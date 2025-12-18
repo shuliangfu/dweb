@@ -1,0 +1,64 @@
+{
+  "name": "@dreamer/dweb",
+  "version": "1.0.7",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/mod.ts",
+    "./cli": "./src/cli.ts"
+  },
+  "description": "A modern full-stack web framework based on Deno + Preact + Tailwind CSS",
+  "nodeModulesDir": "manual",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
+  },
+  "imports": {
+    "@dweb/": "./src/",
+    "@std/fs": "jsr:@std/fs@^1.0.2",
+    "preact": "https://esm.sh/preact@latest",
+    "preact/hooks": "https://esm.sh/preact@latest/hooks",
+    "preact-router": "https://esm.sh/preact-router@4.1.2",
+    "preact/jsx-runtime": "https://esm.sh/preact@latest/jsx-runtime",
+    "preact-render-to-string": "npm:preact-render-to-string@6.2.2",
+    "@std/path": "jsr:@std/path@^1.1.3",
+    "@std/fs/ensure_dir": "jsr:@std/fs@^1.0.2/ensure-dir",
+    "@std/fs/copy": "jsr:@std/fs@^1.0.2/copy",
+    "@std/fs/exists": "jsr:@std/fs@^1.0.2/exists",
+    "@std/fs/walk": "jsr:@std/fs@^1.0.2/walk",
+    "@std/crypto": "jsr:@std/crypto@1",
+    "@std/path/glob-to-regexp": "jsr:@std/path@^1.1.3/glob-to-regexp",
+    "tailwindcss": "npm:tailwindcss@^4.1.10",
+    "tailwindcss-v3": "npm:tailwindcss@^3.4.0",
+    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@^4.1.10",
+    "postcss": "npm:postcss@8.5.6",
+    "postcss-v3": "npm:postcss@^8.4.35",
+    "autoprefixer": "npm:autoprefixer@^10.4.17",
+    "cssnano": "npm:cssnano@^6.0.3",
+    "esbuild": "npm:esbuild@0.19.12"
+  },
+  "tasks": {
+    "dev": "deno run -A src/cli.ts dev",
+    "build": "deno run -A src/cli.ts build",
+    "start": "deno run -A src/cli.ts start",
+    "compile": "deno compile -A --output bin/dweb src/cli.ts",
+
+    "lint": "deno lint src/ example/",
+    "fmt": "deno fmt src/ example/",
+    "fmt:check": "deno fmt --check src/ example/",
+    "check": "deno check src/ example/",
+    "setup:hooks": "./scripts/setup-git-hooks.sh"
+  },
+  "fmt": {
+    "files": {
+      "include": ["src/"]
+    }
+  },
+  "lint": {
+    "include": ["src/"],
+    "rules": {
+      "tags": ["recommended"],
+      "exclude": ["no-explicit-any"]
+    }
+  }
+}
+

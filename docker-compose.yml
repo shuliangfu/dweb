@@ -1,0 +1,18 @@
+services:
+  dweb-example:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dweb-example
+    ports:
+      - "3000:3000"
+    environment:
+      - DENO_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "deno", "run", "-A", "healthcheck.ts"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+

@@ -1,0 +1,39 @@
+# 依赖目录
+node_modules/
+.deno/
+.npm/
+
+# 构建输出
+dist/
+build/
+*.tsbuildinfo
+
+# 日志文件
+*.log
+logs/
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# IDE 配置
+.vscode/
+.idea/
+
+# OS 文件
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+
+# 配置文件（保持原样）
+*.config.js
+ecosystem.config.js
+deno.lock
+
+# 示例项目的构建输出
+example/dist/
+example/build/
+

@@ -1,0 +1,38 @@
+# 排除不需要的文件和目录
+node_modules/
+dist/
+.git/
+.gitignore
+.vscode/
+.idea/
+*.log
+
+# 排除构建产物（构建阶段会重新生成）
+example/dist/
+
+# 排除文档文件（保留 README.md）
+*.md
+!README.md
+!example/README.md
+
+# 测试文件
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# 开发相关文件
+example/QUICK_START.md
+example/TEST_COMMANDS.md
+
+# Docker 相关文件（避免递归复制）
+Dockerfile
+.dockerignore
+docker-compose.yml
+DOCKER.md
+
+# 临时文件
+*.tmp
+*.temp
+.DS_Store
+
