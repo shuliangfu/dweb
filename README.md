@@ -516,7 +516,7 @@ deno task check
 
 ## 🤝 贡献
 
-欢迎贡献代码！请查看 [贡献指南](./CONTRIBUTING.md)（如果存在）或直接提交 [Issue](https://github.com/shuliangfu/dweb/issues) 和 [Pull Request](https://github.com/shuliangfu/dweb/pulls)。
+欢迎贡献代码！请查看 [贡献指南](./CONTRIBUTING.md) 了解如何参与项目，或直接提交 [Issue](https://github.com/shuliangfu/dweb/issues) 和 [Pull Request](https://github.com/shuliangfu/dweb/pulls)。
 
 ## 📄 许可证
 
