@@ -516,7 +516,7 @@ deno task check
 
 ## 🤝 贡献
 
-欢迎贡献代码！请查看 [贡献指南](./CONTRIBUTING.md)（如果存在）或直接提交 Issue 和 Pull Request。
+欢迎贡献代码！请查看 [贡献指南](./CONTRIBUTING.md)（如果存在）或直接提交 [Issue](https://github.com/shuliangfu/dweb/issues) 和 [Pull Request](https://github.com/shuliangfu/dweb/pulls)。
 
 ## 📄 许可证
 
@@ -525,8 +525,8 @@ MIT License - 查看 [LICENSE](./LICENSE) 文件了解详情
 ## 🔗 相关链接
 
 - [JSR 包页面](https://jsr.io/@dreamer/dweb)
-- [GitHub 仓库](https://github.com/dreamer/dweb)（如果存在）
-- [问题反馈](https://github.com/dreamer/dweb/issues)（如果存在）
+- [GitHub 仓库](https://github.com/shuliangfu/dweb)
+- [问题反馈](https://github.com/shuliangfu/dweb/issues)
 
 ---
 
