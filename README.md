@@ -482,7 +482,6 @@ const debug = env.bool("DEBUG", false);
 - **[开发指南](./docs/DEVELOPMENT.md)** - 插件开发、中间件开发、自定义路由指南
 - **[快速开始指南](./example/QUICK_START.md)** - 快速上手教程
 - **[Docker 部署](./docs/DOCKER.md)** - Docker 部署指南
-- **[云平台部署](./docs/CLOUD_DEPLOYMENT.md)** - 云平台部署指南（Deno Deploy、Vercel、Railway、Fly.io 等）
 - **[使用示例](./example/)** - 完整的示例项目
 
 ## 🛠️ 开发
