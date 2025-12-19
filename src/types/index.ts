@@ -13,6 +13,8 @@ export interface StaticOptions {
 
 // 数据库配置（从数据库模块导入类型）
 import type { DatabaseConfig } from '../features/database/types.ts';
+// WebSocket 配置（从 WebSocket 模块导入类型）
+import type { WebSocketConfig } from '../features/websocket/types.ts';
 
 // 应用配置
 export interface AppConfig {
@@ -33,6 +35,8 @@ export interface AppConfig {
   renderMode?: RenderMode;
   // 数据库配置
   database?: DatabaseConfig;
+  // WebSocket 配置
+  websocket?: WebSocketConfig;
 }
 
 // 配置类型

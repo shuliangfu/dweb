@@ -26,6 +26,7 @@ import type { CookieOptions, Middleware, Request, Response, Session } from '../t
 export class Server {
   private middlewares: Middleware[] = [];
   private handler?: (req: Request, res: Response) => Promise<void> | void;
+  private wsUpgradeHandler?: (req: globalThis.Request) => globalThis.Response | null;
   private serverHandle?: {
     shutdown: () => Promise<void>;
     finished: Promise<void>;
@@ -62,6 +63,26 @@ export class Server {
   }
 
   /**
+   * 设置 WebSocket 升级处理器
+   * 
+   * 设置用于处理 WebSocket 升级请求的函数。如果设置了此处理器，
+   * 在处理请求之前会先检查是否为 WebSocket 升级请求。
+   * 
+   * @param handler - WebSocket 升级处理函数，接收原生 Request 对象，返回升级响应或 null
+   * 
+   * @example
+   * ```typescript
+   * server.setWebSocketUpgradeHandler((req) => {
+   *   // 处理 WebSocket 升级
+   *   return wsServer.handleUpgrade(req);
+   * });
+   * ```
+   */
+  setWebSocketUpgradeHandler(handler: (req: globalThis.Request) => globalThis.Response | null): void {
+    this.wsUpgradeHandler = handler;
+  }
+
+  /**
    * 处理请求
    * 
    * 将 Deno 原生请求转换为框架的 Request 对象，执行中间件链或处理器，然后返回响应。
@@ -79,6 +100,14 @@ export class Server {
    * ```
    */
   async handleRequest(nativeReq: globalThis.Request): Promise<globalThis.Response> {
+    // 检查 WebSocket 升级请求
+    if (this.wsUpgradeHandler) {
+      const upgradeResponse = this.wsUpgradeHandler(nativeReq);
+      if (upgradeResponse) {
+        return upgradeResponse;
+      }
+    }
+
     // 创建扩展的请求和响应对象
     const req = this.createRequest(nativeReq);
     const res = this.createResponse();

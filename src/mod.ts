@@ -83,7 +83,25 @@ export {
   type Migration,
   type MigrationConfig,
   type MigrationStatus,
+  initDatabase,
+  getDatabase,
+  getDatabaseManager,
+  isDatabaseInitialized,
+  closeDatabase,
 } from './features/database/mod.ts';
+// 导出 WebSocket 相关 API
+export {
+  WebSocketServer,
+  initWebSocket,
+  getWebSocketServer,
+  isWebSocketInitialized,
+  type WebSocketConfig,
+  type WebSocketConnection,
+  type WebSocketMessage,
+  type WebSocketHandlers,
+  type WebSocketStats,
+  type WebSocketMessageType,
+} from './features/websocket/mod.ts';
 export { env, envInt, envFloat, envBool, getAllEnv, validateEnv, initEnv } from './features/env.ts';
 export {
   registerShutdownHandler,

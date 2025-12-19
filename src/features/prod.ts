@@ -13,6 +13,8 @@ import { PluginManager } from '../core/plugin.ts';
 import { CookieManager } from '../features/cookie.ts';
 import { SessionManager } from '../features/session.ts';
 import { initDatabase, closeDatabase } from '../features/database/access.ts';
+import { WebSocketServer } from '../features/websocket/server.ts';
+import { initWebSocket } from '../features/websocket/access.ts';
 import { logger } from '../middleware/logger.ts';
 import { bodyParser } from '../middleware/body-parser.ts';
 import { staticFiles } from '../middleware/static.ts';
@@ -388,6 +390,24 @@ export async function startProdServer(config: AppConfig): Promise<void> {
 
   // 执行插件初始化
   await pluginManager.executeOnInit({ server, router, routeHandler });
+
+  // 创建 WebSocket 服务器（如果配置了）
+  let wsServer: WebSocketServer | null = null;
+  if (config.websocket) {
+    wsServer = new WebSocketServer(config.websocket);
+    initWebSocket(wsServer);
+    console.log(`✅ WebSocket 服务器已启动 (路径: ${config.websocket.path || '/ws'})`);
+    
+    // 设置 WebSocket 升级处理器
+    server.setWebSocketUpgradeHandler((req: globalThis.Request) => {
+      const url = new URL(req.url);
+      const wsPath = config.websocket!.path || '/ws';
+      if (url.pathname === wsPath || url.pathname.startsWith(wsPath + '/')) {
+        return wsServer!.handleUpgrade(req);
+      }
+      return null;
+    });
+  }
 
   // 设置请求处理器
   const requestHandler = createRequestHandler(
