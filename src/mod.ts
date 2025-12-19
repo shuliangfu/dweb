@@ -61,6 +61,16 @@ export {
   getErrorStatusCode,
   getErrorMessage,
 } from './utils/error.ts';
+
+// 导出数据库相关 API
+export {
+  DatabaseManager,
+  SQLiteAdapter,
+  BaseAdapter,
+  type DatabaseConfig,
+  type DatabaseType,
+  type DatabaseAdapter,
+} from './features/database/mod.ts';
 export { env, envInt, envFloat, envBool, getAllEnv, validateEnv, initEnv } from './features/env.ts';
 export {
   registerShutdownHandler,

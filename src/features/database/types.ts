@@ -1,0 +1,84 @@
+/**
+ * 数据库支持类型定义
+ */
+
+/**
+ * 数据库类型
+ */
+export type DatabaseType = 'sqlite' | 'postgresql' | 'mysql' | 'mongodb';
+
+/**
+ * 数据库连接配置
+ */
+export interface DatabaseConfig {
+  /** 数据库类型 */
+  type: DatabaseType;
+  
+  /** 连接配置 */
+  connection: {
+    // SQLite
+    path?: string;
+    
+    // PostgreSQL/MySQL/MongoDB
+    host?: string;
+    port?: number;
+    database?: string;
+    username?: string;
+    password?: string;
+    
+    // MongoDB 特定
+    authSource?: string;
+    replicaSet?: string;
+  };
+  
+  /** 连接池配置（SQL 数据库） */
+  pool?: {
+    min?: number;
+    max?: number;
+    idleTimeout?: number;
+  };
+  
+  /** MongoDB 特定配置 */
+  mongoOptions?: {
+    maxPoolSize?: number;
+    minPoolSize?: number;
+    serverSelectionTimeoutMS?: number;
+  };
+}
+
+/**
+ * 数据库适配器接口
+ * 所有数据库适配器必须实现此接口
+ */
+export interface DatabaseAdapter {
+  /**
+   * 连接数据库
+   */
+  connect(config: DatabaseConfig): Promise<void>;
+  
+  /**
+   * 执行查询（返回结果集）
+   */
+  query(sql: string, params?: any[]): Promise<any[]>;
+  
+  /**
+   * 执行更新/插入/删除（返回影响行数等信息）
+   */
+  execute(sql: string, params?: any[]): Promise<any>;
+  
+  /**
+   * 执行事务
+   */
+  transaction<T>(callback: (db: DatabaseAdapter) => Promise<T>): Promise<T>;
+  
+  /**
+   * 关闭连接
+   */
+  close(): Promise<void>;
+  
+  /**
+   * 检查是否已连接
+   */
+  isConnected(): boolean;
+}
+

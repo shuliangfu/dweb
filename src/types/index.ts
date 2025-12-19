@@ -11,6 +11,9 @@ export interface StaticOptions {
   maxAge?: number;  // 缓存时间（秒）
 }
 
+// 数据库配置（从数据库模块导入类型）
+import type { DatabaseConfig } from '../features/database/types.ts';
+
 // 应用配置
 export interface AppConfig {
   name?: string;
@@ -28,6 +31,8 @@ export interface AppConfig {
   dev?: DevConfig;
   // 全局渲染模式（可在页面组件中覆盖）
   renderMode?: RenderMode;
+  // 数据库配置
+  database?: DatabaseConfig;
 }
 
 // 配置类型
