@@ -184,6 +184,10 @@ Deno.test('RouteHandler - handle - 处理模块请求路径（生产环境）', 
     build: {
       outDir: 'dist',
     },
+    server: {
+      port: 3000,
+      host: 'localhost',
+    },
   };
   const handler = new RouteHandler(router, undefined, undefined, config);
   
