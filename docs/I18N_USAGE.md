@@ -95,26 +95,9 @@ export default config;
 
 ### 方式一：使用全局 `$t()` 函数（推荐，服务端和客户端都支持）
 
-在服务端渲染（SSR）和客户端渲染（CSR/Hybrid）中，都可以直接使用全局的 `$t()` 或 `t()` 函数：
+在服务端渲染（SSR）和客户端渲染（CSR/Hybrid）中，都可以直接使用全局的 `$t()` 或 `t()` 函数。
 
-```tsx
-export default function HomePage() {
-  // 服务端和客户端都可以直接使用全局函数
-  // 注意：需要类型声明，见下方说明
-  const $t = (globalThis as any).$t;
-  
-  return (
-    <div>
-      <h1>{$t?.("common.title")}</h1>
-      <p>{$t?.("common.description")}</p>
-      <p>{$t?.("你好")}</p>
-      <p>{$t?.("user.welcome", { name: "张三" })}</p>
-    </div>
-  );
-}
-```
-
-**类型支持**（可选，但推荐）：
+**首先，添加类型声明**（只需添加一次）：
 
 ```typescript
 // types/global.d.ts
@@ -126,48 +109,69 @@ declare global {
 export {};
 ```
 
-使用类型声明后，可以直接使用：
+**然后，在页面组件中直接使用**（不需要 `?.`）：
 
 ```tsx
 export default function HomePage() {
   return (
     <div>
       <h1>{$t("common.title")}</h1>
+      <p>{$t("common.description")}</p>
       <p>{$t("你好")}</p>
+      <p>{$t("user.welcome", { name: "张三" })}</p>
     </div>
   );
 }
 ```
 
+或者使用 `t()` 函数（与 `$t()` 完全相同）：
+
+```tsx
+export default function HomePage() {
+  return (
+    <div>
+      <h1>{t("common.title")}</h1>
+      <p>{t("你好")}</p>
+    </div>
+  );
+}
+```
+
+> **注意**：添加类型声明后，TypeScript 会知道这些全局函数存在，可以直接使用而不需要 `?.`。如果没有添加类型声明，可以使用 `(globalThis as any).$t("你好")`，但推荐添加类型声明以获得更好的类型支持。
+
 ### 方式二：使用 props 中的 `t` 函数
 
-在页面组件中，`t` 函数也会通过 props 传递：
+在页面组件中，`t` 函数也会通过 props 传递。如果已配置 i18n 插件，可以直接使用（不需要 `?.`）：
 
 ```tsx
 import type { PageProps } from "@dreamer/dweb";
 
 export default function HomePage({ t, lang }: PageProps) {
+  // 如果已配置 i18n 插件，t 函数总是存在，可以直接使用
   return (
     <div>
-      <h1>{t?.("common.title")}</h1>
-      <p>{t?.("common.description")}</p>
-      <p>{t?.("你好")}</p>
-      <p>{t?.("user.welcome", { name: "张三" })}</p>
+      <h1>{t("common.title")}</h1>
+      <p>{t("common.description")}</p>
+      <p>{t("你好")}</p>
+      <p>{t("user.welcome", { name: "张三" })}</p>
     </div>
   );
 }
 ```
 
-### 方式二：在 load 函数中使用
+> **注意**：如果项目中没有配置 i18n 插件，`t` 可能是 `undefined`，此时需要使用 `t?.("你好")` 或使用全局 `$t()` 函数。
 
-在 `load` 函数中，可以通过 `LoadContext` 访问 `t` 函数：
+### 方式三：在 load 函数中使用
+
+在 `load` 函数中，可以通过 `LoadContext` 访问 `t` 函数。如果已配置 i18n 插件，可以直接使用：
 
 ```tsx
 import type { LoadContext, PageProps } from "@dreamer/dweb";
 
 export async function load({ t, lang }: LoadContext) {
   // 在服务端获取数据时也可以使用翻译
-  const title = t?.("common.title") || "默认标题";
+  // 如果已配置 i18n 插件，t 函数总是存在
+  const title = t("common.title");
   
   return {
     title,
@@ -178,14 +182,36 @@ export async function load({ t, lang }: LoadContext) {
 export default function AboutPage({ t, data }: PageProps) {
   return (
     <div>
-      <h1>{t?.("common.title")}</h1>
+      <h1>{t("common.title")}</h1>
       <p>{data.title}</p>
     </div>
   );
 }
 ```
 
-### 方式三：在客户端使用全局函数（CSR/Hybrid 模式）
+或者使用全局 `$t()` 函数（推荐，更简洁）：
+
+```tsx
+export async function load({ lang }: LoadContext) {
+  const title = $t("common.title");
+  
+  return {
+    title,
+    lang,
+  };
+}
+
+export default function AboutPage({ data }: PageProps) {
+  return (
+    <div>
+      <h1>{$t("common.title")}</h1>
+      <p>{data.title}</p>
+    </div>
+  );
+}
+```
+
+### 方式四：在客户端使用全局函数（CSR/Hybrid 模式）
 
 在客户端渲染的组件中，可以使用全局的 `$t()` 或 `t()` 函数：
 
@@ -212,27 +238,25 @@ export default function ClientComponent() {
 }
 ```
 
-### 方式四：创建自定义 Hook（推荐用于客户端）
+### 方式五：创建自定义 Hook（可选，通常不需要）
 
-创建一个自定义 Hook 来使用翻译：
+如果不想使用全局函数，可以创建一个自定义 Hook。但通常直接使用全局 `$t()` 函数更简单：
 
 ```tsx
 // hooks/useI18n.ts
 import { useState, useEffect } from "preact/hooks";
 
 export function useI18n() {
-  const [t, setT] = useState<((key: string, params?: Record<string, string>) => string) | null>(null);
   const [lang, setLang] = useState<string>("");
 
   useEffect(() => {
     if (typeof window !== "undefined" && (window as any).__I18N_DATA__) {
       const i18nData = (window as any).__I18N_DATA__;
-      setT(() => i18nData.t.bind(i18nData));
       setLang(i18nData.lang);
     }
   }, []);
 
-  return { t, lang };
+  return { t: $t, lang }; // 直接返回全局 $t 函数
 }
 
 // 在组件中使用
@@ -240,8 +264,6 @@ import { useI18n } from "../hooks/useI18n";
 
 export default function MyComponent() {
   const { t, lang } = useI18n();
-
-  if (!t) return <div>Loading...</div>;
 
   return (
     <div>
@@ -252,6 +274,8 @@ export default function MyComponent() {
   );
 }
 ```
+
+> **推荐**：直接使用全局 `$t()` 函数，更简单直接。
 
 ## 翻译键的格式
 
@@ -361,6 +385,23 @@ export default function MyComponent({ t }: PageProps) {
 
 ## 完整示例
 
+### 使用全局 `$t()` 函数（推荐）
+
+```tsx
+// routes/index.tsx
+export default function HomePage() {
+  return (
+    <div>
+      <h1>{$t("common.title")}</h1>
+      <p>{$t("你好")}</p>
+      <p>{$t("user.welcome", { name: "访客" })}</p>
+    </div>
+  );
+}
+```
+
+### 使用 props 中的 `t` 函数
+
 ```tsx
 // routes/index.tsx
 import type { PageProps } from "@dreamer/dweb";
@@ -368,9 +409,9 @@ import type { PageProps } from "@dreamer/dweb";
 export default function HomePage({ t, lang }: PageProps) {
   return (
     <div>
-      <h1>{t?.("common.title") || "默认标题"}</h1>
-      <p>{t?.("你好")}</p>
-      <p>{t?.("user.welcome", { name: "访客" })}</p>
+      <h1>{t("common.title")}</h1>
+      <p>{t("你好")}</p>
+      <p>{t("user.welcome", { name: "访客" })}</p>
       <p>当前语言: {lang}</p>
     </div>
   );
