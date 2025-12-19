@@ -173,7 +173,7 @@ const frameworkUrl = `jsr:@dreamer/dweb@^${version}`;
 // 创建项目目录
 await ensureDir(projectDir);
 await ensureDir(path.join(projectDir, 'routes'));
-await ensureDir(path.join(projectDir, 'public'));
+await ensureDir(path.join(projectDir, 'assets'));
 
 // 生成配置文件
 let configContent: string;
