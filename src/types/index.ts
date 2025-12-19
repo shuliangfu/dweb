@@ -167,6 +167,10 @@ export interface BuildConfig {
   split?: boolean;
   /** 代码分割的最小 chunk 大小（字节），默认 20000（20KB） */
   chunkSize?: number;
+  /** 是否启用静态资源压缩（图片、字体等），默认 false */
+  compress?: boolean;
+  /** 图片压缩质量（0-100），默认 80 */
+  imageQuality?: number;
   [key: string]: any;
 }
 

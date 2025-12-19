@@ -749,28 +749,54 @@ async function buildApp(config: AppConfig): Promise<void> {
   // CSS 文件会由 Tailwind 插件处理，这里只复制其他静态资源
   const staticDir = config.static?.dir || 'assets';
   const staticOutDir = path.join(outDir, staticDir);
+  const compressAssets = config.build?.compress === true;
+  const imageQuality = config.build?.imageQuality || 80;
+  
   try {
     await ensureDir(staticOutDir);
+
+    let copiedCount = 0;
+    let compressedCount = 0;
+    let skippedCount = 0;
 
     // 遍历静态资源目录
     for await (const entry of walk(staticDir)) {
       if (entry.isFile) {
-        const ext = path.extname(entry.path);
+        const ext = path.extname(entry.path).toLowerCase();
         // CSS 文件跳过（由 Tailwind 插件处理）
         if (ext === '.css') {
+          skippedCount++;
           continue;
         }
 
-        // 其他静态资源保持原文件名复制
         const relativePath = path.relative(staticDir, entry.path);
         const outputPath = path.join(staticOutDir, relativePath);
         const outputDir = path.dirname(outputPath);
         await ensureDir(outputDir);
 
-        await Deno.copyFile(entry.path, outputPath);
+        // 如果启用压缩，尝试压缩图片和字体
+        if (compressAssets) {
+          const compressed = await compressAsset(entry.path, outputPath, ext, imageQuality);
+          if (compressed) {
+            compressedCount++;
+          } else {
+            // 压缩失败或不支持，直接复制
+            await Deno.copyFile(entry.path, outputPath);
+            copiedCount++;
+          }
+        } else {
+          // 未启用压缩，直接复制
+          await Deno.copyFile(entry.path, outputPath);
+          copiedCount++;
+        }
       }
     }
-    console.log(`✅ 复制静态资源完成 (${staticDir})`);
+    
+    if (compressAssets) {
+      console.log(`✅ 静态资源处理完成 (${staticDir}): ${compressedCount} 个已压缩, ${copiedCount} 个已复制, ${skippedCount} 个已跳过`);
+    } else {
+      console.log(`✅ 复制静态资源完成 (${staticDir}): ${copiedCount} 个文件`);
+    }
   } catch {
     // 静态资源目录不存在时忽略错误
   }
