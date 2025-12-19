@@ -3,7 +3,7 @@
  * 生成 manifest.json 和 Service Worker
  */
 
-import type { Plugin, AppLike, Request, Response, BuildConfig } from '../../types/index.ts';
+import type { Plugin, Request, Response, BuildConfig } from '../../types/index.ts';
 import type { PWAPluginOptions, PWAManifestConfig, ServiceWorkerConfig } from './types.ts';
 import * as path from '@std/path';
 
@@ -193,7 +193,7 @@ export function pwa(options: PWAPluginOptions): Plugin {
     /**
      * 请求处理钩子 - 注入 PWA 链接
      */
-    async onRequest(req: Request, res: Response) {
+    onRequest(_req: Request, res: Response) {
       // 只处理 HTML 响应
       if (!res.body || typeof res.body !== 'string') {
         return;
