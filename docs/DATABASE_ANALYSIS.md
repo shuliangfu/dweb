@@ -1238,28 +1238,40 @@ await db
   .delete({ _id: userId });
 ```
 
-### ORM 使用
+### ORM 使用（习惯性写法）
 
 ```typescript
 import { User } from "./models/User.ts";
 
-// 查找
-const user = await User.find(1);
+// 1. 查找 - 支持对象条件
+const user1 = await User.find(1);  // 通过 ID
+const user2 = await User.find({ id: 1 });  // 通过条件对象
+const user3 = await User.find({ email: 'user@example.com' });  // 通过其他字段
 
-// 查找所有
-const users = await User.findAll({ age: { $gt: 18 } });
+// 2. 查找 - 指定查询字段
+const user4 = await User.find(1, ['id', 'name', 'email']);  // 只查询指定字段
 
-// 创建
+// 3. 查找多个 - 支持条件对象和字段选择
+const users1 = await User.findAll();  // 查找所有
+const users2 = await User.findAll({ age: 25 });  // 按条件查找
+const users3 = await User.findAll({ age: { $gt: 18 } });  // 支持操作符
+const users4 = await User.findAll({}, ['id', 'name', 'email']);  // 指定字段
+
+// 4. 创建
 const newUser = await User.create({
   name: 'John',
   email: 'john@example.com'
 });
 
-// 更新
-await User.update(1, { name: 'Jane' });
+// 5. 更新 - 支持对象条件
+await User.update(1, { name: 'lisi' });  // 通过 ID 更新
+await User.update({ id: 1 }, { name: 'lisi' });  // 通过条件对象更新
+await User.update({ email: 'user@example.com' }, { name: 'lisi' });  // 通过其他字段更新
 
-// 删除
-await User.delete(1);
+// 6. 删除 - 支持对象条件
+await User.delete(1);  // 通过 ID 删除
+await User.delete({ id: 1 });  // 通过条件对象删除
+await User.delete({ email: 'user@example.com' });  // 通过其他字段删除
 ```
 
 ### 迁移使用
