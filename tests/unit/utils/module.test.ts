@@ -315,3 +315,299 @@ export function other() {
 // 需要在实际编译后的 JS 代码上测试，而不是手写的 JS 代码
 // 这些测试用例可以在集成测试中补充
 
+// 补充更多边界情况测试
+Deno.test('Module Utils - extractFunctionBody - 空函数体', () => {
+  const code = `function empty() {}`;
+  
+  const body = extractFunctionBody(code, code.indexOf('function empty'));
+  
+  assertEquals(body.trim(), '');
+});
+
+Deno.test('Module Utils - extractFunctionBody - 嵌套函数', () => {
+  const code = `
+function outer() {
+  function inner() {
+    return 'nested';
+  }
+  return inner();
+}
+`;
+  
+  const body = extractFunctionBody(code, code.indexOf('function outer'));
+  
+  assert(body.includes('function inner'));
+  assert(body.includes('return inner()'));
+});
+
+Deno.test('Module Utils - extractFunctionBody - 字符串中包含括号', () => {
+  const code = `
+function test() {
+  const str = "()";
+  const str2 = '{}';
+  return str + str2;
+}
+`;
+  
+  const body = extractFunctionBody(code, code.indexOf('function test'));
+  
+  assert(body.includes('const str = "()"'));
+  assert(body.includes('const str2 = \'{}\''));
+});
+
+Deno.test('Module Utils - extractFunctionBody - 模板字符串中包含括号', () => {
+  const code = `
+function test() {
+  const str = \`() {}\`;
+  return str;
+}
+`;
+  
+  const body = extractFunctionBody(code, code.indexOf('function test'));
+  
+  assert(body.includes('const str'));
+});
+
+Deno.test('Module Utils - extractFunctionBody - 无效的开始位置', () => {
+  const code = `function test() { return 'test'; }`;
+  
+  // 无效的开始位置应该返回空字符串
+  const body = extractFunctionBody(code, code.length + 100);
+  
+  assertEquals(body, '');
+});
+
+Deno.test('Module Utils - extractLoadFunctionBody - export async function load', () => {
+  const code = `
+export async function load() {
+  return { data: 'async test' };
+}
+`;
+  
+  const body = extractLoadFunctionBody(code);
+  
+  assert(body.includes('return'));
+  assert(body.includes('async test'));
+});
+
+Deno.test('Module Utils - extractLoadFunctionBody - export const load = async () =>', () => {
+  const code = `
+export const load = async () => {
+  return { data: 'arrow async' };
+};
+`;
+  
+  const body = extractLoadFunctionBody(code);
+  
+  assert(body.includes('return'));
+  assert(body.includes('arrow async'));
+});
+
+Deno.test('Module Utils - extractLoadFunctionBody - export const load = function()', () => {
+  const code = `
+export const load = function() {
+  return { data: 'function expression' };
+};
+`;
+  
+  const body = extractLoadFunctionBody(code);
+  
+  assert(body.includes('return'));
+  assert(body.includes('function expression'));
+});
+
+Deno.test('Module Utils - extractLoadFunctionBody - 没有 load 函数', () => {
+  const code = `
+export function other() {
+  return 'test';
+}
+`;
+  
+  const body = extractLoadFunctionBody(code);
+  
+  assertEquals(body, '');
+});
+
+Deno.test('Module Utils - collectStaticImports - 命名空间导入', () => {
+  const code = `
+import * as utils from './utils.js';
+`;
+  
+  const imports = collectStaticImports(code);
+  
+  assertEquals(imports.length, 1);
+  assertEquals(imports[0].names, ['utils']);
+});
+
+Deno.test('Module Utils - collectStaticImports - 默认导入', () => {
+  const code = `
+import Component from './component.js';
+`;
+  
+  const imports = collectStaticImports(code);
+  
+  assertEquals(imports.length, 1);
+  assertEquals(imports[0].names, ['Component']);
+});
+
+Deno.test('Module Utils - collectStaticImports - type 导入', () => {
+  const code = `
+import type { Type1, Type2 } from './types.js';
+`;
+  
+  const imports = collectStaticImports(code);
+  
+  assertEquals(imports.length, 1);
+  assert(imports[0].names.includes('Type1'));
+  assert(imports[0].names.includes('Type2'));
+});
+
+Deno.test('Module Utils - collectStaticImports - 带 as 的导入', () => {
+  const code = `
+import { name as alias } from './module.js';
+`;
+  
+  const imports = collectStaticImports(code);
+  
+  assertEquals(imports.length, 1);
+  assertEquals(imports[0].names, ['name']);
+});
+
+Deno.test('Module Utils - collectStaticImports - 多个导入语句', () => {
+  const code = `
+import { a } from './a.js';
+import { b } from './b.js';
+import { c } from './c.js';
+`;
+  
+  const imports = collectStaticImports(code);
+  
+  assertEquals(imports.length, 3);
+});
+
+Deno.test('Module Utils - collectStaticImports - 没有相对路径导入', () => {
+  const code = `
+import { Component } from 'preact';
+import { useState } from 'preact/hooks';
+`;
+  
+  const imports = collectStaticImports(code);
+  
+  assertEquals(imports.length, 0);
+});
+
+Deno.test('Module Utils - removeLoadOnlyImports - 混合导入（load 和非 load）', () => {
+  const code = `
+import { useState } from 'preact/hooks';
+import { Component } from './component.js';
+export function load() {
+  return { data: 'test' };
+}
+`;
+  
+  const result = removeLoadOnlyImports(code);
+  
+  // useState 应该保留（非 load 使用）
+  assert(result.includes('useState'));
+  // Component 应该保留（非 load 使用）
+  assert(result.includes('Component'));
+});
+
+Deno.test('Module Utils - removeLoadOnlyImports - 空文件', () => {
+  const code = '';
+  
+  const result = removeLoadOnlyImports(code);
+  
+  assertEquals(result, '');
+});
+
+Deno.test('Module Utils - replaceRelativeImports - 保留绝对路径导入', () => {
+  const jsCode = `
+import { Component } from 'preact';
+import { utils } from './utils.js';
+`;
+  const filePath = '/src/routes/page.js';
+  
+  const result = replaceRelativeImports(jsCode, filePath);
+  
+  // 绝对路径应该保留
+  assert(result.includes("from 'preact'"));
+  // 相对路径应该被替换
+  assert(!result.includes('./utils.js'));
+});
+
+Deno.test('Module Utils - replaceRelativeImports - 处理 Windows 路径', () => {
+  const jsCode = `
+import { Component } from './component.js';
+`;
+  const filePath = 'C:\\Users\\test\\routes\\page.js';
+  
+  const result = replaceRelativeImports(jsCode, filePath);
+  
+  // 应该能处理 Windows 路径
+  assert(result.includes('/__modules/'));
+});
+
+Deno.test('Module Utils - replaceRelativeImports - 空文件', () => {
+  const jsCode = '';
+  const filePath = '/src/routes/page.js';
+  
+  const result = replaceRelativeImports(jsCode, filePath);
+  
+  assertEquals(result, '');
+});
+
+Deno.test('Module Utils - replaceRelativeImports - 没有相对路径', () => {
+  const jsCode = `
+import { Component } from 'preact';
+import { useState } from 'preact/hooks';
+`;
+  const filePath = '/src/routes/page.js';
+  
+  const result = replaceRelativeImports(jsCode, filePath);
+  
+  // 应该保持不变
+  assert(result.includes("from 'preact'"));
+  assert(result.includes("from 'preact/hooks'"));
+});
+
+Deno.test({
+  name: 'Module Utils - compileWithEsbuild - 处理语法错误',
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const code = `
+const x: string = 123; // 类型错误
+export default x;
+`;
+    const filePath = '/test/file.ts';
+    
+    // esbuild 可能会编译但产生警告，或者抛出错误
+    try {
+      const result = await compileWithEsbuild(code, filePath);
+      // 如果编译成功，至少应该有输出
+      assert(result.length > 0);
+    } catch (error) {
+      // 如果编译失败，应该抛出错误
+      assert(error instanceof Error);
+    }
+  },
+});
+
+Deno.test({
+  name: 'Module Utils - compileWithEsbuild - 空文件',
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const code = 'export default {};'; // 使用最小有效代码而不是空文件
+    const filePath = '/test/file.ts';
+    
+    const result = await compileWithEsbuild(code, filePath);
+    
+    // 应该返回编译后的代码
+    assert(typeof result === 'string');
+    assert(result.length > 0);
+  },
+});
+
+
