@@ -3,6 +3,34 @@
  */
 
 /**
+ * 图片裁切配置
+ */
+export interface ImageCropConfig {
+  /** 是否启用裁切 */
+  enabled?: boolean;
+  /** 目标宽度 */
+  width: number;
+  /** 目标高度 */
+  height: number;
+  /** 裁切模式：'center' 居中裁切（顶边对齐） */
+  mode?: 'center';
+}
+
+/**
+ * 图片压缩配置
+ */
+export interface ImageCompressConfig {
+  /** 是否启用压缩 */
+  enabled?: boolean;
+  /** 压缩格式：'webp' | 'avif' */
+  format?: 'webp' | 'avif';
+  /** 压缩质量（0-100） */
+  quality?: number;
+  /** 是否同时保留原格式 */
+  keepOriginal?: boolean;
+}
+
+/**
  * 文件上传配置
  */
 export interface FileUploadConfig {
@@ -22,6 +50,10 @@ export interface FileUploadConfig {
   perFileLimit?: number;
   /** 总大小限制（所有文件） */
   totalLimit?: number;
+  /** 图片裁切配置 */
+  imageCrop?: ImageCropConfig;
+  /** 图片压缩配置 */
+  imageCompress?: ImageCompressConfig;
 }
 
 /**

@@ -11,7 +11,7 @@ import { walk } from '@std/fs/walk';
 /**
  * 支持的图片格式
  */
-const IMAGE_FORMATS: ImageFormat[] = ['jpeg', 'jpg', 'png', 'webp', 'gif', 'svg'];
+const IMAGE_FORMATS: ImageFormat[] = ['jpeg', 'jpg', 'png', 'webp', 'avif', 'gif', 'svg'];
 
 /**
  * 检查文件是否为图片
@@ -107,10 +107,11 @@ function transformImageTags(html: string, options: ImageOptimizerPluginOptions):
       }
     }
 
-    // 添加 WebP 支持（使用 <picture> 标签）
-    if (options.webp?.enabled !== false) {
+    // 添加 WebP/AVIF 支持（使用 <picture> 标签）
+    if (options.webp?.enabled !== false || options.avif?.enabled !== false) {
       // 这里简化处理，实际应该生成 <picture> 标签
       // 为了不破坏现有结构，只添加注释提示
+      // 实际实现中，可以生成 <picture> 标签，包含原图、WebP 和 AVIF 版本
     }
 
     return `<img ${newAttributes}>`;
@@ -252,6 +253,17 @@ export function imageOptimizer(options: ImageOptimizerPluginOptions = {}): Plugi
                 const webpPath = outputPath.replace(/\.(jpg|jpeg|png)$/i, '.webp');
                 console.log(`💡 [Image Optimizer] 建议生成 WebP: ${webpPath}`);
                 // 实际实现中，可以调用外部工具生成 WebP
+                webpCount++;
+              }
+
+              // 生成 AVIF 版本
+              const avif = options.avif || {};
+              if (avif.enabled !== false && (ext === '.jpg' || ext === '.jpeg' || ext === '.png')) {
+                // 注意：AVIF 转换需要外部工具
+                // 这里只记录需要转换的文件，实际转换可以通过配置外部工具实现
+                const avifPath = outputPath.replace(/\.(jpg|jpeg|png)$/i, '.avif');
+                console.log(`💡 [Image Optimizer] 建议生成 AVIF: ${avifPath}`);
+                // 实际实现中，可以调用外部工具生成 AVIF
                 webpCount++;
               }
             }

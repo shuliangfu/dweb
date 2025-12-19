@@ -289,5 +289,5 @@ export function formValidator(options: FormValidatorPluginOptions = {}): Plugin 
 
 // 导出类型和函数
 export type { FormValidatorPluginOptions, ValidationRuleConfig, ValidationResult, FormValidationConfig, FieldValidation } from './types.ts';
-export { validateForm, validateValue };
+export { validateValue };
 

@@ -5,7 +5,7 @@
 /**
  * 图片格式
  */
-export type ImageFormat = 'jpeg' | 'jpg' | 'png' | 'webp' | 'gif' | 'svg';
+export type ImageFormat = 'jpeg' | 'jpg' | 'png' | 'webp' | 'avif' | 'gif' | 'svg';
 
 /**
  * 图片尺寸配置
@@ -40,6 +40,18 @@ export interface WebPConfig {
   /** 是否生成 WebP 格式 */
   enabled?: boolean;
   /** WebP 质量（0-100） */
+  quality?: number;
+  /** 是否同时保留原格式 */
+  keepOriginal?: boolean;
+}
+
+/**
+ * AVIF 配置
+ */
+export interface AVIFConfig {
+  /** 是否生成 AVIF 格式 */
+  enabled?: boolean;
+  /** AVIF 质量（0-100） */
   quality?: number;
   /** 是否同时保留原格式 */
   keepOriginal?: boolean;
@@ -95,6 +107,8 @@ export interface ImageOptimizerPluginOptions {
   compression?: CompressionConfig;
   /** WebP 配置 */
   webp?: WebPConfig;
+  /** AVIF 配置 */
+  avif?: AVIFConfig;
   /** 响应式图片配置 */
   responsive?: ResponsiveImageConfig;
   /** 占位符配置 */

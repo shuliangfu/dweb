@@ -160,6 +160,7 @@ export default {
 **功能**：
 - 自动压缩图片（SVG 优化）
 - 支持 WebP 格式转换（框架，需外部工具）
+- **支持 AVIF 格式转换**（框架，需外部工具）
 - 生成响应式图片（srcset）
 - 支持懒加载
 - 自动转换 HTML 中的图片标签
@@ -178,6 +179,10 @@ export default {
         optimizeSvg: true,
       },
       webp: {
+        enabled: true,
+        quality: 80,
+      },
+      avif: {
         enabled: true,
         quality: 80,
       },
@@ -374,6 +379,8 @@ export async function POST(req: Request) {
 - 文件类型和大小验证
 - 文件命名策略（original, timestamp, uuid, hash）
 - 自动创建子目录（按日期）
+- **图片居中裁切**（顶边对齐）
+- **图片压缩**（WebP/AVIF 格式转换）
 
 **使用示例**：
 ```typescript
@@ -389,6 +396,20 @@ export default {
         allowMultiple: true,
         namingStrategy: "timestamp",
         createSubdirs: true,
+        // 图片裁切配置
+        imageCrop: {
+          enabled: true,
+          width: 800,
+          height: 600,
+          mode: "center", // 居中裁切（顶边对齐）
+        },
+        // 图片压缩配置
+        imageCompress: {
+          enabled: true,
+          format: "webp", // 或 "avif"
+          quality: 80,
+          keepOriginal: false, // 是否保留原图
+        },
       },
     }),
   ],
@@ -402,6 +423,17 @@ export async function POST(req: Request) {
     uploadDir: "uploads",
     maxFileSize: 5 * 1024 * 1024,
     allowedTypes: ["image/*"],
+    // 图片处理配置
+    imageCrop: {
+      enabled: true,
+      width: 1200,
+      height: 800,
+    },
+    imageCompress: {
+      enabled: true,
+      format: "avif",
+      quality: 85,
+    },
   });
   
   if (!result.success) {
@@ -411,6 +443,8 @@ export async function POST(req: Request) {
   return Response.json({ files: result.files });
 }
 ```
+
+**注意**：图片裁切和压缩功能需要安装图片处理库（如 sharp）。当前实现提供框架和接口，实际处理需要集成外部工具。
 
 ---
 

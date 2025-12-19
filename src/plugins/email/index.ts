@@ -167,5 +167,3 @@ export function email(options: EmailPluginOptions): Plugin {
 
 // 导出类型和函数
 export type { EmailPluginOptions, EmailOptions, EmailResult, EmailTemplate, EmailAttachment, SMTPConfig } from './types.ts';
-export { sendEmail, renderTemplate };
-
