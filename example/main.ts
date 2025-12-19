@@ -23,15 +23,15 @@ app.use(cors({
 // 这样可以通过两种方式访问：
 // - /assets/images/logo.png (通过这个配置)
 // - /images/logo.png (通过框架自动添加的中间件)
-app.use(
-  staticFiles({
-    dir: 'assets',
-    prefix: '/assets', // 访问前缀，例如 /assets/images/logo.png
-    maxAge: 86400, // 缓存 1 天
-    index: ['index.html', 'index.htm'],
-    dotfiles: 'deny', // 禁止访问隐藏文件
-  })
-);
+// app.use(
+//   staticFiles({
+//     dir: 'assets',
+//     prefix: '/assets', // 访问前缀，例如 /assets/images/logo.png
+//     maxAge: 86400, // 缓存 1 天
+//     index: ['index.html', 'index.htm'],
+//     dotfiles: 'deny', // 禁止访问隐藏文件
+//   })
+// );
 
 // app.use((req, res, next) => {
 //   console.log('request', req.url);

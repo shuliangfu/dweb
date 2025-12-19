@@ -41,9 +41,13 @@ const config: AppConfig = {
   },
 
   // 静态资源目录，默认为 'assets'
-	static: {
-		dir: 'assets'
-	},
+  static: {
+    dir: 'assets',
+    prefix: '/assets', // 访问前缀，例如 /assets/logo.png
+    maxAge: 86400, // 缓存 1 天
+    index: ['index.html', 'index.htm'],
+    dotfiles: 'deny', // 禁止访问隐藏文件
+  },
 
   // Cookie 配置
   cookie: {
