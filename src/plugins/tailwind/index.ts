@@ -10,6 +10,7 @@ import { findTailwindConfigFile, findCSSFiles } from './utils.ts';
 import { processCSSV3 } from './v3.ts';
 import { processCSSV4 } from './v4.ts';
 import * as path from '@std/path';
+import { isPathSafe } from '../../utils/security.ts';
 
 /**
  * 处理 CSS 文件
@@ -123,6 +124,13 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
         } else {
           // 没有配置 cssPath，直接使用请求路径
           targetPath = filePath;
+        }
+
+        // 安全检查：确保文件路径在当前工作目录内（防止路径遍历攻击）
+        const cwd = Deno.cwd();
+        if (!isPathSafe(targetPath, cwd)) {
+          // 路径不安全，跳过处理
+          return;
         }
 
         // 检查文件是否存在

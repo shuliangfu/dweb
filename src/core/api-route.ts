@@ -4,6 +4,7 @@
  */
 
 import type { Request, RouteHandler } from '../types/index.ts';
+import { isSafeMethodName } from '../utils/security.ts';
 
 /**
  * 加载 API 路由模块
@@ -119,8 +120,7 @@ export async function handleApiRoute(
   }
   
   // 安全检查：验证方法名是否安全
-  // 方法名应该是有效的标识符，防止注入攻击
-  if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(methodName) || methodName.length > 100) {
+  if (!isSafeMethodName(methodName)) {
     throw new Error(`API 方法名不安全: ${methodName}`);
   }
   

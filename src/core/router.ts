@@ -6,6 +6,7 @@
 import { walk } from '@std/fs/walk';
 import { globToRegExp } from '@std/path/glob-to-regexp';
 import * as path from '@std/path';
+import { isValidIdentifier, sanitizeRouteParams } from '../utils/security.ts';
 
 /**
  * 路由信息
@@ -469,28 +470,25 @@ export class Router {
       if (routeParts[i].startsWith(':')) {
         const paramName = routeParts[i].slice(1);
         // 安全检查：验证参数名是否为有效标识符
-        if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(paramName)) {
+        if (!isValidIdentifier(paramName)) {
           // 参数名无效，跳过
           continue;
         }
-        // 清理参数值：移除控制字符，限制长度
-        const controlCharRegex = new RegExp('[\u0000-\u001F\u007F]', 'g');
-        const paramValue = (urlParts[i] || '').replace(controlCharRegex, '').slice(0, 1000);
-        params[paramName] = paramValue;
+        // 获取原始参数值
+        params[paramName] = urlParts[i] || '';
       } else if (routeParts[i] === '*' && i === routeParts.length - 1) {
         // 捕获所有
         const paramName = routeInfo?.params?.[0] || 'slug';
         // 安全检查：验证参数名
-        if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(paramName)) {
-          const controlCharRegex = new RegExp('[\u0000-\u001F\u007F]', 'g');
-          const paramValue = urlParts.slice(i).join('/').replace(controlCharRegex, '').slice(0, 2000);
-          params[paramName] = paramValue;
+        if (isValidIdentifier(paramName)) {
+          params[paramName] = urlParts.slice(i).join('/');
         }
         break;
       }
     }
     
-    return params;
+    // 使用安全工具函数清理所有参数
+    return sanitizeRouteParams(params);
   }
   
   /**

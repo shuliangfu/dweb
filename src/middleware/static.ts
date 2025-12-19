@@ -5,6 +5,7 @@
 
 import type { Middleware, StaticOptions } from '../types/index.ts';
 import * as path from '@std/path';
+import { isPathSafe } from '../utils/security.ts';
 
 /**
  * 根据文件扩展名获取 MIME 类型
@@ -85,6 +86,11 @@ export function staticFiles(options: StaticOptions): Middleware {
       let foundIndex = false;
       for (const indexFile of indexFiles) {
         const indexPath = path.join(dir, filePath, indexFile);
+        // 安全检查：确保索引文件路径在 dir 目录内
+        if (!isPathSafe(indexPath, dir)) {
+          // 路径不在允许的目录内，跳过
+          continue;
+        }
         try {
           const stat = await Deno.stat(indexPath);
           if (stat.isFile) {
@@ -106,6 +112,13 @@ export function staticFiles(options: StaticOptions): Middleware {
     
     // 使用 path.join 规范化路径，防止路径遍历攻击
     const fullPath = path.join(dir, filePath);
+    
+    // 安全检查：确保文件路径在 dir 目录内
+    if (!isPathSafe(fullPath, dir)) {
+      // 路径不在允许的目录内，拒绝访问
+      await next();
+      return;
+    }
     
     // 检查文件是否存在且是文件（不是目录）
     let fileStat: Deno.FileInfo;
