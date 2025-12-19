@@ -41,7 +41,7 @@ export interface RequestIdOptions {
 /**
  * 生成 UUID v4
  */
-async function generateUUID(): Promise<string> {
+function generateUUID(): string {
   // 使用 crypto.randomUUID() 如果可用（Deno 2.x 支持）
   try {
     if (typeof globalThis.crypto !== 'undefined' && 'randomUUID' in globalThis.crypto) {
@@ -117,7 +117,7 @@ export function requestId(options: RequestIdOptions = {}): Middleware {
     useHeader = true,
   } = options;
   
-  const generateId = generator || generateUUID;
+  const generateId = generator || (() => Promise.resolve(generateUUID()));
   
   return async (req, res, next) => {
     const url = new URL(req.url);
