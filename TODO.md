@@ -323,15 +323,3 @@
 **维护者**: DWeb 团队
 
 ---
-
-## 📋 最近完成的功能
-
-### 2024-12-16
-- ✅ **Docker 部署支持** - 完成 Dockerfile、docker-compose.yml、.dockerignore、DOCKER.md
-- ✅ **安全功能加强** - 完成安全工具函数（security.ts）并集成到核心模块
-  - 路由参数验证和清理
-  - API 方法名验证
-  - 路径安全验证
-  - 静态文件路径边界检查
-- ✅ **安全文档** - 完成 SECURITY.md 安全指南
-- ✅ **贡献指南** - 完成 CONTRIBUTING.md
