@@ -136,17 +136,78 @@ function generateFlatFileName(
 }
 
 /**
+ * 计算源文件的 hash（用于缓存检查）
+ * 基于文件内容和修改时间
+ * @param filePath 文件路径
+ * @returns hash 字符串
+ */
+async function calculateSourceHash(filePath: string): Promise<string> {
+  try {
+    const fileContent = await Deno.readFile(filePath);
+    const fileStat = await Deno.stat(filePath);
+    // 结合文件内容和修改时间计算 hash
+    const combinedData = new TextEncoder().encode(
+      `${fileContent.length}-${fileStat.mtime?.getTime() || 0}`
+    );
+    const buffer = new ArrayBuffer(combinedData.length);
+    const view = new Uint8Array(buffer);
+    view.set(combinedData);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+    return hashHex.substring(0, 10);
+  } catch {
+    // 如果文件不存在或读取失败，返回空字符串（强制重新编译）
+    return '';
+  }
+}
+
+/**
+ * 检查文件是否需要重新编译（基于缓存）
+ * @param filePath 源文件路径
+ * @param outDir 输出目录
+ * @param sourceHash 源文件 hash
+ * @returns 如果缓存有效返回缓存的文件名，否则返回 null
+ */
+async function checkBuildCache(
+  filePath: string,
+  outDir: string,
+  sourceHash: string
+): Promise<string | null> {
+  try {
+    // 生成预期的输出文件名
+    const hashName = generateFlatFileName(filePath, sourceHash);
+    const outputPath = path.join(outDir, hashName);
+    
+    // 检查输出文件是否存在
+    try {
+      await Deno.stat(outputPath);
+      // 文件存在，缓存有效
+      return hashName;
+    } catch {
+      // 文件不存在，需要重新编译
+      return null;
+    }
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 编译单个文件并生成 hash 文件名（扁平化输出）
+ * 支持构建缓存，如果源文件未变化则跳过编译
  * @param filePath 源文件路径（绝对路径）
  * @param outDir 输出目录（绝对路径，扁平化输出）
  * @param fileMap 文件映射表（原始路径 -> hash 文件名）
+ * @param useCache 是否使用缓存（默认 true）
  * @returns 编译后的文件路径和 hash 文件名
  */
 async function compileFile(
   filePath: string,
   outDir: string,
-  fileMap: Map<string, string>
-): Promise<{ outputPath: string; hashName: string }> {
+  fileMap: Map<string, string>,
+  useCache: boolean = true
+): Promise<{ outputPath: string; hashName: string; cached: boolean }> {
   try {
     // 确保使用绝对路径
     const absoluteFilePath = path.isAbsolute(filePath)
@@ -158,6 +219,18 @@ async function compileFile(
     await ensureDir(absoluteOutDir);
 
     const ext = path.extname(filePath);
+
+    // 检查构建缓存
+    if (useCache) {
+      const sourceHash = await calculateSourceHash(absoluteFilePath);
+      const cachedHashName = await checkBuildCache(absoluteFilePath, absoluteOutDir, sourceHash);
+      if (cachedHashName) {
+        // 缓存有效，直接返回
+        const cachedOutputPath = path.join(absoluteOutDir, cachedHashName);
+        fileMap.set(filePath, cachedHashName);
+        return { outputPath: cachedOutputPath, hashName: cachedHashName, cached: true };
+      }
+    }
 
     // 如果是 TSX/TS 文件，使用 esbuild 打包（包含所有依赖）
     if (ext === '.tsx' || ext === '.ts') {
@@ -240,7 +313,7 @@ async function compileFile(
       // 记录映射关系
       fileMap.set(filePath, hashName);
 
-      return { outputPath, hashName };
+      return { outputPath, hashName, cached: false };
     } else {
       // 非 TS/TSX 文件，直接读取并计算 hash
       const fileContent = await Deno.readFile(absoluteFilePath);
@@ -257,7 +330,7 @@ async function compileFile(
       // 记录映射关系
       fileMap.set(filePath, hashName);
 
-      return { outputPath, hashName };
+      return { outputPath, hashName, cached: false };
     }
   } catch (error) {
     console.error(`编译文件失败: ${filePath}`, error);
@@ -267,16 +340,21 @@ async function compileFile(
 
 /**
  * 编译目录中的所有文件（扁平化输出，使用 hash 文件名）
+ * 支持并行编译和构建缓存
  * @param srcDir 源目录（相对路径）
  * @param outDir 输出目录（相对路径，扁平化）
  * @param fileMap 文件映射表
  * @param extensions 要编译的文件扩展名
+ * @param useCache 是否使用缓存（默认 true）
+ * @param parallel 是否并行编译（默认 true，最多 10 个并发）
  */
 async function compileDirectory(
   srcDir: string,
   outDir: string,
   fileMap: Map<string, string>,
-  extensions: string[] = ['.ts', '.tsx']
+  extensions: string[] = ['.ts', '.tsx'],
+  useCache: boolean = true,
+  parallel: boolean = true
 ): Promise<void> {
   // 转换为绝对路径
   const absoluteSrcDir = path.isAbsolute(srcDir) ? srcDir : path.resolve(Deno.cwd(), srcDir);
@@ -296,12 +374,44 @@ async function compileDirectory(
 
   console.log(`📝 找到 ${files.length} 个文件需要编译`);
 
-  // 编译每个文件
-  for (const file of files) {
-    await compileFile(file, absoluteOutDir, fileMap);
-  }
+  if (parallel && files.length > 1) {
+    // 并行编译（限制并发数为 10，避免资源耗尽）
+    const concurrency = 10;
+    let cachedCount = 0;
+    let compiledCount = 0;
 
-  console.log(`✅ 编译完成: ${files.length} 个文件`);
+    for (let i = 0; i < files.length; i += concurrency) {
+      const batch = files.slice(i, i + concurrency);
+      await Promise.all(
+        batch.map(async (file) => {
+          const result = await compileFile(file, absoluteOutDir, fileMap, useCache);
+          if (result.cached) {
+            cachedCount++;
+          } else {
+            compiledCount++;
+          }
+          return result;
+        })
+      );
+    }
+
+    console.log(`✅ 编译完成: ${compiledCount} 个文件重新编译, ${cachedCount} 个文件使用缓存`);
+  } else {
+    // 串行编译（用于调试或小文件数量）
+    let cachedCount = 0;
+    let compiledCount = 0;
+
+    for (const file of files) {
+      const result = await compileFile(file, absoluteOutDir, fileMap, useCache);
+      if (result.cached) {
+        cachedCount++;
+      } else {
+        compiledCount++;
+      }
+    }
+
+    console.log(`✅ 编译完成: ${compiledCount} 个文件重新编译, ${cachedCount} 个文件使用缓存`);
+  }
 }
 
 /**
@@ -485,11 +595,16 @@ async function buildApp(config: AppConfig): Promise<void> {
 
   console.log(`📦 构建到: ${outDir}`);
 
-  // 0. 清空输出目录
-  await clearDirectory(outDir);
-
-  // 确保输出目录存在
-  await ensureDir(outDir);
+  // 0. 检查是否需要清空输出目录
+  // 如果启用缓存，不清空目录（保留已编译的文件）
+  const useCache = config.build?.cache !== false; // 默认启用缓存
+  if (!useCache) {
+    await clearDirectory(outDir);
+  } else {
+    // 只确保输出目录存在
+    await ensureDir(outDir);
+    console.log(`💾 启用构建缓存（增量构建）`);
+  }
 
   // 文件映射表（原始路径 -> hash 文件名）
   const fileMap = new Map<string, string>();
@@ -531,7 +646,7 @@ async function buildApp(config: AppConfig): Promise<void> {
   const routeConfig = normalizeRouteConfig(config.routes);
   const routesDir = routeConfig.dir || 'routes';
   try {
-    await compileDirectory(routesDir, outDir, fileMap, ['.ts', '.tsx']);
+    await compileDirectory(routesDir, outDir, fileMap, ['.ts', '.tsx'], useCache, true);
     console.log(`✅ 编译路由文件完成 (${routesDir})`);
   } catch (error) {
     console.warn(`⚠️  路由目录编译失败: ${routesDir}`, error);
@@ -544,7 +659,7 @@ async function buildApp(config: AppConfig): Promise<void> {
         .then(() => true)
         .catch(() => false)
     ) {
-      await compileDirectory('components', outDir, fileMap, ['.ts', '.tsx']);
+      await compileDirectory('components', outDir, fileMap, ['.ts', '.tsx'], useCache, true);
       console.log('✅ 编译组件文件完成 (components)');
     }
   } catch (error) {

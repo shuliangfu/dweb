@@ -161,6 +161,8 @@ export interface DevConfig {
 // 构建配置
 export interface BuildConfig {
   outDir: string;
+  /** 是否启用构建缓存（增量构建），默认 true */
+  cache?: boolean;
   [key: string]: any;
 }
 
