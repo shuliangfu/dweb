@@ -963,16 +963,27 @@ export class RouteHandler {
       scriptsToInject.push(hmrClientScript);
     }
 
-    // 将链接拦截器脚本注入到 </head> 之前（尽早执行）
+    // 生成预加载和预取链接
+    const preloadLinks = await this.generatePreloadLinks(routeInfo, renderMode, fullHtml);
+    
+    // 将预加载链接和脚本注入到 </head> 之前（尽早执行）
+    const headContent: string[] = [];
+    if (preloadLinks) {
+      headContent.push(preloadLinks);
+    }
     if (headScriptsToInject.length > 0) {
-      const allHeadScripts = headScriptsToInject.join("\n");
+      headContent.push(...headScriptsToInject);
+    }
+    
+    if (headContent.length > 0) {
+      const allHeadContent = headContent.join("\n");
       if (fullHtml.includes("</head>")) {
-        fullHtml = fullHtml.replace("</head>", `${allHeadScripts}\n</head>`);
+        fullHtml = fullHtml.replace("</head>", `${allHeadContent}\n</head>`);
       } else if (fullHtml.includes("<head>")) {
-        fullHtml = fullHtml.replace("<head>", `<head>\n${allHeadScripts}`);
+        fullHtml = fullHtml.replace("<head>", `<head>\n${allHeadContent}`);
       } else {
         // 如果没有 head 标签，在开头添加
-        fullHtml = `<head>${allHeadScripts}</head>${fullHtml}`;
+        fullHtml = `<head>${allHeadContent}</head>${fullHtml}`;
       }
     }
     
