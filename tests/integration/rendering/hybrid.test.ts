@@ -62,12 +62,14 @@ export default function HybridPage({ params, query }: PageProps) {
 // 注意：在覆盖率模式下不清理文件，以便覆盖率报告可以访问它们
 async function cleanupTestFiles() {
   // 检查是否在覆盖率模式下运行
-  // Deno 在覆盖率模式下会设置环境变量或通过参数传递
-  const isCoverageMode = Deno.args.some(arg => arg.includes('--coverage')) ||
-                         Deno.env.get('DENO_COVERAGE_DIR') !== undefined;
+  // 使用更可靠的方法检测覆盖率模式
+  const isCoverageMode = Deno.args.some(arg => 
+    arg.includes('--coverage') || arg.startsWith('--coverage=')
+  );
   
   if (isCoverageMode) {
     // 覆盖率模式下不清理文件，让覆盖率报告可以访问它们
+    // 这些文件会在覆盖率报告生成后保留在文件系统中
     return;
   }
   
