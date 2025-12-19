@@ -28,7 +28,7 @@ export class MongoQueryBuilder {
    * @param collection 集合名称
    * @returns 查询构建器实例（支持链式调用）
    */
-  collection(collection: string): this {
+  from(collection: string): this {
     this.collection = collection;
     return this;
   }
