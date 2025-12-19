@@ -154,40 +154,41 @@ Deno.test({
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
-  await cleanupTestFiles();
-  await createTestFiles();
-
-  const originalCwd = Deno.cwd();
-  try {
-    Deno.chdir(testDir);
-
-    const config: AppConfig = {
-      build: { outDir: 'dist' },
-      routes: { dir: 'routes' },
-      static: { dir: 'assets' },
-    };
-
-    await build(config);
-
-    // 等待所有异步操作完成
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // 验证静态资源已复制到输出目录
-    const staticOutPath = path.join(testDir, 'dist', 'assets', 'test.txt');
-    const staticExists = await Deno.stat(staticOutPath)
-      .then(() => true)
-      .catch(() => false);
-    assert(staticExists, '静态资源应该已复制到输出目录');
-
-    // 验证静态资源内容正确
-    if (staticExists) {
-      const content = await Deno.readTextFile(staticOutPath);
-      assertEquals(content, 'test content');
-    }
-  } finally {
-    Deno.chdir(originalCwd);
     await cleanupTestFiles();
-  }
+    await createTestFiles();
+
+    const originalCwd = Deno.cwd();
+    try {
+      Deno.chdir(testDir);
+
+      const config: AppConfig = {
+        build: { outDir: 'dist' },
+        routes: { dir: 'routes' },
+        static: { dir: 'assets' },
+      };
+
+      await build(config);
+
+      // 等待所有异步操作完成
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // 验证静态资源已复制到输出目录
+      const staticOutPath = path.join(testDir, 'dist', 'assets', 'test.txt');
+      const staticExists = await Deno.stat(staticOutPath)
+        .then(() => true)
+        .catch(() => false);
+      assert(staticExists, '静态资源应该已复制到输出目录');
+
+      // 验证静态资源内容正确
+      if (staticExists) {
+        const content = await Deno.readTextFile(staticOutPath);
+        assertEquals(content, 'test content');
+      }
+    } finally {
+      Deno.chdir(originalCwd);
+      await cleanupTestFiles();
+    }
+  },
 });
 
 Deno.test({
@@ -195,44 +196,45 @@ Deno.test({
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
-  await cleanupTestFiles();
-  await createTestFiles();
-
-  const originalCwd = Deno.cwd();
-  try {
-    Deno.chdir(testDir);
-
-    const config: AppConfig = {
-      build: { outDir: 'dist' },
-      routes: { dir: 'routes' },
-      static: { dir: 'assets' },
-    };
-
-    await build(config);
-
-    // 等待所有异步操作完成
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // 验证路由文件已编译（检查文件映射）
-    const fileMapPath = path.join(testDir, 'dist', '.file-map.json');
-    const fileMapExists = await Deno.stat(fileMapPath)
-      .then(() => true)
-      .catch(() => false);
-    
-    if (fileMapExists) {
-      const fileMapContent = await Deno.readTextFile(fileMapPath);
-      const fileMap = JSON.parse(fileMapContent);
-      
-      // 应该包含路由文件的映射
-      const routeFileKey = Object.keys(fileMap).find(key => 
-        key.includes('routes') && key.includes('index')
-      );
-      assert(routeFileKey !== undefined, '文件映射应该包含路由文件');
-    }
-  } finally {
-    Deno.chdir(originalCwd);
     await cleanupTestFiles();
-  }
+    await createTestFiles();
+
+    const originalCwd = Deno.cwd();
+    try {
+      Deno.chdir(testDir);
+
+      const config: AppConfig = {
+        build: { outDir: 'dist' },
+        routes: { dir: 'routes' },
+        static: { dir: 'assets' },
+      };
+
+      await build(config);
+
+      // 等待所有异步操作完成
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // 验证路由文件已编译（检查文件映射）
+      const fileMapPath = path.join(testDir, 'dist', '.file-map.json');
+      const fileMapExists = await Deno.stat(fileMapPath)
+        .then(() => true)
+        .catch(() => false);
+      
+      if (fileMapExists) {
+        const fileMapContent = await Deno.readTextFile(fileMapPath);
+        const fileMap = JSON.parse(fileMapContent);
+        
+        // 应该包含路由文件的映射
+        const routeFileKey = Object.keys(fileMap).find(key => 
+          key.includes('routes') && key.includes('index')
+        );
+        assert(routeFileKey !== undefined, '文件映射应该包含路由文件');
+      }
+    } finally {
+      Deno.chdir(originalCwd);
+      await cleanupTestFiles();
+    }
+  },
 });
 
 Deno.test({
@@ -240,44 +242,45 @@ Deno.test({
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
-  await cleanupTestFiles();
-  await createTestFiles();
-
-  const originalCwd = Deno.cwd();
-  try {
-    Deno.chdir(testDir);
-
-    const config: AppConfig = {
-      build: { outDir: 'dist' },
-      routes: { dir: 'routes' },
-      static: { dir: 'assets' },
-    };
-
-    await build(config);
-
-    // 等待所有异步操作完成
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // 验证组件文件已编译（检查文件映射）
-    const fileMapPath = path.join(testDir, 'dist', '.file-map.json');
-    const fileMapExists = await Deno.stat(fileMapPath)
-      .then(() => true)
-      .catch(() => false);
-    
-    if (fileMapExists) {
-      const fileMapContent = await Deno.readTextFile(fileMapPath);
-      const fileMap = JSON.parse(fileMapContent);
-      
-      // 应该包含组件文件的映射
-      const componentFileKey = Object.keys(fileMap).find(key => 
-        key.includes('components') && key.includes('Button')
-      );
-      assert(componentFileKey !== undefined, '文件映射应该包含组件文件');
-    }
-  } finally {
-    Deno.chdir(originalCwd);
     await cleanupTestFiles();
-  }
+    await createTestFiles();
+
+    const originalCwd = Deno.cwd();
+    try {
+      Deno.chdir(testDir);
+
+      const config: AppConfig = {
+        build: { outDir: 'dist' },
+        routes: { dir: 'routes' },
+        static: { dir: 'assets' },
+      };
+
+      await build(config);
+
+      // 等待所有异步操作完成
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // 验证组件文件已编译（检查文件映射）
+      const fileMapPath = path.join(testDir, 'dist', '.file-map.json');
+      const fileMapExists = await Deno.stat(fileMapPath)
+        .then(() => true)
+        .catch(() => false);
+      
+      if (fileMapExists) {
+        const fileMapContent = await Deno.readTextFile(fileMapPath);
+        const fileMap = JSON.parse(fileMapContent);
+        
+        // 应该包含组件文件的映射
+        const componentFileKey = Object.keys(fileMap).find(key => 
+          key.includes('components') && key.includes('Button')
+        );
+        assert(componentFileKey !== undefined, '文件映射应该包含组件文件');
+      }
+    } finally {
+      Deno.chdir(originalCwd);
+      await cleanupTestFiles();
+    }
+  },
 });
 
 Deno.test({
@@ -285,40 +288,41 @@ Deno.test({
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
-  await cleanupTestFiles();
-  await createTestFiles();
-
-  const originalCwd = Deno.cwd();
-  try {
-    Deno.chdir(testDir);
-
-    // 先创建一些旧文件
-    const distDir = path.join(testDir, 'dist');
-    await ensureDir(distDir);
-    await ensureFile(path.join(distDir, 'old-file.txt'));
-    await Deno.writeTextFile(path.join(distDir, 'old-file.txt'), 'old content');
-
-    const config: AppConfig = {
-      build: { outDir: 'dist' },
-      routes: { dir: 'routes' },
-      static: { dir: 'assets' },
-    };
-
-    // 执行构建（应该清空旧文件）
-    await build(config);
-
-    // 等待所有异步操作完成
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // 验证旧文件已被删除
-    const oldFileExists = await Deno.stat(path.join(distDir, 'old-file.txt'))
-      .then(() => true)
-      .catch(() => false);
-    assert(!oldFileExists, '旧文件应该已被删除');
-  } finally {
-    Deno.chdir(originalCwd);
     await cleanupTestFiles();
-  }
+    await createTestFiles();
+
+    const originalCwd = Deno.cwd();
+    try {
+      Deno.chdir(testDir);
+
+      // 先创建一些旧文件
+      const distDir = path.join(testDir, 'dist');
+      await ensureDir(distDir);
+      await ensureFile(path.join(distDir, 'old-file.txt'));
+      await Deno.writeTextFile(path.join(distDir, 'old-file.txt'), 'old content');
+
+      const config: AppConfig = {
+        build: { outDir: 'dist' },
+        routes: { dir: 'routes' },
+        static: { dir: 'assets' },
+      };
+
+      // 执行构建（应该清空旧文件）
+      await build(config);
+
+      // 等待所有异步操作完成
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // 验证旧文件已被删除
+      const oldFileExists = await Deno.stat(path.join(distDir, 'old-file.txt'))
+        .then(() => true)
+        .catch(() => false);
+      assert(!oldFileExists, '旧文件应该已被删除');
+    } finally {
+      Deno.chdir(originalCwd);
+      await cleanupTestFiles();
+    }
+  },
 });
 
 Deno.test({
@@ -326,36 +330,37 @@ Deno.test({
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
-  await cleanupTestFiles();
-  await createTestFiles();
-
-  const originalCwd = Deno.cwd();
-  try {
-    Deno.chdir(testDir);
-
-    // 删除静态资源目录
-    await Deno.remove(testAssetsDir, { recursive: true });
-
-    const config: AppConfig = {
-      build: { outDir: 'dist' },
-      routes: { dir: 'routes' },
-      static: { dir: 'assets' },
-    };
-
-    // 应该不会抛出错误（缺少静态资源目录时应该忽略）
-    await build(config);
-
-    // 等待所有异步操作完成
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // 验证构建仍然成功
-    const outDirStat = await Deno.stat(path.join(testDir, 'dist'))
-      .then(() => true)
-      .catch(() => false);
-    assert(outDirStat, '构建应该成功完成');
-  } finally {
-    Deno.chdir(originalCwd);
     await cleanupTestFiles();
-  }
+    await createTestFiles();
+
+    const originalCwd = Deno.cwd();
+    try {
+      Deno.chdir(testDir);
+
+      // 删除静态资源目录
+      await Deno.remove(testAssetsDir, { recursive: true });
+
+      const config: AppConfig = {
+        build: { outDir: 'dist' },
+        routes: { dir: 'routes' },
+        static: { dir: 'assets' },
+      };
+
+      // 应该不会抛出错误（缺少静态资源目录时应该忽略）
+      await build(config);
+
+      // 等待所有异步操作完成
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // 验证构建仍然成功
+      const outDirStat = await Deno.stat(path.join(testDir, 'dist'))
+        .then(() => true)
+        .catch(() => false);
+      assert(outDirStat, '构建应该成功完成');
+    } finally {
+      Deno.chdir(originalCwd);
+      await cleanupTestFiles();
+    }
+  },
 });
 
