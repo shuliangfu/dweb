@@ -61,68 +61,10 @@ export default function HomePage({ params: _params, query: _query, data }: PageP
   // data 就是 load 函数返回的数据
   // 例如：data.message 就是 'Hello, World!'
 
-  const { jsrPackageUrl, versionString } = data as {
-    jsrPackageUrl: string;
+  const { versionString } = data as {
     versionString: string;
   };
 
-  // console.log({ jsrPackageUrl });
-
-  // 核心特性列表
-  const features = [
-    {
-      title: '文件系统路由',
-      description:
-        '基于文件系统的自动路由，类似 Next.js。只需在 routes 目录下创建文件，即可自动生成路由，无需手动配置。',
-      icon: '📁',
-      highlighted: true,
-    },
-    {
-      title: '多种渲染模式',
-      description:
-        '支持 SSR（服务端渲染）、CSR（客户端渲染）和 Hybrid（混合渲染）三种模式，可根据需求灵活选择。',
-      icon: '🎨',
-      highlighted: true,
-    },
-    {
-      title: '热更新（HMR）',
-      description: '开发时实时热更新，支持服务端和客户端组件热替换，大幅提升开发效率。',
-      icon: '🔥',
-    },
-    {
-      title: '中间件系统',
-      description:
-        '灵活的中间件系统，支持链式调用。内置日志、CORS、Body Parser、压缩、安全、限流、认证等中间件。',
-      icon: '🛠️',
-    },
-    {
-      title: '插件系统',
-      description:
-        '强大的插件系统，支持 Tailwind CSS、自定义插件等。插件生命周期钩子，灵活扩展框架功能。',
-      icon: '🔌',
-    },
-    {
-      title: 'Cookie & Session',
-      description: '内置 Cookie 和 Session 管理功能，支持安全的会话存储和配置，开箱即用。',
-      icon: '🍪',
-    },
-    {
-      title: '函数式 API 路由',
-      description:
-        '基于文件系统的函数式 API 路由，支持 GET、POST 等多种请求方式。通过 URL 路径直接调用函数，简化 API 开发。',
-      icon: '⚡',
-    },
-    {
-      title: 'TypeScript 支持',
-      description: '完整的 TypeScript 类型定义，提供优秀的开发体验和类型安全。',
-      icon: '📘',
-    },
-    {
-      title: 'Deno 原生',
-      description: '基于 Deno 运行时，内置安全性和现代 Web API 支持，无需复杂的构建配置。',
-      icon: '🦕',
-    },
-  ];
 
   // 快速开始代码示例
   const quickStartCode = `# 创建新项目
