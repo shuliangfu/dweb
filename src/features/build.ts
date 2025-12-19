@@ -438,7 +438,7 @@ async function compileWithCodeSplitting(
  * @param useCache 是否使用缓存（默认 true）
  * @param parallel 是否并行编译（默认 true，最多 10 个并发）
  * @param codeSplitting 是否启用代码分割（默认 false）
- * @param minChunkSize 代码分割的最小 chunk 大小（字节，默认 20000）
+ * @param _minChunkSize 代码分割的最小 chunk 大小（字节，默认 20000，暂未使用，由 esbuild 自动处理）
  */
 async function compileDirectory(
   srcDir: string,
@@ -448,7 +448,7 @@ async function compileDirectory(
   useCache: boolean = true,
   parallel: boolean = true,
   codeSplitting: boolean = false,
-  minChunkSize: number = 20000
+  _minChunkSize: number = 20000
 ): Promise<void> {
   // 转换为绝对路径
   const absoluteSrcDir = path.isAbsolute(srcDir) ? srcDir : path.resolve(Deno.cwd(), srcDir);
