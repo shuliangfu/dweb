@@ -314,25 +314,229 @@ deno test --allow-all --inspect-brk tests/unit/core/server.test.ts
    - 渲染系统测试（SSR/CSR/Hybrid）
 
 2. **功能模块测试**
-   - `RouteHandler` 完整测试
-   - `dev.ts` 和 `prod.ts` 测试
-   - `build.ts` 测试
-   - `create.ts` 测试
+   - `RouteHandler` 完整测试（复杂，需要 Mock 文件系统和路由）
+   - `dev.ts` 和 `prod.ts` 测试（需要启动服务器，适合集成测试）
+   - `build.ts` 测试（需要文件系统操作，适合集成测试）
+   - `create.ts` 测试（需要文件系统操作，适合集成测试）
 
 3. **中间件测试**
-   - `auth.ts` 认证中间件
-   - `rate-limit.ts` 限流中间件
-   - `logger.ts` 日志中间件
-   - `health.ts` 健康检查
+   - ✅ `auth.ts` 认证中间件（已创建基础测试）
+   - ✅ `rate-limit.ts` 限流中间件（已创建基础测试）
+   - ✅ `logger.ts` 日志中间件（已创建基础测试）
+   - ✅ `health.ts` 健康检查（已创建基础测试）
 
 4. **插件测试**
-   - Tailwind CSS 插件测试
+   - Tailwind CSS 插件测试（需要文件系统操作，适合集成测试）
 
 5. **工具函数测试**
-   - `file.ts` 文件工具
-   - `import-map.ts` 导入映射
-   - `script-client.ts` 客户端脚本
-   - `script-hmr.ts` HMR 脚本
+   - ✅ `file.ts` 文件工具（已创建基础测试）
+   - ✅ `import-map.ts` 导入映射（已创建基础测试）
+   - ✅ `script-client.ts` 客户端脚本（已创建基础测试）
+   - ✅ `script-hmr.ts` HMR 脚本（已创建基础测试）
+
+## 🎯 待测试模块的测试策略
+
+### 1. 中间件测试（已完成基础测试）
+
+中间件测试相对简单，主要测试：
+- 中间件的创建和基本功能
+- 配置选项的处理
+- 跳过逻辑
+- 错误处理
+
+**示例：** 已创建的 `auth.test.ts`、`rate-limit.test.ts`、`logger.test.ts`、`health.test.ts`
+
+### 2. RouteHandler 测试（推荐集成测试）
+
+`RouteHandler` 是一个复杂的类，涉及：
+- 文件系统操作（读取路由文件）
+- 模块编译（esbuild）
+- 路由匹配和渲染
+- API 路由处理
+
+**测试策略：**
+- **单元测试：** 测试独立的方法（如 `handle404`、`handleError`）
+- **集成测试：** 测试完整的请求处理流程（需要 Mock 文件系统和路由）
+
+**示例测试场景：**
+```typescript
+// 单元测试示例
+Deno.test('RouteHandler - handle404', async () => {
+  const router = new Router('routes');
+  const handler = new RouteHandler(router);
+  
+  const req = { url: 'http://localhost:3000/not-found' } as Request;
+  const res = { status: 200, html: function(_html: string) {} } as Response;
+  
+  await handler.handle404(req, res);
+  assertEquals(res.status, 404);
+});
+```
+
+### 3. Dev/Prod Server 测试（推荐集成测试）
+
+这些模块需要：
+- 启动实际的 HTTP 服务器
+- 文件系统操作
+- 模块加载
+
+**测试策略：**
+- 使用集成测试，启动测试服务器
+- 使用 HTTP 客户端发送请求
+- 验证响应
+
+**示例测试场景：**
+```typescript
+// 集成测试示例
+Deno.test('Dev Server - 启动服务器', async () => {
+  const config: AppConfig = {
+    server: { port: 3001, host: 'localhost' },
+    routes: { dir: 'routes' },
+    build: { outDir: 'dist' },
+  };
+  
+  // 在后台启动服务器
+  const serverPromise = startDevServer(config);
+  
+  // 等待服务器启动
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // 发送测试请求
+  const response = await fetch('http://localhost:3001/');
+  assertEquals(response.status, 200);
+  
+  // 清理
+  // ...
+});
+```
+
+### 4. Build 测试（推荐集成测试）
+
+`build.ts` 涉及：
+- 文件系统操作（读取、写入）
+- 模块编译
+- 资源处理
+
+**测试策略：**
+- 使用临时目录
+- 创建测试项目结构
+- 执行构建
+- 验证输出
+
+**示例测试场景：**
+```typescript
+// 集成测试示例
+Deno.test('Build - 构建项目', async () => {
+  const testDir = await Deno.makeTempDir();
+  
+  // 创建测试项目结构
+  await ensureDir(path.join(testDir, 'routes'));
+  await Deno.writeTextFile(
+    path.join(testDir, 'routes', 'index.tsx'),
+    'export default () => <h1>Hello</h1>;'
+  );
+  
+  const config: AppConfig = {
+    server: { port: 3000, host: 'localhost' },
+    routes: { dir: 'routes' },
+    build: { outDir: 'dist' },
+  };
+  
+  await build(config);
+  
+  // 验证构建输出
+  const distExists = await Deno.stat(path.join(testDir, 'dist'))
+    .then(() => true)
+    .catch(() => false);
+  assert(distExists);
+  
+  // 清理
+  await Deno.remove(testDir, { recursive: true });
+});
+```
+
+### 5. Create 测试（推荐集成测试）
+
+`create.ts` 涉及：
+- 文件系统操作（创建目录和文件）
+- 模板生成
+- 配置生成
+
+**测试策略：**
+- 使用临时目录
+- 执行创建命令
+- 验证生成的文件
+
+**示例测试场景：**
+```typescript
+// 集成测试示例
+Deno.test('Create - 创建单应用项目', async () => {
+  const testDir = await Deno.makeTempDir();
+  const originalCwd = Deno.cwd();
+  
+  try {
+    Deno.chdir(testDir);
+    
+    await createProject({
+      projectName: 'test-app',
+      mode: 'single',
+      tailwindVersion: 'v4',
+      renderMode: 'hybrid',
+    });
+    
+    // 验证生成的文件
+    const configExists = await Deno.stat('dweb.config.ts')
+      .then(() => true)
+      .catch(() => false);
+    assert(configExists);
+    
+    const routesExists = await Deno.stat('routes')
+      .then(() => true)
+      .catch(() => false);
+    assert(routesExists);
+  } finally {
+    Deno.chdir(originalCwd);
+    await Deno.remove(testDir, { recursive: true });
+  }
+});
+```
+
+### 6. Tailwind CSS 插件测试（推荐集成测试）
+
+Tailwind 插件涉及：
+- CSS 文件处理
+- PostCSS 编译
+- 文件系统操作
+
+**测试策略：**
+- 使用临时目录和文件
+- 创建测试 CSS 文件
+- 执行插件处理
+- 验证输出
+
+## 📝 测试编写建议
+
+### 优先级排序
+
+1. **高优先级（核心功能）：**
+   - RouteHandler 的基础方法测试
+   - Build 的基础功能测试
+
+2. **中优先级（常用功能）：**
+   - Dev/Prod Server 的基础测试
+   - Create 的基础测试
+
+3. **低优先级（辅助功能）：**
+   - Tailwind 插件测试
+   - 其他工具函数测试
+
+### 测试技巧
+
+1. **使用临时目录：** 对于文件系统操作，使用 `Deno.makeTempDir()`
+2. **Mock 复杂依赖：** 对于 esbuild、文件系统等，考虑使用 Mock
+3. **异步测试：** 确保正确处理异步操作
+4. **清理资源：** 测试后清理临时文件和目录
+5. **错误处理：** 测试错误情况和边界情况
 
 ## 🤝 贡献测试
 
