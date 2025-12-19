@@ -5,9 +5,9 @@
 
 import type { DatabaseAdapter, DatabaseConfig, DatabaseType } from './types.ts';
 import { SQLiteAdapter } from './adapters/sqlite.ts';
-// import { PostgreSQLAdapter } from './adapters/postgresql.ts';
-// import { MySQLAdapter } from './adapters/mysql.ts';
-// import { MongoDBAdapter } from './adapters/mongodb.ts';
+import { PostgreSQLAdapter } from './adapters/postgresql.ts';
+import { MySQLAdapter } from './adapters/mysql.ts';
+import { MongoDBAdapter } from './adapters/mongodb.ts';
 
 /**
  * 数据库管理器类
@@ -48,12 +48,12 @@ export class DatabaseManager {
     switch (type) {
       case 'sqlite':
         return new SQLiteAdapter();
-      // case 'postgresql':
-      //   return new PostgreSQLAdapter();
-      // case 'mysql':
-      //   return new MySQLAdapter();
-      // case 'mongodb':
-      //   return new MongoDBAdapter();
+      case 'postgresql':
+        return new PostgreSQLAdapter();
+      case 'mysql':
+        return new MySQLAdapter();
+      case 'mongodb':
+        return new MongoDBAdapter();
       default:
         throw new Error(`Unsupported database type: ${type}`);
     }

@@ -19,13 +19,17 @@ export abstract class BaseAdapter implements DatabaseAdapter {
 
   /**
    * 执行查询（由子类实现）
+   * SQL 数据库: query(sql: string, params?: any[]): Promise<any[]>
+   * MongoDB: query(collection: string, filter?: any, options?: any): Promise<any[]>
    */
-  abstract query(sql: string, params?: any[]): Promise<any[]>;
+  abstract query(sqlOrCollection: string, paramsOrFilter?: any[] | any, options?: any): Promise<any[]>;
 
   /**
    * 执行更新/插入/删除（由子类实现）
+   * SQL 数据库: execute(sql: string, params?: any[]): Promise<any>
+   * MongoDB: execute(operation: string, collection: string, data: any): Promise<any>
    */
-  abstract execute(sql: string, params?: any[]): Promise<any>;
+  abstract execute(sqlOrOperation: string, paramsOrCollection?: any[] | string, data?: any): Promise<any>;
 
   /**
    * 执行事务（由子类实现）

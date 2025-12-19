@@ -16,6 +16,9 @@ export type {
 // 导出适配器
 export {
   SQLiteAdapter,
+  PostgreSQLAdapter,
+  MySQLAdapter,
+  MongoDBAdapter,
   BaseAdapter,
 } from './adapters/mod.ts';
 

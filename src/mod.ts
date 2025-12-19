@@ -66,6 +66,9 @@ export {
 export {
   DatabaseManager,
   SQLiteAdapter,
+  PostgreSQLAdapter,
+  MySQLAdapter,
+  MongoDBAdapter,
   BaseAdapter,
   type DatabaseConfig,
   type DatabaseType,
