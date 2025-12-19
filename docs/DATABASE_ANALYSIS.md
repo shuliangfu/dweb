@@ -430,32 +430,87 @@ export abstract class SQLModel {
   static primaryKey: string = 'id';
   static adapter: DatabaseAdapter;
   
-  static async find(id: any): Promise<SQLModel | null> {
+  /**
+   * 查找单个记录
+   * @param condition 查询条件（可以是 ID 值或条件对象）
+   * @param fields 要查询的字段数组（可选，默认查询所有字段）
+   * @returns 找到的记录或 null
+   * 
+   * @example
+   * // 通过 ID 查找
+   * const user = await User.find(1);
+   * 
+   * // 通过条件对象查找
+   * const user = await User.find({ id: 1 });
+   * const user = await User.find({ email: 'user@example.com' });
+   * 
+   * // 指定查询字段
+   * const user = await User.find(1, ['id', 'name', 'email']);
+   */
+  static async find(
+    condition: any | Record<string, any>,
+    fields?: string[]
+  ): Promise<SQLModel | null> {
+    const columns = fields || ['*'];
     const query = new SQLQueryBuilder(this.adapter)
-      .select(['*'])
-      .from(this.table)
-      .where(`${this.primaryKey} = ?`, [id]);
+      .select(columns)
+      .from(this.table);
+    
+    // 如果 condition 是对象，使用对象条件
+    if (typeof condition === 'object' && condition !== null && !Array.isArray(condition)) {
+      const whereClause = Object.keys(condition)
+        .map(key => `${key} = ?`)
+        .join(' AND ');
+      query.where(whereClause, Object.values(condition));
+    } else {
+      // 否则使用主键查找
+      query.where(`${this.primaryKey} = ?`, [condition]);
+    }
     
     const result = await query.executeOne();
     return result ? this.fromRow(result) : null;
   }
   
-  static async findAll(conditions?: Record<string, any>): Promise<SQLModel[]> {
+  /**
+   * 查找多个记录
+   * @param conditions 查询条件对象（可选）
+   * @param fields 要查询的字段数组（可选，默认查询所有字段）
+   * @returns 记录数组
+   * 
+   * @example
+   * // 查找所有记录
+   * const users = await User.findAll();
+   * 
+   * // 按条件查找
+   * const users = await User.findAll({ age: 25 });
+   * const users = await User.findAll({ status: 'active', age: { $gt: 18 } });
+   * 
+   * // 指定查询字段
+   * const users = await User.findAll({}, ['id', 'name', 'email']);
+   */
+  static async findAll(
+    conditions?: Record<string, any>,
+    fields?: string[]
+  ): Promise<SQLModel[]> {
+    const columns = fields || ['*'];
     const query = new SQLQueryBuilder(this.adapter)
-      .select(['*'])
+      .select(columns)
       .from(this.table);
     
-    if (conditions) {
-      const whereClause = Object.keys(conditions)
-        .map(key => `${key} = ?`)
-        .join(' AND ');
-      query.where(whereClause, Object.values(conditions));
+    if (conditions && Object.keys(conditions).length > 0) {
+      const whereClause = this.buildWhereClause(conditions);
+      query.where(whereClause.clause, whereClause.params);
     }
     
     const results = await query.execute();
     return results.map(row => this.fromRow(row));
   }
   
+  /**
+   * 创建新记录
+   * @param data 记录数据
+   * @returns 创建的记录
+   */
   static async create(data: Record<string, any>): Promise<SQLModel> {
     const query = new SQLQueryBuilder(this.adapter)
       .insert(this.table, data);
@@ -464,37 +519,180 @@ export abstract class SQLModel {
     return this.fromRow(result);
   }
   
-  static async update(id: any, data: Record<string, any>): Promise<SQLModel> {
+  /**
+   * 更新记录
+   * @param condition 查询条件（可以是 ID 值或条件对象）
+   * @param data 要更新的数据
+   * @returns 更新后的记录
+   * 
+   * @example
+   * // 通过 ID 更新
+   * await User.update(1, { name: 'lisi' });
+   * 
+   * // 通过条件对象更新
+   * await User.update({ id: 1 }, { name: 'lisi' });
+   * await User.update({ email: 'user@example.com' }, { name: 'lisi' });
+   */
+  static async update(
+    condition: any | Record<string, any>,
+    data: Record<string, any>
+  ): Promise<SQLModel | null> {
     const query = new SQLQueryBuilder(this.adapter)
-      .update(this.table, data)
-      .where(`${this.primaryKey} = ?`, [id]);
+      .update(this.table, data);
+    
+    // 如果 condition 是对象，使用对象条件
+    if (typeof condition === 'object' && condition !== null && !Array.isArray(condition)) {
+      const whereClause = Object.keys(condition)
+        .map(key => `${key} = ?`)
+        .join(' AND ');
+      query.where(whereClause, Object.values(condition));
+    } else {
+      // 否则使用主键
+      query.where(`${this.primaryKey} = ?`, [condition]);
+    }
     
     await query.execute();
-    return await this.find(id) as SQLModel;
+    
+    // 返回更新后的记录
+    if (typeof condition === 'object' && condition !== null && !Array.isArray(condition)) {
+      return await this.find(condition);
+    } else {
+      return await this.find(condition);
+    }
   }
   
-  static async delete(id: any): Promise<boolean> {
+  /**
+   * 删除记录
+   * @param condition 查询条件（可以是 ID 值或条件对象）
+   * @returns 是否删除成功
+   * 
+   * @example
+   * // 通过 ID 删除
+   * await User.delete(1);
+   * 
+   * // 通过条件对象删除
+   * await User.delete({ id: 1 });
+   * await User.delete({ email: 'user@example.com' });
+   */
+  static async delete(condition: any | Record<string, any>): Promise<boolean> {
     const query = new SQLQueryBuilder(this.adapter)
-      .delete(this.table)
-      .where(`${this.primaryKey} = ?`, [id]);
+      .delete(this.table);
+    
+    // 如果 condition 是对象，使用对象条件
+    if (typeof condition === 'object' && condition !== null && !Array.isArray(condition)) {
+      const whereClause = Object.keys(condition)
+        .map(key => `${key} = ?`)
+        .join(' AND ');
+      query.where(whereClause, Object.values(condition));
+    } else {
+      // 否则使用主键
+      query.where(`${this.primaryKey} = ?`, [condition]);
+    }
     
     const result = await query.execute();
     return result.affectedRows > 0;
   }
   
+  /**
+   * 构建 WHERE 子句（支持操作符）
+   * @param conditions 条件对象
+   * @returns WHERE 子句和参数
+   */
+  private static buildWhereClause(conditions: Record<string, any>): {
+    clause: string;
+    params: any[];
+  } {
+    const clauses: string[] = [];
+    const params: any[] = [];
+    
+    for (const [key, value] of Object.entries(conditions)) {
+      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        // 支持操作符：{ $gt: 18 }, { $lt: 100 }, { $gte: 0 }, { $lte: 100 }, { $ne: null }, { $in: [1, 2, 3] }
+        if ('$gt' in value) {
+          clauses.push(`${key} > ?`);
+          params.push(value.$gt);
+        } else if ('$lt' in value) {
+          clauses.push(`${key} < ?`);
+          params.push(value.$lt);
+        } else if ('$gte' in value) {
+          clauses.push(`${key} >= ?`);
+          params.push(value.$gte);
+        } else if ('$lte' in value) {
+          clauses.push(`${key} <= ?`);
+          params.push(value.$lte);
+        } else if ('$ne' in value) {
+          clauses.push(`${key} != ?`);
+          params.push(value.$ne);
+        } else if ('$in' in value) {
+          const placeholders = value.$in.map(() => '?').join(', ');
+          clauses.push(`${key} IN (${placeholders})`);
+          params.push(...value.$in);
+        } else {
+          // 默认等于
+          clauses.push(`${key} = ?`);
+          params.push(value);
+        }
+      } else {
+        clauses.push(`${key} = ?`);
+        params.push(value);
+      }
+    }
+    
+    return {
+      clause: clauses.join(' AND '),
+      params,
+    };
+  }
+  
+  /**
+   * 从数据库行转换为模型实例
+   */
   static fromRow(row: any): SQLModel {
     const model = new (this as any)();
     Object.assign(model, row);
     return model;
   }
   
+  /**
+   * 保存当前实例
+   */
   async save(): Promise<this> {
-    // 实现保存逻辑
+    const primaryKey = (this.constructor as typeof SQLModel).primaryKey;
+    const id = (this as any)[primaryKey];
+    
+    if (id) {
+      // 更新
+      await (this.constructor as typeof SQLModel).update({ [primaryKey]: id }, this.toData());
+    } else {
+      // 创建
+      const created = await (this.constructor as typeof SQLModel).create(this.toData());
+      (this as any)[primaryKey] = (created as any)[primaryKey];
+    }
+    
     return this;
   }
   
+  /**
+   * 删除当前实例
+   */
   async delete(): Promise<boolean> {
-    return await (this.constructor as typeof SQLModel).delete((this as any)[(this.constructor as typeof SQLModel).primaryKey]);
+    const primaryKey = (this.constructor as typeof SQLModel).primaryKey;
+    const id = (this as any)[primaryKey];
+    return await (this.constructor as typeof SQLModel).delete({ [primaryKey]: id });
+  }
+  
+  /**
+   * 转换为数据对象（用于保存）
+   */
+  protected toData(): Record<string, any> {
+    const data: Record<string, any> = {};
+    const model = this as any;
+    for (const key in model) {
+      if (typeof model[key] !== 'function' && key !== 'constructor') {
+        data[key] = model[key];
+      }
+    }
+    return data;
   }
 }
 
@@ -510,64 +708,207 @@ export abstract class MongoModel {
     return this.db.collection(this.collection);
   }
   
-  static async find(id: any): Promise<MongoModel | null> {
+  /**
+   * 查找单个文档
+   * @param condition 查询条件（可以是 ID 值或条件对象）
+   * @param fields 要查询的字段数组（可选，MongoDB 使用投影）
+   * @returns 找到的文档或 null
+   * 
+   * @example
+   * // 通过 ID 查找
+   * const user = await User.find(userId);
+   * 
+   * // 通过条件对象查找
+   * const user = await User.find({ _id: userId });
+   * const user = await User.find({ email: 'user@example.com' });
+   * 
+   * // 指定查询字段
+   * const user = await User.find(userId, ['name', 'email', 'age']);
+   */
+  static async find(
+    condition: any | Record<string, any>,
+    fields?: string[]
+  ): Promise<MongoModel | null> {
     const collection = this.getCollection();
-    const result = await collection.findOne({ [this.primaryKey]: id });
+    
+    // 构建查询条件
+    let filter: any;
+    if (typeof condition === 'object' && condition !== null && !Array.isArray(condition)) {
+      filter = condition;
+    } else {
+      filter = { [this.primaryKey]: condition };
+    }
+    
+    // 构建投影（字段选择）
+    const projection: any = fields && fields.length > 0
+      ? fields.reduce((acc, field) => {
+          acc[field] = 1;
+          return acc;
+        }, {} as Record<string, number>)
+      : undefined;
+    
+    const result = await collection.findOne(filter, { projection });
     return result ? this.fromDocument(result) : null;
   }
   
-  static async findAll(filter: any = {}): Promise<MongoModel[]> {
+  /**
+   * 查找多个文档
+   * @param filter 查询条件对象（可选）
+   * @param fields 要查询的字段数组（可选，MongoDB 使用投影）
+   * @returns 文档数组
+   * 
+   * @example
+   * // 查找所有文档
+   * const users = await User.findAll();
+   * 
+   * // 按条件查找
+   * const users = await User.findAll({ age: 25 });
+   * const users = await User.findAll({ age: { $gt: 18 } });
+   * 
+   * // 指定查询字段
+   * const users = await User.findAll({}, ['name', 'email', 'age']);
+   */
+  static async findAll(
+    filter: any = {},
+    fields?: string[]
+  ): Promise<MongoModel[]> {
     const collection = this.getCollection();
-    const results = await collection.find(filter).toArray();
+    
+    // 构建投影（字段选择）
+    const projection: any = fields && fields.length > 0
+      ? fields.reduce((acc, field) => {
+          acc[field] = 1;
+          return acc;
+        }, {} as Record<string, number>)
+      : undefined;
+    
+    const results = await collection.find(filter, { projection }).toArray();
     return results.map(doc => this.fromDocument(doc));
   }
   
+  /**
+   * 创建新文档
+   * @param data 文档数据
+   * @returns 创建的文档
+   */
   static async create(data: Record<string, any>): Promise<MongoModel> {
     const collection = this.getCollection();
     const result = await collection.insertOne(data);
     return await this.find(result.insertedId);
   }
   
-  static async update(id: any, data: Record<string, any>): Promise<MongoModel> {
+  /**
+   * 更新文档
+   * @param condition 查询条件（可以是 ID 值或条件对象）
+   * @param data 要更新的数据
+   * @returns 更新后的文档
+   * 
+   * @example
+   * // 通过 ID 更新
+   * await User.update(userId, { name: 'lisi' });
+   * 
+   * // 通过条件对象更新
+   * await User.update({ _id: userId }, { name: 'lisi' });
+   * await User.update({ email: 'user@example.com' }, { name: 'lisi' });
+   */
+  static async update(
+    condition: any | Record<string, any>,
+    data: Record<string, any>
+  ): Promise<MongoModel | null> {
     const collection = this.getCollection();
-    await collection.updateOne(
-      { [this.primaryKey]: id },
-      { $set: data }
-    );
-    return await this.find(id) as MongoModel;
+    
+    // 构建查询条件
+    let filter: any;
+    if (typeof condition === 'object' && condition !== null && !Array.isArray(condition)) {
+      filter = condition;
+    } else {
+      filter = { [this.primaryKey]: condition };
+    }
+    
+    await collection.updateOne(filter, { $set: data });
+    return await this.find(filter);
   }
   
-  static async delete(id: any): Promise<boolean> {
+  /**
+   * 删除文档
+   * @param condition 查询条件（可以是 ID 值或条件对象）
+   * @returns 是否删除成功
+   * 
+   * @example
+   * // 通过 ID 删除
+   * await User.delete(userId);
+   * 
+   * // 通过条件对象删除
+   * await User.delete({ _id: userId });
+   * await User.delete({ email: 'user@example.com' });
+   */
+  static async delete(condition: any | Record<string, any>): Promise<boolean> {
     const collection = this.getCollection();
-    const result = await collection.deleteOne({ [this.primaryKey]: id });
+    
+    // 构建查询条件
+    let filter: any;
+    if (typeof condition === 'object' && condition !== null && !Array.isArray(condition)) {
+      filter = condition;
+    } else {
+      filter = { [this.primaryKey]: condition };
+    }
+    
+    const result = await collection.deleteOne(filter);
     return result.deletedCount > 0;
   }
   
+  /**
+   * 从 MongoDB 文档转换为模型实例
+   */
   static fromDocument(doc: any): MongoModel {
     const model = new (this as any)();
     Object.assign(model, doc);
     return model;
   }
   
+  /**
+   * 保存当前实例
+   */
   async save(): Promise<this> {
-    const collection = (this.constructor as typeof MongoModel).getCollection();
-    const id = (this as any)[(this.constructor as typeof MongoModel).primaryKey];
-    await collection.updateOne(
-      { [(this.constructor as typeof MongoModel).primaryKey]: id },
-      { $set: this.toDocument() }
-    );
+    const primaryKey = (this.constructor as typeof MongoModel).primaryKey;
+    const id = (this as any)[primaryKey];
+    
+    if (id) {
+      // 更新
+      await (this.constructor as typeof MongoModel).update(
+        { [primaryKey]: id },
+        this.toDocument()
+      );
+    } else {
+      // 创建
+      const created = await (this.constructor as typeof MongoModel).create(this.toDocument());
+      (this as any)[primaryKey] = (created as any)[primaryKey];
+    }
+    
     return this;
   }
   
+  /**
+   * 删除当前实例
+   */
   async delete(): Promise<boolean> {
-    return await (this.constructor as typeof MongoModel).delete(
-      (this as any)[(this.constructor as typeof MongoModel).primaryKey]
-    );
+    const primaryKey = (this.constructor as typeof MongoModel).primaryKey;
+    const id = (this as any)[primaryKey];
+    return await (this.constructor as typeof MongoModel).delete({ [primaryKey]: id });
   }
   
-  toDocument(): Record<string, any> {
-    // 转换为文档格式
-    return { ...this };
+  /**
+   * 转换为文档格式（用于保存）
+   */
+  protected toDocument(): Record<string, any> {
+    const doc: Record<string, any> = {};
+    const model = this as any;
+    for (const key in model) {
+      if (typeof model[key] !== 'function' && key !== 'constructor') {
+        doc[key] = model[key];
+      }
+    }
+    return doc;
   }
 }
 ```
@@ -1002,7 +1343,9 @@ export default class CreateUsersTable implements Migration {
 #### Week 8-9: SQL ORM
 - `SQLModel` 基类实现
 - 模型定义和注册
-- CRUD 操作
+- CRUD 操作（支持对象条件查询）
+- 字段选择支持（数组形式）
+- 查询条件操作符支持（$gt, $lt, $gte, $lte, $ne, $in）
 - 关系映射（一对一、一对多）
 - 数据验证
 - 单元测试
@@ -1010,7 +1353,9 @@ export default class CreateUsersTable implements Migration {
 #### Week 10: MongoDB ODM
 - `MongoModel` 基类实现
 - 文档模型定义
-- CRUD 操作
+- CRUD 操作（支持对象条件查询）
+- 字段投影支持（数组形式）
+- MongoDB 操作符支持（$gt, $lt, $gte, $lte, $ne, $in, $nin, $exists 等）
 - 模式验证
 - 单元测试
 
