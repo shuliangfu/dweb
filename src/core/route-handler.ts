@@ -604,6 +604,9 @@ export class RouteHandler {
             return null;
           }
         })(),
+        // 提供翻译函数（如果 i18n 插件已设置）
+        t: (req as any).t,
+        lang: (req as any).lang,
       });
     } catch (error) {
       res.status = 500;
@@ -1142,7 +1145,14 @@ export class RouteHandler {
     
     // 加载页面数据
     const pageData = await this.loadPageData(pageModule, req, res);
-    const pageProps = { params: req.params, query: req.query, data: pageData };
+    const pageProps = { 
+      params: req.params, 
+      query: req.query, 
+      data: pageData,
+      // 提供翻译函数（如果 i18n 插件已设置）
+      t: (req as any).t,
+      lang: (req as any).lang,
+    };
 
     // 获取渲染配置
     const { renderMode, shouldHydrate, LayoutComponent } =

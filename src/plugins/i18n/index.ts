@@ -240,14 +240,54 @@ export function i18n(options: I18nPluginOptions): Plugin {
         });
       }
 
-      // 注入语言属性到 HTML
+      // 注入语言属性到 HTML 和翻译数据到客户端
       if (options.injectLangAttribute !== false) {
         if (res.body && typeof res.body === 'string') {
           const contentType = res.headers.get('Content-Type') || '';
           if (contentType.includes('text/html')) {
             const html = res.body as string;
             const isRtl = langConfig?.rtl || false;
-            res.body = injectLangAttribute(html, langCode, isRtl);
+            let newHtml = injectLangAttribute(html, langCode, isRtl);
+            
+            // 注入翻译数据到客户端（在 </head> 之前）
+            const translations = translationCache.get(langCode) || null;
+            if (translations && newHtml.includes('</head>')) {
+              const translationsScript = `
+    <script>
+      // i18n 翻译数据
+      window.__I18N_DATA__ = {
+        lang: ${JSON.stringify(langCode)},
+        translations: ${JSON.stringify(translations)},
+        t: function(key, params) {
+          const keys = key.split('.');
+          let value = this.translations;
+          for (const k of keys) {
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+              value = value[k];
+            } else {
+              return key;
+            }
+          }
+          if (typeof value !== 'string') return key;
+          if (params) {
+            return value.replace(/\\{(\\w+)\\}/g, (match, paramKey) => {
+              return params[paramKey] || match;
+            });
+          }
+          return value;
+        }
+      };
+      // 全局翻译函数
+      window.$t = function(key, params) {
+        return window.__I18N_DATA__.t(key, params);
+      };
+      // 也支持 t 函数
+      window.t = window.$t;
+    </script>`;
+              newHtml = newHtml.replace('</head>', `${translationsScript}\n</head>`);
+            }
+            
+            res.body = newHtml;
           }
         }
       }
