@@ -805,7 +805,6 @@ export default config;
 
 - [使用指南](./GUIDES.md) - 详细的使用说明
 - [开发指南](./DEVELOPMENT.md) - 插件和中间件开发
-- [API 文档](./DOC.md) - 完整的 API 参考
 
 ---
 

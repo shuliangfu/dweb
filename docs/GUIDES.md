@@ -536,7 +536,6 @@ const config: AppConfig = {
 ## 📖 更多资源
 
 - [配置示例](./CONFIG_EXAMPLES.md) - 各种场景的配置示例
-- [API 文档](./DOC.md) - 完整的 API 参考
 - [开发指南](./DEVELOPMENT.md) - 插件和中间件开发
 - [Docker 部署指南](./DOCKER.md) - Docker 部署
 - [示例项目](../example/) - 完整示例

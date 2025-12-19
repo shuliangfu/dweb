@@ -568,7 +568,6 @@ setupSignalHandlers({
 
 ## 相关文档
 
-- [完整文档](./DOC.md) - 详细的功能说明和 API 文档
 - [使用指南](./GUIDES.md) - 完整的使用指南
 
 ---
