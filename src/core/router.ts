@@ -41,10 +41,10 @@ export interface RouteInfo {
  * 负责扫描路由目录、匹配路由、提取参数等。
  * 
  * @example
- * ```typescript
+ * ```ts
  * import { Router } from "@dreamer/dweb";
  * 
- * const router = new Router("routes", ["**/*.test.ts"]);
+ * const router = new Router("routes", ["**\/*.test.ts"]);
  * await router.scan();
  * 
  * const route = router.match("/users/123");
@@ -205,8 +205,8 @@ export class Router {
    * 支持页面路由、API 路由、布局、中间件和错误页面。
    * 
    * @example
-   * ```typescript
-   * const router = new Router("routes", ["**/*.test.ts"]);
+   * ```ts
+   * const router = new Router("routes", ["**\/*.test.ts"]);
    * await router.scan();
    * 
    * // 获取所有路由
