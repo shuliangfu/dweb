@@ -806,57 +806,70 @@ export class RouteHandler {
     LayoutComponent: ((props: { children: unknown }) => unknown | Promise<unknown>) | null,
     pageProps: Record<string, unknown>,
     renderMode: RenderMode,
+    req?: Request,
   ): Promise<string> {
     if (renderMode === "csr") {
       // CSR 模式：服务端只渲染容器，内容由客户端渲染
       return '';
     }
 
-      // SSR 或 Hybrid 模式：服务端渲染内容
-    let pageElement;
-    try {
-      // 支持异步组件：如果组件返回 Promise，则等待它
-      const result = PageComponent(pageProps);
-      pageElement = result instanceof Promise ? await result : result;
-      if (!pageElement) {
-        throw new Error("页面组件返回了空值");
-      }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      throw new Error(`渲染页面组件失败: ${errorMsg}`);
+    // 在渲染前设置全局 i18n 函数（如果 i18n 插件已设置）
+    if (req && (req as any).__setGlobalI18n) {
+      (req as any).__setGlobalI18n();
     }
-    
-    // 如果有布局，包裹在布局中（支持异步布局组件）
-    let html: string;
+
     try {
-      if (LayoutComponent) {
-        // 支持异步布局组件：如果组件返回 Promise，则等待它
-        const layoutResult = LayoutComponent({ children: pageElement });
-        const layoutElement = layoutResult instanceof Promise ? await layoutResult : layoutResult;
-        if (!layoutElement) {
-          throw new Error("布局组件返回了空值");
+      // SSR 或 Hybrid 模式：服务端渲染内容
+      let pageElement;
+      try {
+        // 支持异步组件：如果组件返回 Promise，则等待它
+        const result = PageComponent(pageProps);
+        pageElement = result instanceof Promise ? await result : result;
+        if (!pageElement) {
+          throw new Error("页面组件返回了空值");
         }
-        html = renderToString(layoutElement as unknown as Parameters<typeof renderToString>[0]);
-      } else {
-        html = renderToString(pageElement as unknown as Parameters<typeof renderToString>[0]);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        throw new Error(`渲染页面组件失败: ${errorMsg}`);
+      }
+    
+      // 如果有布局，包裹在布局中（支持异步布局组件）
+      let html: string;
+      try {
+        if (LayoutComponent) {
+          // 支持异步布局组件：如果组件返回 Promise，则等待它
+          const layoutResult = LayoutComponent({ children: pageElement });
+          const layoutElement = layoutResult instanceof Promise ? await layoutResult : layoutResult;
+          if (!layoutElement) {
+            throw new Error("布局组件返回了空值");
+          }
+          html = renderToString(layoutElement as unknown as Parameters<typeof renderToString>[0]);
+        } else {
+          html = renderToString(pageElement as unknown as Parameters<typeof renderToString>[0]);
+        }
+        
+        // 确保 HTML 内容不为空
+        if (!html || html.trim() === "") {
+          html = "<div>页面渲染失败：内容为空</div>";
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        html = `<div>页面渲染失败: ${errorMsg}</div>`;
       }
       
-      // 确保 HTML 内容不为空
-      if (!html || html.trim() === "") {
-        html = "<div>页面渲染失败：内容为空</div>";
-      }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      html = `<div>页面渲染失败: ${errorMsg}</div>`;
-    }
-    
-    // SSR 和 Hybrid 模式：都需要包装在容器中以便 hydration
-    if (renderMode === "hybrid" || renderMode === "ssr") {
-      html = `<div>${html}</div>`;
+      // SSR 和 Hybrid 模式：都需要包装在容器中以便 hydration
+      if (renderMode === "hybrid" || renderMode === "ssr") {
+        html = `<div>${html}</div>`;
       }
 
-    return html;
+      return html;
+    } finally {
+      // 渲染完成后清理全局 i18n 函数
+      if (req && (req as any).__clearGlobalI18n) {
+        (req as any).__clearGlobalI18n();
+      }
     }
+  }
     
   /**
    * 注入脚本到 HTML（import map 和客户端脚本）
@@ -1166,6 +1179,7 @@ export class RouteHandler {
         LayoutComponent,
         pageProps,
         renderMode,
+        req,
       );
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);

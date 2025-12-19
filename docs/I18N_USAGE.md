@@ -93,9 +93,55 @@ export default config;
 
 ## 在页面中使用翻译
 
-### 方式一：使用 props 中的 `t` 函数（推荐）
+### 方式一：使用全局 `$t()` 函数（推荐，服务端和客户端都支持）
 
-在页面组件中，`t` 函数会通过 props 传递：
+在服务端渲染（SSR）和客户端渲染（CSR/Hybrid）中，都可以直接使用全局的 `$t()` 或 `t()` 函数：
+
+```tsx
+export default function HomePage() {
+  // 服务端和客户端都可以直接使用全局函数
+  // 注意：需要类型声明，见下方说明
+  const $t = (globalThis as any).$t;
+  
+  return (
+    <div>
+      <h1>{$t?.("common.title")}</h1>
+      <p>{$t?.("common.description")}</p>
+      <p>{$t?.("你好")}</p>
+      <p>{$t?.("user.welcome", { name: "张三" })}</p>
+    </div>
+  );
+}
+```
+
+**类型支持**（可选，但推荐）：
+
+```typescript
+// types/global.d.ts
+declare global {
+  var $t: (key: string, params?: Record<string, string>) => string;
+  var t: (key: string, params?: Record<string, string>) => string;
+}
+
+export {};
+```
+
+使用类型声明后，可以直接使用：
+
+```tsx
+export default function HomePage() {
+  return (
+    <div>
+      <h1>{$t("common.title")}</h1>
+      <p>{$t("你好")}</p>
+    </div>
+  );
+}
+```
+
+### 方式二：使用 props 中的 `t` 函数
+
+在页面组件中，`t` 函数也会通过 props 传递：
 
 ```tsx
 import type { PageProps } from "@dreamer/dweb";
@@ -103,10 +149,10 @@ import type { PageProps } from "@dreamer/dweb";
 export default function HomePage({ t, lang }: PageProps) {
   return (
     <div>
-      <h1>{t("common.title")}</h1>
-      <p>{t("common.description")}</p>
-      <p>{t("你好")}</p>
-      <p>{t("user.welcome", { name: "张三" })}</p>
+      <h1>{t?.("common.title")}</h1>
+      <p>{t?.("common.description")}</p>
+      <p>{t?.("你好")}</p>
+      <p>{t?.("user.welcome", { name: "张三" })}</p>
     </div>
   );
 }

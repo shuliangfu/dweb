@@ -222,12 +222,31 @@ export function i18n(options: I18nPluginOptions): Plugin {
       const langCode = detectLanguage(req, options);
       const langConfig = options.languages.find(l => l.code === langCode) || options.languages[0];
 
+      // 创建翻译函数
+      const tFunction = (key: string, params?: Record<string, string>) => {
+        return translate(key, translationCache.get(langCode) || null, params);
+      };
+
       // 将语言信息存储到请求对象（通过扩展属性）
       (req as any).lang = langCode;
       (req as any).langConfig = langConfig;
       (req as any).translations = translationCache.get(langCode) || null;
-      (req as any).t = (key: string, params?: Record<string, string>) => {
-        return translate(key, translationCache.get(langCode) || null, params);
+      (req as any).t = tFunction;
+      
+      // 在服务端设置全局 $t 和 t 函数
+      // 将翻译函数存储到请求对象，供 route-handler 在渲染时使用
+      (req as any).__setGlobalI18n = () => {
+        if (typeof globalThis !== 'undefined') {
+          (globalThis as any).$t = tFunction;
+          (globalThis as any).t = tFunction;
+        }
+      };
+      
+      (req as any).__clearGlobalI18n = () => {
+        if (typeof globalThis !== 'undefined') {
+          delete (globalThis as any).$t;
+          delete (globalThis as any).t;
+        }
       };
 
       // 设置语言 Cookie
