@@ -102,18 +102,54 @@ export interface MiddlewareConfig {
   options?: Record<string, any>;
 }
 
-// 应用实例接口（用于插件系统，避免循环依赖）
-// 注意：完整的 App 类型定义在 mod.ts 中
-// 这个接口是宽松的，允许插件访问应用的不同部分
+/**
+ * 应用实例接口（用于插件系统，避免循环依赖）
+ * 
+ * 为什么叫 `AppLike` 而不是 `App`？
+ * 1. **避免循环依赖**：完整的 `App` 类型定义在 `mod.ts` 中，而 `mod.ts` 依赖 `types/index.ts`。
+ *    如果 `Plugin` 接口直接使用 `App` 类型，会导致循环依赖问题。
+ * 
+ * 2. **"Like" 的含义**：`AppLike` 表示"类似 App 的对象"，它是一个更宽松的接口，
+ *    只定义了插件可能需要访问的基本属性，而不是完整的 `App` 类型。
+ * 
+ * 3. **灵活性**：所有属性都是可选的，并且有索引签名 `[key: string]: unknown`，
+ *    这使得它可以接受不同结构的对象：
+ *    - 完整的 `App` 对象（包含 `server`, `middleware`, `plugins`, `use`, `plugin`）
+ *    - 开发/生产服务器传递的对象（如 `{ server, router, routeHandler }`）
+ *    - 其他符合接口结构的对象
+ * 
+ * 4. **类型安全**：虽然属性类型是 `unknown`，但这确保了插件系统不会因为类型定义
+ *    的循环依赖而无法工作。插件在使用时可以通过类型断言或类型守卫来访问具体属性。
+ * 
+ * @example
+ * ```ts
+ * // 在插件中使用
+ * async onInit(app: AppLike) {
+ *   if (app.server) {
+ *     // 访问 server 实例
+ *   }
+ *   if (app.router) {
+ *     // 访问 router 实例
+ *   }
+ * }
+ * ```
+ */
 export interface AppLike {
+  /** 服务器实例 */
   server?: unknown;
+  /** 中间件管理器 */
   middleware?: unknown;
+  /** 插件管理器 */
   plugins?: unknown;
+  /** 路由实例 */
   router?: unknown;
+  /** 路由处理器实例 */
   routeHandler?: unknown;
+  /** 添加中间件的方法 */
   use?: (middleware: unknown) => void;
+  /** 注册插件的方法 */
   plugin?: (plugin: unknown) => void;
-  // 扩展属性（某些插件可能需要）
+  /** 扩展属性（某些插件可能需要访问其他属性） */
   [key: string]: unknown;
 }
 
