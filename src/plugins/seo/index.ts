@@ -299,11 +299,28 @@ function injectSEOTags(html: string, metaTags: string, jsonLd: string): string {
   // 先移除已存在的 SEO 标签，避免重复
   let result = removeExistingSEOTags(html);
   
-  // 注入 meta 标签到 </head> 之前
+  // 查找第一个 meta 标签或 viewport meta 标签的位置，在其后插入
+  // 如果没有找到，则查找 </head> 标签
   if (metaTags) {
-    if (result.includes('</head>')) {
+    // 尝试在第一个 meta 标签后插入（通常在 viewport 之后）
+    const viewportPattern = /(<meta\s+name=["']viewport["'][^>]*>)/i;
+    const firstMetaPattern = /(<meta[^>]*>)/i;
+    const charsetPattern = /(<meta\s+charset=["'][^"']*["']>)/i;
+    
+    if (viewportPattern.test(result)) {
+      // 在 viewport meta 标签后插入
+      result = result.replace(viewportPattern, `$1\n    ${metaTags}`);
+    } else if (charsetPattern.test(result)) {
+      // 在 charset meta 标签后插入
+      result = result.replace(charsetPattern, `$1\n    ${metaTags}`);
+    } else if (firstMetaPattern.test(result)) {
+      // 在第一个 meta 标签后插入
+      result = result.replace(firstMetaPattern, `$1\n    ${metaTags}`);
+    } else if (result.includes('</head>')) {
+      // 如果没有找到 meta 标签，在 </head> 之前插入
       result = result.replace('</head>', `    ${metaTags}\n</head>`);
     } else if (result.includes('<head>')) {
+      // 如果只有 <head> 标签，在其后插入
       result = result.replace('<head>', `<head>\n    ${metaTags}`);
     } else {
       // 如果没有 head 标签，在 </html> 之前添加
