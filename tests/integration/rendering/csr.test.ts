@@ -18,6 +18,28 @@ const testCSRPageFile = path.join(testPagesDir, 'csr.tsx');
 // 辅助函数：创建 CSR 测试页面
 async function createCSRPage() {
   await ensureDir(testPagesDir);
+  
+  // 创建 _app.tsx 文件（框架必需）
+  const appFile = path.join(testPagesDir, '_app.tsx');
+  await Deno.writeTextFile(appFile, `
+import { h } from 'preact';
+
+export default function App({ children }: { children: string }) {
+  return (
+    <html lang="zh-CN">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Test App</title>
+      </head>
+      <body>
+        <div id="app" dangerouslySetInnerHTML={{ __html: children }} />
+      </body>
+    </html>
+  );
+}
+`);
+  
   await Deno.writeTextFile(testCSRPageFile, `
 import { h } from 'preact';
 import type { PageProps } from '../../../../src/types/index.ts';

@@ -18,6 +18,23 @@ const routesDir = path.join(testDir, 'routes');
 Deno.test('Integration - Router - 完整路由处理流程', async () => {
   await ensureDir(routesDir);
   
+  // 创建 _app.tsx 文件（框架必需）
+  const appFile = path.join(routesDir, '_app.tsx');
+  await ensureFile(appFile);
+  await Deno.writeTextFile(
+    appFile,
+    `export default function App({ children }: { children: string }) {
+  return (
+    <html>
+      <head><title>Test App</title></head>
+      <body>
+        <div id="app" dangerouslySetInnerHTML={{ __html: children }} />
+      </body>
+    </html>
+  );
+}`
+  );
+  
   // 创建测试路由文件
   const indexFile = path.join(routesDir, 'index.tsx');
   await ensureFile(indexFile);
