@@ -6,6 +6,8 @@ import { assertEquals, assert } from '@std/assert';
 import { startProdServer } from '../../../src/features/prod.ts';
 import type { AppConfig } from '../../../src/types/index.ts';
 
+// 注意：这些测试主要验证配置验证逻辑，不实际启动服务器
+
 Deno.test('Prod Server - 缺少路由配置时抛出错误', async () => {
   const config: AppConfig = {
     server: {
