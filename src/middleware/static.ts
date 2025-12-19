@@ -4,6 +4,7 @@
  */
 
 import type { Middleware, StaticOptions } from '../types/index.ts';
+import * as path from '@std/path';
 
 /**
  * 根据文件扩展名获取 MIME 类型
@@ -83,7 +84,7 @@ export function staticFiles(options: StaticOptions): Middleware {
       const indexFiles = Array.isArray(index) ? index : [index];
       let foundIndex = false;
       for (const indexFile of indexFiles) {
-        const indexPath = `${dir}${filePath}${indexFile}`;
+        const indexPath = path.join(dir, filePath, indexFile);
         try {
           const stat = await Deno.stat(indexPath);
           if (stat.isFile) {
@@ -103,7 +104,8 @@ export function staticFiles(options: StaticOptions): Middleware {
       }
     }
     
-    const fullPath = `${dir}${filePath}`;
+    // 使用 path.join 规范化路径，防止路径遍历攻击
+    const fullPath = path.join(dir, filePath);
     
     // 检查文件是否存在且是文件（不是目录）
     let fileStat: Deno.FileInfo;

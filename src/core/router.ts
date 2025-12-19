@@ -468,11 +468,24 @@ export class Router {
     for (let i = 0; i < routeParts.length; i++) {
       if (routeParts[i].startsWith(':')) {
         const paramName = routeParts[i].slice(1);
-        params[paramName] = urlParts[i] || '';
+        // 安全检查：验证参数名是否为有效标识符
+        if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(paramName)) {
+          // 参数名无效，跳过
+          continue;
+        }
+        // 清理参数值：移除控制字符，限制长度
+        const controlCharRegex = new RegExp('[\u0000-\u001F\u007F]', 'g');
+        const paramValue = (urlParts[i] || '').replace(controlCharRegex, '').slice(0, 1000);
+        params[paramName] = paramValue;
       } else if (routeParts[i] === '*' && i === routeParts.length - 1) {
         // 捕获所有
         const paramName = routeInfo?.params?.[0] || 'slug';
-        params[paramName] = urlParts.slice(i).join('/');
+        // 安全检查：验证参数名
+        if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(paramName)) {
+          const controlCharRegex = new RegExp('[\u0000-\u001F\u007F]', 'g');
+          const paramValue = urlParts.slice(i).join('/').replace(controlCharRegex, '').slice(0, 2000);
+          params[paramName] = paramValue;
+        }
         break;
       }
     }

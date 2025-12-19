@@ -345,11 +345,13 @@ export class RouteHandler {
   ): Promise<void> {
     // 提取路由参数
     if (routeInfo.params) {
-      req.params = this.router.extractParams(
+      const extractedParams = this.router.extractParams(
         routeInfo.path,
         pathname,
         routeInfo,
       );
+      // 参数已经在上层进行了基本清理，但这里可以进一步验证
+      req.params = extractedParams;
     }
     
       // 根据路由类型处理

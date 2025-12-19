@@ -118,6 +118,12 @@ export async function handleApiRoute(
     throw new Error(`API 方法名不能为空。路径: ${url.pathname}，可用处理器: [${availableHandlers}]`);
   }
   
+  // 安全检查：验证方法名是否安全
+  // 方法名应该是有效的标识符，防止注入攻击
+  if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(methodName) || methodName.length > 100) {
+    throw new Error(`API 方法名不安全: ${methodName}`);
+  }
+  
   // 查找对应的处理器（支持驼峰和短横线两种格式）
   const handler = findHandler(handlers, methodName);
   
