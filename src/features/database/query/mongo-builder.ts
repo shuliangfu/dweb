@@ -4,13 +4,14 @@
  */
 
 import type { DatabaseAdapter } from '../types.ts';
+import type { MongoDBAdapter } from '../adapters/mongodb.ts';
 
 /**
  * MongoDB 查询构建器类
  * 提供链式调用的 MongoDB 查询构建 API
  */
 export class MongoQueryBuilder {
-  private adapter: DatabaseAdapter;
+  private adapter: MongoDBAdapter;
   private collection: string = '';
   private filter: any = {};
   private options: any = {};
@@ -20,7 +21,8 @@ export class MongoQueryBuilder {
    * @param adapter 数据库适配器实例（必须是 MongoDBAdapter）
    */
   constructor(adapter: DatabaseAdapter) {
-    this.adapter = adapter;
+    // 类型断言：MongoDB 查询构建器只能用于 MongoDBAdapter
+    this.adapter = adapter as MongoDBAdapter;
   }
 
   /**
@@ -176,7 +178,8 @@ export class MongoQueryBuilder {
     if (!this.collection) {
       throw new Error('Collection name is required');
     }
-    return await this.adapter.query(this.collection, this.filter, this.options) as T[];
+    // MongoDB 适配器的 query 方法签名：query(collection: string, filter?: any, options?: any)
+    return await (this.adapter as any).query(this.collection, this.filter, this.options) as T[];
   }
 
   /**
@@ -198,7 +201,7 @@ export class MongoQueryBuilder {
     if (!this.collection) {
       throw new Error('Collection name is required');
     }
-    return await this.adapter.execute('insert', this.collection, data);
+    return await (this.adapter as any).execute('insert', this.collection, data);
   }
 
   /**
@@ -210,7 +213,7 @@ export class MongoQueryBuilder {
     if (!this.collection) {
       throw new Error('Collection name is required');
     }
-    return await this.adapter.execute('insertMany', this.collection, data);
+    return await (this.adapter as any).execute('insertMany', this.collection, data);
   }
 
   /**
@@ -222,7 +225,7 @@ export class MongoQueryBuilder {
     if (!this.collection) {
       throw new Error('Collection name is required');
     }
-    return await this.adapter.execute('update', this.collection, {
+    return await (this.adapter as any).execute('update', this.collection, {
       filter: this.filter,
       update,
     });
@@ -237,7 +240,7 @@ export class MongoQueryBuilder {
     if (!this.collection) {
       throw new Error('Collection name is required');
     }
-    return await this.adapter.execute('updateMany', this.collection, {
+    return await (this.adapter as any).execute('updateMany', this.collection, {
       filter: this.filter,
       update,
     });
@@ -251,7 +254,7 @@ export class MongoQueryBuilder {
     if (!this.collection) {
       throw new Error('Collection name is required');
     }
-    return await this.adapter.execute('delete', this.collection, {
+    return await (this.adapter as any).execute('delete', this.collection, {
       filter: this.filter,
     });
   }
@@ -264,7 +267,7 @@ export class MongoQueryBuilder {
     if (!this.collection) {
       throw new Error('Collection name is required');
     }
-    return await this.adapter.execute('deleteMany', this.collection, {
+    return await (this.adapter as any).execute('deleteMany', this.collection, {
       filter: this.filter,
     });
   }
