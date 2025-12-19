@@ -16,7 +16,7 @@ export class PluginManager {
    * @param plugin 插件对象或插件配置
    */
   register(plugin: Plugin | { name: string; config?: Record<string, any> }): void {
-    if ('onInit' in plugin || 'onRequest' in plugin || 'onResponse' in plugin) {
+    if ('onInit' in plugin || 'onRequest' in plugin || 'onResponse' in plugin || 'onError' in plugin || 'onBuild' in plugin || 'onStart' in plugin) {
       // 完整的插件对象
       this.plugins.push(plugin as Plugin);
     } else {
