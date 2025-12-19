@@ -313,22 +313,6 @@ class MongoExecutor {
       filter: this.filter,
     });
   }
-
-  /**
-   * 获取查询过滤器（用于调试）
-   * @returns 过滤器对象
-   */
-  getFilter(): any {
-    return this.filter;
-  }
-
-  /**
-   * 获取查询选项（用于调试）
-   * @returns 选项对象
-   */
-  getOptions(): any {
-    return this.options;
-  }
 }
 
 /**
