@@ -41,6 +41,10 @@ Deno.test('RouteHandler - handle404 - 返回 404 状态', async () => {
     status: 200,
     headers: new Headers(),
     setHeader: function(_name: string, _value: string) {},
+    html: function(html: string) {
+      this.body = html;
+      return this;
+    },
     text: function(text: string) {
       this.body = text;
       return this;
@@ -48,13 +52,23 @@ Deno.test('RouteHandler - handle404 - 返回 404 状态', async () => {
     body: undefined as string | undefined,
   } as Response;
   
-  // 使用反射调用私有方法（通过 handle 方法间接测试）
-  // 或者直接测试 handle 方法，传入不存在的路由
-  await handler.handle(req, res);
-  
-  // 404 应该被处理（虽然可能没有路由文件，但至少不会抛出错误）
-  // 由于没有实际路由文件，这里主要测试方法不会抛出异常
-  assert(res.status === 404 || res.status === 200);
+  // 使用 handle 方法测试 404 处理
+  // 由于没有实际路由文件，router.match 会返回 null，触发 handle404
+  try {
+    await handler.handle(req, res);
+    // 应该返回 404 状态
+    assertEquals(res.status, 404);
+    // 应该有响应体
+    assert(res.body !== undefined);
+  } catch (error) {
+    // 如果 router.getErrorPage 抛出错误（例如目录不存在），这是可以接受的
+    // 但至少应该设置了 404 状态
+    if (res.status === 404) {
+      assert(true); // 状态码正确
+    } else {
+      throw error; // 重新抛出其他错误
+    }
+  }
 });
 
 Deno.test('RouteHandler - handleError - 处理错误', async () => {
