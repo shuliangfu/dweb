@@ -194,13 +194,15 @@
 ### 🟢 低优先级（可选功能）
 
 #### 5. 可选功能
-- [ ] **数据库支持**（可选）
-  - [ ] 数据库连接池
-  - [ ] 查询构建器
-  - [ ] ORM 集成
-  - [ ] 迁移管理
+- [x] **数据库支持** ✅ 已完成
+  - [x] 数据库适配器（SQLite, PostgreSQL, MySQL, MongoDB）
+  - [x] 数据库管理器（DatabaseManager）
+  - [x] 查询构建器（SQLQueryBuilder, MongoQueryBuilder）
+  - [x] ORM/ODM 模型（SQLModel, MongoModel）
+  - [x] 迁移管理（MigrationManager）
+  - [x] 框架集成（配置系统、load 函数、API 路由）
+  - **完成时间**: 2024-12-20
   - **优先级**: 低
-  - **预计时间**: 10-15 天
 
 - [ ] **WebSocket 支持**（可选）
   - [ ] WebSocket 服务器
