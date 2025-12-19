@@ -46,7 +46,7 @@
     "test": "deno test --allow-all tests/",
     "test:unit": "deno test --allow-all tests/unit/",
     "test:integration": "deno test --allow-all tests/integration/",
-    "test:coverage": "deno test --allow-all --no-check --coverage=coverage tests/ && deno coverage coverage --exclude='tests/fixtures/.*' 2>&1 | grep -v 'Error generating coverage report' || true"
+    "test:coverage": "deno test --allow-all --no-check --coverage=coverage tests/ && deno coverage coverage --ignore='tests/fixtures/.*' --exclude='tests/fixtures/.*' 2>&1 | grep -v 'Error generating coverage report' || true"
   },
   "fmt": {
     "files": {
