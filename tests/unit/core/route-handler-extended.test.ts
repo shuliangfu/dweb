@@ -85,6 +85,7 @@ Deno.test('RouteHandler - 构造函数 - 接受 AppConfig', () => {
       dir: 'routes',
     },
     server: {
+      host: 'localhost',
       port: 3000,
     },
   };

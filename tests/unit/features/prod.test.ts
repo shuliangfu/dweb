@@ -102,8 +102,8 @@ Deno.test('Prod Server - 默认 host 为 0.0.0.0', () => {
       outDir: 'dist',
     },
     server: {
+      host: 'localhost',
       port: 3000,
-      // host 未设置
     },
   };
 
@@ -121,6 +121,7 @@ Deno.test('Prod Server - 构建输出目录配置', () => {
       outDir: 'dist',
     },
     server: {
+      host: 'localhost',
       port: 3000,
     },
   };
@@ -139,6 +140,7 @@ Deno.test('Prod Server - 静态资源目录配置', () => {
       outDir: 'dist',
     },
     server: {
+      host: 'localhost',
       port: 3000,
     },
     static: {
@@ -160,6 +162,7 @@ Deno.test('Prod Server - Cookie 配置', () => {
       outDir: 'dist',
     },
     server: {
+      host: 'localhost',
       port: 3000,
     },
     cookie: {
@@ -181,6 +184,7 @@ Deno.test('Prod Server - Session 配置', () => {
       outDir: 'dist',
     },
     server: {
+      host: 'localhost',
       port: 3000,
     },
     session: {
