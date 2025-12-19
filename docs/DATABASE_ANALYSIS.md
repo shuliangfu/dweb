@@ -142,32 +142,131 @@
 
 ```typescript
 // src/features/database.ts
+
+/**
+ * 数据库类型
+ */
+export type DatabaseType = 'sqlite' | 'postgresql' | 'mysql' | 'mongodb';
+
+/**
+ * 数据库连接配置
+ */
 export interface DatabaseConfig {
-  type: 'sqlite' | 'postgresql' | 'mysql';
+  /** 数据库类型 */
+  type: DatabaseType;
+  
+  /** 连接配置 */
   connection: {
     // SQLite
     path?: string;
-    // PostgreSQL/MySQL
+    
+    // PostgreSQL/MySQL/MongoDB
     host?: string;
     port?: number;
     database?: string;
     username?: string;
     password?: string;
+    
+    // MongoDB 特定
+    authSource?: string;
+    replicaSet?: string;
   };
+  
+  /** 连接池配置（SQL 数据库） */
   pool?: {
     min?: number;
     max?: number;
     idleTimeout?: number;
   };
+  
+  /** MongoDB 特定配置 */
+  mongoOptions?: {
+    maxPoolSize?: number;
+    minPoolSize?: number;
+    serverSelectionTimeoutMS?: number;
+  };
 }
 
+/**
+ * 数据库适配器接口
+ */
+export interface DatabaseAdapter {
+  connect(config: DatabaseConfig): Promise<void>;
+  query(sql: string, params?: any[]): Promise<any[]>;
+  execute(sql: string, params?: any[]): Promise<any>;
+  transaction<T>(callback: (db: DatabaseAdapter) => Promise<T>): Promise<T>;
+  close(): Promise<void>;
+  isConnected(): boolean;
+}
+
+/**
+ * 数据库管理器
+ */
 export class DatabaseManager {
-  private connections: Map<string, DatabaseConnection>;
+  private adapters: Map<string, DatabaseAdapter> = new Map();
   
-  connect(name: string, config: DatabaseConfig): Promise<void>;
-  getConnection(name?: string): DatabaseConnection;
-  close(name?: string): Promise<void>;
-  closeAll(): Promise<void>;
+  /**
+   * 连接数据库
+   */
+  async connect(name: string, config: DatabaseConfig): Promise<void> {
+    const adapter = this.createAdapter(config.type);
+    await adapter.connect(config);
+    this.adapters.set(name, adapter);
+  }
+  
+  /**
+   * 获取数据库连接
+   */
+  getConnection(name: string = 'default'): DatabaseAdapter {
+    const adapter = this.adapters.get(name);
+    if (!adapter) {
+      throw new Error(`Database connection "${name}" not found`);
+    }
+    return adapter;
+  }
+  
+  /**
+   * 创建适配器
+   */
+  private createAdapter(type: DatabaseType): DatabaseAdapter {
+    switch (type) {
+      case 'sqlite':
+        return new SQLiteAdapter();
+      case 'postgresql':
+        return new PostgreSQLAdapter();
+      case 'mysql':
+        return new MySQLAdapter();
+      case 'mongodb':
+        return new MongoDBAdapter();
+      default:
+        throw new Error(`Unsupported database type: ${type}`);
+    }
+  }
+  
+  /**
+   * 关闭连接
+   */
+  async close(name?: string): Promise<void> {
+    if (name) {
+      const adapter = this.adapters.get(name);
+      if (adapter) {
+        await adapter.close();
+        this.adapters.delete(name);
+      }
+    } else {
+      await this.closeAll();
+    }
+  }
+  
+  /**
+   * 关闭所有连接
+   */
+  async closeAll(): Promise<void> {
+    for (const [name, adapter] of this.adapters) {
+      await adapter.close();
+    }
+    this.adapters.clear();
+  }
 }
 ```
 
@@ -193,22 +292,158 @@ export class QueryBuilder {
 }
 ```
 
-### 3. ORM 模型 (Model)
+### 3. ORM/ODM 模型 (Model)
 
 ```typescript
 // src/features/orm.ts
-export abstract class Model {
+
+/**
+ * SQL 数据库模型基类（用于 SQLite、PostgreSQL、MySQL）
+ */
+export abstract class SQLModel {
   static table: string;
   static primaryKey: string = 'id';
+  static adapter: DatabaseAdapter;
   
-  static find(id: any): Promise<Model | null>;
-  static findAll(conditions?: Record<string, any>): Promise<Model[]>;
-  static create(data: Record<string, any>): Promise<Model>;
-  static update(id: any, data: Record<string, any>): Promise<Model>;
-  static delete(id: any): Promise<boolean>;
+  static async find(id: any): Promise<SQLModel | null> {
+    const query = new SQLQueryBuilder(this.adapter)
+      .select(['*'])
+      .from(this.table)
+      .where(`${this.primaryKey} = ?`, [id]);
+    
+    const result = await query.executeOne();
+    return result ? this.fromRow(result) : null;
+  }
   
-  save(): Promise<this>;
-  delete(): Promise<boolean>;
+  static async findAll(conditions?: Record<string, any>): Promise<SQLModel[]> {
+    const query = new SQLQueryBuilder(this.adapter)
+      .select(['*'])
+      .from(this.table);
+    
+    if (conditions) {
+      const whereClause = Object.keys(conditions)
+        .map(key => `${key} = ?`)
+        .join(' AND ');
+      query.where(whereClause, Object.values(conditions));
+    }
+    
+    const results = await query.execute();
+    return results.map(row => this.fromRow(row));
+  }
+  
+  static async create(data: Record<string, any>): Promise<SQLModel> {
+    const query = new SQLQueryBuilder(this.adapter)
+      .insert(this.table, data);
+    
+    const result = await query.execute();
+    return this.fromRow(result);
+  }
+  
+  static async update(id: any, data: Record<string, any>): Promise<SQLModel> {
+    const query = new SQLQueryBuilder(this.adapter)
+      .update(this.table, data)
+      .where(`${this.primaryKey} = ?`, [id]);
+    
+    await query.execute();
+    return await this.find(id) as SQLModel;
+  }
+  
+  static async delete(id: any): Promise<boolean> {
+    const query = new SQLQueryBuilder(this.adapter)
+      .delete(this.table)
+      .where(`${this.primaryKey} = ?`, [id]);
+    
+    const result = await query.execute();
+    return result.affectedRows > 0;
+  }
+  
+  static fromRow(row: any): SQLModel {
+    const model = new (this as any)();
+    Object.assign(model, row);
+    return model;
+  }
+  
+  async save(): Promise<this> {
+    // 实现保存逻辑
+    return this;
+  }
+  
+  async delete(): Promise<boolean> {
+    return await (this.constructor as typeof SQLModel).delete((this as any)[(this.constructor as typeof SQLModel).primaryKey]);
+  }
+}
+
+/**
+ * MongoDB 文档模型基类
+ */
+export abstract class MongoModel {
+  static collection: string;
+  static primaryKey: string = '_id';
+  static db: any; // MongoDB 数据库实例
+  
+  static getCollection() {
+    return this.db.collection(this.collection);
+  }
+  
+  static async find(id: any): Promise<MongoModel | null> {
+    const collection = this.getCollection();
+    const result = await collection.findOne({ [this.primaryKey]: id });
+    return result ? this.fromDocument(result) : null;
+  }
+  
+  static async findAll(filter: any = {}): Promise<MongoModel[]> {
+    const collection = this.getCollection();
+    const results = await collection.find(filter).toArray();
+    return results.map(doc => this.fromDocument(doc));
+  }
+  
+  static async create(data: Record<string, any>): Promise<MongoModel> {
+    const collection = this.getCollection();
+    const result = await collection.insertOne(data);
+    return await this.find(result.insertedId);
+  }
+  
+  static async update(id: any, data: Record<string, any>): Promise<MongoModel> {
+    const collection = this.getCollection();
+    await collection.updateOne(
+      { [this.primaryKey]: id },
+      { $set: data }
+    );
+    return await this.find(id) as MongoModel;
+  }
+  
+  static async delete(id: any): Promise<boolean> {
+    const collection = this.getCollection();
+    const result = await collection.deleteOne({ [this.primaryKey]: id });
+    return result.deletedCount > 0;
+  }
+  
+  static fromDocument(doc: any): MongoModel {
+    const model = new (this as any)();
+    Object.assign(model, doc);
+    return model;
+  }
+  
+  async save(): Promise<this> {
+    const collection = (this.constructor as typeof MongoModel).getCollection();
+    const id = (this as any)[(this.constructor as typeof MongoModel).primaryKey];
+    await collection.updateOne(
+      { [(this.constructor as typeof MongoModel).primaryKey]: id },
+      { $set: this.toDocument() }
+    );
+    return this;
+  }
+  
+  async delete(): Promise<boolean> {
+    return await (this.constructor as typeof MongoModel).delete(
+      (this as any)[(this.constructor as typeof MongoModel).primaryKey]
+    );
+  }
+  
+  toDocument(): Record<string, any> {
+    // 转换为文档格式
+    return { ...this };
+  }
 }
 ```
 
@@ -452,7 +687,7 @@ export async function createUser(req: Request) {
 
 ## 使用示例
 
-### 基础查询
+### SQL 数据库查询（SQLite、PostgreSQL、MySQL）
 
 ```typescript
 import { db } from "@dreamer/dweb";
@@ -486,6 +721,48 @@ await db
   .delete('users')
   .where('id = ?', [1])
   .execute();
+
+// 事务
+await db.transaction(async (tx) => {
+  await tx.insert('users', { name: 'John', email: 'john@example.com' });
+  await tx.insert('profiles', { user_id: 1, bio: 'Developer' });
+});
+```
+
+### MongoDB 查询
+
+```typescript
+import { db } from "@dreamer/dweb";
+
+// 查询
+const users = await db
+  .collection('users')
+  .find({ age: { $gt: 18 } })
+  .sort({ createdAt: -1 })
+  .limit(10)
+  .execute();
+
+// 插入
+await db
+  .collection('users')
+  .insert({
+    name: 'John',
+    email: 'john@example.com',
+    age: 25
+  });
+
+// 更新
+await db
+  .collection('users')
+  .update(
+    { _id: userId },
+    { $set: { name: 'Jane' } }
+  );
+
+// 删除
+await db
+  .collection('users')
+  .delete({ _id: userId });
 ```
 
 ### ORM 使用
@@ -540,55 +817,101 @@ export default class CreateUsersTable implements Migration {
 
 ## 实施计划
 
-### 第一阶段：基础支持（2-3 周）
+### 第一阶段：基础数据库支持（3-4 周）
 
-1. **Week 1**: 数据库管理器实现
-   - SQLite 支持
-   - 连接池基础
-   - 配置集成
+#### Week 1: 数据库适配器接口和 SQLite 实现
+- 定义统一的 `DatabaseAdapter` 接口
+- 实现 `SQLiteAdapter`
+- 实现基础的连接管理
+- 单元测试
 
-2. **Week 2**: 查询构建器
-   - SELECT、INSERT、UPDATE、DELETE
-   - WHERE、JOIN、ORDER BY、LIMIT
-   - 参数化查询（SQL 注入防护）
+#### Week 2: PostgreSQL 和 MySQL 适配器
+- 实现 `PostgreSQLAdapter`
+- 实现 `MySQLAdapter`
+- 连接池支持
+- 事务支持
+- 单元测试
 
-3. **Week 3**: 测试和文档
-   - 单元测试
-   - 集成测试
-   - 使用文档
+#### Week 3: MongoDB 适配器
+- 实现 `MongoDBAdapter`
+- MongoDB 特定功能（集合操作、文档操作）
+- 事务支持（MongoDB 4.0+）
+- 单元测试
 
-### 第二阶段：ORM 支持（2-3 周）
+#### Week 4: 数据库管理器
+- 实现 `DatabaseManager`
+- 多数据库连接支持
+- 配置系统集成
+- 集成测试
 
-1. **Week 4-5**: ORM 核心功能
-   - Model 基类
-   - 模型定义
-   - CRUD 操作
-   - 关系映射（基础）
+### 第二阶段：查询构建器（2-3 周）
 
-2. **Week 6**: 高级功能
-   - 数据验证
-   - 钩子（beforeSave、afterSave 等）
-   - 查询优化
+#### Week 5: SQL 查询构建器
+- `SQLQueryBuilder` 实现
+- SELECT、INSERT、UPDATE、DELETE
+- WHERE、JOIN、ORDER BY、LIMIT、OFFSET
+- 参数化查询（SQL 注入防护）
+- 单元测试
 
-### 第三阶段：迁移管理（1-2 周）
+#### Week 6: MongoDB 查询构建器
+- `MongoQueryBuilder` 实现
+- find、insert、update、delete
+- 聚合查询支持
+- 索引管理
+- 单元测试
 
-1. **Week 7**: 迁移管理器
-   - 迁移文件生成
-   - 迁移执行
-   - 版本控制
+#### Week 7: 测试和优化
+- 集成测试
+- 性能测试
+- 文档编写
 
-2. **Week 8**: 测试和优化
-   - 迁移测试
-   - 回滚测试
-   - 性能优化
+### 第三阶段：ORM/ODM 支持（2-3 周）
 
-### 第四阶段：集成和优化（1 周）
+#### Week 8-9: SQL ORM
+- `SQLModel` 基类实现
+- 模型定义和注册
+- CRUD 操作
+- 关系映射（一对一、一对多）
+- 数据验证
+- 单元测试
 
-1. **Week 9**: 框架集成
-   - 配置系统集成
-   - load 函数支持
-   - API 路由支持
-   - 文档完善
+#### Week 10: MongoDB ODM
+- `MongoModel` 基类实现
+- 文档模型定义
+- CRUD 操作
+- 模式验证
+- 单元测试
+
+#### Week 11: 高级功能
+- 钩子（beforeSave、afterSave、beforeDelete 等）
+- 查询优化
+- 批量操作
+- 性能优化
+
+### 第四阶段：迁移管理（2 周）
+
+#### Week 12: 迁移管理器
+- `MigrationManager` 实现
+- 迁移文件生成（SQL 和 MongoDB）
+- 迁移执行和回滚
+- 版本控制
+- 迁移历史记录
+
+#### Week 13: 测试和优化
+- 迁移测试
+- 回滚测试
+- 多数据库迁移支持
+- 文档编写
+
+### 第五阶段：框架集成（1 周）
+
+#### Week 14: 框架集成
+- 配置系统集成（`dweb.config.ts`）
+- `load` 函数中数据库访问支持
+- API 路由中数据库访问支持
+- 中间件集成
+- 文档完善
+- 示例项目更新
 
 ---
 
@@ -627,27 +950,93 @@ export default class CreateUsersTable implements Migration {
 
 ### 1. 性能考虑
 
+#### SQL 数据库
 - 连接池大小需要根据实际负载调整
 - 避免 N+1 查询问题
 - 使用索引优化查询性能
+- 使用事务减少数据库往返
+- 批量操作优化
+
+#### MongoDB
+- 合理使用索引
+- 避免全表扫描
+- 使用聚合管道优化复杂查询
+- 连接池配置优化
 
 ### 2. 安全考虑
 
-- 所有查询必须使用参数化查询
+#### SQL 注入防护
+- **所有查询必须使用参数化查询**
+- 禁止字符串拼接 SQL
 - 输入验证和清理
-- 权限控制
+- 权限控制（最小权限原则）
+
+#### MongoDB 注入防护
+- 使用参数化查询
+- 验证输入数据
+- 使用操作符而非字符串拼接
+
+#### 连接安全
+- 使用环境变量存储敏感信息
+- 生产环境使用 SSL/TLS 连接
+- 定期更新数据库驱动
 
 ### 3. 类型安全
 
 - 充分利用 TypeScript 类型系统
 - 提供类型推断
 - 避免 any 类型
+- 模型定义使用接口或类
+- 查询结果类型推断
 
 ### 4. 错误处理
 
 - 统一的错误处理机制
-- 详细的错误信息
+- 详细的错误信息（开发环境）
 - 连接失败重试机制
+- 事务回滚处理
+- 超时处理
+
+### 5. 数据库特定注意事项
+
+#### SQLite
+- 并发写入性能有限，不适合高并发写入场景
+- 文件锁可能导致性能问题
+- 建议用于读多写少的场景
+
+#### PostgreSQL
+- 需要合理配置连接池
+- 使用预编译语句提升性能
+- 注意事务隔离级别
+
+#### MySQL
+- 注意字符集配置（UTF-8）
+- 合理使用索引
+- 注意存储引擎选择（InnoDB vs MyISAM）
+
+#### MongoDB
+- 注意文档大小限制（16MB）
+- 合理设计文档结构
+- 使用适当的索引策略
+- 注意事务性能影响（4.0+）
+
+### 6. 开发建议
+
+#### 开发环境
+- 使用 SQLite 作为开发数据库（零配置）
+- 使用内存数据库进行测试
+
+#### 生产环境
+- 使用 PostgreSQL 或 MySQL（关系型数据）
+- 使用 MongoDB（非结构化数据）
+- 配置连接池和超时
+- 启用查询日志（调试）
+- 监控数据库性能
+
+#### 测试
+- 使用 SQLite 内存数据库进行单元测试
+- 使用 Docker 容器进行集成测试
+- 测试不同数据库的兼容性
 
 ---
 
