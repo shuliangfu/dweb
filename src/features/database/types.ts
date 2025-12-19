@@ -64,6 +64,8 @@ export interface DatabaseAdapter {
    * 执行查询（返回结果集）
    * SQL 数据库: query(sql: string, params?: any[]): Promise<any[]>
    * MongoDB: query(collection: string, filter?: any, options?: any): Promise<any[]>
+   * 
+   * 注意：第三个参数 options 仅用于 MongoDB
    */
   query(sqlOrCollection: string, paramsOrFilter?: any[] | any, options?: any): Promise<any[]>;
   

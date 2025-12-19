@@ -171,36 +171,78 @@ export class MongoQueryBuilder {
   }
 
   /**
-   * 执行查询并返回所有结果
-   * @returns 查询结果数组
+   * 获取执行器对象，支持链式调用 insert、update、delete 等方法
+   * @returns 执行器对象
+   * 
+   * @example
+   * // 插入
+   * await builder.from('users').execute().insert({ name: 'John' });
+   * 
+   * // 更新
+   * await builder.from('users').find({ id: 1 }).execute().update({ name: 'Jane' });
+   * 
+   * // 删除
+   * await builder.from('users').find({ id: 1 }).execute().delete();
    */
-  async execute<T = any>(): Promise<T[]> {
+  execute(): MongoExecutor {
     if (!this.collection) {
       throw new Error('Collection name is required');
     }
-    // MongoDB 适配器的 query 方法签名：query(collection: string, filter?: any, options?: any)
+    return new MongoExecutor(this.adapter, this.collection, this.filter);
+  }
+
+  /**
+   * 执行查询并返回所有结果
+   * @returns 查询结果数组
+   * 
+   * @example
+   * const users = await builder.from('users').find({ age: { $gt: 18 } }).query();
+   */
+  async query<T = any>(): Promise<T[]> {
+    if (!this.collection) {
+      throw new Error('Collection name is required');
+    }
     return await (this.adapter as any).query(this.collection, this.filter, this.options) as T[];
   }
 
   /**
    * 执行查询并返回第一条结果
    * @returns 查询结果或 null
+   * 
+   * @example
+   * const user = await builder.from('users').find({ id: 1 }).queryOne();
    */
-  async executeOne<T = any>(): Promise<T | null> {
+  async queryOne<T = any>(): Promise<T | null> {
     this.options.limit = 1;
-    const results = await this.execute<T>();
+    const results = await this.query<T>();
     return results[0] || null;
+  }
+}
+
+/**
+ * MongoDB 执行器类
+ * 提供 insert、update、delete 等操作的链式调用
+ */
+class MongoExecutor {
+  private adapter: MongoDBAdapter;
+  private collection: string;
+  private filter: any;
+
+  constructor(adapter: MongoDBAdapter, collection: string, filter: any) {
+    this.adapter = adapter;
+    this.collection = collection;
+    this.filter = filter;
   }
 
   /**
    * 插入单个文档
    * @param data 要插入的文档数据
    * @returns 插入结果
+   * 
+   * @example
+   * await builder.from('users').execute().insert({ name: 'John', age: 25 });
    */
   async insert(data: any): Promise<any> {
-    if (!this.collection) {
-      throw new Error('Collection name is required');
-    }
     return await (this.adapter as any).execute('insert', this.collection, data);
   }
 
@@ -208,23 +250,23 @@ export class MongoQueryBuilder {
    * 插入多个文档
    * @param data 要插入的文档数组
    * @returns 插入结果
+   * 
+   * @example
+   * await builder.from('users').execute().insertMany([{ name: 'John' }, { name: 'Jane' }]);
    */
   async insertMany(data: any[]): Promise<any> {
-    if (!this.collection) {
-      throw new Error('Collection name is required');
-    }
     return await (this.adapter as any).execute('insertMany', this.collection, data);
   }
 
   /**
-   * 更新单个文档
+   * 更新单个文档（基于当前过滤器）
    * @param update 要更新的数据对象
    * @returns 更新结果
+   * 
+   * @example
+   * await builder.from('users').find({ id: 1 }).execute().update({ name: 'Jane' });
    */
   async update(update: any): Promise<any> {
-    if (!this.collection) {
-      throw new Error('Collection name is required');
-    }
     return await (this.adapter as any).execute('update', this.collection, {
       filter: this.filter,
       update,
@@ -232,14 +274,14 @@ export class MongoQueryBuilder {
   }
 
   /**
-   * 更新多个文档
+   * 更新多个文档（基于当前过滤器）
    * @param update 要更新的数据对象
    * @returns 更新结果
+   * 
+   * @example
+   * await builder.from('users').find({ status: 'active' }).execute().updateMany({ status: 'inactive' });
    */
   async updateMany(update: any): Promise<any> {
-    if (!this.collection) {
-      throw new Error('Collection name is required');
-    }
     return await (this.adapter as any).execute('updateMany', this.collection, {
       filter: this.filter,
       update,
@@ -247,26 +289,26 @@ export class MongoQueryBuilder {
   }
 
   /**
-   * 删除单个文档
+   * 删除单个文档（基于当前过滤器）
    * @returns 删除结果
+   * 
+   * @example
+   * await builder.from('users').find({ id: 1 }).execute().delete();
    */
   async delete(): Promise<any> {
-    if (!this.collection) {
-      throw new Error('Collection name is required');
-    }
     return await (this.adapter as any).execute('delete', this.collection, {
       filter: this.filter,
     });
   }
 
   /**
-   * 删除多个文档
+   * 删除多个文档（基于当前过滤器）
    * @returns 删除结果
+   * 
+   * @example
+   * await builder.from('users').find({ status: 'deleted' }).execute().deleteMany();
    */
   async deleteMany(): Promise<any> {
-    if (!this.collection) {
-      throw new Error('Collection name is required');
-    }
     return await (this.adapter as any).execute('deleteMany', this.collection, {
       filter: this.filter,
     });
