@@ -40,8 +40,10 @@ const config: AppConfig = {
     ignore: ['**/*.test.ts', '**/*.test.tsx'],
   },
 
-  // 静态资源目录，默认为 'public'，可以设置为 'assets' 等其他目录
-  // staticDir: 'assets',
+  // 静态资源目录，默认为 'assets'
+	static: {
+		dir: 'assets'
+	},
 
   // Cookie 配置
   cookie: {
@@ -62,7 +64,7 @@ const config: AppConfig = {
     // Tailwind CSS v4 插件（默认使用 v4）
     tailwind({
       version: 'v4',
-      cssPath: 'public/style.css', // 指定主 CSS 文件路径
+      cssPath: 'assets/style.css', // 指定主 CSS 文件路径
       optimize: true, // 生产环境优化
     }),
   ],

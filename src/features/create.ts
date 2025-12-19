@@ -306,7 +306,7 @@ export async function createApp(
 
   // 创建子目录
   await ensureDir(path.join(projectDir, 'routes'));
-  await ensureDir(path.join(projectDir, 'public'));
+  await ensureDir(path.join(projectDir, 'assets'));
 
   // 生成配置文件
   await generateConfigFile(projectDir, projectName, isMultiApp, appNames, useTailwindV4, renderModeValue);
@@ -364,11 +364,13 @@ async function generateConfigFile(
         dir: '${appName}/routes',
         ignore: ['**/*.test.ts', '**/*.test.tsx']
       },
-      staticDir: '${appName}/public',
+      static: {
+        dir: '${appName}/assets'
+      },
       plugins: [
         tailwind({
           version: '${useTailwindV4 ? 'v4' : 'v3'}',
-          cssPath: '${appName}/public/style.css',
+          cssPath: '${appName}/assets/style.css',
           optimize: true,
         }),
       ],
@@ -451,8 +453,8 @@ const config: AppConfig = {
     ignore: ['**/*.test.ts', '**/*.test.tsx']
   },
   
-  // 静态资源目录，默认为 'public'，可以设置为 'assets' 等其他目录
-  // staticDir: 'assets',
+  // 静态资源目录，默认为 'assets'
+  // static: { dir: 'assets' },
   
   // Cookie 配置
   cookie: {
@@ -473,7 +475,7 @@ const config: AppConfig = {
     // Tailwind CSS ${useTailwindV4 ? 'v4' : 'v3'} 插件
     tailwind({
       version: '${useTailwindV4 ? 'v4' : 'v3'}',
-      cssPath: 'public/style.css', // 指定主 CSS 文件路径
+      cssPath: 'assets/style.css', // 指定主 CSS 文件路径
       optimize: true, // 生产环境优化
     }),
   ],
@@ -900,7 +902,7 @@ export default function Home({ params: _params, query: _query, data }: PageProps
                 <li>编辑 <code className="bg-blue-100 px-2 py-1 rounded text-sm">routes/index.tsx</code> 来修改首页</li>
                 <li>在 <code className="bg-blue-100 px-2 py-1 rounded text-sm">routes/</code> 目录下创建新文件来添加路由</li>
                 <li>在 <code className="bg-blue-100 px-2 py-1 rounded text-sm">components/</code> 目录下创建可复用组件</li>
-                <li>在 <code className="bg-blue-100 px-2 py-1 rounded text-sm">public/</code> 目录下放置静态资源</li>
+                <li>在 <code className="bg-blue-100 px-2 py-1 rounded text-sm">assets/</code> 目录下放置静态资源</li>
         </ul>
             </div>
             {/* load 方法示例说明 */}
@@ -1567,8 +1569,8 @@ async function generateStaticFiles(
   if (isMultiApp) {
     // 多应用模式：为每个应用创建目录和文件
     for (const appName of appNames) {
-      const appPublicDir = path.join(projectDir, appName, 'public');
-      await ensureDir(appPublicDir);
+      const appAssetsDir = path.join(projectDir, appName, 'assets');
+      await ensureDir(appAssetsDir);
       
       // 生成 style.css
       const styleContent = useTailwindV4
@@ -1581,8 +1583,8 @@ async function generateStaticFiles(
 @tailwind utilities;
 `;
 
-      await Deno.writeTextFile(path.join(appPublicDir, 'style.css'), styleContent);
-      console.log(`✅ 已创建: ${appName}/public/style.css`);
+      await Deno.writeTextFile(path.join(appAssetsDir, 'style.css'), styleContent);
+      console.log(`✅ 已创建: ${appName}/assets/style.css`);
       
       // 为每个应用创建 routes 目录
       const appRoutesDir = path.join(projectDir, appName, 'routes');
@@ -1590,8 +1592,8 @@ async function generateStaticFiles(
     }
   } else {
     // 单应用模式：在项目根目录创建
-  const publicDir = path.join(projectDir, 'public');
-    await ensureDir(publicDir);
+  const assetsDir = path.join(projectDir, 'assets');
+    await ensureDir(assetsDir);
 
     // 生成 style.css
     const styleContent = useTailwindV4
@@ -1604,8 +1606,8 @@ async function generateStaticFiles(
 @tailwind utilities;
 `;
 
-  await Deno.writeTextFile(path.join(publicDir, 'style.css'), styleContent);
-  console.log(`✅ 已创建: public/style.css`);
+  await Deno.writeTextFile(path.join(assetsDir, 'style.css'), styleContent);
+  console.log(`✅ 已创建: assets/style.css`);
   }
 }
 
@@ -1644,7 +1646,7 @@ deno task start
 \`\`\`
 ${projectName}/
 ├── routes/          # 路由文件（自动路由）
-├── public/          # 静态资源
+├── assets/          # 静态资源
 ├── dweb.config.ts  # 配置文件
 └── deno.json       # Deno 配置
 \`\`\`

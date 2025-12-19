@@ -97,7 +97,7 @@ const config: AppConfig = {
   plugins: [
     tailwind({
       version: 'v4',
-      cssPath: 'public/style.css',
+      cssPath: 'assets/style.css',
       optimize: true,
     }),
   ],

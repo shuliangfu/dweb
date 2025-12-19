@@ -68,7 +68,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
     async onInit(app: any) {
       // 在开发环境中，设置 CSS 文件处理中间件
       if (app.server && !app.isProduction) {
-        // TODO: 在开发环境中，设置 CSS 文件处理中间件
+				// TODO: 在开发环境中，设置 CSS 文件处理中间件
       }
     },
 
@@ -76,8 +76,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
      * 请求处理钩子（开发环境实时编译）
      */
     async onRequest(req: any, res: any) {
-      const url = new URL(req.url);
-
+			const url = new URL(req.url);
       // 只处理 CSS 文件请求
       if (!url.pathname.endsWith('.css')) {
         return;
@@ -93,25 +92,33 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
         const filePath = url.pathname.startsWith('/') ? url.pathname.slice(1) : url.pathname;
 
         // 如果配置了 cssPath，使用配置的路径作为实际文件路径
-        // 但需要检查请求路径是否匹配（考虑 staticDir 的情况）
+        // 但需要检查请求路径是否匹配（考虑 staticDir 和 prefix 的情况）
         let targetPath: string;
         if (options.cssPath) {
           // 配置了 cssPath，使用配置的路径作为实际文件路径
           targetPath = options.cssPath.startsWith('/') ? options.cssPath.slice(1) : options.cssPath;
 
           // 检查请求路径是否匹配配置的路径
-          // 如果请求是 /style.css，配置是 public/style.css，需要检查是否匹配
+          // 支持两种匹配方式：
+          // 1. 完全匹配：请求 /assets/style.css，配置 assets/style.css
+          // 2. 文件名匹配：请求 /style.css，配置 assets/style.css（去掉路径前缀后比较文件名）
           const normalizedCssPath = targetPath;
           const normalizedRequestPath = filePath;
 
-          // 如果请求路径是配置路径的最后一部分（去掉 staticDir 前缀），也认为是匹配的
-          // 例如：请求 /style.css，配置 public/style.css，应该匹配
-          const cssFileName = normalizedCssPath.split('/').pop() || '';
-          const requestFileName = normalizedRequestPath.split('/').pop() || '';
+          // 先尝试完全匹配
+          if (normalizedCssPath === normalizedRequestPath) {
+            // 完全匹配，使用配置的路径
+          } else {
+            // 不完全匹配，尝试文件名匹配
+            // 例如：请求 /style.css，配置 assets/style.css，应该匹配
+            const cssFileName = normalizedCssPath.split('/').pop() || '';
+            const requestFileName = normalizedRequestPath.split('/').pop() || '';
 
-          // 如果文件名不匹配，跳过处理
-          if (cssFileName !== requestFileName) {
-            return;
+            // 如果文件名不匹配，跳过处理
+            if (cssFileName !== requestFileName) {
+              return;
+            }
+            // 文件名匹配，使用配置的路径（而不是请求路径）
           }
         } else {
           // 没有配置 cssPath，直接使用请求路径
@@ -186,8 +193,9 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
     async onBuild(buildConfig: any) {
       const isProduction = true;
       const outDir = buildConfig.outDir || 'dist';
-      // staticDir 从构建配置中获取，如果没有则默认为 'public'
-      const staticDir = buildConfig.staticDir || 'public';
+      // staticDir 从构建配置中获取，如果没有则默认为 'assets'
+      // 注意：buildConfig 可能包含 staticDir（向后兼容）或从 config.static?.dir 获取
+      const staticDir = buildConfig.staticDir || 'assets';
 
       console.log(`🎨 [Tailwind ${version}] 开始编译 CSS 文件...`);
 

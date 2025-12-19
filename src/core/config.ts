@@ -70,7 +70,8 @@ export async function loadConfig(
               plugins: [...(config.plugins || []), ...(matchedApp.plugins || [])],
               build: matchedApp.build,
               dev: config.dev,
-              staticDir: matchedApp.staticDir || config.staticDir || 'public',
+              // 合并 static：优先使用应用配置，否则使用顶层配置
+              static: matchedApp.static || config.static,
             };
             // 验证合并后的单应用配置
             validateConfig(mergedConfig);

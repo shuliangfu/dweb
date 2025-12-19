@@ -496,7 +496,7 @@ async function buildApp(config: AppConfig): Promise<void> {
 
   // 1. 复制静态资源（保持原文件名，不 hash 化）
   // CSS 文件会由 Tailwind 插件处理，这里只复制其他静态资源
-  const staticDir = config.staticDir || 'public';
+  const staticDir = config.static?.dir || 'assets';
   const staticOutDir = path.join(outDir, staticDir);
   try {
     await ensureDir(staticOutDir);

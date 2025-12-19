@@ -331,15 +331,24 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   }
 
   // 添加静态资源中间件（从构建输出目录）
-  const staticDir = config.staticDir || 'public';
-  const publicPath = `${config.build!.outDir}/${staticDir}`;
+  // 使用 config.static 配置，如果没有配置则使用默认值 'assets'
+  const staticDir = config.static?.dir || 'assets';
+  const assetsPath = `${config.build!.outDir}/${staticDir}`;
   try {
     if (
-      await Deno.stat(publicPath)
+      await Deno.stat(assetsPath)
         .then(() => true)
         .catch(() => false)
     ) {
-      middlewareManager.add(staticFiles({ root: publicPath }));
+      // 如果配置了 static，使用完整配置（但更新 dir 为构建输出路径）；否则使用默认配置
+      if (config.static) {
+        middlewareManager.add(staticFiles({
+          ...config.static,
+          dir: assetsPath
+        }));
+      } else {
+        middlewareManager.add(staticFiles({ dir: assetsPath }));
+      }
     }
   } catch {
     // 静态资源目录不存在时忽略

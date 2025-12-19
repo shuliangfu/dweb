@@ -396,14 +396,20 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 	}
 
 	// 添加静态资源中间件
-	const staticDir = config.staticDir || "public"
+	// 使用 config.static 配置，如果没有配置则使用默认值 'assets'
+	const staticDir = config.static?.dir || "assets"
 	try {
 		if (
 			await Deno.stat(staticDir)
 				.then(() => true)
 				.catch(() => false)
 		) {
-			middlewareManager.add(staticFiles({ root: staticDir }))
+			// 如果配置了 static，使用完整配置；否则使用默认配置
+			if (config.static) {
+				middlewareManager.add(staticFiles(config.static))
+			} else {
+				middlewareManager.add(staticFiles({ dir: staticDir }))
+			}
 		}
 	} catch {
 		// 静态资源目录不存在时忽略

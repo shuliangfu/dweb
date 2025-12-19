@@ -3,8 +3,7 @@
  * 服务静态文件
  */
 
-import type { Middleware } from '../types/index.ts';
-import { exists } from '@std/fs/exists';
+import type { Middleware, StaticOptions } from '../types/index.ts';
 
 /**
  * 根据文件扩展名获取 MIME 类型
@@ -47,26 +46,13 @@ function getContentType(filePath: string): string {
 }
 
 /**
- * 静态资源选项
- */
-export interface StaticOptions {
-  root: string;
-  prefix?: string;
-  index?: string | string[];
-  dotfiles?: 'allow' | 'deny' | 'ignore';
-  etag?: boolean;
-  lastModified?: boolean;
-  maxAge?: number;
-}
-
-/**
  * 创建静态资源中间件
  * @param options 静态资源选项
  * @returns 中间件函数
  */
 export function staticFiles(options: StaticOptions): Middleware {
   const {
-    root,
+    dir,
     prefix = '',
     index = ['index.html'],
     dotfiles = 'ignore',
@@ -97,14 +83,17 @@ export function staticFiles(options: StaticOptions): Middleware {
       const indexFiles = Array.isArray(index) ? index : [index];
       let foundIndex = false;
       for (const indexFile of indexFiles) {
-        const indexPath = `${root}${filePath}${indexFile}`;
-        if (await exists(indexPath)) {
+        const indexPath = `${dir}${filePath}${indexFile}`;
+        try {
           const stat = await Deno.stat(indexPath);
           if (stat.isFile) {
             filePath = `${filePath}${indexFile}`;
             foundIndex = true;
             break;
           }
+        } catch {
+          // 文件不存在，继续查找
+          continue;
         }
       }
       // 如果没有找到索引文件，跳过
@@ -114,10 +103,10 @@ export function staticFiles(options: StaticOptions): Middleware {
       }
     }
     
-    const fullPath = `${root}${filePath}`;
+    const fullPath = `${dir}${filePath}`;
     
     // 检查文件是否存在且是文件（不是目录）
-    let fileStat;
+    let fileStat: Deno.FileInfo;
     try {
       fileStat = await Deno.stat(fullPath);
       if (!fileStat.isFile) {
@@ -151,6 +140,7 @@ export function staticFiles(options: StaticOptions): Middleware {
         const ifNoneMatch = req.headers.get('if-none-match');
         if (ifNoneMatch === etagValue) {
           res.status = 304;
+          res.body = undefined;  // 304 响应不应该有 body
           return;
         }
       }
@@ -165,6 +155,7 @@ export function staticFiles(options: StaticOptions): Middleware {
           const modifiedSince = new Date(ifModifiedSince);
           if (fileStat.mtime <= modifiedSince) {
             res.status = 304;
+            res.body = undefined;  // 304 响应不应该有 body
             return;
           }
         }
@@ -177,17 +168,28 @@ export function staticFiles(options: StaticOptions): Middleware {
       
       // 返回文件内容
       // 注意：静态文件中间件应该直接设置响应并返回，不调用 next()
-      // 将 Uint8Array 转换为字符串（对于文本文件）或保持原样
-      // 这里我们使用 TextDecoder 将文件内容转换为字符串
-      try {
-        const decoder = new TextDecoder();
-        res.body = decoder.decode(file);
-      } catch {
-        // 如果解码失败，可能是二进制文件，直接使用原始数据
-        // 但 Response 对象期望字符串，所以我们需要特殊处理
-        // 实际上，对于二进制文件，应该使用 res.send() 或其他方法
-        res.body = new TextDecoder('utf-8', { fatal: false }).decode(file);
+      // 对于文本文件（如 HTML、CSS、JS），可以转换为字符串
+      // 对于二进制文件（如图片、字体），直接使用 Uint8Array
+      const isTextFile = mimeType.startsWith('text/') || 
+                         mimeType.includes('javascript') || 
+                         mimeType.includes('json') || 
+                         mimeType.includes('xml') ||
+                         mimeType.includes('svg');
+      
+      if (isTextFile) {
+        // 文本文件：转换为字符串
+        try {
+          const decoder = new TextDecoder('utf-8');
+          res.body = decoder.decode(file);
+        } catch {
+          // 如果解码失败，使用原始数据（可能是二进制文件被误判为文本）
+          res.body = file;
+        }
+      } else {
+        // 二进制文件：直接使用 Uint8Array
+        res.body = file;
       }
+      
       res.status = 200;
       // 不调用 next()，直接返回文件
       return;

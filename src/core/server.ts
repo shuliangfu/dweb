@@ -160,7 +160,7 @@ export class Server {
   private createResponse(): Response {
     const headers = new Headers();
     const cookies: Array<{ name: string; value: string; options?: CookieOptions }> = [];
-    let body: string | undefined = undefined;
+    let body: string | Uint8Array | undefined = undefined;
     let status = 200;
     let statusText = 'OK';
 
@@ -181,7 +181,7 @@ export class Server {
       get body() {
         return body;
       },
-      set body(value: string | undefined) {
+      set body(value: string | Uint8Array | undefined) {
         body = value;
       },
       setCookie(name: string, value: string, options?: CookieOptions) {
@@ -252,6 +252,15 @@ export class Server {
 
     // 读取响应体（通过 getter）
     const responseBody = res.body;
+
+    // 304 Not Modified 响应不应该有 body
+    if (res.status === 304) {
+      return new globalThis.Response(null, {
+        status: res.status,
+        statusText: res.statusText,
+        headers: res.headers,
+      });
+    }
 
     // 确保 body 不为 undefined，如果为空则使用空字符串
     const finalBody: string | Uint8Array | undefined = responseBody ?? '';

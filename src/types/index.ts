@@ -1,3 +1,38 @@
+// ==================== 应用配置类型 ==================== 
+
+// 静态资源配置
+export interface StaticOptions {
+  dir: string;  // 静态资源根目录
+  prefix?: string;  // URL 前缀
+  index?: string | string[];  // 索引文件名
+  dotfiles?: 'allow' | 'deny' | 'ignore';  // 点文件处理方式
+  etag?: boolean;  // 是否启用 ETag
+  lastModified?: boolean;  // 是否发送 Last-Modified
+  maxAge?: number;  // 缓存时间（秒）
+}
+
+// 应用配置
+export interface AppConfig {
+  name?: string;
+  basePath?: string;
+  routes?: RouteConfig | string;
+  server?: ServerConfig;
+  middleware?: (Middleware | MiddlewareConfig)[];
+  plugins?: (Plugin | { name: string; config?: Record<string, any> })[];
+  cookie?: CookieConfig;
+  session?: SessionConfig;
+  build?: BuildConfig;
+  // 静态资源配置
+  static?: StaticOptions;
+  apps?: AppConfig[];
+  dev?: DevConfig;
+  // 全局渲染模式（可在页面组件中覆盖）
+  renderMode?: RenderMode;
+}
+
+// 配置类型
+export type DWebConfig = AppConfig;
+
 /**
  * DWeb 框架类型定义
  */
@@ -23,7 +58,7 @@ export interface Response {
   status: number;
   statusText: string;
   headers: Headers;
-  body?: any;
+  body?: string | Uint8Array; // 支持字符串和二进制数据
   setCookie(name: string, value: string, options?: CookieOptions): void;
   setHeader(name: string, value: string): void;
   json(data: any): Response;
@@ -119,8 +154,8 @@ export interface SessionConfig {
 export interface DevConfig {
   hmr?: boolean;
   open?: boolean;
-  hmrPort?: number;  // HMR WebSocket 服务器端口
-  reloadDelay?: number;  // 文件变化后重载延迟（毫秒）
+  hmrPort?: number; // HMR WebSocket 服务器端口
+  reloadDelay?: number; // 文件变化后重载延迟（毫秒）
 }
 
 // 构建配置
@@ -141,28 +176,6 @@ export interface CorsConfig {
   credentials?: boolean;
   maxAge?: number;
 }
-
-// 应用配置
-export interface AppConfig {
-  name?: string;
-  basePath?: string;
-  routes?: RouteConfig | string;
-  server?: ServerConfig;
-  middleware?: (Middleware | MiddlewareConfig)[];
-  plugins?: (Plugin | { name: string; config?: Record<string, any> })[];
-  cookie?: CookieConfig;
-  session?: SessionConfig;
-  build?: BuildConfig;
-  // 静态资源目录，默认为顶层配置的 staticDir 或 'public'
-  staticDir?: string;
-  apps?: AppConfig[];
-  dev?: DevConfig;
-  // 全局渲染模式（可在页面组件中覆盖）
-  renderMode?: RenderMode;
-}
-
-// 配置类型
-export type DWebConfig = AppConfig;
 
 // 路由处理器
 export type RouteHandler = (req: Request) => Promise<any> | any;
@@ -205,4 +218,3 @@ export interface PageProps {
   /** 页面数据（load 函数返回的数据） */
   data: unknown;
 }
-

@@ -41,11 +41,11 @@ export interface AutoprefixerOptions {
 export interface TailwindPluginOptions {
   // Tailwind CSS 版本：'v3' 或 'v4'，默认为 'v4'
   version?: 'v3' | 'v4';
-  // 主 CSS 文件路径（如 'public/style.css'），用于开发环境实时编译
-  // 如果不指定，默认查找 'public/style.css'
+  // 主 CSS 文件路径（如 'assets/style.css'），用于开发环境实时编译
+  // 如果不指定，默认查找 'assets/style.css'
   cssPath?: string;
   // CSS 文件路径（支持 glob 模式），用于构建时处理多个文件
-  // 默认为 'public/**/*.css'
+  // 默认为 'assets/**/*.css'
   cssFiles?: string | string[];
   // 排除的文件（支持 glob 模式）
   exclude?: string | string[];
