@@ -538,7 +538,8 @@ const config: AppConfig = {
 - [配置示例](./CONFIG_EXAMPLES.md) - 各种场景的配置示例
 - [API 文档](./DOC.md) - 完整的 API 参考
 - [开发指南](./DEVELOPMENT.md) - 插件和中间件开发
-- [部署指南](./DOCKER.md) - Docker 部署
+- [Docker 部署指南](./DOCKER.md) - Docker 部署
+- [云平台部署指南](./CLOUD_DEPLOYMENT.md) - 云平台部署（Deno Deploy、Vercel、Railway 等）
 - [示例项目](../example/) - 完整示例
 
 ---
