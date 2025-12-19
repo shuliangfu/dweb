@@ -190,9 +190,7 @@ interface DatabaseAdapter {
 }
 
 // 不同数据库的适配器实现
-class SQLiteAdapter implements DatabaseAdapter { ... }
 class PostgreSQLAdapter implements DatabaseAdapter { ... }
-class MySQLAdapter implements DatabaseAdapter { ... }
 class MongoDBAdapter implements DatabaseAdapter { ... }
 ```
 
@@ -1523,9 +1521,9 @@ export default class CreateUsersTable implements Migration {
 
 ### 第一阶段：基础数据库支持（3-4 周）
 
-#### Week 1: 数据库适配器接口和 SQLite 实现
+#### Week 1: 数据库适配器接口和 PostgreSQL 实现
 - 定义统一的 `DatabaseAdapter` 接口
-- 实现 `SQLiteAdapter`
+- 实现 `PostgreSQLAdapter`
 - 实现基础的连接管理
 - 单元测试
 
@@ -1710,11 +1708,6 @@ export default class CreateUsersTable implements Migration {
 - 需要合理配置连接池
 - 使用预编译语句提升性能
 - 注意事务隔离级别
-
-#### MySQL
-- 注意字符集配置（UTF-8）
-- 合理使用索引
-- 注意存储引擎选择（InnoDB vs MyISAM）
 
 #### MongoDB
 - 注意文档大小限制（16MB）
