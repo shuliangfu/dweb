@@ -36,6 +36,11 @@ export {
   type MongoWhereCondition,
 } from './orm/mod.ts';
 
-// 迁移管理将在后续阶段实现
-// export { MigrationManager, type Migration } from './migration/mod.ts';
+// 导出迁移管理
+export {
+  MigrationManager,
+  type Migration,
+  type MigrationConfig,
+  type MigrationStatus,
+} from './migration/mod.ts';
 
