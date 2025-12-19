@@ -60,11 +60,12 @@ export default function SSRPage({ params, query }: PageProps) {
 // 注意：在覆盖率模式下不清理文件，以便覆盖率报告可以访问它们
 async function cleanupTestFiles() {
   // 检查是否在覆盖率模式下运行
-  const isCoverageMode = Deno.env.get('DENO_COVERAGE') !== undefined || 
-                         Deno.args.includes('--coverage');
+  // Deno 在覆盖率模式下会设置环境变量或通过参数传递
+  const isCoverageMode = Deno.args.some(arg => arg.includes('--coverage')) ||
+                         Deno.env.get('DENO_COVERAGE_DIR') !== undefined;
   
   if (isCoverageMode) {
-    // 覆盖率模式下不清理文件
+    // 覆盖率模式下不清理文件，让覆盖率报告可以访问它们
     return;
   }
   
