@@ -32,7 +32,6 @@ export class SQLiteAdapter extends BaseAdapter {
       throw new Error('Database not connected');
     }
 
-    const results: any[] = [];
     try {
       // SQLite 的 query 方法返回 Row[] 数组
       // 使用 queryEntries 方法可以直接获取对象数组（带列名）
