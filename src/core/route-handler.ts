@@ -1028,11 +1028,22 @@ export class RouteHandler {
       if (prefetchEnabled) {
         // 从 HTML 中提取链接并生成预取标签
         const { extractAndPrefetchLinks } = await import('../utils/preload.ts');
-        // 使用当前请求的 URL 作为基础 URL（从 routeInfo 中获取路径）
         const currentPath = routeInfo.path || '/';
         // 构建基础 URL（用于解析相对路径）
-        // 注意：这里使用相对路径，浏览器会自动解析
-        const baseUrl = `http://localhost${currentPath}`;
+        // 从请求中获取实际的 host，如果没有则使用相对路径
+        let baseUrl: string;
+        if (req && req.url) {
+          try {
+            const url = new URL(req.url);
+            baseUrl = `${url.protocol}//${url.host}${currentPath}`;
+          } catch {
+            // URL 解析失败，使用相对路径（浏览器会自动解析）
+            baseUrl = currentPath;
+          }
+        } else {
+          // 没有请求对象，使用相对路径
+          baseUrl = currentPath;
+        }
         const prefetchLinks = extractAndPrefetchLinks(html, baseUrl, 5);
         if (prefetchLinks) {
           links.push(prefetchLinks);
