@@ -7,7 +7,7 @@ import { CookieManager } from '../../../src/features/cookie.ts';
 
 Deno.test('CookieManager - 设置基本 Cookie', async () => {
   const manager = new CookieManager();
-  const cookie = await manager.setCookieAsync('test', 'value');
+  const cookie = await manager.setAsync('test', 'value');
   
   assert(cookie.includes('test=value'));
   assert(cookie.includes('Path=/'));
@@ -15,7 +15,7 @@ Deno.test('CookieManager - 设置基本 Cookie', async () => {
 
 Deno.test('CookieManager - 设置带选项的 Cookie', async () => {
   const manager = new CookieManager();
-  const cookie = await manager.setCookieAsync('test', 'value', {
+  const cookie = await manager.setAsync('test', 'value', {
     path: '/api',
     domain: 'example.com',
     maxAge: 3600,
@@ -35,7 +35,7 @@ Deno.test('CookieManager - 设置带选项的 Cookie', async () => {
 
 Deno.test('CookieManager - Cookie 签名', async () => {
   const manager = new CookieManager('secret-key');
-  const cookie = await manager.setCookieAsync('test', 'value');
+  const cookie = await manager.setAsync('test', 'value');
   
   // 签名的 Cookie 应该包含签名部分（用 . 分隔）
   const parts = cookie.split(';')[0].split('=');
@@ -47,7 +47,7 @@ Deno.test('CookieManager - Cookie 签名', async () => {
 Deno.test('CookieManager - 解析 Cookie', () => {
   const manager = new CookieManager();
   const cookieHeader = 'test=value; other=otherValue';
-  const cookies = manager.parseCookies(cookieHeader);
+  const cookies = manager.parse(cookieHeader);
   
   assertEquals(cookies.test, 'value');
   assertEquals(cookies.other, 'otherValue');
@@ -55,14 +55,14 @@ Deno.test('CookieManager - 解析 Cookie', () => {
 
 Deno.test('CookieManager - 解析空 Cookie 头', () => {
   const manager = new CookieManager();
-  const cookies = manager.parseCookies(null);
+  const cookies = manager.parse(null);
   
   assertEquals(Object.keys(cookies).length, 0);
 });
 
 Deno.test('CookieManager - 删除 Cookie', () => {
   const manager = new CookieManager();
-  const cookie = manager.deleteCookie('test');
+  const cookie = manager.delete('test');
   
   assert(cookie.includes('test='));
   assert(cookie.includes('Max-Age=0'));
@@ -72,7 +72,7 @@ Deno.test('CookieManager - 删除 Cookie', () => {
 
 Deno.test('CookieManager - URL 编码 Cookie 值', async () => {
   const manager = new CookieManager();
-  const cookie = await manager.setCookieAsync('test', 'value with spaces');
+  const cookie = await manager.setAsync('test', 'value with spaces');
   
   assert(cookie.includes('test=value%20with%20spaces'));
 });

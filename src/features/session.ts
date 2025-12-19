@@ -127,7 +127,7 @@ export class SessionManager {
    * @param data Session 数据
    * @returns Session 对象
    */
-  async createSession(data: Record<string, unknown> = {}): Promise<Session> {
+  async create(data: Record<string, unknown> = {}): Promise<Session> {
     const sessionId = this.generateSessionId();
     const sessionData: SessionData = {
       id: sessionId,
@@ -145,7 +145,7 @@ export class SessionManager {
    * @param sessionId Session ID
    * @returns Session 对象或 null
    */
-  async getSession(sessionId: string): Promise<Session | null> {
+  async get(sessionId: string): Promise<Session | null> {
     const sessionData = await this.store.get(sessionId);
     if (!sessionData) {
       return null;
@@ -186,7 +186,7 @@ export class SessionManager {
    * 销毁 Session
    * @param sessionId Session ID
    */
-  async destroySession(sessionId: string): Promise<void> {
+  async destroy(sessionId: string): Promise<void> {
     await this.store.delete(sessionId);
   }
   

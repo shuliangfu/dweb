@@ -115,12 +115,12 @@ function setupSessionSupport(
         
         // 添加 createSession 方法
         req.createSession = async (data: Record<string, unknown> = {}) => {
-    const session = await sessionManager.createSession(data);
+    const session = await sessionManager.create(data);
           req.session = session;
           
           // 设置 Session Cookie
           if (cookieManager) {
-      const cookieValue = await cookieManager.setCookieAsync(
+      const cookieValue = await cookieManager.setAsync(
         cookieName,
         session.id,
         {
@@ -138,7 +138,7 @@ function setupSessionSupport(
         // 添加 getSession 方法
         req.getSession = async () => {
           if (sessionId) {
-      const session = await sessionManager.getSession(sessionId);
+      const session = await sessionManager.get(sessionId);
             req.session = session;
             return session;
           }
@@ -147,7 +147,7 @@ function setupSessionSupport(
         
         // 初始化 Session
         if (sessionId) {
-    sessionManager.getSession(sessionId).then((session) => {
+    sessionManager.get(sessionId).then((session) => {
       req.session = session;
     });
   }

@@ -16,13 +16,13 @@ export class CookieManager {
   }
   
   /**
-   * 设置 Cookie
+   * 设置 Cookie（异步版本，支持签名）
    * @param name Cookie 名称
    * @param value Cookie 值
    * @param options Cookie 选项
-   * @returns Cookie 字符串（异步版本）
+   * @returns Cookie 字符串
    */
-  async setCookieAsync(name: string, value: string, options: CookieOptions = {}): Promise<string> {
+  async setAsync(name: string, value: string, options: CookieOptions = {}): Promise<string> {
     let cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}`;
     
     // 如果配置了签名密钥，对 Cookie 进行签名
@@ -41,7 +41,7 @@ export class CookieManager {
    * @param options Cookie 选项
    * @returns Cookie 字符串
    */
-  setCookie(name: string, value: string, options: CookieOptions = {}): string {
+  set(name: string, value: string, options: CookieOptions = {}): string {
     const cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}`;
     return this.buildCookieString(cookie, options);
   }
@@ -96,7 +96,7 @@ export class CookieManager {
    * @param cookieHeader Cookie 头字符串
    * @returns Cookie 对象
    */
-  parseCookies(cookieHeader: string | null): Record<string, string> {
+  parse(cookieHeader: string | null): Record<string, string> {
     const cookies: Record<string, string> = {};
     
     if (!cookieHeader) {
@@ -121,8 +121,8 @@ export class CookieManager {
    * @param options Cookie 选项
    * @returns Cookie 字符串
    */
-  deleteCookie(name: string, options: CookieOptions = {}): string {
-    return this.setCookie(name, '', {
+  delete(name: string, options: CookieOptions = {}): string {
+    return this.set(name, '', {
       ...options,
       maxAge: 0,
       expires: new Date(0)
@@ -177,7 +177,7 @@ export class CookieManager {
    * @param cookieHeader Cookie 头字符串
    * @returns Cookie 对象
    */
-  async parseCookiesAsync(cookieHeader: string | null): Promise<Record<string, string>> {
+  async parseAsync(cookieHeader: string | null): Promise<Record<string, string>> {
     const cookies: Record<string, string> = {};
     
     if (!cookieHeader) {
