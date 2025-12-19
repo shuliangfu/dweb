@@ -28,7 +28,6 @@ function parseCommand(cmd: string): { command: string; appName?: string } {
  * 开发服务器命令
  */
 async function dev(appName?: string) {
-  info('启动开发服务器...');
   if (appName) {
     step(`应用: ${appName}`);
   }
@@ -62,7 +61,6 @@ async function buildCommand(appName?: string) {
  * 生产服务器命令
  */
 async function start(appName?: string) {
-  info('启动生产服务器...');
   if (appName) {
     step(`应用: ${appName}`);
   }

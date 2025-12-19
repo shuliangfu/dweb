@@ -377,11 +377,21 @@ export class Server {
     };
 
     // 使用 Deno.serve 启动服务器
+    // 使用 onListen 回调来禁用默认的 "Listening on" 输出
     // Deno.serve 返回一个包含 shutdown 方法的对象
-    const serverHandle = Deno.serve({ port, hostname: host }, handler);
+    const serverHandle = Deno.serve(
+      {
+        port,
+        hostname: host,
+				onListen: () => {
+					console.log(`✅ 服务器已启动: http://${host}:${port}`);
+				}, // 禁用默认的 "Listening on" 输出
+      },
+      handler
+    );
     this.serverHandle = {
       shutdown: () => serverHandle.shutdown(),
-      finished: serverHandle.finished || Promise.resolve(),
+			finished: serverHandle.finished || Promise.resolve(),
     };
 
     // 等待服务器关闭
