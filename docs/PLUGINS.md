@@ -45,8 +45,9 @@ export default {
 - 自动生成 SEO meta 标签
 - 支持 Open Graph 协议
 - 支持 Twitter Cards
-- 支持 JSON-LD 结构化数据
+- 支持 JSON-LD 结构化数据（自动压缩）
 - 自动注入到 HTML
+- 自动移除重复的 SEO 标签
 
 **使用示例**：
 ```typescript
