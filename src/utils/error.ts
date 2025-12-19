@@ -5,6 +5,8 @@
  * @module utils/error
  */
 
+import { getLogger } from '../features/logger.ts';
+
 /**
  * 框架错误基类
  * 所有框架相关的错误都应该继承此类
