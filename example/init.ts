@@ -197,7 +197,7 @@ if (isMultiApp) {
       plugins: [
         tailwind({
           version: '${useTailwindV4 ? 'v4' : 'v3'}',
-          cssPath: '${appName}/public/style.css',
+          cssPath: '${appName}/assets/style.css',
           optimize: true,
         }),
       ],
@@ -304,7 +304,7 @@ const config: AppConfig = {
     // Tailwind CSS ${useTailwindV4 ? 'v4' : 'v3'} 插件
     tailwind({
       version: '${useTailwindV4 ? 'v4' : 'v3'}',
-      cssPath: 'public/style.css', // 指定主 CSS 文件路径
+      cssPath: 'assets/style.css', // 指定主 CSS 文件路径
       optimize: true, // 生产环境优化
     }),
   ],
@@ -445,7 +445,7 @@ export default function App({ children }: AppProps) {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>${appName}</title>
-        <link rel="stylesheet" href="/style.css" />
+        <link rel="stylesheet" href="/assets/style.css" />
       </head>
       <body>
         {/* 使用 dangerouslySetInnerHTML 插入已渲染的页面内容 */}
