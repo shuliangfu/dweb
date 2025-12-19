@@ -59,11 +59,15 @@ Deno.test('SessionManager - 更新 Session', async () => {
     maxAge: 3600000,
   });
   
-  const session = await manager.create({ userId: '123' });
-  await session.update({ userId: '456' });
-  
-  const retrieved = await manager.getSession(session.id);
-  assertEquals(retrieved?.data.userId, '456');
+  try {
+    const session = await manager.create({ userId: '123' });
+    await session.update({ userId: '456' });
+    
+    const retrieved = await manager.get(session.id);
+    assertEquals(retrieved?.data.userId, '456');
+  } finally {
+    cleanupManager(manager);
+  }
 });
 
 Deno.test('SessionManager - 删除 Session', async () => {
