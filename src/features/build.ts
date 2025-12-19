@@ -339,14 +339,106 @@ async function compileFile(
 }
 
 /**
+ * 使用代码分割编译多个文件（提取共享代码到公共 chunk）
+ * @param entryPoints 入口文件列表（绝对路径）
+ * @param outDir 输出目录（绝对路径）
+ * @param fileMap 文件映射表
+ * @param cwd 工作目录
+ * @param importMap import map 配置
+ * @param externalPackages 外部依赖包列表
+ * @returns 编译结果统计
+ */
+async function compileWithCodeSplitting(
+  entryPoints: string[],
+  outDir: string,
+  fileMap: Map<string, string>,
+  cwd: string,
+  importMap: Record<string, string>,
+  externalPackages: string[]
+): Promise<{ compiled: number; chunks: number }> {
+  if (entryPoints.length === 0) {
+    return { compiled: 0, chunks: 0 };
+  }
+
+  // 使用 esbuild 的代码分割功能
+  const result = await esbuild.build({
+    entryPoints: entryPoints,
+    bundle: true,
+    splitting: true, // 启用代码分割
+    format: 'esm',
+    target: 'esnext',
+    jsx: 'automatic',
+    jsxImportSource: 'preact',
+    minify: true,
+    treeShaking: true,
+    legalComments: 'none',
+    outdir: outDir, // 输出到目录（代码分割需要）
+    outbase: cwd, // 保持目录结构
+    external: externalPackages,
+    alias: Object.fromEntries(
+      Object.entries(importMap).map(([key, value]) => [
+        key,
+        value.startsWith('jsr:') || value.startsWith('npm:') || value.startsWith('http')
+          ? value
+          : path.resolve(cwd, value),
+      ])
+    ),
+    write: false, // 不写入文件，我们手动处理
+  });
+
+  if (!result.outputFiles || result.outputFiles.length === 0) {
+    throw new Error('esbuild 代码分割结果为空');
+  }
+
+  // 处理输出文件
+  let compiled = 0;
+  const chunkMap = new Map<string, string>(); // 原始路径 -> hash 文件名
+
+  for (const outputFile of result.outputFiles) {
+    const outputPath = outputFile.path;
+    const content = outputFile.text;
+    
+    // 计算 hash
+    const hash = await calculateHash(content);
+    
+    // 生成 hash 文件名
+    // esbuild 输出的文件名格式：path/to/file.js
+    // 我们需要转换为扁平化的 hash 文件名
+    const relativePath = path.relative(outDir, outputPath);
+    const baseName = path.basename(relativePath, path.extname(relativePath));
+    const hashName = `${baseName}.${hash}.js`;
+    const finalOutputPath = path.join(outDir, hashName);
+    
+    // 写入文件
+    await Deno.writeTextFile(finalOutputPath, content);
+    
+    // 记录映射关系（如果是入口文件）
+    // esbuild 的代码分割会生成多个 chunk，我们需要识别哪些是入口文件
+    for (const entryPoint of entryPoints) {
+      const entryRelative = path.relative(cwd, entryPoint);
+      if (relativePath.includes(entryRelative.replace(/\.(tsx?|jsx?)$/, ''))) {
+        fileMap.set(entryPoint, hashName);
+        chunkMap.set(entryPoint, hashName);
+        compiled++;
+        break;
+      }
+    }
+  }
+
+  return { compiled, chunks: result.outputFiles.length };
+}
+
+/**
  * 编译目录中的所有文件（扁平化输出，使用 hash 文件名）
- * 支持并行编译和构建缓存
+ * 支持并行编译、构建缓存和代码分割
  * @param srcDir 源目录（相对路径）
  * @param outDir 输出目录（相对路径，扁平化）
  * @param fileMap 文件映射表
  * @param extensions 要编译的文件扩展名
  * @param useCache 是否使用缓存（默认 true）
  * @param parallel 是否并行编译（默认 true，最多 10 个并发）
+ * @param codeSplitting 是否启用代码分割（默认 false）
+ * @param minChunkSize 代码分割的最小 chunk 大小（字节，默认 20000）
  */
 async function compileDirectory(
   srcDir: string,
@@ -354,7 +446,9 @@ async function compileDirectory(
   fileMap: Map<string, string>,
   extensions: string[] = ['.ts', '.tsx'],
   useCache: boolean = true,
-  parallel: boolean = true
+  parallel: boolean = true,
+  codeSplitting: boolean = false,
+  minChunkSize: number = 20000
 ): Promise<void> {
   // 转换为绝对路径
   const absoluteSrcDir = path.isAbsolute(srcDir) ? srcDir : path.resolve(Deno.cwd(), srcDir);
@@ -645,8 +739,22 @@ async function buildApp(config: AppConfig): Promise<void> {
   }
   const routeConfig = normalizeRouteConfig(config.routes);
   const routesDir = routeConfig.dir || 'routes';
+  
+  // 检查是否启用代码分割
+  const codeSplitting = config.build?.codeSplitting === true;
+  const minChunkSize = config.build?.minChunkSize || 20000;
+  
   try {
-    await compileDirectory(routesDir, outDir, fileMap, ['.ts', '.tsx'], useCache, true);
+    await compileDirectory(
+      routesDir, 
+      outDir, 
+      fileMap, 
+      ['.ts', '.tsx'], 
+      useCache, 
+      true, 
+      codeSplitting,
+      minChunkSize
+    );
     console.log(`✅ 编译路由文件完成 (${routesDir})`);
   } catch (error) {
     console.warn(`⚠️  路由目录编译失败: ${routesDir}`, error);
@@ -659,7 +767,16 @@ async function buildApp(config: AppConfig): Promise<void> {
         .then(() => true)
         .catch(() => false)
     ) {
-      await compileDirectory('components', outDir, fileMap, ['.ts', '.tsx'], useCache, true);
+      await compileDirectory(
+        'components', 
+        outDir, 
+        fileMap, 
+        ['.ts', '.tsx'], 
+        useCache, 
+        true,
+        codeSplitting,
+        minChunkSize
+      );
       console.log('✅ 编译组件文件完成 (components)');
     }
   } catch (error) {
