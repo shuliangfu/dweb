@@ -175,8 +175,15 @@ export function compression(options: CompressionOptions = {}): Middleware {
       data = new TextEncoder().encode(res.body);
     } else if (res.body instanceof Uint8Array) {
       data = res.body;
-    } else if (res.body instanceof ArrayBuffer) {
-      data = new Uint8Array(res.body);
+    } else if (originalBody && typeof originalBody === 'object' && 'byteLength' in originalBody) {
+      // 检查是否为 ArrayBuffer 或类似类型
+      try {
+        // 先转换为 unknown，再转换为 ArrayBuffer
+        data = new Uint8Array(originalBody as unknown as ArrayBuffer);
+      } catch {
+        // 其他类型不压缩
+        return;
+      }
     } else {
       // 其他类型不压缩
       return;
