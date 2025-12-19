@@ -13,7 +13,7 @@ Deno.test('PWA Plugin - 创建插件', () => {
       name: 'Test App',
       short_name: 'Test',
       description: 'Test PWA',
-      startUrl: '/',
+      start_url: '/',
       display: 'standalone',
     },
   });
@@ -32,10 +32,9 @@ Deno.test('PWA Plugin - 生成 Manifest', async () => {
         name: 'Test App',
         short_name: 'Test',
         description: 'Test PWA',
-        startUrl: '/',
+        start_url: '/',
         display: 'standalone',
       },
-      outputDir: testOutDir,
     });
     
     if (plugin.onBuild) {
@@ -88,7 +87,7 @@ Deno.test('PWA Plugin - 注入 PWA 链接', async () => {
       name: 'Test App',
       short_name: 'Test',
       description: 'Test PWA',
-      startUrl: '/',
+      start_url: '/',
       display: 'standalone',
     },
   });
@@ -124,11 +123,11 @@ Deno.test('PWA Plugin - Service Worker 配置', () => {
       name: 'Test App',
       short_name: 'Test',
       description: 'Test PWA',
-      startUrl: '/',
+      start_url: '/',
       display: 'standalone',
     },
       serviceWorker: {
-        filename: 'sw.js',
+        swPath: 'sw.js',
       },
   });
   

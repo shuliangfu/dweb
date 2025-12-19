@@ -86,7 +86,7 @@ Deno.test('Sitemap Plugin - 默认输出路径', () => {
 Deno.test('Sitemap Plugin - 自动扫描路由', () => {
   const plugin = sitemap({
     siteUrl: 'https://example.com',
-    routesDir: 'routes',
+    routes: ['routes'],
   });
   
   assertEquals(plugin.name, 'sitemap');
