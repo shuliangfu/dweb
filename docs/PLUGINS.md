@@ -1,175 +1,14 @@
-# DWeb 插件推荐
+# DWeb 插件文档
 
-本文档列出了 DWeb 框架推荐的插件，按优先级分类。
-
-## 📋 插件分类
-
-### 🔴 高优先级（生产必需）
-
-#### 1. SEO 插件
-**功能**：自动生成 SEO meta 标签、Open Graph、Twitter Cards
-- 自动注入 meta 标签到 HTML
-- 支持 Open Graph 协议
-- 支持 Twitter Cards
-- 支持 JSON-LD 结构化数据
-- 自动生成 sitemap.xml（可选）
-
-**使用场景**：所有需要 SEO 优化的网站
-
-**推荐指数**：⭐⭐⭐⭐⭐
-
----
-
-#### 2. Sitemap 插件
-**功能**：自动生成 sitemap.xml 和 robots.txt
-- 自动扫描路由生成 sitemap
-- 支持动态路由配置
-- 自动生成 robots.txt
-- 支持多语言 sitemap
-
-**使用场景**：所有需要搜索引擎索引的网站
-
-**推荐指数**：⭐⭐⭐⭐⭐
-
----
-
-#### 3. PWA 插件
-**功能**：生成 Progressive Web App 支持
-- 自动生成 manifest.json
-- 生成 Service Worker
-- 离线支持
-- 安装提示
-- 缓存策略
-
-**使用场景**：需要 PWA 功能的 Web 应用
-
-**推荐指数**：⭐⭐⭐⭐
-
----
-
-#### 4. 图片优化插件
-**功能**：自动优化图片资源
-- 自动压缩图片
-- 生成 WebP 格式
-- 生成响应式图片（srcset）
-- 懒加载支持
-- 占位符生成
-
-**使用场景**：包含大量图片的网站
-
-**推荐指数**：⭐⭐⭐⭐
-
----
-
-### 🟡 中优先级（重要功能）
-
-#### 5. i18n（国际化）插件
-**功能**：多语言支持
-- 自动检测语言
-- 路由级语言切换
-- 翻译文件管理
-- 日期/数字格式化
-- RTL 支持
-
-**使用场景**：需要多语言支持的网站
-
-**推荐指数**：⭐⭐⭐⭐
-
----
-
-#### 6. RSS 插件
-**功能**：自动生成 RSS Feed
-- 自动扫描内容生成 RSS
-- 支持多种 RSS 格式
-- 自动更新
-- 支持分类和标签
-
-**使用场景**：博客、新闻网站
-
-**推荐指数**：⭐⭐⭐
-
----
-
-#### 7. 字体优化插件
-**功能**：优化字体加载
-- 自动生成字体子集
-- 字体预加载
-- 字体显示策略（font-display）
-- 自动生成 @font-face
-
-**使用场景**：使用自定义字体的网站
-
-**推荐指数**：⭐⭐⭐
-
----
-
-#### 8. Bundle Analyzer 插件
-**功能**：分析构建产物大小
-- 生成构建报告
-- 可视化依赖关系
-- 识别大文件
-- 优化建议
-
-**使用场景**：需要优化构建大小的项目
-
-**推荐指数**：⭐⭐⭐
-
----
-
-#### 9. 环境变量验证插件
-**功能**：验证必需的环境变量
-- 启动时验证环境变量
-- 类型检查
-- 默认值支持
-- 友好的错误提示
-
-**使用场景**：所有项目（防止配置错误）
-
-**推荐指数**：⭐⭐⭐
-
----
-
-### 🟢 低优先级（开发工具）
-
-#### 10. TypeScript 增强插件
-**功能**：增强 TypeScript 支持
-- 类型检查增强
-- 类型生成
-- 路径别名支持
-
-**使用场景**：使用 TypeScript 的项目
-
-**推荐指数**：⭐⭐
-
----
-
-#### 11. 代码检查插件
-**功能**：集成代码检查工具
-- Deno Lint 集成
-- 自动修复
-- 代码质量报告
-
-**使用场景**：需要代码质量保证的项目
-
-**推荐指数**：⭐⭐
-
----
-
-#### 12. API 文档生成插件
-**功能**：自动生成 API 文档
-- 从代码生成文档
-- 支持 OpenAPI/Swagger
-- 交互式 API 文档
-
-**使用场景**：提供 API 的项目
-
-**推荐指数**：⭐⭐
-
----
+本文档列出了 DWeb 框架的所有已实现插件和使用方法。
 
 ## 🚀 已实现插件
 
 ### ✅ Tailwind CSS 插件
+
+支持 Tailwind CSS v3 和 v4，自动编译和优化。
+
+**功能**：
 - 支持 Tailwind CSS v3 和 v4
 - 开发环境实时编译
 - 生产环境优化
@@ -181,14 +20,28 @@ import { tailwind } from "@dreamer/dweb";
 
 export default {
   plugins: [
-    tailwind({ version: "v4" }),
+    tailwind({ 
+      version: "v4",
+      cssPath: "assets/style.css",
+    }),
   ],
 };
 ```
 
+**配置选项**：
+- `version`: 'v3' | 'v4' - Tailwind 版本
+- `cssPath`: 主 CSS 文件路径
+- `cssFiles`: CSS 文件路径（支持 glob）
+- `content`: 内容扫描路径
+- `optimize`: 是否优化（生产环境）
+
 ---
 
 ### ✅ SEO 插件
+
+自动生成 SEO meta 标签、Open Graph、Twitter Cards、JSON-LD。
+
+**功能**：
 - 自动生成 SEO meta 标签
 - 支持 Open Graph 协议
 - 支持 Twitter Cards
@@ -227,10 +80,15 @@ export default {
 ---
 
 ### ✅ Sitemap 插件
+
+自动生成 sitemap.xml 和 robots.txt。
+
+**功能**：
 - 自动生成 sitemap.xml
 - 自动生成 robots.txt
 - 自动扫描路由文件
 - 支持自定义 URL
+- 支持排除规则
 
 **使用示例**：
 ```typescript
@@ -252,9 +110,14 @@ export default {
 ---
 
 ### ✅ PWA 插件
+
+生成 Progressive Web App 支持。
+
+**功能**：
 - 自动生成 manifest.json
 - 自动生成 Service Worker
 - 离线支持
+- 多种缓存策略
 - 自动注入 PWA 链接
 
 **使用示例**：
@@ -277,20 +140,428 @@ export default {
             sizes: "192x192",
             type: "image/png",
           },
-          {
-            src: "/icon-512.png",
-            sizes: "512x512",
-            type: "image/png",
-          },
         ],
       },
       serviceWorker: {
         cacheStrategy: "network-first",
-        precache: ["/", "/about", "/contact"],
+        precache: ["/", "/about"],
       },
     }),
   ],
 };
+```
+
+---
+
+### ✅ 图片优化插件
+
+自动优化图片资源。
+
+**功能**：
+- 自动压缩图片（SVG 优化）
+- 支持 WebP 格式转换（框架，需外部工具）
+- 生成响应式图片（srcset）
+- 支持懒加载
+- 自动转换 HTML 中的图片标签
+
+**使用示例**：
+```typescript
+import { imageOptimizer } from "@dreamer/dweb";
+
+export default {
+  plugins: [
+    imageOptimizer({
+      imageDir: "assets",
+      compression: {
+        enabled: true,
+        quality: 80,
+        optimizeSvg: true,
+      },
+      webp: {
+        enabled: true,
+        quality: 80,
+      },
+      responsive: {
+        breakpoints: [640, 768, 1024, 1280],
+        generateSrcset: true,
+      },
+      lazyLoad: {
+        enabled: true,
+      },
+    }),
+  ],
+};
+```
+
+---
+
+### ✅ i18n（国际化）插件
+
+多语言支持。
+
+**功能**：
+- 自动检测语言（URL、查询参数、Cookie、Accept-Language）
+- 路由级语言切换
+- 翻译文件管理
+- 支持 RTL 语言
+- 自动注入语言属性到 HTML
+- 全局 `$t()` 和 `t()` 函数支持
+
+**使用示例**：
+```typescript
+import { i18n } from "@dreamer/dweb";
+
+export default {
+  plugins: [
+    i18n({
+      languages: [
+        { code: "zh-CN", name: "简体中文", default: true },
+        { code: "en", name: "English" },
+      ],
+      translationsDir: "locales",
+      detection: {
+        fromPath: true,
+        fromQuery: true,
+        fromCookie: true,
+        fromHeader: true,
+      },
+    }),
+  ],
+};
+```
+
+**详细文档**：请参考 [i18n 使用指南](./I18N_USAGE.md)
+
+---
+
+### ✅ RSS 插件
+
+自动生成 RSS Feed。
+
+**功能**：
+- 自动生成 RSS Feed
+- 支持 RSS 2.0 标准
+- 支持分类 Feed
+- 支持自定义条目
+
+**使用示例**：
+```typescript
+import { rss } from "@dreamer/dweb";
+
+export default {
+  plugins: [
+    rss({
+      feed: {
+        title: "My Blog",
+        description: "我的博客",
+        siteUrl: "https://example.com",
+        language: "zh-CN",
+      },
+      items: [
+        {
+          title: "文章标题",
+          link: "https://example.com/post/1",
+          description: "文章描述",
+          pubDate: new Date(),
+        },
+      ],
+    }),
+  ],
+};
+```
+
+---
+
+### ✅ 主题切换插件
+
+深色/浅色主题支持。
+
+**功能**：
+- 支持深色/浅色/自动主题切换
+- 自动检测系统主题
+- 主题持久化存储（localStorage）
+- 支持主题切换动画
+- 全局函数：`setTheme()`, `getTheme()`, `toggleTheme()`
+
+**使用示例**：
+```typescript
+import { theme } from "@dreamer/dweb";
+
+export default {
+  plugins: [
+    theme({
+      config: {
+        defaultTheme: "auto",
+        storageKey: "theme",
+        injectDataAttribute: true,
+        injectBodyClass: true,
+        transition: true,
+      },
+    }),
+  ],
+};
+```
+
+**在页面中使用**：
+```tsx
+// 切换主题
+<button onClick={() => toggleTheme()}>切换主题</button>
+
+// 获取当前主题
+const currentTheme = getTheme();
+```
+
+---
+
+### ✅ 表单验证插件
+
+客户端和服务端表单验证。
+
+**功能**：
+- 客户端和服务端验证
+- 支持多种验证规则（required, email, url, number, min, max, minLength, maxLength, pattern, custom）
+- 自定义验证函数
+- 错误消息配置
+
+**使用示例**：
+```typescript
+import { formValidator, validateForm } from "@dreamer/dweb";
+
+export default {
+  plugins: [
+    formValidator(),
+  ],
+};
+
+// 在 API 路由中使用
+import { validateForm } from "@dreamer/dweb";
+
+export async function POST(req: Request) {
+  const data = await req.json();
+  const result = validateForm(data, [
+    {
+      name: "email",
+      rules: [
+        { type: "required", message: "邮箱是必需的" },
+        { type: "email", message: "请输入有效的邮箱地址" },
+      ],
+    },
+    {
+      name: "password",
+      rules: [
+        { type: "required" },
+        { type: "minLength", value: 8, message: "密码至少 8 个字符" },
+      ],
+    },
+  ]);
+  
+  if (!result.valid) {
+    return Response.json({ errors: result.errors }, { status: 400 });
+  }
+  
+  // 处理表单数据
+}
+```
+
+---
+
+### ✅ 文件上传插件
+
+处理文件上传。
+
+**功能**：
+- 多文件上传支持
+- 文件类型和大小验证
+- 文件命名策略（original, timestamp, uuid, hash）
+- 自动创建子目录（按日期）
+
+**使用示例**：
+```typescript
+import { fileUpload, handleFileUpload } from "@dreamer/dweb";
+
+export default {
+  plugins: [
+    fileUpload({
+      config: {
+        uploadDir: "uploads",
+        maxFileSize: 10 * 1024 * 1024, // 10MB
+        allowedTypes: ["image/jpeg", "image/png"],
+        allowMultiple: true,
+        namingStrategy: "timestamp",
+        createSubdirs: true,
+      },
+    }),
+  ],
+};
+
+// 在 API 路由中使用
+import { handleFileUpload } from "@dreamer/dweb";
+
+export async function POST(req: Request) {
+  const result = await handleFileUpload(req, {
+    uploadDir: "uploads",
+    maxFileSize: 5 * 1024 * 1024,
+    allowedTypes: ["image/*"],
+  });
+  
+  if (!result.success) {
+    return Response.json({ error: result.error }, { status: 400 });
+  }
+  
+  return Response.json({ files: result.files });
+}
+```
+
+---
+
+### ✅ 性能监控插件
+
+收集 Web Vitals 和性能指标。
+
+**功能**：
+- Web Vitals 指标收集（LCP, FID, CLS, FCP, TTFB）
+- 页面加载时间监控
+- API 响应时间监控
+- 性能数据上报
+- 采样率控制
+
+**使用示例**：
+```typescript
+import { performance } from "@dreamer/dweb";
+
+export default {
+  plugins: [
+    performance({
+      config: {
+        endpoint: "/api/performance",
+        collectWebVitals: true,
+        collectResourceTiming: true,
+        collectApiTiming: true,
+        logToConsole: true,
+        sampleRate: 1.0,
+      },
+      onMetrics: async (metrics) => {
+        // 自定义指标处理
+        console.log("性能指标:", metrics);
+      },
+    }),
+  ],
+};
+```
+
+---
+
+### ✅ 缓存插件
+
+提供内存、Redis 和文件缓存支持。
+
+**功能**：
+- 内存缓存支持
+- 文件缓存支持
+- Redis 缓存支持（框架，需要 Redis 客户端库）
+- 缓存过期管理（TTL）
+- `getOrSet` 便捷方法
+
+**使用示例**：
+```typescript
+import { cache, CacheManager } from "@dreamer/dweb";
+
+export default {
+  plugins: [
+    // 内存缓存
+    cache({
+      config: {
+        store: "memory",
+        defaultTTL: 3600,
+        maxSize: 100 * 1024 * 1024,
+      },
+    }),
+    
+    // 文件缓存
+    cache({
+      config: {
+        store: "file",
+        cacheDir: ".cache",
+        defaultTTL: 3600,
+      },
+    }),
+    
+    // Redis 缓存（需要 Redis 客户端库）
+    cache({
+      config: {
+        store: "redis",
+        redis: {
+          host: "localhost",
+          port: 6379,
+        },
+        defaultTTL: 3600,
+      },
+    }),
+  ],
+};
+
+// 在代码中使用
+// 通过 app.cache 访问缓存管理器
+const value = await app.cache.get("key");
+await app.cache.set("key", "value", { ttl: 3600 });
+const result = await app.cache.getOrSet("key", async () => {
+  // 如果缓存不存在，执行此函数获取值
+  return await fetchData();
+});
+```
+
+---
+
+### ✅ 邮件发送插件
+
+SMTP 邮件发送支持。
+
+**功能**：
+- SMTP 邮件发送（框架，需要 SMTP 客户端库）
+- 邮件模板支持
+- 附件支持
+- 模板变量替换
+
+**使用示例**：
+```typescript
+import { email, sendEmail } from "@dreamer/dweb";
+
+export default {
+  plugins: [
+    email({
+      smtp: {
+        host: "smtp.example.com",
+        port: 587,
+        secure: false,
+        user: "user@example.com",
+        password: "password",
+        from: "noreply@example.com",
+        fromName: "My App",
+      },
+      templates: [
+        {
+          name: "welcome",
+          html: "<h1>欢迎，{{name}}！</h1>",
+          text: "欢迎，{{name}}！",
+        },
+      ],
+    }),
+  ],
+};
+
+// 在代码中使用
+// 通过 app.sendEmail 发送邮件
+await app.sendEmail({
+  to: "user@example.com",
+  subject: "欢迎",
+  html: "<h1>欢迎使用我们的服务</h1>",
+});
+
+// 使用模板发送
+await app.sendEmailTemplate("welcome", { name: "张三" }, {
+  to: "user@example.com",
+  subject: "欢迎",
+});
 ```
 
 ---
@@ -339,134 +610,13 @@ export function myPlugin(options: MyPluginOptions = {}): Plugin {
 
 以下插件正在规划中：
 
-- [x] SEO 插件 ✅
-- [x] Sitemap 插件 ✅
-- [x] PWA 插件 ✅
-- [x] 图片优化插件 ✅
-- [x] i18n 插件 ✅
-- [x] RSS 插件 ✅
 - [ ] 字体优化插件
 - [ ] Bundle Analyzer 插件
 - [ ] 错误追踪插件（Sentry 集成）
-- [ ] 性能监控插件
-- [ ] 缓存插件（Redis/Memory）
 - [ ] 压缩优化插件（Brotli/Gzip）
 - [ ] 安全扫描插件
 - [ ] 代码分割优化插件
 
 ---
 
-## 💡 其他推荐插件
-
-### 1. 错误追踪插件（Sentry 集成）
-**功能**：集成 Sentry 错误追踪
-- 自动捕获和上报错误
-- 性能监控
-- 用户反馈
-- 发布跟踪
-
-**推荐指数**：⭐⭐⭐⭐⭐（生产环境强烈推荐）
-
----
-
-### 2. 性能监控插件
-**功能**：性能指标收集和监控
-- Web Vitals 指标收集
-- 页面加载时间监控
-- API 响应时间监控
-- 自定义性能指标
-
-**推荐指数**：⭐⭐⭐⭐
-
----
-
-### 3. 缓存插件
-**功能**：智能缓存管理
-- Redis 缓存支持
-- 内存缓存支持
-- 缓存策略配置
-- 缓存失效管理
-
-**推荐指数**：⭐⭐⭐⭐
-
----
-
-### 4. 压缩优化插件
-**功能**：响应压缩优化
-- Brotli 压缩
-- Gzip 压缩
-- 智能压缩策略
-- 压缩级别配置
-
-**推荐指数**：⭐⭐⭐（框架已有压缩中间件，此插件可增强）
-
----
-
-### 5. 安全扫描插件
-**功能**：安全漏洞扫描
-- 依赖漏洞扫描
-- 代码安全扫描
-- 安全头部检查
-- 安全报告生成
-
-**推荐指数**：⭐⭐⭐
-
----
-
-### 6. 代码分割优化插件
-**功能**：智能代码分割
-- 路由级代码分割
-- 组件级代码分割
-- 动态导入优化
-- 预加载策略
-
-**推荐指数**：⭐⭐⭐（框架已有基础支持，此插件可增强）
-
----
-
-### 7. 主题切换插件
-**功能**：深色/浅色主题支持
-- 自动主题检测
-- 主题持久化
-- 主题切换动画
-- 多主题支持
-
-**推荐指数**：⭐⭐⭐
-
----
-
-### 8. 表单验证插件
-**功能**：表单验证和提交
-- 客户端验证
-- 服务端验证
-- 验证规则配置
-- 错误提示
-
-**推荐指数**：⭐⭐⭐
-
----
-
-### 9. 文件上传插件
-**功能**：文件上传处理
-- 多文件上传
-- 文件类型验证
-- 文件大小限制
-- 上传进度显示
-
-**推荐指数**：⭐⭐⭐
-
----
-
-### 10. 邮件发送插件
-**功能**：邮件发送服务
-- SMTP 支持
-- 模板邮件
-- 批量发送
-- 发送队列
-
-**推荐指数**：⭐⭐⭐
-
----
-
 **最后更新**: 2024-12-20
-
