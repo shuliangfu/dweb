@@ -444,7 +444,29 @@ export async function POST(req: Request) {
 }
 ```
 
-**注意**：图片裁切和压缩功能需要安装图片处理库（如 sharp）。当前实现提供框架和接口，实际处理需要集成外部工具。
+**安装图片处理库（Sharp）**：
+
+图片裁切和压缩功能使用 Sharp 库。Sharp 已添加到 `deno.json` 的依赖中，安装方法：
+
+```bash
+# 方法 1：使用 deno install（推荐）
+deno install
+
+# 方法 2：使用 deno cache
+deno cache --reload src/plugins/file-upload/index.ts
+
+# 如果遇到构建脚本警告，运行：
+deno approve-scripts
+```
+
+**注意事项**：
+- Sharp 会自动下载预编译的二进制文件，通常**不需要**安装系统级别的图片库
+- 如果遇到安装问题，可能需要安装系统依赖：
+  - **macOS**: `brew install vips` 或确保已安装 Xcode Command Line Tools
+  - **Linux**: `sudo apt-get install libvips-dev` 或 `sudo yum install vips-devel`
+  - **Windows**: 通常不需要额外安装，Sharp 会自动处理
+
+如果 Sharp 未安装，插件会跳过图片处理并给出警告，但不会影响其他功能。
 
 ---
 
