@@ -125,6 +125,85 @@ const config: AppConfig = {
 export default config;
 ```
 
+### 配置选项说明
+
+#### 服务器配置 (`server`)
+
+```typescript
+server: {
+  port: 3000,        // 端口号（默认: 3000）
+  host: "localhost", // 主机地址（默认: "localhost"）
+}
+```
+
+#### 路由配置 (`routes`)
+
+```typescript
+routes: {
+  dir: "routes",                    // 路由目录（默认: "routes"）
+  ignore: ["**/*.test.ts"],         // 忽略的文件模式
+  cache: true,                      // 是否启用路由缓存
+  priority: "specific-first",       // 路由优先级（"specific-first" | "order"）
+}
+```
+
+#### 静态资源配置 (`static`)
+
+```typescript
+static: {
+  dir: "public",                    // 静态资源目录
+  prefix: "/static",                // URL 前缀
+  index: ["index.html"],            // 索引文件名
+  dotfiles: "deny",                 // 点文件处理（"allow" | "deny" | "ignore"）
+  etag: true,                       // 启用 ETag
+  lastModified: true,               // 发送 Last-Modified 头
+  maxAge: 3600,                     // 缓存时间（秒）
+}
+```
+
+#### 构建配置 (`build`)
+
+```typescript
+build: {
+  outDir: "dist",                   // 输出目录（默认: "dist"）
+  cache: true,                      // 启用构建缓存（默认: true）
+  split: true,                      // 启用代码分割（默认: false）
+  chunkSize: 20000,                 // 代码分割的最小 chunk 大小（字节，默认: 20000）
+  compress: true,                   // 启用资源压缩（默认: false）
+  imageQuality: 80,                 // 图片压缩质量（0-100，默认: 80）
+  prefetch: true,                   // 启用资源预取（默认: true）
+  prefetchRoutes: true,             // 预取相关路由（默认: false）
+}
+```
+
+#### Cookie 配置 (`cookie`)
+
+```typescript
+cookie: {
+  secret: "your-secret-key",        // Cookie 签名密钥（必需）
+  secure: true,                     // 仅 HTTPS（默认: false）
+  httpOnly: true,                   // 禁止 JavaScript 访问（默认: true）
+  sameSite: "strict",               // SameSite 策略（"strict" | "lax" | "none"）
+  maxAge: 86400,                    // 过期时间（秒）
+}
+```
+
+#### Session 配置 (`session`)
+
+```typescript
+session: {
+  secret: "your-session-secret",    // Session 加密密钥（必需）
+  store: "memory",                  // 存储方式（"memory" | "file" | "redis"）
+  maxAge: 86400,                    // 过期时间（秒）
+  secure: true,                     // 仅 HTTPS
+  httpOnly: true,                   // 禁止 JavaScript 访问
+  redis: {                          // Redis 配置（如果使用 Redis）
+    host: "localhost",
+    port: 6379,
+  },
+}
+```
+
 ### 多应用模式
 
 ```typescript
@@ -147,6 +226,8 @@ const config: DWebConfig = {
 
 export default config;
 ```
+
+> 💡 **提示**: 更多配置示例请查看 [配置示例文档](./CONFIG_EXAMPLES.md)
 
 ---
 
@@ -454,7 +535,8 @@ const config: AppConfig = {
 
 ## 📖 更多资源
 
-- [API 文档](./API.md) - 完整的 API 参考
+- [配置示例](./CONFIG_EXAMPLES.md) - 各种场景的配置示例
+- [API 文档](./DOC.md) - 完整的 API 参考
 - [开发指南](./DEVELOPMENT.md) - 插件和中间件开发
 - [部署指南](./DOCKER.md) - Docker 部署
 - [示例项目](../example/) - 完整示例
