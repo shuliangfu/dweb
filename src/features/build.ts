@@ -468,6 +468,48 @@ async function compileDirectory(
 
   console.log(`📝 找到 ${files.length} 个文件需要编译`);
 
+  // 如果启用代码分割，使用批量编译
+  if (codeSplitting && files.length > 1) {
+    // 读取 deno.json 获取 import map
+    const cwd = Deno.cwd();
+    let importMap: Record<string, string> = {};
+    try {
+      const denoJsonPath = path.join(cwd, 'deno.json');
+      const denoJsonContent = await Deno.readTextFile(denoJsonPath);
+      const denoJson = JSON.parse(denoJsonContent);
+      if (denoJson.imports) {
+        importMap = denoJson.imports;
+      }
+    } catch {
+      // deno.json 不存在或解析失败，使用空 import map
+    }
+
+    // 收集外部依赖
+    const externalPackages: string[] = [
+      '@dreamer/dweb',
+      'preact',
+      'preact-render-to-string',
+    ];
+    for (const [key, value] of Object.entries(importMap)) {
+      if (value.startsWith('jsr:') || value.startsWith('npm:') || value.startsWith('http')) {
+        externalPackages.push(key);
+      }
+    }
+
+    // 使用代码分割编译所有文件
+    console.log(`🔀 启用代码分割，批量编译 ${files.length} 个文件...`);
+    const result = await compileWithCodeSplitting(
+      files,
+      absoluteOutDir,
+      fileMap,
+      cwd,
+      importMap,
+      externalPackages
+    );
+    console.log(`✅ 代码分割完成: ${result.compiled} 个入口文件, ${result.chunks} 个 chunk`);
+    return;
+  }
+
   if (parallel && files.length > 1) {
     // 并行编译（限制并发数为 10，避免资源耗尽）
     const concurrency = 10;
