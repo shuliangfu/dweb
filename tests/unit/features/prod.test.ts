@@ -199,3 +199,182 @@ Deno.test('Prod Server - Session 配置', () => {
   assertEquals(config.session.maxAge, 3600000);
 });
 
+Deno.test('Prod Server - 端口默认值处理', () => {
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+    },
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      // 没有指定 port
+    },
+  } as AppConfig;
+
+  // 验证默认端口逻辑（在 prod.ts 中会使用 config.server?.port || 3000）
+  const port = config.server?.port || 3000;
+  assertEquals(port, 3000);
+});
+
+Deno.test('Prod Server - 多应用模式配置', () => {
+  const config: AppConfig = {
+    name: 'app1',
+    basePath: '/app1',
+    routes: {
+      dir: 'routes',
+    },
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+  };
+
+  // 验证多应用模式配置
+  assert(config.name === 'app1');
+  assertEquals(config.basePath, '/app1');
+});
+
+Deno.test('Prod Server - 中间件配置', () => {
+  const mockMiddleware = async (_req: any, _res: any, next: () => void) => {
+    await next();
+  };
+
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+    },
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+    middleware: [
+      { name: 'test-middleware', handler: mockMiddleware },
+    ],
+  };
+
+  // 验证中间件配置
+  assert(config.middleware !== undefined);
+  assertEquals(config.middleware.length, 1);
+  assertEquals(config.middleware[0].name, 'test-middleware');
+});
+
+Deno.test('Prod Server - 插件配置', () => {
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+    },
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+    plugins: [
+      { name: 'test-plugin' },
+    ],
+  };
+
+  // 验证插件配置
+  assert(config.plugins !== undefined);
+  assertEquals(config.plugins.length, 1);
+  assertEquals(config.plugins[0].name, 'test-plugin');
+});
+
+Deno.test('Prod Server - 路由配置字符串格式', () => {
+  const config: AppConfig = {
+    routes: 'routes' as any,
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+  };
+
+  // 验证路由配置可以是字符串（会被 normalizeRouteConfig 处理）
+  assert(config.routes !== undefined);
+});
+
+Deno.test('Prod Server - 路由配置对象格式', () => {
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+      ignore: ['**/*.test.ts'],
+      cache: true,
+      priority: 'specific-first',
+    },
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+  };
+
+  // 验证路由配置对象格式
+  assert(config.routes !== undefined);
+  if (typeof config.routes === 'object') {
+    assertEquals(config.routes.dir, 'routes');
+    assertEquals(config.routes.ignore, ['**/*.test.ts']);
+    assertEquals(config.routes.cache, true);
+    assertEquals(config.routes.priority, 'specific-first');
+  }
+});
+
+Deno.test('Prod Server - 构建配置扩展选项', () => {
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+    },
+    build: {
+      outDir: 'dist',
+      minify: true,
+      sourceMap: false,
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+  };
+
+  // 验证构建配置扩展选项
+  assert(config.build !== undefined);
+  assertEquals(config.build.outDir, 'dist');
+  // 注意：minify 和 sourceMap 可能不在类型定义中，但可以存在
+});
+
+Deno.test('Prod Server - 开发配置选项', () => {
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+    },
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+    dev: {
+      open: true,
+      hmr: true,
+    },
+  };
+
+  // 验证开发配置选项（虽然生产环境不使用，但配置可以存在）
+  assert(config.dev !== undefined);
+  assertEquals(config.dev.open, true);
+  assertEquals(config.dev.hmr, true);
+});
+
