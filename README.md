@@ -478,6 +478,7 @@ const debug = env.bool("DEBUG", false);
 
 - **[完整文档](./docs/DOC.md)** - 详细的功能说明和 API 文档
 - **[使用指南](./docs/GUIDES.md)** - 完整的使用指南（快速开始、配置、路由、渲染模式、中间件、插件、最佳实践、FAQ）
+- **[配置示例](./docs/CONFIG_EXAMPLES.md)** - 各种场景的配置示例（基础配置、单应用、多应用、开发/生产环境、高级配置）
 - **[开发指南](./docs/DEVELOPMENT.md)** - 插件开发、中间件开发、自定义路由指南
 - **[快速开始指南](./example/QUICK_START.md)** - 快速上手教程
 - **[Docker 部署](./docs/DOCKER.md)** - Docker 部署指南
