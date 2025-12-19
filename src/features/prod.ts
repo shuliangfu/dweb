@@ -15,6 +15,7 @@ import { SessionManager } from '../features/session.ts';
 import { initDatabase, closeDatabase } from '../features/database/access.ts';
 import { WebSocketServer } from '../features/websocket/server.ts';
 import { initWebSocket } from '../features/websocket/access.ts';
+import { GraphQLServer } from '../features/graphql/server.ts';
 import { logger } from '../middleware/logger.ts';
 import { bodyParser } from '../middleware/body-parser.ts';
 import { staticFiles } from '../middleware/static.ts';
@@ -286,12 +287,26 @@ export async function startProdServer(config: AppConfig): Promise<void> {
     sessionManager = new SessionManager(config.session);
   }
 
+  // 创建 GraphQL 服务器（如果配置了）
+  let graphqlServer: GraphQLServer | null = null;
+  if (config.graphql) {
+    graphqlServer = new GraphQLServer(
+      config.graphql.schema,
+      config.graphql.config
+    );
+    console.log(`✅ GraphQL 服务器已启动 (端点: ${config.graphql.config?.path || '/graphql'})`);
+    if (config.graphql.config?.graphiql !== false) {
+      console.log(`   GraphiQL: ${config.graphql.config?.graphiqlPath || '/graphiql'}`);
+    }
+  }
+
   // 创建路由处理器（传入 Cookie 和 Session 管理器以及配置）
   const routeHandler = new RouteHandler(
     router,
     cookieManager || undefined,
     sessionManager || undefined,
     config,
+    graphqlServer || undefined,
   );
 
   // 创建中间件管理器

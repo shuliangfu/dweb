@@ -15,6 +15,8 @@ export interface StaticOptions {
 import type { DatabaseConfig } from '../features/database/types.ts';
 // WebSocket 配置（从 WebSocket 模块导入类型）
 import type { WebSocketConfig } from '../features/websocket/types.ts';
+// GraphQL 配置（从 GraphQL 模块导入类型）
+import type { GraphQLConfig, GraphQLSchema } from '../features/graphql/types.ts';
 
 // 应用配置
 export interface AppConfig {
@@ -37,6 +39,11 @@ export interface AppConfig {
   database?: DatabaseConfig;
   // WebSocket 配置
   websocket?: WebSocketConfig;
+  // GraphQL 配置
+  graphql?: {
+    schema: GraphQLSchema;
+    config?: GraphQLConfig;
+  };
 }
 
 // 配置类型

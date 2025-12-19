@@ -11,6 +11,7 @@ import type {
 } from "../types/index.ts";
 import type { RouteInfo, Router } from "./router.ts";
 import { handleApiRoute, loadApiRoute } from "./api-route.ts";
+import type { GraphQLServer } from "../features/graphql/server.ts";
 import { renderToString } from 'preact-render-to-string';
 import type { CookieManager } from "../features/cookie.ts";
 import type { SessionManager } from "../features/session.ts";
@@ -90,17 +91,20 @@ export class RouteHandler {
   private cookieManager?: CookieManager;
   private sessionManager?: SessionManager;
   private config?: AppConfig;
+  private graphqlServer?: GraphQLServer;
   
   constructor(
     router: Router,
     cookieManager?: CookieManager,
     sessionManager?: SessionManager,
     config?: AppConfig,
+    graphqlServer?: GraphQLServer,
   ) {
     this.router = router;
     this.cookieManager = cookieManager;
     this.sessionManager = sessionManager;
     this.config = config;
+    this.graphqlServer = graphqlServer;
   }
   
 
@@ -430,6 +434,29 @@ export class RouteHandler {
     if (pathname === "/.well-known/appspecific/com.chrome.devtools.json") {
       this.handleDevToolsConfig(res);
       return;
+    }
+
+    // 处理 GraphQL 请求
+    if (this.graphqlServer && this.config) {
+      const graphqlPath = this.config.graphql?.config?.path || '/graphql';
+      const graphiqlPath = this.config.graphql?.config?.graphiqlPath || '/graphiql';
+      
+      if (pathname === graphqlPath) {
+        const response = await this.graphqlServer.handleRequest(req as unknown as globalThis.Request);
+        // 将原生 Response 转换为框架 Response
+        res.status = response.status;
+        response.headers.forEach((value, key) => {
+          res.setHeader(key, value);
+        });
+        res.body = await response.text();
+        return;
+      }
+      
+      // 处理 GraphiQL 请求
+      if (pathname === graphiqlPath && this.config.graphql?.config?.graphiql !== false) {
+        res.html(this.graphqlServer.getGraphiQLHTML());
+        return;
+      }
     }
 
     // 将组件文件路径转换为模块请求路径

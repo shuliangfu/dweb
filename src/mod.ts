@@ -107,6 +107,27 @@ export {
   type WebSocketClientState,
   type WebSocketClientEventType,
 } from './features/websocket/mod.ts';
+// 导出 GraphQL 相关 API
+export {
+  GraphQLServer,
+  parseQuery,
+  validateQuery,
+  executeQuery,
+  type GraphQLSchema,
+  type GraphQLType,
+  type GraphQLField,
+  type GraphQLResolver,
+  type GraphQLContext,
+  type GraphQLInfo,
+  type GraphQLRequest,
+  type GraphQLResponse,
+  type GraphQLError,
+  type GraphQLConfig,
+  type GraphQLScalarType,
+  type GraphQLArgument,
+  type ParsedQuery,
+  type ParsedField,
+} from './features/graphql/mod.ts';
 export { env, envInt, envFloat, envBool, getAllEnv, validateEnv, initEnv } from './features/env.ts';
 export {
   registerShutdownHandler,
