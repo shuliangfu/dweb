@@ -122,7 +122,7 @@ async function compressImage(
   inputPath: string,
   outputPath: string,
   ext: string,
-  quality: number
+  _quality: number
 ): Promise<boolean> {
   try {
     // 读取原始图片
