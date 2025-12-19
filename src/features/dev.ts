@@ -448,8 +448,8 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 	server.setHandler(requestHandler)
 
 	// 启动服务器
-	const port = config.server.port
-	const host = config.server.host || "localhost"
+	const port = config.server!.port
+	const host = config.server!.host || "localhost"
   
   // 如果配置了自动打开浏览器
   if (config.dev?.open) {
