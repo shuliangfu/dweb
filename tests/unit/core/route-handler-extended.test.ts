@@ -357,6 +357,7 @@ Deno.test('RouteHandler - handle - 处理带配置的请求', async () => {
     },
     server: {
       port: 3000,
+      host: 'localhost',
     },
     build: {
       outDir: 'dist',
