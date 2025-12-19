@@ -60,14 +60,18 @@ deno add jsr:@dreamer/dweb
 然后在代码中导入使用：
 
 ```typescript
-import { startDevServer } from "jsr:@dreamer/dweb";
+import { startDevServer, loadConfig } from "jsr:@dreamer/dweb";
 import type { AppConfig } from "jsr:@dreamer/dweb";
 
+// 方式 1: 直接传入配置对象
 const config: AppConfig = {
-  server: { port: 3000 },
+  server: { port: 3000, host: "localhost" },
   routes: { dir: "routes" },
 };
+await startDevServer(config);
 
+// 方式 2: 从配置文件加载（推荐）
+const { config } = await loadConfig("dweb.config.ts");
 await startDevServer(config);
 ```
 
