@@ -59,7 +59,17 @@ export default function HybridPage({ params, query }: PageProps) {
 }
 
 // 辅助函数：清理测试文件
+// 注意：在覆盖率模式下不清理文件，以便覆盖率报告可以访问它们
 async function cleanupTestFiles() {
+  // 检查是否在覆盖率模式下运行
+  const isCoverageMode = Deno.env.get('DENO_COVERAGE') !== undefined || 
+                         Deno.args.includes('--coverage');
+  
+  if (isCoverageMode) {
+    // 覆盖率模式下不清理文件
+    return;
+  }
+  
   try {
     await Deno.remove(testRoutesDir, { recursive: true });
   } catch (e) {
