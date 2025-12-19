@@ -2,7 +2,7 @@
  * SQLite 数据库适配器
  */
 
-import { DB } from 'https://deno.land/x/sqlite@v3.7.3/mod.ts';
+import { DB } from '@sqlite';
 import { BaseAdapter } from './base.ts';
 import type { DatabaseConfig, DatabaseAdapter } from '../types.ts';
 

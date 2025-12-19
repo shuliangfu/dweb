@@ -30,7 +30,8 @@
     "postcss-v3": "npm:postcss@^8.4.35",
     "autoprefixer": "npm:autoprefixer@^10.4.17",
     "cssnano": "npm:cssnano@^6.0.3",
-    "esbuild": "npm:esbuild@0.19.12"
+    "esbuild": "npm:esbuild@0.19.12",
+    "@sqlite": "https://deno.land/x/sqlite@v3.7.3/mod.ts"
   },
   "tasks": {
     "dev": "deno run -A src/cli.ts dev",
