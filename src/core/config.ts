@@ -122,8 +122,24 @@ function validateConfig(config: unknown): void {
 
 /**
  * 判断是否为多应用模式
- * @param config 配置对象
- * @returns 是否为多应用模式
+ * 
+ * 通过检查配置对象是否包含 `apps` 属性来判断是否为多应用模式。
+ * 
+ * @param config - 配置对象
+ * @returns config is AppConfig - 类型守卫，如果返回 true，则 config 是多应用配置
+ * 
+ * @example
+ * ```ts
+ * import { isMultiAppMode } from "@dreamer/dweb";
+ * 
+ * if (isMultiAppMode(config)) {
+ *   // config 是多应用配置，包含 apps 数组
+ *   console.log("多应用模式，应用数量:", config.apps.length);
+ * } else {
+ *   // config 是单应用配置
+ *   console.log("单应用模式");
+ * }
+ * ```
  */
 export function isMultiAppMode(config: DWebConfig): config is AppConfig {
   return 'apps' in config && Array.isArray(config.apps);

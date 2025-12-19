@@ -477,9 +477,11 @@ const debug = env.bool("DEBUG", false);
 ## 📖 文档
 
 - **[完整文档](./docs/DOC.md)** - 详细的功能说明和 API 文档
+- **[使用指南](./docs/GUIDES.md)** - 完整的使用指南（快速开始、配置、路由、渲染模式、中间件、插件、最佳实践、FAQ）
+- **[开发指南](./docs/DEVELOPMENT.md)** - 插件开发、中间件开发、自定义路由指南
 - **[快速开始指南](./example/QUICK_START.md)** - 快速上手教程
+- **[Docker 部署](./docs/DOCKER.md)** - Docker 部署指南
 - **[使用示例](./example/)** - 完整的示例项目
-- **[作为库使用](./USAGE_AS_LIBRARY.md)** - 如何将框架作为库导入使用
 
 ## 🛠️ 开发
 

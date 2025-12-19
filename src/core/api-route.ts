@@ -1,6 +1,8 @@
 /**
  * API 路由处理模块
  * 处理 API 路由（通过 URL 路径指定方法名）
+ * 
+ * @module core/api-route
  */
 
 import type { Request, RouteHandler } from '../types/index.ts';
@@ -8,8 +10,21 @@ import { isSafeMethodName } from '../utils/security.ts';
 
 /**
  * 加载 API 路由模块
- * @param filePath 文件路径
- * @returns API 路由导出对象
+ * 
+ * 从指定文件路径加载 API 路由模块，返回所有导出的路由处理函数。
+ * 
+ * @param filePath - API 路由文件路径（相对路径或绝对路径）
+ * @returns Promise<Record<string, RouteHandler>> - API 路由处理函数对象
+ * 
+ * @throws {Error} 如果文件加载失败或路径无效
+ * 
+ * @example
+ * ```ts
+ * import { loadApiRoute } from "@dreamer/dweb";
+ * 
+ * const handlers = await loadApiRoute("routes/api/users.ts");
+ * // handlers = { getUser: Function, createUser: Function, ... }
+ * ```
  */
 export async function loadApiRoute(filePath: string): Promise<Record<string, RouteHandler>> {
   try {
@@ -86,10 +101,29 @@ function findHandler(
 
 /**
  * 处理 API 路由请求
- * @param handlers API 路由处理器对象
- * @param method 请求方法（所有请求都使用 POST）
- * @param req 请求对象
- * @returns 响应数据
+ * 
+ * 根据 URL 路径中的方法名查找并执行对应的 API 处理函数。
+ * 支持驼峰格式（如 `getUser`）和短横线格式（如 `get-user`）。
+ * 
+ * @param handlers - API 路由处理器对象，键为方法名，值为处理函数
+ * @param _method - 请求方法（当前未使用，所有请求都使用 POST）
+ * @param req - 请求对象
+ * @returns Promise<any> - 处理函数返回的响应数据
+ * 
+ * @throws {Error} 如果路径格式错误、方法名为空、方法名不安全或未找到对应的处理器
+ * 
+ * @example
+ * ```ts
+ * import { handleApiRoute } from "@dreamer/dweb";
+ * 
+ * const handlers = {
+ *   getUser: (req) => ({ id: req.query.id, name: "User" }),
+ *   createUser: (req) => ({ success: true }),
+ * };
+ * 
+ * // 处理 POST /api/users/getUser?id=123
+ * const result = await handleApiRoute(handlers, "POST", req);
+ * ```
  */
 export async function handleApiRoute(
   handlers: Record<string, RouteHandler>,

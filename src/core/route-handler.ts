@@ -35,6 +35,17 @@ let hmrClientScript: string | null = null;
 
 /**
  * 设置 HMR 客户端脚本
+ * 
+ * 用于在开发环境中注入热更新客户端脚本。
+ * 
+ * @param script - HMR 客户端脚本内容
+ * 
+ * @example
+ * ```ts
+ * import { setHMRClientScript } from "@dreamer/dweb";
+ * 
+ * setHMRClientScript("<script>/* HMR client code *\/</script>");
+ * ```
  */
 export function setHMRClientScript(script: string): void {
   hmrClientScript = script;
@@ -60,6 +71,19 @@ export async function preloadImportMapScript(): Promise<void> {
 
 /**
  * 路由处理器
+ * 
+ * 负责处理路由请求，包括页面渲染（SSR/CSR/Hybrid）和 API 路由调用。
+ * 
+ * @example
+ * ```ts
+ * import { RouteHandler, Router } from "@dreamer/dweb";
+ * 
+ * const router = new Router("routes");
+ * await router.scan();
+ * 
+ * const handler = new RouteHandler(router);
+ * await handler.handle(req, res);
+ * ```
  */
 export class RouteHandler {
   private router: Router;

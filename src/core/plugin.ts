@@ -1,19 +1,51 @@
 /**
  * 插件系统模块
  * 提供插件注册和生命周期管理
+ * 
+ * @module core/plugin
  */
 
 import type { Plugin, Request, Response } from '../types/index.ts';
 
 /**
  * 插件管理器
+ * 
+ * 负责管理插件的注册和生命周期钩子的执行。
+ * 
+ * @example
+ * ```ts
+ * import { PluginManager } from "@dreamer/dweb";
+ * import { tailwind } from "@dreamer/dweb";
+ * 
+ * const manager = new PluginManager();
+ * manager.register(tailwind({ version: "v4" }));
+ * 
+ * await manager.executeOnInit({ server, router, routeHandler });
+ * ```
  */
 export class PluginManager {
   private plugins: Plugin[] = [];
   
   /**
    * 注册插件
-   * @param plugin 插件对象或插件配置
+   * 
+   * 将插件注册到插件管理器中。插件可以是完整的插件对象，也可以是包含名称和配置的对象。
+   * 
+   * @param plugin - 插件对象或插件配置对象
+   * 
+   * @example
+   * ```ts
+   * const manager = new PluginManager();
+   * 
+   * // 注册完整插件对象
+   * manager.register({
+   *   name: "my-plugin",
+   *   onInit: async (app) => { \/* ... *\/ },
+   * });
+   * 
+   * // 注册配置对象
+   * manager.register({ name: "my-plugin", config: { enabled: true } });
+   * ```
    */
   register(plugin: Plugin | { name: string; config?: Record<string, any> }): void {
     if ('onInit' in plugin || 'onRequest' in plugin || 'onResponse' in plugin || 'onError' in plugin || 'onBuild' in plugin || 'onStart' in plugin) {
@@ -30,7 +62,18 @@ export class PluginManager {
   
   /**
    * 批量注册插件
-   * @param plugins 插件数组
+   * 
+   * 一次性注册多个插件。
+   * 
+   * @param plugins - 插件数组
+   * 
+   * @example
+   * ```ts
+   * manager.registerMany([
+   *   tailwind({ version: "v4" }),
+   *   customPlugin({ enabled: true }),
+   * ]);
+   * ```
    */
   registerMany(plugins: (Plugin | { name: string; config?: Record<string, any> })[]): void {
     plugins.forEach(p => this.register(p));
