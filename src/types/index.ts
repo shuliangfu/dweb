@@ -164,9 +164,9 @@ export interface BuildConfig {
   /** 是否启用构建缓存（增量构建），默认 true */
   cache?: boolean;
   /** 是否启用代码分割（提取共享代码到公共 chunk），默认 false */
-  codeSplitting?: boolean;
+  split?: boolean;
   /** 代码分割的最小 chunk 大小（字节），默认 20000（20KB） */
-  minChunkSize?: number;
+  chunkSize?: number;
   [key: string]: any;
 }
 

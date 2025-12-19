@@ -783,8 +783,8 @@ async function buildApp(config: AppConfig): Promise<void> {
   const routesDir = routeConfig.dir || 'routes';
   
   // 检查是否启用代码分割
-  const codeSplitting = config.build?.codeSplitting === true;
-  const minChunkSize = config.build?.minChunkSize || 20000;
+  const codeSplitting = config.build?.split === true;
+  const minChunkSize = config.build?.chunkSize || 20000;
   
   try {
     await compileDirectory(
