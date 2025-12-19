@@ -129,7 +129,7 @@ deno test --allow-all --fail-fast tests/unit/
 |------|---------|---------|------|
 | Server | `server.test.ts` | 19 | ✅ 通过 |
 | Router | `router.test.ts` | 4 | ✅ 通过 |
-| RouteHandler | - | - | ⏳ 待测试 |
+| RouteHandler | `route-handler.test.ts` + `route-handler-extended.test.ts` | 16 | ✅ 通过 |
 | API Route | `api-route.test.ts` | 9 | ✅ 通过 |
 | Middleware Manager | `middleware.test.ts` | 5 | ✅ 通过 |
 | Plugin Manager | `plugin.test.ts` | 12 | ✅ 通过 |
