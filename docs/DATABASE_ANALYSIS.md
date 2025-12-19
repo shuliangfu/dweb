@@ -933,6 +933,297 @@ export class MigrationManager {
 
 ---
 
+## 目录结构
+
+### 框架源码目录结构
+
+数据库支持功能将添加到框架的 `src/features/database/` 目录下，具体结构如下：
+
+```
+src/
+├── features/
+│   └── database/              # 数据库功能模块
+│       ├── mod.ts             # 数据库模块入口，导出所有公共 API
+│       ├── manager.ts         # 数据库管理器 (DatabaseManager)
+│       ├── types.ts           # 数据库相关类型定义
+│       │
+│       ├── adapters/          # 数据库适配器
+│       │   ├── mod.ts         # 适配器模块入口
+│       │   ├── base.ts        # 基础适配器接口和抽象类
+│       │   ├── sqlite.ts      # SQLite 适配器
+│       │   ├── postgresql.ts  # PostgreSQL 适配器
+│       │   ├── mysql.ts       # MySQL 适配器
+│       │   └── mongodb.ts      # MongoDB 适配器
+│       │
+│       ├── query/             # 查询构建器
+│       │   ├── mod.ts         # 查询构建器模块入口
+│       │   ├── sql-builder.ts # SQL 查询构建器 (SQLQueryBuilder)
+│       │   └── mongo-builder.ts # MongoDB 查询构建器 (MongoQueryBuilder)
+│       │
+│       ├── orm/               # ORM/ODM 模型
+│       │   ├── mod.ts         # ORM 模块入口
+│       │   ├── sql-model.ts  # SQL 模型基类 (SQLModel)
+│       │   └── mongo-model.ts # MongoDB 模型基类 (MongoModel)
+│       │
+│       └── migration/         # 迁移管理
+│           ├── mod.ts         # 迁移模块入口
+│           ├── manager.ts     # 迁移管理器 (MigrationManager)
+│           ├── types.ts       # 迁移相关类型
+│           └── utils.ts       # 迁移工具函数
+│
+├── types/
+│   └── index.ts               # 添加 DatabaseConfig 到 AppConfig
+│
+└── mod.ts                     # 框架主入口，导出数据库相关 API
+```
+
+### 项目使用目录结构
+
+使用数据库功能的项目目录结构：
+
+```
+my-project/
+├── routes/                    # 路由目录
+│   ├── users/
+│   │   └── [id].tsx          # 使用数据库查询的页面
+│   └── api/
+│       └── users.ts          # API 路由中使用数据库
+│
+├── models/                    # 数据模型目录（可选）
+│   ├── User.ts               # User 模型
+│   ├── Post.ts               # Post 模型
+│   └── index.ts              # 模型导出
+│
+├── migrations/                # 数据库迁移目录（可选）
+│   ├── 001_create_users_table.ts
+│   ├── 002_create_posts_table.ts
+│   └── 003_add_email_to_users.ts
+│
+├── dweb.config.ts            # 配置文件（包含数据库配置）
+├── main.ts                   # 应用入口
+└── ...
+```
+
+### 目录说明
+
+#### 1. `src/features/database/` - 数据库功能模块
+
+**`mod.ts`** - 数据库模块入口
+- 导出 `DatabaseManager`
+- 导出所有适配器
+- 导出查询构建器
+- 导出 ORM/ODM 模型基类
+- 导出迁移管理器
+
+**`manager.ts`** - 数据库管理器
+- 管理多个数据库连接
+- 提供连接创建、获取、关闭功能
+- 支持多数据库同时使用
+
+**`types.ts`** - 类型定义
+- `DatabaseType` - 数据库类型枚举
+- `DatabaseConfig` - 数据库配置接口
+- `DatabaseAdapter` - 适配器接口
+- 其他相关类型
+
+#### 2. `src/features/database/adapters/` - 数据库适配器
+
+每个适配器实现 `DatabaseAdapter` 接口，提供统一的数据库操作 API。
+
+**`base.ts`** - 基础适配器
+- `DatabaseAdapter` 接口定义
+- 抽象适配器基类（可选）
+
+**`sqlite.ts`** - SQLite 适配器
+- 使用 `deno-sqlite` 库
+- 实现 SQLite 特定功能
+
+**`postgresql.ts`** - PostgreSQL 适配器
+- 使用 `postgres` 库
+- 实现 PostgreSQL 特定功能
+
+**`mysql.ts`** - MySQL 适配器
+- 使用 `deno_mysql` 库
+- 实现 MySQL 特定功能
+
+**`mongodb.ts`** - MongoDB 适配器
+- 使用 `npm:mongodb` 库
+- 实现 MongoDB 特定功能
+
+#### 3. `src/features/database/query/` - 查询构建器
+
+**`sql-builder.ts`** - SQL 查询构建器
+- 支持 SELECT、INSERT、UPDATE、DELETE
+- 支持 WHERE、JOIN、ORDER BY、LIMIT、OFFSET
+- 参数化查询（SQL 注入防护）
+
+**`mongo-builder.ts`** - MongoDB 查询构建器
+- 支持 find、insert、update、delete
+- 支持聚合查询
+- 支持索引管理
+
+#### 4. `src/features/database/orm/` - ORM/ODM 模型
+
+**`sql-model.ts`** - SQL 模型基类
+- `SQLModel` 抽象类
+- 提供 CRUD 操作方法
+- 支持对象条件查询
+- 支持字段数组选择
+- 支持查询条件操作符
+
+**`mongo-model.ts`** - MongoDB 模型基类
+- `MongoModel` 抽象类
+- 提供 CRUD 操作方法
+- 支持对象条件查询
+- 支持字段投影
+- 支持 MongoDB 操作符
+
+#### 5. `src/features/database/migration/` - 迁移管理
+
+**`manager.ts`** - 迁移管理器
+- 迁移文件生成
+- 迁移执行和回滚
+- 版本控制
+- 迁移历史记录
+
+**`types.ts`** - 迁移类型
+- `Migration` 接口
+- `MigrationStatus` 接口
+- 其他迁移相关类型
+
+**`utils.ts`** - 迁移工具
+- 迁移文件解析
+- 迁移历史管理
+- 迁移文件模板生成
+
+### 导出结构
+
+#### 框架主入口 (`src/mod.ts`)
+
+```typescript
+// 数据库相关导出
+export {
+  // 数据库管理器
+  DatabaseManager,
+  type DatabaseConfig,
+  type DatabaseType,
+  type DatabaseAdapter,
+  
+  // 查询构建器
+  SQLQueryBuilder,
+  MongoQueryBuilder,
+  
+  // ORM/ODM
+  SQLModel,
+  MongoModel,
+  
+  // 迁移管理
+  MigrationManager,
+  type Migration,
+} from './features/database/mod.ts';
+```
+
+#### 数据库模块入口 (`src/features/database/mod.ts`)
+
+```typescript
+// 导出管理器
+export { DatabaseManager } from './manager.ts';
+
+// 导出类型
+export type {
+  DatabaseConfig,
+  DatabaseType,
+  DatabaseAdapter,
+} from './types.ts';
+
+// 导出适配器
+export {
+  SQLiteAdapter,
+  PostgreSQLAdapter,
+  MySQLAdapter,
+  MongoDBAdapter,
+} from './adapters/mod.ts';
+
+// 导出查询构建器
+export {
+  SQLQueryBuilder,
+  MongoQueryBuilder,
+} from './query/mod.ts';
+
+// 导出 ORM/ODM
+export {
+  SQLModel,
+  MongoModel,
+} from './orm/mod.ts';
+
+// 导出迁移管理
+export {
+  MigrationManager,
+  type Migration,
+  type MigrationStatus,
+} from './migration/mod.ts';
+```
+
+### 使用示例
+
+#### 在项目中使用数据库
+
+```typescript
+// models/User.ts
+import { SQLModel } from '@dreamer/dweb';
+import { db } from '@dreamer/dweb';
+
+export class User extends SQLModel {
+  static table = 'users';
+  static primaryKey = 'id';
+  static adapter = db.getConnection();
+  
+  id!: number;
+  name!: string;
+  email!: string;
+  age!: number;
+  
+  static fromRow(row: any): User {
+    const user = new User();
+    Object.assign(user, row);
+    return user;
+  }
+}
+```
+
+```typescript
+// dweb.config.ts
+import type { AppConfig } from '@dreamer/dweb';
+
+const config: AppConfig = {
+  database: {
+    type: 'sqlite',
+    connection: {
+      path: 'database.sqlite',
+    },
+  },
+  // ... 其他配置
+};
+
+export default config;
+```
+
+```typescript
+// routes/users/[id].tsx
+import { User } from '../../models/User.ts';
+
+export const load = async ({ params }) => {
+  const user = await User.find({ id: parseInt(params.id) });
+  return { user };
+};
+
+export default function UserPage({ data }) {
+  return <div>{data.user.name}</div>;
+}
+```
+
+---
+
 ## 实现方案
 
 ### 阶段一：基础数据库支持（1-2 周）
