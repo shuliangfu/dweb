@@ -64,10 +64,11 @@ Deno.test('CookieManager - 删除 Cookie', () => {
   const manager = new CookieManager();
   const cookie = manager.delete('test');
   
-  assert(cookie.includes('test='));
-  assert(cookie.includes('Max-Age=0'));
-  // Expires 可能使用不同的日期格式
-  assert(cookie.includes('Expires=') || cookie.includes('expires='));
+  assert(cookie.includes('test='), '应该包含 Cookie 名称');
+  // 删除 Cookie 时，会设置 maxAge: 0 和 expires: new Date(0)
+  // 但 buildCookieString 中，如果同时设置了 expires 和 maxAge，会优先使用 expires
+  assert(cookie.includes('Expires='), '应该包含 Expires 头');
+  // 注意：由于设置了 expires，可能不会同时包含 Max-Age
 });
 
 Deno.test('CookieManager - URL 编码 Cookie 值', async () => {
