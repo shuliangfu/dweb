@@ -7,6 +7,43 @@ import TechCard from '../components/TechCard.tsx';
 import CodeBlock from '../components/CodeBlock.tsx';
 import type { PageProps } from '@dreamer/dweb';
 
+import { getJsrPackageUrl, getVersionString } from '../utils.ts';
+import type { LoadContext } from '@dreamer/dweb';
+
+/**
+ * 加载页面数据（服务端执行）
+ * @param context 包含 params、query、cookies、session 等的上下文对象
+ * @returns 页面数据，会自动赋值到组件的 data 属性
+ */
+export const load = async ({
+  params: _params,
+  query: _query,
+  cookies,
+  session,
+  getCookie,
+  getSession,
+}: LoadContext) => {
+  // 示例：读取 Cookie
+  const token = getCookie('token') || cookies.token;
+
+  // 示例：读取 Session
+  const currentSession = session || (await getSession());
+  const userId = currentSession?.data.userId;
+
+  const jsrPackageUrl = getJsrPackageUrl();
+  const versionString = getVersionString();
+
+  // console.log({ jsrPackageUrl, versionString });
+
+  return {
+    message: 'Hello, World!',
+    token,
+    userId,
+    jsrPackageUrl,
+    versionString,
+  };
+};
+
 export const metadata = {
   title: '关于 DWeb - 技术栈与设计理念',
   description: '了解 DWeb 框架的技术栈（Deno、Preact、Tailwind CSS）和设计理念（简单易用、性能优先、开发体验、灵活扩展）',

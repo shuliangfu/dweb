@@ -7,7 +7,6 @@
 import Hero from '../components/Hero.tsx';
 import CodeBlock from '../components/CodeBlock.tsx';
 import type { PageProps, LoadContext } from '@dreamer/dweb';
-import { getJsrPackageUrl, getVersionString } from '../utils.ts';
 
 /**
  * 加载页面数据（服务端执行）
@@ -22,6 +21,8 @@ export const load = async ({
   getCookie,
   getSession,
 }: LoadContext) => {
+   const { getJsrPackageUrl, getVersionString } = await import('../utils.ts');
+
   // 示例：读取 Cookie
   const token = getCookie('token') || cookies.token;
 

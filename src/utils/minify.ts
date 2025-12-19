@@ -17,10 +17,22 @@ export async function minifyJavaScript(code: string): Promise<string> {
       minify: true,
       legalComments: 'none', // 移除注释
       target: 'esnext',
+      format: 'esm', // 确保使用 ES 模块格式
+      keepNames: false, // 允许重命名
     });
 
     if (!result || !result.code) {
       // 如果压缩失败，返回原始代码
+      return code;
+    }
+
+    // 验证压缩后的代码是否有效（基本检查）
+    try {
+      // 尝试解析压缩后的代码，检查是否有语法错误
+      new Function(result.code);
+    } catch (parseError) {
+      // 如果解析失败，返回原始代码
+      console.warn('[Minify] 压缩后的代码有语法错误，使用原始代码:', parseError);
       return code;
     }
 

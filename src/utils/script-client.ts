@@ -27,7 +27,17 @@ export async function createClientScript(
   const httpUrl = filePathToHttpUrl(routePath);
   // 转义路径中的特殊字符
   const escapedRoutePath = httpUrl.replace(/'/g, "\\'");
-  const propsJson = JSON.stringify(props).replace(/</g, "\\u003c");
+  
+  // 提取 metadata（如果存在），并从 props 中移除，避免重复和潜在问题
+  const metadata = (props as any)?.metadata || null;
+  const propsWithoutMetadata = { ...props };
+  if ('metadata' in propsWithoutMetadata) {
+    delete (propsWithoutMetadata as any).metadata;
+  }
+  // 确保 propsJson 是有效的 JSON，并转义特殊字符
+  let propsJson = JSON.stringify(propsWithoutMetadata);
+  // 转义 HTML 特殊字符，防止 XSS
+  propsJson = propsJson.replace(/</g, "\\u003c").replace(/>/g, "\\u003e");
 
   // 如果有布局路径，转换为 HTTP URL
   let escapedLayoutPath = "null";
@@ -477,10 +487,19 @@ async function initClientSideNavigation(render, jsx) {
   const appBasePath = basePath || '/';
   const escapedBasePath = appBasePath.replace(/'/g, "\\'");
 
-  // 提取 metadata（如果存在）
-  const metadata = (props as any)?.metadata || null;
-  const metadataJson = metadata ? JSON.stringify(metadata).replace(/</g, "\\u003c") : 'null';
-
+  // 生成 metadata JSON（已在上面提取），确保格式正确
+  let metadataJson = 'null';
+  if (metadata) {
+    try {
+      metadataJson = JSON.stringify(metadata);
+      // 转义 HTML 特殊字符，防止 XSS
+      metadataJson = metadataJson.replace(/</g, "\\u003c").replace(/>/g, "\\u003e");
+    } catch (error) {
+      console.warn('[Client Script] metadata 序列化失败，使用 null:', error);
+      metadataJson = 'null';
+    }
+	}
+	
   const clientContent = `
 // 页面数据
 globalThis.__PAGE_DATA__ = {
@@ -662,13 +681,16 @@ ${clientRouterCode}
       return;
     }
     
+    // 获取页面 props（从 __PAGE_DATA__ 中获取，避免直接插入 JSON）
+    const pageProps = globalThis.__PAGE_DATA__?.props || {};
+    
     // 创建页面元素（支持异步组件）
     let pageElement;
     try {
       // 先尝试直接调用组件（支持异步组件）
       // 如果组件是 async function，它会返回 Promise，我们等待它
       // 如果组件是同步函数，它直接返回 JSX 元素
-      const componentResult = PageComponent(${propsJson});
+      const componentResult = PageComponent(pageProps);
       if (componentResult instanceof Promise) {
         pageElement = await componentResult;
       } else {
@@ -679,7 +701,7 @@ ${clientRouterCode}
     } catch (elementError) {
       // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
       try {
-        let elementResult = jsx(PageComponent, ${propsJson});
+        let elementResult = jsx(PageComponent, pageProps);
         if (elementResult instanceof Promise) {
           pageElement = await elementResult;
         } else {

@@ -370,7 +370,7 @@ async function compileFile(
         jsx: 'automatic',
         jsxImportSource: 'preact',
         minify: true, // ✅ 压缩代码
-        // keepNames: true, // ✅ 保留导出名称（确保 load 方法名不被压缩）
+        keepNames: true, // ✅ 保留导出名称（确保 load 方法名不被压缩）
         treeShaking: true, // ✅ Tree-shaking
         legalComments: 'none', // ✅ 移除注释
         write: false, // 不写入文件，我们手动处理
