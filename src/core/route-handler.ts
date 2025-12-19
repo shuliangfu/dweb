@@ -987,7 +987,7 @@ export class RouteHandler {
         // 静默处理错误
       }
       
-      const clientScript = createClientScript(
+      const clientScript = await createClientScript(
         modulePath,
         renderMode,
         pageProps,
@@ -1169,6 +1169,11 @@ export class RouteHandler {
     
     // 加载页面数据
     const pageData = await this.loadPageData(pageModule, req, res);
+    // 提取页面元数据（metadata）用于 SEO
+    const pageMetadata = pageModule.metadata && typeof pageModule.metadata === 'object'
+      ? pageModule.metadata
+      : undefined;
+    
     const pageProps = { 
       params: req.params, 
       query: req.query, 
@@ -1176,6 +1181,8 @@ export class RouteHandler {
       // 提供翻译函数（如果 i18n 插件已设置）
       t: (req as any).t,
       lang: (req as any).lang,
+      // 添加 metadata 到 props，供客户端脚本使用
+      metadata: pageMetadata,
     };
 
     // 获取渲染配置

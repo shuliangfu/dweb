@@ -19,7 +19,6 @@ import { GraphQLServer } from "../features/graphql/server.ts";
 import { logger } from "../middleware/logger.ts";
 import { bodyParser } from "../middleware/body-parser.ts";
 import { staticFiles } from "../middleware/static.ts";
-import { setupSignalHandlers as _setupSignalHandlers } from "../features/shutdown.ts";
 import { createHMRClientScript, FileWatcher, HMRServer } from "./hmr.ts";
 import { loadMainApp, getMiddlewaresFromApp, getPluginsFromApp } from "../utils/app.ts";
 
@@ -309,7 +308,7 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 
 	// 设置 HMR 客户端脚本
 	const { setHMRClientScript } = await import("../core/route-handler.ts")
-	const hmrScript = createHMRClientScript(hmrPort)
+	const hmrScript = await createHMRClientScript(hmrPort)
 	setHMRClientScript(hmrScript)
 
 	// 创建文件监听器
@@ -516,13 +515,20 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 		}, 1000)
   }
   
-	// 设置优雅关闭信号监听器
-	_setupSignalHandlers({
-		close: async () => {
-			await closeDatabase()
-			server.close()
-		},
-	})
+	// 设置信号监听器（开发环境直接关闭，不执行优雅关闭）
+	Deno.addSignalListener('SIGTERM', async () => {
+		await closeDatabase().catch(() => {});
+		await hmrServer.stop().catch(() => {});
+		server.close();
+		Deno.exit(0);
+	});
+	
+	Deno.addSignalListener('SIGINT', async () => {
+		await closeDatabase().catch(() => {});
+		await hmrServer.stop().catch(() => {});
+		server.close();
+		Deno.exit(0);
+	});
 
 	await server.start(port, host)
 	

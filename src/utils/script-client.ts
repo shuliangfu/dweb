@@ -4,6 +4,7 @@
  */
 
 import { filePathToHttpUrl } from "./path.ts";
+import { minifyJavaScript } from "./minify.ts";
 
 /**
  * 创建客户端 JS 脚本
@@ -14,14 +15,14 @@ import { filePathToHttpUrl } from "./path.ts";
  * @param layoutPath 布局文件路径（可选）
  * @returns 客户端脚本 HTML
  */
-export function createClientScript(
+export async function createClientScript(
   routePath: string,
   renderMode: "ssr" | "csr" | "hybrid",
   props: Record<string, unknown>,
   shouldHydrate: boolean = false,
   layoutPath?: string | null,
   basePath?: string,
-): string {
+): Promise<string> {
   // 将文件路径转换为 HTTP URL
   const httpUrl = filePathToHttpUrl(routePath);
   // 转义路径中的特殊字符
@@ -139,6 +140,15 @@ async function initClientSideNavigation(render, jsx) {
   
   // 组件缓存
   const cache = new Map();
+  
+  // 更新 SEO meta 标签（客户端导航时使用）
+  // 直接使用全局的 updateMetaTagsFromPageData 函数
+  // updateMetaTagsFromPageData 可以接受 pageData 对象或 metadata 对象
+  function updateMetaTags(metadata) {
+    if (typeof window.updateMetaTagsFromPageData === 'function') {
+      window.updateMetaTagsFromPageData(metadata);
+    }
+  }
   
   // 加载页面数据（简化版：直接使用 Function 解析）
   async function loadPageData(pathname) {
@@ -427,6 +437,11 @@ async function initClientSideNavigation(render, jsx) {
       if (!hasContent) {
         throw new Error('渲染后容器为空');
       }
+      
+      // 更新 SEO meta 标签（如果页面数据包含 metadata）
+      if (typeof window.updateMetaTagsFromPageData === 'function') {
+        window.updateMetaTagsFromPageData(pageData);
+      }
     } catch (error) {
       // 打印错误到控制台，便于调试
       console.error('客户端路由导航错误:', error);
@@ -462,6 +477,10 @@ async function initClientSideNavigation(render, jsx) {
   const appBasePath = basePath || '/';
   const escapedBasePath = appBasePath.replace(/'/g, "\\'");
 
+  // 提取 metadata（如果存在）
+  const metadata = (props as any)?.metadata || null;
+  const metadataJson = metadata ? JSON.stringify(metadata).replace(/</g, "\\u003c") : 'null';
+
   const clientContent = `
 // 页面数据
 globalThis.__PAGE_DATA__ = {
@@ -469,8 +488,91 @@ globalThis.__PAGE_DATA__ = {
   renderMode: '${renderMode}',
   props: ${propsJson},
   layoutPath: ${escapedLayoutPath},
-  basePath: '${escapedBasePath}'
+  basePath: '${escapedBasePath}',
+  metadata: ${metadataJson}
 };
+
+// 更新 SEO meta 标签的通用函数（全局函数，供客户端路由使用）
+window.updateMetaTagsFromPageData = function updateMetaTagsFromPageData(pageData) {
+  const metadata = pageData?.metadata || (pageData && typeof pageData === 'object' ? pageData : null);
+  if (!metadata || typeof metadata !== 'object') return;
+  
+  const escapeHtml = (text) => {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+  };
+  
+  const updateOrCreateMeta = (attr, value, content) => {
+    let meta = document.querySelector(\`meta[\${attr}="\${value}"]\`);
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute(attr, value);
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('content', escapeHtml(content));
+  };
+  
+  // 更新 title
+  if (metadata.title) {
+    document.title = metadata.title;
+    updateOrCreateMeta('property', 'og:title', metadata.title);
+    updateOrCreateMeta('name', 'twitter:title', metadata.title);
+  }
+  
+  // 更新 description
+  if (metadata.description) {
+    updateOrCreateMeta('name', 'description', metadata.description);
+    updateOrCreateMeta('property', 'og:description', metadata.description);
+    updateOrCreateMeta('name', 'twitter:description', metadata.description);
+  }
+  
+  // 更新 keywords
+  if (metadata.keywords) {
+    const keywordsStr = Array.isArray(metadata.keywords) 
+      ? metadata.keywords.join(', ') 
+      : metadata.keywords;
+    updateOrCreateMeta('name', 'keywords', keywordsStr);
+  }
+  
+  // 更新 author
+  if (metadata.author) {
+    updateOrCreateMeta('name', 'author', metadata.author);
+  }
+  
+  // 更新 Open Graph image
+  if (metadata.image) {
+    updateOrCreateMeta('property', 'og:image', metadata.image);
+    updateOrCreateMeta('name', 'twitter:image', metadata.image);
+  }
+  
+  // 更新 canonical URL
+  if (metadata.url) {
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', metadata.url);
+  }
+  
+  // 更新 robots
+  if (metadata.robots !== undefined) {
+    if (metadata.robots === false) {
+      updateOrCreateMeta('name', 'robots', 'noindex, nofollow');
+    } else if (typeof metadata.robots === 'object') {
+      const directives = [];
+      if (metadata.robots.index !== false) directives.push('index');
+      else directives.push('noindex');
+      if (metadata.robots.follow !== false) directives.push('follow');
+      else directives.push('nofollow');
+      if (metadata.robots.noarchive) directives.push('noarchive');
+      if (metadata.robots.nosnippet) directives.push('nosnippet');
+      if (metadata.robots.noimageindex) directives.push('noimageindex');
+      updateOrCreateMeta('name', 'robots', directives.join(', '));
+    }
+  }
+}
 
 ${clientRouterCode}
 
@@ -626,6 +728,11 @@ ${clientRouterCode}
         throw renderError;
       }
       
+      // 更新 SEO meta 标签（初始加载时，CSR 模式）
+      if (typeof updateMetaTagsFromPageData === 'function') {
+        updateMetaTagsFromPageData(globalThis.__PAGE_DATA__);
+      }
+      
       // CSR 模式：初始化客户端路由导航（SPA 无刷新切换）
       if (typeof initClientSideNavigation === 'function') {
         initClientSideNavigation(render, jsx);
@@ -646,6 +753,12 @@ ${clientRouterCode}
           // 如果 hydration 失败，保留原有内容，不进行客户端渲染
           // 这样可以避免页面内容消失
         }
+      }
+      
+      // 更新 SEO meta 标签（初始加载时，Hybrid 模式）
+      // 即使服务端已经渲染了 meta 标签，客户端也需要更新以确保一致性
+      if (typeof updateMetaTagsFromPageData === 'function') {
+        updateMetaTagsFromPageData(globalThis.__PAGE_DATA__);
       }
       
       // Hybrid 模式：初始化客户端路由导航（SPA 无刷新切换）
@@ -680,16 +793,18 @@ ${clientRouterCode}
 
   // 对于 CSR 和 Hybrid 模式，需要立即执行链接拦截器（不使用 module，立即执行）
   if (renderMode === 'csr' || renderMode === 'hybrid') {
+    // 使用 esbuild 压缩代码
+    const [minifiedLinkInterceptor, minifiedClientContent] = await Promise.all([
+      minifyJavaScript(linkInterceptorScript),
+      minifyJavaScript(clientContent),
+		]);
+    
     // 返回两个脚本：立即执行的链接拦截器 + 模块化的渲染代码
-    return `
-<script>
-${linkInterceptorScript}
-</script>
-<script type="module">
-${clientContent}
-</script>`;
+    return `<script>${minifiedLinkInterceptor}</script><script type="module">${minifiedClientContent}</script>`;
   }
   
-  return `<script type="module">${clientContent}</script>`;
+  // 使用 esbuild 压缩代码
+  const minifiedClientContent = await minifyJavaScript(clientContent);
+  return `<script type="module">${minifiedClientContent}</script>`;
 }
 

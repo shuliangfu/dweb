@@ -3,6 +3,8 @@
  * 用于生成 HMR 客户端脚本代码
  */
 
+import { minifyJavaScript } from "./minify.ts";
+
 /**
  * 生成 HMR 客户端脚本内容
  * @param hmrPort HMR 服务器端口
@@ -339,13 +341,12 @@ export function generateHMRClientScript(hmrPort: number): string {
  * @param hmrPort HMR 服务器端口
  * @returns HMR 客户端脚本 HTML
  */
-export function createHMRClientScript(hmrPort: number): string {
+export async function createHMRClientScript(hmrPort: number): Promise<string> {
   const scriptContent = generateHMRClientScript(hmrPort);
+  
+  // 使用 esbuild 压缩代码
+  const minifiedScriptContent = await minifyJavaScript(scriptContent);
 
-  return `
-<script>
-${scriptContent}
-</script>
-`;
+  return `<script>${minifiedScriptContent}</script>`;
 }
 
