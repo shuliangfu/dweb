@@ -54,23 +54,44 @@ Deno.test('Form Validator Plugin - validateValue - number 规则', () => {
 });
 
 Deno.test('Form Validator Plugin - validateValue - min/max 规则', () => {
-  // 根据实际实现调整测试
-  const errors1 = validateValue(5, [{ type: 'number', value: 5, min: 10 }]);
-  // 根据实际实现验证
-  assert(errors1.length >= 0);
+  // 使用正确的规则格式：min 和 max 是单独的规则类型
+  const errors1 = validateValue(5, [
+    { type: 'number' },
+    { type: 'min', value: 10 },
+  ]);
+  assert(errors1.length > 0); // 5 < 10，应该有错误
   
-  const errors2 = validateValue(15, [{ type: 'number', value: 15, min: 10, max: 20 }]);
-  // 根据实际实现验证
-  assert(errors2.length >= 0);
+  const errors2 = validateValue(15, [
+    { type: 'number' },
+    { type: 'min', value: 10 },
+    { type: 'max', value: 20 },
+  ]);
+  assertEquals(errors2.length, 0); // 10 <= 15 <= 20，应该通过
+  
+  const errors3 = validateValue(25, [
+    { type: 'number' },
+    { type: 'max', value: 20 },
+  ]);
+  assert(errors3.length > 0); // 25 > 20，应该有错误
 });
 
 Deno.test('Form Validator Plugin - validateValue - minLength/maxLength 规则', () => {
-  // 根据实际实现，可能需要使用不同的规则格式
-  const errors1 = validateValue('ab', [{ type: 'string', value: 'ab', minLength: 5 }]);
-  assert(errors1.length >= 0);
+  // 使用正确的规则格式：minLength 和 maxLength 是单独的规则类型
+  const errors1 = validateValue('ab', [
+    { type: 'minLength', value: 5 },
+  ]);
+  assert(errors1.length > 0); // 'ab' 长度 < 5，应该有错误
   
-  const errors2 = validateValue('hello', [{ type: 'string', value: 'hello', minLength: 5, maxLength: 10 }]);
-  assert(errors2.length >= 0);
+  const errors2 = validateValue('hello', [
+    { type: 'minLength', value: 5 },
+    { type: 'maxLength', value: 10 },
+  ]);
+  assertEquals(errors2.length, 0); // 'hello' 长度在 5-10 之间，应该通过
+  
+  const errors3 = validateValue('this is too long', [
+    { type: 'maxLength', value: 10 },
+  ]);
+  assert(errors3.length > 0); // 长度 > 10，应该有错误
 });
 
 Deno.test('Form Validator Plugin - validateValue - pattern 规则', () => {
@@ -88,10 +109,10 @@ Deno.test('Form Validator Plugin - validateForm - 验证整个表单', () => {
     age: 25,
   };
   
-  const fields = [
-    { name: 'email', rules: [{ type: 'email', required: true }] },
+  const fields: Array<{ name: string; rules: Array<{ type: 'required' | 'email' | 'number' }> }> = [
+    { name: 'email', rules: [{ type: 'required' }, { type: 'email' }] },
     { name: 'name', rules: [{ type: 'required' }] },
-    { name: 'age', rules: [{ type: 'number', required: true }] },
+    { name: 'age', rules: [{ type: 'required' }, { type: 'number' }] },
   ];
   
   const result = validateForm(formData, fields);
@@ -107,18 +128,18 @@ Deno.test('Form Validator Plugin - validateForm - 验证失败', () => {
     age: 15,
   };
   
-  const fields = [
-    { name: 'email', rules: [{ type: 'email', required: true }] },
+  const fields: Array<{ name: string; rules: Array<{ type: 'required' | 'email' | 'number' }> }> = [
+    { name: 'email', rules: [{ type: 'required' }, { type: 'email' }] },
     { name: 'name', rules: [{ type: 'required' }] },
-    { name: 'age', rules: [{ type: 'number', required: true }] },
+    { name: 'age', rules: [{ type: 'required' }, { type: 'number' }] },
   ];
   
   const result = validateForm(formData, fields);
   
   assertEquals(result.valid, false);
   assert(Object.keys(result.errors).length > 0);
-  assert(result.errors.email !== undefined);
-  assert(result.errors.name !== undefined);
+  assert(result.errors.email !== undefined); // 无效的邮箱格式
+  assert(result.errors.name !== undefined); // 必填字段为空
 });
 
 Deno.test('Form Validator Plugin - 注入客户端脚本', async () => {
@@ -146,12 +167,15 @@ Deno.test('Form Validator Plugin - 注入客户端脚本', async () => {
     nextCalled = true;
   };
   
-  // 注意：onRequest 钩子可能不调用 next，它只是修改响应
+  // 注意：onRequest 钩子只接受 req 和 res，不接受 next
   if (plugin.onRequest) {
-    plugin.onRequest(req, res, next);
+    plugin.onRequest(req, res);
   }
   
-  // onRequest 可能不调用 next，所以不验证 nextCalled
+  // onRequest 不调用 next，所以手动调用以确保测试完成
+  await next();
+  
+  assert(nextCalled);
   assert(typeof res.body === 'string');
   // 验证脚本是否被注入（如果包含 </head>，应该被修改）
   const originalBody = '<html><head></head><body></body></html>';
@@ -190,12 +214,15 @@ Deno.test('Form Validator Plugin - 不注入客户端脚本', async () => {
     nextCalled = true;
   };
   
-  // 注意：onRequest 钩子可能不调用 next
+  // 注意：onRequest 钩子只接受 req 和 res，不接受 next
   if (plugin.onRequest) {
-    plugin.onRequest(req, res, next);
+    plugin.onRequest(req, res);
   }
   
-  // onRequest 可能不调用 next，所以不验证 nextCalled
+  // onRequest 不调用 next，所以手动调用以确保测试完成
+  await next();
+  
+  assert(nextCalled);
   // 如果不注入脚本，body 应该保持不变
   // 但注意：插件可能仍然会处理 HTML，所以只验证类型
   assert(typeof res.body === 'string');

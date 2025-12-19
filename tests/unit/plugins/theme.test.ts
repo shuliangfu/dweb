@@ -39,12 +39,15 @@ Deno.test('Theme Plugin - 注入主题脚本', async () => {
     nextCalled = true;
   };
   
-  // 注意：onRequest 钩子可能不调用 next，它只是修改响应
+  // 注意：onRequest 钩子只接受 req 和 res，不接受 next
   if (plugin.onRequest) {
-    plugin.onRequest(req, res, next);
+    plugin.onRequest(req, res);
   }
   
-  // onRequest 可能不调用 next，所以不验证 nextCalled
+  // onRequest 不调用 next，所以手动调用以确保测试完成
+  await next();
+  
+  assert(nextCalled);
   assert(typeof res.body === 'string');
   // 验证脚本是否被注入（检查 body 是否被修改）
   const originalBody = '<html><head></head><body></body></html>';
@@ -109,12 +112,15 @@ Deno.test('Theme Plugin - 不注入脚本', async () => {
     nextCalled = true;
   };
   
-  // 注意：onRequest 钩子可能不调用 next
+  // 注意：onRequest 钩子只接受 req 和 res，不接受 next
   if (plugin.onRequest) {
-    plugin.onRequest(req, res, next);
+    plugin.onRequest(req, res);
   }
   
-  // onRequest 可能不调用 next，所以不验证 nextCalled
+  // onRequest 不调用 next，所以手动调用以确保测试完成
+  await next();
+  
+  assert(nextCalled);
   // 如果不注入脚本，body 可能仍然会被修改（注入 data-theme 属性）
   assert(typeof res.body === 'string');
   // 注意：即使 injectScript 为 false，插件仍然可能注入 data-theme 属性
