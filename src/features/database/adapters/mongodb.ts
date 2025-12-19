@@ -2,7 +2,7 @@
  * MongoDB 数据库适配器
  */
 
-import { MongoClient } from '@mongodb';
+import { MongoClient, type Db } from '@mongodb';
 import { BaseAdapter } from './base.ts';
 import type { DatabaseConfig, DatabaseAdapter } from '../types.ts';
 
@@ -12,7 +12,7 @@ import type { DatabaseConfig, DatabaseAdapter } from '../types.ts';
  */
 export class MongoDBAdapter extends BaseAdapter {
   private client: MongoClient | null = null;
-  private db: any = null;
+  private db: Db | null = null;
 
   /**
    * 连接 MongoDB 数据库
@@ -131,7 +131,7 @@ export class MongoDBAdapter extends BaseAdapter {
   /**
    * 获取数据库实例（用于直接操作 MongoDB）
    */
-  getDatabase() {
+  getDatabase(): Db | null {
     return this.db;
   }
 

@@ -68,9 +68,9 @@ export {
 // 导出数据库相关 API
 export {
   DatabaseManager,
-  SQLiteAdapter,
+  // SQLiteAdapter,  // 使用 https:// 导入，JSR 不支持
   PostgreSQLAdapter,
-  MySQLAdapter,
+  // MySQLAdapter,  // 使用 https:// 导入，JSR 不支持
   MongoDBAdapter,
   BaseAdapter,
   SQLQueryBuilder,

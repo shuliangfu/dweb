@@ -4,10 +4,9 @@
  */
 
 import type { DatabaseAdapter, DatabaseConfig, DatabaseType } from './types.ts';
-import { SQLiteAdapter } from './adapters/sqlite.ts';
 import { PostgreSQLAdapter } from './adapters/postgresql.ts';
-import { MySQLAdapter } from './adapters/mysql.ts';
 import { MongoDBAdapter } from './adapters/mongodb.ts';
+// SQLiteAdapter 和 MySQLAdapter 使用 https:// 导入，JSR 不支持，使用动态导入
 
 /**
  * 数据库管理器类
@@ -21,7 +20,7 @@ export class DatabaseManager {
    * @param config 数据库配置
    */
   async connect(name: string = 'default', config: DatabaseConfig): Promise<void> {
-    const adapter = this.createAdapter(config.type);
+    const adapter = await this.createAdapter(config.type);
     await adapter.connect(config);
     this.adapters.set(name, adapter);
   }
@@ -44,14 +43,20 @@ export class DatabaseManager {
    * @param type 数据库类型
    * @returns 数据库适配器实例
    */
-  private createAdapter(type: DatabaseType): DatabaseAdapter {
+  private async createAdapter(type: DatabaseType): Promise<DatabaseAdapter> {
     switch (type) {
-      case 'sqlite':
+      case 'sqlite': {
+        // 动态导入 SQLite 适配器（使用 https:// 导入，JSR 不支持）
+        const { SQLiteAdapter } = await import('./adapters/sqlite.ts');
         return new SQLiteAdapter();
+      }
       case 'postgresql':
         return new PostgreSQLAdapter();
-      case 'mysql':
+      case 'mysql': {
+        // 动态导入 MySQL 适配器（使用 https:// 导入，JSR 不支持）
+        const { MySQLAdapter } = await import('./adapters/mysql.ts');
         return new MySQLAdapter();
+      }
       case 'mongodb':
         return new MongoDBAdapter();
       default:
