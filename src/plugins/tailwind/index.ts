@@ -76,7 +76,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
      * 请求处理钩子（开发环境实时编译）
      */
     async onRequest(req: any, res: any) {
-			const url = new URL(req.url);
+      const url = new URL(req.url);
       // 只处理 CSS 文件请求
       if (!url.pathname.endsWith('.css')) {
         return;
