@@ -73,7 +73,7 @@ export class DatabaseManager {
    * 关闭所有连接
    */
   async closeAll(): Promise<void> {
-    for (const [name, adapter] of this.adapters) {
+    for (const [_name, adapter] of this.adapters) {
       await adapter.close();
     }
     this.adapters.clear();
