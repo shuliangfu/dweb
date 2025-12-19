@@ -8,7 +8,7 @@ import { Server } from '../../../src/core/server.ts';
 import { Router } from '../../../src/core/router.ts';
 import { RouteHandler } from '../../../src/core/route-handler.ts';
 import * as path from '@std/path';
-import { ensureDir, ensureFile, remove } from '@std/fs';
+import { ensureDir, ensureFile } from '@std/fs';
 
 // 创建测试路由目录
 const testRoutesDir = path.join(Deno.cwd(), 'tests', 'fixtures', 'integration-rendering');
@@ -39,7 +39,7 @@ export default function HybridPage({ params, query }: PageProps) {
 // 辅助函数：清理测试文件
 async function cleanupTestFiles() {
   try {
-    await remove(testRoutesDir, { recursive: true });
+    await Deno.remove(testRoutesDir, { recursive: true });
   } catch (e) {
     if (!(e instanceof Deno.errors.NotFound)) {
       throw e;
