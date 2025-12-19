@@ -10,7 +10,6 @@ import {
   removeLoadOnlyImports,
   compileWithEsbuild,
   replaceRelativeImports,
-  removeLoadFromCompiledJS,
 } from '../../../src/utils/module.ts';
 
 Deno.test('Module Utils - extractFunctionBody - 提取普通函数体', () => {
@@ -298,22 +297,8 @@ import { c } from '../../c.js';
   assert(result.includes('/__modules/'));
 });
 
-// removeLoadFromCompiledJS 测试
-// 注意：这个函数处理编译后的 JS 代码，逻辑复杂，需要更精确的测试用例
-Deno.test('Module Utils - removeLoadFromCompiledJS - 没有 load 函数时返回原内容', () => {
-  const jsCode = `
-export function other() {
-  return 'test';
-}
-`;
-  
-  const result = removeLoadFromCompiledJS(jsCode);
-  assertEquals(result.trim(), jsCode.trim());
-});
-
-// 注意：以下测试用例暂时跳过，因为 removeLoadFromCompiledJS 函数实现复杂
-// 需要在实际编译后的 JS 代码上测试，而不是手写的 JS 代码
-// 这些测试用例可以在集成测试中补充
+// removeLoadFromCompiledJS 测试已移除
+// 该函数已被完全移除，不再需要测试
 
 // 补充更多边界情况测试
 Deno.test('Module Utils - extractFunctionBody - 空函数体', () => {

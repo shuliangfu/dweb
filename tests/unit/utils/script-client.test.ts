@@ -5,8 +5,8 @@
 import { assert } from '@std/assert';
 import { createClientScript } from '../../../src/utils/script-client.ts';
 
-Deno.test('Script Client Utils - createClientScript - 创建客户端脚本', () => {
-  const script = createClientScript(
+Deno.test('Script Client Utils - createClientScript - 创建客户端脚本', async () => {
+  const script = await createClientScript(
     '/routes/index.tsx',
     'hybrid',
     {},
@@ -19,8 +19,8 @@ Deno.test('Script Client Utils - createClientScript - 创建客户端脚本', ()
   assert(script.includes('<script') || script.includes('type="module"'));
 });
 
-Deno.test('Script Client Utils - createClientScript - 脚本包含必要内容', () => {
-  const script = createClientScript(
+Deno.test('Script Client Utils - createClientScript - 脚本包含必要内容', async () => {
+  const script = await createClientScript(
     '/routes/index.tsx',
     'csr',
     { title: 'Test' },
@@ -31,10 +31,10 @@ Deno.test('Script Client Utils - createClientScript - 脚本包含必要内容',
   assert(script.length > 0);
 });
 
-Deno.test('Script Client Utils - createClientScript - 不同渲染模式', () => {
-  const ssrScript = createClientScript('/routes/index.tsx', 'ssr', {}, false);
-  const csrScript = createClientScript('/routes/index.tsx', 'csr', {}, false);
-  const hybridScript = createClientScript('/routes/index.tsx', 'hybrid', {}, false);
+Deno.test('Script Client Utils - createClientScript - 不同渲染模式', async () => {
+  const ssrScript = await createClientScript('/routes/index.tsx', 'ssr', {}, false);
+  const csrScript = await createClientScript('/routes/index.tsx', 'csr', {}, false);
+  const hybridScript = await createClientScript('/routes/index.tsx', 'hybrid', {}, false);
   
   // 所有模式都应该生成脚本
   assert(ssrScript.length > 0);

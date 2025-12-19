@@ -14,8 +14,8 @@ Deno.test('Script HMR Utils - generateHMRClientScript - 生成 HMR 客户端脚�
   assert(script.includes('3001') || script.includes('port'));
 });
 
-Deno.test('Script HMR Utils - createHMRClientScript - 创建 HMR 客户端脚本', () => {
-  const script = createHMRClientScript(3001);
+Deno.test('Script HMR Utils - createHMRClientScript - 创建 HMR 客户端脚本', async () => {
+  const script = await createHMRClientScript(3001);
   
   // 应该返回一个字符串
   assert(typeof script === 'string');
