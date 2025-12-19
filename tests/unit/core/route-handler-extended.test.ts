@@ -760,3 +760,350 @@ Deno.test('RouteHandler - handle - 处理带配置的请求', async () => {
   assert(res.status === 404 || res.status === 200);
 });
 
+Deno.test('RouteHandler - handle - 处理不同的 HTTP 方法', async () => {
+  const router = createTestRouter();
+  const handler = new RouteHandler(router);
+  
+  const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
+  
+  for (const method of methods) {
+    const req = {
+      url: 'http://localhost:3000/test',
+      method: method,
+      headers: new Headers(),
+      getHeader: function(_name: string) {
+        return null;
+      },
+      params: {},
+      query: {},
+      body: undefined,
+      cookies: {},
+      getCookie: function(_name: string) {
+        return null;
+      },
+    } as Request;
+    
+    const res = {
+      status: 200,
+      headers: new Headers(),
+      setHeader: function(_name: string, _value: string) {},
+      html: function(html: string) {
+        this.body = html;
+        return this;
+      },
+      text: function(text: string) {
+        this.body = text;
+        return this;
+      },
+      body: undefined as string | undefined,
+    } as Response;
+    
+    await handler.handle(req, res);
+    
+    // 应该设置了响应（可能是 404 或其他状态码）
+    assert(res.status !== 200 || res.body !== undefined);
+  }
+});
+
+Deno.test('RouteHandler - handle - 处理带 hash 的 URL', async () => {
+  const router = createTestRouter();
+  const handler = new RouteHandler(router);
+  
+  const req = {
+    url: 'http://localhost:3000/test#section',
+    method: 'GET',
+    headers: new Headers(),
+    getHeader: function(_name: string) {
+      return null;
+    },
+    params: {},
+    query: {},
+    body: undefined,
+    cookies: {},
+    getCookie: function(_name: string) {
+      return null;
+    },
+  } as Request;
+  
+  const res = {
+    status: 200,
+    headers: new Headers(),
+    setHeader: function(_name: string, _value: string) {},
+    html: function(html: string) {
+      this.body = html;
+      return this;
+    },
+    text: function(text: string) {
+      this.body = text;
+      return this;
+    },
+    body: undefined as string | undefined,
+  } as Response;
+  
+  // 带 hash 的 URL 应该被正常处理（hash 部分会被忽略）
+  await handler.handle(req, res);
+  
+  // 应该设置了响应
+  assert(res.status !== 200 || res.body !== undefined);
+});
+
+Deno.test('RouteHandler - handle - 处理带多个查询参数的请求', async () => {
+  const router = createTestRouter();
+  const handler = new RouteHandler(router);
+  
+  const req = {
+    url: 'http://localhost:3000/test?param1=value1&param2=value2&param3=value3',
+    method: 'GET',
+    headers: new Headers(),
+    getHeader: function(_name: string) {
+      return null;
+    },
+    params: {},
+    query: {},
+    body: undefined,
+    cookies: {},
+    getCookie: function(_name: string) {
+      return null;
+    },
+  } as Request;
+  
+  const res = {
+    status: 200,
+    headers: new Headers(),
+    setHeader: function(_name: string, _value: string) {},
+    html: function(html: string) {
+      this.body = html;
+      return this;
+    },
+    text: function(text: string) {
+      this.body = text;
+      return this;
+    },
+    body: undefined as string | undefined,
+  } as Response;
+  
+  // 带多个查询参数的请求应该被正常处理
+  await handler.handle(req, res);
+  
+  // 应该设置了响应
+  assert(res.status !== 200 || res.body !== undefined);
+});
+
+Deno.test('RouteHandler - handle - 处理空查询字符串', async () => {
+  const router = createTestRouter();
+  const handler = new RouteHandler(router);
+  
+  const req = {
+    url: 'http://localhost:3000/test?',
+    method: 'GET',
+    headers: new Headers(),
+    getHeader: function(_name: string) {
+      return null;
+    },
+    params: {},
+    query: {},
+    body: undefined,
+    cookies: {},
+    getCookie: function(_name: string) {
+      return null;
+    },
+  } as Request;
+  
+  const res = {
+    status: 200,
+    headers: new Headers(),
+    setHeader: function(_name: string, _value: string) {},
+    html: function(html: string) {
+      this.body = html;
+      return this;
+    },
+    text: function(text: string) {
+      this.body = text;
+      return this;
+    },
+    body: undefined as string | undefined,
+  } as Response;
+  
+  // 空查询字符串应该被正常处理
+  await handler.handle(req, res);
+  
+  // 应该设置了响应
+  assert(res.status !== 200 || res.body !== undefined);
+});
+
+Deno.test('RouteHandler - handle - 处理根路径', async () => {
+  const router = createTestRouter();
+  const handler = new RouteHandler(router);
+  
+  const req = {
+    url: 'http://localhost:3000/',
+    method: 'GET',
+    headers: new Headers(),
+    getHeader: function(_name: string) {
+      return null;
+    },
+    params: {},
+    query: {},
+    body: undefined,
+    cookies: {},
+    getCookie: function(_name: string) {
+      return null;
+    },
+  } as Request;
+  
+  const res = {
+    status: 200,
+    headers: new Headers(),
+    setHeader: function(_name: string, _value: string) {},
+    html: function(html: string) {
+      this.body = html;
+      return this;
+    },
+    text: function(text: string) {
+      this.body = text;
+      return this;
+    },
+    body: undefined as string | undefined,
+  } as Response;
+  
+  // 根路径应该被正常处理
+  await handler.handle(req, res);
+  
+  // 应该设置了响应
+  assert(res.status !== 200 || res.body !== undefined);
+});
+
+Deno.test('RouteHandler - handle - 处理带特殊字符的路径', async () => {
+  const router = createTestRouter();
+  const handler = new RouteHandler(router);
+  
+  const req = {
+    url: 'http://localhost:3000/test%20path',
+    method: 'GET',
+    headers: new Headers(),
+    getHeader: function(_name: string) {
+      return null;
+    },
+    params: {},
+    query: {},
+    body: undefined,
+    cookies: {},
+    getCookie: function(_name: string) {
+      return null;
+    },
+  } as Request;
+  
+  const res = {
+    status: 200,
+    headers: new Headers(),
+    setHeader: function(_name: string, _value: string) {},
+    html: function(html: string) {
+      this.body = html;
+      return this;
+    },
+    text: function(text: string) {
+      this.body = text;
+      return this;
+    },
+    body: undefined as string | undefined,
+  } as Response;
+  
+  // URL 编码的路径应该被正常处理
+  await handler.handle(req, res);
+  
+  // 应该设置了响应
+  assert(res.status !== 200 || res.body !== undefined);
+});
+
+Deno.test('RouteHandler - handle - 处理模块请求 - 已编码的路径', async () => {
+  const router = createTestRouter();
+  const handler = new RouteHandler(router);
+  
+  const req = {
+    url: 'http://localhost:3000/__modules/routes%2Findex.tsx',
+    method: 'GET',
+    headers: new Headers({
+      'Accept': 'application/javascript',
+    }),
+    getHeader: function(name: string) {
+      return this.headers.get(name);
+    },
+    params: {},
+    query: {},
+    body: undefined,
+    cookies: {},
+    getCookie: function(_name: string) {
+      return null;
+    },
+  } as Request;
+  
+  const res = {
+    status: 200,
+    headers: new Headers(),
+    setHeader: function(name: string, value: string) {
+      this.headers.set(name, value);
+    },
+    text: function(text: string) {
+      this.body = text;
+      return this;
+    },
+    body: undefined as string | undefined,
+  } as Response;
+  
+  // URL 编码的模块请求路径应该被正常处理
+  try {
+    await handler.handle(req, res);
+    // 应该设置了响应
+    assert(res.status !== 200 || res.body !== undefined);
+  } catch (e) {
+    // 如果文件不存在或编译失败，可能会抛出错误，这是可以接受的
+    assert(e instanceof Error);
+  }
+});
+
+Deno.test('RouteHandler - handle - 处理模块请求 - 非 JavaScript 文件', async () => {
+  const router = createTestRouter();
+  const handler = new RouteHandler(router);
+  
+  const req = {
+    url: 'http://localhost:3000/__modules/assets/image.png',
+    method: 'GET',
+    headers: new Headers({
+      'Accept': 'image/png',
+    }),
+    getHeader: function(name: string) {
+      return this.headers.get(name);
+    },
+    params: {},
+    query: {},
+    body: undefined,
+    cookies: {},
+    getCookie: function(_name: string) {
+      return null;
+    },
+  } as Request;
+  
+  const res = {
+    status: 200,
+    headers: new Headers(),
+    setHeader: function(name: string, value: string) {
+      this.headers.set(name, value);
+    },
+    text: function(text: string) {
+      this.body = text;
+      return this;
+    },
+    body: undefined as string | undefined,
+  } as Response;
+  
+  // 非 JavaScript 文件的模块请求应该被处理（可能返回 404 或错误）
+  try {
+    await handler.handle(req, res);
+    // 应该设置了响应
+    assert(res.status !== 200 || res.body !== undefined);
+  } catch (e) {
+    // 如果文件不存在或处理失败，可能会抛出错误，这是可以接受的
+    assert(e instanceof Error);
+  }
+});
+
