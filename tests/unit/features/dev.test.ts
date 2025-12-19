@@ -51,6 +51,7 @@ Deno.test('Dev Server - HMR 端口配置', () => {
       dir: 'routes',
     },
     server: {
+      host: 'localhost',
       port: 3000,
     },
     dev: {
@@ -69,6 +70,7 @@ Deno.test('Dev Server - 自动打开浏览器配置', () => {
       dir: 'routes',
     },
     server: {
+      host: 'localhost',
       port: 3000,
     },
     dev: {
@@ -87,6 +89,7 @@ Deno.test('Dev Server - 静态资源目录配置', () => {
       dir: 'routes',
     },
     server: {
+      host: 'localhost',
       port: 3000,
     },
     static: {
@@ -105,6 +108,7 @@ Deno.test('Dev Server - Cookie 配置', () => {
       dir: 'routes',
     },
     server: {
+      host: 'localhost',
       port: 3000,
     },
     cookie: {
@@ -123,6 +127,7 @@ Deno.test('Dev Server - Session 配置', () => {
       dir: 'routes',
     },
     server: {
+      host: 'localhost',
       port: 3000,
     },
     session: {

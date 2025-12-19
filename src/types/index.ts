@@ -124,8 +124,8 @@ export interface RouteConfig {
 
 // 服务器配置
 export interface ServerConfig {
-  port？: number;
-  host: string;
+  port?: number;
+  host?: string;
 }
 
 // Cookie 配置
