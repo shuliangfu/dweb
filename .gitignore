@@ -3,7 +3,6 @@
 deno.lock
 node_modules/
 .npm/
-.github/
 
 # 构建输出
 dist/
