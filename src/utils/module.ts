@@ -7,10 +7,28 @@ import * as esbuild from "esbuild";
 
 /**
  * 提取函数体（使用括号匹配）
- * @param fileContent 文件内容
- * @param startIndex 开始位置
- * @param isArrowFunction 是否为箭头函数
- * @returns 函数体内容
+ * 
+ * 该函数通过括号匹配算法提取函数体内容，支持普通函数和箭头函数。
+ * 使用字符串状态机处理括号嵌套和字符串字面量，确保正确匹配函数体的开始和结束位置。
+ * 
+ * @param fileContent - 完整的文件内容字符串
+ * @param startIndex - 函数声明的开始位置（函数名或箭头函数的位置）
+ * @param isArrowFunction - 是否为箭头函数。如果为 true，会查找 `=>` 后的第一个 `{`；如果为 false，会查找参数列表结束后的第一个 `{`
+ * @returns 函数体内容（不包含外层花括号），如果无法找到函数体则返回空字符串
+ * 
+ * @example
+ * ```typescript
+ * const code = `function test(a, b) { return a + b; }`;
+ * const body = extractFunctionBody(code, code.indexOf('function test'));
+ * // body = " return a + b; "
+ * ```
+ * 
+ * @example
+ * ```typescript
+ * const code = `const test = (a, b) => { return a + b; }`;
+ * const body = extractFunctionBody(code, code.indexOf('const test'), true);
+ * // body = " return a + b; "
+ * ```
  */
 export function extractFunctionBody(
   fileContent: string,
@@ -104,8 +122,29 @@ export function extractFunctionBody(
 
 /**
  * 提取 load 函数体（支持多种写法）
- * @param fileContent 文件内容
- * @returns load 函数体内容，如果不存在则返回空字符串
+ * 
+ * 该函数用于从页面模块中提取 `load` 函数体，支持以下格式：
+ * - `export function load(...) { ... }`
+ * - `export async function load(...) { ... }`
+ * - `export const load = (...) => { ... }` (箭头函数)
+ * - `export const load = function(...) { ... }` (函数表达式)
+ * 
+ * 主要用于分析 `load` 函数中使用的导入，以便在客户端代码中移除不必要的导入。
+ * 
+ * @param fileContent - 完整的文件内容字符串
+ * @returns load 函数体内容（不包含外层花括号），如果不存在则返回空字符串
+ * 
+ * @example
+ * ```typescript
+ * const code = `
+ *   import { fetchData } from './api';
+ *   export async function load({ params }) {
+ *     return await fetchData(params.id);
+ *   }
+ * `;
+ * const body = extractLoadFunctionBody(code);
+ * // body = " return await fetchData(params.id); "
+ * ```
  */
 export function extractLoadFunctionBody(fileContent: string): string {
   // 尝试匹配：export function load(...) 或 export async function load(...)
@@ -140,8 +179,35 @@ export function extractLoadFunctionBody(fileContent: string): string {
 
 /**
  * 收集静态导入语句
- * @param fileContent 文件内容
- * @returns 导入信息数组
+ * 
+ * 该函数从文件内容中提取所有静态导入语句（相对路径导入），包括：
+ * - 命名导入：`import { name1, name2 } from './module'`
+ * - 默认导入：`import name from './module'`
+ * - 命名空间导入：`import * as name from './module'`
+ * - 类型导入：`import type { Type1, Type2 } from './module'`
+ * 
+ * 注意：只收集相对路径导入（以 `./` 或 `../` 开头），不收集绝对路径或 npm 包导入。
+ * 
+ * @param fileContent - 完整的文件内容字符串
+ * @returns 导入信息数组，每个元素包含：
+ *   - `lineNumber`: 导入语句所在的行号（从 0 开始）
+ *   - `names`: 导入的名称数组（包括默认导入、命名导入、命名空间导入）
+ *   - `importStatement`: 完整的导入语句字符串
+ * 
+ * @example
+ * ```typescript
+ * const code = `
+ *   import { a, b } from './module1';
+ *   import defaultName from './module2';
+ *   import * as ns from './module3';
+ * `;
+ * const imports = collectStaticImports(code);
+ * // imports = [
+ * //   { lineNumber: 1, names: ['a', 'b'], importStatement: "import { a, b } from './module1';" },
+ * //   { lineNumber: 2, names: ['defaultName'], importStatement: "import defaultName from './module2';" },
+ * //   { lineNumber: 3, names: ['ns'], importStatement: "import * as ns from './module3';" }
+ * // ]
+ * ```
  */
 export function collectStaticImports(fileContent: string): Array<{
   lineNumber: number;
@@ -448,8 +514,40 @@ function findLoadFunctionRange(fileContent: string): { start: number; end: numbe
 
 /**
  * 移除只在 load 函数中使用的静态导入，并移除整个 load 函数
- * @param fileContent 文件内容
- * @returns 处理后的文件内容
+ * 
+ * 该函数用于优化客户端代码，移除以下内容：
+ * 1. 只在 `load` 函数中使用的静态导入（这些导入在客户端不需要）
+ * 2. 整个 `load` 函数（`load` 函数只在服务端执行）
+ * 
+ * 算法流程：
+ * 1. 检测是否存在 `load` 函数
+ * 2. 收集所有静态导入语句
+ * 3. 提取 `load` 函数体
+ * 4. 对每个导入，检查是否只在 `load` 函数中使用（通过正则匹配使用次数）
+ * 5. 移除只在 `load` 函数中使用的导入
+ * 6. 移除整个 `load` 函数
+ * 7. 清理空行，保持代码可读性
+ * 
+ * @param fileContent - 完整的文件内容字符串
+ * @returns 处理后的文件内容，已移除不必要的导入和 `load` 函数
+ * 
+ * @example
+ * ```typescript
+ * const code = `
+ *   import { fetchData } from './api';  // 只在 load 中使用
+ *   import { Component } from './Component';  // 在组件中使用
+ *   
+ *   export async function load() {
+ *     return await fetchData();
+ *   }
+ *   
+ *   export default function Page() {
+ *     return <Component />;
+ *   }
+ * `;
+ * const result = removeLoadOnlyImports(code);
+ * // result 中移除了 fetchData 导入和 load 函数，保留了 Component 导入
+ * ```
  */
 export function removeLoadOnlyImports(fileContent: string): string {
   // 检测是否有 load 函数
@@ -538,9 +636,32 @@ export function removeLoadOnlyImports(fileContent: string): string {
 
 /**
  * 使用 esbuild 编译 TypeScript/TSX 文件
- * @param fileContent 文件内容
- * @param fullPath 完整文件路径
- * @returns 编译后的 JavaScript 代码
+ * 
+ * 该函数使用 esbuild 将 TypeScript/TSX 代码编译为 JavaScript，支持：
+ * - TypeScript 语法转换
+ * - JSX 自动转换（使用 Preact）
+ * - ES 模块格式输出
+ * 
+ * 注意：该函数只进行语法转换，不进行打包或代码分割。
+ * 
+ * @param fileContent - TypeScript/TSX 源代码内容
+ * @param fullPath - 完整的文件路径，用于：
+ *   - 确定文件类型（`.ts` 或 `.tsx`）
+ *   - 设置 sourcefile 选项（用于错误提示和 source map）
+ * @returns 编译后的 JavaScript 代码（Promise）
+ * @throws {Error} 如果 esbuild.transform 方法不存在或编译结果为空
+ * 
+ * @example
+ * ```typescript
+ * const tsCode = `
+ *   interface Props { name: string; }
+ *   export default function Component({ name }: Props) {
+ *     return <div>Hello {name}</div>;
+ *   }
+ * `;
+ * const jsCode = await compileWithEsbuild(tsCode, '/path/to/Component.tsx');
+ * // jsCode 包含编译后的 JavaScript 代码
+ * ```
  */
 export async function compileWithEsbuild(fileContent: string, fullPath: string): Promise<string> {
   // esbuild 可能导出为 default 或命名导出
@@ -568,9 +689,32 @@ export async function compileWithEsbuild(fileContent: string, fullPath: string):
 
 /**
  * 替换相对路径导入为 /__modules/ 路径
- * @param jsCode 编译后的 JavaScript 代码
- * @param filePath 当前文件路径（用于解析相对路径）
- * @returns 处理后的代码
+ * 
+ * 该函数将编译后的 JavaScript 代码中的相对路径导入（如 `./module`、`../utils`）
+ * 替换为框架的模块请求路径（如 `/__modules/...`），以便在运行时通过框架的模块加载器加载。
+ * 
+ * 支持的导入格式：
+ * - 静态导入：`import ... from './module'`
+ * - 动态导入：`import('./module')`
+ * 
+ * 路径解析规则：
+ * - `./module` → 相对于当前文件目录
+ * - `../module` → 相对于当前文件父目录
+ * - 支持多级相对路径（如 `../../module`）
+ * 
+ * @param jsCode - 编译后的 JavaScript 代码
+ * @param filePath - 当前文件的完整路径（用于解析相对路径），例如：`/project/routes/index.tsx`
+ * @returns 处理后的代码，所有相对路径导入已替换为 `/__modules/` 路径
+ * 
+ * @example
+ * ```typescript
+ * const jsCode = `
+ *   import { Component } from './Component';
+ *   import('./utils').then(m => m.doSomething());
+ * `;
+ * const result = replaceRelativeImports(jsCode, '/project/routes/index.tsx');
+ * // result 中的相对路径被替换为 /__modules/ 路径
+ * ```
  */
 export function replaceRelativeImports(jsCode: string, filePath: string): string {
   const currentDir = filePath.substring(0, filePath.lastIndexOf("/"));

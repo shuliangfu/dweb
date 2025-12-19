@@ -96,8 +96,37 @@ export class RouteHandler {
 
   /**
    * 处理模块请求（/__modules/ 路径）
-   * 将 TypeScript/TSX 文件编译为浏览器可用的 JavaScript
-   * 使用 esbuild 编译 TypeScript/TSX 文件
+   * 
+   * 该函数处理客户端模块请求，将 TypeScript/TSX 文件编译为浏览器可用的 JavaScript。
+   * 这是框架实现客户端代码分割和按需加载的核心机制。
+   * 
+   * 处理流程：
+   * 1. 解析请求路径，提取文件路径
+   * 2. 根据环境（开发/生产）确定文件位置：
+   *    - 开发环境：从项目根目录加载源文件
+   *    - 生产环境：从 `dist` 目录加载构建后的文件
+   * 3. 检查文件是否存在
+   * 4. 如果是 TypeScript/TSX 文件：
+   *    - 移除只在 `load` 函数中使用的导入
+   *    - 使用 esbuild 打包文件（包含所有依赖）
+   *    - 外部依赖保持 `import` 语句（不打包）
+   * 5. 设置响应头和内容类型
+   * 6. 返回编译后的 JavaScript 代码
+   * 
+   * 路径处理规则：
+   * - 开发环境：`/__modules/routes/index.tsx` → `routes/index.tsx`
+   * - 生产环境：`/__modules/./routes_index.abc123.js` → `dist/routes_index.abc123.js`
+   * 
+   * @param req - HTTP 请求对象
+   * @param res - HTTP 响应对象
+   * @returns Promise，在模块处理完成后解析
+   * 
+   * @throws {Error} 如果文件不存在或编译失败，会设置响应状态码并返回错误信息
+   * 
+   * @remarks
+   * - 使用 `Promise.resolve().then()` 确保所有操作都在异步上下文中执行
+   * - 生产环境会从 `dist` 目录加载已构建的文件，提高性能
+   * - 开发环境会实时编译 TypeScript/TSX 文件，支持热更新
    */
   private handleModuleRequest(req: Request, res: Response): Promise<void> {
     // 立即进入异步操作，确保函数不会在同步代码后提前返回
@@ -504,6 +533,30 @@ export class RouteHandler {
 
   /**
    * 加载页面模块
+   * 
+   * 该函数动态导入页面模块文件，获取页面组件、`load` 函数、`metadata` 等导出内容。
+   * 
+   * 模块导出内容：
+   * - `default`: 页面组件（必需）
+   * - `load`: 数据加载函数（可选）
+   * - `metadata`: SEO 元数据（可选）
+   * - `renderMode`: 渲染模式（可选）
+   * - `hydrate`: 是否启用 hydration（可选）
+   * - `layout`: 布局组件（可选）
+   * 
+   * @param routeInfo - 路由信息对象，包含文件路径等信息
+   * @param res - HTTP 响应对象，用于在加载失败时设置错误响应
+   * @returns 页面模块对象，包含所有导出内容
+   * 
+   * @throws {Error} 如果模块导入失败或返回空值，会设置响应状态码为 500 并抛出错误
+   * 
+   * @example
+   * ```typescript
+   * const pageModule = await this.loadPageModule(routeInfo, res);
+   * const PageComponent = pageModule.default;
+   * const loadFunction = pageModule.load;
+   * const metadata = pageModule.metadata;
+   * ```
    */
   private async loadPageModule(
     routeInfo: RouteInfo,
@@ -527,6 +580,40 @@ export class RouteHandler {
 
   /**
    * 加载页面数据（通过 load 函数）
+   * 
+   * 该函数调用页面模块的 `load` 函数获取页面所需的数据。
+   * `load` 函数在服务端执行，用于在渲染前获取数据（如数据库查询、API 调用等）。
+   * 
+   * 传递给 `load` 函数的参数：
+   * - `params`: 路由参数（动态路由参数）
+   * - `query`: URL 查询参数
+   * - `cookies`: Cookie 对象（只读）
+   * - `session`: Session 对象（如果存在）
+   * - `getCookie(name)`: 获取 Cookie 值的函数
+   * - `getSession()`: 获取 Session 的函数（异步）
+   * - `db`: 数据库实例（如果配置了数据库）
+   * 
+   * 如果页面模块没有导出 `load` 函数，返回空对象。
+   * 
+   * @param pageModule - 页面模块对象，可能包含 `load` 函数
+   * @param req - HTTP 请求对象，用于获取参数、查询、Cookie、Session 等
+   * @param res - HTTP 响应对象，用于在 `load` 函数执行失败时设置错误响应
+   * @returns `load` 函数返回的数据对象，如果没有 `load` 函数则返回空对象
+   * 
+   * @throws {Error} 如果 `load` 函数执行失败，会设置响应状态码为 500 并抛出错误
+   * 
+   * @example
+   * ```typescript
+   * // 在页面模块中
+   * export async function load({ params, db }) {
+   *   const user = await db.query('SELECT * FROM users WHERE id = ?', [params.id]);
+   *   return { user };
+   * }
+   * 
+   * // 在路由处理器中
+   * const pageData = await this.loadPageData(pageModule, req, res);
+   * // pageData = { user: {...} }
+   * ```
    */
   private async loadPageData(
     pageModule: Record<string, unknown>,
@@ -585,9 +672,38 @@ export class RouteHandler {
 
   /**
    * 检测组件文件是否使用了 Preact Hooks
-   * @param filePath 组件文件路径
-   * @param visited 已访问的文件路径集合（防止循环引用）
-   * @returns 如果使用了 Hooks 返回 true
+   * 
+   * 该函数通过静态分析检测组件文件及其依赖是否使用了 Preact Hooks。
+   * 如果检测到 Hooks 使用，框架会自动将渲染模式设置为 CSR（客户端渲染），
+   * 因为 Hooks 需要在客户端环境中运行。
+   * 
+   * 检测策略：
+   * 1. 检查是否导入了 `preact/hooks`（包括各种格式：源文件、构建后、HTTP URL）
+   * 2. 检查是否使用了常见的 Hooks（useState、useEffect、useCallback 等）
+   * 3. 检查是否有重命名的 Hooks（如 `useState as i`）
+   * 4. 递归检测所有相对路径导入的组件文件（防止循环引用）
+   * 
+   * 支持的 Hooks：
+   * - useState, useEffect, useCallback, useMemo, useRef
+   * - useContext, useReducer, useLayoutEffect
+   * 
+   * @param filePath - 组件文件的路径（相对路径或绝对路径）
+   * @param visited - 已访问的文件路径集合，用于防止循环引用（递归调用时使用）
+   * @returns 如果检测到使用了 Hooks 返回 `true`，否则返回 `false`
+   * 
+   * @example
+   * ```typescript
+   * // 检测页面组件是否使用 Hooks
+   * const usesHooks = await this.detectPreactHooks('routes/index.tsx');
+   * if (usesHooks) {
+   *   // 自动设置为 CSR 模式
+   * }
+   * ```
+   * 
+   * @remarks
+   * - 如果文件读取失败，返回 `false`（不自动设置 CSR，避免影响正常渲染）
+   * - 使用保守策略：只要检测到 hooks 导入，即使没有直接使用，也认为使用了 hooks
+   * - 递归检测深度受文件系统限制，但通过 `visited` 集合防止无限递归
    */
   private async detectPreactHooks(
     filePath: string,
@@ -716,6 +832,44 @@ export class RouteHandler {
 
   /**
    * 获取渲染配置（模式、是否 hydration、布局组件）
+   * 
+   * 该函数根据页面模块导出、路由信息和自动检测结果，确定页面的渲染配置。
+   * 
+   * 渲染模式优先级（从高到低）：
+   * 1. 页面组件导出的 `renderMode`（显式指定）
+   * 2. 自动检测结果（如果组件使用了 Preact Hooks，自动设置为 CSR）
+   * 3. 全局配置的 `renderMode`
+   * 4. 默认 SSR 模式
+   * 
+   * Hydration 规则：
+   * - Hybrid 模式：总是启用 hydration
+   * - SSR 模式：默认不启用 hydration，除非页面组件显式设置 `hydrate: true`
+   * - CSR 模式：不启用 hydration（客户端完全渲染）
+   * 
+   * 布局组件加载：
+   * - 从路由系统获取布局路径
+   * - 动态导入布局模块
+   * - 如果加载失败，静默处理，继续使用无布局模式
+   * 
+   * @param pageModule - 页面模块对象，可能包含：
+   *   - `renderMode`: 显式指定的渲染模式
+   *   - `hydrate`: 是否启用 hydration（仅 SSR 模式有效）
+   *   - `default`: 页面组件
+   * @param routeInfo - 路由信息对象，包含文件路径、路由路径等信息
+   * @returns 渲染配置对象，包含：
+   *   - `renderMode`: 最终确定的渲染模式（'ssr' | 'csr' | 'hybrid'）
+   *   - `shouldHydrate`: 是否启用 hydration（客户端激活）
+   *   - `LayoutComponent`: 布局组件函数，如果不存在则返回 `null`
+   * 
+   * @example
+   * ```typescript
+   * const config = await this.getRenderConfig(pageModule, routeInfo);
+   * // config = {
+   * //   renderMode: 'csr',
+   * //   shouldHydrate: false,
+   * //   LayoutComponent: LayoutComponentFunction
+   * // }
+   * ```
    */
   private async getRenderConfig(
     pageModule: Record<string, unknown>,
