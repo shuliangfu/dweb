@@ -24,7 +24,6 @@ Deno.test('Compression Middleware - 压缩文本响应', async () => {
     headers: new Headers({
       'Content-Type': 'text/html; charset=utf-8',
     }),
-    body: 'Hello World '.repeat(100), // 创建足够大的响应以触发压缩
     setHeader: function(name: string, value: string) {
       this.headers.set(name, value);
     },
@@ -70,7 +69,6 @@ Deno.test('Compression Middleware - 不压缩小响应', async () => {
     headers: new Headers({
       'Content-Type': 'text/plain',
     }),
-    body: 'Small', // 小于阈值
     setHeader: function(name: string, value: string) {
       this.headers.set(name, value);
     },
@@ -116,7 +114,6 @@ Deno.test('Compression Middleware - 不压缩二进制响应', async () => {
     headers: new Headers({
       'Content-Type': 'image/png',
     }),
-    body: binaryData,
     setHeader: function(name: string, value: string) {
       this.headers.set(name, value);
     },
@@ -158,7 +155,6 @@ Deno.test('Compression Middleware - 客户端不支持压缩', async () => {
     headers: new Headers({
       'Content-Type': 'text/html',
     }),
-    body: 'Hello World '.repeat(100),
     setHeader: function(name: string, value: string) {
       this.headers.set(name, value);
     },
@@ -209,7 +205,6 @@ Deno.test('Compression Middleware - 自定义过滤器', async () => {
     headers: new Headers({
       'Content-Type': 'application/json',
     }),
-    body: largeJson,
     setHeader: function(name: string, value: string) {
       this.headers.set(name, value);
     },
