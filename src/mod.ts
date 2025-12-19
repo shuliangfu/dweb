@@ -72,9 +72,13 @@ export {
   BaseAdapter,
   SQLQueryBuilder,
   MongoQueryBuilder,
+  SQLModel,
+  MongoModel,
   type DatabaseConfig,
   type DatabaseType,
   type DatabaseAdapter,
+  type WhereCondition,
+  type MongoWhereCondition,
 } from './features/database/mod.ts';
 export { env, envInt, envFloat, envBool, getAllEnv, validateEnv, initEnv } from './features/env.ts';
 export {

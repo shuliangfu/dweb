@@ -28,7 +28,14 @@ export {
   MongoQueryBuilder,
 } from './query/mod.ts';
 
-// ORM/ODM、迁移管理将在后续阶段实现
-// export { SQLModel, MongoModel } from './orm/mod.ts';
+// 导出 ORM/ODM 模型
+export {
+  SQLModel,
+  MongoModel,
+  type WhereCondition,
+  type MongoWhereCondition,
+} from './orm/mod.ts';
+
+// 迁移管理将在后续阶段实现
 // export { MigrationManager, type Migration } from './migration/mod.ts';
 
