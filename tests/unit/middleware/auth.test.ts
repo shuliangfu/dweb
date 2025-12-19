@@ -3,7 +3,7 @@
  */
 
 import { assertEquals, assert } from '@std/assert';
-import { auth } from '../../../src/middleware/auth.ts';
+import { auth, type AuthOptions } from '../../../src/middleware/auth.ts';
 
 Deno.test('Auth Middleware - 创建中间件', () => {
   const middleware = auth({
