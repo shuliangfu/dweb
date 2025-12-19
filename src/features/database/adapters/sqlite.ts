@@ -100,4 +100,3 @@ export class SQLiteAdapter extends BaseAdapter {
     }
   }
 }
-

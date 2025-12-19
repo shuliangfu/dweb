@@ -47,15 +47,31 @@ export class DatabaseManager {
     switch (type) {
       case 'sqlite': {
         // 动态导入 SQLite 适配器（使用 https:// 导入，JSR 不支持）
-        const { SQLiteAdapter } = await import('./adapters/sqlite.ts');
-        return new SQLiteAdapter();
+        // 注意：在 JSR 发布时，此文件可能被排除，需要从适配器文件直接导入
+        try {
+          const { SQLiteAdapter } = await import('./adapters/sqlite.ts');
+          return new SQLiteAdapter();
+        } catch (error) {
+          throw new Error(
+            `SQLite adapter not available. This may be because the package was published to JSR. ` +
+            `Please import SQLiteAdapter directly: import { SQLiteAdapter } from '@dreamer/dweb/features/database/adapters/sqlite';`
+          );
+        }
       }
       case 'postgresql':
         return new PostgreSQLAdapter();
       case 'mysql': {
         // 动态导入 MySQL 适配器（使用 https:// 导入，JSR 不支持）
-        const { MySQLAdapter } = await import('./adapters/mysql.ts');
-        return new MySQLAdapter();
+        // 注意：在 JSR 发布时，此文件可能被排除，需要从适配器文件直接导入
+        try {
+          const { MySQLAdapter } = await import('./adapters/mysql.ts');
+          return new MySQLAdapter();
+        } catch (error) {
+          throw new Error(
+            `MySQL adapter not available. This may be because the package was published to JSR. ` +
+            `Please import MySQLAdapter directly: import { MySQLAdapter } from '@dreamer/dweb/features/database/adapters/mysql';`
+          );
+        }
       }
       case 'mongodb':
         return new MongoDBAdapter();

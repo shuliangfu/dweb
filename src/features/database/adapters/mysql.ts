@@ -99,4 +99,3 @@ export class MySQLAdapter extends BaseAdapter {
     }
   }
 }
-
