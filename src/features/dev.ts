@@ -344,6 +344,18 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 	// 预先加载 import map 脚本
 	await preloadImportMapScript()
 
+	// 初始化数据库连接（如果配置了数据库）
+	if (config.database) {
+		try {
+			await initDatabase(config.database)
+			console.log('✅ 数据库连接已初始化')
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error)
+			console.error(`❌ 数据库连接失败: ${message}`)
+			// 不阻止服务器启动，但记录错误
+		}
+	}
+
 	// 创建 Cookie 和 Session 管理器
 	let cookieManager: CookieManager | null = null
 	let sessionManager: SessionManager | null = null
