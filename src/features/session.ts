@@ -160,7 +160,10 @@ export class SessionManager {
    * @returns Session 对象
    */
   private createSessionObject(sessionData: SessionData): Session {
-    const self = this;
+    // 保存必要的引用，避免在闭包中直接使用 this
+    const store = this.store;
+    const maxAge = this.config.maxAge || 3600000;
+    const generateSessionId = () => this.generateSessionId();
     
     return {
       // 使用 getter 确保 id 始终返回最新的 sessionData.id
@@ -170,17 +173,17 @@ export class SessionManager {
       data: sessionData.data,
       async update(newData: Record<string, unknown>): Promise<void> {
         sessionData.data = { ...sessionData.data, ...newData };
-        await self.store.set(sessionData.id, sessionData, self.config.maxAge || 3600000);
+        await store.set(sessionData.id, sessionData, maxAge);
       },
       async destroy(): Promise<void> {
-        await self.store.delete(sessionData.id);
+        await store.delete(sessionData.id);
       },
       async regenerate(): Promise<void> {
         const oldId = sessionData.id;
-        const newId = self.generateSessionId();
+        const newId = generateSessionId();
         sessionData.id = newId;
-        await self.store.set(newId, sessionData, self.config.maxAge || 3600000);
-        await self.store.delete(oldId);
+        await store.set(newId, sessionData, maxAge);
+        await store.delete(oldId);
       }
     };
   }
