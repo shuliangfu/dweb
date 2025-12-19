@@ -4,7 +4,7 @@
  * 参考 Fresh 框架的实现方式
  */
 
-import type { Plugin } from '../../types/index.ts';
+import type { Plugin, AppLike, Request, Response, BuildConfig } from '../../types/index.ts';
 import type { TailwindPluginOptions } from './types.ts';
 import { findTailwindConfigFile, findCSSFiles } from './utils.ts';
 import { processCSSV3 } from './v3.ts';
@@ -61,12 +61,12 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
 
   return {
     name: 'tailwind',
-    config: options,
+    config: options as Record<string, unknown>,
 
     /**
      * 初始化钩子
      */
-    async onInit(app: any) {
+    async onInit(app: AppLike) {
       // 在开发环境中，设置 CSS 文件处理中间件
       if (app.server && !app.isProduction) {
 				// TODO: 在开发环境中，设置 CSS 文件处理中间件
@@ -76,7 +76,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
     /**
      * 请求处理钩子（开发环境实时编译）
      */
-    async onRequest(req: any, res: any) {
+    async onRequest(req: Request, res: Response) {
       const url = new URL(req.url);
       // 只处理 CSS 文件请求
       if (!url.pathname.endsWith('.css')) {

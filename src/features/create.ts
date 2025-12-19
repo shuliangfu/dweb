@@ -668,7 +668,7 @@ export default function App({ children }: AppProps) {
  * @param props 组件属性
  * @returns JSX 元素
  */
-export default async function RootLayout({ children }: { children: any }) {
+export default async function RootLayout({ children }: { children: unknown }) {
   // 获取当前路径（在客户端运行时）
   let currentPath = '/';
   if (typeof globalThis !== 'undefined' && globalThis.location) {

@@ -61,11 +61,11 @@ export interface Response {
   body?: string | Uint8Array; // 支持字符串和二进制数据
   setCookie(name: string, value: string, options?: CookieOptions): void;
   setHeader(name: string, value: string): void;
-  json(data: any): Response;
+  json<T = unknown>(data: T): Response;
   html(html: string): Response;
   text(text: string): Response;
   redirect(url: string, status?: number): Response;
-  send(data: any): Response;
+  send(data: string | Uint8Array | object): Response;
 }
 
 // Cookie 选项
@@ -102,16 +102,35 @@ export interface MiddlewareConfig {
   options?: Record<string, any>;
 }
 
+// 应用实例接口（用于插件系统，避免循环依赖）
+// 注意：完整的 App 类型定义在 mod.ts 中
+export interface AppLike {
+  server: unknown;
+  middleware: unknown;
+  plugins: unknown;
+  use: (middleware: unknown) => void;
+  plugin: (plugin: unknown) => void;
+  // 扩展属性（某些插件可能需要）
+  [key: string]: unknown;
+}
+
 // 插件接口
 export interface Plugin {
   name: string;
-  onInit?: (app: any) => Promise<void> | void;
+  /** 初始化钩子，在应用启动时调用 */
+  onInit?: (app: AppLike) => Promise<void> | void;
+  /** 请求钩子，在每个请求处理前调用 */
   onRequest?: (req: Request, res: Response) => Promise<void> | void;
+  /** 响应钩子，在每个请求处理后调用 */
   onResponse?: (req: Request, res: Response) => Promise<void> | void;
+  /** 错误钩子，在发生错误时调用 */
   onError?: (err: Error, req: Request, res: Response) => Promise<void> | void;
-  onBuild?: (config: any) => Promise<void> | void;
-  onStart?: (app: any) => Promise<void> | void;
-  config?: Record<string, any>;
+  /** 构建钩子，在构建时调用 */
+  onBuild?: (config: BuildConfig) => Promise<void> | void;
+  /** 启动钩子，在服务器启动时调用 */
+  onStart?: (app: AppLike) => Promise<void> | void;
+  /** 插件配置 */
+  config?: Record<string, unknown>;
 }
 
 // 路由配置

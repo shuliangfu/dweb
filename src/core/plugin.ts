@@ -5,7 +5,7 @@
  * @module core/plugin
  */
 
-import type { Plugin, Request, Response } from '../types/index.ts';
+import type { Plugin, Request, Response, AppLike, BuildConfig } from '../types/index.ts';
 
 /**
  * 插件管理器
@@ -47,7 +47,7 @@ export class PluginManager {
    * manager.register({ name: "my-plugin", config: { enabled: true } });
    * ```
    */
-  register(plugin: Plugin | { name: string; config?: Record<string, any> }): void {
+  register(plugin: Plugin | { name: string; config?: Record<string, unknown> }): void {
     if ('onInit' in plugin || 'onRequest' in plugin || 'onResponse' in plugin || 'onError' in plugin || 'onBuild' in plugin || 'onStart' in plugin) {
       // 完整的插件对象
       this.plugins.push(plugin as Plugin);
@@ -83,7 +83,7 @@ export class PluginManager {
    * 执行初始化钩子
    * @param app 应用实例
    */
-  async executeOnInit(app: any): Promise<void> {
+  async executeOnInit(app: AppLike): Promise<void> {
     for (const plugin of this.plugins) {
       if (plugin.onInit) {
         await plugin.onInit(app);
@@ -135,7 +135,7 @@ export class PluginManager {
    * 执行构建钩子
    * @param config 构建配置
    */
-  async executeOnBuild(config: any): Promise<void> {
+  async executeOnBuild(config: BuildConfig): Promise<void> {
     for (const plugin of this.plugins) {
       if (plugin.onBuild) {
         await plugin.onBuild(config);
@@ -147,7 +147,7 @@ export class PluginManager {
    * 执行启动钩子
    * @param app 应用实例
    */
-  async executeOnStart(app: any): Promise<void> {
+  async executeOnStart(app: AppLike): Promise<void> {
     for (const plugin of this.plugins) {
       if (plugin.onStart) {
         await plugin.onStart(app);
