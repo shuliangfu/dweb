@@ -272,7 +272,6 @@ export async function createUser(req: Request) {
 **访问方式**（只支持路径模式）：
 - ✅ 驼峰格式：`POST /api/users/getUsers`
 - ✅ 短横线格式：`POST /api/users/get-users`
-- ❌ 查询参数模式：`POST /api/users?action=getUsers`（不支持）
 
 两种路径格式会自动转换，可以混用。
 
@@ -430,6 +429,45 @@ deno run -A jsr:@dreamer/dweb/cli dev:frontend
 # 启动后端应用
 deno run -A jsr:@dreamer/dweb/cli dev:backend
 ```
+
+## 🐳 Docker 部署
+
+### 使用 Docker Compose（推荐）
+
+```bash
+# 在项目根目录执行
+# 构建并启动容器（后台运行）
+docker compose up -d
+
+# 查看日志
+docker compose logs -f
+
+# 停止容器
+docker compose down
+```
+
+### 使用 Docker 命令
+
+```bash
+# 构建镜像
+docker build -t dweb-app:latest .
+
+# 运行容器
+docker run -d \
+  --name dweb-app \
+  -p 3000:3000 \
+  --restart unless-stopped \
+  dweb-app:latest
+
+# 查看日志
+docker logs -f dweb-app
+```
+
+### 访问应用
+
+容器启动后，访问：http://localhost:3000
+
+> 更多 Docker 部署详情，请查看 [Docker 部署指南](./docs/DOCKER.md)
 
 ## 📖 文档
 
