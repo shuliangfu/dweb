@@ -253,11 +253,51 @@ function escapeHtml(text: string): string {
 }
 
 /**
+ * 移除已存在的 SEO 标签，避免重复
+ */
+function removeExistingSEOTags(html: string): string {
+  let result = html;
+  
+  // 移除已存在的 title 标签
+  result = result.replace(/<title>.*?<\/title>/gi, '');
+  
+  // 移除已存在的 meta 标签（通过 name 或 property 属性匹配）
+  const metaPatterns = [
+    /<meta\s+name=["']description["'].*?>/gi,
+    /<meta\s+name=["']keywords["'].*?>/gi,
+    /<meta\s+name=["']author["'].*?>/gi,
+    /<meta\s+name=["']robots["'].*?>/gi,
+    /<meta\s+property=["']og:title["'].*?>/gi,
+    /<meta\s+property=["']og:description["'].*?>/gi,
+    /<meta\s+property=["']og:image["'].*?>/gi,
+    /<meta\s+property=["']og:url["'].*?>/gi,
+    /<meta\s+property=["']og:type["'].*?>/gi,
+    /<meta\s+property=["']og:site_name["'].*?>/gi,
+    /<meta\s+name=["']twitter:title["'].*?>/gi,
+    /<meta\s+name=["']twitter:description["'].*?>/gi,
+    /<meta\s+name=["']twitter:image["'].*?>/gi,
+    /<meta\s+name=["']twitter:card["'].*?>/gi,
+    /<meta\s+name=["']twitter:site["'].*?>/gi,
+    /<meta\s+name=["']twitter:creator["'].*?>/gi,
+    /<link\s+rel=["']canonical["'].*?>/gi,
+  ];
+  
+  for (const pattern of metaPatterns) {
+    result = result.replace(pattern, '');
+  }
+  
+  // 移除已存在的 JSON-LD 脚本
+  result = result.replace(/<script\s+type=["']application\/ld\+json["'].*?<\/script>/gis, '');
+  
+  return result;
+}
+
+/**
  * 注入 SEO 标签到 HTML
  */
 function injectSEOTags(html: string, metaTags: string, jsonLd: string): string {
-  // 在 <head> 标签内注入 meta 标签
-  let result = html;
+  // 先移除已存在的 SEO 标签，避免重复
+  let result = removeExistingSEOTags(html);
   
   // 注入 meta 标签到 </head> 之前
   if (metaTags) {
@@ -285,14 +325,30 @@ function injectSEOTags(html: string, metaTags: string, jsonLd: string): string {
  * 创建 SEO 插件
  */
 export function seo(options: SEOPluginOptions = {}): Plugin {
+  // 处理简写属性：将 title、description、keywords、author 映射到 defaultTitle、defaultDescription 等
+  const normalizedOptions: SEOPluginOptions = {
+    ...options,
+    defaultTitle: options.defaultTitle ?? options.title,
+    defaultDescription: options.defaultDescription ?? options.description,
+    defaultKeywords: options.defaultKeywords ?? (
+      options.keywords
+        ? Array.isArray(options.keywords)
+          ? options.keywords
+          : [options.keywords]
+        : undefined
+    ),
+    defaultAuthor: options.defaultAuthor ?? options.author,
+  };
+  
   return {
     name: 'seo',
-    config: options as Record<string, unknown>,
+    config: normalizedOptions as Record<string, unknown>,
     
     /**
-     * 请求处理钩子 - 注入 SEO 标签
+     * 响应处理钩子 - 注入 SEO 标签
+     * 在路由处理完成后执行，此时 pageMetadata 已经被提取
      */
-    async onRequest(req: Request, res: Response) {
+    onResponse(req: Request, res: Response) {
       // 只处理 HTML 响应
       if (!res.body || typeof res.body !== 'string') {
         return;
@@ -305,18 +361,49 @@ export function seo(options: SEOPluginOptions = {}): Plugin {
       
       try {
         const url = new URL(req.url);
+        
+        // 从请求中获取页面元数据（metadata）
+        // RouteHandler 会将页面组件导出的 metadata 存储到 req.pageMetadata
+        const pageMetadata = (req as any).pageMetadata as {
+          title?: string;
+          description?: string;
+          keywords?: string | string[];
+          author?: string;
+          image?: string;
+          url?: string;
+          lang?: string;
+          robots?: boolean | {
+            index?: boolean;
+            follow?: boolean;
+            noarchive?: boolean;
+            nosnippet?: boolean;
+            noimageindex?: boolean;
+          };
+        } | undefined;
+        
+        // 处理 keywords：如果是字符串，转换为数组
+        const keywords = pageMetadata?.keywords
+          ? Array.isArray(pageMetadata.keywords)
+            ? pageMetadata.keywords
+            : [pageMetadata.keywords]
+          : undefined;
+        
         const pageData = {
-          title: undefined, // 可以从页面组件中获取
-          description: undefined,
-          url: url.href,
-          image: options.defaultImage,
+          title: pageMetadata?.title,
+          description: pageMetadata?.description,
+          keywords: keywords,
+          author: pageMetadata?.author,
+          url: pageMetadata?.url || url.href,
+          image: pageMetadata?.image || normalizedOptions.defaultImage,
+          lang: pageMetadata?.lang,
+          robots: pageMetadata?.robots,
         };
         
         // 生成 meta 标签
-        const metaTags = generateMetaTags(options, pageData);
+        const metaTags = generateMetaTags(normalizedOptions, pageData);
         
         // 生成 JSON-LD
-        const jsonLd = generateJSONLD(options, pageData);
+        const jsonLd = generateJSONLD(normalizedOptions, pageData);
         
         // 注入到 HTML
         const html = res.body as string;

@@ -3,6 +3,14 @@
  * 使用 Preact + Tailwind CSS v4
  */
 
+export const metadata = {
+  title: '500 - 服务器错误',
+  description: '发生了服务器错误。请稍后重试，或联系管理员。',
+  keywords: '500, 服务器错误, DWeb',
+  author: 'DWeb',
+  robots: false, // 错误页面不需要被搜索引擎索引
+};
+
 export default function ErrorPage({ error }: { error?: { message?: string } }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-red-50 to-pink-100">

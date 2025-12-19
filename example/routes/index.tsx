@@ -5,7 +5,6 @@
  */
 
 import Hero from '../components/Hero.tsx';
-import FeatureSection from '../components/FeatureSection.tsx';
 import CodeBlock from '../components/CodeBlock.tsx';
 import type { PageProps, LoadContext } from '@dreamer/dweb';
 import { getJsrPackageUrl, getVersionString } from '../utils.ts';
@@ -42,6 +41,14 @@ export const load = async ({
     jsrPackageUrl,
     versionString,
   };
+};
+
+// 我想在这里设置 网页Title，Meta标签，SEO优化等
+export const metadata = {
+  title: 'DWeb - 现代化的全栈 Web 框架',
+  description: '基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web 框架',
+  keywords: 'DWeb, Deno, Preact, Tailwind CSS, Web 框架',
+  author: 'DWeb',
 };
 
 /**

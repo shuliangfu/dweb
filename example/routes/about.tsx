@@ -7,6 +7,13 @@ import TechCard from '../components/TechCard.tsx';
 import CodeBlock from '../components/CodeBlock.tsx';
 import type { PageProps } from '@dreamer/dweb';
 
+export const metadata = {
+  title: '关于 DWeb - 技术栈与设计理念',
+  description: '了解 DWeb 框架的技术栈（Deno、Preact、Tailwind CSS）和设计理念（简单易用、性能优先、开发体验、灵活扩展）',
+  keywords: 'DWeb, Deno, Preact, Tailwind CSS, 技术栈, 设计理念, Web 框架',
+  author: 'DWeb',
+};
+
 /**
  * 关于页面组件
  * @param props 页面属性

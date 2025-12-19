@@ -98,16 +98,24 @@ export interface JSONLDConfig {
  * SEO 插件选项
  */
 export interface SEOPluginOptions {
-  /** 默认标题 */
+  /** 默认标题（可以使用 title 作为简写） */
   defaultTitle?: string;
+  /** 标题（defaultTitle 的简写） */
+  title?: string;
   /** 标题模板（例如：`%s | My Site`） */
   titleTemplate?: string;
-  /** 默认描述 */
+  /** 默认描述（可以使用 description 作为简写） */
   defaultDescription?: string;
-  /** 默认关键词 */
+  /** 描述（defaultDescription 的简写） */
+  description?: string;
+  /** 默认关键词（可以使用 keywords 作为简写，支持字符串或数组） */
   defaultKeywords?: string[];
-  /** 默认作者 */
+  /** 关键词（defaultKeywords 的简写，支持字符串或数组） */
+  keywords?: string | string[];
+  /** 默认作者（可以使用 author 作为简写） */
   defaultAuthor?: string;
+  /** 作者（defaultAuthor 的简写） */
+  author?: string;
   /** 默认语言 */
   defaultLang?: string;
   /** 网站 URL */

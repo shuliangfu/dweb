@@ -1161,6 +1161,12 @@ export class RouteHandler {
       return;
     }
     
+    // 提取页面元数据（metadata）用于 SEO
+    // 将 metadata 存储到 req 对象上，供 SEO 插件使用
+    if (pageModule.metadata && typeof pageModule.metadata === 'object') {
+      (req as any).pageMetadata = pageModule.metadata;
+    }
+    
     // 加载页面数据
     const pageData = await this.loadPageData(pageModule, req, res);
     const pageProps = { 

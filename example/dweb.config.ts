@@ -3,7 +3,7 @@
  * 单应用模式
  */
 
-import { tailwind, cors, type AppConfig } from '@dreamer/dweb';
+import { tailwind, cors, seo, type AppConfig } from '@dreamer/dweb';
 
 const config: AppConfig = {
   name: 'example',
@@ -70,7 +70,13 @@ const config: AppConfig = {
       version: 'v4',
       cssPath: 'assets/style.css', // 指定主 CSS 文件路径
       optimize: true, // 生产环境优化
-    }),
+		}),
+		seo({
+			title: 'DWeb - 现代化的全栈 Web 框架',
+			description: '基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web 框架',
+			keywords: 'DWeb, Deno, Preact, Tailwind CSS, Web 框架',
+			author: 'DWeb',
+		}),
   ],
   middleware: [
     cors({

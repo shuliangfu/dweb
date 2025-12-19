@@ -10,6 +10,13 @@ import { useState, useEffect } from 'preact/hooks';
 import CodeBlock from '../components/CodeBlock.tsx';
 import type { PageProps } from '@dreamer/dweb';
 
+export const metadata = {
+  title: '交互示例 - DWeb 框架使用示例',
+  description: 'DWeb 框架的交互示例，包括点击事件、接口请求（支持驼峰和短横线格式）、表单提交、状态管理等完整示例代码',
+  keywords: 'DWeb, 示例, 交互示例, API 路由, 表单提交, Preact Hooks, 状态管理',
+  author: 'DWeb',
+};
+
 /**
  * 渲染模式：CSR（客户端渲染）
  * 因为使用了 Preact Hooks，必须在客户端渲染

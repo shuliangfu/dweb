@@ -3,6 +3,13 @@
  * 页面完全在客户端渲染
  */
 
+export const metadata = {
+  title: 'CSR 示例 - 客户端渲染示例页面',
+  description: 'DWeb 框架的 CSR（客户端渲染）模式示例，展示完全在客户端渲染的页面实现方式',
+  keywords: 'DWeb, CSR, 客户端渲染, 示例, Preact, SPA',
+  author: 'DWeb',
+};
+
 // 导出渲染模式
 export const renderMode = 'csr' as const;
 

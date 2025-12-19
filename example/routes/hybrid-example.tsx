@@ -5,6 +5,13 @@
 
 import { useState } from 'preact/hooks';
 
+export const metadata = {
+  title: 'Hybrid 示例 - 混合渲染示例页面',
+  description: 'DWeb 框架的 Hybrid（混合渲染）模式示例，展示服务端渲染 + 客户端 Hydration 的实现方式',
+  keywords: 'DWeb, Hybrid, 混合渲染, SSR, Hydration, 示例, Preact',
+  author: 'DWeb',
+};
+
 // 导出渲染模式
 export const renderMode = 'hybrid' as const;
 

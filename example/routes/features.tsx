@@ -7,6 +7,13 @@ import FeatureSection from '../components/FeatureSection.tsx';
 import CodeBlock from '../components/CodeBlock.tsx';
 import type { PageProps } from '@dreamer/dweb';
 
+export const metadata = {
+  title: '功能特性 - DWeb 框架完整功能列表',
+  description: 'DWeb 框架的完整功能列表，包括文件系统路由、多种渲染模式、HMR、中间件系统、插件系统、Cookie & Session、TypeScript 支持等',
+  keywords: 'DWeb, 功能特性, 文件系统路由, SSR, CSR, Hybrid, HMR, 中间件, 插件, TypeScript',
+  author: 'DWeb',
+};
+
 /**
  * 特性页面组件
  * @param props 页面属性

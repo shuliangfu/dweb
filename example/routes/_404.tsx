@@ -3,6 +3,14 @@
  * 使用 Preact + Tailwind CSS v4
  */
 
+export const metadata = {
+  title: '404 - 页面未找到',
+  description: '抱歉，您访问的页面不存在。请检查 URL 是否正确，或返回首页。',
+  keywords: '404, 页面未找到, DWeb',
+  author: 'DWeb',
+  robots: false, // 404 页面不需要被搜索引擎索引
+};
+
 export default function NotFoundPage({ error }: any) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100">

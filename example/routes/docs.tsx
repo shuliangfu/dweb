@@ -6,6 +6,13 @@
 import CodeBlock from '../components/CodeBlock.tsx';
 import type { PageProps, LoadContext } from '@dreamer/dweb';
 
+export const metadata = {
+  title: '文档 - DWeb 快速开始指南',
+  description: 'DWeb 框架的完整使用文档，包括快速开始、配置、创建页面、API 路由、中间件、渲染模式等详细说明',
+  keywords: 'DWeb, 文档, 快速开始, 教程, 使用指南, Deno, Preact, Web 框架',
+  author: 'DWeb',
+};
+
 /**
  * 加载页面数据（服务端执行）
  * @param context 包含 params、query、cookies、session 等的上下文对象
