@@ -48,6 +48,9 @@ export * from './plugins/mod.ts';
 export { CookieManager } from './features/cookie.ts';
 export { SessionManager } from './features/session.ts';
 
+// 导出统一的日志工具（便捷访问）
+export { logger } from './utils/logger.ts';
+
 // 导出错误类
 export {
   DWebError,

@@ -13,7 +13,7 @@
 
 ## 🔴 高优先级优化
 
-### 1. 统一日志系统
+### 1. 统一日志系统 ✅ 进行中
 
 **问题**：
 - 发现 **351 处** `console.log/error/warn` 直接调用
@@ -25,20 +25,35 @@
 - 无法统一控制日志级别
 - 生产环境调试不便
 
+**已完成**：
+- ✅ 创建统一的 logger 工具模块 (`src/utils/logger.ts`)
+- ✅ 在 `mod.ts` 中导出 logger，方便使用
+- ✅ 替换 `route-handler.ts` 中的 console 调用（3 处）
+- ✅ 替换 `error.ts` 中的 `logError` 函数使用 logger
+- ✅ 替换 `dev.ts` 中的 console 调用（10 处）
+- ✅ 替换 `build.ts` 中的 console 调用（9 处）
+
+**进行中**：
+- 🔄 替换插件中的 console 调用（约 50+ 处）
+- 🔄 替换中间件中的 console 调用（约 10+ 处）
+- 🔄 替换其他工具文件中的 console 调用
+
 **建议**：
 ```typescript
 // 统一使用框架的日志系统
 import { logger } from '@dreamer/dweb';
 
 // 替换所有 console.log/error/warn
-logger.info('消息');
-logger.error('错误', { context });
-logger.warn('警告');
+logger.info('消息', { context });
+logger.error('错误', error, { context });
+logger.warn('警告', { context });
+logger.debug('调试信息', { context });
 ```
 
 **优先级**: 🔴 高  
 **预计工作量**: 2-3 天  
-**文件数量**: 43 个文件
+**文件数量**: 43 个文件  
+**完成进度**: 约 30%（核心文件已完成）
 
 ---
 

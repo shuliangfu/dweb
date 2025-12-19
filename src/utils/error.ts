@@ -140,55 +140,57 @@ export function logError(
     [key: string]: unknown;
   }
 ): void {
-  console.error('\n❌ ========== 错误 ==========');
+  // 使用统一的日志系统
+  const logger = getLogger();
   
-  // 输出上下文信息
+  // 构建错误上下文数据
+  const errorData: Record<string, unknown> = {};
+  
   if (context) {
     if (context.request) {
-      console.error('请求路径:', context.request.url || 'N/A');
-      console.error('请求方法:', context.request.method || 'N/A');
+      errorData.requestUrl = context.request.url || 'N/A';
+      errorData.requestMethod = context.request.method || 'N/A';
     }
     if (context.route) {
-      console.error('路由路径:', context.route.path || 'N/A');
-      console.error('路由文件:', context.route.filePath || 'N/A');
-      console.error('路由类型:', context.route.type || 'N/A');
+      errorData.routePath = context.route.path || 'N/A';
+      errorData.routeFile = context.route.filePath || 'N/A';
+      errorData.routeType = context.route.type || 'N/A';
     }
-    // 输出其他上下文信息
+    // 添加其他上下文信息
     for (const [key, value] of Object.entries(context)) {
       if (key !== 'request' && key !== 'route' && value !== undefined) {
-        console.error(`${key}:`, value);
+        errorData[key] = value;
       }
     }
   }
   
-  // 输出错误信息
+  // 构建错误消息
+  let errorMessage = '发生错误';
+  let errorObj: Error | undefined;
+  
   if (error instanceof DWebError) {
-    console.error('错误类型:', error.name);
-    console.error('错误代码:', error.code);
-    console.error('HTTP 状态码:', error.statusCode);
-    console.error('错误消息:', error.message);
+    errorMessage = `[${error.code}] ${error.message}`;
+    errorObj = error;
+    errorData.errorType = error.name;
+    errorData.errorCode = error.code;
+    errorData.statusCode = error.statusCode;
     if (error.details && Object.keys(error.details).length > 0) {
-      console.error('错误详情:', error.details);
-    }
-    if (error.stack) {
-      console.error('错误堆栈:');
-      console.error(error.stack);
+      errorData.errorDetails = error.details;
     }
   } else if (error instanceof Error) {
-    console.error('错误类型:', error.name);
-    console.error('错误消息:', error.message);
+    errorMessage = error.message;
+    errorObj = error;
+    errorData.errorType = error.name;
     if (error.cause) {
-      console.error('错误原因:', error.cause);
-    }
-    if (error.stack) {
-      console.error('错误堆栈:');
-      console.error(error.stack);
+      errorData.errorCause = error.cause;
     }
   } else {
-    console.error('错误内容:', error);
+    errorMessage = String(error);
+    errorData.errorContent = error;
   }
   
-  console.error('===================================\n');
+  // 使用日志系统记录错误
+  logger.error(errorMessage, errorObj, errorData);
 }
 
 /**

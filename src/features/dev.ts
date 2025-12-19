@@ -16,6 +16,7 @@ import { initDatabase, closeDatabase } from "../features/database/access.ts";
 import { WebSocketServer } from "../features/websocket/server.ts";
 import { initWebSocket } from "../features/websocket/access.ts";
 import { GraphQLServer } from "../features/graphql/server.ts";
+import { logger as appLogger } from "../utils/logger.ts";
 import { logger } from "../middleware/logger.ts";
 import { bodyParser } from "../middleware/body-parser.ts";
 import { staticFiles } from "../middleware/static.ts";
@@ -199,32 +200,21 @@ function createRequestHandler(
           // 如果插件清空了响应体，恢复它
           if (!res.body && res.status === 200) {
             const errorMsg = "响应体在插件处理后丢失";
-            console.error('\n❌ ========== 插件处理错误 ==========');
-            console.error('请求路径:', req.url);
-            console.error('请求方法:', req.method);
-            console.error('错误:', errorMsg);
-            console.error('===================================\n');
+            appLogger.error('插件处理错误', undefined, {
+              url: req.url,
+              method: req.method,
+              errorMessage: errorMsg,
+            });
             res.status = 500;
             res.html(`<h1>500 - Internal Server Error</h1><p>${errorMsg}</p>`);
           }
         }
       } catch (error) {
         // 捕获中间件或路由处理过程中的错误
-        console.error('\n❌ ========== 请求处理异常 ==========');
-        console.error('请求路径:', req.url);
-        console.error('请求方法:', req.method);
-        
-        if (error instanceof Error) {
-          console.error('错误类型:', error.name);
-          console.error('错误消息:', error.message);
-          if (error.stack) {
-            console.error('错误堆栈:');
-            console.error(error.stack);
-          }
-        } else {
-          console.error('错误内容:', error);
-        }
-        console.error('===================================\n');
+        appLogger.error('请求处理异常', error instanceof Error ? error : undefined, {
+          url: req.url,
+          method: req.method,
+        });
         
         // 确保错误响应已设置
         if (!res.body || res.status === 200) {
@@ -266,21 +256,10 @@ async function handleRoute(
     }
   } catch (error) {
     // 捕获路由处理过程中的错误
-    console.error('\n❌ ========== 路由处理异常 ==========');
-    console.error('请求路径:', req.url);
-    console.error('请求方法:', req.method);
-    
-    if (error instanceof Error) {
-      console.error('错误类型:', error.name);
-      console.error('错误消息:', error.message);
-      if (error.stack) {
-        console.error('错误堆栈:');
-        console.error(error.stack);
-      }
-    } else {
-      console.error('错误内容:', error);
-    }
-    console.error('===================================\n');
+    appLogger.error('路由处理异常', error instanceof Error ? error : undefined, {
+      url: req.url,
+      method: req.method,
+    });
     
     // 重新抛出错误，让上层的错误处理机制处理
     throw error;
@@ -350,10 +329,10 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 	if (config.database) {
 		try {
 			await initDatabase(config.database)
-			console.log('✅ 数据库连接已初始化')
+			appLogger.info('数据库连接已初始化')
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error)
-			console.error(`❌ 数据库连接失败: ${message}`)
+			appLogger.error(`数据库连接失败: ${message}`)
 			// 不阻止服务器启动，但记录错误
 		}
 	}
@@ -377,9 +356,9 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 			config.graphql.schema,
 			config.graphql.config
 		);
-		console.log(`✅ GraphQL 服务器已启动 (端点: ${config.graphql.config?.path || '/graphql'})`);
+		appLogger.info(`GraphQL 服务器已启动`, { endpoint: config.graphql.config?.path || '/graphql' });
 		if (config.graphql.config?.graphiql !== false) {
-			console.log(`   GraphiQL: ${config.graphql.config?.graphiqlPath || '/graphiql'}`);
+			appLogger.info(`GraphiQL 端点`, { path: config.graphql.config?.graphiqlPath || '/graphiql' });
 		}
 	}
 
@@ -399,7 +378,7 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 	middlewareManager.add(logger({
 		format: "dev",
 		// 跳过 .well-known 路径的请求（浏览器自动发送的元数据请求）
-		skip: (req) => {
+		skip: (req: { url: string; method: string }) => {
 			const url = new URL(req.url)
 			return url.pathname.startsWith('/.well-known/')
 		}
@@ -471,7 +450,7 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 	if (config.websocket) {
 		wsServer = new WebSocketServer(config.websocket);
 		initWebSocket(wsServer);
-		console.log(`✅ WebSocket 服务器已启动 (路径: ${config.websocket.path || '/ws'})`);
+		appLogger.info(`WebSocket 服务器已启动`, { path: config.websocket.path || '/ws' });
 		
 		// 设置 WebSocket 升级处理器
 		server.setWebSocketUpgradeHandler((req: globalThis.Request) => {

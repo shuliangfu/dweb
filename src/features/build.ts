@@ -11,6 +11,7 @@ import { PluginManager } from '../core/plugin.ts';
 import { crypto } from '@std/crypto';
 import * as path from '@std/path';
 import * as esbuild from 'esbuild';
+import { logger } from '../utils/logger.ts';
 
 /**
  * 清空目录
@@ -55,19 +56,19 @@ async function clearDirectory(dirPath: string): Promise<void> {
         }
       }
 
-      console.log(`🗑️  已清空目录: ${dirPath}`);
+      logger.info(`已清空目录`, { path: dirPath });
     } catch (_error) {
       // 如果 walk 失败（可能是目录结构有问题），尝试直接删除整个目录后重建
       try {
         await Deno.remove(dirPath, { recursive: true });
         await ensureDir(dirPath);
-        console.log(`🗑️  已清空并重建目录: ${dirPath}`);
+        logger.info(`已清空并重建目录`, { path: dirPath });
       } catch (removeError) {
-        console.warn(`⚠️  清空目录失败: ${dirPath}`, removeError);
+        logger.warn(`清空目录失败`, { path: dirPath, error: removeError });
       }
     }
   } catch (error) {
-    console.warn(`⚠️  清空目录失败: ${dirPath}`, error);
+    logger.warn(`清空目录失败`, { path: dirPath, error });
   }
 }
 
@@ -103,7 +104,7 @@ async function compressAsset(
     // 其他格式不支持压缩
     return false;
   } catch (error) {
-    console.warn(`⚠️  压缩资源失败: ${inputPath}`, error);
+    logger.warn(`压缩资源失败`, { path: inputPath, error });
     return false;
   }
 }
@@ -157,10 +158,10 @@ async function compressImage(
 
     // 大文件：提示需要外部压缩工具
     // 在实际项目中，可以通过插件或配置外部工具来实现
-    console.warn(`💡 提示: 图片 ${inputPath} 较大 (${(imageData.length / 1024).toFixed(2)}KB)，建议使用外部工具压缩（如 sharp、imagemin）`);
+    logger.warn(`图片较大，建议使用外部工具压缩`, { path: inputPath, size: `${(imageData.length / 1024).toFixed(2)}KB` });
     return false; // 暂时不压缩，直接复制
   } catch (error) {
-    console.warn(`⚠️  图片压缩失败: ${inputPath}`, error);
+    logger.warn(`图片压缩失败`, { path: inputPath, error });
     return false;
   }
 }
@@ -427,7 +428,7 @@ async function compileFile(
       return { outputPath, hashName, cached: false };
     }
   } catch (error) {
-    console.error(`编译文件失败: ${filePath}`, error);
+    logger.error(`编译文件失败`, error instanceof Error ? error : undefined, { path: filePath });
     throw error;
   }
 }
@@ -560,7 +561,7 @@ async function compileDirectory(
     }
   }
 
-  console.log(`📝 找到 ${files.length} 个文件需要编译`);
+  logger.info(`找到文件需要编译`, { count: files.length });
 
   // 如果启用代码分割，使用批量编译
   if (codeSplitting && files.length > 1) {

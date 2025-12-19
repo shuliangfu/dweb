@@ -17,6 +17,7 @@ import { createImportMapScript } from '../utils/import-map.ts';
 import { createClientScript } from '../utils/script-client.ts';
 import { minifyJavaScript } from '../utils/minify.ts';
 import * as path from '@std/path';
+import { logger } from '../utils/logger.ts';
 
 /**
  * HMR 客户端脚本注入函数
@@ -389,13 +390,12 @@ export class RouteHandler {
       // 验证响应体已设置
       if (!res.body && res.status === 200) {
         const errorMsg = '响应体在路由处理后丢失';
-        console.error('\n❌ ========== 响应体丢失 ==========');
-        console.error('请求路径:', req.url);
-        console.error('请求方法:', req.method);
-        console.error('错误:', errorMsg);
-        console.error('路由类型:', routeInfo.type);
-        console.error('路由文件:', routeInfo.filePath);
-        console.error('===================================\n');
+        logger.error('响应体在路由处理后丢失', undefined, {
+          url: req.url,
+          method: req.method,
+          routeType: routeInfo.type,
+          routeFile: routeInfo.filePath,
+        });
         res.status = 500;
         res.html(`<h1>500 - Internal Server Error</h1><p>${errorMsg}</p>`);
       }
@@ -407,13 +407,12 @@ export class RouteHandler {
     // 最终验证响应体已设置
     if (!res.body && res.status === 200) {
       const errorMsg = 'Route handler did not set response body';
-      console.error('\n❌ ========== 路由处理器未设置响应体 ==========');
-      console.error('请求路径:', req.url);
-      console.error('请求方法:', req.method);
-      console.error('错误:', errorMsg);
-      console.error('路由类型:', routeInfo.type);
-      console.error('路由文件:', routeInfo.filePath);
-      console.error('===================================\n');
+      logger.error('路由处理器未设置响应体', undefined, {
+        url: req.url,
+        method: req.method,
+        routeType: routeInfo.type,
+        routeFile: routeInfo.filePath,
+      });
       res.status = 500;
       res.text(`Internal Server Error: ${errorMsg}`);
     }
@@ -512,16 +511,12 @@ export class RouteHandler {
     } catch (error) {
       // API 路由错误应该返回 JSON，而不是 HTML
       const errorMsg = error instanceof Error ? error.message : String(error);
-      console.error('\n❌ ========== API 路由错误 ==========');
-      console.error('请求路径:', req.url);
-      console.error('请求方法:', req.method);
-      console.error('错误:', errorMsg);
-      if (error instanceof Error && error.stack) {
-        console.error('错误堆栈:');
-        console.error(error.stack);
-      }
-      console.error('路由文件:', routeInfo.filePath);
-      console.error('===================================\n');
+      logger.error('API 路由错误', error instanceof Error ? error : undefined, {
+        url: req.url,
+        method: req.method,
+        errorMessage: errorMsg,
+        routeFile: routeInfo.filePath,
+      });
 
       res.status = errorMsg.includes('未找到') ? 404 : 500;
       res.json({
