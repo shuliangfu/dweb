@@ -11,6 +11,7 @@
 - [使用迁移管理](#使用迁移管理)
 - [在 load 函数中使用](#在-load-函数中使用)
 - [在 API 路由中使用](#在-api-路由中使用)
+- [在中间件中使用](#在中间件中使用)
 - [最佳实践](#最佳实践)
 
 ---
@@ -410,6 +411,43 @@ export async function createUser(req: Request) {
     .insert('users', body)
     .execute();
   return { success: true };
+}
+```
+
+---
+
+## 在中间件中使用
+
+中间件可以通过 `getDatabase()` 函数访问数据库：
+
+```typescript
+// routes/_middleware.ts
+import type { Request, Response } from '@dreamer/dweb';
+import { getDatabase, SQLQueryBuilder } from '@dreamer/dweb';
+
+export default async function middleware(
+  req: Request,
+  res: Response,
+  next: () => Promise<void>
+) {
+  try {
+    // 访问数据库
+    const db = getDatabase();
+    const builder = new SQLQueryBuilder(db);
+    
+    // 记录请求日志到数据库
+    await builder
+      .insert('request_logs', {
+        method: req.method,
+        url: req.url,
+        timestamp: new Date().toISOString(),
+      })
+      .execute();
+  } catch {
+    // 数据库未配置或访问失败时忽略
+  }
+  
+  await next();
 }
 ```
 
