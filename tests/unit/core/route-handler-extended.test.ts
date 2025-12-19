@@ -64,7 +64,7 @@ Deno.test('RouteHandler - 构造函数 - 接受 CookieManager', () => {
   assert(handler !== null);
 });
 
-Deno.test('RouteHandler - 构造函数 - 接受 SessionManager', () => {
+Deno.test('RouteHandler - 构造函数 - 接受 SessionManager', async () => {
   const router = createTestRouter();
   const sessionManager = new SessionManager({
     secret: 'test-secret',
@@ -73,6 +73,10 @@ Deno.test('RouteHandler - 构造函数 - 接受 SessionManager', () => {
   const handler = new RouteHandler(router, undefined, sessionManager);
   
   assert(handler !== null);
+  
+  // 清理 SessionManager 的资源（如果有）
+  // 注意：SessionManager 可能启动了清理定时器，需要等待或清理
+  await new Promise(resolve => setTimeout(resolve, 10));
 });
 
 Deno.test('RouteHandler - 构造函数 - 接受 AppConfig', () => {
@@ -355,6 +359,10 @@ Deno.test('RouteHandler - handle - 处理带 SessionManager 的请求', async ()
   // 应该正常处理请求（即使没有路由，也应该返回 404）
   await handler.handle(req, res);
   assert(res.status === 404 || res.status === 200);
+  
+  // 清理 SessionManager 的资源（如果有）
+  // 注意：SessionManager 可能启动了清理定时器，需要等待或清理
+  await new Promise(resolve => setTimeout(resolve, 10));
 });
 
 Deno.test('RouteHandler - handle - 处理带配置的请求', async () => {
