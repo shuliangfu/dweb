@@ -827,6 +827,7 @@ export class RouteHandler {
     renderMode: RenderMode,
     shouldHydrate: boolean,
     pageProps: Record<string, unknown>,
+    req?: Request,
   ): Promise<string> {
     // 注入 import map
     let importMapScript = preloadedImportMapScript;
@@ -964,7 +965,7 @@ export class RouteHandler {
     }
 
     // 生成预加载和预取链接
-    const preloadLinks = await this.generatePreloadLinks(routeInfo, renderMode, fullHtml);
+    const preloadLinks = await this.generatePreloadLinks(routeInfo, renderMode, fullHtml, req);
     
     // 将预加载链接和脚本注入到 </head> 之前（尽早执行）
     const headContent: string[] = [];
@@ -1005,12 +1006,14 @@ export class RouteHandler {
    * @param routeInfo 当前路由信息
    * @param _renderMode 渲染模式（暂未使用，未来可用于优化预加载策略）
    * @param html HTML 内容（用于提取链接）
+   * @param req 请求对象（用于获取实际的 host 信息）
    * @returns HTML link 标签字符串
    */
   private async generatePreloadLinks(
     routeInfo: RouteInfo,
     _renderMode: RenderMode,
-    html: string
+    html: string,
+    req?: Request
   ): Promise<string> {
     const links: string[] = [];
     
@@ -1205,6 +1208,7 @@ export class RouteHandler {
       renderMode,
       shouldHydrate,
       pageProps,
+      req,
     );
 
     // 设置响应
