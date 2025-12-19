@@ -21,6 +21,7 @@
 - ⚡️ **异步组件支持** - 支持异步页面组件、布局组件和 App 组件，轻松处理数据加载
 - 📊 **服务端数据获取** - 通过 `load` 函数在服务端获取数据，自动注入到组件 props
 - 🔄 **客户端路由导航** - 无缝的客户端路由导航，支持无刷新页面切换，类似 SPA 体验
+- 🗄️ **数据库支持** - 内置数据库支持，支持 SQLite、PostgreSQL、MySQL、MongoDB，提供查询构建器和 ORM/ODM 模型，支持迁移管理
 
 ## 🌐 运行时兼容性
 
@@ -173,18 +174,28 @@ export default function UserPage({ data }: PageProps) {
 ```typescript
 // routes/api/users.ts
 import type { Request } from "@dreamer/dweb";
+import { getDatabase, SQLQueryBuilder } from "@dreamer/dweb";
 
 // POST /api/users/getUsers 或 POST /api/users/get-users
 export async function getUsers(req: Request) {
-  const users = await db.getUsers();
+  const db = getDatabase();
+  const builder = new SQLQueryBuilder(db);
+  const users = await builder
+    .select(['*'])
+    .from('users')
+    .execute();
   return { users };
 }
 
 // POST /api/users/createUser 或 POST /api/users/create-user
 export async function createUser(req: Request) {
+  const db = getDatabase();
   const data = await req.json();
-  const user = await db.createUser(data);
-  return { success: true, user };
+  const builder = new SQLQueryBuilder(db);
+  await builder
+    .insert('users', data)
+    .execute();
+  return { success: true };
 }
 ```
 
@@ -478,6 +489,8 @@ const debug = env.bool("DEBUG", false);
 
 - **[完整文档](./docs/DOC.md)** - 详细的功能说明和 API 文档
 - **[使用指南](./docs/GUIDES.md)** - 完整的使用指南（快速开始、配置、路由、渲染模式、中间件、插件、最佳实践、FAQ）
+- **[数据库使用指南](./docs/DATABASE_USAGE.md)** - 数据库功能使用指南（配置、查询构建器、ORM/ODM、迁移管理）
+- **[数据库实现方案](./docs/DATABASE_ANALYSIS.md)** - 数据库功能的详细架构设计和实现方案
 - **[配置示例](./docs/CONFIG_EXAMPLES.md)** - 各种场景的配置示例（基础配置、单应用、多应用、开发/生产环境、高级配置）
 - **[开发指南](./docs/DEVELOPMENT.md)** - 插件开发、中间件开发、自定义路由指南
 - **[快速开始指南](./example/QUICK_START.md)** - 快速上手教程
