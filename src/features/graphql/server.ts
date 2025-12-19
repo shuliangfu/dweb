@@ -207,6 +207,9 @@ export class GraphQLServer {
   /**
    * 生成 GraphiQL HTML
    * 
+   * 使用 Preact 和 preact/compat 替代 React，保持与框架的一致性。
+   * preact/compat 提供了与 React 的兼容层，使得 GraphiQL 可以在 Preact 环境下运行。
+   * 
    * @returns GraphiQL HTML 字符串
    */
   getGraphiQLHTML(): string {
@@ -215,13 +218,21 @@ export class GraphQLServer {
 <head>
   <title>GraphiQL</title>
   <link rel="stylesheet" href="https://unpkg.com/graphiql@3/graphiql.min.css" />
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/graphiql@3/graphiql.min.js"></script>
-</head>
-<body style="margin: 0;">
-  <div id="graphiql" style="height: 100vh;"></div>
-  <script>
+  <!-- 使用 Preact 替代 React，保持与框架的一致性 -->
+  <script type="module">
+    // 导入 Preact 和 preact/compat
+    import { render } from 'https://esm.sh/preact@latest';
+    import * as PreactCompat from 'https://esm.sh/preact@latest/compat';
+    
+    // 将 preact/compat 暴露为全局的 React，供 GraphiQL 使用
+    // GraphiQL 期望使用 React.createElement 和 ReactDOM.render
+    globalThis.React = PreactCompat;
+    globalThis.ReactDOM = PreactCompat;
+    
+    // 导入 GraphiQL
+    const { GraphiQL } = await import('https://esm.sh/graphiql@3');
+    
+    // GraphQL 查询执行器
     const graphQLFetcher = async (graphQLParams) => {
       const response = await fetch('${this.config.path}', {
         method: 'POST',
@@ -231,11 +242,19 @@ export class GraphQLServer {
       return response.json();
     };
 
-    ReactDOM.render(
-      React.createElement(GraphiQL.GraphiQL, { fetcher: graphQLFetcher }),
-      document.getElementById('graphiql')
-    );
+    // 渲染 GraphiQL 组件
+    // 使用 React.createElement 和 ReactDOM.render（实际是 preact/compat）
+    const container = document.getElementById('graphiql');
+    if (container) {
+      ReactDOM.render(
+        React.createElement(GraphiQL, { fetcher: graphQLFetcher }),
+        container
+      );
+    }
   </script>
+</head>
+<body style="margin: 0;">
+  <div id="graphiql" style="height: 100vh;"></div>
 </body>
 </html>`;
   }
