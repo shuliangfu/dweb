@@ -2,7 +2,7 @@
  * MongoDB 数据库适配器
  */
 
-import { MongoClient, type Db } from '@mongodb';
+import { MongoClient, type Db, type MongoClientOptions } from '@mongodb';
 import { BaseAdapter } from './base.ts';
 import type { DatabaseConfig, DatabaseAdapter } from '../types.ts';
 
@@ -35,11 +35,12 @@ export class MongoDBAdapter extends BaseAdapter {
     }
 
     // 创建 MongoDB 客户端
-    this.client = new MongoClient(url, {
+    const clientOptions: MongoClientOptions = {
       maxPoolSize: config.mongoOptions?.maxPoolSize || 10,
       minPoolSize: config.mongoOptions?.minPoolSize || 1,
       serverSelectionTimeoutMS: config.mongoOptions?.serverSelectionTimeoutMS || 5000,
-    });
+    };
+    this.client = new MongoClient(url, clientOptions);
 
     await this.client.connect();
     this.db = this.client.db(database);
