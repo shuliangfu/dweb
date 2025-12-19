@@ -169,6 +169,8 @@ export class FileWatcher {
  */
 export class HMRServer {
   private connections: Set<WebSocket> = new Set();
+  // 组件编译缓存（改进 HMR 响应速度）
+  private componentCache: Map<string, { code: string; mtime: number }> | null = null;
   private server?: Deno.HttpServer;
   private serverOrigin: string = DEFAULT_SERVER_ORIGIN;
   private routesDir: string = 'routes';  // 路由目录（用于判断文件类型）
@@ -401,6 +403,8 @@ export class HMRServer {
       jsx: 'automatic',
       jsxImportSource: 'preact',
       minify: false, // 开发环境不压缩，便于调试
+      // 优化编译速度：减少不必要的转换
+      sourcemap: false, // HMR 不需要 sourcemap，可以加快编译
       treeShaking: true, // ✅ Tree-shaking
       write: false, // 不写入文件，我们手动处理
       external: externalPackages, // 外部依赖不打包（保持 import 语句）
@@ -435,6 +439,21 @@ export class HMRServer {
         return null;
       }
 
+      // 优化：使用缓存避免重复编译（改进 HMR 响应速度）
+      const cacheKey = `hmr:${filePath}`;
+      const cached = this.componentCache?.get(cacheKey);
+      if (cached) {
+        // 检查文件修改时间，如果未变化则使用缓存
+        try {
+          const stat = await Deno.stat(filePath);
+          if (cached.mtime === stat.mtime?.getTime()) {
+            return cached.code;
+          }
+        } catch {
+          // 文件不存在或无法读取，继续编译
+        }
+      }
+      
       const fileContent = await Deno.readTextFile(filePath);
       const relativePath = getRelativePath(filePath);
       const origin = cleanUrl(this.serverOrigin);
@@ -445,6 +464,19 @@ export class HMRServer {
       let jsCode = await this.transformWithEsbuild(fileContent, filePath, moduleHttpUrl);
       // 转换外部依赖为 HTTP URL（相对路径导入已被打包，不需要处理）
       jsCode = await this.convertExternalImportsToHttpUrls(jsCode);
+      
+      // 缓存编译结果（改进 HMR 响应速度）
+      if (this.componentCache) {
+        try {
+          const stat = await Deno.stat(filePath);
+          this.componentCache.set(cacheKey, {
+            code: jsCode,
+            mtime: stat.mtime?.getTime() || Date.now(),
+          });
+        } catch {
+          // 无法获取文件信息，不缓存
+        }
+      }
 
       return jsCode;
     } catch {
@@ -474,7 +506,22 @@ export class HMRServer {
   /**
    * 启动 HMR WebSocket 服务器
    */
-  async start(port: number = DEFAULT_HMR_PORT): Promise<void> {
+  async start(port: number = DEFAULT_HMR_PORT, enableCache: boolean = true): Promise<void> {
+    // 启用组件编译缓存（改进 HMR 响应速度）
+    if (enableCache) {
+      this.componentCache = new Map();
+      // 定期清理缓存（每 10 分钟清理一次，避免内存泄漏）
+      setInterval(() => {
+        if (this.componentCache && this.componentCache.size > 100) {
+          // 如果缓存超过 100 项，清理最旧的 50%
+          const entries = Array.from(this.componentCache.entries());
+          const toDelete = entries.slice(0, Math.floor(entries.length / 2));
+          for (const [key] of toDelete) {
+            this.componentCache.delete(key);
+          }
+        }
+      }, 10 * 60 * 1000) as unknown as number;
+    }
     const handler = async (req: Request): Promise<Response> => {
       // 处理 WebSocket 升级
       const upgrade = req.headers.get('upgrade');

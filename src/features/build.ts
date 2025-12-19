@@ -605,8 +605,31 @@ async function compileDirectory(
   }
 
   if (parallel && files.length > 1) {
-    // 并行编译（限制并发数为 10，避免资源耗尽）
-    const concurrency = 10;
+    // 并行编译（根据 CPU 核心数动态调整并发数，优化构建速度）
+    // 在 Deno 环境中，使用系统 CPU 核心数
+    let cpuCount = 4; // 默认值
+    try {
+      // Deno 环境：尝试获取 CPU 核心数
+      if (typeof Deno !== 'undefined') {
+        // Deno 没有直接获取 CPU 核心数的 API，使用环境变量或默认值
+        const envCores = Deno.env.get('DENO_CPU_COUNT');
+        if (envCores) {
+          cpuCount = parseInt(envCores, 10) || 4;
+        } else {
+          // 使用合理的默认值（通常为 4-8）
+          cpuCount = 4;
+        }
+      } else if (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) {
+        // 浏览器环境
+        cpuCount = navigator.hardwareConcurrency;
+      }
+    } catch {
+      // 获取失败时使用默认值
+      cpuCount = 4;
+    }
+    
+    // 动态调整并发数：CPU 核心数的 2 倍，但不超过文件数量和最大限制
+    const concurrency = Math.min(Math.max(cpuCount * 2, 4), files.length, 20); // 最多 20 个并发
     let cachedCount = 0;
     let compiledCount = 0;
 

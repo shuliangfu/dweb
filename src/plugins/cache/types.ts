@@ -26,6 +26,8 @@ export interface CacheConfig {
   defaultTTL?: number;
   /** 最大缓存大小（内存缓存，字节） */
   maxSize?: number;
+  /** 最大缓存条目数（内存缓存，减少内存占用） */
+  maxEntries?: number;
   /** 缓存键前缀 */
   keyPrefix?: string;
 }

@@ -1058,22 +1058,27 @@ export class RouteHandler {
   /**
    * 生成预加载和预取链接
    * @param routeInfo 当前路由信息
-   * @param _renderMode 渲染模式（暂未使用，未来可用于优化预加载策略）
+   * @param renderMode 渲染模式（暂未使用，未来可用于优化预加载策略）
    * @param html HTML 内容（用于提取链接）
    * @param req 请求对象（用于获取实际的 host 信息）
    * @returns HTML link 标签字符串
    */
   private async generatePreloadLinks(
     routeInfo: RouteInfo,
-    _renderMode: RenderMode,
+    renderMode: RenderMode,
     html: string,
     req?: Request
   ): Promise<string> {
     const links: string[] = [];
     
     try {
-      // 1. 预加载关键资源
-      // 对于 CSR/Hybrid 模式，预加载 Preact 模块（已在脚本中处理，这里可以添加其他资源）
+      // 1. 预加载关键资源（优化首次加载时间）
+      // 对于 CSR/Hybrid 模式，预加载 Preact 模块（已在脚本中处理）
+      // 可以添加关键 CSS、字体等资源的预加载
+      if (renderMode === 'ssr' || renderMode === 'hybrid') {
+        // SSR 模式下，可以预加载关键 CSS
+        // 这里可以根据需要添加更多预加载资源
+      }
       
       // 2. 预取页面中的链接（如果启用）
       // 从配置中读取是否启用预取

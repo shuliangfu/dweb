@@ -4,20 +4,29 @@
  */
 
 import type { Plugin, AppLike } from '../../types/index.ts';
-import type { CachePluginOptions, CacheOptions } from './types.ts';
+import type { CachePluginOptions, CacheOptions, CacheConfig } from './types.ts';
 import * as path from '@std/path';
 import { ensureDir } from '@std/fs/ensure-dir';
 import { crypto } from '@std/crypto';
 
 /**
- * 内存缓存实现
+ * 内存缓存实现（使用改进的 LRU 策略）
  */
 class MemoryCache {
   private cache: Map<string, { value: unknown; expires: number }> = new Map();
   private maxSize: number;
+  private maxEntries: number;
+  private accessOrder: string[] = [];
+  private cleanupInterval?: number;
 
-  constructor(maxSize: number = 100 * 1024 * 1024) { // 默认 100MB
+  constructor(maxSize: number = 100 * 1024 * 1024, maxEntries: number = 1000) { // 默认 100MB, 1000 条目
     this.maxSize = maxSize;
+    this.maxEntries = maxEntries;
+    
+    // 定期清理过期项（每 5 分钟）
+    this.cleanupInterval = setInterval(() => {
+      this.cleanup();
+    }, 5 * 60 * 1000) as unknown as number;
   }
 
   async get<T>(key: string): Promise<T | null> {
@@ -29,23 +38,75 @@ class MemoryCache {
     // 检查是否过期
     if (item.expires > 0 && Date.now() > item.expires) {
       this.cache.delete(key);
+      this.removeFromAccessOrder(key);
       return null;
     }
+
+    // 更新访问顺序（LRU）
+    this.updateAccessOrder(key);
 
     return item.value as T;
   }
 
   async set(key: string, value: unknown, ttl: number = 0): Promise<void> {
     const expires = ttl > 0 ? Date.now() + ttl * 1000 : 0;
-    this.cache.set(key, { value, expires });
-
-    // 简单的 LRU 策略：如果超过最大大小，删除最旧的项
-    if (this.cache.size > 1000) { // 简单的限制
-      const firstKey = this.cache.keys().next().value;
-      if (firstKey) {
-        this.cache.delete(firstKey);
+    
+    if (this.cache.has(key)) {
+      // 更新现有项
+      this.cache.set(key, { value, expires });
+      this.updateAccessOrder(key);
+    } else {
+      // 添加新项
+      // 如果超过最大条目数，删除最久未使用的项
+      if (this.cache.size >= this.maxEntries) {
+        const oldestKey = this.accessOrder.shift();
+        if (oldestKey) {
+          this.cache.delete(oldestKey);
+        }
+      }
+      
+      this.cache.set(key, { value, expires });
+      this.accessOrder.push(key);
+    }
+  }
+  
+  private updateAccessOrder(key: string): void {
+    const index = this.accessOrder.indexOf(key);
+    if (index > -1) {
+      this.accessOrder.splice(index, 1);
+    }
+    this.accessOrder.push(key);
+  }
+  
+  private removeFromAccessOrder(key: string): void {
+    const index = this.accessOrder.indexOf(key);
+    if (index > -1) {
+      this.accessOrder.splice(index, 1);
+    }
+  }
+  
+  private cleanup(): void {
+    const now = Date.now();
+    const keysToDelete: string[] = [];
+    
+    for (const [key, item] of this.cache.entries()) {
+      if (item.expires > 0 && now > item.expires) {
+        keysToDelete.push(key);
       }
     }
+    
+    for (const key of keysToDelete) {
+      this.cache.delete(key);
+      this.removeFromAccessOrder(key);
+    }
+  }
+  
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+    }
+    this.cache.clear();
+    this.accessOrder = [];
   }
 
   async delete(key: string): Promise<void> {
@@ -291,10 +352,11 @@ export class CacheManager {
   private keyPrefix: string;
   private defaultTTL: number;
 
-  constructor(config: CachePluginOptions['config'] = {}) {
+  constructor(config: CacheConfig = {}) {
     const storeType = config?.store || 'memory';
     const defaultTTL = config?.defaultTTL || 3600; // 默认 1 小时
     const keyPrefix = config?.keyPrefix || 'cache:';
+    const maxEntries = config?.maxEntries || 1000; // 最大条目数（减少内存占用）
 
     if (storeType === 'redis') {
       if (!config?.redis) {
@@ -305,7 +367,8 @@ export class CacheManager {
       const cacheDir = config?.cacheDir || '.cache';
       this.store = new FileCache(cacheDir);
     } else {
-      this.store = new MemoryCache(config?.maxSize);
+      // 内存缓存：使用改进的 LRU 策略，减少内存占用
+      this.store = new MemoryCache(config?.maxSize, maxEntries);
     }
 
     this.keyPrefix = keyPrefix;
