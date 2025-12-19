@@ -171,6 +171,10 @@ export interface BuildConfig {
   compress?: boolean;
   /** 图片压缩质量（0-100），默认 80 */
   imageQuality?: number;
+  /** 是否启用资源预取（prefetch），默认 true */
+  prefetch?: boolean;
+  /** 是否预取相关路由，默认 false */
+  prefetchRoutes?: boolean;
   [key: string]: any;
 }
 

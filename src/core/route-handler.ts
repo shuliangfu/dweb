@@ -819,6 +819,7 @@ export class RouteHandler {
     
   /**
    * 注入脚本到 HTML（import map 和客户端脚本）
+   * 同时注入预加载和预取链接
    */
   private async injectScripts(
     fullHtml: string,
@@ -986,6 +987,68 @@ export class RouteHandler {
     }
 
     return fullHtml;
+  }
+
+  /**
+   * 生成预加载和预取链接
+   * @param routeInfo 当前路由信息
+   * @param renderMode 渲染模式
+   * @param html HTML 内容（用于提取链接）
+   * @returns HTML link 标签字符串
+   */
+  private async generatePreloadLinks(
+    routeInfo: RouteInfo,
+    renderMode: RenderMode,
+    html: string
+  ): Promise<string> {
+    const links: string[] = [];
+    
+    try {
+      // 1. 预加载关键资源
+      // 对于 CSR/Hybrid 模式，预加载 Preact 模块（已在脚本中处理，这里可以添加其他资源）
+      
+      // 2. 预取页面中的链接（如果启用）
+      // 从配置中读取是否启用预取
+      const prefetchEnabled = this.config?.build?.prefetch !== false; // 默认启用
+      
+      if (prefetchEnabled) {
+        // 从 HTML 中提取链接并生成预取标签
+        const { extractAndPrefetchLinks } = await import('../utils/preload.ts');
+        // 使用当前请求的 URL 作为基础 URL（从 routeInfo 中获取路径）
+        const currentPath = routeInfo.path || '/';
+        // 构建基础 URL（用于解析相对路径）
+        // 注意：这里使用相对路径，浏览器会自动解析
+        const baseUrl = `http://localhost${currentPath}`;
+        const prefetchLinks = extractAndPrefetchLinks(html, baseUrl, 5);
+        if (prefetchLinks) {
+          links.push(prefetchLinks);
+        }
+      }
+      
+      // 3. 预取相关路由（如果启用）
+      const prefetchRoutes = this.config?.build?.prefetchRoutes === true;
+      if (prefetchRoutes && this.router) {
+        try {
+          const { generateRoutePreloadLinks } = await import('../utils/preload.ts');
+          const routePrefetchLinks = generateRoutePreloadLinks(routeInfo, this.router, {
+            enabled: true,
+            prefetchRoutes: true,
+            prefetchLimit: 3,
+          });
+          if (routePrefetchLinks) {
+            links.push(routePrefetchLinks);
+          }
+        } catch (error) {
+          // 预取路由失败时静默处理
+          console.warn('预取路由失败:', error);
+        }
+      }
+    } catch (error) {
+      // 预加载生成失败时静默处理
+      console.warn('生成预加载链接失败:', error);
+    }
+    
+    return links.join('\n');
   }
 
   /**
