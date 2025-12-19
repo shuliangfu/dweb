@@ -1,10 +1,13 @@
 /**
  * 缓存插件
- * 提供内存和 Redis 缓存支持
+ * 提供内存、Redis 和文件缓存支持
  */
 
 import type { Plugin, AppLike } from '../../types/index.ts';
-import type { CachePluginOptions, CacheStore, CacheOptions } from './types.ts';
+import type { CachePluginOptions, CacheOptions } from './types.ts';
+import * as path from '@std/path';
+import { ensureDir } from '@std/fs/ensure-dir';
+import { crypto } from '@std/crypto';
 
 /**
  * 内存缓存实现
@@ -70,6 +73,161 @@ class MemoryCache {
 }
 
 /**
+ * 文件缓存实现
+ */
+class FileCache {
+  private cacheDir: string;
+
+  constructor(cacheDir: string = '.cache') {
+    this.cacheDir = cacheDir;
+  }
+
+  /**
+   * 获取缓存文件路径
+   */
+  private getCacheFilePath(key: string): string {
+    // 使用 key 的 hash 作为文件名，避免文件名冲突
+    const hash = this.hashKey(key);
+    return path.join(this.cacheDir, `${hash}.json`);
+  }
+
+  /**
+   * 生成 key 的 hash
+   */
+  private async hashKey(key: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(key);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
+  }
+
+  /**
+   * 同步版本的 hash（用于同步方法）
+   */
+  private hashKeySync(key: string): string {
+    // 简化实现：使用简单的 hash
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) {
+      const char = key.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(16).padStart(16, '0');
+  }
+
+  /**
+   * 获取缓存文件路径（同步版本）
+   */
+  private getCacheFilePathSync(key: string): string {
+    const hash = this.hashKeySync(key);
+    return path.join(this.cacheDir, `${hash}.json`);
+  }
+
+  async get<T>(key: string): Promise<T | null> {
+    try {
+      const filePath = this.getCacheFilePathSync(key);
+      
+      // 检查文件是否存在
+      try {
+        await Deno.stat(filePath);
+      } catch {
+        return null;
+      }
+
+      // 读取文件
+      const content = await Deno.readTextFile(filePath);
+      const data = JSON.parse(content);
+
+      // 检查是否过期
+      if (data.expires > 0 && Date.now() > data.expires) {
+        // 过期，删除文件
+        try {
+          await Deno.remove(filePath);
+        } catch {
+          // 忽略删除错误
+        }
+        return null;
+      }
+
+      return data.value as T;
+    } catch {
+      // 文件读取失败或解析失败
+      return null;
+    }
+  }
+
+  async set(key: string, value: unknown, ttl: number = 0): Promise<void> {
+    try {
+      // 确保缓存目录存在
+      await ensureDir(this.cacheDir);
+
+      const filePath = this.getCacheFilePathSync(key);
+      const expires = ttl > 0 ? Date.now() + ttl * 1000 : 0;
+
+      const data = {
+        key,
+        value,
+        expires,
+        createdAt: Date.now(),
+      };
+
+      // 写入文件
+      await Deno.writeTextFile(filePath, JSON.stringify(data));
+    } catch (error) {
+      console.error('[File Cache] 写入缓存失败:', error);
+      throw error;
+    }
+  }
+
+  async delete(key: string): Promise<void> {
+    try {
+      const filePath = this.getCacheFilePathSync(key);
+      await Deno.remove(filePath);
+    } catch {
+      // 文件不存在，忽略错误
+    }
+  }
+
+  async clear(): Promise<void> {
+    try {
+      // 删除缓存目录中的所有文件
+      for await (const entry of Deno.readDir(this.cacheDir)) {
+        if (entry.isFile && entry.name.endsWith('.json')) {
+          try {
+            await Deno.remove(path.join(this.cacheDir, entry.name));
+          } catch {
+            // 忽略删除错误
+          }
+        }
+      }
+    } catch {
+      // 目录不存在，忽略错误
+    }
+  }
+
+  async has(key: string): Promise<boolean> {
+    try {
+      const filePath = this.getCacheFilePathSync(key);
+      await Deno.stat(filePath);
+      
+      // 检查是否过期
+      const content = await Deno.readTextFile(filePath);
+      const data = JSON.parse(content);
+      
+      if (data.expires > 0 && Date.now() > data.expires) {
+        await Deno.remove(filePath);
+        return false;
+      }
+      
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+/**
  * Redis 缓存实现（简化版，需要实际 Redis 客户端）
  */
 class RedisCache {
@@ -87,7 +245,7 @@ class RedisCache {
     console.warn('[Cache Plugin] Redis 缓存需要安装 Redis 客户端库');
   }
 
-  async get<T>(key: string): Promise<T | null> {
+  async get<T>(_key: string): Promise<T | null> {
     if (!this.client) {
       await this.connect();
     }
@@ -95,14 +253,14 @@ class RedisCache {
     return null;
   }
 
-  async set(key: string, value: unknown, ttl: number = 0): Promise<void> {
+  async set(_key: string, _value: unknown, _ttl: number = 0): Promise<void> {
     if (!this.client) {
       await this.connect();
     }
     // 实际实现需要调用 Redis SET 命令
   }
 
-  async delete(key: string): Promise<void> {
+  async delete(_key: string): Promise<void> {
     if (!this.client) {
       await this.connect();
     }
@@ -116,7 +274,7 @@ class RedisCache {
     // 实际实现需要调用 Redis FLUSHDB 命令
   }
 
-  async has(key: string): Promise<boolean> {
+  async has(_key: string): Promise<boolean> {
     if (!this.client) {
       await this.connect();
     }
@@ -129,7 +287,7 @@ class RedisCache {
  * 缓存管理器
  */
 export class CacheManager {
-  private store: MemoryCache | RedisCache;
+  private store: MemoryCache | RedisCache | FileCache;
   private keyPrefix: string;
   private defaultTTL: number;
 
@@ -143,6 +301,9 @@ export class CacheManager {
         throw new Error('Redis 缓存需要配置 redis 选项');
       }
       this.store = new RedisCache(config.redis);
+    } else if (storeType === 'file') {
+      const cacheDir = config?.cacheDir || '.cache';
+      this.store = new FileCache(cacheDir);
     } else {
       this.store = new MemoryCache(config?.maxSize);
     }
@@ -226,5 +387,4 @@ export function cache(options: CachePluginOptions = {}): Plugin {
 
 // 导出类型和类
 export type { CachePluginOptions, CacheConfig, CacheStore, CacheOptions } from './types.ts';
-export { CacheManager };
 

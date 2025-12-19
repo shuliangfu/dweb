@@ -5,7 +5,7 @@
 /**
  * 缓存存储类型
  */
-export type CacheStore = 'memory' | 'redis';
+export type CacheStore = 'memory' | 'redis' | 'file';
 
 /**
  * 缓存配置
@@ -20,6 +20,8 @@ export interface CacheConfig {
     password?: string;
     db?: number;
   };
+  /** 文件缓存目录（如果使用文件缓存） */
+  cacheDir?: string;
   /** 默认过期时间（秒） */
   defaultTTL?: number;
   /** 最大缓存大小（内存缓存，字节） */
