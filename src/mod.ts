@@ -70,6 +70,8 @@ export {
   MySQLAdapter,
   MongoDBAdapter,
   BaseAdapter,
+  SQLQueryBuilder,
+  MongoQueryBuilder,
   type DatabaseConfig,
   type DatabaseType,
   type DatabaseAdapter,

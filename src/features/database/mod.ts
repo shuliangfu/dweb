@@ -22,8 +22,13 @@ export {
   BaseAdapter,
 } from './adapters/mod.ts';
 
-// 查询构建器、ORM/ODM、迁移管理将在后续阶段实现
-// export { SQLQueryBuilder, MongoQueryBuilder } from './query/mod.ts';
+// 导出查询构建器
+export {
+  SQLQueryBuilder,
+  MongoQueryBuilder,
+} from './query/mod.ts';
+
+// ORM/ODM、迁移管理将在后续阶段实现
 // export { SQLModel, MongoModel } from './orm/mod.ts';
 // export { MigrationManager, type Migration } from './migration/mod.ts';
 
