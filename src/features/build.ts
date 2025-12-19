@@ -467,39 +467,6 @@ async function generateRouteMap(
 }
 
 /**
- * 生成服务器入口文件
- * @param outDir 输出目录
- * @param _config 配置对象（未使用，保留用于未来扩展）
- */
-async function generateServerEntry(outDir: string, _config: AppConfig): Promise<void> {
-  // 注意：此文件仅用于兼容性，实际启动请使用 cli start 命令
-  const entryContent = `/**
- * 生产服务器入口文件
- * 此文件由构建系统自动生成，请勿手动修改
- * 
- * 运行方式（从项目根目录）：
- *   deno task start
- */
-
-// 从 JSR 包导入框架（Deno 会在运行时通过 deno.json 的 import map 解析依赖）
-import { startProdServer } from '@dreamer/dweb';
-import { loadConfig } from '@dreamer/dweb';
-
-// 从项目根目录加载配置文件（与 cli start 保持一致）
-// 注意：需要从项目根目录运行，而不是从 dist 目录运行
-const { config } = await loadConfig();
-
-// 启动生产服务器
-await startProdServer(config);
-`;
-
-  const entryPath = path.join(outDir, 'server.js');
-  await Deno.writeTextFile(entryPath, entryContent);
-
-  console.log(`✅ 服务器入口文件已生成: server.js`);
-}
-
-/**
  * 构建项目
  * @param config 单应用配置对象（CLI 已处理多应用模式，传入的是单个应用的配置）
  */
@@ -584,64 +551,17 @@ async function buildApp(config: AppConfig): Promise<void> {
     console.warn('⚠️  组件目录编译失败', error);
   }
 
-  // 4. 复制配置文件（不包括 dweb.config.ts，因为通过 cli start 启动时会从项目根目录加载）
-  // 其他配置文件可以 hash 化
-  const configFiles = ['tailwind.config.ts', 'deno.json', 'deno.lock'];
-  for (const configFile of configFiles) {
-    try {
-      if (
-        await Deno.stat(configFile)
-          .then(() => true)
-          .catch(() => false)
-      ) {
-        const fileContent = await Deno.readFile(configFile);
-        const hash = await calculateHash(fileContent);
-        const ext = path.extname(configFile);
-        const hashName = `${hash}${ext}`;
-        const outputPath = path.join(outDir, hashName);
+  // 4. 配置文件不再复制到构建输出目录
+  // 注意：以下文件不再复制：
+  // - tailwind.config.ts (由 Tailwind 插件处理)
+  // - deno.json (运行时从项目根目录读取)
+  // - deno.lock (运行时从项目根目录读取)
+  // - dweb.config.ts (运行时从项目根目录加载)
+  
+  console.log('✅ 跳过配置文件复制（运行时从项目根目录读取）');
 
-        await Deno.writeFile(outputPath, fileContent);
-        fileMap.set(configFile, hashName);
-      }
-    } catch {
-      // 文件不存在时忽略
-    }
-  }
-
-  console.log('✅ 处理配置文件完成');
-
-  // 5. 复制项目的 deno.json 到输出目录（用于运行时解析 import map）
-  // 注意：框架代码通过 JSR 包导入，不需要复制框架源代码
-  console.log('📦 复制项目配置文件...');
-  try {
-    const denoJsonPath = path.join(Deno.cwd(), 'deno.json');
-    if (
-      await Deno.stat(denoJsonPath)
-        .then(() => true)
-        .catch(() => false)
-    ) {
-      const denoJsonContent = await Deno.readTextFile(denoJsonPath);
-      const denoJson = JSON.parse(denoJsonContent);
-
-      // 确保 @std/path/glob-to-regexp 映射正确（修复可能的错误映射）
-      if (denoJson.imports) {
-        // 移除错误的 @std/path/glob 映射（如果存在）
-        if (denoJson.imports['@std/path/glob']) {
-          delete denoJson.imports['@std/path/glob'];
-        }
-        // 确保 @std/path/glob-to-regexp 映射正确
-        if (!denoJson.imports['@std/path/glob-to-regexp']) {
-          denoJson.imports['@std/path/glob-to-regexp'] = 'jsr:@std/path@^1.1.3/glob-to-regexp';
-        }
-      }
-
-      const denoJsonOutputPath = path.join(outDir, 'deno.json');
-      await Deno.writeTextFile(denoJsonOutputPath, JSON.stringify(denoJson, null, 2));
-      console.log('✅ 复制并修复 deno.json 到输出目录');
-    }
-  } catch (error) {
-    console.warn(`⚠️  复制 deno.json 失败:`, error);
-  }
+  // 5. 不再复制 deno.json 到输出目录
+  // 注意：运行时从项目根目录读取 deno.json，不需要复制到 dist 目录
 
   // 6. 创建插件管理器并执行构建钩子
   const pluginManager = new PluginManager();
@@ -677,26 +597,8 @@ async function buildApp(config: AppConfig): Promise<void> {
     JSON.stringify(fileMapObj, null, 2)
   );
 
-  // 9. 生成服务器入口文件
-  await generateServerEntry(outDir, config);
-
-  // 10. 生成构建信息
-  const buildInfo = {
-    buildTime: new Date().toISOString(),
-    outDir,
-    routesDir,
-    staticDir,
-    fileCount: fileMap.size,
-    entryFile: 'server.js',
-    frameworkSourceDir: 'src',
-  };
-
-  await Deno.writeTextFile(
-    path.join(outDir, '.build-info.json'),
-    JSON.stringify(buildInfo, null, 2)
-  );
-
-  console.log('✅ 构建信息已生成');
+  // 9. 不再生成服务器入口文件和构建信息
+  // 注意：server.js 和 .build-info.json 不再生成，运行时使用 CLI 命令启动
   console.log(`📊 构建统计: 输出目录 ${outDir}, 共 ${fileMap.size} 个文件`);
   console.log(`🚀 启动命令: deno task start`);
 }
