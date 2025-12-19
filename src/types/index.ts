@@ -104,12 +104,15 @@ export interface MiddlewareConfig {
 
 // 应用实例接口（用于插件系统，避免循环依赖）
 // 注意：完整的 App 类型定义在 mod.ts 中
+// 这个接口是宽松的，允许插件访问应用的不同部分
 export interface AppLike {
-  server: unknown;
-  middleware: unknown;
-  plugins: unknown;
-  use: (middleware: unknown) => void;
-  plugin: (plugin: unknown) => void;
+  server?: unknown;
+  middleware?: unknown;
+  plugins?: unknown;
+  router?: unknown;
+  routeHandler?: unknown;
+  use?: (middleware: unknown) => void;
+  plugin?: (plugin: unknown) => void;
   // 扩展属性（某些插件可能需要）
   [key: string]: unknown;
 }

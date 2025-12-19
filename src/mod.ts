@@ -47,6 +47,20 @@ export * from './plugins/mod.ts';
 // 导出功能模块
 export { CookieManager } from './features/cookie.ts';
 export { SessionManager } from './features/session.ts';
+
+// 导出错误类
+export {
+  DWebError,
+  ConfigError,
+  RouteError,
+  RenderError,
+  ApiError,
+  BuildError,
+  formatError,
+  logError,
+  getErrorStatusCode,
+  getErrorMessage,
+} from './utils/error.ts';
 export { env, envInt, envFloat, envBool, getAllEnv, validateEnv, initEnv } from './features/env.ts';
 export {
   registerShutdownHandler,
