@@ -347,6 +347,6 @@ export async function createHMRClientScript(hmrPort: number): Promise<string> {
   // 使用 esbuild 压缩代码
   const minifiedScriptContent = await minifyJavaScript(scriptContent);
 
-  return `<script>${minifiedScriptContent}</script>`;
+  return `<script type="module">${minifiedScriptContent}</script>`;
 }
 

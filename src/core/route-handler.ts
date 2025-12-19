@@ -27,6 +27,7 @@ import {
 } from "../utils/path.ts";
 import { createImportMapScript } from "../utils/import-map.ts";
 import { createClientScript } from "../utils/script-client.ts";
+import { minifyJavaScript } from '../utils/minify.ts';
 import * as path from '@std/path';
 
 /**
@@ -909,8 +910,7 @@ export class RouteHandler {
     // 预加载 Preact 模块到全局作用域（CSR/Hybrid 模式或 HMR 时需要）
     // CSR 和 Hybrid 模式需要 Preact 进行客户端渲染，所以必须预加载
     if (renderMode === "csr" || renderMode === "hybrid" || shouldHydrate || hmrClientScript) {
-      const preactPreloadScript = `
-<script type="module">
+      const preactPreloadScriptContent = `
 // 预加载 Preact 模块到全局作用域，供客户端渲染和 HMR 使用
 (async function() {
   try {
@@ -938,8 +938,11 @@ export class RouteHandler {
     console.error('Preact 模块预加载失败:', _error);
       }
 })();
-</script>`;
-    
+`;
+      // 压缩脚本内容
+      const minifiedContent = await minifyJavaScript(preactPreloadScriptContent);
+      const preactPreloadScript = `<script type="module">${minifiedContent}</script>`;
+			
       // 注入到 head 中（在 import map 之后）
       if (fullHtml.includes("</head>")) {
         fullHtml = fullHtml.replace("</head>", `  ${preactPreloadScript}\n</head>`);

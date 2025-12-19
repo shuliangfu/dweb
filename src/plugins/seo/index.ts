@@ -235,7 +235,9 @@ function generateJSONLD(options: SEOPluginOptions, pageData?: {
     data.sameAs = jsonLd.sameAs;
   }
   
-  return `<script type="application/ld+json">\n${JSON.stringify(data, null, 2)}\n    </script>`;
+  // 压缩 JSON 内容（移除空格和换行）
+  const compressedJson = JSON.stringify(data);
+  return `<script type="application/ld+json">${compressedJson}</script>`;
 }
 
 /**
