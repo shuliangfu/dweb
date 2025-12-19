@@ -1,6 +1,8 @@
 /**
  * 配置管理模块
  * 负责读取和解析 dweb.config.ts 配置文件
+ * 
+ * @module core/config
  */
 
 import type { DWebConfig, AppConfig } from '../types/index.ts';
@@ -10,9 +12,26 @@ import { findConfigFile } from "../utils/file.ts";
 
 /**
  * 加载配置文件
- * @param configPath 配置文件路径，如果不提供则自动查找
- * @param appName 应用名称（可选，用于多应用模式），例如 "backend"
- * @returns 配置对象和配置文件所在目录（总是返回单应用配置）
+ * 
+ * 从指定路径加载 DWeb 配置文件，支持单应用和多应用模式。
+ * 如果未提供路径，会自动查找配置文件。
+ * 
+ * @param configPath - 配置文件路径（可选，如果不提供则自动查找 'dweb.config.ts'）
+ * @param appName - 应用名称（可选，用于多应用模式），例如 "backend"
+ * @returns Promise<{ config: AppConfig; configDir: string }> - 配置对象和配置文件所在目录
+ * 
+ * @throws {Error} 如果配置文件不存在、格式错误或应用名称不存在（多应用模式）
+ * 
+ * @example
+ * ```ts
+ * import { loadConfig } from "@dreamer/dweb";
+ * 
+ * // 单应用模式
+ * const { config, configDir } = await loadConfig();
+ * 
+ * // 多应用模式
+ * const { config, configDir } = await loadConfig("dweb.config.ts", "app1");
+ * ```
  */
 export async function loadConfig(
   configPath?: string,
@@ -147,8 +166,27 @@ export function isMultiAppMode(config: DWebConfig): config is AppConfig {
 
 /**
  * 规范化路由配置
- * @param routes 路由配置（可能是字符串或对象）
- * @returns 规范化的路由配置对象
+ * 
+ * 将字符串形式的路由配置转换为对象形式，或确保对象配置包含所有必需的字段。
+ * 
+ * @param routes - 路由配置，可以是字符串（目录路径）或配置对象
+ * @returns 规范化后的路由配置对象
+ * 
+ * @example
+ * ```ts
+ * import { normalizeRouteConfig } from "@dreamer/dweb";
+ * 
+ * // 字符串形式
+ * const config1 = normalizeRouteConfig("routes");
+ * // { dir: "routes", ignore: undefined, cache: undefined, priority: undefined }
+ * 
+ * // 对象形式
+ * const config2 = normalizeRouteConfig({
+ *   dir: "routes",
+ *   ignore: ["**\/*.test.ts"],
+ *   priority: "specific-first",
+ * });
+ * ```
  */
 export function normalizeRouteConfig(
   routes:
@@ -163,9 +201,35 @@ export function normalizeRouteConfig(
 
 /**
  * 合并配置（用于多应用模式）
- * @param baseConfig 基础配置（顶层配置）
- * @param appConfig 应用配置
- * @returns 合并后的配置
+ * 
+ * 将基础配置和应用配置合并，应用配置会覆盖基础配置中的相同字段。
+ * 对于对象类型的配置（如 cookie、session），会进行深度合并。
+ * 
+ * @param baseConfig - 基础配置（顶层配置，部分配置）
+ * @param appConfig - 应用配置（完整配置）
+ * @returns 合并后的完整配置对象
+ * 
+ * @example
+ * ```ts
+ * import { mergeConfig } from "@dreamer/dweb";
+ * 
+ * const base = { 
+ *   server: { port: 3000 },
+ *   cookie: { secret: "base-secret" },
+ * };
+ * const app = {
+ *   server: { port: 3001, host: "localhost" },
+ *   routes: { dir: "routes" },
+ *   cookie: { secret: "app-secret", httpOnly: true },
+ * };
+ * 
+ * const merged = mergeConfig(base, app);
+ * // { 
+ * //   server: { port: 3001, host: "localhost" },
+ * //   routes: { dir: "routes" },
+ * //   cookie: { secret: "app-secret", httpOnly: true }
+ * // }
+ * ```
  */
 export function mergeConfig(
   baseConfig: Partial<AppConfig>,
