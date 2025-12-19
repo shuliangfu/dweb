@@ -992,13 +992,13 @@ export class RouteHandler {
   /**
    * 生成预加载和预取链接
    * @param routeInfo 当前路由信息
-   * @param renderMode 渲染模式
+   * @param _renderMode 渲染模式（暂未使用，未来可用于优化预加载策略）
    * @param html HTML 内容（用于提取链接）
    * @returns HTML link 标签字符串
    */
   private async generatePreloadLinks(
     routeInfo: RouteInfo,
-    renderMode: RenderMode,
+    _renderMode: RenderMode,
     html: string
   ): Promise<string> {
     const links: string[] = [];
