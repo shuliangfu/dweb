@@ -7,11 +7,6 @@
     "./cli": "./src/cli.ts"
   },
   "description": "A modern full-stack web framework based on Deno + Preact + Tailwind CSS",
-  "nodeModulesDir": "manual",
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "preact"
-  },
   "imports": {
     "@dweb/": "./src/",
     "@std/fs": "jsr:@std/fs@^1.0.2",
@@ -59,6 +54,11 @@
       "tags": ["recommended"],
       "exclude": ["no-explicit-any"]
     }
-  }
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
+  },
+  "nodeModulesDir": "manual"
 }
 

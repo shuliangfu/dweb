@@ -17,6 +17,7 @@ import { bodyParser } from '../middleware/body-parser.ts';
 import { staticFiles } from '../middleware/static.ts';
 import { setupSignalHandlers } from './shutdown.ts';
 import * as path from '@std/path';
+import { loadMainApp, getMiddlewaresFromApp, getPluginsFromApp } from '../utils/app.ts';
 
 /**
  * 预加载所有路由模块、布局和错误页面
@@ -316,6 +317,19 @@ export async function startProdServer(config: AppConfig): Promise<void> {
     }
   }
 
+  // 尝试从 main.ts 加载中间件
+  try {
+    const mainApp = await loadMainApp();
+    if (mainApp) {
+      const mainMiddlewares = getMiddlewaresFromApp(mainApp);
+      if (mainMiddlewares.length > 0) {
+        middlewareManager.addMany(mainMiddlewares);
+      }
+    }
+  } catch (_error) {
+    // 加载 main.ts 失败时静默忽略（main.ts 是可选的）
+  }
+
   // 添加静态资源中间件（从构建输出目录）
   const staticDir = config.staticDir || 'public';
   const publicPath = `${config.build!.outDir}/${staticDir}`;
@@ -335,6 +349,19 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   const pluginManager = new PluginManager();
   if (config.plugins) {
     pluginManager.registerMany(config.plugins);
+  }
+
+  // 尝试从 main.ts 加载插件
+  try {
+    const mainApp = await loadMainApp();
+    if (mainApp) {
+      const mainPlugins = getPluginsFromApp(mainApp);
+      if (mainPlugins.length > 0) {
+        pluginManager.registerMany(mainPlugins);
+      }
+    }
+  } catch (_error) {
+    // 加载 main.ts 失败时静默忽略（main.ts 是可选的）
   }
 
   // 执行插件初始化

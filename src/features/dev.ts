@@ -17,6 +17,7 @@ import { bodyParser } from "../middleware/body-parser.ts";
 import { staticFiles } from "../middleware/static.ts";
 import { setupSignalHandlers as _setupSignalHandlers } from "../features/shutdown.ts";
 import { createHMRClientScript, FileWatcher, HMRServer } from "./hmr.ts";
+import { loadMainApp, getMiddlewaresFromApp, getPluginsFromApp } from "../utils/app.ts";
 
 /**
  * 预加载所有路由模块、布局和错误页面
@@ -381,6 +382,19 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 		middlewareManager.addMany(config.middleware)
 	}
 
+	// 尝试从 main.ts 加载中间件
+	try {
+		const mainApp = await loadMainApp();
+		if (mainApp) {
+			const mainMiddlewares = getMiddlewaresFromApp(mainApp);
+			if (mainMiddlewares.length > 0) {
+				middlewareManager.addMany(mainMiddlewares);
+			}
+		}
+	} catch (_error) {
+		// 加载 main.ts 失败时静默忽略（main.ts 是可选的）
+	}
+
 	// 添加静态资源中间件
 	const staticDir = config.staticDir || "public"
 	try {
@@ -399,6 +413,19 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 	const pluginManager = new PluginManager()
 	if (config.plugins) {
 		pluginManager.registerMany(config.plugins)
+	}
+
+	// 尝试从 main.ts 加载插件
+	try {
+		const mainApp = await loadMainApp();
+		if (mainApp) {
+			const mainPlugins = getPluginsFromApp(mainApp);
+			if (mainPlugins.length > 0) {
+				pluginManager.registerMany(mainPlugins);
+			}
+		}
+	} catch (_error) {
+		// 加载 main.ts 失败时静默忽略（main.ts 是可选的）
 	}
 
 	// 执行插件初始化
