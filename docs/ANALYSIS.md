@@ -27,7 +27,7 @@
    - 错误提示友好
 
 4. **文档基础扎实**
-   - README、SECURITY.md、CONTRIBUTING.md、DOCKER.md 已完成
+   - README、SECURITY.md、CONTRIBUTING.md、docs/DOCKER.md 已完成
    - 示例项目完整
 
 ### ⚠️ 需要改进的方面

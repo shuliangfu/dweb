@@ -476,7 +476,7 @@ const debug = env.bool("DEBUG", false);
 
 ## 📖 文档
 
-- **[完整文档](./DOC.md)** - 详细的功能说明和 API 文档
+- **[完整文档](./docs/DOC.md)** - 详细的功能说明和 API 文档
 - **[快速开始指南](./example/QUICK_START.md)** - 快速上手教程
 - **[使用示例](./example/)** - 完整的示例项目
 - **[作为库使用](./USAGE_AS_LIBRARY.md)** - 如何将框架作为库导入使用

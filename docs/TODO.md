@@ -89,7 +89,7 @@
 - ✅ **Cookie/Session 安全** - Cookie 签名、Session 加密、HttpOnly 标志
 
 ### 📚 文档和部署
-- ✅ **Docker 支持** - Dockerfile、docker-compose.yml、.dockerignore、DOCKER.md
+- ✅ **Docker 支持** - Dockerfile、docker-compose.yml、.dockerignore、docs/DOCKER.md
 - ✅ **贡献指南** - CONTRIBUTING.md
 - ✅ **安全文档** - SECURITY.md
 
@@ -105,7 +105,7 @@
   - [x] docker-compose.yml 配置
   - [x] .dockerignore 文件
   - [x] 多阶段构建优化
-  - [x] DOCKER.md 部署文档
+  - [x] docs/DOCKER.md 部署文档
   - **完成时间**: 2024-12-16
 
 #### 2. 测试支持
@@ -251,7 +251,7 @@
 ## 🎯 当前重点任务
 
 ### 本周任务
-1. ✅ **Docker 支持** - 已完成 Dockerfile、docker-compose.yml、DOCKER.md
+1. ✅ **Docker 支持** - 已完成 Dockerfile、docker-compose.yml、docs/DOCKER.md
 2. ✅ **安全功能** - 已完成安全工具函数集成和安全文档
 3. **基础测试** - 添加核心功能的单元测试
 

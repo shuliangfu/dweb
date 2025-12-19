@@ -322,7 +322,7 @@ Fixes #123
 - [ ] 代码已通过 lint 检查
 - [ ] 代码已格式化
 - [ ] 已添加必要的注释和文档
-- [ ] 已更新相关文档（如 README、DOC.md）
+- [ ] 已更新相关文档（如 README、docs/DOC.md）
 - [ ] 已测试功能正常工作
 - [ ] 提交信息遵循 Conventional Commits 规范
 ```
@@ -372,7 +372,7 @@ Fixes #123
 
 - 在 [GitHub Discussions](https://github.com/shuliangfu/dweb/discussions) 提问
 - 创建 [GitHub Issue](https://github.com/shuliangfu/dweb/issues)
-- 查看 [项目文档](./DOC.md)
+- 查看 [项目文档](./docs/DOC.md)
 
 ---
 
