@@ -81,7 +81,11 @@ async function cleanupTestFiles() {
 }
 
 Deno.test('Integration - Rendering - Hybrid 模式渲染', async () => {
-  await cleanupTestFiles();
+  // 在覆盖率模式下不清理文件，以便覆盖率报告可以访问它们
+  const isCoverageMode = Deno.args.some(arg => arg.includes('--coverage'));
+  if (!isCoverageMode) {
+    await cleanupTestFiles();
+  }
   await createHybridPage();
 
   const router = new Router(testPagesDir);
@@ -116,11 +120,17 @@ Deno.test('Integration - Rendering - Hybrid 模式渲染', async () => {
     );
   }
 
-  await cleanupTestFiles();
+  if (!isCoverageMode) {
+    await cleanupTestFiles();
+  }
 });
 
 Deno.test('Integration - Rendering - Hybrid 模式包含 hydration 脚本', async () => {
-  await cleanupTestFiles();
+  // 在覆盖率模式下不清理文件，以便覆盖率报告可以访问它们
+  const isCoverageMode = Deno.args.some(arg => arg.includes('--coverage'));
+  if (!isCoverageMode) {
+    await cleanupTestFiles();
+  }
   await createHybridPage();
 
   const router = new Router(testPagesDir);
@@ -153,6 +163,8 @@ Deno.test('Integration - Rendering - Hybrid 模式包含 hydration 脚本', asyn
     );
   }
 
-  await cleanupTestFiles();
+  if (!isCoverageMode) {
+    await cleanupTestFiles();
+  }
 });
 

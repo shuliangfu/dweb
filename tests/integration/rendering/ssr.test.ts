@@ -79,7 +79,11 @@ async function cleanupTestFiles() {
 }
 
 Deno.test('Integration - Rendering - SSR 模式渲染', async () => {
-  await cleanupTestFiles();
+  // 在覆盖率模式下不清理文件，以便覆盖率报告可以访问它们
+  const isCoverageMode = Deno.args.some(arg => arg.includes('--coverage'));
+  if (!isCoverageMode) {
+    await cleanupTestFiles();
+  }
   await createSSRPage();
 
   const router = new Router(testPagesDir);
@@ -106,11 +110,17 @@ Deno.test('Integration - Rendering - SSR 模式渲染', async () => {
     assert(html.includes('SSR') || html.includes('ssr') || html.includes('<div>') || html.includes('</div>'));
   }
 
-  await cleanupTestFiles();
+  if (!isCoverageMode) {
+    await cleanupTestFiles();
+  }
 });
 
 Deno.test('Integration - Rendering - SSR 模式传递参数', async () => {
-  await cleanupTestFiles();
+  // 在覆盖率模式下不清理文件，以便覆盖率报告可以访问它们
+  const isCoverageMode = Deno.args.some(arg => arg.includes('--coverage'));
+  if (!isCoverageMode) {
+    await cleanupTestFiles();
+  }
   await createSSRPage();
 
   const router = new Router(testPagesDir);
@@ -137,6 +147,8 @@ Deno.test('Integration - Rendering - SSR 模式传递参数', async () => {
     assert(html.includes('Query') || html.includes('query') || html.includes('SSR') || html.includes('ssr'));
   }
 
-  await cleanupTestFiles();
+  if (!isCoverageMode) {
+    await cleanupTestFiles();
+  }
 });
 
