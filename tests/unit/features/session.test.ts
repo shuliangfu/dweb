@@ -123,18 +123,19 @@ Deno.test('SessionManager - 重新生成 Session ID', async () => {
     const oldId = session.id;
     
     await session.regenerate();
-    const newId = session.id;
+    const newId = session.id; // 使用 getter 获取更新后的 ID
     
-    assert(oldId !== newId);
-    assertEquals(session.data.userId, '123');
+    assert(oldId !== newId, 'Session ID 应该已更改');
+    assertEquals(session.data.userId, '123', 'Session 数据应该保持不变');
     
     // 旧 ID 应该无效
     const oldSession = await manager.get(oldId);
-    assertEquals(oldSession, null);
+    assertEquals(oldSession, null, '旧 Session ID 应该失效');
     
     // 新 ID 应该有效
     const newSession = await manager.get(newId);
-    assert(newSession !== null);
+    assert(newSession !== null, '新 Session ID 应该有效');
+    assertEquals(newSession.data.userId, '123', 'Session 数据应该保持不变');
   } finally {
     cleanupManager(manager);
   }

@@ -163,7 +163,10 @@ export class SessionManager {
     const self = this;
     
     return {
-      id: sessionData.id,
+      // 使用 getter 确保 id 始终返回最新的 sessionData.id
+      get id() {
+        return sessionData.id;
+      },
       data: sessionData.data,
       async update(newData: Record<string, unknown>): Promise<void> {
         sessionData.data = { ...sessionData.data, ...newData };
