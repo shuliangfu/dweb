@@ -41,7 +41,7 @@ Deno.test('Dev Server - 默认 host 为 localhost', () => {
   };
 
   // 验证默认值逻辑
-  const host = config.server.host || 'localhost';
+  const host = config.server?.host || 'localhost';
   assertEquals(host, 'localhost');
 });
 
