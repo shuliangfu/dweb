@@ -481,6 +481,14 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 		}, 1000)
   }
   
+	// 设置优雅关闭信号监听器
+	_setupSignalHandlers({
+		close: async () => {
+			await closeDatabase()
+			server.close()
+		},
+	})
+
 	await server.start(port, host)
 	
 }
