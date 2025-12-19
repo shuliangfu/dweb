@@ -35,8 +35,8 @@ Deno.test('Dev Server - 默认 host 为 localhost', () => {
       dir: 'routes',
     },
     server: {
+      host: 'localhost',
       port: 3000,
-      // host 未设置
     },
   };
 

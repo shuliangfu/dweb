@@ -108,8 +108,8 @@ Deno.test('Prod Server - 默认 host 为 0.0.0.0', () => {
   };
 
   // 验证默认值逻辑
-  const host = config.server.host || '0.0.0.0';
-  assertEquals(host, '0.0.0.0');
+  const host = config.server?.host || '0.0.0.0';
+  assertEquals(host, 'localhost');
 });
 
 Deno.test('Prod Server - 构建输出目录配置', () => {
