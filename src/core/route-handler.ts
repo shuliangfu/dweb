@@ -1285,26 +1285,30 @@ export class RouteHandler {
     req: Request,
     res: Response,
   ): Promise<void> {
-    // 输出详细的错误信息到控制台，便于调试
-    console.error('\n❌ ========== 服务器错误 ==========');
-    console.error('请求路径:', req.url);
-    console.error('请求方法:', req.method);
+    // 使用统一的错误日志工具
+    const { logError, getErrorStatusCode, getErrorMessage } = await import('../utils/error.ts');
     
-    if (error instanceof Error) {
-      console.error('错误类型:', error.name);
-      console.error('错误消息:', error.message);
-      if (error.stack) {
-        console.error('错误堆栈:');
-        console.error(error.stack);
-      }
-      if (error.cause) {
-        console.error('错误原因:', error.cause);
-      }
-    } else {
-      console.error('错误内容:', error);
-    }
-    console.error('===================================\n');
+    // 获取当前路由信息（如果有）
+    const routeInfo = this.router?.match(req.url || '/');
     
+    // 记录错误
+    logError(error, {
+      request: {
+        url: req.url,
+        method: req.method,
+      },
+      route: routeInfo ? {
+        path: routeInfo.path,
+        filePath: routeInfo.filePath,
+        type: routeInfo.type,
+      } : undefined,
+    });
+    
+    // 获取错误状态码和消息
+    const statusCode = getErrorStatusCode(error);
+    const errorMessage = getErrorMessage(error);
+    
+    // 尝试加载自定义错误页面
     const errorPagePath = this.router.getErrorPage("error");
     
     if (errorPagePath) {
@@ -1316,25 +1320,21 @@ export class RouteHandler {
         );
         const ErrorComponent = errorModule.default;
         if (ErrorComponent) {
-          const errorMessage = error instanceof Error
-            ? error.message
-            : String(error);
           const html = renderToString(
-            ErrorComponent({ error: { message: errorMessage } }),
+            ErrorComponent({ error: { message: errorMessage, statusCode } }),
           );
-          res.status = 500;
+          res.status = statusCode;
           res.html(html);
           return;
         }
       } catch (_err) {
-        // 加载错误页面失败时静默处理
+        // 加载错误页面失败时静默处理，使用默认错误响应
       }
     }
     
     // 默认错误响应
-    res.status = 500;
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    res.html(`<h1>500 - Internal Server Error</h1><p>${errorMessage}</p>`);
+    res.status = statusCode;
+    res.html(`<h1>${statusCode} - ${statusCode === 404 ? 'Not Found' : statusCode === 400 ? 'Bad Request' : 'Internal Server Error'}</h1><p>${errorMessage}</p>`);
   }
 	
 }

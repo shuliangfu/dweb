@@ -142,7 +142,12 @@ export async function handleApiRoute(
   // pathParts 应该是 ['api', 'routeName', 'methodName']
   if (pathParts.length < 3) {
     const availableHandlers = Object.keys(handlers).join(', ');
-    throw new Error(`API 路径格式错误: ${url.pathname}。路径格式应为 /api/routeName/methodName，可用处理器: [${availableHandlers}]`);
+    const { ApiError } = await import('../utils/error.ts');
+    throw new ApiError(
+      `API 路径格式错误: ${url.pathname}。路径格式应为 /api/routeName/methodName`,
+      400,
+      { availableHandlers, pathname: url.pathname }
+    );
   }
   
   // 获取最后一个部分作为方法名
@@ -150,12 +155,22 @@ export async function handleApiRoute(
   
   if (!methodName) {
     const availableHandlers = Object.keys(handlers).join(', ');
-    throw new Error(`API 方法名不能为空。路径: ${url.pathname}，可用处理器: [${availableHandlers}]`);
+    const { ApiError } = await import('../utils/error.ts');
+    throw new ApiError(
+      `API 方法名不能为空`,
+      400,
+      { pathname: url.pathname, availableHandlers }
+    );
   }
   
   // 安全检查：验证方法名是否安全
   if (!isSafeMethodName(methodName)) {
-    throw new Error(`API 方法名不安全: ${methodName}`);
+    const { ApiError } = await import('../utils/error.ts');
+    throw new ApiError(
+      `API 方法名不安全: ${methodName}`,
+      400,
+      { methodName }
+    );
   }
   
   // 查找对应的处理器（支持驼峰和短横线两种格式）
@@ -165,7 +180,17 @@ export async function handleApiRoute(
     // 如果没有找到对应的处理器，返回错误
     // 添加调试信息：显示路径部分和可用的处理器
     const availableHandlers = Object.keys(handlers).join(', ');
-    throw new Error(`未找到 API 方法: ${methodName}。路径: ${url.pathname}，路径部分: [${pathParts.join(', ')}]，可用处理器: [${availableHandlers}]`);
+    const { ApiError } = await import('../utils/error.ts');
+    throw new ApiError(
+      `未找到 API 方法: ${methodName}`,
+      404,
+      {
+        methodName,
+        pathname: url.pathname,
+        pathParts: pathParts.join(', '),
+        availableHandlers
+      }
+    );
   }
   
   // 执行处理器
