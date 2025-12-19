@@ -34,19 +34,14 @@ export class SQLiteAdapter extends BaseAdapter {
 
     const results: any[] = [];
     try {
-      for (const row of this.db.query(sql, params)) {
-        const obj: any = {};
-        const columns = row.columns();
-        for (let i = 0; i < row.length; i++) {
-          obj[columns[i]] = row[i];
-        }
-        results.push(obj);
-      }
+      // SQLite 的 query 方法返回 Row[] 数组
+      // 使用 queryEntries 方法可以直接获取对象数组（带列名）
+      const rows = this.db.queryEntries(sql, params);
+      return rows;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`SQLite query error: ${message}`);
     }
-    return results;
   }
 
   /**
@@ -58,7 +53,14 @@ export class SQLiteAdapter extends BaseAdapter {
     }
 
     try {
-      this.db.execute(sql, params);
+      // SQLite 的 execute 方法只接受 SQL 字符串，参数需要通过 query 方法传递
+      if (params.length > 0) {
+        // 对于带参数的 SQL，使用 query 方法执行
+        this.db.query(sql, params);
+      } else {
+        // 对于不带参数的 SQL，使用 execute 方法
+        this.db.execute(sql);
+      }
       return {
         affectedRows: this.db.changes,
         lastInsertRowId: this.db.lastInsertRowId,
