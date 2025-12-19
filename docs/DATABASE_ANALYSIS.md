@@ -51,88 +51,213 @@
 
 ## 技术选型
 
-### Deno 生态中的数据库库
+### 支持的数据库类型
 
-#### 1. **Deno SQLite** (推荐用于简单场景)
+DWeb 框架将支持以下四种数据库：
 
-**优点**:
-- 官方支持，稳定可靠
-- 轻量级，无需外部依赖
-- 适合小型项目
+1. **SQLite** - 轻量级嵌入式数据库
+2. **PostgreSQL** - 强大的关系型数据库
+3. **MySQL** - 流行的关系型数据库
+4. **MongoDB** - NoSQL 文档数据库
 
-**缺点**:
-- 仅支持 SQLite
-- 功能相对简单
+### 数据库驱动选择
 
-**适用场景**: 小型项目、原型开发、单机应用
+#### 1. **SQLite** - `deno-sqlite`
 
-#### 2. **Postgres.js** (推荐用于生产环境)
+**驱动**: `https://deno.land/x/sqlite@v3.8.0/mod.ts`
 
 **优点**:
-- 原生 PostgreSQL 支持
-- 高性能
-- 支持连接池
-- TypeScript 类型支持
+- ✅ 官方维护，稳定可靠
+- ✅ 轻量级，无需外部服务
+- ✅ 零配置，适合开发和简单部署
+- ✅ 性能优秀（单机场景）
+- ✅ 支持事务
 
 **缺点**:
-- 仅支持 PostgreSQL
-- 需要外部数据库服务
+- ❌ 仅支持单机访问
+- ❌ 并发写入性能有限
+- ❌ 不适合高并发场景
 
-**适用场景**: 生产环境、需要关系型数据库的场景
+**适用场景**: 
+- 小型项目、原型开发
+- 单机应用
+- 开发环境
+- 嵌入式应用
 
-#### 3. **MySQL2** (通过 npm 兼容层)
+**示例代码**:
+```typescript
+import { DB } from "https://deno.land/x/sqlite@v3.8.0/mod.ts";
+
+const db = new DB("database.sqlite");
+db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)");
+```
+
+---
+
+#### 2. **PostgreSQL** - `postgres`
+
+**驱动**: `https://deno.land/x/postgres@v0.17.0/mod.ts` 或 `npm:postgres`
 
 **优点**:
-- 成熟的 MySQL 驱动
-- 功能完整
+- ✅ 功能强大的关系型数据库
+- ✅ 支持复杂查询和事务
+- ✅ 高性能，适合生产环境
+- ✅ 支持连接池
+- ✅ 丰富的数据类型
+- ✅ ACID 事务支持
 
 **缺点**:
-- 需要通过 npm 兼容层
-- 性能可能不如原生库
+- ❌ 需要独立的数据库服务
+- ❌ 配置相对复杂
+- ❌ 资源占用较大
 
-**适用场景**: 需要 MySQL 的场景
+**适用场景**:
+- 生产环境
+- 需要复杂查询的应用
+- 需要 ACID 事务的应用
+- 企业级应用
 
-#### 4. **Drizzle ORM** (推荐用于 ORM)
+**示例代码**:
+```typescript
+import postgres from "npm:postgres";
+
+const sql = postgres("postgres://user:password@localhost:5432/database");
+const users = await sql`SELECT * FROM users WHERE age > ${18}`;
+```
+
+---
+
+#### 3. **MySQL** - `deno_mysql`
+
+**驱动**: `https://deno.land/x/mysql@v2.12.1/mod.ts`
 
 **优点**:
-- 轻量级 ORM
-- 类型安全
-- 支持多种数据库（PostgreSQL、MySQL、SQLite）
-- 支持迁移
-- 性能优秀
+- ✅ 流行的关系型数据库
+- ✅ 性能优秀
+- ✅ 社区支持广泛
+- ✅ 支持连接池
+- ✅ 兼容性好
 
 **缺点**:
-- 需要学习新的 API
-- 社区相对较小
+- ❌ 需要独立的数据库服务
+- ❌ 某些高级特性不如 PostgreSQL
 
-**适用场景**: 需要 ORM 功能的项目
+**适用场景**:
+- 需要 MySQL 兼容性的项目
+- 现有 MySQL 基础设施
+- Web 应用
 
-#### 5. **Prisma** (通过 npm 兼容层)
+**示例代码**:
+```typescript
+import { Client } from "https://deno.land/x/mysql@v2.12.1/mod.ts";
+
+const client = await new Client().connect({
+  hostname: "127.0.0.1",
+  username: "root",
+  db: "database",
+  password: "password",
+});
+
+const users = await client.query("SELECT * FROM users WHERE age > ?", [18]);
+```
+
+---
+
+#### 4. **MongoDB** - `mongodb` (npm)
+
+**驱动**: `npm:mongodb@6`
 
 **优点**:
-- 功能强大的 ORM
-- 优秀的类型推断
-- 完善的迁移工具
-- 大型社区
+- ✅ NoSQL 文档数据库
+- ✅ 灵活的文档结构
+- ✅ 水平扩展能力强
+- ✅ 适合非结构化数据
+- ✅ 丰富的查询功能
 
 **缺点**:
-- 需要通过 npm 兼容层
-- 配置相对复杂
-- 包体积较大
+- ❌ 需要通过 npm 兼容层
+- ❌ 不支持 JOIN 操作
+- ❌ 事务支持相对较弱（早期版本）
 
-**适用场景**: 大型项目、需要完整 ORM 功能
+**适用场景**:
+- 非结构化数据
+- 需要水平扩展的应用
+- 内容管理系统
+- 日志存储
 
-### 推荐方案
+**示例代码**:
+```typescript
+import { MongoClient } from "npm:mongodb@6";
 
-**方案一：轻量级方案（推荐）**
-- 使用 **Deno SQLite** 作为默认数据库
-- 提供简单的查询构建器
-- 支持插件方式集成其他数据库（PostgreSQL、MySQL）
+const client = new MongoClient("mongodb://localhost:27017");
+await client.connect();
+const db = client.db("database");
+const users = await db.collection("users").find({ age: { $gt: 18 } }).toArray();
+```
 
-**方案二：完整方案**
-- 集成 **Drizzle ORM** 作为核心 ORM
-- 支持多种数据库
-- 提供完整的迁移工具
+---
+
+### ORM 选择
+
+#### **Drizzle ORM** (推荐用于 SQL 数据库)
+
+**优点**:
+- ✅ 支持 SQLite、PostgreSQL、MySQL
+- ✅ 类型安全
+- ✅ 轻量级
+- ✅ 支持迁移
+- ✅ 性能优秀
+- ✅ 学习曲线平缓
+
+**缺点**:
+- ❌ 不支持 MongoDB（MongoDB 需要单独的 ODM）
+
+**适用场景**: SQL 数据库的 ORM 需求
+
+#### **Mongoose** (用于 MongoDB)
+
+**驱动**: `npm:mongoose@8`
+
+**优点**:
+- ✅ MongoDB 官方推荐的 ODM
+- ✅ 功能完整
+- ✅ 模式验证
+- ✅ 中间件支持
+
+**缺点**:
+- ❌ 仅支持 MongoDB
+- ❌ 需要通过 npm 兼容层
+
+**适用场景**: MongoDB 的 ODM 需求
+
+---
+
+### 推荐架构方案
+
+**统一接口 + 多驱动支持**
+
+```typescript
+// 统一的数据库接口
+interface DatabaseAdapter {
+  connect(config: DatabaseConfig): Promise<void>;
+  query(sql: string, params?: any[]): Promise<any[]>;
+  execute(sql: string, params?: any[]): Promise<any>;
+  transaction(callback: (db: DatabaseAdapter) => Promise<void>): Promise<void>;
+  close(): Promise<void>;
+}
+
+// 不同数据库的适配器实现
+class SQLiteAdapter implements DatabaseAdapter { ... }
+class PostgreSQLAdapter implements DatabaseAdapter { ... }
+class MySQLAdapter implements DatabaseAdapter { ... }
+class MongoDBAdapter implements DatabaseAdapter { ... }
+```
+
+**优势**:
+- ✅ 统一的 API，用户无需关心底层实现
+- ✅ 可以轻松切换数据库
+- ✅ 支持多种数据库同时使用
+- ✅ 便于测试（可以使用 SQLite 作为测试数据库）
 
 ---
 
@@ -627,7 +752,7 @@ export class MigrationManager {
 ```typescript
 // src/types/index.ts
 export interface DatabaseConfig {
-  type: 'sqlite' | 'postgresql' | 'mysql';
+  type: 'sqlite' | 'postgresql' | 'mysql' | 'mongodb';
   connection: {
     path?: string;
     host?: string;
@@ -635,11 +760,18 @@ export interface DatabaseConfig {
     database?: string;
     username?: string;
     password?: string;
+    authSource?: string;
+    replicaSet?: string;
   };
   pool?: {
     min?: number;
     max?: number;
     idleTimeout?: number;
+  };
+  mongoOptions?: {
+    maxPoolSize?: number;
+    minPoolSize?: number;
+    serverSelectionTimeoutMS?: number;
   };
 }
 
