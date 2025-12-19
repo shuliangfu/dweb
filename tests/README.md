@@ -143,8 +143,8 @@ deno test --allow-all --fail-fast tests/unit/
 | Session Manager | `session.test.ts` | 6 | ✅ 通过 |
 | Dev Server | `dev.test.ts` | 8 | ✅ 通过 |
 | Prod Server | `prod.test.ts` | 10 | ✅ 通过 |
-| Build | - | - | ⏳ 待测试 |
-| Create | - | - | ⏳ 待测试 |
+| Build | `build.test.ts` | 7 | ✅ 通过 |
+| Create | `create.test.ts` | 5 | ✅ 通过 |
 
 ### 中间件 (Middleware)
 

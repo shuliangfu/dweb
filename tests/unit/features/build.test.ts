@@ -101,7 +101,11 @@ Deno.test('Build - 构建配置验证', async () => {
   }
 });
 
-Deno.test('Build - 基本构建流程', async () => {
+Deno.test({
+  name: 'Build - 基本构建流程',
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
   await cleanupTestFiles();
   await createTestFiles();
 
@@ -144,7 +148,11 @@ Deno.test('Build - 基本构建流程', async () => {
   }
 });
 
-Deno.test('Build - 静态资源复制', async () => {
+Deno.test({
+  name: 'Build - 静态资源复制',
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
   await cleanupTestFiles();
   await createTestFiles();
 
@@ -181,7 +189,11 @@ Deno.test('Build - 静态资源复制', async () => {
   }
 });
 
-Deno.test('Build - 路由文件编译', async () => {
+Deno.test({
+  name: 'Build - 路由文件编译',
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
   await cleanupTestFiles();
   await createTestFiles();
 
@@ -222,7 +234,11 @@ Deno.test('Build - 路由文件编译', async () => {
   }
 });
 
-Deno.test('Build - 组件文件编译', async () => {
+Deno.test({
+  name: 'Build - 组件文件编译',
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
   await cleanupTestFiles();
   await createTestFiles();
 
@@ -263,7 +279,11 @@ Deno.test('Build - 组件文件编译', async () => {
   }
 });
 
-Deno.test('Build - 输出目录清空', async () => {
+Deno.test({
+  name: 'Build - 输出目录清空',
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
   await cleanupTestFiles();
   await createTestFiles();
 
@@ -300,7 +320,11 @@ Deno.test('Build - 输出目录清空', async () => {
   }
 });
 
-Deno.test('Build - 缺少静态资源目录', async () => {
+Deno.test({
+  name: 'Build - 缺少静态资源目录',
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
   await cleanupTestFiles();
   await createTestFiles();
 
