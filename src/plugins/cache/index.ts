@@ -1,0 +1,230 @@
+/**
+ * 缓存插件
+ * 提供内存和 Redis 缓存支持
+ */
+
+import type { Plugin, AppLike } from '../../types/index.ts';
+import type { CachePluginOptions, CacheStore, CacheOptions } from './types.ts';
+
+/**
+ * 内存缓存实现
+ */
+class MemoryCache {
+  private cache: Map<string, { value: unknown; expires: number }> = new Map();
+  private maxSize: number;
+
+  constructor(maxSize: number = 100 * 1024 * 1024) { // 默认 100MB
+    this.maxSize = maxSize;
+  }
+
+  async get<T>(key: string): Promise<T | null> {
+    const item = this.cache.get(key);
+    if (!item) {
+      return null;
+    }
+
+    // 检查是否过期
+    if (item.expires > 0 && Date.now() > item.expires) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return item.value as T;
+  }
+
+  async set(key: string, value: unknown, ttl: number = 0): Promise<void> {
+    const expires = ttl > 0 ? Date.now() + ttl * 1000 : 0;
+    this.cache.set(key, { value, expires });
+
+    // 简单的 LRU 策略：如果超过最大大小，删除最旧的项
+    if (this.cache.size > 1000) { // 简单的限制
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey) {
+        this.cache.delete(firstKey);
+      }
+    }
+  }
+
+  async delete(key: string): Promise<void> {
+    this.cache.delete(key);
+  }
+
+  async clear(): Promise<void> {
+    this.cache.clear();
+  }
+
+  async has(key: string): Promise<boolean> {
+    const item = this.cache.get(key);
+    if (!item) {
+      return false;
+    }
+
+    // 检查是否过期
+    if (item.expires > 0 && Date.now() > item.expires) {
+      this.cache.delete(key);
+      return false;
+    }
+
+    return true;
+  }
+}
+
+/**
+ * Redis 缓存实现（简化版，需要实际 Redis 客户端）
+ */
+class RedisCache {
+  private config: { host: string; port: number; password?: string; db?: number };
+  private client: any = null; // Redis 客户端
+
+  constructor(config: { host: string; port: number; password?: string; db?: number }) {
+    this.config = config;
+  }
+
+  async connect(): Promise<void> {
+    // 这里需要实际的 Redis 客户端实现
+    // 例如使用 npm:redis 或 deno.land/x/redis
+    // 为了简化，这里只提供接口
+    console.warn('[Cache Plugin] Redis 缓存需要安装 Redis 客户端库');
+  }
+
+  async get<T>(key: string): Promise<T | null> {
+    if (!this.client) {
+      await this.connect();
+    }
+    // 实际实现需要调用 Redis GET 命令
+    return null;
+  }
+
+  async set(key: string, value: unknown, ttl: number = 0): Promise<void> {
+    if (!this.client) {
+      await this.connect();
+    }
+    // 实际实现需要调用 Redis SET 命令
+  }
+
+  async delete(key: string): Promise<void> {
+    if (!this.client) {
+      await this.connect();
+    }
+    // 实际实现需要调用 Redis DEL 命令
+  }
+
+  async clear(): Promise<void> {
+    if (!this.client) {
+      await this.connect();
+    }
+    // 实际实现需要调用 Redis FLUSHDB 命令
+  }
+
+  async has(key: string): Promise<boolean> {
+    if (!this.client) {
+      await this.connect();
+    }
+    // 实际实现需要调用 Redis EXISTS 命令
+    return false;
+  }
+}
+
+/**
+ * 缓存管理器
+ */
+export class CacheManager {
+  private store: MemoryCache | RedisCache;
+  private keyPrefix: string;
+  private defaultTTL: number;
+
+  constructor(config: CachePluginOptions['config'] = {}) {
+    const storeType = config?.store || 'memory';
+    const defaultTTL = config?.defaultTTL || 3600; // 默认 1 小时
+    const keyPrefix = config?.keyPrefix || 'cache:';
+
+    if (storeType === 'redis') {
+      if (!config?.redis) {
+        throw new Error('Redis 缓存需要配置 redis 选项');
+      }
+      this.store = new RedisCache(config.redis);
+    } else {
+      this.store = new MemoryCache(config?.maxSize);
+    }
+
+    this.keyPrefix = keyPrefix;
+    this.defaultTTL = defaultTTL;
+  }
+
+  private getKey(key: string): string {
+    return `${this.keyPrefix}${key}`;
+  }
+
+  async get<T>(key: string, options?: CacheOptions): Promise<T | null> {
+    if (options?.force) {
+      return null;
+    }
+    return await this.store.get<T>(this.getKey(key));
+  }
+
+  async set(key: string, value: unknown, options?: CacheOptions): Promise<void> {
+    const ttl = options?.ttl ?? this.defaultTTL;
+    await this.store.set(this.getKey(key), value, ttl);
+  }
+
+  async delete(key: string): Promise<void> {
+    await this.store.delete(this.getKey(key));
+  }
+
+  async clear(): Promise<void> {
+    await this.store.clear();
+  }
+
+  async has(key: string): Promise<boolean> {
+    return await this.store.has(this.getKey(key));
+  }
+
+  /**
+   * 获取或设置缓存（如果不存在则执行函数获取值）
+   */
+  async getOrSet<T>(
+    key: string,
+    fn: () => Promise<T> | T,
+    options?: CacheOptions
+  ): Promise<T> {
+    const cached = await this.get<T>(key, options);
+    if (cached !== null) {
+      return cached;
+    }
+
+    const value = await fn();
+    await this.set(key, value, options);
+    return value;
+  }
+}
+
+/**
+ * 创建缓存插件
+ */
+export function cache(options: CachePluginOptions = {}): Plugin {
+  let cacheManager: CacheManager | null = null;
+
+  return {
+    name: 'cache',
+    config: options as unknown as Record<string, unknown>,
+
+    /**
+     * 初始化钩子 - 创建缓存管理器
+     */
+    async onInit(app: AppLike) {
+      try {
+        cacheManager = new CacheManager(options.config);
+        // 将缓存管理器存储到 app 中，供其他代码使用
+        (app as any).cache = cacheManager;
+        console.log(`✅ [Cache Plugin] 缓存初始化成功 (${options.config?.store || 'memory'})`);
+      } catch (error) {
+        console.error('❌ [Cache Plugin] 缓存初始化失败:', error);
+      }
+    },
+  };
+}
+
+// 导出类型和类
+export type { CachePluginOptions, CacheConfig, CacheStore, CacheOptions } from './types.ts';
+export { CacheManager };
+
