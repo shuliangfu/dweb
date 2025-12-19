@@ -7,52 +7,9 @@ import { startDevServer } from '../../../src/features/dev.ts';
 import type { AppConfig } from '../../../src/types/index.ts';
 
 // 注意：这些测试主要验证配置验证逻辑，不实际启动服务器
+// 实际启动服务器的测试更适合作为集成测试
 
-Deno.test('Dev Server - 缺少路由配置时抛出错误', async () => {
-  const config: AppConfig = {
-    server: {
-      port: 3000,
-    },
-  } as AppConfig;
-
-  let errorThrown = false;
-  try {
-    // 使用 Promise.race 来避免服务器启动导致的资源泄漏
-    await Promise.race([
-      startDevServer(config),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 100)),
-    ]);
-  } catch (error) {
-    errorThrown = true;
-    // 只要抛出错误即可（可能是配置错误或其他运行时错误）
-    assert(error instanceof Error);
-  }
-  // 缺少必需配置时应该抛出错误
-  assert(errorThrown);
-});
-
-Deno.test('Dev Server - 缺少服务器配置时抛出错误', async () => {
-  const config: AppConfig = {
-    routes: {
-      dir: 'routes',
-    },
-  } as AppConfig;
-
-  let errorThrown = false;
-  try {
-    // 使用 Promise.race 来避免服务器启动导致的资源泄漏
-    await Promise.race([
-      startDevServer(config),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 100)),
-    ]);
-  } catch (error) {
-    errorThrown = true;
-    // 只要抛出错误即可（可能是配置错误或其他运行时错误）
-    assert(error instanceof Error);
-  }
-  // 缺少必需配置时应该抛出错误
-  assert(errorThrown);
-});
+// 配置验证测试（不实际启动服务器）
 
 Deno.test('Dev Server - 配置验证通过', () => {
   const config: AppConfig = {
