@@ -81,7 +81,7 @@ function generateMetaTags(options: SEOPluginOptions, pageData?: {
       if (robots.nosnippet) directives.push('nosnippet');
       if (robots.noimageindex) directives.push('noimageindex');
       tags.push(`<meta name="robots" content="${directives.join(', ')}" />`);
-    } else if (pageData?.robots !== false) {
+    } else if (pageData && pageData.robots !== false) {
       if (typeof pageData.robots === 'object') {
         const robots = pageData.robots;
         const directives: string[] = [];

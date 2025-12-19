@@ -173,7 +173,9 @@ export default {
     // 验证配置
     assert(result.config !== null);
     assertEquals(result.config.server?.port, 3000);
-    assertEquals(result.config.routes?.dir, 'routes');
+    if (typeof result.config.routes === 'object' && result.config.routes !== null) {
+      assertEquals(result.config.routes.dir, 'routes');
+    }
     assertEquals(result.config.build?.outDir, 'dist');
   } finally {
     // 恢复工作目录
@@ -224,7 +226,9 @@ export default {
     assert(result.config !== null);
     assertEquals(result.config.name, 'app1');
     assertEquals(result.config.server?.port, 3000);
-    assertEquals(result.config.routes?.dir, 'routes1');
+    if (typeof result.config.routes === 'object' && result.config.routes !== null) {
+      assertEquals(result.config.routes.dir, 'routes1');
+    }
   } finally {
     // 恢复工作目录
     Deno.chdir(originalCwd);

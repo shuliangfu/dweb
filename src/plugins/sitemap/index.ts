@@ -131,7 +131,7 @@ export function sitemap(options: SitemapPluginOptions): Plugin {
   
   return {
     name: 'sitemap',
-    config: options as Record<string, unknown>,
+    config: options as unknown as Record<string, unknown>,
     
     /**
      * 构建时钩子 - 生成 sitemap.xml 和 robots.txt

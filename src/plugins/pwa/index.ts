@@ -188,7 +188,7 @@ export function pwa(options: PWAPluginOptions): Plugin {
   
   return {
     name: 'pwa',
-    config: options as Record<string, unknown>,
+    config: options as unknown as Record<string, unknown>,
     
     /**
      * 请求处理钩子 - 注入 PWA 链接
@@ -237,13 +237,14 @@ export function pwa(options: PWAPluginOptions): Plugin {
         
         // 确保 manifest 包含必需的字段
         const manifest: PWAManifestConfig = {
-          name: options.manifest.name,
           short_name: options.manifest.short_name || options.manifest.name,
           start_url: options.manifest.start_url || '/',
           display: options.manifest.display || 'standalone',
           theme_color: options.manifest.theme_color || '#000000',
           background_color: options.manifest.background_color || '#ffffff',
           ...options.manifest,
+          // name 必须在最后，确保使用用户提供的值
+          name: options.manifest.name,
         };
         
         await Deno.writeTextFile(manifestPath, JSON.stringify(manifest, null, 2));
