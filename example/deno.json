@@ -23,13 +23,17 @@
     "preact-router": "https://esm.sh/preact-router@4.1.1",
     "preact-render-to-string": "https://esm.sh/preact-render-to-string@6.2.2",
     "tailwindcss": "npm:tailwindcss@^4.1.10",
-    "tailwindcss-v3": "npm:tailwindcss@^3.4.0",
     "@tailwindcss/postcss": "npm:@tailwindcss/postcss@^4.1.10",
     "postcss": "npm:postcss@8.5.6",
     "postcss-v3": "npm:postcss@^8.4.35",
     "autoprefixer": "npm:autoprefixer@^10.4.17",
     "cssnano": "npm:cssnano@^6.0.3",
-    "esbuild": "npm:esbuild@0.19.12"
+    "esbuild": "npm:esbuild@0.19.12",
+    "@sqlite": "https://deno.land/x/sqlite@v3.7.3/mod.ts",
+    "@postgres": "npm:postgres@^3.4.3",
+    "@mysql": "https://deno.land/x/mysql@v2.12.1/mod.ts",
+    "@mongodb": "npm:mongodb@^6.3.0",
+    "sharp": "npm:sharp@^0.34.5"
   },
   "tasks": {
     "dev": "deno run -A @dreamer/dweb/cli dev",
