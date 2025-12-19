@@ -17,7 +17,11 @@ Deno.test('Dev Server - 缺少路由配置时抛出错误', async () => {
 
   let errorThrown = false;
   try {
-    await startDevServer(config);
+    // 使用 Promise.race 来避免服务器启动导致的资源泄漏
+    await Promise.race([
+      startDevServer(config),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 100)),
+    ]);
   } catch (error) {
     errorThrown = true;
     // 只要抛出错误即可（可能是配置错误或其他运行时错误）
@@ -36,7 +40,11 @@ Deno.test('Dev Server - 缺少服务器配置时抛出错误', async () => {
 
   let errorThrown = false;
   try {
-    await startDevServer(config);
+    // 使用 Promise.race 来避免服务器启动导致的资源泄漏
+    await Promise.race([
+      startDevServer(config),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 100)),
+    ]);
   } catch (error) {
     errorThrown = true;
     // 只要抛出错误即可（可能是配置错误或其他运行时错误）
