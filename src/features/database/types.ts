@@ -5,7 +5,7 @@
 /**
  * 数据库类型
  */
-export type DatabaseType = 'sqlite' | 'postgresql' | 'mysql' | 'mongodb';
+export type DatabaseType = 'postgresql' | 'mongodb';
 
 /**
  * 数据库连接配置
@@ -16,10 +16,7 @@ export interface DatabaseConfig {
   
   /** 连接配置 */
   connection: {
-    // SQLite
-    path?: string;
-    
-    // PostgreSQL/MySQL/MongoDB
+    // PostgreSQL/MongoDB
     host?: string;
     port?: number;
     database?: string;

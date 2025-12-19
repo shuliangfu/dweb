@@ -54,48 +54,14 @@
 
 ### 支持的数据库类型
 
-DWeb 框架将支持以下四种数据库：
+DWeb 框架支持以下两种数据库：
 
-1. **SQLite** - 轻量级嵌入式数据库
-2. **PostgreSQL** - 强大的关系型数据库
-3. **MySQL** - 流行的关系型数据库
-4. **MongoDB** - NoSQL 文档数据库
+1. **PostgreSQL** - 强大的关系型数据库
+2. **MongoDB** - NoSQL 文档数据库
 
 ### 数据库驱动选择
 
-#### 1. **SQLite** - `deno-sqlite`
-
-**驱动**: `https://deno.land/x/sqlite@v3.8.0/mod.ts`
-
-**优点**:
-- ✅ 官方维护，稳定可靠
-- ✅ 轻量级，无需外部服务
-- ✅ 零配置，适合开发和简单部署
-- ✅ 性能优秀（单机场景）
-- ✅ 支持事务
-
-**缺点**:
-- ❌ 仅支持单机访问
-- ❌ 并发写入性能有限
-- ❌ 不适合高并发场景
-
-**适用场景**: 
-- 小型项目、原型开发
-- 单机应用
-- 开发环境
-- 嵌入式应用
-
-**示例代码**:
-```typescript
-import { DB } from "https://deno.land/x/sqlite@v3.8.0/mod.ts";
-
-const db = new DB("database.sqlite");
-db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)");
-```
-
----
-
-#### 2. **PostgreSQL** - `postgres`
+#### 1. **PostgreSQL** - `postgres`
 
 **驱动**: `https://deno.land/x/postgres@v0.17.0/mod.ts` 或 `npm:postgres`
 
@@ -127,30 +93,6 @@ const users = await sql`SELECT * FROM users WHERE age > ${18}`;
 ```
 
 ---
-
-#### 3. **MySQL** - `deno_mysql`
-
-**驱动**: `https://deno.land/x/mysql@v2.12.1/mod.ts`
-
-**优点**:
-- ✅ 流行的关系型数据库
-- ✅ 性能优秀
-- ✅ 社区支持广泛
-- ✅ 支持连接池
-- ✅ 兼容性好
-
-**缺点**:
-- ❌ 需要独立的数据库服务
-- ❌ 某些高级特性不如 PostgreSQL
-
-**适用场景**:
-- 需要 MySQL 兼容性的项目
-- 现有 MySQL 基础设施
-- Web 应用
-
-**示例代码**:
-```typescript
-import { Client } from "https://deno.land/x/mysql@v2.12.1/mod.ts";
 
 const client = await new Client().connect({
   hostname: "127.0.0.1",
@@ -203,7 +145,7 @@ const users = await db.collection("users").find({ age: { $gt: 18 } }).toArray();
 #### **Drizzle ORM** (推荐用于 SQL 数据库)
 
 **优点**:
-- ✅ 支持 SQLite、PostgreSQL、MySQL
+- ✅ 支持 PostgreSQL、MongoDB
 - ✅ 类型安全
 - ✅ 轻量级
 - ✅ 支持迁移
@@ -258,7 +200,7 @@ class MongoDBAdapter implements DatabaseAdapter { ... }
 - ✅ 统一的 API，用户无需关心底层实现
 - ✅ 可以轻松切换数据库
 - ✅ 支持多种数据库同时使用
-- ✅ 便于测试（可以使用 SQLite 作为测试数据库）
+- ✅ 便于测试
 
 ---
 
@@ -272,7 +214,7 @@ class MongoDBAdapter implements DatabaseAdapter { ... }
 /**
  * 数据库类型
  */
-export type DatabaseType = 'sqlite' | 'postgresql' | 'mysql' | 'mongodb';
+export type DatabaseType = 'postgresql' | 'mongodb';
 
 /**
  * 数据库连接配置
@@ -283,10 +225,7 @@ export interface DatabaseConfig {
   
   /** 连接配置 */
   connection: {
-    // SQLite
-    path?: string;
-    
-    // PostgreSQL/MySQL/MongoDB
+    // PostgreSQL/MongoDB
     host?: string;
     port?: number;
     database?: string;
@@ -356,12 +295,8 @@ export class DatabaseManager {
    */
   private createAdapter(type: DatabaseType): DatabaseAdapter {
     switch (type) {
-      case 'sqlite':
-        return new SQLiteAdapter();
       case 'postgresql':
         return new PostgreSQLAdapter();
-      case 'mysql':
-        return new MySQLAdapter();
       case 'mongodb':
         return new MongoDBAdapter();
       default:
@@ -424,7 +359,7 @@ export class QueryBuilder {
 // src/features/orm.ts
 
 /**
- * SQL 数据库模型基类（用于 SQLite、PostgreSQL、MySQL）
+ * SQL 数据库模型基类（用于 PostgreSQL）
  */
 export abstract class SQLModel {
   static table: string;
@@ -950,9 +885,7 @@ src/
 │       ├── adapters/          # 数据库适配器
 │       │   ├── mod.ts         # 适配器模块入口
 │       │   ├── base.ts        # 基础适配器接口和抽象类
-│       │   ├── sqlite.ts      # SQLite 适配器
 │       │   ├── postgresql.ts  # PostgreSQL 适配器
-│       │   ├── mysql.ts       # MySQL 适配器
 │       │   └── mongodb.ts      # MongoDB 适配器
 │       │
 │       ├── query/             # 查询构建器
@@ -1034,17 +967,9 @@ my-project/
 - `DatabaseAdapter` 接口定义
 - 抽象适配器基类（可选）
 
-**`sqlite.ts`** - SQLite 适配器
-- 使用 `deno-sqlite` 库
-- 实现 SQLite 特定功能
-
 **`postgresql.ts`** - PostgreSQL 适配器
 - 使用 `postgres` 库
 - 实现 PostgreSQL 特定功能
-
-**`mysql.ts`** - MySQL 适配器
-- 使用 `deno_mysql` 库
-- 实现 MySQL 特定功能
 
 **`mongodb.ts`** - MongoDB 适配器
 - 使用 `npm:mongodb` 库
@@ -1138,9 +1063,7 @@ export type {
 
 // 导出适配器
 export {
-  SQLiteAdapter,
   PostgreSQLAdapter,
-  MySQLAdapter,
   MongoDBAdapter,
 } from './adapters/mod.ts';
 
@@ -1197,9 +1120,13 @@ import type { AppConfig } from '@dreamer/dweb';
 
 const config: AppConfig = {
   database: {
-    type: 'sqlite',
+    type: 'postgresql',
     connection: {
-      path: 'database.sqlite',
+      host: 'localhost',
+      port: 5432,
+      database: 'mydb',
+      username: 'user',
+      password: 'password',
     },
   },
   // ... 其他配置
@@ -1385,7 +1312,7 @@ export class MigrationManager {
 ```typescript
 // src/types/index.ts
 export interface DatabaseConfig {
-  type: 'sqlite' | 'postgresql' | 'mysql' | 'mongodb';
+  type: 'postgresql' | 'mongodb';
   connection: {
     path?: string;
     host?: string;
@@ -1452,7 +1379,7 @@ export async function createUser(req: Request) {
 
 ## 使用示例
 
-### SQL 数据库查询（SQLite、PostgreSQL、MySQL）
+### SQL 数据库查询（PostgreSQL）
 
 ```typescript
 import { db } from "@dreamer/dweb";
@@ -1602,9 +1529,8 @@ export default class CreateUsersTable implements Migration {
 - 实现基础的连接管理
 - 单元测试
 
-#### Week 2: PostgreSQL 和 MySQL 适配器
-- 实现 `PostgreSQLAdapter`
-- 实现 `MySQLAdapter`
+#### Week 2: MongoDB 适配器
+- 实现 `MongoDBAdapter`
 - 连接池支持
 - 事务支持
 - 单元测试
@@ -1700,10 +1626,10 @@ export default class CreateUsersTable implements Migration {
 
 ### 1. 数据库选择
 
-**推荐**: 默认支持 SQLite，通过插件支持 PostgreSQL/MySQL
+**推荐**: 支持 PostgreSQL 和 MongoDB
 
 **理由**:
-- SQLite 无需额外服务，适合开发和简单部署
+- PostgreSQL 功能强大，适合生产环境
 - 通过插件方式支持其他数据库，保持灵活性
 - 用户可以根据需求选择数据库
 
@@ -1780,11 +1706,6 @@ export default class CreateUsersTable implements Migration {
 
 ### 5. 数据库特定注意事项
 
-#### SQLite
-- 并发写入性能有限，不适合高并发写入场景
-- 文件锁可能导致性能问题
-- 建议用于读多写少的场景
-
 #### PostgreSQL
 - 需要合理配置连接池
 - 使用预编译语句提升性能
@@ -1804,18 +1725,18 @@ export default class CreateUsersTable implements Migration {
 ### 6. 开发建议
 
 #### 开发环境
-- 使用 SQLite 作为开发数据库（零配置）
+- 使用 PostgreSQL 作为开发数据库
 - 使用内存数据库进行测试
 
 #### 生产环境
-- 使用 PostgreSQL 或 MySQL（关系型数据）
+- 使用 PostgreSQL（关系型数据）
 - 使用 MongoDB（非结构化数据）
 - 配置连接池和超时
 - 启用查询日志（调试）
 - 监控数据库性能
 
 #### 测试
-- 使用 SQLite 内存数据库进行单元测试
+- 使用 PostgreSQL 进行单元测试
 - 使用 Docker 容器进行集成测试
 - 测试不同数据库的兼容性
 
@@ -1825,7 +1746,7 @@ export default class CreateUsersTable implements Migration {
 
 数据库支持是一个可选功能，但可以大大提升框架的实用性。建议采用渐进式实现：
 
-1. **先实现基础功能**（查询构建器 + SQLite）
+1. **先实现基础功能**（查询构建器 + PostgreSQL）
 2. **再添加 ORM 支持**（模型定义 + CRUD）
 3. **最后完善迁移管理**（版本控制 + 回滚）
 

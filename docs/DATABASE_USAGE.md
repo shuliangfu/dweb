@@ -29,9 +29,13 @@ const config: AppConfig = {
   // ... 其他配置
   
   database: {
-    type: 'sqlite',
+    type: 'postgresql',
     connection: {
-      path: 'database.sqlite',
+      host: 'localhost',
+      port: 5432,
+      database: 'mydb',
+      username: 'user',
+      password: 'password',
     },
   },
 };
@@ -74,17 +78,6 @@ export async function getUser(req: Request) {
 
 ## 配置数据库
 
-### SQLite
-
-```typescript
-database: {
-  type: 'sqlite',
-  connection: {
-    path: 'database.sqlite', // 数据库文件路径
-  },
-}
-```
-
 ### PostgreSQL
 
 ```typescript
@@ -93,26 +86,6 @@ database: {
   connection: {
     host: 'localhost',
     port: 5432,
-    database: 'mydb',
-    username: 'user',
-    password: 'password',
-  },
-  pool: {
-    min: 2,
-    max: 10,
-    idleTimeout: 30000,
-  },
-}
-```
-
-### MySQL
-
-```typescript
-database: {
-  type: 'mysql',
-  connection: {
-    host: 'localhost',
-    port: 3306,
     database: 'mydb',
     username: 'user',
     password: 'password',
@@ -512,9 +485,7 @@ User.setAdapter(getDatabase());
 
 ## 支持的数据库
 
-- ✅ **SQLite** - 轻量级嵌入式数据库
 - ✅ **PostgreSQL** - 强大的关系型数据库
-- ✅ **MySQL** - 流行的关系型数据库
 - ✅ **MongoDB** - NoSQL 文档数据库
 
 ---

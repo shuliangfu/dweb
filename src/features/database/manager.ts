@@ -6,7 +6,6 @@
 import type { DatabaseAdapter, DatabaseConfig, DatabaseType } from './types.ts';
 import { PostgreSQLAdapter } from './adapters/postgresql.ts';
 import { MongoDBAdapter } from './adapters/mongodb.ts';
-// SQLiteAdapter 和 MySQLAdapter 使用 https:// 导入，JSR 不支持，使用动态导入
 
 /**
  * 数据库管理器类
@@ -20,7 +19,7 @@ export class DatabaseManager {
    * @param config 数据库配置
    */
   async connect(name: string = 'default', config: DatabaseConfig): Promise<void> {
-    const adapter = await this.createAdapter(config.type);
+    const adapter = this.createAdapter(config.type);
     await adapter.connect(config);
     this.adapters.set(name, adapter);
   }
@@ -43,36 +42,10 @@ export class DatabaseManager {
    * @param type 数据库类型
    * @returns 数据库适配器实例
    */
-  private async createAdapter(type: DatabaseType): Promise<DatabaseAdapter> {
+  private createAdapter(type: DatabaseType): DatabaseAdapter {
     switch (type) {
-      case 'sqlite': {
-        // 动态导入 SQLite 适配器（使用 https:// 导入，JSR 不支持）
-        // 注意：在 JSR 发布时，此文件可能被排除，需要从适配器文件直接导入
-        try {
-          const { SQLiteAdapter } = await import('./adapters/sqlite.ts');
-          return new SQLiteAdapter();
-        } catch (error) {
-          throw new Error(
-            `SQLite adapter not available. This may be because the package was published to JSR. ` +
-            `Please import SQLiteAdapter directly: import { SQLiteAdapter } from '@dreamer/dweb/features/database/adapters/sqlite';`
-          );
-        }
-      }
       case 'postgresql':
         return new PostgreSQLAdapter();
-      case 'mysql': {
-        // 动态导入 MySQL 适配器（使用 https:// 导入，JSR 不支持）
-        // 注意：在 JSR 发布时，此文件可能被排除，需要从适配器文件直接导入
-        try {
-          const { MySQLAdapter } = await import('./adapters/mysql.ts');
-          return new MySQLAdapter();
-        } catch (error) {
-          throw new Error(
-            `MySQL adapter not available. This may be because the package was published to JSR. ` +
-            `Please import MySQLAdapter directly: import { MySQLAdapter } from '@dreamer/dweb/features/database/adapters/mysql';`
-          );
-        }
-      }
       case 'mongodb':
         return new MongoDBAdapter();
       default:

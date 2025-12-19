@@ -195,7 +195,7 @@
 
 #### 5. 可选功能
 - [x] **数据库支持** ✅ 已完成
-  - [x] 数据库适配器（SQLite, PostgreSQL, MySQL, MongoDB）
+  - [x] 数据库适配器（PostgreSQL, MongoDB）
   - [x] 数据库管理器（DatabaseManager）
   - [x] 查询构建器（SQLQueryBuilder, MongoQueryBuilder）
   - [x] ORM/ODM 模型（SQLModel, MongoModel）
@@ -272,7 +272,7 @@
 
 ### 第三阶段：扩展功能（当前阶段）
 - [x] **可选功能开发** ✅ 已完成
-  - [x] 数据库支持（SQLite, PostgreSQL, MySQL, MongoDB）
+  - [x] 数据库支持（PostgreSQL, MongoDB）
   - [x] WebSocket 支持（服务器、客户端、实时通信）
   - [x] GraphQL 支持（查询、Mutation、类型系统、GraphiQL）
   - **完成时间**: 2024-12-20

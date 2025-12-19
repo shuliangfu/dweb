@@ -56,14 +56,8 @@ export abstract class BaseAdapter implements DatabaseAdapter {
       throw new Error('Database type is required');
     }
 
-    if (config.type === 'sqlite') {
-      if (!config.connection.path) {
-        throw new Error('SQLite database path is required');
-      }
-    } else {
-      if (!config.connection.host || !config.connection.database) {
-        throw new Error('Database host and database name are required');
-      }
+    if (!config.connection.host || !config.connection.database) {
+      throw new Error('Database host and database name are required');
     }
   }
 }
