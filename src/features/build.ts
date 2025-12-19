@@ -72,6 +72,100 @@ async function clearDirectory(dirPath: string): Promise<void> {
 }
 
 /**
+ * 压缩静态资源（图片、字体等）
+ * @param inputPath 输入文件路径
+ * @param outputPath 输出文件路径
+ * @param ext 文件扩展名
+ * @param quality 压缩质量（0-100，仅用于图片）
+ * @returns 是否成功压缩（如果返回 false，应该直接复制原文件）
+ */
+async function compressAsset(
+  inputPath: string,
+  outputPath: string,
+  ext: string,
+  quality: number
+): Promise<boolean> {
+  try {
+    // 图片压缩（支持常见格式）
+    const imageExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
+    if (imageExts.includes(ext.toLowerCase())) {
+      return await compressImage(inputPath, outputPath, ext.toLowerCase(), quality);
+    }
+
+    // 字体压缩（子集化需要外部工具，这里只做基础优化）
+    const fontExts = ['.woff', '.woff2', '.ttf', '.otf', '.eot'];
+    if (fontExts.includes(ext.toLowerCase())) {
+      // 字体压缩需要专门的工具，暂时直接复制
+      // 未来可以集成 fontmin 或类似工具
+      return false;
+    }
+
+    // 其他格式不支持压缩
+    return false;
+  } catch (error) {
+    console.warn(`⚠️  压缩资源失败: ${inputPath}`, error);
+    return false;
+  }
+}
+
+/**
+ * 压缩图片
+ * 注意：Deno 环境下图片压缩需要外部库，这里提供基础框架
+ * 实际压缩可以通过插件或外部工具实现
+ * @param inputPath 输入文件路径
+ * @param outputPath 输出文件路径
+ * @param ext 文件扩展名
+ * @param quality 压缩质量（0-100）
+ * @returns 是否成功压缩
+ */
+async function compressImage(
+  inputPath: string,
+  outputPath: string,
+  ext: string,
+  quality: number
+): Promise<boolean> {
+  try {
+    // 读取原始图片
+    const imageData = await Deno.readFile(inputPath);
+    
+    // SVG 文件：简单优化（移除注释、空白等）
+    if (ext === '.svg') {
+      const svgContent = new TextDecoder().decode(imageData);
+      // 简单的 SVG 优化：移除注释、多余空白
+      const optimized = svgContent
+        .replace(/<!--[\s\S]*?-->/g, '') // 移除注释
+        .replace(/\s+/g, ' ') // 压缩空白
+        .replace(/>\s+</g, '><') // 移除标签间的空白
+        .trim();
+      
+      await Deno.writeTextFile(outputPath, optimized);
+      return true;
+    }
+
+    // 其他图片格式（JPG, PNG, WebP, GIF）
+    // 注意：Deno 原生不支持图片压缩，需要：
+    // 1. 使用外部工具（如 sharp、imagemin）
+    // 2. 通过插件系统实现
+    // 3. 或调用系统命令（如 ImageMagick、pngquant）
+    
+    // 当前实现：对于非 SVG 图片，如果文件已经很小（< 50KB），直接复制
+    // 否则提示需要外部工具
+    if (imageData.length < 50 * 1024) {
+      // 小文件直接复制（可能已经优化过）
+      return false; // 返回 false 让调用者直接复制
+    }
+
+    // 大文件：提示需要外部压缩工具
+    // 在实际项目中，可以通过插件或配置外部工具来实现
+    console.warn(`💡 提示: 图片 ${inputPath} 较大 (${(imageData.length / 1024).toFixed(2)}KB)，建议使用外部工具压缩（如 sharp、imagemin）`);
+    return false; // 暂时不压缩，直接复制
+  } catch (error) {
+    console.warn(`⚠️  图片压缩失败: ${inputPath}`, error);
+    return false;
+  }
+}
+
+/**
  * 计算文件内容的 hash 值
  * @param content 文件内容
  * @returns hash 字符串（前 10 个字符）
