@@ -4,7 +4,13 @@
  */
 
 import type { Plugin, Request, Response } from '../../types/index.ts';
-import type { FileUploadPluginOptions, UploadResult, UploadedFile, ImageCropConfig, ImageCompressConfig } from './types.ts';
+import type {
+  FileUploadPluginOptions,
+  UploadResult,
+  UploadedFile,
+  ImageCropConfig,
+  ImageCompressConfig,
+} from './types.ts';
 import * as path from '@std/path';
 import { ensureDir } from '@std/fs/ensure-dir';
 import { crypto } from '@std/crypto';
@@ -20,11 +26,11 @@ async function getSharp() {
   if (sharpModule !== null) {
     return sharpModule;
   }
-  
+
   try {
     // 从 deno.json 的 imports 中导入 sharp
     // deno-lint-ignore no-explicit-any
-    sharpModule = await import('sharp') as any;
+    sharpModule = (await import('sharp')) as any;
     return sharpModule;
   } catch {
     // Sharp 未安装，需要运行 `deno cache --reload src/plugins/file-upload/index.ts`
@@ -61,7 +67,7 @@ async function generateFilename(
         new TextEncoder().encode(`${originalName}-${Date.now()}`)
       );
       const hashArray = Array.from(new Uint8Array(hash));
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
       return `${hashHex.substring(0, 16)}${ext}`;
     }
     default: {
@@ -73,18 +79,14 @@ async function generateFilename(
 /**
  * 验证文件类型
  */
-function validateFileType(
-  filename: string,
-  mimeType: string,
-  allowedTypes: string[]
-): boolean {
+function validateFileType(filename: string, mimeType: string, allowedTypes: string[]): boolean {
   if (allowedTypes.length === 0) {
     return true;
   }
 
   const ext = path.extname(filename).toLowerCase().slice(1);
 
-  return allowedTypes.some(type => {
+  return allowedTypes.some((type) => {
     // 检查扩展名
     if (type.startsWith('.')) {
       return type.slice(1).toLowerCase() === ext;
@@ -112,7 +114,7 @@ function isImageFile(mimeType: string): boolean {
 /**
  * 居中裁切图片
  * 使用 Sharp 库进行图片处理
- * 
+ *
  * 安装说明：
  * 1. Sharp 依赖已添加到 deno.json 的 imports 中
  * 2. 运行 `deno cache --reload src/plugins/file-upload/index.ts` 安装依赖
@@ -124,18 +126,17 @@ async function cropImage(
   config: ImageCropConfig
 ): Promise<Uint8Array<ArrayBuffer>> {
   const sharp = await getSharp();
-  
+
   if (!sharp) {
     console.warn(
-      '[File Upload Plugin] Sharp 未安装，跳过图片裁切。\n' +
-      '安装方法： `deno install`'
+      '[File Upload Plugin] Sharp 未安装，跳过图片裁切。\n' + '安装方法：运行 `deno install`'
     );
     return new Uint8Array(imageData);
   }
 
   try {
     const { width, height } = config;
-    
+
     // 使用 Sharp 进行居中裁切
     const processed = await sharp(imageData)
       .resize({
@@ -157,7 +158,7 @@ async function cropImage(
 /**
  * 压缩图片为 WebP 或 AVIF
  * 使用 Sharp 库进行图片格式转换
- * 
+ *
  * 安装说明：
  * 1. Sharp 依赖已添加到 deno.json 的 imports 中
  * 2. 运行 `deno cache --reload src/plugins/file-upload/index.ts` 安装依赖
@@ -169,11 +170,11 @@ async function compressImage(
   config: ImageCompressConfig
 ): Promise<{ data: Uint8Array<ArrayBuffer>; format: string }> {
   const sharp = await getSharp();
-  
+
   if (!sharp) {
     console.warn(
       `[File Upload Plugin] Sharp 未安装，跳过图片压缩（${config.format || 'webp'}）。\n` +
-      '安装方法：运行 `deno install`'
+        '安装方法：运行 `deno install`'
     );
     return {
       data: new Uint8Array(imageData),
@@ -184,18 +185,14 @@ async function compressImage(
   try {
     const format = config.format || 'webp';
     const quality = config.quality || 80;
-    
+
     let processed: Uint8Array;
-    
+
     // 根据格式进行转换
     if (format === 'webp') {
-      processed = await sharp(imageData)
-        .webp({ quality })
-        .toBuffer();
+      processed = await sharp(imageData).webp({ quality }).toBuffer();
     } else if (format === 'avif') {
-      processed = await sharp(imageData)
-        .avif({ quality })
-        .toBuffer();
+      processed = await sharp(imageData).avif({ quality }).toBuffer();
     } else {
       // 不支持的格式，返回原图
       console.warn(`[File Upload Plugin] 不支持的格式: ${format}，返回原图`);
@@ -312,7 +309,9 @@ export async function handleFileUpload(
           try {
             processedData = await cropImage(fileData, config.imageCrop);
             finalSize = processedData.length;
-            console.log(`✅ [File Upload] 图片裁切完成: ${file.name} -> ${config.imageCrop.width}x${config.imageCrop.height}`);
+            console.log(
+              `✅ [File Upload] 图片裁切完成: ${file.name} -> ${config.imageCrop.width}x${config.imageCrop.height}`
+            );
           } catch (error) {
             console.warn(`⚠️  [File Upload] 图片裁切失败: ${file.name}`, error);
             // 裁切失败，使用原图
@@ -325,13 +324,13 @@ export async function handleFileUpload(
             const compressed = await compressImage(processedData, config.imageCompress);
             processedData = compressed.data;
             finalSize = processedData.length;
-            
+
             // 更新文件名和扩展名
             const baseName = path.basename(finalFilename, path.extname(finalFilename));
             finalExtension = compressed.format;
             finalFilename = `${baseName}.${compressed.format}`;
             finalMimeType = compressed.format === 'webp' ? 'image/webp' : 'image/avif';
-            
+
             console.log(`✅ [File Upload] 图片压缩完成: ${file.name} -> ${compressed.format}`);
           } catch (error) {
             console.warn(`⚠️  [File Upload] 图片压缩失败: ${file.name}`, error);
@@ -462,7 +461,7 @@ export function fileUpload(options: FileUploadPluginOptions = {}): Plugin {
       if (options.injectClientScript !== false) {
         try {
           const html = res.body as string;
-          
+
           // 注入上传脚本（在 </head> 之前）
           if (html.includes('</head>')) {
             const script = generateClientScript();
@@ -477,5 +476,11 @@ export function fileUpload(options: FileUploadPluginOptions = {}): Plugin {
 }
 
 // 导出类型和函数
-export type { FileUploadPluginOptions, FileUploadConfig, UploadResult, UploadedFile, ImageCropConfig, ImageCompressConfig } from './types.ts';
-
+export type {
+  FileUploadPluginOptions,
+  FileUploadConfig,
+  UploadResult,
+  UploadedFile,
+  ImageCropConfig,
+  ImageCompressConfig,
+} from './types.ts';
