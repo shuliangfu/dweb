@@ -213,26 +213,28 @@ export default function AboutPage({ data }: PageProps) {
 
 ### 方式四：在客户端使用全局函数（CSR/Hybrid 模式）
 
-在客户端渲染的组件中，可以使用全局的 `$t()` 或 `t()` 函数：
+在客户端渲染的组件中，如果添加了类型声明，可以直接使用全局的 `$t()` 或 `t()` 函数：
 
 ```tsx
-import { useEffect, useState } from "preact/hooks";
-
 export default function ClientComponent() {
-  const [text, setText] = useState("");
-
-  useEffect(() => {
-    // 在客户端使用全局翻译函数
-    if (typeof window !== "undefined" && (window as any).$t) {
-      setText((window as any).$t("你好"));
-    }
-  }, []);
-
+  // 添加类型声明后，可以直接使用，不需要类型断言
   return (
     <div>
-      <p>{text}</p>
-      {/* 或者直接在 JSX 中使用（需要类型断言） */}
-      <p>{(window as any).$t?.("欢迎")}</p>
+      <p>{$t("你好")}</p>
+      <p>{$t("欢迎")}</p>
+    </div>
+  );
+}
+```
+
+如果没有添加类型声明，可以使用类型断言：
+
+```tsx
+export default function ClientComponent() {
+  const $t = (globalThis as any).$t;
+  return (
+    <div>
+      <p>{$t("你好")}</p>
     </div>
   );
 }
