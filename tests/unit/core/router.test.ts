@@ -81,23 +81,20 @@ Deno.test('Router - 无效参数名过滤', () => {
   assertEquals(Object.keys(params).length, 0);
 });
 
-Deno.test({
-  name: 'Router - 匹配路由',
-  permissions: { read: true, write: true },
-  fn: async () => {
-    // 创建测试路由目录
-    await ensureDir(testRoutesDir);
-    
-    const router = new Router(testRoutesDir);
-    
-    // 扫描路由（需要实际文件，这里只测试匹配逻辑）
-    // 注意：这个测试需要实际的路由文件，可能需要 mock 或使用 fixtures
-    
-    // 测试基本匹配
-    const routeInfo = router.match('/users/123');
-    // 如果没有路由文件，应该返回 null
-    // 这里主要测试匹配逻辑不会抛出错误
-    assert(true); // 占位测试
-  }
+Deno.test('Router - 匹配路由', async () => {
+  // 创建测试路由目录
+  // 注意：使用 --allow-all 时，不需要在测试中声明权限
+  await ensureDir(testRoutesDir);
+  
+  const router = new Router(testRoutesDir);
+  
+  // 扫描路由（需要实际文件，这里只测试匹配逻辑）
+  // 注意：这个测试需要实际的路由文件，可能需要 mock 或使用 fixtures
+  
+  // 测试基本匹配
+  const routeInfo = router.match('/users/123');
+  // 如果没有路由文件，应该返回 null
+  // 这里主要测试匹配逻辑不会抛出错误
+  assert(true); // 占位测试
 });
 
