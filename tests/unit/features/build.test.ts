@@ -106,46 +106,47 @@ Deno.test({
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
-  await cleanupTestFiles();
-  await createTestFiles();
-
-  const originalCwd = Deno.cwd();
-  try {
-    Deno.chdir(testDir);
-
-    const config: AppConfig = {
-      build: { outDir: 'dist' },
-      routes: { dir: 'routes' },
-      static: { dir: 'assets' },
-    };
-
-    // 执行构建
-    await build(config);
-
-    // 等待所有异步操作完成
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // 验证输出目录已创建
-    const outDirStat = await Deno.stat(path.join(testDir, 'dist'));
-    assert(outDirStat.isDirectory, '输出目录应该已创建');
-
-    // 验证路由映射文件已生成
-    const routeMapPath = path.join(testDir, 'dist', '.route-map.json');
-    const routeMapExists = await Deno.stat(routeMapPath)
-      .then(() => true)
-      .catch(() => false);
-    assert(routeMapExists, '路由映射文件应该已生成');
-
-    // 验证文件映射文件已生成
-    const fileMapPath = path.join(testDir, 'dist', '.file-map.json');
-    const fileMapExists = await Deno.stat(fileMapPath)
-      .then(() => true)
-      .catch(() => false);
-    assert(fileMapExists, '文件映射文件应该已生成');
-  } finally {
-    Deno.chdir(originalCwd);
     await cleanupTestFiles();
-  }
+    await createTestFiles();
+
+    const originalCwd = Deno.cwd();
+    try {
+      Deno.chdir(testDir);
+
+      const config: AppConfig = {
+        build: { outDir: 'dist' },
+        routes: { dir: 'routes' },
+        static: { dir: 'assets' },
+      };
+
+      // 执行构建
+      await build(config);
+
+      // 等待所有异步操作完成
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // 验证输出目录已创建
+      const outDirStat = await Deno.stat(path.join(testDir, 'dist'));
+      assert(outDirStat.isDirectory, '输出目录应该已创建');
+
+      // 验证路由映射文件已生成
+      const routeMapPath = path.join(testDir, 'dist', '.route-map.json');
+      const routeMapExists = await Deno.stat(routeMapPath)
+        .then(() => true)
+        .catch(() => false);
+      assert(routeMapExists, '路由映射文件应该已生成');
+
+      // 验证文件映射文件已生成
+      const fileMapPath = path.join(testDir, 'dist', '.file-map.json');
+      const fileMapExists = await Deno.stat(fileMapPath)
+        .then(() => true)
+        .catch(() => false);
+      assert(fileMapExists, '文件映射文件应该已生成');
+    } finally {
+      Deno.chdir(originalCwd);
+      await cleanupTestFiles();
+    }
+  },
 });
 
 Deno.test({
