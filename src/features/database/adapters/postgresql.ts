@@ -81,13 +81,14 @@ export class PostgreSQLAdapter extends BaseAdapter {
     }
 
     try {
-      return await this.sql.begin(async (sql) => {
+      const result = await this.sql.begin(async (sql) => {
         // 创建一个临时适配器用于事务
         const txAdapter = new PostgreSQLAdapter();
         txAdapter.sql = sql;
         txAdapter.connected = true;
         return await callback(txAdapter);
       });
+      return result as T;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`PostgreSQL transaction error: ${message}`);
