@@ -10,18 +10,48 @@ import { isValidIdentifier, sanitizeRouteParams } from '../utils/security.ts';
 
 /**
  * 路由信息
+ * 
+ * 表示一个路由的完整信息，包括路径、文件路径、类型等。
+ * 
+ * @interface RouteInfo
  */
 export interface RouteInfo {
-  path: string;           // URL 路径
-  filePath: string;       // 文件路径（服务器端加载用）
-  type: 'page' | 'api' | 'layout' | 'middleware' | 'error';  // 路由类型
-  params?: string[];      // 动态参数名
-  isCatchAll?: boolean;   // 是否为捕获所有路由
-  clientModulePath?: string;  // 客户端模块路径（生产环境用，只包含文件名）
+  /** URL 路径，例如 `/users/:id` 或 `/about` */
+  path: string;
+  
+  /** 文件路径（服务器端加载用），绝对路径或相对路径 */
+  filePath: string;
+  
+  /** 路由类型：页面路由、API 路由、布局、中间件或错误页面 */
+  type: 'page' | 'api' | 'layout' | 'middleware' | 'error';
+  
+  /** 动态参数名数组，例如 `['id']` 对于 `/users/:id` */
+  params?: string[];
+  
+  /** 是否为捕获所有路由（`[...slug]` 格式） */
+  isCatchAll?: boolean;
+  
+  /** 客户端模块路径（生产环境用，只包含文件名），例如 `routes_index.abc123.js` */
+  clientModulePath?: string;
 }
 
 /**
  * 路由管理器
+ * 
+ * 负责扫描路由目录、匹配路由、提取参数等。
+ * 
+ * @example
+ * ```typescript
+ * import { Router } from "@dreamer/dweb";
+ * 
+ * const router = new Router("routes", ["**/*.test.ts"]);
+ * await router.scan();
+ * 
+ * const route = router.match("/users/123");
+ * if (route) {
+ *   console.log("匹配的路由:", route.path);
+ * }
+ * ```
  */
 export class Router {
   private routes: Map<string, RouteInfo> = new Map();
@@ -55,8 +85,18 @@ export class Router {
   
   /**
    * 从构建映射文件加载路由（生产环境）
-   * @param routeMapPath 路由映射文件路径（.route-map.json）
-   * @param outDir 构建输出目录
+   * 
+   * 在生产环境中，从构建系统生成的路由映射文件加载路由信息。
+   * 这样可以避免在生产环境中扫描文件系统，提升性能。
+   * 
+   * @param routeMapPath - 路由映射文件路径（.route-map.json）
+   * @param outDir - 构建输出目录
+   * 
+   * @example
+   * ```typescript
+   * const router = new Router("routes");
+   * await router.loadFromBuildMap("dist/.route-map.json", "dist");
+   * ```
    */
   async loadFromBuildMap(routeMapPath: string, outDir: string): Promise<void> {
     this.routes.clear();
@@ -160,6 +200,19 @@ export class Router {
 
   /**
    * 扫描路由目录
+   * 
+   * 扫描配置的路由目录，自动发现所有路由文件并构建路由映射。
+   * 支持页面路由、API 路由、布局、中间件和错误页面。
+   * 
+   * @example
+   * ```typescript
+   * const router = new Router("routes", ["**/*.test.ts"]);
+   * await router.scan();
+   * 
+   * // 获取所有路由
+   * const routes = router.getAllRoutes();
+   * console.log(`发现 ${routes.length} 个路由`);
+   * ```
    */
   async scan(): Promise<void> {
     this.routes.clear();

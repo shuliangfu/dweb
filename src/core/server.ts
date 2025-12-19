@@ -1,12 +1,27 @@
 /**
  * 核心服务器模块
  * 基于 Deno 的 HTTP 服务器实现
+ * 
+ * @module core/server
  */
 
 import type { CookieOptions, Middleware, Request, Response, Session } from '../types/index.ts';
 
 /**
- * 服务器类
+ * HTTP 服务器类
+ * 
+ * 提供基于 Deno 的 HTTP 服务器实现，支持中间件链和请求处理。
+ * 
+ * @example
+ * ```typescript
+ * import { Server } from "@dreamer/dweb";
+ * 
+ * const server = new Server();
+ * server.setHandler(async (req, res) => {
+ *   res.text("Hello World");
+ * });
+ * await server.start(3000, "localhost");
+ * ```
  */
 export class Server {
   private middlewares: Middleware[] = [];
@@ -30,7 +45,17 @@ export class Server {
 
   /**
    * 设置请求处理器
-   * @param handler 请求处理函数
+   * 
+   * 设置统一的请求处理函数。如果设置了处理器，将优先使用处理器而不是中间件链。
+   * 
+   * @param handler - 请求处理函数，接收 Request 和 Response 对象
+   * 
+   * @example
+   * ```typescript
+   * server.setHandler(async (req, res) => {
+   *   res.text("Hello World");
+   * });
+   * ```
    */
   setHandler(handler: (req: Request, res: Response) => Promise<void> | void): void {
     this.handler = handler;
@@ -38,8 +63,20 @@ export class Server {
 
   /**
    * 处理请求
-   * @param nativeReq Deno 原生请求对象
-   * @returns 响应对象
+   * 
+   * 将 Deno 原生请求转换为框架的 Request 对象，执行中间件链或处理器，然后返回响应。
+   * 
+   * @param nativeReq - Deno 原生请求对象
+   * @returns Promise<Response> - Deno 原生响应对象
+   * 
+   * @example
+   * ```typescript
+   * const server = new Server();
+   * // ... 配置服务器
+   * 
+   * // 在 Deno.serve 中使用
+   * Deno.serve({ port: 3000 }, server.handleRequest.bind(server));
+   * ```
    */
   async handleRequest(nativeReq: globalThis.Request): Promise<globalThis.Response> {
     // 创建扩展的请求和响应对象
