@@ -313,8 +313,8 @@
 ## 📚 相关文档
 
 - [需求文档](./DOC.md) - 完整的功能需求说明
-- [README](./README.md) - 项目介绍和使用指南
-- [使用示例](./example/) - 示例项目
+- [README](../README.md) - 项目介绍和使用指南
+- [使用示例](../example/) - 示例项目
 - [开发工具](./README-DEV-TOOLS.md) - 开发工具说明
 
 ---
