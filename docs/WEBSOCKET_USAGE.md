@@ -7,6 +7,7 @@
 - [快速开始](#快速开始)
 - [配置 WebSocket](#配置-websocket)
 - [使用 WebSocket 服务器](#使用-websocket-服务器)
+- [使用 WebSocket 客户端](#使用-websocket-客户端)
 - [消息处理](#消息处理)
 - [连接管理](#连接管理)
 - [消息广播](#消息广播)

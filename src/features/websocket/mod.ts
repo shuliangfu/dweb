@@ -6,6 +6,7 @@
  */
 
 export { WebSocketServer } from './server.ts';
+export { WebSocketClient } from './client.ts';
 export {
   initWebSocket,
   getWebSocketServer,
@@ -19,4 +20,10 @@ export type {
   WebSocketStats,
   WebSocketMessageType,
 } from './types.ts';
+export type {
+  WebSocketClientConfig,
+  WebSocketClientHandlers,
+  WebSocketClientState,
+  WebSocketClientEventType,
+} from './client.ts';
 

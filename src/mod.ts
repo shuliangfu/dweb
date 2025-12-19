@@ -92,6 +92,7 @@ export {
 // 导出 WebSocket 相关 API
 export {
   WebSocketServer,
+  WebSocketClient,
   initWebSocket,
   getWebSocketServer,
   isWebSocketInitialized,
@@ -101,6 +102,10 @@ export {
   type WebSocketHandlers,
   type WebSocketStats,
   type WebSocketMessageType,
+  type WebSocketClientConfig,
+  type WebSocketClientHandlers,
+  type WebSocketClientState,
+  type WebSocketClientEventType,
 } from './features/websocket/mod.ts';
 export { env, envInt, envFloat, envBool, getAllEnv, validateEnv, initEnv } from './features/env.ts';
 export {
