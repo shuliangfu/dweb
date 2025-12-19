@@ -353,7 +353,52 @@ for (const conn of targetConnections) {
 
 ## 客户端示例
 
-### JavaScript/TypeScript 客户端
+### 使用 DWeb WebSocket 客户端（推荐）
+
+```typescript
+import { WebSocketClient } from '@dreamer/dweb';
+
+// 创建客户端
+const client = new WebSocketClient({
+  url: 'ws://localhost:3000/ws',
+  autoReconnect: true,
+  heartbeat: true,
+  handlers: {
+    onOpen: () => {
+      console.log('WebSocket 连接已建立');
+      client.sendJSON({ type: 'join', room: 'chat' });
+    },
+    onMessage: (event) => {
+      if (typeof event.data === 'string') {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('收到消息:', data);
+        } catch {
+          console.log('收到文本消息:', event.data);
+        }
+      }
+    },
+    onClose: (event) => {
+      console.log('连接已关闭:', event.code, event.reason);
+    },
+    onError: (error) => {
+      console.error('WebSocket 错误:', error);
+    },
+  },
+});
+
+// 连接到服务器
+await client.connect();
+
+// 发送消息
+client.send('Hello Server');
+client.sendJSON({ type: 'chat', message: 'Hello' });
+
+// 关闭连接
+client.close();
+```
+
+### 使用原生 WebSocket API
 
 ```typescript
 // 连接 WebSocket
