@@ -21,7 +21,7 @@
 - ⚡️ **异步组件支持** - 支持异步页面组件、布局组件和 App 组件，轻松处理数据加载
 - 📊 **服务端数据获取** - 通过 `load` 函数在服务端获取数据，自动注入到组件 props
 - 🔄 **客户端路由导航** - 无缝的客户端路由导航，支持无刷新页面切换，类似 SPA 体验
-- 🗄️ **数据库支持** - 内置数据库支持，支持 SQLite、PostgreSQL、MySQL、MongoDB，提供查询构建器和 ORM/ODM 模型，支持迁移管理
+- 🗄️ **数据库支持** - 内置数据库支持，支持 PostgreSQL、MongoDB，提供查询构建器和 ORM/ODM 模型，支持迁移管理
 
 ## 🌐 运行时兼容性
 
@@ -36,7 +36,7 @@ DWeb 框架主要针对 **Deno** 运行时设计，同时兼容以下运行时�
 
 ## 📦 安装
 
-### 方式一：使用 JSR 创建项目（推荐）
+### 创建新项目
 
 ```bash
 # 使用 CLI 创建新项目（交互式）
@@ -49,34 +49,6 @@ cd my-app
 deno task dev
 ```
 
-### 方式二：作为库导入使用（高级用法）
-
-如果你需要以编程方式使用框架（不通过配置文件），可以使用库模式：
-
-```bash
-deno add jsr:@dreamer/dweb
-```
-
-然后在代码中导入使用：
-
-```typescript
-import { startDevServer, loadConfig } from "jsr:@dreamer/dweb";
-import type { AppConfig } from "jsr:@dreamer/dweb";
-
-// 方式 1: 直接传入配置对象
-const config: AppConfig = {
-  server: { port: 3000, host: "localhost" },
-  routes: { dir: "routes" },
-};
-await startDevServer(config);
-
-// 方式 2: 从配置文件加载（推荐）
-const { config } = await loadConfig("dweb.config.ts");
-await startDevServer(config);
-```
-
-> **注意**：推荐使用配置文件（`dweb.config.ts`）+ CLI 命令的方式，更简单且符合框架设计。库模式主要用于特殊场景或自定义集成。
-
 ## 🚀 快速开始
 
 ### 1. 创建项目
@@ -85,35 +57,70 @@ await startDevServer(config);
 deno run -A jsr:@dreamer/dweb/cli create
 ```
 
+按照提示输入项目信息：
+- 项目名称
+- 应用模式（单应用/多应用）
+- Tailwind CSS 版本（V3/V4）
+- 渲染模式（SSR/CSR/Hybrid）
+
 ### 2. 配置项目
 
-创建 `dweb.config.ts` 配置文件：
+创建项目后，会自动生成 `dweb.config.ts` 配置文件：
 
 ```typescript
-import { tailwind, cors } from "@dreamer/dweb";
-import type { AppConfig } from "@dreamer/dweb";
+import { tailwind, cors, seo, type AppConfig } from "@dreamer/dweb";
 
 const config: AppConfig = {
+  name: "my-app",
+  renderMode: "hybrid", // 'ssr' | 'csr' | 'hybrid'
+  
+  // 服务器配置
   server: {
     port: 3000,
     host: "localhost",
   },
+  
+  // 路由配置
   routes: {
     dir: "routes",
+    ignore: ["**/*.test.ts", "**/*.test.tsx"],
   },
+  
+  // 静态资源目录
+  static: {
+    dir: "assets",
+    prefix: "/assets",
+    maxAge: 86400, // 缓存 1 天
+  },
+  
+  // 插件配置
   plugins: [
     tailwind({
       version: "v4",
-      cssPath: "public/style.css",
+      cssPath: "assets/style.css",
+      optimize: true,
+    }),
+    seo({
+      title: "我的应用",
+      description: "基于 DWeb 框架构建的应用",
     }),
   ],
-  middleware: [cors()],
+  
+  // 中间件配置
+  middleware: [
+    cors({
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    }),
+  ],
 };
 
 export default config;
 ```
 
 ### 3. 创建路由
+
+在 `routes/` 目录下创建页面文件：
 
 ```typescript
 // routes/index.tsx
@@ -155,7 +162,7 @@ export default function AboutPage({ params, query }: PageProps) {
 }
 ```
 
-### 服务端数据获取
+### 动态路由
 
 ```typescript
 // routes/user/[id].tsx
@@ -230,7 +237,7 @@ export default function Layout({ children }: PageProps) {
     <html>
       <head>
         <title>DWeb 应用</title>
-        <link rel="stylesheet" href="/style.css" />
+        <link rel="stylesheet" href="/assets/style.css" />
       </head>
       <body>
         <header>网站头部</header>
@@ -271,14 +278,13 @@ export async function createUser(req: Request) {
 
 ## 📚 配置说明
 
-DWeb 框架使用配置文件（`dweb.config.ts`）来管理应用配置，无需手动调用 API。框架会自动加载配置文件并启动服务器。
+DWeb 框架使用配置文件（`dweb.config.ts`）来管理应用配置。框架会自动加载配置文件并启动服务器。
 
 ### 基本配置
 
 ```typescript
 // dweb.config.ts
-import { tailwind, cors } from "@dreamer/dweb";
-import type { AppConfig } from "@dreamer/dweb";
+import { tailwind, cors, seo, type AppConfig } from "@dreamer/dweb";
 
 const config: AppConfig = {
   // ========== 基础配置 ==========
@@ -286,172 +292,75 @@ const config: AppConfig = {
   // 应用名称（可选，多应用模式下用于区分应用）
   name: "my-app",
   
-  // 应用基础路径（可选，多应用模式下使用）
-  // basePath: "/api",
-  
   // 全局渲染模式（可选，默认: 'ssr'）
   // 可选值: 'ssr' | 'csr' | 'hybrid'
-  // - ssr: 服务端渲染（SEO 友好，首屏快）
-  // - csr: 客户端渲染（交互性强，适合管理后台）
-  // - hybrid: 混合渲染（SSR + 客户端 hydration）
   renderMode: "hybrid",
   
   // ========== 服务器配置 ==========
   server: {
-    // 服务器端口（必需）
     port: 3000,
-    // 服务器主机地址（必需）
     host: "localhost", // 或 "127.0.0.1" 或 "0.0.0.0"
   },
   
   // ========== 路由配置 ==========
   routes: {
-    // 路由目录（必需）
-    // 框架会扫描此目录下的文件自动生成路由
     dir: "routes",
-    
-    // 忽略的文件或目录（可选，支持 glob 模式）
-    ignore: [
-      "**/*.test.ts",      // 忽略测试文件
-      "**/*.test.tsx",     // 忽略测试文件
-      "**/__tests__/**",   // 忽略测试目录
-    ],
-    
-    // 是否启用路由缓存（可选，开发环境默认 false，生产环境默认 true）
-    // cache: false,
-    
-    // 路由匹配优先级（可选，默认: 'specific-first'）
-    // - 'specific-first': 具体路由优先于动态路由（如 /user/123 优先于 /user/[id]）
-    // - 'order': 按文件系统顺序匹配
-    // priority: "specific-first",
+    ignore: ["**/*.test.ts", "**/*.test.tsx"],
   },
   
   // ========== 静态资源目录 ==========
-  // 静态资源目录（可选，默认: 'public'）
-  // 此目录下的文件可以通过 URL 直接访问，如 public/logo.png → /logo.png
-  // staticDir: "public",
+  static: {
+    dir: "assets",
+    prefix: "/assets",
+    maxAge: 86400, // 缓存 1 天
+  },
   
   // ========== 开发配置 ==========
   dev: {
-    // 是否启用热更新（可选，默认: true）
-    // hmr: true,
-    
-    // 是否自动打开浏览器（可选，默认: false）
-    // open: true,
-    
-    // HMR WebSocket 服务器端口（可选，默认: 24678）
     hmrPort: 24678,
-    
-    // 文件变化后重载延迟（毫秒，可选，默认: 300）
-    // 用于避免频繁重载，等待文件保存完成
     reloadDelay: 300,
   },
   
   // ========== 构建配置 ==========
   build: {
-    // 构建输出目录（必需）
     outDir: "dist",
-    // 可以添加其他构建选项
   },
   
   // ========== Cookie 配置 ==========
   cookie: {
-    // Cookie 签名密钥（可选，用于签名 Cookie 防止篡改）
     secret: "your-secret-key-here",
-    
-    // 是否仅通过 HTTPS 传输（可选，默认: false）
-    // secure: true,
-    
-    // 是否禁止 JavaScript 访问（可选，默认: true）
-    // httpOnly: true,
-    
-    // SameSite 策略（可选，默认: 'lax'）
-    // 可选值: 'strict' | 'lax' | 'none'
-    // sameSite: "lax",
-    
-    // 默认过期时间（秒，可选）
-    // maxAge: 86400, // 24小时
   },
   
   // ========== Session 配置 ==========
   session: {
-    // Session 密钥（必需，用于加密 Session 数据）
     secret: "your-session-secret-here",
-    
-    // 存储方式（可选，默认: 'memory'）
-    // 可选值: 'memory' | 'file' | 'redis'
     store: "memory",
-    
-    // 过期时间（毫秒，可选，默认: 3600000，即 1 小时）
-    maxAge: 3600000,
-    
-    // 是否仅通过 HTTPS 传输（可选，默认: false）
+    maxAge: 3600000, // 1小时
     secure: false,
-    
-    // 是否禁止 JavaScript 访问（可选，默认: true）
     httpOnly: true,
-    
-    // Redis 配置（当 store 为 'redis' 时使用）
-    // redis: {
-    //   host: "localhost",
-    //   port: 6379,
-    // },
   },
   
   // ========== 插件配置 ==========
   plugins: [
-    // Tailwind CSS 插件
     tailwind({
-      // Tailwind CSS 版本（可选，默认: 'v4'）
-      version: "v4", // 或 "v3"
-      
-      // CSS 文件路径（可选，默认: 'public/style.css'）
-      cssPath: "public/style.css",
-      
-      // 生产环境是否优化（可选，默认: true）
+      version: "v4",
+      cssPath: "assets/style.css",
       optimize: true,
     }),
-    
-    // 可以添加更多插件
-    // customPlugin({
-    //   // 插件配置
-    // }),
+    seo({
+      title: "我的应用",
+      description: "应用描述",
+      keywords: "关键词1, 关键词2",
+    }),
   ],
   
   // ========== 中间件配置 ==========
   middleware: [
-    // CORS 中间件
     cors({
-      // 允许的源（可选，默认: '*'）
-      origin: "*", // 或 ["http://localhost:3000", "https://example.com"]
-      
-      // 允许的 HTTP 方法（可选）
+      origin: "*",
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-      
-      // 允许的请求头（可选）
       allowedHeaders: ["Content-Type", "Authorization"],
-      
-      // 暴露的响应头（可选）
-      // exposedHeaders: ["X-Custom-Header"],
-      
-      // 是否允许携带凭证（可选，默认: false）
-      // credentials: true,
-      
-      // 预检请求缓存时间（秒，可选）
-      // maxAge: 86400,
     }),
-    
-    // 可以添加更多中间件
-    // logger(),           // 日志中间件
-    // compression(),      // 压缩中间件
-    // security(),         // 安全中间件
-    // rateLimit({         // 限流中间件
-    //   windowMs: 60000,  // 时间窗口（毫秒）
-    //   max: 100,         // 最大请求数
-    // }),
-    // auth({              // 认证中间件
-    //   secret: "your-jwt-secret",
-    // }),
   ],
 };
 
@@ -478,15 +387,48 @@ deno task start
 2. 根据配置初始化服务器、路由、中间件和插件
 3. 启动开发或生产服务器
 
-
-### 环境变量
+### 多应用模式
 
 ```typescript
-import { env } from "@dreamer/dweb";
+// dweb.config.ts
+import { tailwind, cors, type DWebConfig } from "@dreamer/dweb";
 
-const apiKey = env("API_KEY");
-const port = env.int("PORT", 3000);
-const debug = env.bool("DEBUG", false);
+const config: DWebConfig = {
+  cookie: {
+    secret: "your-secret-key-here",
+  },
+  session: {
+    secret: "your-session-secret-here",
+    store: "memory",
+  },
+  apps: [
+    {
+      name: "frontend",
+      server: { port: 3000, host: "localhost" },
+      routes: { dir: "frontend/routes" },
+      static: { dir: "frontend/assets" },
+      plugins: [tailwind({ cssPath: "frontend/assets/style.css" })],
+    },
+    {
+      name: "backend",
+      server: { port: 3001, host: "localhost" },
+      routes: { dir: "backend/routes" },
+      plugins: [cors()],
+    },
+  ],
+};
+
+export default config;
+```
+
+启动指定应用：
+
+```bash
+# 启动前端应用
+deno run -A jsr:@dreamer/dweb/cli dev:frontend
+
+# 启动后端应用
+deno run -A jsr:@dreamer/dweb/cli dev:backend
 ```
 
 ## 📖 文档
@@ -530,7 +472,7 @@ deno task check
 ## 📦 JSR 包信息
 
 - **包名**: `@dreamer/dweb`
-- **版本**: `1.0.0`
+- **版本**: `1.0.10`
 - **JSR 链接**: https://jsr.io/@dreamer/dweb
 - **质量分数**: 查看 [JSR Score](https://jsr.io/@dreamer/dweb/score)
 
@@ -551,4 +493,3 @@ MIT License - 查看 [LICENSE](./LICENSE) 文件了解详情
 ---
 
 **DWeb 框架** - 让 Deno Web 开发更简单、更快速、更高效！ 🚀
-
