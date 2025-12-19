@@ -24,8 +24,8 @@ Deno.test('Sitemap Plugin - 生成 Sitemap', async () => {
     const plugin = sitemap({
       siteUrl: 'https://example.com',
       urls: [
-        { url: '/', changefreq: 'daily', priority: 1.0 },
-        { url: '/about', changefreq: 'monthly', priority: 0.8 },
+        { loc: '/', changefreq: 'daily', priority: 1.0 },
+        { loc: '/about', changefreq: 'monthly', priority: 0.8 },
       ],
       outputPath: path.join(testOutDir, 'sitemap.xml'),
     });
@@ -86,7 +86,6 @@ Deno.test('Sitemap Plugin - 默认输出路径', () => {
 Deno.test('Sitemap Plugin - 自动扫描路由', () => {
   const plugin = sitemap({
     siteUrl: 'https://example.com',
-    autoScan: true,
     routesDir: 'routes',
   });
   

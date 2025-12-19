@@ -74,7 +74,6 @@ Deno.test('SEO Plugin - 不处理非 HTML 响应', async () => {
 Deno.test('SEO Plugin - Open Graph 配置', () => {
   const plugin = seo({
     openGraph: {
-      enabled: true,
       siteName: 'Test Site',
     },
   });
@@ -85,8 +84,7 @@ Deno.test('SEO Plugin - Open Graph 配置', () => {
 
 Deno.test('SEO Plugin - Twitter Card 配置', () => {
   const plugin = seo({
-    twitterCard: {
-      enabled: true,
+    twitter: {
       card: 'summary_large_image',
     },
   });

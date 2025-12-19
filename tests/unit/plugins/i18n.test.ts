@@ -40,6 +40,8 @@ Deno.test('i18n Plugin - 注入语言属性', async () => {
   const req = {
     method: 'GET',
     url: 'https://example.com/test',
+    query: {},
+    params: {},
     headers: new Headers({
       'Accept-Language': 'en-US,en;q=0.9',
     }),
@@ -76,7 +78,7 @@ Deno.test('i18n Plugin - 从 URL 检测语言', async () => {
       { code: 'zh', name: '中文' },
     ],
     detection: {
-      order: ['url'],
+      fromPath: true,
     },
   });
   
