@@ -34,7 +34,6 @@ Deno.test('Static Middleware - ETag 和 If-None-Match (304 响应)', async () =>
     setHeader: function(name: string, value: string) {
       this.headers.set(name, value);
     },
-    body: undefined as string | Uint8Array | undefined,
     _body: undefined as string | Uint8Array | undefined,
     get body() {
       return this._body;
@@ -77,7 +76,6 @@ Deno.test('Static Middleware - ETag 和 If-None-Match (304 响应)', async () =>
     setHeader: function(name: string, value: string) {
       this.headers.set(name, value);
     },
-    body: undefined as string | Uint8Array | undefined,
     _body: undefined as string | Uint8Array | undefined,
     get body() {
       return this._body;
@@ -135,7 +133,6 @@ Deno.test('Static Middleware - Last-Modified 和 If-Modified-Since (304 响应)'
     setHeader: function(name: string, value: string) {
       this.headers.set(name, value);
     },
-    body: undefined as string | Uint8Array | undefined,
     _body: undefined as string | Uint8Array | undefined,
     get body() {
       return this._body;
@@ -179,7 +176,6 @@ Deno.test('Static Middleware - Last-Modified 和 If-Modified-Since (304 响应)'
     setHeader: function(name: string, value: string) {
       this.headers.set(name, value);
     },
-    body: undefined as string | Uint8Array | undefined,
     _body: undefined as string | Uint8Array | undefined,
     get body() {
       return this._body;
@@ -231,7 +227,6 @@ Deno.test('Static Middleware - Cache-Control 头部', async () => {
     setHeader: function(name: string, value: string) {
       this.headers.set(name, value);
     },
-    body: undefined as string | Uint8Array | undefined,
     _body: undefined as string | Uint8Array | undefined,
     get body() {
       return this._body;
@@ -329,7 +324,6 @@ Deno.test('Static Middleware - 点文件处理 - allow', async () => {
     setHeader: function(name: string, value: string) {
       this.headers.set(name, value);
     },
-    body: undefined as string | Uint8Array | undefined,
     _body: undefined as string | Uint8Array | undefined,
     get body() {
       return this._body;
@@ -387,7 +381,6 @@ Deno.test('Static Middleware - 二进制文件处理（图片）', async () => {
     setHeader: function(name: string, value: string) {
       this.headers.set(name, value);
     },
-    body: undefined as string | Uint8Array | undefined,
     _body: undefined as string | Uint8Array | undefined,
     get body() {
       return this._body;
@@ -450,7 +443,6 @@ Deno.test('Static Middleware - 多个索引文件配置', async () => {
     setHeader: function(name: string, value: string) {
       this.headers.set(name, value);
     },
-    body: undefined as string | Uint8Array | undefined,
     _body: undefined as string | Uint8Array | undefined,
     get body() {
       return this._body;
@@ -561,7 +553,6 @@ Deno.test('Static Middleware - MIME 类型检测', async () => {
       setHeader: function(name: string, value: string) {
         this.headers.set(name, value);
       },
-      body: undefined as string | Uint8Array | undefined,
       _body: undefined as string | Uint8Array | undefined,
       get body() {
         return this._body;
@@ -618,7 +609,6 @@ Deno.test('Static Middleware - 禁用 ETag', async () => {
     setHeader: function(name: string, value: string) {
       this.headers.set(name, value);
     },
-    body: undefined as string | Uint8Array | undefined,
     _body: undefined as string | Uint8Array | undefined,
     get body() {
       return this._body;
@@ -673,7 +663,6 @@ Deno.test('Static Middleware - 禁用 Last-Modified', async () => {
     setHeader: function(name: string, value: string) {
       this.headers.set(name, value);
     },
-    body: undefined as string | Uint8Array | undefined,
     _body: undefined as string | Uint8Array | undefined,
     get body() {
       return this._body;
@@ -761,7 +750,6 @@ Deno.test('Static Middleware - Content-Length 头部', async () => {
     setHeader: function(name: string, value: string) {
       this.headers.set(name, value);
     },
-    body: undefined as string | Uint8Array | undefined,
     _body: undefined as string | Uint8Array | undefined,
     get body() {
       return this._body;
