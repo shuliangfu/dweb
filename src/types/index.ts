@@ -281,6 +281,8 @@ export interface LoadContext {
   getCookie(name: string): string | null;
   /** 获取 Session（如果不存在则返回 null） */
   getSession(): Promise<Session | null>;
+  /** 数据库适配器实例（如果已配置数据库） */
+  db?: import('../features/database/types.ts').DatabaseAdapter | null;
 }
 
 /**

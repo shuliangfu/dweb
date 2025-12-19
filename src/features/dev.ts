@@ -12,6 +12,7 @@ import { MiddlewareManager } from "../core/middleware.ts";
 import { PluginManager } from "../core/plugin.ts";
 import { CookieManager } from "../features/cookie.ts";
 import { SessionManager } from "../features/session.ts";
+import { initDatabase, closeDatabase } from "../features/database/access.ts";
 import { logger } from "../middleware/logger.ts";
 import { bodyParser } from "../middleware/body-parser.ts";
 import { staticFiles } from "../middleware/static.ts";

@@ -553,7 +553,10 @@ export class RouteHandler {
         session = await req.getSession();
       }
 
-      // 调用 load 函数，传递 params、query、cookies 和 session
+      // 导入数据库访问函数
+      const { getDatabase } = await import("../features/database/access.ts");
+
+      // 调用 load 函数，传递 params、query、cookies、session 和数据库
       return await pageModule.load({
         params: req.params,
         query: req.query,
@@ -566,6 +569,14 @@ export class RouteHandler {
       }
           return null;
         },
+        // 提供数据库访问（如果已初始化）
+        db: (() => {
+          try {
+            return getDatabase();
+          } catch {
+            return null;
+          }
+        })(),
       });
     } catch (error) {
       res.status = 500;

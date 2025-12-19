@@ -44,3 +44,12 @@ export {
   type MigrationStatus,
 } from './migration/mod.ts';
 
+// 导出数据库访问辅助函数
+export {
+  initDatabase,
+  getDatabase,
+  getDatabaseManager,
+  isDatabaseInitialized,
+  closeDatabase,
+} from './access.ts';
+

@@ -12,6 +12,7 @@ import { MiddlewareManager } from '../core/middleware.ts';
 import { PluginManager } from '../core/plugin.ts';
 import { CookieManager } from '../features/cookie.ts';
 import { SessionManager } from '../features/session.ts';
+import { initDatabase, closeDatabase } from '../features/database/access.ts';
 import { logger } from '../middleware/logger.ts';
 import { bodyParser } from '../middleware/body-parser.ts';
 import { staticFiles } from '../middleware/static.ts';
@@ -259,6 +260,18 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   // 预加载所有模块（解决首次访问延迟问题）
   await preloadModules(router);
 
+  // 初始化数据库连接（如果配置了数据库）
+  if (config.database) {
+    try {
+      await initDatabase(config.database);
+      console.log('✅ 数据库连接已初始化');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`❌ 数据库连接失败: ${message}`);
+      // 不阻止服务器启动，但记录错误
+    }
+  }
+
   // 创建 Cookie 和 Session 管理器
   let cookieManager: CookieManager | null = null;
   let sessionManager: SessionManager | null = null;
@@ -391,7 +404,12 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   const host = config.server!.host || '0.0.0.0';
 
   // 设置优雅关闭信号监听器
-  setupSignalHandlers({ close: () => server.close() });
+  setupSignalHandlers({
+    close: async () => {
+      await closeDatabase();
+      server.close();
+    },
+  });
 
   await server.start(port, host);
 }
