@@ -448,7 +448,7 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 	server.setHandler(requestHandler)
 
 	// 启动服务器
-	const port = config.server!.port
+	const port = config.server!.port || 3000
 	const host = config.server!.host || "localhost"
   
   // 如果配置了自动打开浏览器
