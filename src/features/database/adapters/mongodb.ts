@@ -69,12 +69,20 @@ export class MongoDBAdapter extends BaseAdapter {
   /**
    * 执行操作（插入、更新、删除）
    * @param operation 操作类型：'insert', 'insertMany', 'update', 'updateMany', 'delete', 'deleteMany'
-   * @param collection 集合名称
-   * @param data 操作数据
+   * @param collection 集合名称（作为第二个参数）
+   * @param data 操作数据（作为第三个参数）
    */
-  async execute(operation: string, collection: string, data: any): Promise<any> {
+  async execute(operation: string, collection?: string | any[], data?: any): Promise<any> {
     if (!this.db) {
       throw new Error('Database not connected');
+    }
+
+    // MongoDB 适配器需要 collection 和 data 参数
+    if (typeof collection !== 'string') {
+      throw new Error('MongoDB execute requires collection name as second parameter');
+    }
+    if (data === undefined) {
+      throw new Error('MongoDB execute requires data as third parameter');
     }
 
     try {
