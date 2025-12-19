@@ -7,7 +7,6 @@ import { assertEquals, assert } from '@std/assert';
 import { Router, type RouteInfo } from '../../../src/core/router.ts';
 import * as path from '@std/path';
 import { ensureDir, ensureFile } from '@std/fs';
-import * as fs from '@std/fs';
 
 // 创建临时测试目录
 const testRoutesDir = path.join(Deno.cwd(), 'tests', 'fixtures', 'router-extended');
@@ -255,7 +254,7 @@ Deno.test('Router - loadFromBuildMap - 从构建映射加载路由', async () =>
   } finally {
     // 清理
     try {
-      await fs.remove(testRoutesDir, { recursive: true });
+      await Deno.remove(testRoutesDir, { recursive: true });
     } catch {
       // 忽略清理错误
     }
