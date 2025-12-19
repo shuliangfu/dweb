@@ -49,13 +49,34 @@ tests/
 
 ## 🚀 运行测试
 
+### ⚠️ 重要提示
+
+**所有测试都需要 `--allow-all` 权限**，因为测试涉及：
+- 文件系统操作（读取、写入、创建目录）
+- 环境变量访问（CI、ESBUILD_BINARY_PATH 等）
+- 网络访问（某些集成测试）
+
+**请务必使用以下方式运行测试：**
+
+```bash
+# ✅ 推荐：使用 deno task（已配置 --allow-all）
+deno task test
+deno task test:unit
+
+# ✅ 或者：直接使用 --allow-all 标志
+deno test --allow-all tests/unit/
+
+# ❌ 错误：不要直接运行 deno test（会缺少权限）
+deno test tests/unit/  # 这会失败！
+```
+
 ### 基本命令
 
 ```bash
-# 运行所有测试
+# 运行所有测试（推荐）
 deno task test
 
-# 运行单元测试
+# 运行单元测试（推荐）
 deno task test:unit
 
 # 运行集成测试（待实现）
