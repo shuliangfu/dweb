@@ -12,7 +12,7 @@ export interface ImageCropConfig {
   width: number;
   /** 目标高度 */
   height: number;
-  /** 裁切模式：'center' 居中裁切（顶边对齐） */
+  /** 裁切模式：'center' 居中裁切 */
   mode?: 'center';
 }
 

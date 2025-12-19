@@ -110,7 +110,7 @@ function isImageFile(mimeType: string): boolean {
 }
 
 /**
- * 居中裁切图片（顶边对齐）
+ * 居中裁切图片
  * 使用 Sharp 库进行图片处理
  * 
  * 安装说明：
@@ -128,7 +128,7 @@ async function cropImage(
   if (!sharp) {
     console.warn(
       '[File Upload Plugin] Sharp 未安装，跳过图片裁切。\n' +
-      '安装方法：运行 `deno cache --reload src/plugins/file-upload/index.ts` 或 `deno install`'
+      '安装方法： `deno install`'
     );
     return new Uint8Array(imageData);
   }
@@ -136,13 +136,13 @@ async function cropImage(
   try {
     const { width, height } = config;
     
-    // 使用 Sharp 进行居中裁切（顶边对齐）
+    // 使用 Sharp 进行居中裁切
     const processed = await sharp(imageData)
       .resize({
         width,
         height,
         fit: 'cover', // 覆盖模式，保持宽高比并裁切
-        position: 'top', // 顶边对齐（居中裁切）
+        position: 'center', // 居中裁切
       })
       .toBuffer();
 
@@ -173,7 +173,7 @@ async function compressImage(
   if (!sharp) {
     console.warn(
       `[File Upload Plugin] Sharp 未安装，跳过图片压缩（${config.format || 'webp'}）。\n` +
-      '安装方法：运行 `deno cache --reload src/plugins/file-upload/index.ts` 或 `deno install`'
+      '安装方法：运行 `deno install`'
     );
     return {
       data: new Uint8Array(imageData),

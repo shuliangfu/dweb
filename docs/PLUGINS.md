@@ -401,7 +401,7 @@ export default {
           enabled: true,
           width: 800,
           height: 600,
-          mode: "center", // 居中裁切（顶边对齐）
+          mode: "center", // 居中裁切
         },
         // 图片压缩配置
         imageCompress: {
