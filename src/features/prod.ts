@@ -387,7 +387,7 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   server.setHandler(requestHandler);
 
   // 启动服务器
-  const port = config.server!.port;
+  const port = config.server!.port || 3000;
   const host = config.server!.host || '0.0.0.0';
 
   // 设置优雅关闭信号监听器
