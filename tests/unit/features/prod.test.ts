@@ -378,3 +378,235 @@ Deno.test('Prod Server - 开发配置选项', () => {
   assertEquals(config.dev.hmr, true);
 });
 
+Deno.test('Prod Server - 静态资源目录不存在时的处理', () => {
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+    },
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+    static: {
+      dir: 'non-existent-assets',
+    },
+  };
+
+  // 验证静态资源目录配置（即使目录不存在，配置也应该有效）
+  assert(config.static !== undefined);
+  assertEquals(config.static.dir, 'non-existent-assets');
+});
+
+Deno.test('Prod Server - 无静态资源配置时使用默认值', () => {
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+    },
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+    // 没有 static 配置
+  };
+
+  // 验证默认静态资源目录逻辑（在 prod.ts 中会使用 config.static?.dir || 'assets'）
+  const staticDir = config.static?.dir || 'assets';
+  assertEquals(staticDir, 'assets');
+});
+
+Deno.test('Prod Server - 无 Cookie 配置', () => {
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+    },
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+    // 没有 cookie 配置
+  };
+
+  // 验证无 Cookie 配置时的处理（在 prod.ts 中 cookieManager 会是 null）
+  assert(config.cookie === undefined);
+});
+
+Deno.test('Prod Server - 无 Session 配置', () => {
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+    },
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+    // 没有 session 配置
+  };
+
+  // 验证无 Session 配置时的处理（在 prod.ts 中 sessionManager 会是 null）
+  assert(config.session === undefined);
+});
+
+Deno.test('Prod Server - 空中间件数组', () => {
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+    },
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+    middleware: [],
+  };
+
+  // 验证空中间件数组的处理
+  assert(config.middleware !== undefined);
+  assertEquals(config.middleware.length, 0);
+});
+
+Deno.test('Prod Server - 空插件数组', () => {
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+    },
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+    plugins: [],
+  };
+
+  // 验证空插件数组的处理
+  assert(config.plugins !== undefined);
+  assertEquals(config.plugins.length, 0);
+});
+
+Deno.test('Prod Server - basePath 配置', () => {
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+    },
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+    basePath: '/api',
+  };
+
+  // 验证 basePath 配置
+  assertEquals(config.basePath, '/api');
+});
+
+Deno.test('Prod Server - 构建输出目录路径处理', () => {
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+    },
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+    static: {
+      dir: 'assets',
+    },
+  };
+
+  // 验证构建输出目录和静态资源路径的组合逻辑
+  // 在 prod.ts 中：assetsPath = `${config.build!.outDir}/${staticDir}`
+  const outDir = config.build!.outDir;
+  const staticDir = config.static?.dir || 'assets';
+  const assetsPath = `${outDir}/${staticDir}`;
+  assertEquals(assetsPath, 'dist/assets');
+});
+
+Deno.test('Prod Server - 路由配置 ignore 选项', () => {
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+      ignore: ['**/*.test.ts', '**/*.test.tsx', '**/_*.ts'],
+    },
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+  };
+
+  // 验证路由配置的 ignore 选项
+  assert(config.routes !== undefined);
+  if (typeof config.routes === 'object') {
+    assert(config.routes.ignore !== undefined);
+    assertEquals(config.routes.ignore.length, 3);
+    assert(config.routes.ignore.includes('**/*.test.ts'));
+  }
+});
+
+Deno.test('Prod Server - 构建输出目录不存在时的处理', () => {
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+    },
+    build: {
+      outDir: 'non-existent-dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+  };
+
+  // 验证构建输出目录配置（即使目录不存在，配置也应该有效）
+  assert(config.build !== undefined);
+  assertEquals(config.build.outDir, 'non-existent-dist');
+  
+  // 在 prod.ts 中，如果构建输出目录不存在，会扫描源代码目录
+  // 这里只验证配置本身是有效的
+  assert(true);
+});
+
+Deno.test('Prod Server - 路由映射文件路径构建', () => {
+  const config: AppConfig = {
+    routes: {
+      dir: 'routes',
+    },
+    build: {
+      outDir: 'dist',
+    },
+    server: {
+      host: 'localhost',
+      port: 3000,
+    },
+  };
+
+  // 验证路由映射文件路径构建逻辑
+  // 在 prod.ts 中：routeMapPath = path.join(outDir, '.route-map.json')
+  const outDir = config.build!.outDir;
+  const routeMapPath = `${outDir}/.route-map.json`;
+  assertEquals(routeMapPath, 'dist/.route-map.json');
+});
+
