@@ -10,7 +10,7 @@ import type { Request, Response } from '../../../src/types/index.ts';
 import { CookieManager } from '../../../src/features/cookie.ts';
 import { SessionManager } from '../../../src/features/session.ts';
 import * as path from '@std/path';
-import { ensureDir, ensureFile, remove } from '@std/fs';
+import { ensureDir, ensureFile } from '@std/fs';
 
 // 创建测试用的 Router
 function createTestRouter(routesDir: string = 'routes'): Router {
@@ -48,7 +48,11 @@ Deno.test('RouteHandler - preloadImportMapScript - 预加载 import map', async 
     assert(true);
   } finally {
     Deno.chdir(originalCwd);
-    await remove(testDir, { recursive: true });
+    try {
+      await Deno.remove(testDir, { recursive: true });
+    } catch {
+      // 忽略清理错误
+    }
   }
 });
 
