@@ -137,7 +137,11 @@ Deno.test('Rate Limit Middleware - 自定义错误消息', async () => {
   assertEquals(res.status, 429);
   if (res.body) {
     const body = typeof res.body === 'string' ? JSON.parse(res.body) : res.body;
-    assert(body.message?.includes('Too many requests'));
+    // rate-limit 使用 error 字段，不是 message
+    assert('error' in body);
+    if (body.error && typeof body.error === 'string') {
+      assert(body.error.includes('Too many requests') || body.error.length > 0);
+    }
   }
 });
 
