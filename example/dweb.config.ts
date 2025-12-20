@@ -1,89 +1,106 @@
 /**
- * DWeb 框架示例配置文件
- * 单应用模式
+ * DWeb 框架配置文件
+ * 项目: example
+ * 模式: 多应用模式
  */
 
-import { tailwind, cors, seo, type AppConfig } from '@dreamer/dweb';
+import { tailwind, cors, type DWebConfig } from '@dreamer/dweb';
 
-const config: AppConfig = {
-  name: 'example',
-  renderMode: 'hybrid', //'ssr' | 'csr' | 'hybrid';
-
-  // 全局渲染模式（可在页面组件中覆盖）
-  // 可选值: 'ssr' | 'csr' | 'hybrid'
-  // - ssr: 服务端渲染（默认）
-  // - csr: 客户端渲染
-  // - hybrid: 混合渲染（服务端渲染 + 客户端 hydration）
-  // renderMode: 'ssr',
-
-  // 开发配置
-  dev: {
-    // open: true,
-    hmrPort: 24678,
-    reloadDelay: 300,
-  },
-
-  // 构建配置
-  build: {
-    outDir: 'dist',
-  },
-
-  // 服务器配置
-  server: {
-    port: 3000,
-    host: '0.0.0.0', // Docker 环境需要监听所有网络接口
-  },
-
-  // 路由配置
-  routes: {
-    dir: 'routes',
-    ignore: ['**/*.test.ts', '**/*.test.tsx'],
-  },
-
-  // 静态资源目录，默认为 'assets'
-  static: {
-    dir: 'assets',
-    prefix: '/assets', // 访问前缀，例如 /assets/logo.png
-    maxAge: 86400, // 缓存 1 天
-    index: ['index.html', 'index.htm'],
-    dotfiles: 'deny', // 禁止访问隐藏文件
-  },
-
-  // Cookie 配置
+const config: DWebConfig = {
+  // Cookie 配置（全局）
   cookie: {
-    secret: 'your-secret-key-here',
+    secret: 'your-secret-key-here-change-in-production',
   },
 
-  // Session 配置
+  // Session 配置（全局）
   session: {
-    secret: 'your-session-secret-here',
+    secret: 'your-session-secret-here-change-in-production',
     store: 'memory',
     maxAge: 3600000, // 1小时
     secure: false,
     httpOnly: true,
   },
 
-  // 插件配置
-  plugins: [
-    // Tailwind CSS v4 插件（默认使用 v4）
-    tailwind({
-      version: 'v4',
-      cssPath: 'assets/style.css', // 指定主 CSS 文件路径
-      optimize: true, // 生产环境优化
-		}),
-		seo({
-			title: 'DWeb - 现代化的全栈 Web 框架',
-			description: '基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web 框架',
-			keywords: 'DWeb, Deno, Preact, Tailwind CSS, Web 框架',
-			author: 'DWeb',
-		}),
-  ],
-  middleware: [
-    cors({
-      origin: '*',
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-    }),
+  // 应用列表
+  apps: [
+    {
+      name: 'dweb',
+      renderMode: 'hybrid', // 'ssr' | 'csr' | 'hybrid'
+      server: {
+        port: 3000,
+        host: '0.0.0.0',
+      },
+      routes: {
+        dir: 'dweb/routes',
+        ignore: ['**/*.test.ts', '**/*.test.tsx'],
+      },
+      static: {
+        dir: 'dweb/assets',
+      },
+      plugins: [
+        tailwind({
+          version: 'v4',
+          cssPath: 'dweb/assets/style.css',
+          optimize: true,
+        }),
+      ],
+      middleware: [
+        cors({
+          origin: '*',
+          methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+          allowedHeaders: ['Content-Type', 'Authorization'],
+        }),
+      ],
+      // 构建配置
+      build: {
+        outDir: 'dist/dweb',
+      },
+      // 开发配置（全局）
+      dev: {
+        // open: true,
+        hmrPort: 24678,
+        reloadDelay: 300,
+      },
+    },
+    {
+      name: 'docs',
+      renderMode: 'hybrid', // 'ssr' | 'csr' | 'hybrid'
+      server: {
+        port: 3001,
+        host: '0.0.0.0',
+      },
+      routes: {
+        dir: 'docs/routes',
+        ignore: ['**/*.test.ts', '**/*.test.tsx'],
+      },
+      static: {
+        dir: 'docs/assets',
+      },
+      plugins: [
+        tailwind({
+          version: 'v4',
+          cssPath: 'docs/assets/style.css',
+          optimize: true,
+        }),
+      ],
+      middleware: [
+        cors({
+          origin: '*',
+          methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+          allowedHeaders: ['Content-Type', 'Authorization'],
+        }),
+      ],
+      // 构建配置
+      build: {
+        outDir: 'dist/docs',
+      },
+      // 开发配置（全局）
+      dev: {
+        // open: true,
+        hmrPort: 24678,
+        reloadDelay: 300,
+      },
+    },
   ],
 };
 

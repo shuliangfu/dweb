@@ -39,9 +39,14 @@
     "sharp": "npm:sharp@^0.34.5"
   },
   "tasks": {
-    "dev": "deno run -A src/cli.ts dev",
-    "build": "deno run -A src/cli.ts build",
-    "start": "deno run -A src/cli.ts start",
+    "dev:dweb": "deno run -A src/cli.ts dev:dweb",
+    "dev:docs": "deno run -A src/cli.ts dev:docs",
+
+    "build:dweb": "deno run -A src/cli.ts build:dweb",
+    "build:docs": "deno run -A src/cli.ts build:docs",
+
+    "start:dweb": "deno run -A src/cli.ts start:dweb",
+    "start:docs": "deno run -A src/cli.ts start:docs",
     "compile": "deno compile -A --output bin/dweb src/cli.ts",
 
     "lint": "deno lint src/ example/",
