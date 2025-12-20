@@ -1,0 +1,63 @@
+# DWeb 框架文档
+
+欢迎使用 DWeb 框架文档！本文档提供了框架的完整使用指南和 API 参考。
+
+## 📚 文档目录
+
+### 核心模块
+- [核心模块 (core)](./core.md) - 服务器、路由、配置等核心功能
+
+### 功能模块
+- [数据库 (database)](./database.md) - 数据库支持、ORM/ODM、查询构建器
+- [GraphQL](./graphql.md) - GraphQL 服务器和查询处理
+- [WebSocket](./websocket.md) - WebSocket 服务器和客户端
+- [Session](./session.md) - Session 管理和多种存储方式
+
+### 扩展模块
+- [中间件 (middleware)](./middleware.md) - 内置中间件和使用指南
+- [插件 (plugins)](./plugins.md) - 插件系统和使用指南
+
+## 🚀 快速开始
+
+### 安装
+
+```bash
+# 创建新项目
+deno run -A jsr:@dreamer/dweb/init
+
+# 进入项目目录
+cd my-app
+
+# 启动开发服务器
+deno task dev
+```
+
+### 基本使用
+
+```typescript
+// main.ts
+import { Server } from '@dreamer/dweb/core/server';
+
+const server = new Server();
+
+server.setHandler(async (req, res) => {
+  res.text('Hello World');
+});
+
+await server.start(3000);
+```
+
+## 📖 更多资源
+
+- [GitHub 仓库](https://github.com/dreamer/dweb)
+- [JSR 包](https://jsr.io/@dreamer/dweb)
+- [示例项目](./example)
+
+## 🤝 贡献
+
+欢迎贡献代码和文档！请查看 [CONTRIBUTING.md](../CONTRIBUTING.md) 了解详情。
+
+## 📄 许可证
+
+MIT License
+
