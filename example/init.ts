@@ -2,7 +2,7 @@
 /**
  * DWeb 项目初始化工具
  * 通过远程 URL 运行，自动配置框架的 import map
- * 
+ *
  * 用法:
  *   deno run -Ar http://your-server.com/init.ts <project-name>
  *   或
@@ -52,7 +52,11 @@ async function prompt(question: string): Promise<string> {
  * @param defaultIndex 默认选项索引（从 0 开始，如果用户直接回车则使用此选项）
  * @returns 选中的选项
  */
-async function select(question: string, options: string[], defaultIndex: number = 0): Promise<string> {
+async function select(
+  question: string,
+  options: string[],
+  defaultIndex: number = 0
+): Promise<string> {
   console.log(question);
   options.forEach((option, index) => {
     const defaultMark = index === defaultIndex ? ' (默认)' : '';
@@ -60,12 +64,12 @@ async function select(question: string, options: string[], defaultIndex: number 
   });
   const defaultPrompt = defaultIndex >= 0 ? ` [默认: ${defaultIndex + 1}]` : '';
   const answer = await prompt(`请选择 (1-${options.length})${defaultPrompt}: `);
-  
+
   // 如果用户直接回车，使用默认值
   if (!answer || answer.trim() === '') {
     return options[defaultIndex];
   }
-  
+
   const index = parseInt(answer) - 1;
   if (index >= 0 && index < options.length) {
     return options[index];
@@ -154,9 +158,8 @@ const renderMode = await select(
   ['SSR (服务端渲染)', 'CSR (客户端渲染)', 'Hybrid (混合渲染)'],
   2 // 默认选择第三个（Hybrid）
 );
-const renderModeValue = renderMode === 'SSR (服务端渲染)' ? 'ssr' 
-  : renderMode === 'CSR (客户端渲染)' ? 'csr' 
-  : 'hybrid';
+const renderModeValue =
+  renderMode === 'SSR (服务端渲染)' ? 'ssr' : renderMode === 'CSR (客户端渲染)' ? 'csr' : 'hybrid';
 
 console.log(`\n📦 正在创建项目: ${projectName}`);
 console.log(`📁 项目目录: ${projectDir}`);
@@ -180,9 +183,10 @@ let configContent: string;
 
 if (isMultiApp) {
   // 多应用模式配置
-  const appsConfig = appNames.map((appName, index) => {
-    const port = 3000 + index;
-    return `    {
+  const appsConfig = appNames
+    .map((appName, index) => {
+      const port = 3000 + index;
+      return `    {
       name: '${appName}',
       renderMode: '${renderModeValue}', // 'ssr' | 'csr' | 'hybrid'
       server: {
@@ -213,8 +217,9 @@ if (isMultiApp) {
         outDir: 'dist/${appName}'
       },
     }`;
-  }).join(',\n');
-  
+    })
+    .join(',\n');
+
   configContent = `/**
  * DWeb 框架配置文件
  * 项目: ${projectName}
@@ -347,24 +352,42 @@ const denoJsonContent = `{
   },
   "imports": {
     "@dreamer/dweb": "${frameworkUrl}",
-    "@dreamer/dweb/cli": "${frameworkUrl.includes('jsr:') ? frameworkUrl.replace(/@([\^~]?[\d.]+)$/, '@$1/cli') : frameworkUrl.replace('/mod.ts', '/cli.ts')}",
+    "@dreamer/dweb/cli": "${
+      frameworkUrl.includes('jsr:')
+        ? frameworkUrl.replace(/@([\^~]?[\d.]+)$/, '@$1/cli')
+        : frameworkUrl.replace('/mod.ts', '/cli.ts')
+    }",
     "preact": "https://esm.sh/preact@latest",
     "preact/hooks": "https://esm.sh/preact@latest/hooks",
-    "preact/jsx-runtime": "https://esm.sh/preact@latest/jsx-runtime"${useTailwindV4 ? `,
+    "preact/jsx-runtime": "https://esm.sh/preact@latest/jsx-runtime"${
+      useTailwindV4
+        ? `,
     "tailwindcss": "npm:tailwindcss@^4.1.10",
-    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@^4.1.10"` : `,
+    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@^4.1.10"`
+        : `,
     "tailwindcss": "npm:tailwindcss@^3.4.0",
     "autoprefixer": "npm:autoprefixer@^10.4.20",
-    "postcss": "npm:postcss@^8.4.47"`}
+    "postcss": "npm:postcss@^8.4.47"`
+    }
   },
   "tasks": {
-${isMultiApp ? [
-  ...appNames.map(appName => `    "dev:${appName}": "deno run -A @dreamer/dweb/cli dev:${appName}"`),
-  ...appNames.map(appName => `    "build:${appName}": "deno run -A @dreamer/dweb/cli build:${appName}"`),
-  ...appNames.map(appName => `    "start:${appName}": "deno run -A @dreamer/dweb/cli start:${appName}"`)
-].join(',\n') : `    "dev": "deno run -A @dreamer/dweb/cli dev",
+${
+  isMultiApp
+    ? [
+        ...appNames.map(
+          (appName) => `    "dev:${appName}": "deno run -A @dreamer/dweb/cli dev:${appName}"`
+        ),
+        ...appNames.map(
+          (appName) => `    "build:${appName}": "deno run -A @dreamer/dweb/cli build:${appName}"`
+        ),
+        ...appNames.map(
+          (appName) => `    "start:${appName}": "deno run -A @dreamer/dweb/cli start:${appName}"`
+        ),
+      ].join(',\n')
+    : `    "dev": "deno run -A @dreamer/dweb/cli dev",
     "build": "deno run -A @dreamer/dweb/cli build",
-    "start": "deno run -A @dreamer/dweb/cli start"`}
+    "start": "deno run -A @dreamer/dweb/cli start"`
+}
   }
 }
 `;
@@ -378,36 +401,36 @@ if (isMultiApp) {
   for (const appName of appNames) {
     const appRoutesDir = path.join(projectDir, appName, 'routes');
     const appComponentsDir = path.join(projectDir, appName, 'components');
-    
+
     await ensureDir(appRoutesDir);
     await ensureDir(appComponentsDir);
-    
+
     // 生成示例路由
     await generateRoutesForApp(appRoutesDir, appName, frameworkUrl);
-    
+
     // 生成示例组件
     await generateComponentsForApp(appComponentsDir, appName);
-    
+
     // 生成示例 API
     await generateApiForApp(appRoutesDir, appName, frameworkUrl);
   }
-  
+
   // 为多应用项目创建 common 目录结构
   await generateCommonDirectory(projectDir, frameworkUrl);
 } else {
   // 单应用模式：在项目根目录生成
   const routesDir = path.join(projectDir, 'routes');
   const componentsDir = path.join(projectDir, 'components');
-  
+
   await ensureDir(routesDir);
   await ensureDir(componentsDir);
-  
+
   // 生成示例路由
   await generateRoutesForApp(routesDir, projectName, frameworkUrl);
-  
+
   // 生成示例组件
   await generateComponentsForApp(componentsDir, projectName);
-  
+
   // 生成示例 API
   await generateApiForApp(routesDir, projectName, frameworkUrl);
 }
@@ -415,7 +438,11 @@ if (isMultiApp) {
 /**
  * 为单个应用生成路由文件
  */
-async function generateRoutesForApp(routesDir: string, appName: string, frameworkUrl: string): Promise<void> {
+async function generateRoutesForApp(
+  routesDir: string,
+  appName: string,
+  frameworkUrl: string
+): Promise<void> {
   // 生成 _app.tsx（根应用组件，框架必需）
   const appContent = `/**
  * 根应用组件
@@ -1123,10 +1150,14 @@ export default function Button({
 /**
  * 为单个应用生成 API 文件
  */
-async function generateApiForApp(routesDir: string, _appName: string, frameworkUrl: string): Promise<void> {
+async function generateApiForApp(
+  routesDir: string,
+  _appName: string,
+  frameworkUrl: string
+): Promise<void> {
   const apiDir = path.join(routesDir, 'api');
   await ensureDir(apiDir);
-  
+
   // 生成示例 API test.ts
   const apiContent = `/**
  * 示例 API 路由
@@ -1230,13 +1261,13 @@ export function getData(_req: Request) {
 async function generateCommonDirectory(projectDir: string, frameworkUrl: string): Promise<void> {
   const commonDir = path.join(projectDir, 'common');
   await ensureDir(commonDir);
-  
+
   // 创建子目录
   const subDirs = ['config', 'utils', 'components', 'models', 'hooks'];
   for (const subDir of subDirs) {
     await ensureDir(path.join(commonDir, subDir));
   }
-  
+
   // 生成 config/index.ts
   const configContent = `/**
  * 公共配置文件
@@ -1253,7 +1284,7 @@ export default commonConfig;
 `;
   await Deno.writeTextFile(path.join(commonDir, 'config', 'index.ts'), configContent);
   console.log(`✅ 已创建: common/config/index.ts`);
-  
+
   // 生成 utils/index.ts
   const utilsContent = `/**
  * 公共工具函数
@@ -1281,7 +1312,7 @@ export function delay(ms: number): Promise<void> {
 `;
   await Deno.writeTextFile(path.join(commonDir, 'utils', 'index.ts'), utilsContent);
   console.log(`✅ 已创建: common/utils/index.ts`);
-  
+
   // 生成 components/Button.tsx
   const commonButtonContent = `import { h } from 'preact';
 
@@ -1313,7 +1344,7 @@ export default function CommonButton({
 `;
   await Deno.writeTextFile(path.join(commonDir, 'components', 'Button.tsx'), commonButtonContent);
   console.log(`✅ 已创建: common/components/Button.tsx`);
-  
+
   // 生成 models/User.ts
   const userModelContent = `/**
  * 用户模型
@@ -1338,7 +1369,7 @@ export function createUser(data: Partial<User>): User {
 `;
   await Deno.writeTextFile(path.join(commonDir, 'models', 'User.ts'), userModelContent);
   console.log(`✅ 已创建: common/models/User.ts`);
-  
+
   // 生成 hooks/useCounter.ts
   const counterHookContent = `import { useState } from 'preact/hooks';
 
@@ -1366,7 +1397,7 @@ if (isMultiApp) {
   for (const appName of appNames) {
     const appAssetsDir = path.join(projectDir, appName, 'assets');
     await ensureDir(appAssetsDir);
-    
+
     // 生成 style.css
     const styleContent = useTailwindV4
       ? `/* Tailwind CSS v4 */
@@ -1380,7 +1411,7 @@ if (isMultiApp) {
 
     await Deno.writeTextFile(path.join(appAssetsDir, 'style.css'), styleContent);
     console.log(`✅ 已创建: ${appName}/assets/style.css`);
-    
+
     // 为每个应用创建 routes 目录
     const appRoutesDir = path.join(projectDir, appName, 'routes');
     await ensureDir(appRoutesDir);
@@ -1493,4 +1524,3 @@ console.log(`  deno task dev`);
 console.log(`\n💡 提示：`);
 console.log(`  项目已配置为从 JSR 导入 DWeb 框架`);
 console.log(`  如需修改框架 URL，请编辑 dweb.config.ts 和 deno.json`);
-
