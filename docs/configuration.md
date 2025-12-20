@@ -369,10 +369,7 @@ export default defineConfig({
 ### 运行多应用
 
 ```bash
-# 运行前端应用
-deno task dev:app-name
-
-# 运行后端应用
+# 运行指定应用
 deno task dev:app-name
 ```
 
