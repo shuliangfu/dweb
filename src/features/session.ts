@@ -650,7 +650,7 @@ export class SessionManager {
       }
       case 'file': {
         // 文件存储
-        const fileDir = config.file?.dir || '.sessions';
+        const fileDir = (config as SessionConfig & { file?: { dir?: string } }).file?.dir || '.sessions';
         this.store = new FileSessionStore(fileDir);
         break;
       }
