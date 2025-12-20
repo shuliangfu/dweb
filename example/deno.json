@@ -1,9 +1,10 @@
 {
   "version": "1.1.1",
   "nodeModulesDir": "manual",
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "preact"
+  "tasks": {
+    "dev": "deno run -A @dreamer/dweb/cli dev",
+    "build": "deno run -A @dreamer/dweb/cli build",
+    "start": "deno run -A @dreamer/dweb/cli start"
   },
   "imports": {
     "@dreamer/dweb": "../src/mod.ts",
@@ -36,9 +37,9 @@
     "@mongodb": "npm:mongodb@^6.3.0",
     "sharp": "npm:sharp@^0.34.5"
   },
-  "tasks": {
-    "dev": "deno run -A @dreamer/dweb/cli dev",
-    "build": "deno run -A @dreamer/dweb/cli build",
-    "start": "deno run -A @dreamer/dweb/cli start"
+
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
   }
 }
