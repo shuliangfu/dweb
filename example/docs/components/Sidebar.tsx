@@ -97,6 +97,34 @@ const navItems: NavItem[] = [
 ];
 
 /**
+ * 检查菜单项是否激活
+ * @param item 菜单项
+ * @param path 当前路径
+ * @returns 是否激活
+ */
+function isItemActive(item: NavItem, path: string): boolean {
+  if (item.path === '/') {
+    return path === '/';
+  }
+  // 检查是否匹配路径或锚点
+  if (path === item.path || path.startsWith(item.path + '#')) {
+    return true;
+  }
+  // 检查子项是否激活
+  if (item.children) {
+    return item.children.some((child) => {
+      if (child.path.includes('#')) {
+        // 锚点链接，检查基础路径
+        const basePath = child.path.split('#')[0];
+        return path === basePath || path.startsWith(basePath + '#');
+      }
+      return path === child.path || path.startsWith(child.path + '/');
+    });
+  }
+  return false;
+}
+
+/**
  * 侧边栏导航组件
  * @param props 组件属性
  * @returns JSX 元素
@@ -117,34 +145,6 @@ export default function Sidebar({ currentPath = '/' }: SidebarProps) {
     });
     return expanded;
   });
-
-  /**
-   * 检查菜单项是否激活
-   * @param item 菜单项
-   * @param path 当前路径
-   * @returns 是否激活
-   */
-  const isItemActive = (item: NavItem, path: string): boolean => {
-    if (item.path === '/') {
-      return path === '/';
-    }
-    // 检查是否匹配路径或锚点
-    if (path === item.path || path.startsWith(item.path + '#')) {
-      return true;
-    }
-    // 检查子项是否激活
-    if (item.children) {
-      return item.children.some((child) => {
-        if (child.path.includes('#')) {
-          // 锚点链接，检查基础路径
-          const basePath = child.path.split('#')[0];
-          return path === basePath || path.startsWith(basePath + '#');
-        }
-        return path === child.path || path.startsWith(child.path + '/');
-      });
-    }
-    return false;
-  };
 
   /**
    * 检查子项是否激活
