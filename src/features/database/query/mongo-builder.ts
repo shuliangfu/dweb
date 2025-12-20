@@ -219,6 +219,33 @@ export class MongoQueryBuilder {
   }
 
   /**
+   * 统计符合条件的记录数量
+   * @returns 记录数量
+   * 
+   * @example
+   * const total = await builder.from('users').count();
+   * const activeUsers = await builder.from('users').find({ status: 'active' }).count();
+   */
+  async count(): Promise<number> {
+    if (!this.collection) {
+      throw new Error('Collection name is required');
+    }
+    
+    const db = (this.adapter as any).getDatabase();
+    if (!db) {
+      throw new Error('Database not connected');
+    }
+
+    try {
+      const count = await db.collection(this.collection).countDocuments(this.filter, this.options);
+      return count;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`MongoDB count error: ${message}`);
+    }
+  }
+
+  /**
    * 获取查询过滤器（用于调试）
    * @returns 过滤器对象
    */

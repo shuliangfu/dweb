@@ -268,7 +268,7 @@ export interface SessionConfig {
   mongodb?: {
     collection?: string; // 集合名称，默认为 'sessions'
   };
-  kv?: {} | undefined;
+  kv?: Record<PropertyKey, never> | undefined; // Deno KV 不需要额外配置，使用全局 Deno.kv
   file?: {
     dir?: string; // 文件存储目录，默认为 '.sessions'
   };
