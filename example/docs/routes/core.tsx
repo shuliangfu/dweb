@@ -228,12 +228,12 @@ export default async function handler({ req, res }: ApiRoute) {
             <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
               中间件系统
             </h2>
-
-            <h3 className="text-2xl font-bold text-gray-900 mt-10 mb-4">创建中间件</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
-              中间件是一个函数，接收请求、响应和下一个中间件函数作为参数：
+              DWeb 框架提供了强大的中间件系统，允许你在请求处理流程中插入自定义逻辑。
             </p>
-            <CodeBlock code={middlewareCode} language="typescript" />
+            <p className="text-gray-700 leading-relaxed mb-4">
+              详细说明请查看 <a href="/core/middleware" className="text-indigo-600 hover:text-indigo-700 hover:underline">中间件系统文档</a>。
+            </p>
           </section>
 
           {/* 插件系统 */}
@@ -241,12 +241,12 @@ export default async function handler({ req, res }: ApiRoute) {
             <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
               插件系统
             </h2>
-
-            <h3 className="text-2xl font-bold text-gray-900 mt-10 mb-4">创建插件</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
-              插件是一个对象，包含名称和初始化函数：
+              DWeb 框架提供了灵活的插件系统，可以扩展框架功能。
             </p>
-            <CodeBlock code={pluginCode} language="typescript" />
+            <p className="text-gray-700 leading-relaxed mb-4">
+              详细说明请查看 <a href="/core/plugin" className="text-indigo-600 hover:text-indigo-700 hover:underline">插件系统文档</a>。
+            </p>
           </section>
 
           {/* API 路由 */}
@@ -254,13 +254,12 @@ export default async function handler({ req, res }: ApiRoute) {
             <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
               API 路由
             </h2>
-
-            <h3 className="text-2xl font-bold text-gray-900 mt-10 mb-4">创建 API 路由</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
-              在 <code className="bg-gray-100 px-2 py-1 rounded">routes/api/</code> 目录下创建 API
-              路由文件：
+              DWeb 框架支持创建 API 路由，用于处理 HTTP 请求并返回 JSON 或其他格式的响应。
             </p>
-            <CodeBlock code={apiRouteCode} language="typescript" />
+            <p className="text-gray-700 leading-relaxed mb-4">
+              详细说明请查看 <a href="/core/api" className="text-indigo-600 hover:text-indigo-700 hover:underline">API 路由文档</a>。
+            </p>
           </section>
 
           {/* API 参考 */}
