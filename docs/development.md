@@ -201,8 +201,11 @@ export default defineConfig({
 ### 使用 Deno 调试器
 
 ```bash
-# 启动调试服务器
+# 启动调试服务器（如果有 main.ts 文件）
 deno run --inspect-brk -A main.ts
+
+# 或使用 CLI 命令（推荐）
+deno run --inspect-brk -A @dreamer/dweb/cli dev
 
 # 在 Chrome DevTools 中连接
 # chrome://inspect
