@@ -25,8 +25,14 @@ export default function App({ children }: AppProps) {
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>docs</title>
+        <meta name="description" content="DWeb 框架的完整使用文档和 API 参考" />
+        <meta name="keywords" content="DWeb, Deno, Preact, Web 框架, 文档" />
+        <title>DWeb 框架文档</title>
         <link rel="stylesheet" href="/assets/style.css" />
+        {/* Prism.js 用于代码高亮 */}
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
+        <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
       </head>
       <body>
         {/* 使用 dangerouslySetInnerHTML 插入已渲染的页面内容 */}
