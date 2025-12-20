@@ -26,6 +26,93 @@ export type MongoWhereCondition = {
 };
 
 /**
+ * 字段类型
+ * 
+ * - string: 字符串类型
+ * - number: 数字类型（整数或浮点数）
+ * - bigint: 大整数类型
+ * - decimal: 精确小数类型（用于货币等需要精确计算的场景）
+ * - boolean: 布尔类型
+ * - date: 日期时间类型
+ * - timestamp: 时间戳类型（数字）
+ * - array: 数组类型
+ * - object: 对象类型
+ * - json: JSON 类型（与 object 类似，但更明确）
+ * - enum: 枚举类型
+ * - uuid: UUID 类型
+ * - text: 长文本类型
+ * - binary: 二进制数据类型
+ * - any: 任意类型
+ */
+export type FieldType = 
+  | 'string' 
+  | 'number' 
+  | 'bigint' 
+  | 'decimal' 
+  | 'boolean' 
+  | 'date' 
+  | 'timestamp' 
+  | 'array' 
+  | 'object' 
+  | 'json' 
+  | 'enum' 
+  | 'uuid' 
+  | 'text' 
+  | 'binary' 
+  | 'any';
+
+/**
+ * 验证规则
+ */
+export interface ValidationRule {
+  required?: boolean; // 必填
+  type?: FieldType; // 类型
+  min?: number; // 最小值（数字）或最小长度（字符串）
+  max?: number; // 最大值（数字）或最大长度（字符串）
+  length?: number; // 固定长度（字符串）
+  pattern?: RegExp | string; // 正则表达式
+  enum?: any[]; // 枚举值
+  custom?: (value: any) => boolean | string; // 自定义验证函数，返回 true 或错误信息
+  message?: string; // 自定义错误信息
+}
+
+/**
+ * 字段定义
+ */
+export interface FieldDefinition {
+  type: FieldType;
+  enum?: any[]; // 枚举值（当 type 为 'enum' 时使用）
+  default?: any; // 默认值
+  validate?: ValidationRule; // 验证规则
+  get?: (value: any) => any; // Getter 函数
+  set?: (value: any) => any; // Setter 函数
+}
+
+/**
+ * 模型字段定义
+ */
+export type ModelSchema = {
+  [fieldName: string]: FieldDefinition;
+};
+
+/**
+ * 验证错误
+ */
+export class ValidationError extends Error {
+  field: string;
+  
+  constructor(
+    field: string,
+    message: string,
+  ) {
+    super(`Validation failed for field "${field}": ${message}`);
+    this.name = 'ValidationError';
+    this.field = field;
+  }
+}
+
+
+/**
  * MongoDB 模型基类
  * 所有 MongoDB 模型都应该继承此类
  */
@@ -46,6 +133,27 @@ export abstract class MongoModel {
   static adapter: DatabaseAdapter | null = null;
 
   /**
+   * 字段定义（可选，用于定义字段类型、默认值和验证规则）
+   * 
+   * @example
+   * static schema: ModelSchema = {
+   *   name: {
+   *     type: 'string',
+   *     validate: { required: true, min: 2, max: 50 }
+   *   },
+   *   email: {
+   *     type: 'string',
+   *     validate: { required: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ }
+   *   },
+   *   age: {
+   *     type: 'number',
+   *     validate: { min: 0, max: 150 }
+   *   }
+   * };
+   */
+  static schema?: ModelSchema;
+
+  /**
    * 实例数据
    */
   [key: string]: any;
@@ -56,6 +164,361 @@ export abstract class MongoModel {
    */
   static setAdapter(adapter: DatabaseAdapter): void {
     this.adapter = adapter;
+  }
+
+  /**
+   * 验证字段值
+   * @param fieldName 字段名
+   * @param value 字段值
+   * @param fieldDef 字段定义
+   * @throws ValidationError 验证失败时抛出
+   */
+  private static validateField(fieldName: string, value: any, fieldDef: FieldDefinition): void {
+    const rule = fieldDef.validate;
+    
+    // 必填验证（优先检查字段定义中的 required，然后是验证规则中的）
+    const isRequired = rule?.required || false;
+    if (isRequired && (value === null || value === undefined || value === '')) {
+      throw new ValidationError(fieldName, rule?.message || `${fieldName} is required`);
+    }
+
+    // 如果值为空且不是必填，跳过其他验证
+    if (value === null || value === undefined || value === '') {
+      return;
+    }
+
+    // 枚举类型验证（优先检查字段定义中的 enum）
+    if (fieldDef.type === 'enum') {
+      if (fieldDef.enum && !fieldDef.enum.includes(value)) {
+        throw new ValidationError(
+          fieldName,
+          rule?.message || `${fieldName} must be one of: ${fieldDef.enum.join(', ')}`
+        );
+      }
+    }
+
+    // 类型验证
+    if (fieldDef.type && fieldDef.type !== 'enum') {
+      const typeCheck = this.checkType(value, fieldDef.type);
+      if (!typeCheck) {
+        throw new ValidationError(
+          fieldName,
+          rule?.message || `${fieldName} must be of type ${fieldDef.type}`
+        );
+      }
+    }
+
+    // 验证规则中的类型验证（如果字段定义中没有指定类型）
+    if (rule?.type && !fieldDef.type) {
+      const typeCheck = this.checkType(value, rule.type);
+      if (!typeCheck) {
+        throw new ValidationError(
+          fieldName,
+          rule.message || `${fieldName} must be of type ${rule.type}`
+        );
+      }
+    }
+
+    // 验证规则中的枚举验证（如果字段定义中没有指定枚举）
+    if (rule?.enum && fieldDef.type !== 'enum' && !rule.enum.includes(value)) {
+      throw new ValidationError(
+        fieldName,
+        rule.message || `${fieldName} must be one of: ${rule.enum.join(', ')}`
+      );
+    }
+
+    // 字符串长度验证
+    if (rule && typeof value === 'string') {
+      if (rule.length !== undefined && value.length !== rule.length) {
+        throw new ValidationError(
+          fieldName,
+          rule.message || `${fieldName} must be exactly ${rule.length} characters`
+        );
+      }
+      if (rule.min !== undefined && value.length < rule.min) {
+        throw new ValidationError(
+          fieldName,
+          rule.message || `${fieldName} must be at least ${rule.min} characters`
+        );
+      }
+      if (rule.max !== undefined && value.length > rule.max) {
+        throw new ValidationError(
+          fieldName,
+          rule.message || `${fieldName} must be at most ${rule.max} characters`
+        );
+      }
+    }
+
+    // 数字范围验证
+    if (rule && typeof value === 'number') {
+      if (rule.min !== undefined && value < rule.min) {
+        throw new ValidationError(
+          fieldName,
+          rule.message || `${fieldName} must be at least ${rule.min}`
+        );
+      }
+      if (rule.max !== undefined && value > rule.max) {
+        throw new ValidationError(
+          fieldName,
+          rule.message || `${fieldName} must be at most ${rule.max}`
+        );
+      }
+    }
+
+    // 正则表达式验证
+    if (rule?.pattern) {
+      const regex = typeof rule.pattern === 'string' ? new RegExp(rule.pattern) : rule.pattern;
+      if (typeof value === 'string' && !regex.test(value)) {
+        throw new ValidationError(
+          fieldName,
+          rule.message || `${fieldName} format is invalid`
+        );
+      }
+    }
+
+    // 自定义验证
+    if (rule?.custom) {
+      const result = rule.custom(value);
+      if (result !== true) {
+        throw new ValidationError(
+          fieldName,
+          rule.message || (typeof result === 'string' ? result : `${fieldName} validation failed`)
+        );
+      }
+    }
+  }
+
+  /**
+   * 检查值是否符合指定类型
+   */
+  private static checkType(value: any, type: FieldType): boolean {
+    switch (type) {
+      case 'string': {
+        return typeof value === 'string';
+      }
+      case 'number': {
+        return typeof value === 'number' && !isNaN(value);
+      }
+      case 'bigint': {
+        return typeof value === 'bigint' || (typeof value === 'number' && Number.isInteger(value));
+      }
+      case 'decimal': {
+        return typeof value === 'number' && !isNaN(value);
+      }
+      case 'boolean': {
+        return typeof value === 'boolean';
+      }
+      case 'date': {
+        return value instanceof Date || !isNaN(Date.parse(value));
+      }
+      case 'timestamp': {
+        return typeof value === 'number' && value > 0;
+      }
+      case 'array': {
+        return Array.isArray(value);
+      }
+      case 'object': {
+        return typeof value === 'object' && value !== null && !Array.isArray(value);
+      }
+      case 'json': {
+        // JSON 类型可以是对象或数组
+        return typeof value === 'object' && value !== null;
+      }
+      case 'enum': {
+        // 枚举类型检查在 validateField 中处理
+        return true;
+      }
+      case 'uuid': {
+        // UUID 格式验证: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        return typeof value === 'string' && uuidRegex.test(value);
+      }
+      case 'text': {
+        return typeof value === 'string';
+      }
+      case 'binary': {
+        // 检查是否为二进制数据类型
+        if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
+          return true;
+        }
+        // 在 Node.js 环境中检查 Buffer
+        if (typeof globalThis !== 'undefined' && 'Buffer' in globalThis) {
+          const Buffer = (globalThis as any).Buffer;
+          if (Buffer && Buffer.isBuffer && Buffer.isBuffer(value)) {
+            return true;
+          }
+        }
+        return false;
+      }
+      case 'any': {
+        return true;
+      }
+      default: {
+        return false;
+      }
+    }
+  }
+
+  /**
+   * 处理字段值（应用默认值、类型转换、getter/setter）
+   * @param data 原始数据
+   * @returns 处理后的数据
+   */
+  private static processFields(data: Record<string, any>): Record<string, any> {
+    const schema = this.schema;
+    if (!schema) {
+      return data;
+    }
+
+    const processed: Record<string, any> = {};
+
+    // 处理已定义的字段
+    for (const [fieldName, fieldDef] of Object.entries(schema)) {
+      let value = data[fieldName];
+
+      // 应用默认值
+      if ((value === null || value === undefined) && fieldDef.default !== undefined) {
+        value = typeof fieldDef.default === 'function' ? fieldDef.default() : fieldDef.default;
+      }
+
+      // 应用 setter
+      if (value !== undefined && fieldDef.set) {
+        value = fieldDef.set(value);
+      }
+
+      // 类型转换（枚举类型不需要转换）
+      if (value !== undefined && fieldDef.type && fieldDef.type !== 'enum') {
+        value = this.convertType(value, fieldDef.type);
+      }
+
+      // 验证
+      if (value !== undefined) {
+        this.validateField(fieldName, value, fieldDef);
+      }
+
+      processed[fieldName] = value;
+    }
+
+    // 保留未定义的字段（如果存在）
+    for (const [key, value] of Object.entries(data)) {
+      if (!(key in processed)) {
+        processed[key] = value;
+      }
+    }
+
+    return processed;
+  }
+
+  /**
+   * 类型转换
+   */
+  private static convertType(value: any, type: FieldType): any {
+    if (value === null || value === undefined) {
+      return value;
+    }
+
+    switch (type) {
+      case 'string': {
+        return String(value);
+      }
+      case 'number': {
+        const num = Number(value);
+        return isNaN(num) ? value : num;
+      }
+      case 'boolean': {
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'string') {
+          return value === 'true' || value === '1';
+        }
+        return Boolean(value);
+      }
+      case 'date': {
+        if (value instanceof Date) return value;
+        const date = new Date(value);
+        return isNaN(date.getTime()) ? value : date;
+      }
+      case 'array': {
+        return Array.isArray(value) ? value : [value];
+      }
+      case 'object': {
+        if (typeof value === 'object' && !Array.isArray(value)) return value;
+        try {
+          return typeof value === 'string' ? JSON.parse(value) : value;
+        } catch {
+          return value;
+        }
+      }
+      case 'json': {
+        if (typeof value === 'object' && value !== null) return value;
+        try {
+          return typeof value === 'string' ? JSON.parse(value) : value;
+        } catch {
+          return value;
+        }
+      }
+      case 'enum': {
+        // 枚举类型不需要转换，直接返回
+        return value;
+      }
+      case 'uuid': {
+        // UUID 保持字符串格式
+        return String(value);
+      }
+      case 'text': {
+        return String(value);
+      }
+      case 'bigint': {
+        if (typeof value === 'bigint') return value;
+        if (typeof value === 'number' && Number.isInteger(value)) return BigInt(value);
+        if (typeof value === 'string') {
+          const num = parseInt(value, 10);
+          return !isNaN(num) ? BigInt(num) : value;
+        }
+        return value;
+      }
+      case 'decimal': {
+        const num = Number(value);
+        return isNaN(num) ? value : num;
+      }
+      case 'timestamp': {
+        if (typeof value === 'number') return value;
+        if (value instanceof Date) return value.getTime();
+        const date = new Date(value);
+        return isNaN(date.getTime()) ? value : date.getTime();
+      }
+      case 'binary': {
+        if (value instanceof Uint8Array || value instanceof ArrayBuffer) return value;
+        if (typeof value === 'string') {
+          // 尝试将字符串转换为 Uint8Array
+          try {
+            return new TextEncoder().encode(value);
+          } catch {
+            return value;
+          }
+        }
+        return value;
+      }
+      default: {
+        return value;
+      }
+    }
+  }
+
+  /**
+   * 验证数据
+   * @param data 要验证的数据
+   * @throws ValidationError 验证失败时抛出
+   */
+  static validate(data: Record<string, any>): void {
+    const schema = this.schema;
+    if (!schema) {
+      return;
+    }
+
+    for (const [fieldName, fieldDef] of Object.entries(schema)) {
+      const value = data[fieldName];
+      this.validateField(fieldName, value, fieldDef);
+    }
   }
 
   /**
@@ -176,16 +639,19 @@ export abstract class MongoModel {
       throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
     }
 
+    // 处理字段（应用默认值、类型转换、验证）
+    const processedData = this.processFields(data);
+
     const adapter = this.adapter as any as MongoDBAdapter;
-    const result = await adapter.execute('insert', this.collectionName, data);
+    const result = await adapter.execute('insert', this.collectionName, processedData);
 
     // MongoDB insert 返回结果包含 insertedId
     let insertedId: any = null;
     if (result && typeof result === 'object') {
       if ('insertedId' in result) {
         insertedId = (result as any).insertedId;
-      } else if ('_id' in data) {
-        insertedId = data._id;
+      } else if ('_id' in processedData) {
+        insertedId = processedData._id;
       }
     }
 
@@ -199,7 +665,7 @@ export abstract class MongoModel {
 
     // 否则返回包含插入数据的实例
     const instance = new (this as any)();
-    Object.assign(instance, data);
+    Object.assign(instance, processedData);
     if (insertedId) {
       instance[this.primaryKey] = insertedId;
     }
@@ -225,6 +691,9 @@ export abstract class MongoModel {
       throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
     }
 
+    // 处理字段（应用默认值、类型转换、验证）
+    const processedData = this.processFields(data);
+
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
@@ -237,7 +706,7 @@ export abstract class MongoModel {
 
     const result = await adapter.execute('update', this.collectionName, {
       filter,
-      update: { $set: data },
+      update: { $set: processedData },
     });
 
     // MongoDB update 返回结果包含 modifiedCount
@@ -385,6 +854,9 @@ export abstract class MongoModel {
       throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
     }
 
+    // 处理字段（应用默认值、类型转换、验证）
+    const processedData = this.processFields(data);
+
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
@@ -397,7 +869,7 @@ export abstract class MongoModel {
 
     const result = await adapter.execute('updateMany', this.collectionName, {
       filter,
-      update: data,
+      update: processedData,
     });
 
     // MongoDB updateMany 返回结果包含 modifiedCount
@@ -537,8 +1009,11 @@ export abstract class MongoModel {
       throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
     }
 
+    // 处理每个数据项（应用默认值、类型转换、验证）
+    const processedArray = dataArray.map(data => this.processFields(data));
+
     const adapter = this.adapter as any as MongoDBAdapter;
-    const result = await adapter.execute('insertMany', this.collectionName, dataArray);
+    const result = await adapter.execute('insertMany', this.collectionName, processedArray);
 
     // MongoDB insertMany 返回结果包含 insertedIds
     const insertedIds: any[] = [];
@@ -923,6 +1398,120 @@ export abstract class MongoModel {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`MongoDB aggregate error: ${message}`);
     }
+  }
+
+  /**
+   * 关联查询：属于（多对一关系）
+   * 例如：Post belongsTo User（一个帖子属于一个用户）
+   * @param RelatedModel 关联的模型类
+   * @param foreignKey 外键字段名（当前模型中的字段）
+   * @param localKey 关联模型的主键字段名（默认为关联模型的 primaryKey）
+   * @returns 关联的模型实例或 null
+   * 
+   * @example
+   * class Post extends MongoModel {
+   *   static collectionName = 'posts';
+   *   async user() {
+   *     return await this.belongsTo(User, 'userId', '_id');
+   *   }
+   * }
+   * const post = await Post.find('...');
+   * const user = await post.user();
+   */
+  async belongsTo<T extends typeof MongoModel>(
+    RelatedModel: T,
+    foreignKey: string,
+    localKey?: string,
+  ): Promise<InstanceType<T> | null> {
+    const Model = this.constructor as typeof MongoModel;
+    if (!Model.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const relatedKey = localKey || RelatedModel.primaryKey;
+    const foreignValue = (this as any)[foreignKey];
+
+    if (!foreignValue) {
+      return null;
+    }
+
+    return await RelatedModel.find({ [relatedKey]: foreignValue });
+  }
+
+  /**
+   * 关联查询：有一个（一对一关系）
+   * 例如：User hasOne Profile（一个用户有一个资料）
+   * @param RelatedModel 关联的模型类
+   * @param foreignKey 外键字段名（关联模型中的字段）
+   * @param localKey 当前模型的主键字段名（默认为当前模型的 primaryKey）
+   * @returns 关联的模型实例或 null
+   * 
+   * @example
+   * class User extends MongoModel {
+   *   static collectionName = 'users';
+   *   async profile() {
+   *     return await this.hasOne(Profile, 'userId', '_id');
+   *   }
+   * }
+   * const user = await User.find('...');
+   * const profile = await user.profile();
+   */
+  async hasOne<T extends typeof MongoModel>(
+    RelatedModel: T,
+    foreignKey: string,
+    localKey?: string,
+  ): Promise<InstanceType<T> | null> {
+    const Model = this.constructor as typeof MongoModel;
+    if (!Model.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const localKeyValue = localKey || Model.primaryKey;
+    const localValue = (this as any)[localKeyValue];
+
+    if (!localValue) {
+      return null;
+    }
+
+    return await RelatedModel.find({ [foreignKey]: localValue });
+  }
+
+  /**
+   * 关联查询：有多个（一对多关系）
+   * 例如：User hasMany Posts（一个用户有多个帖子）
+   * @param RelatedModel 关联的模型类
+   * @param foreignKey 外键字段名（关联模型中的字段）
+   * @param localKey 当前模型的主键字段名（默认为当前模型的 primaryKey）
+   * @returns 关联的模型实例数组
+   * 
+   * @example
+   * class User extends MongoModel {
+   *   static collectionName = 'users';
+   *   async posts() {
+   *     return await this.hasMany(Post, 'userId', '_id');
+   *   }
+   * }
+   * const user = await User.find('...');
+   * const posts = await user.posts();
+   */
+  async hasMany<T extends typeof MongoModel>(
+    RelatedModel: T,
+    foreignKey: string,
+    localKey?: string,
+  ): Promise<InstanceType<T>[]> {
+    const Model = this.constructor as typeof MongoModel;
+    if (!Model.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const localKeyValue = localKey || Model.primaryKey;
+    const localValue = (this as any)[localKeyValue];
+
+    if (!localValue) {
+      return [];
+    }
+
+    return await RelatedModel.findAll({ [foreignKey]: localValue });
   }
 }
 

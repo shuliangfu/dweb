@@ -22,6 +22,92 @@ export type WhereCondition = {
 };
 
 /**
+ * 字段类型
+ * 
+ * - string: 字符串类型
+ * - number: 数字类型（整数或浮点数）
+ * - bigint: 大整数类型
+ * - decimal: 精确小数类型（用于货币等需要精确计算的场景）
+ * - boolean: 布尔类型
+ * - date: 日期时间类型
+ * - timestamp: 时间戳类型（数字）
+ * - array: 数组类型
+ * - object: 对象类型
+ * - json: JSON 类型（与 object 类似，但更明确）
+ * - enum: 枚举类型
+ * - uuid: UUID 类型
+ * - text: 长文本类型
+ * - binary: 二进制数据类型
+ * - any: 任意类型
+ */
+export type FieldType = 
+  | 'string' 
+  | 'number' 
+  | 'bigint' 
+  | 'decimal' 
+  | 'boolean' 
+  | 'date' 
+  | 'timestamp' 
+  | 'array' 
+  | 'object' 
+  | 'json' 
+  | 'enum' 
+  | 'uuid' 
+  | 'text' 
+  | 'binary' 
+  | 'any';
+
+/**
+ * 验证规则
+ */
+export interface ValidationRule {
+  required?: boolean; // 必填
+  type?: FieldType; // 类型
+  min?: number; // 最小值（数字）或最小长度（字符串）
+  max?: number; // 最大值（数字）或最大长度（字符串）
+  length?: number; // 固定长度（字符串）
+  pattern?: RegExp | string; // 正则表达式
+  enum?: any[]; // 枚举值
+  custom?: (value: any) => boolean | string; // 自定义验证函数，返回 true 或错误信息
+  message?: string; // 自定义错误信息
+}
+
+/**
+ * 字段定义
+ */
+export interface FieldDefinition {
+  type: FieldType;
+  enum?: any[]; // 枚举值（当 type 为 'enum' 时使用）
+  default?: any; // 默认值
+  validate?: ValidationRule; // 验证规则
+  get?: (value: any) => any; // Getter 函数
+  set?: (value: any) => any; // Setter 函数
+}
+
+/**
+ * 模型字段定义
+ */
+export type ModelSchema = {
+  [fieldName: string]: FieldDefinition;
+};
+
+/**
+ * 验证错误
+ */
+export class ValidationError extends Error {
+  field: string;
+  
+  constructor(
+    field: string,
+    message: string,
+  ) {
+    super(`Validation failed for field "${field}": ${message}`);
+    this.name = 'ValidationError';
+    this.field = field;
+  }
+}
+
+/**
  * SQL 模型基类
  * 所有 SQL 数据库模型都应该继承此类
  */
@@ -715,6 +801,120 @@ export abstract class SQLModel {
     const results = await this.adapter.query(sql, params);
 
     return results.map((row: any) => row[field]).filter((value: any) => value !== null && value !== undefined);
+  }
+
+  /**
+   * 关联查询：属于（多对一关系）
+   * 例如：Post belongsTo User（一个帖子属于一个用户）
+   * @param RelatedModel 关联的模型类
+   * @param foreignKey 外键字段名（当前模型中的字段）
+   * @param localKey 关联模型的主键字段名（默认为关联模型的 primaryKey）
+   * @returns 关联的模型实例或 null
+   * 
+   * @example
+   * class Post extends SQLModel {
+   *   static tableName = 'posts';
+   *   async user() {
+   *     return await this.belongsTo(User, 'user_id', 'id');
+   *   }
+   * }
+   * const post = await Post.find(1);
+   * const user = await post.user();
+   */
+  async belongsTo<T extends typeof SQLModel>(
+    RelatedModel: T,
+    foreignKey: string,
+    localKey?: string,
+  ): Promise<InstanceType<T> | null> {
+    const Model = this.constructor as typeof SQLModel;
+    if (!Model.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const relatedKey = localKey || RelatedModel.primaryKey;
+    const foreignValue = (this as any)[foreignKey];
+
+    if (!foreignValue) {
+      return null;
+    }
+
+    return await RelatedModel.find({ [relatedKey]: foreignValue });
+  }
+
+  /**
+   * 关联查询：有一个（一对一关系）
+   * 例如：User hasOne Profile（一个用户有一个资料）
+   * @param RelatedModel 关联的模型类
+   * @param foreignKey 外键字段名（关联模型中的字段）
+   * @param localKey 当前模型的主键字段名（默认为当前模型的 primaryKey）
+   * @returns 关联的模型实例或 null
+   * 
+   * @example
+   * class User extends SQLModel {
+   *   static tableName = 'users';
+   *   async profile() {
+   *     return await this.hasOne(Profile, 'user_id', 'id');
+   *   }
+   * }
+   * const user = await User.find(1);
+   * const profile = await user.profile();
+   */
+  async hasOne<T extends typeof SQLModel>(
+    RelatedModel: T,
+    foreignKey: string,
+    localKey?: string,
+  ): Promise<InstanceType<T> | null> {
+    const Model = this.constructor as typeof SQLModel;
+    if (!Model.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const localKeyValue = localKey || Model.primaryKey;
+    const localValue = (this as any)[localKeyValue];
+
+    if (!localValue) {
+      return null;
+    }
+
+    return await RelatedModel.find({ [foreignKey]: localValue });
+  }
+
+  /**
+   * 关联查询：有多个（一对多关系）
+   * 例如：User hasMany Posts（一个用户有多个帖子）
+   * @param RelatedModel 关联的模型类
+   * @param foreignKey 外键字段名（关联模型中的字段）
+   * @param localKey 当前模型的主键字段名（默认为当前模型的 primaryKey）
+   * @returns 关联的模型实例数组
+   * 
+   * @example
+   * class User extends SQLModel {
+   *   static tableName = 'users';
+   *   async posts() {
+   *     return await this.hasMany(Post, 'user_id', 'id');
+   *   }
+   * }
+   * const user = await User.find(1);
+   * const posts = await user.posts();
+   */
+  async hasMany<T extends typeof SQLModel>(
+    RelatedModel: T,
+    foreignKey: string,
+    localKey?: string,
+  ): Promise<InstanceType<T>[]> {
+    const Model = this.constructor as typeof SQLModel;
+    if (!Model.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const localKeyValue = localKey || Model.primaryKey;
+    const localValue = (this as any)[localKeyValue];
+
+    if (!localValue) {
+      return [];
+    }
+
+    return await RelatedModel.findAll({ [foreignKey]: localValue });
   }
 }
 
