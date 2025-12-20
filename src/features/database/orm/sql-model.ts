@@ -108,6 +108,11 @@ export class ValidationError extends Error {
 }
 
 /**
+ * 生命周期钩子函数类型
+ */
+export type LifecycleHook<T = any> = (instance: T, options?: any) => Promise<void> | void;
+
+/**
  * SQL 模型基类
  * 所有 SQL 数据库模型都应该继承此类
  */
@@ -126,6 +131,83 @@ export abstract class SQLModel {
    * 数据库适配器实例（子类需要设置）
    */
   static adapter: DatabaseAdapter | null = null;
+
+  /**
+   * 是否启用软删除（默认为 false）
+   * 启用后，删除操作会设置 deletedAt 字段而不是真正删除记录
+   */
+  static softDelete: boolean = false;
+
+  /**
+   * 软删除字段名（默认为 'deletedAt'）
+   * 可以自定义为 'deleted_at' 等
+   */
+  static deletedAtField: string = 'deletedAt';
+
+  /**
+   * 是否自动管理时间戳
+   * - false: 不启用时间戳
+   * - true: 启用时间戳，使用默认字段名（createdAt, updatedAt）
+   * - 对象: 启用时间戳并自定义字段名，例如 { createdAt: 'created_at', updatedAt: 'updated_at' }
+   * 
+   * @example
+   * static timestamps = true; // 使用默认字段名
+   * static timestamps = { createdAt: 'created_at', updatedAt: 'updated_at' }; // 自定义字段名
+   */
+  static timestamps: boolean | { createdAt?: string; updatedAt?: string } = false;
+
+  /**
+   * 生命周期钩子（可选，子类可以重写这些方法）
+   * 
+   * @example
+   * static async beforeCreate(instance: User) {
+   *   instance.createdAt = new Date();
+   * }
+   * 
+   * static async afterCreate(instance: User) {
+   *   console.log('User created:', instance);
+   * }
+   */
+  static beforeCreate?: LifecycleHook;
+  static afterCreate?: LifecycleHook;
+  static beforeUpdate?: LifecycleHook;
+  static afterUpdate?: LifecycleHook;
+  static beforeDelete?: LifecycleHook;
+  static afterDelete?: LifecycleHook;
+  static beforeSave?: LifecycleHook;
+  static afterSave?: LifecycleHook;
+  static beforeValidate?: LifecycleHook;
+  static afterValidate?: LifecycleHook;
+
+  /**
+   * 查询作用域（可选，子类可以定义常用的查询条件）
+   * 
+   * @example
+   * static scopes = {
+   *   active: () => ({ status: 'active' }),
+   *   published: () => ({ published: true, deletedAt: null }),
+   *   recent: () => ({ createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } })
+   * };
+   * 
+   * // 使用
+   * const activeUsers = await User.scope('active').findAll();
+   */
+  static scopes?: Record<string, () => WhereCondition>;
+
+  /**
+   * 虚拟字段（可选，子类可以定义计算属性）
+   * 
+   * @example
+   * static virtuals = {
+   *   fullName: (instance: User) => `${instance.firstName} ${instance.lastName}`,
+   *   isAdult: (instance: User) => instance.age >= 18
+   * };
+   * 
+   * // 使用
+   * const user = await User.find(1);
+   * console.log(user.fullName); // 自动计算
+   */
+  static virtuals?: Record<string, (instance: any) => any>;
 
   /**
    * 实例数据
@@ -203,6 +285,249 @@ export abstract class SQLModel {
       where: conditions.length > 0 ? conditions.join(' AND ') : '1=1',
       params,
     };
+  }
+
+  /**
+   * 处理字段（应用默认值、类型转换、验证）
+   * @param data 原始数据
+   * @returns 处理后的数据
+   */
+  private static processFields(data: Record<string, any>): Record<string, any> {
+    const schema = (this as any).schema;
+    if (!schema) {
+      return data;
+    }
+
+    const processed: Record<string, any> = { ...data };
+
+    // 遍历 schema 中定义的字段
+    for (const [fieldName, fieldDef] of Object.entries(schema)) {
+      const field = fieldDef as FieldDefinition;
+      const value = processed[fieldName];
+
+      // 应用默认值
+      if (value === undefined && field.default !== undefined) {
+        processed[fieldName] = typeof field.default === 'function'
+          ? field.default()
+          : field.default;
+      }
+
+      // 类型转换
+      if (processed[fieldName] !== undefined) {
+        processed[fieldName] = this.convertType(
+          processed[fieldName],
+          field.type,
+          field.enum,
+        );
+      }
+
+      // Setter
+      if (field.set && processed[fieldName] !== undefined) {
+        processed[fieldName] = field.set(processed[fieldName]);
+      }
+    }
+
+    // 验证
+    SQLModel.validate.call(this, processed);
+
+    return processed;
+  }
+
+  /**
+   * 验证数据
+   * @param data 要验证的数据
+   * @throws ValidationError 验证失败时抛出
+   */
+  static validate(data: Record<string, any>): void {
+    const schema = (this as any).schema;
+    if (!schema) {
+      return;
+    }
+
+    for (const [fieldName, fieldDef] of Object.entries(schema)) {
+      const field = fieldDef as FieldDefinition;
+      const value = data[fieldName];
+      SQLModel.validateField.call(this, fieldName, value, field);
+    }
+  }
+
+  /**
+   * 验证单个字段
+   */
+  private static validateField(
+    fieldName: string,
+    value: any,
+    fieldDef: FieldDefinition,
+  ): void {
+    const rule = fieldDef.validate;
+    if (!rule) {
+      return;
+    }
+
+    // 必填验证
+    if (rule.required && (value === null || value === undefined || value === '')) {
+      throw new ValidationError(fieldName, rule.message || `${fieldName} 是必填字段`);
+    }
+
+    // 如果值为空且不是必填，跳过其他验证
+    if (value === null || value === undefined || value === '') {
+      return;
+    }
+
+    // 类型验证
+    if (rule.type) {
+      const expectedType = rule.type;
+      const actualType = typeof value;
+      if (expectedType === 'array' && !Array.isArray(value)) {
+        throw new ValidationError(fieldName, rule.message || `${fieldName} 必须是数组类型`);
+      }
+      if (expectedType === 'object' && (actualType !== 'object' || Array.isArray(value) || value === null)) {
+        throw new ValidationError(fieldName, rule.message || `${fieldName} 必须是对象类型`);
+      }
+      if (expectedType !== 'array' && expectedType !== 'object' && actualType !== expectedType) {
+        throw new ValidationError(fieldName, rule.message || `${fieldName} 必须是 ${expectedType} 类型`);
+      }
+    }
+
+    // 长度验证（字符串或数组）
+    if (rule.length !== undefined) {
+      const len = Array.isArray(value) ? value.length : String(value).length;
+      if (len !== rule.length) {
+        throw new ValidationError(fieldName, rule.message || `${fieldName} 长度必须是 ${rule.length}`);
+      }
+    }
+
+    // 最小值/最大长度验证
+    if (rule.min !== undefined) {
+      if (typeof value === 'number') {
+        if (value < rule.min) {
+          throw new ValidationError(fieldName, rule.message || `${fieldName} 必须大于等于 ${rule.min}`);
+        }
+      } else {
+        const len = Array.isArray(value) ? value.length : String(value).length;
+        if (len < rule.min) {
+          throw new ValidationError(fieldName, rule.message || `${fieldName} 长度必须大于等于 ${rule.min}`);
+        }
+      }
+    }
+
+    // 最大值/最大长度验证
+    if (rule.max !== undefined) {
+      if (typeof value === 'number') {
+        if (value > rule.max) {
+          throw new ValidationError(fieldName, rule.message || `${fieldName} 必须小于等于 ${rule.max}`);
+        }
+      } else {
+        const len = Array.isArray(value) ? value.length : String(value).length;
+        if (len > rule.max) {
+          throw new ValidationError(fieldName, rule.message || `${fieldName} 长度必须小于等于 ${rule.max}`);
+        }
+      }
+    }
+
+    // 正则表达式验证
+    if (rule.pattern) {
+      const regex = rule.pattern instanceof RegExp ? rule.pattern : new RegExp(rule.pattern);
+      if (!regex.test(String(value))) {
+        throw new ValidationError(fieldName, rule.message || `${fieldName} 格式不正确`);
+      }
+    }
+
+    // 枚举验证
+    if (rule.enum && !rule.enum.includes(value)) {
+      throw new ValidationError(fieldName, rule.message || `${fieldName} 必须是以下之一: ${rule.enum.join(', ')}`);
+    }
+
+    // 自定义验证
+    if (rule.custom) {
+      const result = rule.custom(value);
+      if (result !== true) {
+        throw new ValidationError(fieldName, rule.message || (typeof result === 'string' ? result : `${fieldName} 验证失败`));
+      }
+    }
+  }
+
+  /**
+   * 类型转换
+   */
+  private static convertType(value: any, type: FieldType, enumValues?: any[]): any {
+    if (value === null || value === undefined) {
+      return value;
+    }
+
+    switch (type) {
+      case 'string': {
+        return String(value);
+      }
+      case 'number': {
+        const num = Number(value);
+        return isNaN(num) ? value : num;
+      }
+      case 'boolean': {
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'string') {
+          return value.toLowerCase() === 'true' || value === '1';
+        }
+        return Boolean(value);
+      }
+      case 'date': {
+        if (value instanceof Date) return value;
+        if (typeof value === 'string' || typeof value === 'number') {
+          return new Date(value);
+        }
+        return value;
+      }
+      case 'array': {
+        return Array.isArray(value) ? value : [value];
+      }
+      case 'object': {
+        return typeof value === 'object' ? value : JSON.parse(String(value));
+      }
+      case 'enum': {
+        if (enumValues && enumValues.includes(value)) {
+          return value;
+        }
+        throw new ValidationError('enum', `值必须是以下之一: ${enumValues?.join(', ')}`);
+      }
+      case 'bigint': {
+        return BigInt(value);
+      }
+      case 'decimal': {
+        return parseFloat(String(value));
+      }
+      case 'timestamp': {
+        if (value instanceof Date) return value;
+        if (typeof value === 'string' || typeof value === 'number') {
+          return new Date(value);
+        }
+        return value;
+      }
+      case 'uuid': {
+        return String(value);
+      }
+      case 'text': {
+        return String(value);
+      }
+      case 'binary': {
+        return value;
+      }
+      case 'json': {
+        if (typeof value === 'string') {
+          try {
+            return JSON.parse(value);
+          } catch {
+            return value;
+          }
+        }
+        return typeof value === 'object' ? value : value;
+      }
+      case 'any': {
+        return value;
+      }
+      default: {
+        return value;
+      }
+    }
   }
 
   /**
@@ -291,8 +616,56 @@ export abstract class SQLModel {
       throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
     }
 
-    const keys = Object.keys(data);
-    const values = Object.values(data);
+    // 处理字段（应用默认值、类型转换、验证）
+    let processedData = this.processFields(data);
+
+    // 自动时间戳
+    if (this.timestamps) {
+      const createdAtField = typeof this.timestamps === 'object' 
+        ? (this.timestamps.createdAt || 'createdAt')
+        : 'createdAt';
+      const updatedAtField = typeof this.timestamps === 'object'
+        ? (this.timestamps.updatedAt || 'updatedAt')
+        : 'updatedAt';
+      
+      if (!processedData[createdAtField]) {
+        processedData[createdAtField] = new Date();
+      }
+      if (!processedData[updatedAtField]) {
+        processedData[updatedAtField] = new Date();
+      }
+    }
+
+    // 创建临时实例用于钩子
+    const tempInstance = new (this as any)();
+    Object.assign(tempInstance, processedData);
+
+    // beforeValidate 钩子
+    if (this.beforeValidate) {
+      await this.beforeValidate(tempInstance);
+      processedData = { ...processedData, ...tempInstance };
+    }
+
+    // afterValidate 钩子
+    if (this.afterValidate) {
+      await this.afterValidate(tempInstance);
+      processedData = { ...processedData, ...tempInstance };
+    }
+
+    // beforeCreate 钩子
+    if (this.beforeCreate) {
+      await this.beforeCreate(tempInstance);
+      processedData = { ...processedData, ...tempInstance };
+    }
+
+    // beforeSave 钩子
+    if (this.beforeSave) {
+      await this.beforeSave(tempInstance);
+      processedData = { ...processedData, ...tempInstance };
+    }
+
+    const keys = Object.keys(processedData);
+    const values = Object.values(processedData);
     const placeholders = keys.map(() => '?').join(', ');
 
     const sql = `INSERT INTO ${this.tableName} (${keys.join(', ')}) VALUES (${placeholders})`;
@@ -310,17 +683,46 @@ export abstract class SQLModel {
     }
 
     // 如果插入成功且有 ID，重新查询获取完整记录
+    let instance: InstanceType<T>;
     if (insertedId) {
-      const instance = await this.find(insertedId);
-      if (instance) {
-        return instance as InstanceType<T>;
+      const found = await this.find(insertedId);
+      if (found) {
+        instance = found;
+      } else {
+        instance = new (this as any)();
+        Object.assign(instance, processedData);
+        (instance as any)[this.primaryKey] = insertedId;
+      }
+    } else {
+      // 否则返回包含插入数据的实例
+      instance = new (this as any)();
+      Object.assign(instance, processedData);
+    }
+
+    // 应用虚拟字段
+    if ((this as any).virtuals) {
+      const Model = this as any;
+      for (const [name, getter] of Object.entries(Model.virtuals)) {
+        const getterFn = getter as (instance: any) => any;
+        Object.defineProperty(instance, name, {
+          get: () => getterFn(instance),
+          enumerable: true,
+          configurable: true,
+        });
       }
     }
 
-    // 否则返回包含插入数据的实例
-    const instance = new (this as any)();
-    Object.assign(instance, data);
-    return instance as InstanceType<T>;
+    // afterCreate 钩子
+    if (this.afterCreate) {
+      await this.afterCreate(instance);
+    }
+
+    // afterSave 钩子
+    if (this.afterSave) {
+      await this.afterSave(instance);
+    }
+
+    return instance;
   }
 
   /**
@@ -342,23 +744,90 @@ export abstract class SQLModel {
       throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
     }
 
+    // 先查找要更新的记录
+    let existingInstance: InstanceType<typeof SQLModel> | null = null;
+    if (typeof condition === 'number' || typeof condition === 'string') {
+      existingInstance = await this.find(condition);
+    } else {
+      const results = await this.findAll(condition);
+      existingInstance = results[0] || null;
+    }
+
+    if (!existingInstance) {
+      return 0;
+    }
+
+    // 处理字段（应用默认值、类型转换、验证）
+    let processedData = this.processFields(data);
+
+    // 自动时间戳
+    if (this.timestamps) {
+      const updatedAtField = typeof this.timestamps === 'object'
+        ? (this.timestamps.updatedAt || 'updatedAt')
+        : 'updatedAt';
+      processedData[updatedAtField] = new Date();
+    }
+
+    // 创建临时实例用于钩子
+    const tempInstance = new (this as any)();
+    Object.assign(tempInstance, { ...existingInstance, ...processedData });
+
+    // beforeValidate 钩子
+    if (this.beforeValidate) {
+      await this.beforeValidate(tempInstance);
+      processedData = { ...processedData, ...tempInstance };
+    }
+
+    // afterValidate 钩子
+    if (this.afterValidate) {
+      await this.afterValidate(tempInstance);
+      processedData = { ...processedData, ...tempInstance };
+    }
+
+    // beforeUpdate 钩子
+    if (this.beforeUpdate) {
+      await this.beforeUpdate(tempInstance);
+      processedData = { ...processedData, ...tempInstance };
+    }
+
+    // beforeSave 钩子
+    if (this.beforeSave) {
+      await this.beforeSave(tempInstance);
+      processedData = { ...processedData, ...tempInstance };
+    }
+
     const { where, params: whereParams } = this.buildWhereClause(condition);
-    const keys = Object.keys(data);
-    const values = Object.values(data);
+    const keys = Object.keys(processedData);
+    const values = Object.values(processedData);
     const setClause = keys.map(key => `${key} = ?`).join(', ');
 
     const sql = `UPDATE ${this.tableName} SET ${setClause} WHERE ${where}`;
     const result = await this.adapter.execute(sql, [...values, ...whereParams]);
 
     // 返回影响的行数（如果适配器支持）
-    if (typeof result === 'number') {
-      return result;
+    const affectedRows = (typeof result === 'number')
+      ? result
+      : ((result && typeof result === 'object' && 'affectedRows' in result)
+        ? ((result as any).affectedRows || 0)
+        : 0);
+
+    if (affectedRows > 0) {
+      // 重新查询更新后的记录
+      const updatedInstance = await this.find(condition);
+      if (updatedInstance) {
+        // afterUpdate 钩子
+        if (this.afterUpdate) {
+          await this.afterUpdate(updatedInstance);
+        }
+
+        // afterSave 钩子
+        if (this.afterSave) {
+          await this.afterSave(updatedInstance);
+        }
+      }
     }
-    // 某些适配器可能返回对象，尝试获取 affectedRows
-    if (result && typeof result === 'object' && 'affectedRows' in result) {
-      return (result as any).affectedRows || 0;
-    }
-    return 0;
+
+    return affectedRows;
   }
 
   /**
@@ -378,19 +847,58 @@ export abstract class SQLModel {
       throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
     }
 
+    // 先查找要删除的记录
+    let instanceToDelete: InstanceType<typeof SQLModel> | null = null;
+    if (typeof condition === 'number' || typeof condition === 'string') {
+      instanceToDelete = await this.find(condition);
+    } else {
+      const results = await this.findAll(condition);
+      instanceToDelete = results[0] || null;
+    }
+
+    if (!instanceToDelete) {
+      return 0;
+    }
+
+    // beforeDelete 钩子
+    if (this.beforeDelete) {
+      await this.beforeDelete(instanceToDelete);
+    }
+
     const { where, params } = this.buildWhereClause(condition);
+
+    // 软删除：设置 deletedAt 字段
+    if (this.softDelete) {
+      const sql = `UPDATE ${this.tableName} SET ${this.deletedAtField} = ? WHERE ${where}`;
+      const result = await this.adapter.execute(sql, [new Date(), ...params]);
+      const affectedRows = (typeof result === 'number')
+        ? result
+        : ((result && typeof result === 'object' && 'affectedRows' in result)
+          ? ((result as any).affectedRows || 0)
+          : 0);
+
+      if (affectedRows > 0 && this.afterDelete) {
+        await this.afterDelete(instanceToDelete);
+      }
+      return affectedRows;
+    }
+
+    // 硬删除：真正删除记录
     const sql = `DELETE FROM ${this.tableName} WHERE ${where}`;
     const result = await this.adapter.execute(sql, params);
 
     // 返回影响的行数（如果适配器支持）
-    if (typeof result === 'number') {
-      return result;
+    const affectedRows = (typeof result === 'number')
+      ? result
+      : ((result && typeof result === 'object' && 'affectedRows' in result)
+        ? ((result as any).affectedRows || 0)
+        : 0);
+
+    if (affectedRows > 0 && this.afterDelete) {
+      await this.afterDelete(instanceToDelete);
     }
-    // 某些适配器可能返回对象，尝试获取 affectedRows
-    if (result && typeof result === 'object' && 'affectedRows' in result) {
-      return (result as any).affectedRows || 0;
-    }
-    return 0;
+
+    return affectedRows;
   }
 
   /**

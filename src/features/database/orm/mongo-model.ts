@@ -113,6 +113,11 @@ export class ValidationError extends Error {
 
 
 /**
+ * 生命周期钩子函数类型
+ */
+export type LifecycleHook<T = any> = (instance: T, options?: any) => Promise<void> | void;
+
+/**
  * MongoDB 模型基类
  * 所有 MongoDB 模型都应该继承此类
  */
@@ -152,6 +157,83 @@ export abstract class MongoModel {
    * };
    */
   static schema?: ModelSchema;
+
+  /**
+   * 是否启用软删除（默认为 false）
+   * 启用后，删除操作会设置 deletedAt 字段而不是真正删除记录
+   */
+  static softDelete: boolean = false;
+
+  /**
+   * 软删除字段名（默认为 'deletedAt'）
+   * 可以自定义为 'deleted_at' 等
+   */
+  static deletedAtField: string = 'deletedAt';
+
+  /**
+   * 是否自动管理时间戳
+   * - false: 不启用时间戳
+   * - true: 启用时间戳，使用默认字段名（createdAt, updatedAt）
+   * - 对象: 启用时间戳并自定义字段名，例如 { createdAt: 'created_at', updatedAt: 'updated_at' }
+   * 
+   * @example
+   * static timestamps = true; // 使用默认字段名
+   * static timestamps = { createdAt: 'created_at', updatedAt: 'updated_at' }; // 自定义字段名
+   */
+  static timestamps: boolean | { createdAt?: string; updatedAt?: string } = false;
+
+  /**
+   * 生命周期钩子（可选，子类可以重写这些方法）
+   * 
+   * @example
+   * static async beforeCreate(instance: User) {
+   *   instance.createdAt = new Date();
+   * }
+   * 
+   * static async afterCreate(instance: User) {
+   *   console.log('User created:', instance);
+   * }
+   */
+  static beforeCreate?: LifecycleHook;
+  static afterCreate?: LifecycleHook;
+  static beforeUpdate?: LifecycleHook;
+  static afterUpdate?: LifecycleHook;
+  static beforeDelete?: LifecycleHook;
+  static afterDelete?: LifecycleHook;
+  static beforeSave?: LifecycleHook;
+  static afterSave?: LifecycleHook;
+  static beforeValidate?: LifecycleHook;
+  static afterValidate?: LifecycleHook;
+
+  /**
+   * 查询作用域（可选，子类可以定义常用的查询条件）
+   * 
+   * @example
+   * static scopes = {
+   *   active: () => ({ status: 'active' }),
+   *   published: () => ({ published: true, deletedAt: { $exists: false } }),
+   *   recent: () => ({ createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } })
+   * };
+   * 
+   * // 使用
+   * const activeUsers = await User.scope('active').findAll();
+   */
+  static scopes?: Record<string, () => MongoWhereCondition>;
+
+  /**
+   * 虚拟字段（可选，子类可以定义计算属性）
+   * 
+   * @example
+   * static virtuals = {
+   *   fullName: (instance: User) => `${instance.firstName} ${instance.lastName}`,
+   *   isAdult: (instance: User) => instance.age >= 18
+   * };
+   * 
+   * // 使用
+   * const user = await User.find(1);
+   * console.log(user.fullName); // 自动计算
+   */
+  static virtuals?: Record<string, (instance: any) => any>;
 
   /**
    * 实例数据
@@ -575,7 +657,16 @@ export abstract class MongoModel {
       options.projection = projection;
     }
 
-    const results = await adapter.query(this.collectionName, filter, options);
+    // 软删除：自动过滤已删除的记录
+    let queryFilter = filter;
+    if (this.softDelete) {
+      queryFilter = {
+        ...filter,
+        [this.deletedAtField]: { $exists: false },
+      };
+    }
+
+    const results = await adapter.query(this.collectionName, queryFilter, options);
 
     if (results.length === 0) {
       return null;
@@ -583,6 +674,20 @@ export abstract class MongoModel {
 
     const instance = new (this as any)();
     Object.assign(instance, results[0]);
+    
+    // 应用虚拟字段
+    if ((this as any).virtuals) {
+      const Model = this as any;
+      for (const [name, getter] of Object.entries(Model.virtuals)) {
+        const getterFn = getter as (instance: any) => any;
+        Object.defineProperty(instance, name, {
+          get: () => getterFn(instance),
+          enumerable: true,
+          configurable: true,
+        });
+      }
+    }
+    
     return instance as InstanceType<T>;
   }
 
@@ -619,8 +724,71 @@ export abstract class MongoModel {
     return results.map((row: any) => {
       const instance = new (this as any)();
       Object.assign(instance, row);
+      
+      // 应用虚拟字段
+      if ((this as any).virtuals) {
+        const Model = this as any;
+        for (const [name, getter] of Object.entries(Model.virtuals)) {
+          const getterFn = getter as (instance: any) => any;
+          Object.defineProperty(instance, name, {
+            get: () => getterFn(instance),
+            enumerable: true,
+            configurable: true,
+          });
+        }
+      }
+      
       return instance as InstanceType<T>;
     });
+  }
+
+  /**
+   * 应用查询作用域
+   * @param scopeName 作用域名称
+   * @returns 查询构建器（链式调用）
+   * 
+   * @example
+   * const activeUsers = await User.scope('active').findAll();
+   */
+  static scope(scopeName: string): {
+    findAll: <T extends typeof MongoModel>(
+      this: T,
+      condition?: MongoWhereCondition,
+      fields?: string[],
+    ) => Promise<InstanceType<T>[]>;
+    find: <T extends typeof MongoModel>(
+      this: T,
+      condition?: MongoWhereCondition | string,
+      fields?: string[],
+    ) => Promise<InstanceType<T> | null>;
+    count: (condition?: MongoWhereCondition) => Promise<number>;
+  } {
+    if (!this.scopes || !this.scopes[scopeName]) {
+      throw new Error(`Scope "${scopeName}" is not defined`);
+    }
+
+    const scopeCondition = this.scopes[scopeName]();
+
+    return {
+      findAll: async <T extends typeof MongoModel>(
+        condition: MongoWhereCondition = {},
+        fields?: string[],
+      ): Promise<InstanceType<T>[]> => {
+        return await this.findAll({ ...scopeCondition, ...condition }, fields) as InstanceType<T>[];
+      },
+      find: async <T extends typeof MongoModel>(
+        condition: MongoWhereCondition | string = {},
+        fields?: string[],
+      ): Promise<InstanceType<T> | null> => {
+        if (typeof condition === 'string') {
+          return await this.find(condition, fields) as InstanceType<T> | null;
+        }
+        return await this.find({ ...scopeCondition, ...condition }, fields) as InstanceType<T> | null;
+      },
+      count: async (condition: MongoWhereCondition = {}): Promise<number> => {
+        return await this.count({ ...scopeCondition, ...condition });
+      },
+    };
   }
 
   /**
@@ -640,7 +808,52 @@ export abstract class MongoModel {
     }
 
     // 处理字段（应用默认值、类型转换、验证）
-    const processedData = this.processFields(data);
+    let processedData = this.processFields(data);
+
+    // 自动时间戳
+    if (this.timestamps) {
+      const createdAtField = typeof this.timestamps === 'object' 
+        ? (this.timestamps.createdAt || 'createdAt')
+        : 'createdAt';
+      const updatedAtField = typeof this.timestamps === 'object'
+        ? (this.timestamps.updatedAt || 'updatedAt')
+        : 'updatedAt';
+      
+      if (!processedData[createdAtField]) {
+        processedData[createdAtField] = new Date();
+      }
+      if (!processedData[updatedAtField]) {
+        processedData[updatedAtField] = new Date();
+      }
+    }
+
+    // 创建临时实例用于钩子
+    const tempInstance = new (this as any)();
+    Object.assign(tempInstance, processedData);
+
+    // beforeValidate 钩子
+    if (this.beforeValidate) {
+      await this.beforeValidate(tempInstance);
+      processedData = { ...processedData, ...tempInstance };
+    }
+
+    // afterValidate 钩子
+    if (this.afterValidate) {
+      await this.afterValidate(tempInstance);
+      processedData = { ...processedData, ...tempInstance };
+    }
+
+    // beforeCreate 钩子
+    if (this.beforeCreate) {
+      await this.beforeCreate(tempInstance);
+      processedData = { ...processedData, ...tempInstance };
+    }
+
+    // beforeSave 钩子
+    if (this.beforeSave) {
+      await this.beforeSave(tempInstance);
+      processedData = { ...processedData, ...tempInstance };
+    }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     const result = await adapter.execute('insert', this.collectionName, processedData);
@@ -656,20 +869,33 @@ export abstract class MongoModel {
     }
 
     // 如果插入成功且有 ID，重新查询获取完整记录
+    let instance: InstanceType<T>;
     if (insertedId) {
-      const instance = await this.find(insertedId);
-      if (instance) {
-        return instance as InstanceType<T>;
+      const found = await this.find(insertedId);
+      if (found) {
+        instance = found;
+      } else {
+        instance = new (this as any)();
+        Object.assign(instance, processedData);
+        (instance as any)[this.primaryKey] = insertedId;
       }
+    } else {
+      // 否则返回包含插入数据的实例
+      instance = new (this as any)();
+      Object.assign(instance, processedData);
     }
 
-    // 否则返回包含插入数据的实例
-    const instance = new (this as any)();
-    Object.assign(instance, processedData);
-    if (insertedId) {
-      instance[this.primaryKey] = insertedId;
+    // afterCreate 钩子
+    if (this.afterCreate) {
+      await this.afterCreate(instance);
     }
-    return instance as InstanceType<T>;
+
+    // afterSave 钩子
+    if (this.afterSave) {
+      await this.afterSave(instance);
+    }
+
+    return instance;
   }
 
   /**
@@ -691,8 +917,57 @@ export abstract class MongoModel {
       throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
     }
 
+    // 先查找要更新的记录
+    let existingInstance: InstanceType<typeof MongoModel> | null = null;
+    if (typeof condition === 'string') {
+      existingInstance = await this.find(condition);
+    } else {
+      const results = await this.findAll(condition);
+      existingInstance = results[0] || null;
+    }
+
+    if (!existingInstance) {
+      return 0;
+    }
+
     // 处理字段（应用默认值、类型转换、验证）
-    const processedData = this.processFields(data);
+    let processedData = this.processFields(data);
+
+    // 自动时间戳
+    if (this.timestamps) {
+      const updatedAtField = typeof this.timestamps === 'object'
+        ? (this.timestamps.updatedAt || 'updatedAt')
+        : 'updatedAt';
+      processedData[updatedAtField] = new Date();
+    }
+
+    // 创建临时实例用于钩子
+    const tempInstance = new (this as any)();
+    Object.assign(tempInstance, { ...existingInstance, ...processedData });
+
+    // beforeValidate 钩子
+    if (this.beforeValidate) {
+      await this.beforeValidate(tempInstance);
+      processedData = { ...processedData, ...tempInstance };
+    }
+
+    // afterValidate 钩子
+    if (this.afterValidate) {
+      await this.afterValidate(tempInstance);
+      processedData = { ...processedData, ...tempInstance };
+    }
+
+    // beforeUpdate 钩子
+    if (this.beforeUpdate) {
+      await this.beforeUpdate(tempInstance);
+      processedData = { ...processedData, ...tempInstance };
+    }
+
+    // beforeSave 钩子
+    if (this.beforeSave) {
+      await this.beforeSave(tempInstance);
+      processedData = { ...processedData, ...tempInstance };
+    }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
@@ -710,10 +985,27 @@ export abstract class MongoModel {
     });
 
     // MongoDB update 返回结果包含 modifiedCount
-    if (result && typeof result === 'object' && 'modifiedCount' in result) {
-      return (result as any).modifiedCount || 0;
+    const modifiedCount = (result && typeof result === 'object' && 'modifiedCount' in result)
+      ? ((result as any).modifiedCount || 0)
+      : 0;
+
+    if (modifiedCount > 0) {
+      // 重新查询更新后的记录
+      const updatedInstance = await this.find(filter);
+      if (updatedInstance) {
+        // afterUpdate 钩子
+        if (this.afterUpdate) {
+          await this.afterUpdate(updatedInstance);
+        }
+
+        // afterSave 钩子
+        if (this.afterSave) {
+          await this.afterSave(updatedInstance);
+        }
+      }
     }
-    return 0;
+
+    return modifiedCount;
   }
 
   /**
@@ -733,6 +1025,24 @@ export abstract class MongoModel {
       throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
     }
 
+    // 先查找要删除的记录
+    let instanceToDelete: InstanceType<typeof MongoModel> | null = null;
+    if (typeof condition === 'string') {
+      instanceToDelete = await this.find(condition);
+    } else {
+      const results = await this.findAll(condition);
+      instanceToDelete = results[0] || null;
+    }
+
+    if (!instanceToDelete) {
+      return 0;
+    }
+
+    // beforeDelete 钩子
+    if (this.beforeDelete) {
+      await this.beforeDelete(instanceToDelete);
+    }
+
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
@@ -743,15 +1053,37 @@ export abstract class MongoModel {
       filter = condition;
     }
 
+    // 软删除：设置 deletedAt 字段
+    if (this.softDelete) {
+      const result = await adapter.execute('update', this.collectionName, {
+        filter,
+        update: { $set: { [this.deletedAtField]: new Date() } },
+      });
+      const modifiedCount = (result && typeof result === 'object' && 'modifiedCount' in result)
+        ? ((result as any).modifiedCount || 0)
+        : 0;
+
+      if (modifiedCount > 0 && this.afterDelete) {
+        await this.afterDelete(instanceToDelete);
+      }
+      return modifiedCount;
+    }
+
+    // 硬删除：真正删除记录
     const result = await adapter.execute('delete', this.collectionName, {
       filter,
     });
 
     // MongoDB delete 返回结果包含 deletedCount
-    if (result && typeof result === 'object' && 'deletedCount' in result) {
-      return (result as any).deletedCount || 0;
+    const deletedCount = (result && typeof result === 'object' && 'deletedCount' in result)
+      ? ((result as any).deletedCount || 0)
+      : 0;
+
+    if (deletedCount > 0 && this.afterDelete) {
+      await this.afterDelete(instanceToDelete);
     }
-    return 0;
+
+    return deletedCount;
   }
 
   /**
