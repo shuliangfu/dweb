@@ -727,7 +727,9 @@ export class RouteHandler {
       const { getDatabase } = await import('../features/database/access.ts');
 
       // 调用 load 函数，传递 params、query、cookies、session 和数据库
-      return await pageModule.load({
+			return await pageModule.load({
+				req,
+				res,
         params: req.params,
         query: req.query,
         cookies: req.cookies,

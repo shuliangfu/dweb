@@ -330,6 +330,10 @@ export interface ApiRoute {
  * 用于页面组件的 load 函数，提供路由参数、查询参数、Cookie 和 Session 等信息
  */
 export interface LoadContext {
+	/** 请求对象 */
+	req: Request;
+	/** 响应对象 */
+	res: Response;
   /** 路由参数 */
   params: Record<string, string>;
   /** 查询参数 */
