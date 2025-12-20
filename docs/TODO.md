@@ -65,7 +65,7 @@
 - ✅ **Cookie 管理** - 完整的 Cookie 操作（设置、获取、删除）
 - ✅ **Cookie 签名** - Cookie 签名防篡改
 - ✅ **Session 管理** - 完整的 Session 系统
-- ✅ **Session 存储** - 支持内存、文件、Redis 存储
+- ✅ **Session 存储** - 支持内存、KV、MongoDB、Redis 存储
 - ✅ **Session 加密** - Session 数据加密
 
 ### 📦 应用模式

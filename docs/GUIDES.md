@@ -193,15 +193,137 @@ cookie: {
 ```typescript
 session: {
   secret: "your-session-secret",    // Session 加密密钥（必需）
-  store: "memory",                  // 存储方式（"memory" | "file" | "redis"）
+  store: "memory",                  // 存储方式（"memory" | "file" | "redis" | "kv" | "mongodb"）
   maxAge: 86400,                    // 过期时间（秒）
   secure: true,                     // 仅 HTTPS
   httpOnly: true,                   // 禁止 JavaScript 访问
-  redis: {                          // Redis 配置（如果使用 Redis）
+  // Redis 配置（如果使用 Redis 存储）
+  redis: {
     host: "localhost",
     port: 6379,
+    password: "optional-password",  // 可选
+    db: 0,                          // 可选，默认为 0
+  },
+  // MongoDB 配置（如果使用 MongoDB 存储）
+  mongodb: {
+    collection: "sessions",         // 可选，默认为 "sessions"
+  },
+  // KV 配置（如果使用 Deno KV 存储，无需额外配置）
+  // kv: {},
+}
+```
+
+**存储方式说明：**
+
+##### 1. `memory` - 内存存储（默认）
+
+```typescript
+session: {
+  secret: "your-session-secret",
+  store: "memory",  // 默认值，无需额外配置
+  maxAge: 86400,
+}
+```
+
+- **适用场景**: 开发环境、单机部署
+- **优点**: 配置简单，性能高
+- **缺点**: 服务器重启后数据丢失，不支持分布式部署
+
+##### 2. `file` - 文件存储
+
+```typescript
+session: {
+  secret: "your-session-secret",
+  store: "file",
+  maxAge: 86400,
+  file: {
+    dir: ".sessions",  // 可选，默认为 ".sessions"
   },
 }
+```
+
+- **适用场景**: 单机生产环境、需要持久化但不想使用数据库
+- **优点**: 数据持久化，配置简单，无需外部依赖
+- **缺点**: 不适合分布式部署，性能较内存存储低
+
+##### 3. `kv` - Deno KV 存储
+
+```typescript
+session: {
+  secret: "your-session-secret",
+  store: "kv",
+  maxAge: 86400,
+  // kv: {},  // 可选，无需额外配置
+}
+```
+
+- **适用场景**: Deno Deploy 或本地开发
+- **优点**: 支持持久化，Deno 原生支持，无需额外服务
+- **缺点**: 需要 Deno 环境，本地开发需要 `--unstable-kv` 标志
+
+**运行方式：**
+```bash
+# 本地开发需要添加 --unstable-kv 标志
+deno run --unstable-kv -A main.ts
+
+# Deno Deploy 环境无需额外配置
+```
+
+##### 4. `mongodb` - MongoDB 存储
+
+```typescript
+session: {
+  secret: "your-session-secret",
+  store: "mongodb",
+  maxAge: 86400,
+  mongodb: {
+    collection: "sessions",  // 可选，默认为 "sessions"
+  },
+}
+```
+
+- **适用场景**: 生产环境，已有 MongoDB 数据库
+- **优点**: 支持分布式部署，数据持久化，可扩展性强
+- **缺点**: 需要配置 MongoDB 连接（在数据库配置中）
+
+**前置条件：**
+需要在 `database` 配置中配置 MongoDB 连接：
+
+```typescript
+database: {
+  type: "mongodb",
+  url: "mongodb://localhost:27017",
+  dbName: "myapp",
+}
+```
+
+##### 5. `redis` - Redis 存储
+
+```typescript
+session: {
+  secret: "your-session-secret",
+  store: "redis",
+  maxAge: 86400,
+  redis: {
+    host: "localhost",
+    port: 6379,
+    password: "optional-password",  // 可选
+    db: 0,                          // 可选，默认为 0
+  },
+}
+```
+
+- **适用场景**: 分布式部署、高并发场景
+- **优点**: 性能高，支持分布式，支持过期时间自动清理
+- **缺点**: 需要独立的 Redis 服务器
+
+**运行方式：**
+```bash
+# 确保 Redis 服务已启动
+redis-server
+
+# 或使用 Docker
+docker run -d -p 6379:6379 redis:latest
 ```
 
 ### 多应用模式

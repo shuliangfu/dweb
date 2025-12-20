@@ -134,14 +134,39 @@ const config: AppConfig = {
   },
   session: {
     secret: Deno.env.get("SESSION_SECRET") || "your-session-secret",
-    store: "memory", // 或 "file" 或 "redis"
+    store: "memory", // 存储方式：memory | file | redis | kv | mongodb
     maxAge: 86400,
     secure: true,
     httpOnly: true,
-    // Redis 配置（如果使用 Redis 存储）
+    
+    // 根据 store 选择对应的配置：
+    
+    // 1. memory 存储（默认，无需额外配置）
+    // store: "memory",
+    
+    // 2. file 存储
+    // store: "file",
+    // file: {
+    //   dir: ".sessions",  // 可选，默认为 ".sessions"
+    // },
+    
+    // 3. redis 存储
+    // store: "redis",
     // redis: {
     //   host: "localhost",
     //   port: 6379,
+    //   password: "optional-password",  // 可选
+    //   db: 0,                           // 可选，默认为 0
+    // },
+    
+    // 4. kv 存储（Deno KV，无需额外配置）
+    // store: "kv",
+    // kv: {},  // 可选
+    
+    // 5. mongodb 存储（需要先配置 database.mongodb）
+    // store: "mongodb",
+    // mongodb: {
+    //   collection: "sessions",  // 可选，默认为 "sessions"
     // },
   },
   plugins: [
@@ -569,14 +594,33 @@ const config: AppConfig = {
   // Session 配置
   session: {
     secret: Deno.env.get("SESSION_SECRET")!,
-    store: Deno.env.get("SESSION_STORE") as "memory" | "file" | "redis" || "memory",
+    store: Deno.env.get("SESSION_STORE") as "memory" | "file" | "redis" | "kv" | "mongodb" || "memory",
     maxAge: 86400,
     secure: Deno.env.get("NODE_ENV") === "production",
     httpOnly: true,
+    
+    // 根据环境变量动态配置存储方式
+    
+    // 文件存储配置
+    file: Deno.env.get("SESSION_STORE") === "file" ? {
+      dir: Deno.env.get("SESSION_DIR") || ".sessions",
+    } : undefined,
+    
+    // Redis 存储配置
     redis: Deno.env.get("REDIS_HOST") ? {
       host: Deno.env.get("REDIS_HOST")!,
       port: parseInt(Deno.env.get("REDIS_PORT") || "6379"),
+      password: Deno.env.get("REDIS_PASSWORD"),
+      db: parseInt(Deno.env.get("REDIS_DB") || "0"),
     } : undefined,
+    
+    // MongoDB 存储配置（需要先配置 database.mongodb）
+    mongodb: Deno.env.get("SESSION_STORE") === "mongodb" ? {
+      collection: Deno.env.get("SESSION_COLLECTION") || "sessions",
+    } : undefined,
+    
+    // KV 存储配置（Deno KV，无需额外配置）
+    kv: Deno.env.get("SESSION_STORE") === "kv" ? {} : undefined,
   },
   
   // 开发配置
@@ -674,6 +718,115 @@ const config: AppConfig = {
 
 export default config;
 ```
+
+---
+
+## Session 存储方式示例
+
+### 1. Memory 存储（默认）
+
+```typescript
+// dweb.config.ts
+session: {
+  secret: "your-session-secret",
+  store: "memory",  // 默认值
+  maxAge: 86400,
+}
+```
+
+**适用场景**: 开发环境、单机部署
+
+### 2. File 存储
+
+```typescript
+// dweb.config.ts
+session: {
+  secret: "your-session-secret",
+  store: "file",
+  maxAge: 86400,
+  file: {
+    dir: ".sessions",  // 可选，默认为 ".sessions"
+  },
+}
+```
+
+**适用场景**: 单机生产环境、需要持久化但不想使用数据库
+
+### 3. Deno KV 存储
+
+```typescript
+// dweb.config.ts
+session: {
+  secret: "your-session-secret",
+  store: "kv",
+  maxAge: 86400,
+  // kv: {},  // 可选，无需额外配置
+}
+```
+
+**运行方式：**
+```bash
+# 本地开发需要添加 --unstable-kv 标志
+deno run --unstable-kv -A main.ts
+
+# Deno Deploy 环境无需额外配置
+```
+
+**适用场景**: Deno Deploy 或本地开发
+
+### 4. MongoDB 存储
+
+```typescript
+// dweb.config.ts
+import type { AppConfig } from "@dreamer/dweb";
+
+const config: AppConfig = {
+  // 需要先配置数据库连接
+  database: {
+    type: "mongodb",
+    url: "mongodb://localhost:27017",
+    dbName: "myapp",
+  },
+  session: {
+    secret: "your-session-secret",
+    store: "mongodb",
+    maxAge: 86400,
+    mongodb: {
+      collection: "sessions",  // 可选，默认为 "sessions"
+    },
+  },
+};
+```
+
+**适用场景**: 生产环境，已有 MongoDB 数据库
+
+### 5. Redis 存储
+
+```typescript
+// dweb.config.ts
+session: {
+  secret: "your-session-secret",
+  store: "redis",
+  maxAge: 86400,
+  redis: {
+    host: "localhost",
+    port: 6379,
+    password: "optional-password",  // 可选
+    db: 0,                          // 可选，默认为 0
+  },
+}
+```
+
+**运行方式：**
+```bash
+# 确保 Redis 服务已启动
+redis-server
+
+# 或使用 Docker
+docker run -d -p 6379:6379 redis:latest
+```
+
+**适用场景**: 分布式部署、高并发场景
 
 ---
 

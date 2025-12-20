@@ -235,13 +235,25 @@ export interface CookieConfig {
 // Session 配置
 export interface SessionConfig {
   secret: string;
-  store?: 'memory' | 'file' | 'redis';
+  store?: 'memory' | 'file' | 'redis' | 'kv' | 'mongodb';
   maxAge?: number;
   secure?: boolean;
   httpOnly?: boolean;
   redis?: {
     host: string;
     port: number;
+    password?: string;
+    db?: number;
+  };
+  mongodb?: {
+    collection?: string; // 集合名称，默认为 'sessions'
+  };
+  kv?: {
+    // Deno KV 不需要额外配置，使用全局 Deno.kv
+    // 此对象可以为空，仅用于类型标记
+  } | undefined;
+  file?: {
+    dir?: string; // 文件存储目录，默认为 '.sessions'
   };
 }
 
