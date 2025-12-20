@@ -377,14 +377,15 @@ async function compileFile(
         write: false, // 不写入文件，我们手动处理
         external: externalPackages, // 外部依赖不打包（保持 import 语句）
         // 设置 import map（用于解析外部依赖）
-        // 注意：相对路径导入（../ 和 ./）不会被 alias 处理，由 esbuild 自动解析和打包
+        // 注意：只对本地路径使用 alias，JSR/NPM/HTTP 导入已经在 external 中，不需要 alias
+        // 相对路径导入（../ 和 ./）不会被 alias 处理，由 esbuild 自动解析和打包
         alias: Object.fromEntries(
-          Object.entries(importMap).map(([key, value]) => [
-            key,
-            value.startsWith('jsr:') || value.startsWith('npm:') || value.startsWith('http')
-              ? value
-              : path.resolve(cwd, value),
-          ])
+          Object.entries(importMap)
+            .filter(([_, value]) => !value.startsWith('jsr:') && !value.startsWith('npm:') && !value.startsWith('http'))
+            .map(([key, value]) => [
+              key,
+              path.resolve(cwd, value),
+            ])
         ),
       });
 
@@ -470,13 +471,14 @@ async function compileWithCodeSplitting(
     outdir: outDir, // 输出到目录（代码分割需要）
     outbase: cwd, // 保持目录结构
     external: externalPackages,
+    // 只对本地路径使用 alias，JSR/NPM/HTTP 导入已经在 external 中，不需要 alias
     alias: Object.fromEntries(
-      Object.entries(importMap).map(([key, value]) => [
-        key,
-        value.startsWith('jsr:') || value.startsWith('npm:') || value.startsWith('http')
-          ? value
-          : path.resolve(cwd, value),
-      ])
+      Object.entries(importMap)
+        .filter(([_, value]) => !value.startsWith('jsr:') && !value.startsWith('npm:') && !value.startsWith('http'))
+        .map(([key, value]) => [
+          key,
+          path.resolve(cwd, value),
+        ])
     ),
     write: false, // 不写入文件，我们手动处理
   });

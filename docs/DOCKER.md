@@ -165,35 +165,154 @@ lsof -i :3000
 netstat -tulpn | grep 3000
 ```
 
-## 更新应用
+## 更新应用（代码升级）
 
-### 方式一：重新构建
+当您更新了代码后，需要重新构建 Docker 镜像并重启容器。以下是详细的升级步骤：
+
+### 方式一：使用 Docker Compose（推荐，最简单）
+
+这是最简单的方式，一条命令完成所有操作：
 
 ```bash
-# 停止并删除旧容器
-docker-compose down
-
-# 重新构建并启动
+# 在项目根目录执行
+# 这会自动停止旧容器、重新构建镜像、启动新容器
 docker-compose up -d --build
 ```
 
-### 方式二：使用新镜像
+**详细步骤说明：**
+
+1. **确保代码已更新**
+   ```bash
+   # 如果使用 Git，确保已拉取最新代码
+   git pull origin main
+   ```
+
+2. **重新构建并启动**
+   ```bash
+   # 停止旧容器、重新构建镜像、启动新容器
+   docker-compose up -d --build
+   ```
+
+3. **查看升级日志**
+   ```bash
+   # 查看容器启动日志，确认升级成功
+   docker-compose logs -f
+   ```
+
+4. **验证升级是否成功**
+   ```bash
+   # 检查容器状态
+   docker-compose ps
+   
+   # 检查健康状态
+   docker inspect dweb-example | grep -A 10 Health
+   
+   # 访问应用验证
+   curl http://localhost:3000
+   ```
+
+### 方式二：使用 Docker 命令（分步操作）
+
+如果需要更精细的控制，可以分步执行：
 
 ```bash
-# 构建新镜像（在项目根目录）
+# 1. 构建新镜像（在项目根目录）
 docker build -t dweb-example:latest .
 
-# 停止并删除旧容器
+# 2. 停止旧容器
 docker stop dweb-example
+
+# 3. 删除旧容器（可选，docker-compose 会自动处理）
 docker rm dweb-example
 
-# 启动新容器
+# 4. 启动新容器
 docker run -d \
   --name dweb-example \
   -p 3000:3000 \
   --restart unless-stopped \
   dweb-example:latest
+
+# 5. 查看日志确认启动成功
+docker logs -f dweb-example
 ```
+
+### 方式三：零停机升级（使用新容器名）
+
+如果需要零停机时间升级（适用于生产环境）：
+
+```bash
+# 1. 构建新镜像，使用版本标签
+docker build -t dweb-example:v2.0.0 .
+
+# 2. 启动新容器，使用不同的名称和端口（临时）
+docker run -d \
+  --name dweb-example-new \
+  -p 3001:3000 \
+  --restart unless-stopped \
+  dweb-example:v2.0.0
+
+# 3. 验证新容器运行正常
+curl http://localhost:3001
+
+# 4. 如果验证通过，停止旧容器
+docker stop dweb-example
+
+# 5. 删除旧容器
+docker rm dweb-example
+
+# 6. 重新启动新容器，使用标准端口和名称
+docker stop dweb-example-new
+docker rm dweb-example-new
+docker run -d \
+  --name dweb-example \
+  -p 3000:3000 \
+  --restart unless-stopped \
+  dweb-example:v2.0.0
+```
+
+### 清理旧镜像（可选）
+
+升级后，旧的镜像会保留在系统中。可以定期清理：
+
+```bash
+# 查看所有镜像
+docker images | grep dweb-example
+
+# 删除未使用的旧镜像（保留最新的）
+docker image prune -f
+
+# 或者删除特定旧版本镜像
+docker rmi dweb-example:old-tag
+```
+
+### 回滚到旧版本
+
+如果升级后出现问题，可以快速回滚：
+
+```bash
+# 方式一：如果有旧镜像标签
+docker stop dweb-example
+docker rm dweb-example
+docker run -d \
+  --name dweb-example \
+  -p 3000:3000 \
+  --restart unless-stopped \
+  dweb-example:previous-version
+
+# 方式二：使用 Git 回退代码后重新构建
+git checkout previous-commit-hash
+docker-compose up -d --build
+```
+
+### 升级检查清单
+
+升级完成后，建议检查以下项目：
+
+- [ ] 容器状态正常：`docker ps` 显示容器运行中
+- [ ] 健康检查通过：`docker inspect dweb-example | grep Health`
+- [ ] 应用可访问：浏览器访问 http://localhost:3000
+- [ ] 日志无错误：`docker logs dweb-example` 无异常错误
+- [ ] 功能正常：测试关键功能是否正常工作
 
 ## 注意事项
 
