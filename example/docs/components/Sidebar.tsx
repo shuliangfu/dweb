@@ -27,9 +27,9 @@ const navItems: NavItem[] = [
     title: '核心模块',
     path: '/core',
     children: [
-      { title: '服务器 (Server)', path: '/core#server' },
-      { title: '路由系统 (Router)', path: '/core#router' },
-      { title: '配置管理 (Config)', path: '/core#config' },
+      { title: '服务器 (Server)', path: '/core/server' },
+      { title: '路由系统 (Router)', path: '/core/router' },
+      { title: '配置管理 (Config)', path: '/core/config' },
       { title: '中间件系统', path: '/core/middleware' },
       { title: '插件系统', path: '/core/plugin' },
       { title: 'API 路由', path: '/core/api' },
@@ -144,11 +144,24 @@ export default function Sidebar({ currentPath: initialPath = '/' }: SidebarProps
       return;
     }
 
+    let isUpdating = false;
+
     const updatePath = () => {
+      // 防止重复更新
+      if (isUpdating) {
+        return;
+      }
+
       const newPath = globalThis.window.location.pathname;
+      
       // 只有当路径真正改变时才更新，避免不必要的重新渲染
       setCurrentPath((prevPath) => {
         if (prevPath !== newPath) {
+          isUpdating = true;
+          // 使用 requestAnimationFrame 确保在下一帧更新
+          requestAnimationFrame(() => {
+            isUpdating = false;
+          });
           return newPath;
         }
         return prevPath;
@@ -159,18 +172,41 @@ export default function Sidebar({ currentPath: initialPath = '/' }: SidebarProps
     updatePath();
 
     // 监听 popstate 事件（浏览器前进/后退）
-    globalThis.window.addEventListener('popstate', updatePath);
+    const handlePopState = () => {
+      // 延迟更新，确保浏览器已经完成导航
+      setTimeout(updatePath, 10);
+    };
+    globalThis.window.addEventListener('popstate', handlePopState);
 
     // 监听自定义路由事件（框架的路由系统会触发此事件）
-    const handleRouteChange = (e: Event) => {
+    const handleRouteChange = () => {
       // 延迟更新，确保框架的路由系统已经完成导航
-      setTimeout(updatePath, 0);
+      setTimeout(updatePath, 50);
     };
     globalThis.window.addEventListener('routechange', handleRouteChange);
 
+    // 使用 MutationObserver 监听 DOM 变化，作为备用方案
+    const observer = new MutationObserver(() => {
+      // 检查路径是否变化
+      const newPath = globalThis.window.location.pathname;
+      setCurrentPath((prevPath) => {
+        if (prevPath !== newPath) {
+          return newPath;
+        }
+        return prevPath;
+      });
+    });
+
+    // 观察整个文档的变化
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
     return () => {
-      globalThis.window.removeEventListener('popstate', updatePath);
+      globalThis.window.removeEventListener('popstate', handlePopState);
       globalThis.window.removeEventListener('routechange', handleRouteChange);
+      observer.disconnect();
     };
   }, []);
 
@@ -192,17 +228,19 @@ export default function Sidebar({ currentPath: initialPath = '/' }: SidebarProps
 
   // 当路径变化时，更新展开状态
   useEffect(() => {
-    setExpandedItems((prev) => {
-      const expanded = new Set<string>();
-      navItems.forEach((item) => {
-        if (item.children) {
-          const isActive = isItemActive(item, currentPath);
-          if (isActive) {
-            expanded.add(item.path);
-          }
+    // 使用 useMemo 优化，避免每次渲染都重新计算
+    const expanded = new Set<string>();
+    navItems.forEach((item) => {
+      if (item.children) {
+        const isActive = isItemActive(item, currentPath);
+        if (isActive) {
+          expanded.add(item.path);
         }
-      });
-      // 只有当展开状态真正改变时才更新
+      }
+    });
+
+    // 只有当展开状态真正改变时才更新
+    setExpandedItems((prev) => {
       const prevStr = Array.from(prev).sort().join(',');
       const newStr = Array.from(expanded).sort().join(',');
       if (prevStr !== newStr) {
@@ -252,12 +290,12 @@ export default function Sidebar({ currentPath: initialPath = '/' }: SidebarProps
 
   /**
    * 处理链接点击
-   * 注意：框架的路由拦截器会处理实际的导航，这里只需要处理特殊情况
+   * 注意：框架的路由拦截器在捕获阶段已经处理了所有链接，这里只处理特殊情况
    * @param e 点击事件
    * @param href 链接地址
    */
   const handleLinkClick = (e: MouseEvent, href: string) => {
-    // 如果是锚点链接，允许默认行为（框架不会拦截锚点）
+    // 如果是锚点链接，允许默认行为
     if (href.includes('#')) {
       return;
     }
@@ -271,11 +309,12 @@ export default function Sidebar({ currentPath: initialPath = '/' }: SidebarProps
     if (href === currentPath) {
       e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation();
       return;
     }
 
-    // 其他情况让框架的路由拦截器处理，不在这里手动导航
-    // 框架的路由系统会自动处理导航并触发 routechange 事件
+    // 其他情况完全交给框架的路由拦截器处理
+    // 不要在这里做任何操作，避免与框架的路由系统冲突
   };
 
   return (
