@@ -508,7 +508,7 @@ export class RouteHandler {
     let pathname = url.pathname;
 
     // 处理 Chrome DevTools 配置请求
-    if (pathname === '/.well-known/appspecific/com.chrome.devtools.json') {
+    if (pathname.endsWith('/com.chrome.devtools.json')) {
       this.handleDevToolsConfig(res);
       return;
     }
