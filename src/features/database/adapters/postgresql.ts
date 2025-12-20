@@ -10,7 +10,9 @@ import type { DatabaseConfig, DatabaseAdapter } from '../types.ts';
  * PostgreSQL 适配器实现
  */
 export class PostgreSQLAdapter extends BaseAdapter {
-  private sql: ReturnType<typeof postgres> | null = null;
+	private sql: ReturnType<typeof postgres> | null = null;
+	
+	// 
 
   /**
    * 连接 PostgreSQL 数据库
