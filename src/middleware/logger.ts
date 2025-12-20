@@ -56,12 +56,13 @@ export function logger(options: {
           `${req.headers.get('host') || '-'} - - [${timestamp}] "${req.method} ${url.pathname} HTTP/1.1" ${res.status} -`
         );
         break;
-      case 'dev':
+      case 'dev': {
         const statusColor = res.status >= 500 ? '\x1b[31m' : res.status >= 400 ? '\x1b[33m' : '\x1b[32m';
         console.log(
           `${statusColor}${req.method}\x1b[0m ${url.pathname} ${statusColor}${res.status}\x1b[0m ${duration}ms`
         );
         break;
+      }
       case 'short':
         console.log(`${req.method} ${url.pathname} ${res.status} ${duration}ms`);
         break;
