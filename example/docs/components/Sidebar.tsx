@@ -140,22 +140,37 @@ export default function Sidebar({ currentPath: initialPath = '/' }: SidebarProps
 
   // 监听路径变化（客户端路由）
   useEffect(() => {
+    if (typeof globalThis === 'undefined' || !globalThis.window) {
+      return;
+    }
+
     const updatePath = () => {
-      if (typeof globalThis !== 'undefined' && globalThis.location) {
-        setCurrentPath(globalThis.location.pathname);
-      }
+      const newPath = globalThis.window.location.pathname;
+      // 只有当路径真正改变时才更新，避免不必要的重新渲染
+      setCurrentPath((prevPath) => {
+        if (prevPath !== newPath) {
+          return newPath;
+        }
+        return prevPath;
+      });
     };
 
-    // 监听 popstate 事件（浏览器前进/后退）
-    globalThis.addEventListener('popstate', updatePath);
+    // 初始化时设置当前路径
+    updatePath();
 
-    // 监听自定义路由事件（如果有的话）
-    const handleRouteChange = () => updatePath();
-    globalThis.addEventListener('routechange', handleRouteChange);
+    // 监听 popstate 事件（浏览器前进/后退）
+    globalThis.window.addEventListener('popstate', updatePath);
+
+    // 监听自定义路由事件（框架的路由系统会触发此事件）
+    const handleRouteChange = (e: Event) => {
+      // 延迟更新，确保框架的路由系统已经完成导航
+      setTimeout(updatePath, 0);
+    };
+    globalThis.window.addEventListener('routechange', handleRouteChange);
 
     return () => {
-      globalThis.removeEventListener('popstate', updatePath);
-      globalThis.removeEventListener('routechange', handleRouteChange);
+      globalThis.window.removeEventListener('popstate', updatePath);
+      globalThis.window.removeEventListener('routechange', handleRouteChange);
     };
   }, []);
 
@@ -177,16 +192,24 @@ export default function Sidebar({ currentPath: initialPath = '/' }: SidebarProps
 
   // 当路径变化时，更新展开状态
   useEffect(() => {
-    const expanded = new Set<string>();
-    navItems.forEach((item) => {
-      if (item.children) {
-        const isActive = isItemActive(item, currentPath);
-        if (isActive) {
-          expanded.add(item.path);
+    setExpandedItems((prev) => {
+      const expanded = new Set<string>();
+      navItems.forEach((item) => {
+        if (item.children) {
+          const isActive = isItemActive(item, currentPath);
+          if (isActive) {
+            expanded.add(item.path);
+          }
         }
+      });
+      // 只有当展开状态真正改变时才更新
+      const prevStr = Array.from(prev).sort().join(',');
+      const newStr = Array.from(expanded).sort().join(',');
+      if (prevStr !== newStr) {
+        return expanded;
       }
+      return prev;
     });
-    setExpandedItems(expanded);
   }, [currentPath]);
 
   /**
@@ -228,12 +251,13 @@ export default function Sidebar({ currentPath: initialPath = '/' }: SidebarProps
   };
 
   /**
-   * 处理链接点击，使用客户端导航
+   * 处理链接点击
+   * 注意：框架的路由拦截器会处理实际的导航，这里只需要处理特殊情况
    * @param e 点击事件
    * @param href 链接地址
    */
   const handleLinkClick = (e: MouseEvent, href: string) => {
-    // 如果是锚点链接，允许默认行为
+    // 如果是锚点链接，允许默认行为（框架不会拦截锚点）
     if (href.includes('#')) {
       return;
     }
@@ -243,20 +267,15 @@ export default function Sidebar({ currentPath: initialPath = '/' }: SidebarProps
       return;
     }
 
-    // 如果是当前路径，阻止默认行为
+    // 如果是当前路径，阻止默认行为避免重复导航
     if (href === currentPath) {
       e.preventDefault();
+      e.stopPropagation();
       return;
     }
 
-    // 使用客户端导航
-    e.preventDefault();
-    if (typeof globalThis !== 'undefined' && globalThis.history) {
-      globalThis.history.pushState({}, '', href);
-      setCurrentPath(href);
-      // 触发自定义事件，通知其他组件路径已变化
-      globalThis.dispatchEvent(new Event('routechange'));
-    }
+    // 其他情况让框架的路由拦截器处理，不在这里手动导航
+    // 框架的路由系统会自动处理导航并触发 routechange 事件
   };
 
   return (
