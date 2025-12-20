@@ -4,6 +4,8 @@
  */
 
 import type { DatabaseAdapter } from '../types.ts';
+import type { IndexDefinitions } from '../types/index.ts';
+import type { CacheAdapter } from '../cache/cache-adapter.ts';
 
 /**
  * 查询条件类型
@@ -210,9 +212,36 @@ export abstract class SQLModel {
   static virtuals?: Record<string, (instance: any) => any>;
 
   /**
+   * 索引定义（可选，用于定义数据库索引）
+   * 
+   * @example
+   * // 单个字段索引
+   * static indexes = [
+   *   { field: 'email', unique: true },
+   *   { field: 'createdAt', direction: -1 }
+   * ];
+   * 
+   * // 复合索引
+   * static indexes = [
+   *   { fields: { userId: 1, createdAt: -1 }, unique: true }
+   * ];
+   */
+  static indexes?: IndexDefinitions;
+
+  /**
    * 实例数据
    */
   [key: string]: any;
+
+  /**
+   * 缓存适配器（可选，用于查询结果缓存）
+   */
+  static cacheAdapter?: CacheAdapter;
+
+  /**
+   * 缓存 TTL（秒，默认 3600）
+   */
+  static cacheTTL: number = 3600;
 
   /**
    * 设置数据库适配器
@@ -894,8 +923,15 @@ export abstract class SQLModel {
         ? ((result as any).affectedRows || 0)
         : 0);
 
-    if (affectedRows > 0 && this.afterDelete) {
-      await this.afterDelete(instanceToDelete);
+    if (affectedRows > 0) {
+      if (this.afterDelete) {
+        await this.afterDelete(instanceToDelete);
+      }
+
+      // 清除相关缓存
+      if (this.cacheAdapter) {
+        await this.cacheAdapter.deleteByTags([`model:${this.tableName}`]);
+      }
     }
 
     return affectedRows;

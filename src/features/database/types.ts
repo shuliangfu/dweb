@@ -33,6 +33,8 @@ export interface DatabaseConfig {
     min?: number;
     max?: number;
     idleTimeout?: number;
+    maxRetries?: number; // 最大重试次数
+    retryDelay?: number; // 重试延迟（毫秒）
   };
   
   /** MongoDB 特定配置 */
@@ -40,6 +42,8 @@ export interface DatabaseConfig {
     maxPoolSize?: number;
     minPoolSize?: number;
     serverSelectionTimeoutMS?: number;
+    maxRetries?: number; // 最大重试次数
+    retryDelay?: number; // 重试延迟（毫秒）
   };
 }
 

@@ -3,7 +3,7 @@
  */
 
 import { MongoClient, type Db, type MongoClientOptions } from '@mongodb';
-import { BaseAdapter } from './base.ts';
+import { BaseAdapter, type PoolStatus, type HealthCheckResult } from './base.ts';
 import type { DatabaseConfig, DatabaseAdapter } from '../types.ts';
 
 /**
@@ -16,35 +16,74 @@ export class MongoDBAdapter extends BaseAdapter {
 
   /**
    * 连接 MongoDB 数据库
+   * @param retryCount 重试次数（内部使用）
    */
-  async connect(config: DatabaseConfig): Promise<void> {
-    this.validateConfig(config);
-    this.config = config;
+  async connect(config: DatabaseConfig, retryCount: number = 0): Promise<void> {
+    const mongoOptions = config.mongoOptions as (typeof config.mongoOptions & { maxRetries?: number; retryDelay?: number }) | undefined;
+    const maxRetries = mongoOptions?.maxRetries || 3;
+    const retryDelay = mongoOptions?.retryDelay || 1000;
 
-    const { host, port, database, username, password, authSource } = config.connection;
+    try {
+      this.validateConfig(config);
+      this.config = config;
 
-    // 构建连接 URL
-    let url: string;
-    if (username && password) {
-      url = `mongodb://${username}:${password}@${host || 'localhost'}:${port || 27017}/${database || ''}`;
-      if (authSource) {
-        url += `?authSource=${authSource}`;
+      const { host, port, database, username, password, authSource } = config.connection;
+
+      // 构建连接 URL
+      let url: string;
+      if (username && password) {
+        url = `mongodb://${username}:${password}@${host || 'localhost'}:${port || 27017}/${database || ''}`;
+        if (authSource) {
+          url += `?authSource=${authSource}`;
+        }
+      } else {
+        url = `mongodb://${host || 'localhost'}:${port || 27017}/${database || ''}`;
       }
-    } else {
-      url = `mongodb://${host || 'localhost'}:${port || 27017}/${database || ''}`;
+
+      // 创建 MongoDB 客户端
+      const clientOptions: Partial<MongoClientOptions> = {
+        maxPoolSize: config.mongoOptions?.maxPoolSize || 10,
+        minPoolSize: config.mongoOptions?.minPoolSize || 1,
+        serverSelectionTimeoutMS: config.mongoOptions?.serverSelectionTimeoutMS || 5000,
+      };
+      this.client = new MongoClient(url, clientOptions);
+
+      await this.client.connect();
+      this.db = this.client.db(database);
+      this.connected = true;
+    } catch (error) {
+      // 自动重连机制
+      if (retryCount < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, retryDelay * (retryCount + 1)));
+        return await this.connect(config, retryCount + 1);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 检查连接并自动重连
+   */
+  private async ensureConnection(): Promise<void> {
+    if (!this.connected || !this.client) {
+      if (this.config) {
+        await this.connect(this.config);
+      } else {
+        throw new Error('Database not connected and no config available for reconnection');
+      }
     }
 
-    // 创建 MongoDB 客户端
-    const clientOptions: Partial<MongoClientOptions> = {
-      maxPoolSize: config.mongoOptions?.maxPoolSize || 10,
-      minPoolSize: config.mongoOptions?.minPoolSize || 1,
-      serverSelectionTimeoutMS: config.mongoOptions?.serverSelectionTimeoutMS || 5000,
-    };
-    this.client = new MongoClient(url, clientOptions);
-
-    await this.client.connect();
-    this.db = this.client.db(database);
-    this.connected = true;
+    // 定期健康检查
+    const now = Date.now();
+    if (!this.lastHealthCheck || now - this.lastHealthCheck.getTime() > this.healthCheckInterval) {
+      const health = await this.healthCheck();
+      if (!health.healthy) {
+        // 连接不健康，尝试重连
+        if (this.config) {
+          await this.connect(this.config);
+        }
+      }
+    }
   }
 
   /**
@@ -54,15 +93,33 @@ export class MongoDBAdapter extends BaseAdapter {
    * @param options 查询选项（可选）
    */
   async query(collection: string, filter: any = {}, options: any = {}): Promise<any[]> {
+    await this.ensureConnection();
     if (!this.db) {
       throw new Error('Database not connected');
     }
 
+    const startTime = Date.now();
+    const sql = `db.${collection}.find(${JSON.stringify(filter)}, ${JSON.stringify(options)})`;
+
     try {
       const result = await this.db.collection(collection).find(filter, options).toArray();
+      const duration = Date.now() - startTime;
+
+      // 记录查询日志
+      if (this.queryLogger) {
+        await this.queryLogger.log('query', sql, [filter, options], duration);
+      }
+
       return result;
     } catch (error) {
+      const duration = Date.now() - startTime;
       const message = error instanceof Error ? error.message : String(error);
+
+      // 记录错误日志
+      if (this.queryLogger) {
+        await this.queryLogger.log('query', sql, [filter, options], duration, error as Error);
+      }
+
       throw new Error(`MongoDB query error: ${message}`);
     }
   }
@@ -74,6 +131,7 @@ export class MongoDBAdapter extends BaseAdapter {
    * @param data 操作数据（作为第三个参数）
    */
   async execute(operation: string, collection?: string | any[], data?: any): Promise<any> {
+    await this.ensureConnection();
     if (!this.db) {
       throw new Error('Database not connected');
     }
@@ -86,27 +144,53 @@ export class MongoDBAdapter extends BaseAdapter {
       throw new Error('MongoDB execute requires data as third parameter');
     }
 
+    const startTime = Date.now();
+    const sql = `db.${collection}.${operation}(${JSON.stringify(data)})`;
+
     try {
       const coll = this.db.collection(collection);
+      let result: any;
 
       switch (operation) {
         case 'insert':
-          return await coll.insertOne(data);
+          result = await coll.insertOne(data);
+          break;
         case 'insertMany':
-          return await coll.insertMany(data);
+          result = await coll.insertMany(data);
+          break;
         case 'update':
-          return await coll.updateOne(data.filter, { $set: data.update });
+          result = await coll.updateOne(data.filter, { $set: data.update });
+          break;
         case 'updateMany':
-          return await coll.updateMany(data.filter, { $set: data.update });
+          result = await coll.updateMany(data.filter, { $set: data.update });
+          break;
         case 'delete':
-          return await coll.deleteOne(data.filter);
+          result = await coll.deleteOne(data.filter);
+          break;
         case 'deleteMany':
-          return await coll.deleteMany(data.filter);
+          result = await coll.deleteMany(data.filter);
+          break;
         default:
           throw new Error(`Unknown MongoDB operation: ${operation}`);
       }
+
+      const duration = Date.now() - startTime;
+
+      // 记录执行日志
+      if (this.queryLogger) {
+        await this.queryLogger.log('execute', sql, [data], duration);
+      }
+
+      return result;
     } catch (error) {
+      const duration = Date.now() - startTime;
       const message = error instanceof Error ? error.message : String(error);
+
+      // 记录错误日志
+      if (this.queryLogger) {
+        await this.queryLogger.log('execute', sql, [data], duration, error as Error);
+      }
+
       throw new Error(`MongoDB execute error: ${message}`);
     }
   }
@@ -134,6 +218,90 @@ export class MongoDBAdapter extends BaseAdapter {
    */
   getDatabase(): Db | null {
     return this.db;
+  }
+
+  /**
+   * 获取连接池状态
+   */
+  getPoolStatus(): Promise<PoolStatus> {
+    if (!this.client) {
+      return Promise.resolve({
+        total: 0,
+        active: 0,
+        idle: 0,
+        waiting: 0,
+      });
+    }
+
+    // MongoDB 连接池信息
+    const topology = (this.client as any).topology;
+    if (topology && topology.s) {
+      const servers = topology.s.servers || new Map();
+      let total = 0;
+      let active = 0;
+      let idle = 0;
+
+      for (const server of servers.values()) {
+        const pool = server.s?.pool;
+        if (pool) {
+          total += pool.totalConnectionCount || 0;
+          active += pool.availableConnectionCount || 0;
+          idle += (pool.totalConnectionCount || 0) - (pool.availableConnectionCount || 0);
+        }
+      }
+
+      return Promise.resolve({
+        total,
+        active,
+        idle,
+        waiting: 0, // MongoDB 不直接提供等待连接数
+      });
+    }
+
+    return Promise.resolve({
+      total: 0,
+      active: 0,
+      idle: 0,
+      waiting: 0,
+    });
+  }
+
+  /**
+   * 健康检查
+   */
+  async healthCheck(): Promise<HealthCheckResult> {
+    const startTime = Date.now();
+    this.lastHealthCheck = new Date();
+
+    try {
+      if (!this.db) {
+        return {
+          healthy: false,
+          error: 'Database not connected',
+          timestamp: new Date(),
+        };
+      }
+
+      // 执行 ping 操作
+      await this.db.admin().ping();
+      const latency = Date.now() - startTime;
+
+      return {
+        healthy: true,
+        latency,
+        timestamp: new Date(),
+      };
+    } catch (error) {
+      const latency = Date.now() - startTime;
+      const message = error instanceof Error ? error.message : String(error);
+
+      return {
+        healthy: false,
+        latency,
+        error: message,
+        timestamp: new Date(),
+      };
+    }
   }
 
   /**

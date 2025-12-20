@@ -5,6 +5,14 @@
 
 import type { DatabaseAdapter } from '../types.ts';
 import type { MongoDBAdapter } from '../adapters/mongodb.ts';
+import type {
+  IndexDefinitions,
+  SingleFieldIndex,
+  CompoundIndex,
+  TextIndex,
+  GeospatialIndex,
+  IndexDirection,
+} from '../types/index.ts';
 
 /**
  * 查询条件类型
@@ -159,6 +167,33 @@ export abstract class MongoModel {
   static schema?: ModelSchema;
 
   /**
+   * 索引定义（可选，用于定义数据库索引）
+   * 
+   * @example
+   * // 单个字段索引
+   * static indexes = [
+   *   { field: 'email', unique: true },
+   *   { field: 'createdAt', direction: -1 }
+   * ];
+   * 
+   * // 复合索引
+   * static indexes = [
+   *   { fields: { userId: 1, createdAt: -1 }, unique: true }
+   * ];
+   * 
+   * // 文本索引
+   * static indexes = [
+   *   { fields: { title: 10, content: 5 }, type: 'text' }
+   * ];
+   * 
+   * // 地理空间索引
+   * static indexes = [
+   *   { field: 'location', type: '2dsphere' }
+   * ];
+   */
+  static indexes?: IndexDefinitions;
+
+  /**
    * 是否启用软删除（默认为 false）
    * 启用后，删除操作会设置 deletedAt 字段而不是真正删除记录
    */
@@ -239,6 +274,16 @@ export abstract class MongoModel {
    * 实例数据
    */
   [key: string]: any;
+
+  /**
+   * 缓存适配器（可选，用于查询结果缓存）
+   */
+  static cacheAdapter?: import('../cache/cache-adapter.ts').CacheAdapter;
+
+  /**
+   * 缓存 TTL（秒，默认 3600）
+   */
+  static cacheTTL: number = 3600;
 
   /**
    * 设置数据库适配器
@@ -1844,6 +1889,195 @@ export abstract class MongoModel {
     }
 
     return await RelatedModel.findAll({ [foreignKey]: localValue });
+  }
+
+  /**
+   * 创建索引（如果未定义则自动创建）
+   * @param force 是否强制重新创建（删除后重建）
+   * @returns 创建的索引信息数组
+   * 
+   * @example
+   * await User.createIndexes(); // 创建所有定义的索引
+   * await User.createIndexes(true); // 强制重新创建
+   */
+  static async createIndexes(force: boolean = false): Promise<string[]> {
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    if (!this.indexes || this.indexes.length === 0) {
+      return [];
+    }
+
+    const adapter = this.adapter as any as MongoDBAdapter;
+    const db = adapter.getDatabase();
+    if (!db) {
+      throw new Error('Database not connected');
+    }
+
+    const collection = db.collection(this.collectionName);
+    const createdIndexes: string[] = [];
+
+    for (const indexDef of this.indexes) {
+      try {
+        let indexSpec: any;
+        const indexOptions: any = {};
+
+        // 判断索引类型
+        if ('field' in indexDef && !('type' in indexDef && (indexDef.type === '2d' || indexDef.type === '2dsphere'))) {
+          // 单个字段索引
+          const singleIndex = indexDef as SingleFieldIndex;
+          const direction = this.normalizeDirection(singleIndex.direction || 1);
+          indexSpec = { [singleIndex.field]: direction };
+          
+          if (singleIndex.unique) {
+            indexOptions.unique = true;
+          }
+          if (singleIndex.sparse) {
+            indexOptions.sparse = true;
+          }
+          if (singleIndex.name) {
+            indexOptions.name = singleIndex.name;
+          }
+        } else if ('fields' in indexDef && 'type' in indexDef && indexDef.type === 'text') {
+          // 文本索引
+          const textIndex = indexDef as TextIndex;
+          indexSpec = {};
+          for (const field of Object.keys(textIndex.fields)) {
+            indexSpec[field] = 'text';
+          }
+          indexOptions.weights = textIndex.fields;
+          if (textIndex.defaultLanguage) {
+            indexOptions.default_language = textIndex.defaultLanguage;
+          }
+          if (textIndex.name) {
+            indexOptions.name = textIndex.name;
+          }
+        } else if ('field' in indexDef && 'type' in indexDef && (indexDef.type === '2d' || indexDef.type === '2dsphere')) {
+          // 地理空间索引
+          const geoIndex = indexDef as GeospatialIndex;
+          indexSpec = { [geoIndex.field]: geoIndex.type };
+          if (geoIndex.name) {
+            indexOptions.name = geoIndex.name;
+          }
+        } else if ('fields' in indexDef) {
+          // 复合索引
+          const compoundIndex = indexDef as CompoundIndex;
+          indexSpec = {};
+          for (const [field, direction] of Object.entries(compoundIndex.fields)) {
+            indexSpec[field] = this.normalizeDirection(direction);
+          }
+          if (compoundIndex.unique) {
+            indexOptions.unique = true;
+          }
+          if (compoundIndex.name) {
+            indexOptions.name = compoundIndex.name;
+          }
+        }
+
+        if (force) {
+          // 删除现有索引（如果存在）
+          try {
+            const indexName = indexOptions.name || this.generateIndexName(indexSpec);
+            await collection.dropIndex(indexName);
+          } catch {
+            // 索引不存在，忽略错误
+          }
+        }
+
+        // 创建索引
+        const indexName = await collection.createIndex(indexSpec, indexOptions);
+        createdIndexes.push(indexName);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`Failed to create index: ${message}`);
+      }
+    }
+
+    return createdIndexes;
+  }
+
+  /**
+   * 删除所有索引（除了 _id 索引）
+   * @returns 删除的索引名称数组
+   */
+  static async dropIndexes(): Promise<string[]> {
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const adapter = this.adapter as any as MongoDBAdapter;
+    const db = adapter.getDatabase();
+    if (!db) {
+      throw new Error('Database not connected');
+    }
+
+    const collection = db.collection(this.collectionName);
+    const indexes = await collection.indexes();
+    const droppedIndexes: string[] = [];
+
+    for (const index of indexes) {
+      // 跳过 _id 索引或没有名称的索引
+      if (!index.name || index.name === '_id_') {
+        continue;
+      }
+
+      try {
+        await collection.dropIndex(index.name);
+        droppedIndexes.push(index.name);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`Failed to drop index ${index.name}: ${message}`);
+      }
+    }
+
+    return droppedIndexes;
+  }
+
+  /**
+   * 获取所有索引信息
+   * @returns 索引信息数组
+   */
+  static async getIndexes(): Promise<any[]> {
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const adapter = this.adapter as any as MongoDBAdapter;
+    const db = adapter.getDatabase();
+    if (!db) {
+      throw new Error('Database not connected');
+    }
+
+    const collection = db.collection(this.collectionName);
+    return await collection.indexes();
+  }
+
+  /**
+   * 规范化索引方向
+   */
+  private static normalizeDirection(direction: IndexDirection): number {
+    if (typeof direction === 'number') {
+      return direction;
+    }
+    if (direction === 'asc' || direction === 'ascending') {
+      return 1;
+    }
+    if (direction === 'desc' || direction === 'descending') {
+      return -1;
+    }
+    return 1;
+  }
+
+  /**
+   * 生成索引名称
+   */
+  private static generateIndexName(indexSpec: any): string {
+    const parts: string[] = [];
+    for (const [field, direction] of Object.entries(indexSpec)) {
+      parts.push(`${field}_${direction}`);
+    }
+    return parts.join('_');
   }
 }
 
