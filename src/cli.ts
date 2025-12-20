@@ -13,7 +13,7 @@ const command = Deno.args[0];
 
 /**
  * 解析命令和应用名称
- * 支持格式：dev、dev:backend、build:frontend 等
+ * 支持格式：dev、dev:app-name、build:app-name 等
  */
 function parseCommand(cmd: string): { command: string; appName?: string } {
   const parts = cmd.split(':');
@@ -87,9 +87,9 @@ function showHelpAndExit(): never {
   console.log('  deno run -A src/cli.ts start');
   console.log();
   step('多应用模式（指定应用）:');
-  console.log('  deno run -A src/cli.ts dev:backend');
-  console.log('  deno run -A src/cli.ts build:frontend');
-  console.log('  deno run -A src/cli.ts start:backend');
+  console.log('  deno run -A src/cli.ts dev:app-name');
+  console.log('  deno run -A src/cli.ts build:app-name');
+  console.log('  deno run -A src/cli.ts start:app-name');
   console.log();
   Deno.exit(1);
 }
