@@ -181,32 +181,13 @@ export default function Sidebar({ currentPath: initialPath = '/' }: SidebarProps
     // 监听自定义路由事件（框架的路由系统会触发此事件）
     const handleRouteChange = () => {
       // 延迟更新，确保框架的路由系统已经完成导航
-      setTimeout(updatePath, 50);
+      setTimeout(updatePath, 100);
     };
     globalThis.window.addEventListener('routechange', handleRouteChange);
-
-    // 使用 MutationObserver 监听 DOM 变化，作为备用方案
-    const observer = new MutationObserver(() => {
-      // 检查路径是否变化
-      const newPath = globalThis.window.location.pathname;
-      setCurrentPath((prevPath) => {
-        if (prevPath !== newPath) {
-          return newPath;
-        }
-        return prevPath;
-      });
-    });
-
-    // 观察整个文档的变化
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
 
     return () => {
       globalThis.window.removeEventListener('popstate', handlePopState);
       globalThis.window.removeEventListener('routechange', handleRouteChange);
-      observer.disconnect();
     };
   }, []);
 
@@ -288,34 +269,6 @@ export default function Sidebar({ currentPath: initialPath = '/' }: SidebarProps
     });
   };
 
-  /**
-   * 处理链接点击
-   * 注意：框架的路由拦截器在捕获阶段已经处理了所有链接，这里只处理特殊情况
-   * @param e 点击事件
-   * @param href 链接地址
-   */
-  const handleLinkClick = (e: MouseEvent, href: string) => {
-    // 如果是锚点链接，允许默认行为
-    if (href.includes('#')) {
-      return;
-    }
-
-    // 如果是外部链接，允许默认行为
-    if (href.startsWith('http://') || href.startsWith('https://')) {
-      return;
-    }
-
-    // 如果是当前路径，阻止默认行为避免重复导航
-    if (href === currentPath) {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      return;
-    }
-
-    // 其他情况完全交给框架的路由拦截器处理
-    // 不要在这里做任何操作，避免与框架的路由系统冲突
-  };
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 h-screen sticky top-0 overflow-y-auto">
@@ -332,7 +285,6 @@ export default function Sidebar({ currentPath: initialPath = '/' }: SidebarProps
                 <div className="flex items-center">
                   <a
                     href={item.path}
-                    onClick={(e) => handleLinkClick(e, item.path)}
                     className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive && !hasChildren
                         ? 'bg-indigo-100 text-indigo-700'
@@ -372,7 +324,6 @@ export default function Sidebar({ currentPath: initialPath = '/' }: SidebarProps
                         <a
                           key={child.path}
                           href={child.path}
-                          onClick={(e) => handleLinkClick(e, child.path)}
                           className={`block px-3 py-2 rounded-md text-sm transition-colors ${
                             childIsActive
                               ? 'bg-indigo-50 text-indigo-600 font-medium'
