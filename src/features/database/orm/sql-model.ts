@@ -352,5 +352,369 @@ export abstract class SQLModel {
     const deleted = await Model.delete(id);
     return deleted > 0;
   }
+
+  /**
+   * 查找单条记录（find 的别名，更符合常见习惯）
+   * @param condition 查询条件（可以是 ID、条件对象）
+   * @param fields 要查询的字段数组（可选）
+   * @returns 模型实例或 null
+   * 
+   * @example
+   * const user = await User.findOne(1);
+   * const user = await User.findOne({ email: 'user@example.com' });
+   */
+  static async findOne<T extends typeof SQLModel>(
+    this: T,
+    condition: WhereCondition | number | string,
+    fields?: string[],
+  ): Promise<InstanceType<T> | null> {
+    return await this.find(condition, fields);
+  }
+
+  /**
+   * 通过主键 ID 查找记录
+   * @param id 主键值
+   * @param fields 要查询的字段数组（可选）
+   * @returns 模型实例或 null
+   * 
+   * @example
+   * const user = await User.findById(1);
+   * const user = await User.findById(1, ['id', 'name', 'email']);
+   */
+  static async findById<T extends typeof SQLModel>(
+    this: T,
+    id: number | string,
+    fields?: string[],
+  ): Promise<InstanceType<T> | null> {
+    return await this.find(id, fields);
+  }
+
+  /**
+   * 批量更新记录
+   * @param condition 查询条件（可以是 ID、条件对象）
+   * @param data 要更新的数据对象
+   * @returns 更新的记录数
+   * 
+   * @example
+   * await User.updateMany({ status: 'active' }, { lastLogin: new Date() });
+   * await User.updateMany({ age: { $lt: 18 } }, { isMinor: true });
+   */
+  static async updateMany(
+    condition: WhereCondition | number | string,
+    data: Record<string, any>,
+  ): Promise<number> {
+    // updateMany 和 update 在 SQL 中逻辑相同，都是 UPDATE ... WHERE
+    return await this.update(condition, data);
+  }
+
+  /**
+   * 批量删除记录
+   * @param condition 查询条件（可以是 ID、条件对象）
+   * @returns 删除的记录数
+   * 
+   * @example
+   * await User.deleteMany({ status: 'deleted' });
+   * await User.deleteMany({ age: { $lt: 18 } });
+   */
+  static async deleteMany(
+    condition: WhereCondition | number | string,
+  ): Promise<number> {
+    // deleteMany 和 delete 在 SQL 中逻辑相同，都是 DELETE ... WHERE
+    return await this.delete(condition);
+  }
+
+  /**
+   * 统计符合条件的记录数量
+   * @param condition 查询条件（可选，不提供则统计所有记录）
+   * @returns 记录数量
+   * 
+   * @example
+   * const total = await User.count();
+   * const activeUsers = await User.count({ status: 'active' });
+   * const adults = await User.count({ age: { $gte: 18 } });
+   */
+  static async count(
+    condition: WhereCondition = {},
+  ): Promise<number> {
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const { where, params } = this.buildWhereClause(condition);
+    const sql = `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
+    const results = await this.adapter.query(sql, params);
+
+    if (results.length > 0) {
+      return parseInt(results[0].count) || 0;
+    }
+    return 0;
+  }
+
+  /**
+   * 检查记录是否存在
+   * @param condition 查询条件（可以是 ID、条件对象）
+   * @returns 是否存在
+   * 
+   * @example
+   * const exists = await User.exists(1);
+   * const exists = await User.exists({ email: 'user@example.com' });
+   */
+  static async exists(
+    condition: WhereCondition | number | string,
+  ): Promise<boolean> {
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const { where, params } = this.buildWhereClause(condition);
+    const sql = `SELECT EXISTS(SELECT 1 FROM ${this.tableName} WHERE ${where}) as exists`;
+    const results = await this.adapter.query(sql, params);
+
+    if (results.length > 0) {
+      // 不同数据库可能返回不同的布尔值表示方式
+      const exists = results[0].exists;
+      return exists === true || exists === 1 || exists === '1' || exists === 't';
+    }
+    return false;
+  }
+
+  /**
+   * 批量创建记录
+   * @param dataArray 要插入的数据对象数组
+   * @returns 创建的模型实例数组
+   * 
+   * @example
+   * const users = await User.createMany([
+   *   { name: 'John', email: 'john@example.com' },
+   *   { name: 'Jane', email: 'jane@example.com' }
+   * ]);
+   */
+  static async createMany<T extends typeof SQLModel>(
+    this: T,
+    dataArray: Record<string, any>[],
+  ): Promise<InstanceType<T>[]> {
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    if (dataArray.length === 0) {
+      return [];
+    }
+
+    // 获取所有数据的键（假设所有对象有相同的键）
+    const keys = Object.keys(dataArray[0]);
+    const placeholders = keys.map(() => '?').join(', ');
+    
+    // 构建批量插入 SQL
+    const valuesList = dataArray.map(() => `(${placeholders})`).join(', ');
+    const allValues = dataArray.flatMap(data => keys.map(key => data[key]));
+
+    const sql = `INSERT INTO ${this.tableName} (${keys.join(', ')}) VALUES ${valuesList}`;
+    await this.adapter.execute(sql, allValues);
+
+    // 尝试获取最后插入的 ID（如果支持）
+    // 注意：批量插入时，不同数据库获取 ID 的方式不同
+    // 这里简化处理，重新查询所有记录
+    // 实际应用中可能需要根据业务逻辑优化
+    try {
+      // 如果有主键且是自增的，尝试获取插入的 ID 范围
+      // 这里简化处理，返回包含插入数据的实例数组
+      return dataArray.map((data) => {
+        const instance = new (this as any)();
+        Object.assign(instance, data);
+        return instance as InstanceType<T>;
+      });
+    } catch {
+      // 如果获取失败，返回包含插入数据的实例数组
+      return dataArray.map((data) => {
+        const instance = new (this as any)();
+        Object.assign(instance, data);
+        return instance as InstanceType<T>;
+      });
+    }
+  }
+
+  /**
+   * 分页查询
+   * @param condition 查询条件（可选）
+   * @param page 页码（从 1 开始）
+   * @param pageSize 每页数量
+   * @param fields 要查询的字段数组（可选）
+   * @returns 分页结果对象，包含 data（数据数组）、total（总记录数）、page、pageSize、totalPages
+   * 
+   * @example
+   * const result = await User.paginate({ status: 'active' }, 1, 10);
+   * console.log(result.data); // 数据数组
+   * console.log(result.total); // 总记录数
+   * console.log(result.totalPages); // 总页数
+   */
+  static async paginate<T extends typeof SQLModel>(
+    this: T,
+    condition: WhereCondition = {},
+    page: number = 1,
+    pageSize: number = 10,
+    fields?: string[],
+  ): Promise<{
+    data: InstanceType<T>[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }> {
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    // 确保页码和每页数量有效
+    page = Math.max(1, Math.floor(page));
+    pageSize = Math.max(1, Math.floor(pageSize));
+
+    // 计算偏移量
+    const offset = (page - 1) * pageSize;
+
+    // 统计总数
+    const total = await this.count(condition);
+
+    // 构建查询 SQL
+    const { where, params } = this.buildWhereClause(condition);
+    const columns = fields && fields.length > 0 ? fields.join(', ') : '*';
+    const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT ? OFFSET ?`;
+
+    const results = await this.adapter.query(sql, [...params, pageSize, offset]);
+
+    const data = results.map((row: any) => {
+      const instance = new (this as any)();
+      Object.assign(instance, row);
+      return instance as InstanceType<T>;
+    });
+
+    return {
+      data,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  }
+
+  /**
+   * 增加字段值
+   * @param condition 查询条件（可以是 ID、条件对象）
+   * @param field 要增加的字段名
+   * @param amount 增加的数量（默认为 1）
+   * @returns 更新的记录数
+   * 
+   * @example
+   * await User.increment(1, 'views', 1);
+   * await User.increment({ status: 'active' }, 'score', 10);
+   */
+  static async increment(
+    condition: WhereCondition | number | string,
+    field: string,
+    amount: number = 1,
+  ): Promise<number> {
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const { where, params } = this.buildWhereClause(condition);
+    const sql = `UPDATE ${this.tableName} SET ${field} = ${field} + ? WHERE ${where}`;
+    const result = await this.adapter.execute(sql, [amount, ...params]);
+
+    if (typeof result === 'number') {
+      return result;
+    }
+    if (result && typeof result === 'object' && 'affectedRows' in result) {
+      return (result as any).affectedRows || 0;
+    }
+    return 0;
+  }
+
+  /**
+   * 减少字段值
+   * @param condition 查询条件（可以是 ID、条件对象）
+   * @param field 要减少的字段名
+   * @param amount 减少的数量（默认为 1）
+   * @returns 更新的记录数
+   * 
+   * @example
+   * await User.decrement(1, 'views', 1);
+   * await User.decrement({ status: 'active' }, 'score', 10);
+   */
+  static async decrement(
+    condition: WhereCondition | number | string,
+    field: string,
+    amount: number = 1,
+  ): Promise<number> {
+    return await this.increment(condition, field, -amount);
+  }
+
+  /**
+   * 更新或插入记录（如果不存在则插入，存在则更新）
+   * 注意：不同数据库的语法不同，这里使用通用方式实现
+   * PostgreSQL: INSERT ... ON CONFLICT ... DO UPDATE
+   * MySQL: INSERT ... ON DUPLICATE KEY UPDATE
+   * SQLite: INSERT ... ON CONFLICT ... DO UPDATE
+   * 
+   * @param condition 查询条件（用于判断是否存在，通常包含唯一键）
+   * @param data 要更新或插入的数据对象
+   * @returns 更新后的模型实例
+   * 
+   * @example
+   * const user = await User.upsert(
+   *   { email: 'user@example.com' },
+   *   { name: 'John', email: 'user@example.com', age: 25 }
+   * );
+   */
+  static async upsert<T extends typeof SQLModel>(
+    this: T,
+    condition: WhereCondition,
+    data: Record<string, any>,
+  ): Promise<InstanceType<T>> {
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    // 先尝试查找是否存在
+    const existing = await this.find(condition);
+    
+    if (existing) {
+      // 如果存在，更新
+      await this.update(condition, data);
+      // 重新查询获取更新后的记录
+      const updated = await this.find(condition);
+      if (updated) {
+        return updated as InstanceType<T>;
+      }
+    }
+
+    // 如果不存在，插入
+    return await this.create(data);
+  }
+
+  /**
+   * 获取字段的唯一值列表
+   * @param field 字段名
+   * @param condition 查询条件（可选）
+   * @returns 唯一值数组
+   * 
+   * @example
+   * const statuses = await User.distinct('status');
+   * const emails = await User.distinct('email', { age: { $gte: 18 } });
+   */
+  static async distinct(
+    field: string,
+    condition: WhereCondition = {},
+  ): Promise<any[]> {
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const { where, params } = this.buildWhereClause(condition);
+    const sql = `SELECT DISTINCT ${field} FROM ${this.tableName} WHERE ${where}`;
+    const results = await this.adapter.query(sql, params);
+
+    return results.map((row: any) => row[field]).filter((value: any) => value !== null && value !== undefined);
+  }
 }
 
