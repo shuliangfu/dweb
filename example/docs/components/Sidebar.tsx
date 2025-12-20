@@ -144,48 +144,50 @@ export default function Sidebar({ currentPath: initialPath = '/' }: SidebarProps
       return;
     }
 
-    let isUpdating = false;
+    let updateTimer: number | null = null;
 
     const updatePath = () => {
-      // 防止重复更新
-      if (isUpdating) {
-        return;
+      // 清除之前的定时器，防止重复更新
+      if (updateTimer !== null) {
+        clearTimeout(updateTimer);
       }
 
-      const newPath = globalThis.window.location.pathname;
-      
-      // 只有当路径真正改变时才更新，避免不必要的重新渲染
-      setCurrentPath((prevPath) => {
-        if (prevPath !== newPath) {
-          isUpdating = true;
-          // 使用 requestAnimationFrame 确保在下一帧更新
-          requestAnimationFrame(() => {
-            isUpdating = false;
-          });
-          return newPath;
-        }
-        return prevPath;
-      });
+      // 延迟更新，确保路由系统已经完成导航
+      updateTimer = setTimeout(() => {
+        const newPath = globalThis.window.location.pathname;
+        
+        // 只有当路径真正改变时才更新，避免不必要的重新渲染
+        setCurrentPath((prevPath) => {
+          if (prevPath !== newPath) {
+            return newPath;
+          }
+          return prevPath;
+        });
+        
+        updateTimer = null;
+      }, 150) as unknown as number;
     };
 
     // 初始化时设置当前路径
-    updatePath();
+    const initialPath = globalThis.window.location.pathname;
+    setCurrentPath(initialPath);
 
     // 监听 popstate 事件（浏览器前进/后退）
     const handlePopState = () => {
-      // 延迟更新，确保浏览器已经完成导航
-      setTimeout(updatePath, 10);
+      updatePath();
     };
     globalThis.window.addEventListener('popstate', handlePopState);
 
     // 监听自定义路由事件（框架的路由系统会触发此事件）
     const handleRouteChange = () => {
-      // 延迟更新，确保框架的路由系统已经完成导航
-      setTimeout(updatePath, 100);
+      updatePath();
     };
     globalThis.window.addEventListener('routechange', handleRouteChange);
 
     return () => {
+      if (updateTimer !== null) {
+        clearTimeout(updateTimer);
+      }
       globalThis.window.removeEventListener('popstate', handlePopState);
       globalThis.window.removeEventListener('routechange', handleRouteChange);
     };
