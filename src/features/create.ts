@@ -667,17 +667,59 @@ export default function App({ children }: AppProps) {
  * 注意：HTML 文档结构由 _app.tsx 提供
  */
 
+import { useState, useEffect } from 'preact/hooks';
+import type { ComponentChildren } from 'preact';
+
 /**
  * 根布局组件
  * @param props 组件属性
  * @returns JSX 元素
  */
-export default async function RootLayout({ children }: { children: unknown }) {
-  // 获取当前路径（在客户端运行时）
-  let currentPath = '/';
-  if (typeof globalThis !== 'undefined' && globalThis.location) {
-    currentPath = globalThis.location.pathname;
-  }
+export default function RootLayout({ children }: { children: ComponentChildren }) {
+  // 在客户端使用 state 跟踪当前路径
+  const [currentPath, setCurrentPath] = useState<string>(() => {
+    // 初始化：使用 window.location.pathname（客户端）
+    if (typeof globalThis !== 'undefined' && globalThis.window) {
+      return globalThis.window.location.pathname;
+    }
+    return '/';
+  });
+
+  // 监听 URL 地址变化
+  useEffect(() => {
+    if (typeof globalThis === 'undefined' || !globalThis.window) {
+      return;
+    }
+
+    // 更新当前路径
+    const updatePath = () => {
+      setCurrentPath(globalThis.window.location.pathname);
+    };
+
+    // 初始化时设置当前路径
+    updatePath();
+
+    // 监听 popstate 事件（浏览器前进/后退）
+    globalThis.window.addEventListener('popstate', updatePath);
+    
+    // 监听 routechange 事件（客户端路由导航时触发）
+    // 从事件详情中获取路径，确保立即更新
+    const handleRouteChange = (event) => {
+      const customEvent = event;
+      if (customEvent.detail?.path) {
+        setCurrentPath(customEvent.detail.path);
+      } else {
+        // 如果没有路径详情，回退到从 location 获取
+        updatePath();
+      }
+    };
+    globalThis.window.addEventListener('routechange', handleRouteChange);
+
+    return () => {
+      globalThis.window.removeEventListener('popstate', updatePath);
+      globalThis.window.removeEventListener('routechange', handleRouteChange);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -696,7 +738,7 @@ export default async function RootLayout({ children }: { children: unknown }) {
                 className={\`px-3 py-2 rounded-md text-sm font-medium transition-colors \${
                   currentPath === '/' 
                     ? 'bg-indigo-100 text-indigo-700' 
-                    : 'text-gray-700 hover:bg-gray-100'
+                    : 'text-gray-700 bg-gray-50 hover:bg-gray-100'
                 }\`}
               >
                 首页
@@ -706,20 +748,20 @@ export default async function RootLayout({ children }: { children: unknown }) {
                 className={\`px-3 py-2 rounded-md text-sm font-medium transition-colors \${
                   currentPath === '/about' 
                     ? 'bg-indigo-100 text-indigo-700' 
-                    : 'text-gray-700 hover:bg-gray-100'
+                    : 'text-gray-700 bg-gray-50 hover:bg-gray-100'
                 }\`}
               >
                 关于
               </a>
             </div>
           </div>
-          </div>
-        </nav>
+        </div>
+      </nav>
       
       {/* 主内容区域 */}
       <main className="grow">
-          {children}
-        </main>
+        {children}
+      </main>
     </div>
   );
 }
@@ -735,7 +777,7 @@ export default async function RootLayout({ children }: { children: unknown }) {
  */
 
 import { h } from 'preact';
-import { useState, useEffect } from 'preact/hooks';
+import { useState } from 'preact/hooks';
 import Button from '../components/Button.tsx';
 import type { PageProps, LoadContext } from '@dreamer/dweb';
 
@@ -805,9 +847,13 @@ export default function Home({ params: _params, query: _query, data }: PageProps
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 获取 API 数据
+  // 获取 API 数据（手动触发，不自动请求）
   const fetchApiData = async () => {
-    // 只设置 loading 状态，不清空现有数据，避免闪动
+    // 如果正在加载中，不重复请求
+    if (loading) {
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     try {
@@ -817,12 +863,12 @@ export default function Home({ params: _params, query: _query, data }: PageProps
           'Content-Type': 'application/json',
         },
       });
+      
       if (!response.ok) {
         throw new Error(\`请求失败: \${response.status}\`);
       }
       const result = await response.json();
       if (result.success && result.data) {
-        // 接收到新数据后再替换，避免闪动
         setApiData(result.data);
       } else {
         throw new Error(result.message || '获取数据失败');
@@ -834,11 +880,6 @@ export default function Home({ params: _params, query: _query, data }: PageProps
       setLoading(false);
     }
   };
-
-  // 组件挂载时自动获取数据
-  useEffect(() => {
-    fetchApiData();
-  }, []);
 
   // 特性列表
   const features = [
@@ -974,7 +1015,7 @@ export default function Home({ params: _params, query: _query, data }: PageProps
           <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">API 数据获取示例</h2>
           <div className="bg-gray-50 p-8 rounded-lg shadow-md">
             <p className="text-center text-gray-600 mb-6">
-              这是一个使用 Preact Hooks (useState + useEffect) 获取 API 数据的示例
+              这是一个使用 Preact Hooks (useState) 手动获取 API 数据的示例
             </p>
             
             {/* 刷新按钮放在头部 */}

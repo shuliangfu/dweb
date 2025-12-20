@@ -440,8 +440,8 @@ async function initClientSideNavigation(render, jsx) {
           window.dispatchEvent(new CustomEvent('routechange', { 
             detail: { path: normalizedPath } 
           }));
-          // 也触发 popstate 事件，确保兼容性
-          window.dispatchEvent(new PopStateEvent('popstate', { state: { path: normalizedPath } }));
+          // 注意：不要手动触发 popstate 事件，这会导致循环
+          // popstate 事件应该只在浏览器前进/后退时由浏览器自动触发
         } catch (_e) {
           // 静默处理事件触发错误
         }
