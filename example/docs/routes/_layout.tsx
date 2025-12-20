@@ -3,15 +3,15 @@
  * 提供文档网站的整体布局结构，包含侧边栏导航
  */
 
-import { h } from 'preact';
 import Sidebar from '../components/Sidebar.tsx';
+import type { ComponentChildren } from 'preact';
 
 /**
  * 根布局组件
  * @param props 组件属性
  * @returns JSX 元素
  */
-export default async function RootLayout({ children }: { children: unknown }) {
+export default function RootLayout({ children }: { children: ComponentChildren }) {
   // 获取当前路径（在客户端运行时）
   let currentPath = '/';
   if (typeof globalThis !== 'undefined' && globalThis.location) {

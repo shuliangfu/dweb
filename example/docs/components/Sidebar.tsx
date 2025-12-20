@@ -3,8 +3,6 @@
  * 用于文档网站的导航菜单
  */
 
-import { h } from 'preact';
-
 interface NavItem {
   title: string;
   path: string;
@@ -69,11 +67,16 @@ const navItems: NavItem[] = [
  * @returns JSX 元素
  */
 export default function Sidebar({ currentPath = '/' }: SidebarProps) {
+  /**
+   * 检查路径是否激活
+   * @param path 路径
+   * @returns 是否激活
+   */
   const isActive = (path: string) => {
     if (path === '/') {
       return currentPath === '/';
     }
-    return currentPath.startsWith(path);
+    return currentPath === path || currentPath.startsWith(path + '/');
   };
 
   return (
