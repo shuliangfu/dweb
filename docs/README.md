@@ -56,7 +56,7 @@ await server.start(3000);
 
 ## 📖 更多资源
 
-- [GitHub 仓库](https://github.com/dreamer/dweb)
+- [GitHub 仓库](https://github.com/shuliangfu/dweb)
 - [JSR 包](https://jsr.io/@dreamer/dweb)
 - [示例项目](./example)
 
