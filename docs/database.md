@@ -172,6 +172,794 @@ await adapter.execute('insert', 'users', { name: 'John', age: 25 });
 
 ## ORM/ODM 模型
 
+### 完整示例：User 模型
+
+#### SQLModel 完整示例
+
+```typescript
+// models/User.ts
+import { SQLModel, getDatabase } from '@dreamer/dweb/features/database';
+import type { DatabaseAdapter } from '@dreamer/dweb/features/database/types';
+
+/**
+ * 用户模型（PostgreSQL）
+ * 展示完整的模型定义，包括字段、验证、索引、时间戳、软删除、作用域、虚拟字段和生命周期钩子
+ */
+class User extends SQLModel {
+  // 表名
+  static tableName = 'users';
+  
+  // 主键字段名
+  static primaryKey = 'id';
+  
+  // 字段定义和验证规则
+  static schema = {
+    // 用户名：必填，长度 2-50
+    username: {
+      type: 'string',
+      validate: {
+        required: true,
+        min: 2,
+        max: 50,
+        pattern: /^[a-zA-Z0-9_]+$/,
+        custom: (value: string) => {
+          if (value.toLowerCase() === 'admin') {
+            throw new Error('用户名不能为 admin');
+          }
+        }
+      }
+    },
+    
+    // 邮箱：必填，邮箱格式验证
+    email: {
+      type: 'string',
+      validate: {
+        required: true,
+        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        custom: async (value: string) => {
+          // 检查邮箱是否已存在
+          const existing = await User.findOne({ email: value });
+          if (existing) {
+            throw new Error('邮箱已被使用');
+          }
+        }
+      }
+    },
+    
+    // 密码：必填，最小长度 8
+    password: {
+      type: 'string',
+      validate: {
+        required: true,
+        min: 8,
+        pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        custom: (value: string) => {
+          if (!/(?=.*[!@#$%^&*])/.test(value)) {
+            throw new Error('密码必须包含至少一个特殊字符');
+          }
+        }
+      }
+    },
+    
+    // 年龄：可选，范围 0-150
+    age: {
+      type: 'number',
+      validate: {
+        required: false,
+        min: 0,
+        max: 150
+      },
+      default: null
+    },
+    
+    // 状态：枚举类型
+    status: {
+      type: 'enum',
+      values: ['active', 'inactive', 'suspended'],
+      default: 'active',
+      validate: {
+        required: true
+      }
+    },
+    
+    // 角色：数组类型
+    roles: {
+      type: 'array',
+      default: [],
+      validate: {
+        required: false
+      }
+    },
+    
+    // 元数据：对象类型
+    metadata: {
+      type: 'object',
+      default: {},
+      validate: {
+        required: false
+      }
+    },
+    
+    // 余额：小数类型
+    balance: {
+      type: 'decimal',
+      default: 0,
+      validate: {
+        required: false,
+        min: 0
+      }
+    },
+    
+    // 最后登录时间
+    lastLoginAt: {
+      type: 'timestamp',
+      default: null,
+      validate: {
+        required: false
+      }
+    }
+  };
+  
+  // 索引定义
+  static indexes = [
+    // 唯一索引：用户名
+    { field: 'username', unique: true },
+    // 唯一索引：邮箱
+    { field: 'email', unique: true },
+    // 普通索引：状态
+    { field: 'status' },
+    // 复合索引：状态和创建时间
+    { fields: { status: 1, createdAt: -1 } },
+    // 复合索引：角色
+    { fields: { roles: 1 } }
+  ];
+  
+  // 自动时间戳（自定义字段名）
+  static timestamps = {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
+  };
+  
+  // 软删除
+  static softDelete = true;
+  static deletedAtField = 'deleted_at';
+  
+  // 查询作用域
+  static scopes = {
+    // 活跃用户
+    active: () => ({ status: 'active' }),
+    // 非活跃用户
+    inactive: () => ({ status: 'inactive' }),
+    // 最近注册的用户（7天内）
+    recent: () => ({
+      createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+    }),
+    // 有余额的用户
+    withBalance: () => ({ balance: { $gt: 0 } })
+  };
+  
+  // 虚拟字段
+  static virtuals = {
+    // 全名（如果有名字和姓氏）
+    fullName: (instance: User) => {
+      return instance.metadata?.firstName && instance.metadata?.lastName
+        ? `${instance.metadata.firstName} ${instance.metadata.lastName}`
+        : instance.username;
+    },
+    // 是否为新用户（注册7天内）
+    isNew: (instance: User) => {
+      const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      return new Date(instance.createdAt).getTime() > weekAgo;
+    },
+    // 账户状态描述
+    statusText: (instance: User) => {
+      const statusMap: Record<string, string> = {
+        active: '活跃',
+        inactive: '未激活',
+        suspended: '已暂停'
+      };
+      return statusMap[instance.status] || '未知';
+    }
+  };
+  
+  // 生命周期钩子
+  
+  /**
+   * 创建前钩子：加密密码
+   */
+  static async beforeCreate(instance: User) {
+    // 模拟密码加密（实际应使用 bcrypt 等）
+    if (instance.password && !instance.password.startsWith('$2b$')) {
+      // 这里应该使用实际的加密库
+      instance.password = `hashed_${instance.password}`;
+    }
+    // 设置默认角色
+    if (!instance.roles || instance.roles.length === 0) {
+      instance.roles = ['user'];
+    }
+  }
+  
+  /**
+   * 创建后钩子：发送欢迎邮件
+   */
+  static async afterCreate(instance: User) {
+    console.log(`用户 ${instance.username} 创建成功，ID: ${instance.id}`);
+    // 这里可以发送欢迎邮件等操作
+  }
+  
+  /**
+   * 更新前钩子：记录更新时间
+   */
+  static async beforeUpdate(instance: User) {
+    // 如果密码被修改，重新加密
+    if (instance.password && !instance.password.startsWith('$2b$')) {
+      instance.password = `hashed_${instance.password}`;
+    }
+  }
+  
+  /**
+   * 更新后钩子：记录操作日志
+   */
+  static async afterUpdate(instance: User) {
+    console.log(`用户 ${instance.username} 已更新`);
+  }
+  
+  /**
+   * 删除前钩子：检查是否可以删除
+   */
+  static async beforeDelete(instance: User) {
+    if (instance.status === 'active') {
+      throw new Error('不能删除活跃用户，请先停用');
+    }
+  }
+  
+  /**
+   * 删除后钩子：清理相关数据
+   */
+  static async afterDelete(instance: User) {
+    console.log(`用户 ${instance.username} 已删除`);
+    // 这里可以清理用户的关联数据
+  }
+  
+  /**
+   * 保存前钩子：统一处理
+   */
+  static async beforeSave(instance: User) {
+    // 统一的数据处理逻辑
+    if (instance.email) {
+      instance.email = instance.email.toLowerCase().trim();
+    }
+  }
+  
+  /**
+   * 验证前钩子：自定义验证
+   */
+  static async beforeValidate(instance: User) {
+    // 自定义验证逻辑
+    if (instance.age && instance.age < 13) {
+      throw new Error('用户年龄不能小于 13 岁');
+    }
+  }
+  
+  // 实例方法
+  
+  /**
+   * 更新最后登录时间
+   */
+  async updateLastLogin() {
+    await this.update({ lastLoginAt: new Date() });
+  }
+  
+  /**
+   * 增加余额
+   */
+  async addBalance(amount: number) {
+    await this.increment('balance', amount);
+    await this.reload(); // 重新加载以获取最新数据
+  }
+  
+  /**
+   * 减少余额
+   */
+  async deductBalance(amount: number) {
+    if (this.balance < amount) {
+      throw new Error('余额不足');
+    }
+    await this.decrement('balance', amount);
+    await this.reload();
+  }
+  
+  /**
+   * 关联查询：用户的帖子（一对多）
+   */
+  async posts() {
+    const Post = (await import('./Post')).default;
+    return await this.hasMany(Post, 'userId', 'id');
+  }
+  
+  /**
+   * 关联查询：用户的资料（一对一）
+   */
+  async profile() {
+    const Profile = (await import('./Profile')).default;
+    return await this.hasOne(Profile, 'userId', 'id');
+  }
+}
+
+// 初始化：设置数据库适配器
+const db = await getDatabase();
+User.setAdapter(db);
+
+// 创建索引（通常在应用启动时执行）
+await User.createIndexes();
+
+export default User;
+```
+
+#### MongoModel 完整示例
+
+```typescript
+// models/User.ts
+import { MongoModel, getDatabase } from '@dreamer/dweb/features/database';
+import type { DatabaseAdapter } from '@dreamer/dweb/features/database/types';
+
+/**
+ * 用户模型（MongoDB）
+ * 展示完整的模型定义，包括字段、验证、索引、时间戳、软删除、作用域、虚拟字段和生命周期钩子
+ */
+class User extends MongoModel {
+  // 集合名
+  static collectionName = 'users';
+  
+  // 主键字段名（MongoDB 默认使用 _id）
+  static primaryKey = '_id';
+  
+  // 字段定义和验证规则
+  static schema = {
+    // 用户名：必填，长度 2-50
+    username: {
+      type: 'string',
+      validate: {
+        required: true,
+        min: 2,
+        max: 50,
+        pattern: /^[a-zA-Z0-9_]+$/,
+        custom: (value: string) => {
+          if (value.toLowerCase() === 'admin') {
+            throw new Error('用户名不能为 admin');
+          }
+        }
+      }
+    },
+    
+    // 邮箱：必填，邮箱格式验证
+    email: {
+      type: 'string',
+      validate: {
+        required: true,
+        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        custom: async (value: string) => {
+          // 检查邮箱是否已存在
+          const existing = await User.findOne({ email: value });
+          if (existing) {
+            throw new Error('邮箱已被使用');
+          }
+        }
+      }
+    },
+    
+    // 密码：必填，最小长度 8
+    password: {
+      type: 'string',
+      validate: {
+        required: true,
+        min: 8,
+        pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        custom: (value: string) => {
+          if (!/(?=.*[!@#$%^&*])/.test(value)) {
+            throw new Error('密码必须包含至少一个特殊字符');
+          }
+        }
+      }
+    },
+    
+    // 年龄：可选，范围 0-150
+    age: {
+      type: 'number',
+      validate: {
+        required: false,
+        min: 0,
+        max: 150
+      },
+      default: null
+    },
+    
+    // 状态：枚举类型
+    status: {
+      type: 'enum',
+      values: ['active', 'inactive', 'suspended'],
+      default: 'active',
+      validate: {
+        required: true
+      }
+    },
+    
+    // 角色：数组类型
+    roles: {
+      type: 'array',
+      default: [],
+      validate: {
+        required: false
+      }
+    },
+    
+    // 元数据：对象类型
+    metadata: {
+      type: 'object',
+      default: {},
+      validate: {
+        required: false
+      }
+    },
+    
+    // 余额：小数类型
+    balance: {
+      type: 'decimal',
+      default: 0,
+      validate: {
+        required: false,
+        min: 0
+      }
+    },
+    
+    // 位置信息：对象类型（用于地理空间查询）
+    location: {
+      type: 'object',
+      default: null,
+      validate: {
+        required: false,
+        custom: (value: any) => {
+          if (value && (!value.type || value.type !== 'Point' || !value.coordinates)) {
+            throw new Error('位置信息格式错误，应为 GeoJSON Point');
+          }
+        }
+      }
+    },
+    
+    // 最后登录时间
+    lastLoginAt: {
+      type: 'timestamp',
+      default: null,
+      validate: {
+        required: false
+      }
+    },
+    
+    // 标签：数组类型
+    tags: {
+      type: 'array',
+      default: [],
+      validate: {
+        required: false
+      }
+    }
+  };
+  
+  // 索引定义
+  static indexes = [
+    // 唯一索引：用户名
+    { field: 'username', unique: true },
+    // 唯一索引：邮箱
+    { field: 'email', unique: true },
+    // 普通索引：状态
+    { field: 'status' },
+    // 复合索引：状态和创建时间
+    { fields: { status: 1, createdAt: -1 } },
+    // 复合索引：角色
+    { fields: { roles: 1 } },
+    // 文本索引：用户名和邮箱（用于全文搜索）
+    { fields: { username: 'text', email: 'text' }, type: 'text' },
+    // 地理空间索引：位置信息
+    { field: 'location', type: '2dsphere' }
+  ];
+  
+  // 自动时间戳
+  static timestamps = true;
+  
+  // 软删除
+  static softDelete = true;
+  static deletedAtField = 'deletedAt';
+  
+  // 查询作用域
+  static scopes = {
+    // 活跃用户
+    active: () => ({ status: 'active' }),
+    // 非活跃用户
+    inactive: () => ({ status: 'inactive' }),
+    // 最近注册的用户（7天内）
+    recent: () => ({
+      createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+    }),
+    // 有余额的用户
+    withBalance: () => ({ balance: { $gt: 0 } }),
+    // 有位置信息的用户
+    withLocation: () => ({ location: { $ne: null } })
+  };
+  
+  // 虚拟字段
+  static virtuals = {
+    // 全名（如果有名字和姓氏）
+    fullName: (instance: User) => {
+      return instance.metadata?.firstName && instance.metadata?.lastName
+        ? `${instance.metadata.firstName} ${instance.metadata.lastName}`
+        : instance.username;
+    },
+    // 是否为新用户（注册7天内）
+    isNew: (instance: User) => {
+      const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      return new Date(instance.createdAt).getTime() > weekAgo;
+    },
+    // 账户状态描述
+    statusText: (instance: User) => {
+      const statusMap: Record<string, string> = {
+        active: '活跃',
+        inactive: '未激活',
+        suspended: '已暂停'
+      };
+      return statusMap[instance.status] || '未知';
+    },
+    // 年龄组
+    ageGroup: (instance: User) => {
+      if (!instance.age) return '未知';
+      if (instance.age < 18) return '未成年';
+      if (instance.age < 30) return '青年';
+      if (instance.age < 50) return '中年';
+      return '老年';
+    }
+  };
+  
+  // 生命周期钩子
+  
+  /**
+   * 创建前钩子：加密密码
+   */
+  static async beforeCreate(instance: User) {
+    // 模拟密码加密（实际应使用 bcrypt 等）
+    if (instance.password && !instance.password.startsWith('$2b$')) {
+      // 这里应该使用实际的加密库
+      instance.password = `hashed_${instance.password}`;
+    }
+    // 设置默认角色
+    if (!instance.roles || instance.roles.length === 0) {
+      instance.roles = ['user'];
+    }
+    // 确保位置信息格式正确
+    if (instance.location && !instance.location.type) {
+      instance.location = {
+        type: 'Point',
+        coordinates: [instance.location.lng || 0, instance.location.lat || 0]
+      };
+    }
+  }
+  
+  /**
+   * 创建后钩子：发送欢迎邮件
+   */
+  static async afterCreate(instance: User) {
+    console.log(`用户 ${instance.username} 创建成功，ID: ${instance._id}`);
+    // 这里可以发送欢迎邮件等操作
+  }
+  
+  /**
+   * 更新前钩子：记录更新时间
+   */
+  static async beforeUpdate(instance: User) {
+    // 如果密码被修改，重新加密
+    if (instance.password && !instance.password.startsWith('$2b$')) {
+      instance.password = `hashed_${instance.password}`;
+    }
+  }
+  
+  /**
+   * 更新后钩子：记录操作日志
+   */
+  static async afterUpdate(instance: User) {
+    console.log(`用户 ${instance.username} 已更新`);
+  }
+  
+  /**
+   * 删除前钩子：检查是否可以删除
+   */
+  static async beforeDelete(instance: User) {
+    if (instance.status === 'active') {
+      throw new Error('不能删除活跃用户，请先停用');
+    }
+  }
+  
+  /**
+   * 删除后钩子：清理相关数据
+   */
+  static async afterDelete(instance: User) {
+    console.log(`用户 ${instance.username} 已删除`);
+    // 这里可以清理用户的关联数据
+  }
+  
+  /**
+   * 保存前钩子：统一处理
+   */
+  static async beforeSave(instance: User) {
+    // 统一的数据处理逻辑
+    if (instance.email) {
+      instance.email = instance.email.toLowerCase().trim();
+    }
+  }
+  
+  /**
+   * 验证前钩子：自定义验证
+   */
+  static async beforeValidate(instance: User) {
+    // 自定义验证逻辑
+    if (instance.age && instance.age < 13) {
+      throw new Error('用户年龄不能小于 13 岁');
+    }
+  }
+  
+  // 实例方法
+  
+  /**
+   * 更新最后登录时间
+   */
+  async updateLastLogin() {
+    await this.update({ lastLoginAt: new Date() });
+  }
+  
+  /**
+   * 增加余额
+   */
+  async addBalance(amount: number) {
+    await this.increment('balance', amount);
+    await this.reload(); // 重新加载以获取最新数据
+  }
+  
+  /**
+   * 减少余额
+   */
+  async deductBalance(amount: number) {
+    if (this.balance < amount) {
+      throw new Error('余额不足');
+    }
+    await this.decrement('balance', amount);
+    await this.reload();
+  }
+  
+  /**
+   * 关联查询：用户的帖子（一对多）
+   */
+  async posts() {
+    const Post = (await import('./Post')).default;
+    return await this.hasMany(Post, 'userId', '_id');
+  }
+  
+  /**
+   * 关联查询：用户的资料（一对一）
+   */
+  async profile() {
+    const Profile = (await import('./Profile')).default;
+    return await this.hasOne(Profile, 'userId', '_id');
+  }
+  
+  /**
+   * 地理空间查询：查找附近的用户
+   */
+  static async findNearby(longitude: number, latitude: number, maxDistance: number = 1000) {
+    return await User.find({
+      location: {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [longitude, latitude]
+          },
+          $maxDistance: maxDistance
+        }
+      }
+    });
+  }
+  
+  /**
+   * 聚合查询：按状态统计用户数
+   */
+  static async countByStatus() {
+    return await User.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+  }
+}
+
+// 初始化：设置数据库适配器
+const db = await getDatabase();
+User.setAdapter(db);
+
+// 创建索引（通常在应用启动时执行）
+await User.createIndexes();
+
+export default User;
+```
+
+#### 使用示例
+
+```typescript
+// 使用 User 模型
+
+// 1. 创建用户
+const user = await User.create({
+  username: 'john_doe',
+  email: 'john@example.com',
+  password: 'SecurePass123!',
+  age: 25,
+  status: 'active',
+  metadata: {
+    firstName: 'John',
+    lastName: 'Doe'
+  }
+});
+console.log(user.fullName); // 虚拟字段：John Doe
+console.log(user.isNew); // 虚拟字段：true
+
+// 2. 查询用户
+const activeUser = await User.findById(user.id);
+const users = await User.findAll({ age: { $gte: 18 } });
+
+// 3. 使用作用域
+const activeUsers = await User.scope('active').findAll();
+const recentUsers = await User.scope('recent').findAll();
+const usersWithBalance = await User.scope('withBalance').findAll();
+
+// 4. 组合查询
+const result = await User
+  .scope('active')
+  .findAll({ age: { $gte: 18 } })
+  .then(users => users.filter(u => u.isNew));
+
+// 5. 更新用户
+await user.update({ age: 26 });
+await user.updateLastLogin();
+
+// 6. 使用实例方法
+await user.addBalance(100);
+await user.deductBalance(50);
+
+// 7. 关联查询
+const posts = await user.posts();
+const profile = await user.profile();
+
+// 8. 批量操作
+await User.createMany([
+  { username: 'user1', email: 'user1@example.com', password: 'pass123' },
+  { username: 'user2', email: 'user2@example.com', password: 'pass123' }
+]);
+
+await User.updateMany(
+  { status: 'inactive' },
+  { status: 'active' }
+);
+
+// 9. 分页查询
+const page1 = await User.paginate({}, 1, 10);
+console.log(`总数: ${page1.total}, 当前页: ${page1.data.length}`);
+
+// 10. 统计查询
+const count = await User.count({ status: 'active' });
+const exists = await User.exists({ email: 'john@example.com' });
+
+// 11. MongoDB 特有功能
+// 地理空间查询
+const nearbyUsers = await User.findNearby(116.3974, 39.9093, 5000);
+
+// 聚合查询
+const stats = await User.countByStatus();
+```
+
 ### SQLModel (PostgreSQL)
 
 ```typescript
