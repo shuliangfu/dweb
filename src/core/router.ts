@@ -625,5 +625,13 @@ export class Router {
   getAllRoutes(): RouteInfo[] {
     return Array.from(this.routes.values());
   }
+
+  /**
+   * 获取所有中间件文件路径
+   * @returns 中间件文件路径数组
+   */
+  getAllMiddlewares(): string[] {
+    return Array.from(this.middlewares.values());
+  }
 }
 

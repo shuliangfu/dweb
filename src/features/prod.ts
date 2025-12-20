@@ -101,6 +101,20 @@ async function preloadModules(router: Router): Promise<void> {
     );
   }
 
+  // 预加载路由中间件
+  const middlewarePaths = router.getAllMiddlewares();
+  for (const middlewarePath of middlewarePaths) {
+    // middlewarePath 已经是绝对路径，直接使用
+    const modulePath = middlewarePath.startsWith("file://")
+      ? middlewarePath
+      : `file://${middlewarePath}`;
+    preloadPromises.push(
+      import(modulePath).catch(() => {
+        // 预加载失败时静默处理
+      }),
+    );
+  }
+
   // 等待所有模块预加载完成
   await Promise.all(preloadPromises);
 }

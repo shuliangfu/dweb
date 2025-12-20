@@ -3,7 +3,7 @@
  * 处理路由匹配、页面渲染、API 路由调用
  */
 
-import type { AppConfig, RenderMode, Request, Response } from '../types/index.ts';
+import type { AppConfig, RenderMode, Request, Response, Middleware } from '../types/index.ts';
 import type { RouteInfo, Router } from './router.ts';
 import { handleApiRoute, loadApiRoute } from './api-route.ts';
 import type { GraphQLServer } from '../features/graphql/server.ts';
@@ -367,6 +367,64 @@ export class RouteHandler {
   }
 
   /**
+   * 加载路由中间件
+   * @param middlewarePath 中间件文件路径
+   * @returns 中间件函数数组（支持单个中间件或中间件数组）
+   */
+  private async loadRouteMiddleware(middlewarePath: string): Promise<Middleware[]> {
+    try {
+      const filePath = resolveFilePath(middlewarePath);
+      const module = await import(filePath);
+      
+      // 支持默认导出中间件函数
+      if (module.default) {
+        // 如果是数组，返回数组中的所有中间件
+        if (Array.isArray(module.default)) {
+          return module.default.filter((m: unknown): m is Middleware => typeof m === 'function');
+        }
+        // 如果是单个函数，返回包含该函数的数组
+        if (typeof module.default === 'function') {
+          return [module.default as Middleware];
+        }
+      }
+      
+      // 如果没有默认导出，返回空数组
+      return [];
+    } catch (error) {
+      logger.error('加载路由中间件失败', error instanceof Error ? error : undefined, {
+        middlewarePath,
+      });
+      return [];
+    }
+  }
+
+  /**
+   * 执行路由中间件链
+   * @param middlewares 中间件函数数组
+   * @param req 请求对象
+   * @param res 响应对象
+   * @param handler 路由处理函数
+   */
+  private async executeRouteMiddlewares(
+    middlewares: Middleware[],
+    req: Request,
+    res: Response,
+    handler: () => Promise<void>
+  ): Promise<void> {
+    let index = 0;
+    const next = async (): Promise<void> => {
+      if (index < middlewares.length) {
+        const middleware = middlewares[index++];
+        await middleware(req, res, next);
+      } else {
+        // 所有中间件执行完毕，执行路由处理
+        await handler();
+      }
+    };
+    await next();
+  }
+
+  /**
    * 处理路由请求
    */
   private async handleMatchedRoute(
@@ -382,40 +440,61 @@ export class RouteHandler {
       req.params = extractedParams;
     }
 
-    // 根据路由类型处理
-    if (routeInfo.type === 'api') {
-      await this.handleApiRoute(routeInfo, req, res);
-    } else if (routeInfo.type === 'page') {
-      await this.handlePageRoute(routeInfo, req, res);
+    // 加载路由中间件
+    const middlewarePaths = this.router.getMiddlewares(pathname);
+    const routeMiddlewares: Middleware[] = [];
+    
+    for (const middlewarePath of middlewarePaths) {
+      const middlewares = await this.loadRouteMiddleware(middlewarePath);
+      // loadRouteMiddleware 现在返回数组，支持单个中间件或中间件数组
+      routeMiddlewares.push(...middlewares);
+    }
 
-      // 验证响应体已设置
+    // 定义路由处理函数
+    const routeHandler = async (): Promise<void> => {
+      // 根据路由类型处理
+      if (routeInfo.type === 'api') {
+        await this.handleApiRoute(routeInfo, req, res);
+      } else if (routeInfo.type === 'page') {
+        await this.handlePageRoute(routeInfo, req, res);
+
+        // 验证响应体已设置
+        if (!res.body && res.status === 200) {
+          const errorMsg = '响应体在路由处理后丢失';
+          logger.error('响应体在路由处理后丢失', undefined, {
+            url: req.url,
+            method: req.method,
+            routeType: routeInfo.type,
+            routeFile: routeInfo.filePath,
+          });
+          res.status = 500;
+          res.html(`<h1>500 - Internal Server Error</h1><p>${errorMsg}</p>`);
+        }
+      } else {
+        res.status = 404;
+        res.text('Not Found');
+      }
+
+      // 最终验证响应体已设置
       if (!res.body && res.status === 200) {
-        const errorMsg = '响应体在路由处理后丢失';
-        logger.error('响应体在路由处理后丢失', undefined, {
+        const errorMsg = 'Route handler did not set response body';
+        logger.error('路由处理器未设置响应体', undefined, {
           url: req.url,
           method: req.method,
           routeType: routeInfo.type,
           routeFile: routeInfo.filePath,
         });
         res.status = 500;
-        res.html(`<h1>500 - Internal Server Error</h1><p>${errorMsg}</p>`);
+        res.text(`Internal Server Error: ${errorMsg}`);
       }
-    } else {
-      res.status = 404;
-      res.text('Not Found');
-    }
+    };
 
-    // 最终验证响应体已设置
-    if (!res.body && res.status === 200) {
-      const errorMsg = 'Route handler did not set response body';
-      logger.error('路由处理器未设置响应体', undefined, {
-        url: req.url,
-        method: req.method,
-        routeType: routeInfo.type,
-        routeFile: routeInfo.filePath,
-      });
-      res.status = 500;
-      res.text(`Internal Server Error: ${errorMsg}`);
+    // 如果有路由中间件，先执行中间件链，再执行路由处理
+    if (routeMiddlewares.length > 0) {
+      await this.executeRouteMiddlewares(routeMiddlewares, req, res, routeHandler);
+    } else {
+      // 没有中间件，直接执行路由处理
+      await routeHandler();
     }
   }
 
