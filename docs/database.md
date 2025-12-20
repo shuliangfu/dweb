@@ -1227,8 +1227,47 @@ if (health.healthy) {
 
 ## 关联查询
 
-### 一对一关系
+关联查询用于处理模型之间的关系，支持一对一、一对多和多对一关系。
 
+### 关联方法
+
+#### `belongsTo(RelatedModel, foreignKey, localKey?)`
+
+属于关系（多对一）。例如：Post belongsTo User（一个帖子属于一个用户）。
+
+**参数：**
+- `RelatedModel`: 关联的模型类
+- `foreignKey`: 外键字段名（当前模型中的字段）
+- `localKey?`: 关联模型的主键字段名（默认为关联模型的 primaryKey）
+
+**返回值：** 关联的模型实例或 `null`
+
+**示例：**
+```typescript
+class Post extends SQLModel {
+  static tableName = 'posts';
+  
+  async user() {
+    return await this.belongsTo(User, 'userId', 'id');
+  }
+}
+
+const post = await Post.find(1);
+const user = await post.user();
+```
+
+#### `hasOne(RelatedModel, foreignKey, localKey?)`
+
+有一个关系（一对一）。例如：User hasOne Profile（一个用户有一个资料）。
+
+**参数：**
+- `RelatedModel`: 关联的模型类
+- `foreignKey`: 外键字段名（关联模型中的字段）
+- `localKey?`: 当前模型的主键字段名（默认为当前模型的 primaryKey）
+
+**返回值：** 关联的模型实例或 `null`
+
+**示例：**
 ```typescript
 class User extends SQLModel {
   static tableName = 'users';
@@ -1238,20 +1277,22 @@ class User extends SQLModel {
   }
 }
 
-class Profile extends SQLModel {
-  static tableName = 'profiles';
-  
-  async user() {
-    return await this.belongsTo(User, 'userId', 'id');
-  }
-}
-
 const user = await User.find(1);
 const profile = await user.profile();
 ```
 
-### 一对多关系
+#### `hasMany(RelatedModel, foreignKey, localKey?)`
 
+有多个关系（一对多）。例如：User hasMany Posts（一个用户有多个帖子）。
+
+**参数：**
+- `RelatedModel`: 关联的模型类
+- `foreignKey`: 外键字段名（关联模型中的字段）
+- `localKey?`: 当前模型的主键字段名（默认为当前模型的 primaryKey）
+
+**返回值：** 关联的模型实例数组
+
+**示例：**
 ```typescript
 class User extends SQLModel {
   static tableName = 'users';
@@ -1261,16 +1302,149 @@ class User extends SQLModel {
   }
 }
 
-class Post extends SQLModel {
-  static tableName = 'posts';
+const user = await User.find(1);
+const posts = await user.posts();
+```
+
+### 完整示例
+
+#### 一对一关系
+
+```typescript
+// 用户模型
+class User extends SQLModel {
+  static tableName = 'users';
+  static primaryKey = 'id';
   
+  // 用户有一个资料
+  async profile() {
+    return await this.hasOne(Profile, 'userId', 'id');
+  }
+}
+
+// 资料模型
+class Profile extends SQLModel {
+  static tableName = 'profiles';
+  static primaryKey = 'id';
+  
+  // 资料属于一个用户
   async user() {
     return await this.belongsTo(User, 'userId', 'id');
   }
 }
 
+// 使用
+const user = await User.find(1);
+const profile = await user.profile();
+
+const profile = await Profile.find(1);
+const user = await profile.user();
+```
+
+#### 一对多关系
+
+```typescript
+// 用户模型
+class User extends SQLModel {
+  static tableName = 'users';
+  static primaryKey = 'id';
+  
+  // 用户有多个帖子
+  async posts() {
+    return await this.hasMany(Post, 'userId', 'id');
+  }
+}
+
+// 帖子模型
+class Post extends SQLModel {
+  static tableName = 'posts';
+  static primaryKey = 'id';
+  
+  // 帖子属于一个用户
+  async user() {
+    return await this.belongsTo(User, 'userId', 'id');
+  }
+  
+  // 帖子有多个评论
+  async comments() {
+    return await this.hasMany(Comment, 'postId', 'id');
+  }
+}
+
+// 使用
 const user = await User.find(1);
 const posts = await user.posts();
+
+const post = await Post.find(1);
+const user = await post.user();
+const comments = await post.comments();
+```
+
+#### 多对多关系（通过中间表）
+
+```typescript
+// 用户模型
+class User extends SQLModel {
+  static tableName = 'users';
+  static primaryKey = 'id';
+  
+  // 用户有多个角色（通过 user_roles 中间表）
+  async roles() {
+    // 先获取中间表数据
+    const userRoles = await UserRole.findAll({ userId: this.id });
+    // 再获取关联的角色
+    const roleIds = userRoles.map(ur => ur.roleId);
+    return await Role.findAll({ id: { $in: roleIds } });
+  }
+}
+
+// 角色模型
+class Role extends SQLModel {
+  static tableName = 'roles';
+  static primaryKey = 'id';
+  
+  // 角色有多个用户（通过 user_roles 中间表）
+  async users() {
+    const userRoles = await UserRole.findAll({ roleId: this.id });
+    const userIds = userRoles.map(ur => ur.userId);
+    return await User.findAll({ id: { $in: userIds } });
+  }
+}
+
+// 中间表模型
+class UserRole extends SQLModel {
+  static tableName = 'user_roles';
+  static primaryKey = 'id';
+}
+```
+
+### MongoDB 关联查询
+
+MongoDB 的关联查询方法与 SQL 相同，但使用 `_id` 作为主键：
+
+```typescript
+// MongoDB 模型
+class User extends MongoModel {
+  static collectionName = 'users';
+  static primaryKey = '_id';
+  
+  async posts() {
+    return await this.hasMany(Post, 'userId', '_id');
+  }
+  
+  async profile() {
+    return await this.hasOne(Profile, 'userId', '_id');
+  }
+}
+
+class Post extends MongoModel {
+  static collectionName = 'posts';
+  static primaryKey = '_id';
+  
+  async user() {
+    return await this.belongsTo(User, 'userId', '_id');
+  }
+}
 ```
 
 ## API 参考
