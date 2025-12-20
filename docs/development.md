@@ -30,8 +30,58 @@ my-app/
 ├── public/              # 公共文件
 ├── dweb.config.ts       # 配置文件
 ├── deno.json            # Deno 配置
-└── main.ts              # 入口文件
+└── main.ts              # 入口文件（可选）
 ```
+
+### 入口文件 (main.ts)
+
+**注意：`main.ts` 文件是可选的，不是必须的。** 框架可以通过 CLI 命令（`deno task dev` 或 `deno task start`）自动启动服务器，无需手动创建入口文件。
+
+如果你需要自定义应用配置（如添加中间件、插件等），可以创建 `main.ts` 文件：
+
+```typescript
+// main.ts（可选）
+/**
+ * DWeb 框架应用配置文件
+ * 用于创建应用实例并配置中间件和插件
+ * 
+ * 注意：此文件只用于配置，不直接启动服务
+ * 服务启动通过 CLI 命令：deno task dev 或 deno task start
+ */
+
+import { createApp, cors, staticFiles } from '@dreamer/dweb';
+
+// 创建应用实例
+const app = createApp();
+
+// 配置中间件
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// 配置静态文件服务
+app.use(staticFiles({
+  dir: 'assets',
+  prefix: '/assets',
+  maxAge: 86400, // 缓存 1 天
+}));
+
+// 可以添加更多中间件
+// app.use(customMiddleware);
+
+// 可以注册插件
+// app.plugin(customPlugin);
+
+// 导出应用实例
+export default app;
+```
+
+**使用说明：**
+- 如果存在 `main.ts` 文件，框架会自动加载并应用其中的配置
+- 如果不存在 `main.ts` 文件，框架会使用 `dweb.config.ts` 中的配置
+- `main.ts` 主要用于需要编程式配置的场景，如动态添加中间件或插件
 
 ## 开发流程
 
