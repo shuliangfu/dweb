@@ -551,11 +551,23 @@ export class RouteHandler {
     }
 
     // 匹配路由
-    const routeInfo = this.router.match(pathname);
-    if (!routeInfo) {
+    const matchedRouteInfo = this.router.match(pathname);
+    
+    if (!matchedRouteInfo) {
       await this.handle404(req, res);
       return;
     }
+
+    // 立即创建 routeInfo 的副本，避免并发请求共享同一个对象引用
+    // 这很重要，因为 router.match 返回的是共享对象，多个并发请求可能会互相影响
+    const routeInfo: RouteInfo = {
+      path: matchedRouteInfo.path,  // 立即捕获
+      filePath: matchedRouteInfo.filePath,  // 立即捕获
+      type: matchedRouteInfo.type,
+      params: matchedRouteInfo.params ? [...matchedRouteInfo.params] : undefined,  // 数组副本
+      isCatchAll: matchedRouteInfo.isCatchAll,
+      clientModulePath: matchedRouteInfo.clientModulePath
+    };
 
     // 处理匹配的路由
     try {
@@ -1176,7 +1188,7 @@ export class RouteHandler {
         // 开发环境：使用完整路径
         modulePath = resolveFilePath(routeInfo.filePath);
       }
-
+      
       // 获取布局路径（用于客户端脚本）
       let layoutPathForClient: string | null = null;
       try {
@@ -1196,13 +1208,21 @@ export class RouteHandler {
         // 静默处理错误
       }
 
+      // 从 Router 获取 basePath（多应用模式使用）
+      // basePath 存储在 Router 中，而不是 config 中
+      const basePath = this.router.getBasePath();
+      // 规范化 basePath：如果 basePath 以 / 结尾且不是根路径，移除末尾的 /
+      const normalizedBasePath = basePath !== '/' && basePath.endsWith('/') 
+        ? basePath.slice(0, -1) 
+        : basePath;
+      
       const clientScript = await createClientScript(
         modulePath,
         renderMode,
         pageProps,
         shouldHydrate,
         layoutPathForClient,
-        this.config?.basePath
+        normalizedBasePath
       );
 
       // 对于 CSR 模式，将链接拦截器脚本注入到 head（尽早执行）
@@ -1348,6 +1368,11 @@ export class RouteHandler {
    * 处理页面路由
    */
   private async handlePageRoute(routeInfo: RouteInfo, req: Request, res: Response): Promise<void> {
+    // 立即捕获 routeInfo 的关键值，避免在异步操作过程中被其他并发请求修改
+    // 这很重要，因为 routeInfo 对象可能被多个请求共享
+    const routePath = routeInfo.path;
+    const routeFilePath = routeInfo.filePath;
+    
     // 加载页面模块
     const pageModule = await this.loadPageModule(routeInfo, res);
 
@@ -1503,9 +1528,20 @@ export class RouteHandler {
     }
 
     // 注入脚本
+    // 注意：使用在 handlePageRoute 开始时捕获的 routePath 和 routeFilePath
+    // 这样可以避免在异步操作过程中被其他并发请求修改
+    const routeInfoForScript: RouteInfo = {
+      path: routePath,  // 使用在函数开始时捕获的值
+      filePath: routeFilePath,  // 使用在函数开始时捕获的值
+      type: routeInfo.type,
+      params: routeInfo.params ? [...routeInfo.params] : undefined,  // 数组副本
+      isCatchAll: routeInfo.isCatchAll,
+      clientModulePath: routeInfo.clientModulePath
+    };
+    
     fullHtml = await this.injectScripts(
       fullHtml,
-      routeInfo,
+      routeInfoForScript,
       renderMode,
       shouldHydrate,
       pageProps,

@@ -48,7 +48,10 @@ export async function createClientScript(
       : `file://${layoutPath}`;
     const layoutHttpUrl = filePathToHttpUrl(layoutFileUrl);
     escapedLayoutPath = `'${layoutHttpUrl.replace(/'/g, "\\'")}'`;
-  }
+	}
+	
+	// 调试日志已移除，避免在并发请求时产生混乱
+	// console.log({ httpUrl, escapedLayoutPath });
 
   // CSR 模式：不再需要手动拦截链接
   // 如果使用 preact-router，它会自动处理链接点击
@@ -121,7 +124,9 @@ export async function createClientScript(
 
   // CSR 模式客户端路由导航初始化函数（在模块中执行）
   // 参考用户之前的实现，使用类似 preact-router 的方式
-  const clientRouterCode = (renderMode === 'csr' || renderMode === 'hybrid') ? `
+  const clientRouterCode =
+    renderMode === 'csr' || renderMode === 'hybrid'
+      ? `
 // CSR 客户端路由导航初始化函数（简化版）
 async function initClientSideNavigation(render, jsx) {
   if (window.__CSR_ROUTER_INITIALIZED__) return;
@@ -170,27 +175,65 @@ async function initClientSideNavigation(render, jsx) {
       headers: { 'Accept': 'text/html' }
     });
     if (!response.ok) {
-      console.error(\`页面数据请求失败: \${pathname}, 状态码: \${response.status}\`);
       throw new Error(\`请求失败: \${response.status}\`);
     }
     
     const html = await response.text();
     const doc = new DOMParser().parseFromString(html, 'text/html');
-    const script = Array.from(doc.querySelectorAll('script[type="module"]'))
-      .find(s => s.textContent?.includes('__PAGE_DATA__'));
+    const allScripts = Array.from(doc.querySelectorAll('script[type="module"]'));
+    
+    // 优先查找包含 __PAGE_DATA__ 赋值的脚本（双下划线，确保是赋值不是读取）
+    // 必须同时包含 'globalThis.__PAGE_DATA__ =' 和 'route:' 字段
+    let script = allScripts.find(s => {
+      const text = s.textContent || '';
+      // 确保是双下划线 __PAGE_DATA__，不是单下划线 _PAGE_DATA_
+      const hasAssign = text.includes('globalThis.__PAGE_DATA__ =') || text.includes('globalThis.__PAGE_DATA__=');
+      const hasRoute = text.includes('route:');
+      return hasAssign && hasRoute;
+    });
+    
+    // 如果没找到，尝试只匹配赋值语句（向后兼容）
+    if (!script) {
+      script = allScripts.find(s => {
+        const text = s.textContent || '';
+        return text.includes('globalThis.__PAGE_DATA__ =') || text.includes('globalThis.__PAGE_DATA__=');
+      });
+    }
+    
+    // 如果还是没找到，再尝试查找包含 __PAGE_DATA__ 的脚本（最后的后备方案）
+    if (!script) {
+      script = allScripts.find(s => s.textContent?.includes('__PAGE_DATA__'));
+    }
     
     if (!script) {
-      console.error('未找到页面数据脚本，路径:', pathname);
       throw new Error('未找到页面数据脚本');
     }
     
     // 提取对象：找到 { 到匹配的 }
-    const startIdx = script.textContent.indexOf('globalThis.__PAGE_DATA__');
-    if (startIdx === -1) throw new Error('未找到 __PAGE_DATA__');
+    const scriptText = script.textContent || '';
+    const startIdx = scriptText.indexOf('globalThis.__PAGE_DATA__');
     
-    const assignIdx = script.textContent.indexOf('=', startIdx);
-    const braceStart = script.textContent.indexOf('{', assignIdx);
-    if (braceStart === -1) throw new Error('未找到对象开始');
+    if (startIdx === -1) {
+      throw new Error('未找到 __PAGE_DATA__');
+    }
+    
+    const assignIdx = scriptText.indexOf('=', startIdx);
+    
+    // 在等号后查找第一个 {，但需要跳过可能的空白和换行
+    let braceStart = assignIdx + 1;
+    while (braceStart < scriptText.length) {
+      const char = scriptText[braceStart];
+      const charCode = char.charCodeAt(0);
+      // 检查是否为空白字符：空格(32)、制表符(9)、换行符(10)、回车符(13)
+      if (charCode !== 32 && charCode !== 9 && charCode !== 10 && charCode !== 13) {
+        break;
+      }
+      braceStart++;
+    }
+    
+    if (scriptText[braceStart] !== '{') {
+      throw new Error('未找到对象开始');
+    }
     
     // 括号匹配（考虑字符串中的括号）
     let count = 0;
@@ -198,9 +241,9 @@ async function initClientSideNavigation(render, jsx) {
     let inString = false;
     let stringChar = null;
     
-    for (let i = braceStart; i < script.textContent.length; i++) {
-      const char = script.textContent[i];
-      const prevChar = i > 0 ? script.textContent[i - 1] : '';
+    for (let i = braceStart; i < scriptText.length; i++) {
+      const char = scriptText[i];
+      const prevChar = i > 0 ? scriptText[i - 1] : '';
       
       // 处理字符串
       if (!inString && (char === '"' || char === "'")) {
@@ -224,10 +267,25 @@ async function initClientSideNavigation(render, jsx) {
       }
     }
     
-    if (count !== 0) throw new Error('括号不匹配');
+    if (count !== 0) {
+      throw new Error('括号不匹配');
+    }
     
-    const objStr = script.textContent.substring(braceStart, braceEnd + 1);
-    return new Function('return ' + objStr)();
+    const objStr = scriptText.substring(braceStart, braceEnd + 1);
+    
+    let pageData;
+    try {
+      pageData = new Function('return ' + objStr)();
+    } catch (parseError) {
+      throw new Error(\`解析页面数据失败: \${parseError.message}\`);
+    }
+    
+    // 验证解析出的数据
+    if (!pageData || typeof pageData !== 'object') {
+      throw new Error('页面数据格式无效');
+    }
+    
+    return pageData;
   }
   
   // 加载并渲染路由
@@ -249,27 +307,34 @@ async function initClientSideNavigation(render, jsx) {
       // 加载页面数据
       const pageData = await loadPageData(normalizedPath);
       
+      // 验证页面数据
+      if (!pageData || typeof pageData !== 'object') {
+        throw new Error('页面数据格式无效');
+      }
+      
+      // 检查 route 字段是否存在
+      if (!pageData.route || typeof pageData.route !== 'string') {
+        throw new Error('页面数据缺少 route 字段，无法加载组件');
+      }
+      
       // 加载组件
       let pageModule, layoutModule;
       try {
         [pageModule, layoutModule] = await Promise.all([
           import(pageData.route),
-          pageData.layoutPath && pageData.layoutPath !== 'null' 
+          pageData.layoutPath && pageData.layoutPath !== 'null' && typeof pageData.layoutPath === 'string'
             ? import(pageData.layoutPath).catch(() => null)
             : Promise.resolve(null)
         ]);
       } catch (importError) {
-        console.error('组件导入失败:', importError);
         throw new Error(\`组件导入失败: \${importError.message}\`);
       }
       
       const PageComponent = pageModule.default;
       if (!PageComponent) {
-        console.error('页面组件未导出默认组件，路由:', pageData.route);
         throw new Error('页面组件未导出默认组件');
       }
       if (typeof PageComponent !== 'function') {
-        console.error('页面组件不是函数，路由:', pageData.route);
         throw new Error('页面组件不是函数');
       }
       
@@ -453,8 +518,6 @@ async function initClientSideNavigation(render, jsx) {
         window.updateMetaTagsFromPageData(pageData);
       }
     } catch (error) {
-      // 打印错误到控制台，便于调试
-      console.error('客户端路由导航错误:', error);
       const errorMsg = error instanceof Error ? error.message : String(error);
       
       // 如果是 404 或网络错误，回退到页面刷新
@@ -481,7 +544,8 @@ async function initClientSideNavigation(render, jsx) {
     window.__setCSRNavigateFunction(navigateTo);
   }
 }
-` : '';
+`
+      : '';
   
   // 处理 basePath（多应用模式使用）
   const appBasePath = basePath || '/';
@@ -494,8 +558,7 @@ async function initClientSideNavigation(render, jsx) {
       metadataJson = JSON.stringify(metadata);
       // 转义 HTML 特殊字符，防止 XSS
       metadataJson = metadataJson.replace(/</g, "\\u003c").replace(/>/g, "\\u003e");
-    } catch (error) {
-      console.warn('[Client Script] metadata 序列化失败，使用 null:', error);
+    } catch (_error) {
       metadataJson = 'null';
     }
 	}
@@ -789,15 +852,6 @@ ${clientRouterCode}
       }
     }
   } catch (error) {
-    // 发生错误时，输出详细错误信息到控制台，便于调试
-    console.error('❌ 客户端渲染失败:', error);
-    console.error('错误堆栈:', error.stack);
-    console.error('错误详情:', {
-      message: error.message,
-      name: error.name,
-      cause: error.cause
-    });
-    
     // 在页面上显示错误信息（开发环境）
     const container = document.getElementById('root');
     if (container) {

@@ -620,6 +620,14 @@ export class Router {
   }
   
   /**
+   * 获取应用基础路径（多应用模式使用）
+   * @returns 应用基础路径
+   */
+  getBasePath(): string {
+    return this.basePath;
+  }
+  
+  /**
    * 获取所有路由
    */
   getAllRoutes(): RouteInfo[] {

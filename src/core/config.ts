@@ -81,6 +81,7 @@ export async function loadConfig(
             const mergedConfig: AppConfig = {
               name: matchedApp.name,
               basePath: matchedApp.basePath || '/',
+              renderMode: matchedApp.renderMode, // 应用级别的 renderMode
               server: matchedApp.server,
               routes: matchedApp.routes,
               cookie: matchedApp.cookie || config.cookie,
