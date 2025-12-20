@@ -270,7 +270,7 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 	// 启动 HMR 服务器
 	const hmrServer = new HMRServer()
 	const hmrPort = config.dev?.hmrPort || 24678
-	await hmrServer.start(hmrPort)
+	hmrServer.start(hmrPort)
 	
 	// 设置服务器 origin（用于 HMR 编译组件时生成完整的 HTTP URL）
 	if (!config.server) {
@@ -301,15 +301,15 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 	)
 
 	// 监听配置文件变化
-	await fileWatcher.watch(".")
+	fileWatcher.watch(".")
 
 	const server = new Server(
 		
 	)
 
 	// 将文件变化事件连接到 HMR 服务器（智能更新）
-	fileWatcher.onReload(async (changeInfo) => {
-		await hmrServer.notifyFileChange(changeInfo)
+	fileWatcher.onReload((changeInfo) => {
+		hmrServer.notifyFileChange(changeInfo)
 	})
 
 	// config.routes 已经在上面检查过了，这里可以安全使用

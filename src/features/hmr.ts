@@ -21,9 +21,6 @@ const DEFAULT_HMR_PORT = 24678;
 /** 默认服务器 origin */
 const DEFAULT_SERVER_ORIGIN = 'http://localhost:3000';
 
-/** Tailwind CSS 缓存有效期（毫秒） */
-const TAILWIND_CACHE_TTL = 1000;
-
 /** 需要忽略的文件模式 */
 const IGNORED_FILE_PATTERNS = [
   (name: string) => name.startsWith('.'),
@@ -103,7 +100,7 @@ export class FileWatcher {
    * 监听目录
    * @param path 目录路径
    */
-  async watch(path: string): Promise<void> {
+  watch(path: string): void {
     try {
       const watcher = Deno.watchFs(path);
       this.watchers.set(path, watcher);
@@ -507,7 +504,7 @@ export class HMRServer {
   /**
    * 启动 HMR WebSocket 服务器
    */
-  async start(port: number = DEFAULT_HMR_PORT, enableCache: boolean = true): Promise<void> {
+  start(port: number = DEFAULT_HMR_PORT, enableCache: boolean = true): void {
     // 启用组件编译缓存（改进 HMR 响应速度）
     if (enableCache) {
       this.componentCache = new Map();
@@ -523,7 +520,7 @@ export class HMRServer {
         }
       }, 10 * 60 * 1000) as unknown as number;
     }
-    const handler = async (req: Request): Promise<Response> => {
+    const handler = (req: Request): Response => {
       // 处理 WebSocket 升级
       const upgrade = req.headers.get('upgrade');
       if (upgrade !== 'websocket') {
@@ -590,7 +587,7 @@ export class HMRServer {
   /**
    * 处理组件文件更新（发送模块 URL，客户端通过 GET 请求获取）
    */
-  private async handleComponentUpdate(filePath: string, fullPath: string): Promise<void> {
+  private handleComponentUpdate(filePath: string, fullPath: string): void {
     try {
       const relativePath = getRelativePath(fullPath);
       const origin = cleanUrl(this.serverOrigin);
@@ -623,11 +620,11 @@ export class HMRServer {
   /**
    * 通知文件变化（智能更新，支持编译组件并发送给客户端）
    */
-  async notifyFileChange(changeInfo: {
+  notifyFileChange(changeInfo: {
     path: string;
     kind: string;
     relativePath?: string;
-  }): Promise<void> {
+  }): void {
     const filePath = changeInfo.relativePath || changeInfo.path;
     const fileType = this.getFileType(filePath);
 
@@ -641,7 +638,7 @@ export class HMRServer {
         break;
 
       case 'component':
-        await this.handleComponentUpdate(filePath, changeInfo.path);
+        this.handleComponentUpdate(filePath, changeInfo.path);
         // 同时通知客户端重新加载 CSS（Tailwind class 可能已变化）
         this.notify('update', {
           file: 'style.css', // 客户端会匹配所有 CSS 文件

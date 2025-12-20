@@ -22,7 +22,7 @@ fi
 # 显示当前容器状态
 echo ""
 echo "📊 当前容器状态:"
-docker-compose ps
+docker compose ps
 
 # 确认是否继续
 echo ""
@@ -36,7 +36,7 @@ fi
 # 停止旧容器并重新构建
 echo ""
 echo "🔨 正在重新构建镜像..."
-docker-compose up -d --build
+docker compose up -d --build
 
 # 等待容器启动
 echo ""
@@ -46,7 +46,7 @@ sleep 5
 # 检查容器状态
 echo ""
 echo "📊 升级后容器状态:"
-docker-compose ps
+docker compose ps
 
 # 检查健康状态
 echo ""
@@ -65,13 +65,13 @@ fi
 # 显示日志
 echo ""
 echo "📋 最近日志 (最后 20 行):"
-docker-compose logs --tail=20
+docker compose logs --tail=20
 
 echo ""
 echo "✅ 升级完成！"
 echo ""
 echo "💡 提示:"
-echo "  - 查看完整日志: docker-compose logs -f"
+echo "  - 查看完整日志: docker compose logs -f"
 echo "  - 访问应用: http://localhost:3000"
-echo "  - 检查状态: docker-compose ps"
+echo "  - 检查状态: docker compose ps"
 
