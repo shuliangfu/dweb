@@ -1,21 +1,21 @@
 /**
  * 核心服务器模块
  * 基于 Deno 的 HTTP 服务器实现
- * 
+ *
  * @module core/server
  */
 
-import type { CookieOptions, Middleware, Request, Response, Session } from '../types/index.ts';
+import type { ContentType, CookieOptions, Middleware, Request, Response, Session } from '../types/index.ts';
 
 /**
  * HTTP 服务器类
- * 
+ *
  * 提供基于 Deno 的 HTTP 服务器实现，支持中间件链和请求处理。
- * 
+ *
  * @example
  * ```typescript
  * import { Server } from "@dreamer/dweb";
- * 
+ *
  * const server = new Server();
  * server.setHandler(async (req, res) => {
  *   res.text("Hello World");
@@ -46,11 +46,11 @@ export class Server {
 
   /**
    * 设置请求处理器
-   * 
+   *
    * 设置统一的请求处理函数。如果设置了处理器，将优先使用处理器而不是中间件链。
-   * 
+   *
    * @param handler - 请求处理函数，接收 Request 和 Response 对象
-   * 
+   *
    * @example
    * ```typescript
    * server.setHandler(async (req, res) => {
@@ -64,12 +64,12 @@ export class Server {
 
   /**
    * 设置 WebSocket 升级处理器
-   * 
+   *
    * 设置用于处理 WebSocket 升级请求的函数。如果设置了此处理器，
    * 在处理请求之前会先检查是否为 WebSocket 升级请求。
-   * 
+   *
    * @param handler - WebSocket 升级处理函数，接收原生 Request 对象，返回升级响应或 null
-   * 
+   *
    * @example
    * ```typescript
    * server.setWebSocketUpgradeHandler((req) => {
@@ -78,23 +78,25 @@ export class Server {
    * });
    * ```
    */
-  setWebSocketUpgradeHandler(handler: (req: globalThis.Request) => globalThis.Response | null): void {
+  setWebSocketUpgradeHandler(
+    handler: (req: globalThis.Request) => globalThis.Response | null
+  ): void {
     this.wsUpgradeHandler = handler;
   }
 
   /**
    * 处理请求
-   * 
+   *
    * 将 Deno 原生请求转换为框架的 Request 对象，执行中间件链或处理器，然后返回响应。
-   * 
+   *
    * @param nativeReq - Deno 原生请求对象
    * @returns Promise<Response> - Deno 原生响应对象
-   * 
+   *
    * @example
    * ```typescript
    * const server = new Server();
    * // ... 配置服务器
-   * 
+   *
    * // 在 Deno.serve 中使用
    * Deno.serve({ port: 3000 }, server.handleRequest.bind(server));
    * ```
@@ -256,11 +258,14 @@ export class Server {
       setHeader(name: string, value: string) {
         headers.set(name, value);
       },
-      json(data: unknown, options?: {
-        charset?: string;
-        status?: number;
-        headers?: Record<string, string>;
-      }) {
+      json(
+        data: unknown,
+        options?: {
+          charset?: string;
+          status?: number;
+          headers?: Record<string, string>;
+        }
+      ) {
         // 设置状态码（如果指定）
         if (options?.status !== undefined) {
           status = options.status;
@@ -280,11 +285,14 @@ export class Server {
         body = JSON.stringify(data);
         return response;
       },
-      html(html: string, options?: {
-        charset?: string;
-        status?: number;
-        headers?: Record<string, string>;
-      }) {
+      html(
+        html: string,
+        options?: {
+          charset?: string;
+          status?: number;
+          headers?: Record<string, string>;
+        }
+      ) {
         // 设置状态码（如果指定）
         if (options?.status !== undefined) {
           status = options.status;
@@ -305,21 +313,38 @@ export class Server {
         body = html;
         return response;
       },
-      text(text: string, options?: { 
-        type?: string;
-        charset?: string;
-        status?: number;
-        headers?: Record<string, string>;
-      }) {
+      text(
+        text: string,
+        options?: {
+          type?: ContentType;
+          charset?: string;
+          status?: number;
+          headers?: Record<string, string>;
+        }
+      ) {
         // 设置状态码（如果指定）
         if (options?.status !== undefined) {
           status = options.status;
         }
 
+        // 类型映射表：将简写的类型名称映射到完整的 MIME 类型
+        const typeMap: Record<string, string> = {
+          html: 'text/html',
+          text: 'text/plain',
+          json: 'application/json',
+          javascript: 'application/javascript',
+          css: 'text/css',
+          xml: 'application/xml',
+          svg: 'image/svg+xml',
+          binary: 'application/octet-stream',
+        };
+
         // 设置 Content-Type
         if (options?.type) {
+          // 根据 type 参数映射到对应的 MIME 类型
+          const mimeType = typeMap[options.type] || 'text/plain';
           const charset = options.charset || 'utf-8';
-          headers.set('content-type', `${options.type}; charset=${charset}`);
+          headers.set('content-type', `${mimeType}; charset=${charset}`);
         } else if (!headers.has('content-type')) {
           // 如果已经设置了 Content-Type，不覆盖（例如 Tailwind CSS 插件设置的 text/css）
           const charset = options?.charset || 'utf-8';
@@ -341,68 +366,65 @@ export class Server {
         body = text;
         return response;
       },
-      redirect(url: string, statusCode: number = 302) {
-        status = statusCode;
-        headers.set('location', url);
-        return response;
-      },
-      send(data: unknown, options?: {
-        type?: 'text' | 'json' | 'html' | 'javascript' | 'css' | 'binary';
-        charset?: string;
-        status?: number;
-        headers?: Record<string, string>;
-      }) {
+      send(
+        data: unknown,
+        options?: {
+          type?: ContentType;
+          charset?: string;
+          status?: number;
+          headers?: Record<string, string>;
+        }
+      ) {
         // 根据 type 参数决定调用哪个方法
         if (options?.type === 'html') {
           return response.html(String(data), options);
         }
-        
+
         // 明确指定 json 类型
         if (options?.type === 'json') {
           // 对于对象，移除 type 选项（json 不需要 type）
-          const jsonOptions = options ? {
-            charset: options.charset,
-            status: options.status,
-            headers: options.headers,
-          } : undefined;
+          const jsonOptions = options
+            ? {
+                charset: options.charset,
+                status: options.status,
+                headers: options.headers,
+              }
+            : undefined;
           return response.json(data, jsonOptions);
         }
-        
-        // 字符串或 Uint8Array 数据，根据 type 映射到对应的 MIME 类型
-        const typeMap: Record<string, string> = {
-          'javascript': 'text/javascript',
-          'css': 'text/css',
-          'text': 'text/plain',
-          'binary': 'application/octet-stream',
-        };
-        
-        // 如果指定了 type，映射到对应的 MIME 类型，否则默认为 text/plain
-        const mimeType = options?.type ? typeMap[options.type] : 'text/plain';
-        
+
         // 处理字符串数据（默认返回 text）
         if (typeof data === 'string') {
+          // 如果指定了 type，使用指定的 type，否则默认为 'text'
           const textOptions = {
             ...options,
-            type: mimeType,
+            type: options?.type || 'text',
           };
           return response.text(data, textOptions);
         }
-        
+
         // 处理 Uint8Array 二进制数据
         if (data instanceof Uint8Array) {
+          // 如果指定了 type，使用指定的 type，否则默认为 'binary'
           const binaryOptions = {
             ...options,
-            type: mimeType === 'text/plain' ? 'application/octet-stream' : mimeType,
+            type: options?.type || 'binary',
           };
           return response.text(new TextDecoder().decode(data), binaryOptions);
         }
-        
+
         // 默认情况：对象也转换为字符串返回 text
+        // 如果指定了 type，使用指定的 type，否则默认为 'text'
         const textOptions = {
           ...options,
-          type: mimeType,
+          type: options?.type || 'text',
         };
         return response.text(String(data), textOptions);
+      },
+      redirect(url: string, statusCode: number = 302) {
+        status = statusCode;
+        headers.set('location', url);
+        return response;
       },
     };
 
@@ -501,15 +523,15 @@ export class Server {
       {
         port,
         hostname: host,
-				onListen: () => {
-					console.log(`✅ 服务器已启动: http://${host}:${port}`);
-				}, // 禁用默认的 "Listening on" 输出
+        onListen: () => {
+          console.log(`✅ 服务器已启动: http://${host}:${port}`);
+        }, // 禁用默认的 "Listening on" 输出
       },
       handler
     );
     this.serverHandle = {
       shutdown: () => serverHandle.shutdown(),
-			finished: serverHandle.finished || Promise.resolve(),
+      finished: serverHandle.finished || Promise.resolve(),
     };
 
     // 等待服务器关闭

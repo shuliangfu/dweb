@@ -69,6 +69,9 @@ export interface Request extends Omit<globalThis.Request, 'body'> {
   getSession(): Promise<Session | null>;
 }
 
+// 内容类型（用于响应方法）
+export type ContentType = 'text' | 'json' | 'html' | 'javascript' | 'css' | 'xml' | 'svg' | 'binary';
+
 // 响应对象
 export interface Response {
   status: number;
@@ -88,14 +91,14 @@ export interface Response {
     headers?: Record<string, string>;
   }): Response;
   text(text: string, options?: { 
-    type?: string;
+    type?: ContentType;
     charset?: string;
     status?: number;
     headers?: Record<string, string>;
   }): Response;
   redirect(url: string, status?: number): Response;
   send(data: string | Uint8Array | object, options?: {
-    type?: 'text' | 'json' | 'html' | 'javascript' | 'css' | 'binary';
+    type?: ContentType;
     charset?: string;
     status?: number;
     headers?: Record<string, string>;
