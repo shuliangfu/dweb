@@ -466,13 +466,29 @@ docker logs -f dweb-app
 
 ## 📖 文档
 
-- **[使用指南](./docs/GUIDES.md)** - 完整的使用指南（快速开始、配置、路由、渲染模式、中间件、插件、最佳实践、FAQ）
-- **[数据库使用指南](./docs/DATABASE_USAGE.md)** - 数据库功能使用指南（配置、查询构建器、ORM/ODM、迁移管理）
-- **[数据库实现方案](./docs/DATABASE_ANALYSIS.md)** - 数据库功能的详细架构设计和实现方案
-- **[配置示例](./docs/CONFIG_EXAMPLES.md)** - 各种场景的配置示例（基础配置、单应用、多应用、开发/生产环境、高级配置）
-- **[开发指南](./docs/DEVELOPMENT.md)** - 插件开发、中间件开发、自定义路由指南
+### 核心文档
+- **[文档总览](./docs/README.md)** - 文档导航和快速开始
+- **[核心模块](./docs/core.md)** - 服务器、路由、配置等核心功能
+- **[配置文档](./docs/configuration.md)** - dweb.config.ts 详细配置说明
+- **[开发指南](./docs/development.md)** - 开发流程、构建、部署
+
+### 功能模块
+- **[数据库](./docs/database.md)** - 数据库支持、ORM/ODM、查询构建器、迁移管理
+- **[GraphQL](./docs/graphql.md)** - GraphQL 服务器和查询处理
+- **[WebSocket](./docs/websocket.md)** - WebSocket 服务器和客户端
+- **[Session](./docs/session.md)** - Session 管理和多种存储方式
+- **[Cookie](./docs/cookie.md)** - Cookie 管理和签名
+- **[Logger](./docs/logger.md)** - 日志系统和日志轮转
+
+### 扩展模块
+- **[中间件](./docs/middleware.md)** - 内置中间件和使用指南
+- **[插件](./docs/plugins.md)** - 插件系统和使用指南
+
+### 部署与运维
+- **[Docker 部署](./docs/docker.md)** - Docker 部署指南
+
+### 示例项目
 - **[快速开始指南](./example/QUICK_START.md)** - 快速上手教程
-- **[Docker 部署](./docs/DOCKER.md)** - Docker 部署指南
 - **[使用示例](./example/)** - 完整的示例项目
 
 ## 🛠️ 开发
