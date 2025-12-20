@@ -56,7 +56,6 @@ await server.start(3000, 'localhost');`;
   const routerCode = `// 路由文件结构
 routes/
 ├── index.tsx          # / (首页)
-├── about.tsx          # /about
 ├── users/
 │   ├── index.tsx      # /users
 │   └── [id].tsx       # /users/:id

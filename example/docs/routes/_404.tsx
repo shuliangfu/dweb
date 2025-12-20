@@ -27,7 +27,7 @@ export default function NotFound() {
           <Button href="/" variant="primary">
             返回首页
           </Button>
-          <Button href="/about" variant="outline">
+          <Button href="/" variant="outline">
             关于我们
           </Button>
         </div>
