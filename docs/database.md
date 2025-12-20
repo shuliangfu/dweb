@@ -1296,36 +1296,475 @@ const db = manager.get('default');
 
 #### 查询方法
 
-- `find(condition, fields?)` - 查找单条记录
-- `findAll(condition?, fields?)` - 查找多条记录
-- `findById(id, fields?)` - 根据 ID 查找
-- `findOne(condition, fields?)` - 查找一条记录
-- `count(condition?)` - 统计数量
-- `exists(condition)` - 检查是否存在
-- `paginate(condition, page, pageSize)` - 分页查询
+##### `find(condition, fields?)`
+
+查找单条记录。
+
+**参数：**
+- `condition`: 查询条件（可以是 ID、条件对象）
+- `fields?`: 可选，指定要返回的字段（字段投影）
+
+**返回值：** 模型实例或 `null`
+
+**示例：**
+```typescript
+// 根据 ID 查找
+const user = await User.find(1);
+
+// 根据条件查找
+const user = await User.find({ email: 'john@example.com' });
+
+// 指定返回字段
+const user = await User.find(1, ['id', 'username', 'email']);
+```
+
+##### `findAll(condition?, fields?)`
+
+查找多条记录。
+
+**参数：**
+- `condition?`: 可选，查询条件对象
+- `fields?`: 可选，指定要返回的字段
+
+**返回值：** 模型实例数组
+
+**示例：**
+```typescript
+// 查找所有记录
+const users = await User.findAll();
+
+// 根据条件查找
+const activeUsers = await User.findAll({ status: 'active' });
+
+// 使用操作符
+const adults = await User.findAll({ age: { $gte: 18 } });
+
+// 指定返回字段
+const users = await User.findAll({}, ['id', 'username']);
+```
+
+##### `findById(id, fields?)`
+
+根据主键 ID 查找记录。
+
+**参数：**
+- `id`: 主键值
+- `fields?`: 可选，指定要返回的字段
+
+**返回值：** 模型实例或 `null`
+
+**示例：**
+```typescript
+const user = await User.findById(1);
+const user = await User.findById('507f1f77bcf86cd799439011'); // MongoDB
+```
+
+##### `findOne(condition, fields?)`
+
+查找一条记录（与 `find` 类似，但语义更明确）。
+
+**参数：**
+- `condition`: 查询条件对象
+- `fields?`: 可选，指定要返回的字段
+
+**返回值：** 模型实例或 `null`
+
+**示例：**
+```typescript
+const user = await User.findOne({ email: 'john@example.com' });
+```
+
+##### `count(condition?)`
+
+统计符合条件的记录数量。
+
+**参数：**
+- `condition?`: 可选，查询条件
+
+**返回值：** 记录数量（数字）
+
+**示例：**
+```typescript
+const total = await User.count();
+const activeCount = await User.count({ status: 'active' });
+```
+
+##### `exists(condition)`
+
+检查是否存在符合条件的记录。
+
+**参数：**
+- `condition`: 查询条件
+
+**返回值：** `boolean`（存在返回 `true`，不存在返回 `false`）
+
+**示例：**
+```typescript
+const exists = await User.exists({ email: 'john@example.com' });
+if (exists) {
+  console.log('用户已存在');
+}
+```
+
+##### `paginate(condition, page, pageSize)`
+
+分页查询记录。
+
+**参数：**
+- `condition?`: 可选，查询条件
+- `page`: 页码（从 1 开始）
+- `pageSize`: 每页记录数
+
+**返回值：** 分页结果对象
+```typescript
+{
+  data: Model[],      // 当前页的数据
+  total: number,     // 总记录数
+  page: number,       // 当前页码
+  pageSize: number,   // 每页记录数
+  totalPages: number  // 总页数
+}
+```
+
+**示例：**
+```typescript
+const result = await User.paginate({ status: 'active' }, 1, 10);
+console.log(`共 ${result.total} 条记录，当前第 ${result.page} 页`);
+```
 
 #### 创建方法
 
-- `create(data)` - 创建单条记录
-- `createMany(data[])` - 批量创建
+##### `create(data)`
+
+创建单条记录。
+
+**参数：**
+- `data`: 要创建的数据对象
+
+**返回值：** 创建的模型实例
+
+**示例：**
+```typescript
+const user = await User.create({
+  username: 'john_doe',
+  email: 'john@example.com',
+  password: 'hashed_password',
+  age: 25
+});
+```
+
+**注意：**
+- 会自动触发 `beforeCreate`、`afterCreate`、`beforeValidate`、`afterValidate` 钩子
+- 会自动应用字段默认值
+- 会自动进行数据验证
+- 如果启用了时间戳，会自动设置 `createdAt` 和 `updatedAt`
+
+##### `createMany(data[])`
+
+批量创建多条记录。
+
+**参数：**
+- `data[]`: 要创建的数据对象数组
+
+**返回值：** 创建的模型实例数组
+
+**示例：**
+```typescript
+const users = await User.createMany([
+  { username: 'user1', email: 'user1@example.com', password: 'pass1' },
+  { username: 'user2', email: 'user2@example.com', password: 'pass2' },
+  { username: 'user3', email: 'user3@example.com', password: 'pass3' }
+]);
+```
+
+**注意：**
+- 批量操作会触发每个记录的钩子
+- 如果其中一条记录验证失败，整个操作会失败
 
 #### 更新方法
 
-- `update(condition, data)` - 更新记录
-- `updateMany(condition, data)` - 批量更新
-- `increment(field, amount)` - 递增字段
-- `decrement(field, amount)` - 递减字段
+##### `update(condition, data)`
+
+更新记录。
+
+**参数：**
+- `condition`: 查询条件（可以是 ID、条件对象）
+- `data`: 要更新的数据对象
+
+**返回值：** 更新的记录数
+
+**示例：**
+```typescript
+// 根据 ID 更新
+await User.update(1, { age: 26 });
+
+// 根据条件更新
+await User.update({ email: 'john@example.com' }, { status: 'active' });
+
+// 实例方法更新
+const user = await User.find(1);
+await user.update({ age: 26 });
+```
+
+**注意：**
+- 会自动触发 `beforeUpdate`、`afterUpdate`、`beforeSave`、`afterSave` 钩子
+- 如果启用了时间戳，会自动更新 `updatedAt`
+- 会进行数据验证
+
+##### `updateMany(condition, data)`
+
+批量更新多条记录。
+
+**参数：**
+- `condition`: 查询条件
+- `data`: 要更新的数据对象
+
+**返回值：** 更新的记录数
+
+**示例：**
+```typescript
+// 批量更新状态
+const count = await User.updateMany(
+  { status: 'inactive' },
+  { status: 'active' }
+);
+console.log(`更新了 ${count} 条记录`);
+```
+
+##### `increment(field, amount)`
+
+递增字段值。
+
+**参数：**
+- `field`: 字段名
+- `amount`: 递增的数值（默认为 1）
+
+**返回值：** 递增后的值
+
+**示例：**
+```typescript
+// 实例方法
+const user = await User.find(1);
+await user.increment('balance', 100);
+
+// 静态方法（需要先指定条件）
+await User.increment({ id: 1 }, 'balance', 100);
+```
+
+##### `decrement(field, amount)`
+
+递减字段值。
+
+**参数：**
+- `field`: 字段名
+- `amount`: 递减的数值（默认为 1）
+
+**返回值：** 递减后的值
+
+**示例：**
+```typescript
+// 实例方法
+const user = await User.find(1);
+await user.decrement('balance', 50);
+
+// 静态方法（需要先指定条件）
+await User.decrement({ id: 1 }, 'balance', 50);
+```
+
+##### `findOneAndUpdate(condition, data)` (仅 MongoDB)
+
+查找并更新一条记录，返回更新后的记录。
+
+**参数：**
+- `condition`: 查询条件
+- `data`: 要更新的数据对象
+
+**返回值：** 更新后的模型实例或 `null`
+
+**示例：**
+```typescript
+const updatedUser = await User.findOneAndUpdate(
+  { email: 'john@example.com' },
+  { lastLoginAt: new Date() }
+);
+```
 
 #### 删除方法
 
-- `delete(condition)` - 删除记录
-- `deleteMany(condition)` - 批量删除
+##### `delete(condition)`
+
+删除记录。
+
+**参数：**
+- `condition`: 查询条件（可以是 ID、条件对象）
+
+**返回值：** 删除的记录数
+
+**示例：**
+```typescript
+// 根据 ID 删除
+await User.delete(1);
+
+// 根据条件删除
+await User.delete({ email: 'john@example.com' });
+
+// 实例方法删除
+const user = await User.find(1);
+await user.delete();
+```
+
+**注意：**
+- 如果启用了软删除，会设置 `deletedAt` 字段而不是真正删除
+- 会自动触发 `beforeDelete`、`afterDelete` 钩子
+
+##### `deleteMany(condition)`
+
+批量删除多条记录。
+
+**参数：**
+- `condition`: 查询条件
+
+**返回值：** 删除的记录数
+
+**示例：**
+```typescript
+// 删除所有非活跃用户
+const count = await User.deleteMany({ status: 'inactive' });
+console.log(`删除了 ${count} 条记录`);
+```
+
+##### `findOneAndDelete(condition)` (仅 MongoDB)
+
+查找并删除一条记录，返回被删除的记录。
+
+**参数：**
+- `condition`: 查询条件
+
+**返回值：** 被删除的模型实例或 `null`
+
+**示例：**
+```typescript
+const deletedUser = await User.findOneAndDelete({ email: 'john@example.com' });
+```
 
 #### 其他方法
 
-- `upsert(condition, data)` - 更新或插入
-- `distinct(field, condition?)` - 去重查询
-- `aggregate(pipeline)` - 聚合查询（MongoDB）
+##### `upsert(condition, data)`
+
+更新或插入记录（如果不存在则插入，存在则更新）。
+
+**参数：**
+- `condition`: 查询条件（用于判断是否存在，通常包含唯一键）
+- `data`: 要更新或插入的数据对象
+
+**返回值：** 更新或插入后的模型实例
+
+**示例：**
+```typescript
+// 如果邮箱不存在则创建，存在则更新
+const user = await User.upsert(
+  { email: 'john@example.com' },
+  { 
+    username: 'john_doe',
+    email: 'john@example.com',
+    age: 25
+  }
+);
+```
+
+**注意：**
+- SQL 数据库使用 `INSERT ... ON CONFLICT ... DO UPDATE` 语法
+- MongoDB 先查找，存在则更新，不存在则插入
+
+##### `distinct(field, condition?)`
+
+获取字段的唯一值列表。
+
+**参数：**
+- `field`: 字段名
+- `condition?`: 可选，查询条件
+
+**返回值：** 唯一值数组
+
+**示例：**
+```typescript
+// 获取所有不同的状态值
+const statuses = await User.distinct('status');
+// ['active', 'inactive', 'suspended']
+
+// 获取符合条件的唯一值
+const emails = await User.distinct('email', { age: { $gte: 18 } });
+```
+
+##### `aggregate(pipeline)` (仅 MongoDB)
+
+执行聚合查询。
+
+**参数：**
+- `pipeline`: MongoDB 聚合管道数组
+
+**返回值：** 聚合结果数组
+
+**示例：**
+```typescript
+// 按状态统计用户数
+const stats = await User.aggregate([
+  { $group: { _id: '$status', count: { $sum: 1 } } },
+  { $sort: { count: -1 } }
+]);
+
+// 计算平均年龄
+const avgAge = await User.aggregate([
+  { $group: { _id: null, avgAge: { $avg: '$age' } } }
+]);
+
+// 查找最活跃的用户
+const topUsers = await User.aggregate([
+  { $match: { status: 'active' } },
+  { $sort: { lastLoginAt: -1 } },
+  { $limit: 10 }
+]);
+```
+
+#### 实例方法
+
+##### `save()`
+
+保存当前实例（如果存在主键则更新，否则插入）。
+
+**返回值：** 保存后的模型实例
+
+**示例：**
+```typescript
+const user = await User.find(1);
+user.age = 26;
+await user.save();
+```
+
+##### `reload()`
+
+重新从数据库加载当前实例的数据。
+
+**返回值：** 重新加载后的模型实例
+
+**示例：**
+```typescript
+const user = await User.find(1);
+await user.increment('balance', 100);
+await user.reload(); // 重新加载以获取最新的 balance 值
+```
+
+##### `delete()`
+
+删除当前实例。
+
+**返回值：** `boolean`（成功返回 `true`，失败返回 `false`）
+
+**示例：**
+```typescript
+const user = await User.find(1);
+await user.delete();
+```
 
 ### 索引管理
 
