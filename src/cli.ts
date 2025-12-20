@@ -1,14 +1,13 @@
 /**
  * CLI 工具入口
- * 提供 dev、build、start、create 命令
+ * 提供 dev、build、start 命令
  */
 
 import { loadConfig } from './core/config.ts';
 import { startDevServer } from './features/dev.ts';
 import { build } from './features/build.ts';
 import { startProdServer } from './features/prod.ts';
-import { createApp } from './features/create.ts';
-import { success, error, info, step, help } from './utils/cli-output.ts';
+import { success, info, step, help } from './utils/cli-output.ts';
 
 const command = Deno.args[0];
 
@@ -73,19 +72,34 @@ async function start(appName?: string) {
 }
 
 /**
- * 创建新项目命令（交互式）
+ * 显示帮助信息并退出
  */
-async function create() {
-  // 不再从命令行参数获取项目名称，而是通过交互式提示获取
-  try {
-    await createApp();
-  } catch (err) {
-    error(`创建项目失败: ${err instanceof Error ? err.message : String(err)}`);
-    Deno.exit(1);
-  }
+function showHelpAndExit(): never {
+  help('DWeb 框架 CLI 工具', [
+    { command: 'dev[:app-name]', description: '启动开发服务器（单应用模式或指定应用）' },
+    { command: 'build[:app-name]', description: '构建生产版本（单应用模式或指定应用）' },
+    { command: 'start[:app-name]', description: '启动生产服务器（单应用模式或指定应用）' },
+  ]);
+  info('示例:');
+  step('单应用模式:');
+  console.log('  deno run -A src/cli.ts dev');
+  console.log('  deno run -A src/cli.ts build');
+  console.log('  deno run -A src/cli.ts start');
+  console.log();
+  step('多应用模式（指定应用）:');
+  console.log('  deno run -A src/cli.ts dev:backend');
+  console.log('  deno run -A src/cli.ts build:frontend');
+  console.log('  deno run -A src/cli.ts start:backend');
+  console.log();
+  Deno.exit(1);
 }
 
 // 执行命令
+// 如果没有提供命令，显示帮助信息
+if (!command) {
+  showHelpAndExit();
+}
+
 const { command: baseCommand, appName } = parseCommand(command);
 switch (baseCommand) {
   case 'dev':
@@ -97,30 +111,7 @@ switch (baseCommand) {
   case 'start':
     await start(appName);
     break;
-  case 'create':
-    await create();
-    break;
   default:
-    help('DWeb 框架 CLI 工具', [
-      { command: 'dev[:app-name]', description: '启动开发服务器（单应用模式或指定应用）' },
-      { command: 'build[:app-name]', description: '构建生产版本（单应用模式或指定应用）' },
-      { command: 'start[:app-name]', description: '启动生产服务器（单应用模式或指定应用）' },
-      { command: 'create', description: '创建新项目' },
-    ]);
-    info('示例:');
-    step('单应用模式:');
-    console.log('  deno run -A src/cli.ts dev');
-    console.log('  deno run -A src/cli.ts build');
-    console.log('  deno run -A src/cli.ts start');
-    console.log();
-    step('多应用模式（指定应用）:');
-    console.log('  deno run -A src/cli.ts dev:backend');
-    console.log('  deno run -A src/cli.ts build:frontend');
-    console.log('  deno run -A src/cli.ts start:backend');
-    console.log();
-    step('创建项目:');
-    console.log('  deno run -A src/cli.ts create');
-    console.log();
-    Deno.exit(1);
+    showHelpAndExit();
 }
 
