@@ -12,6 +12,8 @@
 - [GraphQL](./graphql.md) - GraphQL 服务器和查询处理
 - [WebSocket](./websocket.md) - WebSocket 服务器和客户端
 - [Session](./session.md) - Session 管理和多种存储方式
+- [Cookie](./cookie.md) - Cookie 管理和签名
+- [Logger](./logger.md) - 日志系统和日志轮转
 
 ### 扩展模块
 - [中间件 (middleware)](./middleware.md) - 内置中间件和使用指南
