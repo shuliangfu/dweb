@@ -370,10 +370,10 @@ export default defineConfig({
 
 ```bash
 # 运行前端应用
-deno task dev:frontend
+deno task dev:app-name
 
 # 运行后端应用
-deno task dev:backend
+deno task dev:app-name
 ```
 
 ## 环境变量

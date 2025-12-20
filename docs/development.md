@@ -139,11 +139,10 @@ deno run -A src/cli.ts dev
 deno task dev
 
 # 启动指定应用（使用应用名称）
-deno run -A src/cli.ts dev:frontend
-deno run -A src/cli.ts dev:backend
+deno run -A src/cli.ts dev:app-name
 
 # 或在 deno.json 中配置任务别名
-# "dev:frontend": "deno run -A src/cli.ts dev:frontend"
+# "dev:app-name": "deno run -A src/cli.ts dev:app-name"
 ```
 
 **命令格式说明：**
@@ -246,8 +245,7 @@ deno run -A src/cli.ts build
 deno task build
 
 # 构建指定应用
-deno run -A src/cli.ts build:frontend
-deno run -A src/cli.ts build:backend
+deno run -A src/cli.ts build:app-name
 ```
 
 ### 构建配置
@@ -310,8 +308,7 @@ DENO_ENV=production deno task start
 deno task start
 
 # 启动指定应用
-deno run -A src/cli.ts start:frontend
-deno run -A src/cli.ts start:backend
+deno run -A src/cli.ts start:app-name
 ```
 
 **生产服务器特性：**
