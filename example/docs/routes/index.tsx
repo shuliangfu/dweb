@@ -36,30 +36,72 @@ const config: DWebConfig = {
   apps: [
     {
       name: 'my-app',
-      renderMode: 'hybrid',
+      renderMode: 'hybrid', // 'ssr' | 'csr' | 'hybrid'
       server: {
         port: 3000,
         host: 'localhost',
       },
       routes: {
         dir: 'routes',
+        ignore: ['**/*.test.ts', '**/*.test.tsx'],
+      },
+      static: {
+        dir: 'assets',
       },
       plugins: [
         tailwind({
           version: 'v4',
           cssPath: 'assets/style.css',
+          optimize: true,
         }),
       ],
       middleware: [
         cors({
           origin: '*',
+          methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+          allowedHeaders: ['Content-Type', 'Authorization'],
         }),
       ],
+      dev: {
+        hmrPort: 24678,
+        reloadDelay: 300,
+      },
+      build: {
+        outDir: 'dist',
+        sourcemap: true,
+        minify: true,
+      },
     },
   ],
 };
 
 export default config;`;
+
+  // 创建页面示例
+  const pageCode = `// routes/index.tsx
+import type { PageProps } from '@dreamer/dweb';
+
+export default function HomePage({ params, query, data }: PageProps) {
+  return (
+    <div>
+      <h1>欢迎使用 DWeb</h1>
+      <p>这是一个简单的页面示例</p>
+    </div>
+  );
+}`;
+
+  // API 路由示例
+  const apiCode = `// routes/api/users.ts
+import type { ApiRoute } from '@dreamer/dweb';
+
+export default async function handler({ req, res }: ApiRoute) {
+  if (req.method === 'GET') {
+    res.json({ users: [] });
+  } else if (req.method === 'POST') {
+    const body = await req.json();
+    res.json({ success: true, data: body });
+  }
+}`;
 
   // 文档分类
   const docCategories = [
@@ -121,6 +163,9 @@ export default config;`;
           <h2 className="text-3xl font-bold text-gray-900 mb-6">快速开始</h2>
           
           <h3 className="text-xl font-semibold text-gray-800 mb-4">创建新项目</h3>
+          <p className="text-gray-600 mb-4">
+            使用 DWeb 框架的初始化工具快速创建新项目：
+          </p>
           <CodeBlock code={installCode} language="bash" />
           
           <h3 className="text-xl font-semibold text-gray-800 mb-4 mt-8">基本配置</h3>
@@ -128,6 +173,18 @@ export default config;`;
             在项目根目录创建 <code className="bg-gray-100 px-2 py-1 rounded">dweb.config.ts</code> 文件：
           </p>
           <CodeBlock code={configCode} language="typescript" />
+          
+          <h3 className="text-xl font-semibold text-gray-800 mb-4 mt-8">创建页面</h3>
+          <p className="text-gray-600 mb-4">
+            在 <code className="bg-gray-100 px-2 py-1 rounded">routes/</code> 目录下创建页面文件：
+          </p>
+          <CodeBlock code={pageCode} language="typescript" />
+          
+          <h3 className="text-xl font-semibold text-gray-800 mb-4 mt-8">创建 API 路由</h3>
+          <p className="text-gray-600 mb-4">
+            在 <code className="bg-gray-100 px-2 py-1 rounded">routes/api/</code> 目录下创建 API 路由：
+          </p>
+          <CodeBlock code={apiCode} language="typescript" />
         </div>
       </div>
 
