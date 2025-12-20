@@ -164,7 +164,7 @@ export default async function handler({ req, res }: ApiRoute) {
           </section>
 
           {/* 服务器 */}
-          <section className="mb-12">
+          <section id="server" className="mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
               服务器 (Server)
             </h2>
@@ -183,7 +183,7 @@ export default async function handler({ req, res }: ApiRoute) {
           </section>
 
           {/* 路由系统 */}
-          <section className="mb-12">
+          <section id="router" className="mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
               路由系统 (Router)
             </h2>
@@ -212,7 +212,7 @@ export default async function handler({ req, res }: ApiRoute) {
           </section>
 
           {/* 配置管理 */}
-          <section className="mb-12">
+          <section id="config" className="mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
               配置管理 (Config)
             </h2>
@@ -225,7 +225,7 @@ export default async function handler({ req, res }: ApiRoute) {
           </section>
 
           {/* 中间件系统 */}
-          <section className="mb-12">
+          <section id="middleware" className="mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
               中间件系统
             </h2>
@@ -238,7 +238,7 @@ export default async function handler({ req, res }: ApiRoute) {
           </section>
 
           {/* 插件系统 */}
-          <section className="mb-12">
+          <section id="plugin" className="mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
               插件系统
             </h2>
@@ -251,7 +251,7 @@ export default async function handler({ req, res }: ApiRoute) {
           </section>
 
           {/* API 路由 */}
-          <section className="mb-12">
+          <section id="api" className="mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
               API 路由
             </h2>
