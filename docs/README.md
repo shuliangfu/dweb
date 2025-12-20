@@ -17,6 +17,11 @@
 - [中间件 (middleware)](./middleware.md) - 内置中间件和使用指南
 - [插件 (plugins)](./plugins.md) - 插件系统和使用指南
 
+### 配置与部署
+- [配置 (configuration)](./configuration.md) - dweb.config.ts 详细配置说明
+- [Docker 部署](./docker.md) - Docker 部署指南
+- [开发指南](./development.md) - 开发流程、构建、部署
+
 ## 🚀 快速开始
 
 ### 安装
