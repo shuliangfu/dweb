@@ -304,9 +304,11 @@ export async function createApp(
   // 创建项目目录
   await ensureDir(projectDir);
 
-  // 创建子目录
-  await ensureDir(path.join(projectDir, 'routes'));
-  await ensureDir(path.join(projectDir, 'assets'));
+  // 创建子目录（仅单应用模式在根目录创建）
+  if (!isMultiApp) {
+    await ensureDir(path.join(projectDir, 'routes'));
+    await ensureDir(path.join(projectDir, 'assets'));
+  }
 
   // 生成配置文件
   await generateConfigFile(projectDir, projectName, isMultiApp, appNames, useTailwindV4, renderModeValue);
