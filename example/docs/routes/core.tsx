@@ -167,18 +167,12 @@ export default async function handler({ req, res }: ApiRoute) {
             <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
               服务器 (Server)
             </h2>
-
-            <h3 className="text-2xl font-bold text-gray-900 mt-10 mb-4">基本使用</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
-              Server 类是框架的核心，提供了 HTTP 服务器功能。
+              Server 类是框架的核心，提供了 HTTP 服务器功能。它基于 Deno 的原生 HTTP 服务器，提供了简洁易用的 API。
             </p>
-            <CodeBlock code={serverBasicCode} language="typescript" />
-
-            <h3 className="text-2xl font-bold text-gray-900 mt-10 mb-4">响应方法</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
-              Response 对象提供了多种响应方法，方便处理不同类型的响应：
+              详细说明请查看 <a href="/core/server" className="text-indigo-600 hover:text-indigo-700 hover:underline">服务器文档</a>。
             </p>
-            <CodeBlock code={serverResponseCode} language="typescript" />
           </section>
 
           {/* 路由系统 */}
@@ -186,28 +180,12 @@ export default async function handler({ req, res }: ApiRoute) {
             <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
               路由系统 (Router)
             </h2>
-
-            <h3 className="text-2xl font-bold text-gray-900 mt-10 mb-4">文件系统路由</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
-              DWeb 使用文件系统路由，路由文件位于{' '}
-              <code className="bg-gray-100 px-2 py-1 rounded">routes</code> 目录。文件路径自动映射为
-              URL 路径。
+              DWeb 使用文件系统路由，路由文件位于 <code className="bg-gray-100 px-2 py-1 rounded">routes</code> 目录。文件路径自动映射为 URL 路径，无需手动配置路由表。
             </p>
-            <CodeBlock code={routerCode} language="text" />
-
-            <h3 className="text-2xl font-bold text-gray-900 mt-10 mb-4">动态路由</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
-              使用方括号 <code className="bg-gray-100 px-2 py-1 rounded">[id]</code>{' '}
-              创建动态路由参数：
+              详细说明请查看 <a href="/core/router" className="text-indigo-600 hover:text-indigo-700 hover:underline">路由系统文档</a>。
             </p>
-            <CodeBlock code={dynamicRouteCode} language="typescript" />
-
-            <h3 className="text-2xl font-bold text-gray-900 mt-10 mb-4">捕获所有路由</h3>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              使用 <code className="bg-gray-100 px-2 py-1 rounded">[...slug]</code>{' '}
-              捕获所有剩余路径段：
-            </p>
-            <CodeBlock code={catchAllRouteCode} language="typescript" />
           </section>
 
           {/* 配置管理 */}
@@ -215,12 +193,12 @@ export default async function handler({ req, res }: ApiRoute) {
             <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
               配置管理 (Config)
             </h2>
-
-            <h3 className="text-2xl font-bold text-gray-900 mt-10 mb-4">加载配置</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
-              框架提供了灵活的配置加载机制，支持单应用和多应用模式：
+              DWeb 框架提供了灵活的配置加载机制，支持单应用和多应用模式。配置文件使用 TypeScript，提供完整的类型支持。
             </p>
-            <CodeBlock code={configCode} language="typescript" />
+            <p className="text-gray-700 leading-relaxed mb-4">
+              详细说明请查看 <a href="/core/config" className="text-indigo-600 hover:text-indigo-700 hover:underline">配置管理文档</a>。
+            </p>
           </section>
 
           {/* 中间件系统 */}
