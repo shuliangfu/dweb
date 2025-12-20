@@ -3,7 +3,7 @@
  * 详细介绍 DWeb 框架的数据库功能
  */
 
-import CodeBlock from '../components/CodeBlock.tsx';
+import CodeBlock from '../../components/CodeBlock.tsx';
 import type { PageProps } from '@dreamer/dweb';
 
 export const metadata = {
