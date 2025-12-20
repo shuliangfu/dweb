@@ -5,7 +5,7 @@
  * @module core/api-route
  */
 
-import type { Request, RouteHandler } from '../types/index.ts';
+import type { Request, Response, RouteHandler } from '../types/index.ts';
 import { isSafeMethodName } from '../utils/security.ts';
 
 /**
@@ -128,7 +128,8 @@ function findHandler(
 export async function handleApiRoute(
   handlers: Record<string, RouteHandler>,
   _method: string,
-  req: Request
+  req: Request,
+  res?: Response
 ): Promise<any> {
   // 从 URL 路径中获取方法名
   // 支持两种格式：
@@ -194,7 +195,8 @@ export async function handleApiRoute(
   }
   
   // 执行处理器
-  const result = await handler(req);
+  // 如果处理函数需要 res 参数（参数数量 >= 2），传递 res
+  const result = handler.length >= 2 && res ? await handler(req, res) : await handler(req);
   
   return result;
 }

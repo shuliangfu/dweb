@@ -256,22 +256,88 @@ export class Server {
       setHeader(name: string, value: string) {
         headers.set(name, value);
       },
-      json(data: unknown) {
-        headers.set('content-type', 'application/json');
+      json(data: unknown, options?: {
+        charset?: string;
+        status?: number;
+        headers?: Record<string, string>;
+      }) {
+        // 设置状态码（如果指定）
+        if (options?.status !== undefined) {
+          status = options.status;
+        }
+
+        // 设置 Content-Type
+        const charset = options?.charset || 'utf-8';
+        headers.set('content-type', `application/json; charset=${charset}`);
+
+        // 设置自定义响应头
+        if (options?.headers) {
+          for (const [key, value] of Object.entries(options.headers)) {
+            headers.set(key.toLowerCase(), value);
+          }
+        }
+
         body = JSON.stringify(data);
         return response;
       },
-      html(html: string) {
-        headers.set('content-type', 'text/html; charset=utf-8');
+      html(html: string, options?: {
+        charset?: string;
+        status?: number;
+        headers?: Record<string, string>;
+      }) {
+        // 设置状态码（如果指定）
+        if (options?.status !== undefined) {
+          status = options.status;
+        }
+
+        // 设置 Content-Type
+        const charset = options?.charset || 'utf-8';
+        headers.set('content-type', `text/html; charset=${charset}`);
+
+        // 设置自定义响应头
+        if (options?.headers) {
+          for (const [key, value] of Object.entries(options.headers)) {
+            headers.set(key.toLowerCase(), value);
+          }
+        }
+
         // 直接设置闭包变量 body
         body = html;
         return response;
       },
-      text(text: string) {
-        // 如果已经设置了 Content-Type，不覆盖（例如 Tailwind CSS 插件设置的 text/css）
-        if (!headers.has('content-type')) {
-          headers.set('content-type', 'text/plain; charset=utf-8');
+      text(text: string, options?: { 
+        type?: string;
+        charset?: string;
+        status?: number;
+        headers?: Record<string, string>;
+      }) {
+        // 设置状态码（如果指定）
+        if (options?.status !== undefined) {
+          status = options.status;
         }
+
+        // 设置 Content-Type
+        if (options?.type) {
+          const charset = options.charset || 'utf-8';
+          headers.set('content-type', `${options.type}; charset=${charset}`);
+        } else if (!headers.has('content-type')) {
+          // 如果已经设置了 Content-Type，不覆盖（例如 Tailwind CSS 插件设置的 text/css）
+          const charset = options?.charset || 'utf-8';
+          headers.set('content-type', `text/plain; charset=${charset}`);
+        } else if (options?.charset) {
+          // 如果已有 Content-Type 但指定了 charset，更新 charset
+          const existingType = headers.get('content-type') || '';
+          const typeWithoutCharset = existingType.split(';')[0].trim();
+          headers.set('content-type', `${typeWithoutCharset}; charset=${options.charset}`);
+        }
+
+        // 设置自定义响应头
+        if (options?.headers) {
+          for (const [key, value] of Object.entries(options.headers)) {
+            headers.set(key.toLowerCase(), value);
+          }
+        }
+
         body = text;
         return response;
       },
@@ -280,11 +346,63 @@ export class Server {
         headers.set('location', url);
         return response;
       },
-      send(data: unknown) {
-        if (typeof data === 'string') {
-          return response.text(data);
+      send(data: unknown, options?: {
+        type?: 'text' | 'json' | 'html' | 'javascript' | 'css' | 'binary';
+        charset?: string;
+        status?: number;
+        headers?: Record<string, string>;
+      }) {
+        // 根据 type 参数决定调用哪个方法
+        if (options?.type === 'html') {
+          return response.html(String(data), options);
         }
-        return response.json(data);
+        
+        // 明确指定 json 类型
+        if (options?.type === 'json') {
+          // 对于对象，移除 type 选项（json 不需要 type）
+          const jsonOptions = options ? {
+            charset: options.charset,
+            status: options.status,
+            headers: options.headers,
+          } : undefined;
+          return response.json(data, jsonOptions);
+        }
+        
+        // 字符串或 Uint8Array 数据，根据 type 映射到对应的 MIME 类型
+        const typeMap: Record<string, string> = {
+          'javascript': 'text/javascript',
+          'css': 'text/css',
+          'text': 'text/plain',
+          'binary': 'application/octet-stream',
+        };
+        
+        // 如果指定了 type，映射到对应的 MIME 类型，否则默认为 text/plain
+        const mimeType = options?.type ? typeMap[options.type] : 'text/plain';
+        
+        // 处理字符串数据（默认返回 text）
+        if (typeof data === 'string') {
+          const textOptions = {
+            ...options,
+            type: mimeType,
+          };
+          return response.text(data, textOptions);
+        }
+        
+        // 处理 Uint8Array 二进制数据
+        if (data instanceof Uint8Array) {
+          const binaryOptions = {
+            ...options,
+            type: mimeType === 'text/plain' ? 'application/octet-stream' : mimeType,
+          };
+          return response.text(new TextDecoder().decode(data), binaryOptions);
+        }
+        
+        // 默认情况：对象也转换为字符串返回 text
+        const textOptions = {
+          ...options,
+          type: mimeType,
+        };
+        return response.text(String(data), textOptions);
       },
     };
 

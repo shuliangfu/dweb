@@ -77,11 +77,29 @@ export interface Response {
   body?: string | Uint8Array; // 支持字符串和二进制数据
   setCookie(name: string, value: string, options?: CookieOptions): void;
   setHeader(name: string, value: string): void;
-  json<T = unknown>(data: T): Response;
-  html(html: string): Response;
-  text(text: string): Response;
+  json<T = unknown>(data: T, options?: {
+    charset?: string;
+    status?: number;
+    headers?: Record<string, string>;
+  }): Response;
+  html(html: string, options?: {
+    charset?: string;
+    status?: number;
+    headers?: Record<string, string>;
+  }): Response;
+  text(text: string, options?: { 
+    type?: string;
+    charset?: string;
+    status?: number;
+    headers?: Record<string, string>;
+  }): Response;
   redirect(url: string, status?: number): Response;
-  send(data: string | Uint8Array | object): Response;
+  send(data: string | Uint8Array | object, options?: {
+    type?: 'text' | 'json' | 'html' | 'javascript' | 'css' | 'binary';
+    charset?: string;
+    status?: number;
+    headers?: Record<string, string>;
+  }): Response;
 }
 
 // Cookie 选项
@@ -266,7 +284,7 @@ export interface CorsConfig {
 }
 
 // 路由处理器
-export type RouteHandler = (req: Request) => Promise<any> | any;
+export type RouteHandler = (req: Request, res?: Response) => Promise<any> | any;
 
 // API 路由导出
 export interface ApiRoute {

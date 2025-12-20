@@ -504,9 +504,14 @@ export class RouteHandler {
       const handlers = await loadApiRoute(routeInfo.filePath);
 
       // 处理 API 请求
-      const result = await handleApiRoute(handlers, req.method, req);
+      const result = await handleApiRoute(handlers, req.method, req, res);
 
-      // 返回 JSON 响应
+      // 如果响应已经被设置（通过 res.text()、res.json() 等方法），直接返回
+      if (res.body !== undefined) {
+        return;
+      }
+
+      // 否则返回 JSON 响应
       res.json(result);
     } catch (error) {
       // API 路由错误应该返回 JSON，而不是 HTML
