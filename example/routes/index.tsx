@@ -68,7 +68,7 @@ export default function HomePage({ params: _params, query: _query, data }: PageP
 
   // 快速开始代码示例
   const quickStartCode = `# 创建新项目
-deno run -A jsr:@dreamer/dweb/cli create
+deno run -A jsr:@dreamer/dweb/init
 
 cd my-app
 deno task dev`;

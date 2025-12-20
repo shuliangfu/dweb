@@ -35,7 +35,7 @@ DWeb 框架基于 **Deno** 运行时开发，仅支持 Deno 运行时。
 
 ```bash
 # 使用 CLI 创建新项目（交互式）
-deno run -A jsr:@dreamer/dweb/cli create
+deno run -A jsr:@dreamer/dweb/init
 
 # 进入项目目录
 cd my-app
@@ -49,7 +49,7 @@ deno task dev
 ### 1. 创建项目
 
 ```bash
-deno run -A jsr:@dreamer/dweb/cli create
+deno run -A jsr:@dreamer/dweb/init
 ```
 
 按照提示输入项目信息：

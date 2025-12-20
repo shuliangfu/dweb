@@ -49,7 +49,7 @@ export default function DocsPage({ params: _params, query: _query, data }: PageP
 
   // 安装代码
   const installCode = `# 创建新项目
-deno run -A jsr:@dreamer/dweb/cli create
+deno run -A jsr:@dreamer/dweb/init
 
 cd my-app
 deno task dev`;

@@ -22,7 +22,7 @@
 
 ```bash
 # 使用 CLI 创建新项目
-deno run -A jsr:@dreamer/dweb/cli create
+deno run -A jsr:@dreamer/dweb/init
 
 # 按照提示输入项目信息
 # - 项目名称

@@ -612,6 +612,8 @@ async function generateExampleRoutes(
  * 为单个应用生成路由文件
  */
 async function generateRoutesForApp(routesDir: string, appName: string): Promise<void> {
+  // 获取框架版本号
+  const frameworkVersion = await getFrameworkVersion();
 
   // 生成 _app.tsx（根应用组件，框架必需）
   const appContent = `/**
@@ -758,6 +760,7 @@ export const load = async ({
   // 返回数据，这些数据会自动传递给页面组件的 data 属性
   return {
     message: '欢迎使用 DWeb 框架！',
+    version: '${frameworkVersion}',
     token: token || null,
     userId: userId || null,
     timestamp: new Date().toISOString(),
@@ -774,6 +777,7 @@ export default function Home({ params: _params, query: _query, data }: PageProps
   // 例如：data.message 就是 '欢迎使用 DWeb 框架！'
   const pageData = data as {
     message: string;
+    version: string;
     token: string | null;
     userId: string | null;
     timestamp: string;
@@ -866,9 +870,15 @@ export default function Home({ params: _params, query: _query, data }: PageProps
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
             {pageData.message}
           </h1>
-          <p className="text-xl text-indigo-100 max-w-3xl mx-auto mb-8">
+          <p className="text-xl text-indigo-100 max-w-3xl mx-auto mb-2">
             基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web 框架
           </p>
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+            <span className="text-sm text-indigo-200">
+              当前版本：v{pageData.version}
+            </span>
+          </div>
           {/* 显示 load 函数返回的数据示例 */}
           {pageData.token && (
             <p className="text-sm text-indigo-200 mb-4">
