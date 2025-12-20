@@ -1,5 +1,6 @@
 {
-  "nodeModulesDir": "auto",
+  "version": "1.1.1",
+  "nodeModulesDir": "manual",
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "preact"
@@ -36,11 +37,8 @@
     "sharp": "npm:sharp@^0.34.5"
   },
   "tasks": {
-    "dev:docs": "deno run -A @dreamer/dweb/cli dev:docs",
-    "dev:dweb": "deno run -A @dreamer/dweb/cli dev:dweb",
-    "build:docs": "deno run -A @dreamer/dweb/cli build:docs",
-    "build:dweb": "deno run -A @dreamer/dweb/cli build:dweb",
-    "start:docs": "deno run -A @dreamer/dweb/cli start:docs",
-    "start:dweb": "deno run -A @dreamer/dweb/cli start:dweb"
+    "dev": "deno run -A @dreamer/dweb/cli dev",
+    "build": "deno run -A @dreamer/dweb/cli build",
+    "start": "deno run -A @dreamer/dweb/cli start"
   }
 }

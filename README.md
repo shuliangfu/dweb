@@ -520,7 +520,7 @@ deno task check
 ## 📦 JSR 包信息
 
 - **包名**: `@dreamer/dweb`
-- **版本**: `1.0.10`
+- **版本**: `1.1.1`
 - **JSR 链接**: https://jsr.io/@dreamer/dweb
 - **质量分数**: 查看 [JSR Score](https://jsr.io/@dreamer/dweb/score)
 

@@ -336,7 +336,8 @@ export class Router {
     // 处理 index 文件
     if (pathWithoutExt === 'index' || pathWithoutExt.endsWith('/index')) {
       const basePath = pathWithoutExt.replace(/\/?index$/, '') || '/';
-      let path = basePath === '/' ? '/' : basePath;
+      // 确保路径以 / 开头（除非是根路径）
+      let path = basePath === '/' ? '/' : (basePath.startsWith('/') ? basePath : '/' + basePath);
       
       // 加上 basePath 前缀（如果 basePath 不是根路径）
       if (this.basePath !== '/') {
@@ -348,11 +349,24 @@ export class Router {
         }
       }
       
-      this.routes.set(path, {
+      const routeInfo = {
         path,
         filePath,
-        type: 'page'
-      });
+        type: 'page' as const
+      };
+      
+      // 注册基础路径（例如 /page）
+      this.routes.set(path, routeInfo);
+      
+      // 同时注册带 /index 的路径（例如 /page/index），支持两种访问方式
+      if (path !== '/') {
+        const pathWithIndex = path + '/index';
+        this.routes.set(pathWithIndex, routeInfo);
+      } else {
+        // 根路径的 index 文件，也注册 /index 路径
+        this.routes.set('/index', routeInfo);
+      }
+      
       return;
     }
     
