@@ -3,7 +3,7 @@
  * 用于文档网站的导航菜单，支持二级菜单
  */
 
-import { useState } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 
 interface NavItem {
   title: string;
@@ -129,7 +129,36 @@ function isItemActive(item: NavItem, path: string): boolean {
  * @param props 组件属性
  * @returns JSX 元素
  */
-export default function Sidebar({ currentPath = '/' }: SidebarProps) {
+export default function Sidebar({ currentPath: initialPath = '/' }: SidebarProps) {
+  // 使用状态管理当前路径，避免每次渲染都重新获取
+  const [currentPath, setCurrentPath] = useState(() => {
+    if (typeof globalThis !== 'undefined' && globalThis.location) {
+      return globalThis.location.pathname;
+    }
+    return initialPath;
+  });
+
+  // 监听路径变化（客户端路由）
+  useEffect(() => {
+    const updatePath = () => {
+      if (typeof globalThis !== 'undefined' && globalThis.location) {
+        setCurrentPath(globalThis.location.pathname);
+      }
+    };
+
+    // 监听 popstate 事件（浏览器前进/后退）
+    globalThis.addEventListener('popstate', updatePath);
+
+    // 监听自定义路由事件（如果有的话）
+    const handleRouteChange = () => updatePath();
+    globalThis.addEventListener('routechange', handleRouteChange);
+
+    return () => {
+      globalThis.removeEventListener('popstate', updatePath);
+      globalThis.removeEventListener('routechange', handleRouteChange);
+    };
+  }, []);
+
   // 展开状态管理
   const [expandedItems, setExpandedItems] = useState<Set<string>>(() => {
     // 根据当前路径自动展开相关菜单项
@@ -145,6 +174,20 @@ export default function Sidebar({ currentPath = '/' }: SidebarProps) {
     });
     return expanded;
   });
+
+  // 当路径变化时，更新展开状态
+  useEffect(() => {
+    const expanded = new Set<string>();
+    navItems.forEach((item) => {
+      if (item.children) {
+        const isActive = isItemActive(item, currentPath);
+        if (isActive) {
+          expanded.add(item.path);
+        }
+      }
+    });
+    setExpandedItems(expanded);
+  }, [currentPath]);
 
   /**
    * 检查子项是否激活
@@ -170,7 +213,9 @@ export default function Sidebar({ currentPath = '/' }: SidebarProps) {
    * 切换菜单项展开状态
    * @param path 菜单项路径
    */
-  const toggleExpanded = (path: string) => {
+  const toggleExpanded = (path: string, e: Event) => {
+    e.preventDefault();
+    e.stopPropagation();
     setExpandedItems((prev) => {
       const next = new Set(prev);
       if (next.has(path)) {
@@ -180,6 +225,38 @@ export default function Sidebar({ currentPath = '/' }: SidebarProps) {
       }
       return next;
     });
+  };
+
+  /**
+   * 处理链接点击，使用客户端导航
+   * @param e 点击事件
+   * @param href 链接地址
+   */
+  const handleLinkClick = (e: MouseEvent, href: string) => {
+    // 如果是锚点链接，允许默认行为
+    if (href.includes('#')) {
+      return;
+    }
+
+    // 如果是外部链接，允许默认行为
+    if (href.startsWith('http://') || href.startsWith('https://')) {
+      return;
+    }
+
+    // 如果是当前路径，阻止默认行为
+    if (href === currentPath) {
+      e.preventDefault();
+      return;
+    }
+
+    // 使用客户端导航
+    e.preventDefault();
+    if (typeof globalThis !== 'undefined' && globalThis.history) {
+      globalThis.history.pushState({}, '', href);
+      setCurrentPath(href);
+      // 触发自定义事件，通知其他组件路径已变化
+      globalThis.dispatchEvent(new Event('routechange'));
+    }
   };
 
   return (
@@ -197,6 +274,7 @@ export default function Sidebar({ currentPath = '/' }: SidebarProps) {
                 <div className="flex items-center">
                   <a
                     href={item.path}
+                    onClick={(e) => handleLinkClick(e, item.path)}
                     className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive && !hasChildren
                         ? 'bg-indigo-100 text-indigo-700'
@@ -208,7 +286,7 @@ export default function Sidebar({ currentPath = '/' }: SidebarProps) {
                   {hasChildren && (
                     <button
                       type="button"
-                      onClick={() => toggleExpanded(item.path)}
+                      onClick={(e) => toggleExpanded(item.path, e)}
                       className="px-2 py-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
                       aria-label={isExpanded ? '折叠菜单' : '展开菜单'}
                     >
@@ -236,6 +314,7 @@ export default function Sidebar({ currentPath = '/' }: SidebarProps) {
                         <a
                           key={child.path}
                           href={child.path}
+                          onClick={(e) => handleLinkClick(e, child.path)}
                           className={`block px-3 py-2 rounded-md text-sm transition-colors ${
                             childIsActive
                               ? 'bg-indigo-50 text-indigo-600 font-medium'

@@ -12,12 +12,6 @@ import type { ComponentChildren } from 'preact';
  * @returns JSX 元素
  */
 export default function RootLayout({ children }: { children: ComponentChildren }) {
-  // 获取当前路径（在客户端运行时）
-  let currentPath = '/';
-  if (typeof globalThis !== 'undefined' && globalThis.location) {
-    currentPath = globalThis.location.pathname;
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* 顶部导航栏 */}
@@ -54,7 +48,7 @@ export default function RootLayout({ children }: { children: ComponentChildren }
       {/* 主内容区域（侧边栏 + 内容） */}
       <div className="flex-1 flex">
         {/* 侧边栏 */}
-        <Sidebar currentPath={currentPath} />
+        <Sidebar />
         
         {/* 内容区域 */}
         <main className="flex-1 overflow-y-auto">
