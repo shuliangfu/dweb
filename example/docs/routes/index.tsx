@@ -3,7 +3,6 @@
  * 展示文档导航和快速开始指南
  */
 
-import { h } from 'preact';
 import CodeBlock from '../components/CodeBlock.tsx';
 import type { PageProps } from '@dreamer/dweb';
 

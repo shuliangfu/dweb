@@ -2,7 +2,6 @@
  * Docker 部署文档页面
  */
 
-import { h } from 'preact';
 import type { PageProps, LoadContext } from '@dreamer/dweb';
 import { loadDoc, markdownToHtml } from '../utils/doc-loader.ts';
 
