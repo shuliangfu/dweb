@@ -340,13 +340,21 @@ export function i18n(options: I18nPluginOptions): Plugin {
         lang: ${JSON.stringify(langCode)},
         translations: ${JSON.stringify(translations)},
         t: function(key, params) {
+          const translations = this.translations;
+          // 支持嵌套键（如 'common.title'）和直接键（如 '你好，世界！'）
           const keys = key.split('.');
-          let value = this.translations;
+          let value = translations;
           for (const k of keys) {
             if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
               value = value[k];
             } else {
-              return key;
+              // 如果找不到嵌套键，尝试直接使用整个 key
+              if (keys.length === 1 && typeof translations === 'object' && translations !== null) {
+                value = translations[key];
+              } else {
+                return key;
+              }
+              break;
             }
           }
           if (typeof value !== 'string') return key;
@@ -358,9 +366,12 @@ export function i18n(options: I18nPluginOptions): Plugin {
           return value;
         }
       };
-      // 全局翻译函数
+      // 全局翻译函数（确保 this 指向 window.__I18N_DATA__）
       window.$t = function(key, params) {
-        return window.__I18N_DATA__.t(key, params);
+        if (!window.__I18N_DATA__ || !window.__I18N_DATA__.t) {
+          return key;
+        }
+        return window.__I18N_DATA__.t.call(window.__I18N_DATA__, key, params);
       };
       // 也支持 t 函数
       window.t = window.$t;
