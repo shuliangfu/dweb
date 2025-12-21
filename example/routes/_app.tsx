@@ -45,8 +45,7 @@ export default function App({ children }: AppProps) {
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-tsx.min.js" />
       </head>
       <body>
-        {/* 使用 dangerouslySetInnerHTML 插入已渲染的页面内容 */}
-        <div id="root" dangerouslySetInnerHTML={{ __html: children }} />
+        <div id="root">{children}</div>
       </body>
     </html>
   );

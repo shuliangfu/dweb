@@ -201,7 +201,10 @@ if (isMultiApp) {
         dir: '${appName}/routes',
         ignore: ['**/*.test.ts', '**/*.test.tsx']
       },
-      staticDir: '${appName}/assets',
+      static: {
+        dir: '${appName}/assets',
+        prefix: '/assets'
+      },
       plugins: [
         tailwind({
           version: '${useTailwindV4 ? 'v4' : 'v3'}',
@@ -235,6 +238,13 @@ import { tailwind } from '${frameworkUrl}/plugins';
 import { cors } from '${frameworkUrl}/middleware';
 
 const config: DWebConfig = {
+  // 开发配置（全局，也可以在每个应用中配置）
+  dev: {
+    // open: true,
+    hmrPort: 24678,
+    reloadDelay: 300
+  },
+  
   // Cookie 配置（全局）
   cookie: {
     secret: 'your-secret-key-here-change-in-production'
@@ -247,13 +257,6 @@ const config: DWebConfig = {
     maxAge: 3600000, // 1小时
     secure: false,
     httpOnly: true
-  },
-  
-  // 开发配置（全局）
-  dev: {
-    // open: true,
-    hmrPort: 24678,
-    reloadDelay: 300
   },
   
   // 应用列表
@@ -294,6 +297,13 @@ const config: AppConfig = {
   // 静态资源目录，默认为 'assets'
   // staticDir: 'assets',
   
+  // 开发配置
+  dev: {
+    // open: true,
+    hmrPort: 24678,
+    reloadDelay: 300
+  },
+  
   // Cookie 配置
   cookie: {
     secret: 'your-secret-key-here-change-in-production'
@@ -326,13 +336,6 @@ const config: AppConfig = {
       allowedHeaders: ['Content-Type', 'Authorization'],
     }),
   ],
-  
-  // 开发配置
-  dev: {
-    // open: true,
-    hmrPort: 24678,
-    reloadDelay: 300
-  },
   
   // 构建配置
   build: {
@@ -480,8 +483,7 @@ export default function App({ children }: AppProps) {
         <title>${appName}</title>
       </head>
       <body>
-        {/* 使用 dangerouslySetInnerHTML 插入已渲染的页面内容 */}
-        <div id="root" dangerouslySetInnerHTML={{ __html: children }} />
+        <div id="root">{children}</div>
       </body>
     </html>
   );
@@ -656,10 +658,6 @@ export default function Home({ params: _params, query: _query, data }: PageProps
     timestamp: string;
   };
 
-  const handleClick = () => {
-    alert('按钮被点击了！');
-  };
-
   // 计数器示例（使用 Preact Hooks）
   const [count, setCount] = useState(0);
   
@@ -761,7 +759,7 @@ export default function Home({ params: _params, query: _query, data }: PageProps
             <Button href="/about" variant="primary" className="bg-white text-indigo-600 hover:bg-gray-50">
               了解更多
             </Button>
-            <Button onClick={handleClick} variant="primary" className="bg-white text-indigo-600 hover:bg-gray-50">
+            <Button href="https://denoweb.dev/docs" target="_blank" variant="primary" className="bg-white text-indigo-600 hover:bg-gray-50">
               开始使用
             </Button>
           </div>
@@ -1112,6 +1110,8 @@ export interface ButtonProps {
   children: ComponentChildren;
   /** 按钮链接（如果提供，则渲染为 a 标签） */
   href?: string;
+  /** 链接目标（如 _blank） */
+  target?: string;
   /** 按钮类型 */
   variant?: 'primary' | 'secondary' | 'outline';
   /** 点击事件处理函数（当没有 href 时使用） */
@@ -1128,6 +1128,7 @@ export interface ButtonProps {
 export default function Button({
   children,
   href,
+  target,
   variant = 'primary',
   onClick,
   className = ''
@@ -1171,7 +1172,7 @@ export default function Button({
   // 如果有 href，渲染为链接
   if (href) {
     return (
-      <a href={href} className={combinedClasses}>
+      <a href={href} target={target} className={combinedClasses}>
         {children}
       </a>
     );
