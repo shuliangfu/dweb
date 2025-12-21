@@ -142,6 +142,11 @@ export function staticFiles(options: StaticOptions): Middleware {
     const url = new URL(req.url);
     let pathname = url.pathname;
     
+    // 调试日志：如果是 CSS 文件请求，输出请求路径
+    if (pathname.endsWith('.css')) {
+      console.log(`[Static Files] 收到 CSS 文件请求: ${pathname}, 目录: ${dir}, prefix: ${prefix}`);
+    }
+    
     // 检查是否匹配 extendDirs（优先检查，因为这些目录始终从项目根目录读取）
     // 例如：如果 extendDirs 包含 'uploads'，请求 /uploads/file.jpg 应该从项目根目录的 uploads 读取
     if (normalizedExtendDirs.length > 0) {
@@ -275,8 +280,15 @@ export function staticFiles(options: StaticOptions): Middleware {
     // 移除主目录的前缀
     if (pathname.startsWith(prefix)) {
       pathname = pathname.slice(prefix.length);
+      // 调试日志：如果是 CSS 文件，输出处理后的路径
+      if (pathname.endsWith('.css')) {
+        console.log(`[Static Files] CSS 文件路径处理: 原始路径=${url.pathname}, prefix=${prefix}, 处理后路径=${pathname}`);
+      }
     } else {
       // 如果不匹配主目录的 prefix，也不匹配 extendDirs，跳过
+      if (url.pathname.endsWith('.css')) {
+        console.log(`[Static Files] CSS 文件请求不匹配 prefix: 路径=${url.pathname}, prefix=${prefix}`);
+      }
       await next();
       return;
     }
