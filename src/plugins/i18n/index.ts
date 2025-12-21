@@ -11,6 +11,7 @@ import type { I18nPluginOptions, TranslationData } from "./types.ts";
 import * as path from "@std/path";
 import {
   clearCurrentLanguage,
+  ensureGlobalI18n,
   initI18nAccess,
   setCurrentLanguage,
 } from "./access.ts";
@@ -236,6 +237,8 @@ export function i18n(options: I18nPluginOptions): Plugin {
         options.languages[0]?.code ||
         "en";
       initI18nAccess(translationCache, defaultLang);
+      // 确保全局函数已初始化（防止类型错误）
+      ensureGlobalI18n();
     },
 
     /**

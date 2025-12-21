@@ -33,7 +33,7 @@ export const load = async ({
   const jsrPackageUrl = getJsrPackageUrl();
   const versionString = getVersionString();
 
-  // console.log({ jsrPackageUrl, versionString });
+	console.log($t('common.welcome'));
 
   return {
     message: 'Hello, World!',
