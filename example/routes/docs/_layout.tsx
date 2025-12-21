@@ -11,6 +11,8 @@ interface DocsLayoutProps {
   children: ComponentChildren;
 }
 
+// export const inherit = false;
+
 /**
  * 文档布局组件
  * @param props 组件属性
