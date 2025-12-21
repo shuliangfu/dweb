@@ -147,9 +147,17 @@ function generateThemeScript(options: ThemePluginOptions): string {
                       .then(cssText => {
                         console.log('[Theme Plugin] CSS 文件大小:', cssText.length, '字节');
                         console.log('[Theme Plugin] CSS 文件前 200 字符:', cssText.substring(0, 200));
-                        const hasDark = cssText.includes('.dark') || 
-                                       cssText.includes('dark:') ||
-                                       cssText.includes('dark\\:');
+                        // 检查 CSS 文件内容（注意：压缩后的 CSS 可能是单行，需要检查转义字符）
+                        const hasDarkDot = cssText.includes('.dark');
+                        const hasDarkColon = cssText.includes('dark:');
+                        const hasDarkEscaped = cssText.includes('dark\\:');
+                        const hasDarkSpace = cssText.includes('.dark ');
+                        console.log('[Theme Plugin] CSS 检查结果:');
+                        console.log('  - 包含 ".dark":', hasDarkDot);
+                        console.log('  - 包含 "dark:":', hasDarkColon);
+                        console.log('  - 包含 "dark\\:":', hasDarkEscaped);
+                        console.log('  - 包含 ".dark ":', hasDarkSpace);
+                        const hasDark = hasDarkDot || hasDarkColon || hasDarkEscaped || hasDarkSpace;
                         console.log('[Theme Plugin] CSS 文件内容包含 dark mode:', hasDark);
                         if (hasDark) {
                           const darkMatches = cssText.match(/\.dark[^}]*\{/g);
