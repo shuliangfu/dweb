@@ -28,7 +28,7 @@ export type TranslationData = Record<string, string | Record<string, unknown>>;
  */
 export interface DateFormatOptions {
   /** 日期格式 */
-  format?: 'short' | 'medium' | 'long' | 'full' | string;
+  format?: "short" | "medium" | "long" | "full" | string;
   /** 时区 */
   timeZone?: string;
 }
@@ -38,7 +38,7 @@ export interface DateFormatOptions {
  */
 export interface NumberFormatOptions {
   /** 样式 */
-  style?: 'decimal' | 'currency' | 'percent';
+  style?: "decimal" | "currency" | "percent";
   /** 货币代码 */
   currency?: string;
   /** 最小小数位数 */
@@ -79,4 +79,3 @@ export interface I18nPluginOptions {
   /** 数字格式化选项 */
   numberFormat?: NumberFormatOptions;
 }
-

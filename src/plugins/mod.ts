@@ -7,7 +7,7 @@ export { seo } from './seo/index.ts';
 export { sitemap } from './sitemap/index.ts';
 export { pwa } from './pwa/index.ts';
 export { imageOptimizer } from './image-optimizer/index.ts';
-export { i18n } from './i18n/index.ts';
+export { i18n, getI18n, getCurrentLanguage, isI18nInitialized } from './i18n/index.ts';
 export { rss } from './rss/index.ts';
 export { theme } from './theme/index.ts';
 export { formValidator, validateForm, validateValue } from './form-validator/index.ts';
