@@ -346,7 +346,6 @@ function injectCSSLink(
       // 如果没有 <link> 标签，但有 </head>，在 </head> 前面注入
       // 注意：需要找到最后一个 </head>，因为插件可能已经在 </head> 之前注入了脚本
       const lastHeadIndex = html.lastIndexOf("</head>");
-      console.log("[Prod Server] injectCSSLink: 最后一个 </head> 位置（无 link 时）:", lastHeadIndex);
       if (lastHeadIndex !== -1) {
         res.body = html.slice(0, lastHeadIndex) + `  ${linkTag}\n` +
           html.slice(lastHeadIndex);
