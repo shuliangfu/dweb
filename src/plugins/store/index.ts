@@ -198,7 +198,7 @@ export function store(options: StorePluginOptions = {}): Plugin {
     /**
      * 初始化钩子
      */
-    onInit: async (app) => {
+    onInit: (app) => {
       // 在应用实例上添加 getStore 方法
       (app as any).getStore = () => {
         if (typeof globalThis !== "undefined" && globalThis.window) {
