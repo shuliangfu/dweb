@@ -37,7 +37,7 @@ my-app/
 ├── routes/              # 路由目录
 │   ├── index.tsx        # 首页
 │   ├── about.tsx        # 关于页面
-│   └── api/             # API 路由
+│   └── api/             # API 路由（默认在 routes/api，可通过 apiDir 配置）
 │       └── users.ts
 ├── components/          # 组件目录
 ├── assets/              # 静态资源

@@ -258,7 +258,7 @@ routes/
 │   ├── _middleware.ts    # 用户路由中间件（应用到 /users 下的所有路由）
 │   ├── index.tsx         # /users
 │   └── [id].tsx          # /users/:id
-└── api/
+└── api/                  # API 路由目录（默认在 routes/api，可通过 apiDir 配置）
     └── _middleware.ts    # API 路由中间件（应用到 /api 下的所有路由）
 ```
 

@@ -73,8 +73,36 @@ export default defineConfig({
     
     // 路由优先级策略
     priority: 'specific-first', // 'specific-first' | 'order'
+    
+    // API 目录配置（可选）
+    // 默认为 'routes/api'，也可以配置为 'api' 等相对路径
+    // 如果配置为 'api'，则 API 文件应放在项目根目录的 api 文件夹中
+    apiDir: 'routes/api', // 或 'api'
   },
 });
+```
+
+#### API 目录配置说明
+
+`apiDir` 选项用于配置 API 路由文件的存放目录：
+
+- **默认值**：`routes/api` - API 文件放在 `routes` 目录下的 `api` 子目录中
+- **自定义配置**：可以设置为 `'api'` 等相对路径，此时 API 文件应放在项目根目录的对应文件夹中
+
+**示例：**
+
+```typescript
+// 默认配置（API 文件在 routes/api 目录）
+routes: {
+  dir: 'routes',
+  // apiDir 默认为 'routes/api'
+}
+
+// 自定义配置（API 文件在项目根目录的 api 文件夹）
+routes: {
+  dir: 'routes',
+  apiDir: 'api', // API 文件放在项目根目录的 api 文件夹中
+}
 ```
 
 ### 构建配置

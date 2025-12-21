@@ -220,10 +220,27 @@ usePlugin(myPlugin);
 
 ## API 路由
 
+### API 目录配置
+
+默认情况下，API 路由文件应放在 `routes/api` 目录下。你也可以在 `dweb.config.ts` 中配置自定义的 API 目录：
+
+```typescript
+// dweb.config.ts
+export default {
+  routes: {
+    dir: 'routes',
+    // 默认 API 目录为 'routes/api'
+    // 也可以配置为 'api'，此时 API 文件放在项目根目录的 api 文件夹中
+    apiDir: 'api', // 可选，默认为 'routes/api'
+  },
+};
+```
+
 ### 创建 API 路由
 
 ```typescript
-// routes/api/users.ts
+// routes/api/users.ts（默认配置）
+// 或 api/users.ts（如果配置了 apiDir: 'api'）
 export async function GET(req: Request, res: Response) {
   const users = await getUsers();
   res.json(users);
