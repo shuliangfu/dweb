@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "1.1.9",
+  "version": "1.2.0",
   "license": "MIT",
   "exports": {
     ".": "./src/mod.ts",
@@ -14,8 +14,6 @@
     "start": "deno run -A src/cli.ts start",
 
     "compile": "deno compile -A --output bin/dweb src/cli.ts",
-
-    "doc": "deno doc --json src/ > docs/api.json",
 
     "lint": "deno lint src/ example/",
     "fmt": "deno fmt src/ example/",
