@@ -8,14 +8,11 @@
 // 或者使用类型断言：const t = globalThis.$t as (key: string, params?: Record<string, string>) => string;
 
 // 在模块加载时初始化默认全局函数
-// 这确保即使 i18n 插件未使用，$t() 和 t() 也可以使用（返回 key 本身）
+// 这确保即使 i18n 插件未使用，$t() 也可以使用（返回 key 本身）
 if (typeof globalThis !== "undefined") {
   const defaultT = (key: string) => key;
   if (!(globalThis as any).$t) {
     (globalThis as any).$t = defaultT;
-  }
-  if (!(globalThis as any).t) {
-    (globalThis as any).t = defaultT;
   }
 }
 
@@ -288,27 +285,24 @@ export function i18n(options: I18nPluginOptions): Plugin {
       (req as any).lang = langCode;
       (req as any).langConfig = langConfig;
       (req as any).translations = translationCache.get(langCode) || null;
-      (req as any).t = tFunction;
+      (req as any).t = tFunction; // 保留 t 用于向后兼容（通过 PageProps 和 LoadContext）
 
-      // 立即在服务端设置全局 $t 和 t 函数（使用当前请求的语言）
-      // 这样在请求处理过程中就可以直接使用 $t() 和 t()
+      // 立即在服务端设置全局 $t 函数（使用当前请求的语言）
+      // 这样在请求处理过程中就可以直接使用 $t()
       if (typeof globalThis !== "undefined") {
         (globalThis as any).$t = tFunction;
-        (globalThis as any).t = tFunction;
       }
 
       // 将翻译函数存储到请求对象，供 route-handler 在渲染时使用
       (req as any).__setGlobalI18n = () => {
         if (typeof globalThis !== "undefined") {
           (globalThis as any).$t = tFunction;
-          (globalThis as any).t = tFunction;
         }
       };
 
       (req as any).__clearGlobalI18n = () => {
         if (typeof globalThis !== "undefined") {
           delete (globalThis as any).$t;
-          delete (globalThis as any).t;
         }
       };
 
@@ -390,8 +384,6 @@ export function i18n(options: I18nPluginOptions): Plugin {
         }
         return window.__I18N_DATA__.t.call(window.__I18N_DATA__, key, params);
       };
-      // 也支持 t 函数
-      window.t = window.$t;
     </script>`;
               newHtml = newHtml.replace(
                 "</head>",

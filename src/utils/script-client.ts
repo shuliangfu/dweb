@@ -347,7 +347,6 @@ async function initClientSideNavigation(render, jsx) {
                   }
                   return window.__I18N_DATA__.t.call(window.__I18N_DATA__, key, params);
                 };
-                window.t = window.$t;
               }
             }
           } catch (_e) {
@@ -359,12 +358,11 @@ async function initClientSideNavigation(render, jsx) {
       // 提取失败，静默处理（可能没有 i18n 数据）
     }
     
-    // 确保 $t 和 t 函数始终可用（即使没有 i18n 数据）
+    // 确保 $t 函数始终可用（即使没有 i18n 数据）
     if (typeof window.$t !== 'function') {
       window.$t = function(key, _params) {
         return key;
       };
-      window.t = window.$t;
     }
   }
   
@@ -712,18 +710,11 @@ if (window.__I18N_DATA__ && window.__I18N_DATA__.t && typeof window.__I18N_DATA_
     }
     return window.__I18N_DATA__.t.call(window.__I18N_DATA__, key, params);
   };
-  window.t = window.$t;
 } else if (typeof window.$t !== 'function') {
   // 如果 i18n 插件未启用或脚本未注入，使用默认函数
   window.$t = function(key, _params) {
     return key;
   };
-  window.t = window.$t;
-} else {
-  // 如果 window.$t 已经存在，确保 window.t 也指向它
-  if (typeof window.t !== 'function') {
-    window.t = window.$t;
-  }
 }
 
 // 页面数据

@@ -790,7 +790,6 @@ export class RouteHandler {
         // 如果 req.t 存在（i18n 插件已设置），使用实际的翻译函数
         if ((req as any).t) {
           (globalThis as any).$t = (req as any).t;
-          (globalThis as any).t = (req as any).t;
         } else {
           // 如果 req.t 不存在，尝试从 i18n access 模块获取
           try {
@@ -805,7 +804,6 @@ export class RouteHandler {
             if (!(globalThis as any).$t) {
               const defaultT = (key: string) => key;
               (globalThis as any).$t = defaultT;
-              (globalThis as any).t = defaultT;
             }
           }
         }

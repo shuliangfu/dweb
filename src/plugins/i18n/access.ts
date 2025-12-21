@@ -38,9 +38,6 @@ function initDefaultGlobalI18n(): void {
     if (!(globalThis as any).$t) {
       (globalThis as any).$t = defaultTranslationFunction;
     }
-    if (!(globalThis as any).t) {
-      (globalThis as any).t = defaultTranslationFunction;
-    }
   }
 }
 
@@ -56,12 +53,11 @@ export function initI18nAccess(
   translationCache = cache;
   defaultLanguage = defaultLang;
 
-  // 初始化全局 $t 和 t 函数（使用默认语言）
+  // 初始化全局 $t 函数（使用默认语言）
   // 只有在 i18n 插件已初始化时才设置全局函数
   if (typeof globalThis !== "undefined") {
     const defaultTFunction = getI18n(defaultLang);
     (globalThis as any).$t = defaultTFunction;
-    (globalThis as any).t = defaultTFunction;
   }
 }
 
@@ -78,14 +74,12 @@ export function ensureGlobalI18n(): void {
       if (!(globalThis as any).$t) {
         const tFunc = getI18n();
         (globalThis as any).$t = tFunc;
-        (globalThis as any).t = tFunc;
       }
     } else {
       // 如果 i18n 未初始化，使用默认函数（返回 key 本身）
-      // 这确保 $t() 和 t() 始终可用，不会报错
+      // 这确保 $t() 始终可用，不会报错
       if (!(globalThis as any).$t) {
         (globalThis as any).$t = defaultTranslationFunction;
-        (globalThis as any).t = defaultTranslationFunction;
       }
     }
   }

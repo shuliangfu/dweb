@@ -6,7 +6,7 @@
 
 在 Model 中使用 i18n 有几种方式：
 
-1. **直接使用 `$t()` 或 `t()`**（最推荐）- 无需导入，全局可用
+1. **直接使用 `$t()`**（最推荐）- 无需导入，全局可用
 2. **使用 `getI18n()` 函数** - 在请求上下文中自动使用当前语言
 3. **通过参数传递** - 在 load 函数中获取 `t` 函数，然后传递给 Model 方法
 
@@ -15,10 +15,11 @@
 ```typescript
 // routes/index.tsx
 export default function HomePage({ t }: PageProps) {
+  // 可以使用 PageProps 中的 t 函数，或直接使用全局 $t()
   return (
     <div>
-      <h1>{t("common.welcome")}</h1>
-      <p>{t("common.greeting", { name: "John" })}</p>
+      <h1>{$t("common.welcome")}</h1>
+      <p>{$t("common.greeting", { name: "John" })}</p>
     </div>
   );
 }
@@ -29,7 +30,8 @@ export default function HomePage({ t }: PageProps) {
 ```typescript
 // routes/index.tsx
 export async function load({ t }: LoadContext) {
-  const message = t("common.welcome");
+  // 可以使用 LoadContext 中的 t 函数，或直接使用全局 $t()
+  const message = $t("common.welcome");
   return { message };
 }
 
@@ -40,7 +42,7 @@ export default function HomePage({ data }: PageProps) {
 
 ### 在 Model 中使用
 
-## 方式 1：直接使用 `$t()` 或 `t()`（最推荐）
+## 方式 1：直接使用 `$t()`（最推荐）
 
 **无需导入，全局可用！** 这是最简单的方式。
 
@@ -76,10 +78,10 @@ class User extends SQLModel {
         required: true,
         pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         custom: async (value: string) => {
-          // 也可以使用 t()，效果相同
+          // 直接使用 $t()，无需导入！
           const existing = await User.findOne({ email: value });
           if (existing) {
-            throw new Error(t("validation.email.exists"));
+            throw new Error($t("validation.email.exists"));
           }
         },
       },
@@ -111,14 +113,14 @@ export default User;
 
 ### 工作原理
 
-- **服务端**：`$t()` 和 `t()` 在 `globalThis` 上可用
-- **客户端**：`$t()` 和 `t()` 在 `window` 上可用
+- **服务端**：`$t()` 在 `globalThis` 上可用
+- **客户端**：`$t()` 在 `window` 上可用
 - **自动语言切换**：在请求处理时，会自动使用当前请求的语言
 - **默认语言**：在非请求上下文中，使用默认语言
 
 ### TypeScript 类型支持
 
-为了在 TypeScript 中使用 `$t()` 和 `t()` 而不报错，需要引用全局类型声明文件：
+为了在 TypeScript 中使用 `$t()` 而不报错，需要引用全局类型声明文件：
 
 **方法 1：在项目根目录创建 `i18n-global.d.ts`**
 
@@ -146,7 +148,7 @@ export default function HomePage() {
 
 ### 注意事项
 
-- `$t()` 和 `t()` 始终可用：如果 i18n 插件未初始化，会返回 key 本身（不会报错）
+- `$t()` 始终可用：如果 i18n 插件未初始化，会返回 key 本身（不会报错）
 - 在 TypeScript 中，需要引用全局类型声明文件才能获得类型支持
 - 运行时功能不需要类型声明文件，类型声明仅用于 TypeScript 类型检查
 - 在请求上下文中，会自动使用当前请求的语言
@@ -304,7 +306,7 @@ i18n 插件支持多种语言检测方式，按以下优先级顺序：
 
 ## 最佳实践
 
-1. **优先使用 `$t()` 或 `t()`**：这是最简单的方式，无需导入，全局可用
+1. **优先使用 `$t()`**：这是最简单的方式，无需导入，全局可用
 2. **备选方案使用
    `getI18n()`**：如果需要在非请求上下文中使用，或需要指定特定语言
 3. **提供默认值**：如果翻译不存在，翻译函数会返回
@@ -314,7 +316,7 @@ i18n 插件支持多种语言检测方式，按以下优先级顺序：
 
 ## 注意事项
 
-- **`$t()` 和 `t()` 始终可用**：
+- **`$t()` 始终可用**：
   - 在请求上下文中，会自动使用当前请求的语言
   - 在非请求上下文（如后台任务）中，使用默认语言
   - 如果 i18n 插件未初始化，会返回 key 本身（不会报错）
