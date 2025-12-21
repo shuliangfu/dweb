@@ -162,26 +162,33 @@ function generateStoreScript(
   const storageKey = config.storageKey || 'dweb-store';
   const initialState = config.initialState || {};
 
-  // 如果有服务端状态，合并到初始状态中（服务端状态优先级更高）
-  const mergedInitialState = serverState
-    ? { ...initialState, ...serverState }
-    : initialState;
+  // 序列化服务端状态（如果存在）
+  const serverStateJson = serverState ? JSON.stringify(serverState) : 'null';
 
   return `
     <script>
       (function() {
-        // 从 localStorage 恢复状态，但服务端状态优先级更高
-        let state = ${JSON.stringify(mergedInitialState)};
+        // 获取服务端状态（如果存在）
+        const serverState = ${serverStateJson};
+        
+        // 从 localStorage 恢复状态
+        let state = ${JSON.stringify(initialState)};
         if (${persist}) {
           try {
             const stored = localStorage.getItem(${JSON.stringify(storageKey)});
             if (stored) {
               // 合并：服务端状态 > localStorage > 初始状态
-              state = { ...${JSON.stringify(initialState)}, ...JSON.parse(stored), ...${JSON.stringify(serverState || {})} };
+              const storedState = JSON.parse(stored);
+              state = { ...${JSON.stringify(initialState)}, ...storedState };
             }
           } catch (error) {
             console.warn('[Store Plugin] 无法从 localStorage 恢复状态:', error);
           }
+        }
+        
+        // 如果有服务端状态，合并到当前状态中（服务端状态优先级最高）
+        if (serverState && typeof serverState === 'object') {
+          state = { ...state, ...serverState };
         }
 
         const listeners = new Set();
