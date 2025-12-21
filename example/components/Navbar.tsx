@@ -138,28 +138,11 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                // 在客户端直接使用 window
+                // 直接调用主题切换方法
                 if (typeof globalThis !== 'undefined' && globalThis.window) {
                   const win = globalThis.window as any;
-                  // 尝试多种方式调用主题切换
-                  if (win.toggleTheme && typeof win.toggleTheme === 'function') {
-                    try {
-                      win.toggleTheme();
-                    } catch (error) {
-                      console.error('[Navbar] 调用 toggleTheme 失败:', error);
-                    }
-                  } else if (win.__THEME_MANAGER__ && typeof win.__THEME_MANAGER__.toggle === 'function') {
-                    try {
-                      win.__THEME_MANAGER__.toggle();
-                    } catch (error) {
-                      console.error('[Navbar] 调用 __THEME_MANAGER__.toggle 失败:', error);
-                    }
-                  } else {
-                    // 调试信息：检查可用的主题相关对象
-                    console.warn('[Navbar] 主题切换功能未初始化');
-                    console.log('[Navbar] window.toggleTheme:', win.toggleTheme);
-                    console.log('[Navbar] window.__THEME_MANAGER__:', win.__THEME_MANAGER__);
-                    console.log('[Navbar] window.__THEME_STORE__:', win.__THEME_STORE__);
+                  if (win.toggleTheme) {
+                    win.toggleTheme();
                   }
                 }
               }}
