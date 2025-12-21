@@ -98,7 +98,7 @@ export default function AboutPage({ params: _params, query: _query, data: _data 
   return (
     <div className="space-y-0">
       {/* 页面标题 */}
-      <div className="bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-800 dark:to-indigo-800 py-16">
+      <div className="bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
             关于 DWeb 
@@ -185,7 +185,7 @@ export default function AboutPage({ params: _params, query: _query, data: _data 
       </div>
 
       {/* 开始使用 */}
-      <div className="py-20 bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-800 dark:to-indigo-800">
+      <div className="py-20 bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
             准备开始了吗？
