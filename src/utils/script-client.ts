@@ -701,27 +701,27 @@ async function initClientSideNavigation(render, jsx) {
   }
 
   const clientContent = `
-// 确保 i18n 函数在页面加载时可用（即使没有 i18n 插件）
-// 注意：i18n 插件的脚本应该在 </head> 之前注入，所以这里应该已经存在 window.$t
-// 如果不存在，说明 i18n 插件未启用或脚本未注入，使用默认函数
-if (typeof window.$t !== 'function') {
+// 确保 i18n 函数在页面加载时可用
+// i18n 插件的脚本在 </head> 之前注入，所以这里应该已经存在 window.__I18N_DATA__
+// 优先使用 window.__I18N_DATA__ 来初始化 window.$t
+if (window.__I18N_DATA__ && window.__I18N_DATA__.t && typeof window.__I18N_DATA__.t === 'function') {
+  // 使用 i18n 插件的翻译函数（确保 this 绑定正确）
+  window.$t = function(key, params) {
+    if (!window.__I18N_DATA__ || !window.__I18N_DATA__.t) {
+      return key;
+    }
+    return window.__I18N_DATA__.t.call(window.__I18N_DATA__, key, params);
+  };
+  window.t = window.$t;
+} else if (typeof window.$t !== 'function') {
+  // 如果 i18n 插件未启用或脚本未注入，使用默认函数
   window.$t = function(key, _params) {
     return key;
   };
   window.t = window.$t;
 } else {
-  // 如果 i18n 插件已经设置了 window.$t，确保 window.t 也指向它
+  // 如果 window.$t 已经存在，确保 window.t 也指向它
   if (typeof window.t !== 'function') {
-    window.t = window.$t;
-  }
-  // 确保 window.$t 使用的是最新的 window.__I18N_DATA__
-  if (window.__I18N_DATA__ && window.__I18N_DATA__.t) {
-    window.$t = function(key, params) {
-      if (!window.__I18N_DATA__ || !window.__I18N_DATA__.t) {
-        return key;
-      }
-      return window.__I18N_DATA__.t.call(window.__I18N_DATA__, key, params);
-    };
     window.t = window.$t;
   }
 }
