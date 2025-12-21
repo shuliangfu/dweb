@@ -108,12 +108,21 @@ function generateThemeScript(options: ThemePluginOptions): string {
           },
           
           // 切换主题（仅在 dark 和 light 之间切换）
-          toggle: function() {
+          toggleTheme: function() {
             const current = this.getTheme();
             // 如果当前是 auto，切换到 dark；否则在 dark 和 light 之间切换
             const next = current === 'dark' ? 'light' : 'dark';
             this.setTheme(next);
             return next;
+          },
+          
+          // 切换到指定主题
+          switchTheme: function(theme) {
+            if (theme === 'dark' || theme === 'light') {
+              this.setTheme(theme);
+              return theme;
+            }
+            return this.getTheme();
           }
         };
         
@@ -183,7 +192,10 @@ function generateThemeScript(options: ThemePluginOptions): string {
           return ThemeManager.getActualTheme();
         };
         window.toggleTheme = function() { 
-          return ThemeManager.toggle(); 
+          return ThemeManager.toggleTheme(); 
+        };
+        window.switchTheme = function(theme) { 
+          return ThemeManager.switchTheme(theme); 
         };
         
         // 初始化
