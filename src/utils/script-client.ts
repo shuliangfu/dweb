@@ -701,51 +701,30 @@ async function initClientSideNavigation(render, jsx) {
   }
 
   const clientContent = `
-// 调试：打印 i18n 相关信息
-console.log('[客户端脚本] 开始初始化 i18n...');
-console.log('[客户端脚本] window.__I18N_DATA__:', window.__I18N_DATA__);
-console.log('[客户端脚本] window.$t:', typeof window.$t, window.$t);
-if (window.__I18N_DATA__) {
-  console.log('[客户端脚本] window.__I18N_DATA__.lang:', window.__I18N_DATA__.lang);
-  console.log('[客户端脚本] window.__I18N_DATA__.translations:', window.__I18N_DATA__.translations);
-  console.log('[客户端脚本] window.__I18N_DATA__.t:', typeof window.__I18N_DATA__.t);
-}
-
 // 确保 i18n 函数在页面加载时可用
 // i18n 插件的脚本在 </head> 之前注入，所以这里应该已经存在 window.__I18N_DATA__
 // 优先使用 window.__I18N_DATA__ 来初始化 window.$t
 if (window.__I18N_DATA__ && window.__I18N_DATA__.t && typeof window.__I18N_DATA__.t === 'function') {
-  console.log('[客户端脚本] 使用 window.__I18N_DATA__ 初始化 window.$t');
   // 使用 i18n 插件的翻译函数（确保 this 绑定正确）
   window.$t = function(key, params) {
-    console.log('[客户端脚本] window.$t 被调用，key:', key, 'params:', params);
-    console.log('[客户端脚本] window.__I18N_DATA__:', window.__I18N_DATA__);
     if (!window.__I18N_DATA__ || !window.__I18N_DATA__.t) {
-      console.log('[客户端脚本] window.__I18N_DATA__ 不存在或 t 函数不存在，返回 key');
       return key;
     }
-    const result = window.__I18N_DATA__.t.call(window.__I18N_DATA__, key, params);
-    console.log('[客户端脚本] 翻译结果:', result);
-    return result;
+    return window.__I18N_DATA__.t.call(window.__I18N_DATA__, key, params);
   };
   window.t = window.$t;
-  console.log('[客户端脚本] window.$t 初始化完成');
 } else if (typeof window.$t !== 'function') {
-  console.log('[客户端脚本] 使用默认函数初始化 window.$t');
   // 如果 i18n 插件未启用或脚本未注入，使用默认函数
   window.$t = function(key, _params) {
-    console.log('[客户端脚本] 默认函数被调用，key:', key);
     return key;
   };
   window.t = window.$t;
 } else {
-  console.log('[客户端脚本] window.$t 已存在，确保 window.t 也指向它');
   // 如果 window.$t 已经存在，确保 window.t 也指向它
   if (typeof window.t !== 'function') {
     window.t = window.$t;
   }
 }
-console.log('[客户端脚本] i18n 初始化完成，window.$t:', typeof window.$t);
 
 // 页面数据
 globalThis.__PAGE_DATA__ = {

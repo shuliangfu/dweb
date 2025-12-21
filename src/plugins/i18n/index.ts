@@ -348,74 +348,49 @@ export function i18n(options: I18nPluginOptions): Plugin {
               const translationsScript = `
     <script>
       // i18n 翻译数据
-      console.log('[i18n 插件] 开始注入翻译数据...');
-      console.log('[i18n 插件] langCode:', ${JSON.stringify(langCode)});
-      console.log('[i18n 插件] translations:', ${JSON.stringify(translations)});
       window.__I18N_DATA__ = {
         lang: ${JSON.stringify(langCode)},
         translations: ${JSON.stringify(translations)},
         t: function(key, params) {
-          console.log('[i18n 插件] t 函数被调用，key:', key, 'params:', params);
-          console.log('[i18n 插件] this:', this);
-          console.log('[i18n 插件] this.translations:', this.translations);
           const translations = this.translations;
           if (!translations || typeof translations !== 'object') {
-            console.log('[i18n 插件] translations 无效，返回 key');
             return key;
           }
           // 支持嵌套键（如 'common.title'）和直接键（如 '你好，世界！'）
           const keys = key.split('.');
           let value = translations;
-          console.log('[i18n 插件] 开始查找翻译，keys:', keys);
           for (const k of keys) {
             if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
               value = value[k];
-              console.log('[i18n 插件] 查找 key:', k, 'value:', value);
               // 如果找不到，且是单个键，尝试直接使用整个 key
               if (value === undefined && keys.length === 1) {
                 value = translations[key];
-                console.log('[i18n 插件] 尝试直接使用整个 key:', key, 'value:', value);
               }
               if (value === undefined) {
-                console.log('[i18n 插件] 未找到翻译，返回 key');
                 return key;
               }
             } else {
-              console.log('[i18n 插件] value 不是对象，返回 key');
               return key;
             }
           }
-          if (typeof value !== 'string') {
-            console.log('[i18n 插件] value 不是字符串，返回 key');
-            return key;
-          }
+          if (typeof value !== 'string') return key;
           if (params) {
-            const result = value.replace(/\\{(\\w+)\\}/g, (match, paramKey) => {
+            return value.replace(/\\{(\\w+)\\}/g, (match, paramKey) => {
               return params[paramKey] || match;
             });
-            console.log('[i18n 插件] 替换参数后的结果:', result);
-            return result;
           }
-          console.log('[i18n 插件] 最终翻译结果:', value);
           return value;
         }
       };
-      console.log('[i18n 插件] window.__I18N_DATA__ 已设置:', window.__I18N_DATA__);
       // 全局翻译函数（确保 this 指向 window.__I18N_DATA__）
       window.$t = function(key, params) {
-        console.log('[i18n 插件] window.$t 被调用，key:', key, 'params:', params);
         if (!window.__I18N_DATA__ || !window.__I18N_DATA__.t) {
-          console.log('[i18n 插件] window.__I18N_DATA__ 不存在或 t 函数不存在，返回 key');
           return key;
         }
-        const result = window.__I18N_DATA__.t.call(window.__I18N_DATA__, key, params);
-        console.log('[i18n 插件] window.$t 翻译结果:', result);
-        return result;
+        return window.__I18N_DATA__.t.call(window.__I18N_DATA__, key, params);
       };
       // 也支持 t 函数
       window.t = window.$t;
-      console.log('[i18n 插件] window.$t 和 window.t 已设置');
-      console.log('[i18n 插件] 翻译数据注入完成');
     </script>`;
               newHtml = newHtml.replace(
                 "</head>",
