@@ -112,6 +112,7 @@ export function staticFiles(options: StaticOptions): Middleware {
     if (isProduction !== undefined && outDir) {
       // 生产环境：使用构建输出目录
       dir = path.join(cwd, outDir, dir);
+      console.log(`[Static Files] 生产环境：使用构建输出目录: ${dir}`);
     } else if (isProduction !== undefined && !isProduction) {
       // 明确指定为开发环境：使用项目目录
       dir = path.join(cwd, dir);
