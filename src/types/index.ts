@@ -366,8 +366,6 @@ export interface LoadContext {
   getSession(): Promise<Session | null>;
   /** 数据库适配器实例（如果已配置数据库） */
   db?: import("../features/database/types.ts").DatabaseAdapter | null;
-  /** 翻译函数（如果已配置 i18n 插件） */
-  t?: (key: string, params?: Record<string, string>) => string;
   /** 当前语言代码（如果已配置 i18n 插件） */
   lang?: string;
   /** 状态管理 Store（如果已配置 store 插件） */
@@ -385,8 +383,6 @@ export interface PageProps {
   query: Record<string, string>;
   /** 页面数据（load 函数返回的数据） */
   data: unknown;
-  /** 翻译函数（如果已配置 i18n 插件） */
-  t?: (key: string, params?: Record<string, string>) => string;
   /** 当前语言代码（如果已配置 i18n 插件） */
   lang?: string;
   /** 状态管理 Store（如果已配置 store 插件） */
