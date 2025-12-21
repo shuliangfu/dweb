@@ -120,11 +120,15 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
 }
 ```
 
-## 禁用布局继承
+## 禁用布局
+
+DWeb 框架提供了两种禁用布局的方式：
+
+### 1. 禁用布局继承（布局级别）
 
 在某些情况下，你可能不希望某个布局继承父布局。例如，你可能希望文档页面使用完全独立的布局，而不继承根布局。
 
-### 使用 `inherit = false`
+#### 使用 `inherit = false`
 
 在布局文件中导出 `export const inherit = false` 可以禁用布局继承：
 
@@ -166,6 +170,8 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
 
 ### 示例场景
 
+#### 场景 1：禁用布局继承
+
 假设你有以下布局结构：
 
 ```
@@ -193,6 +199,31 @@ routes/
   <DocsLayout>
     <RouterPage />
   </DocsLayout>
+  ```
+
+#### 场景 2：禁用页面布局
+
+假设你有以下结构：
+
+```
+routes/
+├── _layout.tsx          # 根布局（包含 HTML 结构、导航栏、页脚）
+├── index.tsx            # 首页（使用布局）
+└── login.tsx            # 登录页面（设置了 layout = false）
+```
+
+当访问不同页面时：
+
+- **访问 `/`（首页）**：
+  ```tsx
+  <RootLayout>
+    <HomePage />
+  </RootLayout>
+  ```
+
+- **访问 `/login`（登录页）**：
+  ```tsx
+  <LoginPage />  // 不使用任何布局
   ```
 
 ## 布局组件属性
