@@ -791,7 +791,6 @@ export default function RootLayout({ children }: { children: ComponentChildren }
  * 展示应用的基本信息和快速开始指南
  */
 
-import { h } from 'preact';
 import { useState } from 'preact/hooks';
 import Button from '../components/Button.tsx';
 import type { PageProps, LoadContext } from '@dreamer/dweb';
@@ -1129,8 +1128,6 @@ export default function Home({ params: _params, query: _query, data }: PageProps
  * 介绍应用和框架的基本信息
  */
 
-import { h } from 'preact';
-
 /**
  * 关于页面组件
  * @returns JSX 元素
@@ -1240,7 +1237,6 @@ export default function About() {
  * 当访问不存在的路由时显示
  */
 
-import { h } from 'preact';
 import Button from '../components/Button.tsx';
 
 /**
@@ -1288,7 +1284,6 @@ async function generateComponentsForApp(componentsDir: string, _appName: string)
  * 提供多种样式的按钮
  */
 
-import { h } from 'preact';
 import type { ComponentChildren, JSX } from 'preact';
 
 /**
@@ -1547,9 +1542,7 @@ export function delay(ms: number): Promise<void> {
   console.log(`✅ 已创建: common/utils/index.ts`);
   
   // 生成 components/Button.tsx
-  const commonButtonContent = `import { h } from 'preact';
-
-/**
+  const commonButtonContent = `/**
  * 公共按钮组件
  * 可在多个应用中使用
  */
