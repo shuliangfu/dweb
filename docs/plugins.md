@@ -17,6 +17,7 @@ src/plugins/
 ├── rss/                # RSS 插件
 ├── seo/                # SEO 插件
 ├── sitemap/            # 网站地图插件
+├── store/              # 状态管理插件
 ├── tailwind/           # Tailwind CSS 插件
 ├── theme/              # 主题插件
 └── mod.ts              # 模块导出
@@ -461,17 +462,28 @@ export async function load({ req }: LoadContext) {
 }
 ```
 
-#### 在 Preact 组件中使用
+#### Store API
+
+**方法说明：**
+
+| 方法 | 参数 | 返回值 | 说明 |
+|------|------|--------|------|
+| `getState()` | - | `T` | 获取当前状态 |
+| `setState(updater)` | `Partial<T> \| ((prev: T) => Partial<T>)` | `void` | 设置状态，支持对象或函数式更新 |
+| `subscribe(listener)` | `(state: T) => void` | `() => void` | 订阅状态变化，返回取消订阅函数 |
+| `unsubscribe(listener)` | `(state: T) => void` | `void` | 取消订阅 |
+| `reset()` | - | `void` | 重置状态到初始值 |
+
+**完整示例：**
 
 ```typescript
 import { useState, useEffect } from 'preact/hooks';
+import type { PageProps } from '@dreamer/dweb';
 
-export default function Counter() {
+export default function Counter({ store }: PageProps) {
   const [count, setCount] = useState(0);
   
   useEffect(() => {
-    // 获取 Store 实例
-    const store = (window as any).__STORE__;
     if (!store) return;
     
     // 初始化：从 Store 获取状态
@@ -479,30 +491,42 @@ export default function Counter() {
     setCount(state.count || 0);
     
     // 订阅状态变化
-    const unsubscribe = store.subscribe((state) => {
-      setCount(state.count || 0);
+    const unsubscribe = store.subscribe((newState) => {
+      setCount(newState.count || 0);
     });
     
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [store]);
   
   const handleIncrement = () => {
-    const store = (window as any).__STORE__;
-    if (store) {
-      store.setState((prev: any) => ({ count: (prev.count || 0) + 1 }));
-    }
+    if (!store) return;
+    // 使用函数式更新
+    store.setState((prev: any) => ({ count: (prev.count || 0) + 1 }));
+  };
+  
+  const handleReset = () => {
+    if (!store) return;
+    store.reset();
   };
   
   return (
     <div>
       <p>Count: {count}</p>
       <button type="button" onClick={handleIncrement}>增加</button>
+      <button type="button" onClick={handleReset}>重置</button>
     </div>
   );
 }
 ```
+
+**注意事项：**
+
+1. **服务端 Store**：每个请求都有独立的 Store 实例，不会在请求之间共享状态
+2. **客户端 Store**：全局共享一个 Store 实例，所有组件共享同一份状态
+3. **持久化**：启用 `persist` 后，状态会自动保存到 localStorage，页面刷新后会自动恢复
+4. **类型安全**：建议为 Store 状态定义 TypeScript 类型，以获得更好的类型提示
 
 ### theme - 主题切换
 
