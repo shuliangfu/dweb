@@ -540,12 +540,49 @@ export default function Counter({ store }: PageProps) {
 }
 ```
 
+**服务端到客户端状态同步：**
+
+在 `load` 函数中设置的状态会自动同步到客户端 Store。工作流程如下：
+
+1. 服务端 `load` 函数中调用 `store.setState()` 设置状态
+2. 响应时，服务端 Store 的状态被注入到客户端 Store 脚本中
+3. 客户端 Store 初始化时，会合并服务端状态（优先级：服务端状态 > localStorage > 初始状态）
+4. 客户端组件可以通过 `store.getState()` 获取到服务端设置的状态
+
+**示例：**
+
+```typescript
+// 服务端 load 函数
+export async function load({ store }: LoadContext) {
+  if (store) {
+    // 设置状态（会自动传递到客户端）
+    store.setState({ user: { id: 1, name: 'John' } });
+  }
+  return {};
+}
+
+// 客户端组件
+export default function MyPage({ store }: PageProps) {
+  useEffect(() => {
+    if (store) {
+      // 可以直接获取到服务端设置的状态
+      const state = store.getState();
+      console.log(state.user); // { id: 1, name: 'John' }
+    }
+  }, [store]);
+  
+  return <div>...</div>;
+}
+```
+
 **注意事项：**
 
 1. **服务端 Store**：每个请求都有独立的 Store 实例，不会在请求之间共享状态
 2. **客户端 Store**：全局共享一个 Store 实例，所有组件共享同一份状态
-3. **持久化**：启用 `persist` 后，状态会自动保存到 localStorage，页面刷新后会自动恢复
-4. **类型安全**：建议为 Store 状态定义 TypeScript 类型，以获得更好的类型提示
+3. **状态同步**：服务端 Store 的状态会在响应时自动注入到客户端 Store，客户端 Store 初始化时会合并服务端状态
+4. **状态优先级**：服务端状态 > localStorage > 初始状态
+5. **持久化**：启用 `persist` 后，状态会自动保存到 localStorage，页面刷新后会自动恢复
+6. **类型安全**：建议为 Store 状态定义 TypeScript 类型，以获得更好的类型提示
 
 ### theme - 主题切换
 
