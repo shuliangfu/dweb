@@ -639,12 +639,7 @@ export class HMRServer {
 
       case 'component':
         this.handleComponentUpdate(filePath, changeInfo.path);
-        // 同时通知客户端重新加载 CSS（Tailwind class 可能已变化）
-        this.notify('update', {
-          file: 'style.css', // 客户端会匹配所有 CSS 文件
-          type: 'css',
-          action: 'reload-stylesheet',
-        });
+        // CSS 已注入到 HTML 中，组件更新时会自动重新编译和注入，无需单独通知
         break;
 
       default:

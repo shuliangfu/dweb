@@ -4,7 +4,7 @@
  * 参考 Fresh 框架的实现方式
  */
 
-import type { Plugin, AppLike, Request, Response, BuildConfig } from '../../types/index.ts';
+import type { Plugin, AppLike, Request, Response } from '../../types/index.ts';
 import type { TailwindPluginOptions } from './types.ts';
 import { findTailwindConfigFile, findCSSFiles } from './utils.ts';
 import { processCSSV3 } from './v3.ts';
@@ -66,69 +66,39 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
     /**
      * 初始化钩子
      */
-    async onInit(app: AppLike) {
-      // 在开发环境中，设置 CSS 文件处理中间件
-      if (app.server && !app.isProduction) {
-				// TODO: 在开发环境中，设置 CSS 文件处理中间件
-      }
+    async onInit(_app: AppLike) {
+      // 不再需要在这里处理，改为在 onResponse 中处理
     },
 
     /**
-     * 请求处理钩子（开发环境实时编译）
+     * 响应处理钩子（开发环境实时编译并注入 CSS）
+     * 当 TS/TSX 路由返回 HTML 响应时，编译 CSS 并注入到 <head> 中
      */
-    async onRequest(req: Request, res: Response) {
-      const url = new URL(req.url);
-      // 只处理 CSS 文件请求
-      if (!url.pathname.endsWith('.css')) {
+    async onResponse(_req: Request, res: Response) {
+      // 只处理 HTML 响应
+      if (!res.body || typeof res.body !== 'string') {
         return;
       }
 
-      // 安全检查：防止路径遍历攻击
-      if (!url.pathname.startsWith('/') || url.pathname.includes('..')) {
+      const contentType = res.headers.get('Content-Type') || '';
+      if (!contentType.includes('text/html')) {
+        return;
+      }
+
+      // 如果没有配置 cssPath，跳过处理
+      if (!options.cssPath) {
         return;
       }
 
       try {
-        // 获取文件路径（去掉开头的 /）
-        const filePath = url.pathname.startsWith('/') ? url.pathname.slice(1) : url.pathname;
-
-        // 如果配置了 cssPath，使用配置的路径作为实际文件路径
-        // 但需要检查请求路径是否匹配（考虑 staticDir 和 prefix 的情况）
-        let targetPath: string;
-        if (options.cssPath) {
-          // 配置了 cssPath，使用配置的路径作为实际文件路径
-          targetPath = options.cssPath.startsWith('/') ? options.cssPath.slice(1) : options.cssPath;
-
-          // 检查请求路径是否匹配配置的路径
-          // 支持两种匹配方式：
-          // 1. 完全匹配：请求 /assets/style.css，配置 assets/style.css
-          // 2. 文件名匹配：请求 /style.css，配置 assets/style.css（去掉路径前缀后比较文件名）
-          const normalizedCssPath = targetPath;
-          const normalizedRequestPath = filePath;
-
-          // 先尝试完全匹配
-          if (normalizedCssPath === normalizedRequestPath) {
-            // 完全匹配，使用配置的路径
-          } else {
-            // 不完全匹配，尝试文件名匹配
-            // 例如：请求 /style.css，配置 assets/style.css，应该匹配
-            const cssFileName = normalizedCssPath.split('/').pop() || '';
-            const requestFileName = normalizedRequestPath.split('/').pop() || '';
-
-            // 如果文件名不匹配，跳过处理
-            if (cssFileName !== requestFileName) {
-              return;
-            }
-            // 文件名匹配，使用配置的路径（而不是请求路径）
-          }
-        } else {
-          // 没有配置 cssPath，直接使用请求路径
-          targetPath = filePath;
-        }
+        // 获取 CSS 文件路径
+        const cssPath = options.cssPath.startsWith('/')
+          ? options.cssPath.slice(1)
+          : options.cssPath;
 
         // 安全检查：确保文件路径在当前工作目录内（防止路径遍历攻击）
         const cwd = Deno.cwd();
-        if (!isPathSafe(targetPath, cwd)) {
+        if (!isPathSafe(cssPath, cwd)) {
           // 路径不安全，跳过处理
           return;
         }
@@ -138,60 +108,73 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
         let fileStat: Deno.FileInfo;
 
         try {
-          fileContent = await Deno.readTextFile(targetPath);
-          fileStat = await Deno.stat(targetPath);
+          fileContent = await Deno.readTextFile(cssPath);
+          fileStat = await Deno.stat(cssPath);
         } catch {
           // 文件不存在，跳过处理
           return;
         }
 
         // 检查缓存
-        // 注意：在开发环境中，即使 CSS 文件本身没有变化，
-        // 如果 TSX 文件中的 Tailwind class 变化了，也需要重新编译
-        // 因此，我们使用较短的时间戳比较，或者直接清除缓存
-        const cacheKey = targetPath;
+        // 在开发环境中，为了支持 Tailwind class 的实时更新，
+        // 我们降低缓存的有效性：如果缓存时间超过 1 秒，就重新编译
+        const cacheKey = cssPath;
         const cached = cssCache.get(cacheKey);
         const fileModified = fileStat.mtime?.getTime() || 0;
         
-        // 在开发环境中，为了支持 Tailwind class 的实时更新，
-        // 我们降低缓存的有效性：如果缓存时间超过 1 秒，就重新编译
-        // 这样可以确保 TSX 文件变化后，CSS 会重新编译
         const cacheAge = cached ? Date.now() - cached.timestamp : Infinity;
         const shouldUseCache = cached && 
                                cached.timestamp >= fileModified && 
                                cacheAge < 1000; // 缓存有效期 1 秒
 
+        let compiledCSS: string;
         if (shouldUseCache) {
           // 使用缓存
-          res.status = 200;
-          res.setHeader('Content-Type', 'text/css');
-          res.text(cached.content);
-          return;
+          compiledCSS = cached.content;
+        } else {
+          // 处理 CSS
+          const processed = await processCSS(
+            fileContent,
+            cssPath,
+            version,
+            false, // 开发环境
+            options
+          );
+
+          // 更新缓存
+          cssCache.set(cacheKey, {
+            content: processed.content,
+            map: processed.map,
+            timestamp: Date.now(),
+          });
+
+          compiledCSS = processed.content;
         }
 
-        // 处理 CSS
-        const processed = await processCSS(
-          fileContent,
-          targetPath,
-          version,
-          false, // 开发环境
-          options
-        );
-
-        // 更新缓存
-        cssCache.set(cacheKey, {
-          content: processed.content,
-          map: processed.map,
-          timestamp: Date.now(),
-        });
-
-        // 返回处理后的 CSS
-        res.status = 200;
-        res.setHeader('Content-Type', 'text/css');
-        res.text(processed.content);
+        // 将编译后的 CSS 注入到 HTML 的 <head> 中的 <style> 标签
+        const html = res.body as string;
+        
+        // 查找 </head> 标签，如果存在则在其前面注入 <style> 标签
+        if (html.includes('</head>')) {
+          const styleTag = `<style>${compiledCSS}</style>`;
+          res.body = html.replace('</head>', `${styleTag}\n</head>`);
+        } else if (html.includes('<head>')) {
+          // 如果没有 </head>，但有 <head>，则在 <head> 后面注入
+          const styleTag = `<style>${compiledCSS}</style>`;
+          res.body = html.replace('<head>', `<head>\n${styleTag}`);
+        } else {
+          // 如果没有 <head>，则在 <html> 后面添加 <head> 和 <style>
+          const styleTag = `<head><style>${compiledCSS}</style></head>`;
+          if (html.includes('<html>')) {
+            res.body = html.replace('<html>', `<html>\n${styleTag}`);
+          } else {
+            // 如果连 <html> 都没有，在开头添加
+            res.body = `${styleTag}\n${html}`;
+          }
+        }
       } catch (error) {
-        console.error('[Tailwind Plugin] 处理 CSS 文件时出错:', error);
-        // 出错时不拦截，让其他中间件处理
+        console.error('[Tailwind Plugin] 处理 CSS 时出错:', error);
+        // 出错时不修改响应，让原始响应返回
       }
     },
 
