@@ -107,10 +107,11 @@ function generateThemeScript(options: ThemePluginOptions): string {
             }
           },
           
-          // 切换主题
+          // 切换主题（仅在 dark 和 light 之间切换）
           toggle: function() {
             const current = this.getTheme();
-            const next = current === 'dark' ? 'light' : current === 'light' ? 'auto' : 'dark';
+            // 如果当前是 auto，切换到 dark；否则在 dark 和 light 之间切换
+            const next = current === 'dark' ? 'light' : 'dark';
             this.setTheme(next);
             return next;
           }

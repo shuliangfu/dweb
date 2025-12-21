@@ -34,7 +34,7 @@ app.plugin(
 app.plugin(
   theme({
     config: {
-      defaultTheme: 'auto', // 'light' | 'dark' | 'auto'
+      defaultTheme: 'light', // 'light' | 'dark'（暂时移除 'auto' 选项）
       storageKey: 'theme',
       injectDataAttribute: true,
       injectBodyClass: true,
