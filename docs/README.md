@@ -6,6 +6,7 @@
 
 ### 核心模块
 - [核心模块 (core)](./core.md) - 服务器、路由、配置等核心功能
+- [布局系统 (layout)](./layout.md) - 布局继承和布局组件
 
 ### 功能模块
 - [数据库 (database)](./database.md) - 数据库支持、ORM/ODM、查询构建器
