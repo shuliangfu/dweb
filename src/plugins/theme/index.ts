@@ -5,6 +5,7 @@
 
 import type { Plugin, Request, Response } from '../../types/index.ts';
 import type { ThemePluginOptions, ThemeMode } from './types.ts';
+import { minifyJavaScript } from '../../utils/minify.ts';
 
 /**
  * 生成主题切换脚本
@@ -279,7 +280,7 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
      * 响应处理钩子 - 注入主题脚本和属性
      * 注意：使用 onResponse 而不是 onRequest，因为 res.body 在 onRequest 时可能还未设置
      */
-    onResponse(_req: Request, res: Response) {
+    onResponse: async (_req: Request, res: Response) => {
       // 只处理 HTML 响应
       if (!res.body || typeof res.body !== 'string') {
         return;

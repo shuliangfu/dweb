@@ -5,6 +5,7 @@
 
 import type { Plugin, Request, Response } from '../../types/index.ts';
 import type { StorePluginOptions, Store } from './types.ts';
+import { minifyJavaScript } from '../../utils/minify.ts';
 
 /**
  * 创建 Store 实例（客户端）
