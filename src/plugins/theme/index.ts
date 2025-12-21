@@ -50,127 +50,43 @@ function generateThemeScript(options: ThemePluginOptions): string {
           
           // 设置主题
           setTheme: function(theme) {
-            console.log('[Theme Plugin] setTheme 被调用:', theme);
             if (typeof window === 'undefined') {
-              console.warn('[Theme Plugin] window 未定义，无法设置主题');
               return;
             }
             localStorage.setItem(this.storageKey, theme);
-            console.log('[Theme Plugin] 主题已保存到 localStorage:', theme);
             this.applyTheme(theme);
             
             // 触发自定义事件
             const actualTheme = this.getActualTheme();
-            console.log('[Theme Plugin] 实际主题:', actualTheme);
             window.dispatchEvent(new CustomEvent('themechange', { 
               detail: { theme, actualTheme } 
             }));
-            console.log('[Theme Plugin] themechange 事件已触发');
           },
           
           // 应用主题
           applyTheme: function(theme) {
-            console.log('[Theme Plugin] applyTheme 被调用:', theme);
             if (typeof document === 'undefined') {
-              console.warn('[Theme Plugin] document 未定义，无法应用主题');
               return;
             }
             const actualTheme = theme === 'auto' ? this.getSystemTheme() : theme;
-            console.log('[Theme Plugin] 计算后的实际主题:', actualTheme);
             
             // 在 html 元素上设置 class（用于 Tailwind CSS dark mode）
             if (document.documentElement) {
               const htmlElement = document.documentElement;
-              const beforeClasses = htmlElement.className;
-              console.log('[Theme Plugin] HTML 元素当前 class:', beforeClasses);
               
               // 移除旧的 dark/light class
               htmlElement.classList.remove('dark', 'light');
               // 添加新的主题 class
               if (actualTheme === 'dark') {
                 htmlElement.classList.add('dark');
-                console.log('[Theme Plugin] 已添加 dark class');
               } else {
                 htmlElement.classList.add('light');
-                console.log('[Theme Plugin] 已添加 light class');
               }
-              
-              const afterClasses = htmlElement.className;
-              console.log('[Theme Plugin] HTML 元素更新后 class:', afterClasses);
-              
-              // 验证 CSS 是否加载
-              const stylesheets = Array.from(document.styleSheets);
-              const tailwindSheet = stylesheets.find(sheet => {
-                try {
-                  return sheet.href && sheet.href.includes('tailwind.css');
-                } catch {
-                  return false;
-                }
-              });
-              if (tailwindSheet) {
-                console.log('[Theme Plugin] Tailwind CSS 已加载:', tailwindSheet.href);
-                // 尝试检查 dark mode 样式是否存在
-                try {
-                  // 递归检查所有 CSS 规则（包括 @layer 内的规则）
-                  const checkRules = function(rules, depth) {
-                    depth = depth || 0;
-                    let count = 0;
-                    for (let i = 0; i < rules.length; i++) {
-                      try {
-                        const rule = rules[i];
-                        if (rule.cssText) {
-                          // 检查是否包含 dark mode 相关的选择器
-                          if (rule.cssText.includes('.dark') || 
-                              rule.cssText.includes('dark:') ||
-                              rule.cssText.includes('dark\\:')) {
-                            count++;
-                          }
-                        }
-                        // 如果是 @layer 或其他嵌套规则，递归检查
-                        if (rule.cssRules) {
-                          count += checkRules(rule.cssRules, depth + 1);
-                        }
-                      } catch (e) {
-                        // 忽略无法访问的规则（可能是跨域问题）
-                      }
-                    }
-                    return count;
-                  };
-                  const darkRulesCount = checkRules(tailwindSheet.cssRules || [], 0);
-                  console.log('[Theme Plugin] 找到 dark mode 样式规则数量:', darkRulesCount);
-                  
-                  // 如果找不到规则，尝试直接检查样式表内容
-                  if (darkRulesCount === 0) {
-                    // 通过 fetch 验证 CSS 内容（静默检查，不输出日志）
-                    fetch(tailwindSheet.href || '')
-                      .then(res => res.text())
-                      .then(cssText => {
-                        // 静默检查 CSS 是否包含 dark mode（用于内部验证）
-                        const hasDark = cssText.includes('.dark') || 
-                                       cssText.includes('dark:') ||
-                                       cssText.includes('dark\\:');
-                        // 不输出日志，仅用于内部验证
-                      })
-                      .catch(() => {
-                        // 静默忽略错误
-                      });
-                  }
-                } catch (e) {
-                  console.warn('[Theme Plugin] 无法检查 CSS 规则（可能是跨域问题）:', e);
-                }
-              } else {
-                console.warn('[Theme Plugin] 未找到 Tailwind CSS 样式表');
-              }
-            } else {
-              console.warn('[Theme Plugin] document.documentElement 不存在');
             }
             
             // 更新主题 store（如果存在）
             if (typeof window !== 'undefined' && window.__THEME_STORE__) {
-              console.log('[Theme Plugin] 更新主题 store:', actualTheme);
               window.__THEME_STORE__.value = actualTheme;
-            } else {
-              console.warn('[Theme Plugin] window.__THEME_STORE__ 不存在');
             }
           },
           
