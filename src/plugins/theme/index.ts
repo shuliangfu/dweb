@@ -141,49 +141,18 @@ function generateThemeScript(options: ThemePluginOptions): string {
                   
                   // 如果找不到规则，尝试直接检查样式表内容
                   if (darkRulesCount === 0) {
-                    console.log('[Theme Plugin] 尝试通过 fetch 检查 CSS 内容...');
+                    // 通过 fetch 验证 CSS 内容（静默检查，不输出日志）
                     fetch(tailwindSheet.href || '')
                       .then(res => res.text())
                       .then(cssText => {
-                        console.log('[Theme Plugin] CSS 文件大小:', cssText.length, '字节');
-                        console.log('[Theme Plugin] CSS 文件前 200 字符:', cssText.substring(0, 200));
-                        // 检查 CSS 文件内容（注意：压缩后的 CSS 可能是单行，需要检查转义字符）
-                        const hasDarkDot = cssText.includes('.dark');
-                        const hasDarkColon = cssText.includes('dark:');
-                        const hasDarkEscaped = cssText.includes('dark\\:');
-                        const hasDarkSpace = cssText.includes('.dark ');
-                        console.log('[Theme Plugin] CSS 检查结果:');
-                        console.log('  - 包含 ".dark":', hasDarkDot);
-                        console.log('  - 包含 "dark:":', hasDarkColon);
-                        console.log('  - 包含 "dark\\:":', hasDarkEscaped);
-                        console.log('  - 包含 ".dark ":', hasDarkSpace);
-                        const hasDark = hasDarkDot || hasDarkColon || hasDarkEscaped || hasDarkSpace;
-                        console.log('[Theme Plugin] CSS 文件内容包含 dark mode:', hasDark);
-                        if (hasDark) {
-                          const darkMatches = cssText.match(/\.dark[^}]*\{/g);
-                          console.log('[Theme Plugin] CSS 文件中的 dark 选择器数量:', darkMatches ? darkMatches.length : 0);
-                          if (darkMatches && darkMatches.length > 0) {
-                            console.log('[Theme Plugin] 前 3 个 dark 选择器示例:', darkMatches.slice(0, 3));
-                          }
-                          
-                          // 测试一个具体的 dark mode 样式是否生效
-                          const testElement = document.createElement('div');
-                          testElement.className = 'dark:bg-gray-900';
-                          testElement.style.display = 'none';
-                          document.body.appendChild(testElement);
-                          const computedStyle = window.getComputedStyle(testElement);
-                          const bgColor = computedStyle.backgroundColor;
-                          console.log('[Theme Plugin] 测试元素 dark:bg-gray-900 的计算样式:', bgColor);
-                          console.log('[Theme Plugin] HTML 元素是否有 dark class:', document.documentElement.classList.contains('dark'));
-                          document.body.removeChild(testElement);
-                        } else {
-                          // 如果找不到 dark mode，检查 CSS 文件内容
-                          console.warn('[Theme Plugin] CSS 文件不包含 dark mode 样式！');
-                          console.warn('[Theme Plugin] 请检查 CSS 文件是否正确构建');
-                        }
+                        // 静默检查 CSS 是否包含 dark mode（用于内部验证）
+                        const hasDark = cssText.includes('.dark') || 
+                                       cssText.includes('dark:') ||
+                                       cssText.includes('dark\\:');
+                        // 不输出日志，仅用于内部验证
                       })
-                      .catch(err => {
-                        console.warn('[Theme Plugin] 无法获取 CSS 内容:', err);
+                      .catch(() => {
+                        // 静默忽略错误
                       });
                   }
                 } catch (e) {

@@ -112,7 +112,6 @@ export function staticFiles(options: StaticOptions): Middleware {
     if (isProduction !== undefined && outDir) {
       // 生产环境：使用构建输出目录
       dir = path.join(cwd, outDir, dir);
-      console.log(`[Static Files] 生产环境：使用构建输出目录: ${dir}`);
     } else if (isProduction !== undefined && !isProduction) {
       // 明确指定为开发环境：使用项目目录
       dir = path.join(cwd, dir);
@@ -141,11 +140,6 @@ export function staticFiles(options: StaticOptions): Middleware {
   return async (req, res, next) => {
     const url = new URL(req.url);
     let pathname = url.pathname;
-    
-    // 调试日志：如果是 CSS 文件请求，输出请求路径
-    if (pathname.endsWith('.css')) {
-      console.log(`[Static Files] 收到 CSS 文件请求: ${pathname}, 目录: ${dir}, prefix: ${prefix}`);
-    }
     
     // 检查是否匹配 extendDirs（优先检查，因为这些目录始终从项目根目录读取）
     // 例如：如果 extendDirs 包含 'uploads'，请求 /uploads/file.jpg 应该从项目根目录的 uploads 读取
@@ -280,15 +274,8 @@ export function staticFiles(options: StaticOptions): Middleware {
     // 移除主目录的前缀
     if (pathname.startsWith(prefix)) {
       pathname = pathname.slice(prefix.length);
-      // 调试日志：如果是 CSS 文件，输出处理后的路径
-      if (pathname.endsWith('.css')) {
-        console.log(`[Static Files] CSS 文件路径处理: 原始路径=${url.pathname}, prefix=${prefix}, 处理后路径=${pathname}`);
-      }
     } else {
       // 如果不匹配主目录的 prefix，也不匹配 extendDirs，跳过
-      if (url.pathname.endsWith('.css')) {
-        console.log(`[Static Files] CSS 文件请求不匹配 prefix: 路径=${url.pathname}, prefix=${prefix}`);
-      }
       await next();
       return;
     }
@@ -358,15 +345,6 @@ export function staticFiles(options: StaticOptions): Middleware {
     try {
       // 读取文件
       const file = await Deno.readFile(fullPath);
-      
-      // 调试日志：如果是 CSS 文件，输出文件路径和大小
-      if (filePath.endsWith('.css')) {
-        console.log(`[Static Files] 服务 CSS 文件: ${fullPath}, 大小: ${file.length} 字节`);
-        // 检查文件内容是否包含 dark mode
-        const fileText = new TextDecoder().decode(file);
-        const hasDark = fileText.includes('.dark') || fileText.includes('dark:') || fileText.includes('dark\\:');
-        console.log(`[Static Files] CSS 文件包含 dark mode: ${hasDark}`);
-      }
       
       // 设置内容类型
       const mimeType = getContentType(filePath);

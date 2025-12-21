@@ -279,7 +279,6 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
               relativePath = path.relative(staticDir, cssFile);
             }
             const outPath = path.join(outDir, staticDir, relativePath);
-            console.log(`[Tailwind ${version}] 编译 CSS: ${cssFile} -> ${outPath}`);
 
             // 确保输出目录存在
             await Deno.mkdir(path.dirname(outPath), { recursive: true });
