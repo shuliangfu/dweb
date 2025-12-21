@@ -176,7 +176,7 @@ export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarP
     const expanded = new Set<string>();
     navItems.forEach((item) => {
       if (item.children) {
-        expanded.add(item.title);
+          expanded.add(item.title);
       }
     });
     return expanded;

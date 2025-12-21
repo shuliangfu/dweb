@@ -142,21 +142,21 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
           // 使用缓存
           compiledCSS = cached.content;
         } else {
-          // 处理 CSS
-          const processed = await processCSS(
-            fileContent,
+        // 处理 CSS
+        const processed = await processCSS(
+          fileContent,
             cssPath,
-            version,
-            false, // 开发环境
-            options
-          );
+          version,
+          false, // 开发环境
+          options
+        );
 
-          // 更新缓存
-          cssCache.set(cacheKey, {
-            content: processed.content,
-            map: processed.map,
-            timestamp: Date.now(),
-          });
+        // 更新缓存
+        cssCache.set(cacheKey, {
+          content: processed.content,
+          map: processed.map,
+          timestamp: Date.now(),
+        });
 
           compiledCSS = processed.content;
         }
@@ -193,7 +193,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
         console.error('[Tailwind Plugin] 处理 CSS 时出错:', error);
         // 出错时不修改响应，让原始响应返回
       }
-    },
+		},
 
     /**
      * 构建时钩子（生产环境编译）

@@ -306,8 +306,8 @@ export async function createApp(
 
   // 创建子目录（仅单应用模式在根目录创建）
   if (!isMultiApp) {
-    await ensureDir(path.join(projectDir, 'routes'));
-    await ensureDir(path.join(projectDir, 'assets'));
+  await ensureDir(path.join(projectDir, 'routes'));
+  await ensureDir(path.join(projectDir, 'assets'));
   }
 
   // 生成配置文件
@@ -521,7 +521,7 @@ export default config;
  * 生成 deno.json 文件
  */
 async function generateDenoJson(
-  projectDir: string,
+  projectDir: string, 
   useTailwindV4: boolean,
   isMultiApp: boolean = false,
   appNames: string[] = []
@@ -770,13 +770,13 @@ export default function RootLayout({ children }: { children: ComponentChildren }
               </a>
             </div>
           </div>
-        </div>
-      </nav>
+          </div>
+        </nav>
       
       {/* 主内容区域 */}
       <main className="grow">
-        {children}
-      </main>
+          {children}
+        </main>
     </div>
   );
 }

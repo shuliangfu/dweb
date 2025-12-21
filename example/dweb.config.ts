@@ -39,7 +39,7 @@ const config: AppConfig = {
     dir: "routes",
     ignore: ["**/*.test.ts", "**/*.test.tsx"],
     // API 目录配置，默认为 'routes/api'，也可以配置为 'api' 等相对路径
-    // apiDir: 'api',  // 如果配置为 'api'，则 API 文件应放在项目根目录的 api 文件夹中
+		// apiDir: 'api',  // 如果配置为 'api'，则 API 文件应放在项目根目录的 api 文件夹中
   },
 
   // 静态资源目录，默认为 'assets'

@@ -61,3 +61,5 @@ example/build/
 .husky/_/
 
 bin/
+
+docs/api.json
