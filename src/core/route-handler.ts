@@ -145,18 +145,21 @@ export class RouteHandler {
         const cwd = Deno.cwd();
 
         // 生产环境：检查是否是构建后的文件（在 dist 目录下）
-        // 如果文件路径不包含目录分隔符，说明是构建后的文件名，需要从 dist 目录加载
+        // 客户端请求应该从 client 目录加载，服务端从 server 目录加载
+        // 如果文件路径不包含目录分隔符，说明是构建后的文件名，需要从 dist/client 目录加载
         // 或者如果路径以 ./ 开头，也是构建后的相对路径
         let fullPath: string;
         const outDir = this.config?.build?.outDir;
         if (outDir) {
+          // 客户端请求：从 client 目录加载（不包含 load 函数）
+          const clientOutDir = path.join(outDir, 'client');
           if (filePath.startsWith('./')) {
-            // 生产环境：相对路径（如 ./components_Hero.4fce6e4f85.js），从 dist 目录加载
+            // 生产环境：相对路径（如 ./components_Hero.4fce6e4f85.js），从 dist/client 目录加载
             const relativePath = filePath.substring(2); // 移除 ./ 前缀
-            fullPath = path.resolve(cwd, outDir, relativePath);
+            fullPath = path.resolve(cwd, clientOutDir, relativePath);
           } else if (!filePath.includes('/') && !filePath.includes('\\')) {
-            // 生产环境：只有文件名（如 components_Hero.4fce6e4f85.js），从 dist 目录加载
-            fullPath = path.resolve(cwd, outDir, filePath);
+            // 生产环境：只有文件名（如 components_Hero.4fce6e4f85.js），从 dist/client 目录加载
+            fullPath = path.resolve(cwd, clientOutDir, filePath);
           } else {
             // 开发环境：从项目根目录加载
             fullPath = path.resolve(cwd, filePath);

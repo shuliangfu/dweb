@@ -227,24 +227,38 @@ Deno.test('Router - loadFromBuildMap - 从构建映射加载路由', async () =>
   const buildDir = path.join(testRoutesDir, 'dist');
   await ensureDir(buildDir);
   
-  const routeMapPath = path.join(buildDir, '.route-map.json');
-  const routeMap = {
-    'index': 'abc123.ts',
-    'users': 'def456.ts',
-    'api/users': 'ghi789.ts',
+  const serverRouteMapPath = path.join(buildDir, 'server.json');
+  const clientRouteMapPath = path.join(buildDir, 'client.json');
+  const serverRouteMap = {
+    'index': 'server/abc123.js',
+    'users': 'server/def456.js',
+    'api/users': 'server/ghi789.js',
+  };
+  const clientRouteMap = {
+    'index': 'client/abc123.js',
+    'users': 'client/def456.js',
+    'api/users': 'client/ghi789.js',
   };
   
-  await Deno.writeTextFile(routeMapPath, JSON.stringify(routeMap));
+  await Deno.writeTextFile(serverRouteMapPath, JSON.stringify(serverRouteMap));
+  await Deno.writeTextFile(clientRouteMapPath, JSON.stringify(clientRouteMap));
   
   // 创建构建文件（占位）
-  for (const file of Object.values(routeMap)) {
-    await ensureFile(path.join(buildDir, file));
+  await ensureDir(path.join(buildDir, 'server'));
+  await ensureDir(path.join(buildDir, 'client'));
+  for (const file of Object.values(serverRouteMap)) {
+    const fileName = file.replace(/^server\//, '');
+    await ensureFile(path.join(buildDir, 'server', fileName));
+  }
+  for (const file of Object.values(clientRouteMap)) {
+    const fileName = file.replace(/^client\//, '');
+    await ensureFile(path.join(buildDir, 'client', fileName));
   }
   
   const router = new Router(testRoutesDir);
   
   try {
-    await router.loadFromBuildMap(routeMapPath, buildDir);
+    await router.loadFromBuildMap(serverRouteMapPath, clientRouteMapPath, buildDir);
     
     // 验证路由已加载
     const allRoutes = router.getAllRoutes();

@@ -380,15 +380,17 @@ export async function startProdServer(config: AppConfig): Promise<void> {
 
   // 检查是否存在构建输出目录和路由映射文件（生产环境）
   const outDir = config.build!.outDir;
-  const routeMapPath = path.join(outDir, '.route-map.json');
-  const hasBuildOutput = await Deno.stat(routeMapPath)
+  // 同时读取服务端和客户端路由映射文件
+  const serverRouteMapPath = path.join(outDir, 'server.json');
+  const clientRouteMapPath = path.join(outDir, 'client.json');
+  const hasBuildOutput = await Deno.stat(serverRouteMapPath)
     .then(() => true)
     .catch(() => false);
 
   if (hasBuildOutput) {
-    // 生产环境：从构建映射文件加载路由
+    // 生产环境：从构建映射文件加载路由（同时读取 server.json 和 client.json）
     // console.log(`📦 从构建输出目录加载路由: ${outDir}`);
-    await router.loadFromBuildMap(routeMapPath, outDir);
+    await router.loadFromBuildMap(serverRouteMapPath, clientRouteMapPath, outDir);
   } else {
     // 开发环境：扫描源代码目录
     console.log(`📝 从源代码目录扫描路由: ${routeConfig.dir}`);

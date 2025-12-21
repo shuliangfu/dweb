@@ -130,18 +130,18 @@ Deno.test({
       assert(outDirStat.isDirectory, '输出目录应该已创建');
 
       // 验证路由映射文件已生成
-      const routeMapPath = path.join(testDir, 'dist', '.route-map.json');
-      const routeMapExists = await Deno.stat(routeMapPath)
+      const serverRouteMapPath = path.join(testDir, 'dist', 'server.json');
+      const clientRouteMapPath = path.join(testDir, 'dist', 'client.json');
+      const serverRouteMapExists = await Deno.stat(serverRouteMapPath)
         .then(() => true)
         .catch(() => false);
-      assert(routeMapExists, '路由映射文件应该已生成');
+      const clientRouteMapExists = await Deno.stat(clientRouteMapPath)
+        .then(() => true)
+        .catch(() => false);
+      assert(serverRouteMapExists, '服务端路由映射文件应该已生成');
+      assert(clientRouteMapExists, '客户端路由映射文件应该已生成');
 
-      // 验证文件映射文件已生成
-      const fileMapPath = path.join(testDir, 'dist', '.file-map.json');
-      const fileMapExists = await Deno.stat(fileMapPath)
-        .then(() => true)
-        .catch(() => false);
-      assert(fileMapExists, '文件映射文件应该已生成');
+      // 注意：.file-map.json 文件已不再生成（生产服务中未使用）
     } finally {
       Deno.chdir(originalCwd);
       await cleanupTestFiles();
@@ -214,22 +214,35 @@ Deno.test({
       // 等待所有异步操作完成
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // 验证路由文件已编译（检查文件映射）
-      const fileMapPath = path.join(testDir, 'dist', '.file-map.json');
-      const fileMapExists = await Deno.stat(fileMapPath)
-        .then(() => true)
-        .catch(() => false);
+      // 注意：.file-map.json 文件已不再生成（生产服务中未使用）
+      // 验证路由文件已编译（检查 server 和 client 目录中的文件）
+      const serverRouteFile = path.join(testDir, 'dist', 'server', 'routes_index');
+      const clientRouteFile = path.join(testDir, 'dist', 'client', 'routes_index');
+      const serverFiles = [];
+      const clientFiles = [];
       
-      if (fileMapExists) {
-        const fileMapContent = await Deno.readTextFile(fileMapPath);
-        const fileMap = JSON.parse(fileMapContent);
-        
-        // 应该包含路由文件的映射
-        const routeFileKey = Object.keys(fileMap).find(key => 
-          key.includes('routes') && key.includes('index')
-        );
-        assert(routeFileKey !== undefined, '文件映射应该包含路由文件');
+      try {
+        for await (const entry of Deno.readDir(path.join(testDir, 'dist', 'server'))) {
+          if (entry.name.startsWith('routes_index')) {
+            serverFiles.push(entry.name);
+          }
+        }
+      } catch {
+        // 目录不存在
       }
+      
+      try {
+        for await (const entry of Deno.readDir(path.join(testDir, 'dist', 'client'))) {
+          if (entry.name.startsWith('routes_index')) {
+            clientFiles.push(entry.name);
+          }
+        }
+      } catch {
+        // 目录不存在
+      }
+      
+      assert(serverFiles.length > 0, 'server 目录应该包含路由文件');
+      assert(clientFiles.length > 0, 'client 目录应该包含路由文件');
     } finally {
       Deno.chdir(originalCwd);
       await cleanupTestFiles();
@@ -260,22 +273,33 @@ Deno.test({
       // 等待所有异步操作完成
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // 验证组件文件已编译（检查文件映射）
-      const fileMapPath = path.join(testDir, 'dist', '.file-map.json');
-      const fileMapExists = await Deno.stat(fileMapPath)
-        .then(() => true)
-        .catch(() => false);
+      // 注意：.file-map.json 文件已不再生成（生产服务中未使用）
+      // 验证组件文件已编译（检查 server 和 client 目录中的文件）
+      const serverComponentFiles = [];
+      const clientComponentFiles = [];
       
-      if (fileMapExists) {
-        const fileMapContent = await Deno.readTextFile(fileMapPath);
-        const fileMap = JSON.parse(fileMapContent);
-        
-        // 应该包含组件文件的映射
-        const componentFileKey = Object.keys(fileMap).find(key => 
-          key.includes('components') && key.includes('Button')
-        );
-        assert(componentFileKey !== undefined, '文件映射应该包含组件文件');
+      try {
+        for await (const entry of Deno.readDir(path.join(testDir, 'dist', 'server'))) {
+          if (entry.name.startsWith('components_Button')) {
+            serverComponentFiles.push(entry.name);
+          }
+        }
+      } catch {
+        // 目录不存在
       }
+      
+      try {
+        for await (const entry of Deno.readDir(path.join(testDir, 'dist', 'client'))) {
+          if (entry.name.startsWith('components_Button')) {
+            clientComponentFiles.push(entry.name);
+          }
+        }
+      } catch {
+        // 目录不存在
+      }
+      
+      assert(serverComponentFiles.length > 0, 'server 目录应该包含组件文件');
+      assert(clientComponentFiles.length > 0, 'client 目录应该包含组件文件');
     } finally {
       Deno.chdir(originalCwd);
       await cleanupTestFiles();

@@ -3,15 +3,16 @@
  * 提供生产环境代码编译、打包和优化
  */
 
-import type { AppConfig } from '../types/index.ts';
-import { normalizeRouteConfig } from '../core/config.ts';
-import { ensureDir } from '@std/fs/ensure_dir';
-import { walk } from '@std/fs/walk';
-import { PluginManager } from '../core/plugin.ts';
-import { crypto } from '@std/crypto';
-import * as path from '@std/path';
-import * as esbuild from 'esbuild';
-import { logger } from '../utils/logger.ts';
+import type { AppConfig } from "../types/index.ts";
+import { normalizeRouteConfig } from "../core/config.ts";
+import { ensureDir } from "@std/fs/ensure_dir";
+import { walk } from "@std/fs/walk";
+import { PluginManager } from "../core/plugin.ts";
+import { crypto } from "@std/crypto";
+import * as path from "@std/path";
+import * as esbuild from "esbuild";
+import { logger } from "../utils/logger.ts";
+import { removeLoadOnlyImports } from "../utils/module.ts";
 
 /**
  * 清空目录
@@ -84,17 +85,22 @@ async function compressAsset(
   inputPath: string,
   outputPath: string,
   ext: string,
-  quality: number
+  quality: number,
 ): Promise<boolean> {
   try {
     // 图片压缩（支持常见格式）
-    const imageExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
+    const imageExts = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"];
     if (imageExts.includes(ext.toLowerCase())) {
-      return await compressImage(inputPath, outputPath, ext.toLowerCase(), quality);
+      return await compressImage(
+        inputPath,
+        outputPath,
+        ext.toLowerCase(),
+        quality,
+      );
     }
 
     // 字体压缩（子集化需要外部工具，这里只做基础优化）
-    const fontExts = ['.woff', '.woff2', '.ttf', '.otf', '.eot'];
+    const fontExts = [".woff", ".woff2", ".ttf", ".otf", ".eot"];
     if (fontExts.includes(ext.toLowerCase())) {
       // 字体压缩需要专门的工具，暂时直接复制
       // 未来可以集成 fontmin 或类似工具
@@ -123,22 +129,22 @@ async function compressImage(
   inputPath: string,
   outputPath: string,
   ext: string,
-  _quality: number
+  _quality: number,
 ): Promise<boolean> {
   try {
     // 读取原始图片
     const imageData = await Deno.readFile(inputPath);
-    
+
     // SVG 文件：简单优化（移除注释、空白等）
-    if (ext === '.svg') {
+    if (ext === ".svg") {
       const svgContent = new TextDecoder().decode(imageData);
       // 简单的 SVG 优化：移除注释、多余空白
       const optimized = svgContent
-        .replace(/<!--[\s\S]*?-->/g, '') // 移除注释
-        .replace(/\s+/g, ' ') // 压缩空白
-        .replace(/>\s+</g, '><') // 移除标签间的空白
+        .replace(/<!--[\s\S]*?-->/g, "") // 移除注释
+        .replace(/\s+/g, " ") // 压缩空白
+        .replace(/>\s+</g, "><") // 移除标签间的空白
         .trim();
-      
+
       await Deno.writeTextFile(outputPath, optimized);
       return true;
     }
@@ -148,7 +154,7 @@ async function compressImage(
     // 1. 使用外部工具（如 sharp、imagemin）
     // 2. 通过插件系统实现
     // 3. 或调用系统命令（如 ImageMagick、pngquant）
-    
+
     // 当前实现：对于非 SVG 图片，如果文件已经很小（< 50KB），直接复制
     // 否则提示需要外部工具
     if (imageData.length < 50 * 1024) {
@@ -158,7 +164,10 @@ async function compressImage(
 
     // 大文件：提示需要外部压缩工具
     // 在实际项目中，可以通过插件或配置外部工具来实现
-    logger.warn(`图片较大，建议使用外部工具压缩`, { path: inputPath, size: `${(imageData.length / 1024).toFixed(2)}KB` });
+    logger.warn(`图片较大，建议使用外部工具压缩`, {
+      path: inputPath,
+      size: `${(imageData.length / 1024).toFixed(2)}KB`,
+    });
     return false; // 暂时不压缩，直接复制
   } catch (error) {
     logger.warn(`图片压缩失败`, { path: inputPath, error });
@@ -178,7 +187,7 @@ async function compressImage(
 async function calculateHash(content: string | Uint8Array): Promise<string> {
   let data: Uint8Array;
 
-  if (typeof content === 'string') {
+  if (typeof content === "string") {
     data = new TextEncoder().encode(content);
   } else {
     // 确保是 Uint8Array 类型
@@ -191,43 +200,14 @@ async function calculateHash(content: string | Uint8Array): Promise<string> {
   const view = new Uint8Array(buffer);
   view.set(data);
 
-  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join(
+    "",
+  );
 
   // 返回前 10 个字符作为文件名 hash
-  return hashHex.substring(0, 10);
-}
-
-/**
- * 生成扁平化的文件名（避免冲突）
- * 例如：routes/index.tsx -> routes_index.[hash].js
- *      components/Navbar.tsx -> components_Navbar.[hash].js
- * @param filePath 文件路径（绝对路径）
- * @param hash 文件 hash 值
- * @param baseDir 基础目录（用于计算相对路径）
- * @returns 扁平化文件名
- */
-function generateFlatFileName(
-  filePath: string,
-  hash: string,
-  baseDir: string = Deno.cwd()
-): string {
-  // 获取相对于基础目录的路径
-  const relativePath = path.relative(baseDir, filePath);
-
-  // 移除扩展名
-  const pathWithoutExt = relativePath.replace(/\.(tsx?|jsx?)$/, '');
-
-  // 将路径分隔符替换为下划线，避免文件名冲突
-  // routes/index.tsx -> routes_index
-  // components/Navbar.tsx -> components_Navbar
-  // routes/api/users.ts -> routes_api_users
-  const flatName = pathWithoutExt.replace(/[\/\\]/g, '_');
-
-  // 处理特殊情况：如果文件名以 _ 开头（如 _layout.tsx），保留下划线
-  // 生成最终文件名：routes_index.[hash].js
-  return `${flatName}.${hash}.js`;
+  return hashHex.substring(0, 20);
 }
 
 /**
@@ -242,18 +222,20 @@ async function calculateSourceHash(filePath: string): Promise<string> {
     const fileStat = await Deno.stat(filePath);
     // 结合文件内容和修改时间计算 hash
     const combinedData = new TextEncoder().encode(
-      `${fileContent.length}-${fileStat.mtime?.getTime() || 0}`
+      `${fileContent.length}-${fileStat.mtime?.getTime() || 0}`,
     );
     const buffer = new ArrayBuffer(combinedData.length);
     const view = new Uint8Array(buffer);
     view.set(combinedData);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join(
+      "",
+    );
     return hashHex.substring(0, 10);
   } catch {
     // 如果文件不存在或读取失败，返回空字符串（强制重新编译）
-    return '';
+    return "";
   }
 }
 
@@ -265,15 +247,15 @@ async function calculateSourceHash(filePath: string): Promise<string> {
  * @returns 如果缓存有效返回缓存的文件名，否则返回 null
  */
 async function checkBuildCache(
-  filePath: string,
+  _filePath: string,
   outDir: string,
-  sourceHash: string
+  sourceHash: string,
 ): Promise<string | null> {
   try {
-    // 生成预期的输出文件名
-    const hashName = generateFlatFileName(filePath, sourceHash);
+    // 生成预期的输出文件名（仅使用 hash）
+    const hashName = `${sourceHash}.js`;
     const outputPath = path.join(outDir, hashName);
-    
+
     // 检查输出文件是否存在
     try {
       await Deno.stat(outputPath);
@@ -291,52 +273,126 @@ async function checkBuildCache(
 /**
  * 编译单个文件并生成 hash 文件名（扁平化输出）
  * 支持构建缓存，如果源文件未变化则跳过编译
+ * 会生成两个版本：服务端版本（包含 load 函数）和客户端版本（移除 load 函数）
  * @param filePath 源文件路径（绝对路径）
  * @param outDir 输出目录（绝对路径，扁平化输出）
  * @param fileMap 文件映射表（原始路径 -> hash 文件名）
  * @param useCache 是否使用缓存（默认 true）
+ * @param target 编译目标：'server' | 'client' | 'both'（默认 'both'）
  * @returns 编译后的文件路径和 hash 文件名
  */
 async function compileFile(
   filePath: string,
   outDir: string,
   fileMap: Map<string, string>,
-  useCache: boolean = true
+  useCache: boolean = true,
+  target: "server" | "client" | "both" = "both",
 ): Promise<{ outputPath: string; hashName: string; cached: boolean }> {
   try {
     // 确保使用绝对路径
     const absoluteFilePath = path.isAbsolute(filePath)
       ? filePath
       : path.resolve(Deno.cwd(), filePath);
-    const absoluteOutDir = path.isAbsolute(outDir) ? outDir : path.resolve(Deno.cwd(), outDir);
+    const absoluteOutDir = path.isAbsolute(outDir)
+      ? outDir
+      : path.resolve(Deno.cwd(), outDir);
 
-    // 确保输出目录存在
-    await ensureDir(absoluteOutDir);
+    // 根据目标创建不同的输出目录
+    // 注意：如果 target 是 'server' 或 'client'，outDir 已经是正确的目录了，不需要再创建子目录
+    // 只有当 target 是 'both' 时，才需要在 outDir 下创建 server 和 client 子目录
+    let serverOutDir: string;
+    let clientOutDir: string;
+
+    if (target === "server") {
+      // target 是 'server'，直接使用 outDir
+      serverOutDir = absoluteOutDir;
+      clientOutDir = absoluteOutDir; // 不会使用，但需要定义
+      await ensureDir(serverOutDir);
+    } else if (target === "client") {
+      // target 是 'client'，直接使用 outDir
+      serverOutDir = absoluteOutDir; // 不会使用，但需要定义
+      clientOutDir = absoluteOutDir;
+      await ensureDir(clientOutDir);
+    } else {
+      // target 是 'both'，需要在 outDir 下创建 server 和 client 子目录
+      serverOutDir = path.join(absoluteOutDir, "server");
+      clientOutDir = path.join(absoluteOutDir, "client");
+      await ensureDir(serverOutDir);
+      await ensureDir(clientOutDir);
+    }
 
     const ext = path.extname(filePath);
 
-    // 检查构建缓存
+    // 检查构建缓存（分别检查 server 和 client 目录）
     if (useCache) {
       const sourceHash = await calculateSourceHash(absoluteFilePath);
-      const cachedHashName = await checkBuildCache(absoluteFilePath, absoluteOutDir, sourceHash);
-      if (cachedHashName) {
-        // 缓存有效，直接返回
-        const cachedOutputPath = path.join(absoluteOutDir, cachedHashName);
-        fileMap.set(filePath, cachedHashName);
-        return { outputPath: cachedOutputPath, hashName: cachedHashName, cached: true };
+      if (target === "server" || target === "both") {
+        const cachedHashName = await checkBuildCache(
+          absoluteFilePath,
+          serverOutDir,
+          sourceHash,
+        );
+        if (cachedHashName) {
+          const cachedOutputPath = path.join(serverOutDir, cachedHashName);
+          fileMap.set(filePath, `server/${cachedHashName}`);
+          // 如果 target 是 both，还需要检查 client 缓存
+          if (target === "both") {
+            const clientCachedHashName = await checkBuildCache(
+              absoluteFilePath,
+              clientOutDir,
+              sourceHash,
+            );
+            if (clientCachedHashName) {
+              fileMap.set(
+                `${filePath}.client`,
+                `client/${clientCachedHashName}`,
+              );
+              return {
+                outputPath: cachedOutputPath,
+                hashName: `server/${cachedHashName}`,
+                cached: true,
+              };
+            }
+          } else {
+            return {
+              outputPath: cachedOutputPath,
+              hashName: `server/${cachedHashName}`,
+              cached: true,
+            };
+          }
+        }
+      }
+      if (target === "client") {
+        const cachedHashName = await checkBuildCache(
+          absoluteFilePath,
+          clientOutDir,
+          sourceHash,
+        );
+        if (cachedHashName) {
+          const cachedOutputPath = path.join(clientOutDir, cachedHashName);
+          fileMap.set(filePath, `client/${cachedHashName}`);
+          return {
+            outputPath: cachedOutputPath,
+            hashName: `client/${cachedHashName}`,
+            cached: true,
+          };
+        }
       }
     }
 
     // 如果是 TSX/TS 文件，使用 esbuild 打包（包含所有依赖）
-    if (ext === '.tsx' || ext === '.ts') {
+    if (ext === ".tsx" || ext === ".ts") {
+      // 读取源代码
+      const sourceCode = await Deno.readTextFile(absoluteFilePath);
+
       // 使用 esbuild.build 进行打包（会将所有静态导入打包到一个文件）
       // 注意：只打包项目内的相对路径导入，不打包外部依赖（如 @dreamer/dweb）
       const cwd = Deno.cwd();
-      
+
       // 读取 deno.json 获取 import map（用于解析外部依赖）
       let importMap: Record<string, string> = {};
       try {
-        const denoJsonPath = path.join(cwd, 'deno.json');
+        const denoJsonPath = path.join(cwd, "deno.json");
         const denoJsonContent = await Deno.readTextFile(denoJsonPath);
         const denoJson = JSON.parse(denoJsonContent);
         if (denoJson.imports) {
@@ -348,76 +404,174 @@ async function compileFile(
 
       // 收集所有外部依赖（从 import map 中提取）
       const externalPackages: string[] = [
-        '@dreamer/dweb',
-        'preact',
-        'preact-render-to-string',
+        "@dreamer/dweb",
+        "preact",
+        "preact-render-to-string",
       ];
-      
+
       // 从 import map 中添加所有外部依赖
       for (const [key, value] of Object.entries(importMap)) {
-        if (value.startsWith('jsr:') || value.startsWith('npm:') || value.startsWith('http')) {
+        if (
+          value.startsWith("jsr:") || value.startsWith("npm:") ||
+          value.startsWith("http")
+        ) {
           externalPackages.push(key);
         }
       }
 
-      // 使用 esbuild.build 打包文件（包含所有静态导入）
-      // bundle: true 会自动打包所有相对路径导入（../ 和 ./），
-      // 只有 external 中列出的外部依赖不会被打包
-      const result = await esbuild.build({
-        entryPoints: [absoluteFilePath],
-        bundle: true, // ✅ 打包所有依赖（包括相对路径导入 ../ 和 ./）
-        format: 'esm',
-        target: 'esnext',
-        jsx: 'automatic',
-        jsxImportSource: 'preact',
-        minify: true, // ✅ 压缩代码
-        keepNames: true, // ✅ 保留导出名称（确保 load 方法名不被压缩）
-        treeShaking: true, // ✅ Tree-shaking
-        legalComments: 'none', // ✅ 移除注释
-        write: false, // 不写入文件，我们手动处理
-        external: externalPackages, // 外部依赖不打包（保持 import 语句）
-        // 设置 import map（用于解析外部依赖）
-        // 注意：只对本地路径使用 alias，JSR/NPM/HTTP 导入已经在 external 中，不需要 alias
-        // 相对路径导入（../ 和 ./）不会被 alias 处理，由 esbuild 自动解析和打包
-        alias: Object.fromEntries(
-          Object.entries(importMap)
-            .filter(([_, value]) => !value.startsWith('jsr:') && !value.startsWith('npm:') && !value.startsWith('http'))
-            .map(([key, value]) => [
-              key,
-              path.resolve(cwd, value),
-            ])
-        ),
-      });
+      // 生成服务端版本（包含 load 函数）
+      let serverCompiledContent: string | null = null;
+      if (target === "server" || target === "both") {
+        // 使用原始源代码编译（包含 load 函数）
+        const result = await esbuild.build({
+          entryPoints: [absoluteFilePath],
+          bundle: true, // ✅ 打包所有依赖（包括相对路径导入 ../ 和 ./）
+          format: "esm",
+          target: "esnext",
+          jsx: "automatic",
+          jsxImportSource: "preact",
+          minify: true, // ✅ 压缩代码
+          keepNames: true, // ✅ 保留导出名称（确保 load 方法名不被压缩）
+          treeShaking: true, // ✅ Tree-shaking
+          legalComments: "none", // ✅ 移除注释
+          write: false, // 不写入文件，我们手动处理
+          external: externalPackages, // 外部依赖不打包（保持 import 语句）
+          // 设置 import map（用于解析外部依赖）
+          // 注意：只对本地路径使用 alias，JSR/NPM/HTTP 导入已经在 external 中，不需要 alias
+          // 相对路径导入（../ 和 ./）不会被 alias 处理，由 esbuild 自动解析和打包
+          alias: Object.fromEntries(
+            Object.entries(importMap)
+              .filter(([_, value]) =>
+                !value.startsWith("jsr:") && !value.startsWith("npm:") &&
+                !value.startsWith("http")
+              )
+              .map(([key, value]) => [
+                key,
+                path.resolve(cwd, value),
+              ]),
+          ),
+        });
 
-      if (!result.outputFiles || result.outputFiles.length === 0) {
-        throw new Error(`esbuild 打包结果为空: ${filePath}`);
+        if (!result.outputFiles || result.outputFiles.length === 0) {
+          throw new Error(`esbuild 打包结果为空: ${filePath}`);
+        }
+
+        serverCompiledContent = result.outputFiles[0].text;
+
+        // 计算 hash（用于缓存）
+        const hash = await calculateHash(serverCompiledContent);
+        // 生成文件名（仅使用 hash）
+        const hashName = `${hash}.js`;
+        const serverOutputPath = path.join(serverOutDir, hashName);
+
+        // 确保目录存在（虽然已经创建，但为了安全再次确保）
+        await ensureDir(path.dirname(serverOutputPath));
+
+        // 写入服务端版本（包含 load 函数）
+        await Deno.writeTextFile(serverOutputPath, serverCompiledContent);
+
+        // 记录映射关系
+        fileMap.set(filePath, `server/${hashName}`);
       }
 
-      // esbuild.build 返回的是 outputFiles 数组，取第一个
-      const compiledContent = result.outputFiles[0].text;
+      // 生成客户端版本（先移除 load 函数，再编译）
+      let clientCompiledContent: string | null = null;
+      if (target === "client" || target === "both") {
+        // 先对源代码执行 removeLoadOnlyImports（移除 load 函数和只在 load 中使用的导入）
+        const clientSourceCode = removeLoadOnlyImports(sourceCode);
 
-      // 计算 hash（用于缓存）
-      const hash = await calculateHash(compiledContent);
+        // 创建临时文件，写入处理后的源代码
+        const tempDir = await Deno.makeTempDir({ prefix: "dweb-build-" });
+        const tempFilePath = path.join(
+          tempDir,
+          path.basename(absoluteFilePath),
+        );
+        await Deno.writeTextFile(tempFilePath, clientSourceCode);
 
-      // 生成扁平化文件名（包含路径信息，避免冲突）
-      const hashName = generateFlatFileName(absoluteFilePath, hash);
-      const outputPath = path.join(absoluteOutDir, hashName);
+        try {
+          // 使用处理后的源代码进行编译
+          const result = await esbuild.build({
+            entryPoints: [tempFilePath],
+            bundle: true, // ✅ 打包所有依赖（包括相对路径导入 ../ 和 ./）
+            format: "esm",
+            target: "esnext",
+            jsx: "automatic",
+            jsxImportSource: "preact",
+            minify: true, // ✅ 压缩代码
+            keepNames: true, // ✅ 保留导出名称
+            treeShaking: true, // ✅ Tree-shaking
+            legalComments: "none", // ✅ 移除注释
+            write: false, // 不写入文件，我们手动处理
+            external: externalPackages, // 外部依赖不打包（保持 import 语句）
+            // 设置 import map（用于解析外部依赖）
+            alias: Object.fromEntries(
+              Object.entries(importMap)
+                .filter(([_, value]) =>
+                  !value.startsWith("jsr:") && !value.startsWith("npm:") &&
+                  !value.startsWith("http")
+                )
+                .map(([key, value]) => [
+                  key,
+                  path.resolve(cwd, value),
+                ]),
+            ),
+          });
 
-      // 写入最终文件（暂时不替换导入，后续统一处理）
-      await Deno.writeTextFile(outputPath, compiledContent);
+          if (!result.outputFiles || result.outputFiles.length === 0) {
+            throw new Error(`esbuild 打包结果为空: ${filePath}`);
+          }
 
-      // 记录映射关系
-      fileMap.set(filePath, hashName);
+          clientCompiledContent = result.outputFiles[0].text;
+        } finally {
+          // 清理临时文件
+          try {
+            await Deno.remove(tempFilePath);
+            await Deno.remove(tempDir);
+          } catch {
+            // 忽略清理错误
+          }
+        }
 
-      return { outputPath, hashName, cached: false };
+        // 计算客户端版本的 hash（内容不同，hash 也不同）
+        const clientHash = await calculateHash(clientCompiledContent);
+        const clientHashName = `${clientHash}.js`;
+        const clientOutputPath = path.join(clientOutDir, clientHashName);
+
+        // 确保目录存在（虽然已经创建，但为了安全再次确保）
+        await ensureDir(path.dirname(clientOutputPath));
+
+        // 写入客户端版本
+        await Deno.writeTextFile(clientOutputPath, clientCompiledContent);
+
+        // 记录映射关系（使用 .client 后缀区分）
+        fileMap.set(`${filePath}.client`, `client/${clientHashName}`);
+      }
+
+      // 返回服务端版本的信息（如果存在）
+      if (target === "server" || target === "both") {
+        const hash = await calculateHash(serverCompiledContent!);
+        const hashName = `${hash}.js`;
+        const outputPath = path.join(serverOutDir, hashName);
+        return { outputPath, hashName: `server/${hashName}`, cached: false };
+      } else {
+        // 只有客户端版本
+        const clientHash = await calculateHash(clientCompiledContent!);
+        const clientHashName = `${clientHash}.js`;
+        const outputPath = path.join(clientOutDir, clientHashName);
+        return {
+          outputPath,
+          hashName: `client/${clientHashName}`,
+          cached: false,
+        };
+      }
     } else {
       // 非 TS/TSX 文件，直接读取并计算 hash
       const fileContent = await Deno.readFile(absoluteFilePath);
       const hash = await calculateHash(fileContent);
-      const originalExt = ext || '';
+      const originalExt = ext || "";
 
-      // 生成扁平化文件名
-      const hashName = generateFlatFileName(absoluteFilePath, hash) + originalExt;
+      // 生成文件名（仅使用 hash，保留原始扩展名）
+      const hashName = `${hash}${originalExt}`;
       const outputPath = path.join(absoluteOutDir, hashName);
 
       // 复制文件
@@ -429,7 +583,9 @@ async function compileFile(
       return { outputPath, hashName, cached: false };
     }
   } catch (error) {
-    logger.error(`编译文件失败`, error instanceof Error ? error : undefined, { path: filePath });
+    logger.error(`编译文件失败`, error instanceof Error ? error : undefined, {
+      path: filePath,
+    });
     throw error;
   }
 }
@@ -450,7 +606,7 @@ async function compileWithCodeSplitting(
   fileMap: Map<string, string>,
   cwd: string,
   importMap: Record<string, string>,
-  externalPackages: string[]
+  externalPackages: string[],
 ): Promise<{ compiled: number; chunks: number }> {
   if (entryPoints.length === 0) {
     return { compiled: 0, chunks: 0 };
@@ -461,30 +617,33 @@ async function compileWithCodeSplitting(
     entryPoints: entryPoints,
     bundle: true,
     splitting: true, // 启用代码分割
-    format: 'esm',
-    target: 'esnext',
-    jsx: 'automatic',
-    jsxImportSource: 'preact',
+    format: "esm",
+    target: "esnext",
+    jsx: "automatic",
+    jsxImportSource: "preact",
     minify: true,
     treeShaking: true,
-    legalComments: 'none',
+    legalComments: "none",
     outdir: outDir, // 输出到目录（代码分割需要）
     outbase: cwd, // 保持目录结构
     external: externalPackages,
     // 只对本地路径使用 alias，JSR/NPM/HTTP 导入已经在 external 中，不需要 alias
     alias: Object.fromEntries(
       Object.entries(importMap)
-        .filter(([_, value]) => !value.startsWith('jsr:') && !value.startsWith('npm:') && !value.startsWith('http'))
+        .filter(([_, value]) =>
+          !value.startsWith("jsr:") && !value.startsWith("npm:") &&
+          !value.startsWith("http")
+        )
         .map(([key, value]) => [
           key,
           path.resolve(cwd, value),
-        ])
+        ]),
     ),
     write: false, // 不写入文件，我们手动处理
   });
 
   if (!result.outputFiles || result.outputFiles.length === 0) {
-    throw new Error('esbuild 代码分割结果为空');
+    throw new Error("esbuild 代码分割结果为空");
   }
 
   // 处理输出文件
@@ -494,26 +653,28 @@ async function compileWithCodeSplitting(
   for (const outputFile of result.outputFiles) {
     const outputPath = outputFile.path;
     const content = outputFile.text;
-    
+
     // 计算 hash
     const hash = await calculateHash(content);
-    
-    // 生成 hash 文件名
+
+    // 生成 hash 文件名（仅使用 hash，不包含路径前缀）
     // esbuild 输出的文件名格式：path/to/file.js
-    // 我们需要转换为扁平化的 hash 文件名
-    const relativePath = path.relative(outDir, outputPath);
-    const baseName = path.basename(relativePath, path.extname(relativePath));
-    const hashName = `${baseName}.${hash}.js`;
+    // 我们直接使用 hash 作为文件名
+    const hashName = `${hash}.js`;
     const finalOutputPath = path.join(outDir, hashName);
-    
+
     // 写入文件
     await Deno.writeTextFile(finalOutputPath, content);
-    
+
     // 记录映射关系（如果是入口文件）
     // esbuild 的代码分割会生成多个 chunk，我们需要识别哪些是入口文件
+    // 通过比较输出路径和入口文件路径来判断
+    const relativePath = path.relative(outDir, outputPath);
     for (const entryPoint of entryPoints) {
       const entryRelative = path.relative(cwd, entryPoint);
-      if (relativePath.includes(entryRelative.replace(/\.(tsx?|jsx?)$/, ''))) {
+      const entryPathWithoutExt = entryRelative.replace(/\.(tsx?|jsx?)$/, "");
+      // 检查输出路径是否包含入口文件的路径（用于识别入口文件对应的 chunk）
+      if (relativePath.includes(entryPathWithoutExt.replace(/[\/\\]/g, "/"))) {
         fileMap.set(entryPoint, hashName);
         chunkMap.set(entryPoint, hashName);
         compiled++;
@@ -536,20 +697,26 @@ async function compileWithCodeSplitting(
  * @param parallel 是否并行编译（默认 true，最多 10 个并发）
  * @param codeSplitting 是否启用代码分割（默认 false）
  * @param _minChunkSize 代码分割的最小 chunk 大小（字节，默认 20000，暂未使用，由 esbuild 自动处理）
+ * @param target 编译目标：'server' | 'client' | 'both'（默认 'both'）
  */
 async function compileDirectory(
   srcDir: string,
   outDir: string,
   fileMap: Map<string, string>,
-  extensions: string[] = ['.ts', '.tsx'],
+  extensions: string[] = [".ts", ".tsx"],
   useCache: boolean = true,
   parallel: boolean = true,
   codeSplitting: boolean = false,
-  _minChunkSize: number = 20000
+  _minChunkSize: number = 20000,
+  target: "server" | "client" | "both" = "both",
 ): Promise<void> {
   // 转换为绝对路径
-  const absoluteSrcDir = path.isAbsolute(srcDir) ? srcDir : path.resolve(Deno.cwd(), srcDir);
-  const absoluteOutDir = path.isAbsolute(outDir) ? outDir : path.resolve(Deno.cwd(), outDir);
+  const absoluteSrcDir = path.isAbsolute(srcDir)
+    ? srcDir
+    : path.resolve(Deno.cwd(), srcDir);
+  const absoluteOutDir = path.isAbsolute(outDir)
+    ? outDir
+    : path.resolve(Deno.cwd(), outDir);
 
   const files: string[] = [];
 
@@ -571,7 +738,7 @@ async function compileDirectory(
     const cwd = Deno.cwd();
     let importMap: Record<string, string> = {};
     try {
-      const denoJsonPath = path.join(cwd, 'deno.json');
+      const denoJsonPath = path.join(cwd, "deno.json");
       const denoJsonContent = await Deno.readTextFile(denoJsonPath);
       const denoJson = JSON.parse(denoJsonContent);
       if (denoJson.imports) {
@@ -583,12 +750,15 @@ async function compileDirectory(
 
     // 收集外部依赖
     const externalPackages: string[] = [
-      '@dreamer/dweb',
-      'preact',
-      'preact-render-to-string',
+      "@dreamer/dweb",
+      "preact",
+      "preact-render-to-string",
     ];
     for (const [key, value] of Object.entries(importMap)) {
-      if (value.startsWith('jsr:') || value.startsWith('npm:') || value.startsWith('http')) {
+      if (
+        value.startsWith("jsr:") || value.startsWith("npm:") ||
+        value.startsWith("http")
+      ) {
         externalPackages.push(key);
       }
     }
@@ -601,28 +771,33 @@ async function compileDirectory(
       fileMap,
       cwd,
       importMap,
-      externalPackages
+      externalPackages,
     );
-    console.log(`✅ 代码分割完成: ${result.compiled} 个入口文件, ${result.chunks} 个 chunk`);
+    console.log(
+      `✅ 代码分割完成: ${result.compiled} 个入口文件, ${result.chunks} 个 chunk`,
+    );
     return;
   }
 
   if (parallel && files.length > 1) {
     // 并行编译（根据 CPU 核心数动态调整并发数，优化构建速度）
     // 在 Deno 环境中，使用系统 CPU 核心数
+    // 注意：需要传递 target 参数给 compileFile
     let cpuCount = 4; // 默认值
     try {
       // Deno 环境：尝试获取 CPU 核心数
-      if (typeof Deno !== 'undefined') {
+      if (typeof Deno !== "undefined") {
         // Deno 没有直接获取 CPU 核心数的 API，使用环境变量或默认值
-        const envCores = Deno.env.get('DENO_CPU_COUNT');
+        const envCores = Deno.env.get("DENO_CPU_COUNT");
         if (envCores) {
           cpuCount = parseInt(envCores, 10) || 4;
         } else {
           // 使用合理的默认值（通常为 4-8）
           cpuCount = 4;
         }
-      } else if (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) {
+      } else if (
+        typeof navigator !== "undefined" && navigator.hardwareConcurrency
+      ) {
         // 浏览器环境
         cpuCount = navigator.hardwareConcurrency;
       }
@@ -630,7 +805,7 @@ async function compileDirectory(
       // 获取失败时使用默认值
       cpuCount = 4;
     }
-    
+
     // 动态调整并发数：CPU 核心数的 2 倍，但不超过文件数量和最大限制
     const concurrency = Math.min(Math.max(cpuCount * 2, 4), files.length, 20); // 最多 20 个并发
     let cachedCount = 0;
@@ -640,25 +815,39 @@ async function compileDirectory(
       const batch = files.slice(i, i + concurrency);
       await Promise.all(
         batch.map(async (file) => {
-          const result = await compileFile(file, absoluteOutDir, fileMap, useCache);
+          const result = await compileFile(
+            file,
+            absoluteOutDir,
+            fileMap,
+            useCache,
+            target,
+          );
           if (result.cached) {
             cachedCount++;
           } else {
             compiledCount++;
           }
           return result;
-        })
+        }),
       );
     }
 
-    console.log(`✅ 编译完成: ${compiledCount} 个文件重新编译, ${cachedCount} 个文件使用缓存`);
+    console.log(
+      `✅ 编译完成: ${compiledCount} 个文件重新编译, ${cachedCount} 个文件使用缓存`,
+    );
   } else {
     // 串行编译（用于调试或小文件数量）
     let cachedCount = 0;
     let compiledCount = 0;
 
     for (const file of files) {
-      const result = await compileFile(file, absoluteOutDir, fileMap, useCache);
+      const result = await compileFile(
+        file,
+        absoluteOutDir,
+        fileMap,
+        useCache,
+        target,
+      );
       if (result.cached) {
         cachedCount++;
       } else {
@@ -666,7 +855,9 @@ async function compileDirectory(
       }
     }
 
-    console.log(`✅ 编译完成: ${compiledCount} 个文件重新编译, ${cachedCount} 个文件使用缓存`);
+    console.log(
+      `✅ 编译完成: ${compiledCount} 个文件重新编译, ${cachedCount} 个文件使用缓存`,
+    );
   }
 }
 
@@ -677,10 +868,10 @@ async function compileDirectory(
  */
 async function postProcessImports(
   outDir: string,
-  fileMap: Map<string, string>
+  fileMap: Map<string, string>,
 ): Promise<void> {
-  console.log('🔄 后处理：替换导入路径...');
-  
+  console.log("🔄 后处理：替换导入路径...");
+
   // 创建反向映射：原始路径 -> hash 文件名
   // 支持多种路径格式作为 key
   const pathToHashMap = new Map<string, string>();
@@ -691,24 +882,83 @@ async function postProcessImports(
     // 也支持绝对路径作为 key
     pathToHashMap.set(originalPath, hashName);
     // 标准化路径（统一使用正斜杠）
-    pathToHashMap.set(relativePath.replace(/\\/g, '/'), hashName);
-    pathToHashMap.set(originalPath.replace(/\\/g, '/'), hashName);
+    pathToHashMap.set(relativePath.replace(/\\/g, "/"), hashName);
+    pathToHashMap.set(originalPath.replace(/\\/g, "/"), hashName);
   }
 
-  // 遍历所有编译后的 JS 文件
-  const absoluteOutDir = path.isAbsolute(outDir) ? outDir : path.resolve(Deno.cwd(), outDir);
+  // 遍历所有编译后的 JS 文件（处理 server 和 client 两个目录）
+  const absoluteOutDir = path.isAbsolute(outDir)
+    ? outDir
+    : path.resolve(Deno.cwd(), outDir);
+  const serverOutDir = path.join(absoluteOutDir, "server");
+  const clientOutDir = path.join(absoluteOutDir, "client");
   let processedCount = 0;
   let modifiedCount = 0;
-  
+
+  // 收集所有需要处理的文件（server 和 client 目录）
+  const filesToProcess: Array<
+    { path: string; originalPath: string; isClient: boolean }
+  > = [];
+
   for (const [originalPath, hashName] of fileMap.entries()) {
-    // 只处理 TS/TSX 文件编译后的 JS 文件
-    if (!originalPath.endsWith('.ts') && !originalPath.endsWith('.tsx')) {
+    // 跳过客户端版本的映射（.client 后缀），这些会在处理原始路径时一起处理
+    if (originalPath.endsWith(".client")) {
       continue;
     }
 
-    const outputPath = path.join(absoluteOutDir, hashName);
-    
+    // 只处理 TS/TSX 文件编译后的 JS 文件
+    if (!originalPath.endsWith(".ts") && !originalPath.endsWith(".tsx")) {
+      continue;
+    }
+
+    // 根据 hashName 判断是 server 还是 client
+    if (hashName.startsWith("server/")) {
+      const serverHashName = hashName.replace(/^server\//, "");
+      const filePath = path.join(serverOutDir, serverHashName);
+      // 检查文件是否存在
+      try {
+        await Deno.stat(filePath);
+        filesToProcess.push({
+          path: filePath,
+          originalPath: originalPath,
+          isClient: false,
+        });
+      } catch {
+        // 文件不存在，跳过
+        continue;
+      }
+    }
+
+    // 查找对应的客户端版本
+    const clientHashName = fileMap.get(`${originalPath}.client`);
+    if (clientHashName && clientHashName.startsWith("client/")) {
+      const clientHash = clientHashName.replace(/^client\//, "");
+      const filePath = path.join(clientOutDir, clientHash);
+      // 检查文件是否存在
+      try {
+        await Deno.stat(filePath);
+        filesToProcess.push({
+          path: filePath,
+          originalPath: originalPath,
+          isClient: true,
+        });
+      } catch {
+        // 文件不存在，跳过
+      }
+    }
+  }
+
+  // 处理所有文件
+  for (const { path: outputPath, originalPath, isClient } of filesToProcess) {
     try {
+      // 再次检查文件是否存在（防止并发问题）
+      try {
+        await Deno.stat(outputPath);
+      } catch {
+        // 文件不存在，跳过
+        continue;
+      }
+
       // 读取编译后的文件内容
       let content = await Deno.readTextFile(outputPath);
       let modified = false;
@@ -722,30 +972,46 @@ async function postProcessImports(
           // 解析相对路径为绝对路径
           const originalDir = path.dirname(originalPath);
           const absoluteImportPath = path.resolve(originalDir, importPath);
-          const relativeImportPath = path.relative(Deno.cwd(), absoluteImportPath);
-          
+          const relativeImportPath = path.relative(
+            Deno.cwd(),
+            absoluteImportPath,
+          );
+
           // 标准化路径（统一使用正斜杠）
-          const normalizedRelative = relativeImportPath.replace(/\\/g, '/');
-          const normalizedAbsolute = absoluteImportPath.replace(/\\/g, '/');
-          
+          const normalizedRelative = relativeImportPath.replace(/\\/g, "/");
+          const normalizedAbsolute = absoluteImportPath.replace(/\\/g, "/");
+
           // 查找对应的 hash 文件名
-          const hashFileName = pathToHashMap.get(normalizedRelative) || 
-                               pathToHashMap.get(relativeImportPath) ||
-                               pathToHashMap.get(normalizedAbsolute) ||
-                               pathToHashMap.get(absoluteImportPath);
-          
+          const hashFileName = pathToHashMap.get(normalizedRelative) ||
+            pathToHashMap.get(relativeImportPath) ||
+            pathToHashMap.get(normalizedAbsolute) ||
+            pathToHashMap.get(absoluteImportPath);
+
           if (hashFileName) {
             modified = true;
-            // 替换为相对路径（相对于输出目录，使用 ./ 前缀）
-            // 所有编译后的文件都在同一个 dist 目录下，使用相对路径即可
-            const relativeModulePath = `./${hashFileName}`;
+            // 替换为相对路径（相对于当前目录，server 或 client）
+            // 需要根据当前文件所在目录（server 或 client）来确定相对路径
+            const currentDir = isClient ? "client" : "server";
+            const targetDir = hashFileName.startsWith("server/")
+              ? "server"
+              : hashFileName.startsWith("client/")
+              ? "client"
+              : currentDir;
+            const targetHashName = hashFileName.replace(
+              /^(server|client)\//,
+              "",
+            );
+            // 如果目标目录和当前目录相同，使用相对路径；否则需要跨目录引用
+            const relativeModulePath = currentDir === targetDir
+              ? `./${targetHashName}`
+              : `../${targetDir}/${targetHashName}`;
             const quote = match.includes("'") ? "'" : '"';
             return `from ${quote}${relativeModulePath}${quote}`;
           }
-          
+
           // 如果找不到映射，保持原样（可能是外部依赖或未编译的文件）
           return match;
-        }
+        },
       );
 
       // 替换 import('相对路径') 动态导入中的相对路径
@@ -754,26 +1020,41 @@ async function postProcessImports(
         (match, importPath) => {
           const originalDir = path.dirname(originalPath);
           const absoluteImportPath = path.resolve(originalDir, importPath);
-          const relativeImportPath = path.relative(Deno.cwd(), absoluteImportPath);
-          
-          const normalizedRelative = relativeImportPath.replace(/\\/g, '/');
-          const normalizedAbsolute = absoluteImportPath.replace(/\\/g, '/');
-          
-          const hashFileName = pathToHashMap.get(normalizedRelative) || 
-                               pathToHashMap.get(relativeImportPath) ||
-                               pathToHashMap.get(normalizedAbsolute) ||
-                               pathToHashMap.get(absoluteImportPath);
-          
+          const relativeImportPath = path.relative(
+            Deno.cwd(),
+            absoluteImportPath,
+          );
+
+          const normalizedRelative = relativeImportPath.replace(/\\/g, "/");
+          const normalizedAbsolute = absoluteImportPath.replace(/\\/g, "/");
+
+          const hashFileName = pathToHashMap.get(normalizedRelative) ||
+            pathToHashMap.get(relativeImportPath) ||
+            pathToHashMap.get(normalizedAbsolute) ||
+            pathToHashMap.get(absoluteImportPath);
+
           if (hashFileName) {
             modified = true;
-            // 替换为相对路径（相对于输出目录，使用 ./ 前缀）
-            const relativeModulePath = `./${hashFileName}`;
+            // 替换为相对路径（动态导入也需要根据目录结构处理）
+            const currentDir = isClient ? "client" : "server";
+            const targetDir = hashFileName.startsWith("server/")
+              ? "server"
+              : hashFileName.startsWith("client/")
+              ? "client"
+              : currentDir;
+            const targetHashName = hashFileName.replace(
+              /^(server|client)\//,
+              "",
+            );
+            const relativeModulePath = currentDir === targetDir
+              ? `./${targetHashName}`
+              : `../${targetDir}/${targetHashName}`;
             const quote = match.includes("'") ? "'" : '"';
             return `import(${quote}${relativeModulePath}${quote})`;
           }
-          
+
           return match;
-        }
+        },
       );
 
       // 如果内容被修改，重新写入文件
@@ -787,11 +1068,14 @@ async function postProcessImports(
     }
   }
 
-  console.log(`✅ 导入路径替换完成: 处理 ${processedCount} 个文件，修改 ${modifiedCount} 个文件`);
+  console.log(
+    `✅ 导入路径替换完成: 处理 ${processedCount} 个文件，修改 ${modifiedCount} 个文件`,
+  );
 }
 
 /**
  * 生成路由映射文件（路由路径 -> hash 文件名）
+ * 分别生成 server 和 client 两个路由映射文件
  * @param fileMap 文件映射表
  * @param routesDir 路由目录
  * @param outDir 输出目录
@@ -799,37 +1083,68 @@ async function postProcessImports(
 async function generateRouteMap(
   fileMap: Map<string, string>,
   routesDir: string,
-  outDir: string
+  outDir: string,
 ): Promise<void> {
-  const routeMap: Record<string, string> = {};
+  const serverRouteMap: Record<string, string> = {};
+  const clientRouteMap: Record<string, string> = {};
 
   // 遍历文件映射表，找出路由文件
   for (const [originalPath, hashName] of fileMap.entries()) {
+    // 跳过客户端版本（.client 后缀）
+    if (originalPath.endsWith(".client")) {
+      continue;
+    }
+
     // 检查是否是路由文件
     if (originalPath.includes(routesDir)) {
       // 计算路由路径（从 routes 目录开始的相对路径）
-      const routeRelativePath = path.relative(path.resolve(Deno.cwd(), routesDir), originalPath);
+      const routeRelativePath = path.relative(
+        path.resolve(Deno.cwd(), routesDir),
+        originalPath,
+      );
 
       // 移除扩展名，转换为路由路径
       const routePath = routeRelativePath
-        .replace(/\.tsx?$/, '')
-        .replace(/^api\//, '/api/')
-        .replace(/^_/, '/_')
-        .replace(/\/index$/, '/')
-        .replace(/\/$/, '');
+        .replace(/\.tsx?$/, "")
+        .replace(/^api\//, "/api/")
+        .replace(/^_/, "/_")
+        .replace(/\/index$/, "/")
+        .replace(/\/$/, "");
 
       // 如果路由路径为空，设置为根路径
-      const finalRoutePath = routePath || '/';
+      const finalRoutePath = routePath || "/";
 
-      routeMap[finalRoutePath] = hashName;
+      // 根据 hashName 判断是 server 还是 client
+      if (hashName.startsWith("server/")) {
+        serverRouteMap[finalRoutePath] = hashName;
+        // 查找对应的客户端版本
+        const clientHashName = fileMap.get(`${originalPath}.client`);
+        if (clientHashName && clientHashName.startsWith("client/")) {
+          clientRouteMap[finalRoutePath] = clientHashName;
+        }
+      } else if (hashName.startsWith("client/")) {
+        clientRouteMap[finalRoutePath] = hashName;
+      }
     }
   }
 
-  // 写入路由映射文件
-  const routeMapPath = path.join(outDir, '.route-map.json');
-  await Deno.writeTextFile(routeMapPath, JSON.stringify(routeMap, null, 2));
+  // 写入服务端路由映射文件
+  await Deno.writeTextFile(
+    path.join(outDir, "server.json"),
+    JSON.stringify(serverRouteMap, null, 2),
+  );
 
-  console.log(`✅ 路由映射文件已生成: .route-map.json`);
+  // 写入客户端路由映射文件
+  await Deno.writeTextFile(
+    path.join(outDir, "client.json"),
+    JSON.stringify(clientRouteMap, null, 2),
+  );
+
+  console.log(
+    `✅ 路由映射文件生成完成: server.json (${
+      Object.keys(serverRouteMap).length
+    } 个路由), client.json (${Object.keys(clientRouteMap).length} 个路由)`,
+  );
 }
 
 /**
@@ -845,7 +1160,7 @@ export async function build(config: AppConfig): Promise<void> {
  */
 async function buildApp(config: AppConfig): Promise<void> {
   if (!config.build) {
-    throw new Error('构建配置 (build) 是必需的');
+    throw new Error("构建配置 (build) 是必需的");
   }
   const outDir = config.build.outDir;
 
@@ -867,11 +1182,11 @@ async function buildApp(config: AppConfig): Promise<void> {
 
   // 1. 复制静态资源（保持原文件名，不 hash 化）
   // CSS 文件会由 Tailwind 插件处理，这里只复制其他静态资源
-  const staticDir = config.static?.dir || 'assets';
+  const staticDir = config.static?.dir || "assets";
   const staticOutDir = path.join(outDir, staticDir);
   const compressAssets = config.build?.compress === true;
   const imageQuality = config.build?.imageQuality || 80;
-  
+
   try {
     await ensureDir(staticOutDir);
 
@@ -884,7 +1199,7 @@ async function buildApp(config: AppConfig): Promise<void> {
       if (entry.isFile) {
         const ext = path.extname(entry.path).toLowerCase();
         // CSS 文件跳过（由 Tailwind 插件处理）
-        if (ext === '.css') {
+        if (ext === ".css") {
           skippedCount++;
           continue;
         }
@@ -896,7 +1211,12 @@ async function buildApp(config: AppConfig): Promise<void> {
 
         // 如果启用压缩，尝试压缩图片和字体
         if (compressAssets) {
-          const compressed = await compressAsset(entry.path, outputPath, ext, imageQuality);
+          const compressed = await compressAsset(
+            entry.path,
+            outputPath,
+            ext,
+            imageQuality,
+          );
           if (compressed) {
             compressedCount++;
           } else {
@@ -911,9 +1231,11 @@ async function buildApp(config: AppConfig): Promise<void> {
         }
       }
     }
-    
+
     if (compressAssets) {
-      console.log(`✅ 静态资源处理完成 (${staticDir}): ${compressedCount} 个已压缩, ${copiedCount} 个已复制, ${skippedCount} 个已跳过`);
+      console.log(
+        `✅ 静态资源处理完成 (${staticDir}): ${compressedCount} 个已压缩, ${copiedCount} 个已复制, ${skippedCount} 个已跳过`,
+      );
     } else {
       console.log(`✅ 复制静态资源完成 (${staticDir}): ${copiedCount} 个文件`);
     }
@@ -921,54 +1243,88 @@ async function buildApp(config: AppConfig): Promise<void> {
     // 静态资源目录不存在时忽略错误
   }
 
-  // 2. 编译路由文件（扁平化输出到 outDir）
+  // 2. 创建 server 和 client 目录
+  const serverOutDir = path.join(outDir, "server");
+  const clientOutDir = path.join(outDir, "client");
+  await ensureDir(serverOutDir);
+  await ensureDir(clientOutDir);
+
+  // 3. 编译路由文件（分别编译到 server 和 client 目录）
   if (!config.routes) {
-    throw new Error('路由配置 (routes) 是必需的');
+    throw new Error("路由配置 (routes) 是必需的");
   }
   const routeConfig = normalizeRouteConfig(config.routes);
-  const routesDir = routeConfig.dir || 'routes';
-  
+  const routesDir = routeConfig.dir || "routes";
+
   // 检查是否启用代码分割
   const codeSplitting = config.build?.split === true;
   const minChunkSize = config.build?.chunkSize || 20000;
-  
+
   try {
+    // 编译路由文件到 server 目录（包含 load 函数）
     await compileDirectory(
-      routesDir, 
-      outDir, 
-      fileMap, 
-      ['.ts', '.tsx'], 
-      useCache, 
-      true, 
+      routesDir,
+      serverOutDir,
+      fileMap,
+      [".ts", ".tsx"],
+      useCache,
+      true,
       codeSplitting,
-      minChunkSize
+      minChunkSize,
+      "server",
     );
-    console.log(`✅ 编译路由文件完成 (${routesDir})`);
+    // 编译路由文件到 client 目录（移除 load 函数）
+    await compileDirectory(
+      routesDir,
+      clientOutDir,
+      fileMap,
+      [".ts", ".tsx"],
+      useCache,
+      true,
+      codeSplitting,
+      minChunkSize,
+      "client",
+    );
+    console.log(`✅ 编译路由文件完成 (${routesDir}) - server 和 client 版本`);
   } catch (error) {
     console.warn(`⚠️  路由目录编译失败: ${routesDir}`, error);
   }
 
-  // 3. 编译组件文件（扁平化输出到 outDir）
+  // 4. 编译组件文件（组件通常只需要客户端版本，但为了兼容性也生成服务端版本）
   try {
     if (
-      await Deno.stat('components')
+      await Deno.stat("components")
         .then(() => true)
         .catch(() => false)
     ) {
+      // 编译组件到 server 目录
       await compileDirectory(
-        'components', 
-        outDir, 
-        fileMap, 
-        ['.ts', '.tsx'], 
-        useCache, 
+        "components",
+        serverOutDir,
+        fileMap,
+        [".ts", ".tsx"],
+        useCache,
         true,
         codeSplitting,
-        minChunkSize
+        minChunkSize,
+        "server",
       );
-      console.log('✅ 编译组件文件完成 (components)');
+      // 编译组件到 client 目录
+      await compileDirectory(
+        "components",
+        clientOutDir,
+        fileMap,
+        [".ts", ".tsx"],
+        useCache,
+        true,
+        codeSplitting,
+        minChunkSize,
+        "client",
+      );
+      console.log("✅ 编译组件文件完成 (components) - server 和 client 版本");
     }
   } catch (error) {
-    console.warn('⚠️  组件目录编译失败', error);
+    console.warn("⚠️  组件目录编译失败", error);
   }
 
   // 4. 配置文件不再复制到构建输出目录
@@ -977,8 +1333,8 @@ async function buildApp(config: AppConfig): Promise<void> {
   // - deno.json (运行时从项目根目录读取)
   // - deno.lock (运行时从项目根目录读取)
   // - dweb.config.ts (运行时从项目根目录加载)
-  
-  console.log('✅ 跳过配置文件复制（运行时从项目根目录读取）');
+
+  console.log("✅ 跳过配置文件复制（运行时从项目根目录读取）");
 
   // 5. 不再复制 deno.json 到输出目录
   // 注意：运行时从项目根目录读取 deno.json，不需要复制到 dist 目录
@@ -1003,19 +1359,6 @@ async function buildApp(config: AppConfig): Promise<void> {
 
   // 8. 生成路由映射文件
   await generateRouteMap(fileMap, routesDir, outDir);
-
-  // 9. 生成文件映射表（JSON 格式）
-  const fileMapObj: Record<string, string> = {};
-  for (const [originalPath, hashName] of fileMap.entries()) {
-    // 使用相对路径作为 key
-    const relativePath = path.relative(Deno.cwd(), originalPath);
-    fileMapObj[relativePath] = hashName;
-  }
-
-  await Deno.writeTextFile(
-    path.join(outDir, '.file-map.json'),
-    JSON.stringify(fileMapObj, null, 2)
-  );
 
   // 9. 不再生成服务器入口文件和构建信息
   // 注意：server.js 和 .build-info.json 不再生成，运行时使用 CLI 命令启动

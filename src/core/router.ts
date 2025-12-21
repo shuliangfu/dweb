@@ -87,18 +87,24 @@ export class Router {
    * 从构建映射文件加载路由（生产环境）
    * 
    * 在生产环境中，从构建系统生成的路由映射文件加载路由信息。
+   * 同时读取 server.json 和 client.json，分别用于服务端和客户端路由。
    * 这样可以避免在生产环境中扫描文件系统，提升性能。
    * 
-   * @param routeMapPath - 路由映射文件路径（.route-map.json）
+   * @param serverRouteMapPath - 服务端路由映射文件路径（server.json）
+   * @param clientRouteMapPath - 客户端路由映射文件路径（client.json）
    * @param outDir - 构建输出目录
    * 
    * @example
    * ```typescript
    * const router = new Router("routes");
-   * await router.loadFromBuildMap("dist/.route-map.json", "dist");
+   * await router.loadFromBuildMap("dist/server.json", "dist/client.json", "dist");
    * ```
    */
-  async loadFromBuildMap(routeMapPath: string, outDir: string): Promise<void> {
+  async loadFromBuildMap(
+    serverRouteMapPath: string,
+    clientRouteMapPath: string,
+    outDir: string
+  ): Promise<void> {
     this.routes.clear();
     this.layouts.clear();
     this.middlewares.clear();
@@ -106,16 +112,42 @@ export class Router {
     this.appFilePath = null;
 
     try {
-      // 读取路由映射文件
-      const routeMapContent = await Deno.readTextFile(routeMapPath);
-      const routeMap: Record<string, string> = JSON.parse(routeMapContent);
+      // 读取服务端路由映射文件
+      const serverRouteMapContent = await Deno.readTextFile(serverRouteMapPath);
+      const serverRouteMap: Record<string, string> = JSON.parse(serverRouteMapContent);
+      
+      // 读取客户端路由映射文件（如果存在）
+      let clientRouteMap: Record<string, string> = {};
+      try {
+        const clientRouteMapContent = await Deno.readTextFile(clientRouteMapPath);
+        clientRouteMap = JSON.parse(clientRouteMapContent);
+      } catch {
+        // 客户端路由映射文件不存在，使用空对象（向后兼容）
+      }
 
-      // 遍历路由映射，创建路由信息
-      for (const [routeKey, hashFileName] of Object.entries(routeMap)) {
-        // 构建文件的完整路径（用于服务器端加载）
-        const buildFilePath = path.resolve(outDir, hashFileName);
-        // 用于客户端请求的路径（只包含文件名，不包含 dist/ 前缀）
-        const clientModulePath = hashFileName;
+      // 遍历服务端路由映射，创建路由信息
+      for (const [routeKey, serverHashFileName] of Object.entries(serverRouteMap)) {
+        // 构建文件的完整路径（用于服务器端加载，从 server 目录）
+        // serverHashFileName 格式：server/routes_index.abc123.js
+        const serverHashName = serverHashFileName.startsWith('server/') 
+          ? serverHashFileName.replace(/^server\//, '') 
+          : serverHashFileName;
+        const buildFilePath = path.resolve(outDir, 'server', serverHashName);
+        
+        // 从客户端路由映射中获取对应的客户端路径
+        // clientHashFileName 格式：client/routes_index.xyz789.js
+        const clientHashFileName = clientRouteMap[routeKey];
+        let clientModulePath: string;
+        if (clientHashFileName) {
+          // 如果客户端映射存在，使用它
+          const clientHashName = clientHashFileName.startsWith('client/')
+            ? clientHashFileName.replace(/^client\//, '')
+            : clientHashFileName;
+          clientModulePath = clientHashName;
+        } else {
+          // 向后兼容：如果没有客户端映射，尝试从服务端路径推断
+          clientModulePath = serverHashName;
+        }
         
         // 规范化路由路径（路由映射中的 key 可能是 "index" 或 "/index"）
         let routePath = routeKey;
@@ -191,7 +223,7 @@ export class Router {
       }
     } catch (error) {
       if (error instanceof Deno.errors.NotFound) {
-        throw new Error(`路由映射文件不存在: ${routeMapPath}`);
+        throw new Error(`路由映射文件不存在: ${serverRouteMapPath} 或 ${clientRouteMapPath}`);
       } else {
         throw error;
       }

@@ -604,9 +604,9 @@ Deno.test('Prod Server - 路由映射文件路径构建', () => {
   };
 
   // 验证路由映射文件路径构建逻辑
-  // 在 prod.ts 中：routeMapPath = path.join(outDir, '.route-map.json')
+  // 在 prod.ts 中：routeMapPath = path.join(outDir, 'server.json')
   const outDir = config.build!.outDir;
-  const routeMapPath = `${outDir}/.route-map.json`;
-  assertEquals(routeMapPath, 'dist/.route-map.json');
+  const routeMapPath = `${outDir}/server.json`;
+  assertEquals(routeMapPath, 'dist/server.json');
 });
 
