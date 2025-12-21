@@ -427,12 +427,7 @@ export function i18n(options: I18nPluginOptions): Plugin {
           }
         }
       }
-    },
 
-    /**
-     * 响应处理钩子 - 清理当前语言
-     */
-    onResponse(_req: Request, _res: Response) {
       // 清理当前语言（请求处理完成后）
       clearCurrentLanguage();
     },
