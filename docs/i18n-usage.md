@@ -268,11 +268,12 @@ export default function UserPage({ data }: PageProps) {
 ```typescript
 // models/User.ts
 class User extends SQLModel {
-  static async findById(id: string, options?: { t?: (key: string) => string }) {
+  static async findById(id: string) {
     const user = await this.find(id);
 
-    if (!user && options?.t) {
-      throw new Error(options.t("user.notFound"));
+    if (!user) {
+      // 使用全局 $t() 方法
+      throw new Error($t("user.notFound"));
     }
 
     return user;
