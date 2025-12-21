@@ -354,6 +354,16 @@ usePlugin(rss({
 
 ### store - 状态管理
 
+状态管理插件提供了跨组件的响应式状态管理功能，支持服务端和客户端，可以用于在多个组件之间共享状态。
+
+**特性：**
+- ✅ 跨组件状态共享
+- ✅ 响应式更新（订阅模式）
+- ✅ 服务端和客户端支持
+- ✅ 可选持久化（localStorage）
+- ✅ 函数式更新支持
+- ✅ 通过 PageProps 注入，使用简单
+
 ```typescript
 import { store } from "@dreamer/dweb/plugins";
 
@@ -367,6 +377,15 @@ app.plugin(store({
   },
 }));
 ```
+
+**配置选项：**
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `persist` | `boolean` | `false` | 是否启用持久化，启用后状态会保存到 localStorage |
+| `storageKey` | `string` | `'dweb-store'` | 持久化存储的键名 |
+| `enableServer` | `boolean` | `true` | 是否在服务端启用，每个请求会有独立的 Store 实例 |
+| `initialState` | `Record<string, unknown>` | `{}` | 初始状态对象 |
 
 #### 客户端使用（推荐方式：通过 PageProps）
 
