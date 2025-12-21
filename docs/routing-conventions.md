@@ -183,7 +183,7 @@ export default function DocsLayout({ children }: LayoutProps) {
 ```
 routes/
 ├── _middleware.ts          # 根中间件（应用到所有路由）
-└── api/
+└── api/                    # API 路由目录（默认在 routes/api，可通过 apiDir 配置）
     └── _middleware.ts      # API 中间件（应用到 /api 下的所有路由）
 ```
 
