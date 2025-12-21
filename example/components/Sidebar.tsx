@@ -172,15 +172,11 @@ export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarP
   // 展开状态管理（允许用户手动展开/折叠）
   // 使用 title 作为 key，因为不是所有菜单项都有 path
   const [expandedItems, setExpandedItems] = useState<Set<string>>(() => {
-    // 初始化时根据当前路径自动展开相关菜单项
+    // 初始化时展开所有菜单项
     const expanded = new Set<string>();
     navItems.forEach((item) => {
       if (item.children) {
-        // 检查当前路径是否匹配该菜单项或其子项
-        const isActive = isItemActive(item, currentPath);
-        if (isActive) {
-          expanded.add(item.title);
-        }
+        expanded.add(item.title);
       }
     });
     return expanded;
@@ -291,35 +287,11 @@ export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarP
                     {item.title}
                   </a>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={(e) => hasChildren && toggleExpanded(item.title, e)}
-                    className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-indigo-100 text-indigo-700'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                    aria-label={hasChildren ? (isExpanded ? '折叠菜单' : '展开菜单') : undefined}
-                  >
-                    <span className="flex-1 text-left">{item.title}</span>
-                    {hasChildren && (
-                      <svg
-                        className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    )}
-                  </button>
+                  <div className="px-3 py-2 text-sm font-semibold text-gray-900">
+                    {item.title}
+                  </div>
                 )}
-                {hasChildren && isExpanded && (
+                {hasChildren && (
                   <div className="ml-4 mt-1 space-y-1">
                     {item.children!.map((child) => {
                       // 子项必须有 path

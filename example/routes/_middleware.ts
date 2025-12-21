@@ -45,4 +45,5 @@ const routeMiddleware: Middleware = async (req, res, next) => {
  * 2. testMiddleware2 - 添加时间戳
  * 3. routeMiddleware - 主路由中间件
  */
-export default [testMiddleware1, testMiddleware2, routeMiddleware];
+// export default [testMiddleware1, testMiddleware2, routeMiddleware];
+export default [routeMiddleware];
