@@ -6,6 +6,18 @@
 // 引用全局类型声明（使 $t 和 t 函数在全局可用）
 import "./global.d.ts";
 
+// 在模块加载时初始化默认全局函数
+// 这确保即使 i18n 插件未使用，$t() 和 t() 也可以使用（返回 key 本身）
+if (typeof globalThis !== "undefined") {
+  const defaultT = (key: string) => key;
+  if (!(globalThis as any).$t) {
+    (globalThis as any).$t = defaultT;
+  }
+  if (!(globalThis as any).t) {
+    (globalThis as any).t = defaultT;
+  }
+}
+
 import type { AppLike, Plugin, Request, Response } from "../../types/index.ts";
 import type { I18nPluginOptions, TranslationData } from "./types.ts";
 import * as path from "@std/path";

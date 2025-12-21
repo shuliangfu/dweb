@@ -13,30 +13,30 @@ type TranslationFunction = (
 
 /**
  * 扩展 globalThis 类型以包含 $t 和 t 函数
- * 注意：这些函数只有在 i18n 插件已初始化时才可用
+ * 这些函数始终可用：如果 i18n 插件未初始化，会返回 key 本身
  */
 declare global {
   /**
    * 全局翻译函数 $t
    * 可以在任何地方直接使用，无需导入
-   * 只有在 i18n 插件已初始化时才可用
+   * 如果 i18n 插件未初始化，会返回 key 本身（不会报错）
    *
    * @example
    * const message = $t('common.welcome');
    * const messageWithParams = $t('user.greeting', { name: 'John' });
    */
-  var $t: TranslationFunction | undefined;
+  var $t: TranslationFunction;
 
   /**
    * 全局翻译函数 t（$t 的别名）
    * 可以在任何地方直接使用，无需导入
-   * 只有在 i18n 插件已初始化时才可用
+   * 如果 i18n 插件未初始化，会返回 key 本身（不会报错）
    *
    * @example
    * const message = t('common.welcome');
    * const messageWithParams = t('user.greeting', { name: 'John' });
    */
-  var t: TranslationFunction | undefined;
+  var t: TranslationFunction;
 }
 
 /**

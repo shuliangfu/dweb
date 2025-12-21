@@ -6,7 +6,7 @@
  * 服务启动通过 CLI 命令：deno task dev 或 deno task start
  */
 
-import { createApp, cors, staticFiles } from '@dreamer/dweb';
+import { createApp, cors, i18n } from '@dreamer/dweb';
 
 // 创建应用实例
 const app = createApp();
@@ -18,20 +18,14 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// 自定义静态资源配置（带访问前缀）
-// 注意：框架也会自动添加一个不带 prefix 的 staticFiles 中间件
-// 这样可以通过两种方式访问：
-// - /assets/images/logo.png (通过这个配置)
-// - /images/logo.png (通过框架自动添加的中间件)
-// app.use(
-//   staticFiles({
-//     dir: 'assets',
-//     prefix: '/assets', // 访问前缀，例如 /assets/images/logo.png
-//     maxAge: 86400, // 缓存 1 天
-//     index: ['index.html', 'index.htm'],
-//     dotfiles: 'deny', // 禁止访问隐藏文件
-//   })
-// );
+app.plugin(i18n({
+  languages: [
+    { code: 'en-US', name: 'English' },
+    { code: 'zh-CN', name: '中文', default: true },
+  ],
+  translationsDir: 'locales',
+  detection: { fromCookie: true },
+}));
 
 // app.use((req, res, next) => {
 //   console.log('request', req.url);

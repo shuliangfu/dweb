@@ -782,27 +782,31 @@ export class RouteHandler {
     }
 
     try {
-      // 确保全局 $t 和 t 函数已设置（仅在 i18n 插件已使用时）
+      // 确保全局 $t 和 t 函数已设置
       // 这确保在 load 函数中可以直接使用 $t() 和 t()
+      // 如果 i18n 插件已初始化，使用实际的翻译函数
+      // 如果未初始化，使用默认函数（返回 key 本身），确保不会报错
       if (typeof globalThis !== "undefined") {
-        // 如果 req.t 存在（i18n 插件已设置），确保全局函数也已设置
+        // 如果 req.t 存在（i18n 插件已设置），使用实际的翻译函数
         if ((req as any).t) {
           (globalThis as any).$t = (req as any).t;
           (globalThis as any).t = (req as any).t;
         } else {
-          // 如果 req.t 不存在，检查 i18n 插件是否已初始化
+          // 如果 req.t 不存在，尝试从 i18n access 模块获取
           try {
-            const { getI18n, isI18nInitialized, ensureGlobalI18n } =
-              await import(
-                "../plugins/i18n/access.ts"
-              );
-            // 只有在 i18n 插件已初始化时才设置全局函数
-            if (isI18nInitialized()) {
-              ensureGlobalI18n();
-            }
-            // 如果 i18n 未初始化，不设置全局函数（避免创建不必要的全局变量）
+            const { ensureGlobalI18n } = await import(
+              "../plugins/i18n/access.ts"
+            );
+            // ensureGlobalI18n 会检查 i18n 是否已初始化
+            // 如果已初始化，使用实际翻译函数；如果未初始化，使用默认函数
+            ensureGlobalI18n();
           } catch {
-            // i18n 模块未加载，不设置全局函数
+            // i18n 模块未加载，设置默认函数（返回 key 本身）
+            if (!(globalThis as any).$t) {
+              const defaultT = (key: string) => key;
+              (globalThis as any).$t = defaultT;
+              (globalThis as any).t = defaultT;
+            }
           }
         }
       }
