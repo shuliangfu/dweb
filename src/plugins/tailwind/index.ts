@@ -268,8 +268,18 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
             const processed = await processCSS(cssContent, cssFile, version, isProduction, options);
 
             // 计算输出路径
-            const relativePath = path.relative(staticDir, cssFile);
+            // 注意：如果 cssFile 就是 staticDir 下的文件（如 assets/tailwind.css），
+            // path.relative 可能会返回相对路径，需要特殊处理
+            let relativePath: string;
+            if (cssFile.startsWith(staticDir + "/") || cssFile.startsWith(staticDir + "\\")) {
+              // 如果 cssFile 在 staticDir 目录下，直接提取相对路径
+              relativePath = cssFile.slice(staticDir.length + 1);
+            } else {
+              // 否则使用 path.relative 计算相对路径
+              relativePath = path.relative(staticDir, cssFile);
+            }
             const outPath = path.join(outDir, staticDir, relativePath);
+            console.log(`[Tailwind ${version}] 编译 CSS: ${cssFile} -> ${outPath}`);
 
             // 确保输出目录存在
             await Deno.mkdir(path.dirname(outPath), { recursive: true });
