@@ -227,8 +227,11 @@ export function i18n(options: I18nPluginOptions): Plugin {
 
   const translationsDir = options.translationsDir || "locales";
 
-  // 翻译缓存
+  // 翻译缓存（每个插件实例都有独立的缓存）
   const translationCache = new Map<string, TranslationData>();
+  
+  // 存储应用实例引用（用于多应用场景）
+  let appInstance: AppLike | undefined;
 
   return {
     name: "i18n",
@@ -237,7 +240,10 @@ export function i18n(options: I18nPluginOptions): Plugin {
     /**
      * 初始化钩子 - 预加载翻译文件
      */
-    async onInit(_app: AppLike) {
+    async onInit(app: AppLike) {
+      // 保存应用实例引用
+      appInstance = app;
+      
       // 预加载所有语言的翻译文件
       for (const lang of options.languages) {
         try {
@@ -258,9 +264,10 @@ export function i18n(options: I18nPluginOptions): Plugin {
         options.languages.find((l) => l.default)?.code ||
         options.languages[0]?.code ||
         "en";
-      initI18nAccess(translationCache, defaultLang);
+      // 传递 app 实例以支持多应用场景下的隔离
+      initI18nAccess(translationCache, defaultLang, app);
       // 确保全局函数已初始化（只有在 i18n 插件已初始化时才设置）
-      ensureGlobalI18n();
+      ensureGlobalI18n(app);
     },
 
     /**
@@ -273,6 +280,9 @@ export function i18n(options: I18nPluginOptions): Plugin {
         options.languages[0];
 
       // 设置当前语言（用于全局访问）
+      // 注意：在多应用场景下，需要从请求对象获取应用实例
+      // 但由于 Request 对象可能没有直接引用 app，这里先使用全局方式
+      // 在请求处理时，会通过 req.__setGlobalI18n 设置正确的翻译函数
       setCurrentLanguage(langCode);
 
       // 创建翻译函数

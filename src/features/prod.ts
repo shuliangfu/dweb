@@ -529,8 +529,9 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   }
 
   // 尝试从 main.ts 加载中间件
+  // 多应用模式下，从应用目录查找 main.ts（如 backend/main.ts）
   try {
-    const mainApp = await loadMainApp();
+    const mainApp = await loadMainApp(config.name);
     if (mainApp) {
       const mainMiddlewares = getMiddlewaresFromApp(mainApp);
       if (mainMiddlewares.length > 0) {
@@ -580,8 +581,9 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   }
 
   // 尝试从 main.ts 加载插件
+  // 多应用模式下，从应用目录查找 main.ts（如 backend/main.ts）
   try {
-    const mainApp = await loadMainApp();
+    const mainApp = await loadMainApp(config.name);
     if (mainApp) {
       const mainPlugins = getPluginsFromApp(mainApp);
       if (mainPlugins.length > 0) {

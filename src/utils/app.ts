@@ -9,16 +9,28 @@ import * as path from '@std/path';
 
 /**
  * 查找 main.ts 文件
+ * @param appName 应用名称（多应用模式下使用，如 'backend'）
  * @returns main.ts 文件路径，如果找不到返回 null
  */
-export async function findMainFile(): Promise<string | null> {
+export async function findMainFile(appName?: string): Promise<string | null> {
   const cwd = Deno.cwd();
-  const possiblePaths = [
+  const possiblePaths: string[] = [];
+  
+  // 如果指定了应用名称（多应用模式），优先查找应用目录下的 main.ts
+  if (appName) {
+    possiblePaths.push(
+      `${appName}/main.ts`,
+      `${appName}/main.js`,
+    );
+  }
+  
+  // 然后查找根目录和 example 目录
+  possiblePaths.push(
     'main.ts',
     'main.js',
     'example/main.ts',
     'example/main.js',
-  ];
+  );
 
   for (const filePath of possiblePaths) {
     try {
@@ -38,11 +50,12 @@ export async function findMainFile(): Promise<string | null> {
 
 /**
  * 加载 main.ts 文件并获取应用实例
+ * @param appName 应用名称（多应用模式下使用，如 'backend'）
  * @returns 应用实例，如果找不到 main.ts 返回 null
  */
-export async function loadMainApp(): Promise<App | null> {
+export async function loadMainApp(appName?: string): Promise<App | null> {
   try {
-    const mainPath = await findMainFile();
+    const mainPath = await findMainFile(appName);
     if (!mainPath) {
       return null;
     }
