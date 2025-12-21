@@ -453,19 +453,19 @@ window.__THEME_STORE__.subscribe((theme) => {
 
 ```typescript
 // 设置主题
-window.setTheme('dark'); // 'light' | 'dark'
+window.setTheme('dark'); // 'light' | 'dark' | 'auto'
 
 // 获取当前主题
-window.getTheme(); // 'light' | 'dark'
+window.getTheme(); // 'light' | 'dark' | 'auto'
 
-// 获取实际主题
+// 获取实际主题（处理 'auto' 模式）
 window.getActualTheme(); // 'light' | 'dark'
 
-// 切换主题（在 dark 和 light 之间切换）
+// 切换主题（在 dark 和 light 之间切换，不包含 auto）
 window.toggleTheme(); // 'light' | 'dark'
 
 // 切换到指定主题
-window.switchTheme('dark'); // 'light' | 'dark'
+window.switchTheme('dark'); // 'light' | 'dark' | 'auto'
 
 // 访问主题管理器
 window.__THEME_MANAGER__;

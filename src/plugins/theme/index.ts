@@ -118,7 +118,7 @@ function generateThemeScript(options: ThemePluginOptions): string {
           
           // 切换到指定主题
           switchTheme: function(theme) {
-            if (theme === 'dark' || theme === 'light') {
+            if (theme === 'dark' || theme === 'light' || theme === 'auto') {
               this.setTheme(theme);
               return theme;
             }
