@@ -1,33 +1,147 @@
+/* Tailwind CSS v4 */
+@layer theme, base, components, utilities;
 @import "tailwindcss";
-/* @import "tailwindcss/base"; */
-/* @import "tailwindcss/components"; */
-/* @import "tailwindcss/utilities"; */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities);
 
-/* 自定义样式 */
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+/* MODIFIED: 配置 Tailwind CSS 扫描路径，确保 common 目录下的组件被扫描 */
+/* @source 路径相对于项目根目录 */
+@source "../../common/**/*.{ts,tsx,js,jsx}";
+@source "../**/*.{ts,tsx,js,jsx}";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+
+/* 定义主题配置 */
+@theme {
+  /* 字体配置 */
+  --font-family-sans: "Graphik", sans-serif;
+  --font-family-serif: "Merriweather", serif;
+
+  /* 默认颜色 */
+  --color-default-50: #f9fafb;
+  --color-default-100: #f3f4f6;
+  --color-default-200: #e5e7eb;
+  --color-default-300: #d1d5db;
+  --color-default-400: #9ca3af;
+  --color-default-500: #6b7280;
+  --color-default-600: #4b5563;
+  --color-default-700: #374151;
+  --color-default-800: #1f2937;
+  --color-default-900: #111827;
+  --color-default-950: #030712;
+  --color-default-1000: #000000;
+
+  /* 主要颜色 */
+  --color-primary-50: #f0f9ff;
+  --color-primary-100: #e0f2fe;
+  --color-primary-200: #bae6fd;
+  --color-primary-300: #7dd3fc;
+  --color-primary-400: #38bdf8;
+  --color-primary-500: #0ea5e9;
+  --color-primary-600: #0284c7;
+  --color-primary-700: #0369a1;
+  --color-primary-800: #075985;
+  --color-primary-900: #0c4a6e;
+  --color-primary-950: #082f49;
+  --color-primary-1000: #051d2c;
+
+  /* 次要颜色 - 紫色系 */
+  --color-secondary-50: #faf5ff;
+  --color-secondary-100: #f3e8ff;
+  --color-secondary-200: #e9d5ff;
+  --color-secondary-300: #d8b4fe;
+  --color-secondary-400: #c084fc;
+  --color-secondary-500: #a855f7;
+  --color-secondary-600: #9333ea;
+  --color-secondary-700: #7e22ce;
+  --color-secondary-800: #6b21a8;
+  --color-secondary-900: #581c87;
+  --color-secondary-950: #3b0764;
+  --color-secondary-1000: #2d0353;
+
+  /* 成功颜色 */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-300: #86efac;
+  --color-success-400: #4ade80;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+  --color-success-800: #166534;
+  --color-success-900: #14532d;
+  --color-success-950: #052e16;
+  --color-success-1000: #031b0d;
+
+  /* 警告颜色 */
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+  --color-warning-950: #451a03;
+  --color-warning-1000: #2c1102;
+
+  /* 危险颜色 */
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
+  --color-danger-400: #f87171;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+  --color-danger-800: #991b1b;
+  --color-danger-900: #7f1d1d;
+  --color-danger-950: #450a0a;
+  --color-danger-1000: #2c0707;
+
+  /* 信息颜色 - 青色系 */
+  --color-info-50: #ecfeff;
+  --color-info-100: #cffafe;
+  --color-info-200: #a5f3fc;
+  --color-info-300: #67e8f9;
+  --color-info-400: #22d3ee;
+  --color-info-500: #06b6d4;
+  --color-info-600: #0891b2;
+  --color-info-700: #0e7490;
+  --color-info-800: #155e75;
+  --color-info-900: #164e63;
+  --color-info-950: #083344;
+  --color-info-1000: #05202a;
+
+  /* 高度配置 */
+  --height-screen: 100vh;
+  --min-height-screen: 100vh;
+
+  /* 间距配置 */
+  --spacing-128: 32rem;
+  --spacing-144: 36rem;
+
+  /* 圆角配置 */
+  --radius-4xl: 2rem;
+
+  /* 背景模糊配置 */
+  --backdrop-blur-xl: 24px;
+
+  /* 动画配置 */
+  --animate-blob: blob 7s infinite;
+  --animate-shake: shake 0.5s infinite;
+  --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-fadeIn2: fadeIn 0.2s ease-in-out forwards;
 }
 
-/* 动画效果 */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
-}
-
-/* 背景动画 */
+/* 关键帧动画 */
 @keyframes blob {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
+  0% {
+    transform: translate(0px, 0px) scale(1);
   }
   33% {
     transform: translate(30px, -50px) scale(1.1);
@@ -35,16 +149,38 @@ body {
   66% {
     transform: translate(-20px, 20px) scale(0.9);
   }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
 }
 
-.animate-blob {
-  animation: blob 7s infinite;
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-10px);
+  }
+  75% {
+    transform: translateX(10px);
+  }
 }
 
-.animation-delay-2000 {
-  animation-delay: 2s;
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
-.animation-delay-4000 {
-  animation-delay: 4s;
+.fresh-gradient {
+  background-color: rgb(134, 239, 172);
+  background-image: linear-gradient(
+    to right bottom,
+    rgb(219, 234, 254),
+    rgb(187, 247, 208),
+    rgb(254, 249, 195)
+  );
 }

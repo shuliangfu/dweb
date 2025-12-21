@@ -73,13 +73,13 @@ export default function CodeBlock({ code, language = 'bash', title }: CodeBlockP
   }, [code, language]);
 
   return (
-    <div className="rounded-lg overflow-hidden border border-gray-200 shadow-lg">
+    <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-lg">
       {title && (
-        <div className="bg-gray-800 text-gray-200 px-4 py-2 text-sm font-medium">
+        <div className="bg-gray-800 dark:bg-gray-900 text-gray-200 dark:text-gray-300 px-4 py-2 text-sm font-medium border-b border-gray-700 dark:border-gray-800">
           {title}
         </div>
       )}
-      <div className="bg-gray-900 p-6 overflow-x-auto">
+      <div className="bg-gray-900 dark:bg-gray-950 p-6 overflow-x-auto">
         <pre className="text-sm font-mono">
           <code ref={codeRef} className={`language-${language}`}>
             {code}

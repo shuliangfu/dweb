@@ -44,7 +44,7 @@ export default function App({ children }: AppProps) {
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-jsx.min.js" />
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-tsx.min.js" />
       </head>
-      <body>
+      <body className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         <div id="root">{children}</div>
       </body>
     </html>
