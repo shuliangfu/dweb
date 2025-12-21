@@ -1274,7 +1274,7 @@ async function buildApp(config: AppConfig): Promise<void> {
 
     if (compressAssets) {
       console.log(
-        `✅ 静态资源处理完成 (${staticDir}): ${compressedCount} 个已压缩, ${copiedCount} 个已复制, ${skippedCount} 个已跳过`,
+        `✅ 静态资源处理完成 (${staticDir}): ${compressedCount} 个已压缩, ${copiedCount} 个已复制`,
       );
     } else {
       console.log(`✅ 复制静态资源完成 (${staticDir}): ${copiedCount} 个文件`);
