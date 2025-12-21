@@ -390,6 +390,7 @@ app.plugin(store({
 #### 客户端使用（推荐方式：通过 PageProps）
 
 ```typescript
+import { useState, useEffect } from 'preact/hooks';
 import type { PageProps } from '@dreamer/dweb';
 
 export default function MyPage({ store }: PageProps) {
