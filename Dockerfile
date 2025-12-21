@@ -39,6 +39,7 @@ COPY --from=builder /app/example/healthcheck.ts ./example/
 COPY --from=builder /app/example/node_modules ./example/node_modules
 COPY --from=builder /app/example/init.ts ./example/init.ts
 COPY --from=builder /app/example/deno.json ./example/deno.json
+COPY --from=builder /app/example/i18n-global.d.ts ./example/i18n-global.d.ts
 
 # 切换到 example 目录（deno.json 和 dweb.config.ts 所在目录）
 WORKDIR /app/example
