@@ -4,7 +4,6 @@
  */
 
 import TechCard from '../components/TechCard.tsx';
-import CodeBlock from '../components/CodeBlock.tsx';
 import type { PageProps } from '@dreamer/dweb';
 
 import { getJsrPackageUrl, getVersionString } from '../utils.ts';
