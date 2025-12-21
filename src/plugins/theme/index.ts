@@ -92,15 +92,12 @@ function generateThemeScript(options: ThemePluginOptions): string {
           
           // 初始化
           init: function() {
-            console.log('[Theme Plugin] 初始化主题管理器');
             const theme = this.getTheme();
-            console.log('[Theme Plugin] 初始主题:', theme);
             this.applyTheme(theme);
             
             // 监听系统主题变化
             if (typeof window !== 'undefined' && window.matchMedia) {
               window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-                console.log('[Theme Plugin] 系统主题变化:', e.matches ? 'dark' : 'light');
                 if (this.getTheme() === 'auto') {
                   this.applyTheme('auto');
                   // 触发主题变化事件
@@ -114,12 +111,9 @@ function generateThemeScript(options: ThemePluginOptions): string {
           
           // 切换主题（仅在 dark 和 light 之间切换）
           toggleTheme: function() {
-            console.log('[Theme Plugin] toggleTheme 被调用');
             const current = this.getTheme();
-            console.log('[Theme Plugin] 当前主题:', current);
             // 如果当前是 auto，切换到 dark；否则在 dark 和 light 之间切换
             const next = current === 'dark' ? 'light' : 'dark';
-            console.log('[Theme Plugin] 切换到主题:', next);
             this.setTheme(next);
             return next;
           },
@@ -200,33 +194,24 @@ function generateThemeScript(options: ThemePluginOptions): string {
           return ThemeManager.getActualTheme();
         };
         window.toggleTheme = function() { 
-          console.log('[Theme Plugin] window.toggleTheme 被调用');
-          const result = ThemeManager.toggleTheme();
-          console.log('[Theme Plugin] toggleTheme 返回:', result);
-          return result;
+          return ThemeManager.toggleTheme();
         };
         window.switchTheme = function(theme) { 
           return ThemeManager.switchTheme(theme); 
         };
         
         // 初始化
-        console.log('[Theme Plugin] 开始初始化，document.readyState:', document.readyState);
         if (document.readyState === 'loading') {
-          console.log('[Theme Plugin] 等待 DOMContentLoaded');
           document.addEventListener('DOMContentLoaded', () => {
-            console.log('[Theme Plugin] DOMContentLoaded 事件触发');
             ThemeManager.init();
             // 初始化 store 的值
             const actualTheme = ThemeManager.getActualTheme();
-            console.log('[Theme Plugin] 初始化 store，主题:', actualTheme);
             themeStore.value = actualTheme;
           });
         } else {
-          console.log('[Theme Plugin] 文档已就绪，立即初始化');
           ThemeManager.init();
           // 初始化 store 的值
           const actualTheme = ThemeManager.getActualTheme();
-          console.log('[Theme Plugin] 初始化 store，主题:', actualTheme);
           themeStore.value = actualTheme;
         }
       })();
