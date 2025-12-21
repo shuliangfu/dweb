@@ -343,15 +343,7 @@ function injectCSSLink(
         html.slice(linkIndex);
     } else if (html.includes("</head>")) {
       // 如果没有 <link> 标签，但有 </head>，在 </head> 前面注入
-      // 注意：需要找到最后一个 </head>，因为插件可能已经在 </head> 之前注入了脚本
-      const lastHeadIndex = html.lastIndexOf("</head>");
-      if (lastHeadIndex !== -1) {
-        res.body = html.slice(0, lastHeadIndex) + `  ${linkTag}\n` +
-          html.slice(lastHeadIndex);
-      } else {
-        // 如果 lastIndexOf 失败（不应该发生），使用 replace 作为后备
-        res.body = html.replace("</head>", `  ${linkTag}\n</head>`);
-      }
+      res.body = html.replace("</head>", `  ${linkTag}\n</head>`);
     } else if (html.includes("<head>")) {
       // 如果没有 </head>，但有 <head>，则在 <head> 后面注入
       res.body = html.replace("<head>", `<head>\n  ${linkTag}`);

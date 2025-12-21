@@ -324,7 +324,17 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
             // 组合 script 和 style 标签
             const minifiedScript =
               `<script>${minifiedCode}</script>${styleTag}`;
-            newHtml = newHtml.replace("</head>", `${minifiedScript}\n</head>`);
+            // 使用 lastIndexOf 确保找到最后一个 </head>，避免与其他注入冲突
+            const lastHeadIndex = newHtml.lastIndexOf("</head>");
+            if (lastHeadIndex !== -1) {
+              newHtml = newHtml.slice(0, lastHeadIndex) + `${minifiedScript}\n` +
+                newHtml.slice(lastHeadIndex);
+            } else {
+              // 如果没有找到 </head>，尝试在 <head> 后插入
+              if (newHtml.includes("<head>")) {
+                newHtml = newHtml.replace("<head>", `<head>\n${minifiedScript}`);
+              }
+            }
           }
 
           res.body = newHtml;
