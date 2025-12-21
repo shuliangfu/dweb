@@ -15,6 +15,7 @@ export { fileUpload, handleFileUpload } from './file-upload/index.ts';
 export { performance } from './performance/index.ts';
 export { cache, CacheManager } from './cache/index.ts';
 export { email, sendEmail, renderTemplate } from './email/index.ts';
+export { store } from './store/index.ts';
 
 // 导出类型
 export type { TailwindPluginOptions, AutoprefixerOptions } from './tailwind/types.ts';
@@ -80,3 +81,4 @@ export type {
   EmailAttachment,
   SMTPConfig,
 } from './email/types.ts';
+export type { StorePluginOptions, Store } from './store/types.ts';

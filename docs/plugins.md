@@ -351,6 +351,116 @@ usePlugin(rss({
 }));
 ```
 
+### store - 状态管理
+
+```typescript
+import { store } from "@dreamer/dweb/plugins";
+
+app.plugin(store({
+  persist: true, // 是否启用持久化（默认 false）
+  storageKey: 'my-app-store', // 持久化存储键名（默认 'dweb-store'）
+  enableServer: true, // 是否在服务端启用（默认 true）
+  initialState: { // 初始状态
+    user: null,
+    count: 0,
+  },
+}));
+```
+
+#### 客户端使用
+
+```typescript
+// 获取 Store 实例
+const store = window.__STORE__;
+
+// 获取状态
+const state = store.getState();
+console.log(state.user); // null
+console.log(state.count); // 0
+
+// 设置状态
+store.setState({ count: 1 });
+// 或使用函数式更新
+store.setState((prev) => ({ count: prev.count + 1 }));
+
+// 订阅状态变化
+const unsubscribe = store.subscribe((state) => {
+  console.log('状态已更新:', state);
+  // 更新 UI
+});
+
+// 取消订阅
+unsubscribe();
+
+// 重置状态
+store.reset();
+```
+
+#### 服务端使用（在 load 函数或页面组件中）
+
+```typescript
+import type { LoadContext } from '@dreamer/dweb';
+
+export async function load({ req }: LoadContext) {
+  // 获取当前请求的 Store 实例
+  const store = (req as any).getStore();
+  
+  if (store) {
+    // 设置状态
+    store.setState({ user: { id: 1, name: 'John' } });
+    
+    // 获取状态
+    const state = store.getState();
+    return { user: state.user };
+  }
+  
+  return {};
+}
+```
+
+#### 在 Preact 组件中使用
+
+```typescript
+import { useState, useEffect } from 'preact/hooks';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+  
+  useEffect(() => {
+    // 获取 Store 实例
+    const store = (window as any).__STORE__;
+    if (!store) return;
+    
+    // 初始化：从 Store 获取状态
+    const state = store.getState();
+    setCount(state.count || 0);
+    
+    // 订阅状态变化
+    const unsubscribe = store.subscribe((state) => {
+      setCount(state.count || 0);
+    });
+    
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+  
+  const handleIncrement = () => {
+    const store = (window as any).__STORE__;
+    if (store) {
+      store.setState((prev: any) => ({ count: (prev.count || 0) + 1 }));
+    }
+  };
+  
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button type="button" onClick={handleIncrement}>增加</button>
+    </div>
+  );
+}
+```
+
 ### theme - 主题切换
 
 ```typescript
