@@ -68,6 +68,10 @@ function generateThemeScript(options: ThemePluginOptions): string {
             const actualTheme = theme === 'auto' ? this.getSystemTheme() : theme;
             ${injectDataAttribute ? `document.documentElement.setAttribute('data-theme', actualTheme);` : ''}
             ${injectBodyClass ? `document.body.className = document.body.className.replace(/\\btheme-\\w+/g, '') + ' theme-' + actualTheme;` : ''}
+            // 更新主题 store（如果存在）
+            if (typeof window !== 'undefined' && window.__THEME_STORE__) {
+              window.__THEME_STORE__.value = actualTheme;
+            }
           },
           
           // 初始化
@@ -80,6 +84,10 @@ function generateThemeScript(options: ThemePluginOptions): string {
               window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
                 if (this.getTheme() === 'auto') {
                   this.applyTheme('auto');
+                  // 触发主题变化事件
+                  window.dispatchEvent(new CustomEvent('themechange', { 
+                    detail: { theme: 'auto', actualTheme: this.getActualTheme() } 
+                  }));
                 }
               });
             }
@@ -94,17 +102,78 @@ function generateThemeScript(options: ThemePluginOptions): string {
           }
         };
         
+        // 响应式主题 Store（使用 Proxy 实现）
+        const themeStore = {
+          _value: ThemeManager.getActualTheme(),
+          _listeners: new Set(),
+          
+          // 获取当前主题值
+          get value() {
+            return this._value;
+          },
+          
+          // 设置主题值并通知所有监听者
+          set value(newValue) {
+            if (this._value !== newValue) {
+              this._value = newValue;
+              // 通知所有监听者
+              this._listeners.forEach(listener => {
+                try {
+                  listener(newValue);
+                } catch (error) {
+                  console.error('[Theme Store] 监听器执行错误:', error);
+                }
+              });
+            }
+          },
+          
+          // 订阅主题变化
+          subscribe: function(listener) {
+            this._listeners.add(listener);
+            // 立即调用一次，传递当前值
+            try {
+              listener(this._value);
+            } catch (error) {
+              console.error('[Theme Store] 监听器执行错误:', error);
+            }
+            // 返回取消订阅函数
+            return () => {
+              this._listeners.delete(listener);
+            };
+          },
+          
+          // 取消订阅
+          unsubscribe: function(listener) {
+            this._listeners.delete(listener);
+          }
+        };
+        
+        // 当主题变化时，更新 store 的值
+        window.addEventListener('themechange', (event) => {
+          if (event.detail && event.detail.actualTheme) {
+            themeStore.value = event.detail.actualTheme;
+          }
+        });
+        
         // 暴露到全局
         window.__THEME_MANAGER__ = ThemeManager;
+        window.__THEME_STORE__ = themeStore;
         window.setTheme = function(theme) { ThemeManager.setTheme(theme); };
         window.getTheme = function() { return ThemeManager.getTheme(); };
+        window.getActualTheme = function() { return ThemeManager.getActualTheme(); };
         window.toggleTheme = function() { return ThemeManager.toggle(); };
         
         // 初始化
         if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', () => ThemeManager.init());
+          document.addEventListener('DOMContentLoaded', () => {
+            ThemeManager.init();
+            // 初始化 store 的值
+            themeStore.value = ThemeManager.getActualTheme();
+          });
         } else {
           ThemeManager.init();
+          // 初始化 store 的值
+          themeStore.value = ThemeManager.getActualTheme();
         }
       })();
     </script>

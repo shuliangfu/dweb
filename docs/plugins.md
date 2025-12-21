@@ -356,23 +356,119 @@ usePlugin(rss({
 ```typescript
 import { theme } from "@dreamer/dweb/plugins";
 
-usePlugin(theme({
-  themes: {
-    light: {
-      colors: {
-        primary: "#000000",
-        background: "#ffffff",
+app.plugin(theme({
+  config: {
+    defaultTheme: "auto", // 'light' | 'dark' | 'auto'
+    storageKey: "theme", // localStorage 键名
+    injectDataAttribute: true, // 是否在 HTML 上添加 data-theme 属性
+    injectBodyClass: true, // 是否添加类名到 body
+    transition: true, // 主题切换动画
+  },
+}));
+```
+
+#### 响应式主题 Store
+
+主题插件提供了一个响应式的主题 store，可以在任何地方订阅主题变化，特别适合与 Chart.js 等图表库集成。
+
+**基本用法：**
+
+```typescript
+// 获取当前主题
+const currentTheme = window.__THEME_STORE__.value; // 'light' 或 'dark'
+
+// 订阅主题变化
+const unsubscribe = window.__THEME_STORE__.subscribe((theme) => {
+  console.log('主题已切换为:', theme);
+  // 更新图表主题
+  if (chart) {
+    chart.options.plugins.legend.labels.color = theme === 'dark' ? '#fff' : '#000';
+    chart.update();
+  }
+});
+
+// 取消订阅
+unsubscribe();
+```
+
+**在 Chart.js 中使用：**
+
+```typescript
+import { Chart, registerables } from 'chart.js';
+
+Chart.register(...registerables);
+
+// 创建图表
+const ctx = document.getElementById('myChart');
+const chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: ['Jan', 'Feb', 'Mar'],
+    datasets: [{
+      label: 'Sales',
+      data: [10, 20, 30],
+    }],
+  },
+  options: {
+    plugins: {
+      legend: {
+        labels: {
+          color: window.__THEME_STORE__.value === 'dark' ? '#fff' : '#000',
+        },
       },
     },
-    dark: {
-      colors: {
-        primary: "#ffffff",
-        background: "#000000",
+    scales: {
+      x: {
+        ticks: {
+          color: window.__THEME_STORE__.value === 'dark' ? '#fff' : '#000',
+        },
+        grid: {
+          color: window.__THEME_STORE__.value === 'dark' ? '#333' : '#ddd',
+        },
+      },
+      y: {
+        ticks: {
+          color: window.__THEME_STORE__.value === 'dark' ? '#fff' : '#000',
+        },
+        grid: {
+          color: window.__THEME_STORE__.value === 'dark' ? '#333' : '#ddd',
+        },
       },
     },
   },
-  defaultTheme: "light",
-}));
+});
+
+// 订阅主题变化，自动更新图表
+window.__THEME_STORE__.subscribe((theme) => {
+  chart.options.plugins.legend.labels.color = theme === 'dark' ? '#fff' : '#000';
+  chart.options.scales.x.ticks.color = theme === 'dark' ? '#fff' : '#000';
+  chart.options.scales.x.grid.color = theme === 'dark' ? '#333' : '#ddd';
+  chart.options.scales.y.ticks.color = theme === 'dark' ? '#fff' : '#000';
+  chart.options.scales.y.grid.color = theme === 'dark' ? '#333' : '#ddd';
+  chart.update();
+});
+```
+
+**全局 API：**
+
+```typescript
+// 设置主题
+window.setTheme('dark'); // 'light' | 'dark' | 'auto'
+
+// 获取当前主题（可能是 'auto'）
+window.getTheme(); // 'light' | 'dark' | 'auto'
+
+// 获取实际主题（处理 'auto' 模式）
+window.getActualTheme(); // 'light' | 'dark'
+
+// 切换主题（light -> dark -> auto -> light）
+window.toggleTheme();
+
+// 访问主题管理器
+window.__THEME_MANAGER__;
+
+// 访问响应式主题 store
+window.__THEME_STORE__;
 ```
 
 ## 创建自定义插件
