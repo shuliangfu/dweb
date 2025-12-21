@@ -1673,6 +1673,8 @@ export class RouteHandler {
       // 提供翻译函数（如果 i18n 插件已设置）
       t: (req as any).t,
       lang: (req as any).lang,
+      // 提供 Store 实例（如果 store 插件已设置）
+      store: (req as any).getStore ? (req as any).getStore() : undefined,
       // 添加 metadata 到 props，供客户端脚本使用
       metadata: pageMetadata,
     };

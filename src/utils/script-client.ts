@@ -614,8 +614,14 @@ async function initClientSideNavigation(render, jsx) {
         // 重新从全局模块获取（确保使用最新的）
         const { render: renderRetry, jsx: jsxRetry } = globalThis.__PREACT_MODULES__;
         
+        // 获取页面 props 并添加 Store
+        const pagePropsRetry = { ...(pageData.props || {}) };
+        if (typeof window !== 'undefined' && window.__STORE__) {
+          pagePropsRetry.store = window.__STORE__;
+        }
+        
         // 重新创建最终元素（使用辅助函数）
-        const finalElementRetry = await createFinalElement(PageComponent, LayoutComponents, pageData.props || {}, jsxRetry);
+        const finalElementRetry = await createFinalElement(PageComponent, LayoutComponents, pagePropsRetry, jsxRetry);
         
         // 直接重新渲染，Preact 会自动处理内容替换
         // 使用 requestAnimationFrame 确保在下一帧渲染
@@ -888,7 +894,12 @@ ${clientRouterCode}
     }
     
     // 获取页面 props（从 __PAGE_DATA__ 中获取，避免直接插入 JSON）
-    const pageProps = globalThis.__PAGE_DATA__?.props || {};
+    const pageProps = { ...(globalThis.__PAGE_DATA__?.props || {}) };
+    
+    // 添加 Store 到 props（如果 Store 插件已启用）
+    if (typeof window !== 'undefined' && window.__STORE__) {
+      pageProps.store = window.__STORE__;
+    }
     
     // 加载所有布局组件（支持布局继承）
     const LayoutComponents = await loadLayoutComponents(globalThis.__PAGE_DATA__);

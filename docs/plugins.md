@@ -367,7 +367,50 @@ app.plugin(store({
 }));
 ```
 
-#### 客户端使用
+#### 客户端使用（推荐方式：通过 PageProps）
+
+```typescript
+import type { PageProps } from '@dreamer/dweb';
+
+export default function MyPage({ store }: PageProps) {
+  if (!store) {
+    return <div>Store 未初始化</div>;
+  }
+  
+  // 获取状态
+  const state = store.getState();
+  console.log(state.user); // null
+  console.log(state.count); // 0
+
+  // 设置状态
+  const handleIncrement = () => {
+    store.setState({ count: (state.count || 0) + 1 });
+  };
+
+  // 在组件中使用（需要配合 useState 和 useEffect）
+  const [count, setCount] = useState(state.count || 0);
+  
+  useEffect(() => {
+    // 订阅状态变化
+    const unsubscribe = store.subscribe((newState) => {
+      setCount(newState.count || 0);
+    });
+    
+    return () => {
+      unsubscribe();
+    };
+  }, [store]);
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button type="button" onClick={handleIncrement}>增加</button>
+    </div>
+  );
+}
+```
+
+#### 客户端使用（直接访问 window.__STORE__）
 
 ```typescript
 // 获取 Store 实例
