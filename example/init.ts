@@ -349,10 +349,26 @@ console.log(`✅ 已创建: dweb.config.ts`);
 
 // 生成 deno.json
 const denoJsonContent = `{
-  "nodeModulesDir": "auto",
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "preact"
+  "version": "1.0.0",
+  "description": "A DWeb framework project",
+  "tasks": {
+${
+  isMultiApp
+    ? [
+        ...appNames.map(
+          (appName) => `    "dev:${appName}": "deno run -A @dreamer/dweb/cli dev:${appName}"`
+        ),
+        ...appNames.map(
+          (appName) => `    "build:${appName}": "deno run -A @dreamer/dweb/cli build:${appName}"`
+        ),
+        ...appNames.map(
+          (appName) => `    "start:${appName}": "deno run -A @dreamer/dweb/cli start:${appName}"`
+        ),
+      ].join(',\n')
+    : `    "dev": "deno run -A @dreamer/dweb/cli dev",
+    "build": "deno run -A @dreamer/dweb/cli build",
+    "start": "deno run -A @dreamer/dweb/cli start"`
+}
   },
   "imports": {
     "@dreamer/dweb": "${frameworkUrl}",
@@ -374,24 +390,10 @@ const denoJsonContent = `{
     "postcss": "npm:postcss@^8.4.47"`
     }
   },
-  "tasks": {
-${
-  isMultiApp
-    ? [
-        ...appNames.map(
-          (appName) => `    "dev:${appName}": "deno run -A @dreamer/dweb/cli dev:${appName}"`
-        ),
-        ...appNames.map(
-          (appName) => `    "build:${appName}": "deno run -A @dreamer/dweb/cli build:${appName}"`
-        ),
-        ...appNames.map(
-          (appName) => `    "start:${appName}": "deno run -A @dreamer/dweb/cli start:${appName}"`
-        ),
-      ].join(',\n')
-    : `    "dev": "deno run -A @dreamer/dweb/cli dev",
-    "build": "deno run -A @dreamer/dweb/cli build",
-    "start": "deno run -A @dreamer/dweb/cli start"`
-}
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
   }
 }
 `;
@@ -1482,6 +1484,9 @@ if (isMultiApp) {
   console.log(`✅ 已创建: assets/style.css`);
 }
 
+// 生成 main.ts
+await generateMainTs(projectDir, isMultiApp, appNames);
+
 // 生成 README
 const readmeContent = `# ${projectName}
 
@@ -1562,6 +1567,83 @@ Thumbs.db
 
 await Deno.writeTextFile(path.join(projectDir, '.gitignore'), gitignoreContent);
 console.log(`✅ 已创建: .gitignore`);
+
+/**
+ * 生成 main.ts 文件
+ * @param projectDir 项目目录
+ * @param isMultiApp 是否为多应用模式
+ * @param appNames 应用名称列表（多应用模式时使用）
+ */
+async function generateMainTs(
+  projectDir: string,
+  isMultiApp: boolean,
+  appNames: string[]
+): Promise<void> {
+  // main.ts 文件内容模板
+  const mainTsContent = `/**
+ * DWeb 框架应用配置文件
+ * 用于创建应用实例并配置中间件和插件
+ * 
+ * 注意：此文件只用于配置，不直接启动服务
+ * 服务启动通过 CLI 命令：deno task dev 或 deno task start
+ */
+
+import { createApp, cors, staticFiles } from '@dreamer/dweb';
+
+// 创建应用实例
+const app = createApp();
+
+// 配置中间件
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// 自定义静态资源配置（带访问前缀）
+// 注意：框架也会自动添加一个不带 prefix 的 staticFiles 中间件
+// 这样可以通过两种方式访问：
+// - /assets/images/logo.png (通过这个配置)
+// - /images/logo.png (通过框架自动添加的中间件)
+// app.use(
+//   staticFiles({
+//     dir: 'assets',
+//     prefix: '/assets', // 访问前缀，例如 /assets/images/logo.png
+//     maxAge: 86400, // 缓存 1 天
+//     index: ['index.html', 'index.htm'],
+//     dotfiles: 'deny', // 禁止访问隐藏文件
+//   })
+// );
+
+// app.use((req, res, next) => {
+//   console.log('request', req.url);
+//   next();
+// });
+
+// 可以添加更多中间件
+// app.use(customMiddleware);
+
+// 可以注册插件
+// app.plugin(customPlugin);
+
+// 导出应用实例
+export default app;
+`;
+
+  if (isMultiApp) {
+    // 多应用模式：为每个应用生成 main.ts
+    for (const appName of appNames) {
+      const appMainTsPath = path.join(projectDir, appName, 'main.ts');
+      await Deno.writeTextFile(appMainTsPath, mainTsContent);
+      console.log(`✅ 已创建: ${appName}/main.ts`);
+    }
+  } else {
+    // 单应用模式：在项目根目录生成 main.ts
+    const mainTsPath = path.join(projectDir, 'main.ts');
+    await Deno.writeTextFile(mainTsPath, mainTsContent);
+    console.log(`✅ 已创建: main.ts`);
+  }
+}
 
 console.log(`\n✅ 项目创建成功！`);
 console.log(`\n📝 下一步：`);
