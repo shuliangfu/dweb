@@ -339,10 +339,13 @@ async function initClientSideNavigation(render, jsx) {
             if (i18nData && typeof i18nData === 'object') {
               window.__I18N_DATA__ = i18nData;
               
-              // 更新全局翻译函数
+              // 更新全局翻译函数（确保 this 绑定正确）
               if (i18nData.t && typeof i18nData.t === 'function') {
                 window.$t = function(key, params) {
-                  return window.__I18N_DATA__.t(key, params);
+                  if (!window.__I18N_DATA__ || !window.__I18N_DATA__.t) {
+                    return key;
+                  }
+                  return window.__I18N_DATA__.t.call(window.__I18N_DATA__, key, params);
                 };
                 window.t = window.$t;
               }
