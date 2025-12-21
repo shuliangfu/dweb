@@ -50,52 +50,77 @@ function generateThemeScript(options: ThemePluginOptions): string {
           
           // 设置主题
           setTheme: function(theme) {
+            console.log('[Theme Plugin] setTheme 被调用:', theme);
             if (typeof window === 'undefined') {
+              console.warn('[Theme Plugin] window 未定义，无法设置主题');
               return;
             }
             localStorage.setItem(this.storageKey, theme);
+            console.log('[Theme Plugin] 主题已保存到 localStorage:', theme);
             this.applyTheme(theme);
             
             // 触发自定义事件
             const actualTheme = this.getActualTheme();
+            console.log('[Theme Plugin] 实际主题:', actualTheme);
             window.dispatchEvent(new CustomEvent('themechange', { 
               detail: { theme, actualTheme } 
             }));
+            console.log('[Theme Plugin] themechange 事件已触发');
           },
           
           // 应用主题
           applyTheme: function(theme) {
+            console.log('[Theme Plugin] applyTheme 被调用:', theme);
             if (typeof document === 'undefined') {
+              console.warn('[Theme Plugin] document 未定义，无法应用主题');
               return;
             }
             const actualTheme = theme === 'auto' ? this.getSystemTheme() : theme;
+            console.log('[Theme Plugin] 计算后的实际主题:', actualTheme);
             
             // 在 html 元素上设置 class（用于 Tailwind CSS dark mode）
             if (document.documentElement) {
+              const htmlElement = document.documentElement;
+              const beforeClasses = htmlElement.className;
+              console.log('[Theme Plugin] HTML 元素当前 class:', beforeClasses);
+              
               // 移除旧的 dark/light class
-              document.documentElement.classList.remove('dark', 'light');
+              htmlElement.classList.remove('dark', 'light');
               // 添加新的主题 class
               if (actualTheme === 'dark') {
-                document.documentElement.classList.add('dark');
+                htmlElement.classList.add('dark');
+                console.log('[Theme Plugin] 已添加 dark class');
               } else {
-                document.documentElement.classList.add('light');
+                htmlElement.classList.add('light');
+                console.log('[Theme Plugin] 已添加 light class');
               }
+              
+              const afterClasses = htmlElement.className;
+              console.log('[Theme Plugin] HTML 元素更新后 class:', afterClasses);
+            } else {
+              console.warn('[Theme Plugin] document.documentElement 不存在');
             }
             
             // 更新主题 store（如果存在）
             if (typeof window !== 'undefined' && window.__THEME_STORE__) {
+              console.log('[Theme Plugin] 更新主题 store:', actualTheme);
               window.__THEME_STORE__.value = actualTheme;
+            } else {
+              console.warn('[Theme Plugin] window.__THEME_STORE__ 不存在');
             }
           },
           
           // 初始化
           init: function() {
+            console.log('[Theme Plugin] 初始化主题管理器');
             const theme = this.getTheme();
+            console.log('[Theme Plugin] 初始主题:', theme);
             this.applyTheme(theme);
             
             // 监听系统主题变化
             if (typeof window !== 'undefined' && window.matchMedia) {
               window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                console.log('[Theme Plugin] 系统主题变化:', e.matches ? 'dark' : 'light');
                 if (this.getTheme() === 'auto') {
                   this.applyTheme('auto');
                   // 触发主题变化事件
@@ -109,9 +134,12 @@ function generateThemeScript(options: ThemePluginOptions): string {
           
           // 切换主题（仅在 dark 和 light 之间切换）
           toggleTheme: function() {
+            console.log('[Theme Plugin] toggleTheme 被调用');
             const current = this.getTheme();
+            console.log('[Theme Plugin] 当前主题:', current);
             // 如果当前是 auto，切换到 dark；否则在 dark 和 light 之间切换
             const next = current === 'dark' ? 'light' : 'dark';
+            console.log('[Theme Plugin] 切换到主题:', next);
             this.setTheme(next);
             return next;
           },
@@ -192,24 +220,33 @@ function generateThemeScript(options: ThemePluginOptions): string {
           return ThemeManager.getActualTheme();
         };
         window.toggleTheme = function() { 
-          return ThemeManager.toggleTheme(); 
+          console.log('[Theme Plugin] window.toggleTheme 被调用');
+          const result = ThemeManager.toggleTheme();
+          console.log('[Theme Plugin] toggleTheme 返回:', result);
+          return result;
         };
         window.switchTheme = function(theme) { 
           return ThemeManager.switchTheme(theme); 
         };
         
         // 初始化
+        console.log('[Theme Plugin] 开始初始化，document.readyState:', document.readyState);
         if (document.readyState === 'loading') {
+          console.log('[Theme Plugin] 等待 DOMContentLoaded');
           document.addEventListener('DOMContentLoaded', () => {
+            console.log('[Theme Plugin] DOMContentLoaded 事件触发');
             ThemeManager.init();
             // 初始化 store 的值
             const actualTheme = ThemeManager.getActualTheme();
+            console.log('[Theme Plugin] 初始化 store，主题:', actualTheme);
             themeStore.value = actualTheme;
           });
         } else {
+          console.log('[Theme Plugin] 文档已就绪，立即初始化');
           ThemeManager.init();
           // 初始化 store 的值
           const actualTheme = ThemeManager.getActualTheme();
+          console.log('[Theme Plugin] 初始化 store，主题:', actualTheme);
           themeStore.value = actualTheme;
         }
       })();
