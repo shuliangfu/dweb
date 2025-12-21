@@ -111,11 +111,52 @@ function generateThemeScript(options: ThemePluginOptions): string {
                 console.log('[Theme Plugin] Tailwind CSS 已加载:', tailwindSheet.href);
                 // 尝试检查 dark mode 样式是否存在
                 try {
-                  const rules = Array.from(tailwindSheet.cssRules || []);
-                  const darkRules = rules.filter(rule => {
-                    return rule.cssText && rule.cssText.includes('.dark');
-                  });
-                  console.log('[Theme Plugin] 找到 dark mode 样式规则数量:', darkRules.length);
+                  // 递归检查所有 CSS 规则（包括 @layer 内的规则）
+                  const checkRules = (rules: any, depth = 0): number => {
+                    let count = 0;
+                    for (let i = 0; i < rules.length; i++) {
+                      try {
+                        const rule = rules[i];
+                        if (rule.cssText) {
+                          // 检查是否包含 dark mode 相关的选择器
+                          if (rule.cssText.includes('.dark') || 
+                              rule.cssText.includes('dark:') ||
+                              rule.cssText.includes('dark\\:')) {
+                            count++;
+                          }
+                        }
+                        // 如果是 @layer 或其他嵌套规则，递归检查
+                        if (rule.cssRules) {
+                          count += checkRules(rule.cssRules, depth + 1);
+                        }
+                      } catch (e) {
+                        // 忽略无法访问的规则（可能是跨域问题）
+                      }
+                    }
+                    return count;
+                  };
+                  const darkRulesCount = checkRules(tailwindSheet.cssRules || []);
+                  console.log('[Theme Plugin] 找到 dark mode 样式规则数量:', darkRulesCount);
+                  
+                  // 如果找不到规则，尝试直接检查样式表内容
+                  if (darkRulesCount === 0) {
+                    console.log('[Theme Plugin] 尝试通过 fetch 检查 CSS 内容...');
+                    fetch(tailwindSheet.href || '')
+                      .then(res => res.text())
+                      .then(cssText => {
+                        const hasDark = cssText.includes('.dark') || 
+                                       cssText.includes('dark:') ||
+                                       cssText.includes('dark\\:');
+                        console.log('[Theme Plugin] CSS 文件内容包含 dark mode:', hasDark);
+                        if (hasDark) {
+                          const darkMatches = cssText.match(/\.dark[^}]*\{/g);
+                          console.log('[Theme Plugin] CSS 文件中的 dark 选择器数量:', darkMatches ? darkMatches.length : 0);
+                        }
+                      })
+                      .catch(err => {
+                        console.warn('[Theme Plugin] 无法获取 CSS 内容:', err);
+                      });
+                  }
                 } catch (e) {
                   console.warn('[Theme Plugin] 无法检查 CSS 规则（可能是跨域问题）:', e);
                 }
