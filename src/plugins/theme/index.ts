@@ -301,15 +301,12 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
       if (options.injectScript !== false) {
         try {
           const html = res.body as string;
-          console.log("[Theme Plugin] 开始处理 HTML 响应");
 
           // 注入主题属性
           let newHtml = injectThemeAttribute(html, defaultTheme);
-          console.log("[Theme Plugin] 已注入主题属性");
 
           // 注入主题脚本（在 </head> 之前）
           if (newHtml.includes("</head>")) {
-            console.log("[Theme Plugin] 找到 </head> 标签，准备注入脚本");
             const scriptContent = generateThemeScript(options);
             // 分离 JavaScript 代码和 style 标签
             const content = scriptContent.trim();
@@ -322,52 +319,15 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
               jsCode = content.replace(styleMatch[0], "").trim();
             }
 
-            console.log("[Theme Plugin] JavaScript 代码长度:", jsCode.length);
-            console.log("[Theme Plugin] 代码包含 toggleTheme:", jsCode.includes("toggleTheme"));
-
             // 压缩 JavaScript 代码
             const minifiedCode = await minifyJavaScript(jsCode);
-            console.log("[Theme Plugin] 压缩后代码长度:", minifiedCode.length);
-            console.log("[Theme Plugin] 压缩后包含 toggleTheme:", minifiedCode.includes("toggleTheme"));
-            
             // 组合 script 和 style 标签
             const minifiedScript =
               `<script>${minifiedCode}</script>${styleTag}`;
-            console.log("[Theme Plugin] 完整脚本长度:", minifiedScript.length);
-            
-            // 使用 lastIndexOf 确保找到最后一个 </head>，避免与其他注入冲突
-            const lastHeadIndex = newHtml.lastIndexOf("</head>");
-            console.log("[Theme Plugin] 最后一个 </head> 位置:", lastHeadIndex);
-            
-            if (lastHeadIndex !== -1) {
-              const beforeScript = newHtml.slice(0, lastHeadIndex);
-              const afterScript = newHtml.slice(lastHeadIndex);
-              console.log("[Theme Plugin] </head> 前内容长度:", beforeScript.length);
-              console.log("[Theme Plugin] </head> 后内容长度:", afterScript.length);
-              
-              newHtml = beforeScript + `${minifiedScript}\n` + afterScript;
-              console.log("[Theme Plugin] 脚本已注入，新 HTML 长度:", newHtml.length);
-              
-              // 验证脚本是否真的被注入
-              if (newHtml.includes(minifiedCode.substring(0, 50))) {
-                console.log("[Theme Plugin] ✅ 脚本注入验证成功");
-              } else {
-                console.warn("[Theme Plugin] ⚠️ 脚本注入验证失败");
-              }
-            } else {
-              console.warn("[Theme Plugin] ⚠️ 未找到 </head> 标签");
-              // 如果没有找到 </head>，尝试在 <head> 后插入
-              if (newHtml.includes("<head>")) {
-                newHtml = newHtml.replace("<head>", `<head>\n${minifiedScript}`);
-                console.log("[Theme Plugin] 脚本已插入到 <head> 后");
-              }
-            }
-          } else {
-            console.warn("[Theme Plugin] ⚠️ HTML 中不包含 </head> 标签");
+            newHtml = newHtml.replace("</head>", `${minifiedScript}\n</head>`);
           }
 
           res.body = newHtml;
-          console.log("[Theme Plugin] 处理完成");
         } catch (error) {
           console.error("[Theme Plugin] 注入主题脚本时出错:", error);
           if (error instanceof Error) {

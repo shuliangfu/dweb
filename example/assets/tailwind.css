@@ -10,7 +10,7 @@
 @source "../../common/**/*.{ts,tsx,js,jsx}";
 @source "../**/*.{ts,tsx,js,jsx}";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (.dark &);
 
 
 /* 定义主题配置 */

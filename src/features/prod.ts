@@ -343,24 +343,7 @@ function injectCSSLink(
         html.slice(linkIndex);
     } else if (html.includes("</head>")) {
       // 如果没有 <link> 标签，但有 </head>，在 </head> 前面注入
-      // 注意：需要找到最后一个 </head>，因为插件可能已经在 </head> 之前注入了脚本
-      const lastHeadIndex = html.lastIndexOf("</head>");
-      console.log("[Prod Server] injectCSSLink: 最后一个 </head> 位置:", lastHeadIndex);
-      console.log("[Prod Server] injectCSSLink: </head> 前 200 字符:", html.slice(Math.max(0, lastHeadIndex - 200), lastHeadIndex));
-      
-      if (lastHeadIndex !== -1) {
-        const beforeLink = html.slice(0, lastHeadIndex);
-        const afterLink = html.slice(lastHeadIndex);
-        console.log("[Prod Server] injectCSSLink: </head> 前内容长度:", beforeLink.length);
-        console.log("[Prod Server] injectCSSLink: </head> 后内容长度:", afterLink.length);
-        
-        res.body = beforeLink + `  ${linkTag}\n` + afterLink;
-        console.log("[Prod Server] injectCSSLink: CSS link 已注入");
-      } else {
-        // 如果 lastIndexOf 失败（不应该发生），使用 replace 作为后备
-        console.warn("[Prod Server] injectCSSLink: ⚠️ lastIndexOf 失败，使用 replace");
-        res.body = html.replace("</head>", `  ${linkTag}\n</head>`);
-      }
+      res.body = html.replace("</head>", `  ${linkTag}\n</head>`);
     } else if (html.includes("<head>")) {
       // 如果没有 </head>，但有 <head>，则在 <head> 后面注入
       res.body = html.replace("<head>", `<head>\n  ${linkTag}`);

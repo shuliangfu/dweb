@@ -3,7 +3,7 @@
  * 用于网站顶部导航
  */
 
-import { useState, useEffect } from 'preact/hooks';
+import { useEffect, useState } from "preact/hooks";
 
 interface NavbarProps {
   /** 当前路径（服务端渲染时使用） */
@@ -19,15 +19,15 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
   // 在客户端使用 state 跟踪当前路径，支持客户端路由导航
   const [currentPath, setCurrentPath] = useState<string>(() => {
     // 初始化：优先使用传入的 prop，其次使用 window.location.pathname（客户端）
-    if (typeof globalThis !== 'undefined' && globalThis.window) {
+    if (typeof globalThis !== "undefined" && globalThis.window) {
       return globalThis.window.location.pathname;
     }
-    return initialPath || '/';
+    return initialPath || "/";
   });
 
   // 监听 URL 变化（客户端路由导航和浏览器前进/后退）
   useEffect(() => {
-    if (typeof globalThis === 'undefined' || !globalThis.window) {
+    if (typeof globalThis === "undefined" || !globalThis.window) {
       return;
     }
 
@@ -41,27 +41,47 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
     updatePath();
 
     // 监听 popstate 事件（浏览器前进/后退）
-    globalThis.window.addEventListener('popstate', updatePath);
+    globalThis.window.addEventListener("popstate", updatePath);
 
     // 监听自定义路由事件（客户端路由导航时触发）
     const handleRouteChange = () => {
       updatePath();
     };
-    globalThis.window.addEventListener('routechange', handleRouteChange);
+    globalThis.window.addEventListener("routechange", handleRouteChange);
 
     return () => {
-      globalThis.window.removeEventListener('popstate', updatePath);
-      globalThis.window.removeEventListener('routechange', handleRouteChange);
+      globalThis.window.removeEventListener("popstate", updatePath);
+      globalThis.window.removeEventListener("routechange", handleRouteChange);
     };
   }, []);
 
   const navItems = [
-    { href: '/', label: '首页' },
-    { href: '/features', label: '特性' },
-    { href: '/examples', label: '示例' },
-    { href: '/docs', label: '文档' },
-    { href: '/about', label: '关于' },
+    { href: "/", label: "首页" },
+    { href: "/features", label: "特性" },
+    { href: "/examples", label: "示例" },
+    { href: "/docs", label: "文档" },
+    { href: "/about", label: "关于" },
   ];
+
+  const toggleTheme = (e: Event) => {
+    e.preventDefault();
+		e.stopPropagation();
+		
+		console.log("toggleTheme");
+
+
+    // 直接调用主题切换方法
+    if (typeof globalThis !== "undefined" && globalThis.window) {
+      const win = globalThis.window as any;
+      if (win.toggleTheme) {
+        console.log("toggleTheme1");
+        win.toggleTheme();
+        console.log("toggleTheme2");
+      }
+    } else {
+      console.log("toggleTheme3");
+    }
+  };
 
   return (
     <nav className="bg-gray-100/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
@@ -80,16 +100,16 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
           <div className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => {
               // 精确匹配路径，支持根路径和子路径
-              const isActive = currentPath === item.href || 
-                (item.href !== '/' && currentPath.startsWith(item.href));
+              const isActive = currentPath === item.href ||
+                (item.href !== "/" && currentPath.startsWith(item.href));
               return (
                 <a
                   key={item.href}
                   href={item.href}
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     isActive
-                      ? 'text-blue-800 dark:text-blue-400 bg-blue-200 dark:bg-blue-900/20'
-                      : 'text-gray-900 dark:text-gray-300 hover:text-blue-800 dark:hover:text-blue-400 hover:bg-gray-200 dark:hover:bg-gray-800'
+                      ? "text-blue-800 dark:text-blue-400 bg-blue-200 dark:bg-blue-900/20"
+                      : "text-gray-900 dark:text-gray-300 hover:text-blue-800 dark:hover:text-blue-400 hover:bg-gray-200 dark:hover:bg-gray-800"
                   }`}
                 >
                   {item.label}
@@ -103,17 +123,7 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
             {/* 主题切换按钮 */}
             <button
               type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // 直接调用主题切换方法
-                if (typeof globalThis !== 'undefined' && globalThis.window) {
-                  const win = globalThis.window as any;
-                  if (win.toggleTheme) {
-                    win.toggleTheme();
-                  }
-                }
-              }}
+              onClick={toggleTheme}
               className="p-2 rounded-md text-gray-800 hover:text-gray-900 hover:bg-gray-300 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
               title="切换主题"
               aria-label="切换主题"
@@ -155,8 +165,12 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
               rel="noopener noreferrer"
               className="hidden md:inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              <svg
+                className="w-5 h-5 mr-2"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
               </svg>
               GitHub
             </a>
@@ -172,4 +186,3 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
     </nav>
   );
 }
-
