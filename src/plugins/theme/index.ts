@@ -299,23 +299,22 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
           // 注入主题脚本（在 </head> 之前）
           if (newHtml.includes('</head>')) {
             const scriptContent = generateThemeScript(options);
-            // 提取 JavaScript 代码和 style 标签
-            const jsMatch = scriptContent.match(/\(function\(\) \{[\s\S]*?\}\)\(\);/);
-            const styleMatch = scriptContent.match(/<style>([\s\S]*?)<\/style>/);
+            // 分离 JavaScript 代码和 style 标签
+            const content = scriptContent.trim();
+            const styleMatch = content.match(/<style>([\s\S]*?)<\/style>/);
+            let jsCode = content;
+            const styleTag = styleMatch ? styleMatch[0] : '';
             
-            if (jsMatch) {
-              // 压缩 JavaScript 代码
-              const jsCode = jsMatch[0];
-              const minifiedCode = await minifyJavaScript(jsCode.trim());
-              // 组合 script 和 style 标签
-              const styleTag = styleMatch ? styleMatch[0] : '';
-              const minifiedScript = `<script>${minifiedCode}</script>${styleTag}`;
-              newHtml = newHtml.replace('</head>', `${minifiedScript}\n</head>`);
-            } else {
-              // 如果没有匹配到，直接使用原始内容
-              const minifiedScript = `<script>${scriptContent.trim()}</script>`;
-              newHtml = newHtml.replace('</head>', `${minifiedScript}\n</head>`);
+            // 如果有 style 标签，从内容中移除
+            if (styleMatch) {
+              jsCode = content.replace(styleMatch[0], '').trim();
             }
+            
+            // 压缩 JavaScript 代码
+            const minifiedCode = await minifyJavaScript(jsCode);
+            // 组合 script 和 style 标签
+            const minifiedScript = `<script>${minifiedCode}</script>${styleTag}`;
+            newHtml = newHtml.replace('</head>', `${minifiedScript}\n</head>`);
           }
           
           res.body = newHtml;
