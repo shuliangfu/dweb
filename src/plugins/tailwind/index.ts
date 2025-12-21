@@ -276,13 +276,19 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
 
             // 写入处理后的 CSS
             await Deno.writeTextFile(outPath, processed.content);
+            
+            // 检查编译后的 CSS 是否包含 dark mode 样式
+            const hasDarkMode = processed.content.includes('.dark') || 
+                               processed.content.includes('[data-theme="dark"]') ||
+                               processed.content.includes('dark:');
+            console.log(`✅ [Tailwind ${version}] 编译完成: ${cssFile} -> ${outPath}`);
+            console.log(`   [Tailwind ${version}] CSS 大小: ${processed.content.length} 字节`);
+            console.log(`   [Tailwind ${version}] 包含 dark mode: ${hasDarkMode}`);
 
             // 如果有 source map，也写入
             if (processed.map) {
               await Deno.writeTextFile(`${outPath}.map`, processed.map);
             }
-
-            console.log(`✅ [Tailwind ${version}] 编译完成: ${cssFile} -> ${outPath}`);
           } catch (error) {
             console.error(`❌ [Tailwind ${version}] 编译失败: ${cssFile}`, error);
           }

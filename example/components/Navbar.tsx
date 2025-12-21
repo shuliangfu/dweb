@@ -66,20 +66,12 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
   const toggleTheme = (e: Event) => {
     e.preventDefault();
 		e.stopPropagation();
-		
-		console.log("toggleTheme");
-
-
     // 直接调用主题切换方法
     if (typeof globalThis !== "undefined" && globalThis.window) {
       const win = globalThis.window as any;
       if (win.toggleTheme) {
-        console.log("toggleTheme1");
         win.toggleTheme();
-        console.log("toggleTheme2");
       }
-    } else {
-      console.log("toggleTheme3");
     }
   };
 

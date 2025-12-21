@@ -331,10 +331,14 @@ function injectCSSLink(
     }
 
     const linkTag = `<link rel="stylesheet" href="${cssUrl}" />`;
+    console.log("[Prod Server] injectCSSLink: CSS URL:", cssUrl);
+    console.log("[Prod Server] injectCSSLink: CSS 路径:", cssPath);
+    console.log("[Prod Server] injectCSSLink: 静态目录:", staticDir);
 
     // 检查 <head> 中是否有 <link> 标签（CSS 文件）
     const linkRegex = /<link[^>]*rel\s*=\s*["']stylesheet["'][^>]*>/i;
     const linkMatch = html.match(linkRegex);
+    console.log("[Prod Server] injectCSSLink: 找到现有 link 标签:", !!linkMatch);
 
     if (linkMatch && linkMatch.index !== undefined) {
       // 如果找到 <link> 标签，在它之前插入新的 link 标签
