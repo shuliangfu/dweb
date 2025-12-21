@@ -118,12 +118,12 @@ app.use(compression());`;
   return (
     <div className="space-y-0">
       {/* 页面标题 */}
-      <div className="bg-linear-to-r from-blue-600 to-indigo-600 py-16">
+      <div className="bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
             功能特性
           </h1>
-          <p className="text-xl text-blue-100 max-w-3xl mx-auto">
+          <p className="text-xl text-blue-100 dark:text-blue-200 max-w-3xl mx-auto">
             DWeb 提供了现代化 Web 开发所需的所有功能，让您专注于业务逻辑
           </p>
         </div>

@@ -392,10 +392,10 @@ const handleSubmit = async (e: Event) => {
   return (
     <div className="space-y-0">
       {/* 页面标题 */}
-      <div className="bg-linear-to-r from-blue-600 to-indigo-600 py-16">
+      <div className="bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">交互示例</h1>
-          <p className="text-xl text-blue-100 max-w-3xl mx-auto">
+          <p className="text-xl text-blue-100 dark:text-blue-200 max-w-3xl mx-auto">
             展示 DWeb 框架中的各种交互功能：点击事件、接口请求、表单提交等
           </p>
         </div>
