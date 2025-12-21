@@ -28,11 +28,11 @@ export async function createClientScript(
   const httpUrl = filePathToHttpUrl(routePath);
   // 转义路径中的特殊字符
   const escapedRoutePath = httpUrl.replace(/'/g, "\\'");
-  
+
   // 提取 metadata（如果存在），并从 props 中移除，避免重复和潜在问题
   const metadata = (props as any)?.metadata || null;
   const propsWithoutMetadata = { ...props };
-  if ('metadata' in propsWithoutMetadata) {
+  if ("metadata" in propsWithoutMetadata) {
     delete (propsWithoutMetadata as any).metadata;
   }
   // 确保 propsJson 是有效的 JSON，并转义特殊字符
@@ -50,10 +50,12 @@ export async function createClientScript(
       : `file://${layoutPath}`;
     const layoutHttpUrl = filePathToHttpUrl(layoutFileUrl);
     escapedLayoutPath = `'${layoutHttpUrl.replace(/'/g, "\\'")}'`;
-	}
-  
+  }
+
   // 如果有多个布局路径，转换为 HTTP URL 数组
-  if (allLayoutPaths && Array.isArray(allLayoutPaths) && allLayoutPaths.length > 0) {
+  if (
+    allLayoutPaths && Array.isArray(allLayoutPaths) && allLayoutPaths.length > 0
+  ) {
     const layoutUrls = allLayoutPaths.map((layoutPath: string) => {
       const layoutFileUrl = layoutPath.startsWith("file://")
         ? layoutPath
@@ -61,17 +63,17 @@ export async function createClientScript(
       const layoutHttpUrl = filePathToHttpUrl(layoutFileUrl);
       return `'${layoutHttpUrl.replace(/'/g, "\\'")}'`;
     });
-    escapedAllLayoutPaths = `[${layoutUrls.join(', ')}]`;
+    escapedAllLayoutPaths = `[${layoutUrls.join(", ")}]`;
   }
-	
-	// 调试日志已移除，避免在并发请求时产生混乱
-	// console.log({ httpUrl, escapedLayoutPath });
+
+  // 调试日志已移除，避免在并发请求时产生混乱
+  // console.log({ httpUrl, escapedLayoutPath });
 
   // CSR 模式：不再需要手动拦截链接
   // 如果使用 preact-router，它会自动处理链接点击
   // 如果不使用 preact-router，在 initClientSideNavigation 中处理
-  let linkInterceptorScript = '';
-  if (renderMode === 'csr' || renderMode === 'hybrid') {
+  let linkInterceptorScript = "";
+  if (renderMode === "csr" || renderMode === "hybrid") {
     linkInterceptorScript = `
 // CSR 链接拦截器（简化版）
 (function() {
@@ -141,20 +143,27 @@ export async function createClientScript(
 
   // CSR 模式客户端路由导航初始化函数（在模块中执行）
   // 参考用户之前的实现，使用类似 preact-router 的方式
-  let clientRouterCode = '';
-  if (renderMode === 'csr' || renderMode === 'hybrid') {
+  let clientRouterCode = "";
+  if (renderMode === "csr" || renderMode === "hybrid") {
     clientRouterCode = `
 // 辅助函数：加载布局组件
 async function loadLayoutComponents(pageData) {
   const LayoutComponents = [];
   if (pageData.allLayoutPaths && Array.isArray(pageData.allLayoutPaths) && pageData.allLayoutPaths.length > 0) {
     // 加载所有布局组件（从最具体到最通用）
+    // 如果某个布局设置了 inherit = false，则停止继承
     for (const layoutPath of pageData.allLayoutPaths) {
       try {
         const layoutModule = await import(layoutPath);
         const LayoutComponent = layoutModule?.default;
         if (LayoutComponent && typeof LayoutComponent === 'function') {
           LayoutComponents.push(LayoutComponent);
+          
+          // 检查是否设置了 inherit = false（禁用继承）
+          // 如果设置了 inherit = false，则停止继承，不再加载后续的布局
+          if (layoutModule.inherit === false) {
+            break;
+          }
         }
       } catch (_layoutError) {
         // 布局加载失败时静默处理，跳过该布局
@@ -604,23 +613,26 @@ async function initClientSideNavigation(render, jsx) {
 }
 `;
   }
-  
+
   // 处理 basePath（多应用模式使用）
-  const appBasePath = basePath || '/';
+  const appBasePath = basePath || "/";
   const escapedBasePath = appBasePath.replace(/'/g, "\\'");
 
   // 生成 metadata JSON（已在上面提取），确保格式正确
-  let metadataJson = 'null';
+  let metadataJson = "null";
   if (metadata) {
     try {
       metadataJson = JSON.stringify(metadata);
       // 转义 HTML 特殊字符，防止 XSS
-      metadataJson = metadataJson.replace(/</g, "\\u003c").replace(/>/g, "\\u003e");
+      metadataJson = metadataJson.replace(/</g, "\\u003c").replace(
+        />/g,
+        "\\u003e",
+      );
     } catch (_error) {
-      metadataJson = 'null';
+      metadataJson = "null";
     }
-	}
-	
+  }
+
   const clientContent = `
 // 页面数据
 globalThis.__PAGE_DATA__ = {
@@ -866,19 +878,18 @@ ${clientRouterCode}
 `;
 
   // 对于 CSR 和 Hybrid 模式，需要立即执行链接拦截器（不使用 module，立即执行）
-  if (renderMode === 'csr' || renderMode === 'hybrid') {
+  if (renderMode === "csr" || renderMode === "hybrid") {
     // 使用 esbuild 压缩代码
     const [minifiedLinkInterceptor, minifiedClientContent] = await Promise.all([
       minifyJavaScript(linkInterceptorScript),
       minifyJavaScript(clientContent),
-		]);
-    
+    ]);
+
     // 返回两个脚本：立即执行的链接拦截器 + 模块化的渲染代码
     return `<script>${minifiedLinkInterceptor}</script><script type="module">${minifiedClientContent}</script>`;
   }
-  
+
   // 使用 esbuild 压缩代码
   const minifiedClientContent = await minifyJavaScript(clientContent);
   return `<script type="module">${minifiedClientContent}</script>`;
 }
-

@@ -1052,7 +1052,7 @@ export class RouteHandler {
       // 获取所有匹配的布局路径
       layoutPaths.push(...this.router.getAllLayouts(routeInfo.path));
 
-      // 加载所有布局组件
+      // 加载所有布局组件，如果某个布局设置了 inherit = false，则停止继承
       for (const layoutPath of layoutPaths) {
         try {
           const layoutFullPath = resolveFilePath(layoutPath);
@@ -1062,6 +1062,15 @@ export class RouteHandler {
             logger.warn(`布局文件 ${layoutPath} 没有默认导出`);
             continue;
           }
+
+          // 检查是否设置了 inherit = false（禁用继承）
+          // 如果设置了 inherit = false，则停止继承，只使用到当前布局为止的布局链
+          if (layoutModule.inherit === false) {
+            LayoutComponents.push(LayoutComponent);
+            // 停止继承，不再加载后续的布局
+            break;
+          }
+
           LayoutComponents.push(LayoutComponent);
         } catch (error) {
           // 布局加载失败不影响页面渲染，跳过该布局
@@ -1314,20 +1323,56 @@ export class RouteHandler {
       }
 
       // 获取所有布局路径（用于客户端脚本）
+      // 需要检查每个布局的 inherit 属性，如果某个布局设置了 inherit = false，则停止继承
       const layoutPathsForClient: string[] = [];
       try {
         const layoutFilePaths = this.router.getAllLayouts(routeInfo.path);
         for (const layoutFilePath of layoutFilePaths) {
-          // 检查布局路由信息，看是否有 clientModulePath
-          const layoutRoute = this.router.getAllRoutes().find((r) =>
-            r.filePath === layoutFilePath
-          );
-          if (layoutRoute?.clientModulePath) {
-            // 生产环境：使用客户端模块路径
-            layoutPathsForClient.push(layoutRoute.clientModulePath);
-          } else {
-            // 开发环境：使用完整路径
-            layoutPathsForClient.push(layoutFilePath);
+          try {
+            // 加载布局模块以检查 inherit 属性
+            const layoutFullPath = resolveFilePath(layoutFilePath);
+            const layoutModule = await import(layoutFullPath);
+
+            // 检查是否设置了 inherit = false（禁用继承）
+            // 如果设置了 inherit = false，则停止继承，只使用到当前布局为止的布局链
+            if (layoutModule.inherit === false) {
+              // 添加当前布局到客户端路径列表
+              const layoutRoute = this.router.getAllRoutes().find((r) =>
+                r.filePath === layoutFilePath
+              );
+              if (layoutRoute?.clientModulePath) {
+                // 生产环境：使用客户端模块路径
+                layoutPathsForClient.push(layoutRoute.clientModulePath);
+              } else {
+                // 开发环境：使用完整路径
+                layoutPathsForClient.push(layoutFilePath);
+              }
+              // 停止继承，不再加载后续的布局
+              break;
+            }
+
+            // 检查布局路由信息，看是否有 clientModulePath
+            const layoutRoute = this.router.getAllRoutes().find((r) =>
+              r.filePath === layoutFilePath
+            );
+            if (layoutRoute?.clientModulePath) {
+              // 生产环境：使用客户端模块路径
+              layoutPathsForClient.push(layoutRoute.clientModulePath);
+            } else {
+              // 开发环境：使用完整路径
+              layoutPathsForClient.push(layoutFilePath);
+            }
+          } catch (layoutError) {
+            // 布局加载失败不影响页面渲染，跳过该布局
+            const errorMessage = layoutError instanceof Error
+              ? layoutError.message
+              : String(layoutError);
+            logger.warn(
+              `[布局继承] 客户端脚本：加载布局文件失败: ${layoutFilePath}`,
+              {
+                error: errorMessage,
+              },
+            );
           }
         }
       } catch (_error) {
