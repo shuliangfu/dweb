@@ -347,6 +347,15 @@ export function staticFiles(options: StaticOptions): Middleware {
       // 读取文件
       const file = await Deno.readFile(fullPath);
       
+      // 调试日志：如果是 CSS 文件，输出文件路径和大小
+      if (filePath.endsWith('.css')) {
+        console.log(`[Static Files] 服务 CSS 文件: ${fullPath}, 大小: ${file.length} 字节`);
+        // 检查文件内容是否包含 dark mode
+        const fileText = new TextDecoder().decode(file);
+        const hasDark = fileText.includes('.dark') || fileText.includes('dark:') || fileText.includes('dark\\:');
+        console.log(`[Static Files] CSS 文件包含 dark mode: ${hasDark}`);
+      }
+      
       // 设置内容类型
       const mimeType = getContentType(filePath);
       res.setHeader('Content-Type', mimeType);
