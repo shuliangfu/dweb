@@ -24,6 +24,7 @@ import {
   initI18nAccess,
   setCurrentLanguage,
 } from "./access.ts";
+import { minifyJavaScript } from "../../utils/minify.ts";
 
 /**
  * 加载翻译文件
@@ -349,8 +350,8 @@ export function i18n(options: I18nPluginOptions): Plugin {
             // 注入翻译数据到客户端（在 </head> 之前）
             const translations = translationCache.get(langCode) || null;
             if (translations && newHtml.includes("</head>")) {
-              const translationsScript = `
-    <script>
+              // 生成 JavaScript 代码（不包含 script 标签）
+              const jsCode = `
       // i18n 翻译数据
       window.__I18N_DATA__ = {
         lang: ${JSON.stringify(langCode)},
@@ -392,8 +393,11 @@ export function i18n(options: I18nPluginOptions): Plugin {
           return key;
         }
         return window.__I18N_DATA__.t.call(window.__I18N_DATA__, key, params);
-      };
-    </script>`;
+      }`;
+              // 压缩 JavaScript 代码
+              const minifiedCode = await minifyJavaScript(jsCode.trim());
+              // 添加 script 标签
+              const translationsScript = `<script>${minifiedCode}</script>`;
               newHtml = newHtml.replace(
                 "</head>",
                 `${translationsScript}\n</head>`,
