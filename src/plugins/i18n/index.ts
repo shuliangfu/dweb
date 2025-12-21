@@ -333,7 +333,7 @@ export function i18n(options: I18nPluginOptions): Plugin {
     /**
      * 响应处理钩子 - 注入语言属性和翻译数据到 HTML
      */
-    onResponse(req: Request, res: Response) {
+    onResponse: async (req: Request, res: Response) => {
       // 获取语言信息（从请求对象中获取，在 onRequest 中已设置）
       const langCode = (req as any).lang;
       const langConfig = (req as any).langConfig;
