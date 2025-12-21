@@ -145,6 +145,8 @@ function generateThemeScript(options: ThemePluginOptions): string {
                     fetch(tailwindSheet.href || '')
                       .then(res => res.text())
                       .then(cssText => {
+                        console.log('[Theme Plugin] CSS 文件大小:', cssText.length, '字节');
+                        console.log('[Theme Plugin] CSS 文件前 200 字符:', cssText.substring(0, 200));
                         const hasDark = cssText.includes('.dark') || 
                                        cssText.includes('dark:') ||
                                        cssText.includes('dark\\:');
@@ -152,6 +154,9 @@ function generateThemeScript(options: ThemePluginOptions): string {
                         if (hasDark) {
                           const darkMatches = cssText.match(/\.dark[^}]*\{/g);
                           console.log('[Theme Plugin] CSS 文件中的 dark 选择器数量:', darkMatches ? darkMatches.length : 0);
+                          if (darkMatches && darkMatches.length > 0) {
+                            console.log('[Theme Plugin] 前 3 个 dark 选择器示例:', darkMatches.slice(0, 3));
+                          }
                           
                           // 测试一个具体的 dark mode 样式是否生效
                           const testElement = document.createElement('div');
@@ -163,6 +168,10 @@ function generateThemeScript(options: ThemePluginOptions): string {
                           console.log('[Theme Plugin] 测试元素 dark:bg-gray-900 的计算样式:', bgColor);
                           console.log('[Theme Plugin] HTML 元素是否有 dark class:', document.documentElement.classList.contains('dark'));
                           document.body.removeChild(testElement);
+                        } else {
+                          // 如果找不到 dark mode，检查 CSS 文件内容
+                          console.warn('[Theme Plugin] CSS 文件不包含 dark mode 样式！');
+                          console.warn('[Theme Plugin] 请检查 CSS 文件是否正确构建');
                         }
                       })
                       .catch(err => {
