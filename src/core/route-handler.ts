@@ -782,6 +782,34 @@ export class RouteHandler {
     }
 
     try {
+      // 确保全局 $t 和 t 函数已设置（如果 i18n 插件已初始化）
+      // 这确保在 load 函数中可以直接使用 $t() 和 t()
+      if (typeof globalThis !== "undefined") {
+        // 如果 req.t 存在（i18n 插件已设置），确保全局函数也已设置
+        if ((req as any).t) {
+          (globalThis as any).$t = (req as any).t;
+          (globalThis as any).t = (req as any).t;
+        } else {
+          // 如果 req.t 不存在，尝试从 i18n access 模块获取默认函数
+          try {
+            const { getI18n, ensureGlobalI18n } = await import(
+              "../plugins/i18n/access.ts"
+            );
+            ensureGlobalI18n();
+            const tFunc = getI18n();
+            (globalThis as any).$t = tFunc;
+            (globalThis as any).t = tFunc;
+          } catch {
+            // i18n 模块未加载，设置一个默认函数（返回 key 本身）
+            if (!(globalThis as any).$t) {
+              const defaultT = (key: string) => key;
+              (globalThis as any).$t = defaultT;
+              (globalThis as any).t = defaultT;
+            }
+          }
+        }
+      }
+
       // 获取 session（如果存在）
       let session = req.session || null;
       if (!session && typeof req.getSession === "function") {
