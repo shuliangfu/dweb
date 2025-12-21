@@ -207,7 +207,7 @@ async function calculateHash(content: string | Uint8Array): Promise<string> {
   );
 
   // 返回前 10 个字符作为文件名 hash
-  return hashHex.substring(0, 20);
+  return hashHex.substring(0, 15);
 }
 
 /**
