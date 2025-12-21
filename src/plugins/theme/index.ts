@@ -301,7 +301,20 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
           // 注入主题脚本（在 </head> 之前）
           if (newHtml.includes('</head>')) {
             const script = generateThemeScript(options);
-            newHtml = newHtml.replace('</head>', `${script}\n</head>`);
+            // 提取 JavaScript 代码并压缩
+            const scriptMatch = script.match(/<script>([\s\S]*?)<\/script>/);
+            if (scriptMatch) {
+              const jsCode = scriptMatch[1];
+              const minifiedCode = await minifyJavaScript(jsCode);
+              // 保留 style 标签（如果有）
+              const styleMatch = script.match(/<style>([\s\S]*?)<\/style>/);
+              const styleTag = styleMatch ? `<style>${styleMatch[1]}</style>` : '';
+              const minifiedScript = `<script>${minifiedCode}</script>${styleTag}`;
+              newHtml = newHtml.replace('</head>', `${minifiedScript}\n</head>`);
+            } else {
+              // 如果没有匹配到，直接使用原始脚本
+              newHtml = newHtml.replace('</head>', `${script}\n</head>`);
+            }
           }
           
           res.body = newHtml;
