@@ -791,12 +791,6 @@ export class RouteHandler {
         if ((req as any).t) {
           (globalThis as any).$t = (req as any).t;
           (globalThis as any).t = (req as any).t;
-          // 调试：显示设置的翻译函数
-          console.log(
-            `[i18n Plugin] 在 loadPageData 中设置全局 $t，当前语言: ${
-              (req as any).lang || "未知"
-            }`,
-          );
         } else {
           // 如果 req.t 不存在，尝试从 i18n access 模块获取
           try {
