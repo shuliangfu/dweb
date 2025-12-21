@@ -541,8 +541,14 @@ async function initClientSideNavigation(render, jsx) {
       // 加载所有布局组件（支持布局继承）
       const LayoutComponents = await loadLayoutComponents(pageData);
       
+      // 获取页面 props 并添加 Store
+      const pageProps = { ...(pageData.props || {}) };
+      if (typeof window !== 'undefined' && window.__STORE__) {
+        pageProps.store = window.__STORE__;
+      }
+      
       // 创建最终元素（页面元素 + 布局嵌套）
-      const finalElement = await createFinalElement(PageComponent, LayoutComponents, pageData.props || {}, jsxFunc);
+      const finalElement = await createFinalElement(PageComponent, LayoutComponents, pageProps, jsxFunc);
       
       // 渲染（与初始渲染使用完全相同的方式）
       const container = document.getElementById('root');
