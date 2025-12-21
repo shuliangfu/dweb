@@ -199,7 +199,7 @@ export class RouteHandler {
 
         // 读取文件内容（确保正确等待，使用 await 等待完成）
         // 直接等待 readTextFile 操作完成，确保异步操作完成
-        let fileContent = await Deno.readTextFile(fullPath);
+        const fileContent = await Deno.readTextFile(fullPath);
         // 检查文件类型
         const isTsx = fullPath.endsWith(".tsx") || fullPath.endsWith(".ts");
         let jsCode: string;
