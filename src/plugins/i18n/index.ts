@@ -245,6 +245,7 @@ export function i18n(options: I18nPluginOptions): Plugin {
      */
     async onInit(_app: AppLike) {
       // 预加载所有语言的翻译文件
+      console.log(`[i18n Plugin] 开始加载翻译文件，目录: ${translationsDir}`);
       for (const lang of options.languages) {
         try {
           const translations = await loadTranslations(
@@ -253,9 +254,19 @@ export function i18n(options: I18nPluginOptions): Plugin {
           );
           if (translations) {
             translationCache.set(lang.code, translations);
+            console.log(
+              `[i18n Plugin] 成功加载语言: ${lang.code}，翻译键数量: ${
+                Object.keys(translations).length
+              }`,
+            );
+          } else {
+            console.warn(`[i18n Plugin] 语言文件为空: ${lang.code}`);
           }
         } catch (error) {
-          console.warn(`[i18n Plugin] 无法加载语言文件 ${lang.code}:`, error);
+          console.warn(
+            `[i18n Plugin] 无法加载语言文件 ${lang.code}:`,
+            error instanceof Error ? error.message : String(error),
+          );
         }
       }
 
