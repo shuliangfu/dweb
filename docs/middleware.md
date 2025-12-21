@@ -27,8 +27,8 @@ src/middleware/
 ### 基本用法
 
 ```typescript
-import { Server } from '@dreamer/dweb/core/server';
-import { logger, cors, bodyParser } from '@dreamer/dweb/middleware';
+import { Server } from "@dreamer/dweb/core/server";
+import { bodyParser, cors, logger } from "@dreamer/dweb/middleware";
 
 const server = new Server();
 
@@ -38,7 +38,7 @@ server.use(cors());
 server.use(bodyParser());
 
 server.setHandler(async (req, res) => {
-  res.json({ message: 'Hello' });
+  res.json({ message: "Hello" });
 });
 
 await server.start(3000);
@@ -49,10 +49,10 @@ await server.start(3000);
 ### logger - 请求日志
 
 ```typescript
-import { logger } from '@dreamer/dweb/middleware';
+import { logger } from "@dreamer/dweb/middleware";
 
 server.use(logger({
-  format: 'combined', // 'combined' | 'common' | 'dev' | 'short' | 'tiny'
+  format: "combined", // 'combined' | 'common' | 'dev' | 'short' | 'tiny'
   stream: process.stdout, // 输出流
 }));
 ```
@@ -60,12 +60,12 @@ server.use(logger({
 ### cors - 跨域支持
 
 ```typescript
-import { cors } from '@dreamer/dweb/middleware';
+import { cors } from "@dreamer/dweb/middleware";
 
 server.use(cors({
-  origin: '*', // 或指定域名 ['https://example.com']
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  origin: "*", // 或指定域名 ['https://example.com']
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 }));
 ```
@@ -73,13 +73,13 @@ server.use(cors({
 ### bodyParser - 请求体解析
 
 ```typescript
-import { bodyParser } from '@dreamer/dweb/middleware';
+import { bodyParser } from "@dreamer/dweb/middleware";
 
 server.use(bodyParser({
-  json: { limit: '1mb' },
-  urlencoded: { limit: '1mb', extended: true },
-  text: { limit: '1mb' },
-  raw: { limit: '1mb' },
+  json: { limit: "1mb" },
+  urlencoded: { limit: "1mb", extended: true },
+  text: { limit: "1mb" },
+  raw: { limit: "1mb" },
 }));
 
 // 使用
@@ -92,7 +92,7 @@ server.setHandler(async (req, res) => {
 ### compression - 响应压缩
 
 ```typescript
-import { compression } from '@dreamer/dweb/middleware';
+import { compression } from "@dreamer/dweb/middleware";
 
 server.use(compression({
   level: 6, // 压缩级别 0-9
@@ -103,7 +103,7 @@ server.use(compression({
 ### security - 安全头
 
 ```typescript
-import { security } from '@dreamer/dweb/middleware';
+import { security } from "@dreamer/dweb/middleware";
 
 server.use(security({
   contentSecurityPolicy: {
@@ -120,31 +120,31 @@ server.use(security({
 ### rateLimit - 速率限制
 
 ```typescript
-import { rateLimit } from '@dreamer/dweb/middleware';
+import { rateLimit } from "@dreamer/dweb/middleware";
 
 server.use(rateLimit({
   windowMs: 15 * 60 * 1000, // 15 分钟
   max: 100, // 最多 100 次请求
-  message: 'Too many requests',
-  store: 'memory', // 'memory' | 'redis'
+  message: "Too many requests",
+  store: "memory", // 'memory' | 'redis'
 }));
 ```
 
 ### auth - JWT 认证
 
 ```typescript
-import { auth, signJWT, verifyJWT } from '@dreamer/dweb/middleware';
+import { auth, signJWT, verifyJWT } from "@dreamer/dweb/middleware";
 
 // 签名 JWT
-const token = await signJWT({ userId: 123 }, 'secret', { expiresIn: '1h' });
+const token = await signJWT({ userId: 123 }, "secret", { expiresIn: "1h" });
 
 // 验证 JWT
-const payload = await verifyJWT(token, 'secret');
+const payload = await verifyJWT(token, "secret");
 
 // 认证中间件
 server.use(auth({
-  secret: 'your-secret-key',
-  unless: ['/login', '/register'], // 排除路径
+  secret: "your-secret-key",
+  unless: ["/login", "/register"], // 排除路径
 }));
 
 // 在处理器中访问用户信息
@@ -157,19 +157,19 @@ server.setHandler(async (req, res) => {
 ### static - 静态文件
 
 ```typescript
-import { staticFiles } from '@dreamer/dweb/middleware';
+import { staticFiles } from "@dreamer/dweb/middleware";
 
 server.use(staticFiles({
-  root: './public',
-  prefix: '/static',
-  index: 'index.html',
+  root: "./public",
+  prefix: "/static",
+  index: "index.html",
 }));
 ```
 
 ### errorHandler - 错误处理
 
 ```typescript
-import { errorHandler } from '@dreamer/dweb/middleware';
+import { errorHandler } from "@dreamer/dweb/middleware";
 
 server.use(errorHandler({
   debug: true, // 开发模式显示详细错误
@@ -180,14 +180,14 @@ server.use(errorHandler({
 ### health - 健康检查
 
 ```typescript
-import { health } from '@dreamer/dweb/middleware';
+import { health } from "@dreamer/dweb/middleware";
 
 server.use(health({
-  path: '/health',
+  path: "/health",
   checks: {
     database: async () => {
       // 检查数据库连接
-      return { status: 'ok' };
+      return { status: "ok" };
     },
   },
 }));
@@ -196,10 +196,10 @@ server.use(health({
 ### requestId - 请求 ID
 
 ```typescript
-import { requestId } from '@dreamer/dweb/middleware';
+import { requestId } from "@dreamer/dweb/middleware";
 
 server.use(requestId({
-  header: 'X-Request-ID',
+  header: "X-Request-ID",
   generator: () => crypto.randomUUID(),
 }));
 
@@ -213,13 +213,17 @@ server.setHandler(async (req, res) => {
 ### requestValidator - 请求验证
 
 ```typescript
-import { requestValidator } from '@dreamer/dweb/middleware';
+import { requestValidator } from "@dreamer/dweb/middleware";
 
 server.use(requestValidator({
   body: {
-    name: { type: 'string', required: true, min: 2, max: 50 },
-    email: { type: 'string', required: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
-    age: { type: 'number', min: 0, max: 150 },
+    name: { type: "string", required: true, min: 2, max: 50 },
+    email: {
+      type: "string",
+      required: true,
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    },
+    age: { type: "number", min: 0, max: 150 },
   },
 }));
 ```
@@ -227,26 +231,28 @@ server.use(requestValidator({
 ### ipFilter - IP 过滤
 
 ```typescript
-import { ipFilter } from '@dreamer/dweb/middleware';
+import { ipFilter } from "@dreamer/dweb/middleware";
 
 // 白名单
 server.use(ipFilter({
-  whitelist: ['192.168.1.0/24', '10.0.0.0/8'],
+  whitelist: ["192.168.1.0/24", "10.0.0.0/8"],
 }));
 
 // 黑名单
 server.use(ipFilter({
-  blacklist: ['192.168.1.100'],
+  blacklist: ["192.168.1.100"],
 }));
 ```
 
 ## 路由级中间件 (_middleware.ts)
 
-DWeb 框架支持路由级中间件，通过创建 `_middleware.ts` 文件，可以为特定路径及其子路径应用中间件。
+DWeb 框架支持路由级中间件，通过创建 `_middleware.ts`
+文件，可以为特定路径及其子路径应用中间件。
 
 ### 基本概念
 
-路由中间件文件使用 `_middleware.ts` 命名约定，放置在路由目录中。中间件会自动应用到该目录及其所有子目录的请求。
+路由中间件文件使用 `_middleware.ts`
+命名约定，放置在路由目录中。中间件会自动应用到该目录及其所有子目录的请求。
 
 ### 中间件文件结构
 
@@ -277,28 +283,30 @@ routes/
 
 ```typescript
 // routes/_middleware.ts
-import type { Middleware } from '@dreamer/dweb';
+import type { Middleware } from "@dreamer/dweb";
 
 const routeMiddleware: Middleware = async (req, res, next) => {
   // 请求处理前的逻辑
   const startTime = Date.now();
   const url = new URL(req.url);
-  
+
   console.log(`[路由中间件] ${req.method} ${url.pathname} - 开始处理`);
-  
+
   // 添加自定义响应头
-  res.setHeader('X-Route-Middleware', 'processed');
-  res.setHeader('X-Request-Time', new Date().toISOString());
-  
+  res.setHeader("X-Route-Middleware", "processed");
+  res.setHeader("X-Request-Time", new Date().toISOString());
+
   // 调用下一个中间件或路由处理器
   await next();
-  
+
   // 请求处理后的逻辑
   const duration = Date.now() - startTime;
-  console.log(`[路由中间件] ${req.method} ${url.pathname} - 处理完成 (${duration}ms)`);
-  
+  console.log(
+    `[路由中间件] ${req.method} ${url.pathname} - 处理完成 (${duration}ms)`,
+  );
+
   // 添加处理时间到响应头
-  res.setHeader('X-Processing-Time', `${duration}ms`);
+  res.setHeader("X-Processing-Time", `${duration}ms`);
 };
 
 export default routeMiddleware;
@@ -308,15 +316,15 @@ export default routeMiddleware;
 
 ```typescript
 // routes/users/_middleware.ts
-import type { Middleware } from '@dreamer/dweb';
-import { auth } from '@dreamer/dweb/middleware';
+import type { Middleware } from "@dreamer/dweb";
+import { auth } from "@dreamer/dweb/middleware";
 
 // 认证中间件（只应用到 /users 路径）
 const userAuthMiddleware: Middleware = async (req, res, next) => {
-  const token = req.headers.get('Authorization');
+  const token = req.headers.get("Authorization");
   if (!token) {
     res.status = 401;
-    res.json({ error: 'Authentication required' });
+    res.json({ error: "Authentication required" });
     return;
   }
   // 验证 token...
@@ -339,24 +347,24 @@ export default [userAuthMiddleware, userLoggerMiddleware];
 
 ```typescript
 // routes/admin/_middleware.ts
-import type { Middleware } from '@dreamer/dweb';
+import type { Middleware } from "@dreamer/dweb";
 
 const adminAuthMiddleware: Middleware = async (req, res, next) => {
   // 检查用户是否已登录
   const session = await req.getSession?.();
   if (!session || !session.user) {
     res.status = 401;
-    res.redirect('/login');
+    res.redirect("/login");
     return;
   }
-  
+
   // 检查用户权限
-  if (session.user.role !== 'admin') {
+  if (session.user.role !== "admin") {
     res.status = 403;
-    res.json({ error: 'Forbidden: Admin access required' });
+    res.json({ error: "Forbidden: Admin access required" });
     return;
   }
-  
+
   await next();
 };
 
@@ -368,23 +376,25 @@ export default adminAuthMiddleware;
 ```typescript
 // routes/api/_middleware.ts（默认配置）
 // 如果配置了 apiDir: 'api'，则路径为 api/_middleware.ts
-import type { Middleware } from '@dreamer/dweb';
+import type { Middleware } from "@dreamer/dweb";
 
 const apiLoggerMiddleware: Middleware = async (req, res, next) => {
   const startTime = Date.now();
   const url = new URL(req.url);
-  
+
   // 记录请求信息
   console.log(`[API] ${req.method} ${url.pathname}`, {
     query: url.search,
-    ip: req.headers.get('x-forwarded-for') || 'unknown',
+    ip: req.headers.get("x-forwarded-for") || "unknown",
   });
-  
+
   await next();
-  
+
   // 记录响应信息
   const duration = Date.now() - startTime;
-  console.log(`[API] ${req.method} ${url.pathname} - ${res.status} (${duration}ms)`);
+  console.log(
+    `[API] ${req.method} ${url.pathname} - ${res.status} (${duration}ms)`,
+  );
 };
 
 export default apiLoggerMiddleware;
@@ -395,23 +405,23 @@ export default apiLoggerMiddleware;
 ```typescript
 // routes/api/_middleware.ts（默认配置）
 // 如果配置了 apiDir: 'api'，则路径为 api/_middleware.ts
-import type { Middleware } from '@dreamer/dweb';
+import type { Middleware } from "@dreamer/dweb";
 
 // 简单的内存速率限制
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
 const apiRateLimitMiddleware: Middleware = async (req, res, next) => {
-  const clientId = req.headers.get('x-forwarded-for') || 'unknown';
+  const clientId = req.headers.get("x-forwarded-for") || "unknown";
   const now = Date.now();
   const windowMs = 60 * 1000; // 1 分钟
   const maxRequests = 100; // 最多 100 次请求
-  
+
   const record = rateLimitMap.get(clientId);
-  
+
   if (record && record.resetTime > now) {
     if (record.count >= maxRequests) {
       res.status = 429;
-      res.json({ error: 'Too many requests' });
+      res.json({ error: "Too many requests" });
       return;
     }
     record.count++;
@@ -421,7 +431,7 @@ const apiRateLimitMiddleware: Middleware = async (req, res, next) => {
       resetTime: now + windowMs,
     });
   }
-  
+
   await next();
 };
 
@@ -438,11 +448,11 @@ export default apiRateLimitMiddleware;
 
 ### 路由中间件 vs 全局中间件
 
-| 特性 | 路由中间件 (_middleware.ts) | 全局中间件 (server.use()) |
-|------|---------------------------|-------------------------|
-| 作用范围 | 特定路径及其子路径 | 所有请求 |
-| 配置位置 | 路由目录中 | main.ts 或配置文件中 |
-| 路径匹配 | 自动匹配路径层级 | 需要手动配置路径匹配 |
+| 特性     | 路由中间件 (_middleware.ts)    | 全局中间件 (server.use()) |
+| -------- | ------------------------------ | ------------------------- |
+| 作用范围 | 特定路径及其子路径             | 所有请求                  |
+| 配置位置 | 路由目录中                     | main.ts 或配置文件中      |
+| 路径匹配 | 自动匹配路径层级               | 需要手动配置路径匹配      |
 | 适用场景 | 路径特定的逻辑（如认证、日志） | 全局功能（如 CORS、压缩） |
 
 ### 最佳实践
@@ -465,18 +475,18 @@ export default apiRateLimitMiddleware;
 ## 创建自定义中间件
 
 ```typescript
-import type { Middleware } from '@dreamer/dweb/core/middleware';
+import type { Middleware } from "@dreamer/dweb/core/middleware";
 
 const myMiddleware: Middleware = async (req, res, next) => {
   // 请求前处理
   const start = Date.now();
-  
+
   // 调用下一个中间件
   await next();
-  
+
   // 响应后处理
   const duration = Date.now() - start;
-  res.setHeader('X-Response-Time', `${duration}ms`);
+  res.setHeader("X-Response-Time", `${duration}ms`);
 };
 
 server.use(myMiddleware);
@@ -492,14 +502,14 @@ server.use(myMiddleware);
 
 ```typescript
 import type {
-  CorsOptions,
+  AuthOptions,
   BodyParserOptions,
   CompressionOptions,
-  SecurityOptions,
+  CorsOptions,
   RateLimitOptions,
-  AuthOptions,
+  SecurityOptions,
   // ... 其他选项类型
-} from '@dreamer/dweb/middleware';
+} from "@dreamer/dweb/middleware";
 ```
 
 ---
@@ -507,12 +517,14 @@ import type {
 ## 📚 相关文档
 
 ### 核心文档
+
 - [文档总览](./README.md)
 - [核心模块](./core.md)
 - [配置文档](./configuration.md)
 - [开发指南](./development.md)
 
 ### 功能模块
+
 - [数据库](./database.md)
 - [GraphQL](./graphql.md)
 - [WebSocket](./websocket.md)
@@ -521,9 +533,10 @@ import type {
 - [Logger](./logger.md)
 
 ### 扩展模块
+
 - [中间件](./middleware.md)
 - [插件](./plugins.md)
 
 ### 部署与运维
-- [Docker 部署](./docker.md)
 
+- [Docker 部署](./docker.md)

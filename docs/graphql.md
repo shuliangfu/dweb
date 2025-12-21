@@ -18,21 +18,21 @@ src/features/graphql/
 ### 创建 GraphQL 服务器
 
 ```typescript
-import { GraphQLServer } from '@dreamer/dweb/features/graphql';
+import { GraphQLServer } from "@dreamer/dweb/features/graphql";
 
 const server = new GraphQLServer({
   schema: {
     query: {
-      name: 'Query',
+      name: "Query",
       fields: {
         hello: {
-          type: 'String',
-          resolve: () => 'Hello World',
+          type: "String",
+          resolve: () => "Hello World",
         },
         user: {
-          type: 'User',
+          type: "User",
           args: {
-            id: { type: 'ID!', required: true },
+            id: { type: "ID!", required: true },
           },
           resolve: async (parent, args, context) => {
             return await User.findById(args.id);
@@ -54,34 +54,34 @@ const result = await server.execute({
 ```typescript
 const schema = {
   query: {
-    name: 'Query',
+    name: "Query",
     fields: {
       // 查询字段
     },
   },
   mutation: {
-    name: 'Mutation',
+    name: "Mutation",
     fields: {
       // 变更字段
     },
   },
   types: {
     User: {
-      name: 'String!',
-      email: 'String!',
-      age: 'Int',
+      name: "String!",
+      email: "String!",
+      age: "Int",
       posts: {
-        type: '[Post!]!',
+        type: "[Post!]!",
         resolve: async (parent) => {
           return await Post.findAll({ userId: parent.id });
         },
       },
     },
     Post: {
-      title: 'String!',
-      content: 'String!',
+      title: "String!",
+      content: "String!",
       author: {
-        type: 'User!',
+        type: "User!",
         resolve: async (parent) => {
           return await User.findById(parent.userId);
         },
@@ -94,14 +94,14 @@ const schema = {
 ### 在 HTTP 路由中使用
 
 ```typescript
-import { Server } from '@dreamer/dweb/core/server';
-import { GraphQLServer } from '@dreamer/dweb/features/graphql';
+import { Server } from "@dreamer/dweb/core/server";
+import { GraphQLServer } from "@dreamer/dweb/features/graphql";
 
 const server = new Server();
 const graphqlServer = new GraphQLServer({ schema });
 
 server.setHandler(async (req, res) => {
-  if (req.path === '/graphql' && req.method === 'POST') {
+  if (req.path === "/graphql" && req.method === "POST") {
     const body = await req.json();
     const result = await graphqlServer.execute({
       query: body.query,
@@ -110,7 +110,7 @@ server.setHandler(async (req, res) => {
     });
     res.json(result);
   } else {
-    res.text('Not Found', 404);
+    res.text("Not Found", 404);
   }
 });
 ```
@@ -127,7 +127,8 @@ new GraphQLServer(config: GraphQLConfig)
 
 #### 方法
 
-- `execute(request: GraphQLRequest): Promise<GraphQLResponse>` - 执行 GraphQL 查询
+- `execute(request: GraphQLRequest): Promise<GraphQLResponse>` - 执行 GraphQL
+  查询
 - `validate(query: string): Promise<boolean>` - 验证查询
 - `parse(query: string): Promise<ParsedQuery>` - 解析查询
 
@@ -158,12 +159,14 @@ interface GraphQLField {
 ## 📚 相关文档
 
 ### 核心文档
+
 - [文档总览](./README.md)
 - [核心模块](./core.md)
 - [配置文档](./configuration.md)
 - [开发指南](./development.md)
 
 ### 功能模块
+
 - [数据库](./database.md)
 - [GraphQL](./graphql.md)
 - [WebSocket](./websocket.md)
@@ -172,9 +175,10 @@ interface GraphQLField {
 - [Logger](./logger.md)
 
 ### 扩展模块
+
 - [中间件](./middleware.md)
 - [插件](./plugins.md)
 
 ### 部署与运维
-- [Docker 部署](./docker.md)
 
+- [Docker 部署](./docker.md)

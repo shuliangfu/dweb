@@ -33,8 +33,6 @@ export const load = async ({
   const jsrPackageUrl = getJsrPackageUrl();
   const versionString = getVersionString();
 
-	console.log($t('你好，世界！'));
-
   return {
     message: 'Hello, World!',
     token,
@@ -63,7 +61,9 @@ export default function HomePage({ params: _params, query: _query, data }: PageP
 
   const { versionString } = data as {
     versionString: string;
-  };
+	};
+	
+	console.log($t('你好，世界！'));
 
 
   // 快速开始代码示例

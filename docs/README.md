@@ -5,23 +5,29 @@
 ## 📚 文档目录
 
 ### 核心模块
+
 - [核心模块 (core)](./core.md) - 服务器、路由、配置等核心功能
 - [布局系统 (layout)](./layout.md) - 布局继承和布局组件
-- [路由约定文件 (routing-conventions)](./routing-conventions.md) - _app、_layout、_middleware 等约定文件说明
+- [路由约定文件 (routing-conventions)](./routing-conventions.md) -
+  _app、_layout、_middleware 等约定文件说明
 
 ### 功能模块
+
 - [数据库 (database)](./database.md) - 数据库支持、ORM/ODM、查询构建器
 - [GraphQL](./graphql.md) - GraphQL 服务器和查询处理
 - [WebSocket](./websocket.md) - WebSocket 服务器和客户端
 - [Session](./session.md) - Session 管理和多种存储方式
 - [Cookie](./cookie.md) - Cookie 管理和签名
 - [Logger](./logger.md) - 日志系统和日志轮转
+- [国际化 (i18n)](./i18n-model-usage.md) - 多语言支持和翻译管理
 
 ### 扩展模块
+
 - [中间件 (middleware)](./middleware.md) - 内置中间件和使用指南
 - [插件 (plugins)](./plugins.md) - 插件系统和使用指南
 
 ### 配置与部署
+
 - [配置 (configuration)](./configuration.md) - dweb.config.ts 详细配置说明
 - [Docker 部署](./docker.md) - Docker 部署指南
 - [开发指南](./development.md) - 开发流程、构建、部署
@@ -45,12 +51,12 @@ deno task dev
 
 ```typescript
 // main.ts
-import { Server } from '@dreamer/dweb/core/server';
+import { Server } from "@dreamer/dweb/core/server";
 
 const server = new Server();
 
 server.setHandler(async (req, res) => {
-  res.text('Hello World');
+  res.text("Hello World");
 });
 
 await server.start(3000);
@@ -69,4 +75,3 @@ await server.start(3000);
 ## 📄 许可证
 
 MIT License
-

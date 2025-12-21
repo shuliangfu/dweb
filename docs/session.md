@@ -21,30 +21,30 @@ src/features/session.ts  # Session 管理实现
 ### 基本使用
 
 ```typescript
-import { SessionManager } from '@dreamer/dweb/features/session';
+import { SessionManager } from "@dreamer/dweb/features/session";
 
 // 创建 Session 管理器
 const sessionManager = new SessionManager({
-  store: 'memory',
-  secret: 'your-secret-key',
+  store: "memory",
+  secret: "your-secret-key",
   maxAge: 3600, // 1 小时
 });
 
 // 在请求处理中使用
 server.setHandler(async (req, res) => {
   const session = await sessionManager.get(req);
-  
+
   // 设置 Session 值
-  session.set('userId', 123);
-  session.set('username', 'john');
-  
+  session.set("userId", 123);
+  session.set("username", "john");
+
   // 获取 Session 值
-  const userId = session.get('userId');
-  
+  const userId = session.get("userId");
+
   // 保存 Session
   await session.save();
-  
-  res.text('OK');
+
+  res.text("OK");
 });
 ```
 
@@ -52,11 +52,11 @@ server.setHandler(async (req, res) => {
 
 ```typescript
 const sessionManager = new SessionManager({
-  store: 'file',
-  secret: 'your-secret-key',
+  store: "file",
+  secret: "your-secret-key",
   maxAge: 3600,
   file: {
-    dir: './sessions', // Session 文件存储目录
+    dir: "./sessions", // Session 文件存储目录
   },
 });
 ```
@@ -65,8 +65,8 @@ const sessionManager = new SessionManager({
 
 ```typescript
 const sessionManager = new SessionManager({
-  store: 'kv',
-  secret: 'your-secret-key',
+  store: "kv",
+  secret: "your-secret-key",
   maxAge: 3600,
   kv: {}, // KV 配置（可选）
 });
@@ -75,24 +75,24 @@ const sessionManager = new SessionManager({
 ### 使用 MongoDB 存储
 
 ```typescript
-import { initDatabase } from '@dreamer/dweb/features/database';
+import { initDatabase } from "@dreamer/dweb/features/database";
 
 // 先初始化数据库
 await initDatabase({
-  type: 'mongodb',
+  type: "mongodb",
   connection: {
-    host: 'localhost',
+    host: "localhost",
     port: 27017,
-    database: 'mydb',
+    database: "mydb",
   },
 });
 
 const sessionManager = new SessionManager({
-  store: 'mongodb',
-  secret: 'your-secret-key',
+  store: "mongodb",
+  secret: "your-secret-key",
   maxAge: 3600,
   mongodb: {
-    collection: 'sessions', // 集合名称（可选，默认为 'sessions'）
+    collection: "sessions", // 集合名称（可选，默认为 'sessions'）
   },
 });
 ```
@@ -101,13 +101,13 @@ const sessionManager = new SessionManager({
 
 ```typescript
 const sessionManager = new SessionManager({
-  store: 'redis',
-  secret: 'your-secret-key',
+  store: "redis",
+  secret: "your-secret-key",
   maxAge: 3600,
   redis: {
-    host: 'localhost',
+    host: "localhost",
     port: 6379,
-    password: 'password', // 可选
+    password: "password", // 可选
     db: 0, // 可选，数据库编号
   },
 });
@@ -145,7 +145,7 @@ new SessionManager(config: SessionConfig)
 
 ```typescript
 interface SessionConfig {
-  store?: 'memory' | 'file' | 'kv' | 'mongodb' | 'redis';
+  store?: "memory" | "file" | "kv" | "mongodb" | "redis";
   secret: string;
   maxAge?: number;
   name?: string;
@@ -170,12 +170,14 @@ interface SessionConfig {
 ## 📚 相关文档
 
 ### 核心文档
+
 - [文档总览](./README.md)
 - [核心模块](./core.md)
 - [配置文档](./configuration.md)
 - [开发指南](./development.md)
 
 ### 功能模块
+
 - [数据库](./database.md)
 - [GraphQL](./graphql.md)
 - [WebSocket](./websocket.md)
@@ -184,9 +186,10 @@ interface SessionConfig {
 - [Logger](./logger.md)
 
 ### 扩展模块
+
 - [中间件](./middleware.md)
 - [插件](./plugins.md)
 
 ### 部署与运维
-- [Docker 部署](./docker.md)
 
+- [Docker 部署](./docker.md)

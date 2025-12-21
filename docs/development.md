@@ -49,7 +49,9 @@ my-app/
 
 ### 入口文件 (main.ts)
 
-**注意：`main.ts` 文件是可选的，不是必须的。** 框架可以通过 CLI 命令（`deno task dev` 或 `deno task start`）自动启动服务器，无需手动创建入口文件。
+**注意：`main.ts` 文件是可选的，不是必须的。** 框架可以通过 CLI
+命令（`deno task dev` 或
+`deno task start`）自动启动服务器，无需手动创建入口文件。
 
 如果你需要自定义应用配置（如添加中间件、插件等），可以创建 `main.ts` 文件：
 
@@ -58,17 +60,17 @@ my-app/
 /**
  * DWeb 框架应用配置文件
  * 用于创建应用实例并配置中间件和插件
- * 
+ *
  * 注意：此文件只用于配置，不直接启动服务
  * 服务启动通过 CLI 命令：deno task dev 或 deno task start
  */
 
-import { createApp, cors, staticFiles } from '@dreamer/dweb';
+import { cors, createApp, staticFiles } from "@dreamer/dweb";
 
 // 创建应用实例
 // createApp() 函数签名：
 // function createApp(): App
-// 
+//
 // 返回值 App 接口包含：
 // - server: Server - 服务器实例
 // - middleware: MiddlewareManager - 中间件管理器
@@ -82,15 +84,15 @@ const app = createApp();
 // 1. 中间件函数：app.use((req, res, next) => { ... })
 // 2. 中间件配置对象：app.use({ name: 'cors', options: { ... } })
 app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
 // 配置静态文件服务
 app.use(staticFiles({
-  dir: 'assets',
-  prefix: '/assets',
+  dir: "assets",
+  prefix: "/assets",
   maxAge: 86400, // 缓存 1 天
 }));
 
@@ -109,6 +111,7 @@ export default app;
 ```
 
 **使用说明：**
+
 - 如果存在 `main.ts` 文件，框架会自动加载并应用其中的配置
 - 如果不存在 `main.ts` 文件，框架会使用 `dweb.config.ts` 中的配置
 - `main.ts` 主要用于需要编程式配置的场景，如动态添加中间件或插件
@@ -146,11 +149,13 @@ deno run -A src/cli.ts dev:app-name
 ```
 
 **命令格式说明：**
+
 - `dev` - 单应用模式，启动默认应用
 - `dev:app-name` - 多应用模式，启动指定名称的应用
 - 应用名称必须与 `dweb.config.ts` 中 `apps` 配置的键名一致
 
 **开发服务器特性：**
+
 - 自动热更新（HMR）：修改代码后自动重新加载
 - 自动路由扫描：自动发现 `routes/` 目录下的路由文件
 - 自动加载中间件和插件：从 `main.ts` 或配置文件中加载
@@ -256,17 +261,16 @@ deno run -A src/cli.ts build:app-name
 export default defineConfig({
   build: {
     // 输出目录
-    outDir: 'dist',
-    
+    outDir: "dist",
+
     // 是否生成 source map（用于调试）
     sourcemap: true,
-    
+
     // 是否压缩代码
     minify: true,
-    
+
     // 目标 JavaScript 版本
-    target: 'es2022',
-    
+    target: "es2022",
     // 其他选项
     // assetsDir: 'assets',      // 静态资源目录
     // publicDir: 'public',      // 公共文件目录
@@ -276,6 +280,7 @@ export default defineConfig({
 ```
 
 **构建输出结构：**
+
 ```
 dist/
 ├── routes/          # 编译后的路由文件
@@ -312,12 +317,14 @@ deno run -A src/cli.ts start:app-name
 ```
 
 **生产服务器特性：**
+
 - 优化的性能：代码已编译和压缩
 - 静态资源缓存：配置的缓存策略生效
 - 错误处理：生产环境友好的错误信息
 - 日志记录：可配置的日志级别和输出
 
 **环境变量：**
+
 - `DENO_ENV` - 环境名称（development、production 等）
 - `PORT` - 服务器端口（会覆盖配置文件中的设置）
 - 其他自定义环境变量可在配置文件中通过 `Deno.env.get()` 获取
@@ -405,6 +412,7 @@ deno run --inspect=127.0.0.1:9229 -A src/cli.ts dev
    - 按 F5 启动调试
 
 **调试选项说明：**
+
 - `--inspect` - 启动调试服务器，不中断执行
 - `--inspect-brk` - 启动调试服务器并在第一行代码处中断
 - `--inspect=host:port` - 指定调试服务器地址和端口
@@ -459,23 +467,23 @@ tests/
 
 ```typescript
 // tests/unit/server.test.ts
-import { assertEquals } from '@std/assert';
-import { Server } from '@dreamer/dweb/core/server';
+import { assertEquals } from "@std/assert";
+import { Server } from "@dreamer/dweb/core/server";
 
-Deno.test('Server should start on specified port', async () => {
+Deno.test("Server should start on specified port", async () => {
   const server = new Server();
   server.setHandler(async (req, res) => {
-    res.text('Hello');
+    res.text("Hello");
   });
-  
+
   await server.start(3000);
-  
+
   // 测试请求
-  const response = await fetch('http://localhost:3000');
+  const response = await fetch("http://localhost:3000");
   const text = await response.text();
-  
-  assertEquals(text, 'Hello');
-  
+
+  assertEquals(text, "Hello");
+
   await server.close();
 });
 ```
@@ -532,12 +540,12 @@ DB_NAME=mydb
 // dweb.config.ts
 export default defineConfig({
   server: {
-    port: parseInt(Deno.env.get('PORT') || '3000'),
+    port: parseInt(Deno.env.get("PORT") || "3000"),
   },
   database: {
     connection: {
-      host: Deno.env.get('DB_HOST') || 'localhost',
-      database: Deno.env.get('DB_NAME') || 'mydb',
+      host: Deno.env.get("DB_HOST") || "localhost",
+      database: Deno.env.get("DB_NAME") || "mydb",
     },
   },
 });
@@ -594,12 +602,14 @@ export default defineConfig({
 ## 📚 相关文档
 
 ### 核心文档
+
 - [文档总览](./README.md)
 - [核心模块](./core.md)
 - [配置文档](./configuration.md)
 - [开发指南](./development.md)
 
 ### 功能模块
+
 - [数据库](./database.md)
 - [GraphQL](./graphql.md)
 - [WebSocket](./websocket.md)
@@ -608,9 +618,10 @@ export default defineConfig({
 - [Logger](./logger.md)
 
 ### 扩展模块
+
 - [中间件](./middleware.md)
 - [插件](./plugins.md)
 
 ### 部署与运维
-- [Docker 部署](./docker.md)
 
+- [Docker 部署](./docker.md)

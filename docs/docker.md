@@ -112,7 +112,7 @@ services:
 
 ```yaml
 ports:
-  - "8080:3000"  # 主机端口:容器端口
+  - "8080:3000" # 主机端口:容器端口
 ```
 
 ### 添加环境变量
@@ -188,7 +188,7 @@ volumes:
 
 ```typescript
 // healthcheck.ts
-const response = await fetch('http://localhost:3000/health');
+const response = await fetch("http://localhost:3000/health");
 if (response.ok) {
   Deno.exit(0);
 } else {
@@ -310,12 +310,14 @@ logging:
 ## 📚 相关文档
 
 ### 核心文档
+
 - [文档总览](./README.md)
 - [核心模块](./core.md)
 - [配置文档](./configuration.md)
 - [开发指南](./development.md)
 
 ### 功能模块
+
 - [数据库](./database.md)
 - [GraphQL](./graphql.md)
 - [WebSocket](./websocket.md)
@@ -324,9 +326,10 @@ logging:
 - [Logger](./logger.md)
 
 ### 扩展模块
+
 - [中间件](./middleware.md)
 - [插件](./plugins.md)
 
 ### 部署与运维
-- [Docker 部署](./docker.md)
 
+- [Docker 部署](./docker.md)

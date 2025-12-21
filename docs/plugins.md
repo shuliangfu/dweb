@@ -27,12 +27,12 @@ src/plugins/
 ### 基本用法
 
 ```typescript
-import { usePlugin } from '@dreamer/dweb/core/plugin';
-import { seo } from '@dreamer/dweb/plugins';
+import { usePlugin } from "@dreamer/dweb/core/plugin";
+import { seo } from "@dreamer/dweb/plugins";
 
 usePlugin(seo({
-  title: 'My App',
-  description: 'My awesome app',
+  title: "My App",
+  description: "My awesome app",
 }));
 ```
 
@@ -41,18 +41,18 @@ usePlugin(seo({
 ### seo - SEO 优化
 
 ```typescript
-import { seo } from '@dreamer/dweb/plugins';
+import { seo } from "@dreamer/dweb/plugins";
 
 usePlugin(seo({
-  title: 'My App',
-  description: 'My awesome app',
-  keywords: ['web', 'framework'],
+  title: "My App",
+  description: "My awesome app",
+  keywords: ["web", "framework"],
   openGraph: {
-    type: 'website',
-    image: 'https://example.com/og-image.jpg',
+    type: "website",
+    image: "https://example.com/og-image.jpg",
   },
   twitter: {
-    card: 'summary_large_image',
+    card: "summary_large_image",
   },
 }));
 ```
@@ -60,13 +60,13 @@ usePlugin(seo({
 ### sitemap - 网站地图
 
 ```typescript
-import { sitemap } from '@dreamer/dweb/plugins';
+import { sitemap } from "@dreamer/dweb/plugins";
 
 usePlugin(sitemap({
-  hostname: 'https://example.com',
+  hostname: "https://example.com",
   urls: [
-    { url: '/', changefreq: 'daily', priority: 1.0 },
-    { url: '/about', changefreq: 'monthly', priority: 0.8 },
+    { url: "/", changefreq: "daily", priority: 1.0 },
+    { url: "/about", changefreq: "monthly", priority: 0.8 },
   ],
 }));
 ```
@@ -74,60 +74,140 @@ usePlugin(sitemap({
 ### pwa - 渐进式 Web 应用
 
 ```typescript
-import { pwa } from '@dreamer/dweb/plugins';
+import { pwa } from "@dreamer/dweb/plugins";
 
 usePlugin(pwa({
   manifest: {
-    name: 'My App',
-    shortName: 'App',
-    description: 'My awesome app',
-    themeColor: '#000000',
-    backgroundColor: '#ffffff',
+    name: "My App",
+    shortName: "App",
+    description: "My awesome app",
+    themeColor: "#000000",
+    backgroundColor: "#ffffff",
     icons: [
-      { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-      { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
   },
   serviceWorker: {
     enabled: true,
-    path: '/sw.js',
+    path: "/sw.js",
   },
 }));
 ```
 
 ### i18n - 国际化
 
-```typescript
-import { i18n } from '@dreamer/dweb/plugins';
+i18n 插件提供多语言支持，支持自动语言检测、翻译文件管理和全局翻译函数。
 
-usePlugin(i18n({
-  defaultLanguage: 'en',
-  languages: {
-    en: { name: 'English', flag: '🇺🇸' },
-    zh: { name: '中文', flag: '🇨🇳' },
-  },
-  translations: {
-    en: {
-      hello: 'Hello',
-      world: 'World',
+#### 基本配置
+
+```typescript
+import { i18n } from "@dreamer/dweb/plugins";
+
+app.plugin(
+  i18n({
+    languages: [
+      { code: "en-US", name: "English" },
+      { code: "zh-CN", name: "中文" },
+    ],
+    defaultLanguage: "en-US",
+    translationsDir: "locales",
+    detection: {
+      fromCookie: true, // 从 Cookie 检测语言
+      fromHeader: false, // 默认不启用 Accept-Language 头检测
+      fromQuery: true, // 从查询参数检测（如 ?lang=en）
+      fromPath: false, // 从 URL 路径检测（如 /en/page）
     },
-    zh: {
-      hello: '你好',
-      world: '世界',
-    },
-  },
-}));
+  }),
+);
 ```
+
+#### 翻译文件结构
+
+翻译文件应放在 `translationsDir` 目录下，文件名格式为 `{语言代码}.json`：
+
+```json
+// locales/en-US.json
+{
+  "common": {
+    "welcome": "Hello, World!",
+    "greeting": "Hello, {name}!"
+  },
+  "validation": {
+    "required": "{field} is required"
+  }
+}
+```
+
+```json
+// locales/zh-CN.json
+{
+  "common": {
+    "welcome": "你好，世界！",
+    "greeting": "你好，{name}！"
+  },
+  "validation": {
+    "required": "{field} 是必填字段"
+  }
+}
+```
+
+#### 使用翻译函数
+
+**方式 1：全局 `$t()` 函数（推荐）**
+
+无需导入，全局可用：
+
+```typescript
+// 在任何地方直接使用
+console.log($t("common.welcome"));
+const message = $t("common.greeting", { name: "John" });
+```
+
+**方式 2：通过 `LoadContext` 或 `PageProps`**
+
+```typescript
+// routes/index.tsx
+export async function load({ t }: LoadContext) {
+  const message = t("common.welcome");
+  return { message };
+}
+
+export default function HomePage({ t }: PageProps) {
+  return <div>{t("common.welcome")}</div>;
+}
+```
+
+**方式 3：使用 `getI18n()` 函数**
+
+```typescript
+import { getI18n } from "@dreamer/dweb/plugins";
+
+const t = getI18n();
+const message = t("common.welcome");
+```
+
+#### 语言检测优先级
+
+1. URL 路径（如 `/en/page`）- 需要启用 `fromPath: true`
+2. 查询参数（如 `?lang=en`）- 需要启用 `fromQuery: true`
+3. Cookie - 需要启用 `fromCookie: true`
+4. Accept-Language 头 - 需要启用 `fromHeader: true`
+5. 默认语言（配置中的 `defaultLanguage`）
+
+#### 更多信息
+
+详细使用说明请参考 [i18n 使用文档](./i18n-model-usage.md)。
 
 ### tailwind - Tailwind CSS
 
 ```typescript
-import { tailwind } from '@dreamer/dweb/plugins';
+import { tailwind } from "@dreamer/dweb/plugins";
 
 usePlugin(tailwind({
-  version: 'v4', // 'v3' | 'v4'
+  version: "v4", // 'v3' | 'v4'
   config: {
-    content: ['./routes/**/*.{tsx,ts}'],
+    content: ["./routes/**/*.{tsx,ts}"],
     theme: {
       extend: {},
     },
@@ -138,61 +218,61 @@ usePlugin(tailwind({
 ### cache - 缓存
 
 ```typescript
-import { cache, CacheManager } from '@dreamer/dweb/plugins';
+import { cache, CacheManager } from "@dreamer/dweb/plugins";
 
 usePlugin(cache({
-  store: 'memory', // 'memory' | 'redis' | 'file'
+  store: "memory", // 'memory' | 'redis' | 'file'
   ttl: 3600, // 默认 TTL（秒）
 }));
 
 // 使用缓存管理器
 const cacheManager = CacheManager.getInstance();
-await cacheManager.set('key', 'value', 3600);
-const value = await cacheManager.get('key');
+await cacheManager.set("key", "value", 3600);
+const value = await cacheManager.get("key");
 ```
 
 ### email - 邮件发送
 
 ```typescript
-import { email, sendEmail } from '@dreamer/dweb/plugins';
+import { email, sendEmail } from "@dreamer/dweb/plugins";
 
 usePlugin(email({
   smtp: {
-    host: 'smtp.example.com',
+    host: "smtp.example.com",
     port: 587,
     secure: false,
     auth: {
-      user: 'user@example.com',
-      pass: 'password',
+      user: "user@example.com",
+      pass: "password",
     },
   },
 }));
 
 // 发送邮件
 await sendEmail({
-  to: 'recipient@example.com',
-  subject: 'Hello',
-  text: 'Hello World',
-  html: '<h1>Hello World</h1>',
+  to: "recipient@example.com",
+  subject: "Hello",
+  text: "Hello World",
+  html: "<h1>Hello World</h1>",
 });
 ```
 
 ### file-upload - 文件上传
 
 ```typescript
-import { fileUpload, handleFileUpload } from '@dreamer/dweb/plugins';
+import { fileUpload, handleFileUpload } from "@dreamer/dweb/plugins";
 
 usePlugin(fileUpload({
   maxSize: 10 * 1024 * 1024, // 10MB
-  allowedTypes: ['image/jpeg', 'image/png'],
-  uploadDir: './uploads',
+  allowedTypes: ["image/jpeg", "image/png"],
+  uploadDir: "./uploads",
 }));
 
 // 处理文件上传
 server.setHandler(async (req, res) => {
-  if (req.method === 'POST' && req.path === '/upload') {
+  if (req.method === "POST" && req.path === "/upload") {
     const result = await handleFileUpload(req, {
-      field: 'file',
+      field: "file",
       maxSize: 5 * 1024 * 1024,
     });
     res.json(result);
@@ -203,29 +283,33 @@ server.setHandler(async (req, res) => {
 ### form-validator - 表单验证
 
 ```typescript
-import { formValidator, validateForm } from '@dreamer/dweb/plugins';
+import { formValidator, validateForm } from "@dreamer/dweb/plugins";
 
 usePlugin(formValidator({
   rules: {
-    name: { type: 'string', required: true, min: 2, max: 50 },
-    email: { type: 'string', required: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
+    name: { type: "string", required: true, min: 2, max: 50 },
+    email: {
+      type: "string",
+      required: true,
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    },
   },
 }));
 
 // 验证表单
 const result = await validateForm(data, {
-  name: { type: 'string', required: true },
-  email: { type: 'string', required: true },
+  name: { type: "string", required: true },
+  email: { type: "string", required: true },
 });
 ```
 
 ### image-optimizer - 图片优化
 
 ```typescript
-import { imageOptimizer } from '@dreamer/dweb/plugins';
+import { imageOptimizer } from "@dreamer/dweb/plugins";
 
 usePlugin(imageOptimizer({
-  formats: ['webp', 'avif'],
+  formats: ["webp", "avif"],
   sizes: [320, 640, 1024, 1920],
   quality: 80,
 }));
@@ -234,7 +318,7 @@ usePlugin(imageOptimizer({
 ### performance - 性能监控
 
 ```typescript
-import { performance } from '@dreamer/dweb/plugins';
+import { performance } from "@dreamer/dweb/plugins";
 
 usePlugin(performance({
   enabled: true,
@@ -246,19 +330,19 @@ usePlugin(performance({
 ### rss - RSS 订阅
 
 ```typescript
-import { rss } from '@dreamer/dweb/plugins';
+import { rss } from "@dreamer/dweb/plugins";
 
 usePlugin(rss({
   feeds: [
     {
-      title: 'My Blog',
-      description: 'My awesome blog',
-      link: 'https://example.com',
+      title: "My Blog",
+      description: "My awesome blog",
+      link: "https://example.com",
       items: [
         {
-          title: 'Post 1',
-          link: 'https://example.com/post-1',
-          description: 'Post 1 description',
+          title: "Post 1",
+          link: "https://example.com/post-1",
+          description: "Post 1 description",
           pubDate: new Date(),
         },
       ],
@@ -270,39 +354,39 @@ usePlugin(rss({
 ### theme - 主题切换
 
 ```typescript
-import { theme } from '@dreamer/dweb/plugins';
+import { theme } from "@dreamer/dweb/plugins";
 
 usePlugin(theme({
   themes: {
     light: {
       colors: {
-        primary: '#000000',
-        background: '#ffffff',
+        primary: "#000000",
+        background: "#ffffff",
       },
     },
     dark: {
       colors: {
-        primary: '#ffffff',
-        background: '#000000',
+        primary: "#ffffff",
+        background: "#000000",
       },
     },
   },
-  defaultTheme: 'light',
+  defaultTheme: "light",
 }));
 ```
 
 ## 创建自定义插件
 
 ```typescript
-import type { Plugin } from '@dreamer/dweb/core/plugin';
+import type { Plugin } from "@dreamer/dweb/core/plugin";
 
 const myPlugin: Plugin = {
-  name: 'my-plugin',
-  version: '1.0.0',
+  name: "my-plugin",
+  version: "1.0.0",
   setup(app) {
     // 插件初始化
-    console.log('Plugin initialized');
-    
+    console.log("Plugin initialized");
+
     // 添加中间件
     app.use((req, res, next) => {
       // 自定义逻辑
@@ -311,7 +395,7 @@ const myPlugin: Plugin = {
   },
   teardown(app) {
     // 插件清理
-    console.log('Plugin teardown');
+    console.log("Plugin teardown");
   },
 };
 
@@ -334,7 +418,7 @@ interface Plugin {
 ### 使用插件
 
 ```typescript
-import { usePlugin } from '@dreamer/dweb/core/plugin';
+import { usePlugin } from "@dreamer/dweb/core/plugin";
 
 usePlugin(plugin);
 ```
@@ -344,12 +428,14 @@ usePlugin(plugin);
 ## 📚 相关文档
 
 ### 核心文档
+
 - [文档总览](./README.md)
 - [核心模块](./core.md)
 - [配置文档](./configuration.md)
 - [开发指南](./development.md)
 
 ### 功能模块
+
 - [数据库](./database.md)
 - [GraphQL](./graphql.md)
 - [WebSocket](./websocket.md)
@@ -358,9 +444,10 @@ usePlugin(plugin);
 - [Logger](./logger.md)
 
 ### 扩展模块
+
 - [中间件](./middleware.md)
 - [插件](./plugins.md)
 
 ### 部署与运维
-- [Docker 部署](./docker.md)
 
+- [Docker 部署](./docker.md)

@@ -10,6 +10,36 @@
 2. **使用 `getI18n()` 函数** - 在请求上下文中自动使用当前语言
 3. **通过参数传递** - 在 load 函数中获取 `t` 函数，然后传递给 Model 方法
 
+### 在页面组件中使用
+
+```typescript
+// routes/index.tsx
+export default function HomePage({ t }: PageProps) {
+  return (
+    <div>
+      <h1>{t("common.welcome")}</h1>
+      <p>{t("common.greeting", { name: "John" })}</p>
+    </div>
+  );
+}
+```
+
+### 在 load 函数中使用
+
+```typescript
+// routes/index.tsx
+export async function load({ t }: LoadContext) {
+  const message = t("common.welcome");
+  return { message };
+}
+
+export default function HomePage({ data }: PageProps) {
+  return <div>{data.message}</div>;
+}
+```
+
+### 在 Model 中使用
+
 ## 方式 1：直接使用 `$t()` 或 `t()`（最推荐）
 
 **无需导入，全局可用！** 这是最简单的方式。
@@ -88,9 +118,10 @@ export default User;
 
 ### 注意事项
 
-- 如果 i18n 插件未初始化，`$t()` 和 `t()` 可能未定义，建议添加检查或使用
-  `getI18n()`
+- `$t()` 和 `t()` 始终可用：如果 i18n 插件未初始化，会返回 key 本身（不会报错）
 - 在 TypeScript 中，类型声明已自动包含，无需额外配置
+- 在请求上下文中，会自动使用当前请求的语言
+- 在非请求上下文中（如后台任务），使用默认语言
 
 ## 方式 2：使用 `getI18n()` 函数（备选方案）
 
@@ -218,60 +249,28 @@ class User extends SQLModel {
 }
 ```
 
-## 翻译文件示例
+## 语言检测
 
-```json
-// locales/zh-CN.json
-{
-  "validation": {
-    "username": {
-      "notAdmin": "用户名不能为 admin",
-      "required": "用户名是必填字段",
-      "min": "用户名长度必须大于等于 {min}",
-      "max": "用户名长度必须小于等于 {max}"
-    },
-    "email": {
-      "exists": "邮箱已被使用",
-      "required": "邮箱是必填字段",
-      "pattern": "邮箱格式不正确"
-    },
-    "age": {
-      "min": "年龄不能小于 {min} 岁"
-    },
-    "required": "{field} 是必填字段"
-  },
-  "user": {
-    "notFound": "用户不存在",
-    "lastLoginUpdated": "最后登录时间已更新"
-  }
-}
-```
+i18n 插件支持多种语言检测方式，按以下优先级顺序：
 
-```json
-// locales/en.json
-{
-  "validation": {
-    "username": {
-      "notAdmin": "Username cannot be admin",
-      "required": "Username is required",
-      "min": "Username must be at least {min} characters",
-      "max": "Username must be at most {max} characters"
-    },
-    "email": {
-      "exists": "Email already exists",
-      "required": "Email is required",
-      "pattern": "Invalid email format"
-    },
-    "age": {
-      "min": "Age must be at least {min} years old"
-    },
-    "required": "{field} is required"
-  },
-  "user": {
-    "notFound": "User not found",
-    "lastLoginUpdated": "Last login time updated"
-  }
-}
+1. **URL 路径**（如 `/en/page`）- 需要启用 `fromPath: true`
+2. **查询参数**（如 `?lang=en`）- 需要启用 `fromQuery: true`
+3. **Cookie** - 需要启用 `fromCookie: true`
+4. **Accept-Language 头** - 需要启用
+   `fromHeader: true`（默认不启用，避免浏览器语言覆盖默认语言）
+5. **默认语言** - 配置中的 `defaultLanguage`
+
+### 语言切换示例
+
+```typescript
+// 通过查询参数切换语言
+// 访问 /?lang=zh-CN 会切换到中文
+
+// 通过 Cookie 切换语言（需要客户端设置 Cookie）
+// document.cookie = 'lang=zh-CN; path=/';
+
+// 通过 URL 路径切换语言（需要启用 fromPath）
+// 访问 /zh-CN/page 会切换到中文
 ```
 
 ## 最佳实践
@@ -286,10 +285,23 @@ class User extends SQLModel {
 
 ## 注意事项
 
-- `$t()` 和 `t()` 在请求上下文中会自动使用当前请求的语言
-- 在非请求上下文（如后台任务）中，使用默认语言
-- 如果 i18n 插件未初始化，`$t()` 和 `t()` 可能未定义，建议添加检查或使用
-  `getI18n()`
-- `getI18n()` 在请求上下文中会自动使用当前请求的语言
-- 在非请求上下文（如后台任务）中，`getI18n()` 会使用默认语言
-- 如果 i18n 插件未初始化，`getI18n()` 会返回一个返回 key 的函数（不会报错）
+- **`$t()` 和 `t()` 始终可用**：
+  - 在请求上下文中，会自动使用当前请求的语言
+  - 在非请求上下文（如后台任务）中，使用默认语言
+  - 如果 i18n 插件未初始化，会返回 key 本身（不会报错）
+  - 在 TypeScript 中，类型声明已自动包含，无需额外配置
+
+- **`getI18n()` 备选方案**：
+  - 在请求上下文中，会自动使用当前请求的语言
+  - 在非请求上下文（如后台任务）中，会使用默认语言
+  - 如果 i18n 插件未初始化，会返回一个返回 key 的函数（不会报错）
+  - 可以指定特定语言：`getI18n('zh-CN')`
+
+- **语言检测**：
+  - 默认不启用 `fromHeader`，避免浏览器语言覆盖默认语言
+  - 需要明确设置 `fromHeader: true` 才会启用 Accept-Language 头检测
+  - Cookie 检测需要客户端设置 Cookie，插件会自动保存当前语言到 Cookie
+
+- **翻译文件路径**：
+  - 相对路径会从当前工作目录解析
+  - 建议使用相对路径（如 `'locales'`），框架会自动解析为绝对路径

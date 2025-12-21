@@ -20,24 +20,24 @@ src/core/
 ### 基本使用
 
 ```typescript
-import { Server } from '@dreamer/dweb/core/server';
+import { Server } from "@dreamer/dweb/core/server";
 
 const server = new Server();
 
 // 设置请求处理器
 server.setHandler(async (req, res) => {
-  res.text('Hello World');
+  res.text("Hello World");
 });
 
 // 启动服务器
-await server.start(3000, 'localhost');
+await server.start(3000, "localhost");
 ```
 
 ### 添加中间件
 
 ```typescript
-import { Server } from '@dreamer/dweb/core/server';
-import { logger } from '@dreamer/dweb/middleware';
+import { Server } from "@dreamer/dweb/core/server";
+import { logger } from "@dreamer/dweb/middleware";
 
 const server = new Server();
 
@@ -46,7 +46,7 @@ server.use(logger());
 server.use(cors());
 
 server.setHandler(async (req, res) => {
-  res.json({ message: 'Hello' });
+  res.json({ message: "Hello" });
 });
 
 await server.start(3000);
@@ -57,25 +57,25 @@ await server.start(3000);
 ```typescript
 server.setHandler(async (req, res) => {
   // 文本响应
-  res.text('Hello');
-  
+  res.text("Hello");
+
   // JSON 响应
-  res.json({ message: 'Hello' });
-  
+  res.json({ message: "Hello" });
+
   // HTML 响应
-  res.html('<h1>Hello</h1>');
-  
+  res.html("<h1>Hello</h1>");
+
   // 设置状态码
   res.status(404);
-  
+
   // 设置响应头
-  res.setHeader('Content-Type', 'application/json');
-  
+  res.setHeader("Content-Type", "application/json");
+
   // 重定向
-  res.redirect('/new-path');
-  
+  res.redirect("/new-path");
+
   // 发送文件
-  res.sendFile('./public/index.html');
+  res.sendFile("./public/index.html");
 });
 ```
 
@@ -99,19 +99,19 @@ routes/
 ### 使用路由
 
 ```typescript
-import { Router } from '@dreamer/dweb/core/router';
+import { Router } from "@dreamer/dweb/core/router";
 
-const router = new Router('routes');
+const router = new Router("routes");
 
 // 扫描路由
 await router.scan();
 
 // 匹配路由
-const route = router.match('/users/123');
+const route = router.match("/users/123");
 if (route) {
-  console.log('路由路径:', route.path);
-  console.log('文件路径:', route.filePath);
-  console.log('参数:', route.params);
+  console.log("路由路径:", route.path);
+  console.log("文件路径:", route.filePath);
+  console.log("参数:", route.params);
 }
 ```
 
@@ -129,7 +129,7 @@ export default function UserPage({ params }: { params: { id: string } }) {
 ```typescript
 // routes/docs/[...slug].tsx
 export default function DocsPage({ params }: { params: { slug: string[] } }) {
-  return <div>Docs: {params.slug.join('/')}</div>;
+  return <div>Docs: {params.slug.join("/")}</div>;
 }
 ```
 
@@ -138,33 +138,33 @@ export default function DocsPage({ params }: { params: { slug: string[] } }) {
 ### 加载配置
 
 ```typescript
-import { loadConfig } from '@dreamer/dweb/core/config';
+import { loadConfig } from "@dreamer/dweb/core/config";
 
 // 加载默认配置
 const { config, configDir } = await loadConfig();
 
 // 加载指定配置文件
-const { config } = await loadConfig('./dweb.config.ts');
+const { config } = await loadConfig("./dweb.config.ts");
 
 // 多应用模式
-const { config } = await loadConfig('./dweb.config.ts', 'backend');
+const { config } = await loadConfig("./dweb.config.ts", "backend");
 ```
 
 ### 配置文件示例
 
 ```typescript
 // dweb.config.ts
-import { defineConfig } from '@dreamer/dweb';
+import { defineConfig } from "@dreamer/dweb";
 
 export default defineConfig({
   port: 3000,
-  host: 'localhost',
+  host: "localhost",
   routes: {
-    dir: 'routes',
-    ignore: ['**/*.test.ts'],
+    dir: "routes",
+    ignore: ["**/*.test.ts"],
   },
   build: {
-    outDir: 'dist',
+    outDir: "dist",
   },
 });
 ```
@@ -174,17 +174,17 @@ export default defineConfig({
 ### 创建中间件
 
 ```typescript
-import type { Middleware } from '@dreamer/dweb/core/middleware';
+import type { Middleware } from "@dreamer/dweb/core/middleware";
 
 const myMiddleware: Middleware = async (req, res, next) => {
   // 请求前处理
-  console.log('Before:', req.path);
-  
+  console.log("Before:", req.path);
+
   // 调用下一个中间件
   await next();
-  
+
   // 响应后处理
-  console.log('After:', res.status);
+  console.log("After:", res.status);
 };
 ```
 
@@ -199,13 +199,13 @@ server.use(myMiddleware);
 ### 创建插件
 
 ```typescript
-import type { Plugin } from '@dreamer/dweb/core/plugin';
+import type { Plugin } from "@dreamer/dweb/core/plugin";
 
 const myPlugin: Plugin = {
-  name: 'my-plugin',
+  name: "my-plugin",
   setup(app) {
     // 插件初始化
-    console.log('Plugin initialized');
+    console.log("Plugin initialized");
   },
 };
 ```
@@ -213,7 +213,7 @@ const myPlugin: Plugin = {
 ### 使用插件
 
 ```typescript
-import { usePlugin } from '@dreamer/dweb/core/plugin';
+import { usePlugin } from "@dreamer/dweb/core/plugin";
 
 usePlugin(myPlugin);
 ```
@@ -222,16 +222,17 @@ usePlugin(myPlugin);
 
 ### API 目录配置
 
-默认情况下，API 路由文件应放在 `routes/api` 目录下。你也可以在 `dweb.config.ts` 中配置自定义的 API 目录：
+默认情况下，API 路由文件应放在 `routes/api` 目录下。你也可以在 `dweb.config.ts`
+中配置自定义的 API 目录：
 
 ```typescript
 // dweb.config.ts
 export default {
   routes: {
-    dir: 'routes',
+    dir: "routes",
     // 默认 API 目录为 'routes/api'
     // 也可以配置为 'api'，此时 API 文件放在项目根目录的 api 文件夹中
-    apiDir: 'api', // 可选，默认为 'routes/api'
+    apiDir: "api", // 可选，默认为 'routes/api'
   },
 };
 ```
@@ -295,12 +296,14 @@ curl -X POST http://localhost:3000/api/users \
 ## 📚 相关文档
 
 ### 核心文档
+
 - [文档总览](./README.md)
 - [核心模块](./core.md)
 - [配置文档](./configuration.md)
 - [开发指南](./development.md)
 
 ### 功能模块
+
 - [数据库](./database.md)
 - [GraphQL](./graphql.md)
 - [WebSocket](./websocket.md)
@@ -309,9 +312,10 @@ curl -X POST http://localhost:3000/api/users \
 - [Logger](./logger.md)
 
 ### 扩展模块
+
 - [中间件](./middleware.md)
 - [插件](./plugins.md)
 
 ### 部署与运维
-- [Docker 部署](./docker.md)
 
+- [Docker 部署](./docker.md)

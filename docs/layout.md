@@ -4,11 +4,13 @@ DWeb 框架支持布局继承，允许你创建可复用的布局组件，并在
 
 ## 布局继承
 
-布局继承是 DWeb 框架的核心特性之一。通过创建 `_layout.tsx` 文件，你可以为特定路径下的所有页面提供统一的布局结构。
+布局继承是 DWeb 框架的核心特性之一。通过创建 `_layout.tsx`
+文件，你可以为特定路径下的所有页面提供统一的布局结构。
 
 ### 基本概念
 
-布局文件使用 `_layout.tsx` 命名约定，放置在路由目录中。布局会自动应用到该目录及其所有子目录的页面。
+布局文件使用 `_layout.tsx`
+命名约定，放置在路由目录中。布局会自动应用到该目录及其所有子目录的页面。
 
 ### 布局文件结构
 
@@ -38,7 +40,7 @@ routes/
   <DocsLayout>
     <PageContent />
   </DocsLayout>
-</RootLayout>
+</RootLayout>;
 ```
 
 ## 创建布局
@@ -105,7 +107,7 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
       <div className="flex flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
         {/* 侧边栏导航 */}
         <Sidebar />
-        
+
         {/* 文档内容区域 */}
         <div className="flex-1 overflow-auto">
           <div className="py-20 bg-white">
@@ -192,14 +194,14 @@ routes/
     <DocsLayout>
       <RouterPage />
     </DocsLayout>
-  </RootLayout>
+  </RootLayout>;
   ```
 
 - **如果 `docs/_layout.tsx` 设置了 `layout = false`**：
   ```tsx
   <DocsLayout>
     <RouterPage />
-  </DocsLayout>
+  </DocsLayout>;
   ```
 
 #### 场景 2：禁用页面布局
@@ -219,12 +221,12 @@ routes/
   ```tsx
   <RootLayout>
     <HomePage />
-  </RootLayout>
+  </RootLayout>;
   ```
 
 - **访问 `/login`（登录页）**：
   ```tsx
-  <LoginPage />  // 不使用任何布局
+  <LoginPage />; // 不使用任何布局
   ```
 
 ## 布局组件属性
@@ -290,13 +292,15 @@ export default function ResponsiveLayout({ children }: LayoutProps) {
 ### Q: 布局继承的顺序是什么？
 
 A: 布局继承从最具体到最通用：
+
 1. 当前路径的布局（如 `/docs/core` 的布局）
 2. 父路径的布局（如 `/docs` 的布局）
 3. 根布局（`/` 的布局）
 
 ### Q: 如何让某个页面不使用任何布局？
 
-A: 目前不支持完全禁用布局。如果你需要，可以在页面组件中返回完整的 HTML 结构，但这不推荐。
+A: 目前不支持完全禁用布局。如果你需要，可以在页面组件中返回完整的 HTML
+结构，但这不推荐。
 
 ### Q: `layout = false` 在布局文件中会影响子布局吗？
 
@@ -304,11 +308,12 @@ A: 是的。如果父布局设置了 `layout = false`，子布局也不会继承
 
 ### Q: 布局可以访问页面数据吗？
 
-A: 布局组件只接收 `children` 属性，不能直接访问页面数据。如果需要共享数据，可以使用 Context 或其他状态管理方案。
+A: 布局组件只接收 `children`
+属性，不能直接访问页面数据。如果需要共享数据，可以使用 Context
+或其他状态管理方案。
 
 ## 相关文档
 
 - [路由系统](./core.md#路由系统) - 了解路由的基本概念
 - [配置](./configuration.md) - 了解如何配置应用
 - [开发指南](./development.md) - 了解开发流程
-

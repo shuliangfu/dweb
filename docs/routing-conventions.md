@@ -1,19 +1,20 @@
 # 路由约定文件
 
-DWeb 框架使用文件系统路由，并支持以 `_` 开头的特殊约定文件。这些文件具有特殊的功能，用于定义布局、中间件、错误页面等。
+DWeb 框架使用文件系统路由，并支持以 `_`
+开头的特殊约定文件。这些文件具有特殊的功能，用于定义布局、中间件、错误页面等。
 
 ## 约定文件概览
 
 DWeb 框架支持以下约定文件：
 
-| 文件名 | 类型 | 必需 | 说明 |
-|--------|------|------|------|
-| `_app.tsx` | 应用组件 | ✅ 必需 | 根应用组件，包裹所有页面 |
-| `_layout.tsx` | 布局组件 | ❌ 可选 | 布局组件，支持继承 |
-| `_middleware.ts` | 中间件 | ❌ 可选 | 路由级中间件 |
-| `_404.tsx` | 错误页面 | ❌ 可选 | 404 页面未找到 |
-| `_error.tsx` | 错误页面 | ❌ 可选 | 通用错误页面 |
-| `_500.tsx` | 错误页面 | ❌ 可选 | 500 服务器错误 |
+| 文件名           | 类型     | 必需    | 说明                     |
+| ---------------- | -------- | ------- | ------------------------ |
+| `_app.tsx`       | 应用组件 | ✅ 必需 | 根应用组件，包裹所有页面 |
+| `_layout.tsx`    | 布局组件 | ❌ 可选 | 布局组件，支持继承       |
+| `_middleware.ts` | 中间件   | ❌ 可选 | 路由级中间件             |
+| `_404.tsx`       | 错误页面 | ❌ 可选 | 404 页面未找到           |
+| `_error.tsx`     | 错误页面 | ❌ 可选 | 通用错误页面             |
+| `_500.tsx`       | 错误页面 | ❌ 可选 | 500 服务器错误           |
 
 ## 文件结构示例
 
@@ -38,7 +39,8 @@ routes/
 
 ## _app.tsx - 根应用组件
 
-`_app.tsx` 是框架**必需**的文件，用于提供完整的 HTML 文档结构，包裹所有页面内容。
+`_app.tsx` 是框架**必需**的文件，用于提供完整的 HTML
+文档结构，包裹所有页面内容。
 
 ### 位置
 
@@ -110,7 +112,8 @@ export default function App({ children }: AppProps) {
 
 ## _layout.tsx - 布局组件
 
-`_layout.tsx` 用于定义页面布局，支持布局继承。详细说明请参考 [布局系统文档](./layout.md)。
+`_layout.tsx` 用于定义页面布局，支持布局继承。详细说明请参考
+[布局系统文档](./layout.md)。
 
 ### 位置
 
@@ -174,7 +177,9 @@ export default function DocsLayout({ children }: LayoutProps) {
 
 ## _middleware.ts - 路由中间件
 
-`_middleware.ts` 用于定义路由级中间件，可以为特定路径及其子路径应用中间件逻辑。详细说明请参考 [中间件文档](./middleware.md#路由级中间件-_middlewarets)。
+`_middleware.ts`
+用于定义路由级中间件，可以为特定路径及其子路径应用中间件逻辑。详细说明请参考
+[中间件文档](./middleware.md#路由级中间件-_middlewarets)。
 
 ### 位置
 
@@ -193,17 +198,17 @@ routes/
 
 ```tsx
 // routes/_middleware.ts
-import type { Middleware } from '@dreamer/dweb';
+import type { Middleware } from "@dreamer/dweb";
 
 const routeMiddleware: Middleware = async (req, res, next) => {
   // 请求处理前的逻辑
   console.log(`[中间件] ${req.method} ${req.url}`);
-  
+
   // 调用下一个中间件或路由处理器
   await next();
-  
+
   // 请求处理后的逻辑
-  res.setHeader('X-Processed', 'true');
+  res.setHeader("X-Processed", "true");
 };
 
 export default routeMiddleware;
@@ -214,14 +219,14 @@ export default routeMiddleware;
 ```tsx
 // routes/api/_middleware.ts（默认配置）
 // 如果配置了 apiDir: 'api'，则路径为 api/_middleware.ts
-import type { Middleware } from '@dreamer/dweb';
+import type { Middleware } from "@dreamer/dweb";
 
 const authMiddleware: Middleware = async (req, res, next) => {
   // 认证逻辑
-  const token = req.headers.get('Authorization');
+  const token = req.headers.get("Authorization");
   if (!token) {
     res.status = 401;
-    res.json({ error: 'Unauthorized' });
+    res.json({ error: "Unauthorized" });
     return;
   }
   await next();
@@ -267,8 +272,8 @@ routes/
 ```tsx
 // routes/_404.tsx
 export const metadata = {
-  title: '404 - 页面未找到',
-  description: '抱歉，您访问的页面不存在。',
+  title: "404 - 页面未找到",
+  description: "抱歉，您访问的页面不存在。",
 };
 
 export default function NotFoundPage() {
@@ -318,8 +323,8 @@ routes/
 ```tsx
 // routes/_error.tsx
 export const metadata = {
-  title: '500 - 服务器错误',
-  description: '发生了服务器错误。请稍后重试。',
+  title: "500 - 服务器错误",
+  description: "发生了服务器错误。请稍后重试。",
 };
 
 interface ErrorProps {
@@ -338,7 +343,7 @@ export default function ErrorPage({ error }: ErrorProps) {
           服务器错误
         </h2>
         <p className="text-lg text-gray-600 mb-8">
-          {error?.message || '发生了未知错误。请稍后重试，或联系管理员。'}
+          {error?.message || "发生了未知错误。请稍后重试，或联系管理员。"}
         </p>
         <a
           href="/"
@@ -354,7 +359,8 @@ export default function ErrorPage({ error }: ErrorProps) {
 
 ### 使用说明
 
-- **自动触发**：当发生服务器错误、渲染错误等时，框架会自动使用 `_error.tsx` 渲染错误页面
+- **自动触发**：当发生服务器错误、渲染错误等时，框架会自动使用 `_error.tsx`
+  渲染错误页面
 - **错误信息**：组件会接收 `error` 属性，包含错误信息
 - **状态码**：框架会根据错误类型自动设置响应状态码（通常是 500）
 
@@ -376,8 +382,8 @@ routes/
 ```tsx
 // routes/_500.tsx
 export const metadata = {
-  title: '500 - 服务器错误',
-  description: '发生了服务器内部错误。',
+  title: "500 - 服务器错误",
+  description: "发生了服务器内部错误。",
 };
 
 interface ErrorProps {
@@ -395,7 +401,7 @@ export default function ServerErrorPage({ error }: ErrorProps) {
           服务器内部错误
         </h2>
         <p className="text-lg text-gray-600 mb-8">
-          {error?.message || '服务器遇到了一个错误，无法完成您的请求。'}
+          {error?.message || "服务器遇到了一个错误，无法完成您的请求。"}
         </p>
         <a
           href="/"
@@ -440,14 +446,14 @@ export default function ServerErrorPage({ error }: ErrorProps) {
 
 ### 文件位置规则
 
-| 文件 | 位置要求 | 作用范围 |
-|------|---------|---------|
-| `_app.tsx` | 必须在 `routes/` 根目录 | 所有页面 |
-| `_layout.tsx` | 可以放在任何目录 | 该目录及其子目录 |
-| `_middleware.ts` | 可以放在任何目录 | 该目录及其子目录 |
-| `_404.tsx` | 必须在 `routes/` 根目录 | 所有 404 错误 |
-| `_error.tsx` | 必须在 `routes/` 根目录 | 所有错误（除 404 和 500） |
-| `_500.tsx` | 必须在 `routes/` 根目录 | 所有 500 错误 |
+| 文件             | 位置要求                | 作用范围                  |
+| ---------------- | ----------------------- | ------------------------- |
+| `_app.tsx`       | 必须在 `routes/` 根目录 | 所有页面                  |
+| `_layout.tsx`    | 可以放在任何目录        | 该目录及其子目录          |
+| `_middleware.ts` | 可以放在任何目录        | 该目录及其子目录          |
+| `_404.tsx`       | 必须在 `routes/` 根目录 | 所有 404 错误             |
+| `_error.tsx`     | 必须在 `routes/` 根目录 | 所有错误（除 404 和 500） |
+| `_500.tsx`       | 必须在 `routes/` 根目录 | 所有 500 错误             |
 
 ## 最佳实践
 
@@ -480,13 +486,15 @@ A: 不可以。`_app.tsx` 只能有一个，必须放在 `routes/` 根目录。
 
 ### Q: _layout.tsx 和 _app.tsx 的区别是什么？
 
-A: 
+A:
+
 - `_app.tsx`：提供 HTML 文档结构（`<html>`、`<head>`、`<body>`），必需
 - `_layout.tsx`：提供页面布局结构（导航、侧边栏等），可选，支持继承
 
 ### Q: 中间件和布局的执行顺序是什么？
 
-A: 
+A:
+
 1. 全局中间件（`server.use()`）
 2. 路由中间件（从根到具体路径）
 3. 布局组件（从最具体到最通用）
@@ -498,7 +506,7 @@ A: 可以。错误页面组件会接收 `error` 属性，包含错误信息：
 
 ```tsx
 export default function ErrorPage({ error }: { error?: { message?: string } }) {
-  return <div>{error?.message || '未知错误'}</div>;
+  return <div>{error?.message || "未知错误"}</div>;
 }
 ```
 
@@ -508,4 +516,3 @@ export default function ErrorPage({ error }: { error?: { message?: string } }) {
 - [布局系统](./layout.md) - 了解布局继承的详细说明
 - [中间件](./middleware.md) - 了解中间件的详细说明
 - [配置](./configuration.md) - 了解如何配置应用
-

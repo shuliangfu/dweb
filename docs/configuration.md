@@ -8,7 +8,7 @@ DWeb 框架使用 `dweb.config.ts` 文件进行配置，支持单应用和多应
 
 ```typescript
 // dweb.config.ts
-import { defineConfig } from '@dreamer/dweb';
+import { defineConfig } from "@dreamer/dweb";
 
 export default defineConfig({
   // 配置选项
@@ -22,13 +22,13 @@ export default defineConfig({
 ```typescript
 export default defineConfig({
   // 应用名称
-  name: 'my-app',
-  
+  name: "my-app",
+
   // 基础路径（用于部署到子路径）
-  basePath: '/',
-  
+  basePath: "/",
+
   // 全局渲染模式（可在页面组件中覆盖）
-  renderMode: 'ssr', // 'ssr' | 'csr' | 'hybrid'
+  renderMode: "ssr", // 'ssr' | 'csr' | 'hybrid'
 });
 ```
 
@@ -58,26 +58,26 @@ export default defineConfig({
 ```typescript
 export default defineConfig({
   // 字符串形式（简单配置）
-  routes: 'routes',
-  
+  routes: "routes",
+
   // 对象形式（完整配置）
   routes: {
     // 路由目录（必需）
-    dir: 'routes',
-    
+    dir: "routes",
+
     // 忽略的文件模式
-    ignore: ['**/*.test.ts', '**/*.spec.ts'],
-    
+    ignore: ["**/*.test.ts", "**/*.spec.ts"],
+
     // 是否缓存路由
     cache: true,
-    
+
     // 路由优先级策略
-    priority: 'specific-first', // 'specific-first' | 'order'
-    
+    priority: "specific-first", // 'specific-first' | 'order'
+
     // API 目录配置（可选）
     // 默认为 'routes/api'，也可以配置为 'api' 等相对路径
     // 如果配置为 'api'，则 API 文件应放在项目根目录的 api 文件夹中
-    apiDir: 'routes/api', // 或 'api'
+    apiDir: "routes/api", // 或 'api'
   },
 });
 ```
@@ -87,7 +87,8 @@ export default defineConfig({
 `apiDir` 选项用于配置 API 路由文件的存放目录：
 
 - **默认值**：`routes/api` - API 文件放在 `routes` 目录下的 `api` 子目录中
-- **自定义配置**：可以设置为 `'api'` 等相对路径，此时 API 文件应放在项目根目录的对应文件夹中
+- **自定义配置**：可以设置为 `'api'` 等相对路径，此时 API
+  文件应放在项目根目录的对应文件夹中
 
 **示例：**
 
@@ -111,19 +112,19 @@ routes: {
 export default defineConfig({
   build: {
     // 输出目录（必需）
-    outDir: 'dist',
-    
+    outDir: "dist",
+
     // 是否生成 source map
     sourcemap: true,
-    
+
     // 是否压缩代码
     minify: true,
-    
+
     // 目标环境
-    target: 'es2022',
-    
+    target: "es2022",
+
     // 外部依赖（不打包）
-    external: ['react', 'preact'],
+    external: ["react", "preact"],
   },
 });
 ```
@@ -135,13 +136,13 @@ export default defineConfig({
   dev: {
     // 开发服务器端口
     port: 3000,
-    
+
     // 是否启用 HMR（热更新）
     hmr: true,
-    
+
     // HMR WebSocket 路径
-    hmrPath: '/_hmr',
-    
+    hmrPath: "/_hmr",
+
     // 是否打开浏览器
     open: false,
   },
@@ -151,12 +152,12 @@ export default defineConfig({
 ### 中间件配置
 
 ```typescript
-import { logger, cors, bodyParser } from '@dreamer/dweb/middleware';
+import { bodyParser, cors, logger } from "@dreamer/dweb/middleware";
 
 export default defineConfig({
   middleware: [
     logger(),
-    cors({ origin: '*' }),
+    cors({ origin: "*" }),
     bodyParser(),
   ],
 });
@@ -165,16 +166,16 @@ export default defineConfig({
 ### 插件配置
 
 ```typescript
-import { seo, tailwind } from '@dreamer/dweb/plugins';
+import { seo, tailwind } from "@dreamer/dweb/plugins";
 
 export default defineConfig({
   plugins: [
     seo({
-      title: 'My App',
-      description: 'My awesome app',
+      title: "My App",
+      description: "My awesome app",
     }),
     tailwind({
-      version: 'v4',
+      version: "v4",
     }),
   ],
 });
@@ -186,12 +187,12 @@ export default defineConfig({
 export default defineConfig({
   cookie: {
     // Cookie 密钥（必需）
-    secret: 'your-secret-key',
-    
+    secret: "your-secret-key",
+
     // 默认选项
     httpOnly: true,
     secure: false,
-    sameSite: 'lax',
+    sameSite: "lax",
     maxAge: 3600,
   },
 });
@@ -203,32 +204,32 @@ export default defineConfig({
 export default defineConfig({
   session: {
     // 存储方式
-    store: 'memory', // 'memory' | 'file' | 'kv' | 'mongodb' | 'redis'
-    
+    store: "memory", // 'memory' | 'file' | 'kv' | 'mongodb' | 'redis'
+
     // Session 密钥（必需）
-    secret: 'your-secret-key',
-    
+    secret: "your-secret-key",
+
     // 最大存活时间（秒）
     maxAge: 3600,
-    
+
     // Session 名称
-    name: 'session',
-    
+    name: "session",
+
     // 文件存储配置
     file: {
-      dir: './sessions',
+      dir: "./sessions",
     },
-    
+
     // MongoDB 存储配置
     mongodb: {
-      collection: 'sessions',
+      collection: "sessions",
     },
-    
+
     // Redis 存储配置
     redis: {
-      host: 'localhost',
+      host: "localhost",
       port: 6379,
-      password: 'password',
+      password: "password",
       db: 0,
     },
   },
@@ -241,23 +242,23 @@ export default defineConfig({
 export default defineConfig({
   static: {
     // 静态资源目录
-    dir: './public',
-    
+    dir: "./public",
+
     // URL 前缀
-    prefix: '/static',
-    
+    prefix: "/static",
+
     // 索引文件名
-    index: 'index.html',
-    
+    index: "index.html",
+
     // 点文件处理方式
-    dotfiles: 'ignore', // 'allow' | 'deny' | 'ignore'
-    
+    dotfiles: "ignore", // 'allow' | 'deny' | 'ignore'
+
     // 是否启用 ETag
     etag: true,
-    
+
     // 是否发送 Last-Modified
     lastModified: true,
-    
+
     // 缓存时间（秒）
     maxAge: 3600,
   },
@@ -270,17 +271,17 @@ export default defineConfig({
 export default defineConfig({
   database: {
     // 数据库类型
-    type: 'postgresql', // 'postgresql' | 'mongodb'
-    
+    type: "postgresql", // 'postgresql' | 'mongodb'
+
     // 连接配置
     connection: {
-      host: 'localhost',
+      host: "localhost",
       port: 5432,
-      database: 'mydb',
-      username: 'user',
-      password: 'password',
+      database: "mydb",
+      username: "user",
+      password: "password",
     },
-    
+
     // 连接池配置（SQL 数据库）
     pool: {
       min: 2,
@@ -289,7 +290,7 @@ export default defineConfig({
       maxRetries: 3,
       retryDelay: 1000,
     },
-    
+
     // MongoDB 特定配置
     mongoOptions: {
       maxPoolSize: 10,
@@ -308,17 +309,17 @@ export default defineConfig({
 export default defineConfig({
   websocket: {
     // WebSocket 路径
-    path: '/ws',
-    
+    path: "/ws",
+
     // 心跳间隔（毫秒）
     heartbeatInterval: 30000,
-    
+
     // 事件处理器
     handlers: {
-      onConnect: (conn) => console.log('连接:', conn.id),
-      onMessage: (conn, msg) => console.log('消息:', msg),
-      onClose: (conn) => console.log('断开:', conn.id),
-      onError: (conn, error) => console.error('错误:', error),
+      onConnect: (conn) => console.log("连接:", conn.id),
+      onMessage: (conn, msg) => console.log("消息:", msg),
+      onClose: (conn) => console.log("断开:", conn.id),
+      onError: (conn, error) => console.error("错误:", error),
     },
   },
 });
@@ -332,16 +333,16 @@ export default defineConfig({
     // GraphQL Schema
     schema: {
       query: {
-        name: 'Query',
+        name: "Query",
         fields: {
           hello: {
-            type: 'String',
-            resolve: () => 'Hello World',
+            type: "String",
+            resolve: () => "Hello World",
           },
         },
       },
     },
-    
+
     // GraphQL 配置选项
     config: {
       debug: true,
@@ -359,35 +360,35 @@ export default defineConfig({
 export default defineConfig({
   // 共享配置
   cookie: {
-    secret: 'shared-secret',
+    secret: "shared-secret",
   },
-  
+
   // 应用列表
   apps: [
     {
-      name: 'frontend',
-      basePath: '/',
+      name: "frontend",
+      basePath: "/",
       server: {
         port: 3000,
       },
       routes: {
-        dir: 'frontend/routes',
+        dir: "frontend/routes",
       },
       build: {
-        outDir: 'dist/frontend',
+        outDir: "dist/frontend",
       },
     },
     {
-      name: 'backend',
-      basePath: '/api',
+      name: "backend",
+      basePath: "/api",
       server: {
         port: 3001,
       },
       routes: {
-        dir: 'backend/routes',
+        dir: "backend/routes",
       },
       build: {
-        outDir: 'dist/backend',
+        outDir: "dist/backend",
       },
     },
   ],
@@ -408,12 +409,12 @@ deno task dev:app-name
 ```typescript
 export default defineConfig({
   server: {
-    port: parseInt(Deno.env.get('PORT') || '3000'),
+    port: parseInt(Deno.env.get("PORT") || "3000"),
   },
   database: {
     connection: {
-      host: Deno.env.get('DB_HOST') || 'localhost',
-      database: Deno.env.get('DB_NAME') || 'mydb',
+      host: Deno.env.get("DB_HOST") || "localhost",
+      database: Deno.env.get("DB_NAME") || "mydb",
     },
   },
 });
@@ -429,92 +430,93 @@ export default defineConfig({
 ## 完整配置示例
 
 ```typescript
-import { defineConfig } from '@dreamer/dweb';
-import { logger, cors, bodyParser } from '@dreamer/dweb/middleware';
-import { seo, tailwind } from '@dreamer/dweb/plugins';
+import { defineConfig } from "@dreamer/dweb";
+import { bodyParser, cors, logger } from "@dreamer/dweb/middleware";
+import { seo, tailwind } from "@dreamer/dweb/plugins";
 
 export default defineConfig({
-  name: 'my-app',
-  basePath: '/',
-  renderMode: 'ssr',
-  
+  name: "my-app",
+  basePath: "/",
+  renderMode: "ssr",
+
   server: {
     port: 3000,
-    host: 'localhost',
+    host: "localhost",
   },
-  
+
   routes: {
-    dir: 'routes',
-    ignore: ['**/*.test.ts'],
+    dir: "routes",
+    ignore: ["**/*.test.ts"],
   },
-  
+
   build: {
-    outDir: 'dist',
+    outDir: "dist",
     sourcemap: true,
     minify: true,
   },
-  
+
   dev: {
     port: 3000,
     hmr: true,
   },
-  
+
   middleware: [
     logger(),
-    cors({ origin: '*' }),
+    cors({ origin: "*" }),
     bodyParser(),
   ],
-  
+
   plugins: [
     seo({
-      title: 'My App',
-      description: 'My awesome app',
+      title: "My App",
+      description: "My awesome app",
     }),
     tailwind({
-      version: 'v4',
+      version: "v4",
     }),
   ],
-  
+
   cookie: {
-    secret: 'your-secret-key',
+    secret: "your-secret-key",
   },
-  
+
   session: {
-    store: 'memory',
-    secret: 'your-secret-key',
+    store: "memory",
+    secret: "your-secret-key",
     maxAge: 3600,
   },
-  
+
   static: {
-    dir: './public',
-    prefix: '/static',
+    dir: "./public",
+    prefix: "/static",
   },
-  
+
   database: {
-    type: 'postgresql',
+    type: "postgresql",
     connection: {
-      host: 'localhost',
+      host: "localhost",
       port: 5432,
-      database: 'mydb',
-      username: 'user',
-      password: 'password',
+      database: "mydb",
+      username: "user",
+      password: "password",
     },
   },
 });
 ```
-
 
 ---
 
 ## 📚 相关文档
 
 ### 核心文档
+
 - [文档总览](./README.md)
 - [核心模块](./core.md)
 - [配置文档](./configuration.md)
 - [开发指南](./development.md)
 
 ### 功能模块
+
 - [数据库](./database.md)
 - [GraphQL](./graphql.md)
 - [WebSocket](./websocket.md)
@@ -523,8 +525,10 @@ export default defineConfig({
 - [Logger](./logger.md)
 
 ### 扩展模块
+
 - [中间件](./middleware.md)
 - [插件](./plugins.md)
 
 ### 部署与运维
+
 - [Docker 部署](./docker.md)

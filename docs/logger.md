@@ -13,7 +13,7 @@ src/features/logger.ts  # 日志系统实现
 ### 基本使用
 
 ```typescript
-import { Logger, LogLevel } from '@dreamer/dweb/features/logger';
+import { Logger, LogLevel } from "@dreamer/dweb/features/logger";
 
 // 创建日志器
 const logger = new Logger({
@@ -21,30 +21,34 @@ const logger = new Logger({
 });
 
 // 记录日志
-logger.debug('调试信息', { userId: 123 });
-logger.info('用户登录', { userId: 123, ip: '192.168.1.1' });
-logger.warn('警告信息', { message: '内存使用率较高' });
-logger.error('错误信息', new Error('Something went wrong'), { userId: 123 });
+logger.debug("调试信息", { userId: 123 });
+logger.info("用户登录", { userId: 123, ip: "192.168.1.1" });
+logger.warn("警告信息", { message: "内存使用率较高" });
+logger.error("错误信息", new Error("Something went wrong"), { userId: 123 });
 ```
 
 ### 使用默认日志器
 
 ```typescript
-import { getLogger } from '@dreamer/dweb/features/logger';
+import { getLogger } from "@dreamer/dweb/features/logger";
 
 const logger = getLogger();
-logger.info('Hello World');
+logger.info("Hello World");
 ```
 
 ### 文件日志
 
 ```typescript
-import { Logger, LogLevel, Logger as LoggerClass } from '@dreamer/dweb/features/logger';
+import {
+  Logger,
+  Logger as LoggerClass,
+  LogLevel,
+} from "@dreamer/dweb/features/logger";
 
 // 创建文件日志目标
-const fileTarget = LoggerClass.createFileTarget('./logs/app.log', {
+const fileTarget = LoggerClass.createFileTarget("./logs/app.log", {
   maxSize: 10 * 1024 * 1024, // 10MB
-  maxFiles: 5,                // 保留 5 个文件
+  maxFiles: 5, // 保留 5 个文件
   interval: 24 * 60 * 60 * 1000, // 每天轮转
 });
 
@@ -58,10 +62,14 @@ const logger = new Logger({
 ### 控制台和文件日志
 
 ```typescript
-import { Logger, LogLevel, Logger as LoggerClass } from '@dreamer/dweb/features/logger';
+import {
+  Logger,
+  Logger as LoggerClass,
+  LogLevel,
+} from "@dreamer/dweb/features/logger";
 
 const consoleTarget = LoggerClass.createConsoleTarget();
-const fileTarget = LoggerClass.createFileTarget('./logs/app.log');
+const fileTarget = LoggerClass.createFileTarget("./logs/app.log");
 
 const logger = new Logger({
   level: LogLevel.DEBUG,
@@ -73,10 +81,10 @@ const logger = new Logger({
 
 ```typescript
 enum LogLevel {
-  DEBUG = 0,  // 调试信息
-  INFO = 1,   // 一般信息
-  WARN = 2,   // 警告信息
-  ERROR = 3,  // 错误信息
+  DEBUG = 0, // 调试信息
+  INFO = 1, // 一般信息
+  WARN = 2, // 警告信息
+  ERROR = 3, // 错误信息
 }
 ```
 
@@ -87,10 +95,10 @@ const logger = new Logger({
   level: LogLevel.WARN, // 只记录 WARN 和 ERROR
 });
 
-logger.debug('不会记录'); // 不会输出
-logger.info('不会记录');  // 不会输出
-logger.warn('会记录');    // 会输出
-logger.error('会记录');   // 会输出
+logger.debug("不会记录"); // 不会输出
+logger.info("不会记录"); // 不会输出
+logger.warn("会记录"); // 会输出
+logger.error("会记录"); // 会输出
 ```
 
 ## 日志格式化
@@ -98,35 +106,48 @@ logger.error('会记录');   // 会输出
 ### JSON 格式化器（默认）
 
 ```typescript
-import { Logger, LogLevel, Logger as LoggerClass } from '@dreamer/dweb/features/logger';
+import {
+  Logger,
+  Logger as LoggerClass,
+  LogLevel,
+} from "@dreamer/dweb/features/logger";
 
 const logger = new Logger({
   level: LogLevel.INFO,
   formatter: LoggerClass.createJSONFormatter(),
 });
 
-logger.info('用户登录', { userId: 123 });
+logger.info("用户登录", { userId: 123 });
 // 输出: {"level":"INFO","message":"用户登录","timestamp":"2024-01-01T00:00:00.000Z","userId":123}
 ```
 
 ### 简单文本格式化器
 
 ```typescript
-import { Logger, LogLevel, Logger as LoggerClass } from '@dreamer/dweb/features/logger';
+import {
+  Logger,
+  Logger as LoggerClass,
+  LogLevel,
+} from "@dreamer/dweb/features/logger";
 
 const logger = new Logger({
   level: LogLevel.INFO,
   formatter: LoggerClass.createSimpleFormatter(),
 });
 
-logger.info('用户登录', { userId: 123 });
+logger.info("用户登录", { userId: 123 });
 // 输出: [2024-01-01T00:00:00.000Z] INFO: 用户登录 {"userId":123}
 ```
 
 ### 自定义格式化器
 
 ```typescript
-import { Logger, LogLevel, type LogFormatter, type LogEntry } from '@dreamer/dweb/features/logger';
+import {
+  type LogEntry,
+  type LogFormatter,
+  Logger,
+  LogLevel,
+} from "@dreamer/dweb/features/logger";
 
 class CustomFormatter implements LogFormatter {
   format(entry: LogEntry): string {
@@ -145,7 +166,11 @@ const logger = new Logger({
 ### 控制台输出（默认）
 
 ```typescript
-import { Logger, LogLevel, Logger as LoggerClass } from '@dreamer/dweb/features/logger';
+import {
+  Logger,
+  Logger as LoggerClass,
+  LogLevel,
+} from "@dreamer/dweb/features/logger";
 
 const logger = new Logger({
   level: LogLevel.INFO,
@@ -156,11 +181,15 @@ const logger = new Logger({
 ### 文件输出
 
 ```typescript
-import { Logger, LogLevel, Logger as LoggerClass } from '@dreamer/dweb/features/logger';
+import {
+  Logger,
+  Logger as LoggerClass,
+  LogLevel,
+} from "@dreamer/dweb/features/logger";
 
-const fileTarget = LoggerClass.createFileTarget('./logs/app.log', {
+const fileTarget = LoggerClass.createFileTarget("./logs/app.log", {
   maxSize: 10 * 1024 * 1024, // 10MB
-  maxFiles: 5,                // 保留 5 个文件
+  maxFiles: 5, // 保留 5 个文件
   interval: 24 * 60 * 60 * 1000, // 每天轮转
 });
 
@@ -173,14 +202,19 @@ const logger = new Logger({
 ### 自定义输出目标
 
 ```typescript
-import { Logger, LogLevel, type LogTarget, type LogEntry } from '@dreamer/dweb/features/logger';
+import {
+  type LogEntry,
+  Logger,
+  LogLevel,
+  type LogTarget,
+} from "@dreamer/dweb/features/logger";
 
 class DatabaseTarget implements LogTarget {
   async write(entry: LogEntry): Promise<void> {
     // 写入数据库
     await db.logs.insert(entry);
   }
-  
+
   async flush(): Promise<void> {
     // 刷新缓冲区
   }
@@ -197,11 +231,15 @@ const logger = new Logger({
 日志轮转可以防止日志文件过大，支持按大小和时间轮转。
 
 ```typescript
-import { Logger, LogLevel, Logger as LoggerClass } from '@dreamer/dweb/features/logger';
+import {
+  Logger,
+  Logger as LoggerClass,
+  LogLevel,
+} from "@dreamer/dweb/features/logger";
 
-const fileTarget = LoggerClass.createFileTarget('./logs/app.log', {
-  maxSize: 10 * 1024 * 1024,    // 10MB，超过此大小会轮转
-  maxFiles: 5,                   // 保留 5 个历史文件
+const fileTarget = LoggerClass.createFileTarget("./logs/app.log", {
+  maxSize: 10 * 1024 * 1024, // 10MB，超过此大小会轮转
+  maxFiles: 5, // 保留 5 个历史文件
   interval: 24 * 60 * 60 * 1000, // 每 24 小时轮转一次
 });
 
@@ -212,6 +250,7 @@ const logger = new Logger({
 ```
 
 轮转后的文件命名：
+
 - `app.log` - 当前日志文件
 - `app.log.1` - 最近的轮转文件
 - `app.log.2` - 第二新的轮转文件
@@ -222,14 +261,14 @@ const logger = new Logger({
 ### 设置全局日志器
 
 ```typescript
-import { setLogger, Logger, LogLevel } from '@dreamer/dweb/features/logger';
+import { Logger, LogLevel, setLogger } from "@dreamer/dweb/features/logger";
 
 // 创建自定义日志器
 const logger = new Logger({
   level: LogLevel.INFO,
   targets: [
     Logger.createConsoleTarget(),
-    Logger.createFileTarget('./logs/app.log'),
+    Logger.createFileTarget("./logs/app.log"),
   ],
 });
 
@@ -237,25 +276,25 @@ const logger = new Logger({
 setLogger(logger);
 
 // 在其他地方使用
-import { getLogger } from '@dreamer/dweb/features/logger';
+import { getLogger } from "@dreamer/dweb/features/logger";
 const logger = getLogger();
-logger.info('使用全局日志器');
+logger.info("使用全局日志器");
 ```
 
 ### 在中间件中使用
 
 ```typescript
-import { getLogger } from '@dreamer/dweb/features/logger';
+import { getLogger } from "@dreamer/dweb/features/logger";
 
 const logger = getLogger();
 
 const loggingMiddleware: Middleware = async (req, res, next) => {
   const start = Date.now();
-  
+
   await next();
-  
+
   const duration = Date.now() - start;
-  logger.info('请求处理完成', {
+  logger.info("请求处理完成", {
     method: req.method,
     path: req.path,
     status: res.status,
@@ -279,12 +318,14 @@ new Logger(options?: LoggerOptions)
 - `debug(message: string, data?: Record<string, unknown>): void` - 调试日志
 - `info(message: string, data?: Record<string, unknown>): void` - 信息日志
 - `warn(message: string, data?: Record<string, unknown>): void` - 警告日志
-- `error(message: string, error?: Error, data?: Record<string, unknown>): void` - 错误日志
+- `error(message: string, error?: Error, data?: Record<string, unknown>): void` -
+  错误日志
 - `flush(): Promise<void>` - 刷新所有输出目标
 
 #### 静态方法
 
-- `createFileTarget(filePath: string, rotationConfig?: LogRotationConfig): FileTarget` - 创建文件目标
+- `createFileTarget(filePath: string, rotationConfig?: LogRotationConfig): FileTarget` -
+  创建文件目标
 - `createConsoleTarget(): ConsoleTarget` - 创建控制台目标
 - `createSimpleFormatter(): SimpleFormatter` - 创建简单格式化器
 - `createJSONFormatter(): JSONFormatter` - 创建 JSON 格式化器
@@ -305,9 +346,9 @@ interface LoggerOptions {
 }
 
 interface LogRotationConfig {
-  maxSize?: number;    // 最大文件大小（字节）
-  maxFiles?: number;   // 保留的文件数量
-  interval?: number;    // 轮转间隔（毫秒）
+  maxSize?: number; // 最大文件大小（字节）
+  maxFiles?: number; // 保留的文件数量
+  interval?: number; // 轮转间隔（毫秒）
 }
 ```
 
@@ -321,9 +362,9 @@ interface LogRotationConfig {
 
 ```typescript
 // 好的实践
-logger.info('用户登录', {
+logger.info("用户登录", {
   userId: 123,
-  ip: '192.168.1.1',
+  ip: "192.168.1.1",
   timestamp: Date.now(),
 });
 
@@ -336,12 +377,14 @@ logger.info(`用户 ${userId} 从 ${ip} 登录`);
 ## 📚 相关文档
 
 ### 核心文档
+
 - [文档总览](./README.md)
 - [核心模块](./core.md)
 - [配置文档](./configuration.md)
 - [开发指南](./development.md)
 
 ### 功能模块
+
 - [数据库](./database.md)
 - [GraphQL](./graphql.md)
 - [WebSocket](./websocket.md)
@@ -350,9 +393,10 @@ logger.info(`用户 ${userId} 从 ${ip} 登录`);
 - [Logger](./logger.md)
 
 ### 扩展模块
+
 - [中间件](./middleware.md)
 - [插件](./plugins.md)
 
 ### 部署与运维
-- [Docker 部署](./docker.md)
 
+- [Docker 部署](./docker.md)
