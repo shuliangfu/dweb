@@ -112,7 +112,8 @@ function generateThemeScript(options: ThemePluginOptions): string {
                 // 尝试检查 dark mode 样式是否存在
                 try {
                   // 递归检查所有 CSS 规则（包括 @layer 内的规则）
-                  const checkRules = (rules: any, depth = 0): number => {
+                  const checkRules = function(rules, depth) {
+                    depth = depth || 0;
                     let count = 0;
                     for (let i = 0; i < rules.length; i++) {
                       try {
@@ -135,7 +136,7 @@ function generateThemeScript(options: ThemePluginOptions): string {
                     }
                     return count;
                   };
-                  const darkRulesCount = checkRules(tailwindSheet.cssRules || []);
+                  const darkRulesCount = checkRules(tailwindSheet.cssRules || [], 0);
                   console.log('[Theme Plugin] 找到 dark mode 样式规则数量:', darkRulesCount);
                   
                   // 如果找不到规则，尝试直接检查样式表内容
