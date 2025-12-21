@@ -213,10 +213,8 @@ function createRequestHandler(
         // 所有中间件执行完毕，处理路由
         await handleRoute(routeHandler, req, res);
 
-        // 执行插件响应钩子
-        await pluginManager.executeOnResponse(req, res);
-
         // 在生产环境中注入 CSS link 标签（如果响应是 HTML）
+        // 注意：必须在插件响应钩子之前注入 CSS，确保 CSS 在主题脚本之前加载
         // 从 Tailwind 插件配置中获取 CSS 路径，或使用默认路径
         let cssPath = `${staticDir}/tailwind.css`; // 默认路径
 
@@ -258,6 +256,9 @@ function createRequestHandler(
 
         // 注入 CSS link 标签
         injectCSSLink(res, cssPath, staticPrefix, staticDir);
+
+        // 执行插件响应钩子（在 CSS 注入之后，确保主题脚本可以正确工作）
+        await pluginManager.executeOnResponse(req, res);
 
         // 如果插件清空了响应体，恢复它
         if (!res.body && res.status === 200) {
