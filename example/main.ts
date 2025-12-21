@@ -6,7 +6,7 @@
  * 服务启动通过 CLI 命令：deno task dev 或 deno task start
  */
 
-import { createApp, cors, i18n } from '@dreamer/dweb';
+import { createApp, cors, i18n, theme } from '@dreamer/dweb';
 
 // 创建应用实例
 const app = createApp();
@@ -27,6 +27,19 @@ app.plugin(
     defaultLanguage: 'en-US',
     translationsDir: 'locales',
     detection: { fromCookie: true },
+  })
+);
+
+// 主题插件
+app.plugin(
+  theme({
+    config: {
+      defaultTheme: 'auto', // 'light' | 'dark' | 'auto'
+      storageKey: 'theme',
+      injectDataAttribute: true,
+      injectBodyClass: true,
+      transition: true,
+    },
   })
 );
 
