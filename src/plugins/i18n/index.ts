@@ -109,7 +109,9 @@ function detectLanguage(req: Request, options: I18nPluginOptions): string {
   }
 
   // 从 Accept-Language 头检测
-  if (detection.fromHeader !== false) {
+  // 注意：如果 detection.fromHeader 未明确设置为 true，默认不启用
+  // 这样可以避免浏览器语言设置覆盖默认语言
+  if (detection.fromHeader === true) {
     const acceptLanguage = req.getHeader("Accept-Language");
     if (acceptLanguage) {
       // 解析 Accept-Language 头（简化处理）
@@ -124,6 +126,7 @@ function detectLanguage(req: Request, options: I18nPluginOptions): string {
           l.code.toLowerCase() === lang
         );
         if (found) {
+          console.log(`[i18n Plugin] 从 Accept-Language 头检测到语言: ${lang}`);
           return found.code;
         }
 
@@ -132,12 +135,16 @@ function detectLanguage(req: Request, options: I18nPluginOptions): string {
           l.code.toLowerCase().startsWith(lang.split("-")[0])
         );
         if (foundPartial) {
+          console.log(
+            `[i18n Plugin] 从 Accept-Language 头部分匹配到语言: ${foundPartial.code}`,
+          );
           return foundPartial.code;
         }
       }
     }
   }
 
+  console.log(`[i18n Plugin] 使用默认语言: ${defaultLang}`);
   return defaultLang;
 }
 
