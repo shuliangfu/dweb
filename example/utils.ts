@@ -13,8 +13,8 @@ let _denoJson: any = null;
 function getDwebVersion(): string {
   if (!_dwebVersion) {
     try {
-			const denoJsonPath = new URL('../deno.json', import.meta.url).pathname;
-			
+			const denoJsonPath = new URL('../../deno.json', import.meta.url).pathname;
+
       const denoJsonContent = Deno.readTextFileSync(denoJsonPath);
       _denoJson = JSON.parse(denoJsonContent);
       _dwebVersion = _denoJson.version || '0.1.0';
