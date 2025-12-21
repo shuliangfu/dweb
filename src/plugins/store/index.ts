@@ -153,22 +153,31 @@ function createServerStore<T = Record<string, unknown>>(
 /**
  * 生成客户端 Store 脚本
  */
-function generateStoreScript(options: StorePluginOptions): string {
+function generateStoreScript(
+  options: StorePluginOptions,
+  serverState?: Record<string, unknown>,
+): string {
   const config = options;
   const persist = config.persist !== false;
   const storageKey = config.storageKey || 'dweb-store';
   const initialState = config.initialState || {};
 
+  // 如果有服务端状态，合并到初始状态中（服务端状态优先级更高）
+  const mergedInitialState = serverState
+    ? { ...initialState, ...serverState }
+    : initialState;
+
   return `
     <script>
       (function() {
-        // 从 localStorage 恢复状态
-        let state = ${JSON.stringify(initialState)};
+        // 从 localStorage 恢复状态，但服务端状态优先级更高
+        let state = ${JSON.stringify(mergedInitialState)};
         if (${persist}) {
           try {
             const stored = localStorage.getItem(${JSON.stringify(storageKey)});
             if (stored) {
-              state = { ...${JSON.stringify(initialState)}, ...JSON.parse(stored) };
+              // 合并：服务端状态 > localStorage > 初始状态
+              state = { ...${JSON.stringify(initialState)}, ...JSON.parse(stored), ...${JSON.stringify(serverState || {})} };
             }
           } catch (error) {
             console.warn('[Store Plugin] 无法从 localStorage 恢复状态:', error);
@@ -295,8 +304,9 @@ export function store(options: StorePluginOptions = {}): Plugin {
 
     /**
      * 响应处理钩子 - 注入客户端 Store 脚本
+     * 将服务端 Store 的状态注入到客户端 Store 中
      */
-    onResponse: (_req: Request, res: Response) => {
+    onResponse: (req: Request, res: Response) => {
       // 只处理 HTML 响应
       if (!res.body || typeof res.body !== 'string') {
         return;
@@ -310,9 +320,18 @@ export function store(options: StorePluginOptions = {}): Plugin {
       try {
         const html = res.body as string;
         
+        // 获取服务端 Store 的状态（如果存在）
+        let serverState: Record<string, unknown> | undefined;
+        if (enableServer) {
+          const serverStore = serverStores.get(req);
+          if (serverStore) {
+            serverState = serverStore.getState() as Record<string, unknown>;
+          }
+        }
+        
         // 注入 Store 脚本（在 </head> 之前）
         if (html.includes('</head>')) {
-          const script = generateStoreScript(options);
+          const script = generateStoreScript(options, serverState);
           const newHtml = html.replace('</head>', `${script}\n</head>`);
           res.body = newHtml;
         }

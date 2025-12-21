@@ -470,7 +470,7 @@ export async function load({ store }: LoadContext) {
     return {};
   }
   
-  // 设置状态
+  // 设置状态（这些状态会自动传递到客户端 Store）
   store.setState({ user: { id: 1, name: 'John' } });
   
   // 获取状态
@@ -478,6 +478,8 @@ export async function load({ store }: LoadContext) {
   return { user: state.user };
 }
 ```
+
+**注意**：在 `load` 函数中设置的状态会自动同步到客户端 Store。服务端 Store 的状态会在响应时注入到客户端 Store 脚本中，客户端 Store 会使用服务端状态初始化（优先级：服务端状态 > localStorage > 初始状态）。
 
 #### Store API
 
