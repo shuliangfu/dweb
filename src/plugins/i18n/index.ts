@@ -289,12 +289,25 @@ export function i18n(options: I18nPluginOptions): Plugin {
       const langConfig = options.languages.find((l) => l.code === langCode) ||
         options.languages[0];
 
+      // 调试：显示检测到的语言
+      console.log(`[i18n Plugin] 检测到语言: ${langCode}，请求URL: ${req.url}`);
+
       // 设置当前语言（用于全局访问）
       setCurrentLanguage(langCode);
 
       // 创建翻译函数
       const tFunction = (key: string, params?: Record<string, string>) => {
-        return translate(key, translationCache.get(langCode) || null, params);
+        const translations = translationCache.get(langCode) || null;
+        const result = translate(key, translations, params);
+        // 调试：显示翻译过程
+        if (result === key) {
+          console.log(
+            `[i18n Plugin] 翻译键未找到: "${key}"，语言: ${langCode}，可用键: ${
+              translations ? Object.keys(translations).join(", ") : "无"
+            }`,
+          );
+        }
+        return result;
       };
 
       // 将语言信息存储到请求对象（通过扩展属性）
