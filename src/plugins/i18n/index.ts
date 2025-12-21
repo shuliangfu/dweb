@@ -237,7 +237,7 @@ export function i18n(options: I18nPluginOptions): Plugin {
         options.languages[0]?.code ||
         "en";
       initI18nAccess(translationCache, defaultLang);
-      // 确保全局函数已初始化（防止类型错误）
+      // 确保全局函数已初始化（只有在 i18n 插件已初始化时才设置）
       ensureGlobalI18n();
     },
 

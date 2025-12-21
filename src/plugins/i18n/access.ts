@@ -41,7 +41,7 @@ export function initI18nAccess(
   defaultLanguage = defaultLang;
 
   // 初始化全局 $t 和 t 函数（使用默认语言）
-  // 这样即使不在请求上下文中也可以使用 $t() 和 t()
+  // 只有在 i18n 插件已初始化时才设置全局函数
   if (typeof globalThis !== "undefined") {
     const defaultTFunction = getI18n(defaultLang);
     (globalThis as any).$t = defaultTFunction;
@@ -51,15 +51,20 @@ export function initI18nAccess(
 
 /**
  * 确保全局 $t 和 t 函数已初始化
- * 如果未初始化，设置一个默认函数（返回 key 本身）
+ * 只有在 i18n 插件已初始化时才设置全局函数
+ * 如果未初始化，不设置全局函数（避免在没有使用 i18n 插件时创建不必要的全局变量）
  */
 export function ensureGlobalI18n(): void {
+  // 只有在 i18n 已初始化时才设置全局函数
+  if (!isI18nInitialized()) {
+    return;
+  }
+
   if (typeof globalThis !== "undefined") {
     if (!(globalThis as any).$t) {
-      (globalThis as any).$t = defaultTranslationFunction;
-    }
-    if (!(globalThis as any).t) {
-      (globalThis as any).t = defaultTranslationFunction;
+      const tFunc = getI18n();
+      (globalThis as any).$t = tFunc;
+      (globalThis as any).t = tFunc;
     }
   }
 }
