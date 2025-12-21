@@ -18,14 +18,17 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-app.plugin(i18n({
-  languages: [
-    { code: 'en-US', name: 'English' },
-    { code: 'zh-CN', name: '中文', default: true },
-  ],
-  translationsDir: 'locales',
-  detection: { fromCookie: true },
-}));
+app.plugin(
+  i18n({
+    languages: [
+      { code: 'en-US', name: 'English' },
+      { code: 'zh-CN', name: '中文' },
+    ],
+    defaultLanguage: 'en-US',
+    translationsDir: 'locales',
+    detection: { fromCookie: true },
+  })
+);
 
 // app.use((req, res, next) => {
 //   console.log('request', req.url);

@@ -36,12 +36,28 @@ async function loadTranslations(
   languageCode: string,
 ): Promise<TranslationData | null> {
   try {
+    // 解析翻译文件路径
+    // 如果 translationsDir 是相对路径，从当前工作目录解析
+    let filePath: string;
+    if (path.isAbsolute(translationsDir)) {
+      filePath = path.join(translationsDir, `${languageCode}.json`);
+    } else {
+      // 相对路径：从当前工作目录解析
+      const cwd = Deno.cwd();
+      filePath = path.join(cwd, translationsDir, `${languageCode}.json`);
+    }
+
     // 尝试加载语言文件
-    const filePath = path.join(translationsDir, `${languageCode}.json`);
     const content = await Deno.readTextFile(filePath);
-    return JSON.parse(content) as TranslationData;
-  } catch {
+    const translations = JSON.parse(content) as TranslationData;
+    console.log(`[i18n Plugin] 已加载语言文件: ${filePath}`);
+    return translations;
+  } catch (error) {
     // 文件不存在或解析失败
+    console.warn(
+      `[i18n Plugin] 无法加载语言文件 ${languageCode}:`,
+      error instanceof Error ? error.message : String(error),
+    );
     return null;
   }
 }

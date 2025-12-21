@@ -72,7 +72,7 @@ export function initI18nAccess(
  * 这确保 $t() 和 t() 始终可用，不会报错
  */
 export function ensureGlobalI18n(): void {
-  if (typeof globalThis !== "undefined") {
+  if (typeof globalThis !== 'undefined') {
     // 如果 i18n 已初始化，使用实际的翻译函数
     if (isI18nInitialized()) {
       if (!(globalThis as any).$t) {
