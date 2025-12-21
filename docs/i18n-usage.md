@@ -15,7 +15,7 @@
 ```typescript
 // routes/index.tsx
 export default function HomePage({ t }: PageProps) {
-  // 可以使用 PageProps 中的 t 函数，或直接使用全局 $t()
+  // 直接使用全局 $t() 方法
   return (
     <div>
       <h1>{$t("common.welcome")}</h1>
@@ -30,7 +30,7 @@ export default function HomePage({ t }: PageProps) {
 ```typescript
 // routes/index.tsx
 export async function load({ t }: LoadContext) {
-  // 可以使用 LoadContext 中的 t 函数，或直接使用全局 $t()
+  // 直接使用全局 $t() 方法
   const message = $t("common.welcome");
   return { message };
 }
