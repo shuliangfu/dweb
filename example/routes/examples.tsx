@@ -402,16 +402,16 @@ const handleSubmit = async (e: Event) => {
       </div>
 
       {/* 内容区域 */}
-      <div className="py-20 bg-white">
+      <div className="py-20 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* 状态消息 */}
           {message && (
             <div className={`mb-8 p-4 rounded-lg ${
               message.includes('成功') || message.includes('已')
-                ? 'bg-green-50 text-green-800 border border-green-200'
+                ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800'
                 : message.includes('失败') || message.includes('错误')
-                ? 'bg-red-50 text-red-800 border border-red-200'
-                : 'bg-blue-50 text-blue-800 border border-blue-200'
+                ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'
+                : 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
             }`}>
               <div className="flex items-center">
                 {loading && (
@@ -427,12 +427,12 @@ const handleSubmit = async (e: Event) => {
 
           {/* 1. 点击事件示例 */}
           <section className="mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">1. 点击事件示例</h2>
-            <p className="text-gray-600 mb-6">
-              使用 Preact 的 <code className="bg-gray-100 px-2 py-1 rounded">useState</code> 和事件处理函数实现交互。
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">1. 点击事件示例</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              使用 Preact 的 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">useState</code> 和事件处理函数实现交互。
             </p>
             
-            <div className="bg-gray-50 p-6 rounded-lg mb-6">
+            <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg mb-6 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-center space-x-4 mb-4">
                 <button
                   type="button"
@@ -441,7 +441,7 @@ const handleSubmit = async (e: Event) => {
                 >
                   减少 (-)
                 </button>
-                <div className="text-4xl font-bold text-gray-900 min-w-[100px] text-center">
+                <div className="text-4xl font-bold text-gray-900 dark:text-white min-w-[100px] text-center">
                   {count}
                 </div>
                 <button
@@ -468,13 +468,13 @@ const handleSubmit = async (e: Event) => {
 
           {/* 2. 接口请求示例 - GET */}
           <section className="mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">2. 接口请求示例 - GET</h2>
-            <p className="text-gray-600 mb-6">
-              使用 <code className="bg-gray-100 px-2 py-1 rounded">fetch</code> API 发送请求获取数据。
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">2. 接口请求示例 - GET</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              使用 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">fetch</code> API 发送请求获取数据。
               DWeb 支持两种格式：<strong>驼峰格式（CamelCase）</strong> 和 <strong>短横线格式（kebab-case）</strong>。
             </p>
 
-            <div className="bg-gray-50 p-6 rounded-lg mb-6">
+            <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg mb-6 border border-gray-200 dark:border-gray-700">
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">两种格式演示：</h3>
@@ -506,11 +506,11 @@ const handleSubmit = async (e: Event) => {
                     {examples.map((example) => (
                       <div
                         key={example.id}
-                        className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200"
+                        className="flex items-center justify-between p-4 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
                       >
                         <div>
-                          <div className="font-semibold text-gray-900">{example.name}</div>
-                          <div className="text-sm text-gray-600">{example.description}</div>
+                          <div className="font-semibold text-gray-900 dark:text-white">{example.name}</div>
+                          <div className="text-sm text-gray-600 dark:text-gray-300">{example.description}</div>
                         </div>
                         <button
                           type="button"
@@ -532,44 +532,44 @@ const handleSubmit = async (e: Event) => {
 
           {/* 2.5. API 格式说明 */}
           <section className="mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">2.5. API 格式说明</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">2.5. API 格式说明</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
               DWeb 的 API 路由支持两种命名格式，可以灵活选择：
             </p>
 
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg mb-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">📝 格式对比</h3>
+            <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-600 p-6 rounded-lg mb-6">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">📝 格式对比</h3>
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="font-semibold text-gray-800 mb-2">✅ 驼峰格式（CamelCase）</h4>
-                  <ul className="list-disc list-inside space-y-1 text-gray-700 text-sm">
-                    <li><code className="bg-white px-2 py-1 rounded">/api/examples/getExamples</code></li>
-                    <li><code className="bg-white px-2 py-1 rounded">/api/examples/createExample</code></li>
-                    <li><code className="bg-white px-2 py-1 rounded">/api/examples/deleteExample</code></li>
+                  <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">✅ 驼峰格式（CamelCase）</h4>
+                  <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300 text-sm">
+                    <li><code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/getExamples</code></li>
+                    <li><code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/createExample</code></li>
+                    <li><code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/deleteExample</code></li>
                   </ul>
-                  <p className="text-sm text-gray-600 mt-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
                     符合 JavaScript 命名规范，推荐使用
                   </p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-800 mb-2">✅ 短横线格式（kebab-case）</h4>
-                  <ul className="list-disc list-inside space-y-1 text-gray-700 text-sm">
-                    <li><code className="bg-white px-2 py-1 rounded">/api/examples/get-examples</code></li>
-                    <li><code className="bg-white px-2 py-1 rounded">/api/examples/create-example</code></li>
-                    <li><code className="bg-white px-2 py-1 rounded">/api/examples/delete-example</code></li>
+                  <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">✅ 短横线格式（kebab-case）</h4>
+                  <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300 text-sm">
+                    <li><code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/get-examples</code></li>
+                    <li><code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/create-example</code></li>
+                    <li><code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/delete-example</code></li>
                   </ul>
-                  <p className="text-sm text-gray-600 mt-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
                     符合 URL 规范，更易读，两种格式会自动转换
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">💡 使用建议</h3>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
+            <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">💡 使用建议</h3>
+              <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
                 <li>两种格式可以<strong>混用</strong>，框架会自动转换</li>
-                <li>代码中定义的函数名使用<strong>驼峰格式</strong>（如 <code className="bg-gray-100 px-2 py-1 rounded">getExamples</code>）</li>
+                <li>代码中定义的函数名使用<strong>驼峰格式</strong>（如 <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-900 dark:text-gray-100">getExamples</code>）</li>
                 <li>URL 中可以使用<strong>任意一种格式</strong>，都会正确匹配到对应的函数</li>
                 <li>建议在团队中统一使用一种格式，保持代码风格一致</li>
               </ul>
@@ -578,16 +578,16 @@ const handleSubmit = async (e: Event) => {
 
           {/* 3. 表单提交示例 - POST */}
           <section className="mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">3. 表单提交示例 - POST</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">3. 表单提交示例 - POST</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
               使用表单提交数据，通过 POST 请求创建新记录。
               支持两种格式：<strong>驼峰格式（CamelCase）</strong> 和 <strong>短横线格式（kebab-case）</strong>。
             </p>
 
-            <div className="bg-gray-50 p-6 rounded-lg mb-6">
+            <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg mb-6 border border-gray-200 dark:border-gray-700">
               <form className="space-y-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     名称 *
                   </label>
                   <input
@@ -595,12 +595,12 @@ const handleSubmit = async (e: Event) => {
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: (e.target as HTMLInputElement).value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     required
                   />
                 </div>
                 <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     描述
                   </label>
                   <textarea
@@ -608,7 +608,7 @@ const handleSubmit = async (e: Event) => {
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: (e.target as HTMLTextAreaElement).value })}
                     rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
                 <div className="space-y-3">
@@ -640,13 +640,13 @@ const handleSubmit = async (e: Event) => {
 
           {/* 4. 其他交互示例 */}
           <section className="mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">4. 其他交互示例</h2>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">4. 其他交互示例</h2>
 
             <div className="grid md:grid-cols-2 gap-6">
               {/* 延迟请求示例 */}
-              <div className="bg-gray-50 p-6 rounded-lg">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">延迟请求示例</h3>
-                <p className="text-gray-600 mb-4 text-sm">
+              <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">延迟请求示例</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm">
                   演示如何处理异步请求的加载状态。
                 </p>
                 <button
@@ -660,9 +660,9 @@ const handleSubmit = async (e: Event) => {
               </div>
 
               {/* 服务器端计数器示例 */}
-              <div className="bg-gray-50 p-6 rounded-lg">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">服务器端计数器</h3>
-                <p className="text-gray-600 mb-4 text-sm">
+              <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">服务器端计数器</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm">
                   从服务器获取和更新计数器值。
                 </p>
                 <div className="space-y-3">
@@ -690,9 +690,9 @@ const handleSubmit = async (e: Event) => {
           {/* 5. API 响应展示 */}
           {apiResponse && (
             <section className="mb-16">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">5. API 响应数据</h2>
-              <div className="bg-gray-900 p-6 rounded-lg">
-                <pre className="text-sm text-gray-100 font-mono overflow-x-auto">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">5. API 响应数据</h2>
+              <div className="bg-gray-900 dark:bg-gray-950 p-6 rounded-lg border border-gray-700 dark:border-gray-800">
+                <pre className="text-sm text-gray-100 dark:text-gray-200 font-mono overflow-x-auto">
                   <code>{JSON.stringify(apiResponse, null, 2)}</code>
                 </pre>
               </div>

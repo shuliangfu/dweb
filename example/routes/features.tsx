@@ -137,13 +137,13 @@ app.use(compression());`;
       />
 
       {/* 代码示例区域 */}
-      <div className="py-20 bg-gray-50">
+      <div className="py-20 bg-gray-50 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
               代码示例
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               看看使用 DWeb 开发有多简单
             </p>
           </div>
@@ -151,19 +151,19 @@ app.use(compression());`;
           <div className="space-y-12">
             {/* 文件系统路由示例 */}
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">文件系统路由</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">文件系统路由</h3>
               <CodeBlock code={routingExample} language="typescript" />
             </div>
 
             {/* 渲染模式示例 */}
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">渲染模式配置</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">渲染模式配置</h3>
               <CodeBlock code={renderModeExample} language="typescript" />
             </div>
 
             {/* 中间件示例 */}
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">中间件使用</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">中间件使用</h3>
               <CodeBlock code={middlewareExample} language="typescript" />
             </div>
           </div>
@@ -171,17 +171,17 @@ app.use(compression());`;
       </div>
 
       {/* CTA 区域 */}
-      <div className="py-20 bg-linear-to-r from-blue-600 to-indigo-600">
+      <div className="py-20 bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
             准备开始了吗？
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-xl text-blue-100 dark:text-blue-200 mb-8">
             立即开始使用 DWeb，体验现代化的 Web 开发方式
           </p>
           <a
             href="/docs"
-            className="inline-flex items-center px-8 py-4 text-lg font-semibold text-blue-600 bg-white rounded-lg hover:bg-gray-50 transition-all shadow-lg hover:shadow-xl"
+            className="inline-flex items-center px-8 py-4 text-lg font-semibold text-blue-600 dark:text-blue-500 bg-white dark:bg-gray-100 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-200 transition-all shadow-lg hover:shadow-xl"
           >
             查看文档
             <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

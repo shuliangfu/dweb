@@ -19,10 +19,10 @@ interface TechCardProps {
  */
 export default function TechCard({ name, description, icon }: TechCardProps) {
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-lg p-6 hover:shadow-lg dark:hover:shadow-xl transition-shadow border border-gray-200 dark:border-gray-700">
       <div className="text-4xl mb-4">{icon}</div>
-      <h3 className="text-xl font-semibold text-gray-800 mb-2">{name}</h3>
-      <p className="text-gray-600">{description}</p>
+      <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">{name}</h3>
+      <p className="text-gray-600 dark:text-gray-300">{description}</p>
     </div>
   );
 }

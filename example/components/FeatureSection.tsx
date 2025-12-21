@@ -34,14 +34,14 @@ export default function FeatureSection({
   subtitle = 'DWeb 提供了现代化 Web 开发所需的所有功能',
 }: FeatureSectionProps) {
   return (
-    <div className="py-20 bg-white">
+    <div className="py-20 bg-white dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 标题区域 */}
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">
             {title}
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             {subtitle}
           </p>
         </div>
@@ -53,31 +53,31 @@ export default function FeatureSection({
               key={index}
               className={`relative p-8 rounded-2xl border-2 transition-all hover:shadow-xl ${
                 feature.highlighted
-                  ? 'border-blue-500 bg-linear-to-br from-blue-50 to-indigo-50 shadow-lg'
-                  : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-lg'
+                  ? 'border-blue-500 dark:border-blue-600 bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 shadow-lg dark:shadow-xl'
+                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg dark:hover:shadow-xl'
               }`}
             >
               {/* 图标 */}
               <div className="mb-4">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 text-white text-3xl shadow-lg">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 text-white text-3xl shadow-lg">
                   {feature.icon}
                 </div>
               </div>
 
               {/* 标题 */}
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
                 {feature.title}
               </h3>
 
               {/* 描述 */}
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                 {feature.description}
               </p>
 
               {/* 高亮标记 */}
               {feature.highlighted && (
                 <div className="absolute top-4 right-4">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 dark:bg-blue-500 text-white">
                     推荐
                   </span>
                 </div>

@@ -261,9 +261,9 @@ export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarP
 
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 h-screen sticky top-0 overflow-y-auto">
+    <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen sticky top-0 overflow-y-auto">
       <div className="p-4">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">文档目录</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">文档目录</h2>
         <nav className="space-y-1">
           {navItems.map((item) => {
             const isActive = isItemActive(item, currentPath);
@@ -280,14 +280,14 @@ export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarP
                     href={item.path}
                     className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-indigo-100 text-indigo-700'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
                     {item.title}
                   </a>
                 ) : (
-                  <div className="px-3 py-2 text-sm font-semibold text-gray-900">
+                  <div className="px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white">
                     {item.title}
                   </div>
                 )}
@@ -303,8 +303,8 @@ export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarP
                           href={child.path}
                           className={`block px-3 py-2 rounded-md text-sm transition-colors ${
                             childIsActive
-                              ? 'bg-indigo-50 text-indigo-600 font-medium'
-                              : 'text-gray-600 hover:bg-gray-50'
+                              ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium'
+                              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                           }`}
                         >
                           {child.title}
