@@ -236,7 +236,7 @@ function injectThemeAttribute(html: string, theme: ThemeMode): string {
   // 在 html 元素上注入 class（用于 Tailwind CSS dark mode）
   if (result.includes('<html')) {
     // 先移除旧的 dark/light class 和 data-theme 属性
-    result = result.replace(/<html([^>]*?)>/i, (match, attrs) => {
+    result = result.replace(/<html([^>]*?)>/i, (_match, attrs) => {
       // 移除 data-theme 属性
       let newAttrs = attrs.replace(/\s+data-theme=["'][^"']*["']/gi, '');
       
