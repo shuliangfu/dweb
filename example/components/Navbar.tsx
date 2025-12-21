@@ -25,17 +25,6 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
     return initialPath || '/';
   });
 
-  // 主题状态（用于响应式更新图标）
-  const [theme, setTheme] = useState<string>(() => {
-    if (typeof globalThis !== 'undefined' && globalThis.window) {
-      const store = (globalThis.window as any).__THEME_STORE__;
-      if (store && store.value) {
-        return store.value;
-      }
-    }
-    return 'light';
-  });
-
   // 监听 URL 变化（客户端路由导航和浏览器前进/后退）
   useEffect(() => {
     if (typeof globalThis === 'undefined' || !globalThis.window) {
@@ -63,27 +52,6 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
     return () => {
       globalThis.window.removeEventListener('popstate', updatePath);
       globalThis.window.removeEventListener('routechange', handleRouteChange);
-    };
-  }, []);
-
-  // 监听主题变化
-  useEffect(() => {
-    if (typeof globalThis === 'undefined' || !globalThis.window) {
-      return;
-    }
-
-    const store = (globalThis.window as any).__THEME_STORE__;
-    if (!store) {
-      return;
-    }
-
-    // 订阅主题变化
-    const unsubscribe = store.subscribe((newTheme: string) => {
-      setTheme(newTheme);
-    });
-
-    return () => {
-      unsubscribe();
     };
   }, []);
 
@@ -150,39 +118,36 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
               title="切换主题"
               aria-label="切换主题"
             >
-              {theme === 'dark' ? (
-                // 月亮图标（深色模式）
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-                  />
-                </svg>
-              ) : (
-                // 太阳图标（浅色模式）
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-                  />
-                </svg>
-              )}
+              {/* 月亮图标（深色模式显示） */}
+              <svg
+                className="w-5 h-5 dark:block hidden"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                />
+              </svg>
+              {/* 太阳图标（浅色模式显示） */}
+              <svg
+                className="w-5 h-5 dark:hidden block"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                />
+              </svg>
             </button>
             <a
               href="https://github.com/shuliangfu/dweb"
