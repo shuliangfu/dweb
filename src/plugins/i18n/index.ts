@@ -50,14 +50,9 @@ async function loadTranslations(
     // 尝试加载语言文件
     const content = await Deno.readTextFile(filePath);
     const translations = JSON.parse(content) as TranslationData;
-    console.log(`[i18n Plugin] 已加载语言文件: ${filePath}`);
     return translations;
-  } catch (error) {
+  } catch {
     // 文件不存在或解析失败
-    console.warn(
-      `[i18n Plugin] 无法加载语言文件 ${languageCode}:`,
-      error instanceof Error ? error.message : String(error),
-    );
     return null;
   }
 }
@@ -126,7 +121,6 @@ function detectLanguage(req: Request, options: I18nPluginOptions): string {
           l.code.toLowerCase() === lang
         );
         if (found) {
-          console.log(`[i18n Plugin] 从 Accept-Language 头检测到语言: ${lang}`);
           return found.code;
         }
 
@@ -135,16 +129,12 @@ function detectLanguage(req: Request, options: I18nPluginOptions): string {
           l.code.toLowerCase().startsWith(lang.split("-")[0])
         );
         if (foundPartial) {
-          console.log(
-            `[i18n Plugin] 从 Accept-Language 头部分匹配到语言: ${foundPartial.code}`,
-          );
           return foundPartial.code;
         }
       }
     }
   }
 
-  console.log(`[i18n Plugin] 使用默认语言: ${defaultLang}`);
   return defaultLang;
 }
 
@@ -296,25 +286,12 @@ export function i18n(options: I18nPluginOptions): Plugin {
       const langConfig = options.languages.find((l) => l.code === langCode) ||
         options.languages[0];
 
-      // 调试：显示检测到的语言
-      console.log(`[i18n Plugin] 检测到语言: ${langCode}，请求URL: ${req.url}`);
-
       // 设置当前语言（用于全局访问）
       setCurrentLanguage(langCode);
 
       // 创建翻译函数
       const tFunction = (key: string, params?: Record<string, string>) => {
-        const translations = translationCache.get(langCode) || null;
-        const result = translate(key, translations, params);
-        // 调试：显示翻译过程
-        if (result === key) {
-          console.log(
-            `[i18n Plugin] 翻译键未找到: "${key}"，语言: ${langCode}，可用键: ${
-              translations ? Object.keys(translations).join(", ") : "无"
-            }`,
-          );
-        }
-        return result;
+        return translate(key, translationCache.get(langCode) || null, params);
       };
 
       // 将语言信息存储到请求对象（通过扩展属性）
