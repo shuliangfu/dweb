@@ -97,6 +97,31 @@ function generateThemeScript(options: ThemePluginOptions): string {
               
               const afterClasses = htmlElement.className;
               console.log('[Theme Plugin] HTML 元素更新后 class:', afterClasses);
+              
+              // 验证 CSS 是否加载
+              const stylesheets = Array.from(document.styleSheets);
+              const tailwindSheet = stylesheets.find(sheet => {
+                try {
+                  return sheet.href && sheet.href.includes('tailwind.css');
+                } catch {
+                  return false;
+                }
+              });
+              if (tailwindSheet) {
+                console.log('[Theme Plugin] Tailwind CSS 已加载:', tailwindSheet.href);
+                // 尝试检查 dark mode 样式是否存在
+                try {
+                  const rules = Array.from(tailwindSheet.cssRules || []);
+                  const darkRules = rules.filter(rule => {
+                    return rule.cssText && rule.cssText.includes('.dark');
+                  });
+                  console.log('[Theme Plugin] 找到 dark mode 样式规则数量:', darkRules.length);
+                } catch (e) {
+                  console.warn('[Theme Plugin] 无法检查 CSS 规则（可能是跨域问题）:', e);
+                }
+              } else {
+                console.warn('[Theme Plugin] 未找到 Tailwind CSS 样式表');
+              }
             } else {
               console.warn('[Theme Plugin] document.documentElement 不存在');
             }
