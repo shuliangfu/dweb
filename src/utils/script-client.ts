@@ -316,6 +316,51 @@ async function initClientSideNavigation(render, jsx) {
     }
   }
   
+  // 提取并更新 i18n 数据（从 HTML 中提取 window.__I18N_DATA__）
+  function extractAndUpdateI18nData(html) {
+    try {
+      // 查找包含 __I18N_DATA__ 的 script 标签（非模块脚本，通常在 head 中）
+      const i18nScriptMatch = html.match(/<script[^>]*>[\s\S]*?window\.__I18N_DATA__[\s\S]*?<\/script>/i);
+      if (i18nScriptMatch) {
+        const scriptContent = i18nScriptMatch[0];
+        
+        // 提取 window.__I18N_DATA__ 对象
+        const dataMatch = scriptContent.match(/window\.__I18N_DATA__\s*=\s*({[\s\S]*?});/);
+        if (dataMatch) {
+          try {
+            // 使用 Function 解析对象（避免 eval）
+            const i18nData = new Function('return ' + dataMatch[1])();
+            
+            // 更新全局 i18n 数据
+            if (i18nData && typeof i18nData === 'object') {
+              window.__I18N_DATA__ = i18nData;
+              
+              // 更新全局翻译函数
+              if (i18nData.t && typeof i18nData.t === 'function') {
+                window.$t = function(key, params) {
+                  return window.__I18N_DATA__.t(key, params);
+                };
+                window.t = window.$t;
+              }
+            }
+          } catch (_e) {
+            // 解析失败，静默处理
+          }
+        }
+      }
+    } catch (_e) {
+      // 提取失败，静默处理（可能没有 i18n 数据）
+    }
+    
+    // 确保 $t 和 t 函数始终可用（即使没有 i18n 数据）
+    if (typeof window.$t !== 'function') {
+      window.$t = function(key, _params) {
+        return key;
+      };
+      window.t = window.$t;
+    }
+  }
+  
   // 加载页面数据（简化版：直接使用 Function 解析）
   async function loadPageData(pathname) {
     if (pathname === window.location.pathname && globalThis.__PAGE_DATA__) {
@@ -330,6 +375,10 @@ async function initClientSideNavigation(render, jsx) {
     }
     
     const html = await response.text();
+    
+    // 提取并更新 i18n 数据（在解析页面数据之前）
+    extractAndUpdateI18nData(html);
+    
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const allScripts = Array.from(doc.querySelectorAll('script[type="module"]'));
     
@@ -645,6 +694,14 @@ async function initClientSideNavigation(render, jsx) {
   }
 
   const clientContent = `
+// 确保 i18n 函数在页面加载时可用（即使没有 i18n 插件）
+if (typeof window.$t !== 'function') {
+  window.$t = function(key, _params) {
+    return key;
+  };
+  window.t = window.$t;
+}
+
 // 页面数据
 globalThis.__PAGE_DATA__ = {
   route: '${escapedRoutePath}',
