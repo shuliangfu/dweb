@@ -1,6 +1,6 @@
 # 使用官方 Deno 镜像作为基础镜像
 # 使用固定版本号避免 Docker Hub 速率限制
-FROM denoland/deno:2.6.0 AS builder
+FROM denoland/deno:latest AS builder
 
 # 设置工作目录
 WORKDIR /app
@@ -24,7 +24,7 @@ RUN deno cache healthcheck.ts
 RUN deno task build
 
 # 生产阶段：使用更小的镜像
-FROM denoland/deno:2.6.0
+FROM denoland/deno:latest
 
 # 设置工作目录（保持目录结构，使 ../src 路径正确）
 WORKDIR /app
