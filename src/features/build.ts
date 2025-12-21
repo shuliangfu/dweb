@@ -480,16 +480,20 @@ async function compileFile(
         // 先对源代码执行 removeLoadOnlyImports（移除 load 函数和只在 load 中使用的导入）
         const clientSourceCode = removeLoadOnlyImports(sourceCode);
 
-        // 创建临时文件，写入处理后的源代码
-        const tempDir = await Deno.makeTempDir({ prefix: "dweb-build-" });
-        const tempFilePath = path.join(
-          tempDir,
-          path.basename(absoluteFilePath),
-        );
+        // 将临时文件放在原始文件的同一目录下，这样相对路径导入才能正确解析
+        const originalDir = path.dirname(absoluteFilePath);
+        const originalBasename = path.basename(absoluteFilePath);
+        // 生成唯一的临时文件名（添加 .temp 后缀和随机字符串）
+        const tempFileName = `${originalBasename}.temp.${Date.now()}.${
+          Math.random().toString(36).substring(2, 9)
+        }`;
+        const tempFilePath = path.join(originalDir, tempFileName);
+
         await Deno.writeTextFile(tempFilePath, clientSourceCode);
 
         try {
           // 使用处理后的源代码进行编译
+          // 将临时文件放在原始文件目录下，相对路径导入就能正确解析
           const result = await esbuild.build({
             entryPoints: [tempFilePath],
             bundle: true, // ✅ 打包所有依赖（包括相对路径导入 ../ 和 ./）
@@ -526,7 +530,6 @@ async function compileFile(
           // 清理临时文件
           try {
             await Deno.remove(tempFilePath);
-            await Deno.remove(tempDir);
           } catch {
             // 忽略清理错误
           }
