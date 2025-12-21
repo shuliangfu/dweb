@@ -23,6 +23,7 @@ export async function createClientScript(
   layoutPath?: string | null,
   basePath?: string,
   allLayoutPaths?: string[] | null,
+  layoutDisabled: boolean = false,
 ): Promise<string> {
   // 将文件路径转换为 HTTP URL
   const httpUrl = filePathToHttpUrl(routePath);
@@ -149,6 +150,13 @@ export async function createClientScript(
 // 辅助函数：加载布局组件
 async function loadLayoutComponents(pageData) {
   const LayoutComponents = [];
+  
+  // 检查页面是否禁用了布局
+  if (pageData.layout === false) {
+    // 如果页面禁用了布局，直接返回空数组
+    return LayoutComponents;
+  }
+  
   if (pageData.allLayoutPaths && Array.isArray(pageData.allLayoutPaths) && pageData.allLayoutPaths.length > 0) {
     // 加载所有布局组件（从最具体到最通用）
     // 如果某个布局设置了 inherit = false，则停止继承
@@ -642,7 +650,8 @@ globalThis.__PAGE_DATA__ = {
   layoutPath: ${escapedLayoutPath},
   allLayoutPaths: ${escapedAllLayoutPaths},
   basePath: '${escapedBasePath}',
-  metadata: ${metadataJson}
+  metadata: ${metadataJson},
+  layout: ${layoutDisabled ? "false" : "undefined"}
 };
 
 // 更新 SEO meta 标签的通用函数（全局函数，供客户端路由使用）

@@ -1041,53 +1041,70 @@ export class RouteHandler {
     renderMode: RenderMode;
     shouldHydrate: boolean;
     LayoutComponents: ((props: { children: unknown }) => unknown)[];
+    layoutDisabled: boolean;
   }> {
     // 获取渲染模式（优先级：页面组件导出 > 自动检测 > 配置 > 默认 SSR）
     const pageRenderMode = pageModule.renderMode as RenderMode | undefined;
 
     // 获取所有布局组件（从最具体到最通用）
     const LayoutComponents: ((props: { children: unknown }) => unknown)[] = [];
+
+    // 检查页面是否设置了 layout = false（禁用布局）
+    const pageLayoutDisabled = pageModule.layout === false;
+
+    // 获取所有匹配的布局路径（用于后续检测 Hooks）
     const layoutPaths: string[] = [];
-    try {
-      // 获取所有匹配的布局路径
-      layoutPaths.push(...this.router.getAllLayouts(routeInfo.path));
 
-      // 加载所有布局组件，如果某个布局设置了 inherit = false，则停止继承
-      for (const layoutPath of layoutPaths) {
-        try {
-          const layoutFullPath = resolveFilePath(layoutPath);
-          const layoutModule = await import(layoutFullPath);
-          const LayoutComponent = layoutModule.default;
-          if (!LayoutComponent) {
-            logger.warn(`布局文件 ${layoutPath} 没有默认导出`);
-            continue;
-          }
+    // 如果页面禁用了布局，直接返回空数组，不加载任何布局
+    if (!pageLayoutDisabled) {
+      try {
+        // 获取所有匹配的布局路径
+        layoutPaths.push(...this.router.getAllLayouts(routeInfo.path));
 
-          // 检查是否设置了 inherit = false（禁用继承）
-          // 如果设置了 inherit = false，则停止继承，只使用到当前布局为止的布局链
-          if (layoutModule.inherit === false) {
+        // 加载所有布局组件，如果某个布局设置了 inherit = false，则停止继承
+        for (const layoutPath of layoutPaths) {
+          try {
+            const layoutFullPath = resolveFilePath(layoutPath);
+            const layoutModule = await import(layoutFullPath);
+            const LayoutComponent = layoutModule.default;
+            if (!LayoutComponent) {
+              logger.warn(`布局文件 ${layoutPath} 没有默认导出`);
+              continue;
+            }
+
+            // 检查是否设置了 inherit = false（禁用继承）
+            // 如果设置了 inherit = false，则停止继承，只使用到当前布局为止的布局链
+            if (layoutModule.inherit === false) {
+              LayoutComponents.push(LayoutComponent);
+              // 停止继承，不再加载后续的布局
+              break;
+            }
+
             LayoutComponents.push(LayoutComponent);
-            // 停止继承，不再加载后续的布局
-            break;
+          } catch (error) {
+            // 布局加载失败不影响页面渲染，跳过该布局
+            const errorMessage = error instanceof Error
+              ? error.message
+              : String(error);
+            logger.warn(`加载布局文件失败: ${layoutPath}`, {
+              error: errorMessage,
+            });
           }
-
-          LayoutComponents.push(LayoutComponent);
-        } catch (error) {
-          // 布局加载失败不影响页面渲染，跳过该布局
-          const errorMessage = error instanceof Error
-            ? error.message
-            : String(error);
-          logger.warn(`加载布局文件失败: ${layoutPath}`, {
-            error: errorMessage,
-          });
         }
+      } catch (error) {
+        // 继续执行，不使用布局
+        const errorMessage = error instanceof Error
+          ? error.message
+          : String(error);
+        logger.warn(`[布局继承] 获取布局时出错: ${errorMessage}`);
       }
-    } catch (error) {
-      // 继续执行，不使用布局
-      const errorMessage = error instanceof Error
-        ? error.message
-        : String(error);
-      logger.warn(`[布局继承] 获取布局时出错: ${errorMessage}`);
+    } else {
+      // 即使禁用了布局，也需要获取布局路径用于检测 Hooks
+      try {
+        layoutPaths.push(...this.router.getAllLayouts(routeInfo.path));
+      } catch {
+        // 静默处理错误
+      }
     }
 
     // 如果页面没有明确指定 renderMode，检测页面组件和布局组件是否使用了 Preact Hooks
@@ -1120,7 +1137,12 @@ export class RouteHandler {
     const shouldHydrate = renderMode === "hybrid" ||
       pageModule.hydrate === true;
 
-    return { renderMode, shouldHydrate, LayoutComponents };
+    return {
+      renderMode,
+      shouldHydrate,
+      LayoutComponents,
+      layoutDisabled: pageLayoutDisabled,
+    };
   }
 
   /**
@@ -1221,6 +1243,7 @@ export class RouteHandler {
     renderMode: RenderMode,
     shouldHydrate: boolean,
     pageProps: Record<string, unknown>,
+    layoutDisabled: boolean,
     req?: Request,
   ): Promise<string> {
     // 注入 import map
@@ -1323,20 +1346,38 @@ export class RouteHandler {
       }
 
       // 获取所有布局路径（用于客户端脚本）
-      // 需要检查每个布局的 inherit 属性，如果某个布局设置了 inherit = false，则停止继承
+      // 需要检查页面是否禁用了布局，以及每个布局的 inherit 属性
       const layoutPathsForClient: string[] = [];
-      try {
-        const layoutFilePaths = this.router.getAllLayouts(routeInfo.path);
-        for (const layoutFilePath of layoutFilePaths) {
-          try {
-            // 加载布局模块以检查 inherit 属性
-            const layoutFullPath = resolveFilePath(layoutFilePath);
-            const layoutModule = await import(layoutFullPath);
 
-            // 检查是否设置了 inherit = false（禁用继承）
-            // 如果设置了 inherit = false，则停止继承，只使用到当前布局为止的布局链
-            if (layoutModule.inherit === false) {
-              // 添加当前布局到客户端路径列表
+      // 如果页面禁用了布局，不加载任何布局路径
+      if (!layoutDisabled) {
+        try {
+          const layoutFilePaths = this.router.getAllLayouts(routeInfo.path);
+          for (const layoutFilePath of layoutFilePaths) {
+            try {
+              // 加载布局模块以检查 inherit 属性
+              const layoutFullPath = resolveFilePath(layoutFilePath);
+              const layoutModule = await import(layoutFullPath);
+
+              // 检查是否设置了 inherit = false（禁用继承）
+              // 如果设置了 inherit = false，则停止继承，只使用到当前布局为止的布局链
+              if (layoutModule.inherit === false) {
+                // 添加当前布局到客户端路径列表
+                const layoutRoute = this.router.getAllRoutes().find((r) =>
+                  r.filePath === layoutFilePath
+                );
+                if (layoutRoute?.clientModulePath) {
+                  // 生产环境：使用客户端模块路径
+                  layoutPathsForClient.push(layoutRoute.clientModulePath);
+                } else {
+                  // 开发环境：使用完整路径
+                  layoutPathsForClient.push(layoutFilePath);
+                }
+                // 停止继承，不再加载后续的布局
+                break;
+              }
+
+              // 检查布局路由信息，看是否有 clientModulePath
               const layoutRoute = this.router.getAllRoutes().find((r) =>
                 r.filePath === layoutFilePath
               );
@@ -1347,37 +1388,23 @@ export class RouteHandler {
                 // 开发环境：使用完整路径
                 layoutPathsForClient.push(layoutFilePath);
               }
-              // 停止继承，不再加载后续的布局
-              break;
+            } catch (layoutError) {
+              // 布局加载失败不影响页面渲染，跳过该布局
+              const errorMessage = layoutError instanceof Error
+                ? layoutError.message
+                : String(layoutError);
+              logger.warn(
+                `[布局继承] 客户端脚本：加载布局文件失败: ${layoutFilePath}`,
+                {
+                  error: errorMessage,
+                },
+              );
             }
-
-            // 检查布局路由信息，看是否有 clientModulePath
-            const layoutRoute = this.router.getAllRoutes().find((r) =>
-              r.filePath === layoutFilePath
-            );
-            if (layoutRoute?.clientModulePath) {
-              // 生产环境：使用客户端模块路径
-              layoutPathsForClient.push(layoutRoute.clientModulePath);
-            } else {
-              // 开发环境：使用完整路径
-              layoutPathsForClient.push(layoutFilePath);
-            }
-          } catch (layoutError) {
-            // 布局加载失败不影响页面渲染，跳过该布局
-            const errorMessage = layoutError instanceof Error
-              ? layoutError.message
-              : String(layoutError);
-            logger.warn(
-              `[布局继承] 客户端脚本：加载布局文件失败: ${layoutFilePath}`,
-              {
-                error: errorMessage,
-              },
-            );
           }
+        } catch (_error) {
+          // 静默处理错误
+          logger.warn(`[布局继承] 客户端脚本：获取布局路径失败`);
         }
-      } catch (_error) {
-        // 静默处理错误
-        logger.warn(`[布局继承] 客户端脚本：获取布局路径失败`);
       }
 
       // 为了向后兼容，使用第一个布局路径（最具体的）
@@ -1405,6 +1432,7 @@ export class RouteHandler {
         layoutPathForClient,
         normalizedBasePath,
         allLayoutPathsForClient,
+        layoutDisabled
       );
 
       // 对于 CSR 模式，将链接拦截器脚本注入到 head（尽早执行）
@@ -1623,11 +1651,12 @@ export class RouteHandler {
     };
 
     // 获取渲染配置
-    const { renderMode, shouldHydrate, LayoutComponents } = await this
-      .getRenderConfig(
-        pageModule,
-        routeInfo,
-      );
+    const { renderMode, shouldHydrate, LayoutComponents, layoutDisabled } =
+      await this
+        .getRenderConfig(
+          pageModule,
+          routeInfo,
+        );
 
     // 渲染页面内容
     let html: string;
@@ -1752,6 +1781,7 @@ export class RouteHandler {
       renderMode,
       shouldHydrate,
       pageProps,
+      layoutDisabled,
       req,
     );
 
