@@ -485,11 +485,15 @@ async function compileFile(
         const originalDir = path.dirname(absoluteFilePath);
         const originalBasename = path.basename(absoluteFilePath);
 
+        // 根据文件扩展名确定 loader（esbuild 需要知道文件类型才能正确解析 TypeScript/JSX）
+        const loader = ext === ".tsx" ? "tsx" : "ts";
+
         const result = await esbuild.build({
           stdin: {
             contents: clientSourceCode,
             sourcefile: originalBasename, // 用于错误报告
             resolveDir: originalDir, // 用于解析相对路径导入
+            loader: loader, // 指定文件类型，确保 TypeScript/JSX 语法被正确解析
           },
           bundle: true, // ✅ 打包所有依赖（包括相对路径导入 ../ 和 ./）
           format: "esm",
