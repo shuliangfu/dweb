@@ -699,11 +699,17 @@ async function initClientSideNavigation(render, jsx) {
 
   const clientContent = `
 // 确保 i18n 函数在页面加载时可用（即使没有 i18n 插件）
+// 注意：如果 i18n 插件已经注入了 window.$t，这里不会覆盖它
 if (typeof window.$t !== 'function') {
   window.$t = function(key, _params) {
     return key;
   };
   window.t = window.$t;
+} else {
+  // 如果 i18n 插件已经设置了 window.$t，确保 window.t 也指向它
+  if (typeof window.t !== 'function') {
+    window.t = window.$t;
+  }
 }
 
 // 页面数据

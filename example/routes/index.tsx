@@ -31,7 +31,9 @@ export const load = async ({
   const userId = currentSession?.data.userId;
 
   const jsrPackageUrl = getJsrPackageUrl();
-  const versionString = getVersionString();
+	const versionString = getVersionString();
+		
+	console.log($t('你好，世界！'));
 
   return {
     message: 'Hello, World!',
