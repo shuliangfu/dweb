@@ -155,13 +155,11 @@ function createServerStore<T = Record<string, unknown>>(
  * 生成客户端 Store 脚本
  */
 function generateStoreScript(
-  options: StorePluginOptions,
+  persist: boolean,
+  storageKey: string,
+  initialState: Record<string, unknown>,
   serverState?: Record<string, unknown>,
 ): string {
-  const config = options;
-  const persist = config.persist !== false;
-  const storageKey = config.storageKey || "dweb-store";
-  const initialState = config.initialState || {};
 
   // 序列化服务端状态（如果存在）
   const serverStateJson = serverState ? JSON.stringify(serverState) : "null";
@@ -272,6 +270,8 @@ function generateStoreScript(
  */
 export function store(options: StorePluginOptions = {}): Plugin {
   const config = options;
+  const persist = config.persist !== false;
+  const storageKey = config.storageKey || "dweb-store";
   const enableServer = config.enableServer !== false;
   const initialState = config.initialState || {};
 
@@ -337,7 +337,7 @@ export function store(options: StorePluginOptions = {}): Plugin {
 
         // 注入 Store 脚本（在 </head> 之前）
         if (html.includes("</head>")) {
-          const jsCode = generateStoreScript(options, serverState);
+          const jsCode = generateStoreScript(persist, storageKey, initialState, serverState);
           // 压缩 JavaScript 代码
           const minifiedCode = await minifyJavaScript(jsCode.trim());
           const minifiedScript = `<script>${minifiedCode}</script>`;
