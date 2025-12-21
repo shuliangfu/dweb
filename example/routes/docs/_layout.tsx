@@ -11,7 +11,7 @@ interface DocsLayoutProps {
   children: ComponentChildren;
 }
 
-// export const inherit = false;
+// export const layout = false; // 禁用布局继承
 
 /**
  * 文档布局组件

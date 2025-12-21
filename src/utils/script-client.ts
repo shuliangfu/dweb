@@ -13,6 +13,9 @@ import { minifyJavaScript } from "./minify.ts";
  * @param props 页面 props
  * @param shouldHydrate 是否启用 hydration
  * @param layoutPath 布局文件路径（可选）
+ * @param basePath 应用基础路径（可选）
+ * @param allLayoutPaths 所有布局路径数组（可选）
+ * @param layoutDisabled 是否禁用布局（可选）
  * @returns 客户端脚本 HTML
  */
 export async function createClientScript(
@@ -159,7 +162,7 @@ async function loadLayoutComponents(pageData) {
   
   if (pageData.allLayoutPaths && Array.isArray(pageData.allLayoutPaths) && pageData.allLayoutPaths.length > 0) {
     // 加载所有布局组件（从最具体到最通用）
-    // 如果某个布局设置了 inherit = false，则停止继承
+    // 如果某个布局设置了 layout = false，则停止继承
     for (const layoutPath of pageData.allLayoutPaths) {
       try {
         const layoutModule = await import(layoutPath);
@@ -167,9 +170,9 @@ async function loadLayoutComponents(pageData) {
         if (LayoutComponent && typeof LayoutComponent === 'function') {
           LayoutComponents.push(LayoutComponent);
           
-          // 检查是否设置了 inherit = false（禁用继承）
-          // 如果设置了 inherit = false，则停止继承，不再加载后续的布局
-          if (layoutModule.inherit === false) {
+          // 检查是否设置了 layout = false（禁用继承）
+          // 如果设置了 layout = false，则停止继承，不再加载后续的布局
+          if (layoutModule.layout === false) {
             break;
           }
         }

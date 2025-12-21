@@ -146,11 +146,11 @@ export default function RootLayout({ children }: LayoutProps) {
 
 ### 禁用布局继承
 
-如果不想继承父布局，可以设置 `inherit = false`：
+如果不想继承父布局，可以设置 `layout = false`：
 
 ```tsx
 // routes/docs/_layout.tsx
-export const inherit = false; // 禁用布局继承
+export const layout = false; // 禁用布局继承
 
 export default function DocsLayout({ children }: LayoutProps) {
   return (
@@ -457,7 +457,7 @@ export default function ServerErrorPage({ error }: ErrorProps) {
 
 - 使用根布局提供全局结构
 - 使用子布局提供特定区域的布局
-- 在需要完全独立布局时使用 `inherit = false`
+- 在需要完全独立布局时使用 `layout = false`
 
 ### 3. 中间件职责分离
 

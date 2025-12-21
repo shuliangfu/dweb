@@ -1061,7 +1061,7 @@ export class RouteHandler {
         // 获取所有匹配的布局路径
         layoutPaths.push(...this.router.getAllLayouts(routeInfo.path));
 
-        // 加载所有布局组件，如果某个布局设置了 inherit = false，则停止继承
+        // 加载所有布局组件，如果某个布局设置了 layout = false，则停止继承
         for (const layoutPath of layoutPaths) {
           try {
             const layoutFullPath = resolveFilePath(layoutPath);
@@ -1072,9 +1072,9 @@ export class RouteHandler {
               continue;
             }
 
-            // 检查是否设置了 inherit = false（禁用继承）
-            // 如果设置了 inherit = false，则停止继承，只使用到当前布局为止的布局链
-            if (layoutModule.inherit === false) {
+            // 检查是否设置了 layout = false（禁用继承）
+            // 如果设置了 layout = false，则停止继承，只使用到当前布局为止的布局链
+            if (layoutModule.layout === false) {
               LayoutComponents.push(LayoutComponent);
               // 停止继承，不再加载后续的布局
               break;
@@ -1346,7 +1346,7 @@ export class RouteHandler {
       }
 
       // 获取所有布局路径（用于客户端脚本）
-      // 需要检查页面是否禁用了布局，以及每个布局的 inherit 属性
+      // 需要检查页面是否禁用了布局，以及每个布局的 layout 属性
       const layoutPathsForClient: string[] = [];
 
       // 如果页面禁用了布局，不加载任何布局路径
@@ -1355,13 +1355,13 @@ export class RouteHandler {
           const layoutFilePaths = this.router.getAllLayouts(routeInfo.path);
           for (const layoutFilePath of layoutFilePaths) {
             try {
-              // 加载布局模块以检查 inherit 属性
+              // 加载布局模块以检查 layout 属性
               const layoutFullPath = resolveFilePath(layoutFilePath);
               const layoutModule = await import(layoutFullPath);
 
-              // 检查是否设置了 inherit = false（禁用继承）
-              // 如果设置了 inherit = false，则停止继承，只使用到当前布局为止的布局链
-              if (layoutModule.inherit === false) {
+              // 检查是否设置了 layout = false（禁用继承）
+              // 如果设置了 layout = false，则停止继承，只使用到当前布局为止的布局链
+              if (layoutModule.layout === false) {
                 // 添加当前布局到客户端路径列表
                 const layoutRoute = this.router.getAllRoutes().find((r) =>
                   r.filePath === layoutFilePath
@@ -1432,7 +1432,7 @@ export class RouteHandler {
         layoutPathForClient,
         normalizedBasePath,
         allLayoutPathsForClient,
-        layoutDisabled
+        layoutDisabled,
       );
 
       // 对于 CSR 模式，将链接拦截器脚本注入到 head（尽早执行）

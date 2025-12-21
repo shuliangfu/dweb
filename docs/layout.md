@@ -128,16 +128,16 @@ DWeb 框架提供了两种禁用布局的方式：
 
 在某些情况下，你可能不希望某个布局继承父布局。例如，你可能希望文档页面使用完全独立的布局，而不继承根布局。
 
-#### 使用 `inherit = false`
+#### 使用 `layout = false`
 
-在布局文件中导出 `export const inherit = false` 可以禁用布局继承：
+在布局文件中导出 `export const layout = false` 可以禁用布局继承：
 
 ```tsx
 // routes/docs/_layout.tsx
 import type { ComponentChildren } from "preact";
 
 // 禁用布局继承，不继承父布局（如根布局）
-export const inherit = false;
+export const layout = false;
 
 interface DocsLayoutProps {
   children: ComponentChildren;
@@ -165,8 +165,9 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
 ### 继承行为说明
 
 - **默认行为**：布局会自动继承所有父级布局
-- **`inherit = false`**：设置后，该布局及其所有子页面将不再继承更上层的布局
-- **继承链中断**：当遇到 `inherit = false` 的布局时，继承链会在此处停止
+- **`layout = false`**（布局级别）：设置后，该布局及其所有子页面将不再继承更上层的布局
+- **`layout = false`**（页面级别）：设置后，该页面将不使用任何布局，包括父级布局
+- **继承链中断**：当遇到 `layout = false` 的布局时，继承链会在此处停止
 
 ### 示例场景
 
@@ -178,14 +179,14 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
 routes/
 ├── _layout.tsx          # 根布局（包含 HTML 结构、导航栏、页脚）
 └── docs/
-    ├── _layout.tsx      # 文档布局（设置了 inherit = false）
+    ├── _layout.tsx      # 文档布局（设置了 layout = false）
     └── core/
         └── router.tsx   # 页面
 ```
 
 当访问 `/docs/core/router` 时：
 
-- **如果 `docs/_layout.tsx` 没有设置 `inherit = false`**：
+- **如果 `docs/_layout.tsx` 没有设置 `layout = false`**：
   ```tsx
   <RootLayout>
     <DocsLayout>
@@ -194,7 +195,7 @@ routes/
   </RootLayout>
   ```
 
-- **如果 `docs/_layout.tsx` 设置了 `inherit = false`**：
+- **如果 `docs/_layout.tsx` 设置了 `layout = false`**：
   ```tsx
   <DocsLayout>
     <RouterPage />
@@ -260,7 +261,7 @@ export default function MyLayout({ children }: LayoutProps) {
 
 - 使用根布局提供全局结构（HTML、导航、页脚等）
 - 使用子布局提供特定区域的布局（如文档侧边栏、管理后台菜单等）
-- 在需要完全独立布局时使用 `inherit = false`
+- 在需要完全独立布局时使用 `layout = false`
 
 ### 3. 布局与页面分离
 
@@ -297,9 +298,9 @@ A: 布局继承从最具体到最通用：
 
 A: 目前不支持完全禁用布局。如果你需要，可以在页面组件中返回完整的 HTML 结构，但这不推荐。
 
-### Q: `inherit = false` 会影响子布局吗？
+### Q: `layout = false` 在布局文件中会影响子布局吗？
 
-A: 是的。如果父布局设置了 `inherit = false`，子布局也不会继承更上层的布局。
+A: 是的。如果父布局设置了 `layout = false`，子布局也不会继承更上层的布局。
 
 ### Q: 布局可以访问页面数据吗？
 
