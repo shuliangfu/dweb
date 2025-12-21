@@ -17,7 +17,6 @@ function generateThemeScript(options: ThemePluginOptions): string {
   const transition = config.transition !== false;
 
   return `
-    <script>
       (function() {
         // 主题管理
         const ThemeManager = {
@@ -214,7 +213,6 @@ function generateThemeScript(options: ThemePluginOptions): string {
           themeStore.value = actualTheme;
         }
       })();
-    </script>
     ${transition ? `<style>
       * {
         transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
@@ -300,20 +298,23 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
           
           // 注入主题脚本（在 </head> 之前）
           if (newHtml.includes('</head>')) {
-            const script = generateThemeScript(options);
-            // 提取 JavaScript 代码并压缩
-            const scriptMatch = script.match(/<script>([\s\S]*?)<\/script>/);
-            if (scriptMatch) {
-              const jsCode = scriptMatch[1];
-              const minifiedCode = await minifyJavaScript(jsCode);
-              // 保留 style 标签（如果有）
-              const styleMatch = script.match(/<style>([\s\S]*?)<\/style>/);
-              const styleTag = styleMatch ? `<style>${styleMatch[1]}</style>` : '';
+            const scriptContent = generateThemeScript(options);
+            // 提取 JavaScript 代码和 style 标签
+            const jsMatch = scriptContent.match(/\(function\(\) \{[\s\S]*?\}\)\(\);/);
+            const styleMatch = scriptContent.match(/<style>([\s\S]*?)<\/style>/);
+            
+            if (jsMatch) {
+              // 压缩 JavaScript 代码
+              const jsCode = jsMatch[0];
+              const minifiedCode = await minifyJavaScript(jsCode.trim());
+              // 组合 script 和 style 标签
+              const styleTag = styleMatch ? styleMatch[0] : '';
               const minifiedScript = `<script>${minifiedCode}</script>${styleTag}`;
               newHtml = newHtml.replace('</head>', `${minifiedScript}\n</head>`);
             } else {
-              // 如果没有匹配到，直接使用原始脚本
-              newHtml = newHtml.replace('</head>', `${script}\n</head>`);
+              // 如果没有匹配到，直接使用原始内容
+              const minifiedScript = `<script>${scriptContent.trim()}</script>`;
+              newHtml = newHtml.replace('</head>', `${minifiedScript}\n</head>`);
             }
           }
           

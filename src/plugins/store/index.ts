@@ -167,7 +167,6 @@ function generateStoreScript(
   const serverStateJson = serverState ? JSON.stringify(serverState) : 'null';
 
   return `
-    <script>
       (function() {
         // 获取服务端状态（如果存在）
         const serverState = ${serverStateJson};
@@ -263,7 +262,6 @@ function generateStoreScript(
         // 暴露到全局
         window.__STORE__ = Store;
       })();
-    </script>
   `;
 }
 
@@ -339,20 +337,12 @@ export function store(options: StorePluginOptions = {}): Plugin {
         
         // 注入 Store 脚本（在 </head> 之前）
         if (html.includes('</head>')) {
-          const script = generateStoreScript(options, serverState);
-          // 提取 JavaScript 代码并压缩
-          const scriptMatch = script.match(/<script>([\s\S]*?)<\/script>/);
-          if (scriptMatch) {
-            const jsCode = scriptMatch[1];
-            const minifiedCode = await minifyJavaScript(jsCode);
-            const minifiedScript = `<script>${minifiedCode}</script>`;
-            const newHtml = html.replace('</head>', `${minifiedScript}\n</head>`);
-            res.body = newHtml;
-          } else {
-            // 如果没有匹配到，直接使用原始脚本
-            const newHtml = html.replace('</head>', `${script}\n</head>`);
-            res.body = newHtml;
-          }
+          const jsCode = generateStoreScript(options, serverState);
+          // 压缩 JavaScript 代码
+          const minifiedCode = await minifyJavaScript(jsCode.trim());
+          const minifiedScript = `<script>${minifiedCode}</script>`;
+          const newHtml = html.replace('</head>', `${minifiedScript}\n</head>`);
+          res.body = newHtml;
         }
       } catch (error) {
         console.error('[Store Plugin] 注入 Store 脚本时出错:', error);
