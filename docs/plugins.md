@@ -358,7 +358,7 @@ import { theme } from "@dreamer/dweb/plugins";
 
 app.plugin(theme({
   config: {
-    defaultTheme: "auto", // 'light' | 'dark' | 'auto'
+    defaultTheme: "light", // 'light' | 'dark'（暂时移除 'auto' 选项）
     storageKey: "theme", // localStorage 键名
     injectDataAttribute: true, // 是否在 HTML 上添加 data-theme 属性
     injectBodyClass: true, // 是否添加类名到 body
@@ -453,16 +453,19 @@ window.__THEME_STORE__.subscribe((theme) => {
 
 ```typescript
 // 设置主题
-window.setTheme('dark'); // 'light' | 'dark' | 'auto'
+window.setTheme('dark'); // 'light' | 'dark'
 
-// 获取当前主题（可能是 'auto'）
-window.getTheme(); // 'light' | 'dark' | 'auto'
+// 获取当前主题
+window.getTheme(); // 'light' | 'dark'
 
-// 获取实际主题（处理 'auto' 模式）
+// 获取实际主题
 window.getActualTheme(); // 'light' | 'dark'
 
-// 切换主题（light -> dark -> auto -> light）
-window.toggleTheme();
+// 切换主题（在 dark 和 light 之间切换）
+window.toggleTheme(); // 'light' | 'dark'
+
+// 切换到指定主题
+window.switchTheme('dark'); // 'light' | 'dark'
 
 // 访问主题管理器
 window.__THEME_MANAGER__;
