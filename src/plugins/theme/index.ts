@@ -151,6 +151,17 @@ function generateThemeScript(options: ThemePluginOptions): string {
                         if (hasDark) {
                           const darkMatches = cssText.match(/\.dark[^}]*\{/g);
                           console.log('[Theme Plugin] CSS 文件中的 dark 选择器数量:', darkMatches ? darkMatches.length : 0);
+                          
+                          // 测试一个具体的 dark mode 样式是否生效
+                          const testElement = document.createElement('div');
+                          testElement.className = 'dark:bg-gray-900';
+                          testElement.style.display = 'none';
+                          document.body.appendChild(testElement);
+                          const computedStyle = window.getComputedStyle(testElement);
+                          const bgColor = computedStyle.backgroundColor;
+                          console.log('[Theme Plugin] 测试元素 dark:bg-gray-900 的计算样式:', bgColor);
+                          console.log('[Theme Plugin] HTML 元素是否有 dark class:', document.documentElement.classList.contains('dark'));
+                          document.body.removeChild(testElement);
                         }
                       })
                       .catch(err => {
