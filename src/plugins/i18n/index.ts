@@ -3,8 +3,9 @@
  * 多语言支持：自动检测语言、路由级语言切换、翻译文件管理
  */
 
-// 引用全局类型声明（使 $t 和 t 函数在全局可用）
-import "./global.d.ts";
+// 注意：全局类型声明在 global.d.ts 中
+// 由于 JSR 不允许修改全局类型，用户需要在项目中手动引用 global.d.ts
+// 或者使用类型断言：const t = globalThis.$t as (key: string, params?: Record<string, string>) => string;
 
 // 在模块加载时初始化默认全局函数
 // 这确保即使 i18n 插件未使用，$t() 和 t() 也可以使用（返回 key 本身）

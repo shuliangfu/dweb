@@ -116,10 +116,39 @@ export default User;
 - **自动语言切换**：在请求处理时，会自动使用当前请求的语言
 - **默认语言**：在非请求上下文中，使用默认语言
 
+### TypeScript 类型支持
+
+为了在 TypeScript 中使用 `$t()` 和 `t()` 而不报错，需要引用全局类型声明文件：
+
+**方法 1：在项目根目录创建 `i18n-global.d.ts`**
+
+将 `example/i18n-global.d.ts` 复制到项目根目录，TypeScript 会自动识别。
+
+**方法 2：在 `deno.json` 中引用**
+
+```json
+{
+  "compilerOptions": {
+    "types": ["./i18n-global.d.ts"]
+  }
+}
+```
+
+**方法 3：在文件中使用三斜杠指令**
+
+```typescript
+/// <reference path="./i18n-global.d.ts" />
+
+export default function HomePage() {
+  return <div>{$t('common.welcome')}</div>;
+}
+```
+
 ### 注意事项
 
 - `$t()` 和 `t()` 始终可用：如果 i18n 插件未初始化，会返回 key 本身（不会报错）
-- 在 TypeScript 中，类型声明已自动包含，无需额外配置
+- 在 TypeScript 中，需要引用全局类型声明文件才能获得类型支持
+- 运行时功能不需要类型声明文件，类型声明仅用于 TypeScript 类型检查
 - 在请求上下文中，会自动使用当前请求的语言
 - 在非请求上下文中（如后台任务），使用默认语言
 
