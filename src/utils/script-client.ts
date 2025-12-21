@@ -320,12 +320,16 @@ async function initClientSideNavigation(render, jsx) {
   function extractAndUpdateI18nData(html) {
     try {
       // 查找包含 __I18N_DATA__ 的 script 标签（非模块脚本，通常在 head 中）
-      const i18nScriptMatch = html.match(/<script[^>]*>[\s\S]*?window\.__I18N_DATA__[\s\S]*?<\/script>/i);
+      // 使用 RegExp 构造函数避免模板字符串插值冲突
+      const scriptTagRegex = new RegExp('<script[^>]*>[\\s\\S]*?window\\.__I18N_DATA__[\\s\\S]*?</script>', 'i');
+      const i18nScriptMatch = html.match(scriptTagRegex);
       if (i18nScriptMatch) {
         const scriptContent = i18nScriptMatch[0];
         
         // 提取 window.__I18N_DATA__ 对象
-        const dataMatch = scriptContent.match(/window\.__I18N_DATA__\s*=\s*({[\s\S]*?});/);
+        // 使用字符串拼接避免模板字符串插值冲突
+        const dataRegex = new RegExp('window\\.__I18N_DATA__\\s*=\\s*(\\{[\\s\\S]*?\\});');
+        const dataMatch = scriptContent.match(dataRegex);
         if (dataMatch) {
           try {
             // 使用 Function 解析对象（避免 eval）
