@@ -224,9 +224,10 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
     config: options as unknown as Record<string, unknown>,
 
     /**
-     * 请求处理钩子 - 注入主题脚本和属性
+     * 响应处理钩子 - 注入主题脚本和属性
+     * 注意：使用 onResponse 而不是 onRequest，因为 res.body 在 onRequest 时可能还未设置
      */
-    onRequest(_req: Request, res: Response) {
+    onResponse(_req: Request, res: Response) {
       // 只处理 HTML 响应
       if (!res.body || typeof res.body !== 'string') {
         return;
