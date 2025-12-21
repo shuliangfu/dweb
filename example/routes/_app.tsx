@@ -26,7 +26,8 @@ export default function App({ children }: AppProps) {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>DWeb - 现代化的全栈 Web 框架</title>
-        <link rel="alternate icon" type="image/png" href="/favicon.png" />
+				<link rel="alternate icon" type="image/png" href="/assets/favicon.png" />
+				<link rel="stylesheet" href="/assets/style.css" />
         {/* Prism.js 语法高亮样式 */}
         <link
           rel="stylesheet"

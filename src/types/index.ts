@@ -1,14 +1,23 @@
 // ==================== 应用配置类型 ====================
 
+// 扩展目录配置
+export interface ExtendDirConfig {
+  dir: string; // 目录路径
+  prefix?: string; // URL 前缀（如果未配置，默认使用 dir 的名称）
+}
+
 // 静态资源配置
 export interface StaticOptions {
   dir: string; // 静态资源根目录
-  prefix?: string; // URL 前缀
+  prefix?: string; // URL 前缀（如果未配置，默认使用 dir 的名称）
   index?: string | string[]; // 索引文件名
   dotfiles?: 'allow' | 'deny' | 'ignore'; // 点文件处理方式
   etag?: boolean; // 是否启用 ETag
   lastModified?: boolean; // 是否发送 Last-Modified
   maxAge?: number; // 缓存时间（秒）
+  outDir?: string; // 构建输出目录（生产环境使用，如果未提供则自动检测）
+  isProduction?: boolean; // 是否为生产环境（如果未提供则自动检测）
+  extendDirs?: (string | ExtendDirConfig)[]; // 扩展的静态资源目录（如上传目录，这些目录不会被打包，始终从项目根目录读取）
 }
 
 // 数据库配置（从数据库模块导入类型）
@@ -44,6 +53,8 @@ export interface AppConfig {
     schema: GraphQLSchema;
     config?: GraphQLConfig;
   };
+  // 是否为生产环境（通常由框架自动设置，但也可以手动指定）
+  isProduction?: boolean;
 }
 
 // 配置类型
@@ -206,6 +217,8 @@ export interface AppLike {
   use?: (middleware: unknown) => void;
   /** 注册插件的方法 */
   plugin?: (plugin: unknown) => void;
+  /** 是否为生产环境 */
+  isProduction?: boolean;
   /** 扩展属性（某些插件可能需要访问其他属性） */
   [key: string]: unknown;
 }

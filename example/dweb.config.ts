@@ -47,6 +47,7 @@ const config: AppConfig = {
     maxAge: 86400, // 缓存 1 天
     index: ['index.html', 'index.htm'],
     dotfiles: 'deny', // 禁止访问隐藏文件
+    extendDirs: ['uploads'], // 扩展的静态资源目录
   },
 
   // Cookie 配置
@@ -68,15 +69,15 @@ const config: AppConfig = {
     // Tailwind CSS v4 插件（默认使用 v4）
     tailwind({
       version: 'v4',
-      cssPath: 'assets/style.css', // 指定主 CSS 文件路径
+      cssPath: 'assets/tailwind.css', // 指定主 CSS 文件路径
       optimize: true, // 生产环境优化
-		}),
-		seo({
-			title: 'DWeb - 现代化的全栈 Web 框架',
-			description: '基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web 框架',
-			keywords: 'DWeb, Deno, Preact, Tailwind CSS, Web 框架',
-			author: 'DWeb',
-		}),
+    }),
+    seo({
+      title: 'DWeb - 现代化的全栈 Web 框架',
+      description: '基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web 框架',
+      keywords: 'DWeb, Deno, Preact, Tailwind CSS, Web 框架',
+      author: 'DWeb',
+    }),
   ],
   middleware: [
     cors({

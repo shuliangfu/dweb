@@ -58,6 +58,9 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
 
   // CSS 文件缓存（开发环境）
   const cssCache = new Map<string, { content: string; map?: string; timestamp: number }>();
+  
+  // 环境标志（在 onInit 中从 app.isProduction 获取）
+  let isProduction = false;
 
   return {
     name: 'tailwind',
@@ -65,16 +68,23 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
 
     /**
      * 初始化钩子
+     * 从 app.isProduction 获取环境信息
      */
-    async onInit(_app: AppLike) {
-      // 不再需要在这里处理，改为在 onResponse 中处理
+    onInit(app: AppLike) {
+      // 从 app 中获取环境标志
+      isProduction = (app.isProduction as boolean) ?? false;
     },
 
     /**
      * 响应处理钩子（开发环境实时编译并注入 CSS）
      * 当 TS/TSX 路由返回 HTML 响应时，编译 CSS 并注入到 <head> 中
+     * 注意：只在开发环境中执行，生产环境不处理（CSS 已通过 link 标签引入）
      */
     async onResponse(_req: Request, res: Response) {
+      // 生产环境不处理，直接返回
+      if (isProduction) {
+        return;
+      }
       // 只处理 HTML 响应
       if (!res.body || typeof res.body !== 'string') {
         return;
@@ -153,23 +163,30 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
 
         // 将编译后的 CSS 注入到 HTML 的 <head> 中的 <style> 标签
         const html = res.body as string;
+        const styleTag = `<style>${compiledCSS}</style>`;
         
-        // 查找 </head> 标签，如果存在则在其前面注入 <style> 标签
-        if (html.includes('</head>')) {
-          const styleTag = `<style>${compiledCSS}</style>`;
-          res.body = html.replace('</head>', `${styleTag}\n</head>`);
+        // 检查 <head> 中是否有 <link> 标签（CSS 文件）
+        const linkRegex = /<link[^>]*rel\s*=\s*["']stylesheet["'][^>]*>/i;
+        const linkMatch = html.match(linkRegex);
+        
+        if (linkMatch && linkMatch.index !== undefined) {
+          // 如果找到 <link> 标签，在它之前插入 <style> 标签
+          const linkIndex = linkMatch.index;
+          res.body = html.slice(0, linkIndex) + `${styleTag}\n  ` + html.slice(linkIndex);
+        } else if (html.includes('</head>')) {
+          // 如果没有 <link> 标签，但有 </head>，在 </head> 前面注入
+          res.body = html.replace('</head>', `  ${styleTag}\n</head>`);
         } else if (html.includes('<head>')) {
           // 如果没有 </head>，但有 <head>，则在 <head> 后面注入
-          const styleTag = `<style>${compiledCSS}</style>`;
-          res.body = html.replace('<head>', `<head>\n${styleTag}`);
+          res.body = html.replace('<head>', `<head>\n  ${styleTag}`);
         } else {
           // 如果没有 <head>，则在 <html> 后面添加 <head> 和 <style>
-          const styleTag = `<head><style>${compiledCSS}</style></head>`;
+          const headWithStyle = `<head>\n  ${styleTag}\n</head>`;
           if (html.includes('<html>')) {
-            res.body = html.replace('<html>', `<html>\n${styleTag}`);
+            res.body = html.replace('<html>', `<html>\n${headWithStyle}`);
           } else {
             // 如果连 <html> 都没有，在开头添加
-            res.body = `${styleTag}\n${html}`;
+            res.body = `${headWithStyle}\n${html}`;
           }
         }
       } catch (error) {

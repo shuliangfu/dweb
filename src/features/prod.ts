@@ -180,6 +180,8 @@ function createRequestHandler(
   pluginManager: PluginManager,
   sessionManager: SessionManager | null,
   cookieManager: CookieManager | null,
+  config: AppConfig,
+  staticDir: string,
 ) {
   return async (req: Request, res: Response): Promise<void> => {
     // 设置 Session 支持
@@ -210,6 +212,42 @@ function createRequestHandler(
         // 执行插件响应钩子
         await pluginManager.executeOnResponse(req, res);
 
+        // 在生产环境中注入 CSS link 标签（如果响应是 HTML）
+        // 从 Tailwind 插件配置中获取 CSS 路径，或使用默认路径
+        let cssPath = `${staticDir}/tailwind.css`; // 默认路径
+        
+        // 尝试从插件管理器中获取 Tailwind 插件配置
+        const tailwindPlugin = pluginManager.getAll().find((p) => p.name === 'tailwind');
+        if (tailwindPlugin?.config) {
+          const pluginConfig = tailwindPlugin.config as any;
+          if (pluginConfig?.cssPath) {
+            // 使用配置的 CSS 路径，但需要转换为 URL 路径
+            cssPath = pluginConfig.cssPath.startsWith('/') 
+              ? pluginConfig.cssPath.slice(1) 
+              : pluginConfig.cssPath;
+          }
+        } else {
+          // 如果插件管理器中找不到，尝试从配置中获取
+          const configPlugin = config.plugins?.find(
+            (p: any) => (typeof p === 'object' && 'name' in p && p.name === 'tailwind') ||
+                   (typeof p === 'object' && 'config' in p && (p.config as any)?.cssPath)
+          );
+          if (configPlugin && typeof configPlugin === 'object' && 'config' in configPlugin) {
+            const pluginConfig = (configPlugin as any).config;
+            if (pluginConfig?.cssPath) {
+              cssPath = pluginConfig.cssPath.startsWith('/') 
+                ? pluginConfig.cssPath.slice(1) 
+                : pluginConfig.cssPath;
+            }
+          }
+        }
+        
+        // 获取静态资源前缀（如果有配置）
+        const staticPrefix = config.static?.prefix;
+        
+        // 注入 CSS link 标签
+        injectCSSLink(res, cssPath, staticPrefix, staticDir);
+
         // 如果插件清空了响应体，恢复它
         if (!res.body && res.status === 200) {
           res.status = 500;
@@ -220,6 +258,89 @@ function createRequestHandler(
 
     await next();
   };
+}
+
+/**
+ * 在生产环境中注入 CSS link 标签到 HTML 响应
+ * @param res 响应对象
+ * @param cssPath CSS 文件路径（相对于静态资源目录）
+ * @param staticPrefix 静态资源 URL 前缀（如果有）
+ * @param staticDir 静态资源目录名（用于检测路径是否已包含目录前缀）
+ */
+function injectCSSLink(res: Response, cssPath: string, staticPrefix?: string, staticDir?: string): void {
+  // 只处理 HTML 响应
+  if (!res.body || typeof res.body !== 'string') {
+    return;
+  }
+
+  const contentType = res.headers.get('Content-Type') || '';
+  if (!contentType.includes('text/html')) {
+    return;
+  }
+
+  try {
+    const html = res.body as string;
+    
+    // 构建 CSS 文件 URL
+    let cssUrl: string;
+    
+    if (staticPrefix) {
+      // 如果配置了 static prefix
+      // 检查 cssPath 是否已经包含了 staticDir 前缀，如果包含则移除
+      let normalizedPath = cssPath;
+      if (staticDir && cssPath.startsWith(staticDir + '/')) {
+        // 移除 staticDir 前缀，只保留文件名部分
+        normalizedPath = cssPath.slice(staticDir.length + 1);
+      } else if (staticDir && cssPath.startsWith('/' + staticDir + '/')) {
+        // 移除 /staticDir 前缀
+        normalizedPath = cssPath.slice(staticDir.length + 2);
+      }
+      
+      // 确保路径以 / 开头
+      if (!normalizedPath.startsWith('/')) {
+        normalizedPath = '/' + normalizedPath;
+      }
+      
+      // 确保 staticPrefix 以 / 开头但不以 / 结尾
+      const normalizedPrefix = staticPrefix.endsWith('/') 
+        ? staticPrefix.slice(0, -1) 
+        : staticPrefix;
+      
+      cssUrl = `${normalizedPrefix}${normalizedPath}`;
+    } else {
+      // 没有配置 static prefix，直接使用路径
+      cssUrl = cssPath.startsWith('/') ? cssPath : '/' + cssPath;
+    }
+    
+    const linkTag = `<link rel="stylesheet" href="${cssUrl}" />`;
+    
+    // 检查 <head> 中是否有 <link> 标签（CSS 文件）
+    const linkRegex = /<link[^>]*rel\s*=\s*["']stylesheet["'][^>]*>/i;
+    const linkMatch = html.match(linkRegex);
+    
+    if (linkMatch && linkMatch.index !== undefined) {
+      // 如果找到 <link> 标签，在它之前插入新的 link 标签
+      const linkIndex = linkMatch.index;
+      res.body = html.slice(0, linkIndex) + `  ${linkTag}\n  ` + html.slice(linkIndex);
+    } else if (html.includes('</head>')) {
+      // 如果没有 <link> 标签，但有 </head>，在 </head> 前面注入
+      res.body = html.replace('</head>', `  ${linkTag}\n</head>`);
+    } else if (html.includes('<head>')) {
+      // 如果没有 </head>，但有 <head>，则在 <head> 后面注入
+      res.body = html.replace('<head>', `<head>\n  ${linkTag}`);
+    } else {
+      // 如果没有 <head>，则在 <html> 后面添加 <head> 和 link
+      if (html.includes('<html>')) {
+        res.body = html.replace('<html>', `<html>\n  <head>\n    ${linkTag}\n  </head>`);
+      } else {
+        // 如果连 <html> 都没有，在开头添加
+        res.body = `<head>\n  ${linkTag}\n</head>\n${html}`;
+      }
+    }
+  } catch (error) {
+    console.error('[Prod Server] 注入 CSS link 时出错:', error);
+    // 出错时不修改响应
+  }
 }
 
 /**
@@ -377,7 +498,8 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   // 添加静态资源中间件（从构建输出目录）
   // 使用 config.static 配置，如果没有配置则使用默认值 'assets'
   const staticDir = config.static?.dir || 'assets';
-  const assetsPath = `${config.build!.outDir}/${staticDir}`;
+  // 构建完整路径用于检查目录是否存在
+  const assetsPath = path.join(config.build!.outDir, staticDir);
   try {
     if (
       await Deno.stat(assetsPath)
@@ -385,13 +507,20 @@ export async function startProdServer(config: AppConfig): Promise<void> {
         .catch(() => false)
     ) {
       // 如果配置了 static，使用完整配置（但更新 dir 为构建输出路径）；否则使用默认配置
+      // 生产环境：传入 outDir 和 isProduction: true，让中间件自动构建完整路径
       if (config.static) {
         middlewareManager.add(staticFiles({
           ...config.static,
-          dir: assetsPath
+          dir: staticDir, // 使用相对路径（如 'assets'），中间件会根据 outDir 自动构建完整路径
+          outDir: config.build!.outDir,
+          isProduction: true
         }));
       } else {
-        middlewareManager.add(staticFiles({ dir: assetsPath }));
+        middlewareManager.add(staticFiles({ 
+          dir: staticDir, // 使用相对路径（如 'assets'），中间件会根据 outDir 自动构建完整路径
+          outDir: config.build!.outDir,
+          isProduction: true
+        }));
       }
     }
   } catch {
@@ -417,8 +546,13 @@ export async function startProdServer(config: AppConfig): Promise<void> {
     // 加载 main.ts 失败时静默忽略（main.ts 是可选的）
   }
 
-  // 执行插件初始化
-  await pluginManager.executeOnInit({ server, router, routeHandler });
+  // 执行插件初始化（传入 isProduction，优先使用 config 中的值，否则默认为 true 表示生产环境）
+  await pluginManager.executeOnInit({ 
+    server, 
+    router, 
+    routeHandler,
+    isProduction: config.isProduction ?? true
+  });
 
   // 创建 WebSocket 服务器（如果配置了）
   let wsServer: WebSocketServer | null = null;
@@ -445,6 +579,8 @@ export async function startProdServer(config: AppConfig): Promise<void> {
     pluginManager,
     sessionManager,
     cookieManager,
+    config,
+    staticDir,
   );
   server.setHandler(requestHandler);
 

@@ -402,10 +402,17 @@ export async function startDevServer(config: AppConfig): Promise<void> {
         .catch(() => false)
     ) {
       // 如果配置了 static，使用完整配置；否则使用默认配置
+      // 开发环境：明确指定 isProduction: false
       if (config.static) {
-        middlewareManager.add(staticFiles(config.static));
+        middlewareManager.add(staticFiles({
+          ...config.static,
+          isProduction: false
+        }));
       } else {
-        middlewareManager.add(staticFiles({ dir: staticDir }));
+        middlewareManager.add(staticFiles({ 
+          dir: staticDir,
+          isProduction: false
+        }));
       }
     }
   } catch {
@@ -431,8 +438,13 @@ export async function startDevServer(config: AppConfig): Promise<void> {
     // 加载 main.ts 失败时静默忽略（main.ts 是可选的）
   }
 
-  // 执行插件初始化
-  await pluginManager.executeOnInit({ server, router, routeHandler });
+  // 执行插件初始化（传入 isProduction，优先使用 config 中的值，否则默认为 false 表示开发环境）
+  await pluginManager.executeOnInit({ 
+    server, 
+    router, 
+    routeHandler,
+    isProduction: config.isProduction ?? false
+  });
 
   // 创建 WebSocket 服务器（如果配置了）
   let wsServer: WebSocketServer | null = null;

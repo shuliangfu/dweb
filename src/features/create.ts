@@ -375,7 +375,7 @@ async function generateConfigFile(
       plugins: [
         tailwind({
           version: '${useTailwindV4 ? 'v4' : 'v3'}',
-          cssPath: '${appName}/assets/style.css',
+          cssPath: '${appName}/assets/tailwind.css',
           optimize: true,
         }),
       ],
@@ -480,7 +480,7 @@ const config: AppConfig = {
     // Tailwind CSS ${useTailwindV4 ? 'v4' : 'v3'} 插件
     tailwind({
       version: '${useTailwindV4 ? 'v4' : 'v3'}',
-      cssPath: 'assets/style.css', // 指定主 CSS 文件路径
+      cssPath: 'assets/tailwind.css', // 指定主 CSS 文件路径
       optimize: true, // 生产环境优化
     }),
   ],
@@ -651,7 +651,6 @@ export default function App({ children }: AppProps) {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>${appName}</title>
-        <link rel="stylesheet" href="/assets/style.css" />
       </head>
       <body>
         {/* 使用 dangerouslySetInnerHTML 插入已渲染的页面内容 */}
@@ -1630,7 +1629,7 @@ async function generateStaticFiles(
       const appAssetsDir = path.join(projectDir, appName, 'assets');
       await ensureDir(appAssetsDir);
       
-      // 生成 style.css
+      // 生成 tailwind.css
       const styleContent = useTailwindV4
         ? `/* Tailwind CSS v4 */
 @import "tailwindcss";
@@ -1641,8 +1640,8 @@ async function generateStaticFiles(
 @tailwind utilities;
 `;
 
-      await Deno.writeTextFile(path.join(appAssetsDir, 'style.css'), styleContent);
-      console.log(`✅ 已创建: ${appName}/assets/style.css`);
+      await Deno.writeTextFile(path.join(appAssetsDir, 'tailwind.css'), styleContent);
+      console.log(`✅ 已创建: ${appName}/assets/tailwind.css`);
       
       // 为每个应用创建 routes 目录
       const appRoutesDir = path.join(projectDir, appName, 'routes');
@@ -1653,7 +1652,7 @@ async function generateStaticFiles(
   const assetsDir = path.join(projectDir, 'assets');
     await ensureDir(assetsDir);
 
-    // 生成 style.css
+    // 生成 tailwind.css
     const styleContent = useTailwindV4
       ? `/* Tailwind CSS v4 */
 @import "tailwindcss";
@@ -1664,8 +1663,8 @@ async function generateStaticFiles(
 @tailwind utilities;
 `;
 
-  await Deno.writeTextFile(path.join(assetsDir, 'style.css'), styleContent);
-  console.log(`✅ 已创建: assets/style.css`);
+  await Deno.writeTextFile(path.join(assetsDir, 'tailwind.css'), styleContent);
+  console.log(`✅ 已创建: assets/tailwind.css`);
   }
 }
 
