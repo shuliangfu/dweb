@@ -258,7 +258,7 @@ routes/
 │   ├── _middleware.ts    # 用户路由中间件（应用到 /users 下的所有路由）
 │   ├── index.tsx         # /users
 │   └── [id].tsx          # /users/:id
-└── api/                  # API 路由目录（默认在 routes/api，可通过 apiDir 配置）
+└── api/
     └── _middleware.ts    # API 路由中间件（应用到 /api 下的所有路由）
 ```
 
@@ -366,7 +366,8 @@ export default adminAuthMiddleware;
 #### 请求日志中间件
 
 ```typescript
-// routes/api/_middleware.ts
+// routes/api/_middleware.ts（默认配置）
+// 如果配置了 apiDir: 'api'，则路径为 api/_middleware.ts
 import type { Middleware } from '@dreamer/dweb';
 
 const apiLoggerMiddleware: Middleware = async (req, res, next) => {
@@ -392,7 +393,8 @@ export default apiLoggerMiddleware;
 #### 速率限制中间件
 
 ```typescript
-// routes/api/_middleware.ts
+// routes/api/_middleware.ts（默认配置）
+// 如果配置了 apiDir: 'api'，则路径为 api/_middleware.ts
 import type { Middleware } from '@dreamer/dweb';
 
 // 简单的内存速率限制

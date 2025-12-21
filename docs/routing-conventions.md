@@ -32,7 +32,7 @@ routes/
 │   ├── _middleware.ts     # 用户中间件（应用到 /users 下的所有路由）
 │   ├── index.tsx           # /users
 │   └── [id].tsx            # /users/:id
-└── api/                    # API 路由目录（默认在 routes/api，可通过 apiDir 配置）
+└── api/
     └── _middleware.ts      # API 中间件（应用到 /api 下的所有路由）
 ```
 
@@ -183,7 +183,7 @@ export default function DocsLayout({ children }: LayoutProps) {
 ```
 routes/
 ├── _middleware.ts          # 根中间件（应用到所有路由）
-└── api/                    # API 路由目录（默认在 routes/api，可通过 apiDir 配置）
+└── api/
     └── _middleware.ts      # API 中间件（应用到 /api 下的所有路由）
 ```
 
@@ -212,7 +212,8 @@ export default routeMiddleware;
 #### 多个中间件
 
 ```tsx
-// routes/api/_middleware.ts
+// routes/api/_middleware.ts（默认配置）
+// 如果配置了 apiDir: 'api'，则路径为 api/_middleware.ts
 import type { Middleware } from '@dreamer/dweb';
 
 const authMiddleware: Middleware = async (req, res, next) => {
@@ -241,7 +242,8 @@ export default [authMiddleware, loggerMiddleware];
 
 - 访问 `/api/users` 时：
   1. `routes/_middleware.ts`（根中间件）
-  2. `routes/api/_middleware.ts`（API 中间件）
+  2. `routes/api/_middleware.ts`（API 中间件，默认配置）
+     - 如果配置了 `apiDir: 'api'`，则路径为 `api/_middleware.ts`
 
 ### 相关文档
 
