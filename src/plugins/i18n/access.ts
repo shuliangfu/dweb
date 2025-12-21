@@ -22,24 +22,12 @@ let currentLanguage: string | null = null;
 
 /**
  * 默认翻译函数（当 i18n 未初始化时使用）
- * 这个函数始终返回 key 本身，确保 $t() 和 t() 始终可用
+ * 这个函数始终返回 key 本身，确保 $t() 始终可用
  */
 const defaultTranslationFunction: (
   key: string,
   params?: Record<string, string>,
 ) => string = (key: string) => key;
-
-/**
- * 初始化全局 $t 和 t 函数（使用默认函数）
- * 这确保即使 i18n 插件未初始化，$t() 和 t() 也可以使用
- */
-function initDefaultGlobalI18n(): void {
-  if (typeof globalThis !== "undefined") {
-    if (!(globalThis as any).$t) {
-      (globalThis as any).$t = defaultTranslationFunction;
-    }
-  }
-}
 
 /**
  * 初始化 i18n 访问（由 i18n 插件调用）
@@ -62,10 +50,10 @@ export function initI18nAccess(
 }
 
 /**
- * 确保全局 $t 和 t 函数已初始化
+ * 确保全局 $t 函数已初始化
  * 如果 i18n 插件已初始化，使用实际的翻译函数
  * 如果未初始化，使用默认函数（返回 key 本身）
- * 这确保 $t() 和 t() 始终可用，不会报错
+ * 这确保 $t() 始终可用，不会报错
  */
 export function ensureGlobalI18n(): void {
   if (typeof globalThis !== 'undefined') {
