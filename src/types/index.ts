@@ -11,7 +11,7 @@ export interface StaticOptions {
   dir: string; // 静态资源根目录
   prefix?: string; // URL 前缀（如果未配置，默认使用 dir 的名称）
   index?: string | string[]; // 索引文件名
-  dotfiles?: 'allow' | 'deny' | 'ignore'; // 点文件处理方式
+  dotfiles?: "allow" | "deny" | "ignore"; // 点文件处理方式
   etag?: boolean; // 是否启用 ETag
   lastModified?: boolean; // 是否发送 Last-Modified
   maxAge?: number; // 缓存时间（秒）
@@ -21,11 +21,14 @@ export interface StaticOptions {
 }
 
 // 数据库配置（从数据库模块导入类型）
-import type { DatabaseConfig } from '../features/database/types.ts';
+import type { DatabaseConfig } from "../features/database/types.ts";
 // WebSocket 配置（从 WebSocket 模块导入类型）
-import type { WebSocketConfig } from '../features/websocket/types.ts';
+import type { WebSocketConfig } from "../features/websocket/types.ts";
 // GraphQL 配置（从 GraphQL 模块导入类型）
-import type { GraphQLConfig, GraphQLSchema } from '../features/graphql/types.ts';
+import type {
+  GraphQLConfig,
+  GraphQLSchema,
+} from "../features/graphql/types.ts";
 
 // 应用配置
 export interface AppConfig {
@@ -65,7 +68,7 @@ export type DWebConfig = AppConfig;
  */
 
 // 请求对象
-export interface Request extends Omit<globalThis.Request, 'body'> {
+export interface Request extends Omit<globalThis.Request, "body"> {
   params: Record<string, string>;
   query: Record<string, string>;
   cookies: Record<string, string>;
@@ -82,14 +85,14 @@ export interface Request extends Omit<globalThis.Request, 'body'> {
 
 // 内容类型（用于响应方法）
 export type ContentType =
-  | 'text'
-  | 'json'
-  | 'html'
-  | 'javascript'
-  | 'css'
-  | 'xml'
-  | 'svg'
-  | 'binary';
+  | "text"
+  | "json"
+  | "html"
+  | "javascript"
+  | "css"
+  | "xml"
+  | "svg"
+  | "binary";
 
 // 响应对象
 export interface Response {
@@ -105,7 +108,7 @@ export interface Response {
       charset?: string;
       status?: number;
       headers?: Record<string, string>;
-    }
+    },
   ): Response;
   html(
     html: string,
@@ -113,7 +116,7 @@ export interface Response {
       charset?: string;
       status?: number;
       headers?: Record<string, string>;
-    }
+    },
   ): Response;
   text(
     text: string,
@@ -122,7 +125,7 @@ export interface Response {
       charset?: string;
       status?: number;
       headers?: Record<string, string>;
-    }
+    },
   ): Response;
   redirect(url: string, status?: number): Response;
   send(
@@ -132,7 +135,7 @@ export interface Response {
       charset?: string;
       status?: number;
       headers?: Record<string, string>;
-    }
+    },
   ): Response;
 }
 
@@ -144,7 +147,7 @@ export interface CookieOptions {
   maxAge?: number;
   secure?: boolean;
   httpOnly?: boolean;
-  sameSite?: 'strict' | 'lax' | 'none';
+  sameSite?: "strict" | "lax" | "none";
 }
 
 // Session 对象
@@ -160,7 +163,7 @@ export interface Session {
 export type Middleware = (
   req: Request,
   res: Response,
-  next: () => Promise<void>
+  next: () => Promise<void>,
 ) => Promise<void> | void;
 
 // 中间件配置
@@ -247,7 +250,9 @@ export interface RouteConfig {
   dir: string;
   ignore?: string[];
   cache?: boolean;
-  priority?: 'specific-first' | 'order';
+  priority?: "specific-first" | "order";
+  /** API 目录，默认为 'routes/api'，也可以配置为 'api' 等相对路径 */
+  apiDir?: string;
 }
 
 // 服务器配置
@@ -261,14 +266,14 @@ export interface CookieConfig {
   secret?: string;
   secure?: boolean;
   httpOnly?: boolean;
-  sameSite?: 'strict' | 'lax' | 'none';
+  sameSite?: "strict" | "lax" | "none";
   maxAge?: number;
 }
 
 // Session 配置
 export interface SessionConfig {
   secret: string;
-  store?: 'memory' | 'file' | 'redis' | 'kv' | 'mongodb';
+  store?: "memory" | "file" | "redis" | "kv" | "mongodb";
   maxAge?: number;
   secure?: boolean;
   httpOnly?: boolean;
@@ -316,7 +321,7 @@ export interface BuildConfig {
 }
 
 // 渲染模式
-export type RenderMode = 'ssr' | 'csr' | 'hybrid';
+export type RenderMode = "ssr" | "csr" | "hybrid";
 
 // CORS 配置
 export interface CorsConfig {
@@ -343,10 +348,10 @@ export interface ApiRoute {
  * 用于页面组件的 load 函数，提供路由参数、查询参数、Cookie 和 Session 等信息
  */
 export interface LoadContext {
-	/** 请求对象 */
-	req: Request;
-	/** 响应对象 */
-	res: Response;
+  /** 请求对象 */
+  req: Request;
+  /** 响应对象 */
+  res: Response;
   /** 路由参数 */
   params: Record<string, string>;
   /** 查询参数 */
@@ -360,7 +365,7 @@ export interface LoadContext {
   /** 获取 Session（如果不存在则返回 null） */
   getSession(): Promise<Session | null>;
   /** 数据库适配器实例（如果已配置数据库） */
-  db?: import('../features/database/types.ts').DatabaseAdapter | null;
+  db?: import("../features/database/types.ts").DatabaseAdapter | null;
   /** 翻译函数（如果已配置 i18n 插件） */
   t?: (key: string, params?: Record<string, string>) => string;
   /** 当前语言代码（如果已配置 i18n 插件） */

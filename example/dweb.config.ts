@@ -3,11 +3,11 @@
  * 单应用模式
  */
 
-import { tailwind, cors, seo, type AppConfig } from '@dreamer/dweb';
+import { type AppConfig, cors, seo, tailwind } from "@dreamer/dweb";
 
 const config: AppConfig = {
-  name: 'example',
-  renderMode: 'hybrid', //'ssr' | 'csr' | 'hybrid';
+  name: "example",
+  renderMode: "hybrid", //'ssr' | 'csr' | 'hybrid';
 
   // 全局渲染模式（可在页面组件中覆盖）
   // 可选值: 'ssr' | 'csr' | 'hybrid'
@@ -25,40 +25,42 @@ const config: AppConfig = {
 
   // 构建配置
   build: {
-    outDir: 'dist',
+    outDir: "dist",
   },
 
   // 服务器配置
   server: {
     port: 3000,
-    host: '0.0.0.0', // Docker 环境需要监听所有网络接口
+    host: "0.0.0.0", // Docker 环境需要监听所有网络接口
   },
 
   // 路由配置
   routes: {
-    dir: 'routes',
-    ignore: ['**/*.test.ts', '**/*.test.tsx'],
+    dir: "routes",
+    ignore: ["**/*.test.ts", "**/*.test.tsx"],
+    // API 目录配置，默认为 'routes/api'，也可以配置为 'api' 等相对路径
+    // apiDir: 'api',  // 如果配置为 'api'，则 API 文件应放在项目根目录的 api 文件夹中
   },
 
   // 静态资源目录，默认为 'assets'
   static: {
-    dir: 'assets',
-    prefix: '/assets', // 访问前缀，例如 /assets/logo.png
+    dir: "assets",
+    prefix: "/assets", // 访问前缀，例如 /assets/logo.png
     maxAge: 86400, // 缓存 1 天
-    index: ['index.html', 'index.htm'],
-    dotfiles: 'deny', // 禁止访问隐藏文件
-    extendDirs: ['uploads'], // 扩展的静态资源目录
+    index: ["index.html", "index.htm"],
+    dotfiles: "deny", // 禁止访问隐藏文件
+    extendDirs: ["uploads"], // 扩展的静态资源目录
   },
 
   // Cookie 配置
   cookie: {
-    secret: 'your-secret-key-here',
+    secret: "your-secret-key-here",
   },
 
   // Session 配置
   session: {
-    secret: 'your-session-secret-here',
-    store: 'memory',
+    secret: "your-session-secret-here",
+    store: "memory",
     maxAge: 3600000, // 1小时
     secure: false,
     httpOnly: true,
@@ -68,22 +70,22 @@ const config: AppConfig = {
   plugins: [
     // Tailwind CSS v4 插件（默认使用 v4）
     tailwind({
-      version: 'v4',
-      cssPath: 'assets/tailwind.css', // 指定主 CSS 文件路径
+      version: "v4",
+      cssPath: "assets/tailwind.css", // 指定主 CSS 文件路径
       optimize: true, // 生产环境优化
     }),
     seo({
-      title: 'DWeb - 现代化的全栈 Web 框架',
-      description: '基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web 框架',
-      keywords: 'DWeb, Deno, Preact, Tailwind CSS, Web 框架',
-      author: 'DWeb',
+      title: "DWeb - 现代化的全栈 Web 框架",
+      description: "基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web 框架",
+      keywords: "DWeb, Deno, Preact, Tailwind CSS, Web 框架",
+      author: "DWeb",
     }),
   ],
   middleware: [
     cors({
-      origin: '*',
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
     }),
   ],
 };

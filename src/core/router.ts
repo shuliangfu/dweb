@@ -3,50 +3,50 @@
  * 实现文件系统路由，自动扫描 routes 目录
  */
 
-import { walk } from '@std/fs/walk';
-import { globToRegExp } from '@std/path/glob-to-regexp';
-import * as path from '@std/path';
-import { isValidIdentifier, sanitizeRouteParams } from '../utils/security.ts';
+import { walk } from "@std/fs/walk";
+import { globToRegExp } from "@std/path/glob-to-regexp";
+import * as path from "@std/path";
+import { isValidIdentifier, sanitizeRouteParams } from "../utils/security.ts";
 
 /**
  * 路由信息
- * 
+ *
  * 表示一个路由的完整信息，包括路径、文件路径、类型等。
- * 
+ *
  * @interface RouteInfo
  */
 export interface RouteInfo {
   /** URL 路径，例如 `/users/:id` 或 `/about` */
   path: string;
-  
+
   /** 文件路径（服务器端加载用），绝对路径或相对路径 */
   filePath: string;
-  
+
   /** 路由类型：页面路由、API 路由、布局、中间件或错误页面 */
-  type: 'page' | 'api' | 'layout' | 'middleware' | 'error';
-  
+  type: "page" | "api" | "layout" | "middleware" | "error";
+
   /** 动态参数名数组，例如 `['id']` 对于 `/users/:id` */
   params?: string[];
-  
+
   /** 是否为捕获所有路由（`[...slug]` 格式） */
   isCatchAll?: boolean;
-  
+
   /** 客户端模块路径（生产环境用，只包含文件名），例如 `routes_index.abc123.js` */
   clientModulePath?: string;
 }
 
 /**
  * 路由管理器
- * 
+ *
  * 负责扫描路由目录、匹配路由、提取参数等。
- * 
+ *
  * @example
  * ```ts
  * import { Router } from "@dreamer/dweb";
- * 
+ *
  * const router = new Router("routes", ["**\/*.test.ts"]);
  * await router.scan();
- * 
+ *
  * const route = router.match("/users/123");
  * if (route) {
  *   console.log("匹配的路由:", route.path);
@@ -55,45 +55,58 @@ export interface RouteInfo {
  */
 export class Router {
   private routes: Map<string, RouteInfo> = new Map();
-  private layouts: Map<string, string> = new Map();  // 路径 -> layout 文件路径
-  private middlewares: Map<string, string> = new Map();  // 路径 -> middleware 文件路径
-  private errorPages: Map<string, string> = new Map();  // 错误类型 -> 文件路径
-  private appFilePath: string | null = null;  // _app.tsx 文件路径
+  private layouts: Map<string, string> = new Map(); // 路径 -> layout 文件路径
+  private middlewares: Map<string, string> = new Map(); // 路径 -> middleware 文件路径
+  private errorPages: Map<string, string> = new Map(); // 错误类型 -> 文件路径
+  private appFilePath: string | null = null; // _app.tsx 文件路径
   private routesDir: string;
+  private apiDir: string; // API 目录路径（相对于项目根目录）
   private ignorePatterns: RegExp[] = [];
-  private basePath: string = '/';  // 应用基础路径（多应用模式使用）
-  
-  constructor(routesDir: string, ignore?: string[], basePath?: string) {
+  private basePath: string = "/"; // 应用基础路径（多应用模式使用）
+
+  constructor(
+    routesDir: string,
+    ignore?: string[],
+    basePath?: string,
+    apiDir?: string,
+  ) {
     this.routesDir = routesDir;
-    this.basePath = basePath || '/';
-    
+    this.basePath = basePath || "/";
+
+    // 设置 API 目录，默认为 routes/api
+    if (apiDir) {
+      this.apiDir = apiDir;
+    } else {
+      this.apiDir = path.join(routesDir, "api");
+    }
+
     // 确保 basePath 以 / 开头，以 / 结尾（除非是根路径）
-    if (this.basePath !== '/') {
-      if (!this.basePath.startsWith('/')) {
-        this.basePath = '/' + this.basePath;
+    if (this.basePath !== "/") {
+      if (!this.basePath.startsWith("/")) {
+        this.basePath = "/" + this.basePath;
       }
-      if (!this.basePath.endsWith('/')) {
-        this.basePath = this.basePath + '/';
+      if (!this.basePath.endsWith("/")) {
+        this.basePath = this.basePath + "/";
       }
     }
-    
+
     // 编译忽略模式
     if (ignore) {
-      this.ignorePatterns = ignore.map(pattern => globToRegExp(pattern));
+      this.ignorePatterns = ignore.map((pattern) => globToRegExp(pattern));
     }
   }
-  
+
   /**
    * 从构建映射文件加载路由（生产环境）
-   * 
+   *
    * 在生产环境中，从构建系统生成的路由映射文件加载路由信息。
    * 同时读取 server.json 和 client.json，分别用于服务端和客户端路由。
    * 这样可以避免在生产环境中扫描文件系统，提升性能。
-   * 
+   *
    * @param serverRouteMapPath - 服务端路由映射文件路径（server.json）
    * @param clientRouteMapPath - 客户端路由映射文件路径（client.json）
    * @param outDir - 构建输出目录
-   * 
+   *
    * @example
    * ```typescript
    * const router = new Router("routes");
@@ -103,7 +116,7 @@ export class Router {
   async loadFromBuildMap(
     serverRouteMapPath: string,
     clientRouteMapPath: string,
-    outDir: string
+    outDir: string,
   ): Promise<void> {
     this.routes.clear();
     this.layouts.clear();
@@ -114,69 +127,80 @@ export class Router {
     try {
       // 读取服务端路由映射文件
       const serverRouteMapContent = await Deno.readTextFile(serverRouteMapPath);
-      const serverRouteMap: Record<string, string> = JSON.parse(serverRouteMapContent);
-      
+      const serverRouteMap: Record<string, string> = JSON.parse(
+        serverRouteMapContent,
+      );
+
       // 读取客户端路由映射文件（如果存在）
       let clientRouteMap: Record<string, string> = {};
       try {
-        const clientRouteMapContent = await Deno.readTextFile(clientRouteMapPath);
+        const clientRouteMapContent = await Deno.readTextFile(
+          clientRouteMapPath,
+        );
         clientRouteMap = JSON.parse(clientRouteMapContent);
       } catch {
         // 客户端路由映射文件不存在，使用空对象（向后兼容）
       }
 
       // 遍历服务端路由映射，创建路由信息
-      for (const [routeKey, serverHashFileName] of Object.entries(serverRouteMap)) {
+      for (
+        const [routeKey, serverHashFileName] of Object.entries(serverRouteMap)
+      ) {
         // 构建文件的完整路径（用于服务器端加载，从 server 目录）
         // serverHashFileName 格式：server/routes_index.abc123.js
-        const serverHashName = serverHashFileName.startsWith('server/') 
-          ? serverHashFileName.replace(/^server\//, '') 
+        const serverHashName = serverHashFileName.startsWith("server/")
+          ? serverHashFileName.replace(/^server\//, "")
           : serverHashFileName;
-        const buildFilePath = path.resolve(outDir, 'server', serverHashName);
-        
+        const buildFilePath = path.resolve(outDir, "server", serverHashName);
+
         // 从客户端路由映射中获取对应的客户端路径
         // clientHashFileName 格式：client/routes_index.xyz789.js
         const clientHashFileName = clientRouteMap[routeKey];
         let clientModulePath: string;
         if (clientHashFileName) {
           // 如果客户端映射存在，使用它
-          const clientHashName = clientHashFileName.startsWith('client/')
-            ? clientHashFileName.replace(/^client\//, '')
+          const clientHashName = clientHashFileName.startsWith("client/")
+            ? clientHashFileName.replace(/^client\//, "")
             : clientHashFileName;
           clientModulePath = clientHashName;
         } else {
           // 向后兼容：如果没有客户端映射，尝试从服务端路径推断
           clientModulePath = serverHashName;
         }
-        
+
         // 规范化路由路径（路由映射中的 key 可能是 "index" 或 "/index"）
         let routePath = routeKey;
-        if (!routePath.startsWith('/')) {
+        if (!routePath.startsWith("/")) {
           // 如果路由 key 是 "index"，转换为 "/"
-          if (routePath === 'index') {
-            routePath = '/';
+          if (routePath === "index") {
+            routePath = "/";
           } else {
-            routePath = '/' + routePath;
+            routePath = "/" + routePath;
           }
         }
-        
+
         // 确定路由类型
-        let type: 'page' | 'api' | 'layout' | 'middleware' | 'error' = 'page';
-        if (routePath.startsWith('/api/')) {
-          type = 'api';
-        } else if (routePath === '/_layout' || routePath.endsWith('/_layout')) {
-          type = 'layout';
-        } else if (routePath === '/_404' || routePath === '/_error' || routePath === '/_500') {
-          type = 'error';
-        } else if (routePath === '/_app') {
+        let type: "page" | "api" | "layout" | "middleware" | "error" = "page";
+        if (routePath.startsWith("/api/")) {
+          type = "api";
+        } else if (routePath === "/_layout" || routePath.endsWith("/_layout")) {
+          type = "layout";
+        } else if (
+          routePath === "/_404" || routePath === "/_error" ||
+          routePath === "/_500"
+        ) {
+          type = "error";
+        } else if (routePath === "/_app") {
           this.appFilePath = buildFilePath;
           continue;
         }
 
         // 加上 basePath 前缀（如果 basePath 不是根路径，且不是特殊文件）
-        if (this.basePath !== '/' && type !== 'layout' && type !== 'error') {
-          const base = this.basePath.endsWith('/') ? this.basePath.slice(0, -1) : this.basePath;
-          if (routePath === '/') {
+        if (this.basePath !== "/" && type !== "layout" && type !== "error") {
+          const base = this.basePath.endsWith("/")
+            ? this.basePath.slice(0, -1)
+            : this.basePath;
+          if (routePath === "/") {
             routePath = base;
           } else {
             routePath = base + routePath;
@@ -197,11 +221,11 @@ export class Router {
         // 处理动态路由参数（路由路径中可能包含 [param] 格式）
         const paramMatch = routePath.match(/\[([^\]]+)\]/g);
         if (paramMatch) {
-          routeInfo.params = paramMatch.map(p => p.slice(1, -1));
+          routeInfo.params = paramMatch.map((p) => p.slice(1, -1));
         }
 
         // 检查是否为捕获所有路由
-        if (routePath.includes('[...')) {
+        if (routePath.includes("[...")) {
           routeInfo.isCatchAll = true;
         }
 
@@ -209,21 +233,27 @@ export class Router {
         this.routes.set(routePath, routeInfo);
 
         // 处理特殊文件
-        if (type === 'layout') {
-          let layoutPath = routePath === '/_layout' ? '/' : routePath.replace('/_layout', '');
+        if (type === "layout") {
+          let layoutPath = routePath === "/_layout"
+            ? "/"
+            : routePath.replace("/_layout", "");
           // 如果 basePath 不是根路径，且 layoutPath 是根路径，使用 basePath
-          if (this.basePath !== '/' && layoutPath === '/') {
-            layoutPath = this.basePath.endsWith('/') ? this.basePath.slice(0, -1) : this.basePath;
+          if (this.basePath !== "/" && layoutPath === "/") {
+            layoutPath = this.basePath.endsWith("/")
+              ? this.basePath.slice(0, -1)
+              : this.basePath;
           }
           this.layouts.set(layoutPath, buildFilePath);
-        } else if (type === 'error') {
-          const errorType = routePath.replace('/_', '');
+        } else if (type === "error") {
+          const errorType = routePath.replace("/_", "");
           this.errorPages.set(errorType, buildFilePath);
         }
       }
     } catch (error) {
       if (error instanceof Deno.errors.NotFound) {
-        throw new Error(`路由映射文件不存在: ${serverRouteMapPath} 或 ${clientRouteMapPath}`);
+        throw new Error(
+          `路由映射文件不存在: ${serverRouteMapPath} 或 ${clientRouteMapPath}`,
+        );
       } else {
         throw error;
       }
@@ -232,15 +262,15 @@ export class Router {
 
   /**
    * 扫描路由目录
-   * 
+   *
    * 扫描配置的路由目录，自动发现所有路由文件并构建路由映射。
    * 支持页面路由、API 路由、布局、中间件和错误页面。
-   * 
+   *
    * @example
    * ```ts
    * const router = new Router("routes", ["**\/*.test.ts"]);
    * await router.scan();
-   * 
+   *
    * // 获取所有路由
    * const routes = router.getAllRoutes();
    * console.log(`发现 ${routes.length} 个路由`);
@@ -252,30 +282,97 @@ export class Router {
     this.middlewares.clear();
     this.errorPages.clear();
     this.appFilePath = null;
-    
+
+    // 标准化 API 目录路径（转换为绝对路径）
+    const apiDirAbsolute = path.isAbsolute(this.apiDir)
+      ? this.apiDir
+      : path.join(Deno.cwd(), this.apiDir);
+
+    // 标准化 routes 目录路径（转换为绝对路径）
+    const routesDirAbsolute = path.isAbsolute(this.routesDir)
+      ? this.routesDir
+      : path.join(Deno.cwd(), this.routesDir);
+
+    // 判断 API 目录是否在 routes 目录下
+    const apiDirInRoutes =
+      apiDirAbsolute.startsWith(routesDirAbsolute + path.SEPARATOR) ||
+      apiDirAbsolute === routesDirAbsolute;
+
     try {
       // 遍历 routes 目录
-      for await (const entry of walk(this.routesDir, {
-        includeFiles: true,
-        includeDirs: false,
-        exts: ['.ts', '.tsx', '.js', '.jsx']
-      })) {
+      for await (
+        const entry of walk(routesDirAbsolute, {
+          includeFiles: true,
+          includeDirs: false,
+          exts: [".ts", ".tsx", ".js", ".jsx"],
+        })
+      ) {
         const filePath = entry.path;
-        const relativePath = filePath.replace(this.routesDir + '/', '');
-        
+        const relativePath = filePath.replace(
+          routesDirAbsolute + path.SEPARATOR,
+          "",
+        );
+
         // 检查是否应该忽略
         if (this.shouldIgnore(relativePath)) {
           continue;
         }
-        
+
+        // 判断是否是 API 路由文件
+        const isApiRoute = apiDirInRoutes &&
+          filePath.startsWith(apiDirAbsolute + path.SEPARATOR);
+
         // 处理不同类型的文件
         // 检查是否是特殊文件（_layout.tsx, _middleware.ts 等）
-        if (relativePath.startsWith('_') || relativePath.includes('/_layout.') || relativePath.includes('/_middleware.') || relativePath.includes('/_404.') || relativePath.includes('/_error.') || relativePath.includes('/_500.')) {
+        if (
+          relativePath.startsWith("_") || relativePath.includes("/_layout.") ||
+          relativePath.includes("/_middleware.") ||
+          relativePath.includes("/_404.") ||
+          relativePath.includes("/_error.") || relativePath.includes("/_500.")
+        ) {
           this.handleSpecialFile(relativePath, filePath);
-        } else if (relativePath.startsWith('api/')) {
-          this.handleApiRoute(relativePath, filePath);
+        } else if (isApiRoute) {
+          // 计算相对于 API 目录的路径
+          const apiRelativePath = filePath.replace(
+            apiDirAbsolute + path.SEPARATOR,
+            "",
+          );
+          this.handleApiRoute(apiRelativePath, filePath);
         } else {
           this.handlePageRoute(relativePath, filePath);
+        }
+      }
+
+      // 如果 API 目录不在 routes 目录下，单独扫描 API 目录
+      if (!apiDirInRoutes) {
+        try {
+          for await (
+            const entry of walk(apiDirAbsolute, {
+              includeFiles: true,
+              includeDirs: false,
+              exts: [".ts", ".tsx", ".js", ".jsx"],
+            })
+          ) {
+            const filePath = entry.path;
+            const apiRelativePath = filePath.replace(
+              apiDirAbsolute + path.SEPARATOR,
+              "",
+            );
+
+            // 检查是否应该忽略
+            if (this.shouldIgnore(apiRelativePath)) {
+              continue;
+            }
+
+            // 处理 API 路由
+            this.handleApiRoute(apiRelativePath, filePath);
+          }
+        } catch (error) {
+          if (error instanceof Deno.errors.NotFound) {
+            console.warn(`API 目录不存在: ${this.apiDir}`);
+          } else {
+            throw error;
+          }
         }
       }
     } catch (error) {
@@ -286,142 +383,159 @@ export class Router {
       }
     }
   }
-  
+
   /**
    * 检查文件是否应该被忽略
    */
   private shouldIgnore(filePath: string): boolean {
-    return this.ignorePatterns.some(pattern => pattern.test(filePath));
+    return this.ignorePatterns.some((pattern) => pattern.test(filePath));
   }
-  
+
   /**
    * 处理特殊约定文件
    */
   private handleSpecialFile(relativePath: string, filePath: string): void {
-    if (relativePath === '_app.tsx' || relativePath === '_app.ts') {
+    if (relativePath === "_app.tsx" || relativePath === "_app.ts") {
       // _app.tsx 是根应用组件，用于包裹所有页面
       this.appFilePath = filePath;
-    } else if (relativePath === '_layout.tsx' || relativePath === '_layout.ts') {
+    } else if (
+      relativePath === "_layout.tsx" || relativePath === "_layout.ts"
+    ) {
       // 根布局：如果 basePath 不是根路径，使用 basePath；否则使用 '/'
-      const layoutPath = this.basePath !== '/' 
-        ? (this.basePath.endsWith('/') ? this.basePath.slice(0, -1) : this.basePath)
-        : '/';
+      const layoutPath = this.basePath !== "/"
+        ? (this.basePath.endsWith("/")
+          ? this.basePath.slice(0, -1)
+          : this.basePath)
+        : "/";
       this.layouts.set(layoutPath, filePath);
-    } else if (relativePath.endsWith('/_layout.tsx') || relativePath.endsWith('/_layout.ts')) {
-      let path = '/' + relativePath.replace(/\/_layout\.(tsx|ts)$/, '');
+    } else if (
+      relativePath.endsWith("/_layout.tsx") ||
+      relativePath.endsWith("/_layout.ts")
+    ) {
+      let path = "/" + relativePath.replace(/\/_layout\.(tsx|ts)$/, "");
       // 加上 basePath 前缀（如果 basePath 不是根路径）
-      if (this.basePath !== '/') {
-        const base = this.basePath.endsWith('/') ? this.basePath.slice(0, -1) : this.basePath;
+      if (this.basePath !== "/") {
+        const base = this.basePath.endsWith("/")
+          ? this.basePath.slice(0, -1)
+          : this.basePath;
         path = base + path;
       }
       this.layouts.set(path, filePath);
-    } else if (relativePath === '_middleware.ts') {
-      this.middlewares.set('/', filePath);
-    } else if (relativePath.endsWith('/_middleware.ts')) {
-      const path = '/' + relativePath.replace(/\/_middleware\.ts$/, '');
+    } else if (relativePath === "_middleware.ts") {
+      this.middlewares.set("/", filePath);
+    } else if (relativePath.endsWith("/_middleware.ts")) {
+      const path = "/" + relativePath.replace(/\/_middleware\.ts$/, "");
       this.middlewares.set(path, filePath);
-    } else if (relativePath === '_404.tsx' || relativePath === '_404.ts') {
-      this.errorPages.set('404', filePath);
-    } else if (relativePath === '_error.tsx' || relativePath === '_error.ts') {
-      this.errorPages.set('error', filePath);
-    } else if (relativePath === '_500.tsx' || relativePath === '_500.ts') {
-      this.errorPages.set('500', filePath);
+    } else if (relativePath === "_404.tsx" || relativePath === "_404.ts") {
+      this.errorPages.set("404", filePath);
+    } else if (relativePath === "_error.tsx" || relativePath === "_error.ts") {
+      this.errorPages.set("error", filePath);
+    } else if (relativePath === "_500.tsx" || relativePath === "_500.ts") {
+      this.errorPages.set("500", filePath);
     }
   }
-  
+
   /**
    * 处理 API 路由
+   *
+   * @param relativePath - 相对于 API 目录的路径（不包含 api/ 前缀）
+   * @param filePath - 文件的绝对路径
    */
   private handleApiRoute(relativePath: string, filePath: string): void {
-    // 移除 api/ 前缀
-    const apiPath = relativePath.replace(/^api\//, '');
-    
     // 移除文件扩展名
-    const pathWithoutExt = apiPath.replace(/\.(ts|tsx|js|jsx)$/, '');
-    
+    const pathWithoutExt = relativePath.replace(/\.(ts|tsx|js|jsx)$/, "");
+
     // 处理动态路由
     const { path, params, isCatchAll } = this.parseDynamicPath(pathWithoutExt);
-    
+
     // 加上 basePath 前缀（如果 basePath 不是根路径）
-    let routePath = '/api' + path;
-    if (this.basePath !== '/') {
+    let routePath = "/api" + path;
+    if (this.basePath !== "/") {
       // 移除 basePath 末尾的 /，然后加上路由路径
-      const base = this.basePath.endsWith('/') ? this.basePath.slice(0, -1) : this.basePath;
+      const base = this.basePath.endsWith("/")
+        ? this.basePath.slice(0, -1)
+        : this.basePath;
       routePath = base + routePath;
     }
-    
+
     this.routes.set(routePath, {
       path: routePath,
       filePath,
-      type: 'api',
+      type: "api",
       params,
-      isCatchAll
+      isCatchAll,
     });
   }
-  
+
   /**
    * 处理页面路由
    */
   private handlePageRoute(relativePath: string, filePath: string): void {
     // 移除文件扩展名
-    const pathWithoutExt = relativePath.replace(/\.(ts|tsx|js|jsx)$/, '');
-    
+    const pathWithoutExt = relativePath.replace(/\.(ts|tsx|js|jsx)$/, "");
+
     // 处理 index 文件
-    if (pathWithoutExt === 'index' || pathWithoutExt.endsWith('/index')) {
-      const basePath = pathWithoutExt.replace(/\/?index$/, '') || '/';
+    if (pathWithoutExt === "index" || pathWithoutExt.endsWith("/index")) {
+      const basePath = pathWithoutExt.replace(/\/?index$/, "") || "/";
       // 确保路径以 / 开头（除非是根路径）
-      let path = basePath === '/' ? '/' : (basePath.startsWith('/') ? basePath : '/' + basePath);
-      
+      let path = basePath === "/"
+        ? "/"
+        : (basePath.startsWith("/") ? basePath : "/" + basePath);
+
       // 加上 basePath 前缀（如果 basePath 不是根路径）
-      if (this.basePath !== '/') {
-        const base = this.basePath.endsWith('/') ? this.basePath.slice(0, -1) : this.basePath;
-        if (path === '/') {
+      if (this.basePath !== "/") {
+        const base = this.basePath.endsWith("/")
+          ? this.basePath.slice(0, -1)
+          : this.basePath;
+        if (path === "/") {
           path = base;
         } else {
           path = base + path;
         }
       }
-      
+
       const routeInfo = {
         path,
         filePath,
-        type: 'page' as const
+        type: "page" as const,
       };
-      
+
       // 注册基础路径（例如 /page）
       this.routes.set(path, routeInfo);
-      
+
       // 同时注册带 /index 的路径（例如 /page/index），支持两种访问方式
-      if (path !== '/') {
-        const pathWithIndex = path + '/index';
+      if (path !== "/") {
+        const pathWithIndex = path + "/index";
         this.routes.set(pathWithIndex, routeInfo);
       } else {
         // 根路径的 index 文件，也注册 /index 路径
-        this.routes.set('/index', routeInfo);
+        this.routes.set("/index", routeInfo);
       }
-      
+
       return;
     }
-    
+
     // 处理动态路由
     const { path, params, isCatchAll } = this.parseDynamicPath(pathWithoutExt);
-    
+
     // 加上 basePath 前缀（如果 basePath 不是根路径）
     let routePath = path;
-    if (this.basePath !== '/') {
-      const base = this.basePath.endsWith('/') ? this.basePath.slice(0, -1) : this.basePath;
+    if (this.basePath !== "/") {
+      const base = this.basePath.endsWith("/")
+        ? this.basePath.slice(0, -1)
+        : this.basePath;
       routePath = base + path;
     }
-    
+
     this.routes.set(routePath, {
       path: routePath,
       filePath,
-      type: 'page',
+      type: "page",
       params,
-      isCatchAll
+      isCatchAll,
     });
   }
-  
+
   /**
    * 解析动态路径
    * @param path 路径字符串
@@ -432,38 +546,38 @@ export class Router {
     params?: string[];
     isCatchAll?: boolean;
   } {
-    const parts = path.split('/');
+    const parts = path.split("/");
     const params: string[] = [];
     let isCatchAll = false;
-    
-    const processedParts = parts.map(part => {
+
+    const processedParts = parts.map((part) => {
       // 处理 [param] 格式
-      if (part.startsWith('[') && part.endsWith(']')) {
+      if (part.startsWith("[") && part.endsWith("]")) {
         const paramName = part.slice(1, -1);
         params.push(paramName);
-        return ':' + paramName;
+        return ":" + paramName;
       }
-      
+
       // 处理 [...slug] 格式
-      if (part.startsWith('[...') && part.endsWith(']')) {
+      if (part.startsWith("[...") && part.endsWith("]")) {
         const paramName = part.slice(4, -1);
         params.push(paramName);
         isCatchAll = true;
-        return '*';
+        return "*";
       }
-      
+
       return part;
     });
-    
-    const processedPath = '/' + processedParts.join('/');
-    
+
+    const processedPath = "/" + processedParts.join("/");
+
     return {
-      path: processedPath === '//' ? '/' : processedPath,
+      path: processedPath === "//" ? "/" : processedPath,
       params: params.length > 0 ? params : undefined,
-      isCatchAll
+      isCatchAll,
     };
   }
-  
+
   /**
    * 匹配路由
    * @param urlPath URL 路径
@@ -471,85 +585,93 @@ export class Router {
    */
   match(urlPath: string): RouteInfo | null {
     // 如果 basePath 不是根路径，检查 urlPath 是否以 basePath 开头
-    if (this.basePath !== '/') {
-      const base = this.basePath.endsWith('/') ? this.basePath.slice(0, -1) : this.basePath;
+    if (this.basePath !== "/") {
+      const base = this.basePath.endsWith("/")
+        ? this.basePath.slice(0, -1)
+        : this.basePath;
       if (!urlPath.startsWith(base)) {
         // 如果 URL 路径不以 basePath 开头，不匹配
         return null;
       }
     }
-    
+
     // 精确匹配
     if (this.routes.has(urlPath)) {
       return this.routes.get(urlPath)!;
     }
-    
+
     // API 路由前缀匹配（支持 Action 模式，如 /api/examples/getExamples 匹配 /api/examples）
-    if (urlPath.startsWith('/api/') || (this.basePath !== '/' && urlPath.includes('/api/'))) {
+    if (
+      urlPath.startsWith("/api/") ||
+      (this.basePath !== "/" && urlPath.includes("/api/"))
+    ) {
       // 按路径长度从长到短排序，优先匹配更具体的路由
       const apiRoutes = Array.from(this.routes.entries())
-        .filter(([_, routeInfo]) => routeInfo.type === 'api')
+        .filter(([_, routeInfo]) => routeInfo.type === "api")
         .sort(([a], [b]) => b.length - a.length);
-      
+
       for (const [routePath, routeInfo] of apiRoutes) {
         // 如果请求路径以路由路径开头，且下一个字符是 / 或路径结束，则匹配
-        if (urlPath.startsWith(routePath) && 
-            (urlPath.length === routePath.length || urlPath[routePath.length] === '/')) {
+        if (
+          urlPath.startsWith(routePath) &&
+          (urlPath.length === routePath.length ||
+            urlPath[routePath.length] === "/")
+        ) {
           return routeInfo;
         }
       }
     }
-    
+
     // 动态路由匹配
     for (const [routePath, routeInfo] of this.routes.entries()) {
       if (this.matchDynamicRoute(routePath, urlPath, routeInfo)) {
         return routeInfo;
       }
     }
-    
+
     return null;
   }
-  
+
   /**
    * 匹配动态路由
    */
   private matchDynamicRoute(
     routePath: string,
     urlPath: string,
-    routeInfo: RouteInfo
+    routeInfo: RouteInfo,
   ): boolean {
-    const routeParts = routePath.split('/');
-    const urlParts = urlPath.split('/');
-    
+    const routeParts = routePath.split("/");
+    const urlParts = urlPath.split("/");
+
     if (routeInfo.isCatchAll) {
       // 捕获所有路由
       if (routeParts.length > urlParts.length) {
         return false;
       }
-      
+
       for (let i = 0; i < routeParts.length - 1; i++) {
-        if (routeParts[i] !== urlParts[i] && !routeParts[i].startsWith(':')) {
+        if (routeParts[i] !== urlParts[i] && !routeParts[i].startsWith(":")) {
           return false;
         }
       }
-      
+
       return true;
     } else {
       // 普通动态路由
       if (routeParts.length !== urlParts.length) {
         return false;
       }
-      
+
       for (let i = 0; i < routeParts.length; i++) {
-        if (routeParts[i] !== urlParts[i] && !routeParts[i].startsWith(':')) {
+        if (routeParts[i] !== urlParts[i] && !routeParts[i].startsWith(":")) {
           return false;
         }
       }
-      
+
       return true;
     }
   }
-  
+
   /**
    * 提取路由参数
    * @param routePath 路由路径
@@ -560,14 +682,14 @@ export class Router {
   extractParams(
     routePath: string,
     urlPath: string,
-    routeInfo?: RouteInfo
+    routeInfo?: RouteInfo,
   ): Record<string, string> {
-    const routeParts = routePath.split('/');
-    const urlParts = urlPath.split('/');
+    const routeParts = routePath.split("/");
+    const urlParts = urlPath.split("/");
     const params: Record<string, string> = {};
-    
+
     for (let i = 0; i < routeParts.length; i++) {
-      if (routeParts[i].startsWith(':')) {
+      if (routeParts[i].startsWith(":")) {
         const paramName = routeParts[i].slice(1);
         // 安全检查：验证参数名是否为有效标识符
         if (!isValidIdentifier(paramName)) {
@@ -575,22 +697,22 @@ export class Router {
           continue;
         }
         // 获取原始参数值
-        params[paramName] = urlParts[i] || '';
-      } else if (routeParts[i] === '*' && i === routeParts.length - 1) {
+        params[paramName] = urlParts[i] || "";
+      } else if (routeParts[i] === "*" && i === routeParts.length - 1) {
         // 捕获所有
-        const paramName = routeInfo?.params?.[0] || 'slug';
+        const paramName = routeInfo?.params?.[0] || "slug";
         // 安全检查：验证参数名
         if (isValidIdentifier(paramName)) {
-          params[paramName] = urlParts.slice(i).join('/');
+          params[paramName] = urlParts.slice(i).join("/");
         }
         break;
       }
     }
-    
+
     // 使用安全工具函数清理所有参数
     return sanitizeRouteParams(params);
   }
-  
+
   /**
    * 获取布局文件路径
    * @param path 路径
@@ -599,14 +721,15 @@ export class Router {
   getLayout(path: string): string | null {
     // 查找最匹配的布局
     let currentPath = path;
-    while (currentPath !== '/') {
+    while (currentPath !== "/") {
       if (this.layouts.has(currentPath)) {
         return this.layouts.get(currentPath)!;
       }
-      currentPath = currentPath.substring(0, currentPath.lastIndexOf('/')) || '/';
+      currentPath = currentPath.substring(0, currentPath.lastIndexOf("/")) ||
+        "/";
     }
-    
-    return this.layouts.get('/') || null;
+
+    return this.layouts.get("/") || null;
   }
 
   /**
@@ -618,23 +741,24 @@ export class Router {
     const layoutPaths: string[] = [];
     let currentPath = path;
     // 从当前路径开始，向上查找所有布局
-    while (currentPath !== '/') {
+    while (currentPath !== "/") {
       if (this.layouts.has(currentPath)) {
         const layoutPath = this.layouts.get(currentPath)!;
         layoutPaths.push(layoutPath);
       }
-      currentPath = currentPath.substring(0, currentPath.lastIndexOf('/')) || '/';
+      currentPath = currentPath.substring(0, currentPath.lastIndexOf("/")) ||
+        "/";
     }
-    
+
     // 最后添加根布局（如果存在）
-    if (this.layouts.has('/')) {
-      const rootLayout = this.layouts.get('/')!;
+    if (this.layouts.has("/")) {
+      const rootLayout = this.layouts.get("/")!;
       layoutPaths.push(rootLayout);
     }
-    
+
     return layoutPaths;
   }
-  
+
   /**
    * 获取中间件文件路径
    * @param path 路径
@@ -642,34 +766,34 @@ export class Router {
    */
   getMiddlewares(path: string): string[] {
     const middlewares: string[] = [];
-    
+
     // 从根路径开始查找
-    if (this.middlewares.has('/')) {
-      middlewares.push(this.middlewares.get('/')!);
+    if (this.middlewares.has("/")) {
+      middlewares.push(this.middlewares.get("/")!);
     }
-    
+
     // 查找路径匹配的中间件
-    const pathParts = path.split('/').filter(p => p);
-    let checkPath = '';
+    const pathParts = path.split("/").filter((p) => p);
+    let checkPath = "";
     for (const part of pathParts) {
-      checkPath += '/' + part;
+      checkPath += "/" + part;
       if (this.middlewares.has(checkPath)) {
         middlewares.push(this.middlewares.get(checkPath)!);
       }
     }
-    
+
     return middlewares;
   }
-  
+
   /**
    * 获取错误页面路径
    * @param errorType 错误类型
    * @returns 错误页面文件路径
    */
-  getErrorPage(errorType: '404' | 'error' | '500'): string | null {
+  getErrorPage(errorType: "404" | "error" | "500"): string | null {
     return this.errorPages.get(errorType) || null;
   }
-  
+
   /**
    * 获取应用组件文件路径（_app.tsx）
    * @returns 应用组件文件路径
@@ -677,7 +801,7 @@ export class Router {
   getApp(): string | null {
     return this.appFilePath;
   }
-  
+
   /**
    * 获取应用基础路径（多应用模式使用）
    * @returns 应用基础路径
@@ -685,7 +809,7 @@ export class Router {
   getBasePath(): string {
     return this.basePath;
   }
-  
+
   /**
    * 获取所有路由
    */
@@ -701,4 +825,3 @@ export class Router {
     return Array.from(this.middlewares.values());
   }
 }
-

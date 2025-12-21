@@ -1073,14 +1073,26 @@ async function postProcessImports(
  * @param fileMap 文件映射表
  * @param routesDir 路由目录
  * @param outDir 输出目录
+ * @param apiDir API 目录（可选，默认为 routes/api）
  */
 async function generateRouteMap(
   fileMap: Map<string, string>,
   routesDir: string,
   outDir: string,
+  apiDir?: string,
 ): Promise<void> {
   const serverRouteMap: Record<string, string> = {};
   const clientRouteMap: Record<string, string> = {};
+
+  // 标准化 API 目录路径
+  const apiDirAbsolute = apiDir
+    ? (path.isAbsolute(apiDir) ? apiDir : path.resolve(Deno.cwd(), apiDir))
+    : path.resolve(Deno.cwd(), routesDir, "api");
+
+  const routesDirAbsolute = path.resolve(Deno.cwd(), routesDir);
+  const apiDirInRoutes =
+    apiDirAbsolute.startsWith(routesDirAbsolute + path.SEPARATOR) ||
+    apiDirAbsolute === routesDirAbsolute;
 
   // 遍历文件映射表，找出路由文件
   for (const [originalPath, hashName] of fileMap.entries()) {
@@ -1089,24 +1101,64 @@ async function generateRouteMap(
       continue;
     }
 
-    // 检查是否是路由文件
-    if (originalPath.includes(routesDir)) {
+    const originalPathAbsolute = path.isAbsolute(originalPath)
+      ? originalPath
+      : path.resolve(Deno.cwd(), originalPath);
+
+    // 判断是否是 API 路由文件
+    const isApiRoute = originalPathAbsolute.startsWith(
+      apiDirAbsolute + path.SEPARATOR,
+    );
+
+    // 判断是否是普通路由文件（在 routes 目录下，但不是 API 路由）
+    const isPageRoute =
+      originalPathAbsolute.startsWith(routesDirAbsolute + path.SEPARATOR) &&
+      !isApiRoute;
+
+    // 处理页面路由
+    if (isPageRoute) {
       // 计算路由路径（从 routes 目录开始的相对路径）
       const routeRelativePath = path.relative(
-        path.resolve(Deno.cwd(), routesDir),
-        originalPath,
+        routesDirAbsolute,
+        originalPathAbsolute,
       );
 
       // 移除扩展名，转换为路由路径
       const routePath = routeRelativePath
         .replace(/\.tsx?$/, "")
-        .replace(/^api\//, "/api/")
         .replace(/^_/, "/_")
         .replace(/\/index$/, "/")
         .replace(/\/$/, "");
 
       // 如果路由路径为空，设置为根路径
       const finalRoutePath = routePath || "/";
+
+      // 根据 hashName 判断是 server 还是 client
+      if (hashName.startsWith("server/")) {
+        serverRouteMap[finalRoutePath] = hashName;
+        // 查找对应的客户端版本
+        const clientHashName = fileMap.get(`${originalPath}.client`);
+        if (clientHashName && clientHashName.startsWith("client/")) {
+          clientRouteMap[finalRoutePath] = clientHashName;
+        }
+      } else if (hashName.startsWith("client/")) {
+        clientRouteMap[finalRoutePath] = hashName;
+      }
+    } // 处理 API 路由
+    else if (isApiRoute) {
+      // 计算路由路径（从 API 目录开始的相对路径）
+      const apiRelativePath = path.relative(
+        apiDirAbsolute,
+        originalPathAbsolute,
+      );
+
+      // 移除扩展名，转换为路由路径
+      const routePath = apiRelativePath
+        .replace(/\.tsx?$/, "")
+        .replace(/\/$/, "");
+
+      // 加上 /api 前缀
+      const finalRoutePath = `/api/${routePath}`;
 
       // 根据 hashName 判断是 server 还是 client
       if (hashName.startsWith("server/")) {
@@ -1249,6 +1301,20 @@ async function buildApp(config: AppConfig): Promise<void> {
   }
   const routeConfig = normalizeRouteConfig(config.routes);
   const routesDir = routeConfig.dir || "routes";
+  const apiDir = routeConfig.apiDir || path.join(routesDir, "api");
+
+  // 标准化路径（转换为绝对路径）
+  const routesDirAbsolute = path.isAbsolute(routesDir)
+    ? routesDir
+    : path.resolve(Deno.cwd(), routesDir);
+  const apiDirAbsolute = path.isAbsolute(apiDir)
+    ? apiDir
+    : path.resolve(Deno.cwd(), apiDir);
+
+  // 判断 API 目录是否在 routes 目录下
+  const apiDirInRoutes =
+    apiDirAbsolute.startsWith(routesDirAbsolute + path.SEPARATOR) ||
+    apiDirAbsolute === routesDirAbsolute;
 
   // 检查是否启用代码分割
   const codeSplitting = config.build?.split === true;
@@ -1282,6 +1348,46 @@ async function buildApp(config: AppConfig): Promise<void> {
     console.log(`✅ 编译路由文件完成 (${routesDir}) - server 和 client 版本`);
   } catch (error) {
     console.warn(`⚠️  路由目录编译失败: ${routesDir}`, error);
+  }
+
+  // 如果 API 目录不在 routes 目录下，单独编译 API 目录
+  if (!apiDirInRoutes) {
+    try {
+      // 检查 API 目录是否存在
+      const apiDirExists = await Deno.stat(apiDirAbsolute)
+        .then(() => true)
+        .catch(() => false);
+
+      if (apiDirExists) {
+        // 编译 API 文件到 server 目录（包含 load 函数）
+        await compileDirectory(
+          apiDir,
+          serverOutDir,
+          fileMap,
+          [".ts", ".tsx"],
+          useCache,
+          true,
+          codeSplitting,
+          minChunkSize,
+          "server",
+        );
+        // 编译 API 文件到 client 目录（移除 load 函数）
+        await compileDirectory(
+          apiDir,
+          clientOutDir,
+          fileMap,
+          [".ts", ".tsx"],
+          useCache,
+          true,
+          codeSplitting,
+          minChunkSize,
+          "client",
+        );
+        console.log(`✅ 编译 API 文件完成 (${apiDir}) - server 和 client 版本`);
+      }
+    } catch (error) {
+      console.warn(`⚠️  API 目录编译失败: ${apiDir}`, error);
+    }
   }
 
   // 4. 编译组件文件（组件通常只需要客户端版本，但为了兼容性也生成服务端版本）
@@ -1352,7 +1458,7 @@ async function buildApp(config: AppConfig): Promise<void> {
   await postProcessImports(outDir, fileMap);
 
   // 8. 生成路由映射文件
-  await generateRouteMap(fileMap, routesDir, outDir);
+  await generateRouteMap(fileMap, routesDir, outDir, routeConfig.apiDir);
 
   // 9. 不再生成服务器入口文件和构建信息
   // 注意：server.js 和 .build-info.json 不再生成，运行时使用 CLI 命令启动

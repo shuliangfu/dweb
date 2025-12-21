@@ -3,25 +3,29 @@
  * 提供开发环境服务器和热更新功能
  */
 
-import type { AppConfig, Request, Response } from '../types/index.ts';
-import { normalizeRouteConfig } from '../core/config.ts';
-import { Server } from '../core/server.ts';
-import { Router } from '../core/router.ts';
-import { preloadImportMapScript, RouteHandler } from '../core/route-handler.ts';
-import { MiddlewareManager } from '../core/middleware.ts';
-import { PluginManager } from '../core/plugin.ts';
-import { CookieManager } from '../features/cookie.ts';
-import { SessionManager } from '../features/session.ts';
-import { initDatabase, closeDatabase } from '../features/database/access.ts';
-import { WebSocketServer } from '../features/websocket/server.ts';
-import { initWebSocket } from '../features/websocket/access.ts';
-import { GraphQLServer } from '../features/graphql/server.ts';
-import { logger as appLogger } from '../utils/logger.ts';
-import { logger } from '../middleware/logger.ts';
-import { bodyParser } from '../middleware/body-parser.ts';
-import { staticFiles } from '../middleware/static.ts';
-import { createHMRClientScript, FileWatcher, HMRServer } from './hmr.ts';
-import { loadMainApp, getMiddlewaresFromApp, getPluginsFromApp } from '../utils/app.ts';
+import type { AppConfig, Request, Response } from "../types/index.ts";
+import { normalizeRouteConfig } from "../core/config.ts";
+import { Server } from "../core/server.ts";
+import { Router } from "../core/router.ts";
+import { preloadImportMapScript, RouteHandler } from "../core/route-handler.ts";
+import { MiddlewareManager } from "../core/middleware.ts";
+import { PluginManager } from "../core/plugin.ts";
+import { CookieManager } from "../features/cookie.ts";
+import { SessionManager } from "../features/session.ts";
+import { closeDatabase, initDatabase } from "../features/database/access.ts";
+import { WebSocketServer } from "../features/websocket/server.ts";
+import { initWebSocket } from "../features/websocket/access.ts";
+import { GraphQLServer } from "../features/graphql/server.ts";
+import { logger as appLogger } from "../utils/logger.ts";
+import { logger } from "../middleware/logger.ts";
+import { bodyParser } from "../middleware/body-parser.ts";
+import { staticFiles } from "../middleware/static.ts";
+import { createHMRClientScript, FileWatcher, HMRServer } from "./hmr.ts";
+import {
+  getMiddlewaresFromApp,
+  getPluginsFromApp,
+  loadMainApp,
+} from "../utils/app.ts";
 
 /**
  * 预加载所有路由模块、布局和错误页面
@@ -33,16 +37,16 @@ async function preloadModules(router: Router): Promise<void> {
 
   // 预加载路由模块（页面和 API）
   for (const route of routes) {
-    if (route.type === 'page' || route.type === 'api') {
+    if (route.type === "page" || route.type === "api") {
       // route.filePath 已经是绝对路径（从 walk 的 entry.path 获取）
       // 直接使用，避免在 JSR 包上下文中被错误解析
-      const modulePath = route.filePath.startsWith('file://')
+      const modulePath = route.filePath.startsWith("file://")
         ? route.filePath
         : `file://${route.filePath}`;
       preloadPromises.push(
         import(modulePath).catch(() => {
           // 预加载失败时静默处理
-        })
+        }),
       );
     }
   }
@@ -59,24 +63,28 @@ async function preloadModules(router: Router): Promise<void> {
   // 预加载布局
   for (const layoutPath of layoutPaths) {
     // layoutPath 已经是绝对路径，直接使用
-    const modulePath = layoutPath.startsWith('file://') ? layoutPath : `file://${layoutPath}`;
+    const modulePath = layoutPath.startsWith("file://")
+      ? layoutPath
+      : `file://${layoutPath}`;
     preloadPromises.push(
       import(modulePath).catch(() => {
         // 预加载失败时静默处理
-      })
+      }),
     );
   }
 
   // 预加载错误页面
-  const error404Path = router.getErrorPage('404');
+  const error404Path = router.getErrorPage("404");
   if (error404Path) {
-    const modulePath = error404Path.startsWith('file://') ? error404Path : `file://${error404Path}`;
+    const modulePath = error404Path.startsWith("file://")
+      ? error404Path
+      : `file://${error404Path}`;
     preloadPromises.push(import(modulePath).catch(() => {}));
   }
 
-  const errorPagePath = router.getErrorPage('error');
+  const errorPagePath = router.getErrorPage("error");
   if (errorPagePath) {
-    const modulePath = errorPagePath.startsWith('file://')
+    const modulePath = errorPagePath.startsWith("file://")
       ? errorPagePath
       : `file://${errorPagePath}`;
     preloadPromises.push(import(modulePath).catch(() => {}));
@@ -85,7 +93,9 @@ async function preloadModules(router: Router): Promise<void> {
   // 预加载 _app.tsx（根应用组件，必需）
   const appPath = router.getApp();
   if (appPath) {
-    const modulePath = appPath.startsWith('file://') ? appPath : `file://${appPath}`;
+    const modulePath = appPath.startsWith("file://")
+      ? appPath
+      : `file://${appPath}`;
     preloadPromises.push(import(modulePath).catch(() => {}));
   }
 
@@ -93,14 +103,14 @@ async function preloadModules(router: Router): Promise<void> {
   const middlewarePaths = router.getAllMiddlewares();
   for (const middlewarePath of middlewarePaths) {
     // middlewarePath 已经是绝对路径，直接使用
-    const modulePath = middlewarePath.startsWith('file://')
+    const modulePath = middlewarePath.startsWith("file://")
       ? middlewarePath
-			: `file://${middlewarePath}`;
-		
+      : `file://${middlewarePath}`;
+
     preloadPromises.push(
       import(modulePath).catch(() => {
         // 预加载失败时静默处理
-      })
+      }),
     );
   }
 
@@ -115,7 +125,7 @@ function setupSessionSupport(
   req: Request,
   res: Response,
   sessionManager: SessionManager,
-  cookieManager: CookieManager | null
+  cookieManager: CookieManager | null,
 ): void {
   const cookieName = sessionManager.getCookieName();
   const sessionId = req.getCookie(cookieName);
@@ -129,10 +139,10 @@ function setupSessionSupport(
     if (cookieManager) {
       const cookieValue = await cookieManager.setAsync(cookieName, session.id, {
         httpOnly: true,
-        secure: sessionManager['config'].secure || false,
-        maxAge: (sessionManager['config'].maxAge || 3600000) / 1000,
+        secure: sessionManager["config"].secure || false,
+        maxAge: (sessionManager["config"].maxAge || 3600000) / 1000,
       });
-      res.setHeader('Set-Cookie', cookieValue);
+      res.setHeader("Set-Cookie", cookieValue);
     }
 
     return session;
@@ -164,7 +174,7 @@ function createRequestHandler(
   middlewareManager: MiddlewareManager,
   pluginManager: PluginManager,
   sessionManager: SessionManager | null,
-  cookieManager: CookieManager | null
+  cookieManager: CookieManager | null,
 ) {
   return async (req: Request, res: Response): Promise<void> => {
     // 设置 Session 支持
@@ -198,8 +208,8 @@ function createRequestHandler(
 
           // 如果插件清空了响应体，恢复它
           if (!res.body && res.status === 200) {
-            const errorMsg = '响应体在插件处理后丢失';
-            appLogger.error('插件处理错误', undefined, {
+            const errorMsg = "响应体在插件处理后丢失";
+            appLogger.error("插件处理错误", undefined, {
               url: req.url,
               method: req.method,
               errorMessage: errorMsg,
@@ -210,16 +220,24 @@ function createRequestHandler(
         }
       } catch (error) {
         // 捕获中间件或路由处理过程中的错误
-        appLogger.error('请求处理异常', error instanceof Error ? error : undefined, {
-          url: req.url,
-          method: req.method,
-        });
+        appLogger.error(
+          "请求处理异常",
+          error instanceof Error ? error : undefined,
+          {
+            url: req.url,
+            method: req.method,
+          },
+        );
 
         // 确保错误响应已设置
         if (!res.body || res.status === 200) {
           res.status = 500;
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          res.html(`<h1>500 - Internal Server Error</h1><p>${errorMessage}</p>`);
+          const errorMessage = error instanceof Error
+            ? error.message
+            : String(error);
+          res.html(
+            `<h1>500 - Internal Server Error</h1><p>${errorMessage}</p>`,
+          );
         }
 
         // 重新抛出错误，让上层的错误处理机制处理
@@ -234,27 +252,36 @@ function createRequestHandler(
 /**
  * 处理路由请求
  */
-async function handleRoute(routeHandler: RouteHandler, req: Request, res: Response): Promise<void> {
+async function handleRoute(
+  routeHandler: RouteHandler,
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     await routeHandler.handle(req, res);
 
     // 验证响应体已设置
     if (!res.body && res.status === 200) {
-      const errorMsg = 'Internal Server Error: Route handler did not set response body';
-      console.error('\n❌ ========== 路由处理错误 ==========');
-      console.error('请求路径:', req.url);
-      console.error('请求方法:', req.method);
-      console.error('错误:', errorMsg);
-      console.error('===================================\n');
+      const errorMsg =
+        "Internal Server Error: Route handler did not set response body";
+      console.error("\n❌ ========== 路由处理错误 ==========");
+      console.error("请求路径:", req.url);
+      console.error("请求方法:", req.method);
+      console.error("错误:", errorMsg);
+      console.error("===================================\n");
       res.status = 500;
       res.text(errorMsg);
     }
   } catch (error) {
     // 捕获路由处理过程中的错误
-    appLogger.error('路由处理异常', error instanceof Error ? error : undefined, {
-      url: req.url,
-      method: req.method,
-    });
+    appLogger.error(
+      "路由处理异常",
+      error instanceof Error ? error : undefined,
+      {
+        url: req.url,
+        method: req.method,
+      },
+    );
 
     // 重新抛出错误，让上层的错误处理机制处理
     throw error;
@@ -269,9 +296,11 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 
   // 设置服务器 origin（用于 HMR 编译组件时生成完整的 HTTP URL）
   if (!config.server) {
-    throw new Error('服务器配置 (server) 是必需的');
+    throw new Error("服务器配置 (server) 是必需的");
   }
-  const serverOrigin = `http://${config.server.host || 'localhost'}:${config.server.port}`;
+  const serverOrigin = `http://${
+    config.server.host || "localhost"
+  }:${config.server.port}`;
   hmrServer.setServerOrigin(serverOrigin);
 
   // 设置路由目录（用于判断文件类型，支持多应用模式）
@@ -281,19 +310,22 @@ export async function startDevServer(config: AppConfig): Promise<void> {
   }
 
   // 设置 HMR 客户端脚本
-  const { setHMRClientScript } = await import('../core/route-handler.ts');
+  const { setHMRClientScript } = await import("../core/route-handler.ts");
   const hmrScript = await createHMRClientScript(hmrPort);
   setHMRClientScript(hmrScript);
 
   // 创建文件监听器
   if (!config.routes) {
-    throw new Error('路由配置 (routes) 是必需的');
+    throw new Error("路由配置 (routes) 是必需的");
   }
   const routeConfigForWatcher = normalizeRouteConfig(config.routes);
-  const fileWatcher = new FileWatcher(config.dev?.reloadDelay || 300, routeConfigForWatcher.dir);
+  const fileWatcher = new FileWatcher(
+    config.dev?.reloadDelay || 300,
+    routeConfigForWatcher.dir,
+  );
 
   // 监听配置文件变化
-  fileWatcher.watch('.');
+  fileWatcher.watch(".");
 
   const server = new Server();
 
@@ -304,7 +336,12 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 
   // config.routes 已经在上面检查过了，这里可以安全使用
   const routeConfig = normalizeRouteConfig(config.routes!);
-  const router = new Router(routeConfig.dir, routeConfig.ignore, config.basePath);
+  const router = new Router(
+    routeConfig.dir,
+    routeConfig.ignore,
+    config.basePath,
+    routeConfig.apiDir,
+  );
 
   // 扫描路由
   await router.scan();
@@ -319,7 +356,7 @@ export async function startDevServer(config: AppConfig): Promise<void> {
   if (config.database) {
     try {
       await initDatabase(config.database);
-      appLogger.info('数据库连接已初始化');
+      appLogger.info("数据库连接已初始化");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       appLogger.error(`数据库连接失败: ${message}`);
@@ -342,10 +379,17 @@ export async function startDevServer(config: AppConfig): Promise<void> {
   // 创建 GraphQL 服务器（如果配置了）
   let graphqlServer: GraphQLServer | null = null;
   if (config.graphql) {
-    graphqlServer = new GraphQLServer(config.graphql.schema, config.graphql.config);
-    appLogger.info(`GraphQL 服务器已启动`, { endpoint: config.graphql.config?.path || '/graphql' });
+    graphqlServer = new GraphQLServer(
+      config.graphql.schema,
+      config.graphql.config,
+    );
+    appLogger.info(`GraphQL 服务器已启动`, {
+      endpoint: config.graphql.config?.path || "/graphql",
+    });
     if (config.graphql.config?.graphiql !== false) {
-      appLogger.info(`GraphiQL 端点`, { path: config.graphql.config?.graphiqlPath || '/graphiql' });
+      appLogger.info(`GraphiQL 端点`, {
+        path: config.graphql.config?.graphiqlPath || "/graphiql",
+      });
     }
   }
 
@@ -355,7 +399,7 @@ export async function startDevServer(config: AppConfig): Promise<void> {
     cookieManager || undefined,
     sessionManager || undefined,
     config,
-    graphqlServer || undefined
+    graphqlServer || undefined,
   );
 
   // 创建中间件管理器
@@ -364,13 +408,13 @@ export async function startDevServer(config: AppConfig): Promise<void> {
   // 添加内置中间件
   middlewareManager.add(
     logger({
-      format: 'dev',
+      format: "dev",
       // 跳过 .well-known 路径的请求（浏览器自动发送的元数据请求）
       skip: (req: { url: string; method: string }) => {
         const url = new URL(req.url);
-        return url.pathname.startsWith('/.well-known/');
+        return url.pathname.startsWith("/.well-known/");
       },
-    })
+    }),
   );
   middlewareManager.add(bodyParser());
 
@@ -394,7 +438,7 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 
   // 添加静态资源中间件
   // 使用 config.static 配置，如果没有配置则使用默认值 'assets'
-  const staticDir = config.static?.dir || 'assets';
+  const staticDir = config.static?.dir || "assets";
   try {
     if (
       await Deno.stat(staticDir)
@@ -406,12 +450,12 @@ export async function startDevServer(config: AppConfig): Promise<void> {
       if (config.static) {
         middlewareManager.add(staticFiles({
           ...config.static,
-          isProduction: false
+          isProduction: false,
         }));
       } else {
-        middlewareManager.add(staticFiles({ 
+        middlewareManager.add(staticFiles({
           dir: staticDir,
-          isProduction: false
+          isProduction: false,
         }));
       }
     }
@@ -439,11 +483,11 @@ export async function startDevServer(config: AppConfig): Promise<void> {
   }
 
   // 执行插件初始化（传入 isProduction，优先使用 config 中的值，否则默认为 false 表示开发环境）
-  await pluginManager.executeOnInit({ 
-    server, 
-    router, 
+  await pluginManager.executeOnInit({
+    server,
+    router,
     routeHandler,
-    isProduction: config.isProduction ?? false
+    isProduction: config.isProduction ?? false,
   });
 
   // 创建 WebSocket 服务器（如果配置了）
@@ -451,13 +495,15 @@ export async function startDevServer(config: AppConfig): Promise<void> {
   if (config.websocket) {
     wsServer = new WebSocketServer(config.websocket);
     initWebSocket(wsServer);
-    appLogger.info(`WebSocket 服务器已启动`, { path: config.websocket.path || '/ws' });
+    appLogger.info(`WebSocket 服务器已启动`, {
+      path: config.websocket.path || "/ws",
+    });
 
     // 设置 WebSocket 升级处理器
     server.setWebSocketUpgradeHandler((req: globalThis.Request) => {
       const url = new URL(req.url);
-      const wsPath = config.websocket!.path || '/ws';
-      if (url.pathname === wsPath || url.pathname.startsWith(wsPath + '/')) {
+      const wsPath = config.websocket!.path || "/ws";
+      if (url.pathname === wsPath || url.pathname.startsWith(wsPath + "/")) {
         return wsServer!.handleUpgrade(req);
       }
       return null;
@@ -470,23 +516,23 @@ export async function startDevServer(config: AppConfig): Promise<void> {
     middlewareManager,
     pluginManager,
     sessionManager,
-    cookieManager
+    cookieManager,
   );
   server.setHandler(requestHandler);
 
   // 启动服务器
   const port = config.server!.port || 3000;
-  const host = config.server!.host || 'localhost';
+  const host = config.server!.host || "localhost";
 
   // 如果配置了自动打开浏览器
   if (config.dev?.open) {
     setTimeout(() => {
       const url = `http://${host}:${port}`;
       try {
-        const command = new Deno.Command('open', {
+        const command = new Deno.Command("open", {
           args: [url],
-          stdout: 'null',
-          stderr: 'null',
+          stdout: "null",
+          stderr: "null",
         });
         command.spawn();
       } catch {
@@ -496,14 +542,14 @@ export async function startDevServer(config: AppConfig): Promise<void> {
   }
 
   // 设置信号监听器（开发环境直接关闭，不执行优雅关闭）
-  Deno.addSignalListener('SIGTERM', async () => {
+  Deno.addSignalListener("SIGTERM", async () => {
     await closeDatabase().catch(() => {});
     await hmrServer.stop().catch(() => {});
     server.close();
     Deno.exit(0);
   });
 
-  Deno.addSignalListener('SIGINT', async () => {
+  Deno.addSignalListener("SIGINT", async () => {
     await closeDatabase().catch(() => {});
     await hmrServer.stop().catch(() => {});
     server.close();

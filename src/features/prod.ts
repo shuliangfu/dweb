@@ -3,25 +3,29 @@
  * 提供生产环境服务器
  */
 
-import type { AppConfig, Request, Response } from '../types/index.ts';
-import { normalizeRouteConfig } from '../core/config.ts';
-import { Server } from '../core/server.ts';
-import { Router } from '../core/router.ts';
-import { RouteHandler } from '../core/route-handler.ts';
-import { MiddlewareManager } from '../core/middleware.ts';
-import { PluginManager } from '../core/plugin.ts';
-import { CookieManager } from '../features/cookie.ts';
-import { SessionManager } from '../features/session.ts';
-import { initDatabase, closeDatabase } from '../features/database/access.ts';
-import { WebSocketServer } from '../features/websocket/server.ts';
-import { initWebSocket } from '../features/websocket/access.ts';
-import { GraphQLServer } from '../features/graphql/server.ts';
-import { logger } from '../middleware/logger.ts';
-import { bodyParser } from '../middleware/body-parser.ts';
-import { staticFiles } from '../middleware/static.ts';
-import { setupSignalHandlers } from './shutdown.ts';
-import * as path from '@std/path';
-import { loadMainApp, getMiddlewaresFromApp, getPluginsFromApp } from '../utils/app.ts';
+import type { AppConfig, Request, Response } from "../types/index.ts";
+import { normalizeRouteConfig } from "../core/config.ts";
+import { Server } from "../core/server.ts";
+import { Router } from "../core/router.ts";
+import { RouteHandler } from "../core/route-handler.ts";
+import { MiddlewareManager } from "../core/middleware.ts";
+import { PluginManager } from "../core/plugin.ts";
+import { CookieManager } from "../features/cookie.ts";
+import { SessionManager } from "../features/session.ts";
+import { closeDatabase, initDatabase } from "../features/database/access.ts";
+import { WebSocketServer } from "../features/websocket/server.ts";
+import { initWebSocket } from "../features/websocket/access.ts";
+import { GraphQLServer } from "../features/graphql/server.ts";
+import { logger } from "../middleware/logger.ts";
+import { bodyParser } from "../middleware/body-parser.ts";
+import { staticFiles } from "../middleware/static.ts";
+import { setupSignalHandlers } from "./shutdown.ts";
+import * as path from "@std/path";
+import {
+  getMiddlewaresFromApp,
+  getPluginsFromApp,
+  loadMainApp,
+} from "../utils/app.ts";
 
 /**
  * 预加载所有路由模块、布局和错误页面
@@ -33,7 +37,7 @@ async function preloadModules(router: Router): Promise<void> {
 
   // 预加载路由模块（页面和 API）
   for (const route of routes) {
-    if (route.type === 'page' || route.type === 'api') {
+    if (route.type === "page" || route.type === "api") {
       // route.filePath 已经是绝对路径（从 walk 的 entry.path 获取）
       // 直接使用，避免在 JSR 包上下文中被错误解析
       const modulePath = route.filePath.startsWith("file://")
@@ -70,7 +74,7 @@ async function preloadModules(router: Router): Promise<void> {
   }
 
   // 预加载错误页面
-  const error404Path = router.getErrorPage('404');
+  const error404Path = router.getErrorPage("404");
   if (error404Path) {
     const modulePath = error404Path.startsWith("file://")
       ? error404Path
@@ -80,7 +84,7 @@ async function preloadModules(router: Router): Promise<void> {
     );
   }
 
-  const errorPagePath = router.getErrorPage('error');
+  const errorPagePath = router.getErrorPage("error");
   if (errorPagePath) {
     const modulePath = errorPagePath.startsWith("file://")
       ? errorPagePath
@@ -143,11 +147,11 @@ function setupSessionSupport(
         session.id,
         {
           httpOnly: true,
-          secure: sessionManager['config'].secure || false,
-          maxAge: (sessionManager['config'].maxAge || 3600000) / 1000,
+          secure: sessionManager["config"].secure || false,
+          maxAge: (sessionManager["config"].maxAge || 3600000) / 1000,
         },
       );
-      res.setHeader('Set-Cookie', cookieValue);
+      res.setHeader("Set-Cookie", cookieValue);
     }
 
     return session;
@@ -215,43 +219,52 @@ function createRequestHandler(
         // 在生产环境中注入 CSS link 标签（如果响应是 HTML）
         // 从 Tailwind 插件配置中获取 CSS 路径，或使用默认路径
         let cssPath = `${staticDir}/tailwind.css`; // 默认路径
-        
+
         // 尝试从插件管理器中获取 Tailwind 插件配置
-        const tailwindPlugin = pluginManager.getAll().find((p) => p.name === 'tailwind');
+        const tailwindPlugin = pluginManager.getAll().find((p) =>
+          p.name === "tailwind"
+        );
         if (tailwindPlugin?.config) {
           const pluginConfig = tailwindPlugin.config as any;
           if (pluginConfig?.cssPath) {
             // 使用配置的 CSS 路径，但需要转换为 URL 路径
-            cssPath = pluginConfig.cssPath.startsWith('/') 
-              ? pluginConfig.cssPath.slice(1) 
+            cssPath = pluginConfig.cssPath.startsWith("/")
+              ? pluginConfig.cssPath.slice(1)
               : pluginConfig.cssPath;
           }
         } else {
           // 如果插件管理器中找不到，尝试从配置中获取
           const configPlugin = config.plugins?.find(
-            (p: any) => (typeof p === 'object' && 'name' in p && p.name === 'tailwind') ||
-                   (typeof p === 'object' && 'config' in p && (p.config as any)?.cssPath)
+            (p: any) =>
+              (typeof p === "object" && "name" in p && p.name === "tailwind") ||
+              (typeof p === "object" && "config" in p &&
+                (p.config as any)?.cssPath),
           );
-          if (configPlugin && typeof configPlugin === 'object' && 'config' in configPlugin) {
+          if (
+            configPlugin && typeof configPlugin === "object" &&
+            "config" in configPlugin
+          ) {
             const pluginConfig = (configPlugin as any).config;
             if (pluginConfig?.cssPath) {
-              cssPath = pluginConfig.cssPath.startsWith('/') 
-                ? pluginConfig.cssPath.slice(1) 
+              cssPath = pluginConfig.cssPath.startsWith("/")
+                ? pluginConfig.cssPath.slice(1)
                 : pluginConfig.cssPath;
             }
           }
         }
-        
+
         // 获取静态资源前缀（如果有配置）
         const staticPrefix = config.static?.prefix;
-        
+
         // 注入 CSS link 标签
         injectCSSLink(res, cssPath, staticPrefix, staticDir);
 
         // 如果插件清空了响应体，恢复它
         if (!res.body && res.status === 200) {
           res.status = 500;
-          res.html('<h1>500 - Internal Server Error</h1><p>响应体在插件处理后丢失</p>');
+          res.html(
+            "<h1>500 - Internal Server Error</h1><p>响应体在插件处理后丢失</p>",
+          );
         }
       }
     };
@@ -267,78 +280,87 @@ function createRequestHandler(
  * @param staticPrefix 静态资源 URL 前缀（如果有）
  * @param staticDir 静态资源目录名（用于检测路径是否已包含目录前缀）
  */
-function injectCSSLink(res: Response, cssPath: string, staticPrefix?: string, staticDir?: string): void {
+function injectCSSLink(
+  res: Response,
+  cssPath: string,
+  staticPrefix?: string,
+  staticDir?: string,
+): void {
   // 只处理 HTML 响应
-  if (!res.body || typeof res.body !== 'string') {
+  if (!res.body || typeof res.body !== "string") {
     return;
   }
 
-  const contentType = res.headers.get('Content-Type') || '';
-  if (!contentType.includes('text/html')) {
+  const contentType = res.headers.get("Content-Type") || "";
+  if (!contentType.includes("text/html")) {
     return;
   }
 
   try {
     const html = res.body as string;
-    
+
     // 构建 CSS 文件 URL
     let cssUrl: string;
-    
+
     if (staticPrefix) {
       // 如果配置了 static prefix
       // 检查 cssPath 是否已经包含了 staticDir 前缀，如果包含则移除
       let normalizedPath = cssPath;
-      if (staticDir && cssPath.startsWith(staticDir + '/')) {
+      if (staticDir && cssPath.startsWith(staticDir + "/")) {
         // 移除 staticDir 前缀，只保留文件名部分
         normalizedPath = cssPath.slice(staticDir.length + 1);
-      } else if (staticDir && cssPath.startsWith('/' + staticDir + '/')) {
+      } else if (staticDir && cssPath.startsWith("/" + staticDir + "/")) {
         // 移除 /staticDir 前缀
         normalizedPath = cssPath.slice(staticDir.length + 2);
       }
-      
+
       // 确保路径以 / 开头
-      if (!normalizedPath.startsWith('/')) {
-        normalizedPath = '/' + normalizedPath;
+      if (!normalizedPath.startsWith("/")) {
+        normalizedPath = "/" + normalizedPath;
       }
-      
+
       // 确保 staticPrefix 以 / 开头但不以 / 结尾
-      const normalizedPrefix = staticPrefix.endsWith('/') 
-        ? staticPrefix.slice(0, -1) 
+      const normalizedPrefix = staticPrefix.endsWith("/")
+        ? staticPrefix.slice(0, -1)
         : staticPrefix;
-      
+
       cssUrl = `${normalizedPrefix}${normalizedPath}`;
     } else {
       // 没有配置 static prefix，直接使用路径
-      cssUrl = cssPath.startsWith('/') ? cssPath : '/' + cssPath;
+      cssUrl = cssPath.startsWith("/") ? cssPath : "/" + cssPath;
     }
-    
+
     const linkTag = `<link rel="stylesheet" href="${cssUrl}" />`;
-    
+
     // 检查 <head> 中是否有 <link> 标签（CSS 文件）
     const linkRegex = /<link[^>]*rel\s*=\s*["']stylesheet["'][^>]*>/i;
     const linkMatch = html.match(linkRegex);
-    
+
     if (linkMatch && linkMatch.index !== undefined) {
       // 如果找到 <link> 标签，在它之前插入新的 link 标签
       const linkIndex = linkMatch.index;
-      res.body = html.slice(0, linkIndex) + `  ${linkTag}\n  ` + html.slice(linkIndex);
-    } else if (html.includes('</head>')) {
+      res.body = html.slice(0, linkIndex) + `  ${linkTag}\n  ` +
+        html.slice(linkIndex);
+    } else if (html.includes("</head>")) {
       // 如果没有 <link> 标签，但有 </head>，在 </head> 前面注入
-      res.body = html.replace('</head>', `  ${linkTag}\n</head>`);
-    } else if (html.includes('<head>')) {
+      res.body = html.replace("</head>", `  ${linkTag}\n</head>`);
+    } else if (html.includes("<head>")) {
       // 如果没有 </head>，但有 <head>，则在 <head> 后面注入
-      res.body = html.replace('<head>', `<head>\n  ${linkTag}`);
+      res.body = html.replace("<head>", `<head>\n  ${linkTag}`);
     } else {
       // 如果没有 <head>，则在 <html> 后面添加 <head> 和 link
-      if (html.includes('<html>')) {
-        res.body = html.replace('<html>', `<html>\n  <head>\n    ${linkTag}\n  </head>`);
+      if (html.includes("<html>")) {
+        res.body = html.replace(
+          "<html>",
+          `<html>\n  <head>\n    ${linkTag}\n  </head>`,
+        );
       } else {
         // 如果连 <html> 都没有，在开头添加
         res.body = `<head>\n  ${linkTag}\n</head>\n${html}`;
       }
     }
   } catch (error) {
-    console.error('[Prod Server] 注入 CSS link 时出错:', error);
+    console.error("[Prod Server] 注入 CSS link 时出错:", error);
     // 出错时不修改响应
   }
 }
@@ -356,7 +378,7 @@ async function handleRoute(
   // 验证响应体已设置
   if (!res.body && res.status === 200) {
     res.status = 500;
-    res.text('Internal Server Error: Route handler did not set response body');
+    res.text("Internal Server Error: Route handler did not set response body");
   }
 }
 
@@ -366,23 +388,28 @@ async function handleRoute(
  */
 export async function startProdServer(config: AppConfig): Promise<void> {
   if (!config.routes) {
-    throw new Error('路由配置 (routes) 是必需的');
+    throw new Error("路由配置 (routes) 是必需的");
   }
   if (!config.build) {
-    throw new Error('构建配置 (build) 是必需的');
+    throw new Error("构建配置 (build) 是必需的");
   }
   if (!config.server) {
-    throw new Error('服务器配置 (server) 是必需的');
+    throw new Error("服务器配置 (server) 是必需的");
   }
   const server = new Server();
   const routeConfig = normalizeRouteConfig(config.routes);
-  const router = new Router(routeConfig.dir, routeConfig.ignore, config.basePath);
+  const router = new Router(
+    routeConfig.dir,
+    routeConfig.ignore,
+    config.basePath,
+    routeConfig.apiDir,
+  );
 
   // 检查是否存在构建输出目录和路由映射文件（生产环境）
   const outDir = config.build!.outDir;
   // 同时读取服务端和客户端路由映射文件
-  const serverRouteMapPath = path.join(outDir, 'server.json');
-  const clientRouteMapPath = path.join(outDir, 'client.json');
+  const serverRouteMapPath = path.join(outDir, "server.json");
+  const clientRouteMapPath = path.join(outDir, "client.json");
   const hasBuildOutput = await Deno.stat(serverRouteMapPath)
     .then(() => true)
     .catch(() => false);
@@ -390,7 +417,11 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   if (hasBuildOutput) {
     // 生产环境：从构建映射文件加载路由（同时读取 server.json 和 client.json）
     // console.log(`📦 从构建输出目录加载路由: ${outDir}`);
-    await router.loadFromBuildMap(serverRouteMapPath, clientRouteMapPath, outDir);
+    await router.loadFromBuildMap(
+      serverRouteMapPath,
+      clientRouteMapPath,
+      outDir,
+    );
   } else {
     // 开发环境：扫描源代码目录
     console.log(`📝 从源代码目录扫描路由: ${routeConfig.dir}`);
@@ -404,7 +435,7 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   if (config.database) {
     try {
       await initDatabase(config.database);
-      console.log('✅ 数据库连接已初始化');
+      console.log("✅ 数据库连接已初始化");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error(`❌ 数据库连接失败: ${message}`);
@@ -429,11 +460,17 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   if (config.graphql) {
     graphqlServer = new GraphQLServer(
       config.graphql.schema,
-      config.graphql.config
+      config.graphql.config,
     );
-    console.log(`✅ GraphQL 服务器已启动 (端点: ${config.graphql.config?.path || '/graphql'})`);
+    console.log(
+      `✅ GraphQL 服务器已启动 (端点: ${
+        config.graphql.config?.path || "/graphql"
+      })`,
+    );
     if (config.graphql.config?.graphiql !== false) {
-      console.log(`   GraphiQL: ${config.graphql.config?.graphiqlPath || '/graphiql'}`);
+      console.log(
+        `   GraphiQL: ${config.graphql.config?.graphiqlPath || "/graphiql"}`,
+      );
     }
   }
 
@@ -450,7 +487,7 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   const middlewareManager = new MiddlewareManager();
 
   // 添加内置中间件
-  middlewareManager.add(logger({ format: 'combined' }));
+  middlewareManager.add(logger({ format: "combined" }));
   middlewareManager.add(bodyParser());
 
   // 添加配置的中间件
@@ -459,22 +496,29 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   let hasValidMiddleware = false;
   if (config.middleware && config.middleware.length > 0) {
     // 检查中间件是否有效（不是 undefined）
-    const validMiddlewares = config.middleware.filter((m) => m !== undefined && m !== null);
+    const validMiddlewares = config.middleware.filter((m) =>
+      m !== undefined && m !== null
+    );
     if (validMiddlewares.length > 0) {
       middlewareManager.addMany(validMiddlewares);
       hasValidMiddleware = true;
     }
   }
-  
+
   // 如果序列化后的中间件无效，尝试从原始配置文件加载
   if (!hasValidMiddleware) {
     try {
       // 尝试从当前目录加载原始配置文件
-      const originalConfigPath = './dweb.config.ts';
-      const originalConfigUrl = new URL(originalConfigPath, import.meta.url).href;
+      const originalConfigPath = "./dweb.config.ts";
+      const originalConfigUrl =
+        new URL(originalConfigPath, import.meta.url).href;
       const originalConfigModule = await import(originalConfigUrl);
       const originalConfig = originalConfigModule.default;
-      if (originalConfig?.middleware && Array.isArray(originalConfig.middleware) && originalConfig.middleware.length > 0) {
+      if (
+        originalConfig?.middleware &&
+        Array.isArray(originalConfig.middleware) &&
+        originalConfig.middleware.length > 0
+      ) {
         middlewareManager.addMany(originalConfig.middleware);
         hasValidMiddleware = true;
       }
@@ -499,7 +543,7 @@ export async function startProdServer(config: AppConfig): Promise<void> {
 
   // 添加静态资源中间件（从构建输出目录）
   // 使用 config.static 配置，如果没有配置则使用默认值 'assets'
-  const staticDir = config.static?.dir || 'assets';
+  const staticDir = config.static?.dir || "assets";
   // 构建完整路径用于检查目录是否存在
   const assetsPath = path.join(config.build!.outDir, staticDir);
   try {
@@ -515,13 +559,13 @@ export async function startProdServer(config: AppConfig): Promise<void> {
           ...config.static,
           dir: staticDir, // 使用相对路径（如 'assets'），中间件会根据 outDir 自动构建完整路径
           outDir: config.build!.outDir,
-          isProduction: true
+          isProduction: true,
         }));
       } else {
-        middlewareManager.add(staticFiles({ 
+        middlewareManager.add(staticFiles({
           dir: staticDir, // 使用相对路径（如 'assets'），中间件会根据 outDir 自动构建完整路径
           outDir: config.build!.outDir,
-          isProduction: true
+          isProduction: true,
         }));
       }
     }
@@ -549,11 +593,11 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   }
 
   // 执行插件初始化（传入 isProduction，优先使用 config 中的值，否则默认为 true 表示生产环境）
-  await pluginManager.executeOnInit({ 
-    server, 
-    router, 
+  await pluginManager.executeOnInit({
+    server,
+    router,
     routeHandler,
-    isProduction: config.isProduction ?? true
+    isProduction: config.isProduction ?? true,
   });
 
   // 创建 WebSocket 服务器（如果配置了）
@@ -561,13 +605,15 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   if (config.websocket) {
     wsServer = new WebSocketServer(config.websocket);
     initWebSocket(wsServer);
-    console.log(`✅ WebSocket 服务器已启动 (路径: ${config.websocket.path || '/ws'})`);
-    
+    console.log(
+      `✅ WebSocket 服务器已启动 (路径: ${config.websocket.path || "/ws"})`,
+    );
+
     // 设置 WebSocket 升级处理器
     server.setWebSocketUpgradeHandler((req: globalThis.Request) => {
       const url = new URL(req.url);
-      const wsPath = config.websocket!.path || '/ws';
-      if (url.pathname === wsPath || url.pathname.startsWith(wsPath + '/')) {
+      const wsPath = config.websocket!.path || "/ws";
+      if (url.pathname === wsPath || url.pathname.startsWith(wsPath + "/")) {
         return wsServer!.handleUpgrade(req);
       }
       return null;
@@ -588,7 +634,7 @@ export async function startProdServer(config: AppConfig): Promise<void> {
 
   // 启动服务器
   const port = config.server!.port || 3000;
-  const host = config.server!.host || '0.0.0.0';
+  const host = config.server!.host || "0.0.0.0";
 
   // 设置优雅关闭信号监听器
   setupSignalHandlers({
