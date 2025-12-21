@@ -6,28 +6,111 @@
 
 在 Model 中使用 i18n 有几种方式：
 
-1. **使用 `getI18n()` 函数**（推荐）- 在请求上下文中自动使用当前语言
-2. **使用 `globalThis.$t()`** - 在服务端渲染时可用
+1. **直接使用 `$t()` 或 `t()`**（最推荐）- 无需导入，全局可用
+2. **使用 `getI18n()` 函数** - 在请求上下文中自动使用当前语言
 3. **通过参数传递** - 在 load 函数中获取 `t` 函数，然后传递给 Model 方法
 
-## 方式 1：使用 `getI18n()` 函数（推荐）
+## 方式 1：直接使用 `$t()` 或 `t()`（最推荐）
 
-`getI18n()` 函数类似于 `getDatabase()`，可以在任何地方使用，包括 Model 的生命周期钩子、验证函数等。
+**无需导入，全局可用！** 这是最简单的方式。
 
 ### 基本用法
 
 ```typescript
 // models/User.ts
-import { SQLModel, getDatabase } from '@dreamer/dweb/features/database';
-import { getI18n } from '@dreamer/dweb/plugins';
+import { getDatabase, SQLModel } from "@dreamer/dweb/features/database";
 
 class User extends SQLModel {
-  static tableName = 'users';
-  static primaryKey = 'id';
+  static tableName = "users";
+  static primaryKey = "id";
 
   static schema = {
     username: {
-      type: 'string',
+      type: "string",
+      validate: {
+        required: true,
+        min: 2,
+        max: 50,
+        custom: (value: string) => {
+          // 直接使用 $t()，无需导入！
+          if (value.toLowerCase() === "admin") {
+            throw new Error($t("validation.username.notAdmin"));
+          }
+        },
+      },
+    },
+
+    email: {
+      type: "string",
+      validate: {
+        required: true,
+        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        custom: async (value: string) => {
+          // 也可以使用 t()，效果相同
+          const existing = await User.findOne({ email: value });
+          if (existing) {
+            throw new Error(t("validation.email.exists"));
+          }
+        },
+      },
+    },
+  };
+
+  // 生命周期钩子中使用
+  static async beforeCreate(instance: User) {
+    // 直接使用 $t()，无需导入！
+    if (instance.age && instance.age < 13) {
+      throw new Error($t("validation.age.min", { min: "13" }));
+    }
+  }
+
+  // 实例方法中使用
+  async updateLastLogin() {
+    // 直接使用 $t()，无需导入！
+    console.log($t("user.lastLoginUpdated"));
+    await this.update({ lastLoginAt: new Date() });
+  }
+}
+
+// 初始化
+const db = await getDatabase();
+User.setAdapter(db);
+
+export default User;
+```
+
+### 工作原理
+
+- **服务端**：`$t()` 和 `t()` 在 `globalThis` 上可用
+- **客户端**：`$t()` 和 `t()` 在 `window` 上可用
+- **自动语言切换**：在请求处理时，会自动使用当前请求的语言
+- **默认语言**：在非请求上下文中，使用默认语言
+
+### 注意事项
+
+- 如果 i18n 插件未初始化，`$t()` 和 `t()` 可能未定义，建议添加检查或使用
+  `getI18n()`
+- 在 TypeScript 中，类型声明已自动包含，无需额外配置
+
+## 方式 2：使用 `getI18n()` 函数（备选方案）
+
+`getI18n()` 函数类似于 `getDatabase()`，可以在任何地方使用，包括 Model
+的生命周期钩子、验证函数等。
+
+### 基本用法
+
+```typescript
+// models/User.ts
+import { getDatabase, SQLModel } from "@dreamer/dweb/features/database";
+import { getI18n } from "@dreamer/dweb/plugins";
+
+class User extends SQLModel {
+  static tableName = "users";
+  static primaryKey = "id";
+
+  static schema = {
+    username: {
+      type: "string",
       validate: {
         required: true,
         min: 2,
@@ -35,17 +118,17 @@ class User extends SQLModel {
         custom: (value: string) => {
           // 使用 getI18n() 获取翻译函数
           const t = getI18n();
-          
-          if (value.toLowerCase() === 'admin') {
+
+          if (value.toLowerCase() === "admin") {
             // 使用翻译函数
-            throw new Error(t('validation.username.notAdmin'));
+            throw new Error(t("validation.username.notAdmin"));
           }
-        }
-      }
+        },
+      },
     },
-    
+
     email: {
-      type: 'string',
+      type: "string",
       validate: {
         required: true,
         pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
@@ -53,27 +136,27 @@ class User extends SQLModel {
           const t = getI18n();
           const existing = await User.findOne({ email: value });
           if (existing) {
-            throw new Error(t('validation.email.exists'));
+            throw new Error(t("validation.email.exists"));
           }
-        }
-      }
+        },
+      },
     },
   };
 
   // 生命周期钩子中使用
   static async beforeCreate(instance: User) {
     const t = getI18n();
-    
+
     // 使用翻译函数
     if (instance.age && instance.age < 13) {
-      throw new Error(t('validation.age.min', { min: '13' }));
+      throw new Error(t("validation.age.min", { min: "13" }));
     }
   }
 
   // 实例方法中使用
   async updateLastLogin() {
     const t = getI18n();
-    console.log(t('user.lastLoginUpdated'));
+    console.log(t("user.lastLoginUpdated"));
     await this.update({ lastLoginAt: new Date() });
   }
 }
@@ -90,33 +173,8 @@ export default User;
 如果需要使用特定语言（而不是当前请求的语言），可以传递语言代码：
 
 ```typescript
-const t = getI18n('zh-CN'); // 使用中文
-const message = t('validation.required');
-```
-
-## 方式 2：使用 `globalThis.$t()`（服务端渲染时）
-
-在服务端渲染时，`globalThis.$t` 会在渲染前设置。但需要注意：
-
-- 只在请求处理流程中可用
-- 在 Model 的生命周期钩子中可能还未设置
-- 渲染完成后会被清理
-
-```typescript
-// models/User.ts
-class User extends SQLModel {
-  static async beforeCreate(instance: User) {
-    // 检查 globalThis.$t 是否存在
-    const t = (globalThis as any).$t;
-    if (t) {
-      const message = t('validation.custom');
-      // 使用翻译
-    } else {
-      // 回退到默认消息
-      const message = '验证失败';
-    }
-  }
-}
+const t = getI18n("zh-CN"); // 使用中文
+const message = t("validation.required");
 ```
 
 ## 方式 3：通过参数传递（最灵活）
@@ -125,13 +183,13 @@ class User extends SQLModel {
 
 ```typescript
 // routes/users/[id].tsx
-import type { LoadContext, PageProps } from '@dreamer/dweb';
-import User from '../../models/User.ts';
+import type { LoadContext, PageProps } from "@dreamer/dweb";
+import User from "../../models/User.ts";
 
 export async function load({ params, t }: LoadContext) {
   // 将 t 函数传递给 Model 方法
   const user = await User.findById(params.id, { t });
-  
+
   return {
     user,
   };
@@ -150,11 +208,11 @@ export default function UserPage({ data }: PageProps) {
 class User extends SQLModel {
   static async findById(id: string, options?: { t?: (key: string) => string }) {
     const user = await this.find(id);
-    
+
     if (!user && options?.t) {
-      throw new Error(options.t('user.notFound'));
+      throw new Error(options.t("user.notFound"));
     }
-    
+
     return user;
   }
 }
@@ -218,14 +276,20 @@ class User extends SQLModel {
 
 ## 最佳实践
 
-1. **优先使用 `getI18n()`**：这是最可靠的方式，在请求上下文中自动使用当前语言
-2. **提供默认值**：如果翻译不存在，`getI18n()` 会返回 key，建议在验证消息中提供默认值
-3. **使用嵌套键**：使用 `validation.email.exists` 这样的嵌套键，便于组织翻译
-4. **参数化消息**：使用 `{field}` 这样的占位符，支持动态内容
+1. **优先使用 `$t()` 或 `t()`**：这是最简单的方式，无需导入，全局可用
+2. **备选方案使用
+   `getI18n()`**：如果需要在非请求上下文中使用，或需要指定特定语言
+3. **提供默认值**：如果翻译不存在，翻译函数会返回
+   key，建议在验证消息中提供默认值
+4. **使用嵌套键**：使用 `validation.email.exists` 这样的嵌套键，便于组织翻译
+5. **参数化消息**：使用 `{field}` 这样的占位符，支持动态内容
 
 ## 注意事项
 
+- `$t()` 和 `t()` 在请求上下文中会自动使用当前请求的语言
+- 在非请求上下文（如后台任务）中，使用默认语言
+- 如果 i18n 插件未初始化，`$t()` 和 `t()` 可能未定义，建议添加检查或使用
+  `getI18n()`
 - `getI18n()` 在请求上下文中会自动使用当前请求的语言
-- 在非请求上下文（如后台任务）中，会使用默认语言
+- 在非请求上下文（如后台任务）中，`getI18n()` 会使用默认语言
 - 如果 i18n 插件未初始化，`getI18n()` 会返回一个返回 key 的函数（不会报错）
-

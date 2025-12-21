@@ -3,6 +3,9 @@
  * 多语言支持：自动检测语言、路由级语言切换、翻译文件管理
  */
 
+// 引用全局类型声明（使 $t 和 t 函数在全局可用）
+import "./global.d.ts";
+
 import type { AppLike, Plugin, Request, Response } from "../../types/index.ts";
 import type { I18nPluginOptions, TranslationData } from "./types.ts";
 import * as path from "@std/path";
@@ -258,7 +261,13 @@ export function i18n(options: I18nPluginOptions): Plugin {
       (req as any).translations = translationCache.get(langCode) || null;
       (req as any).t = tFunction;
 
-      // 在服务端设置全局 $t 和 t 函数
+      // 立即在服务端设置全局 $t 和 t 函数（使用当前请求的语言）
+      // 这样在请求处理过程中就可以直接使用 $t() 和 t()
+      if (typeof globalThis !== "undefined") {
+        (globalThis as any).$t = tFunction;
+        (globalThis as any).t = tFunction;
+      }
+
       // 将翻译函数存储到请求对象，供 route-handler 在渲染时使用
       (req as any).__setGlobalI18n = () => {
         if (typeof globalThis !== "undefined") {

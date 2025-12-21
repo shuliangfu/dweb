@@ -31,6 +31,13 @@ export function initI18nAccess(
 ): void {
   translationCache = cache;
   defaultLanguage = defaultLang;
+
+  // 初始化全局 $t 和 t 函数（使用默认语言）
+  if (typeof globalThis !== "undefined") {
+    const defaultTFunction = getI18n(defaultLang);
+    (globalThis as any).$t = defaultTFunction;
+    (globalThis as any).t = defaultTFunction;
+  }
 }
 
 /**
