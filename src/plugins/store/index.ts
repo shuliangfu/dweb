@@ -314,7 +314,7 @@ export function store(options: StorePluginOptions = {}): Plugin {
      * 响应处理钩子 - 注入客户端 Store 脚本
      * 将服务端 Store 的状态注入到客户端 Store 中
      */
-    onResponse: (req: Request, res: Response) => {
+    onResponse: async (req: Request, res: Response) => {
       // 只处理 HTML 响应
       if (!res.body || typeof res.body !== 'string') {
         return;
@@ -340,8 +340,19 @@ export function store(options: StorePluginOptions = {}): Plugin {
         // 注入 Store 脚本（在 </head> 之前）
         if (html.includes('</head>')) {
           const script = generateStoreScript(options, serverState);
-          const newHtml = html.replace('</head>', `${script}\n</head>`);
-          res.body = newHtml;
+          // 提取 JavaScript 代码并压缩
+          const scriptMatch = script.match(/<script>([\s\S]*?)<\/script>/);
+          if (scriptMatch) {
+            const jsCode = scriptMatch[1];
+            const minifiedCode = await minifyJavaScript(jsCode);
+            const minifiedScript = `<script>${minifiedCode}</script>`;
+            const newHtml = html.replace('</head>', `${minifiedScript}\n</head>`);
+            res.body = newHtml;
+          } else {
+            // 如果没有匹配到，直接使用原始脚本
+            const newHtml = html.replace('</head>', `${script}\n</head>`);
+            res.body = newHtml;
+          }
         }
       } catch (error) {
         console.error('[Store Plugin] 注入 Store 脚本时出错:', error);
