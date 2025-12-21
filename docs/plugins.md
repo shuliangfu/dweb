@@ -460,25 +460,22 @@ unsubscribe();
 store.reset();
 ```
 
-#### 服务端使用（在 load 函数或页面组件中）
+#### 服务端使用（在 load 函数中）
 
 ```typescript
 import type { LoadContext } from '@dreamer/dweb';
 
-export async function load({ req }: LoadContext) {
-  // 获取当前请求的 Store 实例
-  const store = (req as any).getStore();
-  
-  if (store) {
-    // 设置状态
-    store.setState({ user: { id: 1, name: 'John' } });
-    
-    // 获取状态
-    const state = store.getState();
-    return { user: state.user };
+export async function load({ store }: LoadContext) {
+  if (!store) {
+    return {};
   }
   
-  return {};
+  // 设置状态
+  store.setState({ user: { id: 1, name: 'John' } });
+  
+  // 获取状态
+  const state = store.getState();
+  return { user: state.user };
 }
 ```
 

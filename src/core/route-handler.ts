@@ -818,7 +818,7 @@ export class RouteHandler {
       // 导入数据库访问函数
       const { getDatabase } = await import("../features/database/access.ts");
 
-      // 调用 load 函数，传递 params、query、cookies、session 和数据库
+      // 调用 load 函数，传递 params、query、cookies、session、数据库和 store
       return await pageModule.load({
         req,
         res,
@@ -844,6 +844,8 @@ export class RouteHandler {
         // 提供翻译函数（如果 i18n 插件已设置）
         t: (req as any).t,
         lang: (req as any).lang,
+        // 提供 Store 实例（如果 store 插件已设置）
+        store: (req as any).getStore ? (req as any).getStore() : undefined,
       });
     } catch (error) {
       res.status = 500;

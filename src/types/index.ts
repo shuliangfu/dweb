@@ -370,6 +370,8 @@ export interface LoadContext {
   t?: (key: string, params?: Record<string, string>) => string;
   /** 当前语言代码（如果已配置 i18n 插件） */
   lang?: string;
+  /** 状态管理 Store（如果已配置 store 插件） */
+  store?: import("../plugins/store/types.ts").Store;
 }
 
 /**
