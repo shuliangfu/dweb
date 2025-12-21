@@ -13,8 +13,6 @@ function generateThemeScript(options: ThemePluginOptions): string {
   const config = options.config || {};
   const storageKey = config.storageKey || 'theme';
   const defaultTheme = config.defaultTheme || 'auto';
-  const injectDataAttribute = config.injectDataAttribute !== false;
-  const injectBodyClass = config.injectBodyClass !== false;
   const transition = config.transition !== false;
 
   return `
@@ -79,14 +77,21 @@ function generateThemeScript(options: ThemePluginOptions): string {
             }
             const actualTheme = theme === 'auto' ? this.getSystemTheme() : theme;
             console.log('[Theme Plugin] 实际主题:', actualTheme);
-            ${injectDataAttribute ? `if (document.documentElement) {
-              document.documentElement.setAttribute('data-theme', actualTheme);
-              console.log('[Theme Plugin] 已设置 data-theme 属性:', actualTheme);
-            }` : ''}
-            ${injectBodyClass ? `if (document.body) {
-              document.body.className = document.body.className.replace(/\\btheme-\\w+/g, '') + ' theme-' + actualTheme;
-              console.log('[Theme Plugin] 已设置 body className:', document.body.className);
-            }` : ''}
+            
+            // 在 html 元素上设置 class（用于 Tailwind CSS dark mode）
+            if (document.documentElement) {
+              // 移除旧的 dark/light class
+              document.documentElement.classList.remove('dark', 'light');
+              // 添加新的主题 class
+              if (actualTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                console.log('[Theme Plugin] 已添加 dark class 到 html 元素');
+              } else {
+                document.documentElement.classList.add('light');
+                console.log('[Theme Plugin] 已添加 light class 到 html 元素');
+              }
+            }
+            
             // 更新主题 store（如果存在）
             if (typeof window !== 'undefined' && window.__THEME_STORE__) {
               window.__THEME_STORE__.value = actualTheme;
@@ -246,27 +251,42 @@ function generateThemeScript(options: ThemePluginOptions): string {
 }
 
 /**
- * 注入主题属性到 HTML
+ * 注入主题 class 到 HTML
+ * 使用 Tailwind CSS 的 dark mode 方式：在 html 元素上添加 dark/light class
  */
 function injectThemeAttribute(html: string, theme: ThemeMode): string {
   let result = html;
   
-  // 获取实际主题（如果是 auto，默认为 light）
+  // 获取实际主题（如果是 auto，需要检测系统主题，但服务端无法检测，默认使用 light）
   const actualTheme = theme === 'auto' ? 'light' : theme;
+  const themeClass = actualTheme === 'dark' ? 'dark' : 'light';
   
-  // 注入 data-theme 属性
+  // 在 html 元素上注入 class（用于 Tailwind CSS dark mode）
   if (result.includes('<html')) {
-    if (result.match(/<html[^>]*data-theme=["'][^"']*["']/)) {
-      result = result.replace(
-        /<html([^>]*?)data-theme=["'][^"']*["']/,
-        `<html$1data-theme="${actualTheme}"`
-      );
-    } else {
-      result = result.replace(
-        /<html([^>]*?)>/,
-        `<html$1 data-theme="${actualTheme}">`
-      );
-    }
+    // 先移除旧的 dark/light class 和 data-theme 属性
+    result = result.replace(/<html([^>]*?)>/i, (match, attrs) => {
+      // 移除 data-theme 属性
+      let newAttrs = attrs.replace(/\s+data-theme=["'][^"']*["']/gi, '');
+      
+      // 处理 class 属性
+      const classMatch = newAttrs.match(/\s+class=["']([^"']*?)["']/i);
+      if (classMatch) {
+        // 移除旧的 dark/light class，保留其他 class
+        const existingClasses = classMatch[1]
+          .split(/\s+/)
+          .filter((c: string) => c && c !== 'dark' && c !== 'light')
+          .join(' ')
+          .trim();
+        const finalClasses = existingClasses ? `${existingClasses} ${themeClass}` : themeClass;
+        // 替换 class 属性
+        newAttrs = newAttrs.replace(/\s+class=["'][^"']*["']/i, ` class="${finalClasses}"`);
+      } else {
+        // 如果没有 class 属性，添加一个
+        newAttrs = `${newAttrs} class="${themeClass}"`;
+      }
+      
+      return `<html${newAttrs}>`;
+    });
   }
   
   return result;
