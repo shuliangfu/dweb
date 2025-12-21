@@ -5,7 +5,7 @@
     "dev": "deno run -A @dreamer/dweb/cli dev",
     "build": "deno run -A @dreamer/dweb/cli build",
     "start": "deno run -A @dreamer/dweb/cli start"
-  },
+  }, 
   "imports": {
     "@dreamer/dweb": "../src/mod.ts",
     "@dreamer/dweb/cli": "../src/cli.ts",
