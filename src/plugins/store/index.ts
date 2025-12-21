@@ -272,8 +272,6 @@ function generateStoreScript(
  */
 export function store(options: StorePluginOptions = {}): Plugin {
   const config = options;
-  const persist = config.persist !== false;
-  const storageKey = config.storageKey || "dweb-store";
   const enableServer = config.enableServer !== false;
   const initialState = config.initialState || {};
 
