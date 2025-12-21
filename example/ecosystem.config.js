@@ -26,7 +26,7 @@ module.exports = {
       script: "deno",
       
       // 启动参数
-      args: "run -A @dreamer/dweb/cli start",
+      args: "run -A ../src/cli.ts start",
       
       // 工作目录（项目根目录）
       cwd: "./",
