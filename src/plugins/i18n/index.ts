@@ -341,20 +341,24 @@ export function i18n(options: I18nPluginOptions): Plugin {
         translations: ${JSON.stringify(translations)},
         t: function(key, params) {
           const translations = this.translations;
+          if (!translations || typeof translations !== 'object') {
+            return key;
+          }
           // 支持嵌套键（如 'common.title'）和直接键（如 '你好，世界！'）
           const keys = key.split('.');
           let value = translations;
           for (const k of keys) {
             if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
               value = value[k];
-            } else {
-              // 如果找不到嵌套键，尝试直接使用整个 key
-              if (keys.length === 1 && typeof translations === 'object' && translations !== null) {
+              // 如果找不到，且是单个键，尝试直接使用整个 key
+              if (value === undefined && keys.length === 1) {
                 value = translations[key];
-              } else {
+              }
+              if (value === undefined) {
                 return key;
               }
-              break;
+            } else {
+              return key;
             }
           }
           if (typeof value !== 'string') return key;
