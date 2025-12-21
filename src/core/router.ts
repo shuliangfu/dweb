@@ -237,7 +237,8 @@ export class Router {
         }
         
         // 处理不同类型的文件
-        if (relativePath.startsWith('_')) {
+        // 检查是否是特殊文件（_layout.tsx, _middleware.ts 等）
+        if (relativePath.startsWith('_') || relativePath.includes('/_layout.') || relativePath.includes('/_middleware.') || relativePath.includes('/_404.') || relativePath.includes('/_error.') || relativePath.includes('/_500.')) {
           this.handleSpecialFile(relativePath, filePath);
         } else if (relativePath.startsWith('api/')) {
           this.handleApiRoute(relativePath, filePath);
@@ -561,7 +562,7 @@ export class Router {
   /**
    * 获取布局文件路径
    * @param path 路径
-   * @returns 布局文件路径
+   * @returns 布局文件路径（最匹配的布局）
    */
   getLayout(path: string): string | null {
     // 查找最匹配的布局
@@ -574,6 +575,32 @@ export class Router {
     }
     
     return this.layouts.get('/') || null;
+  }
+
+  /**
+   * 获取所有匹配的布局文件路径（从最具体到最通用）
+   * @param path 路径
+   * @returns 布局文件路径数组
+   */
+  getAllLayouts(path: string): string[] {
+    const layoutPaths: string[] = [];
+    let currentPath = path;
+    // 从当前路径开始，向上查找所有布局
+    while (currentPath !== '/') {
+      if (this.layouts.has(currentPath)) {
+        const layoutPath = this.layouts.get(currentPath)!;
+        layoutPaths.push(layoutPath);
+      }
+      currentPath = currentPath.substring(0, currentPath.lastIndexOf('/')) || '/';
+    }
+    
+    // 最后添加根布局（如果存在）
+    if (this.layouts.has('/')) {
+      const rootLayout = this.layouts.get('/')!;
+      layoutPaths.push(rootLayout);
+    }
+    
+    return layoutPaths;
   }
   
   /**

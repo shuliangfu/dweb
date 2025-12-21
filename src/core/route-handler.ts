@@ -97,10 +97,10 @@ export class RouteHandler {
 
   /**
    * 处理模块请求（/__modules/ 路径）
-   * 
+   *
    * 该函数处理客户端模块请求，将 TypeScript/TSX 文件编译为浏览器可用的 JavaScript。
    * 这是框架实现客户端代码分割和按需加载的核心机制。
-   * 
+   *
    * 处理流程：
    * 1. 解析请求路径，提取文件路径
    * 2. 根据环境（开发/生产）确定文件位置：
@@ -113,17 +113,17 @@ export class RouteHandler {
    *    - 外部依赖保持 `import` 语句（不打包）
    * 5. 设置响应头和内容类型
    * 6. 返回编译后的 JavaScript 代码
-   * 
+   *
    * 路径处理规则：
    * - 开发环境：`/__modules/routes/index.tsx` → `routes/index.tsx`
    * - 生产环境：`/__modules/./routes_index.abc123.js` → `dist/routes_index.abc123.js`
-   * 
+   *
    * @param req - HTTP 请求对象
    * @param res - HTTP 响应对象
    * @returns Promise，在模块处理完成后解析
-   * 
+   *
    * @throws {Error} 如果文件不存在或编译失败，会设置响应状态码并返回错误信息
-   * 
+   *
    * @remarks
    * - 使用 `Promise.resolve().then()` 确保所有操作都在异步上下文中执行
    * - 生产环境会从 `dist` 目录加载已构建的文件，提高性能
@@ -251,11 +251,13 @@ export class RouteHandler {
               // 相对路径导入（../ 和 ./）不会被 alias 处理，由 esbuild 自动解析和打包
               alias: Object.fromEntries(
                 Object.entries(importMap)
-                  .filter(([_, value]) => !value.startsWith('jsr:') && !value.startsWith('npm:') && !value.startsWith('http'))
-                  .map(([key, value]) => [
-                    key,
-                    path.resolve(cwd, value),
-                  ])
+                  .filter(
+                    ([_, value]) =>
+                      !value.startsWith('jsr:') &&
+                      !value.startsWith('npm:') &&
+                      !value.startsWith('http')
+                  )
+                  .map(([key, value]) => [key, path.resolve(cwd, value)])
               ),
             });
 
@@ -375,7 +377,7 @@ export class RouteHandler {
     try {
       const filePath = resolveFilePath(middlewarePath);
       const module = await import(filePath);
-      
+
       // 支持默认导出中间件函数
       if (module.default) {
         // 如果是数组，返回数组中的所有中间件
@@ -387,7 +389,7 @@ export class RouteHandler {
           return [module.default as Middleware];
         }
       }
-      
+
       // 如果没有默认导出，返回空数组
       return [];
     } catch (error) {
@@ -443,7 +445,7 @@ export class RouteHandler {
     // 加载路由中间件
     const middlewarePaths = this.router.getMiddlewares(pathname);
     const routeMiddlewares: Middleware[] = [];
-    
+
     for (const middlewarePath of middlewarePaths) {
       const middlewares = await this.loadRouteMiddleware(middlewarePath);
       // loadRouteMiddleware 现在返回数组，支持单个中间件或中间件数组
@@ -552,7 +554,7 @@ export class RouteHandler {
 
     // 匹配路由
     const matchedRouteInfo = this.router.match(pathname);
-    
+
     if (!matchedRouteInfo) {
       await this.handle404(req, res);
       return;
@@ -561,12 +563,12 @@ export class RouteHandler {
     // 立即创建 routeInfo 的副本，避免并发请求共享同一个对象引用
     // 这很重要，因为 router.match 返回的是共享对象，多个并发请求可能会互相影响
     const routeInfo: RouteInfo = {
-      path: matchedRouteInfo.path,  // 立即捕获
-      filePath: matchedRouteInfo.filePath,  // 立即捕获
+      path: matchedRouteInfo.path, // 立即捕获
+      filePath: matchedRouteInfo.filePath, // 立即捕获
       type: matchedRouteInfo.type,
-      params: matchedRouteInfo.params ? [...matchedRouteInfo.params] : undefined,  // 数组副本
+      params: matchedRouteInfo.params ? [...matchedRouteInfo.params] : undefined, // 数组副本
       isCatchAll: matchedRouteInfo.isCatchAll,
-      clientModulePath: matchedRouteInfo.clientModulePath
+      clientModulePath: matchedRouteInfo.clientModulePath,
     };
 
     // 处理匹配的路由
@@ -625,9 +627,9 @@ export class RouteHandler {
 
   /**
    * 加载页面模块
-   * 
+   *
    * 该函数动态导入页面模块文件，获取页面组件、`load` 函数、`metadata` 等导出内容。
-   * 
+   *
    * 模块导出内容：
    * - `default`: 页面组件（必需）
    * - `load`: 数据加载函数（可选）
@@ -635,13 +637,13 @@ export class RouteHandler {
    * - `renderMode`: 渲染模式（可选）
    * - `hydrate`: 是否启用 hydration（可选）
    * - `layout`: 布局组件（可选）
-   * 
+   *
    * @param routeInfo - 路由信息对象，包含文件路径等信息
    * @param res - HTTP 响应对象，用于在加载失败时设置错误响应
    * @returns 页面模块对象，包含所有导出内容
-   * 
+   *
    * @throws {Error} 如果模块导入失败或返回空值，会设置响应状态码为 500 并抛出错误
-   * 
+   *
    * @example
    * ```typescript
    * const pageModule = await this.loadPageModule(routeInfo, res);
@@ -672,10 +674,10 @@ export class RouteHandler {
 
   /**
    * 加载页面数据（通过 load 函数）
-   * 
+   *
    * 该函数调用页面模块的 `load` 函数获取页面所需的数据。
    * `load` 函数在服务端执行，用于在渲染前获取数据（如数据库查询、API 调用等）。
-   * 
+   *
    * 传递给 `load` 函数的参数：
    * - `params`: 路由参数（动态路由参数）
    * - `query`: URL 查询参数
@@ -684,16 +686,16 @@ export class RouteHandler {
    * - `getCookie(name)`: 获取 Cookie 值的函数
    * - `getSession()`: 获取 Session 的函数（异步）
    * - `db`: 数据库实例（如果配置了数据库）
-   * 
+   *
    * 如果页面模块没有导出 `load` 函数，返回空对象。
-   * 
+   *
    * @param pageModule - 页面模块对象，可能包含 `load` 函数
    * @param req - HTTP 请求对象，用于获取参数、查询、Cookie、Session 等
    * @param res - HTTP 响应对象，用于在 `load` 函数执行失败时设置错误响应
    * @returns `load` 函数返回的数据对象，如果没有 `load` 函数则返回空对象
-   * 
+   *
    * @throws {Error} 如果 `load` 函数执行失败，会设置响应状态码为 500 并抛出错误
-   * 
+   *
    * @example
    * ```typescript
    * // 在页面模块中
@@ -701,7 +703,7 @@ export class RouteHandler {
    *   const user = await db.query('SELECT * FROM users WHERE id = ?', [params.id]);
    *   return { user };
    * }
-   * 
+   *
    * // 在路由处理器中
    * const pageData = await this.loadPageData(pageModule, req, res);
    * // pageData = { user: {...} }
@@ -727,9 +729,9 @@ export class RouteHandler {
       const { getDatabase } = await import('../features/database/access.ts');
 
       // 调用 load 函数，传递 params、query、cookies、session 和数据库
-			return await pageModule.load({
-				req,
-				res,
+      return await pageModule.load({
+        req,
+        res,
         params: req.params,
         query: req.query,
         cookies: req.cookies,
@@ -766,25 +768,25 @@ export class RouteHandler {
 
   /**
    * 检测组件文件是否使用了 Preact Hooks
-   * 
+   *
    * 该函数通过静态分析检测组件文件及其依赖是否使用了 Preact Hooks。
    * 如果检测到 Hooks 使用，框架会自动将渲染模式设置为 CSR（客户端渲染），
    * 因为 Hooks 需要在客户端环境中运行。
-   * 
+   *
    * 检测策略：
    * 1. 检查是否导入了 `preact/hooks`（包括各种格式：源文件、构建后、HTTP URL）
    * 2. 检查是否使用了常见的 Hooks（useState、useEffect、useCallback 等）
    * 3. 检查是否有重命名的 Hooks（如 `useState as i`）
    * 4. 递归检测所有相对路径导入的组件文件（防止循环引用）
-   * 
+   *
    * 支持的 Hooks：
    * - useState, useEffect, useCallback, useMemo, useRef
    * - useContext, useReducer, useLayoutEffect
-   * 
+   *
    * @param filePath - 组件文件的路径（相对路径或绝对路径）
    * @param visited - 已访问的文件路径集合，用于防止循环引用（递归调用时使用）
    * @returns 如果检测到使用了 Hooks 返回 `true`，否则返回 `false`
-   * 
+   *
    * @example
    * ```typescript
    * // 检测页面组件是否使用 Hooks
@@ -793,7 +795,7 @@ export class RouteHandler {
    *   // 自动设置为 CSR 模式
    * }
    * ```
-   * 
+   *
    * @remarks
    * - 如果文件读取失败，返回 `false`（不自动设置 CSR，避免影响正常渲染）
    * - 使用保守策略：只要检测到 hooks 导入，即使没有直接使用，也认为使用了 hooks
@@ -926,25 +928,25 @@ export class RouteHandler {
 
   /**
    * 获取渲染配置（模式、是否 hydration、布局组件）
-   * 
+   *
    * 该函数根据页面模块导出、路由信息和自动检测结果，确定页面的渲染配置。
-   * 
+   *
    * 渲染模式优先级（从高到低）：
    * 1. 页面组件导出的 `renderMode`（显式指定）
    * 2. 自动检测结果（如果组件使用了 Preact Hooks，自动设置为 CSR）
    * 3. 全局配置的 `renderMode`
    * 4. 默认 SSR 模式
-   * 
+   *
    * Hydration 规则：
    * - Hybrid 模式：总是启用 hydration
    * - SSR 模式：默认不启用 hydration，除非页面组件显式设置 `hydrate: true`
    * - CSR 模式：不启用 hydration（客户端完全渲染）
-   * 
+   *
    * 布局组件加载：
    * - 从路由系统获取布局路径
    * - 动态导入布局模块
    * - 如果加载失败，静默处理，继续使用无布局模式
-   * 
+   *
    * @param pageModule - 页面模块对象，可能包含：
    *   - `renderMode`: 显式指定的渲染模式
    *   - `hydrate`: 是否启用 hydration（仅 SSR 模式有效）
@@ -954,7 +956,7 @@ export class RouteHandler {
    *   - `renderMode`: 最终确定的渲染模式（'ssr' | 'csr' | 'hybrid'）
    *   - `shouldHydrate`: 是否启用 hydration（客户端激活）
    *   - `LayoutComponent`: 布局组件函数，如果不存在则返回 `null`
-   * 
+   *
    * @example
    * ```typescript
    * const config = await this.getRenderConfig(pageModule, routeInfo);
@@ -971,27 +973,39 @@ export class RouteHandler {
   ): Promise<{
     renderMode: RenderMode;
     shouldHydrate: boolean;
-    LayoutComponent: ((props: { children: unknown }) => unknown) | null;
+    LayoutComponents: ((props: { children: unknown }) => unknown)[];
   }> {
     // 获取渲染模式（优先级：页面组件导出 > 自动检测 > 配置 > 默认 SSR）
     const pageRenderMode = pageModule.renderMode as RenderMode | undefined;
 
-    // 获取布局组件
-    let LayoutComponent = null;
-    let layoutPath: string | null = null;
+    // 获取所有布局组件（从最具体到最通用）
+    const LayoutComponents: ((props: { children: unknown }) => unknown)[] = [];
+    const layoutPaths: string[] = [];
     try {
-      layoutPath = this.router.getLayout(routeInfo.path);
-      if (layoutPath) {
+      // 获取所有匹配的布局路径
+      layoutPaths.push(...this.router.getAllLayouts(routeInfo.path));
+
+      // 加载所有布局组件
+      for (const layoutPath of layoutPaths) {
         try {
           const layoutFullPath = resolveFilePath(layoutPath);
           const layoutModule = await import(layoutFullPath);
-          LayoutComponent = layoutModule.default;
-        } catch (_error) {
-          // 布局加载失败不影响页面渲染，继续使用无布局模式
+          const LayoutComponent = layoutModule.default;
+          if (!LayoutComponent) {
+            logger.warn(`布局文件 ${layoutPath} 没有默认导出`);
+            continue;
+          }
+          LayoutComponents.push(LayoutComponent);
+        } catch (error) {
+          // 布局加载失败不影响页面渲染，跳过该布局
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          logger.warn(`加载布局文件失败: ${layoutPath}`, { error: errorMessage });
         }
       }
-    } catch (_error) {
+    } catch (error) {
       // 继续执行，不使用布局
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.warn(`[布局继承] 获取布局时出错: ${errorMessage}`);
     }
 
     // 如果页面没有明确指定 renderMode，检测页面组件和布局组件是否使用了 Preact Hooks
@@ -1002,8 +1016,11 @@ export class RouteHandler {
 
       // 检测布局组件（如果存在）
       let layoutUsesHooks = false;
-      if (layoutPath) {
-        layoutUsesHooks = await this.detectPreactHooks(layoutPath);
+      for (const layoutPath of layoutPaths) {
+        if (await this.detectPreactHooks(layoutPath)) {
+          layoutUsesHooks = true;
+          break;
+        }
       }
 
       // 如果页面组件或布局组件使用了 Hooks，自动设置为 CSR
@@ -1019,7 +1036,7 @@ export class RouteHandler {
     // 只有在明确指定 hybrid 模式或 hydrate=true 时才进行 hydration
     const shouldHydrate = renderMode === 'hybrid' || pageModule.hydrate === true;
 
-    return { renderMode, shouldHydrate, LayoutComponent };
+    return { renderMode, shouldHydrate, LayoutComponents };
   }
 
   /**
@@ -1027,7 +1044,7 @@ export class RouteHandler {
    */
   private async renderPageContent(
     PageComponent: (props: Record<string, unknown>) => unknown | Promise<unknown>,
-    LayoutComponent: ((props: { children: unknown }) => unknown | Promise<unknown>) | null,
+    LayoutComponents: ((props: { children: unknown }) => unknown | Promise<unknown>)[],
     pageProps: Record<string, unknown>,
     renderMode: RenderMode,
     req?: Request
@@ -1057,17 +1074,24 @@ export class RouteHandler {
         throw new Error(`渲染页面组件失败: ${errorMsg}`);
       }
 
-      // 如果有布局，包裹在布局中（支持异步布局组件）
+      // 如果有布局，按顺序嵌套包裹（支持异步布局组件）
       let html: string;
       try {
-        if (LayoutComponent) {
-          // 支持异步布局组件：如果组件返回 Promise，则等待它
-          const layoutResult = LayoutComponent({ children: pageElement });
-          const layoutElement = layoutResult instanceof Promise ? await layoutResult : layoutResult;
-          if (!layoutElement) {
-            throw new Error('布局组件返回了空值');
+        if (LayoutComponents.length > 0) {
+          // 从最内层到最外层嵌套布局组件
+          let currentElement = pageElement;
+          for (let i = 0; i < LayoutComponents.length; i++) {
+            const LayoutComponent = LayoutComponents[i];
+            // 支持异步布局组件：如果组件返回 Promise，则等待它
+            const layoutResult = LayoutComponent({ children: currentElement });
+            const layoutElement =
+              layoutResult instanceof Promise ? await layoutResult : layoutResult;
+            if (!layoutElement) {
+              throw new Error('布局组件返回了空值');
+            }
+            currentElement = layoutElement;
           }
-          html = renderToString(layoutElement as unknown as Parameters<typeof renderToString>[0]);
+          html = renderToString(currentElement as unknown as Parameters<typeof renderToString>[0]);
         } else {
           html = renderToString(pageElement as unknown as Parameters<typeof renderToString>[0]);
         }
@@ -1190,41 +1214,47 @@ export class RouteHandler {
         // 开发环境：使用完整路径
         modulePath = resolveFilePath(routeInfo.filePath);
       }
-      
-      // 获取布局路径（用于客户端脚本）
-      let layoutPathForClient: string | null = null;
+
+      // 获取所有布局路径（用于客户端脚本）
+      const layoutPathsForClient: string[] = [];
       try {
-        const layoutFilePath = this.router.getLayout(routeInfo.path);
-        if (layoutFilePath) {
+        const layoutFilePaths = this.router.getAllLayouts(routeInfo.path);
+        for (const layoutFilePath of layoutFilePaths) {
           // 检查布局路由信息，看是否有 clientModulePath
           const layoutRoute = this.router.getAllRoutes().find((r) => r.filePath === layoutFilePath);
           if (layoutRoute?.clientModulePath) {
             // 生产环境：使用客户端模块路径
-            layoutPathForClient = layoutRoute.clientModulePath;
+            layoutPathsForClient.push(layoutRoute.clientModulePath);
           } else {
             // 开发环境：使用完整路径
-            layoutPathForClient = layoutFilePath;
+            layoutPathsForClient.push(layoutFilePath);
           }
         }
       } catch (_error) {
         // 静默处理错误
+        logger.warn(`[布局继承] 客户端脚本：获取布局路径失败`);
       }
+
+      // 为了向后兼容，使用第一个布局路径（最具体的）
+      // 但我们需要修改客户端脚本以支持多个布局
+      const layoutPathForClient = layoutPathsForClient.length > 0 ? layoutPathsForClient[0] : null;
+      const allLayoutPathsForClient = layoutPathsForClient.length > 0 ? layoutPathsForClient : null;
 
       // 从 Router 获取 basePath（多应用模式使用）
       // basePath 存储在 Router 中，而不是 config 中
       const basePath = this.router.getBasePath();
       // 规范化 basePath：如果 basePath 以 / 结尾且不是根路径，移除末尾的 /
-      const normalizedBasePath = basePath !== '/' && basePath.endsWith('/') 
-        ? basePath.slice(0, -1) 
-        : basePath;
-      
+      const normalizedBasePath =
+        basePath !== '/' && basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
+
       const clientScript = await createClientScript(
         modulePath,
         renderMode,
         pageProps,
         shouldHydrate,
         layoutPathForClient,
-        normalizedBasePath
+        normalizedBasePath,
+        allLayoutPathsForClient
       );
 
       // 对于 CSR 模式，将链接拦截器脚本注入到 head（尽早执行）
@@ -1374,7 +1404,7 @@ export class RouteHandler {
     // 这很重要，因为 routeInfo 对象可能被多个请求共享
     const routePath = routeInfo.path;
     const routeFilePath = routeInfo.filePath;
-    
+
     // 加载页面模块
     const pageModule = await this.loadPageModule(routeInfo, res);
 
@@ -1419,7 +1449,7 @@ export class RouteHandler {
     };
 
     // 获取渲染配置
-    const { renderMode, shouldHydrate, LayoutComponent } = await this.getRenderConfig(
+    const { renderMode, shouldHydrate, LayoutComponents } = await this.getRenderConfig(
       pageModule,
       routeInfo
     );
@@ -1429,7 +1459,7 @@ export class RouteHandler {
     try {
       html = await this.renderPageContent(
         PageComponent,
-        LayoutComponent,
+        LayoutComponents,
         pageProps,
         renderMode,
         req
@@ -1533,14 +1563,14 @@ export class RouteHandler {
     // 注意：使用在 handlePageRoute 开始时捕获的 routePath 和 routeFilePath
     // 这样可以避免在异步操作过程中被其他并发请求修改
     const routeInfoForScript: RouteInfo = {
-      path: routePath,  // 使用在函数开始时捕获的值
-      filePath: routeFilePath,  // 使用在函数开始时捕获的值
+      path: routePath, // 使用在函数开始时捕获的值
+      filePath: routeFilePath, // 使用在函数开始时捕获的值
       type: routeInfo.type,
-      params: routeInfo.params ? [...routeInfo.params] : undefined,  // 数组副本
+      params: routeInfo.params ? [...routeInfo.params] : undefined, // 数组副本
       isCatchAll: routeInfo.isCatchAll,
-      clientModulePath: routeInfo.clientModulePath
+      clientModulePath: routeInfo.clientModulePath,
     };
-    
+
     fullHtml = await this.injectScripts(
       fullHtml,
       routeInfoForScript,

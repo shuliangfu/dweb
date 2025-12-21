@@ -22,6 +22,7 @@ export async function createClientScript(
   shouldHydrate: boolean = false,
   layoutPath?: string | null,
   basePath?: string,
+  allLayoutPaths?: string[] | null,
 ): Promise<string> {
   // 将文件路径转换为 HTTP URL
   const httpUrl = filePathToHttpUrl(routePath);
@@ -41,6 +42,7 @@ export async function createClientScript(
 
   // 如果有布局路径，转换为 HTTP URL
   let escapedLayoutPath = "null";
+  let escapedAllLayoutPaths = "null";
   if (layoutPath) {
     // layoutPath 已经是绝对路径，直接使用
     const layoutFileUrl = layoutPath.startsWith("file://")
@@ -49,6 +51,18 @@ export async function createClientScript(
     const layoutHttpUrl = filePathToHttpUrl(layoutFileUrl);
     escapedLayoutPath = `'${layoutHttpUrl.replace(/'/g, "\\'")}'`;
 	}
+  
+  // 如果有多个布局路径，转换为 HTTP URL 数组
+  if (allLayoutPaths && Array.isArray(allLayoutPaths) && allLayoutPaths.length > 0) {
+    const layoutUrls = allLayoutPaths.map((layoutPath: string) => {
+      const layoutFileUrl = layoutPath.startsWith("file://")
+        ? layoutPath
+        : `file://${layoutPath}`;
+      const layoutHttpUrl = filePathToHttpUrl(layoutFileUrl);
+      return `'${layoutHttpUrl.replace(/'/g, "\\'")}'`;
+    });
+    escapedAllLayoutPaths = `[${layoutUrls.join(', ')}]`;
+  }
 	
 	// 调试日志已移除，避免在并发请求时产生混乱
 	// console.log({ httpUrl, escapedLayoutPath });
@@ -56,7 +70,9 @@ export async function createClientScript(
   // CSR 模式：不再需要手动拦截链接
   // 如果使用 preact-router，它会自动处理链接点击
   // 如果不使用 preact-router，在 initClientSideNavigation 中处理
-  const linkInterceptorScript = (renderMode === 'csr' || renderMode === 'hybrid') ? `
+  let linkInterceptorScript = '';
+  if (renderMode === 'csr' || renderMode === 'hybrid') {
+    linkInterceptorScript = `
 // CSR 链接拦截器（简化版）
 (function() {
   if (window.__CSR_LINK_INTERCEPTOR_INITIALIZED__) return;
@@ -120,13 +136,128 @@ export async function createClientScript(
     navigateToFunc = fn;
   };
 })();
-` : '';
+`;
+  }
 
   // CSR 模式客户端路由导航初始化函数（在模块中执行）
   // 参考用户之前的实现，使用类似 preact-router 的方式
-  const clientRouterCode =
-    renderMode === 'csr' || renderMode === 'hybrid'
-      ? `
+  let clientRouterCode = '';
+  if (renderMode === 'csr' || renderMode === 'hybrid') {
+    clientRouterCode = `
+// 辅助函数：加载布局组件
+async function loadLayoutComponents(pageData) {
+  const LayoutComponents = [];
+  if (pageData.allLayoutPaths && Array.isArray(pageData.allLayoutPaths) && pageData.allLayoutPaths.length > 0) {
+    // 加载所有布局组件（从最具体到最通用）
+    for (const layoutPath of pageData.allLayoutPaths) {
+      try {
+        const layoutModule = await import(layoutPath);
+        const LayoutComponent = layoutModule?.default;
+        if (LayoutComponent && typeof LayoutComponent === 'function') {
+          LayoutComponents.push(LayoutComponent);
+        }
+      } catch (_layoutError) {
+        // 布局加载失败时静默处理，跳过该布局
+      }
+    }
+  } else if (pageData.layoutPath && pageData.layoutPath !== 'null' && typeof pageData.layoutPath === 'string') {
+    // 向后兼容：如果只有单个布局路径
+    try {
+      const layoutModule = await import(pageData.layoutPath);
+      const LayoutComponent = layoutModule?.default;
+      if (LayoutComponent && typeof LayoutComponent === 'function') {
+        LayoutComponents.push(LayoutComponent);
+      }
+    } catch (_layoutError) {
+      // 布局加载失败时静默处理
+    }
+  }
+  return LayoutComponents;
+}
+
+// 辅助函数：创建页面元素（支持异步组件）
+async function createPageElement(PageComponent, props, jsxFunc) {
+  let pageElement;
+  try {
+    // 先尝试直接调用组件（支持异步组件）
+    const componentResult = PageComponent(props);
+    // 如果返回 Promise，等待它
+    if (componentResult instanceof Promise) {
+      pageElement = await componentResult;
+    } else {
+      // 同步组件返回 JSX，但可能需要用 jsx 包装
+      // 如果已经是有效的 Preact 元素，直接使用；否则用 jsx 包装
+      pageElement = componentResult;
+    }
+  } catch (callError) {
+    // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
+    pageElement = jsxFunc(PageComponent, props);
+    if (pageElement instanceof Promise) {
+      pageElement = await pageElement;
+    }
+  }
+  if (!pageElement) {
+    throw new Error('页面元素创建失败（返回 null）');
+  }
+  return pageElement;
+}
+
+// 辅助函数：嵌套布局组件（支持异步布局组件和布局继承）
+async function nestLayoutComponents(LayoutComponents, pageElement, jsxFunc) {
+  if (LayoutComponents.length === 0) {
+    return pageElement;
+  }
+  
+  // 从最内层到最外层嵌套布局组件
+  let currentElement = pageElement;
+  for (const LayoutComponent of LayoutComponents) {
+    try {
+      // 先尝试直接调用布局组件（支持异步组件）
+      const layoutResult = LayoutComponent({ children: currentElement });
+      // 如果布局组件返回 Promise，等待它
+      if (layoutResult instanceof Promise) {
+        currentElement = await layoutResult;
+      } else {
+        currentElement = layoutResult;
+      }
+    } catch (layoutError) {
+      // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
+      try {
+        let layoutResult = jsxFunc(LayoutComponent, { children: currentElement });
+        if (layoutResult instanceof Promise) {
+          currentElement = await layoutResult;
+        } else {
+          currentElement = layoutResult;
+        }
+      } catch (jsxError) {
+        // 如果都失败，跳过该布局，继续使用当前元素
+      }
+    }
+  }
+  return currentElement;
+}
+
+// 辅助函数：创建最终元素（页面元素 + 布局嵌套）
+async function createFinalElement(PageComponent, LayoutComponents, props, jsxFunc) {
+  // 创建页面元素
+  const pageElement = await createPageElement(PageComponent, props, jsxFunc);
+  
+  // 嵌套布局组件
+  let finalElement = await nestLayoutComponents(LayoutComponents, pageElement, jsxFunc);
+  
+  // 如果最终元素为空，使用页面元素作为后备
+  if (!finalElement) {
+    finalElement = pageElement;
+  }
+  
+  // 如果页面元素也为空，才抛出错误
+  if (!finalElement) {
+    throw new Error('最终元素创建失败（返回 null）');
+  }
+  
+  return finalElement;
+}
+
 // CSR 客户端路由导航初始化函数（简化版）
 async function initClientSideNavigation(render, jsx) {
   if (window.__CSR_ROUTER_INITIALIZED__) return;
@@ -318,14 +449,9 @@ async function initClientSideNavigation(render, jsx) {
       }
       
       // 加载组件
-      let pageModule, layoutModule;
+      let pageModule;
       try {
-        [pageModule, layoutModule] = await Promise.all([
-          import(pageData.route),
-          pageData.layoutPath && pageData.layoutPath !== 'null' && typeof pageData.layoutPath === 'string'
-            ? import(pageData.layoutPath).catch(() => null)
-            : Promise.resolve(null)
-        ]);
+        pageModule = await import(pageData.route);
       } catch (importError) {
         throw new Error(\`组件导入失败: \${importError.message}\`);
       }
@@ -338,50 +464,11 @@ async function initClientSideNavigation(render, jsx) {
         throw new Error('页面组件不是函数');
       }
       
-      const LayoutComponent = layoutModule?.default || null;
-      if (LayoutComponent && typeof LayoutComponent !== 'function') {
-        LayoutComponent = null;
-      }
+      // 加载所有布局组件（支持布局继承）
+      const LayoutComponents = await loadLayoutComponents(pageData);
       
-      // 创建元素（支持异步组件）
-      // 注意：如果 PageComponent 是 async function，直接调用它并等待 Promise
-      // 如果组件是同步的，使用 jsx 函数调用
-      let pageElement;
-      try {
-        // 先尝试直接调用组件（支持异步组件）
-        const componentResult = PageComponent(pageData.props || {});
-        // 如果返回 Promise，等待它
-        if (componentResult instanceof Promise) {
-          pageElement = await componentResult;
-        } else {
-          // 同步组件返回 JSX，但可能需要用 jsx 包装
-          // 如果已经是有效的 Preact 元素，直接使用；否则用 jsx 包装
-          pageElement = componentResult;
-        }
-      } catch (callError) {
-        // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
-        pageElement = jsxFunc(PageComponent, pageData.props || {});
-        if (pageElement instanceof Promise) {
-          pageElement = await pageElement;
-        }
-      }
-      if (!pageElement) throw new Error('页面元素创建失败（返回 null）');
-      
-      // 创建最终元素（支持异步布局组件）
-      let finalElement;
-      if (LayoutComponent) {
-        let layoutResult = jsxFunc(LayoutComponent, { children: pageElement });
-        // 如果布局组件返回 Promise，等待它
-        if (layoutResult instanceof Promise) {
-          finalElement = await layoutResult;
-        } else {
-          finalElement = layoutResult;
-        }
-      } else {
-        finalElement = pageElement;
-      }
-      
-      if (!finalElement) throw new Error('最终元素创建失败（返回 null）');
+      // 创建最终元素（页面元素 + 布局嵌套）
+      const finalElement = await createFinalElement(PageComponent, LayoutComponents, pageData.props || {}, jsxFunc);
       
       // 渲染（与初始渲染使用完全相同的方式）
       const container = document.getElementById('root');
@@ -390,12 +477,11 @@ async function initClientSideNavigation(render, jsx) {
       // 检查目标页面的渲染模式
       const targetMode = pageModule.renderMode || pageData.renderMode || 'csr';
       
-      // Preact 的 render 函数：如果要替换内容，需要先卸载之前的渲染
+      // Preact 的 render 函数会自动处理内容替换，不需要先卸载
+      // 直接渲染新内容，Preact 会进行差异更新，避免闪动
       try {
-        // 如果容器有内容，先卸载
-        if (container.children.length > 0 || container.textContent.trim() !== '') {
-          renderFunc(null, container);
-        }
+        // 使用 requestAnimationFrame 确保在下一帧渲染，优化性能
+        await new Promise(resolve => requestAnimationFrame(resolve));
         
         // 根据目标页面的渲染模式决定使用 render 还是 hydrate
         if (targetMode === 'hybrid') {
@@ -413,14 +499,16 @@ async function initClientSideNavigation(render, jsx) {
           }
         } else {
           // CSR 模式：直接使用 render
+          // Preact 的 render 会自动处理内容替换，无需先卸载
           renderFunc(finalElement, container);
         }
       } catch (renderError) {
         throw renderError;
       }
       
-      // 等待一下，让 Preact 完成渲染（虽然 render 是同步的，但为了保险）
-      await new Promise(resolve => setTimeout(resolve, 0));
+      // 等待一下，让 Preact 完成 DOM 更新
+      // 使用 requestAnimationFrame 确保 DOM 更新完成
+      await new Promise(resolve => requestAnimationFrame(resolve));
       
       // 检查渲染结果
       let hasContent = container.children.length > 0 || container.textContent.trim() !== '';
@@ -452,49 +540,12 @@ async function initClientSideNavigation(render, jsx) {
         // 重新从全局模块获取（确保使用最新的）
         const { render: renderRetry, jsx: jsxRetry } = globalThis.__PREACT_MODULES__;
         
-        // 重新创建元素（支持异步组件）
-        let pageElementRetry;
-        try {
-          // 先尝试直接调用组件（支持异步组件）
-          const componentResultRetry = PageComponent(pageData.props || {});
-          if (componentResultRetry instanceof Promise) {
-            pageElementRetry = await componentResultRetry;
-          } else {
-            pageElementRetry = componentResultRetry;
-          }
-        } catch (callError) {
-          // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
-          pageElementRetry = jsxRetry(PageComponent, pageData.props || {});
-          if (pageElementRetry instanceof Promise) {
-            pageElementRetry = await pageElementRetry;
-          }
-        }
-        // 重新创建最终元素（支持异步布局组件）
-        let finalElementRetry;
-        if (LayoutComponent) {
-          try {
-            // 先尝试直接调用布局组件（支持异步组件）
-            const layoutResultRetry = LayoutComponent({ children: pageElementRetry });
-            if (layoutResultRetry instanceof Promise) {
-              finalElementRetry = await layoutResultRetry;
-            } else {
-              finalElementRetry = layoutResultRetry;
-            }
-          } catch (layoutCallError) {
-            // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
-            let layoutResultRetry = jsxRetry(LayoutComponent, { children: pageElementRetry });
-            if (layoutResultRetry instanceof Promise) {
-              finalElementRetry = await layoutResultRetry;
-            } else {
-              finalElementRetry = layoutResultRetry;
-            }
-          }
-        } else {
-          finalElementRetry = pageElementRetry;
-        }
+        // 重新创建最终元素（使用辅助函数）
+        const finalElementRetry = await createFinalElement(PageComponent, LayoutComponents, pageData.props || {}, jsxRetry);
         
-        // 清空容器并重新渲染
-        container.innerHTML = '';
+        // 直接重新渲染，Preact 会自动处理内容替换
+        // 使用 requestAnimationFrame 确保在下一帧渲染
+        await new Promise(resolve => requestAnimationFrame(resolve));
         renderRetry(finalElementRetry, container);
         
         // 再次检查
@@ -528,12 +579,19 @@ async function initClientSideNavigation(render, jsx) {
           // 如果无法跳转，静默失败
         }
       } else {
-        // 其他错误（如组件加载失败、渲染失败等），也回退到页面刷新
-        // 这样可以确保用户能看到新页面，即使客户端路由失败
-        try {
-          window.location.href = normalizedPath;
-        } catch (_e) {
-          // 如果无法跳转，静默失败
+        // 其他错误（如组件加载失败、渲染失败等），先尝试在控制台显示错误
+        // 只有在严重错误时才回退到页面刷新
+        // 对于布局相关的错误，不应该回退到页面刷新，因为布局继承是新增功能
+        if (errorMsg.includes('布局组件渲染失败')) {
+          // 布局渲染失败不应该导致页面刷新，因为我们已经跳过了失败的布局
+          // 这种情况不应该发生，但如果发生了，至少页面已经渲染了
+        } else {
+          // 其他严重错误才回退到页面刷新
+          try {
+            window.location.href = normalizedPath;
+          } catch (_e) {
+            // 如果无法跳转，静默失败
+          }
         }
       }
     }
@@ -544,8 +602,8 @@ async function initClientSideNavigation(render, jsx) {
     window.__setCSRNavigateFunction(navigateTo);
   }
 }
-`
-      : '';
+`;
+  }
   
   // 处理 basePath（多应用模式使用）
   const appBasePath = basePath || '/';
@@ -570,6 +628,7 @@ globalThis.__PAGE_DATA__ = {
   renderMode: '${renderMode}',
   props: ${propsJson},
   layoutPath: ${escapedLayoutPath},
+  allLayoutPaths: ${escapedAllLayoutPaths},
   basePath: '${escapedBasePath}',
   metadata: ${metadataJson}
 };
@@ -726,18 +785,6 @@ ${clientRouterCode}
     const actualMode = module.renderMode || mode;
     const actualShouldHydrate = module.hydrate === true || shouldHydrate;
     
-    // 如果有布局，导入布局组件
-    let LayoutComponent = null;
-    const layoutPath = ${escapedLayoutPath};
-    if (layoutPath) {
-      try {
-        const layoutModule = await import(layoutPath);
-        LayoutComponent = layoutModule.default;
-      } catch (_layoutError) {
-        // 布局加载失败时静默处理
-      }
-    }
-    
     // 查找容器元素（优先使用 #root，如果没有则使用 body）
     const container = document.getElementById('root');
     if (!container) {
@@ -747,60 +794,11 @@ ${clientRouterCode}
     // 获取页面 props（从 __PAGE_DATA__ 中获取，避免直接插入 JSON）
     const pageProps = globalThis.__PAGE_DATA__?.props || {};
     
-    // 创建页面元素（支持异步组件）
-    let pageElement;
-    try {
-      // 先尝试直接调用组件（支持异步组件）
-      // 如果组件是 async function，它会返回 Promise，我们等待它
-      // 如果组件是同步函数，它直接返回 JSX 元素
-      const componentResult = PageComponent(pageProps);
-      if (componentResult instanceof Promise) {
-        pageElement = await componentResult;
-      } else {
-        // 同步组件返回的结果，可能需要用 jsx 包装
-        // 但如果已经是有效的 Preact 元素，直接使用
-        pageElement = componentResult;
-      }
-    } catch (elementError) {
-      // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
-      try {
-        let elementResult = jsx(PageComponent, pageProps);
-        if (elementResult instanceof Promise) {
-          pageElement = await elementResult;
-        } else {
-          pageElement = elementResult;
-        }
-      } catch (jsxError) {
-        throw new Error('创建页面元素失败: ' + elementError.message);
-      }
-    }
+    // 加载所有布局组件（支持布局继承）
+    const LayoutComponents = await loadLayoutComponents(globalThis.__PAGE_DATA__);
     
-    // 如果有布局，用布局包裹页面元素（支持异步布局组件）
-    let finalElement = pageElement;
-    if (LayoutComponent) {
-      try {
-        // 先尝试直接调用布局组件（支持异步组件）
-        const layoutResult = LayoutComponent({ children: pageElement });
-        if (layoutResult instanceof Promise) {
-          finalElement = await layoutResult;
-        } else {
-          finalElement = layoutResult;
-        }
-      } catch (layoutError) {
-        // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
-        try {
-          let layoutResult = jsx(LayoutComponent, { children: pageElement });
-          if (layoutResult instanceof Promise) {
-            finalElement = await layoutResult;
-          } else {
-            finalElement = layoutResult;
-          }
-        } catch (jsxError) {
-          // 如果都失败，使用原始页面元素
-          finalElement = pageElement;
-        }
-      }
-    }
+    // 创建最终元素（页面元素 + 布局嵌套）
+    const finalElement = await createFinalElement(PageComponent, LayoutComponents, pageProps, jsx);
     
     if (actualMode === 'csr') {
       // 客户端渲染：完全在客户端渲染
