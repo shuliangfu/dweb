@@ -230,7 +230,7 @@ export function i18n(options: I18nPluginOptions): Plugin {
 
   // 翻译缓存（每个插件实例都有独立的缓存）
   const translationCache = new Map<string, TranslationData>();
-  
+
   // 存储应用实例引用（用于多应用场景）
   let appInstance: AppLike | undefined;
 
@@ -244,7 +244,7 @@ export function i18n(options: I18nPluginOptions): Plugin {
     async onInit(app: AppLike) {
       // 保存应用实例引用
       appInstance = app;
-      
+
       // 预加载所有语言的翻译文件
       for (const lang of options.languages) {
         try {

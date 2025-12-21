@@ -3,17 +3,17 @@
  * 支持深色/浅色主题切换，自动检测系统主题
  */
 
-import type { Plugin, Request, Response } from '../../types/index.ts';
-import type { ThemePluginOptions, ThemeMode } from './types.ts';
-import { minifyJavaScript } from '../../utils/minify.ts';
+import type { Plugin, Request, Response } from "../../types/index.ts";
+import type { ThemeMode, ThemePluginOptions } from "./types.ts";
+import { minifyJavaScript } from "../../utils/minify.ts";
 
 /**
  * 生成主题切换脚本
  */
 function generateThemeScript(options: ThemePluginOptions): string {
   const config = options.config || {};
-  const storageKey = config.storageKey || 'theme';
-  const defaultTheme = config.defaultTheme || 'auto';
+  const storageKey = config.storageKey || "theme";
+  const defaultTheme = config.defaultTheme || "auto";
   const transition = config.transition !== false;
 
   return `
@@ -213,11 +213,15 @@ function generateThemeScript(options: ThemePluginOptions): string {
           themeStore.value = actualTheme;
         }
       })();
-    ${transition ? `<style>
+    ${
+    transition
+      ? `<style>
       * {
         transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
       }
-    </style>` : ''}
+    </style>`
+      : ""
+  }
   `;
 }
 
@@ -227,39 +231,44 @@ function generateThemeScript(options: ThemePluginOptions): string {
  */
 function injectThemeAttribute(html: string, theme: ThemeMode): string {
   let result = html;
-  
+
   // 获取实际主题（如果是 auto，需要检测系统主题，但服务端无法检测，默认使用 light）
-  const actualTheme = theme === 'auto' ? 'light' : theme;
-  const themeClass = actualTheme === 'dark' ? 'dark' : 'light';
-  
+  const actualTheme = theme === "auto" ? "light" : theme;
+  const themeClass = actualTheme === "dark" ? "dark" : "light";
+
   // 在 html 元素上注入 class（用于 Tailwind CSS dark mode）
-  if (result.includes('<html')) {
+  if (result.includes("<html")) {
     // 先移除旧的 dark/light class 和 data-theme 属性
     result = result.replace(/<html([^>]*?)>/i, (_match, attrs) => {
       // 移除 data-theme 属性
-      let newAttrs = attrs.replace(/\s+data-theme=["'][^"']*["']/gi, '');
-      
+      let newAttrs = attrs.replace(/\s+data-theme=["'][^"']*["']/gi, "");
+
       // 处理 class 属性
       const classMatch = newAttrs.match(/\s+class=["']([^"']*?)["']/i);
       if (classMatch) {
         // 移除旧的 dark/light class，保留其他 class
         const existingClasses = classMatch[1]
           .split(/\s+/)
-          .filter((c: string) => c && c !== 'dark' && c !== 'light')
-          .join(' ')
+          .filter((c: string) => c && c !== "dark" && c !== "light")
+          .join(" ")
           .trim();
-        const finalClasses = existingClasses ? `${existingClasses} ${themeClass}` : themeClass;
+        const finalClasses = existingClasses
+          ? `${existingClasses} ${themeClass}`
+          : themeClass;
         // 替换 class 属性
-        newAttrs = newAttrs.replace(/\s+class=["'][^"']*["']/i, ` class="${finalClasses}"`);
+        newAttrs = newAttrs.replace(
+          /\s+class=["'][^"']*["']/i,
+          ` class="${finalClasses}"`,
+        );
       } else {
         // 如果没有 class 属性，添加一个
         newAttrs = `${newAttrs} class="${themeClass}"`;
       }
-      
+
       return `<html${newAttrs}>`;
     });
   }
-  
+
   return result;
 }
 
@@ -268,10 +277,10 @@ function injectThemeAttribute(html: string, theme: ThemeMode): string {
  */
 export function theme(options: ThemePluginOptions = {}): Plugin {
   const config = options.config || {};
-  const defaultTheme = config.defaultTheme || 'auto';
+  const defaultTheme = config.defaultTheme || "auto";
 
   return {
-    name: 'theme',
+    name: "theme",
     config: options as unknown as Record<string, unknown>,
 
     /**
@@ -280,48 +289,49 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
      */
     onResponse: async (_req: Request, res: Response) => {
       // 只处理 HTML 响应
-      if (!res.body || typeof res.body !== 'string') {
+      if (!res.body || typeof res.body !== "string") {
         return;
       }
 
-      const contentType = res.headers.get('Content-Type') || '';
-      if (!contentType.includes('text/html')) {
+      const contentType = res.headers.get("Content-Type") || "";
+      if (!contentType.includes("text/html")) {
         return;
       }
 
       if (options.injectScript !== false) {
         try {
           const html = res.body as string;
-          
+
           // 注入主题属性
           let newHtml = injectThemeAttribute(html, defaultTheme);
-          
+
           // 注入主题脚本（在 </head> 之前）
-          if (newHtml.includes('</head>')) {
+          if (newHtml.includes("</head>")) {
             const scriptContent = generateThemeScript(options);
             // 分离 JavaScript 代码和 style 标签
             const content = scriptContent.trim();
             const styleMatch = content.match(/<style>([\s\S]*?)<\/style>/);
             let jsCode = content;
-            const styleTag = styleMatch ? styleMatch[0] : '';
-            
+            const styleTag = styleMatch ? styleMatch[0] : "";
+
             // 如果有 style 标签，从内容中移除
             if (styleMatch) {
-              jsCode = content.replace(styleMatch[0], '').trim();
+              jsCode = content.replace(styleMatch[0], "").trim();
             }
-            
+
             // 压缩 JavaScript 代码
             const minifiedCode = await minifyJavaScript(jsCode);
             // 组合 script 和 style 标签
-            const minifiedScript = `<script>${minifiedCode}</script>${styleTag}`;
-            newHtml = newHtml.replace('</head>', `${minifiedScript}\n</head>`);
+            const minifiedScript =
+              `<script>${minifiedCode}</script>${styleTag}`;
+            newHtml = newHtml.replace("</head>", `${minifiedScript}\n</head>`);
           }
-          
+
           res.body = newHtml;
         } catch (error) {
-          console.error('[Theme Plugin] 注入主题脚本时出错:', error);
+          console.error("[Theme Plugin] 注入主题脚本时出错:", error);
           if (error instanceof Error) {
-            console.error('[Theme Plugin] 错误堆栈:', error.stack);
+            console.error("[Theme Plugin] 错误堆栈:", error.stack);
           }
         }
       }
@@ -330,5 +340,4 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
 }
 
 // 导出类型
-export type { ThemePluginOptions, ThemeConfig, ThemeMode } from './types.ts';
-
+export type { ThemeConfig, ThemeMode, ThemePluginOptions } from "./types.ts";

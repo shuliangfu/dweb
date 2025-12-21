@@ -3,9 +3,9 @@
  * 提供跨组件的响应式状态管理功能
  */
 
-import type { Plugin, Request, Response } from '../../types/index.ts';
-import type { StorePluginOptions, Store } from './types.ts';
-import { minifyJavaScript } from '../../utils/minify.ts';
+import type { Plugin, Request, Response } from "../../types/index.ts";
+import type { Store, StorePluginOptions } from "./types.ts";
+import { minifyJavaScript } from "../../utils/minify.ts";
 
 /**
  * 创建 Store 实例（客户端）
@@ -13,18 +13,18 @@ import { minifyJavaScript } from '../../utils/minify.ts';
 function createClientStore<T = Record<string, unknown>>(
   initialState: T,
   persist: boolean = false,
-  storageKey: string = 'dweb-store',
+  storageKey: string = "dweb-store",
 ): Store<T> {
   // 从 localStorage 恢复状态
   let state: T = { ...initialState };
-  if (persist && typeof window !== 'undefined') {
+  if (persist && typeof window !== "undefined") {
     try {
       const stored = localStorage.getItem(storageKey);
       if (stored) {
         state = { ...initialState, ...JSON.parse(stored) };
       }
     } catch (error) {
-      console.warn('[Store Plugin] 无法从 localStorage 恢复状态:', error);
+      console.warn("[Store Plugin] 无法从 localStorage 恢复状态:", error);
     }
   }
 
@@ -34,27 +34,27 @@ function createClientStore<T = Record<string, unknown>>(
     getState: () => state,
     setState: (updater) => {
       const prevState = state;
-      const nextState = typeof updater === 'function' 
+      const nextState = typeof updater === "function"
         ? { ...prevState, ...updater(prevState) }
         : { ...prevState, ...updater };
-      
+
       state = nextState;
-      
+
       // 持久化到 localStorage
-      if (persist && typeof window !== 'undefined') {
+      if (persist && typeof window !== "undefined") {
         try {
           localStorage.setItem(storageKey, JSON.stringify(nextState));
         } catch (error) {
-          console.warn('[Store Plugin] 无法保存状态到 localStorage:', error);
+          console.warn("[Store Plugin] 无法保存状态到 localStorage:", error);
         }
       }
-      
+
       // 通知所有监听者
       listeners.forEach((listener) => {
         try {
           listener(state);
         } catch (error) {
-          console.error('[Store Plugin] 监听器执行错误:', error);
+          console.error("[Store Plugin] 监听器执行错误:", error);
         }
       });
     },
@@ -64,7 +64,7 @@ function createClientStore<T = Record<string, unknown>>(
       try {
         listener(state);
       } catch (error) {
-        console.error('[Store Plugin] 监听器执行错误:', error);
+        console.error("[Store Plugin] 监听器执行错误:", error);
       }
       // 返回取消订阅函数
       return () => {
@@ -76,18 +76,18 @@ function createClientStore<T = Record<string, unknown>>(
     },
     reset: () => {
       state = { ...initialState };
-      if (persist && typeof window !== 'undefined') {
+      if (persist && typeof window !== "undefined") {
         try {
           localStorage.removeItem(storageKey);
         } catch (error) {
-          console.warn('[Store Plugin] 无法清除 localStorage:', error);
+          console.warn("[Store Plugin] 无法清除 localStorage:", error);
         }
       }
       listeners.forEach((listener) => {
         try {
           listener(state);
         } catch (error) {
-          console.error('[Store Plugin] 监听器执行错误:', error);
+          console.error("[Store Plugin] 监听器执行错误:", error);
         }
       });
     },
@@ -107,18 +107,18 @@ function createServerStore<T = Record<string, unknown>>(
     getState: () => state,
     setState: (updater) => {
       const prevState = state;
-      const nextState = typeof updater === 'function' 
+      const nextState = typeof updater === "function"
         ? { ...prevState, ...updater(prevState) }
         : { ...prevState, ...updater };
-      
+
       state = nextState;
-      
+
       // 通知所有监听者
       listeners.forEach((listener) => {
         try {
           listener(state);
         } catch (error) {
-          console.error('[Store Plugin] 监听器执行错误:', error);
+          console.error("[Store Plugin] 监听器执行错误:", error);
         }
       });
     },
@@ -128,7 +128,7 @@ function createServerStore<T = Record<string, unknown>>(
       try {
         listener(state);
       } catch (error) {
-        console.error('[Store Plugin] 监听器执行错误:', error);
+        console.error("[Store Plugin] 监听器执行错误:", error);
       }
       // 返回取消订阅函数
       return () => {
@@ -144,7 +144,7 @@ function createServerStore<T = Record<string, unknown>>(
         try {
           listener(state);
         } catch (error) {
-          console.error('[Store Plugin] 监听器执行错误:', error);
+          console.error("[Store Plugin] 监听器执行错误:", error);
         }
       });
     },
@@ -160,11 +160,11 @@ function generateStoreScript(
 ): string {
   const config = options;
   const persist = config.persist !== false;
-  const storageKey = config.storageKey || 'dweb-store';
+  const storageKey = config.storageKey || "dweb-store";
   const initialState = config.initialState || {};
 
   // 序列化服务端状态（如果存在）
-  const serverStateJson = serverState ? JSON.stringify(serverState) : 'null';
+  const serverStateJson = serverState ? JSON.stringify(serverState) : "null";
 
   return `
       (function() {
@@ -209,7 +209,9 @@ function generateStoreScript(
             // 持久化到 localStorage
             if (${persist}) {
               try {
-                localStorage.setItem(${JSON.stringify(storageKey)}, JSON.stringify(nextState));
+                localStorage.setItem(${
+    JSON.stringify(storageKey)
+  }, JSON.stringify(nextState));
               } catch (error) {
                 console.warn('[Store Plugin] 无法保存状态到 localStorage:', error);
               }
@@ -271,7 +273,7 @@ function generateStoreScript(
 export function store(options: StorePluginOptions = {}): Plugin {
   const config = options;
   const persist = config.persist !== false;
-  const storageKey = config.storageKey || 'dweb-store';
+  const storageKey = config.storageKey || "dweb-store";
   const enableServer = config.enableServer !== false;
   const initialState = config.initialState || {};
 
@@ -279,7 +281,7 @@ export function store(options: StorePluginOptions = {}): Plugin {
   const serverStores = new WeakMap<Request, Store>();
 
   return {
-    name: 'store',
+    name: "store",
     config: options as unknown as Record<string, unknown>,
 
     /**
@@ -288,7 +290,7 @@ export function store(options: StorePluginOptions = {}): Plugin {
     onInit: async (app) => {
       // 在应用实例上添加 getStore 方法
       (app as any).getStore = () => {
-        if (typeof globalThis !== 'undefined' && globalThis.window) {
+        if (typeof globalThis !== "undefined" && globalThis.window) {
           // 客户端：返回全局 Store
           return (globalThis.window as any).__STORE__;
         }
@@ -314,18 +316,18 @@ export function store(options: StorePluginOptions = {}): Plugin {
      */
     onResponse: async (req: Request, res: Response) => {
       // 只处理 HTML 响应
-      if (!res.body || typeof res.body !== 'string') {
+      if (!res.body || typeof res.body !== "string") {
         return;
       }
 
-      const contentType = res.headers.get('Content-Type') || '';
-      if (!contentType.includes('text/html')) {
+      const contentType = res.headers.get("Content-Type") || "";
+      if (!contentType.includes("text/html")) {
         return;
       }
 
       try {
         const html = res.body as string;
-        
+
         // 获取服务端 Store 的状态（如果存在）
         let serverState: Record<string, unknown> | undefined;
         if (enableServer) {
@@ -334,23 +336,22 @@ export function store(options: StorePluginOptions = {}): Plugin {
             serverState = serverStore.getState() as Record<string, unknown>;
           }
         }
-        
+
         // 注入 Store 脚本（在 </head> 之前）
-        if (html.includes('</head>')) {
+        if (html.includes("</head>")) {
           const jsCode = generateStoreScript(options, serverState);
           // 压缩 JavaScript 代码
           const minifiedCode = await minifyJavaScript(jsCode.trim());
           const minifiedScript = `<script>${minifiedCode}</script>`;
-          const newHtml = html.replace('</head>', `${minifiedScript}\n</head>`);
+          const newHtml = html.replace("</head>", `${minifiedScript}\n</head>`);
           res.body = newHtml;
         }
       } catch (error) {
-        console.error('[Store Plugin] 注入 Store 脚本时出错:', error);
+        console.error("[Store Plugin] 注入 Store 脚本时出错:", error);
       }
     },
   };
 }
 
 // 导出类型
-export type { StorePluginOptions, Store } from './types.ts';
-
+export type { Store, StorePluginOptions } from "./types.ts";
