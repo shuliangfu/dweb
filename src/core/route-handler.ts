@@ -1671,8 +1671,7 @@ export class RouteHandler {
       params: req.params,
       query: req.query,
       data: pageData,
-      // 提供翻译函数（如果 i18n 插件已设置）
-      t: (req as any).t,
+      // 提供当前语言代码（如果 i18n 插件已设置）
       lang: (req as any).lang,
       // 提供 Store 实例（如果 store 插件已设置）
       store: (req as any).getStore ? (req as any).getStore() : undefined,
