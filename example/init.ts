@@ -254,7 +254,7 @@ const config: DWebConfig = {
   session: {
     secret: 'your-session-secret-here-change-in-production',
     store: 'memory',
-    maxAge: 3600000, // 1小时
+    maxAge: 3600, // 1小时（单位：秒）
     secure: false,
     httpOnly: true
   },
@@ -313,7 +313,7 @@ const config: AppConfig = {
   session: {
     secret: 'your-session-secret-here-change-in-production',
     store: 'memory',
-    maxAge: 3600000, // 1小时
+    maxAge: 3600, // 1小时（单位：秒）
     secure: false,
     httpOnly: true
   },
