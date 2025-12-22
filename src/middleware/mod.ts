@@ -8,7 +8,6 @@ export { cors, type CorsOptions } from './cors.ts';
 export { bodyParser, type BodyParserOptions } from './body-parser.ts';
 export { staticFiles } from './static.ts';
 export type { StaticOptions } from '../types/index.ts';
-export { compression, type CompressionOptions } from './compression.ts';
 export { security, type SecurityOptions } from './security.ts';
 export { health, type HealthOptions } from './health.ts';
 export { rateLimit, type RateLimitOptions, type RateLimitStore } from './rate-limit.ts';

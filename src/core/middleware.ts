@@ -68,7 +68,6 @@ export class MiddlewareManager {
    * manager.addMany([
    *   logger(),
    *   cors({ origin: "*" }),
-   *   compression(),
    * ]);
    * ```
    */

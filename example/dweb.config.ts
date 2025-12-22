@@ -90,6 +90,8 @@ const config: AppConfig = {
     }),
   ],
   middleware: [
+    // 注意：Deno.serve 有内置的自动压缩功能，支持 Brotli 和 Gzip
+    // 无需手动配置压缩中间件，Deno.serve 会自动根据客户端的 Accept-Encoding 头进行压缩
     cors({
       origin: "*",
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
