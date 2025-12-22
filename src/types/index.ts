@@ -33,7 +33,8 @@ import type {
 // 预加载配置
 export interface PrefetchConfig {
   /** 是否启用资源预取（prefetch），默认 true */
-  enabled?: boolean;
+	enabled?: boolean;
+	/** 预加载的路由，支持通配符模式 */
   routes?: string[];
 }
 

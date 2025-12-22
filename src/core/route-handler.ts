@@ -1546,8 +1546,20 @@ export class RouteHandler {
    */
   private resolvePrefetchRoutes(patterns: string[]): string[] {
     const allRoutes = this.router.getAllRoutes();
-    const pageRoutes = allRoutes.filter((route) => route.type === "page");
+    // 过滤页面路由，排除特殊路由（_middleware, _layout, _app, _404, _500, _error 等）
+    const pageRoutes = allRoutes.filter((route) => {
+      if (route.type !== "page") return false;
+      // 排除以 _ 开头的特殊路由
+      const pathSegments = route.path.split("/").filter(Boolean);
+      return !pathSegments.some(segment => segment.startsWith("_"));
+    });
     const matchedRoutes = new Set<string>();
+    
+    // 获取 basePath（用于从路由路径中移除 basePath 前缀）
+    const basePath = this.router.getBasePath();
+    const normalizedBasePath = basePath !== "/" && basePath.endsWith("/")
+      ? basePath.slice(0, -1)
+      : basePath;
 
     for (const pattern of patterns) {
       if (pattern === "*") {
@@ -1556,20 +1568,41 @@ export class RouteHandler {
           matchedRoutes.add(route.path);
         });
       } else if (pattern.startsWith("/") && pattern.includes("*")) {
-        // 通配符模式：计算路径深度（/ 的数量）
-        // 例如：/* 深度为1，/*/* 深度为2，/*/*/* 深度为3
-        const depth = pattern.split("/").filter(Boolean).length;
+        // 通配符模式：计算最大路径深度（/ 的数量）
+        // 例如：/* 最大深度为1（匹配深度 <= 1），/*/* 最大深度为2（匹配深度 <= 2），/*/*/* 最大深度为3（匹配深度 <= 3）
+        const maxDepth = pattern.split("/").filter(Boolean).length;
         
         pageRoutes.forEach((route) => {
-          const routeDepth = route.path.split("/").filter(Boolean).length;
-          // 匹配指定深度的路由
-          if (routeDepth === depth) {
-            matchedRoutes.add(route.path);
+          // 从路由路径中移除 basePath 前缀（如果存在）
+          let routePath = route.path;
+          if (normalizedBasePath !== "/" && routePath.startsWith(normalizedBasePath)) {
+            routePath = routePath.slice(normalizedBasePath.length);
+            // 如果移除后为空，说明是根路径，设置为 "/"
+            if (!routePath) {
+              routePath = "/";
+            }
+          }
+          
+          // 移除动态参数部分（如 [id]）来计算深度
+          // 例如：/users/[id] -> /users/param -> 深度为 2
+          const pathWithoutParams = routePath.replace(/\[[^\]]+\]/g, "param");
+          
+          // 计算路径深度（排除 basePath 后的深度）
+          const routeDepth = pathWithoutParams.split("/").filter(Boolean).length;
+          
+          // 匹配深度 <= maxDepth 的路由（例如 /*/* 匹配深度 1 和 2）
+          if (routeDepth > 0 && routeDepth <= maxDepth) {
+            matchedRoutes.add(route.path); // 使用原始路径（包含 basePath）
           }
         });
       } else {
-        // 具体路由路径，直接添加
-        matchedRoutes.add(pattern);
+        // 具体路由路径，需要处理 basePath
+        let fullRoute = pattern;
+        if (normalizedBasePath !== "/" && !pattern.startsWith(normalizedBasePath)) {
+          // 如果模式路径不包含 basePath，添加 basePath 前缀
+          fullRoute = normalizedBasePath + (pattern.startsWith("/") ? pattern : "/" + pattern);
+        }
+        matchedRoutes.add(fullRoute);
       }
     }
 
