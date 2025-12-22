@@ -6,9 +6,63 @@
 import type { Plugin, Request, Response } from "../../types/index.ts";
 import type { ThemeMode, ThemePluginOptions } from "./types.ts";
 import { minifyJavaScript } from "../../utils/minify.ts";
+import { compileWithEsbuild } from "../../utils/module.ts";
+import * as path from "@std/path";
+
+// 缓存编译后的客户端脚本
+let cachedClientScript: string | null = null;
 
 /**
- * 生成主题切换脚本
+ * 编译客户端主题脚本
+ */
+async function compileClientScript(): Promise<string> {
+  if (cachedClientScript) {
+    return cachedClientScript;
+  }
+
+  try {
+    // 读取浏览器端脚本文件
+    const browserScriptPath = path.join(
+      path.dirname(new URL(import.meta.url).pathname),
+      "browser.ts",
+    );
+    const browserScriptContent = await Deno.readTextFile(browserScriptPath);
+
+    // 使用 esbuild 编译 TypeScript 为 JavaScript
+    const compiledCode = await compileWithEsbuild(
+      browserScriptContent,
+      browserScriptPath,
+    );
+
+    // 压缩代码
+    const minifiedCode = await minifyJavaScript(compiledCode);
+    cachedClientScript = minifiedCode;
+
+    return minifiedCode;
+  } catch (error) {
+    console.error("[Theme Plugin] 编译客户端脚本失败:", error);
+    // 如果编译失败，返回空字符串
+    return "";
+  }
+}
+
+/**
+ * 生成主题初始化脚本（包含配置）
+ */
+function generateInitScript(config: {
+  storageKey: string;
+  defaultTheme: "light" | "dark" | "auto";
+  transition?: boolean;
+}): string {
+  return `initTheme(${JSON.stringify({
+    storageKey: config.storageKey,
+    defaultTheme: config.defaultTheme,
+    transition: config.transition,
+  })});`;
+}
+
+/**
+ * 生成主题切换脚本（已废弃，保留作为后备）
  */
 function generateThemeScript(options: ThemePluginOptions): string {
   const config = options.config || {};
@@ -309,35 +363,47 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
 
           // 注入主题脚本（在 </head> 之前）
           if (newHtml.includes("</head>")) {
-            const scriptContent = generateThemeScript(options);
-            // 分离 JavaScript 代码和 style 标签
-            const content = scriptContent.trim();
-            const styleMatch = content.match(/<style>([\s\S]*?)<\/style>/);
-            let jsCode = content;
-            const styleTag = styleMatch ? styleMatch[0] : "";
-
-            // 如果有 style 标签，从内容中移除
-            if (styleMatch) {
-              jsCode = content.replace(styleMatch[0], "").trim();
+            // 编译客户端脚本
+            const clientScript = await compileClientScript();
+            if (!clientScript) {
+              console.warn("[Theme Plugin] 客户端脚本编译失败，跳过注入");
+              return;
             }
 
-            // 压缩 JavaScript 代码
-            const minifiedCode = await minifyJavaScript(jsCode);
-            // 组合 script 和 style 标签
-            const minifiedScript =
-              `<script>${minifiedCode}</script>${styleTag}`;
-            // 使用 lastIndexOf 确保找到最后一个 </head>，避免与其他注入冲突
+            // 生成初始化脚本
+            const config = options.config || {};
+            const storageKey = config.storageKey || "theme";
+            const defaultTheme = config.defaultTheme || "auto";
+            const transition = config.transition !== false;
+
+            const initScript = generateInitScript({
+              storageKey,
+              defaultTheme,
+              transition,
+            });
+
+            // 组合完整的脚本
+            const fullScript = `${clientScript}\n${initScript}`;
+
+            // 如果有过渡效果，添加 style 标签
+            const styleTag = transition
+              ? `<style>* { transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }</style>`
+              : "";
+
+            const scriptTag = `<script data-type="theme">${fullScript}</script>${styleTag}`;
+
+            // 使用 lastIndexOf 确保在最后一个 </head> 之前注入
             const lastHeadIndex = newHtml.lastIndexOf("</head>");
             if (lastHeadIndex !== -1) {
               newHtml = newHtml.slice(0, lastHeadIndex) +
-                `${minifiedScript}\n` +
+                `${scriptTag}\n` +
                 newHtml.slice(lastHeadIndex);
             } else {
               // 如果没有找到 </head>，尝试在 <head> 后插入
               if (newHtml.includes("<head>")) {
                 newHtml = newHtml.replace(
                   "<head>",
-                  `<head>\n${minifiedScript}`,
+                  `<head>\n${scriptTag}`,
                 );
               }
             }

@@ -6,6 +6,8 @@
 import type { Plugin, Request, Response } from "../../types/index.ts";
 import type { Store, StorePluginOptions } from "./types.ts";
 import { minifyJavaScript } from "../../utils/minify.ts";
+import { compileWithEsbuild } from "../../utils/module.ts";
+import * as path from "@std/path";
 
 /**
  * 创建 Store 实例（服务端）
@@ -64,118 +66,58 @@ function createServerStore<T = Record<string, unknown>>(
   };
 }
 
+// 缓存编译后的客户端脚本
+let cachedClientScript: string | null = null;
+
 /**
- * 生成客户端 Store 脚本
+ * 编译客户端 Store 脚本
  */
-function generateStoreScript(
-  persist: boolean,
-  storageKey: string,
-  initialState: Record<string, unknown>,
-  serverState?: Record<string, unknown>,
-): string {
+async function compileClientScript(): Promise<string> {
+  if (cachedClientScript) {
+    return cachedClientScript;
+  }
 
-  // 序列化服务端状态（如果存在）
-  const serverStateJson = serverState ? JSON.stringify(serverState) : "null";
+  try {
+    // 读取浏览器端脚本文件
+    const browserScriptPath = path.join(
+      path.dirname(new URL(import.meta.url).pathname),
+      "browser.ts",
+    );
+    const browserScriptContent = await Deno.readTextFile(browserScriptPath);
 
-  return `
-      (function() {
-        // 获取服务端状态（如果存在）
-        const serverState = ${serverStateJson};
-        
-        // 从 localStorage 恢复状态
-        let state = ${JSON.stringify(initialState)};
-        if (${persist}) {
-          try {
-            const stored = localStorage.getItem(${JSON.stringify(storageKey)});
-            if (stored) {
-              // 合并：服务端状态 > localStorage > 初始状态
-              const storedState = JSON.parse(stored);
-              state = { ...${JSON.stringify(initialState)}, ...storedState };
-            }
-          } catch (error) {
-            console.warn('[Store Plugin] 无法从 localStorage 恢复状态:', error);
-          }
-        }
-        
-        // 如果有服务端状态，合并到当前状态中（服务端状态优先级最高）
-        if (serverState && typeof serverState === 'object') {
-          state = { ...state, ...serverState };
-        }
+    // 使用 esbuild 编译 TypeScript 为 JavaScript
+    const compiledCode = await compileWithEsbuild(
+      browserScriptContent,
+      browserScriptPath,
+		);
+		
+    // 压缩代码
+    const minifiedCode = await minifyJavaScript(compiledCode);
+		cachedClientScript = minifiedCode;
+		
+    return minifiedCode;
+  } catch (error) {
+    console.error("[Store Plugin] 编译客户端脚本失败:", error);
+    // 如果编译失败，返回空字符串
+    return "";
+  }
+}
 
-        const listeners = new Set();
-
-        // 创建 Store 对象
-        const Store = {
-          getState: function() {
-            return state;
-          },
-          setState: function(updater) {
-            const prevState = state;
-            const nextState = typeof updater === 'function' 
-              ? { ...prevState, ...updater(prevState) }
-              : { ...prevState, ...updater };
-            
-            state = nextState;
-            
-            // 持久化到 localStorage
-            if (${persist}) {
-              try {
-                localStorage.setItem(${
-    JSON.stringify(storageKey)
-  }, JSON.stringify(nextState));
-              } catch (error) {
-                console.warn('[Store Plugin] 无法保存状态到 localStorage:', error);
-              }
-            }
-            
-            // 通知所有监听者
-            listeners.forEach((listener) => {
-              try {
-                listener(state);
-              } catch (error) {
-                console.error('[Store Plugin] 监听器执行错误:', error);
-              }
-            });
-          },
-          subscribe: function(listener) {
-            listeners.add(listener);
-            // 立即调用一次，传递当前状态
-            try {
-              listener(state);
-            } catch (error) {
-              console.error('[Store Plugin] 监听器执行错误:', error);
-            }
-            // 返回取消订阅函数
-            return () => {
-              listeners.delete(listener);
-            };
-          },
-          unsubscribe: function(listener) {
-            listeners.delete(listener);
-          },
-          reset: function() {
-            state = ${JSON.stringify(initialState)};
-            if (${persist}) {
-              try {
-                localStorage.removeItem(${JSON.stringify(storageKey)});
-              } catch (error) {
-                console.warn('[Store Plugin] 无法清除 localStorage:', error);
-              }
-            }
-            listeners.forEach((listener) => {
-              try {
-                listener(state);
-              } catch (error) {
-                console.error('[Store Plugin] 监听器执行错误:', error);
-              }
-            });
-          },
-        };
-
-        // 暴露到全局
-        window.__STORE__ = Store;
-      })();
-  `;
+/**
+ * 生成 Store 初始化脚本（包含配置）
+ */
+function generateInitScript(config: {
+  persist: boolean;
+  storageKey: string;
+  initialState: Record<string, unknown>;
+  serverState?: Record<string, unknown>;
+}): string {
+  return `initStore(${JSON.stringify({
+    persist: config.persist,
+    storageKey: config.storageKey,
+    initialState: config.initialState,
+    serverState: config.serverState,
+  })});`;
 }
 
 /**
@@ -250,12 +192,35 @@ export function store(options: StorePluginOptions = {}): Plugin {
 
         // 注入 Store 脚本（在 </head> 之前）
         if (html.includes("</head>")) {
-          const jsCode = generateStoreScript(persist, storageKey, initialState, serverState);
-          // 压缩 JavaScript 代码
-          const minifiedCode = await minifyJavaScript(jsCode.trim());
-          const minifiedScript = `<script>${minifiedCode}</script>`;
-          const newHtml = html.replace("</head>", `${minifiedScript}\n</head>`);
-          res.body = newHtml;
+          // 编译客户端脚本
+          const clientScript = await compileClientScript();
+          if (!clientScript) {
+            console.warn("[Store Plugin] 客户端脚本编译失败，跳过注入");
+            return;
+          }
+
+          // 生成初始化脚本
+          const initScript = generateInitScript({
+            persist,
+            storageKey,
+            initialState,
+            serverState,
+          });
+
+          // 组合完整的脚本
+          const fullScript = `${clientScript}\n${initScript}`;
+					const scriptTag = `<script data-type="store">${fullScript}</script>`;
+					
+          // 使用 lastIndexOf 确保在最后一个 </head> 之前注入
+					const lastHeadIndex = html.lastIndexOf("</head>");
+
+          if (lastHeadIndex !== -1) {
+            const newHtml =
+              html.substring(0, lastHeadIndex) +
+              `${scriptTag}\n` +
+              html.substring(lastHeadIndex);
+            res.body = newHtml;
+          }
         }
       } catch (error) {
         console.error("[Store Plugin] 注入 Store 脚本时出错:", error);

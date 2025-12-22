@@ -34,17 +34,6 @@ declare global {
    * const messageWithParams = $t('user.greeting', { name: 'John' });
    */
 	var $t: TranslationFunction;
-	/**
-	 * 主题切换函数
-	 * 可以在任何地方直接使用，无需导入
-	 * 如果主题插件未初始化，会返回 key 本身（不会报错）
-	 *
-	 * @example
-	 * toggleTheme();
-	 */
-	var toggleTheme: () => "dark" | "light" | null;
-
-	var switchTheme: (theme: "dark" | "light" | "auto") => "dark" | "light" | "auto" | null;
 }
 
 /**
@@ -55,8 +44,6 @@ interface Window {
    * 客户端全局翻译函数 $t
    */
 	$t?: TranslationFunction;
-	toggleTheme?: () => void;
-	switchTheme?: (theme: "dark" | "light" | "auto") => "dark" | "light" | "auto" | null;
 }
 
 export {};

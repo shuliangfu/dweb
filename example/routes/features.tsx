@@ -3,15 +3,18 @@
  * 详细介绍 DWeb 框架的所有特性
  */
 
-import FeatureSection from '../components/FeatureSection.tsx';
-import CodeBlock from '../components/CodeBlock.tsx';
-import type { PageProps } from '@dreamer/dweb';
+import FeatureSection from "../components/FeatureSection.tsx";
+import CodeBlock from "../components/CodeBlock.tsx";
+import type { PageProps } from "@dreamer/dweb";
+import { getStore } from "@dreamer/dweb/client";
 
 export const metadata = {
-  title: '功能特性 - DWeb 框架完整功能列表',
-  description: 'DWeb 框架的完整功能列表，包括文件系统路由、多种渲染模式、HMR、中间件系统、插件系统、Cookie & Session、TypeScript 支持等',
-  keywords: 'DWeb, 功能特性, 文件系统路由, SSR, CSR, Hybrid, HMR, 中间件, 插件, TypeScript',
-  author: 'DWeb',
+  title: "功能特性 - DWeb 框架完整功能列表",
+  description:
+    "DWeb 框架的完整功能列表，包括文件系统路由、多种渲染模式、HMR、中间件系统、插件系统、Cookie & Session、TypeScript 支持等",
+  keywords:
+    "DWeb, 功能特性, 文件系统路由, SSR, CSR, Hybrid, HMR, 中间件, 插件, TypeScript",
+  author: "DWeb",
 };
 
 /**
@@ -19,70 +22,90 @@ export const metadata = {
  * @param props 页面属性
  * @returns JSX 元素
  */
-export default function FeaturesPage({ params: _params, query: _query, data: _data }: PageProps) {
+export default function FeaturesPage(
+  { params: _params, query: _query, data: _data }: PageProps,
+) {
+  const store = getStore();
+  if (store) {
+    console.log(store.getState());
+    console.log("获取Store数据成功");
+  }
+
   // 所有特性列表
   const allFeatures = [
     {
-      title: '文件系统路由',
-      description: '基于文件系统的自动路由，类似 Next.js。只需在 routes 目录下创建文件，即可自动生成路由，无需手动配置。支持动态路由、嵌套路由和 API 路由。',
-      icon: '📁',
+      title: "文件系统路由",
+      description:
+        "基于文件系统的自动路由，类似 Next.js。只需在 routes 目录下创建文件，即可自动生成路由，无需手动配置。支持动态路由、嵌套路由和 API 路由。",
+      icon: "📁",
       highlighted: true,
     },
     {
-      title: '多种渲染模式',
-      description: '支持 SSR（服务端渲染）、CSR（客户端渲染）和 Hybrid（混合渲染）三种模式。可根据页面需求灵活选择，实现最佳性能和 SEO 优化。',
-      icon: '🎨',
+      title: "多种渲染模式",
+      description:
+        "支持 SSR（服务端渲染）、CSR（客户端渲染）和 Hybrid（混合渲染）三种模式。可根据页面需求灵活选择，实现最佳性能和 SEO 优化。",
+      icon: "🎨",
       highlighted: true,
     },
     {
-      title: '热更新（HMR）',
-      description: '开发时实时热更新，支持服务端和客户端组件热替换。修改代码后立即看到效果，无需手动刷新页面，大幅提升开发效率。',
-      icon: '🔥',
+      title: "热更新（HMR）",
+      description:
+        "开发时实时热更新，支持服务端和客户端组件热替换。修改代码后立即看到效果，无需手动刷新页面，大幅提升开发效率。",
+      icon: "🔥",
     },
     {
-      title: '中间件系统',
-      description: '灵活的中间件系统，支持链式调用和异步处理。内置日志、CORS、Body Parser、压缩、安全、限流、认证等常用中间件，开箱即用。',
-      icon: '🛠️',
+      title: "中间件系统",
+      description:
+        "灵活的中间件系统，支持链式调用和异步处理。内置日志、CORS、Body Parser、压缩、安全、限流、认证等常用中间件，开箱即用。",
+      icon: "🛠️",
     },
     {
-      title: '插件系统',
-      description: '强大的插件系统，支持 Tailwind CSS、自定义插件等。提供完整的插件生命周期钩子，可灵活扩展框架功能。',
-      icon: '🔌',
+      title: "插件系统",
+      description:
+        "强大的插件系统，支持 Tailwind CSS、自定义插件等。提供完整的插件生命周期钩子，可灵活扩展框架功能。",
+      icon: "🔌",
     },
     {
-      title: 'Cookie & Session',
-      description: '内置 Cookie 和 Session 管理功能，支持安全的会话存储和配置。提供简单易用的 API，轻松处理用户认证和状态管理。',
-      icon: '🍪',
+      title: "Cookie & Session",
+      description:
+        "内置 Cookie 和 Session 管理功能，支持安全的会话存储和配置。提供简单易用的 API，轻松处理用户认证和状态管理。",
+      icon: "🍪",
     },
     {
-      title: '函数式 API 路由',
-      description: '基于文件系统的函数式 API 路由，支持 GET、POST 等多种请求方式。通过 URL 路径直接调用函数，简化 API 开发。',
-      icon: '⚡',
+      title: "函数式 API 路由",
+      description:
+        "基于文件系统的函数式 API 路由，支持 GET、POST 等多种请求方式。通过 URL 路径直接调用函数，简化 API 开发。",
+      icon: "⚡",
     },
     {
-      title: 'TypeScript 支持',
-      description: '完整的 TypeScript 类型定义，提供优秀的开发体验和类型安全。所有 API 都有完整的类型提示，减少开发错误。',
-      icon: '📘',
+      title: "TypeScript 支持",
+      description:
+        "完整的 TypeScript 类型定义，提供优秀的开发体验和类型安全。所有 API 都有完整的类型提示，减少开发错误。",
+      icon: "📘",
     },
     {
-      title: 'Deno 原生',
-      description: '基于 Deno 运行时，内置安全性和现代 Web API 支持。无需复杂的构建配置，直接使用 ES Modules，享受现代 JavaScript 特性。',
-      icon: '🦕',
+      title: "Deno 原生",
+      description:
+        "基于 Deno 运行时，内置安全性和现代 Web API 支持。无需复杂的构建配置，直接使用 ES Modules，享受现代 JavaScript 特性。",
+      icon: "🦕",
     },
     {
-      title: '单应用和多应用模式',
-      description: '支持单应用和多应用两种模式。单应用模式适合简单项目，多应用模式适合大型项目，可灵活选择。',
-      icon: '📦',
+      title: "单应用和多应用模式",
+      description:
+        "支持单应用和多应用两种模式。单应用模式适合简单项目，多应用模式适合大型项目，可灵活选择。",
+      icon: "📦",
     },
     {
-      title: '环境变量管理',
-      description: '内置环境变量管理功能，支持 .env 文件、类型转换、默认值等。提供 env() API，轻松访问环境变量。',
-      icon: '🔐',
+      title: "环境变量管理",
+      description:
+        "内置环境变量管理功能，支持 .env 文件、类型转换、默认值等。提供 env() API，轻松访问环境变量。",
+      icon: "🔐",
     },
     {
-      title: '健康检查',
-      description: '内置健康检查端点，支持基础健康检查、就绪检查和存活检查。方便监控和运维，确保应用正常运行。',
-      icon: '💚',
+      title: "健康检查",
+      description:
+        "内置健康检查端点，支持基础健康检查、就绪检查和存活检查。方便监控和运维，确保应用正常运行。",
+      icon: "💚",
     },
   ];
 
@@ -151,19 +174,25 @@ app.use(compression());`;
           <div className="space-y-12">
             {/* 文件系统路由示例 */}
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">文件系统路由</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                文件系统路由
+              </h3>
               <CodeBlock code={routingExample} language="typescript" />
             </div>
 
             {/* 渲染模式示例 */}
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">渲染模式配置</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                渲染模式配置
+              </h3>
               <CodeBlock code={renderModeExample} language="typescript" />
             </div>
 
             {/* 中间件示例 */}
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">中间件使用</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                中间件使用
+              </h3>
               <CodeBlock code={middlewareExample} language="typescript" />
             </div>
           </div>
@@ -184,8 +213,18 @@ app.use(compression());`;
             className="inline-flex items-center px-8 py-4 text-lg font-semibold text-blue-600 dark:text-blue-500 bg-white dark:bg-gray-100 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-200 transition-all shadow-lg hover:shadow-xl"
           >
             查看文档
-            <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            <svg
+              className="ml-2 w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 7l5 5m0 0l-5 5m5-5H6"
+              />
             </svg>
           </a>
         </div>
@@ -193,4 +232,3 @@ app.use(compression());`;
     </div>
   );
 }
-

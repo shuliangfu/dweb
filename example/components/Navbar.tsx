@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState } from "preact/hooks";
+import { toggleTheme } from "@dreamer/dweb/client";
 
 interface NavbarProps {
   /** 当前路径（服务端渲染时使用） */
