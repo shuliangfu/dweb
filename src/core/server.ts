@@ -562,11 +562,13 @@ export class Server {
    * @param port 端口号
    * @param host 主机地址
    * @param tls TLS 配置（可选，用于启用 HTTPS）
+   *   - `true`: 使用框架内置的默认证书（适用于开发环境）
+   *   - 配置对象: 使用自定义证书和私钥
    */
   async start(
     port: number,
     host: string,
-    tls?: {
+    tls?: boolean | {
       certFile?: string;
       keyFile?: string;
       cert?: Uint8Array;
