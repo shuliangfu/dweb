@@ -1875,8 +1875,13 @@ export class RouteHandler {
 
       const url = new URL(req.url);
 
-      // 处理每个路由，获取模块路径和页面数据
-      const batchData: Array<{ route: string; body: string; pageData: Record<string, unknown> }> = [];
+          // 处理每个路由，获取模块路径和页面数据
+      const batchData: Array<{
+        route: string;
+        body: string;
+        pageData: Record<string, unknown>;
+        layouts?: Record<string, string>; // 布局组件代码映射（key: 布局路径, value: 布局代码）
+      }> = [];
 
       for (const route of routes) {
         try {
@@ -2015,15 +2020,81 @@ export class RouteHandler {
             },
           } as any;
 
-          // 处理模块请求
+          // 处理模块请求（获取页面组件代码）
           await this.handleModuleRequest(extendedModuleReq, tempRes);
 
-          // 如果成功获取模块代码，存储到结果中
+          // 如果成功获取页面组件代码，继续获取布局组件代码
           if (tempRes.body && tempRes.status === 200) {
+            const layouts: Record<string, string> = {};
+
+            // 获取所有布局组件的代码
+            if (layoutPathsForClient && layoutPathsForClient.length > 0) {
+              for (const layoutPath of layoutPathsForClient) {
+                // 如果布局已经存在，跳过（避免重复获取相同的布局组件）
+                if (layouts[layoutPath]) {
+                  continue;
+                }
+
+                try {
+                  // 构建布局模块的 HTTP URL
+                  let layoutHttpUrl: string;
+                  if (layoutPath.startsWith("http")) {
+                    layoutHttpUrl = layoutPath;
+                  } else if (layoutPath.startsWith("/")) {
+                    // 绝对路径（开发环境）
+                    layoutHttpUrl = layoutPath.startsWith("/__modules/")
+                      ? layoutPath
+                      : `/__modules/${layoutPath}`;
+                    if (!layoutHttpUrl.startsWith("http")) {
+                      layoutHttpUrl = `${url.origin}${layoutHttpUrl}`;
+                    }
+                  } else {
+                    // 相对路径（生产环境的 clientModulePath，如 "81e2f5821399146.js"）
+                    layoutHttpUrl = `${url.origin}/__modules/${layoutPath}`;
+                  }
+
+                  // 创建布局模块请求
+                  const layoutModuleReq = new Request(layoutHttpUrl, {
+                    method: "GET",
+                    headers: req.headers,
+                  });
+                  const extendedLayoutReq = this.createExtendedRequest(req, layoutModuleReq);
+
+                  // 创建临时响应对象来获取布局代码
+                  const layoutTempRes = {
+                    status: 200,
+                    body: null as string | null,
+                    headers: new Headers(),
+                    setHeader: function (key: string, value: string) {
+                      this.headers.set(key, value);
+                    },
+                    json: function (data: any) {
+                      this.body = JSON.stringify(data);
+                    },
+                    text: function (data: string) {
+                      this.body = data;
+                    },
+                  } as any;
+
+                  // 处理布局模块请求
+                  await this.handleModuleRequest(extendedLayoutReq, layoutTempRes);
+
+                  // 如果成功获取布局代码，存储到 layouts 中（使用原始路径作为 key）
+                  if (layoutTempRes.body && layoutTempRes.status === 200) {
+                    layouts[layoutPath] = layoutTempRes.body;
+                  }
+                } catch (_layoutError) {
+                  // 布局加载失败不影响，跳过该布局
+                }
+              }
+            }
+
+            // 存储页面组件代码和布局组件代码
             batchData.push({
               route,
               body: tempRes.body,
               pageData,
+              layouts: Object.keys(layouts).length > 0 ? layouts : undefined,
             });
           }
         } catch (error) {

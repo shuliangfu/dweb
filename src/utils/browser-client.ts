@@ -115,6 +115,7 @@ class PrefetchRouters {
             route: string;
             body: string;
             pageData: Record<string, unknown>;
+            layouts?: Record<string, string>; // 布局组件代码映射（key: 布局路径, value: 布局代码）
           }>;
 
           // 处理返回的数据，缓存页面数据并执行组件代码（参考 single 模式）
@@ -171,19 +172,23 @@ class PrefetchRouters {
                       }
                     }
 
-                    // 2. 预加载布局组件模块（如果有）
+                    // 2. 预加载布局组件模块（使用服务端返回的布局代码）
                     const moduleCache = (globalThis as any).__moduleCache;
-                    if (pageData?.allLayoutPaths && Array.isArray(pageData.allLayoutPaths)) {
+                    if (item.layouts && typeof item.layouts === "object") {
                       // 并行预加载所有布局组件
-                      const layoutPromises = pageData.allLayoutPaths.map(
-                        async (layoutPath: string) => {
+                      const layoutPromises = Object.entries(item.layouts).map(
+                        async ([layoutPath, layoutCode]: [string, string]) => {
                           try {
-                            const layoutModule = await import(layoutPath);
+                            // 使用 Data URL 来执行布局组件代码（不会在 Network 面板显示）
+                            const dataUrl = `data:application/javascript;charset=utf-8,${encodeURIComponent(layoutCode)}`;
+                            const layoutModule = await import(dataUrl);
+                            
                             // 验证模块是否有效
                             if (!layoutModule || typeof layoutModule !== "object") {
                               throw new Error("布局模块导入返回无效值");
                             }
-                            // 缓存布局模块，避免重复导入
+                            
+                            // 缓存布局模块，避免重复导入（使用原始路径作为 key，与 loadLayoutComponents 一致）
                             if (moduleCache && typeof moduleCache.set === "function") {
                               moduleCache.set(layoutPath, layoutModule);
                             }
@@ -193,24 +198,6 @@ class PrefetchRouters {
                         },
                       );
                       await Promise.all(layoutPromises);
-                    } else if (
-                      pageData?.layoutPath && typeof pageData.layoutPath === "string" &&
-                      pageData.layoutPath !== "null"
-                    ) {
-                      // 向后兼容：单个布局路径
-                      try {
-                        const layoutModule = await import(pageData.layoutPath);
-                        // 验证模块是否有效
-                        if (!layoutModule || typeof layoutModule !== "object") {
-                          throw new Error("布局模块导入返回无效值");
-                        }
-                        // 缓存布局模块，避免重复导入
-                        if (moduleCache && typeof moduleCache.set === "function") {
-                          moduleCache.set(pageData.layoutPath, layoutModule);
-                        }
-                      } catch (_layoutError) {
-                        // 布局导入失败时静默处理
-                      }
                     }
                   } catch (_e) {
                     // 预取失败时静默处理（不影响正常导航）

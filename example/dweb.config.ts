@@ -70,7 +70,8 @@ const config: AppConfig = {
   prefetch: {
     enabled: true,
     loading: true,
-		routes: ["*"]
+		routes: ["*"],
+		mode: "batch",
   },
 
   // 插件配置
