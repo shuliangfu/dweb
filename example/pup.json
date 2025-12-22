@@ -1,0 +1,8 @@
+{
+  "processes": [
+    {
+      "id": "dweb-example",
+      "cmd": "deno run -A ../src/cli.ts start"
+    }
+  ]
+}
