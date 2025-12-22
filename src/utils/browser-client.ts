@@ -18,6 +18,75 @@ interface ClientConfig {
   prefetchLoading?: boolean;
 }
 
+class PrefetchRouters {
+  private config: any;
+  private routes: string[] = [];
+  private hasPrefetch = false;
+  private loadElement: HTMLElement | null = null;
+  private prefetchLoading = false;
+
+  constructor(config: any) {
+    this.config = config;
+    this.routes = config.prefetchRoutes || [];
+    this.prefetchLoading = config.prefetchLoading || false;
+    this.hasPrefetch = this.routes && Array.isArray(this.routes) &&
+      this.routes.length > 0;
+  }
+
+  init() {
+    if (this.hasPrefetch) {
+      const showLoading = this.prefetchLoading === true;
+      if (showLoading) {
+        this.loadElement = createPrefetchLoadElement();
+        document.body.appendChild(this.loadElement);
+      }
+    }
+  }
+
+  prefetch() {
+    // 预加载配置的路由（如果配置了）
+    if (this.hasPrefetch) {
+      // 延迟预加载，避免影响首屏加载
+      setTimeout(() => {
+        const prefetchFn = (globalThis as any).__prefetchPageData;
+        if (typeof prefetchFn === "function") {
+          const basePath = this.config.basePath || "/";
+          const routes = this.routes; // 已经检查过不为空
+
+          // 并发预加载所有路由（使用 Promise.allSettled 确保所有请求都能完成）
+          const prefetchPromises = routes.map((route: string) => {
+            // 处理 basePath
+            let fullRoute = route;
+            if (basePath !== "/" && !route.startsWith(basePath)) {
+              const base = basePath.endsWith("/")
+                ? basePath.slice(0, -1)
+                : basePath;
+              fullRoute = base + (route.startsWith("/") ? route : "/" + route);
+            }
+            // 异步预加载，不阻塞
+            return prefetchFn(fullRoute).catch(() => {
+              // 预加载失败时静默处理
+            });
+          });
+
+          // 等待所有预加载完成（不阻塞，后台执行）
+          Promise.allSettled(prefetchPromises).then(() => {
+            // 预加载完成后移除加载状态
+            if (this.loadElement && this.loadElement.parentNode) {
+              this.loadElement.parentNode.removeChild(this.loadElement);
+            }
+          }).catch(() => {
+            // 即使出错也要移除加载状态
+            if (this.loadElement && this.loadElement.parentNode) {
+              this.loadElement.parentNode.removeChild(this.loadElement);
+            }
+          });
+        }
+      }, 1000); // 1秒后开始预加载
+    }
+  }
+}
+
 /**
  * 创建预加载全屏加载状态元素
  */
@@ -1220,65 +1289,18 @@ function initClient(config: ClientConfig): void {
     layout: config.layout,
   };
 
-  const hasPrefetch = config.prefetchRoutes &&
-    Array.isArray(config.prefetchRoutes) && config.prefetchRoutes.length > 0;
-
   // 设置更新 meta 标签的函数
   setupUpdateMetaTagsFunction();
 
-  // 创建全屏加载状态（如果需要）
-  let loadElement: HTMLElement | null = null;
-  if (hasPrefetch) {
-    const showLoading = config.prefetchLoading === true;
-    if (showLoading) {
-      loadElement = createPrefetchLoadElement();
-      document.body.appendChild(loadElement);
-    }
-  }
+  // 初始化预加载
+  const prefetchRouters = new PrefetchRouters(config);
+  prefetchRouters.init();
 
   // 初始化客户端渲染（链接拦截器会在导航函数准备好后自动初始化）
   initClientRender(config);
 
-  // 预加载配置的路由（如果配置了）
-  if (hasPrefetch) {
-    // 延迟预加载，避免影响首屏加载
-    setTimeout(() => {
-      const prefetchFn = (globalThis as any).__prefetchPageData;
-      if (typeof prefetchFn === "function") {
-        const basePath = config.basePath || "/";
-        const routes = config.prefetchRoutes!; // 已经检查过不为空
-
-        // 并发预加载所有路由（使用 Promise.allSettled 确保所有请求都能完成）
-        const prefetchPromises = routes.map((route: string) => {
-          // 处理 basePath
-          let fullRoute = route;
-          if (basePath !== "/" && !route.startsWith(basePath)) {
-            const base = basePath.endsWith("/")
-              ? basePath.slice(0, -1)
-              : basePath;
-            fullRoute = base + (route.startsWith("/") ? route : "/" + route);
-          }
-          // 异步预加载，不阻塞
-          return prefetchFn(fullRoute).catch(() => {
-            // 预加载失败时静默处理
-          });
-        });
-
-        // 等待所有预加载完成（不阻塞，后台执行）
-        Promise.allSettled(prefetchPromises).then(() => {
-          // 预加载完成后移除加载状态
-          if (loadElement && loadElement.parentNode) {
-            loadElement.parentNode.removeChild(loadElement);
-          }
-        }).catch(() => {
-          // 即使出错也要移除加载状态
-          if (loadElement && loadElement.parentNode) {
-            loadElement.parentNode.removeChild(loadElement);
-          }
-        });
-      }
-    }, 1000); // 1秒后开始预加载
-  }
+  // 执行预加载
+  prefetchRouters.prefetch();
 }
 
 // 暴露到全局，供内联脚本调用
