@@ -562,5 +562,5 @@ export async function startDevServer(config: AppConfig): Promise<void> {
     Deno.exit(0);
   });
 
-  await server.start(port, host);
+  await server.start(port, host, tls);
 }
