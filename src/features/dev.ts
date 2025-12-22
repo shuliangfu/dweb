@@ -140,7 +140,8 @@ function setupSessionSupport(
       const cookieValue = await cookieManager.setAsync(cookieName, session.id, {
         httpOnly: true,
         secure: sessionManager["config"].secure || false,
-        maxAge: (sessionManager["config"].maxAge || 3600000) / 1000,
+        // maxAge 配置单位为秒，直接使用
+        maxAge: sessionManager["config"].maxAge || 3600,
       });
       res.setHeader("Set-Cookie", cookieValue);
     }

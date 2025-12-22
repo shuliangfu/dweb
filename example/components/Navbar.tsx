@@ -63,18 +63,6 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
     { href: "/about", label: "关于" },
   ];
 
-  const toggleTheme = (e: Event) => {
-    e.preventDefault();
-		e.stopPropagation();
-    // 直接调用主题切换方法
-    if (typeof globalThis !== "undefined" && globalThis.window) {
-      const win = globalThis.window as any;
-      if (win.toggleTheme) {
-        win.toggleTheme();
-      }
-    }
-  };
-
   return (
     <nav className="bg-gray-100/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

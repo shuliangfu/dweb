@@ -4,7 +4,7 @@
  */
 
 // 读取根目录的 deno.json 获取版本号
-let _dwebVersion: string = '';
+let _dwebVersion: string = "";
 let _denoJson: any = null;
 
 /**
@@ -13,14 +13,20 @@ let _denoJson: any = null;
 function getDwebVersion(): string {
   if (!_dwebVersion) {
     try {
-			const denoJsonPath = new URL('../../deno.json', import.meta.url).pathname;
-
+      const denoJsonPath = new URL("../../deno.json", import.meta.url).pathname;
       const denoJsonContent = Deno.readTextFileSync(denoJsonPath);
       _denoJson = JSON.parse(denoJsonContent);
-      _dwebVersion = _denoJson.version || '0.1.0';
+      _dwebVersion = _denoJson.version || "0.1.0";
     } catch (_error) {
-      // 无法读取 deno.json，使用默认版本号
-      _dwebVersion = '0.1.0';
+      try {
+        const denoJsonPath = new URL("../deno.json", import.meta.url).pathname;
+        const denoJsonContent = Deno.readTextFileSync(denoJsonPath);
+        _denoJson = JSON.parse(denoJsonContent);
+        _dwebVersion = _denoJson.version || "0.1.0";
+      } catch (_error) {
+        // 无法读取 deno.json，使用默认版本号
+        _dwebVersion = "0.1.0";
+      }
     }
   }
   return _dwebVersion;
@@ -37,7 +43,7 @@ export function getVersionString(): string {
  * 获取 JSR 包 URL（带版本号）
  * @param path 可选的子路径，如 '/cli'
  */
-export function getJsrPackageUrl(path: string = ''): string {
+export function getJsrPackageUrl(path: string = ""): string {
   const version = getDwebVersion();
   // 使用 ^ 前缀表示兼容版本范围
   return `jsr:@dreamer/dweb@^${version}${path}`;

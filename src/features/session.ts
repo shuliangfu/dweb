@@ -676,13 +676,15 @@ export class SessionManager {
    */
   async create(data: Record<string, unknown> = {}): Promise<Session> {
     const sessionId = this.generateSessionId();
+    // maxAge 配置单位为秒，转换为毫秒
+    const maxAgeMs = (this.config.maxAge || 3600) * 1000;
     const sessionData: SessionData = {
       id: sessionId,
       data,
-      expires: Date.now() + (this.config.maxAge || 3600000)
+      expires: Date.now() + maxAgeMs
     };
     
-    await this.store.set(sessionId, sessionData, this.config.maxAge || 3600000);
+    await this.store.set(sessionId, sessionData, maxAgeMs);
     
     return this.createSessionObject(sessionData);
   }

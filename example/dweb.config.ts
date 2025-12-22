@@ -54,14 +54,14 @@ const config: AppConfig = {
 
   // Cookie 配置
   cookie: {
-    secret: "your-secret-key-here",
+    secret: "462eec55bf89cd760e791e8ae7ffec888b95c21f8c79ac564e484337bc548493",
   },
 
   // Session 配置
   session: {
-    secret: "your-session-secret-here",
+    secret: "525d78bd02739da55197c45cab91541652d32f508e9820e3fc57c8a7ff736a12",
     store: "memory",
-    maxAge: 3600000, // 1小时
+    maxAge: 3600, // 1小时（单位：秒）
     secure: false,
     httpOnly: true,
   },
