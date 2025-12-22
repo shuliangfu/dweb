@@ -57,6 +57,7 @@ async function compileClientScript(): Promise<string> {
  * @param basePath 应用基础路径（可选）
  * @param allLayoutPaths 所有布局路径数组（可选）
  * @param layoutDisabled 是否禁用布局（可选）
+ * @param prefetchRoutes 需要预加载的路由数组（可选）
  * @returns 客户端脚本 HTML
  */
 export async function createClientScript(
@@ -68,6 +69,7 @@ export async function createClientScript(
   basePath?: string,
   allLayoutPaths?: string[] | null,
   layoutDisabled: boolean = false,
+  prefetchRoutes?: string[],
 ): Promise<string> {
   // 将文件路径转换为 HTTP URL
   const httpUrl = filePathToHttpUrl(routePath);
@@ -121,6 +123,7 @@ export async function createClientScript(
       basePath: appBasePath,
       metadata,
       layout: layoutDisabled ? false : undefined,
+      prefetchRoutes: prefetchRoutes || undefined,
     };
 
     // 转义 JSON 中的 HTML 特殊字符，防止 XSS

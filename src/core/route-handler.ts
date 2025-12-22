@@ -1272,7 +1272,7 @@ export class RouteHandler {
     shouldHydrate: boolean,
     pageProps: Record<string, unknown>,
     layoutDisabled: boolean,
-    req?: Request,
+    _req?: Request,
   ): Promise<string> {
     // 注入 import map
     let importMapScript = preloadedImportMapScript;
@@ -1459,6 +1459,14 @@ export class RouteHandler {
         ? basePath.slice(0, -1)
         : basePath;
 
+      // 获取 prefetch 配置并解析通配符模式
+      const prefetchConfig = this.config?.prefetch?.routes;
+      let prefetchRoutes: string[] | undefined;
+
+      if (Array.isArray(prefetchConfig) && prefetchConfig.length > 0) {
+        prefetchRoutes = this.resolvePrefetchRoutes(prefetchConfig);
+      }
+
       const clientScript = await createClientScript(
         modulePath,
         renderMode,
@@ -1468,6 +1476,7 @@ export class RouteHandler {
         normalizedBasePath,
         allLayoutPathsForClient,
         layoutDisabled,
+        prefetchRoutes,
       );
 
       // 对于 CSR 模式，将链接拦截器脚本注入到 head（尽早执行）
@@ -1499,25 +1508,9 @@ export class RouteHandler {
       scriptsToInject.push(hmrClientScript);
     }
 
-    // 生成预加载和预取链接
-    const preloadLinks = await this.generatePreloadLinks(
-      routeInfo,
-      renderMode,
-      fullHtml,
-      req,
-    );
-
-    // 将预加载链接和脚本注入到 </head> 之前（尽早执行）
-    const headContent: string[] = [];
-    if (preloadLinks) {
-      headContent.push(preloadLinks);
-    }
+    // 将脚本注入到 </head> 之前（尽早执行）
     if (headScriptsToInject.length > 0) {
-      headContent.push(...headScriptsToInject);
-    }
-
-    if (headContent.length > 0) {
-      const allHeadContent = headContent.join("\n");
+      const allHeadContent = headScriptsToInject.join("\n");
       if (fullHtml.includes("</head>")) {
         fullHtml = fullHtml.replace("</head>", `${allHeadContent}\n</head>`);
       } else if (fullHtml.includes("<head>")) {
@@ -1542,89 +1535,45 @@ export class RouteHandler {
   }
 
   /**
-   * 生成预加载和预取链接
-   * @param routeInfo 当前路由信息
-   * @param renderMode 渲染模式（暂未使用，未来可用于优化预加载策略）
-   * @param html HTML 内容（用于提取链接）
-   * @param req 请求对象（用于获取实际的 host 信息）
-   * @returns HTML link 标签字符串
+   * 解析预加载路由配置（支持通配符模式）
+   * @param patterns 路由模式数组，支持：
+   *   - ["*"] - 所有路由
+   *   - ["/*] - 所有一级页面（如 /docs, /about）
+   *   - ["/*\/*"] - 所有一级二级页面（如 /docs/route, /about/contact）
+   *   - ["/*\/*\/*"] - 所有一级二级三级页面路由
+   *   - ["/specific-route"] - 具体路由路径
+   * @returns 匹配的路由路径数组
    */
-  private async generatePreloadLinks(
-    routeInfo: RouteInfo,
-    renderMode: RenderMode,
-    html: string,
-    req?: Request,
-  ): Promise<string> {
-    const links: string[] = [];
+  private resolvePrefetchRoutes(patterns: string[]): string[] {
+    const allRoutes = this.router.getAllRoutes();
+    const pageRoutes = allRoutes.filter((route) => route.type === "page");
+    const matchedRoutes = new Set<string>();
 
-    try {
-      // 1. 预加载关键资源（优化首次加载时间）
-      // 对于 CSR/Hybrid 模式，预加载 Preact 模块（已在脚本中处理）
-      // 可以添加关键 CSS、字体等资源的预加载
-      if (renderMode === "ssr" || renderMode === "hybrid") {
-        // SSR 模式下，可以预加载关键 CSS
-        // 这里可以根据需要添加更多预加载资源
-      }
-
-      // 2. 预取页面中的链接（如果启用）
-      // 从配置中读取是否启用预取
-      const prefetchEnabled = this.config?.build?.prefetch !== false; // 默认启用
-
-      if (prefetchEnabled) {
-        // 从 HTML 中提取链接并生成预取标签
-        const { extractAndPrefetchLinks } = await import("../utils/preload.ts");
-        const currentPath = routeInfo.path || "/";
-        // 构建基础 URL（用于解析相对路径）
-        // 从请求中获取实际的 host，如果没有则使用相对路径
-        let baseUrl: string;
-        if (req && req.url) {
-          try {
-            const url = new URL(req.url);
-            baseUrl = `${url.protocol}//${url.host}${currentPath}`;
-          } catch {
-            // URL 解析失败，使用相对路径（浏览器会自动解析）
-            baseUrl = currentPath;
+    for (const pattern of patterns) {
+      if (pattern === "*") {
+        // 匹配所有路由
+        pageRoutes.forEach((route) => {
+          matchedRoutes.add(route.path);
+        });
+      } else if (pattern.startsWith("/") && pattern.includes("*")) {
+        // 通配符模式：计算路径深度（/ 的数量）
+        // 例如：/* 深度为1，/*/* 深度为2，/*/*/* 深度为3
+        const depth = pattern.split("/").filter(Boolean).length;
+        
+        pageRoutes.forEach((route) => {
+          const routeDepth = route.path.split("/").filter(Boolean).length;
+          // 匹配指定深度的路由
+          if (routeDepth === depth) {
+            matchedRoutes.add(route.path);
           }
-        } else {
-          // 没有请求对象，使用相对路径
-          baseUrl = currentPath;
-        }
-        const prefetchLinks = extractAndPrefetchLinks(html, baseUrl, 5);
-        if (prefetchLinks) {
-          links.push(prefetchLinks);
-        }
+        });
+      } else {
+        // 具体路由路径，直接添加
+        matchedRoutes.add(pattern);
       }
-
-      // 3. 预取相关路由（如果启用）
-      const prefetchRoutes = this.config?.build?.prefetchRoutes === true;
-      if (prefetchRoutes && this.router) {
-        try {
-          const { generateRoutePreloadLinks } = await import(
-            "../utils/preload.ts"
-          );
-          const routePrefetchLinks = generateRoutePreloadLinks(
-            routeInfo,
-            this.router,
-            {
-              enabled: true,
-              prefetchRoutes: true,
-              prefetchLimit: 3,
-            },
-          );
-          if (routePrefetchLinks) {
-            links.push(routePrefetchLinks);
-          }
-        } catch (error) {
-          // 预取路由失败时静默处理
-          console.warn("预取路由失败:", error);
-        }
-      }
-    } catch (error) {
-      // 预加载生成失败时静默处理
-      console.warn("生成预加载链接失败:", error);
     }
 
-    return links.join("\n");
+    return Array.from(matchedRoutes);
   }
 
   /**

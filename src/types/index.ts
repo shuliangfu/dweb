@@ -30,6 +30,13 @@ import type {
   GraphQLSchema,
 } from "../features/graphql/types.ts";
 
+// 预加载配置
+export interface PrefetchConfig {
+  /** 是否启用资源预取（prefetch），默认 true */
+  enabled?: boolean;
+  routes?: string[];
+}
+
 // 应用配置
 export interface AppConfig {
   name?: string;
@@ -47,6 +54,8 @@ export interface AppConfig {
   dev?: DevConfig;
   // 全局渲染模式（可在页面组件中覆盖）
   renderMode?: RenderMode;
+  // 预加载配置
+  prefetch?: PrefetchConfig;
   // 数据库配置
   database?: DatabaseConfig;
   // WebSocket 配置
@@ -327,10 +336,6 @@ export interface BuildConfig {
   compress?: boolean;
   /** 图片压缩质量（0-100），默认 80 */
   imageQuality?: number;
-  /** 是否启用资源预取（prefetch），默认 true */
-  prefetch?: boolean;
-  /** 是否预取相关路由，默认 false */
-  prefetchRoutes?: boolean;
   [key: string]: any;
 }
 

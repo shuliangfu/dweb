@@ -31,8 +31,8 @@ const config: AppConfig = {
   // 服务器配置
   server: {
     port: 3000,
-		host: "127.0.0.1", // Docker 环境需要监听所有网络接口
-		tls: false, // 使用默认证书
+    host: "127.0.0.1", // Docker 环境需要监听所有网络接口
+    tls: false, // 使用默认证书
   },
 
   // 路由配置
@@ -40,7 +40,7 @@ const config: AppConfig = {
     dir: "routes",
     ignore: ["**/*.test.ts", "**/*.test.tsx"],
     // API 目录配置，默认为 'routes/api'，也可以配置为 'api' 等相对路径
-		// apiDir: 'api',  // 如果配置为 'api'，则 API 文件应放在项目根目录的 api 文件夹中
+    // apiDir: 'api',  // 如果配置为 'api'，则 API 文件应放在项目根目录的 api 文件夹中
   },
 
   // 静态资源目录，默认为 'assets'
@@ -65,6 +65,11 @@ const config: AppConfig = {
     maxAge: 3600, // 1小时（单位：秒）
     secure: false,
     httpOnly: true,
+  },
+
+  prefetch: {
+    enabled: true,
+    routes: ["/*/*"],
   },
 
   // 插件配置

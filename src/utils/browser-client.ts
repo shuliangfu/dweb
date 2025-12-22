@@ -14,6 +14,38 @@ interface ClientConfig {
   basePath: string;
   metadata: any;
   layout: boolean | undefined;
+  prefetchRoutes?: string[];
+}
+
+/**
+ * 链接工具函数：检查链接是否应该被拦截/预取
+ */
+function isValidInternalLink(link: HTMLAnchorElement): string | null {
+  const href = link.getAttribute("href");
+  
+  // 排除特殊链接
+  if (
+    !href ||
+    href.startsWith("#") ||
+    href.startsWith("mailto:") ||
+    href.startsWith("tel:") ||
+    href.startsWith("javascript:") ||
+    link.hasAttribute("download") ||
+    (link.target && link.target !== "_self")
+  ) {
+    return null;
+  }
+
+  // 解析 URL 并检查是否同源
+  try {
+    const url = new URL(href, globalThis.location.href);
+    if (url.origin !== globalThis.location.origin) {
+      return null; // 外链
+    }
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return null; // URL 解析失败
+  }
 }
 
 /**
@@ -26,90 +58,66 @@ function initLinkInterceptor(): void {
 
   let navigateToFunc: ((path: string, replace?: boolean) => void) | null = null;
 
+  /**
+   * 处理链接点击事件
+   */
   const clickHandler = (event: MouseEvent) => {
-    // 1. 获取链接对象
     const target = event.target as HTMLElement;
     const link = target?.closest?.("a");
 
-    // 如果不是 A 链接，不处理
     if (!link || !(link instanceof HTMLAnchorElement)) return;
 
-    // 2. 排除不需要拦截的特殊 A 链接（新窗口、下载、外链等）
-    const href = link.getAttribute("href");
-    if (
-      !href || href.startsWith("#") || href.startsWith("mailto:") ||
-      href.startsWith("tel:") ||
-      link.hasAttribute("download") ||
-      (link.target && link.target !== "_self")
-    ) {
-      return; // 这些情况交给浏览器默认处理
-    }
+    const fullPath = isValidInternalLink(link);
+    if (!fullPath) return; // 不是有效的站内链接
 
-    // 3. 检查是否是站内链接
-    try {
-      const url = new URL(href, globalThis.location.href);
-      if (url.origin !== globalThis.location.origin) return; // 外链不拦截
+    // 阻止默认行为并停止事件传播
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
 
-      // --- 确认是站内跳转，立即彻底拦截 ---
-      // 必须同时调用这三个方法，确保完全阻止默认行为和事件传播
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
+    // 执行导航
+    if (navigateToFunc) {
+      navigateToFunc(fullPath);
+    } else {
+      // 等待导航函数准备好（最多等待 5 秒）
+      let retryCount = 0;
+      const maxRetries = 50;
+      const retryInterval = 100;
 
-      const fullPath = url.pathname + url.search + url.hash;
+      const checkAndNavigate = () => {
+        if (navigateToFunc) {
+          navigateToFunc(fullPath);
+        } else if (retryCount < maxRetries) {
+          retryCount++;
+          setTimeout(checkAndNavigate, retryInterval);
+        }
+      };
 
-      // 4. 执行跳转逻辑
-      if (navigateToFunc) {
-        // 导航函数已准备好，直接调用
-        navigateToFunc(fullPath);
-      } else {
-        // 导航函数还没准备好，需要等待
-        // 注意：已经调用了 preventDefault()，所以必须等待导航函数准备好
-        // 不能回退到 location.href，否则会失去 SPA 优势
-        let retryCount = 0;
-        const maxRetries = 50; // 最多等待 5 秒（50 * 100ms）
-        const retryInterval = 100; // 每 100ms 检查一次
-
-        const checkAndNavigate = () => {
-          // 直接访问闭包中的 navigateToFunc（它会自动获取最新值）
-          if (navigateToFunc) {
-            // 导航函数已准备好，执行导航
-            navigateToFunc(fullPath);
-          } else if (retryCount < maxRetries) {
-            // 还没准备好，继续等待
-            retryCount++;
-            setTimeout(checkAndNavigate, retryInterval);
-          } else {
-            // 等待超时（5秒），作为最后的后备方案，使用页面刷新
-            // 注意：这种情况应该很少发生，因为导航函数通常在页面加载后很快就会被设置
-          }
-        };
-
-        // 立即开始检查（不延迟第一次检查）
-        checkAndNavigate();
-      }
-    } catch (e) {
-      console.error("[Link Interceptor] 链接拦截错误:", e);
+      checkAndNavigate();
     }
   };
 
-  // 只在 window 挂载一个监听器即可，使用捕获模式确保最早拦截
-  globalThis.addEventListener("click", clickHandler as EventListener, {
-    capture: true,
-    passive: false,
-  });
-
-  // 处理前进/后退
-  globalThis.addEventListener("popstate", (e: PopStateEvent) => {
+  /**
+   * 处理浏览器前进/后退
+   */
+  const popstateHandler = (e: PopStateEvent) => {
     if (navigateToFunc) {
       navigateToFunc(
         (e.state?.path as string) || globalThis.location.pathname,
         true,
       );
     }
+  };
+
+  // 注册事件监听器
+  globalThis.addEventListener("click", clickHandler as EventListener, {
+    capture: true,
+    passive: false,
   });
 
-  // 暴露设置导航函数的接口（供 initClientSideNavigation 调用）
+  globalThis.addEventListener("popstate", popstateHandler);
+
+  // 暴露设置导航函数的接口
   (globalThis as any).__setCSRNavigateFunction = function (
     fn: (path: string, replace?: boolean) => void,
   ) {
@@ -325,6 +333,10 @@ async function initClientSideNavigation(
   // 更新 SEO meta 标签（客户端导航时使用）
   // 注意：这个函数在 navigateTo 中直接调用 updateMetaTagsFromPageData，所以这里不需要单独定义
 
+  // 页面数据缓存（避免重复请求相同页面）
+  const pageDataCache = new Map<string, any>();
+  const MAX_CACHE_SIZE = 100; // 最多缓存 100 个页面
+
   // 提取并更新 i18n 数据（从 HTML 中提取 window.__I18N_DATA__）
   function extractAndUpdateI18nData(html: string): void {
     try {
@@ -400,6 +412,11 @@ async function initClientSideNavigation(
         return (globalThis as any).__PAGE_DATA__;
       }
 
+      // 检查缓存
+      if (pageDataCache.has(pathname)) {
+        return pageDataCache.get(pathname);
+      }
+
       // 获取目标页面的 HTML
       const response = await fetch(pathname, {
         headers: { "Accept": "text/html" },
@@ -441,6 +458,16 @@ async function initClientSideNavigation(
       if (!pageData || typeof pageData !== "object") {
         throw new Error("页面数据格式无效");
       }
+
+      // 存入缓存（限制缓存大小，避免内存泄漏）
+      if (pageDataCache.size >= MAX_CACHE_SIZE) {
+        // 删除最旧的缓存项（FIFO）
+        const firstKey = pageDataCache.keys().next().value;
+        if (firstKey) {
+          pageDataCache.delete(firstKey);
+        }
+      }
+      pageDataCache.set(pathname, pageData);
 
       return pageData;
     } catch (error: any) {
@@ -685,6 +712,58 @@ async function initClientSideNavigation(
   if (typeof (globalThis as any).__setCSRNavigateFunction === "function") {
     (globalThis as any).__setCSRNavigateFunction(navigateTo);
   }
+
+  // 暴露预取函数给链接拦截器（用于鼠标悬停预取）
+  (globalThis as any).__prefetchPageData = async function (pathname: string): Promise<void> {
+    try {
+      // 如果已经在缓存中，不需要预取
+      if (pageDataCache.has(pathname)) {
+        return;
+      }
+
+      // 如果是当前页面，不需要预取
+      if (
+        pathname === globalThis.location.pathname &&
+        (globalThis as any).__PAGE_DATA__
+      ) {
+        return;
+      }
+
+      // 1. 加载页面数据（获取 route 和布局信息）
+      const pageData = await loadPageData(pathname);
+      
+      // 2. 预加载页面组件模块
+      if (pageData?.route && typeof pageData.route === "string") {
+        try {
+          await import(pageData.route);
+        } catch (_importError) {
+          // 组件导入失败时静默处理
+        }
+      }
+
+      // 3. 预加载布局组件模块（如果有）
+      if (pageData?.allLayoutPaths && Array.isArray(pageData.allLayoutPaths)) {
+        // 并行预加载所有布局组件
+        const layoutPromises = pageData.allLayoutPaths.map(async (layoutPath: string) => {
+          try {
+            await import(layoutPath);
+          } catch (_layoutError) {
+            // 布局导入失败时静默处理
+          }
+        });
+        await Promise.all(layoutPromises);
+      } else if (pageData?.layoutPath && typeof pageData.layoutPath === "string" && pageData.layoutPath !== "null") {
+        // 向后兼容：单个布局路径
+        try {
+          await import(pageData.layoutPath);
+        } catch (_layoutError) {
+          // 布局导入失败时静默处理
+        }
+      }
+    } catch (_e) {
+      // 预取失败时静默处理（不影响正常导航）
+    }
+  };
 }
 
 /**
@@ -1063,6 +1142,37 @@ function initClient(config: ClientConfig): void {
 
   // 初始化客户端渲染（链接拦截器会在导航函数准备好后自动初始化）
   initClientRender(config);
+
+  // 预加载配置的路由（如果配置了）
+  if (config.prefetchRoutes && Array.isArray(config.prefetchRoutes) && config.prefetchRoutes.length > 0) {
+    // 延迟预加载，避免影响首屏加载
+    setTimeout(() => {
+      const prefetchFn = (globalThis as any).__prefetchPageData;
+      if (typeof prefetchFn === "function") {
+        const basePath = config.basePath || "/";
+        const routes = config.prefetchRoutes!; // 已经检查过不为空
+        
+        // 并发预加载所有路由（使用 Promise.allSettled 确保所有请求都能完成）
+        const prefetchPromises = routes.map((route: string) => {
+          // 处理 basePath
+          let fullRoute = route;
+          if (basePath !== "/" && !route.startsWith(basePath)) {
+            const base = basePath.endsWith("/") ? basePath.slice(0, -1) : basePath;
+            fullRoute = base + (route.startsWith("/") ? route : "/" + route);
+          }
+          // 异步预加载，不阻塞
+          return prefetchFn(fullRoute).catch(() => {
+            // 预加载失败时静默处理
+          });
+        });
+        
+        // 等待所有预加载完成（不阻塞，后台执行）
+        Promise.allSettled(prefetchPromises).catch(() => {
+          // 静默处理
+        });
+      }
+    }, 1000); // 1秒后开始预加载
+  }
 }
 
 // 暴露到全局，供内联脚本调用
