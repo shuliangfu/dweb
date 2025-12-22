@@ -611,24 +611,30 @@ export class Server {
       let cert: string;
       let key: string;
 
-      // 读取证书文件或使用提供的证书内容
-      if (tls.certFile) {
-        cert = await Deno.readTextFile(tls.certFile);
-      } else if (tls.cert) {
-        // 将 Uint8Array 转换为字符串
-        cert = new TextDecoder().decode(tls.cert);
+      // 如果 tls 是 true，使用默认证书
+      if (tls === true) {
+        cert = DEFAULT_CERT;
+        key = DEFAULT_KEY;
       } else {
-        throw new Error('TLS 配置错误：必须提供 certFile 或 cert');
-      }
+        // 读取证书文件或使用提供的证书内容
+        if (tls.certFile) {
+          cert = await Deno.readTextFile(tls.certFile);
+        } else if (tls.cert) {
+          // 将 Uint8Array 转换为字符串
+          cert = new TextDecoder().decode(tls.cert);
+        } else {
+          throw new Error('TLS 配置错误：必须提供 certFile 或 cert');
+        }
 
-      // 读取私钥文件或使用提供的私钥内容
-      if (tls.keyFile) {
-        key = await Deno.readTextFile(tls.keyFile);
-      } else if (tls.key) {
-        // 将 Uint8Array 转换为字符串
-        key = new TextDecoder().decode(tls.key);
-      } else {
-        throw new Error('TLS 配置错误：必须提供 keyFile 或 key');
+        // 读取私钥文件或使用提供的私钥内容
+        if (tls.keyFile) {
+          key = await Deno.readTextFile(tls.keyFile);
+        } else if (tls.key) {
+          // 将 Uint8Array 转换为字符串
+          key = new TextDecoder().decode(tls.key);
+        } else {
+          throw new Error('TLS 配置错误：必须提供 keyFile 或 key');
+        }
       }
 
       serveOptions.cert = cert;
