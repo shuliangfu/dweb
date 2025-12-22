@@ -471,12 +471,12 @@ const config: AppConfig = {
   
   // Cookie 配置
   cookie: {
-    secret: 'your-secret-key-here-change-in-production'
+    secret: 'your-secret-key-here'
   },
   
   // Session 配置
   session: {
-    secret: 'your-session-secret-here-change-in-production',
+    secret: 'your-secret-key-here',
     store: 'memory',
     maxAge: 3600, // 1小时（单位：秒）
     secure: false,
