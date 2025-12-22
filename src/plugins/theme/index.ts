@@ -165,7 +165,7 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
               ? `<style>* { transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }</style>`
               : "";
 
-            const scriptTag = `<script data-type="theme">${fullScript}</script>${styleTag}`;
+            const scriptTag = `<script data-type="dweb-theme">${fullScript}</script>${styleTag}`;
 
             // 使用 lastIndexOf 确保在最后一个 </head> 之前注入
             const lastHeadIndex = newHtml.lastIndexOf("</head>");

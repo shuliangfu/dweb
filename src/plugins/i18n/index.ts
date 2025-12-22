@@ -409,7 +409,7 @@ export function i18n(options: I18nPluginOptions): Plugin {
 
                   // 组合完整的脚本
                   const fullScript = `${clientScript}\n${initScript}`;
-                  const scriptTag = `<script data-type="i18n">${fullScript}</script>`;
+                  const scriptTag = `<script data-type="dweb-i18n">${fullScript}</script>`;
 
                   // 使用 lastIndexOf 确保在最后一个 </head> 之前注入
                   const lastHeadIndex = newHtml.lastIndexOf("</head>");

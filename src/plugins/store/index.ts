@@ -209,7 +209,7 @@ export function store(options: StorePluginOptions = {}): Plugin {
 
           // 组合完整的脚本
           const fullScript = `${clientScript}\n${initScript}`;
-					const scriptTag = `<script data-type="store">${fullScript}</script>`;
+					const scriptTag = `<script data-type="dweb-store">${fullScript}</script>`;
 					
           // 使用 lastIndexOf 确保在最后一个 </head> 之前注入
 					const lastHeadIndex = html.lastIndexOf("</head>");
