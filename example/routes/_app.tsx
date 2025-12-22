@@ -26,8 +26,12 @@ export default function App({ children }: AppProps) {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>DWeb - 现代化的全栈 Web 框架</title>
-				<link rel="alternate icon" type="image/png" href="/assets/favicon.png" />
-				<link rel="stylesheet" href="/assets/style.css" />
+        <link
+          rel="alternate icon"
+          type="image/png"
+          href="/assets/favicon.png"
+        />
+        <link rel="stylesheet" href="/assets/style.css" />
         {/* Prism.js 语法高亮样式 */}
         <link
           rel="stylesheet"
@@ -44,8 +48,8 @@ export default function App({ children }: AppProps) {
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-jsx.min.js" />
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-tsx.min.js" />
       </head>
-      <body className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-        <div id="root">{children}</div>
+      <body id="root">
+        {children}
       </body>
     </html>
   );
