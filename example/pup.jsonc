@@ -4,7 +4,7 @@
 			// 实例名称
       "id": "dweb-example",
       // 启动命令
-      "cmd": "deno run -A ../src/cli.ts start",
+      "cmd": "deno run -A ../src/cli.ts start", 
       // 自动启动
       "autostart": true,
 			// 集群模式
