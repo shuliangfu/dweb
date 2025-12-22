@@ -412,12 +412,12 @@ const config: DWebConfig = {
   
   // Cookie 配置（全局）
   cookie: {
-    secret: 'your-secret-key-here-change-in-production'
+    secret: 'your-secret-key-here'
   },
   
   // Session 配置（全局）
   session: {
-    secret: 'your-session-secret-here-change-in-production',
+    secret: 'your-secret-key-here',
     store: 'memory',
     maxAge: 3600, // 1小时（单位：秒）
     secure: false,
