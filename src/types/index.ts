@@ -259,8 +259,11 @@ export interface RouteConfig {
 export interface ServerConfig {
   port?: number;
   host?: string;
-  /** TLS/HTTPS 配置（可选） */
-  tls?: {
+  /** TLS/HTTPS 配置（可选）
+   * - `true`: 使用框架内置的默认自签名证书（适用于开发环境）
+   * - 配置对象: 使用自定义证书和私钥
+   */
+  tls?: boolean | {
     /** 证书文件路径或证书内容（PEM 格式） */
     certFile?: string;
     /** 私钥文件路径或私钥内容（PEM 格式） */
