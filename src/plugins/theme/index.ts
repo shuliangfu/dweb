@@ -54,13 +54,14 @@ function generateInitScript(options: {
   defaultTheme?: "light" | "dark" | "auto";
   transition?: boolean;
 }): string {
-  return `initTheme(${JSON.stringify({
-    storageKey: options.storageKey || "theme",
-    defaultTheme: options.defaultTheme || "auto",
-    transition: options.transition !== false,
-  })});`;
+  return `initTheme(${
+    JSON.stringify({
+      storageKey: options.storageKey || "theme",
+      defaultTheme: options.defaultTheme || "auto",
+      transition: options.transition !== false,
+    })
+  });`;
 }
-
 
 /**
  * 注入主题 class 到 HTML
@@ -162,23 +163,34 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
 
             // 如果有过渡效果，添加 style 标签（放在 head 中，与其他 style 标签一起）
             if (options.transition !== false) {
-              const styleTag = `<style>* { transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }</style>`;
-              
+              const styleTag =
+                `<style>* { transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }</style>`;
+
               // 查找 head 中的最后一个 style 标签或 link[rel="stylesheet"]，在其后插入
-              const styleMatch = newHtml.match(/<style[^>]*>[\s\S]*?<\/style>/gi);
-              const linkMatch = newHtml.match(/<link[^>]*rel=["']stylesheet["'][^>]*>/gi);
-              
+              const styleMatch = newHtml.match(
+                /<style[^>]*>[\s\S]*?<\/style>/gi,
+              );
+              const linkMatch = newHtml.match(
+                /<link[^>]*rel=["']stylesheet["'][^>]*>/gi,
+              );
+
               if (styleMatch && styleMatch.length > 0) {
                 // 在最后一个 style 标签后插入
-                const lastStyleIndex = newHtml.lastIndexOf(styleMatch[styleMatch.length - 1]);
-                const insertIndex = lastStyleIndex + styleMatch[styleMatch.length - 1].length;
+                const lastStyleIndex = newHtml.lastIndexOf(
+                  styleMatch[styleMatch.length - 1],
+                );
+                const insertIndex = lastStyleIndex +
+                  styleMatch[styleMatch.length - 1].length;
                 newHtml = newHtml.slice(0, insertIndex) +
                   `\n${styleTag}` +
                   newHtml.slice(insertIndex);
               } else if (linkMatch && linkMatch.length > 0) {
                 // 在最后一个 link[rel="stylesheet"] 后插入
-                const lastLinkIndex = newHtml.lastIndexOf(linkMatch[linkMatch.length - 1]);
-                const insertIndex = lastLinkIndex + linkMatch[linkMatch.length - 1].length;
+                const lastLinkIndex = newHtml.lastIndexOf(
+                  linkMatch[linkMatch.length - 1],
+                );
+                const insertIndex = lastLinkIndex +
+                  linkMatch[linkMatch.length - 1].length;
                 newHtml = newHtml.slice(0, insertIndex) +
                   `\n${styleTag}` +
                   newHtml.slice(insertIndex);
@@ -194,7 +206,8 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
             }
 
             // 注入 script 标签（在 </head> 之前）
-            const scriptTag = `<script data-type="dweb-theme">${fullScript}</script>`;
+            const scriptTag =
+              `<script data-type="dweb-theme">${fullScript}</script>`;
             const lastHeadIndex = newHtml.lastIndexOf("</head>");
             if (lastHeadIndex !== -1) {
               newHtml = newHtml.slice(0, lastHeadIndex) +
