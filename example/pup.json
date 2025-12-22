@@ -3,7 +3,10 @@
     {
       "id": "dweb-example",
       "cmd": "deno run -A ../src/cli.ts start",
-      "autostart": true
+      "autostart": true,
+      "cluster": {
+        "instances": 1
+      }
     }
   ]
 }

@@ -588,18 +588,21 @@ export class Server {
         const errorMessage = error instanceof Error ? error.message : String(error);
         return new globalThis.Response(`Internal Server Error: ${errorMessage}`, { status: 500 });
       }
-    };
+		};
+		
+		const instanceIndex = Number(Deno.env.get("PUP_CLUSTER_INSTANCE") || 0);
+		port += instanceIndex;
 
     // 准备 Deno.serve 配置
     const serveOptions: {
       port: number;
-      hostname: string;
+			hostname: string;
       onListen?: () => void;
       cert?: string;
       key?: string;
     } = {
       port,
-      hostname: host,
+			hostname: host,
       onListen: () => {
         const protocol = tls ? 'https' : 'http';
         console.log(`✅ 服务器已启动: ${protocol}://${host}:${port}`);
