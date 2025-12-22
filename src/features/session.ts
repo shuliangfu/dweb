@@ -711,7 +711,8 @@ export class SessionManager {
   private createSessionObject(sessionData: SessionData): Session {
     // 保存必要的引用，避免在闭包中直接使用 this
     const store = this.store;
-    const maxAge = this.config.maxAge || 3600000;
+    // maxAge 配置单位为秒，转换为毫秒
+    const maxAge = (this.config.maxAge || 3600) * 1000;
     const generateSessionId = () => this.generateSessionId();
     
     return {
