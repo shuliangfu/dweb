@@ -25,6 +25,7 @@ import {
   setCurrentLanguage,
 } from "./access.ts";
 import { minifyJavaScript } from "../../utils/minify.ts";
+import { compileWithEsbuild } from "../../utils/module.ts";
 
 /**
  * 加载翻译文件
@@ -231,8 +232,55 @@ export function i18n(options: I18nPluginOptions): Plugin {
   // 翻译缓存（每个插件实例都有独立的缓存）
   const translationCache = new Map<string, TranslationData>();
 
-  // 存储应用实例引用（用于多应用场景）
-  let appInstance: AppLike | undefined;
+  // 缓存编译后的客户端脚本
+  let cachedClientScript: string | null = null;
+
+  /**
+   * 编译客户端 i18n 脚本
+   */
+  async function compileClientScript(): Promise<string> {
+    if (cachedClientScript) {
+      return cachedClientScript;
+    }
+
+    try {
+      // 读取浏览器端脚本文件
+      const browserScriptPath = path.join(
+        path.dirname(new URL(import.meta.url).pathname),
+        "browser.ts",
+      );
+      const browserScriptContent = await Deno.readTextFile(browserScriptPath);
+
+      // 使用 esbuild 编译 TypeScript 为 JavaScript
+      const compiledCode = await compileWithEsbuild(
+        browserScriptContent,
+        browserScriptPath,
+      );
+
+      // 压缩代码
+      const minifiedCode = await minifyJavaScript(compiledCode);
+      cachedClientScript = minifiedCode;
+
+      return minifiedCode;
+    } catch (error) {
+      console.error("[i18n Plugin] 编译客户端脚本失败:", error);
+      // 如果编译失败，返回空字符串
+      return "";
+    }
+  }
+
+  /**
+   * 生成 i18n 初始化脚本（包含配置）
+   */
+  function generateInitScript(config: {
+    lang: string;
+    translations: Record<string, unknown>;
+  }): string {
+    return `initI18n(${JSON.stringify({
+      lang: config.lang,
+      translations: config.translations,
+    })});`;
+  }
 
   return {
     name: "i18n",
@@ -242,9 +290,6 @@ export function i18n(options: I18nPluginOptions): Plugin {
      * 初始化钩子 - 预加载翻译文件
      */
     async onInit(app: AppLike) {
-      // 保存应用实例引用
-      appInstance = app;
-
       // 预加载所有语言的翻译文件
       for (const lang of options.languages) {
         try {
@@ -350,58 +395,33 @@ export function i18n(options: I18nPluginOptions): Plugin {
             // 注入翻译数据到客户端（在 </head> 之前）
             const translations = translationCache.get(langCode) || null;
             if (translations && newHtml.includes("</head>")) {
-              // 生成 JavaScript 代码（不包含 script 标签）
-              const jsCode = `
-      // i18n 翻译数据
-      window.__I18N_DATA__ = {
-        lang: ${JSON.stringify(langCode)},
-        translations: ${JSON.stringify(translations)},
-        t: function(key, params) {
-          const translations = this.translations;
-          if (!translations || typeof translations !== 'object') {
-            return key;
-          }
-          // 支持嵌套键（如 'common.title'）和直接键（如 '你好，世界！'）
-          const keys = key.split('.');
-          let value = translations;
-          for (const k of keys) {
-            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-              value = value[k];
-              // 如果找不到，且是单个键，尝试直接使用整个 key
-              if (value === undefined && keys.length === 1) {
-                value = translations[key];
+              try {
+                // 编译客户端脚本
+                const clientScript = await compileClientScript();
+                if (!clientScript) {
+                  console.warn("[i18n Plugin] 客户端脚本编译失败，跳过注入");
+                } else {
+                  // 生成初始化脚本
+                  const initScript = generateInitScript({
+                    lang: langCode,
+                    translations,
+                  });
+
+                  // 组合完整的脚本
+                  const fullScript = `${clientScript}\n${initScript}`;
+                  const scriptTag = `<script data-type="i18n">${fullScript}</script>`;
+
+                  // 使用 lastIndexOf 确保在最后一个 </head> 之前注入
+                  const lastHeadIndex = newHtml.lastIndexOf("</head>");
+                  if (lastHeadIndex !== -1) {
+                    newHtml = newHtml.substring(0, lastHeadIndex) +
+                      `${scriptTag}\n` +
+                      newHtml.substring(lastHeadIndex);
+                  }
+                }
+              } catch (error) {
+                console.error("[i18n Plugin] 注入 i18n 脚本时出错:", error);
               }
-              if (value === undefined) {
-                return key;
-              }
-            } else {
-              return key;
-            }
-          }
-          if (typeof value !== 'string') return key;
-          if (params) {
-            return value.replace(/\\{(\\w+)\\}/g, (match, paramKey) => {
-              return params[paramKey] || match;
-            });
-          }
-          return value;
-        }
-      };
-      // 全局翻译函数（确保 this 指向 window.__I18N_DATA__）
-      window.$t = function(key, params) {
-        if (!window.__I18N_DATA__ || !window.__I18N_DATA__.t) {
-          return key;
-        }
-        return window.__I18N_DATA__.t.call(window.__I18N_DATA__, key, params);
-      }`;
-              // 压缩 JavaScript 代码
-              const minifiedCode = await minifyJavaScript(jsCode.trim());
-              // 添加 script 标签
-              const translationsScript = `<script>${minifiedCode}</script>`;
-              newHtml = newHtml.replace(
-                "</head>",
-                `${translationsScript}\n</head>`,
-              );
             }
 
             res.body = newHtml;

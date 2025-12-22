@@ -364,12 +364,14 @@ usePlugin(rss({
 - ✅ 函数式更新支持
 - ✅ 通过 PageProps 注入，使用简单
 
+**基本配置：**
+
 ```typescript
 import { store } from "@dreamer/dweb/plugins";
 
 app.plugin(store({
   persist: true, // 是否启用持久化（默认 false）
-  storageKey: 'my-app-store', // 持久化存储键名（默认 'dweb-store'）
+  storageKey: 'dweb-store', // 持久化存储键名（默认 'dweb-store'）
   enableServer: true, // 是否在服务端启用（默认 true）
   initialState: { // 初始状态
     user: null,
@@ -387,80 +389,101 @@ app.plugin(store({
 | `enableServer` | `boolean` | `true` | 是否在服务端启用，每个请求会有独立的 Store 实例 |
 | `initialState` | `Record<string, unknown>` | `{}` | 初始状态对象 |
 
-#### 客户端使用（推荐方式：通过 PageProps）
+**客户端 API（推荐方式）：**
 
 ```typescript
-import { useState, useEffect } from 'preact/hooks';
-import type { PageProps } from '@dreamer/dweb';
+import { 
+  getStore, 
+  getStoreState, 
+  setStoreState, 
+  subscribeStore,
+  resetStore 
+} from '@dreamer/dweb/client';
 
-export default function MyPage({ store }: PageProps) {
-  if (!store) {
-    return <div>Store 未初始化</div>;
-  }
-  
-  // 获取状态
-  const state = store.getState();
-  console.log(state.user); // null
-  console.log(state.count); // 0
+// 方式1：获取 Store 实例（适用于需要多次操作）
+const store = getStore();
+if (store) {
+  const state = store.getState();        // 获取状态
+  store.setState({ count: 1 });          // 更新状态
+  const unsubscribe = store.subscribe((state) => {
+    console.log('状态变化:', state);
+  });
+  store.reset();                         // 重置状态
+}
 
-  // 设置状态
-  const handleIncrement = () => {
-    store.setState({ count: (state.count || 0) + 1 });
+// 方式2：直接获取状态值（更简洁，适用于只读取一次）
+const state = getStoreState<{ count: number }>();
+if (state) {
+  console.log(state.count);
+}
+
+// 方式3：更新状态
+setStoreState({ count: 1 });
+// 或使用函数式更新
+setStoreState((prev) => ({ count: prev.count + 1 }));
+
+// 方式4：订阅状态变化
+const unsubscribe = subscribeStore((state) => {
+  console.log('状态变化:', state);
+});
+// 取消订阅
+if (unsubscribe) {
+  unsubscribe();
+}
+
+// 方式5：重置状态
+resetStore();
+```
+
+**在 React/Preact 组件中使用：**
+
+```typescript
+import { useEffect, useState } from 'preact/hooks';
+import { getStoreState, setStoreState, subscribeStore } from '@dreamer/dweb/client';
+
+interface NavState {
+  currentPath: string;
+  navOpen: boolean;
+}
+
+export default function Navbar() {
+  const [state, setState] = useState<NavState | null>(null);
+
+  useEffect(() => {
+    // 初始化状态
+    const initialState = getStoreState<NavState>();
+    setState(initialState);
+
+    // 订阅状态变化
+    const unsubscribe = subscribeStore<NavState>((newState) => {
+      setState(newState);
+    });
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
+
+  const toggleNav = () => {
+    setStoreState<NavState>((prev) => ({
+      ...prev,
+      navOpen: !prev?.navOpen,
+    }));
   };
 
-  // 在组件中使用（需要配合 useState 和 useEffect）
-  const [count, setCount] = useState(state.count || 0);
-  
-  useEffect(() => {
-    // 订阅状态变化
-    const unsubscribe = store.subscribe((newState) => {
-      setCount(newState.count || 0);
-    });
-    
-    return () => {
-      unsubscribe();
-    };
-  }, [store]);
-
   return (
-    <div>
-      <p>Count: {count}</p>
-      <button type="button" onClick={handleIncrement}>增加</button>
-    </div>
+    <nav>
+      <button onClick={toggleNav}>
+        {state?.navOpen ? '关闭' : '打开'}
+      </button>
+    </nav>
   );
 }
 ```
 
-#### 客户端使用（直接访问 window.__STORE__）
-
-```typescript
-// 获取 Store 实例
-const store = window.__STORE__;
-
-// 获取状态
-const state = store.getState();
-console.log(state.user); // null
-console.log(state.count); // 0
-
-// 设置状态
-store.setState({ count: 1 });
-// 或使用函数式更新
-store.setState((prev) => ({ count: prev.count + 1 }));
-
-// 订阅状态变化
-const unsubscribe = store.subscribe((state) => {
-  console.log('状态已更新:', state);
-  // 更新 UI
-});
-
-// 取消订阅
-unsubscribe();
-
-// 重置状态
-store.reset();
-```
-
-#### 服务端使用（在 load 函数中）
+**服务端使用（在 load 函数中）：**
 
 ```typescript
 import type { LoadContext } from '@dreamer/dweb';
@@ -481,64 +504,15 @@ export async function load({ store }: LoadContext) {
 
 **注意**：在 `load` 函数中设置的状态会自动同步到客户端 Store。服务端 Store 的状态会在响应时注入到客户端 Store 脚本中，客户端 Store 会使用服务端状态初始化（优先级：服务端状态 > localStorage > 初始状态）。
 
-#### Store API
-
-**方法说明：**
+**API 参考：**
 
 | 方法 | 参数 | 返回值 | 说明 |
 |------|------|--------|------|
-| `getState()` | - | `T` | 获取当前状态 |
-| `setState(updater)` | `Partial<T> \| ((prev: T) => Partial<T>)` | `void` | 设置状态，支持对象或函数式更新 |
-| `subscribe(listener)` | `(state: T) => void` | `() => void` | 订阅状态变化，返回取消订阅函数 |
-| `unsubscribe(listener)` | `(state: T) => void` | `void` | 取消订阅 |
-| `reset()` | - | `void` | 重置状态到初始值 |
-
-**完整示例：**
-
-```typescript
-import { useState, useEffect } from 'preact/hooks';
-import type { PageProps } from '@dreamer/dweb';
-
-export default function Counter({ store }: PageProps) {
-  const [count, setCount] = useState(0);
-  
-  useEffect(() => {
-    if (!store) return;
-    
-    // 初始化：从 Store 获取状态
-    const state = store.getState();
-    setCount(state.count || 0);
-    
-    // 订阅状态变化
-    const unsubscribe = store.subscribe((newState) => {
-      setCount(newState.count || 0);
-    });
-    
-    return () => {
-      unsubscribe();
-    };
-  }, [store]);
-  
-  const handleIncrement = () => {
-    if (!store) return;
-    // 使用函数式更新
-    store.setState((prev: any) => ({ count: (prev.count || 0) + 1 }));
-  };
-  
-  const handleReset = () => {
-    if (!store) return;
-    store.reset();
-  };
-  
-  return (
-    <div>
-      <p>Count: {count}</p>
-      <button type="button" onClick={handleIncrement}>增加</button>
-      <button type="button" onClick={handleReset}>重置</button>
-    </div>
-  );
-}
-```
+| `getStore()` | - | `Store \| null` | 获取 Store 实例，适用于需要多次操作 |
+| `getStoreState<T>()` | - | `T \| null` | 直接获取当前状态值，更简洁 |
+| `setStoreState<T>(updater)` | `Partial<T> \| ((prev: T) => Partial<T>)` | `void` | 设置状态，支持对象或函数式更新 |
+| `subscribeStore<T>(listener)` | `(state: T) => void` | `(() => void) \| null` | 订阅状态变化，返回取消订阅函数 |
+| `resetStore()` | - | `void` | 重置状态到初始值 |
 
 **服务端到客户端状态同步：**
 
@@ -547,7 +521,7 @@ export default function Counter({ store }: PageProps) {
 1. 服务端 `load` 函数中调用 `store.setState()` 设置状态
 2. 响应时，服务端 Store 的状态被注入到客户端 Store 脚本中
 3. 客户端 Store 初始化时，会合并服务端状态（优先级：服务端状态 > localStorage > 初始状态）
-4. 客户端组件可以通过 `store.getState()` 获取到服务端设置的状态
+4. 客户端组件可以通过 `getStoreState()` 获取到服务端设置的状态
 
 **示例：**
 
@@ -562,14 +536,14 @@ export async function load({ store }: LoadContext) {
 }
 
 // 客户端组件
-export default function MyPage({ store }: PageProps) {
+import { getStoreState } from '@dreamer/dweb/client';
+
+export default function MyPage() {
   useEffect(() => {
-    if (store) {
-      // 可以直接获取到服务端设置的状态
-      const state = store.getState();
-      console.log(state.user); // { id: 1, name: 'John' }
-    }
-  }, [store]);
+    // 可以直接获取到服务端设置的状态
+    const state = getStoreState<{ user: { id: number; name: string } }>();
+    console.log(state?.user); // { id: 1, name: 'John' }
+  }, []);
   
   return <div>...</div>;
 }
@@ -583,56 +557,132 @@ export default function MyPage({ store }: PageProps) {
 4. **状态优先级**：服务端状态 > localStorage > 初始状态
 5. **持久化**：启用 `persist` 后，状态会自动保存到 localStorage，页面刷新后会自动恢复
 6. **类型安全**：建议为 Store 状态定义 TypeScript 类型，以获得更好的类型提示
+7. **客户端 API**：所有客户端 API 函数在服务端渲染时返回 `null`，不会报错
+8. **导入路径**：客户端 API 需要从 `@dreamer/dweb/client` 导入，而不是从 `@dreamer/dweb`
 
 ### theme - 主题切换
+
+主题插件提供主题切换功能，支持亮色、暗色和自动模式（跟随系统主题）。插件会自动在 HTML 元素上添加相应的 class，方便与 Tailwind CSS 的 dark mode 配合使用。
+
+**基本配置：**
 
 ```typescript
 import { theme } from "@dreamer/dweb/plugins";
 
 app.plugin(theme({
-  config: {
-    defaultTheme: "light", // 'light' | 'dark'（暂时移除 'auto' 选项）
-    storageKey: "theme", // localStorage 键名
-    injectDataAttribute: true, // 是否在 HTML 上添加 data-theme 属性
-    injectBodyClass: true, // 是否添加类名到 body
-    transition: true, // 主题切换动画
-  },
+  defaultTheme: "light", // 'light' | 'dark' | 'auto'（默认 'auto'）
+  storageKey: "theme", // localStorage 键名（默认 'theme'）
+  injectDataAttribute: true, // 是否在 HTML 上添加 data-theme 属性（默认 true）
+  injectBodyClass: true, // 是否添加类名到 body（默认 true）
+  transition: true, // 主题切换动画（默认 true）
+  injectScript: true, // 是否注入客户端脚本（默认 true）
 }));
 ```
 
-#### 响应式主题 Store
+**配置选项：**
 
-主题插件提供了一个响应式的主题 store，可以在任何地方订阅主题变化，特别适合与 Chart.js 等图表库集成。
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `defaultTheme` | `'light' \| 'dark' \| 'auto'` | `'auto'` | 默认主题，`'auto'` 会跟随系统主题 |
+| `storageKey` | `string` | `'theme'` | localStorage 存储键名 |
+| `injectDataAttribute` | `boolean` | `true` | 是否在 HTML 元素上添加 `data-theme` 属性 |
+| `injectBodyClass` | `boolean` | `true` | 是否在 body 元素上添加主题类名 |
+| `transition` | `boolean` | `true` | 是否启用主题切换过渡动画 |
+| `injectScript` | `boolean` | `true` | 是否注入客户端脚本 |
 
-**基本用法：**
+**客户端 API（推荐方式）：**
 
 ```typescript
+import { 
+  getTheme, 
+  getActualTheme, 
+  setTheme, 
+  toggleTheme,
+  switchTheme,
+  subscribeTheme,
+  getThemeValue
+} from '@dreamer/dweb/client';
+
 // 获取当前主题
-const currentTheme = window.__THEME_STORE__.value; // 'light' 或 'dark'
+const theme = getTheme(); // 'light' | 'dark' | 'auto' | null
+
+// 获取实际主题（处理 auto 模式）
+const actualTheme = getActualTheme(); // 'light' | 'dark' | null
+
+// 设置主题
+setTheme('dark');
+setTheme('light');
+setTheme('auto'); // 自动跟随系统主题
+
+// 切换主题（在 dark 和 light 之间切换）
+const newTheme = toggleTheme(); // 'dark' | 'light' | null
+
+// 切换到指定主题
+const switchedTheme = switchTheme('dark'); // 'light' | 'dark' | 'auto' | null
 
 // 订阅主题变化
-const unsubscribe = window.__THEME_STORE__.subscribe((theme) => {
-  console.log('主题已切换为:', theme);
-  // 更新图表主题
-  if (chart) {
-    chart.options.plugins.legend.labels.color = theme === 'dark' ? '#fff' : '#000';
-    chart.update();
-  }
+const unsubscribe = subscribeTheme((actualTheme) => {
+  console.log('主题变化:', actualTheme); // 'light' | 'dark'
 });
-
 // 取消订阅
-unsubscribe();
+if (unsubscribe) {
+  unsubscribe();
+}
+
+// 获取当前主题值（从 Store 中获取）
+const currentValue = getThemeValue(); // 'light' | 'dark' | null
+```
+
+**在 React/Preact 组件中使用：**
+
+```typescript
+import { useEffect, useState } from 'preact/hooks';
+import { getActualTheme, toggleTheme, subscribeTheme } from '@dreamer/dweb/client';
+
+export default function ThemeToggle() {
+  const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
+
+  useEffect(() => {
+    // 初始化主题
+    const initialTheme = getActualTheme();
+    setTheme(initialTheme);
+
+    // 订阅主题变化
+    const unsubscribe = subscribeTheme((newTheme) => {
+      setTheme(newTheme);
+    });
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
+
+  const handleToggle = () => {
+    toggleTheme();
+  };
+
+  return (
+    <button onClick={handleToggle}>
+      当前主题: {theme === 'dark' ? '🌙' : '☀️'}
+    </button>
+  );
+}
 ```
 
 **在 Chart.js 中使用：**
 
 ```typescript
 import { Chart, registerables } from 'chart.js';
+import { getActualTheme, subscribeTheme } from '@dreamer/dweb/client';
 
 Chart.register(...registerables);
 
 // 创建图表
 const ctx = document.getElementById('myChart');
+const currentTheme = getActualTheme();
+
 const chart = new Chart(ctx, {
   type: 'line',
   data: {
@@ -646,25 +696,25 @@ const chart = new Chart(ctx, {
     plugins: {
       legend: {
         labels: {
-          color: window.__THEME_STORE__.value === 'dark' ? '#fff' : '#000',
+          color: currentTheme === 'dark' ? '#fff' : '#000',
         },
       },
     },
     scales: {
       x: {
         ticks: {
-          color: window.__THEME_STORE__.value === 'dark' ? '#fff' : '#000',
+          color: currentTheme === 'dark' ? '#fff' : '#000',
         },
         grid: {
-          color: window.__THEME_STORE__.value === 'dark' ? '#333' : '#ddd',
+          color: currentTheme === 'dark' ? '#333' : '#ddd',
         },
       },
       y: {
         ticks: {
-          color: window.__THEME_STORE__.value === 'dark' ? '#fff' : '#000',
+          color: currentTheme === 'dark' ? '#fff' : '#000',
         },
         grid: {
-          color: window.__THEME_STORE__.value === 'dark' ? '#333' : '#ddd',
+          color: currentTheme === 'dark' ? '#333' : '#ddd',
         },
       },
     },
@@ -672,7 +722,7 @@ const chart = new Chart(ctx, {
 });
 
 // 订阅主题变化，自动更新图表
-window.__THEME_STORE__.subscribe((theme) => {
+const unsubscribe = subscribeTheme((theme) => {
   chart.options.plugins.legend.labels.color = theme === 'dark' ? '#fff' : '#000';
   chart.options.scales.x.ticks.color = theme === 'dark' ? '#fff' : '#000';
   chart.options.scales.x.grid.color = theme === 'dark' ? '#333' : '#ddd';
@@ -682,30 +732,36 @@ window.__THEME_STORE__.subscribe((theme) => {
 });
 ```
 
-**全局 API：**
+**与 Tailwind CSS 配合使用：**
 
-```typescript
-// 设置主题
-window.setTheme('dark'); // 'light' | 'dark' | 'auto'
+主题插件会自动在 HTML 元素上添加 `dark` 或 `light` class，配合 Tailwind CSS v4 的 dark mode 使用：
 
-// 获取当前主题
-window.getTheme(); // 'light' | 'dark' | 'auto'
+```css
+/* Tailwind CSS v4 配置 */
+@custom-variant dark (&:is(.dark *));
 
-// 获取实际主题（处理 'auto' 模式）
-window.getActualTheme(); // 'light' | 'dark'
-
-// 切换主题（在 dark 和 light 之间切换，不包含 auto）
-window.toggleTheme(); // 'light' | 'dark'
-
-// 切换到指定主题
-window.switchTheme('dark'); // 'light' | 'dark' | 'auto'
-
-// 访问主题管理器
-window.__THEME_MANAGER__;
-
-// 访问响应式主题 store
-window.__THEME_STORE__;
+/* 使用示例 */
+<div className="bg-white dark:bg-gray-800 text-black dark:text-white">
+  内容
+</div>
 ```
+
+**特性：**
+
+- ✅ 三种模式：支持亮色（light）、暗色（dark）和自动（auto）模式
+- ✅ 自动检测：auto 模式会自动检测系统主题偏好
+- ✅ 持久化存储：主题设置会保存到 localStorage
+- ✅ Tailwind CSS 集成：自动在 HTML 元素上添加 `dark` 或 `light` class
+- ✅ 过渡动画：支持主题切换时的平滑过渡效果
+- ✅ 响应式更新：支持订阅主题变化，实时响应主题切换
+
+**注意事项：**
+
+- 所有客户端 API 函数在服务端渲染时返回 `null`，不会报错
+- 主题设置会保存到 localStorage，仅在浏览器环境中可用
+- 建议在组件卸载时取消订阅，避免内存泄漏
+- 客户端 API 需要从 `@dreamer/dweb/client` 导入，而不是从 `@dreamer/dweb`
+- `getTheme()` 返回用户设置的主题（可能是 `'auto'`），而 `getActualTheme()` 返回实际应用的主题（`'light'` 或 `'dark'`）
 
 ## 创建自定义插件
 
