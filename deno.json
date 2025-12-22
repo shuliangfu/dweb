@@ -32,7 +32,6 @@
     "@std/fs": "jsr:@std/fs@^1.0.2",
     "preact": "https://esm.sh/preact@latest",
     "preact/hooks": "https://esm.sh/preact@latest/hooks",
-    "preact-router": "https://esm.sh/preact-router@4.1.2",
     "preact/jsx-runtime": "https://esm.sh/preact@latest/jsx-runtime",
     "preact-render-to-string": "npm:preact-render-to-string@6.2.2",
     "@std/path": "jsr:@std/path@^1.1.3",

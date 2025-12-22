@@ -1307,10 +1307,11 @@ export class RouteHandler {
 // 预加载 Preact 模块到全局作用域，供客户端渲染和 HMR 使用
 (async function() {
   try {
-    const [preactModule, jsxRuntimeModule, preactRouterModule] = await Promise.all([
+    const [preactModule, jsxRuntimeModule, hooksModule] = await Promise.all([
       import('preact'),
       import('preact/jsx-runtime'),
-      import('preact-router').catch(() => null) // preact-router 可能不存在，允许失败
+      import('preact-router').catch(() => null), // preact-router 可能不存在，允许失败
+      import('preact/hooks').catch(() => null) // preact/hooks 可能不存在，允许失败
     ]);
     
     globalThis.__PREACT_MODULES__ = {
@@ -1319,11 +1320,17 @@ export class RouteHandler {
       jsx: jsxRuntimeModule.jsx
     };
     
-    // 如果 preact-router 可用，也预加载到全局作用域
-    if (preactRouterModule) {
-      globalThis.__PREACT_ROUTER__ = {
-        Router: preactRouterModule.Router,
-        Route: preactRouterModule.Route
+    // 如果 preact/hooks 可用，也预加载到全局作用域
+    if (hooksModule) {
+      globalThis.__PREACT_HOOKS__ = {
+        useState: hooksModule.useState,
+        useEffect: hooksModule.useEffect,
+        useCallback: hooksModule.useCallback,
+        useMemo: hooksModule.useMemo,
+        useRef: hooksModule.useRef,
+        useContext: hooksModule.useContext,
+        useReducer: hooksModule.useReducer,
+        useLayoutEffect: hooksModule.useLayoutEffect
       };
     }
   } catch (_error) {

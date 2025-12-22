@@ -22,7 +22,7 @@ async function compileClientScript(): Promise<string> {
     // 读取浏览器端脚本文件
     const browserScriptPath = path.join(
       path.dirname(new URL(import.meta.url).pathname),
-      "hmr-browser.ts",
+      "browser-hmr.ts",
     );
     const browserScriptContent = await Deno.readTextFile(browserScriptPath);
 
