@@ -36,6 +36,8 @@ export interface PrefetchConfig {
 	enabled?: boolean;
 	/** 预加载的路由，支持通配符模式 */
   routes?: string[];
+  /** 是否在预加载时显示全屏加载状态，默认 false */
+  loading?: boolean;
 }
 
 // 应用配置

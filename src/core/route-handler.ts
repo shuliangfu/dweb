@@ -1461,6 +1461,7 @@ export class RouteHandler {
 
       // 获取 prefetch 配置并解析通配符模式
       const prefetchConfig = this.config?.prefetch?.routes;
+      const prefetchLoading = this.config?.prefetch?.loading ?? false;
       let prefetchRoutes: string[] | undefined;
 
       if (Array.isArray(prefetchConfig) && prefetchConfig.length > 0) {
@@ -1477,6 +1478,7 @@ export class RouteHandler {
         allLayoutPathsForClient,
         layoutDisabled,
         prefetchRoutes,
+        prefetchLoading,
       );
 
       // 对于 CSR 模式，将链接拦截器脚本注入到 head（尽早执行）

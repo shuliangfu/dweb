@@ -48,8 +48,8 @@ export default function App({ children }: AppProps) {
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-jsx.min.js" />
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-tsx.min.js" />
       </head>
-      <body id="root">
-        {children}
+      <body>
+        <div id="root">{children}</div>
       </body>
     </html>
   );

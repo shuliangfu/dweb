@@ -15,6 +15,50 @@ interface ClientConfig {
   metadata: any;
   layout: boolean | undefined;
   prefetchRoutes?: string[];
+  prefetchLoading?: boolean;
+}
+
+/**
+ * 创建预加载全屏加载状态元素
+ */
+function createPrefetchLoadElement(): HTMLElement {
+  const loadElement = document.createElement("div");
+  loadElement.id = "__dweb_prefetch_load__";
+  loadElement.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+    backdrop-filter: blur(4px);
+  `;
+
+  const spinner = document.createElement("div");
+  spinner.style.cssText = `
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  `;
+
+  // 添加旋转动画
+  const style = document.createElement("style");
+  style.textContent = `
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  `;
+  document.head.appendChild(style);
+
+  loadElement.appendChild(spinner);
+  return loadElement;
 }
 
 /**
@@ -22,7 +66,7 @@ interface ClientConfig {
  */
 function isValidInternalLink(link: HTMLAnchorElement): string | null {
   const href = link.getAttribute("href");
-  
+
   // 排除特殊链接
   if (
     !href ||
@@ -162,7 +206,11 @@ async function loadLayoutComponents(pageData: any): Promise<any[]> {
           }
         }
       } catch (layoutError) {
-        console.warn("[Layout] 布局加载失败，跳过该布局:", layoutPath, layoutError);
+        console.warn(
+          "[Layout] 布局加载失败，跳过该布局:",
+          layoutPath,
+          layoutError,
+        );
       }
     }
   } else if (
@@ -205,7 +253,10 @@ async function createPageElement(
     }
   } catch (callError) {
     // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
-    console.warn("[createPageElement] 直接调用组件失败，尝试使用 jsx 函数:", callError);
+    console.warn(
+      "[createPageElement] 直接调用组件失败，尝试使用 jsx 函数:",
+      callError,
+    );
     pageElement = jsxFunc(PageComponent, props);
     if (pageElement instanceof Promise) {
       pageElement = await pageElement;
@@ -243,7 +294,10 @@ async function nestLayoutComponents(
       }
     } catch (layoutError) {
       // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
-      console.warn("[nestLayoutComponents] 直接调用布局组件失败，尝试使用 jsx 函数:", layoutError);
+      console.warn(
+        "[nestLayoutComponents] 直接调用布局组件失败，尝试使用 jsx 函数:",
+        layoutError,
+      );
       try {
         const layoutResult = jsxFunc(LayoutComponent, {
           children: currentElement,
@@ -255,7 +309,10 @@ async function nestLayoutComponents(
         }
       } catch (jsxError) {
         // 如果都失败，跳过该布局，继续使用当前元素
-        console.error("[nestLayoutComponents] 布局组件渲染失败，跳过该布局:", jsxError);
+        console.error(
+          "[nestLayoutComponents] 布局组件渲染失败，跳过该布局:",
+          jsxError,
+        );
       }
     }
   }
@@ -432,9 +489,11 @@ async function initClientSideNavigation(
 
       // 解析 HTML 并查找 JSON script 标签
       const doc = new DOMParser().parseFromString(html, "text/html");
-      
+
       // 查找 data-type="dweb-page-data" 的 JSON script 标签
-      const pageDataScript = doc.querySelector('script[data-type="dweb-page-data"]');
+      const pageDataScript = doc.querySelector(
+        'script[data-type="dweb-page-data"]',
+      );
 
       if (!pageDataScript) {
         throw new Error("页面数据未找到");
@@ -445,7 +504,7 @@ async function initClientSideNavigation(
       let pageDataJson = pageDataScript.textContent || "{}";
       // 去掉末尾的分号和空白字符
       pageDataJson = pageDataJson.trim().replace(/;+$/, "");
-      
+
       let pageData: any;
       try {
         pageData = JSON.parse(pageDataJson);
@@ -510,7 +569,11 @@ async function initClientSideNavigation(
       try {
         pageModule = await import(pageData.route);
       } catch (importError: any) {
-        console.error("[navigateTo] 组件导入失败:", pageData.route, importError);
+        console.error(
+          "[navigateTo] 组件导入失败:",
+          pageData.route,
+          importError,
+        );
         throw new Error(`组件导入失败: ${importError.message}`);
       }
 
@@ -564,7 +627,10 @@ async function initClientSideNavigation(
             }
           } catch (hydrateError) {
             // hydration 失败，使用 render
-            console.warn("[navigateTo] hydration 失败，回退到 render:", hydrateError);
+            console.warn(
+              "[navigateTo] hydration 失败，回退到 render:",
+              hydrateError,
+            );
             renderFunc(finalElement, container);
           }
         } else {
@@ -714,7 +780,9 @@ async function initClientSideNavigation(
   }
 
   // 暴露预取函数给链接拦截器（用于鼠标悬停预取）
-  (globalThis as any).__prefetchPageData = async function (pathname: string): Promise<void> {
+  (globalThis as any).__prefetchPageData = async function (
+    pathname: string,
+  ): Promise<void> {
     try {
       // 如果已经在缓存中，不需要预取
       if (pageDataCache.has(pathname)) {
@@ -731,7 +799,7 @@ async function initClientSideNavigation(
 
       // 1. 加载页面数据（获取 route 和布局信息）
       const pageData = await loadPageData(pathname);
-      
+
       // 2. 预加载页面组件模块
       if (pageData?.route && typeof pageData.route === "string") {
         try {
@@ -744,15 +812,20 @@ async function initClientSideNavigation(
       // 3. 预加载布局组件模块（如果有）
       if (pageData?.allLayoutPaths && Array.isArray(pageData.allLayoutPaths)) {
         // 并行预加载所有布局组件
-        const layoutPromises = pageData.allLayoutPaths.map(async (layoutPath: string) => {
-          try {
-            await import(layoutPath);
-          } catch (_layoutError) {
-            // 布局导入失败时静默处理
-          }
-        });
+        const layoutPromises = pageData.allLayoutPaths.map(
+          async (layoutPath: string) => {
+            try {
+              await import(layoutPath);
+            } catch (_layoutError) {
+              // 布局导入失败时静默处理
+            }
+          },
+        );
         await Promise.all(layoutPromises);
-      } else if (pageData?.layoutPath && typeof pageData.layoutPath === "string" && pageData.layoutPath !== "null") {
+      } else if (
+        pageData?.layoutPath && typeof pageData.layoutPath === "string" &&
+        pageData.layoutPath !== "null"
+      ) {
         // 向后兼容：单个布局路径
         try {
           await import(pageData.layoutPath);
@@ -976,7 +1049,11 @@ async function initClientRender(config: ClientConfig): Promise<void> {
     try {
       module = await import(config.route);
     } catch (importError: any) {
-      console.error("[initClientRender] 页面组件导入失败:", config.route, importError);
+      console.error(
+        "[initClientRender] 页面组件导入失败:",
+        config.route,
+        importError,
+      );
       throw new Error("页面组件导入失败: " + importError.message);
     }
 
@@ -1023,7 +1100,10 @@ async function initClientRender(config: ClientConfig): Promise<void> {
           hydrate(finalElement, container);
         } catch (hydrateError) {
           // hydration 失败，使用 render（会清空容器）
-          console.warn("[initClientRender] hydration 失败，回退到 render:", hydrateError);
+          console.warn(
+            "[initClientRender] hydration 失败，回退到 render:",
+            hydrateError,
+          );
           render(finalElement, container);
         }
       } else {
@@ -1069,7 +1149,10 @@ async function initClientRender(config: ClientConfig): Promise<void> {
         } catch (hydrateError) {
           // 如果 hydration 失败，回退到 render（会清空容器，但此时组件已准备好）
           // 这样可以确保页面有内容，而不是空白
-          console.warn("[initClientRender] hydration 失败，回退到 render:", hydrateError);
+          console.warn(
+            "[initClientRender] hydration 失败，回退到 render:",
+            hydrateError,
+          );
           render(finalElement, container);
         }
       } else {
@@ -1095,7 +1178,7 @@ async function initClientRender(config: ClientConfig): Promise<void> {
   } catch (error: any) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error("[initClientRender] 客户端渲染失败:", errorMsg, error);
-    
+
     // 在页面上显示错误信息（开发环境）
     const container = document.getElementById("root");
     if (container) {
@@ -1137,27 +1220,42 @@ function initClient(config: ClientConfig): void {
     layout: config.layout,
   };
 
+  const hasPrefetch = config.prefetchRoutes &&
+    Array.isArray(config.prefetchRoutes) && config.prefetchRoutes.length > 0;
+
   // 设置更新 meta 标签的函数
   setupUpdateMetaTagsFunction();
+
+  // 创建全屏加载状态（如果需要）
+  let loadElement: HTMLElement | null = null;
+  if (hasPrefetch) {
+    const showLoading = config.prefetchLoading === true;
+    if (showLoading) {
+      loadElement = createPrefetchLoadElement();
+      document.body.appendChild(loadElement);
+    }
+  }
 
   // 初始化客户端渲染（链接拦截器会在导航函数准备好后自动初始化）
   initClientRender(config);
 
   // 预加载配置的路由（如果配置了）
-  if (config.prefetchRoutes && Array.isArray(config.prefetchRoutes) && config.prefetchRoutes.length > 0) {
+  if (hasPrefetch) {
     // 延迟预加载，避免影响首屏加载
     setTimeout(() => {
       const prefetchFn = (globalThis as any).__prefetchPageData;
       if (typeof prefetchFn === "function") {
         const basePath = config.basePath || "/";
         const routes = config.prefetchRoutes!; // 已经检查过不为空
-        
+
         // 并发预加载所有路由（使用 Promise.allSettled 确保所有请求都能完成）
         const prefetchPromises = routes.map((route: string) => {
           // 处理 basePath
           let fullRoute = route;
           if (basePath !== "/" && !route.startsWith(basePath)) {
-            const base = basePath.endsWith("/") ? basePath.slice(0, -1) : basePath;
+            const base = basePath.endsWith("/")
+              ? basePath.slice(0, -1)
+              : basePath;
             fullRoute = base + (route.startsWith("/") ? route : "/" + route);
           }
           // 异步预加载，不阻塞
@@ -1165,10 +1263,18 @@ function initClient(config: ClientConfig): void {
             // 预加载失败时静默处理
           });
         });
-        
+
         // 等待所有预加载完成（不阻塞，后台执行）
-        Promise.allSettled(prefetchPromises).catch(() => {
-          // 静默处理
+        Promise.allSettled(prefetchPromises).then(() => {
+          // 预加载完成后移除加载状态
+          if (loadElement && loadElement.parentNode) {
+            loadElement.parentNode.removeChild(loadElement);
+          }
+        }).catch(() => {
+          // 即使出错也要移除加载状态
+          if (loadElement && loadElement.parentNode) {
+            loadElement.parentNode.removeChild(loadElement);
+          }
         });
       }
     }, 1000); // 1秒后开始预加载
