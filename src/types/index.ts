@@ -259,6 +259,17 @@ export interface RouteConfig {
 export interface ServerConfig {
   port?: number;
   host?: string;
+  /** TLS/HTTPS 配置（可选） */
+  tls?: {
+    /** 证书文件路径或证书内容（PEM 格式） */
+    certFile?: string;
+    /** 私钥文件路径或私钥内容（PEM 格式） */
+    keyFile?: string;
+    /** 证书内容（字节数组，与 certFile 二选一） */
+    cert?: Uint8Array;
+    /** 私钥内容（字节数组，与 keyFile 二选一） */
+    key?: Uint8Array;
+  };
 }
 
 // Cookie 配置

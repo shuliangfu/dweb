@@ -526,11 +526,13 @@ export async function startDevServer(config: AppConfig): Promise<void> {
   // 启动服务器
   const port = config.server!.port || 3000;
   const host = config.server!.host || "localhost";
+  const tls = config.server!.tls;
 
   // 如果配置了自动打开浏览器
   if (config.dev?.open) {
     setTimeout(() => {
-      const url = `http://${host}:${port}`;
+      const protocol = tls ? 'https' : 'http';
+      const url = `${protocol}://${host}:${port}`;
       try {
         const command = new Deno.Command("open", {
           args: [url],

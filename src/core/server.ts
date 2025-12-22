@@ -499,8 +499,18 @@ export class Server {
    * 启动服务器
    * @param port 端口号
    * @param host 主机地址
+   * @param tls TLS 配置（可选，用于启用 HTTPS）
    */
-  async start(port: number, host: string): Promise<void> {
+  async start(
+    port: number,
+    host: string,
+    tls?: {
+      certFile?: string;
+      keyFile?: string;
+      cert?: Uint8Array;
+      key?: Uint8Array;
+    }
+  ): Promise<void> {
     const handler = async (req: globalThis.Request): Promise<globalThis.Response> => {
       try {
         // 确保请求有有效的 URL
@@ -516,19 +526,46 @@ export class Server {
       }
     };
 
-    // 使用 Deno.serve 启动服务器
-    // 使用 onListen 回调来禁用默认的 "Listening on" 输出
-    // Deno.serve 返回一个包含 shutdown 方法的对象
-    const serverHandle = Deno.serve(
-      {
-        port,
-        hostname: host,
-        onListen: () => {
-          console.log(`✅ 服务器已启动: http://${host}:${port}`);
-        }, // 禁用默认的 "Listening on" 输出
+    // 准备 Deno.serve 配置
+    const serveOptions: Deno.ServeOptions = {
+      port,
+      hostname: host,
+      onListen: () => {
+        const protocol = tls ? 'https' : 'http';
+        console.log(`✅ 服务器已启动: ${protocol}://${host}:${port}`);
       },
-      handler
-    );
+    };
+
+    // 如果配置了 TLS，添加证书和私钥
+    if (tls) {
+      let cert: Uint8Array;
+      let key: Uint8Array;
+
+      // 读取证书文件或使用提供的证书内容
+      if (tls.certFile) {
+        cert = await Deno.readFile(tls.certFile);
+      } else if (tls.cert) {
+        cert = tls.cert;
+      } else {
+        throw new Error('TLS 配置错误：必须提供 certFile 或 cert');
+      }
+
+      // 读取私钥文件或使用提供的私钥内容
+      if (tls.keyFile) {
+        key = await Deno.readFile(tls.keyFile);
+      } else if (tls.key) {
+        key = tls.key;
+      } else {
+        throw new Error('TLS 配置错误：必须提供 keyFile 或 key');
+      }
+
+      serveOptions.cert = cert;
+      serveOptions.key = key;
+    }
+
+    // 使用 Deno.serve 启动服务器
+    // Deno.serve 返回一个包含 shutdown 方法的对象
+    const serverHandle = Deno.serve(serveOptions, handler);
     this.serverHandle = {
       shutdown: () => serverHandle.shutdown(),
       finished: serverHandle.finished || Promise.resolve(),
