@@ -68,9 +68,9 @@ const config: AppConfig = {
   },
 
   prefetch: {
-		enabled: true,
-		loading: true,
-    routes: ["*"],
+    enabled: true,
+    loading: true,
+    routes: ["/*/*"],
   },
 
   // 插件配置
