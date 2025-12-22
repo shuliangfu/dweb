@@ -258,16 +258,7 @@ function initTheme(config: ThemeConfig): void {
     themeStore.value = actualTheme;
   }
 
-  // 添加过渡效果（如果启用）
-  if (config.transition !== false) {
-    const style = document.createElement("style");
-    style.textContent = `
-      * {
-        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-      }
-    `;
-    document.head.appendChild(style);
-  }
+  // 注意：过渡效果的 style 标签由服务端注入，不需要在客户端创建
 }
 
 // 暴露到全局，供内联脚本调用
