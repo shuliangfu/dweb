@@ -652,7 +652,7 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   // 生产环境不允许使用 tls: true（必须使用自定义证书）
   if (tls === true) {
     throw new Error(
-      '生产环境不允许使用 tls: true，必须提供自定义证书配置。请使用 tls: { certFile: "...", keyFile: "..." } 或 tls: { cert: ..., key: ... }'
+      '生产环境不允许使用 tls: true，必须提供自定义证书配置。\n请使用 tls: { certFile: "...", keyFile: "..." } 或 tls: { cert: ..., key: ... }'
     );
   }
 
