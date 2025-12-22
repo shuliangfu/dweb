@@ -28,17 +28,6 @@ function generateMetaTags(options: SEOPluginOptions, pageData?: {
   const tags: string[] = [];
   
   // 基础 meta 标签
-  const title = pageData?.title || options.defaultTitle || '';
-  const finalTitle = options.titleTemplate 
-    ? options.titleTemplate.replace('%s', title)
-    : title;
-  
-  if (finalTitle) {
-    tags.push(`<title>${escapeHtml(finalTitle)}</title>`);
-    tags.push(`<meta property="og:title" content="${escapeHtml(finalTitle)}" />`);
-    tags.push(`<meta name="twitter:title" content="${escapeHtml(finalTitle)}" />`);
-  }
-  
   const description = pageData?.description || options.defaultDescription || '';
   if (description) {
     tags.push(`<meta name="description" content="${escapeHtml(description)}" />`);
@@ -55,10 +44,6 @@ function generateMetaTags(options: SEOPluginOptions, pageData?: {
   if (author) {
     tags.push(`<meta name="author" content="${escapeHtml(author)}" />`);
   }
-  
-  const lang = pageData?.lang || options.defaultLang || 'en';
-  // 注意：lang 属性应该在 <html> 标签上，这里只生成 meta 标签
-  // 实际的 lang 属性注入应该在 HTML 处理时完成
   
   // Canonical URL
   if (options.canonical !== false) {
@@ -174,6 +159,17 @@ function generateMetaTags(options: SEOPluginOptions, pageData?: {
         tags.push(`<meta property="${escapeHtml(meta.property)}" content="${escapeHtml(meta.content)}" />`);
       }
     }
+	}
+	
+	const title = pageData?.title || options.defaultTitle || '';
+  const finalTitle = options.titleTemplate 
+    ? options.titleTemplate.replace('%s', title)
+    : title;
+  
+  if (finalTitle) {
+    tags.push(`<meta property="og:title" content="${escapeHtml(finalTitle)}" />`);
+    tags.push(`<meta name="twitter:title" content="${escapeHtml(finalTitle)}" />`);
+    tags.push(`<title>${escapeHtml(finalTitle)}</title>`);
   }
   
   return tags.join('\n    ');
