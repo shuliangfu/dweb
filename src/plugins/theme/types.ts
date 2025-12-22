@@ -28,9 +28,7 @@ export interface ThemeConfig {
 /**
  * 主题切换插件选项
  */
-export interface ThemePluginOptions {
-  /** 主题配置 */
-  config?: ThemeConfig;
+export interface ThemePluginOptions extends ThemeConfig {
   /** 是否在服务端注入主题脚本 */
   injectScript?: boolean;
 }

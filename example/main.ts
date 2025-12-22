@@ -33,13 +33,11 @@ app.plugin(
 // 主题插件
 app.plugin(
   theme({
-    config: {
-      defaultTheme: 'light', // 'light' | 'dark'（暂时移除 'auto' 选项）
-      storageKey: 'theme',
-      injectDataAttribute: true,
-      injectBodyClass: true,
-      transition: true,
-    },
+    defaultTheme: 'light', // 'light' | 'dark' | 'auto'
+    storageKey: 'theme',
+    injectDataAttribute: true,
+    injectBodyClass: true,
+    transition: true,
   })
 );
 
