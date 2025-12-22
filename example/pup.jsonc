@@ -1,0 +1,24 @@
+{
+  "processes": [
+    {
+			// 实例名称
+      "id": "dweb-example",
+      // 启动命令
+      "cmd": "deno run -A ../src/cli.ts start",
+      // 自动启动
+      "autostart": true,
+			// 集群模式
+      "cluster": { "instances": 1 },
+      // 故障策略：崩溃后延迟 5 秒重启
+      "restart": "always",
+      "restartDelayMs": 5000,
+      // 监听文件
+      "watch": ["dist", "dweb.config.ts"],
+      // 输出日志
+      "logger": {
+        "stdout": "./logs/dweb.log",
+        "stderr": "./logs/error.log"
+      }	
+    }
+  ]
+}
