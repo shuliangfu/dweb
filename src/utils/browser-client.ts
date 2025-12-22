@@ -16,6 +16,7 @@ interface ClientConfig {
   layout: boolean | undefined;
   prefetchRoutes?: string[];
   prefetchLoading?: boolean;
+  prefetchMode?: "single" | "batch";
 }
 
 class PrefetchRouters {
@@ -24,11 +25,13 @@ class PrefetchRouters {
   private hasPrefetch = false;
   private loadElement: HTMLElement | null = null;
   private prefetchLoading = false;
+  private prefetchMode: "single" | "batch" = "batch";
 
   constructor(config: any) {
     this.config = config;
     this.routes = config.prefetchRoutes || [];
     this.prefetchLoading = config.prefetchLoading || false;
+    this.prefetchMode = config.prefetchMode || "batch";
     this.hasPrefetch = this.routes && Array.isArray(this.routes) &&
       this.routes.length > 0;
   }
@@ -45,8 +48,12 @@ class PrefetchRouters {
 
   prefetch() {
     // 预加载配置的路由（如果配置了）
-    if (this.hasPrefetch) {
-      // 延迟预加载，避免影响首屏加载
+    if (!this.hasPrefetch) {
+      return;
+    }
+
+    if (this.prefetchMode === "single") {
+      // 逐个请求模式：延迟预加载，避免影响首屏加载
       setTimeout(() => {
         const prefetchFn = (globalThis as any).__prefetchPageData;
         if (typeof prefetchFn === "function") {
@@ -81,6 +88,152 @@ class PrefetchRouters {
               this.loadElement.parentNode.removeChild(this.loadElement);
             }
           });
+        }
+      }, 1000); // 1秒后开始预加载
+    } else if (this.prefetchMode === "batch") {
+      // 批量请求模式：发送一次请求，服务端打包返回所有路由数据
+      setTimeout(async () => {
+        try {
+          const basePath = this.config.basePath || "/";
+
+          // 构建批量预加载请求 URL
+          const batchUrl = basePath === "/"
+            ? "/__prefetch/batch"
+            : `${basePath}/__prefetch/batch`;
+
+          // 发送批量请求（GET 请求）
+          const response = await fetch(batchUrl, {
+            method: "GET",
+          });
+
+          if (!response.ok) {
+            throw new Error(`批量预加载请求失败: ${response.status}`);
+          }
+
+          // 解析返回的打包数据（路由、组件代码和页面数据的数组）
+          const batchData = await response.json() as Array<{
+            route: string;
+            body: string;
+            pageData: Record<string, unknown>;
+          }>;
+
+          // 处理返回的数据，缓存页面数据并执行组件代码（参考 single 模式）
+          if (batchData && Array.isArray(batchData)) {
+            const prefetchPromises: Promise<void>[] = [];
+            const pageDataCache = (globalThis as any).__pageDataCache;
+            const basePath = this.config.basePath || "/";
+
+            for (const item of batchData) {
+              if (item && item.route && item.body && item.pageData) {
+                // 规范化路径（与 navigateTo 中的逻辑一致）
+                let normalizedRoute = item.route;
+                if (basePath !== "/") {
+                  const base = basePath.endsWith("/") ? basePath.slice(0, -1) : basePath;
+                  if (!normalizedRoute.startsWith(base) && normalizedRoute.startsWith("/")) {
+                    normalizedRoute = base + normalizedRoute;
+                  }
+                }
+
+                // 缓存页面数据（使用规范化后的路径作为 key，与 loadPageData 中的逻辑一致）
+                if (pageDataCache && typeof pageDataCache.set === "function") {
+                  pageDataCache.set(normalizedRoute, item.pageData);
+                }
+
+                // 使用 __prefetchPageData 的逻辑来处理预加载
+                // 但由于 pageData 已经缓存，__prefetchPageData 会直接返回
+                // 所以我们需要手动执行预加载逻辑
+                const prefetchPromise = (async () => {
+                  try {
+                    const pageData = item.pageData;
+
+                    // 1. 预加载页面组件模块（使用 Data URL，避免 Blob URL 和 HTTP 请求）
+                    if (pageData?.route && typeof pageData.route === "string") {
+                      try {
+                        // 使用 Data URL 来执行组件代码（不会在 Network 面板显示）
+                        const dataUrl = `data:application/javascript;charset=utf-8,${encodeURIComponent(item.body)}`;
+                        const module = await import(dataUrl);
+                        
+                        // 验证模块是否有效
+                        if (!module || typeof module !== "object") {
+                          throw new Error("模块导入返回无效值");
+                        }
+                        if (!module.default) {
+                          throw new Error("模块未导出默认组件");
+                        }
+                        
+                        // 将模块缓存到实际的 HTTP URL（这样 navigateTo 时可以直接使用）
+                        const moduleCache = (globalThis as any).__moduleCache;
+                        if (moduleCache && typeof moduleCache.set === "function") {
+                          moduleCache.set(pageData.route, module);
+                        }
+                      } catch (_importError) {
+                        // 组件导入失败时静默处理
+                      }
+                    }
+
+                    // 2. 预加载布局组件模块（如果有）
+                    const moduleCache = (globalThis as any).__moduleCache;
+                    if (pageData?.allLayoutPaths && Array.isArray(pageData.allLayoutPaths)) {
+                      // 并行预加载所有布局组件
+                      const layoutPromises = pageData.allLayoutPaths.map(
+                        async (layoutPath: string) => {
+                          try {
+                            const layoutModule = await import(layoutPath);
+                            // 验证模块是否有效
+                            if (!layoutModule || typeof layoutModule !== "object") {
+                              throw new Error("布局模块导入返回无效值");
+                            }
+                            // 缓存布局模块，避免重复导入
+                            if (moduleCache && typeof moduleCache.set === "function") {
+                              moduleCache.set(layoutPath, layoutModule);
+                            }
+                          } catch (_layoutError) {
+                            // 布局导入失败时静默处理
+                          }
+                        },
+                      );
+                      await Promise.all(layoutPromises);
+                    } else if (
+                      pageData?.layoutPath && typeof pageData.layoutPath === "string" &&
+                      pageData.layoutPath !== "null"
+                    ) {
+                      // 向后兼容：单个布局路径
+                      try {
+                        const layoutModule = await import(pageData.layoutPath);
+                        // 验证模块是否有效
+                        if (!layoutModule || typeof layoutModule !== "object") {
+                          throw new Error("布局模块导入返回无效值");
+                        }
+                        // 缓存布局模块，避免重复导入
+                        if (moduleCache && typeof moduleCache.set === "function") {
+                          moduleCache.set(pageData.layoutPath, layoutModule);
+                        }
+                      } catch (_layoutError) {
+                        // 布局导入失败时静默处理
+                      }
+                    }
+                  } catch (_e) {
+                    // 预取失败时静默处理（不影响正常导航）
+                  }
+                })();
+
+                prefetchPromises.push(prefetchPromise);
+              }
+            }
+
+            // 等待所有预加载完成（类似 single 模式中的 Promise.allSettled）
+            await Promise.allSettled(prefetchPromises);
+          }
+
+          // 预加载完成后移除加载状态
+          if (this.loadElement && this.loadElement.parentNode) {
+            this.loadElement.parentNode.removeChild(this.loadElement);
+          }
+        } catch (_error) {
+          // 批量预加载失败时静默处理，移除加载状态
+          if (this.loadElement && this.loadElement.parentNode) {
+            this.loadElement.parentNode.removeChild(this.loadElement);
+          }
         }
       }, 1000); // 1秒后开始预加载
     }
@@ -261,9 +414,24 @@ async function loadLayoutComponents(pageData: any): Promise<any[]> {
   ) {
     // 加载所有布局组件（从最具体到最通用）
     // 如果某个布局设置了 layout = false，则停止继承
+    const moduleCache = (globalThis as any).__moduleCache;
     for (const layoutPath of pageData.allLayoutPaths) {
       try {
-        const layoutModule = await import(layoutPath);
+        // 先检查模块缓存
+        let layoutModule: any;
+        if (moduleCache && typeof moduleCache.get === "function") {
+          layoutModule = moduleCache.get(layoutPath);
+        }
+
+        // 如果缓存中没有，则动态导入
+        if (!layoutModule) {
+          layoutModule = await import(layoutPath);
+          // 缓存布局模块，避免重复导入
+          if (moduleCache && typeof moduleCache.set === "function") {
+            moduleCache.set(layoutPath, layoutModule);
+          }
+        }
+
         const LayoutComponent = layoutModule?.default;
         if (LayoutComponent && typeof LayoutComponent === "function") {
           LayoutComponents.push(LayoutComponent);
@@ -287,8 +455,23 @@ async function loadLayoutComponents(pageData: any): Promise<any[]> {
     typeof pageData.layoutPath === "string"
   ) {
     // 向后兼容：如果只有单个布局路径
+    const moduleCache = (globalThis as any).__moduleCache;
     try {
-      const layoutModule = await import(pageData.layoutPath);
+      // 先检查模块缓存
+      let layoutModule: any;
+      if (moduleCache && typeof moduleCache.get === "function") {
+        layoutModule = moduleCache.get(pageData.layoutPath);
+      }
+
+      // 如果缓存中没有，则动态导入
+      if (!layoutModule) {
+        layoutModule = await import(pageData.layoutPath);
+        // 缓存布局模块，避免重复导入
+        if (moduleCache && typeof moduleCache.set === "function") {
+          moduleCache.set(pageData.layoutPath, layoutModule);
+        }
+      }
+
       const LayoutComponent = layoutModule?.default;
       if (LayoutComponent && typeof LayoutComponent === "function") {
         LayoutComponents.push(LayoutComponent);
@@ -461,7 +644,13 @@ async function initClientSideNavigation(
 
   // 页面数据缓存（避免重复请求相同页面）
   const pageDataCache = new Map<string, any>();
-  const MAX_CACHE_SIZE = 100; // 最多缓存 100 个页面
+
+  // 模块缓存（避免重复导入相同模块）
+  const moduleCache = new Map<string, any>();
+
+  // 暴露到全局，供 PrefetchRouters 类使用
+  (globalThis as any).__pageDataCache = pageDataCache;
+  (globalThis as any).__moduleCache = moduleCache;
 
   // 提取并更新 i18n 数据（从 HTML 中提取 window.__I18N_DATA__）
   function extractAndUpdateI18nData(html: string): void {
@@ -551,8 +740,8 @@ async function initClientSideNavigation(
         throw new Error(`请求失败: ${response.status}`);
       }
 
-      const html = await response.text();
-
+			const html = await response.text();
+			
       // 提取并更新 i18n 数据（在解析页面数据之前）
       extractAndUpdateI18nData(html);
 
@@ -587,14 +776,7 @@ async function initClientSideNavigation(
         throw new Error("页面数据格式无效");
       }
 
-      // 存入缓存（限制缓存大小，避免内存泄漏）
-      if (pageDataCache.size >= MAX_CACHE_SIZE) {
-        // 删除最旧的缓存项（FIFO）
-        const firstKey = pageDataCache.keys().next().value;
-        if (firstKey) {
-          pageDataCache.delete(firstKey);
-        }
-      }
+      // 存入缓存
       pageDataCache.set(pathname, pageData);
 
       return pageData;
@@ -633,32 +815,76 @@ async function initClientSideNavigation(
         throw new Error("页面数据缺少 route 字段，无法加载组件");
       }
 
-      // 加载组件
+      // 加载组件（先检查模块缓存）
       let pageModule: any;
-      try {
-        pageModule = await import(pageData.route);
-      } catch (importError: any) {
-        console.error(
-          "[navigateTo] 组件导入失败:",
-          pageData.route,
-          importError,
-        );
-        throw new Error(`组件导入失败: ${importError.message}`);
+      const moduleCache = (globalThis as any).__moduleCache;
+      if (moduleCache && typeof moduleCache.get === "function") {
+        pageModule = moduleCache.get(pageData.route);
+        // 验证缓存的模块是否有效
+        if (pageModule && (!pageModule.default || typeof pageModule.default !== "function")) {
+          // 缓存的模块无效，清除缓存并重新导入
+          console.warn(
+            "[navigateTo] 缓存的模块无效，重新导入:",
+            pageData.route,
+          );
+          moduleCache.delete(pageData.route);
+          pageModule = null;
+        }
+      }
+
+      // 如果缓存中没有或缓存无效，则动态导入
+      if (!pageModule) {
+        try {
+          pageModule = await import(pageData.route);
+          // 验证导入的模块是否有效
+          if (!pageModule || typeof pageModule !== "object") {
+            throw new Error("模块导入返回无效值");
+          }
+          if (!pageModule.default || typeof pageModule.default !== "function") {
+            throw new Error("模块未导出默认组件或组件不是函数");
+          }
+          // 缓存模块，避免重复导入
+          if (moduleCache && typeof moduleCache.set === "function") {
+            moduleCache.set(pageData.route, pageModule);
+          }
+        } catch (importError: any) {
+          console.error(
+            "[navigateTo] 组件导入失败:",
+            pageData.route,
+            importError,
+          );
+          throw new Error(`组件导入失败: ${importError.message}`);
+        }
       }
 
       const PageComponent = pageModule.default;
-      if (!PageComponent) {
-        throw new Error("页面组件未导出默认组件");
-      }
-      if (typeof PageComponent !== "function") {
-        throw new Error("页面组件不是函数");
-      }
 
       // 加载所有布局组件（支持布局继承）
       const LayoutComponents = await loadLayoutComponents(pageData);
 
       // 获取页面 props 并添加 Store
-      const pageProps = { ...(pageData.props || {}) };
+      // pageData 的结构：{ route, renderMode, layoutPath, allLayoutPaths, props, ...loadData }
+      // 其中 loadData 是 load 函数返回的数据（如 jsrPackageUrl），应该放在 props.data 中
+      // props 中可能包含 params, query 等字段
+      const excludeKeys = ["route", "renderMode", "layoutPath", "allLayoutPaths", "props"];
+      const loadData: Record<string, unknown> = {};
+      for (const key in pageData) {
+        if (!excludeKeys.includes(key)) {
+          loadData[key] = pageData[key];
+        }
+      }
+
+      // 构建 pageProps，参考服务端的结构：{ params, query, data, ... }
+      const pageProps = {
+        params: (pageData.props as any)?.params || {},
+        query: (pageData.props as any)?.query || {},
+        data: loadData, // load 函数返回的数据（如 jsrPackageUrl）
+        ...(pageData.props || {}), // 保留其他 props 字段（如 lang, metadata 等）
+      };
+      // 确保 data 字段存在（即使 loadData 为空）
+      if (!pageProps.data) {
+        pageProps.data = loadData;
+      }
       if (typeof globalThis !== "undefined" && (globalThis as any).__STORE__) {
         pageProps.store = (globalThis as any).__STORE__;
       }
@@ -879,12 +1105,17 @@ async function initClientSideNavigation(
       }
 
       // 3. 预加载布局组件模块（如果有）
+      const moduleCache = (globalThis as any).__moduleCache;
       if (pageData?.allLayoutPaths && Array.isArray(pageData.allLayoutPaths)) {
         // 并行预加载所有布局组件
         const layoutPromises = pageData.allLayoutPaths.map(
           async (layoutPath: string) => {
             try {
-              await import(layoutPath);
+              const layoutModule = await import(layoutPath);
+              // 缓存布局模块，避免重复导入
+              if (moduleCache && typeof moduleCache.set === "function") {
+                moduleCache.set(layoutPath, layoutModule);
+              }
             } catch (_layoutError) {
               // 布局导入失败时静默处理
             }
@@ -897,7 +1128,11 @@ async function initClientSideNavigation(
       ) {
         // 向后兼容：单个布局路径
         try {
-          await import(pageData.layoutPath);
+          const layoutModule = await import(pageData.layoutPath);
+          // 缓存布局模块，避免重复导入
+          if (moduleCache && typeof moduleCache.set === "function") {
+            moduleCache.set(pageData.layoutPath, layoutModule);
+          }
         } catch (_layoutError) {
           // 布局导入失败时静默处理
         }

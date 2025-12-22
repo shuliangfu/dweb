@@ -59,6 +59,7 @@ async function compileClientScript(): Promise<string> {
  * @param layoutDisabled 是否禁用布局（可选）
  * @param prefetchRoutes 需要预加载的路由数组（可选）
  * @param prefetchLoading 是否在预加载时显示全屏加载状态（可选）
+ * @param prefetchMode 预加载模式：single（逐个请求每个路由的组件）或 batch（一次请求，服务端打包返回所有匹配路由的数据，默认）（可选）
  * @returns 客户端脚本 HTML
  */
 export async function createClientScript(
@@ -72,6 +73,7 @@ export async function createClientScript(
   layoutDisabled: boolean = false,
   prefetchRoutes?: string[],
   prefetchLoading: boolean = false,
+  prefetchMode: "single" | "batch" = "batch",
 ): Promise<string> {
   // 将文件路径转换为 HTTP URL
   const httpUrl = filePathToHttpUrl(routePath);
@@ -127,6 +129,7 @@ export async function createClientScript(
       layout: layoutDisabled ? false : undefined,
       prefetchRoutes: prefetchRoutes || undefined,
       prefetchLoading: prefetchLoading || undefined,
+      prefetchMode: prefetchMode || undefined,
     };
 
     // 转义 JSON 中的 HTML 特殊字符，防止 XSS

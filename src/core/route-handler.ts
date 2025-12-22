@@ -19,6 +19,7 @@ import type { SessionManager } from "../features/session.ts";
 import { removeLoadOnlyImports } from "../utils/module.ts";
 import * as esbuild from "esbuild";
 import {
+  filePathToHttpUrl,
   normalizeModulePath,
   resolveFilePath,
   resolveRelativePath,
@@ -139,10 +140,10 @@ export class RouteHandler {
    * - 生产环境会从 `dist` 目录加载已构建的文件，提高性能
    * - 开发环境会实时编译 TypeScript/TSX 文件，支持热更新
    */
-  private handleModuleRequest(req: Request, res: Response): Promise<void> {
+  private async handleModuleRequest(req: Request, res: Response): Promise<void> {
     // 立即进入异步操作，确保函数不会在同步代码后提前返回
     // 使用 Promise.resolve().then() 确保所有操作都在异步上下文中执行
-    return Promise.resolve().then(async () => {
+    return await Promise.resolve().then(async () => {
       // 确保函数是同步开始的，所有异步操作都在 try 块内
       const url = new URL(req.url);
       const encodedPath = url.pathname.replace(/^\/__modules\//, "");
@@ -307,12 +308,8 @@ export class RouteHandler {
         res.status = 200;
         res.setHeader("Content-Type", contentType);
         res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        res.text(jsCode);
-        // 检查响应体是否已设置
-        const bodyAfterText = res.body;
-        const __bodyLengthAfterText = typeof bodyAfterText === "string"
-          ? bodyAfterText.length
-          : bodyAfterText?.length || 0;
+				res.text(jsCode);
+				
         // 确保响应体已设置
         if (
           !res.body || (typeof res.body === "string" && res.body.trim() === "")
@@ -324,11 +321,6 @@ export class RouteHandler {
         if (res.status !== 200) {
           res.status = 200;
         }
-
-        const finalBody = res.body;
-        const _finalBodyLength = typeof finalBody === "string"
-          ? finalBody.length
-          : finalBody?.length || 0;
       } catch (error) {
         res.status = 500;
         res.setHeader("Content-Type", "text/plain; charset=utf-8");
@@ -385,7 +377,9 @@ export class RouteHandler {
     const moduleReq = new Request(moduleReqUrl, {
       method: req.method,
       headers: req.headers,
-    });
+		});
+		
+		// console.log({ pathname, url})
 
     // 转换为扩展的请求对象
     const extendedModuleReq = this.createExtendedRequest(req, moduleReq);
@@ -604,6 +598,14 @@ export class RouteHandler {
     // 处理模块请求
     if (pathname.startsWith("/__modules/")) {
       await this.handleModuleRequestRoute(req, res, pathname, url);
+      return;
+    }
+
+    // 处理批量预加载请求
+    if (
+      pathname === "/__prefetch/batch" || pathname.endsWith("/__prefetch/batch")
+    ) {
+      await this.handleBatchPrefetch(req, res);
       return;
     }
 
@@ -1462,6 +1464,7 @@ export class RouteHandler {
       // 获取 prefetch 配置并解析通配符模式
       const prefetchConfig = this.config?.prefetch?.routes;
       const prefetchLoading = this.config?.prefetch?.loading ?? false;
+      const prefetchMode = this.config?.prefetch?.mode ?? "batch";
       let prefetchRoutes: string[] | undefined;
 
       if (Array.isArray(prefetchConfig) && prefetchConfig.length > 0) {
@@ -1479,6 +1482,7 @@ export class RouteHandler {
         layoutDisabled,
         prefetchRoutes,
         prefetchLoading,
+        prefetchMode,
       );
 
       // 对于 CSR 模式，将链接拦截器脚本注入到 head（尽早执行）
@@ -1553,10 +1557,10 @@ export class RouteHandler {
       if (route.type !== "page") return false;
       // 排除以 _ 开头的特殊路由
       const pathSegments = route.path.split("/").filter(Boolean);
-      return !pathSegments.some(segment => segment.startsWith("_"));
+      return !pathSegments.some((segment) => segment.startsWith("_"));
     });
     const matchedRoutes = new Set<string>();
-    
+
     // 获取 basePath（用于从路由路径中移除 basePath 前缀）
     const basePath = this.router.getBasePath();
     const normalizedBasePath = basePath !== "/" && basePath.endsWith("/")
@@ -1573,25 +1577,29 @@ export class RouteHandler {
         // 通配符模式：计算最大路径深度（/ 的数量）
         // 例如：/* 最大深度为1（匹配深度 <= 1），/*/* 最大深度为2（匹配深度 <= 2），/*/*/* 最大深度为3（匹配深度 <= 3）
         const maxDepth = pattern.split("/").filter(Boolean).length;
-        
+
         pageRoutes.forEach((route) => {
           // 从路由路径中移除 basePath 前缀（如果存在）
           let routePath = route.path;
-          if (normalizedBasePath !== "/" && routePath.startsWith(normalizedBasePath)) {
+          if (
+            normalizedBasePath !== "/" &&
+            routePath.startsWith(normalizedBasePath)
+          ) {
             routePath = routePath.slice(normalizedBasePath.length);
             // 如果移除后为空，说明是根路径，设置为 "/"
             if (!routePath) {
               routePath = "/";
             }
           }
-          
+
           // 移除动态参数部分（如 [id]）来计算深度
           // 例如：/users/[id] -> /users/param -> 深度为 2
           const pathWithoutParams = routePath.replace(/\[[^\]]+\]/g, "param");
-          
+
           // 计算路径深度（排除 basePath 后的深度）
-          const routeDepth = pathWithoutParams.split("/").filter(Boolean).length;
-          
+          const routeDepth =
+            pathWithoutParams.split("/").filter(Boolean).length;
+
           // 匹配深度 <= maxDepth 的路由（例如 /*/* 匹配深度 1 和 2）
           if (routeDepth > 0 && routeDepth <= maxDepth) {
             matchedRoutes.add(route.path); // 使用原始路径（包含 basePath）
@@ -1600,9 +1608,12 @@ export class RouteHandler {
       } else {
         // 具体路由路径，需要处理 basePath
         let fullRoute = pattern;
-        if (normalizedBasePath !== "/" && !pattern.startsWith(normalizedBasePath)) {
+        if (
+          normalizedBasePath !== "/" && !pattern.startsWith(normalizedBasePath)
+        ) {
           // 如果模式路径不包含 basePath，添加 basePath 前缀
-          fullRoute = normalizedBasePath + (pattern.startsWith("/") ? pattern : "/" + pattern);
+          fullRoute = normalizedBasePath +
+            (pattern.startsWith("/") ? pattern : "/" + pattern);
         }
         matchedRoutes.add(fullRoute);
       }
@@ -1827,6 +1838,207 @@ export class RouteHandler {
       res.status = 500;
       res.body = "<h1>500 - Internal Server Error</h1><p>响应体设置失败</p>";
       res.setHeader("Content-Type", "text/html; charset=utf-8");
+    }
+  }
+
+  /**
+   * 处理批量预加载请求
+   * 返回路由和组件模块路径的映射，供客户端预加载
+   */
+  private async handleBatchPrefetch(
+    req: Request,
+    res: Response,
+  ): Promise<void> {
+    // 只处理 GET 请求
+    if (req.method !== "GET") {
+      res.status = 405;
+      res.json({ error: "Method not allowed" });
+      return;
+    }
+
+    try {
+      // 获取 prefetch 配置
+      const prefetchConfig = this.config?.prefetch?.routes;
+      if (!Array.isArray(prefetchConfig) || prefetchConfig.length === 0) {
+        res.status = 200;
+        res.json({});
+        return;
+      }
+
+      // 解析预加载路由
+      const routes = this.resolvePrefetchRoutes(prefetchConfig);
+      if (routes.length === 0) {
+        res.status = 200;
+        res.json({});
+        return;
+      }
+
+      const url = new URL(req.url);
+
+      // 处理每个路由，获取模块路径和页面数据
+      const batchData: Array<{ route: string; body: string; pageData: Record<string, unknown> }> = [];
+
+      for (const route of routes) {
+        try {
+          // 匹配路由
+          const routeInfo = this.router.match(route);
+          if (!routeInfo || routeInfo.type !== "page") {
+            continue;
+          }
+
+          // 创建模拟请求对象用于加载页面数据
+          // 需要包含所有扩展方法（getCookie, getHeader, getSession 等）
+          const routeUrl = new URL(route, req.url);
+          const mockNativeReq = new Request(routeUrl.toString(), {
+            method: "GET",
+            headers: req.headers,
+          });
+          const mockReq = this.createExtendedRequest(req, mockNativeReq);
+          // 更新 params/query（路由匹配后的参数，url 是只读的，不能设置）
+          (mockReq as any).params = {};
+          (mockReq as any).query = {};
+
+          // 加载页面模块
+          const pageModule = await this.loadPageModule(routeInfo, res);
+          if (!pageModule || !pageModule.default) {
+            continue;
+          }
+
+          // 加载页面数据（load 函数返回的数据）
+          const loadData = await this.loadPageData(pageModule, mockReq, res);
+
+          // 构建模块路径
+          let modulePath: string;
+          if (routeInfo.clientModulePath) {
+            modulePath = `./${routeInfo.clientModulePath}`;
+          } else {
+            modulePath = resolveFilePath(routeInfo.filePath);
+          }
+
+          // 转换为 HTTP URL（模块请求路径，filePathToHttpUrl 已经包含了 /__modules/ 前缀）
+          const moduleHttpUrl = filePathToHttpUrl(modulePath);
+
+          // 获取渲染配置（用于获取布局路径）
+          const { renderMode, layoutDisabled } = await this.getRenderConfig(
+            pageModule,
+            routeInfo,
+          );
+
+          // 获取布局路径（参考 injectScripts 中的逻辑）
+          const layoutPathsForClient: string[] = [];
+          if (!layoutDisabled) {
+            try {
+              const layoutFilePaths = this.router.getAllLayouts(routeInfo.path);
+              for (const layoutFilePath of layoutFilePaths) {
+                try {
+                  // 加载布局模块以检查 layout 属性
+                  const layoutFullPath = resolveFilePath(layoutFilePath);
+                  const layoutModule = await import(layoutFullPath);
+
+                  // 检查是否设置了 layout = false（禁用继承）
+                  if (layoutModule.layout === false) {
+                    // 添加当前布局到客户端路径列表
+                    const layoutRoute = this.router.getAllRoutes().find((r) =>
+                      r.filePath === layoutFilePath
+                    );
+                    if (layoutRoute?.clientModulePath) {
+                      layoutPathsForClient.push(layoutRoute.clientModulePath);
+                    } else {
+                      const layoutHttpUrl = filePathToHttpUrl(layoutFullPath);
+                      layoutPathsForClient.push(layoutHttpUrl);
+                    }
+                    // 停止继承，不再加载后续的布局
+                    break;
+                  }
+
+                  // 检查布局路由信息，看是否有 clientModulePath
+                  const layoutRoute = this.router.getAllRoutes().find((r) =>
+                    r.filePath === layoutFilePath
+                  );
+                  if (layoutRoute?.clientModulePath) {
+                    layoutPathsForClient.push(layoutRoute.clientModulePath);
+                  } else {
+                    const layoutHttpUrl = filePathToHttpUrl(layoutFullPath);
+                    layoutPathsForClient.push(layoutHttpUrl);
+                  }
+                } catch (_layoutError) {
+                  // 布局加载失败不影响，跳过该布局
+                }
+              }
+            } catch (_error) {
+              // 静默处理错误
+            }
+          }
+
+          // 构建完整的 pageData（包含客户端预加载需要的所有字段）
+          const pageData = {
+            ...loadData, // load 函数返回的数据（如 jsrPackageUrl）
+            route: moduleHttpUrl, // 组件路径（用于 import）
+            renderMode: renderMode || "csr", // 渲染模式
+            layoutPath: layoutPathsForClient.length > 0
+              ? layoutPathsForClient[0]
+              : null, // 单个布局路径（向后兼容）
+            allLayoutPaths: layoutPathsForClient.length > 0
+              ? layoutPathsForClient
+              : null, // 所有布局路径
+            props: {
+              params: (mockReq as any).params || {},
+              query: (mockReq as any).query || {},
+            },
+          };
+
+          // 创建模块请求来获取组件代码
+          const moduleReqUrl = moduleHttpUrl.startsWith("http")
+            ? moduleHttpUrl
+            : `${url.origin}${moduleHttpUrl}`;
+          const moduleReq = new Request(moduleReqUrl, {
+            method: "GET",
+            headers: req.headers,
+          });
+
+          // 转换为扩展的请求对象
+          const extendedModuleReq = this.createExtendedRequest(req, moduleReq);
+
+          // 创建临时响应对象来获取模块代码
+          const tempRes = {
+            status: 200,
+            body: null as string | null,
+            headers: new Headers(),
+            setHeader: function (key: string, value: string) {
+              this.headers.set(key, value);
+            },
+            json: function (data: any) {
+              this.body = JSON.stringify(data);
+            },
+            text: function (data: string) {
+              this.body = data;
+            },
+          } as any;
+
+          // 处理模块请求
+          await this.handleModuleRequest(extendedModuleReq, tempRes);
+
+          // 如果成功获取模块代码，存储到结果中
+          if (tempRes.body && tempRes.status === 200) {
+            batchData.push({
+              route,
+              body: tempRes.body,
+              pageData,
+            });
+          }
+        } catch (error) {
+          // 单个路由处理失败时静默处理，继续处理下一个
+          console.warn(`[Batch Prefetch] 处理路由失败: ${route}`, error);
+        }
+      }
+
+      // 返回路由、组件代码和页面数据的数组
+      res.status = 200;
+      res.json(batchData);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      res.status = 500;
+      res.json({ error: `Batch prefetch failed: ${errorMsg}` });
     }
   }
 

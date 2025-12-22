@@ -30,6 +30,9 @@ import type {
   GraphQLSchema,
 } from "../features/graphql/types.ts";
 
+// 预加载模式
+export type PrefetchMode = "single" | "batch";
+
 // 预加载配置
 export interface PrefetchConfig {
   /** 是否启用资源预取（prefetch），默认 true */
@@ -38,6 +41,8 @@ export interface PrefetchConfig {
   routes?: string[];
   /** 是否在预加载时显示全屏加载状态，默认 false */
   loading?: boolean;
+  /** 预加载模式：single（逐个请求每个路由的组件）或 batch（一次请求，服务端打包返回所有匹配路由的数据，默认） */
+  mode?: PrefetchMode;
 }
 
 // 应用配置
