@@ -527,7 +527,13 @@ export class Server {
     };
 
     // 准备 Deno.serve 配置
-    const serveOptions: Deno.ServeOptions = {
+    const serveOptions: {
+      port: number;
+      hostname: string;
+      onListen?: () => void;
+      cert?: string;
+      key?: string;
+    } = {
       port,
       hostname: host,
       onListen: () => {
@@ -538,23 +544,25 @@ export class Server {
 
     // 如果配置了 TLS，添加证书和私钥
     if (tls) {
-      let cert: Uint8Array;
-      let key: Uint8Array;
+      let cert: string;
+      let key: string;
 
       // 读取证书文件或使用提供的证书内容
       if (tls.certFile) {
-        cert = await Deno.readFile(tls.certFile);
+        cert = await Deno.readTextFile(tls.certFile);
       } else if (tls.cert) {
-        cert = tls.cert;
+        // 将 Uint8Array 转换为字符串
+        cert = new TextDecoder().decode(tls.cert);
       } else {
         throw new Error('TLS 配置错误：必须提供 certFile 或 cert');
       }
 
       // 读取私钥文件或使用提供的私钥内容
       if (tls.keyFile) {
-        key = await Deno.readFile(tls.keyFile);
+        key = await Deno.readTextFile(tls.keyFile);
       } else if (tls.key) {
-        key = tls.key;
+        // 将 Uint8Array 转换为字符串
+        key = new TextDecoder().decode(tls.key);
       } else {
         throw new Error('TLS 配置错误：必须提供 keyFile 或 key');
       }

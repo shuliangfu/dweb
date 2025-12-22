@@ -299,7 +299,8 @@ export async function startDevServer(config: AppConfig): Promise<void> {
   if (!config.server) {
     throw new Error("服务器配置 (server) 是必需的");
   }
-  const serverOrigin = `http://${
+  const protocol = config.server.tls ? 'https' : 'http';
+  const serverOrigin = `${protocol}://${
     config.server.host || "localhost"
   }:${config.server.port}`;
   hmrServer.setServerOrigin(serverOrigin);
