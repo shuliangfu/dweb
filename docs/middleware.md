@@ -8,7 +8,6 @@ DWeb 框架提供了丰富的内置中间件，用于处理常见的 HTTP 请求
 src/middleware/
 ├── auth.ts              # JWT 认证
 ├── body-parser.ts       # 请求体解析
-├── compression.ts       # 响应压缩
 ├── cors.ts              # CORS 支持
 ├── error-handler.ts     # 错误处理
 ├── health.ts            # 健康检查
@@ -89,16 +88,14 @@ server.setHandler(async (req, res) => {
 });
 ```
 
-### compression - 响应压缩
+### 响应压缩
 
-```typescript
-import { compression } from "@dreamer/dweb/middleware";
+DWeb 框架使用 Deno.serve 的内置自动压缩功能，支持 Brotli 和 Gzip 压缩。
 
-server.use(compression({
-  level: 6, // 压缩级别 0-9
-  threshold: 1024, // 最小压缩大小（字节）
-}));
-```
+**无需手动配置**，Deno.serve 会根据客户端的 `Accept-Encoding` 头自动选择合适的压缩方式：
+- 如果客户端支持 `br`（Brotli），自动使用 Brotli 压缩
+- 如果客户端只支持 `gzip`，自动使用 Gzip 压缩
+- 响应正文大于 64 字节且 Content-Type 可压缩时，自动应用压缩
 
 ### security - 安全头
 
@@ -464,8 +461,8 @@ export default apiRateLimitMiddleware;
 
 2. **使用全局中间件处理通用功能**
    - CORS 配置
-   - 响应压缩
    - 全局错误处理
+   - 注意：响应压缩由 Deno.serve 自动处理，无需配置
 
 3. **合理组织中间件**
    - 将认证中间件放在需要保护的路径
@@ -504,7 +501,6 @@ server.use(myMiddleware);
 import type {
   AuthOptions,
   BodyParserOptions,
-  CompressionOptions,
   CorsOptions,
   RateLimitOptions,
   SecurityOptions,

@@ -132,11 +132,11 @@ export default function Page() {
 }`;
 
   const middlewareExample = `// 使用内置中间件
-import { cors, logger, compression } from 'dweb';
+import { cors, logger } from 'dweb';
 
 app.use(logger());
 app.use(cors());
-app.use(compression());`;
+// 注意：响应压缩由 Deno.serve 自动处理，无需手动配置`;
 
   return (
     <div className="space-y-0">

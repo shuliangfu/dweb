@@ -168,14 +168,14 @@ export async function getUser(req: Request) {
   // 中间件使用
   const middlewareCode = `// main.ts
 import { createApp } from 'jsr:@dreamer/dweb';
-import { logger, cors, compression } from 'jsr:@dreamer/dweb';
+import { logger, cors } from 'jsr:@dreamer/dweb';
 
 const app = createApp();
 
 // 使用内置中间件
 app.use(logger());
 app.use(cors());
-app.use(compression());
+// 注意：响应压缩由 Deno.serve 自动处理，无需手动配置
 
 export default app;`;
 

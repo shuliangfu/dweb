@@ -51,7 +51,6 @@ const navItems: NavItem[] = [
       { title: 'logger', path: '/docs/middleware/logger' },
       { title: 'cors', path: '/docs/middleware/cors' },
       { title: 'bodyParser', path: '/docs/middleware/body-parser' },
-      { title: 'compression', path: '/docs/middleware/compression' },
       { title: 'staticFiles', path: '/docs/middleware/static-files' },
       { title: 'security', path: '/docs/middleware/security' },
       { title: 'rateLimit', path: '/docs/middleware/rate-limit' },
