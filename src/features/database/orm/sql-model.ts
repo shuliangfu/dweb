@@ -1074,6 +1074,36 @@ export abstract class SQLModel {
   }
 
   /**
+   * 通过主键 ID 更新记录
+   * @param id 主键值
+   * @param data 要更新的数据对象
+   * @returns 更新的记录数
+   * 
+   * @example
+   * await User.updateById(1, { name: 'lisi' });
+   */
+  static async updateById(
+    id: number | string,
+    data: Record<string, any>,
+  ): Promise<number> {
+    return await this.update(id, data);
+  }
+
+  /**
+   * 通过主键 ID 删除记录
+   * @param id 主键值
+   * @returns 删除的记录数
+   * 
+   * @example
+   * await User.deleteById(1);
+   */
+  static async deleteById(
+    id: number | string,
+  ): Promise<number> {
+    return await this.delete(id);
+  }
+
+  /**
    * 批量更新记录
    * @param condition 查询条件（可以是 ID、条件对象）
    * @param data 要更新的数据对象

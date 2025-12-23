@@ -1120,8 +1120,11 @@ export abstract class MongoModel {
   static async delete(
     condition: MongoWhereCondition | string,
   ): Promise<number> {
+    // 自动初始化（如果未初始化）
+    await this.ensureInitialized();
+    
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
     }
 
     // 先查找要删除的记录
@@ -1265,6 +1268,36 @@ export abstract class MongoModel {
     fields?: string[],
   ): Promise<InstanceType<T> | null> {
     return await this.find(id, fields);
+  }
+
+  /**
+   * 通过主键 ID 更新记录
+   * @param id 主键值
+   * @param data 要更新的数据对象
+   * @returns 更新的记录数
+   * 
+   * @example
+   * await User.updateById('507f1f77bcf86cd799439011', { name: 'lisi' });
+   */
+  static async updateById(
+    id: string,
+    data: Record<string, any>,
+  ): Promise<number> {
+    return await this.update(id, data);
+  }
+
+  /**
+   * 通过主键 ID 删除记录
+   * @param id 主键值
+   * @returns 删除的记录数
+   * 
+   * @example
+   * await User.deleteById('507f1f77bcf86cd799439011');
+   */
+  static async deleteById(
+    id: string,
+  ): Promise<number> {
+    return await this.delete(id);
   }
 
   /**
