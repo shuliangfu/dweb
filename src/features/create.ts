@@ -319,6 +319,9 @@ export async function createApp(
   // 生成示例路由和组件
   await generateExampleRoutes(projectDir, isMultiApp, appNames);
   
+  // 生成 stores 目录和示例
+  await generateStores(projectDir, isMultiApp, appNames);
+  
   // 生成静态文件
   await generateStaticFiles(projectDir, isMultiApp, appNames, useTailwindV4);
   
@@ -379,6 +382,11 @@ async function generateConfigFile(
           cssPath: '${appName}/assets/tailwind.css',
           optimize: true,
         }),
+        // Store 状态管理插件（自动收集 stores 目录中的初始状态）
+        store({
+          persist: true, // 启用持久化，状态会保存到 localStorage
+          storageKey: 'dweb-store',
+        }),
       ],
       middleware: [
         cors({
@@ -400,7 +408,7 @@ async function generateConfigFile(
  * 模式: 多应用模式
  */
 
-import { tailwind, cors, type DWebConfig } from '@dreamer/dweb';
+import { tailwind, cors, store, type DWebConfig } from '@dreamer/dweb';
 
 const config: DWebConfig = {
   // 开发配置（全局，也可以在每个应用中配置）
@@ -440,7 +448,7 @@ export default config;
  * 模式: 单应用模式
  */
 
-import { tailwind, cors, type AppConfig } from '@dreamer/dweb';
+import { tailwind, cors, store, type AppConfig } from '@dreamer/dweb';
 
 
 const config: AppConfig = {
@@ -490,6 +498,11 @@ const config: AppConfig = {
       version: '${useTailwindV4 ? 'v4' : 'v3'}',
       cssPath: 'assets/tailwind.css', // 指定主 CSS 文件路径
       optimize: true, // 生产环境优化
+    }),
+    // Store 状态管理插件（自动收集 stores 目录中的初始状态）
+    store({
+      persist: true, // 启用持久化，状态会保存到 localStorage
+      storageKey: 'dweb-store',
     }),
   ],
   
@@ -791,8 +804,9 @@ export default function RootLayout({ children }: { children: ComponentChildren }
  * 展示应用的基本信息和快速开始指南
  */
 
-import { useState } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import Button from '../components/Button.tsx';
+import { exampleStore, type ExampleStoreState } from '../stores/example.ts';
 import type { PageProps, LoadContext } from '@dreamer/dweb';
 
 /**
@@ -840,6 +854,22 @@ export default function Home({ params: _params, query: _query, data }: PageProps
     userId: string | null;
     timestamp: string;
   };
+
+  // Store 状态管理示例（使用 defineStore）
+  const [storeState, setStoreState] = useState<ExampleStoreState>(exampleStore.$state);
+
+  useEffect(() => {
+    // 订阅 Store 状态变化
+    const unsubscribe = exampleStore.$subscribe((newState: ExampleStoreState) => {
+      setStoreState(newState);
+    });
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
 
   // 计数器示例（使用 Preact Hooks）
   const [count, setCount] = useState(0);
@@ -1096,6 +1126,97 @@ export default function Home({ params: _params, query: _query, data }: PageProps
         </div>
       </div>
 
+      {/* Store 状态管理示例 */}
+      <div className="py-16 bg-purple-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">Store 状态管理示例</h2>
+          <div className="bg-white p-8 rounded-lg shadow-md">
+            <p className="text-center text-gray-600 mb-6">
+              这是一个使用 Store 插件进行状态管理的示例，状态会自动持久化到 localStorage
+            </p>
+            
+            {/* Store 状态显示 */}
+            <div className="mb-6 space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-500 mb-2">当前计数：</p>
+                <p className="text-3xl font-bold text-indigo-600">{storeState.count}</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-500 mb-2">消息：</p>
+                <p className="text-lg text-gray-900">{storeState.message || '暂无消息'}</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-500 mb-2">项目列表：</p>
+                <ul className="list-disc list-inside space-y-1">
+                  {storeState.items.length > 0 ? (
+                    storeState.items.map((item, index) => (
+                      <li key={index} className="text-gray-700">{item}</li>
+                    ))
+                  ) : (
+                    <li className="text-gray-400">暂无项目</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+            
+            {/* Store 操作按钮 */}
+            <div className="flex flex-wrap gap-3 justify-center mb-6">
+              <button
+                type="button"
+                onClick={() => exampleStore.increment()}
+                className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
+              >
+                +1
+              </button>
+              <button
+                type="button"
+                onClick={() => exampleStore.decrement()}
+                className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-semibold"
+              >
+                -1
+              </button>
+              <button
+                type="button"
+                onClick={() => exampleStore.setMessage('Hello from Store!')}
+                className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold"
+              >
+                设置消息
+              </button>
+              <button
+                type="button"
+                onClick={() => exampleStore.addItem(\`项目 \${storeState.items.length + 1}\`)}
+                className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-semibold"
+              >
+                添加项目
+              </button>
+              <button
+                type="button"
+                onClick={() => exampleStore.removeItem(storeState.items.length - 1)}
+                disabled={storeState.items.length === 0}
+                className={\`px-6 py-3 rounded-lg transition-colors font-semibold \${
+                  storeState.items.length === 0
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-orange-500 text-white hover:bg-orange-600'
+                }\`}
+              >
+                删除最后一项
+              </button>
+              <button
+                type="button"
+                onClick={() => exampleStore.$reset()}
+                className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-semibold"
+              >
+                重置状态
+              </button>
+            </div>
+            
+            <p className="text-center text-sm text-gray-500">
+              💡 提示：刷新页面后状态会保留（已启用持久化）
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* 特性展示 */}
       <div className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1272,6 +1393,90 @@ export default function NotFound() {
 
   await Deno.writeTextFile(path.join(routesDir, '_404.tsx'), notFoundContent);
   console.log(`✅ 已创建: ${routesDir}/_404.tsx`);
+}
+
+/**
+ * 生成 stores 目录和示例文件
+ */
+async function generateStores(
+  projectDir: string,
+  isMultiApp: boolean,
+  appNames: string[]
+): Promise<void> {
+  if (isMultiApp) {
+    // 多应用模式：为每个应用生成 stores 目录
+    for (const appName of appNames) {
+      const appStoresDir = path.join(projectDir, appName, 'stores');
+      await ensureDir(appStoresDir);
+      await generateStoreExample(appStoresDir, appName);
+    }
+  } else {
+    // 单应用模式：在项目根目录生成
+    const storesDir = path.join(projectDir, 'stores');
+    await ensureDir(storesDir);
+    const projectName = path.basename(projectDir);
+    await generateStoreExample(storesDir, projectName);
+  }
+}
+
+/**
+ * 生成示例 store 文件
+ */
+async function generateStoreExample(storesDir: string, _appName: string): Promise<void> {
+  const storeContent = `/**
+ * Example Store
+ * 使用 defineStore 定义，声明式 API
+ * 
+ * Store 插件会自动收集此文件中的初始状态
+ * 无需在配置文件中手动配置 initialState
+ */
+
+import { defineStore } from '@dreamer/dweb/client';
+
+/**
+ * Store 状态接口
+ */
+export interface ExampleStoreState extends Record<string, unknown> {
+  count: number;
+  message: string;
+  items: string[];
+}
+
+/**
+ * 定义 Example Store
+ * 使用声明式 API，简洁易用
+ * 直接导出，类型会自动推断
+ */
+export const exampleStore = defineStore('example', {
+  state: (): ExampleStoreState => ({
+    count: 0,
+    message: '',
+    items: [] as string[],
+  }),
+  actions: {
+    // 在 actions 中，可以直接通过 this.xxx 访问和修改状态
+    // defineStore 会自动处理状态更新，this 类型会自动推断，无需手动指定
+    increment() {
+      this.count++;
+    },
+    decrement() {
+      this.count--;
+    },
+    setMessage(message: string) {
+      this.message = message;
+    },
+    addItem(item: string) {
+      this.items = [...this.items, item];
+    },
+    removeItem(index: number) {
+      this.items = this.items.filter((_item: string, i: number) => i !== index);
+    },
+  },
+});
+`;
+
+  await Deno.writeTextFile(path.join(storesDir, 'example.ts'), storeContent);
+  console.log(`✅ 已创建: ${storesDir}/example.ts`);
 }
 
 /**
