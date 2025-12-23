@@ -9,7 +9,7 @@ import { MongoModel } from "@dreamer/dweb";
  * 用户模型类
  * 继承 MongoModel，提供完整的 ODM 功能
  */
-class User extends MongoModel {
+export class User extends MongoModel {
   // 集合名称
   static override collectionName = "users";
 
