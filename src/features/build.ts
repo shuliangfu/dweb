@@ -284,62 +284,59 @@ function createJSRResolverPlugin(
     name: "jsr-resolver",
     setup(build: esbuild.PluginBuild) {
       // 解析 @dreamer/dweb/client（支持 JSR URL 和本地路径）
-      // 必须在所有其他解析器之前执行，确保能拦截到导入
-      // 使用更通用的 filter，匹配所有可能的导入方式
-      build.onResolve(
-        { filter: /^@dreamer\/dweb\/client$/ },
-        (_args) => {
-          const clientImport = importMap["@dreamer/dweb/client"];
-          if (!clientImport) {
-            return undefined; // 让 esbuild 使用默认解析
-          }
+      // 完全复制自 route-handler.ts 的实现
+      build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, async (_args) => {
+        const clientImport = importMap["@dreamer/dweb/client"];
+        if (!clientImport) {
+          return undefined; // 让 esbuild 使用默认解析
+        }
 
-          // 如果是本地路径，解析为绝对路径
-          if (!clientImport.startsWith("jsr:") && !clientImport.startsWith("http")) {
-            const resolvedPath = path.isAbsolute(clientImport)
-              ? clientImport
-              : path.resolve(cwd, clientImport);
-            return {
-              path: resolvedPath,
-              external: false, // 明确标记为不 external，确保被打包
-            };
-          }
+        // 如果是本地路径，解析为绝对路径
+        if (!clientImport.startsWith("jsr:") && !clientImport.startsWith("http")) {
+          const resolvedPath = path.isAbsolute(clientImport)
+            ? clientImport
+            : path.resolve(cwd, clientImport);
+          return {
+            path: resolvedPath,
+          };
+        }
 
-          // 如果是 JSR URL，解析为实际的 HTTP URL
-          if (clientImport.startsWith("jsr:")) {
-            try {
-              // 直接手动构建 JSR URL，不依赖 import.meta.resolve
-              // 因为在 build 时，import.meta.resolve 可能无法正确解析 JSR URL
+        // 如果是 JSR URL，解析为实际的 HTTP URL
+        if (clientImport.startsWith("jsr:")) {
+          try {
+            // 使用 import.meta.resolve 解析 JSR URL
+            let resolvedUrl = await import.meta.resolve(clientImport);
+            
+            // 如果返回的是 file:// 协议（本地开发），需要转换为 HTTP URL
+            if (resolvedUrl.startsWith("file://")) {
+              // 手动构建 JSR URL
               const jsrPath = clientImport.replace(/^jsr:/, "");
               const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
-              if (!jsrMatch) {
+              if (jsrMatch) {
+                const [, scope, packageName, version, subPath] = jsrMatch;
+                let actualSubPath = subPath;
+                if (!actualSubPath.startsWith("src/") && !actualSubPath.includes("/")) {
+                  actualSubPath = `src/${subPath}.ts`;
+                } else if (!actualSubPath.endsWith(".ts") && !actualSubPath.endsWith(".tsx")) {
+                  actualSubPath = `${actualSubPath}.ts`;
+                }
+                resolvedUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${actualSubPath}`;
+              } else {
                 return undefined;
               }
-              
-              const [, scope, packageName, version, subPath] = jsrMatch;
-              let actualSubPath = subPath;
-              if (!actualSubPath.startsWith("src/") && !actualSubPath.includes("/")) {
-                actualSubPath = `src/${subPath}.ts`;
-              } else if (!actualSubPath.endsWith(".ts") && !actualSubPath.endsWith(".tsx")) {
-                actualSubPath = `${actualSubPath}.ts`;
-              }
-              const resolvedUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${actualSubPath}`;
-              
-              // 返回 http-url namespace，esbuild 会调用 onLoad 加载内容
-              return {
-                path: resolvedUrl,
-                namespace: "http-url",
-                // 注意：当返回 namespace 时，不需要设置 external: false
-                // esbuild 会自动调用 onLoad 加载内容并打包
-              };
-            } catch {
-              return undefined; // 解析失败，使用默认行为
             }
+            
+            return {
+              path: resolvedUrl,
+              namespace: "http-url",
+            };
+          } catch {
+            return undefined; // 解析失败，使用默认行为
           }
-          
-          return undefined; // 不是 JSR URL，使用默认解析
-        },
-      );
+        }
+        
+        return undefined; // 不是 JSR URL，使用默认解析
+      });
 
       // 处理相对路径导入（从 http-url namespace 中的模块）
       build.onResolve({ filter: /^\.\.?\/.*/, namespace: "http-url" }, (args) => {
@@ -370,14 +367,9 @@ function createJSRResolverPlugin(
             throw new Error(`Failed to fetch: ${args.path} (${response.status})`);
           }
           const contents = await response.text();
-          
-          // 返回内容，esbuild 会自动打包
-          // 注意：当返回 namespace 时，esbuild 会自动调用 onLoad 加载内容并打包
-          // 不需要设置 external: false，因为已经在 onResolve 中返回了 namespace
           return {
             contents,
             loader: "ts",
-            resolveDir: cwd, // 设置 resolveDir，用于解析相对路径导入
           };
         } catch (error) {
           return {
