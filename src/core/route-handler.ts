@@ -320,6 +320,27 @@ export class RouteHandler {
                   return undefined; // 不是 JSR URL，使用默认解析
                 });
 
+                // 处理相对路径导入（从 http-url namespace 中的模块）
+                build.onResolve({ filter: /^\.\.?\/.*/, namespace: "http-url" }, (args) => {
+                  try {
+                    // 解析相对路径为完整的 JSR URL
+                    const baseUrl = new URL(args.importer);
+                    const relativePath = args.path;
+                    const resolvedUrl = new URL(relativePath, baseUrl).href;
+                    
+                    return {
+                      path: resolvedUrl,
+                      namespace: "http-url",
+                    };
+                  } catch (error) {
+                    return {
+                      errors: [{
+                        text: `Failed to resolve relative path: ${args.path} (${error instanceof Error ? error.message : String(error)})`,
+                      }],
+                    };
+                  }
+                });
+
                 // 加载 HTTP URL 内容
                 build.onLoad({ filter: /.*/, namespace: "http-url" }, async (args) => {
                   try {
