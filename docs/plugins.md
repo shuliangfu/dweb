@@ -362,13 +362,16 @@ usePlugin(rss({
 - ✅ 服务端和客户端支持
 - ✅ 可选持久化（localStorage）
 - ✅ 函数式更新支持
-- ✅ 通过 PageProps 注入，使用简单
+- ✅ 声明式的 `defineStore` API，简洁易用
+- ✅ 自动收集初始状态，无需手动配置
+- ✅ 完整的 TypeScript 类型推断
 
 **基本配置：**
 
 ```typescript
 import { store } from "@dreamer/dweb/plugins";
 
+// 方式1：手动配置 initialState（传统方式）
 app.plugin(store({
   persist: true, // 是否启用持久化（默认 false）
   storageKey: 'dweb-store', // 持久化存储键名（默认 'dweb-store'）
@@ -377,6 +380,15 @@ app.plugin(store({
     user: null,
     count: 0,
   },
+}));
+
+// 方式2：自动收集（推荐，使用 defineStore）
+// 只需导入 stores 文件，store 插件会自动收集初始状态
+
+app.plugin(store({
+  persist: true,
+  storageKey: 'dweb-store',
+  // 不需要手动配置 initialState，会自动从已注册的 stores 中收集
 }));
 ```
 
@@ -389,7 +401,56 @@ app.plugin(store({
 | `enableServer` | `boolean` | `true` | 是否在服务端启用，每个请求会有独立的 Store 实例 |
 | `initialState` | `Record<string, unknown>` | `{}` | 初始状态对象 |
 
-**客户端 API（推荐方式）：**
+**defineStore API（推荐，声明式 API）：**
+
+```typescript
+// stores/example.ts
+import { defineStore, type StoreInstance } from '@dreamer/dweb/client';
+
+export interface ExampleStoreState extends Record<string, unknown> {
+  count: number;
+  message: string;
+}
+
+export const exampleStore = defineStore('example', {
+  state: (): ExampleStoreState => ({
+    count: 0,
+    message: '',
+  }),
+  actions: {
+    increment(this: ExampleStoreState & StoreInstance<ExampleStoreState>) {
+      this.count++;
+    },
+    setMessage(this: ExampleStoreState & StoreInstance<ExampleStoreState>, message: string) {
+      this.message = message;
+    },
+  },
+});
+
+// 在组件中使用
+import { exampleStore } from '../stores/example.ts';
+
+export default function MyPage() {
+  const [state, setState] = useState(exampleStore.$state);
+
+  useEffect(() => {
+    const unsubscribe = exampleStore.$subscribe((newState) => {
+      setState(newState);
+    });
+    return () => unsubscribe?.();
+  }, []);
+
+  return (
+    <div>
+      <p>Count: {exampleStore.count}</p>
+      <button onClick={() => exampleStore.increment()}>+1</button>
+      <button onClick={() => exampleStore.$reset()}>重置</button>
+    </div>
+  );
+}
+```
+
+**传统客户端 API：**
 
 ```typescript
 import { 
