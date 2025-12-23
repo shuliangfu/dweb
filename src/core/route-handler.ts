@@ -266,11 +266,21 @@ export class RouteHandler {
             const jsrResolverPlugin = {
               name: "jsr-resolver",
               setup(build: esbuild.PluginBuild) {
-                // 解析 @dreamer/dweb/client 的 JSR URL
+                // 解析 @dreamer/dweb/client（支持 JSR URL 和本地路径）
                 build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, async (_args) => {
                   const clientImport = importMap["@dreamer/dweb/client"];
                   if (!clientImport) {
                     return undefined; // 让 esbuild 使用默认解析
+                  }
+
+                  // 如果是本地路径，解析为绝对路径
+                  if (!clientImport.startsWith("jsr:") && !clientImport.startsWith("http")) {
+                    const resolvedPath = path.isAbsolute(clientImport)
+                      ? clientImport
+                      : path.resolve(cwd, clientImport);
+                    return {
+                      path: resolvedPath,
+                    };
                   }
 
                   // 如果是 JSR URL，解析为实际的 HTTP URL
@@ -357,7 +367,8 @@ export class RouteHandler {
                 Object.entries(importMap)
                   .filter(
                     ([key, value]) =>
-                      key !== "@dreamer/dweb/client" && // @dreamer/dweb/client 由插件处理
+                      // 排除所有 @dreamer/dweb 相关的导入（由插件处理或保持为外部依赖）
+                      !key.startsWith("@dreamer/dweb") &&
                       !value.startsWith("jsr:") &&
                       !value.startsWith("npm:") &&
                       !value.startsWith("http"),
