@@ -1563,7 +1563,16 @@ if (isMultiApp) {
     // 生成 tailwind.css
     const styleContent = useTailwindV4
       ? `/* Tailwind CSS v4 */
+@layer theme, base, components, utilities;
 @import "tailwindcss";
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* MODIFIED: 配置 Tailwind CSS 扫描路径，确保 common 目录下的组件被扫描 */
+/* @source 路径相对于项目根目录 */ 
+
+@custom-variant dark (.dark &);
 `
       : `/* Tailwind CSS v3 */
 @tailwind base;
@@ -1586,7 +1595,16 @@ if (isMultiApp) {
   // 生成 tailwind.css
   const styleContent = useTailwindV4
     ? `/* Tailwind CSS v4 */
+@layer theme, base, components, utilities;
 @import "tailwindcss";
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* MODIFIED: 配置 Tailwind CSS 扫描路径，确保 common 目录下的组件被扫描 */
+/* @source 路径相对于项目根目录 */ 
+
+@custom-variant dark (.dark &);
 `
     : `/* Tailwind CSS v3 */
 @tailwind base;
