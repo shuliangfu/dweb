@@ -443,8 +443,8 @@ export async function startProdServer(config: AppConfig): Promise<void> {
 
   // 设置数据库配置加载器（用于 CLI 工具中的自动初始化）
   // 这样在 CLI 工具中使用模型时，可以自动从配置加载器获取配置
-  setDatabaseConfigLoader(async () => {
-    return config.database || null;
+  setDatabaseConfigLoader(() => {
+    return Promise.resolve(config.database || null);
   });
 
   // 初始化数据库连接（如果配置了数据库）
