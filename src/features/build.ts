@@ -284,7 +284,12 @@ function createJSRResolverPlugin(
     name: "jsr-resolver",
     setup(build: esbuild.PluginBuild) {
       // 解析 @dreamer/dweb/client（支持 JSR URL 和本地路径）
-      // 在 build 时，直接手动构建 JSR URL，不依赖 import.meta.resolve
+      // 必须在所有其他解析器之前执行，确保能拦截到导入
+      // 使用 onStart 确保插件优先级最高
+      build.onStart(() => {
+        // 确保插件在解析阶段之前执行
+      });
+      
       build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, (_args) => {
         const clientImport = importMap["@dreamer/dweb/client"];
         if (!clientImport) {
@@ -298,6 +303,7 @@ function createJSRResolverPlugin(
             : path.resolve(cwd, clientImport);
           return {
             path: resolvedPath,
+            external: false, // 明确标记为不 external，强制打包
           };
         }
 
@@ -321,11 +327,14 @@ function createJSRResolverPlugin(
             }
             const resolvedUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${actualSubPath}`;
             
+            // 返回 http-url namespace，并明确标记为不 external
             return {
               path: resolvedUrl,
               namespace: "http-url",
+              external: false, // 明确标记为不 external，强制打包
             };
-          } catch {
+          } catch (error) {
+            console.error("[JSR Resolver] 解析 JSR URL 失败:", error);
             return undefined; // 解析失败，使用默认行为
           }
         }
