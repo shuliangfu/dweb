@@ -397,7 +397,10 @@ export class HMRServer {
       minify: false, // 开发环境不压缩，便于调试
       // 优化编译速度：减少不必要的转换
       sourcemap: false, // HMR 不需要 sourcemap，可以加快编译
-      treeShaking: true, // ✅ Tree-shaking
+      treeShaking: true, // ✅ Tree-shaking：自动移除未使用的代码
+      // 确保 tree-shaking 正常工作：只打包实际使用的导出
+      // 对于命名导入（如 import { twMerge } from "tailwind-merge"），
+      // esbuild 会自动 tree-shake 掉其他未使用的导出
       write: false, // 不写入文件，我们手动处理
       external: externalPackages, // 外部依赖不打包（保持 import 语句）
       // 设置 import map（用于解析外部依赖）

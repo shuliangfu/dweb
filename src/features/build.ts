@@ -620,7 +620,10 @@ async function compileFile(
           jsxImportSource: "preact",
           minify: true, // ✅ 压缩代码
           keepNames: true, // ✅ 保留导出名称
-          treeShaking: true, // ✅ Tree-shaking
+          treeShaking: true, // ✅ Tree-shaking：自动移除未使用的代码
+          // 确保 tree-shaking 正常工作：只打包实际使用的导出
+          // 对于命名导入（如 import { twMerge } from "tailwind-merge"），
+          // esbuild 会自动 tree-shake 掉其他未使用的导出（如 twJoin, createTailwindMerge 等）
           legalComments: "none", // ✅ 移除注释
           write: false, // 不写入文件，我们手动处理
           external: externalPackages, // 外部依赖不打包（保持 import 语句）
@@ -739,7 +742,10 @@ async function compileWithCodeSplitting(
     jsx: "automatic",
     jsxImportSource: "preact",
     minify: true,
-    treeShaking: true,
+    treeShaking: true, // ✅ Tree-shaking：自动移除未使用的代码
+    // 确保 tree-shaking 正常工作：只打包实际使用的导出
+    // 对于命名导入（如 import { twMerge } from "tailwind-merge"），
+    // esbuild 会自动 tree-shake 掉其他未使用的导出
     legalComments: "none",
     outdir: outDir, // 输出到目录（代码分割需要）
     outbase: cwd, // 保持目录结构
