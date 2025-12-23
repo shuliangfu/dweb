@@ -8,7 +8,6 @@ import Hero from "../components/Hero.tsx";
 import CodeBlock from "../components/CodeBlock.tsx";
 import type { LoadContext, PageProps } from "@dreamer/dweb";
 import { getJsrPackageUrl, getVersionString } from "../utils.ts";
-import { getStore } from "@dreamer/dweb/client";
 
 /**
  * 页面元数据（用于 SEO）
@@ -63,6 +62,7 @@ export function metadata({
   };
 }
 
+
 /**
  * 加载页面数据（服务端执行）
  * @param context 包含 params、query、cookies、session 等的上下文对象
@@ -85,8 +85,6 @@ export const load = async ({
 
   const jsrPackageUrl = getJsrPackageUrl();
   const versionString = getVersionString();
-
-  console.log($t("你好，世界！"));
 
   return {
     message: "Hello, World!",
@@ -111,17 +109,6 @@ export default function HomePage(
   const { versionString } = data as {
     versionString: string;
   };
-
-  console.log($t("你好，世界！"));
-
-  const store = getStore();
-
-  if (store) {
-    store.setState({
-      message: "Hello, World!",
-    });
-    console.log("设置Store数据成功");
-  }
 
   // 快速开始代码示例
   const quickStartCode = `# 创建新项目
