@@ -193,4 +193,3 @@ class User extends MongoModel {
 
 // 导出模型
 export default User;
-
