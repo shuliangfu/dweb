@@ -252,6 +252,45 @@ export abstract class SQLModel {
   }
 
   /**
+   * 初始化模型
+   * 设置数据库适配器（SQL 模型通常不需要创建索引，索引通过迁移管理）
+   * 这个方法会自动从全局数据库管理器获取适配器
+   * 
+   * @param connectionName 连接名称（默认为 'default'）
+   * @returns Promise<void>
+   * 
+   * @example
+   * await User.init(); // 使用默认连接
+   * await User.init('secondary'); // 使用指定连接
+   */
+  static async init(connectionName: string = 'default'): Promise<void> {
+    // 动态导入 getDatabase 以避免循环依赖
+    const { getDatabase } = await import('../access.ts');
+    
+    try {
+      // 获取数据库适配器
+      const adapter = getDatabase(connectionName);
+      // 设置适配器
+      this.setAdapter(adapter);
+      // 注意：SQL 模型的索引通常通过迁移管理，不在这里创建
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to initialize model ${this.tableName}: ${message}`);
+    }
+  }
+
+  /**
+   * 确保模型已初始化（懒加载）
+   * 如果适配器未设置，自动尝试初始化
+   * @param connectionName 连接名称（默认为 'default'）
+   */
+  private static async ensureInitialized(connectionName: string = 'default'): Promise<void> {
+    if (!this.adapter) {
+      await this.init(connectionName);
+    }
+  }
+
+  /**
    * 将查询条件对象转换为 SQL WHERE 子句
    * @param condition 查询条件对象
    * @returns SQL WHERE 子句和参数数组
@@ -576,8 +615,11 @@ export abstract class SQLModel {
     condition: WhereCondition | number | string,
     fields?: string[],
   ): Promise<InstanceType<T> | null> {
+    // 自动初始化（如果未初始化）
+    await this.ensureInitialized();
+    
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
     }
 
     const { where, params } = this.buildWhereClause(condition);
@@ -612,8 +654,11 @@ export abstract class SQLModel {
     condition: WhereCondition = {},
     fields?: string[],
   ): Promise<InstanceType<T>[]> {
+    // 自动初始化（如果未初始化）
+    await this.ensureInitialized();
+    
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
     }
 
     const { where, params } = this.buildWhereClause(condition);
@@ -641,8 +686,11 @@ export abstract class SQLModel {
     this: T,
     data: Record<string, any>,
   ): Promise<InstanceType<T>> {
+    // 自动初始化（如果未初始化）
+    await this.ensureInitialized();
+    
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
     }
 
     // 处理字段（应用默认值、类型转换、验证）
@@ -769,8 +817,11 @@ export abstract class SQLModel {
     condition: WhereCondition | number | string,
     data: Record<string, any>,
   ): Promise<number> {
+    // 自动初始化（如果未初始化）
+    await this.ensureInitialized();
+    
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
     }
 
     // 先查找要更新的记录
@@ -872,8 +923,11 @@ export abstract class SQLModel {
   static async delete(
     condition: WhereCondition | number | string,
   ): Promise<number> {
+    // 自动初始化（如果未初始化）
+    await this.ensureInitialized();
+    
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
     }
 
     // 先查找要删除的记录
@@ -1066,8 +1120,11 @@ export abstract class SQLModel {
   static async count(
     condition: WhereCondition = {},
   ): Promise<number> {
+    // 自动初始化（如果未初始化）
+    await this.ensureInitialized();
+    
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
     }
 
     const { where, params } = this.buildWhereClause(condition);

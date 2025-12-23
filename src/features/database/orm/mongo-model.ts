@@ -294,6 +294,48 @@ export abstract class MongoModel {
   }
 
   /**
+   * 初始化模型
+   * 设置数据库适配器并创建索引（如果定义了索引）
+   * 这个方法会自动从全局数据库管理器获取适配器
+   * 
+   * @param connectionName 连接名称（默认为 'default'）
+   * @returns Promise<void>
+   * 
+   * @example
+   * await User.init(); // 使用默认连接
+   * await User.init('secondary'); // 使用指定连接
+   */
+  static async init(connectionName: string = 'default'): Promise<void> {
+    // 动态导入 getDatabase 以避免循环依赖
+    const { getDatabase } = await import('../access.ts');
+    
+    try {
+      // 获取数据库适配器
+      const adapter = getDatabase(connectionName);
+      // 设置适配器
+      this.setAdapter(adapter);
+      // 创建索引（如果定义了索引）
+      if (this.indexes && this.indexes.length > 0) {
+        await this.createIndexes();
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to initialize model ${this.collectionName}: ${message}`);
+    }
+  }
+
+  /**
+   * 确保模型已初始化（懒加载）
+   * 如果适配器未设置，自动尝试初始化
+   * @param connectionName 连接名称（默认为 'default'）
+   */
+  private static async ensureInitialized(connectionName: string = 'default'): Promise<void> {
+    if (!this.adapter) {
+      await this.init(connectionName);
+    }
+  }
+
+  /**
    * 验证字段值
    * @param fieldName 字段名
    * @param value 字段值
@@ -682,8 +724,11 @@ export abstract class MongoModel {
     condition: MongoWhereCondition | string,
     fields?: string[],
   ): Promise<InstanceType<T> | null> {
+    // 自动初始化（如果未初始化）
+    await this.ensureInitialized();
+    
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
@@ -753,8 +798,11 @@ export abstract class MongoModel {
     condition: MongoWhereCondition = {},
     fields?: string[],
   ): Promise<InstanceType<T>[]> {
+    // 自动初始化（如果未初始化）
+    await this.ensureInitialized();
+    
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
@@ -848,8 +896,11 @@ export abstract class MongoModel {
     this: T,
     data: Record<string, any>,
   ): Promise<InstanceType<T>> {
+    // 自动初始化（如果未初始化）
+    await this.ensureInitialized();
+    
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
     }
 
     // 处理字段（应用默认值、类型转换、验证）
@@ -958,8 +1009,11 @@ export abstract class MongoModel {
     condition: MongoWhereCondition | string,
     data: Record<string, any>,
   ): Promise<number> {
+    // 自动初始化（如果未初始化）
+    await this.ensureInitialized();
+    
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
     }
 
     // 先查找要更新的记录
