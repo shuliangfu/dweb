@@ -359,53 +359,54 @@ export class RouteHandler {
     pathname: string,
   ): Promise<void> {
     try {
-      // 提取 JSR 路径：/__jsr/@dreamer/dweb@1.3.0/client -> jsr:@dreamer/dweb@1.3.0/client
+      // 提取 JSR 路径：/__jsr/@dreamer/dweb@1.3.0/client -> @dreamer/dweb@1.3.0/client
       const jsrPath = pathname.replace(/^\/__jsr\//, "");
-      const jsrUrl = `jsr:${jsrPath}`;
       
-      // 使用 Deno 的 import map 解析 JSR URL
-      // Deno 会自动处理 JSR URL 的解析，将其转换为实际的 HTTP URL
+      // 直接构建 JSR URL：@dreamer/dweb@1.3.0/client -> https://jsr.io/@dreamer/dweb/1.3.0/client.ts
+      // 注意：JSR 的 URL 格式是 https://jsr.io/@scope/package/version/path/to/file.ts
+      const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
+      if (!jsrMatch) {
+        res.status = 400;
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.text(`Invalid JSR path format: ${jsrPath}`);
+        return;
+      }
+      
+      const [, scope, packageName, version, subPath] = jsrMatch;
+      // 构建 JSR URL（直接使用 https://jsr.io）
+      const moduleUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${subPath}.ts`;
+      
+      // 获取模块内容（TypeScript 文件）
+      const response = await fetch(moduleUrl);
+      if (!response.ok) {
+        res.status = response.status;
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.text(`Failed to fetch JSR module: ${moduleUrl} (${response.status})`);
+        return;
+      }
+      
+      const tsContent = await response.text();
+      
+      // 编译 TypeScript 为 JavaScript（浏览器无法直接执行 TypeScript）
       try {
-        // 尝试获取模块的 URL（通过 import.meta.resolve）
-        // 注意：Deno 的 import.meta.resolve 可以解析 JSR URL
-        let moduleUrl: string;
-        try {
-          // 使用 import.meta.resolve 解析 JSR URL
-          moduleUrl = await import.meta.resolve(jsrUrl);
-        } catch {
-          // 如果 resolve 失败，尝试直接导入
-          // 但我们需要获取模块的 URL，所以使用另一种方法
-          // 实际上，我们可以直接使用 JSR URL 的 HTTP 等价形式
-          // jsr:@dreamer/dweb@1.3.0/client -> https://jsr.io/@dreamer/dweb/1.3.0/client.ts
-          const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
-          if (jsrMatch) {
-            const [, scope, packageName, version, subPath] = jsrMatch;
-            moduleUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${subPath}.ts`;
-          } else {
-            throw new Error(`Invalid JSR path format: ${jsrPath}`);
-          }
-        }
+        const result = await esbuild.transform(tsContent, {
+          loader: "ts",
+          format: "esm",
+          target: "esnext",
+          jsx: "automatic",
+          jsxImportSource: "preact",
+        });
         
-        // 获取模块内容
-        const response = await fetch(moduleUrl);
-        if (!response.ok) {
-          res.status = response.status;
-          res.setHeader("Content-Type", "text/plain; charset=utf-8");
-          res.text(`Failed to fetch JSR module: ${moduleUrl} (${response.status})`);
-          return;
-        }
-        
-        const content = await response.text();
-        
-        // 返回模块内容
+        // 返回编译后的 JavaScript
         res.status = 200;
         res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-        res.text(content);
-      } catch (importError) {
-        res.status = 500;
-        res.setHeader("Content-Type", "text/plain; charset=utf-8");
-        const errorMsg = importError instanceof Error ? importError.message : String(importError);
-        res.text(`Failed to import JSR module: ${jsrUrl}\nError: ${errorMsg}`);
+        res.text(result.code);
+      } catch (compileError) {
+        // 如果编译失败，返回原始内容（虽然浏览器可能无法执行）
+        res.status = 200;
+        res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+        const errorMsg = compileError instanceof Error ? compileError.message : String(compileError);
+        res.text(`// Compilation error: ${errorMsg}\n${tsContent}`);
       }
     } catch (error) {
       res.status = 500;
