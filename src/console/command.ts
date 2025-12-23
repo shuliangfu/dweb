@@ -621,11 +621,24 @@ export class Command {
         }
       }
 
+      // 计算所有选项的最大显示长度（用于对齐）
+      let maxOptionLength = 0;
+      for (const opts of groupedOptions.values()) {
+        for (const opt of opts) {
+          maxOptionLength = Math.max(maxOptionLength, this.calculateOptionDisplayLength(opt));
+        }
+      }
+      for (const opt of ungroupedOptions) {
+        maxOptionLength = Math.max(maxOptionLength, this.calculateOptionDisplayLength(opt));
+      }
+      // 确保最小宽度，保证对齐效果
+      maxOptionLength = Math.max(maxOptionLength, 20);
+
       // 显示分组选项
       for (const [groupName, opts] of groupedOptions) {
         console.log(`${colors.dim}${groupName}:${colors.reset}`);
         for (const opt of opts) {
-          this.printOption(opt);
+          this.printOption(opt, maxOptionLength);
         }
         console.log();
       }
@@ -638,7 +651,7 @@ export class Command {
           console.log(`${colors.dim}选项:${colors.reset}`);
         }
         for (const opt of ungroupedOptions) {
-          this.printOption(opt);
+          this.printOption(opt, maxOptionLength);
         }
         console.log();
       }
@@ -647,11 +660,29 @@ export class Command {
     // 显示使用示例
     if (this.examples.length > 0) {
       console.log(`${colors.dim}示例:${colors.reset}`);
+      
+      // 计算所有示例命令的最大显示宽度（用于对齐描述）
+      let maxCommandWidth = 0;
       for (const example of this.examples) {
-        console.log(`  ${colors.cyan}${example.command}${colors.reset}`);
+        const commandWidth = this.calculateDisplayWidth(example.command);
+        maxCommandWidth = Math.max(maxCommandWidth, commandWidth);
+      }
+      // 确保最小宽度
+      maxCommandWidth = Math.max(maxCommandWidth, 20);
+      
+      // 显示示例，描述在同一行并对齐
+      for (const example of this.examples) {
+        const commandWidth = this.calculateDisplayWidth(example.command);
+        const padding = maxCommandWidth - commandWidth;
+        let exampleStr = `  ${colors.cyan}${example.command}${colors.reset}`;
+        
         if (example.description) {
-          console.log(`    ${colors.dim}${example.description}${colors.reset}`);
+          // 添加 padding 使描述对齐
+          exampleStr += " ".repeat(padding);
+          exampleStr += ` ${colors.dim}${example.description}${colors.reset}`;
         }
+        
+        console.log(exampleStr);
       }
       console.log();
     }
@@ -732,7 +763,22 @@ export class Command {
       console.log();
       
       // 提示查看子命令详细帮助
-      console.log(`${colors.dim}提示: 使用 ${colors.reset}${colors.cyan}${this.name} <command> --help${colors.reset}${colors.dim} 查看子命令的详细选项${colors.reset}\n`);
+      // 获取第一个子命令作为示例
+      const firstSubcommand = this.subcommands.keys().next().value;
+      if (firstSubcommand) {
+        // 从 usage 中提取命令前缀，或使用默认格式
+        let commandPrefix = `deno run -A src/cli.ts ${firstSubcommand} --help`;
+        if (this.usage) {
+          // 提取第一行，替换 <command> 为实际子命令，替换 [选项] 为 --help
+          const firstLine = this.usage.split('\n')[0].trim();
+          commandPrefix = firstLine
+            .replace(/<command>/g, firstSubcommand)
+            .replace(/\[选项\]/g, '--help');
+        }
+        console.log(`${colors.dim}提示: 查看子命令详细帮助，例如: ${colors.reset}${colors.cyan}${commandPrefix}${colors.reset}${colors.dim}${colors.reset}\n`);
+      } else {
+        console.log(`${colors.dim}提示: 使用 ${colors.reset}${colors.cyan}${this.name} <command> --help${colors.reset}${colors.dim} 查看子命令的详细选项${colors.reset}\n`);
+      }
     }
 
     // 显示版本
@@ -742,10 +788,76 @@ export class Command {
   }
 
   /**
+   * 计算字符串的实际显示宽度（考虑中文字符占 2 个字符宽度）
+   * @param str 字符串
+   * @returns 实际显示宽度
+   */
+  private calculateDisplayWidth(str: string): number {
+    let width = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str[i];
+      // 判断是否为中文字符（包括中文标点）
+      // 中文字符的 Unicode 范围：\u4e00-\u9fff
+      // 中文标点等：\u3000-\u303f, \uff00-\uffef
+      const code = char.charCodeAt(0);
+      if (
+        (code >= 0x4e00 && code <= 0x9fff) || // 中文字符
+        (code >= 0x3000 && code <= 0x303f) || // 中文标点
+        (code >= 0xff00 && code <= 0xffef)   // 全角字符
+      ) {
+        width += 2;
+      } else {
+        width += 1;
+      }
+    }
+    return width;
+  }
+
+  /**
+   * 计算选项的实际显示长度（不包含 ANSI 颜色代码）
+   * 考虑中文字符的宽度（中文字符占 2 个字符宽度）
+   * @param opt 选项定义
+   * @returns 实际显示长度
+   */
+  private calculateOptionDisplayLength(opt: CommandOption): number {
+    let length = 2; // 前面的两个空格 "  "
+    
+    // 必需标记
+    if (opt.required) {
+      length += 2; // "* "
+    }
+    
+    // 别名: "-a, " = 4 个字符（"-" + alias + ", "）
+    if (opt.alias) {
+      // 别名通常是单个字符，但也要考虑中文字符的情况
+      length += 1 + this.calculateDisplayWidth(opt.alias) + 2; // "-" + alias + ", "
+    }
+    
+    // 选项名称: "--name" = name.length + 2
+    // 选项名称通常不包含中文，但也要考虑中文字符的情况
+    length += this.calculateDisplayWidth(opt.name) + 2; // "--" + name
+    
+    // 需要值
+    if (opt.requiresValue) {
+      // " <值>" 需要整体计算宽度（考虑中文字符）
+      length += this.calculateDisplayWidth(" <值>");
+    }
+    
+    // 可选值
+    if (opt.choices && opt.choices.length > 0) {
+      const choicesStr = `(${opt.choices.join("|")})`;
+      length += this.calculateDisplayWidth(choicesStr) + 1; // " (choices)"
+    }
+    
+    return length;
+  }
+
+  /**
    * 打印单个选项信息
    * @param opt 选项定义
+   * @param maxLength 最大显示长度（用于对齐）
    */
-  private printOption(opt: CommandOption): void {
+  private printOption(opt: CommandOption, maxLength?: number): void {
     let optionStr = "  ";
     
     // 显示必需标记
@@ -767,9 +879,12 @@ export class Command {
       optionStr += ` ${colors.dim}(${opt.choices.join("|")})${colors.reset}`;
     }
 
-    // 对齐描述
-    const padding = 30 - optionStr.length;
-    optionStr += " ".repeat(Math.max(0, padding));
+    // 对齐描述（如果提供了最大长度，使用它；否则使用固定值）
+    const actualLength = this.calculateOptionDisplayLength(opt);
+    // 如果 maxLength 为 0 或 undefined，使用实际长度（不 padding）
+    const targetLength = maxLength && maxLength > 0 ? maxLength : actualLength;
+    const padding = Math.max(0, targetLength - actualLength);
+    optionStr += " ".repeat(padding);
     optionStr += opt.description;
 
     if (opt.defaultValue !== undefined) {
@@ -784,23 +899,7 @@ export class Command {
    * @param args 命令行参数（默认使用 Deno.args）
    */
   async execute(args: string[] = Deno.args): Promise<void> {
-    // 检查是否请求帮助
-    if (args.includes("--help") || args.includes("-h")) {
-      this.showHelp();
-      return;
-    }
-
-    // 检查是否请求版本
-    if (args.includes("--version") || args.includes("-v")) {
-      if (this.version) {
-        console.log(this.version);
-      } else {
-        outputError("未设置版本号");
-      }
-      return;
-    }
-
-    // 检查子命令（包括别名）
+    // 先检查子命令（包括别名），如果是子命令，让子命令处理后续参数（包括 --help）
     if (args.length > 0) {
       const firstArg = args[0];
       
@@ -818,6 +917,22 @@ export class Command {
         await subcommand.execute(args.slice(1));
         return;
       }
+    }
+
+    // 检查是否请求帮助（在子命令检查之后）
+    if (args.includes("--help") || args.includes("-h")) {
+      this.showHelp();
+      return;
+    }
+
+    // 检查是否请求版本
+    if (args.includes("--version") || args.includes("-v")) {
+      if (this.version) {
+        console.log(this.version);
+      } else {
+        outputError("未设置版本号");
+      }
+      return;
     }
 
     // 解析参数和选项

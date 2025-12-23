@@ -3,15 +3,15 @@
  * 使用 Command 类提供 dev、build、start 命令
  */
 
-import { loadConfig } from './core/config.ts';
-import { startDevServer } from './features/dev.ts';
-import { build } from './features/build.ts';
-import { startProdServer } from './features/prod.ts';
-import { Command } from './console/command.ts';
-import { success, info } from './console/output.ts';
-import { interactiveMenu } from './console/prompt.ts';
-import { isMultiAppMode } from './core/config.ts';
-import { readDenoJson } from './utils/file.ts';
+import { loadConfig } from "./core/config.ts";
+import { startDevServer } from "./features/dev.ts";
+import { build } from "./features/build.ts";
+import { startProdServer } from "./features/prod.ts";
+import { Command } from "./console/command.ts";
+import { info, success } from "./console/output.ts";
+import { interactiveMenu } from "./console/prompt.ts";
+import { isMultiAppMode } from "./core/config.ts";
+import { readDenoJson } from "./utils/file.ts";
 
 /**
  * 尝试从指定路径读取版本号
@@ -21,7 +21,7 @@ import { readDenoJson } from './utils/file.ts';
  */
 async function tryReadVersion(
   dir: string,
-  packageName?: string
+  packageName?: string,
 ): Promise<string | null> {
   try {
     const denoJson = await readDenoJson(dir);
@@ -42,7 +42,7 @@ async function tryReadVersion(
  * @returns 版本号或 null
  */
 function extractVersionFromJsrUrl(url: URL): string | null {
-  if (url.protocol === 'https:' || url.protocol === 'http:') {
+  if (url.protocol === "https:" || url.protocol === "http:") {
     // JSR 格式：/@dreamer/dweb/1.4.5/src/cli.ts
     const jsrMatch = url.pathname.match(/\/@[\w-]+\/[\w-]+\/([\d.]+)\//);
     if (jsrMatch && jsrMatch[1]) {
@@ -59,48 +59,48 @@ function extractVersionFromJsrUrl(url: URL): string | null {
  */
 async function getFrameworkVersion(): Promise<string> {
   const currentFileUrl = new URL(import.meta.url);
-  
+
   // 方法1: 从 JSR URL 中提取版本号（如果是从 JSR 导入）
   const jsrVersion = extractVersionFromJsrUrl(currentFileUrl);
   if (jsrVersion) {
     return jsrVersion;
   }
-  
+
   // 方法2: 从当前文件位置向上查找 deno.json
-  if (currentFileUrl.protocol === 'file:') {
+  if (currentFileUrl.protocol === "file:") {
     let filePath = currentFileUrl.pathname;
     // Windows 路径处理
-    if (Deno.build.os === 'windows' && filePath.startsWith('/')) {
+    if (Deno.build.os === "windows" && filePath.startsWith("/")) {
       filePath = filePath.substring(1);
     }
-    const currentDir = filePath.substring(0, filePath.lastIndexOf('/'));
-    
+    const currentDir = filePath.substring(0, filePath.lastIndexOf("/"));
+
     // 尝试从 src/cli.ts 向上查找
     const parentDir = `${currentDir}/..`;
-    const parentVersion = await tryReadVersion(parentDir, '@dreamer/dweb');
+    const parentVersion = await tryReadVersion(parentDir, "@dreamer/dweb");
     if (parentVersion) return parentVersion;
-    
+
     // 尝试查找 example 目录
     const exampleDir = `${currentDir}/../example`;
     const exampleVersion = await tryReadVersion(exampleDir);
     if (exampleVersion) return exampleVersion;
   }
-  
+
   // 方法3: 从当前工作目录读取
   const cwd = Deno.cwd();
-  const cwdVersion = await tryReadVersion(cwd, '@dreamer/dweb');
+  const cwdVersion = await tryReadVersion(cwd, "@dreamer/dweb");
   if (cwdVersion) return cwdVersion;
-  
+
   // 方法4: 尝试从 example 目录读取
   const exampleCwdVersion = await tryReadVersion(`${cwd}/example`);
   if (exampleCwdVersion) return exampleCwdVersion;
-  
+
   // 方法5: 如果当前在 example 目录
-  if (cwd.endsWith('example')) {
+  if (cwd.endsWith("example")) {
     const exampleVersion = await tryReadVersion(cwd);
     if (exampleVersion) return exampleVersion;
   }
-  
+
   // 如果都找不到，返回未知版本
   return "unknown";
 }
@@ -118,14 +118,16 @@ async function loadConfigForDetection(): Promise<any | null> {
     return result.config;
   } catch (loadError) {
     // 如果是多应用模式但未指定应用的错误，说明确实是多应用模式
-    if (loadError instanceof Error && loadError.message.includes("多应用模式下")) {
+    if (
+      loadError instanceof Error && loadError.message.includes("多应用模式下")
+    ) {
       // 直接读取配置文件来获取应用列表
-      const { findConfigFile } = await import('./utils/file.ts');
+      const { findConfigFile } = await import("./utils/file.ts");
       const configPath = await findConfigFile();
       if (!configPath) {
         return null;
       }
-      
+
       // 动态导入配置文件
       const configUrl = new URL(configPath, `file://${Deno.cwd()}/`).href;
       const configModule = await import(configUrl);
@@ -141,11 +143,13 @@ async function loadConfigForDetection(): Promise<any | null> {
  * @param apps 应用列表
  * @returns 选中的应用名称
  */
-async function selectAppInteractively(apps: Array<{ name?: string }>): Promise<string> {
+async function selectAppInteractively(
+  apps: Array<{ name?: string }>,
+): Promise<string> {
   if (apps.length === 0) {
     throw new Error("多应用模式下未找到任何应用配置");
   }
-  
+
   // 如果只有一个应用，直接返回
   if (apps.length === 1) {
     const appName = apps[0].name;
@@ -154,22 +158,22 @@ async function selectAppInteractively(apps: Array<{ name?: string }>): Promise<s
       return appName;
     }
   }
-  
+
   // 多个应用，让用户选择
   const appNames = apps
     .map((app) => app.name)
     .filter((name): name is string => !!name);
-  
+
   if (appNames.length === 0) {
     throw new Error("多应用模式下未找到有效的应用名称");
   }
-  
+
   // 显示应用列表供用户选择
   const selectedIndex = await interactiveMenu(
     "检测到多应用模式，请选择要操作的应用：",
-    appNames
+    appNames,
   );
-  
+
   return appNames[selectedIndex];
 }
 
@@ -183,27 +187,27 @@ async function selectAppInteractively(apps: Array<{ name?: string }>): Promise<s
  */
 async function parseAppName(
   args: string[],
-  options: Record<string, any>
+  options: Record<string, any>,
 ): Promise<string | undefined> {
   // 优先使用 --app 选项
   if (options.app) {
     return options.app as string;
   }
-  
+
   // 检查第一个参数是否包含冒号（兼容旧格式 dev:app-name）
-  if (args.length > 0 && args[0].includes(':')) {
-    const parts = args[0].split(':');
+  if (args.length > 0 && args[0].includes(":")) {
+    const parts = args[0].split(":");
     if (parts.length === 2) {
       return parts[1];
     }
   }
-  
+
   // 如果没有指定应用名称，检查是否为多应用模式
   const config = await loadConfigForDetection();
   if (!config) {
     return undefined;
   }
-  
+
   if (isMultiAppMode(config)) {
     try {
       return await selectAppInteractively(config.apps || []);
@@ -216,7 +220,7 @@ async function parseAppName(
       return undefined;
     }
   }
-  
+
   return undefined;
 }
 
@@ -238,10 +242,10 @@ const appOption = {
  */
 async function loadConfigWithServerOptions(
   appName: string | undefined,
-  options: Record<string, any>
+  options: Record<string, any>,
 ): Promise<any> {
   const { config } = await loadConfig(undefined, appName);
-  
+
   // 更新服务器配置
   if (options.port || options.host) {
     if (!config.server) {
@@ -254,7 +258,7 @@ async function loadConfigWithServerOptions(
       config.server.host = options.host as string;
     }
   }
-  
+
   return config;
 }
 
@@ -271,7 +275,21 @@ function displayAppName(appName: string | undefined): void {
 // 创建主命令
 const cli = new Command("dweb", "DWeb 框架 CLI 工具")
   .setVersion(frameworkVersion)
-  .setUsage("deno run -A src/cli.ts <command> [选项]\n  deno run -A src/cli.ts <command>:<app-name>  # 旧格式（兼容）");
+  .setUsage(
+    "deno run -A src/cli.ts <command> [选项]\n  deno run -A src/cli.ts <command>:<app-name>  # 旧格式（兼容）",
+  )
+  .example(
+    "deno run -A src/cli.ts dev --app my-app",
+    "启动开发服务器并指定应用",
+  )
+  .example(
+    "deno run -A src/cli.ts build --minify",
+    "监听文件变化并自动重新构建并压缩输出文件",
+  )
+  .example(
+    "deno run -A src/cli.ts start --port 8080",
+    "启动生产服务器并指定端口号和主机地址",
+  );
 
 // dev 子命令：启动开发服务器
 cli.command("dev", "启动开发服务器")
@@ -296,10 +314,10 @@ cli.command("dev", "启动开发服务器")
   .action(async (args, options) => {
     const appName = await parseAppName(args, options);
     displayAppName(appName);
-    
+
     // 加载配置并更新服务器设置
     const config = await loadConfigWithServerOptions(appName, options);
-    
+
     // 如果指定了自动打开浏览器，更新配置
     if (options.open === true) {
       if (!config.dev) {
@@ -307,7 +325,7 @@ cli.command("dev", "启动开发服务器")
       }
       config.dev.open = true;
     }
-    
+
     // 启动开发服务器
     await startDevServer(config);
   });
@@ -328,17 +346,17 @@ cli.command("build", "构建生产版本")
   })
   .action(async (args, options) => {
     const appName = await parseAppName(args, options);
-    
-    info('开始构建...');
+
+    info("开始构建...");
     displayAppName(appName);
-    
+
     // 加载配置
     const { config } = await loadConfig(undefined, appName);
-    
+
     // 更新构建配置
     if (options.watch === true || options.minify !== undefined) {
       if (!config.build) {
-        config.build = { outDir: 'dist' };
+        config.build = { outDir: "dist" };
       }
       if (options.watch === true) {
         (config.build as any).watch = true;
@@ -347,11 +365,11 @@ cli.command("build", "构建生产版本")
         (config.build as any).minify = options.minify as boolean;
       }
     }
-    
+
     // 执行构建
     await build(config);
-    
-    success('构建完成');
+
+    success("构建完成");
   });
 
 // start 子命令：启动生产服务器
@@ -372,10 +390,10 @@ cli.command("start", "启动生产服务器")
   .action(async (args, options) => {
     const appName = await parseAppName(args, options);
     displayAppName(appName);
-    
+
     // 加载配置并更新服务器设置
     const config = await loadConfigWithServerOptions(appName, options);
-    
+
     // 启动生产服务器
     await startProdServer(config);
   });
@@ -390,19 +408,19 @@ function preprocessArgs(args: string[]): string[] {
   if (args.length === 0) {
     return args;
   }
-  
+
   const firstArg = args[0];
-  
+
   // 检查是否包含冒号格式（旧格式：dev:app-name）
-  if (firstArg.includes(':') && !firstArg.startsWith('-')) {
-    const parts = firstArg.split(':');
+  if (firstArg.includes(":") && !firstArg.startsWith("-")) {
+    const parts = firstArg.split(":");
     if (parts.length === 2) {
       const [command, appName] = parts;
       // 转换为新格式：command --app app-name
-      return [command, '--app', appName, ...args.slice(1)];
+      return [command, "--app", appName, ...args.slice(1)];
     }
   }
-  
+
   return args;
 }
 
