@@ -1837,19 +1837,42 @@ export class RouteHandler {
       return;
     }
 
-    // 提取页面元数据（metadata）用于 SEO
-    // 将 metadata 存储到 req 对象上，供 SEO 插件使用
-    if (pageModule.metadata && typeof pageModule.metadata === "object") {
-      (req as any).pageMetadata = pageModule.metadata;
-    }
-
     // 加载页面数据
     const pageData = await this.loadPageData(pageModule, req, res);
+    
     // 提取页面元数据（metadata）用于 SEO
-    const pageMetadata =
-      pageModule.metadata && typeof pageModule.metadata === "object"
-        ? pageModule.metadata
-        : undefined;
+    // 支持 metadata 为对象或函数（函数可以接收 params、query、data 等参数）
+    let pageMetadata: Record<string, unknown> | undefined;
+    if (pageModule.metadata) {
+      if (typeof pageModule.metadata === "function") {
+        // metadata 是函数，调用它获取元数据
+        try {
+          const metadataResult = await pageModule.metadata({
+            params: req.params,
+            query: req.query,
+            data: pageData,
+            lang: (req as any).lang,
+          });
+          // 确保返回的是对象
+          if (metadataResult && typeof metadataResult === "object") {
+            pageMetadata = metadataResult as Record<string, unknown>;
+          }
+        } catch (error) {
+          logger.warn("metadata 函数执行失败", {
+            error: error instanceof Error ? error.message : String(error),
+          });
+          pageMetadata = undefined;
+        }
+      } else if (typeof pageModule.metadata === "object") {
+        // metadata 是对象，直接使用
+        pageMetadata = pageModule.metadata as Record<string, unknown>;
+      }
+    }
+    
+    // 将 metadata 存储到 req 对象上，供 SEO 插件使用
+    if (pageMetadata) {
+      (req as any).pageMetadata = pageMetadata;
+    }
 
     const pageProps = {
       params: req.params,

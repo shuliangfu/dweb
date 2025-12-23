@@ -11,6 +11,51 @@ import { getJsrPackageUrl, getVersionString } from "../utils.ts";
 import { getStore } from "@dreamer/dweb/client";
 
 /**
+ * 页面元数据（用于 SEO）
+ * 支持对象或函数两种形式：
+ * - 对象：静态元数据
+ * - 函数：动态元数据（可以基于 params、query、data 等生成）
+ * 
+ * @example
+ * // 对象形式（静态）
+ * export const metadata = {
+ *   title: "页面标题",
+ *   description: "页面描述",
+ * };
+ * 
+ * @example
+ * // 函数形式（动态）
+ * export const metadata = ({ params, query, data }) => ({
+ *   title: \`\${data.name} - 详情页\`,
+ *   description: data.description,
+ * });
+ */
+export function metadata({
+  params: _params,
+  query: _query,
+  data,
+}: {
+  params: Record<string, string>;
+  query: Record<string, string>;
+  data: unknown;
+}): {
+  title: string;
+  description: string;
+  keywords: string;
+  author: string;
+} {
+  // 可以从 data 中获取动态信息
+  const pageData = data as { versionString?: string; message?: string } | undefined;
+  
+  return {
+    title: "DWeb - 现代化的全栈 Web 框架",
+    description: `基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web 框架${pageData?.versionString ? ` (v${pageData.versionString})` : ""}`,
+    keywords: "DWeb, Deno, Preact, Tailwind CSS, Web 框架",
+    author: "DWeb",
+  };
+}
+
+/**
  * 加载页面数据（服务端执行）
  * @param context 包含 params、query、cookies、session 等的上下文对象
  * @returns 页面数据，会自动赋值到组件的 data 属性
@@ -42,14 +87,6 @@ export const load = async ({
     jsrPackageUrl,
     versionString,
   };
-};
-
-// 我想在这里设置 网页Title，Meta标签，SEO优化等
-export const metadata = {
-  title: "DWeb - 现代化的全栈 Web 框架",
-  description: "基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web 框架",
-  keywords: "DWeb, Deno, Preact, Tailwind CSS, Web 框架",
-  author: "DWeb",
 };
 
 /**

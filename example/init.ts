@@ -716,13 +716,47 @@ import type { PageProps, LoadContext } from '${frameworkUrl}';
 
 /**
  * 页面元数据（用于 SEO）
+ * 支持对象或函数两种形式：
+ * - 对象：静态元数据
+ * - 函数：动态元数据（可以基于 params、query、data 等生成）
+ * 
+ * @example
+ * // 对象形式（静态）
+ * export const metadata = {
+ *   title: "页面标题",
+ *   description: "页面描述",
+ * };
+ * 
+ * @example
+ * // 函数形式（动态）
+ * export function metadata({ params, query, data }) {
+ *   return {
+ *     title: \`\${data.name} - 详情页\`,
+ *     description: data.description,
+ *   };
+ * }
  */
-export const metadata = {
-  title: '${appName} - 首页',
-  description: '欢迎使用 ${appName}，基于 DWeb 框架构建的现代化 Web 应用',
-  keywords: '${appName}, DWeb, Deno, Preact, Web 应用',
-  author: '${appName}',
-};
+export function metadata({
+  params: _params,
+  query: _query,
+  data: _data,
+}: {
+  params: Record<string, string>;
+  query: Record<string, string>;
+  data: unknown;
+}): {
+  title: string;
+  description: string;
+  keywords: string;
+  author: string;
+} {
+  return {
+    title: '${appName} - 首页',
+    description: '欢迎使用 ${appName}，基于 DWeb 框架构建的现代化 Web 应用',
+    keywords: '${appName}, DWeb, Deno, Preact, Web 应用',
+    author: '${appName}',
+  };
+}
 
 /**
  * 加载页面数据（服务端执行）
@@ -1052,13 +1086,31 @@ export default function Home({ params: _params, query: _query, data }: PageProps
 
 /**
  * 页面元数据（用于 SEO）
+ * 支持对象或函数两种形式：
+ * - 对象：静态元数据
+ * - 函数：动态元数据（可以基于 params、query、data 等生成）
  */
-export const metadata = {
-  title: '关于 - ${appName}',
-  description: '了解 ${appName} 应用和 DWeb 框架的技术栈与设计理念',
-  keywords: '${appName}, DWeb, Deno, Preact, Tailwind CSS, 技术栈',
-  author: '${appName}',
-};
+export function metadata({
+  params: _params,
+  query: _query,
+  data: _data,
+}: {
+  params: Record<string, string>;
+  query: Record<string, string>;
+  data: unknown;
+}): {
+  title: string;
+  description: string;
+  keywords: string;
+  author: string;
+} {
+  return {
+    title: '关于 - ${appName}',
+    description: '了解 ${appName} 应用和 DWeb 框架的技术栈与设计理念',
+    keywords: '${appName}, DWeb, Deno, Preact, Tailwind CSS, 技术栈',
+    author: '${appName}',
+  };
+}
 
 /**
  * 关于页面组件
