@@ -1,17 +1,25 @@
 #!/usr/bin/env -S deno run -A
 /**
  * 控制台 CLI 示例
- * 演示如何使用 Command 类创建命令行工具
+ * 演示如何使用 Command 类创建命令行工具，包括数据库操作
  * 
  * 使用方法：
  *   deno run -A console/cli.ts --help
  *   deno run -A console/cli.ts greet --name "张三" --age 25
  *   deno run -A console/cli.ts calc add 10 20
  *   deno run -A console/cli.ts calc multiply 5 8
+ *   deno run -A console/cli.ts db create-user -u "testuser" -e "test@example.com" -p "password123"
+ *   deno run -A console/cli.ts db list-users --limit 5
+ *   deno run -A console/cli.ts db find-user -e "test@example.com"
+ *   deno run -A console/cli.ts db count-users
+ * 
+ * 注意：使用数据库命令前，请确保在 dweb.config.ts 中配置了数据库连接信息
  */
 
 import { Command } from "../../src/console/command.ts";
-import { success, info, error } from "../../src/console/output.ts";
+import { success, info, error, warning } from "../../src/console/output.ts";
+import { initDatabaseFromConfig } from "../../src/features/database/init-database.ts";
+import { User } from "../models/User.ts";
 
 /**
  * 创建主命令
@@ -188,6 +196,234 @@ cli
           Deno.exit(1);
         }
         break;
+    }
+  });
+
+/**
+ * 数据库操作命令
+ */
+const dbCommand = cli
+  .command("db", "数据库操作")
+  .info("执行数据库相关操作");
+
+// 初始化数据库连接（在数据库命令执行前）
+let dbInitialized = false;
+
+/**
+ * 初始化数据库连接
+ */
+async function ensureDatabaseInitialized(): Promise<void> {
+  if (dbInitialized) {
+    return;
+  }
+
+  try {
+    info("正在初始化数据库连接...");
+    await initDatabaseFromConfig();
+    await User.init();
+    dbInitialized = true;
+    success("数据库连接初始化成功");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    error(`数据库初始化失败: ${message}`);
+    error("请确保 dweb.config.ts 中配置了数据库连接信息");
+    Deno.exit(1);
+  }
+}
+
+// 创建用户命令
+dbCommand
+  .command("create-user", "创建新用户")
+  .option({
+    name: "username",
+    alias: "u",
+    description: "用户名",
+    requiresValue: true,
+    required: true,
+  })
+  .option({
+    name: "email",
+    alias: "e",
+    description: "邮箱地址",
+    requiresValue: true,
+    required: true,
+  })
+  .option({
+    name: "password",
+    alias: "p",
+    description: "密码",
+    requiresValue: true,
+    required: true,
+  })
+  .option({
+    name: "nickname",
+    alias: "n",
+    description: "昵称",
+    requiresValue: true,
+  })
+  .option({
+    name: "age",
+    alias: "a",
+    description: "年龄",
+    type: "number",
+    requiresValue: true,
+  })
+  .action(async (_args, options) => {
+    await ensureDatabaseInitialized();
+
+    const username = options.username as string;
+    const email = options.email as string;
+    const password = options.password as string;
+    const nickname = options.nickname as string | undefined;
+    const age = options.age as number | undefined;
+
+    try {
+      const user = await User.create({
+        username,
+        email,
+        password,
+        nickname: nickname || null,
+        age: age || null,
+        status: "active",
+        roles: ["user"],
+      });
+
+      success(`用户创建成功！`);
+      info(`用户 ID: ${user._id}`);
+      info(`用户名: ${user.username}`);
+      info(`邮箱: ${user.email}`);
+      if (user.nickname) {
+        info(`昵称: ${user.nickname}`);
+      }
+      if (user.age) {
+        info(`年龄: ${user.age}`);
+      }
+    } catch (err) {
+      error(`创建用户失败: ${err instanceof Error ? err.message : String(err)}`);
+      Deno.exit(1);
+    }
+  });
+
+// 查询用户命令
+dbCommand
+  .command("list-users", "列出所有用户")
+  .option({
+    name: "limit",
+    alias: "l",
+    description: "限制返回数量",
+    type: "number",
+    requiresValue: true,
+    defaultValue: 10,
+  })
+  .option({
+    name: "status",
+    alias: "s",
+    description: "用户状态过滤",
+    requiresValue: true,
+    choices: ["active", "inactive", "suspended"],
+  })
+  .action(async (_args, options) => {
+    await ensureDatabaseInitialized();
+
+    const limit = (options.limit as number) || 10;
+    const status = options.status as string | undefined;
+
+    try {
+      const condition: Record<string, unknown> = {};
+      if (status) {
+        condition.status = status;
+      }
+
+      const users = await User.findAll(condition);
+      const limitedUsers = users.slice(0, limit);
+
+      if (limitedUsers.length === 0) {
+        warning("没有找到用户");
+        return;
+      }
+
+      success(`找到 ${limitedUsers.length} 个用户：`);
+      console.log("");
+
+      for (const user of limitedUsers) {
+        info(`用户 ID: ${user._id}`);
+        info(`  用户名: ${user.username}`);
+        info(`  邮箱: ${user.email}`);
+        if (user.nickname) {
+          info(`  昵称: ${user.nickname}`);
+        }
+        if (user.age) {
+          info(`  年龄: ${user.age}`);
+        }
+        info(`  状态: ${user.status}`);
+        info(`  创建时间: ${user.createdAt}`);
+        console.log("");
+      }
+    } catch (err) {
+      error(`查询用户失败: ${err instanceof Error ? err.message : String(err)}`);
+      Deno.exit(1);
+    }
+  });
+
+// 根据邮箱查找用户命令
+dbCommand
+  .command("find-user", "根据邮箱查找用户")
+  .option({
+    name: "email",
+    alias: "e",
+    description: "邮箱地址",
+    requiresValue: true,
+    required: true,
+  })
+  .action(async (_args, options) => {
+    await ensureDatabaseInitialized();
+
+    const email = options.email as string;
+
+    try {
+      const user = await User.findByEmail(email);
+
+      if (!user) {
+        warning(`未找到邮箱为 ${email} 的用户`);
+        return;
+      }
+
+      success(`找到用户：`);
+      info(`用户 ID: ${user._id}`);
+      info(`用户名: ${user.username}`);
+      info(`邮箱: ${user.email}`);
+      if (user.nickname) {
+        info(`昵称: ${user.nickname}`);
+      }
+      if (user.age) {
+        info(`年龄: ${user.age}`);
+      }
+      info(`状态: ${user.status}`);
+      info(`创建时间: ${user.createdAt}`);
+    } catch (err) {
+      error(`查找用户失败: ${err instanceof Error ? err.message : String(err)}`);
+      Deno.exit(1);
+    }
+  });
+
+// 统计用户数量命令
+dbCommand
+  .command("count-users", "统计用户数量")
+  .action(async () => {
+    await ensureDatabaseInitialized();
+
+    try {
+      const allUsers = await User.findAll({});
+      const activeUsers = await User.findAll({ status: "active" });
+      const inactiveUsers = await User.findAll({ status: "inactive" });
+
+      success("用户统计：");
+      info(`总用户数: ${allUsers.length}`);
+      info(`活跃用户: ${activeUsers.length}`);
+      info(`非活跃用户: ${inactiveUsers.length}`);
+    } catch (err) {
+      error(`统计用户失败: ${err instanceof Error ? err.message : String(err)}`);
+      Deno.exit(1);
     }
   });
 
