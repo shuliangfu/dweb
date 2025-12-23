@@ -44,7 +44,7 @@ export class MongoDBAdapter extends BaseAdapter {
       const clientOptions: Partial<MongoClientOptions> = {
         maxPoolSize: config.mongoOptions?.maxPoolSize || 10,
         minPoolSize: config.mongoOptions?.minPoolSize || 1,
-        serverSelectionTimeoutMS: config.mongoOptions?.serverSelectionTimeoutMS || 5000,
+        serverSelectionTimeoutMS: config.mongoOptions?.timeoutMS || 5000,
       };
       this.client = new MongoClient(url, clientOptions);
 

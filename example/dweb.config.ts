@@ -89,7 +89,7 @@ const config: AppConfig = {
   //   mongoOptions: {
   //     maxPoolSize: 10, // 最大连接池大小
   //     minPoolSize: 1, // 最小连接池大小
-  //     serverSelectionTimeoutMS: 5000, // 服务器选择超时时间（毫秒）
+  //     timeoutMS: 5000, // 服务器选择超时时间（毫秒）
   //     maxRetries: 3, // 最大重试次数
   //     retryDelay: 1000, // 重试延迟（毫秒）
   //   },

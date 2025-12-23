@@ -102,7 +102,7 @@ await adapter.connect({
   mongoOptions: {
     maxPoolSize: 10,
     minPoolSize: 2,
-    serverSelectionTimeoutMS: 5000,
+    timeoutMS: 5000,
     maxRetries: 3,
     retryDelay: 1000,
   },
