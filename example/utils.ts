@@ -3,9 +3,30 @@
  * 用于获取 DWeb 框架的版本信息和相关 URL
  */
 
-// 读取根目录的 deno.json 获取版本号
+// 读取根目录的 deno.json 或 deno.jsonc 获取版本号
 let _dwebVersion: string = "";
 let _denoJson: any = null;
+
+/**
+ * 同步读取 deno.json 或 deno.jsonc
+ */
+function readDenoJsonSync(basePath: string): Record<string, any> | null {
+  // 优先尝试 deno.json
+  const denoJsonPath = `${basePath}/deno.json`;
+  try {
+    const content = Deno.readTextFileSync(denoJsonPath);
+    return JSON.parse(content);
+  } catch {
+    // deno.json 不存在，尝试 deno.jsonc
+    try {
+      const denoJsoncPath = `${basePath}/deno.jsonc`;
+      const content = Deno.readTextFileSync(denoJsoncPath);
+      return JSON.parse(content);
+    } catch {
+      return null;
+    }
+  }
+}
 
 /**
  * 获取 DWeb 版本号
@@ -13,18 +34,24 @@ let _denoJson: any = null;
 function getDwebVersion(): string {
   if (!_dwebVersion) {
     try {
-      const denoJsonPath = new URL("../../deno.json", import.meta.url).pathname;
-      const denoJsonContent = Deno.readTextFileSync(denoJsonPath);
-      _denoJson = JSON.parse(denoJsonContent);
-      _dwebVersion = _denoJson.version || "0.1.0";
+      const basePath1 = new URL("../../", import.meta.url).pathname;
+      _denoJson = readDenoJsonSync(basePath1);
+      if (_denoJson && _denoJson.version) {
+        _dwebVersion = _denoJson.version;
+      } else {
+        throw new Error("Version not found");
+      }
     } catch (_error) {
       try {
-        const denoJsonPath = new URL("../deno.json", import.meta.url).pathname;
-        const denoJsonContent = Deno.readTextFileSync(denoJsonPath);
-        _denoJson = JSON.parse(denoJsonContent);
-        _dwebVersion = _denoJson.version || "0.1.0";
+        const basePath2 = new URL("../", import.meta.url).pathname;
+        _denoJson = readDenoJsonSync(basePath2);
+        if (_denoJson && _denoJson.version) {
+          _dwebVersion = _denoJson.version;
+        } else {
+          throw new Error("Version not found");
+        }
       } catch (_error) {
-        // 无法读取 deno.json，使用默认版本号
+        // 无法读取 deno.json 或 deno.jsonc，使用默认版本号
         _dwebVersion = "0.1.0";
       }
     }

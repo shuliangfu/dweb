@@ -5,6 +5,7 @@
 
 import * as path from '@std/path';
 import { ensureDir } from '@std/fs/ensure_dir';
+import { readDenoJson } from '../utils/file.ts';
 
 /**
  * 从框架的 deno.json 读取版本号
@@ -75,12 +76,10 @@ async function getFrameworkVersion(): Promise<string> {
     const maxDepth = 5; // 最多向上查找 5 层目录
     
     for (let i = 0; i < maxDepth; i++) {
-      const denoJsonPath = path.join(searchDir, 'deno.json');
       try {
-        const denoJsonContent = await Deno.readTextFile(denoJsonPath);
-        const denoJson = JSON.parse(denoJsonContent);
+        const denoJson = await readDenoJson(searchDir);
         // 验证是否是框架的 deno.json（检查 name 字段）
-        if (denoJson.name === '@dreamer/dweb' && denoJson.version) {
+        if (denoJson && denoJson.name === '@dreamer/dweb' && denoJson.version) {
           return denoJson.version;
         }
       } catch (_error) {
@@ -99,10 +98,8 @@ async function getFrameworkVersion(): Promise<string> {
     // 方法2: 如果找不到，尝试从当前工作目录读取（向后兼容，仅用于开发环境）
     // 注意：这仅在开发框架时有用，从 JSR 导入时不应依赖此方法
     try {
-      const denoJsonPath = path.join(Deno.cwd(), 'deno.json');
-      const denoJsonContent = await Deno.readTextFile(denoJsonPath);
-      const denoJson = JSON.parse(denoJsonContent);
-      if (denoJson.name === '@dreamer/dweb' && denoJson.version) {
+      const denoJson = await readDenoJson();
+      if (denoJson && denoJson.name === '@dreamer/dweb' && denoJson.version) {
         return denoJson.version;
       }
     } catch (_error) {

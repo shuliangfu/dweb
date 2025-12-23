@@ -46,3 +46,63 @@ export function shouldIgnoreFile(
   return ignoredPatterns.some((pattern) => pattern(name) || pattern(filePath));
 }
 
+/**
+ * 读取 deno.json 或 deno.jsonc 文件
+ * 优先尝试 deno.json，如果不存在则尝试 deno.jsonc
+ * @param basePath 基础路径（目录路径，不包含文件名）
+ * @returns 解析后的 JSON 对象，如果文件不存在返回 null
+ */
+export async function readDenoJson(basePath?: string): Promise<Record<string, any> | null> {
+  const base = basePath || Deno.cwd();
+  const baseDir = base.endsWith('/') ? base.slice(0, -1) : base;
+  
+  // 优先尝试 deno.json
+  const denoJsonPath = `${baseDir}/deno.json`;
+  try {
+    const content = await Deno.readTextFile(denoJsonPath);
+    // JSON.parse 可以解析 JSONC 格式（带注释的 JSON）
+    return JSON.parse(content);
+  } catch {
+    // deno.json 不存在，尝试 deno.jsonc
+    try {
+      const denoJsoncPath = `${baseDir}/deno.jsonc`;
+      const content = await Deno.readTextFile(denoJsoncPath);
+      // JSON.parse 可以解析 JSONC 格式（带注释的 JSON）
+      return JSON.parse(content);
+    } catch {
+      // 两个文件都不存在
+      return null;
+    }
+  }
+}
+
+/**
+ * 同步读取 deno.json 或 deno.jsonc 文件
+ * 优先尝试 deno.json，如果不存在则尝试 deno.jsonc
+ * @param basePath 基础路径（目录路径，不包含文件名）
+ * @returns 解析后的 JSON 对象，如果文件不存在返回 null
+ */
+export function readDenoJsonSync(basePath?: string): Record<string, any> | null {
+  const base = basePath || Deno.cwd();
+  const baseDir = base.endsWith('/') ? base.slice(0, -1) : base;
+  
+  // 优先尝试 deno.json
+  const denoJsonPath = `${baseDir}/deno.json`;
+  try {
+    const content = Deno.readTextFileSync(denoJsonPath);
+    // JSON.parse 可以解析 JSONC 格式（带注释的 JSON）
+    return JSON.parse(content);
+  } catch {
+    // deno.json 不存在，尝试 deno.jsonc
+    try {
+      const denoJsoncPath = `${baseDir}/deno.jsonc`;
+      const content = Deno.readTextFileSync(denoJsoncPath);
+      // JSON.parse 可以解析 JSONC 格式（带注释的 JSON）
+      return JSON.parse(content);
+    } catch {
+      // 两个文件都不存在
+      return null;
+    }
+  }
+}
+

@@ -289,13 +289,15 @@ export class HMRServer {
    * 读取 import map 配置
    */
   private async loadImportMap(): Promise<Record<string, string>> {
-    const possiblePaths = ['deno.json', './deno.json', `${Deno.cwd()}/deno.json`];
+    const { readDenoJson } = await import('../utils/file.ts');
+    const possiblePaths = [Deno.cwd(), '.', './'];
 
-    for (const path of possiblePaths) {
+    for (const basePath of possiblePaths) {
       try {
-        const content = await Deno.readTextFile(path);
-        const config = JSON.parse(content);
-        return config.imports || {};
+        const config = await readDenoJson(basePath);
+        if (config && config.imports) {
+          return config.imports;
+        }
       } catch {
         // 继续尝试下一个路径
       }
@@ -361,17 +363,19 @@ export class HMRServer {
       ? filePath
       : path.resolve(cwd, filePath);
 
-    // 读取 deno.json 获取 import map（用于解析外部依赖）
+    // 读取 deno.json 或 deno.jsonc 获取 import map（用于解析外部依赖）
     let importMap: Record<string, string> = {};
     try {
-      const denoJsonPath = path.join(cwd, 'deno.json');
-      const denoJsonContent = await Deno.readTextFile(denoJsonPath);
-      const denoJson = JSON.parse(denoJsonContent);
-      if (denoJson.imports) {
+      const { readDenoJson } = await import('../utils/file.ts');
+      const denoJson = await readDenoJson(cwd);
+      if (denoJson && denoJson.imports) {
         importMap = denoJson.imports;
+      } else {
+        // 如果读取失败，使用默认 import map
+        importMap = await this.loadImportMap();
       }
     } catch {
-      // deno.json 不存在或解析失败，使用默认 import map
+      // deno.json 或 deno.jsonc 不存在或解析失败，使用默认 import map
       importMap = await this.loadImportMap();
     }
 

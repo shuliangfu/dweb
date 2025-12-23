@@ -514,17 +514,16 @@ async function compileFile(
       // 注意：只打包项目内的相对路径导入，不打包外部依赖（如 @dreamer/dweb）
       const cwd = Deno.cwd();
 
-      // 读取 deno.json 获取 import map（用于解析外部依赖）
+      // 读取 deno.json 或 deno.jsonc 获取 import map（用于解析外部依赖）
       let importMap: Record<string, string> = {};
       try {
-        const denoJsonPath = path.join(cwd, "deno.json");
-        const denoJsonContent = await Deno.readTextFile(denoJsonPath);
-        const denoJson = JSON.parse(denoJsonContent);
-        if (denoJson.imports) {
+        const { readDenoJson } = await import('../utils/file.ts');
+        const denoJson = await readDenoJson(cwd);
+        if (denoJson && denoJson.imports) {
           importMap = denoJson.imports;
         }
       } catch {
-        // deno.json 不存在或解析失败，使用空 import map
+        // deno.json 或 deno.jsonc 不存在或解析失败，使用空 import map
       }
 
       // 收集所有外部依赖（从 import map 中提取）
@@ -874,18 +873,17 @@ async function compileDirectory(
 
   // 如果启用代码分割，使用批量编译
   if (codeSplitting && files.length > 1) {
-    // 读取 deno.json 获取 import map
+    // 读取 deno.json 或 deno.jsonc 获取 import map
     const cwd = Deno.cwd();
     let importMap: Record<string, string> = {};
     try {
-      const denoJsonPath = path.join(cwd, "deno.json");
-      const denoJsonContent = await Deno.readTextFile(denoJsonPath);
-      const denoJson = JSON.parse(denoJsonContent);
-      if (denoJson.imports) {
+      const { readDenoJson } = await import('../utils/file.ts');
+      const denoJson = await readDenoJson(cwd);
+      if (denoJson && denoJson.imports) {
         importMap = denoJson.imports;
       }
     } catch {
-      // deno.json 不存在或解析失败，使用空 import map
+      // deno.json 或 deno.jsonc 不存在或解析失败，使用空 import map
     }
 
     // 收集外部依赖

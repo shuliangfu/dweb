@@ -1,6 +1,6 @@
 {
-  "version": "1.4.6", 
-  "nodeModulesDir": "manual",
+  "version": "1.4.7", 
+  "nodeModulesDir": "auto",
   "tasks": {
     "dev": "deno run -A @dreamer/dweb/cli dev",
     "build": "deno run -A @dreamer/dweb/cli build",

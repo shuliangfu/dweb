@@ -3,6 +3,8 @@
  * 用于创建和管理 import map 脚本
  */
 
+import { readDenoJson } from './file.ts';
+
 // 缓存 import map 脚本，避免每次请求都读取文件
 let cachedImportMapScript: string | null = null;
 let importMapScriptCacheTime = 0;
@@ -24,32 +26,24 @@ export async function createImportMapScript(): Promise<string | null> {
   }
   
   try {
-    // 读取 deno.json（尝试多个可能的位置）
+    // 读取 deno.json 或 deno.jsonc（尝试多个可能的位置）
     const possiblePaths = [
-      "deno.json",
-      "./deno.json",
-      `${Deno.cwd()}/deno.json`,
+      Deno.cwd(),
+      ".",
+      "./",
     ];
-    let denoJsonContent = "";
-    let found = false;
+    let denoJson: Record<string, any> | null = null;
     
-    for (const denoJsonPath of possiblePaths) {
-      try {
-        // 使用 await 确保正确等待文件读取
-        const fileContent = await Deno.readTextFile(denoJsonPath);
-        denoJsonContent = fileContent;
-        found = true;
+    for (const basePath of possiblePaths) {
+      denoJson = await readDenoJson(basePath);
+      if (denoJson) {
         break;
-      } catch (_error) {
-        // 继续尝试下一个路径
       }
     }
     
-    if (!found) {
+    if (!denoJson) {
       return null;
     }
-    
-    const denoJson = JSON.parse(denoJsonContent);
     
     // 获取 imports，只保留客户端需要的模块
     const imports = denoJson.imports || {};
