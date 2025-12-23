@@ -59,3 +59,9 @@ export {
   setDatabaseConfigLoader,
 } from './access.ts';
 
+// 导出数据库初始化工具
+export {
+  initDatabaseFromConfig,
+  setupDatabaseConfigLoader,
+} from './init-database.ts';
+

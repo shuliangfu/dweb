@@ -37,6 +37,29 @@ src/features/database/
 
 ### 初始化数据库
 
+#### 方式 1：使用初始化工具（推荐）
+
+在项目入口文件（如 `main.ts` 或 `init.ts`）中调用初始化工具，自动从 `dweb.config.ts` 加载配置：
+
+```typescript
+import { initDatabaseFromConfig } from "@dreamer/dweb/features/database";
+
+// 自动从 dweb.config.ts 加载配置并初始化数据库
+await initDatabaseFromConfig();
+```
+
+或者手动传入配置：
+
+```typescript
+import { initDatabaseFromConfig } from "@dreamer/dweb/features/database";
+import config from "./dweb.config.ts";
+
+// 使用配置对象初始化数据库
+await initDatabaseFromConfig(config);
+```
+
+#### 方式 2：手动初始化
+
 ```typescript
 import { initDatabase } from "@dreamer/dweb/features/database";
 
@@ -50,6 +73,48 @@ await initDatabase({
     username: "user",
     password: "password",
   },
+});
+```
+
+#### 解决 "Database config loader not set" 错误
+
+如果在使用模型时遇到 `Database config loader not set` 错误，需要在项目启动时设置配置加载器：
+
+**方法 1：使用初始化工具（最简单）**
+
+```typescript
+// 在项目入口文件（如 main.ts 或 init.ts）中
+import { initDatabaseFromConfig } from "@dreamer/dweb/features/database";
+
+// 自动设置配置加载器并初始化数据库
+await initDatabaseFromConfig();
+```
+
+**方法 2：仅设置配置加载器（延迟初始化）**
+
+```typescript
+// 在项目入口文件中
+import { setupDatabaseConfigLoader } from "@dreamer/dweb/features/database";
+
+// 仅设置配置加载器，数据库会在首次使用模型时自动初始化
+await setupDatabaseConfigLoader();
+
+// 之后使用模型时，会自动初始化数据库
+await User.init();
+```
+
+**方法 3：手动设置配置加载器**
+
+```typescript
+import { setDatabaseConfigLoader } from "@dreamer/dweb/features/database";
+import { loadConfig } from "@dreamer/dweb/core/config";
+
+// 加载配置
+const { config } = await loadConfig();
+
+// 设置配置加载器
+setDatabaseConfigLoader(() => {
+  return Promise.resolve(config.database || null);
 });
 ```
 

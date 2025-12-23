@@ -125,7 +125,7 @@ export class User extends MongoModel {
     // 邮箱唯一索引
     { field: "email", unique: true },
     // 用户名唯一索引
-    { field: "username", unique: true },
+    // { field: "username", unique: true },
     // 手机号唯一索引（可选字段，但如果有值则必须唯一）
     { field: "phone", unique: true, sparse: true },
     // 状态索引（用于查询活跃用户）
