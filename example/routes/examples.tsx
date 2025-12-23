@@ -9,6 +9,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import CodeBlock from '../components/CodeBlock.tsx';
 import type { PageProps } from '@dreamer/dweb';
+import { exampleStore, type ExampleStoreState } from '../stores/example.ts';
 
 export const metadata = {
   title: '交互示例 - DWeb 框架使用示例',
@@ -389,6 +390,78 @@ const handleSubmit = async (e: Event) => {
   console.log(result);
 };`;
 
+  // Store 状态管理
+  const [storeState, setStoreState] = useState<ExampleStoreState>(exampleStore.$state);
+
+  useEffect(() => {
+    // 订阅状态变化
+    const unsubscribe = exampleStore.$subscribe((newState: ExampleStoreState) => {
+      setStoreState(newState);
+    });
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
+
+  const storeExampleCode = `// 1. 在 stores/example.ts 中定义 store（声明式 API）
+import { defineStore, type StoreInstance } from '@dreamer/dweb/client';
+
+export interface ExampleStoreState extends Record<string, unknown> {
+  count: number;
+  message: string;
+  items: string[];
+}
+
+export const exampleStore = defineStore('example', {
+  state: (): ExampleStoreState => ({
+    count: 0,
+    message: '',
+    items: [],
+  }),
+  actions: {
+    increment(this: ExampleStoreState & StoreInstance<ExampleStoreState>) {
+      this.count++;
+    },
+    decrement(this: ExampleStoreState & StoreInstance<ExampleStoreState>) {
+      this.count--;
+    },
+    setMessage(this: ExampleStoreState & StoreInstance<ExampleStoreState>, message: string) {
+      this.message = message;
+    },
+    addItem(this: ExampleStoreState & StoreInstance<ExampleStoreState>, item: string) {
+      this.items = [...this.items, item];
+    },
+    removeItem(this: ExampleStoreState & StoreInstance<ExampleStoreState>, index: number) {
+      this.items = this.items.filter((_item: string, i: number) => i !== index);
+    },
+  },
+});
+
+// 2. 在页面中使用
+import { exampleStore, type ExampleStoreState } from '../stores/example.ts';
+
+export default function MyPage() {
+  const [state, setState] = useState<ExampleStoreState>(exampleStore.$state);
+
+  useEffect(() => {
+    const unsubscribe = exampleStore.$subscribe((newState: ExampleStoreState) => {
+      setState(newState);
+    });
+    return () => unsubscribe?.();
+  }, []);
+
+  return (
+    <div>
+      <p>Count: {exampleStore.count}</p>
+      <button type="button" onClick={() => exampleStore.increment()}>+1</button>
+      <button type="button" onClick={() => exampleStore.$reset()}>重置</button>
+    </div>
+  );
+}`;
+
   return (
     <div className="space-y-0">
       {/* 页面标题 */}
@@ -638,9 +711,93 @@ const handleSubmit = async (e: Event) => {
             <CodeBlock code={formSubmitCode} language="typescript" title="表单提交代码示例" />
           </section>
 
-          {/* 4. 其他交互示例 */}
+          {/* 4. Store 状态管理示例 */}
           <section className="mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">4. 其他交互示例</h2>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">4. Store 状态管理示例</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              使用 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">defineStore</code> 定义 store，实现跨组件的状态管理。
+            </p>
+
+            <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg mb-6 border border-gray-200 dark:border-gray-700">
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">当前状态</h3>
+                <div className="space-y-2">
+                  <p className="text-gray-700 dark:text-gray-300">
+                    <strong>Count:</strong> {storeState?.count ?? 0}
+                  </p>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    <strong>Message:</strong> {storeState?.message || '(空)'}
+                  </p>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    <strong>Items:</strong> {storeState?.items.length ?? 0} 项
+                  </p>
+                  {storeState?.items && storeState.items.length > 0 && (
+                    <ul className="list-disc list-inside ml-4 text-gray-700 dark:text-gray-300">
+                      {storeState.items.map((item, index) => (
+                        <li key={index}>{item}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">操作按钮</h3>
+                <div className="flex flex-wrap gap-3 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => exampleStore.increment()}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  >
+                    +1
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => exampleStore.decrement()}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  >
+                    -1
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => exampleStore.setMessage('Hello from Store!')}
+                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                  >
+                    设置消息
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => exampleStore.addItem(`Item ${Date.now()}`)}
+                    className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                  >
+                    添加项目
+                  </button>
+                  {storeState?.items && storeState.items.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => exampleStore.removeItem(storeState.items.length - 1)}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    >
+                      删除最后一项
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => exampleStore.$reset()}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  重置状态
+                </button>
+              </div>
+            </div>
+
+            <CodeBlock code={storeExampleCode} language="typescript" title="Store 状态管理代码示例" />
+          </section>
+
+          {/* 5. 其他交互示例 */}
+          <section className="mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">5. 其他交互示例</h2>
 
             <div className="grid md:grid-cols-2 gap-6">
               {/* 延迟请求示例 */}
@@ -687,10 +844,10 @@ const handleSubmit = async (e: Event) => {
             </div>
           </section>
 
-          {/* 5. API 响应展示 */}
+          {/* 6. API 响应展示 */}
           {apiResponse && (
             <section className="mb-16">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">5. API 响应数据</h2>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">6. API 响应数据</h2>
               <div className="bg-gray-900 dark:bg-gray-950 p-6 rounded-lg border border-gray-700 dark:border-gray-800">
                 <pre className="text-sm text-gray-100 dark:text-gray-200 font-mono overflow-x-auto">
                   <code>{JSON.stringify(apiResponse, null, 2)}</code>
