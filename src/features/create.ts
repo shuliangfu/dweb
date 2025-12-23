@@ -555,8 +555,8 @@ ${isMultiApp ? [
   },
   "imports": {
     "@dreamer/dweb": "${frameworkUrl}",
-    "@dreamer/dweb/client": "${frameworkUrl.includes('jsr:') ? frameworkUrl.replace(/@([\^~]?[\d.]+)$/, '@$1/client') : frameworkUrl.replace('/mod.ts', '/client.ts')}",
     "@dreamer/dweb/cli": "${frameworkUrl.includes('jsr:') ? frameworkUrl.replace(/@([\^~]?[\d.]+)$/, '@$1/cli') : frameworkUrl.replace('/mod.ts', '/cli.ts')}",
+    "@dreamer/dweb/client": "${frameworkUrl.includes('jsr:') ? frameworkUrl.replace(/@([\^~]?[\d.]+)$/, '@$1/client') : frameworkUrl.replace('/mod.ts', '/client.ts')}",
     "preact": "https://esm.sh/preact@latest",
     "preact/hooks": "https://esm.sh/preact@latest/hooks",
     "preact/jsx-runtime": "https://esm.sh/preact@latest/jsx-runtime"${useTailwindV4 ? `,
