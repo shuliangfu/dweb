@@ -811,6 +811,16 @@ import { exampleStore, type ExampleStoreState } from '../stores/example.ts';
 import type { PageProps, LoadContext } from '@dreamer/dweb';
 
 /**
+ * 页面元数据（用于 SEO）
+ */
+export const metadata = {
+  title: '${appName} - 首页',
+  description: '欢迎使用 ${appName}，基于 DWeb 框架构建的现代化 Web 应用',
+  keywords: '${appName}, DWeb, Deno, Preact, Web 应用',
+  author: '${appName}',
+};
+
+/**
  * 加载页面数据（服务端执行）
  * @param context 包含 params、query、cookies、session 等的上下文对象
  * @returns 页面数据，会自动赋值到组件的 data 属性
@@ -1249,6 +1259,16 @@ export default function Home({ params: _params, query: _query, data }: PageProps
  * 关于页面
  * 介绍应用和框架的基本信息
  */
+
+/**
+ * 页面元数据（用于 SEO）
+ */
+export const metadata = {
+  title: '关于 - ${appName}',
+  description: '了解 ${appName} 应用和 DWeb 框架的技术栈与设计理念',
+  keywords: '${appName}, DWeb, Deno, Preact, Tailwind CSS, 技术栈',
+  author: '${appName}',
+};
 
 /**
  * 关于页面组件
