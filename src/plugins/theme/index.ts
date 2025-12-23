@@ -13,6 +13,40 @@ import * as path from "@std/path";
 let cachedClientScript: string | null = null;
 
 /**
+ * 读取文件内容（支持本地文件和 JSR 包）
+ * @param relativePath 相对于当前文件的路径
+ * @returns 文件内容
+ */
+async function readFileContent(relativePath: string): Promise<string> {
+  const currentUrl = new URL(import.meta.url);
+  
+  // 如果是 HTTP/HTTPS URL（JSR 包），使用 fetch
+  if (currentUrl.protocol === 'http:' || currentUrl.protocol === 'https:') {
+    // 构建 JSR URL：将当前文件的 URL 替换为相对路径的文件
+    const currentPath = currentUrl.pathname;
+    const currentDir = currentPath.substring(0, currentPath.lastIndexOf('/'));
+    const targetPath = `${currentDir}/${relativePath}`;
+    
+    // 构建完整的 JSR URL
+    const baseUrl = currentUrl.origin;
+    const fullUrl = `${baseUrl}${targetPath}`;
+    
+    const response = await fetch(fullUrl);
+    if (!response.ok) {
+      throw new Error(`无法从 JSR 包读取文件: ${fullUrl} (${response.status})`);
+    }
+    return await response.text();
+  } else {
+    // 本地文件系统，使用 Deno.readTextFile
+    const browserScriptPath = path.join(
+      path.dirname(new URL(import.meta.url).pathname),
+      relativePath,
+    );
+    return await Deno.readTextFile(browserScriptPath);
+  }
+}
+
+/**
  * 编译客户端主题脚本
  */
 async function compileClientScript(): Promise<string> {
@@ -21,12 +55,24 @@ async function compileClientScript(): Promise<string> {
   }
 
   try {
-    // 读取浏览器端脚本文件
-    const browserScriptPath = path.join(
-      path.dirname(new URL(import.meta.url).pathname),
-      "browser.ts",
-    );
-    const browserScriptContent = await Deno.readTextFile(browserScriptPath);
+    // 读取浏览器端脚本文件（支持本地文件和 JSR 包）
+    const browserScriptContent = await readFileContent("browser.ts");
+    
+    // 获取文件路径用于 esbuild（用于错误报告）
+    const currentUrl = new URL(import.meta.url);
+    let browserScriptPath: string;
+    if (currentUrl.protocol === 'http:' || currentUrl.protocol === 'https:') {
+      // JSR 包：使用 URL 作为路径标识
+      const currentPath = currentUrl.pathname;
+      const currentDir = currentPath.substring(0, currentPath.lastIndexOf('/'));
+      browserScriptPath = `${currentUrl.origin}${currentDir}/browser.ts`;
+    } else {
+      // 本地文件系统
+      browserScriptPath = path.join(
+        path.dirname(new URL(import.meta.url).pathname),
+        "browser.ts",
+      );
+    }
 
     // 使用 esbuild 编译 TypeScript 为 JavaScript
     const compiledCode = await compileWithEsbuild(
