@@ -284,7 +284,7 @@ function createJSRResolverPlugin(
     name: "jsr-resolver",
     setup(build: esbuild.PluginBuild) {
       // 解析 @dreamer/dweb/client（支持 JSR URL 和本地路径）
-      build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, async (_args) => {
+      build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, (_args) => {
         const clientImport = importMap["@dreamer/dweb/client"];
         if (!clientImport) {
           return undefined; // 让 esbuild 使用默认解析
@@ -303,27 +303,22 @@ function createJSRResolverPlugin(
         // 如果是 JSR URL，解析为实际的 HTTP URL
         if (clientImport.startsWith("jsr:")) {
           try {
-            // 使用 import.meta.resolve 解析 JSR URL
-            let resolvedUrl = await import.meta.resolve(clientImport);
-            
-            // 如果返回的是 file:// 协议（本地开发），需要转换为 HTTP URL
-            if (resolvedUrl.startsWith("file://")) {
-              // 手动构建 JSR URL
-              const jsrPath = clientImport.replace(/^jsr:/, "");
-              const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
-              if (jsrMatch) {
-                const [, scope, packageName, version, subPath] = jsrMatch;
-                let actualSubPath = subPath;
-                if (!actualSubPath.startsWith("src/") && !actualSubPath.includes("/")) {
-                  actualSubPath = `src/${subPath}.ts`;
-                } else if (!actualSubPath.endsWith(".ts") && !actualSubPath.endsWith(".tsx")) {
-                  actualSubPath = `${actualSubPath}.ts`;
-                }
-                resolvedUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${actualSubPath}`;
-              } else {
-                return undefined;
-              }
+            // 直接手动构建 JSR URL，不依赖 import.meta.resolve
+            // 因为在 build 时，import.meta.resolve 可能无法正确解析 JSR URL
+            const jsrPath = clientImport.replace(/^jsr:/, "");
+            const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
+            if (!jsrMatch) {
+              return undefined;
             }
+            
+            const [, scope, packageName, version, subPath] = jsrMatch;
+            let actualSubPath = subPath;
+            if (!actualSubPath.startsWith("src/") && !actualSubPath.includes("/")) {
+              actualSubPath = `src/${subPath}.ts`;
+            } else if (!actualSubPath.endsWith(".ts") && !actualSubPath.endsWith(".tsx")) {
+              actualSubPath = `${actualSubPath}.ts`;
+            }
+            const resolvedUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${actualSubPath}`;
             
             return {
               path: resolvedUrl,
@@ -1218,7 +1213,8 @@ async function generateRouteMap(
     : path.resolve(Deno.cwd(), routesDir, "api");
 
   const routesDirAbsolute = path.resolve(Deno.cwd(), routesDir);
-  const apiDirInRoutes =
+  // 注意：apiDirInRoutes 在此函数中未使用，但在 buildApp 函数中使用
+  const _apiDirInRoutes =
     apiDirAbsolute.startsWith(routesDirAbsolute + path.SEPARATOR) ||
     apiDirAbsolute === routesDirAbsolute;
 
