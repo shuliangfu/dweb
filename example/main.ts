@@ -45,6 +45,8 @@ app.plugin(
   store({
     persist: true,
     storageKey: 'store',
+    // 不需要手动配置 initialState，会自动从已注册的 stores 中收集
+    // store 插件会自动导入 stores/index.ts（如果存在）
   })
 );
 
