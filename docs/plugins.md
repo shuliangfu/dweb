@@ -403,9 +403,13 @@ app.plugin(store({
 
 **defineStore API（推荐，声明式 API）：**
 
+支持两种定义方式：**对象式（Options API）** 和 **函数式（Setup API）**。
+
+**方式 1：对象式定义（Options API）**
+
 ```typescript
 // stores/example.ts
-import { defineStore, type StoreInstance } from '@dreamer/dweb/client';
+import { defineStore } from '@dreamer/dweb/client';
 
 export interface ExampleStoreState extends Record<string, unknown> {
   count: number;
@@ -418,17 +422,60 @@ export const exampleStore = defineStore('example', {
     message: '',
   }),
   actions: {
-    increment(this: ExampleStoreState & StoreInstance<ExampleStoreState>) {
+    // this 类型会自动推断，无需手动指定
+    increment() {
       this.count++;
     },
-    setMessage(this: ExampleStoreState & StoreInstance<ExampleStoreState>, message: string) {
+    setMessage(message: string) {
       this.message = message;
     },
   },
 });
+```
 
-// 在组件中使用
+**方式 2：函数式定义（Setup API）**
+
+```typescript
+// stores/example-setup.ts
+import { defineStore } from '@dreamer/dweb/client';
+
+export interface ExampleStoreState extends Record<string, unknown> {
+  count: number;
+  message: string;
+}
+
+export const exampleStoreSetup = defineStore('example-setup', ({ storeAction }) => {
+  // 定义初始状态
+  const count: number = 0;
+  const message: string = '';
+  
+  // 定义 actions
+  // 使用 storeAction 辅助函数，需要手动指定状态类型参数
+  // 这样可以让 this 类型正确推断，无需手动指定 this 类型
+  const increment = storeAction<ExampleStoreState>(function() {
+    this.count = (this.count || 0) + 1;
+  });
+  
+  const setMessage = storeAction<ExampleStoreState>(function(msg: string) {
+    this.message = msg;
+  });
+  
+  // 返回状态和 actions
+  return {
+    count,
+    message,
+    increment,
+    setMessage,
+  };
+});
+```
+
+**在组件中使用（两种方式用法相同）：**
+
+```typescript
 import { exampleStore } from '../stores/example.ts';
+// 或
+import { exampleStoreSetup } from '../stores/example-setup.ts';
 
 export default function MyPage() {
   const [state, setState] = useState(exampleStore.$state);
@@ -449,6 +496,16 @@ export default function MyPage() {
   );
 }
 ```
+
+**两种方式对比：**
+
+| 特性 | 对象式（Options API） | 函数式（Setup API） |
+|------|---------------------|-------------------|
+| 结构清晰度 | ✅ 高 | ⚠️ 中等 |
+| this 类型推断 | ✅ 自动推断 | ✅ 使用 storeAction，需指定类型参数 |
+| 灵活性 | ⚠️ 中等 | ✅ 高 |
+| 适用场景 | 简单状态管理 | 复杂逻辑和计算 |
+| 推荐度 | ✅ 推荐（大多数情况） | ⚠️ 特殊场景 |
 
 **传统客户端 API：**
 

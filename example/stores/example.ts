@@ -3,7 +3,7 @@
  * 使用 defineStore 定义，声明式 API
  */
 
-import { defineStore, type StoreInstance } from '@dreamer/dweb/client';
+import { defineStore } from '@dreamer/dweb/client';
 
 export interface ExampleStoreState extends Record<string, unknown> {
   count: number;
@@ -24,20 +24,20 @@ export const exampleStore = defineStore('example', {
   }),
   actions: {
     // 在 actions 中，可以直接通过 this.xxx 访问和修改状态
-    // defineStore 会自动处理状态更新
-    increment(this: ExampleStoreState & StoreInstance<ExampleStoreState>) {
+    // defineStore 会自动处理状态更新，this 类型会自动推断，无需手动指定
+    increment() {
       this.count++;
     },
-    decrement(this: ExampleStoreState & StoreInstance<ExampleStoreState>) {
+    decrement() {
       this.count--;
     },
-    setMessage(this: ExampleStoreState & StoreInstance<ExampleStoreState>, message: string) {
+    setMessage(message: string) {
       this.message = message;
     },
-    addItem(this: ExampleStoreState & StoreInstance<ExampleStoreState>, item: string) {
+    addItem(item: string) {
       this.items = [...this.items, item];
     },
-    removeItem(this: ExampleStoreState & StoreInstance<ExampleStoreState>, index: number) {
+    removeItem(index: number) {
       this.items = this.items.filter((_item: string, i: number) => i !== index);
     },
   },

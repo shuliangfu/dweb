@@ -406,8 +406,9 @@ const handleSubmit = async (e: Event) => {
     };
   }, []);
 
-  const storeExampleCode = `// 1. 在 stores/example.ts 中定义 store（声明式 API）
-import { defineStore, type StoreInstance } from '@dreamer/dweb/client';
+  const storeExampleCode = `// 方式 1：对象式定义（Options API）
+// stores/example.ts
+import { defineStore } from '@dreamer/dweb/client';
 
 export interface ExampleStoreState extends Record<string, unknown> {
   count: number;
@@ -422,26 +423,77 @@ export const exampleStore = defineStore('example', {
     items: [],
   }),
   actions: {
-    increment(this: ExampleStoreState & StoreInstance<ExampleStoreState>) {
+    // this 类型会自动推断，无需手动指定
+    increment() {
       this.count++;
     },
-    decrement(this: ExampleStoreState & StoreInstance<ExampleStoreState>) {
+    decrement() {
       this.count--;
     },
-    setMessage(this: ExampleStoreState & StoreInstance<ExampleStoreState>, message: string) {
+    setMessage(message: string) {
       this.message = message;
     },
-    addItem(this: ExampleStoreState & StoreInstance<ExampleStoreState>, item: string) {
+    addItem(item: string) {
       this.items = [...this.items, item];
     },
-    removeItem(this: ExampleStoreState & StoreInstance<ExampleStoreState>, index: number) {
+    removeItem(index: number) {
       this.items = this.items.filter((_item: string, i: number) => i !== index);
     },
   },
 });
 
-// 2. 在页面中使用
+// 方式 2：函数式定义（Setup API）
+// stores/example-setup.ts
+import { defineStore, storeAction } from '@dreamer/dweb/client';
+
+export const exampleStoreSetup = defineStore('example-setup', () => {
+  // 定义初始状态
+  const count = 0;
+  const message = '';
+  const items: string[] = [];
+  
+  // 定义 actions
+  // 使用 storeAction 辅助函数可以让 this 类型自动推断
+  // 与对象式定义方式一致，无需手动指定 this 类型
+  const increment = storeAction<ExampleStoreState>(function() {
+    this.count = (this.count || 0) + 1;
+  });
+  
+  const decrement = storeAction<ExampleStoreState>(function() {
+    this.count = (this.count || 0) - 1;
+  });
+  
+  const setMessage = storeAction<ExampleStoreState>(function(msg: string) {
+    this.message = msg;
+  });
+  
+  const addItem = storeAction<ExampleStoreState>(function(item: string) {
+    const currentItems = this.items || [];
+    this.items = [...currentItems, item];
+  });
+  
+  const removeItem = storeAction<ExampleStoreState>(function(index: number) {
+    const currentItems = this.items || [];
+    this.items = currentItems.filter((_item: string, i: number) => i !== index);
+  });
+  
+  // 返回状态和 actions
+  return {
+    count,
+    message,
+    items,
+    increment,
+    decrement,
+    setMessage,
+    addItem,
+    removeItem,
+  };
+});
+
+// 在页面中使用（两种方式用法相同）
 import { exampleStore, type ExampleStoreState } from '../stores/example.ts';
+// 或
+import { exampleStoreSetup } from '../stores/example-setup.ts';
 
 export default function MyPage() {
   const [state, setState] = useState<ExampleStoreState>(exampleStore.$state);
@@ -716,6 +768,10 @@ export default function MyPage() {
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">4. Store 状态管理示例</h2>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
               使用 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">defineStore</code> 定义 store，实现跨组件的状态管理。
+              <br />
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                支持两种定义方式：<strong>对象式（Options API）</strong> 和 <strong>函数式（Setup API）</strong>
+              </span>
             </p>
 
             <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg mb-6 border border-gray-200 dark:border-gray-700">
@@ -792,7 +848,31 @@ export default function MyPage() {
               </div>
             </div>
 
-            <CodeBlock code={storeExampleCode} language="typescript" title="Store 状态管理代码示例" />
+            <CodeBlock code={storeExampleCode} language="typescript" title="Store 状态管理代码示例（包含对象式和函数式两种定义方式）" />
+            
+            <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-600 p-6 rounded-lg">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">📝 两种定义方式对比</h3>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">✅ 对象式（Options API）</h4>
+                  <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300 text-sm">
+                    <li>结构清晰，易于理解</li>
+                    <li>this 类型自动推断，无需手动指定</li>
+                    <li>适合简单的状态管理场景</li>
+                    <li>推荐用于大多数情况</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">✅ 函数式（Setup API）</h4>
+                  <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300 text-sm">
+                    <li>更灵活，可以定义局部变量和函数</li>
+                    <li>适合复杂的逻辑和计算</li>
+                    <li>使用 storeAction 辅助函数，this 类型自动推断</li>
+                    <li>适合需要更多控制权的场景</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </section>
 
           {/* 5. 其他交互示例 */}
