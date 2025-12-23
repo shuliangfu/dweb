@@ -1,3 +1,8 @@
-{ 
-	"你好，世界！": "Hello, World!"
+{
+  "首页": "Home",
+  "特性": "Features",
+  "示例": "Examples",
+  "文档": "Documentation",
+  "关于": "About",
+  "你好，世界！": "Hello, World!"
 }

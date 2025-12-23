@@ -24,7 +24,7 @@ export function initTailwindV4(
   _configPath: string | null,
   options: TailwindPluginOptions,
   isProduction: boolean
-): any {
+): ReturnType<typeof postcss> {
   // v4 使用 @tailwindcss/postcss 插件（内置优化）
   const optimize = options.optimize !== false && isProduction;
   
@@ -68,7 +68,7 @@ export async function processCSSV4(
   options: TailwindPluginOptions
 ): Promise<{ content: string; map?: string }> {
   // 初始化 PostCSS 处理器
-  const processor = initTailwindV4(configPath || '', options, isProduction);
+  const processor: ReturnType<typeof postcss> = initTailwindV4(configPath || '', options, isProduction);
   
   // 处理 CSS 文件路径
   const absoluteFilePath = path.isAbsolute(filePath) 
@@ -76,7 +76,7 @@ export async function processCSSV4(
     : path.resolve(Deno.cwd(), filePath);
   
   // PostCSS 处理选项
-  const processOptions: any = {
+  const processOptions = {
     from: absoluteFilePath, // 使用实际的 CSS 文件路径
     to: undefined, // 不生成输出文件，只处理内容
     // 禁用 source map（去掉 sourceMappingURL）

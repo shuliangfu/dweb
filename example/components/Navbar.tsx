@@ -57,11 +57,11 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
   }, []);
 
   const navItems = [
-    { href: "/", label: "首页" },
-    { href: "/features", label: "特性" },
-    { href: "/examples", label: "示例" },
-    { href: "/docs", label: "文档" },
-    { href: "/about", label: "关于" },
+    { href: "/", label: $t("首页") },
+    { href: "/features", label: $t("特性") },
+    { href: "/examples", label: $t("示例") },
+    { href: "/docs", label: $t("文档") },
+    { href: "/about", label: $t("关于") },
   ];
 
   return (

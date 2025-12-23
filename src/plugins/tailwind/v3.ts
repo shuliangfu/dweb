@@ -22,9 +22,9 @@ export async function initTailwindV3(
   configPath: string | null,
   options: TailwindPluginOptions,
   isProduction: boolean
-): Promise<any> {
+): Promise<ReturnType<typeof postcss>> {
   
-  let tailwindConfig: any = {};
+  let tailwindConfig: Record<string, unknown> = {};
   
   // 如果找到配置文件，加载它
   if (configPath) {
@@ -36,11 +36,12 @@ export async function initTailwindV3(
   // 确保 content 是数组
   // 如果没有配置文件或配置文件中没有 content，使用默认的 content 路径
   if (!Array.isArray(tailwindConfig.content)) {
-    tailwindConfig.content = tailwindConfig.content || [];
+    tailwindConfig.content = (tailwindConfig.content as string[]) || [];
   }
   
   // 如果 content 为空，使用默认的扫描路径
-  if (tailwindConfig.content.length === 0) {
+  const contentArray = tailwindConfig.content as string[];
+  if (contentArray.length === 0) {
     tailwindConfig.content = [
       './routes/**/*.{tsx,ts,jsx,js}',
       './components/**/*.{tsx,ts,jsx,js}',
@@ -54,7 +55,7 @@ export async function initTailwindV3(
     const relative = path.relative(cwd, configDir);
     
     if (!relative.startsWith('..')) {
-      tailwindConfig.content = tailwindConfig.content.map((pattern: any) => {
+      tailwindConfig.content = contentArray.map((pattern: string) => {
         if (typeof pattern === 'string') {
           return path.join(relative, pattern);
         }
@@ -65,8 +66,8 @@ export async function initTailwindV3(
   
   // 创建 PostCSS 插件数组
   const autoprefixerOptions = options.autoprefixer || {};
-  const plugins: any[] = [
-    tailwindcss(tailwindConfig),
+  const plugins = [
+    tailwindcss(tailwindConfig as Parameters<typeof tailwindcss>[0]),
     autoprefixer(autoprefixerOptions),
   ];
   
@@ -103,7 +104,7 @@ export async function processCSSV3(
     : path.resolve(Deno.cwd(), filePath);
   
   // PostCSS 处理选项
-  const processOptions: any = {
+  const processOptions = {
     from: absoluteFilePath, // 使用实际的 CSS 文件路径
     to: undefined, // 不生成输出文件，只处理内容
     // 禁用 source map（去掉 sourceMappingURL）

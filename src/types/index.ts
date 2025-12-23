@@ -187,7 +187,7 @@ export type Middleware = (
 export interface MiddlewareConfig {
   name?: string;
   handler: Middleware;
-  options?: Record<string, any>;
+  options?: Record<string, unknown>;
 }
 
 /**

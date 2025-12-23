@@ -161,46 +161,69 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
             // 组合完整的脚本
             const fullScript = `${clientScript}\n${initScript}`;
 
-            // 如果有过渡效果，添加 style 标签（放在 head 中，与其他 style 标签一起）
+            // 如果有过渡效果，添加样式（插入到现有的 style 标签中，或创建新的 style 标签）
             if (options.transition !== false) {
-              const styleTag =
-                `<style>* { transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }</style>`;
+              const transitionCss =
+                `* { transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }`;
 
-              // 查找 head 中的最后一个 style 标签或 link[rel="stylesheet"]，在其后插入
+              // 查找 head 中的 style 标签
               const styleMatch = newHtml.match(
-                /<style[^>]*>[\s\S]*?<\/style>/gi,
-              );
-              const linkMatch = newHtml.match(
-                /<link[^>]*rel=["']stylesheet["'][^>]*>/gi,
+                /<style[^>]*>([\s\S]*?)<\/style>/gi,
               );
 
               if (styleMatch && styleMatch.length > 0) {
-                // 在最后一个 style 标签后插入
-                const lastStyleIndex = newHtml.lastIndexOf(
-                  styleMatch[styleMatch.length - 1],
+                // 如果存在 style 标签，将 CSS 插入到最后一个 style 标签的内容中
+                const lastStyleTag = styleMatch[styleMatch.length - 1];
+                const lastStyleIndex = newHtml.lastIndexOf(lastStyleTag);
+
+                // 提取 style 标签的内容（不包含标签本身）
+                const styleContentMatch = lastStyleTag.match(
+                  /<style[^>]*>([\s\S]*?)<\/style>/i,
                 );
-                const insertIndex = lastStyleIndex +
-                  styleMatch[styleMatch.length - 1].length;
-                newHtml = newHtml.slice(0, insertIndex) +
-                  `\n${styleTag}` +
-                  newHtml.slice(insertIndex);
-              } else if (linkMatch && linkMatch.length > 0) {
-                // 在最后一个 link[rel="stylesheet"] 后插入
-                const lastLinkIndex = newHtml.lastIndexOf(
-                  linkMatch[linkMatch.length - 1],
-                );
-                const insertIndex = lastLinkIndex +
-                  linkMatch[linkMatch.length - 1].length;
-                newHtml = newHtml.slice(0, insertIndex) +
-                  `\n${styleTag}` +
-                  newHtml.slice(insertIndex);
-              } else {
-                // 如果没有找到 style 或 link，在 <head> 后插入
-                if (newHtml.includes("<head>")) {
-                  newHtml = newHtml.replace(
-                    "<head>",
-                    `<head>\n${styleTag}`,
+                if (styleContentMatch) {
+                  const existingContent = styleContentMatch[1];
+                  const styleTagStart = lastStyleTag.substring(
+                    0,
+                    lastStyleTag.indexOf(">") + 1,
                   );
+                  const styleTagEnd = "</style>";
+
+                  // 检查是否已经包含过渡样式（避免重复）
+                  if (
+                    !existingContent.includes("transition: background-color")
+                  ) {
+                    const newStyleContent = styleTagStart + existingContent +
+                      "\n" + transitionCss + styleTagEnd;
+                    newHtml = newHtml.slice(0, lastStyleIndex) +
+                      newStyleContent +
+                      newHtml.slice(lastStyleIndex + lastStyleTag.length);
+                  }
+                }
+              } else {
+                // 如果不存在 style 标签，创建新的 style 标签
+                const styleTag = `<style>${transitionCss}</style>`;
+
+                // 查找 link[rel="stylesheet"]，在其后插入
+                const linkMatch = newHtml.match(
+                  /<link[^>]*rel=["']stylesheet["'][^>]*>/gi,
+                );
+
+                if (linkMatch && linkMatch.length > 0) {
+                  // 在最后一个 link[rel="stylesheet"] 后插入
+                  const lastLinkIndex = newHtml.lastIndexOf(
+                    linkMatch[linkMatch.length - 1],
+                  );
+                  const insertIndex = lastLinkIndex +
+                    linkMatch[linkMatch.length - 1].length;
+                  newHtml = newHtml.slice(0, insertIndex) +
+                    `\n${styleTag}` +
+                    newHtml.slice(insertIndex);
+                } else if (newHtml.includes("</head>")) {
+                  // 如果没有找到 link，在 </head> 之前插入
+                  newHtml = newHtml.replace("</head>", `${styleTag}\n</head>`);
+                } else if (newHtml.includes("<head>")) {
+                  // 如果没有 </head>，在 <head> 后插入
+                  newHtml = newHtml.replace("<head>", `<head>\n${styleTag}`);
                 }
               }
             }

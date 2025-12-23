@@ -140,7 +140,10 @@ export class RouteHandler {
    * - 生产环境会从 `dist` 目录加载已构建的文件，提高性能
    * - 开发环境会实时编译 TypeScript/TSX 文件，支持热更新
    */
-  private async handleModuleRequest(req: Request, res: Response): Promise<void> {
+  private async handleModuleRequest(
+    req: Request,
+    res: Response,
+  ): Promise<void> {
     // 立即进入异步操作，确保函数不会在同步代码后提前返回
     // 使用 Promise.resolve().then() 确保所有操作都在异步上下文中执行
     return await Promise.resolve().then(async () => {
@@ -308,8 +311,8 @@ export class RouteHandler {
         res.status = 200;
         res.setHeader("Content-Type", contentType);
         res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-				res.text(jsCode);
-				
+        res.text(jsCode);
+
         // 确保响应体已设置
         if (
           !res.body || (typeof res.body === "string" && res.body.trim() === "")
@@ -377,9 +380,9 @@ export class RouteHandler {
     const moduleReq = new Request(moduleReqUrl, {
       method: req.method,
       headers: req.headers,
-		});
-		
-		// console.log({ pathname, url})
+    });
+
+    // console.log({ pathname, url})
 
     // 转换为扩展的请求对象
     const extendedModuleReq = this.createExtendedRequest(req, moduleReq);
@@ -1485,6 +1488,68 @@ export class RouteHandler {
         prefetchMode,
       );
 
+      // 如果启用了预加载加载状态，注入预加载动画样式（插入到现有的 style 标签中，或创建新的 style 标签）
+      if (prefetchLoading) {
+        const prefetchSpinCss =
+          `@keyframes spin { to { transform: rotate(360deg); }}`;
+
+        // 查找 head 中的 style 标签
+        const styleMatch = fullHtml.match(/<style[^>]*>([\s\S]*?)<\/style>/gi);
+
+        if (styleMatch && styleMatch.length > 0) {
+          // 如果存在 style 标签，将 CSS 插入到最后一个 style 标签的内容中
+          const lastStyleTag = styleMatch[styleMatch.length - 1];
+          const lastStyleIndex = fullHtml.lastIndexOf(lastStyleTag);
+
+          // 提取 style 标签的内容（不包含标签本身）
+          const styleContentMatch = lastStyleTag.match(
+            /<style[^>]*>([\s\S]*?)<\/style>/i,
+          );
+          if (styleContentMatch) {
+            const existingContent = styleContentMatch[1];
+            const styleTagStart = lastStyleTag.substring(
+              0,
+              lastStyleTag.indexOf(">") + 1,
+            );
+            const styleTagEnd = "</style>";
+
+            // 检查是否已经包含 spin 动画（避免重复）
+            if (!existingContent.includes("@keyframes spin")) {
+              const newStyleContent = styleTagStart + existingContent +
+                prefetchSpinCss + styleTagEnd;
+              fullHtml = fullHtml.slice(0, lastStyleIndex) + newStyleContent +
+                fullHtml.slice(lastStyleIndex + lastStyleTag.length);
+            }
+          }
+        } else {
+          // 如果不存在 style 标签，创建新的 style 标签
+          const prefetchSpinStyle = `<style>${prefetchSpinCss}</style>`;
+
+          // 查找 link[rel="stylesheet"]，在其后插入
+          const linkMatch = fullHtml.match(
+            /<link[^>]*rel=["']stylesheet["'][^>]*>/gi,
+          );
+
+          if (linkMatch && linkMatch.length > 0) {
+            // 在最后一个 link[rel="stylesheet"] 后插入
+            const lastLinkIndex = fullHtml.lastIndexOf(
+              linkMatch[linkMatch.length - 1],
+            );
+            const insertIndex = lastLinkIndex +
+              linkMatch[linkMatch.length - 1].length;
+            fullHtml = fullHtml.slice(0, insertIndex) +
+              `\n      ${prefetchSpinStyle}` +
+              fullHtml.slice(insertIndex);
+          } else if (fullHtml.includes("</head>")) {
+            // 如果没有找到 link，在 </head> 之前插入
+            fullHtml = fullHtml.replace(
+              "</head>",
+              `      ${prefetchSpinStyle}\n</head>`,
+            );
+          }
+        }
+      }
+
       // 对于 CSR 模式，将链接拦截器脚本注入到 head（尽早执行）
       if (renderMode === "csr" && clientScript.includes("<script>")) {
         // 提取链接拦截器脚本（第一个 <script> 标签）
@@ -1875,7 +1940,7 @@ export class RouteHandler {
 
       const url = new URL(req.url);
 
-          // 处理每个路由，获取模块路径和页面数据
+      // 处理每个路由，获取模块路径和页面数据
       const batchData: Array<{
         route: string;
         body: string;
@@ -2012,7 +2077,7 @@ export class RouteHandler {
             setHeader: function (key: string, value: string) {
               this.headers.set(key, value);
             },
-            json: function (data: any) {
+            json: function (data: unknown) {
               this.body = JSON.stringify(data);
             },
             text: function (data: string) {
@@ -2058,7 +2123,10 @@ export class RouteHandler {
                     method: "GET",
                     headers: req.headers,
                   });
-                  const extendedLayoutReq = this.createExtendedRequest(req, layoutModuleReq);
+                  const extendedLayoutReq = this.createExtendedRequest(
+                    req,
+                    layoutModuleReq,
+                  );
 
                   // 创建临时响应对象来获取布局代码
                   const layoutTempRes = {
@@ -2077,7 +2145,10 @@ export class RouteHandler {
                   } as any;
 
                   // 处理布局模块请求
-                  await this.handleModuleRequest(extendedLayoutReq, layoutTempRes);
+                  await this.handleModuleRequest(
+                    extendedLayoutReq,
+                    layoutTempRes,
+                  );
 
                   // 如果成功获取布局代码，存储到 layouts 中（使用原始路径作为 key）
                   if (layoutTempRes.body && layoutTempRes.status === 200) {

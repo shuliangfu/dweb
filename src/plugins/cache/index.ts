@@ -293,7 +293,7 @@ class FileCache {
  */
 class RedisCache {
   private config: { host: string; port: number; password?: string; db?: number };
-  private client: any = null; // Redis 客户端
+  private client: unknown = null; // Redis 客户端（类型由 Redis 库定义）
 
   constructor(config: { host: string; port: number; password?: string; db?: number }) {
     this.config = config;

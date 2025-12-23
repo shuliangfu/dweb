@@ -97,7 +97,7 @@ export interface StoreInstance<T extends StoreState> {
  * 辅助类型：让 actions 中的 this 自动推断为 T & StoreInstance<T>
  */
 type StoreActions<T extends StoreState> = {
-  [K in string]?: (this: T & StoreInstance<T>, ...args: any[]) => void | Promise<void>;
+  [K in string]?: (this: T & StoreInstance<T>, ...args: never[]) => void | Promise<void>;
 };
 
 /**
@@ -118,7 +118,7 @@ type StoreActions<T extends StoreState> = {
  * ```
  */
 export function storeAction<T extends StoreState>(
-  fn: (this: T & StoreInstance<T>, ...args: any[]) => void | Promise<void>
+  fn: (this: T & StoreInstance<T>, ...args: never[]) => void | Promise<void>
 ): typeof fn {
   return fn;
 }
@@ -135,7 +135,7 @@ export interface StoreOptions<T extends StoreState, A extends StoreActions<T> = 
 
 // 辅助类型：从返回值中提取状态类型（排除函数）
 type ExtractStateFromReturn<R extends Record<string, unknown>> = {
-  [K in keyof R as R[K] extends (...args: any[]) => any ? never : K]: R[K];
+  [K in keyof R as R[K] extends (...args: never[]) => unknown ? never : K]: R[K];
 };
 
 /**
@@ -150,7 +150,7 @@ export function defineStore<
   name: string,
   options: StoreOptions<T, A>
 ): StoreInstance<T> & T & {
-  [K in keyof A]: A[K] extends (this: any, ...args: infer P) => infer R
+  [K in keyof A]: A[K] extends (this: T & StoreInstance<T>, ...args: infer P) => infer R
     ? (...args: P) => R
     : never;
 };
@@ -171,7 +171,7 @@ export function defineStore<
   name: string,
   setupFn: (helpers: {
     storeAction: <TState extends StoreState = R>(
-      fn: (this: TState & StoreInstance<TState>, ...args: any[]) => void | Promise<void>
+      fn: (this: TState & StoreInstance<TState>, ...args: never[]) => void | Promise<void>
     ) => typeof fn;
   }) => R
 ): StoreInstance<Extract<Record<string, unknown>, R>> & R;
@@ -184,9 +184,9 @@ export function defineStore<
   A extends StoreActions<T> = StoreActions<T>
 >(
   name: string,
-  optionsOrSetup: StoreOptions<T, A> | ((helpers: { storeAction: <T extends StoreState = any>(fn: (this: T & StoreInstance<T>, ...args: any[]) => void | Promise<void>) => typeof fn }) => T & { [K in string]?: (...args: any[]) => void | Promise<void> | unknown })
+  optionsOrSetup: StoreOptions<T, A> | ((helpers: { storeAction: <TState extends StoreState = T>(fn: (this: TState & StoreInstance<TState>, ...args: never[]) => void | Promise<void>) => typeof fn }) => T & { [K in string]?: (...args: never[]) => void | Promise<void> | unknown })
 ): StoreInstance<T> & T & {
-  [K in keyof A]: A[K] extends (this: any, ...args: infer P) => infer R
+  [K in keyof A]: A[K] extends (this: T & StoreInstance<T>, ...args: infer P) => infer R
     ? (...args: P) => R
     : never;
 } {
@@ -198,9 +198,9 @@ export function defineStore<
   
   if (isSetupFn) {
     // 函数式：创建已绑定状态类型的 storeAction 辅助函数
-    // 类型参数默认值为 any，但会在调用时从 setup 函数的返回值中推断
-    const createStoreAction = <TState extends StoreState = any>(
-      fn: (this: TState & StoreInstance<TState>, ...args: any[]) => void | Promise<void>
+    // 类型参数默认值为 T，但会在调用时从 setup 函数的返回值中推断
+    const createStoreAction = <TState extends StoreState = T>(
+      fn: (this: TState & StoreInstance<TState>, ...args: never[]) => void | Promise<void>
     ): typeof fn => {
       return fn;
     };
@@ -210,7 +210,7 @@ export function defineStore<
     // 使用 R 作为默认类型，让 TypeScript 能够从返回值中推断
     const setupFn = optionsOrSetup as <R extends Record<string, unknown>>(helpers: { 
       storeAction: <TState extends StoreState = R>(
-        fn: (this: TState & StoreInstance<TState>, ...args: any[]) => void | Promise<void>
+        fn: (this: TState & StoreInstance<TState>, ...args: never[]) => void | Promise<void>
       ) => typeof fn;
     }) => R;
     
@@ -219,11 +219,11 @@ export function defineStore<
     });
     // 从返回值中分离状态和 actions
     const stateObj: Record<string, unknown> = {};
-    const actionsObj: Record<string, (...args: any[]) => void | Promise<void>> = {};
+    const actionsObj: Record<string, (...args: never[]) => void | Promise<void>> = {};
     
     for (const [key, value] of Object.entries(setupResult)) {
       if (typeof value === 'function') {
-        actionsObj[key] = value as (...args: any[]) => void | Promise<void>;
+        actionsObj[key] = value as (...args: never[]) => void | Promise<void>;
       } else {
         stateObj[key] = value;
       }
@@ -248,17 +248,21 @@ export function defineStore<
   // 创建 actions 的代理，绑定 this（仅用于对象式）
   const createActionProxy = (
     _actionName: string, 
-    actionFn: (this: any, ...args: never[]) => void | Promise<void>
+    actionFn: (this: T & StoreInstance<T>, ...args: never[]) => void | Promise<void>
   ) => {
-    return (...args: unknown[]) => {
+    return (...args: never[]) => {
       // 创建 action 的上下文，this 指向 store 实例
-      const context = storeProxy as any;
-      return (actionFn as (this: any, ...args: unknown[]) => void | Promise<void>).call(context, ...args);
+      const context = storeProxy as T & StoreInstance<T>;
+      return (actionFn as (this: T & StoreInstance<T>, ...args: never[]) => void | Promise<void>).call(context, ...args);
     };
   };
   
   // 创建 store 代理对象
-  const storeProxy = new Proxy({} as any, {
+  const storeProxy = new Proxy({} as T & StoreInstance<T> & {
+    [K in keyof A]: A[K] extends (this: T & StoreInstance<T>, ...args: infer P) => infer R
+      ? (...args: P) => R
+      : never;
+  }, {
     get(_target, prop: string | symbol) {
       const currentState = getCurrentState();
       

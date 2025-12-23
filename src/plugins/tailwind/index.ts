@@ -161,32 +161,78 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
           compiledCSS = processed.content;
         }
 
-        // 将编译后的 CSS 注入到 HTML 的 <head> 中的 <style> 标签
+        // 将编译后的 CSS 注入到 HTML 的 <head> 中（优先插入到现有的 <style> 标签中）
         const html = res.body as string;
-        const styleTag = `<style>${compiledCSS}</style>`;
-        
-        // 检查 <head> 中是否有 <link> 标签（CSS 文件）
-        const linkRegex = /<link[^>]*rel\s*=\s*["']stylesheet["'][^>]*>/i;
-        const linkMatch = html.match(linkRegex);
-        
-        if (linkMatch && linkMatch.index !== undefined) {
-          // 如果找到 <link> 标签，在它之前插入 <style> 标签
-          const linkIndex = linkMatch.index;
-          res.body = html.slice(0, linkIndex) + `${styleTag}\n  ` + html.slice(linkIndex);
-        } else if (html.includes('</head>')) {
-          // 如果没有 <link> 标签，但有 </head>，在 </head> 前面注入
-          res.body = html.replace('</head>', `  ${styleTag}\n</head>`);
-        } else if (html.includes('<head>')) {
-          // 如果没有 </head>，但有 <head>，则在 <head> 后面注入
-          res.body = html.replace('<head>', `<head>\n  ${styleTag}`);
-        } else {
-          // 如果没有 <head>，则在 <html> 后面添加 <head> 和 <style>
-          const headWithStyle = `<head>\n  ${styleTag}\n</head>`;
-          if (html.includes('<html>')) {
-            res.body = html.replace('<html>', `<html>\n${headWithStyle}`);
+
+        // 查找 head 中的 style 标签
+        const styleTagRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+        const styleMatches = [...html.matchAll(styleTagRegex)];
+
+        if (styleMatches.length > 0) {
+          // 如果存在 style 标签，将 CSS 插入到最后一个 style 标签的内容中
+          const lastStyleTag = styleMatches[styleMatches.length - 1][0];
+          const lastStyleIndex = html.lastIndexOf(lastStyleTag);
+
+          // 提取 style 标签的内容（不包含标签本身）
+          const styleContentMatch = lastStyleTag.match(
+            /<style[^>]*>([\s\S]*?)<\/style>/i,
+          );
+          if (styleContentMatch) {
+            const existingContent = styleContentMatch[1];
+            const styleTagStart = lastStyleTag.substring(
+              0,
+              lastStyleTag.indexOf(">") + 1,
+            );
+            const styleTagEnd = "</style>";
+
+            // 检查是否已经包含相同的 Tailwind CSS（避免重复）
+            // 简单检查：如果已包含 Tailwind 的典型类名或注释，则认为已存在
+            if (!existingContent.includes("@tailwind") && !existingContent.includes("tailwind")) {
+              const newStyleContent = styleTagStart + existingContent +
+                "\n        " + compiledCSS + styleTagEnd;
+              res.body = html.slice(0, lastStyleIndex) +
+                newStyleContent +
+                html.slice(lastStyleIndex + lastStyleTag.length);
+            } else {
+              // 如果已包含 Tailwind CSS，不重复注入
+              res.body = html;
+            }
           } else {
-            // 如果连 <html> 都没有，在开头添加
-            res.body = `${headWithStyle}\n${html}`;
+            res.body = html;
+          }
+        } else {
+          // 如果不存在 style 标签，创建新的 style 标签
+          const styleTag = `<style>${compiledCSS}</style>`;
+
+          // 查找 link[rel="stylesheet"]，在其后插入
+          const linkRegex = /<link[^>]*rel\s*=\s*["']stylesheet["'][^>]*>/gi;
+          const linkMatches = html.match(linkRegex);
+
+          if (linkMatches && linkMatches.length > 0) {
+            // 在最后一个 link[rel="stylesheet"] 后插入
+            const lastLinkIndex = html.lastIndexOf(
+              linkMatches[linkMatches.length - 1],
+            );
+            const insertIndex = lastLinkIndex +
+              linkMatches[linkMatches.length - 1].length;
+            res.body = html.slice(0, insertIndex) +
+              `\n${styleTag}` +
+              html.slice(insertIndex);
+          } else if (html.includes("</head>")) {
+            // 如果没有找到 link，在 </head> 之前插入
+            res.body = html.replace("</head>", `${styleTag}\n</head>`);
+          } else if (html.includes("<head>")) {
+            // 如果没有 </head>，在 <head> 后插入
+            res.body = html.replace("<head>", `<head>\n${styleTag}`);
+          } else {
+            // 如果没有 <head>，则在 <html> 后面添加 <head> 和 <style>
+            const headWithStyle = `<head>\n  ${styleTag}\n</head>`;
+            if (html.includes("<html>")) {
+              res.body = html.replace("<html>", `<html>\n${headWithStyle}`);
+            } else {
+              // 如果连 <html> 都没有，在开头添加
+              res.body = `${headWithStyle}\n${html}`;
+            }
           }
         }
       } catch (error) {
@@ -198,7 +244,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
     /**
      * 构建时钩子（生产环境编译）
      */
-    async onBuild(buildConfig: any) {
+    async onBuild(buildConfig: { outDir?: string; staticDir?: string }) {
       const isProduction = true;
       const outDir = buildConfig.outDir || 'dist';
       // staticDir 从构建配置中获取，如果没有则默认为 'assets'
