@@ -317,13 +317,22 @@ function createJSRResolverPlugin(
             // 在 build 时，import.meta.resolve 可能无法解析 JSR URL
             // 直接手动构建 JSR URL，不依赖 import.meta.resolve
             const jsrPath = clientImport.replace(/^jsr:/, "");
-            const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
+            // 匹配版本号可能包含 ^、~ 等符号，例如 @dreamer/dweb@^1.3.12/client
+            // 正则说明：@([\w-]+)\/([\w-]+)@([\^~]?[\d.]+)\/(.+)
+            // - @([\w-]+) 匹配 scope
+            // - \/([\w-]+) 匹配 packageName
+            // - @([\^~]?[\d.]+) 匹配版本号（可能包含 ^ 或 ~）
+            // - \/(.+) 匹配子路径
+            const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\^~]?[\d.]+)\/(.+)$/);
             if (!jsrMatch) {
               console.error(`[JSR Resolver] JSR URL 格式不匹配: ${jsrPath}`);
               return undefined;
             }
             
-            const [, scope, packageName, version, subPath] = jsrMatch;
+            const [, scope, packageName, versionWithPrefix, subPath] = jsrMatch;
+            // 移除版本号前缀（^ 或 ~），只保留版本号本身
+            const version = versionWithPrefix.replace(/^[\^~]/, "");
+            
             let actualSubPath = subPath;
             if (!actualSubPath.startsWith("src/") && !actualSubPath.includes("/")) {
               actualSubPath = `src/${subPath}.ts`;
