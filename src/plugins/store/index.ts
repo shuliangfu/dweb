@@ -8,6 +8,7 @@ import type { Store, StorePluginOptions } from "./types.ts";
 import { minifyJavaScript } from "../../utils/minify.ts";
 import { compileWithEsbuild } from "../../utils/module.ts";
 import * as path from "@std/path";
+import { getAllStoreInitialStates } from "./define-store.ts";
 
 /**
  * 创建 Store 实例（服务端）
@@ -128,7 +129,9 @@ export function store(options: StorePluginOptions = {}): Plugin {
   const persist = config.persist !== false;
   const storageKey = config.storageKey || "dweb-store";
   const enableServer = config.enableServer !== false;
-  const initialState = config.initialState || {};
+  
+  // 如果用户提供了 initialState，使用用户的；否则自动从注册表收集
+  const initialState = config.initialState || getAllStoreInitialStates();
 
   // 服务端 Store 实例（每个请求独立）
   const serverStores = new WeakMap<Request, Store>();
@@ -140,7 +143,7 @@ export function store(options: StorePluginOptions = {}): Plugin {
     /**
      * 初始化钩子
      */
-    onInit: (app) => {
+    onInit: async (app) => {
       // 在应用实例上添加 getStore 方法
       (app as any).getStore = () => {
         if (typeof globalThis !== "undefined" && globalThis.window) {
@@ -149,6 +152,32 @@ export function store(options: StorePluginOptions = {}): Plugin {
         }
         return null;
       };
+
+      // 自动导入 stores/index.ts（如果存在）
+      // 这样用户就不需要在 main.ts 中手动导入了
+      try {
+        const cwd = Deno.cwd();
+        const storesPath = path.resolve(cwd, "stores", "index.ts");
+        
+        // 检查文件是否存在
+        try {
+          await Deno.stat(storesPath);
+          // 文件存在，尝试导入（触发 defineStore 注册）
+          // 使用 file:// URL 格式导入
+          const fileUrl = `file://${storesPath}`;
+          await import(fileUrl);
+        } catch (_statError) {
+          // 文件不存在，忽略（这是正常的，用户可能没有使用 stores）
+          // 不输出错误，因为这是预期的行为
+        }
+      } catch (error) {
+        // 导入失败，忽略（可能是路径问题或其他原因）
+        // 不影响插件正常工作
+        // 只在开发环境输出警告
+        if (!(app as any).isProduction) {
+          console.debug("[Store Plugin] 自动导入 stores/index.ts 失败（这是正常的，如果项目没有使用 stores）:", error);
+        }
+      }
     },
 
     /**
@@ -231,3 +260,7 @@ export function store(options: StorePluginOptions = {}): Plugin {
 
 // 导出类型
 export type { Store, StorePluginOptions } from "./types.ts";
+
+// 导出 defineStore API
+export { defineStore, getStoreInitialState, getAllStoreInitialStates, clearStoreRegistry } from "./define-store.ts";
+export type { StoreInstance, StoreOptions } from "./define-store.ts";

@@ -13,8 +13,15 @@ export {
   resetStore,
 } from './plugins/store/client.ts';
 
+// 导出 defineStore API（类似 Vue 3 Pinia）
+export {
+  defineStore,
+  getStoreInitialState,
+} from './plugins/store/define-store.ts';
+
 // 导出 Store 类型
 export type { Store, StorePluginOptions } from './plugins/store/types.ts';
+export type { StoreInstance, StoreOptions } from './plugins/store/define-store.ts';
 
 // 导出主题客户端函数
 export {
