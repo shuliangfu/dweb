@@ -10,6 +10,7 @@
     "@dreamer/dweb": "../src/mod.ts",
     "@dreamer/dweb/cli": "../src/cli.ts",
     "@dreamer/dweb/client": "../src/client.ts",
+		"@dreamer/dweb/console": "../src/console/mod.ts",
     "@dreamer/dweb/database": "../src/features/database/mod.ts",
     "@std/fs": "jsr:@std/fs@^1.0.20",
     "@std/path": "jsr:@std/path@^1.1.3",

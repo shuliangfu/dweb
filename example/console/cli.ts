@@ -17,8 +17,8 @@
  */
 
 import { Command } from "../../src/console/command.ts";
-import { success, info, error, warning } from "../../src/console/output.ts";
-import { initDatabaseFromConfig } from "../../src/features/database/init-database.ts";
+import { success, info, error, warning } from "@dreamer/dweb/console";
+import { initDatabaseFromConfig } from "@dreamer/dweb/database";
 import { User } from "../models/User.ts";
 
 /**
@@ -219,8 +219,13 @@ async function ensureDatabaseInitialized(): Promise<void> {
 
   try {
     info("正在初始化数据库连接...");
+    
+    // 先初始化数据库连接（会自动设置配置加载器）
     await initDatabaseFromConfig();
+    
+    // 然后初始化模型（此时配置加载器已设置，数据库已连接）
     await User.init();
+    
     dbInitialized = true;
     success("数据库连接初始化成功");
   } catch (err) {
