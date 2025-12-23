@@ -23,12 +23,15 @@ interface ThemeManager {
   switchTheme(theme: "light" | "dark" | "auto"): "light" | "dark" | "auto";
 }
 
-interface ThemeStore {
-  _value: "light" | "dark";
-  _listeners: Set<(theme: "light" | "dark") => void>;
-  value: "light" | "dark";
-  subscribe(listener: (theme: "light" | "dark") => void): () => void;
-  unsubscribe(listener: (theme: "light" | "dark") => void): void;
+/**
+ * Store 接口（从 store 插件）
+ */
+interface Store {
+  getState(): Record<string, unknown>;
+  setState(updater: (prev: Record<string, unknown>) => Record<string, unknown>): void;
+  subscribe(listener: (state: Record<string, unknown>) => void): () => void;
+  unsubscribe(listener: (state: Record<string, unknown>) => void): void;
+  reset(): void;
 }
 
 /**
@@ -107,8 +110,20 @@ function createThemeManager(config: ThemeConfig): ThemeManager {
       }
 
       // 更新主题 store（如果存在）
-      if (typeof globalThis !== "undefined" && (globalThis as any).__THEME_STORE__) {
-        (globalThis as any).__THEME_STORE__.value = actualTheme;
+      // 使用全局 store 来更新主题状态
+      if (typeof globalThis !== "undefined" && (globalThis as any).__STORE__) {
+        const store = (globalThis as any).__STORE__ as Store;
+        const currentState = store.getState();
+        const themeState = (currentState.theme as { value?: "light" | "dark" }) || {};
+        if (themeState.value !== actualTheme) {
+          store.setState((prev) => ({
+            ...prev,
+            theme: {
+              ...themeState,
+              value: actualTheme,
+            },
+          }));
+        }
       }
     },
 
@@ -158,55 +173,6 @@ function createThemeManager(config: ThemeConfig): ThemeManager {
   };
 }
 
-/**
- * 创建主题 Store
- */
-function createThemeStore(initialValue: "light" | "dark"): ThemeStore {
-  return {
-    _value: initialValue,
-    _listeners: new Set(),
-
-    // 获取当前主题值
-    get value(): "light" | "dark" {
-      return this._value;
-    },
-
-    // 设置主题值并通知所有监听者
-    set value(newValue: "light" | "dark") {
-      if (this._value !== newValue) {
-        this._value = newValue;
-        // 通知所有监听者
-        this._listeners.forEach((listener) => {
-          try {
-            listener(newValue);
-          } catch (error) {
-            console.error("[Theme Store] 监听器执行错误:", error);
-          }
-        });
-      }
-    },
-
-    // 订阅主题变化
-    subscribe(listener: (theme: "light" | "dark") => void): () => void {
-      this._listeners.add(listener);
-      // 立即调用一次，传递当前值
-      try {
-        listener(this._value);
-      } catch (error) {
-        console.error("[Theme Store] 监听器执行错误:", error);
-      }
-      // 返回取消订阅函数
-      return () => {
-        this._listeners.delete(listener);
-      };
-    },
-
-    // 取消订阅
-    unsubscribe(listener: (theme: "light" | "dark") => void): void {
-      this._listeners.delete(listener);
-    },
-  };
-}
 
 /**
  * 初始化主题系统
@@ -215,18 +181,28 @@ function createThemeStore(initialValue: "light" | "dark"): ThemeStore {
 function initTheme(config: ThemeConfig): void {
   // 创建主题管理器
   const themeManager = createThemeManager(config);
-  const themeStore = createThemeStore(themeManager.getActualTheme());
 
-  // 当主题变化时，更新 store 的值
+  // 当主题变化时，更新全局 store 的值
   globalThis.addEventListener("themechange", ((event: CustomEvent) => {
     if (event.detail && event.detail.actualTheme) {
-      themeStore.value = event.detail.actualTheme;
+      // 更新全局 store 中的主题状态
+      if (typeof globalThis !== "undefined" && (globalThis as any).__STORE__) {
+        const store = (globalThis as any).__STORE__ as Store;
+        const currentState = store.getState();
+        const themeState = (currentState.theme as { value?: "light" | "dark" }) || {};
+        store.setState((prev) => ({
+          ...prev,
+          theme: {
+            ...themeState,
+            value: event.detail.actualTheme,
+          },
+        }));
+      }
     }
   }) as EventListener);
 
   // 暴露到全局
   (globalThis as any).__THEME_MANAGER__ = themeManager;
-  (globalThis as any).__THEME_STORE__ = themeStore;
   (globalThis as any).setTheme = (theme: "light" | "dark" | "auto") => {
     return themeManager.setTheme(theme);
   };
@@ -243,19 +219,30 @@ function initTheme(config: ThemeConfig): void {
     return themeManager.switchTheme(theme);
   };
 
+  // 初始化函数
+  const init = () => {
+    themeManager.init();
+    // 初始化全局 store 中的主题状态
+    const actualTheme = themeManager.getActualTheme();
+    if (typeof globalThis !== "undefined" && (globalThis as any).__STORE__) {
+      const store = (globalThis as any).__STORE__ as Store;
+      const currentState = store.getState();
+      const themeState = (currentState.theme as { value?: "light" | "dark" }) || {};
+      store.setState((prev) => ({
+        ...prev,
+        theme: {
+          ...themeState,
+          value: actualTheme,
+        },
+      }));
+    }
+  };
+
   // 初始化
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      themeManager.init();
-      // 初始化 store 的值
-      const actualTheme = themeManager.getActualTheme();
-      themeStore.value = actualTheme;
-    });
+    document.addEventListener("DOMContentLoaded", init);
   } else {
-    themeManager.init();
-    // 初始化 store 的值
-    const actualTheme = themeManager.getActualTheme();
-    themeStore.value = actualTheme;
+    init();
   }
 
   // 注意：过渡效果的 style 标签由服务端注入，不需要在客户端创建

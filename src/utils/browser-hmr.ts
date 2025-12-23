@@ -142,13 +142,13 @@ class HMRClient {
       }
     } catch (callError: unknown) {
       // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
-      try {
-        const elementResult = jsx(PageComponent, props);
-        if (elementResult instanceof Promise) {
-          pageElement = await elementResult;
-        } else {
-          pageElement = elementResult;
-        }
+        try {
+          const elementResult = jsx(PageComponent, props);
+          if (elementResult instanceof Promise) {
+            pageElement = await elementResult;
+          } else {
+            pageElement = elementResult;
+          }
         if (!pageElement) {
           throw new Error('页面组件返回了空值');
         }
@@ -219,25 +219,25 @@ class HMRClient {
     // 直接使用 Preact 的 render 函数更新内容
     // Preact 会自动 diff 并更新 DOM，不需要手动清空容器
     // 这样可以避免闪动，实现平滑的热更新
-    render(finalElement, root);
+        render(finalElement, root);
 
     // 验证渲染结果（不抛出错误，只记录警告）
-    setTimeout(() => {
+        setTimeout(() => {
       this.validateRender(root);
-    }, 50);
+        }, 50);
   }
 
   /**
    * 验证渲染结果
    */
   private validateRender(root: HTMLElement): void {
-    const hasChildren = root.children.length > 0;
+        const hasChildren = root.children.length > 0;
     const hasText = root.textContent?.trim() !== '';
 
-    if (!hasChildren && !hasText) {
+        if (!hasChildren && !hasText) {
       // 只记录警告，不抛出错误（避免导致页面刷新）
       console.warn('[HMR] 渲染后容器为空，但继续运行');
-    }
+        }
   }
 
   /**
@@ -295,9 +295,9 @@ class HMRClient {
 
     // 获取根容器（使用缓存的元素）
     const root = this.rootElement;
-    if (!root) {
-      throw new Error('未找到 #root 容器');
-    }
+      if (!root) {
+        throw new Error('未找到 #root 容器');
+      }
 
     try {
       // 通过 GET 请求获取编译后的模块
@@ -438,7 +438,7 @@ class HMRClient {
       console.error('[HMR] 处理更新消息失败:', error);
       // 只有在严重错误时才回退到完全重载
       if (error instanceof Error && error.message.includes('严重')) {
-        globalThis.location.reload();
+      globalThis.location.reload();
       }
     }
   }

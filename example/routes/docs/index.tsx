@@ -48,8 +48,8 @@ export default function DocsPage(
   const { jsrPackageUrl, jsrPackageUrlWithCli } = data as {
     jsrPackageUrl: string;
     jsrPackageUrlWithCli: string;
-	};
-	
+  };
+
 	// console.log({ jsrPackageUrl, jsrPackageUrlWithCli });
 
   // 安装代码

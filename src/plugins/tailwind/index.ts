@@ -207,7 +207,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
           // 查找 link[rel="stylesheet"]，在其后插入
           const linkRegex = /<link[^>]*rel\s*=\s*["']stylesheet["'][^>]*>/gi;
           const linkMatches = html.match(linkRegex);
-
+        
           if (linkMatches && linkMatches.length > 0) {
             // 在最后一个 link[rel="stylesheet"] 后插入
             const lastLinkIndex = html.lastIndexOf(
@@ -224,14 +224,14 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
           } else if (html.includes("<head>")) {
             // 如果没有 </head>，在 <head> 后插入
             res.body = html.replace("<head>", `<head>\n${styleTag}`);
-          } else {
-            // 如果没有 <head>，则在 <html> 后面添加 <head> 和 <style>
-            const headWithStyle = `<head>\n  ${styleTag}\n</head>`;
+        } else {
+          // 如果没有 <head>，则在 <html> 后面添加 <head> 和 <style>
+          const headWithStyle = `<head>\n  ${styleTag}\n</head>`;
             if (html.includes("<html>")) {
               res.body = html.replace("<html>", `<html>\n${headWithStyle}`);
-            } else {
-              // 如果连 <html> 都没有，在开头添加
-              res.body = `${headWithStyle}\n${html}`;
+          } else {
+            // 如果连 <html> 都没有，在开头添加
+            res.body = `${headWithStyle}\n${html}`;
             }
           }
         }

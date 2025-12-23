@@ -4,17 +4,9 @@
  */
 
 import type { ThemeMode } from "./types.ts";
-
-/**
- * 主题 Store 接口
- */
-interface ThemeStore {
-  _value: "light" | "dark";
-  _listeners: Set<(theme: "light" | "dark") => void>;
-  value: "light" | "dark";
-  subscribe(listener: (theme: "light" | "dark") => void): () => void;
-  unsubscribe(listener: (theme: "light" | "dark") => void): void;
-}
+import { themeStore } from "./store.ts";
+import type { StoreInstance } from "../../plugins/store/define-store.ts";
+import type { ThemeStoreState } from "./store.ts";
 
 /**
  * 主题管理器接口
@@ -52,16 +44,13 @@ export function getThemeManager(): ThemeManager | null {
  * 获取主题 Store 实例
  * @returns 主题 Store 实例，如果不在客户端环境则返回 null
  */
-export function getThemeStore(): ThemeStore | null {
+export function getThemeStore(): (StoreInstance<ThemeStoreState> & ThemeStoreState) | null {
   if (typeof globalThis === "undefined" || !globalThis.window) {
     return null;
   }
 
-  const win = globalThis.window as Window & {
-    __THEME_STORE__?: ThemeStore;
-  };
-
-  return win.__THEME_STORE__ || null;
+  // 返回使用 defineStore 定义的 themeStore
+  return themeStore;
 }
 
 /**
@@ -178,12 +167,24 @@ export function switchTheme(theme: ThemeMode): ThemeMode | null {
 export function subscribeTheme(
   listener: (theme: "light" | "dark") => void,
 ): (() => void) | null {
-  const store = getThemeStore();
-  if (!store) {
-    console.warn("[Theme Client] 无法订阅主题变化：不在客户端环境或主题 Store 未初始化");
+  if (typeof globalThis === "undefined" || !globalThis.window) {
+    console.warn("[Theme Client] 无法订阅主题变化：不在客户端环境");
     return null;
   }
-  return store.subscribe(listener);
+
+  const store = getThemeStore();
+  if (!store) {
+    console.warn("[Theme Client] 无法订阅主题变化：主题 Store 未初始化");
+    return null;
+  }
+
+  // 使用 store 的 $subscribe 方法
+  return store.$subscribe((state) => {
+    if (state && typeof state === "object" && "value" in state) {
+      const themeValue = state.value as "light" | "dark";
+      listener(themeValue);
+    }
+  });
 }
 
 /**
@@ -191,10 +192,16 @@ export function subscribeTheme(
  * @returns 当前主题值（'light' | 'dark'），如果不在客户端环境则返回 null
  */
 export function getThemeValue(): "light" | "dark" | null {
+  if (typeof globalThis === "undefined" || !globalThis.window) {
+    return null;
+  }
+
   const store = getThemeStore();
   if (!store) {
     return null;
   }
+
+  // 从 store 中获取 value 属性
   return store.value;
 }
 
