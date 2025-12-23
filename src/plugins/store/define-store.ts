@@ -1,11 +1,11 @@
 /**
- * defineStore - 类似 Vue 3 Pinia 的 Store 定义 API
+ * defineStore - 声明式的 Store 定义 API
  * 
  * 使用示例：
  * ```typescript
  * import { defineStore } from '@dreamer/dweb/client';
  * 
- * export const useTestStore = defineStore('test', {
+ * export const exampleStore = defineStore('example', {
  *   state: () => ({
  *     count: 0,
  *     message: '',
@@ -22,10 +22,10 @@
  * });
  * 
  * // 在组件中使用
- * const testStore = useTestStore();
- * console.log(testStore.count); // 直接访问状态
- * testStore.increment(); // 调用 action
- * testStore.$reset(); // 重置状态
+ * import { exampleStore } from '../stores/example.ts';
+ * console.log(exampleStore.count); // 直接访问状态
+ * exampleStore.increment(); // 调用 action
+ * exampleStore.$reset(); // 重置状态
  * ```
  */
 
