@@ -12,7 +12,7 @@ import { MiddlewareManager } from "../core/middleware.ts";
 import { PluginManager } from "../core/plugin.ts";
 import { CookieManager } from "../features/cookie.ts";
 import { SessionManager } from "../features/session.ts";
-import { closeDatabase, initDatabase } from "../features/database/access.ts";
+import { closeDatabase, initDatabase, setDatabaseConfigLoader } from "../features/database/access.ts";
 import { WebSocketServer } from "../features/websocket/server.ts";
 import { initWebSocket } from "../features/websocket/access.ts";
 import { GraphQLServer } from "../features/graphql/server.ts";
@@ -440,6 +440,12 @@ export async function startProdServer(config: AppConfig): Promise<void> {
 
   // 预加载所有模块（解决首次访问延迟问题）
   await preloadModules(router);
+
+  // 设置数据库配置加载器（用于 CLI 工具中的自动初始化）
+  // 这样在 CLI 工具中使用模型时，可以自动从配置加载器获取配置
+  setDatabaseConfigLoader(async () => {
+    return config.database || null;
+  });
 
   // 初始化数据库连接（如果配置了数据库）
   if (config.database) {

@@ -56,5 +56,6 @@ export {
   getDatabaseManager,
   isDatabaseInitialized,
   closeDatabase,
+  setDatabaseConfigLoader,
 } from './access.ts';
 

@@ -5,7 +5,6 @@
 
 import { DatabaseManager } from './manager.ts';
 import type { DatabaseAdapter, DatabaseConfig } from './types.ts';
-import { loadConfig } from '../../core/config.ts';
 
 /**
  * 全局数据库管理器实例
@@ -16,6 +15,39 @@ let dbManager: DatabaseManager | null = null;
  * 自动初始化数据库的 Promise（用于避免重复初始化）
  */
 let autoInitPromise: Promise<void> | null = null;
+
+/**
+ * 数据库配置加载器回调函数类型
+ * 用于从框架配置中获取数据库配置
+ */
+type DatabaseConfigLoader = () => Promise<DatabaseConfig | null>;
+
+/**
+ * 全局数据库配置加载器
+ * 由框架在启动时设置，用于自动初始化数据库
+ */
+let configLoader: DatabaseConfigLoader | null = null;
+
+/**
+ * 设置数据库配置加载器
+ * 框架在启动时调用此函数，设置配置加载器回调
+ * 
+ * @param loader 配置加载器回调函数，返回数据库配置或 null
+ * 
+ * @example
+ * ```typescript
+ * import { setDatabaseConfigLoader } from '@dreamer/dweb/features/database';
+ * 
+ * // 在框架启动时设置配置加载器
+ * setDatabaseConfigLoader(async () => {
+ *   const { config } = await loadConfig();
+ *   return config.database || null;
+ * });
+ * ```
+ */
+export function setDatabaseConfigLoader(loader: DatabaseConfigLoader): void {
+  configLoader = loader;
+}
 
 /**
  * 初始化数据库连接
@@ -34,7 +66,7 @@ export async function initDatabase(
 }
 
 /**
- * 自动从配置文件加载并初始化数据库
+ * 自动从配置加载器获取配置并初始化数据库
  * @param connectionName 连接名称（默认为 'default'）
  */
 async function autoInitDatabase(connectionName: string = 'default'): Promise<void> {
@@ -47,21 +79,28 @@ async function autoInitDatabase(connectionName: string = 'default'): Promise<voi
   // 创建新的初始化任务
   const initTask = (async () => {
     try {
-      // 尝试加载配置文件
-      const { config } = await loadConfig();
+      // 如果没有设置配置加载器，抛出错误
+      if (!configLoader) {
+        throw new Error(
+          'Database config loader not set. Please call setDatabaseConfigLoader() first or call initDatabase() manually.',
+        );
+      }
+
+      // 调用配置加载器获取数据库配置
+      const config = await configLoader();
       
-      // 如果配置中有数据库配置，则初始化
-      if (config.database) {
-        await initDatabase(config.database, connectionName);
+      // 如果配置加载器返回了配置，则初始化
+      if (config) {
+        await initDatabase(config, connectionName);
       } else {
         throw new Error(
-          'Database not configured in dweb.config.ts. Please add database configuration or call initDatabase() manually.',
+          'Database not configured. Please add database configuration in dweb.config.ts or call initDatabase() manually.',
         );
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(
-        `Failed to auto-initialize database from config: ${message}`,
+        `Failed to auto-initialize database: ${message}`,
       );
     } finally {
       // 清除 Promise，允许下次重新尝试
