@@ -1218,7 +1218,7 @@ async function generateRouteMap(
     : path.resolve(Deno.cwd(), routesDir, "api");
 
   const routesDirAbsolute = path.resolve(Deno.cwd(), routesDir);
-  const _apiDirInRoutes =
+  const apiDirInRoutes =
     apiDirAbsolute.startsWith(routesDirAbsolute + path.SEPARATOR) ||
     apiDirAbsolute === routesDirAbsolute;
 
@@ -1434,7 +1434,7 @@ async function buildApp(config: AppConfig): Promise<void> {
     : path.resolve(Deno.cwd(), apiDir);
 
   // 判断 API 目录是否在 routes 目录下
-  const _apiDirInRoutes =
+  const apiDirInRoutes =
     apiDirAbsolute.startsWith(routesDirAbsolute + path.SEPARATOR) ||
     apiDirAbsolute === routesDirAbsolute;
 
@@ -1473,7 +1473,7 @@ async function buildApp(config: AppConfig): Promise<void> {
   }
 
   // 如果 API 目录不在 routes 目录下，单独编译 API 目录
-  if (!_apiDirInRoutes) {
+  if (!apiDirInRoutes) {
     try {
       // 检查 API 目录是否存在
       const apiDirExists = await Deno.stat(apiDirAbsolute)
