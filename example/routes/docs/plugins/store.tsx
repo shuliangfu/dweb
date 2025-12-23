@@ -15,7 +15,8 @@ export default function StorePluginPage(
 ) {
   const basicUsageCode = `import { store } from '@dreamer/dweb/plugins';
 
-plugins: [
+// 方式1：手动配置 initialState（传统方式）
+app.plugin(
   store({
     persist: true,              // 是否启用持久化（默认 false）
     storageKey: 'dweb-store',   // 持久化存储键名（默认 'dweb-store'）
@@ -24,8 +25,19 @@ plugins: [
       count: 0,
       user: null,
     },
-  }),
-],`;
+  })
+);
+
+// 方式2：自动收集（推荐，使用 defineStore）
+// 只需导入 stores 文件，store 插件会自动收集初始状态
+
+app.plugin(
+  store({
+    persist: true,
+    storageKey: 'dweb-store',
+    // 不需要手动配置 initialState，会自动从已注册的 stores 中收集
+  })
+);`;
 
   const clientUsageCode = `import { 
   getStore, 
@@ -68,6 +80,76 @@ if (unsubscribe) {
 
 // 方式5：重置状态
 resetStore();`;
+
+  const defineStoreCode = `// stores/example.ts
+import { defineStore, type StoreInstance } from '@dreamer/dweb/client';
+
+export interface ExampleStoreState extends Record<string, unknown> {
+  count: number;
+  message: string;
+  items: string[];
+}
+
+// 定义 Store（声明式 API）
+export const exampleStore = defineStore('example', {
+  state: (): ExampleStoreState => ({
+    count: 0,
+    message: '',
+    items: [],
+  }),
+  actions: {
+    // 在 actions 中，可以直接通过 this.xxx 访问和修改状态
+    increment(this: ExampleStoreState & StoreInstance<ExampleStoreState>) {
+      this.count++;
+    },
+    decrement(this: ExampleStoreState & StoreInstance<ExampleStoreState>) {
+      this.count--;
+    },
+    setMessage(this: ExampleStoreState & StoreInstance<ExampleStoreState>, message: string) {
+      this.message = message;
+    },
+    addItem(this: ExampleStoreState & StoreInstance<ExampleStoreState>, item: string) {
+      this.items = [...this.items, item];
+    },
+    removeItem(this: ExampleStoreState & StoreInstance<ExampleStoreState>, index: number) {
+      this.items = this.items.filter((_item: string, i: number) => i !== index);
+    },
+  },
+});`;
+
+  const defineStoreUsageCode = `// 在组件中使用 defineStore 定义的 store
+import { useEffect, useState } from 'preact/hooks';
+import { exampleStore, type ExampleStoreState } from '../stores/example.ts';
+
+export default function ExampleStorePage() {
+  // exampleStore 是 store 实例，直接使用
+  const [state, setState] = useState<ExampleStoreState>(exampleStore.$state);
+
+  useEffect(() => {
+    // 订阅状态变化
+    // $subscribe 会立即调用一次，传递当前状态
+    const unsubscribe = exampleStore.$subscribe((newState: ExampleStoreState) => {
+      setState(newState);
+    });
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
+
+  return (
+    <div>
+      <p>Count: {exampleStore.count}</p>
+      <p>Message: {exampleStore.message}</p>
+      <button onClick={() => exampleStore.increment()}>+1</button>
+      <button onClick={() => exampleStore.decrement()}>-1</button>
+      <button onClick={() => exampleStore.setMessage('Hello!')}>设置消息</button>
+      <button onClick={() => exampleStore.$reset()}>重置</button>
+    </div>
+  );
+}`;
 
   const reactExampleCode = `import { useEffect, useState } from 'preact/hooks';
 import { getStoreState, setStoreState, subscribeStore } from '@dreamer/dweb/client';
@@ -113,7 +195,22 @@ export default function Navbar() {
   );
 }`;
 
-  const apiReferenceCode = `// 获取 Store 实例
+  const apiReferenceCode = `// ===== defineStore API（推荐） =====
+function defineStore<T extends StoreState>(
+  name: string,
+  options: StoreOptions<T>
+): StoreInstance<T> & T
+
+// Store 实例方法
+interface StoreInstance<T> {
+  $name: string;              // Store 名称
+  $state: T;                  // 获取完整状态
+  $reset: () => void;         // 重置状态
+  $subscribe: (listener: (state: T) => void) => (() => void) | null;
+}
+
+// ===== 传统 API =====
+// 获取 Store 实例
 function getStore(): Store | null
 
 // 获取当前状态值
@@ -163,10 +260,36 @@ function resetStore(): void`;
 
       <section className="mb-12">
         <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
-          React/Preact 组件示例
+          defineStore API（推荐，声明式 API）
         </h2>
         <p className="text-gray-700 leading-relaxed mb-4">
-          在 Preact/React 组件中使用 store 的完整示例：
+          <code className="bg-gray-100 px-2 py-1 rounded">defineStore</code> 提供了声明式的 API，让 store 的定义和使用更加简洁和类型安全。
+        </p>
+        <div className="mb-6">
+          <h3 className="text-2xl font-semibold text-gray-900 mt-8 mb-4">
+            定义 Store
+          </h3>
+          <CodeBlock code={defineStoreCode} language="typescript" />
+        </div>
+        <div className="mb-6">
+          <h3 className="text-2xl font-semibold text-gray-900 mt-8 mb-4">
+            在组件中使用
+          </h3>
+          <CodeBlock code={defineStoreUsageCode} language="typescript" />
+        </div>
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 my-4">
+          <p className="text-blue-800">
+            <strong>💡 提示：</strong>使用 <code className="bg-blue-100 px-2 py-1 rounded">defineStore</code> 时，store 插件会自动收集所有已定义的 store 的初始状态，无需手动配置 <code className="bg-blue-100 px-2 py-1 rounded">initialState</code>。只需在 <code className="bg-blue-100 px-2 py-1 rounded">main.ts</code> 中导入 stores 文件即可。
+          </p>
+        </div>
+      </section>
+
+      <section className="mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
+          传统 API 使用示例
+        </h2>
+        <p className="text-gray-700 leading-relaxed mb-4">
+          如果不使用 <code className="bg-gray-100 px-2 py-1 rounded">defineStore</code>，也可以使用传统的 API 方式：
         </p>
         <CodeBlock code={reactExampleCode} language="typescript" />
       </section>
@@ -258,13 +381,19 @@ function resetStore(): void`;
             <strong>持久化存储：</strong>支持将状态保存到 <code className="bg-gray-100 px-2 py-1 rounded">localStorage</code>
           </li>
           <li className="text-gray-700">
-            <strong>类型安全：</strong>完整的 TypeScript 类型支持
+            <strong>类型安全：</strong>完整的 TypeScript 类型支持，自动推断 actions 类型
           </li>
           <li className="text-gray-700">
             <strong>跨组件共享：</strong>状态可以在任意组件间共享
           </li>
           <li className="text-gray-700">
             <strong>服务端支持：</strong>支持服务端状态初始化
+          </li>
+          <li className="text-gray-700">
+            <strong>声明式 API：</strong>提供 <code className="bg-gray-100 px-2 py-1 rounded">defineStore</code> API，使用简洁直观
+          </li>
+          <li className="text-gray-700">
+            <strong>自动收集：</strong>使用 <code className="bg-gray-100 px-2 py-1 rounded">defineStore</code> 时，初始状态会自动收集，无需手动配置
           </li>
         </ul>
       </section>
