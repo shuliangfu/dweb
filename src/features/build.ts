@@ -298,6 +298,7 @@ function createJSRResolverPlugin(
             : path.resolve(cwd, clientImport);
           return {
             path: resolvedPath,
+            external: false, // 明确标记为不 external，确保被打包
           };
         }
 
@@ -324,6 +325,7 @@ function createJSRResolverPlugin(
             return {
               path: resolvedUrl,
               namespace: "http-url",
+              external: false, // 明确标记为不 external，确保被打包
             };
           } catch {
             return undefined; // 解析失败，使用默认行为
