@@ -724,6 +724,7 @@ async function compileWithCodeSplitting(
   cwd: string,
   importMap: Record<string, string>,
   externalPackages: string[],
+  jsrResolverPlugin: esbuild.Plugin,
 ): Promise<{ compiled: number; chunks: number }> {
   if (entryPoints.length === 0) {
     return { compiled: 0, chunks: 0 };
@@ -744,12 +745,16 @@ async function compileWithCodeSplitting(
     outdir: outDir, // 输出到目录（代码分割需要）
     outbase: cwd, // 保持目录结构
     external: externalPackages,
+    plugins: [jsrResolverPlugin], // 添加 JSR 解析插件
     // 只对本地路径使用 alias，JSR/NPM/HTTP 导入已经在 external 中，不需要 alias
     alias: Object.fromEntries(
       Object.entries(importMap)
-        .filter(([_, value]) =>
-          !value.startsWith("jsr:") && !value.startsWith("npm:") &&
-          !value.startsWith("http")
+        .filter(
+          ([key, value]) =>
+            // 排除所有 @dreamer/dweb 相关的导入（由插件处理或保持为外部依赖）
+            !key.startsWith("@dreamer/dweb") &&
+            !value.startsWith("jsr:") && !value.startsWith("npm:") &&
+            !value.startsWith("http")
         )
         .map(([key, value]) => [
           key,
@@ -871,7 +876,13 @@ async function compileDirectory(
       "preact",
       "preact-render-to-string",
     ];
+    // 从 import map 中添加所有外部依赖
+    // 注意：@dreamer/dweb/client 会被打包，不添加到 external
     for (const [key, value] of Object.entries(importMap)) {
+      // @dreamer/dweb/client 需要被打包，不添加到 external
+      if (key === "@dreamer/dweb/client") {
+        continue;
+      }
       if (
         value.startsWith("jsr:") || value.startsWith("npm:") ||
         value.startsWith("http")
@@ -879,6 +890,9 @@ async function compileDirectory(
         externalPackages.push(key);
       }
     }
+
+    // 创建 JSR 解析插件
+    const jsrResolverPlugin = createJSRResolverPlugin(importMap, cwd);
 
     // 使用代码分割编译所有文件
     console.log(`🔀 启用代码分割，批量编译 ${files.length} 个文件...`);
@@ -889,6 +903,7 @@ async function compileDirectory(
       cwd,
       importMap,
       externalPackages,
+      jsrResolverPlugin,
     );
     console.log(
       `✅ 代码分割完成: ${result.compiled} 个入口文件, ${result.chunks} 个 chunk`,
