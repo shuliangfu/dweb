@@ -366,7 +366,7 @@ async function generateConfigFile(
       renderMode: '${renderMode}', // 'ssr' | 'csr' | 'hybrid'
       server: {
         port: ${port},
-        host: 'localhost'
+        host: '127.0.0.1'
       },
       routes: {
         dir: '${appName}/routes',
@@ -458,7 +458,7 @@ const config: AppConfig = {
   // 服务器配置
   server: {
     port: 3000,
-    host: 'localhost'
+    host: '127.0.0.1'
   },
   
   // 路由配置
