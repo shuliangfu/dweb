@@ -88,7 +88,8 @@ export {
   getDatabase,
   getDatabaseManager,
   isDatabaseInitialized,
-  closeDatabase,
+	setDatabaseConfigLoader,
+	closeDatabase,
 } from './features/database/mod.ts';
 // 导出 WebSocket 相关 API
 export {
