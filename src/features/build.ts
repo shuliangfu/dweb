@@ -290,17 +290,21 @@ function createJSRResolverPlugin(
         // 确保插件在解析阶段之前执行
       });
       
-      build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, (_args) => {
+      build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, (args) => {
         const clientImport = importMap["@dreamer/dweb/client"];
         if (!clientImport) {
           return undefined; // 让 esbuild 使用默认解析
         }
+
+        // 调试日志：确认插件被调用
+        console.log(`[JSR Resolver] 拦截到 @dreamer/dweb/client 导入，路径: ${args.path}, 导入: ${clientImport}`);
 
         // 如果是本地路径，解析为绝对路径
         if (!clientImport.startsWith("jsr:") && !clientImport.startsWith("http")) {
           const resolvedPath = path.isAbsolute(clientImport)
             ? clientImport
             : path.resolve(cwd, clientImport);
+          console.log(`[JSR Resolver] 本地路径，解析为: ${resolvedPath}`);
           return {
             path: resolvedPath,
             external: false, // 明确标记为不 external，强制打包
@@ -315,6 +319,7 @@ function createJSRResolverPlugin(
             const jsrPath = clientImport.replace(/^jsr:/, "");
             const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
             if (!jsrMatch) {
+              console.error(`[JSR Resolver] JSR URL 格式不匹配: ${jsrPath}`);
               return undefined;
             }
             
@@ -326,6 +331,8 @@ function createJSRResolverPlugin(
               actualSubPath = `${actualSubPath}.ts`;
             }
             const resolvedUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${actualSubPath}`;
+            
+            console.log(`[JSR Resolver] JSR URL，解析为: ${resolvedUrl}`);
             
             // 返回 http-url namespace，并明确标记为不 external
             return {
@@ -366,16 +373,19 @@ function createJSRResolverPlugin(
       // 加载 HTTP URL 内容
       build.onLoad({ filter: /.*/, namespace: "http-url" }, async (args) => {
         try {
+          console.log(`[JSR Resolver] 加载 HTTP URL: ${args.path}`);
           const response = await fetch(args.path);
           if (!response.ok) {
             throw new Error(`Failed to fetch: ${args.path} (${response.status})`);
           }
           const contents = await response.text();
+          console.log(`[JSR Resolver] 成功加载内容，长度: ${contents.length} 字符`);
           return {
             contents,
             loader: "ts",
           };
         } catch (error) {
+          console.error(`[JSR Resolver] 加载失败: ${args.path}`, error);
           return {
             errors: [{
               text: error instanceof Error ? error.message : String(error),
