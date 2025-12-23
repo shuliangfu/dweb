@@ -359,29 +359,101 @@ export class RouteHandler {
     pathname: string,
   ): Promise<void> {
     try {
-      // 提取 JSR 路径：/__jsr/@dreamer/dweb@1.3.0/client -> @dreamer/dweb@1.3.0/client
+      // 提取 JSR 路径：/__jsr/@dreamer/dweb@1.3.1/client -> @dreamer/dweb@1.3.1/client
       const jsrPath = pathname.replace(/^\/__jsr\//, "");
+      const jsrUrl = `jsr:${jsrPath}`;
       
-      // 直接构建 JSR URL：@dreamer/dweb@1.3.0/client -> https://jsr.io/@dreamer/dweb/1.3.0/client.ts
-      // 注意：JSR 的 URL 格式是 https://jsr.io/@scope/package/version/path/to/file.ts
-      const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
-      if (!jsrMatch) {
-        res.status = 400;
-        res.setHeader("Content-Type", "text/plain; charset=utf-8");
-        res.text(`Invalid JSR path format: ${jsrPath}`);
-        return;
-      }
-      
+      // 尝试使用 import.meta.resolve 获取正确的 JSR URL
+      // 这样可以处理 JSR 的实际 URL 格式（可能不是简单的 https://jsr.io/...）
+      let moduleUrl: string;
+      try {
+        // 使用 import.meta.resolve 解析 JSR URL（Deno 会自动处理）
+        moduleUrl = await import.meta.resolve(jsrUrl);
+        
+        // 如果 resolve 返回的是 file:// 协议（本地开发环境），需要转换为 HTTP URL
+        if (moduleUrl.startsWith("file://")) {
+          // 在本地开发环境中，无法直接获取 JSR URL
+          // 尝试手动构建 JSR URL
+          const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
+          if (!jsrMatch) {
+            throw new Error(`Invalid JSR path format: ${jsrPath}`);
+          }
+          const [, scope, packageName, version, subPath] = jsrMatch;
+          // JSR 的导出路径（如 client）映射到 src/client.ts
+          let actualSubPath = subPath;
+          if (!actualSubPath.startsWith("src/") && !actualSubPath.includes("/")) {
+            // 如果是单个导出名（如 client），映射到 src/client.ts
+            actualSubPath = `src/${subPath}.ts`;
+          } else if (!actualSubPath.endsWith(".ts") && !actualSubPath.endsWith(".tsx")) {
+            // 如果路径不包含扩展名，添加 .ts
+            actualSubPath = `${actualSubPath}.ts`;
+          }
+          moduleUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${actualSubPath}`;
+        }
+      } catch {
+        // 如果 resolve 失败，手动构建 JSR URL
+        const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
+        if (!jsrMatch) {
+          res.status = 400;
+          res.setHeader("Content-Type", "text/plain; charset=utf-8");
+          res.text(`Invalid JSR path format: ${jsrPath}`);
+          return;
+        }
       const [, scope, packageName, version, subPath] = jsrMatch;
       // 构建 JSR URL（直接使用 https://jsr.io）
-      const moduleUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${subPath}.ts`;
+      // 注意：JSR 的导出路径（如 client）映射到 src/client.ts
+      // 所以如果 subPath 不包含 src/，需要添加 src/ 前缀
+      let actualSubPath = subPath;
+      if (!actualSubPath.startsWith("src/") && !actualSubPath.includes("/")) {
+        // 如果是单个导出名（如 client），映射到 src/client.ts
+        actualSubPath = `src/${subPath}.ts`;
+      } else if (!actualSubPath.endsWith(".ts") && !actualSubPath.endsWith(".tsx")) {
+        // 如果路径不包含扩展名，添加 .ts
+        actualSubPath = `${actualSubPath}.ts`;
+      }
+      moduleUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${actualSubPath}`;
+      }
       
       // 获取模块内容（TypeScript 文件）
       const response = await fetch(moduleUrl);
       if (!response.ok) {
+        // 如果第一种格式失败，尝试其他可能的格式
+        if (response.status === 404) {
+          const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
+          if (jsrMatch) {
+            const [, scope, packageName, version, subPath] = jsrMatch;
+            // 尝试格式2: https://deno.land/x/... (旧格式，可能不适用)
+            // 或者格式3: 不带 .ts 扩展名
+            const alternativeUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${subPath}`;
+            const altResponse = await fetch(alternativeUrl);
+            if (altResponse.ok) {
+              const tsContent = await altResponse.text();
+              // 编译 TypeScript 为 JavaScript
+              try {
+                const result = await esbuild.transform(tsContent, {
+                  loader: "ts",
+                  format: "esm",
+                  target: "esnext",
+                  jsx: "automatic",
+                  jsxImportSource: "preact",
+                });
+                res.status = 200;
+                res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+                res.text(result.code);
+                return;
+              } catch (compileError) {
+                res.status = 500;
+                res.setHeader("Content-Type", "text/plain; charset=utf-8");
+                const errorMsg = compileError instanceof Error ? compileError.message : String(compileError);
+                res.text(`Compilation error: ${errorMsg}`);
+                return;
+              }
+            }
+          }
+        }
         res.status = response.status;
         res.setHeader("Content-Type", "text/plain; charset=utf-8");
-        res.text(`Failed to fetch JSR module: ${moduleUrl} (${response.status})`);
+        res.text(`Failed to fetch JSR module: ${moduleUrl} (${response.status})\nTried path: ${jsrPath}`);
         return;
       }
       
