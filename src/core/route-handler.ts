@@ -240,7 +240,12 @@ export class RouteHandler {
             ];
 
             // 从 import map 中添加所有外部依赖
+            // 注意：@dreamer/dweb/client 会被打包，不添加到 external
             for (const [key, value] of Object.entries(importMap)) {
+              // @dreamer/dweb/client 需要被打包，不添加到 external
+              if (key === "@dreamer/dweb/client") {
+                continue;
+              }
               if (
                 value.startsWith("jsr:") ||
                 value.startsWith("npm:") ||
@@ -256,6 +261,77 @@ export class RouteHandler {
             const originalBasename = path.basename(absoluteFilePath);
             // 根据文件扩展名确定 loader
             const loader = fullPath.endsWith(".tsx") ? "tsx" : "ts";
+
+            // 创建 JSR URL 解析插件（用于打包 @dreamer/dweb/client）
+            const jsrResolverPlugin = {
+              name: "jsr-resolver",
+              setup(build: esbuild.PluginBuild) {
+                // 解析 @dreamer/dweb/client 的 JSR URL
+                build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, async (_args) => {
+                  const clientImport = importMap["@dreamer/dweb/client"];
+                  if (!clientImport) {
+                    return undefined; // 让 esbuild 使用默认解析
+                  }
+
+                  // 如果是 JSR URL，解析为实际的 HTTP URL
+                  if (clientImport.startsWith("jsr:")) {
+                    try {
+                      // 使用 import.meta.resolve 解析 JSR URL
+                      let resolvedUrl = await import.meta.resolve(clientImport);
+                      
+                      // 如果返回的是 file:// 协议（本地开发），需要转换为 HTTP URL
+                      if (resolvedUrl.startsWith("file://")) {
+                        // 手动构建 JSR URL
+                        const jsrPath = clientImport.replace(/^jsr:/, "");
+                        const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
+                        if (jsrMatch) {
+                          const [, scope, packageName, version, subPath] = jsrMatch;
+                          let actualSubPath = subPath;
+                          if (!actualSubPath.startsWith("src/") && !actualSubPath.includes("/")) {
+                            actualSubPath = `src/${subPath}.ts`;
+                          } else if (!actualSubPath.endsWith(".ts") && !actualSubPath.endsWith(".tsx")) {
+                            actualSubPath = `${actualSubPath}.ts`;
+                          }
+                          resolvedUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${actualSubPath}`;
+                        } else {
+                          return undefined;
+                        }
+                      }
+                      
+                      return {
+                        path: resolvedUrl,
+                        namespace: "http-url",
+                      };
+                    } catch {
+                      return undefined; // 解析失败，使用默认行为
+                    }
+                  }
+                  
+                  return undefined; // 不是 JSR URL，使用默认解析
+                });
+
+                // 加载 HTTP URL 内容
+                build.onLoad({ filter: /.*/, namespace: "http-url" }, async (args) => {
+                  try {
+                    const response = await fetch(args.path);
+                    if (!response.ok) {
+                      throw new Error(`Failed to fetch: ${args.path} (${response.status})`);
+                    }
+                    const contents = await response.text();
+                    return {
+                      contents,
+                      loader: "ts",
+                    };
+                  } catch (error) {
+                    return {
+                      errors: [{
+                        text: error instanceof Error ? error.message : String(error),
+                      }],
+                    };
+                  }
+                });
+              },
+            };
 
             const result = await esbuild.build({
               stdin: {
@@ -273,13 +349,15 @@ export class RouteHandler {
               treeShaking: true, // ✅ Tree-shaking
               write: false, // 不写入文件，我们手动处理
               external: externalPackages, // 外部依赖不打包（保持 import 语句）
+              plugins: [jsrResolverPlugin], // 添加 JSR 解析插件
               // 设置 import map（用于解析外部依赖）
               // 注意：只对本地路径使用 alias，JSR/NPM/HTTP 导入已经在 external 中，不需要 alias
               // 相对路径导入（../ 和 ./）不会被 alias 处理，由 esbuild 自动解析和打包
               alias: Object.fromEntries(
                 Object.entries(importMap)
                   .filter(
-                    ([_, value]) =>
+                    ([key, value]) =>
+                      key !== "@dreamer/dweb/client" && // @dreamer/dweb/client 由插件处理
                       !value.startsWith("jsr:") &&
                       !value.startsWith("npm:") &&
                       !value.startsWith("http"),
