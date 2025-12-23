@@ -8,23 +8,24 @@ import Hero from "../components/Hero.tsx";
 import CodeBlock from "../components/CodeBlock.tsx";
 import type { LoadContext, PageProps } from "@dreamer/dweb";
 import { getJsrPackageUrl, getVersionString } from "../utils.ts";
+import { twMerge } from "tailwind-merge";
 
 /**
  * 页面元数据（用于 SEO）
  * 支持对象或函数两种形式：
  * - 对象：静态元数据
  * - 函数：动态元数据（可以基于 params、query、data、cookies、session 等生成）
- * 
+ *
  * metadata 函数接收与 load 函数相同的完整参数（LoadContext），
  * 并额外提供 data 参数（load 函数返回的数据）
- * 
+ *
  * @example
  * // 对象形式（静态）
  * export const metadata = {
  *   title: "页面标题",
  *   description: "页面描述",
  * };
- * 
+ *
  * @example
  * // 函数形式（动态）
  * export function metadata({ params, query, data, cookies, session, db }) {
@@ -52,16 +53,24 @@ export function metadata({
   author: string;
 } {
   // 可以从 data 中获取动态信息
-  const pageData = data as { versionString?: string; message?: string } | undefined;
-  
+  const pageData = data as
+    | { versionString?: string; message?: string }
+    | undefined;
+
   return {
     title: "DWeb - 现代化的全栈 Web 框架",
-    description: `基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web 框架${pageData?.versionString ? ` (v${pageData.versionString})` : ""}`,
+    description: `基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web 框架${
+      pageData?.versionString ? ` (v${pageData.versionString})` : ""
+    }`,
     keywords: "DWeb, Deno, Preact, Tailwind CSS, Web 框架",
     author: "DWeb",
   };
 }
 
+const styles = { 
+	quickStart: twMerge("text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4"),
+	intro: twMerge("text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto"),
+};
 
 /**
  * 加载页面数据（服务端执行）
@@ -149,10 +158,10 @@ import { createApp, startDevServer } from 'jsr:@dreamer/dweb';`;
       <div className="py-20 bg-linear-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className={styles.quickStart}>
               快速开始
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className={styles.intro}>
               只需几分钟，即可开始使用 DWeb 构建您的下一个 Web 应用
             </p>
           </div>
