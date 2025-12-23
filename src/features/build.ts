@@ -284,6 +284,7 @@ function createJSRResolverPlugin(
     name: "jsr-resolver",
     setup(build: esbuild.PluginBuild) {
       // 解析 @dreamer/dweb/client（支持 JSR URL 和本地路径）
+      // 必须在所有其他解析器之前执行，确保能拦截到导入
       build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, (_args) => {
         const clientImport = importMap["@dreamer/dweb/client"];
         if (!clientImport) {
