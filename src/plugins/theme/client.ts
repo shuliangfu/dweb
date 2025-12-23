@@ -205,3 +205,21 @@ export function getThemeValue(): "light" | "dark" | null {
   return store.value;
 }
 
+/**
+ * 获取当前主题模式（从 Store 中获取）
+ * @returns 当前主题模式（'light' | 'dark' | 'auto'），如果不在客户端环境则返回 null
+ */
+export function getThemeMode(): ThemeMode | null {
+  if (typeof globalThis === "undefined" || !globalThis.window) {
+    return null;
+  }
+
+  const store = getThemeStore();
+  if (!store) {
+    return null;
+  }
+
+  // 从 store 中获取 mode 属性
+  return store.mode;
+}
+

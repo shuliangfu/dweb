@@ -33,6 +33,7 @@ export {
   switchTheme,
   subscribeTheme,
   getThemeValue,
+  getThemeMode,
   getThemeManager,
   getThemeStore,
 } from './plugins/theme/client.ts';

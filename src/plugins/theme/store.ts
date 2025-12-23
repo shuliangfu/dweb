@@ -9,7 +9,9 @@ import { defineStore } from "../../plugins/store/define-store.ts";
  * 主题 Store 状态类型
  */
 export interface ThemeStoreState extends Record<string, unknown> {
-  /** 当前实际主题值（'light' | 'dark'） */
+  /** 用户选择的主题模式（'light' | 'dark' | 'auto'） */
+  mode: "light" | "dark" | "auto";
+  /** 当前实际主题值（'light' | 'dark'），当 mode 为 'auto' 时，根据系统主题确定 */
   value: "light" | "dark";
 }
 
@@ -19,15 +21,23 @@ export interface ThemeStoreState extends Record<string, unknown> {
  */
 export const themeStore = defineStore("theme", {
   state: (): ThemeStoreState => ({
+    mode: "auto",
     value: "light",
   }),
   actions: {
     /**
-     * 设置主题值
-     * @param theme 主题值（'light' | 'dark'）
+     * 设置主题模式
+     * @param mode 主题模式（'light' | 'dark' | 'auto'）
      */
-    setValue(theme: "light" | "dark") {
-      this.value = theme;
+    setMode(mode: "light" | "dark" | "auto") {
+      this.mode = mode;
+    },
+    /**
+     * 设置主题值
+     * @param value 实际主题值（'light' | 'dark'）
+     */
+    setValue(value: "light" | "dark") {
+      this.value = value;
     },
   },
 });

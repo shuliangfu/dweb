@@ -114,16 +114,16 @@ function createThemeManager(config: ThemeConfig): ThemeManager {
       if (typeof globalThis !== "undefined" && (globalThis as any).__STORE__) {
         const store = (globalThis as any).__STORE__ as Store;
         const currentState = store.getState();
-        const themeState = (currentState.theme as { value?: "light" | "dark" }) || {};
-        if (themeState.value !== actualTheme) {
-          store.setState((prev) => ({
-            ...prev,
-            theme: {
-              ...themeState,
-              value: actualTheme,
-            },
-          }));
-        }
+        const themeState = (currentState.theme as { mode?: "light" | "dark" | "auto"; value?: "light" | "dark" }) || {};
+        const currentTheme = this.getTheme();
+        store.setState((prev) => ({
+          ...prev,
+          theme: {
+            ...themeState,
+            mode: currentTheme,
+            value: actualTheme,
+          },
+        }));
       }
     },
 
@@ -189,11 +189,13 @@ function initTheme(config: ThemeConfig): void {
       if (typeof globalThis !== "undefined" && (globalThis as any).__STORE__) {
         const store = (globalThis as any).__STORE__ as Store;
         const currentState = store.getState();
-        const themeState = (currentState.theme as { value?: "light" | "dark" }) || {};
+        const themeState = (currentState.theme as { mode?: "light" | "dark" | "auto"; value?: "light" | "dark" }) || {};
+        const currentTheme = themeManager.getTheme();
         store.setState((prev) => ({
           ...prev,
           theme: {
             ...themeState,
+            mode: currentTheme,
             value: event.detail.actualTheme,
           },
         }));
@@ -223,15 +225,17 @@ function initTheme(config: ThemeConfig): void {
   const init = () => {
     themeManager.init();
     // 初始化全局 store 中的主题状态
+    const currentTheme = themeManager.getTheme();
     const actualTheme = themeManager.getActualTheme();
     if (typeof globalThis !== "undefined" && (globalThis as any).__STORE__) {
       const store = (globalThis as any).__STORE__ as Store;
       const currentState = store.getState();
-      const themeState = (currentState.theme as { value?: "light" | "dark" }) || {};
+      const themeState = (currentState.theme as { mode?: "light" | "dark" | "auto"; value?: "light" | "dark" }) || {};
       store.setState((prev) => ({
         ...prev,
         theme: {
           ...themeState,
+          mode: currentTheme,
           value: actualTheme,
         },
       }));
