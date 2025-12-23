@@ -255,21 +255,22 @@ export abstract class SQLModel {
    * 初始化模型
    * 设置数据库适配器（SQL 模型通常不需要创建索引，索引通过迁移管理）
    * 这个方法会自动从全局数据库管理器获取适配器
+   * 如果数据库未初始化，会自动尝试从 dweb.config.ts 加载配置并初始化
    * 
    * @param connectionName 连接名称（默认为 'default'）
    * @returns Promise<void>
    * 
    * @example
-   * await User.init(); // 使用默认连接
+   * await User.init(); // 使用默认连接，如果数据库未初始化会自动从配置文件加载
    * await User.init('secondary'); // 使用指定连接
    */
   static async init(connectionName: string = 'default'): Promise<void> {
-    // 动态导入 getDatabase 以避免循环依赖
-    const { getDatabase } = await import('../access.ts');
+    // 动态导入 getDatabaseAsync 以避免循环依赖
+    const { getDatabaseAsync } = await import('../access.ts');
     
     try {
-      // 获取数据库适配器
-      const adapter = getDatabase(connectionName);
+      // 获取数据库适配器（如果数据库未初始化，会自动尝试从配置文件加载并初始化）
+      const adapter = await getDatabaseAsync(connectionName);
       // 设置适配器
       this.setAdapter(adapter);
       // 注意：SQL 模型的索引通常通过迁移管理，不在这里创建

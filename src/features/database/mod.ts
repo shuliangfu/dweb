@@ -52,6 +52,7 @@ export {
 export {
   initDatabase,
   getDatabase,
+  getDatabaseAsync,
   getDatabaseManager,
   isDatabaseInitialized,
   closeDatabase,
