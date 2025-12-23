@@ -55,7 +55,12 @@ export async function createImportMapScript(): Promise<string | null> {
     const imports = denoJson.imports || {};
     const clientImports: Record<string, string> = {};
     
-    // 只包含 preact 相关的导入
+    // 包含 @dreamer/dweb/client（用于 Store 等客户端 API）
+    if (imports["@dreamer/dweb/client"]) {
+      clientImports["@dreamer/dweb/client"] = imports["@dreamer/dweb/client"];
+    }
+    
+    // 包含 preact 相关的导入
     if (imports["preact"]) {
       clientImports["preact"] = imports["preact"];
     }
