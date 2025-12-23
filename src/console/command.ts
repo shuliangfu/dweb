@@ -7,6 +7,21 @@ import { colors } from "./ansi.ts";
 import { error as outputError, warning } from "./output.ts";
 
 /**
+ * 选项值类型
+ */
+export type OptionValueType = "string" | "number" | "boolean" | "array";
+
+/**
+ * 选项值验证函数
+ */
+export type OptionValidator = (value: string) => boolean | string;
+
+/**
+ * 参数值验证函数
+ */
+export type ArgumentValidator = (value: string) => boolean | string;
+
+/**
  * 命令选项定义
  */
 export interface CommandOption {
@@ -19,7 +34,21 @@ export interface CommandOption {
   /** 是否需要值 */
   requiresValue?: boolean;
   /** 默认值 */
-  defaultValue?: string | boolean;
+  defaultValue?: string | boolean | number;
+  /** 选项值类型（用于自动类型转换） */
+  type?: OptionValueType;
+  /** 选项值验证函数，返回 true 或错误消息字符串 */
+  validator?: OptionValidator;
+  /** 选项分组名称（用于在帮助信息中分组显示） */
+  group?: string;
+  /** 选项是否必需 */
+  required?: boolean;
+  /** 与此选项冲突的选项名称列表 */
+  conflicts?: string[];
+  /** 此选项依赖的选项名称列表 */
+  dependsOn?: string[];
+  /** 选项的可选值列表（用于枚举验证） */
+  choices?: string[];
 }
 
 /**
@@ -32,13 +61,17 @@ export interface CommandArgument {
   description: string;
   /** 是否必需 */
   required?: boolean;
+  /** 参数值验证函数，返回 true 或错误消息字符串 */
+  validator?: ArgumentValidator;
+  /** 参数的可选值列表（用于枚举验证） */
+  choices?: string[];
 }
 
 /**
  * 解析后的命令选项
  */
 export interface ParsedOptions {
-  [key: string]: string | boolean | undefined;
+  [key: string]: string | boolean | number | string[] | undefined;
 }
 
 /**
@@ -50,34 +83,72 @@ export type CommandHandler = (
 ) => Promise<void> | void;
 
 /**
+ * 命令钩子函数类型
+ */
+export type CommandHook = (
+  args: string[],
+  options: ParsedOptions
+) => Promise<void> | void;
+
+/**
  * 命令行命令类
  */
 export class Command {
   /** 命令名称 */
   private name: string;
+  /** 命令别名列表 */
+  private aliases: string[] = [];
   /** 命令描述 */
-  private description: string;
+  private description?: string;
   /** 命令版本 */
   private version?: string;
   /** 自定义用法字符串（如果设置，将覆盖自动生成的用法） */
   private usage?: string;
+  /** 使用示例列表 */
+  private examples: Array<{ command: string; description?: string }> = [];
   /** 命令选项列表 */
   private options: CommandOption[] = [];
   /** 命令参数列表 */
   private arguments: CommandArgument[] = [];
   /** 命令执行函数 */
   private handler?: CommandHandler;
+  /** 命令执行前钩子 */
+  private beforeHook?: CommandHook;
+  /** 命令执行后钩子 */
+  private afterHook?: CommandHook;
   /** 子命令列表 */
   private subcommands: Map<string, Command> = new Map();
+  /** 子命令别名映射 */
+  private subcommandAliases: Map<string, string> = new Map();
 
   /**
    * 创建命令实例
    * @param name 命令名称
-   * @param description 命令描述
+   * @param description 命令描述（可选，可通过 info() 方法设置）
    */
-  constructor(name: string, description: string) {
+  constructor(name: string, description?: string) {
     this.name = name;
     this.description = description;
+  }
+
+  /**
+   * 设置命令描述
+   * @param description 命令描述
+   * @returns 当前命令实例（支持链式调用）
+   */
+  info(description: string): this {
+    this.description = description;
+    return this;
+  }
+
+  /**
+   * 添加命令别名
+   * @param alias 别名
+   * @returns 当前命令实例（支持链式调用）
+   */
+  alias(alias: string): this {
+    this.aliases.push(alias);
+    return this;
   }
 
   /**
@@ -97,6 +168,17 @@ export class Command {
    */
   setUsage(usage: string): this {
     this.usage = usage;
+    return this;
+  }
+
+  /**
+   * 添加使用示例
+   * @param command 示例命令
+   * @param description 示例描述（可选）
+   * @returns 当前命令实例（支持链式调用）
+   */
+  example(command: string, description?: string): this {
+    this.examples.push({ command, description });
     return this;
   }
 
@@ -131,15 +213,179 @@ export class Command {
   }
 
   /**
+   * 设置命令执行前钩子
+   * @param hook 钩子函数
+   * @returns 当前命令实例（支持链式调用）
+   */
+  before(hook: CommandHook): this {
+    this.beforeHook = hook;
+    return this;
+  }
+
+  /**
+   * 设置命令执行后钩子
+   * @param hook 钩子函数
+   * @returns 当前命令实例（支持链式调用）
+   */
+  after(hook: CommandHook): this {
+    this.afterHook = hook;
+    return this;
+  }
+
+  /**
    * 添加子命令
    * @param name 子命令名称
    * @param description 子命令描述
    * @returns 子命令实例
    */
-  command(name: string, description: string): Command {
+  command(name: string, description?: string): Command {
     const subcommand = new Command(name, description);
     this.subcommands.set(name, subcommand);
     return subcommand;
+  }
+
+  /**
+   * 为子命令添加别名
+   * @param alias 别名
+   * @param commandName 子命令名称
+   * @returns 当前命令实例（支持链式调用）
+   */
+  subcommandAlias(alias: string, commandName: string): this {
+    if (!this.subcommands.has(commandName)) {
+      throw new Error(`子命令 "${commandName}" 不存在`);
+    }
+    this.subcommandAliases.set(alias, commandName);
+    return this;
+  }
+
+  /**
+   * 转换选项值类型
+   * @param value 原始值
+   * @param type 目标类型
+   * @returns 转换后的值
+   */
+  private convertOptionValue(
+    value: string,
+    type?: OptionValueType
+  ): string | number | boolean | string[] {
+    if (!type || type === "string") {
+      return value;
+    }
+
+    if (type === "boolean") {
+      return value === "true" || value === "1" || value === "yes";
+    }
+
+    if (type === "number") {
+      const num = Number(value);
+      if (isNaN(num)) {
+        throw new Error(`无法将 "${value}" 转换为数字`);
+      }
+      return num;
+    }
+
+    if (type === "array") {
+      // 支持逗号分隔的数组值
+      return value.split(",").map((v) => v.trim());
+    }
+
+    return value;
+  }
+
+  /**
+   * 验证选项值
+   * @param option 选项定义
+   * @param value 选项值
+   * @returns 验证结果，true 表示通过，字符串表示错误消息
+   */
+  private validateOptionValue(
+    option: CommandOption,
+    value: string
+  ): boolean | string {
+    // 检查枚举值
+    if (option.choices && option.choices.length > 0) {
+      if (!option.choices.includes(value)) {
+        return `选项 --${option.name} 的值必须是以下之一: ${option.choices.join(", ")}`;
+      }
+    }
+
+    // 执行自定义验证函数
+    if (option.validator) {
+      const result = option.validator(value);
+      if (result !== true) {
+        return result || `选项 --${option.name} 的值无效`;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * 验证参数值
+   * @param argument 参数定义
+   * @param value 参数值
+   * @returns 验证结果，true 表示通过，字符串表示错误消息
+   */
+  private validateArgumentValue(
+    argument: CommandArgument,
+    value: string
+  ): boolean | string {
+    // 检查枚举值
+    if (argument.choices && argument.choices.length > 0) {
+      if (!argument.choices.includes(value)) {
+        return `参数 ${argument.name} 的值必须是以下之一: ${argument.choices.join(", ")}`;
+      }
+    }
+
+    // 执行自定义验证函数
+    if (argument.validator) {
+      const result = argument.validator(value);
+      if (result !== true) {
+        return result || `参数 ${argument.name} 的值无效`;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * 检查选项冲突和依赖
+   * @param parsedOptions 解析后的选项
+   */
+  private validateOptionRelations(parsedOptions: ParsedOptions): void {
+    for (const opt of this.options) {
+      const optionValue = parsedOptions[opt.name];
+
+      // 检查冲突
+      if (opt.conflicts && opt.conflicts.length > 0 && optionValue !== undefined) {
+        for (const conflictName of opt.conflicts) {
+          if (parsedOptions[conflictName] !== undefined) {
+            outputError(
+              `选项 --${opt.name} 与 --${conflictName} 冲突，不能同时使用`
+            );
+            Deno.exit(1);
+          }
+        }
+      }
+
+      // 检查依赖
+      if (opt.dependsOn && opt.dependsOn.length > 0 && optionValue !== undefined) {
+        for (const depName of opt.dependsOn) {
+          if (parsedOptions[depName] === undefined) {
+            outputError(
+              `选项 --${opt.name} 依赖于 --${depName}，请先指定 --${depName}`
+            );
+            Deno.exit(1);
+          }
+        }
+      }
+
+      // 检查必需选项
+      if (opt.required && optionValue === undefined) {
+        outputError(`选项 --${opt.name} 是必需的`);
+        Deno.exit(1);
+      }
+    }
   }
 
   /**
@@ -158,7 +404,7 @@ export class Command {
     // 初始化选项默认值
     for (const opt of this.options) {
       if (opt.defaultValue !== undefined) {
-        parsedOptions[opt.name] = opt.defaultValue;
+        parsedOptions[opt.name] = opt.defaultValue as string | boolean | number;
       }
     }
 
@@ -174,14 +420,35 @@ export class Command {
         if (option) {
           if (option.requiresValue) {
             // 需要值的选项：--option=value 或 --option value
+            let value: string;
             if (arg.includes("=")) {
-              const [name, value] = arg.split("=", 2);
-              parsedOptions[name.slice(2)] = value;
+              const [, val] = arg.split("=", 2);
+              value = val;
             } else if (i + 1 < args.length && !args[i + 1].startsWith("-")) {
-              parsedOptions[optionName] = args[i + 1];
+              value = args[i + 1];
               i++;
             } else {
               outputError(`选项 --${optionName} 需要值`);
+              Deno.exit(1);
+            }
+
+            // 验证选项值
+            const validation = this.validateOptionValue(option, value);
+            if (validation !== true) {
+              outputError(validation as string);
+              Deno.exit(1);
+            }
+
+            // 转换类型
+            try {
+              parsedOptions[optionName] = this.convertOptionValue(
+                value,
+                option.type
+              );
+            } catch (err) {
+              outputError(
+                err instanceof Error ? err.message : String(err)
+              );
               Deno.exit(1);
             }
           } else {
@@ -202,7 +469,28 @@ export class Command {
         if (option) {
           if (option.requiresValue) {
             if (i + 1 < args.length && !args[i + 1].startsWith("-")) {
-              parsedOptions[option.name] = args[i + 1];
+              const value = args[i + 1];
+
+              // 验证选项值
+              const validation = this.validateOptionValue(option, value);
+              if (validation !== true) {
+                outputError(validation as string);
+                Deno.exit(1);
+              }
+
+              // 转换类型
+              try {
+                parsedOptions[option.name] = this.convertOptionValue(
+                  value,
+                  option.type
+                );
+              } catch (err) {
+                outputError(
+                  err instanceof Error ? err.message : String(err)
+                );
+                Deno.exit(1);
+              }
+
               i++;
             } else {
               outputError(`选项 -${optionName} 需要值`);
@@ -230,7 +518,19 @@ export class Command {
         outputError(`缺少必需参数: ${argDef.name}`);
         Deno.exit(1);
       }
+
+      // 验证参数值
+      if (j < parsedArgs.length) {
+        const validation = this.validateArgumentValue(argDef, parsedArgs[j]);
+        if (validation !== true) {
+          outputError(validation as string);
+          Deno.exit(1);
+        }
+      }
     }
+
+    // 验证选项关系和必需选项
+    this.validateOptionRelations(parsedOptions);
 
     return {
       arguments: parsedArgs,
@@ -242,7 +542,13 @@ export class Command {
    * 显示帮助信息
    */
   showHelp(): void {
-    console.log(`\n${colors.cyan}${colors.bright}${this.name}${colors.reset}`);
+    // 显示命令名称和别名
+    let nameDisplay = `${colors.cyan}${colors.bright}${this.name}${colors.reset}`;
+    if (this.aliases.length > 0) {
+      nameDisplay += ` ${colors.dim}(${this.aliases.join(", ")})${colors.reset}`;
+    }
+    console.log(`\n${nameDisplay}`);
+
     if (this.description) {
       console.log(`  ${this.description}\n`);
     }
@@ -281,36 +587,71 @@ export class Command {
       console.log(`${colors.dim}参数:${colors.reset}`);
       for (const arg of this.arguments) {
         const required = arg.required ? `${colors.red}*${colors.reset} ` : "  ";
-        console.log(
-          `  ${required}${colors.cyan}${arg.name}${colors.reset}    ${arg.description}`
-        );
+        let argStr = `  ${required}${colors.cyan}${arg.name}${colors.reset}`;
+        
+        // 显示可选值
+        if (arg.choices && arg.choices.length > 0) {
+          argStr += ` ${colors.dim}(${arg.choices.join("|")})${colors.reset}`;
+        }
+        
+        // 对齐描述
+        const padding = 30 - argStr.length;
+        argStr += " ".repeat(Math.max(0, padding));
+        argStr += arg.description;
+        
+        console.log(argStr);
       }
       console.log();
     }
 
-    // 显示选项
+    // 显示选项（按分组）
     if (this.options.length > 0) {
-      console.log(`${colors.dim}选项:${colors.reset}`);
+      // 按分组组织选项
+      const groupedOptions = new Map<string, CommandOption[]>();
+      const ungroupedOptions: CommandOption[] = [];
+
       for (const opt of this.options) {
-        let optionStr = "  ";
-        if (opt.alias) {
-          optionStr += `${colors.cyan}-${opt.alias}${colors.reset}, `;
+        if (opt.group) {
+          if (!groupedOptions.has(opt.group)) {
+            groupedOptions.set(opt.group, []);
+          }
+          groupedOptions.get(opt.group)!.push(opt);
+        } else {
+          ungroupedOptions.push(opt);
         }
-        optionStr += `${colors.cyan}--${opt.name}${colors.reset}`;
-        if (opt.requiresValue) {
-          optionStr += ` <值>`;
+      }
+
+      // 显示分组选项
+      for (const [groupName, opts] of groupedOptions) {
+        console.log(`${colors.dim}${groupName}:${colors.reset}`);
+        for (const opt of opts) {
+          this.printOption(opt);
         }
+        console.log();
+      }
 
-        // 对齐描述
-        const padding = 30 - optionStr.length;
-        optionStr += " ".repeat(Math.max(0, padding));
-        optionStr += opt.description;
-
-        if (opt.defaultValue !== undefined) {
-          optionStr += ` ${colors.dim}(默认: ${opt.defaultValue})${colors.reset}`;
+      // 显示未分组选项
+      if (ungroupedOptions.length > 0) {
+        if (groupedOptions.size > 0) {
+          console.log(`${colors.dim}选项:${colors.reset}`);
+        } else {
+          console.log(`${colors.dim}选项:${colors.reset}`);
         }
+        for (const opt of ungroupedOptions) {
+          this.printOption(opt);
+        }
+        console.log();
+      }
+    }
 
-        console.log(optionStr);
+    // 显示使用示例
+    if (this.examples.length > 0) {
+      console.log(`${colors.dim}示例:${colors.reset}`);
+      for (const example of this.examples) {
+        console.log(`  ${colors.cyan}${example.command}${colors.reset}`);
+        if (example.description) {
+          console.log(`    ${colors.dim}${example.description}${colors.reset}`);
+        }
       }
       console.log();
     }
@@ -331,15 +672,111 @@ export class Command {
       for (const [name, cmd] of this.subcommands) {
         const nameStr = `${colors.cyan}${name}${colors.reset}`;
         const padding = alignWidth - name.length;
-        console.log(`  ${nameStr}${" ".repeat(padding)}${cmd.description}`);
+        // 显示子命令名称和描述（子命令名称后加点）
+        console.log(`  ${nameStr}.${" ".repeat(Math.max(0, padding - 1))}${cmd.description || ""}`);
+        
+        // 显示子命令的选项（最多显示前5个常用选项）
+        if (cmd.options.length > 0) {
+          // 计算选项名称的最大长度（用于对齐，包含颜色代码但不影响实际宽度）
+          // 先计算所有子命令中选项的最大长度，确保统一对齐
+          let globalMaxOptionLength = 0;
+          for (const [, subCmd] of this.subcommands) {
+            for (const opt of subCmd.options.slice(0, 5)) {
+              const optionDisplayLength = opt.alias 
+                ? opt.alias.length + 2  // -a.
+                : opt.name.length + 3;  // --name.
+              globalMaxOptionLength = Math.max(globalMaxOptionLength, optionDisplayLength);
+            }
+          }
+          
+          // 计算当前子命令选项的最大长度
+          let maxOptionDisplayLength = 0;
+          for (const opt of cmd.options.slice(0, 5)) {
+            // 计算实际显示长度（不包含 ANSI 颜色代码）
+            const optionDisplayLength = opt.alias 
+              ? opt.alias.length + 2  // -a.
+              : opt.name.length + 3;  // --name.
+            maxOptionDisplayLength = Math.max(maxOptionDisplayLength, optionDisplayLength);
+          }
+          
+          // 使用全局最大长度确保所有子命令的选项对齐一致
+          const alignToLength = Math.max(maxOptionDisplayLength, globalMaxOptionLength, 8);
+          
+          const displayOptions = cmd.options.slice(0, 5);
+          for (const opt of displayOptions) {
+            let optionStr = "    ";
+            
+            // 显示选项（优先显示别名，选项名称后加点）
+            const optionName = opt.alias 
+              ? `${colors.cyan}-${opt.alias}${colors.reset}.`
+              : `${colors.cyan}--${opt.name}${colors.reset}.`;
+            optionStr += optionName;
+            
+            // 对齐选项描述（计算实际显示长度，不包含 ANSI 代码）
+            const optionDisplayLength = opt.alias 
+              ? opt.alias.length + 2  // -a.
+              : opt.name.length + 3;  // --name.
+            const optionPadding = alignToLength - optionDisplayLength + 2; // +2 用于额外间距
+            optionStr += " ".repeat(Math.max(0, optionPadding));
+            optionStr += opt.description;
+            
+            console.log(optionStr);
+          }
+          
+          // 如果还有更多选项，显示提示
+          if (cmd.options.length > 5) {
+            console.log(`    ${colors.dim}... 还有 ${cmd.options.length - 5} 个选项${colors.reset}`);
+          }
+        }
       }
       console.log();
+      
+      // 提示查看子命令详细帮助
+      console.log(`${colors.dim}提示: 使用 ${colors.reset}${colors.cyan}${this.name} <command> --help${colors.reset}${colors.dim} 查看子命令的详细选项${colors.reset}\n`);
     }
 
     // 显示版本
     if (this.version) {
       console.log(`${colors.dim}版本:${colors.reset} ${this.version}\n`);
     }
+  }
+
+  /**
+   * 打印单个选项信息
+   * @param opt 选项定义
+   */
+  private printOption(opt: CommandOption): void {
+    let optionStr = "  ";
+    
+    // 显示必需标记
+    if (opt.required) {
+      optionStr += `${colors.red}*${colors.reset} `;
+    }
+    
+    if (opt.alias) {
+      optionStr += `${colors.cyan}-${opt.alias}${colors.reset}, `;
+    }
+    optionStr += `${colors.cyan}--${opt.name}${colors.reset}`;
+    
+    if (opt.requiresValue) {
+      optionStr += ` <值>`;
+    }
+
+    // 显示可选值
+    if (opt.choices && opt.choices.length > 0) {
+      optionStr += ` ${colors.dim}(${opt.choices.join("|")})${colors.reset}`;
+    }
+
+    // 对齐描述
+    const padding = 30 - optionStr.length;
+    optionStr += " ".repeat(Math.max(0, padding));
+    optionStr += opt.description;
+
+    if (opt.defaultValue !== undefined) {
+      optionStr += ` ${colors.dim}(默认: ${opt.defaultValue})${colors.reset}`;
+    }
+
+    console.log(optionStr);
   }
 
   /**
@@ -363,11 +800,24 @@ export class Command {
       return;
     }
 
-    // 检查子命令
-    if (args.length > 0 && this.subcommands.has(args[0])) {
-      const subcommand = this.subcommands.get(args[0])!;
-      await subcommand.execute(args.slice(1));
-      return;
+    // 检查子命令（包括别名）
+    if (args.length > 0) {
+      const firstArg = args[0];
+      
+      // 检查子命令别名
+      if (this.subcommandAliases.has(firstArg)) {
+        const commandName = this.subcommandAliases.get(firstArg)!;
+        const subcommand = this.subcommands.get(commandName)!;
+        await subcommand.execute(args.slice(1));
+        return;
+      }
+      
+      // 检查子命令
+      if (this.subcommands.has(firstArg)) {
+        const subcommand = this.subcommands.get(firstArg)!;
+        await subcommand.execute(args.slice(1));
+        return;
+      }
     }
 
     // 解析参数和选项
@@ -377,7 +827,18 @@ export class Command {
     // 执行命令处理函数
     if (this.handler) {
       try {
+        // 执行前置钩子
+        if (this.beforeHook) {
+          await this.beforeHook(parsedArgs, parsedOptions);
+        }
+
+        // 执行主处理函数
         await this.handler(parsedArgs, parsedOptions);
+
+        // 执行后置钩子
+        if (this.afterHook) {
+          await this.afterHook(parsedArgs, parsedOptions);
+        }
       } catch (err) {
         outputError(`执行命令时出错: ${err instanceof Error ? err.message : String(err)}`);
         Deno.exit(1);

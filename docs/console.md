@@ -157,8 +157,11 @@ numberedList(["项目 A", "项目 B"], 10); // 从 10 开始编号
 import { Command } from "@dreamer/dweb/console";
 import { success, error } from "@dreamer/dweb/console";
 
-const cmd = new Command("my-command", "这是一个示例命令")
+// 创建命令（description 参数可选）
+const cmd = new Command("my-command")
+  .info("这是一个示例命令")  // 使用 info() 方法设置描述
   .setVersion("1.0.0")
+  .alias("mc")  // 添加命令别名
   .option({
     name: "verbose",
     alias: "v",
@@ -175,6 +178,7 @@ const cmd = new Command("my-command", "这是一个示例命令")
     description: "要处理的文件",
     required: true,
   })
+  .example("my-command file.txt -o output.txt", "处理文件并输出")
   .action(async (args, options) => {
     const file = args[0];
     const verbose = options.verbose === true;
@@ -212,6 +216,51 @@ await cmd.execute();
   description: "端口号",
   requiresValue: true,
   defaultValue: "3000",
+  type: "number",  // 自动类型转换：string | number | boolean | array
+})
+
+// 带验证的选项
+.option({
+  name: "env",
+  description: "环境",
+  requiresValue: true,
+  choices: ["dev", "prod", "test"],  // 枚举值验证
+  validator: (value) => {
+    // 自定义验证函数，返回 true 或错误消息
+    return value.length > 0 || "环境不能为空";
+  },
+})
+
+// 必需选项
+.option({
+  name: "config",
+  alias: "c",
+  description: "配置文件路径",
+  requiresValue: true,
+  required: true,  // 标记为必需选项
+})
+
+// 选项分组
+.option({
+  name: "host",
+  description: "主机地址",
+  requiresValue: true,
+  group: "服务器配置",  // 在帮助信息中分组显示
+})
+
+// 选项冲突检测
+.option({
+  name: "json",
+  description: "JSON 输出",
+  conflicts: ["yaml"],  // 与 --yaml 选项冲突
+})
+
+// 选项依赖
+.option({
+  name: "output",
+  description: "输出文件",
+  requiresValue: true,
+  dependsOn: ["format"],  // 依赖于 --format 选项
 })
 ```
 
@@ -231,6 +280,18 @@ await cmd.execute();
   description: "目标文件路径",
   required: false,
 })
+
+// 带验证的参数
+.argument({
+  name: "action",
+  description: "操作类型",
+  required: true,
+  choices: ["create", "update", "delete"],  // 枚举值验证
+  validator: (value) => {
+    // 自定义验证函数，返回 true 或错误消息
+    return value.length > 0 || "操作类型不能为空";
+  },
+})
 ```
 
 ### 子命令
@@ -238,8 +299,9 @@ await cmd.execute();
 ```typescript
 const cmd = new Command("app", "应用程序管理工具");
 
-// 添加子命令
-const createCmd = cmd.command("create", "创建新项目")
+// 添加子命令（description 参数可选）
+const createCmd = cmd.command("create")
+  .info("创建新项目")  // 使用 info() 方法设置描述
   .argument({
     name: "name",
     description: "项目名称",
@@ -255,7 +317,37 @@ const listCmd = cmd.command("list", "列出所有项目")
     success("项目列表");
   });
 
+// 为子命令添加别名
+cmd.subcommandAlias("c", "create");  // 可以使用 app c 代替 app create
+
 await cmd.execute();
+```
+
+### 命令钩子
+
+```typescript
+const cmd = new Command("my-command", "示例命令")
+  .before(async (args, options) => {
+    // 执行前钩子
+    console.log("准备执行命令...");
+  })
+  .after(async (args, options) => {
+    // 执行后钩子
+    console.log("命令执行完成");
+  })
+  .action(async (args, options) => {
+    // 主处理函数
+    console.log("执行命令逻辑");
+  });
+```
+
+### 使用示例
+
+```typescript
+const cmd = new Command("my-command", "示例命令")
+  .example("my-command --help", "查看帮助信息")
+  .example("my-command file.txt -o output.txt", "处理文件并输出")
+  .example("my-command --port 8080 --env prod", "生产环境运行");
 ```
 
 ### 自动帮助信息
@@ -264,6 +356,17 @@ await cmd.execute();
 
 ```bash
 my-command --help
+```
+
+帮助信息会自动显示：
+- 命令名称和别名
+- 命令描述
+- 用法说明
+- 参数列表（带必需标记和可选值）
+- 选项列表（按分组显示，带默认值和可选值）
+- 使用示例
+- 子命令列表（显示常用选项）
+- 版本信息
 ```
 
 ## 命令行输入工具
@@ -445,7 +548,7 @@ for (let i = 0; i <= 100; i += 10) {
 
 ## 完整示例
 
-### 示例 1：创建 CLI 工具
+### 示例 1：创建 CLI 工具（基础功能）
 
 ```typescript
 import { Command } from "@dreamer/dweb/console";
@@ -453,6 +556,7 @@ import { success, error, info, title, separator } from "@dreamer/dweb/console";
 
 const cmd = new Command("my-cli", "我的 CLI 工具")
   .setVersion("1.0.0")
+  .alias("mc")  // 添加别名
   .option({
     name: "verbose",
     alias: "v",
@@ -470,6 +574,7 @@ const cmd = new Command("my-cli", "我的 CLI 工具")
     description: "要执行的操作",
     required: true,
   })
+  .example("my-cli start --config ./prod.json", "使用生产配置启动")
   .action(async (args, options) => {
     const action = args[0];
     const verbose = options.verbose === true;
@@ -486,6 +591,56 @@ const cmd = new Command("my-cli", "我的 CLI 工具")
     
     // 执行操作逻辑
     success(`操作 ${action} 执行成功`);
+  });
+
+await cmd.execute();
+```
+
+### 示例 1.1：高级选项功能
+
+```typescript
+import { Command } from "@dreamer/dweb/console";
+
+const cmd = new Command("server", "服务器管理工具")
+  .option({
+    name: "port",
+    alias: "p",
+    description: "端口号",
+    requiresValue: true,
+    type: "number",  // 自动转换为数字
+    validator: (value) => {
+      const port = Number(value);
+      return (port > 0 && port < 65536) || "端口号必须在 1-65535 之间";
+    },
+    group: "服务器配置",
+  })
+  .option({
+    name: "env",
+    description: "环境",
+    requiresValue: true,
+    choices: ["dev", "prod", "test"],  // 枚举值
+    group: "服务器配置",
+  })
+  .option({
+    name: "json",
+    description: "JSON 输出",
+    conflicts: ["yaml"],  // 与 --yaml 冲突
+  })
+  .option({
+    name: "yaml",
+    description: "YAML 输出",
+    conflicts: ["json"],  // 与 --json 冲突
+  })
+  .option({
+    name: "output",
+    description: "输出文件",
+    requiresValue: true,
+    dependsOn: ["format"],  // 依赖于 --format
+  })
+  .action(async (args, options) => {
+    const port = options.port as number;
+    const env = options.env as string;
+    console.log(`启动服务器: 端口 ${port}, 环境 ${env}`);
   });
 
 await cmd.execute();
@@ -597,35 +752,69 @@ for (let i = 0; i <= 100; i += 10) {
 
 #### 方法
 
-- `setVersion(version: string): this` - 设置命令版本
-- `option(option: CommandOption): this` - 添加命令选项
-- `argument(argument: CommandArgument): this` - 添加命令参数
-- `action(handler: CommandHandler): this` - 设置命令执行函数
-- `command(name: string, description: string): Command` - 添加子命令
+- `info(description: string): this` - 设置命令描述（支持链式调用）
+- `alias(alias: string): this` - 添加命令别名（支持链式调用）
+- `setVersion(version: string): this` - 设置命令版本（支持链式调用）
+- `setUsage(usage: string): this` - 设置自定义用法字符串（支持链式调用）
+- `example(command: string, description?: string): this` - 添加使用示例（支持链式调用）
+- `option(option: CommandOption): this` - 添加命令选项（支持链式调用）
+- `argument(argument: CommandArgument): this` - 添加命令参数（支持链式调用）
+- `action(handler: CommandHandler): this` - 设置命令执行函数（支持链式调用）
+- `before(hook: CommandHook): this` - 设置命令执行前钩子（支持链式调用）
+- `after(hook: CommandHook): this` - 设置命令执行后钩子（支持链式调用）
+- `command(name: string, description?: string): Command` - 添加子命令（description 可选）
+- `subcommandAlias(alias: string, commandName: string): this` - 为子命令添加别名（支持链式调用）
 - `showHelp(): void` - 显示帮助信息
-- `execute(args?: string[]): Promise<void>` - 执行命令
+- `execute(args?: string[]): Promise<void>` - 执行命令（无参数时自动显示帮助）
 
 #### 接口
 
 ```typescript
+// 选项值类型
+type OptionValueType = "string" | "number" | "boolean" | "array";
+
+// 选项值验证函数
+type OptionValidator = (value: string) => boolean | string;
+
+// 参数值验证函数
+type ArgumentValidator = (value: string) => boolean | string;
+
 interface CommandOption {
-  name: string;              // 选项名称（长格式，如 --help）
-  alias?: string;            // 选项别名（短格式，如 -h）
-  description: string;       // 选项描述
-  requiresValue?: boolean;   // 是否需要值
-  defaultValue?: string | boolean; // 默认值
+  name: string;                    // 选项名称（长格式，如 --help）
+  alias?: string;                  // 选项别名（短格式，如 -h）
+  description: string;             // 选项描述
+  requiresValue?: boolean;         // 是否需要值
+  defaultValue?: string | boolean | number; // 默认值
+  type?: OptionValueType;          // 选项值类型（用于自动类型转换）
+  validator?: OptionValidator;      // 选项值验证函数
+  group?: string;                  // 选项分组名称（用于在帮助信息中分组显示）
+  required?: boolean;              // 选项是否必需
+  conflicts?: string[];            // 与此选项冲突的选项名称列表
+  dependsOn?: string[];            // 此选项依赖的选项名称列表
+  choices?: string[];               // 选项的可选值列表（用于枚举验证）
 }
 
 interface CommandArgument {
-  name: string;             // 参数名称
-  description: string;      // 参数描述
-  required?: boolean;       // 是否必需
+  name: string;                    // 参数名称
+  description: string;             // 参数描述
+  required?: boolean;              // 是否必需
+  validator?: ArgumentValidator;   // 参数值验证函数
+  choices?: string[];              // 参数的可选值列表（用于枚举验证）
 }
 
 type CommandHandler = (
   args: string[],
   options: ParsedOptions
 ) => Promise<void> | void;
+
+type CommandHook = (
+  args: string[],
+  options: ParsedOptions
+) => Promise<void> | void;
+
+interface ParsedOptions {
+  [key: string]: string | boolean | number | string[] | undefined;
+}
 ```
 
 ## 最佳实践
@@ -636,6 +825,11 @@ type CommandHandler = (
 4. **显示帮助信息**：为命令提供详细的帮助信息，方便用户使用
 5. **处理错误**：妥善处理错误情况，提供有意义的错误消息
 6. **使用表格展示数据**：对于结构化数据，使用表格工具提供更好的可读性
+7. **使用选项分组**：对于选项较多的命令，使用 `group` 属性对选项进行分组，提高帮助信息的可读性
+8. **添加使用示例**：使用 `example()` 方法为命令添加使用示例，帮助用户快速理解命令用法
+9. **利用类型转换**：使用 `type` 属性自动转换选项值类型，减少手动类型转换代码
+10. **使用命令钩子**：使用 `before()` 和 `after()` 钩子处理命令执行前后的通用逻辑
+11. **选项冲突和依赖检测**：使用 `conflicts` 和 `dependsOn` 属性确保选项使用的正确性
 
 ## 注意事项
 
