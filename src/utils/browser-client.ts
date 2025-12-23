@@ -767,7 +767,16 @@ class ClientRouter {
       // 如果缓存中没有或缓存无效，则动态导入
       if (!pageModule) {
         try {
-          pageModule = await import(pageData.route) as {
+          // 确保 route 是完整的 HTTP URL
+          let routeUrl = pageData.route;
+          if (typeof routeUrl === 'string' && routeUrl.startsWith('/') && !routeUrl.startsWith('http://') && !routeUrl.startsWith('https://')) {
+            routeUrl = `${globalThis.location.origin}${routeUrl}`;
+          }
+          // 清理 URL 中的空格
+          if (typeof routeUrl === 'string') {
+            routeUrl = routeUrl.replace(/\s+/g, '');
+          }
+          pageModule = await import(routeUrl as string) as {
             default?: unknown;
             renderMode?: string;
           };
@@ -778,6 +787,7 @@ class ClientRouter {
             throw new Error("模块未导出默认组件或组件不是函数");
           }
           // 缓存模块（直接访问类属性，更快）
+          // 使用原始 route 作为缓存键
           this.moduleCache.set(pageData.route, pageModule);
         } catch (importError: unknown) {
           console.error(
@@ -980,7 +990,14 @@ class ClientRouter {
       // 预加载页面组件模块
       if (pageData?.route && typeof pageData.route === "string") {
         try {
-          const module = await import(pageData.route);
+          // 确保 route 是完整的 HTTP URL
+          let routeUrl = pageData.route;
+          if (routeUrl.startsWith('/') && !routeUrl.startsWith('http://') && !routeUrl.startsWith('https://')) {
+            routeUrl = `${globalThis.location.origin}${routeUrl}`;
+          }
+          // 清理 URL 中的空格
+          routeUrl = routeUrl.replace(/\s+/g, '');
+          const module = await import(routeUrl);
           this.moduleCache.set(pageData.route, module);
         } catch (_importError) {
           // 组件导入失败时静默处理
@@ -1404,9 +1421,18 @@ class BrowserClient {
         container.textContent.trim() !== "";
 
       // 加载页面组件
+      // 确保 route 是完整的 HTTP URL（如果是相对路径，需要转换为完整 URL）
+      let routeUrl = this.config.route;
+      if (routeUrl.startsWith('/') && !routeUrl.startsWith('http://') && !routeUrl.startsWith('https://')) {
+        // 相对路径（如 /__modules/...），需要转换为完整的 HTTP URL
+        routeUrl = `${globalThis.location.origin}${routeUrl}`;
+      }
+      // 清理 URL 中的空格（防止 URL 中有空格导致导入失败）
+      routeUrl = routeUrl.replace(/\s+/g, '');
+      
       let module: { default: unknown; renderMode?: string; hydrate?: boolean };
       try {
-        module = await import(this.config.route) as {
+        module = await import(routeUrl) as {
           default: unknown;
           renderMode?: string;
           hydrate?: boolean;
@@ -1414,7 +1440,7 @@ class BrowserClient {
       } catch (importError: unknown) {
         console.error(
           "[BrowserClient.render] 页面组件导入失败:",
-          this.config.route,
+          routeUrl,
           importError,
         );
         const errorMessage = importError instanceof Error

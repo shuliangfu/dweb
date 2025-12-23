@@ -9,6 +9,9 @@
  * @returns HTTP URL
  */
 export function filePathToHttpUrl(filePath: string): string {
+  // 清理输入路径，移除空格
+  filePath = cleanUrl(filePath);
+  
   // 如果是 file:// 协议，转换为 /__modules/ 路径
   if (filePath.startsWith("file://")) {
     // 提取文件路径（去掉 file:// 前缀）
@@ -22,18 +25,18 @@ export function filePathToHttpUrl(filePath: string): string {
     // 转换为 URL 编码的路径
     return `/__modules/${encodeURIComponent(relativePath)}`;
   }
-  // 如果已经是 HTTP URL，直接返回
+  // 如果已经是 HTTP URL，直接返回（但需要清理空格）
   if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
-    return filePath;
+    return cleanUrl(filePath);
   }
   // 如果路径以 ./ 开头，说明是相对路径（生产环境构建后的文件）
   // 转换为 /__modules/ 路径，但保持文件名不变
   if (filePath.startsWith('./')) {
     const fileName = filePath.substring(2); // 移除 ./ 前缀
-    return `/__modules/${encodeURIComponent(fileName)}`;
+    return `/__modules/${encodeURIComponent(cleanUrl(fileName))}`;
   }
   // 否则作为相对路径处理
-  return `/__modules/${encodeURIComponent(filePath)}`;
+  return `/__modules/${encodeURIComponent(cleanUrl(filePath))}`;
 }
 
 /**

@@ -347,6 +347,75 @@ export class RouteHandler {
   }
 
   /**
+   * 处理 JSR 模块请求（/__jsr/ 路径）
+   * 将 JSR URL 转换为可通过服务端代理的 HTTP URL
+   * 
+   * 注意：这个方法通过 Deno 的 import map 解析 JSR URL，然后返回模块的源代码
+   * 对于客户端 API（如 @dreamer/dweb/client），我们需要返回原始的 TypeScript/JavaScript 代码
+   */
+  private async handleJSRModuleRequest(
+    _req: Request,
+    res: Response,
+    pathname: string,
+  ): Promise<void> {
+    try {
+      // 提取 JSR 路径：/__jsr/@dreamer/dweb@1.3.0/client -> jsr:@dreamer/dweb@1.3.0/client
+      const jsrPath = pathname.replace(/^\/__jsr\//, "");
+      const jsrUrl = `jsr:${jsrPath}`;
+      
+      // 使用 Deno 的 import map 解析 JSR URL
+      // Deno 会自动处理 JSR URL 的解析，将其转换为实际的 HTTP URL
+      try {
+        // 尝试获取模块的 URL（通过 import.meta.resolve）
+        // 注意：Deno 的 import.meta.resolve 可以解析 JSR URL
+        let moduleUrl: string;
+        try {
+          // 使用 import.meta.resolve 解析 JSR URL
+          moduleUrl = await import.meta.resolve(jsrUrl);
+        } catch {
+          // 如果 resolve 失败，尝试直接导入
+          // 但我们需要获取模块的 URL，所以使用另一种方法
+          // 实际上，我们可以直接使用 JSR URL 的 HTTP 等价形式
+          // jsr:@dreamer/dweb@1.3.0/client -> https://jsr.io/@dreamer/dweb/1.3.0/client.ts
+          const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
+          if (jsrMatch) {
+            const [, scope, packageName, version, subPath] = jsrMatch;
+            moduleUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${subPath}.ts`;
+          } else {
+            throw new Error(`Invalid JSR path format: ${jsrPath}`);
+          }
+        }
+        
+        // 获取模块内容
+        const response = await fetch(moduleUrl);
+        if (!response.ok) {
+          res.status = response.status;
+          res.setHeader("Content-Type", "text/plain; charset=utf-8");
+          res.text(`Failed to fetch JSR module: ${moduleUrl} (${response.status})`);
+          return;
+        }
+        
+        const content = await response.text();
+        
+        // 返回模块内容
+        res.status = 200;
+        res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+        res.text(content);
+      } catch (importError) {
+        res.status = 500;
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        const errorMsg = importError instanceof Error ? importError.message : String(importError);
+        res.text(`Failed to import JSR module: ${jsrUrl}\nError: ${errorMsg}`);
+      }
+    } catch (error) {
+      res.status = 500;
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      res.text(`Error handling JSR module request: ${errorMsg}`);
+    }
+  }
+
+  /**
    * 创建扩展的请求对象（用于模块请求）
    */
   private createExtendedRequest(
@@ -596,6 +665,12 @@ export class RouteHandler {
     pathname = normalizeModulePath(pathname);
     if (pathname !== url.pathname) {
       url.pathname = pathname;
+    }
+
+    // 处理 JSR 模块请求（通过服务端代理）
+    if (pathname.startsWith("/__jsr/")) {
+      await this.handleJSRModuleRequest(req, res, pathname);
+      return;
     }
 
     // 处理模块请求
