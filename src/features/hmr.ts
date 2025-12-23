@@ -10,6 +10,7 @@ import {
   cleanUrl,
 } from "../utils/path.ts";
 import { shouldIgnoreFile } from "../utils/file.ts";
+import { getExternalPackages } from "../utils/module.ts";
 // HMR 客户端脚本生成函数已迁移到 src/utils/script-hmr.ts
 export { createHMRClientScript } from "../utils/script-hmr.ts";
 
@@ -379,19 +380,9 @@ export class HMRServer {
       importMap = await this.loadImportMap();
     }
 
-    // 收集所有外部依赖（从 import map 中提取）
-    const externalPackages: string[] = [
-      '@dreamer/dweb',
-      'preact',
-      'preact-render-to-string',
-    ];
-    
-    // 从 import map 中添加所有外部依赖
-    for (const [key, value] of Object.entries(importMap)) {
-      if (value.startsWith('jsr:') || value.startsWith('npm:') || value.startsWith('http')) {
-        externalPackages.push(key);
-      }
-    }
+    // 收集外部依赖（只包含 preact 和服务端依赖，其他客户端依赖会被打包）
+    // HMR 环境：不使用共享依赖机制（每个组件独立打包，便于热更新）
+    const externalPackages = getExternalPackages(importMap, true, false);
 
     // 使用 esbuild.build 打包文件（包含所有静态导入）
     // bundle: true 会自动打包所有相对路径导入（../ 和 ./），

@@ -16,7 +16,7 @@ import type { GraphQLServer } from "../features/graphql/server.ts";
 import { renderToString } from "preact-render-to-string";
 import type { CookieManager } from "../features/cookie.ts";
 import type { SessionManager } from "../features/session.ts";
-import { removeLoadOnlyImports } from "../utils/module.ts";
+import { removeLoadOnlyImports, getExternalPackages } from "../utils/module.ts";
 import * as esbuild from "esbuild";
 import {
   filePathToHttpUrl,
@@ -231,28 +231,10 @@ export class RouteHandler {
               // deno.json 或 deno.jsonc 不存在或解析失败，使用空 import map
             }
 
-            // 收集所有外部依赖（从 import map 中提取）
-            const externalPackages: string[] = [
-              "@dreamer/dweb",
-              "preact",
-              "preact-render-to-string",
-            ];
-
-            // 从 import map 中添加所有外部依赖
-            // 注意：@dreamer/dweb/client 会被打包，不添加到 external
-            for (const [key, value] of Object.entries(importMap)) {
-              // @dreamer/dweb/client 需要被打包，不添加到 external
-              if (key === "@dreamer/dweb/client") {
-                continue;
-              }
-              if (
-                value.startsWith("jsr:") ||
-                value.startsWith("npm:") ||
-                value.startsWith("http")
-              ) {
-                externalPackages.push(key);
-              }
-            }
+            // 收集外部依赖（只包含 preact 和服务端依赖，其他客户端依赖会被打包）
+            // 开发环境：不使用共享依赖机制（每个组件独立打包，便于热更新）
+            // 生产环境：通过代码分割自动去重
+            const externalPackages = getExternalPackages(importMap, true, false);
 
             // 使用 stdin 选项直接传入处理后的代码，确保 load 函数被移除
             // resolveDir 设置为原始文件所在目录，用于解析相对路径导入

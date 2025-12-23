@@ -12,7 +12,7 @@ import { crypto } from "@std/crypto";
 import * as path from "@std/path";
 import * as esbuild from "esbuild";
 import { logger } from "../utils/logger.ts";
-import { removeLoadOnlyImports } from "../utils/module.ts";
+import { removeLoadOnlyImports, getExternalPackages } from "../utils/module.ts";
 
 /**
  * 清空目录
@@ -526,27 +526,9 @@ async function compileFile(
         // deno.json 或 deno.jsonc 不存在或解析失败，使用空 import map
       }
 
-      // 收集所有外部依赖（从 import map 中提取）
-      const externalPackages: string[] = [
-        "@dreamer/dweb",
-        "preact",
-        "preact-render-to-string",
-      ];
-
-      // 从 import map 中添加所有外部依赖
-      // 注意：@dreamer/dweb/client 会被打包，不添加到 external
-      for (const [key, value] of Object.entries(importMap)) {
-        // @dreamer/dweb/client 需要被打包，不添加到 external
-        if (key === "@dreamer/dweb/client") {
-          continue;
-        }
-        if (
-          value.startsWith("jsr:") || value.startsWith("npm:") ||
-          value.startsWith("http")
-        ) {
-          externalPackages.push(key);
-        }
-      }
+      // 收集外部依赖（只包含 preact 和服务端依赖，其他客户端依赖会被打包）
+      // 生产环境：不使用共享依赖机制（通过代码分割自动去重）
+      const externalPackages = getExternalPackages(importMap, false, false);
 
       // 创建 JSR 解析插件
       const jsrResolverPlugin = createJSRResolverPlugin(importMap, cwd);
@@ -886,26 +868,9 @@ async function compileDirectory(
       // deno.json 或 deno.jsonc 不存在或解析失败，使用空 import map
     }
 
-    // 收集外部依赖
-    const externalPackages: string[] = [
-      "@dreamer/dweb",
-      "preact",
-      "preact-render-to-string",
-    ];
-    // 从 import map 中添加所有外部依赖
-    // 注意：@dreamer/dweb/client 会被打包，不添加到 external
-    for (const [key, value] of Object.entries(importMap)) {
-      // @dreamer/dweb/client 需要被打包，不添加到 external
-      if (key === "@dreamer/dweb/client") {
-        continue;
-      }
-      if (
-        value.startsWith("jsr:") || value.startsWith("npm:") ||
-        value.startsWith("http")
-      ) {
-        externalPackages.push(key);
-      }
-    }
+    // 收集外部依赖（只包含 preact 和服务端依赖，其他客户端依赖会被打包）
+    // 代码分割模式：不使用共享依赖机制（esbuild 会自动提取共享依赖）
+    const externalPackages = getExternalPackages(importMap, false, false);
 
     // 创建 JSR 解析插件
     const jsrResolverPlugin = createJSRResolverPlugin(importMap, cwd);

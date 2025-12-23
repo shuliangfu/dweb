@@ -6,6 +6,161 @@
 import * as esbuild from "esbuild";
 
 /**
+ * 判断是否为服务端依赖
+ * 服务端依赖应该保持 external，不被打包到客户端代码中
+ * @param packageName 包名
+ * @returns 是否为服务端依赖
+ */
+export function isServerDependency(packageName: string): boolean {
+  // Deno 标准库（@std/*）
+  if (packageName.startsWith("@std/")) {
+    return true;
+  }
+  
+  // Deno 内置模块（deno:）
+  if (packageName.startsWith("deno:")) {
+    return true;
+  }
+  
+  // 服务端特定的包
+  const serverPackages = [
+    "@dreamer/dweb", // 框架核心（服务端使用）
+    "preact-render-to-string", // 服务端渲染
+    "@sqlite",
+    "@postgres",
+    "@mysql",
+    "@mongodb",
+    "sharp", // 图片处理（服务端）
+  ];
+  
+  return serverPackages.some(pkg => packageName === pkg || packageName.startsWith(`${pkg}/`));
+}
+
+/**
+ * 判断是否为 Preact 相关依赖
+ * Preact 相关依赖应该保持 external，通过 import map 在浏览器中加载
+ * @param packageName 包名
+ * @returns 是否为 Preact 相关依赖
+ */
+export function isPreactDependency(packageName: string): boolean {
+  const preactPackages = [
+    "preact",
+    "preact/hooks",
+    "preact/jsx-runtime",
+    "preact-router",
+  ];
+  
+  return preactPackages.some(pkg => packageName === pkg || packageName.startsWith(`${pkg}/`));
+}
+
+/**
+ * 判断依赖是否应该被打包
+ * 除了 preact 和服务端依赖外，其他客户端依赖都应该被打包
+ * @param packageName 包名
+ * @param importValue import map 中的值
+ * @returns 是否应该被打包（false 表示应该保持 external）
+ */
+export function shouldBundleDependency(
+  packageName: string,
+  importValue: string
+): boolean {
+  // @dreamer/dweb/client 需要被打包
+  if (packageName === "@dreamer/dweb/client") {
+    return true;
+  }
+  
+  // 服务端依赖不打包
+  if (isServerDependency(packageName)) {
+    return false;
+  }
+  
+  // Preact 相关依赖不打包（通过 import map 加载）
+  if (isPreactDependency(packageName)) {
+    return false;
+  }
+  
+  // 本地路径导入应该被打包
+  if (!importValue.startsWith("jsr:") && 
+      !importValue.startsWith("npm:") && 
+      !importValue.startsWith("http")) {
+    return true;
+  }
+  
+  // 其他客户端依赖（如 tailwind-merge）应该被打包
+  return true;
+}
+
+/**
+ * 识别常用的共享客户端依赖
+ * 这些依赖应该被单独打包成共享 chunk，避免在每个组件中重复打包
+ * @param packageName 包名
+ * @returns 是否为共享依赖
+ */
+export function isSharedClientDependency(packageName: string): boolean {
+  // 常用的共享客户端依赖列表
+  const sharedDependencies = [
+    "tailwind-merge",
+    "clsx",
+    "classnames",
+    "date-fns",
+    "lodash",
+    "lodash-es",
+    "uuid",
+    "nanoid",
+    "zod",
+    "yup",
+    "validator",
+  ];
+  
+  return sharedDependencies.some(
+    (dep) => packageName === dep || packageName.startsWith(`${dep}/`)
+  );
+}
+
+/**
+ * 从 import map 中提取外部依赖列表
+ * 只包含应该保持 external 的依赖（preact 和服务端依赖）
+ * @param importMap import map 配置
+ * @param bundleClient 是否打包客户端依赖（默认 false，表示客户端依赖保持 external）
+ * @param useSharedDeps 是否使用共享依赖机制（默认 false，开发环境可启用）
+ * @returns 外部依赖包名数组
+ */
+export function getExternalPackages(
+  importMap: Record<string, string>,
+  bundleClient: boolean = false,
+  useSharedDeps: boolean = false,
+): string[] {
+  const externalPackages: string[] = [
+    "@dreamer/dweb",
+    "preact",
+    "preact-render-to-string",
+  ];
+  
+  for (const [key, value] of Object.entries(importMap)) {
+    // @dreamer/dweb/client 根据 bundleClient 参数决定是否打包
+    if (key === "@dreamer/dweb/client") {
+      if (!bundleClient) {
+        externalPackages.push(key);
+      }
+      continue;
+    }
+    
+    // 如果依赖不应该被打包，则添加到 external 列表
+    if (!shouldBundleDependency(key, value)) {
+      externalPackages.push(key);
+      continue;
+    }
+    
+    // 如果使用共享依赖机制，将共享依赖也标记为 external
+    if (useSharedDeps && isSharedClientDependency(key)) {
+      externalPackages.push(key);
+    }
+  }
+  
+  return externalPackages;
+}
+
+/**
  * 提取函数体（使用括号匹配）
  *
  * 该函数通过括号匹配算法提取函数体内容，支持普通函数和箭头函数。
@@ -82,7 +237,9 @@ export function extractFunctionBody(
     }
   }
 
-  if (braceStart === -1) return "";
+  if (braceStart === -1) {
+    return "";
+  }
 
   // 使用括号匹配找到函数体的结束位置
   let braceCount = 0;
@@ -123,41 +280,79 @@ export function extractFunctionBody(
 /**
  * 提取 load 函数体（支持多种写法）
  *
- * 该函数用于从页面模块中提取 `load` 函数体，支持以下格式：
- * - `export function load(...) { ... }`
- * - `export async function load(...) { ... }`
- * - `export const load = (...) => { ... }` (箭头函数)
- * - `export const load = function(...) { ... }` (函数表达式)
- *
+ * 该函数用于从页面模块中提取 `load` 函数体，支持以下所有格式：
+ * 
+ * 1. 函数声明（Function Declaration）：
+ *    - `export function load(...) { ... }` - 无 async
+ *    - `export async function load(...) { ... }` - 有 async
+ * 
+ * 2. 箭头函数（Arrow Function）：
+ *    - `export const load = (...) => { ... }` - 无 async，有花括号
+ *    - `export const load = async (...) => { ... }` - 有 async，有花括号
+ *    - `export const load = (...) => value` - 无 async，无花括号（单行返回，较少见）
+ *    - `export const load = async (...) => value` - 有 async，无花括号（单行返回，较少见）
+ * 
+ * 3. 函数表达式（Function Expression）：
+ *    - `export const load = function(...) { ... }` - 无 async
+ *    - `export const load = async function(...) { ... }` - 有 async
+ * 
+ * 注意：
+ * - 所有格式都支持类型注解：`(...): ReturnType`
+ * - 所有格式都支持解构参数：`({ params, query })`
+ * - 所有格式都支持默认参数：`({ params = {} })`
+ * - 单行返回的箭头函数（无花括号）会返回空字符串，因为函数体是表达式而非代码块
+ * 
  * 主要用于分析 `load` 函数中使用的导入，以便在客户端代码中移除不必要的导入。
  *
  * @param fileContent - 完整的文件内容字符串
- * @returns load 函数体内容（不包含外层花括号），如果不存在则返回空字符串
+ * @returns load 函数体内容（不包含外层花括号），如果不存在或无法提取则返回空字符串
  *
  * @example
  * ```typescript
- * const code = `
- *   import { fetchData } from './api';
+ * // 示例 1: 函数声明
+ * const code1 = `
  *   export async function load({ params }) {
  *     return await fetchData(params.id);
  *   }
  * `;
- * const body = extractLoadFunctionBody(code);
- * // body = " return await fetchData(params.id); "
+ * const body1 = extractLoadFunctionBody(code1);
+ * // body1 = " return await fetchData(params.id); "
+ * 
+ * // 示例 2: 箭头函数
+ * const code2 = `
+ *   export const load = async ({ params }) => {
+ *     return await fetchData(params.id);
+ *   };
+ * `;
+ * const body2 = extractLoadFunctionBody(code2);
+ * // body2 = " return await fetchData(params.id); "
+ * 
+ * // 示例 3: 函数表达式
+ * const code3 = `
+ *   export const load = async function({ params }) {
+ *     return await fetchData(params.id);
+ *   };
+ * `;
+ * const body3 = extractLoadFunctionBody(code3);
+ * // body3 = " return await fetchData(params.id); "
  * ```
  */
 export function extractLoadFunctionBody(fileContent: string): string {
-  // 查找 load 函数，但排除字符串字面量中的匹配
+  // 查找 load 函数，但排除字符串字面量和注释中的匹配
   let inString = false;
   let stringChar: string | null = null;
+  let inSingleLineComment = false;
+  let inMultiLineComment = false;
 
   // 尝试匹配：export function load(...) 或 export async function load(...)
   for (let i = 0; i < fileContent.length; i++) {
     const char = fileContent[i];
     const prevChar = i > 0 ? fileContent[i - 1] : "";
+    const nextChar = i < fileContent.length - 1 ? fileContent[i + 1] : "";
 
     // 处理字符串字面量
-    if (!inString && (char === '"' || char === "'" || char === "`")) {
+    if (!inString && !inSingleLineComment && !inMultiLineComment && 
+        (char === '"' || char === "'" || char === "`")) {
       inString = true;
       stringChar = char;
     } else if (inString && char === stringChar && prevChar !== "\\") {
@@ -165,15 +360,30 @@ export function extractLoadFunctionBody(fileContent: string): string {
       stringChar = null;
     }
 
-    // 只在非字符串区域检查 load 函数
-    if (!inString) {
+    // 处理单行注释 //
+    if (!inString && !inMultiLineComment && char === "/" && nextChar === "/") {
+      inSingleLineComment = true;
+    } else if (inSingleLineComment && char === "\n") {
+      inSingleLineComment = false;
+    }
+
+    // 处理多行注释 /* */
+    if (!inString && !inSingleLineComment && char === "/" && nextChar === "*") {
+      inMultiLineComment = true;
+    } else if (inMultiLineComment && prevChar === "*" && char === "/") {
+      inMultiLineComment = false;
+    }
+
+    // 只在非字符串、非注释区域检查 load 函数
+    if (!inString && !inSingleLineComment && !inMultiLineComment) {
       const remaining = fileContent.substring(i);
       const functionLoadMatch = remaining.match(
         /^export\s+(async\s+)?function\s+load\s*\(/i,
       );
       if (functionLoadMatch) {
         const loadFunctionStart = i;
-        return extractFunctionBody(fileContent, loadFunctionStart, false);
+        const body = extractFunctionBody(fileContent, loadFunctionStart, false);
+        return body;
       }
     }
   }
@@ -181,12 +391,17 @@ export function extractLoadFunctionBody(fileContent: string): string {
   // 尝试匹配：export const load = ... (箭头函数或函数表达式)
   inString = false;
   stringChar = null;
+  inSingleLineComment = false;
+  inMultiLineComment = false;
+  
   for (let i = 0; i < fileContent.length; i++) {
     const char = fileContent[i];
     const prevChar = i > 0 ? fileContent[i - 1] : "";
+    const nextChar = i < fileContent.length - 1 ? fileContent[i + 1] : "";
 
     // 处理字符串字面量
-    if (!inString && (char === '"' || char === "'" || char === "`")) {
+    if (!inString && !inSingleLineComment && !inMultiLineComment && 
+        (char === '"' || char === "'" || char === "`")) {
       inString = true;
       stringChar = char;
     } else if (inString && char === stringChar && prevChar !== "\\") {
@@ -194,18 +409,40 @@ export function extractLoadFunctionBody(fileContent: string): string {
       stringChar = null;
     }
 
-    // 只在非字符串区域检查 load 函数
-    if (!inString) {
+    // 处理单行注释 //
+    if (!inString && !inMultiLineComment && char === "/" && nextChar === "/") {
+      inSingleLineComment = true;
+    } else if (inSingleLineComment && char === "\n") {
+      inSingleLineComment = false;
+    }
+
+    // 处理多行注释 /* */
+    if (!inString && !inSingleLineComment && char === "/" && nextChar === "*") {
+      inMultiLineComment = true;
+    } else if (inMultiLineComment && prevChar === "*" && char === "/") {
+      inMultiLineComment = false;
+    }
+
+    // 只在非字符串、非注释区域检查 load 函数
+    if (!inString && !inSingleLineComment && !inMultiLineComment) {
       const remaining = fileContent.substring(i);
       const constLoadMatch = remaining.match(/^export\s+const\s+load\s*=\s*/i);
       if (constLoadMatch) {
         const equalSignIndex = i + constLoadMatch[0].length;
 
         // 检查是否是箭头函数
-        const arrowIndex = fileContent.indexOf("=>", equalSignIndex);
+        // 注意：可能是 async (...) => 或 (...) =>，需要跳过 async 关键字
+        let searchStart = equalSignIndex;
+        const asyncMatch = fileContent.substring(equalSignIndex).match(/^async\s+/i);
+        if (asyncMatch) {
+          searchStart = equalSignIndex + asyncMatch[0].length;
+        }
+        
+        const arrowIndex = fileContent.indexOf("=>", searchStart);
         if (arrowIndex !== -1) {
           // 箭头函数
-          return extractFunctionBody(fileContent, equalSignIndex, true);
+          const body = extractFunctionBody(fileContent, equalSignIndex, true);
+          return body;
         }
 
         // 函数表达式：export const load = function(...) 或 export const load = async function(...)
@@ -215,7 +452,8 @@ export function extractLoadFunctionBody(fileContent: string): string {
         if (funcKeywordMatch) {
           const funcKeywordIndex = equalSignIndex +
             (funcKeywordMatch.index || 0);
-          return extractFunctionBody(fileContent, funcKeywordIndex, false);
+          const body = extractFunctionBody(fileContent, funcKeywordIndex, false);
+          return body;
         }
       }
     }
@@ -225,7 +463,7 @@ export function extractLoadFunctionBody(fileContent: string): string {
 }
 
 /**
- * 收集静态导入语句
+ * 收集静态导入语句（相对路径导入）
  *
  * 该函数从文件内容中提取所有静态导入语句（相对路径导入），包括：
  * - 命名导入：`import { name1, name2 } from './module'`
@@ -240,6 +478,7 @@ export function extractLoadFunctionBody(fileContent: string): string {
  *   - `lineNumber`: 导入语句所在的行号（从 0 开始）
  *   - `names`: 导入的名称数组（包括默认导入、命名导入、命名空间导入）
  *   - `importStatement`: 完整的导入语句字符串
+ *   - `fromPath`: 导入路径（相对路径）
  *
  * @example
  * ```typescript
@@ -250,9 +489,9 @@ export function extractLoadFunctionBody(fileContent: string): string {
  * `;
  * const imports = collectStaticImports(code);
  * // imports = [
- * //   { lineNumber: 1, names: ['a', 'b'], importStatement: "import { a, b } from './module1';" },
- * //   { lineNumber: 2, names: ['defaultName'], importStatement: "import defaultName from './module2';" },
- * //   { lineNumber: 3, names: ['ns'], importStatement: "import * as ns from './module3';" }
+ * //   { lineNumber: 1, names: ['a', 'b'], importStatement: "import { a, b } from './module1';", fromPath: './module1' },
+ * //   { lineNumber: 2, names: ['defaultName'], importStatement: "import defaultName from './module2';", fromPath: './module2' },
+ * //   { lineNumber: 3, names: ['ns'], importStatement: "import * as ns from './module3';", fromPath: './module3' }
  * // ]
  * ```
  */
@@ -260,11 +499,12 @@ export function collectStaticImports(fileContent: string): Array<{
   lineNumber: number;
   names: string[];
   importStatement: string;
+  fromPath: string;
 }> {
   const importRegex =
     /^import\s+(?:(?:\{([^}]+)\}|\*\s+as\s+(\w+)|(\w+)|type\s+\{([^}]+)\})(?:\s*,\s*(?:\{[^}]*\}|\*\s+as\s+\w+|\w+))*\s+from\s+)?['"](\.\.?\/[^'"]+)['"];?/gm;
   const importsToCheck: Array<
-    { lineNumber: number; names: string[]; importStatement: string }
+    { lineNumber: number; names: string[]; importStatement: string; fromPath: string }
   > = [];
 
   importRegex.lastIndex = 0;
@@ -274,6 +514,7 @@ export function collectStaticImports(fileContent: string): Array<{
     const importIndex = importMatch.index || 0;
     const lineNumber =
       fileContent.substring(0, importIndex).split("\n").length - 1;
+    const fromPath = importMatch[5] || ""; // 相对路径
 
     // 提取导入的名称
     const names: string[] = [];
@@ -300,8 +541,98 @@ export function collectStaticImports(fileContent: string): Array<{
     }
 
     if (names.length > 0) {
-      importsToCheck.push({ lineNumber, names, importStatement });
+      importsToCheck.push({ lineNumber, names, importStatement, fromPath });
     }
+  }
+
+  return importsToCheck;
+}
+
+/**
+ * 收集所有导入语句（包括相对路径和 npm 包导入）
+ *
+ * 该函数从文件内容中提取所有导入语句，包括：
+ * - 相对路径导入：`import { name } from './module'`
+ * - npm 包导入：`import { name } from 'package-name'`
+ * - 命名导入、默认导入、命名空间导入、类型导入
+ *
+ * @param fileContent - 完整的文件内容字符串
+ * @returns 导入信息数组，每个元素包含：
+ *   - `lineNumber`: 导入语句所在的行号（从 0 开始）
+ *   - `names`: 导入的名称数组
+ *   - `importStatement`: 完整的导入语句字符串
+ *   - `fromPath`: 导入路径（相对路径或包名）
+ *   - `isRelative`: 是否为相对路径导入
+ *
+ * @example
+ * ```typescript
+ * const code = `
+ *   import { a } from './module1';
+ *   import { b } from 'tailwind-merge';
+ * `;
+ * const imports = collectAllImports(code);
+ * ```
+ */
+export function collectAllImports(fileContent: string): Array<{
+  lineNumber: number;
+  names: string[];
+  importStatement: string;
+  fromPath: string;
+  isRelative: boolean;
+}> {
+  // 匹配所有导入语句（包括相对路径和 npm 包）
+  // 分组说明：
+  // [1]: 解构导入 { name1, name2 }
+  // [2]: 命名空间导入 * as name
+  // [3]: 默认导入 name
+  // [4]: type 导入 type { name1, name2 }
+  // [5]: 导入路径（from 后面的路径）
+  const importRegex =
+    /^import\s+(?:(?:\{([^}]+)\}|\*\s+as\s+(\w+)|(\w+)|type\s+\{([^}]+)\})(?:\s*,\s*(?:\{[^}]*\}|\*\s+as\s+\w+|\w+))*\s+from\s+)?['"]([^'"]+)['"];?/gm;
+  const importsToCheck: Array<{
+    lineNumber: number;
+    names: string[];
+    importStatement: string;
+    fromPath: string;
+    isRelative: boolean;
+  }> = [];
+
+  importRegex.lastIndex = 0;
+  let importMatch;
+  while ((importMatch = importRegex.exec(fileContent)) !== null) {
+    const importStatement = importMatch[0];
+    const importIndex = importMatch.index || 0;
+    const lineNumber =
+      fileContent.substring(0, importIndex).split("\n").length - 1;
+    const fromPath = importMatch[5] || ""; // 导入路径（第6个分组，索引5）
+    const isRelative = fromPath.startsWith("./") || fromPath.startsWith("../");
+
+    // 提取导入的名称
+    const names: string[] = [];
+    if (importMatch[1]) {
+      // 解构导入：{ name1, name2 }
+      names.push(
+        ...importMatch[1].split(",").map((n) =>
+          n.trim().split(/\s+as\s+/)[0].trim()
+        ).filter((n) => n),
+      );
+    } else if (importMatch[2]) {
+      // 命名空间导入：* as name
+      names.push(importMatch[2]);
+    } else if (importMatch[3]) {
+      // 默认导入：import name
+      names.push(importMatch[3]);
+    } else if (importMatch[4]) {
+      // type 导入：import type { name1, name2 }
+      names.push(
+        ...importMatch[4].split(",").map((n) =>
+          n.trim().split(/\s+as\s+/)[0].trim()
+        ).filter((n) => n),
+      );
+    }
+
+    // 记录所有导入（包括没有显式导入名称的情况，如 import 'package'）
+    importsToCheck.push({ lineNumber, names, importStatement, fromPath, isRelative });
   }
 
   return importsToCheck;
@@ -315,18 +646,22 @@ export function collectStaticImports(fileContent: string): Array<{
 function findLoadFunctionRange(
   fileContent: string,
 ): { start: number; end: number } | null {
-  // 查找 load 函数，但排除字符串字面量中的匹配
+  // 查找 load 函数，但排除字符串字面量和注释中的匹配
   let inString = false;
   let stringChar: string | null = null;
+  let inSingleLineComment = false;
+  let inMultiLineComment = false;
   let loadFunctionStart: number | null = null;
 
   // 尝试匹配：export function load(...) 或 export async function load(...)
   for (let i = 0; i < fileContent.length; i++) {
     const char = fileContent[i];
     const prevChar = i > 0 ? fileContent[i - 1] : "";
+    const nextChar = i < fileContent.length - 1 ? fileContent[i + 1] : "";
 
     // 处理字符串字面量
-    if (!inString && (char === '"' || char === "'" || char === "`")) {
+    if (!inString && !inSingleLineComment && !inMultiLineComment && 
+        (char === '"' || char === "'" || char === "`")) {
       inString = true;
       stringChar = char;
     } else if (inString && char === stringChar && prevChar !== "\\") {
@@ -334,8 +669,22 @@ function findLoadFunctionRange(
       stringChar = null;
     }
 
-    // 只在非字符串区域检查 load 函数
-    if (!inString) {
+    // 处理单行注释 //
+    if (!inString && !inMultiLineComment && char === "/" && nextChar === "/") {
+      inSingleLineComment = true;
+    } else if (inSingleLineComment && char === "\n") {
+      inSingleLineComment = false;
+    }
+
+    // 处理多行注释 /* */
+    if (!inString && !inSingleLineComment && char === "/" && nextChar === "*") {
+      inMultiLineComment = true;
+    } else if (inMultiLineComment && prevChar === "*" && char === "/") {
+      inMultiLineComment = false;
+    }
+
+    // 只在非字符串、非注释区域检查 load 函数
+    if (!inString && !inSingleLineComment && !inMultiLineComment) {
       const remaining = fileContent.substring(i);
       const functionLoadMatch = remaining.match(
         /^export\s+(async\s+)?function\s+load\s*\(/i,
@@ -363,8 +712,8 @@ function findLoadFunctionRange(
     // 找到函数体的开始位置（第一个 {）
     let paramCount = 0;
     let paramEnd = -1;
-    let inString = false;
-    let stringChar: string | null = null;
+    inString = false;
+    stringChar = null;
 
     const openParen = fileContent.indexOf("(", loadFunctionStart);
     if (openParen !== -1) {
@@ -453,14 +802,18 @@ function findLoadFunctionRange(
   // 尝试匹配：export const load = ... (箭头函数或函数表达式)
   inString = false;
   stringChar = null;
+  inSingleLineComment = false;
+  inMultiLineComment = false;
   let exportStart: number | null = null;
 
   for (let i = 0; i < fileContent.length; i++) {
     const char = fileContent[i];
     const prevChar = i > 0 ? fileContent[i - 1] : "";
+    const nextChar = i < fileContent.length - 1 ? fileContent[i + 1] : "";
 
     // 处理字符串字面量
-    if (!inString && (char === '"' || char === "'" || char === "`")) {
+    if (!inString && !inSingleLineComment && !inMultiLineComment && 
+        (char === '"' || char === "'" || char === "`")) {
       inString = true;
       stringChar = char;
     } else if (inString && char === stringChar && prevChar !== "\\") {
@@ -468,8 +821,22 @@ function findLoadFunctionRange(
       stringChar = null;
     }
 
-    // 只在非字符串区域检查 load 函数
-    if (!inString) {
+    // 处理单行注释 //
+    if (!inString && !inMultiLineComment && char === "/" && nextChar === "/") {
+      inSingleLineComment = true;
+    } else if (inSingleLineComment && char === "\n") {
+      inSingleLineComment = false;
+    }
+
+    // 处理多行注释 /* */
+    if (!inString && !inSingleLineComment && char === "/" && nextChar === "*") {
+      inMultiLineComment = true;
+    } else if (inMultiLineComment && prevChar === "*" && char === "/") {
+      inMultiLineComment = false;
+    }
+
+    // 只在非字符串、非注释区域检查 load 函数
+    if (!inString && !inSingleLineComment && !inMultiLineComment) {
       const remaining = fileContent.substring(i);
       const constLoadMatch = remaining.match(/^export\s+const\s+load\s*=\s*/i);
       if (constLoadMatch) {
@@ -503,8 +870,8 @@ function findLoadFunctionRange(
       // 找到函数体的结束位置
       let braceCount = 0;
       let braceEnd = braceStart;
-      let inString = false;
-      let stringChar: string | null = null;
+      inString = false;
+      stringChar = null;
 
       for (let i = braceStart; i < fileContent.length; i++) {
         const char = fileContent[i];
@@ -566,8 +933,8 @@ function findLoadFunctionRange(
       // 找到函数体的开始位置
       let paramCount = 0;
       let paramEnd = -1;
-      let inString = false;
-      let stringChar: string | null = null;
+      inString = false;
+      stringChar = null;
 
       const openParen = fileContent.indexOf("(", funcKeywordIndex);
       if (openParen !== -1) {
@@ -693,7 +1060,7 @@ function findLoadFunctionRange(
  * ```
  */
 export function removeLoadOnlyImports(fileContent: string): string {
-  // 检测是否有 load 函数（排除字符串字面量中的匹配）
+  // 检测是否有 load 函数（排除字符串字面量和注释中的匹配）
   // 先检查是否在字符串中，如果在字符串中则忽略
   const loadFunctionRegex =
     /export\s+(?:const\s+load\s*=|(?:async\s+)?function\s+load\s*\()/i;
@@ -797,18 +1164,23 @@ export function removeLoadOnlyImports(fileContent: string): string {
   });
 
   // 重新组合文件内容（移除空行，但保留必要的空行）
-  return lines.map((line, index) => {
-    if (linesToRemove.includes(index)) {
-      return "";
-    }
-    return line;
-  }).filter((line, index, arr) => {
-    // 移除连续的空行，但保留单个空行用于代码可读性
-    if (line.trim() === "") {
-      return index === 0 || arr[index - 1].trim() !== "";
-    }
-    return true;
-  }).join("\n");
+  const result = lines
+    .map((line, index) => {
+      if (linesToRemove.includes(index)) {
+        return "";
+      }
+      return line;
+    })
+    .filter((line, index, arr) => {
+      // 移除连续的空行，但保留单个空行用于代码可读性
+      if (line.trim() === "") {
+        return index === 0 || arr[index - 1].trim() !== "";
+      }
+      return true;
+    })
+    .join("\n");
+
+  return result;
 }
 
 /**
