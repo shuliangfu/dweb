@@ -65,33 +65,6 @@ export {
   getErrorMessage,
 } from './utils/error.ts';
 
-// 导出数据库相关 API
-export {
-  DatabaseManager,
-  PostgreSQLAdapter,
-  MongoDBAdapter,
-  BaseAdapter,
-  SQLQueryBuilder,
-  MongoQueryBuilder,
-  SQLModel,
-  MongoModel,
-  MigrationManager,
-  type DatabaseConfig,
-  type DatabaseType,
-  type DatabaseAdapter,
-  type WhereCondition,
-  type MongoWhereCondition,
-  type Migration,
-  type MigrationConfig,
-  type MigrationStatus,
-  initDatabase,
-	getDatabase,
-	getDatabaseAsync,
-  getDatabaseManager,
-  isDatabaseInitialized,
-	setDatabaseConfigLoader,
-	closeDatabase,
-} from './features/database/mod.ts';
 // 导出 WebSocket 相关 API
 export {
   WebSocketServer,
