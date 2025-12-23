@@ -814,7 +814,10 @@ import type { PageProps, LoadContext } from '@dreamer/dweb';
  * 页面元数据（用于 SEO）
  * 支持对象或函数两种形式：
  * - 对象：静态元数据
- * - 函数：动态元数据（可以基于 params、query、data 等生成）
+ * - 函数：动态元数据（可以基于 params、query、data、cookies、session 等生成）
+ * 
+ * metadata 函数接收与 load 函数相同的完整参数（LoadContext），
+ * 并额外提供 data 参数（load 函数返回的数据）
  * 
  * @example
  * // 对象形式（静态）
@@ -825,7 +828,7 @@ import type { PageProps, LoadContext } from '@dreamer/dweb';
  * 
  * @example
  * // 函数形式（动态）
- * export function metadata({ params, query, data }) {
+ * export function metadata({ params, query, data, cookies, session, db }) {
  *   return {
  *     title: \`\${data.name} - 详情页\`,
  *     description: data.description,
@@ -835,12 +838,15 @@ import type { PageProps, LoadContext } from '@dreamer/dweb';
 export function metadata({
   params: _params,
   query: _query,
+  cookies: _cookies,
+  session: _session,
+  getCookie: _getCookie,
+  getSession: _getSession,
+  db: _db,
+  lang: _lang,
+  store: _store,
   data: _data,
-}: {
-  params: Record<string, string>;
-  query: Record<string, string>;
-  data: unknown;
-}): {
+}: LoadContext & { data: unknown }): {
   title: string;
   description: string;
   keywords: string;
@@ -1298,17 +1304,23 @@ export default function Home({ params: _params, query: _query, data }: PageProps
  * 页面元数据（用于 SEO）
  * 支持对象或函数两种形式：
  * - 对象：静态元数据
- * - 函数：动态元数据（可以基于 params、query、data 等生成）
+ * - 函数：动态元数据（可以基于 params、query、data、cookies、session 等生成）
+ * 
+ * metadata 函数接收与 load 函数相同的完整参数（LoadContext），
+ * 并额外提供 data 参数（load 函数返回的数据）
  */
 export function metadata({
   params: _params,
   query: _query,
+  cookies: _cookies,
+  session: _session,
+  getCookie: _getCookie,
+  getSession: _getSession,
+  db: _db,
+  lang: _lang,
+  store: _store,
   data: _data,
-}: {
-  params: Record<string, string>;
-  query: Record<string, string>;
-  data: unknown;
-}): {
+}: LoadContext & { data: unknown }): {
   title: string;
   description: string;
   keywords: string;

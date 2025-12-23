@@ -1841,17 +1841,50 @@ export class RouteHandler {
     const pageData = await this.loadPageData(pageModule, req, res);
     
     // 提取页面元数据（metadata）用于 SEO
-    // 支持 metadata 为对象或函数（函数可以接收 params、query、data 等参数）
+    // 支持 metadata 为对象或函数（函数可以接收与 load 函数相同的完整参数）
     let pageMetadata: Record<string, unknown> | undefined;
     if (pageModule.metadata) {
       if (typeof pageModule.metadata === "function") {
         // metadata 是函数，调用它获取元数据
+        // 传递与 load 函数相同的完整参数，并额外添加 data（load 函数返回的数据）
         try {
+          // 获取 session（如果存在）
+          let session = req.session || null;
+          if (!session && typeof req.getSession === "function") {
+            session = await req.getSession();
+          }
+          
+          // 导入数据库访问函数
+          const { getDatabase } = await import("../features/database/access.ts");
+          
           const metadataResult = await pageModule.metadata({
+            req,
+            res,
             params: req.params,
             query: req.query,
-            data: pageData,
+            cookies: req.cookies,
+            session: session,
+            getCookie: (name: string) => req.getCookie(name),
+            getSession: async () => {
+              if (typeof req.getSession === "function") {
+                return await req.getSession();
+              }
+              return null;
+            },
+            // 提供数据库访问（如果已初始化）
+            db: (() => {
+              try {
+                return getDatabase();
+              } catch {
+                return null;
+              }
+            })(),
+            // 提供当前语言代码（如果 i18n 插件已设置）
             lang: (req as any).lang,
+            // 提供 Store 实例（如果 store 插件已设置）
+            store: (req as any).getStore ? (req as any).getStore() : undefined,
+            // 额外提供 data（load 函数返回的数据）
+            data: pageData,
           });
           // 确保返回的是对象
           if (metadataResult && typeof metadataResult === "object") {
