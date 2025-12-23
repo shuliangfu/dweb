@@ -139,15 +139,6 @@ import { createApp, startDevServer } from 'jsr:@dreamer/dweb';`;
         version={versionString}
       />
 
-      {/* 特性展示区域 */}
-      {
-        /* <FeatureSection
-        features={features}
-        title="强大的功能特性"
-        subtitle="DWeb 提供了现代化 Web 开发所需的所有功能，让您专注于业务逻辑"
-      /> */
-      }
-
       {/* 快速开始区域 */}
       <div className="py-20 bg-linear-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
