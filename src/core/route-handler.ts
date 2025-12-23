@@ -456,147 +456,9 @@ export class RouteHandler {
     res.json({});
   }
 
-  /**
-   * 处理 JSR 模块请求（/__jsr/ 路径）
-   * 将 JSR URL 转换为可通过服务端代理的 HTTP URL
-   * 
-   * 注意：这个方法通过 Deno 的 import map 解析 JSR URL，然后返回模块的源代码
-   * 对于客户端 API（如 @dreamer/dweb/client），我们需要返回原始的 TypeScript/JavaScript 代码
-   */
-  private async handleJSRModuleRequest(
-    _req: Request,
-    res: Response,
-    pathname: string,
-  ): Promise<void> {
-    try {
-      // 提取 JSR 路径：/__jsr/@dreamer/dweb@1.3.1/client -> @dreamer/dweb@1.3.1/client
-      const jsrPath = pathname.replace(/^\/__jsr\//, "");
-      const jsrUrl = `jsr:${jsrPath}`;
-      
-      // 尝试使用 import.meta.resolve 获取正确的 JSR URL
-      // 这样可以处理 JSR 的实际 URL 格式（可能不是简单的 https://jsr.io/...）
-      let moduleUrl: string;
-      try {
-        // 使用 import.meta.resolve 解析 JSR URL（Deno 会自动处理）
-        moduleUrl = await import.meta.resolve(jsrUrl);
-        
-        // 如果 resolve 返回的是 file:// 协议（本地开发环境），需要转换为 HTTP URL
-        if (moduleUrl.startsWith("file://")) {
-          // 在本地开发环境中，无法直接获取 JSR URL
-          // 尝试手动构建 JSR URL
-          const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
-          if (!jsrMatch) {
-            throw new Error(`Invalid JSR path format: ${jsrPath}`);
-          }
-          const [, scope, packageName, version, subPath] = jsrMatch;
-          // JSR 的导出路径（如 client）映射到 src/client.ts
-          let actualSubPath = subPath;
-          if (!actualSubPath.startsWith("src/") && !actualSubPath.includes("/")) {
-            // 如果是单个导出名（如 client），映射到 src/client.ts
-            actualSubPath = `src/${subPath}.ts`;
-          } else if (!actualSubPath.endsWith(".ts") && !actualSubPath.endsWith(".tsx")) {
-            // 如果路径不包含扩展名，添加 .ts
-            actualSubPath = `${actualSubPath}.ts`;
-          }
-          moduleUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${actualSubPath}`;
-        }
-      } catch {
-        // 如果 resolve 失败，手动构建 JSR URL
-        const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
-        if (!jsrMatch) {
-          res.status = 400;
-          res.setHeader("Content-Type", "text/plain; charset=utf-8");
-          res.text(`Invalid JSR path format: ${jsrPath}`);
-          return;
-        }
-      const [, scope, packageName, version, subPath] = jsrMatch;
-      // 构建 JSR URL（直接使用 https://jsr.io）
-      // 注意：JSR 的导出路径（如 client）映射到 src/client.ts
-      // 所以如果 subPath 不包含 src/，需要添加 src/ 前缀
-      let actualSubPath = subPath;
-      if (!actualSubPath.startsWith("src/") && !actualSubPath.includes("/")) {
-        // 如果是单个导出名（如 client），映射到 src/client.ts
-        actualSubPath = `src/${subPath}.ts`;
-      } else if (!actualSubPath.endsWith(".ts") && !actualSubPath.endsWith(".tsx")) {
-        // 如果路径不包含扩展名，添加 .ts
-        actualSubPath = `${actualSubPath}.ts`;
-      }
-      moduleUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${actualSubPath}`;
-      }
-      
-      // 获取模块内容（TypeScript 文件）
-      const response = await fetch(moduleUrl);
-      if (!response.ok) {
-        // 如果第一种格式失败，尝试其他可能的格式
-        if (response.status === 404) {
-          const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
-          if (jsrMatch) {
-            const [, scope, packageName, version, subPath] = jsrMatch;
-            // 尝试格式2: https://deno.land/x/... (旧格式，可能不适用)
-            // 或者格式3: 不带 .ts 扩展名
-            const alternativeUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${subPath}`;
-            const altResponse = await fetch(alternativeUrl);
-            if (altResponse.ok) {
-              const tsContent = await altResponse.text();
-              // 编译 TypeScript 为 JavaScript
-              try {
-                const result = await esbuild.transform(tsContent, {
-                  loader: "ts",
-                  format: "esm",
-                  target: "esnext",
-                  jsx: "automatic",
-                  jsxImportSource: "preact",
-                });
-                res.status = 200;
-                res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-                res.text(result.code);
-                return;
-              } catch (compileError) {
-                res.status = 500;
-                res.setHeader("Content-Type", "text/plain; charset=utf-8");
-                const errorMsg = compileError instanceof Error ? compileError.message : String(compileError);
-                res.text(`Compilation error: ${errorMsg}`);
-                return;
-              }
-            }
-          }
-        }
-        res.status = response.status;
-        res.setHeader("Content-Type", "text/plain; charset=utf-8");
-        res.text(`Failed to fetch JSR module: ${moduleUrl} (${response.status})\nTried path: ${jsrPath}`);
-        return;
-      }
-      
-      const tsContent = await response.text();
-      
-      // 编译 TypeScript 为 JavaScript（浏览器无法直接执行 TypeScript）
-      try {
-        const result = await esbuild.transform(tsContent, {
-          loader: "ts",
-          format: "esm",
-          target: "esnext",
-          jsx: "automatic",
-          jsxImportSource: "preact",
-        });
-        
-        // 返回编译后的 JavaScript
-        res.status = 200;
-        res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-        res.text(result.code);
-      } catch (compileError) {
-        // 如果编译失败，返回原始内容（虽然浏览器可能无法执行）
-        res.status = 200;
-        res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-        const errorMsg = compileError instanceof Error ? compileError.message : String(compileError);
-        res.text(`// Compilation error: ${errorMsg}\n${tsContent}`);
-      }
-    } catch (error) {
-      res.status = 500;
-      res.setHeader("Content-Type", "text/plain; charset=utf-8");
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      res.text(`Error handling JSR module request: ${errorMsg}`);
-    }
-  }
+  // 注意：handleJSRModuleRequest 方法已删除
+  // 因为 @dreamer/dweb/client 已经被打包进代码，不再需要在运行时通过 /__jsr/ 代理加载
+  // 如果将来有其他 JSR 模块需要在运行时加载，可以从 git 历史中恢复此方法
 
   /**
    * 创建扩展的请求对象（用于模块请求）
@@ -850,11 +712,8 @@ export class RouteHandler {
       url.pathname = pathname;
     }
 
-    // 处理 JSR 模块请求（通过服务端代理）
-    if (pathname.startsWith("/__jsr/")) {
-      await this.handleJSRModuleRequest(req, res, pathname);
-      return;
-    }
+    // 注意：/__jsr/ 路径已不再使用，因为 @dreamer/dweb/client 已经被打包进代码
+    // 如果将来有其他 JSR 模块需要在运行时加载，可以恢复这个处理
 
     // 处理模块请求
     if (pathname.startsWith("/__modules/")) {

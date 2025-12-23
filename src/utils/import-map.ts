@@ -55,25 +55,6 @@ export async function createImportMapScript(): Promise<string | null> {
     const imports = denoJson.imports || {};
     const clientImports: Record<string, string> = {};
     
-    // 包含 @dreamer/dweb/client（用于 Store 等客户端 API）
-    if (imports["@dreamer/dweb/client"]) {
-      let clientUrl = imports["@dreamer/dweb/client"];
-      // 如果是 JSR URL，需要通过服务端代理
-      // 浏览器无法直接使用 JSR URL，所以我们需要将其转换为可通过服务端代理的路径
-      // 注意：虽然 JSR 设置了 CORS，但浏览器无法直接执行 TypeScript 文件，需要服务端编译
-      if (clientUrl.startsWith("jsr:")) {
-        // jsr:@dreamer/dweb@^1.3.0/client -> /__jsr/@dreamer/dweb@1.3.0/client
-        // 移除 jsr: 前缀，提取版本号（移除 ^ 或 ~），转换为代理路径
-        const jsrPath = clientUrl.replace(/^jsr:/, "");
-        // 提取版本号（移除 ^ 或 ~），但保留版本号
-        const normalizedPath = jsrPath.replace(/@([\^~]?)([\d.]+)/, "@$2");
-        // 转换为可通过服务端代理的路径
-        // 服务端会从 https://jsr.io/@dreamer/dweb/1.3.0/client.ts 获取并编译 TypeScript
-        clientUrl = `/__jsr/${normalizedPath}`;
-      }
-      clientImports["@dreamer/dweb/client"] = clientUrl;
-    }
-    
     // 包含 preact 相关的导入
     if (imports["preact"]) {
       clientImports["preact"] = imports["preact"];
