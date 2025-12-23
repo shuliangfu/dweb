@@ -1,5 +1,5 @@
 {
-  "version": "1.2.8", 
+  "version": "1.2.9", 
   "nodeModulesDir": "manual",
   "tasks": {
     "dev": "deno run -A @dreamer/dweb/cli dev",
