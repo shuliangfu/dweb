@@ -3,7 +3,7 @@
  * 使用 MongoModel 定义，提供类型安全的用户数据管理
  */
 
-import { MongoModel } from "@dreamer/dweb";
+import { MongoModel } from "@dreamer/dweb/database";
 
 /**
  * 用户模型类
