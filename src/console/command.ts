@@ -59,6 +59,8 @@ export class Command {
   private description: string;
   /** 命令版本 */
   private version?: string;
+  /** 自定义用法字符串（如果设置，将覆盖自动生成的用法） */
+  private usage?: string;
   /** 命令选项列表 */
   private options: CommandOption[] = [];
   /** 命令参数列表 */
@@ -85,6 +87,16 @@ export class Command {
    */
   setVersion(version: string): this {
     this.version = version;
+    return this;
+  }
+
+  /**
+   * 设置自定义用法字符串
+   * @param usage 用法字符串
+   * @returns 当前命令实例（支持链式调用）
+   */
+  setUsage(usage: string): this {
+    this.usage = usage;
     return this;
   }
 
@@ -237,25 +249,32 @@ export class Command {
 
     // 显示用法
     console.log(`${colors.dim}用法:${colors.reset}`);
-    let usage = `  ${this.name}`;
+    
+    // 如果设置了自定义用法，直接使用
+    if (this.usage) {
+      console.log(`  ${this.usage}\n`);
+    } else {
+      // 否则自动生成用法
+      let usage = `  ${this.name}`;
 
-    // 添加选项
-    const optionalOptions = this.options.filter((opt) => !opt.requiresValue);
-    const requiredOptions = this.options.filter((opt) => opt.requiresValue);
-    if (optionalOptions.length > 0 || requiredOptions.length > 0) {
-      usage += " [选项]";
-    }
-
-    // 添加参数
-    for (const arg of this.arguments) {
-      if (arg.required) {
-        usage += ` <${arg.name}>`;
-      } else {
-        usage += ` [${arg.name}]`;
+      // 添加选项
+      const optionalOptions = this.options.filter((opt) => !opt.requiresValue);
+      const requiredOptions = this.options.filter((opt) => opt.requiresValue);
+      if (optionalOptions.length > 0 || requiredOptions.length > 0) {
+        usage += " [选项]";
       }
-    }
 
-    console.log(usage + "\n");
+      // 添加参数
+      for (const arg of this.arguments) {
+        if (arg.required) {
+          usage += ` <${arg.name}>`;
+        } else {
+          usage += ` [${arg.name}]`;
+        }
+      }
+
+      console.log(usage + "\n");
+    }
 
     // 显示参数
     if (this.arguments.length > 0) {
@@ -299,10 +318,20 @@ export class Command {
     // 显示子命令
     if (this.subcommands.size > 0) {
       console.log(`${colors.dim}子命令:${colors.reset}`);
+      
+      // 计算最长的子命令名称长度，用于对齐
+      let maxNameLength = 0;
+      for (const [name] of this.subcommands) {
+        maxNameLength = Math.max(maxNameLength, name.length);
+      }
+      
+      // 统一的对齐宽度（命令名称 + 4个空格）
+      const alignWidth = maxNameLength + 4;
+      
       for (const [name, cmd] of this.subcommands) {
-        console.log(
-          `  ${colors.cyan}${name}${colors.reset}    ${cmd.description}`
-        );
+        const nameStr = `${colors.cyan}${name}${colors.reset}`;
+        const padding = alignWidth - name.length;
+        console.log(`  ${nameStr}${" ".repeat(padding)}${cmd.description}`);
       }
       console.log();
     }
