@@ -271,6 +271,118 @@ async function checkBuildCache(
 }
 
 /**
+ * 创建 JSR URL 解析插件（用于打包 @dreamer/dweb/client）
+ * @param importMap import map 配置
+ * @param cwd 工作目录
+ * @returns esbuild 插件
+ */
+function createJSRResolverPlugin(
+  importMap: Record<string, string>,
+  cwd: string,
+): esbuild.Plugin {
+  return {
+    name: "jsr-resolver",
+    setup(build: esbuild.PluginBuild) {
+      // 解析 @dreamer/dweb/client（支持 JSR URL 和本地路径）
+      build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, async (_args) => {
+        const clientImport = importMap["@dreamer/dweb/client"];
+        if (!clientImport) {
+          return undefined; // 让 esbuild 使用默认解析
+        }
+
+        // 如果是本地路径，解析为绝对路径
+        if (!clientImport.startsWith("jsr:") && !clientImport.startsWith("http")) {
+          const resolvedPath = path.isAbsolute(clientImport)
+            ? clientImport
+            : path.resolve(cwd, clientImport);
+          return {
+            path: resolvedPath,
+          };
+        }
+
+        // 如果是 JSR URL，解析为实际的 HTTP URL
+        if (clientImport.startsWith("jsr:")) {
+          try {
+            // 使用 import.meta.resolve 解析 JSR URL
+            let resolvedUrl = await import.meta.resolve(clientImport);
+            
+            // 如果返回的是 file:// 协议（本地开发），需要转换为 HTTP URL
+            if (resolvedUrl.startsWith("file://")) {
+              // 手动构建 JSR URL
+              const jsrPath = clientImport.replace(/^jsr:/, "");
+              const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
+              if (jsrMatch) {
+                const [, scope, packageName, version, subPath] = jsrMatch;
+                let actualSubPath = subPath;
+                if (!actualSubPath.startsWith("src/") && !actualSubPath.includes("/")) {
+                  actualSubPath = `src/${subPath}.ts`;
+                } else if (!actualSubPath.endsWith(".ts") && !actualSubPath.endsWith(".tsx")) {
+                  actualSubPath = `${actualSubPath}.ts`;
+                }
+                resolvedUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${actualSubPath}`;
+              } else {
+                return undefined;
+              }
+            }
+            
+            return {
+              path: resolvedUrl,
+              namespace: "http-url",
+            };
+          } catch {
+            return undefined; // 解析失败，使用默认行为
+          }
+        }
+        
+        return undefined; // 不是 JSR URL，使用默认解析
+      });
+
+      // 处理相对路径导入（从 http-url namespace 中的模块）
+      build.onResolve({ filter: /^\.\.?\/.*/, namespace: "http-url" }, (args) => {
+        try {
+          // 解析相对路径为完整的 JSR URL
+          const baseUrl = new URL(args.importer);
+          const relativePath = args.path;
+          const resolvedUrl = new URL(relativePath, baseUrl).href;
+          
+          return {
+            path: resolvedUrl,
+            namespace: "http-url",
+          };
+        } catch (error) {
+          return {
+            errors: [{
+              text: `Failed to resolve relative path: ${args.path} (${error instanceof Error ? error.message : String(error)})`,
+            }],
+          };
+        }
+      });
+
+      // 加载 HTTP URL 内容
+      build.onLoad({ filter: /.*/, namespace: "http-url" }, async (args) => {
+        try {
+          const response = await fetch(args.path);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch: ${args.path} (${response.status})`);
+          }
+          const contents = await response.text();
+          return {
+            contents,
+            loader: "ts",
+          };
+        } catch (error) {
+          return {
+            errors: [{
+              text: error instanceof Error ? error.message : String(error),
+            }],
+          };
+        }
+      });
+    },
+  };
+}
+
+/**
  * 编译单个文件并生成 hash 文件名（扁平化输出）
  * 支持构建缓存，如果源文件未变化则跳过编译
  * 会生成两个版本：服务端版本（包含 load 函数）和客户端版本（移除 load 函数）
@@ -410,7 +522,12 @@ async function compileFile(
       ];
 
       // 从 import map 中添加所有外部依赖
+      // 注意：@dreamer/dweb/client 会被打包，不添加到 external
       for (const [key, value] of Object.entries(importMap)) {
+        // @dreamer/dweb/client 需要被打包，不添加到 external
+        if (key === "@dreamer/dweb/client") {
+          continue;
+        }
         if (
           value.startsWith("jsr:") || value.startsWith("npm:") ||
           value.startsWith("http")
@@ -418,6 +535,9 @@ async function compileFile(
           externalPackages.push(key);
         }
       }
+
+      // 创建 JSR 解析插件
+      const jsrResolverPlugin = createJSRResolverPlugin(importMap, cwd);
 
       // 生成服务端版本（包含 load 函数）
       let serverCompiledContent: string | null = null;
@@ -436,14 +556,18 @@ async function compileFile(
           legalComments: "none", // ✅ 移除注释
           write: false, // 不写入文件，我们手动处理
           external: externalPackages, // 外部依赖不打包（保持 import 语句）
+          plugins: [jsrResolverPlugin], // 添加 JSR 解析插件
           // 设置 import map（用于解析外部依赖）
           // 注意：只对本地路径使用 alias，JSR/NPM/HTTP 导入已经在 external 中，不需要 alias
           // 相对路径导入（../ 和 ./）不会被 alias 处理，由 esbuild 自动解析和打包
           alias: Object.fromEntries(
             Object.entries(importMap)
-              .filter(([_, value]) =>
-                !value.startsWith("jsr:") && !value.startsWith("npm:") &&
-                !value.startsWith("http")
+              .filter(
+                ([key, value]) =>
+                  // 排除所有 @dreamer/dweb 相关的导入（由插件处理或保持为外部依赖）
+                  !key.startsWith("@dreamer/dweb") &&
+                  !value.startsWith("jsr:") && !value.startsWith("npm:") &&
+                  !value.startsWith("http")
               )
               .map(([key, value]) => [
                 key,
@@ -506,12 +630,16 @@ async function compileFile(
           legalComments: "none", // ✅ 移除注释
           write: false, // 不写入文件，我们手动处理
           external: externalPackages, // 外部依赖不打包（保持 import 语句）
+          plugins: [jsrResolverPlugin], // 添加 JSR 解析插件
           // 设置 import map（用于解析外部依赖）
           alias: Object.fromEntries(
             Object.entries(importMap)
-              .filter(([_, value]) =>
-                !value.startsWith("jsr:") && !value.startsWith("npm:") &&
-                !value.startsWith("http")
+              .filter(
+                ([key, value]) =>
+                  // 排除所有 @dreamer/dweb 相关的导入（由插件处理或保持为外部依赖）
+                  !key.startsWith("@dreamer/dweb") &&
+                  !value.startsWith("jsr:") && !value.startsWith("npm:") &&
+                  !value.startsWith("http")
               )
               .map(([key, value]) => [
                 key,
@@ -1090,7 +1218,7 @@ async function generateRouteMap(
     : path.resolve(Deno.cwd(), routesDir, "api");
 
   const routesDirAbsolute = path.resolve(Deno.cwd(), routesDir);
-  const apiDirInRoutes =
+  const _apiDirInRoutes =
     apiDirAbsolute.startsWith(routesDirAbsolute + path.SEPARATOR) ||
     apiDirAbsolute === routesDirAbsolute;
 
@@ -1306,7 +1434,7 @@ async function buildApp(config: AppConfig): Promise<void> {
     : path.resolve(Deno.cwd(), apiDir);
 
   // 判断 API 目录是否在 routes 目录下
-  const apiDirInRoutes =
+  const _apiDirInRoutes =
     apiDirAbsolute.startsWith(routesDirAbsolute + path.SEPARATOR) ||
     apiDirAbsolute === routesDirAbsolute;
 
@@ -1345,7 +1473,7 @@ async function buildApp(config: AppConfig): Promise<void> {
   }
 
   // 如果 API 目录不在 routes 目录下，单独编译 API 目录
-  if (!apiDirInRoutes) {
+  if (!_apiDirInRoutes) {
     try {
       // 检查 API 目录是否存在
       const apiDirExists = await Deno.stat(apiDirAbsolute)
