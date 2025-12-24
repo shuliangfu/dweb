@@ -47,6 +47,7 @@ export function isPreactDependency(packageName: string): boolean {
     "preact",
     "preact/hooks",
     "preact/jsx-runtime",
+    "preact/signals",
     "preact-router",
   ];
   

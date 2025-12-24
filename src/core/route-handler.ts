@@ -1423,10 +1423,11 @@ export class RouteHandler {
 // 预加载 Preact 模块到全局作用域，供客户端渲染和 HMR 使用
 (async function() {
   try {
-    const [preactModule, jsxRuntimeModule, hooksModule] = await Promise.all([
+    const [preactModule, jsxRuntimeModule, hooksModule, signalsModule] = await Promise.all([
       import('preact'),
       import('preact/jsx-runtime'),
-      import('preact/hooks').catch(() => null) // preact/hooks 可能不存在，允许失败
+      import('preact/hooks').catch(() => null), // preact/hooks 可能不存在，允许失败
+      import('preact/signals').catch(() => null) // preact/signals 可能不存在，允许失败
     ]);
     
     globalThis.__PREACT_MODULES__ = {
@@ -1447,6 +1448,11 @@ export class RouteHandler {
         useReducer: hooksModule.useReducer,
         useLayoutEffect: hooksModule.useLayoutEffect
       };
+    }
+    
+    // 如果 preact/signals 可用，也预加载到全局作用域
+    if (signalsModule) {
+      globalThis.__PREACT_SIGNALS__ = signalsModule;
     }
   } catch (_error) {
     // 预加载失败时静默处理
