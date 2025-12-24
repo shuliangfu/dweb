@@ -1567,12 +1567,15 @@ export class RouteHandler {
         : basePath;
 
       // 获取 prefetch 配置并解析通配符模式
+      // 检查是否启用了预加载（enabled 默认为 true，只有显式设置为 false 时才禁用）
+      const prefetchEnabled = this.config?.prefetch?.enabled !== false;
       const prefetchConfig = this.config?.prefetch?.routes;
       const prefetchLoading = this.config?.prefetch?.loading ?? false;
       const prefetchMode = this.config?.prefetch?.mode ?? "batch";
       let prefetchRoutes: string[] | undefined;
 
-      if (Array.isArray(prefetchConfig) && prefetchConfig.length > 0) {
+      // 只有当预加载启用且配置了路由时才处理预加载
+      if (prefetchEnabled && Array.isArray(prefetchConfig) && prefetchConfig.length > 0) {
         prefetchRoutes = this.resolvePrefetchRoutes(prefetchConfig);
       }
 
@@ -1717,6 +1720,91 @@ export class RouteHandler {
    *   - ["/specific-route"] - 具体路由路径
    * @returns 匹配的路由路径数组
    */
+  /**
+   * 检查路由是否匹配给定的模式
+   * @param routePath 路由路径（已移除 basePath）
+   * @param pattern 匹配模式（已移除 basePath 和否定前缀）
+   * @returns 是否匹配
+   */
+  private matchRoutePattern(
+    routePath: string,
+    pattern: string,
+  ): boolean {
+    if (pattern === "*") {
+      // 匹配所有路由
+      return true;
+    } else if (pattern.startsWith("/") && pattern.includes("*")) {
+      // 通配符模式处理
+      // 例如：/* 匹配所有一级路由，/*/* 匹配所有二级路由，/docs/* 匹配所有以 /docs/ 开头的路由
+      
+      // 检查是否是带前缀的通配符模式（如 /docs/*）
+      const lastStarIndex = pattern.lastIndexOf("*");
+      const prefixBeforeStar = pattern.substring(0, lastStarIndex);
+      
+      if (prefixBeforeStar && prefixBeforeStar !== "/") {
+        // 带前缀的通配符模式，需要检查路径前缀
+        // 例如：/docs/* 需要匹配 /docs/xxx, /docs/xxx/yyy 等所有以 /docs/ 开头的路由
+        // prefixBeforeStar 可能是 "/docs/" 或 "/docs"，需要处理两种情况
+        const prefixWithoutTrailingSlash = prefixBeforeStar.endsWith("/")
+          ? prefixBeforeStar.slice(0, -1)
+          : prefixBeforeStar;
+        
+        // 检查路由路径是否以该前缀开头（必须包含子路径，即路径长度大于前缀长度）
+        // 例如：/docs/* 应该匹配 /docs/middleware，但不匹配 /docs 本身
+        if (!routePath.startsWith(prefixWithoutTrailingSlash + "/")) {
+          return false;
+        }
+        
+        // 计算通配符部分的深度（* 的数量）
+        const wildcardPart = pattern.substring(lastStarIndex);
+        const wildcardDepth = (wildcardPart.match(/\*/g) || []).length;
+        
+        // 检查通配符是否在模式末尾（如 /docs/* 或 /docs/*/*）
+        // 如果通配符在末尾，应该匹配所有更深的路由，不限制最大深度
+        const isWildcardAtEnd = pattern.endsWith("*") || pattern.endsWith("/*");
+        
+        // 移除动态参数部分来计算深度
+        const pathWithoutParams = routePath.replace(/\[[^\]]+\]/g, "param");
+        const routeDepth = pathWithoutParams.split("/").filter(Boolean).length;
+        const prefixDepth = prefixWithoutTrailingSlash.split("/").filter(Boolean).length;
+        
+        // 计算最小深度（前缀深度 + 1，因为至少要有一个子路径）
+        const minDepth = prefixDepth + 1;
+        
+        if (isWildcardAtEnd) {
+          // 如果通配符在末尾（如 /docs/*），匹配所有深度 >= minDepth 的路由
+          // 例如：/docs/* 匹配 /docs/middleware, /docs/middleware/health 等所有以 /docs/ 开头的路由
+          return routeDepth >= minDepth;
+        } else {
+          // 如果通配符不在末尾（如 /docs/*/specific），限制最大深度
+          const maxDepth = prefixDepth + wildcardDepth;
+          return routeDepth >= minDepth && routeDepth <= maxDepth;
+        }
+      } else {
+        // 纯通配符模式（如 /*, /*/*），只检查深度
+        const maxDepth = pattern.split("/").filter(Boolean).length;
+
+        // 移除动态参数部分（如 [id]）来计算深度
+        // 例如：/users/[id] -> /users/param -> 深度为 2
+        const pathWithoutParams = routePath.replace(/\[[^\]]+\]/g, "param");
+
+        // 计算路径深度（排除 basePath 后的深度）
+        const routeDepth = pathWithoutParams.split("/").filter(Boolean).length;
+
+        // 匹配深度 <= maxDepth 的路由（例如 /*/* 匹配深度 1 和 2）
+        return routeDepth > 0 && routeDepth <= maxDepth;
+      }
+    } else {
+      // 具体路由路径匹配
+      return routePath === pattern;
+    }
+  }
+
+  /**
+   * 解析预加载路由配置，支持通配符和否定模式
+   * @param patterns 路由模式数组，支持通配符（如 `/*`）和否定模式（如 `!/docs/*`）
+   * @returns 匹配的路由路径数组
+   */
   private resolvePrefetchRoutes(patterns: string[]): string[] {
     const allRoutes = this.router.getAllRoutes();
     // 过滤页面路由，排除特殊路由（_middleware, _layout, _app, _404, _500, _error 等）
@@ -1726,7 +1814,6 @@ export class RouteHandler {
       const pathSegments = route.path.split("/").filter(Boolean);
       return !pathSegments.some((segment) => segment.startsWith("_"));
     });
-    const matchedRoutes = new Set<string>();
 
     // 获取 basePath（用于从路由路径中移除 basePath 前缀）
     const basePath = this.router.getBasePath();
@@ -1734,17 +1821,59 @@ export class RouteHandler {
       ? basePath.slice(0, -1)
       : basePath;
 
+    // 分离包含模式和排除模式（以 ! 开头的为排除模式）
+    const includePatterns: string[] = [];
+    const excludePatterns: string[] = [];
+
     for (const pattern of patterns) {
+      if (pattern.startsWith("!")) {
+        // 排除模式，移除 ! 前缀
+        excludePatterns.push(pattern.slice(1));
+      } else {
+        // 包含模式
+        includePatterns.push(pattern);
+      }
+    }
+
+    // 如果没有包含模式，返回空数组
+    if (includePatterns.length === 0) {
+      return [];
+    }
+
+    const matchedRoutes = new Set<string>();
+
+    // 第一步：处理包含模式，收集所有匹配的路由
+    for (const pattern of includePatterns) {
+      // 处理 basePath
+      let normalizedPattern = pattern;
+      if (
+        normalizedBasePath !== "/" &&
+        !pattern.startsWith(normalizedBasePath)
+      ) {
+        // 如果模式路径不包含 basePath，添加 basePath 前缀用于后续处理
+        normalizedPattern = normalizedBasePath +
+          (pattern.startsWith("/") ? pattern : "/" + pattern);
+      }
+
+      // 从模式中移除 basePath 用于匹配
+      let patternForMatch = normalizedPattern;
+      if (
+        normalizedBasePath !== "/" &&
+        patternForMatch.startsWith(normalizedBasePath)
+      ) {
+        patternForMatch = patternForMatch.slice(normalizedBasePath.length);
+        if (!patternForMatch) {
+          patternForMatch = "/";
+        }
+      }
+
       if (pattern === "*") {
         // 匹配所有路由
         pageRoutes.forEach((route) => {
           matchedRoutes.add(route.path);
         });
       } else if (pattern.startsWith("/") && pattern.includes("*")) {
-        // 通配符模式：计算最大路径深度（/ 的数量）
-        // 例如：/* 最大深度为1（匹配深度 <= 1），/*/* 最大深度为2（匹配深度 <= 2），/*/*/* 最大深度为3（匹配深度 <= 3）
-        const maxDepth = pattern.split("/").filter(Boolean).length;
-
+        // 通配符模式
         pageRoutes.forEach((route) => {
           // 从路由路径中移除 basePath 前缀（如果存在）
           let routePath = route.path;
@@ -1759,16 +1888,8 @@ export class RouteHandler {
             }
           }
 
-          // 移除动态参数部分（如 [id]）来计算深度
-          // 例如：/users/[id] -> /users/param -> 深度为 2
-          const pathWithoutParams = routePath.replace(/\[[^\]]+\]/g, "param");
-
-          // 计算路径深度（排除 basePath 后的深度）
-          const routeDepth =
-            pathWithoutParams.split("/").filter(Boolean).length;
-
-          // 匹配深度 <= maxDepth 的路由（例如 /*/* 匹配深度 1 和 2）
-          if (routeDepth > 0 && routeDepth <= maxDepth) {
+          // 检查是否匹配模式
+          if (this.matchRoutePattern(routePath, patternForMatch)) {
             matchedRoutes.add(route.path); // 使用原始路径（包含 basePath）
           }
         });
@@ -1784,6 +1905,78 @@ export class RouteHandler {
         }
         matchedRoutes.add(fullRoute);
       }
+    }
+
+    // 第二步：处理排除模式，从匹配的路由中移除被排除的路由
+    if (excludePatterns.length > 0) {
+      const routesToExclude = new Set<string>();
+
+      for (const pattern of excludePatterns) {
+        // 处理 basePath
+        let normalizedPattern = pattern;
+        if (
+          normalizedBasePath !== "/" &&
+          !pattern.startsWith(normalizedBasePath)
+        ) {
+          normalizedPattern = normalizedBasePath +
+            (pattern.startsWith("/") ? pattern : "/" + pattern);
+        }
+
+        // 从模式中移除 basePath 用于匹配
+        let patternForMatch = normalizedPattern;
+        if (
+          normalizedBasePath !== "/" &&
+          patternForMatch.startsWith(normalizedBasePath)
+        ) {
+          patternForMatch = patternForMatch.slice(normalizedBasePath.length);
+          if (!patternForMatch) {
+            patternForMatch = "/";
+          }
+        }
+
+        if (pattern === "*") {
+          // 排除所有路由
+          matchedRoutes.forEach((route) => {
+            routesToExclude.add(route);
+          });
+        } else if (pattern.startsWith("/") && pattern.includes("*")) {
+          // 通配符排除模式
+          matchedRoutes.forEach((routePath) => {
+            // 从路由路径中移除 basePath 前缀（如果存在）
+            let routePathForMatch = routePath;
+            if (
+              normalizedBasePath !== "/" &&
+              routePathForMatch.startsWith(normalizedBasePath)
+            ) {
+              routePathForMatch = routePathForMatch.slice(normalizedBasePath.length);
+              // 如果移除后为空，说明是根路径，设置为 "/"
+              if (!routePathForMatch) {
+                routePathForMatch = "/";
+              }
+            }
+
+            // 检查是否匹配排除模式
+            if (this.matchRoutePattern(routePathForMatch, patternForMatch)) {
+              routesToExclude.add(routePath);
+            }
+          });
+        } else {
+          // 具体路由路径排除
+          let fullRoute = pattern;
+          if (
+            normalizedBasePath !== "/" && !pattern.startsWith(normalizedBasePath)
+          ) {
+            fullRoute = normalizedBasePath +
+              (pattern.startsWith("/") ? pattern : "/" + pattern);
+          }
+          routesToExclude.add(fullRoute);
+        }
+      }
+
+      // 从匹配的路由中移除被排除的路由
+      routesToExclude.forEach((route) => {
+        matchedRoutes.delete(route);
+      });
     }
 
     return Array.from(matchedRoutes);
@@ -2087,6 +2280,14 @@ export class RouteHandler {
     }
 
     try {
+      // 检查是否启用了预加载（enabled 默认为 true，只有显式设置为 false 时才禁用）
+      const prefetchEnabled = this.config?.prefetch?.enabled !== false;
+      if (!prefetchEnabled) {
+        res.status = 200;
+        res.json({});
+        return;
+      }
+
       // 获取 prefetch 配置
       const prefetchConfig = this.config?.prefetch?.routes;
       if (!Array.isArray(prefetchConfig) || prefetchConfig.length === 0) {

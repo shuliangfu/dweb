@@ -37,7 +37,24 @@ export type PrefetchMode = "single" | "batch";
 export interface PrefetchConfig {
   /** 是否启用资源预取（prefetch），默认 true */
 	enabled?: boolean;
-	/** 预加载的路由，支持通配符模式 */
+	/** 
+	 * 预加载的路由配置数组，支持通配符模式和否定模式
+	 * 
+	 * 通配符模式：
+	 * - 星号匹配所有路由
+	 * - 斜杠加星号匹配所有一级路由
+	 * - 斜杠星号斜杠星号匹配所有二级路由，以此类推
+	 * 
+	 * 否定模式（以感叹号开头）：
+	 * - 感叹号加斜杠表示不预加载首页
+	 * - 感叹号加斜杠docs加斜杠星号表示不预加载 docs 下的所有页面
+	 * 
+	 * 具体路由：
+	 * - 斜杠about表示预加载 about 页面
+	 * 
+	 * 注意：否定模式会从已匹配的路由中排除
+	 * 例如配置星号和感叹号加斜杠docs加斜杠星号表示预加载所有路由，但排除 docs 下的页面
+	 */
   routes?: string[];
   /** 是否在预加载时显示全屏加载状态，默认 false */
   loading?: boolean;
