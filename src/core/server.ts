@@ -594,6 +594,8 @@ export class Server {
 		port += instanceIndex;
 
     // 准备 Deno.serve 配置
+    // 为了显示友好，将 127.0.0.1 转换为 localhost（但实际监听仍使用原始 host）
+    const displayHost = host === '127.0.0.1' ? 'localhost' : host;
     const serveOptions: {
       port: number;
 			hostname: string;
@@ -605,7 +607,7 @@ export class Server {
 			hostname: host,
       onListen: () => {
         const protocol = tls ? 'https' : 'http';
-        console.log(`✅ 服务器已启动: ${protocol}://${host}:${port}`);
+        console.log(`✅ 服务器已启动: ${protocol}://${displayHost}:${port}`);
       },
     };
 
