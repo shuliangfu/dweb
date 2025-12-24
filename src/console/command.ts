@@ -788,6 +788,9 @@ export class Command {
     if (this.version) {
       console.log(`${colors.dim}版本:${colors.reset} ${this.version}\n`);
     }
+
+    // 显示完帮助信息后退出程序
+    Deno.exit(0);
   }
 
   /**
