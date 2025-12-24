@@ -535,7 +535,8 @@ ${
     "preact": "https://esm.sh/preact@latest",
     "preact/hooks": "https://esm.sh/preact@latest/hooks",
     "preact/jsx-runtime": "https://esm.sh/preact@latest/jsx-runtime",
-    "preact/signals": "https://esm.sh/@preact/signals@^2.5.0"${
+    "preact/signals": "https://esm.sh/@preact/signals@latest?external=preact",
+    "preact-render-to-string": "npm:preact-render-to-string@6.5.1"${
       useTailwindV4
         ? `,
     "tailwindcss": "npm:tailwindcss@^4.1.10",
