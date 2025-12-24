@@ -58,21 +58,6 @@ export * from "./helpers/array.ts";
 export * from "./helpers/math.ts";
 export * from "./helpers/file.ts";
 
-// 同时提供命名空间导出（可选，用于避免命名冲突或按模块组织代码）
-// 注意：cache 命名空间重命名为 cacheHelpers，避免与 plugins 的 cache 插件冲突
-export * as validation from "./helpers/validation.ts";
-export * as format from "./helpers/format.ts";
-export * as crypto from "./helpers/crypto.ts";
-export * as cacheHelpers from "./helpers/cache.ts";
-export * as http from "./helpers/http.ts";
-export * as web3 from "./helpers/web3.ts";
-export * as utils from "./helpers/utils.ts";
-export * as storage from "./helpers/storage.ts";
-export * as url from "./helpers/url.ts";
-export * as time from "./helpers/time.ts";
-export * as array from "./helpers/array.ts";
-export * as math from "./helpers/math.ts";
-export * as file from "./helpers/file.ts";
 
 // 导出用户扩展示例（可选）
 export * from "./user/index.ts";
