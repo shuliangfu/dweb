@@ -100,7 +100,7 @@ setCache("key", "value", 3600); // 缓存1小时
 - [格式化函数](./helpers/format.md) - 数据格式化工具
 - [加密函数](./helpers/crypto.md) - 加密、哈希、签名工具
 - [缓存函数](./helpers/cache.md) - 内存缓存工具
-- [HTTP 请求库](./helpers/http.md) - 前端 HTTP 请求库
+- [HTTP 请求库](./helpers/http.md) - 前端 HTTP 请求库（支持拦截器、重试、并发请求、文件上传/下载、进度追踪）
 - [Web3 操作库](./helpers/web3.md) - Web3 相关操作
 
 ### 其他
@@ -110,8 +110,8 @@ setCache("key", "value", 3600); // 缓存1小时
 
 ## 相关文档
 
-- [核心模块](../core.md) - 框架核心功能
+- [核心模块](../core/README.md) - 框架核心功能
 - [中间件](../middleware/README.md) - 中间件系统
 - [插件](../plugins/README.md) - 插件系统
-- [控制台工具](../console.md) - 命令行工具
+- [控制台工具](../console/README.md) - 命令行工具
 
