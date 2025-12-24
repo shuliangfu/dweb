@@ -92,7 +92,7 @@ export interface StoreInstance<T extends StoreState> {
   /** 订阅状态变化 */
   $subscribe: (listener: (state: T) => void) => (() => void) | null;
   /** 响应式使用 Store 的 Hook（仅在客户端可用） */
-  $use: () => T;
+  $use: () => StoreInstance<T> & T & Record<string, unknown>;
 }
 
 /**
@@ -304,38 +304,41 @@ export function defineStore<
       if (prop === '$use') {
         // 返回一个 hook 函数，用于在组件中响应式地使用 store
         // 这个函数会在组件的顶层被调用，所以可以安全地使用 hooks
-        return function useStoreHook(): T {
+        // 返回 store 代理对象本身，这样既可以访问状态，也可以调用 actions
+        return function useStoreHook(): typeof storeProxy {
           // 检查是否在客户端环境
           const isClient = typeof globalThis !== 'undefined' && 
                           'window' in globalThis &&
                           'document' in globalThis;
           
           if (!isClient) {
-            // 服务端渲染时，只返回当前状态
-            return getCurrentState() as T;
+            // 服务端渲染时，返回 store 代理对象
+            return storeProxy;
           }
           
-          // 客户端环境：使用 hooks
+          // 客户端环境：使用 hooks 实现响应式更新
           try {
             // 从全局获取 hooks（preact 会被预加载到 globalThis.__PREACT_HOOKS__）
             const hooks = (globalThis as any).__PREACT_HOOKS__;
             
             if (!hooks || !hooks.useState || !hooks.useEffect) {
-              // 如果 hooks 不可用，返回当前状态，不进行响应式更新
-              return getCurrentState() as T;
+              // 如果 hooks 不可用，返回 store 代理对象
+              return storeProxy;
             }
             
             const { useState, useEffect } = hooks;
             
-            // 使用 useState 存储状态，初始值为 store 的当前状态
-            const [state, setState] = useState(getCurrentState() as T);
+            // 使用 useState 存储一个版本号，用于触发重新渲染
+            // 当状态变化时，更新版本号，触发组件重新渲染
+            const [_version, setVersion] = useState(0);
             
             // 使用 useEffect 订阅 store 状态变化
             useEffect(() => {
               // 订阅 store 状态变化
-              const unsubscribe = storeProxy.$subscribe((newState: T) => {
-                // 当 store 状态变化时，更新本地 state，触发组件重新渲染
-                setState(newState);
+              const unsubscribe = storeProxy.$subscribe((_newState: T) => {
+                // 当 store 状态变化时，更新版本号，触发组件重新渲染
+                // 组件重新渲染时，会重新访问 store 代理对象的属性，获取最新状态
+                setVersion((v: number) => v + 1);
               });
               
               // 清理函数：组件卸载时取消订阅
@@ -346,12 +349,15 @@ export function defineStore<
               };
             }, []); // 空依赖数组，只在组件挂载时订阅一次
             
-            // 返回当前状态
-            return state;
+            // 返回 store 代理对象本身（包含状态和 actions）
+            // 当 version 变化时，组件会重新渲染，重新访问代理对象的属性，获取最新状态
+            // 使用 _version 来确保依赖项正确，触发重新渲染
+            void _version; // 标记为已使用，避免警告
+            return storeProxy;
           } catch (error) {
-            // 如果出错（比如 hooks 不可用），返回当前状态
-            console.warn('[Store] $use hook 执行失败，返回当前状态:', error);
-            return getCurrentState() as T;
+            // 如果出错（比如 hooks 不可用），返回 store 代理对象
+            console.warn('[Store] $use hook 执行失败，返回 store 代理对象:', error);
+            return storeProxy;
           }
         };
       }
@@ -413,12 +419,16 @@ export function defineStore<
  * }
  * ```
  */
-export function useStore<T extends StoreState>(
-  store: StoreInstance<T>
-): T {
-  // 使用 store 的 $use() 方法获取响应式状态
+export function useStore<
+  T extends StoreState,
+  S extends StoreInstance<T> & T & Record<string, unknown> = StoreInstance<T> & T & Record<string, unknown>
+>(
+  store: S
+): S {
+  // 使用 store 的 $use() 方法获取响应式 store 代理对象
   // $use() 内部已经处理了 useState 和 useEffect
-  return store.$use();
+  // 返回 store 代理对象本身，这样既可以访问状态，也可以调用 actions
+  return store.$use() as unknown as S;
 }
 
 /**

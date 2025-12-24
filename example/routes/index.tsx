@@ -8,7 +8,7 @@ import Hero from "../components/Hero.tsx";
 import CodeBlock from "../components/CodeBlock.tsx";
 import type { LoadContext, PageProps } from "@dreamer/dweb";
 import { getJsrPackageUrl, getVersionString } from "../utils.ts";
-import { exampleStore, useExampleStore } from "../stores/example.ts";
+import { useExampleStore } from "../stores/example.ts";
 import { useEffect } from "preact/hooks";
 
 /**
@@ -118,7 +118,7 @@ export default function HomePage(
   // useEffect(() => {
   //   // 使用 setInterval 定时调用 action
   //   const interval = setInterval(() => {
-  //     exampleStore.increment();
+  //     state.increment();
   //   }, 2000);
 
   //   // 清理函数：组件卸载时清除定时器
