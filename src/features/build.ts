@@ -676,6 +676,7 @@ async function compileFile(
           keepNames: true, // ✅ 保留导出名称（确保 load 方法名不被压缩）
           treeShaking: true, // ✅ Tree-shaking
           legalComments: "none", // ✅ 移除注释
+          drop: [], // ✅ 不移除 console，保留 console.warn 和 console.error 以便生产环境调试
           write: false, // 不写入文件，我们手动处理
           external: externalPackages, // 外部依赖不打包（保持 import 语句）
           plugins: [jsrResolverPlugin], // 添加 JSR 解析插件
@@ -753,6 +754,7 @@ async function compileFile(
           // 对于命名导入（如 import { twMerge } from "tailwind-merge"），
           // esbuild 会自动 tree-shake 掉其他未使用的导出（如 twJoin, createTailwindMerge 等）
           legalComments: "none", // ✅ 移除注释
+          drop: [], // ✅ 不移除 console，保留 console.warn 和 console.error 以便生产环境调试
           write: false, // 不写入文件，我们手动处理
           external: externalPackages, // 外部依赖不打包（保持 import 语句）
           plugins: [jsrResolverPlugin], // 添加 JSR 解析插件
@@ -875,6 +877,7 @@ async function compileWithCodeSplitting(
     // 对于命名导入（如 import { twMerge } from "tailwind-merge"），
     // esbuild 会自动 tree-shake 掉其他未使用的导出
     legalComments: "none",
+    drop: [], // ✅ 不移除 console，保留 console.warn 和 console.error 以便生产环境调试
     outdir: outDir, // 输出到目录（代码分割需要）
     outbase: cwd, // 保持目录结构
     external: externalPackages as string[], // 支持正则表达式但类型定义不完整
@@ -1639,44 +1642,40 @@ async function buildApp(config: AppConfig): Promise<void> {
   }
 
   // 4. 编译组件文件（组件通常只需要客户端版本，但为了兼容性也生成服务端版本）
-  // 支持编译 components 和 common 目录（多应用项目可能使用 common 目录共享组件）
-  const componentDirs = ["components", "common"];
-  for (const componentDir of componentDirs) {
-    try {
-      if (
-        await Deno.stat(componentDir)
-          .then(() => true)
-          .catch(() => false)
-      ) {
-        // 编译组件到 server 目录
-        await compileDirectory(
-          componentDir,
-          serverOutDir,
-          fileMap,
-          [".ts", ".tsx"],
-          useCache,
-          true,
-          codeSplitting,
-          minChunkSize,
-          "server",
-        );
-        // 编译组件到 client 目录
-        await compileDirectory(
-          componentDir,
-          clientOutDir,
-          fileMap,
-          [".ts", ".tsx"],
-          useCache,
-          true,
-          codeSplitting,
-          minChunkSize,
-          "client",
-        );
-        console.log(`✅ 编译组件文件完成 (${componentDir}) - server 和 client 版本`);
-      }
-    } catch (error) {
-      console.warn(`⚠️  组件目录编译失败 (${componentDir})`, error);
+  try {
+    if (
+      await Deno.stat("components")
+        .then(() => true)
+        .catch(() => false)
+    ) {
+      // 编译组件到 server 目录
+      await compileDirectory(
+        "components",
+        serverOutDir,
+        fileMap,
+        [".ts", ".tsx"],
+        useCache,
+        true,
+        codeSplitting,
+        minChunkSize,
+        "server",
+      );
+      // 编译组件到 client 目录
+      await compileDirectory(
+        "components",
+        clientOutDir,
+        fileMap,
+        [".ts", ".tsx"],
+        useCache,
+        true,
+        codeSplitting,
+        minChunkSize,
+        "client",
+      );
+      console.log("✅ 编译组件文件完成 (components) - server 和 client 版本");
     }
+  } catch (error) {
+    console.warn("⚠️  组件目录编译失败", error);
   }
 
   // 4. 配置文件不再复制到构建输出目录
