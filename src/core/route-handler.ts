@@ -247,37 +247,24 @@ export class RouteHandler {
             const jsrResolverPlugin = {
               name: "jsr-resolver",
               setup(build: esbuild.PluginBuild) {
-                // 处理子路径导入（如 chart/auto），如果父包在 external 列表中或在 import map 中，则标记为 external
+                // 处理子路径导入（如 chart/auto）
+                // 只有当父包在 external 列表中时，才将子路径标记为 external
+                // 如果父包不在 external 列表中，子路径应该被打包（即使它在 import map 中）
                 // 使用更具体的过滤器，避免与 @dreamer/dweb/client 冲突
                 build.onResolve({ filter: /^[^@./].*\/.*/ }, (args) => {
                   // 检查是否是子路径导入（包含 / 但不是相对路径，也不是 @ 开头的）
                   if (args.path.includes("/") && !args.path.startsWith(".") && !args.path.startsWith("/") && !args.path.startsWith("@")) {
-                    // 首先检查子路径本身是否在 import map 中（如 "chart/auto"）
-                    // 如果子路径本身在 import map 中，直接标记为 external
-                    if (args.path in importMap) {
-                      return {
-                        path: args.path,
-                        external: true,
-                      };
-                    }
-                    
                     // 提取父包名（如 "chart/auto" -> "chart"）
                     const parentPackage = args.path.split("/")[0];
-                    // 如果父包在 external 列表中，将子路径也标记为 external
+                    // 只有当父包在 external 列表中时，才将子路径标记为 external
+                    // 如果父包不在 external 列表中，子路径应该被打包
                     if (externalPackages.includes(parentPackage)) {
                       return {
                         path: args.path,
                         external: true,
                       };
                     }
-                    // 如果父包在 import map 中（npm/jsr/http），子路径也应该标记为 external
-                    // 因为浏览器会通过 import map 来解析，esbuild 无法打包 npm 包的子路径
-                    if (parentPackage in importMap) {
-                      return {
-                        path: args.path,
-                        external: true,
-                      };
-                    }
+                    // 如果父包不在 external 列表中，返回 undefined，让 esbuild 打包它
                   }
                   return undefined; // 让其他处理器处理
                 });
