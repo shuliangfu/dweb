@@ -656,7 +656,8 @@ async function compileFile(
 
       // 收集外部依赖（只包含 preact 和服务端依赖，其他客户端依赖会被打包）
       // 生产环境：不使用共享依赖机制（通过代码分割自动去重）
-      const externalPackages = getExternalPackages(importMap, false, false);
+      // 注意：使用与 dev 环境相同的 bundleClient 参数（true），确保 @dreamer/dweb/client 被打包
+      const externalPackages = getExternalPackages(importMap, true, false);
 
       // 创建 JSR 解析插件
       const jsrResolverPlugin = createJSRResolverPlugin(importMap, cwd, externalPackages);
@@ -676,7 +677,6 @@ async function compileFile(
           keepNames: true, // ✅ 保留导出名称（确保 load 方法名不被压缩）
           treeShaking: true, // ✅ Tree-shaking
           legalComments: "none", // ✅ 移除注释
-          drop: [], // ✅ 不移除 console，保留 console.warn 和 console.error 以便生产环境调试
           write: false, // 不写入文件，我们手动处理
           external: externalPackages, // 外部依赖不打包（保持 import 语句）
           plugins: [jsrResolverPlugin], // 添加 JSR 解析插件
@@ -754,7 +754,6 @@ async function compileFile(
           // 对于命名导入（如 import { twMerge } from "tailwind-merge"），
           // esbuild 会自动 tree-shake 掉其他未使用的导出（如 twJoin, createTailwindMerge 等）
           legalComments: "none", // ✅ 移除注释
-          drop: [], // ✅ 不移除 console，保留 console.warn 和 console.error 以便生产环境调试
           write: false, // 不写入文件，我们手动处理
           external: externalPackages, // 外部依赖不打包（保持 import 语句）
           plugins: [jsrResolverPlugin], // 添加 JSR 解析插件
@@ -877,7 +876,6 @@ async function compileWithCodeSplitting(
     // 对于命名导入（如 import { twMerge } from "tailwind-merge"），
     // esbuild 会自动 tree-shake 掉其他未使用的导出
     legalComments: "none",
-    drop: [], // ✅ 不移除 console，保留 console.warn 和 console.error 以便生产环境调试
     outdir: outDir, // 输出到目录（代码分割需要）
     outbase: cwd, // 保持目录结构
     external: externalPackages as string[], // 支持正则表达式但类型定义不完整
