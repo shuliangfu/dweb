@@ -82,91 +82,101 @@ async function cleanupTestFiles() {
   }
 }
 
-Deno.test('Integration - Rendering - Hybrid 模式渲染', async () => {
-  // 在覆盖率模式下不清理文件，以便覆盖率报告可以访问它们
-  const isCoverageMode = Deno.args.some(arg => arg.includes('--coverage'));
-  if (!isCoverageMode) {
-    await cleanupTestFiles();
-  }
-  await createHybridPage();
+Deno.test({
+  name: 'Integration - Rendering - Hybrid 模式渲染',
+  sanitizeResources: false, // 禁用资源清理检查，因为 esbuild 可能启动子进程
+  sanitizeOps: false, // 禁用操作清理检查
+  async fn() {
+    // 在覆盖率模式下不清理文件，以便覆盖率报告可以访问它们
+    const isCoverageMode = Deno.args.some(arg => arg.includes('--coverage'));
+    if (!isCoverageMode) {
+      await cleanupTestFiles();
+    }
+    await createHybridPage();
 
-  const router = new Router(testPagesDir);
-  await router.scan();
-  const routeHandler = new RouteHandler(router);
-  const server = new Server();
+    const router = new Router(testPagesDir);
+    await router.scan();
+    const routeHandler = new RouteHandler(router);
+    const server = new Server();
 
-  server.setHandler(async (req, res) => {
-    await routeHandler.handle(req, res);
-  });
+    server.setHandler(async (req, res) => {
+      await routeHandler.handle(req, res);
+    });
 
-  // 测试 Hybrid 页面渲染
-  // 注意：路由路径取决于 Router 的扫描结果
-  const req = new Request('http://localhost:3000/hybrid');
-  const res = await server.handleRequest(req);
+    // 测试 Hybrid 页面渲染
+    // 注意：路由路径取决于 Router 的扫描结果
+    const req = new Request('http://localhost:3000/hybrid');
+    const res = await server.handleRequest(req);
 
-  // 验证响应状态（可能是 200、404 或 500，取决于路由文件是否能正确加载）
-  assert(res.status === 200 || res.status === 404 || res.status === 500);
-  const html = await res.text();
-  
-  // 如果有响应体，验证内容
-  if (res.status === 200 && html.length > 0) {
-    // Hybrid 模式应该包含服务端渲染的内容或客户端脚本
-    assert(
-      html.includes('Hybrid') || 
-      html.includes('hybrid') ||
-      html.includes('__INITIAL_PROPS__') || 
-      html.includes('hydrate(') || 
-      html.includes('import(') ||
-      html.includes('<div>') ||
-      html.includes('</div>')
-    );
-  }
+    // 验证响应状态（可能是 200、404 或 500，取决于路由文件是否能正确加载）
+    assert(res.status === 200 || res.status === 404 || res.status === 500);
+    const html = await res.text();
+    
+    // 如果有响应体，验证内容
+    if (res.status === 200 && html.length > 0) {
+      // Hybrid 模式应该包含服务端渲染的内容或客户端脚本
+      assert(
+        html.includes('Hybrid') || 
+        html.includes('hybrid') ||
+        html.includes('__INITIAL_PROPS__') || 
+        html.includes('hydrate(') || 
+        html.includes('import(') ||
+        html.includes('<div>') ||
+        html.includes('</div>')
+      );
+    }
 
-  if (!isCoverageMode) {
-    await cleanupTestFiles();
+    if (!isCoverageMode) {
+      await cleanupTestFiles();
+    }
   }
 });
 
-Deno.test('Integration - Rendering - Hybrid 模式包含 hydration 脚本', async () => {
-  // 在覆盖率模式下不清理文件，以便覆盖率报告可以访问它们
-  const isCoverageMode = Deno.args.some(arg => arg.includes('--coverage'));
-  if (!isCoverageMode) {
-    await cleanupTestFiles();
-  }
-  await createHybridPage();
+Deno.test({
+  name: 'Integration - Rendering - Hybrid 模式包含 hydration 脚本',
+  sanitizeResources: false, // 禁用资源清理检查，因为 esbuild 可能启动子进程
+  sanitizeOps: false, // 禁用操作清理检查
+  async fn() {
+    // 在覆盖率模式下不清理文件，以便覆盖率报告可以访问它们
+    const isCoverageMode = Deno.args.some(arg => arg.includes('--coverage'));
+    if (!isCoverageMode) {
+      await cleanupTestFiles();
+    }
+    await createHybridPage();
 
-  const router = new Router(testPagesDir);
-  await router.scan();
-  const routeHandler = new RouteHandler(router);
-  const server = new Server();
+    const router = new Router(testPagesDir);
+    await router.scan();
+    const routeHandler = new RouteHandler(router);
+    const server = new Server();
 
-  server.setHandler(async (req, res) => {
-    await routeHandler.handle(req, res);
-  });
+    server.setHandler(async (req, res) => {
+      await routeHandler.handle(req, res);
+    });
 
-  // 测试 Hybrid 页面包含 hydration 脚本
-  // 注意：路由路径取决于 Router 的扫描结果
-  const req = new Request('http://localhost:3000/hybrid');
-  const res = await server.handleRequest(req);
+    // 测试 Hybrid 页面包含 hydration 脚本
+    // 注意：路由路径取决于 Router 的扫描结果
+    const req = new Request('http://localhost:3000/hybrid');
+    const res = await server.handleRequest(req);
 
-  // 验证响应状态（可能是 200、404 或 500，取决于路由文件是否能正确加载）
-  assert(res.status === 200 || res.status === 404 || res.status === 500);
-  const html = await res.text();
-  
-  // 如果有响应体，验证内容
-  if (res.status === 200 && html.length > 0) {
-    // Hybrid 模式应该包含 script 标签或 hydration 相关的代码
-    assert(
-      html.includes('<script') || 
-      html.includes('</script>') ||
-      html.includes('hydrate') || 
-      html.includes('__INITIAL_PROPS__') ||
-      html.includes('import(')
-    );
-  }
+    // 验证响应状态（可能是 200、404 或 500，取决于路由文件是否能正确加载）
+    assert(res.status === 200 || res.status === 404 || res.status === 500);
+    const html = await res.text();
+    
+    // 如果有响应体，验证内容
+    if (res.status === 200 && html.length > 0) {
+      // Hybrid 模式应该包含 script 标签或 hydration 相关的代码
+      assert(
+        html.includes('<script') || 
+        html.includes('</script>') ||
+        html.includes('hydrate') || 
+        html.includes('__INITIAL_PROPS__') ||
+        html.includes('import(')
+      );
+    }
 
-  if (!isCoverageMode) {
-    await cleanupTestFiles();
+    if (!isCoverageMode) {
+      await cleanupTestFiles();
+    }
   }
 });
 
