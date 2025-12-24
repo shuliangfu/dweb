@@ -216,7 +216,7 @@ export class ExtensionRegistryImpl implements ExtensionRegistry {
 /**
  * 全局扩展注册器实例
  */
-export const extensionRegistry = new ExtensionRegistryImpl();
+export const extensionRegistry: ExtensionRegistryImpl = new ExtensionRegistryImpl();
 
 /**
  * 注册扩展（便捷函数）

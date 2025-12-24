@@ -117,7 +117,7 @@ class MemoryCache {
 /**
  * 全局内存缓存实例
  */
-export const memoryCache = new MemoryCache();
+export const memoryCache: MemoryCache = new MemoryCache();
 
 /**
  * 设置缓存（便捷函数）
