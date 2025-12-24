@@ -252,6 +252,15 @@ export class RouteHandler {
                 build.onResolve({ filter: /^[^@./].*\/.*/ }, (args) => {
                   // 检查是否是子路径导入（包含 / 但不是相对路径，也不是 @ 开头的）
                   if (args.path.includes("/") && !args.path.startsWith(".") && !args.path.startsWith("/") && !args.path.startsWith("@")) {
+                    // 首先检查子路径本身是否在 import map 中（如 "chart/auto"）
+                    // 如果子路径本身在 import map 中，直接标记为 external
+                    if (args.path in importMap) {
+                      return {
+                        path: args.path,
+                        external: true,
+                      };
+                    }
+                    
                     // 提取父包名（如 "chart/auto" -> "chart"）
                     const parentPackage = args.path.split("/")[0];
                     // 如果父包在 external 列表中，将子路径也标记为 external
