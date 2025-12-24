@@ -583,11 +583,19 @@ export function toWei(value: string | number, unit: string = "ether"): string {
 
 /**
  * 验证以太坊地址格式
+ * 参考 web3.js 和 ethers.js 的实现
+ * - 检查地址格式（40 个十六进制字符）
+ * - 如果地址包含大小写混合，会进行基本的校验和检查
+ * 
+ * 注意：这是同步版本，不进行完整的校验和验证
+ * 如果需要完整的校验和验证，请使用 isAddressAsync
+ * 
  * @param address 地址字符串
  * @returns 是否为有效地址
  * 
  * @example
  * isAddress('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb') // true
+ * isAddress('0x742d35cc6634c0532925a3b844bc9e7595f0beb') // true (小写)
  * isAddress('0xinvalid') // false
  */
 export function isAddress(address: string): boolean {
@@ -608,7 +616,82 @@ export function isAddress(address: string): boolean {
 }
 
 /**
- * 转换为校验和地址（EIP-55）
+ * 异步验证以太坊地址格式（包含校验和验证）
+ * @param address 地址字符串
+ * @returns 是否为有效地址
+ * 
+ * @example
+ * await isAddressAsync('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb') // true
+ */
+export async function isAddressAsync(address: string): Promise<boolean> {
+  if (!address || typeof address !== "string") {
+    return false;
+  }
+  
+  // 尝试使用 ethers.js 的 isAddress（如果可用）
+  try {
+    const { isAddress: ethersIsAddress } = await import("npm:ethers@^6.0.0");
+    return ethersIsAddress(address);
+  } catch {
+    // ethers.js 不可用，使用自己的实现
+  }
+  
+  // 移除 0x 前缀（如果有）
+  const addr = address.startsWith("0x") ? address.slice(2) : address;
+  
+  // 检查长度（40 个十六进制字符）
+  if (addr.length !== 40) {
+    return false;
+  }
+  
+  // 检查是否为有效的十六进制字符串
+  if (!/^[0-9a-fA-F]{40}$/.test(addr)) {
+    return false;
+  }
+  
+  // 如果地址包含大小写混合，验证校验和（EIP-55）
+  const hasMixedCase = /[a-f]/.test(addr) && /[A-F]/.test(addr);
+  if (hasMixedCase) {
+    return await checkAddressChecksum(address);
+  }
+  
+  return true;
+}
+
+/**
+ * 验证地址校验和（EIP-55）
+ * @param address 地址字符串
+ * @returns 校验和是否正确
+ * 
+ * @example
+ * await checkAddressChecksum('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb') // true
+ */
+export async function checkAddressChecksum(address: string): Promise<boolean> {
+  if (!address || typeof address !== "string") {
+    return false;
+  }
+  
+  // 移除 0x 前缀并转为小写
+  const addr = address.startsWith("0x") ? address.slice(2).toLowerCase() : address.toLowerCase();
+  
+  if (addr.length !== 40 || !/^[0-9a-f]{40}$/.test(addr)) {
+    return false;
+  }
+  
+  // 使用 toChecksumAddress 计算正确的校验和地址，然后比较
+  try {
+    const checksummed = await toChecksumAddressAsync("0x" + addr);
+    return checksummed === address;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 转换为校验和地址（EIP-55）- 同步版本（简化实现）
+ * 注意：此版本使用简化实现，不进行真正的 Keccak-256 哈希
+ * 如需准确的校验和地址，请使用 toChecksumAddressAsync
+ * 
  * @param address 地址字符串
  * @returns 校验和地址
  * 
@@ -621,19 +704,48 @@ export function toChecksumAddress(address: string): string {
     throw new Error(`无效的地址: ${address}`);
   }
 
-  // 移除 0x 前缀
+  // 移除 0x 前缀并转为小写
   const addr = address.startsWith("0x") ? address.slice(2).toLowerCase() : address.toLowerCase();
   
-  // 计算 Keccak-256 哈希
-  // 注意：这里使用简化的实现，实际应该使用完整的 Keccak-256
-  // 为了简化，我们使用 SHA-256 作为替代（实际应用中应使用真正的 Keccak-256）
-  const hash = addr; // 简化实现，实际应使用 Keccak-256
+  // 注意：同步版本无法使用真正的 Keccak-256，返回小写地址
+  // 如果需要真正的校验和地址，请使用 toChecksumAddressAsync
+  return "0x" + addr;
+}
+
+/**
+ * 转换为校验和地址（EIP-55）- 异步版本（使用真正的 Keccak-256）
+ * @param address 地址字符串
+ * @returns 校验和地址
+ * 
+ * @example
+ * await toChecksumAddressAsync('0x742d35cc6634c0532925a3b844bc9e7595f0beb')
+ * // '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
+ */
+export async function toChecksumAddressAsync(address: string): Promise<string> {
+  if (!isAddress(address)) {
+    throw new Error(`无效的地址: ${address}`);
+  }
+
+  // 移除 0x 前缀并转为小写
+  const addr = address.startsWith("0x") ? address.slice(2).toLowerCase() : address.toLowerCase();
+  
+  // 尝试使用 ethers.js 的 getAddress（如果可用）
+  try {
+    const { getAddress } = await import("npm:ethers@^6.0.0");
+    return getAddress("0x" + addr);
+  } catch {
+    // ethers.js 不可用，使用自己的实现
+  }
+  
+  // 计算地址的 Keccak-256 哈希
+  const hash = await keccak256(addr);
+  const hashHex = hash.startsWith("0x") ? hash.slice(2) : hash;
   
   // 根据哈希值决定每个字符的大小写
   let checksum = "0x";
   for (let i = 0; i < addr.length; i++) {
     const char = addr[i];
-    const hashChar = hash[i];
+    const hashChar = hashHex[i];
     
     // 如果哈希字符 >= 8，则大写；否则小写
     if (parseInt(hashChar, 16) >= 8) {
