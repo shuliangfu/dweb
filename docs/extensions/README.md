@@ -122,6 +122,13 @@ await upload("/api/upload", file);
 - [缓存函数](./helpers/cache.md) - 内存缓存工具
 - [HTTP 请求库](./helpers/http.md) - 前端 HTTP 请求库（支持拦截器、重试、并发请求、文件上传/下载、进度追踪）
 - [Web3 操作库](./helpers/web3.md) - Web3 相关操作
+- [工具函数库](./helpers/utils.md) - 防抖、节流、深拷贝、对象操作等通用工具函数
+- [存储工具](./helpers/storage.md) - localStorage/sessionStorage 封装，支持过期时间
+- [URL 工具](./helpers/url.md) - URL 解析、构建、查询参数处理
+- [时间工具](./helpers/time.md) - 时间计算、转换、判断等功能
+- [数组工具](./helpers/array.md) - 数组操作补充工具函数
+- [数学工具](./helpers/math.md) - 数学计算辅助函数
+- [文件工具](./helpers/file.md) - 文件处理工具函数
 
 ### 其他
 
