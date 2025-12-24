@@ -109,7 +109,7 @@ export async function createImportMapScript(
     // 根据 import map 规范，如果父包映射存在，子路径应该能够自动解析
     // 但某些浏览器或 npm 包的实现可能不支持自动解析，所以我们需要显式添加
     // 例如：chart -> npm:chart.js@4.4.7，自动生成 chart/auto -> npm:chart.js@4.4.7/auto
-    for (const [packageName, packageUrl] of Object.entries(clientImports)) {
+    for (const [_packageName, packageUrl] of Object.entries(clientImports)) {
       // 只处理 npm:、jsr:、http: 等远程包，不处理本地路径
       if (
         packageUrl.startsWith("npm:") ||
