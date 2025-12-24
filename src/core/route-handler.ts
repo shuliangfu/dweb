@@ -754,10 +754,6 @@ export class RouteHandler {
 
   /**
    * 处理 API 路由
-   * 
-   * 根据配置中的 apiMode 选择使用 method 模式或 rest 模式处理请求。
-   * - method 模式（默认）：通过 URL 路径指定方法名，例如 /api/users/getUser
-   * - rest 模式：基于 HTTP 方法和资源路径的 RESTful API，例如 GET /api/users, POST /api/users
    */
   private async handleApiRoute(
     routeInfo: RouteInfo,
@@ -768,14 +764,8 @@ export class RouteHandler {
       // 加载 API 路由模块
       const handlers = await loadApiRoute(routeInfo.filePath);
 
-      // 获取 API 模式配置，默认为 "method"
-      // routes 可能是 string 或 RouteConfig 对象，需要类型检查
-      const apiMode = (typeof this.config?.routes === 'object' && this.config.routes?.apiMode) 
-        ? this.config.routes.apiMode 
-        : "method";
-
-      // 处理 API 请求，根据配置选择不同的处理方式
-      const result = await handleApiRoute(handlers, req.method, req, res, apiMode);
+      // 处理 API 请求
+      const result = await handleApiRoute(handlers, req.method, req, res);
 
       // 如果响应已经被设置（通过 res.text()、res.json() 等方法），直接返回
       if (res.body !== undefined) {
@@ -1423,11 +1413,11 @@ export class RouteHandler {
 // 预加载 Preact 模块到全局作用域，供客户端渲染和 HMR 使用
 (async function() {
   try {
-    // 先加载基础 Preact 模块
-    const [preactModule, jsxRuntimeModule, hooksModule] = await Promise.all([
+    const [preactModule, jsxRuntimeModule, hooksModule, ] = await Promise.all([
       import('preact'),
       import('preact/jsx-runtime'),
-      import('preact/hooks').catch(() => null) // preact/hooks 可能不存在，允许失败
+      import('preact/hooks').catch(() => null), // preact/hooks 可能不存在，允许失败
+      import('preact/signals').catch(() => null) // preact/signals 可能不存在，允许失败
     ]);
     
     globalThis.__PREACT_MODULES__ = {
@@ -1449,37 +1439,10 @@ export class RouteHandler {
         useLayoutEffect: hooksModule.useLayoutEffect
       };
     }
-    
-    // 预加载 preact/signals（确保在组件使用前完全加载，包括其依赖）
-    // 注意：组件代码中的 import('preact/signals') 会通过 import map 解析
-    // 预加载的目的是确保 signals 及其依赖在组件使用前就已经加载完成
-    try {
-      // 强制加载 preact/signals，确保其依赖（如 @preact/signals-core）也完全加载
-      const signalsModule = await import('preact/signals');
-      if (signalsModule) {
-        // 确保 signals 模块完全初始化（访问其导出以确保依赖已加载）
-        // 这确保了 signals-core 等依赖已经加载完成
-        if (signalsModule.useSignal) {
-          // 尝试访问 useSignal 以确保模块完全初始化
-          void signalsModule.useSignal;
-        }
-        globalThis.__PREACT_SIGNALS__ = signalsModule;
-        // 标记 signals 已准备就绪
-        globalThis.__PREACT_SIGNALS_READY__ = true;
-      }
-    } catch (signalsError) {
-      // preact/signals 可能不存在，标记为已检查（避免无限等待）
-      globalThis.__PREACT_SIGNALS_READY__ = false;
-      console.warn('preact/signals 预加载失败（如果未使用 signals，可忽略）:', signalsError);
-    }
   } catch (_error) {
     // 预加载失败时静默处理
     console.error('Preact 模块预加载失败:', _error);
-    // 确保标记已设置，避免客户端无限等待
-    if (globalThis.__PREACT_SIGNALS_READY__ === undefined) {
-      globalThis.__PREACT_SIGNALS_READY__ = false;
-    }
-      }
+  }
 })();
 `;
       // 压缩脚本内容
@@ -1490,6 +1453,7 @@ export class RouteHandler {
         `<script type="module" data-type="dweb-preact-preload">${minifiedContent}</script>`;
 
       // 注入到 head 中（在 import map 之后）
+      // 注意：预加载脚本会在 import map 之后执行，确保 import map 已生效
       if (fullHtml.includes("</head>")) {
         fullHtml = fullHtml.replace(
           "</head>",

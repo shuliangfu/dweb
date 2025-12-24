@@ -1420,23 +1420,6 @@ class BrowserClient {
       const hasServerContent = container.children.length > 0 ||
         container.textContent.trim() !== "";
 
-      // 等待 preact/signals 准备就绪（如果使用了 signals）
-      // 检查是否有组件使用了 signals，如果有则等待 signals 加载完成
-      let signalsReady = (globalThis as Record<string, unknown>).__PREACT_SIGNALS_READY__;
-      if (signalsReady === undefined) {
-        // 如果标记还未设置，等待最多 2 秒，确保 preact/signals 加载完成
-        let waitCount = 0;
-        const maxWait = 20; // 20 * 100ms = 2秒
-        while (signalsReady === undefined && waitCount < maxWait) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          waitCount++;
-          signalsReady = (globalThis as Record<string, unknown>).__PREACT_SIGNALS_READY__;
-          if (signalsReady !== undefined) {
-            break;
-          }
-        }
-      }
-      
       // 加载页面组件
       // 确保 route 是完整的 HTTP URL（如果是相对路径，需要转换为完整 URL）
       let routeUrl = this.config.route;

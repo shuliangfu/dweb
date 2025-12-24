@@ -8,6 +8,8 @@ import Hero from "../components/Hero.tsx";
 import CodeBlock from "../components/CodeBlock.tsx";
 import type { LoadContext, PageProps } from "@dreamer/dweb";
 import { getJsrPackageUrl, getVersionString } from "../utils.ts";
+import { useSignal } from "preact/signals";
+import { useEffect } from "preact/hooks";
 
 /**
  * 页面元数据（用于 SEO）
@@ -106,8 +108,21 @@ export const load = async ({
 export default function HomePage(
   { params: _params, query: _query, data }: PageProps,
 ) {
-  // data 就是 load 函数返回的数据
-  // 例如：data.message 就是 'Hello, World!'
+
+
+
+	const count = useSignal(0);
+	const increment = () => {
+		count.value++;
+	};
+	const decrement = () => {
+		count.value--;
+	};
+
+	useEffect(() => {
+		console.log('count', count.value);
+	}, [count]);
+
 
   const { versionString } = data as {
     versionString: string;
