@@ -109,23 +109,23 @@ export default function HomePage(
   { params: _params, query: _query, data }: PageProps,
 ) {
   // 使用 useStore hook 获取响应式状态，类似 useState(exampleStore)
-  const state = useExampleStore();
+  // const state = useExampleStore();
 
-  useEffect(() => {
-    console.log('count changed:', state.count);
-  }, [state.count]);
+  // useEffect(() => {
+  //   console.log('count changed:', state.count);
+  // }, [state.count]);
 
-  useEffect(() => {
-    // 使用 setInterval 定时调用 action
-    const interval = setInterval(() => {
-      exampleStore.increment();
-    }, 2000);
+  // useEffect(() => {
+  //   // 使用 setInterval 定时调用 action
+  //   const interval = setInterval(() => {
+  //     exampleStore.increment();
+  //   }, 2000);
 
-    // 清理函数：组件卸载时清除定时器
-    return () => {
-      clearInterval(interval);
-    };
-  }, []); // 空依赖数组，只在组件挂载时设置一次
+  //   // 清理函数：组件卸载时清除定时器
+  //   return () => {
+  //     clearInterval(interval);
+  //   };
+  // }, []); // 空依赖数组，只在组件挂载时设置一次
 
   const { versionString } = data as {
     versionString: string;
