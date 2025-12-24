@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'preact/hooks';
-import { getStoreState, setStoreState } from '@dweb/zclient.ts';
+import { getStoreState, setStoreState } from '@dreamer/dweb/client';
 
 /**
  * 用户信息类型
