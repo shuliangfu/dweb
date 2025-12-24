@@ -14,8 +14,9 @@
  */
 
 import { setDatabaseConfigLoader, initDatabase } from './access.ts';
-import { loadConfig } from '../../core/config.ts';
+import { findConfigFile } from '../../utils/file.ts';
 import type { DatabaseConfig } from './types.ts';
+import type { DWebConfig } from '../../types/index.ts';
 
 /**
  * 从配置文件初始化数据库
@@ -47,14 +48,46 @@ export async function initDatabaseFromConfig(
   if (config?.database) {
     databaseConfig = config.database;
   } else {
-    // 自动从 dweb.config.ts 加载配置
+    // 直接从 dweb.config.ts 读取配置（不使用 loadConfig，避免多应用模式下的问题）
     try {
-      const { config: loadedConfig } = await loadConfig();
+      const configPath = await findConfigFile();
+      if (!configPath) {
+        // 如果没有找到配置文件，直接返回（不报错，允许项目不使用数据库）
+        return;
+      }
+
+      // 读取配置文件
+      const originalCwd = Deno.cwd();
+      const configDir = configPath.includes("/")
+        ? configPath.substring(0, configPath.lastIndexOf("/"))
+        : originalCwd;
+
+      // 如果配置文件在子目录中，切换到该目录
+      if (configDir !== originalCwd && configDir !== ".") {
+        Deno.chdir(configDir);
+      }
+
+      // 读取配置文件（使用相对于配置目录的路径）
+      const configFileName = configPath.includes("/")
+        ? configPath.substring(configPath.lastIndexOf("/") + 1)
+        : configPath;
+      const configUrl = new URL(configFileName, `file://${Deno.cwd()}/`).href;
+      const configModule = await import(configUrl);
+
+      // 恢复工作目录
+      if (configDir !== originalCwd && configDir !== ".") {
+        Deno.chdir(originalCwd);
+      }
+
+      // 获取默认导出
+      const loadedConfig: DWebConfig = configModule.default || configModule;
+      
+      // 提取 database 配置（只能从根配置中获取）
       databaseConfig = loadedConfig.database || null;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(
-        `Failed to load database config: ${message}. Please ensure dweb.config.ts exists and contains database configuration.`,
+        `Failed to load database config from dweb.config.ts: ${message}. Please ensure dweb.config.ts exists and contains database configuration.`,
       );
     }
   }
@@ -98,14 +131,46 @@ export async function setupDatabaseConfigLoader(
   if (config?.database) {
     databaseConfig = config.database;
   } else {
-    // 自动从 dweb.config.ts 加载配置
+    // 直接从 dweb.config.ts 读取配置（不使用 loadConfig，避免多应用模式下的问题）
     try {
-      const { config: loadedConfig } = await loadConfig();
+      const configPath = await findConfigFile();
+      if (!configPath) {
+        // 如果没有找到配置文件，直接返回（不报错，允许项目不使用数据库）
+        return;
+      }
+
+      // 读取配置文件
+      const originalCwd = Deno.cwd();
+      const configDir = configPath.includes("/")
+        ? configPath.substring(0, configPath.lastIndexOf("/"))
+        : originalCwd;
+
+      // 如果配置文件在子目录中，切换到该目录
+      if (configDir !== originalCwd && configDir !== ".") {
+        Deno.chdir(configDir);
+      }
+
+      // 读取配置文件（使用相对于配置目录的路径）
+      const configFileName = configPath.includes("/")
+        ? configPath.substring(configPath.lastIndexOf("/") + 1)
+        : configPath;
+      const configUrl = new URL(configFileName, `file://${Deno.cwd()}/`).href;
+      const configModule = await import(configUrl);
+
+      // 恢复工作目录
+      if (configDir !== originalCwd && configDir !== ".") {
+        Deno.chdir(originalCwd);
+      }
+
+      // 获取默认导出
+      const loadedConfig: DWebConfig = configModule.default || configModule;
+      
+      // 提取 database 配置（只能从根配置中获取）
       databaseConfig = loadedConfig.database || null;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(
-        `Failed to load database config: ${message}. Please ensure dweb.config.ts exists and contains database configuration.`,
+        `Failed to load database config from dweb.config.ts: ${message}. Please ensure dweb.config.ts exists and contains database configuration.`,
       );
     }
   }
