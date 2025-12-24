@@ -569,7 +569,7 @@ if (isMultiApp) {
     await ensureDir(appComponentsDir);
 
     // 生成示例路由
-    await generateRoutesForApp(appRoutesDir, appName, frameworkUrl, apiMode);
+    await generateRoutesForApp(appRoutesDir, appName, frameworkUrl, apiMode, useTailwindV4);
 
     // 生成示例组件
     await generateComponentsForApp(appComponentsDir, appName);
@@ -589,7 +589,7 @@ if (isMultiApp) {
   await ensureDir(componentsDir);
 
   // 生成示例路由
-  await generateRoutesForApp(routesDir, projectName, frameworkUrl, apiMode);
+  await generateRoutesForApp(routesDir, projectName, frameworkUrl, apiMode, useTailwindV4);
 
   // 生成示例组件
   await generateComponentsForApp(componentsDir, projectName);
@@ -680,7 +680,8 @@ async function generateRoutesForApp(
   routesDir: string,
   appName: string,
   frameworkUrl: string,
-  apiMode: string
+  apiMode: string,
+  useTailwindV4: boolean
 ): Promise<void> {
   // 生成 _app.tsx（根应用组件，框架必需）
   const appContent = `/**
@@ -1038,7 +1039,7 @@ ${apiCallCode}
   return (
     <div className="space-y-0">
       {/* Hero 区域 */}
-      <div className="bg-linear-to-r from-indigo-600 to-purple-600 py-20">
+      <div className="${useTailwindV4 ? 'bg-linear-to-r' : 'bg-gradient-to-r'} from-indigo-600 to-purple-600 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
             {pageData.message}
@@ -1303,7 +1304,7 @@ export default function About() {
   return (
     <div className="space-y-0">
       {/* 页面标题 */}
-      <div className="bg-linear-to-r from-blue-600 to-indigo-600 py-16">
+      <div className="${useTailwindV4 ? 'bg-linear-to-r' : 'bg-gradient-to-r'} from-blue-600 to-indigo-600 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
             关于
