@@ -291,7 +291,27 @@ function createJSRResolverPlugin(
       });
       
       build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, (_args) => {
-        const clientImport = importMap["@dreamer/dweb/client"];
+        let clientImport = importMap["@dreamer/dweb/client"];
+        
+        // 如果没有显式配置 @dreamer/dweb/client，尝试从 @dreamer/dweb 推断
+        if (!clientImport) {
+          const mainImport = importMap["@dreamer/dweb"];
+          if (mainImport) {
+            // 从主包配置推断 client 路径
+            if (mainImport.startsWith("jsr:")) {
+              // JSR URL: jsr:@dreamer/dweb@^1.6.9 -> jsr:@dreamer/dweb@^1.6.9/client
+              clientImport = `${mainImport}/client`;
+            } else if (mainImport.includes("/mod.ts")) {
+              // 本地路径: ./src/mod.ts -> ./src/client.ts
+              clientImport = mainImport.replace("/mod.ts", "/client.ts");
+            } else if (mainImport.endsWith(".ts")) {
+              // 本地路径: ./src/mod.ts -> ./src/client.ts
+              const basePath = mainImport.substring(0, mainImport.lastIndexOf("/"));
+              clientImport = `${basePath}/client.ts`;
+            }
+          }
+        }
+        
         if (!clientImport) {
           return undefined; // 让 esbuild 使用默认解析
         }
