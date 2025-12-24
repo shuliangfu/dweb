@@ -1639,40 +1639,44 @@ async function buildApp(config: AppConfig): Promise<void> {
   }
 
   // 4. 编译组件文件（组件通常只需要客户端版本，但为了兼容性也生成服务端版本）
-  try {
-    if (
-      await Deno.stat("components")
-        .then(() => true)
-        .catch(() => false)
-    ) {
-      // 编译组件到 server 目录
-      await compileDirectory(
-        "components",
-        serverOutDir,
-        fileMap,
-        [".ts", ".tsx"],
-        useCache,
-        true,
-        codeSplitting,
-        minChunkSize,
-        "server",
-      );
-      // 编译组件到 client 目录
-      await compileDirectory(
-        "components",
-        clientOutDir,
-        fileMap,
-        [".ts", ".tsx"],
-        useCache,
-        true,
-        codeSplitting,
-        minChunkSize,
-        "client",
-      );
-      console.log("✅ 编译组件文件完成 (components) - server 和 client 版本");
+  // 支持编译 components 和 common 目录（多应用项目可能使用 common 目录共享组件）
+  const componentDirs = ["components", "common"];
+  for (const componentDir of componentDirs) {
+    try {
+      if (
+        await Deno.stat(componentDir)
+          .then(() => true)
+          .catch(() => false)
+      ) {
+        // 编译组件到 server 目录
+        await compileDirectory(
+          componentDir,
+          serverOutDir,
+          fileMap,
+          [".ts", ".tsx"],
+          useCache,
+          true,
+          codeSplitting,
+          minChunkSize,
+          "server",
+        );
+        // 编译组件到 client 目录
+        await compileDirectory(
+          componentDir,
+          clientOutDir,
+          fileMap,
+          [".ts", ".tsx"],
+          useCache,
+          true,
+          codeSplitting,
+          minChunkSize,
+          "client",
+        );
+        console.log(`✅ 编译组件文件完成 (${componentDir}) - server 和 client 版本`);
+      }
+    } catch (error) {
+      console.warn(`⚠️  组件目录编译失败 (${componentDir})`, error);
     }
-  } catch (error) {
-    console.warn("⚠️  组件目录编译失败", error);
   }
 
   // 4. 配置文件不再复制到构建输出目录
