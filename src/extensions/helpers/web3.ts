@@ -581,39 +581,6 @@ export function toWei(value: string | number, unit: string = "ether"): string {
   return result.toString();
 }
 
-/**
- * 验证以太坊地址格式
- * 参考 web3.js 和 ethers.js 的实现
- * - 检查地址格式（40 个十六进制字符）
- * - 如果地址包含大小写混合，会进行基本的校验和检查
- * 
- * 注意：这是同步版本，不进行完整的校验和验证
- * 如果需要完整的校验和验证，请使用 isAddressAsync
- * 
- * @param address 地址字符串
- * @returns 是否为有效地址
- * 
- * @example
- * isAddress('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb') // true
- * isAddress('0x742d35cc6634c0532925a3b844bc9e7595f0beb') // true (小写)
- * isAddress('0xinvalid') // false
- */
-export function isAddress(address: string): boolean {
-  if (!address || typeof address !== "string") {
-    return false;
-  }
-  
-  // 移除 0x 前缀（如果有）
-  const addr = address.startsWith("0x") ? address.slice(2) : address;
-  
-  // 检查长度（40 个十六进制字符）
-  if (addr.length !== 40) {
-    return false;
-  }
-  
-  // 检查是否为有效的十六进制字符串
-  return /^[0-9a-fA-F]{40}$/.test(addr);
-}
 
 /**
  * 异步验证以太坊地址格式（包含校验和验证）
@@ -623,7 +590,7 @@ export function isAddress(address: string): boolean {
  * @example
  * await isAddressAsync('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb') // true
  */
-export async function isAddressAsync(address: string): Promise<boolean> {
+export async function isAddress(address: string): Promise<boolean> {
   if (!address || typeof address !== "string") {
     return false;
   }

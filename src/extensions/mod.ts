@@ -5,46 +5,53 @@
 
 // 导出类型定义
 export type {
-  Extension,
-  ExtensionType,
-  ExtensionTarget,
-  ExtensionRegistry,
-  StringExtensions,
   ArrayExtensions,
   DateExtensions,
+  Extension,
+  ExtensionRegistry,
+  ExtensionTarget,
+  ExtensionType,
   ObjectExtensions,
-} from './types.ts';
+  StringExtensions,
+} from "./types.ts";
 
 // 导出注册器
 export {
-  ExtensionRegistryImpl,
+  disableExtension,
+  enableExtension,
   extensionRegistry,
-  registerExtension,
+  ExtensionRegistryImpl,
   getExtension,
   hasExtension,
+  registerExtension,
   removeExtension,
-  enableExtension,
-  disableExtension,
-} from './registry.ts';
+} from "./registry.ts";
 
 // 导入并导出内置扩展初始化函数
-import { initStringExtensions } from './builtin/string.ts';
-import { initArrayExtensions } from './builtin/array.ts';
-import { initDateExtensions } from './builtin/date.ts';
-import { initObjectExtensions } from './builtin/object.ts';
-import { initRequestExtensions } from './builtin/request.ts';
+import { initStringExtensions } from "./builtin/string.ts";
+import { initArrayExtensions } from "./builtin/array.ts";
+import { initDateExtensions } from "./builtin/date.ts";
+import { initObjectExtensions } from "./builtin/object.ts";
+import { initRequestExtensions } from "./builtin/request.ts";
 
-export { initStringExtensions, initArrayExtensions, initDateExtensions, initObjectExtensions, initRequestExtensions };
+export {
+  initArrayExtensions,
+  initDateExtensions,
+  initObjectExtensions,
+  initRequestExtensions,
+  initStringExtensions,
+};
 
 // 导出辅助函数
-export * from './helpers/validation.ts';
-export * from './helpers/format.ts';
-export * from './helpers/crypto.ts';
-export * from './helpers/cache.ts';
-export * from './helpers/web3.ts';
+export * from "./helpers/validation.ts";
+export * from "./helpers/format.ts";
+export * from "./helpers/crypto.ts";
+export * from "./helpers/cache.ts";
+export * from "./helpers/http.ts";
+export * as web3 from "./helpers/web3.ts";
 
 // 导出用户扩展示例（可选）
-export * from './user/index.ts';
+export * from "./user/index.ts";
 
 /**
  * 初始化所有内置扩展
@@ -70,7 +77,7 @@ export function setupExtensions(initUserExtensions: boolean = false): void {
   // 可选：初始化用户扩展
   if (initUserExtensions) {
     // 动态导入用户扩展（如果存在）
-    import('./user/index.ts')
+    import("./user/index.ts")
       .then((module) => {
         if (module.initUserExtensions) {
           module.initUserExtensions();
@@ -81,4 +88,3 @@ export function setupExtensions(initUserExtensions: boolean = false): void {
       });
   }
 }
-
