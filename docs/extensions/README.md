@@ -69,7 +69,15 @@ user.omit(['id']); // { name: 'Alice', email: 'alice@example.com' }
 辅助函数可以直接导入使用，无需初始化：
 
 ```typescript
-import { validateEmail, formatCurrency, sha256, setCache } from "@dreamer/dweb/extensions";
+import { 
+  validateEmail, 
+  formatCurrency, 
+  sha256, 
+  setCache,
+  http,
+  all,
+  upload,
+} from "@dreamer/dweb/extensions";
 
 // 验证函数
 validateEmail("test@example.com"); // true
@@ -82,6 +90,18 @@ const hash = await sha256("hello world");
 
 // 缓存函数
 setCache("key", "value", 3600); // 缓存1小时
+
+// HTTP 请求
+const users = await http.get("/api/users");
+
+// 并发请求
+const [users, posts] = await all([
+  http.get("/api/users"),
+  http.get("/api/posts"),
+]);
+
+// 文件上传
+await upload("/api/upload", file);
 ```
 
 ## 文档导航
