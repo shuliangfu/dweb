@@ -49,6 +49,11 @@ export * from "./helpers/crypto.ts";
 export * from "./helpers/cache.ts";
 export * from "./helpers/http.ts";
 export * from "./helpers/web3.ts";
+export * from "./helpers/utils.ts";
+export * from "./helpers/storage.ts";
+export * from "./helpers/url.ts";
+export * from "./helpers/time.ts";
+export * from "./helpers/array.ts";
 
 // 导出用户扩展示例（可选）
 export * from "./user/index.ts";
