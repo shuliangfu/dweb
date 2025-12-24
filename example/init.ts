@@ -1956,6 +1956,25 @@ if (isMultiApp) {
 
   await Deno.writeTextFile(path.join(assetsDir, 'tailwind.css'), styleContent);
   console.log(`✅ 已创建: assets/tailwind.css`);
+  
+  // Tailwind CSS v3 需要配置文件
+  if (!useTailwindV4) {
+    const tailwindConfigContent = `/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    './routes/**/*.{tsx,ts,jsx,js}',
+    './components/**/*.{tsx,ts,jsx,js}',
+    './common/**/*.{tsx,ts,jsx,js}',
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+`;
+    await Deno.writeTextFile(path.join(projectDir, 'tailwind.config.ts'), tailwindConfigContent);
+    console.log(`✅ 已创建: tailwind.config.ts`);
+  }
 }
 
 // 生成 main.ts

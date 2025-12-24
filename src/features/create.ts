@@ -2223,6 +2223,29 @@ async function generateStaticFiles(
       const appRoutesDir = path.join(projectDir, appName, 'routes');
       await ensureDir(appRoutesDir);
     }
+    
+    // Tailwind CSS v3 需要配置文件（多应用模式：所有应用共享一个配置文件）
+    if (!useTailwindV4) {
+      const contentPaths = appNames.flatMap(appName => [
+        `    './${appName}/routes/**/*.{tsx,ts,jsx,js}'`,
+        `    './${appName}/components/**/*.{tsx,ts,jsx,js}'`,
+      ]);
+      contentPaths.push(`    './common/**/*.{tsx,ts,jsx,js}'`);
+      
+      const tailwindConfigContent = `/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+${contentPaths.join(',\n')}
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+`;
+      await Deno.writeTextFile(path.join(projectDir, 'tailwind.config.ts'), tailwindConfigContent);
+      console.log(`✅ 已创建: tailwind.config.ts`);
+    }
   } else {
     // 单应用模式：在项目根目录创建
   const assetsDir = path.join(projectDir, 'assets');
@@ -2250,6 +2273,25 @@ async function generateStaticFiles(
 
   await Deno.writeTextFile(path.join(assetsDir, 'tailwind.css'), styleContent);
   console.log(`✅ 已创建: assets/tailwind.css`);
+  
+  // Tailwind CSS v3 需要配置文件
+  if (!useTailwindV4) {
+    const tailwindConfigContent = `/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    './routes/**/*.{tsx,ts,jsx,js}',
+    './components/**/*.{tsx,ts,jsx,js}',
+    './common/**/*.{tsx,ts,jsx,js}',
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+`;
+    await Deno.writeTextFile(path.join(projectDir, 'tailwind.config.ts'), tailwindConfigContent);
+    console.log(`✅ 已创建: tailwind.config.ts`);
+  }
   }
 }
 
