@@ -124,14 +124,14 @@ export function isSharedClientDependency(packageName: string): boolean {
  * @param importMap import map 配置
  * @param bundleClient 是否打包客户端依赖（默认 false，表示客户端依赖保持 external）
  * @param useSharedDeps 是否使用共享依赖机制（默认 false，开发环境可启用）
- * @returns 外部依赖包名数组
+ * @returns 外部依赖包名数组或正则表达式数组（包含子路径模式，如 "chart" 和 /^chart\//）
  */
 export function getExternalPackages(
   importMap: Record<string, string>,
   bundleClient: boolean = false,
   useSharedDeps: boolean = false,
-): string[] {
-  const externalPackages: string[] = [
+): (string | RegExp)[] {
+  const externalPackages: (string | RegExp)[] = [
     "@dreamer/dweb",
     "preact",
     "preact-render-to-string",
@@ -149,12 +149,24 @@ export function getExternalPackages(
     // 如果依赖不应该被打包，则添加到 external 列表
     if (!shouldBundleDependency(key, value)) {
       externalPackages.push(key);
+      // 对于 npm 包，同时添加子路径正则表达式（如 /^chart\//），以支持子路径导入（如 "chart/auto"）
+      // esbuild 的 external 选项支持正则表达式，可以匹配所有以 "chart/" 开头的导入
+      if (value.startsWith("npm:") || value.startsWith("jsr:") || value.startsWith("http")) {
+        // 转义特殊字符，确保正则表达式正确匹配
+        const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        externalPackages.push(new RegExp(`^${escapedKey}/`));
+      }
       continue;
     }
     
     // 如果使用共享依赖机制，将共享依赖也标记为 external
     if (useSharedDeps && isSharedClientDependency(key)) {
       externalPackages.push(key);
+      // 对于共享依赖，也添加子路径正则表达式
+      if (value.startsWith("npm:") || value.startsWith("jsr:") || value.startsWith("http")) {
+        const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        externalPackages.push(new RegExp(`^${escapedKey}/`));
+      }
     }
   }
   
