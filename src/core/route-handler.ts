@@ -266,7 +266,12 @@ export class RouteHandler {
                 });
 
                 // 处理 @ 开头的子路径导入（如 @scope/package/subpath）
+                // 排除 @dreamer/dweb/client，因为它有专门的处理逻辑
                 build.onResolve({ filter: /^@[^/]+\/[^/]+\/.+/ }, (args) => {
+                  // 排除 @dreamer/dweb/client，它有专门的处理逻辑
+                  if (args.path === "@dreamer/dweb/client") {
+                    return undefined;
+                  }
                   // 提取父包名（如 "@scope/package/subpath" -> "@scope/package"）
                   const parts = args.path.split("/");
                   if (parts.length >= 3) {
