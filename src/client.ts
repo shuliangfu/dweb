@@ -40,7 +40,7 @@ export {
 } from './plugins/theme/client.ts';
 
 // 导出主题 Store 实例和类型（方便外部直接访问）
-export { themeStore } from './plugins/theme/store.ts';
+export { themeStore, useThemeStore } from './plugins/theme/store.ts';
 export type { ThemeStoreState } from './plugins/theme/store.ts';
 
 // 导出类型（这些只是类型，不会在运行时导入任何代码）

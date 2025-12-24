@@ -8,7 +8,8 @@ import { defineStore, useStore } from "@dreamer/dweb/client";
 export interface ExampleStoreState extends Record<string, unknown> {
   count: number;
   message: string;
-  items: string[];
+	items: string[];
+	isLoading: boolean;
 }
 
 /**
@@ -21,6 +22,7 @@ export const exampleStore = defineStore("example", {
     count: 0,
     message: "",
     items: [] as string[],
+    isLoading: false,
   }),
   actions: {
     // 在 actions 中，可以直接通过 this.xxx 访问和修改状态
@@ -39,7 +41,10 @@ export const exampleStore = defineStore("example", {
     },
     removeItem(index: number) {
       this.items = this.items.filter((_item: string, i: number) => i !== index);
-    },
+		},
+		toggleIsLoading() {
+			this.isLoading = !this.isLoading;
+		},
   },
 });
 

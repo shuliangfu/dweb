@@ -10,6 +10,7 @@ import type { LoadContext, PageProps } from "@dreamer/dweb";
 import { getJsrPackageUrl, getVersionString } from "../utils.ts";
 import { useExampleStore } from "../stores/example.ts";
 import { useEffect } from "preact/hooks";
+import { useThemeStore } from "@dreamer/dweb/client";
 
 /**
  * 页面元数据（用于 SEO）
@@ -109,16 +110,22 @@ export default function HomePage(
   { params: _params, query: _query, data }: PageProps,
 ) {
   // 使用 useStore hook 获取响应式状态，类似 useState(exampleStore)
-  // const state = useExampleStore();
+	const state = useExampleStore();
+	const themeState = useThemeStore();
 
-  // useEffect(() => {
-  //   console.log('count changed:', state.count);
-  // }, [state.count]);
+  useEffect(() => {
+		console.log({ 
+			count: state.count,
+			isLoading: state.isLoading,
+			theme: themeState.value
+		});
+  }, [state.count, state.isLoading, themeState.value]);
 
   // useEffect(() => {
   //   // 使用 setInterval 定时调用 action
   //   const interval = setInterval(() => {
   //     state.increment();
+	// 		state.toggleIsLoading();
   //   }, 2000);
 
   //   // 清理函数：组件卸载时清除定时器

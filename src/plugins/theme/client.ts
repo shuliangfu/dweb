@@ -7,6 +7,7 @@ import type { ThemeMode } from "./types.ts";
 import { themeStore } from "./store.ts";
 import type { StoreInstance } from "../../plugins/store/define-store.ts";
 import type { ThemeStoreState } from "./store.ts";
+import { useThemeStore } from "./store.ts";
 
 /**
  * 主题管理器接口
@@ -107,8 +108,9 @@ export function setTheme(theme: ThemeMode): void {
     setTheme?: (theme: ThemeMode) => void;
   };
 
-  if (win.setTheme && typeof win.setTheme === "function") {
+	if (win.setTheme && typeof win.setTheme === "function") {
     win.setTheme(theme);
+		useThemeStore().setValue(theme as "light" | "dark");
   } else {
     console.warn("[Theme Client] 无法设置主题：主题系统未初始化");
   }

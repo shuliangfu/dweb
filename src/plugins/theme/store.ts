@@ -3,7 +3,7 @@
  * 使用 defineStore 定义，提供类型安全的主题状态管理
  */
 
-import { defineStore, type StoreInstance } from "../../plugins/store/define-store.ts";
+import { defineStore, useStore, type StoreInstance } from "../../plugins/store/define-store.ts";
 
 /**
  * 主题 Store 状态类型
@@ -57,3 +57,7 @@ export const themeStore: ThemeStore = defineStore("theme", {
   },
 });
 
+
+export const useThemeStore = () => {
+  return useStore(themeStore) as ThemeStore;
+};
