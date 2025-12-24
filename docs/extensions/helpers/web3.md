@@ -1,8 +1,10 @@
-### Web3 操作库
+# Web3 操作库
 
 提供 Web3 相关的操作功能，如钱包连接、合约交互、交易处理等。支持浏览器钱包（如 MetaMask）和服务端操作。
 
-#### 快速开始
+**环境兼容性：** 客户端/服务端混合使用（钱包连接、签名等功能需要在浏览器环境使用，RPC 调用、合约交互等功能可以在服务端使用）
+
+## 快速开始
 
 ```typescript
 import { createWeb3Client } from "@dreamer/dweb/extensions";
