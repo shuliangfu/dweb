@@ -754,6 +754,10 @@ export class RouteHandler {
 
   /**
    * 处理 API 路由
+   * 
+   * 根据配置中的 apiMode 选择使用 method 模式或 rest 模式处理请求。
+   * - method 模式（默认）：通过 URL 路径指定方法名，例如 /api/users/getUser
+   * - rest 模式：基于 HTTP 方法和资源路径的 RESTful API，例如 GET /api/users, POST /api/users
    */
   private async handleApiRoute(
     routeInfo: RouteInfo,
@@ -764,8 +768,14 @@ export class RouteHandler {
       // 加载 API 路由模块
       const handlers = await loadApiRoute(routeInfo.filePath);
 
-      // 处理 API 请求
-      const result = await handleApiRoute(handlers, req.method, req, res);
+      // 获取 API 模式配置，默认为 "method"
+      // routes 可能是 string 或 RouteConfig 对象，需要类型检查
+      const apiMode = (typeof this.config?.routes === 'object' && this.config.routes?.apiMode) 
+        ? this.config.routes.apiMode 
+        : "method";
+
+      // 处理 API 请求，根据配置选择不同的处理方式
+      const result = await handleApiRoute(handlers, req.method, req, res, apiMode);
 
       // 如果响应已经被设置（通过 res.text()、res.json() 等方法），直接返回
       if (res.body !== undefined) {
@@ -1416,7 +1426,6 @@ export class RouteHandler {
     const [preactModule, jsxRuntimeModule, hooksModule] = await Promise.all([
       import('preact'),
       import('preact/jsx-runtime'),
-      import('preact-router').catch(() => null), // preact-router 可能不存在，允许失败
       import('preact/hooks').catch(() => null) // preact/hooks 可能不存在，允许失败
     ]);
     

@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "1.5.7",
+  "version": "1.5.8",
   "license": "MIT",
   "exports": {
     ".": "./src/mod.ts",
@@ -34,6 +34,7 @@
     "@std/fs": "jsr:@std/fs@^1.0.2",
     "preact": "https://esm.sh/preact@latest",
     "preact/hooks": "https://esm.sh/preact@latest/hooks",
+    "preact/signals": "https://esm.sh/@preact/signals@^2.5.0",
     "preact/jsx-runtime": "https://esm.sh/preact@latest/jsx-runtime",
     "preact-render-to-string": "npm:preact-render-to-string@6.2.2",
     "@std/path": "jsr:@std/path@^1.1.3",

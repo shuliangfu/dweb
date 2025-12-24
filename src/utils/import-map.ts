@@ -59,6 +59,10 @@ export async function createImportMapScript(): Promise<string | null> {
     if (imports["preact/hooks"]) {
       clientImports["preact/hooks"] = imports["preact/hooks"];
     }
+    // 添加 preact/signals 支持（如果存在）
+    if (imports["preact/signals"]) {
+      clientImports["preact/signals"] = imports["preact/signals"];
+    }
     // 添加 preact-router 支持（如果存在）
     if (imports["preact-router"]) {
       clientImports["preact-router"] = imports["preact-router"];

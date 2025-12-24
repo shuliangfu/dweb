@@ -102,7 +102,7 @@ export async function loadConfig(
           // 合并 static：优先使用应用配置，否则使用顶层配置
           static: matchedApp.static || config.static,
           // 合并 prefetch：优先使用应用配置，否则使用顶层配置
-          prefetch: matchedApp.prefetch || config.prefetch,
+					prefetch: matchedApp.prefetch || config.prefetch
         };
         // 验证合并后的单应用配置
         validateConfig(mergedConfig);

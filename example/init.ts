@@ -64,17 +64,139 @@ async function select(
   });
   const defaultPrompt = defaultIndex >= 0 ? ` [默认: ${defaultIndex + 1}]` : '';
   const answer = await prompt(`请选择 (1-${options.length})${defaultPrompt}: `);
-
+  
   // 如果用户直接回车，使用默认值
   if (!answer || answer.trim() === '') {
     return options[defaultIndex];
   }
-
+  
   const index = parseInt(answer) - 1;
   if (index >= 0 && index < options.length) {
     return options[index];
   }
   throw new Error(`无效的选择: ${answer}`);
+}
+
+/**
+ * 交互式菜单选择（支持上下键导航）
+ * @param message 提示信息
+ * @param options 选项列表
+ * @param defaultValue 默认选项索引
+ * @returns 选中的选项索引
+ */
+async function interactiveSelect(
+  message: string,
+  options: string[],
+  defaultValue = 0
+): Promise<number> {
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  let selectedIndex = defaultValue;
+
+  // 显示菜单
+  const renderMenu = () => {
+    // 清除屏幕并移动光标到顶部
+    Deno.stdout.writeSync(encoder.encode("\x1b[2J\x1b[H"));
+    
+    // 显示标题
+    console.log(`${message}\n`);
+    
+    // 显示选项
+    options.forEach((option, index) => {
+      if (index === selectedIndex) {
+        // 选中的选项：高亮显示
+        console.log(`  ▶ ${option}`);
+      } else {
+        // 未选中的选项：普通显示
+        console.log(`    ${option}`);
+      }
+    });
+    
+    console.log(`\n使用 ↑↓ 键选择，Enter 确认`);
+  };
+
+  // 尝试使用原始模式
+  try {
+    // 隐藏光标
+    Deno.stdout.writeSync(encoder.encode("\x1b[?25l"));
+    
+    // 启用原始模式
+    const stdin = Deno.stdin;
+    const isRaw = Deno.stdin.setRaw !== undefined;
+    
+    if (isRaw) {
+      Deno.stdin.setRaw(true, { cbreak: true });
+    }
+    
+    renderMenu();
+
+    while (true) {
+      const buf = new Uint8Array(10);
+      const n = await stdin.read(buf);
+      
+      if (n === null || n === 0) {
+        continue;
+      }
+
+      const bytes = buf.subarray(0, n);
+      
+      // 处理方向键（ANSI 转义序列）
+      // 上箭头: \x1b[A 或 \x1bOA
+      // 下箭头: \x1b[B 或 \x1bOB
+      if (bytes[0] === 0x1b && bytes[1] === 0x5b) {
+        if (bytes[2] === 0x41) {
+          // 上箭头
+          selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : options.length - 1;
+          renderMenu();
+        } else if (bytes[2] === 0x42) {
+          // 下箭头
+          selectedIndex = selectedIndex < options.length - 1 ? selectedIndex + 1 : 0;
+          renderMenu();
+        }
+      } else if (bytes[0] === 0x0d || bytes[0] === 0x0a) {
+        // Enter 键
+        break;
+      } else if (bytes[0] === 0x1b || bytes[0] === 0x03) {
+        // Esc 或 Ctrl+C
+        // 恢复终端
+        Deno.stdout.writeSync(encoder.encode("\x1b[?25h"));
+        if (isRaw) {
+          Deno.stdin.setRaw(false);
+        }
+        Deno.exit(0);
+      }
+    }
+    
+    // 恢复终端
+    Deno.stdout.writeSync(encoder.encode("\x1b[?25h"));
+    if (isRaw) {
+      Deno.stdin.setRaw(false);
+    }
+    
+    // 清屏
+    Deno.stdout.writeSync(encoder.encode("\x1b[2J\x1b[H"));
+    
+    return selectedIndex;
+  } catch (_err) {
+    // 如果原始模式不支持，回退到普通选择
+    console.log(message);
+    options.forEach((option, index) => {
+      const defaultMark = index === defaultValue ? ' (默认)' : '';
+      console.log(`  ${index + 1}. ${option}${defaultMark}`);
+    });
+    const defaultPrompt = defaultValue >= 0 ? ` [默认: ${defaultValue + 1}]` : '';
+    const answer = await prompt(`请选择 (1-${options.length})${defaultPrompt}: `);
+    
+    if (!answer || answer.trim() === '') {
+      return defaultValue;
+    }
+    
+    const index = parseInt(answer) - 1;
+    if (index >= 0 && index < options.length) {
+      return index;
+    }
+    return defaultValue;
+  }
 }
 
 // 获取项目名称（从命令行参数或交互式输入）
@@ -153,13 +275,23 @@ const tailwindVersion = await select(
 const useTailwindV4 = tailwindVersion === 'V4 (推荐)';
 
 // 交互式选择：渲染模式（默认 hybrid）
-const renderMode = await select(
+const renderModeIndex = await interactiveSelect(
   '\n请选择渲染模式:',
   ['SSR (服务端渲染)', 'CSR (客户端渲染)', 'Hybrid (混合渲染)'],
   2 // 默认选择第三个（Hybrid）
 );
+const renderMode = ['SSR (服务端渲染)', 'CSR (客户端渲染)', 'Hybrid (混合渲染)'][renderModeIndex];
 const renderModeValue =
   renderMode === 'SSR (服务端渲染)' ? 'ssr' : renderMode === 'CSR (客户端渲染)' ? 'csr' : 'hybrid';
+
+// 交互式选择：API 路由模式（默认 method）
+const apiModeIndex = await interactiveSelect(
+  '\n请选择 API 路由模式:',
+  ['Method (方法路由，默认使用中划线格式，例如 /api/users/get-user)', 'REST (RESTful API，基于 HTTP 方法，例如 GET /api/users)'],
+  0 // 默认选择第一个（Method）
+);
+const apiMode = apiModeIndex === 0 ? 'method' : 'rest';
+const apiModeDisplay = apiModeIndex === 0 ? 'Method (方法路由)' : 'REST (RESTful API)';
 
 console.log(`\n📦 正在创建项目: ${projectName}`);
 console.log(`📁 项目目录: ${projectDir}`);
@@ -167,7 +299,8 @@ if (isMultiApp) {
   console.log(`📦 应用列表: ${appNames.join(', ')}`);
 }
 console.log(`🎨 Tailwind CSS: ${tailwindVersion}`);
-console.log(`🎭 渲染模式: ${renderMode}\n`);
+console.log(`🎭 渲染模式: ${renderMode}`);
+console.log(`🔌 API 模式: ${apiModeDisplay}\n`);
 
 // 获取框架版本并构建 JSR URL
 const version = await getFrameworkVersion();
@@ -199,7 +332,9 @@ if (isMultiApp) {
       },
       routes: {
         dir: '${appName}/routes',
-        ignore: ['**/*.test.ts', '**/*.test.tsx']
+        ignore: ['**/*.test.ts', '**/*.test.tsx'],
+        // API 路由模式：'method'（方法路由，默认使用中划线格式，例如 /api/users/get-user）或 'rest'（RESTful API，基于 HTTP 方法，例如 GET /api/users）
+        apiMode: '${apiMode}'
       },
       static: {
         dir: '${appName}/assets',
@@ -296,7 +431,9 @@ const config: AppConfig = {
   // 路由配置
   routes: {
     dir: 'routes',
-    ignore: ['**/*.test.ts', '**/*.test.tsx']
+    ignore: ['**/*.test.ts', '**/*.test.tsx'],
+    // API 路由模式：'method'（方法路由，默认使用中划线格式，例如 /api/users/get-user）或 'rest'（RESTful API，基于 HTTP 方法，例如 GET /api/users）
+    apiMode: '${apiMode}'
   },
   
   // 静态资源目录，默认为 'assets'
@@ -397,7 +534,8 @@ ${
     }",
     "preact": "https://esm.sh/preact@latest",
     "preact/hooks": "https://esm.sh/preact@latest/hooks",
-    "preact/jsx-runtime": "https://esm.sh/preact@latest/jsx-runtime"${
+    "preact/jsx-runtime": "https://esm.sh/preact@latest/jsx-runtime",
+    "preact/signals": "https://esm.sh/@preact/signals@^2.5.0"${
       useTailwindV4
         ? `,
     "tailwindcss": "npm:tailwindcss@^4.1.10",
@@ -430,13 +568,13 @@ if (isMultiApp) {
     await ensureDir(appComponentsDir);
 
     // 生成示例路由
-    await generateRoutesForApp(appRoutesDir, appName, frameworkUrl);
+    await generateRoutesForApp(appRoutesDir, appName, frameworkUrl, apiMode);
 
     // 生成示例组件
     await generateComponentsForApp(appComponentsDir, appName);
 
     // 生成示例 API
-    await generateApiForApp(appRoutesDir, appName, frameworkUrl);
+    await generateApiForApp(appRoutesDir, appName, frameworkUrl, apiMode);
   }
 
   // 为多应用项目创建 common 目录结构
@@ -450,13 +588,13 @@ if (isMultiApp) {
   await ensureDir(componentsDir);
 
   // 生成示例路由
-  await generateRoutesForApp(routesDir, projectName, frameworkUrl);
+  await generateRoutesForApp(routesDir, projectName, frameworkUrl, apiMode);
 
   // 生成示例组件
   await generateComponentsForApp(componentsDir, projectName);
 
   // 生成示例 API
-  await generateApiForApp(routesDir, projectName, frameworkUrl);
+  await generateApiForApp(routesDir, projectName, frameworkUrl, apiMode);
 }
 
 // 生成 stores 目录和示例
@@ -540,7 +678,8 @@ export const exampleStore = defineStore('example', {
 async function generateRoutesForApp(
   routesDir: string,
   appName: string,
-  frameworkUrl: string
+  frameworkUrl: string,
+  apiMode: string
 ): Promise<void> {
   // 生成 _app.tsx（根应用组件，框架必需）
   const appContent = `/**
@@ -705,6 +844,23 @@ export default function RootLayout({ children }: { children: ComponentChildren }
   console.log(`✅ 已创建: ${routesDir}/_layout.tsx`);
 
   // 生成 index.tsx（美化后的首页）
+  // 根据 apiMode 生成不同的 API 调用代码
+  const apiCallCode = apiMode === 'rest' 
+    ? `      // RESTful 模式：使用 GET 方法获取列表
+      const response = await fetch('/api/examples', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });`
+    : `      // Method 模式：使用 POST 方法，通过 URL 路径指定方法名（中划线格式）
+      const response = await fetch('/api/examples/get-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });`;
+  
   const indexContent = `/**
  * 首页
  * 展示应用的基本信息和快速开始指南
@@ -830,12 +986,7 @@ export default function Home({ params: _params, query: _query, data }: PageProps
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/test/getData', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+${apiCallCode}
       if (!response.ok) {
         throw new Error(\`请求失败: \${response.status}\`);
       }
@@ -1381,23 +1532,148 @@ export default function Button({
 async function generateApiForApp(
   routesDir: string,
   _appName: string,
-  frameworkUrl: string
+  frameworkUrl: string,
+  apiMode: string
 ): Promise<void> {
   const apiDir = path.join(routesDir, 'api');
   await ensureDir(apiDir);
 
-  // 生成示例 API test.ts
-  const apiContent = `/**
- * 示例 API 路由
- * 通过 URL 路径指定方法名，支持驼峰格式和短横线格式
- * 例如：POST /api/test/getUser 或 POST /api/test/get-user
+  // 根据 apiMode 生成不同的 API 文件
+  let apiContent: string;
+  
+  if (apiMode === 'rest') {
+    // RESTful 模式：生成 RESTful API
+    apiContent = `/**
+ * 示例 RESTful API 路由
+ * 基于 HTTP 方法和资源路径
+ * 
+ * 路由映射：
+ * - GET /api/examples -> index (获取列表)
+ * - GET /api/examples/:id -> show (获取单个)
+ * - POST /api/examples -> create (创建)
+ * - PUT /api/examples/:id -> update (更新)
+ * - DELETE /api/examples/:id -> destroy (删除)
+ */
+
+import type { Request } from '${frameworkUrl}';
+
+/**
+ * 获取示例列表
+ * 访问方式：GET /api/examples
+ */
+export function index(_req: Request) {
+  return {
+    success: true,
+    message: '获取数据成功',
+    data: [
+      {
+        id: 1,
+        name: '示例项目 1',
+        description: '这是第一个示例项目，展示了如何使用 DWeb 框架构建 Web 应用',
+        createdAt: new Date(Date.now() - 86400000).toISOString() // 1天前
+      },
+      {
+        id: 2,
+        name: '示例项目 2',
+        description: '这是第二个示例项目，演示了 API 接口的调用和数据展示',
+        createdAt: new Date(Date.now() - 43200000).toISOString() // 12小时前
+      },
+      {
+        id: 3,
+        name: '示例项目 3',
+        description: '这是第三个示例项目，展示了前端交互和状态管理的实现',
+        createdAt: new Date().toISOString() // 现在
+      }
+    ],
+    timestamp: new Date().toISOString()
+  };
+}
+
+/**
+ * 获取单个示例
+ * 访问方式：GET /api/examples/:id
+ */
+export function show(req: Request) {
+  const id = req.params.id || '1';
+  
+  return {
+    success: true,
+    data: {
+      id,
+      name: '示例项目 ' + id,
+      description: '这是示例项目 ' + id + ' 的详细描述',
+      createdAt: new Date().toISOString()
+    }
+  };
+}
+
+/**
+ * 创建示例
+ * 访问方式：POST /api/examples
+ */
+export function create(req: Request) {
+  const body = req.body as { name?: string; description?: string };
+  
+  return {
+    success: true,
+    message: '创建成功',
+    data: {
+      id: Date.now(),
+      name: body?.name || '未命名',
+      description: body?.description || '',
+      createdAt: new Date().toISOString()
+    }
+  };
+}
+
+/**
+ * 更新示例
+ * 访问方式：PUT /api/examples/:id
+ */
+export function update(req: Request) {
+  const id = req.params.id || '1';
+  const body = req.body as { name?: string; description?: string };
+  
+  return {
+    success: true,
+    message: '更新成功',
+    data: {
+      id,
+      name: body?.name || '更新后的名称',
+      description: body?.description || '更新后的描述',
+      updatedAt: new Date().toISOString()
+    }
+  };
+}
+
+/**
+ * 删除示例
+ * 访问方式：DELETE /api/examples/:id
+ */
+export function destroy(req: Request) {
+  const id = req.params.id || '1';
+  
+  return {
+    success: true,
+    message: '删除成功',
+    deletedId: id,
+    timestamp: new Date().toISOString()
+  };
+}
+`;
+  } else {
+    // Method 模式：生成方法路由 API
+    apiContent = `/**
+ * 示例 API 路由（Method 模式）
+ * 通过 URL 路径指定方法名，默认使用中划线格式
+ * 例如：POST /api/examples/get-user 或 POST /api/examples/getUser
  */
 
 import type { Request } from '${frameworkUrl}';
 
 /**
  * 测试方法
- * 访问方式：POST /api/test/test
+ * 访问方式：POST /api/examples/test
  */
 export function test(req: Request) {
   return {
@@ -1411,7 +1687,7 @@ export function test(req: Request) {
 
 /**
  * 获取用户信息
- * 访问方式：POST /api/test/getUser?id=123 或 POST /api/test/get-user?id=123
+ * 访问方式：POST /api/examples/get-user?id=123
  */
 export function getUser(req: Request) {
   const userId = req.query.id || '1';
@@ -1429,7 +1705,7 @@ export function getUser(req: Request) {
 
 /**
  * 创建数据
- * 访问方式：POST /api/test/createData 或 POST /api/test/create-data
+ * 访问方式：POST /api/examples/create-data
  */
 export function createData(req: Request) {
   const body = req.body as { name?: string; description?: string };
@@ -1448,7 +1724,7 @@ export function createData(req: Request) {
 
 /**
  * 获取示例数据列表
- * 访问方式：POST /api/test/getData 或 POST /api/test/get-data
+ * 访问方式：POST /api/examples/get-data
  */
 export function getData(_req: Request) {
   return {
@@ -1478,9 +1754,10 @@ export function getData(_req: Request) {
   };
 }
 `;
+  }
 
-  await Deno.writeTextFile(path.join(apiDir, 'test.ts'), apiContent);
-  console.log(`✅ 已创建: ${apiDir}/test.ts`);
+  await Deno.writeTextFile(path.join(apiDir, 'examples.ts'), apiContent);
+  console.log(`✅ 已创建: ${apiDir}/examples.ts`);
 }
 
 /**
