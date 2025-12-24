@@ -23,7 +23,7 @@
     "@std/crypto": "https://deno.land/std@0.208.0/crypto/mod.ts",
     "preact": "https://esm.sh/preact@10.28.0",
     "preact/hooks": "https://esm.sh/preact@10.28.0/hooks",
-    "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact",
+    "preact/signals": "https://esm.sh/@preact/signals@latest?external=preact",
     "preact/jsx-runtime": "https://esm.sh/preact@10.28.0/jsx-runtime",
     "preact-render-to-string": "npm:preact-render-to-string@6.5.1",
     "tailwindcss": "npm:tailwindcss@^4.1.10",
