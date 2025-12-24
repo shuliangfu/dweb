@@ -279,10 +279,46 @@ async function checkBuildCache(
 function createJSRResolverPlugin(
   importMap: Record<string, string>,
   cwd: string,
+  externalPackages: string[],
 ): esbuild.Plugin {
   return {
     name: "jsr-resolver",
     setup(build: esbuild.PluginBuild) {
+      // 处理子路径导入（如 chart/auto），如果父包在 external 列表中，则标记为 external
+      // 必须在 @dreamer/dweb/client 处理之前执行，但使用更具体的过滤器避免冲突
+      build.onResolve({ filter: /^[^@./].*\/.*/ }, (args) => {
+        // 检查是否是子路径导入（包含 / 但不是相对路径，也不是 @ 开头的）
+        if (args.path.includes("/") && !args.path.startsWith(".") && !args.path.startsWith("/") && !args.path.startsWith("@")) {
+          // 提取父包名（如 "chart/auto" -> "chart"）
+          const parentPackage = args.path.split("/")[0];
+          // 如果父包在 external 列表中，将子路径也标记为 external
+          if (externalPackages.includes(parentPackage)) {
+            return {
+              path: args.path,
+              external: true,
+            };
+          }
+        }
+        return undefined; // 让其他处理器处理
+      });
+
+      // 处理 @ 开头的子路径导入（如 @scope/package/subpath）
+      build.onResolve({ filter: /^@[^/]+\/[^/]+\/.+/ }, (args) => {
+        // 提取父包名（如 "@scope/package/subpath" -> "@scope/package"）
+        const parts = args.path.split("/");
+        if (parts.length >= 3) {
+          const parentPackage = `${parts[0]}/${parts[1]}`;
+          // 如果父包在 external 列表中，将子路径也标记为 external
+          if (externalPackages.includes(parentPackage)) {
+            return {
+              path: args.path,
+              external: true,
+            };
+          }
+        }
+        return undefined; // 让其他处理器处理
+      });
+
       // 解析 @dreamer/dweb/client（支持 JSR URL 和本地路径）
       // 必须在所有其他解析器之前执行，确保能拦截到导入
       // 使用 onStart 确保插件优先级最高
@@ -551,7 +587,7 @@ async function compileFile(
       const externalPackages = getExternalPackages(importMap, false, false);
 
       // 创建 JSR 解析插件
-      const jsrResolverPlugin = createJSRResolverPlugin(importMap, cwd);
+      const jsrResolverPlugin = createJSRResolverPlugin(importMap, cwd, externalPackages);
 
       // 生成服务端版本（包含 load 函数）
       let serverCompiledContent: string | null = null;
@@ -569,7 +605,7 @@ async function compileFile(
           treeShaking: true, // ✅ Tree-shaking
           legalComments: "none", // ✅ 移除注释
           write: false, // 不写入文件，我们手动处理
-          external: externalPackages as string[], // 外部依赖不打包（保持 import 语句），支持正则表达式但类型定义不完整
+          external: externalPackages, // 外部依赖不打包（保持 import 语句）
           plugins: [jsrResolverPlugin], // 添加 JSR 解析插件
           // 设置 import map（用于解析外部依赖）
           // 注意：只对本地路径使用 alias，JSR/NPM/HTTP 导入已经在 external 中，不需要 alias
@@ -646,7 +682,7 @@ async function compileFile(
           // esbuild 会自动 tree-shake 掉其他未使用的导出（如 twJoin, createTailwindMerge 等）
           legalComments: "none", // ✅ 移除注释
           write: false, // 不写入文件，我们手动处理
-          external: externalPackages as string[], // 外部依赖不打包（保持 import 语句），支持正则表达式但类型定义不完整
+          external: externalPackages, // 外部依赖不打包（保持 import 语句）
           plugins: [jsrResolverPlugin], // 添加 JSR 解析插件
           // 设置 import map（用于解析外部依赖）
           alias: Object.fromEntries(
@@ -745,7 +781,7 @@ async function compileWithCodeSplitting(
   fileMap: Map<string, string>,
   cwd: string,
   importMap: Record<string, string>,
-  externalPackages: (string | RegExp)[],
+  externalPackages: string[],
   jsrResolverPlugin: esbuild.Plugin,
 ): Promise<{ compiled: number; chunks: number }> {
   if (entryPoints.length === 0) {
@@ -899,7 +935,7 @@ async function compileDirectory(
     const externalPackages = getExternalPackages(importMap, false, false);
 
     // 创建 JSR 解析插件
-    const jsrResolverPlugin = createJSRResolverPlugin(importMap, cwd);
+    const jsrResolverPlugin = createJSRResolverPlugin(importMap, cwd, externalPackages);
 
     // 使用代码分割编译所有文件
     console.log(`🔀 启用代码分割，批量编译 ${files.length} 个文件...`);
