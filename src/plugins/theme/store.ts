@@ -58,6 +58,6 @@ export const themeStore: ThemeStore = defineStore("theme", {
 });
 
 
-export const useThemeStore = () => {
+export const useThemeStore = (): ThemeStore => {
   return useStore(themeStore) as ThemeStore;
 };
