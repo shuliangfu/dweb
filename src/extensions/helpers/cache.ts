@@ -1,6 +1,9 @@
 /**
  * 缓存辅助函数
- * 提供简单的内存缓存功能
+ * 提供简单的内存缓存功能，支持过期时间（TTL）和自动清理
+ * 
+ * 环境兼容性：
+ * - 通用：所有函数都可以在服务端和客户端使用
  */
 
 /**
@@ -121,9 +124,17 @@ export const memoryCache: MemoryCache = new MemoryCache();
 
 /**
  * 设置缓存（便捷函数）
+ * 将值存储到内存缓存中，可设置过期时间
+ * 
  * @param key 缓存键
  * @param value 缓存值
- * @param ttl 过期时间（秒）
+ * @param ttl 过期时间（秒，可选，不设置则永不过期）
+ * 
+ * @example
+ * ```typescript
+ * setCache('user', { id: 1, name: 'Alice' });
+ * setCache('token', 'abc123', 3600); // 1小时后过期
+ * ```
  */
 export function setCache<T>(key: string, value: T, ttl?: number): void {
   memoryCache.set(key, value, ttl);
@@ -131,8 +142,18 @@ export function setCache<T>(key: string, value: T, ttl?: number): void {
 
 /**
  * 获取缓存（便捷函数）
+ * 从内存缓存中获取值，如果不存在或已过期则返回 undefined
+ * 
  * @param key 缓存键
- * @returns 缓存值
+ * @returns 缓存值，如果不存在或已过期返回 undefined
+ * 
+ * @example
+ * ```typescript
+ * const user = getCache<User>('user');
+ * if (user) {
+ *   console.log(user.name);
+ * }
+ * ```
  */
 export function getCache<T>(key: string): T | undefined {
   return memoryCache.get<T>(key);
@@ -140,8 +161,17 @@ export function getCache<T>(key: string): T | undefined {
 
 /**
  * 检查缓存是否存在（便捷函数）
+ * 检查指定键的缓存是否存在且未过期
+ * 
  * @param key 缓存键
- * @returns 是否存在
+ * @returns 是否存在且未过期
+ * 
+ * @example
+ * ```typescript
+ * if (hasCache('user')) {
+ *   const user = getCache('user');
+ * }
+ * ```
  */
 export function hasCache(key: string): boolean {
   return memoryCache.has(key);
@@ -149,8 +179,15 @@ export function hasCache(key: string): boolean {
 
 /**
  * 删除缓存（便捷函数）
+ * 从内存缓存中删除指定键的缓存项
+ * 
  * @param key 缓存键
  * @returns 是否成功删除
+ * 
+ * @example
+ * ```typescript
+ * deleteCache('user');
+ * ```
  */
 export function deleteCache(key: string): boolean {
   return memoryCache.delete(key);
@@ -158,6 +195,12 @@ export function deleteCache(key: string): boolean {
 
 /**
  * 清空所有缓存（便捷函数）
+ * 删除内存缓存中的所有缓存项
+ * 
+ * @example
+ * ```typescript
+ * clearCache(); // 清空所有缓存
+ * ```
  */
 export function clearCache(): void {
   memoryCache.clear();
@@ -165,9 +208,26 @@ export function clearCache(): void {
 
 /**
  * 缓存装饰器（用于函数结果缓存）
- * @param ttl 过期时间（秒）
- * @param keyGenerator 缓存键生成器（可选）
+ * 自动缓存函数的结果，避免重复计算
+ * 
+ * @param ttl 过期时间（秒，可选）
+ * @param keyGenerator 缓存键生成器（可选，默认使用函数名和参数生成）
  * @returns 装饰器函数
+ * 
+ * @example
+ * ```typescript
+ * class ApiService {
+ *   @cached(3600) // 缓存1小时
+ *   async getUser(id: number) {
+ *     return await fetch(`/api/users/${id}`).then(r => r.json());
+ *   }
+ * 
+ *   @cached(1800, (id, type) => `user_${id}_${type}`) // 自定义缓存键
+ *   async getUserData(id: number, type: string) {
+ *     // ...
+ *   }
+ * }
+ * ```
  */
 export function cached<T extends (...args: unknown[]) => unknown>(
   ttl?: number,
