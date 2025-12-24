@@ -689,13 +689,11 @@ async function compileFile(
                 ([key, value]) =>
                   // 排除所有 @dreamer/dweb 相关的导入（由插件处理或保持为外部依赖）
                   !key.startsWith("@dreamer/dweb") &&
-                  !value.startsWith("jsr:") && !value.startsWith("npm:") &&
-                  !value.startsWith("http")
+                  !value.startsWith("jsr:") &&
+                  !value.startsWith("npm:") &&
+                  !value.startsWith("http"),
               )
-              .map(([key, value]) => [
-                key,
-                path.resolve(cwd, value),
-              ]),
+              .map(([key, value]) => [key, path.resolve(cwd, value)]),
           ),
         });
 
@@ -764,13 +762,11 @@ async function compileFile(
                 ([key, value]) =>
                   // 排除所有 @dreamer/dweb 相关的导入（由插件处理或保持为外部依赖）
                   !key.startsWith("@dreamer/dweb") &&
-                  !value.startsWith("jsr:") && !value.startsWith("npm:") &&
-                  !value.startsWith("http")
+                  !value.startsWith("jsr:") &&
+                  !value.startsWith("npm:") &&
+                  !value.startsWith("http"),
               )
-              .map(([key, value]) => [
-                key,
-                path.resolve(cwd, value),
-              ]),
+              .map(([key, value]) => [key, path.resolve(cwd, value)]),
           ),
         });
 
@@ -1005,7 +1001,8 @@ async function compileDirectory(
 
     // 收集外部依赖（只包含 preact 和服务端依赖，其他客户端依赖会被打包）
     // 代码分割模式：不使用共享依赖机制（esbuild 会自动提取共享依赖）
-    const externalPackages = getExternalPackages(importMap, false, false);
+    // 注意：使用与 dev 环境相同的 bundleClient 参数（true），确保 @dreamer/dweb/client 被打包
+    const externalPackages = getExternalPackages(importMap, true, false);
 
     // 创建 JSR 解析插件
     const jsrResolverPlugin = createJSRResolverPlugin(importMap, cwd, externalPackages);
