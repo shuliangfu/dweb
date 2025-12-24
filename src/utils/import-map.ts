@@ -12,13 +12,18 @@ const IMPORT_MAP_CACHE_TTL = 5000; // 5秒缓存
 
 /**
  * 创建 import map 脚本（让浏览器能够解析 preact 等模块）
+ * 支持从多个位置读取并合并 imports（项目根目录、应用目录等）
  * 使用缓存机制，避免频繁读取文件
+ * @param searchPaths 可选的搜索路径列表，用于查找 deno.json 文件（默认从当前工作目录开始）
  * @returns import map 脚本 HTML，如果失败返回 null
  */
-export async function createImportMapScript(): Promise<string | null> {
-  // 检查缓存是否有效
+export async function createImportMapScript(
+  searchPaths?: string[],
+): Promise<string | null> {
+  // 检查缓存是否有效（注意：如果传入了不同的 searchPaths，应该不使用缓存）
   const now = Date.now();
   if (
+    !searchPaths &&
     cachedImportMapScript &&
     (now - importMapScriptCacheTime) < IMPORT_MAP_CACHE_TTL
   ) {
@@ -27,30 +32,36 @@ export async function createImportMapScript(): Promise<string | null> {
   
   try {
     // 读取 deno.json 或 deno.jsonc（尝试多个可能的位置）
-    const possiblePaths = [
+    const possiblePaths = searchPaths || [
       Deno.cwd(),
       ".",
       "./",
     ];
-    let denoJson: Record<string, any> | null = null;
+    
+    // 收集所有找到的 imports，合并它们
+    const allImports: Record<string, string> = {};
     
     for (const basePath of possiblePaths) {
-      denoJson = await readDenoJson(basePath);
-      if (denoJson) {
-        break;
+      const denoJson = await readDenoJson(basePath);
+      if (denoJson && denoJson.imports) {
+        // 合并 imports（后面的会覆盖前面的）
+        for (const [key, value] of Object.entries(denoJson.imports)) {
+          if (typeof value === "string") {
+            allImports[key] = value;
+          }
+        }
       }
     }
     
-    if (!denoJson) {
+    if (Object.keys(allImports).length === 0) {
       return null;
     }
     
-    // 获取 imports，包含所有客户端需要的模块
-    const imports = denoJson.imports || {};
+    // 过滤出客户端需要的 imports
     const clientImports: Record<string, string> = {};
     
     // 遍历所有 imports，只排除服务端依赖
-    for (const [key, value] of Object.entries(imports)) {
+    for (const [key, value] of Object.entries(allImports)) {
       // 排除服务端依赖（这些不应该在浏览器中加载）
       if (
         key === "@dreamer/dweb" ||
@@ -68,9 +79,7 @@ export async function createImportMapScript(): Promise<string | null> {
       }
       
       // 包含所有其他导入（preact、npm 包等）
-      if (typeof value === "string") {
-        clientImports[key] = value;
-      }
+      clientImports[key] = value;
     }
     
     if (Object.keys(clientImports).length === 0) {
@@ -85,9 +94,11 @@ export async function createImportMapScript(): Promise<string | null> {
       JSON.stringify(importMap)
     }</script>`;
     
-    // 更新缓存
-    cachedImportMapScript = script;
-    importMapScriptCacheTime = now;
+    // 更新缓存（只在没有传入 searchPaths 时缓存）
+    if (!searchPaths) {
+      cachedImportMapScript = script;
+      importMapScriptCacheTime = now;
+    }
     
     return script;
   } catch (_error) {
