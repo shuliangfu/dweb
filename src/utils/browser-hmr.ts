@@ -52,13 +52,13 @@ class HMRClient {
     // 设置 WebSocket 事件处理器
     this.ws.onmessage = (event: MessageEvent) => this.handleHMRMessage(event);
     this.ws.onopen = () => {
-      console.log('✅ HMR WebSocket 连接已建立');
+      // console.log('✅ HMR WebSocket 连接已建立');
     };
     this.ws.onerror = () => {
       // 静默处理错误
     };
     this.ws.onclose = () => {
-      console.log('❌ HMR WebSocket 连接已关闭');
+      // console.log('❌ HMR WebSocket 连接已关闭');
     };
   }
 
