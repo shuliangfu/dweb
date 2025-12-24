@@ -62,8 +62,9 @@ export interface PrefetchConfig {
   mode?: PrefetchMode;
 }
 
-// 应用配置
-export interface AppConfig {
+// 应用配置基础接口（不包含 apps 和 database）
+// 用于定义子应用配置，确保子应用不能配置 database
+interface AppConfigBase {
   name?: string;
   basePath?: string;
   routes?: RouteConfig | string;
@@ -75,14 +76,11 @@ export interface AppConfig {
   build?: BuildConfig;
   // 静态资源配置
   static?: StaticOptions;
-  apps?: AppConfig[];
   dev?: DevConfig;
   // 全局渲染模式（可在页面组件中覆盖）
   renderMode?: RenderMode;
   // 预加载配置
   prefetch?: PrefetchConfig;
-  // 数据库配置
-  database?: DatabaseConfig;
   // WebSocket 配置
   websocket?: WebSocketConfig;
   // GraphQL 配置
@@ -92,6 +90,21 @@ export interface AppConfig {
   };
   // 是否为生产环境（通常由框架自动设置，但也可以手动指定）
   isProduction?: boolean;
+}
+
+// 子应用配置（不包含数据库配置，数据库配置只能在根配置中）
+// 子应用不能嵌套 apps（不支持多级嵌套）
+export interface SubAppConfig extends AppConfigBase {
+  // 子应用不能包含 database 配置
+  // 子应用不能嵌套 apps
+}
+
+// 应用配置（根配置，可以包含 database 和 apps）
+export interface AppConfig extends AppConfigBase {
+  // 子应用配置（不包含 database 字段）
+  apps?: SubAppConfig[];
+  // 数据库配置（只能在根配置中，子应用配置中不允许）
+  database?: DatabaseConfig;
 }
 
 // 配置类型

@@ -84,6 +84,7 @@ export async function loadConfig(
         }
 
         // 合并应用配置和顶层配置，返回 AppConfig
+        // 注意：database 配置只能来自根配置，子应用配置中不允许包含 database
         const mergedConfig: AppConfig = {
           name: matchedApp.name,
           basePath: matchedApp.basePath || "/",
@@ -102,7 +103,13 @@ export async function loadConfig(
           // 合并 static：优先使用应用配置，否则使用顶层配置
           static: matchedApp.static || config.static,
           // 合并 prefetch：优先使用应用配置，否则使用顶层配置
-					prefetch: matchedApp.prefetch || config.prefetch
+          prefetch: matchedApp.prefetch || config.prefetch,
+          // 数据库配置只能来自根配置（子应用配置中不允许包含 database）
+          database: config.database,
+          // WebSocket 配置（如果根配置中有）
+          websocket: config.websocket,
+          // GraphQL 配置（如果根配置中有）
+          graphql: config.graphql,
         };
         // 验证合并后的单应用配置
         validateConfig(mergedConfig);
