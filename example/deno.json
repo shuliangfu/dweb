@@ -25,7 +25,7 @@
     "preact/hooks": "https://esm.sh/preact@10.28.0/hooks",
     "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact",
     "preact/jsx-runtime": "https://esm.sh/preact@10.28.0/jsx-runtime",
-    "preact-render-to-string": "https://esm.sh/preact-render-to-string@6.5.1?external=preact",
+    "preact-render-to-string": "npm:preact-render-to-string@6.5.1",
     "tailwindcss": "npm:tailwindcss@^4.1.10",
     "tailwindcss-v3": "npm:tailwindcss@^3.4.0",
     "@tailwindcss/postcss": "npm:@tailwindcss/postcss@^4.1.10",
