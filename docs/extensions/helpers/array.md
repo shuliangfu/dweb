@@ -260,7 +260,7 @@ const sorted = sortBy(users, 'age', 'desc');
 const commonTags = intersection(tags1, tags2, tags3);
 const allTags = union(tags1, tags2, tags3);
 
-// 统计
+// 统计（sum 和 average 现在位于 math.ts 中）
 const total = sum(scores);
 const avg = average(scores);
 ```
