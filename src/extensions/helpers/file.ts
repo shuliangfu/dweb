@@ -89,8 +89,8 @@ export function readFileAsArrayBuffer(file: File | Blob): Promise<ArrayBuffer> {
 }
 
 /**
- * 下载文件
- * 在浏览器中触发文件下载
+ * 保存文件到本地
+ * 在浏览器中将 Blob 或字符串保存为文件
  * 
  * @param blob 文件 Blob 对象或数据
  * @param filename 文件名
@@ -98,15 +98,15 @@ export function readFileAsArrayBuffer(file: File | Blob): Promise<ArrayBuffer> {
  * @example
  * ```typescript
  * const blob = new Blob(['Hello World'], { type: 'text/plain' });
- * downloadFile(blob, 'hello.txt');
+ * saveFile(blob, 'hello.txt');
  * 
- * // 或者从 URL 下载
+ * // 或者从 URL 下载后保存
  * const response = await fetch('/api/file');
  * const blob = await response.blob();
- * downloadFile(blob, 'document.pdf');
+ * saveFile(blob, 'document.pdf');
  * ```
  */
-export function downloadFile(blob: Blob | string, filename: string): void {
+export function saveFile(blob: Blob | string, filename: string): void {
   if (typeof globalThis === "undefined" || !("document" in globalThis)) {
     throw new Error("downloadFile 只能在浏览器环境使用");
   }
@@ -121,14 +121,13 @@ export function downloadFile(blob: Blob | string, filename: string): void {
 
   // 创建下载链接
   const downloadUrl = URL.createObjectURL(downloadBlob);
-  const link = (globalThis as { document: Document }).document.createElement(
-    "a",
-  );
+  const doc = (globalThis as unknown as { document: { createElement: (tag: string) => { href: string; download: string; click: () => void }; body: { appendChild: (el: unknown) => void; removeChild: (el: unknown) => void } } }).document;
+  const link = doc.createElement("a");
   link.href = downloadUrl;
   link.download = filename;
 
   // 触发下载
-  const body = (globalThis as { document: Document }).document.body;
+  const body = doc.body;
   body.appendChild(link);
   link.click();
   body.removeChild(link);
@@ -354,7 +353,8 @@ export function compressImage(
     readFileAsDataUrl(file)
       .then((dataUrl) => {
         // 创建图片对象
-        const img = new Image();
+        const ImageConstructor = (globalThis as unknown as { Image: new () => { src: string; width: number; height: number; onload: (() => void) | null; onerror: ((error: Event) => void) | null } }).Image;
+        const img = new ImageConstructor();
         img.onload = () => {
           // 计算压缩后的尺寸
           let width = img.width;
@@ -367,8 +367,8 @@ export function compressImage(
           }
 
           // 创建 Canvas 进行压缩
-          const canvas = (globalThis as { document: Document }).document
-            .createElement("canvas");
+          const doc = (globalThis as unknown as { document: { createElement: (tag: string) => { width: number; height: number; getContext: (type: string) => { drawImage: (img: unknown, x: number, y: number, w: number, h: number) => void; } | null; toBlob: (callback: (blob: Blob | null) => void, mimeType: string, quality: number) => void } } }).document;
+          const canvas = doc.createElement("canvas");
           canvas.width = width;
           canvas.height = height;
 
@@ -379,7 +379,9 @@ export function compressImage(
           }
 
           // 绘制图片
-          ctx.drawImage(img, 0, 0, width, height);
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+          }
 
           // 转换为 Blob
           canvas.toBlob(

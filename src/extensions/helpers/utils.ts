@@ -372,12 +372,12 @@ export function omit<T extends Record<string, unknown>, K extends keyof T>(
  * @example
  * ```typescript
  * const user = { profile: { name: 'Alice' } };
- * get(user, 'profile.name'); // 'Alice'
- * get(user, 'profile.age', 0); // 0（路径不存在，返回默认值）
- * get(user, ['profile', 'name']); // 'Alice'（使用数组路径）
+ * getValue(user, 'profile.name'); // 'Alice'
+ * getValue(user, 'profile.age', 0); // 0（路径不存在，返回默认值）
+ * getValue(user, ['profile', 'name']); // 'Alice'（使用数组路径）
  * ```
  */
-export function get<T = unknown>(
+export function getValue<T = unknown>(
   obj: unknown,
   path: string | string[],
   defaultValue?: T,
