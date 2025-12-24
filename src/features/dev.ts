@@ -532,10 +532,7 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 
   // 启动服务器
   const port = config.server!.port || 3000;
-  // 调试：打印配置中的 host 值
-  console.log("配置中的 server.host:", config.server!.host);
   const host = config.server!.host || "localhost";
-  console.log("提取后的 host 值:", host);
   const tls = config.server!.tls;
 
   // 如果配置了自动打开浏览器

@@ -251,12 +251,12 @@ async function loadConfigWithServerOptions(
   if (!config.server) {
     config.server = {};
   }
-  
+
   // 只在用户明确指定时才覆盖配置
   if (options.port !== undefined) {
     config.server.port = parseInt(options.port as string, 10);
   }
-  
+
   if (options.host !== undefined) {
     config.server.host = options.host as string;
   }
@@ -306,7 +306,6 @@ cli.command("dev", "启动开发服务器")
     name: "host",
     description: "主机地址",
     requiresValue: true,
-    // 不设置 defaultValue，避免覆盖配置文件中的 host 设置
   })
   .option({
     name: "open",
