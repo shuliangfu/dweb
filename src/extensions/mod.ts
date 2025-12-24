@@ -54,6 +54,8 @@ export * from "./helpers/storage.ts";
 export * from "./helpers/url.ts";
 export * from "./helpers/time.ts";
 export * from "./helpers/array.ts";
+export * from "./helpers/math.ts";
+export * from "./helpers/file.ts";
 
 // 导出用户扩展示例（可选）
 export * from "./user/index.ts";
