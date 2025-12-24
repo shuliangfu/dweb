@@ -351,8 +351,8 @@ export async function startDevServer(config: AppConfig): Promise<void> {
   // 预加载所有模块（解决首次访问延迟问题）
   await preloadModules(router);
 
-  // 预先加载 import map 脚本
-  await preloadImportMapScript();
+  // 预先加载 import map 脚本（传入应用名称，支持多应用场景）
+  await preloadImportMapScript(config.name);
 
   // 设置数据库配置加载器（用于 CLI 工具中的自动初始化）
   // 这样在 CLI 工具中使用模型时，可以自动从配置加载器获取配置
