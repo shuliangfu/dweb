@@ -118,7 +118,7 @@ export async function loadConfig(
     }
 
     // 验证配置
-    validateConfig(config);
+		validateConfig(config);
 
     // 单应用模式，直接返回（已经是 AppConfig）
     return { config: config as AppConfig, configDir: Deno.cwd() };
