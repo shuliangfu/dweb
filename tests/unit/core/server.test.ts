@@ -71,7 +71,7 @@ Deno.test('Server - 处理请求 - JSON 响应', async () => {
   
   assertEquals(response.status, 200);
   const contentType = response.headers.get('content-type');
-  assertEquals(contentType, 'application/json');
+  assertEquals(contentType, 'application/json; charset=utf-8');
   const json = await response.json();
   assertEquals(json, { message: 'Hello' });
 });

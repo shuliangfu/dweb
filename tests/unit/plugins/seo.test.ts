@@ -28,20 +28,21 @@ Deno.test('SEO Plugin - 注入 SEO 标签', async () => {
   const res = {
     status: 200,
     headers: new Headers({
-      'Content-Type': 'text/html',
+      'Content-Type': 'text/html; charset=utf-8',
     }),
     setHeader: function(_name: string, _value: string) {},
     body: '<html><head></head><body></body></html>',
   } as any;
   
-  if (plugin.onRequest) {
-    await plugin.onRequest(req, res);
+  if (plugin.onResponse) {
+    plugin.onResponse(req, res);
   }
   
   assert(typeof res.body === 'string');
   // 验证 SEO 标签是否被注入
   const html = res.body as string;
-  assert(html.includes('meta') || html.includes('title') || html.length > 50);
+  assert(html.includes('<meta name="description"'));
+  assert(html.includes('<title>Test Site</title>'));
 });
 
 Deno.test('SEO Plugin - 不处理非 HTML 响应', async () => {

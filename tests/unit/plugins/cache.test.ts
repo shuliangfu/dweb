@@ -39,19 +39,25 @@ Deno.test('Cache Plugin - 内存缓存 - 基本操作', async () => {
   const cacheManager = mockApp.cache;
   assert(cacheManager !== null);
   
-  // 测试 set 和 get
-  await cacheManager.set('test-key', 'test-value');
-  const value = await cacheManager.get('test-key');
-  assertEquals(value, 'test-value');
-  
-  // 测试 has
-  const hasValue = await cacheManager.has('test-key');
-  assertEquals(hasValue, true);
-  
-  // 测试 delete
-  await cacheManager.delete('test-key');
-  const deletedValue = await cacheManager.get('test-key');
-  assertEquals(deletedValue, null);
+  try {
+    // 测试 set 和 get
+    await cacheManager.set('test-key', 'test-value');
+    const value = await cacheManager.get('test-key');
+    assertEquals(value, 'test-value');
+    
+    // 测试 has
+    const hasValue = await cacheManager.has('test-key');
+    assertEquals(hasValue, true);
+    
+    // 测试 delete
+    await cacheManager.delete('test-key');
+    const deletedValue = await cacheManager.get('test-key');
+    assertEquals(deletedValue, null);
+  } finally {
+    if (cacheManager && typeof cacheManager.destroy === 'function') {
+      cacheManager.destroy();
+    }
+  }
 });
 
 Deno.test('Cache Plugin - 内存缓存 - TTL 过期', async () => {
@@ -75,15 +81,21 @@ Deno.test('Cache Plugin - 内存缓存 - TTL 过期', async () => {
   
   const cacheManager = mockApp.cache;
   
-  await cacheManager.set('test-key', 'test-value', { ttl: 1 });
-  const value1 = await cacheManager.get('test-key');
-  assertEquals(value1, 'test-value');
-  
-  // 等待过期
-  await new Promise(resolve => setTimeout(resolve, 1100));
-  
-  const value2 = await cacheManager.get('test-key');
-  assertEquals(value2, null);
+  try {
+    await cacheManager.set('test-key', 'test-value', { ttl: 1 });
+    const value1 = await cacheManager.get('test-key');
+    assertEquals(value1, 'test-value');
+    
+    // 等待过期
+    await new Promise(resolve => setTimeout(resolve, 1100));
+    
+    const value2 = await cacheManager.get('test-key');
+    assertEquals(value2, null);
+  } finally {
+    if (cacheManager && typeof cacheManager.destroy === 'function') {
+      cacheManager.destroy();
+    }
+  }
 });
 
 Deno.test('Cache Plugin - 内存缓存 - getOrSet', async () => {
@@ -106,21 +118,27 @@ Deno.test('Cache Plugin - 内存缓存 - getOrSet', async () => {
   
   const cacheManager = mockApp.cache;
   
-  let callCount = 0;
-  const getValue = async () => {
-    callCount++;
-    return 'computed-value';
-  };
-  
-  // 第一次调用应该执行函数
-  const value1 = await cacheManager.getOrSet('test-key', getValue);
-  assertEquals(value1, 'computed-value');
-  assertEquals(callCount, 1);
-  
-  // 第二次调用应该从缓存获取
-  const value2 = await cacheManager.getOrSet('test-key', getValue);
-  assertEquals(value2, 'computed-value');
-  assertEquals(callCount, 1); // 不应该再次调用
+  try {
+    let callCount = 0;
+    const getValue = async () => {
+      callCount++;
+      return 'computed-value';
+    };
+    
+    // 第一次调用应该执行函数
+    const value1 = await cacheManager.getOrSet('test-key', getValue);
+    assertEquals(value1, 'computed-value');
+    assertEquals(callCount, 1);
+    
+    // 第二次调用应该从缓存获取
+    const value2 = await cacheManager.getOrSet('test-key', getValue);
+    assertEquals(value2, 'computed-value');
+    assertEquals(callCount, 1); // 不应该再次调用
+  } finally {
+    if (cacheManager && typeof cacheManager.destroy === 'function') {
+      cacheManager.destroy();
+    }
+  }
 });
 
 Deno.test('Cache Plugin - 文件缓存 - 基本操作', async () => {
@@ -189,16 +207,20 @@ Deno.test('Cache Plugin - CacheManager - 直接使用', async () => {
     defaultTTL: 3600,
   });
   
-  await manager.set('key', 'value');
-  const value = await manager.get('key');
-  assertEquals(value, 'value');
-  
-  const hasValue = await manager.has('key');
-  assertEquals(hasValue, true);
-  
-  await manager.delete('key');
-  const deletedValue = await manager.get('key');
-  assertEquals(deletedValue, null);
+  try {
+    await manager.set('key', 'value');
+    const value = await manager.get('key');
+    assertEquals(value, 'value');
+    
+    const hasValue = await manager.has('key');
+    assertEquals(hasValue, true);
+    
+    await manager.delete('key');
+    const deletedValue = await manager.get('key');
+    assertEquals(deletedValue, null);
+  } finally {
+    manager.destroy();
+  }
 });
 
 Deno.test('Cache Plugin - CacheManager - getOrSet', async () => {
@@ -206,26 +228,30 @@ Deno.test('Cache Plugin - CacheManager - getOrSet', async () => {
     store: 'memory',
   });
   
-  let callCount = 0;
-  const getValue = async () => {
-    callCount++;
-    return `value-${callCount}`;
-  };
-  
-  // 第一次调用
-  const value1 = await manager.getOrSet('key', getValue);
-  assertEquals(value1, 'value-1');
-  assertEquals(callCount, 1);
-  
-  // 第二次调用（从缓存）
-  const value2 = await manager.getOrSet('key', getValue);
-  assertEquals(value2, 'value-1');
-  assertEquals(callCount, 1);
-  
-  // 删除后再次调用
-  await manager.delete('key');
-  const value3 = await manager.getOrSet('key', getValue);
-  assertEquals(value3, 'value-2');
-  assertEquals(callCount, 2);
+  try {
+    let callCount = 0;
+    const getValue = async () => {
+      callCount++;
+      return `value-${callCount}`;
+    };
+    
+    // 第一次调用
+    const value1 = await manager.getOrSet('key', getValue);
+    assertEquals(value1, 'value-1');
+    assertEquals(callCount, 1);
+    
+    // 第二次调用（从缓存）
+    const value2 = await manager.getOrSet('key', getValue);
+    assertEquals(value2, 'value-1');
+    assertEquals(callCount, 1);
+    
+    // 删除后再次调用
+    await manager.delete('key');
+    const value3 = await manager.getOrSet('key', getValue);
+    assertEquals(value3, 'value-2');
+    assertEquals(callCount, 2);
+  } finally {
+    manager.destroy();
+  }
 });
 

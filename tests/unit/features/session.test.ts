@@ -94,7 +94,7 @@ Deno.test('SessionManager - Session 过期', async () => {
   const manager = new SessionManager({
     secret: 'test-secret',
     store: 'memory',
-    maxAge: 100, // 100 毫秒
+    maxAge: 0.1, // 0.1 秒 = 100 毫秒
   });
   
   try {

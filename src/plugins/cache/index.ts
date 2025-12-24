@@ -420,6 +420,15 @@ export class CacheManager {
     await this.set(key, value, options);
     return value;
   }
+
+  /**
+   * 销毁缓存管理器，清理所有资源
+   */
+  destroy(): void {
+    if (this.store && typeof (this.store as any).destroy === 'function') {
+      (this.store as any).destroy();
+    }
+  }
 }
 
 /**
