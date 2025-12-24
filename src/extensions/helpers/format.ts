@@ -70,40 +70,115 @@ export function formatFileSize(bytes: number, decimals: number = 2): string {
 
 /**
  * 格式化日期
- * 将日期格式化为指定格式的字符串
+ * 将日期格式化为指定格式的字符串，支持丰富的格式选项
  * 
  * @param date 日期对象或时间戳
  * @param pattern 格式模式（默认 YYYY-MM-DD HH:mm:ss）
- *   - YYYY: 年份（4位）
- *   - MM: 月份（2位）
- *   - DD: 日期（2位）
- *   - HH: 小时（2位，24小时制）
- *   - mm: 分钟（2位）
- *   - ss: 秒数（2位）
+ *   - YYYY: 年份（4位，如：2024）
+ *   - YY: 年份（2位，如：24）
+ *   - MM: 月份（2位，如：01）
+ *   - M: 月份（1-2位，如：1）
+ *   - DD: 日期（2位，如：01）
+ *   - D: 日期（1-2位，如：1）
+ *   - HH: 小时（2位，24小时制，如：09）
+ *   - H: 小时（1-2位，24小时制，如：9）
+ *   - hh: 小时（2位，12小时制，如：09）
+ *   - h: 小时（1-2位，12小时制，如：9）
+ *   - mm: 分钟（2位，如：05）
+ *   - m: 分钟（1-2位，如：5）
+ *   - ss: 秒数（2位，如：05）
+ *   - s: 秒数（1-2位，如：5）
+ *   - SSS: 毫秒（3位，如：001）
+ *   - A: 上午/下午（AM/PM）
+ *   - a: 上午/下午（am/pm）
+ *   - ddd: 星期几（简写，如：周一）
+ *   - dddd: 星期几（完整，如：星期一）
+ *   - MMM: 月份（简写，如：1月）
+ *   - MMMM: 月份（完整，如：一月）
+ *   - Q: 季度（如：Q1）
  * @returns 格式化后的日期字符串
  * 
  * @example
  * ```typescript
  * formatDate(new Date(), 'YYYY-MM-DD'); // '2024-01-15'
  * formatDate(new Date(), 'YYYY-MM-DD HH:mm:ss'); // '2024-01-15 10:30:45'
+ * formatDate(new Date(), 'YYYY年MM月DD日 HH:mm:ss'); // '2024年01月15日 10:30:45'
+ * formatDate(new Date(), 'hh:mm:ss A'); // '10:30:45 AM'
+ * formatDate(new Date(), 'YYYY-MM-DD dddd'); // '2024-01-15 星期一'
+ * formatDate(new Date(), 'YYYY年MMM'); // '2024年1月'
  * ```
  */
 export function formatDate(date: Date | number, pattern: string = 'YYYY-MM-DD HH:mm:ss'): string {
   const d = date instanceof Date ? date : new Date(date);
+  
+  // 基础值
   const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  const seconds = String(d.getSeconds()).padStart(2, '0');
-
-  return pattern
-    .replace('YYYY', String(year))
-    .replace('MM', month)
-    .replace('DD', day)
-    .replace('HH', hours)
-    .replace('mm', minutes)
-    .replace('ss', seconds);
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  const hours24 = d.getHours();
+  const hours12 = hours24 % 12 || 12;
+  const minutes = d.getMinutes();
+  const seconds = d.getSeconds();
+  const milliseconds = d.getMilliseconds();
+  const dayOfWeek = d.getDay();
+  
+  // 星期几名称（中文）
+  const weekdaysShort = ['日', '一', '二', '三', '四', '五', '六'];
+  const weekdaysLong = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+  
+  // 月份名称（中文）
+  const monthsShort = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+  const monthsLong = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'];
+  
+  // 季度
+  const quarter = Math.floor(month / 3) + (month % 3 === 0 ? 0 : 1);
+  
+  // 替换规则
+  const replacements: Record<string, string> = {
+    // 年份
+    YYYY: String(year),
+    YY: String(year).slice(-2),
+    // 月份
+    MMMM: `${monthsLong[month - 1]}月`,
+    MMM: `${monthsShort[month - 1]}月`,
+    MM: String(month).padStart(2, '0'),
+    M: String(month),
+    // 日期
+    DD: String(day).padStart(2, '0'),
+    D: String(day),
+    // 小时（24小时制）
+    HH: String(hours24).padStart(2, '0'),
+    H: String(hours24),
+    // 小时（12小时制）
+    hh: String(hours12).padStart(2, '0'),
+    h: String(hours12),
+    // 分钟
+    mm: String(minutes).padStart(2, '0'),
+    m: String(minutes),
+    // 秒数
+    ss: String(seconds).padStart(2, '0'),
+    s: String(seconds),
+    // 毫秒
+    SSS: String(milliseconds).padStart(3, '0'),
+    // 上午/下午
+    A: hours24 >= 12 ? 'PM' : 'AM',
+    a: hours24 >= 12 ? 'pm' : 'am',
+    // 星期几
+    dddd: weekdaysLong[dayOfWeek],
+    ddd: `周${weekdaysShort[dayOfWeek]}`,
+    // 季度
+    Q: `Q${quarter}`,
+  };
+  
+  // 按长度从长到短排序，避免短匹配覆盖长匹配
+  const sortedKeys = Object.keys(replacements).sort((a, b) => b.length - a.length);
+  
+  let result = pattern;
+  for (const key of sortedKeys) {
+    result = result.replace(new RegExp(key, 'g'), replacements[key]);
+  }
+  
+  return result;
 }
 
 /**
