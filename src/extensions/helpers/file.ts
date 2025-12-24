@@ -431,13 +431,8 @@ export function createFile(
   if (data instanceof Blob) {
     blob = data;
   } else {
-    // 将数据转换为 BlobPart 类型
-    const blobParts: BlobPart[] = typeof data === "string"
-      ? [data]
-      : data instanceof Uint8Array
-      ? [data]
-      : [data as ArrayBuffer];
-    blob = new Blob(blobParts, { type: mimeType });
+    // 将数据转换为 Blob，使用类型断言处理 Uint8Array
+    blob = new Blob([data as BlobPart], { type: mimeType });
   }
 
   return new File([blob], filename, { type: mimeType });
