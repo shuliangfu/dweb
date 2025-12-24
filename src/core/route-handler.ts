@@ -1998,32 +1998,62 @@ export class RouteHandler {
     // 加载页面模块
 		const pageModule = await this.loadPageModule(routeInfo, res);
 		
-		// 检查是否在 load 函数中进行了重定向
-    // 如果响应状态码是 301 或 302，并且设置了 location header，说明已经重定向，直接返回
-    if ((res.status === 301 || res.status === 302) && res.headers.get('location')) {
-      return; // 重定向已设置，直接返回，不继续渲染页面
-    }
-    
+		// 先执行 load 函数（如果存在），因为 load 函数可能会进行重定向
+		// 如果 load 函数进行了重定向，就不需要默认导出的页面组件了
+		let pageData: Record<string, unknown> = {};
+		const hasLoadFunction = pageModule.load && typeof pageModule.load === "function";
+		
+		if (hasLoadFunction) {
+			pageData = await this.loadPageData(pageModule, req, res);
+			
+			// 检查是否在 load 函数中进行了重定向
+			// 如果响应状态码是 301 或 302，并且设置了 location header，说明已经重定向，直接返回
+			if ((res.status === 301 || res.status === 302) && res.headers.get('location')) {
+				return; // 重定向已设置，直接返回，不继续渲染页面
+			}
+		}
 
     // 获取页面组件
     const PageComponent = pageModule.default as (
       props: Record<string, unknown>,
     ) => unknown;
+    
+    // 如果没有默认导出的页面组件，检查是否是因为只需要重定向
+    // 如果 load 函数存在但没有重定向，说明需要页面组件，报错
+    // 如果 load 函数不存在，也需要页面组件，报错
     if (!PageComponent || typeof PageComponent !== "function") {
-      const errorMsg = "Page component not found";
-      console.error("\n❌ ========== 页面组件错误 ==========");
-      console.error("请求路径:", req.url);
-      console.error("请求方法:", req.method);
-      console.error("错误:", errorMsg);
-      console.error("路由文件:", routeInfo.filePath);
-      console.error("===================================\n");
-      res.status = 500;
-      res.html(`<h1>500 - ${errorMsg}</h1>`);
-      return;
+      // 如果只有 load 函数且没有重定向，说明需要页面组件
+      if (hasLoadFunction) {
+        const errorMsg = "Page component not found";
+        console.error("\n❌ ========== 页面组件错误 ==========");
+        console.error("请求路径:", req.url);
+        console.error("请求方法:", req.method);
+        console.error("错误:", errorMsg);
+        console.error("路由文件:", routeInfo.filePath);
+        console.error("提示: 如果只需要重定向，请在 load 函数中使用 res.redirect()");
+        console.error("===================================\n");
+        res.status = 500;
+        res.html(`<h1>500 - ${errorMsg}</h1>`);
+        return;
+      } else {
+        // 没有 load 函数也没有页面组件，报错
+        const errorMsg = "Page component not found";
+        console.error("\n❌ ========== 页面组件错误 ==========");
+        console.error("请求路径:", req.url);
+        console.error("请求方法:", req.method);
+        console.error("错误:", errorMsg);
+        console.error("路由文件:", routeInfo.filePath);
+        console.error("===================================\n");
+        res.status = 500;
+        res.html(`<h1>500 - ${errorMsg}</h1>`);
+        return;
+      }
     }
 
-    // 加载页面数据
-    const pageData = await this.loadPageData(pageModule, req, res);
+    // 如果 load 函数还没有执行（没有 load 函数），现在加载页面数据
+    if (!hasLoadFunction) {
+      pageData = await this.loadPageData(pageModule, req, res);
+    }
     
     // 提取页面元数据（metadata）用于 SEO
     // 支持 metadata 为对象或函数（函数可以接收与 load 函数相同的完整参数）
