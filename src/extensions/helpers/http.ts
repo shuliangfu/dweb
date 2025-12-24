@@ -804,14 +804,18 @@ export class HttpClient {
 
     // 创建下载链接
     const downloadUrl = URL.createObjectURL(blob);
-    const link = (globalThis as { document: Document }).document.createElement(
-      "a",
-    );
+    const doc = (globalThis as unknown as { 
+      document: { 
+        createElement: (tag: string) => { href: string; download: string; click: () => void }; 
+        body: { appendChild: (el: unknown) => void; removeChild: (el: unknown) => void } 
+      } 
+    }).document;
+    const link = doc.createElement("a");
     link.href = downloadUrl;
     link.download = filename || "download";
 
     // 触发下载
-    const body = (globalThis as { document: Document }).document.body;
+    const body = doc.body;
     body.appendChild(link);
     link.click();
     body.removeChild(link);
