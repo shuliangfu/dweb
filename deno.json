@@ -6,11 +6,11 @@
     ".": "./src/mod.ts",
     "./cli": "./src/cli.ts",
     "./init": "./src/init.ts",
-		"./client": "./src/client.ts",
-		"./console": "./src/console/mod.ts",
-		"./database": "./src/features/database/mod.ts",
-		"./extensions": "./src/extensions/mod.ts"
-  }, 
+    "./client": "./src/client.ts",
+    "./console": "./src/console/mod.ts",
+    "./database": "./src/features/database/mod.ts",
+    "./extensions": "./src/extensions/mod.ts" 
+  },
   "description": "A modern full-stack web framework based on Deno + Preact + Tailwind CSS",
   "tasks": {
     "dev": "deno run -A src/cli.ts dev",
@@ -77,4 +77,3 @@
   },
   "nodeModulesDir": "auto"
 }
-
