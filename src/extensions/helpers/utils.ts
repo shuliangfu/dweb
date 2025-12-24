@@ -185,13 +185,13 @@ export function deepMerge<T extends Record<string, unknown>>(
 
       if (isObject(sourceValue) && isObject(targetValue)) {
         // 递归合并嵌套对象
-        output[key] = deepMerge(
+        (output as Record<string, unknown>)[key] = deepMerge(
           targetValue as Record<string, unknown>,
           sourceValue as Record<string, unknown>,
-        ) as T[Extract<keyof T, string>];
+        );
       } else if (sourceValue !== undefined) {
         // 直接覆盖
-        output[key] = sourceValue as T[Extract<keyof T, string>];
+        (output as Record<string, unknown>)[key] = sourceValue;
       }
     });
   }
