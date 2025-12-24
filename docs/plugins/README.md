@@ -39,6 +39,8 @@ usePlugin(seo({
 
 ## 文档导航
 
+### 内置插件
+
 - [seo - SEO 优化](./seo.md)
 - [sitemap - 网站地图](./sitemap.md)
 - [pwa - 渐进式 Web 应用](./pwa.md)
@@ -53,6 +55,10 @@ usePlugin(seo({
 - [rss - RSS 订阅](./rss.md)
 - [store - 状态管理](./store.md)
 - [theme - 主题切换](./theme.md)
+
+### 其他
+
+- [创建自定义插件](./custom.md) - 编写自己的插件
 
 ## 相关文档
 
