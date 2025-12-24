@@ -23,6 +23,7 @@
 
 ### 扩展模块
 
+- [扩展系统 (extensions)](./extensions.md) - 扩展方法、辅助函数和自定义扩展
 - [中间件 (middleware)](./middleware.md) - 内置中间件和使用指南
 - [插件 (plugins)](./plugins.md) - 插件系统和使用指南
 - [控制台工具 (console)](./console.md) - 命令行工具、输入输出、命令封装
