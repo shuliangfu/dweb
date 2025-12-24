@@ -579,7 +579,10 @@ export class Command {
         }
       }
 
-      console.log(usage + "\n");
+			console.log(usage + "\n");
+			
+			// 退出程序
+			Deno.exit(0);
     }
 
     // 显示参数

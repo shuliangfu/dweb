@@ -301,7 +301,7 @@ export function extractFunctionBody(
  * - 所有格式都支持解构参数：`({ params, query })`
  * - 所有格式都支持默认参数：`({ params = {} })`
  * - 单行返回的箭头函数（无花括号）会返回空字符串，因为函数体是表达式而非代码块
- * 
+ *
  * 主要用于分析 `load` 函数中使用的导入，以便在客户端代码中移除不必要的导入。
  *
  * @param fileContent - 完整的文件内容字符串
@@ -1166,17 +1166,17 @@ export function removeLoadOnlyImports(fileContent: string): string {
   // 重新组合文件内容（移除空行，但保留必要的空行）
   const result = lines
     .map((line, index) => {
-      if (linesToRemove.includes(index)) {
-        return "";
-      }
-      return line;
+    if (linesToRemove.includes(index)) {
+      return "";
+    }
+    return line;
     })
     .filter((line, index, arr) => {
-      // 移除连续的空行，但保留单个空行用于代码可读性
-      if (line.trim() === "") {
-        return index === 0 || arr[index - 1].trim() !== "";
-      }
-      return true;
+    // 移除连续的空行，但保留单个空行用于代码可读性
+    if (line.trim() === "") {
+      return index === 0 || arr[index - 1].trim() !== "";
+    }
+    return true;
     })
     .join("\n");
 
