@@ -5,18 +5,23 @@
 import { assert } from '@std/assert';
 import { createClientScript } from '../../../src/utils/script-client.ts';
 
-Deno.test('Script Client Utils - createClientScript - 创建客户端脚本', async () => {
-  const script = await createClientScript(
-    '/routes/index.tsx',
-    'hybrid',
-    {},
-    true
-  );
-  
-  // 应该返回一个字符串
-  assert(typeof script === 'string');
-  // 应该包含 script 标签
-  assert(script.includes('<script') || script.includes('type="module"'));
+Deno.test({
+  name: 'Script Client Utils - createClientScript - 创建客户端脚本',
+  sanitizeResources: false, // 禁用资源清理检查，因为 esbuild 可能启动子进程
+  sanitizeOps: false, // 禁用操作清理检查
+  async fn() {
+    const script = await createClientScript(
+      '/routes/index.tsx',
+      'hybrid',
+      {},
+      true
+    );
+    
+    // 应该返回一个字符串
+    assert(typeof script === 'string');
+    // 应该包含 script 标签
+    assert(script.includes('<script') || script.includes('type="module"'));
+  }
 });
 
 Deno.test('Script Client Utils - createClientScript - 脚本包含必要内容', async () => {
