@@ -8,6 +8,14 @@ import * as esbuild from "esbuild";
 /**
  * 判断是否为服务端依赖
  * 服务端依赖应该保持 external，不被打包到客户端代码中
+ * 
+ * 判断规则（按优先级）：
+ * 1. Deno 标准库和内置模块（@std/*、deno:）- 明确的服务端依赖
+ * 2. 数据库驱动（@sqlite、@postgres、@mysql、@mongodb 等）- 明确的服务端依赖
+ * 3. 服务端渲染库（preact-render-to-string）- 明确的服务端依赖
+ * 4. 图片处理库（sharp）- 明确的服务端依赖
+ * 5. 其他包名包含 server、backend、deno 等关键词的包
+ * 
  * @param packageName 包名
  * @returns 是否为服务端依赖
  */
@@ -22,18 +30,49 @@ export function isServerDependency(packageName: string): boolean {
     return true;
   }
   
-  // 服务端特定的包
-  const serverPackages = [
-    "@dreamer/dweb", // 框架核心（服务端使用）
-    "preact-render-to-string", // 服务端渲染
-    "@sqlite",
-    "@postgres",
-    "@mysql",
-    "@mongodb",
-    "sharp", // 图片处理（服务端）
+  // 数据库驱动（常见的数据库包）
+  if (
+    packageName.startsWith("@sqlite") ||
+    packageName.startsWith("@postgres") ||
+    packageName.startsWith("@mysql") ||
+    packageName.startsWith("@mongodb") ||
+    packageName.startsWith("sqlite") ||
+    packageName.startsWith("postgres") ||
+    packageName.startsWith("mysql") ||
+    packageName.startsWith("mongodb")
+  ) {
+    return true;
+  }
+  
+  // 服务端渲染库
+  if (packageName === "preact-render-to-string" || packageName.startsWith("preact-render-to-string/")) {
+    return true;
+  }
+  
+  // 图片处理库（服务端）
+  if (packageName === "sharp" || packageName.startsWith("sharp/")) {
+    return true;
+  }
+  
+  // 包名包含服务端相关关键词（更通用的判断）
+  const serverKeywords = [
+    "server",
+    "backend",
+    "deno",
+    "node",
+    "fs", // 文件系统相关
+    "path", // 路径处理（通常是服务端）
+    "crypto", // 加密（服务端）
+    "http-server",
+    "ws-server",
   ];
   
-  return serverPackages.some(pkg => packageName === pkg || packageName.startsWith(`${pkg}/`));
+  const lowerPackageName = packageName.toLowerCase();
+  if (serverKeywords.some(keyword => lowerPackageName.includes(keyword))) {
+    return true;
+  }
+  
+  return false;
 }
 
 /**
