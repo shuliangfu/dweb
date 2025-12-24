@@ -251,7 +251,7 @@ export class RouteHandler {
                 // 只有当父包在 external 列表中时，才将子路径标记为 external
                 // 如果父包不在 external 列表中，子路径应该被打包（即使它在 import map 中）
                 // 使用更具体的过滤器，避免与 @dreamer/dweb/client 冲突
-                build.onResolve({ filter: /^[^@./].*\/.*/ }, (args) => {
+                build.onResolve({ filter: /^[^@./].*\/.*/ }, async (args) => {
                   // 检查是否是子路径导入（包含 / 但不是相对路径，也不是 @ 开头的）
                   if (args.path.includes("/") && !args.path.startsWith(".") && !args.path.startsWith("/") && !args.path.startsWith("@")) {
                     // 提取父包名（如 "chart/auto" -> "chart"）
@@ -264,7 +264,42 @@ export class RouteHandler {
                         external: true,
                       };
                     }
-                    // 如果父包不在 external 列表中，返回 undefined，让 esbuild 打包它
+                    // 如果父包不在 external 列表中，需要解析子路径以便打包
+                    // 从 import map 中查找父包的映射
+                    const parentImport = importMap[parentPackage];
+                    if (parentImport) {
+                      // 提取子路径（如 "chart/auto" -> "auto"）
+                      const subPath = args.path.substring(parentPackage.length + 1);
+                      // 构建完整的 npm/jsr 路径
+                      let fullPath: string;
+                      if (parentImport.startsWith("npm:")) {
+                        // npm:chart.js@4.4.7 -> npm:chart.js@4.4.7/auto
+                        fullPath = `${parentImport}/${subPath}`;
+                      } else if (parentImport.startsWith("jsr:")) {
+                        // jsr:@scope/package@1.0.0 -> jsr:@scope/package@1.0.0/subpath
+                        fullPath = `${parentImport}/${subPath}`;
+                      } else {
+                        // 其他情况，返回 undefined 让 esbuild 处理
+                        return undefined;
+                      }
+                      
+                      // 使用 Deno 的 import.meta.resolve 来解析路径
+                      try {
+                        const resolved = await import.meta.resolve(fullPath);
+                        // 如果解析成功，返回解析后的路径
+                        return {
+                          path: resolved,
+                        };
+                      } catch (error) {
+                        // 如果解析失败，返回错误
+                        return {
+                          errors: [{
+                            text: `Failed to resolve subpath "${args.path}" from parent package "${parentPackage}": ${error instanceof Error ? error.message : String(error)}`,
+                          }],
+                        };
+                      }
+                    }
+                    // 如果父包不在 import map 中，返回 undefined，让 esbuild 处理
                   }
                   return undefined; // 让其他处理器处理
                 });
