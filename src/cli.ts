@@ -130,6 +130,7 @@ async function loadConfigForDetection(): Promise<any | null> {
 
       // 动态导入配置文件
       const configUrl = new URL(configPath, `file://${Deno.cwd()}/`).href;
+      // @ts-ignore - 动态导入配置文件，类型由运行时确定
       const configModule = await import(configUrl);
       return configModule.default || configModule;
     }

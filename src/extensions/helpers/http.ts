@@ -515,7 +515,7 @@ export function createHttpClient(config?: {
 /**
  * 默认 HTTP 客户端实例
  */
-export const http = createHttpClient();
+export const http: HttpClient = createHttpClient();
 
 /**
  * 便捷方法：直接使用默认实例
