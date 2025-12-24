@@ -569,7 +569,7 @@ async function compileFile(
           treeShaking: true, // ✅ Tree-shaking
           legalComments: "none", // ✅ 移除注释
           write: false, // 不写入文件，我们手动处理
-          external: externalPackages, // 外部依赖不打包（保持 import 语句）
+          external: externalPackages as string[], // 外部依赖不打包（保持 import 语句），支持正则表达式但类型定义不完整
           plugins: [jsrResolverPlugin], // 添加 JSR 解析插件
           // 设置 import map（用于解析外部依赖）
           // 注意：只对本地路径使用 alias，JSR/NPM/HTTP 导入已经在 external 中，不需要 alias
@@ -646,7 +646,7 @@ async function compileFile(
           // esbuild 会自动 tree-shake 掉其他未使用的导出（如 twJoin, createTailwindMerge 等）
           legalComments: "none", // ✅ 移除注释
           write: false, // 不写入文件，我们手动处理
-          external: externalPackages, // 外部依赖不打包（保持 import 语句）
+          external: externalPackages as string[], // 外部依赖不打包（保持 import 语句），支持正则表达式但类型定义不完整
           plugins: [jsrResolverPlugin], // 添加 JSR 解析插件
           // 设置 import map（用于解析外部依赖）
           alias: Object.fromEntries(
@@ -745,7 +745,7 @@ async function compileWithCodeSplitting(
   fileMap: Map<string, string>,
   cwd: string,
   importMap: Record<string, string>,
-  externalPackages: string[],
+  externalPackages: (string | RegExp)[],
   jsrResolverPlugin: esbuild.Plugin,
 ): Promise<{ compiled: number; chunks: number }> {
   if (entryPoints.length === 0) {
@@ -769,7 +769,7 @@ async function compileWithCodeSplitting(
     legalComments: "none",
     outdir: outDir, // 输出到目录（代码分割需要）
     outbase: cwd, // 保持目录结构
-    external: externalPackages,
+    external: externalPackages as string[], // 支持正则表达式但类型定义不完整
     plugins: [jsrResolverPlugin], // 添加 JSR 解析插件
     // 只对本地路径使用 alias，JSR/NPM/HTTP 导入已经在 external 中，不需要 alias
     alias: Object.fromEntries(
