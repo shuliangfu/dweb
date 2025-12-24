@@ -1031,6 +1031,47 @@ const exists = await User.exists({ email: "john@example.com" });
 // 11. 通过 ID 删除（静态方法）
 await User.deleteById(user.id);
 
+// 12. 实例方法更新
+await user.update({ age: 28 });
+
+// 13. 软删除相关操作
+// 恢复软删除的记录
+await User.restore(1);
+await User.restore({ email: 'user@example.com' });
+
+// 强制删除（忽略软删除）
+await User.forceDelete(1);
+
+// 查询时包含已软删除的记录
+const allUsers = await User.withTrashed().findAll();
+const deletedUser = await User.withTrashed().find(1);
+
+// 只查询已软删除的记录
+const deletedUsers = await User.onlyTrashed().findAll();
+const count = await User.onlyTrashed().count();
+
+// 14. 查找或创建
+const user = await User.findOrCreate(
+  { email: 'user@example.com' },
+  { name: 'John', email: 'user@example.com', age: 25 }
+);
+
+// 15. 清空表/集合
+await User.truncate();
+
+// 16. 使用查询作用域
+const activeUsers = await User.scope('active').findAll();
+const recentUsers = await User.scope('recent').findAll();
+
+// 17. 初始化模型
+await User.init(); // 使用默认连接
+await User.init('secondary'); // 使用指定连接
+
+// 18. 关联查询
+const posts = await user.posts(); // 一对多
+const profile = await user.profile(); // 一对一
+const author = await post.user(); // 多对一
+
 // 11. MongoDB 特有功能
 // 地理空间查询
 const nearbyUsers = await User.findNearby(116.3974, 39.9093, 5000);
@@ -1579,6 +1620,7 @@ const db = manager.get("default");
 #### 更新方法
 
 - `update(condition, data)` - 更新记录（静态方法）
+- `update(data)` - 更新当前实例（实例方法）
 - `updateById(id, data)` - 通过主键 ID 更新记录（静态方法）
 - `updateMany(condition, data)` - 批量更新
 - `increment(condition, field, amount)` - 递增字段（静态方法）
@@ -1593,13 +1635,53 @@ const db = manager.get("default");
 - `deleteMany(condition)` - 批量删除
 - `findOneAndDelete(condition)` - 查找并删除（仅 MongoDB）
 
+#### 软删除相关方法
+
+- `restore(condition)` - 恢复软删除的记录（静态方法）
+- `forceDelete(condition)` - 强制删除记录，忽略软删除（静态方法）
+- `withTrashed()` - 查询时包含已软删除的记录（静态方法，返回查询构建器）
+- `onlyTrashed()` - 只查询已软删除的记录（静态方法，返回查询构建器）
+
 #### 其他方法
 
 - `upsert(condition, data)` - 更新或插入
+- `findOrCreate(condition, data)` - 查找或创建（如果不存在则创建）
 - `distinct(field, condition?)` - 去重查询
 - `aggregate(pipeline)` - 聚合查询（仅 MongoDB）
+- `truncate()` - 清空表/集合（删除所有记录）
 - `save()` - 保存当前实例（实例方法）
 - `reload()` - 重新加载当前实例（实例方法）
+
+#### 查询作用域方法
+
+- `scope(scopeName)` - 应用查询作用域（静态方法，返回查询构建器）
+  - 返回的查询构建器支持 `findAll()`, `find()`, `count()` 方法
+
+#### 初始化方法
+
+- `init(connectionName?)` - 初始化模型，设置数据库适配器并创建索引（静态方法）
+  - `connectionName`: 连接名称，默认为 'default'
+  - 如果数据库未初始化，会自动尝试从 dweb.config.ts 加载配置并初始化
+
+#### 关联查询方法（实例方法）
+
+- `belongsTo(RelatedModel, foreignKey, localKey?)` - 属于关系（多对一）
+  - `RelatedModel`: 关联的模型类
+  - `foreignKey`: 外键字段名（当前模型中的字段）
+  - `localKey`: 关联模型的主键字段名（默认为关联模型的 primaryKey）
+  - 返回：关联的模型实例或 `null`
+
+- `hasOne(RelatedModel, foreignKey, localKey?)` - 有一个关系（一对一）
+  - `RelatedModel`: 关联的模型类
+  - `foreignKey`: 外键字段名（关联模型中的字段）
+  - `localKey`: 当前模型的主键字段名（默认为当前模型的 primaryKey）
+  - 返回：关联的模型实例或 `null`
+
+- `hasMany(RelatedModel, foreignKey, localKey?)` - 有多个关系（一对多）
+  - `RelatedModel`: 关联的模型类
+  - `foreignKey`: 外键字段名（关联模型中的字段）
+  - `localKey`: 当前模型的主键字段名（默认为当前模型的 primaryKey）
+  - 返回：关联的模型实例数组
 
 ### 索引管理
 

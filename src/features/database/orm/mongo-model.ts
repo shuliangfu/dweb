@@ -748,7 +748,7 @@ export abstract class MongoModel {
       options.projection = projection;
     }
 
-    // 软删除：自动过滤已删除的记录
+    // 软删除：自动过滤已删除的记录（默认排除软删除）
     let queryFilter = filter;
     if (this.softDelete) {
       queryFilter = {
@@ -813,7 +813,16 @@ export abstract class MongoModel {
       options.projection = projection;
     }
 
-    const results = await adapter.query(this.collectionName, condition, options);
+    // 软删除：自动过滤已删除的记录（默认排除软删除）
+    let queryFilter = condition;
+    if (this.softDelete) {
+      queryFilter = {
+        ...condition,
+        [this.deletedAtField]: { $exists: false },
+      };
+    }
+
+    const results = await adapter.query(this.collectionName, queryFilter, options);
 
     return results.map((row: any) => {
       const instance = new (this as any)();
@@ -1212,6 +1221,34 @@ export abstract class MongoModel {
       Object.assign(this, instance);
       return this;
     }
+  }
+
+  /**
+   * 更新当前实例
+   * @param data 要更新的数据对象
+   * @returns 更新后的实例
+   * 
+   * @example
+   * const user = await User.find('507f1f77bcf86cd799439011');
+   * await user.update({ age: 26 });
+   */
+  async update<T extends MongoModel>(this: T, data: Record<string, any>): Promise<T> {
+    const Model = this.constructor as typeof MongoModel;
+    if (!Model.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const primaryKey = (Model.constructor as any).primaryKey || '_id';
+    const id = (this as any)[primaryKey];
+
+    if (!id) {
+      throw new Error('Cannot update instance without primary key');
+    }
+
+    await Model.update(id, data);
+    // 重新加载更新后的数据
+    await this.reload();
+    return this;
   }
 
   /**
@@ -1823,7 +1860,15 @@ export abstract class MongoModel {
     }
 
     try {
-      const values = await db.collection(this.collectionName).distinct(field, condition);
+      // 软删除：自动过滤已删除的记录（默认排除软删除）
+      let queryFilter = condition;
+      if (this.softDelete) {
+        queryFilter = {
+          ...condition,
+          [this.deletedAtField]: { $exists: false },
+        };
+      }
+      const values = await db.collection(this.collectionName).distinct(field, queryFilter);
       return values;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -1862,6 +1907,371 @@ export abstract class MongoModel {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`MongoDB aggregate error: ${message}`);
+    }
+  }
+
+  /**
+   * 查询时包含已软删除的记录
+   * @returns 查询构建器（链式调用）
+   * 
+   * @example
+   * const allUsers = await User.withTrashed().findAll();
+   * const user = await User.withTrashed().find('507f1f77bcf86cd799439011');
+   */
+  static withTrashed<T extends typeof MongoModel>(this: T): {
+    findAll: (
+      condition?: MongoWhereCondition,
+      fields?: string[],
+    ) => Promise<InstanceType<T>[]>;
+    find: (
+      condition?: MongoWhereCondition | string,
+      fields?: string[],
+    ) => Promise<InstanceType<T> | null>;
+    count: (condition?: MongoWhereCondition) => Promise<number>;
+  } {
+    return {
+      findAll: async (
+        condition: MongoWhereCondition = {},
+        fields?: string[],
+      ): Promise<InstanceType<T>[]> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+        }
+        const adapter = this.adapter as any as MongoDBAdapter;
+        const projection = this.buildProjection(fields);
+        const options: any = {};
+        if (Object.keys(projection).length > 0) {
+          options.projection = projection;
+        }
+        const results = await adapter.query(this.collectionName, condition, options);
+        return results.map((row: any) => {
+          const instance = new (this as any)();
+          Object.assign(instance, row);
+          if ((this as any).virtuals) {
+            for (const [name, getter] of Object.entries((this as any).virtuals)) {
+              const getterFn = getter as (instance: any) => any;
+              Object.defineProperty(instance, name, {
+                get: () => getterFn(instance),
+                enumerable: true,
+                configurable: true,
+              });
+            }
+          }
+          return instance as InstanceType<T>;
+        });
+      },
+      find: async (
+        condition: MongoWhereCondition | string = {},
+        fields?: string[],
+      ): Promise<InstanceType<T> | null> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+        }
+        const adapter = this.adapter as any as MongoDBAdapter;
+        let filter: any = {};
+        if (typeof condition === 'string') {
+          filter[this.primaryKey] = condition;
+        } else {
+          filter = condition;
+        }
+        const projection = this.buildProjection(fields);
+        const options: any = { limit: 1 };
+        if (Object.keys(projection).length > 0) {
+          options.projection = projection;
+        }
+        const results = await adapter.query(this.collectionName, filter, options);
+        if (results.length === 0) {
+          return null;
+        }
+        const instance = new (this as any)();
+        Object.assign(instance, results[0]);
+        if ((this as any).virtuals) {
+          for (const [name, getter] of Object.entries((this as any).virtuals)) {
+            const getterFn = getter as (instance: any) => any;
+            Object.defineProperty(instance, name, {
+              get: () => getterFn(instance),
+              enumerable: true,
+              configurable: true,
+            });
+          }
+        }
+        return instance as InstanceType<T>;
+      },
+      count: async (condition: MongoWhereCondition = {}): Promise<number> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+        }
+        const adapter = this.adapter as any as MongoDBAdapter;
+        const db = (adapter as any).getDatabase();
+        if (!db) {
+          throw new Error('Database not connected');
+        }
+        const count = await db.collection(this.collectionName).countDocuments(condition);
+        return count;
+      },
+    };
+  }
+
+  /**
+   * 只查询已软删除的记录
+   * @returns 查询构建器（链式调用）
+   * 
+   * @example
+   * const deletedUsers = await User.onlyTrashed().findAll();
+   * const user = await User.onlyTrashed().find('507f1f77bcf86cd799439011');
+   */
+  static onlyTrashed<T extends typeof MongoModel>(this: T): {
+    findAll: (
+      condition?: MongoWhereCondition,
+      fields?: string[],
+    ) => Promise<InstanceType<T>[]>;
+    find: (
+      condition?: MongoWhereCondition | string,
+      fields?: string[],
+    ) => Promise<InstanceType<T> | null>;
+    count: (condition?: MongoWhereCondition) => Promise<number>;
+  } {
+    return {
+      findAll: async (
+        condition: MongoWhereCondition = {},
+        fields?: string[],
+      ): Promise<InstanceType<T>[]> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+        }
+        const adapter = this.adapter as any as MongoDBAdapter;
+        const projection = this.buildProjection(fields);
+        const options: any = {};
+        if (Object.keys(projection).length > 0) {
+          options.projection = projection;
+        }
+        const queryFilter = {
+          ...condition,
+          [this.deletedAtField]: { $exists: true },
+        };
+        const results = await adapter.query(this.collectionName, queryFilter, options);
+        return results.map((row: any) => {
+          const instance = new (this as any)();
+          Object.assign(instance, row);
+          if ((this as any).virtuals) {
+            for (const [name, getter] of Object.entries((this as any).virtuals)) {
+              const getterFn = getter as (instance: any) => any;
+              Object.defineProperty(instance, name, {
+                get: () => getterFn(instance),
+                enumerable: true,
+                configurable: true,
+              });
+            }
+          }
+          return instance as InstanceType<T>;
+        });
+      },
+      find: async (
+        condition: MongoWhereCondition | string = {},
+        fields?: string[],
+      ): Promise<InstanceType<T> | null> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+        }
+        const adapter = this.adapter as any as MongoDBAdapter;
+        let filter: any = {};
+        if (typeof condition === 'string') {
+          filter[this.primaryKey] = condition;
+        } else {
+          filter = condition;
+        }
+        filter[this.deletedAtField] = { $exists: true };
+        const projection = this.buildProjection(fields);
+        const options: any = { limit: 1 };
+        if (Object.keys(projection).length > 0) {
+          options.projection = projection;
+        }
+        const results = await adapter.query(this.collectionName, filter, options);
+        if (results.length === 0) {
+          return null;
+        }
+        const instance = new (this as any)();
+        Object.assign(instance, results[0]);
+        if ((this as any).virtuals) {
+          for (const [name, getter] of Object.entries((this as any).virtuals)) {
+            const getterFn = getter as (instance: any) => any;
+            Object.defineProperty(instance, name, {
+              get: () => getterFn(instance),
+              enumerable: true,
+              configurable: true,
+            });
+          }
+        }
+        return instance as InstanceType<T>;
+      },
+      count: async (condition: MongoWhereCondition = {}): Promise<number> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+        }
+        const adapter = this.adapter as any as MongoDBAdapter;
+        const db = (adapter as any).getDatabase();
+        if (!db) {
+          throw new Error('Database not connected');
+        }
+        const queryFilter = {
+          ...condition,
+          [this.deletedAtField]: { $exists: true },
+        };
+        const count = await db.collection(this.collectionName).countDocuments(queryFilter);
+        return count;
+      },
+    };
+  }
+
+  /**
+   * 恢复软删除的记录
+   * @param condition 查询条件（可以是 ID、条件对象）
+   * @returns 恢复的记录数
+   * 
+   * @example
+   * await User.restore('507f1f77bcf86cd799439011');
+   * await User.restore({ email: 'user@example.com' });
+   */
+  static async restore(
+    condition: MongoWhereCondition | string,
+  ): Promise<number> {
+    if (!this.softDelete) {
+      throw new Error('Soft delete is not enabled for this model');
+    }
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const adapter = this.adapter as any as MongoDBAdapter;
+    let filter: any = {};
+
+    if (typeof condition === 'string') {
+      filter[this.primaryKey] = condition;
+    } else {
+      filter = condition;
+    }
+
+    // 只恢复已软删除的记录
+    filter[this.deletedAtField] = { $exists: true };
+
+    const db = (adapter as any).getDatabase();
+    if (!db) {
+      throw new Error('Database not connected');
+    }
+
+    try {
+      const result = await db.collection(this.collectionName).updateMany(
+        filter,
+        { $unset: { [this.deletedAtField]: '' } }
+      );
+      return result.modifiedCount || 0;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`MongoDB restore error: ${message}`);
+    }
+  }
+
+  /**
+   * 强制删除记录（忽略软删除，真正删除）
+   * @param condition 查询条件（可以是 ID、条件对象）
+   * @returns 删除的记录数
+   * 
+   * @example
+   * await User.forceDelete('507f1f77bcf86cd799439011');
+   * await User.forceDelete({ email: 'user@example.com' });
+   */
+  static async forceDelete(
+    condition: MongoWhereCondition | string,
+  ): Promise<number> {
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const adapter = this.adapter as any as MongoDBAdapter;
+    let filter: any = {};
+
+    if (typeof condition === 'string') {
+      filter[this.primaryKey] = condition;
+    } else {
+      filter = condition;
+    }
+
+    const db = (adapter as any).getDatabase();
+    if (!db) {
+      throw new Error('Database not connected');
+    }
+
+    try {
+      const result = await db.collection(this.collectionName).deleteMany(filter);
+      return result.deletedCount || 0;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`MongoDB forceDelete error: ${message}`);
+    }
+  }
+
+  /**
+   * 查找或创建记录（如果不存在则创建）
+   * @param condition 查询条件（用于判断是否存在）
+   * @param data 要创建的数据对象（如果不存在）
+   * @returns 找到或创建的模型实例
+   * 
+   * @example
+   * const user = await User.findOrCreate(
+   *   { email: 'user@example.com' },
+   *   { name: 'John', email: 'user@example.com', age: 25 }
+   * );
+   */
+  static async findOrCreate<T extends typeof MongoModel>(
+    this: T,
+    condition: MongoWhereCondition,
+    data: Record<string, any>,
+  ): Promise<InstanceType<T>> {
+    await this.ensureInitialized();
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+    }
+
+    // 先尝试查找（包含软删除的记录）
+    const existing = await this.withTrashed().find(condition);
+    if (existing) {
+      return existing as InstanceType<T>;
+    }
+
+    // 如果不存在，创建新记录
+    return await this.create(data);
+  }
+
+  /**
+   * 清空集合（删除所有记录）
+   * @returns 删除的记录数
+   * 
+   * @example
+   * await User.truncate();
+   */
+  static async truncate(): Promise<number> {
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const adapter = this.adapter as any as MongoDBAdapter;
+    const db = (adapter as any).getDatabase();
+    if (!db) {
+      throw new Error('Database not connected');
+    }
+
+    try {
+      const result = await db.collection(this.collectionName).deleteMany({});
+      return result.deletedCount || 0;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`MongoDB truncate error: ${message}`);
     }
   }
 

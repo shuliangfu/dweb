@@ -296,12 +296,28 @@ export abstract class SQLModel {
    * @param condition 查询条件对象
    * @returns SQL WHERE 子句和参数数组
    */
-  private static buildWhereClause(condition: WhereCondition | number | string): { where: string; params: any[] } {
+  private static buildWhereClause(
+    condition: WhereCondition | number | string,
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
+  ): { where: string; params: any[] } {
     // 如果是数字或字符串，作为主键查询
     if (typeof condition === 'number' || typeof condition === 'string') {
+      const conditions: string[] = [`${this.primaryKey} = ?`];
+      const params: any[] = [condition];
+      
+      // 处理软删除
+      if (this.softDelete) {
+        if (onlyTrashed) {
+          conditions.push(`${this.deletedAtField} IS NOT NULL`);
+        } else if (!includeTrashed) {
+          conditions.push(`${this.deletedAtField} IS NULL`);
+        }
+      }
+      
       return {
-        where: `${this.primaryKey} = ?`,
-        params: [condition],
+        where: conditions.join(' AND '),
+        params,
       };
     }
 
@@ -347,6 +363,15 @@ export abstract class SQLModel {
         // 普通等值条件
         conditions.push(`${key} = ?`);
         params.push(value);
+      }
+    }
+
+    // 处理软删除
+    if (this.softDelete) {
+      if (onlyTrashed) {
+        conditions.push(`${this.deletedAtField} IS NOT NULL`);
+      } else if (!includeTrashed) {
+        conditions.push(`${this.deletedAtField} IS NULL`);
       }
     }
 
@@ -623,7 +648,7 @@ export abstract class SQLModel {
       throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
     }
 
-    const { where, params } = this.buildWhereClause(condition);
+    const { where, params } = this.buildWhereClause(condition, false, false);
     const columns = fields && fields.length > 0 ? fields.join(', ') : '*';
 
     const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT 1`;
@@ -662,7 +687,7 @@ export abstract class SQLModel {
       throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
     }
 
-    const { where, params } = this.buildWhereClause(condition);
+    const { where, params } = this.buildWhereClause(condition, false, false);
     const columns = fields && fields.length > 0 ? fields.join(', ') : '*';
 
     const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
@@ -877,7 +902,7 @@ export abstract class SQLModel {
       processedData = { ...processedData, ...tempInstance };
     }
 
-    const { where, params: whereParams } = this.buildWhereClause(condition);
+    const { where, params: whereParams } = this.buildWhereClause(condition, false, false);
     const keys = Object.keys(processedData);
     const values = Object.values(processedData);
     const setClause = keys.map(key => `${key} = ?`).join(', ');
@@ -949,7 +974,7 @@ export abstract class SQLModel {
       await this.beforeDelete(instanceToDelete);
     }
 
-    const { where, params } = this.buildWhereClause(condition);
+    const { where, params } = this.buildWhereClause(condition, true, false);
 
     // 软删除：设置 deletedAt 字段
     if (this.softDelete) {
@@ -1015,6 +1040,34 @@ export abstract class SQLModel {
       Object.assign(this, instance);
       return this;
     }
+  }
+
+  /**
+   * 更新当前实例
+   * @param data 要更新的数据对象
+   * @returns 更新后的实例
+   * 
+   * @example
+   * const user = await User.find(1);
+   * await user.update({ age: 26 });
+   */
+  async update<T extends SQLModel>(this: T, data: Record<string, any>): Promise<T> {
+    const Model = this.constructor as typeof SQLModel;
+    if (!Model.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const primaryKey = (Model.constructor as any).primaryKey || 'id';
+    const id = (this as any)[primaryKey];
+
+    if (!id) {
+      throw new Error('Cannot update instance without primary key');
+    }
+
+    await Model.update(id, data);
+    // 重新加载更新后的数据
+    await this.reload();
+    return this;
   }
 
   /**
@@ -1158,7 +1211,7 @@ export abstract class SQLModel {
       throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
     }
 
-    const { where, params } = this.buildWhereClause(condition);
+    const { where, params } = this.buildWhereClause(condition, false, false);
     const sql = `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
     const results = await this.adapter.query(sql, params);
 
@@ -1184,7 +1237,7 @@ export abstract class SQLModel {
       throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
     }
 
-    const { where, params } = this.buildWhereClause(condition);
+    const { where, params } = this.buildWhereClause(condition, false, false);
     const sql = `SELECT EXISTS(SELECT 1 FROM ${this.tableName} WHERE ${where}) as exists`;
     const results = await this.adapter.query(sql, params);
 
@@ -1294,7 +1347,7 @@ export abstract class SQLModel {
     const total = await this.count(condition);
 
     // 构建查询 SQL
-    const { where, params } = this.buildWhereClause(condition);
+    const { where, params } = this.buildWhereClause(condition, false, false);
     const columns = fields && fields.length > 0 ? fields.join(', ') : '*';
     const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT ? OFFSET ?`;
 
@@ -1335,7 +1388,7 @@ export abstract class SQLModel {
       throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
     }
 
-    const { where, params } = this.buildWhereClause(condition);
+    const { where, params } = this.buildWhereClause(condition, false, false);
     const sql = `UPDATE ${this.tableName} SET ${field} = ${field} + ? WHERE ${where}`;
     const result = await this.adapter.execute(sql, [amount, ...params]);
 
@@ -1393,8 +1446,8 @@ export abstract class SQLModel {
       throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
     }
 
-    // 先尝试查找是否存在
-    const existing = await this.find(condition);
+    // 先尝试查找是否存在（包含软删除的记录）
+    const existing = await this.withTrashed().find(condition);
     
     if (existing) {
       // 如果存在，更新
@@ -1428,11 +1481,274 @@ export abstract class SQLModel {
       throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
     }
 
-    const { where, params } = this.buildWhereClause(condition);
+    const { where, params } = this.buildWhereClause(condition, false, false);
     const sql = `SELECT DISTINCT ${field} FROM ${this.tableName} WHERE ${where}`;
     const results = await this.adapter.query(sql, params);
 
     return results.map((row: any) => row[field]).filter((value: any) => value !== null && value !== undefined);
+  }
+
+  /**
+   * 查询时包含已软删除的记录
+   * @returns 查询构建器（链式调用）
+   * 
+   * @example
+   * const allUsers = await User.withTrashed().findAll();
+   * const user = await User.withTrashed().find(1);
+   */
+  static withTrashed<T extends typeof SQLModel>(this: T): {
+    findAll: (
+      condition?: WhereCondition,
+      fields?: string[],
+    ) => Promise<InstanceType<T>[]>;
+    find: (
+      condition?: WhereCondition | number | string,
+      fields?: string[],
+    ) => Promise<InstanceType<T> | null>;
+    count: (condition?: WhereCondition) => Promise<number>;
+  } {
+    return {
+      findAll: async (
+        condition: WhereCondition = {},
+        fields?: string[],
+      ): Promise<InstanceType<T>[]> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+        }
+        const { where, params } = this.buildWhereClause(condition, true, false);
+        const columns = fields && fields.length > 0 ? fields.join(', ') : '*';
+        const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
+        const results = await this.adapter.query(sql, params);
+        return results.map((row: any) => {
+          const instance = new (this as any)();
+          Object.assign(instance, row);
+          return instance as InstanceType<T>;
+        });
+      },
+      find: async (
+        condition: WhereCondition | number | string = {},
+        fields?: string[],
+      ): Promise<InstanceType<T> | null> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+        }
+        const { where, params } = this.buildWhereClause(condition, true, false);
+        const columns = fields && fields.length > 0 ? fields.join(', ') : '*';
+        const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT 1`;
+        const results = await this.adapter.query(sql, params);
+        if (results.length === 0) {
+          return null;
+        }
+        const instance = new (this as any)();
+        Object.assign(instance, results[0]);
+        return instance as InstanceType<T>;
+      },
+      count: async (condition: WhereCondition = {}): Promise<number> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+        }
+        const { where, params } = this.buildWhereClause(condition, true, false);
+        const sql = `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
+        const results = await this.adapter.query(sql, params);
+        if (results.length > 0) {
+          return parseInt(results[0].count) || 0;
+        }
+        return 0;
+      },
+    };
+  }
+
+  /**
+   * 只查询已软删除的记录
+   * @returns 查询构建器（链式调用）
+   * 
+   * @example
+   * const deletedUsers = await User.onlyTrashed().findAll();
+   * const user = await User.onlyTrashed().find(1);
+   */
+  static onlyTrashed<T extends typeof SQLModel>(this: T): {
+    findAll: (
+      condition?: WhereCondition,
+      fields?: string[],
+    ) => Promise<InstanceType<T>[]>;
+    find: (
+      condition?: WhereCondition | number | string,
+      fields?: string[],
+    ) => Promise<InstanceType<T> | null>;
+    count: (condition?: WhereCondition) => Promise<number>;
+  } {
+    return {
+      findAll: async (
+        condition: WhereCondition = {},
+        fields?: string[],
+      ): Promise<InstanceType<T>[]> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+        }
+        const { where, params } = this.buildWhereClause(condition, false, true);
+        const columns = fields && fields.length > 0 ? fields.join(', ') : '*';
+        const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
+        const results = await this.adapter.query(sql, params);
+        return results.map((row: any) => {
+          const instance = new (this as any)();
+          Object.assign(instance, row);
+          return instance as InstanceType<T>;
+        });
+      },
+      find: async (
+        condition: WhereCondition | number | string = {},
+        fields?: string[],
+      ): Promise<InstanceType<T> | null> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+        }
+        const { where, params } = this.buildWhereClause(condition, false, true);
+        const columns = fields && fields.length > 0 ? fields.join(', ') : '*';
+        const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT 1`;
+        const results = await this.adapter.query(sql, params);
+        if (results.length === 0) {
+          return null;
+        }
+        const instance = new (this as any)();
+        Object.assign(instance, results[0]);
+        return instance as InstanceType<T>;
+      },
+      count: async (condition: WhereCondition = {}): Promise<number> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+        }
+        const { where, params } = this.buildWhereClause(condition, false, true);
+        const sql = `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
+        const results = await this.adapter.query(sql, params);
+        if (results.length > 0) {
+          return parseInt(results[0].count) || 0;
+        }
+        return 0;
+      },
+    };
+  }
+
+  /**
+   * 恢复软删除的记录
+   * @param condition 查询条件（可以是 ID、条件对象）
+   * @returns 恢复的记录数
+   * 
+   * @example
+   * await User.restore(1);
+   * await User.restore({ email: 'user@example.com' });
+   */
+  static async restore(
+    condition: WhereCondition | number | string,
+  ): Promise<number> {
+    if (!this.softDelete) {
+      throw new Error('Soft delete is not enabled for this model');
+    }
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const { where, params } = this.buildWhereClause(condition, true, true);
+    const sql = `UPDATE ${this.tableName} SET ${this.deletedAtField} = NULL WHERE ${where}`;
+    const result = await this.adapter.execute(sql, params);
+
+    const affectedRows = (typeof result === 'number')
+      ? result
+      : ((result && typeof result === 'object' && 'affectedRows' in result)
+        ? ((result as any).affectedRows || 0)
+        : 0);
+
+    return affectedRows;
+  }
+
+  /**
+   * 强制删除记录（忽略软删除，真正删除）
+   * @param condition 查询条件（可以是 ID、条件对象）
+   * @returns 删除的记录数
+   * 
+   * @example
+   * await User.forceDelete(1);
+   * await User.forceDelete({ email: 'user@example.com' });
+   */
+  static async forceDelete(
+    condition: WhereCondition | number | string,
+  ): Promise<number> {
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const { where, params } = this.buildWhereClause(condition, true, false);
+    const sql = `DELETE FROM ${this.tableName} WHERE ${where}`;
+    const result = await this.adapter.execute(sql, params);
+
+    const affectedRows = (typeof result === 'number')
+      ? result
+      : ((result && typeof result === 'object' && 'affectedRows' in result)
+        ? ((result as any).affectedRows || 0)
+        : 0);
+
+    return affectedRows;
+  }
+
+  /**
+   * 查找或创建记录（如果不存在则创建）
+   * @param condition 查询条件（用于判断是否存在）
+   * @param data 要创建的数据对象（如果不存在）
+   * @returns 找到或创建的模型实例
+   * 
+   * @example
+   * const user = await User.findOrCreate(
+   *   { email: 'user@example.com' },
+   *   { name: 'John', email: 'user@example.com', age: 25 }
+   * );
+   */
+  static async findOrCreate<T extends typeof SQLModel>(
+    this: T,
+    condition: WhereCondition,
+    data: Record<string, any>,
+  ): Promise<InstanceType<T>> {
+    await this.ensureInitialized();
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+    }
+
+    // 先尝试查找
+    const existing = await this.find(condition);
+    if (existing) {
+      return existing as InstanceType<T>;
+    }
+
+    // 如果不存在，创建新记录
+    return await this.create(data);
+  }
+
+  /**
+   * 清空表（删除所有记录）
+   * @returns 删除的记录数
+   * 
+   * @example
+   * await User.truncate();
+   */
+  static async truncate(): Promise<number> {
+    if (!this.adapter) {
+      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+    }
+
+    const sql = `TRUNCATE TABLE ${this.tableName}`;
+    const result = await this.adapter.execute(sql, []);
+
+    const affectedRows = (typeof result === 'number')
+      ? result
+      : ((result && typeof result === 'object' && 'affectedRows' in result)
+        ? ((result as any).affectedRows || 0)
+        : 0);
+
+    return affectedRows;
   }
 
   /**
