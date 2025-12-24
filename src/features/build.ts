@@ -284,7 +284,7 @@ function createJSRResolverPlugin(
   return {
     name: "jsr-resolver",
     setup(build: esbuild.PluginBuild) {
-      // 处理子路径导入（如 chart/auto），如果父包在 external 列表中，则标记为 external
+      // 处理子路径导入（如 chart/auto），如果父包在 external 列表中或在 import map 中，则标记为 external
       // 必须在 @dreamer/dweb/client 处理之前执行，但使用更具体的过滤器避免冲突
       build.onResolve({ filter: /^[^@./].*\/.*/ }, (args) => {
         // 检查是否是子路径导入（包含 / 但不是相对路径，也不是 @ 开头的）
@@ -293,6 +293,14 @@ function createJSRResolverPlugin(
           const parentPackage = args.path.split("/")[0];
           // 如果父包在 external 列表中，将子路径也标记为 external
           if (externalPackages.includes(parentPackage)) {
+            return {
+              path: args.path,
+              external: true,
+            };
+          }
+          // 如果父包在 import map 中（npm/jsr/http），子路径也应该标记为 external
+          // 因为浏览器会通过 import map 来解析，esbuild 无法打包 npm 包的子路径
+          if (parentPackage in importMap) {
             return {
               path: args.path,
               external: true,
@@ -315,6 +323,14 @@ function createJSRResolverPlugin(
           const parentPackage = `${parts[0]}/${parts[1]}`;
           // 如果父包在 external 列表中，将子路径也标记为 external
           if (externalPackages.includes(parentPackage)) {
+            return {
+              path: args.path,
+              external: true,
+            };
+          }
+          // 如果父包在 import map 中（npm/jsr/http），子路径也应该标记为 external
+          // 因为浏览器会通过 import map 来解析，esbuild 无法打包 npm 包的子路径
+          if (parentPackage in importMap) {
             return {
               path: args.path,
               external: true,
