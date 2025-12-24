@@ -10,7 +10,19 @@
     "./console": "./src/console/mod.ts",
     "./database": "./src/features/database/mod.ts",
     "./extensions": "./src/extensions/mod.ts",
-    "./extensions/*": "./src/extensions/helpers/*.ts"
+    "./extensions/validation": "./src/extensions/helpers/validation.ts",
+    "./extensions/format": "./src/extensions/helpers/format.ts",
+    "./extensions/crypto": "./src/extensions/helpers/crypto.ts",
+    "./extensions/cache": "./src/extensions/helpers/cache.ts",
+    "./extensions/http": "./src/extensions/helpers/http.ts",
+    "./extensions/web3": "./src/extensions/helpers/web3.ts",
+    "./extensions/utils": "./src/extensions/helpers/utils.ts",
+    "./extensions/storage": "./src/extensions/helpers/storage.ts",
+    "./extensions/url": "./src/extensions/helpers/url.ts",
+    "./extensions/time": "./src/extensions/helpers/time.ts",
+    "./extensions/array": "./src/extensions/helpers/array.ts",
+    "./extensions/math": "./src/extensions/helpers/math.ts",
+    "./extensions/file": "./src/extensions/helpers/file.ts"
   },
   "description": "A modern full-stack web framework based on Deno + Preact + Tailwind CSS",
   "tasks": {
