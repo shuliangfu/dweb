@@ -8,6 +8,8 @@ import Hero from "../components/Hero.tsx";
 import CodeBlock from "../components/CodeBlock.tsx";
 import type { LoadContext, PageProps } from "@dreamer/dweb";
 import { getJsrPackageUrl, getVersionString } from "../utils.ts";
+import { exampleStore, useExampleStore } from "../stores/example.ts";
+import { useEffect } from "preact/hooks";
 
 /**
  * 页面元数据（用于 SEO）
@@ -106,6 +108,24 @@ export const load = async ({
 export default function HomePage(
   { params: _params, query: _query, data }: PageProps,
 ) {
+  // 使用 useExampleStore hook 获取响应式状态
+  const state = useExampleStore();
+
+  useEffect(() => {
+    console.log('count changed:', state.count);
+  }, [state.count]);
+
+  useEffect(() => {
+    // 使用 setInterval 定时调用 action
+    const interval = setInterval(() => {
+      exampleStore.increment();
+    }, 2000);
+
+    // 清理函数：组件卸载时清除定时器
+    return () => {
+      clearInterval(interval);
+    };
+  }, []); // 空依赖数组，只在组件挂载时设置一次
 
   const { versionString } = data as {
     versionString: string;

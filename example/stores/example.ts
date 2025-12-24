@@ -3,7 +3,7 @@
  * 使用 defineStore 定义，声明式 API
  */
 
-import { defineStore } from '@dreamer/dweb/client';
+import { defineStore } from "@dreamer/dweb/client";
 
 export interface ExampleStoreState extends Record<string, unknown> {
   count: number;
@@ -16,10 +16,10 @@ export interface ExampleStoreState extends Record<string, unknown> {
  * 使用声明式 API，简洁易用
  * 直接导出，类型会自动推断
  */
-export const exampleStore = defineStore('example', {
+export const exampleStore = defineStore("example", {
   state: (): ExampleStoreState => ({
     count: 0,
-    message: '',
+    message: "",
     items: [] as string[],
   }),
   actions: {
@@ -43,3 +43,18 @@ export const exampleStore = defineStore('example', {
   },
 });
 
+/**
+ * 响应式使用 Example Store 的 Hook
+ * 在组件中使用，会自动响应状态变化
+ *
+ * @example
+ * ```tsx
+ * const state = useExampleStore();
+ * // state.count 会自动响应变化
+ * // state.increment() 可以调用 actions
+ * ```
+ */
+export const useExampleStore = (): typeof exampleStore.$state => {
+  return (exampleStore.$use as () =>
+    typeof exampleStore.$state)() as typeof exampleStore.$state;
+};

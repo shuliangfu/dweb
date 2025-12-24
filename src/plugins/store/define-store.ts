@@ -268,7 +268,11 @@ export function defineStore<
       
       // 特殊属性
       if (prop === '$name') return name;
-      if (prop === '$state') return currentState;
+      if (prop === '$state') {
+        // 返回 store 代理对象本身，这样既可以访问状态，也可以调用 actions
+        // 例如：const state = store.$state; state.count; state.increment();
+        return storeProxy;
+      }
       if (prop === '$reset') {
         return () => {
           setStoreState<{ [key: string]: Record<string, unknown> }>((prev) => ({
@@ -293,6 +297,60 @@ export function defineStore<
               listener(initialState);
             }
           });
+        };
+      }
+      if (prop === '$use') {
+        // 返回一个 hook 函数，用于在组件中响应式地使用 store
+        // 这个函数会在组件的顶层被调用，所以可以安全地使用 hooks
+        return function useStoreHook(): T {
+          // 检查是否在客户端环境
+          const isClient = typeof globalThis !== 'undefined' && 
+                          typeof globalThis.window !== 'undefined' &&
+                          typeof globalThis.document !== 'undefined';
+          
+          if (!isClient) {
+            // 服务端渲染时，只返回当前状态
+            return getCurrentState() as T;
+          }
+          
+          // 客户端环境：使用 hooks
+          try {
+            // 从全局获取 hooks（preact 会被预加载到 globalThis.__PREACT_HOOKS__）
+            const hooks = (globalThis as any).__PREACT_HOOKS__;
+            
+            if (!hooks || !hooks.useState || !hooks.useEffect) {
+              // 如果 hooks 不可用，返回当前状态，不进行响应式更新
+              return getCurrentState() as T;
+            }
+            
+            const { useState, useEffect } = hooks;
+            
+            // 使用 useState 存储状态，初始值为 store 的当前状态
+            const [state, setState] = useState(getCurrentState() as T);
+            
+            // 使用 useEffect 订阅 store 状态变化
+            useEffect(() => {
+              // 订阅 store 状态变化
+              const unsubscribe = storeProxy.$subscribe((newState: T) => {
+                // 当 store 状态变化时，更新本地 state，触发组件重新渲染
+                setState(newState);
+              });
+              
+              // 清理函数：组件卸载时取消订阅
+              return () => {
+                if (unsubscribe) {
+                  unsubscribe();
+                }
+              };
+            }, []); // 空依赖数组，只在组件挂载时订阅一次
+            
+            // 返回当前状态
+            return state;
+          } catch (error) {
+            // 如果出错（比如 hooks 不可用），返回当前状态
+            console.warn('[Store] $use hook 执行失败，返回当前状态:', error);
+            return getCurrentState() as T;
+          }
         };
       }
       
