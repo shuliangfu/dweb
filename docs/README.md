@@ -13,12 +13,21 @@
 
 ### 功能模块
 
-- [数据库 (database)](./database.md) - 数据库支持、ORM/ODM、查询构建器
-- [GraphQL](./graphql.md) - GraphQL 服务器和查询处理
-- [WebSocket](./websocket.md) - WebSocket 服务器和客户端
-- [Session](./session.md) - Session 管理和多种存储方式
-- [Cookie](./cookie.md) - Cookie 管理和签名
-- [Logger](./logger.md) - 日志系统和日志轮转
+- [功能模块 (features)](./features/README.md) - 所有功能模块的完整文档
+  - [数据库 (database)](./features/database/README.md) - 数据库支持、ORM/ODM、查询构建器
+  - [GraphQL](./features/graphql/README.md) - GraphQL 服务器和查询处理
+  - [WebSocket](./features/websocket/README.md) - WebSocket 服务器和客户端
+  - [Session](./features/session.md) - Session 管理和多种存储方式
+  - [Cookie](./features/cookie.md) - Cookie 管理和签名
+  - [Logger](./features/logger.md) - 日志系统和日志轮转
+  - [项目创建](./features/create.md) - 使用 CLI 创建项目
+  - [开发服务器](./features/dev.md) - 开发模式服务器
+  - [热模块替换 (HMR)](./features/hmr.md) - 开发时的热更新
+  - [环境变量](./features/env.md) - 环境变量管理
+  - [构建](./features/build.md) - 生产构建
+  - [生产服务器](./features/prod.md) - 生产模式服务器
+  - [性能监控](./features/monitoring.md) - 性能监控功能
+  - [优雅关闭](./features/shutdown.md) - 服务器优雅关闭
 - [国际化 (i18n)](./i18n-model-usage.md) - 多语言支持和翻译管理
 
 ### 扩展模块
