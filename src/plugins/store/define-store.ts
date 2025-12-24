@@ -91,6 +91,8 @@ export interface StoreInstance<T extends StoreState> {
   $reset: () => void;
   /** 订阅状态变化 */
   $subscribe: (listener: (state: T) => void) => (() => void) | null;
+  /** 响应式使用 Store 的 Hook（仅在客户端可用） */
+  $use: () => T;
 }
 
 /**
@@ -305,8 +307,8 @@ export function defineStore<
         return function useStoreHook(): T {
           // 检查是否在客户端环境
           const isClient = typeof globalThis !== 'undefined' && 
-                          typeof globalThis.window !== 'undefined' &&
-                          typeof globalThis.document !== 'undefined';
+                          'window' in globalThis &&
+                          'document' in globalThis;
           
           if (!isClient) {
             // 服务端渲染时，只返回当前状态
@@ -391,6 +393,32 @@ export function defineStore<
   });
   
   return storeProxy;
+}
+
+/**
+ * 响应式使用 Store 的 Hook
+ * 类似 useState 的 API，可以直接传入 store 实例
+ * 
+ * @param store Store 实例（通过 defineStore 创建）
+ * @returns Store 的当前状态（包含状态和 actions），当状态变化时会自动更新
+ * 
+ * @example
+ * ```typescript
+ * import { exampleStore, useStore } from '@dreamer/dweb/client';
+ * 
+ * export default function MyComponent() {
+ *   const state = useStore(exampleStore);
+ *   // state.count 会自动响应 store 的变化
+ *   // state.increment() 可以调用 actions
+ * }
+ * ```
+ */
+export function useStore<T extends StoreState>(
+  store: StoreInstance<T>
+): T {
+  // 使用 store 的 $use() 方法获取响应式状态
+  // $use() 内部已经处理了 useState 和 useEffect
+  return store.$use();
 }
 
 /**

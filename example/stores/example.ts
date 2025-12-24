@@ -3,7 +3,7 @@
  * 使用 defineStore 定义，声明式 API
  */
 
-import { defineStore } from "@dreamer/dweb/client";
+import { defineStore, useStore } from "@dreamer/dweb/client";
 
 export interface ExampleStoreState extends Record<string, unknown> {
   count: number;
@@ -54,7 +54,6 @@ export const exampleStore = defineStore("example", {
  * // state.increment() 可以调用 actions
  * ```
  */
-export const useExampleStore = (): typeof exampleStore.$state => {
-  return (exampleStore.$use as () =>
-    typeof exampleStore.$state)() as typeof exampleStore.$state;
+export const useExampleStore = () => {
+  return useStore(exampleStore);
 };

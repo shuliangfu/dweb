@@ -18,6 +18,7 @@ export {
   defineStore,
   getStoreInitialState,
   storeAction,
+  useStore,
 } from './plugins/store/define-store.ts';
 
 // 导出 Store 类型

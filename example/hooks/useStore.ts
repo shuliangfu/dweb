@@ -1,6 +1,7 @@
 /**
  * Store Hook
  * 用于在组件中响应式地使用 defineStore 创建的 store
+ * 类似 useState 的 API，可以直接传入 store 实例
  * 
  * @example
  * ```typescript
@@ -8,7 +9,7 @@
  * import { useStore } from '../hooks/useStore.ts';
  * 
  * export default function HomePage() {
- *   // 直接使用，会自动响应状态变化
+ *   // 直接使用，类似 useState(store)，会自动响应状态变化
  *   const state = useStore(sidebarStore);
  *   
  *   useEffect(() => {
@@ -16,7 +17,7 @@
  *   }, [state.isCollapsed]);
  * 
  *   return (
- *     <div onClick={() => sidebarStore.setCollapsed(!state.isCollapsed)}>
+ *     <div onClick={() => state.setCollapsed(!state.isCollapsed)}>
  *       isCollapsed: {state.isCollapsed ? 'true' : 'false'}
  *     </div>
  *   );
@@ -24,52 +25,35 @@
  * ```
  */
 
-import { useState, useEffect } from 'preact/hooks';
-
 /**
  * Store 实例类型（通过 defineStore 创建的）
+ * 包含 $use 方法用于响应式使用
  */
-type StoreInstance<T = Record<string, unknown>> = T & {
-  $subscribe: (listener: (state: T) => void) => (() => void) | null;
+type StoreInstance<T = Record<string, unknown>> = {
+  $use?: () => T;
   $state: T;
   [key: string]: unknown;
 };
 
 /**
  * 响应式地使用 Store
+ * 类似 useState 的 API，可以直接传入 store 实例
  * 
  * @param store Store 实例（通过 defineStore 创建）
- * @returns Store 的当前状态，当状态变化时会自动更新
+ * @returns Store 的当前状态（包含状态和 actions），当状态变化时会自动更新
  * 
  * @example
  * ```typescript
- * const state = useStore(sidebarStore);
- * // state.isCollapsed 会自动响应 store 的变化
+ * const state = useStore(exampleStore);
+ * // state.count 会自动响应 store 的变化
+ * // state.increment() 可以调用 actions
  * ```
  */
 export function useStore<T extends Record<string, unknown>>(
-  store: StoreInstance<T>
+  store: StoreInstance<T> & { $use: () => T }
 ): T {
-  // 使用 useState 存储状态，初始值为 store 的当前状态
-  const [state, setState] = useState<T>(store.$state);
-
-  useEffect(() => {
-    // 订阅 store 状态变化
-    // $subscribe 会立即调用一次，传递当前状态
-    const unsubscribe = store.$subscribe((newState: T) => {
-      // 当 store 状态变化时，更新本地 state，触发组件重新渲染
-      setState(newState);
-    });
-
-    // 清理函数：组件卸载时取消订阅
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, [store]); // 依赖 store 实例
-
-  // 返回当前状态
-  return state;
+  // 使用 store 的 $use() 方法获取响应式状态
+  // $use() 内部已经处理了 useState 和 useEffect
+  return store.$use();
 }
 

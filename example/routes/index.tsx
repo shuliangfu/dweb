@@ -108,7 +108,7 @@ export const load = async ({
 export default function HomePage(
   { params: _params, query: _query, data }: PageProps,
 ) {
-  // 使用 useExampleStore hook 获取响应式状态
+  // 使用 useStore hook 获取响应式状态，类似 useState(exampleStore)
   const state = useExampleStore();
 
   useEffect(() => {
