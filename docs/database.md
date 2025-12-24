@@ -998,6 +998,9 @@ const result = await User
 await user.update({ age: 26 });
 await user.updateLastLogin();
 
+// 5.1. 通过 ID 更新（静态方法）
+await User.updateById(user.id, { age: 27 });
+
 // 6. 使用实例方法
 await user.addBalance(100);
 await user.deductBalance(50);
@@ -1024,6 +1027,9 @@ console.log(`总数: ${page1.total}, 当前页: ${page1.data.length}`);
 // 10. 统计查询
 const count = await User.count({ status: "active" });
 const exists = await User.exists({ email: "john@example.com" });
+
+// 11. 通过 ID 删除（静态方法）
+await User.deleteById(user.id);
 
 // 11. MongoDB 特有功能
 // 地理空间查询
@@ -1572,17 +1578,17 @@ const db = manager.get("default");
 
 #### 更新方法
 
-- `update(condition, data)` - 更新记录
+- `update(condition, data)` - 更新记录（静态方法）
+- `updateById(id, data)` - 通过主键 ID 更新记录（静态方法）
 - `updateMany(condition, data)` - 批量更新
 - `increment(condition, field, amount)` - 递增字段（静态方法）
-- `increment(field, amount)` - 递增字段（实例方法）
 - `decrement(condition, field, amount)` - 递减字段（静态方法）
-- `decrement(field, amount)` - 递减字段（实例方法）
 - `findOneAndUpdate(condition, data)` - 查找并更新（仅 MongoDB）
 
 #### 删除方法
 
 - `delete(condition)` - 删除记录（静态方法）
+- `deleteById(id)` - 通过主键 ID 删除记录（静态方法）
 - `delete()` - 删除当前实例（实例方法）
 - `deleteMany(condition)` - 批量删除
 - `findOneAndDelete(condition)` - 查找并删除（仅 MongoDB）
