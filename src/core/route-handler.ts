@@ -286,9 +286,20 @@ export class RouteHandler {
                       // 使用 Deno 的 import.meta.resolve 来解析路径
                       try {
                         const resolved = await import.meta.resolve(fullPath);
+                        // 将 file:// URL 转换为绝对路径
+                        let resolvedPath: string;
+                        if (resolved.startsWith("file://")) {
+                          // 使用 URL 对象解析 file:// URL
+                          const url = new URL(resolved);
+                          resolvedPath = url.pathname;
+                          // 在 Windows 上，pathname 可能以 / 开头，需要移除（但 Deno 通常处理得很好）
+                          // 在 Unix 系统上，pathname 就是正确的路径
+                        } else {
+                          resolvedPath = resolved;
+                        }
                         // 如果解析成功，返回解析后的路径
                         return {
-                          path: resolved,
+                          path: resolvedPath,
                         };
                       } catch (error) {
                         // 如果解析失败，返回错误
