@@ -45,27 +45,32 @@ export async function createImportMapScript(): Promise<string | null> {
       return null;
     }
     
-    // 获取 imports，只保留客户端需要的模块
+    // 获取 imports，包含所有客户端需要的模块
     const imports = denoJson.imports || {};
     const clientImports: Record<string, string> = {};
     
-    // 包含 preact 相关的导入
-    if (imports["preact"]) {
-      clientImports["preact"] = imports["preact"];
-    }
-    if (imports["preact/jsx-runtime"]) {
-      clientImports["preact/jsx-runtime"] = imports["preact/jsx-runtime"];
-    }
-    if (imports["preact/hooks"]) {
-      clientImports["preact/hooks"] = imports["preact/hooks"];
-    }
-    // 添加 preact/signals 支持（如果存在）
-    if (imports["preact/signals"]) {
-      clientImports["preact/signals"] = imports["preact/signals"];
-    }
-    // 添加 preact-router 支持（如果存在）
-    if (imports["preact-router"]) {
-      clientImports["preact-router"] = imports["preact-router"];
+    // 遍历所有 imports，只排除服务端依赖
+    for (const [key, value] of Object.entries(imports)) {
+      // 排除服务端依赖（这些不应该在浏览器中加载）
+      if (
+        key === "@dreamer/dweb" ||
+        (key.startsWith("@dreamer/dweb/") && key !== "@dreamer/dweb/client") ||
+        key === "preact-render-to-string" ||
+        key.startsWith("@std/") ||
+        key.startsWith("deno:") ||
+        key.startsWith("@sqlite") ||
+        key.startsWith("@postgres") ||
+        key.startsWith("@mysql") ||
+        key.startsWith("@mongodb") ||
+        key === "sharp"
+      ) {
+        continue;
+      }
+      
+      // 包含所有其他导入（preact、npm 包等）
+      if (typeof value === "string") {
+        clientImports[key] = value;
+      }
     }
     
     if (Object.keys(clientImports).length === 0) {
