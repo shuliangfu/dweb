@@ -60,14 +60,10 @@ let preloadedImportMapScript: string | null = null;
 
 /**
  * 预先加载 import map 脚本（在服务器启动时调用）
- * @param appName 应用名称（多应用模式下使用）
  */
-export async function preloadImportMapScript(appName?: string): Promise<void> {
+export async function preloadImportMapScript(): Promise<void> {
   try {
-    const searchPaths = appName 
-      ? [Deno.cwd(), appName, ".", "./"]
-      : [Deno.cwd(), ".", "./"];
-    preloadedImportMapScript = await createImportMapScript(searchPaths);
+    preloadedImportMapScript = await createImportMapScript();
   } catch (_error) {
     // 预加载失败时静默处理
   }
@@ -1467,12 +1463,7 @@ export class RouteHandler {
     let importMapScript = preloadedImportMapScript;
     if (!importMapScript) {
       try {
-        // 根据应用配置构建搜索路径（项目根目录和应用目录）
-        const appName = this.config?.name;
-        const searchPaths = appName 
-          ? [Deno.cwd(), appName, ".", "./"]
-          : [Deno.cwd(), ".", "./"];
-        importMapScript = await createImportMapScript(searchPaths);
+        importMapScript = await createImportMapScript();
       } catch (_error) {
         // 静默处理错误
       }
