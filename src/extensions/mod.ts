@@ -48,7 +48,7 @@ export * from "./helpers/format.ts";
 export * from "./helpers/crypto.ts";
 export * from "./helpers/cache.ts";
 export * from "./helpers/http.ts";
-export * as web3 from "./helpers/web3.ts";
+export * from "./helpers/web3.ts";
 
 // 导出用户扩展示例（可选）
 export * from "./user/index.ts";
