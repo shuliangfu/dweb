@@ -232,7 +232,11 @@ export function isImageFile(file: File | Blob | string): boolean {
     "svg",
     "ico",
   ];
-  const filename = typeof file === "string" ? file : file.name;
+  const filename = typeof file === "string"
+    ? file
+    : file instanceof File
+    ? file.name
+    : "";
   const ext = getFileExtension(filename);
   return imageExtensions.includes(ext);
 }
@@ -263,7 +267,11 @@ export function isVideoFile(file: File | Blob | string): boolean {
     "mkv",
     "m4v",
   ];
-  const filename = typeof file === "string" ? file : file.name;
+  const filename = typeof file === "string"
+    ? file
+    : file instanceof File
+    ? file.name
+    : "";
   const ext = getFileExtension(filename);
   return videoExtensions.includes(ext);
 }
@@ -293,7 +301,11 @@ export function isAudioFile(file: File | Blob | string): boolean {
     "m4a",
     "wma",
   ];
-  const filename = typeof file === "string" ? file : file.name;
+  const filename = typeof file === "string"
+    ? file
+    : file instanceof File
+    ? file.name
+    : "";
   const ext = getFileExtension(filename);
   return audioExtensions.includes(ext);
 }
@@ -415,9 +427,14 @@ export function createFile(
     throw new Error("createFile 只能在浏览器环境使用");
   }
 
-  const blob = data instanceof Blob
-    ? data
-    : new Blob([data], { type: mimeType });
+  let blob: Blob;
+  if (data instanceof Blob) {
+    blob = data;
+  } else if (data instanceof Uint8Array) {
+    blob = new Blob([data.buffer], { type: mimeType });
+  } else {
+    blob = new Blob([data], { type: mimeType });
+  }
 
   return new File([blob], filename, { type: mimeType });
 }
