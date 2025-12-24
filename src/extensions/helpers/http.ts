@@ -97,7 +97,7 @@ export class HttpClient {
    */
   interceptors = {
     request: {
-      use: (interceptor: RequestInterceptor) => {
+      use: (interceptor: RequestInterceptor): (() => void) => {
         this.requestInterceptors.push(interceptor);
         return () => {
           const index = this.requestInterceptors.indexOf(interceptor);
@@ -111,7 +111,7 @@ export class HttpClient {
       use: (
         onFulfilled?: ResponseInterceptor,
         onRejected?: ErrorInterceptor,
-      ) => {
+      ): (() => void) => {
         if (onFulfilled) {
           this.responseInterceptors.push(onFulfilled);
         }
