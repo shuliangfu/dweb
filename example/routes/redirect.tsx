@@ -40,34 +40,3 @@ export const load = ({ res }: LoadContext) => {
   res.redirect('/', 301);
 };
 
-/**
- * 页面组件（实际上不会渲染，因为 load 函数已经重定向了）
- * 但如果客户端直接访问或重定向失败，这个组件会作为后备显示
- * 
- * @param props 页面属性
- * @returns JSX 元素
- */
-export default function RedirectPage({ params: _params, query: _query, data: _data }: {
-  params: Record<string, string>;
-  query: Record<string, string>;
-  data: unknown;
-}) {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">
-          正在跳转...
-        </h1>
-        <p className="text-gray-600 mb-4">
-          如果页面没有自动跳转，请
-          <a href="/" className="text-blue-600 hover:text-blue-800 underline ml-1">
-            点击这里
-          </a>
-          返回首页
-        </p>
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    </div>
-  );
-}
-
