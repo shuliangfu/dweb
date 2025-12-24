@@ -44,6 +44,9 @@ export * from './middleware/mod.ts';
 // 导出内置插件
 export * from './plugins/mod.ts';
 
+// 导出扩展系统
+export * from './extensions/mod.ts';
+
 // 导出功能模块
 export { CookieManager } from './features/cookie.ts';
 export { SessionManager } from './features/session.ts';
@@ -140,6 +143,14 @@ import { Server } from './core/server.ts';
 import { MiddlewareManager } from './core/middleware.ts';
 import { PluginManager } from './core/plugin.ts';
 import type { Middleware, MiddlewareConfig, Plugin } from './types/index.ts';
+
+// 导出控制台工具
+export * from './console/mod.ts';
+
+// 导出数据库工具
+export * from './features/database/mod.ts';
+
+
 
 /**
  * 应用实例接口
