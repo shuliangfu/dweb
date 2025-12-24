@@ -446,7 +446,7 @@ export async function createApp(
   await generateDenoJson(projectDir, useTailwindV4, isMultiApp, appNames);
   
   // 生成示例路由和组件
-  await generateExampleRoutes(projectDir, isMultiApp, appNames, apiMode);
+  await generateExampleRoutes(projectDir, isMultiApp, appNames, apiMode, useTailwindV4);
   
   // 生成 stores 目录和示例
   await generateStores(projectDir, isMultiApp, appNames);
@@ -722,7 +722,8 @@ async function generateExampleRoutes(
   projectDir: string,
   isMultiApp: boolean,
   appNames: string[],
-  apiMode: string
+  apiMode: string,
+  useTailwindV4: boolean
 ): Promise<void> {
   if (isMultiApp) {
     // 多应用模式：为每个应用生成路由和组件
@@ -734,7 +735,7 @@ async function generateExampleRoutes(
       await ensureDir(appComponentsDir);
       
     // 生成示例路由
-    await generateRoutesForApp(appRoutesDir, appName, apiMode);
+    await generateRoutesForApp(appRoutesDir, appName, apiMode, useTailwindV4);
     
     // 生成示例组件
     await generateComponentsForApp(appComponentsDir, appName);
@@ -757,7 +758,7 @@ async function generateExampleRoutes(
     const projectName = path.basename(projectDir);
     
     // 生成示例路由
-    await generateRoutesForApp(routesDir, projectName, apiMode);
+    await generateRoutesForApp(routesDir, projectName, apiMode, useTailwindV4);
     
     // 生成示例组件
     await generateComponentsForApp(componentsDir, projectName);
@@ -770,7 +771,7 @@ async function generateExampleRoutes(
 /**
  * 为单个应用生成路由文件
  */
-async function generateRoutesForApp(routesDir: string, appName: string, apiMode: string): Promise<void> {
+async function generateRoutesForApp(routesDir: string, appName: string, apiMode: string, useTailwindV4: boolean): Promise<void> {
   // 获取框架版本号
   const frameworkVersion = await getFrameworkVersion();
 
@@ -1148,7 +1149,7 @@ ${apiCallCode}
   return (
     <div className="space-y-0">
       {/* Hero 区域 */}
-      <div className="bg-linear-to-r from-indigo-600 to-purple-600 py-20">
+      <div className="${useTailwindV4 ? 'bg-linear-to-r' : 'bg-gradient-to-r'} from-indigo-600 to-purple-600 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
             {pageData.message}
@@ -1510,7 +1511,7 @@ export default function About() {
   return (
     <div className="space-y-0">
       {/* 页面标题 */}
-      <div className="bg-linear-to-r from-blue-600 to-indigo-600 py-16">
+      <div className="${useTailwindV4 ? 'bg-linear-to-r' : 'bg-gradient-to-r'} from-blue-600 to-indigo-600 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
             关于
