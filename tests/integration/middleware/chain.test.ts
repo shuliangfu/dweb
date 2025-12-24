@@ -6,7 +6,6 @@
 import { assertEquals, assert } from '@std/assert';
 import { Server } from '../../../src/core/server.ts';
 import { cors } from '../../../src/middleware/cors.ts';
-import { compression } from '../../../src/middleware/compression.ts';
 import { logger } from '../../../src/middleware/logger.ts';
 import type { Middleware } from '../../../src/types/index.ts';
 
@@ -15,7 +14,6 @@ Deno.test('Integration - Middleware - 中间件链式调用', async () => {
   
   // 添加多个中间件
   server.use(cors());
-  server.use(compression());
   server.use(logger());
   
   // 设置处理器

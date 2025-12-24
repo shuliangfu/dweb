@@ -14,9 +14,7 @@ Deno.test('Theme Plugin - 创建插件', () => {
 
 Deno.test('Theme Plugin - 注入主题脚本', async () => {
   const plugin = theme({
-    config: {
-      defaultTheme: 'light',
-    },
+    defaultTheme: 'light',
   });
   
   const req = {
@@ -62,25 +60,19 @@ Deno.test('Theme Plugin - 注入主题脚本', async () => {
 
 Deno.test('Theme Plugin - 默认主题配置', () => {
   const plugin1 = theme({
-    config: {
-      defaultTheme: 'light',
-    },
+    defaultTheme: 'light',
   });
   
   assertEquals(plugin1.name, 'theme');
   
   const plugin2 = theme({
-    config: {
-      defaultTheme: 'dark',
-    },
+    defaultTheme: 'dark',
   });
   
   assertEquals(plugin2.name, 'theme');
   
   const plugin3 = theme({
-    config: {
-      defaultTheme: 'auto',
-    },
+    defaultTheme: 'auto',
   });
   
   assertEquals(plugin3.name, 'theme');
