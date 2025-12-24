@@ -430,10 +430,14 @@ export function createFile(
   let blob: Blob;
   if (data instanceof Blob) {
     blob = data;
-  } else if (data instanceof Uint8Array) {
-    blob = new Blob([data.buffer], { type: mimeType });
   } else {
-    blob = new Blob([data], { type: mimeType });
+    // 将数据转换为 BlobPart 类型
+    const blobParts: BlobPart[] = typeof data === "string"
+      ? [data]
+      : data instanceof Uint8Array
+      ? [data]
+      : [data as ArrayBuffer];
+    blob = new Blob(blobParts, { type: mimeType });
   }
 
   return new File([blob], filename, { type: mimeType });
