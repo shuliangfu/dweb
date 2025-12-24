@@ -2,7 +2,7 @@
 /**
  * 控制台 CLI 示例
  * 演示如何使用 Command 类创建命令行工具，包括数据库操作
- * 
+ *
  * 使用方法：
  *   deno run -A console/cli.ts --help
  *   deno run -A console/cli.ts greet --name "张三" --age 25
@@ -12,12 +12,12 @@
  *   deno run -A console/cli.ts db list-users --limit 5
  *   deno run -A console/cli.ts db find-user -e "test@example.com"
  *   deno run -A console/cli.ts db count-users
- * 
+ *
  * 注意：使用数据库命令前，请确保在 dweb.config.ts 中配置了数据库连接信息
  */
 
 import { Command } from "../../src/console/command.ts";
-import { success, info, error, warning } from "@dreamer/dweb/console";
+import { error, info, success, warning } from "@dreamer/dweb/console";
 import { initDatabaseFromConfig } from "@dreamer/dweb/database";
 import { User } from "../models/User.ts";
 
@@ -176,7 +176,9 @@ cli
           const content = await Deno.readTextFile(path);
           info(`文件内容：\n${content}`);
         } catch (err) {
-          error(`读取文件失败: ${err instanceof Error ? err.message : String(err)}`);
+          error(
+            `读取文件失败: ${err instanceof Error ? err.message : String(err)}`,
+          );
           Deno.exit(1);
         }
         break;
@@ -192,7 +194,9 @@ cli
           await Deno.remove(path);
           success(`文件删除成功: ${path}`);
         } catch (err) {
-          error(`删除文件失败: ${err instanceof Error ? err.message : String(err)}`);
+          error(
+            `删除文件失败: ${err instanceof Error ? err.message : String(err)}`,
+          );
           Deno.exit(1);
         }
         break;
@@ -219,13 +223,13 @@ async function ensureDatabaseInitialized(): Promise<void> {
 
   try {
     info("正在初始化数据库连接...");
-    
+
     // 先初始化数据库连接（会自动设置配置加载器）
     await initDatabaseFromConfig();
-    
+
     // 然后初始化模型（此时配置加载器已设置，数据库已连接）
     await User.init();
-    
+
     dbInitialized = true;
     success("数据库连接初始化成功");
   } catch (err) {
@@ -304,7 +308,9 @@ dbCommand
         info(`年龄: ${user.age}`);
       }
     } catch (err) {
-      error(`创建用户失败: ${err instanceof Error ? err.message : String(err)}`);
+      error(
+        `创建用户失败: ${err instanceof Error ? err.message : String(err)}`,
+      );
       Deno.exit(1);
     }
   });
@@ -365,7 +371,9 @@ dbCommand
         console.log("");
       }
     } catch (err) {
-      error(`查询用户失败: ${err instanceof Error ? err.message : String(err)}`);
+      error(
+        `查询用户失败: ${err instanceof Error ? err.message : String(err)}`,
+      );
       Deno.exit(1);
     }
   });
@@ -406,7 +414,9 @@ dbCommand
       info(`状态: ${user.status}`);
       info(`创建时间: ${user.createdAt}`);
     } catch (err) {
-      error(`查找用户失败: ${err instanceof Error ? err.message : String(err)}`);
+      error(
+        `查找用户失败: ${err instanceof Error ? err.message : String(err)}`,
+      );
       Deno.exit(1);
     }
   });
@@ -427,7 +437,9 @@ dbCommand
       info(`活跃用户: ${activeUsers.length}`);
       info(`非活跃用户: ${inactiveUsers.length}`);
     } catch (err) {
-      error(`统计用户失败: ${err instanceof Error ? err.message : String(err)}`);
+      error(
+        `统计用户失败: ${err instanceof Error ? err.message : String(err)}`,
+      );
       Deno.exit(1);
     }
   });
@@ -435,7 +447,4 @@ dbCommand
 /**
  * 执行命令
  */
-if (import.meta.main) {
-  await cli.execute();
-}
-
+await cli.execute();
