@@ -209,6 +209,8 @@ difference([1, 2, 3, 4], [2, 3], [3, 4]);
 
 ### 数组统计函数
 
+> **注意：** `sum`, `average`, `max`, `min` 函数已移至 `math.ts`。如需使用，请从 `@dreamer/dweb/extensions` 导入，这些函数在 `math.ts` 中提供相同的功能。
+
 ```typescript
 import { sum, average, max, min } from "@dreamer/dweb/extensions";
 
@@ -224,6 +226,8 @@ max([1, 5, 3, 9, 2]); // 9
 // 最小值
 min([1, 5, 3, 9, 2]); // 1
 ```
+
+> 这些函数现在位于 [数学工具](./math.md) 模块中。
 
 ## 完整示例
 
@@ -289,8 +293,6 @@ const avg = average(scores);
 - `difference<T>(array, ...arrays)` - 数组差集
 
 ### 统计函数
-- `sum(array)` - 数组求和
-- `average(array)` - 数组平均值
-- `max(array)` - 数组最大值
-- `min(array)` - 数组最小值
+
+> **注意：** `sum`, `average`, `max`, `min` 函数已移至 [数学工具](./math.md) 模块。这些函数在 `math.ts` 中提供相同的功能。
 

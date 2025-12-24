@@ -115,14 +115,14 @@ const omitted = omit(user, ['id', 'age']);
 使用路径字符串安全地获取或设置嵌套对象的属性值。
 
 ```typescript
-import { get, set } from "@dreamer/dweb/extensions";
+import { getValue, set } from "@dreamer/dweb/extensions";
 
 const user = { profile: { name: 'Alice' } };
 
 // 获取嵌套属性
-get(user, 'profile.name'); // 'Alice'
-get(user, 'profile.age', 0); // 0（路径不存在，返回默认值）
-get(user, ['profile', 'name']); // 'Alice'（使用数组路径）
+getValue(user, 'profile.name'); // 'Alice'
+getValue(user, 'profile.age', 0); // 0（路径不存在，返回默认值）
+getValue(user, ['profile', 'name']); // 'Alice'（使用数组路径）
 
 // 设置嵌套属性
 const user2 = {};
@@ -207,7 +207,7 @@ const result = await retry(
 - `deepMerge<T>(target, source)` - 深度合并
 - `pick<T, K>(obj, keys)` - 选择指定键
 - `omit<T, K>(obj, keys)` - 排除指定键
-- `get<T>(obj, path, defaultValue?)` - 安全获取嵌套属性
+- `getValue<T>(obj, path, defaultValue?)` - 安全获取嵌套属性
 - `set<T>(obj, path, value)` - 安全设置嵌套属性
 
 ### 值判断

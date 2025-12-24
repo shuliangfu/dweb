@@ -7,15 +7,15 @@
 ## 快速开始
 
 ```typescript
-import { readFile, downloadFile, getFileExtension, isImageFile } from "@dreamer/dweb/extensions";
+import { readFile, saveFile, getFileExtension, isImageFile } from "@dreamer/dweb/extensions";
 
 // 读取文件
 const file = input.files[0];
 const text = await readFile(file);
 
-// 下载文件
+// 保存文件到本地
 const blob = await fetch('/api/file').then(r => r.blob());
-downloadFile(blob, 'document.pdf');
+saveFile(blob, 'document.pdf');
 
 // 获取文件扩展名
 const ext = getFileExtension('image.jpg'); // 'jpg'
@@ -64,23 +64,23 @@ const buffer = await readFileAsArrayBuffer(file);
 // 可以用于处理二进制数据
 ```
 
-## 文件下载
+## 文件保存
 
-### 下载文件
+### 保存文件到本地
 
-在浏览器中触发文件下载。
+在浏览器中将 Blob 或字符串保存为文件。
 
 ```typescript
-import { downloadFile } from "@dreamer/dweb/extensions";
+import { saveFile } from "@dreamer/dweb/extensions";
 
-// 从 Blob 下载
+// 从 Blob 保存
 const blob = new Blob(['Hello World'], { type: 'text/plain' });
-downloadFile(blob, 'hello.txt');
+saveFile(blob, 'hello.txt');
 
-// 从 URL 下载
+// 从 URL 下载后保存
 const response = await fetch('/api/file');
 const blob = await response.blob();
-downloadFile(blob, 'document.pdf');
+saveFile(blob, 'document.pdf');
 ```
 
 ## 文件信息
@@ -214,7 +214,7 @@ import {
   compressImage,
   isImageFile,
   getFileExtension,
-  downloadFile,
+  saveFile,
 } from "@dreamer/dweb/extensions";
 
 // 处理文件上传
@@ -248,11 +248,11 @@ const previewImage = async (file: File) => {
   imgElement.src = dataUrl;
 };
 
-// 下载文件
-const downloadReport = async () => {
+// 保存文件
+const saveReport = async () => {
   const response = await fetch('/api/report');
   const blob = await response.blob();
-  downloadFile(blob, 'report.pdf');
+  saveFile(blob, 'report.pdf');
 };
 ```
 
@@ -263,8 +263,8 @@ const downloadReport = async () => {
 - `readFileAsDataUrl(file)` - 读取文件为 Data URL
 - `readFileAsArrayBuffer(file)` - 读取文件为 ArrayBuffer
 
-### 文件下载
-- `downloadFile(blob, filename)` - 下载文件
+### 文件保存
+- `saveFile(blob, filename)` - 保存文件到本地
 
 ### 文件信息
 - `getFileExtension(filename)` - 获取文件扩展名
