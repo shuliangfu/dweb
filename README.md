@@ -562,7 +562,14 @@ docker logs -f dweb-app
 ### 核心文档
 
 - **[文档总览](./docs/README.md)** - 文档导航和快速开始
-- **[核心模块](./docs/core.md)** - 服务器、路由、配置等核心功能
+- **[核心模块](./docs/core/README.md)** - 服务器、路由、配置等核心功能
+  - [服务器 (Server)](./docs/core/server.md) - HTTP 服务器实现
+  - [路由系统 (Router)](./docs/core/router.md) - 文件系统路由
+  - [配置管理 (Config)](./docs/core/config.md) - 配置加载和管理
+  - [中间件系统](./docs/core/middleware.md) - 中间件管理
+  - [插件系统](./docs/core/plugin.md) - 插件管理
+  - [路由处理器 (RouteHandler)](./docs/core/route-handler.md) - 路由处理逻辑
+  - [API 路由](./docs/core/api-route.md) - API 路由处理
 - **[配置文档](./docs/configuration.md)** - dweb.config.ts 详细配置说明
 - **[开发指南](./docs/development.md)** - 开发流程、构建、部署
 - **[布局系统](./docs/layout.md)** - 布局继承和布局组件
@@ -570,20 +577,29 @@ docker logs -f dweb-app
 
 ### 功能模块
 
-- **[数据库](./docs/database.md)** - 数据库支持、ORM/ODM、查询构建器、迁移管理
-- **[GraphQL](./docs/graphql.md)** - GraphQL 服务器和查询处理
-- **[WebSocket](./docs/websocket.md)** - WebSocket 服务器和客户端
-- **[Session](./docs/session.md)** - Session 管理和多种存储方式
-- **[Cookie](./docs/cookie.md)** - Cookie 管理和签名
-- **[Logger](./docs/logger.md)** - 日志系统和日志轮转
-- **[国际化 (i18n)](./docs/i18n-usage.md)** - 多语言支持和翻译管理
+- **[功能模块](./docs/features/README.md)** - 所有功能模块的完整文档
+  - [数据库 (database)](./docs/features/database/README.md) - 数据库支持、ORM/ODM、查询构建器
+  - [GraphQL](./docs/features/graphql/README.md) - GraphQL 服务器和查询处理
+  - [WebSocket](./docs/features/websocket/README.md) - WebSocket 服务器和客户端
+  - [Session](./docs/features/session.md) - Session 管理和多种存储方式
+  - [Cookie](./docs/features/cookie.md) - Cookie 管理和签名
+  - [Logger](./docs/features/logger.md) - 日志系统和日志轮转
+  - [项目创建](./docs/features/create.md) - 使用 CLI 创建项目
+  - [开发服务器](./docs/features/dev.md) - 开发模式服务器
+  - [热模块替换 (HMR)](./docs/features/hmr.md) - 开发时的热更新
+  - [环境变量](./docs/features/env.md) - 环境变量管理
+  - [构建](./docs/features/build.md) - 生产构建
+  - [生产服务器](./docs/features/prod.md) - 生产模式服务器
+  - [性能监控](./docs/features/monitoring.md) - 性能监控功能
+  - [优雅关闭](./docs/features/shutdown.md) - 服务器优雅关闭
+- **[国际化 (i18n)](./docs/plugins/i18n-usage.md)** - 多语言支持和翻译管理
 
 ### 扩展模块
 
-- **[扩展系统](./docs/extensions.md)** - 扩展方法、辅助函数和自定义扩展
-- **[中间件](./docs/middleware.md)** - 内置中间件和使用指南
-- **[插件](./docs/plugins.md)** - 插件系统和使用指南
-- **[控制台工具](./docs/console.md)** - 命令行工具、输入输出、命令封装
+- **[扩展系统](./docs/extensions/README.md)** - 扩展方法、辅助函数和自定义扩展
+- **[中间件](./docs/middleware/README.md)** - 内置中间件和使用指南
+- **[插件](./docs/plugins/README.md)** - 插件系统和使用指南
+- **[控制台工具](./docs/console/README.md)** - 命令行工具、输入输出、命令封装
 
 ### 部署与运维
 
