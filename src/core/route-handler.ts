@@ -1803,7 +1803,14 @@ export class RouteHandler {
     const routeFilePath = routeInfo.filePath;
 
     // 加载页面模块
-    const pageModule = await this.loadPageModule(routeInfo, res);
+		const pageModule = await this.loadPageModule(routeInfo, res);
+		
+		// 检查是否在 load 函数中进行了重定向
+    // 如果响应状态码是 301 或 302，并且设置了 location header，说明已经重定向，直接返回
+    if ((res.status === 301 || res.status === 302) && res.headers.get('location')) {
+      return; // 重定向已设置，直接返回，不继续渲染页面
+    }
+    
 
     // 获取页面组件
     const PageComponent = pageModule.default as (
@@ -1824,12 +1831,6 @@ export class RouteHandler {
 
     // 加载页面数据
     const pageData = await this.loadPageData(pageModule, req, res);
-    
-    // 检查是否在 load 函数中进行了重定向
-    // 如果响应状态码是 301 或 302，并且设置了 location header，说明已经重定向，直接返回
-    if ((res.status === 301 || res.status === 302) && res.headers.get('location')) {
-      return; // 重定向已设置，直接返回，不继续渲染页面
-    }
     
     // 提取页面元数据（metadata）用于 SEO
     // 支持 metadata 为对象或函数（函数可以接收与 load 函数相同的完整参数）
