@@ -4,6 +4,7 @@
  */
 
 import { readDenoJson } from './file.ts';
+import { isServerDependency } from './module.ts';
 
 // 缓存 import map 脚本，避免每次请求都读取文件
 let cachedImportMapScript: string | null = null;
@@ -62,23 +63,13 @@ export async function createImportMapScript(
     
     // 遍历所有 imports，只排除服务端依赖
     for (const [key, value] of Object.entries(allImports)) {
-      // 排除服务端依赖（这些不应该在浏览器中加载）
-      if (
-        key === "@dreamer/dweb" ||
-        (key.startsWith("@dreamer/dweb/") && key !== "@dreamer/dweb/client") ||
-        key === "preact-render-to-string" ||
-        key.startsWith("@std/") ||
-        key.startsWith("deno:") ||
-        key.startsWith("@sqlite") ||
-        key.startsWith("@postgres") ||
-        key.startsWith("@mysql") ||
-        key.startsWith("@mongodb") ||
-        key === "sharp"
-      ) {
+      // 使用通用的服务端依赖判断函数，而不是硬编码排除规则
+      // 这样可以支持任何项目，不仅仅是我们的框架项目
+      if (isServerDependency(key)) {
         continue;
       }
       
-      // 包含所有其他导入（preact、npm 包等）
+      // 包含所有其他导入（preact、npm 包等客户端依赖）
       clientImports[key] = value;
     }
     
