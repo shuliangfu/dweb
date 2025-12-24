@@ -9,8 +9,7 @@
     "./client": "./src/client.ts",
     "./console": "./src/console/mod.ts",
     "./database": "./src/features/database/mod.ts",
-    "./extensions": "./src/extensions/mod.ts",
-    "./extensions/": "./src/extensions/helpers/"
+    "./extensions": "./src/extensions/mod.ts"
   },
   "description": "A modern full-stack web framework based on Deno + Preact + Tailwind CSS",
   "tasks": {
