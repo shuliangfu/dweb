@@ -6,7 +6,14 @@
 
 ### 核心模块
 
-- [核心模块 (core)](./core.md) - 服务器、路由、配置等核心功能
+- [核心模块 (core)](./core/README.md) - 服务器、路由、配置等核心功能
+  - [服务器 (Server)](./core/server.md) - HTTP 服务器实现
+  - [路由系统 (Router)](./core/router.md) - 文件系统路由
+  - [配置管理 (Config)](./core/config.md) - 配置加载和管理
+  - [中间件系统](./core/middleware.md) - 中间件管理
+  - [插件系统](./core/plugin.md) - 插件管理
+  - [路由处理器 (RouteHandler)](./core/route-handler.md) - 路由处理逻辑
+  - [API 路由](./core/api-route.md) - API 路由处理
 - [布局系统 (layout)](./layout.md) - 布局继承和布局组件
 - [路由约定文件 (routing-conventions)](./routing-conventions.md) -
   _app、_layout、_middleware 等约定文件说明
