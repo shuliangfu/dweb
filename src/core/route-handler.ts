@@ -248,7 +248,7 @@ export class RouteHandler {
               name: "jsr-resolver",
               setup(build: esbuild.PluginBuild) {
                 // 解析 @dreamer/dweb/client（支持 JSR URL 和本地路径）
-                build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, async (_args) => {
+                build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, (_args) => {
                   let clientImport = importMap["@dreamer/dweb/client"];
                   
                   // 如果没有显式配置 @dreamer/dweb/client，尝试从 @dreamer/dweb 推断
@@ -287,27 +287,30 @@ export class RouteHandler {
                   // 如果是 JSR URL，解析为实际的 HTTP URL
                   if (clientImport.startsWith("jsr:")) {
                     try {
-                      // 使用 import.meta.resolve 解析 JSR URL
-                      let resolvedUrl = await import.meta.resolve(clientImport);
-                      
-                      // 如果返回的是 file:// 协议（本地开发），需要转换为 HTTP URL
-                      if (resolvedUrl.startsWith("file://")) {
-                        // 手动构建 JSR URL
-                        const jsrPath = clientImport.replace(/^jsr:/, "");
-                        const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\d.]+)\/(.+)$/);
-                        if (jsrMatch) {
-                          const [, scope, packageName, version, subPath] = jsrMatch;
-                          let actualSubPath = subPath;
-                          if (!actualSubPath.startsWith("src/") && !actualSubPath.includes("/")) {
-                            actualSubPath = `src/${subPath}.ts`;
-                          } else if (!actualSubPath.endsWith(".ts") && !actualSubPath.endsWith(".tsx")) {
-                            actualSubPath = `${actualSubPath}.ts`;
-                          }
-                          resolvedUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${actualSubPath}`;
-                        } else {
-                          return undefined;
-                        }
+                      // 直接手动构建 JSR URL，不依赖 import.meta.resolve（更可靠）
+                      const jsrPath = clientImport.replace(/^jsr:/, "");
+                      // 匹配版本号可能包含 ^、~ 等符号，例如 @dreamer/dweb@^1.6.9/client
+                      // 正则说明：@([\w-]+)\/([\w-]+)@([\^~]?[\d.]+)\/(.+)
+                      // - @([\w-]+) 匹配 scope
+                      // - \/([\w-]+) 匹配 packageName
+                      // - @([\^~]?[\d.]+) 匹配版本号（可能包含 ^ 或 ~）
+                      // - \/(.+) 匹配子路径
+                      const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\^~]?[\d.]+)\/(.+)$/);
+                      if (!jsrMatch) {
+                        return undefined;
                       }
+                      
+                      const [, scope, packageName, versionWithPrefix, subPath] = jsrMatch;
+                      // 移除版本号前缀（^ 或 ~），只保留版本号本身
+                      const version = versionWithPrefix.replace(/^[\^~]/, "");
+                      
+                      let actualSubPath = subPath;
+                      if (!actualSubPath.startsWith("src/") && !actualSubPath.includes("/")) {
+                        actualSubPath = `src/${subPath}.ts`;
+                      } else if (!actualSubPath.endsWith(".ts") && !actualSubPath.endsWith(".tsx")) {
+                        actualSubPath = `${actualSubPath}.ts`;
+                      }
+                      const resolvedUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${actualSubPath}`;
                       
                       return {
                         path: resolvedUrl,
