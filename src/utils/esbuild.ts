@@ -282,8 +282,27 @@ export function createJSRResolverPlugin(
         }
         
         // 首先检查子路径本身是否在 import map 中（如 "@scope/package/subpath"）
-        // 如果子路径本身在 import map 中，直接标记为 external
+        // 如果子路径本身在 import map 中，检查是否需要转换
         if (args.path in importMap) {
+          const importValue = importMap[args.path];
+          // 如果是 JSR URL，转换为 HTTP URL
+          if (importValue.startsWith("jsr:")) {
+            const httpUrl = convertJsrToHttpUrl(importValue);
+            return {
+              path: httpUrl,
+              external: true,
+            };
+          }
+          // 如果是 npm URL，也需要转换
+          if (importValue.startsWith("npm:")) {
+            // npm URL 应该已经在 import map 生成时转换了，但为了安全起见，这里也处理一下
+            // 实际上，npm URL 的转换应该在 import map 生成时完成
+            return {
+              path: args.path,
+              external: true,
+            };
+          }
+          // 其他情况（HTTP URL 或本地路径），直接标记为 external
           return {
             path: args.path,
             external: true,
@@ -294,8 +313,25 @@ export function createJSRResolverPlugin(
         const parts = args.path.split("/");
         if (parts.length >= 3) {
           const parentPackage = `${parts[0]}/${parts[1]}`;
-          // 如果父包在 external 列表中，将子路径也标记为 external
+          // 如果父包在 external 列表中，检查是否需要转换
           if (externalPackages.includes(parentPackage)) {
+            // 检查父包在 import map 中的值
+            if (parentPackage in importMap) {
+              const parentImport = importMap[parentPackage];
+              // 如果父包是 JSR URL，需要转换为 HTTP URL
+              if (parentImport.startsWith("jsr:")) {
+                // 构建完整的 JSR URL（如 jsr:@scope/package@version/subpath）
+                const subPath = args.path.substring(parentPackage.length + 1);
+                const jsrUrl = `${parentImport}/${subPath}`;
+                // 转换为 HTTP URL
+                const httpUrl = convertJsrToHttpUrl(jsrUrl);
+                return {
+                  path: httpUrl,
+                  external: true,
+                };
+              }
+            }
+            // 其他情况，直接标记为 external
             return {
               path: args.path,
               external: true,
