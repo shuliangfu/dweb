@@ -7,6 +7,11 @@
     "start": "deno run -A @dreamer/dweb/cli start"
   },
   "imports": {
+		"@store/": "./stores/",
+		"@components/": "./components/",
+		"@services/": "./services/",
+		"@hooks/": "./hooks/",
+
     "@dreamer/dweb": "../src/mod.ts",
     "@dreamer/dweb/cli": "../src/cli.ts",
     "@dreamer/dweb/client": "../src/client.ts",
