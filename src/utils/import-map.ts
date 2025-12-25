@@ -118,11 +118,10 @@ export async function createImportMapScript(
     const importMap = {
       imports: {
         "preact": "https://esm.sh/preact@latest",
-        "preact/hooks": "https://esm.sh/preact@latest/hooks?external=preact",
-        "preact/jsx-runtime":
-          "https://esm.sh/preact@latest/jsx-runtime?external=preact",
-        "preact/signals":
-          "https://esm.sh/@preact/signals@latest?external=preact",
+        "preact/hooks": "https://esm.sh/preact@latest/hooks",
+        "preact/jsx-runtime":"https://esm.sh/preact@latest/jsx-runtime",
+        "preact/signals":"https://esm.sh/@preact/signals@latest?external=preact",
+				"preact/compat": "https://esm.sh/preact@latest/compat",
       },
     };
 

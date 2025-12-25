@@ -1,5 +1,5 @@
 {
-  "version": "1.8.6",
+  "version": "1.8.7",
   "nodeModulesDir": "auto",
   "tasks": {
     "dev": "deno run -A @dreamer/dweb/cli dev",
@@ -32,8 +32,8 @@
     "@std/crypto": "https://deno.land/std@0.208.0/crypto/mod.ts",
 
     "preact": "https://esm.sh/preact@latest",
-    "preact/hooks": "https://esm.sh/preact@latest/hooks?external=preact",
-    "preact/jsx-runtime": "https://esm.sh/preact@latest/jsx-runtime?external=preact",
+    "preact/hooks": "https://esm.sh/preact@latest/hooks",
+    "preact/jsx-runtime": "https://esm.sh/preact@latest/jsx-runtime",
     "preact/signals": "https://esm.sh/@preact/signals@latest?external=preact",
     "preact-render-to-string": "npm:preact-render-to-string@6.5.1",
 
