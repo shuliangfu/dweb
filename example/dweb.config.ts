@@ -27,7 +27,7 @@ const config: AppConfig = {
   build: {
 		outDir: ".dist",
 		split: true,
-		components: ["components"],
+		// components: ["components"], // 通常不需要，split: true 时会自动将共享组件提取为 chunk
   },
 
   // 服务器配置

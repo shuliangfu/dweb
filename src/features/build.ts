@@ -1689,14 +1689,17 @@ async function buildApp(config: AppConfig): Promise<void> {
     }
   }
 
-  // 4. 编译组件文件（可选）
-  // 注意：components 目录下的组件通常不需要单独编译，因为它们会被打包到使用它们的路由文件中
-  // 只有在以下情况下才需要单独编译 components：
-  // 1. 组件需要被动态导入（lazy loading）
-  // 2. 启用代码分割时，需要将共享组件提取到公共 chunk
-  // 3. 多应用项目中，共享的 components 目录需要单独编译
+  // 4. 编译组件文件（可选，通常不需要）
+  // 注意：components 目录下的组件通常不需要单独编译，原因如下：
+  // 1. 当启用代码分割（split: true）时，esbuild 会自动分析所有路由文件的依赖，
+  //    如果多个路由文件使用了同一个组件，esbuild 会自动将该组件提取到共享 chunk 中
+  // 2. 当未启用代码分割时，组件会被打包到使用它们的路由文件中
   // 
-  // 如果配置了 components 目录，才会编译；否则跳过（组件会被打包到路由文件中）
+  // 只有在以下特殊情况下才需要单独编译 components：
+  // 1. 组件需要被动态导入（lazy loading），且需要单独的文件
+  // 2. 多应用项目中，共享的 components 目录需要单独编译（但这种情况也可以通过代码分割自动处理）
+  // 
+  // 如果配置了 components 目录，才会编译；否则跳过（这是推荐的做法）
   const componentsDirs = config.build?.components;
   
   if (componentsDirs) {
