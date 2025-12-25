@@ -1398,13 +1398,17 @@ export class RouteHandler {
             const { children: _, ...restLayoutProps } = layoutProps;
             // 显式声明 children 的类型，确保类型正确传递
             const children: ComponentChildren = currentElement as ComponentChildren;
-            const layoutPropsWithData: LayoutProps = {
-              // 将页面数据也传递给布局组件，方便布局访问页面数据
-              data: pageData || {},
-              ...restLayoutProps,
-              // children 放在最后，确保类型正确且不被覆盖
-              children,
-            };
+            // 构建 layoutPropsWithData，确保 children 类型正确
+            // 注意：使用 Object.assign 确保类型正确传递
+            const layoutPropsWithData = Object.assign(
+              {
+                // 将页面数据也传递给布局组件，方便布局访问页面数据
+                data: pageData || {},
+                // children 放在这里，确保类型正确
+                children,
+              },
+              restLayoutProps,
+            ) as LayoutProps;
 						
             const layoutResult = LayoutComponent(layoutPropsWithData);
             const layoutElement = layoutResult instanceof Promise
