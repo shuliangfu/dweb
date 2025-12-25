@@ -1358,8 +1358,6 @@ export class RouteHandler {
     renderMode: RenderMode,
     req?: Request,
   ): Promise<string> {
-    // 提取页面数据，用于传递给布局组件
-    const pageData = pageProps.data as Record<string, unknown> | undefined;
     if (renderMode === "csr") {
       // CSR 模式：服务端只渲染容器，内容由客户端渲染
       return "";
