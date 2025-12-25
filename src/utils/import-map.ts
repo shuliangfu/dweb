@@ -12,6 +12,86 @@ let importMapScriptCacheTime = 0;
 const IMPORT_MAP_CACHE_TTL = 5000; // 5秒缓存
 
 /**
+ * 将 npm: 协议转换为浏览器可访问的 URL
+ * @param npmUrl npm: 协议的 URL，例如：npm:chart.js@4.4.7 或 npm:@scope/package@1.0.0
+ * @returns 浏览器可访问的 URL，例如：https://esm.sh/chart.js@4.4.7
+ */
+function convertNpmToBrowserUrl(npmUrl: string): string {
+  // 移除 npm: 前缀
+  const packageSpec = npmUrl.replace(/^npm:/, "");
+  
+  // 使用 esm.sh 作为 CDN（支持 ESM 格式）
+  return `https://esm.sh/${packageSpec}`;
+}
+
+/**
+ * 将 jsr: 协议转换为浏览器可访问的 URL
+ * @param jsrUrl jsr: 协议的 URL，例如：jsr:@std/fs@^1.0.20 或 jsr:@dreamer/dweb@1.0.0/client
+ * @returns 浏览器可访问的 URL，例如：https://jsr.io/@std/fs/1.0.20/mod.ts
+ */
+function convertJsrToBrowserUrl(jsrUrl: string): string {
+  // 移除 jsr: 前缀
+  const jsrPath = jsrUrl.replace(/^jsr:/, "");
+  
+  // 匹配格式：@scope/package@version 或 @scope/package@version/subpath
+  // 版本号可能包含 ^、~ 等符号
+  const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\^~]?[\d.]+)(?:\/(.+))?$/);
+  
+  if (!jsrMatch) {
+    // 如果无法匹配，尝试直接使用（可能是不标准的格式）
+    // 这种情况下，返回一个基于 jsr.io 的 URL
+    return `https://jsr.io/${jsrPath}`;
+  }
+  
+  const [, scope, packageName, versionWithPrefix, subPath] = jsrMatch;
+  
+  // 移除版本号前缀（^ 或 ~），只保留版本号本身
+  const version = versionWithPrefix.replace(/^[\^~]/, "");
+  
+  // 构建 JSR URL
+  // JSR URL 格式：https://jsr.io/@scope/package/version/path
+  if (subPath) {
+    // 有子路径，直接使用
+    // 确保子路径以 / 开头
+    const normalizedSubPath = subPath.startsWith("/") ? subPath : `/${subPath}`;
+    // 如果子路径没有扩展名，尝试添加 .ts
+    if (!normalizedSubPath.match(/\.(ts|tsx|js|jsx)$/)) {
+      return `https://jsr.io/@${scope}/${packageName}/${version}${normalizedSubPath}.ts`;
+    }
+    return `https://jsr.io/@${scope}/${packageName}/${version}${normalizedSubPath}`;
+  } else {
+    // 没有子路径，指向包的 mod.ts（JSR 包的标准入口文件）
+    return `https://jsr.io/@${scope}/${packageName}/${version}/mod.ts`;
+  }
+}
+
+/**
+ * 将 import map 中的 URL 转换为浏览器可访问的 URL
+ * 处理 npm: 和 jsr: 协议，将它们转换为浏览器可访问的 HTTP URL
+ * @param importValue import map 中的原始值
+ * @returns 转换后的浏览器可访问的 URL
+ */
+function convertToBrowserUrl(importValue: string): string {
+  // 如果已经是 HTTP URL，直接返回
+  if (importValue.startsWith("http://") || importValue.startsWith("https://")) {
+    return importValue;
+  }
+  
+  // 处理 npm: 协议
+  if (importValue.startsWith("npm:")) {
+    return convertNpmToBrowserUrl(importValue);
+  }
+  
+  // 处理 jsr: 协议
+  if (importValue.startsWith("jsr:")) {
+    return convertJsrToBrowserUrl(importValue);
+  }
+  
+  // 其他情况（本地路径等），直接返回
+  return importValue;
+}
+
+/**
  * 创建 import map 脚本（让浏览器能够解析 preact 等模块）
  * 支持从多个位置读取并合并 imports（项目根目录、应用目录等）
  * 使用缓存机制，避免频繁读取文件
@@ -69,8 +149,9 @@ export async function createImportMapScript(
         continue;
       }
       
+      // 将 npm: 和 jsr: 协议转换为浏览器可访问的 URL
       // 包含所有其他导入（preact、npm 包等客户端依赖）
-      clientImports[key] = value;
+      clientImports[key] = convertToBrowserUrl(value);
     }
     
     // 检查 allImports 中是否已经有子路径映射（例如 chart/auto）
@@ -99,7 +180,8 @@ export async function createImportMapScript(
         if (parentPackage in clientImports && !isServerDependency(key)) {
           // 如果这个子路径映射还没有在 clientImports 中，添加它
           if (!(key in clientImports)) {
-            subpathImports[key] = value;
+            // 将 npm: 和 jsr: 协议转换为浏览器可访问的 URL
+            subpathImports[key] = convertToBrowserUrl(value);
           }
         }
       }

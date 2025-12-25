@@ -95,10 +95,10 @@ export function isPreactDependency(packageName: string): boolean {
 
 /**
  * 判断依赖是否应该被打包
- * 除了 preact 和服务端依赖外，其他客户端依赖都应该被打包
+ * 优化策略：通过 npm: 或 http: 导入的客户端依赖通过 CDN 加载，不打包
  * @param packageName 包名
  * @param importValue import map 中的值
- * @returns 是否应该被打包（false 表示应该保持 external）
+ * @returns 是否应该被打包（false 表示应该保持 external，通过 CDN 加载）
  */
 export function shouldBundleDependency(
   packageName: string,
@@ -119,14 +119,25 @@ export function shouldBundleDependency(
     return false;
   }
   
-  // 本地路径导入应该被打包
+  // 本地路径导入应该被打包（相对路径、绝对路径等）
   if (!importValue.startsWith("jsr:") && 
       !importValue.startsWith("npm:") && 
       !importValue.startsWith("http")) {
     return true;
   }
   
-  // 其他客户端依赖（如 tailwind-merge）应该被打包
+  // 通过 npm: 或 http: 导入的客户端依赖不打包，通过 CDN 加载
+  // 这样可以减少打包后的代码体积，提高加载速度
+  if (importValue.startsWith("npm:") || importValue.startsWith("http")) {
+    return false;
+  }
+  
+  // JSR 导入的客户端依赖也不打包，通过 CDN 加载
+  if (importValue.startsWith("jsr:")) {
+    return false;
+  }
+  
+  // 其他情况默认打包（兜底逻辑）
   return true;
 }
 
@@ -159,9 +170,12 @@ export function isSharedClientDependency(packageName: string): boolean {
 
 /**
  * 从 import map 中提取外部依赖列表
- * 只包含应该保持 external 的依赖（preact 和服务端依赖）
+ * 包含应该保持 external 的依赖：
+ * - preact 相关依赖（通过 CDN 加载）
+ * - 服务端依赖（不打包到客户端）
+ * - 通过 npm:/http: 导入的客户端依赖（通过 CDN 加载，减少打包体积）
  * @param importMap import map 配置
- * @param bundleClient 是否打包客户端依赖（默认 false，表示客户端依赖保持 external）
+ * @param bundleClient 是否打包 @dreamer/dweb/client（默认 false，表示保持 external）
  * @param useSharedDeps 是否使用共享依赖机制（默认 false，开发环境可启用）
  * @returns 外部依赖包名数组（子路径导入由插件处理）
  */

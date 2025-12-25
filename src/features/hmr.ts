@@ -3,14 +3,13 @@
  * 监听文件变化并自动重载
  */
 
-import * as esbuild from 'esbuild';
+import { buildFromEntryPoints } from '../utils/esbuild.ts';
 import * as path from '@std/path';
 import {
   getRelativePath,
   cleanUrl,
 } from "../utils/path.ts";
 import { shouldIgnoreFile } from "../utils/file.ts";
-import { getExternalPackages } from "../utils/module.ts";
 // HMR 客户端脚本生成函数已迁移到 src/utils/script-hmr.ts
 export { createHMRClientScript } from "../utils/script-hmr.ts";
 
@@ -380,47 +379,22 @@ export class HMRServer {
       importMap = await this.loadImportMap();
     }
 
-    // 收集外部依赖（只包含 preact 和服务端依赖，其他客户端依赖会被打包）
-    // HMR 环境：不使用共享依赖机制（每个组件独立打包，便于热更新）
-    const externalPackages = getExternalPackages(importMap, true, false);
+    // 外部依赖由 buildFromEntryPoints 自动处理
 
-    // 使用 esbuild.build 打包文件（包含所有静态导入）
-    // bundle: true 会自动打包所有相对路径导入（../ 和 ./），
-    // 只有 external 中列出的外部依赖不会被打包
-    const result = await esbuild.build({
-      entryPoints: [absoluteFilePath],
-      bundle: true, // ✅ 打包所有依赖（包括相对路径导入 ../ 和 ./）
-      format: 'esm',
-      target: 'esnext',
-      jsx: 'automatic',
-      jsxImportSource: 'preact',
+    // 使用统一的构建函数
+    const result = await buildFromEntryPoints([absoluteFilePath], {
+      importMap,
+      cwd,
+      bundleClient: true,
       minify: false, // 开发环境不压缩，便于调试
-      // 优化编译速度：减少不必要的转换
       sourcemap: false, // HMR 不需要 sourcemap，可以加快编译
-      treeShaking: true, // ✅ Tree-shaking：自动移除未使用的代码
-      // 确保 tree-shaking 正常工作：只打包实际使用的导出
-      // 对于命名导入（如 import { twMerge } from "tailwind-merge"），
-      // esbuild 会自动 tree-shake 掉其他未使用的导出
-      write: false, // 不写入文件，我们手动处理
-      external: externalPackages, // 外部依赖不打包（保持 import 语句）
-      // 设置 import map（用于解析外部依赖）
-      // 注意：只对本地路径使用 alias，JSR/NPM/HTTP 导入已经在 external 中，不需要 alias
-      // 相对路径导入（../ 和 ./）不会被 alias 处理，由 esbuild 自动解析和打包
-      alias: Object.fromEntries(
-        Object.entries(importMap)
-          .filter(([_, value]) => !value.startsWith('jsr:') && !value.startsWith('npm:') && !value.startsWith('http'))
-          .map(([key, value]) => [
-            key,
-            path.resolve(cwd, value),
-          ])
-      ),
     });
 
     if (!result.outputFiles || result.outputFiles.length === 0) {
       throw new Error('esbuild 打包结果为空');
     }
 
-    // esbuild.build 返回的是 outputFiles 数组，取第一个
+    // 返回编译后的代码
     return result.outputFiles[0].text;
   }
 

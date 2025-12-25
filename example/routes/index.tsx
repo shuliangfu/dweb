@@ -11,6 +11,7 @@ import { getJsrPackageUrl, getVersionString } from "../utils.ts";
 import { useExampleStore } from "@store/example.ts";
 import { useEffect } from "preact/hooks";
 import { useThemeStore } from "@dreamer/dweb/client";
+import { twMerge } from "tailwind-merge";
 
 /**
  * 页面元数据（用于 SEO）
@@ -134,7 +135,20 @@ export default function HomePage(
     return () => {
       clearTimeout(timer);
     };
-  }, []); // 空依赖数组，确保只执行一次
+	}, []) // 空依赖数组，确保只执行一次
+	
+
+
+	const mergedClassName = twMerge("text-red-500", "text-blue-500");
+	console.log(mergedClassName);
+
+
+
+
+
+
+
+
 
   const { versionString } = data as {
     versionString: string;
