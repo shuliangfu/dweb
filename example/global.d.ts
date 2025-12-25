@@ -18,7 +18,7 @@
  */
 type TranslationFunction = (
   key: string,
-  params?: Record<string, any>,
+  params?: Record<string, string | number | boolean | undefined>,
 ) => string;
 
 /**
