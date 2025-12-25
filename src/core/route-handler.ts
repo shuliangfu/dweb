@@ -947,7 +947,7 @@ export class RouteHandler {
       const { getDatabase } = await import("../features/database/access.ts");
 
       // 调用 load 函数，传递 params、query、cookies、session、数据库和 store
-      return await pageModule.load({
+      const loadResult = await pageModule.load({
         req,
         res,
         params: req.params,
@@ -974,6 +974,11 @@ export class RouteHandler {
         // 提供 Store 实例（如果 store 插件已设置）
         store: (req as any).getStore ? (req as any).getStore() : undefined,
       });
+      // 确保返回的是对象，如果 load 函数返回 undefined 或 null，返回空对象
+      if (loadResult && typeof loadResult === "object") {
+        return loadResult as Record<string, unknown>;
+      }
+      return {};
     } catch (error) {
       res.status = 500;
       res.html(
