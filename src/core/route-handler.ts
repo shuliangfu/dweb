@@ -1361,6 +1361,8 @@ export class RouteHandler {
     // 提取页面数据，用于传递给布局组件
     const pageData = pageProps.data as Record<string, unknown> | undefined;
     // 调试：检查 pageData 是否正确传递
+    console.log('[RenderPageContent Debug] pageProps:', pageProps);
+    console.log('[RenderPageContent Debug] pageData extracted:', pageData);
     if (typeof pageData === 'undefined') {
       console.warn('[Layout Debug] pageData is undefined, pageProps:', Object.keys(pageProps));
     }
@@ -2226,6 +2228,10 @@ export class RouteHandler {
       (req as any).pageMetadata = pageMetadata;
     }
 
+    // 调试：检查 pageData 的值
+    console.log('[PageRoute Debug] pageData before pageProps:', pageData);
+    // 调试：检查 pageData 的值
+    console.log('[PageRoute Debug] pageData before pageProps:', pageData);
     const pageProps = {
       params: req.params,
       query: req.query,
@@ -2237,6 +2243,10 @@ export class RouteHandler {
       // 添加 metadata 到 props，供客户端脚本使用
       metadata: pageMetadata,
     };
+    // 调试：检查 pageProps.data 的值
+    console.log('[PageRoute Debug] pageProps.data:', pageProps.data);
+    // 调试：检查 pageProps.data 的值
+    console.log('[PageRoute Debug] pageProps.data:', pageProps.data);
 
     // 获取渲染配置
     const { renderMode, shouldHydrate, LayoutComponents, layoutData, layoutDisabled } =
