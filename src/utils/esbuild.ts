@@ -6,7 +6,7 @@
 import * as esbuild from "esbuild";
 import * as path from "@std/path";
 import { getExternalPackages } from "./module.ts";
-import { denoPlugins } from "jsr:@luca/esbuild-deno-loader@^0.11.0";
+import { denoPlugins } from "esbuild-deno-loader@^0.11.0";
 
 // 调试模式：直接输出日志
 
@@ -657,8 +657,9 @@ export async function buildFromStdin(
 
   // 使用 @luca/esbuild-deno-loader 插件处理 Deno 特有的模块解析（jsr:、npm: 等）
   // 这个插件会自动处理 JSR 和 npm 包的解析，但我们仍然保留自定义插件以处理特殊逻辑
+  const denoJsonPath = path.join(cwd, "deno.json");
   const denoLoaderPlugins = denoPlugins({
-    importMapURL: new URL("./deno.json", `file://${cwd}/`),
+    importMapURL: `file://${denoJsonPath}`,
   });
 
   // 构建 alias 配置
@@ -736,8 +737,9 @@ export async function buildFromEntryPoints(
 
   // 使用 @luca/esbuild-deno-loader 插件处理 Deno 特有的模块解析（jsr:、npm: 等）
   // 这个插件会自动处理 JSR 和 npm 包的解析，但我们仍然保留自定义插件以处理特殊逻辑
+  const denoJsonPath = path.join(cwd, "deno.json");
   const denoLoaderPlugins = denoPlugins({
-    importMapURL: new URL("./deno.json", `file://${cwd}/`),
+    importMapURL: `file://${denoJsonPath}`,
   });
 
   // 构建 alias 配置
