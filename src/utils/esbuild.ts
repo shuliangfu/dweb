@@ -81,9 +81,11 @@ function convertJsrToHttpUrl(jsrUrl: string): string {
         }
       }
     } else {
-      // 对于其他包，直接使用子路径
+      // 对于其他 JSR 包，直接使用子路径
+      // 注意：理想情况下应该从 JSR 包的 deno.json 读取 exports 字段来映射子路径
+      // 但目前实现中，我们假设子路径就是实际的文件路径
+      // 如果子路径没有扩展名，尝试添加 .ts（JSR 包的标准做法）
       const normalizedSubPath = subPath.startsWith("/") ? subPath : `/${subPath}`;
-      // 如果子路径没有扩展名，尝试添加 .ts
       if (!normalizedSubPath.match(/\.(ts|tsx|js|jsx)$/)) {
         actualPath = `${normalizedSubPath}.ts`;
       } else {
