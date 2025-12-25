@@ -1485,6 +1485,7 @@ export class RouteHandler {
     pageProps: Record<string, unknown>,
     layoutDisabled: boolean,
     _req?: Request,
+    layoutData?: Record<string, unknown>[],
   ): Promise<string> {
     // 注入 import map
     let importMapScript = preloadedImportMapScript;
@@ -1697,6 +1698,7 @@ export class RouteHandler {
         prefetchRoutes,
         prefetchLoading,
         prefetchMode,
+        layoutData, // 传递布局的 load 数据到客户端
       );
 
       // 如果启用了预加载加载状态，注入预加载动画样式（插入到现有的 style 标签中，或创建新的 style 标签）
@@ -2384,6 +2386,7 @@ export class RouteHandler {
       pageProps,
       layoutDisabled,
       req,
+      layoutData, // 传递布局的 load 数据
     );
 
     // 设置响应

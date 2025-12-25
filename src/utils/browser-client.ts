@@ -17,6 +17,7 @@ interface ClientConfig {
   prefetchRoutes?: string[];
   prefetchLoading?: boolean;
   prefetchMode?: "single" | "batch";
+  layoutData?: Record<string, unknown>[]; // 布局的 load 数据
   [key: string]: unknown; // 允许动态属性（如 load 函数返回的数据）
 }
 
@@ -441,6 +442,7 @@ class ClientRenderer {
     LayoutComponents: unknown[],
     pageElement: unknown,
     pageData?: Record<string, unknown>,
+    layoutData?: Record<string, unknown>[],
   ): Promise<unknown> {
     if (LayoutComponents.length === 0) {
       return pageElement;
@@ -448,16 +450,22 @@ class ClientRenderer {
 
     // 从最内层到最外层嵌套布局组件
     let currentElement = pageElement;
-    for (const LayoutComponent of LayoutComponents) {
+    for (let i = 0; i < LayoutComponents.length; i++) {
+      const LayoutComponent = LayoutComponents[i];
+      // 获取对应布局的 load 数据（如果有）
+      const layoutLoadData = layoutData?.[i] || {};
+      // 从 layoutLoadData 中排除 children 和 data，避免类型冲突和数据覆盖
+      const { children: _, data: __, ...restLayoutProps } = layoutLoadData;
       try {
         // 先尝试直接调用布局组件（支持异步组件）
-        // 传递 children 和 data 属性
+        // 布局的 load 数据直接展开，页面的 data 通过 data 字段传递
         const layoutProps = {
+          ...restLayoutProps, // 布局的 load 数据
+          data: pageData || {}, // 页面的 data
           children: currentElement,
-          data: pageData || {},
         };
         const layoutResult =
-          (LayoutComponent as (props: { children: unknown; data: Record<string, unknown> }) => unknown)(layoutProps);
+          (LayoutComponent as (props: { children: unknown; data: Record<string, unknown>; [key: string]: unknown }) => unknown)(layoutProps);
         // 如果布局组件返回 Promise，等待它
         if (layoutResult instanceof Promise) {
           currentElement = await layoutResult;
@@ -472,8 +480,9 @@ class ClientRenderer {
         );
         try {
           const layoutProps = {
+            ...restLayoutProps, // 布局的 load 数据
+            data: pageData || {}, // 页面的 data
             children: currentElement,
-            data: pageData || {},
           };
           const layoutResult = this.jsxFunc(LayoutComponent, layoutProps);
           if (layoutResult instanceof Promise) {
@@ -500,6 +509,7 @@ class ClientRenderer {
     PageComponent: unknown,
     LayoutComponents: unknown[],
     props: Record<string, unknown>,
+    layoutData?: Record<string, unknown>[],
   ): Promise<unknown> {
     // 创建页面元素
     const pageElement = await this.createPageElement(PageComponent, props);
@@ -507,11 +517,12 @@ class ClientRenderer {
     // 提取页面数据，用于传递给布局组件
     const pageData = (props.data as Record<string, unknown> | undefined) || {};
 
-    // 嵌套布局组件，传递 pageData
+    // 嵌套布局组件，传递 pageData 和 layoutData
     let finalElement = await this.nestLayoutComponents(
       LayoutComponents,
       pageElement,
       pageData,
+      layoutData,
     );
 
     // 如果最终元素为空，使用页面元素作为后备
@@ -916,10 +927,14 @@ class ClientRouter {
             pagePropsRetry.store = store;
           }
 
+          // 获取布局的 load 数据（如果有）
+          const layoutDataRetry = pageData?.layoutData as Record<string, unknown>[] | undefined;
+
           const finalElementRetry = await this.renderer.createFinalElement(
             PageComponent,
             LayoutComponents,
             pagePropsRetry,
+            layoutDataRetry,
           );
 
           await new Promise((resolve) => requestAnimationFrame(resolve));
