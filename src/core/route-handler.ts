@@ -5,6 +5,7 @@
 
 import type {
   AppConfig,
+  LayoutProps,
   Middleware,
   RenderMode,
   Request,
@@ -1391,12 +1392,13 @@ export class RouteHandler {
             // 支持异步布局组件：如果组件返回 Promise，则等待它
             // 将布局的 load 数据和页面数据作为 props 传递给布局组件
             // 布局数据直接展开，页面数据通过 data 字段传递（与页面组件保持一致）
-            const layoutResult = LayoutComponent({ 
+            const layoutPropsWithData: LayoutProps = {
               children: currentElement,
               ...layoutProps,
               // 将页面数据也传递给布局组件，方便布局访问页面数据
               data: pageData || {},
-            } as { children: unknown; [key: string]: unknown });
+            };
+            const layoutResult = LayoutComponent(layoutPropsWithData);
             const layoutElement = layoutResult instanceof Promise
               ? await layoutResult
               : layoutResult;

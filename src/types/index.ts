@@ -452,3 +452,47 @@ export interface PageProps {
   /** 状态管理 Store（如果已配置 store 插件） */
   store?: import("../plugins/store/types.ts").Store;
 }
+
+/**
+ * 布局组件属性
+ * 传递给布局组件的 props
+ * 
+ * @example
+ * ```tsx
+ * import type { LayoutProps } from '@dreamer/dweb';
+ * 
+ * export default function RootLayout({ children, data }: LayoutProps) {
+ *   return (
+ *     <div>
+ *       <header>Header</header>
+ *       <main>{children}</main>
+ *     </div>
+ *   );
+ * }
+ * ```
+ * 
+ * @example
+ * ```tsx
+ * // 如果布局有自己的 load 方法，可以扩展类型
+ * interface MyLayoutProps extends LayoutProps {
+ *   user: User;
+ *   theme: string;
+ * }
+ * 
+ * export default function MyLayout({ children, data, user, theme }: MyLayoutProps) {
+ *   return <div className={theme}>{children}</div>;
+ * }
+ * ```
+ */
+export interface LayoutProps {
+  /** 子元素（页面内容） */
+  children: unknown;
+  /** 页面数据（页面 load 函数返回的数据） */
+  data: unknown;
+  /** 当前语言代码（如果已配置 i18n 插件） */
+  lang?: string;
+  /** 状态管理 Store（如果已配置 store 插件） */
+  store?: import("../plugins/store/types.ts").Store;
+  /** 布局自己的 load 数据会通过展开运算符传递，可以扩展此接口来定义具体类型 */
+  [key: string]: unknown;
+}

@@ -51,5 +51,6 @@ export type {
   Session,
   LoadContext,
   PageProps,
+  LayoutProps,
 } from './types/index.ts';
 

@@ -22,6 +22,7 @@ export type {
   DWebConfig,
   LoadContext,
   PageProps,
+  LayoutProps,
 } from './types/index.ts';
 
 // 导出核心类
