@@ -7,6 +7,9 @@ import * as esbuild from "esbuild";
 import * as path from "@std/path";
 import { getExternalPackages } from "./module.ts";
 
+// 调试模式：通过环境变量控制
+const DEBUG_ESBUILD = Deno.env.get("DEBUG_ESBUILD") === "true";
+
 /**
  * @dreamer/dweb 包的客户端 exports 映射表
  * 只包含客户端可能使用的路径，服务端路径（如 /cli、/init、/console、/database）不需要映射
@@ -272,14 +275,17 @@ export function createJSRResolverPlugin(
             const subPath = args.path.substring("@dreamer/dweb/".length);
             // 构建完整的 JSR URL
             const jsrUrl = `${parentImport}/${subPath}`;
-            // 转换为 HTTP URL
-            const httpUrl = convertJsrToHttpUrl(jsrUrl);
-            return {
-              path: httpUrl,
-              external: true,
-            };
+              // 转换为 HTTP URL
+              const httpUrl = convertJsrToHttpUrl(jsrUrl);
+              if (DEBUG_ESBUILD) {
+                console.log(`🔍 [Esbuild Debug] @dreamer/dweb/* subpath resolved: ${args.path} -> ${httpUrl} (from ${jsrUrl})`);
+              }
+              return {
+                path: httpUrl,
+                external: true,
+              };
+            }
           }
-        }
         
         // 首先检查子路径本身是否在 import map 中（如 "@scope/package/subpath"）
         // 如果子路径本身在 import map 中，检查是否需要转换
@@ -288,6 +294,9 @@ export function createJSRResolverPlugin(
           // 如果是 JSR URL，转换为 HTTP URL
           if (importValue.startsWith("jsr:")) {
             const httpUrl = convertJsrToHttpUrl(importValue);
+            if (DEBUG_ESBUILD) {
+              console.log(`🔍 [Esbuild Debug] Subpath in importMap (JSR): ${args.path} -> ${httpUrl} (from ${importValue})`);
+            }
             return {
               path: httpUrl,
               external: true,
@@ -318,18 +327,21 @@ export function createJSRResolverPlugin(
             // 检查父包在 import map 中的值
             if (parentPackage in importMap) {
               const parentImport = importMap[parentPackage];
-              // 如果父包是 JSR URL，需要转换为 HTTP URL
-              if (parentImport.startsWith("jsr:")) {
-                // 构建完整的 JSR URL（如 jsr:@scope/package@version/subpath）
-                const subPath = args.path.substring(parentPackage.length + 1);
-                const jsrUrl = `${parentImport}/${subPath}`;
-                // 转换为 HTTP URL
-                const httpUrl = convertJsrToHttpUrl(jsrUrl);
-                return {
-                  path: httpUrl,
-                  external: true,
-                };
+            // 如果父包是 JSR URL，需要转换为 HTTP URL
+            if (parentImport.startsWith("jsr:")) {
+              // 构建完整的 JSR URL（如 jsr:@scope/package@version/subpath）
+              const subPath = args.path.substring(parentPackage.length + 1);
+              const jsrUrl = `${parentImport}/${subPath}`;
+              // 转换为 HTTP URL
+              const httpUrl = convertJsrToHttpUrl(jsrUrl);
+              if (DEBUG_ESBUILD) {
+                console.log(`🔍 [Esbuild Debug] Subpath resolved (parent in importMap): ${args.path} -> ${httpUrl} (from ${jsrUrl})`);
               }
+              return {
+                path: httpUrl,
+                external: true,
+              };
+            }
             }
             // 其他情况，直接标记为 external
             return {
@@ -348,6 +360,9 @@ export function createJSRResolverPlugin(
               const jsrUrl = `${parentImport}/${subPath}`;
               // 转换为 HTTP URL
               const httpUrl = convertJsrToHttpUrl(jsrUrl);
+              if (DEBUG_ESBUILD) {
+                console.log(`🔍 [Esbuild Debug] Subpath resolved (parent in external): ${args.path} -> ${httpUrl} (from ${jsrUrl})`);
+              }
               return {
                 path: httpUrl,
                 external: true,
@@ -377,6 +392,9 @@ export function createJSRResolverPlugin(
         // 如果是 JSR URL，转换为 HTTP URL 后标记为 external
         if (args.path.startsWith("jsr:")) {
           const httpUrl = convertJsrToHttpUrl(args.path);
+          if (DEBUG_ESBUILD) {
+            console.log(`🔍 [Esbuild Debug] JSR URL resolved: ${args.path} -> ${httpUrl}`);
+          }
           return {
             path: httpUrl,
             external: true,
@@ -415,6 +433,9 @@ export function createJSRResolverPlugin(
         if (clientImport.startsWith("jsr:")) {
           // 将 JSR URL 转换为浏览器可访问的 HTTP URL
           const httpUrl = convertJsrToHttpUrl(clientImport);
+          if (DEBUG_ESBUILD) {
+            console.log(`🔍 [Esbuild Debug] @dreamer/dweb/client resolved: ${clientImport} -> ${httpUrl}`);
+          }
           // 标记为 external，浏览器会直接请求转换后的 HTTP URL
           return {
             path: httpUrl,
