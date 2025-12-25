@@ -46,8 +46,8 @@ function convertJsrToBrowserUrl(jsrUrl: string): string {
   const jsrPath = jsrUrl.replace(/^jsr:/, "");
   
   // 匹配格式：@scope/package@version 或 @scope/package@version/subpath
-  // 版本号可能包含 ^、~ 等符号
-  const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\^~]?[\d.]+)(?:\/(.+))?$/);
+  // 版本号可能包含 ^、~ 等符号，以及预发布版本号（如 -beta.2、-alpha.1、-rc.1）
+  const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\^~]?[\d.]+(?:-[\w.]+)?)(?:\/(.+))?$/);
   
   if (!jsrMatch) {
     // 如果无法匹配，尝试直接使用（可能是不标准的格式）
