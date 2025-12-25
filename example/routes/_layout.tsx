@@ -20,8 +20,8 @@ export const load = () => {
  * @param props 组件属性
  * @returns JSX 元素
  */
-export default function AppLayout({ children, data }: LayoutProps) { 
-	console.log('布局 data:', data.menus);
+export default function AppLayout({ children, data: _data }: LayoutProps) { 
+	// console.log('布局 data:', data.menus);
 
 
   // 获取当前路径（在客户端运行时）

@@ -122,26 +122,26 @@ export default function HomePage(
   const state = useExampleStore();
   const themeState = useThemeStore();
 
-  useEffect(() => {
-    console.log({
-      count: state.count,
-      isLoading: state.isLoading,
-      theme: themeState.value,
-    });
-  }, [state.count, state.isLoading, themeState.value]);
+  // useEffect(() => {
+  //   console.log({
+  //     count: state.count,
+  //     isLoading: state.isLoading,
+  //     theme: themeState.value,
+  //   });
+  // }, [state.count, state.isLoading, themeState.value]);
 
-  // 只在组件挂载时执行一次
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      state.increment();
-      state.toggleIsLoading();
-    }, 2000);
+  // // 只在组件挂载时执行一次
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     state.increment();
+  //     state.toggleIsLoading();
+  //   }, 2000);
 
-    // 清理函数：组件卸载时清除定时器
-    return () => {
-      clearTimeout(timer);
-    };
-	}, []) // 空依赖数组，确保只执行一次
+  //   // 清理函数：组件卸载时清除定时器
+  //   return () => {
+  //     clearTimeout(timer);
+  //   };
+	// }, []) // 空依赖数组，确保只执行一次
 	
 
 

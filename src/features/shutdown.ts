@@ -77,7 +77,7 @@ export async function gracefulShutdown(
     
     // 2. 等待现有请求完成（给一个合理的超时时间）
     console.log('等待现有请求完成...');
-    await new Promise(resolve => setTimeout(resolve, 1000)); // 等待最多 5 秒
+    await new Promise(resolve => setTimeout(resolve, 500)); // 等待最多 5 秒
     
     // 3. 执行关闭处理器（清理资源）
     console.log('执行关闭处理器...');

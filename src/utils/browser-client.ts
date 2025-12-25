@@ -188,16 +188,30 @@ class PrefetchRouters {
                   try {
                     const pageData = item.pageData;
 
-                    // 1. 预加载页面组件模块（使用 Data URL，避免 Blob URL 和 HTTP 请求）
+                    // 1. 预加载页面组件模块
                     if (pageData?.route && typeof pageData.route === "string") {
                       try {
+                        // 在导入之前，将代码中的相对路径（如 ./chunk-xxx.js）替换为绝对路径
+                        // 因为 Data URL 无法解析相对路径导入
+                        let processedBody = item.body;
+                        // 获取当前页面的 origin（协议 + 主机 + 端口）
+                        const currentOrigin = globalThis.location.origin;
+                        // 匹配 import ... from "./chunk-xxx.js"（只匹配 chunk 文件）
+                        processedBody = processedBody.replace(
+                          /from\s+["']\.\/chunk-([A-Z0-9]+\.js)["']/gi,
+                          (_match: string, fileName: string) => {
+                            // 转换为绝对路径，使用当前页面的 origin
+                            return `from "${currentOrigin}/__modules/chunk-${fileName}"`;
+                          },
+                        );
+
                         // 使用 Data URL 来执行组件代码（不会在 Network 面板显示）
                         const dataUrl =
                           `data:application/javascript;charset=utf-8,${
-                            encodeURIComponent(item.body)
+                            encodeURIComponent(processedBody)
                           }`;
                         const module = await import(dataUrl);
-
+												
                         // 验证模块是否有效
                         if (!module || typeof module !== "object") {
                           throw new Error("模块导入返回无效值");
@@ -225,13 +239,23 @@ class PrefetchRouters {
                       const layoutPromises = Object.entries(item.layouts).map(
                         async ([layoutPath, layoutCode]: [string, string]) => {
                           try {
-                            // 使用 Data URL 来执行布局组件代码（不会在 Network 面板显示）
-                            const dataUrl =
-                              `data:application/javascript;charset=utf-8,${
-                                encodeURIComponent(layoutCode)
-                              }`;
-                            const layoutModule = await import(dataUrl);
+                            // 因为 Data URL 无法解析相对路径导入
+                            let processedCode = layoutCode;
+                            // 获取当前页面的 origin（协议 + 主机 + 端口）
+                            const currentOrigin = globalThis.location.origin;
+                            processedCode = processedCode.replace(
+                              /from\s+["']\.\/chunk-([A-Z0-9]+\.js)["']/gi,
+                              (_match: string, fileName: string) => {
+                                // 转换为绝对路径，使用当前页面的 origin
+                                return `from "${currentOrigin}/__modules/chunk-${fileName}"`;
+                              },
+                            );
 
+                            // 使用 Data URL 来执行布局组件代码（不会在 Network 面板显示）
+                            const dataUrl = `data:application/javascript;charset=utf-8,${
+                              encodeURIComponent(processedCode)
+                            }`;
+                            const layoutModule = await import(dataUrl);
                             // 验证模块是否有效
                             if (
                               !layoutModule || typeof layoutModule !== "object"
@@ -248,13 +272,21 @@ class PrefetchRouters {
                             }
                           } catch (_layoutError) {
                             // 布局导入失败时静默处理
+                            console.warn(
+                              "[Layout] 布局加载失败，跳过该布局:",
+                              layoutPath,
+                              _layoutError,
+                            );
                           }
                         },
                       );
                       await Promise.all(layoutPromises);
                     }
                   } catch (_e) {
-                    // 预取失败时静默处理（不影响正常导航）
+                    console.warn(
+                      "[Batch Prefetch] 预取失败:",
+                      _e,
+                    );
                   }
                 })();
 
@@ -280,7 +312,6 @@ class PrefetchRouters {
     }
   }
 }
-
 
 /**
  * 客户端渲染器类
@@ -447,36 +478,41 @@ class ClientRenderer {
       return pageElement;
     }
 
-      // 从最内层到最外层嵌套布局组件
-      let currentElement = pageElement;
-      for (let i = 0; i < LayoutComponents.length; i++) {
-        const LayoutComponent = LayoutComponents[i];
-        // 获取对应布局的 load 数据（如果有）
-        const layoutLoadData = layoutData?.[i] || {};
-        // 从 layoutLoadData 中排除 children 和 data，避免类型冲突和数据覆盖
-        const { children: _, data: __, ...restLayoutProps } = layoutLoadData;
-        try {
-          // 先尝试直接调用布局组件（支持异步组件）
-          // data: 布局的 load 数据（layoutLoadData）
-          const layoutProps = {
-            ...restLayoutProps, // 布局的 load 数据中的其他属性（如果有）
-            data: layoutLoadData, // 布局的 load 数据（例如 menus）
-            children: currentElement,
-          };
-        const layoutResult =
-          (LayoutComponent as (props: { children: unknown; data: Record<string, unknown>; [key: string]: unknown }) => unknown)(layoutProps);
+    // 从最内层到最外层嵌套布局组件
+    let currentElement = pageElement;
+    for (let i = 0; i < LayoutComponents.length; i++) {
+      const LayoutComponent = LayoutComponents[i];
+      // 获取对应布局的 load 数据（如果有）
+      const layoutLoadData = layoutData?.[i] || {};
+      // 从 layoutLoadData 中排除 children 和 data，避免类型冲突和数据覆盖
+      const { children: _, data: __, ...restLayoutProps } = layoutLoadData;
+      try {
+        // 先尝试直接调用布局组件（支持异步组件）
+        // data: 布局的 load 数据（layoutLoadData）
+        const layoutProps = {
+          ...restLayoutProps, // 布局的 load 数据中的其他属性（如果有）
+          data: layoutLoadData, // 布局的 load 数据（例如 menus）
+          children: currentElement,
+        };
+        const layoutResult = (LayoutComponent as (
+          props: {
+            children: unknown;
+            data: Record<string, unknown>;
+            [key: string]: unknown;
+          },
+        ) => unknown)(layoutProps);
         // 如果布局组件返回 Promise，等待它
         if (layoutResult instanceof Promise) {
           currentElement = await layoutResult;
         } else {
           currentElement = layoutResult;
         }
-        } catch (layoutError) {
-          // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
-          console.warn(
-            "[nestLayoutComponents] 直接调用布局组件失败，尝试使用 jsx 函数:",
-            layoutError,
-          );
+      } catch (layoutError) {
+        // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
+        console.warn(
+          "[nestLayoutComponents] 直接调用布局组件失败，尝试使用 jsx 函数:",
+          layoutError,
+        );
         try {
           const layoutProps = {
             ...restLayoutProps, // 布局的 load 数据中的其他属性（如果有）
@@ -786,12 +822,15 @@ class ClientRouter {
         try {
           // 确保 route 是完整的 HTTP URL
           let routeUrl = pageData.route;
-          if (typeof routeUrl === 'string' && routeUrl.startsWith('/') && !routeUrl.startsWith('http://') && !routeUrl.startsWith('https://')) {
+          if (
+            typeof routeUrl === "string" && routeUrl.startsWith("/") &&
+            !routeUrl.startsWith("http://") && !routeUrl.startsWith("https://")
+          ) {
             routeUrl = `${globalThis.location.origin}${routeUrl}`;
           }
           // 清理 URL 中的空格
-          if (typeof routeUrl === 'string') {
-            routeUrl = routeUrl.replace(/\s+/g, '');
+          if (typeof routeUrl === "string") {
+            routeUrl = routeUrl.replace(/\s+/g, "");
           }
           pageModule = await import(routeUrl as string) as {
             default?: unknown;
@@ -858,8 +897,10 @@ class ClientRouter {
       }
 
       // 获取布局的 load 数据（如果有）
-      const layoutData = pageData?.layoutData as Record<string, unknown>[] | undefined;
-      
+      const layoutData = pageData?.layoutData as
+        | Record<string, unknown>[]
+        | undefined;
+
       // 创建最终元素（使用渲染器的方法）
       const finalElement = await this.renderer.createFinalElement(
         PageComponent,
@@ -927,7 +968,10 @@ class ClientRouter {
           }
 
           // 获取布局的 load 数据（如果有）
-          const layoutDataRetry = pageData?.layoutData as Record<string, unknown>[] | undefined;
+          const layoutDataRetry = pageData?.layoutData as Record<
+            string,
+            unknown
+          >[] | undefined;
 
           const finalElementRetry = await this.renderer.createFinalElement(
             PageComponent,
@@ -1017,11 +1061,14 @@ class ClientRouter {
         try {
           // 确保 route 是完整的 HTTP URL
           let routeUrl = pageData.route;
-          if (routeUrl.startsWith('/') && !routeUrl.startsWith('http://') && !routeUrl.startsWith('https://')) {
+          if (
+            routeUrl.startsWith("/") && !routeUrl.startsWith("http://") &&
+            !routeUrl.startsWith("https://")
+          ) {
             routeUrl = `${globalThis.location.origin}${routeUrl}`;
           }
           // 清理 URL 中的空格
-          routeUrl = routeUrl.replace(/\s+/g, '');
+          routeUrl = routeUrl.replace(/\s+/g, "");
           const module = await import(routeUrl);
           this.moduleCache.set(pageData.route, module);
         } catch (_importError) {
@@ -1126,10 +1173,15 @@ class BrowserClient {
    * 初始化链接拦截器（CSR/Hybrid 模式）
    */
   private initLinkInterceptor(): void {
-    if ((globalThis as Record<string, unknown>).__CSR_LINK_INTERCEPTOR_INITIALIZED__) return;
-    (globalThis as Record<string, unknown>).__CSR_LINK_INTERCEPTOR_INITIALIZED__ = true;
+    if (
+      (globalThis as Record<string, unknown>)
+        .__CSR_LINK_INTERCEPTOR_INITIALIZED__
+    ) return;
+    (globalThis as Record<string, unknown>)
+      .__CSR_LINK_INTERCEPTOR_INITIALIZED__ = true;
 
-    let navigateToFunc: ((path: string, replace?: boolean) => void) | null = null;
+    let navigateToFunc: ((path: string, replace?: boolean) => void) | null =
+      null;
 
     /**
      * 处理链接点击事件
@@ -1191,11 +1243,12 @@ class BrowserClient {
     globalThis.addEventListener("popstate", popstateHandler);
 
     // 暴露设置导航函数的接口
-    (globalThis as Record<string, unknown>).__setCSRNavigateFunction = function (
-      fn: (path: string, replace?: boolean) => void,
-    ) {
-      navigateToFunc = fn;
-    };
+    (globalThis as Record<string, unknown>).__setCSRNavigateFunction =
+      function (
+        fn: (path: string, replace?: boolean) => void,
+      ) {
+        navigateToFunc = fn;
+      };
   }
 
   /**
@@ -1275,7 +1328,8 @@ class BrowserClient {
           if (metadataObj.robots === false) {
             updateOrCreateMeta("name", "robots", "noindex, nofollow");
           } else if (
-            typeof metadataObj.robots === "object" && metadataObj.robots !== null
+            typeof metadataObj.robots === "object" &&
+            metadataObj.robots !== null
           ) {
             const robotsObj = metadataObj.robots as Record<string, unknown>;
             const directives: string[] = [];
@@ -1449,13 +1503,16 @@ class BrowserClient {
       // 加载页面组件
       // 确保 route 是完整的 HTTP URL（如果是相对路径，需要转换为完整 URL）
       let routeUrl = this.config.route;
-      if (routeUrl.startsWith('/') && !routeUrl.startsWith('http://') && !routeUrl.startsWith('https://')) {
+      if (
+        routeUrl.startsWith("/") && !routeUrl.startsWith("http://") &&
+        !routeUrl.startsWith("https://")
+      ) {
         // 相对路径（如 /__modules/...），需要转换为完整的 HTTP URL
         routeUrl = `${globalThis.location.origin}${routeUrl}`;
       }
       // 清理 URL 中的空格（防止 URL 中有空格导致导入失败）
-      routeUrl = routeUrl.replace(/\s+/g, '');
-      
+      routeUrl = routeUrl.replace(/\s+/g, "");
+
       let module: { default: unknown; renderMode?: string; hydrate?: boolean };
       try {
         module = await import(routeUrl) as {
@@ -1513,7 +1570,10 @@ class BrowserClient {
         : [];
 
       // 获取布局的 load 数据（如果有）
-      const layoutData = currentPageData?.layoutData as Record<string, unknown>[] | undefined;
+      const layoutData = currentPageData?.layoutData as Record<
+        string,
+        unknown
+      >[] | undefined;
 
       // 创建最终元素（使用渲染器的方法，性能更好）
       const finalElement = await this.renderer.createFinalElement(
@@ -1694,7 +1754,7 @@ function initClient(config: ClientConfig): void {
 if (typeof globalThis !== "undefined") {
   (globalThis as Record<string, unknown>).initClient = initClient;
   // 为了向后兼容，也暴露 initLinkInterceptor（内部会通过 BrowserClient 调用）
-  (globalThis as Record<string, unknown>).initLinkInterceptor = function() {
+  (globalThis as Record<string, unknown>).initLinkInterceptor = function () {
     // 这个函数现在由 BrowserClient 内部调用，这里保留只是为了向后兼容
     // 实际功能已经在 BrowserClient.init() 中通过 this.initLinkInterceptor() 调用
   };

@@ -6,7 +6,7 @@
 
 import type { AppLike, Plugin, Request, Response } from "../../types/index.ts";
 import type { TailwindPluginOptions } from "./types.ts";
-import { findCSSFiles, findTailwindConfigFile } from "./utils.ts";
+import { findTailwindConfigFile } from "./utils.ts";
 import { processCSSV3 } from "./v3.ts";
 import { processCSSV4 } from "./v4.ts";
 import * as path from "@std/path";
@@ -162,7 +162,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
             fileContent,
             cssPath,
             version,
-            true, 
+            false, 
             options,
           );
 
@@ -272,10 +272,10 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
       console.log(`🎨 [Tailwind ${version}] 开始编译 CSS 文件...`);
 
       try {
-        // 查找所有 CSS 文件
-        const cssFiles: string[] = [];
+        // 获取 CSS 文件路径
+        let cssFile: string | undefined;
 
-        // 如果配置了 cssPath，优先处理该文件
+        // 如果配置了 cssPath，使用该文件
         if (options.cssPath) {
           const cssPath = options.cssPath.startsWith("/")
             ? options.cssPath.slice(1)
@@ -283,50 +283,15 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
           try {
             const stat = await Deno.stat(cssPath);
             if (stat.isFile) {
-              cssFiles.push(cssPath);
+              cssFile = cssPath;
             }
           } catch {
-            // 文件不存在，继续查找其他文件
+            // 文件不存在，跳过
           }
         }
 
-        // 如果配置了 cssFiles，使用配置的文件列表
-        if (options.cssFiles) {
-          const files = Array.isArray(options.cssFiles)
-            ? options.cssFiles
-            : [options.cssFiles];
-          for (const file of files) {
-            // 这里简化处理，实际应该支持 glob 模式匹配
-            if (file.endsWith(".css")) {
-              const filePath = file.startsWith("/") ? file.slice(1) : file;
-              try {
-                const stat = await Deno.stat(filePath);
-                if (stat.isFile) {
-                  cssFiles.push(filePath);
-                }
-              } catch {
-                // 文件不存在，跳过
-              }
-            }
-          }
-        } else if (!options.cssPath) {
-          // 默认处理：遍历静态资源目录（如果没有配置 cssPath 和 cssFiles）
-          try {
-            for await (const entry of Deno.readDir(staticDir)) {
-              if (entry.isFile && entry.name.endsWith(".css")) {
-                cssFiles.push(path.join(staticDir, entry.name));
-              } else if (entry.isDirectory) {
-                // 递归查找子目录
-                await findCSSFiles(path.join(staticDir, entry.name), cssFiles);
-              }
-            }
-          } catch {
-            // 静态资源目录不存在，跳过
-          }
-        }
-
-        // 处理每个 CSS 文件
-        for (const cssFile of cssFiles) {
+        // 如果找到了 CSS 文件，进行处理
+        if (cssFile) {
           try {
             const cssContent = await Deno.readTextFile(cssFile);
 
@@ -337,8 +302,8 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
               version,
               isProduction,
               options,
-            );
-
+						);
+					
             // 计算输出路径
             // 注意：如果 cssFile 就是 staticDir 下的文件（如 assets/tailwind.css），
             // path.relative 可能会返回相对路径，需要特殊处理
@@ -364,17 +329,21 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
             if (processed.map) {
               await Deno.writeTextFile(`${outPath}.map`, processed.map);
             }
+
+            console.log(
+              `   ✅ [Tailwind ${version}] CSS 编译完成: ${cssFile}`,
+            );
           } catch (error) {
             console.error(
               `❌ [Tailwind ${version}] 编译失败: ${cssFile}`,
               error,
             );
           }
+        } else {
+          console.warn(
+            `⚠️  [Tailwind ${version}] 未找到 CSS 文件，跳过编译`,
+          );
         }
-
-        console.log(
-          `   ✅ [Tailwind ${version}] CSS 编译完成，共处理 ${cssFiles.length} 个文件`,
-        );
       } catch (error) {
         console.error(`❌ [Tailwind ${version}] 构建时出错:`, error);
       }

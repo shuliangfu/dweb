@@ -27,7 +27,6 @@ const config: AppConfig = {
   build: {
 		outDir: ".dist",
 		split: true,
-		// 注意：当 split: true 时，esbuild 会自动将共享组件提取为 chunk，无需单独配置 components
   },
 
   // 服务器配置

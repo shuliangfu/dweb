@@ -2643,7 +2643,7 @@ export class RouteHandler {
                   );
 
                   // 如果成功获取布局代码，存储到 layouts 中（使用原始路径作为 key）
-                  if (layoutTempRes.body && layoutTempRes.status === 200) {
+									if (layoutTempRes.body && layoutTempRes.status === 200) {
                     layouts[layoutPath] = layoutTempRes.body;
                   }
                 } catch (_layoutError) {
