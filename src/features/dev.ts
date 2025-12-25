@@ -12,7 +12,11 @@ import { MiddlewareManager } from "../core/middleware.ts";
 import { PluginManager } from "../core/plugin.ts";
 import { CookieManager } from "../features/cookie.ts";
 import { SessionManager } from "../features/session.ts";
-import { closeDatabase, initDatabase, setDatabaseConfigLoader } from "../features/database/access.ts";
+import {
+  closeDatabase,
+  initDatabase,
+  setDatabaseConfigLoader,
+} from "../features/database/access.ts";
 import { WebSocketServer } from "../features/websocket/server.ts";
 import { initWebSocket } from "../features/websocket/access.ts";
 import { GraphQLServer } from "../features/graphql/server.ts";
@@ -299,7 +303,7 @@ export async function startDevServer(config: AppConfig): Promise<void> {
   if (!config.server) {
     throw new Error("服务器配置 (server) 是必需的");
   }
-  const protocol = config.server.tls ? 'https' : 'http';
+  const protocol = config.server.tls ? "https" : "http";
   const serverOrigin = `${protocol}://${
     config.server.host || "localhost"
   }:${config.server.port}`;
@@ -498,7 +502,7 @@ export async function startDevServer(config: AppConfig): Promise<void> {
     router,
     routeHandler,
     isProduction: config.isProduction ?? false,
-  });
+  }, config);
 
   // 创建 WebSocket 服务器（如果配置了）
   let wsServer: WebSocketServer | null = null;
@@ -538,7 +542,7 @@ export async function startDevServer(config: AppConfig): Promise<void> {
   // 如果配置了自动打开浏览器
   if (config.dev?.open) {
     setTimeout(() => {
-      const protocol = tls ? 'https' : 'http';
+      const protocol = tls ? "https" : "http";
       const url = `${protocol}://${host}:${port}`;
       try {
         const command = new Deno.Command("open", {

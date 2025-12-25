@@ -129,8 +129,8 @@ export class Router {
       const serverRouteMapContent = await Deno.readTextFile(serverRouteMapPath);
       const serverRouteMap: Record<string, string> = JSON.parse(
         serverRouteMapContent,
-      );
-
+			);
+			
       // 读取客户端路由映射文件（如果存在）
       let clientRouteMap: Record<string, string> = {};
       try {
@@ -151,8 +151,8 @@ export class Router {
         const serverHashName = serverHashFileName.startsWith("server/")
           ? serverHashFileName.replace(/^server\//, "")
           : serverHashFileName;
-        const buildFilePath = path.resolve(outDir, "server", serverHashName);
-
+				const buildFilePath = path.resolve(outDir, "server", serverHashName);
+				
         // 从客户端路由映射中获取对应的客户端路径
         // clientHashFileName 格式：client/routes_index.xyz789.js
         const clientHashFileName = clientRouteMap[routeKey];
@@ -227,8 +227,8 @@ export class Router {
         // 检查是否为捕获所有路由
         if (routePath.includes("[...")) {
           routeInfo.isCatchAll = true;
-        }
-
+				}
+				
         // 添加到路由映射
         this.routes.set(routePath, routeInfo);
 

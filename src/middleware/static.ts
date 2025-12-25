@@ -64,15 +64,15 @@ export function staticFiles(options: StaticOptions): Middleware {
     outDir,
     isProduction,
     extendDirs = []
-  } = options;
-  
+	} = options;
+
   const cwd = Deno.cwd();
   
   // 处理主配置的 prefix：如果未配置，默认使用 dir 的名称
   if (!prefix) {
     const dirName = path.basename(dir);
     prefix = `/${dirName}`;
-  }
+	}
   
   // 处理 extendDirs：支持字符串或对象格式
   interface NormalizedExtendDir {
@@ -139,8 +139,8 @@ export function staticFiles(options: StaticOptions): Middleware {
   
   return async (req, res, next) => {
     const url = new URL(req.url);
-    let pathname = url.pathname;
-    
+		let pathname = url.pathname;
+		
     // 检查是否匹配 extendDirs（优先检查，因为这些目录始终从项目根目录读取）
     // 例如：如果 extendDirs 包含 'uploads'，请求 /uploads/file.jpg 应该从项目根目录的 uploads 读取
     if (normalizedExtendDirs.length > 0) {
@@ -187,8 +187,8 @@ export function staticFiles(options: StaticOptions): Middleware {
           }
           
           // 构建完整路径
-          const fullPath = filePath ? path.join(extendDirConfig.dir, filePath) : extendDirConfig.dir;
-          
+					const fullPath = filePath ? path.join(extendDirConfig.dir, filePath) : extendDirConfig.dir;
+					
           // 安全检查
           if (!isPathSafe(fullPath, extendDirConfig.dir)) {
             await next();

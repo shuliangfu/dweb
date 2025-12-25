@@ -198,7 +198,7 @@ class PrefetchRouters {
                         const currentOrigin = globalThis.location.origin;
                         // 匹配 import ... from "./chunk-xxx.js"（只匹配 chunk 文件）
                         processedBody = processedBody.replace(
-                          /from\s+["']\.\/chunk-([A-Z0-9]+\.js)["']/gi,
+                          /from\s?["']\.\/chunk-([A-Z0-9]+\.js)["']|import\s?["']\.\/chunk-([A-Z0-9]+\.js)["']/gi,
                           (_match: string, fileName: string) => {
                             // 转换为绝对路径，使用当前页面的 origin
                             return `from "${currentOrigin}/__modules/chunk-${fileName}"`;
@@ -211,7 +211,7 @@ class PrefetchRouters {
                             encodeURIComponent(processedBody)
                           }`;
                         const module = await import(dataUrl);
-												
+
                         // 验证模块是否有效
                         if (!module || typeof module !== "object") {
                           throw new Error("模块导入返回无效值");
@@ -243,8 +243,9 @@ class PrefetchRouters {
                             let processedCode = layoutCode;
                             // 获取当前页面的 origin（协议 + 主机 + 端口）
                             const currentOrigin = globalThis.location.origin;
-                            processedCode = processedCode.replace(
-                              /from\s+["']\.\/chunk-([A-Z0-9]+\.js)["']/gi,
+														processedCode = processedCode.replace(
+															// 查找 import 或 from 的相对路径导入
+                              /from\s?["']\.\/chunk-([A-Z0-9]+\.js)["']|import\s?["']\.\/chunk-([A-Z0-9]+\.js)["']/gi,
                               (_match: string, fileName: string) => {
                                 // 转换为绝对路径，使用当前页面的 origin
                                 return `from "${currentOrigin}/__modules/chunk-${fileName}"`;
@@ -252,9 +253,10 @@ class PrefetchRouters {
                             );
 
                             // 使用 Data URL 来执行布局组件代码（不会在 Network 面板显示）
-                            const dataUrl = `data:application/javascript;charset=utf-8,${
-                              encodeURIComponent(processedCode)
-                            }`;
+                            const dataUrl =
+                              `data:application/javascript;charset=utf-8,${
+                                encodeURIComponent(processedCode)
+                              }`;
                             const layoutModule = await import(dataUrl);
                             // 验证模块是否有效
                             if (

@@ -5,7 +5,7 @@
  * @module core/plugin
  */
 
-import type { Plugin, Request, Response, AppLike, BuildConfig } from '../types/index.ts';
+import type { Plugin, Request, Response, AppLike, BuildConfig, AppConfig } from '../types/index.ts';
 
 /**
  * 插件管理器
@@ -83,10 +83,10 @@ export class PluginManager {
    * 执行初始化钩子
    * @param app 应用实例
    */
-  async executeOnInit(app: AppLike): Promise<void> {
+  async executeOnInit(app: AppLike, config: AppConfig): Promise<void> {
     for (const plugin of this.plugins) {
       if (plugin.onInit) {
-        await plugin.onInit(app);
+        await plugin.onInit(app, config);
       }
     }
   }

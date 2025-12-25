@@ -336,10 +336,11 @@ if (isMultiApp) {
         // API 路由模式：'method'（方法路由，默认使用中划线格式，例如 /api/users/get-user）或 'rest'（RESTful API，基于 HTTP 方法，例如 GET /api/users）
         apiMode: '${apiMode}'
       },
-      static: {
-        dir: '${appName}/assets',
-        prefix: '/assets'
-      },
+      // 静态资源目录，默认为 'assets', prefix 为 /assets
+      // static: {
+      //   dir: '${appName}/assets',
+      //   prefix: '/assets'
+      // },
       plugins: [
         tailwind({
           version: '${useTailwindV4 ? 'v4' : 'v3'}',
@@ -361,7 +362,7 @@ if (isMultiApp) {
       ],
       // 构建配置
       build: {
-        outDir: 'dist/${appName}'
+        outDir: 'dist'
       },
     }`;
     })
@@ -436,8 +437,11 @@ const config: AppConfig = {
     apiMode: '${apiMode}'
   },
   
-  // 静态资源目录，默认为 'assets'
-  // staticDir: 'assets',
+  // 静态资源目录，默认为 'assets', prefix 为 /assets
+  // static: {
+  //   dir: 'assets',
+  //   prefix: '/assets'
+  // },
   
   // 开发配置
   dev: {

@@ -17,6 +17,7 @@ import {
   buildFromEntryPoints,
 } from "../utils/esbuild.ts";
 import * as esbuild from "esbuild";
+import { isMultiAppMode } from "../core/config.ts";
 
 /**
  * 清空目录
@@ -1512,8 +1513,18 @@ export async function build(config: AppConfig): Promise<void> {
 async function buildApp(config: AppConfig): Promise<void> {
   if (!config.build) {
     throw new Error("构建配置 (build) 是必需的");
-  }
-  const outDir = config.build.outDir;
+	}
+	
+
+
+	const isMultApp = await isMultiAppMode();
+
+  let outDir: string = config.build.outDir;
+
+	if (isMultApp) {
+		outDir = outDir + "/" + config.name;
+	}
+
 
   console.log(`\n📦 构建输出目录: ${outDir}`);
 
@@ -1534,9 +1545,14 @@ async function buildApp(config: AppConfig): Promise<void> {
   // 1. 复制静态资源（保持原文件名，不 hash 化）
   // 先复制所有文件（包括 CSS），Tailwind 插件构建时会覆盖 tailwind.css
   const staticDir = config.static?.dir || "assets";
-  const staticOutDir = path.join(outDir, staticDir);
+  // 在多应用模式下，static.dir 已经包含了 path（在 config.ts 中已处理）
+  // 输出目录直接使用 staticDir（已经包含 path）
+  const staticOutDir = path.join(config.build.outDir, staticDir);
   const compressAssets = config.build?.compress === true;
   const imageQuality = config.build?.imageQuality || 80;
+
+
+	// console.log({ staticDir, staticOutDir, outDir });
 
   try {
     await ensureDir(staticOutDir);
@@ -1711,7 +1727,7 @@ async function buildApp(config: AppConfig): Promise<void> {
 
   // 执行插件构建钩子
   await pluginManager.executeOnBuild({
-    outDir,
+    outDir: config.build.outDir,
     staticDir: staticDir,
     isProduction: true,
   });

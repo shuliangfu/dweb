@@ -8,29 +8,83 @@ import type { DWebConfig, AppConfig, Middleware } from '../../../src/types/index
 import { ensureDir, ensureFile } from '@std/fs';
 import * as path from '@std/path';
 
-Deno.test('Config - isMultiAppMode - 单应用模式', () => {
-  const config: AppConfig = {
-    server: { port: 3000, host: 'localhost' },
-    routes: { dir: 'routes' },
-    build: { outDir: 'dist' },
-  };
+Deno.test('Config - isMultiAppMode - 单应用模式', async () => {
+  const testDir = path.join(Deno.cwd(), 'tests', 'fixtures', 'config-test-single');
+  const configFile = path.join(testDir, 'dweb.config.ts');
+  const originalCwd = Deno.cwd();
   
-  assertEquals(isMultiAppMode(config), false);
+  try {
+    // 创建测试目录和配置文件
+    await ensureDir(testDir);
+    await ensureFile(configFile);
+    
+    const configContent = `
+export default {
+  server: { port: 3000, host: 'localhost' },
+  routes: { dir: 'routes' },
+  build: { outDir: 'dist' },
+};
+`;
+    await Deno.writeTextFile(configFile, configContent);
+    
+    // 切换到测试目录
+    Deno.chdir(testDir);
+    
+    // 测试单应用模式
+    const result = await isMultiAppMode();
+    assertEquals(result, false);
+  } finally {
+    // 恢复工作目录
+    Deno.chdir(originalCwd);
+    // 清理测试文件
+    try {
+      await Deno.remove(testDir, { recursive: true });
+    } catch {
+      // 忽略清理错误
+    }
+  }
 });
 
-Deno.test('Config - isMultiAppMode - 多应用模式', () => {
-  const config: DWebConfig = {
-    apps: [
-      {
-        name: 'app1',
-        server: { port: 3000, host: 'localhost' },
-        routes: { dir: 'routes' },
-        build: { outDir: 'dist' },
-      },
-    ],
-  };
+Deno.test('Config - isMultiAppMode - 多应用模式', async () => {
+  const testDir = path.join(Deno.cwd(), 'tests', 'fixtures', 'config-test-multi-check');
+  const configFile = path.join(testDir, 'dweb.config.ts');
+  const originalCwd = Deno.cwd();
   
-  assertEquals(isMultiAppMode(config), true);
+  try {
+    // 创建测试目录和配置文件
+    await ensureDir(testDir);
+    await ensureFile(configFile);
+    
+    const configContent = `
+export default {
+  apps: [
+    {
+      path: 'app1',
+      server: { port: 3000, host: 'localhost' },
+      routes: { dir: 'routes' },
+      build: { outDir: 'dist' },
+    },
+  ],
+};
+`;
+    await Deno.writeTextFile(configFile, configContent);
+    
+    // 切换到测试目录
+    Deno.chdir(testDir);
+    
+    // 测试多应用模式
+    const result = await isMultiAppMode();
+    assertEquals(result, true);
+  } finally {
+    // 恢复工作目录
+    Deno.chdir(originalCwd);
+    // 清理测试文件
+    try {
+      await Deno.remove(testDir, { recursive: true });
+    } catch {
+      // 忽略清理错误
+    }
+  }
 });
 
 Deno.test('Config - normalizeRouteConfig - 字符串配置', () => {

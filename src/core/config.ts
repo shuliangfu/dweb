@@ -71,7 +71,8 @@ export async function loadConfig(
     const config: DWebConfig = configModule.default || configModule;
 
     // 如果是多应用模式
-    if (isMultiAppMode(config)) {
+    const isMultiApp = "apps" in config && Array.isArray(config.apps);
+    if (isMultiApp) {
       // 如果指定了应用名称，查找对应的应用配置
       if (appName) {
         const matchedApp = config.apps?.find((app) => app.name === appName);
@@ -163,26 +164,41 @@ function validateConfig(config: unknown): void {
 /**
  * 判断是否为多应用模式
  *
- * 通过检查配置对象是否包含 `apps` 属性来判断是否为多应用模式。
+ * 直接读取 dweb.config.ts 文件，检查配置是否包含 `apps` 属性来判断是否为多应用模式。
  *
- * @param config - 配置对象
- * @returns config is AppConfig - 类型守卫，如果返回 true，则 config 是多应用配置
+ * @returns Promise<boolean> - 如果返回 true，则是多应用模式
  *
  * @example
  * ```ts
  * import { isMultiAppMode } from "@dreamer/dweb";
  *
- * if (isMultiAppMode(config)) {
- *   // config 是多应用配置，包含 apps 数组
- *   console.log("多应用模式，应用数量:", config.apps.length);
+ * if (await isMultiAppMode()) {
+ *   // 多应用模式
+ *   console.log("多应用模式");
  * } else {
- *   // config 是单应用配置
+ *   // 单应用模式
  *   console.log("单应用模式");
  * }
  * ```
  */
-export function isMultiAppMode(config: DWebConfig): config is AppConfig {
-  return "apps" in config && Array.isArray(config.apps);
+export async function isMultiAppMode(): Promise<boolean> {
+  try {
+    const configPath = await findConfigFile();
+    if (!configPath) {
+      return false;
+    }
+
+    // 动态导入配置文件
+    const configModule = await import(
+      `file://${path.resolve(Deno.cwd(), configPath)}`
+    );
+    const config: DWebConfig = configModule.default || configModule;
+
+    return "apps" in config && Array.isArray(config.apps);
+  } catch {
+    // 如果读取失败，返回 false（单应用模式）
+    return false;
+  }
 }
 
 /**

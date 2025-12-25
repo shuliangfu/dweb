@@ -10,7 +10,6 @@ import { startProdServer } from "./features/prod.ts";
 import { Command } from "./console/command.ts";
 import { info, success } from "./console/output.ts";
 import { interactiveMenu } from "./console/prompt.ts";
-import { isMultiAppMode } from "./core/config.ts";
 import { readDenoJson } from "./utils/file.ts";
 
 /**
@@ -153,29 +152,30 @@ async function selectAppInteractively(
 
   // 如果只有一个应用，直接返回
   if (apps.length === 1) {
-    const appName = apps[0].name;
-    if (appName) {
-      info(`自动选择应用: ${appName}`);
-      return appName;
+    const appPath = (apps[0] as any).path || apps[0].name;
+    if (appPath) {
+      info(`自动选择应用: ${appPath}`);
+      return appPath;
     }
   }
 
   // 多个应用，让用户选择
-  const appNames = apps
-    .map((app) => app.name)
-    .filter((name): name is string => !!name);
+  // 优先使用 path，如果没有 path 则使用 name（向后兼容）
+  const appPaths = apps
+    .map((app) => (app as any).path || app.name)
+    .filter((p): p is string => !!p);
 
-  if (appNames.length === 0) {
-    throw new Error("多应用模式下未找到有效的应用名称");
+  if (appPaths.length === 0) {
+    throw new Error("多应用模式下未找到有效的应用路径或名称");
   }
 
   // 显示应用列表供用户选择
   const selectedIndex = await interactiveMenu(
     "检测到多应用模式，请选择要操作的应用：",
-    appNames,
+    appPaths,
   );
 
-  return appNames[selectedIndex];
+  return appPaths[selectedIndex];
 }
 
 /**
@@ -209,7 +209,8 @@ async function parseAppName(
     return undefined;
   }
 
-  if (isMultiAppMode(config)) {
+  const isMultiApp = "apps" in config && Array.isArray(config.apps);
+  if (isMultiApp) {
     try {
       return await selectAppInteractively(config.apps || []);
     } catch (error) {

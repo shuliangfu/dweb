@@ -5,8 +5,8 @@
 
 import type {
   AppConfig,
-  LayoutProps,
   ComponentChildren,
+  LayoutProps,
   Middleware,
   RenderMode,
   Request,
@@ -31,6 +31,7 @@ import { createClientScript } from "../utils/script-client.ts";
 import { minifyJavaScript } from "../utils/minify.ts";
 import * as path from "@std/path";
 import { logger } from "../utils/logger.ts";
+import { isMultiAppMode } from "./config.ts";
 
 /**
  * HMR 客户端脚本注入函数
@@ -166,10 +167,16 @@ export class RouteHandler {
         // 如果文件路径不包含目录分隔符，说明是构建后的文件名，需要从 dist/client 目录加载
         // 或者如果路径以 ./ 开头，也是构建后的相对路径
         let fullPath: string;
-        const outDir = this.config?.build?.outDir;
+        const outDir = this.config?.build?.outDir || "dist";
         if (outDir) {
           // 客户端请求：从 client 目录加载（不包含 load 函数）
-          const clientOutDir = path.join(outDir, "client");
+          let clientOutDir;
+          if (await isMultiAppMode()) {
+            clientOutDir = path.join(outDir, this.config!.name!, "client");
+          } else {
+            clientOutDir = path.join(outDir, "client");
+          }
+
           if (filePath.startsWith("./")) {
             // 生产环境：相对路径（如 ./components_Hero.4fce6e4f85.js），从 dist/client 目录加载
             const relativePath = filePath.substring(2); // 移除 ./ 前缀
@@ -225,7 +232,7 @@ export class RouteHandler {
             // 读取 deno.json 或 deno.jsonc 获取 import map（用于解析外部依赖）
             let importMap: Record<string, string> = {};
             try {
-              const { readDenoJson } = await import('../utils/file.ts');
+              const { readDenoJson } = await import("../utils/file.ts");
               const denoJson = await readDenoJson(cwd);
               if (denoJson && denoJson.imports) {
                 importMap = denoJson.imports;
@@ -318,84 +325,96 @@ export class RouteHandler {
     try {
       // 移除 /__jsr/ 前缀，获取 JSR 路径
       const jsrPath = pathname.replace(/^\/__jsr\//, "");
-      
+
       // 构建 JSR.io 的 URL
       // 路径格式：@dreamer/dweb/1.8.2-beta.10/src/client.ts
       const jsrUrl = `https://jsr.io/${jsrPath}`;
-      
+
       // 尝试使用 .js 扩展名（JSR.io 可能会自动编译 TypeScript 为 JavaScript）
       // 如果 .ts 路径返回 HTML，尝试使用 .js 扩展名
       let actualUrl = jsrUrl;
       if (jsrPath.endsWith(".ts") || jsrPath.endsWith(".tsx")) {
         // 尝试使用 .js 扩展名
         const jsUrl = jsrUrl.replace(/\.tsx?$/, ".js");
-        
+
         // 先尝试使用 .js 扩展名，并设置 Accept 头为 application/javascript
         const jsResponse = await fetch(jsUrl, {
           headers: {
             "Accept": "application/javascript, text/javascript, */*",
           },
         });
-        
+
         if (jsResponse.ok) {
           const jsContentType = jsResponse.headers.get("content-type") || "";
           // 如果返回的是 JavaScript，使用它
-          if (jsContentType.includes("javascript") || jsContentType.includes("application/javascript")) {
+          if (
+            jsContentType.includes("javascript") ||
+            jsContentType.includes("application/javascript")
+          ) {
             actualUrl = jsUrl;
             const jsCode = await jsResponse.text();
             res.status = 200;
-            res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-            res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            res.setHeader(
+              "Content-Type",
+              "application/javascript; charset=utf-8",
+            );
+            res.setHeader(
+              "Cache-Control",
+              "no-cache, no-store, must-revalidate",
+            );
             res.text(jsCode);
             return;
           }
         }
       }
-      
+
       // 如果 .js 扩展名不可用，尝试使用 .ts 扩展名，并设置 Accept 头
       // 从 JSR.io 获取文件内容，设置 Accept 头为 application/javascript
       // 某些 JSR.io 实现可能会根据 Accept 头返回编译后的 JavaScript
       const response = await fetch(actualUrl, {
         headers: {
-          "Accept": "application/javascript, text/javascript, application/typescript, text/typescript, */*",
+          "Accept":
+            "application/javascript, text/javascript, application/typescript, text/typescript, */*",
         },
       });
-      
+
       if (!response.ok) {
         res.status = response.status;
         res.setHeader("Content-Type", "text/plain; charset=utf-8");
         res.text(`Failed to fetch from JSR.io: ${jsrUrl} (${response.status})`);
         return;
       }
-      
+
       // 检查响应类型
       const contentType = response.headers.get("content-type") || "";
-      
+
       // 如果返回的是 HTML（JSR.io 的文件查看页面），说明路径不正确
       if (contentType.includes("text/html")) {
         res.status = 404;
         res.setHeader("Content-Type", "text/plain; charset=utf-8");
-        res.text(`JSR.io returned HTML instead of TypeScript file. This usually means the path is incorrect: ${jsrUrl}`);
+        res.text(
+          `JSR.io returned HTML instead of TypeScript file. This usually means the path is incorrect: ${jsrUrl}`,
+        );
         return;
       }
-      
+
       // 读取文件内容
       const fileContent = await response.text();
-      
+
       // 检查文件类型
       const isTsx = jsrPath.endsWith(".tsx") || jsrPath.endsWith(".ts");
-      
+
       let jsCode: string;
-      
+
       if (isTsx) {
         // 使用 esbuild 编译 TypeScript/TSX 文件
         try {
           const cwd = Deno.cwd();
-          
+
           // 读取 deno.json 获取 import map
           let importMap: Record<string, string> = {};
           try {
-            const { readDenoJson } = await import('../utils/file.ts');
+            const { readDenoJson } = await import("../utils/file.ts");
             const denoJson = await readDenoJson(cwd);
             if (denoJson && denoJson.imports) {
               importMap = denoJson.imports;
@@ -403,7 +422,7 @@ export class RouteHandler {
           } catch {
             // deno.json 不存在或解析失败，使用空 import map
           }
-          
+
           // 使用统一的构建函数编译
           const fileName = pathname.split("/").pop() || "module.ts";
           jsCode = await buildFromStdin(
@@ -422,7 +441,9 @@ export class RouteHandler {
           // 如果 esbuild 失败，返回错误信息
           res.status = 500;
           res.setHeader("Content-Type", "text/plain; charset=utf-8");
-          const errorMsg = esbuildError instanceof Error ? esbuildError.message : String(esbuildError);
+          const errorMsg = esbuildError instanceof Error
+            ? esbuildError.message
+            : String(esbuildError);
           res.text(`Failed to compile JSR module: ${errorMsg}`);
           return;
         }
@@ -430,7 +451,7 @@ export class RouteHandler {
         // 非 TS/TSX 文件，直接使用原始内容
         jsCode = fileContent;
       }
-      
+
       // 设置响应头和状态码
       res.status = 200;
       res.setHeader("Content-Type", "application/javascript; charset=utf-8");
@@ -1240,13 +1261,23 @@ export class RouteHandler {
 
             // 检查并执行布局的 load 方法（如果存在）
             let layoutLoadData: Record<string, unknown> = {};
-            if (req && res && layoutModule.load && typeof layoutModule.load === "function") {
+            if (
+              req && res && layoutModule.load &&
+              typeof layoutModule.load === "function"
+            ) {
               try {
-                layoutLoadData = await this.loadPageData(layoutModule, req, res);
-                
+                layoutLoadData = await this.loadPageData(
+                  layoutModule,
+                  req,
+                  res,
+                );
+
                 // 检查是否在 load 函数中进行了重定向
                 // 如果响应状态码是 301 或 302，并且设置了 location header，说明已经重定向
-                if ((res.status === 301 || res.status === 302) && res.headers.get('location')) {
+                if (
+                  (res.status === 301 || res.status === 302) &&
+                  res.headers.get("location")
+                ) {
                   // 布局重定向，停止加载后续布局，直接返回
                   // 注意：布局重定向会中断整个页面渲染流程
                   return {
@@ -1351,8 +1382,7 @@ export class RouteHandler {
     PageComponent: (
       props: Record<string, unknown>,
     ) => unknown | Promise<unknown>,
-    LayoutComponents:
-      ((props: LayoutProps) => unknown | Promise<unknown>)[],
+    LayoutComponents: ((props: LayoutProps) => unknown | Promise<unknown>)[],
     layoutData: Record<string, unknown>[],
     pageProps: Record<string, unknown>,
     renderMode: RenderMode,
@@ -1400,7 +1430,8 @@ export class RouteHandler {
             // 从 layoutProps 中排除 children 和 data，避免类型冲突和数据覆盖
             const { children: _, data: __, ...restLayoutProps } = layoutProps;
             // 显式声明 children 的类型，确保类型正确传递
-            const children: ComponentChildren = currentElement as ComponentChildren;
+            const children: ComponentChildren =
+              currentElement as ComponentChildren;
             // 构建 layoutPropsWithData
             // data: 布局的 load 数据（layoutProps）
             const layoutPropsWithData = Object.assign(
@@ -1413,7 +1444,7 @@ export class RouteHandler {
                 children,
               },
             ) as LayoutProps;
-						
+
             const layoutResult = LayoutComponent(layoutPropsWithData);
             const layoutElement = layoutResult instanceof Promise
               ? await layoutResult
@@ -1664,7 +1695,10 @@ export class RouteHandler {
       let prefetchRoutes: string[] | undefined;
 
       // 只有当预加载启用且配置了路由时才处理预加载
-      if (prefetchEnabled && Array.isArray(prefetchConfig) && prefetchConfig.length > 0) {
+      if (
+        prefetchEnabled && Array.isArray(prefetchConfig) &&
+        prefetchConfig.length > 0
+      ) {
         prefetchRoutes = this.resolvePrefetchRoutes(prefetchConfig);
       }
 
@@ -1826,11 +1860,11 @@ export class RouteHandler {
     } else if (pattern.startsWith("/") && pattern.includes("*")) {
       // 通配符模式处理
       // 例如：/* 匹配所有一级路由，/*/* 匹配所有二级路由，/docs/* 匹配所有以 /docs/ 开头的路由
-      
+
       // 检查是否是带前缀的通配符模式（如 /docs/*）
       const lastStarIndex = pattern.lastIndexOf("*");
       const prefixBeforeStar = pattern.substring(0, lastStarIndex);
-      
+
       if (prefixBeforeStar && prefixBeforeStar !== "/") {
         // 带前缀的通配符模式，需要检查路径前缀
         // 例如：/docs/* 需要匹配 /docs/xxx, /docs/xxx/yyy 等所有以 /docs/ 开头的路由
@@ -1838,29 +1872,30 @@ export class RouteHandler {
         const prefixWithoutTrailingSlash = prefixBeforeStar.endsWith("/")
           ? prefixBeforeStar.slice(0, -1)
           : prefixBeforeStar;
-        
+
         // 检查路由路径是否以该前缀开头（必须包含子路径，即路径长度大于前缀长度）
         // 例如：/docs/* 应该匹配 /docs/middleware，但不匹配 /docs 本身
         if (!routePath.startsWith(prefixWithoutTrailingSlash + "/")) {
           return false;
         }
-        
+
         // 计算通配符部分的深度（* 的数量）
         const wildcardPart = pattern.substring(lastStarIndex);
         const wildcardDepth = (wildcardPart.match(/\*/g) || []).length;
-        
+
         // 检查通配符是否在模式末尾（如 /docs/* 或 /docs/*/*）
         // 如果通配符在末尾，应该匹配所有更深的路由，不限制最大深度
         const isWildcardAtEnd = pattern.endsWith("*") || pattern.endsWith("/*");
-        
+
         // 移除动态参数部分来计算深度
         const pathWithoutParams = routePath.replace(/\[[^\]]+\]/g, "param");
         const routeDepth = pathWithoutParams.split("/").filter(Boolean).length;
-        const prefixDepth = prefixWithoutTrailingSlash.split("/").filter(Boolean).length;
-        
+        const prefixDepth =
+          prefixWithoutTrailingSlash.split("/").filter(Boolean).length;
+
         // 计算最小深度（前缀深度 + 1，因为至少要有一个子路径）
         const minDepth = prefixDepth + 1;
-        
+
         if (isWildcardAtEnd) {
           // 如果通配符在末尾（如 /docs/*），匹配所有深度 >= minDepth 的路由
           // 例如：/docs/* 匹配 /docs/middleware, /docs/middleware/health 等所有以 /docs/ 开头的路由
@@ -2038,7 +2073,9 @@ export class RouteHandler {
               normalizedBasePath !== "/" &&
               routePathForMatch.startsWith(normalizedBasePath)
             ) {
-              routePathForMatch = routePathForMatch.slice(normalizedBasePath.length);
+              routePathForMatch = routePathForMatch.slice(
+                normalizedBasePath.length,
+              );
               // 如果移除后为空，说明是根路径，设置为 "/"
               if (!routePathForMatch) {
                 routePathForMatch = "/";
@@ -2054,7 +2091,8 @@ export class RouteHandler {
           // 具体路由路径排除
           let fullRoute = pattern;
           if (
-            normalizedBasePath !== "/" && !pattern.startsWith(normalizedBasePath)
+            normalizedBasePath !== "/" &&
+            !pattern.startsWith(normalizedBasePath)
           ) {
             fullRoute = normalizedBasePath +
               (pattern.startsWith("/") ? pattern : "/" + pattern);
@@ -2086,28 +2124,32 @@ export class RouteHandler {
     const routeFilePath = routeInfo.filePath;
 
     // 加载页面模块
-		const pageModule = await this.loadPageModule(routeInfo, res);
-		
-		// 先执行 load 函数（如果存在），因为 load 函数可能会进行重定向
-		// 如果 load 函数进行了重定向，就不需要默认导出的页面组件了
-		let pageData: Record<string, unknown> = {};
-		const hasLoadFunction = pageModule.load && typeof pageModule.load === "function";
-		
-		if (hasLoadFunction) {
-			pageData = await this.loadPageData(pageModule, req, res);
-			
-			// 检查是否在 load 函数中进行了重定向
-			// 如果响应状态码是 301 或 302，并且设置了 location header，说明已经重定向，直接返回
-			if ((res.status === 301 || res.status === 302) && res.headers.get('location')) {
-				return; // 重定向已设置，直接返回，不继续渲染页面
-			}
-		}
+    const pageModule = await this.loadPageModule(routeInfo, res);
+
+    // 先执行 load 函数（如果存在），因为 load 函数可能会进行重定向
+    // 如果 load 函数进行了重定向，就不需要默认导出的页面组件了
+    let pageData: Record<string, unknown> = {};
+    const hasLoadFunction = pageModule.load &&
+      typeof pageModule.load === "function";
+
+    if (hasLoadFunction) {
+      pageData = await this.loadPageData(pageModule, req, res);
+
+      // 检查是否在 load 函数中进行了重定向
+      // 如果响应状态码是 301 或 302，并且设置了 location header，说明已经重定向，直接返回
+      if (
+        (res.status === 301 || res.status === 302) &&
+        res.headers.get("location")
+      ) {
+        return; // 重定向已设置，直接返回，不继续渲染页面
+      }
+    }
 
     // 获取页面组件
     const PageComponent = pageModule.default as (
       props: Record<string, unknown>,
     ) => unknown;
-    
+
     // 如果没有默认导出的页面组件，检查是否是因为只需要重定向
     // 如果 load 函数存在但没有重定向，说明需要页面组件，报错
     // 如果 load 函数不存在，也需要页面组件，报错
@@ -2120,7 +2162,9 @@ export class RouteHandler {
         console.error("请求方法:", req.method);
         console.error("错误:", errorMsg);
         console.error("路由文件:", routeInfo.filePath);
-        console.error("提示: 如果只需要重定向，请在 load 函数中使用 res.redirect()");
+        console.error(
+          "提示: 如果只需要重定向，请在 load 函数中使用 res.redirect()",
+        );
         console.error("===================================\n");
         res.status = 500;
         res.html(`<h1>500 - ${errorMsg}</h1>`);
@@ -2144,7 +2188,7 @@ export class RouteHandler {
     if (!hasLoadFunction) {
       pageData = await this.loadPageData(pageModule, req, res);
     }
-    
+
     // 提取页面元数据（metadata）用于 SEO
     // 支持 metadata 为对象或函数（函数可以接收与 load 函数相同的完整参数）
     let pageMetadata: Record<string, unknown> | undefined;
@@ -2158,10 +2202,12 @@ export class RouteHandler {
           if (!session && typeof req.getSession === "function") {
             session = await req.getSession();
           }
-          
+
           // 导入数据库访问函数
-          const { getDatabase } = await import("../features/database/access.ts");
-          
+          const { getDatabase } = await import(
+            "../features/database/access.ts"
+          );
+
           const metadataResult = await pageModule.metadata({
             req,
             res,
@@ -2206,7 +2252,7 @@ export class RouteHandler {
         pageMetadata = pageModule.metadata as Record<string, unknown>;
       }
     }
-    
+
     // 将 metadata 存储到 req 对象上，供 SEO 插件使用
     if (pageMetadata) {
       (req as any).pageMetadata = pageMetadata;
@@ -2225,14 +2271,19 @@ export class RouteHandler {
     };
 
     // 获取渲染配置
-    const { renderMode, shouldHydrate, LayoutComponents, layoutData, layoutDisabled } =
-      await this
-        .getRenderConfig(
-          pageModule,
-          routeInfo,
-          req,
-          res,
-        );
+    const {
+      renderMode,
+      shouldHydrate,
+      LayoutComponents,
+      layoutData,
+      layoutDisabled,
+    } = await this
+      .getRenderConfig(
+        pageModule,
+        routeInfo,
+        req,
+        res,
+      );
 
     // 渲染页面内容
     let html: string;
@@ -2641,7 +2692,7 @@ export class RouteHandler {
                   );
 
                   // 如果成功获取布局代码，存储到 layouts 中（使用原始路径作为 key）
-									if (layoutTempRes.body && layoutTempRes.status === 200) {
+                  if (layoutTempRes.body && layoutTempRes.status === 200) {
                     layouts[layoutPath] = layoutTempRes.body;
                   }
                 } catch (_layoutError) {

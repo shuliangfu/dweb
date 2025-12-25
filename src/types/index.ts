@@ -87,7 +87,7 @@ export interface PrefetchConfig {
 // 应用配置基础接口（不包含 apps 和 database）
 // 用于定义子应用配置，确保子应用不能配置 database
 interface AppConfigBase {
-  name?: string;
+	name?: string;
   basePath?: string;
   routes?: RouteConfig | string;
   server?: ServerConfig;
@@ -117,8 +117,6 @@ interface AppConfigBase {
 // 子应用配置（不包含数据库配置，数据库配置只能在根配置中）
 // 子应用不能嵌套 apps（不支持多级嵌套）
 export interface SubAppConfig extends AppConfigBase {
-  // 子应用不能包含 database 配置
-  // 子应用不能嵌套 apps
 }
 
 // 应用配置（根配置，可以包含 database 和 apps）
@@ -299,7 +297,7 @@ export interface AppLike {
 export interface Plugin {
   name: string;
   /** 初始化钩子，在应用启动时调用 */
-  onInit?: (app: AppLike) => Promise<void> | void;
+  onInit?: (app: AppLike, config: AppConfig) => Promise<void> | void;
   /** 请求钩子，在每个请求处理前调用 */
   onRequest?: (req: Request, res: Response) => Promise<void> | void;
   /** 响应钩子，在每个请求处理后调用 */
