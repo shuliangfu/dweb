@@ -284,6 +284,47 @@ function createJSRResolverPlugin(
   return {
     name: "jsr-resolver",
     setup(build: esbuild.PluginBuild) {
+      // 处理路径别名（以 / 结尾的别名，如 @store/、@components/）
+      // 必须在其他处理器之前执行，确保能拦截到路径别名导入
+      build.onResolve({ filter: /^@[^/]+\// }, async (args) => {
+        // 查找匹配的路径别名（以 / 结尾的 import map 条目）
+        for (const [aliasKey, aliasValue] of Object.entries(importMap)) {
+          // 检查是否是路径别名（以 / 结尾）
+          if (aliasKey.endsWith("/") && args.path.startsWith(aliasKey)) {
+            // 提取子路径（如 "@store/something" -> "something"）
+            const subPath = args.path.substring(aliasKey.length);
+            // 构建完整路径（如 "./stores/" + "something" -> "./stores/something"）
+            const fullPath = aliasValue + subPath;
+            
+            // 使用 Deno 的 import.meta.resolve 来解析路径
+            try {
+              const resolved = await import.meta.resolve(fullPath);
+              // 将 file:// URL 转换为绝对路径
+              let resolvedPath: string;
+              if (resolved.startsWith("file://")) {
+                const url = new URL(resolved);
+                resolvedPath = url.pathname;
+              } else {
+                resolvedPath = resolved;
+              }
+              // 返回解析后的路径
+              return {
+                path: resolvedPath,
+              };
+            } catch (error) {
+              // 如果解析失败，返回错误
+              return {
+                errors: [{
+                  text: `Failed to resolve path alias "${args.path}" (${aliasKey} -> ${aliasValue}): ${error instanceof Error ? error.message : String(error)}`,
+                }],
+              };
+            }
+          }
+        }
+        // 如果没有匹配的路径别名，返回 undefined 让其他处理器处理
+        return undefined;
+      });
+
       // 处理子路径导入（如 chart/auto）
       // 只有当父包在 external 列表中时，才将子路径标记为 external
       // 如果父包不在 external 列表中，子路径应该被打包（即使它在 import map 中）
@@ -689,6 +730,8 @@ async function compileFile(
                 ([key, value]) =>
                   // 排除所有 @dreamer/dweb 相关的导入（由插件处理或保持为外部依赖）
                   !key.startsWith("@dreamer/dweb") &&
+                  // 排除路径别名（以 / 结尾），由插件处理
+                  !key.endsWith("/") &&
                   !value.startsWith("jsr:") &&
                   !value.startsWith("npm:") &&
                   !value.startsWith("http"),
@@ -762,6 +805,8 @@ async function compileFile(
                 ([key, value]) =>
                   // 排除所有 @dreamer/dweb 相关的导入（由插件处理或保持为外部依赖）
                   !key.startsWith("@dreamer/dweb") &&
+                  // 排除路径别名（以 / 结尾），由插件处理
+                  !key.endsWith("/") &&
                   !value.startsWith("jsr:") &&
                   !value.startsWith("npm:") &&
                   !value.startsWith("http"),
