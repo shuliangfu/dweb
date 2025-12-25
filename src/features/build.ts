@@ -16,6 +16,7 @@ import {
   buildFromStdin,
   buildFromEntryPoints,
 } from "../utils/esbuild.ts";
+import * as esbuild from "esbuild";
 
 /**
  * 清空目录
@@ -548,19 +549,88 @@ async function compileFile(
  * @param externalPackages 外部依赖包列表
  * @returns 编译结果统计
  */
+/**
+ * 使用代码分割编译多个文件（提取共享代码到公共 chunk）
+ * @param entryPoints 入口文件列表（绝对路径）
+ * @param outDir 输出目录（绝对路径）
+ * @param fileMap 文件映射表
+ * @param cwd 工作目录
+ * @param importMap import map 配置
+ * @param target 编译目标：'server' | 'client'（代码分割时不能是 'both'）
+ * @returns 编译结果统计
+ */
 async function compileWithCodeSplitting(
   entryPoints: string[],
   outDir: string,
   fileMap: Map<string, string>,
   cwd: string,
   importMap: Record<string, string>,
+  target: "server" | "client",
 ): Promise<{ compiled: number; chunks: number }> {
   if (entryPoints.length === 0) {
     return { compiled: 0, chunks: 0 };
   }
 
+  // 根据 target 处理入口文件
+  // - server: 使用原始文件（保留 load 函数）
+  // - client: 通过 esbuild 插件拦截文件加载，移除 load 函数后返回代码内容
+  // 使用原始文件路径作为入口点，通过插件处理代码内容
+  const finalEntryPoints = entryPoints;
+  
+  // 为 client 版本创建插件，拦截文件加载并移除 load 函数
+  const loadInterceptorPlugin: esbuild.Plugin | null = target === "client"
+    ? {
+      name: "remove-load-for-client",
+      setup(build: esbuild.PluginBuild) {
+        // 缓存处理后的代码内容
+        const processedCodeCache = new Map<string, string>();
+        
+        // 拦截所有入口文件的加载
+        build.onLoad(
+          { filter: /.*/, namespace: "file" },
+          async (args: esbuild.OnLoadArgs) => {
+            // 只处理入口文件
+            if (!entryPoints.includes(args.path)) {
+              return undefined; // 使用默认加载
+            }
+            
+            // 检查缓存
+            if (processedCodeCache.has(args.path)) {
+              const cachedCode = processedCodeCache.get(args.path)!;
+              const ext = path.extname(args.path);
+              const loader = ext === ".tsx" ? "tsx" : ext === ".ts" ? "ts" : "js";
+              return {
+                contents: cachedCode,
+                loader,
+              };
+            }
+            
+            // 读取原始文件内容
+            const sourceCode = await Deno.readTextFile(args.path);
+            // 移除 load 函数
+            const clientSourceCode = removeLoadOnlyImports(sourceCode);
+            
+            // 缓存处理后的代码
+            processedCodeCache.set(args.path, clientSourceCode);
+            
+            // 确定 loader
+            const ext = path.extname(args.path);
+            const loader = ext === ".tsx" ? "tsx" : ext === ".ts" ? "ts" : "js";
+            
+            return {
+              contents: clientSourceCode,
+              loader,
+            };
+          },
+        );
+      },
+    }
+    : null;
+
   // 使用统一的构建函数，启用代码分割
-  const result = await buildFromEntryPoints(entryPoints, {
+  // 对于 client 版本，通过插件拦截文件加载；对于 server 版本，直接使用原始文件
+  // 注意：loadInterceptorPlugin 需要在其他插件之前执行，所以使用 prePlugins
+  const result = await buildFromEntryPoints(finalEntryPoints, {
     importMap,
     cwd,
     bundleClient: true,
@@ -569,6 +639,7 @@ async function compileWithCodeSplitting(
     splitting: true,
     outdir: outDir,
     outbase: cwd,
+    prePlugins: loadInterceptorPlugin ? [loadInterceptorPlugin] : [],
   });
 
   if (!result.outputFiles || result.outputFiles.length === 0) {
@@ -578,7 +649,13 @@ async function compileWithCodeSplitting(
   // 处理输出文件
   let compiled = 0;
   const chunkMap = new Map<string, string>(); // 原始路径 -> hash 文件名
+  const chunkFileMap = new Map<string, string>(); // esbuild chunk 路径 -> hash 文件名（用于替换代码中的引用）
+  const fileInfoMap = new Map<string, { hash: string; hashName: string; content: string; relativePath: string }>(); // 文件信息映射
 
+  // 根据 target 确定前缀（server/ 或 client/）
+  const prefix = `${target}/`;
+
+  // 第一遍循环：写入所有文件，记录映射关系
   for (const outputFile of result.outputFiles) {
     const outputPath = outputFile.path;
     const content = outputFile.text;
@@ -592,22 +669,138 @@ async function compileWithCodeSplitting(
     const hashName = `${hash}.js`;
     const finalOutputPath = path.join(outDir, hashName);
 
-    // 写入文件
-    await Deno.writeTextFile(finalOutputPath, content);
-
-    // 记录映射关系（如果是入口文件）
-    // esbuild 的代码分割会生成多个 chunk，我们需要识别哪些是入口文件
-    // 通过比较输出路径和入口文件路径来判断
-    const relativePath = path.relative(outDir, outputPath);
-    for (const entryPoint of entryPoints) {
-      const entryRelative = path.relative(cwd, entryPoint);
+    // 计算输出路径相对于 outdir 的路径（esbuild 保持的目录结构）
+    // outputPath 是 esbuild 的绝对输出路径，例如：/project/.dist/server/routes/index.js
+    // outdir 是输出目录，例如：/project/.dist/server
+    // 所以 relativeToOutdir 应该是 routes/index.js
+    const relativeToOutdir = path.relative(outDir, outputPath);
+    const relativeToOutdirNormalized = relativeToOutdir.replace(/[\/\\]/g, "/");
+    
+    // 保存文件信息
+    fileInfoMap.set(relativeToOutdirNormalized, {
+      hash,
+      hashName,
+      content,
+      relativePath: relativeToOutdirNormalized,
+    });
+    
+    // 判断是否是入口文件
+    let isEntryFile = false;
+    for (const originalEntryPoint of entryPoints) {
+      // 计算入口文件相对于 cwd 的路径（去掉扩展名）
+      const entryRelative = path.relative(cwd, originalEntryPoint);
       const entryPathWithoutExt = entryRelative.replace(/\.(tsx?|jsx?)$/, "");
-      // 检查输出路径是否包含入口文件的路径（用于识别入口文件对应的 chunk）
-      if (relativePath.includes(entryPathWithoutExt.replace(/[\/\\]/g, "/"))) {
-        fileMap.set(entryPoint, hashName);
-        chunkMap.set(entryPoint, hashName);
+      const entryPathNormalized = entryPathWithoutExt.replace(/[\/\\]/g, "/");
+      
+      // 检查输出路径是否匹配入口文件路径
+      // esbuild 代码分割时，输出路径相对于 outdir 应该等于入口文件路径（相对于 cwd）+ .js
+      // 例如：routes/index.js 应该匹配 routes/index
+      // 或者：routes/index 应该匹配 routes/index（无扩展名的情况）
+      // 或者：routes/index/chunk.js 应该匹配 routes/index（共享 chunk）
+      if (relativeToOutdirNormalized === entryPathNormalized + ".js" ||
+          relativeToOutdirNormalized.startsWith(entryPathNormalized + ".") ||
+          relativeToOutdirNormalized === entryPathNormalized ||
+          relativeToOutdirNormalized.startsWith(entryPathNormalized + "/")) {
+        isEntryFile = true;
+        // 根据 target 添加前缀（server/ 或 client/）
+        const hashNameWithPrefix = `${prefix}${hashName}`;
+        // 注意：代码分割时，server 和 client 使用同一个 fileMap，会互相覆盖
+        // 为了避免覆盖，我们需要为 client 版本使用不同的 key（添加 .client 后缀）
+        // 这样 server 和 client 版本的映射可以共存
+        if (target === "client") {
+          fileMap.set(`${originalEntryPoint}.client`, hashNameWithPrefix);
+        } else {
+          fileMap.set(originalEntryPoint, hashNameWithPrefix);
+        }
+        chunkMap.set(originalEntryPoint, hashNameWithPrefix);
         compiled++;
         break;
+      }
+    }
+    
+    // 如果不是入口文件，可能是共享 chunk 文件
+    // 需要记录 chunk 文件的映射关系，用于替换代码中的引用
+    if (!isEntryFile) {
+      // 记录 chunk 文件的映射关系
+      // relativeToOutdirNormalized 是 esbuild 生成的 chunk 路径（相对于 outdir）
+      // 例如：chunk-BNMXUETK.js 或 routes/chunk-BNMXUETK.js
+      chunkFileMap.set(relativeToOutdirNormalized, hashName);
+    }
+    
+    // 写入文件（所有文件都需要写入，包括入口文件和共享 chunk）
+    await Deno.writeTextFile(finalOutputPath, content);
+  }
+  
+  // 第二遍循环：替换所有文件中的 chunk 引用
+  for (const [relativePath, fileInfo] of fileInfoMap.entries()) {
+    let modifiedContent = fileInfo.content;
+    let modified = false;
+    
+    // 替换所有 chunk 文件引用
+    // 匹配格式：from "../chunk-XXXXX.js" 或 from "./chunk-XXXXX.js" 或 from "chunk-XXXXX.js"
+    // 注意：esbuild 生成的 chunk 引用可能是相对路径，如 "../../../chunk-XXXXX.js"
+    for (const [chunkPath, chunkHashName] of chunkFileMap.entries()) {
+      // 提取 chunk 文件名（去掉路径，只保留文件名）
+      const chunkFileName = path.basename(chunkPath);
+      
+      // 替换代码中的 chunk 引用
+      // 匹配各种格式：
+      // - from "../../../chunk-XXXXX.js" (相对路径)
+      // - from "../chunk-XXXXX.js" (相对路径)
+      // - from "./chunk-XXXXX.js" (相对路径)
+      // - from "chunk-XXXXX.js" (文件名)
+      // 使用大小写不敏感匹配，支持 chunk-XXXXX.js 和 chunk-xxxxx.js（小写）
+      // 匹配任意数量的 ../ 或 ./
+      const chunkPathRegex = new RegExp(
+        `(["'])(\\.\\.?/)*${chunkFileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(["'])`,
+        'gi' // 使用 i 标志进行大小写不敏感匹配
+      );
+      const newChunkPath = `./${chunkHashName}`;
+      const newContent = modifiedContent.replace(chunkPathRegex, (_match, quote1, _prefix, quote2) => {
+        modified = true;
+        return `${quote1}${newChunkPath}${quote2}`;
+      });
+      modifiedContent = newContent;
+    }
+    
+    // 如果内容被修改，需要重新计算 hash 并写入文件
+    if (modified) {
+      const newHash = await calculateHash(modifiedContent);
+      const newHashName = `${newHash}.js`;
+      const newFinalOutputPath = path.join(outDir, newHashName);
+      
+      // 写入新文件
+      await Deno.writeTextFile(newFinalOutputPath, modifiedContent);
+      
+      // 更新文件映射（如果是入口文件）
+      for (const originalEntryPoint of entryPoints) {
+        const entryRelative = path.relative(cwd, originalEntryPoint);
+        const entryPathWithoutExt = entryRelative.replace(/\.(tsx?|jsx?)$/, "");
+        const entryPathNormalized = entryPathWithoutExt.replace(/[\/\\]/g, "/");
+        
+        if (relativePath === entryPathNormalized + ".js" ||
+            relativePath.startsWith(entryPathNormalized + ".") ||
+            relativePath === entryPathNormalized ||
+            relativePath.startsWith(entryPathNormalized + "/")) {
+          const hashNameWithPrefix = `${prefix}${newHashName}`;
+          if (target === "client") {
+            fileMap.set(`${originalEntryPoint}.client`, hashNameWithPrefix);
+          } else {
+            fileMap.set(originalEntryPoint, hashNameWithPrefix);
+          }
+          chunkMap.set(originalEntryPoint, hashNameWithPrefix);
+          break;
+        }
+      }
+      
+      // 删除旧文件（如果 hash 改变了）
+      if (fileInfo.hashName !== newHashName) {
+        const oldFinalOutputPath = path.join(outDir, fileInfo.hashName);
+        try {
+          await Deno.remove(oldFinalOutputPath);
+        } catch {
+          // 忽略删除错误（文件可能不存在）
+        }
       }
     }
   }
@@ -659,7 +852,6 @@ async function compileDirectory(
     }
   }
 
-  logger.info(`找到文件需要编译`, { count: files.length });
 
   // 如果启用代码分割，使用批量编译
   if (codeSplitting && files.length > 1) {
@@ -677,13 +869,20 @@ async function compileDirectory(
     }
 
     // 使用代码分割编译所有文件
-    console.log(`🔀 启用代码分割，批量编译 ${files.length} 个文件...`);
+    // 注意：代码分割时，target 不能是 'both'，必须是 'server' 或 'client'
+    if (target === "both") {
+      throw new Error(
+        "代码分割不支持 target='both'，请分别编译 server 和 client 版本",
+      );
+    }
+    console.log(`🔀 启用代码分割，批量编译 ${files.length} 个文件 (${target})...`);
     const result = await compileWithCodeSplitting(
       files,
       absoluteOutDir,
       fileMap,
       cwd,
       importMap,
+      target,
     );
     console.log(
       `✅ 代码分割完成: ${result.compiled} 个入口文件, ${result.chunks} 个 chunk`,
@@ -744,9 +943,6 @@ async function compileDirectory(
       );
     }
 
-    console.log(
-      `✅ 编译完成: ${compiledCount} 个文件重新编译, ${cachedCount} 个文件使用缓存`,
-    );
   } else {
     // 串行编译（用于调试或小文件数量）
     let cachedCount = 0;
@@ -767,9 +963,6 @@ async function compileDirectory(
       }
     }
 
-    console.log(
-      `✅ 编译完成: ${compiledCount} 个文件重新编译, ${cachedCount} 个文件使用缓存`,
-    );
   }
 }
 
@@ -782,7 +975,7 @@ async function postProcessImports(
   outDir: string,
   fileMap: Map<string, string>,
 ): Promise<void> {
-  console.log("🔄 后处理：替换导入路径...");
+  console.log("\n🔄 后处理：替换导入路径...");
 
   // 创建反向映射：原始路径 -> hash 文件名
   // 支持多种路径格式作为 key
@@ -981,7 +1174,7 @@ async function postProcessImports(
   }
 
   console.log(
-    `✅ 导入路径替换完成: 处理 ${processedCount} 个文件，修改 ${modifiedCount} 个文件`,
+    `   ✅ 导入路径替换完成: 处理 ${processedCount} 个文件，修改 ${modifiedCount} 个文件`,
   );
 }
 
@@ -1106,7 +1299,7 @@ async function generateRouteMap(
   );
 
   console.log(
-    `✅ 路由映射文件生成完成: server.json (${
+    `   ✅ 路由映射文件生成完成: server.json (${
       Object.keys(serverRouteMap).length
     } 个路由), client.json (${Object.keys(clientRouteMap).length} 个路由)`,
   );
@@ -1129,7 +1322,7 @@ async function buildApp(config: AppConfig): Promise<void> {
   }
   const outDir = config.build.outDir;
 
-  console.log(`📦 构建到: ${outDir}`);
+  console.log(`\n📦 构建输出目录: ${outDir}`);
 
   // 0. 检查是否需要清空输出目录
   // 如果启用缓存，不清空目录（保留已编译的文件）
@@ -1139,7 +1332,7 @@ async function buildApp(config: AppConfig): Promise<void> {
   } else {
     // 只确保输出目录存在
     await ensureDir(outDir);
-    console.log(`💾 启用构建缓存（增量构建）`);
+    console.log(`   💾 启用构建缓存（增量构建）`);
   }
 
   // 文件映射表（原始路径 -> hash 文件名）
@@ -1193,10 +1386,10 @@ async function buildApp(config: AppConfig): Promise<void> {
 
     if (compressAssets) {
       console.log(
-        `✅ 静态资源处理完成 (${staticDir}): ${compressedCount} 个已压缩, ${copiedCount} 个已复制`,
+        `   ✅ 静态资源处理完成 (${staticDir}): ${compressedCount} 个已压缩, ${copiedCount} 个已复制`,
       );
     } else {
-      console.log(`✅ 复制静态资源完成 (${staticDir}): ${copiedCount} 个文件`);
+      console.log(`   ✅ 复制静态资源完成 (${staticDir}): ${copiedCount} 个文件`);
     }
   } catch {
     // 静态资源目录不存在时忽略错误
@@ -1258,7 +1451,7 @@ async function buildApp(config: AppConfig): Promise<void> {
       minChunkSize,
       "client",
     );
-    console.log(`✅ 编译路由文件完成 (${routesDir}) - server 和 client 版本`);
+    console.log(`   ✅ 编译路由文件完成 (${routesDir}) - server 和 client 版本`);
   } catch (error) {
     console.warn(`⚠️  路由目录编译失败: ${routesDir}`, error);
   }
@@ -1296,49 +1489,74 @@ async function buildApp(config: AppConfig): Promise<void> {
           minChunkSize,
           "client",
         );
-        console.log(`✅ 编译 API 文件完成 (${apiDir}) - server 和 client 版本`);
+        console.log(`   ✅ 编译 API 文件完成 (${apiDir}) - server 和 client 版本`);
       }
     } catch (error) {
       console.warn(`⚠️  API 目录编译失败: ${apiDir}`, error);
     }
   }
 
-  // 4. 编译组件文件（组件通常只需要客户端版本，但为了兼容性也生成服务端版本）
-  try {
-    if (
-      await Deno.stat("components")
-        .then(() => true)
-        .catch(() => false)
-    ) {
-      // 编译组件到 server 目录
-      await compileDirectory(
-        "components",
-        serverOutDir,
-        fileMap,
-        [".ts", ".tsx"],
-        useCache,
-        true,
-        codeSplitting,
-        minChunkSize,
-        "server",
-      );
-      // 编译组件到 client 目录
-      await compileDirectory(
-        "components",
-        clientOutDir,
-        fileMap,
-        [".ts", ".tsx"],
-        useCache,
-        true,
-        codeSplitting,
-        minChunkSize,
-        "client",
-      );
-      console.log("✅ 编译组件文件完成 (components) - server 和 client 版本");
+  // 4. 编译组件文件（可选）
+  // 注意：components 目录下的组件通常不需要单独编译，因为它们会被打包到使用它们的路由文件中
+  // 只有在以下情况下才需要单独编译 components：
+  // 1. 组件需要被动态导入（lazy loading）
+  // 2. 启用代码分割时，需要将共享组件提取到公共 chunk
+  // 3. 多应用项目中，共享的 components 目录需要单独编译
+  // 
+  // 如果配置了 components 目录，才会编译；否则跳过（组件会被打包到路由文件中）
+  const componentsDirs = config.build?.components;
+  
+  if (componentsDirs) {
+    const componentsDirList: string[] = [];
+    
+    // 如果配置了组件目录，使用配置的目录
+    if (typeof componentsDirs === "string") {
+      componentsDirList.push(componentsDirs);
+    } else if (Array.isArray(componentsDirs)) {
+      componentsDirList.push(...componentsDirs);
     }
-  } catch (error) {
-    console.warn("⚠️  组件目录编译失败", error);
+    
+    // 编译所有配置的组件目录
+    for (const componentsDir of componentsDirList) {
+      try {
+        // 检查组件目录是否存在
+        const componentsDirExists = await Deno.stat(componentsDir)
+          .then(() => true)
+          .catch(() => false);
+        
+        if (componentsDirExists) {
+          // 编译组件到 server 目录
+          await compileDirectory(
+            componentsDir,
+            serverOutDir,
+            fileMap,
+            [".ts", ".tsx"],
+            useCache,
+            true,
+            codeSplitting,
+            minChunkSize,
+            "server",
+          );
+          // 编译组件到 client 目录
+          await compileDirectory(
+            componentsDir,
+            clientOutDir,
+            fileMap,
+            [".ts", ".tsx"],
+            useCache,
+            true,
+            codeSplitting,
+            minChunkSize,
+            "client",
+          );
+          console.log(`   ✅ 编译组件文件完成 (${componentsDir}) - server 和 client 版本`);
+        }
+      } catch (error) {
+        console.warn(`⚠️  组件目录编译失败 (${componentsDir}):`, error);
+      }
+    }
   }
+  // 如果没有配置 components，跳过编译（组件会被打包到路由文件中，这是正常行为）
 
   // 4. 配置文件不再复制到构建输出目录
   // 注意：以下文件不再复制：
@@ -1347,7 +1565,7 @@ async function buildApp(config: AppConfig): Promise<void> {
   // - deno.lock (运行时从项目根目录读取)
   // - dweb.config.ts (运行时从项目根目录加载)
 
-  console.log("✅ 跳过配置文件复制（运行时从项目根目录读取）");
+  console.log("   ✅ 跳过配置文件复制（运行时从项目根目录读取）");
 
   // 5. 不再复制 deno.json 到输出目录
   // 注意：运行时从项目根目录读取 deno.json，不需要复制到 dist 目录
@@ -1375,6 +1593,8 @@ async function buildApp(config: AppConfig): Promise<void> {
 
   // 9. 不再生成服务器入口文件和构建信息
   // 注意：server.js 和 .build-info.json 不再生成，运行时使用 CLI 命令启动
-  console.log(`📊 构建统计: 输出目录 ${outDir}, 共 ${fileMap.size} 个文件`);
-  console.log(`🚀 启动命令: deno task start`);
+  console.log(`\n📊 构建统计:`);
+  console.log(`   • 输出目录: ${outDir}`);
+  console.log(`   • 文件总数: ${fileMap.size} 个`);
+  console.log(`   • 启动命令: deno task start`);
 }

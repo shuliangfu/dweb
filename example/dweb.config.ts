@@ -25,7 +25,9 @@ const config: AppConfig = {
 
   // 构建配置
   build: {
-    outDir: "dist",
+		outDir: ".dist",
+		split: true,
+		components: ["components"],
   },
 
   // 服务器配置

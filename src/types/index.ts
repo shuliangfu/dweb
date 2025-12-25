@@ -403,6 +403,21 @@ export interface BuildConfig {
   compress?: boolean;
   /** 图片压缩质量（0-100），默认 80 */
   imageQuality?: number;
+  /** 
+   * 组件目录配置（可选）
+   * - 字符串：单个组件目录路径，如 "components" 或 "common/components"
+   * - 字符串数组：多个组件目录路径，如 ["components", "common/components"]
+   * - 如果不配置，默认不编译 components 目录（组件会被打包到使用它们的路由文件中）
+   * 
+   * 注意：
+   * - components 目录下的组件通常不需要单独编译，因为它们会被打包到路由文件中
+   * - 只有在以下情况下才需要配置 components：
+   *   1. 组件需要被动态导入（lazy loading）
+   *   2. 启用代码分割时，需要将共享组件提取到公共 chunk
+   *   3. 多应用项目中，共享的 components 目录需要单独编译
+   * - 所有组件都会被编译，esbuild 的 tree-shaking 会自动移除未使用的代码
+   */
+  components?: string | string[];
   [key: string]: any;
 }
 

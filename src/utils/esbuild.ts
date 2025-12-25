@@ -623,6 +623,8 @@ export async function buildFromEntryPoints(
     outbase?: string;
     /** 是否启用代码分割（默认 false） */
     splitting?: boolean;
+    /** 前置插件（在其他插件之前执行） */
+    prePlugins?: esbuild.Plugin[];
   },
 ): Promise<esbuild.BuildResult> {
   const {
@@ -638,6 +640,7 @@ export async function buildFromEntryPoints(
     outdir,
     outbase,
     splitting = false,
+    prePlugins = [],
   } = options;
 
   // 如果没有提供外部依赖列表，自动生成
@@ -656,6 +659,7 @@ export async function buildFromEntryPoints(
 
   // 执行构建
   // 使用自定义的 jsrResolverPlugin 处理所有模块解析（npm:、jsr:、路径别名等）
+  // 前置插件在最前面执行，然后是 jsrResolverPlugin，最后是其他插件
   return await esbuild.build({
     entryPoints,
     ...getBaseConfig(),
@@ -664,7 +668,7 @@ export async function buildFromEntryPoints(
     keepNames,
     legalComments,
     external: finalExternalPackages,
-    plugins: [jsrResolverPlugin, ...plugins],
+    plugins: [...prePlugins, jsrResolverPlugin, ...plugins],
     alias,
     ...(splitting && outdir ? { splitting: true, outdir, outbase } : {}),
   });

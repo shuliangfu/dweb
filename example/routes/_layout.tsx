@@ -21,6 +21,9 @@ export const load = () => {
  * @returns JSX 元素
  */
 export default function AppLayout({ children, data }: LayoutProps) { 
+	console.log('布局 data:', data.menus);
+
+
   // 获取当前路径（在客户端运行时）
   let currentPath = "/";
   if (typeof globalThis !== "undefined" && globalThis.location) {

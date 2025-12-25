@@ -336,9 +336,9 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
             const hasDarkMode = processed.content.includes('.dark') || 
                                processed.content.includes('[data-theme="dark"]') ||
                                processed.content.includes('dark:');
-            console.log(`✅ [Tailwind ${version}] 编译完成: ${cssFile} -> ${outPath}`);
-            console.log(`   [Tailwind ${version}] CSS 大小: ${processed.content.length} 字节`);
-            console.log(`   [Tailwind ${version}] 包含 dark mode: ${hasDarkMode}`);
+            const sizeKB = (processed.content.length / 1024).toFixed(2);
+            console.log(`      • CSS 大小: ${sizeKB} KB (${processed.content.length} 字节)`);
+            console.log(`      • 包含 dark mode: ${hasDarkMode ? '是' : '否'}`);
 
             // 如果有 source map，也写入
             if (processed.map) {
@@ -349,7 +349,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
           }
         }
 
-        console.log(`✅ [Tailwind ${version}] CSS 编译完成，共处理 ${cssFiles.length} 个文件`);
+        console.log(`   ✅ [Tailwind ${version}] CSS 编译完成，共处理 ${cssFiles.length} 个文件`);
       } catch (error) {
         console.error(`❌ [Tailwind ${version}] 构建时出错:`, error);
       }
