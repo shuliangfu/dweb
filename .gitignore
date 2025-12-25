@@ -3,6 +3,7 @@
 deno.lock
 node_modules/
 .npm/
+vendor
 
 # 构建输出
 dist/
