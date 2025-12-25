@@ -324,8 +324,17 @@ export async function createImportMapScript(
       console.log("🔍 [Import Map Debug] @dreamer/dweb mappings:");
       for (const [key, value] of Object.entries(finalImports)) {
         if (key.startsWith("@dreamer/dweb")) {
-          console.log(`  ${key} -> ${value}`);
+          const valueStr = String(value);
+          const isHttp = valueStr.startsWith("https://jsr.io/");
+          console.log(`  ${key} -> ${valueStr} ${isHttp ? "✅" : "❌"}`);
         }
+      }
+      // 特别检查 @dreamer/dweb/client
+      if ("@dreamer/dweb/client" in finalImports) {
+        const clientValue = String(finalImports["@dreamer/dweb/client"]);
+        console.log(`🔍 [Import Map Debug] @dreamer/dweb/client mapping: ${clientValue}`);
+      } else {
+        console.log("🔍 [Import Map Debug] ⚠️  @dreamer/dweb/client NOT in import map!");
       }
     }
     
