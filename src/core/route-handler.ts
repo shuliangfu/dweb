@@ -259,17 +259,50 @@ export class RouteHandler {
                       // 构建完整路径（如 "./stores/" + "something" -> "./stores/something"）
                       const fullPath = aliasValue + subPath;
                       
-                      // 使用 Deno 的 import.meta.resolve 来解析路径
+                      // 手动解析路径（相对于项目根目录 cwd）
+                      // 注意：不能使用 import.meta.resolve，因为它在 esbuild 插件中使用的是框架的上下文
                       try {
-                        const resolved = await import.meta.resolve(fullPath);
-                        // 将 file:// URL 转换为绝对路径
-                        let resolvedPath: string;
-                        if (resolved.startsWith("file://")) {
-                          const url = new URL(resolved);
-                          resolvedPath = url.pathname;
-                        } else {
-                          resolvedPath = resolved;
+                        // 将相对路径解析为绝对路径
+                        const resolvedPath = path.isAbsolute(fullPath)
+                          ? fullPath
+                          : path.resolve(cwd, fullPath);
+                        
+                        // 检查文件是否存在
+                        try {
+                          await Deno.stat(resolvedPath);
+                        } catch {
+                          // 如果文件不存在，尝试添加 .ts 或 .tsx 扩展名
+                          const ext = path.extname(resolvedPath);
+                          if (!ext || ext === "") {
+                            // 尝试 .tsx
+                            const tsxPath = `${resolvedPath}.tsx`;
+                            try {
+                              await Deno.stat(tsxPath);
+                              return { path: tsxPath };
+                            } catch {
+                              // 尝试 .ts
+                              const tsPath = `${resolvedPath}.ts`;
+                              try {
+                                await Deno.stat(tsPath);
+                                return { path: tsPath };
+                              } catch {
+                                // 文件不存在，返回错误
+                                return {
+                                  errors: [{
+                                    text: `Path alias file not found: "${args.path}" (${aliasKey} -> ${aliasValue}${subPath})`,
+                                  }],
+                                };
+                              }
+                            }
+                          }
+                          // 文件不存在，返回错误
+                          return {
+                            errors: [{
+                              text: `Path alias file not found: "${args.path}" (${aliasKey} -> ${aliasValue}${subPath})`,
+                            }],
+                          };
                         }
+                        
                         // 返回解析后的路径
                         return {
                           path: resolvedPath,
