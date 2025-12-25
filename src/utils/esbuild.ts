@@ -336,6 +336,19 @@ export function createJSRResolverPlugin(
         // 确保插件在解析阶段之前执行
       });
       
+      // 处理直接使用 JSR URL 的情况（如 jsr:@dreamer/dweb@^1.8.2-beta.3/client）
+      build.onResolve({ filter: /^jsr:/ }, (args) => {
+        // 如果是 JSR URL，转换为 HTTP URL 后标记为 external
+        if (args.path.startsWith("jsr:")) {
+          const httpUrl = convertJsrToHttpUrl(args.path);
+          return {
+            path: httpUrl,
+            external: true,
+          };
+        }
+        return undefined;
+      });
+
       build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, (_args) => {
         let clientImport = importMap["@dreamer/dweb/client"];
         

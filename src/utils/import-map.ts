@@ -265,12 +265,27 @@ export async function createImportMapScript(
       const mainImport = allImports["@dreamer/dweb"];
       if (mainImport.startsWith("jsr:")) {
         // 如果主包是 JSR URL，自动为客户端子路径生成映射
-        if (!("@dreamer/dweb/client" in clientImports) && !("@dreamer/dweb/client" in subpathImports)) {
+        // 注意：即使 @dreamer/dweb/client 已经在 clientImports 中（用户显式定义），
+        // 如果它是 JSR URL，也需要确保它被转换为 HTTP URL
+        if ("@dreamer/dweb/client" in clientImports) {
+          // 如果已经在 clientImports 中，确保它是转换后的 HTTP URL
+          const existingClient = clientImports["@dreamer/dweb/client"];
+          if (existingClient.startsWith("jsr:")) {
+            // 如果仍然是 JSR URL，转换为 HTTP URL
+            clientImports["@dreamer/dweb/client"] = convertToBrowserUrl(existingClient);
+          }
+        } else if (!("@dreamer/dweb/client" in subpathImports)) {
+          // 如果不在 clientImports 和 subpathImports 中，自动生成
           const clientJsrUrl = `${mainImport}/client`;
           subpathImports["@dreamer/dweb/client"] = convertToBrowserUrl(clientJsrUrl);
         }
         // 自动为 extensions 生成映射
-        if (!("@dreamer/dweb/extensions" in clientImports) && !("@dreamer/dweb/extensions" in subpathImports)) {
+        if ("@dreamer/dweb/extensions" in clientImports) {
+          const existingExtensions = clientImports["@dreamer/dweb/extensions"];
+          if (existingExtensions.startsWith("jsr:")) {
+            clientImports["@dreamer/dweb/extensions"] = convertToBrowserUrl(existingExtensions);
+          }
+        } else if (!("@dreamer/dweb/extensions" in subpathImports)) {
           const extensionsJsrUrl = `${mainImport}/extensions`;
           subpathImports["@dreamer/dweb/extensions"] = convertToBrowserUrl(extensionsJsrUrl);
         }
