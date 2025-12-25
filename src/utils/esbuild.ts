@@ -7,8 +7,7 @@ import * as esbuild from "esbuild";
 import * as path from "@std/path";
 import { getExternalPackages } from "./module.ts";
 
-// 调试模式：通过环境变量控制
-const DEBUG_ESBUILD = Deno.env.get("DEBUG_ESBUILD") === "true";
+// 调试模式：直接输出日志
 
 /**
  * @dreamer/dweb 包的客户端 exports 映射表
@@ -277,9 +276,7 @@ export function createJSRResolverPlugin(
             const jsrUrl = `${parentImport}/${subPath}`;
               // 转换为 HTTP URL
               const httpUrl = convertJsrToHttpUrl(jsrUrl);
-              if (DEBUG_ESBUILD) {
-                console.log(`🔍 [Esbuild Debug] @dreamer/dweb/* subpath resolved: ${args.path} -> ${httpUrl} (from ${jsrUrl})`);
-              }
+              console.log(`🔍 [Esbuild Debug] @dreamer/dweb/* subpath resolved: ${args.path} -> ${httpUrl} (from ${jsrUrl})`);
               return {
                 path: httpUrl,
                 external: true,
@@ -294,9 +291,7 @@ export function createJSRResolverPlugin(
           // 如果是 JSR URL，转换为 HTTP URL
           if (importValue.startsWith("jsr:")) {
             const httpUrl = convertJsrToHttpUrl(importValue);
-            if (DEBUG_ESBUILD) {
-              console.log(`🔍 [Esbuild Debug] Subpath in importMap (JSR): ${args.path} -> ${httpUrl} (from ${importValue})`);
-            }
+            console.log(`🔍 [Esbuild Debug] Subpath in importMap (JSR): ${args.path} -> ${httpUrl} (from ${importValue})`);
             return {
               path: httpUrl,
               external: true,
@@ -334,9 +329,7 @@ export function createJSRResolverPlugin(
               const jsrUrl = `${parentImport}/${subPath}`;
               // 转换为 HTTP URL
               const httpUrl = convertJsrToHttpUrl(jsrUrl);
-              if (DEBUG_ESBUILD) {
-                console.log(`🔍 [Esbuild Debug] Subpath resolved (parent in importMap): ${args.path} -> ${httpUrl} (from ${jsrUrl})`);
-              }
+              console.log(`🔍 [Esbuild Debug] Subpath resolved (parent in importMap): ${args.path} -> ${httpUrl} (from ${jsrUrl})`);
               return {
                 path: httpUrl,
                 external: true,
@@ -360,9 +353,7 @@ export function createJSRResolverPlugin(
               const jsrUrl = `${parentImport}/${subPath}`;
               // 转换为 HTTP URL
               const httpUrl = convertJsrToHttpUrl(jsrUrl);
-              if (DEBUG_ESBUILD) {
-                console.log(`🔍 [Esbuild Debug] Subpath resolved (parent in external): ${args.path} -> ${httpUrl} (from ${jsrUrl})`);
-              }
+              console.log(`🔍 [Esbuild Debug] Subpath resolved (parent in external): ${args.path} -> ${httpUrl} (from ${jsrUrl})`);
               return {
                 path: httpUrl,
                 external: true,
@@ -392,9 +383,7 @@ export function createJSRResolverPlugin(
         // 如果是 JSR URL，转换为 HTTP URL 后标记为 external
         if (args.path.startsWith("jsr:")) {
           const httpUrl = convertJsrToHttpUrl(args.path);
-          if (DEBUG_ESBUILD) {
-            console.log(`🔍 [Esbuild Debug] JSR URL resolved: ${args.path} -> ${httpUrl}`);
-          }
+          console.log(`🔍 [Esbuild Debug] JSR URL resolved: ${args.path} -> ${httpUrl}`);
           return {
             path: httpUrl,
             external: true,
@@ -405,9 +394,7 @@ export function createJSRResolverPlugin(
 
       // 处理 @dreamer/dweb/client（必须在其他处理器之前，确保优先级最高）
       build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, (args) => {
-        if (DEBUG_ESBUILD) {
-          console.log(`🔍 [Esbuild Debug] Resolving @dreamer/dweb/client from ${args.importer}`);
-        }
+        console.log(`🔍 [Esbuild Debug] Resolving @dreamer/dweb/client from ${args.importer}`);
         
         let clientImport = importMap["@dreamer/dweb/client"];
         
@@ -419,9 +406,7 @@ export function createJSRResolverPlugin(
             if (mainImport.startsWith("jsr:")) {
               // JSR URL: jsr:@dreamer/dweb@^1.6.9 -> jsr:@dreamer/dweb@^1.6.9/client
               clientImport = `${mainImport}/client`;
-              if (DEBUG_ESBUILD) {
-                console.log(`🔍 [Esbuild Debug] Inferred @dreamer/dweb/client from main package: ${clientImport}`);
-              }
+              console.log(`🔍 [Esbuild Debug] Inferred @dreamer/dweb/client from main package: ${clientImport}`);
             } else if (mainImport.includes("/mod.ts")) {
               // 本地路径: ./src/mod.ts -> ./src/client.ts
               clientImport = mainImport.replace("/mod.ts", "/client.ts");
@@ -434,9 +419,7 @@ export function createJSRResolverPlugin(
         }
         
         if (!clientImport) {
-          if (DEBUG_ESBUILD) {
-            console.log(`🔍 [Esbuild Debug] @dreamer/dweb/client not found in import map and cannot be inferred`);
-          }
+          console.log(`🔍 [Esbuild Debug] @dreamer/dweb/client not found in import map and cannot be inferred`);
           return undefined; // 让 esbuild 使用默认解析
         }
 
@@ -444,9 +427,7 @@ export function createJSRResolverPlugin(
         if (clientImport.startsWith("jsr:")) {
           // 将 JSR URL 转换为浏览器可访问的 HTTP URL
           const httpUrl = convertJsrToHttpUrl(clientImport);
-          if (DEBUG_ESBUILD) {
-            console.log(`🔍 [Esbuild Debug] @dreamer/dweb/client resolved: ${clientImport} -> ${httpUrl}`);
-          }
+          console.log(`🔍 [Esbuild Debug] @dreamer/dweb/client resolved: ${clientImport} -> ${httpUrl}`);
           // 标记为 external，浏览器会直接请求转换后的 HTTP URL
           // 注意：即使 @dreamer/dweb/client 在 externalPackages 列表中，
           // 插件返回的 path 会覆盖 esbuild 的默认行为，输出代码中会使用 HTTP URL
@@ -461,18 +442,14 @@ export function createJSRResolverPlugin(
           const resolvedPath = path.isAbsolute(clientImport)
             ? clientImport
             : path.resolve(cwd, clientImport);
-          if (DEBUG_ESBUILD) {
-            console.log(`🔍 [Esbuild Debug] @dreamer/dweb/client resolved to local path: ${resolvedPath}`);
-          }
+          console.log(`🔍 [Esbuild Debug] @dreamer/dweb/client resolved to local path: ${resolvedPath}`);
           return {
             path: resolvedPath,
             external: false, // 明确标记为不 external，强制打包
           };
         }
         
-        if (DEBUG_ESBUILD) {
-          console.log(`🔍 [Esbuild Debug] @dreamer/dweb/client is already HTTP URL: ${clientImport}`);
-        }
+        console.log(`🔍 [Esbuild Debug] @dreamer/dweb/client is already HTTP URL: ${clientImport}`);
         return undefined; // 不是 JSR URL，使用默认解析
       });
 
