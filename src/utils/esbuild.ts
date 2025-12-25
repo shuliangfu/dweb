@@ -8,6 +8,94 @@ import * as path from "@std/path";
 import { getExternalPackages } from "./module.ts";
 
 /**
+ * @dreamer/dweb 包的客户端 exports 映射表
+ * 只包含客户端可能使用的路径，服务端路径（如 /cli、/init、/console、/database）不需要映射
+ */
+const DREAMER_DWEB_EXPORTS: Record<string, string> = {
+  "./client": "src/client.ts",
+  "./extensions": "src/extensions/mod.ts",
+  // extensions 的子路径通过动态解析处理，不需要全部列出
+  // 如果遇到 ./extensions/* 路径，会动态构建路径
+};
+
+/**
+ * 将 jsr: 协议转换为浏览器可访问的 HTTP URL
+ * JSR.io 会自动编译 TypeScript 文件，浏览器请求 .ts 文件时会返回编译后的 JavaScript
+ * @param jsrUrl jsr: 协议的 URL，例如：jsr:@dreamer/dweb@^1.8.2/client
+ * @returns 浏览器可访问的 HTTP URL，例如：https://jsr.io/@dreamer/dweb/1.8.2/src/client.ts
+ */
+function convertJsrToHttpUrl(jsrUrl: string): string {
+  // 移除 jsr: 前缀
+  const jsrPath = jsrUrl.replace(/^jsr:/, "");
+  
+  // 匹配格式：@scope/package@version 或 @scope/package@version/subpath
+  // 版本号可能包含 ^、~ 等符号
+  const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\^~]?[\d.]+)(?:\/(.+))?$/);
+  
+  if (!jsrMatch) {
+    // 如果无法匹配，返回原始 URL（让浏览器报错，便于调试）
+    return jsrUrl;
+  }
+  
+  const [, scope, packageName, versionWithPrefix, subPath] = jsrMatch;
+  
+  // 移除版本号前缀（^ 或 ~），只保留版本号本身
+  const version = versionWithPrefix.replace(/^[\^~]/, "");
+  
+  // 构建 JSR HTTP URL
+  // JSR URL 格式：https://jsr.io/@scope/package/version/path
+  // JSR.io 会自动编译 TypeScript 文件，浏览器请求 .ts 文件时会返回编译后的 JavaScript
+  if (subPath) {
+    // 有子路径，需要根据 exports 映射到实际文件路径
+    let actualPath: string;
+    
+    // 对于 @dreamer/dweb 包，使用 exports 映射表
+    if (scope === "dreamer" && packageName === "dweb") {
+      const exportKey = `./${subPath}`;
+      if (exportKey in DREAMER_DWEB_EXPORTS) {
+        // 根据 exports 映射到实际文件路径
+        actualPath = DREAMER_DWEB_EXPORTS[exportKey];
+      } else if (subPath.startsWith("extensions/")) {
+        // 处理 extensions 的子路径（如 extensions/validation -> src/extensions/helpers/validation.ts）
+        const extensionSubPath = subPath.substring("extensions/".length);
+        // 根据常见的 extensions 子路径模式构建路径
+        // extensions/validation -> src/extensions/helpers/validation.ts
+        actualPath = `src/extensions/helpers/${extensionSubPath}.ts`;
+      } else {
+        // 如果 exports 中没有，尝试直接使用子路径
+        // 确保路径以 / 开头
+        const normalizedSubPath = subPath.startsWith("/") ? subPath : `/${subPath}`;
+        // 如果子路径没有扩展名，尝试添加 .ts
+        if (!normalizedSubPath.match(/\.(ts|tsx|js|jsx)$/)) {
+          actualPath = `${normalizedSubPath}.ts`;
+        } else {
+          actualPath = normalizedSubPath;
+        }
+      }
+    } else {
+      // 对于其他包，直接使用子路径
+      const normalizedSubPath = subPath.startsWith("/") ? subPath : `/${subPath}`;
+      // 如果子路径没有扩展名，尝试添加 .ts
+      if (!normalizedSubPath.match(/\.(ts|tsx|js|jsx)$/)) {
+        actualPath = `${normalizedSubPath}.ts`;
+      } else {
+        actualPath = normalizedSubPath;
+      }
+    }
+    
+    // 确保路径以 / 开头
+    if (!actualPath.startsWith("/")) {
+      actualPath = `/${actualPath}`;
+    }
+    
+    return `https://jsr.io/@${scope}/${packageName}/${version}${actualPath}`;
+  } else {
+    // 没有子路径，指向包的 mod.ts（JSR 包的标准入口文件）
+    return `https://jsr.io/@${scope}/${packageName}/${version}/mod.ts`;
+  }
+}
+
+/**
  * 创建 JSR 解析插件
  * 处理 JSR URL、npm 子路径、路径别名等
  * @param importMap import map 配置
@@ -174,14 +262,20 @@ export function createJSRResolverPlugin(
         }
         
         // 特别处理 @dreamer/dweb/* 的其他子路径
-        // 如果是 JSR URL，标记为 external，通过网络请求加载
+        // 如果是 JSR URL，转换为 HTTP URL 后标记为 external，通过网络请求加载
         if (args.path.startsWith("@dreamer/dweb/")) {
           const parentPackage = "@dreamer/dweb";
           const parentImport = importMap[parentPackage];
-          // 如果父包是 JSR URL，子路径也应该标记为 external
+          // 如果父包是 JSR URL，构建子路径的 JSR URL 并转换为 HTTP URL
           if (parentImport && parentImport.startsWith("jsr:")) {
+            // 提取子路径（如 "@dreamer/dweb/console" -> "console"）
+            const subPath = args.path.substring("@dreamer/dweb/".length);
+            // 构建完整的 JSR URL
+            const jsrUrl = `${parentImport}/${subPath}`;
+            // 转换为 HTTP URL
+            const httpUrl = convertJsrToHttpUrl(jsrUrl);
             return {
-              path: args.path,
+              path: httpUrl,
               external: true,
             };
           }
@@ -211,8 +305,20 @@ export function createJSRResolverPlugin(
           // 因为浏览器会通过 import map 来解析，esbuild 无法打包 npm/jsr 包的子路径
           if (parentPackage in importMap) {
             const parentImport = importMap[parentPackage];
-            // 如果父包是 JSR URL 或 npm URL，子路径应该标记为 external
-            if (parentImport.startsWith("jsr:") || parentImport.startsWith("npm:") || parentImport.startsWith("http")) {
+            // 如果父包是 JSR URL，需要转换为 HTTP URL
+            if (parentImport.startsWith("jsr:")) {
+              // 构建完整的 JSR URL（如 jsr:@scope/package@version/subpath）
+              const subPath = args.path.substring(parentPackage.length + 1);
+              const jsrUrl = `${parentImport}/${subPath}`;
+              // 转换为 HTTP URL
+              const httpUrl = convertJsrToHttpUrl(jsrUrl);
+              return {
+                path: httpUrl,
+                external: true,
+              };
+            }
+            // 如果父包是 npm URL 或 HTTP URL，子路径也应该标记为 external
+            if (parentImport.startsWith("npm:") || parentImport.startsWith("http")) {
               return {
                 path: args.path,
                 external: true,
@@ -256,11 +362,13 @@ export function createJSRResolverPlugin(
           return undefined; // 让 esbuild 使用默认解析
         }
 
-        // 如果是 JSR URL，标记为 external，不打包，通过网络请求加载
+        // 如果是 JSR URL，转换为 HTTP URL 后标记为 external，不打包，通过网络请求加载
         if (clientImport.startsWith("jsr:")) {
-          // 直接标记为 external，让浏览器通过 import map 加载
+          // 将 JSR URL 转换为浏览器可访问的 HTTP URL
+          const httpUrl = convertJsrToHttpUrl(clientImport);
+          // 标记为 external，浏览器会直接请求转换后的 HTTP URL
           return {
-            path: clientImport,
+            path: httpUrl,
             external: true,
           };
         }

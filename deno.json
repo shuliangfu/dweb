@@ -1,4 +1,5 @@
 {
+  "vendor": true,
   "name": "@dreamer/dweb",
   "version": "1.8.2",
   "license": "MIT",
@@ -82,6 +83,33 @@
       "tags": ["recommended"],
       "exclude": ["no-explicit-any"]
     }
+  },
+  "exclude": [
+    "**/example/**",
+    "**/tests/**",
+    "**/coverage/**",
+    "**/node_modules/**",
+    "**/vendor/**",
+    "**/dist/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/deno.lock"
+  ],
+  "publish": {
+    "include": ["src/**", "deno.json", "README.md", "LICENSE", "SECURITY.md"],
+    "exclude": [
+      "**/example/**",
+      "**/tests/**",
+      "**/coverage/**",
+      "**/node_modules/**",
+      "**/vendor/**",
+      "**/dist/**",
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "**/deno.lock",
+      "**/.git/**",
+      "**/docs/**"
+    ]
   },
   "compilerOptions": {
     "jsx": "react-jsx",

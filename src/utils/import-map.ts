@@ -25,7 +25,19 @@ function convertNpmToBrowserUrl(npmUrl: string): string {
 }
 
 /**
+ * @dreamer/dweb 包的客户端 exports 映射表
+ * 只包含客户端可能使用的路径，服务端路径（如 /cli、/init、/console、/database）不需要映射
+ */
+const DREAMER_DWEB_EXPORTS: Record<string, string> = {
+  "./client": "src/client.ts",
+  "./extensions": "src/extensions/mod.ts",
+  // extensions 的子路径通过动态解析处理，不需要全部列出
+  // 如果遇到 ./extensions/* 路径，会动态构建路径
+};
+
+/**
  * 将 jsr: 协议转换为浏览器可访问的 URL
+ * JSR.io 会自动编译 TypeScript 文件，浏览器请求 .ts 文件时会返回编译后的 JavaScript
  * @param jsrUrl jsr: 协议的 URL，例如：jsr:@std/fs@^1.0.20 或 jsr:@dreamer/dweb@1.0.0/client
  * @returns 浏览器可访问的 URL，例如：https://jsr.io/@std/fs/1.0.20/mod.ts
  */
@@ -50,15 +62,51 @@ function convertJsrToBrowserUrl(jsrUrl: string): string {
   
   // 构建 JSR URL
   // JSR URL 格式：https://jsr.io/@scope/package/version/path
+  // JSR.io 会自动编译 TypeScript 文件，浏览器请求 .ts 文件时会返回编译后的 JavaScript
   if (subPath) {
-    // 有子路径，直接使用
-    // 确保子路径以 / 开头
-    const normalizedSubPath = subPath.startsWith("/") ? subPath : `/${subPath}`;
-    // 如果子路径没有扩展名，尝试添加 .ts
-    if (!normalizedSubPath.match(/\.(ts|tsx|js|jsx)$/)) {
-      return `https://jsr.io/@${scope}/${packageName}/${version}${normalizedSubPath}.ts`;
+    // 有子路径，需要根据 exports 映射到实际文件路径
+    let actualPath: string;
+    
+    // 对于 @dreamer/dweb 包，使用 exports 映射表
+    if (scope === "dreamer" && packageName === "dweb") {
+      const exportKey = `./${subPath}`;
+      if (exportKey in DREAMER_DWEB_EXPORTS) {
+        // 根据 exports 映射到实际文件路径
+        actualPath = DREAMER_DWEB_EXPORTS[exportKey];
+      } else if (subPath.startsWith("extensions/")) {
+        // 处理 extensions 的子路径（如 extensions/validation -> src/extensions/helpers/validation.ts）
+        const extensionSubPath = subPath.substring("extensions/".length);
+        // 根据常见的 extensions 子路径模式构建路径
+        // extensions/validation -> src/extensions/helpers/validation.ts
+        actualPath = `src/extensions/helpers/${extensionSubPath}.ts`;
+      } else {
+        // 如果 exports 中没有，尝试直接使用子路径
+        // 确保路径以 / 开头
+        const normalizedSubPath = subPath.startsWith("/") ? subPath : `/${subPath}`;
+        // 如果子路径没有扩展名，尝试添加 .ts
+        if (!normalizedSubPath.match(/\.(ts|tsx|js|jsx)$/)) {
+          actualPath = `${normalizedSubPath}.ts`;
+        } else {
+          actualPath = normalizedSubPath;
+        }
+      }
+    } else {
+      // 对于其他包，直接使用子路径
+      const normalizedSubPath = subPath.startsWith("/") ? subPath : `/${subPath}`;
+      // 如果子路径没有扩展名，尝试添加 .ts
+      if (!normalizedSubPath.match(/\.(ts|tsx|js|jsx)$/)) {
+        actualPath = `${normalizedSubPath}.ts`;
+      } else {
+        actualPath = normalizedSubPath;
+      }
     }
-    return `https://jsr.io/@${scope}/${packageName}/${version}${normalizedSubPath}`;
+    
+    // 确保路径以 / 开头
+    if (!actualPath.startsWith("/")) {
+      actualPath = `/${actualPath}`;
+    }
+    
+    return `https://jsr.io/@${scope}/${packageName}/${version}${actualPath}`;
   } else {
     // 没有子路径，指向包的 mod.ts（JSR 包的标准入口文件）
     return `https://jsr.io/@${scope}/${packageName}/${version}/mod.ts`;
