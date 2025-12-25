@@ -6,6 +6,7 @@
 import * as esbuild from "esbuild";
 import * as path from "@std/path";
 import { getExternalPackages } from "./module.ts";
+import { denoPlugins } from "jsr:@luca/esbuild-deno-loader@^0.11.0";
 
 // 调试模式：直接输出日志
 
@@ -654,10 +655,18 @@ export async function buildFromStdin(
     finalExternalPackages,
   );
 
+  // 使用 @luca/esbuild-deno-loader 插件处理 Deno 特有的模块解析（jsr:、npm: 等）
+  // 这个插件会自动处理 JSR 和 npm 包的解析，但我们仍然保留自定义插件以处理特殊逻辑
+  const denoLoaderPlugins = denoPlugins({
+    importMapURL: new URL("./deno.json", `file://${cwd}/`),
+  });
+
   // 构建 alias 配置
   const alias = buildAliasConfig(importMap, cwd);
 
   // 执行构建
+  // 注意：denoPlugins 应该放在最前面，因为它处理基础的模块解析
+  // 我们的自定义插件放在后面，处理特殊逻辑（如路径别名、@dreamer/dweb/client 等）
   const result = await esbuild.build({
     stdin: {
       contents: code,
@@ -671,7 +680,7 @@ export async function buildFromStdin(
     keepNames,
     legalComments,
     external: finalExternalPackages,
-    plugins: [jsrResolverPlugin, ...plugins],
+    plugins: [...denoLoaderPlugins, jsrResolverPlugin, ...plugins],
     alias,
   });
 
@@ -725,10 +734,18 @@ export async function buildFromEntryPoints(
     finalExternalPackages,
   );
 
+  // 使用 @luca/esbuild-deno-loader 插件处理 Deno 特有的模块解析（jsr:、npm: 等）
+  // 这个插件会自动处理 JSR 和 npm 包的解析，但我们仍然保留自定义插件以处理特殊逻辑
+  const denoLoaderPlugins = denoPlugins({
+    importMapURL: new URL("./deno.json", `file://${cwd}/`),
+  });
+
   // 构建 alias 配置
   const alias = buildAliasConfig(importMap, cwd);
 
   // 执行构建
+  // 注意：denoPlugins 应该放在最前面，因为它处理基础的模块解析
+  // 我们的自定义插件放在后面，处理特殊逻辑（如路径别名、@dreamer/dweb/client 等）
   return await esbuild.build({
     entryPoints,
     ...getBaseConfig(),
@@ -737,7 +754,7 @@ export async function buildFromEntryPoints(
     keepNames,
     legalComments,
     external: finalExternalPackages,
-    plugins: [jsrResolverPlugin, ...plugins],
+    plugins: [...denoLoaderPlugins, jsrResolverPlugin, ...plugins],
     alias,
     ...(splitting && outdir ? { splitting: true, outdir, outbase } : {}),
   });
