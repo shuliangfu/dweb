@@ -1355,6 +1355,10 @@ export class RouteHandler {
   ): Promise<string> {
     // 提取页面数据，用于传递给布局组件
     const pageData = pageProps.data as Record<string, unknown> | undefined;
+    // 调试：检查 pageData 是否正确传递
+    if (typeof pageData === 'undefined') {
+      console.warn('[Layout Debug] pageData is undefined, pageProps:', Object.keys(pageProps));
+    }
     if (renderMode === "csr") {
       // CSR 模式：服务端只渲染容器，内容由客户端渲染
       return "";
@@ -1400,17 +1404,26 @@ export class RouteHandler {
             const children: ComponentChildren = currentElement as ComponentChildren;
             // 构建 layoutPropsWithData，确保 children 和 data 类型正确
             // 注意：使用 Object.assign 确保类型正确传递，data 和 children 放在最后确保不被覆盖
+            // 调试：检查 pageData 的值
+            if (typeof pageData === 'undefined') {
+              console.warn(`[Layout Debug] pageData is undefined for layout ${i}, pageProps.data:`, pageProps.data);
+            }
+            const finalData = pageData || {};
             const layoutPropsWithData = Object.assign(
               {},
               restLayoutProps,
               {
                 // 将页面数据也传递给布局组件，方便布局访问页面数据
                 // data 放在这里，确保不被 restLayoutProps 覆盖
-                data: pageData || {},
+                data: finalData,
                 // children 放在最后，确保类型正确且不被覆盖
                 children,
               },
             ) as LayoutProps;
+            // 调试：检查最终传递的 data
+            if (typeof layoutPropsWithData.data === 'undefined') {
+              console.warn(`[Layout Debug] layoutPropsWithData.data is undefined for layout ${i}, finalData:`, finalData);
+            }
 						
             const layoutResult = LayoutComponent(layoutPropsWithData);
             const layoutElement = layoutResult instanceof Promise
