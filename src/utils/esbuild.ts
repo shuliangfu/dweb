@@ -6,7 +6,6 @@
 import * as esbuild from "esbuild";
 import * as path from "@std/path";
 import { getExternalPackages } from "./module.ts";
-import { denoPlugins } from "jsr:@luca/esbuild-deno-loader@^0.11.0";
 
 // 调试模式：直接输出日志
 
@@ -305,13 +304,12 @@ export function createJSRResolverPlugin(
               external: true,
             };
           }
-          // 如果是 npm URL，转换为 HTTP URL
+          // 如果是 npm URL，也需要转换
           if (importValue.startsWith("npm:")) {
-            // 移除 npm: 前缀，使用 esm.sh 作为 CDN
-            const packageSpec = importValue.replace(/^npm:/, "");
-            const httpUrl = `https://esm.sh/${packageSpec}`;
+            // npm URL 应该已经在 import map 生成时转换了，但为了安全起见，这里也处理一下
+            // 实际上，npm URL 的转换应该在 import map 生成时完成
             return {
-              path: httpUrl,
+              path: args.path,
               external: true,
             };
           }
@@ -385,34 +383,6 @@ export function createJSRResolverPlugin(
         // 确保插件在解析阶段之前执行
       });
       
-      // 处理直接使用 npm: 协议的情况（如 npm:chart.js@4.4.7）
-      build.onResolve({ filter: /^npm:/ }, (args) => {
-        // 如果是 npm URL，转换为 HTTP URL 后标记为 external
-        if (args.path.startsWith("npm:")) {
-          // 先检查 import map 中是否已经有转换后的 URL
-          if (args.path in importMap) {
-            const mappedUrl = importMap[args.path];
-            // 如果已经是 HTTP URL，直接使用
-            if (mappedUrl.startsWith("http://") || mappedUrl.startsWith("https://")) {
-              return {
-                path: mappedUrl,
-                external: true,
-              };
-            }
-          }
-          
-          // 如果没有在 import map 中找到，使用转换函数生成 HTTP URL
-          // 移除 npm: 前缀，使用 esm.sh 作为 CDN
-          const packageSpec = args.path.replace(/^npm:/, "");
-          const httpUrl = `https://esm.sh/${packageSpec}`;
-          return {
-            path: httpUrl,
-            external: true,
-          };
-        }
-        return undefined;
-      });
-
       // 处理直接使用 JSR URL 的情况（如 jsr:@dreamer/dweb@^1.8.2-beta.3/client）
       build.onResolve({ filter: /^jsr:/ }, (args) => {
         // 如果是 JSR URL，转换为代理路径后标记为 external
@@ -440,7 +410,7 @@ export function createJSRResolverPlugin(
       });
 
       // 处理 @dreamer/dweb/client（必须在其他处理器之前，确保优先级最高）
-      build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, (_args) => {
+      build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, (args) => {
         let clientImport = importMap["@dreamer/dweb/client"];
         
         // 如果没有显式配置 @dreamer/dweb/client，尝试从 @dreamer/dweb 推断
@@ -669,20 +639,11 @@ export async function buildFromStdin(
     finalExternalPackages,
   );
 
-  // 使用 @luca/esbuild-deno-loader 插件处理 Deno 特有的模块解析（jsr:、npm: 等）
-  // 这个插件会自动处理 JSR 和 npm 包的解析，但我们仍然保留自定义插件以处理特殊逻辑
-  // 注意：denoPlugins 需要一个纯 import map（只包含 imports 和 scopes），
-  // 但 deno.json 包含其他字段，所以我们需要创建一个临时的 import map 文件
-  // 或者不传递 importMapURL，让插件从代码中自动解析
-  // 我们选择不传递 importMapURL，因为我们已经有了 importMap 参数，自定义插件会处理
-  const denoLoaderPlugins = denoPlugins();
-
   // 构建 alias 配置
   const alias = buildAliasConfig(importMap, cwd);
 
   // 执行构建
-  // 注意：denoPlugins 应该放在最前面，因为它处理基础的模块解析
-  // 我们的自定义插件放在后面，处理特殊逻辑（如路径别名、@dreamer/dweb/client 等）
+  // 使用自定义的 jsrResolverPlugin 处理所有模块解析（npm:、jsr:、路径别名等）
   const result = await esbuild.build({
     stdin: {
       contents: code,
@@ -696,7 +657,7 @@ export async function buildFromStdin(
     keepNames,
     legalComments,
     external: finalExternalPackages,
-    plugins: [...denoLoaderPlugins, jsrResolverPlugin, ...plugins],
+    plugins: [jsrResolverPlugin, ...plugins],
     alias,
   });
 
@@ -750,20 +711,11 @@ export async function buildFromEntryPoints(
     finalExternalPackages,
   );
 
-  // 使用 @luca/esbuild-deno-loader 插件处理 Deno 特有的模块解析（jsr:、npm: 等）
-  // 这个插件会自动处理 JSR 和 npm 包的解析，但我们仍然保留自定义插件以处理特殊逻辑
-  // 注意：denoPlugins 需要一个纯 import map（只包含 imports 和 scopes），
-  // 但 deno.json 包含其他字段，所以我们需要创建一个临时的 import map 文件
-  // 或者不传递 importMapURL，让插件从代码中自动解析
-  // 我们选择不传递 importMapURL，因为我们已经有了 importMap 参数，自定义插件会处理
-  const denoLoaderPlugins = denoPlugins();
-
   // 构建 alias 配置
   const alias = buildAliasConfig(importMap, cwd);
 
   // 执行构建
-  // 注意：denoPlugins 应该放在最前面，因为它处理基础的模块解析
-  // 我们的自定义插件放在后面，处理特殊逻辑（如路径别名、@dreamer/dweb/client 等）
+  // 使用自定义的 jsrResolverPlugin 处理所有模块解析（npm:、jsr:、路径别名等）
   return await esbuild.build({
     entryPoints,
     ...getBaseConfig(),
@@ -772,7 +724,7 @@ export async function buildFromEntryPoints(
     keepNames,
     legalComments,
     external: finalExternalPackages,
-    plugins: [...denoLoaderPlugins, jsrResolverPlugin, ...plugins],
+    plugins: [jsrResolverPlugin, ...plugins],
     alias,
     ...(splitting && outdir ? { splitting: true, outdir, outbase } : {}),
   });
