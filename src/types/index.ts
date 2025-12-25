@@ -1,5 +1,19 @@
 // ==================== 应用配置类型 ====================
 
+/**
+ * 组件子元素类型
+ * 兼容 Preact 的 ComponentChildren 类型
+ * 可以是 VNode、字符串、数字、布尔值、null、undefined 或这些类型的数组
+ */
+export type ComponentChildren =
+  | unknown // VNode 类型（在类型定义文件中使用 unknown 代替）
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | ComponentChildren[];
+
 // 扩展目录配置
 export interface ExtendDirConfig {
   dir: string; // 目录路径
@@ -486,7 +500,7 @@ export interface PageProps {
  */
 export interface LayoutProps {
   /** 子元素（页面内容） */
-  children: unknown;
+  children: ComponentChildren;
   /** 页面数据（页面 load 函数返回的数据） */
   data: Record<string, unknown>;
   /** 当前语言代码（如果已配置 i18n 插件） */
