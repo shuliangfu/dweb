@@ -360,17 +360,6 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
 
             // 写入处理后的 CSS
             await Deno.writeTextFile(outPath, processed.content);
-
-            // 检查编译后的 CSS 是否包含 dark mode 样式
-            const hasDarkMode = processed.content.includes(".dark") ||
-              processed.content.includes('[data-theme="dark"]') ||
-              processed.content.includes("dark:");
-            const sizeKB = (processed.content.length / 1024).toFixed(2);
-            console.log(
-              `      • CSS 大小: ${sizeKB} KB (${processed.content.length} 字节)`,
-            );
-            console.log(`      • 包含 dark mode: ${hasDarkMode ? "是" : "否"}`);
-
             // 如果有 source map，也写入
             if (processed.map) {
               await Deno.writeTextFile(`${outPath}.map`, processed.map);

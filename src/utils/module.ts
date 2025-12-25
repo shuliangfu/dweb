@@ -54,6 +54,34 @@ export function isServerDependency(packageName: string): boolean {
     return true;
   }
   
+  // 构建工具（服务端）
+  if (
+    packageName === "esbuild" ||
+    packageName.startsWith("esbuild/")
+  ) {
+    return true;
+  }
+  
+  // CSS 处理工具（服务端构建时使用）
+  if (
+    packageName === "postcss" ||
+    packageName.startsWith("postcss/") ||
+    packageName === "postcss-v3" ||
+    packageName.startsWith("postcss-v3/") ||
+    packageName === "autoprefixer" ||
+    packageName.startsWith("autoprefixer/") ||
+    packageName === "cssnano" ||
+    packageName.startsWith("cssnano/") ||
+    packageName === "tailwindcss" ||
+    packageName.startsWith("tailwindcss/") ||
+    packageName === "tailwindcss-v3" ||
+    packageName.startsWith("tailwindcss-v3/") ||
+    packageName === "@tailwindcss/postcss" ||
+    packageName.startsWith("@tailwindcss/postcss/")
+  ) {
+    return true;
+  }
+  
   // 包名包含服务端相关关键词（更通用的判断）
   const serverKeywords = [
     "server",

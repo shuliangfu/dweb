@@ -55,6 +55,198 @@ function convertJsrToHttpUrl(jsrUrl: string): string {
  * @param externalPackages 外部依赖包列表
  * @returns esbuild 插件
  */
+/**
+ * 将 npm: 协议转换为浏览器可访问的 URL
+ * @param npmUrl npm: 协议的 URL，例如：npm:chart.js@4.4.7
+ * @returns 浏览器可访问的 URL，例如：https://esm.sh/chart.js@4.4.7
+ */
+function convertNpmToBrowserUrl(npmUrl: string): string {
+  // 移除 npm: 前缀
+  const packageSpec = npmUrl.replace(/^npm:/, "");
+  // 使用 esm.sh 作为 CDN（支持 ESM 格式）
+  return `https://esm.sh/${packageSpec}`;
+}
+
+/**
+ * 将 jsr: 协议转换为浏览器可访问的 URL
+ * @param jsrUrl jsr: 协议的 URL，例如：jsr:@dreamer/dweb@1.8.2/extensions/web3
+ * @returns 浏览器可访问的 URL，例如：https://esm.sh/jsr/@dreamer/dweb@1.8.2/extensions/web3?bundle
+ */
+function convertJsrToBrowserUrl(jsrUrl: string): string {
+  // 移除 jsr: 前缀
+  const jsrPath = jsrUrl.replace(/^jsr:/, "");
+  
+  // 匹配格式：@scope/package@version 或 @scope/package@version/subpath
+  const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\^~]?[\d.]+(?:-[\w.]+)?)(?:\/(.+))?$/);
+  
+  if (!jsrMatch) {
+    // 如果无法匹配，使用 esm.sh 的格式
+    return `https://esm.sh/jsr/${jsrPath}?bundle`;
+  }
+  
+  const [, scope, packageName, versionWithPrefix, subPath] = jsrMatch;
+  
+  // 移除版本号前缀（^ 或 ~），只保留版本号本身
+  const version = versionWithPrefix.replace(/^[\^~]/, "");
+  
+  // 使用 esm.sh 的 /jsr/ 路径格式
+  if (subPath) {
+    return `https://esm.sh/jsr/@${scope}/${packageName}@${version}/${subPath}?bundle`;
+  } else {
+    return `https://esm.sh/jsr/@${scope}/${packageName}@${version}?bundle`;
+  }
+}
+
+/**
+ * 将 import map 中的 URL 转换为浏览器可访问的 URL
+ * @param importValue import map 中的原始值
+ * @returns 转换后的浏览器可访问的 URL
+ */
+function convertToBrowserUrl(importValue: string): string {
+  // 如果已经是 HTTP URL，直接返回
+  if (importValue.startsWith("http://") || importValue.startsWith("https://")) {
+    return importValue;
+  }
+  
+  // 处理 npm: 协议
+  if (importValue.startsWith("npm:")) {
+    return convertNpmToBrowserUrl(importValue);
+  }
+  
+  // 处理 jsr: 协议
+  if (importValue.startsWith("jsr:")) {
+    return convertJsrToBrowserUrl(importValue);
+  }
+  
+  // 其他情况（本地路径等），直接返回
+  return importValue;
+}
+
+/**
+ * 创建导入替换插件
+ * 在编译时直接替换代码中的依赖导入为浏览器可访问的 URL
+ * 例如：import Chart from "chart/auto" -> import Chart from "https://esm.sh/chart.js@4.4.7/auto"
+ * @param importMap import map 配置
+ * @returns esbuild 插件
+ */
+function createImportReplacerPlugin(
+  importMap: Record<string, string>,
+): esbuild.Plugin {
+  return {
+    name: "import-replacer",
+    setup(build: esbuild.PluginBuild) {
+      // 在解析模块时替换导入路径
+      // 注意：这个插件只处理外部依赖（npm、jsr），本地依赖会被其他插件处理并打包
+      build.onResolve({ filter: /.*/ }, (args) => {
+        const importPath = args.path;
+        
+        // 跳过相对路径导入（这些是本地依赖，应该被打包）
+        if (importPath.startsWith("./") || importPath.startsWith("../")) {
+          return undefined;
+        }
+        
+        // 跳过 HTTP URL（已经是外部 URL）
+        if (importPath.startsWith("http://") || importPath.startsWith("https://")) {
+          return undefined;
+        }
+        
+        // 跳过路径别名（以 @ 开头且可能是路径别名，由 createJSRResolverPlugin 处理）
+        // 路径别名会被解析为本地文件路径并打包
+        if (importPath.startsWith("@")) {
+          // 检查是否是路径别名（在 importMap 中以 / 结尾）
+          for (const [aliasKey] of Object.keys(importMap)) {
+            if (aliasKey.endsWith("/") && importPath.startsWith(aliasKey)) {
+              // 这是路径别名，让 createJSRResolverPlugin 处理
+              return undefined;
+            }
+          }
+        }
+        
+        // 检查是否是外部依赖（npm、jsr）
+        let resolvedPath: string | undefined;
+        let isLocalPath = false;
+        
+        // 1. 直接检查 importMap 中是否有这个路径
+        if (importPath in importMap) {
+          const mappedValue = importMap[importPath];
+          // 检查是否是本地路径（以 ./ 或 ../ 开头）
+          if (mappedValue.startsWith("./") || mappedValue.startsWith("../")) {
+            // 本地路径，应该被打包，不替换
+            isLocalPath = true;
+          } else {
+            // 外部依赖，转换为浏览器 URL
+            resolvedPath = convertToBrowserUrl(mappedValue);
+          }
+        } else {
+          // 2. 检查是否是子路径，尝试从父包生成
+          if (importPath.includes("/") && !importPath.startsWith("@")) {
+            // 普通包的子路径（如 chart/auto）
+            const parentPackage = importPath.split("/")[0];
+            if (parentPackage in importMap) {
+              const parentImport = importMap[parentPackage];
+              // 检查父包是否是本地路径
+              if (parentImport.startsWith("./") || parentImport.startsWith("../")) {
+                // 父包是本地路径，子路径也应该是本地路径，应该被打包
+                isLocalPath = true;
+              } else {
+                // 父包是外部依赖，生成子路径的浏览器 URL
+                const subPath = importPath.substring(parentPackage.length + 1);
+                const subPathImport = `${parentImport}/${subPath}`;
+                resolvedPath = convertToBrowserUrl(subPathImport);
+              }
+            }
+          } else if (importPath.startsWith("@") && importPath.split("/").length >= 3) {
+            // @scope/package/subpath 格式
+            const parts = importPath.split("/");
+            const parentPackage = `${parts[0]}/${parts[1]}`;
+            if (parentPackage in importMap) {
+              const parentImport = importMap[parentPackage];
+              // 检查父包是否是本地路径
+              if (parentImport.startsWith("./") || parentImport.startsWith("../")) {
+                // 父包是本地路径，子路径也应该是本地路径，应该被打包
+                isLocalPath = true;
+              } else {
+                // 父包是外部依赖，生成子路径的浏览器 URL
+                const subPath = parts.slice(2).join("/");
+                const subPathImport = `${parentImport}/${subPath}`;
+                resolvedPath = convertToBrowserUrl(subPathImport);
+              }
+            }
+          } else {
+            // 3. 直接检查是否是根包
+            if (importPath in importMap) {
+              const mappedValue = importMap[importPath];
+              // 检查是否是本地路径
+              if (mappedValue.startsWith("./") || mappedValue.startsWith("../")) {
+                // 本地路径，应该被打包，不替换
+                isLocalPath = true;
+              } else {
+                // 外部依赖，转换为浏览器 URL
+                resolvedPath = convertToBrowserUrl(mappedValue);
+              }
+            }
+          }
+        }
+        
+        // 如果是本地路径，返回 undefined，让 esbuild 打包它
+        if (isLocalPath) {
+          return undefined;
+        }
+        
+        // 如果找到了外部依赖的映射，返回替换后的路径
+        if (resolvedPath) {
+          return {
+            path: resolvedPath,
+            external: true, // 标记为外部依赖，不打包
+          };
+        }
+        
+        return undefined;
+      });
+    },
+  };
+}
+
 export function createJSRResolverPlugin(
   importMap: Record<string, string>,
   cwd: string,
@@ -572,6 +764,9 @@ export async function buildFromStdin(
   const finalExternalPackages = externalPackages ??
     getExternalPackages(importMap, bundleClient, false);
 
+  // 创建导入替换插件（在编译时直接替换代码中的依赖导入）
+  const importReplacerPlugin = createImportReplacerPlugin(importMap);
+  
   // 创建 JSR 解析插件
   const jsrResolverPlugin = createJSRResolverPlugin(
     importMap,
@@ -583,7 +778,7 @@ export async function buildFromStdin(
   const alias = buildAliasConfig(importMap, cwd);
 
   // 执行构建
-  // 使用自定义的 jsrResolverPlugin 处理所有模块解析（npm:、jsr:、路径别名等）
+  // 使用导入替换插件在编译时替换依赖导入，然后使用 jsrResolverPlugin 处理其他模块解析
   const result = await esbuild.build({
     stdin: {
       contents: code,
@@ -597,7 +792,7 @@ export async function buildFromStdin(
     keepNames,
     legalComments,
     external: finalExternalPackages,
-    plugins: [jsrResolverPlugin, ...plugins],
+    plugins: [importReplacerPlugin, jsrResolverPlugin, ...plugins],
     alias,
   });
 
@@ -647,6 +842,9 @@ export async function buildFromEntryPoints(
   const finalExternalPackages = externalPackages ??
     getExternalPackages(importMap, bundleClient, false);
 
+  // 创建导入替换插件（在编译时直接替换代码中的依赖导入）
+  const importReplacerPlugin = createImportReplacerPlugin(importMap);
+  
   // 创建 JSR 解析插件
   const jsrResolverPlugin = createJSRResolverPlugin(
     importMap,
@@ -658,8 +856,8 @@ export async function buildFromEntryPoints(
   const alias = buildAliasConfig(importMap, cwd);
 
   // 执行构建
-  // 使用自定义的 jsrResolverPlugin 处理所有模块解析（npm:、jsr:、路径别名等）
-  // 前置插件在最前面执行，然后是 jsrResolverPlugin，最后是其他插件
+  // 使用导入替换插件在编译时替换依赖导入，然后使用 jsrResolverPlugin 处理其他模块解析
+  // 前置插件在最前面执行，然后是导入替换插件，然后是 jsrResolverPlugin，最后是其他插件
   return await esbuild.build({
     entryPoints,
     ...getBaseConfig(),
@@ -668,7 +866,7 @@ export async function buildFromEntryPoints(
     keepNames,
     legalComments,
     external: finalExternalPackages,
-    plugins: [...prePlugins, jsrResolverPlugin, ...plugins],
+    plugins: [...prePlugins, importReplacerPlugin, jsrResolverPlugin, ...plugins],
     alias,
     ...(splitting && outdir ? { splitting: true, outdir, outbase } : {}),
   });
