@@ -171,21 +171,16 @@ function convertToBrowserUrl(importValue: string): string {
 export async function createImportMapScript(
   searchPaths?: string[],
 ): Promise<string | null> {
-  console.log("🔍 [Import Map Debug] createImportMapScript called", { searchPaths });
-  
   // 检查缓存是否有效（注意：如果传入了不同的 searchPaths，应该不使用缓存）
   const now = Date.now();
   const useCache = !searchPaths &&
     cachedImportMapScript &&
     (now - importMapScriptCacheTime) < IMPORT_MAP_CACHE_TTL;
   
-  // 如果使用缓存，也要输出日志（但只输出一次，避免重复）
+  // 如果使用缓存，直接返回
   if (useCache) {
-    console.log("🔍 [Import Map Debug] Using cached import map");
     return cachedImportMapScript;
   }
-  
-  console.log("🔍 [Import Map Debug] Generating new import map...");
   
   try {
     // 读取 deno.json 或 deno.jsonc（尝试多个可能的位置）
@@ -210,10 +205,7 @@ export async function createImportMapScript(
       }
     }
     
-    console.log("🔍 [Import Map Debug] Found imports in deno.json:", Object.keys(allImports).length);
-    
     if (Object.keys(allImports).length === 0) {
-      console.log("🔍 [Import Map Debug] ⚠️  No imports found in deno.json, returning null");
       return null;
     }
     
@@ -345,25 +337,6 @@ export async function createImportMapScript(
       imports: finalImports,
     };
     
-    // 调试模式：输出 import map 内容
-    console.log("🔍 [Import Map Debug] Generated import map:");
-    console.log(JSON.stringify(importMap, null, 2));
-    console.log("🔍 [Import Map Debug] @dreamer/dweb mappings:");
-    for (const [key, value] of Object.entries(finalImports)) {
-      if (key.startsWith("@dreamer/dweb")) {
-        const valueStr = String(value);
-        const isHttp = valueStr.startsWith("https://jsr.io/");
-        console.log(`  ${key} -> ${valueStr} ${isHttp ? "✅" : "❌"}`);
-      }
-    }
-    // 特别检查 @dreamer/dweb/client
-    if ("@dreamer/dweb/client" in finalImports) {
-      const clientValue = String(finalImports["@dreamer/dweb/client"]);
-      console.log(`🔍 [Import Map Debug] @dreamer/dweb/client mapping: ${clientValue}`);
-    } else {
-      console.log("🔍 [Import Map Debug] ⚠️  @dreamer/dweb/client NOT in import map!");
-    }
-    
     const script = `<script type="importmap">${
       JSON.stringify(importMap)
     }</script>`;
@@ -374,10 +347,9 @@ export async function createImportMapScript(
       importMapScriptCacheTime = now;
     }
     
-    console.log("🔍 [Import Map Debug] Import map script generated successfully");
     return script;
   } catch (error) {
-    console.error("🔍 [Import Map Debug] ❌ Error generating import map script:", error);
+    console.error("Error generating import map script:", error);
     return null;
   }
 }

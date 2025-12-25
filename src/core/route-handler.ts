@@ -63,13 +63,7 @@ let preloadedImportMapScript: string | null = null;
  */
 export async function preloadImportMapScript(): Promise<void> {
   try {
-    console.log("🔍 [Import Map Debug] Preloading import map script...");
     preloadedImportMapScript = await createImportMapScript();
-    if (preloadedImportMapScript) {
-      console.log("🔍 [Import Map Debug] Import map script preloaded successfully");
-    } else {
-      console.log("🔍 [Import Map Debug] ⚠️  Import map script is null (no client imports found)");
-    }
   } catch (error) {
     // 预加载失败时输出错误信息
     console.error("🔍 [Import Map Debug] ❌ Failed to preload import map script:", error);
@@ -327,15 +321,12 @@ export class RouteHandler {
       // 路径格式：@dreamer/dweb/1.8.2-beta.10/src/client.ts
       const jsrUrl = `https://jsr.io/${jsrPath}`;
       
-      console.log(`🔍 [JSR Proxy] Fetching from JSR.io: ${jsrUrl}`);
-      
       // 尝试使用 .js 扩展名（JSR.io 可能会自动编译 TypeScript 为 JavaScript）
       // 如果 .ts 路径返回 HTML，尝试使用 .js 扩展名
       let actualUrl = jsrUrl;
       if (jsrPath.endsWith(".ts") || jsrPath.endsWith(".tsx")) {
         // 尝试使用 .js 扩展名
         const jsUrl = jsrUrl.replace(/\.tsx?$/, ".js");
-        console.log(`🔍 [JSR Proxy] Trying .js extension: ${jsUrl}`);
         
         // 先尝试使用 .js 扩展名，并设置 Accept 头为 application/javascript
         const jsResponse = await fetch(jsUrl, {
@@ -348,7 +339,6 @@ export class RouteHandler {
           const jsContentType = jsResponse.headers.get("content-type") || "";
           // 如果返回的是 JavaScript，使用它
           if (jsContentType.includes("javascript") || jsContentType.includes("application/javascript")) {
-            console.log(`🔍 [JSR Proxy] Successfully fetched compiled JavaScript from: ${jsUrl}`);
             actualUrl = jsUrl;
             const jsCode = await jsResponse.text();
             res.status = 200;
@@ -444,8 +434,6 @@ export class RouteHandler {
       res.setHeader("Content-Type", "application/javascript; charset=utf-8");
       res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
       res.text(jsCode);
-      
-      console.log(`🔍 [JSR Proxy] Successfully proxied: ${jsrUrl}`);
     } catch (error) {
       res.status = 500;
       res.setHeader("Content-Type", "text/plain; charset=utf-8");
