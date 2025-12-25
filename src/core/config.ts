@@ -186,13 +186,18 @@ export async function isMultiAppMode(): Promise<boolean> {
     const configPath = await findConfigFile();
     if (!configPath) {
       return false;
-    }
+		}
+		
+		console.log({ configPath });
 
     // 动态导入配置文件
     const configModule = await import(
       `file://${path.resolve(Deno.cwd(), configPath)}`
-    );
-    const config: DWebConfig = configModule.default || configModule;
+		);
+		
+		const config: DWebConfig = configModule.default || configModule;
+		
+		console.log({ config });
 
     return "apps" in config && Array.isArray(config.apps);
   } catch {

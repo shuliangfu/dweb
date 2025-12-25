@@ -1559,7 +1559,9 @@ async function buildApp(config: AppConfig): Promise<void> {
 
   const isMultApp = await isMultiAppMode();
 
-  let outDir: string = config.build.outDir;
+	let outDir: string = config.build.outDir;
+	
+	console.log({ outDir, isMultApp, appName: config.name });
 
   let staticDir;
   if (isMultApp) {
