@@ -1396,7 +1396,7 @@ export class RouteHandler {
               ...layoutProps,
               // 将页面数据也传递给布局组件，方便布局访问页面数据
               pageData: pageData || {},
-            });
+            } as { children: unknown; [key: string]: unknown });
             const layoutElement = layoutResult instanceof Promise
               ? await layoutResult
               : layoutResult;
