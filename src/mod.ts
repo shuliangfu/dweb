@@ -23,6 +23,7 @@ export type {
   LoadContext,
   PageProps,
   LayoutProps,
+  ComponentChildren,
 } from './types/index.ts';
 
 // 导出核心类
