@@ -1346,6 +1346,7 @@ export class RouteHandler {
     ) => unknown | Promise<unknown>,
     LayoutComponents:
       ((props: { children: unknown }) => unknown | Promise<unknown>)[],
+    layoutData: Record<string, unknown>[],
     pageProps: Record<string, unknown>,
     renderMode: RenderMode,
     req?: Request,
