@@ -529,7 +529,7 @@ export interface PageProps {
 export interface LayoutProps {
   /** 子元素（页面内容） */
   children: ComponentChildren;
-  /** 页面数据（页面 load 函数返回的数据） */
+  /** 布局数据（布局 load 函数返回的数据） */
   data: Record<string, any>;
   /** 当前语言代码（如果已配置 i18n 插件） */
   lang?: string;

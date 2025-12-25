@@ -166,10 +166,21 @@ class HMRClient {
         if (typeof LayoutComponent !== 'function') {
           throw new Error('布局组件不是函数');
         }
+        // 获取布局的 load 数据（如果有）
+        const pageData = (globalThis as Record<string, unknown>).__PAGE_DATA__ as
+          | { layoutData?: Record<string, unknown>[] }
+          | undefined;
+        const layoutData = pageData?.layoutData?.[0] || {};
+        
         // 先尝试直接调用布局组件（支持异步组件）
+        // 传递布局的 load 数据作为 data 属性
         const layoutResult = (LayoutComponent as (props: {
           children: unknown;
-        }) => unknown | Promise<unknown>)({ children: pageElement });
+          data?: Record<string, unknown>;
+        }) => unknown | Promise<unknown>)({ 
+          children: pageElement,
+          data: layoutData,
+        });
 
         let finalElement: unknown;
         if (layoutResult instanceof Promise) {
@@ -185,7 +196,16 @@ class HMRClient {
       } catch {
         // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
         try {
-          const layoutResult = jsx(LayoutComponent, { children: pageElement });
+          // 获取布局的 load 数据（如果有）
+          const pageData = (globalThis as Record<string, unknown>).__PAGE_DATA__ as
+            | { layoutData?: Record<string, unknown>[] }
+            | undefined;
+          const layoutData = pageData?.layoutData?.[0] || {};
+          
+          const layoutResult = jsx(LayoutComponent, { 
+            children: pageElement,
+            data: layoutData,
+          });
           let finalElement: unknown;
           if (layoutResult instanceof Promise) {
             finalElement = await layoutResult;
@@ -288,7 +308,7 @@ class HMRClient {
    */
   private async updateComponent(
     moduleUrl: string,
-    _filePath: string,
+    filePath: string,
   ): Promise<void> {
     // 动态获取 Preact 模块（支持延迟加载）
     const { render, jsx } = this.getPreactModules();
@@ -299,42 +319,116 @@ class HMRClient {
         throw new Error('未找到 #root 容器');
       }
 
+    // 判断更新的是布局文件还是页面文件
+    const isLayoutFile = filePath.includes('_layout') || filePath.includes('_app');
+    
     try {
-      // 通过 GET 请求获取编译后的模块
-      // 添加时间戳避免缓存
-      const separator = moduleUrl.includes('?') ? '&' : '?';
-      const timestamp = Date.now();
-      const moduleUrlWithTimestamp = `${moduleUrl}${separator}t=${timestamp}`;
-
-      // 直接导入模块（服务器会编译并返回）
-      const module = await import(moduleUrlWithTimestamp);
-
-      // 获取页面组件
-      const PageComponent = module.default;
-      if (!PageComponent || typeof PageComponent !== 'function') {
-        throw new Error('组件未导出默认组件或组件不是函数');
-      }
-
-      // 获取页面数据和布局路径
+      // 获取页面数据
       const pageData = (globalThis as Record<string, unknown>).__PAGE_DATA__ as
-        | { props?: Record<string, unknown>; layoutPath?: string }
+        | { props?: Record<string, unknown>; layoutPath?: string; allLayoutPaths?: string[]; route?: string }
         | undefined;
       const props = pageData?.props || {};
-      const layoutPath = pageData?.layoutPath ?? null;
 
-      // 加载布局组件
-      const LayoutComponent = await this.loadLayoutComponent(layoutPath);
+      if (isLayoutFile) {
+        // 更新的是布局文件：清除布局组件缓存，重新加载布局组件
+        const layoutPath = pageData?.layoutPath ?? null;
+        const allLayoutPaths = pageData?.allLayoutPaths ?? [];
+        
+        // 清除布局组件的缓存
+        const moduleCache = (globalThis as Record<string, unknown>).__moduleCache as Map<string, unknown> | undefined;
+        if (moduleCache) {
+          // 清除所有布局路径的缓存
+          if (allLayoutPaths.length > 0) {
+            allLayoutPaths.forEach(path => {
+              moduleCache.delete(path);
+            });
+          } else if (layoutPath) {
+            moduleCache.delete(layoutPath);
+          }
+        }
 
-      // 创建页面元素（包含布局，支持异步组件）
-      const finalElement = await this.createPageElement(
-        PageComponent,
-        LayoutComponent,
-        props,
-        jsx,
-      );
+        // 重新加载布局组件（使用新的模块 URL，带时间戳避免缓存）
+        const separator = moduleUrl.includes('?') ? '&' : '?';
+        const timestamp = Date.now();
+        const moduleUrlWithTimestamp = `${moduleUrl}${separator}t=${timestamp}`;
+        const layoutModule = await import(moduleUrlWithTimestamp);
+        const LayoutComponent = layoutModule.default;
+        
+        if (!LayoutComponent || typeof LayoutComponent !== 'function') {
+          throw new Error('布局组件未导出默认组件或组件不是函数');
+        }
 
-      // 渲染组件
-      this.renderComponent(root, finalElement, render);
+        // 获取当前页面组件（从缓存或重新加载）
+        let PageComponent: unknown;
+        const currentRoute = pageData?.route || globalThis.location.pathname;
+        
+        // 尝试从缓存获取页面组件
+        if (moduleCache && currentRoute) {
+          const cachedModule = moduleCache.get(currentRoute);
+          if (cachedModule && typeof cachedModule === 'object' && 'default' in cachedModule) {
+            PageComponent = (cachedModule as { default: unknown }).default;
+          }
+        }
+        
+        // 如果缓存中没有，重新加载页面组件
+        if (!PageComponent || typeof PageComponent !== 'function') {
+          // 重新加载当前页面组件
+          const pageModuleUrl = typeof currentRoute === 'string' && currentRoute.startsWith('http')
+            ? currentRoute
+            : `${globalThis.location.origin}${currentRoute}`;
+          const pageSeparator = pageModuleUrl.includes('?') ? '&' : '?';
+          const pageTimestamp = Date.now();
+          const pageModuleUrlWithTimestamp = `${pageModuleUrl}${pageSeparator}t=${pageTimestamp}`;
+          const pageModule = await import(pageModuleUrlWithTimestamp);
+          PageComponent = pageModule.default;
+        }
+
+        if (!PageComponent || typeof PageComponent !== 'function') {
+          throw new Error('页面组件未找到或不是函数');
+        }
+
+        // 创建页面元素（包含更新的布局，支持异步组件）
+        const finalElement = await this.createPageElement(
+          PageComponent,
+          LayoutComponent,
+          props,
+          jsx,
+        );
+
+        // 渲染组件
+        this.renderComponent(root, finalElement, render);
+      } else {
+        // 更新的是页面文件：正常处理
+        // 通过 GET 请求获取编译后的模块
+        // 添加时间戳避免缓存
+        const separator = moduleUrl.includes('?') ? '&' : '?';
+        const timestamp = Date.now();
+        const moduleUrlWithTimestamp = `${moduleUrl}${separator}t=${timestamp}`;
+
+        // 直接导入模块（服务器会编译并返回）
+        const module = await import(moduleUrlWithTimestamp);
+
+        // 获取页面组件
+        const PageComponent = module.default;
+        if (!PageComponent || typeof PageComponent !== 'function') {
+          throw new Error('组件未导出默认组件或组件不是函数');
+        }
+
+        // 获取布局路径并加载布局组件（保持原有布局）
+        const layoutPath = pageData?.layoutPath ?? null;
+        const LayoutComponent = await this.loadLayoutComponent(layoutPath);
+
+        // 创建页面元素（包含布局，支持异步组件）
+        const finalElement = await this.createPageElement(
+          PageComponent,
+          LayoutComponent,
+          props,
+          jsx,
+        );
+
+        // 渲染组件
+        this.renderComponent(root, finalElement, render);
+      }
     } catch (error) {
       // 记录错误但不立即回退，尝试继续运行
       console.error('[HMR] 更新组件失败:', error);
@@ -367,33 +461,62 @@ class HMRClient {
       const newBody = newDoc.body;
       const currentBody = document.body;
 
-      // 替换 body 内容（保留 script 标签，但排除 HMR 脚本）
-      const scripts = Array.from(currentBody.querySelectorAll('script'));
-      currentBody.innerHTML = newBody.innerHTML;
+      // 获取新的 script 标签（从新解析的 HTML）
+      const newScripts = Array.from(newBody.querySelectorAll('script'));
 
-      // 重新执行脚本（排除 HMR 脚本，避免重复连接）
-      const timestamp = Date.now(); // 缓存时间戳（性能优化）
+      // 清空当前 body 内容
+      currentBody.innerHTML = '';
+
+      // 添加新的 body 内容（排除 script 标签，稍后单独处理）
+      const bodyContent = newBody.cloneNode(true) as HTMLElement;
+      const bodyScripts = Array.from(bodyContent.querySelectorAll('script'));
+      bodyScripts.forEach(script => script.remove());
+      currentBody.innerHTML = bodyContent.innerHTML;
+
+      // 重新执行新的脚本（排除 HMR 脚本，避免重复连接）
+      const timestamp = Date.now();
       const hmrPortString = String(this.config.hmrPort);
 
-      scripts.forEach((script) => {
+      newScripts.forEach((script) => {
         const scriptContent = script.textContent || '';
+        const scriptSrc = script.getAttribute('src') || '';
+        
         // 检查是否是 HMR 脚本（包含 WebSocket 连接代码）
-        const isHMRScript = scriptContent.includes('ws://:') &&
+        const isHMRScript = (scriptContent.includes('ws://') || scriptSrc.includes('ws://')) &&
           scriptContent.includes(hmrPortString);
-        // 跳过 HMR 脚本，避免重复创建 WebSocket 连接
-        if (isHMRScript) {
+        
+        // 检查是否是 JSON script 标签（data-type="dweb-page-data"）
+        const isJsonScript = script.getAttribute('data-type') === 'dweb-page-data';
+        
+        // 跳过 HMR 脚本和 JSON script 标签
+        if (isHMRScript || isJsonScript) {
           return;
         }
 
         const newScript = document.createElement('script');
-        if (script.src) {
-          newScript.src = `${script.src}?t=${timestamp}`;
-        } else {
+        
+        // 复制所有属性
+        Array.from(script.attributes).forEach(attr => {
+          if (attr.name !== 'src') {
+            newScript.setAttribute(attr.name, attr.value);
+          }
+        });
+        
+        if (scriptSrc) {
+          newScript.src = `${scriptSrc}${scriptSrc.includes('?') ? '&' : '?'}t=${timestamp}`;
+        } else if (scriptContent) {
           newScript.textContent = scriptContent;
         }
-        document.body.appendChild(newScript);
+        
+        // 安全地添加脚本到 body
+        try {
+          document.body.appendChild(newScript);
+        } catch (error) {
+          console.warn('[HMR] 添加脚本失败:', error);
+        }
       });
-    } catch {
+    } catch (error) {
+      console.error('[HMR] 重新加载组件失败:', error);
       // 失败时回退到完全重载
       globalThis.location.reload();
     }

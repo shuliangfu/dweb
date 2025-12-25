@@ -94,7 +94,7 @@ export const load = async ({
   const jsrPackageUrl = getJsrPackageUrl();
   const versionString = getVersionString();
 
-  console.log($t("总共{count}条数据", { count: 100 }));
+  // console.log($t("总共{count}条数据", { count: 100 }));
 
   return {
     message: "Hello, World!",
@@ -113,6 +113,11 @@ export const load = async ({
 export default function HomePage(
   { params: _params, query: _query, data }: PageProps,
 ) {
+
+
+
+
+
   // 使用 useStore hook 获取响应式状态，类似 useState(exampleStore)
   const state = useExampleStore();
   const themeState = useThemeStore();

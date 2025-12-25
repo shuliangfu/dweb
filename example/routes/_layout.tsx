@@ -4,19 +4,26 @@
  * 提供网站的整体布局结构
  */
 
-import Navbar from '@components/Navbar.tsx';
-import Footer from '@components/Footer.tsx';
-import type { LayoutProps } from '@dreamer/dweb';
+import Navbar from "@components/Navbar.tsx";
+import Footer from "@components/Footer.tsx";
+import type { LayoutProps } from "@dreamer/dweb";
+import menus from "@config/menus.ts";
+
+export const load = () => {
+  return {
+    menus,
+  };
+};
 
 /**
  * 根布局组件
  * @param props 组件属性
  * @returns JSX 元素
  */
-export default function RootLayout({ children }: LayoutProps) {
+export default function AppLayout({ children, data }: LayoutProps) { 
   // 获取当前路径（在客户端运行时）
-  let currentPath = '/';
-  if (typeof globalThis !== 'undefined' && globalThis.location) {
+  let currentPath = "/";
+  if (typeof globalThis !== "undefined" && globalThis.location) {
     currentPath = globalThis.location.pathname;
   }
 
@@ -24,12 +31,12 @@ export default function RootLayout({ children }: LayoutProps) {
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* 导航栏 */}
       <Navbar currentPath={currentPath} />
-      
+
       {/* 主内容区域 */}
       <main className="grow">
         {children}
       </main>
-      
+
       {/* 页脚 */}
       <Footer />
     </div>

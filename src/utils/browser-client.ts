@@ -441,7 +441,6 @@ class ClientRenderer {
   private async nestLayoutComponents(
     LayoutComponents: unknown[],
     pageElement: unknown,
-    pageData?: Record<string, unknown>,
     layoutData?: Record<string, unknown>[],
   ): Promise<unknown> {
     if (LayoutComponents.length === 0) {
@@ -454,22 +453,16 @@ class ClientRenderer {
         const LayoutComponent = LayoutComponents[i];
         // 获取对应布局的 load 数据（如果有）
         const layoutLoadData = layoutData?.[i] || {};
-        // 调试：检查布局的 load 数据
-        console.log(`[Client Layout Debug] layout ${i} load data:`, layoutLoadData);
         // 从 layoutLoadData 中排除 children 和 data，避免类型冲突和数据覆盖
         const { children: _, data: __, ...restLayoutProps } = layoutLoadData;
-        // 调试：检查展开后的布局 props
-        console.log(`[Client Layout Debug] layout ${i} restLayoutProps:`, restLayoutProps);
         try {
           // 先尝试直接调用布局组件（支持异步组件）
-          // 布局的 load 数据直接展开，页面的 data 通过 data 字段传递
+          // data: 布局的 load 数据（layoutLoadData）
           const layoutProps = {
-            ...restLayoutProps, // 布局的 load 数据（例如 menus）
-            data: pageData || {}, // 页面的 data（例如 message, jsrPackageUrl）
+            ...restLayoutProps, // 布局的 load 数据中的其他属性（如果有）
+            data: layoutLoadData, // 布局的 load 数据（例如 menus）
             children: currentElement,
           };
-          // 调试：检查最终传递的 props
-          console.log(`[Client Layout Debug] layout ${i} final props:`, layoutProps);
         const layoutResult =
           (LayoutComponent as (props: { children: unknown; data: Record<string, unknown>; [key: string]: unknown }) => unknown)(layoutProps);
         // 如果布局组件返回 Promise，等待它
@@ -478,16 +471,16 @@ class ClientRenderer {
         } else {
           currentElement = layoutResult;
         }
-      } catch (layoutError) {
-        // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
-        console.warn(
-          "[nestLayoutComponents] 直接调用布局组件失败，尝试使用 jsx 函数:",
-          layoutError,
-        );
+        } catch (layoutError) {
+          // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
+          console.warn(
+            "[nestLayoutComponents] 直接调用布局组件失败，尝试使用 jsx 函数:",
+            layoutError,
+          );
         try {
           const layoutProps = {
-            ...restLayoutProps, // 布局的 load 数据
-            data: pageData || {}, // 页面的 data
+            ...restLayoutProps, // 布局的 load 数据中的其他属性（如果有）
+            data: layoutLoadData, // 布局的 load 数据（例如 menus）
             children: currentElement,
           };
           const layoutResult = this.jsxFunc(LayoutComponent, layoutProps);
@@ -520,14 +513,10 @@ class ClientRenderer {
     // 创建页面元素
     const pageElement = await this.createPageElement(PageComponent, props);
 
-    // 提取页面数据，用于传递给布局组件
-    const pageData = (props.data as Record<string, unknown> | undefined) || {};
-
-    // 嵌套布局组件，传递 pageData 和 layoutData
+    // 嵌套布局组件，传递 layoutData
     let finalElement = await this.nestLayoutComponents(
       LayoutComponents,
       pageElement,
-      pageData,
       layoutData,
     );
 
@@ -868,11 +857,15 @@ class ClientRouter {
         pageProps.store = store;
       }
 
+      // 获取布局的 load 数据（如果有）
+      const layoutData = pageData?.layoutData as Record<string, unknown>[] | undefined;
+      
       // 创建最终元素（使用渲染器的方法）
       const finalElement = await this.renderer.createFinalElement(
         PageComponent,
         LayoutComponents,
         pageProps,
+        layoutData,
       );
 
       // 检查目标页面的渲染模式
@@ -1337,6 +1330,7 @@ class BrowserClient {
       basePath: this.config.basePath,
       metadata: this.config.metadata,
       layout: this.config.layout,
+      layoutData: this.config.layoutData, // 布局的 load 数据
     };
 
     // 设置更新 meta 标签的函数
@@ -1518,11 +1512,15 @@ class BrowserClient {
         ? await this.renderer.loadLayoutComponents(currentPageData)
         : [];
 
+      // 获取布局的 load 数据（如果有）
+      const layoutData = currentPageData?.layoutData as Record<string, unknown>[] | undefined;
+
       // 创建最终元素（使用渲染器的方法，性能更好）
       const finalElement = await this.renderer.createFinalElement(
         PageComponent,
         LayoutComponents,
         pageProps,
+        layoutData,
       );
 
       if (actualMode === "csr") {
