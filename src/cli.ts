@@ -388,7 +388,6 @@ cli.command("start", "启动生产服务器")
     name: "host",
     description: "主机地址",
     requiresValue: true,
-    defaultValue: "0.0.0.0",
   })
   .action(async (args, options) => {
     const appName = await parseAppName(args, options);

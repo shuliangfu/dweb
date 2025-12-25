@@ -263,7 +263,9 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   }
   if (!config.server) {
     throw new Error("服务器配置 (server) 是必需的");
-  }
+	}
+	
+	// 创建服务器实例
   const server = new Server();
   const routeConfig = normalizeRouteConfig(config.routes);
   const router = new Router(
