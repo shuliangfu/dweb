@@ -6,7 +6,7 @@
 
 import Navbar from '@components/Navbar.tsx';
 import Footer from '@components/Footer.tsx';
-import type { LayoutProps, ComponentChildren } from '@dreamer/dweb';
+import type { LayoutProps } from '@dreamer/dweb';
 
 /**
  * 根布局组件
@@ -27,7 +27,7 @@ export default function RootLayout({ children }: LayoutProps) {
       
       {/* 主内容区域 */}
       <main className="grow">
-        {children as ComponentChildren}
+        {children}
       </main>
       
       {/* 页脚 */}

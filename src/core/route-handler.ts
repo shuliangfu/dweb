@@ -6,6 +6,7 @@
 import type {
   AppConfig,
   LayoutProps,
+  ComponentChildren,
   Middleware,
   RenderMode,
   Request,
@@ -1197,7 +1198,7 @@ export class RouteHandler {
   ): Promise<{
     renderMode: RenderMode;
     shouldHydrate: boolean;
-    LayoutComponents: ((props: { children: unknown }) => unknown)[];
+    LayoutComponents: ((props: LayoutProps) => unknown)[];
     layoutData: Record<string, unknown>[];
     layoutDisabled: boolean;
   }> {
@@ -1346,7 +1347,7 @@ export class RouteHandler {
       props: Record<string, unknown>,
     ) => unknown | Promise<unknown>,
     LayoutComponents:
-      ((props: { children: unknown }) => unknown | Promise<unknown>)[],
+      ((props: LayoutProps) => unknown | Promise<unknown>)[],
     layoutData: Record<string, unknown>[],
     pageProps: Record<string, unknown>,
     renderMode: RenderMode,
@@ -1392,11 +1393,15 @@ export class RouteHandler {
             // 支持异步布局组件：如果组件返回 Promise，则等待它
             // 将布局的 load 数据和页面数据作为 props 传递给布局组件
             // 布局数据直接展开，页面数据通过 data 字段传递（与页面组件保持一致）
+            // 确保 children 的类型正确，并且放在最后以避免被 layoutProps 覆盖
+            // 从 layoutProps 中排除 children，避免类型冲突
+            const { children: _, ...restLayoutProps } = layoutProps;
             const layoutPropsWithData: LayoutProps = {
-              children: currentElement,
-              ...layoutProps,
               // 将页面数据也传递给布局组件，方便布局访问页面数据
               data: pageData || {},
+              ...restLayoutProps,
+              // children 放在最后，确保类型正确且不被覆盖
+              children: currentElement as ComponentChildren,
             };
             const layoutResult = LayoutComponent(layoutPropsWithData);
             const layoutElement = layoutResult instanceof Promise

@@ -507,9 +507,24 @@ export interface PageProps {
 /**
  * 布局组件属性
  * 传递给布局组件的 props
- * 使用 type 和 Omit 避免索引签名覆盖 children 的类型
+ * 
+ * 注意：移除了索引签名，确保 children 的类型不会被覆盖
+ * 布局自己的 load 数据会通过展开运算符传递，可以通过接口扩展来定义具体类型
+ * 
+ * @example
+ * ```tsx
+ * // 扩展 LayoutProps 来添加自定义属性
+ * interface MyLayoutProps extends LayoutProps {
+ *   user: User;
+ *   theme: string;
+ * }
+ * 
+ * export default function MyLayout({ children, data, user, theme }: MyLayoutProps) {
+ *   return <div className={theme}>{children}</div>;
+ * }
+ * ```
  */
-export type LayoutProps = {
+export interface LayoutProps {
   /** 子元素（页面内容） */
   children: ComponentChildren;
   /** 页面数据（页面 load 函数返回的数据） */
@@ -518,4 +533,4 @@ export type LayoutProps = {
   lang?: string;
   /** 状态管理 Store（如果已配置 store 插件） */
   store?: import("../plugins/store/types.ts").Store;
-} & Omit<Record<string, unknown>, 'children' | 'data' | 'lang' | 'store'>;
+}
