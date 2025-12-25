@@ -46,7 +46,8 @@
     "@postgres": "npm:postgres@^3.4.3",
     "@mysql": "https://deno.land/x/mysql@v2.12.1/mod.ts",
     "@mongodb": "npm:mongodb@^6.3.0",
-    "sharp": "npm:sharp@^0.34.5"
+    "sharp": "npm:sharp@^0.34.5",
+    "chart": "npm:chart.js@4.4.7"
   },
 
   "compilerOptions": {

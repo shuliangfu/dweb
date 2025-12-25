@@ -187,28 +187,27 @@ export async function createImportMapScript(
       }
     }
     
-    // 为所有客户端包自动生成子路径映射
+    // 为所有客户端包自动生成常见的子路径映射
     // 根据 import map 规范，如果父包映射存在，子路径应该能够自动解析
-    // 但某些浏览器或 npm 包的实现可能不支持自动解析，所以我们需要显式添加
-    // 例如：chart -> npm:chart.js@4.4.7，自动生成 chart/auto -> npm:chart.js@4.4.7/auto
-    for (const [_packageName, packageUrl] of Object.entries(clientImports)) {
-      // 只处理 npm:、jsr:、http: 等远程包，不处理本地路径
-      if (
-        packageUrl.startsWith("npm:") ||
-        packageUrl.startsWith("jsr:") ||
-        packageUrl.startsWith("http://") ||
-        packageUrl.startsWith("https://")
-      ) {
-        // 为所有可能的子路径自动生成映射
-        // 注意：我们无法预知所有可能的子路径，但可以根据常见的模式生成
-        // 对于 npm 包，子路径通常是 /auto、/helpers、/utils 等
-        // 但为了通用性，我们只处理已经在 allImports 中定义的子路径
-        // 如果用户需要使用子路径，应该在 deno.json 中显式定义
-        // 例如：在 deno.json 中添加 "chart/auto": "npm:chart.js@4.4.7/auto"
-        
-        // 实际上，根据 import map 规范，如果父包映射存在，浏览器应该能够自动解析子路径
-        // 但如果浏览器不支持，我们需要显式添加
-        // 为了简化，我们只处理已经在 allImports 中定义的子路径
+    // 但转换后的 URL（如 https://esm.sh/chart.js@4.4.7）无法自动解析子路径
+    // 所以我们需要显式添加常见的子路径映射
+    // 例如：chart -> https://esm.sh/chart.js@4.4.7，自动生成 chart/auto -> https://esm.sh/chart.js@4.4.7/auto
+    const commonSubpaths = ["auto", "helpers", "utils", "types", "dist", "lib", "src"];
+    
+    for (const [packageName, packageUrl] of Object.entries(clientImports)) {
+      // 只处理已转换的 HTTP URL（npm: 和 jsr: 已经转换为 https://）
+      // 不处理本地路径
+      if (packageUrl.startsWith("https://") || packageUrl.startsWith("http://")) {
+        // 为常见的子路径自动生成映射
+        for (const subpath of commonSubpaths) {
+          const subpathKey = `${packageName}/${subpath}`;
+          // 如果子路径还没有在 clientImports 或 subpathImports 中，且不在 allImports 中（避免覆盖用户自定义的映射）
+          if (!(subpathKey in clientImports) && !(subpathKey in subpathImports) && !(subpathKey in allImports)) {
+            // 构建子路径 URL：在父包 URL 后添加子路径
+            const subpathUrl = `${packageUrl}/${subpath}`;
+            subpathImports[subpathKey] = subpathUrl;
+          }
+        }
       }
     }
     

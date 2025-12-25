@@ -12,6 +12,7 @@ import { useExampleStore } from "@store/example.ts";
 import { useEffect } from "preact/hooks";
 import { useThemeStore } from "@dreamer/dweb/client";
 import { twMerge } from "tailwind-merge";
+import Chart from "chart/auto";
 
 /**
  * 页面元数据（用于 SEO）
@@ -143,6 +144,7 @@ export default function HomePage(
 	console.log(mergedClassName);
 
 
+	console.log(Chart);
 
 
 
