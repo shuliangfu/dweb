@@ -259,6 +259,24 @@ export async function createImportMapScript(
       }
     }
     
+    // 为 @dreamer/dweb 自动生成客户端子路径映射（如果主包是 JSR URL）
+    // 例如：如果 @dreamer/dweb 是 jsr:@dreamer/dweb@^1.8.2-beta.1，自动生成 @dreamer/dweb/client 映射
+    if ("@dreamer/dweb" in allImports) {
+      const mainImport = allImports["@dreamer/dweb"];
+      if (mainImport.startsWith("jsr:")) {
+        // 如果主包是 JSR URL，自动为客户端子路径生成映射
+        if (!("@dreamer/dweb/client" in clientImports) && !("@dreamer/dweb/client" in subpathImports)) {
+          const clientJsrUrl = `${mainImport}/client`;
+          subpathImports["@dreamer/dweb/client"] = convertToBrowserUrl(clientJsrUrl);
+        }
+        // 自动为 extensions 生成映射
+        if (!("@dreamer/dweb/extensions" in clientImports) && !("@dreamer/dweb/extensions" in subpathImports)) {
+          const extensionsJsrUrl = `${mainImport}/extensions`;
+          subpathImports["@dreamer/dweb/extensions"] = convertToBrowserUrl(extensionsJsrUrl);
+        }
+      }
+    }
+    
     // 合并基础 imports 和子路径 imports
     // 注意：如果 deno.json 中没有显式定义子路径映射（如 chart/auto），
     // 根据 import map 规范，浏览器应该能够自动解析子路径
