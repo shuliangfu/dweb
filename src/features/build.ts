@@ -904,7 +904,6 @@ async function compileWithCodeSplitting(
       // 如果内容被修改，需要重新计算 hash 并写入文件
       if (modified) {
         hasChanges = true;
-        const newHash = await calculateHash(modifiedContent);
         // 判断是否是入口文件，决定文件名格式
         let isEntryFile = false;
         for (const originalEntryPoint of entryPoints) {
@@ -920,9 +919,17 @@ async function compileWithCodeSplitting(
           }
         }
         // 根据文件类型生成不同的文件名格式
-        // - 入口文件：hash.js
-        // - chunk 文件：chunk-hash.js
-        const newHashName = isEntryFile ? `${newHash}.js` : `chunk-${newHash}.js`;
+        // - 入口文件：使用内容 hash 命名（hash.js）
+        // - chunk 文件：保持使用 esbuild 的原始文件名（如 chunk-BNMXUETK.js）
+        // 注意：chunk 文件不应该因为内容修改而改变文件名，应该保持 esbuild 的原始文件名
+        let newHashName: string;
+        if (isEntryFile) {
+          const newHash = await calculateHash(modifiedContent);
+          newHashName = `${newHash}.js`;
+        } else {
+          // chunk 文件：保持使用原来的文件名（esbuild 的原始文件名）
+          newHashName = fileInfo.hashName;
+        }
         const newFinalOutputPath = path.join(outDir, newHashName);
         
         // 写入新文件
