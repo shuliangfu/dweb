@@ -1351,6 +1351,8 @@ export class RouteHandler {
     renderMode: RenderMode,
     req?: Request,
   ): Promise<string> {
+    // 提取页面数据，用于传递给布局组件
+    const pageData = pageProps.data as Record<string, unknown> | undefined;
     if (renderMode === "csr") {
       // CSR 模式：服务端只渲染容器，内容由客户端渲染
       return "";
@@ -1387,10 +1389,13 @@ export class RouteHandler {
             // 获取对应布局的 load 数据（如果有）
             const layoutProps = layoutData[i] || {};
             // 支持异步布局组件：如果组件返回 Promise，则等待它
-            // 将布局的 load 数据作为 props 传递给布局组件
+            // 将布局的 load 数据和页面数据作为 props 传递给布局组件
+            // 页面数据通过 pageData 字段传递，布局数据直接展开
             const layoutResult = LayoutComponent({ 
               children: currentElement,
               ...layoutProps,
+              // 将页面数据也传递给布局组件，方便布局访问页面数据
+              pageData: pageData || {},
             });
             const layoutElement = layoutResult instanceof Promise
               ? await layoutResult
