@@ -448,22 +448,28 @@ class ClientRenderer {
       return pageElement;
     }
 
-    // 从最内层到最外层嵌套布局组件
-    let currentElement = pageElement;
-    for (let i = 0; i < LayoutComponents.length; i++) {
-      const LayoutComponent = LayoutComponents[i];
-      // 获取对应布局的 load 数据（如果有）
-      const layoutLoadData = layoutData?.[i] || {};
-      // 从 layoutLoadData 中排除 children 和 data，避免类型冲突和数据覆盖
-      const { children: _, data: __, ...restLayoutProps } = layoutLoadData;
-      try {
-        // 先尝试直接调用布局组件（支持异步组件）
-        // 布局的 load 数据直接展开，页面的 data 通过 data 字段传递
-        const layoutProps = {
-          ...restLayoutProps, // 布局的 load 数据
-          data: pageData || {}, // 页面的 data
-          children: currentElement,
-        };
+      // 从最内层到最外层嵌套布局组件
+      let currentElement = pageElement;
+      for (let i = 0; i < LayoutComponents.length; i++) {
+        const LayoutComponent = LayoutComponents[i];
+        // 获取对应布局的 load 数据（如果有）
+        const layoutLoadData = layoutData?.[i] || {};
+        // 调试：检查布局的 load 数据
+        console.log(`[Client Layout Debug] layout ${i} load data:`, layoutLoadData);
+        // 从 layoutLoadData 中排除 children 和 data，避免类型冲突和数据覆盖
+        const { children: _, data: __, ...restLayoutProps } = layoutLoadData;
+        // 调试：检查展开后的布局 props
+        console.log(`[Client Layout Debug] layout ${i} restLayoutProps:`, restLayoutProps);
+        try {
+          // 先尝试直接调用布局组件（支持异步组件）
+          // 布局的 load 数据直接展开，页面的 data 通过 data 字段传递
+          const layoutProps = {
+            ...restLayoutProps, // 布局的 load 数据（例如 menus）
+            data: pageData || {}, // 页面的 data（例如 message, jsrPackageUrl）
+            children: currentElement,
+          };
+          // 调试：检查最终传递的 props
+          console.log(`[Client Layout Debug] layout ${i} final props:`, layoutProps);
         const layoutResult =
           (LayoutComponent as (props: { children: unknown; data: Record<string, unknown>; [key: string]: unknown }) => unknown)(layoutProps);
         // 如果布局组件返回 Promise，等待它
