@@ -7,9 +7,11 @@
  * 参考 Preact 的类型定义：
  * - ComponentChild = VNode<any> | object | string | number | bigint | boolean | null | undefined
  * - ComponentChildren = ComponentChild[] | ComponentChild
+ * 
+ * 注意：使用 any 代替 unknown，避免类型推断失败
  */
 export type ComponentChild =
-  | unknown // VNode<any> 类型（在类型定义文件中使用 unknown 代替）
+  | any // VNode<any> 类型（在类型定义文件中使用 any 代替 unknown，避免类型推断失败）
   | object
   | string
   | number
