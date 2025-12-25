@@ -73,8 +73,8 @@ export function staticFiles(options: StaticOptions): Middleware {
     const dirName = path.basename(dir);
     prefix = `/${dirName}`;
 	}
-  
-  // 处理 extendDirs：支持字符串或对象格式
+
+	// 处理 extendDirs：支持字符串或对象格式
   interface NormalizedExtendDir {
     dir: string; // 绝对路径
     prefix: string; // URL 前缀

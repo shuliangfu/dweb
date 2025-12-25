@@ -271,8 +271,8 @@ export async function startProdServer(config: AppConfig): Promise<void> {
     routeConfig.ignore,
     config.basePath,
     routeConfig.apiDir,
-  );
-
+	);
+	
   // 检查是否存在构建输出目录和路由映射文件（生产环境）
   let outDir = config.build!.outDir;
   if (await isMultiAppMode()) {
@@ -421,7 +421,13 @@ export async function startProdServer(config: AppConfig): Promise<void> {
 
   // 添加静态资源中间件（从构建输出目录）
   // 使用 config.static 配置，如果没有配置则使用默认值 'assets'
-  const staticDir = config.static?.dir || "assets";
+  let staticDir;
+	if (await isMultiAppMode()) {
+		staticDir = config.static?.dir || config.name + "/assets";
+	} else { 
+		staticDir = config.static?.dir || "assets";
+	}
+
   // 构建完整路径用于检查目录是否存在
   const assetsPath = path.join(config.build!.outDir, staticDir);
 
@@ -433,14 +439,16 @@ export async function startProdServer(config: AppConfig): Promise<void> {
     ) {
       // 如果配置了 static，使用完整配置（但更新 dir 为构建输出路径）；否则使用默认配置
       // 生产环境：传入 outDir 和 isProduction: true，让中间件自动构建完整路径
-      if (config.static) {
+			if (config.static) {
+				console.log("1.....");
         middlewareManager.add(staticFiles({
           ...config.static,
           dir: staticDir, // 使用相对路径（如 'assets'），中间件会根据 outDir 自动构建完整路径
           outDir: config.build!.outDir,
           isProduction: true,
         }));
-      } else {
+			} else {
+				console.log("2.....");
         middlewareManager.add(staticFiles({
           dir: staticDir, // 使用相对路径（如 'assets'），中间件会根据 outDir 自动构建完整路径
           outDir: config.build!.outDir,

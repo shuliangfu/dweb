@@ -12,10 +12,7 @@ import { crypto } from "@std/crypto";
 import * as path from "@std/path";
 import { logger } from "../utils/logger.ts";
 import { removeLoadOnlyImports } from "../utils/module.ts";
-import {
-  buildFromStdin,
-  buildFromEntryPoints,
-} from "../utils/esbuild.ts";
+import { buildFromEntryPoints, buildFromStdin } from "../utils/esbuild.ts";
 import * as esbuild from "esbuild";
 import { isMultiAppMode } from "../core/config.ts";
 
@@ -405,7 +402,7 @@ async function compileFile(
       // 读取 deno.json 或 deno.jsonc 获取 import map（用于解析外部依赖）
       let importMap: Record<string, string> = {};
       try {
-        const { readDenoJson } = await import('../utils/file.ts');
+        const { readDenoJson } = await import("../utils/file.ts");
         const denoJson = await readDenoJson(cwd);
         if (denoJson && denoJson.imports) {
           importMap = denoJson.imports;
@@ -577,7 +574,7 @@ async function compileWithCodeSplitting(
   // - client: 通过 esbuild 插件拦截文件加载，移除 load 函数后返回代码内容
   // 使用原始文件路径作为入口点，通过插件处理代码内容
   const finalEntryPoints = entryPoints;
-  
+
   // 为 client 版本创建插件，拦截文件加载并移除 load 函数
   const loadInterceptorPlugin: esbuild.Plugin | null = target === "client"
     ? {
@@ -585,7 +582,7 @@ async function compileWithCodeSplitting(
       setup(build: esbuild.PluginBuild) {
         // 缓存处理后的代码内容
         const processedCodeCache = new Map<string, string>();
-        
+
         // 拦截所有入口文件的加载
         build.onLoad(
           { filter: /.*/, namespace: "file" },
@@ -594,30 +591,34 @@ async function compileWithCodeSplitting(
             if (!entryPoints.includes(args.path)) {
               return undefined; // 使用默认加载
             }
-            
+
             // 检查缓存
             if (processedCodeCache.has(args.path)) {
               const cachedCode = processedCodeCache.get(args.path)!;
               const ext = path.extname(args.path);
-              const loader = ext === ".tsx" ? "tsx" : ext === ".ts" ? "ts" : "js";
+              const loader = ext === ".tsx"
+                ? "tsx"
+                : ext === ".ts"
+                ? "ts"
+                : "js";
               return {
                 contents: cachedCode,
                 loader,
               };
             }
-            
+
             // 读取原始文件内容
             const sourceCode = await Deno.readTextFile(args.path);
             // 移除 load 函数
             const clientSourceCode = removeLoadOnlyImports(sourceCode);
-            
+
             // 缓存处理后的代码
             processedCodeCache.set(args.path, clientSourceCode);
-            
+
             // 确定 loader
             const ext = path.extname(args.path);
             const loader = ext === ".tsx" ? "tsx" : ext === ".ts" ? "ts" : "js";
-            
+
             return {
               contents: clientSourceCode,
               loader,
@@ -651,7 +652,10 @@ async function compileWithCodeSplitting(
   let compiled = 0;
   const chunkMap = new Map<string, string>(); // 原始路径 -> 输出文件名（入口文件是 hash.js，chunk 文件是 esbuild 文件名）
   const chunkFileMap = new Map<string, string>(); // esbuild chunk 路径 -> 输出文件名（用于替换代码中的引用）
-  let fileInfoMap = new Map<string, { hash: string; hashName: string; content: string; relativePath: string }>(); // 文件信息映射
+  let fileInfoMap = new Map<
+    string,
+    { hash: string; hashName: string; content: string; relativePath: string }
+  >(); // 文件信息映射
 
   // 根据 target 确定前缀（server/ 或 client/）
   const prefix = `${target}/`;
@@ -661,7 +665,7 @@ async function compileWithCodeSplitting(
   const esbuildPathToHashMap = new Map<string, string>();
   // 创建一个映射：内容 hash -> 输出文件名（仅用于入口文件，用于缓存等）
   const contentHashToFileNameMap = new Map<string, string>();
-  
+
   for (const outputFile of result.outputFiles) {
     const outputPath = outputFile.path;
     const content = outputFile.text;
@@ -672,10 +676,10 @@ async function compileWithCodeSplitting(
     // 所以 relativeToOutdir 应该是 routes/index.js
     const relativeToOutdir = path.relative(outDir, outputPath);
     const relativeToOutdirNormalized = relativeToOutdir.replace(/[\/\\]/g, "/");
-    
+
     // 提取 esbuild 生成的文件名（例如：chunk-RF5DZGEJ.js）
     const esbuildFileName = path.basename(relativeToOutdirNormalized);
-    
+
     // 判断是否是入口文件，并记录匹配的入口文件路径
     let isEntryFile = false;
     let matchedEntryPoint: string | null = null;
@@ -684,22 +688,24 @@ async function compileWithCodeSplitting(
       const entryRelative = path.relative(cwd, originalEntryPoint);
       const entryPathWithoutExt = entryRelative.replace(/\.(tsx?|jsx?)$/, "");
       const entryPathNormalized = entryPathWithoutExt.replace(/[\/\\]/g, "/");
-      
+
       // 检查输出路径是否匹配入口文件路径
       // esbuild 代码分割时，输出路径相对于 outdir 应该等于入口文件路径（相对于 cwd）+ .js
       // 例如：routes/index.js 应该匹配 routes/index
       // 或者：routes/index 应该匹配 routes/index（无扩展名的情况）
       // 或者：routes/index/chunk.js 应该匹配 routes/index（共享 chunk）
-      if (relativeToOutdirNormalized === entryPathNormalized + ".js" ||
-          relativeToOutdirNormalized.startsWith(entryPathNormalized + ".") ||
-          relativeToOutdirNormalized === entryPathNormalized ||
-          relativeToOutdirNormalized.startsWith(entryPathNormalized + "/")) {
+      if (
+        relativeToOutdirNormalized === entryPathNormalized + ".js" ||
+        relativeToOutdirNormalized.startsWith(entryPathNormalized + ".") ||
+        relativeToOutdirNormalized === entryPathNormalized ||
+        relativeToOutdirNormalized.startsWith(entryPathNormalized + "/")
+      ) {
         isEntryFile = true;
         matchedEntryPoint = originalEntryPoint;
         break;
       }
     }
-    
+
     // 根据文件类型生成不同的文件名格式
     // - 入口文件：使用内容 hash 命名（hash.js）
     // - chunk 文件：直接使用 esbuild 生成的文件名（如 chunk-RF5DZGEJ.js）
@@ -715,17 +721,17 @@ async function compileWithCodeSplitting(
       hashName = esbuildFileName;
     }
     const finalOutputPath = path.join(outDir, hashName);
-    
+
     // 记录 esbuild 路径到输出文件名的映射（用于替换所有相对路径引用）
     esbuildPathToHashMap.set(relativeToOutdirNormalized, hashName);
-    
+
     // 对于入口文件，记录内容 hash 到 hash 文件名的映射（用于缓存等）
     // 对于 chunk 文件，不需要记录 hash，因为直接使用 esbuild 的文件名
     if (isEntryFile) {
       const fileHash = await calculateHash(content);
       contentHashToFileNameMap.set(fileHash, hashName);
     }
-    
+
     // 保存文件信息
     const fileHash = isEntryFile ? await calculateHash(content) : ""; // chunk 文件不需要 hash
     fileInfoMap.set(relativeToOutdirNormalized, {
@@ -734,7 +740,7 @@ async function compileWithCodeSplitting(
       content,
       relativePath: relativeToOutdirNormalized,
     });
-    
+
     if (isEntryFile && matchedEntryPoint) {
       // 根据 target 添加前缀（server/ 或 client/）
       const hashNameWithPrefix = `${prefix}${hashName}`;
@@ -756,35 +762,38 @@ async function compileWithCodeSplitting(
       // hashName 是 esbuild 生成的文件名（如 chunk-BNMXUETK.js）
       chunkFileMap.set(relativeToOutdirNormalized, hashName);
     }
-    
+
     // 写入文件（所有文件都需要写入，包括入口文件和共享 chunk）
     await Deno.writeTextFile(finalOutputPath, content);
   }
-  
+
   // 第二遍循环：替换所有文件中的 chunk 引用
   // 需要多遍处理，因为 chunk 文件可能也引用了其他 chunk 文件
   let hasChanges = true;
   let iteration = 0;
   const maxIterations = 10; // 防止无限循环
-  
+
   // 创建一个可变的 contentHashToFileNameMap 副本，用于在迭代中更新
   // 注意：这里必须使用深拷贝，因为 Map 的浅拷贝可能不会正确复制所有条目
   const currentContentHashToFileNameMap = new Map<string, string>();
   for (const [hash, fileName] of contentHashToFileNameMap.entries()) {
     currentContentHashToFileNameMap.set(hash, fileName);
   }
-  
+
   while (hasChanges && iteration < maxIterations) {
     hasChanges = false;
     iteration++;
-    
+
     // 创建新的文件信息映射，用于存储修改后的文件
-    const newFileInfoMap = new Map<string, { hash: string; hashName: string; content: string; relativePath: string }>();
-    
+    const newFileInfoMap = new Map<
+      string,
+      { hash: string; hashName: string; content: string; relativePath: string }
+    >();
+
     for (const [relativePath, fileInfo] of fileInfoMap.entries()) {
       let modifiedContent = fileInfo.content;
       let modified = false;
-      
+
       // 替换所有相对路径的 .js 文件引用
       // esbuild 代码分割时，会生成相对路径引用，如：
       // - from "../../../chunk-XXXXX.js" (esbuild 原始文件名)
@@ -795,7 +804,7 @@ async function compileWithCodeSplitting(
       for (const [esbuildPath, hashName] of esbuildPathToHashMap.entries()) {
         // 提取文件名（去掉路径，只保留文件名）
         const fileName = path.basename(esbuildPath);
-        
+
         // 替换代码中的相对路径引用（匹配 esbuild 原始文件名）
         // 匹配各种格式：
         // - from "../../../chunk-XXXXX.js" (相对路径)
@@ -805,91 +814,107 @@ async function compileWithCodeSplitting(
         // 匹配任意数量的 ../ 或 ./
         // 注意：只匹配相对路径，不匹配绝对路径或外部依赖
         const pathRegex = new RegExp(
-          `(["'])(\\.\\.?/)+${fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(["'])`,
-          'gi' // 使用 i 标志进行大小写不敏感匹配
+          `(["'])(\\.\\.?/)+${
+            fileName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+          }(["'])`,
+          "gi", // 使用 i 标志进行大小写不敏感匹配
         );
         const newPath = `./${hashName}`;
-        const newContent = modifiedContent.replace(pathRegex, (_match, quote1, _prefix, quote2) => {
-          modified = true;
-          return `${quote1}${newPath}${quote2}`;
-        });
+        const newContent = modifiedContent.replace(
+          pathRegex,
+          (_match, quote1, _prefix, quote2) => {
+            modified = true;
+            return `${quote1}${newPath}${quote2}`;
+          },
+        );
         modifiedContent = newContent;
-        
+
         // 同时，也要匹配可能的 hash 文件名（入口文件的 hash 文件名）
         // 注意：这里我们只匹配纯 hash 文件名（15 位十六进制，因为 calculateHash 返回 15 个字符），不匹配 chunk- 前缀的
         // 因为 chunk- 前缀的是 esbuild 生成的文件名格式
         if (/^[a-f0-9]{15}\.js$/i.test(fileName)) {
           // 这是一个 hash 文件名，可能是入口文件的 hash 文件名
           // 我们需要检查这个 hash 是否对应某个文件的内容
-          const hashFromFileName = fileName.replace(/\.js$/, '');
+          const hashFromFileName = fileName.replace(/\.js$/, "");
           // 检查这个 hash 是否在我们的映射中（通过内容 hash 匹配）
           for (const [, info] of fileInfoMap.entries()) {
             if (info.hash === hashFromFileName) {
               // 找到了对应的文件，替换引用
               const hashFileNameRegex = new RegExp(
-                `(["'])(\\.\\.?/)+${fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(["'])`,
-                'gi'
+                `(["'])(\\.\\.?/)+${
+                  fileName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+                }(["'])`,
+                "gi",
               );
-              modifiedContent = modifiedContent.replace(hashFileNameRegex, (_match, quote1, _prefix, quote2) => {
-                modified = true;
-                return `${quote1}./${hashName}${quote2}`;
-              });
+              modifiedContent = modifiedContent.replace(
+                hashFileNameRegex,
+                (_match, quote1, _prefix, quote2) => {
+                  modified = true;
+                  return `${quote1}./${hashName}${quote2}`;
+                },
+              );
               break;
             }
           }
         }
       }
-      
+
       // 同时，也要替换已经被替换为文件名的引用（如入口文件的 hash 文件名）
       // 这些引用可能是之前迭代中生成的
       // 匹配所有相对路径的文件名引用（15 位十六进制字符，因为 calculateHash 返回 15 个字符）
       // 注意：这里我们需要通过原始 esbuild 文件名来匹配，而不是依赖 hash，因为 hash 可能在迭代中改变
-      const hashFileNameRegex = /(["'])(\.\.?\/)+(chunk-)?([a-f0-9]{15}\.js)(["'])/gi;
-      modifiedContent = modifiedContent.replace(hashFileNameRegex, (match, quote1, _prefix, chunkPrefix, hashFileName, quote2) => {
-        // 构建完整的文件名（包括可能的 chunk- 前缀）
-        const fullFileName = chunkPrefix ? `chunk-${hashFileName}` : hashFileName;
-        
-        // 提取 hash 值（去掉 .js 扩展名）
-        const hashFromFileName = hashFileName.replace(/\.js$/, '');
-        
-        // 首先，查找这个文件名对应的原始 esbuild 路径
-        // 注意：这里我们需要通过 fileInfoMap 来查找，因为 hash 可能在迭代中改变
-        for (const [, hashName] of esbuildPathToHashMap.entries()) {
-          if (hashName === fullFileName) {
-            // 如果找到了对应的映射，保持使用当前的文件名（因为可能已经被更新）
-            modified = true;
-            return `${quote1}./${hashName}${quote2}`;
+      const hashFileNameRegex =
+        /(["'])(\.\.?\/)+(chunk-)?([a-f0-9]{15}\.js)(["'])/gi;
+      modifiedContent = modifiedContent.replace(
+        hashFileNameRegex,
+        (match, quote1, _prefix, chunkPrefix, hashFileName, quote2) => {
+          // 构建完整的文件名（包括可能的 chunk- 前缀）
+          const fullFileName = chunkPrefix
+            ? `chunk-${hashFileName}`
+            : hashFileName;
+
+          // 提取 hash 值（去掉 .js 扩展名）
+          const hashFromFileName = hashFileName.replace(/\.js$/, "");
+
+          // 首先，查找这个文件名对应的原始 esbuild 路径
+          // 注意：这里我们需要通过 fileInfoMap 来查找，因为 hash 可能在迭代中改变
+          for (const [, hashName] of esbuildPathToHashMap.entries()) {
+            if (hashName === fullFileName) {
+              // 如果找到了对应的映射，保持使用当前的文件名（因为可能已经被更新）
+              modified = true;
+              return `${quote1}./${hashName}${quote2}`;
+            }
           }
-        }
-        // 如果没有找到对应的映射，说明这个文件可能还没有被写入
-        // 检查一下这个文件名是否在 fileInfoMap 中（可能是之前的迭代中生成的）
-        for (const [, info] of fileInfoMap.entries()) {
-          if (info.hashName === fullFileName) {
-            modified = true;
-            return `${quote1}./${info.hashName}${quote2}`;
+          // 如果没有找到对应的映射，说明这个文件可能还没有被写入
+          // 检查一下这个文件名是否在 fileInfoMap 中（可能是之前的迭代中生成的）
+          for (const [, info] of fileInfoMap.entries()) {
+            if (info.hashName === fullFileName) {
+              modified = true;
+              return `${quote1}./${info.hashName}${quote2}`;
+            }
           }
-        }
-        // 如果仍然没有找到，尝试通过内容 hash 匹配（可能是入口文件的 hash 文件名）
-        // 注意：这里我们需要检查 fileInfoMap 中是否有匹配的 hash，因为 hash 可能在迭代中改变
-        // 但是，如果 hash 改变了，那么 fileInfoMap 中的 hash 也会改变，所以我们需要检查所有可能的 hash
-        // 实际上，我们应该通过 esbuild 原始文件名来匹配，而不是依赖 hash
-        // 但是，esbuild 生成的代码中可能直接引用了 hash 文件名，所以我们需要通过 hash 来匹配
-        // 解决方案：在 fileInfoMap 中查找所有可能的 hash，然后匹配对应的文件名
-        for (const [, info] of fileInfoMap.entries()) {
-          // 检查这个 hash 是否匹配任何文件的内容 hash（可能是之前的迭代中生成的）
-          // 注意：这里我们检查的是 fileInfoMap 中的 hash，而不是 currentContentHashToFileNameMap
-          // 因为 currentContentHashToFileNameMap 可能在迭代中被更新，导致旧的 hash 被删除
-          if (info.hash === hashFromFileName) {
-            // 找到了对应的文件（通过内容 hash 匹配），替换为正确的文件名
-            modified = true;
-            return `${quote1}./${info.hashName}${quote2}`;
+          // 如果仍然没有找到，尝试通过内容 hash 匹配（可能是入口文件的 hash 文件名）
+          // 注意：这里我们需要检查 fileInfoMap 中是否有匹配的 hash，因为 hash 可能在迭代中改变
+          // 但是，如果 hash 改变了，那么 fileInfoMap 中的 hash 也会改变，所以我们需要检查所有可能的 hash
+          // 实际上，我们应该通过 esbuild 原始文件名来匹配，而不是依赖 hash
+          // 但是，esbuild 生成的代码中可能直接引用了 hash 文件名，所以我们需要通过 hash 来匹配
+          // 解决方案：在 fileInfoMap 中查找所有可能的 hash，然后匹配对应的文件名
+          for (const [, info] of fileInfoMap.entries()) {
+            // 检查这个 hash 是否匹配任何文件的内容 hash（可能是之前的迭代中生成的）
+            // 注意：这里我们检查的是 fileInfoMap 中的 hash，而不是 currentContentHashToFileNameMap
+            // 因为 currentContentHashToFileNameMap 可能在迭代中被更新，导致旧的 hash 被删除
+            if (info.hash === hashFromFileName) {
+              // 找到了对应的文件（通过内容 hash 匹配），替换为正确的文件名
+              modified = true;
+              return `${quote1}./${info.hashName}${quote2}`;
+            }
           }
-        }
-        // 如果仍然没有找到，说明这个文件确实不存在，这不应该发生
-        // 为了安全起见，我们保持原样，不输出警告（因为可能是正常的迭代过程）
-        return match;
-      });
-      
+          // 如果仍然没有找到，说明这个文件确实不存在，这不应该发生
+          // 为了安全起见，我们保持原样，不输出警告（因为可能是正常的迭代过程）
+          return match;
+        },
+      );
+
       // 如果内容被修改，需要重新计算 hash 并写入文件
       if (modified) {
         hasChanges = true;
@@ -897,12 +922,20 @@ async function compileWithCodeSplitting(
         let isEntryFile = false;
         for (const originalEntryPoint of entryPoints) {
           const entryRelative = path.relative(cwd, originalEntryPoint);
-          const entryPathWithoutExt = entryRelative.replace(/\.(tsx?|jsx?)$/, "");
-          const entryPathNormalized = entryPathWithoutExt.replace(/[\/\\]/g, "/");
-          if (relativePath === entryPathNormalized + ".js" ||
-              relativePath.startsWith(entryPathNormalized + ".") ||
-              relativePath === entryPathNormalized ||
-              relativePath.startsWith(entryPathNormalized + "/")) {
+          const entryPathWithoutExt = entryRelative.replace(
+            /\.(tsx?|jsx?)$/,
+            "",
+          );
+          const entryPathNormalized = entryPathWithoutExt.replace(
+            /[\/\\]/g,
+            "/",
+          );
+          if (
+            relativePath === entryPathNormalized + ".js" ||
+            relativePath.startsWith(entryPathNormalized + ".") ||
+            relativePath === entryPathNormalized ||
+            relativePath.startsWith(entryPathNormalized + "/")
+          ) {
             isEntryFile = true;
             break;
           }
@@ -919,15 +952,15 @@ async function compileWithCodeSplitting(
           newHashName = fileInfo.hashName;
         }
         const newFinalOutputPath = path.join(outDir, newHashName);
-        
+
         // 写入新文件
         await Deno.writeTextFile(newFinalOutputPath, modifiedContent);
-        
+
         // 更新 chunk 文件映射（如果这个文件是 chunk 文件）
         if (chunkFileMap.has(relativePath)) {
           chunkFileMap.set(relativePath, newHashName);
         }
-        
+
         // 更新 esbuildPathToHashMap（如果这个文件的 hash 改变了）
         if (esbuildPathToHashMap.has(relativePath)) {
           esbuildPathToHashMap.set(relativePath, newHashName);
@@ -943,26 +976,36 @@ async function compileWithCodeSplitting(
             currentContentHashToFileNameMap.set(newHash, newHashName);
           }
         }
-        
+
         // 更新文件信息映射
-        const updatedHash = isEntryFile ? await calculateHash(modifiedContent) : ""; // chunk 文件不需要 hash
+        const updatedHash = isEntryFile
+          ? await calculateHash(modifiedContent)
+          : ""; // chunk 文件不需要 hash
         newFileInfoMap.set(relativePath, {
           hash: updatedHash,
           hashName: newHashName,
           content: modifiedContent,
           relativePath: relativePath,
         });
-        
+
         // 更新文件映射（如果是入口文件）
         for (const originalEntryPoint of entryPoints) {
           const entryRelative = path.relative(cwd, originalEntryPoint);
-          const entryPathWithoutExt = entryRelative.replace(/\.(tsx?|jsx?)$/, "");
-          const entryPathNormalized = entryPathWithoutExt.replace(/[\/\\]/g, "/");
-          
-          if (relativePath === entryPathNormalized + ".js" ||
-              relativePath.startsWith(entryPathNormalized + ".") ||
-              relativePath === entryPathNormalized ||
-              relativePath.startsWith(entryPathNormalized + "/")) {
+          const entryPathWithoutExt = entryRelative.replace(
+            /\.(tsx?|jsx?)$/,
+            "",
+          );
+          const entryPathNormalized = entryPathWithoutExt.replace(
+            /[\/\\]/g,
+            "/",
+          );
+
+          if (
+            relativePath === entryPathNormalized + ".js" ||
+            relativePath.startsWith(entryPathNormalized + ".") ||
+            relativePath === entryPathNormalized ||
+            relativePath.startsWith(entryPathNormalized + "/")
+          ) {
             const hashNameWithPrefix = `${prefix}${newHashName}`;
             if (target === "client") {
               fileMap.set(`${originalEntryPoint}.client`, hashNameWithPrefix);
@@ -973,12 +1016,12 @@ async function compileWithCodeSplitting(
             break;
           }
         }
-        
+
         // 更新 esbuildPathToHashMap（如果这个文件的 hash 改变了）
         if (esbuildPathToHashMap.has(relativePath)) {
           esbuildPathToHashMap.set(relativePath, newHashName);
         }
-        
+
         // 删除旧文件（如果 hash 改变了）
         if (fileInfo.hashName !== newHashName) {
           const oldFinalOutputPath = path.join(outDir, fileInfo.hashName);
@@ -993,7 +1036,7 @@ async function compileWithCodeSplitting(
         newFileInfoMap.set(relativePath, fileInfo);
       }
     }
-    
+
     // 更新文件信息映射
     fileInfoMap = newFileInfoMap;
   }
@@ -1046,14 +1089,13 @@ async function compileDirectory(
     }
   }
 
-
   // 如果启用代码分割，使用批量编译
   if (codeSplitting && files.length > 1) {
     // 读取 deno.json 或 deno.jsonc 获取 import map
     const cwd = Deno.cwd();
     let importMap: Record<string, string> = {};
     try {
-      const { readDenoJson } = await import('../utils/file.ts');
+      const { readDenoJson } = await import("../utils/file.ts");
       const denoJson = await readDenoJson(cwd);
       if (denoJson && denoJson.imports) {
         importMap = denoJson.imports;
@@ -1069,7 +1111,9 @@ async function compileDirectory(
         "代码分割不支持 target='both'，请分别编译 server 和 client 版本",
       );
     }
-    console.log(`🔀 启用代码分割，批量编译 ${files.length} 个文件 (${target})...`);
+    console.log(
+      `🔀 启用代码分割，批量编译 ${files.length} 个文件 (${target})...`,
+    );
     const result = await compileWithCodeSplitting(
       files,
       absoluteOutDir,
@@ -1136,7 +1180,6 @@ async function compileDirectory(
         }),
       );
     }
-
   } else {
     // 串行编译（用于调试或小文件数量）
     let cachedCount = 0;
@@ -1156,7 +1199,6 @@ async function compileDirectory(
         compiledCount++;
       }
     }
-
   }
 }
 
@@ -1513,18 +1555,19 @@ export async function build(config: AppConfig): Promise<void> {
 async function buildApp(config: AppConfig): Promise<void> {
   if (!config.build) {
     throw new Error("构建配置 (build) 是必需的");
-	}
-	
+  }
 
-
-	const isMultApp = await isMultiAppMode();
+  const isMultApp = await isMultiAppMode();
 
   let outDir: string = config.build.outDir;
 
-	if (isMultApp) {
-		outDir = outDir + "/" + config.name;
-	}
-
+  let staticDir;
+  if (isMultApp) {
+    outDir = outDir + "/" + config.name;
+    staticDir = config.static?.dir || config.name + "/assets";
+  } else {
+    staticDir = config.static?.dir || "assets";
+  }
 
   console.log(`\n📦 构建输出目录: ${outDir}`);
 
@@ -1544,15 +1587,14 @@ async function buildApp(config: AppConfig): Promise<void> {
 
   // 1. 复制静态资源（保持原文件名，不 hash 化）
   // 先复制所有文件（包括 CSS），Tailwind 插件构建时会覆盖 tailwind.css
-  const staticDir = config.static?.dir || "assets";
+
   // 在多应用模式下，static.dir 已经包含了 path（在 config.ts 中已处理）
   // 输出目录直接使用 staticDir（已经包含 path）
   const staticOutDir = path.join(config.build.outDir, staticDir);
   const compressAssets = config.build?.compress === true;
   const imageQuality = config.build?.imageQuality || 80;
 
-
-	// console.log({ staticDir, staticOutDir, outDir });
+  console.log({ staticDir, staticOutDir, outDir });
 
   try {
     await ensureDir(staticOutDir);
@@ -1598,7 +1640,9 @@ async function buildApp(config: AppConfig): Promise<void> {
         `   ✅ 静态资源处理完成 (${staticDir}): ${compressedCount} 个已压缩, ${copiedCount} 个已复制`,
       );
     } else {
-      console.log(`   ✅ 复制静态资源完成 (${staticDir}): ${copiedCount} 个文件`);
+      console.log(
+        `   ✅ 复制静态资源完成 (${staticDir}): ${copiedCount} 个文件`,
+      );
     }
   } catch {
     // 静态资源目录不存在时忽略错误
@@ -1660,7 +1704,9 @@ async function buildApp(config: AppConfig): Promise<void> {
       minChunkSize,
       "client",
     );
-    console.log(`   ✅ 编译路由文件完成 (${routesDir}) - server 和 client 版本`);
+    console.log(
+      `   ✅ 编译路由文件完成 (${routesDir}) - server 和 client 版本`,
+    );
   } catch (error) {
     console.warn(`⚠️  路由目录编译失败: ${routesDir}`, error);
   }
@@ -1698,7 +1744,9 @@ async function buildApp(config: AppConfig): Promise<void> {
           minChunkSize,
           "client",
         );
-        console.log(`   ✅ 编译 API 文件完成 (${apiDir}) - server 和 client 版本`);
+        console.log(
+          `   ✅ 编译 API 文件完成 (${apiDir}) - server 和 client 版本`,
+        );
       }
     } catch (error) {
       console.warn(`⚠️  API 目录编译失败: ${apiDir}`, error);

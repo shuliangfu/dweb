@@ -76,8 +76,7 @@ async function processCSS(
 function injectCSSLink(
   res: Response,
   cssPath: string,
-  staticPrefix?: string,
-  staticDir?: string,
+  staticPrefix: string,
 ): void {
   // 只处理 HTML 响应
   if (!res.body || typeof res.body !== "string") {
@@ -92,36 +91,11 @@ function injectCSSLink(
   try {
     const html = res.body as string;
 
+		// 获取 CSS 文件名
+    const filename = path.basename(cssPath);
+
     // 构建 CSS 文件 URL
-    let cssUrl: string;
-
-    if (staticPrefix) {
-      // 如果配置了 static prefix
-      // 检查 cssPath 是否已经包含了 staticDir 前缀，如果包含则移除
-      let normalizedPath = cssPath;
-      if (staticDir && cssPath.startsWith(staticDir + "/")) {
-        // 移除 staticDir 前缀，只保留文件名部分
-        normalizedPath = cssPath.slice(staticDir.length + 1);
-      } else if (staticDir && cssPath.startsWith("/" + staticDir + "/")) {
-        // 移除 /staticDir 前缀
-        normalizedPath = cssPath.slice(staticDir.length + 2);
-      }
-
-      // 确保路径以 / 开头
-      if (!normalizedPath.startsWith("/")) {
-        normalizedPath = "/" + normalizedPath;
-      }
-
-      // 确保 staticPrefix 以 / 开头但不以 / 结尾
-      const normalizedPrefix = staticPrefix.endsWith("/")
-        ? staticPrefix.slice(0, -1)
-        : staticPrefix;
-
-      cssUrl = `${normalizedPrefix}${normalizedPath}`;
-    } else {
-      // 没有配置 static prefix，直接使用路径
-      cssUrl = cssPath.startsWith("/") ? cssPath : "/" + cssPath;
-    }
+    const cssUrl = path.join(staticPrefix, filename);
 
     const linkTag = `<link rel="stylesheet" href="${cssUrl}" />`;
 
@@ -210,7 +184,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
       if (isProduction) {
         const cssPath = options.cssPath || "tailwind.css";
         // 注入 CSS link 标签
-        injectCSSLink(res, cssPath, staticPrefix, staticDir);
+        injectCSSLink(res, cssPath, staticPrefix);
       } else {
         // 只处理 HTML 响应
         if (!res.body || typeof res.body !== "string") {

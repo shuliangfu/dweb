@@ -1,0 +1,30 @@
+# Deno 相关
+.deno/
+deno.lock
+node_modules/
+.npm/
+
+# 构建输出
+dist/
+build/
+*.tsbuildinfo
+
+# 日志文件
+*.log
+logs/
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# IDE 和编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
