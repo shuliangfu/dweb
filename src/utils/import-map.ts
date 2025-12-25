@@ -143,11 +143,20 @@ export async function createImportMapScript(
     // 过滤出客户端需要的 imports
     const clientImports: Record<string, string> = {};
     
-    // 遍历所有 imports，只排除服务端依赖
+    // 遍历所有 imports，只排除服务端依赖和本地路径别名
     for (const [key, value] of Object.entries(allImports)) {
       // 使用通用的服务端依赖判断函数，而不是硬编码排除规则
       // 这样可以支持任何项目，不仅仅是我们的框架项目
       if (isServerDependency(key)) {
+        continue;
+      }
+      
+      // 排除本地路径别名（如 @components/ -> ./components/）
+      // 这些路径别名在客户端 import map 中不需要，因为：
+      // 1. 客户端代码会被 esbuild 打包，路径别名会在打包时被解析为相对路径
+      // 2. import map 主要用于浏览器解析外部模块（npm、jsr 等），不需要本地路径别名
+      // 3. 浏览器无法直接访问本地文件系统
+      if (typeof value === "string" && (value.startsWith("./") || value.startsWith("../"))) {
         continue;
       }
       
@@ -189,35 +198,9 @@ export async function createImportMapScript(
       }
     }
     
-    // 为所有客户端包自动生成常见的子路径映射
-    // 根据 import map 规范，如果父包映射存在，子路径应该能够自动解析
-    // 但转换后的 URL（如 https://esm.sh/chart.js@4.4.7）无法自动解析子路径
-    // 所以我们需要显式添加常见的子路径映射
-    // 例如：chart -> https://esm.sh/chart.js@4.4.7，自动生成 chart/auto -> https://esm.sh/chart.js@4.4.7/auto
-    // 注意：JSR URL（https://jsr.io/）不需要自动生成子路径，因为 JSR 包的结构不同
-    const commonSubpaths = ["auto", "helpers", "utils", "types", "dist", "lib", "src"];
-    
-    for (const [packageName, packageUrl] of Object.entries(clientImports)) {
-      // 只处理已转换的 HTTP URL（npm: 已经转换为 https://esm.sh/）
-      // 不处理 JSR URL（https://jsr.io/），因为 JSR 包的结构不同，不应该自动生成子路径
-      // 不处理本地路径
-      if (
-        (packageUrl.startsWith("https://") || packageUrl.startsWith("http://")) &&
-        !packageUrl.startsWith("https://jsr.io/") &&
-        !packageUrl.startsWith("http://jsr.io/")
-      ) {
-        // 为常见的子路径自动生成映射（仅限 npm 包）
-        for (const subpath of commonSubpaths) {
-          const subpathKey = `${packageName}/${subpath}`;
-          // 如果子路径还没有在 clientImports 或 subpathImports 中，且不在 allImports 中（避免覆盖用户自定义的映射）
-          if (!(subpathKey in clientImports) && !(subpathKey in subpathImports) && !(subpathKey in allImports)) {
-            // 构建子路径 URL：在父包 URL 后添加子路径
-            const subpathUrl = `${packageUrl}/${subpath}`;
-            subpathImports[subpathKey] = subpathUrl;
-          }
-        }
-      }
-    }
+    // 不再自动生成常见的子路径映射
+    // 只使用用户在 deno.json 中显式定义的子路径映射
+    // 这样可以避免生成不存在的子路径映射（如 chart/auto, preact/auto 等）
     
     // 为 @dreamer/dweb 自动生成客户端子路径映射（如果主包是 JSR URL）
     // 例如：如果 @dreamer/dweb 是 jsr:@dreamer/dweb@^1.8.2-beta.1，自动生成 @dreamer/dweb/client 映射
