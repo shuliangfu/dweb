@@ -190,10 +190,12 @@ export async function isMultiAppMode(): Promise<boolean> {
 		
 		console.log({ configPath });
 
+		const configUrl = new URL(configPath, `file://${Deno.cwd()}/`).href;
+
+		console.log({ configUrl });
+
     // 动态导入配置文件
-    const configModule = await import(
-      `file://${path.resolve(Deno.cwd(), configPath)}`
-		);
+    const configModule = await import(configUrl);
 		
 		const config: DWebConfig = configModule.default || configModule;
 		
