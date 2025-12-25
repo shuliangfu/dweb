@@ -26,7 +26,7 @@ export function initTailwindV4(
   isProduction: boolean,
 ): ReturnType<typeof postcss> {
   // v4 使用 @tailwindcss/postcss 插件（内置优化）
-  const optimize = options.optimize !== false && isProduction;
+	const optimize = false;// options.optimize !== false && isProduction;
 
   // 获取项目根目录（当前工作目录）的绝对路径
   // @tailwindcss/postcss 插件的 base 参数用于指定扫描类候选的基础目录
