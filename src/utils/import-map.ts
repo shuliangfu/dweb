@@ -153,11 +153,13 @@ export async function createImportMapScript(
 ): Promise<string | null> {
   // 检查缓存是否有效（注意：如果传入了不同的 searchPaths，应该不使用缓存）
   const now = Date.now();
-  if (
-    !searchPaths &&
+  const useCache = !searchPaths &&
     cachedImportMapScript &&
-    (now - importMapScriptCacheTime) < IMPORT_MAP_CACHE_TTL
-  ) {
+    (now - importMapScriptCacheTime) < IMPORT_MAP_CACHE_TTL;
+  
+  // 如果使用缓存，也要输出日志（但只输出一次，避免重复）
+  if (useCache) {
+    console.log("🔍 [Import Map Debug] Using cached import map");
     return cachedImportMapScript;
   }
   

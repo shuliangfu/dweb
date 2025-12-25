@@ -63,9 +63,16 @@ let preloadedImportMapScript: string | null = null;
  */
 export async function preloadImportMapScript(): Promise<void> {
   try {
+    console.log("🔍 [Import Map Debug] Preloading import map script...");
     preloadedImportMapScript = await createImportMapScript();
-  } catch (_error) {
-    // 预加载失败时静默处理
+    if (preloadedImportMapScript) {
+      console.log("🔍 [Import Map Debug] Import map script preloaded successfully");
+    } else {
+      console.log("🔍 [Import Map Debug] ⚠️  Import map script is null (no client imports found)");
+    }
+  } catch (error) {
+    // 预加载失败时输出错误信息
+    console.error("🔍 [Import Map Debug] ❌ Failed to preload import map script:", error);
   }
 }
 
