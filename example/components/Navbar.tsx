@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from "preact/hooks";
 import { toggleTheme } from "@dreamer/dweb/client";
+import { menus } from "../config/menu.ts";
 
 interface NavbarProps {
   /** 当前路径（服务端渲染时使用） */
@@ -56,13 +57,6 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
     };
   }, []);
 
-  const navItems = [
-    { href: "/", label: $t("首页") },
-    { href: "/features", label: $t("特性") },
-    { href: "/examples", label: $t("示例") },
-    { href: "/docs", label: $t("文档") },
-    { href: "/about", label: $t("关于") },
-  ];
 
   return (
     <nav className="bg-gray-100/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
@@ -79,7 +73,7 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
 
           {/* 导航链接 */}
           <div className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => {
+            {menus.map((item) => {
               // 精确匹配路径，支持根路径和子路径
               const isActive = currentPath === item.href ||
                 (item.href !== "/" && currentPath.startsWith(item.href));
