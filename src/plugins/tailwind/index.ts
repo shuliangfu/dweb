@@ -4,13 +4,13 @@
  * 参考 Fresh 框架的实现方式
  */
 
-import type { Plugin, AppLike, Request, Response } from '../../types/index.ts';
-import type { TailwindPluginOptions } from './types.ts';
-import { findTailwindConfigFile, findCSSFiles } from './utils.ts';
-import { processCSSV3 } from './v3.ts';
-import { processCSSV4 } from './v4.ts';
-import * as path from '@std/path';
-import { isPathSafe } from '../../utils/security.ts';
+import type { AppLike, Plugin, Request, Response } from "../../types/index.ts";
+import type { TailwindPluginOptions } from "./types.ts";
+import { findCSSFiles, findTailwindConfigFile } from "./utils.ts";
+import { processCSSV3 } from "./v3.ts";
+import { processCSSV4 } from "./v4.ts";
+import * as path from "@std/path";
+import { isPathSafe } from "../../utils/security.ts";
 
 /**
  * 处理 CSS 文件
@@ -33,18 +33,30 @@ import { isPathSafe } from '../../utils/security.ts';
 async function processCSS(
   cssContent: string,
   filePath: string,
-  version: 'v3' | 'v4',
+  version: "v3" | "v4",
   isProduction: boolean,
-  options: TailwindPluginOptions
+  options: TailwindPluginOptions,
 ): Promise<{ content: string; map?: string }> {
   // 查找 Tailwind 配置文件
   const configPath = await findTailwindConfigFile(Deno.cwd());
 
   // 根据版本调用对应的处理方法
-  if (version === 'v3') {
-    return await processCSSV3(cssContent, filePath, configPath, isProduction, options);
+  if (version === "v3") {
+    return await processCSSV3(
+      cssContent,
+      filePath,
+      configPath,
+      isProduction,
+      options,
+    );
   } else {
-    return await processCSSV4(cssContent, filePath, configPath, isProduction, options);
+    return await processCSSV4(
+      cssContent,
+      filePath,
+      configPath,
+      isProduction,
+      options,
+    );
   }
 }
 
@@ -54,16 +66,19 @@ async function processCSS(
  * @returns 插件对象
  */
 export function tailwind(options: TailwindPluginOptions = {}): Plugin {
-  const version = options.version || 'v4';
+  const version = options.version || "v4";
 
   // CSS 文件缓存（开发环境）
-  const cssCache = new Map<string, { content: string; map?: string; timestamp: number }>();
-  
+  const cssCache = new Map<
+    string,
+    { content: string; map?: string; timestamp: number }
+  >();
+
   // 环境标志（在 onInit 中从 app.isProduction 获取）
   let isProduction = false;
 
   return {
-    name: 'tailwind',
+    name: "tailwind",
     config: options as Record<string, unknown>,
 
     /**
@@ -86,12 +101,12 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
         return;
       }
       // 只处理 HTML 响应
-      if (!res.body || typeof res.body !== 'string') {
+      if (!res.body || typeof res.body !== "string") {
         return;
       }
 
-      const contentType = res.headers.get('Content-Type') || '';
-      if (!contentType.includes('text/html')) {
+      const contentType = res.headers.get("Content-Type") || "";
+      if (!contentType.includes("text/html")) {
         return;
       }
 
@@ -102,7 +117,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
 
       try {
         // 获取 CSS 文件路径
-        const cssPath = options.cssPath.startsWith('/')
+        const cssPath = options.cssPath.startsWith("/")
           ? options.cssPath.slice(1)
           : options.cssPath;
 
@@ -131,32 +146,32 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
         const cacheKey = cssPath;
         const cached = cssCache.get(cacheKey);
         const fileModified = fileStat.mtime?.getTime() || 0;
-        
+
         const cacheAge = cached ? Date.now() - cached.timestamp : Infinity;
-        const shouldUseCache = cached && 
-                               cached.timestamp >= fileModified && 
-                               cacheAge < 1000; // 缓存有效期 1 秒
+        const shouldUseCache = cached &&
+          cached.timestamp >= fileModified &&
+          cacheAge < 1000; // 缓存有效期 1 秒
 
         let compiledCSS: string;
         if (shouldUseCache) {
           // 使用缓存
           compiledCSS = cached.content;
         } else {
-        // 处理 CSS
-        const processed = await processCSS(
-          fileContent,
+          // 处理 CSS
+          const processed = await processCSS(
+            fileContent,
             cssPath,
-          version,
-          false, // 开发环境
-          options
-        );
+            version,
+            false, // 开发环境
+            options,
+          );
 
-        // 更新缓存
-        cssCache.set(cacheKey, {
-          content: processed.content,
-          map: processed.map,
-          timestamp: Date.now(),
-        });
+          // 更新缓存
+          cssCache.set(cacheKey, {
+            content: processed.content,
+            map: processed.map,
+            timestamp: Date.now(),
+          });
 
           compiledCSS = processed.content;
         }
@@ -187,7 +202,10 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
 
             // 检查是否已经包含相同的 Tailwind CSS（避免重复）
             // 简单检查：如果已包含 Tailwind 的典型类名或注释，则认为已存在
-            if (!existingContent.includes("@tailwind") && !existingContent.includes("tailwind")) {
+            if (
+              !existingContent.includes("@tailwind") &&
+              !existingContent.includes("tailwind")
+            ) {
               const newStyleContent = styleTagStart + existingContent +
                 "\n        " + compiledCSS + styleTagEnd;
               res.body = html.slice(0, lastStyleIndex) +
@@ -207,7 +225,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
           // 查找 link[rel="stylesheet"]，在其后插入
           const linkRegex = /<link[^>]*rel\s*=\s*["']stylesheet["'][^>]*>/gi;
           const linkMatches = html.match(linkRegex);
-        
+
           if (linkMatches && linkMatches.length > 0) {
             // 在最后一个 link[rel="stylesheet"] 后插入
             const lastLinkIndex = html.lastIndexOf(
@@ -224,32 +242,32 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
           } else if (html.includes("<head>")) {
             // 如果没有 </head>，在 <head> 后插入
             res.body = html.replace("<head>", `<head>\n${styleTag}`);
-        } else {
-          // 如果没有 <head>，则在 <html> 后面添加 <head> 和 <style>
-          const headWithStyle = `<head>\n  ${styleTag}\n</head>`;
+          } else {
+            // 如果没有 <head>，则在 <html> 后面添加 <head> 和 <style>
+            const headWithStyle = `<head>\n  ${styleTag}\n</head>`;
             if (html.includes("<html>")) {
               res.body = html.replace("<html>", `<html>\n${headWithStyle}`);
-          } else {
-            // 如果连 <html> 都没有，在开头添加
-            res.body = `${headWithStyle}\n${html}`;
+            } else {
+              // 如果连 <html> 都没有，在开头添加
+              res.body = `${headWithStyle}\n${html}`;
             }
           }
         }
       } catch (error) {
-        console.error('[Tailwind Plugin] 处理 CSS 时出错:', error);
+        console.error("[Tailwind Plugin] 处理 CSS 时出错:", error);
         // 出错时不修改响应，让原始响应返回
       }
-		},
+    },
 
     /**
      * 构建时钩子（生产环境编译）
      */
     async onBuild(buildConfig: { outDir?: string; staticDir?: string }) {
       const isProduction = true;
-      const outDir = buildConfig.outDir || 'dist';
+      const outDir = buildConfig.outDir || "dist";
       // staticDir 从构建配置中获取，如果没有则默认为 'assets'
       // 注意：buildConfig 可能包含 staticDir（向后兼容）或从 config.static?.dir 获取
-      const staticDir = buildConfig.staticDir || 'assets';
+      const staticDir = buildConfig.staticDir || "assets";
 
       console.log(`🎨 [Tailwind ${version}] 开始编译 CSS 文件...`);
 
@@ -259,7 +277,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
 
         // 如果配置了 cssPath，优先处理该文件
         if (options.cssPath) {
-          const cssPath = options.cssPath.startsWith('/')
+          const cssPath = options.cssPath.startsWith("/")
             ? options.cssPath.slice(1)
             : options.cssPath;
           try {
@@ -274,11 +292,13 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
 
         // 如果配置了 cssFiles，使用配置的文件列表
         if (options.cssFiles) {
-          const files = Array.isArray(options.cssFiles) ? options.cssFiles : [options.cssFiles];
+          const files = Array.isArray(options.cssFiles)
+            ? options.cssFiles
+            : [options.cssFiles];
           for (const file of files) {
             // 这里简化处理，实际应该支持 glob 模式匹配
-            if (file.endsWith('.css')) {
-              const filePath = file.startsWith('/') ? file.slice(1) : file;
+            if (file.endsWith(".css")) {
+              const filePath = file.startsWith("/") ? file.slice(1) : file;
               try {
                 const stat = await Deno.stat(filePath);
                 if (stat.isFile) {
@@ -293,7 +313,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
           // 默认处理：遍历静态资源目录（如果没有配置 cssPath 和 cssFiles）
           try {
             for await (const entry of Deno.readDir(staticDir)) {
-              if (entry.isFile && entry.name.endsWith('.css')) {
+              if (entry.isFile && entry.name.endsWith(".css")) {
                 cssFiles.push(path.join(staticDir, entry.name));
               } else if (entry.isDirectory) {
                 // 递归查找子目录
@@ -311,13 +331,22 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
             const cssContent = await Deno.readTextFile(cssFile);
 
             // 处理 CSS
-            const processed = await processCSS(cssContent, cssFile, version, isProduction, options);
+            const processed = await processCSS(
+              cssContent,
+              cssFile,
+              version,
+              isProduction,
+              options,
+            );
 
             // 计算输出路径
             // 注意：如果 cssFile 就是 staticDir 下的文件（如 assets/tailwind.css），
             // path.relative 可能会返回相对路径，需要特殊处理
             let relativePath: string;
-            if (cssFile.startsWith(staticDir + "/") || cssFile.startsWith(staticDir + "\\")) {
+            if (
+              cssFile.startsWith(staticDir + "/") ||
+              cssFile.startsWith(staticDir + "\\")
+            ) {
               // 如果 cssFile 在 staticDir 目录下，直接提取相对路径
               relativePath = cssFile.slice(staticDir.length + 1);
             } else {
@@ -331,25 +360,32 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
 
             // 写入处理后的 CSS
             await Deno.writeTextFile(outPath, processed.content);
-            
+
             // 检查编译后的 CSS 是否包含 dark mode 样式
-            const hasDarkMode = processed.content.includes('.dark') || 
-                               processed.content.includes('[data-theme="dark"]') ||
-                               processed.content.includes('dark:');
+            const hasDarkMode = processed.content.includes(".dark") ||
+              processed.content.includes('[data-theme="dark"]') ||
+              processed.content.includes("dark:");
             const sizeKB = (processed.content.length / 1024).toFixed(2);
-            console.log(`      • CSS 大小: ${sizeKB} KB (${processed.content.length} 字节)`);
-            console.log(`      • 包含 dark mode: ${hasDarkMode ? '是' : '否'}`);
+            console.log(
+              `      • CSS 大小: ${sizeKB} KB (${processed.content.length} 字节)`,
+            );
+            console.log(`      • 包含 dark mode: ${hasDarkMode ? "是" : "否"}`);
 
             // 如果有 source map，也写入
             if (processed.map) {
               await Deno.writeTextFile(`${outPath}.map`, processed.map);
             }
           } catch (error) {
-            console.error(`❌ [Tailwind ${version}] 编译失败: ${cssFile}`, error);
+            console.error(
+              `❌ [Tailwind ${version}] 编译失败: ${cssFile}`,
+              error,
+            );
           }
         }
 
-        console.log(`   ✅ [Tailwind ${version}] CSS 编译完成，共处理 ${cssFiles.length} 个文件`);
+        console.log(
+          `   ✅ [Tailwind ${version}] CSS 编译完成，共处理 ${cssFiles.length} 个文件`,
+        );
       } catch (error) {
         console.error(`❌ [Tailwind ${version}] 构建时出错:`, error);
       }
@@ -358,4 +394,4 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
 }
 
 // 导出类型
-export type { TailwindPluginOptions, AutoprefixerOptions } from './types.ts';
+export type { AutoprefixerOptions, TailwindPluginOptions } from "./types.ts";

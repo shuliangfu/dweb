@@ -26,19 +26,13 @@ export function initTailwindV4(
   isProduction: boolean,
 ): ReturnType<typeof postcss> {
   // v4 使用 @tailwindcss/postcss 插件（内置优化）
-	const optimize = false;// options.optimize !== false && isProduction;
+  const optimize = options.optimize !== false && isProduction;
 
   // 获取项目根目录（当前工作目录）的绝对路径
   // @tailwindcss/postcss 插件的 base 参数用于指定扫描类候选的基础目录
   // 它会在该目录下自动扫描常见的文件路径（如 routes/, components/ 等）
   // 注意：base 参数应该是绝对路径
   const projectRoot = path.resolve(Deno.cwd());
-
-  // 调试：输出工作目录和优化状态
-  console.log(`   [Tailwind v4] 工作目录: ${projectRoot}`);
-	console.log(`   [Tailwind v4] 优化模式: ${optimize}`);
-
-	console.log({ options, isProduction });
 
   // 按照 Fresh 的方式创建 PostCSS 实例
   // Fresh 代码：const instance = postcss(twPostcss({ optimize: ... }))
