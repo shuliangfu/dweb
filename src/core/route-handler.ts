@@ -1396,13 +1396,16 @@ export class RouteHandler {
             // 确保 children 的类型正确，并且放在最后以避免被 layoutProps 覆盖
             // 从 layoutProps 中排除 children，避免类型冲突
             const { children: _, ...restLayoutProps } = layoutProps;
+            // 显式声明 children 的类型，确保类型正确传递
+            const children: ComponentChildren = currentElement as ComponentChildren;
             const layoutPropsWithData: LayoutProps = {
               // 将页面数据也传递给布局组件，方便布局访问页面数据
               data: pageData || {},
               ...restLayoutProps,
               // children 放在最后，确保类型正确且不被覆盖
-              children: currentElement as ComponentChildren,
+              children,
             };
+						
             const layoutResult = LayoutComponent(layoutPropsWithData);
             const layoutElement = layoutResult instanceof Promise
               ? await layoutResult
