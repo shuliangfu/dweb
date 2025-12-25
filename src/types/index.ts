@@ -530,7 +530,7 @@ export interface LayoutProps {
   /** 子元素（页面内容） */
   children: ComponentChildren;
   /** 页面数据（页面 load 函数返回的数据） */
-  data: Record<string, unknown>;
+  data: Record<string, any>;
   /** 当前语言代码（如果已配置 i18n 插件） */
   lang?: string;
   /** 状态管理 Store（如果已配置 store 插件） */
