@@ -23,6 +23,7 @@ export type {
   LoadContext,
   PageProps,
   LayoutProps,
+  ComponentChild,
   ComponentChildren,
 } from './types/index.ts';
 
