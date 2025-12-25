@@ -665,9 +665,6 @@ async function compileWithCodeSplitting(
     const outputPath = outputFile.path;
     const content = outputFile.text;
 
-    // 计算 hash
-    const hash = await calculateHash(content);
-
     // 计算输出路径相对于 outdir 的路径（esbuild 保持的目录结构）
     // outputPath 是 esbuild 的绝对输出路径，例如：/project/.dist/server/routes/index.js
     // outdir 是输出目录，例如：/project/.dist/server
@@ -724,8 +721,8 @@ async function compileWithCodeSplitting(
     // 对于入口文件，记录内容 hash 到 hash 文件名的映射（用于缓存等）
     // 对于 chunk 文件，不需要记录 hash，因为直接使用 esbuild 的文件名
     if (isEntryFile) {
-      const hash = await calculateHash(content);
-      contentHashToFileNameMap.set(hash, hashName);
+      const fileHash = await calculateHash(content);
+      contentHashToFileNameMap.set(fileHash, hashName);
     }
     
     // 保存文件信息
@@ -764,15 +761,13 @@ async function compileWithCodeSplitting(
   
   // 第二遍循环：替换所有文件中的 chunk 引用
   // 需要多遍处理，因为 chunk 文件可能也引用了其他 chunk 文件
-  // 使用一个集合来跟踪已处理的文件，避免重复处理
-  const processedFiles = new Set<string>();
   let hasChanges = true;
   let iteration = 0;
   const maxIterations = 10; // 防止无限循环
   
   // 创建一个可变的 contentHashToFileNameMap 副本，用于在迭代中更新
   // 注意：这里必须使用深拷贝，因为 Map 的浅拷贝可能不会正确复制所有条目
-  let currentContentHashToFileNameMap = new Map<string, string>();
+  const currentContentHashToFileNameMap = new Map<string, string>();
   for (const [hash, fileName] of contentHashToFileNameMap.entries()) {
     currentContentHashToFileNameMap.set(hash, fileName);
   }
@@ -793,8 +788,7 @@ async function compileWithCodeSplitting(
       // - from "../../../chunk-XXXXX.js" (esbuild 原始文件名)
       // - from "../chunk-XXXXX.js" (esbuild 原始文件名)
       // - from "./chunk-XXXXX.js" (esbuild 原始文件名)
-      // - from "./85f9136f8d111bd.js" (esbuild 生成的 hash 文件名，如果 esbuild 自己生成了 hash)
-      // 我们需要将所有相对路径的 .js 引用替换为对应的 hash 文件名
+      // 我们需要将所有相对路径的 .js 引用替换为对应的文件名
       // 注意：esbuild 生成的引用路径是相对于当前文件的，我们需要匹配这些路径
       for (const [esbuildPath, hashName] of esbuildPathToHashMap.entries()) {
         // 提取文件名（去掉路径，只保留文件名）
@@ -820,8 +814,6 @@ async function compileWithCodeSplitting(
         modifiedContent = newContent;
         
         // 同时，也要匹配可能的 hash 文件名（如果 esbuild 自己生成了 hash 文件名）
-        // 例如：esbuild 可能生成 "85f9136f8d111bd.js" 这样的文件名
-        // 我们需要检查这个 hash 是否对应某个文件的内容
         // 注意：这里我们只匹配纯 hash 文件名（15 位十六进制，因为 calculateHash 返回 15 个字符），不匹配 chunk- 前缀的
         // 因为 chunk- 前缀的是我们自己的命名格式
         if (/^[a-f0-9]{15}\.js$/i.test(fileName)) {
@@ -829,7 +821,7 @@ async function compileWithCodeSplitting(
           // 我们需要检查这个 hash 是否对应某个文件的内容
           const hashFromFileName = fileName.replace(/\.js$/, '');
           // 检查这个 hash 是否在我们的映射中（通过内容 hash 匹配）
-          for (const [path, info] of fileInfoMap.entries()) {
+          for (const [, info] of fileInfoMap.entries()) {
             if (info.hash === hashFromFileName) {
               // 找到了对应的文件，替换引用
               const hashFileNameRegex = new RegExp(
@@ -846,12 +838,12 @@ async function compileWithCodeSplitting(
         }
       }
       
-      // 同时，也要替换已经被替换为 hash 文件名的引用（如 "./85f9136f8d111bd.js" 或 "./chunk-85f9136f8d111bd.js"）
-      // 这些引用可能是之前迭代中生成的，或者是 esbuild 自己生成的 hash 文件名
+      // 同时，也要替换已经被替换为 hash 文件名的引用（如入口文件的 hash 文件名）
+      // 这些引用可能是之前迭代中生成的
       // 匹配所有相对路径的 hash 文件名引用（15 位十六进制字符，因为 calculateHash 返回 15 个字符，包括 chunk- 前缀）
       // 注意：这里我们需要通过原始 esbuild 文件名来匹配，而不是依赖 hash，因为 hash 可能在迭代中改变
       const hashFileNameRegex = /(["'])(\.\.?\/)+(chunk-)?([a-f0-9]{15}\.js)(["'])/gi;
-      modifiedContent = modifiedContent.replace(hashFileNameRegex, (match, quote1, prefix, chunkPrefix, hashFileName, quote2) => {
+      modifiedContent = modifiedContent.replace(hashFileNameRegex, (match, quote1, _prefix, chunkPrefix, hashFileName, quote2) => {
         // 构建完整的文件名（包括可能的 chunk- 前缀）
         const fullFileName = chunkPrefix ? `chunk-${hashFileName}` : hashFileName;
         
@@ -860,39 +852,34 @@ async function compileWithCodeSplitting(
         
         // 首先，查找这个 hash 文件名对应的原始 esbuild 路径
         // 注意：这里我们需要通过 fileInfoMap 来查找，因为 hash 可能在迭代中改变
-        let found = false;
-        for (const [esbuildPath, hashName] of esbuildPathToHashMap.entries()) {
+        for (const [, hashName] of esbuildPathToHashMap.entries()) {
           if (hashName === fullFileName) {
             // 如果找到了对应的映射，保持使用当前的 hash 文件名（因为可能已经被更新）
             modified = true;
-            found = true;
             return `${quote1}./${hashName}${quote2}`;
           }
         }
         // 如果没有找到对应的映射，说明这个文件可能还没有被写入
         // 检查一下这个 hash 文件名是否在 fileInfoMap 中（可能是之前的迭代中生成的）
-        for (const [path, info] of fileInfoMap.entries()) {
+        for (const [, info] of fileInfoMap.entries()) {
           if (info.hashName === fullFileName) {
             modified = true;
-            found = true;
             return `${quote1}./${info.hashName}${quote2}`;
           }
         }
-        // 如果仍然没有找到，尝试通过内容 hash 匹配（可能是 esbuild 自己生成的 hash 文件名）
-        // 例如：esbuild 可能生成 "85f9136f8d111bd.js" 这样的文件名，我们需要通过内容 hash 找到对应的文件
+        // 如果仍然没有找到，尝试通过内容 hash 匹配（可能是入口文件的 hash 文件名）
         // 注意：这里我们需要检查 fileInfoMap 中是否有匹配的 hash，因为 hash 可能在迭代中改变
         // 但是，如果 hash 改变了，那么 fileInfoMap 中的 hash 也会改变，所以我们需要检查所有可能的 hash
         // 实际上，我们应该通过 esbuild 原始文件名来匹配，而不是依赖 hash
         // 但是，esbuild 生成的代码中可能直接引用了 hash 文件名，所以我们需要通过 hash 来匹配
         // 解决方案：在 fileInfoMap 中查找所有可能的 hash，然后匹配对应的文件名
-        for (const [path, info] of fileInfoMap.entries()) {
+        for (const [, info] of fileInfoMap.entries()) {
           // 检查这个 hash 是否匹配任何文件的内容 hash（可能是之前的迭代中生成的）
           // 注意：这里我们检查的是 fileInfoMap 中的 hash，而不是 currentContentHashToFileNameMap
           // 因为 currentContentHashToFileNameMap 可能在迭代中被更新，导致旧的 hash 被删除
           if (info.hash === hashFromFileName) {
             // 找到了对应的文件（通过内容 hash 匹配），替换为正确的 hash 文件名
             modified = true;
-            found = true;
             return `${quote1}./${info.hashName}${quote2}`;
           }
         }
