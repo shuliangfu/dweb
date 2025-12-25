@@ -3,16 +3,22 @@
 /**
  * 组件子元素类型
  * 兼容 Preact 的 ComponentChildren 类型
- * 可以是 VNode、字符串、数字、布尔值、null、undefined 或这些类型的数组
+ * 
+ * 参考 Preact 的类型定义：
+ * - ComponentChild = VNode<any> | object | string | number | bigint | boolean | null | undefined
+ * - ComponentChildren = ComponentChild[] | ComponentChild
  */
-export type ComponentChildren =
-  | unknown // VNode 类型（在类型定义文件中使用 unknown 代替）
+export type ComponentChild =
+  | unknown // VNode<any> 类型（在类型定义文件中使用 unknown 代替）
+  | object
   | string
   | number
+  | bigint
   | boolean
   | null
-  | undefined
-  | ComponentChildren[];
+  | undefined;
+
+export type ComponentChildren = ComponentChild[] | ComponentChild;
 
 // 扩展目录配置
 export interface ExtendDirConfig {
