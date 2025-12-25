@@ -339,10 +339,10 @@ export function createJSRResolverPlugin(
             }
           }
           
-          // 如果没有在 import map 中找到，使用转换函数生成代理路径
-          const proxyUrl = convertJsrToHttpUrl(args.path);
+          // 如果没有在 import map 中找到，使用转换函数生成 HTTP URL
+          const httpUrl = convertJsrToHttpUrl(args.path);
           return {
-            path: proxyUrl,
+            path: httpUrl,
             external: true,
           };
         }
