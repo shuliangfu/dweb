@@ -351,9 +351,8 @@ cli.command("build", "构建生产版本")
     const appName = await parseAppName(args, options);
 
     info("开始构建...");
-    displayAppName(appName);
 
-    // 加载配置
+		// 加载配置
     const { config } = await loadConfig(undefined, appName);
 
     // 更新构建配置
