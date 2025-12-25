@@ -378,9 +378,9 @@ export function createJSRResolverPlugin(
 
         // 如果是 JSR URL，转换为代理路径后标记为 external，不打包，通过网络请求加载
         if (clientImport.startsWith("jsr:")) {
-          // 将 JSR URL 转换为浏览器可访问的代理路径（/__jsr/）
-          const proxyUrl = convertJsrToHttpUrl(clientImport);
-          // 标记为 external，浏览器会通过开发服务器代理请求
+          // 将 JSR URL 转换为浏览器可访问的 HTTP URL（esm.sh）
+          const httpUrl = convertJsrToHttpUrl(clientImport);
+          // 标记为 external，浏览器会通过 esm.sh CDN 加载
           // 注意：即使 @dreamer/dweb/client 在 externalPackages 列表中，
           // 插件返回的 path 会覆盖 esbuild 的默认行为，输出代码中会使用 HTTP URL
           return {
