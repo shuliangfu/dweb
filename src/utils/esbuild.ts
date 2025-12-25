@@ -9,16 +9,6 @@ import { getExternalPackages } from "./module.ts";
 
 // 调试模式：直接输出日志
 
-/**
- * @dreamer/dweb 包的客户端 exports 映射表
- * 只包含客户端可能使用的路径，服务端路径（如 /cli、/init、/console、/database）不需要映射
- */
-const DREAMER_DWEB_EXPORTS: Record<string, string> = {
-  "./client": "src/client.ts",
-  "./extensions": "src/extensions/mod.ts",
-  // extensions 的子路径通过动态解析处理，不需要全部列出
-  // 如果遇到 ./extensions/* 路径，会动态构建路径
-};
 
 /**
  * 将 jsr: 协议转换为浏览器可访问的 HTTP URL
@@ -392,9 +382,9 @@ export function createJSRResolverPlugin(
           const proxyUrl = convertJsrToHttpUrl(clientImport);
           // 标记为 external，浏览器会通过开发服务器代理请求
           // 注意：即使 @dreamer/dweb/client 在 externalPackages 列表中，
-          // 插件返回的 path 会覆盖 esbuild 的默认行为，输出代码中会使用代理路径
+          // 插件返回的 path 会覆盖 esbuild 的默认行为，输出代码中会使用 HTTP URL
           return {
-            path: proxyUrl,
+            path: httpUrl,
             external: true,
           };
         }

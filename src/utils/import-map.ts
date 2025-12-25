@@ -26,16 +26,6 @@ function convertNpmToBrowserUrl(npmUrl: string): string {
   return `https://esm.sh/${packageSpec}`;
 }
 
-/**
- * @dreamer/dweb 包的客户端 exports 映射表
- * 只包含客户端可能使用的路径，服务端路径（如 /cli、/init、/console、/database）不需要映射
- */
-const DREAMER_DWEB_EXPORTS: Record<string, string> = {
-  "./client": "src/client.ts",
-  "./extensions": "src/extensions/mod.ts",
-  // extensions 的子路径通过动态解析处理，不需要全部列出
-  // 如果遇到 ./extensions/* 路径，会动态构建路径
-};
 
 /**
  * 将 jsr: 协议转换为浏览器可访问的 URL
