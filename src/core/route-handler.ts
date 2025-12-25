@@ -1394,20 +1394,22 @@ export class RouteHandler {
             // 将布局的 load 数据和页面数据作为 props 传递给布局组件
             // 布局数据直接展开，页面数据通过 data 字段传递（与页面组件保持一致）
             // 确保 children 的类型正确，并且放在最后以避免被 layoutProps 覆盖
-            // 从 layoutProps 中排除 children，避免类型冲突
-            const { children: _, ...restLayoutProps } = layoutProps;
+            // 从 layoutProps 中排除 children 和 data，避免类型冲突和数据覆盖
+            const { children: _, data: __, ...restLayoutProps } = layoutProps;
             // 显式声明 children 的类型，确保类型正确传递
             const children: ComponentChildren = currentElement as ComponentChildren;
-            // 构建 layoutPropsWithData，确保 children 类型正确
-            // 注意：使用 Object.assign 确保类型正确传递
+            // 构建 layoutPropsWithData，确保 children 和 data 类型正确
+            // 注意：使用 Object.assign 确保类型正确传递，data 和 children 放在最后确保不被覆盖
             const layoutPropsWithData = Object.assign(
+              {},
+              restLayoutProps,
               {
                 // 将页面数据也传递给布局组件，方便布局访问页面数据
+                // data 放在这里，确保不被 restLayoutProps 覆盖
                 data: pageData || {},
-                // children 放在这里，确保类型正确
+                // children 放在最后，确保类型正确且不被覆盖
                 children,
               },
-              restLayoutProps,
             ) as LayoutProps;
 						
             const layoutResult = LayoutComponent(layoutPropsWithData);
