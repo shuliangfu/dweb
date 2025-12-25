@@ -39,11 +39,13 @@ const DREAMER_DWEB_EXPORTS: Record<string, string> = {
 
 /**
  * 将 jsr: 协议转换为浏览器可访问的 URL
- * JSR.io 会自动编译 TypeScript 文件，浏览器请求 .ts 文件时会返回编译后的 JavaScript
+ * 在开发环境中，通过开发服务器代理 JSR 依赖，避免 CORS 问题
+ * 在生产环境中，直接使用 JSR.io 的 URL（但 JSR.io 不支持直接访问 .ts 文件）
  * @param jsrUrl jsr: 协议的 URL，例如：jsr:@std/fs@^1.0.20 或 jsr:@dreamer/dweb@1.0.0/client
- * @returns 浏览器可访问的 URL，例如：https://jsr.io/@std/fs/1.0.20/mod.ts
+ * @param useProxy 是否使用开发服务器代理（默认 true，开发环境使用）
+ * @returns 浏览器可访问的 URL，例如：/__jsr/@dreamer/dweb/1.8.2-beta.10/src/client.ts 或 https://jsr.io/@std/fs/1.0.20/mod.ts
  */
-function convertJsrToBrowserUrl(jsrUrl: string): string {
+function convertJsrToBrowserUrl(jsrUrl: string, useProxy: boolean = true): string {
   // 移除 jsr: 前缀
   const jsrPath = jsrUrl.replace(/^jsr:/, "");
   
@@ -108,9 +110,18 @@ function convertJsrToBrowserUrl(jsrUrl: string): string {
       actualPath = `/${actualPath}`;
     }
     
+    // 在开发环境中，使用开发服务器代理，避免 CORS 问题
+    // JSR.io 不支持直接通过 HTTP URL 访问 .ts 文件并返回编译后的 JavaScript
+    if (useProxy) {
+      return `/__jsr/@${scope}/${packageName}/${version}${actualPath}`;
+    }
+    
     return `https://jsr.io/@${scope}/${packageName}/${version}${actualPath}`;
   } else {
     // 没有子路径，指向包的 mod.ts（JSR 包的标准入口文件）
+    if (useProxy) {
+      return `/__jsr/@${scope}/${packageName}/${version}/mod.ts`;
+    }
     return `https://jsr.io/@${scope}/${packageName}/${version}/mod.ts`;
   }
 }
@@ -133,8 +144,12 @@ function convertToBrowserUrl(importValue: string): string {
   }
   
   // 处理 jsr: 协议
+  // 使用开发服务器代理，避免 CORS 问题
+  // JSR.io 不支持直接通过 HTTP URL 访问 .ts 文件并返回编译后的 JavaScript
+  // 所以需要通过开发服务器代理，从 JSR.io 获取文件内容，编译后返回给浏览器
   if (importValue.startsWith("jsr:")) {
-    return convertJsrToBrowserUrl(importValue);
+    // 在开发和生产环境都使用代理，因为 JSR.io 不支持直接访问 .ts 文件
+    return convertJsrToBrowserUrl(importValue, true);
   }
   
   // 其他情况（本地路径等），直接返回

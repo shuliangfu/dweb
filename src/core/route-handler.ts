@@ -307,6 +307,122 @@ export class RouteHandler {
   }
 
   /**
+   * 处理 JSR 依赖代理请求（开发环境使用，避免 CORS 问题）
+   * JSR.io 不支持直接通过 HTTP URL 访问 .ts 文件并返回编译后的 JavaScript
+   * 所以需要通过开发服务器代理，从 JSR.io 获取文件内容，编译后返回给浏览器
+   * @param req HTTP 请求对象
+   * @param res HTTP 响应对象
+   * @param pathname 请求路径（如 /__jsr/@dreamer/dweb/1.8.2-beta.10/src/client.ts）
+   */
+  private async handleJSRProxyRequest(
+    _req: Request,
+    res: Response,
+    pathname: string,
+  ): Promise<void> {
+    try {
+      // 移除 /__jsr/ 前缀，获取 JSR 路径
+      const jsrPath = pathname.replace(/^\/__jsr\//, "");
+      
+      // 构建 JSR.io 的 URL
+      // 路径格式：@dreamer/dweb/1.8.2-beta.10/src/client.ts
+      const jsrUrl = `https://jsr.io/${jsrPath}`;
+      
+      console.log(`🔍 [JSR Proxy] Fetching from JSR.io: ${jsrUrl}`);
+      
+      // 从 JSR.io 获取文件内容
+      const response = await fetch(jsrUrl);
+      
+      if (!response.ok) {
+        res.status = response.status;
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.text(`Failed to fetch from JSR.io: ${jsrUrl} (${response.status})`);
+        return;
+      }
+      
+      // 检查响应类型
+      const contentType = response.headers.get("content-type") || "";
+      
+      // 如果返回的是 HTML（JSR.io 的文件查看页面），说明路径不正确
+      if (contentType.includes("text/html")) {
+        res.status = 404;
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.text(`JSR.io returned HTML instead of TypeScript file. This usually means the path is incorrect: ${jsrUrl}`);
+        return;
+      }
+      
+      // 读取文件内容
+      const fileContent = await response.text();
+      
+      // 检查文件类型
+      const isTsx = jsrPath.endsWith(".tsx") || jsrPath.endsWith(".ts");
+      
+      let jsCode: string;
+      
+      if (isTsx) {
+        // 使用 esbuild 编译 TypeScript/TSX 文件
+        try {
+          const cwd = Deno.cwd();
+          
+          // 读取 deno.json 获取 import map
+          let importMap: Record<string, string> = {};
+          try {
+            const { readDenoJson } = await import('../utils/file.ts');
+            const denoJson = await readDenoJson(cwd);
+            if (denoJson && denoJson.imports) {
+              importMap = denoJson.imports;
+            }
+          } catch {
+            // deno.json 不存在或解析失败，使用空 import map
+          }
+          
+          // 使用统一的构建函数编译
+          const fileName = pathname.split("/").pop() || "module.ts";
+          jsCode = await buildFromStdin(
+            fileContent,
+            fileName,
+            cwd,
+            jsrPath.endsWith(".tsx") ? "tsx" : "ts",
+            {
+              importMap,
+              cwd,
+              bundleClient: true,
+              minify: false, // 开发环境不压缩，便于调试
+            },
+          );
+        } catch (esbuildError) {
+          // 如果 esbuild 失败，返回错误信息
+          res.status = 500;
+          res.setHeader("Content-Type", "text/plain; charset=utf-8");
+          const errorMsg = esbuildError instanceof Error ? esbuildError.message : String(esbuildError);
+          res.text(`Failed to compile JSR module: ${errorMsg}`);
+          return;
+        }
+      } else {
+        // 非 TS/TSX 文件，直接使用原始内容
+        jsCode = fileContent;
+      }
+      
+      // 设置响应头和状态码
+      res.status = 200;
+      res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.text(jsCode);
+      
+      console.log(`🔍 [JSR Proxy] Successfully proxied: ${jsrUrl}`);
+    } catch (error) {
+      res.status = 500;
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      const errorText = `Failed to proxy JSR request: ${errorMsg}${
+        errorStack ? "\n\n" + errorStack : ""
+      }`;
+      res.text(errorText);
+      console.error(`🔍 [JSR Proxy] Error:`, error);
+    }
+  }
+
+  /**
    * 处理 Chrome DevTools 配置请求
    */
   private handleDevToolsConfig(res: Response): void {
@@ -571,8 +687,12 @@ export class RouteHandler {
       url.pathname = pathname;
     }
 
-    // 注意：/__jsr/ 路径已不再使用，因为 @dreamer/dweb/client 已经被打包进代码
-    // 如果将来有其他 JSR 模块需要在运行时加载，可以恢复这个处理
+    // 处理 JSR 依赖代理请求（开发环境使用，避免 CORS 问题）
+    // JSR.io 不支持直接通过 HTTP URL 访问 .ts 文件并返回编译后的 JavaScript
+    if (pathname.startsWith("/__jsr/")) {
+      await this.handleJSRProxyRequest(req, res, pathname);
+      return;
+    }
 
     // 处理模块请求
     if (pathname.startsWith("/__modules/")) {
