@@ -162,7 +162,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
             fileContent,
             cssPath,
             version,
-            false, // 开发环境
+            true, 
             options,
           );
 
