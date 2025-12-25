@@ -39,13 +39,11 @@ const DREAMER_DWEB_EXPORTS: Record<string, string> = {
 
 /**
  * 将 jsr: 协议转换为浏览器可访问的 URL
- * 在开发环境中，通过开发服务器代理 JSR 依赖，避免 CORS 问题
- * 在生产环境中，直接使用 JSR.io 的 URL（但 JSR.io 不支持直接访问 .ts 文件）
- * @param jsrUrl jsr: 协议的 URL，例如：jsr:@std/fs@^1.0.20 或 jsr:@dreamer/dweb@1.0.0/client
- * @param useProxy 是否使用开发服务器代理（默认 true，开发环境使用）
- * @returns 浏览器可访问的 URL，例如：/__jsr/@dreamer/dweb/1.8.2-beta.10/src/client.ts 或 https://jsr.io/@std/fs/1.0.20/mod.ts
+ * 使用 esm.sh 的 /jsr/ 路径来访问 JSR 包
+ * @param jsrUrl jsr: 协议的 URL，例如：jsr:@std/fs@^1.0.20 或 jsr:@dreamer/dweb@1.8.2-beta.11/client
+ * @returns 浏览器可访问的 URL，例如：https://esm.sh/jsr/@dreamer/dweb@1.8.2-beta.11/client?bundle
  */
-function convertJsrToBrowserUrl(jsrUrl: string, useProxy: boolean = true): string {
+function convertJsrToBrowserUrl(jsrUrl: string): string {
   // 移除 jsr: 前缀
   const jsrPath = jsrUrl.replace(/^jsr:/, "");
   
@@ -55,8 +53,8 @@ function convertJsrToBrowserUrl(jsrUrl: string, useProxy: boolean = true): strin
   
   if (!jsrMatch) {
     // 如果无法匹配，尝试直接使用（可能是不标准的格式）
-    // 这种情况下，返回一个基于 jsr.io 的 URL
-    return `https://jsr.io/${jsrPath}`;
+    // 这种情况下，使用 esm.sh 的格式
+    return `https://esm.sh/jsr/${jsrPath}?bundle`;
   }
   
   const [, scope, packageName, versionWithPrefix, subPath] = jsrMatch;
@@ -64,67 +62,15 @@ function convertJsrToBrowserUrl(jsrUrl: string, useProxy: boolean = true): strin
   // 移除版本号前缀（^ 或 ~），只保留版本号本身
   const version = versionWithPrefix.replace(/^[\^~]/, "");
   
-  // 构建 JSR URL
-  // JSR URL 格式：https://jsr.io/@scope/package/version/path
-  // JSR.io 会自动编译 TypeScript 文件，浏览器请求 .ts 文件时会返回编译后的 JavaScript
+  // 使用 esm.sh 的 /jsr/ 路径格式
+  // 格式：https://esm.sh/jsr/@scope/package@version/subpath?bundle
   if (subPath) {
-    // 有子路径，需要根据 exports 映射到实际文件路径
-    let actualPath: string;
-    
-    // 对于 @dreamer/dweb 包，使用 exports 映射表
-    if (scope === "dreamer" && packageName === "dweb") {
-      const exportKey = `./${subPath}`;
-      if (exportKey in DREAMER_DWEB_EXPORTS) {
-        // 根据 exports 映射到实际文件路径
-        actualPath = DREAMER_DWEB_EXPORTS[exportKey];
-      } else if (subPath.startsWith("extensions/")) {
-        // 处理 extensions 的子路径（如 extensions/validation -> src/extensions/helpers/validation.ts）
-        const extensionSubPath = subPath.substring("extensions/".length);
-        // 根据常见的 extensions 子路径模式构建路径
-        // extensions/validation -> src/extensions/helpers/validation.ts
-        actualPath = `src/extensions/helpers/${extensionSubPath}.ts`;
-      } else {
-        // 如果 exports 中没有，尝试直接使用子路径
-        // 确保路径以 / 开头
-        const normalizedSubPath = subPath.startsWith("/") ? subPath : `/${subPath}`;
-        // 如果子路径没有扩展名，尝试添加 .ts
-        if (!normalizedSubPath.match(/\.(ts|tsx|js|jsx)$/)) {
-          actualPath = `${normalizedSubPath}.ts`;
-        } else {
-          actualPath = normalizedSubPath;
-        }
-      }
-    } else {
-      // 对于其他 JSR 包，直接使用子路径
-      // 注意：理想情况下应该从 JSR 包的 deno.json 读取 exports 字段来映射子路径
-      // 但目前实现中，我们假设子路径就是实际的文件路径
-      // 如果子路径没有扩展名，尝试添加 .ts（JSR 包的标准做法）
-      const normalizedSubPath = subPath.startsWith("/") ? subPath : `/${subPath}`;
-      if (!normalizedSubPath.match(/\.(ts|tsx|js|jsx)$/)) {
-        actualPath = `${normalizedSubPath}.ts`;
-      } else {
-        actualPath = normalizedSubPath;
-      }
-    }
-    
-    // 确保路径以 / 开头
-    if (!actualPath.startsWith("/")) {
-      actualPath = `/${actualPath}`;
-    }
-    
-    // 在开发环境中，使用开发服务器代理，避免 CORS 问题
-    // JSR.io 不支持直接通过 HTTP URL 访问 .ts 文件并返回编译后的 JavaScript
-    if (useProxy) {
-      return `/__jsr/@${scope}/${packageName}/${version}${actualPath}`;
-    }
-    
-    return `https://jsr.io/@${scope}/${packageName}/${version}${actualPath}`;
+    // 有子路径，直接使用子路径（不需要映射到文件路径）
+    // esm.sh 会自动处理 JSR 包的子路径解析
+    return `https://esm.sh/jsr/@${scope}/${packageName}@${version}/${subPath}?bundle`;
   } else {
-    // 没有子路径，指向包的 mod.ts（JSR 包的标准入口文件）
-    if (useProxy) {
-      return `/__jsr/@${scope}/${packageName}/${version}/mod.ts`;
-    }
-    return `https://jsr.io/@${scope}/${packageName}/${version}/mod.ts`;
+    // 没有子路径，指向包的默认入口（esm.sh 会自动处理）
+    return `https://esm.sh/jsr/@${scope}/${packageName}@${version}?bundle`;
   }
 }
 
@@ -146,15 +92,10 @@ function convertToBrowserUrl(importValue: string): string {
   }
   
   // 处理 jsr: 协议
-  // JSR.io 的行为说明：
-  // 1. JSR.io 主要用于分发 TypeScript 源代码，浏览器无法直接执行 TypeScript
-  // 2. 某些包可能导出 .js 文件，可以直接在浏览器中使用
-  // 3. 对于 .ts 文件，需要通过开发服务器代理编译后返回给浏览器
-  // 4. 我们使用代理方案，确保所有 JSR 依赖都能正常工作
+  // 使用 esm.sh 的 /jsr/ 路径来访问 JSR 包
+  // esm.sh 会自动处理 JSR 包的编译和打包
   if (importValue.startsWith("jsr:")) {
-    // 使用代理方案：开发服务器会尝试从 JSR.io 获取编译后的 JavaScript
-    // 如果 JSR.io 返回的是 TypeScript，服务器会使用 esbuild 编译
-    return convertJsrToBrowserUrl(importValue, true);
+    return convertJsrToBrowserUrl(importValue);
   }
   
   // 其他情况（本地路径等），直接返回

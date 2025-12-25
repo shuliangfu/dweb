@@ -22,15 +22,10 @@ const DREAMER_DWEB_EXPORTS: Record<string, string> = {
 
 /**
  * 将 jsr: 协议转换为浏览器可访问的 HTTP URL
- * JSR.io 会自动编译 TypeScript 文件，浏览器请求 .ts 文件时会返回编译后的 JavaScript
+ * 使用 esm.sh 的 /jsr/ 路径来访问 JSR 包
+ * 与 import-map.ts 中的 convertJsrToBrowserUrl 保持一致
  * @param jsrUrl jsr: 协议的 URL，例如：jsr:@dreamer/dweb@^1.8.2/client
- * @returns 浏览器可访问的 HTTP URL，例如：https://jsr.io/@dreamer/dweb/1.8.2/src/client.ts
- */
-/**
- * 将 jsr: 协议转换为浏览器可访问的 URL（使用代理路径）
- * 与 import-map.ts 中的 convertJsrToBrowserUrl 保持一致，使用代理路径
- * @param jsrUrl jsr: 协议的 URL，例如：jsr:@dreamer/dweb@^1.8.2/client
- * @returns 浏览器可访问的代理路径，例如：/__jsr/@dreamer/dweb/1.8.2/src/client.ts
+ * @returns 浏览器可访问的 HTTP URL，例如：https://esm.sh/jsr/@dreamer/dweb@1.8.2/client?bundle
  */
 function convertJsrToHttpUrl(jsrUrl: string): string {
   // 移除 jsr: 前缀
@@ -41,8 +36,8 @@ function convertJsrToHttpUrl(jsrUrl: string): string {
   const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\^~]?[\d.]+(?:-[\w.]+)?)(?:\/(.+))?$/);
   
   if (!jsrMatch) {
-    // 如果无法匹配，返回原始 URL（让浏览器报错，便于调试）
-    return jsrUrl;
+    // 如果无法匹配，使用 esm.sh 的格式
+    return `https://esm.sh/jsr/${jsrPath}?bundle`;
   }
   
   const [, scope, packageName, versionWithPrefix, subPath] = jsrMatch;
@@ -50,60 +45,15 @@ function convertJsrToHttpUrl(jsrUrl: string): string {
   // 移除版本号前缀（^ 或 ~），只保留版本号本身
   const version = versionWithPrefix.replace(/^[\^~]/, "");
   
-  // 构建 JSR HTTP URL
-  // JSR URL 格式：https://jsr.io/@scope/package/version/path
-  // JSR.io 会自动编译 TypeScript 文件，浏览器请求 .ts 文件时会返回编译后的 JavaScript
+  // 使用 esm.sh 的 /jsr/ 路径格式
+  // 格式：https://esm.sh/jsr/@scope/package@version/subpath?bundle
   if (subPath) {
-    // 有子路径，需要根据 exports 映射到实际文件路径
-    let actualPath: string;
-    
-    // 对于 @dreamer/dweb 包，使用 exports 映射表
-    if (scope === "dreamer" && packageName === "dweb") {
-      const exportKey = `./${subPath}`;
-      if (exportKey in DREAMER_DWEB_EXPORTS) {
-        // 根据 exports 映射到实际文件路径
-        actualPath = DREAMER_DWEB_EXPORTS[exportKey];
-      } else if (subPath.startsWith("extensions/")) {
-        // 处理 extensions 的子路径（如 extensions/validation -> src/extensions/helpers/validation.ts）
-        const extensionSubPath = subPath.substring("extensions/".length);
-        // 根据常见的 extensions 子路径模式构建路径
-        // extensions/validation -> src/extensions/helpers/validation.ts
-        actualPath = `src/extensions/helpers/${extensionSubPath}.ts`;
-      } else {
-        // 如果 exports 中没有，尝试直接使用子路径
-        // 确保路径以 / 开头
-        const normalizedSubPath = subPath.startsWith("/") ? subPath : `/${subPath}`;
-        // 如果子路径没有扩展名，尝试添加 .ts
-        if (!normalizedSubPath.match(/\.(ts|tsx|js|jsx)$/)) {
-          actualPath = `${normalizedSubPath}.ts`;
-        } else {
-          actualPath = normalizedSubPath;
-        }
-      }
-    } else {
-      // 对于其他 JSR 包，直接使用子路径
-      // 注意：理想情况下应该从 JSR 包的 deno.json 读取 exports 字段来映射子路径
-      // 但目前实现中，我们假设子路径就是实际的文件路径
-      // 如果子路径没有扩展名，尝试添加 .ts（JSR 包的标准做法）
-      const normalizedSubPath = subPath.startsWith("/") ? subPath : `/${subPath}`;
-      if (!normalizedSubPath.match(/\.(ts|tsx|js|jsx)$/)) {
-        actualPath = `${normalizedSubPath}.ts`;
-      } else {
-        actualPath = normalizedSubPath;
-      }
-    }
-    
-    // 确保路径以 / 开头
-    if (!actualPath.startsWith("/")) {
-      actualPath = `/${actualPath}`;
-    }
-    
-    // 使用代理路径，与 import-map.ts 中的 convertJsrToBrowserUrl 保持一致
-    return `/__jsr/@${scope}/${packageName}/${version}${actualPath}`;
+    // 有子路径，直接使用子路径（不需要映射到文件路径）
+    // esm.sh 会自动处理 JSR 包的子路径解析
+    return `https://esm.sh/jsr/@${scope}/${packageName}@${version}/${subPath}?bundle`;
   } else {
-    // 没有子路径，指向包的 mod.ts（JSR 包的标准入口文件）
-    // 使用代理路径
-    return `/__jsr/@${scope}/${packageName}/${version}/mod.ts`;
+    // 没有子路径，指向包的默认入口（esm.sh 会自动处理）
+    return `https://esm.sh/jsr/@${scope}/${packageName}@${version}?bundle`;
   }
 }
 
@@ -449,8 +399,8 @@ export function createJSRResolverPlugin(
           };
         }
         
-        // 如果已经是代理路径（/__jsr/）或 HTTP URL，直接使用
-        if (clientImport.startsWith("/__jsr/") || clientImport.startsWith("http")) {
+        // 如果已经是 HTTP URL，直接使用
+        if (clientImport.startsWith("http://") || clientImport.startsWith("https://")) {
           return {
             path: clientImport,
             external: true,
