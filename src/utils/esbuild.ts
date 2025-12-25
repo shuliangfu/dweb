@@ -6,7 +6,7 @@
 import * as esbuild from "esbuild";
 import * as path from "@std/path";
 import { getExternalPackages } from "./module.ts";
-import { denoPlugins } from "esbuild-deno-loader@^0.11.0";
+import { denoPlugins } from "jsr:@luca/esbuild-deno-loader@^0.11.0";
 
 // 调试模式：直接输出日志
 
@@ -215,36 +215,36 @@ export function createJSRResolverPlugin(
               external: true,
             };
           }
-          // 如果父包不在 external 列表中，需要解析子路径以便打包
+          // 如果父包不在 external 列表中，检查父包是否是 npm/jsr/http 导入
+          // 如果是，子路径也应该标记为 external，通过网络访问，不打包
           // 从 import map 中查找父包的映射
           const parentImport = importMap[parentPackage];
           if (parentImport) {
-            // 提取子路径（如 "chart/auto" -> "auto"）
-            const subPath = args.path.substring(parentPackage.length + 1);
-            // 构建完整的 npm/jsr 路径
-            let fullPath: string;
-            if (parentImport.startsWith("npm:")) {
-              // npm:chart.js@4.4.7 -> npm:chart.js@4.4.7/auto
-              fullPath = `${parentImport}/${subPath}`;
-            } else if (parentImport.startsWith("jsr:")) {
-              // jsr:@scope/package@1.0.0 -> jsr:@scope/package@1.0.0/subpath
-              fullPath = `${parentImport}/${subPath}`;
-            } else {
-              // 其他情况，返回 undefined 让 esbuild 处理
-              return undefined;
+            // 如果父包是 npm:、jsr: 或 http: 导入，子路径应该标记为 external
+            // 这些依赖应该通过网络访问，不应该被打包
+            if (
+              parentImport.startsWith("npm:") ||
+              parentImport.startsWith("jsr:") ||
+              parentImport.startsWith("http://") ||
+              parentImport.startsWith("https://")
+            ) {
+              // 子路径也应该通过网络访问，标记为 external
+              console.log(`🔍 [Esbuild Debug] Subpath of npm/jsr/http package marked as external: ${args.path} (parent: ${parentPackage})`);
+              return {
+                path: args.path,
+                external: true,
+              };
             }
             
+            // 如果父包是本地路径，需要解析子路径以便打包
             // 使用 Deno 的 import.meta.resolve 来解析路径
             try {
-              const resolved = await import.meta.resolve(fullPath);
+              const resolved = await import.meta.resolve(args.path);
               // 将 file:// URL 转换为绝对路径
               let resolvedPath: string;
               if (resolved.startsWith("file://")) {
-                // 使用 URL 对象解析 file:// URL
                 const url = new URL(resolved);
                 resolvedPath = url.pathname;
-                // 在 Windows 上，pathname 可能以 / 开头，需要移除（但 Deno 通常处理得很好）
-                // 在 Unix 系统上，pathname 就是正确的路径
               } else {
                 resolvedPath = resolved;
               }
@@ -657,10 +657,11 @@ export async function buildFromStdin(
 
   // 使用 @luca/esbuild-deno-loader 插件处理 Deno 特有的模块解析（jsr:、npm: 等）
   // 这个插件会自动处理 JSR 和 npm 包的解析，但我们仍然保留自定义插件以处理特殊逻辑
-  const denoJsonPath = path.join(cwd, "deno.json");
-  const denoLoaderPlugins = denoPlugins({
-    importMapURL: `file://${denoJsonPath}`,
-  });
+  // 注意：denoPlugins 需要一个纯 import map（只包含 imports 和 scopes），
+  // 但 deno.json 包含其他字段，所以我们需要创建一个临时的 import map 文件
+  // 或者不传递 importMapURL，让插件从代码中自动解析
+  // 我们选择不传递 importMapURL，因为我们已经有了 importMap 参数，自定义插件会处理
+  const denoLoaderPlugins = denoPlugins();
 
   // 构建 alias 配置
   const alias = buildAliasConfig(importMap, cwd);
@@ -737,10 +738,11 @@ export async function buildFromEntryPoints(
 
   // 使用 @luca/esbuild-deno-loader 插件处理 Deno 特有的模块解析（jsr:、npm: 等）
   // 这个插件会自动处理 JSR 和 npm 包的解析，但我们仍然保留自定义插件以处理特殊逻辑
-  const denoJsonPath = path.join(cwd, "deno.json");
-  const denoLoaderPlugins = denoPlugins({
-    importMapURL: `file://${denoJsonPath}`,
-  });
+  // 注意：denoPlugins 需要一个纯 import map（只包含 imports 和 scopes），
+  // 但 deno.json 包含其他字段，所以我们需要创建一个临时的 import map 文件
+  // 或者不传递 importMapURL，让插件从代码中自动解析
+  // 我们选择不传递 importMapURL，因为我们已经有了 importMap 参数，自定义插件会处理
+  const denoLoaderPlugins = denoPlugins();
 
   // 构建 alias 配置
   const alias = buildAliasConfig(importMap, cwd);
