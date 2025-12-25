@@ -26,6 +26,12 @@ const DREAMER_DWEB_EXPORTS: Record<string, string> = {
  * @param jsrUrl jsr: 协议的 URL，例如：jsr:@dreamer/dweb@^1.8.2/client
  * @returns 浏览器可访问的 HTTP URL，例如：https://jsr.io/@dreamer/dweb/1.8.2/src/client.ts
  */
+/**
+ * 将 jsr: 协议转换为浏览器可访问的 URL（使用代理路径）
+ * 与 import-map.ts 中的 convertJsrToBrowserUrl 保持一致，使用代理路径
+ * @param jsrUrl jsr: 协议的 URL，例如：jsr:@dreamer/dweb@^1.8.2/client
+ * @returns 浏览器可访问的代理路径，例如：/__jsr/@dreamer/dweb/1.8.2/src/client.ts
+ */
 function convertJsrToHttpUrl(jsrUrl: string): string {
   // 移除 jsr: 前缀
   const jsrPath = jsrUrl.replace(/^jsr:/, "");
@@ -90,10 +96,12 @@ function convertJsrToHttpUrl(jsrUrl: string): string {
       actualPath = `/${actualPath}`;
     }
     
-    return `https://jsr.io/@${scope}/${packageName}/${version}${actualPath}`;
+    // 使用代理路径，与 import-map.ts 中的 convertJsrToBrowserUrl 保持一致
+    return `/__jsr/@${scope}/${packageName}/${version}${actualPath}`;
   } else {
     // 没有子路径，指向包的 mod.ts（JSR 包的标准入口文件）
-    return `https://jsr.io/@${scope}/${packageName}/${version}/mod.ts`;
+    // 使用代理路径
+    return `/__jsr/@${scope}/${packageName}/${version}/mod.ts`;
   }
 }
 
@@ -380,12 +388,26 @@ export function createJSRResolverPlugin(
       
       // 处理直接使用 JSR URL 的情况（如 jsr:@dreamer/dweb@^1.8.2-beta.3/client）
       build.onResolve({ filter: /^jsr:/ }, (args) => {
-        // 如果是 JSR URL，转换为 HTTP URL 后标记为 external
+        // 如果是 JSR URL，转换为代理路径后标记为 external
         if (args.path.startsWith("jsr:")) {
-          const httpUrl = convertJsrToHttpUrl(args.path);
-          console.log(`🔍 [Esbuild Debug] JSR URL resolved: ${args.path} -> ${httpUrl}`);
+          // 先检查 import map 中是否已经有转换后的 URL（代理路径）
+          if (args.path in importMap) {
+            const mappedUrl = importMap[args.path];
+            // 如果已经是代理路径或 HTTP URL，直接使用
+            if (mappedUrl.startsWith("/__jsr/") || mappedUrl.startsWith("http")) {
+              console.log(`🔍 [Esbuild Debug] JSR URL resolved via import map: ${args.path} -> ${mappedUrl}`);
+              return {
+                path: mappedUrl,
+                external: true,
+              };
+            }
+          }
+          
+          // 如果没有在 import map 中找到，使用转换函数生成代理路径
+          const proxyUrl = convertJsrToHttpUrl(args.path);
+          console.log(`🔍 [Esbuild Debug] JSR URL resolved: ${args.path} -> ${proxyUrl}`);
           return {
-            path: httpUrl,
+            path: proxyUrl,
             external: true,
           };
         }
@@ -423,16 +445,25 @@ export function createJSRResolverPlugin(
           return undefined; // 让 esbuild 使用默认解析
         }
 
-        // 如果是 JSR URL，转换为 HTTP URL 后标记为 external，不打包，通过网络请求加载
+        // 如果是 JSR URL，转换为代理路径后标记为 external，不打包，通过网络请求加载
         if (clientImport.startsWith("jsr:")) {
-          // 将 JSR URL 转换为浏览器可访问的 HTTP URL
-          const httpUrl = convertJsrToHttpUrl(clientImport);
-          console.log(`🔍 [Esbuild Debug] @dreamer/dweb/client resolved: ${clientImport} -> ${httpUrl}`);
-          // 标记为 external，浏览器会直接请求转换后的 HTTP URL
+          // 将 JSR URL 转换为浏览器可访问的代理路径（/__jsr/）
+          const proxyUrl = convertJsrToHttpUrl(clientImport);
+          console.log(`🔍 [Esbuild Debug] @dreamer/dweb/client resolved: ${clientImport} -> ${proxyUrl}`);
+          // 标记为 external，浏览器会通过开发服务器代理请求
           // 注意：即使 @dreamer/dweb/client 在 externalPackages 列表中，
-          // 插件返回的 path 会覆盖 esbuild 的默认行为，输出代码中会使用 HTTP URL
+          // 插件返回的 path 会覆盖 esbuild 的默认行为，输出代码中会使用代理路径
           return {
-            path: httpUrl,
+            path: proxyUrl,
+            external: true,
+          };
+        }
+        
+        // 如果已经是代理路径（/__jsr/）或 HTTP URL，直接使用
+        if (clientImport.startsWith("/__jsr/") || clientImport.startsWith("http")) {
+          console.log(`🔍 [Esbuild Debug] @dreamer/dweb/client is already proxy/HTTP URL: ${clientImport}`);
+          return {
+            path: clientImport,
             external: true,
           };
         }
