@@ -412,8 +412,6 @@ export function createJSRResolverPlugin(
 
       // 处理 @dreamer/dweb/client（必须在其他处理器之前，确保优先级最高）
       build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, (args) => {
-        console.log(`🔍 [Esbuild Debug] Resolving @dreamer/dweb/client from ${args.importer}`);
-        
         let clientImport = importMap["@dreamer/dweb/client"];
         
         // 如果没有显式配置 @dreamer/dweb/client，尝试从 @dreamer/dweb 推断

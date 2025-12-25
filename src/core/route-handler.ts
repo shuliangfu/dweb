@@ -66,7 +66,7 @@ export async function preloadImportMapScript(): Promise<void> {
     preloadedImportMapScript = await createImportMapScript();
   } catch (error) {
     // 预加载失败时输出错误信息
-    console.error("🔍 [Import Map Debug] ❌ Failed to preload import map script:", error);
+    console.error("Failed to preload import map script:", error);
   }
 }
 
@@ -443,7 +443,7 @@ export class RouteHandler {
         errorStack ? "\n\n" + errorStack : ""
       }`;
       res.text(errorText);
-      console.error(`🔍 [JSR Proxy] Error:`, error);
+      console.error("JSR Proxy Error:", error);
     }
   }
 
