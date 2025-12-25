@@ -446,7 +446,7 @@ export interface PageProps {
   /** 查询参数 */
   query: Record<string, string>;
   /** 页面数据（load 函数返回的数据） */
-  data: unknown;
+  data: Record<string, unknown>;
   /** 当前语言代码（如果已配置 i18n 插件） */
   lang?: string;
   /** 状态管理 Store（如果已配置 store 插件） */
@@ -488,7 +488,7 @@ export interface LayoutProps {
   /** 子元素（页面内容） */
   children: unknown;
   /** 页面数据（页面 load 函数返回的数据） */
-  data: unknown;
+  data: Record<string, unknown>;
   /** 当前语言代码（如果已配置 i18n 插件） */
   lang?: string;
   /** 状态管理 Store（如果已配置 store 插件） */
