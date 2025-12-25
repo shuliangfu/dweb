@@ -305,12 +305,13 @@ export function createJSRResolverPlugin(
               external: true,
             };
           }
-          // 如果是 npm URL，也需要转换
+          // 如果是 npm URL，转换为 HTTP URL
           if (importValue.startsWith("npm:")) {
-            // npm URL 应该已经在 import map 生成时转换了，但为了安全起见，这里也处理一下
-            // 实际上，npm URL 的转换应该在 import map 生成时完成
+            // 移除 npm: 前缀，使用 esm.sh 作为 CDN
+            const packageSpec = importValue.replace(/^npm:/, "");
+            const httpUrl = `https://esm.sh/${packageSpec}`;
             return {
-              path: args.path,
+              path: httpUrl,
               external: true,
             };
           }
@@ -439,7 +440,7 @@ export function createJSRResolverPlugin(
       });
 
       // 处理 @dreamer/dweb/client（必须在其他处理器之前，确保优先级最高）
-      build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, (args) => {
+      build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, (_args) => {
         let clientImport = importMap["@dreamer/dweb/client"];
         
         // 如果没有显式配置 @dreamer/dweb/client，尝试从 @dreamer/dweb 推断
