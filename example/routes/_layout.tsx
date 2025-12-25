@@ -4,16 +4,16 @@
  * 提供网站的整体布局结构
  */
 
-import Navbar from '../components/Navbar.tsx';
-import Footer from '../components/Footer.tsx';
-import type { ComponentChildren } from 'preact';
+import Navbar from '@components/Navbar.tsx';
+import Footer from '@components/Footer.tsx';
+import type { LayoutProps, ComponentChildren } from '@dreamer/dweb';
 
 /**
  * 根布局组件
  * @param props 组件属性
  * @returns JSX 元素
  */
-export default function RootLayout({ children }: { children: ComponentChildren }) {
+export default function RootLayout({ children }: LayoutProps) {
   // 获取当前路径（在客户端运行时）
   let currentPath = '/';
   if (typeof globalThis !== 'undefined' && globalThis.location) {
@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: ComponentChildren }
       
       {/* 主内容区域 */}
       <main className="grow">
-        {children}
+        {children as ComponentChildren}
       </main>
       
       {/* 页脚 */}
