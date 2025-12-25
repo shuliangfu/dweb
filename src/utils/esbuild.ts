@@ -172,6 +172,21 @@ export function createJSRResolverPlugin(
         if (args.path === "@dreamer/dweb/client") {
           return undefined;
         }
+        
+        // 特别处理 @dreamer/dweb/* 的其他子路径
+        // 如果是 JSR URL，标记为 external，通过网络请求加载
+        if (args.path.startsWith("@dreamer/dweb/")) {
+          const parentPackage = "@dreamer/dweb";
+          const parentImport = importMap[parentPackage];
+          // 如果父包是 JSR URL，子路径也应该标记为 external
+          if (parentImport && parentImport.startsWith("jsr:")) {
+            return {
+              path: args.path,
+              external: true,
+            };
+          }
+        }
+        
         // 首先检查子路径本身是否在 import map 中（如 "@scope/package/subpath"）
         // 如果子路径本身在 import map 中，直接标记为 external
         if (args.path in importMap) {
@@ -193,12 +208,16 @@ export function createJSRResolverPlugin(
             };
           }
           // 如果父包在 import map 中（npm/jsr/http），子路径也应该标记为 external
-          // 因为浏览器会通过 import map 来解析，esbuild 无法打包 npm 包的子路径
+          // 因为浏览器会通过 import map 来解析，esbuild 无法打包 npm/jsr 包的子路径
           if (parentPackage in importMap) {
-            return {
-              path: args.path,
-              external: true,
-            };
+            const parentImport = importMap[parentPackage];
+            // 如果父包是 JSR URL 或 npm URL，子路径应该标记为 external
+            if (parentImport.startsWith("jsr:") || parentImport.startsWith("npm:") || parentImport.startsWith("http")) {
+              return {
+                path: args.path,
+                external: true,
+              };
+            }
           }
         }
         return undefined; // 让其他处理器处理
@@ -237,8 +256,17 @@ export function createJSRResolverPlugin(
           return undefined; // 让 esbuild 使用默认解析
         }
 
-        // 如果是本地路径，解析为绝对路径
-        if (!clientImport.startsWith("jsr:") && !clientImport.startsWith("http")) {
+        // 如果是 JSR URL，标记为 external，不打包，通过网络请求加载
+        if (clientImport.startsWith("jsr:")) {
+          // 直接标记为 external，让浏览器通过 import map 加载
+          return {
+            path: clientImport,
+            external: true,
+          };
+        }
+
+        // 如果是本地路径，解析为绝对路径并打包
+        if (!clientImport.startsWith("http")) {
           const resolvedPath = path.isAbsolute(clientImport)
             ? clientImport
             : path.resolve(cwd, clientImport);
@@ -246,46 +274,6 @@ export function createJSRResolverPlugin(
             path: resolvedPath,
             external: false, // 明确标记为不 external，强制打包
           };
-        }
-
-        // 如果是 JSR URL，解析为实际的 HTTP URL
-        if (clientImport.startsWith("jsr:")) {
-          try {
-            // 在 build 时，import.meta.resolve 可能无法解析 JSR URL
-            // 直接手动构建 JSR URL，不依赖 import.meta.resolve
-            const jsrPath = clientImport.replace(/^jsr:/, "");
-            // 匹配版本号可能包含 ^、~ 等符号，例如 @dreamer/dweb@^1.3.12/client
-            // 正则说明：@([\w-]+)\/([\w-]+)@([\^~]?[\d.]+)\/(.+)
-            // - @([\w-]+) 匹配 scope
-            // - \/([\w-]+) 匹配 packageName
-            // - @([\^~]?[\d.]+) 匹配版本号（可能包含 ^ 或 ~）
-            // - \/(.+) 匹配子路径
-            const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\^~]?[\d.]+)\/(.+)$/);
-            if (!jsrMatch) {
-              return undefined;
-            }
-            
-            const [, scope, packageName, versionWithPrefix, subPath] = jsrMatch;
-            // 移除版本号前缀（^ 或 ~），只保留版本号本身
-            const version = versionWithPrefix.replace(/^[\^~]/, "");
-            
-            let actualSubPath = subPath;
-            if (!actualSubPath.startsWith("src/") && !actualSubPath.includes("/")) {
-              actualSubPath = `src/${subPath}.ts`;
-            } else if (!actualSubPath.endsWith(".ts") && !actualSubPath.endsWith(".tsx")) {
-              actualSubPath = `${actualSubPath}.ts`;
-            }
-            const resolvedUrl = `https://jsr.io/@${scope}/${packageName}/${version}/${actualSubPath}`;
-            
-            // 返回 http-url namespace，并明确标记为不 external
-            return {
-              path: resolvedUrl,
-              namespace: "http-url",
-              external: false, // 明确标记为不 external，强制打包
-            };
-          } catch {
-            return undefined; // 解析失败，使用默认行为
-          }
         }
         
         return undefined; // 不是 JSR URL，使用默认解析

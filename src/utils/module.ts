@@ -95,7 +95,7 @@ export function isPreactDependency(packageName: string): boolean {
 
 /**
  * 判断依赖是否应该被打包
- * 优化策略：通过 npm: 或 http: 导入的客户端依赖通过 CDN 加载，不打包
+ * 优化策略：通过 npm:、jsr: 或 http: 导入的客户端依赖通过 CDN 加载，不打包
  * @param packageName 包名
  * @param importValue import map 中的值
  * @returns 是否应该被打包（false 表示应该保持 external，通过 CDN 加载）
@@ -104,8 +104,13 @@ export function shouldBundleDependency(
   packageName: string,
   importValue: string
 ): boolean {
-  // @dreamer/dweb/client 需要被打包
-  if (packageName === "@dreamer/dweb/client") {
+  // @dreamer/dweb 相关依赖：如果是 JSR URL，不打包，通过网络请求加载
+  if (packageName.startsWith("@dreamer/dweb")) {
+    // 如果是 JSR URL，不打包
+    if (importValue.startsWith("jsr:")) {
+      return false;
+    }
+    // 如果是本地路径，需要打包
     return true;
   }
   
@@ -191,12 +196,25 @@ export function getExternalPackages(
   ];
   
   for (const [key, value] of Object.entries(importMap)) {
-    // @dreamer/dweb/client 根据 bundleClient 参数决定是否打包
-    if (key === "@dreamer/dweb/client") {
-      if (!bundleClient) {
+    // @dreamer/dweb 相关依赖：如果是 JSR URL，始终不打包，通过网络请求加载
+    if (key.startsWith("@dreamer/dweb")) {
+      // 如果是 JSR URL，始终保持 external
+      if (value.startsWith("jsr:")) {
         externalPackages.push(key);
+        continue;
       }
-      continue;
+      // @dreamer/dweb/client 根据 bundleClient 参数决定是否打包（仅限本地路径）
+      if (key === "@dreamer/dweb/client") {
+        if (!bundleClient) {
+          externalPackages.push(key);
+        }
+        continue;
+      }
+      // 其他 @dreamer/dweb/* 依赖，如果是本地路径，默认不打包（保持 external）
+      if (!value.startsWith("http")) {
+        externalPackages.push(key);
+        continue;
+      }
     }
     
     // 如果依赖不应该被打包，则添加到 external 列表
