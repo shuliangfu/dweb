@@ -4,8 +4,6 @@
  * 展示 DWeb 框架的核心信息和特性
  */
 
-/// <reference path="../global.d.ts" />
-
 import Hero from "@components/Hero.tsx";
 import CodeBlock from "@components/CodeBlock.tsx";
 import type { LoadContext, PageProps } from "@dreamer/dweb";
@@ -92,16 +90,9 @@ export const load = async ({
   const userId = currentSession?.data.userId;
 
   const jsrPackageUrl = getJsrPackageUrl();
-	const versionString = getVersionString();
-	
+  const versionString = getVersionString();
 
-	console.log($t("总共{count}条数据", { count: 100 }));
-
-
-
-
-
-
+  console.log($t("总共{count}条数据", { count: 100 }));
 
   return {
     message: "Hello, World!",
@@ -121,29 +112,29 @@ export default function HomePage(
   { params: _params, query: _query, data }: PageProps,
 ) {
   // 使用 useStore hook 获取响应式状态，类似 useState(exampleStore)
-	const state = useExampleStore();
-	const themeState = useThemeStore();
+  const state = useExampleStore();
+  const themeState = useThemeStore();
 
   useEffect(() => {
-		console.log({ 
-			count: state.count,
-			isLoading: state.isLoading,
-			theme: themeState.value
-		});
+    console.log({
+      count: state.count,
+      isLoading: state.isLoading,
+      theme: themeState.value,
+    });
   }, [state.count, state.isLoading, themeState.value]);
 
-  // useEffect(() => {
-  //   // 使用 setInterval 定时调用 action
-  //   const interval = setInterval(() => {
-  //     state.increment();
-	// 		state.toggleIsLoading();
-  //   }, 2000);
+  // 只在组件挂载时执行一次
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      state.increment();
+      state.toggleIsLoading();
+    }, 2000);
 
-  //   // 清理函数：组件卸载时清除定时器
-  //   return () => {
-  //     clearInterval(interval);
-  //   };
-  // }, []); // 空依赖数组，只在组件挂载时设置一次
+    // 清理函数：组件卸载时清除定时器
+    return () => {
+      clearTimeout(timer);
+    };
+  }, []); // 空依赖数组，确保只执行一次
 
   const { versionString } = data as {
     versionString: string;
