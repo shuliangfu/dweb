@@ -34,10 +34,18 @@ export function initTailwindV4(
   // 注意：base 参数应该是绝对路径
   const projectRoot = path.resolve(Deno.cwd());
   
+  // 调试：输出工作目录和优化状态
+  if (isProduction) {
+    console.log(`   [Tailwind v4] 工作目录: ${projectRoot}`);
+    console.log(`   [Tailwind v4] 优化模式: ${optimize}`);
+  }
+  
   // 按照 Fresh 的方式创建 PostCSS 实例
   // Fresh 代码：const instance = postcss(twPostcss({ optimize: ... }))
   // @tailwindcss/postcss 插件支持的参数：
   // - base: 扫描类候选的基础目录（默认为当前工作目录），应该是绝对路径
+  //   * 插件会在 base 目录下自动扫描 routes/, components/, app/, src/ 等常见目录
+  //   * 但是 common/ 目录不在默认扫描范围内，需要在 CSS 文件中使用 @source 指令指定
   // - optimize: 优化和压缩输出 CSS
   // - transformAssetUrls: 启用或禁用资源 URL 重写（默认为 true）
   const instance = postcss(
