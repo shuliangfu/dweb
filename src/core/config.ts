@@ -188,19 +188,13 @@ export async function isMultiAppMode(): Promise<boolean> {
       return false;
 		}
 		
-		console.log({ configPath });
-
 		const configUrl = new URL(configPath, `file://${Deno.cwd()}/`).href;
 
-		console.log({ configUrl });
-
-    // 动态导入配置文件
+		// 动态导入配置文件
     const configModule = await import(configUrl);
 		
 		const config: DWebConfig = configModule.default || configModule;
 		
-		console.log({ config });
-
     return "apps" in config && Array.isArray(config.apps);
   } catch {
     // 如果读取失败，返回 false（单应用模式）

@@ -1561,14 +1561,14 @@ async function buildApp(config: AppConfig): Promise<void> {
 
 	let outDir: string = config.build.outDir;
 	
-	console.log({ outDir, isMultApp, appName: config.name });
-
   let staticDir;
   if (isMultApp) {
     outDir = outDir + "/" + config.name;
-    staticDir = config.static?.dir || config.name + "/assets";
+		staticDir = config.static?.dir || config.name + "/assets";
+		console.log(`\n💡 构建多应用: ${config.name}`);
   } else {
     staticDir = config.static?.dir || "assets";
+		console.log(`\n💡 构建单应用: ${config.name}`);
   }
 
   console.log(`\n📦 构建输出目录: ${outDir}`);
@@ -1595,8 +1595,6 @@ async function buildApp(config: AppConfig): Promise<void> {
   const staticOutDir = path.join(config.build.outDir, staticDir);
   const compressAssets = config.build?.compress === true;
   const imageQuality = config.build?.imageQuality || 80;
-
-  console.log({ staticDir, staticOutDir, outDir });
 
   try {
     await ensureDir(staticOutDir);
