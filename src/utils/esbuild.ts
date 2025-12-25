@@ -384,6 +384,34 @@ export function createJSRResolverPlugin(
         // 确保插件在解析阶段之前执行
       });
       
+      // 处理直接使用 npm: 协议的情况（如 npm:chart.js@4.4.7）
+      build.onResolve({ filter: /^npm:/ }, (args) => {
+        // 如果是 npm URL，转换为 HTTP URL 后标记为 external
+        if (args.path.startsWith("npm:")) {
+          // 先检查 import map 中是否已经有转换后的 URL
+          if (args.path in importMap) {
+            const mappedUrl = importMap[args.path];
+            // 如果已经是 HTTP URL，直接使用
+            if (mappedUrl.startsWith("http://") || mappedUrl.startsWith("https://")) {
+              return {
+                path: mappedUrl,
+                external: true,
+              };
+            }
+          }
+          
+          // 如果没有在 import map 中找到，使用转换函数生成 HTTP URL
+          // 移除 npm: 前缀，使用 esm.sh 作为 CDN
+          const packageSpec = args.path.replace(/^npm:/, "");
+          const httpUrl = `https://esm.sh/${packageSpec}`;
+          return {
+            path: httpUrl,
+            external: true,
+          };
+        }
+        return undefined;
+      });
+
       // 处理直接使用 JSR URL 的情况（如 jsr:@dreamer/dweb@^1.8.2-beta.3/client）
       build.onResolve({ filter: /^jsr:/ }, (args) => {
         // 如果是 JSR URL，转换为代理路径后标记为 external
