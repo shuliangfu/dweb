@@ -1191,10 +1191,13 @@ export class RouteHandler {
   private async getRenderConfig(
     pageModule: Record<string, unknown>,
     routeInfo: RouteInfo,
+    req?: Request,
+    res?: Response,
   ): Promise<{
     renderMode: RenderMode;
     shouldHydrate: boolean;
     LayoutComponents: ((props: { children: unknown }) => unknown)[];
+    layoutData: Record<string, unknown>[];
     layoutDisabled: boolean;
   }> {
     // 获取渲染模式（优先级：页面组件导出 > 自动检测 > 配置 > 默认 SSR）
@@ -1202,6 +1205,8 @@ export class RouteHandler {
 
     // 获取所有布局组件（从最具体到最通用）
     const LayoutComponents: ((props: { children: unknown }) => unknown)[] = [];
+    // 存储每个布局的 load 数据
+    const layoutData: Record<string, unknown>[] = [];
 
     // 检查页面是否设置了 layout = false（禁用布局）
     const pageLayoutDisabled = pageModule.layout === false;
@@ -1226,15 +1231,47 @@ export class RouteHandler {
               continue;
             }
 
+            // 检查并执行布局的 load 方法（如果存在）
+            let layoutLoadData: Record<string, unknown> = {};
+            if (req && res && layoutModule.load && typeof layoutModule.load === "function") {
+              try {
+                layoutLoadData = await this.loadPageData(layoutModule, req, res);
+                
+                // 检查是否在 load 函数中进行了重定向
+                // 如果响应状态码是 301 或 302，并且设置了 location header，说明已经重定向
+                if ((res.status === 301 || res.status === 302) && res.headers.get('location')) {
+                  // 布局重定向，停止加载后续布局，直接返回
+                  // 注意：布局重定向会中断整个页面渲染流程
+                  return {
+                    renderMode: "ssr",
+                    shouldHydrate: false,
+                    LayoutComponents: [],
+                    layoutData: [],
+                    layoutDisabled: true,
+                  };
+                }
+              } catch (loadError) {
+                // load 函数执行失败，记录警告但继续加载布局组件
+                const errorMessage = loadError instanceof Error
+                  ? loadError.message
+                  : String(loadError);
+                logger.warn(`布局文件 ${layoutPath} 的 load 函数执行失败:`, {
+                  error: errorMessage,
+                });
+              }
+            }
+
             // 检查是否设置了 layout = false（禁用继承）
             // 如果设置了 layout = false，则停止继承，只使用到当前布局为止的布局链
             if (layoutModule.layout === false) {
               LayoutComponents.push(LayoutComponent);
+              layoutData.push(layoutLoadData);
               // 停止继承，不再加载后续的布局
               break;
             }
 
             LayoutComponents.push(LayoutComponent);
+            layoutData.push(layoutLoadData);
           } catch (error) {
             // 布局加载失败不影响页面渲染，跳过该布局
             const errorMessage = error instanceof Error
@@ -1295,6 +1332,7 @@ export class RouteHandler {
       renderMode,
       shouldHydrate,
       LayoutComponents,
+      layoutData,
       layoutDisabled: pageLayoutDisabled,
     };
   }
@@ -1345,8 +1383,14 @@ export class RouteHandler {
           let currentElement = pageElement;
           for (let i = 0; i < LayoutComponents.length; i++) {
             const LayoutComponent = LayoutComponents[i];
+            // 获取对应布局的 load 数据（如果有）
+            const layoutProps = layoutData[i] || {};
             // 支持异步布局组件：如果组件返回 Promise，则等待它
-            const layoutResult = LayoutComponent({ children: currentElement });
+            // 将布局的 load 数据作为 props 传递给布局组件
+            const layoutResult = LayoutComponent({ 
+              children: currentElement,
+              ...layoutProps,
+            });
             const layoutElement = layoutResult instanceof Promise
               ? await layoutResult
               : layoutResult;
@@ -2155,11 +2199,13 @@ export class RouteHandler {
     };
 
     // 获取渲染配置
-    const { renderMode, shouldHydrate, LayoutComponents, layoutDisabled } =
+    const { renderMode, shouldHydrate, LayoutComponents, layoutData, layoutDisabled } =
       await this
         .getRenderConfig(
           pageModule,
           routeInfo,
+          req,
+          res,
         );
 
     // 渲染页面内容
@@ -2168,6 +2214,7 @@ export class RouteHandler {
       html = await this.renderPageContent(
         PageComponent,
         LayoutComponents,
+        layoutData,
         pageProps,
         renderMode,
         req,
