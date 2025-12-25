@@ -1,5 +1,7 @@
 // ==================== 应用配置类型 ====================
 
+import type { ComponentChildren } from "preact";
+
 // 扩展目录配置
 export interface ExtendDirConfig {
   dir: string; // 目录路径
@@ -36,25 +38,25 @@ export type PrefetchMode = "single" | "batch";
 // 预加载配置
 export interface PrefetchConfig {
   /** 是否启用资源预取（prefetch），默认 true */
-	enabled?: boolean;
-	/** 
-	 * 预加载的路由配置数组，支持通配符模式和否定模式
-	 * 
-	 * 通配符模式：
-	 * - 星号匹配所有路由
-	 * - 斜杠加星号匹配所有一级路由
-	 * - 斜杠星号斜杠星号匹配所有二级路由，以此类推
-	 * 
-	 * 否定模式（以感叹号开头）：
-	 * - 感叹号加斜杠表示不预加载首页
-	 * - 感叹号加斜杠docs加斜杠星号表示不预加载 docs 下的所有页面
-	 * 
-	 * 具体路由：
-	 * - 斜杠about表示预加载 about 页面
-	 * 
-	 * 注意：否定模式会从已匹配的路由中排除
-	 * 例如配置星号和感叹号加斜杠docs加斜杠星号表示预加载所有路由，但排除 docs 下的页面
-	 */
+  enabled?: boolean;
+  /**
+   * 预加载的路由配置数组，支持通配符模式和否定模式
+   *
+   * 通配符模式：
+   * - 星号匹配所有路由
+   * - 斜杠加星号匹配所有一级路由
+   * - 斜杠星号斜杠星号匹配所有二级路由，以此类推
+   *
+   * 否定模式（以感叹号开头）：
+   * - 感叹号加斜杠表示不预加载首页
+   * - 感叹号加斜杠docs加斜杠星号表示不预加载 docs 下的所有页面
+   *
+   * 具体路由：
+   * - 斜杠about表示预加载 about 页面
+   *
+   * 注意：否定模式会从已匹配的路由中排除
+   * 例如配置星号和感叹号加斜杠docs加斜杠星号表示预加载所有路由，但排除 docs 下的页面
+   */
   routes?: string[];
   /** 是否在预加载时显示全屏加载状态，默认 false */
   loading?: boolean;
@@ -299,14 +301,14 @@ export interface RouteConfig {
   cache?: boolean;
   priority?: "specific-first" | "order";
   /** API 目录，默认为 'routes/api'，也可以配置为 'api' 等相对路径 */
-	apiDir?: string;
-	/** 
-	 * API 路由模式
-	 * - "method": 方法路由模式（默认），通过 URL 路径指定方法名，默认使用中划线格式，例如 /api/users/get-user
-	 * - "rest": RESTful 模式，基于 HTTP 方法和资源路径，例如 GET /api/users, POST /api/users
-	 * @default "method"
-	 */
-	apiMode?: "method" | "rest";
+  apiDir?: string;
+  /**
+   * API 路由模式
+   * - "method": 方法路由模式（默认），通过 URL 路径指定方法名，默认使用中划线格式，例如 /api/users/get-user
+   * - "rest": RESTful 模式，基于 HTTP 方法和资源路径，例如 GET /api/users, POST /api/users
+   * @default "method"
+   */
+  apiMode?: "method" | "rest";
 }
 
 // 服务器配置
@@ -412,10 +414,10 @@ export interface ApiRoute {
  * 用于页面组件的 load 函数，提供路由参数、查询参数、Cookie 和 Session 等信息
  */
 export interface LoadContext {
-	/** 请求对象 */
-	req: Request;
-	/** 响应对象 */
-	res: Response;
+  /** 请求对象 */
+  req: Request;
+  /** 响应对象 */
+  res: Response;
   /** 路由参数 */
   params: Record<string, string>;
   /** 查询参数 */
@@ -456,11 +458,11 @@ export interface PageProps {
 /**
  * 布局组件属性
  * 传递给布局组件的 props
- * 
+ *
  * @example
  * ```tsx
  * import type { LayoutProps } from '@dreamer/dweb';
- * 
+ *
  * export default function RootLayout({ children, data }: LayoutProps) {
  *   return (
  *     <div>
@@ -470,7 +472,7 @@ export interface PageProps {
  *   );
  * }
  * ```
- * 
+ *
  * @example
  * ```tsx
  * // 如果布局有自己的 load 方法，可以扩展类型
@@ -478,7 +480,7 @@ export interface PageProps {
  *   user: User;
  *   theme: string;
  * }
- * 
+ *
  * export default function MyLayout({ children, data, user, theme }: MyLayoutProps) {
  *   return <div className={theme}>{children}</div>;
  * }
@@ -486,7 +488,7 @@ export interface PageProps {
  */
 export interface LayoutProps {
   /** 子元素（页面内容） */
-  children: unknown;
+  children: ComponentChildren;
   /** 页面数据（页面 load 函数返回的数据） */
   data: Record<string, unknown>;
   /** 当前语言代码（如果已配置 i18n 插件） */
