@@ -144,11 +144,14 @@ function convertToBrowserUrl(importValue: string): string {
   }
   
   // 处理 jsr: 协议
-  // 使用开发服务器代理，避免 CORS 问题
-  // JSR.io 不支持直接通过 HTTP URL 访问 .ts 文件并返回编译后的 JavaScript
-  // 所以需要通过开发服务器代理，从 JSR.io 获取文件内容，编译后返回给浏览器
+  // JSR.io 的行为说明：
+  // 1. JSR.io 主要用于分发 TypeScript 源代码，浏览器无法直接执行 TypeScript
+  // 2. 某些包可能导出 .js 文件，可以直接在浏览器中使用
+  // 3. 对于 .ts 文件，需要通过开发服务器代理编译后返回给浏览器
+  // 4. 我们使用代理方案，确保所有 JSR 依赖都能正常工作
   if (importValue.startsWith("jsr:")) {
-    // 在开发和生产环境都使用代理，因为 JSR.io 不支持直接访问 .ts 文件
+    // 使用代理方案：开发服务器会尝试从 JSR.io 获取编译后的 JavaScript
+    // 如果 JSR.io 返回的是 TypeScript，服务器会使用 esbuild 编译
     return convertJsrToBrowserUrl(importValue, true);
   }
   

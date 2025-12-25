@@ -329,8 +329,45 @@ export class RouteHandler {
       
       console.log(`🔍 [JSR Proxy] Fetching from JSR.io: ${jsrUrl}`);
       
-      // 从 JSR.io 获取文件内容
-      const response = await fetch(jsrUrl);
+      // 尝试使用 .js 扩展名（JSR.io 可能会自动编译 TypeScript 为 JavaScript）
+      // 如果 .ts 路径返回 HTML，尝试使用 .js 扩展名
+      let actualUrl = jsrUrl;
+      if (jsrPath.endsWith(".ts") || jsrPath.endsWith(".tsx")) {
+        // 尝试使用 .js 扩展名
+        const jsUrl = jsrUrl.replace(/\.tsx?$/, ".js");
+        console.log(`🔍 [JSR Proxy] Trying .js extension: ${jsUrl}`);
+        
+        // 先尝试使用 .js 扩展名，并设置 Accept 头为 application/javascript
+        const jsResponse = await fetch(jsUrl, {
+          headers: {
+            "Accept": "application/javascript, text/javascript, */*",
+          },
+        });
+        
+        if (jsResponse.ok) {
+          const jsContentType = jsResponse.headers.get("content-type") || "";
+          // 如果返回的是 JavaScript，使用它
+          if (jsContentType.includes("javascript") || jsContentType.includes("application/javascript")) {
+            console.log(`🔍 [JSR Proxy] Successfully fetched compiled JavaScript from: ${jsUrl}`);
+            actualUrl = jsUrl;
+            const jsCode = await jsResponse.text();
+            res.status = 200;
+            res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+            res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            res.text(jsCode);
+            return;
+          }
+        }
+      }
+      
+      // 如果 .js 扩展名不可用，尝试使用 .ts 扩展名，并设置 Accept 头
+      // 从 JSR.io 获取文件内容，设置 Accept 头为 application/javascript
+      // 某些 JSR.io 实现可能会根据 Accept 头返回编译后的 JavaScript
+      const response = await fetch(actualUrl, {
+        headers: {
+          "Accept": "application/javascript, text/javascript, application/typescript, text/typescript, */*",
+        },
+      });
       
       if (!response.ok) {
         res.status = response.status;
