@@ -13,11 +13,12 @@
 
 /**
  * 翻译函数类型
- * 支持 string、number、boolean 类型参数，自动转换为字符串
+ * 支持任意类型参数（string、number、boolean 等），自动转换为字符串
+ * 使用 any 以提供更好的类型兼容性和灵活性
  */
 type TranslationFunction = (
   key: string,
-  params?: Record<string, string | number | boolean>,
+  params?: Record<string, any>,
 ) => string;
 
 /**

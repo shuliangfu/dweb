@@ -61,7 +61,7 @@ function getAppId(app: unknown): string | symbol {
  */
 const defaultTranslationFunction: (
   key: string,
-  params?: Record<string, string | number | boolean>,
+  params?: Record<string, any>,
 ) => string = (key: string) => key;
 
 /**
@@ -140,7 +140,7 @@ export function clearCurrentLanguage(app?: unknown): void {
 function translate(
   key: string,
   translations: TranslationData | null,
-  params?: Record<string, string | number | boolean>,
+  params?: Record<string, any>,
 ): string {
   if (!translations) {
     return key;
@@ -186,7 +186,7 @@ function translate(
 export function getI18n(
   langCode?: string,
   app?: unknown,
-): (key: string, params?: Record<string, string | number | boolean>) => string {
+): (key: string, params?: Record<string, any>) => string {
   const appId = getAppId(app);
   const translationCache = appTranslationCaches.get(appId);
   
@@ -204,8 +204,8 @@ export function getI18n(
   const translations = translationCache.get(lang) || null;
 
   // 返回翻译函数
-  // 支持 string、number、boolean 类型参数，自动转换为字符串
-  return (key: string, params?: Record<string, string | number | boolean>) => {
+  // 支持任意类型参数（string、number、boolean 等），自动转换为字符串
+  return (key: string, params?: Record<string, any>) => {
     return translate(key, translations, params);
   };
 }

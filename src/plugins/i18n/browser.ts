@@ -7,7 +7,7 @@
 interface I18nData {
   lang: string;
   translations: Record<string, unknown>;
-  t: (key: string, params?: Record<string, string | number | boolean>) => string;
+  t: (key: string, params?: Record<string, any>) => string;
 }
 
 interface I18nConfig {
@@ -20,8 +20,8 @@ interface I18nConfig {
  */
 function createTranslateFunction(
   translations: Record<string, unknown>,
-): (key: string, params?: Record<string, string | number | boolean>) => string {
-  return function (key: string, params?: Record<string, string | number | boolean>): string {
+): (key: string, params?: Record<string, any>) => string {
+  return function (key: string, params?: Record<string, any>): string {
     if (!translations || typeof translations !== "object") {
       return key;
     }
@@ -84,8 +84,8 @@ function initI18n(config: I18nConfig): void {
   (globalThis as any).__I18N_DATA__ = i18nData;
 
   // 全局翻译函数（确保 this 指向 window.__I18N_DATA__）
-  // 支持 string、number、boolean 类型参数，自动转换为字符串
-  (globalThis as any).$t = function (key: string, params?: Record<string, string | number | boolean>): string {
+  // 支持任意类型参数（string、number、boolean 等），自动转换为字符串
+  (globalThis as any).$t = function (key: string, params?: Record<string, any>): string {
     if (!i18nData || !i18nData.t) {
       return key;
     }

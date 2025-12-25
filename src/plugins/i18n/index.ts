@@ -143,7 +143,7 @@ function detectLanguage(req: Request, options: I18nPluginOptions): string {
 function translate(
   key: string,
   translations: TranslationData | null,
-  params?: Record<string, string | number | boolean>,
+  params?: Record<string, any>,
 ): string {
   if (!translations) {
     return key;
@@ -383,8 +383,8 @@ export function i18n(options: I18nPluginOptions): Plugin {
       setCurrentLanguage(langCode);
 
       // 创建翻译函数
-      // 支持 string、number、boolean 类型参数，自动转换为字符串
-      const tFunction = (key: string, params?: Record<string, string | number | boolean>) => {
+      // 支持任意类型参数（string、number、boolean 等），自动转换为字符串
+      const tFunction = (key: string, params?: Record<string, any>) => {
         return translate(key, translationCache.get(langCode) || null, params);
       };
 

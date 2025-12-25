@@ -636,11 +636,11 @@ class ClientRouter {
     }
 
     // 确保 $t 函数始终可用
-    // 支持 string、number、boolean 类型参数，自动转换为字符串
+    // 支持任意类型参数（string、number、boolean 等），自动转换为字符串
     if (typeof (globalThis as Record<string, unknown>).$t !== "function") {
       (globalThis as Record<string, unknown>).$t = function (
         key: string,
-        _params?: Record<string, string | number | boolean>,
+        _params?: Record<string, any>,
       ): string {
         return key;
       };
