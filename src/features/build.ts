@@ -760,29 +760,7 @@ async function compileWithCodeSplitting(
     
     // 写入文件（所有文件都需要写入，包括入口文件和共享 chunk）
     await Deno.writeTextFile(finalOutputPath, content);
-    
-    // 调试：记录所有生成的文件（包括 esbuild 原始路径和我们的 hash 文件名）
-    // 如果 hash 是 85f9136f8d111bd，输出详细信息以便调试
-    if (hash === "85f9136f8d111bd") {
-      console.log(`[DEBUG] 找到 85f9136f8d111bd: ${relativeToOutdirNormalized} -> ${hashName} (isEntry: ${isEntryFile})`);
-      console.log(`   [DEBUG] contentHashToFileNameMap.set(${hash}, ${hashName})`);
-    }
   }
-  
-  // 调试：输出 contentHashToFileNameMap 的内容（仅针对 85f9136f8d111bd）
-  if (contentHashToFileNameMap.has("85f9136f8d111bd")) {
-    console.log(`[DEBUG] contentHashToFileNameMap 包含 85f9136f8d111bd: ${contentHashToFileNameMap.get("85f9136f8d111bd")}`);
-  } else {
-    console.log(`[DEBUG] contentHashToFileNameMap 不包含 85f9136f8d111bd，总大小: ${contentHashToFileNameMap.size}`);
-  }
-  
-  // 调试：输出所有 esbuild 生成的文件路径
-  // console.log(`[DEBUG] esbuild 生成了 ${result.outputFiles.length} 个文件`);
-  // for (const outputFile of result.outputFiles) {
-  //   const relativeToOutdir = path.relative(outDir, outputFile.path);
-  //   const relativeToOutdirNormalized = relativeToOutdir.replace(/[\/\\]/g, "/");
-  //   console.log(`[DEBUG] esbuild 文件: ${relativeToOutdirNormalized}`);
-  // }
   
   // 第二遍循环：替换所有文件中的 chunk 引用
   // 需要多遍处理，因为 chunk 文件可能也引用了其他 chunk 文件
@@ -797,21 +775,6 @@ async function compileWithCodeSplitting(
   let currentContentHashToFileNameMap = new Map<string, string>();
   for (const [hash, fileName] of contentHashToFileNameMap.entries()) {
     currentContentHashToFileNameMap.set(hash, fileName);
-  }
-  
-  // 调试：验证 currentContentHashToFileNameMap 是否正确初始化
-  if (contentHashToFileNameMap.has("85f9136f8d111bd")) {
-    const expectedValue = contentHashToFileNameMap.get("85f9136f8d111bd")!;
-    if (currentContentHashToFileNameMap.has("85f9136f8d111bd")) {
-      const actualValue = currentContentHashToFileNameMap.get("85f9136f8d111bd")!;
-      if (actualValue === expectedValue) {
-        console.log(`[DEBUG] currentContentHashToFileNameMap 正确初始化: 85f9136f8d111bd -> ${actualValue}`);
-      } else {
-        console.log(`[DEBUG] currentContentHashToFileNameMap 值不匹配: 期望 ${expectedValue}, 实际 ${actualValue}`);
-      }
-    } else {
-      console.log(`[DEBUG] currentContentHashToFileNameMap 未包含 85f9136f8d111bd，但 contentHashToFileNameMap 包含`);
-    }
   }
   
   while (hasChanges && iteration < maxIterations) {
