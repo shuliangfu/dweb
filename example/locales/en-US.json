@@ -1,8 +1,9 @@
 {
-  "首页": "Home",
+  "你好，世界！": "Hello, World!",
+  "关于": "About",
+  "总共{count}条数据": "There are {count} data",
+  "文档": "Documentation",
   "特性": "Features",
   "示例": "Examples",
-  "文档": "Documentation",
-  "关于": "About",
-  "你好，世界！": "Hello, World!"
+  "首页": "Home"
 }

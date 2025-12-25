@@ -4,6 +4,8 @@
  * 展示 DWeb 框架的核心信息和特性
  */
 
+/// <reference path="../global.d.ts" />
+
 import Hero from "@components/Hero.tsx";
 import CodeBlock from "@components/CodeBlock.tsx";
 import type { LoadContext, PageProps } from "@dreamer/dweb";
@@ -90,7 +92,16 @@ export const load = async ({
   const userId = currentSession?.data.userId;
 
   const jsrPackageUrl = getJsrPackageUrl();
-  const versionString = getVersionString();
+	const versionString = getVersionString();
+	
+
+	console.log($t("总共{count}条数据", { count: 100 }));
+
+
+
+
+
+
 
   return {
     message: "Hello, World!",
