@@ -243,13 +243,19 @@ export async function createImportMapScript(
     // 但转换后的 URL（如 https://esm.sh/chart.js@4.4.7）无法自动解析子路径
     // 所以我们需要显式添加常见的子路径映射
     // 例如：chart -> https://esm.sh/chart.js@4.4.7，自动生成 chart/auto -> https://esm.sh/chart.js@4.4.7/auto
+    // 注意：JSR URL（https://jsr.io/）不需要自动生成子路径，因为 JSR 包的结构不同
     const commonSubpaths = ["auto", "helpers", "utils", "types", "dist", "lib", "src"];
     
     for (const [packageName, packageUrl] of Object.entries(clientImports)) {
-      // 只处理已转换的 HTTP URL（npm: 和 jsr: 已经转换为 https://）
+      // 只处理已转换的 HTTP URL（npm: 已经转换为 https://esm.sh/）
+      // 不处理 JSR URL（https://jsr.io/），因为 JSR 包的结构不同，不应该自动生成子路径
       // 不处理本地路径
-      if (packageUrl.startsWith("https://") || packageUrl.startsWith("http://")) {
-        // 为常见的子路径自动生成映射
+      if (
+        (packageUrl.startsWith("https://") || packageUrl.startsWith("http://")) &&
+        !packageUrl.startsWith("https://jsr.io/") &&
+        !packageUrl.startsWith("http://jsr.io/")
+      ) {
+        // 为常见的子路径自动生成映射（仅限 npm 包）
         for (const subpath of commonSubpaths) {
           const subpathKey = `${packageName}/${subpath}`;
           // 如果子路径还没有在 clientImports 或 subpathImports 中，且不在 allImports 中（避免覆盖用户自定义的映射）
