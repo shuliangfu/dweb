@@ -145,9 +145,9 @@ export default function HomePage(
 	
 
 
-	// const mergedClassName = twMerge("text-red-500", "text-blue-500");
-	// console.log(mergedClassName);
-	// console.log(Chart);
+	const mergedClassName = twMerge("text-red-500", "text-blue-500");
+	console.log(mergedClassName);
+	console.log(Chart);
 
 
 

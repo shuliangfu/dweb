@@ -30,11 +30,13 @@
     "@std/path/glob-to-regexp": "jsr:@std/path@^1.1.3/glob-to-regexp",
     "@std/media-types/content_type": "https://deno.land/std@0.208.0/media_types/content_type.ts",
     "@std/crypto": "https://deno.land/std@0.208.0/crypto/mod.ts",
+
     "preact": "https://esm.sh/preact@latest",
-    "preact/hooks": "https://esm.sh/preact@latest/hooks",
-    "preact/jsx-runtime": "https://esm.sh/preact@latest/jsx-runtime",
+    "preact/hooks": "https://esm.sh/preact@latest/hooks?external=preact",
+    "preact/jsx-runtime": "https://esm.sh/preact@latest/jsx-runtime?external=preact",
     "preact/signals": "https://esm.sh/@preact/signals@latest?external=preact",
     "preact-render-to-string": "npm:preact-render-to-string@6.5.1",
+
     "tailwindcss": "npm:tailwindcss@^4.1.10",
     "tailwindcss-v3": "npm:tailwindcss@^3.4.0",
     "@tailwindcss/postcss": "npm:@tailwindcss/postcss@^4.1.10",
