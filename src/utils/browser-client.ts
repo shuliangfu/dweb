@@ -440,6 +440,7 @@ class ClientRenderer {
   private async nestLayoutComponents(
     LayoutComponents: unknown[],
     pageElement: unknown,
+    pageData?: Record<string, unknown>,
   ): Promise<unknown> {
     if (LayoutComponents.length === 0) {
       return pageElement;
@@ -450,10 +451,13 @@ class ClientRenderer {
     for (const LayoutComponent of LayoutComponents) {
       try {
         // 先尝试直接调用布局组件（支持异步组件）
+        // 传递 children 和 data 属性
+        const layoutProps = {
+          children: currentElement,
+          data: pageData || {},
+        };
         const layoutResult =
-          (LayoutComponent as (props: { children: unknown }) => unknown)({
-            children: currentElement,
-          });
+          (LayoutComponent as (props: { children: unknown; data: Record<string, unknown> }) => unknown)(layoutProps);
         // 如果布局组件返回 Promise，等待它
         if (layoutResult instanceof Promise) {
           currentElement = await layoutResult;
@@ -467,9 +471,11 @@ class ClientRenderer {
           layoutError,
         );
         try {
-          const layoutResult = this.jsxFunc(LayoutComponent, {
+          const layoutProps = {
             children: currentElement,
-          });
+            data: pageData || {},
+          };
+          const layoutResult = this.jsxFunc(LayoutComponent, layoutProps);
           if (layoutResult instanceof Promise) {
             currentElement = await layoutResult;
           } else {
@@ -498,10 +504,14 @@ class ClientRenderer {
     // 创建页面元素
     const pageElement = await this.createPageElement(PageComponent, props);
 
-    // 嵌套布局组件
+    // 提取页面数据，用于传递给布局组件
+    const pageData = (props.data as Record<string, unknown> | undefined) || {};
+
+    // 嵌套布局组件，传递 pageData
     let finalElement = await this.nestLayoutComponents(
       LayoutComponents,
       pageElement,
+      pageData,
     );
 
     // 如果最终元素为空，使用页面元素作为后备
