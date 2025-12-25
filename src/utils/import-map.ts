@@ -151,6 +151,8 @@ function convertToBrowserUrl(importValue: string): string {
 export async function createImportMapScript(
   searchPaths?: string[],
 ): Promise<string | null> {
+  console.log("🔍 [Import Map Debug] createImportMapScript called", { searchPaths });
+  
   // 检查缓存是否有效（注意：如果传入了不同的 searchPaths，应该不使用缓存）
   const now = Date.now();
   const useCache = !searchPaths &&
@@ -162,6 +164,8 @@ export async function createImportMapScript(
     console.log("🔍 [Import Map Debug] Using cached import map");
     return cachedImportMapScript;
   }
+  
+  console.log("🔍 [Import Map Debug] Generating new import map...");
   
   try {
     // 读取 deno.json 或 deno.jsonc（尝试多个可能的位置）
@@ -186,7 +190,10 @@ export async function createImportMapScript(
       }
     }
     
+    console.log("🔍 [Import Map Debug] Found imports in deno.json:", Object.keys(allImports).length);
+    
     if (Object.keys(allImports).length === 0) {
+      console.log("🔍 [Import Map Debug] ⚠️  No imports found in deno.json, returning null");
       return null;
     }
     
@@ -347,8 +354,10 @@ export async function createImportMapScript(
       importMapScriptCacheTime = now;
     }
     
+    console.log("🔍 [Import Map Debug] Import map script generated successfully");
     return script;
-  } catch (_error) {
+  } catch (error) {
+    console.error("🔍 [Import Map Debug] ❌ Error generating import map script:", error);
     return null;
   }
 }
