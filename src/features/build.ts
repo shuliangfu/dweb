@@ -945,20 +945,21 @@ async function compileWithCodeSplitting(
           esbuildPathToHashMap.set(relativePath, newHashName);
         }
         // 更新 currentContentHashToFileNameMap（如果这个文件的 hash 改变了）
-        // 注意：只有当 hash 真正改变时才需要更新映射
-        if (fileInfo.hash !== newHash) {
-          if (fileInfo.hash === "85f9136f8d111bd" || newHash === "85f9136f8d111bd") {
-            console.log(`[DEBUG] 更新 currentContentHashToFileNameMap: ${fileInfo.hash} -> ${newHash}`);
+        // 注意：只有当 hash 真正改变时才需要更新映射（仅针对入口文件）
+        if (isEntryFile && fileInfo.hash) {
+          const newHash = await calculateHash(modifiedContent);
+          if (fileInfo.hash !== newHash) {
+            if (currentContentHashToFileNameMap.has(fileInfo.hash)) {
+              currentContentHashToFileNameMap.delete(fileInfo.hash);
+            }
+            currentContentHashToFileNameMap.set(newHash, newHashName);
           }
-          if (currentContentHashToFileNameMap.has(fileInfo.hash)) {
-            currentContentHashToFileNameMap.delete(fileInfo.hash);
-          }
-          currentContentHashToFileNameMap.set(newHash, newHashName);
         }
         
         // 更新文件信息映射
+        const updatedHash = isEntryFile ? await calculateHash(modifiedContent) : ""; // chunk 文件不需要 hash
         newFileInfoMap.set(relativePath, {
-          hash: newHash,
+          hash: updatedHash,
           hashName: newHashName,
           content: modifiedContent,
           relativePath: relativePath,
