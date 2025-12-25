@@ -288,7 +288,7 @@ async function checkBuildCache(
  * 会生成两个版本：服务端版本（包含 load 函数）和客户端版本（移除 load 函数）
  * @param filePath 源文件路径（绝对路径）
  * @param outDir 输出目录（绝对路径，扁平化输出）
- * @param fileMap 文件映射表（原始路径 -> hash 文件名）
+ * @param fileMap 文件映射表（原始路径 -> 输出文件名）
  * @param useCache 是否使用缓存（默认 true）
  * @param target 编译目标：'server' | 'client' | 'both'（默认 'both'）
  * @returns 编译后的文件路径和 hash 文件名
@@ -648,17 +648,17 @@ async function compileWithCodeSplitting(
 
   // 处理输出文件
   let compiled = 0;
-  const chunkMap = new Map<string, string>(); // 原始路径 -> hash 文件名
-  const chunkFileMap = new Map<string, string>(); // esbuild chunk 路径 -> hash 文件名（用于替换代码中的引用）
+  const chunkMap = new Map<string, string>(); // 原始路径 -> 输出文件名（入口文件是 hash.js，chunk 文件是 esbuild 文件名）
+  const chunkFileMap = new Map<string, string>(); // esbuild chunk 路径 -> 输出文件名（用于替换代码中的引用）
   let fileInfoMap = new Map<string, { hash: string; hashName: string; content: string; relativePath: string }>(); // 文件信息映射
 
   // 根据 target 确定前缀（server/ 或 client/）
   const prefix = `${target}/`;
 
   // 第一遍循环：写入所有文件，记录映射关系
-  // 创建一个映射：esbuild 原始路径 -> hash 文件名（用于替换所有相对路径引用）
+  // 创建一个映射：esbuild 原始路径 -> 输出文件名（用于替换所有相对路径引用）
   const esbuildPathToHashMap = new Map<string, string>();
-  // 创建一个映射：内容 hash -> hash 文件名（用于通过内容 hash 匹配 esbuild 生成的 hash 文件名）
+  // 创建一个映射：内容 hash -> 输出文件名（仅用于入口文件，用于缓存等）
   const contentHashToFileNameMap = new Map<string, string>();
   
   for (const outputFile of result.outputFiles) {
@@ -715,7 +715,7 @@ async function compileWithCodeSplitting(
     }
     const finalOutputPath = path.join(outDir, hashName);
     
-    // 记录 esbuild 路径到 hash 文件名的映射（用于替换所有相对路径引用）
+    // 记录 esbuild 路径到输出文件名的映射（用于替换所有相对路径引用）
     esbuildPathToHashMap.set(relativeToOutdirNormalized, hashName);
     
     // 对于入口文件，记录内容 hash 到 hash 文件名的映射（用于缓存等）
@@ -752,6 +752,7 @@ async function compileWithCodeSplitting(
       // 需要记录 chunk 文件的映射关系，用于替换代码中的引用
       // relativeToOutdirNormalized 是 esbuild 生成的 chunk 路径（相对于 outdir）
       // 例如：chunk-BNMXUETK.js 或 routes/chunk-BNMXUETK.js
+      // hashName 是 esbuild 生成的文件名（如 chunk-BNMXUETK.js）
       chunkFileMap.set(relativeToOutdirNormalized, hashName);
     }
     
@@ -813,11 +814,11 @@ async function compileWithCodeSplitting(
         });
         modifiedContent = newContent;
         
-        // 同时，也要匹配可能的 hash 文件名（如果 esbuild 自己生成了 hash 文件名）
+        // 同时，也要匹配可能的 hash 文件名（入口文件的 hash 文件名）
         // 注意：这里我们只匹配纯 hash 文件名（15 位十六进制，因为 calculateHash 返回 15 个字符），不匹配 chunk- 前缀的
-        // 因为 chunk- 前缀的是我们自己的命名格式
+        // 因为 chunk- 前缀的是 esbuild 生成的文件名格式
         if (/^[a-f0-9]{15}\.js$/i.test(fileName)) {
-          // 这是一个 hash 文件名，可能是 esbuild 自己生成的
+          // 这是一个 hash 文件名，可能是入口文件的 hash 文件名
           // 我们需要检查这个 hash 是否对应某个文件的内容
           const hashFromFileName = fileName.replace(/\.js$/, '');
           // 检查这个 hash 是否在我们的映射中（通过内容 hash 匹配）
@@ -838,9 +839,9 @@ async function compileWithCodeSplitting(
         }
       }
       
-      // 同时，也要替换已经被替换为 hash 文件名的引用（如入口文件的 hash 文件名）
+      // 同时，也要替换已经被替换为文件名的引用（如入口文件的 hash 文件名）
       // 这些引用可能是之前迭代中生成的
-      // 匹配所有相对路径的 hash 文件名引用（15 位十六进制字符，因为 calculateHash 返回 15 个字符，包括 chunk- 前缀）
+      // 匹配所有相对路径的文件名引用（15 位十六进制字符，因为 calculateHash 返回 15 个字符）
       // 注意：这里我们需要通过原始 esbuild 文件名来匹配，而不是依赖 hash，因为 hash 可能在迭代中改变
       const hashFileNameRegex = /(["'])(\.\.?\/)+(chunk-)?([a-f0-9]{15}\.js)(["'])/gi;
       modifiedContent = modifiedContent.replace(hashFileNameRegex, (match, quote1, _prefix, chunkPrefix, hashFileName, quote2) => {
@@ -850,17 +851,17 @@ async function compileWithCodeSplitting(
         // 提取 hash 值（去掉 .js 扩展名）
         const hashFromFileName = hashFileName.replace(/\.js$/, '');
         
-        // 首先，查找这个 hash 文件名对应的原始 esbuild 路径
+        // 首先，查找这个文件名对应的原始 esbuild 路径
         // 注意：这里我们需要通过 fileInfoMap 来查找，因为 hash 可能在迭代中改变
         for (const [, hashName] of esbuildPathToHashMap.entries()) {
           if (hashName === fullFileName) {
-            // 如果找到了对应的映射，保持使用当前的 hash 文件名（因为可能已经被更新）
+            // 如果找到了对应的映射，保持使用当前的文件名（因为可能已经被更新）
             modified = true;
             return `${quote1}./${hashName}${quote2}`;
           }
         }
         // 如果没有找到对应的映射，说明这个文件可能还没有被写入
-        // 检查一下这个 hash 文件名是否在 fileInfoMap 中（可能是之前的迭代中生成的）
+        // 检查一下这个文件名是否在 fileInfoMap 中（可能是之前的迭代中生成的）
         for (const [, info] of fileInfoMap.entries()) {
           if (info.hashName === fullFileName) {
             modified = true;
@@ -878,7 +879,7 @@ async function compileWithCodeSplitting(
           // 注意：这里我们检查的是 fileInfoMap 中的 hash，而不是 currentContentHashToFileNameMap
           // 因为 currentContentHashToFileNameMap 可能在迭代中被更新，导致旧的 hash 被删除
           if (info.hash === hashFromFileName) {
-            // 找到了对应的文件（通过内容 hash 匹配），替换为正确的 hash 文件名
+            // 找到了对应的文件（通过内容 hash 匹配），替换为正确的文件名
             modified = true;
             return `${quote1}./${info.hashName}${quote2}`;
           }
@@ -906,9 +907,8 @@ async function compileWithCodeSplitting(
           }
         }
         // 根据文件类型生成不同的文件名格式
-        // - 入口文件：使用内容 hash 命名（hash.js）
-        // - chunk 文件：保持使用 esbuild 的原始文件名（如 chunk-BNMXUETK.js）
-        // 注意：chunk 文件不应该因为内容修改而改变文件名，应该保持 esbuild 的原始文件名
+        // - 入口文件：使用内容 hash 命名（hash.js），内容改变时重新计算 hash
+        // - chunk 文件：保持使用 esbuild 的原始文件名（如 chunk-BNMXUETK.js），不因内容修改而改变
         let newHashName: string;
         if (isEntryFile) {
           const newHash = await calculateHash(modifiedContent);
@@ -1002,6 +1002,7 @@ async function compileWithCodeSplitting(
 
 /**
  * 编译目录中的所有文件（扁平化输出，使用 hash 文件名）
+ * 注意：入口文件使用 hash 文件名，chunk 文件使用 esbuild 生成的文件名
  * 支持并行编译、构建缓存和代码分割
  * @param srcDir 源目录（相对路径）
  * @param outDir 输出目录（相对路径，扁平化）
@@ -1161,7 +1162,7 @@ async function compileDirectory(
 /**
  * 后处理：替换所有编译文件中的相对路径导入为编译后的文件名
  * @param outDir 输出目录
- * @param fileMap 文件映射表（原始路径 -> hash 文件名）
+ * @param fileMap 文件映射表（原始路径 -> 输出文件名）
  */
 async function postProcessImports(
   outDir: string,
@@ -1169,7 +1170,7 @@ async function postProcessImports(
 ): Promise<void> {
   console.log("\n🔄 后处理：替换导入路径...");
 
-  // 创建反向映射：原始路径 -> hash 文件名
+  // 创建反向映射：原始路径 -> 输出文件名
   // 支持多种路径格式作为 key
   const pathToHashMap = new Map<string, string>();
   for (const [originalPath, hashName] of fileMap.entries()) {
@@ -1278,7 +1279,7 @@ async function postProcessImports(
           const normalizedRelative = relativeImportPath.replace(/\\/g, "/");
           const normalizedAbsolute = absoluteImportPath.replace(/\\/g, "/");
 
-          // 查找对应的 hash 文件名
+          // 查找对应的输出文件名
           const hashFileName = pathToHashMap.get(normalizedRelative) ||
             pathToHashMap.get(relativeImportPath) ||
             pathToHashMap.get(normalizedAbsolute) ||
@@ -1371,7 +1372,7 @@ async function postProcessImports(
 }
 
 /**
- * 生成路由映射文件（路由路径 -> hash 文件名）
+ * 生成路由映射文件（路由路径 -> 输出文件名）
  * 分别生成 server 和 client 两个路由映射文件
  * @param fileMap 文件映射表
  * @param routesDir 路由目录
@@ -1527,7 +1528,7 @@ async function buildApp(config: AppConfig): Promise<void> {
     console.log(`   💾 启用构建缓存（增量构建）`);
   }
 
-  // 文件映射表（原始路径 -> hash 文件名）
+  // 文件映射表（原始路径 -> 输出文件名）
   const fileMap = new Map<string, string>();
 
   // 1. 复制静态资源（保持原文件名，不 hash 化）
