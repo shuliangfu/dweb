@@ -745,7 +745,7 @@ class ClientRouter {
       );
 
       if (!pageDataScript) {
-        throw new Error("页面数据未找到");
+				throw new Error("页面数据未找到");
       }
 
       // 解析 JSON
@@ -773,7 +773,7 @@ class ClientRouter {
 
       return pageData;
     } catch (error: unknown) {
-      console.error("[loadPageData] 加载页面数据失败:", error);
+      // console.error("[loadPageData] 加载页面数据失败:", error);
       throw error;
     }
   }
@@ -1073,7 +1073,7 @@ class ClientRouter {
       }
     } catch (error: unknown) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      console.error("[navigateTo] 导航失败:", errorMsg, error);
+      // console.error("[navigateTo] 导航失败:", errorMsg, error);
 
       // 错误处理
       if (

@@ -22,7 +22,7 @@ export const metadata = {
  * 渲染模式：CSR（客户端渲染）
  * 因为使用了 Preact Hooks，必须在客户端渲染
  */
-// export const renderMode = 'csr';
+export const renderMode = 'csr';
 
 /**
  * 示例页面组件
