@@ -15,7 +15,7 @@ import type {
 import type { RouteInfo, Router } from "./router.ts";
 import { handleApiRoute, loadApiRoute } from "./api-route.ts";
 import type { GraphQLServer } from "../features/graphql/server.ts";
-import { renderToString } from "preact-render-to-string";
+import { renderToString, renderToStringAsync } from "preact-render-to-string";
 import { h } from "preact";
 // 在模块加载时导入 preact/hooks，确保 hooks 上下文在 SSR 时正确初始化
 // 这可以解决 "Cannot read properties of undefined (reading '__H')" 错误
@@ -1218,8 +1218,16 @@ export class RouteHandler {
 
   /**
    * 渲染页面内容为 HTML
+   * 支持异步页面组件和异步布局组件
+   *
+   * 注意：preact-render-to-string 不支持异步组件
+   * 对于异步组件，我们需要创建一个包装组件，在 h() 内部调用异步组件并等待 Promise
+   * 但是 renderToString 不支持异步组件，所以我们需要先等待 Promise 完成，然后用同步方式渲染
+   *
+   * 关键：如果组件使用了 hooks，hooks 上下文需要在 h() 内部初始化
+   * 所以，对于使用 hooks 的异步组件，我们需要在 h() 内部调用组件
    */
-  private renderPageContent(
+  private async renderPageContent(
     PageComponent: (
       props: Record<string, unknown>,
     ) => unknown | Promise<unknown>,
@@ -1228,7 +1236,7 @@ export class RouteHandler {
     pageProps: Record<string, unknown>,
     renderMode: RenderMode,
     req?: Request,
-  ): string {
+  ): Promise<string> {
     if (renderMode === "csr") {
       // CSR 模式：服务端只渲染容器，内容由客户端渲染
       return "";
@@ -1240,7 +1248,88 @@ export class RouteHandler {
     }
 
     try {
-      const pageVNode = h(PageComponent as any, pageProps);
+      // 处理页面组件（支持 async 和 hooks）
+      let pageResult: unknown = null;
+      let pageNeedsHooksContext = false;
+      
+      try {
+        const result = PageComponent(pageProps);
+        if (result instanceof Promise) {
+          pageResult = await result;
+        } else {
+          pageResult = result;
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        if (errorMsg.includes("__H") || errorMsg.includes("hooks")) {
+          pageNeedsHooksContext = true;
+          pageResult = null;
+        } else {
+          throw error;
+        }
+      }
+
+      let pageVNode;
+      if (pageNeedsHooksContext) {
+        // 需要在 h() 内部调用组件，hooks 上下文会正确初始化
+        // 对于 async + hooks 的组件，我们需要先获取 Promise，等待它，然后用结果渲染
+        let savedPromise: Promise<unknown> | null = null;
+        let resolvedResult: unknown = null;
+        
+        const PageWrapper = (props: Record<string, unknown>) => {
+          try {
+            // 在 h() 内部调用组件，hooks 上下文会初始化
+            const result = PageComponent(props);
+            if (result instanceof Promise) {
+              if (!savedPromise) {
+                savedPromise = result;
+              }
+              // 返回 null，等待 Promise 完成后再渲染
+              return null;
+            }
+            // 同步组件直接返回结果
+            resolvedResult = result;
+            return result;
+          } catch {
+            return null;
+          }
+        };
+        
+        // 先创建 VNode 并使用 renderToString 触发 PageWrapper 执行（即使返回 null）
+        // 这样 hooks 上下文会初始化，savedPromise 会被设置
+        const tempVNode = h(PageWrapper as any, pageProps);
+        try {
+          // 使用 renderToString 触发 PageWrapper 执行，获取 Promise
+          renderToString(tempVNode);
+        } catch {
+          // 忽略渲染错误，我们只是要触发 PageWrapper 执行
+        }
+        
+        // 如果组件返回 Promise，等待它完成
+        if (savedPromise) {
+          try {
+            resolvedResult = await savedPromise;
+          } catch {
+            resolvedResult = null;
+          }
+        }
+        
+        // 用结果创建同步组件
+        if (resolvedResult !== null && resolvedResult !== undefined) {
+          const ResultWrapper = () => resolvedResult as any;
+          pageVNode = h(ResultWrapper as any, pageProps);
+        } else {
+          // 如果 resolvedResult 为空，说明是同步组件，直接使用 PageWrapper
+          pageVNode = tempVNode;
+        }
+      } else if (pageResult !== null && pageResult !== undefined) {
+        // 使用已解析的结果创建 VNode
+        const ResultWrapper = () => pageResult as any;
+        pageVNode = h(ResultWrapper as any, pageProps);
+      } else {
+        // 直接使用组件函数
+        pageVNode = h(PageComponent as any, pageProps);
+      }
 
       // 如果有布局，按顺序嵌套包裹（支持异步布局组件）
       // hooks 上下文会在 renderToString 内部初始化
@@ -1276,16 +1365,109 @@ export class RouteHandler {
               },
             ) as LayoutProps;
 
-            // 使用 h() 函数创建布局组件的 VNode
-            currentElement = h(LayoutComponent as any, layoutPropsWithData);
+            let layoutResult: unknown = null;
+            let layoutNeedsHooksContext = false;
+            
+            try {
+              const result = LayoutComponent(layoutPropsWithData);
+              if (result instanceof Promise) {
+                layoutResult = await result;
+              } else {
+                layoutResult = result;
+              }
+            } catch (error) {
+              const errorMsg = error instanceof Error ? error.message : String(error);
+              if (errorMsg.includes("__H") || errorMsg.includes("hooks")) {
+                layoutNeedsHooksContext = true;
+                layoutResult = null;
+              } else {
+                layoutResult = null;
+              }
+            }
+
+            if (layoutNeedsHooksContext) {
+              // 需要在 h() 内部调用组件，hooks 上下文会正确初始化
+              // 对于 async + hooks 的组件，我们需要先获取 Promise，等待它，然后用结果渲染
+              let savedLayoutPromise: Promise<unknown> | null = null;
+              let resolvedLayoutResult: unknown = null;
+              
+              const LayoutWrapper = (props: LayoutProps) => {
+                try {
+                  // 在 h() 内部调用组件，hooks 上下文会初始化
+                  const result = LayoutComponent(props);
+                  if (result instanceof Promise) {
+                    if (!savedLayoutPromise) {
+                      savedLayoutPromise = result;
+                    }
+                    // 返回 null，等待 Promise 完成后再渲染
+                    return null;
+                  }
+                  // 同步组件直接返回结果
+                  resolvedLayoutResult = result;
+                  return result;
+                } catch (error) {
+                  const errorMsg = error instanceof Error ? error.message : String(error);
+                  if (!errorMsg.includes("__H") && !errorMsg.includes("hooks")) {
+                    // 忽略非 hooks 错误
+                  }
+                  return null;
+                }
+              };
+              
+              // 先创建 VNode 并使用 renderToString 触发 LayoutWrapper 执行（即使返回 null）
+              // 这样 hooks 上下文会初始化，savedLayoutPromise 会被设置
+              const tempLayoutVNode = h(LayoutWrapper as any, layoutPropsWithData) as any;
+              try {
+                // 使用 renderToString 触发 LayoutWrapper 执行，获取 Promise
+                renderToString(tempLayoutVNode);
+              } catch {
+                // 忽略渲染错误，我们只是要触发 LayoutWrapper 执行
+              }
+              
+              // 如果组件返回 Promise，等待它完成
+              if (savedLayoutPromise) {
+                try {
+                  resolvedLayoutResult = await savedLayoutPromise;
+                } catch {
+                  resolvedLayoutResult = null;
+                }
+              }
+              
+              // 用结果创建同步组件
+              if (resolvedLayoutResult !== null && resolvedLayoutResult !== undefined) {
+                const ResultWrapper = () => resolvedLayoutResult as any;
+                currentElement = h(ResultWrapper as any, layoutPropsWithData) as any;
+              } else {
+                // 如果 resolvedLayoutResult 为空，说明是同步组件，直接使用 LayoutWrapper
+                currentElement = tempLayoutVNode;
+              }
+            } else if (layoutResult !== null && layoutResult !== undefined) {
+              // 使用已解析的结果创建 VNode
+              const ResultWrapper = () => layoutResult as any;
+              currentElement = h(ResultWrapper as any, layoutPropsWithData) as any;
+            } else {
+              // 直接使用组件函数
+              currentElement = h(LayoutComponent as any, layoutPropsWithData) as any;
+            }
           }
-          html = renderToString(
-            currentElement as unknown as Parameters<typeof renderToString>[0],
+          
+          const renderResult = renderToStringAsync(
+            currentElement as unknown as Parameters<typeof renderToStringAsync>[0],
           );
+          if (renderResult instanceof Promise) {
+            html = await renderResult;
+          } else {
+            html = renderResult;
+          }
         } else {
-          html = renderToString(
-            pageVNode as unknown as Parameters<typeof renderToString>[0],
+          const renderResult = renderToStringAsync(
+            pageVNode as unknown as Parameters<typeof renderToStringAsync>[0],
           );
+          if (renderResult instanceof Promise) {
+            html = await renderResult;
+          } else {
+            html = renderResult;
+          }
         }
 
         // 确保 HTML 内容不为空
@@ -1297,11 +1479,8 @@ export class RouteHandler {
         html = `<div>页面渲染失败: ${errorMsg}</div>`;
       }
 
-      // SSR 和 Hybrid 模式：都需要包装在容器中以便 hydration
-      if (renderMode === "hybrid" || renderMode === "ssr") {
-        html = `<div>${html}</div>`;
-      }
-
+      // 不再需要额外的包装 div，因为 _app.tsx 已经有了 <div id="root">
+      // 直接返回渲染的 HTML
       return html;
     } finally {
       // 渲染完成后清理全局 i18n 函数
@@ -1325,26 +1504,39 @@ export class RouteHandler {
     _req?: Request,
     layoutData?: Record<string, unknown>[],
   ): Promise<string> {
-    // 注入 import map
-    let importMapScript = preloadedImportMapScript;
-    if (!importMapScript) {
-      try {
-        importMapScript = createImportMapScript();
-      } catch (_error) {
-        // 静默处理错误
-      }
-    }
+    // 只在需要客户端脚本时注入 import map
+    // 纯 SSR 模式（ssr + !shouldHydrate）不需要 import map，因为不需要客户端脚本
+    // CSR、Hybrid 和 SSR + Hydration 模式需要 import map
+    const needsClientScript = renderMode === "csr" ||
+      renderMode === "hybrid" ||
+      (renderMode === "ssr" && shouldHydrate) ||
+      hmrClientScript;
 
-    if (importMapScript) {
-      if (fullHtml.includes("</head>")) {
-        fullHtml = fullHtml.replace("</head>", `  ${importMapScript}\n</head>`);
-      } else if (fullHtml.includes("<head>")) {
-        fullHtml = fullHtml.replace("<head>", `<head>\n  ${importMapScript}`);
-      } else {
-        fullHtml = fullHtml.replace(
-          "<html",
-          `<html>\n<head>\n  ${importMapScript}\n</head>`,
-        );
+    if (needsClientScript) {
+      // 注入 import map
+      let importMapScript = preloadedImportMapScript;
+      if (!importMapScript) {
+        try {
+          importMapScript = createImportMapScript();
+        } catch (_error) {
+          // 静默处理错误
+        }
+      }
+
+      if (importMapScript) {
+        if (fullHtml.includes("</head>")) {
+          fullHtml = fullHtml.replace(
+            "</head>",
+            `  ${importMapScript}\n</head>`,
+          );
+        } else if (fullHtml.includes("<head>")) {
+          fullHtml = fullHtml.replace("<head>", `<head>\n  ${importMapScript}`);
+        } else {
+          fullHtml = fullHtml.replace(
+            "<html",
+            `<html>\n<head>\n  ${importMapScript}\n</head>`,
+          );
+        }
       }
     }
 
@@ -2124,9 +2316,10 @@ export class RouteHandler {
       );
 
     // 渲染页面内容
+    // 支持异步页面组件和异步布局组件
     let html: string;
     try {
-      html = this.renderPageContent(
+      html = await this.renderPageContent(
         PageComponent,
         LayoutComponents,
         layoutData,

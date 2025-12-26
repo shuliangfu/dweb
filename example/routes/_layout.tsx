@@ -20,7 +20,7 @@ export const load = () => {
  * @param props 组件属性
  * @returns JSX 元素
  */
-export default function AppLayout({ children, data: _data }: LayoutProps) { 
+export default async function AppLayout({ children, data: _data }: LayoutProps) { 
 	// console.log('布局 data:', data.menus);
 
 

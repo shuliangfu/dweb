@@ -21,14 +21,14 @@ export const metadata = {
 
 // 启用 hydration，让客户端脚本能够激活事件处理
 // 这样页面在 SSR 渲染后，客户端可以正常响应事件（如点击按钮）
-export const hydrate = true;
+// export const hydrate = true;
 
 /**
  * 示例页面组件
  * @param props 页面属性
  * @returns JSX 元素
  */
-export default function ExamplesPage({ params: _params, query: _query, data: _data }: PageProps) {
+export default async function ExamplesPage({ params: _params, query: _query, data: _data }: PageProps) {
   // 使用 Store 管理状态，在 SSR 时安全（useStore 在服务端会直接返回 store 代理对象，不调用 hooks）
   const state = useExamplesPageStore();
 

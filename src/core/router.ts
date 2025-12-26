@@ -600,6 +600,16 @@ export class Router {
       return this.routes.get(urlPath)!;
     }
 
+    // 如果精确匹配失败，尝试匹配对应的 index 文件
+    // 例如：访问 /docs 时，如果没有 /docs 路由，尝试匹配 /docs/index
+    // 但前提是 urlPath 不以 / 结尾（避免与目录路径混淆）
+    if (urlPath !== "/" && !urlPath.endsWith("/")) {
+      const indexPath = urlPath + "/index";
+      if (this.routes.has(indexPath)) {
+        return this.routes.get(indexPath)!;
+      }
+    }
+
     // API 路由前缀匹配（支持 Action 模式，如 /api/examples/getExamples 匹配 /api/examples）
     if (
       urlPath.startsWith("/api/") ||
@@ -754,8 +764,8 @@ export class Router {
     if (this.layouts.has("/")) {
       const rootLayout = this.layouts.get("/")!;
       layoutPaths.push(rootLayout);
-    }
-
+		}
+		
     return layoutPaths;
   }
 

@@ -41,7 +41,7 @@ export async function load({
  * @param props 页面属性
  * @returns JSX 元素
  */
-export default async function DocsPage(
+export default function DocsPage(
   { params: _params, query: _query, data }: PageProps,
 ) {
   // 从 load 函数返回的数据中获取 JSR 包 URL

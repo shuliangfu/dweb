@@ -18,7 +18,7 @@ interface DocsLayoutProps {
  * @param props 组件属性
  * @returns JSX 元素
  */
-export default function DocsLayout({ children }: DocsLayoutProps) {
+export default async function DocsLayout({ children }: DocsLayoutProps) {
   // 在客户端使用 state 跟踪当前路径
   const [currentPath, setCurrentPath] = useState<string>(() => {
     if (typeof globalThis !== "undefined" && globalThis.window) {
