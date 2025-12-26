@@ -1,7 +1,7 @@
 {
   "vendor": true,
   "name": "@dreamer/dweb",
-  "version": "1.8.8",
+  "version": "1.8.9",
   "license": "MIT",
   "exports": {
     ".": "./src/mod.ts",
@@ -102,7 +102,6 @@
   "publish": {
     "include": ["src/**", "deno.json", "README.md", "LICENSE", "SECURITY.md"],
     "exclude": [
-      "imports_map.json",
       "**/example/**",
       "**/tests/**",
       "**/coverage/**",
