@@ -4,7 +4,7 @@
  */
 
 import * as path from '@std/path';
-import { ensureDir } from '@std/fs/ensure_dir';
+import { ensureDir } from '@std/fs/ensure-dir';
 import { readDenoJson } from '../utils/file.ts';
 
 /**
