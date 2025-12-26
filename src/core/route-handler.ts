@@ -15,7 +15,6 @@ import type {
 import type { RouteInfo, Router } from "./router.ts";
 import { handleApiRoute, loadApiRoute } from "./api-route.ts";
 import type { GraphQLServer } from "../features/graphql/server.ts";
-import { renderToString } from "npm:preact-render-to-string@6.5.1";
 import type { CookieManager } from "../features/cookie.ts";
 import type { SessionManager } from "../features/session.ts";
 import { removeLoadOnlyImports } from "../utils/module.ts";
@@ -1278,6 +1277,8 @@ export class RouteHandler {
       // 创建错误页面 VNode
       const errorVNode = h(ErrorPageComponent as any, errorProps);
 
+      const { renderToString } = await import("preact-render-to-string");
+
       // 加载 _app.tsx 组件（如果存在）
       const appPath = this.router.getApp();
       if (appPath) {
@@ -1325,6 +1326,8 @@ export class RouteHandler {
     if (req && (req as any).__setGlobalI18n) {
       (req as any).__setGlobalI18n();
     }
+
+    const { renderToString } = await import("preact-render-to-string");
 
     try {
       // 处理页面组件（支持 hooks，但不支持 async）
@@ -2374,6 +2377,8 @@ export class RouteHandler {
     // 渲染完整的 HTML
     let fullHtml: string;
     try {
+      const { renderToString } = await import("preact-render-to-string");
+
       fullHtml = renderToString(appElement);
       if (!fullHtml || fullHtml.trim() === "") {
         throw new Error("_app.tsx 渲染结果为空");
@@ -2756,6 +2761,8 @@ export class RouteHandler {
         );
         const ErrorComponent = errorModule.default;
         if (ErrorComponent) {
+          const { renderToString } = await import("preact-render-to-string");
+
           const html = renderToString(ErrorComponent({}));
           res.status = 404;
           res.html(html);
@@ -2818,6 +2825,8 @@ export class RouteHandler {
         );
         const ErrorComponent = errorModule.default;
         if (ErrorComponent) {
+          const { renderToString } = await import("preact-render-to-string");
+
           const html = renderToString(
             ErrorComponent({ error: { message: errorMessage, statusCode } }),
           );
