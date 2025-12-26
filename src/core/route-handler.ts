@@ -16,9 +16,7 @@ import type { RouteInfo, Router } from "./router.ts";
 import { handleApiRoute, loadApiRoute } from "./api-route.ts";
 import type { GraphQLServer } from "../features/graphql/server.ts";
 
-// 先导入 preact，确保 preact-render-to-string 使用同一个实例
-import { h } from "npm:preact@10.28.0";
-// 然后导入 preact-render-to-string，它会自动使用已导入的 preact 实例
+import { h } from "preact";
 import { renderToString } from "preact-render-to-string";
 
 import type { CookieManager } from "../features/cookie.ts";
@@ -68,9 +66,9 @@ let preloadedImportMapScript: string | null = null;
 /**
  * 预先加载 import map 脚本（在服务器启动时调用）
  */
-export function preloadImportMapScript(): void {
+export async function preloadImportMapScript(): Promise<void> {
   try {
-    preloadedImportMapScript = createImportMapScript();
+    preloadedImportMapScript = await createImportMapScript();
   } catch (error) {
     // 预加载失败时输出错误信息
     console.error("Failed to preload import map script:", error);
@@ -1343,6 +1341,16 @@ export class RouteHandler {
         throw new Error("页面组件不能是异步函数");
       }
       
+      // 初始化 hooks 上下文：先渲染一个简单的组件来初始化 hooks 上下文
+      // 这可以确保在使用 h() 创建组件 VNode 时，hooks 上下文已经准备好
+      try {
+        // 创建一个简单的测试组件来初始化 hooks 上下文
+        const initComponent = () => null;
+        renderToString(h(initComponent, {}));
+      } catch {
+        // 忽略错误，hooks 上下文可能已经初始化
+      }
+      
       // 创建页面 VNode（hooks 上下文会在 h() 调用时自动初始化）
       const pageVNode = h(PageComponent as any, pageProps);
 
@@ -1450,7 +1458,7 @@ export class RouteHandler {
       let importMapScript = preloadedImportMapScript;
       if (!importMapScript) {
         try {
-          importMapScript = createImportMapScript();
+          importMapScript = await createImportMapScript();
         } catch (_error) {
           // 静默处理错误
         }
