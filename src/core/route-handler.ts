@@ -15,6 +15,12 @@ import type {
 import type { RouteInfo, Router } from "./router.ts";
 import { handleApiRoute, loadApiRoute } from "./api-route.ts";
 import type { GraphQLServer } from "../features/graphql/server.ts";
+
+// 先导入 preact，确保 preact-render-to-string 使用同一个实例
+import { h } from "npm:preact@10.28.0";
+// 然后导入 preact-render-to-string，它会自动使用已导入的 preact 实例
+import { renderToString } from "preact-render-to-string";
+
 import type { CookieManager } from "../features/cookie.ts";
 import type { SessionManager } from "../features/session.ts";
 import { removeLoadOnlyImports } from "../utils/module.ts";
@@ -1219,7 +1225,15 @@ export class RouteHandler {
   /**
    * 渲染页面内容为 HTML
    * 支持异步页面组件和异步布局组件
-
+   *
+   * 注意：preact-render-to-string 不支持异步组件
+   * 对于异步组件，我们需要创建一个包装组件，在 h() 内部调用异步组件并等待 Promise
+   * 但是 renderToString 不支持异步组件，所以我们需要先等待 Promise 完成，然后用同步方式渲染
+   *
+   * 关键：如果组件使用了 hooks，hooks 上下文需要在 h() 内部初始化
+   * 所以，对于使用 hooks 的异步组件，我们需要在 h() 内部调用组件
+   */
+  /**
    * 渲染错误页面（优先使用 _500.tsx，如果没有则使用 _error.tsx，如果都没有则返回 null）
    */
   private async renderErrorPage(
@@ -1231,35 +1245,35 @@ export class RouteHandler {
     try {
       // 先尝试加载 _500.tsx
       let errorPagePath = this.router.getErrorPage("500");
-
+      
       // 如果没有 _500.tsx，尝试加载 _error.tsx
       if (!errorPagePath) {
         errorPagePath = this.router.getErrorPage("error");
       }
-
+      
       // 如果都没有，返回 null
       if (!errorPagePath) {
         return null;
       }
-
+      
       // 加载错误页面组件
       const errorPageFullPath = resolveFilePath(errorPagePath);
       const errorPageModule = await import(errorPageFullPath);
       const ErrorPageComponent = errorPageModule.default as (
         props: { error?: { message?: string } },
       ) => unknown;
-
+      
       if (!ErrorPageComponent || typeof ErrorPageComponent !== "function") {
         return null;
       }
-
+      
       // 检查组件是否是异步函数
       const errorProps = {
         error: error instanceof Error
           ? { message: error.message }
           : { message: String(error) },
       };
-
+      
       try {
         const result = ErrorPageComponent(errorProps);
         if (result instanceof Promise) {
@@ -1271,14 +1285,10 @@ export class RouteHandler {
           throw err;
         }
       }
-
-      const { h } = await import("preact");
-
+      
       // 创建错误页面 VNode
       const errorVNode = h(ErrorPageComponent as any, errorProps);
-
-      const { renderToString } = await import("preact-render-to-string");
-
+      
       // 加载 _app.tsx 组件（如果存在）
       const appPath = this.router.getApp();
       if (appPath) {
@@ -1287,17 +1297,15 @@ export class RouteHandler {
         const AppComponent = appModule.default as (props: {
           children: string;
         }) => unknown;
-
+        
         if (AppComponent && typeof AppComponent === "function") {
           const errorHtml = renderToString(errorVNode);
           const appResult = AppComponent({ children: errorHtml });
-          const appElement = appResult instanceof Promise
-            ? await appResult
-            : appResult;
+          const appElement = appResult instanceof Promise ? await appResult : appResult;
           return renderToString(appElement);
         }
       }
-
+      
       // 如果没有 _app.tsx，直接渲染错误页面
       return renderToString(errorVNode);
     } catch {
@@ -1306,7 +1314,7 @@ export class RouteHandler {
     }
   }
 
-  private async renderPageContent(
+  private renderPageContent(
     PageComponent: (
       props: Record<string, unknown>,
     ) => unknown,
@@ -1316,7 +1324,7 @@ export class RouteHandler {
     renderMode: RenderMode,
     req?: Request,
     routeInfo?: RouteInfo,
-  ): Promise<string> {
+  ): string {
     if (renderMode === "csr") {
       // CSR 模式：服务端只渲染容器，内容由客户端渲染
       return "";
@@ -1327,26 +1335,14 @@ export class RouteHandler {
       (req as any).__setGlobalI18n();
     }
 
-    const { renderToString } = await import("preact-render-to-string");
-
     try {
       // 处理页面组件（支持 hooks，但不支持 async）
-      // 先检查组件是否是异步函数，如果是则抛出异常
-      try {
-        const result = PageComponent(pageProps);
-        if (result instanceof Promise) {
-          throw new Error("页面组件不能是异步函数");
-        }
-      } catch (error) {
-        // 如果是 hooks 错误，继续执行（hooks 上下文会在 h() 调用时初始化）
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        if (!errorMsg.includes("__H") && !errorMsg.includes("hooks")) {
-          // 如果不是 hooks 错误，重新抛出
-          throw error;
-        }
+      // 检查组件函数本身是否是异步函数（不调用函数，避免触发 hooks）
+      if (PageComponent.constructor.name === 'AsyncFunction' || 
+          (PageComponent as any)[Symbol.toStringTag] === 'AsyncFunction') {
+        throw new Error("页面组件不能是异步函数");
       }
-
-      const { h } = await import("preact");
+      
       // 创建页面 VNode（hooks 上下文会在 h() 调用时自动初始化）
       const pageVNode = h(PageComponent as any, pageProps);
 
@@ -1380,8 +1376,7 @@ export class RouteHandler {
                 // 布局的 load 数据作为 data
                 data: layoutProps,
                 // 提供当前路由路径
-                routePath: routeInfo?.path ||
-                  (req ? new URL(req.url).pathname : "/"),
+                routePath: routeInfo?.path || (req ? new URL(req.url).pathname : "/"),
                 // 提供 URL 对象
                 url: req ? new URL(req.url) : undefined,
                 // children 放在最后，确保类型正确且不被覆盖
@@ -1389,30 +1384,16 @@ export class RouteHandler {
               },
             ) as LayoutProps;
 
-            // 检查布局组件是否是异步函数，如果是则抛出异常
-            try {
-              const layoutResult = LayoutComponent(layoutPropsWithData);
-              if (layoutResult instanceof Promise) {
-                throw new Error("布局组件不能是异步函数");
-              }
-            } catch (error) {
-              // 如果是 hooks 错误，继续执行（hooks 上下文会在 h() 调用时初始化）
-              const errorMsg = error instanceof Error
-                ? error.message
-                : String(error);
-              if (!errorMsg.includes("__H") && !errorMsg.includes("hooks")) {
-                // 如果不是 hooks 错误，重新抛出
-                throw error;
-              }
+            // 检查布局组件函数本身是否是异步函数（不调用函数，避免触发 hooks）
+            if (LayoutComponent.constructor.name === 'AsyncFunction' || 
+                (LayoutComponent as any)[Symbol.toStringTag] === 'AsyncFunction') {
+              throw new Error("布局组件不能是异步函数");
             }
 
             // 创建布局 VNode（hooks 上下文会在 h() 调用时自动初始化）
-            currentElement = h(
-              LayoutComponent as any,
-              layoutPropsWithData,
-            ) as any;
+            currentElement = h(LayoutComponent as any, layoutPropsWithData) as any;
           }
-
+          
           html = renderToString(
             currentElement as unknown as Parameters<typeof renderToString>[0],
           );
@@ -2275,7 +2256,7 @@ export class RouteHandler {
     // 支持异步页面组件和异步布局组件
     let html: string;
     try {
-      html = await this.renderPageContent(
+      html = this.renderPageContent(
         PageComponent,
         LayoutComponents,
         layoutData,
@@ -2295,14 +2276,14 @@ export class RouteHandler {
         console.error(error.stack);
       }
       console.error("===================================\n");
-
+      
       // 尝试渲染自定义错误页面
       const errorHtml = await this.renderErrorPage(500, error, req, res);
       if (errorHtml) {
         res.html(errorHtml, { status: 500 });
         return;
       }
-
+      
       // 如果没有自定义错误页面，使用默认错误 HTML
       const defaultErrorHtml = `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -2359,26 +2340,22 @@ export class RouteHandler {
         console.error(error.stack);
       }
       console.error("===================================\n");
-
+      
       // 尝试渲染自定义错误页面
       const errorHtml = await this.renderErrorPage(500, error, req, res);
       if (errorHtml) {
         res.html(errorHtml, { status: 500 });
         return;
       }
-
+      
       // 如果没有自定义错误页面，使用默认错误 HTML
-      res.html(`<h1>500 - App Component Error</h1><p>${errorMsg}</p>`, {
-        status: 500,
-      });
+      res.html(`<h1>500 - App Component Error</h1><p>${errorMsg}</p>`, { status: 500 });
       return;
     }
 
     // 渲染完整的 HTML
     let fullHtml: string;
     try {
-      const { renderToString } = await import("preact-render-to-string");
-
       fullHtml = renderToString(appElement);
       if (!fullHtml || fullHtml.trim() === "") {
         throw new Error("_app.tsx 渲染结果为空");
@@ -2394,18 +2371,16 @@ export class RouteHandler {
         console.error(error.stack);
       }
       console.error("===================================\n");
-
+      
       // 尝试渲染自定义错误页面
       const errorHtml = await this.renderErrorPage(500, error, req, res);
       if (errorHtml) {
         res.html(errorHtml, { status: 500 });
         return;
       }
-
+      
       // 如果没有自定义错误页面，使用默认错误 HTML
-      res.html(`<h1>500 - Render Error</h1><p>${errorMsg}</p>`, {
-        status: 500,
-      });
+      res.html(`<h1>500 - Render Error</h1><p>${errorMsg}</p>`, { status: 500 });
       return;
     }
 
@@ -2440,7 +2415,7 @@ export class RouteHandler {
       console.error("请求方法:", req.method);
       console.error("错误:", errorMsg);
       console.error("===================================\n");
-
+      
       // 尝试渲染自定义错误页面
       const error = new Error(errorMsg);
       const errorHtml = await this.renderErrorPage(500, error, req, res);
@@ -2448,11 +2423,9 @@ export class RouteHandler {
         res.html(errorHtml, { status: 500 });
         return;
       }
-
+      
       // 如果没有自定义错误页面，使用默认错误 HTML
-      res.html(`<h1>500 - Internal Server Error</h1><p>${errorMsg}</p>`, {
-        status: 500,
-      });
+      res.html(`<h1>500 - Internal Server Error</h1><p>${errorMsg}</p>`, { status: 500 });
       return;
     }
 
@@ -2761,8 +2734,6 @@ export class RouteHandler {
         );
         const ErrorComponent = errorModule.default;
         if (ErrorComponent) {
-          const { renderToString } = await import("preact-render-to-string");
-
           const html = renderToString(ErrorComponent({}));
           res.status = 404;
           res.html(html);
@@ -2825,8 +2796,6 @@ export class RouteHandler {
         );
         const ErrorComponent = errorModule.default;
         if (ErrorComponent) {
-          const { renderToString } = await import("preact-render-to-string");
-
           const html = renderToString(
             ErrorComponent({ error: { message: errorMessage, statusCode } }),
           );

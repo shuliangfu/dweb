@@ -5,7 +5,7 @@
 
 import type { AppConfig } from "../types/index.ts";
 import { normalizeRouteConfig } from "../core/config.ts";
-import { ensureDir } from "@std/fs/ensure_dir";
+import { ensureDir } from "@std/fs/ensure-dir";
 import { walk } from "@std/fs/walk";
 import { PluginManager } from "../core/plugin.ts";
 import { crypto } from "@std/crypto";

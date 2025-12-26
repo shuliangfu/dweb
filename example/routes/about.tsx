@@ -3,7 +3,7 @@
  * 详细介绍 DWeb 框架的技术栈和设计理念
  */
 
-import TechCard from '@components/TechCard.tsx';
+import TechCard from '../components/TechCard.tsx';
 import type { PageProps } from '@dreamer/dweb';
 
 import { getJsrPackageUrl, getVersionString } from '../utils.ts';

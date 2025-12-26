@@ -4,11 +4,11 @@
  * 展示 DWeb 框架的核心信息和特性
  */
 
-import Hero from "@components/Hero.tsx";
-import CodeBlock from "@components/CodeBlock.tsx";
+import Hero from "../components/Hero.tsx";
+import CodeBlock from "../components/CodeBlock.tsx";
 import type { LoadContext, PageProps } from "@dreamer/dweb";
 import { getJsrPackageUrl, getVersionString } from "../utils.ts";
-import { useExampleStore } from "@store/example.ts";
+import { useExampleStore } from "../stores/example.ts";
 import { useEffect } from "preact/hooks";
 import { useThemeStore } from "@dreamer/dweb/client";
 import { twMerge } from "tailwind-merge";

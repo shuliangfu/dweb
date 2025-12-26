@@ -4,10 +4,10 @@
  * 提供网站的整体布局结构
  */
 
-import Navbar from "@components/Navbar.tsx";
-import Footer from "@components/Footer.tsx";
+import Navbar from "../components/Navbar.tsx";
+import Footer from "../components/Footer.tsx";
 import type { LayoutProps } from "@dreamer/dweb";
-import menus from "@config/menus.ts";
+import menus from "../config/menus.ts";
 
 export const load = () => {
   return {

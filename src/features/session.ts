@@ -9,7 +9,7 @@ import { crypto } from '@std/crypto';
 import { getDatabase } from './database/access.ts';
 import type { MongoDBAdapter } from './database/adapters/mongodb.ts';
 import * as path from '@std/path';
-import { ensureDir } from '@std/fs/ensure_dir';
+import { ensureDir } from '@std/fs/ensure-dir';
 
 /**
  * Session 存储接口
