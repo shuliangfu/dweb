@@ -454,6 +454,10 @@ export interface LoadContext {
   lang?: string;
   /** 状态管理 Store（如果已配置 store 插件） */
   store?: import("../plugins/store/types.ts").Store;
+  /** 当前路由路径 */
+  routePath: string;
+  /** URL 对象 */
+  url: URL;
 }
 
 /**
@@ -471,6 +475,10 @@ export interface PageProps {
   lang?: string;
   /** 状态管理 Store（如果已配置 store 插件） */
   store?: import("../plugins/store/types.ts").Store;
+  /** 当前路由路径 */
+  routePath: string;
+  /** URL 对象 */
+  url: URL;
 }
 
 /**
@@ -533,4 +541,8 @@ export interface LayoutProps {
   lang?: string;
   /** 状态管理 Store（如果已配置 store 插件） */
   store?: import("../plugins/store/types.ts").Store;
+  /** 当前路由路径 */
+  routePath: string;
+  /** URL 对象 */
+  url: URL;
 }

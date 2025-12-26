@@ -130,12 +130,17 @@ function isItemActive(item: NavItem, path: string): boolean {
  */
 export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarProps) {
   // 在客户端使用 state 跟踪当前路径，支持客户端路由导航
+  // 服务端渲染时使用传入的 routePath，客户端初始化时也优先使用传入的值
   const [currentPath, setCurrentPath] = useState<string>(() => {
-    // 初始化：优先使用传入的 prop，其次使用 window.location.pathname（客户端）
+    // 优先使用传入的 prop（服务端渲染时传入的 routePath）
+    if (initialPath) {
+      return initialPath;
+    }
+    // 客户端回退：使用 window.location.pathname
     if (typeof globalThis !== 'undefined' && globalThis.window) {
       return globalThis.window.location.pathname;
     }
-    return initialPath;
+    return '/docs';
   });
 
   // 监听 URL 变化（客户端路由导航和浏览器前进/后退）

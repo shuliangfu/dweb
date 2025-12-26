@@ -38,7 +38,7 @@ export default function App({ children }: AppProps) {
           href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css"
         />
         {/* Prism.js 核心库和常用语言支持 */}
-        <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" />
+        {/* <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" />
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-clike.min.js" />
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js" />
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js" />
@@ -46,7 +46,7 @@ export default function App({ children }: AppProps) {
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js" />
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js" />
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-jsx.min.js" />
-        <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-tsx.min.js" />
+        <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-tsx.min.js" /> */}
       </head>
       <body>
         <div id="root" dangerouslySetInnerHTML={{ __html: children }} />

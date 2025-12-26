@@ -20,20 +20,13 @@ export const load = () => {
  * @param props 组件属性
  * @returns JSX 元素
  */
-export default async function AppLayout({ children, data: _data }: LayoutProps) { 
+export default function AppLayout({ children, data: _data, routePath }: LayoutProps) { 
 	// console.log('布局 data:', data.menus);
-
-
-  // 获取当前路径（在客户端运行时）
-  let currentPath = "/";
-  if (typeof globalThis !== "undefined" && globalThis.location) {
-    currentPath = globalThis.location.pathname;
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* 导航栏 */}
-      <Navbar currentPath={currentPath} />
+      <Navbar currentPath={routePath} />
 
       {/* 主内容区域 */}
       <main className="grow">

@@ -253,6 +253,50 @@ export default function MyLayout({ children }: LayoutProps) {
 }
 ```
 
+## 重要限制
+
+### ⚠️ 布局组件不能是异步函数
+
+**布局组件不能定义为 `async function`**。如果需要进行异步操作（如数据获取），请在组件内部使用 `useEffect` 钩子处理。
+
+#### ❌ 错误示例
+
+```tsx
+// ❌ 错误：布局组件不能是异步函数
+export default async function MyLayout({ children }: LayoutProps) {
+  const data = await fetchData(); // 这会导致错误
+  return <div>{children}</div>;
+}
+```
+
+#### ✅ 正确示例
+
+```tsx
+// ✅ 正确：使用 useEffect 处理异步操作
+import { useEffect, useState } from 'preact/hooks';
+
+export default function MyLayout({ children }: LayoutProps) {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const result = await fetch('/api/data');
+      const json = await result.json();
+      setData(json);
+    };
+    fetchData();
+  }, []);
+
+  return (
+    <div className="layout-wrapper">
+      <header>导航栏</header>
+      <main>{children}</main>
+      <footer>页脚</footer>
+    </div>
+  );
+}
+```
+
 ## 最佳实践
 
 ### 1. 保持布局简洁

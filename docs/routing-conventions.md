@@ -171,6 +171,48 @@ export default function DocsLayout({ children }: LayoutProps) {
 }
 ```
 
+### ⚠️ 重要限制：布局组件不能是异步函数
+
+**布局组件不能定义为 `async function`**。如果需要进行异步操作（如数据获取），请在组件内部使用 `useEffect` 钩子处理。
+
+#### ❌ 错误示例
+
+```tsx
+// ❌ 错误：布局组件不能是异步函数
+export default async function MyLayout({ children }: LayoutProps) {
+  const data = await fetchData(); // 这会导致错误
+  return <div>{children}</div>;
+}
+```
+
+#### ✅ 正确示例
+
+```tsx
+// ✅ 正确：使用 useEffect 处理异步操作
+import { useEffect, useState } from 'preact/hooks';
+
+export default function MyLayout({ children }: LayoutProps) {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const result = await fetch('/api/data');
+      const json = await result.json();
+      setData(json);
+    };
+    fetchData();
+  }, []);
+
+  return (
+    <div className="layout-wrapper">
+      <header>导航栏</header>
+      <main>{children}</main>
+      <footer>页脚</footer>
+    </div>
+  );
+}
+```
+
 ### 相关文档
 
 - [布局系统完整文档](./layout.md)
@@ -253,6 +295,105 @@ export default [authMiddleware, loggerMiddleware];
 ### 相关文档
 
 - [中间件完整文档](./middleware.md#路由级中间件-_middlewarets)
+
+## 页面组件
+
+页面组件是路由目录中的普通文件（如 `index.tsx`、`about.tsx`），用于定义页面的内容和逻辑。
+
+### 基本结构
+
+```tsx
+// routes/about.tsx
+import type { PageProps } from '@dreamer/dweb';
+
+export default function AboutPage({ params, query, data }: PageProps) {
+  return (
+    <div>
+      <h1>关于我们</h1>
+      <p>这是关于页面</p>
+    </div>
+  );
+}
+```
+
+### ⚠️ 重要限制：页面组件不能是异步函数
+
+**页面组件不能定义为 `async function`**。如果需要进行异步操作（如数据获取），请在组件内部使用 `useEffect` 钩子处理，或者使用 `load` 函数在服务端获取数据。
+
+#### ❌ 错误示例
+
+```tsx
+// ❌ 错误：页面组件不能是异步函数
+export default async function MyPage({ params, query, data }: PageProps) {
+  const apiData = await fetch('/api/data').then(r => r.json()); // 这会导致错误
+  return <div>{apiData.title}</div>;
+}
+```
+
+#### ✅ 正确示例 1：使用 useEffect 处理异步操作
+
+```tsx
+// ✅ 正确：使用 useEffect 处理异步操作
+import { useEffect, useState } from 'preact/hooks';
+import type { PageProps } from '@dreamer/dweb';
+
+export default function MyPage({ params, query, data }: PageProps) {
+  const [apiData, setApiData] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const result = await fetch('/api/data');
+      const json = await result.json();
+      setApiData(json);
+    };
+    fetchData();
+  }, []);
+
+  if (!apiData) {
+    return <div>加载中...</div>;
+  }
+
+  return <div>{apiData.title}</div>;
+}
+```
+
+#### ✅ 正确示例 2：使用 load 函数在服务端获取数据
+
+```tsx
+// ✅ 正确：使用 load 函数在服务端获取数据
+import type { PageProps, LoadContext } from '@dreamer/dweb';
+
+// load 函数在服务端执行，可以异步获取数据
+export async function load({ params, query }: LoadContext) {
+  const response = await fetch('https://api.example.com/data');
+  const data = await response.json();
+  return { apiData: data };
+}
+
+// 页面组件接收 load 函数返回的数据
+export default function MyPage({ params, query, data }: PageProps) {
+  const apiData = data.apiData as { title: string };
+  return <div>{apiData.title}</div>;
+}
+```
+
+### 页面组件 Props
+
+页面组件接收以下 props：
+
+- `params`: 路由参数（如 `/users/:id` 中的 `id`）
+- `query`: 查询参数（URL 中的 `?key=value`）
+- `data`: `load` 函数返回的数据
+- `lang`: 当前语言代码（如果配置了 i18n 插件）
+- `store`: 状态管理 Store（如果配置了 store 插件）
+- `metadata`: 页面元数据
+- `routePath`: 当前路由路径
+- `url`: URL 对象
+
+### 相关文档
+
+- [布局系统](./layout.md) - 了解布局的使用
+- [路由系统](./core/router.md) - 了解路由的基本概念
 
 ## _404.tsx - 404 错误页面
 

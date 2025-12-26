@@ -55,7 +55,7 @@ export const metadata = {
  * @param props 页面属性
  * @returns JSX 元素
  */
-export default async function AboutPage({ params: _params, query: _query, data: _data }: PageProps) {
+export default function AboutPage({ params: _params, query: _query, data: _data }: PageProps) {
   // 技术栈数据
   const technologies = [
     {

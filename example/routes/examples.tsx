@@ -2,15 +2,14 @@
  * 示例页面
  * 展示各种交互示例：点击事件、接口请求、表单提交等
  * 
- * 注意：此页面使用 Store 来管理状态，避免在 SSR 时使用 hooks
- * Store 在 SSR 时安全，因为 useStore 在服务端会直接返回 store 代理对象，不调用 hooks
+ * 注意：此页面使用了 Preact Hooks（useState、useEffect），
+ * 必须在客户端渲染，因此设置为 CSR 模式
  */
 
-import CodeBlock from '@components/CodeBlock.tsx';
+import { useState, useEffect } from 'preact/hooks';
+import CodeBlock from '../components/CodeBlock.tsx';
 import type { PageProps } from '@dreamer/dweb';
-import { exampleStore, useExampleStore } from '@store/example.ts';
-import { useExamplesPageStore } from '@store/examples-page.ts';
-import { useEffect } from '@dreamer/dweb/client';
+import { exampleStore, type ExampleStoreState } from '../stores/example.ts';
 
 export const metadata = {
   title: '交互示例 - DWeb 框架使用示例',
@@ -19,52 +18,108 @@ export const metadata = {
   author: 'DWeb',
 };
 
-// 启用 hydration，让客户端脚本能够激活事件处理
-// 这样页面在 SSR 渲染后，客户端可以正常响应事件（如点击按钮）
-// export const hydrate = true;
+/**
+ * 渲染模式：CSR（客户端渲染）
+ * 因为使用了 Preact Hooks，必须在客户端渲染
+ */
+// export const renderMode = 'csr';
 
 /**
  * 示例页面组件
  * @param props 页面属性
  * @returns JSX 元素
  */
-export default async function ExamplesPage({ params: _params, query: _query, data: _data }: PageProps) {
-  // 使用 Store 管理状态，在 SSR 时安全（useStore 在服务端会直接返回 store 代理对象，不调用 hooks）
-  const state = useExamplesPageStore();
+export default function ExamplesPage({ params: _params, query: _query, data: _data }: PageProps) {
+  // 状态管理示例
+  const [count, setCount] = useState(0);
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [examples, setExamples] = useState<Array<{ id: number; name: string; description: string }>>([]);
+  const [formData, setFormData] = useState({ name: '', description: '' });
+  const [apiResponse, setApiResponse] = useState<Record<string, unknown> | null>(null);
 
   /**
    * 点击事件示例：增加计数器
    */
   const handleIncrement = () => {
-    state.increment();
+    setCount(count + 1);
+		setMessage(`计数器已增加到 ${count + 1}`);
+		console.log('计数器已增加到', count + 1);
   };
 
   /**
    * 点击事件示例：减少计数器
    */
   const handleDecrement = () => {
-    state.decrement();
+    setCount(count - 1);
+		setMessage(`计数器已减少到 ${count - 1}`);
+		console.log('计数器已减少到', count - 1);
   };
 
   /**
    * 点击事件示例：重置计数器
    */
   const handleReset = () => {
-    state.reset();
+    setCount(0);
+    setMessage('计数器已重置');
   };
 
   /**
    * 接口请求示例：获取示例数据列表（使用函数式 API - 驼峰格式）
    */
-  const fetchExamples = () => {
-    state.fetchExamples();
+  const fetchExamples = async () => {
+    setLoading(true);
+    setMessage('正在加载数据（驼峰格式）...');
+    try {
+      // DWeb 使用函数式 API，通过 URL 路径直接调用函数（驼峰格式）
+      const response = await fetch('/api/examples/getExamples', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const result = await response.json();
+      if (result.success) {
+        setExamples(result.data);
+        setMessage('数据加载成功！（使用驼峰格式：getExamples）');
+        setApiResponse(result);
+      } else {
+        setMessage('数据加载失败');
+      }
+    } catch (error) {
+      setMessage(`请求失败: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   /**
    * 接口请求示例：获取示例数据列表（使用函数式 API - 短横线格式）
    */
-  const fetchExamplesKebab = () => {
-    state.fetchExamplesKebab();
+  const fetchExamplesKebab = async () => {
+    setLoading(true);
+    setMessage('正在加载数据（短横线格式）...');
+    try {
+      // DWeb 使用函数式 API，通过 URL 路径直接调用函数（短横线格式）
+      const response = await fetch('/api/examples/get-examples', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const result = await response.json();
+      if (result.success) {
+        setExamples(result.data);
+        setMessage('数据加载成功！（使用短横线格式：get-examples）');
+        setApiResponse(result);
+      } else {
+        setMessage('数据加载失败');
+      }
+    } catch (error) {
+      setMessage(`请求失败: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   /**
@@ -72,11 +127,37 @@ export default async function ExamplesPage({ params: _params, query: _query, dat
    */
   const handleCreateExample = async (e: Event) => {
     e.preventDefault();
-    if (!state.formData.name.trim()) {
-      state.setMessage('请输入名称');
+    if (!formData.name.trim()) {
+      setMessage('请输入名称');
       return;
     }
-    await state.createExample(state.formData);
+
+    setLoading(true);
+    setMessage('正在创建（驼峰格式）...');
+    try {
+      // DWeb 使用函数式 API，通过 URL 路径直接调用函数（驼峰格式）
+      const response = await fetch('/api/examples/createExample', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      const result = await response.json();
+      if (result.success) {
+        setMessage(`创建成功！ID: ${result.data.id}（使用驼峰格式：createExample）`);
+        setFormData({ name: '', description: '' });
+        setApiResponse(result);
+        // 刷新列表
+        await fetchExamples();
+      } else {
+        setMessage('创建失败');
+      }
+    } catch (error) {
+      setMessage(`请求失败: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   /**
@@ -84,11 +165,37 @@ export default async function ExamplesPage({ params: _params, query: _query, dat
    */
   const handleCreateExampleKebab = async (e: Event) => {
     e.preventDefault();
-    if (!state.formData.name.trim()) {
-      state.setMessage('请输入名称');
+    if (!formData.name.trim()) {
+      setMessage('请输入名称');
       return;
     }
-    await state.createExampleKebab(state.formData);
+
+    setLoading(true);
+    setMessage('正在创建（短横线格式）...');
+    try {
+      // DWeb 使用函数式 API，通过 URL 路径直接调用函数（短横线格式）
+      const response = await fetch('/api/examples/create-example', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      const result = await response.json();
+      if (result.success) {
+        setMessage(`创建成功！ID: ${result.data.id}（使用短横线格式：create-example）`);
+        setFormData({ name: '', description: '' });
+        setApiResponse(result);
+        // 刷新列表
+        await fetchExamples();
+      } else {
+        setMessage('创建失败');
+      }
+    } catch (error) {
+      setMessage(`请求失败: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   /**
@@ -98,15 +205,39 @@ export default async function ExamplesPage({ params: _params, query: _query, dat
     if (!confirm(`确定要删除 ID 为 ${id} 的示例吗？`)) {
       return;
     }
-    await state.deleteExample(id);
+
+    setLoading(true);
+    setMessage('正在删除...');
+    try {
+      // DWeb 使用函数式 API，通过 URL 路径直接调用函数
+      const response = await fetch(`/api/examples/deleteExample?id=${id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const result = await response.json();
+      if (result.success) {
+        setMessage(`删除成功！ID: ${result.deletedId}`);
+        setApiResponse(result);
+        // 刷新列表
+        await fetchExamples();
+      } else {
+        setMessage('删除失败');
+      }
+    } catch (error) {
+      setMessage(`请求失败: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   /**
    * 接口请求示例：延迟响应（演示加载状态）
    */
   const handleDelayedRequest = async () => {
-    state.setLoading(true);
-    state.setMessage('正在请求（延迟 2 秒）...');
+    setLoading(true);
+    setMessage('正在请求（延迟 2 秒）...');
     try {
       // 使用查询参数传递 delay 参数
       const response = await fetch('/api/examples/delayedResponse?delay=2000', {
@@ -117,13 +248,13 @@ export default async function ExamplesPage({ params: _params, query: _query, dat
       });
       const result = await response.json();
       if (result.success) {
-        state.setMessage(result.message);
-        state.setApiResponse(result);
+        setMessage(result.message);
+        setApiResponse(result);
       }
     } catch (error) {
-      state.setMessage(`请求失败: ${error instanceof Error ? error.message : String(error)}`);
+      setMessage(`请求失败: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
-      state.setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -131,8 +262,8 @@ export default async function ExamplesPage({ params: _params, query: _query, dat
    * 接口请求示例：获取计数器值
    */
   const handleGetCounter = async () => {
-    state.setLoading(true);
-    state.setMessage('正在获取计数器值...');
+    setLoading(true);
+    setMessage('正在获取计数器值...');
     try {
       const response = await fetch('/api/examples/getCounter', {
         method: 'POST',
@@ -142,15 +273,14 @@ export default async function ExamplesPage({ params: _params, query: _query, dat
       });
       const result = await response.json();
       if (result.value !== undefined) {
-        // 直接更新 count（store 会自动处理）
-        state.count = result.value;
-        state.setMessage(`计数器值已更新为 ${result.value}`);
-        state.setApiResponse(result);
+        setCount(result.value);
+        setMessage(`计数器值已更新为 ${result.value}`);
+        setApiResponse(result);
       }
     } catch (error) {
-      state.setMessage(`请求失败: ${error instanceof Error ? error.message : String(error)}`);
+      setMessage(`请求失败: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
-      state.setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -158,36 +288,32 @@ export default async function ExamplesPage({ params: _params, query: _query, dat
    * 接口请求示例：增加计数器
    */
   const handleIncrementCounter = async () => {
-    state.setLoading(true);
-    state.setMessage('正在增加计数器...');
+    setLoading(true);
+    setMessage('正在增加计数器...');
     try {
       const response = await fetch('/api/examples/incrementCounter', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ value: state.count }),
+        body: JSON.stringify({ value: count }),
       });
       const result = await response.json();
       if (result.success) {
-        // 直接更新 count（store 会自动处理）
-        state.count = result.value;
-        state.setMessage(`计数器已增加到 ${result.value}`);
-        state.setApiResponse(result);
+        setCount(result.value);
+        setMessage(`计数器已增加到 ${result.value}`);
+        setApiResponse(result);
       }
     } catch (error) {
-      state.setMessage(`请求失败: ${error instanceof Error ? error.message : String(error)}`);
+      setMessage(`请求失败: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
-      state.setLoading(false);
+      setLoading(false);
     }
   };
 
-  // 组件挂载时自动加载数据（只在客户端执行）
+  // 组件挂载时自动加载数据
   useEffect(() => {
-    // 只在客户端执行
-    if (typeof globalThis !== 'undefined' && globalThis.window) {
-      state.fetchExamples();
-    }
+    fetchExamples();
   }, []);
 
   // 代码示例
@@ -266,8 +392,21 @@ const handleSubmit = async (e: Event) => {
   console.log(result);
 };`;
 
-  // Store 状态管理示例（使用 useExampleStore hook）
-  const storeState = useExampleStore();
+  // Store 状态管理
+  const [storeState, setStoreState] = useState<ExampleStoreState>(exampleStore.$state);
+
+  useEffect(() => {
+    // 订阅状态变化
+    const unsubscribe = exampleStore.$subscribe((newState: ExampleStoreState) => {
+      setStoreState(newState);
+    });
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
 
   const storeExampleCode = `// 方式 1：对象式定义（Options API）
 // stores/example.ts
@@ -382,7 +521,9 @@ export default function MyPage() {
       {/* 页面标题 */}
       <div className="bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">交互示例</h1>
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4" onClick={() => {
+            console.log('点击了标题');
+          }}>交互示例</h1>
           <p className="text-xl text-blue-100 dark:text-blue-200 max-w-3xl mx-auto">
             展示 DWeb 框架中的各种交互功能：点击事件、接口请求、表单提交等
           </p>
@@ -393,22 +534,22 @@ export default function MyPage() {
       <div className="py-20 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* 状态消息 */}
-          {state.message && (
+          {message && (
             <div className={`mb-8 p-4 rounded-lg ${
-              state.message.includes('成功') || state.message.includes('已')
+              message.includes('成功') || message.includes('已')
                 ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800'
-                : state.message.includes('失败') || state.message.includes('错误')
+                : message.includes('失败') || message.includes('错误')
                 ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'
                 : 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
             }`}>
               <div className="flex items-center">
-                {state.loading && (
+                {loading && (
                   <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                 )}
-                <span>{state.message}</span>
+                <span>{message}</span>
               </div>
             </div>
           )}
@@ -430,7 +571,7 @@ export default function MyPage() {
                   减少 (-)
                 </button>
                 <div className="text-4xl font-bold text-gray-900 dark:text-white min-w-[100px] text-center">
-                  {state.count}
+                  {count}
                 </div>
                 <button
                   type="button"
@@ -470,28 +611,28 @@ export default function MyPage() {
                     <button
                       type="button"
                       onClick={fetchExamples}
-                      disabled={state.loading}
+                      disabled={loading}
                       className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {state.loading ? '加载中...' : '驼峰格式 (getExamples)'}
+                      {loading ? '加载中...' : '驼峰格式 (getExamples)'}
                     </button>
                     <button
                       type="button"
                       onClick={fetchExamplesKebab}
-                      disabled={state.loading}
+                      disabled={loading}
                       className="px-6 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {state.loading ? '加载中...' : '短横线格式 (get-examples)'}
+                      {loading ? '加载中...' : '短横线格式 (get-examples)'}
                     </button>
                   </div>
                 </div>
               </div>
 
-              {state.examples.length > 0 && (
+              {examples.length > 0 && (
                 <div className="mt-6 space-y-3">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">示例列表：</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">示例列表：</h3>
                   <div className="space-y-2">
-                    {state.examples.map((example) => (
+                    {examples.map((example) => (
                       <div
                         key={example.id}
                         className="flex items-center justify-between p-4 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
@@ -503,7 +644,7 @@ export default function MyPage() {
                         <button
                           type="button"
                           onClick={() => handleDeleteExample(example.id)}
-                          disabled={state.loading}
+                          disabled={loading}
                           className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm disabled:opacity-50"
                         >
                           删除
@@ -581,8 +722,8 @@ export default function MyPage() {
                   <input
                     type="text"
                     id="name"
-                    value={state.formData.name}
-                    onChange={(e) => state.setFormData({ ...state.formData, name: (e.target as HTMLInputElement).value })}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: (e.target as HTMLInputElement).value })}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     required
                   />
@@ -593,8 +734,8 @@ export default function MyPage() {
                   </label>
                   <textarea
                     id="description"
-                    value={state.formData.description}
-                    onChange={(e) => state.setFormData({ ...state.formData, description: (e.target as HTMLTextAreaElement).value })}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: (e.target as HTMLTextAreaElement).value })}
                     rows={3}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
@@ -605,18 +746,18 @@ export default function MyPage() {
                     <button
                       type="button"
                       onClick={handleCreateExample}
-                      disabled={state.loading}
+                      disabled={loading}
                       className="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {state.loading ? '创建中...' : '驼峰格式 (createExample)'}
+                      {loading ? '创建中...' : '驼峰格式 (createExample)'}
                     </button>
                     <button
                       type="button"
                       onClick={handleCreateExampleKebab}
-                      disabled={state.loading}
+                      disabled={loading}
                       className="flex-1 px-6 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {state.loading ? '创建中...' : '短横线格式 (create-example)'}
+                      {loading ? '创建中...' : '短横线格式 (create-example)'}
                     </button>
                   </div>
                 </div>
@@ -652,7 +793,7 @@ export default function MyPage() {
                   </p>
                   {storeState?.items && storeState.items.length > 0 && (
                     <ul className="list-disc list-inside ml-4 text-gray-700 dark:text-gray-300">
-                      {storeState.items.map((item: string, index: number) => (
+                      {storeState.items.map((item, index) => (
                         <li key={index}>{item}</li>
                       ))}
                     </ul>
@@ -752,10 +893,10 @@ export default function MyPage() {
                 <button
                   type="button"
                   onClick={handleDelayedRequest}
-                  disabled={state.loading}
+                  disabled={loading}
                   className="w-full px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50"
                 >
-                  {state.loading ? '请求中...' : '发送延迟请求（2秒）'}
+                  {loading ? '请求中...' : '发送延迟请求（2秒）'}
                 </button>
               </div>
 
@@ -769,18 +910,18 @@ export default function MyPage() {
                   <button
                     type="button"
                     onClick={handleGetCounter}
-                    disabled={state.loading}
+                    disabled={loading}
                     className="w-full px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors disabled:opacity-50"
                   >
-                    {state.loading ? '获取中...' : '从服务器获取计数器值'}
+                    {loading ? '获取中...' : '从服务器获取计数器值'}
                   </button>
                   <button
                     type="button"
                     onClick={handleIncrementCounter}
-                    disabled={state.loading}
+                    disabled={loading}
                     className="w-full px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors disabled:opacity-50"
                   >
-                    {state.loading ? '更新中...' : '服务器端增加计数器'}
+                    {loading ? '更新中...' : '服务器端增加计数器'}
                   </button>
                 </div>
               </div>
@@ -788,12 +929,12 @@ export default function MyPage() {
           </section>
 
           {/* 6. API 响应展示 */}
-          {state.apiResponse && (
+          {apiResponse && (
             <section className="mb-16">
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">6. API 响应数据</h2>
               <div className="bg-gray-900 dark:bg-gray-950 p-6 rounded-lg border border-gray-700 dark:border-gray-800">
                 <pre className="text-sm text-gray-100 dark:text-gray-200 font-mono overflow-x-auto">
-                  <code>{JSON.stringify(state.apiResponse, null, 2)}</code>
+                  <code>{JSON.stringify(apiResponse, null, 2)}</code>
                 </pre>
               </div>
             </section>

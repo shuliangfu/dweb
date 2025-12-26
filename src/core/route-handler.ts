@@ -15,7 +15,7 @@ import type {
 import type { RouteInfo, Router } from "./router.ts";
 import { handleApiRoute, loadApiRoute } from "./api-route.ts";
 import type { GraphQLServer } from "../features/graphql/server.ts";
-import { renderToString, renderToStringAsync } from "preact-render-to-string";
+import { renderToString } from "preact-render-to-string";
 import { h } from "preact";
 // 在模块加载时导入 preact/hooks，确保 hooks 上下文在 SSR 时正确初始化
 // 这可以解决 "Cannot read properties of undefined (reading '__H')" 错误
@@ -929,6 +929,7 @@ export class RouteHandler {
     pageModule: Record<string, unknown>,
     req: Request,
     res: Response,
+    routePath?: string,
   ): Promise<Record<string, unknown>> {
     if (!pageModule.load || typeof pageModule.load !== "function") {
       return {};
@@ -998,6 +999,10 @@ export class RouteHandler {
         lang: (req as any).lang,
         // 提供 Store 实例（如果 store 插件已设置）
         store: (req as any).getStore ? (req as any).getStore() : undefined,
+        // 提供当前路由路径
+        routePath: routePath || new URL(req.url).pathname || "/",
+        // 提供 URL 对象
+        url: new URL(req.url),
       });
       // 确保返回的是对象，如果 load 函数返回 undefined 或 null，返回空对象
       if (loadResult && typeof loadResult === "object") {
@@ -1110,6 +1115,7 @@ export class RouteHandler {
                   layoutModule,
                   req,
                   res,
+                  routeInfo.path,
                 );
 
                 // 检查是否在 load 函数中进行了重定向
@@ -1227,16 +1233,98 @@ export class RouteHandler {
    * 关键：如果组件使用了 hooks，hooks 上下文需要在 h() 内部初始化
    * 所以，对于使用 hooks 的异步组件，我们需要在 h() 内部调用组件
    */
-  private async renderPageContent(
+  /**
+   * 渲染错误页面（优先使用 _500.tsx，如果没有则使用 _error.tsx，如果都没有则返回 null）
+   */
+  private async renderErrorPage(
+    _statusCode: number,
+    error: unknown,
+    _req: Request,
+    _res: Response,
+  ): Promise<string | null> {
+    try {
+      // 先尝试加载 _500.tsx
+      let errorPagePath = this.router.getErrorPage("500");
+      
+      // 如果没有 _500.tsx，尝试加载 _error.tsx
+      if (!errorPagePath) {
+        errorPagePath = this.router.getErrorPage("error");
+      }
+      
+      // 如果都没有，返回 null
+      if (!errorPagePath) {
+        return null;
+      }
+      
+      // 加载错误页面组件
+      const errorPageFullPath = resolveFilePath(errorPagePath);
+      const errorPageModule = await import(errorPageFullPath);
+      const ErrorPageComponent = errorPageModule.default as (
+        props: { error?: { message?: string } },
+      ) => unknown;
+      
+      if (!ErrorPageComponent || typeof ErrorPageComponent !== "function") {
+        return null;
+      }
+      
+      // 检查组件是否是异步函数
+      const errorProps = {
+        error: error instanceof Error
+          ? { message: error.message }
+          : { message: String(error) },
+      };
+      
+      try {
+        const result = ErrorPageComponent(errorProps);
+        if (result instanceof Promise) {
+          throw new Error("错误页面组件不能是异步函数");
+        }
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        if (!errMsg.includes("__H") && !errMsg.includes("hooks")) {
+          throw err;
+        }
+      }
+      
+      // 创建错误页面 VNode
+      const errorVNode = h(ErrorPageComponent as any, errorProps);
+      
+      // 加载 _app.tsx 组件（如果存在）
+      const appPath = this.router.getApp();
+      if (appPath) {
+        const appFullPath = resolveFilePath(appPath);
+        const appModule = await import(appFullPath);
+        const AppComponent = appModule.default as (props: {
+          children: string;
+        }) => unknown;
+        
+        if (AppComponent && typeof AppComponent === "function") {
+          const errorHtml = renderToString(errorVNode);
+          const appResult = AppComponent({ children: errorHtml });
+          const appElement = appResult instanceof Promise ? await appResult : appResult;
+          return renderToString(appElement);
+        }
+      }
+      
+      // 如果没有 _app.tsx，直接渲染错误页面
+      return renderToString(errorVNode);
+    } catch {
+      // 如果渲染错误页面失败，返回 null，使用默认错误页面
+      return null;
+    }
+  }
+
+  private renderPageContent(
     PageComponent: (
       props: Record<string, unknown>,
-    ) => unknown | Promise<unknown>,
-    LayoutComponents: ((props: LayoutProps) => unknown | Promise<unknown>)[],
+    ) => unknown,
+    LayoutComponents: ((props: LayoutProps) => unknown)[],
     layoutData: Record<string, unknown>[],
     pageProps: Record<string, unknown>,
     renderMode: RenderMode,
     req?: Request,
-  ): Promise<string> {
+    routeInfo?: RouteInfo,
+  ): string {
     if (renderMode === "csr") {
       // CSR 模式：服务端只渲染容器，内容由客户端渲染
       return "";
@@ -1248,88 +1336,24 @@ export class RouteHandler {
     }
 
     try {
-      // 处理页面组件（支持 async 和 hooks）
-      let pageResult: unknown = null;
-      let pageNeedsHooksContext = false;
-      
+      // 处理页面组件（支持 hooks，但不支持 async）
+      // 先检查组件是否是异步函数，如果是则抛出异常
       try {
         const result = PageComponent(pageProps);
         if (result instanceof Promise) {
-          pageResult = await result;
-        } else {
-          pageResult = result;
+          throw new Error("页面组件不能是异步函数");
         }
       } catch (error) {
+        // 如果是 hooks 错误，继续执行（hooks 上下文会在 h() 调用时初始化）
         const errorMsg = error instanceof Error ? error.message : String(error);
-        if (errorMsg.includes("__H") || errorMsg.includes("hooks")) {
-          pageNeedsHooksContext = true;
-          pageResult = null;
-        } else {
+        if (!errorMsg.includes("__H") && !errorMsg.includes("hooks")) {
+          // 如果不是 hooks 错误，重新抛出
           throw error;
         }
       }
-
-      let pageVNode;
-      if (pageNeedsHooksContext) {
-        // 需要在 h() 内部调用组件，hooks 上下文会正确初始化
-        // 对于 async + hooks 的组件，我们需要先获取 Promise，等待它，然后用结果渲染
-        let savedPromise: Promise<unknown> | null = null;
-        let resolvedResult: unknown = null;
-        
-        const PageWrapper = (props: Record<string, unknown>) => {
-          try {
-            // 在 h() 内部调用组件，hooks 上下文会初始化
-            const result = PageComponent(props);
-            if (result instanceof Promise) {
-              if (!savedPromise) {
-                savedPromise = result;
-              }
-              // 返回 null，等待 Promise 完成后再渲染
-              return null;
-            }
-            // 同步组件直接返回结果
-            resolvedResult = result;
-            return result;
-          } catch {
-            return null;
-          }
-        };
-        
-        // 先创建 VNode 并使用 renderToString 触发 PageWrapper 执行（即使返回 null）
-        // 这样 hooks 上下文会初始化，savedPromise 会被设置
-        const tempVNode = h(PageWrapper as any, pageProps);
-        try {
-          // 使用 renderToString 触发 PageWrapper 执行，获取 Promise
-          renderToString(tempVNode);
-        } catch {
-          // 忽略渲染错误，我们只是要触发 PageWrapper 执行
-        }
-        
-        // 如果组件返回 Promise，等待它完成
-        if (savedPromise) {
-          try {
-            resolvedResult = await savedPromise;
-          } catch {
-            resolvedResult = null;
-          }
-        }
-        
-        // 用结果创建同步组件
-        if (resolvedResult !== null && resolvedResult !== undefined) {
-          const ResultWrapper = () => resolvedResult as any;
-          pageVNode = h(ResultWrapper as any, pageProps);
-        } else {
-          // 如果 resolvedResult 为空，说明是同步组件，直接使用 PageWrapper
-          pageVNode = tempVNode;
-        }
-      } else if (pageResult !== null && pageResult !== undefined) {
-        // 使用已解析的结果创建 VNode
-        const ResultWrapper = () => pageResult as any;
-        pageVNode = h(ResultWrapper as any, pageProps);
-      } else {
-        // 直接使用组件函数
-        pageVNode = h(PageComponent as any, pageProps);
-      }
+      
+      // 创建页面 VNode（hooks 上下文会在 h() 调用时自动初始化）
+      const pageVNode = h(PageComponent as any, pageProps);
 
       // 如果有布局，按顺序嵌套包裹（支持异步布局组件）
       // hooks 上下文会在 renderToString 内部初始化
@@ -1360,114 +1384,41 @@ export class RouteHandler {
               {
                 // 布局的 load 数据作为 data
                 data: layoutProps,
+                // 提供当前路由路径
+                routePath: routeInfo?.path || (req ? new URL(req.url).pathname : "/"),
+                // 提供 URL 对象
+                url: req ? new URL(req.url) : undefined,
                 // children 放在最后，确保类型正确且不被覆盖
                 children,
               },
             ) as LayoutProps;
 
-            let layoutResult: unknown = null;
-            let layoutNeedsHooksContext = false;
-            
+            // 检查布局组件是否是异步函数，如果是则抛出异常
             try {
-              const result = LayoutComponent(layoutPropsWithData);
-              if (result instanceof Promise) {
-                layoutResult = await result;
-              } else {
-                layoutResult = result;
+              const layoutResult = LayoutComponent(layoutPropsWithData);
+              if (layoutResult instanceof Promise) {
+                throw new Error("布局组件不能是异步函数");
               }
             } catch (error) {
+              // 如果是 hooks 错误，继续执行（hooks 上下文会在 h() 调用时初始化）
               const errorMsg = error instanceof Error ? error.message : String(error);
-              if (errorMsg.includes("__H") || errorMsg.includes("hooks")) {
-                layoutNeedsHooksContext = true;
-                layoutResult = null;
-              } else {
-                layoutResult = null;
+              if (!errorMsg.includes("__H") && !errorMsg.includes("hooks")) {
+                // 如果不是 hooks 错误，重新抛出
+                throw error;
               }
             }
 
-            if (layoutNeedsHooksContext) {
-              // 需要在 h() 内部调用组件，hooks 上下文会正确初始化
-              // 对于 async + hooks 的组件，我们需要先获取 Promise，等待它，然后用结果渲染
-              let savedLayoutPromise: Promise<unknown> | null = null;
-              let resolvedLayoutResult: unknown = null;
-              
-              const LayoutWrapper = (props: LayoutProps) => {
-                try {
-                  // 在 h() 内部调用组件，hooks 上下文会初始化
-                  const result = LayoutComponent(props);
-                  if (result instanceof Promise) {
-                    if (!savedLayoutPromise) {
-                      savedLayoutPromise = result;
-                    }
-                    // 返回 null，等待 Promise 完成后再渲染
-                    return null;
-                  }
-                  // 同步组件直接返回结果
-                  resolvedLayoutResult = result;
-                  return result;
-                } catch (error) {
-                  const errorMsg = error instanceof Error ? error.message : String(error);
-                  if (!errorMsg.includes("__H") && !errorMsg.includes("hooks")) {
-                    // 忽略非 hooks 错误
-                  }
-                  return null;
-                }
-              };
-              
-              // 先创建 VNode 并使用 renderToString 触发 LayoutWrapper 执行（即使返回 null）
-              // 这样 hooks 上下文会初始化，savedLayoutPromise 会被设置
-              const tempLayoutVNode = h(LayoutWrapper as any, layoutPropsWithData) as any;
-              try {
-                // 使用 renderToString 触发 LayoutWrapper 执行，获取 Promise
-                renderToString(tempLayoutVNode);
-              } catch {
-                // 忽略渲染错误，我们只是要触发 LayoutWrapper 执行
-              }
-              
-              // 如果组件返回 Promise，等待它完成
-              if (savedLayoutPromise) {
-                try {
-                  resolvedLayoutResult = await savedLayoutPromise;
-                } catch {
-                  resolvedLayoutResult = null;
-                }
-              }
-              
-              // 用结果创建同步组件
-              if (resolvedLayoutResult !== null && resolvedLayoutResult !== undefined) {
-                const ResultWrapper = () => resolvedLayoutResult as any;
-                currentElement = h(ResultWrapper as any, layoutPropsWithData) as any;
-              } else {
-                // 如果 resolvedLayoutResult 为空，说明是同步组件，直接使用 LayoutWrapper
-                currentElement = tempLayoutVNode;
-              }
-            } else if (layoutResult !== null && layoutResult !== undefined) {
-              // 使用已解析的结果创建 VNode
-              const ResultWrapper = () => layoutResult as any;
-              currentElement = h(ResultWrapper as any, layoutPropsWithData) as any;
-            } else {
-              // 直接使用组件函数
-              currentElement = h(LayoutComponent as any, layoutPropsWithData) as any;
-            }
+            // 创建布局 VNode（hooks 上下文会在 h() 调用时自动初始化）
+            currentElement = h(LayoutComponent as any, layoutPropsWithData) as any;
           }
           
-          const renderResult = renderToStringAsync(
-            currentElement as unknown as Parameters<typeof renderToStringAsync>[0],
+          html = renderToString(
+            currentElement as unknown as Parameters<typeof renderToString>[0],
           );
-          if (renderResult instanceof Promise) {
-            html = await renderResult;
-          } else {
-            html = renderResult;
-          }
         } else {
-          const renderResult = renderToStringAsync(
-            pageVNode as unknown as Parameters<typeof renderToStringAsync>[0],
+          html = renderToString(
+            pageVNode as unknown as Parameters<typeof renderToString>[0],
           );
-          if (renderResult instanceof Promise) {
-            html = await renderResult;
-          } else {
-            html = renderResult;
-          }
         }
 
         // 确保 HTML 内容不为空
@@ -2163,7 +2114,7 @@ export class RouteHandler {
       typeof pageModule.load === "function";
 
     if (hasLoadFunction) {
-      pageData = await this.loadPageData(pageModule, req, res);
+      pageData = await this.loadPageData(pageModule, req, res, routePath);
 
       // 检查是否在 load 函数中进行了重定向
       // 如果响应状态码是 301 或 302，并且设置了 location header，说明已经重定向，直接返回
@@ -2298,6 +2249,10 @@ export class RouteHandler {
       store: (req as any).getStore ? (req as any).getStore() : undefined,
       // 添加 metadata 到 props，供客户端脚本使用
       metadata: pageMetadata,
+      // 提供当前路由路径
+      routePath: routePath,
+      // 提供 URL 对象
+      url: new URL(req.url),
     };
 
     // 获取渲染配置
@@ -2319,13 +2274,14 @@ export class RouteHandler {
     // 支持异步页面组件和异步布局组件
     let html: string;
     try {
-      html = await this.renderPageContent(
+      html = this.renderPageContent(
         PageComponent,
         LayoutComponents,
         layoutData,
         pageProps,
         renderMode,
         req,
+        routeInfo,
       );
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
@@ -2338,7 +2294,16 @@ export class RouteHandler {
         console.error(error.stack);
       }
       console.error("===================================\n");
-      const errorHtml = `<!DOCTYPE html>
+      
+      // 尝试渲染自定义错误页面
+      const errorHtml = await this.renderErrorPage(500, error, req, res);
+      if (errorHtml) {
+        res.html(errorHtml, { status: 500 });
+        return;
+      }
+      
+      // 如果没有自定义错误页面，使用默认错误 HTML
+      const defaultErrorHtml = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -2350,8 +2315,7 @@ export class RouteHandler {
   <p>${errorMsg}</p>
 </body>
 </html>`;
-      res.status = 500;
-      res.body = errorHtml;
+      res.html(defaultErrorHtml, { status: 500 });
       return;
     }
 
@@ -2394,8 +2358,16 @@ export class RouteHandler {
         console.error(error.stack);
       }
       console.error("===================================\n");
-      res.status = 500;
-      res.html(`<h1>500 - App Component Error</h1><p>${errorMsg}</p>`);
+      
+      // 尝试渲染自定义错误页面
+      const errorHtml = await this.renderErrorPage(500, error, req, res);
+      if (errorHtml) {
+        res.html(errorHtml, { status: 500 });
+        return;
+      }
+      
+      // 如果没有自定义错误页面，使用默认错误 HTML
+      res.html(`<h1>500 - App Component Error</h1><p>${errorMsg}</p>`, { status: 500 });
       return;
     }
 
@@ -2417,8 +2389,16 @@ export class RouteHandler {
         console.error(error.stack);
       }
       console.error("===================================\n");
-      res.status = 500;
-      res.html(`<h1>500 - Render Error</h1><p>${errorMsg}</p>`);
+      
+      // 尝试渲染自定义错误页面
+      const errorHtml = await this.renderErrorPage(500, error, req, res);
+      if (errorHtml) {
+        res.html(errorHtml, { status: 500 });
+        return;
+      }
+      
+      // 如果没有自定义错误页面，使用默认错误 HTML
+      res.html(`<h1>500 - Render Error</h1><p>${errorMsg}</p>`, { status: 500 });
       return;
     }
 
@@ -2453,8 +2433,17 @@ export class RouteHandler {
       console.error("请求方法:", req.method);
       console.error("错误:", errorMsg);
       console.error("===================================\n");
-      res.status = 500;
-      res.html(`<h1>500 - Internal Server Error</h1><p>${errorMsg}</p>`);
+      
+      // 尝试渲染自定义错误页面
+      const error = new Error(errorMsg);
+      const errorHtml = await this.renderErrorPage(500, error, req, res);
+      if (errorHtml) {
+        res.html(errorHtml, { status: 500 });
+        return;
+      }
+      
+      // 如果没有自定义错误页面，使用默认错误 HTML
+      res.html(`<h1>500 - Internal Server Error</h1><p>${errorMsg}</p>`, { status: 500 });
       return;
     }
 

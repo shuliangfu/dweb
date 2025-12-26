@@ -38,8 +38,7 @@ export function createImportMapScript(
         "preact/hooks": "https://esm.sh/preact@10.28.0/hooks",
         "preact/jsx-runtime": "https://esm.sh/preact@10.28.0/jsx-runtime",
         "preact/compat": "https://esm.sh/preact@10.28.0/compat",
-        "preact/signals":
-          "https://esm.sh/@preact/signals@1.2.2?external=preact",
+        "preact/signals": "https://esm.sh/@preact/signals@2.5.1?external=preact",
       },
     };
 

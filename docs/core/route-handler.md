@@ -40,6 +40,8 @@ server.setHandler(async (req, res) => {
 4. 渲染页面组件（SSR）或返回客户端脚本（CSR）
 5. 注入 HMR 脚本（开发模式）
 
+**重要提示**：页面组件和布局组件不能是异步函数（`async function`）。如果需要进行异步操作，请在组件内部使用 `useEffect` 钩子处理，或者使用 `load` 函数在服务端获取数据。详细说明请参考[路由约定文件文档](../routing-conventions.md)。
+
 ### API 路由处理
 
 1. 匹配 API 路由

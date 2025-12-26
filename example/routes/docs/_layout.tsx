@@ -4,12 +4,7 @@
  */
 
 import Sidebar from "../../components/Sidebar.tsx";
-import type { ComponentChildren } from "preact";
-import { useEffect, useState } from "preact/hooks";
-
-interface DocsLayoutProps {
-  children: ComponentChildren;
-}
+import type { LayoutProps } from "@dreamer/dweb";
 
 // export const layout = false; // 禁用布局继承
 
@@ -18,49 +13,7 @@ interface DocsLayoutProps {
  * @param props 组件属性
  * @returns JSX 元素
  */
-export default async function DocsLayout({ children }: DocsLayoutProps) {
-  // 在客户端使用 state 跟踪当前路径
-  const [currentPath, setCurrentPath] = useState<string>(() => {
-    if (typeof globalThis !== "undefined" && globalThis.window) {
-      return globalThis.window.location.pathname;
-    }
-    return "/docs";
-  });
-
-  // 监听 URL 地址变化
-  useEffect(() => {
-    if (typeof globalThis === "undefined" || !globalThis.window) {
-      return;
-    }
-
-    // 更新当前路径
-    const updatePath = () => {
-      setCurrentPath(globalThis.window.location.pathname);
-    };
-
-    // 初始化时设置当前路径
-    updatePath();
-
-    // 监听 popstate 事件（浏览器前进/后退）
-    globalThis.window.addEventListener("popstate", updatePath);
-
-    // 监听 routechange 事件（客户端路由导航时触发）
-    const handleRouteChange = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      if (customEvent.detail?.path) {
-        setCurrentPath(customEvent.detail.path);
-      } else {
-        updatePath();
-      }
-    };
-    globalThis.window.addEventListener("routechange", handleRouteChange);
-
-    return () => {
-      globalThis.window.removeEventListener("popstate", updatePath);
-      globalThis.window.removeEventListener("routechange", handleRouteChange);
-    };
-  }, []);
-
+export default function DocsLayout({ children, routePath }: LayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* 页面标题 */}
@@ -78,7 +31,7 @@ export default async function DocsLayout({ children }: DocsLayoutProps) {
       {/* 主要内容区域：左侧菜单 + 文档内容 */}
       <div className="flex flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
         {/* 侧边栏导航 */}
-        <Sidebar currentPath={currentPath} />
+        <Sidebar currentPath={routePath} />
 
         {/* 文档内容区域 */}
         <div className="flex-1 overflow-auto">
