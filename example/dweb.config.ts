@@ -7,7 +7,7 @@ import { type AppConfig, cors, seo, tailwind } from "@dreamer/dweb";
 
 const config: AppConfig = {
   name: "example",
-  renderMode: "ssr", //'ssr' | 'csr' | 'hybrid';
+  renderMode: "hybrid", //'ssr' | 'csr' | 'hybrid';
 
   // 全局渲染模式（可在页面组件中覆盖）
   // 可选值: 'ssr' | 'csr' | 'hybrid'

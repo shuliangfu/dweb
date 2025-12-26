@@ -21,6 +21,10 @@ interface ClientConfig {
   [key: string]: unknown; // 允许动态属性（如 load 函数返回的数据）
 }
 
+/**
+ * 预加载路由器类
+ * 负责预加载路由数据，提高首屏加载性能
+ */
 class PrefetchRouters {
   private config: ClientConfig;
   private routes: string[] = [];
@@ -243,8 +247,8 @@ class PrefetchRouters {
                             let processedCode = layoutCode;
                             // 获取当前页面的 origin（协议 + 主机 + 端口）
                             const currentOrigin = globalThis.location.origin;
-														processedCode = processedCode.replace(
-															// 查找 import 或 from 的相对路径导入
+                            processedCode = processedCode.replace(
+                              // 查找 import 或 from 的相对路径导入
                               /from\s?["']\.\/chunk-([A-Z0-9]+\.js)["']|import\s?["']\.\/chunk-([A-Z0-9]+\.js)["']/gi,
                               (_match: string, fileName: string) => {
                                 // 转换为绝对路径，使用当前页面的 origin
@@ -587,7 +591,8 @@ class ClientRenderer {
 
     // 根据渲染模式决定使用 render 还是 hydrate
     if (mode === "hybrid" && this.hydrateFunc) {
-      try {
+			try {
+				this.container.innerHTML = "";
         this.hydrateFunc(element, this.container);
       } catch (hydrateError) {
         // hydration 失败，使用 render
@@ -893,6 +898,24 @@ class ClientRouter {
         pageProps.data = loadData;
       }
 
+      // 确保 routePath 和 url 存在（与服务端 props 保持一致）
+      // 如果 props 中没有 routePath，使用当前导航的路径
+      if (!pageProps.routePath) {
+        pageProps.routePath = normalizedPath;
+      }
+      // 如果 props 中有 url 字符串，转换为 URL 对象（JSON 序列化后 url 对象会变成字符串）
+      if (pageProps.url && typeof pageProps.url === "string") {
+        try {
+          pageProps.url = new URL(pageProps.url);
+        } catch {
+          // 如果转换失败，使用当前 URL
+          pageProps.url = new URL(globalThis.location.href);
+        }
+      } else if (!pageProps.url) {
+        // 如果没有 url，使用当前 URL
+        pageProps.url = new URL(globalThis.location.href);
+      }
+
       const store = (globalThis as Record<string, unknown>).__STORE__;
       if (store) {
         pageProps.store = store;
@@ -917,14 +940,17 @@ class ClientRouter {
           | "csr"
           | "hybrid";
 
-      // 渲染（使用渲染器的方法）
-      let hasContent = await this.renderer.render(finalElement, targetMode);
-
       // 获取容器元素
       const container = this.renderer.getContainer();
       if (!container) {
         throw new Error("未找到容器");
       }
+
+
+      // container.innerHTML = "";
+
+      // 渲染（使用渲染器的方法）
+      let hasContent = await this.renderer.render(finalElement, targetMode);
 
       // 如果渲染成功，立即更新历史记录
       if (hasContent) {
@@ -964,7 +990,32 @@ class ClientRouter {
             container: HTMLElement,
           ) => void;
 
-          const pagePropsRetry = { ...(pageData.props || {}) };
+          // 重新构建 pageProps，确保包含所有必要的属性
+          const pagePropsRetry: Record<string, unknown> = {
+            params: (pageData.props as Record<string, unknown>)?.params || {},
+            query: (pageData.props as Record<string, unknown>)?.query || {},
+            data: loadData,
+            ...(pageData.props || {}),
+          };
+
+          if (!pagePropsRetry.data) {
+            pagePropsRetry.data = loadData;
+          }
+
+          // 确保 routePath 和 url 存在
+          if (!pagePropsRetry.routePath) {
+            pagePropsRetry.routePath = normalizedPath;
+          }
+          if (pagePropsRetry.url && typeof pagePropsRetry.url === "string") {
+            try {
+              pagePropsRetry.url = new URL(pagePropsRetry.url);
+            } catch {
+              pagePropsRetry.url = new URL(globalThis.location.href);
+            }
+          } else if (!pagePropsRetry.url) {
+            pagePropsRetry.url = new URL(globalThis.location.href);
+          }
+
           if (store) {
             pagePropsRetry.store = store;
           }
@@ -982,8 +1033,15 @@ class ClientRouter {
             layoutDataRetry,
           );
 
+          if (!finalElementRetry) {
+            throw new Error("创建最终元素失败（返回 null）");
+          }
+
           await new Promise((resolve) => requestAnimationFrame(resolve));
           renderRetry(finalElementRetry, container);
+
+          // 等待一下，让 Preact 完成 DOM 更新
+          await new Promise((resolve) => requestAnimationFrame(resolve));
 
           if (
             container.children.length > 0 || container.textContent.trim() !== ""
@@ -1217,6 +1275,13 @@ class BrowserClient {
           } else if (retryCount < maxRetries) {
             retryCount++;
             setTimeout(checkAndNavigate, retryInterval);
+          } else {
+            // 如果等待超时，回退到整页跳转
+            console.warn(
+              "[LinkInterceptor] 导航函数未准备好，回退到整页跳转:",
+              fullPath,
+            );
+            globalThis.location.href = fullPath;
           }
         };
 
