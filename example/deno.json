@@ -33,8 +33,8 @@
     "preact": "npm:preact@10.28.0",
     "preact/hooks": "npm:preact@10.28.0/hooks",
     "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
-    "preact/compat": "npm:preact@10.28.0/compat",
-		"preact/signals": "npm:@preact/signals@1.2.2",
+    "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact",
+
     "preact-render-to-string": "npm:preact-render-to-string@6.5.1",
 
     "tailwindcss": "npm:tailwindcss@^4.1.10",

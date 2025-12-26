@@ -170,14 +170,34 @@ export async function createImportMapScript(
       "preact/hooks": "https://esm.sh/preact@10.28.0/hooks",
       "preact/jsx-runtime": "https://esm.sh/preact@10.28.0/jsx-runtime",
       "preact/compat": "https://esm.sh/preact@10.28.0/compat",
-      "preact/signals": "https://esm.sh/@preact/signals@1.2.2",
+      "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact",
     };
 
     // 从用户的 deno.json 读取 imports 配置
     const userImports = await loadImportsFromDenoJson(searchPaths);
 
+    // 处理用户导入：如果是 @preact/signals 且是 esm.sh URL，确保添加 ?external=preact
+    const processedUserImports: Record<string, string> = {};
+    for (const [key, value] of Object.entries(userImports)) {
+      let processedValue = value;
+      // 如果是 preact/signals 且是 esm.sh URL，确保添加 ?external=preact
+      if (key === "preact/signals" && value.includes("@preact/signals") && value.includes("esm.sh")) {
+        // 检查是否已经有查询参数
+        if (value.includes("?")) {
+          // 如果已经有查询参数，检查是否包含 external=preact
+          if (!value.includes("external=preact")) {
+            processedValue = `${value}&external=preact`;
+          }
+        } else {
+          // 如果没有查询参数，添加 ?external=preact
+          processedValue = `${value}?external=preact`;
+        }
+      }
+      processedUserImports[key] = processedValue;
+    }
+
     // 合并 imports（用户配置优先，然后使用默认配置）
-    const imports = { ...defaultImports, ...userImports };
+    const imports = { ...defaultImports, ...processedUserImports };
 
     const importMap = { imports };
 

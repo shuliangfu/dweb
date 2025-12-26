@@ -526,8 +526,9 @@ ${
   },
   "imports": {
     "@dreamer/dweb": "${frameworkUrl}",
-    "preact": "https://esm.sh/preact@10.28.0",
-    "preact/": "https://esm.sh/preact@10.28.0/",
+    "preact": "npm:preact@10.28.0",
+    "preact/hooks": "npm:preact@10.28.0/hooks",
+    "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
     "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact"${
       useTailwindV4
         ? `,
