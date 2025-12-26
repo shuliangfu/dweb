@@ -19,6 +19,10 @@ export const metadata = {
   author: 'DWeb',
 };
 
+// 启用 hydration，让客户端脚本能够激活事件处理
+// 这样页面在 SSR 渲染后，客户端可以正常响应事件（如点击按钮）
+export const hydrate = true;
+
 /**
  * 示例页面组件
  * @param props 页面属性

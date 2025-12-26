@@ -16,7 +16,7 @@ import type { RouteInfo, Router } from "./router.ts";
 import { handleApiRoute, loadApiRoute } from "./api-route.ts";
 import type { GraphQLServer } from "../features/graphql/server.ts";
 import { renderToString } from "preact-render-to-string";
-import { options, h } from "preact";
+import { h } from "preact";
 // 在模块加载时导入 preact/hooks，确保 hooks 上下文在 SSR 时正确初始化
 // 这可以解决 "Cannot read properties of undefined (reading '__H')" 错误
 // 注意：hooks 上下文是在 renderToString 渲染时自动初始化的，不需要手动初始化
@@ -1202,14 +1202,10 @@ export class RouteHandler {
     const renderMode: RenderMode = pageRenderMode || autoDetectedMode ||
       configRenderMode || "ssr";
 
-    // 对于 SSR 模式，默认启用 hydration，让客户端能够激活事件处理
-    // 如果页面明确设置了 hydrate=false，则不进行 hydration
-    // hybrid 模式始终进行 hydration
+    // 对于 SSR 模式，默认不进行 hydration
+    // 只有在明确指定 hybrid 模式或 hydrate=true 时才进行 hydration
     const shouldHydrate = renderMode === "hybrid" ||
-      (renderMode === "ssr" && pageModule.hydrate !== false) ||
       pageModule.hydrate === true;
-
-    console.log({ renderMode, shouldHydrate });
 
     return {
       renderMode,
@@ -1223,7 +1219,7 @@ export class RouteHandler {
   /**
    * 渲染页面内容为 HTML
    */
-  private async renderPageContent(
+  private renderPageContent(
     PageComponent: (
       props: Record<string, unknown>,
     ) => unknown | Promise<unknown>,
@@ -1232,7 +1228,7 @@ export class RouteHandler {
     pageProps: Record<string, unknown>,
     renderMode: RenderMode,
     req?: Request,
-  ): Promise<string> {
+  ): string {
     if (renderMode === "csr") {
       // CSR 模式：服务端只渲染容器，内容由客户端渲染
       return "";
@@ -1244,32 +1240,14 @@ export class RouteHandler {
     }
 
     try {
-      // SSR 或 Hybrid 模式：服务端渲染内容
-      // 在调用组件之前，确保 preact hooks 上下文正确初始化
-      // 保存原有的 vnode 钩子（如果有）
-      const originalVnode = options.vnode;
-      
-      // 设置 vnode 钩子来确保 hooks 上下文在渲染时可用
-      options.vnode = (vnode) => {
-        // 调用原有的 vnode 钩子（如果有）
-        if (originalVnode) {
-          originalVnode(vnode);
-        }
-      };
-
-      // 关键：preact-render-to-string 的 hooks 上下文是在 renderToString 内部初始化的
-      // 我们不能直接调用 PageComponent，因为此时 hooks 上下文还没有初始化
-      // 正确的做法是：使用 h() 函数创建组件 VNode，然后通过 renderToString 渲染
-      // 这样组件函数会在 renderToString 内部执行，hooks 上下文会被正确初始化
-      // 如果组件是异步的（返回 Promise），renderToString 会等待 Promise 完成
       const pageVNode = h(PageComponent as any, pageProps);
-      
+
       // 如果有布局，按顺序嵌套包裹（支持异步布局组件）
       // hooks 上下文会在 renderToString 内部初始化
       let html: string;
       try {
         let currentElement = pageVNode;
-        
+
         if (LayoutComponents.length > 0) {
           // 从最内层到最外层嵌套布局组件
           for (let i = 0; i < LayoutComponents.length; i++) {
@@ -1317,14 +1295,6 @@ export class RouteHandler {
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         html = `<div>页面渲染失败: ${errorMsg}</div>`;
-      } finally {
-        // 恢复原有的 vnode 钩子（如果有）
-        if (originalVnode) {
-          options.vnode = originalVnode;
-        } else {
-          // 如果没有原有的钩子，清除我们设置的钩子
-          delete options.vnode;
-        }
       }
 
       // SSR 和 Hybrid 模式：都需要包装在容器中以便 hydration
@@ -2156,7 +2126,7 @@ export class RouteHandler {
     // 渲染页面内容
     let html: string;
     try {
-      html = await this.renderPageContent(
+      html = this.renderPageContent(
         PageComponent,
         LayoutComponents,
         layoutData,
