@@ -2,9 +2,9 @@
   "version": "1.8.8",
   "nodeModulesDir": "auto",
   "tasks": {
-    "dev": "deno run -A --import-map=imports_map.json ../src/cli.ts dev",
-    "build": "deno run -A --import-map=imports_map.json ../src/cli.ts build",
-    "start": "deno run -A --import-map=imports_map.json ../src/cli.ts start"
+    "dev": "deno run -A ../src/cli.ts dev",
+    "build": "deno run -A ../src/cli.ts build",
+    "start": "deno run -A ../src/cli.ts start"
   },
   "imports": {
     "@components/": "./components/",
@@ -30,9 +30,12 @@
     "@std/path/glob-to-regexp": "jsr:@std/path@^1.1.3/glob-to-regexp",
     "@std/crypto": "https://deno.land/std@0.208.0/crypto/mod.ts",
 
-    "preact": "https://esm.sh/preact@10.28.0",
-    "preact/": "https://esm.sh/preact@10.28.0/",
-    "preact-render-to-string": "https://esm.sh/preact-render-to-string@6.5.1?external=preact",
+    "preact": "npm:preact@10.28.0",
+    "preact/hooks": "npm:preact@10.28.0/hooks",
+    "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
+    "preact/compat": "npm:preact@10.28.0/compat",
+		"preact/signals": "npm:@preact/signals@1.2.2",
+    "preact-render-to-string": "npm:preact-render-to-string@6.5.1",
 
     "tailwindcss": "npm:tailwindcss@^4.1.10",
     "tailwindcss-v3": "npm:tailwindcss@^3.4.0",
