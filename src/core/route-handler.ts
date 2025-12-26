@@ -16,6 +16,11 @@ import type { RouteInfo, Router } from "./router.ts";
 import { handleApiRoute, loadApiRoute } from "./api-route.ts";
 import type { GraphQLServer } from "../features/graphql/server.ts";
 import { renderToString } from "preact-render-to-string";
+import { options, h } from "preact";
+// 在模块加载时导入 preact/hooks，确保 hooks 上下文在 SSR 时正确初始化
+// 这可以解决 "Cannot read properties of undefined (reading '__H')" 错误
+// 注意：hooks 上下文是在 renderToString 渲染时自动初始化的，不需要手动初始化
+import "preact/hooks";
 import type { CookieManager } from "../features/cookie.ts";
 import type { SessionManager } from "../features/session.ts";
 import { removeLoadOnlyImports } from "../utils/module.ts";
@@ -24,7 +29,6 @@ import {
   filePathToHttpUrl,
   normalizeModulePath,
   resolveFilePath,
-  resolveRelativePath,
 } from "../utils/path.ts";
 import { createImportMapScript } from "../utils/import-map.ts";
 import { createClientScript } from "../utils/script-client.ts";
@@ -64,9 +68,9 @@ let preloadedImportMapScript: string | null = null;
 /**
  * 预先加载 import map 脚本（在服务器启动时调用）
  */
-export async function preloadImportMapScript(): Promise<void> {
+export function preloadImportMapScript(): void {
   try {
-    preloadedImportMapScript = await createImportMapScript();
+    preloadedImportMapScript = createImportMapScript();
   } catch (error) {
     // 预加载失败时输出错误信息
     console.error("Failed to preload import map script:", error);
@@ -1012,170 +1016,6 @@ export class RouteHandler {
   }
 
   /**
-   * 检测组件文件是否使用了 Preact Hooks
-   *
-   * 该函数通过静态分析检测组件文件及其依赖是否使用了 Preact Hooks。
-   * 如果检测到 Hooks 使用，框架会自动将渲染模式设置为 CSR（客户端渲染），
-   * 因为 Hooks 需要在客户端环境中运行。
-   *
-   * 检测策略：
-   * 1. 检查是否导入了 `preact/hooks`（包括各种格式：源文件、构建后、HTTP URL）
-   * 2. 检查是否使用了常见的 Hooks（useState、useEffect、useCallback 等）
-   * 3. 检查是否有重命名的 Hooks（如 `useState as i`）
-   * 4. 递归检测所有相对路径导入的组件文件（防止循环引用）
-   *
-   * 支持的 Hooks：
-   * - useState, useEffect, useCallback, useMemo, useRef
-   * - useContext, useReducer, useLayoutEffect
-   *
-   * @param filePath - 组件文件的路径（相对路径或绝对路径）
-   * @param visited - 已访问的文件路径集合，用于防止循环引用（递归调用时使用）
-   * @returns 如果检测到使用了 Hooks 返回 `true`，否则返回 `false`
-   *
-   * @example
-   * ```typescript
-   * // 检测页面组件是否使用 Hooks
-   * const usesHooks = await this.detectPreactHooks('routes/index.tsx');
-   * if (usesHooks) {
-   *   // 自动设置为 CSR 模式
-   * }
-   * ```
-   *
-   * @remarks
-   * - 如果文件读取失败，返回 `false`（不自动设置 CSR，避免影响正常渲染）
-   * - 使用保守策略：只要检测到 hooks 导入，即使没有直接使用，也认为使用了 hooks
-   * - 递归检测深度受文件系统限制，但通过 `visited` 集合防止无限递归
-   */
-  private async detectPreactHooks(
-    filePath: string,
-    visited: Set<string> = new Set(),
-  ): Promise<boolean> {
-    try {
-      // 读取文件源代码
-      const fullPath = resolveFilePath(filePath);
-      // 处理 file:// 协议路径
-      let actualPath: string;
-      if (fullPath.startsWith("file://")) {
-        actualPath = new URL(fullPath).pathname;
-      } else if (fullPath.startsWith("/")) {
-        actualPath = fullPath;
-      } else {
-        actualPath = `${Deno.cwd()}/${fullPath}`;
-      }
-
-      // 防止循环引用
-      if (visited.has(actualPath)) {
-        return false;
-      }
-      visited.add(actualPath);
-
-      const fileContent = await Deno.readTextFile(actualPath);
-
-      // 检查是否导入了 preact/hooks
-      // 匹配以下所有格式：
-      // 1. 源文件格式：import { useState, useEffect } from 'preact/hooks';
-      // 2. 源文件格式：import { useState, useEffect } from "preact/hooks";
-      // 3. 构建后格式（无空格）：import{useState as i,useEffect as d}from"https://esm.sh/preact@10.19.2/hooks";
-      // 4. 构建后格式（有空格）：import { useState as i, useEffect as d } from "https://esm.sh/preact@10.19.2/hooks";
-      // 正则说明：
-      // - `import\s*\{[^}]*\}` 匹配 import { ... } 或 import{...}（无空格）
-      // - `\s*from\s*` 匹配 from（可能有空格，也可能没有）
-      // - `['"](?:preact\/hooks|https?:\/\/[^'"]*\/preact[^'"]*\/hooks)['"]` 匹配：
-      //   * 'preact/hooks' 或 "preact/hooks"（源文件）
-      //   * "https://esm.sh/preact@10.19.2/hooks"（构建后的文件，包含版本号）
-      //   * 其他 HTTP URL 格式的 hooks 导入
-      const hasPreactHooksImport =
-        /import\s*\{[^}]*\}\s*from\s*['"](?:preact\/hooks|https?:\/\/[^'"]*\/preact[^'"]*\/hooks)['"]/i
-          .test(
-            fileContent,
-          );
-
-      // 检查是否使用了常见的 Hooks
-      // 匹配：useState(、useEffect(、const [x, setX] = useState( 等
-      // 注意：构建后的代码中，hooks 可能被重命名（如 useState as i），所以需要检测原始名称和重命名后的使用
-      const commonHooks = [
-        "useState",
-        "useEffect",
-        "useCallback",
-        "useMemo",
-        "useRef",
-        "useContext",
-        "useReducer",
-        "useLayoutEffect",
-      ];
-      const hasHooksUsage = commonHooks.some((hook) => {
-        // 匹配 hook 的使用，例如：useState(、useEffect(、const [x, setX] = useState(
-        // 使用单词边界 \b 确保匹配完整的 hook 名称
-        const hookPattern = new RegExp(`\\b${hook}\\s*\\(`, "i");
-        return hookPattern.test(fileContent);
-      });
-
-      // 如果检测到 hooks 导入，即使没有直接使用（可能被重命名），也认为使用了 hooks
-      // 因为 hooks 导入通常意味着组件需要客户端交互
-      if (hasPreactHooksImport) {
-        // 检查是否有重命名的 hooks（如 useState as i, useEffect as d）
-        // 匹配：import { useState as xxx, useEffect as yyy } from ...
-        // 注意：构建后的代码可能没有空格，如 import{useState as i,useEffect as d}from"..."
-        const renamedHooksPattern =
-          /import\s*\{[^}]*\b(?:useState|useEffect|useCallback|useMemo|useRef|useContext|useReducer|useLayoutEffect)\s+as\s+\w+/i;
-        if (renamedHooksPattern.test(fileContent) || hasHooksUsage) {
-          // 如果检测到重命名的 hooks 或直接使用 hooks，认为使用了 hooks
-          return true;
-        }
-        // 即使没有检测到重命名，只要有 hooks 导入，也认为使用了 hooks（保守策略）
-        return true;
-      }
-
-      // 如果当前文件使用了 Hooks，直接返回 true
-      if (hasHooksUsage) {
-        return true;
-      }
-
-      // 检测导入的相对路径组件（如 ../components/Navbar.tsx）
-      // 匹配：import ... from '../components/Navbar.tsx' 或 import ... from './Navbar'
-      const importRegex = /import\s+.*\s+from\s+['"](\.\.?\/[^'"]+)['"]/gi;
-      const imports: string[] = [];
-      let match;
-      while ((match = importRegex.exec(fileContent)) !== null) {
-        const importPath = match[1];
-        // 只检测相对路径的导入（本地组件）
-        if (importPath.startsWith("./") || importPath.startsWith("../")) {
-          imports.push(importPath);
-        }
-      }
-
-      // 递归检测所有导入的组件文件
-      for (const importPath of imports) {
-        try {
-          // 解析相对路径为绝对路径
-          const dir = actualPath.substring(0, actualPath.lastIndexOf("/"));
-          const resolvedPath = resolveRelativePath(dir, importPath);
-
-          // 只检测 .tsx、.ts、.jsx、.js 文件
-          if (resolvedPath.match(/\.(tsx?|jsx?)$/)) {
-            const componentUsesHooks = await this.detectPreactHooks(
-              resolvedPath,
-              visited,
-            );
-            if (componentUsesHooks) {
-              return true;
-            }
-          }
-        } catch (_error) {
-          // 如果解析导入路径失败，跳过该导入
-          continue;
-        }
-      }
-
-      return false;
-    } catch (_error) {
-      // 如果读取文件失败，返回 false（不自动设置 CSR）
-      // 这样即使检测失败，也不会影响正常渲染
-      return false;
-    }
-  }
-
-  /**
    * 获取渲染配置（模式、是否 hydration、布局组件）
    *
    * 该函数根据页面模块导出、路由信息和自动检测结果，确定页面的渲染配置。
@@ -1337,34 +1177,39 @@ export class RouteHandler {
     }
 
     // 如果页面没有明确指定 renderMode，检测页面组件和布局组件是否使用了 Preact Hooks
-    let autoDetectedMode: RenderMode | undefined = undefined;
-    if (!pageRenderMode) {
-      // 检测页面组件
-      const pageUsesHooks = await this.detectPreactHooks(routeInfo.filePath);
+    // 暂时禁用自动检测 Hooks 并转换为 CSR 的功能
+    const autoDetectedMode: RenderMode | undefined = undefined;
+    // if (!pageRenderMode) {
+    //   // 检测页面组件
+    //   const pageUsesHooks = await this.detectPreactHooks(routeInfo.filePath);
 
-      // 检测布局组件（如果存在）
-      let layoutUsesHooks = false;
-      for (const layoutPath of layoutPaths) {
-        if (await this.detectPreactHooks(layoutPath)) {
-          layoutUsesHooks = true;
-          break;
-        }
-      }
+    //   // 检测布局组件（如果存在）
+    //   let layoutUsesHooks = false;
+    //   for (const layoutPath of layoutPaths) {
+    //     if (await this.detectPreactHooks(layoutPath)) {
+    //       layoutUsesHooks = true;
+    //       break;
+    //     }
+    //   }
 
-      // 如果页面组件或布局组件使用了 Hooks，自动设置为 CSR
-      if (pageUsesHooks || layoutUsesHooks) {
-        autoDetectedMode = "csr";
-      }
-    }
+    //   // 如果页面组件或布局组件使用了 Hooks，自动设置为 CSR
+    //   if (pageUsesHooks || layoutUsesHooks) {
+    //     autoDetectedMode = "csr";
+    //   }
+    // }
 
     const configRenderMode = this.config?.renderMode;
     const renderMode: RenderMode = pageRenderMode || autoDetectedMode ||
       configRenderMode || "ssr";
 
-    // 对于 SSR 模式，默认不进行 hydration
-    // 只有在明确指定 hybrid 模式或 hydrate=true 时才进行 hydration
+    // 对于 SSR 模式，默认启用 hydration，让客户端能够激活事件处理
+    // 如果页面明确设置了 hydrate=false，则不进行 hydration
+    // hybrid 模式始终进行 hydration
     const shouldHydrate = renderMode === "hybrid" ||
+      (renderMode === "ssr" && pageModule.hydrate !== false) ||
       pageModule.hydrate === true;
+
+    console.log({ renderMode, shouldHydrate });
 
     return {
       renderMode,
@@ -1400,25 +1245,33 @@ export class RouteHandler {
 
     try {
       // SSR 或 Hybrid 模式：服务端渲染内容
-      let pageElement;
-      try {
-        // 支持异步组件：如果组件返回 Promise，则等待它
-        const result = PageComponent(pageProps);
-        pageElement = result instanceof Promise ? await result : result;
-        if (!pageElement) {
-          throw new Error("页面组件返回了空值");
+      // 在调用组件之前，确保 preact hooks 上下文正确初始化
+      // 保存原有的 vnode 钩子（如果有）
+      const originalVnode = options.vnode;
+      
+      // 设置 vnode 钩子来确保 hooks 上下文在渲染时可用
+      options.vnode = (vnode) => {
+        // 调用原有的 vnode 钩子（如果有）
+        if (originalVnode) {
+          originalVnode(vnode);
         }
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        throw new Error(`渲染页面组件失败: ${errorMsg}`);
-      }
+      };
 
+      // 关键：preact-render-to-string 的 hooks 上下文是在 renderToString 内部初始化的
+      // 我们不能直接调用 PageComponent，因为此时 hooks 上下文还没有初始化
+      // 正确的做法是：使用 h() 函数创建组件 VNode，然后通过 renderToString 渲染
+      // 这样组件函数会在 renderToString 内部执行，hooks 上下文会被正确初始化
+      // 如果组件是异步的（返回 Promise），renderToString 会等待 Promise 完成
+      const pageVNode = h(PageComponent as any, pageProps);
+      
       // 如果有布局，按顺序嵌套包裹（支持异步布局组件）
+      // hooks 上下文会在 renderToString 内部初始化
       let html: string;
       try {
+        let currentElement = pageVNode;
+        
         if (LayoutComponents.length > 0) {
           // 从最内层到最外层嵌套布局组件
-          let currentElement = pageElement;
           for (let i = 0; i < LayoutComponents.length; i++) {
             const LayoutComponent = LayoutComponents[i];
             // 获取对应布局的 load 数据（如果有）
@@ -1445,21 +1298,15 @@ export class RouteHandler {
               },
             ) as LayoutProps;
 
-            const layoutResult = LayoutComponent(layoutPropsWithData);
-            const layoutElement = layoutResult instanceof Promise
-              ? await layoutResult
-              : layoutResult;
-            if (!layoutElement) {
-              throw new Error("布局组件返回了空值");
-            }
-            currentElement = layoutElement;
+            // 使用 h() 函数创建布局组件的 VNode
+            currentElement = h(LayoutComponent as any, layoutPropsWithData);
           }
           html = renderToString(
             currentElement as unknown as Parameters<typeof renderToString>[0],
           );
         } else {
           html = renderToString(
-            pageElement as unknown as Parameters<typeof renderToString>[0],
+            pageVNode as unknown as Parameters<typeof renderToString>[0],
           );
         }
 
@@ -1470,6 +1317,14 @@ export class RouteHandler {
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         html = `<div>页面渲染失败: ${errorMsg}</div>`;
+      } finally {
+        // 恢复原有的 vnode 钩子（如果有）
+        if (originalVnode) {
+          options.vnode = originalVnode;
+        } else {
+          // 如果没有原有的钩子，清除我们设置的钩子
+          delete options.vnode;
+        }
       }
 
       // SSR 和 Hybrid 模式：都需要包装在容器中以便 hydration
@@ -1504,7 +1359,7 @@ export class RouteHandler {
     let importMapScript = preloadedImportMapScript;
     if (!importMapScript) {
       try {
-        importMapScript = await createImportMapScript();
+        importMapScript = createImportMapScript();
       } catch (_error) {
         // 静默处理错误
       }
@@ -1536,8 +1391,8 @@ export class RouteHandler {
     const [preactModule, jsxRuntimeModule, hooksModule, ] = await Promise.all([
       import('preact'),
       import('preact/jsx-runtime'),
-      import('preact/hooks').catch(() => null), // preact/hooks 可能不存在，允许失败
-      import('preact/signals').catch(() => null) // preact/signals 可能不存在，允许失败
+      import('preact/hooks').catch(() => null), 
+      import('preact/signals').catch(() => null) 
     ]);
     
     globalThis.__PREACT_MODULES__ = {
@@ -1702,20 +1557,30 @@ export class RouteHandler {
         prefetchRoutes = this.resolvePrefetchRoutes(prefetchConfig);
       }
 
-      const clientScript = await createClientScript(
-        modulePath,
-        renderMode,
-        pageProps,
-        shouldHydrate,
-        layoutPathForClient,
-        normalizedBasePath,
-        allLayoutPathsForClient,
-        layoutDisabled,
-        prefetchRoutes,
-        prefetchLoading,
-        prefetchMode,
-        layoutData, // 传递布局的 load 数据到客户端
-      );
+      // 只在需要客户端渲染时注入客户端脚本
+      // 纯 SSR 模式（ssr + !shouldHydrate）不需要客户端脚本，因为页面是静态的
+      // CSR、Hybrid 和 SSR + Hydration 模式需要客户端脚本
+      let clientScript: string | null = null;
+      if (
+        renderMode === "csr" ||
+        renderMode === "hybrid" ||
+        (renderMode === "ssr" && shouldHydrate)
+      ) {
+        clientScript = await createClientScript(
+          modulePath,
+          renderMode,
+          pageProps,
+          shouldHydrate,
+          layoutPathForClient,
+          normalizedBasePath,
+          allLayoutPathsForClient,
+          layoutDisabled,
+          prefetchRoutes,
+          prefetchLoading,
+          prefetchMode,
+          layoutData, // 传递布局的 load 数据到客户端
+        );
+      }
 
       // 如果启用了预加载加载状态，注入预加载动画样式（插入到现有的 style 标签中，或创建新的 style 标签）
       if (prefetchLoading) {
@@ -1779,27 +1644,30 @@ export class RouteHandler {
         }
       }
 
-      // 对于 CSR 模式，将链接拦截器脚本注入到 head（尽早执行）
-      if (renderMode === "csr" && clientScript.includes("<script>")) {
-        // 提取链接拦截器脚本（第一个 <script> 标签）
-        const linkInterceptorMatch = clientScript.match(
-          /<script>([\s\S]*?)<\/script>/,
-        );
-        if (linkInterceptorMatch) {
-          headScriptsToInject.push(
-            `<script>${linkInterceptorMatch[1]}</script>`,
+      // 只在有客户端脚本时才注入
+      if (clientScript) {
+        // 对于 CSR 模式，将链接拦截器脚本注入到 head（尽早执行）
+        if (renderMode === "csr" && clientScript.includes("<script>")) {
+          // 提取链接拦截器脚本（第一个 <script> 标签）
+          const linkInterceptorMatch = clientScript.match(
+            /<script>([\s\S]*?)<\/script>/,
           );
-          // 从 body 脚本中移除链接拦截器，只保留模块脚本
-          const moduleScript = clientScript.replace(
-            /<script>[\s\S]*?<\/script>\s*/,
-            "",
-          );
-          scriptsToInject.push(moduleScript);
+          if (linkInterceptorMatch) {
+            headScriptsToInject.push(
+              `<script>${linkInterceptorMatch[1]}</script>`,
+            );
+            // 从 body 脚本中移除链接拦截器，只保留模块脚本
+            const moduleScript = clientScript.replace(
+              /<script>[\s\S]*?<\/script>\s*/,
+              "",
+            );
+            scriptsToInject.push(moduleScript);
+          } else {
+            scriptsToInject.push(clientScript);
+          }
         } else {
           scriptsToInject.push(clientScript);
         }
-      } else {
-        scriptsToInject.push(clientScript);
       }
     }
 
@@ -2427,16 +2295,8 @@ export class RouteHandler {
       return;
     }
 
-    res.status = 200;
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.body = fullHtml;
-
-    // 验证响应体已设置
-    if (!res.body || res.body.trim() === "") {
-      res.status = 500;
-      res.body = "<h1>500 - Internal Server Error</h1><p>响应体设置失败</p>";
-      res.setHeader("Content-Type", "text/html; charset=utf-8");
-    }
+    // 使用 res.html() 方法设置响应，确保 Content-Type 正确设置
+    res.html(fullHtml, { status: 200 });
   }
 
   /**

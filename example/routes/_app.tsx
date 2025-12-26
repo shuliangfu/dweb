@@ -49,7 +49,7 @@ export default function App({ children }: AppProps) {
         <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-tsx.min.js" />
       </head>
       <body>
-        <div id="root">{children}</div>
+        <div id="root" dangerouslySetInnerHTML={{ __html: children }} />
       </body>
     </html>
   );

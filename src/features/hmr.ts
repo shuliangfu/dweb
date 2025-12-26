@@ -303,11 +303,11 @@ export class HMRServer {
       }
     }
 
-    // 默认的 import map
+    // 默认的 import map（使用固定版本，与 import-map.ts 保持一致，避免 Preact 实例冲突）
     return {
-      preact: 'https://esm.sh/preact@latest',
-      'preact/jsx-runtime': 'https://esm.sh/preact@latest/jsx-runtime',
-      'preact/hooks': 'https://esm.sh/preact@latest/hooks',
+      'preact': 'https://esm.sh/preact@10.28.0',
+      'preact/jsx-runtime': 'https://esm.sh/preact@10.28.0/jsx-runtime',
+      'preact/hooks': 'https://esm.sh/preact@10.28.0/hooks',
     };
   }
 

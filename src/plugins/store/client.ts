@@ -11,7 +11,8 @@ import type { Store } from "./types.ts";
  */
 export function getStore(): Store | null {
 	if (typeof globalThis === "undefined" || !globalThis.window) {
-		console.warn("[Store Client] 无法获取 Store 实例：不在客户端环境");
+		// SSR 时不在客户端环境是正常的，不需要输出警告
+		// console.warn("[Store Client] 无法获取 Store 实例：不在客户端环境");
     return null;
   }
 

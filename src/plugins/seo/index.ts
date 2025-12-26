@@ -3,8 +3,8 @@
  * 自动生成 SEO meta 标签、Open Graph、Twitter Cards、JSON-LD
  */
 
-import type { Plugin, AppLike, Request, Response, BuildConfig } from '../../types/index.ts';
-import type { SEOPluginOptions, OpenGraphConfig, TwitterCardConfig, JSONLDConfig } from './types.ts';
+import type { Plugin, Request, Response, BuildConfig } from '../../types/index.ts';
+import type { SEOPluginOptions } from './types.ts';
 
 /**
  * 生成 meta 标签 HTML

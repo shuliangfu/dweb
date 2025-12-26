@@ -220,9 +220,9 @@ export class GraphQLServer {
   <link rel="stylesheet" href="https://unpkg.com/graphiql@3/graphiql.min.css" />
   <!-- 使用 Preact 替代 React，保持与框架的一致性 -->
   <script type="module">
-    // 导入 Preact 和 preact/compat
-    import { render } from 'https://esm.sh/preact@latest';
-    import * as PreactCompat from 'https://esm.sh/preact@latest/compat';
+    // 导入 Preact 和 preact/compat（使用固定版本，与 import-map.ts 保持一致，避免 Preact 实例冲突）
+    import { render } from 'https://esm.sh/preact@10.28.0';
+    import * as PreactCompat from 'https://esm.sh/preact@10.28.0/compat';
     
     // 将 preact/compat 暴露为全局的 React，供 GraphiQL 使用
     // GraphiQL 期望使用 React.createElement 和 ReactDOM.render
