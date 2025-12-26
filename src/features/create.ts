@@ -18,7 +18,7 @@ async function getFrameworkVersion(): Promise<string> {
     const currentFileUrl = new URL(import.meta.url);
     
     let currentDir: string;
-    
+     
     // 处理不同的协议
     if (currentFileUrl.protocol === 'file:') {
       // 本地文件系统路径

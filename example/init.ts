@@ -2167,7 +2167,7 @@ if (isMultiApp) {
   }
 } else {
   // 单应用模式：显示通用命令
-  console.log(`  deno task dev    # 启动开发服务器`);
+  console.log(`  deno task dev    # 启动开发服务器`); 
   console.log(`  deno task build  # 构建生产版本`);
   console.log(`  deno task start  # 启动生产服务器`);
 }
