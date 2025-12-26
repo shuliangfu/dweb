@@ -466,9 +466,19 @@ export async function createApp(
   console.log(`✅ 项目创建成功！`);
   console.log(`\n📝 下一步：`);
   console.log(`  cd ${projectName}`);
-  console.log(`  deno task dev    # 启动开发服务器`);
-  console.log(`  deno task build  # 构建生产版本`);
-  console.log(`  deno task start  # 启动生产服务器`);
+  if (isMultiApp) {
+    // 多应用模式：为每个应用显示命令
+    for (const appName of appNames) {
+      console.log(`  deno task dev:${appName}    # 启动 ${appName} 开发服务器`);
+      console.log(`  deno task build:${appName}  # 构建 ${appName} 生产版本`);
+      console.log(`  deno task start:${appName}  # 启动 ${appName} 生产服务器`);
+    }
+  } else {
+    // 单应用模式：显示通用命令
+    console.log(`  deno task dev    # 启动开发服务器`);
+    console.log(`  deno task build  # 构建生产版本`);
+    console.log(`  deno task start  # 启动生产服务器`);
+  }
   console.log(`\n💡 提示：`);
   console.log(`  项目已配置为从 JSR 导入 DWeb 框架`);
   console.log(`  如需修改框架 URL，请编辑 dweb.config.ts 和 deno.json`);
