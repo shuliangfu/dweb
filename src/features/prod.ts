@@ -7,7 +7,7 @@ import type { AppConfig, Request, Response } from "../types/index.ts";
 import { isMultiAppMode, normalizeRouteConfig } from "../core/config.ts";
 import { Server } from "../core/server.ts";
 import { Router } from "../core/router.ts";
-import { RouteHandler } from "../core/route-handler.ts";
+import { preloadImportMapScript, RouteHandler } from "../core/route-handler.ts";
 import { MiddlewareManager } from "../core/middleware.ts";
 import { PluginManager } from "../core/plugin.ts";
 import { CookieManager } from "../features/cookie.ts";
@@ -304,6 +304,9 @@ export async function startProdServer(config: AppConfig): Promise<void> {
   // 预加载所有模块（解决首次访问延迟问题）
   await preloadModules(router);
 
+  // 预先加载 import map 脚本
+  await preloadImportMapScript();
+
   // 设置数据库配置加载器（用于 CLI 工具中的自动初始化）
   // 这样在 CLI 工具中使用模型时，可以自动从配置加载器获取配置
   setDatabaseConfigLoader(() => {
@@ -442,7 +445,6 @@ export async function startProdServer(config: AppConfig): Promise<void> {
       // 如果配置了 static，使用完整配置（但更新 dir 为构建输出路径）；否则使用默认配置
       // 生产环境：传入 outDir 和 isProduction: true，让中间件自动构建完整路径
 			if (config.static) {
-				console.log("1.....");
         middlewareManager.add(staticFiles({
           ...config.static,
           dir: staticDir, // 使用相对路径（如 'assets'），中间件会根据 outDir 自动构建完整路径

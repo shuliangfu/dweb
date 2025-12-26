@@ -415,10 +415,12 @@ async function compileFile(
       let serverCompiledContent: string | null = null;
       if (target === "server" || target === "both") {
         // 使用原始源代码编译（包含 load 函数）
+        // 服务端构建时，明确指定 isServerBuild: true，确保 preact 相关依赖保持原始导入
         const result = await buildFromEntryPoints([absoluteFilePath], {
           importMap,
           cwd,
           bundleClient: true,
+          isServerBuild: true, // 明确指定为服务端构建
           minify: true,
           keepNames: true,
           legalComments: "none",
@@ -636,6 +638,7 @@ async function compileWithCodeSplitting(
     importMap,
     cwd,
     bundleClient: true,
+    isServerBuild: target === "server", // 服务端构建时明确指定
     minify: true,
     legalComments: "none",
     splitting: true,

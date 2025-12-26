@@ -131,6 +131,7 @@ function convertToBrowserUrl(importValue: string): string {
  */
 function createImportReplacerPlugin(
   importMap: Record<string, string>,
+  isServerBuild: boolean = false,
 ): esbuild.Plugin {
   return {
     name: "import-replacer",
@@ -162,6 +163,21 @@ function createImportReplacerPlugin(
           }
         }
         
+        // 服务端构建时，preact 相关依赖保持原始导入，不转换为 HTTP URL
+        // 这样运行时可以使用项目的 import map，确保与 route-handler.ts 使用同一个 preact 实例
+        if (isServerBuild && (
+          importPath === "preact" ||
+          importPath.startsWith("preact/") ||
+          importPath === "preact-render-to-string" ||
+          importPath.startsWith("preact-render-to-string/")
+        )) {
+          // 保持原始导入，让运行时使用项目的 import map
+          return {
+            path: importPath,
+            external: true,
+          };
+        }
+        
         // 检查是否是外部依赖（npm、jsr）
         let resolvedPath: string | undefined;
         let isLocalPath = false;
@@ -174,8 +190,8 @@ function createImportReplacerPlugin(
             // 本地路径，应该被打包，不替换
             isLocalPath = true;
           } else {
-            // 外部依赖，转换为浏览器 URL
-            resolvedPath = convertToBrowserUrl(mappedValue);
+            // 外部依赖，转换为浏览器 URL（仅客户端构建）
+            resolvedPath = isServerBuild ? mappedValue : convertToBrowserUrl(mappedValue);
           }
         } else {
           // 2. 检查是否是子路径，尝试从父包生成
@@ -189,10 +205,10 @@ function createImportReplacerPlugin(
                 // 父包是本地路径，子路径也应该是本地路径，应该被打包
                 isLocalPath = true;
               } else {
-                // 父包是外部依赖，生成子路径的浏览器 URL
+                // 父包是外部依赖，生成子路径的 URL（服务端保持原始，客户端转换为浏览器 URL）
                 const subPath = importPath.substring(parentPackage.length + 1);
                 const subPathImport = `${parentImport}/${subPath}`;
-                resolvedPath = convertToBrowserUrl(subPathImport);
+                resolvedPath = isServerBuild ? subPathImport : convertToBrowserUrl(subPathImport);
               }
             }
           } else if (importPath.startsWith("@") && importPath.split("/").length >= 3) {
@@ -206,10 +222,10 @@ function createImportReplacerPlugin(
                 // 父包是本地路径，子路径也应该是本地路径，应该被打包
                 isLocalPath = true;
               } else {
-                // 父包是外部依赖，生成子路径的浏览器 URL
+                // 父包是外部依赖，生成子路径的 URL（服务端保持原始，客户端转换为浏览器 URL）
                 const subPath = parts.slice(2).join("/");
                 const subPathImport = `${parentImport}/${subPath}`;
-                resolvedPath = convertToBrowserUrl(subPathImport);
+                resolvedPath = isServerBuild ? subPathImport : convertToBrowserUrl(subPathImport);
               }
             }
           } else {
@@ -221,8 +237,8 @@ function createImportReplacerPlugin(
                 // 本地路径，应该被打包，不替换
                 isLocalPath = true;
               } else {
-                // 外部依赖，转换为浏览器 URL
-                resolvedPath = convertToBrowserUrl(mappedValue);
+                // 外部依赖，转换为浏览器 URL（仅客户端构建）
+                resolvedPath = isServerBuild ? mappedValue : convertToBrowserUrl(mappedValue);
               }
             }
           }
@@ -718,6 +734,8 @@ export interface BuildOptions {
   cwd: string;
   /** 是否打包客户端依赖（默认 false） */
   bundleClient?: boolean;
+  /** 是否为服务端构建（默认根据 bundleClient 推断：!bundleClient） */
+  isServerBuild?: boolean;
   /** 是否压缩代码（默认 false，开发环境） */
   minify?: boolean;
   /** 是否生成 sourcemap（默认 false） */
@@ -765,7 +783,9 @@ export async function buildFromStdin(
     getExternalPackages(importMap, bundleClient, false);
 
   // 创建导入替换插件（在编译时直接替换代码中的依赖导入）
-  const importReplacerPlugin = createImportReplacerPlugin(importMap);
+  // 服务端构建时，preact 相关依赖保持原始导入，不转换为 HTTP URL
+  const isServerBuild = !bundleClient;
+  const importReplacerPlugin = createImportReplacerPlugin(importMap, isServerBuild);
   
   // 创建 JSR 解析插件
   const jsrResolverPlugin = createJSRResolverPlugin(
@@ -808,6 +828,7 @@ export async function buildFromStdin(
  * @param entryPoints 入口文件路径数组
  * @param options 构建选项
  * @returns esbuild 构建结果
+ * 构建入口点（添加调试日志）
  */
 export async function buildFromEntryPoints(
   entryPoints: string[],
@@ -826,6 +847,7 @@ export async function buildFromEntryPoints(
     importMap,
     cwd,
     bundleClient = false,
+    isServerBuild: explicitIsServerBuild,
     minify = false,
     sourcemap = false,
     keepNames = false,
@@ -842,8 +864,13 @@ export async function buildFromEntryPoints(
   const finalExternalPackages = externalPackages ??
     getExternalPackages(importMap, bundleClient, false);
 
+  // 判断是否为服务端构建：如果明确指定了 isServerBuild，使用它；否则根据 bundleClient 推断
+  // 注意：服务端构建时，preact 相关依赖应该保持原始导入，不转换为 HTTP URL
+  const isServerBuild = explicitIsServerBuild ?? !bundleClient;
+
   // 创建导入替换插件（在编译时直接替换代码中的依赖导入）
-  const importReplacerPlugin = createImportReplacerPlugin(importMap);
+  // 服务端构建时，preact 相关依赖保持原始导入，不转换为 HTTP URL
+  const importReplacerPlugin = createImportReplacerPlugin(importMap, isServerBuild);
   
   // 创建 JSR 解析插件
   const jsrResolverPlugin = createJSRResolverPlugin(
