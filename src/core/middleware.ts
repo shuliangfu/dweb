@@ -75,6 +75,22 @@ export class MiddlewareManager extends BaseManager implements IService {
    * ```
    */
   add(middleware: Middleware | MiddlewareConfig): void {
+    // 获取中间件名称（如果存在），用于去重检查
+    const middlewareName = typeof middleware === "function"
+      ? undefined
+      : middleware.name;
+
+    // 检查是否已经注册了同名中间件，避免重复注册
+    if (
+      middlewareName && this.middlewares.some((m) => m.name === middlewareName)
+    ) {
+      // 如果已经存在同名中间件，跳过注册（避免重复执行）
+      console.warn(
+        `⚠️  中间件 "${middlewareName}" 已注册，跳过重复注册（避免重复执行）`,
+      );
+      return;
+    }
+
     if (typeof middleware === "function") {
       this.middlewares.push({
         handler: middleware,
