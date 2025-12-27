@@ -1,0 +1,25 @@
+#!/bin/sh
+#
+# Pre-commit hook to format code with deno fmt before committing
+# This hook runs `deno task fmt` to format all staged files
+
+# Redirect output to stderr
+exec 1>&2
+
+echo "🔧 Running deno fmt to format code..."
+
+# Run deno fmt to format code
+deno task fmt
+
+# Check if fmt command succeeded
+if [ $? -ne 0 ]; then
+  echo "❌ Code formatting failed. Please fix the errors and try again."
+  exit 1
+fi
+
+# Add formatted files back to staging area
+git add -u
+
+echo "✅ Code formatted successfully!"
+
+exit 0

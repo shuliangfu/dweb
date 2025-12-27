@@ -151,7 +151,10 @@ class FileNameUtils {
    * @param target - 编译目标（"server" | "client"）
    * @returns 带前缀的文件名（如 "server/abc123.js" 或 "client/abc123.js"）
    */
-  static addTargetPrefix(fileName: string, target: "server" | "client"): string {
+  static addTargetPrefix(
+    fileName: string,
+    target: "server" | "client",
+  ): string {
     return `${target}/${fileName}`;
   }
 }
@@ -176,7 +179,10 @@ class FileMapUtils {
     target: "server" | "client" | "both",
   ): void {
     if (target === "server" || target === "both") {
-      fileMap.set(originalPath, FileNameUtils.addTargetPrefix(hashName, "server"));
+      fileMap.set(
+        originalPath,
+        FileNameUtils.addTargetPrefix(hashName, "server"),
+      );
     }
     if (target === "client" || target === "both") {
       fileMap.set(
@@ -818,7 +824,12 @@ class FileCompiler {
           await Deno.writeTextFile(clientOutputPath, clientCompiledContent);
 
           // 记录映射关系（使用 .client 后缀区分）
-          FileMapUtils.setFileMapping(fileMap, filePath, clientHashName, "client");
+          FileMapUtils.setFileMapping(
+            fileMap,
+            filePath,
+            clientHashName,
+            "client",
+          );
         }
 
         // 返回服务端版本的信息（如果存在）
@@ -1002,7 +1013,9 @@ class FileCompiler {
       // outdir 是输出目录，例如：/project/.dist/server
       // 所以 relativeToOutdir 应该是 routes/index.js
       const relativeToOutdir = path.relative(outDir, outputPath);
-      const relativeToOutdirNormalized = PathUtils.normalizePath(relativeToOutdir);
+      const relativeToOutdirNormalized = PathUtils.normalizePath(
+        relativeToOutdir,
+      );
 
       // 提取 esbuild 生成的文件名（例如：chunk-RF5DZGEJ.js）
       const esbuildFileName = path.basename(relativeToOutdirNormalized);
