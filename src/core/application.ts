@@ -690,10 +690,32 @@ export class Application {
           this.middlewareManager.addMany(mainMiddlewares);
         }
 
-        // 加载插件
+        // 加载插件（从 main.ts 中的 app 实例获取）
+        // 注意：main.ts 中的 app 实例是独立的，它的插件管理器也是独立的
+        // 所以这里获取的是 main.ts 中通过 app.plugin() 注册的插件
         const mainPlugins = getPluginsFromApp(mainApp);
         if (mainPlugins.length > 0) {
-          this.pluginManager.registerMany(mainPlugins);
+          // 检查是否有重复的插件（避免重复注册警告）
+          // 如果配置中已经注册了某个插件，main.ts 中就不应该再注册相同的插件
+          const configPluginNames = new Set(
+            (config.plugins || []).map((p) => {
+              const pluginName = (p as { name?: string }).name ||
+                (p as { name: string }).name;
+              return pluginName;
+            }).filter(Boolean),
+          );
+          const filteredMainPlugins = mainPlugins.filter((p) => {
+            // 如果配置中已经注册了同名插件，跳过（避免重复注册）
+            if (p.name && configPluginNames.has(p.name)) {
+              return false;
+            }
+            return true;
+          });
+
+          if (filteredMainPlugins.length > 0) {
+            // 注册 main.ts 中的插件（去重逻辑在 registerMany 中处理）
+            this.pluginManager.registerMany(filteredMainPlugins);
+          }
         }
       }
     } catch (_error) {
