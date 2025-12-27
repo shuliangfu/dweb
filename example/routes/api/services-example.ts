@@ -10,37 +10,24 @@
  * 5. **生命周期管理**：支持单例、瞬态、作用域等不同生命周期
  */
 
-import type { Request, Response } from '@dreamer/dweb';
+import type { ApiContext } from '@dreamer/dweb';
 import { UserService } from '../../services/user.ts';
 import { OrderService } from '../../services/order.ts';
 
 // GET /api/services-example/get-users
-export function getUsers(req: Request, res?: Response) {
-  if (!res) {
-    throw new Error('Response object is required');
-  }
-  
+export function getUsers(context: ApiContext) {
   try {
-    // 通过 req.getApplication() 获取 Application 实例
-    const application = req.getApplication?.();
-    if (!application) {
-      return res.json({
-        success: false,
-        error: 'Application 实例不可用',
-      }, { status: 500 });
-    }
-    
-    // 从服务容器获取已注册的服务（单例模式，整个应用共享同一个实例）
-    const userService = application.getService<UserService>('userService');
+    // 从 ApiContext 获取 Application 实例
+    const userService = context.app.getService<UserService>('userService');
     const users = userService.getAllUsers();
     
-    return res.json({
+    return context.res.json({
       success: true,
       data: users,
       message: '✅ 使用服务容器获取服务，数据在多个请求间共享',
     });
   } catch (error) {
-    return res.json({
+    return context.res.json({
       success: false,
       error: error instanceof Error ? error.message : String(error),
     }, { status: 500 });
@@ -48,48 +35,34 @@ export function getUsers(req: Request, res?: Response) {
 }
 
 // GET /api/services-example/get-user
-export function getUser(req: Request, res?: Response) {
-  if (!res) {
-    throw new Error('Response object is required');
-  }
-  
+export function getUser(context: ApiContext) {
   try {
-    const url = new URL(req.url);
-    const id = url.searchParams.get('id');
+    const id = context.query.id;
     
     if (!id) {
-      return res.json({
+      return context.res.json({
         success: false,
         error: '用户 ID 不能为空',
       }, { status: 400 });
     }
     
-    // 通过 req.getApplication() 获取 Application 实例
-    const application = req.getApplication?.();
-    if (!application) {
-      return res.json({
-        success: false,
-        error: 'Application 实例不可用',
-      }, { status: 500 });
-    }
-    
     // 从服务容器获取已注册的服务（单例模式）
-    const userService = application.getService<UserService>('userService');
+    const userService = context.app.getService<UserService>('userService');
     const user = userService.getUserById(id);
     
     if (!user) {
-      return res.json({
+      return context.res.json({
         success: false,
         error: '用户不存在',
       }, { status: 404 });
     }
     
-    return res.json({
+    return context.res.json({
       success: true,
       data: user,
     });
   } catch (error) {
-    return res.json({
+    return context.res.json({
       success: false,
       error: error instanceof Error ? error.message : String(error),
     }, { status: 500 });
@@ -98,27 +71,15 @@ export function getUser(req: Request, res?: Response) {
 
 // POST /api/services-example/create-user
 // 演示：使用服务容器，创建的用户会在所有请求间共享
-export function createUser(req: Request, res?: Response) {
-  if (!res) {
-    throw new Error('Response object is required');
-  }
-  
+export function createUser(context: ApiContext) {
   try {
-    const application = req.getApplication?.();
-    if (!application) {
-      return res.json({
-        success: false,
-        error: 'Application 实例不可用',
-      }, { status: 500 });
-    }
-    
     // 从服务容器获取服务（单例模式）
-    const userService = application.getService<UserService>('userService');
+    const userService = context.app.getService<UserService>('userService');
     
     // 从请求体获取用户数据
-    const body = req.body as { name?: string; email?: string };
+    const body = context.req.body as { name?: string; email?: string };
     if (!body?.name || !body?.email) {
-      return res.json({
+      return context.res.json({
         success: false,
         error: '用户名和邮箱不能为空',
       }, { status: 400 });
@@ -130,13 +91,13 @@ export function createUser(req: Request, res?: Response) {
       email: body.email,
     });
     
-    return res.json({
+    return context.res.json({
       success: true,
       data: newUser,
       message: '✅ 用户已创建，数据保存在服务容器的单例实例中，所有请求都可以访问',
     });
   } catch (error) {
-    return res.json({
+    return context.res.json({
       success: false,
       error: error instanceof Error ? error.message : String(error),
     }, { status: 500 });
@@ -145,23 +106,11 @@ export function createUser(req: Request, res?: Response) {
 
 // GET /api/services-example/demo-singleton
 // 演示：服务容器的单例模式 vs 直接 new 的区别
-export function demoSingleton(req: Request, res?: Response) {
-  if (!res) {
-    throw new Error('Response object is required');
-  }
-  
+export function demoSingleton(context: ApiContext) {
   try {
-    const application = req.getApplication?.();
-    if (!application) {
-      return res.json({
-        success: false,
-        error: 'Application 实例不可用',
-      }, { status: 500 });
-    }
-    
     // 方式 1：使用服务容器（单例模式）
-    const userService1 = application.getService<UserService>('userService');
-    const userService2 = application.getService<UserService>('userService');
+    const userService1 = context.app.getService<UserService>('userService');
+    const userService2 = context.app.getService<UserService>('userService');
     const isSingleton = userService1 === userService2; // true，同一个实例
     
     // 方式 2：直接 new（每次都是新实例）
@@ -179,7 +128,7 @@ export function demoSingleton(req: Request, res?: Response) {
     const isolatedUsers = userService3.getAllUsers();
     const containerUsers = userService1.getAllUsers(); // 不包含 isolatedUsers 的数据
     
-    return res.json({
+    return context.res.json({
       success: true,
       data: {
         singleton: {
@@ -199,7 +148,7 @@ export function demoSingleton(req: Request, res?: Response) {
       },
     });
   } catch (error) {
-    return res.json({
+    return context.res.json({
       success: false,
       error: error instanceof Error ? error.message : String(error),
     }, { status: 500 });
@@ -208,35 +157,23 @@ export function demoSingleton(req: Request, res?: Response) {
 
 // GET /api/services-example/demo-dependency
 // 演示：服务之间的依赖注入（OrderService 依赖 UserService）
-export function demoDependency(req: Request, res?: Response) {
-  if (!res) {
-    throw new Error('Response object is required');
-  }
-  
+export function demoDependency(context: ApiContext) {
   try {
-    const application = req.getApplication?.();
-    if (!application) {
-      return res.json({
-        success: false,
-        error: 'Application 实例不可用',
-      }, { status: 500 });
-    }
-    
     // 获取多个服务（它们都是单例，在整个应用中共享）
-    const userService = application.getService<UserService>('userService');
-    const orderService = application.getService<OrderService>('orderService');
+    const userService = context.app.getService<UserService>('userService');
+    const orderService = context.app.getService<OrderService>('orderService');
     
     // 获取用户的订单（演示服务之间的协作）
     const users = userService.getAllUsers();
     const orders = orderService.getAllOrders();
     
     // 关联用户和订单
-    const usersWithOrders = users.map(user => ({
+    const usersWithOrders = users.map((user: { id: string }) => ({
       ...user,
       orders: orderService.getOrdersByUserId(user.id),
     }));
     
-    return res.json({
+    return context.res.json({
       success: true,
       data: {
         users: users.length,
@@ -246,7 +183,7 @@ export function demoDependency(req: Request, res?: Response) {
       },
     });
   } catch (error) {
-    return res.json({
+    return context.res.json({
       success: false,
       error: error instanceof Error ? error.message : String(error),
     }, { status: 500 });

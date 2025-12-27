@@ -7,7 +7,12 @@
  * @module core/api-route
  */
 
-import type { Request, Response, RouteHandler } from "../types/index.ts";
+import type {
+  ApiContext,
+  Request,
+  Response,
+  RouteHandler,
+} from "../types/index.ts";
 import { isSafeMethodName } from "../utils/security.ts";
 
 /**
@@ -167,11 +172,13 @@ function returnErrorResponse(
  * // 不允许驼峰格式: POST /api/users/getUser (会返回 400 错误)
  * ```
  */
+
 export async function handleMethodApiRoute(
   handlers: Record<string, RouteHandler>,
   _method: string,
   req: Request,
   res?: Response,
+  context?: ApiContext,
 ): Promise<any> {
   // 从 URL 路径中获取方法名
   // URL 必须使用中划线格式（kebab-case），例如 /api/users/get-user
@@ -282,10 +289,24 @@ export async function handleMethodApiRoute(
   }
 
   // 执行处理器
-  // 如果处理函数需要 res 参数（参数数量 >= 2），传递 res
-  const result = handler.length >= 2 && res
-    ? await handler(req, res)
-    : await handler(req);
+  // 优先使用 ApiContext（如果提供），否则使用旧版 (req, res?) 签名
+  let result: any;
+  if (context) {
+    // 使用 ApiContext
+    result = await (handler as (context: ApiContext) => Promise<any> | any)(
+      context,
+    );
+  } else if (handler.length >= 2 && res) {
+    // 旧版签名：传递 req 和 res
+    result =
+      await (handler as (req: Request, res?: Response) => Promise<any> | any)(
+        req,
+        res,
+      );
+  } else {
+    // 旧版签名：只传递 req
+    result = await (handler as (req: Request) => Promise<any> | any)(req);
+  }
 
   return result;
 }
@@ -360,6 +381,7 @@ export async function handleRestApiRoute(
   method: string,
   req: Request,
   res?: Response,
+  context?: ApiContext,
 ): Promise<any> {
   const url = new URL(req.url);
   const pathParts = url.pathname.split("/").filter((p) => p);
@@ -504,10 +526,24 @@ export async function handleRestApiRoute(
   }
 
   // 执行处理器
-  // 如果处理函数需要 res 参数（参数数量 >= 2），传递 res
-  const result = handler.length >= 2 && res
-    ? await handler(req, res)
-    : await handler(req);
+  // 优先使用 ApiContext（如果提供），否则使用旧版 (req, res?) 签名
+  let result: any;
+  if (context) {
+    // 使用 ApiContext
+    result = await (handler as (context: ApiContext) => Promise<any> | any)(
+      context,
+    );
+  } else if (handler.length >= 2 && res) {
+    // 旧版签名：传递 req 和 res
+    result =
+      await (handler as (req: Request, res?: Response) => Promise<any> | any)(
+        req,
+        res,
+      );
+  } else {
+    // 旧版签名：只传递 req
+    result = await (handler as (req: Request) => Promise<any> | any)(req);
+  }
 
   return result;
 }
@@ -540,13 +576,14 @@ export async function handleRestApiRoute(
 export async function handleApiRoute(
   handlers: Record<string, RouteHandler>,
   method: string,
+  apiMode: "method" | "restful" = "method",
   req: Request,
   res?: Response,
-  apiMode: "method" | "restful" = "method",
+  context?: ApiContext,
 ): Promise<any> {
   if (apiMode === "restful") {
-    return await handleRestApiRoute(handlers, method, req, res);
+    return await handleRestApiRoute(handlers, method, req, res, context);
   } else {
-    return await handleMethodApiRoute(handlers, method, req, res);
+    return await handleMethodApiRoute(handlers, method, req, res, context);
   }
 }

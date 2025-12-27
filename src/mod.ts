@@ -5,6 +5,7 @@
 
 // 导出类型
 export type {
+  ApiContext,
   ApiRoute,
   AppConfig,
   BuildConfig,

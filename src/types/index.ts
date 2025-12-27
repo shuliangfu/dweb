@@ -507,8 +507,36 @@ export interface CorsConfig {
   maxAge?: number;
 }
 
-// 路由处理器
-export type RouteHandler = (req: Request, res?: Response) => Promise<any> | any;
+/**
+ * API 路由上下文
+ * 包含 API 路由处理所需的所有信息
+ */
+export interface ApiContext {
+  /** 请求对象 */
+  req: Request;
+  /** 响应对象 */
+  res: Response;
+  /** Application 实例 */
+  app: import("./index.ts").ApplicationLike;
+  /** Cookie 对象 */
+  cookie: Record<string, string>;
+  /** Session 对象（如果存在） */
+  session: import("./index.ts").Session | null;
+  /** 路由参数 */
+  params: Record<string, string>;
+  /** 查询参数 */
+  query: Record<string, string>;
+  /** 当前路由路径 */
+  routePath: string;
+  /** URL 对象 */
+  url: URL;
+}
+
+// 路由处理器（支持旧版 (req, res?) 和新版 (context: ApiContext) 两种签名）
+export type RouteHandler =
+  | ((context: ApiContext) => Promise<any> | any)
+  | ((req: Request, res?: Response) => Promise<any> | any)
+  | ((req: Request) => Promise<any> | any);
 
 // API 路由导出
 export interface ApiRoute {

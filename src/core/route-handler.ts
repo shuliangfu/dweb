@@ -4,6 +4,7 @@
  */
 
 import type {
+  ApiContext,
   AppConfig,
   ComponentChildren,
   LayoutProps,
@@ -875,14 +876,62 @@ export class RouteHandler {
         apiMode = this.config.routes.apiMode || "method";
       }
 
+      // 提取路由参数
+      const params = req.params || {};
+      if (routeInfo.params) {
+        const url = new URL(req.url);
+        const extractedParams = this.router.extractParams(
+          routeInfo.path,
+          url.pathname,
+          routeInfo,
+        );
+        Object.assign(params, extractedParams);
+      }
+
+      // 解析查询参数
+      const url = new URL(req.url);
+      const query: Record<string, string> = {};
+      url.searchParams.forEach((value, key) => {
+        query[key] = value;
+      });
+
+      // 获取 Cookie
+      const cookie = req.cookies || {};
+
+      // 获取 Session
+      let session = req.session || null;
+      if (!session && typeof req.getSession === "function") {
+        session = await req.getSession();
+      }
+
+      // 获取 Application 实例
+      const app = this.application || (req.getApplication?.() || null);
+      if (!app) {
+        throw new Error("Application 实例不可用");
+      }
+
+      // 创建 ApiContext
+      const context: ApiContext = {
+        req,
+        res,
+        app,
+        cookie,
+        session,
+        params,
+        query,
+        routePath: routeInfo.path,
+        url,
+      };
+
       // 处理 API 请求
       // 如果发生错误，api-route.ts 会直接设置响应并返回 null（不再抛出异常）
       const result = await handleApiRoute(
         handlers,
         req.method,
+        apiMode,
         req,
         res,
-        apiMode,
+        context,
       );
 
       // 如果返回 null，说明错误响应已经设置，直接返回
