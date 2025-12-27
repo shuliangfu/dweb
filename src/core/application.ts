@@ -1024,6 +1024,7 @@ export class Application {
       }
 
       // 执行中间件链
+      // 使用 getAll() 获取中间件处理函数数组（用于执行）
       const middlewares = this.middlewareManager.getAll();
       let index = 0;
       const next = async (): Promise<void> => {

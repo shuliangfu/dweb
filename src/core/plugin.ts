@@ -192,6 +192,78 @@ export class PluginManager extends BaseManager implements IService {
   }
 
   /**
+   * 根据名称获取插件
+   *
+   * 通过插件的名称查找并返回对应的插件对象。
+   * 如果插件不存在，返回 undefined。
+   *
+   * @param name - 插件名称
+   * @returns 插件对象，如果未找到则返回 undefined
+   *
+   * @example
+   * ```ts
+   * // 注册插件
+   * manager.register({
+   *   name: "tailwind",
+   *   onInit: async (app) => { /* ... *\/ },
+   * });
+   *
+   * // 获取插件
+   * const tailwindPlugin = manager.get("tailwind");
+   * if (tailwindPlugin) {
+   *   // 使用插件
+   *   console.log("Tailwind 插件配置:", tailwindPlugin.config);
+   * }
+   * ```
+   */
+  get(name: string): Plugin | undefined {
+    return this.plugins.find((p) => p.name === name);
+  }
+
+  /**
+   * 根据索引获取插件
+   *
+   * 通过索引位置获取插件对象。
+   *
+   * @param index - 插件在数组中的索引位置
+   * @returns 插件对象，如果索引无效则返回 undefined
+   *
+   * @example
+   * ```ts
+   * // 获取第一个插件
+   * const firstPlugin = manager.getByIndex(0);
+   *
+   * // 获取最后一个插件
+   * const lastPlugin = manager.getByIndex(manager.getAll().length - 1);
+   * ```
+   */
+  getByIndex(index: number): Plugin | undefined {
+    if (index < 0 || index >= this.plugins.length) {
+      return undefined;
+    }
+    return this.plugins[index];
+  }
+
+  /**
+   * 检查插件是否存在
+   *
+   * 根据名称检查插件是否已注册。
+   *
+   * @param name - 插件名称
+   * @returns 如果插件存在返回 true，否则返回 false
+   *
+   * @example
+   * ```ts
+   * if (manager.has("tailwind")) {
+   *   const tailwindPlugin = manager.get("tailwind");
+   * }
+   * ```
+   */
+  has(name: string): boolean {
+    return this.plugins.some((p) => p.name === name);
+  }
+
+  /**
    * 清空所有插件
    */
   clear(): void {
