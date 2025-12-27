@@ -671,32 +671,26 @@ export class Application {
       this.middlewareManager.addMany(config.middleware);
     }
 
-    // 尝试从 main.ts 加载中间件
-    const { getMiddlewaresFromApp, loadMainApp } = await import(
-      "../utils/app.ts"
-    );
-    try {
-      const mainApp = await loadMainApp(config.name);
-      if (mainApp) {
-        const mainMiddlewares = getMiddlewaresFromApp(mainApp);
-        if (mainMiddlewares.length > 0) {
-          this.middlewareManager.addMany(mainMiddlewares);
-        }
-      }
-    } catch (_error) {
-      // 加载 main.ts 失败时静默忽略（main.ts 是可选的）
-    }
-
     // 添加配置的插件
     if (config.plugins) {
       this.pluginManager.registerMany(config.plugins);
     }
 
-    // 尝试从 main.ts 加载插件
-    const { getPluginsFromApp } = await import("../utils/app.ts");
+    // 尝试从 main.ts 加载中间件和插件（只加载一次，避免重复）
+    const { getMiddlewaresFromApp, getPluginsFromApp, loadMainApp } =
+      await import(
+        "../utils/app.ts"
+      );
     try {
       const mainApp = await loadMainApp(config.name);
       if (mainApp) {
+        // 加载中间件
+        const mainMiddlewares = getMiddlewaresFromApp(mainApp);
+        if (mainMiddlewares.length > 0) {
+          this.middlewareManager.addMany(mainMiddlewares);
+        }
+
+        // 加载插件
         const mainPlugins = getPluginsFromApp(mainApp);
         if (mainPlugins.length > 0) {
           this.pluginManager.registerMany(mainPlugins);
