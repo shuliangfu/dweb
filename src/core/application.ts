@@ -273,14 +273,10 @@ export class Application {
       // 将文件变化事件连接到 HMR 服务器（智能更新）
       fileWatcher.onReload((changeInfo) => {
         hmrServer.notifyFileChange(changeInfo);
-
-        // 1秒后通知css文件变化
-        setTimeout(() => {
-          hmrServer.notifyFileChange({
-            path: cssPath,
-            kind: "modify",
-          });
-        }, 500);
+        hmrServer.notifyFileChange({
+          path: cssPath,
+          kind: "modify",
+        });
       });
 
       // 注册文件监听器到服务容器
