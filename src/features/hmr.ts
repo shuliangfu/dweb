@@ -25,6 +25,7 @@ const IGNORED_FILE_PATTERNS = [
   (name: string) => name.endsWith("~"),
   (path: string) => path.includes("node_modules"),
   (path: string) => path.includes(".deno"),
+  (path: string) => path.includes("/.git/") || path.includes("\\.git\\"),
 ];
 
 // ==================== 类型定义 ====================

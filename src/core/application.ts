@@ -264,7 +264,7 @@ export class Application {
         if (tailwindPlugin.config.cssPath) {
           cssPath = path.join(
             "/",
-            config.static!.dir,
+            config.static!.prefix || "/assets",
             path.basename(tailwindPlugin.config.cssPath as string),
           );
         }

@@ -5,11 +5,8 @@
 @import "tailwindcss/preflight.css" layer(base);
 @import "tailwindcss/utilities.css" layer(utilities);
 
-/* MODIFIED: 配置 Tailwind CSS 扫描路径，确保 common 目录下的组件被扫描 */
-/* @source 路径相对于项目根目录 */ 
 
 @custom-variant dark (.dark &);
-
 
 /* 定义主题配置 */
 @theme {
