@@ -5,6 +5,7 @@
 
 // 导出类型
 export type {
+  ApiRoute,
   AppConfig,
   BuildConfig,
   ComponentChild,
@@ -35,7 +36,11 @@ export { PluginManager } from "./core/plugin.ts";
 export { Application } from "./core/application.ts";
 export { ApplicationContext } from "./core/application-context.ts";
 export { ConfigManager } from "./core/config-manager.ts";
-export { ServiceContainer, ServiceLifetime } from "./core/service-container.ts";
+export {
+  type ServiceConfig,
+  ServiceContainer,
+  ServiceLifetime,
+} from "./core/service-container.ts";
 export { LifecycleManager, LifecyclePhase } from "./core/lifecycle-manager.ts";
 export { RenderAdapterManager } from "./core/render/manager.ts";
 export { PreactRenderAdapter } from "./core/render/preact.ts";

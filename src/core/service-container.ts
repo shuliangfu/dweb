@@ -30,7 +30,7 @@ export enum ServiceLifetime {
 }
 
 /**
- * 服务注册信息
+ * 服务注册信息（内部使用）
  */
 interface ServiceRegistration<T> {
   /** 服务令牌 */
@@ -41,6 +41,29 @@ interface ServiceRegistration<T> {
   lifetime: ServiceLifetime;
   /** 服务实例（单例模式使用） */
   instance?: T;
+}
+
+/**
+ * 服务注册配置（用于用户配置服务）
+ * 用于在插件中批量注册服务
+ *
+ * @example
+ * ```ts
+ * import { ServiceConfig, ServiceLifetime } from '@dreamer/dweb';
+ *
+ * const services: ServiceConfig[] = [
+ *   { name: 'userService', factory: () => new UserService() },
+ *   { name: 'orderService', factory: () => new OrderService(), lifetime: ServiceLifetime.Singleton },
+ * ];
+ * ```
+ */
+export interface ServiceConfig {
+  /** 服务名称（token） */
+  name: string;
+  /** 服务工厂函数 */
+  factory: () => unknown;
+  /** 服务生命周期，默认为单例 */
+  lifetime?: ServiceLifetime;
 }
 
 /**

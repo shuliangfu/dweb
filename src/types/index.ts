@@ -193,6 +193,26 @@ export interface Request extends Omit<globalThis.Request, "body"> {
   formData(): Promise<FormData>;
   createSession(data?: Record<string, unknown>): Promise<Session>;
   getSession(): Promise<Session | null>;
+  /**
+   * 获取 Application 实例
+   * 用于在 API 路由中访问服务容器等应用级别的功能
+   *
+   * @returns Application 实例，如果未设置则返回 undefined
+   *
+   * @example
+   * ```ts
+   * // 在 API 路由中
+   * export async function getUsers(req: Request, res?: Response) {
+   *   const application = req.getApplication();
+   *   if (application) {
+   *     const userService = application.getService<UserService>('userService');
+   *     const users = userService.getAllUsers();
+   *     return res?.json({ success: true, data: users });
+   *   }
+   * }
+   * ```
+   */
+  getApplication?(): ApplicationLike | undefined;
 }
 
 // 内容类型（用于响应方法）
@@ -335,6 +355,34 @@ export interface AppLike {
   /** 是否为生产环境 */
   isProduction?: boolean;
   /** 扩展属性（某些插件可能需要访问其他属性） */
+  [key: string]: unknown;
+}
+
+/**
+ * 服务令牌类型（从 service-container 导入，避免循环依赖）
+ */
+export type ServiceToken<T = unknown> = string | symbol | (new () => T);
+
+/**
+ * Application 接口（用于 Request.getApplication，避免循环依赖）
+ * 只包含 API 路由中常用的方法
+ */
+export interface ApplicationLike {
+  /**
+   * 获取服务
+   * 从服务容器中获取已注册的服务
+   *
+   * @param token - 服务令牌
+   * @returns 服务实例
+   *
+   * @example
+   * ```ts
+   * const userService = application.getService<UserService>('userService');
+   * ```
+   */
+  getService<T>(token: ServiceToken<T>): T;
+
+  /** 扩展属性（允许访问其他 Application 方法） */
   [key: string]: unknown;
 }
 

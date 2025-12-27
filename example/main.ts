@@ -7,6 +7,8 @@
  */
 
 import { createApp, cors, i18n, theme, store } from '@dreamer/dweb';
+import { services } from './services/mod.ts';
+import { createServicePlugin } from './utils/register-services.ts';
 
 // 创建应用实例
 const app = createApp();
@@ -49,6 +51,11 @@ app.plugin(
     // store 插件会自动导入 stores/index.ts（如果存在）
   })
 );
+
+// 注册自定义服务
+// 使用 createServicePlugin 辅助函数，直接传入 services 配置数组
+// services 在 services/mod.ts 中统一管理
+app.plugin(createServicePlugin(services));
 
 // app.use((req, res, next) => {
 //   console.log('request', req.url);

@@ -97,6 +97,7 @@ export class RouteHandler {
   private config?: AppConfig;
   private graphqlServer?: GraphQLServer;
   private renderAdapter: RenderAdapter;
+  private application?: any; // Application 实例（可选，避免循环依赖）
 
   /**
    * 模块编译缓存
@@ -115,6 +116,7 @@ export class RouteHandler {
     sessionManager?: SessionManager,
     config?: AppConfig,
     graphqlServer?: GraphQLServer,
+    application?: any, // Application 实例（可选，避免循环依赖）
   ) {
     this.router = router;
     this.renderAdapter = renderAdapter;
@@ -122,6 +124,7 @@ export class RouteHandler {
     this.sessionManager = sessionManager;
     this.config = config;
     this.graphqlServer = graphqlServer;
+    this.application = application;
   }
 
   /**
@@ -855,6 +858,11 @@ export class RouteHandler {
     res: Response,
   ): Promise<void> {
     try {
+      // 将 Application 实例附加到 req 对象，供 API 路由使用
+      if (this.application) {
+        (req as any).getApplication = () => this.application;
+      }
+
       // 加载 API 路由模块
       const handlers = await loadApiRoute(routeInfo.filePath);
 

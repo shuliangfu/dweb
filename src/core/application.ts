@@ -14,6 +14,7 @@ import type {
   Response,
   Session,
 } from "../types/index.ts";
+import type { Logger } from "../features/logger.ts";
 import { Server } from "./server.ts";
 import { Router } from "./router.ts";
 import { RouteHandler } from "./route-handler.ts";
@@ -572,15 +573,15 @@ export class Application {
     if (config.database) {
       try {
         await initDatabase(config.database);
-        const logger = this.serviceContainer.get("logger");
-        if (logger && typeof (logger as any).info === "function") {
-          (logger as any).info("数据库连接已初始化");
+        const logger = this.serviceContainer.get<Logger>("logger");
+        if (logger) {
+          logger.info("数据库连接已初始化");
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        const logger = this.serviceContainer.get("logger");
-        if (logger && typeof (logger as any).error === "function") {
-          (logger as any).error(`数据库连接失败: ${message}`);
+        const logger = this.serviceContainer.get<Logger>("logger");
+        if (logger) {
+          logger.error(`数据库连接失败: ${message}`);
         }
         // 不阻止服务器启动，但记录错误
       }
@@ -605,13 +606,13 @@ export class Application {
         () => graphqlServer,
       );
 
-      const logger = this.serviceContainer.get("logger");
-      if (logger && typeof (logger as any).info === "function") {
-        (logger as any).info(`GraphQL 服务器已启动`, {
+      const logger = this.serviceContainer.get<Logger>("logger");
+      if (logger) {
+        logger.info(`GraphQL 服务器已启动`, {
           endpoint: config.graphql.config?.path || "/graphql",
         });
         if (config.graphql.config?.graphiql !== false) {
-          (logger as any).info(`GraphiQL 端点`, {
+          logger.info(`GraphiQL 端点`, {
             path: config.graphql.config?.graphiqlPath || "/graphiql",
           });
         }
@@ -686,9 +687,9 @@ export class Application {
         () => wsServer,
       );
 
-      const logger = this.serviceContainer.get("logger");
-      if (logger && typeof (logger as any).info === "function") {
-        (logger as any).info(`WebSocket 服务器已启动`, {
+      const logger = this.serviceContainer.get<Logger>("logger");
+      if (logger) {
+        logger.info(`WebSocket 服务器已启动`, {
           path: config.websocket.path || "/ws",
         });
       }
@@ -877,6 +878,7 @@ export class Application {
       : undefined;
 
     // 创建路由处理器
+    // 传递 Application 实例，以便在 API 路由中可以通过 req.getApplication() 获取
     this.routeHandler = new RouteHandler(
       this.router,
       renderAdapter,
@@ -884,6 +886,7 @@ export class Application {
       sessionManager,
       config,
       graphqlServer,
+      this, // 传递 Application 实例
     );
 
     // 注册路由处理器到服务容器
@@ -1039,9 +1042,9 @@ export class Application {
 
             // 如果插件清空了响应体，恢复它
             if (!res.body && res.status === 200) {
-              const logger = this.serviceContainer.get("logger");
-              if (logger && typeof (logger as any).error === "function") {
-                (logger as any).error("插件处理错误", undefined, {
+              const logger = this.serviceContainer.get<Logger>("logger");
+              if (logger) {
+                logger.error("插件处理错误", undefined, {
                   url: req.url,
                   method: req.method,
                   errorMessage: "响应体在插件处理后丢失",
@@ -1055,9 +1058,9 @@ export class Application {
           }
         } catch (error) {
           // 捕获中间件或路由处理过程中的错误
-          const logger = this.serviceContainer.get("logger");
-          if (logger && typeof (logger as any).error === "function") {
-            (logger as any).error(
+          const logger = this.serviceContainer.get<Logger>("logger");
+          if (logger) {
+            logger.error(
               "请求处理异常",
               error instanceof Error ? error : undefined,
               {
