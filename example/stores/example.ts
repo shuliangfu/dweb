@@ -24,8 +24,36 @@ export const exampleStore = defineStore("example", {
     items: [] as string[],
     isLoading: false,
   }),
+  getters: {
+    // 计算属性：在 getters 中，可以通过 this.xxx 访问状态和其他 getters
+    // defineStore 会自动处理计算属性的缓存，this 类型会自动推断，无需手动指定
+    /**
+     * 获取双倍计数
+     */
+    doubleCount() {
+      return this.count * 2;
+    },
+    /**
+     * 获取项目数量
+     */
+    itemCount() {
+      return this.items.length;
+    },
+    /**
+     * 获取是否有项目
+     */
+    hasItems() {
+      return this.items.length > 0;
+    },
+    /**
+     * 获取格式化的消息
+     */
+    formattedMessage() {
+      return this.message ? `消息: ${this.message}` : "暂无消息";
+    },
+  },
   actions: {
-    // 在 actions 中，可以直接通过 this.xxx 访问和修改状态
+    // 在 actions 中，可以直接通过 this.xxx 访问和修改状态，也可以访问 getters
     // defineStore 会自动处理状态更新，this 类型会自动推断，无需手动指定
     increment() {
       this.count++;

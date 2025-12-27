@@ -418,7 +418,7 @@ export async function createApp(
     ['Method (方法路由，默认使用中划线格式，例如 /api/users/get-user)', 'REST (RESTful API，基于 HTTP 方法，例如 GET /api/users)'],
     0 // 默认选择第一个（Method）
   );
-  const apiMode = apiModeIndex === 0 ? 'method' : 'rest';
+  const apiMode = apiModeIndex === 0 ? 'method' : 'restful';
   const apiModeDisplay = apiModeIndex === 0 ? 'Method (方法路由)' : 'REST (RESTful API)';
   
   console.log(`\n📦 正在创建项目: ${projectName}`);
@@ -513,7 +513,7 @@ async function generateConfigFile(
       routes: {
         dir: '${appName}/routes',
         ignore: ['**/*.test.ts', '**/*.test.tsx'],
-        // API 路由模式：'method'（方法路由，默认使用中划线格式，例如 /api/users/get-user）或 'rest'（RESTful API，基于 HTTP 方法，例如 GET /api/users）
+        // API 路由模式：'method'（方法路由，默认使用中划线格式，例如 /api/users/get-user）或 'restful'（RESTful API，基于 HTTP 方法，例如 GET /api/users）
         apiMode: '${apiMode}'
       },
       // 静态资源目录，默认为 'assets', prefix 为 /assets
@@ -894,7 +894,7 @@ export default menus;
 
   // 生成 index.tsx（美化后的首页）
   // 根据 apiMode 生成不同的 API 调用代码
-  const apiCallCode = apiMode === 'rest' 
+  const apiCallCode = apiMode === 'restful' 
     ? `      // RESTful 模式：使用 GET 方法获取列表
       const response = await fetch('/api/examples', {
         method: 'GET',
@@ -1894,7 +1894,7 @@ async function generateApiForApp(routesDir: string, _appName: string, apiMode: s
   // 根据 apiMode 生成不同的 API 文件
   let apiContent: string;
   
-  if (apiMode === 'rest') {
+  if (apiMode === 'restful') {
     // RESTful 模式：生成 RESTful API
     apiContent = `/**
  * 示例 RESTful API 路由

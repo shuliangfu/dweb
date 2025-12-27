@@ -6,11 +6,14 @@
  */
 
 import type { Plugin, Request, Response, AppLike, BuildConfig, AppConfig } from '../types/index.ts';
+import { BaseManager } from './base-manager.ts';
+import type { IService } from './iservice.ts';
 
 /**
  * 插件管理器
  * 
  * 负责管理插件的注册和生命周期钩子的执行。
+ * 继承 BaseManager 以获得统一的生命周期管理。
  * 
  * @example
  * ```ts
@@ -18,13 +21,24 @@ import type { Plugin, Request, Response, AppLike, BuildConfig, AppConfig } from 
  * import { tailwind } from "@dreamer/dweb";
  * 
  * const manager = new PluginManager();
+ * await manager.initialize();
+ * 
  * manager.register(tailwind({ version: "v4" }));
  * 
  * await manager.executeOnInit({ server, router, routeHandler });
+ * 
+ * await manager.start();
  * ```
  */
-export class PluginManager {
+export class PluginManager extends BaseManager implements IService {
   private plugins: Plugin[] = [];
+
+  /**
+   * 构造函数
+   */
+  constructor() {
+    super('PluginManager');
+  }
   
   /**
    * 注册插件

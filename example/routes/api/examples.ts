@@ -2,15 +2,19 @@
  * 示例 API 路由
  * 用于演示各种接口请求
  * 所有请求默认使用 POST 方法
- * 通过 URL 路径指定方法名，支持驼峰格式和短横线格式
- * 例如：/api/examples/getExamples 或 /api/examples/get-examples
+ * 通过 URL 路径指定方法名，必须使用中划线格式（kebab-case）
+ * 例如：/api/examples/get-examples
+ * 
+ * ⚠️ 注意：URL 必须使用中划线格式，不允许使用驼峰格式
+ * - ✅ 正确：/api/examples/get-examples
+ * - ❌ 错误：/api/examples/getExamples（会返回 400 错误）
  */
 
 import type { Request } from '@dreamer/dweb';
 
 /**
  * 获取示例数据列表
- * 访问方式：POST /api/examples/getExamples 或 POST /api/examples/get-examples
+ * 访问方式：POST /api/examples/get-examples
  */
 export function getExamples(_req: Request) {
   return {
@@ -26,7 +30,7 @@ export function getExamples(_req: Request) {
 
 /**
  * 创建示例数据
- * 访问方式：POST /api/examples/createExample 或 POST /api/examples/create-example
+ * 访问方式：POST /api/examples/create-example
  */
 export function createExample(req: Request) {
   const body = req.body as { name?: string; description?: string };
@@ -49,7 +53,7 @@ export function createExample(req: Request) {
 
 /**
  * 更新示例数据
- * 访问方式：POST /api/examples/updateExample 或 POST /api/examples/update-example
+ * 访问方式：POST /api/examples/update-example
  */
 export function updateExample(req: Request) {
   const body = req.body as { id?: string; name?: string; description?: string };
@@ -73,7 +77,7 @@ export function updateExample(req: Request) {
 
 /**
  * 删除示例数据
- * 访问方式：POST /api/examples/deleteExample 或 POST /api/examples/delete-example
+ * 访问方式：POST /api/examples/delete-example
  */
 export function deleteExample(req: Request) {
   const id = req.params.id || req.query.id;
@@ -92,7 +96,7 @@ export function deleteExample(req: Request) {
 
 /**
  * 模拟延迟响应（用于演示加载状态）
- * 访问方式：POST /api/examples/delayedResponse?delay=2000
+ * 访问方式：POST /api/examples/delayed-response?delay=2000
  */
 export async function delayedResponse(req: Request) {
   const delay = parseInt(req.query.delay || '2000', 10);
@@ -108,7 +112,7 @@ export async function delayedResponse(req: Request) {
 
 /**
  * 获取计数器值
- * 访问方式：POST /api/examples/getCounter
+ * 访问方式：POST /api/examples/get-counter
  */
 export function getCounter(_req: Request) {
   return {
@@ -119,7 +123,7 @@ export function getCounter(_req: Request) {
 
 /**
  * 增加计数器
- * 访问方式：POST /api/examples/incrementCounter
+ * 访问方式：POST /api/examples/increment-counter
  */
 export function incrementCounter(req: Request) {
   const body = req.body as { value?: number };

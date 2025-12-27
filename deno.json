@@ -27,15 +27,15 @@
   },
   "description": "A modern full-stack web framework based on Deno + Preact + Tailwind CSS",
   "tasks": {
-    "dev": "deno run -A --import-map=imports_map.json src/cli.ts dev",
-    "build": "deno run -A --import-map=imports_map.json src/cli.ts build",
-    "start": "deno run -A --import-map=imports_map.json src/cli.ts start",
-    "compile": "deno compile -A --import-map=imports_map.json --output bin/dweb src/cli.ts",
+    "dev": "deno run -A src/cli.ts dev",
+    "build": "deno run -A src/cli.ts build",
+    "start": "deno run -A src/cli.ts start",
+    "compile": "deno compile -A --output bin/dweb src/cli.ts",
 
     "lint": "deno lint src/ example/",
     "fmt": "deno fmt src/ example/",
     "fmt:check": "deno fmt --check src/ example/",
-    "check": "deno check src/ example/",
+    "check": "deno check --quiet src/ example/",
     "setup:hooks": "./scripts/setup-git-hooks.sh",
     "test": "deno test --allow-all tests/",
     "test:unit": "deno test --allow-all tests/unit/",
@@ -55,6 +55,12 @@
 
     "preact": "npm:preact@10.28.0",
     "preact-render-to-string": "npm:preact-render-to-string@6.5.1",
+
+    "react": "npm:react@^18.3.1",
+    "react-dom": "npm:react-dom@^18.3.1",
+
+    "vue": "npm:vue@^3.5.13",
+    "@vue/server-renderer": "npm:@vue/server-renderer@^3.5.13",
 
     "tailwindcss": "npm:tailwindcss@^4.1.10",
     "tailwindcss-v3": "npm:tailwindcss@^3.4.0",
@@ -117,7 +123,8 @@
   },
   "compilerOptions": {
     "jsx": "react-jsx",
-    "jsxImportSource": "preact"
+    "jsxImportSource": "preact",
+    "lib": ["deno.window", "dom", "dom.iterable", "dom.asynciterable", "deno.ns"]
   },
   "nodeModulesDir": "auto",
   "allowScripts": {

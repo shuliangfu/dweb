@@ -7,13 +7,22 @@
 ### 核心模块
 
 - [核心模块 (core)](./core/README.md) - 服务器、路由、配置等核心功能
-  - [服务器 (Server)](./core/server.md) - HTTP 服务器实现
-  - [路由系统 (Router)](./core/router.md) - 文件系统路由
-  - [配置管理 (Config)](./core/config.md) - 配置加载和管理
-  - [中间件系统](./core/middleware.md) - 中间件管理
-  - [插件系统](./core/plugin.md) - 插件管理
-  - [路由处理器 (RouteHandler)](./core/route-handler.md) - 路由处理逻辑
-  - [API 路由](./core/api-route.md) - API 路由处理
+  - **OOP 架构（推荐）**
+    - [应用核心类 (Application)](./core/application.md) - 统一的应用入口
+    - [应用上下文 (ApplicationContext)](./core/application-context.md) - 应用状态和服务访问
+    - [配置管理器 (ConfigManager)](./core/config-manager.md) - 配置管理
+    - [服务容器 (ServiceContainer)](./core/service-container.md) - 依赖注入
+    - [生命周期管理器 (LifecycleManager)](./core/lifecycle-manager.md) - 生命周期管理
+    - [服务接口 (IService)](./core/iservice.md) - 服务接口定义
+    - [基础管理器 (BaseManager)](./core/base-manager.md) - 管理器基类
+  - **传统组件**
+    - [服务器 (Server)](./core/server.md) - HTTP 服务器实现
+    - [路由系统 (Router)](./core/router.md) - 文件系统路由
+    - [配置管理 (Config)](./core/config.md) - 配置加载和管理（旧 API）
+    - [中间件系统](./core/middleware.md) - 中间件管理
+    - [插件系统](./core/plugin.md) - 插件管理
+    - [路由处理器 (RouteHandler)](./core/route-handler.md) - 路由处理逻辑
+    - [API 路由](./core/api-route.md) - API 路由处理
 - [布局系统 (layout)](./layout.md) - 布局继承和布局组件
 - [路由约定文件 (routing-conventions)](./routing-conventions.md) -
   _app、_layout、_middleware 等约定文件说明
@@ -43,6 +52,12 @@
 - [中间件 (middleware)](./middleware/README.md) - 内置中间件和使用指南
 - [插件 (plugins)](./plugins/README.md) - 插件系统和使用指南
 - [控制台工具 (console)](./console/README.md) - 命令行工具、输入输出、命令封装
+- [渲染适配器系统 (render)](./render/README.md) - 多渲染引擎支持（Preact、React、Vue3）
+  - [渲染适配器接口](./render/adapter.md) - RenderAdapter 接口说明
+  - [Preact 适配器](./render/preact.md) - Preact 渲染适配器
+  - [React 适配器](./render/react.md) - React 渲染适配器
+  - [Vue 3 适配器](./render/vue3.md) - Vue 3 渲染适配器
+  - [适配器管理器](./render/manager.md) - RenderAdapterManager 使用指南
 
 ### 配置与部署
 
@@ -65,7 +80,18 @@ cd my-app
 deno task dev
 ```
 
-### 基本使用
+### 基本使用（推荐使用 Application）
+
+```typescript
+// main.ts
+import { Application } from "@dreamer/dweb/core/application";
+
+const app = new Application("dweb.config.ts");
+await app.initialize();
+await app.start();
+```
+
+### 传统方式（仍然支持）
 
 ```typescript
 // main.ts

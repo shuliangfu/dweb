@@ -13,7 +13,7 @@ import { exampleStore, type ExampleStoreState } from '../stores/example.ts';
 
 export const metadata = {
   title: '交互示例 - DWeb 框架使用示例',
-  description: 'DWeb 框架的交互示例，包括点击事件、接口请求（支持驼峰和短横线格式）、表单提交、状态管理等完整示例代码',
+  description: 'DWeb 框架的交互示例，包括点击事件、接口请求（必须使用中划线格式）、表单提交、状态管理等完整示例代码',
   keywords: 'DWeb, 示例, 交互示例, API 路由, 表单提交, Preact Hooks, 状态管理',
   author: 'DWeb',
 };
@@ -65,42 +65,13 @@ export default function ExamplesPage({ params: _params, query: _query, data: _da
   };
 
   /**
-   * 接口请求示例：获取示例数据列表（使用函数式 API - 驼峰格式）
+   * 接口请求示例：获取示例数据列表（使用函数式 API - 中划线格式）
    */
   const fetchExamples = async () => {
     setLoading(true);
-    setMessage('正在加载数据（驼峰格式）...');
+    setMessage('正在加载数据...');
     try {
-      // DWeb 使用函数式 API，通过 URL 路径直接调用函数（驼峰格式）
-      const response = await fetch('/api/examples/getExamples', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      const result = await response.json();
-      if (result.success) {
-        setExamples(result.data);
-        setMessage('数据加载成功！（使用驼峰格式：getExamples）');
-        setApiResponse(result);
-      } else {
-        setMessage('数据加载失败');
-      }
-    } catch (error) {
-      setMessage(`请求失败: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
-   * 接口请求示例：获取示例数据列表（使用函数式 API - 短横线格式）
-   */
-  const fetchExamplesKebab = async () => {
-    setLoading(true);
-    setMessage('正在加载数据（短横线格式）...');
-    try {
-      // DWeb 使用函数式 API，通过 URL 路径直接调用函数（短横线格式）
+      // DWeb 使用函数式 API，通过 URL 路径直接调用函数（必须使用中划线格式）
       const response = await fetch('/api/examples/get-examples', {
         method: 'POST',
         headers: {
@@ -110,7 +81,7 @@ export default function ExamplesPage({ params: _params, query: _query, data: _da
       const result = await response.json();
       if (result.success) {
         setExamples(result.data);
-        setMessage('数据加载成功！（使用短横线格式：get-examples）');
+        setMessage('数据加载成功！（使用中划线格式：get-examples）');
         setApiResponse(result);
       } else {
         setMessage('数据加载失败');
@@ -122,8 +93,9 @@ export default function ExamplesPage({ params: _params, query: _query, data: _da
     }
   };
 
+
   /**
-   * 接口请求示例：创建示例数据（使用函数式 API - 驼峰格式）
+   * 接口请求示例：创建示例数据（使用函数式 API - 中划线格式）
    */
   const handleCreateExample = async (e: Event) => {
     e.preventDefault();
@@ -133,47 +105,9 @@ export default function ExamplesPage({ params: _params, query: _query, data: _da
     }
 
     setLoading(true);
-    setMessage('正在创建（驼峰格式）...');
+    setMessage('正在创建...');
     try {
-      // DWeb 使用函数式 API，通过 URL 路径直接调用函数（驼峰格式）
-      const response = await fetch('/api/examples/createExample', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-      const result = await response.json();
-      if (result.success) {
-        setMessage(`创建成功！ID: ${result.data.id}（使用驼峰格式：createExample）`);
-        setFormData({ name: '', description: '' });
-        setApiResponse(result);
-        // 刷新列表
-        await fetchExamples();
-      } else {
-        setMessage('创建失败');
-      }
-    } catch (error) {
-      setMessage(`请求失败: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
-   * 接口请求示例：创建示例数据（使用函数式 API - 短横线格式）
-   */
-  const handleCreateExampleKebab = async (e: Event) => {
-    e.preventDefault();
-    if (!formData.name.trim()) {
-      setMessage('请输入名称');
-      return;
-    }
-
-    setLoading(true);
-    setMessage('正在创建（短横线格式）...');
-    try {
-      // DWeb 使用函数式 API，通过 URL 路径直接调用函数（短横线格式）
+      // DWeb 使用函数式 API，通过 URL 路径直接调用函数（必须使用中划线格式）
       const response = await fetch('/api/examples/create-example', {
         method: 'POST',
         headers: {
@@ -183,7 +117,7 @@ export default function ExamplesPage({ params: _params, query: _query, data: _da
       });
       const result = await response.json();
       if (result.success) {
-        setMessage(`创建成功！ID: ${result.data.id}（使用短横线格式：create-example）`);
+        setMessage(`创建成功！ID: ${result.data.id}（使用中划线格式：create-example）`);
         setFormData({ name: '', description: '' });
         setApiResponse(result);
         // 刷新列表
@@ -210,7 +144,8 @@ export default function ExamplesPage({ params: _params, query: _query, data: _da
     setMessage('正在删除...');
     try {
       // DWeb 使用函数式 API，通过 URL 路径直接调用函数
-      const response = await fetch(`/api/examples/deleteExample?id=${id}`, {
+      // ⚠️ 重要：URL 必须使用中划线格式（kebab-case），不允许使用驼峰格式（camelCase）
+      const response = await fetch(`/api/examples/delete-example?id=${id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -240,7 +175,8 @@ export default function ExamplesPage({ params: _params, query: _query, data: _da
     setMessage('正在请求（延迟 2 秒）...');
     try {
       // 使用查询参数传递 delay 参数
-      const response = await fetch('/api/examples/delayedResponse?delay=2000', {
+      // ⚠️ 重要：URL 必须使用中划线格式（kebab-case），不允许使用驼峰格式（camelCase）
+      const response = await fetch('/api/examples/delayed-response?delay=2000', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -265,7 +201,7 @@ export default function ExamplesPage({ params: _params, query: _query, data: _da
     setLoading(true);
     setMessage('正在获取计数器值...');
     try {
-      const response = await fetch('/api/examples/getCounter', {
+      const response = await fetch('/api/examples/get-counter', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -291,7 +227,7 @@ export default function ExamplesPage({ params: _params, query: _query, data: _da
     setLoading(true);
     setMessage('正在增加计数器...');
     try {
-      const response = await fetch('/api/examples/incrementCounter', {
+      const response = await fetch('/api/examples/increment-counter', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -331,12 +267,15 @@ return (
 );`;
 
   const fetchApiCode = `// DWeb 使用函数式 API，所有请求使用 POST 方法
-// 通过 URL 路径直接调用函数，支持两种格式：驼峰格式和短横线格式
+// 通过 URL 路径直接调用函数，必须使用中划线格式（kebab-case）
 
-// ========== 驼峰格式（CamelCase）==========
+// ⚠️ 重要：URL 必须使用中划线格式，不允许使用驼峰格式
+// ✅ 正确：/api/examples/get-examples
+// ❌ 错误：/api/examples/getExamples（会返回 400 错误）
+
 // 获取数据示例
 const fetchData = async () => {
-  const response = await fetch('/api/examples/getExamples', {
+  const response = await fetch('/api/examples/get-examples', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
@@ -346,32 +285,31 @@ const fetchData = async () => {
 
 // 创建数据示例
 const createData = async () => {
-  const response = await fetch('/api/examples/createExample', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: '示例', description: '描述' }),
-  });
-  const result = await response.json();
-  console.log(result);
-};
-
-// ========== 短横线格式（kebab-case）==========
-// 获取数据示例（短横线格式）
-const fetchDataKebab = async () => {
-  const response = await fetch('/api/examples/get-examples', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  const result = await response.json();
-  console.log(result);
-};
-
-// 创建数据示例（短横线格式）
-const createDataKebab = async () => {
   const response = await fetch('/api/examples/create-example', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: '示例', description: '描述' }),
+  });
+  const result = await response.json();
+  console.log(result);
+};
+
+// 更新数据示例
+const updateData = async () => {
+  const response = await fetch('/api/examples/update-example', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: '123', name: '更新后的名称' }),
+  });
+  const result = await response.json();
+  console.log(result);
+};
+
+// 删除数据示例
+const deleteData = async () => {
+  const response = await fetch('/api/examples/delete-example?id=123', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
   });
   const result = await response.json();
   console.log(result);
@@ -600,13 +538,13 @@ export default function MyPage() {
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">2. 接口请求示例 - GET</h2>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
               使用 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">fetch</code> API 发送请求获取数据。
-              DWeb 支持两种格式：<strong>驼峰格式（CamelCase）</strong> 和 <strong>短横线格式（kebab-case）</strong>。
+              <strong>⚠️ 注意：</strong>API 路由 URL 必须使用中划线格式（kebab-case），例如 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/get-examples</code>，不允许使用驼峰格式（camelCase）。
             </p>
 
             <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg mb-6 border border-gray-200 dark:border-gray-700">
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">两种格式演示：</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">获取示例数据：</h3>
                   <div className="flex flex-wrap gap-3">
                     <button
                       type="button"
@@ -614,15 +552,7 @@ export default function MyPage() {
                       disabled={loading}
                       className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {loading ? '加载中...' : '驼峰格式 (getExamples)'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={fetchExamplesKebab}
-                      disabled={loading}
-                      className="px-6 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading ? '加载中...' : '短横线格式 (get-examples)'}
+                      {loading ? '加载中...' : '获取数据 (get-examples)'}
                     </button>
                   </div>
                 </div>
@@ -656,51 +586,51 @@ export default function MyPage() {
               )}
             </div>
 
-            <CodeBlock code={fetchApiCode} language="typescript" title="接口请求代码示例（支持两种格式）" />
+            <CodeBlock code={fetchApiCode} language="typescript" title="接口请求代码示例（必须使用中划线格式）" />
           </section>
 
           {/* 2.5. API 格式说明 */}
           <section className="mb-16">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">2.5. API 格式说明</h2>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
-              DWeb 的 API 路由支持两种命名格式，可以灵活选择：
+              DWeb 的 API 路由 <strong>必须使用中划线格式（kebab-case）</strong>，不允许使用驼峰格式（camelCase）。
             </p>
 
-            <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-600 p-6 rounded-lg mb-6">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">📝 格式对比</h3>
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-600 p-6 rounded-lg mb-6">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">⚠️ 格式要求</h3>
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">✅ 驼峰格式（CamelCase）</h4>
-                  <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300 text-sm">
-                    <li><code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/getExamples</code></li>
-                    <li><code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/createExample</code></li>
-                    <li><code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/deleteExample</code></li>
-                  </ul>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
-                    符合 JavaScript 命名规范，推荐使用
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">✅ 短横线格式（kebab-case）</h4>
+                  <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2">✅ 正确：中划线格式（kebab-case）</h4>
                   <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300 text-sm">
                     <li><code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/get-examples</code></li>
                     <li><code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/create-example</code></li>
                     <li><code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/delete-example</code></li>
                   </ul>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
-                    符合 URL 规范，更易读，两种格式会自动转换
+                    符合 URL 规范，必须使用此格式
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-red-800 dark:text-red-200 mb-2">❌ 错误：驼峰格式（camelCase）</h4>
+                  <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300 text-sm">
+                    <li><code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/getExamples</code></li>
+                    <li><code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/createExample</code></li>
+                    <li><code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/deleteExample</code></li>
+                  </ul>
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-3">
+                    会返回 400 错误，不允许使用
                   </p>
                 </div>
               </div>
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">💡 使用建议</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">💡 使用说明</h3>
               <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
-                <li>两种格式可以<strong>混用</strong>，框架会自动转换</li>
                 <li>代码中定义的函数名使用<strong>驼峰格式</strong>（如 <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-900 dark:text-gray-100">getExamples</code>）</li>
-                <li>URL 中可以使用<strong>任意一种格式</strong>，都会正确匹配到对应的函数</li>
-                <li>建议在团队中统一使用一种格式，保持代码风格一致</li>
+                <li>URL 中<strong>必须使用中划线格式</strong>（如 <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/api/examples/get-examples</code>）</li>
+                <li>框架会自动将 URL 中的中划线格式转换为函数名的驼峰格式进行匹配</li>
+                <li>如果 URL 使用驼峰格式，会返回 400 错误，并提示正确的格式</li>
               </ul>
             </div>
           </section>
@@ -710,7 +640,7 @@ export default function MyPage() {
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">3. 表单提交示例 - POST</h2>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
               使用表单提交数据，通过 POST 请求创建新记录。
-              支持两种格式：<strong>驼峰格式（CamelCase）</strong> 和 <strong>短横线格式（kebab-case）</strong>。
+              <strong>⚠️ 注意：</strong>API 路由 URL 必须使用中划线格式（kebab-case）。
             </p>
 
             <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg mb-6 border border-gray-200 dark:border-gray-700">
@@ -741,7 +671,7 @@ export default function MyPage() {
                   />
                 </div>
                 <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-gray-900">两种格式提交：</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">提交表单：</h3>
                   <div className="flex flex-wrap gap-3">
                     <button
                       type="button"
@@ -749,15 +679,7 @@ export default function MyPage() {
                       disabled={loading}
                       className="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {loading ? '创建中...' : '驼峰格式 (createExample)'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleCreateExampleKebab}
-                      disabled={loading}
-                      className="flex-1 px-6 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading ? '创建中...' : '短横线格式 (create-example)'}
+                      {loading ? '创建中...' : '创建示例 (create-example)'}
                     </button>
                   </div>
                 </div>

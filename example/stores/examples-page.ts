@@ -85,41 +85,13 @@ export const examplesPageStore = defineStore("examplesPage", {
       this.apiResponse = apiResponse;
     },
     /**
-     * 获取示例数据列表（使用函数式 API - 驼峰格式）
+     * 获取示例数据列表（使用函数式 API - 必须使用中划线格式）
      */
-    async fetchExamples() {
+		async fetchExamples() {
       this.setLoading(true);
-      this.setMessage("正在加载数据（驼峰格式）...");
+      this.setMessage("正在加载数据...");
       try {
-        const response = await fetch("/api/examples/getExamples", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        const result = await response.json();
-        if (result.success) {
-          this.setExamples(result.data);
-          this.setMessage("数据加载成功！（使用驼峰格式：getExamples）");
-          this.setApiResponse(result);
-        } else {
-          this.setMessage("数据加载失败");
-        }
-      } catch (error) {
-        this.setMessage(
-          `请求失败: ${error instanceof Error ? error.message : String(error)}`,
-        );
-      } finally {
-        this.setLoading(false);
-      }
-    },
-    /**
-     * 获取示例数据列表（使用函数式 API - 短横线格式）
-     */
-    async fetchExamplesKebab() {
-      this.setLoading(true);
-      this.setMessage("正在加载数据（短横线格式）...");
-      try {
+        // ⚠️ 重要：URL 必须使用中划线格式（kebab-case），不允许使用驼峰格式（camelCase）
         const response = await fetch("/api/examples/get-examples", {
           method: "POST",
           headers: {
@@ -129,7 +101,7 @@ export const examplesPageStore = defineStore("examplesPage", {
         const result = await response.json();
         if (result.success) {
           this.setExamples(result.data);
-          this.setMessage("数据加载成功！（使用短横线格式：get-examples）");
+          this.setMessage("数据加载成功！");
           this.setApiResponse(result);
         } else {
           this.setMessage("数据加载失败");
@@ -149,7 +121,7 @@ export const examplesPageStore = defineStore("examplesPage", {
       this.setLoading(true);
       this.setMessage("正在创建（驼峰格式）...");
       try {
-        const response = await fetch("/api/examples/createExample", {
+        const response = await fetch("/api/examples/create-example", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -211,13 +183,14 @@ export const examplesPageStore = defineStore("examplesPage", {
       }
     },
     /**
-     * 删除示例数据
+     * 删除示例数据（使用函数式 API - 必须使用中划线格式）
      */
     async deleteExample(id: number) {
       this.setLoading(true);
       this.setMessage("正在删除...");
       try {
-        const response = await fetch(`/api/examples/deleteExample?id=${id}`, {
+        // ⚠️ 重要：URL 必须使用中划线格式（kebab-case），不允许使用驼峰格式（camelCase）
+        const response = await fetch(`/api/examples/delete-example?id=${id}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

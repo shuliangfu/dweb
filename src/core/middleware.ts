@@ -6,11 +6,14 @@
  */
 
 import type { Middleware, MiddlewareConfig } from '../types/index.ts';
+import { BaseManager } from './base-manager.ts';
+import type { IService } from './iservice.ts';
 
 /**
  * 中间件管理器
  * 
  * 负责管理中间件链，支持添加、批量添加、获取和清空中间件。
+ * 继承 BaseManager 以获得统一的生命周期管理。
  * 
  * @example
  * ```ts
@@ -18,14 +21,25 @@ import type { Middleware, MiddlewareConfig } from '../types/index.ts';
  * import { logger, cors } from "@dreamer/dweb";
  * 
  * const manager = new MiddlewareManager();
+ * await manager.initialize();
+ * 
  * manager.add(logger());
  * manager.add(cors({ origin: "*" }));
  * 
  * const middlewares = manager.getAll();
+ * 
+ * await manager.start();
  * ```
  */
-export class MiddlewareManager {
+export class MiddlewareManager extends BaseManager implements IService {
   private middlewares: Middleware[] = [];
+
+  /**
+   * 构造函数
+   */
+  constructor() {
+    super('MiddlewareManager');
+  }
   
   /**
    * 添加中间件

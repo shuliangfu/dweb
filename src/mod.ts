@@ -32,6 +32,16 @@ export { Server } from './core/server.ts';
 export { Router } from './core/router.ts';
 export { MiddlewareManager } from './core/middleware.ts';
 export { PluginManager } from './core/plugin.ts';
+export { Application } from './core/application.ts';
+export { ApplicationContext } from './core/application-context.ts';
+export { ConfigManager } from './core/config-manager.ts';
+export { ServiceContainer, ServiceLifetime } from './core/service-container.ts';
+export { LifecycleManager, LifecyclePhase } from './core/lifecycle-manager.ts';
+export { RenderAdapterManager } from './core/render/manager.ts';
+export { PreactRenderAdapter } from './core/render/preact.ts';
+export { ReactRenderAdapter } from './core/render/react.ts';
+export { Vue3RenderAdapter } from './core/render/vue3.ts';
+export type { RenderAdapter, RenderEngine, VNode } from './core/render/adapter.ts';
 
 // 导出配置管理
 import { loadConfig, isMultiAppMode, normalizeRouteConfig, mergeConfig } from './core/config.ts';
@@ -168,8 +178,11 @@ export interface App {
 
 /**
  * 创建应用实例（单应用模式）
+ * @deprecated 推荐使用 new Application()
+ * 此函数保留用于向后兼容
  */
 export function createApp(): App {
+  // 内部使用 Application 类（但不初始化，保持向后兼容）
   const server = new Server();
   const middlewareManager = new MiddlewareManager();
   const pluginManager = new PluginManager();

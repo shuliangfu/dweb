@@ -158,7 +158,7 @@ export function useUser(options?: {
     try {
       // 如果指定了用户 ID，获取指定用户信息
       if (targetUserId) {
-        const response = await fetch(`/api/users/getUser?id=${targetUserId}`, {
+        const response = await fetch(`/api/users/get-user?id=${targetUserId}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

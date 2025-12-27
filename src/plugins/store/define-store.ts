@@ -96,11 +96,61 @@ export interface StoreInstance<T extends StoreState> {
 }
 
 /**
- * 辅助类型：让 actions 中的 this 自动推断为 T & StoreInstance<T>
+ * 辅助类型：将 actions 对象转换为方法类型（移除 this 参数）
+ * 用于在 actions 的 this 类型中包含其他 actions 方法
+ * 支持 IDE 代码跟踪，从实际的 actions 对象中提取具体的方法签名
+ * 
+ * 注意：这个类型与 ExtractActions 相同，但用于 ThisType 中
+ * 确保 actions 方法内部的 this 能够访问其他 actions 方法，并且 IDE 可以跟踪代码
+ */
+type ActionsMethods<A> = A extends Record<string, any>
+  ? {
+      [K in keyof A]: A[K] extends (this: any, ...args: infer P) => infer R
+        ? (...args: P) => R
+        : A[K] extends (...args: infer P) => infer R
+        ? (...args: P) => R
+        : never;
+    }
+  : Record<string, never>;
+
+/**
+ * 辅助类型：让 actions 中的 this 自动推断
+ * 这个类型允许 actions 方法中的 this 访问状态和其他 actions 方法
+ * 使用更具体的类型定义，支持 IDE 代码跟踪
  */
 type StoreActions<T extends StoreState> = {
-  [K in string]?: (this: T & StoreInstance<T>, ...args: never[]) => void | Promise<void>;
+  [K in string]?: (this: T & StoreInstance<T> & Record<string, (...args: any[]) => any>, ...args: any[]) => any;
 };
+
+/**
+ * 辅助类型：从 actions 对象中提取方法签名
+ * 用于在返回类型中包含具体的 actions 方法，支持 IDE 代码跟踪
+ * 移除 this 参数，保留其他参数和返回类型
+ */
+type ExtractActions<A> = A extends Record<string, any>
+  ? {
+      [K in keyof A]: A[K] extends (this: any, ...args: infer P) => infer R
+        ? (...args: P) => R
+        : A[K] extends (...args: infer P) => infer R
+        ? (...args: P) => R
+        : never;
+    }
+  : Record<string, never>;
+
+/**
+ * 辅助类型：从 getters 对象中提取计算属性签名
+ * 用于在返回类型中包含具体的 getters，支持 IDE 代码跟踪
+ * getters 是只读的计算属性，不需要移除 this 参数
+ */
+type ExtractGetters<G> = G extends Record<string, any>
+  ? {
+      [K in keyof G]: G[K] extends (this: any, ...args: infer P) => infer R
+        ? (...args: P) => R
+        : G[K] extends (...args: infer P) => infer R
+        ? (...args: P) => R
+        : never;
+    }
+  : Record<string, never>;
 
 /**
  * 辅助函数：用于函数式定义，让 actions 中的 this 自动推断
@@ -127,12 +177,21 @@ export function storeAction<T extends StoreState>(
 
 /**
  * Store 选项
+ * actions 中的 this 类型会自动包含所有 actions 方法，支持 IDE 代码跟踪
+ * getters 中的 this 类型会自动包含状态和所有 getters，支持 IDE 代码跟踪
+ * 使用 ThisType 来让 TypeScript 能够推断 actions 和 getters 中的 this 类型
  */
-export interface StoreOptions<T extends StoreState, A extends StoreActions<T> = StoreActions<T>> {
+export interface StoreOptions<
+  T extends StoreState,
+  A extends StoreActions<T> = StoreActions<T>,
+  G extends Record<string, (this: T & Record<string, unknown>, ...args: any[]) => any> = Record<string, (this: T & Record<string, unknown>, ...args: any[]) => any>
+> {
   /** 初始状态（函数形式，返回状态对象） */
   state: () => T;
+  /** 计算属性（可选），类似 Vuex 的 getters */
+  getters?: G & ThisType<T & G>;
   /** 操作函数（可选） */
-  actions?: A;
+  actions?: A & ThisType<T & StoreInstance<T> & ActionsMethods<NonNullable<A>> & ExtractGetters<G>>;
 }
 
 // 辅助类型：从返回值中提取状态类型（排除函数）
@@ -142,20 +201,31 @@ type ExtractStateFromReturn<R extends Record<string, unknown>> = {
 
 /**
  * 定义 Store - 对象式（Options API）
- * 自动推断 actions 类型，无需手动添加类型断言
- * actions 中的 this 类型会自动推断为 T & StoreInstance<T>，无需手动指定
+ * 自动推断 actions 和 getters 类型，无需手动添加类型断言
+ * actions 中的 this 类型会自动推断，支持 IDE 代码跟踪
+ * getters 中的 this 类型会自动推断，可以访问状态和其他 getters
+ * 返回类型包含状态、所有 getters 和所有 actions 方法，支持 IDE 跳转到定义
+ * 
+ * 关键：让 TypeScript 从实际的 actions 和 getters 对象中推断类型
+ * 使用 ExtractActions<A> 和 ExtractGetters<G> 提取方法签名，支持 IDE 代码跟踪
+ * 在 ThisType 中使用 ActionsMethods<A>，从实际的 actions 对象中提取方法签名
+ * 这样 actions 方法内部的 this 就能访问其他 actions 方法、getters 和状态，并且 IDE 可以跟踪代码
+ * 
+ * 注意：这里使用默认类型，但通过 ThisType 让 TypeScript 能够从实际的 actions 和 getters 对象中推断类型
+ * 虽然 ActionsMethods<A> 在默认情况下无法提取具体方法签名，但 ThisType 会让 TypeScript 尝试从实际的 actions 对象中推断
  */
 export function defineStore<
   T extends StoreState,
-  A extends StoreActions<T> = StoreActions<T>
+  G extends Record<string, (this: T & Record<string, unknown>, ...args: any[]) => any> = Record<string, (this: T & Record<string, unknown>, ...args: any[]) => any>,
+  A extends Record<string, (this: T & StoreInstance<T> & Record<string, (...args: any[]) => any>, ...args: any[]) => any> = Record<string, (this: T & StoreInstance<T> & Record<string, (...args: any[]) => any>, ...args: any[]) => any>
 >(
   name: string,
-  options: StoreOptions<T, A>
-): StoreInstance<T> & T & {
-  [K in keyof A]: A[K] extends (this: T & StoreInstance<T>, ...args: infer P) => infer R
-    ? (...args: P) => R
-    : never;
-};
+  options: {
+    state: () => T;
+    getters?: G & ThisType<T & G>;
+    actions?: A & ThisType<T & StoreInstance<T> & ActionsMethods<A> & ExtractGetters<G>>;
+  }
+): StoreInstance<T> & T & ExtractGetters<G> & ExtractActions<A>;
 
 /**
  * 定义 Store - 函数式（Setup API）
@@ -183,19 +253,21 @@ export function defineStore<
  */
 export function defineStore<
   T extends StoreState,
-  A extends StoreActions<T> = StoreActions<T>
+  G extends Record<string, (this: T & Record<string, unknown>, ...args: any[]) => any> = Record<string, (this: T & Record<string, unknown>, ...args: any[]) => any>,
+  A extends Record<string, (this: T & StoreInstance<T> & Record<string, (...args: any[]) => any>, ...args: any[]) => any> = Record<string, (this: T & StoreInstance<T> & Record<string, (...args: any[]) => any>, ...args: any[]) => any>
 >(
   name: string,
-  optionsOrSetup: StoreOptions<T, A> | ((helpers: { storeAction: <TState extends StoreState = T>(fn: (this: TState & StoreInstance<TState>, ...args: never[]) => void | Promise<void>) => typeof fn }) => T & { [K in string]?: (...args: never[]) => void | Promise<void> | unknown })
-): StoreInstance<T> & T & {
-  [K in keyof A]: A[K] extends (this: T & StoreInstance<T>, ...args: infer P) => infer R
-    ? (...args: P) => R
-    : never;
-} {
+  optionsOrSetup: {
+    state: () => T;
+    getters?: G & ThisType<T & G>;
+    actions?: A & ThisType<T & StoreInstance<T> & ActionsMethods<A> & ExtractGetters<G>>;
+  } | ((helpers: { storeAction: <TState extends StoreState = T>(fn: (this: TState & StoreInstance<TState>, ...args: never[]) => void | Promise<void>) => typeof fn }) => T & { [K in string]?: (...args: never[]) => void | Promise<void> | unknown })
+): StoreInstance<T> & T & ExtractGetters<G> & ExtractActions<A> {
   // 判断是对象式还是函数式
   const isSetupFn = typeof optionsOrSetup === 'function';
   
   let initialState: T;
+  let getters: G | undefined;
   let actions: A | undefined;
   
   if (isSetupFn) {
@@ -236,6 +308,7 @@ export function defineStore<
   } else {
     // 对象式：直接使用 options
     initialState = optionsOrSetup.state();
+    getters = optionsOrSetup.getters;
     actions = optionsOrSetup.actions;
   }
   
@@ -248,30 +321,46 @@ export function defineStore<
   };
   
   // 创建 actions 的代理，绑定 this（仅用于对象式）
+  // this 类型包含状态、StoreInstance 方法和所有 actions 方法
+  // 使用 ActionsMethods<A> 让 actions 中的 this 能够访问其他 actions 方法，支持 IDE 代码跟踪
+  // 注意：这里使用 ActionsMethods<A> 而不是 ExtractActions<A>，因为 ThisType 中使用的是 ActionsMethods<A>
   const createActionProxy = (
     _actionName: string, 
-    actionFn: (this: T & StoreInstance<T>, ...args: never[]) => void | Promise<void>
+    actionFn: (this: T & StoreInstance<T> & ActionsMethods<A>, ...args: never[]) => void | Promise<void>
   ) => {
     return (...args: never[]) => {
-      // 创建 action 的上下文，this 指向 store 实例
-      const context = storeProxy as T & StoreInstance<T>;
-      return (actionFn as (this: T & StoreInstance<T>, ...args: never[]) => void | Promise<void>).call(context, ...args);
+      // 创建 action 的上下文，this 指向 store 实例（包含状态、StoreInstance 方法和所有 actions）
+      // 使用 ActionsMethods<A> 确保类型一致性，支持 IDE 代码跟踪
+      const context = storeProxy as T & StoreInstance<T> & ActionsMethods<A>;
+      return (actionFn as (this: T & StoreInstance<T> & ActionsMethods<A>, ...args: never[]) => void | Promise<void>).call(context, ...args);
+    };
+  };
+  
+  // 创建 getters 的代理，绑定 this（仅用于对象式）
+  // this 类型包含状态和所有 getters，支持 IDE 代码跟踪
+  const createGetterProxy = (
+    _getterName: string,
+    getterFn: (this: T & ExtractGetters<G>, ...args: never[]) => unknown
+  ) => {
+    return (...args: never[]) => {
+      // 创建 getter 的上下文，this 指向 store 实例（包含状态和所有 getters）
+      // 使用 ExtractGetters<G> 确保类型一致性，支持 IDE 代码跟踪
+      const context = storeProxy as T & ExtractGetters<G>;
+      return (getterFn as (this: T & ExtractGetters<G>, ...args: never[]) => unknown).call(context, ...args);
     };
   };
   
   // 创建 store 代理对象
-  const storeProxy = new Proxy({} as T & StoreInstance<T> & {
-    [K in keyof A]: A[K] extends (this: T & StoreInstance<T>, ...args: infer P) => infer R
-      ? (...args: P) => R
-      : never;
-  }, {
+  // 类型断言：确保 storeProxy 的类型与返回类型匹配
+  // 使用 ExtractGetters<G> 和 ExtractActions<A> 支持 IDE 代码跟踪
+  const storeProxy = new Proxy({} as StoreInstance<T> & T & ExtractGetters<G> & ExtractActions<A>, {
     get(_target, prop: string | symbol) {
       const currentState = getCurrentState();
       
       // 特殊属性
       if (prop === '$name') return name;
       if (prop === '$state') {
-        // 返回 store 代理对象本身，这样既可以访问状态，也可以调用 actions
+        // 返回 store 代理对象本身，这样既可以访问状态，也可以调用 actions 和 getters
         // 例如：const state = store.$state; state.count; state.increment();
         return storeProxy;
       }
@@ -304,7 +393,7 @@ export function defineStore<
       if (prop === '$use') {
         // 返回一个 hook 函数，用于在组件中响应式地使用 store
         // 这个函数会在组件的顶层被调用，所以可以安全地使用 hooks
-        // 返回 store 代理对象本身，这样既可以访问状态，也可以调用 actions
+        // 返回 store 代理对象本身，这样既可以访问状态，也可以调用 actions 和 getters
         return function useStoreHook(): typeof storeProxy {
           // 检查是否在客户端环境
           const isClient = typeof globalThis !== 'undefined' && 
@@ -349,7 +438,7 @@ export function defineStore<
               };
             }, []); // 空依赖数组，只在组件挂载时订阅一次
             
-            // 返回 store 代理对象本身（包含状态和 actions）
+            // 返回 store 代理对象本身（包含状态、getters 和 actions）
             // 当 version 变化时，组件会重新渲染，重新访问代理对象的属性，获取最新状态
             // 使用 _version 来确保依赖项正确，触发重新渲染
             void _version; // 标记为已使用，避免警告
@@ -362,13 +451,24 @@ export function defineStore<
         };
       }
       
+      // Getters（计算属性）
+      if (getters && typeof prop === 'string') {
+        const getter = (getters as Record<string, unknown>)[prop];
+        if (getter && typeof getter === 'function') {
+          // 创建 getter 的代理，绑定 this（包含状态和所有 getters）
+          // 这样 getters 中可以使用 this 来访问状态和其他 getters
+          return createGetterProxy(prop, getter as (this: T & ExtractGetters<G>, ...args: never[]) => unknown);
+        }
+      }
+      
       // Actions
-      if (actions && typeof prop === 'string' && prop in actions) {
-        const action = actions[prop];
-        if (action) {
+      if (actions && typeof prop === 'string') {
+        const action = (actions as Record<string, unknown>)[prop];
+        if (action && typeof action === 'function') {
           // 函数式和对象式都使用 this 绑定
-          // 这样 actions 中可以使用 this 来访问和修改状态
-          return createActionProxy(prop, action);
+          // 这样 actions 中可以使用 this 来访问和修改状态，也可以调用其他 actions 和 getters
+          // 使用 ActionsMethods<A> 让 actions 中的 this 能够访问其他 actions 方法，支持 IDE 代码跟踪
+          return createActionProxy(prop, action as (this: T & StoreInstance<T> & ActionsMethods<A>, ...args: never[]) => void | Promise<void>);
         }
       }
       

@@ -15,9 +15,7 @@ import type {
 import type { RouteInfo, Router } from "./router.ts";
 import { handleApiRoute, loadApiRoute } from "./api-route.ts";
 import type { GraphQLServer } from "../features/graphql/server.ts";
-
-import { h } from "preact";
-import { renderToString } from "preact-render-to-string";
+import type { RenderAdapter } from "./render/adapter.ts";
 
 import type { CookieManager } from "../features/cookie.ts";
 import type { SessionManager } from "../features/session.ts";
@@ -98,6 +96,7 @@ export class RouteHandler {
   private sessionManager?: SessionManager;
   private config?: AppConfig;
   private graphqlServer?: GraphQLServer;
+  private renderAdapter: RenderAdapter;
   
   /**
    * 模块编译缓存
@@ -109,12 +108,14 @@ export class RouteHandler {
 
   constructor(
     router: Router,
+    renderAdapter: RenderAdapter,
     cookieManager?: CookieManager,
     sessionManager?: SessionManager,
     config?: AppConfig,
     graphqlServer?: GraphQLServer,
   ) {
     this.router = router;
+    this.renderAdapter = renderAdapter;
     this.cookieManager = cookieManager;
     this.sessionManager = sessionManager;
     this.config = config;
@@ -849,8 +850,21 @@ export class RouteHandler {
       // 加载 API 路由模块
       const handlers = await loadApiRoute(routeInfo.filePath);
 
+      // 从配置中获取 API 路由模式（method 或 restful）
+      // routes 可能是字符串或对象，需要检查类型
+      let apiMode: "method" | "restful" = "method"; // 默认使用 method 模式
+      if (this.config?.routes && typeof this.config.routes === "object") {
+        apiMode = this.config.routes.apiMode || "method";
+      }
+
       // 处理 API 请求
-      const result = await handleApiRoute(handlers, req.method, req, res);
+      // 如果发生错误，api-route.ts 会直接设置响应并返回 null（不再抛出异常）
+      const result = await handleApiRoute(handlers, req.method, req, res, apiMode);
+
+      // 如果返回 null，说明错误响应已经设置，直接返回
+      if (result === null) {
+        return;
+      }
 
       // 如果响应已经被设置（通过 res.text()、res.json() 等方法），直接返回
       if (res.body !== undefined) {
@@ -860,19 +874,47 @@ export class RouteHandler {
       // 否则返回 JSON 响应
       res.json(result);
     } catch (error) {
+      // 向后兼容：如果 api-route.ts 没有传递 res 参数，仍然会抛出异常
       // API 路由错误应该返回 JSON，而不是 HTML
-      const errorMsg = error instanceof Error ? error.message : String(error);
+      // 检查是否是 ApiError 类型（从 utils/error.ts 导入）
+      const { ApiError } = await import('../utils/error.ts');
+      
+      let statusCode = 500;
+      let errorMessage = 'API 请求处理失败';
+      let errorDetails: Record<string, unknown> | undefined = undefined;
+      
+      if (error instanceof ApiError) {
+        // 如果是 ApiError，使用其状态码和详情
+        statusCode = error.statusCode;
+        errorMessage = error.message;
+        errorDetails = error.details;
+      } else if (error instanceof Error) {
+        // 如果是普通 Error，根据错误消息判断状态码
+        errorMessage = error.message;
+        if (errorMessage.includes("未找到") || errorMessage.includes("not found")) {
+          statusCode = 404;
+        } else if (errorMessage.includes("格式错误") || errorMessage.includes("格式")) {
+          statusCode = 400;
+        }
+      } else {
+        errorMessage = String(error);
+      }
+      
+      // 记录错误日志（但不抛出异常）
       logger.error("API 路由错误", error instanceof Error ? error : undefined, {
         url: req.url,
         method: req.method,
-        errorMessage: errorMsg,
+        errorMessage,
         routeFile: routeInfo.filePath,
+        statusCode,
       });
 
-      res.status = errorMsg.includes("未找到") ? 404 : 500;
+      // 返回结构化的错误响应给客户端
+      res.status = statusCode;
       res.json({
         success: false,
-        error: errorMsg,
+        error: errorMessage,
+        ...(errorDetails && { details: errorDetails }),
       });
     }
   }
@@ -1325,7 +1367,7 @@ export class RouteHandler {
       }
       
       // 创建错误页面 VNode
-      const errorVNode = h(ErrorPageComponent as any, errorProps);
+      const errorVNode = this.renderAdapter.createElement(ErrorPageComponent as any, errorProps);
       
       // 加载 _app.tsx 组件（如果存在）
       const appPath = this.router.getApp();
@@ -1337,22 +1379,25 @@ export class RouteHandler {
         }) => unknown;
         
         if (AppComponent && typeof AppComponent === "function") {
-          const errorHtml = renderToString(errorVNode);
+          const errorHtmlResult = this.renderAdapter.renderToString(errorVNode);
+          const errorHtml = errorHtmlResult instanceof Promise ? await errorHtmlResult : errorHtmlResult;
           const appResult = AppComponent({ children: errorHtml });
           const appElement = appResult instanceof Promise ? await appResult : appResult;
-          return renderToString(appElement);
+          const appHtmlResult = this.renderAdapter.renderToString(appElement);
+          return appHtmlResult instanceof Promise ? await appHtmlResult : appHtmlResult;
         }
       }
       
       // 如果没有 _app.tsx，直接渲染错误页面
-      return renderToString(errorVNode);
+      const errorHtmlResult = this.renderAdapter.renderToString(errorVNode);
+      return errorHtmlResult instanceof Promise ? await errorHtmlResult : errorHtmlResult;
     } catch {
       // 如果渲染错误页面失败，返回 null，使用默认错误页面
       return null;
     }
   }
 
-  private renderPageContent(
+  private async renderPageContent(
     PageComponent: (
       props: Record<string, unknown>,
     ) => unknown,
@@ -1362,7 +1407,7 @@ export class RouteHandler {
     renderMode: RenderMode,
     req?: Request,
     routeInfo?: RouteInfo,
-  ): string {
+  ): Promise<string> {
     if (renderMode === "csr") {
       // CSR 模式：服务端只渲染容器，内容由客户端渲染
       return "";
@@ -1382,17 +1427,23 @@ export class RouteHandler {
       }
       
       // 初始化 hooks 上下文：先渲染一个简单的组件来初始化 hooks 上下文
-      // 这可以确保在使用 h() 创建组件 VNode 时，hooks 上下文已经准备好
+      // 这可以确保在使用 createElement() 创建组件 VNode 时，hooks 上下文已经准备好
       try {
         // 创建一个简单的测试组件来初始化 hooks 上下文
         const initComponent = () => null;
-        renderToString(h(initComponent, {}));
+        const initResult = this.renderAdapter.renderToString(
+          this.renderAdapter.createElement(initComponent, {})
+        );
+        // 处理异步 renderToString（Vue3）
+        if (initResult instanceof Promise) {
+          await initResult;
+        }
       } catch {
         // 忽略错误，hooks 上下文可能已经初始化
       }
       
-      // 创建页面 VNode（hooks 上下文会在 h() 调用时自动初始化）
-      const pageVNode = h(PageComponent as any, pageProps);
+      // 创建页面 VNode（hooks 上下文会在 createElement() 调用时自动初始化）
+      const pageVNode = this.renderAdapter.createElement(PageComponent as any, pageProps);
 
       // 如果有布局，按顺序嵌套包裹（支持异步布局组件）
       // hooks 上下文会在 renderToString 内部初始化
@@ -1438,17 +1489,17 @@ export class RouteHandler {
               throw new Error("布局组件不能是异步函数");
             }
 
-            // 创建布局 VNode（hooks 上下文会在 h() 调用时自动初始化）
-            currentElement = h(LayoutComponent as any, layoutPropsWithData) as any;
+            // 创建布局 VNode（hooks 上下文会在 createElement() 调用时自动初始化）
+            currentElement = this.renderAdapter.createElement(LayoutComponent as any, layoutPropsWithData as unknown as Record<string, unknown>) as any;
           }
           
-          html = renderToString(
-            currentElement as unknown as Parameters<typeof renderToString>[0],
-          );
+          const renderResult = this.renderAdapter.renderToString(currentElement);
+          // 处理异步 renderToString（Vue3）
+          html = renderResult instanceof Promise ? await renderResult : renderResult;
         } else {
-          html = renderToString(
-            pageVNode as unknown as Parameters<typeof renderToString>[0],
-          );
+          const renderResult = this.renderAdapter.renderToString(pageVNode);
+          // 处理异步 renderToString（Vue3）
+          html = renderResult instanceof Promise ? await renderResult : renderResult;
         }
 
         // 确保 HTML 内容不为空
@@ -2243,7 +2294,7 @@ export class RouteHandler {
     // 支持异步页面组件和异步布局组件
     let html: string;
     try {
-      html = this.renderPageContent(
+      html = await this.renderPageContent(
         PageComponent,
         LayoutComponents,
         layoutData,
@@ -2343,7 +2394,9 @@ export class RouteHandler {
     // 渲染完整的 HTML
     let fullHtml: string;
     try {
-      fullHtml = renderToString(appElement);
+      const renderResult = this.renderAdapter.renderToString(appElement);
+      // 处理异步 renderToString（Vue3）
+      fullHtml = renderResult instanceof Promise ? await renderResult : renderResult;
       if (!fullHtml || fullHtml.trim() === "") {
         throw new Error("_app.tsx 渲染结果为空");
       }
@@ -2721,7 +2774,9 @@ export class RouteHandler {
         );
         const ErrorComponent = errorModule.default;
         if (ErrorComponent) {
-          const html = renderToString(ErrorComponent({}));
+          const errorVNode = this.renderAdapter.createElement(ErrorComponent as any, {});
+          const htmlResult = this.renderAdapter.renderToString(errorVNode);
+          const html = htmlResult instanceof Promise ? await htmlResult : htmlResult;
           res.status = 404;
           res.html(html);
           return;
@@ -2783,9 +2838,12 @@ export class RouteHandler {
         );
         const ErrorComponent = errorModule.default;
         if (ErrorComponent) {
-          const html = renderToString(
-            ErrorComponent({ error: { message: errorMessage, statusCode } }),
+          const errorVNode = this.renderAdapter.createElement(
+            ErrorComponent as any,
+            { error: { message: errorMessage, statusCode } }
           );
+          const htmlResult = this.renderAdapter.renderToString(errorVNode);
+          const html = htmlResult instanceof Promise ? await htmlResult : htmlResult;
           res.status = statusCode;
           res.html(html);
           return;

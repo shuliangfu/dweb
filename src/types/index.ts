@@ -323,10 +323,10 @@ export interface RouteConfig {
   /**
    * API 路由模式
    * - "method": 方法路由模式（默认），通过 URL 路径指定方法名，默认使用中划线格式，例如 /api/users/get-user
-   * - "rest": RESTful 模式，基于 HTTP 方法和资源路径，例如 GET /api/users, POST /api/users
+   * - "restful": RESTful 模式，基于 HTTP 方法和资源路径，例如 GET /api/users, POST /api/users
    * @default "method"
    */
-  apiMode?: "method" | "rest";
+  apiMode?: "method" | "restful";
 }
 
 // 服务器配置

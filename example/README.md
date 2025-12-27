@@ -85,8 +85,8 @@ export default app;
 
 ### API 路由（函数式 API）
 
-- 测试 API: http://localhost:3000/api/test/getTest
-- 获取用户: http://localhost:3000/api/test/getUser?id=123
+- 测试 API: http://localhost:3000/api/test/test
+- 获取用户: http://localhost:3000/api/test/get-user?id=123
 - 登录: POST http://localhost:3000/api/test/login
   ```json
   {
@@ -95,6 +95,8 @@ export default app;
   }
   ```
 - 登出: http://localhost:3000/api/test/logout
+
+**注意**：API 路由 URL 必须使用中划线格式（kebab-case），例如 `/api/test/get-user`，不允许使用驼峰格式（camelCase），例如 `/api/test/getUser` 会返回 400 错误。
 
 ### 热更新测试
 
