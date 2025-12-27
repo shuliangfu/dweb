@@ -8,7 +8,7 @@
 
 import { createApp, cors, i18n, theme, store } from '@dreamer/dweb';
 import { services } from './services/mod.ts';
-import { createServicePlugin } from './utils/register-services.ts';
+import { createServicePlugin } from './plugins/register-services.ts';
 
 // 创建应用实例
 const app = createApp();

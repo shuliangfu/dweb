@@ -60,6 +60,7 @@ example/build/
 
 # 开发工具
 .husky/_/
+.githooks/
 
 bin/
 
