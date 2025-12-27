@@ -31,7 +31,7 @@ export default function App({ children }: AppProps) {
           type="image/png"
           href="/assets/favicon.png"
         />
-        <link rel="stylesheet" href="/assets/tailwind.css" />
+        {/* <link rel="stylesheet" href="/assets/tailwind.css" /> */}
         <link rel="stylesheet" href="/assets/style.css" />
         {/* Prism.js 语法高亮样式 */}
         <link
