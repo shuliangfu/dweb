@@ -215,8 +215,9 @@ export class LifecycleManager {
     // TODO: 清理其他资源
     
     // 清理服务容器的作用域实例
-    const serviceContainer = this.application.getService('serviceContainer');
-    if (serviceContainer && typeof serviceContainer.clearScope === 'function') {
+    const { ServiceContainer } = await import('./service-container.ts');
+    const serviceContainer = this.application.getService<InstanceType<typeof ServiceContainer>>('serviceContainer');
+    if (serviceContainer) {
       serviceContainer.clearScope();
     }
   }

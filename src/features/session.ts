@@ -8,6 +8,19 @@ import type { Session, SessionConfig } from '../types/index.ts';
 import { crypto } from '@std/crypto';
 import { getDatabase } from './database/access.ts';
 import type { MongoDBAdapter } from './database/adapters/mongodb.ts';
+
+// Deno.Kv 类型定义（用于类型检查，实际运行时需要 --unstable 标志）
+type DenoKvKey = string[];
+type DenoKvEntryMaybe<T> = { key: DenoKvKey; value: T | null; versionstamp: string | null };
+type DenoKvCommitResult = { ok: boolean; versionstamp: string };
+type DenoKvListIterator<T> = AsyncIterableIterator<{ key: DenoKvKey; value: T; versionstamp: string }>;
+
+type DenoKv = {
+  get<T = unknown>(key: DenoKvKey, options?: { consistency?: "strong" | "eventual" }): Promise<DenoKvEntryMaybe<T>>;
+  set(key: DenoKvKey, value: unknown, options?: { expireIn?: number }): Promise<DenoKvCommitResult>;
+  delete(key: DenoKvKey): Promise<void>;
+  list<T = unknown>(selector: { prefix?: DenoKvKey }): DenoKvListIterator<T>;
+};
 import * as path from '@std/path';
 import { ensureDir } from '@std/fs/ensure-dir';
 
@@ -104,7 +117,7 @@ class MemorySessionStore implements SessionStore {
  * Deno KV Session 存储
  */
 class KVSessionStore implements SessionStore {
-  private kv: Deno.Kv | null = null;
+  private kv: DenoKv | null = null;
   private keyPrefix = 'session:';
   private initPromise: Promise<void> | null = null;
   
@@ -116,7 +129,8 @@ class KVSessionStore implements SessionStore {
   
   private async init(): Promise<void> {
     try {
-      this.kv = await Deno.openKv();
+      // 使用类型断言，因为 Deno.openKv 需要 --unstable 标志
+      this.kv = await (Deno as any).openKv() as DenoKv;
     } catch (error) {
       throw new Error(`Failed to open Deno KV: ${error instanceof Error ? error.message : String(error)}`);
     }
