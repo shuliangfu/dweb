@@ -505,7 +505,10 @@ async function generateConfigFile(
       const port = 3000 + index;
       return `    {
       name: '${appName}',
-      renderMode: '${renderMode}', // 'ssr' | 'csr' | 'hybrid'
+      render: {
+        engine: 'preact',
+        mode: '${renderMode}', // 'ssr' | 'csr' | 'hybrid'
+      },
       server: {
         port: ${port},
         host: '127.0.0.1'
@@ -598,7 +601,10 @@ import { tailwind, cors, store, type AppConfig } from '@dreamer/dweb';
 
 const config: AppConfig = {
   name: '${projectName}',
-  renderMode: '${renderMode}', // 'ssr' | 'csr' | 'hybrid'
+  render: {
+    engine: 'preact',
+    mode: '${renderMode}', // 'ssr' | 'csr' | 'hybrid'
+  },
   
   // 服务器配置
   server: {

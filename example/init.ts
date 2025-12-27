@@ -325,7 +325,10 @@ if (isMultiApp) {
       const port = 3000 + index;
       return `    {
       name: '${appName}',
-      renderMode: '${renderModeValue}', // 'ssr' | 'csr' | 'hybrid'
+      render: {
+        engine: 'preact',
+        mode: '${renderModeValue}', // 'ssr' | 'csr' | 'hybrid'
+      },
       server: {
         port: ${port},
         host: 'localhost'
@@ -421,7 +424,10 @@ import { tailwind, store, cors, type AppConfig } from '${frameworkUrl}';
 
 const config: AppConfig = {
   name: '${projectName}',
-  renderMode: '${renderModeValue}', // 'ssr' | 'csr' | 'hybrid'
+  render: {
+    engine: 'preact',
+    mode: '${renderModeValue}', // 'ssr' | 'csr' | 'hybrid'
+  },
   
   // 服务器配置
   server: {

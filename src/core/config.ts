@@ -89,7 +89,11 @@ export async function loadConfig(
         const mergedConfig: AppConfig = {
           name: matchedApp.name,
           basePath: matchedApp.basePath || "/",
-          renderMode: matchedApp.renderMode, // 应用级别的 renderMode
+          // 渲染适配器配置（包含渲染引擎和渲染模式）
+          render: {
+            ...config.render,
+            ...matchedApp.render,
+          },
           server: matchedApp.server,
           routes: matchedApp.routes,
           cookie: matchedApp.cookie || config.cookie,

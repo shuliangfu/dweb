@@ -1284,7 +1284,8 @@ export class RouteHandler {
     //   }
     // }
 
-    const configRenderMode = this.config?.renderMode;
+    // 从配置中读取渲染模式
+    const configRenderMode = this.config?.render?.mode;
     const renderMode: RenderMode = pageRenderMode || autoDetectedMode ||
       configRenderMode || "ssr";
 

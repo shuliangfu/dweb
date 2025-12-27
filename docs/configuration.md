@@ -27,8 +27,18 @@ export default defineConfig({
   // 基础路径（用于部署到子路径）
   basePath: "/",
 
-  // 全局渲染模式（可在页面组件中覆盖）
-  renderMode: "ssr", // 'ssr' | 'csr' | 'hybrid'
+  // 渲染适配器配置
+  render: {
+    // 渲染引擎，可选值：'preact' | 'react' | 'vue3'
+    // 默认为 'preact'
+    engine: "preact",
+    // 渲染模式，可选值：'ssr' | 'csr' | 'hybrid'
+    // - ssr: 服务端渲染（默认）
+    // - csr: 客户端渲染
+    // - hybrid: 混合渲染（服务端渲染 + 客户端 hydration）
+    // 注意：这个配置是全局的，可以在页面组件中通过导出 renderMode 来覆盖
+    mode: "ssr",
+  },
 });
 ```
 
@@ -87,6 +97,32 @@ export default defineConfig({
   },
 });
 ```
+
+#### 渲染适配器配置
+
+`render` 选项用于配置渲染引擎：
+
+```typescript
+export default defineConfig({
+  render: {
+    // 渲染引擎，可选值：'preact' | 'react' | 'vue3'
+    // 默认为 'preact'
+    engine: "preact",
+  },
+});
+```
+
+**支持的渲染引擎：**
+
+- **preact**（默认）：使用 Preact 作为渲染引擎，轻量级，性能优秀
+- **react**：使用 React 作为渲染引擎，需要安装 `react` 和 `react-dom` 依赖
+- **vue3**：使用 Vue 3 作为渲染引擎，需要安装 `vue` 和 `@vue/server-renderer` 依赖
+
+**注意事项：**
+
+- 如果使用 React 或 Vue3，需要确保已安装对应的依赖包
+- 如果未安装对应的依赖包，框架会使用默认的 Preact 引擎
+- 切换渲染引擎后，需要确保代码兼容对应的渲染引擎
 
 #### API 目录配置说明
 

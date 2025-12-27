@@ -7,14 +7,19 @@ import { type AppConfig, cors, seo, tailwind } from "@dreamer/dweb";
 
 const config: AppConfig = {
   name: "example",
-  renderMode: "ssr", //'ssr' | 'csr' | 'hybrid';
-
-  // 全局渲染模式（可在页面组件中覆盖）
-  // 可选值: 'ssr' | 'csr' | 'hybrid'
-  // - ssr: 服务端渲染（默认）
-  // - csr: 客户端渲染
-  // - hybrid: 混合渲染（服务端渲染 + 客户端 hydration）
-  // renderMode: 'ssr',
+  
+  // 渲染适配器配置
+  render: {
+    // 渲染引擎，可选值：'preact' | 'react' | 'vue3'
+    // 默认为 'preact'
+    engine: "preact",
+    // 渲染模式，可选值：'ssr' | 'csr' | 'hybrid'
+    // - ssr: 服务端渲染（默认）
+    // - csr: 客户端渲染
+    // - hybrid: 混合渲染（服务端渲染 + 客户端 hydration）
+    // 注意：这个配置是全局的，可以在页面组件中通过导出 renderMode 来覆盖
+    mode: "ssr",
+  },
 
   // 开发配置
   dev: {

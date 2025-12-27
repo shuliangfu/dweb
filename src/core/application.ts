@@ -1079,12 +1079,43 @@ export class Application {
    * 
    * @param config - 应用配置
    */
+  /**
+   * 初始化渲染适配器
+   * 从配置中读取渲染引擎设置，并初始化对应的适配器
+   * 
+   * @param config - 应用配置
+   */
   private async initializeRenderAdapter(config: AppConfig): Promise<void> {
+    // 动态注册 React 和 Vue3 适配器（如果可用）
+    // 这些适配器在构造函数中不注册，因为需要异步导入
+    if (!this.renderAdapterManager.has('react')) {
+      try {
+        const { ReactRenderAdapter } = await import('./render/react.ts');
+        this.renderAdapterManager.register(new ReactRenderAdapter());
+      } catch (_error) {
+        // React 适配器不可用，忽略
+      }
+    }
+    
+    if (!this.renderAdapterManager.has('vue3')) {
+      try {
+        const { Vue3RenderAdapter } = await import('./render/vue3.ts');
+        this.renderAdapterManager.register(new Vue3RenderAdapter());
+      } catch (_error) {
+        // Vue3 适配器不可用，忽略
+      }
+    }
+    
     // 从配置中获取渲染引擎（如果未配置则使用默认的 Preact）
-    const renderEngine = (config as any).renderEngine || 'preact';
+    const renderEngine = config.render?.engine || 'preact';
+    
+    // 检查适配器是否已注册
+    if (!this.renderAdapterManager.has(renderEngine)) {
+      throw new Error(`渲染引擎未注册: ${renderEngine}。请确保已安装对应的依赖包。`);
+    }
     
     // 设置渲染引擎
-    await this.renderAdapterManager.setEngine(renderEngine as RenderEngine);
+    await this.renderAdapterManager.setEngine(renderEngine);
     
     // 注册渲染适配器管理器到服务容器
     this.serviceContainer.registerSingleton('renderAdapterManager', () => this.renderAdapterManager);

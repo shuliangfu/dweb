@@ -84,6 +84,51 @@ export interface PrefetchConfig {
   mode?: PrefetchMode;
 }
 
+// 渲染引擎类型
+export type RenderEngine = 'preact' | 'react' | 'vue3';
+
+// 渲染模式类型
+export type RenderMode = 'ssr' | 'csr' | 'hybrid';
+
+// 渲染适配器配置
+export interface RenderConfig {
+  /** 
+   * 渲染引擎，可选值：'preact' | 'react' | 'vue3'
+   * 默认为 'preact'
+   * 
+   * @example
+   * ```typescript
+   * export default defineConfig({
+   *   render: {
+   *     engine: 'react'
+   *   }
+   * });
+   * ```
+   */
+  engine?: RenderEngine;
+  
+  /** 
+   * 渲染模式，可选值：'ssr' | 'csr' | 'hybrid'
+   * 默认为 'ssr'
+   * - ssr: 服务端渲染（默认）
+   * - csr: 客户端渲染
+   * - hybrid: 混合渲染（服务端渲染 + 客户端 hydration）
+   * 
+   * 注意：这个配置是全局的，可以在页面组件中通过导出 `renderMode` 来覆盖
+   * 
+   * @example
+   * ```typescript
+   * export default defineConfig({
+   *   render: {
+   *     engine: 'preact',
+   *     mode: 'ssr'
+   *   }
+   * });
+   * ```
+   */
+  mode?: RenderMode;
+}
+
 // 应用配置基础接口（不包含 apps 和 database）
 // 用于定义子应用配置，确保子应用不能配置 database
 interface AppConfigBase {
@@ -99,8 +144,8 @@ interface AppConfigBase {
   // 静态资源配置
   static?: StaticOptions;
   dev?: DevConfig;
-  // 全局渲染模式（可在页面组件中覆盖）
-  renderMode?: RenderMode;
+  // 渲染适配器配置（包含渲染引擎和渲染模式）
+  render?: RenderConfig;
   // 预加载配置
   prefetch?: PrefetchConfig;
   // WebSocket 配置
@@ -403,9 +448,6 @@ export interface BuildConfig {
   imageQuality?: number;
   [key: string]: any;
 }
-
-// 渲染模式
-export type RenderMode = "ssr" | "csr" | "hybrid";
 
 // CORS 配置
 export interface CorsConfig {
