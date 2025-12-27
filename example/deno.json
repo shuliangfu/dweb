@@ -53,13 +53,6 @@
     "sharp": "npm:sharp@^0.34.5",
     "chart": "npm:chart.js@4.4.7"
   },
-  "scopes": {
-    "https://esm.sh/": {
-      "preact": "https://esm.sh/preact@10.28.0",
-      "preact/": "https://esm.sh/preact@10.28.0/"
-    }
-  },
-
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "preact"
