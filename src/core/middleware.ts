@@ -85,9 +85,6 @@ export class MiddlewareManager extends BaseManager implements IService {
       middlewareName && this.middlewares.some((m) => m.name === middlewareName)
     ) {
       // 如果已经存在同名中间件，跳过注册（避免重复执行）
-      console.warn(
-        `⚠️  中间件 "${middlewareName}" 已注册，跳过重复注册（避免重复执行）`,
-      );
       return;
     }
 
