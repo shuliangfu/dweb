@@ -1,7 +1,7 @@
 /**
  * 数组工具
  * 提供数组操作的补充工具函数（与 builtin/array.ts 的扩展方法互补）
- * 
+ *
  * 环境兼容性：
  * - 通用：所有函数都可以在服务端和客户端使用
  */
@@ -9,11 +9,11 @@
 /**
  * 数组分块
  * 将数组分割成指定大小的块
- * 
+ *
  * @param array 要分割的数组
  * @param size 每块的大小
  * @returns 分割后的二维数组
- * 
+ *
  * @example
  * ```typescript
  * chunk([1, 2, 3, 4, 5], 2);
@@ -35,16 +35,16 @@ export function chunk<T>(array: T[], size: number): T[][] {
 /**
  * 数组扁平化
  * 将嵌套数组扁平化为一维数组
- * 
+ *
  * @param array 要扁平化的数组
  * @param depth 扁平化深度（默认 Infinity，完全扁平化）
  * @returns 扁平化后的数组
- * 
+ *
  * @example
  * ```typescript
  * flatten([1, [2, 3], [4, [5, 6]]]);
  * // [1, 2, 3, 4, 5, 6]
- * 
+ *
  * flatten([1, [2, [3, [4]]]], 2);
  * // [1, 2, 3, [4]]（只扁平化两层）
  * ```
@@ -66,15 +66,15 @@ export function flatten<T>(array: unknown[], depth: number = Infinity): T[] {
 /**
  * 数组去重
  * 去除数组中的重复元素
- * 
+ *
  * @param array 要去重的数组
  * @returns 去重后的数组
- * 
+ *
  * @example
  * ```typescript
  * unique([1, 2, 2, 3, 3, 3]);
  * // [1, 2, 3]
- * 
+ *
  * unique(['a', 'b', 'a', 'c']);
  * // ['a', 'b', 'c']
  * ```
@@ -86,11 +86,11 @@ export function unique<T>(array: T[]): T[] {
 /**
  * 按条件分组
  * 根据指定的键或函数对数组进行分组
- * 
+ *
  * @param array 要分组的数组
  * @param keyOrFn 分组键或分组函数
  * @returns 分组后的对象
- * 
+ *
  * @example
  * ```typescript
  * const users = [
@@ -98,10 +98,10 @@ export function unique<T>(array: T[]): T[] {
  *   { id: 2, role: 'user', name: 'Bob' },
  *   { id: 3, role: 'admin', name: 'Charlie' },
  * ];
- * 
+ *
  * groupBy(users, 'role');
  * // { admin: [{ id: 1, ... }, { id: 3, ... }], user: [{ id: 2, ... }] }
- * 
+ *
  * groupBy(users, (user) => user.name.length);
  * // { 5: [{ id: 1, ... }, { id: 2, ... }], 7: [{ id: 3, ... }] }
  * ```
@@ -129,12 +129,12 @@ export function groupBy<T>(
 /**
  * 按条件排序
  * 根据指定的键或函数对数组进行排序
- * 
+ *
  * @param array 要排序的数组
  * @param keyOrFn 排序键或排序函数
  * @param order 排序顺序（'asc' 升序，'desc' 降序，默认 'asc'）
  * @returns 排序后的新数组（原数组不变）
- * 
+ *
  * @example
  * ```typescript
  * const users = [
@@ -142,10 +142,10 @@ export function groupBy<T>(
  *   { id: 2, name: 'Bob', age: 25 },
  *   { id: 3, name: 'Charlie', age: 35 },
  * ];
- * 
+ *
  * sortBy(users, 'age');
  * // 按年龄升序排序
- * 
+ *
  * sortBy(users, (user) => user.name.length, 'desc');
  * // 按名字长度降序排序
  * ```
@@ -180,10 +180,10 @@ export function sortBy<T>(
 /**
  * 数组洗牌
  * 随机打乱数组元素的顺序
- * 
+ *
  * @param array 要洗牌的数组
  * @returns 洗牌后的新数组（原数组不变）
- * 
+ *
  * @example
  * ```typescript
  * shuffle([1, 2, 3, 4, 5]);
@@ -202,11 +202,11 @@ export function shuffle<T>(array: T[]): T[] {
 /**
  * 随机采样
  * 从数组中随机选择指定数量的元素
- * 
+ *
  * @param array 源数组
  * @param count 要选择的数量
  * @returns 随机选择的元素数组
- * 
+ *
  * @example
  * ```typescript
  * sample([1, 2, 3, 4, 5], 3);
@@ -225,11 +225,11 @@ export function sample<T>(array: T[], count: number): T[] {
 /**
  * 数组分割
  * 将数组分割为满足条件和不满足条件的两部分
- * 
+ *
  * @param array 要分割的数组
  * @param predicate 分割条件函数
  * @returns 包含两部分数组的元组 [满足条件的数组, 不满足条件的数组]
- * 
+ *
  * @example
  * ```typescript
  * partition([1, 2, 3, 4, 5], (n) => n % 2 === 0);
@@ -257,10 +257,10 @@ export function partition<T>(
 /**
  * 数组压缩
  * 将多个数组压缩成一个二维数组，每个子数组包含对应位置的元素
- * 
+ *
  * @param arrays 要压缩的数组
  * @returns 压缩后的二维数组
- * 
+ *
  * @example
  * ```typescript
  * zip([1, 2, 3], ['a', 'b', 'c']);
@@ -281,10 +281,10 @@ export function zip<T extends unknown[]>(...arrays: T[]): unknown[][] {
 /**
  * 数组解压
  * 将压缩后的二维数组解压为多个数组
- * 
+ *
  * @param array 要解压的二维数组
  * @returns 解压后的数组元组
- * 
+ *
  * @example
  * ```typescript
  * unzip([[1, 'a'], [2, 'b'], [3, 'c']]);
@@ -311,10 +311,10 @@ export function unzip<T extends unknown[]>(
 /**
  * 数组交集
  * 获取多个数组的交集（出现在所有数组中的元素）
- * 
+ *
  * @param arrays 要计算交集的数组
  * @returns 交集数组
- * 
+ *
  * @example
  * ```typescript
  * intersection([1, 2, 3], [2, 3, 4], [3, 4, 5]);
@@ -341,10 +341,10 @@ export function intersection<T>(...arrays: T[][]): T[] {
 /**
  * 数组并集
  * 获取多个数组的并集（所有数组中的唯一元素）
- * 
+ *
  * @param arrays 要计算并集的数组
  * @returns 并集数组
- * 
+ *
  * @example
  * ```typescript
  * union([1, 2, 3], [2, 3, 4], [3, 4, 5]);
@@ -362,11 +362,11 @@ export function union<T>(...arrays: T[][]): T[] {
 /**
  * 数组差集
  * 获取第一个数组相对于其他数组的差集（在第一个数组中但不在其他数组中的元素）
- * 
+ *
  * @param array 第一个数组
  * @param arrays 其他数组
  * @returns 差集数组
- * 
+ *
  * @example
  * ```typescript
  * difference([1, 2, 3, 4], [2, 3], [3, 4]);
@@ -387,4 +387,3 @@ export function difference<T>(array: T[], ...arrays: T[][]): T[] {
 // 注意：sum, average, max, min 函数已移至 math.ts
 // 如需使用，请从 @dreamer/dweb/extensions 导入
 // 这些函数在 math.ts 中提供相同的功能
-

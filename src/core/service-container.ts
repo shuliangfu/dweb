@@ -1,7 +1,7 @@
 /**
  * 服务容器模块
  * 实现依赖注入，管理服务的注册和解析
- * 
+ *
  * @module core/service-container
  */
 
@@ -22,11 +22,11 @@ export type ServiceFactory<T> = (container: ServiceContainer) => T | Promise<T>;
  */
 export enum ServiceLifetime {
   /** 单例模式：整个应用生命周期内只有一个实例 */
-  Singleton = 'singleton',
+  Singleton = "singleton",
   /** 瞬态模式：每次请求都创建新实例 */
-  Transient = 'transient',
+  Transient = "transient",
   /** 作用域模式：在作用域内单例（如每个请求一个实例） */
-  Scoped = 'scoped'
+  Scoped = "scoped",
 }
 
 /**
@@ -46,19 +46,19 @@ interface ServiceRegistration<T> {
 /**
  * 服务容器
  * 实现依赖注入，管理服务的注册和解析
- * 
+ *
  * @example
  * ```ts
  * import { ServiceContainer, ServiceLifetime } from "@dreamer/dweb/core/service-container";
- * 
+ *
  * const container = new ServiceContainer();
- * 
+ *
  * // 注册单例服务
  * container.registerSingleton('logger', () => new Logger());
- * 
+ *
  * // 注册瞬态服务
  * container.registerTransient('requestId', () => generateId());
- * 
+ *
  * // 获取服务
  * const logger = container.get<Logger>('logger');
  * ```
@@ -72,10 +72,10 @@ export class ServiceContainer {
   /**
    * 注册服务（单例模式）
    * 整个应用生命周期内只有一个实例
-   * 
+   *
    * @param token - 服务令牌
    * @param factory - 服务工厂函数
-   * 
+   *
    * @example
    * ```ts
    * container.registerSingleton('logger', () => new Logger());
@@ -83,7 +83,7 @@ export class ServiceContainer {
    */
   registerSingleton<T>(
     token: ServiceToken<T>,
-    factory: ServiceFactory<T>
+    factory: ServiceFactory<T>,
   ): void {
     this.register(token, factory, ServiceLifetime.Singleton);
   }
@@ -91,10 +91,10 @@ export class ServiceContainer {
   /**
    * 注册服务（瞬态模式）
    * 每次获取都创建新实例
-   * 
+   *
    * @param token - 服务令牌
    * @param factory - 服务工厂函数
-   * 
+   *
    * @example
    * ```ts
    * container.registerTransient('requestId', () => generateId());
@@ -102,7 +102,7 @@ export class ServiceContainer {
    */
   registerTransient<T>(
     token: ServiceToken<T>,
-    factory: ServiceFactory<T>
+    factory: ServiceFactory<T>,
   ): void {
     this.register(token, factory, ServiceLifetime.Transient);
   }
@@ -110,10 +110,10 @@ export class ServiceContainer {
   /**
    * 注册服务（作用域模式）
    * 在作用域内单例（如每个请求一个实例）
-   * 
+   *
    * @param token - 服务令牌
    * @param factory - 服务工厂函数
-   * 
+   *
    * @example
    * ```ts
    * container.registerScoped('requestContext', () => new RequestContext());
@@ -121,14 +121,14 @@ export class ServiceContainer {
    */
   registerScoped<T>(
     token: ServiceToken<T>,
-    factory: ServiceFactory<T>
+    factory: ServiceFactory<T>,
   ): void {
     this.register(token, factory, ServiceLifetime.Scoped);
   }
 
   /**
    * 注册服务（内部方法）
-   * 
+   *
    * @param token - 服务令牌
    * @param factory - 服务工厂函数
    * @param lifetime - 服务生命周期
@@ -136,7 +136,7 @@ export class ServiceContainer {
   private register<T>(
     token: ServiceToken<T>,
     factory: ServiceFactory<T>,
-    lifetime: ServiceLifetime
+    lifetime: ServiceLifetime,
   ): void {
     this.services.set(token, {
       token,
@@ -148,11 +148,11 @@ export class ServiceContainer {
   /**
    * 获取服务
    * 根据服务生命周期返回相应的实例
-   * 
+   *
    * @param token - 服务令牌
    * @returns 服务实例
    * @throws {Error} 如果服务未注册
-   * 
+   *
    * @example
    * ```ts
    * const logger = container.get<Logger>('logger');
@@ -193,10 +193,10 @@ export class ServiceContainer {
 
   /**
    * 检查服务是否已注册
-   * 
+   *
    * @param token - 服务令牌
    * @returns 如果服务已注册返回 true，否则返回 false
-   * 
+   *
    * @example
    * ```ts
    * if (container.has('logger')) {
@@ -211,7 +211,7 @@ export class ServiceContainer {
   /**
    * 清除作用域实例
    * 用于请求结束后清理作用域内的服务实例
-   * 
+   *
    * @example
    * ```ts
    * // 在请求处理完成后调用
@@ -224,7 +224,7 @@ export class ServiceContainer {
 
   /**
    * 获取所有已注册的服务令牌
-   * 
+   *
    * @returns 服务令牌数组
    */
   getRegisteredTokens(): ServiceToken[] {

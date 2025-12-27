@@ -2,24 +2,30 @@
  * PostgreSQL 数据库适配器
  */
 
-import postgres from '@postgres';
-import { BaseAdapter, type PoolStatus, type HealthCheckResult } from './base.ts';
-import type { DatabaseConfig, DatabaseAdapter } from '../types.ts';
+import postgres from "@postgres";
+import {
+  BaseAdapter,
+  type HealthCheckResult,
+  type PoolStatus,
+} from "./base.ts";
+import type { DatabaseAdapter, DatabaseConfig } from "../types.ts";
 
 /**
  * PostgreSQL 适配器实现
  */
 export class PostgreSQLAdapter extends BaseAdapter {
-	private sql: ReturnType<typeof postgres> | null = null;
-	
-	// 
+  private sql: ReturnType<typeof postgres> | null = null;
+
+  //
 
   /**
    * 连接 PostgreSQL 数据库
    * @param retryCount 重试次数（内部使用）
    */
   async connect(config: DatabaseConfig, retryCount: number = 0): Promise<void> {
-    const pool = config.pool as (typeof config.pool & { maxRetries?: number; retryDelay?: number }) | undefined;
+    const pool = config.pool as
+      | (typeof config.pool & { maxRetries?: number; retryDelay?: number })
+      | undefined;
     const maxRetries = pool?.maxRetries || 3;
     const retryDelay = pool?.retryDelay || 1000;
 
@@ -28,10 +34,12 @@ export class PostgreSQLAdapter extends BaseAdapter {
       this.config = config;
 
       const { host, port, database, username, password } = config.connection;
-      
+
       // 构建连接字符串
-      const connectionString = `postgres://${username || ''}:${password || ''}@${host || 'localhost'}:${port || 5432}/${database || ''}`;
-      
+      const connectionString = `postgres://${username || ""}:${
+        password || ""
+      }@${host || "localhost"}:${port || 5432}/${database || ""}`;
+
       // 创建连接池
       this.sql = postgres(connectionString, {
         max: config.pool?.max || 10,
@@ -42,7 +50,9 @@ export class PostgreSQLAdapter extends BaseAdapter {
     } catch (error) {
       // 自动重连机制
       if (retryCount < maxRetries) {
-        await new Promise((resolve) => setTimeout(resolve, retryDelay * (retryCount + 1)));
+        await new Promise((resolve) =>
+          setTimeout(resolve, retryDelay * (retryCount + 1))
+        );
         return await this.connect(config, retryCount + 1);
       }
       throw error;
@@ -57,13 +67,18 @@ export class PostgreSQLAdapter extends BaseAdapter {
       if (this.config) {
         await this.connect(this.config);
       } else {
-        throw new Error('Database not connected and no config available for reconnection');
+        throw new Error(
+          "Database not connected and no config available for reconnection",
+        );
       }
     }
 
     // 定期健康检查
     const now = Date.now();
-    if (!this.lastHealthCheck || now - this.lastHealthCheck.getTime() > this.healthCheckInterval) {
+    if (
+      !this.lastHealthCheck ||
+      now - this.lastHealthCheck.getTime() > this.healthCheckInterval
+    ) {
       const health = await this.healthCheck();
       if (!health.healthy) {
         // 连接不健康，尝试重连
@@ -80,7 +95,7 @@ export class PostgreSQLAdapter extends BaseAdapter {
   async query(sql: string, params: any[] = []): Promise<any[]> {
     await this.ensureConnection();
     if (!this.sql) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     const startTime = Date.now();
@@ -93,7 +108,7 @@ export class PostgreSQLAdapter extends BaseAdapter {
 
       // 记录查询日志
       if (this.queryLogger) {
-        await this.queryLogger.log('query', sql, params, duration);
+        await this.queryLogger.log("query", sql, params, duration);
       }
 
       return result;
@@ -103,7 +118,13 @@ export class PostgreSQLAdapter extends BaseAdapter {
 
       // 记录错误日志
       if (this.queryLogger) {
-        await this.queryLogger.log('query', sql, params, duration, error as Error);
+        await this.queryLogger.log(
+          "query",
+          sql,
+          params,
+          duration,
+          error as Error,
+        );
       }
 
       throw new Error(`PostgreSQL query error: ${message}`);
@@ -116,7 +137,7 @@ export class PostgreSQLAdapter extends BaseAdapter {
   async execute(sql: string, params: any[] = []): Promise<any> {
     await this.ensureConnection();
     if (!this.sql) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     const startTime = Date.now();
@@ -127,7 +148,7 @@ export class PostgreSQLAdapter extends BaseAdapter {
 
       // 记录执行日志
       if (this.queryLogger) {
-        await this.queryLogger.log('execute', sql, params, duration);
+        await this.queryLogger.log("execute", sql, params, duration);
       }
 
       return {
@@ -140,7 +161,13 @@ export class PostgreSQLAdapter extends BaseAdapter {
 
       // 记录错误日志
       if (this.queryLogger) {
-        await this.queryLogger.log('execute', sql, params, duration, error as Error);
+        await this.queryLogger.log(
+          "execute",
+          sql,
+          params,
+          duration,
+          error as Error,
+        );
       }
 
       throw new Error(`PostgreSQL execute error: ${message}`);
@@ -150,9 +177,11 @@ export class PostgreSQLAdapter extends BaseAdapter {
   /**
    * 执行事务
    */
-  async transaction<T>(callback: (db: DatabaseAdapter) => Promise<T>): Promise<T> {
+  async transaction<T>(
+    callback: (db: DatabaseAdapter) => Promise<T>,
+  ): Promise<T> {
     if (!this.sql) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     try {
@@ -196,7 +225,8 @@ export class PostgreSQLAdapter extends BaseAdapter {
 
     // 尝试从连接池获取统计信息
     try {
-      const result = await this.sql`SELECT * FROM pg_stat_activity WHERE datname = current_database()`;
+      const result = await this
+        .sql`SELECT * FROM pg_stat_activity WHERE datname = current_database()`;
       const active = result.length || 0;
 
       return {
@@ -226,7 +256,7 @@ export class PostgreSQLAdapter extends BaseAdapter {
       if (!this.sql) {
         return {
           healthy: false,
-          error: 'Database not connected',
+          error: "Database not connected",
           timestamp: new Date(),
         };
       }
@@ -264,4 +294,3 @@ export class PostgreSQLAdapter extends BaseAdapter {
     }
   }
 }
-

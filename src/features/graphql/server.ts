@@ -1,29 +1,29 @@
 /**
  * GraphQL 服务器实现
- * 
+ *
  * 提供 GraphQL 查询处理、Schema 管理等功能。
- * 
+ *
  * @module features/graphql/server
  */
 
 import type {
-  GraphQLSchema,
   GraphQLConfig,
   GraphQLRequest,
   GraphQLResponse,
-} from './types.ts';
-import { parseQuery, validateQuery } from './parser.ts';
-import { executeQuery } from './executor.ts';
+  GraphQLSchema,
+} from "./types.ts";
+import { parseQuery, validateQuery } from "./parser.ts";
+import { executeQuery } from "./executor.ts";
 
 /**
  * GraphQL 服务器类
- * 
+ *
  * 管理 GraphQL Schema，处理查询请求。
- * 
+ *
  * @example
  * ```typescript
  * import { GraphQLServer } from '@dreamer/dweb';
- * 
+ *
  * const server = new GraphQLServer({
  *   schema: {
  *     query: {
@@ -37,7 +37,7 @@ import { executeQuery } from './executor.ts';
  *     },
  *   },
  * });
- * 
+ *
  * const result = await server.execute({ query: '{ hello }' });
  * ```
  */
@@ -47,19 +47,19 @@ export class GraphQLServer {
 
   /**
    * 创建 GraphQL 服务器实例
-   * 
+   *
    * @param schema - GraphQL Schema 定义
    * @param config - 服务器配置
    */
   constructor(
     schema: GraphQLSchema,
-    config: GraphQLConfig = {}
+    config: GraphQLConfig = {},
   ) {
     this.schema = schema;
     this.config = {
-      path: config.path || '/graphql',
+      path: config.path || "/graphql",
       graphiql: config.graphiql !== false,
-      graphiqlPath: config.graphiqlPath || '/graphiql',
+      graphiqlPath: config.graphiqlPath || "/graphiql",
       validation: config.validation !== false,
       cache: config.cache !== false,
       maxDepth: config.maxDepth || 10,
@@ -70,10 +70,10 @@ export class GraphQLServer {
 
   /**
    * 处理 GraphQL 请求
-   * 
+   *
    * @param req - HTTP 请求对象
    * @returns GraphQL 响应
-   * 
+   *
    * @example
    * ```typescript
    * const response = await server.handleRequest(req);
@@ -89,7 +89,7 @@ export class GraphQLServer {
         const errors = validateQuery(
           request.query,
           this.config.maxDepth,
-          this.config.maxComplexity
+          this.config.maxComplexity,
         );
         if (errors.length > 0) {
           return this.createResponse({ errors });
@@ -117,7 +117,7 @@ export class GraphQLServer {
 
   /**
    * 解析 HTTP 请求为 GraphQL 请求
-   * 
+   *
    * @param req - HTTP 请求对象
    * @returns GraphQL 请求
    */
@@ -125,14 +125,14 @@ export class GraphQLServer {
     const method = req.method;
     const url = new URL(req.url);
 
-    if (method === 'GET') {
+    if (method === "GET") {
       // GET 请求：从查询参数获取
-      const query = url.searchParams.get('query');
-      const operationName = url.searchParams.get('operationName') || undefined;
-      const variablesStr = url.searchParams.get('variables');
+      const query = url.searchParams.get("query");
+      const operationName = url.searchParams.get("operationName") || undefined;
+      const variablesStr = url.searchParams.get("variables");
 
       if (!query) {
-        throw new Error('查询参数 query 是必需的');
+        throw new Error("查询参数 query 是必需的");
       }
 
       let variables: Record<string, unknown> = {};
@@ -140,33 +140,33 @@ export class GraphQLServer {
         try {
           variables = JSON.parse(variablesStr);
         } catch {
-          throw new Error('查询变量格式错误');
+          throw new Error("查询变量格式错误");
         }
       }
 
       return { query, operationName, variables };
-    } else if (method === 'POST') {
+    } else if (method === "POST") {
       // POST 请求：从请求体获取
-      const contentType = req.headers.get('content-type') || '';
-      
-      if (contentType.includes('application/json')) {
+      const contentType = req.headers.get("content-type") || "";
+
+      if (contentType.includes("application/json")) {
         const body = await req.json() as GraphQLRequest;
         if (!body.query) {
-          throw new Error('请求体必须包含 query 字段');
+          throw new Error("请求体必须包含 query 字段");
         }
         return body;
-      } else if (contentType.includes('application/graphql')) {
+      } else if (contentType.includes("application/graphql")) {
         const query = await req.text();
         return { query };
       } else {
         // 尝试解析为 URL 编码的表单数据
         const formData = await req.formData();
-        const query = formData.get('query') as string;
-        const operationName = formData.get('operationName') as string | null;
-        const variablesStr = formData.get('variables') as string | null;
+        const query = formData.get("query") as string;
+        const operationName = formData.get("operationName") as string | null;
+        const variablesStr = formData.get("variables") as string | null;
 
         if (!query) {
-          throw new Error('查询参数 query 是必需的');
+          throw new Error("查询参数 query 是必需的");
         }
 
         let variables: Record<string, unknown> = {};
@@ -174,7 +174,7 @@ export class GraphQLServer {
           try {
             variables = JSON.parse(variablesStr);
           } catch {
-            throw new Error('查询变量格式错误');
+            throw new Error("查询变量格式错误");
           }
         }
 
@@ -191,7 +191,7 @@ export class GraphQLServer {
 
   /**
    * 创建 HTTP 响应
-   * 
+   *
    * @param result - GraphQL 响应
    * @returns HTTP 响应对象
    */
@@ -199,17 +199,17 @@ export class GraphQLServer {
     return new Response(JSON.stringify(result), {
       status: result.errors && result.errors.length > 0 ? 400 : 200,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
   }
 
   /**
    * 生成 GraphiQL HTML
-   * 
+   *
    * 使用 Preact 和 preact/compat 替代 React，保持与框架的一致性。
    * preact/compat 提供了与 React 的兼容层，使得 GraphiQL 可以在 Preact 环境下运行。
-   * 
+   *
    * @returns GraphiQL HTML 字符串
    */
   getGraphiQLHTML(): string {
@@ -261,7 +261,7 @@ export class GraphQLServer {
 
   /**
    * 获取配置
-   * 
+   *
    * @returns 服务器配置
    */
   getConfig(): Required<GraphQLConfig> {
@@ -270,11 +270,10 @@ export class GraphQLServer {
 
   /**
    * 更新 Schema
-   * 
+   *
    * @param schema - 新的 Schema 定义
    */
   updateSchema(schema: GraphQLSchema): void {
     this.schema = schema;
   }
 }
-

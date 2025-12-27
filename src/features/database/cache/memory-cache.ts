@@ -2,7 +2,7 @@
  * 内存缓存适配器实现
  */
 
-import type { CacheAdapter } from './cache-adapter.ts';
+import type { CacheAdapter } from "./cache-adapter.ts";
 
 /**
  * 缓存项
@@ -42,7 +42,12 @@ export class MemoryCacheAdapter implements CacheAdapter {
   /**
    * 设置缓存值
    */
-  async set(key: string, value: any, ttl?: number, tags: string[] = []): Promise<boolean> {
+  async set(
+    key: string,
+    value: any,
+    ttl?: number,
+    tags: string[] = [],
+  ): Promise<boolean> {
     const expiresAt = ttl ? Date.now() + ttl * 1000 : null;
 
     // 如果键已存在，先删除旧的标签索引
@@ -175,4 +180,3 @@ export class MemoryCacheAdapter implements CacheAdapter {
     };
   }
 }
-

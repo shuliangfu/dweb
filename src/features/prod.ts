@@ -1,7 +1,7 @@
 /**
  * 生产服务器模块
  * 提供生产环境服务器
- * 
+ *
  * 注意：此模块已重构为使用 Application 类
  * 为了保持向后兼容，仍然导出 startProdServer 函数
  */
@@ -12,13 +12,13 @@ import { Application } from "../core/application.ts";
 /**
  * 启动生产服务器
  * 使用 Application 类来启动生产环境服务器
- * 
+ *
  * @param config 配置对象（单应用配置）
- * 
+ *
  * @example
  * ```ts
  * import { startProdServer } from "@dreamer/dweb";
- * 
+ *
  * await startProdServer({
  *   server: { port: 3000 },
  *   routes: { dir: "routes" },
@@ -47,17 +47,17 @@ export async function startProdServer(config: AppConfig): Promise<void> {
 
   // 创建 Application 实例（不指定配置文件路径，使用程序化配置）
   const app = new Application(undefined, config.name);
-  
+
   // 加载配置（先加载默认配置，然后合并传入的配置）
-  const configManager = app.getService('configManager') as any;
+  const configManager = app.getService("configManager") as any;
   try {
     await configManager.load();
   } catch {
     // 如果加载失败（配置文件不存在），使用传入的配置
   }
-  
+
   // 设置配置
-  if (configManager && typeof configManager.setConfig === 'function') {
+  if (configManager && typeof configManager.setConfig === "function") {
     // 如果已加载配置，合并配置；否则直接设置
     if (configManager.isLoaded()) {
       const existingConfig = configManager.getConfig();

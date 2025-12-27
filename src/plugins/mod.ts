@@ -16,15 +16,15 @@ export {
 export { rss } from "./rss/index.ts";
 export { theme } from "./theme/index.ts";
 export {
-  getTheme,
   getActualTheme,
-  setTheme,
-  toggleTheme,
-  switchTheme,
-  subscribeTheme,
-  getThemeValue,
+  getTheme,
   getThemeManager,
   getThemeStore,
+  getThemeValue,
+  setTheme,
+  subscribeTheme,
+  switchTheme,
+  toggleTheme,
 } from "./theme/client.ts";
 export {
   formValidator,

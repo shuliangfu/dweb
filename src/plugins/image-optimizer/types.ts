@@ -5,7 +5,14 @@
 /**
  * 图片格式
  */
-export type ImageFormat = 'jpeg' | 'jpg' | 'png' | 'webp' | 'avif' | 'gif' | 'svg';
+export type ImageFormat =
+  | "jpeg"
+  | "jpg"
+  | "png"
+  | "webp"
+  | "avif"
+  | "gif"
+  | "svg";
 
 /**
  * 图片尺寸配置
@@ -78,7 +85,7 @@ export interface PlaceholderConfig {
   /** 是否生成占位符 */
   enabled?: boolean;
   /** 占位符类型 */
-  type?: 'blur' | 'color' | 'lqip'; // blur: 模糊图, color: 主色, lqip: 低质量图片占位符
+  type?: "blur" | "color" | "lqip"; // blur: 模糊图, color: 主色, lqip: 低质量图片占位符
   /** 占位符尺寸 */
   size?: ImageSize;
 }
@@ -122,4 +129,3 @@ export interface ImageOptimizerPluginOptions {
   /** 是否在 HTML 中自动转换图片标签 */
   autoTransform?: boolean;
 }
-

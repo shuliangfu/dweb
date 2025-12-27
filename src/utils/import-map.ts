@@ -181,7 +181,10 @@ export async function createImportMapScript(
     for (const [key, value] of Object.entries(userImports)) {
       let processedValue = value;
       // 如果是 preact/signals 且是 esm.sh URL，确保添加 ?external=preact
-      if (key === "preact/signals" && value.includes("@preact/signals") && value.includes("esm.sh")) {
+      if (
+        key === "preact/signals" && value.includes("@preact/signals") &&
+        value.includes("esm.sh")
+      ) {
         // 检查是否已经有查询参数
         if (value.includes("?")) {
           // 如果已经有查询参数，检查是否包含 external=preact

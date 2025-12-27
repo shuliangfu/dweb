@@ -1,7 +1,7 @@
 /**
  * i18n 访问辅助模块
  * 提供全局 i18n 访问接口，用于在 Model、工具函数等非请求上下文中使用翻译
- * 
+ *
  * 注意：在多应用场景下，每个应用实例都有独立的翻译缓存和语言状态
  */
 
@@ -94,11 +94,11 @@ export function initI18nAccess(
  * 如果 i18n 插件已初始化，使用实际的翻译函数
  * 如果未初始化，使用默认函数（返回 key 本身）
  * 这确保 $t() 始终可用，不会报错
- * 
+ *
  * @param app 应用实例（可选，用于多应用场景）
  */
 export function ensureGlobalI18n(app?: unknown): void {
-  if (typeof globalThis !== 'undefined') {
+  if (typeof globalThis !== "undefined") {
     // 如果 i18n 已初始化，使用实际的翻译函数
     if (isI18nInitialized(app)) {
       if (!(globalThis as any).$t) {
@@ -189,7 +189,7 @@ export function getI18n(
 ): (key: string, params?: Record<string, any>) => string {
   const appId = getAppId(app);
   const translationCache = appTranslationCaches.get(appId);
-  
+
   if (!translationCache) {
     // 如果 i18n 未初始化，返回一个返回 key 的函数
     return (key: string) => key;

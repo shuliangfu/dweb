@@ -1,28 +1,28 @@
 /**
  * GraphQL 查询执行器
- * 
+ *
  * 执行 GraphQL 查询，调用解析器函数并返回结果。
- * 
+ *
  * @module features/graphql/executor
  */
 
 import type {
-  GraphQLSchema,
-  GraphQLType,
   GraphQLContext,
   GraphQLInfo,
   GraphQLResponse,
-} from './types.ts';
-import type { ParsedQuery, ParsedField } from './parser.ts';
+  GraphQLSchema,
+  GraphQLType,
+} from "./types.ts";
+import type { ParsedField, ParsedQuery } from "./parser.ts";
 
 /**
  * 执行 GraphQL 查询
- * 
+ *
  * @param schema - GraphQL Schema
  * @param query - 解析后的查询
  * @param context - 上下文对象
  * @returns 查询结果
- * 
+ *
  * @example
  * ```typescript
  * const result = await executeQuery(schema, parsedQuery, context);
@@ -31,11 +31,11 @@ import type { ParsedQuery, ParsedField } from './parser.ts';
 export async function executeQuery(
   schema: GraphQLSchema,
   query: ParsedQuery,
-  context: GraphQLContext
+  context: GraphQLContext,
 ): Promise<GraphQLResponse> {
   try {
     // 根据操作类型选择根类型
-    const rootType = query.operation === 'mutation'
+    const rootType = query.operation === "mutation"
       ? schema.mutation
       : schema.query;
 
@@ -58,7 +58,7 @@ export async function executeQuery(
           null,
           query.variables,
           context,
-          schema
+          schema,
         );
         const key = field.alias || field.name;
         data[key] = result;
@@ -85,7 +85,7 @@ export async function executeQuery(
 
 /**
  * 执行字段
- * 
+ *
  * @param type - 字段类型
  * @param field - 字段信息
  * @param parent - 父对象
@@ -100,7 +100,7 @@ async function executeField(
   parent: unknown,
   variables: Record<string, unknown>,
   context: GraphQLContext,
-  schema: GraphQLSchema
+  schema: GraphQLSchema,
 ): Promise<unknown> {
   // 获取字段定义
   const fieldDef = type.fields?.[field.name];
@@ -115,7 +115,10 @@ async function executeField(
       const argValue = field.args[argName];
       if (argValue !== undefined) {
         // 如果是变量，从 variables 中获取
-        if (typeof argValue === 'object' && argValue !== null && '__variable' in argValue) {
+        if (
+          typeof argValue === "object" && argValue !== null &&
+          "__variable" in argValue
+        ) {
           const varName = (argValue as { __variable: string }).__variable;
           args[argName] = variables[varName];
         } else {
@@ -133,7 +136,7 @@ async function executeField(
   const info: GraphQLInfo = {
     fieldName: field.name,
     path: field.path,
-    selectedFields: field.fields?.map(f => f.name),
+    selectedFields: field.fields?.map((f) => f.name),
     variables,
   };
 
@@ -143,7 +146,7 @@ async function executeField(
     value = await fieldDef.resolve(parent, args, context, info);
   } else {
     // 如果没有解析器，尝试从 parent 中获取
-    if (parent && typeof parent === 'object') {
+    if (parent && typeof parent === "object") {
       value = (parent as Record<string, unknown>)[field.name];
     } else {
       value = null;
@@ -151,20 +154,41 @@ async function executeField(
   }
 
   // 处理子字段
-  if (field.fields && field.fields.length > 0 && value !== null && value !== undefined) {
+  if (
+    field.fields && field.fields.length > 0 && value !== null &&
+    value !== undefined
+  ) {
     // 获取字段类型
-    const fieldTypeName = typeof fieldDef.type === 'string' ? fieldDef.type : fieldDef.type.name;
+    const fieldTypeName = typeof fieldDef.type === "string"
+      ? fieldDef.type
+      : fieldDef.type.name;
     const fieldType = schema.types?.[fieldTypeName];
 
     if (fieldType) {
       // 如果是列表
       if (fieldDef.isList && Array.isArray(value)) {
         value = await Promise.all(
-          value.map((item) => executeFields(fieldType, field.fields!, item, variables, context, schema))
+          value.map((item) =>
+            executeFields(
+              fieldType,
+              field.fields!,
+              item,
+              variables,
+              context,
+              schema,
+            )
+          ),
         );
       } else {
         // 单个对象
-        value = await executeFields(fieldType, field.fields, value, variables, context, schema);
+        value = await executeFields(
+          fieldType,
+          field.fields,
+          value,
+          variables,
+          context,
+          schema,
+        );
       }
     }
   }
@@ -174,7 +198,7 @@ async function executeField(
 
 /**
  * 执行多个字段
- * 
+ *
  * @param type - 对象类型
  * @param fields - 字段列表
  * @param parent - 父对象
@@ -189,13 +213,20 @@ async function executeFields(
   parent: unknown,
   variables: Record<string, unknown>,
   context: GraphQLContext,
-  schema: GraphQLSchema
+  schema: GraphQLSchema,
 ): Promise<Record<string, unknown>> {
   const result: Record<string, unknown> = {};
 
   for (const field of fields) {
     try {
-      const value = await executeField(type, field, parent, variables, context, schema);
+      const value = await executeField(
+        type,
+        field,
+        parent,
+        variables,
+        context,
+        schema,
+      );
       const key = field.alias || field.name;
       result[key] = value;
     } catch (error) {
@@ -206,4 +237,3 @@ async function executeFields(
 
   return result;
 }
-

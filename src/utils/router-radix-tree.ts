@@ -51,18 +51,24 @@ export class RadixTree {
 
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
-      
+
       // 处理捕获所有路由（...slug 或 *）
       // 注意：Catch-all 必须是路径的最后一部分
-      if (part === "*" || (part.startsWith(":") && part.endsWith("*")) || part.startsWith("[...") || (routeInfo.isCatchAll && i === parts.length - 1)) {
+      if (
+        part === "*" || (part.startsWith(":") && part.endsWith("*")) ||
+        part.startsWith("[...") ||
+        (routeInfo.isCatchAll && i === parts.length - 1)
+      ) {
         if (!currentNode.catchAllChild) {
           currentNode.catchAllChild = this.createNode("*");
           // 提取参数名
           if (part.startsWith("[...")) {
             currentNode.catchAllChild.paramName = part.slice(4, -1);
           } else {
-             // 尝试从 routeInfo.params 获取
-             currentNode.catchAllChild.paramName = routeInfo.params ? routeInfo.params[routeInfo.params.length - 1] : "slug";
+            // 尝试从 routeInfo.params 获取
+            currentNode.catchAllChild.paramName = routeInfo.params
+              ? routeInfo.params[routeInfo.params.length - 1]
+              : "slug";
           }
         }
         currentNode = currentNode.catchAllChild;
@@ -71,10 +77,14 @@ export class RadixTree {
       }
 
       // 处理参数路由（:id 或 [id]）
-      if (part.startsWith(":") || (part.startsWith("[") && part.endsWith("]"))) {
+      if (
+        part.startsWith(":") || (part.startsWith("[") && part.endsWith("]"))
+      ) {
         if (!currentNode.wildcardChild) {
           currentNode.wildcardChild = this.createNode(":");
-          currentNode.wildcardChild.paramName = part.startsWith(":") ? part.slice(1) : part.slice(1, -1);
+          currentNode.wildcardChild.paramName = part.startsWith(":")
+            ? part.slice(1)
+            : part.slice(1, -1);
         }
         currentNode = currentNode.wildcardChild;
         continue;
@@ -101,7 +111,11 @@ export class RadixTree {
     return this.matchRecursive(this.root, parts, 0);
   }
 
-  private matchRecursive(node: RadixNode, parts: string[], index: number): RouteInfo | null {
+  private matchRecursive(
+    node: RadixNode,
+    parts: string[],
+    index: number,
+  ): RouteInfo | null {
     // 匹配结束，检查当前节点是否有路由信息
     if (index === parts.length) {
       // 优先匹配当前节点的路由信息

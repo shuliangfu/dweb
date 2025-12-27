@@ -8,10 +8,10 @@
 export {
   getStore,
   getStoreState,
+  resetStore,
   setStoreState,
   subscribeStore,
-  resetStore,
-} from './plugins/store/client.ts';
+} from "./plugins/store/client.ts";
 
 // 导出 defineStore API（声明式 API）
 export {
@@ -19,40 +19,42 @@ export {
   getStoreInitialState,
   storeAction,
   useStore,
-} from './plugins/store/define-store.ts';
+} from "./plugins/store/define-store.ts";
 
 // 导出 Store 类型
-export type { Store, StorePluginOptions } from './plugins/store/types.ts';
-export type { StoreInstance, StoreOptions } from './plugins/store/define-store.ts';
+export type { Store, StorePluginOptions } from "./plugins/store/types.ts";
+export type {
+  StoreInstance,
+  StoreOptions,
+} from "./plugins/store/define-store.ts";
 
 // 导出主题客户端函数
 export {
-  getTheme,
   getActualTheme,
-  setTheme,
-  toggleTheme,
-  switchTheme,
-  subscribeTheme,
-  getThemeValue,
-  getThemeMode,
+  getTheme,
   getThemeManager,
+  getThemeMode,
   getThemeStore,
-} from './plugins/theme/client.ts';
+  getThemeValue,
+  setTheme,
+  subscribeTheme,
+  switchTheme,
+  toggleTheme,
+} from "./plugins/theme/client.ts";
 
 // 导出主题 Store 实例和类型（方便外部直接访问）
-export { themeStore, useThemeStore } from './plugins/theme/store.ts';
-export type { ThemeStoreState } from './plugins/theme/store.ts';
+export { themeStore, useThemeStore } from "./plugins/theme/store.ts";
+export type { ThemeStoreState } from "./plugins/theme/store.ts";
 
 // 导出类型（这些只是类型，不会在运行时导入任何代码）
 export type {
-  Request,
-  Response,
-  CookieOptions,
-  Session,
-  LoadContext,
-  PageProps,
-  LayoutProps,
   ComponentChild,
   ComponentChildren,
-} from './types/index.ts';
-
+  CookieOptions,
+  LayoutProps,
+  LoadContext,
+  PageProps,
+  Request,
+  Response,
+  Session,
+} from "./types/index.ts";

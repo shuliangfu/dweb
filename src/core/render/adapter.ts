@@ -1,20 +1,22 @@
 /**
  * 渲染适配器模块
  * 提供统一的渲染引擎接口，支持 Preact、React、Vue3 等多种渲染引擎
- * 
+ *
  * @module core/render/adapter
  */
 
 /**
  * 渲染引擎类型
  */
-export type RenderEngine = 'preact' | 'react' | 'vue3';
+export type RenderEngine = "preact" | "react" | "vue3";
 
 /**
  * 组件类型
  * 可以是字符串（HTML 标签）或函数（组件）
  */
-export type ComponentType = string | ((props: Record<string, unknown>) => unknown);
+export type ComponentType =
+  | string
+  | ((props: Record<string, unknown>) => unknown);
 
 /**
  * VNode 类型（渲染引擎无关）
@@ -29,7 +31,7 @@ export interface VNode {
 /**
  * 渲染适配器接口
  * 所有渲染引擎适配器都必须实现此接口
- * 
+ *
  * @example
  * ```ts
  * class MyRenderAdapter implements RenderAdapter {
@@ -47,7 +49,7 @@ export interface RenderAdapter {
   /**
    * 创建 VNode（JSX 工厂函数）
    * 对应 Preact 的 h(), React 的 createElement(), Vue 的 h()
-   * 
+   *
    * @param type - 组件类型（字符串或函数）
    * @param props - 组件属性
    * @param children - 子元素
@@ -62,7 +64,7 @@ export interface RenderAdapter {
   /**
    * 服务端渲染（SSR）
    * 将组件树渲染为 HTML 字符串
-   * 
+   *
    * @param element - 虚拟节点
    * @returns HTML 字符串
    */
@@ -71,7 +73,7 @@ export interface RenderAdapter {
   /**
    * 客户端水合（Hydration）
    * 将服务端渲染的 HTML 与客户端组件关联
-   * 
+   *
    * @param element - 虚拟节点
    * @param container - 容器元素
    */
@@ -80,7 +82,7 @@ export interface RenderAdapter {
   /**
    * 客户端渲染（CSR）
    * 在客户端渲染组件树
-   * 
+   *
    * @param element - 虚拟节点
    * @param container - 容器元素
    */
@@ -89,7 +91,7 @@ export interface RenderAdapter {
   /**
    * 获取 JSX Runtime 模块路径
    * 用于客户端代码编译
-   * 
+   *
    * @returns JSX Runtime 模块路径
    */
   getJSXRuntimePath(): string;
@@ -97,7 +99,7 @@ export interface RenderAdapter {
   /**
    * 获取客户端运行时模块路径
    * 用于客户端渲染
-   * 
+   *
    * @returns 客户端运行时模块路径
    */
   getClientRuntimePath(): string;
@@ -105,7 +107,7 @@ export interface RenderAdapter {
   /**
    * 获取服务端运行时模块路径
    * 用于服务端渲染
-   * 
+   *
    * @returns 服务端运行时模块路径
    */
   getServerRuntimePath(): string;
@@ -113,7 +115,7 @@ export interface RenderAdapter {
   /**
    * 检测组件是否使用了 Hooks
    * 用于自动检测渲染模式
-   * 
+   *
    * @param filePath - 文件路径
    * @returns 如果使用了 Hooks 返回 true，否则返回 false
    */

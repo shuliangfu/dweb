@@ -3,7 +3,7 @@
  * 提供输入验证、路径安全等安全相关的工具函数
  */
 
-import * as path from '@std/path';
+import * as path from "@std/path";
 
 /**
  * 验证路径是否在允许的目录内（防止路径遍历攻击）
@@ -16,13 +16,13 @@ export function isPathSafe(filePath: string, allowedDir: string): boolean {
     // 规范化路径
     const resolvedFilePath = path.resolve(filePath);
     const resolvedAllowedDir = path.resolve(allowedDir);
-    
+
     // 检查路径是否在允许的目录内
     // 使用路径分隔符确保跨平台兼容性
-    const sep = Deno.build.os === 'windows' ? '\\' : '/';
+    const sep = Deno.build.os === "windows" ? "\\" : "/";
     const normalizedFilePath = resolvedFilePath + sep;
     const normalizedAllowedDir = resolvedAllowedDir + sep;
-    
+
     return normalizedFilePath.startsWith(normalizedAllowedDir);
   } catch {
     // 路径解析失败，认为不安全
@@ -47,21 +47,44 @@ export function isValidIdentifier(str: string): boolean {
  */
 export function isSafeFileName(fileName: string): boolean {
   // 不允许路径分隔符、空字符、控制字符
-  if (fileName.includes('/') || fileName.includes('\\') || 
-      fileName.includes('\0') || fileName.includes('..')) {
+  if (
+    fileName.includes("/") || fileName.includes("\\") ||
+    fileName.includes("\0") || fileName.includes("..")
+  ) {
     return false;
   }
-  
+
   // 不允许 Windows 保留名称
-  const reservedNames = ['CON', 'PRN', 'AUX', 'NUL', 
-    'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
-    'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'];
-  
-  const upperName = fileName.toUpperCase().split('.')[0];
+  const reservedNames = [
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    "COM1",
+    "COM2",
+    "COM3",
+    "COM4",
+    "COM5",
+    "COM6",
+    "COM7",
+    "COM8",
+    "COM9",
+    "LPT1",
+    "LPT2",
+    "LPT3",
+    "LPT4",
+    "LPT5",
+    "LPT6",
+    "LPT7",
+    "LPT8",
+    "LPT9",
+  ];
+
+  const upperName = fileName.toUpperCase().split(".")[0];
   if (reservedNames.includes(upperName)) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -70,25 +93,27 @@ export function isSafeFileName(fileName: string): boolean {
  * @param params 路由参数对象
  * @returns 清理后的参数对象
  */
-export function sanitizeRouteParams(params: Record<string, string>): Record<string, string> {
+export function sanitizeRouteParams(
+  params: Record<string, string>,
+): Record<string, string> {
   const sanitized: Record<string, string> = {};
-  
+
   for (const [key, value] of Object.entries(params)) {
     // 验证键名
     if (!isValidIdentifier(key)) {
       continue; // 跳过无效的键名
     }
-    
+
     // 清理值（移除控制字符，限制长度）
     // 移除控制字符（ASCII 0-31 和 127）
-    const controlCharRegex = new RegExp('[\u0000-\u001F\u007F]', 'g');
+    const controlCharRegex = new RegExp("[\u0000-\u001F\u007F]", "g");
     const cleaned = value
-      .replace(controlCharRegex, '')
+      .replace(controlCharRegex, "")
       .slice(0, 1000); // 限制长度
-    
+
     sanitized[key] = cleaned;
   }
-  
+
   return sanitized;
 }
 
@@ -102,7 +127,7 @@ export function isSafeMethodName(methodName: string): boolean {
   if (methodName.length > 100 || methodName.length === 0) {
     return false;
   }
-  
+
   // 允许字母、数字、下划线、短横线（用于 kebab-case）
   return /^[a-zA-Z][a-zA-Z0-9_-]*$/.test(methodName);
 }
@@ -117,7 +142,7 @@ export function isSafeQueryValue(value: string): boolean {
   if (value.length > 1000) {
     return false;
   }
-  
+
   // 不允许明显的注入尝试
   const dangerousPatterns = [
     /<script/i,
@@ -125,7 +150,6 @@ export function isSafeQueryValue(value: string): boolean {
     /on\w+\s*=/i, // onclick=, onerror= 等
     /data:text\/html/i,
   ];
-  
-  return !dangerousPatterns.some(pattern => pattern.test(value));
-}
 
+  return !dangerousPatterns.some((pattern) => pattern.test(value));
+}

@@ -1,24 +1,24 @@
 /**
  * 渲染适配器管理器模块
  * 负责管理多个渲染适配器，支持运行时切换
- * 
+ *
  * @module core/render/manager
  */
 
-import type { RenderAdapter, RenderEngine } from './adapter.ts';
+import type { RenderAdapter, RenderEngine } from "./adapter.ts";
 
 /**
  * 渲染适配器管理器
  * 负责管理多个渲染适配器，支持运行时切换
- * 
+ *
  * @example
  * ```ts
  * import { RenderAdapterManager } from "@dreamer/dweb/core/render/manager";
  * import { PreactRenderAdapter } from "@dreamer/dweb/core/render/preact";
- * 
+ *
  * const manager = new RenderAdapterManager();
  * manager.register(new PreactRenderAdapter());
- * 
+ *
  * await manager.setEngine('preact');
  * const adapter = manager.getAdapter();
  * ```
@@ -29,13 +29,13 @@ export class RenderAdapterManager {
   /** 当前使用的适配器 */
   private currentAdapter: RenderAdapter | null = null;
   /** 默认渲染引擎 */
-  private defaultEngine: RenderEngine = 'preact';
+  private defaultEngine: RenderEngine = "preact";
 
   /**
    * 注册渲染适配器
-   * 
+   *
    * @param adapter - 渲染适配器实例
-   * 
+   *
    * @example
    * ```ts
    * manager.register(new PreactRenderAdapter());
@@ -47,10 +47,10 @@ export class RenderAdapterManager {
 
   /**
    * 设置当前使用的渲染引擎
-   * 
+   *
    * @param engine - 渲染引擎名称
    * @throws {Error} 如果渲染引擎未注册
-   * 
+   *
    * @example
    * ```ts
    * await manager.setEngine('preact');
@@ -76,10 +76,10 @@ export class RenderAdapterManager {
 
   /**
    * 获取当前渲染适配器
-   * 
+   *
    * @returns 当前渲染适配器
    * @throws {Error} 如果适配器未初始化
-   * 
+   *
    * @example
    * ```ts
    * const adapter = manager.getAdapter();
@@ -87,14 +87,14 @@ export class RenderAdapterManager {
    */
   getAdapter(): RenderAdapter {
     if (!this.currentAdapter) {
-      throw new Error('渲染适配器未初始化，请先调用 setEngine()');
+      throw new Error("渲染适配器未初始化，请先调用 setEngine()");
     }
     return this.currentAdapter;
   }
 
   /**
    * 获取默认引擎
-   * 
+   *
    * @returns 默认渲染引擎
    */
   getDefaultEngine(): RenderEngine {
@@ -103,7 +103,7 @@ export class RenderAdapterManager {
 
   /**
    * 设置默认引擎
-   * 
+   *
    * @param engine - 默认渲染引擎
    */
   setDefaultEngine(engine: RenderEngine): void {
@@ -113,7 +113,7 @@ export class RenderAdapterManager {
   /**
    * 初始化所有适配器
    * 预加载所有已注册的适配器（可选，用于性能优化）
-   * 
+   *
    * @example
    * ```ts
    * await manager.initializeAll();
@@ -128,7 +128,7 @@ export class RenderAdapterManager {
   /**
    * 清理所有适配器
    * 在应用关闭时调用，清理所有适配器的资源
-   * 
+   *
    * @example
    * ```ts
    * await manager.destroyAll();
@@ -143,7 +143,7 @@ export class RenderAdapterManager {
 
   /**
    * 检查适配器是否已注册
-   * 
+   *
    * @param engine - 渲染引擎名称
    * @returns 如果已注册返回 true，否则返回 false
    */

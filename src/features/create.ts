@@ -3,9 +3,9 @@
  * 用于快速创建新的 DWeb 项目
  */
 
-import * as path from '@std/path';
-import { ensureDir } from '@std/fs/ensure-dir';
-import { readDenoJson } from '../utils/file.ts';
+import * as path from "@std/path";
+import { ensureDir } from "@std/fs/ensure-dir";
+import { readDenoJson } from "../utils/file.ts";
 
 /**
  * 从框架的 deno.json 读取版本号
@@ -16,76 +16,83 @@ async function getFrameworkVersion(): Promise<string> {
   try {
     // 使用 import.meta.url 获取当前文件的位置
     const currentFileUrl = new URL(import.meta.url);
-    
+
     let currentDir: string;
-     
+
     // 处理不同的协议
-    if (currentFileUrl.protocol === 'file:') {
+    if (currentFileUrl.protocol === "file:") {
       // 本地文件系统路径
       // 在 Windows 上，pathname 可能以 / 开头，需要处理
       let filePath = currentFileUrl.pathname;
       // 移除开头的 /（如果有），在 Windows 上这会导致路径错误
-      if (Deno.build.os === 'windows' && filePath.startsWith('/')) {
+      if (Deno.build.os === "windows" && filePath.startsWith("/")) {
         filePath = filePath.substring(1);
       }
       currentDir = path.dirname(filePath);
-    } else if (currentFileUrl.protocol === 'https:' || currentFileUrl.protocol === 'http:') {
+    } else if (
+      currentFileUrl.protocol === "https:" ||
+      currentFileUrl.protocol === "http:"
+    ) {
       // 从 JSR 或其他 HTTP 源导入
-      
+
       // 方法1: 优先匹配 JSR 格式：/@scope/package/版本号/
       // JSR URL 格式：https://jsr.io/@dreamer/dweb/1.0.5/src/features/create.ts
       // 路径格式：/@dreamer/dweb/1.0.5/src/features/create.ts
-      const jsrMatch = currentFileUrl.pathname.match(/\/@[\w-]+\/[\w-]+\/([\d.]+)\//);
+      const jsrMatch = currentFileUrl.pathname.match(
+        /\/@[\w-]+\/[\w-]+\/([\d.]+)\//,
+      );
       if (jsrMatch && jsrMatch[1]) {
         return jsrMatch[1];
       }
-      
+
       // 方法2: 匹配路径中的版本号格式 /版本号/（备用方案）
       // 例如：/1.0.5/src/features/create.ts
       const versionMatch = currentFileUrl.pathname.match(/\/([\d.]+)\//);
       if (versionMatch && versionMatch[1]) {
         // 验证版本号格式（至少包含一个点，如 1.0.5）
-        if (versionMatch[1].includes('.')) {
+        if (versionMatch[1].includes(".")) {
           return versionMatch[1];
         }
       }
-      
+
       // 方法3: 匹配包含 @ 符号的格式（如 @1.0.5 或 @^1.0.5）
       // 例如：https://deno.land/x/dreamer_dweb@1.0.2/src/features/create.ts
       const atMatch = currentFileUrl.pathname.match(/@([\^~]?)([\d.]+)\//);
       if (atMatch && atMatch[2]) {
         return atMatch[2];
       }
-      
+
       // 方法4: 从完整 href 中匹配
-      const hrefMatch = currentFileUrl.href.match(/@dreamer\/dweb@?([\^~]?)([\d.]+)/);
+      const hrefMatch = currentFileUrl.href.match(
+        /@dreamer\/dweb@?([\^~]?)([\d.]+)/,
+      );
       if (hrefMatch && hrefMatch[2]) {
         return hrefMatch[2];
       }
-      
+
       // 如果都匹配不到，使用默认版本
-      return '1.0.0';
+      return "1.0.0";
     } else {
       // 其他协议，使用默认版本
-      return '1.0.0';
+      return "1.0.0";
     }
-    
+
     // 从当前文件位置向上查找框架的 deno.json
     // create.ts 位于 src/features/，deno.json 在项目根目录（向上 2 层）
     let searchDir = currentDir;
     const maxDepth = 5; // 最多向上查找 5 层目录
-    
+
     for (let i = 0; i < maxDepth; i++) {
       try {
         const denoJson = await readDenoJson(searchDir);
         // 验证是否是框架的 deno.json（检查 name 字段）
-        if (denoJson && denoJson.name === '@dreamer/dweb' && denoJson.version) {
+        if (denoJson && denoJson.name === "@dreamer/dweb" && denoJson.version) {
           return denoJson.version;
         }
       } catch (_error) {
         // 文件不存在或读取失败，继续向上查找
       }
-      
+
       // 向上查找父目录
       const parentDir = path.dirname(searchDir);
       if (parentDir === searchDir) {
@@ -94,23 +101,23 @@ async function getFrameworkVersion(): Promise<string> {
       }
       searchDir = parentDir;
     }
-    
+
     // 方法2: 如果找不到，尝试从当前工作目录读取（向后兼容，仅用于开发环境）
     // 注意：这仅在开发框架时有用，从 JSR 导入时不应依赖此方法
     try {
       const denoJson = await readDenoJson();
-      if (denoJson && denoJson.name === '@dreamer/dweb' && denoJson.version) {
+      if (denoJson && denoJson.name === "@dreamer/dweb" && denoJson.version) {
         return denoJson.version;
       }
     } catch (_error) {
       // 忽略错误
     }
-    
+
     // 如果都找不到，返回默认版本
-    return '1.0.0';
+    return "1.0.0";
   } catch (_error) {
     // 如果读取失败，返回默认版本
-    return '1.0.0';
+    return "1.0.0";
   }
 }
 
@@ -118,7 +125,7 @@ async function getFrameworkVersion(): Promise<string> {
  * DWeb 框架的 JSR 包 URL（用于生成项目模板中的导入路径）
  * 用户可以在创建项目时指定，或使用默认值
  */
-let frameworkUrl = '';
+let frameworkUrl = "";
 
 /**
  * 设置框架 URL（用于从 JSR 或其他源导入）
@@ -155,7 +162,7 @@ async function prompt(question: string): Promise<string> {
   await Deno.stdout.write(new TextEncoder().encode(question));
   const n = await Deno.stdin.read(buf);
   if (n === null) {
-    throw new Error('无法读取输入');
+    throw new Error("无法读取输入");
   }
   return new TextDecoder().decode(buf.subarray(0, n)).trim();
 }
@@ -167,20 +174,24 @@ async function prompt(question: string): Promise<string> {
  * @param defaultIndex 默认选项索引（从 0 开始，如果用户直接回车则使用此选项）
  * @returns 选中的选项
  */
-async function select(question: string, options: string[], defaultIndex: number = 0): Promise<string> {
+async function select(
+  question: string,
+  options: string[],
+  defaultIndex: number = 0,
+): Promise<string> {
   console.log(question);
   options.forEach((option, index) => {
-    const defaultMark = index === defaultIndex ? ' (默认)' : '';
+    const defaultMark = index === defaultIndex ? " (默认)" : "";
     console.log(`  ${index + 1}. ${option}${defaultMark}`);
   });
-  const defaultPrompt = defaultIndex >= 0 ? ` [默认: ${defaultIndex + 1}]` : '';
+  const defaultPrompt = defaultIndex >= 0 ? ` [默认: ${defaultIndex + 1}]` : "";
   const answer = await prompt(`请选择 (1-${options.length})${defaultPrompt}: `);
-  
+
   // 如果用户直接回车，使用默认值
-  if (!answer || answer.trim() === '') {
+  if (!answer || answer.trim() === "") {
     return options[defaultIndex];
   }
-  
+
   const index = parseInt(answer) - 1;
   if (index >= 0 && index < options.length) {
     return options[index];
@@ -198,7 +209,7 @@ async function select(question: string, options: string[], defaultIndex: number 
 async function interactiveSelect(
   message: string,
   options: string[],
-  defaultValue = 0
+  defaultValue = 0,
 ): Promise<number> {
   const encoder = new TextEncoder();
   let selectedIndex = defaultValue;
@@ -207,10 +218,10 @@ async function interactiveSelect(
   const renderMenu = () => {
     // 清除屏幕并移动光标到顶部
     Deno.stdout.writeSync(encoder.encode("\x1b[2J\x1b[H"));
-    
+
     // 显示标题
     console.log(`${message}\n`);
-    
+
     // 显示选项
     options.forEach((option, index) => {
       if (index === selectedIndex) {
@@ -221,7 +232,7 @@ async function interactiveSelect(
         console.log(`    ${option}`);
       }
     });
-    
+
     console.log(`\n使用 ↑↓ 键选择，Enter 确认`);
   };
 
@@ -229,38 +240,42 @@ async function interactiveSelect(
   try {
     // 隐藏光标
     Deno.stdout.writeSync(encoder.encode("\x1b[?25l"));
-    
+
     // 启用原始模式
     const stdin = Deno.stdin;
     const isRaw = Deno.stdin.setRaw !== undefined;
-    
+
     if (isRaw) {
       Deno.stdin.setRaw(true, { cbreak: true });
     }
-    
+
     renderMenu();
 
     while (true) {
       const buf = new Uint8Array(10);
       const n = await stdin.read(buf);
-      
+
       if (n === null || n === 0) {
         continue;
       }
 
       const bytes = buf.subarray(0, n);
-      
+
       // 处理方向键（ANSI 转义序列）
       // 上箭头: \x1b[A 或 \x1bOA
       // 下箭头: \x1b[B 或 \x1bOB
       if (bytes[0] === 0x1b && bytes[1] === 0x5b) {
         if (bytes[2] === 0x41) {
           // 上箭头
-          selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : options.length - 1;
+          selectedIndex = selectedIndex > 0
+            ? selectedIndex - 1
+            : options.length - 1;
           renderMenu();
         } else if (bytes[2] === 0x42) {
           // 下箭头
-          selectedIndex = selectedIndex < options.length - 1 ? selectedIndex + 1 : 0;
+          selectedIndex = selectedIndex < options.length - 1
+            ? selectedIndex + 1
+            : 0;
           renderMenu();
         }
       } else if (bytes[0] === 0x0d || bytes[0] === 0x0a) {
@@ -276,31 +291,35 @@ async function interactiveSelect(
         Deno.exit(0);
       }
     }
-    
+
     // 恢复终端
     Deno.stdout.writeSync(encoder.encode("\x1b[?25h"));
     if (isRaw) {
       Deno.stdin.setRaw(false);
     }
-    
+
     // 清屏
     Deno.stdout.writeSync(encoder.encode("\x1b[2J\x1b[H"));
-    
+
     return selectedIndex;
   } catch (_err) {
     // 如果原始模式不支持，回退到普通选择
     console.log(message);
     options.forEach((option, index) => {
-      const defaultMark = index === defaultValue ? ' (默认)' : '';
+      const defaultMark = index === defaultValue ? " (默认)" : "";
       console.log(`  ${index + 1}. ${option}${defaultMark}`);
     });
-    const defaultPrompt = defaultValue >= 0 ? ` [默认: ${defaultValue + 1}]` : '';
-    const answer = await prompt(`请选择 (1-${options.length})${defaultPrompt}: `);
-    
-    if (!answer || answer.trim() === '') {
+    const defaultPrompt = defaultValue >= 0
+      ? ` [默认: ${defaultValue + 1}]`
+      : "";
+    const answer = await prompt(
+      `请选择 (1-${options.length})${defaultPrompt}: `,
+    );
+
+    if (!answer || answer.trim() === "") {
       return defaultValue;
     }
-    
+
     const index = parseInt(answer) - 1;
     if (index >= 0 && index < options.length) {
       return index;
@@ -318,7 +337,7 @@ async function interactiveSelect(
 export async function createApp(
   projectName?: string,
   targetDir?: string,
-  frameworkUrlOverride?: string
+  frameworkUrlOverride?: string,
 ): Promise<void> {
   // 如果提供了框架 URL，使用它
   if (frameworkUrlOverride) {
@@ -329,19 +348,19 @@ export async function createApp(
     const url = `jsr:@dreamer/dweb@^${version}`;
     setFrameworkUrl(url);
   }
-  
+
   // 交互式输入项目名称（如果未提供）
-  if (!projectName || projectName.trim() === '') {
-    console.log('\n📦 创建新 DWeb 项目\n');
-    projectName = await prompt('请输入项目名称: ');
-  if (!projectName || projectName.trim() === '') {
-    throw new Error('项目名称不能为空');
+  if (!projectName || projectName.trim() === "") {
+    console.log("\n📦 创建新 DWeb 项目\n");
+    projectName = await prompt("请输入项目名称: ");
+    if (!projectName || projectName.trim() === "") {
+      throw new Error("项目名称不能为空");
     }
   }
 
   // 验证项目名称（只允许字母、数字、连字符和下划线）
   if (!/^[a-zA-Z0-9_-]+$/.test(projectName)) {
-    throw new Error('项目名称只能包含字母、数字、连字符和下划线');
+    throw new Error("项目名称只能包含字母、数字、连字符和下划线");
   }
 
   const projectDir = targetDir || path.join(Deno.cwd(), projectName);
@@ -362,69 +381,80 @@ export async function createApp(
 
   // 交互式选择：单应用还是多应用（默认单应用）
   const appMode = await select(
-    '\n请选择应用模式:',
-    ['单应用模式', '多应用模式'],
-    0 // 默认选择第一个（单应用模式）
+    "\n请选择应用模式:",
+    ["单应用模式", "多应用模式"],
+    0, // 默认选择第一个（单应用模式）
   );
-  const isMultiApp = appMode === '多应用模式';
-  
+  const isMultiApp = appMode === "多应用模式";
+
   // 如果是多应用模式，先收集应用名称
   const appNames: string[] = [];
   if (isMultiApp) {
-    console.log('\n📝 请输入应用名称（至少一个，输入空行结束）:');
-    let appName = '';
+    console.log("\n📝 请输入应用名称（至少一个，输入空行结束）:");
+    let appName = "";
     let index = 1;
     while (true) {
       appName = await prompt(`应用 ${index} 名称: `);
-      if (!appName || appName.trim() === '') {
+      if (!appName || appName.trim() === "") {
         if (appNames.length === 0) {
-          console.log('❌ 至少需要输入一个应用名称');
+          console.log("❌ 至少需要输入一个应用名称");
           continue;
         }
         break;
       }
       // 验证应用名称
       if (!/^[a-zA-Z0-9_-]+$/.test(appName)) {
-        console.log('❌ 应用名称只能包含字母、数字、连字符和下划线');
+        console.log("❌ 应用名称只能包含字母、数字、连字符和下划线");
         continue;
       }
       appNames.push(appName.trim());
       index++;
     }
   }
-  
+
   // 交互式选择：Tailwind CSS 版本（默认 V4）
   const tailwindVersion = await select(
-    '\n请选择 Tailwind CSS 版本:',
-    ['V4 (推荐)', 'V3'],
-    0 // 默认选择第一个（V4）
+    "\n请选择 Tailwind CSS 版本:",
+    ["V4 (推荐)", "V3"],
+    0, // 默认选择第一个（V4）
   );
-  const useTailwindV4 = tailwindVersion === 'V4 (推荐)';
-  
+  const useTailwindV4 = tailwindVersion === "V4 (推荐)";
+
   // 交互式选择：渲染模式（默认 hybrid）
   const renderModeIndex = await interactiveSelect(
-    '\n请选择渲染模式:',
-    ['SSR (服务端渲染)', 'CSR (客户端渲染)', 'Hybrid (混合渲染)'],
-    2 // 默认选择第三个（Hybrid）
+    "\n请选择渲染模式:",
+    ["SSR (服务端渲染)", "CSR (客户端渲染)", "Hybrid (混合渲染)"],
+    2, // 默认选择第三个（Hybrid）
   );
-  const renderMode = ['SSR (服务端渲染)', 'CSR (客户端渲染)', 'Hybrid (混合渲染)'][renderModeIndex];
-  const renderModeValue = renderMode === 'SSR (服务端渲染)' ? 'ssr' 
-    : renderMode === 'CSR (客户端渲染)' ? 'csr' 
-    : 'hybrid';
-  
+  const renderMode = [
+    "SSR (服务端渲染)",
+    "CSR (客户端渲染)",
+    "Hybrid (混合渲染)",
+  ][renderModeIndex];
+  const renderModeValue = renderMode === "SSR (服务端渲染)"
+    ? "ssr"
+    : renderMode === "CSR (客户端渲染)"
+    ? "csr"
+    : "hybrid";
+
   // 交互式选择：API 路由模式（默认 method）
   const apiModeIndex = await interactiveSelect(
-    '\n请选择 API 路由模式:',
-    ['Method (方法路由，默认使用中划线格式，例如 /api/users/get-user)', 'REST (RESTful API，基于 HTTP 方法，例如 GET /api/users)'],
-    0 // 默认选择第一个（Method）
+    "\n请选择 API 路由模式:",
+    [
+      "Method (方法路由，默认使用中划线格式，例如 /api/users/get-user)",
+      "REST (RESTful API，基于 HTTP 方法，例如 GET /api/users)",
+    ],
+    0, // 默认选择第一个（Method）
   );
-  const apiMode = apiModeIndex === 0 ? 'method' : 'restful';
-  const apiModeDisplay = apiModeIndex === 0 ? 'Method (方法路由)' : 'REST (RESTful API)';
-  
+  const apiMode = apiModeIndex === 0 ? "method" : "restful";
+  const apiModeDisplay = apiModeIndex === 0
+    ? "Method (方法路由)"
+    : "REST (RESTful API)";
+
   console.log(`\n📦 正在创建项目: ${projectName}`);
   console.log(`📁 项目目录: ${projectDir}`);
   if (isMultiApp) {
-    console.log(`📦 应用列表: ${appNames.join(', ')}`);
+    console.log(`📦 应用列表: ${appNames.join(", ")}`);
   }
   console.log(`🎨 Tailwind CSS: ${tailwindVersion}`);
   console.log(`🎭 渲染模式: ${renderMode}`);
@@ -435,31 +465,45 @@ export async function createApp(
 
   // 创建子目录（仅单应用模式在根目录创建）
   if (!isMultiApp) {
-  await ensureDir(path.join(projectDir, 'routes'));
-  await ensureDir(path.join(projectDir, 'assets'));
+    await ensureDir(path.join(projectDir, "routes"));
+    await ensureDir(path.join(projectDir, "assets"));
   }
 
   // 生成配置文件
-  await generateConfigFile(projectDir, projectName, isMultiApp, appNames, useTailwindV4, renderModeValue, apiMode);
-  
+  await generateConfigFile(
+    projectDir,
+    projectName,
+    isMultiApp,
+    appNames,
+    useTailwindV4,
+    renderModeValue,
+    apiMode,
+  );
+
   // 生成 deno.json
   await generateDenoJson(projectDir, useTailwindV4, isMultiApp, appNames);
-  
+
   // 生成示例路由和组件
-  await generateExampleRoutes(projectDir, isMultiApp, appNames, apiMode, useTailwindV4);
-  
+  await generateExampleRoutes(
+    projectDir,
+    isMultiApp,
+    appNames,
+    apiMode,
+    useTailwindV4,
+  );
+
   // 生成 stores 目录和示例
   await generateStores(projectDir, isMultiApp, appNames);
-  
+
   // 生成静态文件
   await generateStaticFiles(projectDir, isMultiApp, appNames, useTailwindV4);
-  
+
   // 生成 main.ts
   await generateMainTs(projectDir, isMultiApp, appNames);
-  
+
   // 生成 README
   await generateREADME(projectDir, projectName);
-  
+
   // 生成 .gitignore
   await generateGitignore(projectDir);
 
@@ -494,11 +538,11 @@ async function generateConfigFile(
   appNames: string[],
   useTailwindV4: boolean,
   renderMode: string,
-  apiMode: string
+  apiMode: string,
 ): Promise<void> {
   // 根据模式生成不同的配置
   let configContent: string;
-  
+
   if (isMultiApp) {
     // 多应用模式配置
     const appsConfig = appNames.map((appName, index) => {
@@ -526,7 +570,7 @@ async function generateConfigFile(
       // },
       plugins: [
         tailwind({
-          version: '${useTailwindV4 ? 'v4' : 'v3'}',
+          version: '${useTailwindV4 ? "v4" : "v3"}',
           cssPath: '${appName}/assets/tailwind.css',
           optimize: true,
         }),
@@ -548,8 +592,8 @@ async function generateConfigFile(
         outDir: 'dist'
       },
     }`;
-    }).join(',\n');
-    
+    }).join(",\n");
+
     configContent = `/**
  * DWeb 框架配置文件
  * 项目: ${projectName}
@@ -649,9 +693,9 @@ const config: AppConfig = {
   
   // 插件配置
   plugins: [
-    // Tailwind CSS ${useTailwindV4 ? 'v4' : 'v3'} 插件
+    // Tailwind CSS ${useTailwindV4 ? "v4" : "v3"} 插件
     tailwind({
-      version: '${useTailwindV4 ? 'v4' : 'v3'}',
+      version: '${useTailwindV4 ? "v4" : "v3"}',
       cssPath: 'assets/tailwind.css', // 指定主 CSS 文件路径
       optimize: true, // 生产环境优化
     }),
@@ -681,7 +725,7 @@ export default config;
 `;
   }
 
-  const configPath = path.join(projectDir, 'dweb.config.ts');
+  const configPath = path.join(projectDir, "dweb.config.ts");
   await Deno.writeTextFile(configPath, configContent);
   console.log(`✅ 已创建: dweb.config.ts`);
 }
@@ -690,24 +734,34 @@ export default config;
  * 生成 deno.json 文件
  */
 async function generateDenoJson(
-  projectDir: string, 
+  projectDir: string,
   useTailwindV4: boolean,
   isMultiApp: boolean = false,
-  appNames: string[] = []
+  appNames: string[] = [],
 ): Promise<void> {
   const frameworkUrl = await getFrameworkUrl();
-  
+
   const denoJsonContent = `{
   "version": "1.0.0",
   "description": "A DWeb framework project",
   "tasks": {
-${isMultiApp ? [
-  ...appNames.map(appName => `    "dev:${appName}": "deno run -A @dreamer/dweb/cli dev:${appName}"`),
-  ...appNames.map(appName => `    "build:${appName}": "deno run -A @dreamer/dweb/cli build:${appName}"`),
-  ...appNames.map(appName => `    "start:${appName}": "deno run -A @dreamer/dweb/cli start:${appName}"`)
-].join(',\n') : `    "dev": "deno run -A @dreamer/dweb/cli dev",
+${
+    isMultiApp
+      ? [
+        ...appNames.map((appName) =>
+          `    "dev:${appName}": "deno run -A @dreamer/dweb/cli dev:${appName}"`
+        ),
+        ...appNames.map((appName) =>
+          `    "build:${appName}": "deno run -A @dreamer/dweb/cli build:${appName}"`
+        ),
+        ...appNames.map((appName) =>
+          `    "start:${appName}": "deno run -A @dreamer/dweb/cli start:${appName}"`
+        ),
+      ].join(",\n")
+      : `    "dev": "deno run -A @dreamer/dweb/cli dev",
     "build": "deno run -A @dreamer/dweb/cli build",
-    "start": "deno run -A @dreamer/dweb/cli start"`}
+    "start": "deno run -A @dreamer/dweb/cli start"`
+  }
   },
   "imports": {
     "@components/": "./components/",
@@ -717,12 +771,16 @@ ${isMultiApp ? [
     "preact": "npm:preact@10.28.0",
     "preact/hooks": "npm:preact@10.28.0/hooks",
     "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
-    "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact"${useTailwindV4 ? `,
+    "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact"${
+    useTailwindV4
+      ? `,
     "tailwindcss": "npm:tailwindcss@^4.1.10",
-    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@^4.1.10"` : `,
+    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@^4.1.10"`
+      : `,
     "tailwindcss": "npm:tailwindcss@^3.4.0",
     "autoprefixer": "npm:autoprefixer@^10.4.20",
-    "postcss": "npm:postcss@^8.4.47"`}
+    "postcss": "npm:postcss@^8.4.47"`
+  }
   },
   "nodeModulesDir": "auto",
   "compilerOptions": {
@@ -732,7 +790,7 @@ ${isMultiApp ? [
 }
 `;
 
-  const denoJsonPath = path.join(projectDir, 'deno.json');
+  const denoJsonPath = path.join(projectDir, "deno.json");
   await Deno.writeTextFile(denoJsonPath, denoJsonContent);
   console.log(`✅ 已创建: deno.json`);
 }
@@ -745,46 +803,46 @@ async function generateExampleRoutes(
   isMultiApp: boolean,
   appNames: string[],
   apiMode: string,
-  useTailwindV4: boolean
+  useTailwindV4: boolean,
 ): Promise<void> {
   if (isMultiApp) {
     // 多应用模式：为每个应用生成路由和组件
     for (const appName of appNames) {
-      const appRoutesDir = path.join(projectDir, appName, 'routes');
-      const appComponentsDir = path.join(projectDir, appName, 'components');
-      
+      const appRoutesDir = path.join(projectDir, appName, "routes");
+      const appComponentsDir = path.join(projectDir, appName, "components");
+
       await ensureDir(appRoutesDir);
       await ensureDir(appComponentsDir);
-      
-    // 生成示例路由
-    await generateRoutesForApp(appRoutesDir, appName, apiMode, useTailwindV4);
-    
-    // 生成示例组件
-    await generateComponentsForApp(appComponentsDir, appName);
-    
-    // 生成示例 API
-    await generateApiForApp(appRoutesDir, appName, apiMode);
+
+      // 生成示例路由
+      await generateRoutesForApp(appRoutesDir, appName, apiMode, useTailwindV4);
+
+      // 生成示例组件
+      await generateComponentsForApp(appComponentsDir, appName);
+
+      // 生成示例 API
+      await generateApiForApp(appRoutesDir, appName, apiMode);
     }
-    
+
     // 为多应用项目创建 common 目录结构
     await generateCommonDirectory(projectDir);
   } else {
     // 单应用模式：在项目根目录生成
-  const routesDir = path.join(projectDir, 'routes');
-    const componentsDir = path.join(projectDir, 'components');
-    
+    const routesDir = path.join(projectDir, "routes");
+    const componentsDir = path.join(projectDir, "components");
+
     await ensureDir(routesDir);
     await ensureDir(componentsDir);
-    
+
     // 获取项目名称（从目录路径提取）
     const projectName = path.basename(projectDir);
-    
+
     // 生成示例路由
     await generateRoutesForApp(routesDir, projectName, apiMode, useTailwindV4);
-    
+
     // 生成示例组件
     await generateComponentsForApp(componentsDir, projectName);
-    
+
     // 生成示例 API
     await generateApiForApp(routesDir, projectName, apiMode);
   }
@@ -793,7 +851,12 @@ async function generateExampleRoutes(
 /**
  * 为单个应用生成路由文件
  */
-async function generateRoutesForApp(routesDir: string, appName: string, apiMode: string, useTailwindV4: boolean): Promise<void> {
+async function generateRoutesForApp(
+  routesDir: string,
+  appName: string,
+  apiMode: string,
+  useTailwindV4: boolean,
+): Promise<void> {
   // 获取框架版本号
   const frameworkVersion = await getFrameworkVersion();
 
@@ -835,7 +898,7 @@ export default function App({ children }: AppProps) {
 }
 `;
 
-  await Deno.writeTextFile(path.join(routesDir, '_app.tsx'), appContent);
+  await Deno.writeTextFile(path.join(routesDir, "_app.tsx"), appContent);
   console.log(`✅ 已创建: ${routesDir}/_app.tsx`);
 
   // 生成 _layout.tsx（根布局组件）
@@ -875,11 +938,11 @@ export default function AppLayout({ children, data: _data, routePath }: LayoutPr
 }
 `;
 
-  await Deno.writeTextFile(path.join(routesDir, '_layout.tsx'), layoutContent);
+  await Deno.writeTextFile(path.join(routesDir, "_layout.tsx"), layoutContent);
   console.log(`✅ 已创建: ${routesDir}/_layout.tsx`);
 
   // 生成 config/menus.ts（菜单配置）
-  const configDir = path.join(path.dirname(routesDir), 'config');
+  const configDir = path.join(path.dirname(routesDir), "config");
   await ensureDir(configDir);
   const menusContent = `export const menus = [
   {
@@ -895,12 +958,12 @@ export default function AppLayout({ children, data: _data, routePath }: LayoutPr
 export default menus;
 `;
 
-  await Deno.writeTextFile(path.join(configDir, 'menus.ts'), menusContent);
+  await Deno.writeTextFile(path.join(configDir, "menus.ts"), menusContent);
   console.log(`✅ 已创建: ${configDir}/menus.ts`);
 
   // 生成 index.tsx（美化后的首页）
   // 根据 apiMode 生成不同的 API 调用代码
-  const apiCallCode = apiMode === 'restful' 
+  const apiCallCode = apiMode === "restful"
     ? `      // RESTful 模式：使用 GET 方法获取列表
       const response = await fetch('/api/examples', {
         method: 'GET',
@@ -915,7 +978,7 @@ export default menus;
           'Content-Type': 'application/json',
         },
       });`;
-  
+
   const indexContent = `/**
  * 首页
  * 展示应用的基本信息和快速开始指南
@@ -1110,7 +1173,9 @@ ${apiCallCode}
   return (
     <div className="space-y-0">
       {/* Hero 区域 */}
-      <div className="${useTailwindV4 ? 'bg-linear-to-r' : 'bg-gradient-to-r'} from-indigo-600 to-purple-600 py-20">
+      <div className="${
+    useTailwindV4 ? "bg-linear-to-r" : "bg-gradient-to-r"
+  } from-indigo-600 to-purple-600 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
             {pageData.message}
@@ -1402,7 +1467,7 @@ ${apiCallCode}
 }
 `;
 
-  await Deno.writeTextFile(path.join(routesDir, 'index.tsx'), indexContent);
+  await Deno.writeTextFile(path.join(routesDir, "index.tsx"), indexContent);
   console.log(`✅ 已创建: ${routesDir}/index.tsx`);
 
   // 生成 about.tsx（美化后的关于页面）
@@ -1474,7 +1539,9 @@ export default function About() {
   return (
     <div className="space-y-0">
       {/* 页面标题 */}
-      <div className="${useTailwindV4 ? 'bg-linear-to-r' : 'bg-gradient-to-r'} from-blue-600 to-indigo-600 py-16">
+      <div className="${
+    useTailwindV4 ? "bg-linear-to-r" : "bg-gradient-to-r"
+  } from-blue-600 to-indigo-600 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
             关于
@@ -1547,7 +1614,7 @@ export default function About() {
 }
 `;
 
-  await Deno.writeTextFile(path.join(routesDir, 'about.tsx'), aboutContent);
+  await Deno.writeTextFile(path.join(routesDir, "about.tsx"), aboutContent);
   console.log(`✅ 已创建: ${routesDir}/about.tsx`);
 
   // 生成 _404.tsx（美化后的 404 页面）
@@ -1589,7 +1656,7 @@ export default function NotFound() {
 }
 `;
 
-  await Deno.writeTextFile(path.join(routesDir, '_404.tsx'), notFoundContent);
+  await Deno.writeTextFile(path.join(routesDir, "_404.tsx"), notFoundContent);
   console.log(`✅ 已创建: ${routesDir}/_404.tsx`);
 }
 
@@ -1599,18 +1666,18 @@ export default function NotFound() {
 async function generateStores(
   projectDir: string,
   isMultiApp: boolean,
-  appNames: string[]
+  appNames: string[],
 ): Promise<void> {
   if (isMultiApp) {
     // 多应用模式：为每个应用生成 stores 目录
     for (const appName of appNames) {
-      const appStoresDir = path.join(projectDir, appName, 'stores');
+      const appStoresDir = path.join(projectDir, appName, "stores");
       await ensureDir(appStoresDir);
       await generateStoreExample(appStoresDir, appName);
     }
   } else {
     // 单应用模式：在项目根目录生成
-    const storesDir = path.join(projectDir, 'stores');
+    const storesDir = path.join(projectDir, "stores");
     await ensureDir(storesDir);
     const projectName = path.basename(projectDir);
     await generateStoreExample(storesDir, projectName);
@@ -1620,7 +1687,10 @@ async function generateStores(
 /**
  * 生成示例 store 文件
  */
-async function generateStoreExample(storesDir: string, _appName: string): Promise<void> {
+async function generateStoreExample(
+  storesDir: string,
+  _appName: string,
+): Promise<void> {
   const storeContent = `/**
  * Example Store
  * 使用 defineStore 定义，声明式 API
@@ -1673,14 +1743,17 @@ export const exampleStore = defineStore('example', {
 });
 `;
 
-  await Deno.writeTextFile(path.join(storesDir, 'example.ts'), storeContent);
+  await Deno.writeTextFile(path.join(storesDir, "example.ts"), storeContent);
   console.log(`✅ 已创建: ${storesDir}/example.ts`);
 }
 
 /**
  * 为单个应用生成组件文件
  */
-async function generateComponentsForApp(componentsDir: string, _appName: string): Promise<void> {
+async function generateComponentsForApp(
+  componentsDir: string,
+  _appName: string,
+): Promise<void> {
   // 生成示例组件 Button.tsx（美化后的按钮组件）
   const buttonContent = `/**
  * 按钮组件
@@ -1778,7 +1851,10 @@ export default function Button({
 }
 `;
 
-  await Deno.writeTextFile(path.join(componentsDir, 'Button.tsx'), buttonContent);
+  await Deno.writeTextFile(
+    path.join(componentsDir, "Button.tsx"),
+    buttonContent,
+  );
   console.log(`✅ 已创建: ${componentsDir}/Button.tsx`);
 
   // 生成 Navbar.tsx（导航栏组件）
@@ -1886,21 +1962,28 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
 }
 `;
 
-  await Deno.writeTextFile(path.join(componentsDir, 'Navbar.tsx'), navbarContent);
+  await Deno.writeTextFile(
+    path.join(componentsDir, "Navbar.tsx"),
+    navbarContent,
+  );
   console.log(`✅ 已创建: ${componentsDir}/Navbar.tsx`);
 }
 
 /**
  * 为单个应用生成 API 文件
  */
-async function generateApiForApp(routesDir: string, _appName: string, apiMode: string): Promise<void> {
-  const apiDir = path.join(routesDir, 'api');
+async function generateApiForApp(
+  routesDir: string,
+  _appName: string,
+  apiMode: string,
+): Promise<void> {
+  const apiDir = path.join(routesDir, "api");
   await ensureDir(apiDir);
-  
+
   // 根据 apiMode 生成不同的 API 文件
   let apiContent: string;
-  
-  if (apiMode === 'restful') {
+
+  if (apiMode === "restful") {
     // RESTful 模式：生成 RESTful API
     apiContent = `/**
  * 示例 RESTful API 路由
@@ -2115,7 +2198,7 @@ export function getData(_req: Request) {
 `;
   }
 
-  await Deno.writeTextFile(path.join(apiDir, 'examples.ts'), apiContent);
+  await Deno.writeTextFile(path.join(apiDir, "examples.ts"), apiContent);
   console.log(`✅ 已创建: ${apiDir}/examples.ts`);
 }
 
@@ -2123,15 +2206,15 @@ export function getData(_req: Request) {
  * 为多应用项目生成 common 目录结构
  */
 async function generateCommonDirectory(projectDir: string): Promise<void> {
-  const commonDir = path.join(projectDir, 'common');
+  const commonDir = path.join(projectDir, "common");
   await ensureDir(commonDir);
-  
+
   // 创建子目录
-  const subDirs = ['config', 'utils', 'components', 'models', 'hooks'];
+  const subDirs = ["config", "utils", "components", "models", "hooks"];
   for (const subDir of subDirs) {
     await ensureDir(path.join(commonDir, subDir));
   }
-  
+
   // 生成 config/index.ts
   const configContent = `/**
  * 公共配置文件
@@ -2146,9 +2229,12 @@ export const commonConfig = {
 
 export default commonConfig;
 `;
-  await Deno.writeTextFile(path.join(commonDir, 'config', 'index.ts'), configContent);
+  await Deno.writeTextFile(
+    path.join(commonDir, "config", "index.ts"),
+    configContent,
+  );
   console.log(`✅ 已创建: common/config/index.ts`);
-  
+
   // 生成 utils/index.ts
   const utilsContent = `/**
  * 公共工具函数
@@ -2174,9 +2260,12 @@ export function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 `;
-  await Deno.writeTextFile(path.join(commonDir, 'utils', 'index.ts'), utilsContent);
+  await Deno.writeTextFile(
+    path.join(commonDir, "utils", "index.ts"),
+    utilsContent,
+  );
   console.log(`✅ 已创建: common/utils/index.ts`);
-  
+
   // 生成 components/Button.tsx
   const commonButtonContent = `/**
  * 公共按钮组件
@@ -2204,9 +2293,12 @@ export default function CommonButton({
   );
 }
 `;
-  await Deno.writeTextFile(path.join(commonDir, 'components', 'Button.tsx'), commonButtonContent);
+  await Deno.writeTextFile(
+    path.join(commonDir, "components", "Button.tsx"),
+    commonButtonContent,
+  );
   console.log(`✅ 已创建: common/components/Button.tsx`);
-  
+
   // 生成 models/User.ts
   const userModelContent = `/**
  * 用户模型
@@ -2229,9 +2321,12 @@ export function createUser(data: Partial<User>): User {
   };
 }
 `;
-  await Deno.writeTextFile(path.join(commonDir, 'models', 'User.ts'), userModelContent);
+  await Deno.writeTextFile(
+    path.join(commonDir, "models", "User.ts"),
+    userModelContent,
+  );
   console.log(`✅ 已创建: common/models/User.ts`);
-  
+
   // 生成 hooks/useCounter.ts
   const counterHookContent = `import { useState } from 'preact/hooks';
 
@@ -2249,7 +2344,10 @@ export function useCounter(initialValue: number = 0) {
   return { count, increment, decrement, reset };
 }
 `;
-  await Deno.writeTextFile(path.join(commonDir, 'hooks', 'useCounter.ts'), counterHookContent);
+  await Deno.writeTextFile(
+    path.join(commonDir, "hooks", "useCounter.ts"),
+    counterHookContent,
+  );
   console.log(`✅ 已创建: common/hooks/useCounter.ts`);
 }
 
@@ -2260,14 +2358,14 @@ async function generateStaticFiles(
   projectDir: string,
   isMultiApp: boolean,
   appNames: string[],
-  useTailwindV4: boolean
+  useTailwindV4: boolean,
 ): Promise<void> {
   if (isMultiApp) {
     // 多应用模式：为每个应用创建目录和文件
     for (const appName of appNames) {
-      const appAssetsDir = path.join(projectDir, appName, 'assets');
+      const appAssetsDir = path.join(projectDir, appName, "assets");
       await ensureDir(appAssetsDir);
-      
+
       // 生成 tailwind.css
       const styleContent = useTailwindV4
         ? `/* Tailwind CSS v4 */
@@ -2288,26 +2386,29 @@ async function generateStaticFiles(
 @tailwind utilities;
 `;
 
-      await Deno.writeTextFile(path.join(appAssetsDir, 'tailwind.css'), styleContent);
+      await Deno.writeTextFile(
+        path.join(appAssetsDir, "tailwind.css"),
+        styleContent,
+      );
       console.log(`✅ 已创建: ${appName}/assets/tailwind.css`);
-      
+
       // 为每个应用创建 routes 目录
-      const appRoutesDir = path.join(projectDir, appName, 'routes');
+      const appRoutesDir = path.join(projectDir, appName, "routes");
       await ensureDir(appRoutesDir);
     }
-    
+
     // Tailwind CSS v3 需要配置文件（多应用模式：所有应用共享一个配置文件）
     if (!useTailwindV4) {
-      const contentPaths = appNames.flatMap(appName => [
+      const contentPaths = appNames.flatMap((appName) => [
         `    './${appName}/routes/**/*.{tsx,ts,jsx,js}'`,
         `    './${appName}/components/**/*.{tsx,ts,jsx,js}'`,
       ]);
       contentPaths.push(`    './common/**/*.{tsx,ts,jsx,js}'`);
-      
+
       const tailwindConfigContent = `/** @type {import('tailwindcss').Config} */
 export default {
   content: [
-${contentPaths.join(',\n')}
+${contentPaths.join(",\n")}
   ],
   theme: {
     extend: {},
@@ -2315,12 +2416,15 @@ ${contentPaths.join(',\n')}
   plugins: [],
 };
 `;
-      await Deno.writeTextFile(path.join(projectDir, 'tailwind.config.ts'), tailwindConfigContent);
+      await Deno.writeTextFile(
+        path.join(projectDir, "tailwind.config.ts"),
+        tailwindConfigContent,
+      );
       console.log(`✅ 已创建: tailwind.config.ts`);
     }
   } else {
     // 单应用模式：在项目根目录创建
-  const assetsDir = path.join(projectDir, 'assets');
+    const assetsDir = path.join(projectDir, "assets");
     await ensureDir(assetsDir);
 
     // 生成 tailwind.css
@@ -2343,12 +2447,15 @@ ${contentPaths.join(',\n')}
 @tailwind utilities;
 `;
 
-  await Deno.writeTextFile(path.join(assetsDir, 'tailwind.css'), styleContent);
-  console.log(`✅ 已创建: assets/tailwind.css`);
-  
-  // Tailwind CSS v3 需要配置文件
-  if (!useTailwindV4) {
-    const tailwindConfigContent = `/** @type {import('tailwindcss').Config} */
+    await Deno.writeTextFile(
+      path.join(assetsDir, "tailwind.css"),
+      styleContent,
+    );
+    console.log(`✅ 已创建: assets/tailwind.css`);
+
+    // Tailwind CSS v3 需要配置文件
+    if (!useTailwindV4) {
+      const tailwindConfigContent = `/** @type {import('tailwindcss').Config} */
 export default {
   content: [
     './routes/**/*.{tsx,ts,jsx,js}',
@@ -2361,16 +2468,22 @@ export default {
   plugins: [],
 };
 `;
-    await Deno.writeTextFile(path.join(projectDir, 'tailwind.config.ts'), tailwindConfigContent);
-    console.log(`✅ 已创建: tailwind.config.ts`);
-  }
+      await Deno.writeTextFile(
+        path.join(projectDir, "tailwind.config.ts"),
+        tailwindConfigContent,
+      );
+      console.log(`✅ 已创建: tailwind.config.ts`);
+    }
   }
 }
 
 /**
  * 生成 README.md
  */
-async function generateREADME(projectDir: string, projectName: string): Promise<void> {
+async function generateREADME(
+  projectDir: string,
+  projectName: string,
+): Promise<void> {
   const readmeContent = `# ${projectName}
 
 这是一个使用 DWeb 框架创建的项目。
@@ -2412,7 +2525,7 @@ ${projectName}/
 更多信息请参考 DWeb 框架文档。
 `;
 
-  await Deno.writeTextFile(path.join(projectDir, 'README.md'), readmeContent);
+  await Deno.writeTextFile(path.join(projectDir, "README.md"), readmeContent);
   console.log(`✅ 已创建: README.md`);
 }
 
@@ -2452,7 +2565,10 @@ logs/
 Thumbs.db
 `;
 
-  await Deno.writeTextFile(path.join(projectDir, '.gitignore'), gitignoreContent);
+  await Deno.writeTextFile(
+    path.join(projectDir, ".gitignore"),
+    gitignoreContent,
+  );
   console.log(`✅ 已创建: .gitignore`);
 }
 
@@ -2465,7 +2581,7 @@ Thumbs.db
 async function generateMainTs(
   projectDir: string,
   isMultiApp: boolean,
-  appNames: string[]
+  appNames: string[],
 ): Promise<void> {
   // main.ts 文件内容模板
   const mainTsContent = `/**
@@ -2521,15 +2637,14 @@ export default app;
   if (isMultiApp) {
     // 多应用模式：为每个应用生成 main.ts
     for (const appName of appNames) {
-      const appMainTsPath = path.join(projectDir, appName, 'main.ts');
+      const appMainTsPath = path.join(projectDir, appName, "main.ts");
       await Deno.writeTextFile(appMainTsPath, mainTsContent);
       console.log(`✅ 已创建: ${appName}/main.ts`);
     }
   } else {
     // 单应用模式：在项目根目录生成 main.ts
-    const mainTsPath = path.join(projectDir, 'main.ts');
+    const mainTsPath = path.join(projectDir, "main.ts");
     await Deno.writeTextFile(mainTsPath, mainTsContent);
     console.log(`✅ 已创建: main.ts`);
   }
 }
-

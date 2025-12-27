@@ -247,21 +247,23 @@ export function i18n(options: I18nPluginOptions): Plugin {
    */
   async function readFileContent(relativePath: string): Promise<string> {
     const currentUrl = new URL(import.meta.url);
-    
+
     // 如果是 HTTP/HTTPS URL（JSR 包），使用 fetch
-    if (currentUrl.protocol === 'http:' || currentUrl.protocol === 'https:') {
+    if (currentUrl.protocol === "http:" || currentUrl.protocol === "https:") {
       // 构建 JSR URL：将当前文件的 URL 替换为相对路径的文件
       const currentPath = currentUrl.pathname;
-      const currentDir = currentPath.substring(0, currentPath.lastIndexOf('/'));
+      const currentDir = currentPath.substring(0, currentPath.lastIndexOf("/"));
       const targetPath = `${currentDir}/${relativePath}`;
-      
+
       // 构建完整的 JSR URL
       const baseUrl = currentUrl.origin;
       const fullUrl = `${baseUrl}${targetPath}`;
-      
+
       const response = await fetch(fullUrl);
       if (!response.ok) {
-        throw new Error(`无法从 JSR 包读取文件: ${fullUrl} (${response.status})`);
+        throw new Error(
+          `无法从 JSR 包读取文件: ${fullUrl} (${response.status})`,
+        );
       }
       return await response.text();
     } else {
@@ -285,14 +287,17 @@ export function i18n(options: I18nPluginOptions): Plugin {
     try {
       // 读取浏览器端脚本文件（支持本地文件和 JSR 包）
       const browserScriptContent = await readFileContent("browser.ts");
-      
+
       // 获取文件路径用于 esbuild（用于错误报告）
       const currentUrl = new URL(import.meta.url);
       let browserScriptPath: string;
-      if (currentUrl.protocol === 'http:' || currentUrl.protocol === 'https:') {
+      if (currentUrl.protocol === "http:" || currentUrl.protocol === "https:") {
         // JSR 包：使用 URL 作为路径标识
         const currentPath = currentUrl.pathname;
-        const currentDir = currentPath.substring(0, currentPath.lastIndexOf('/'));
+        const currentDir = currentPath.substring(
+          0,
+          currentPath.lastIndexOf("/"),
+        );
         browserScriptPath = `${currentUrl.origin}${currentDir}/browser.ts`;
       } else {
         // 本地文件系统
@@ -327,10 +332,12 @@ export function i18n(options: I18nPluginOptions): Plugin {
     lang: string;
     translations: Record<string, unknown>;
   }): string {
-    return `initI18n(${JSON.stringify({
-      lang: config.lang,
-      translations: config.translations,
-    })});`;
+    return `initI18n(${
+      JSON.stringify({
+        lang: config.lang,
+        translations: config.translations,
+      })
+    });`;
   }
 
   return {
@@ -461,7 +468,8 @@ export function i18n(options: I18nPluginOptions): Plugin {
 
                   // 组合完整的脚本
                   const fullScript = `${clientScript}\n${initScript}`;
-                  const scriptTag = `<script data-type="dweb-i18n">${fullScript}</script>`;
+                  const scriptTag =
+                    `<script data-type="dweb-i18n">${fullScript}</script>`;
 
                   // 使用 lastIndexOf 确保在最后一个 </head> 之前注入
                   const lastHeadIndex = newHtml.lastIndexOf("</head>");

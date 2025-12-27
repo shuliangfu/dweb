@@ -130,7 +130,7 @@ export async function loadConfig(
     }
 
     // 验证配置
-		validateConfig(config);
+    validateConfig(config);
 
     // 单应用模式，直接返回（已经是 AppConfig）
     return { config: config as AppConfig, configDir: Deno.cwd() };
@@ -190,15 +190,15 @@ export async function isMultiAppMode(): Promise<boolean> {
     const configPath = await findConfigFile();
     if (!configPath) {
       return false;
-		}
-		
-		const configUrl = new URL(configPath, `file://${Deno.cwd()}/`).href;
+    }
 
-		// 动态导入配置文件
+    const configUrl = new URL(configPath, `file://${Deno.cwd()}/`).href;
+
+    // 动态导入配置文件
     const configModule = await import(configUrl);
-		
-		const config: DWebConfig = configModule.default || configModule;
-		
+
+    const config: DWebConfig = configModule.default || configModule;
+
     return "apps" in config && Array.isArray(config.apps);
   } catch {
     // 如果读取失败，返回 false（单应用模式）

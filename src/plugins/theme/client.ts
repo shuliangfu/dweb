@@ -45,7 +45,9 @@ export function getThemeManager(): ThemeManager | null {
  * 获取主题 Store 实例
  * @returns 主题 Store 实例，如果不在客户端环境则返回 null
  */
-export function getThemeStore(): (StoreInstance<ThemeStoreState> & ThemeStoreState) | null {
+export function getThemeStore():
+  | (StoreInstance<ThemeStoreState> & ThemeStoreState)
+  | null {
   if (typeof globalThis === "undefined" || !globalThis.window) {
     return null;
   }
@@ -100,7 +102,9 @@ export function getActualTheme(): "light" | "dark" | null {
  */
 export function setTheme(theme: ThemeMode): void {
   if (typeof globalThis === "undefined" || !globalThis.window) {
-    console.warn("[Theme Client] 无法设置主题：不在客户端环境或主题系统未初始化");
+    console.warn(
+      "[Theme Client] 无法设置主题：不在客户端环境或主题系统未初始化",
+    );
     return;
   }
 
@@ -108,9 +112,9 @@ export function setTheme(theme: ThemeMode): void {
     setTheme?: (theme: ThemeMode) => void;
   };
 
-	if (win.setTheme && typeof win.setTheme === "function") {
+  if (win.setTheme && typeof win.setTheme === "function") {
     win.setTheme(theme);
-		useThemeStore().setValue(theme as "light" | "dark");
+    useThemeStore().setValue(theme as "light" | "dark");
   } else {
     console.warn("[Theme Client] 无法设置主题：主题系统未初始化");
   }
@@ -122,7 +126,9 @@ export function setTheme(theme: ThemeMode): void {
  */
 export function toggleTheme(): "dark" | "light" | null {
   if (typeof globalThis === "undefined" || !globalThis.window) {
-    console.warn("[Theme Client] 无法切换主题：不在客户端环境或主题系统未初始化");
+    console.warn(
+      "[Theme Client] 无法切换主题：不在客户端环境或主题系统未初始化",
+    );
     return null;
   }
 
@@ -145,7 +151,9 @@ export function toggleTheme(): "dark" | "light" | null {
  */
 export function switchTheme(theme: ThemeMode): ThemeMode | null {
   if (typeof globalThis === "undefined" || !globalThis.window) {
-    console.warn("[Theme Client] 无法切换主题：不在客户端环境或主题系统未初始化");
+    console.warn(
+      "[Theme Client] 无法切换主题：不在客户端环境或主题系统未初始化",
+    );
     return null;
   }
 
@@ -224,4 +232,3 @@ export function getThemeMode(): ThemeMode | null {
   // 从 store 中获取 mode 属性
   return store.mode;
 }
-

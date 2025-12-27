@@ -77,18 +77,18 @@ let cachedClientScript: string | null = null;
  */
 async function readFileContent(relativePath: string): Promise<string> {
   const currentUrl = new URL(import.meta.url);
-  
+
   // 如果是 HTTP/HTTPS URL（JSR 包），使用 fetch
-  if (currentUrl.protocol === 'http:' || currentUrl.protocol === 'https:') {
+  if (currentUrl.protocol === "http:" || currentUrl.protocol === "https:") {
     // 构建 JSR URL：将当前文件的 URL 替换为相对路径的文件
     const currentPath = currentUrl.pathname;
-    const currentDir = currentPath.substring(0, currentPath.lastIndexOf('/'));
+    const currentDir = currentPath.substring(0, currentPath.lastIndexOf("/"));
     const targetPath = `${currentDir}/${relativePath}`;
-    
+
     // 构建完整的 JSR URL
     const baseUrl = currentUrl.origin;
     const fullUrl = `${baseUrl}${targetPath}`;
-    
+
     const response = await fetch(fullUrl);
     if (!response.ok) {
       throw new Error(`无法从 JSR 包读取文件: ${fullUrl} (${response.status})`);
@@ -115,14 +115,14 @@ async function compileClientScript(): Promise<string> {
   try {
     // 读取浏览器端脚本文件（支持本地文件和 JSR 包）
     const browserScriptContent = await readFileContent("browser.ts");
-    
+
     // 获取文件路径用于 esbuild（用于错误报告）
     const currentUrl = new URL(import.meta.url);
     let browserScriptPath: string;
-    if (currentUrl.protocol === 'http:' || currentUrl.protocol === 'https:') {
+    if (currentUrl.protocol === "http:" || currentUrl.protocol === "https:") {
       // JSR 包：使用 URL 作为路径标识
       const currentPath = currentUrl.pathname;
-      const currentDir = currentPath.substring(0, currentPath.lastIndexOf('/'));
+      const currentDir = currentPath.substring(0, currentPath.lastIndexOf("/"));
       browserScriptPath = `${currentUrl.origin}${currentDir}/browser.ts`;
     } else {
       // 本地文件系统
@@ -137,11 +137,11 @@ async function compileClientScript(): Promise<string> {
       browserScriptContent,
       browserScriptPath,
     );
-		
+
     // 压缩代码
     const minifiedCode = await minifyJavaScript(compiledCode);
     cachedClientScript = minifiedCode;
-		
+
     return minifiedCode;
   } catch (error) {
     console.error("[Store Plugin] 编译客户端脚本失败:", error);
@@ -159,12 +159,14 @@ function generateInitScript(config: {
   initialState: Record<string, unknown>;
   serverState?: Record<string, unknown>;
 }): string {
-  return `initStore(${JSON.stringify({
-    persist: config.persist,
-    storageKey: config.storageKey,
-    initialState: config.initialState,
-    serverState: config.serverState,
-  })});`;
+  return `initStore(${
+    JSON.stringify({
+      persist: config.persist,
+      storageKey: config.storageKey,
+      initialState: config.initialState,
+      serverState: config.serverState,
+    })
+  });`;
 }
 
 /**
@@ -175,7 +177,7 @@ export function store(options: StorePluginOptions = {}): Plugin {
   const persist = config.persist !== false;
   const storageKey = config.storageKey || "dweb-store";
   const enableServer = config.enableServer !== false;
-  
+
   // 如果用户提供了 initialState，使用用户的；否则自动从注册表收集
   const initialState = config.initialState || getAllStoreInitialStates();
 
@@ -204,7 +206,7 @@ export function store(options: StorePluginOptions = {}): Plugin {
       try {
         const cwd = Deno.cwd();
         const storesPath = path.resolve(cwd, "stores", "index.ts");
-        
+
         // 检查文件是否存在
         try {
           await Deno.stat(storesPath);
@@ -221,7 +223,10 @@ export function store(options: StorePluginOptions = {}): Plugin {
         // 不影响插件正常工作
         // 只在开发环境输出警告
         if (!(app as any).isProduction) {
-          console.debug("[Store Plugin] 自动导入 stores/index.ts 失败（这是正常的，如果项目没有使用 stores）:", error);
+          console.debug(
+            "[Store Plugin] 自动导入 stores/index.ts 失败（这是正常的，如果项目没有使用 stores）:",
+            error,
+          );
         }
       }
     },
@@ -284,14 +289,14 @@ export function store(options: StorePluginOptions = {}): Plugin {
 
           // 组合完整的脚本
           const fullScript = `${clientScript}\n${initScript}`;
-					const scriptTag = `<script data-type="dweb-store">${fullScript}</script>`;
-					
+          const scriptTag =
+            `<script data-type="dweb-store">${fullScript}</script>`;
+
           // 使用 lastIndexOf 确保在最后一个 </head> 之前注入
-					const lastHeadIndex = html.lastIndexOf("</head>");
+          const lastHeadIndex = html.lastIndexOf("</head>");
 
           if (lastHeadIndex !== -1) {
-            const newHtml =
-              html.substring(0, lastHeadIndex) +
+            const newHtml = html.substring(0, lastHeadIndex) +
               `${scriptTag}\n` +
               html.substring(lastHeadIndex);
             res.body = newHtml;
@@ -308,5 +313,10 @@ export function store(options: StorePluginOptions = {}): Plugin {
 export type { Store, StorePluginOptions } from "./types.ts";
 
 // 导出 defineStore API
-export { defineStore, getStoreInitialState, getAllStoreInitialStates, clearStoreRegistry } from "./define-store.ts";
+export {
+  clearStoreRegistry,
+  defineStore,
+  getAllStoreInitialStates,
+  getStoreInitialState,
+} from "./define-store.ts";
 export type { StoreInstance, StoreOptions } from "./define-store.ts";

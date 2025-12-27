@@ -31,4 +31,3 @@ export interface Store<T = Record<string, unknown>> {
   /** 重置状态 */
   reset(): void;
 }
-

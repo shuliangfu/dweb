@@ -78,10 +78,10 @@ export class LRUCache<K, V> {
  */
 export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
-  wait: number
+  wait: number,
 ): (...args: Parameters<T>) => void {
   let timeout: number | null = null;
-  
+
   return function (this: unknown, ...args: Parameters<T>) {
     if (timeout !== null) {
       clearTimeout(timeout);
@@ -97,10 +97,10 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
  */
 export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
-  limit: number
+  limit: number,
 ): (...args: Parameters<T>) => void {
   let inThrottle: boolean = false;
-  
+
   return function (this: unknown, ...args: Parameters<T>) {
     if (!inThrottle) {
       func.apply(this, args);
@@ -118,16 +118,16 @@ export function throttle<T extends (...args: unknown[]) => unknown>(
 export async function batchProcess<T, R>(
   items: T[],
   processor: (item: T) => Promise<R> | R,
-  batchSize: number = 10
+  batchSize: number = 10,
 ): Promise<R[]> {
   const results: R[] = [];
-  
+
   for (let i = 0; i < items.length; i += batchSize) {
     const batch = items.slice(i, i + batchSize);
     const batchResults = await Promise.all(batch.map(processor));
     results.push(...batchResults);
   }
-  
+
   return results;
 }
 
@@ -140,7 +140,7 @@ export function getMemoryUsage(): {
   heapUsed: number;
   external: number;
 } {
-  if (typeof Deno !== 'undefined' && Deno.memoryUsage) {
+  if (typeof Deno !== "undefined" && Deno.memoryUsage) {
     return Deno.memoryUsage();
   }
   // 浏览器环境或 Deno 不可用时的降级处理
@@ -156,15 +156,14 @@ export function getMemoryUsage(): {
  * 格式化内存大小
  */
 export function formatMemorySize(bytes: number): string {
-  const units = ['B', 'KB', 'MB', 'GB'];
+  const units = ["B", "KB", "MB", "GB"];
   let size = bytes;
   let unitIndex = 0;
-  
+
   while (size >= 1024 && unitIndex < units.length - 1) {
     size /= 1024;
     unitIndex++;
   }
-  
+
   return `${size.toFixed(2)} ${units[unitIndex]}`;
 }
-

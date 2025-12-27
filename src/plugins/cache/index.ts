@@ -3,11 +3,11 @@
  * 提供内存、Redis 和文件缓存支持
  */
 
-import type { Plugin, AppLike } from '../../types/index.ts';
-import type { CachePluginOptions, CacheOptions, CacheConfig } from './types.ts';
-import * as path from '@std/path';
-import { ensureDir } from '@std/fs/ensure-dir';
-import { crypto } from '@std/crypto';
+import type { AppLike, Plugin } from "../../types/index.ts";
+import type { CacheConfig, CacheOptions, CachePluginOptions } from "./types.ts";
+import * as path from "@std/path";
+import { ensureDir } from "@std/fs/ensure-dir";
+import { crypto } from "@std/crypto";
 
 /**
  * 内存缓存实现（使用改进的 LRU 策略）
@@ -22,7 +22,7 @@ class MemoryCache {
   constructor(maxSize: number = 100 * 1024 * 1024, maxEntries: number = 1000) { // 默认 100MB, 1000 条目
     this.maxSize = maxSize;
     this.maxEntries = maxEntries;
-    
+
     // 定期清理过期项（每 5 分钟）
     this.cleanupInterval = setInterval(() => {
       this.cleanup();
@@ -50,7 +50,7 @@ class MemoryCache {
 
   async set(key: string, value: unknown, ttl: number = 0): Promise<void> {
     const expires = ttl > 0 ? Date.now() + ttl * 1000 : 0;
-    
+
     if (this.cache.has(key)) {
       // 更新现有项
       this.cache.set(key, { value, expires });
@@ -64,12 +64,12 @@ class MemoryCache {
           this.cache.delete(oldestKey);
         }
       }
-      
+
       this.cache.set(key, { value, expires });
       this.accessOrder.push(key);
     }
   }
-  
+
   private updateAccessOrder(key: string): void {
     const index = this.accessOrder.indexOf(key);
     if (index > -1) {
@@ -77,30 +77,30 @@ class MemoryCache {
     }
     this.accessOrder.push(key);
   }
-  
+
   private removeFromAccessOrder(key: string): void {
     const index = this.accessOrder.indexOf(key);
     if (index > -1) {
       this.accessOrder.splice(index, 1);
     }
   }
-  
+
   private cleanup(): void {
     const now = Date.now();
     const keysToDelete: string[] = [];
-    
+
     for (const [key, item] of this.cache.entries()) {
       if (item.expires > 0 && now > item.expires) {
         keysToDelete.push(key);
       }
     }
-    
+
     for (const key of keysToDelete) {
       this.cache.delete(key);
       this.removeFromAccessOrder(key);
     }
   }
-  
+
   destroy(): void {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
@@ -139,7 +139,7 @@ class MemoryCache {
 class FileCache {
   private cacheDir: string;
 
-  constructor(cacheDir: string = '.cache') {
+  constructor(cacheDir: string = ".cache") {
     this.cacheDir = cacheDir;
   }
 
@@ -158,9 +158,10 @@ class FileCache {
   private async hashKey(key: string): Promise<string> {
     const encoder = new TextEncoder();
     const data = encoder.encode(key);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
+    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")
+      .substring(0, 16);
   }
 
   /**
@@ -174,7 +175,7 @@ class FileCache {
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // Convert to 32bit integer
     }
-    return Math.abs(hash).toString(16).padStart(16, '0');
+    return Math.abs(hash).toString(16).padStart(16, "0");
   }
 
   /**
@@ -188,7 +189,7 @@ class FileCache {
   async get<T>(key: string): Promise<T | null> {
     try {
       const filePath = this.getCacheFilePathSync(key);
-      
+
       // 检查文件是否存在
       try {
         await Deno.stat(filePath);
@@ -236,7 +237,7 @@ class FileCache {
       // 写入文件
       await Deno.writeTextFile(filePath, JSON.stringify(data));
     } catch (error) {
-      console.error('[File Cache] 写入缓存失败:', error);
+      console.error("[File Cache] 写入缓存失败:", error);
       throw error;
     }
   }
@@ -254,7 +255,7 @@ class FileCache {
     try {
       // 删除缓存目录中的所有文件
       for await (const entry of Deno.readDir(this.cacheDir)) {
-        if (entry.isFile && entry.name.endsWith('.json')) {
+        if (entry.isFile && entry.name.endsWith(".json")) {
           try {
             await Deno.remove(path.join(this.cacheDir, entry.name));
           } catch {
@@ -271,16 +272,16 @@ class FileCache {
     try {
       const filePath = this.getCacheFilePathSync(key);
       await Deno.stat(filePath);
-      
+
       // 检查是否过期
       const content = await Deno.readTextFile(filePath);
       const data = JSON.parse(content);
-      
+
       if (data.expires > 0 && Date.now() > data.expires) {
         await Deno.remove(filePath);
         return false;
       }
-      
+
       return true;
     } catch {
       return false;
@@ -292,10 +293,17 @@ class FileCache {
  * Redis 缓存实现（简化版，需要实际 Redis 客户端）
  */
 class RedisCache {
-  private config: { host: string; port: number; password?: string; db?: number };
+  private config: {
+    host: string;
+    port: number;
+    password?: string;
+    db?: number;
+  };
   private client: unknown = null; // Redis 客户端（类型由 Redis 库定义）
 
-  constructor(config: { host: string; port: number; password?: string; db?: number }) {
+  constructor(
+    config: { host: string; port: number; password?: string; db?: number },
+  ) {
     this.config = config;
   }
 
@@ -303,7 +311,7 @@ class RedisCache {
     // 这里需要实际的 Redis 客户端实现
     // 例如使用 npm:redis 或 deno.land/x/redis
     // 为了简化，这里只提供接口
-    console.warn('[Cache Plugin] Redis 缓存需要安装 Redis 客户端库');
+    console.warn("[Cache Plugin] Redis 缓存需要安装 Redis 客户端库");
   }
 
   async get<T>(_key: string): Promise<T | null> {
@@ -353,18 +361,18 @@ export class CacheManager {
   private defaultTTL: number;
 
   constructor(config: CacheConfig = {}) {
-    const storeType = config?.store || 'memory';
+    const storeType = config?.store || "memory";
     const defaultTTL = config?.defaultTTL || 3600; // 默认 1 小时
-    const keyPrefix = config?.keyPrefix || 'cache:';
+    const keyPrefix = config?.keyPrefix || "cache:";
     const maxEntries = config?.maxEntries || 1000; // 最大条目数（减少内存占用）
 
-    if (storeType === 'redis') {
+    if (storeType === "redis") {
       if (!config?.redis) {
-        throw new Error('Redis 缓存需要配置 redis 选项');
+        throw new Error("Redis 缓存需要配置 redis 选项");
       }
       this.store = new RedisCache(config.redis);
-    } else if (storeType === 'file') {
-      const cacheDir = config?.cacheDir || '.cache';
+    } else if (storeType === "file") {
+      const cacheDir = config?.cacheDir || ".cache";
       this.store = new FileCache(cacheDir);
     } else {
       // 内存缓存：使用改进的 LRU 策略，减少内存占用
@@ -386,7 +394,11 @@ export class CacheManager {
     return await this.store.get<T>(this.getKey(key));
   }
 
-  async set(key: string, value: unknown, options?: CacheOptions): Promise<void> {
+  async set(
+    key: string,
+    value: unknown,
+    options?: CacheOptions,
+  ): Promise<void> {
     const ttl = options?.ttl ?? this.defaultTTL;
     await this.store.set(this.getKey(key), value, ttl);
   }
@@ -409,7 +421,7 @@ export class CacheManager {
   async getOrSet<T>(
     key: string,
     fn: () => Promise<T> | T,
-    options?: CacheOptions
+    options?: CacheOptions,
   ): Promise<T> {
     const cached = await this.get<T>(key, options);
     if (cached !== null) {
@@ -425,7 +437,7 @@ export class CacheManager {
    * 销毁缓存管理器，清理所有资源
    */
   destroy(): void {
-    if (this.store && typeof (this.store as any).destroy === 'function') {
+    if (this.store && typeof (this.store as any).destroy === "function") {
       (this.store as any).destroy();
     }
   }
@@ -438,7 +450,7 @@ export function cache(options: CachePluginOptions = {}): Plugin {
   let cacheManager: CacheManager | null = null;
 
   return {
-    name: 'cache',
+    name: "cache",
     config: options as unknown as Record<string, unknown>,
 
     /**
@@ -449,14 +461,22 @@ export function cache(options: CachePluginOptions = {}): Plugin {
         cacheManager = new CacheManager(options.config);
         // 将缓存管理器存储到 app 中，供其他代码使用
         (app as any).cache = cacheManager;
-        console.log(`✅ [Cache Plugin] 缓存初始化成功 (${options.config?.store || 'memory'})`);
+        console.log(
+          `✅ [Cache Plugin] 缓存初始化成功 (${
+            options.config?.store || "memory"
+          })`,
+        );
       } catch (error) {
-        console.error('❌ [Cache Plugin] 缓存初始化失败:', error);
+        console.error("❌ [Cache Plugin] 缓存初始化失败:", error);
       }
     },
   };
 }
 
 // 导出类型和类
-export type { CachePluginOptions, CacheConfig, CacheStore, CacheOptions } from './types.ts';
-
+export type {
+  CacheConfig,
+  CacheOptions,
+  CachePluginOptions,
+  CacheStore,
+} from "./types.ts";

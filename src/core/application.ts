@@ -1,41 +1,54 @@
 /**
  * 应用核心类模块
  * 作为框架的统一入口，管理所有组件和服务
- * 
+ *
  * @module core/application
  */
 
-import type { AppConfig, Middleware, MiddlewareConfig, Plugin, Request, Response, Session } from '../types/index.ts';
-import { Server } from './server.ts';
-import { Router } from './router.ts';
-import { RouteHandler } from './route-handler.ts';
-import { MiddlewareManager } from './middleware.ts';
-import { PluginManager } from './plugin.ts';
-import { ServiceContainer, ServiceLifetime, type ServiceToken, type ServiceFactory } from './service-container.ts';
-import { ConfigManager } from './config-manager.ts';
-import { ApplicationContext } from './application-context.ts';
-import { LifecycleManager, LifecyclePhase } from './lifecycle-manager.ts';
-import { CookieManager } from '../features/cookie.ts';
-import { SessionManager } from '../features/session.ts';
-import { normalizeRouteConfig } from './config.ts';
-import { RenderAdapterManager } from './render/manager.ts';
-import { PreactRenderAdapter } from './render/preact.ts';
-import type { RenderAdapter, RenderEngine } from './render/adapter.ts';
+import type {
+  AppConfig,
+  Middleware,
+  MiddlewareConfig,
+  Plugin,
+  Request,
+  Response,
+  Session,
+} from "../types/index.ts";
+import { Server } from "./server.ts";
+import { Router } from "./router.ts";
+import { RouteHandler } from "./route-handler.ts";
+import { MiddlewareManager } from "./middleware.ts";
+import { PluginManager } from "./plugin.ts";
+import {
+  ServiceContainer,
+  type ServiceFactory,
+  ServiceLifetime,
+  type ServiceToken,
+} from "./service-container.ts";
+import { ConfigManager } from "./config-manager.ts";
+import { ApplicationContext } from "./application-context.ts";
+import { LifecycleManager, LifecyclePhase } from "./lifecycle-manager.ts";
+import { CookieManager } from "../features/cookie.ts";
+import { SessionManager } from "../features/session.ts";
+import { normalizeRouteConfig } from "./config.ts";
+import { RenderAdapterManager } from "./render/manager.ts";
+import { PreactRenderAdapter } from "./render/preact.ts";
+import type { RenderAdapter, RenderEngine } from "./render/adapter.ts";
 
 /**
  * 应用核心类
  * 作为框架的统一入口，管理所有组件和服务
- * 
+ *
  * @example
  * ```ts
  * import { Application } from "@dreamer/dweb/core/application";
- * 
+ *
  * const app = new Application("dweb.config.ts");
  * await app.initialize();
- * 
+ *
  * app.use(middleware);
  * app.plugin(plugin);
- * 
+ *
  * await app.start();
  * ```
  */
@@ -63,7 +76,7 @@ export class Application {
 
   /**
    * 构造函数
-   * 
+   *
    * @param configPath - 配置文件路径（可选，如果不提供则自动查找）
    * @param appName - 应用名称（可选，用于多应用模式）
    */
@@ -73,20 +86,20 @@ export class Application {
     this.serviceContainer = new ServiceContainer();
     this.context = new ApplicationContext(this);
     this.lifecycleManager = new LifecycleManager(this);
-    
+
     // 初始化管理器
     this.middlewareManager = new MiddlewareManager();
     this.pluginManager = new PluginManager();
-    
+
     // 初始化渲染适配器管理器
     this.renderAdapterManager = new RenderAdapterManager();
-    
+
     // 注册默认适配器（Preact）
     this.renderAdapterManager.register(new PreactRenderAdapter());
-    
+
     // 创建服务器实例
     this.server = new Server();
-    
+
     // 注册核心服务
     this.registerCoreServices();
   }
@@ -94,9 +107,9 @@ export class Application {
   /**
    * 初始化应用
    * 加载配置、注册服务、初始化路由和服务器
-   * 
+   *
    * @throws {Error} 如果初始化失败
-   * 
+   *
    * @example
    * ```ts
    * const app = new Application();
@@ -108,10 +121,12 @@ export class Application {
     this.lifecycleManager.setPhase(LifecyclePhase.Initializing);
 
     try {
-      // 1. 加载配置
-      await this.configManager.load();
+      // 1. 加载配置（如果尚未加载）
+      if (!this.configManager.isLoaded()) {
+        await this.configManager.load();
+      }
       const config = this.configManager.getConfig();
-      
+
       // 更新应用上下文
       this.context.setConfig(config);
       this.context.setIsProduction(config.isProduction ?? false);
@@ -158,9 +173,9 @@ export class Application {
    * 启动应用
    * 启动服务器并进入运行状态
    * 根据环境自动设置开发或生产环境的特定功能
-   * 
+   *
    * @throws {Error} 如果应用未初始化或启动失败
-   * 
+   *
    * @example
    * ```ts
    * await app.start();
@@ -202,10 +217,10 @@ export class Application {
     }
 
     // 启动 HMR 服务器
-    const { HMRServer } = await import('../features/hmr.ts');
-    const { createHMRClientScript } = await import('../features/hmr.ts');
-    const { setHMRClientScript } = await import('./route-handler.ts');
-    
+    const { HMRServer } = await import("../features/hmr.ts");
+    const { createHMRClientScript } = await import("../features/hmr.ts");
+    const { setHMRClientScript } = await import("./route-handler.ts");
+
     const hmrServer = new HMRServer();
     const hmrPort = config.dev.hmrPort || 24678;
     hmrServer.start(hmrPort);
@@ -230,11 +245,11 @@ export class Application {
     setHMRClientScript(hmrScript);
 
     // 注册 HMR 服务器到服务容器
-    this.serviceContainer.registerSingleton('hmrServer', () => hmrServer);
+    this.serviceContainer.registerSingleton("hmrServer", () => hmrServer);
 
     // 创建文件监听器
     if (config.routes) {
-      const { FileWatcher } = await import('../features/hmr.ts');
+      const { FileWatcher } = await import("../features/hmr.ts");
       const routeConfigForWatcher = normalizeRouteConfig(config.routes);
       const fileWatcher = new FileWatcher(
         config.dev.reloadDelay || 300,
@@ -250,7 +265,7 @@ export class Application {
       });
 
       // 注册文件监听器到服务容器
-      this.serviceContainer.registerSingleton('fileWatcher', () => fileWatcher);
+      this.serviceContainer.registerSingleton("fileWatcher", () => fileWatcher);
     }
   }
 
@@ -294,16 +309,16 @@ export class Application {
 
     // 设置信号监听器（开发环境直接关闭，不执行优雅关闭）
     const cleanup = async () => {
-      const { closeDatabase } = await import('../features/database/access.ts');
+      const { closeDatabase } = await import("../features/database/access.ts");
       await closeDatabase().catch(() => {});
-      
-      if (this.serviceContainer.has('hmrServer')) {
-        const hmrServer = this.serviceContainer.get('hmrServer');
-        if (hmrServer && typeof (hmrServer as any).stop === 'function') {
+
+      if (this.serviceContainer.has("hmrServer")) {
+        const hmrServer = this.serviceContainer.get("hmrServer");
+        if (hmrServer && typeof (hmrServer as any).stop === "function") {
           await (hmrServer as any).stop().catch(() => {});
         }
       }
-      
+
       this.server.close();
       Deno.exit(0);
     };
@@ -317,9 +332,9 @@ export class Application {
    * 使用优雅关闭
    */
   private async setupProductionShutdown(): Promise<void> {
-    const { setupSignalHandlers } = await import('../features/shutdown.ts');
-    const { closeDatabase } = await import('../features/database/access.ts');
-    
+    const { setupSignalHandlers } = await import("../features/shutdown.ts");
+    const { closeDatabase } = await import("../features/database/access.ts");
+
     setupSignalHandlers({
       close: async () => {
         await closeDatabase();
@@ -331,7 +346,7 @@ export class Application {
   /**
    * 停止应用
    * 停止服务器并清理资源
-   * 
+   *
    * @example
    * ```ts
    * await app.stop();
@@ -343,9 +358,9 @@ export class Application {
 
   /**
    * 注册中间件
-   * 
+   *
    * @param middleware - 中间件函数或配置对象
-   * 
+   *
    * @example
    * ```ts
    * app.use(async (req, res, next) => {
@@ -360,9 +375,9 @@ export class Application {
 
   /**
    * 注册插件
-   * 
+   *
    * @param plugin - 插件对象或插件配置对象
-   * 
+   *
    * @example
    * ```ts
    * app.plugin({
@@ -373,17 +388,19 @@ export class Application {
    * });
    * ```
    */
-  plugin(plugin: Plugin | { name: string; config?: Record<string, unknown> }): void {
+  plugin(
+    plugin: Plugin | { name: string; config?: Record<string, unknown> },
+  ): void {
     this.pluginManager.register(plugin);
   }
 
   /**
    * 获取服务
    * 从服务容器中获取已注册的服务
-   * 
+   *
    * @param token - 服务令牌
    * @returns 服务实例
-   * 
+   *
    * @example
    * ```ts
    * const logger = app.getService<Logger>('logger');
@@ -396,11 +413,11 @@ export class Application {
   /**
    * 注册服务
    * 向服务容器注册服务
-   * 
+   *
    * @param token - 服务令牌
    * @param factory - 服务工厂函数
    * @param lifetime - 服务生命周期（可选，默认为单例）
-   * 
+   *
    * @example
    * ```ts
    * app.registerService('logger', () => new Logger(), ServiceLifetime.Singleton);
@@ -409,7 +426,7 @@ export class Application {
   registerService<T>(
     token: ServiceToken<T>,
     factory: ServiceFactory<T>,
-    lifetime: ServiceLifetime = ServiceLifetime.Singleton
+    lifetime: ServiceLifetime = ServiceLifetime.Singleton,
   ): void {
     if (lifetime === ServiceLifetime.Singleton) {
       this.serviceContainer.registerSingleton(token, factory);
@@ -422,7 +439,7 @@ export class Application {
 
   /**
    * 获取应用上下文
-   * 
+   *
    * @returns 应用上下文实例
    */
   getContext(): ApplicationContext {
@@ -431,7 +448,7 @@ export class Application {
 
   /**
    * 获取渲染适配器
-   * 
+   *
    * @returns 当前渲染适配器
    */
   getRenderAdapter(): RenderAdapter {
@@ -440,9 +457,9 @@ export class Application {
 
   /**
    * 切换渲染引擎
-   * 
+   *
    * @param engine - 渲染引擎名称
-   * 
+   *
    * @example
    * ```ts
    * await app.setRenderEngine('preact');
@@ -458,25 +475,40 @@ export class Application {
    */
   private registerCoreServices(): void {
     // 注册服务容器自身
-    this.serviceContainer.registerSingleton('serviceContainer', () => this.serviceContainer);
-    
+    this.serviceContainer.registerSingleton(
+      "serviceContainer",
+      () => this.serviceContainer,
+    );
+
     // 注册配置管理器
-    this.serviceContainer.registerSingleton('configManager', () => this.configManager);
-    
+    this.serviceContainer.registerSingleton(
+      "configManager",
+      () => this.configManager,
+    );
+
     // 注册应用上下文
-    this.serviceContainer.registerSingleton('context', () => this.context);
-    
+    this.serviceContainer.registerSingleton("context", () => this.context);
+
     // 注册生命周期管理器
-    this.serviceContainer.registerSingleton('lifecycleManager', () => this.lifecycleManager);
-    
+    this.serviceContainer.registerSingleton(
+      "lifecycleManager",
+      () => this.lifecycleManager,
+    );
+
     // 注册服务器
-    this.serviceContainer.registerSingleton('server', () => this.server);
-    
+    this.serviceContainer.registerSingleton("server", () => this.server);
+
     // 注册中间件管理器
-    this.serviceContainer.registerSingleton('middleware', () => this.middlewareManager);
-    
+    this.serviceContainer.registerSingleton(
+      "middleware",
+      () => this.middlewareManager,
+    );
+
     // 注册插件管理器
-    this.serviceContainer.registerSingleton('plugins', () => this.pluginManager);
+    this.serviceContainer.registerSingleton(
+      "plugins",
+      () => this.pluginManager,
+    );
   }
 
   /**
@@ -487,33 +519,39 @@ export class Application {
     const config = this.configManager.getConfig();
 
     // 注册 Logger 服务（核心服务，始终注册）
-    const { Logger } = await import('../features/logger.ts');
+    const { Logger } = await import("../features/logger.ts");
     const logger = new Logger();
-    this.serviceContainer.registerSingleton('logger', () => logger);
-    
+    this.serviceContainer.registerSingleton("logger", () => logger);
+
     // 为了向后兼容，设置全局默认日志器
-    const { setLogger } = await import('../features/logger.ts');
+    const { setLogger } = await import("../features/logger.ts");
     setLogger(logger);
 
     // 注册 Monitor 服务（核心服务，始终注册）
-    const { Monitor } = await import('../features/monitoring.ts');
+    const { Monitor } = await import("../features/monitoring.ts");
     const monitor = new Monitor();
-    this.serviceContainer.registerSingleton('monitor', () => monitor);
-    
+    this.serviceContainer.registerSingleton("monitor", () => monitor);
+
     // 为了向后兼容，设置全局默认监控器
-    const { setMonitor } = await import('../features/monitoring.ts');
+    const { setMonitor } = await import("../features/monitoring.ts");
     setMonitor(monitor);
 
     // 注册 Cookie 管理器（如果配置了）
     if (config.cookie) {
       const cookieManager = new CookieManager(config.cookie.secret);
-      this.serviceContainer.registerSingleton('cookieManager', () => cookieManager);
+      this.serviceContainer.registerSingleton(
+        "cookieManager",
+        () => cookieManager,
+      );
     }
 
     // 注册 Session 管理器（如果配置了）
     if (config.session) {
       const sessionManager = new SessionManager(config.session);
-      this.serviceContainer.registerSingleton('sessionManager', () => sessionManager);
+      this.serviceContainer.registerSingleton(
+        "sessionManager",
+        () => sessionManager,
+      );
     }
   }
 
@@ -523,7 +561,9 @@ export class Application {
    */
   private async initializeDatabase(config: AppConfig): Promise<void> {
     // 设置数据库配置加载器（用于 CLI 工具中的自动初始化）
-    const { setDatabaseConfigLoader, initDatabase } = await import('../features/database/access.ts');
+    const { setDatabaseConfigLoader, initDatabase } = await import(
+      "../features/database/access.ts"
+    );
     setDatabaseConfigLoader(() => {
       return Promise.resolve(config.database || null);
     });
@@ -532,14 +572,14 @@ export class Application {
     if (config.database) {
       try {
         await initDatabase(config.database);
-        const logger = this.serviceContainer.get('logger');
-        if (logger && typeof (logger as any).info === 'function') {
+        const logger = this.serviceContainer.get("logger");
+        if (logger && typeof (logger as any).info === "function") {
           (logger as any).info("数据库连接已初始化");
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        const logger = this.serviceContainer.get('logger');
-        if (logger && typeof (logger as any).error === 'function') {
+        const logger = this.serviceContainer.get("logger");
+        if (logger && typeof (logger as any).error === "function") {
           (logger as any).error(`数据库连接失败: ${message}`);
         }
         // 不阻止服务器启动，但记录错误
@@ -553,17 +593,20 @@ export class Application {
    */
   private async initializeGraphQL(config: AppConfig): Promise<void> {
     if (config.graphql) {
-      const { GraphQLServer } = await import('../features/graphql/server.ts');
+      const { GraphQLServer } = await import("../features/graphql/server.ts");
       const graphqlServer = new GraphQLServer(
         config.graphql.schema,
         config.graphql.config,
       );
-      
+
       // 注册 GraphQL 服务器到服务容器
-      this.serviceContainer.registerSingleton('graphqlServer', () => graphqlServer);
-      
-      const logger = this.serviceContainer.get('logger');
-      if (logger && typeof (logger as any).info === 'function') {
+      this.serviceContainer.registerSingleton(
+        "graphqlServer",
+        () => graphqlServer,
+      );
+
+      const logger = this.serviceContainer.get("logger");
+      if (logger && typeof (logger as any).info === "function") {
         (logger as any).info(`GraphQL 服务器已启动`, {
           endpoint: config.graphql.config?.path || "/graphql",
         });
@@ -580,14 +623,18 @@ export class Application {
    * 初始化中间件和插件
    * 从配置和 main.ts 加载中间件和插件
    */
-  private async initializeMiddlewareAndPlugins(config: AppConfig): Promise<void> {
+  private async initializeMiddlewareAndPlugins(
+    config: AppConfig,
+  ): Promise<void> {
     // 添加配置的中间件
     if (config.middleware) {
       this.middlewareManager.addMany(config.middleware);
     }
 
     // 尝试从 main.ts 加载中间件
-    const { getMiddlewaresFromApp, loadMainApp } = await import('../utils/app.ts');
+    const { getMiddlewaresFromApp, loadMainApp } = await import(
+      "../utils/app.ts"
+    );
     try {
       const mainApp = await loadMainApp(config.name);
       if (mainApp) {
@@ -606,7 +653,7 @@ export class Application {
     }
 
     // 尝试从 main.ts 加载插件
-    const { getPluginsFromApp } = await import('../utils/app.ts');
+    const { getPluginsFromApp } = await import("../utils/app.ts");
     try {
       const mainApp = await loadMainApp(config.name);
       if (mainApp) {
@@ -626,16 +673,21 @@ export class Application {
    */
   private async initializeWebSocket(config: AppConfig): Promise<void> {
     if (config.websocket) {
-      const { WebSocketServer } = await import('../features/websocket/server.ts');
-      const { initWebSocket } = await import('../features/websocket/access.ts');
+      const { WebSocketServer } = await import(
+        "../features/websocket/server.ts"
+      );
+      const { initWebSocket } = await import("../features/websocket/access.ts");
       const wsServer = new WebSocketServer(config.websocket);
       initWebSocket(wsServer);
-      
+
       // 注册 WebSocket 服务器到服务容器
-      this.serviceContainer.registerSingleton('webSocketServer', () => wsServer);
-      
-      const logger = this.serviceContainer.get('logger');
-      if (logger && typeof (logger as any).info === 'function') {
+      this.serviceContainer.registerSingleton(
+        "webSocketServer",
+        () => wsServer,
+      );
+
+      const logger = this.serviceContainer.get("logger");
+      if (logger && typeof (logger as any).info === "function") {
         (logger as any).info(`WebSocket 服务器已启动`, {
           path: config.websocket.path || "/ws",
         });
@@ -660,37 +712,47 @@ export class Application {
   private async initializeRouter(): Promise<void> {
     const config = this.configManager.getConfig();
     const routesConfig = normalizeRouteConfig(config.routes!);
-    
+
     // 创建路由管理器
     this.router = new Router(
       routesConfig.dir,
       routesConfig.ignore,
       config.basePath,
-      routesConfig.apiDir
+      routesConfig.apiDir,
     );
 
     // 根据环境加载路由
     const isProduction = config.isProduction ?? false;
     if (isProduction && config.build?.outDir) {
       // 生产环境：从构建映射文件加载
-      const { isMultiAppMode } = await import('./config.ts');
+      const { isMultiAppMode } = await import("./config.ts");
       let outDir = config.build.outDir;
       if (await isMultiAppMode() && config.name) {
         outDir = `${outDir}/${config.name}`;
       }
-      const path = await import('@std/path');
+      const path = await import("@std/path");
       const serverRouteMapPath = path.join(outDir, "server.json");
       const clientRouteMapPath = path.join(outDir, "client.json");
-      
+
       // 检查构建输出目录是否存在
       const hasBuildOutput = await Deno.stat(serverRouteMapPath)
         .then(() => true)
         .catch(() => false);
-      
+
       if (hasBuildOutput) {
-        await this.router.loadFromBuildMap(serverRouteMapPath, clientRouteMapPath, outDir);
+        // 如果构建输出目录存在，从构建映射文件加载
+        await this.router.loadFromBuildMap(
+          serverRouteMapPath,
+          clientRouteMapPath,
+          outDir,
+        );
       } else {
-        throw new Error("构建输出目录不存在");
+        // 如果构建输出目录不存在，回退到扫描文件系统（用于开发或测试环境）
+        // 这样可以避免在没有构建的情况下无法启动服务器
+        console.warn(
+          `⚠️  构建输出目录不存在 (${serverRouteMapPath})，回退到扫描文件系统模式`,
+        );
+        await this.router.scan();
       }
     } else {
       // 开发环境：扫描文件系统
@@ -701,11 +763,11 @@ export class Application {
     await this.preloadModules();
 
     // 预先加载 import map 脚本
-    const { preloadImportMapScript } = await import('./route-handler.ts');
+    const { preloadImportMapScript } = await import("./route-handler.ts");
     await preloadImportMapScript();
 
     // 注册路由管理器到服务容器
-    this.serviceContainer.registerSingleton('router', () => this.router!);
+    this.serviceContainer.registerSingleton("router", () => this.router!);
   }
 
   /**
@@ -791,27 +853,27 @@ export class Application {
    */
   private initializeRouteHandler(): void {
     if (!this.router) {
-      throw new Error('路由管理器未初始化');
+      throw new Error("路由管理器未初始化");
     }
 
     const config = this.configManager.getConfig();
-    
+
     // 获取渲染适配器
     const renderAdapter = this.renderAdapterManager.getAdapter();
-    
+
     // 获取可选的服务
-    const cookieManager = this.serviceContainer.has('cookieManager')
-      ? this.serviceContainer.get<CookieManager>('cookieManager')
+    const cookieManager = this.serviceContainer.has("cookieManager")
+      ? this.serviceContainer.get<CookieManager>("cookieManager")
       : undefined;
-    
-    const sessionManager = this.serviceContainer.has('sessionManager')
-      ? this.serviceContainer.get<SessionManager>('sessionManager')
+
+    const sessionManager = this.serviceContainer.has("sessionManager")
+      ? this.serviceContainer.get<SessionManager>("sessionManager")
       : undefined;
 
     // 获取 GraphQL 服务器（如果已注册）
     // 使用类型断言，因为 GraphQLServer 类型在运行时才可用
-    const graphqlServer = this.serviceContainer.has('graphqlServer')
-      ? (this.serviceContainer.get('graphqlServer') as any)
+    const graphqlServer = this.serviceContainer.has("graphqlServer")
+      ? (this.serviceContainer.get("graphqlServer") as any)
       : undefined;
 
     // 创建路由处理器
@@ -821,11 +883,14 @@ export class Application {
       cookieManager,
       sessionManager,
       config,
-      graphqlServer
+      graphqlServer,
     );
 
     // 注册路由处理器到服务容器
-    this.serviceContainer.registerSingleton('routeHandler', () => this.routeHandler!);
+    this.serviceContainer.registerSingleton(
+      "routeHandler",
+      () => this.routeHandler!,
+    );
   }
 
   /**
@@ -834,34 +899,36 @@ export class Application {
    */
   private async initializeServer(): Promise<void> {
     if (!this.routeHandler) {
-      throw new Error('路由处理器未初始化');
+      throw new Error("路由处理器未初始化");
     }
 
     const config = this.configManager.getConfig();
-    
+
     // 获取服务
-    const cookieManager = this.serviceContainer.has('cookieManager')
-      ? this.serviceContainer.get<CookieManager>('cookieManager')
+    const cookieManager = this.serviceContainer.has("cookieManager")
+      ? this.serviceContainer.get<CookieManager>("cookieManager")
       : null;
-    
-    const sessionManager = this.serviceContainer.has('sessionManager')
-      ? this.serviceContainer.get<SessionManager>('sessionManager')
+
+    const sessionManager = this.serviceContainer.has("sessionManager")
+      ? this.serviceContainer.get<SessionManager>("sessionManager")
       : null;
 
     // 设置内置中间件
-    const { logger } = await import('../middleware/logger.ts');
-    const { bodyParser } = await import('../middleware/body-parser.ts');
+    const { logger } = await import("../middleware/logger.ts");
+    const { bodyParser } = await import("../middleware/body-parser.ts");
     const isProduction = config.isProduction ?? false;
-    
+
     this.middlewareManager.add(
       logger({
         format: isProduction ? "combined" : "dev",
         // 开发环境：跳过 .well-known 路径的请求
-        skip: isProduction ? undefined : (req: { url: string; method: string }) => {
-          const url = new URL(req.url);
-          return url.pathname.startsWith("/.well-known/");
-        },
-      })
+        skip: isProduction
+          ? undefined
+          : (req: { url: string; method: string }) => {
+            const url = new URL(req.url);
+            return url.pathname.startsWith("/.well-known/");
+          },
+      }),
     );
     this.middlewareManager.add(bodyParser());
 
@@ -876,7 +943,7 @@ export class Application {
     // 设置请求处理器（包含中间件和插件逻辑）
     const requestHandler = this.createRequestHandler(
       cookieManager,
-      sessionManager
+      sessionManager,
     );
     this.server.setHandler(requestHandler);
   }
@@ -884,15 +951,18 @@ export class Application {
   /**
    * 设置静态资源中间件
    */
-  private async setupStaticMiddleware(config: AppConfig, isProduction: boolean): Promise<void> {
-    const { staticFiles } = await import('../middleware/static.ts');
+  private async setupStaticMiddleware(
+    config: AppConfig,
+    isProduction: boolean,
+  ): Promise<void> {
+    const { staticFiles } = await import("../middleware/static.ts");
     const staticDir = config.static?.dir || "assets";
-    
+
     try {
       let staticPath: string;
       if (isProduction && config.build?.outDir) {
         // 生产环境：从构建输出目录加载
-        const { isMultiAppMode } = await import('./config.ts');
+        const { isMultiAppMode } = await import("./config.ts");
         const outDir = await isMultiAppMode() && config.name
           ? `${config.build.outDir}/${config.name}`
           : config.build.outDir;
@@ -969,8 +1039,8 @@ export class Application {
 
             // 如果插件清空了响应体，恢复它
             if (!res.body && res.status === 200) {
-              const logger = this.serviceContainer.get('logger');
-              if (logger && typeof (logger as any).error === 'function') {
+              const logger = this.serviceContainer.get("logger");
+              if (logger && typeof (logger as any).error === "function") {
                 (logger as any).error("插件处理错误", undefined, {
                   url: req.url,
                   method: req.method,
@@ -978,13 +1048,15 @@ export class Application {
                 });
               }
               res.status = 500;
-              res.html(`<h1>500 - Internal Server Error</h1><p>响应体在插件处理后丢失</p>`);
+              res.html(
+                `<h1>500 - Internal Server Error</h1><p>响应体在插件处理后丢失</p>`,
+              );
             }
           }
         } catch (error) {
           // 捕获中间件或路由处理过程中的错误
-          const logger = this.serviceContainer.get('logger');
-          if (logger && typeof (logger as any).error === 'function') {
+          const logger = this.serviceContainer.get("logger");
+          if (logger && typeof (logger as any).error === "function") {
             (logger as any).error(
               "请求处理异常",
               error instanceof Error ? error : undefined,
@@ -1001,7 +1073,9 @@ export class Application {
             const errorMessage = error instanceof Error
               ? error.message
               : String(error);
-            res.html(`<h1>500 - Internal Server Error</h1><p>${errorMessage}</p>`);
+            res.html(
+              `<h1>500 - Internal Server Error</h1><p>${errorMessage}</p>`,
+            );
           }
 
           // 重新抛出错误，让上层的错误处理机制处理
@@ -1032,11 +1106,15 @@ export class Application {
 
       // 设置 Session Cookie
       if (cookieManager) {
-        const cookieValue = await cookieManager.setAsync(cookieName, session.id, {
-          httpOnly: true,
-          secure: (sessionManager as any).config?.secure || false,
-          maxAge: (sessionManager as any).config?.maxAge || 3600,
-        });
+        const cookieValue = await cookieManager.setAsync(
+          cookieName,
+          session.id,
+          {
+            httpOnly: true,
+            secure: (sessionManager as any).config?.secure || false,
+            maxAge: (sessionManager as any).config?.maxAge || 3600,
+          },
+        );
         res.setHeader("Set-Cookie", cookieValue);
       }
 
@@ -1054,7 +1132,7 @@ export class Application {
     };
 
     // 设置 session 属性（延迟加载）
-    Object.defineProperty(req, 'session', {
+    Object.defineProperty(req, "session", {
       get: () => {
         return (req as any).__session || null;
       },
@@ -1076,48 +1154,53 @@ export class Application {
   /**
    * 初始化渲染适配器
    * 根据配置选择渲染引擎
-   * 
+   *
    * @param config - 应用配置
    */
   /**
    * 初始化渲染适配器
    * 从配置中读取渲染引擎设置，并初始化对应的适配器
-   * 
+   *
    * @param config - 应用配置
    */
   private async initializeRenderAdapter(config: AppConfig): Promise<void> {
     // 动态注册 React 和 Vue3 适配器（如果可用）
     // 这些适配器在构造函数中不注册，因为需要异步导入
-    if (!this.renderAdapterManager.has('react')) {
+    if (!this.renderAdapterManager.has("react")) {
       try {
-        const { ReactRenderAdapter } = await import('./render/react.ts');
+        const { ReactRenderAdapter } = await import("./render/react.ts");
         this.renderAdapterManager.register(new ReactRenderAdapter());
       } catch (_error) {
         // React 适配器不可用，忽略
       }
     }
-    
-    if (!this.renderAdapterManager.has('vue3')) {
+
+    if (!this.renderAdapterManager.has("vue3")) {
       try {
-        const { Vue3RenderAdapter } = await import('./render/vue3.ts');
+        const { Vue3RenderAdapter } = await import("./render/vue3.ts");
         this.renderAdapterManager.register(new Vue3RenderAdapter());
       } catch (_error) {
         // Vue3 适配器不可用，忽略
       }
     }
-    
+
     // 从配置中获取渲染引擎（如果未配置则使用默认的 Preact）
-    const renderEngine = config.render?.engine || 'preact';
-    
+    const renderEngine = config.render?.engine || "preact";
+
     // 检查适配器是否已注册
     if (!this.renderAdapterManager.has(renderEngine)) {
-      throw new Error(`渲染引擎未注册: ${renderEngine}。请确保已安装对应的依赖包。`);
+      throw new Error(
+        `渲染引擎未注册: ${renderEngine}。请确保已安装对应的依赖包。`,
+      );
     }
-    
+
     // 设置渲染引擎
     await this.renderAdapterManager.setEngine(renderEngine);
-    
+
     // 注册渲染适配器管理器到服务容器
-    this.serviceContainer.registerSingleton('renderAdapterManager', () => this.renderAdapterManager);
+    this.serviceContainer.registerSingleton(
+      "renderAdapterManager",
+      () => this.renderAdapterManager,
+    );
   }
 }

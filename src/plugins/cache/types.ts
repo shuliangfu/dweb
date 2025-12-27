@@ -5,7 +5,7 @@
 /**
  * 缓存存储类型
  */
-export type CacheStore = 'memory' | 'redis' | 'file';
+export type CacheStore = "memory" | "redis" | "file";
 
 /**
  * 缓存配置
@@ -49,4 +49,3 @@ export interface CachePluginOptions {
   /** 缓存配置 */
   config?: CacheConfig;
 }
-

@@ -51,4 +51,3 @@ export interface CacheAdapter {
    */
   deleteByTags(tags: string[]): Promise<number>;
 }
-

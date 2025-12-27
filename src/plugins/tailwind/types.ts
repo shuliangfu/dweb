@@ -17,9 +17,9 @@ export interface AutoprefixerOptions {
   // 是否为 @supports 参数添加前缀
   supports?: boolean;
   // 是否为 flexbox 属性添加前缀
-  flexbox?: boolean | 'no-2009';
+  flexbox?: boolean | "no-2009";
   // 是否为 Grid Layout 属性添加 IE 10-11 前缀
-  grid?: boolean | 'autoplace' | 'no-autoplace';
+  grid?: boolean | "autoplace" | "no-autoplace";
   // 自定义使用统计（用于 > 10% 的浏览器查询）
   stats?: {
     [browser: string]: {
@@ -40,7 +40,7 @@ export interface AutoprefixerOptions {
  */
 export interface TailwindPluginOptions {
   // Tailwind CSS 版本：'v3' 或 'v4'，默认为 'v4'
-  version?: 'v3' | 'v4';
+  version?: "v3" | "v4";
   // 主 CSS 文件路径（如 'assets/style.css'），用于开发环境实时编译
   // 如果不指定，默认查找 'assets/style.css'
   cssPath?: string;
@@ -57,4 +57,3 @@ export interface TailwindPluginOptions {
   // v4 特定选项：是否优化（生产环境默认 true）
   optimize?: boolean;
 }
-

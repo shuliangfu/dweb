@@ -9,7 +9,6 @@ import { getExternalPackages } from "./module.ts";
 
 // 调试模式：直接输出日志
 
-
 /**
  * 将 jsr: 协议转换为浏览器可访问的 HTTP URL
  * 使用 esm.sh 的 /jsr/ 路径来访问 JSR 包
@@ -20,21 +19,23 @@ import { getExternalPackages } from "./module.ts";
 function convertJsrToHttpUrl(jsrUrl: string): string {
   // 移除 jsr: 前缀
   const jsrPath = jsrUrl.replace(/^jsr:/, "");
-  
+
   // 匹配格式：@scope/package@version 或 @scope/package@version/subpath
   // 版本号可能包含 ^、~ 等符号，以及预发布版本号（如 -beta.2、-alpha.1、-rc.1）
-  const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\^~]?[\d.]+(?:-[\w.]+)?)(?:\/(.+))?$/);
-  
+  const jsrMatch = jsrPath.match(
+    /^@([\w-]+)\/([\w-]+)@([\^~]?[\d.]+(?:-[\w.]+)?)(?:\/(.+))?$/,
+  );
+
   if (!jsrMatch) {
     // 如果无法匹配，使用 esm.sh 的格式
     return `https://esm.sh/jsr/${jsrPath}?bundle`;
   }
-  
+
   const [, scope, packageName, versionWithPrefix, subPath] = jsrMatch;
-  
+
   // 移除版本号前缀（^ 或 ~），只保留版本号本身
   const version = versionWithPrefix.replace(/^[\^~]/, "");
-  
+
   // 使用 esm.sh 的 /jsr/ 路径格式
   // 格式：https://esm.sh/jsr/@scope/package@version/subpath?bundle
   if (subPath) {
@@ -75,20 +76,22 @@ function convertNpmToBrowserUrl(npmUrl: string): string {
 function convertJsrToBrowserUrl(jsrUrl: string): string {
   // 移除 jsr: 前缀
   const jsrPath = jsrUrl.replace(/^jsr:/, "");
-  
+
   // 匹配格式：@scope/package@version 或 @scope/package@version/subpath
-  const jsrMatch = jsrPath.match(/^@([\w-]+)\/([\w-]+)@([\^~]?[\d.]+(?:-[\w.]+)?)(?:\/(.+))?$/);
-  
+  const jsrMatch = jsrPath.match(
+    /^@([\w-]+)\/([\w-]+)@([\^~]?[\d.]+(?:-[\w.]+)?)(?:\/(.+))?$/,
+  );
+
   if (!jsrMatch) {
     // 如果无法匹配，使用 esm.sh 的格式
     return `https://esm.sh/jsr/${jsrPath}?bundle`;
   }
-  
+
   const [, scope, packageName, versionWithPrefix, subPath] = jsrMatch;
-  
+
   // 移除版本号前缀（^ 或 ~），只保留版本号本身
   const version = versionWithPrefix.replace(/^[\^~]/, "");
-  
+
   // 使用 esm.sh 的 /jsr/ 路径格式
   if (subPath) {
     return `https://esm.sh/jsr/@${scope}/${packageName}@${version}/${subPath}?bundle`;
@@ -107,17 +110,17 @@ function convertToBrowserUrl(importValue: string): string {
   if (importValue.startsWith("http://") || importValue.startsWith("https://")) {
     return importValue;
   }
-  
+
   // 处理 npm: 协议
   if (importValue.startsWith("npm:")) {
     return convertNpmToBrowserUrl(importValue);
   }
-  
+
   // 处理 jsr: 协议
   if (importValue.startsWith("jsr:")) {
     return convertJsrToBrowserUrl(importValue);
   }
-  
+
   // 其他情况（本地路径等），直接返回
   return importValue;
 }
@@ -140,17 +143,19 @@ function createImportReplacerPlugin(
       // 注意：这个插件只处理外部依赖（npm、jsr），本地依赖会被其他插件处理并打包
       build.onResolve({ filter: /.*/ }, (args) => {
         const importPath = args.path;
-        
+
         // 跳过相对路径导入（这些是本地依赖，应该被打包）
         if (importPath.startsWith("./") || importPath.startsWith("../")) {
           return undefined;
         }
-        
+
         // 跳过 HTTP URL（已经是外部 URL）
-        if (importPath.startsWith("http://") || importPath.startsWith("https://")) {
+        if (
+          importPath.startsWith("http://") || importPath.startsWith("https://")
+        ) {
           return undefined;
         }
-        
+
         // 跳过路径别名（以 @ 开头且可能是路径别名，由 createJSRResolverPlugin 处理）
         // 路径别名会被解析为本地文件路径并打包
         if (importPath.startsWith("@")) {
@@ -162,26 +167,28 @@ function createImportReplacerPlugin(
             }
           }
         }
-        
+
         // 服务端构建时，preact 相关依赖保持原始导入，不转换为 HTTP URL
         // 这样运行时可以使用项目的 import map，确保与 route-handler.ts 使用同一个 preact 实例
-        if (isServerBuild && (
-          importPath === "preact" ||
-          importPath.startsWith("preact/") ||
-          importPath === "preact-render-to-string" ||
-          importPath.startsWith("preact-render-to-string/")
-        )) {
+        if (
+          isServerBuild && (
+            importPath === "preact" ||
+            importPath.startsWith("preact/") ||
+            importPath === "preact-render-to-string" ||
+            importPath.startsWith("preact-render-to-string/")
+          )
+        ) {
           // 保持原始导入，让运行时使用项目的 import map
           return {
             path: importPath,
             external: true,
           };
         }
-        
+
         // 检查是否是外部依赖（npm、jsr）
         let resolvedPath: string | undefined;
         let isLocalPath = false;
-        
+
         // 1. 直接检查 importMap 中是否有这个路径
         if (importPath in importMap) {
           const mappedValue = importMap[importPath];
@@ -191,7 +198,9 @@ function createImportReplacerPlugin(
             isLocalPath = true;
           } else {
             // 外部依赖，转换为浏览器 URL（仅客户端构建）
-            resolvedPath = isServerBuild ? mappedValue : convertToBrowserUrl(mappedValue);
+            resolvedPath = isServerBuild
+              ? mappedValue
+              : convertToBrowserUrl(mappedValue);
           }
         } else {
           // 2. 检查是否是子路径，尝试从父包生成
@@ -201,31 +210,41 @@ function createImportReplacerPlugin(
             if (parentPackage in importMap) {
               const parentImport = importMap[parentPackage];
               // 检查父包是否是本地路径
-              if (parentImport.startsWith("./") || parentImport.startsWith("../")) {
+              if (
+                parentImport.startsWith("./") || parentImport.startsWith("../")
+              ) {
                 // 父包是本地路径，子路径也应该是本地路径，应该被打包
                 isLocalPath = true;
               } else {
                 // 父包是外部依赖，生成子路径的 URL（服务端保持原始，客户端转换为浏览器 URL）
                 const subPath = importPath.substring(parentPackage.length + 1);
                 const subPathImport = `${parentImport}/${subPath}`;
-                resolvedPath = isServerBuild ? subPathImport : convertToBrowserUrl(subPathImport);
+                resolvedPath = isServerBuild
+                  ? subPathImport
+                  : convertToBrowserUrl(subPathImport);
               }
             }
-          } else if (importPath.startsWith("@") && importPath.split("/").length >= 3) {
+          } else if (
+            importPath.startsWith("@") && importPath.split("/").length >= 3
+          ) {
             // @scope/package/subpath 格式
             const parts = importPath.split("/");
             const parentPackage = `${parts[0]}/${parts[1]}`;
             if (parentPackage in importMap) {
               const parentImport = importMap[parentPackage];
               // 检查父包是否是本地路径
-              if (parentImport.startsWith("./") || parentImport.startsWith("../")) {
+              if (
+                parentImport.startsWith("./") || parentImport.startsWith("../")
+              ) {
                 // 父包是本地路径，子路径也应该是本地路径，应该被打包
                 isLocalPath = true;
               } else {
                 // 父包是外部依赖，生成子路径的 URL（服务端保持原始，客户端转换为浏览器 URL）
                 const subPath = parts.slice(2).join("/");
                 const subPathImport = `${parentImport}/${subPath}`;
-                resolvedPath = isServerBuild ? subPathImport : convertToBrowserUrl(subPathImport);
+                resolvedPath = isServerBuild
+                  ? subPathImport
+                  : convertToBrowserUrl(subPathImport);
               }
             }
           } else {
@@ -233,22 +252,26 @@ function createImportReplacerPlugin(
             if (importPath in importMap) {
               const mappedValue = importMap[importPath];
               // 检查是否是本地路径
-              if (mappedValue.startsWith("./") || mappedValue.startsWith("../")) {
+              if (
+                mappedValue.startsWith("./") || mappedValue.startsWith("../")
+              ) {
                 // 本地路径，应该被打包，不替换
                 isLocalPath = true;
               } else {
                 // 外部依赖，转换为浏览器 URL（仅客户端构建）
-                resolvedPath = isServerBuild ? mappedValue : convertToBrowserUrl(mappedValue);
+                resolvedPath = isServerBuild
+                  ? mappedValue
+                  : convertToBrowserUrl(mappedValue);
               }
             }
           }
         }
-        
+
         // 如果是本地路径，返回 undefined，让 esbuild 打包它
         if (isLocalPath) {
           return undefined;
         }
-        
+
         // 如果找到了外部依赖的映射，返回替换后的路径
         if (resolvedPath) {
           return {
@@ -256,7 +279,7 @@ function createImportReplacerPlugin(
             external: true, // 标记为外部依赖，不打包
           };
         }
-        
+
         return undefined;
       });
     },
@@ -282,7 +305,7 @@ export function createJSRResolverPlugin(
             const subPath = args.path.substring(aliasKey.length);
             // 构建完整路径（如 "./stores/" + "something" -> "./stores/something"）
             const fullPath = aliasValue + subPath;
-            
+
             // 手动解析路径（相对于项目根目录 cwd）
             // 注意：不能使用 import.meta.resolve，因为它在 esbuild 插件中使用的是框架的上下文
             try {
@@ -290,7 +313,7 @@ export function createJSRResolverPlugin(
               const resolvedPath = path.isAbsolute(fullPath)
                 ? fullPath
                 : path.resolve(cwd, fullPath);
-              
+
               // 检查文件是否存在
               try {
                 await Deno.stat(resolvedPath);
@@ -313,7 +336,8 @@ export function createJSRResolverPlugin(
                       // 文件不存在，返回错误
                       return {
                         errors: [{
-                          text: `Path alias file not found: "${args.path}" (${aliasKey} -> ${aliasValue}${subPath})`,
+                          text:
+                            `Path alias file not found: "${args.path}" (${aliasKey} -> ${aliasValue}${subPath})`,
                         }],
                       };
                     }
@@ -322,11 +346,12 @@ export function createJSRResolverPlugin(
                 // 文件不存在，返回错误
                 return {
                   errors: [{
-                    text: `Path alias file not found: "${args.path}" (${aliasKey} -> ${aliasValue}${subPath})`,
+                    text:
+                      `Path alias file not found: "${args.path}" (${aliasKey} -> ${aliasValue}${subPath})`,
                   }],
                 };
               }
-              
+
               // 返回解析后的路径
               return {
                 path: resolvedPath,
@@ -335,7 +360,10 @@ export function createJSRResolverPlugin(
               // 如果解析失败，返回错误
               return {
                 errors: [{
-                  text: `Failed to resolve path alias "${args.path}" (${aliasKey} -> ${aliasValue}): ${error instanceof Error ? error.message : String(error)}`,
+                  text:
+                    `Failed to resolve path alias "${args.path}" (${aliasKey} -> ${aliasValue}): ${
+                      error instanceof Error ? error.message : String(error)
+                    }`,
                 }],
               };
             }
@@ -351,7 +379,10 @@ export function createJSRResolverPlugin(
       // 必须在 @dreamer/dweb/client 处理之前执行，但使用更具体的过滤器避免冲突
       build.onResolve({ filter: /^[^@./].*\/.*/ }, async (args) => {
         // 检查是否是子路径导入（包含 / 但不是相对路径，也不是 @ 开头的）
-        if (args.path.includes("/") && !args.path.startsWith(".") && !args.path.startsWith("/") && !args.path.startsWith("@")) {
+        if (
+          args.path.includes("/") && !args.path.startsWith(".") &&
+          !args.path.startsWith("/") && !args.path.startsWith("@")
+        ) {
           // 提取父包名（如 "chart/auto" -> "chart"）
           const parentPackage = args.path.split("/")[0];
           // 只有当父包在 external 列表中时，才将子路径标记为 external
@@ -381,7 +412,7 @@ export function createJSRResolverPlugin(
                 external: true,
               };
             }
-            
+
             // 如果父包是本地路径，需要解析子路径以便打包
             // 使用 Deno 的 import.meta.resolve 来解析路径
             try {
@@ -402,7 +433,10 @@ export function createJSRResolverPlugin(
               // 如果解析失败，返回错误
               return {
                 errors: [{
-                  text: `Failed to resolve subpath "${args.path}" from parent package "${parentPackage}": ${error instanceof Error ? error.message : String(error)}`,
+                  text:
+                    `Failed to resolve subpath "${args.path}" from parent package "${parentPackage}": ${
+                      error instanceof Error ? error.message : String(error)
+                    }`,
                 }],
               };
             }
@@ -419,7 +453,7 @@ export function createJSRResolverPlugin(
         if (args.path === "@dreamer/dweb/client") {
           return undefined;
         }
-        
+
         // 特别处理 @dreamer/dweb/* 的其他子路径
         // 如果是 JSR URL，转换为 HTTP URL 后标记为 external，通过网络请求加载
         if (args.path.startsWith("@dreamer/dweb/")) {
@@ -431,15 +465,15 @@ export function createJSRResolverPlugin(
             const subPath = args.path.substring("@dreamer/dweb/".length);
             // 构建完整的 JSR URL
             const jsrUrl = `${parentImport}/${subPath}`;
-              // 转换为 HTTP URL
-              const httpUrl = convertJsrToHttpUrl(jsrUrl);
-              return {
-                path: httpUrl,
-                external: true,
-              };
-            }
+            // 转换为 HTTP URL
+            const httpUrl = convertJsrToHttpUrl(jsrUrl);
+            return {
+              path: httpUrl,
+              external: true,
+            };
           }
-        
+        }
+
         // 首先检查子路径本身是否在 import map 中（如 "@scope/package/subpath"）
         // 如果子路径本身在 import map 中，检查是否需要转换
         if (args.path in importMap) {
@@ -467,7 +501,7 @@ export function createJSRResolverPlugin(
             external: true,
           };
         }
-        
+
         // 提取父包名（如 "@scope/package/subpath" -> "@scope/package"）
         const parts = args.path.split("/");
         if (parts.length >= 3) {
@@ -477,18 +511,18 @@ export function createJSRResolverPlugin(
             // 检查父包在 import map 中的值
             if (parentPackage in importMap) {
               const parentImport = importMap[parentPackage];
-            // 如果父包是 JSR URL，需要转换为 HTTP URL
-            if (parentImport.startsWith("jsr:")) {
-              // 构建完整的 JSR URL（如 jsr:@scope/package@version/subpath）
-              const subPath = args.path.substring(parentPackage.length + 1);
-              const jsrUrl = `${parentImport}/${subPath}`;
-              // 转换为 HTTP URL
-              const httpUrl = convertJsrToHttpUrl(jsrUrl);
-              return {
-                path: httpUrl,
-                external: true,
-              };
-            }
+              // 如果父包是 JSR URL，需要转换为 HTTP URL
+              if (parentImport.startsWith("jsr:")) {
+                // 构建完整的 JSR URL（如 jsr:@scope/package@version/subpath）
+                const subPath = args.path.substring(parentPackage.length + 1);
+                const jsrUrl = `${parentImport}/${subPath}`;
+                // 转换为 HTTP URL
+                const httpUrl = convertJsrToHttpUrl(jsrUrl);
+                return {
+                  path: httpUrl,
+                  external: true,
+                };
+              }
             }
             // 其他情况，直接标记为 external
             return {
@@ -513,7 +547,9 @@ export function createJSRResolverPlugin(
               };
             }
             // 如果父包是 npm URL 或 HTTP URL，子路径也应该标记为 external
-            if (parentImport.startsWith("npm:") || parentImport.startsWith("http")) {
+            if (
+              parentImport.startsWith("npm:") || parentImport.startsWith("http")
+            ) {
               return {
                 path: args.path,
                 external: true,
@@ -530,7 +566,7 @@ export function createJSRResolverPlugin(
       build.onStart(() => {
         // 确保插件在解析阶段之前执行
       });
-      
+
       // 处理直接使用 JSR URL 的情况（如 jsr:@dreamer/dweb@^1.8.2-beta.3/client）
       build.onResolve({ filter: /^jsr:/ }, (args) => {
         // 如果是 JSR URL，转换为代理路径后标记为 external
@@ -539,14 +575,16 @@ export function createJSRResolverPlugin(
           if (args.path in importMap) {
             const mappedUrl = importMap[args.path];
             // 如果已经是代理路径或 HTTP URL，直接使用
-            if (mappedUrl.startsWith("/__jsr/") || mappedUrl.startsWith("http")) {
+            if (
+              mappedUrl.startsWith("/__jsr/") || mappedUrl.startsWith("http")
+            ) {
               return {
                 path: mappedUrl,
                 external: true,
               };
             }
           }
-          
+
           // 如果没有在 import map 中找到，使用转换函数生成 HTTP URL
           const httpUrl = convertJsrToHttpUrl(args.path);
           return {
@@ -560,7 +598,7 @@ export function createJSRResolverPlugin(
       // 处理 @dreamer/dweb/client（必须在其他处理器之前，确保优先级最高）
       build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, (_args) => {
         let clientImport = importMap["@dreamer/dweb/client"];
-        
+
         // 如果没有显式配置 @dreamer/dweb/client，尝试从 @dreamer/dweb 推断
         if (!clientImport) {
           const mainImport = importMap["@dreamer/dweb"];
@@ -574,12 +612,15 @@ export function createJSRResolverPlugin(
               clientImport = mainImport.replace("/mod.ts", "/client.ts");
             } else if (mainImport.endsWith(".ts")) {
               // 本地路径: ./src/mod.ts -> ./src/client.ts
-              const basePath = mainImport.substring(0, mainImport.lastIndexOf("/"));
+              const basePath = mainImport.substring(
+                0,
+                mainImport.lastIndexOf("/"),
+              );
               clientImport = `${basePath}/client.ts`;
             }
           }
         }
-        
+
         if (!clientImport) {
           return undefined; // 让 esbuild 使用默认解析
         }
@@ -596,9 +637,12 @@ export function createJSRResolverPlugin(
             external: true,
           };
         }
-        
+
         // 如果已经是 HTTP URL，直接使用
-        if (clientImport.startsWith("http://") || clientImport.startsWith("https://")) {
+        if (
+          clientImport.startsWith("http://") ||
+          clientImport.startsWith("https://")
+        ) {
           return {
             path: clientImport,
             external: true,
@@ -615,37 +659,44 @@ export function createJSRResolverPlugin(
             external: false, // 明确标记为不 external，强制打包
           };
         }
-        
+
         return undefined; // 不是 JSR URL，使用默认解析
       });
 
       // 处理相对路径导入（从 http-url namespace 中的模块）
-      build.onResolve({ filter: /^\.\.?\/.*/, namespace: "http-url" }, (args) => {
-        try {
-          // 解析相对路径为完整的 JSR URL
-          const baseUrl = new URL(args.importer);
-          const relativePath = args.path;
-          const resolvedUrl = new URL(relativePath, baseUrl).href;
-          
-          return {
-            path: resolvedUrl,
-            namespace: "http-url",
-          };
-        } catch (error) {
-          return {
-            errors: [{
-              text: `Failed to resolve relative path: ${args.path} (${error instanceof Error ? error.message : String(error)})`,
-            }],
-          };
-        }
-      });
+      build.onResolve(
+        { filter: /^\.\.?\/.*/, namespace: "http-url" },
+        (args) => {
+          try {
+            // 解析相对路径为完整的 JSR URL
+            const baseUrl = new URL(args.importer);
+            const relativePath = args.path;
+            const resolvedUrl = new URL(relativePath, baseUrl).href;
+
+            return {
+              path: resolvedUrl,
+              namespace: "http-url",
+            };
+          } catch (error) {
+            return {
+              errors: [{
+                text: `Failed to resolve relative path: ${args.path} (${
+                  error instanceof Error ? error.message : String(error)
+                })`,
+              }],
+            };
+          }
+        },
+      );
 
       // 加载 HTTP URL 内容
       build.onLoad({ filter: /.*/, namespace: "http-url" }, async (args) => {
         try {
           const response = await fetch(args.path);
           if (!response.ok) {
-            throw new Error(`Failed to fetch: ${args.path} (${response.status})`);
+            throw new Error(
+              `Failed to fetch: ${args.path} (${response.status})`,
+            );
           }
           const contents = await response.text();
           return {
@@ -785,8 +836,11 @@ export async function buildFromStdin(
   // 创建导入替换插件（在编译时直接替换代码中的依赖导入）
   // 服务端构建时，preact 相关依赖保持原始导入，不转换为 HTTP URL
   const isServerBuild = !bundleClient;
-  const importReplacerPlugin = createImportReplacerPlugin(importMap, isServerBuild);
-  
+  const importReplacerPlugin = createImportReplacerPlugin(
+    importMap,
+    isServerBuild,
+  );
+
   // 创建 JSR 解析插件
   const jsrResolverPlugin = createJSRResolverPlugin(
     importMap,
@@ -870,8 +924,11 @@ export async function buildFromEntryPoints(
 
   // 创建导入替换插件（在编译时直接替换代码中的依赖导入）
   // 服务端构建时，preact 相关依赖保持原始导入，不转换为 HTTP URL
-  const importReplacerPlugin = createImportReplacerPlugin(importMap, isServerBuild);
-  
+  const importReplacerPlugin = createImportReplacerPlugin(
+    importMap,
+    isServerBuild,
+  );
+
   // 创建 JSR 解析插件
   const jsrResolverPlugin = createJSRResolverPlugin(
     importMap,
@@ -893,9 +950,13 @@ export async function buildFromEntryPoints(
     keepNames,
     legalComments,
     external: finalExternalPackages,
-    plugins: [...prePlugins, importReplacerPlugin, jsrResolverPlugin, ...plugins],
+    plugins: [
+      ...prePlugins,
+      importReplacerPlugin,
+      jsrResolverPlugin,
+      ...plugins,
+    ],
     alias,
     ...(splitting && outdir ? { splitting: true, outdir, outbase } : {}),
   });
 }
-

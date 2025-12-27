@@ -3,9 +3,9 @@
  * 用于加载 main.ts 文件并获取应用实例中的中间件和插件
  */
 
-import type { App } from '../mod.ts';
-import type { Middleware, Plugin } from '../types/index.ts';
-import * as path from '@std/path';
+import type { App } from "../mod.ts";
+import type { Middleware, Plugin } from "../types/index.ts";
+import * as path from "@std/path";
 
 /**
  * 查找 main.ts 文件
@@ -15,7 +15,7 @@ import * as path from '@std/path';
 export async function findMainFile(appName?: string): Promise<string | null> {
   const cwd = Deno.cwd();
   const possiblePaths: string[] = [];
-  
+
   // 如果指定了应用名称（多应用模式），优先查找应用目录下的 main.ts
   if (appName) {
     possiblePaths.push(
@@ -23,18 +23,20 @@ export async function findMainFile(appName?: string): Promise<string | null> {
       `${appName}/main.js`,
     );
   }
-  
+
   // 然后查找根目录和 example 目录
   possiblePaths.push(
-    'main.ts',
-    'main.js',
-    'example/main.ts',
-    'example/main.js',
+    "main.ts",
+    "main.js",
+    "example/main.ts",
+    "example/main.js",
   );
 
   for (const filePath of possiblePaths) {
     try {
-      const fullPath = path.isAbsolute(filePath) ? filePath : path.join(cwd, filePath);
+      const fullPath = path.isAbsolute(filePath)
+        ? filePath
+        : path.join(cwd, filePath);
       const stat = await Deno.stat(fullPath);
       if (stat.isFile) {
         return fullPath;
@@ -61,8 +63,8 @@ export async function loadMainApp(appName?: string): Promise<App | null> {
     }
 
     // 转换为绝对路径
-    const absolutePath = path.isAbsolute(mainPath) 
-      ? mainPath 
+    const absolutePath = path.isAbsolute(mainPath)
+      ? mainPath
       : path.resolve(Deno.cwd(), mainPath);
 
     // 转换为 file:// URL
@@ -70,19 +72,24 @@ export async function loadMainApp(appName?: string): Promise<App | null> {
 
     // 导入 main.ts
     const mainModule = await import(mainUrl);
-    
+
     // 获取默认导出（应用实例）
     const app: App = mainModule.default || mainModule.app || mainModule;
-    
+
     // 验证是否是有效的应用实例
-    if (app && typeof app.use === 'function' && typeof app.plugin === 'function') {
+    if (
+      app && typeof app.use === "function" && typeof app.plugin === "function"
+    ) {
       return app;
     }
 
     return null;
   } catch (error) {
     // 加载失败时静默返回 null（main.ts 是可选的）
-    console.warn('⚠️  加载 main.ts 失败:', error instanceof Error ? error.message : String(error));
+    console.warn(
+      "⚠️  加载 main.ts 失败:",
+      error instanceof Error ? error.message : String(error),
+    );
     return null;
   }
 }
@@ -106,4 +113,3 @@ export function getPluginsFromApp(app: App): Plugin[] {
   // 从插件管理器中获取所有插件
   return app.plugins.getAll();
 }
-

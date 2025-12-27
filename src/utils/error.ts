@@ -1,11 +1,11 @@
 /**
  * 错误处理工具模块
  * 提供统一的错误类型和错误处理函数
- * 
+ *
  * @module utils/error
  */
 
-import { getLogger } from '../features/logger.ts';
+import { getLogger } from "../features/logger.ts";
 
 /**
  * 框架错误基类
@@ -21,16 +21,16 @@ export class DWebError extends Error {
 
   constructor(
     message: string,
-    code: string = 'DWEB_ERROR',
+    code: string = "DWEB_ERROR",
     statusCode: number = 500,
-    details?: Record<string, unknown>
+    details?: Record<string, unknown>,
   ) {
     super(message);
-    this.name = 'DWebError';
+    this.name = "DWebError";
     this.code = code;
     this.statusCode = statusCode;
     this.details = details;
-    
+
     // 确保错误堆栈正确
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, DWebError);
@@ -44,8 +44,8 @@ export class DWebError extends Error {
  */
 export class ConfigError extends DWebError {
   constructor(message: string, details?: Record<string, unknown>) {
-    super(message, 'CONFIG_ERROR', 500, details);
-    this.name = 'ConfigError';
+    super(message, "CONFIG_ERROR", 500, details);
+    this.name = "ConfigError";
   }
 }
 
@@ -54,9 +54,13 @@ export class ConfigError extends DWebError {
  * 用于路由相关的错误
  */
 export class RouteError extends DWebError {
-  constructor(message: string, statusCode: number = 404, details?: Record<string, unknown>) {
-    super(message, 'ROUTE_ERROR', statusCode, details);
-    this.name = 'RouteError';
+  constructor(
+    message: string,
+    statusCode: number = 404,
+    details?: Record<string, unknown>,
+  ) {
+    super(message, "ROUTE_ERROR", statusCode, details);
+    this.name = "RouteError";
   }
 }
 
@@ -66,8 +70,8 @@ export class RouteError extends DWebError {
  */
 export class RenderError extends DWebError {
   constructor(message: string, details?: Record<string, unknown>) {
-    super(message, 'RENDER_ERROR', 500, details);
-    this.name = 'RenderError';
+    super(message, "RENDER_ERROR", 500, details);
+    this.name = "RenderError";
   }
 }
 
@@ -76,9 +80,13 @@ export class RenderError extends DWebError {
  * 用于 API 路由相关的错误
  */
 export class ApiError extends DWebError {
-  constructor(message: string, statusCode: number = 400, details?: Record<string, unknown>) {
-    super(message, 'API_ERROR', statusCode, details);
-    this.name = 'ApiError';
+  constructor(
+    message: string,
+    statusCode: number = 400,
+    details?: Record<string, unknown>,
+  ) {
+    super(message, "API_ERROR", statusCode, details);
+    this.name = "ApiError";
   }
 }
 
@@ -88,20 +96,23 @@ export class ApiError extends DWebError {
  */
 export class BuildError extends DWebError {
   constructor(message: string, details?: Record<string, unknown>) {
-    super(message, 'BUILD_ERROR', 500, details);
-    this.name = 'BuildError';
+    super(message, "BUILD_ERROR", 500, details);
+    this.name = "BuildError";
   }
 }
 
 /**
  * 格式化错误信息
  * 将错误对象格式化为可读的字符串
- * 
+ *
  * @param error 错误对象
  * @param includeStack 是否包含堆栈信息
  * @returns 格式化后的错误信息
  */
-export function formatError(error: unknown, includeStack: boolean = false): string {
+export function formatError(
+  error: unknown,
+  includeStack: boolean = false,
+): string {
   if (error instanceof DWebError) {
     let message = `${error.name} [${error.code}]: ${error.message}`;
     if (error.details && Object.keys(error.details).length > 0) {
@@ -112,7 +123,7 @@ export function formatError(error: unknown, includeStack: boolean = false): stri
     }
     return message;
   }
-  
+
   if (error instanceof Error) {
     let message = `${error.name}: ${error.message}`;
     if (error.cause) {
@@ -123,14 +134,14 @@ export function formatError(error: unknown, includeStack: boolean = false): stri
     }
     return message;
   }
-  
+
   return String(error);
 }
 
 /**
  * 记录错误到控制台
  * 提供统一的错误日志格式
- * 
+ *
  * @param error 错误对象
  * @param context 错误上下文信息
  */
@@ -140,36 +151,36 @@ export function logError(
     request?: { url?: string; method?: string };
     route?: { path?: string; filePath?: string; type?: string };
     [key: string]: unknown;
-  }
+  },
 ): void {
   // 使用统一的日志系统
   const logger = getLogger();
-  
+
   // 构建错误上下文数据
   const errorData: Record<string, unknown> = {};
-  
+
   if (context) {
     if (context.request) {
-      errorData.requestUrl = context.request.url || 'N/A';
-      errorData.requestMethod = context.request.method || 'N/A';
+      errorData.requestUrl = context.request.url || "N/A";
+      errorData.requestMethod = context.request.method || "N/A";
     }
     if (context.route) {
-      errorData.routePath = context.route.path || 'N/A';
-      errorData.routeFile = context.route.filePath || 'N/A';
-      errorData.routeType = context.route.type || 'N/A';
+      errorData.routePath = context.route.path || "N/A";
+      errorData.routeFile = context.route.filePath || "N/A";
+      errorData.routeType = context.route.type || "N/A";
     }
     // 添加其他上下文信息
     for (const [key, value] of Object.entries(context)) {
-      if (key !== 'request' && key !== 'route' && value !== undefined) {
+      if (key !== "request" && key !== "route" && value !== undefined) {
         errorData[key] = value;
       }
     }
   }
-  
+
   // 构建错误消息
-  let errorMessage = '发生错误';
+  let errorMessage = "发生错误";
   let errorObj: Error | undefined;
-  
+
   if (error instanceof DWebError) {
     errorMessage = `[${error.code}] ${error.message}`;
     errorObj = error;
@@ -190,14 +201,14 @@ export function logError(
     errorMessage = String(error);
     errorData.errorContent = error;
   }
-  
+
   // 使用日志系统记录错误
   logger.error(errorMessage, errorObj, errorData);
 }
 
 /**
  * 获取错误的 HTTP 状态码
- * 
+ *
  * @param error 错误对象
  * @returns HTTP 状态码
  */
@@ -205,7 +216,7 @@ export function getErrorStatusCode(error: unknown): number {
   if (error instanceof DWebError) {
     return error.statusCode;
   }
-  if (error instanceof Error && 'statusCode' in error) {
+  if (error instanceof Error && "statusCode" in error) {
     return (error as { statusCode: number }).statusCode;
   }
   return 500;
@@ -213,7 +224,7 @@ export function getErrorStatusCode(error: unknown): number {
 
 /**
  * 获取错误消息
- * 
+ *
  * @param error 错误对象
  * @returns 错误消息
  */
@@ -223,4 +234,3 @@ export function getErrorMessage(error: unknown): string {
   }
   return String(error);
 }
-

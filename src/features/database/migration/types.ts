@@ -2,7 +2,7 @@
  * 迁移管理类型定义
  */
 
-import type { DatabaseAdapter } from '../types.ts';
+import type { DatabaseAdapter } from "../types.ts";
 
 /**
  * 迁移接口
@@ -81,4 +81,3 @@ export interface MigrationConfig {
    */
   adapter: DatabaseAdapter;
 }
-

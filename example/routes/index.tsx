@@ -176,7 +176,7 @@ import { createApp, startDevServer } from 'jsr:@dreamer/dweb';`;
     <div className="space-y-0">
       {/* Hero 区域 */}
       <Hero
-        title="DWeb"
+        title="DWeb 222"
         subtitle="基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web 框架，让 Web 开发更简单、更快速、更高效。"
         primaryCTA="快速开始"
         primaryCTALink="/docs"

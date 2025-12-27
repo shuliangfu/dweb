@@ -3,12 +3,9 @@
  * 监听文件变化并自动重载
  */
 
-import { buildFromEntryPoints } from '../utils/esbuild.ts';
-import * as path from '@std/path';
-import {
-  getRelativePath,
-  cleanUrl,
-} from "../utils/path.ts";
+import { buildFromEntryPoints } from "../utils/esbuild.ts";
+import * as path from "@std/path";
+import { cleanUrl, getRelativePath } from "../utils/path.ts";
 import { shouldIgnoreFile } from "../utils/file.ts";
 // HMR 客户端脚本生成函数已迁移到 src/utils/script-hmr.ts
 export { createHMRClientScript } from "../utils/script-hmr.ts";
@@ -19,15 +16,15 @@ export { createHMRClientScript } from "../utils/script-hmr.ts";
 const DEFAULT_HMR_PORT = 24678;
 
 /** 默认服务器 origin */
-const DEFAULT_SERVER_ORIGIN = 'http://localhost:3000';
+const DEFAULT_SERVER_ORIGIN = "http://localhost:3000";
 
 /** 需要忽略的文件模式 */
 const IGNORED_FILE_PATTERNS = [
-  (name: string) => name.startsWith('.'),
-  (name: string) => name.endsWith('.tmp'),
-  (name: string) => name.endsWith('~'),
-  (path: string) => path.includes('node_modules'),
-  (path: string) => path.includes('.deno'),
+  (name: string) => name.startsWith("."),
+  (name: string) => name.endsWith(".tmp"),
+  (name: string) => name.endsWith("~"),
+  (path: string) => path.includes("node_modules"),
+  (path: string) => path.includes(".deno"),
 ];
 
 // ==================== 类型定义 ====================
@@ -37,17 +34,16 @@ const IGNORED_FILE_PATTERNS = [
  */
 export interface FileChangeInfo {
   path: string;
-  kind: 'modify' | 'create' | 'remove';
+  kind: "modify" | "create" | "remove";
   relativePath?: string;
 }
 
 /**
  * 文件类型
  */
-type FileType = 'css' | 'component' | 'other';
+type FileType = "css" | "component" | "other";
 
 // ==================== 工具函数 ====================
-
 
 // ==================== FileWatcher 类 ====================
 
@@ -57,12 +53,13 @@ type FileType = 'css' | 'component' | 'other';
  */
 export class FileWatcher {
   private watchers: Map<string, Deno.FsWatcher> = new Map();
-  private callbacks: Set<(info: FileChangeInfo) => void | Promise<void>> = new Set();
+  private callbacks: Set<(info: FileChangeInfo) => void | Promise<void>> =
+    new Set();
   private reloadTimer?: number;
   private reloadDelay: number;
   private routesDir: string;
 
-  constructor(reloadDelay: number = 300, routesDir: string = 'routes') {
+  constructor(reloadDelay: number = 300, routesDir: string = "routes") {
     this.reloadDelay = reloadDelay;
     this.routesDir = routesDir;
   }
@@ -70,7 +67,10 @@ export class FileWatcher {
   /**
    * 防抖重载
    */
-  private debouncedReload(filePath: string, kind: 'modify' | 'create' | 'remove'): void {
+  private debouncedReload(
+    filePath: string,
+    kind: "modify" | "create" | "remove",
+  ): void {
     // 清除之前的定时器
     if (this.reloadTimer) {
       clearTimeout(this.reloadTimer);
@@ -109,7 +109,10 @@ export class FileWatcher {
       (async () => {
         for await (const event of watcher) {
           // 过滤掉不相关的事件
-          if (event.kind === 'modify' || event.kind === 'create' || event.kind === 'remove') {
+          if (
+            event.kind === "modify" || event.kind === "create" ||
+            event.kind === "remove"
+          ) {
             // 处理每个变化的文件
             for (const filePath of event.paths) {
               if (!shouldIgnoreFile(filePath, IGNORED_FILE_PATTERNS)) {
@@ -167,10 +170,11 @@ export class FileWatcher {
 export class HMRServer {
   private connections: Set<WebSocket> = new Set();
   // 组件编译缓存（改进 HMR 响应速度）
-  private componentCache: Map<string, { code: string; mtime: number }> | null = null;
+  private componentCache: Map<string, { code: string; mtime: number }> | null =
+    null;
   private server?: Deno.HttpServer;
   private serverOrigin: string = DEFAULT_SERVER_ORIGIN;
-  private routesDir: string = 'routes';  // 路由目录（用于判断文件类型）
+  private routesDir: string = "routes"; // 路由目录（用于判断文件类型）
 
   /**
    * 设置服务器 origin（用于生成完整的 HTTP URL）
@@ -195,20 +199,20 @@ export class HMRServer {
    * @returns /__modules/ 格式的路径（如 '/__modules/example%2Fcomponents%2FTechCard.tsx'）
    */
   private resolveModulePath(relativePath: string, importPath: string): string {
-    const currentDir = relativePath.substring(0, relativePath.lastIndexOf('/'));
-    const parts = currentDir.split('/').filter(Boolean);
-    const importParts = importPath.split('/').filter(Boolean);
+    const currentDir = relativePath.substring(0, relativePath.lastIndexOf("/"));
+    const parts = currentDir.split("/").filter(Boolean);
+    const importParts = importPath.split("/").filter(Boolean);
 
     // 处理 .. 和 . 路径
     for (const part of importParts) {
-      if (part === '..') {
+      if (part === "..") {
         if (parts.length > 0) parts.pop();
-      } else if (part !== '.') {
+      } else if (part !== ".") {
         parts.push(part);
       }
     }
 
-    const absolutePath = parts.join('/');
+    const absolutePath = parts.join("/");
     return `/__modules/${encodeURIComponent(absolutePath)}`;
   }
 
@@ -216,7 +220,11 @@ export class HMRServer {
    * 替换代码中的相对路径导入为 /__modules/ 路径
    */
   private replaceRelativeImports(jsCode: string, relativePath: string): string {
-    const replaceImport = (match: string, importPath: string, quote: string) => {
+    const replaceImport = (
+      match: string,
+      importPath: string,
+      quote: string,
+    ) => {
       const modulePath = this.resolveModulePath(relativePath, importPath);
       return match.replace(importPath + quote, modulePath + quote);
     };
@@ -225,12 +233,15 @@ export class HMRServer {
     jsCode = jsCode.replace(/from\s+['"](\.\.?\/[^'"]+)(['"])/g, replaceImport);
 
     // 替换 import('相对路径') 动态导入
-    jsCode = jsCode.replace(/import\s*\(\s*['"](\.\.?\/[^'"]+)(['"])/g, replaceImport);
+    jsCode = jsCode.replace(
+      /import\s*\(\s*['"](\.\.?\/[^'"]+)(['"])/g,
+      replaceImport,
+    );
 
     // 替换 import type ... from '相对路径'（TypeScript 类型导入）
     jsCode = jsCode.replace(
       /import\s+type\s+[^'"]+\s+from\s+['"](\.\.?\/[^'"]+)(['"])/g,
-      replaceImport
+      replaceImport,
     );
 
     return jsCode;
@@ -239,7 +250,10 @@ export class HMRServer {
   /**
    * 将 /__modules/ 路径转换为完整的 HTTP URL
    */
-  private convertModulePathsToHttpUrls(jsCode: string, relativePath: string): string {
+  private convertModulePathsToHttpUrls(
+    jsCode: string,
+    relativePath: string,
+  ): string {
     const origin = cleanUrl(this.serverOrigin);
 
     // 修复错误的模块路径格式（/modules/ 或 /_modules/ 或 / modules/）
@@ -247,15 +261,15 @@ export class HMRServer {
       /(['"])(https?:\/\/[^'"]*?)\/\s*([_ ]?modules\/[^'"]+)(['"])/g,
       (_match, quote1, urlOrigin, modulePath, quote2) => {
         let cleanPath = cleanUrl(modulePath);
-        if (cleanPath.startsWith('modules/')) {
-          cleanPath = '__modules/' + cleanPath.slice('modules/'.length);
-        } else if (cleanPath.startsWith('_modules/')) {
-          cleanPath = '__modules/' + cleanPath.slice('_modules/'.length);
-        } else if (!cleanPath.startsWith('__modules/')) {
-          cleanPath = '__modules/' + cleanPath;
+        if (cleanPath.startsWith("modules/")) {
+          cleanPath = "__modules/" + cleanPath.slice("modules/".length);
+        } else if (cleanPath.startsWith("_modules/")) {
+          cleanPath = "__modules/" + cleanPath.slice("_modules/".length);
+        } else if (!cleanPath.startsWith("__modules/")) {
+          cleanPath = "__modules/" + cleanPath;
         }
         return `${quote1}${urlOrigin}/${cleanPath}${quote2}`;
-      }
+      },
     );
 
     // 替换 /__modules/ 路径为完整的 HTTP URL
@@ -263,21 +277,31 @@ export class HMRServer {
       /(['"])(\/__modules\/[^'"]+)(['"])/g,
       (_match, quote1, modulePath, quote2) => {
         return `${quote1}${origin}${cleanUrl(modulePath)}${quote2}`;
-      }
+      },
     );
 
     // 处理遗漏的相对路径导入（双重检查）
-    const replaceRelative = (match: string, importPath: string, quote: string) => {
+    const replaceRelative = (
+      match: string,
+      importPath: string,
+      quote: string,
+    ) => {
       const modulePath = this.resolveModulePath(relativePath, importPath);
       const fullUrl = `${origin}${cleanUrl(modulePath)}`;
       return match.replace(importPath + quote, fullUrl + quote);
     };
 
-    jsCode = jsCode.replace(/from\s+['"](\.\.?\/[^'"]+)(['"])/g, replaceRelative);
-    jsCode = jsCode.replace(/import\s*\(\s*['"](\.\.?\/[^'"]+)(['"])/g, replaceRelative);
+    jsCode = jsCode.replace(
+      /from\s+['"](\.\.?\/[^'"]+)(['"])/g,
+      replaceRelative,
+    );
+    jsCode = jsCode.replace(
+      /import\s*\(\s*['"](\.\.?\/[^'"]+)(['"])/g,
+      replaceRelative,
+    );
     jsCode = jsCode.replace(
       /import\s+type\s+[^'"]+\s+from\s+['"](\.\.?\/[^'"]+)(['"])/g,
-      replaceRelative
+      replaceRelative,
     );
 
     return jsCode;
@@ -289,8 +313,8 @@ export class HMRServer {
    * 读取 import map 配置
    */
   private async loadImportMap(): Promise<Record<string, string>> {
-    const { readDenoJson } = await import('../utils/file.ts');
-    const possiblePaths = [Deno.cwd(), '.', './'];
+    const { readDenoJson } = await import("../utils/file.ts");
+    const possiblePaths = [Deno.cwd(), ".", "./"];
 
     for (const basePath of possiblePaths) {
       try {
@@ -305,9 +329,9 @@ export class HMRServer {
 
     // 默认的 import map（使用固定版本，与 import-map.ts 保持一致，避免 Preact 实例冲突）
     return {
-      'preact': 'https://esm.sh/preact@10.28.0',
-      'preact/jsx-runtime': 'https://esm.sh/preact@10.28.0/jsx-runtime',
-      'preact/hooks': 'https://esm.sh/preact@10.28.0/hooks',
+      "preact": "https://esm.sh/preact@10.28.0",
+      "preact/jsx-runtime": "https://esm.sh/preact@10.28.0/jsx-runtime",
+      "preact/hooks": "https://esm.sh/preact@10.28.0/hooks",
     };
   }
 
@@ -316,18 +340,20 @@ export class HMRServer {
    */
   private isExternalModule(moduleName: string): boolean {
     return (
-      !moduleName.startsWith('http://') &&
-      !moduleName.startsWith('https://') &&
-      !moduleName.startsWith('/__modules/') &&
-      !moduleName.startsWith('./') &&
-      !moduleName.startsWith('../')
+      !moduleName.startsWith("http://") &&
+      !moduleName.startsWith("https://") &&
+      !moduleName.startsWith("/__modules/") &&
+      !moduleName.startsWith("./") &&
+      !moduleName.startsWith("../")
     );
   }
 
   /**
    * 将外部模块导入（如 'preact'）转换为 HTTP URL
    */
-  private async convertExternalImportsToHttpUrls(jsCode: string): Promise<string> {
+  private async convertExternalImportsToHttpUrls(
+    jsCode: string,
+  ): Promise<string> {
     const importMap = await this.loadImportMap();
 
     // 替换外部模块导入为 HTTP URL
@@ -344,7 +370,10 @@ export class HMRServer {
     jsCode = jsCode.replace(/from\s+['"]([^'"]+)['"]/g, replaceExternalImport);
 
     // 处理动态导入 import('preact')
-    jsCode = jsCode.replace(/import\s*\(\s*['"]([^'"]+)['"]/g, replaceExternalImport);
+    jsCode = jsCode.replace(
+      /import\s*\(\s*['"]([^'"]+)['"]/g,
+      replaceExternalImport,
+    );
 
     return jsCode;
   }
@@ -356,7 +385,7 @@ export class HMRServer {
   private async transformWithEsbuild(
     _fileContent: string,
     filePath: string,
-    _moduleHttpUrl: string
+    _moduleHttpUrl: string,
   ): Promise<string> {
     const cwd = Deno.cwd();
     const absoluteFilePath = path.isAbsolute(filePath)
@@ -366,7 +395,7 @@ export class HMRServer {
     // 读取 deno.json 或 deno.jsonc 获取 import map（用于解析外部依赖）
     let importMap: Record<string, string> = {};
     try {
-      const { readDenoJson } = await import('../utils/file.ts');
+      const { readDenoJson } = await import("../utils/file.ts");
       const denoJson = await readDenoJson(cwd);
       if (denoJson && denoJson.imports) {
         importMap = denoJson.imports;
@@ -391,7 +420,7 @@ export class HMRServer {
     });
 
     if (!result.outputFiles || result.outputFiles.length === 0) {
-      throw new Error('esbuild 打包结果为空');
+      throw new Error("esbuild 打包结果为空");
     }
 
     // 返回编译后的代码
@@ -405,7 +434,7 @@ export class HMRServer {
     try {
       await Deno.stat(filePath);
 
-      if (!filePath.endsWith('.tsx') && !filePath.endsWith('.ts')) {
+      if (!filePath.endsWith(".tsx") && !filePath.endsWith(".ts")) {
         return null;
       }
 
@@ -423,18 +452,24 @@ export class HMRServer {
           // 文件不存在或无法读取，继续编译
         }
       }
-      
+
       const fileContent = await Deno.readTextFile(filePath);
       const relativePath = getRelativePath(filePath);
       const origin = cleanUrl(this.serverOrigin);
-      const moduleHttpUrl = `${origin}/__modules/${encodeURIComponent(cleanUrl(relativePath))}`;
+      const moduleHttpUrl = `${origin}/__modules/${
+        encodeURIComponent(cleanUrl(relativePath))
+      }`;
 
       // 编译和转换流程
       // 使用 bundle: true 后，相对路径导入已被自动打包，只需要转换外部依赖
-      let jsCode = await this.transformWithEsbuild(fileContent, filePath, moduleHttpUrl);
+      let jsCode = await this.transformWithEsbuild(
+        fileContent,
+        filePath,
+        moduleHttpUrl,
+      );
       // 转换外部依赖为 HTTP URL（相对路径导入已被打包，不需要处理）
       jsCode = await this.convertExternalImportsToHttpUrls(jsCode);
-      
+
       // 缓存编译结果（改进 HMR 响应速度）
       if (this.componentCache) {
         try {
@@ -459,7 +494,7 @@ export class HMRServer {
    */
   private setupWebSocketHandlers(socket: WebSocket): void {
     socket.onopen = () => {
-      socket.send(JSON.stringify({ type: 'connected' }));
+      socket.send(JSON.stringify({ type: "connected" }));
     };
 
     socket.onclose = () => {
@@ -494,9 +529,9 @@ export class HMRServer {
     }
     const handler = (req: Request): Response => {
       // 处理 WebSocket 升级
-      const upgrade = req.headers.get('upgrade');
-      if (upgrade !== 'websocket') {
-        return new Response('Expected WebSocket', { status: 426 });
+      const upgrade = req.headers.get("upgrade");
+      if (upgrade !== "websocket") {
+        return new Response("Expected WebSocket", { status: 426 });
       }
 
       const { socket, response } = Deno.upgradeWebSocket(req);
@@ -512,7 +547,7 @@ export class HMRServer {
         port,
         onListen: () => {},
       },
-      handler
+      handler,
     );
   }
 
@@ -521,7 +556,7 @@ export class HMRServer {
    * @param type 更新类型
    * @param data 更新数据（包含文件变化信息）
    */
-  notify(type: 'reload' | 'update', data?: Record<string, unknown>): void {
+  notify(type: "reload" | "update", data?: Record<string, unknown>): void {
     const message = JSON.stringify({ type, data, timestamp: Date.now() });
 
     for (const socket of this.connections) {
@@ -541,19 +576,19 @@ export class HMRServer {
    * 判断文件类型
    */
   private getFileType(filePath: string): FileType {
-    if (filePath.endsWith('.css')) {
-      return 'css';
+    if (filePath.endsWith(".css")) {
+      return "css";
     }
 
     // 判断是否为路由文件（支持多应用模式，如 backend/routes/、frontend/routes/ 等）
     // 路由目录可能是 'routes' 或 'backend/routes'、'frontend/routes' 等
-    const normalizedRoutesDir = this.routesDir.replace(/\/$/, ''); // 移除末尾的 /
-    const isRoute =
-      (filePath.startsWith(`${normalizedRoutesDir}/`) || filePath.startsWith('routes/')) &&
-      (filePath.endsWith('.tsx') || filePath.endsWith('.ts'));
-    const isLayout = filePath.includes('_layout') || filePath.includes('_app');
+    const normalizedRoutesDir = this.routesDir.replace(/\/$/, ""); // 移除末尾的 /
+    const isRoute = (filePath.startsWith(`${normalizedRoutesDir}/`) ||
+      filePath.startsWith("routes/")) &&
+      (filePath.endsWith(".tsx") || filePath.endsWith(".ts"));
+    const isLayout = filePath.includes("_layout") || filePath.includes("_app");
 
-    return isRoute || isLayout ? 'component' : 'other';
+    return isRoute || isLayout ? "component" : "other";
   }
 
   /**
@@ -563,12 +598,14 @@ export class HMRServer {
     try {
       const relativePath = getRelativePath(fullPath);
       const origin = cleanUrl(this.serverOrigin);
-      const moduleUrl = `${origin}/__modules/${encodeURIComponent(cleanUrl(relativePath))}`;
+      const moduleUrl = `${origin}/__modules/${
+        encodeURIComponent(cleanUrl(relativePath))
+      }`;
 
-      this.notify('update', {
+      this.notify("update", {
         file: filePath,
-        type: 'component',
-        action: 'update-component',
+        type: "component",
+        action: "update-component",
         moduleUrl,
       });
     } catch {
@@ -580,10 +617,10 @@ export class HMRServer {
    * 通知组件重新加载（降级方案）
    */
   private notifyComponentReload(filePath: string): void {
-    this.notify('update', {
+    this.notify("update", {
       file: filePath,
-      type: 'component',
-      action: 'reload-component',
+      type: "component",
+      action: "reload-component",
     });
   }
 
@@ -601,21 +638,21 @@ export class HMRServer {
     const fileType = this.getFileType(filePath);
 
     switch (fileType) {
-      case 'css':
-        this.notify('update', {
+      case "css":
+        this.notify("update", {
           file: filePath,
-          type: 'css',
-          action: 'reload-stylesheet',
+          type: "css",
+          action: "reload-stylesheet",
         });
         break;
 
-      case 'component':
+      case "component":
         this.handleComponentUpdate(filePath, changeInfo.path);
         // CSS 已注入到 HTML 中，组件更新时会自动重新编译和注入，无需单独通知
         break;
 
       default:
-        this.notify('reload', { file: filePath });
+        this.notify("reload", { file: filePath });
         break;
     }
   }

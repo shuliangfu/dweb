@@ -5,17 +5,17 @@
 /**
  * 验证规则类型
  */
-export type ValidationRule = 
-  | 'required'
-  | 'email'
-  | 'url'
-  | 'number'
-  | 'min'
-  | 'max'
-  | 'minLength'
-  | 'maxLength'
-  | 'pattern'
-  | 'custom';
+export type ValidationRule =
+  | "required"
+  | "email"
+  | "url"
+  | "number"
+  | "min"
+  | "max"
+  | "minLength"
+  | "maxLength"
+  | "pattern"
+  | "custom";
 
 /**
  * 验证规则配置
@@ -82,4 +82,3 @@ export interface FormValidatorPluginOptions {
   /** 默认验证配置 */
   defaultConfig?: FormValidationConfig;
 }
-

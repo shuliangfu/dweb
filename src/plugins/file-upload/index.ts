@@ -3,21 +3,21 @@
  * 处理文件上传，支持多文件、文件类型验证、大小限制
  */
 
-import type { Plugin, Request, Response } from '../../types/index.ts';
+import type { Plugin, Request, Response } from "../../types/index.ts";
 import type {
   FileUploadPluginOptions,
-  UploadResult,
-  UploadedFile,
-  ImageCropConfig,
   ImageCompressConfig,
-} from './types.ts';
-import * as path from '@std/path';
-import { ensureDir } from '@std/fs/ensure-dir';
-import { crypto } from '@std/crypto';
+  ImageCropConfig,
+  UploadedFile,
+  UploadResult,
+} from "./types.ts";
+import * as path from "@std/path";
+import { ensureDir } from "@std/fs/ensure-dir";
+import { crypto } from "@std/crypto";
 
 // 可选导入 Sharp（如果已安装）
 // 注意：需要在 deno.json 的 imports 中添加 "sharp": "npm:sharp@^0.33.0"
-let sharpModule: typeof import('sharp') | null = null;
+let sharpModule: typeof import("sharp") | null = null;
 
 /**
  * 获取 Sharp 实例（如果已安装）
@@ -30,7 +30,7 @@ async function getSharp() {
   try {
     // 从 deno.json 的 imports 中导入 sharp
     // deno-lint-ignore no-explicit-any
-    sharpModule = (await import('sharp')) as any;
+    sharpModule = (await import("sharp")) as any;
     return sharpModule;
   } catch {
     // Sharp 未安装，需要运行 `deno cache --reload src/plugins/file-upload/index.ts`
@@ -43,31 +43,32 @@ async function getSharp() {
  */
 async function generateFilename(
   originalName: string,
-  strategy: 'original' | 'timestamp' | 'uuid' | 'hash' = 'timestamp'
+  strategy: "original" | "timestamp" | "uuid" | "hash" = "timestamp",
 ): Promise<string> {
   const ext = path.extname(originalName);
   const baseName = path.basename(originalName, ext);
 
   switch (strategy) {
-    case 'original': {
+    case "original": {
       return originalName;
     }
-    case 'timestamp': {
+    case "timestamp": {
       return `${Date.now()}-${baseName}${ext}`;
     }
-    case 'uuid': {
+    case "uuid": {
       // 简化实现，使用时间戳 + 随机数
       const random = Math.random().toString(36).substring(2, 15);
       return `${Date.now()}-${random}${ext}`;
     }
-    case 'hash': {
+    case "hash": {
       // 使用文件内容的 hash（需要文件内容，这里简化处理）
       const hash = await crypto.subtle.digest(
-        'SHA-256',
-        new TextEncoder().encode(`${originalName}-${Date.now()}`)
+        "SHA-256",
+        new TextEncoder().encode(`${originalName}-${Date.now()}`),
       );
       const hashArray = Array.from(new Uint8Array(hash));
-      const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+      const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
       return `${hashHex.substring(0, 16)}${ext}`;
     }
     default: {
@@ -79,7 +80,11 @@ async function generateFilename(
 /**
  * 验证文件类型
  */
-function validateFileType(filename: string, mimeType: string, allowedTypes: string[]): boolean {
+function validateFileType(
+  filename: string,
+  mimeType: string,
+  allowedTypes: string[],
+): boolean {
   if (allowedTypes.length === 0) {
     return true;
   }
@@ -88,14 +93,14 @@ function validateFileType(filename: string, mimeType: string, allowedTypes: stri
 
   return allowedTypes.some((type) => {
     // 检查扩展名
-    if (type.startsWith('.')) {
+    if (type.startsWith(".")) {
       return type.slice(1).toLowerCase() === ext;
     }
     // 检查 MIME 类型
-    if (type.includes('/')) {
-      if (type.endsWith('/*')) {
+    if (type.includes("/")) {
+      if (type.endsWith("/*")) {
         const baseType = type.slice(0, -2);
-        return mimeType.startsWith(baseType + '/');
+        return mimeType.startsWith(baseType + "/");
       }
       return mimeType === type;
     }
@@ -108,7 +113,7 @@ function validateFileType(filename: string, mimeType: string, allowedTypes: stri
  * 检查是否为图片文件
  */
 function isImageFile(mimeType: string): boolean {
-  return mimeType.startsWith('image/');
+  return mimeType.startsWith("image/");
 }
 
 /**
@@ -123,13 +128,14 @@ function isImageFile(mimeType: string): boolean {
  */
 async function cropImage(
   imageData: Uint8Array<ArrayBuffer>,
-  config: ImageCropConfig
+  config: ImageCropConfig,
 ): Promise<Uint8Array<ArrayBuffer>> {
   const sharp = await getSharp();
 
   if (!sharp) {
     console.warn(
-      '[File Upload Plugin] Sharp 未安装，跳过图片裁切。\n' + '安装方法：运行 `deno install`'
+      "[File Upload Plugin] Sharp 未安装，跳过图片裁切。\n" +
+        "安装方法：运行 `deno install`",
     );
     return new Uint8Array(imageData);
   }
@@ -142,14 +148,14 @@ async function cropImage(
       .resize({
         width,
         height,
-        fit: 'cover', // 覆盖模式，保持宽高比并裁切
-        position: 'center', // 居中裁切
+        fit: "cover", // 覆盖模式，保持宽高比并裁切
+        position: "center", // 居中裁切
       })
       .toBuffer();
 
     return new Uint8Array(processed);
   } catch (error) {
-    console.error('[File Upload Plugin] 图片裁切失败:', error);
+    console.error("[File Upload Plugin] 图片裁切失败:", error);
     // 失败时返回原图
     return new Uint8Array(imageData);
   }
@@ -167,31 +173,33 @@ async function cropImage(
  */
 async function compressImage(
   imageData: Uint8Array<ArrayBuffer>,
-  config: ImageCompressConfig
+  config: ImageCompressConfig,
 ): Promise<{ data: Uint8Array<ArrayBuffer>; format: string }> {
   const sharp = await getSharp();
 
   if (!sharp) {
     console.warn(
-      `[File Upload Plugin] Sharp 未安装，跳过图片压缩（${config.format || 'webp'}）。\n` +
-        '安装方法：运行 `deno install`'
+      `[File Upload Plugin] Sharp 未安装，跳过图片压缩（${
+        config.format || "webp"
+      }）。\n` +
+        "安装方法：运行 `deno install`",
     );
     return {
       data: new Uint8Array(imageData),
-      format: config.format || 'webp',
+      format: config.format || "webp",
     };
   }
 
   try {
-    const format = config.format || 'webp';
+    const format = config.format || "webp";
     const quality = config.quality || 80;
 
     let processed: Uint8Array;
 
     // 根据格式进行转换
-    if (format === 'webp') {
+    if (format === "webp") {
       processed = await sharp(imageData).webp({ quality }).toBuffer();
-    } else if (format === 'avif') {
+    } else if (format === "avif") {
       processed = await sharp(imageData).avif({ quality }).toBuffer();
     } else {
       // 不支持的格式，返回原图
@@ -207,11 +215,14 @@ async function compressImage(
       format: format,
     };
   } catch (error) {
-    console.error(`[File Upload Plugin] 图片压缩失败（${config.format || 'webp'}）:`, error);
+    console.error(
+      `[File Upload Plugin] 图片压缩失败（${config.format || "webp"}）:`,
+      error,
+    );
     // 失败时返回原图
     return {
       data: new Uint8Array(imageData),
-      format: config.format || 'webp',
+      format: config.format || "webp",
     };
   }
 }
@@ -221,13 +232,13 @@ async function compressImage(
  */
 export async function handleFileUpload(
   req: Request,
-  config: FileUploadPluginOptions['config'] = {}
+  config: FileUploadPluginOptions["config"] = {},
 ): Promise<UploadResult> {
-  const uploadDir = config.uploadDir || 'uploads';
+  const uploadDir = config.uploadDir || "uploads";
   const maxFileSize = config.maxFileSize || 10 * 1024 * 1024; // 默认 10MB
   const allowedTypes = config.allowedTypes || [];
   const allowMultiple = config.allowMultiple !== false;
-  const namingStrategy = config.namingStrategy || 'timestamp';
+  const namingStrategy = config.namingStrategy || "timestamp";
   const createSubdirs = config.createSubdirs !== false;
 
   try {
@@ -247,14 +258,14 @@ export async function handleFileUpload(
     if (fileEntries.length === 0) {
       return {
         success: false,
-        error: '没有上传文件',
+        error: "没有上传文件",
       };
     }
 
     if (!allowMultiple && fileEntries.length > 1) {
       return {
         success: false,
-        error: '只允许上传一个文件',
+        error: "只允许上传一个文件",
       };
     }
 
@@ -263,7 +274,9 @@ export async function handleFileUpload(
     if (config.totalLimit && totalSize > config.totalLimit) {
       return {
         success: false,
-        error: `总文件大小超过限制 ${(config.totalLimit / 1024 / 1024).toFixed(2)}MB`,
+        error: `总文件大小超过限制 ${
+          (config.totalLimit / 1024 / 1024).toFixed(2)
+        }MB`,
       };
     }
 
@@ -272,8 +285,8 @@ export async function handleFileUpload(
     if (createSubdirs) {
       const date = new Date();
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
       targetDir = path.join(uploadDir, String(year), month, day);
     }
     await ensureDir(targetDir);
@@ -283,7 +296,11 @@ export async function handleFileUpload(
       // 验证文件大小
       const fileSizeLimit = config.perFileLimit || maxFileSize;
       if (file.size > fileSizeLimit) {
-        errors.push(`${file.name}: 文件大小超过限制 ${(fileSizeLimit / 1024 / 1024).toFixed(2)}MB`);
+        errors.push(
+          `${file.name}: 文件大小超过限制 ${
+            (fileSizeLimit / 1024 / 1024).toFixed(2)
+          }MB`,
+        );
         continue;
       }
 
@@ -305,12 +322,15 @@ export async function handleFileUpload(
       // 如果是图片文件，进行图片处理
       if (isImageFile(file.type)) {
         // 图片裁切
-        if (config.imageCrop?.enabled && config.imageCrop.width && config.imageCrop.height) {
+        if (
+          config.imageCrop?.enabled && config.imageCrop.width &&
+          config.imageCrop.height
+        ) {
           try {
             processedData = await cropImage(fileData, config.imageCrop);
             finalSize = processedData.length;
             console.log(
-              `✅ [File Upload] 图片裁切完成: ${file.name} -> ${config.imageCrop.width}x${config.imageCrop.height}`
+              `✅ [File Upload] 图片裁切完成: ${file.name} -> ${config.imageCrop.width}x${config.imageCrop.height}`,
             );
           } catch (error) {
             console.warn(`⚠️  [File Upload] 图片裁切失败: ${file.name}`, error);
@@ -321,17 +341,27 @@ export async function handleFileUpload(
         // 图片压缩（转换为 WebP 或 AVIF）
         if (config.imageCompress?.enabled) {
           try {
-            const compressed = await compressImage(processedData, config.imageCompress);
+            const compressed = await compressImage(
+              processedData,
+              config.imageCompress,
+            );
             processedData = compressed.data;
             finalSize = processedData.length;
 
             // 更新文件名和扩展名
-            const baseName = path.basename(finalFilename, path.extname(finalFilename));
+            const baseName = path.basename(
+              finalFilename,
+              path.extname(finalFilename),
+            );
             finalExtension = compressed.format;
             finalFilename = `${baseName}.${compressed.format}`;
-            finalMimeType = compressed.format === 'webp' ? 'image/webp' : 'image/avif';
+            finalMimeType = compressed.format === "webp"
+              ? "image/webp"
+              : "image/avif";
 
-            console.log(`✅ [File Upload] 图片压缩完成: ${file.name} -> ${compressed.format}`);
+            console.log(
+              `✅ [File Upload] 图片压缩完成: ${file.name} -> ${compressed.format}`,
+            );
           } catch (error) {
             console.warn(`⚠️  [File Upload] 图片压缩失败: ${file.name}`, error);
             // 压缩失败，使用原图
@@ -356,7 +386,7 @@ export async function handleFileUpload(
     if (errors.length > 0 && files.length === 0) {
       return {
         success: false,
-        error: '文件上传失败',
+        error: "文件上传失败",
         errors,
       };
     }
@@ -369,7 +399,7 @@ export async function handleFileUpload(
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : '文件上传失败',
+      error: error instanceof Error ? error.message : "文件上传失败",
     };
   }
 }
@@ -441,7 +471,7 @@ function generateClientScript(): string {
  */
 export function fileUpload(options: FileUploadPluginOptions = {}): Plugin {
   return {
-    name: 'file-upload',
+    name: "file-upload",
     config: options as unknown as Record<string, unknown>,
 
     /**
@@ -449,12 +479,12 @@ export function fileUpload(options: FileUploadPluginOptions = {}): Plugin {
      */
     onRequest(_req: Request, res: Response) {
       // 只处理 HTML 响应
-      if (!res.body || typeof res.body !== 'string') {
+      if (!res.body || typeof res.body !== "string") {
         return;
       }
 
-      const contentType = res.headers.get('Content-Type') || '';
-      if (!contentType.includes('text/html')) {
+      const contentType = res.headers.get("Content-Type") || "";
+      if (!contentType.includes("text/html")) {
         return;
       }
 
@@ -463,12 +493,12 @@ export function fileUpload(options: FileUploadPluginOptions = {}): Plugin {
           const html = res.body as string;
 
           // 注入上传脚本（在 </head> 之前）
-          if (html.includes('</head>')) {
+          if (html.includes("</head>")) {
             const script = generateClientScript();
-            res.body = html.replace('</head>', `${script}\n</head>`);
+            res.body = html.replace("</head>", `${script}\n</head>`);
           }
         } catch (error) {
-          console.error('[File Upload Plugin] 注入上传脚本时出错:', error);
+          console.error("[File Upload Plugin] 注入上传脚本时出错:", error);
         }
       }
     },
@@ -477,10 +507,10 @@ export function fileUpload(options: FileUploadPluginOptions = {}): Plugin {
 
 // 导出类型和函数
 export type {
-  FileUploadPluginOptions,
   FileUploadConfig,
-  UploadResult,
-  UploadedFile,
-  ImageCropConfig,
+  FileUploadPluginOptions,
   ImageCompressConfig,
-} from './types.ts';
+  ImageCropConfig,
+  UploadedFile,
+  UploadResult,
+} from "./types.ts";

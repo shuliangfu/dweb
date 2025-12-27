@@ -10,16 +10,16 @@ import type { Store } from "./types.ts";
  * @returns Store 实例，如果不在客户端环境则返回 null
  */
 export function getStore(): Store | null {
-	if (typeof globalThis === "undefined" || !globalThis.window) {
-		// SSR 时不在客户端环境是正常的，不需要输出警告
-		// console.warn("[Store Client] 无法获取 Store 实例：不在客户端环境");
+  if (typeof globalThis === "undefined" || !globalThis.window) {
+    // SSR 时不在客户端环境是正常的，不需要输出警告
+    // console.warn("[Store Client] 无法获取 Store 实例：不在客户端环境");
     return null;
   }
 
   const win = globalThis.window as Window & {
     __STORE__?: Store;
-	};
-	
+  };
+
   return win.__STORE__ || null;
 }
 
@@ -44,7 +44,9 @@ export function setStoreState<T = Record<string, unknown>>(
 ): void {
   const store = getStore();
   if (!store) {
-    console.warn("[Store Client] 无法更新状态：不在客户端环境或 Store 未初始化");
+    console.warn(
+      "[Store Client] 无法更新状态：不在客户端环境或 Store 未初始化",
+    );
     return;
   }
   store.setState(updater as any);
@@ -60,7 +62,9 @@ export function subscribeStore<T = Record<string, unknown>>(
 ): (() => void) | null {
   const store = getStore();
   if (!store) {
-    console.warn("[Store Client] 无法订阅状态变化：不在客户端环境或 Store 未初始化");
+    console.warn(
+      "[Store Client] 无法订阅状态变化：不在客户端环境或 Store 未初始化",
+    );
     return null;
   }
   return store.subscribe(listener as any);
@@ -72,9 +76,10 @@ export function subscribeStore<T = Record<string, unknown>>(
 export function resetStore(): void {
   const store = getStore();
   if (!store) {
-    console.warn("[Store Client] 无法重置状态：不在客户端环境或 Store 未初始化");
+    console.warn(
+      "[Store Client] 无法重置状态：不在客户端环境或 Store 未初始化",
+    );
     return;
   }
   store.reset();
 }
-

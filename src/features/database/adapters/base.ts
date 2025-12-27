@@ -2,8 +2,8 @@
  * 数据库适配器基础接口和抽象类
  */
 
-import type { DatabaseAdapter, DatabaseConfig } from '../types.ts';
-import type { QueryLogger } from '../logger/query-logger.ts';
+import type { DatabaseAdapter, DatabaseConfig } from "../types.ts";
+import type { QueryLogger } from "../logger/query-logger.ts";
 
 /**
  * 连接池状态
@@ -70,19 +70,29 @@ export abstract class BaseAdapter implements DatabaseAdapter {
    * SQL 数据库: query(sql: string, params?: any[]): Promise<any[]>
    * MongoDB: query(collection: string, filter?: any, options?: any): Promise<any[]>
    */
-  abstract query(sqlOrCollection: string, paramsOrFilter?: any[] | any, options?: any): Promise<any[]>;
+  abstract query(
+    sqlOrCollection: string,
+    paramsOrFilter?: any[] | any,
+    options?: any,
+  ): Promise<any[]>;
 
   /**
    * 执行更新/插入/删除（由子类实现）
    * SQL 数据库: execute(sql: string, params?: any[]): Promise<any>
    * MongoDB: execute(operation: string, collection: string, data: any): Promise<any>
    */
-  abstract execute(sqlOrOperation: string, paramsOrCollection?: any[] | string, data?: any): Promise<any>;
+  abstract execute(
+    sqlOrOperation: string,
+    paramsOrCollection?: any[] | string,
+    data?: any,
+  ): Promise<any>;
 
   /**
    * 执行事务（由子类实现）
    */
-  abstract transaction<T>(callback: (db: DatabaseAdapter) => Promise<T>): Promise<T>;
+  abstract transaction<T>(
+    callback: (db: DatabaseAdapter) => Promise<T>,
+  ): Promise<T>;
 
   /**
    * 关闭连接（由子类实现）
@@ -101,11 +111,11 @@ export abstract class BaseAdapter implements DatabaseAdapter {
    */
   protected validateConfig(config: DatabaseConfig): void {
     if (!config.type) {
-      throw new Error('Database type is required');
+      throw new Error("Database type is required");
     }
 
     if (!config.connection.host || !config.connection.database) {
-      throw new Error('Database host and database name are required');
+      throw new Error("Database host and database name are required");
     }
   }
 
@@ -147,4 +157,3 @@ export abstract class BaseAdapter implements DatabaseAdapter {
     return this.queryLogger;
   }
 }
-

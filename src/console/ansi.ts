@@ -27,7 +27,11 @@ export const colors = {
  * @param bold 是否加粗
  * @returns 带颜色代码的文本
  */
-export function colorize(text: string, color: keyof typeof colors, bold = false): string {
+export function colorize(
+  text: string,
+  color: keyof typeof colors,
+  bold = false,
+): string {
   const colorCode = colors[color];
   const boldCode = bold ? colors.bright : "";
   return `${boldCode}${colorCode}${text}${colors.reset}`;
@@ -74,4 +78,3 @@ export function clearLine(): void {
   const encoder = new TextEncoder();
   Deno.stdout.writeSync(encoder.encode("\r\x1b[K"));
 }
-

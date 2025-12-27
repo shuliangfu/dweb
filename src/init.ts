@@ -12,12 +12,12 @@
  * 包括路径别名配置（@components/、@config/、@store/）等都会自动应用
  */
 
-import { createApp } from './features/create.ts';
+import { createApp } from "./features/create.ts";
 
 /**
  * 主函数
  * 调用 createApp 函数创建新项目
- * 
+ *
  * createApp 会自动生成以下内容：
  * - 项目目录结构（routes、components、config、stores 等）
  * - deno.json 配置文件（包含路径别名：@components/、@config/、@store/）
@@ -30,12 +30,15 @@ async function main() {
   try {
     // 从命令行参数获取项目名称（如果提供）
     const projectName = Deno.args[0];
-    
+
     // 调用 createApp 函数创建项目
     // createApp 会处理所有项目生成逻辑，包括路径别名配置
     await createApp(projectName);
   } catch (error) {
-    console.error('❌ 创建项目失败:', error instanceof Error ? error.message : String(error));
+    console.error(
+      "❌ 创建项目失败:",
+      error instanceof Error ? error.message : String(error),
+    );
     Deno.exit(1);
   }
 }
@@ -44,4 +47,3 @@ async function main() {
 if (import.meta.main) {
   await main();
 }
-

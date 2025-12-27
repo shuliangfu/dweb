@@ -3,7 +3,7 @@
  * 提供请求监控、性能监控、错误监控等功能
  */
 
-import type { Request, Response } from '../types/index.ts';
+import type { Request, Response } from "../types/index.ts";
 
 /**
  * 请求指标
@@ -56,32 +56,32 @@ export interface MonitoringOptions {
    * 是否启用请求监控（默认 true）
    */
   enableRequestMonitoring?: boolean;
-  
+
   /**
    * 是否启用性能监控（默认 true）
    */
   enablePerformanceMonitoring?: boolean;
-  
-   /**
+
+  /**
    * 是否启用错误监控（默认 true）
    */
   enableErrorMonitoring?: boolean;
-  
+
   /**
    * 性能监控间隔（毫秒），默认 60000（1分钟）
    */
   performanceInterval?: number;
-  
+
   /**
    * 请求指标回调
    */
   onRequest?: (metrics: RequestMetrics) => void;
-  
+
   /**
    * 性能指标回调
    */
   onPerformance?: (metrics: PerformanceMetrics) => void;
-  
+
   /**
    * 错误指标回调
    */
@@ -97,7 +97,7 @@ export class Monitor {
   private errorCount: number = 0;
   private startTime: number = Date.now();
   private performanceTimer?: number;
-  
+
   constructor(options: MonitoringOptions = {}) {
     this.options = {
       enableRequestMonitoring: true,
@@ -106,13 +106,13 @@ export class Monitor {
       performanceInterval: 60000,
       ...options,
     };
-    
+
     // 启动性能监控
     if (this.options.enablePerformanceMonitoring) {
       this.startPerformanceMonitoring();
     }
   }
-  
+
   /**
    * 记录请求指标
    */
@@ -120,9 +120,9 @@ export class Monitor {
     if (!this.options.enableRequestMonitoring) {
       return;
     }
-    
+
     this.requestCount++;
-    
+
     const url = new URL(req.url);
     const metrics: RequestMetrics = {
       method: req.method,
@@ -130,17 +130,17 @@ export class Monitor {
       statusCode: res.status,
       duration,
       timestamp: Date.now(),
-      userAgent: req.headers.get('user-agent') || undefined,
-      ip: req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 
-          req.headers.get('x-real-ip') || 
-          'unknown',
+      userAgent: req.headers.get("user-agent") || undefined,
+      ip: req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+        req.headers.get("x-real-ip") ||
+        "unknown",
     };
-    
+
     if (this.options.onRequest) {
       this.options.onRequest(metrics);
     }
   }
-  
+
   /**
    * 记录错误指标
    */
@@ -148,9 +148,9 @@ export class Monitor {
     if (!this.options.enableErrorMonitoring) {
       return;
     }
-    
+
     this.errorCount++;
-    
+
     const url = new URL(req.url);
     const metrics: ErrorMetrics = {
       message: error.message,
@@ -159,23 +159,23 @@ export class Monitor {
       method: req.method,
       statusCode: res.status,
       timestamp: Date.now(),
-      userAgent: req.headers.get('user-agent') || undefined,
-      ip: req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 
-          req.headers.get('x-real-ip') || 
-          'unknown',
+      userAgent: req.headers.get("user-agent") || undefined,
+      ip: req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+        req.headers.get("x-real-ip") ||
+        "unknown",
     };
-    
+
     if (this.options.onError) {
       this.options.onError(metrics);
     }
   }
-  
+
   /**
    * 获取性能指标
    */
   getPerformanceMetrics(): PerformanceMetrics {
     const memoryUsage = Deno.memoryUsage();
-    
+
     return {
       memoryUsage: {
         rss: memoryUsage.rss,
@@ -188,7 +188,7 @@ export class Monitor {
       errorCount: this.errorCount,
     };
   }
-  
+
   /**
    * 启动性能监控
    */
@@ -196,7 +196,7 @@ export class Monitor {
     if (!this.options.performanceInterval) {
       return;
     }
-    
+
     this.performanceTimer = setInterval(() => {
       const metrics = this.getPerformanceMetrics();
       if (this.options.onPerformance) {
@@ -204,7 +204,7 @@ export class Monitor {
       }
     }, this.options.performanceInterval);
   }
-  
+
   /**
    * 停止监控
    */
@@ -214,7 +214,7 @@ export class Monitor {
       this.performanceTimer = undefined;
     }
   }
-  
+
   /**
    * 重置统计
    */
@@ -246,4 +246,3 @@ export function getMonitor(): Monitor {
 export function setMonitor(monitor: Monitor): void {
   defaultMonitor = monitor;
 }
-

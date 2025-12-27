@@ -5,7 +5,14 @@
  * @module core/server
  */
 
-import type { ContentType, CookieOptions, Middleware, Request, Response, Session } from '../types/index.ts';
+import type {
+  ContentType,
+  CookieOptions,
+  Middleware,
+  Request,
+  Response,
+  Session,
+} from "../types/index.ts";
 
 /**
  * 默认 TLS 证书（用于开发环境，自签名证书）
@@ -88,7 +95,9 @@ WQ0jFYXdtswUT8/WNAENf3s=
 export class Server {
   private middlewares: Middleware[] = [];
   private handler?: (req: Request, res: Response) => Promise<void> | void;
-  private wsUpgradeHandler?: (req: globalThis.Request) => globalThis.Response | null;
+  private wsUpgradeHandler?: (
+    req: globalThis.Request,
+  ) => globalThis.Response | null;
   private serverHandle?: {
     shutdown: () => Promise<void>;
     finished: Promise<void>;
@@ -120,7 +129,9 @@ export class Server {
    * });
    * ```
    */
-  setHandler(handler: (req: Request, res: Response) => Promise<void> | void): void {
+  setHandler(
+    handler: (req: Request, res: Response) => Promise<void> | void,
+  ): void {
     this.handler = handler;
   }
 
@@ -141,7 +152,7 @@ export class Server {
    * ```
    */
   setWebSocketUpgradeHandler(
-    handler: (req: globalThis.Request) => globalThis.Response | null
+    handler: (req: globalThis.Request) => globalThis.Response | null,
   ): void {
     this.wsUpgradeHandler = handler;
   }
@@ -163,7 +174,9 @@ export class Server {
    * Deno.serve({ port: 3000 }, server.handleRequest.bind(server));
    * ```
    */
-  async handleRequest(nativeReq: globalThis.Request): Promise<globalThis.Response> {
+  async handleRequest(
+    nativeReq: globalThis.Request,
+  ): Promise<globalThis.Response> {
     // 检查 WebSocket 升级请求
     if (this.wsUpgradeHandler) {
       const upgradeResponse = this.wsUpgradeHandler(nativeReq);
@@ -190,12 +203,14 @@ export class Server {
       // 确保响应体已设置（在 handler 完成后检查）
       if (!res.body && res.status === 200) {
         res.status = 500;
-        res.text('Internal Server Error: Empty response');
+        res.text("Internal Server Error: Empty response");
       }
     } catch (error) {
       // 错误处理
       res.status = 500;
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error
+        ? error.message
+        : String(error);
       res.text(`Internal Server Error: ${errorMessage}`);
     }
 
@@ -210,7 +225,7 @@ export class Server {
   private createRequest(nativeReq: globalThis.Request): Request {
     // 确保 URL 存在
     if (!nativeReq.url) {
-      throw new Error('Request URL is required');
+      throw new Error("Request URL is required");
     }
 
     const url = new URL(nativeReq.url);
@@ -223,10 +238,10 @@ export class Server {
 
     // 解析 Cookie
     const cookies: Record<string, string> = {};
-    const cookieHeader = nativeReq.headers.get('cookie');
+    const cookieHeader = nativeReq.headers.get("cookie");
     if (cookieHeader) {
-      cookieHeader.split(';').forEach((cookie) => {
-        const [name, value] = cookie.trim().split('=');
+      cookieHeader.split(";").forEach((cookie) => {
+        const [name, value] = cookie.trim().split("=");
         if (name && value) {
           cookies[name] = decodeURIComponent(value);
         }
@@ -244,7 +259,7 @@ export class Server {
       getHeader: (name: string) => nativeReq.headers.get(name),
       createSession: (_data?: Record<string, unknown>) => {
         // Session 创建逻辑将在 features/session.ts 中实现
-        return Promise.reject(new Error('Session 功能未实现'));
+        return Promise.reject(new Error("Session 功能未实现"));
       },
       getSession: () => {
         // Session 获取逻辑将在 features/session.ts 中实现
@@ -289,10 +304,13 @@ export class Server {
    */
   private createResponse(): Response {
     const headers = new Headers();
-    const cookies: Array<{ name: string; value: string; options?: CookieOptions }> = [];
-    let body: string | Uint8Array | ReadableStream<Uint8Array> | undefined = undefined;
+    const cookies: Array<
+      { name: string; value: string; options?: CookieOptions }
+    > = [];
+    let body: string | Uint8Array | ReadableStream<Uint8Array> | undefined =
+      undefined;
     let status = 200;
-    let statusText = 'OK';
+    let statusText = "OK";
 
     const response: Response = {
       get status() {
@@ -326,7 +344,7 @@ export class Server {
           charset?: string;
           status?: number;
           headers?: Record<string, string>;
-        }
+        },
       ) {
         // 设置状态码（如果指定）
         if (options?.status !== undefined) {
@@ -334,8 +352,8 @@ export class Server {
         }
 
         // 设置 Content-Type
-        const charset = options?.charset || 'utf-8';
-        headers.set('content-type', `application/json; charset=${charset}`);
+        const charset = options?.charset || "utf-8";
+        headers.set("content-type", `application/json; charset=${charset}`);
 
         // 设置自定义响应头
         if (options?.headers) {
@@ -353,7 +371,7 @@ export class Server {
           charset?: string;
           status?: number;
           headers?: Record<string, string>;
-        }
+        },
       ) {
         // 设置状态码（如果指定）
         if (options?.status !== undefined) {
@@ -361,8 +379,8 @@ export class Server {
         }
 
         // 设置 Content-Type
-        const charset = options?.charset || 'utf-8';
-        headers.set('content-type', `text/html; charset=${charset}`);
+        const charset = options?.charset || "utf-8";
+        headers.set("content-type", `text/html; charset=${charset}`);
 
         // 设置自定义响应头
         if (options?.headers) {
@@ -382,7 +400,7 @@ export class Server {
           charset?: string;
           status?: number;
           headers?: Record<string, string>;
-        }
+        },
       ) {
         // 设置状态码（如果指定）
         if (options?.status !== undefined) {
@@ -391,31 +409,34 @@ export class Server {
 
         // 类型映射表：将简写的类型名称映射到完整的 MIME 类型
         const typeMap: Record<string, string> = {
-          html: 'text/html',
-          text: 'text/plain',
-          json: 'application/json',
-          javascript: 'application/javascript',
-          css: 'text/css',
-          xml: 'application/xml',
-          svg: 'image/svg+xml',
-          binary: 'application/octet-stream',
+          html: "text/html",
+          text: "text/plain",
+          json: "application/json",
+          javascript: "application/javascript",
+          css: "text/css",
+          xml: "application/xml",
+          svg: "image/svg+xml",
+          binary: "application/octet-stream",
         };
 
         // 设置 Content-Type
         if (options?.type) {
           // 根据 type 参数映射到对应的 MIME 类型
-          const mimeType = typeMap[options.type] || 'text/plain';
-          const charset = options.charset || 'utf-8';
-          headers.set('content-type', `${mimeType}; charset=${charset}`);
-        } else if (!headers.has('content-type')) {
+          const mimeType = typeMap[options.type] || "text/plain";
+          const charset = options.charset || "utf-8";
+          headers.set("content-type", `${mimeType}; charset=${charset}`);
+        } else if (!headers.has("content-type")) {
           // 如果已经设置了 Content-Type，不覆盖（例如 Tailwind CSS 插件设置的 text/css）
-          const charset = options?.charset || 'utf-8';
-          headers.set('content-type', `text/plain; charset=${charset}`);
+          const charset = options?.charset || "utf-8";
+          headers.set("content-type", `text/plain; charset=${charset}`);
         } else if (options?.charset) {
           // 如果已有 Content-Type 但指定了 charset，更新 charset
-          const existingType = headers.get('content-type') || '';
-          const typeWithoutCharset = existingType.split(';')[0].trim();
-          headers.set('content-type', `${typeWithoutCharset}; charset=${options.charset}`);
+          const existingType = headers.get("content-type") || "";
+          const typeWithoutCharset = existingType.split(";")[0].trim();
+          headers.set(
+            "content-type",
+            `${typeWithoutCharset}; charset=${options.charset}`,
+          );
         }
 
         // 设置自定义响应头
@@ -435,32 +456,32 @@ export class Server {
           charset?: string;
           status?: number;
           headers?: Record<string, string>;
-        }
+        },
       ) {
         // 根据 type 参数决定调用哪个方法
-        if (options?.type === 'html') {
+        if (options?.type === "html") {
           return response.html(String(data), options);
         }
 
         // 明确指定 json 类型
-        if (options?.type === 'json') {
+        if (options?.type === "json") {
           // 对于对象，移除 type 选项（json 不需要 type）
           const jsonOptions = options
             ? {
-                charset: options.charset,
-                status: options.status,
-                headers: options.headers,
-              }
+              charset: options.charset,
+              status: options.status,
+              headers: options.headers,
+            }
             : undefined;
           return response.json(data, jsonOptions);
         }
 
         // 处理字符串数据（默认返回 text）
-        if (typeof data === 'string') {
+        if (typeof data === "string") {
           // 如果指定了 type，使用指定的 type，否则默认为 'text'
           const textOptions = {
             ...options,
-            type: options?.type || 'text',
+            type: options?.type || "text",
           };
           return response.text(data, textOptions);
         }
@@ -470,7 +491,7 @@ export class Server {
           // 如果指定了 type，使用指定的 type，否则默认为 'binary'
           const binaryOptions = {
             ...options,
-            type: options?.type || 'binary',
+            type: options?.type || "binary",
           };
           return response.text(new TextDecoder().decode(data), binaryOptions);
         }
@@ -479,13 +500,13 @@ export class Server {
         // 如果指定了 type，使用指定的 type，否则默认为 'text'
         const textOptions = {
           ...options,
-          type: options?.type || 'text',
+          type: options?.type || "text",
         };
         return response.text(String(data), textOptions);
       },
       redirect(url: string, statusCode: number = 302) {
         status = statusCode;
-        headers.set('location', url);
+        headers.set("location", url);
         return response;
       },
     };
@@ -509,14 +530,16 @@ export class Server {
       const i = index;
       // 预先增加索引，以便下一次调用 next 时获取下一个中间件
       index++;
-      
+
       const middleware = middlewares[i];
-      
+
       // 防止在同一个中间件中多次调用 next()
       let nextCalled = false;
       const wrappedNext = async () => {
         if (nextCalled) {
-          console.warn(`[Middleware] Warning: next() called multiple times in middleware at index ${i}`);
+          console.warn(
+            `[Middleware] Warning: next() called multiple times in middleware at index ${i}`,
+          );
           return;
         }
         nextCalled = true;
@@ -555,7 +578,11 @@ export class Server {
     }
 
     // 确保 body 不为 undefined，如果为空则使用空字符串
-    const finalBody: string | Uint8Array | ReadableStream<Uint8Array> | undefined = responseBody ?? '';
+    const finalBody:
+      | string
+      | Uint8Array
+      | ReadableStream<Uint8Array>
+      | undefined = responseBody ?? "";
 
     // 调试：如果 body 为空但状态是 200，记录详细日志
     // 注意：此检查已在 handleRequest 中处理，这里保留用于未来扩展
@@ -597,38 +624,45 @@ export class Server {
       keyFile?: string;
       cert?: Uint8Array;
       key?: Uint8Array;
-    }
+    },
   ): Promise<void> {
-    const handler = async (req: globalThis.Request): Promise<globalThis.Response> => {
+    const handler = async (
+      req: globalThis.Request,
+    ): Promise<globalThis.Response> => {
       try {
         // 确保请求有有效的 URL
         if (!req.url) {
-          return new globalThis.Response('Invalid Request: Missing URL', {
+          return new globalThis.Response("Invalid Request: Missing URL", {
             status: 400,
           });
         }
         return await this.handleRequest(req);
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        return new globalThis.Response(`Internal Server Error: ${errorMessage}`, { status: 500 });
+        const errorMessage = error instanceof Error
+          ? error.message
+          : String(error);
+        return new globalThis.Response(
+          `Internal Server Error: ${errorMessage}`,
+          { status: 500 },
+        );
       }
-		};
-		
-		const instanceIndex = Number(Deno.env.get("PUP_CLUSTER_INSTANCE") || 0);
-		port += instanceIndex;
+    };
+
+    const instanceIndex = Number(Deno.env.get("PUP_CLUSTER_INSTANCE") || 0);
+    port += instanceIndex;
 
     // 准备 Deno.serve 配置
     const serveOptions: {
       port: number;
-			hostname: string;
+      hostname: string;
       onListen?: () => void;
       cert?: string;
       key?: string;
     } = {
       port,
-			hostname: host,
+      hostname: host,
       onListen: () => {
-        const protocol = tls ? 'https' : 'http';
+        const protocol = tls ? "https" : "http";
         console.log(`✅ 服务器已启动: ${protocol}://${host}:${port}`);
       },
     };
@@ -650,7 +684,7 @@ export class Server {
           // 将 Uint8Array 转换为字符串
           cert = new TextDecoder().decode(tls.cert);
         } else {
-          throw new Error('TLS 配置错误：必须提供 certFile 或 cert');
+          throw new Error("TLS 配置错误：必须提供 certFile 或 cert");
         }
 
         // 读取私钥文件或使用提供的私钥内容
@@ -660,7 +694,7 @@ export class Server {
           // 将 Uint8Array 转换为字符串
           key = new TextDecoder().decode(tls.key);
         } else {
-          throw new Error('TLS 配置错误：必须提供 keyFile 或 key');
+          throw new Error("TLS 配置错误：必须提供 keyFile 或 key");
         }
       }
 

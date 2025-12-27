@@ -1,7 +1,7 @@
 /**
  * 文件工具
  * 提供文件处理相关工具函数
- * 
+ *
  * 环境兼容性：
  * - 客户端：大部分函数只能在浏览器环境使用（需要 File/Blob API）
  * - 服务端：部分函数在服务端环境会返回默认值或抛出错误
@@ -10,10 +10,10 @@
 /**
  * 读取文件为文本
  * 将文件读取为文本字符串
- * 
+ *
  * @param file 文件对象（File 或 Blob）
  * @returns Promise，解析为文件文本内容
- * 
+ *
  * @example
  * ```typescript
  * const file = input.files[0];
@@ -37,10 +37,10 @@ export function readFile(file: File | Blob): Promise<string> {
 /**
  * 读取文件为 Data URL
  * 将文件读取为 Data URL 字符串（base64 编码）
- * 
+ *
  * @param file 文件对象（File 或 Blob）
  * @returns Promise，解析为 Data URL 字符串
- * 
+ *
  * @example
  * ```typescript
  * const file = input.files[0];
@@ -64,10 +64,10 @@ export function readFileAsDataUrl(file: File | Blob): Promise<string> {
 /**
  * 读取文件为 ArrayBuffer
  * 将文件读取为 ArrayBuffer 对象
- * 
+ *
  * @param file 文件对象（File 或 Blob）
  * @returns Promise，解析为 ArrayBuffer
- * 
+ *
  * @example
  * ```typescript
  * const file = input.files[0];
@@ -91,15 +91,15 @@ export function readFileAsArrayBuffer(file: File | Blob): Promise<ArrayBuffer> {
 /**
  * 保存文件到本地
  * 在浏览器中将 Blob 或字符串保存为文件
- * 
+ *
  * @param blob 文件 Blob 对象或数据
  * @param filename 文件名
- * 
+ *
  * @example
  * ```typescript
  * const blob = new Blob(['Hello World'], { type: 'text/plain' });
  * saveFile(blob, 'hello.txt');
- * 
+ *
  * // 或者从 URL 下载后保存
  * const response = await fetch('/api/file');
  * const blob = await response.blob();
@@ -121,7 +121,17 @@ export function saveFile(blob: Blob | string, filename: string): void {
 
   // 创建下载链接
   const downloadUrl = URL.createObjectURL(downloadBlob);
-  const doc = (globalThis as unknown as { document: { createElement: (tag: string) => { href: string; download: string; click: () => void }; body: { appendChild: (el: unknown) => void; removeChild: (el: unknown) => void } } }).document;
+  const doc = (globalThis as unknown as {
+    document: {
+      createElement: (
+        tag: string,
+      ) => { href: string; download: string; click: () => void };
+      body: {
+        appendChild: (el: unknown) => void;
+        removeChild: (el: unknown) => void;
+      };
+    };
+  }).document;
   const link = doc.createElement("a");
   link.href = downloadUrl;
   link.download = filename;
@@ -139,10 +149,10 @@ export function saveFile(blob: Blob | string, filename: string): void {
 /**
  * 获取文件扩展名
  * 从文件名中提取扩展名（不含点号）
- * 
+ *
  * @param filename 文件名
  * @returns 文件扩展名（小写），如果没有扩展名返回空字符串
- * 
+ *
  * @example
  * ```typescript
  * getFileExtension('document.pdf'); // 'pdf'
@@ -161,10 +171,10 @@ export function getFileExtension(filename: string): string {
 /**
  * 获取文件名（不含扩展名）
  * 从完整文件名中提取不含扩展名的文件名
- * 
+ *
  * @param filename 完整文件名
  * @returns 不含扩展名的文件名
- * 
+ *
  * @example
  * ```typescript
  * getFileName('document.pdf'); // 'document'
@@ -185,10 +195,10 @@ export function getFileName(filename: string): string {
 /**
  * 获取文件大小
  * 获取文件对象的大小（字节）
- * 
+ *
  * @param file 文件对象（File 或 Blob）
  * @returns 文件大小（字节）
- * 
+ *
  * @example
  * ```typescript
  * const file = input.files[0];
@@ -203,17 +213,17 @@ export function getFileSize(file: File | Blob): number {
 /**
  * 判断是否为图片文件
  * 根据文件扩展名判断是否为图片文件
- * 
+ *
  * @param file 文件对象或文件名
  * @returns 是否为图片文件
- * 
+ *
  * @example
  * ```typescript
  * const file = input.files[0];
  * if (isImageFile(file)) {
  *   // 处理图片
  * }
- * 
+ *
  * // 或者使用文件名
  * if (isImageFile('image.jpg')) {
  *   // 处理图片
@@ -243,10 +253,10 @@ export function isImageFile(file: File | Blob | string): boolean {
 /**
  * 判断是否为视频文件
  * 根据文件扩展名判断是否为视频文件
- * 
+ *
  * @param file 文件对象或文件名
  * @returns 是否为视频文件
- * 
+ *
  * @example
  * ```typescript
  * const file = input.files[0];
@@ -278,10 +288,10 @@ export function isVideoFile(file: File | Blob | string): boolean {
 /**
  * 判断是否为音频文件
  * 根据文件扩展名判断是否为音频文件
- * 
+ *
  * @param file 文件对象或文件名
  * @returns 是否为音频文件
- * 
+ *
  * @example
  * ```typescript
  * const file = input.files[0];
@@ -312,11 +322,11 @@ export function isAudioFile(file: File | Blob | string): boolean {
 /**
  * 压缩图片
  * 在浏览器中压缩图片文件，返回压缩后的 Blob
- * 
+ *
  * @param file 图片文件对象
  * @param options 压缩选项
  * @returns Promise，解析为压缩后的 Blob
- * 
+ *
  * @example
  * ```typescript
  * const file = input.files[0];
@@ -353,7 +363,15 @@ export function compressImage(
     readFileAsDataUrl(file)
       .then((dataUrl) => {
         // 创建图片对象
-        const ImageConstructor = (globalThis as unknown as { Image: new () => { src: string; width: number; height: number; onload: (() => void) | null; onerror: ((error: Event) => void) | null } }).Image;
+        const ImageConstructor = (globalThis as unknown as {
+          Image: new () => {
+            src: string;
+            width: number;
+            height: number;
+            onload: (() => void) | null;
+            onerror: ((error: Event) => void) | null;
+          };
+        }).Image;
         const img = new ImageConstructor();
         img.onload = () => {
           // 计算压缩后的尺寸
@@ -367,7 +385,32 @@ export function compressImage(
           }
 
           // 创建 Canvas 进行压缩
-          const doc = (globalThis as unknown as { document: { createElement: (tag: string) => { width: number; height: number; getContext: (type: string) => { drawImage: (img: unknown, x: number, y: number, w: number, h: number) => void; } | null; toBlob: (callback: (blob: Blob | null) => void, mimeType: string, quality: number) => void } } }).document;
+          const doc = (globalThis as unknown as {
+            document: {
+              createElement: (
+                tag: string,
+              ) => {
+                width: number;
+                height: number;
+                getContext: (
+                  type: string,
+                ) => {
+                  drawImage: (
+                    img: unknown,
+                    x: number,
+                    y: number,
+                    w: number,
+                    h: number,
+                  ) => void;
+                } | null;
+                toBlob: (
+                  callback: (blob: Blob | null) => void,
+                  mimeType: string,
+                  quality: number,
+                ) => void;
+              };
+            };
+          }).document;
           const canvas = doc.createElement("canvas");
           canvas.width = width;
           canvas.height = height;
@@ -408,12 +451,12 @@ export function compressImage(
 /**
  * 创建文件对象
  * 从数据创建 File 或 Blob 对象
- * 
+ *
  * @param data 文件数据（字符串、ArrayBuffer、Blob 等）
  * @param filename 文件名
  * @param mimeType MIME 类型（默认 'application/octet-stream'）
  * @returns File 对象
- * 
+ *
  * @example
  * ```typescript
  * const file = createFile('Hello World', 'hello.txt', 'text/plain');
@@ -443,10 +486,10 @@ export function createFile(
 /**
  * 获取文件 MIME 类型
  * 根据文件扩展名获取对应的 MIME 类型
- * 
+ *
  * @param filename 文件名或扩展名
  * @returns MIME 类型，如果无法识别返回 'application/octet-stream'
- * 
+ *
  * @example
  * ```typescript
  * getMimeType('image.jpg'); // 'image/jpeg'
@@ -483,11 +526,13 @@ export function getMimeType(filename: string): string {
     // 文档
     pdf: "application/pdf",
     doc: "application/msword",
-    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    docx:
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     xls: "application/vnd.ms-excel",
     xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ppt: "application/vnd.ms-powerpoint",
-    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    pptx:
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     // 文本
     txt: "text/plain",
     html: "text/html",
@@ -505,4 +550,3 @@ export function getMimeType(filename: string): string {
 
   return mimeTypes[ext] || "application/octet-stream";
 }
-

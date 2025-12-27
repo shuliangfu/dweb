@@ -36,7 +36,7 @@ class HMRClient {
    */
   private init(): void {
     // 缓存根元素（性能优化：避免重复查询 DOM）
-    this.rootElement = document.getElementById('root');
+    this.rootElement = document.getElementById("root");
 
     // 缓存 Preact 模块（性能优化：避免重复访问 globalThis）
     this.preactModules = (globalThis as Record<string, unknown>)
@@ -73,11 +73,11 @@ class HMRClient {
     const timestamp = Date.now(); // 缓存时间戳（性能优化）
 
     links.forEach((link) => {
-      const href = link.getAttribute('href');
-      if (href && (href.includes(filePath) || filePath.includes('style.css'))) {
+      const href = link.getAttribute("href");
+      if (href && (href.includes(filePath) || filePath.includes("style.css"))) {
         // 添加时间戳强制重新加载
-        const baseUrl = href.split('?')[0];
-        link.setAttribute('href', `${baseUrl}?t=${timestamp}`);
+        const baseUrl = href.split("?")[0];
+        link.setAttribute("href", `${baseUrl}?t=${timestamp}`);
       }
     });
   }
@@ -93,7 +93,7 @@ class HMRClient {
     }
 
     try {
-      const separator = layoutPath.includes('?') ? '&' : '?';
+      const separator = layoutPath.includes("?") ? "&" : "?";
       const timestamp = Date.now();
       const layoutModule = await import(
         `${layoutPath}${separator}t=${timestamp}`
@@ -123,8 +123,8 @@ class HMRClient {
     let pageElement: unknown;
     try {
       // 先尝试直接调用组件（支持异步组件）
-      if (typeof PageComponent !== 'function') {
-        throw new Error('页面组件不是函数');
+      if (typeof PageComponent !== "function") {
+        throw new Error("页面组件不是函数");
       }
       const componentResult = (PageComponent as (
         props: Record<string, unknown>,
@@ -138,19 +138,19 @@ class HMRClient {
       }
 
       if (!pageElement) {
-        throw new Error('页面组件返回了空值');
+        throw new Error("页面组件返回了空值");
       }
     } catch (callError: unknown) {
       // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
-        try {
-          const elementResult = jsx(PageComponent, props);
-          if (elementResult instanceof Promise) {
-            pageElement = await elementResult;
-          } else {
-            pageElement = elementResult;
-          }
+      try {
+        const elementResult = jsx(PageComponent, props);
+        if (elementResult instanceof Promise) {
+          pageElement = await elementResult;
+        } else {
+          pageElement = elementResult;
+        }
         if (!pageElement) {
-          throw new Error('页面组件返回了空值');
+          throw new Error("页面组件返回了空值");
         }
       } catch {
         const errorMessage = callError instanceof Error
@@ -163,21 +163,22 @@ class HMRClient {
     // 如果有布局，用布局包裹页面元素（支持异步布局组件）
     if (LayoutComponent) {
       try {
-        if (typeof LayoutComponent !== 'function') {
-          throw new Error('布局组件不是函数');
+        if (typeof LayoutComponent !== "function") {
+          throw new Error("布局组件不是函数");
         }
         // 获取布局的 load 数据（如果有）
-        const pageData = (globalThis as Record<string, unknown>).__PAGE_DATA__ as
-          | { layoutData?: Record<string, unknown>[] }
-          | undefined;
+        const pageData = (globalThis as Record<string, unknown>)
+          .__PAGE_DATA__ as
+            | { layoutData?: Record<string, unknown>[] }
+            | undefined;
         const layoutData = pageData?.layoutData?.[0] || {};
-        
+
         // 先尝试直接调用布局组件（支持异步组件）
         // 传递布局的 load 数据作为 data 属性
         const layoutResult = (LayoutComponent as (props: {
           children: unknown;
           data?: Record<string, unknown>;
-        }) => unknown | Promise<unknown>)({ 
+        }) => unknown | Promise<unknown>)({
           children: pageElement,
           data: layoutData,
         });
@@ -190,19 +191,20 @@ class HMRClient {
         }
 
         if (!finalElement) {
-          throw new Error('布局组件返回了空值');
+          throw new Error("布局组件返回了空值");
         }
         return finalElement;
       } catch {
         // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
         try {
           // 获取布局的 load 数据（如果有）
-          const pageData = (globalThis as Record<string, unknown>).__PAGE_DATA__ as
-            | { layoutData?: Record<string, unknown>[] }
-            | undefined;
+          const pageData = (globalThis as Record<string, unknown>)
+            .__PAGE_DATA__ as
+              | { layoutData?: Record<string, unknown>[] }
+              | undefined;
           const layoutData = pageData?.layoutData?.[0] || {};
-          
-          const layoutResult = jsx(LayoutComponent, { 
+
+          const layoutResult = jsx(LayoutComponent, {
             children: pageElement,
             data: layoutData,
           });
@@ -213,7 +215,7 @@ class HMRClient {
             finalElement = layoutResult;
           }
           if (!finalElement) {
-            throw new Error('布局组件返回了空值');
+            throw new Error("布局组件返回了空值");
           }
           return finalElement;
         } catch {
@@ -239,25 +241,25 @@ class HMRClient {
     // 直接使用 Preact 的 render 函数更新内容
     // Preact 会自动 diff 并更新 DOM，不需要手动清空容器
     // 这样可以避免闪动，实现平滑的热更新
-        render(finalElement, root);
+    render(finalElement, root);
 
     // 验证渲染结果（不抛出错误，只记录警告）
-        setTimeout(() => {
+    setTimeout(() => {
       this.validateRender(root);
-        }, 50);
+    }, 50);
   }
 
   /**
    * 验证渲染结果
    */
   private validateRender(root: HTMLElement): void {
-        const hasChildren = root.children.length > 0;
-    const hasText = root.textContent?.trim() !== '';
+    const hasChildren = root.children.length > 0;
+    const hasText = root.textContent?.trim() !== "";
 
-        if (!hasChildren && !hasText) {
+    if (!hasChildren && !hasText) {
       // 只记录警告，不抛出错误（避免导致页面刷新）
-      console.warn('[HMR] 渲染后容器为空，但继续运行');
-        }
+      console.warn("[HMR] 渲染后容器为空，但继续运行");
+    }
   }
 
   /**
@@ -291,7 +293,7 @@ class HMRClient {
       } | undefined;
 
     if (!modules || !modules.render || !modules.jsx) {
-      throw new Error('Preact 模块未预加载');
+      throw new Error("Preact 模块未预加载");
     }
 
     // 更新缓存
@@ -315,17 +317,23 @@ class HMRClient {
 
     // 获取根容器（使用缓存的元素）
     const root = this.rootElement;
-      if (!root) {
-        throw new Error('未找到 #root 容器');
-      }
+    if (!root) {
+      throw new Error("未找到 #root 容器");
+    }
 
     // 判断更新的是布局文件还是页面文件
-    const isLayoutFile = filePath.includes('_layout') || filePath.includes('_app');
-    
+    const isLayoutFile = filePath.includes("_layout") ||
+      filePath.includes("_app");
+
     try {
       // 获取页面数据
       const pageData = (globalThis as Record<string, unknown>).__PAGE_DATA__ as
-        | { props?: Record<string, unknown>; layoutPath?: string; allLayoutPaths?: string[]; route?: string }
+        | {
+          props?: Record<string, unknown>;
+          layoutPath?: string;
+          allLayoutPaths?: string[];
+          route?: string;
+        }
         | undefined;
       const props = pageData?.props || {};
 
@@ -333,13 +341,14 @@ class HMRClient {
         // 更新的是布局文件：清除布局组件缓存，重新加载布局组件
         const layoutPath = pageData?.layoutPath ?? null;
         const allLayoutPaths = pageData?.allLayoutPaths ?? [];
-        
+
         // 清除布局组件的缓存
-        const moduleCache = (globalThis as Record<string, unknown>).__moduleCache as Map<string, unknown> | undefined;
+        const moduleCache = (globalThis as Record<string, unknown>)
+          .__moduleCache as Map<string, unknown> | undefined;
         if (moduleCache) {
           // 清除所有布局路径的缓存
           if (allLayoutPaths.length > 0) {
-            allLayoutPaths.forEach(path => {
+            allLayoutPaths.forEach((path) => {
               moduleCache.delete(path);
             });
           } else if (layoutPath) {
@@ -348,43 +357,48 @@ class HMRClient {
         }
 
         // 重新加载布局组件（使用新的模块 URL，带时间戳避免缓存）
-        const separator = moduleUrl.includes('?') ? '&' : '?';
+        const separator = moduleUrl.includes("?") ? "&" : "?";
         const timestamp = Date.now();
         const moduleUrlWithTimestamp = `${moduleUrl}${separator}t=${timestamp}`;
         const layoutModule = await import(moduleUrlWithTimestamp);
         const LayoutComponent = layoutModule.default;
-        
-        if (!LayoutComponent || typeof LayoutComponent !== 'function') {
-          throw new Error('布局组件未导出默认组件或组件不是函数');
+
+        if (!LayoutComponent || typeof LayoutComponent !== "function") {
+          throw new Error("布局组件未导出默认组件或组件不是函数");
         }
 
         // 获取当前页面组件（从缓存或重新加载）
         let PageComponent: unknown;
         const currentRoute = pageData?.route || globalThis.location.pathname;
-        
+
         // 尝试从缓存获取页面组件
         if (moduleCache && currentRoute) {
           const cachedModule = moduleCache.get(currentRoute);
-          if (cachedModule && typeof cachedModule === 'object' && 'default' in cachedModule) {
+          if (
+            cachedModule && typeof cachedModule === "object" &&
+            "default" in cachedModule
+          ) {
             PageComponent = (cachedModule as { default: unknown }).default;
           }
         }
-        
+
         // 如果缓存中没有，重新加载页面组件
-        if (!PageComponent || typeof PageComponent !== 'function') {
+        if (!PageComponent || typeof PageComponent !== "function") {
           // 重新加载当前页面组件
-          const pageModuleUrl = typeof currentRoute === 'string' && currentRoute.startsWith('http')
-            ? currentRoute
-            : `${globalThis.location.origin}${currentRoute}`;
-          const pageSeparator = pageModuleUrl.includes('?') ? '&' : '?';
+          const pageModuleUrl =
+            typeof currentRoute === "string" && currentRoute.startsWith("http")
+              ? currentRoute
+              : `${globalThis.location.origin}${currentRoute}`;
+          const pageSeparator = pageModuleUrl.includes("?") ? "&" : "?";
           const pageTimestamp = Date.now();
-          const pageModuleUrlWithTimestamp = `${pageModuleUrl}${pageSeparator}t=${pageTimestamp}`;
+          const pageModuleUrlWithTimestamp =
+            `${pageModuleUrl}${pageSeparator}t=${pageTimestamp}`;
           const pageModule = await import(pageModuleUrlWithTimestamp);
           PageComponent = pageModule.default;
         }
 
-        if (!PageComponent || typeof PageComponent !== 'function') {
-          throw new Error('页面组件未找到或不是函数');
+        if (!PageComponent || typeof PageComponent !== "function") {
+          throw new Error("页面组件未找到或不是函数");
         }
 
         // 创建页面元素（包含更新的布局，支持异步组件）
@@ -401,7 +415,7 @@ class HMRClient {
         // 更新的是页面文件：正常处理
         // 通过 GET 请求获取编译后的模块
         // 添加时间戳避免缓存
-        const separator = moduleUrl.includes('?') ? '&' : '?';
+        const separator = moduleUrl.includes("?") ? "&" : "?";
         const timestamp = Date.now();
         const moduleUrlWithTimestamp = `${moduleUrl}${separator}t=${timestamp}`;
 
@@ -410,8 +424,8 @@ class HMRClient {
 
         // 获取页面组件
         const PageComponent = module.default;
-        if (!PageComponent || typeof PageComponent !== 'function') {
-          throw new Error('组件未导出默认组件或组件不是函数');
+        if (!PageComponent || typeof PageComponent !== "function") {
+          throw new Error("组件未导出默认组件或组件不是函数");
         }
 
         // 获取布局路径并加载布局组件（保持原有布局）
@@ -431,9 +445,9 @@ class HMRClient {
       }
     } catch (error) {
       // 记录错误但不立即回退，尝试继续运行
-      console.error('[HMR] 更新组件失败:', error);
+      console.error("[HMR] 更新组件失败:", error);
       // 只有在关键错误时才回退到重新加载组件
-      if (error instanceof Error && error.message.includes('未找到')) {
+      if (error instanceof Error && error.message.includes("未找到")) {
         await this.reloadComponent();
       }
     }
@@ -447,30 +461,30 @@ class HMRClient {
       // 获取当前页面的 HTML
       const response = await fetch(globalThis.location.href, {
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
+          "Cache-Control": "no-cache",
+          "Pragma": "no-cache",
         },
       });
       const html = await response.text();
 
       // 解析 HTML
       const parser = new DOMParser();
-      const newDoc = parser.parseFromString(html, 'text/html');
+      const newDoc = parser.parseFromString(html, "text/html");
 
       // 获取新的 body 内容
       const newBody = newDoc.body;
       const currentBody = document.body;
 
       // 获取新的 script 标签（从新解析的 HTML）
-      const newScripts = Array.from(newBody.querySelectorAll('script'));
+      const newScripts = Array.from(newBody.querySelectorAll("script"));
 
       // 清空当前 body 内容
-      currentBody.innerHTML = '';
+      currentBody.innerHTML = "";
 
       // 添加新的 body 内容（排除 script 标签，稍后单独处理）
       const bodyContent = newBody.cloneNode(true) as HTMLElement;
-      const bodyScripts = Array.from(bodyContent.querySelectorAll('script'));
-      bodyScripts.forEach(script => script.remove());
+      const bodyScripts = Array.from(bodyContent.querySelectorAll("script"));
+      bodyScripts.forEach((script) => script.remove());
       currentBody.innerHTML = bodyContent.innerHTML;
 
       // 重新执行新的脚本（排除 HMR 脚本，避免重复连接）
@@ -478,45 +492,49 @@ class HMRClient {
       const hmrPortString = String(this.config.hmrPort);
 
       newScripts.forEach((script) => {
-        const scriptContent = script.textContent || '';
-        const scriptSrc = script.getAttribute('src') || '';
-        
+        const scriptContent = script.textContent || "";
+        const scriptSrc = script.getAttribute("src") || "";
+
         // 检查是否是 HMR 脚本（包含 WebSocket 连接代码）
-        const isHMRScript = (scriptContent.includes('ws://') || scriptSrc.includes('ws://')) &&
+        const isHMRScript =
+          (scriptContent.includes("ws://") || scriptSrc.includes("ws://")) &&
           scriptContent.includes(hmrPortString);
-        
+
         // 检查是否是 JSON script 标签（data-type="dweb-page-data"）
-        const isJsonScript = script.getAttribute('data-type') === 'dweb-page-data';
-        
+        const isJsonScript =
+          script.getAttribute("data-type") === "dweb-page-data";
+
         // 跳过 HMR 脚本和 JSON script 标签
         if (isHMRScript || isJsonScript) {
           return;
         }
 
-        const newScript = document.createElement('script');
-        
+        const newScript = document.createElement("script");
+
         // 复制所有属性
-        Array.from(script.attributes).forEach(attr => {
-          if (attr.name !== 'src') {
+        Array.from(script.attributes).forEach((attr) => {
+          if (attr.name !== "src") {
             newScript.setAttribute(attr.name, attr.value);
           }
         });
-        
+
         if (scriptSrc) {
-          newScript.src = `${scriptSrc}${scriptSrc.includes('?') ? '&' : '?'}t=${timestamp}`;
+          newScript.src = `${scriptSrc}${
+            scriptSrc.includes("?") ? "&" : "?"
+          }t=${timestamp}`;
         } else if (scriptContent) {
           newScript.textContent = scriptContent;
         }
-        
+
         // 安全地添加脚本到 body
         try {
           document.body.appendChild(newScript);
         } catch (error) {
-          console.warn('[HMR] 添加脚本失败:', error);
+          console.warn("[HMR] 添加脚本失败:", error);
         }
       });
     } catch (error) {
-      console.error('[HMR] 重新加载组件失败:', error);
+      console.error("[HMR] 重新加载组件失败:", error);
       // 失败时回退到完全重载
       globalThis.location.reload();
     }
@@ -532,13 +550,13 @@ class HMRClient {
     moduleUrl?: string;
   }): Promise<void> {
     try {
-      if (data.type === 'css' && data.action === 'reload-stylesheet') {
+      if (data.type === "css" && data.action === "reload-stylesheet") {
         // CSS 文件：只更新样式表
         if (data.file) {
           this.reloadStylesheet(data.file);
         }
       } else if (
-        data.type === 'component' && data.action === 'update-component'
+        data.type === "component" && data.action === "update-component"
       ) {
         // 组件文件：通过 GET 请求获取编译后的模块
         if (data.moduleUrl && data.file) {
@@ -548,7 +566,7 @@ class HMRClient {
           await this.reloadComponent();
         }
       } else if (
-        data.type === 'component' && data.action === 'reload-component'
+        data.type === "component" && data.action === "reload-component"
       ) {
         // 组件文件：重新加载组件内容（降级方案）
         await this.reloadComponent();
@@ -558,10 +576,10 @@ class HMRClient {
       }
     } catch (error) {
       // 记录错误，但不立即重载页面
-      console.error('[HMR] 处理更新消息失败:', error);
+      console.error("[HMR] 处理更新消息失败:", error);
       // 只有在严重错误时才回退到完全重载
-      if (error instanceof Error && error.message.includes('严重')) {
-      globalThis.location.reload();
+      if (error instanceof Error && error.message.includes("严重")) {
+        globalThis.location.reload();
       }
     }
   }
@@ -581,9 +599,9 @@ class HMRClient {
         };
       };
 
-      if (message.type === 'reload') {
+      if (message.type === "reload") {
         globalThis.location.reload();
-      } else if (message.type === 'update') {
+      } else if (message.type === "update") {
         await this.handleUpdateMessage(message.data || {});
       }
     } catch {
@@ -601,6 +619,6 @@ function initHMR(config: HMRConfig): void {
 }
 
 // 暴露到全局，供内联脚本调用
-if (typeof globalThis !== 'undefined') {
+if (typeof globalThis !== "undefined") {
   (globalThis as Record<string, unknown>).initHMR = initHMR;
 }

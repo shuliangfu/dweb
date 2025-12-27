@@ -71,4 +71,3 @@ export interface PerformancePluginOptions {
   /** 自定义指标收集函数 */
   onMetrics?: (metrics: PerformanceMetrics) => void | Promise<void>;
 }
-

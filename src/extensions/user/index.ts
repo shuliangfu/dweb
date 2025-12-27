@@ -3,7 +3,7 @@
  * 演示如何创建和使用自定义扩展
  */
 
-import { registerExtension } from '../registry.ts';
+import { registerExtension } from "../registry.ts";
 
 /**
  * 示例：自定义字符串扩展
@@ -11,13 +11,13 @@ import { registerExtension } from '../registry.ts';
  */
 export function initCustomStringExtension(): void {
   registerExtension({
-    name: 'toCapitalize',
-    type: 'method',
-    target: 'String',
+    name: "toCapitalize",
+    type: "method",
+    target: "String",
     handler: function (this: string): string {
       return this.charAt(0).toUpperCase() + this.slice(1).toLowerCase();
     },
-    description: '自定义：将字符串转换为首字母大写格式',
+    description: "自定义：将字符串转换为首字母大写格式",
   });
 }
 
@@ -34,7 +34,7 @@ export function add(a: number, b: number): number {
  * 生成指定长度的随机数字字符串
  */
 export function generateRandomNumber(length: number): string {
-  let result = '';
+  let result = "";
   for (let i = 0; i < length; i++) {
     result += Math.floor(Math.random() * 10).toString();
   }
@@ -52,4 +52,3 @@ export function initUserExtensions(): void {
   // 可以在这里注册更多自定义扩展
   // registerExtension({ ... });
 }
-

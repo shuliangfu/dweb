@@ -1,7 +1,7 @@
 /**
  * 工具函数库
  * 提供常用的工具函数，包括防抖、节流、深拷贝、对象操作等
- * 
+ *
  * 环境兼容性：
  * - 通用：所有函数都可以在服务端和客户端使用
  */
@@ -9,17 +9,17 @@
 /**
  * 防抖函数
  * 限制函数调用频率，在指定时间内只执行最后一次调用
- * 
+ *
  * @param func 要防抖的函数
  * @param wait 等待时间（毫秒）
  * @returns 防抖后的函数
- * 
+ *
  * @example
  * ```typescript
  * const debouncedSearch = debounce((query: string) => {
  *   console.log('搜索:', query);
  * }, 300);
- * 
+ *
  * // 快速调用多次，只会在停止调用 300ms 后执行一次
  * debouncedSearch('a');
  * debouncedSearch('ab');
@@ -45,17 +45,17 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
 /**
  * 节流函数
  * 限制函数执行频率，在指定时间内最多执行一次
- * 
+ *
  * @param func 要节流的函数
  * @param limit 时间间隔（毫秒）
  * @returns 节流后的函数
- * 
+ *
  * @example
  * ```typescript
  * const throttledScroll = throttle(() => {
  *   console.log('滚动事件');
  * }, 100);
- * 
+ *
  * // 频繁触发，但每 100ms 最多执行一次
  * window.addEventListener('scroll', throttledScroll);
  * ```
@@ -82,17 +82,17 @@ export function throttle<T extends (...args: unknown[]) => unknown>(
 /**
  * 深拷贝函数
  * 深度克隆对象，包括嵌套对象和数组，返回完全独立的新对象
- * 
+ *
  * @param value 要克隆的值
  * @returns 克隆后的新值
- * 
+ *
  * @example
  * ```typescript
  * const obj = { a: 1, b: { c: 2 }, d: [3, 4] };
  * const cloned = deepClone(obj);
  * cloned.b.c = 5;
  * // obj.b.c 仍然是 2，因为进行了深度克隆
- * 
+ *
  * const date = new Date();
  * const clonedDate = deepClone(date);
  * // clonedDate 是新的 Date 对象
@@ -159,11 +159,11 @@ export function deepClone<T>(value: T): T {
 /**
  * 深度合并对象
  * 深度合并两个对象，嵌套对象会递归合并，返回新的合并对象（原对象不会被修改）
- * 
+ *
  * @param target 目标对象
  * @param source 源对象
  * @returns 合并后的新对象
- * 
+ *
  * @example
  * ```typescript
  * const obj1 = { a: 1, b: { c: 2, d: 3 } };
@@ -202,10 +202,10 @@ export function deepMerge<T extends Record<string, unknown>>(
 /**
  * 判断值是否为空
  * 检查值是否为 null、undefined、空字符串、空数组或空对象
- * 
+ *
  * @param value 要检查的值
  * @returns 是否为空
- * 
+ *
  * @example
  * ```typescript
  * isEmpty(null); // true
@@ -241,11 +241,11 @@ export function isEmpty(value: unknown): boolean {
 /**
  * 深度比较两个值是否相等
  * 递归比较两个值，包括嵌套对象和数组
- * 
+ *
  * @param a 第一个值
  * @param b 第二个值
  * @returns 是否相等
- * 
+ *
  * @example
  * ```typescript
  * isEqual({ a: 1, b: { c: 2 } }, { a: 1, b: { c: 2 } }); // true
@@ -295,7 +295,12 @@ export function isEqual(a: unknown, b: unknown): boolean {
       if (!keysB.includes(key)) {
         return false;
       }
-      if (!isEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])) {
+      if (
+        !isEqual(
+          (a as Record<string, unknown>)[key],
+          (b as Record<string, unknown>)[key],
+        )
+      ) {
         return false;
       }
     }
@@ -309,11 +314,11 @@ export function isEqual(a: unknown, b: unknown): boolean {
 /**
  * 从对象中选择指定键
  * 从对象中选择指定的键，返回包含这些键的新对象
- * 
+ *
  * @param obj 源对象
  * @param keys 要选择的键数组
  * @returns 包含指定键的新对象
- * 
+ *
  * @example
  * ```typescript
  * const user = { id: 1, name: 'Alice', email: 'alice@example.com', age: 30 };
@@ -337,11 +342,11 @@ export function pick<T extends Record<string, unknown>, K extends keyof T>(
 /**
  * 从对象中排除指定键
  * 从对象中排除指定的键，返回不包含这些键的新对象
- * 
+ *
  * @param obj 源对象
  * @param keys 要排除的键数组
  * @returns 不包含指定键的新对象
- * 
+ *
  * @example
  * ```typescript
  * const user = { id: 1, name: 'Alice', email: 'alice@example.com', age: 30 };
@@ -363,12 +368,12 @@ export function omit<T extends Record<string, unknown>, K extends keyof T>(
 /**
  * 安全获取嵌套对象属性
  * 使用路径字符串安全地获取嵌套对象的属性值，如果路径不存在则返回默认值
- * 
+ *
  * @param obj 源对象
  * @param path 属性路径（如 'user.profile.name' 或 ['user', 'profile', 'name']）
  * @param defaultValue 默认值（当路径不存在时返回）
  * @returns 属性值或默认值
- * 
+ *
  * @example
  * ```typescript
  * const user = { profile: { name: 'Alice' } };
@@ -405,18 +410,18 @@ export function getValue<T = unknown>(
 /**
  * 安全设置嵌套对象属性
  * 使用路径字符串安全地设置嵌套对象的属性值，如果路径不存在则创建
- * 
+ *
  * @param obj 目标对象
  * @param path 属性路径（如 'user.profile.name' 或 ['user', 'profile', 'name']）
  * @param value 要设置的值
  * @returns 设置后的对象
- * 
+ *
  * @example
  * ```typescript
  * const user = {};
  * set(user, 'profile.name', 'Alice');
  * // { profile: { name: 'Alice' } }
- * 
+ *
  * set(user, ['profile', 'age'], 30);
  * // { profile: { name: 'Alice', age: 30 } }
  * ```
@@ -434,7 +439,10 @@ export function set<T extends Record<string, unknown>>(
 
   let current: Record<string, unknown> = obj as Record<string, unknown>;
   for (const key of keys) {
-    if (!(key in current) || typeof current[key] !== "object" || current[key] === null) {
+    if (
+      !(key in current) || typeof current[key] !== "object" ||
+      current[key] === null
+    ) {
       current[key] = {};
     }
     current = current[key] as Record<string, unknown>;
@@ -450,10 +458,10 @@ export function set<T extends Record<string, unknown>>(
 /**
  * 延迟函数
  * 返回一个 Promise，在指定时间后 resolve
- * 
+ *
  * @param ms 延迟时间（毫秒）
  * @returns Promise
- * 
+ *
  * @example
  * ```typescript
  * await sleep(1000); // 等待 1 秒
@@ -469,11 +477,11 @@ export function sleep(ms: number): Promise<void> {
 /**
  * 重试函数包装器
  * 自动重试失败的异步函数
- * 
+ *
  * @param fn 要重试的异步函数
  * @param options 重试选项
  * @returns 重试后的结果
- * 
+ *
  * @example
  * ```typescript
  * const result = await retry(
@@ -519,4 +527,3 @@ function isObject(value: unknown): value is Record<string, unknown> {
     !(value instanceof Date) && !(value instanceof RegExp) &&
     !(value instanceof Map) && !(value instanceof Set);
 }
-

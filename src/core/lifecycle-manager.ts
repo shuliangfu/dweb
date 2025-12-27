@@ -1,30 +1,30 @@
 /**
  * 生命周期管理器模块
  * 管理应用的生命周期，统一处理启动、运行、关闭流程
- * 
+ *
  * @module core/lifecycle-manager
  */
 
-import type { Application } from './application.ts';
-import type { Server } from './server.ts';
-import type { ConfigManager } from './config-manager.ts';
+import type { Application } from "./application.ts";
+import type { Server } from "./server.ts";
+import type { ConfigManager } from "./config-manager.ts";
 
 /**
  * 应用生命周期阶段
  */
 export enum LifecyclePhase {
   /** 初始化中 */
-  Initializing = 'initializing',
+  Initializing = "initializing",
   /** 已初始化 */
-  Initialized = 'initialized',
+  Initialized = "initialized",
   /** 启动中 */
-  Starting = 'starting',
+  Starting = "starting",
   /** 运行中 */
-  Running = 'running',
+  Running = "running",
   /** 停止中 */
-  Stopping = 'stopping',
+  Stopping = "stopping",
   /** 已停止 */
-  Stopped = 'stopped',
+  Stopped = "stopped",
 }
 
 /**
@@ -45,13 +45,13 @@ export interface LifecycleHooks {
 /**
  * 生命周期管理器
  * 管理应用的生命周期，统一处理启动、运行、关闭流程
- * 
+ *
  * @example
  * ```ts
  * import { LifecycleManager } from "@dreamer/dweb/core/lifecycle-manager";
- * 
+ *
  * const lifecycleManager = new LifecycleManager(application);
- * 
+ *
  * // 注册生命周期钩子
  * lifecycleManager.registerHooks({
  *   onStart: async () => {
@@ -61,7 +61,7 @@ export interface LifecycleHooks {
  *     console.log('应用停止中...');
  *   },
  * });
- * 
+ *
  * // 启动应用
  * await lifecycleManager.start();
  * ```
@@ -76,7 +76,7 @@ export class LifecycleManager {
 
   /**
    * 构造函数
-   * 
+   *
    * @param application - 应用实例
    */
   constructor(application: Application) {
@@ -85,9 +85,9 @@ export class LifecycleManager {
 
   /**
    * 注册生命周期钩子
-   * 
+   *
    * @param hooks - 生命周期钩子对象
-   * 
+   *
    * @example
    * ```ts
    * lifecycleManager.registerHooks({
@@ -104,9 +104,9 @@ export class LifecycleManager {
   /**
    * 启动应用
    * 执行启动流程：执行启动钩子 -> 启动服务器 -> 更新状态
-   * 
+   *
    * @throws {Error} 如果应用未初始化
-   * 
+   *
    * @example
    * ```ts
    * await lifecycleManager.start();
@@ -114,28 +114,30 @@ export class LifecycleManager {
    */
   async start(): Promise<void> {
     if (this.phase !== LifecyclePhase.Initialized) {
-      throw new Error('应用未初始化，无法启动');
+      throw new Error("应用未初始化，无法启动");
     }
 
     this.phase = LifecyclePhase.Starting;
 
     try {
       // 执行启动前钩子
-      await this.executeHooks('onStart');
+      await this.executeHooks("onStart");
 
       // 启动服务器
-      const server = this.application.getService<Server>('server');
-      const configManager = this.application.getService<ConfigManager>('configManager');
+      const server = this.application.getService<Server>("server");
+      const configManager = this.application.getService<ConfigManager>(
+        "configManager",
+      );
       const config = configManager.getConfig();
-      
+
       if (!config.server || !config.server.port) {
-        throw new Error('服务器配置无效：缺少 port');
+        throw new Error("服务器配置无效：缺少 port");
       }
 
       await server.start(
         config.server.port,
-        config.server.host || 'localhost',
-        config.server.tls
+        config.server.host || "localhost",
+        config.server.tls,
       );
 
       this.phase = LifecyclePhase.Running;
@@ -151,7 +153,7 @@ export class LifecycleManager {
   /**
    * 停止应用
    * 执行停止流程：执行停止钩子 -> 停止服务器 -> 清理资源 -> 更新状态
-   * 
+   *
    * @example
    * ```ts
    * await lifecycleManager.stop();
@@ -167,10 +169,10 @@ export class LifecycleManager {
 
     try {
       // 执行停止前钩子
-      await this.executeHooks('onStop');
+      await this.executeHooks("onStop");
 
       // 停止服务器
-      const server = this.application.getService<Server>('server');
+      const server = this.application.getService<Server>("server");
       await server.close();
 
       // 清理资源
@@ -179,7 +181,7 @@ export class LifecycleManager {
       this.phase = LifecyclePhase.Stopped;
 
       // 执行关闭钩子
-      await this.executeHooks('onShutdown');
+      await this.executeHooks("onShutdown");
     } catch (error) {
       this.phase = LifecyclePhase.Stopped;
       throw error;
@@ -188,7 +190,7 @@ export class LifecycleManager {
 
   /**
    * 执行生命周期钩子
-   * 
+   *
    * @param hookName - 钩子名称
    */
   private async executeHooks(hookName: keyof LifecycleHooks): Promise<void> {
@@ -213,10 +215,12 @@ export class LifecycleManager {
     // TODO: 清理数据库连接
     // TODO: 清理 WebSocket 连接
     // TODO: 清理其他资源
-    
+
     // 清理服务容器的作用域实例
-    const { ServiceContainer } = await import('./service-container.ts');
-    const serviceContainer = this.application.getService<InstanceType<typeof ServiceContainer>>('serviceContainer');
+    const { ServiceContainer } = await import("./service-container.ts");
+    const serviceContainer = this.application.getService<
+      InstanceType<typeof ServiceContainer>
+    >("serviceContainer");
     if (serviceContainer) {
       serviceContainer.clearScope();
     }
@@ -224,7 +228,7 @@ export class LifecycleManager {
 
   /**
    * 获取当前生命周期阶段
-   * 
+   *
    * @returns 当前生命周期阶段
    */
   getPhase(): LifecyclePhase {
@@ -233,7 +237,7 @@ export class LifecycleManager {
 
   /**
    * 设置生命周期阶段（内部使用）
-   * 
+   *
    * @param phase - 生命周期阶段
    */
   setPhase(phase: LifecyclePhase): void {

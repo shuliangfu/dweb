@@ -3,7 +3,7 @@
  * 使用 esbuild 进行压缩，更可靠
  */
 
-import * as esbuild from 'esbuild';
+import * as esbuild from "esbuild";
 
 /**
  * 使用 esbuild 压缩 JavaScript 代码
@@ -13,11 +13,11 @@ import * as esbuild from 'esbuild';
 export async function minifyJavaScript(code: string): Promise<string> {
   try {
     const result = await esbuild.transform(code, {
-      loader: 'js',
+      loader: "js",
       minify: true,
-      legalComments: 'none', // 移除注释
-      target: 'esnext',
-      format: 'esm', // 确保使用 ES 模块格式
+      legalComments: "none", // 移除注释
+      target: "esnext",
+      format: "esm", // 确保使用 ES 模块格式
       keepNames: false, // 允许重命名
     });
 
@@ -32,14 +32,17 @@ export async function minifyJavaScript(code: string): Promise<string> {
       new Function(result.code);
     } catch (parseError) {
       // 如果解析失败，返回原始代码
-      console.warn('[Minify] 压缩后的代码有语法错误，使用原始代码:', parseError);
+      console.warn(
+        "[Minify] 压缩后的代码有语法错误，使用原始代码:",
+        parseError,
+      );
       return code;
     }
 
     return result.code;
   } catch (error) {
     // 如果压缩失败，返回原始代码，避免破坏功能
-    console.warn('[Minify] 压缩失败，使用原始代码:', error);
+    console.warn("[Minify] 压缩失败，使用原始代码:", error);
     return code;
   }
 }

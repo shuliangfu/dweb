@@ -1,15 +1,15 @@
 /**
  * WebSocket 客户端实现
- * 
+ *
  * 提供 WebSocket 客户端连接、消息发送接收、自动重连等功能。
- * 
+ *
  * @module features/websocket/client
  */
 
 /**
  * WebSocket 客户端事件类型
  */
-export type WebSocketClientEventType = 'open' | 'message' | 'error' | 'close';
+export type WebSocketClientEventType = "open" | "message" | "error" | "close";
 
 /**
  * WebSocket 客户端事件处理器
@@ -52,17 +52,17 @@ export interface WebSocketClientConfig {
 /**
  * WebSocket 客户端状态
  */
-export type WebSocketClientState = 'connecting' | 'open' | 'closing' | 'closed';
+export type WebSocketClientState = "connecting" | "open" | "closing" | "closed";
 
 /**
  * WebSocket 客户端类
- * 
+ *
  * 提供 WebSocket 客户端功能，支持自动重连、心跳检测等。
- * 
+ *
  * @example
  * ```typescript
  * import { WebSocketClient } from '@dreamer/dweb';
- * 
+ *
  * const client = new WebSocketClient({
  *   url: 'ws://localhost:3000/ws',
  *   autoReconnect: true,
@@ -72,18 +72,18 @@ export type WebSocketClientState = 'connecting' | 'open' | 'closing' | 'closed';
  *     onClose: () => console.log('连接已关闭'),
  *   },
  * });
- * 
+ *
  * await client.connect();
  * client.send('Hello Server');
  * ```
  */
 export class WebSocketClient {
-  private config: Required<Omit<WebSocketClientConfig, 'url' | 'protocols'>> & {
+  private config: Required<Omit<WebSocketClientConfig, "url" | "protocols">> & {
     url: string;
     protocols?: string | string[];
   };
   private socket: WebSocket | null = null;
-  private state: WebSocketClientState = 'closed';
+  private state: WebSocketClientState = "closed";
   private reconnectAttempts = 0;
   private reconnectTimer: number | null = null;
   private heartbeatTimer: number | null = null;
@@ -92,12 +92,12 @@ export class WebSocketClient {
 
   /**
    * 创建 WebSocket 客户端实例
-   * 
+   *
    * @param config - 客户端配置
    */
   constructor(config: WebSocketClientConfig) {
     if (!config.url) {
-      throw new Error('WebSocket URL is required');
+      throw new Error("WebSocket URL is required");
     }
 
     this.config = {
@@ -115,9 +115,9 @@ export class WebSocketClient {
 
   /**
    * 连接到 WebSocket 服务器
-   * 
+   *
    * @returns Promise<void> - 连接建立后 resolve
-   * 
+   *
    * @example
    * ```typescript
    * await client.connect();
@@ -125,12 +125,12 @@ export class WebSocketClient {
    */
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.state === 'open' || this.state === 'connecting') {
+      if (this.state === "open" || this.state === "connecting") {
         resolve();
         return;
       }
 
-      this.state = 'connecting';
+      this.state = "connecting";
 
       try {
         // 创建 WebSocket 连接
@@ -141,18 +141,18 @@ export class WebSocketClient {
 
         // 设置超时
         const timeout = globalThis.setTimeout(() => {
-          if (this.state === 'connecting') {
+          if (this.state === "connecting") {
             this.socket?.close();
-            reject(new Error('WebSocket connection timeout'));
+            reject(new Error("WebSocket connection timeout"));
           }
         }, 10000); // 10 秒超时
 
         // 连接成功后清除超时
-        this.socket.addEventListener('open', () => {
+        this.socket.addEventListener("open", () => {
           globalThis.clearTimeout(timeout);
         }, { once: true });
       } catch (error) {
-        this.state = 'closed';
+        this.state = "closed";
         reject(error);
       }
     });
@@ -160,13 +160,13 @@ export class WebSocketClient {
 
   /**
    * 设置 WebSocket 事件处理器
-   * 
+   *
    * @param resolve - Promise resolve 函数
    * @param reject - Promise reject 函数
    */
   private setupEventHandlers(
     resolve: () => void,
-    reject: (error: Error) => void
+    reject: (error: Error) => void,
   ): void {
     if (!this.socket) {
       return;
@@ -174,7 +174,7 @@ export class WebSocketClient {
 
     // 连接建立
     this.socket.onopen = (event) => {
-      this.state = 'open';
+      this.state = "open";
       this.reconnectAttempts = 0;
 
       // 启动心跳检测
@@ -185,7 +185,7 @@ export class WebSocketClient {
       // 调用用户处理器
       if (this.config.handlers.onOpen) {
         Promise.resolve(this.config.handlers.onOpen(event)).catch((error) => {
-          console.error('WebSocket onOpen 回调错误:', error);
+          console.error("WebSocket onOpen 回调错误:", error);
         });
       }
 
@@ -197,8 +197,10 @@ export class WebSocketClient {
       // 处理心跳响应
       if (this.config.heartbeat) {
         try {
-          const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-          if (data && data.type === 'pong') {
+          const data = typeof event.data === "string"
+            ? JSON.parse(event.data)
+            : event.data;
+          if (data && data.type === "pong") {
             this.lastHeartbeatTime = Date.now();
             if (this.heartbeatTimeoutTimer) {
               globalThis.clearTimeout(this.heartbeatTimeoutTimer);
@@ -213,9 +215,11 @@ export class WebSocketClient {
 
       // 调用用户处理器
       if (this.config.handlers.onMessage) {
-        Promise.resolve(this.config.handlers.onMessage(event)).catch((error) => {
-          console.error('WebSocket onMessage 回调错误:', error);
-        });
+        Promise.resolve(this.config.handlers.onMessage(event)).catch(
+          (error) => {
+            console.error("WebSocket onMessage 回调错误:", error);
+          },
+        );
       }
     };
 
@@ -224,25 +228,25 @@ export class WebSocketClient {
       // 调用用户处理器
       if (this.config.handlers.onError) {
         Promise.resolve(this.config.handlers.onError(event)).catch((error) => {
-          console.error('WebSocket onError 回调错误:', error);
+          console.error("WebSocket onError 回调错误:", error);
         });
       }
 
       // 如果不是手动关闭，触发 reject
-      if (this.state === 'connecting') {
-        reject(new Error('WebSocket connection failed'));
+      if (this.state === "connecting") {
+        reject(new Error("WebSocket connection failed"));
       }
     };
 
     // 连接关闭
     this.socket.onclose = (event) => {
-      this.state = 'closed';
+      this.state = "closed";
       this.stopHeartbeat();
 
       // 调用用户处理器
       if (this.config.handlers.onClose) {
         Promise.resolve(this.config.handlers.onClose(event)).catch((error) => {
-          console.error('WebSocket onClose 回调错误:', error);
+          console.error("WebSocket onClose 回调错误:", error);
         });
       }
 
@@ -255,10 +259,10 @@ export class WebSocketClient {
 
   /**
    * 发送消息
-   * 
+   *
    * @param data - 要发送的数据（字符串、ArrayBuffer 或 Blob）
    * @returns 是否发送成功
-   * 
+   *
    * @example
    * ```typescript
    * client.send('Hello Server');
@@ -266,8 +270,8 @@ export class WebSocketClient {
    * ```
    */
   send(data: string | ArrayBuffer | Blob): boolean {
-    if (!this.socket || this.state !== 'open') {
-      console.warn('WebSocket is not connected');
+    if (!this.socket || this.state !== "open") {
+      console.warn("WebSocket is not connected");
       return false;
     }
 
@@ -275,17 +279,17 @@ export class WebSocketClient {
       this.socket.send(data);
       return true;
     } catch (error) {
-      console.error('WebSocket send error:', error);
+      console.error("WebSocket send error:", error);
       return false;
     }
   }
 
   /**
    * 发送 JSON 消息
-   * 
+   *
    * @param data - 要发送的对象
    * @returns 是否发送成功
-   * 
+   *
    * @example
    * ```typescript
    * client.sendJSON({ type: 'message', data: 'Hello' });
@@ -295,17 +299,17 @@ export class WebSocketClient {
     try {
       return this.send(JSON.stringify(data));
     } catch (error) {
-      console.error('WebSocket sendJSON error:', error);
+      console.error("WebSocket sendJSON error:", error);
       return false;
     }
   }
 
   /**
    * 关闭连接
-   * 
+   *
    * @param code - 关闭代码（可选）
    * @param reason - 关闭原因（可选）
-   * 
+   *
    * @example
    * ```typescript
    * client.close(1000, 'Normal closure');
@@ -317,14 +321,14 @@ export class WebSocketClient {
     this.cancelReconnect();
 
     if (this.socket) {
-      this.state = 'closing';
+      this.state = "closing";
       this.socket.close(code || 1000, reason);
     }
   }
 
   /**
    * 获取当前连接状态
-   * 
+   *
    * @returns 连接状态
    */
   getState(): WebSocketClientState {
@@ -333,11 +337,11 @@ export class WebSocketClient {
 
   /**
    * 检查是否已连接
-   * 
+   *
    * @returns 如果已连接返回 true
    */
   isConnected(): boolean {
-    return this.state === 'open' && this.socket?.readyState === WebSocket.OPEN;
+    return this.state === "open" && this.socket?.readyState === WebSocket.OPEN;
   }
 
   /**
@@ -349,18 +353,21 @@ export class WebSocketClient {
     }
 
     if (this.reconnectAttempts >= this.config.maxReconnectAttempts) {
-      console.warn('WebSocket max reconnect attempts reached');
+      console.warn("WebSocket max reconnect attempts reached");
       return;
     }
 
     this.reconnectAttempts++;
-    const delay = this.config.reconnectDelay * Math.min(this.reconnectAttempts, 10); // 指数退避，最多 10 倍
+    const delay = this.config.reconnectDelay *
+      Math.min(this.reconnectAttempts, 10); // 指数退避，最多 10 倍
 
     this.reconnectTimer = globalThis.setTimeout(() => {
       this.reconnectTimer = null;
-      console.log(`WebSocket reconnecting (attempt ${this.reconnectAttempts})...`);
+      console.log(
+        `WebSocket reconnecting (attempt ${this.reconnectAttempts})...`,
+      );
       this.connect().catch((error) => {
-        console.error('WebSocket reconnect failed:', error);
+        console.error("WebSocket reconnect failed:", error);
       });
     }, delay);
   }
@@ -385,13 +392,13 @@ export class WebSocketClient {
     this.heartbeatTimer = globalThis.setInterval(() => {
       if (this.isConnected()) {
         // 发送 ping
-        this.sendJSON({ type: 'ping', timestamp: Date.now() });
+        this.sendJSON({ type: "ping", timestamp: Date.now() });
 
         // 设置超时检测
         this.heartbeatTimeoutTimer = globalThis.setTimeout(() => {
           const timeSinceLastHeartbeat = Date.now() - this.lastHeartbeatTime;
           if (timeSinceLastHeartbeat > this.config.heartbeatTimeout) {
-            console.warn('WebSocket heartbeat timeout, reconnecting...');
+            console.warn("WebSocket heartbeat timeout, reconnecting...");
             this.socket?.close();
           }
         }, this.config.heartbeatTimeout);
@@ -414,4 +421,3 @@ export class WebSocketClient {
     }
   }
 }
-

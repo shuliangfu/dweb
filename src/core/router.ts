@@ -132,8 +132,8 @@ export class Router {
       const serverRouteMapContent = await Deno.readTextFile(serverRouteMapPath);
       const serverRouteMap: Record<string, string> = JSON.parse(
         serverRouteMapContent,
-			);
-			
+      );
+
       // 读取客户端路由映射文件（如果存在）
       let clientRouteMap: Record<string, string> = {};
       try {
@@ -154,8 +154,8 @@ export class Router {
         const serverHashName = serverHashFileName.startsWith("server/")
           ? serverHashFileName.replace(/^server\//, "")
           : serverHashFileName;
-				const buildFilePath = path.resolve(outDir, "server", serverHashName);
-				
+        const buildFilePath = path.resolve(outDir, "server", serverHashName);
+
         // 从客户端路由映射中获取对应的客户端路径
         // clientHashFileName 格式：client/routes_index.xyz789.js
         const clientHashFileName = clientRouteMap[routeKey];
@@ -230,11 +230,17 @@ export class Router {
         // 检查是否为捕获所有路由
         if (routePath.includes("[...")) {
           routeInfo.isCatchAll = true;
-				}
-				
+        }
+
         // 添加到路由映射
         this.routes.set(routePath, routeInfo);
         this.radixTree.insert(routePath, routeInfo);
+
+        // 对于 API 路由，同时注册捕获所有路由，支持 API Action 模式（如 /api/users/get 匹配 /api/users）
+        // 注意：如果有更具体的路由（如 /api/users/details），RadixTree 会优先匹配更具体的
+        if (type === "api") {
+          this.radixTree.insert(routePath + "/*", routeInfo);
+        }
 
         // 处理特殊文件
         if (type === "layout") {
@@ -614,7 +620,7 @@ export class Router {
     if (this.routes.has(urlPath)) {
       return this.routes.get(urlPath)!;
     }
-    
+
     // 尝试 Radix Tree 匹配（性能优化：O(K) vs O(N)）
     // Radix Tree 已包含：
     // 1. 精确路由
@@ -760,8 +766,8 @@ export class Router {
     if (this.layouts.has("/")) {
       const rootLayout = this.layouts.get("/")!;
       layoutPaths.push(rootLayout);
-		}
-		
+    }
+
     return layoutPaths;
   }
 

@@ -5,7 +5,7 @@
 /**
  * 主题模式
  */
-export type ThemeMode = 'light' | 'dark' | 'auto';
+export type ThemeMode = "light" | "dark" | "auto";
 
 /**
  * 主题配置
@@ -32,4 +32,3 @@ export interface ThemePluginOptions extends ThemeConfig {
   /** 是否在服务端注入主题脚本 */
   injectScript?: boolean;
 }
-

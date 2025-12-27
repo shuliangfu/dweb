@@ -11,7 +11,14 @@ export interface SitemapUrl {
   /** 最后修改时间 */
   lastmod?: string | Date;
   /** 更新频率 */
-  changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
+  changefreq?:
+    | "always"
+    | "hourly"
+    | "daily"
+    | "weekly"
+    | "monthly"
+    | "yearly"
+    | "never";
   /** 优先级（0.0 - 1.0） */
   priority?: number;
 }
@@ -27,7 +34,14 @@ export interface SitemapPluginOptions {
   /** 要排除的路由路径（支持 glob 模式） */
   exclude?: string[];
   /** 默认更新频率 */
-  defaultChangefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
+  defaultChangefreq?:
+    | "always"
+    | "hourly"
+    | "daily"
+    | "weekly"
+    | "monthly"
+    | "yearly"
+    | "never";
   /** 默认优先级 */
   defaultPriority?: number;
   /** 自定义 URL 列表 */
@@ -41,4 +55,3 @@ export interface SitemapPluginOptions {
   /** robots.txt 输出路径（相对于输出目录） */
   robotsOutputPath?: string;
 }
-

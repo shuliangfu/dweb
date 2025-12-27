@@ -3,8 +3,8 @@
  * 提供全局数据库访问接口，用于在 load 函数和 API 路由中访问数据库
  */
 
-import { DatabaseManager } from './manager.ts';
-import type { DatabaseAdapter, DatabaseConfig } from './types.ts';
+import { DatabaseManager } from "./manager.ts";
+import type { DatabaseAdapter, DatabaseConfig } from "./types.ts";
 
 /**
  * 全局数据库管理器实例
@@ -31,13 +31,13 @@ let configLoader: DatabaseConfigLoader | null = null;
 /**
  * 设置数据库配置加载器
  * 框架在启动时调用此函数，设置配置加载器回调
- * 
+ *
  * @param loader 配置加载器回调函数，返回数据库配置或 null
- * 
+ *
  * @example
  * ```typescript
  * import { setDatabaseConfigLoader } from '@dreamer/dweb/features/database';
- * 
+ *
  * // 在框架启动时设置配置加载器
  * setDatabaseConfigLoader(async () => {
  *   const { config } = await loadConfig();
@@ -56,7 +56,7 @@ export function setDatabaseConfigLoader(loader: DatabaseConfigLoader): void {
  */
 export async function initDatabase(
   config: DatabaseConfig,
-  connectionName: string = 'default',
+  connectionName: string = "default",
 ): Promise<void> {
   if (!dbManager) {
     dbManager = new DatabaseManager();
@@ -69,7 +69,9 @@ export async function initDatabase(
  * 自动从配置加载器获取配置并初始化数据库
  * @param connectionName 连接名称（默认为 'default'）
  */
-async function autoInitDatabase(connectionName: string = 'default'): Promise<void> {
+async function autoInitDatabase(
+  connectionName: string = "default",
+): Promise<void> {
   // 如果已经有初始化任务在进行，等待它完成
   if (autoInitPromise) {
     await autoInitPromise;
@@ -82,19 +84,19 @@ async function autoInitDatabase(connectionName: string = 'default'): Promise<voi
       // 如果没有设置配置加载器，抛出错误
       if (!configLoader) {
         throw new Error(
-          'Database config loader not set. Please call setDatabaseConfigLoader() first or call initDatabase() manually.',
+          "Database config loader not set. Please call setDatabaseConfigLoader() first or call initDatabase() manually.",
         );
       }
 
       // 调用配置加载器获取数据库配置
       const config = await configLoader();
-      
+
       // 如果配置加载器返回了配置，则初始化
       if (config) {
         await initDatabase(config, connectionName);
       } else {
         throw new Error(
-          'Database not configured. Please add database configuration in dweb.config.ts or call initDatabase() manually.',
+          "Database not configured. Please add database configuration in dweb.config.ts or call initDatabase() manually.",
         );
       }
     } catch (error) {
@@ -119,7 +121,9 @@ async function autoInitDatabase(connectionName: string = 'default'): Promise<voi
  * @returns 数据库适配器实例
  * @throws {Error} 如果数据库未初始化且无法自动初始化
  */
-export async function getDatabaseAsync(connectionName: string = 'default'): Promise<DatabaseAdapter> {
+export async function getDatabaseAsync(
+  connectionName: string = "default",
+): Promise<DatabaseAdapter> {
   // 如果数据库未初始化，尝试自动初始化
   if (!dbManager) {
     await autoInitDatabase(connectionName);
@@ -127,7 +131,7 @@ export async function getDatabaseAsync(connectionName: string = 'default'): Prom
 
   if (!dbManager) {
     throw new Error(
-      'Database not initialized. Please call initDatabase() first or configure database in dweb.config.ts',
+      "Database not initialized. Please call initDatabase() first or configure database in dweb.config.ts",
     );
   }
 
@@ -140,10 +144,12 @@ export async function getDatabaseAsync(connectionName: string = 'default'): Prom
  * @returns 数据库适配器实例
  * @throws {Error} 如果数据库未初始化
  */
-export function getDatabase(connectionName: string = 'default'): DatabaseAdapter {
+export function getDatabase(
+  connectionName: string = "default",
+): DatabaseAdapter {
   if (!dbManager) {
     throw new Error(
-      'Database not initialized. Please call initDatabase() first or configure database in dweb.config.ts. For automatic initialization, use getDatabaseAsync() instead.',
+      "Database not initialized. Please call initDatabase() first or configure database in dweb.config.ts. For automatic initialization, use getDatabaseAsync() instead.",
     );
   }
 
@@ -158,7 +164,7 @@ export function getDatabase(connectionName: string = 'default'): DatabaseAdapter
 export function getDatabaseManager(): DatabaseManager {
   if (!dbManager) {
     throw new Error(
-      'Database not initialized. Please call initDatabase() first or configure database in dweb.config.ts',
+      "Database not initialized. Please call initDatabase() first or configure database in dweb.config.ts",
     );
   }
 
@@ -182,4 +188,3 @@ export async function closeDatabase(): Promise<void> {
     dbManager = null;
   }
 }
-

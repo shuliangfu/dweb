@@ -1,6 +1,6 @@
 /**
  * WebSocket 功能类型定义
- * 
+ *
  * @module features/websocket/types
  */
 
@@ -21,7 +21,7 @@ export interface WebSocketConnection {
 /**
  * WebSocket 消息类型
  */
-export type WebSocketMessageType = 'text' | 'binary' | 'json';
+export type WebSocketMessageType = "text" | "binary" | "json";
 
 /**
  * WebSocket 消息对象
@@ -46,11 +46,21 @@ export interface WebSocketHandlers {
   /** 连接建立时调用 */
   onConnect?: (connection: WebSocketConnection) => void | Promise<void>;
   /** 收到消息时调用 */
-  onMessage?: (connection: WebSocketConnection, message: WebSocketMessage) => void | Promise<void>;
+  onMessage?: (
+    connection: WebSocketConnection,
+    message: WebSocketMessage,
+  ) => void | Promise<void>;
   /** 连接关闭时调用 */
-  onClose?: (connection: WebSocketConnection, code: number, reason: string) => void | Promise<void>;
+  onClose?: (
+    connection: WebSocketConnection,
+    code: number,
+    reason: string,
+  ) => void | Promise<void>;
   /** 连接错误时调用 */
-  onError?: (connection: WebSocketConnection, error: Error) => void | Promise<void>;
+  onError?: (
+    connection: WebSocketConnection,
+    error: Error,
+  ) => void | Promise<void>;
 }
 
 /**
@@ -86,4 +96,3 @@ export interface WebSocketStats {
   /** 服务器启动时间 */
   startTime: Date;
 }
-

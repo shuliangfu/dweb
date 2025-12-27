@@ -1,51 +1,51 @@
 /**
  * 基础管理器模块
  * 提供所有管理器的通用功能和生命周期管理
- * 
+ *
  * @module core/base-manager
  */
 
-import type { IService } from './iservice.ts';
+import type { IService } from "./iservice.ts";
 
 /**
  * 服务状态枚举
  */
 export enum ServiceState {
   /** 未初始化 */
-  Uninitialized = 'uninitialized',
+  Uninitialized = "uninitialized",
   /** 已初始化 */
-  Initialized = 'initialized',
+  Initialized = "initialized",
   /** 运行中 */
-  Running = 'running',
+  Running = "running",
   /** 已停止 */
-  Stopped = 'stopped',
+  Stopped = "stopped",
   /** 已销毁 */
-  Destroyed = 'destroyed',
+  Destroyed = "destroyed",
 }
 
 /**
  * 基础管理器类
  * 所有管理器都应该继承此类，以获得统一的生命周期管理和通用功能
- * 
+ *
  * @example
  * ```ts
  * class MyManager extends BaseManager {
  *   constructor() {
  *     super('MyManager');
  *   }
- * 
+ *
  *   protected async onInitialize(): Promise<void> {
  *     // 自定义初始化逻辑
  *   }
- * 
+ *
  *   protected async onStart(): Promise<void> {
  *     // 自定义启动逻辑
  *   }
- * 
+ *
  *   protected async onStop(): Promise<void> {
  *     // 自定义停止逻辑
  *   }
- * 
+ *
  *   protected async onDestroy(): Promise<void> {
  *     // 自定义清理逻辑
  *   }
@@ -64,7 +64,7 @@ export abstract class BaseManager implements IService {
 
   /**
    * 构造函数
-   * 
+   *
    * @param name - 管理器名称
    */
   constructor(name: string) {
@@ -74,7 +74,7 @@ export abstract class BaseManager implements IService {
   /**
    * 初始化管理器
    * 调用子类的 onInitialize 方法
-   * 
+   *
    * @throws {Error} 如果初始化失败
    */
   async initialize(): Promise<void> {
@@ -95,7 +95,7 @@ export abstract class BaseManager implements IService {
   /**
    * 启动管理器
    * 调用子类的 onStart 方法
-   * 
+   *
    * @throws {Error} 如果启动失败
    */
   async start(): Promise<void> {
@@ -104,8 +104,13 @@ export abstract class BaseManager implements IService {
       await this.initialize();
     }
 
-    if (this.state !== ServiceState.Initialized && this.state !== ServiceState.Stopped) {
-      throw new Error(`${this.name} 状态不正确，无法启动。当前状态: ${this.state}`);
+    if (
+      this.state !== ServiceState.Initialized &&
+      this.state !== ServiceState.Stopped
+    ) {
+      throw new Error(
+        `${this.name} 状态不正确，无法启动。当前状态: ${this.state}`,
+      );
     }
 
     try {
@@ -121,7 +126,7 @@ export abstract class BaseManager implements IService {
   /**
    * 停止管理器
    * 调用子类的 onStop 方法
-   * 
+   *
    * @throws {Error} 如果停止失败
    */
   async stop(): Promise<void> {
@@ -142,7 +147,7 @@ export abstract class BaseManager implements IService {
   /**
    * 销毁管理器
    * 调用子类的 onDestroy 方法
-   * 
+   *
    * @throws {Error} 如果销毁失败
    */
   async destroy(): Promise<void> {
@@ -162,7 +167,7 @@ export abstract class BaseManager implements IService {
 
   /**
    * 获取服务名称
-   * 
+   *
    * @returns 服务名称
    */
   getName(): string {
@@ -171,7 +176,7 @@ export abstract class BaseManager implements IService {
 
   /**
    * 检查服务是否已初始化
-   * 
+   *
    * @returns 如果服务已初始化返回 true，否则返回 false
    */
   isInitialized(): boolean {
@@ -180,7 +185,7 @@ export abstract class BaseManager implements IService {
 
   /**
    * 检查服务是否正在运行
-   * 
+   *
    * @returns 如果服务正在运行返回 true，否则返回 false
    */
   isRunning(): boolean {
@@ -189,7 +194,7 @@ export abstract class BaseManager implements IService {
 
   /**
    * 获取服务状态
-   * 
+   *
    * @returns 当前服务状态
    */
   getState(): ServiceState {
@@ -198,7 +203,7 @@ export abstract class BaseManager implements IService {
 
   /**
    * 获取初始化时间戳
-   * 
+   *
    * @returns 初始化时间戳（如果已初始化）
    */
   getInitializedAt(): number | undefined {
@@ -207,7 +212,7 @@ export abstract class BaseManager implements IService {
 
   /**
    * 获取启动时间戳
-   * 
+   *
    * @returns 启动时间戳（如果已启动）
    */
   getStartedAt(): number | undefined {
@@ -217,7 +222,7 @@ export abstract class BaseManager implements IService {
   /**
    * 初始化钩子
    * 子类可以重写此方法来实现自定义初始化逻辑
-   * 
+   *
    * @protected
    */
   protected async onInitialize(): Promise<void> {
@@ -227,7 +232,7 @@ export abstract class BaseManager implements IService {
   /**
    * 启动钩子
    * 子类可以重写此方法来实现自定义启动逻辑
-   * 
+   *
    * @protected
    */
   protected async onStart(): Promise<void> {
@@ -237,7 +242,7 @@ export abstract class BaseManager implements IService {
   /**
    * 停止钩子
    * 子类可以重写此方法来实现自定义停止逻辑
-   * 
+   *
    * @protected
    */
   protected async onStop(): Promise<void> {
@@ -247,7 +252,7 @@ export abstract class BaseManager implements IService {
   /**
    * 销毁钩子
    * 子类可以重写此方法来实现自定义清理逻辑
-   * 
+   *
    * @protected
    */
   protected async onDestroy(): Promise<void> {

@@ -28,7 +28,9 @@ interface ThemeManager {
  */
 interface Store {
   getState(): Record<string, unknown>;
-  setState(updater: (prev: Record<string, unknown>) => Record<string, unknown>): void;
+  setState(
+    updater: (prev: Record<string, unknown>) => Record<string, unknown>,
+  ): void;
   subscribe(listener: (state: Record<string, unknown>) => void): () => void;
   unsubscribe(listener: (state: Record<string, unknown>) => void): void;
   reset(): void;
@@ -114,7 +116,10 @@ function createThemeManager(config: ThemeConfig): ThemeManager {
       if (typeof globalThis !== "undefined" && (globalThis as any).__STORE__) {
         const store = (globalThis as any).__STORE__ as Store;
         const currentState = store.getState();
-        const themeState = (currentState.theme as { mode?: "light" | "dark" | "auto"; value?: "light" | "dark" }) || {};
+        const themeState = (currentState.theme as {
+          mode?: "light" | "dark" | "auto";
+          value?: "light" | "dark";
+        }) || {};
         const currentTheme = this.getTheme();
         store.setState((prev) => ({
           ...prev,
@@ -173,7 +178,6 @@ function createThemeManager(config: ThemeConfig): ThemeManager {
   };
 }
 
-
 /**
  * 初始化主题系统
  * 暴露到全局，供内联脚本调用
@@ -183,25 +187,33 @@ function initTheme(config: ThemeConfig): void {
   const themeManager = createThemeManager(config);
 
   // 当主题变化时，更新全局 store 的值
-  globalThis.addEventListener("themechange", ((event: CustomEvent) => {
-    if (event.detail && event.detail.actualTheme) {
-      // 更新全局 store 中的主题状态
-      if (typeof globalThis !== "undefined" && (globalThis as any).__STORE__) {
-        const store = (globalThis as any).__STORE__ as Store;
-        const currentState = store.getState();
-        const themeState = (currentState.theme as { mode?: "light" | "dark" | "auto"; value?: "light" | "dark" }) || {};
-        const currentTheme = themeManager.getTheme();
-        store.setState((prev) => ({
-          ...prev,
-          theme: {
-            ...themeState,
-            mode: currentTheme,
-            value: event.detail.actualTheme,
-          },
-        }));
+  globalThis.addEventListener(
+    "themechange",
+    ((event: CustomEvent) => {
+      if (event.detail && event.detail.actualTheme) {
+        // 更新全局 store 中的主题状态
+        if (
+          typeof globalThis !== "undefined" && (globalThis as any).__STORE__
+        ) {
+          const store = (globalThis as any).__STORE__ as Store;
+          const currentState = store.getState();
+          const themeState = (currentState.theme as {
+            mode?: "light" | "dark" | "auto";
+            value?: "light" | "dark";
+          }) || {};
+          const currentTheme = themeManager.getTheme();
+          store.setState((prev) => ({
+            ...prev,
+            theme: {
+              ...themeState,
+              mode: currentTheme,
+              value: event.detail.actualTheme,
+            },
+          }));
+        }
       }
-    }
-  }) as EventListener);
+    }) as EventListener,
+  );
 
   // 暴露到全局
   (globalThis as any).__THEME_MANAGER__ = themeManager;
@@ -230,7 +242,10 @@ function initTheme(config: ThemeConfig): void {
     if (typeof globalThis !== "undefined" && (globalThis as any).__STORE__) {
       const store = (globalThis as any).__STORE__ as Store;
       const currentState = store.getState();
-      const themeState = (currentState.theme as { mode?: "light" | "dark" | "auto"; value?: "light" | "dark" }) || {};
+      const themeState = (currentState.theme as {
+        mode?: "light" | "dark" | "auto";
+        value?: "light" | "dark";
+      }) || {};
       store.setState((prev) => ({
         ...prev,
         theme: {
@@ -256,4 +271,3 @@ function initTheme(config: ThemeConfig): void {
 if (typeof globalThis !== "undefined") {
   (globalThis as any).initTheme = initTheme;
 }
-

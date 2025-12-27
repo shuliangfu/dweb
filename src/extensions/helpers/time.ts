@@ -1,18 +1,18 @@
 /**
  * 时间工具
  * 提供时间计算、转换、判断等功能
- * 
+ *
  * 环境兼容性：
  * - 通用：所有函数都可以在服务端和客户端使用
  */
 
 /**
  * 添加天数
- * 
+ *
  * @param date 日期对象或时间戳
  * @param days 要添加的天数（可以为负数）
  * @returns 新的日期对象
- * 
+ *
  * @example
  * ```typescript
  * addDays(new Date(), 7); // 7 天后
@@ -28,11 +28,11 @@ export function addDays(date: Date | number, days: number): Date {
 
 /**
  * 添加小时
- * 
+ *
  * @param date 日期对象或时间戳
  * @param hours 要添加的小时数（可以为负数）
  * @returns 新的日期对象
- * 
+ *
  * @example
  * ```typescript
  * addHours(new Date(), 2); // 2 小时后
@@ -48,11 +48,11 @@ export function addHours(date: Date | number, hours: number): Date {
 
 /**
  * 添加分钟
- * 
+ *
  * @param date 日期对象或时间戳
  * @param minutes 要添加的分钟数（可以为负数）
  * @returns 新的日期对象
- * 
+ *
  * @example
  * ```typescript
  * addMinutes(new Date(), 30); // 30 分钟后
@@ -68,11 +68,11 @@ export function addMinutes(date: Date | number, minutes: number): Date {
 
 /**
  * 添加月数
- * 
+ *
  * @param date 日期对象或时间戳
  * @param months 要添加的月数（可以为负数）
  * @returns 新的日期对象
- * 
+ *
  * @example
  * ```typescript
  * addMonths(new Date(), 1); // 1 个月后
@@ -88,11 +88,11 @@ export function addMonths(date: Date | number, months: number): Date {
 
 /**
  * 添加年数
- * 
+ *
  * @param date 日期对象或时间戳
  * @param years 要添加的年数（可以为负数）
  * @returns 新的日期对象
- * 
+ *
  * @example
  * ```typescript
  * addYears(new Date(), 1); // 1 年后
@@ -109,11 +109,11 @@ export function addYears(date: Date | number, years: number): Date {
 /**
  * 计算天数差
  * 计算两个日期之间的天数差
- * 
+ *
  * @param date1 第一个日期
  * @param date2 第二个日期
  * @returns 天数差（date2 - date1）
- * 
+ *
  * @example
  * ```typescript
  * diffDays(new Date('2024-01-01'), new Date('2024-01-10'));
@@ -130,11 +130,11 @@ export function diffDays(date1: Date | number, date2: Date | number): number {
 /**
  * 计算小时差
  * 计算两个日期之间的小时差
- * 
+ *
  * @param date1 第一个日期
  * @param date2 第二个日期
  * @returns 小时差（date2 - date1）
- * 
+ *
  * @example
  * ```typescript
  * diffHours(new Date('2024-01-01 10:00'), new Date('2024-01-01 15:00'));
@@ -151,18 +151,21 @@ export function diffHours(date1: Date | number, date2: Date | number): number {
 /**
  * 计算分钟差
  * 计算两个日期之间的分钟差
- * 
+ *
  * @param date1 第一个日期
  * @param date2 第二个日期
  * @returns 分钟差（date2 - date1）
- * 
+ *
  * @example
  * ```typescript
  * diffMinutes(new Date('2024-01-01 10:00'), new Date('2024-01-01 10:30'));
  * // 30
  * ```
  */
-export function diffMinutes(date1: Date | number, date2: Date | number): number {
+export function diffMinutes(
+  date1: Date | number,
+  date2: Date | number,
+): number {
   const d1 = date1 instanceof Date ? date1 : new Date(date1);
   const d2 = date2 instanceof Date ? date2 : new Date(date2);
   const diff = d2.getTime() - d1.getTime();
@@ -172,18 +175,21 @@ export function diffMinutes(date1: Date | number, date2: Date | number): number 
 /**
  * 计算秒数差
  * 计算两个日期之间的秒数差
- * 
+ *
  * @param date1 第一个日期
  * @param date2 第二个日期
  * @returns 秒数差（date2 - date1）
- * 
+ *
  * @example
  * ```typescript
  * diffSeconds(new Date('2024-01-01 10:00:00'), new Date('2024-01-01 10:00:30'));
  * // 30
  * ```
  */
-export function diffSeconds(date1: Date | number, date2: Date | number): number {
+export function diffSeconds(
+  date1: Date | number,
+  date2: Date | number,
+): number {
   const d1 = date1 instanceof Date ? date1 : new Date(date1);
   const d2 = date2 instanceof Date ? date2 : new Date(date2);
   const diff = d2.getTime() - d1.getTime();
@@ -192,10 +198,10 @@ export function diffSeconds(date1: Date | number, date2: Date | number): number 
 
 /**
  * 判断是否为今天
- * 
+ *
  * @param date 日期对象或时间戳
  * @returns 是否为今天
- * 
+ *
  * @example
  * ```typescript
  * isToday(new Date()); // true
@@ -214,10 +220,10 @@ export function isToday(date: Date | number): boolean {
 
 /**
  * 判断是否为昨天
- * 
+ *
  * @param date 日期对象或时间戳
  * @returns 是否为昨天
- * 
+ *
  * @example
  * ```typescript
  * const yesterday = addDays(new Date(), -1);
@@ -236,10 +242,10 @@ export function isYesterday(date: Date | number): boolean {
 
 /**
  * 判断是否为明天
- * 
+ *
  * @param date 日期对象或时间戳
  * @returns 是否为明天
- * 
+ *
  * @example
  * ```typescript
  * const tomorrow = addDays(new Date(), 1);
@@ -259,11 +265,11 @@ export function isTomorrow(date: Date | number): boolean {
 /**
  * 判断是否为同一天
  * 判断两个日期是否为同一天
- * 
+ *
  * @param date1 第一个日期
  * @param date2 第二个日期
  * @returns 是否为同一天
- * 
+ *
  * @example
  * ```typescript
  * isSameDay(new Date('2024-01-01 10:00'), new Date('2024-01-01 15:00'));
@@ -283,10 +289,10 @@ export function isSameDay(date1: Date | number, date2: Date | number): boolean {
 /**
  * 获取一天的开始时间
  * 返回指定日期当天的 00:00:00.000
- * 
+ *
  * @param date 日期对象或时间戳
  * @returns 一天的开始时间
- * 
+ *
  * @example
  * ```typescript
  * startOfDay(new Date('2024-01-01 15:30:45'));
@@ -303,10 +309,10 @@ export function startOfDay(date: Date | number): Date {
 /**
  * 获取一天的结束时间
  * 返回指定日期当天的 23:59:59.999
- * 
+ *
  * @param date 日期对象或时间戳
  * @returns 一天的结束时间
- * 
+ *
  * @example
  * ```typescript
  * endOfDay(new Date('2024-01-01 15:30:45'));
@@ -323,11 +329,11 @@ export function endOfDay(date: Date | number): Date {
 /**
  * 获取一周的开始时间
  * 返回指定日期所在周的第一天（周一）的 00:00:00.000
- * 
+ *
  * @param date 日期对象或时间戳
  * @param weekStartsOn 一周从哪天开始（0=周日，1=周一，默认1）
  * @returns 一周的开始时间
- * 
+ *
  * @example
  * ```typescript
  * startOfWeek(new Date('2024-01-05')); // 假设是周五
@@ -350,11 +356,11 @@ export function startOfWeek(
 /**
  * 获取一周的结束时间
  * 返回指定日期所在周的最后一天（周日）的 23:59:59.999
- * 
+ *
  * @param date 日期对象或时间戳
  * @param weekStartsOn 一周从哪天开始（0=周日，1=周一，默认1）
  * @returns 一周的结束时间
- * 
+ *
  * @example
  * ```typescript
  * endOfWeek(new Date('2024-01-05')); // 假设是周五
@@ -377,10 +383,10 @@ export function endOfWeek(
 /**
  * 获取一月的开始时间
  * 返回指定日期所在月的第一天的 00:00:00.000
- * 
+ *
  * @param date 日期对象或时间戳
  * @returns 一月的开始时间
- * 
+ *
  * @example
  * ```typescript
  * startOfMonth(new Date('2024-01-15'));
@@ -397,10 +403,10 @@ export function startOfMonth(date: Date | number): Date {
 /**
  * 获取一月的结束时间
  * 返回指定日期所在月的最后一天的 23:59:59.999
- * 
+ *
  * @param date 日期对象或时间戳
  * @returns 一月的结束时间
- * 
+ *
  * @example
  * ```typescript
  * endOfMonth(new Date('2024-01-15'));
@@ -417,10 +423,10 @@ export function endOfMonth(date: Date | number): Date {
 /**
  * 获取一年的开始时间
  * 返回指定日期所在年的第一天的 00:00:00.000
- * 
+ *
  * @param date 日期对象或时间戳
  * @returns 一年的开始时间
- * 
+ *
  * @example
  * ```typescript
  * startOfYear(new Date('2024-06-15'));
@@ -437,10 +443,10 @@ export function startOfYear(date: Date | number): Date {
 /**
  * 获取一年的结束时间
  * 返回指定日期所在年的最后一天的 23:59:59.999
- * 
+ *
  * @param date 日期对象或时间戳
  * @returns 一年的结束时间
- * 
+ *
  * @example
  * ```typescript
  * endOfYear(new Date('2024-06-15'));
@@ -457,12 +463,12 @@ export function endOfYear(date: Date | number): Date {
 /**
  * 判断日期是否在范围内
  * 判断日期是否在指定的开始和结束日期之间（包含边界）
- * 
+ *
  * @param date 要判断的日期
  * @param startDate 开始日期
  * @param endDate 结束日期
  * @returns 是否在范围内
- * 
+ *
  * @example
  * ```typescript
  * isInRange(
@@ -483,4 +489,3 @@ export function isInRange(
   const end = endDate instanceof Date ? endDate : new Date(endDate);
   return d.getTime() >= start.getTime() && d.getTime() <= end.getTime();
 }
-

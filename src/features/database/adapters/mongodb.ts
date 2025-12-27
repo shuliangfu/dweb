@@ -2,9 +2,13 @@
  * MongoDB 数据库适配器
  */
 
-import { MongoClient, type Db, type MongoClientOptions } from '@mongodb';
-import { BaseAdapter, type PoolStatus, type HealthCheckResult } from './base.ts';
-import type { DatabaseConfig, DatabaseAdapter } from '../types.ts';
+import { type Db, MongoClient, type MongoClientOptions } from "@mongodb";
+import {
+  BaseAdapter,
+  type HealthCheckResult,
+  type PoolStatus,
+} from "./base.ts";
+import type { DatabaseAdapter, DatabaseConfig } from "../types.ts";
 
 /**
  * MongoDB 适配器实现
@@ -19,7 +23,12 @@ export class MongoDBAdapter extends BaseAdapter {
    * @param retryCount 重试次数（内部使用）
    */
   async connect(config: DatabaseConfig, retryCount: number = 0): Promise<void> {
-    const mongoOptions = config.mongoOptions as (typeof config.mongoOptions & { maxRetries?: number; retryDelay?: number }) | undefined;
+    const mongoOptions = config.mongoOptions as
+      | (typeof config.mongoOptions & {
+        maxRetries?: number;
+        retryDelay?: number;
+      })
+      | undefined;
     const maxRetries = mongoOptions?.maxRetries || 3;
     const retryDelay = mongoOptions?.retryDelay || 1000;
 
@@ -27,17 +36,22 @@ export class MongoDBAdapter extends BaseAdapter {
       this.validateConfig(config);
       this.config = config;
 
-      const { host, port, database, username, password, authSource } = config.connection;
+      const { host, port, database, username, password, authSource } =
+        config.connection;
 
       // 构建连接 URL
       let url: string;
       if (username && password) {
-        url = `mongodb://${username}:${password}@${host || 'localhost'}:${port || 27017}/${database || ''}`;
+        url = `mongodb://${username}:${password}@${host || "localhost"}:${
+          port || 27017
+        }/${database || ""}`;
         if (authSource) {
           url += `?authSource=${authSource}`;
         }
       } else {
-        url = `mongodb://${host || 'localhost'}:${port || 27017}/${database || ''}`;
+        url = `mongodb://${host || "localhost"}:${port || 27017}/${
+          database || ""
+        }`;
       }
 
       // 创建 MongoDB 客户端
@@ -54,7 +68,9 @@ export class MongoDBAdapter extends BaseAdapter {
     } catch (error) {
       // 自动重连机制
       if (retryCount < maxRetries) {
-        await new Promise((resolve) => setTimeout(resolve, retryDelay * (retryCount + 1)));
+        await new Promise((resolve) =>
+          setTimeout(resolve, retryDelay * (retryCount + 1))
+        );
         return await this.connect(config, retryCount + 1);
       }
       throw error;
@@ -69,13 +85,18 @@ export class MongoDBAdapter extends BaseAdapter {
       if (this.config) {
         await this.connect(this.config);
       } else {
-        throw new Error('Database not connected and no config available for reconnection');
+        throw new Error(
+          "Database not connected and no config available for reconnection",
+        );
       }
     }
 
     // 定期健康检查
     const now = Date.now();
-    if (!this.lastHealthCheck || now - this.lastHealthCheck.getTime() > this.healthCheckInterval) {
+    if (
+      !this.lastHealthCheck ||
+      now - this.lastHealthCheck.getTime() > this.healthCheckInterval
+    ) {
       const health = await this.healthCheck();
       if (!health.healthy) {
         // 连接不健康，尝试重连
@@ -92,22 +113,29 @@ export class MongoDBAdapter extends BaseAdapter {
    * @param filter 查询过滤器（可选）
    * @param options 查询选项（可选）
    */
-  async query(collection: string, filter: any = {}, options: any = {}): Promise<any[]> {
+  async query(
+    collection: string,
+    filter: any = {},
+    options: any = {},
+  ): Promise<any[]> {
     await this.ensureConnection();
     if (!this.db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     const startTime = Date.now();
-    const sql = `db.${collection}.find(${JSON.stringify(filter)}, ${JSON.stringify(options)})`;
+    const sql = `db.${collection}.find(${JSON.stringify(filter)}, ${
+      JSON.stringify(options)
+    })`;
 
     try {
-      const result = await this.db.collection(collection).find(filter, options).toArray();
+      const result = await this.db.collection(collection).find(filter, options)
+        .toArray();
       const duration = Date.now() - startTime;
 
       // 记录查询日志
       if (this.queryLogger) {
-        await this.queryLogger.log('query', sql, [filter, options], duration);
+        await this.queryLogger.log("query", sql, [filter, options], duration);
       }
 
       return result;
@@ -117,7 +145,13 @@ export class MongoDBAdapter extends BaseAdapter {
 
       // 记录错误日志
       if (this.queryLogger) {
-        await this.queryLogger.log('query', sql, [filter, options], duration, error as Error);
+        await this.queryLogger.log(
+          "query",
+          sql,
+          [filter, options],
+          duration,
+          error as Error,
+        );
       }
 
       throw new Error(`MongoDB query error: ${message}`);
@@ -130,18 +164,24 @@ export class MongoDBAdapter extends BaseAdapter {
    * @param collection 集合名称（作为第二个参数）
    * @param data 操作数据（作为第三个参数）
    */
-  async execute(operation: string, collection?: string | any[], data?: any): Promise<any> {
+  async execute(
+    operation: string,
+    collection?: string | any[],
+    data?: any,
+  ): Promise<any> {
     await this.ensureConnection();
     if (!this.db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     // MongoDB 适配器需要 collection 和 data 参数
-    if (typeof collection !== 'string') {
-      throw new Error('MongoDB execute requires collection name as second parameter');
+    if (typeof collection !== "string") {
+      throw new Error(
+        "MongoDB execute requires collection name as second parameter",
+      );
     }
     if (data === undefined) {
-      throw new Error('MongoDB execute requires data as third parameter');
+      throw new Error("MongoDB execute requires data as third parameter");
     }
 
     const startTime = Date.now();
@@ -152,22 +192,22 @@ export class MongoDBAdapter extends BaseAdapter {
       let result: any;
 
       switch (operation) {
-        case 'insert':
+        case "insert":
           result = await coll.insertOne(data);
           break;
-        case 'insertMany':
+        case "insertMany":
           result = await coll.insertMany(data);
           break;
-        case 'update':
+        case "update":
           result = await coll.updateOne(data.filter, { $set: data.update });
           break;
-        case 'updateMany':
+        case "updateMany":
           result = await coll.updateMany(data.filter, { $set: data.update });
           break;
-        case 'delete':
+        case "delete":
           result = await coll.deleteOne(data.filter);
           break;
-        case 'deleteMany':
+        case "deleteMany":
           result = await coll.deleteMany(data.filter);
           break;
         default:
@@ -178,7 +218,7 @@ export class MongoDBAdapter extends BaseAdapter {
 
       // 记录执行日志
       if (this.queryLogger) {
-        await this.queryLogger.log('execute', sql, [data], duration);
+        await this.queryLogger.log("execute", sql, [data], duration);
       }
 
       return result;
@@ -188,7 +228,13 @@ export class MongoDBAdapter extends BaseAdapter {
 
       // 记录错误日志
       if (this.queryLogger) {
-        await this.queryLogger.log('execute', sql, [data], duration, error as Error);
+        await this.queryLogger.log(
+          "execute",
+          sql,
+          [data],
+          duration,
+          error as Error,
+        );
       }
 
       throw new Error(`MongoDB execute error: ${message}`);
@@ -198,9 +244,11 @@ export class MongoDBAdapter extends BaseAdapter {
   /**
    * 执行事务（MongoDB 4.0+ 支持）
    */
-  async transaction<T>(callback: (db: DatabaseAdapter) => Promise<T>): Promise<T> {
+  async transaction<T>(
+    callback: (db: DatabaseAdapter) => Promise<T>,
+  ): Promise<T> {
     if (!this.client) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     const session = this.client.startSession();
@@ -246,7 +294,8 @@ export class MongoDBAdapter extends BaseAdapter {
         if (pool) {
           total += pool.totalConnectionCount || 0;
           active += pool.availableConnectionCount || 0;
-          idle += (pool.totalConnectionCount || 0) - (pool.availableConnectionCount || 0);
+          idle += (pool.totalConnectionCount || 0) -
+            (pool.availableConnectionCount || 0);
         }
       }
 
@@ -277,7 +326,7 @@ export class MongoDBAdapter extends BaseAdapter {
       if (!this.db) {
         return {
           healthy: false,
-          error: 'Database not connected',
+          error: "Database not connected",
           timestamp: new Date(),
         };
       }
@@ -316,4 +365,3 @@ export class MongoDBAdapter extends BaseAdapter {
     }
   }
 }
-

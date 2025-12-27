@@ -1,7 +1,7 @@
 /**
  * 存储工具
  * 封装 localStorage 和 sessionStorage，提供自动 JSON 序列化、过期时间等功能
- * 
+ *
  * 环境兼容性：
  * - 客户端：所有函数都可以在浏览器环境使用
  * - 服务端：在服务端环境会静默失败或返回默认值（不会抛出错误）
@@ -23,7 +23,7 @@ interface StorageItem<T> {
 /**
  * 获取存储对象（localStorage 或 sessionStorage）
  * 内部辅助函数
- * 
+ *
  * @param type 存储类型
  * @returns Storage 对象或 null（服务端环境）
  */
@@ -47,20 +47,20 @@ function getStorageObject(type: StorageType): Storage | null {
 /**
  * 设置存储
  * 自动将值序列化为 JSON 字符串存储
- * 
+ *
  * @param key 存储键
  * @param value 存储值（会自动序列化为 JSON）
  * @param type 存储类型，默认 'localStorage'
  * @returns 是否设置成功
- * 
+ *
  * @example
  * ```typescript
  * // 存储对象
  * setStorage('user', { id: 1, name: 'Alice' });
- * 
+ *
  * // 存储数组
  * setStorage('items', [1, 2, 3]);
- * 
+ *
  * // 存储到 sessionStorage
  * setStorage('token', 'abc123', 'sessionStorage');
  * ```
@@ -90,16 +90,16 @@ export function setStorage(
 /**
  * 获取存储
  * 自动将 JSON 字符串反序列化为原始值
- * 
+ *
  * @param key 存储键
  * @param type 存储类型，默认 'localStorage'
  * @returns 存储值，如果不存在或已过期返回 undefined
- * 
+ *
  * @example
  * ```typescript
  * const user = getStorage('user');
  * // { id: 1, name: 'Alice' }
- * 
+ *
  * const token = getStorage('token', 'sessionStorage');
  * ```
  */
@@ -136,11 +136,11 @@ export function getStorage<T = unknown>(
 
 /**
  * 删除存储
- * 
+ *
  * @param key 存储键
  * @param type 存储类型，默认 'localStorage'
  * @returns 是否删除成功
- * 
+ *
  * @example
  * ```typescript
  * removeStorage('user');
@@ -168,10 +168,10 @@ export function removeStorage(
 /**
  * 清空存储
  * 清空指定类型的所有存储项
- * 
+ *
  * @param type 存储类型，默认 'localStorage'
  * @returns 是否清空成功
- * 
+ *
  * @example
  * ```typescript
  * clearStorage(); // 清空 localStorage
@@ -195,11 +195,11 @@ export function clearStorage(type: StorageType = "localStorage"): boolean {
 
 /**
  * 检查存储是否存在
- * 
+ *
  * @param key 存储键
  * @param type 存储类型，默认 'localStorage'
  * @returns 是否存在
- * 
+ *
  * @example
  * ```typescript
  * if (hasStorage('user')) {
@@ -225,10 +225,10 @@ export function hasStorage(
 
 /**
  * 获取所有存储键
- * 
+ *
  * @param type 存储类型，默认 'localStorage'
  * @returns 所有键的数组
- * 
+ *
  * @example
  * ```typescript
  * const keys = getStorageKeys();
@@ -258,18 +258,18 @@ export function getStorageKeys(type: StorageType = "localStorage"): string[] {
 /**
  * 设置带过期时间的存储
  * 存储的值会在指定时间后自动过期
- * 
+ *
  * @param key 存储键
  * @param value 存储值
  * @param ttl 过期时间（秒）
  * @param type 存储类型，默认 'localStorage'
  * @returns 是否设置成功
- * 
+ *
  * @example
  * ```typescript
  * // 存储 token，1 小时后过期
  * setStorageWithExpiry('token', 'abc123', 3600);
- * 
+ *
  * // 存储临时数据，5 分钟后过期
  * setStorageWithExpiry('temp', { data: 'xxx' }, 300);
  * ```
@@ -301,11 +301,11 @@ export function setStorageWithExpiry(
 /**
  * 获取带过期时间的存储
  * 自动检查是否过期，如果过期则删除并返回 undefined
- * 
+ *
  * @param key 存储键
  * @param type 存储类型，默认 'localStorage'
  * @returns 存储值，如果不存在或已过期返回 undefined
- * 
+ *
  * @example
  * ```typescript
  * const token = getStorageWithExpiry('token');
@@ -324,11 +324,11 @@ export function getStorageWithExpiry<T = unknown>(
 /**
  * 获取存储大小（字节）
  * 计算指定键的存储项占用的字节数
- * 
+ *
  * @param key 存储键
  * @param type 存储类型，默认 'localStorage'
  * @returns 存储大小（字节）
- * 
+ *
  * @example
  * ```typescript
  * const size = getStorageSize('user');
@@ -359,17 +359,19 @@ export function getStorageSize(
 /**
  * 获取所有存储的总大小（字节）
  * 计算指定类型所有存储项的总字节数
- * 
+ *
  * @param type 存储类型，默认 'localStorage'
  * @returns 总大小（字节）
- * 
+ *
  * @example
  * ```typescript
  * const totalSize = getTotalStorageSize();
  * console.log(`localStorage 总占用 ${totalSize} 字节`);
  * ```
  */
-export function getTotalStorageSize(type: StorageType = "localStorage"): number {
+export function getTotalStorageSize(
+  type: StorageType = "localStorage",
+): number {
   const storage = getStorageObject(type);
   if (!storage) {
     return 0;
@@ -391,4 +393,3 @@ export function getTotalStorageSize(type: StorageType = "localStorage"): number 
     return 0;
   }
 }
-

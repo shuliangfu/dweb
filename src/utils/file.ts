@@ -10,15 +10,15 @@
 export async function findConfigFile(): Promise<string | null> {
   const cwd = Deno.cwd();
   const possiblePaths = [
-    'dweb.config.ts',
-    'dweb.config.js',
-    'example/dweb.config.ts',
-    'example/dweb.config.js',
+    "dweb.config.ts",
+    "dweb.config.js",
+    "example/dweb.config.ts",
+    "example/dweb.config.js",
   ];
 
   for (const path of possiblePaths) {
     try {
-      const fullPath = path.startsWith('/') ? path : `${cwd}/${path}`;
+      const fullPath = path.startsWith("/") ? path : `${cwd}/${path}`;
       const stat = await Deno.stat(fullPath);
       if (stat.isFile) {
         return path;
@@ -40,9 +40,9 @@ export async function findConfigFile(): Promise<string | null> {
  */
 export function shouldIgnoreFile(
   filePath: string,
-  ignoredPatterns: Array<(name: string) => boolean>
+  ignoredPatterns: Array<(name: string) => boolean>,
 ): boolean {
-  const name = filePath.split('/').pop() || '';
+  const name = filePath.split("/").pop() || "";
   return ignoredPatterns.some((pattern) => pattern(name) || pattern(filePath));
 }
 
@@ -52,10 +52,12 @@ export function shouldIgnoreFile(
  * @param basePath 基础路径（目录路径，不包含文件名）
  * @returns 解析后的 JSON 对象，如果文件不存在返回 null
  */
-export async function readDenoJson(basePath?: string): Promise<Record<string, any> | null> {
+export async function readDenoJson(
+  basePath?: string,
+): Promise<Record<string, any> | null> {
   const base = basePath || Deno.cwd();
-  const baseDir = base.endsWith('/') ? base.slice(0, -1) : base;
-  
+  const baseDir = base.endsWith("/") ? base.slice(0, -1) : base;
+
   // 优先尝试 deno.json
   const denoJsonPath = `${baseDir}/deno.json`;
   try {
@@ -82,10 +84,12 @@ export async function readDenoJson(basePath?: string): Promise<Record<string, an
  * @param basePath 基础路径（目录路径，不包含文件名）
  * @returns 解析后的 JSON 对象，如果文件不存在返回 null
  */
-export function readDenoJsonSync(basePath?: string): Record<string, any> | null {
+export function readDenoJsonSync(
+  basePath?: string,
+): Record<string, any> | null {
   const base = basePath || Deno.cwd();
-  const baseDir = base.endsWith('/') ? base.slice(0, -1) : base;
-  
+  const baseDir = base.endsWith("/") ? base.slice(0, -1) : base;
+
   // 优先尝试 deno.json
   const denoJsonPath = `${baseDir}/deno.json`;
   try {
@@ -105,4 +109,3 @@ export function readDenoJsonSync(basePath?: string): Record<string, any> | null 
     }
   }
 }
-

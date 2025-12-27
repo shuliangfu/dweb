@@ -3,9 +3,14 @@
  * 服务静态文件
  */
 
-import type { Middleware, Request, Response, StaticOptions } from '../types/index.ts';
-import * as path from '@std/path';
-import { isPathSafe } from '../utils/security.ts';
+import type {
+  Middleware,
+  Request,
+  Response,
+  StaticOptions,
+} from "../types/index.ts";
+import * as path from "@std/path";
+import { isPathSafe } from "../utils/security.ts";
 
 /**
  * 根据文件扩展名获取 MIME 类型
@@ -13,38 +18,38 @@ import { isPathSafe } from '../utils/security.ts';
  * @returns MIME 类型字符串
  */
 function getContentType(filePath: string): string {
-  const ext = filePath.split('.').pop()?.toLowerCase() || '';
+  const ext = filePath.split(".").pop()?.toLowerCase() || "";
   const mimeTypes: Record<string, string> = {
-    'html': 'text/html; charset=utf-8',
-    'htm': 'text/html; charset=utf-8',
-    'css': 'text/css; charset=utf-8',
-    'js': 'application/javascript; charset=utf-8',
-    'mjs': 'application/javascript; charset=utf-8',
-    'json': 'application/json; charset=utf-8',
-    'xml': 'application/xml; charset=utf-8',
-    'txt': 'text/plain; charset=utf-8',
-    'md': 'text/markdown; charset=utf-8',
-    'pdf': 'application/pdf',
-    'zip': 'application/zip',
-    'jpg': 'image/jpeg',
-    'jpeg': 'image/jpeg',
-    'png': 'image/png',
-    'gif': 'image/gif',
-    'svg': 'image/svg+xml',
-    'webp': 'image/webp',
-    'ico': 'image/x-icon',
-    'woff': 'font/woff',
-    'woff2': 'font/woff2',
-    'ttf': 'font/ttf',
-    'otf': 'font/otf',
-    'eot': 'application/vnd.ms-fontobject',
-    'mp4': 'video/mp4',
-    'webm': 'video/webm',
-    'mp3': 'audio/mpeg',
-    'wav': 'audio/wav',
-    'ogg': 'audio/ogg',
+    "html": "text/html; charset=utf-8",
+    "htm": "text/html; charset=utf-8",
+    "css": "text/css; charset=utf-8",
+    "js": "application/javascript; charset=utf-8",
+    "mjs": "application/javascript; charset=utf-8",
+    "json": "application/json; charset=utf-8",
+    "xml": "application/xml; charset=utf-8",
+    "txt": "text/plain; charset=utf-8",
+    "md": "text/markdown; charset=utf-8",
+    "pdf": "application/pdf",
+    "zip": "application/zip",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "png": "image/png",
+    "gif": "image/gif",
+    "svg": "image/svg+xml",
+    "webp": "image/webp",
+    "ico": "image/x-icon",
+    "woff": "font/woff",
+    "woff2": "font/woff2",
+    "ttf": "font/ttf",
+    "otf": "font/otf",
+    "eot": "application/vnd.ms-fontobject",
+    "mp4": "video/mp4",
+    "webm": "video/webm",
+    "mp3": "audio/mpeg",
+    "wav": "audio/wav",
+    "ogg": "audio/ogg",
   };
-  return mimeTypes[ext] || 'application/octet-stream';
+  return mimeTypes[ext] || "application/octet-stream";
 }
 
 /**
@@ -61,14 +66,14 @@ async function serveStaticFile(
     etag?: boolean;
     lastModified?: boolean;
     maxAge?: number;
-  }
+  },
 ): Promise<boolean> {
   const { etag = true, lastModified = true, maxAge = 0 } = options;
 
   if (etag) {
     const etagValue = `"${fileStat.mtime?.getTime() || fileStat.size}"`;
-    res.setHeader('ETag', etagValue);
-    const ifNoneMatch = req.headers.get('if-none-match');
+    res.setHeader("ETag", etagValue);
+    const ifNoneMatch = req.headers.get("if-none-match");
     if (ifNoneMatch === etagValue) {
       res.status = 304;
       res.body = undefined;
@@ -77,8 +82,8 @@ async function serveStaticFile(
   }
 
   if (lastModified && fileStat.mtime) {
-    res.setHeader('Last-Modified', fileStat.mtime.toUTCString());
-    const ifModifiedSince = req.headers.get('if-modified-since');
+    res.setHeader("Last-Modified", fileStat.mtime.toUTCString());
+    const ifModifiedSince = req.headers.get("if-modified-since");
     if (ifModifiedSince) {
       const modifiedSince = new Date(ifModifiedSince);
       if (fileStat.mtime <= modifiedSince) {
@@ -90,7 +95,7 @@ async function serveStaticFile(
   }
 
   if (maxAge > 0) {
-    res.setHeader('Cache-Control', `public, max-age=${maxAge}`);
+    res.setHeader("Cache-Control", `public, max-age=${maxAge}`);
   }
 
   try {
@@ -107,7 +112,7 @@ async function serveStaticFile(
     res.body = body;
     return true;
   } catch (error) {
-    console.error('打开静态文件失败:', error);
+    console.error("打开静态文件失败:", error);
     return false;
   }
 }
@@ -121,58 +126,63 @@ export function staticFiles(options: StaticOptions): Middleware {
   let {
     dir,
     prefix,
-    index = ['index.html'],
-    dotfiles = 'ignore',
+    index = ["index.html"],
+    dotfiles = "ignore",
     etag = true,
     lastModified = true,
     maxAge = 0,
     outDir,
     isProduction,
-    extendDirs = []
-	} = options;
+    extendDirs = [],
+  } = options;
 
   const cwd = Deno.cwd();
-  
+
   // 处理主配置的 prefix：如果未配置，默认使用 dir 的名称
   if (!prefix) {
     const dirName = path.basename(dir);
     prefix = `/${dirName}`;
-	}
+  }
 
-	// 处理 extendDirs：支持字符串或对象格式
+  // 处理 extendDirs：支持字符串或对象格式
   interface NormalizedExtendDir {
     dir: string; // 绝对路径
     prefix: string; // URL 前缀
   }
-  
-  const normalizedExtendDirs: NormalizedExtendDir[] = extendDirs.map(extendDir => {
-    if (typeof extendDir === 'string') {
-      // 字符串格式：['uploads'] -> prefix 默认为目录名
-      const dirPath = path.isAbsolute(extendDir) ? extendDir : path.join(cwd, extendDir);
-      const dirName = path.basename(extendDir);
-      return {
-        dir: dirPath,
-        prefix: `/${dirName}`
-      };
-    } else {
-      // 对象格式：[{dir: 'uploads', prefix: '/uploads'}]
-      const dirPath = path.isAbsolute(extendDir.dir) 
-        ? extendDir.dir 
-        : path.join(cwd, extendDir.dir);
-      const extendPrefix = extendDir.prefix || `/${path.basename(extendDir.dir)}`;
-      return {
-        dir: dirPath,
-        prefix: extendPrefix
-      };
-    }
-  });
-  
+
+  const normalizedExtendDirs: NormalizedExtendDir[] = extendDirs.map(
+    (extendDir) => {
+      if (typeof extendDir === "string") {
+        // 字符串格式：['uploads'] -> prefix 默认为目录名
+        const dirPath = path.isAbsolute(extendDir)
+          ? extendDir
+          : path.join(cwd, extendDir);
+        const dirName = path.basename(extendDir);
+        return {
+          dir: dirPath,
+          prefix: `/${dirName}`,
+        };
+      } else {
+        // 对象格式：[{dir: 'uploads', prefix: '/uploads'}]
+        const dirPath = path.isAbsolute(extendDir.dir)
+          ? extendDir.dir
+          : path.join(cwd, extendDir.dir);
+        const extendPrefix = extendDir.prefix ||
+          `/${path.basename(extendDir.dir)}`;
+        return {
+          dir: dirPath,
+          prefix: extendPrefix,
+        };
+      }
+    },
+  );
+
   // 如果 dir 是相对路径，根据环境自动选择目录
   // 开发环境：使用项目目录
   // 生产环境：使用构建输出目录
   if (dir && !path.isAbsolute(dir)) {
     const cwd = Deno.cwd();
-    
+
     // 如果明确指定了 isProduction 和 outDir，使用它们
     if (isProduction !== undefined && outDir) {
       // 生产环境：使用构建输出目录
@@ -183,9 +193,9 @@ export function staticFiles(options: StaticOptions): Middleware {
     } else {
       // 自动检测环境：检查构建输出目录是否存在
       // 如果提供了 outDir，使用它；否则默认使用 'dist'
-      const buildOutDir = outDir || 'dist';
+      const buildOutDir = outDir || "dist";
       const buildPath = path.join(cwd, buildOutDir, dir);
-      
+
       try {
         const buildStat = Deno.statSync(buildPath);
         if (buildStat.isDirectory) {
@@ -199,38 +209,44 @@ export function staticFiles(options: StaticOptions): Middleware {
         // 构建输出目录不存在，使用项目目录（开发环境）
         dir = path.join(cwd, dir);
       }
-		}
+    }
   }
-  
+
   return async (req, res, next) => {
     const url = new URL(req.url);
-		let pathname = url.pathname;
-		
+    let pathname = url.pathname;
+
     // 检查是否匹配 extendDirs（优先检查，因为这些目录始终从项目根目录读取）
     // 例如：如果 extendDirs 包含 'uploads'，请求 /uploads/file.jpg 应该从项目根目录的 uploads 读取
     if (normalizedExtendDirs.length > 0) {
       for (const extendDirConfig of normalizedExtendDirs) {
         const extendPrefix = extendDirConfig.prefix;
         // 检查路径是否以 prefix 开头（如 /uploads/... 或 /uploads）
-        if (pathname === extendPrefix || pathname.startsWith(`${extendPrefix}/`)) {
+        if (
+          pathname === extendPrefix || pathname.startsWith(`${extendPrefix}/`)
+        ) {
           // 移除 prefix，获取相对路径
-          const relativePath = pathname.slice(extendPrefix.length + 1) || '';
-          
+          const relativePath = pathname.slice(extendPrefix.length + 1) || "";
+
           // 处理点文件
-          if (dotfiles === 'deny' && relativePath.includes('/.')) {
+          if (dotfiles === "deny" && relativePath.includes("/.")) {
             await next();
             return;
           }
-          
+
           // 构建文件路径
           let filePath = relativePath;
-          
+
           // 处理索引文件
-          if (filePath.endsWith('/') || filePath === '') {
+          if (filePath.endsWith("/") || filePath === "") {
             const indexFiles = Array.isArray(index) ? index : [index];
             let foundIndex = false;
             for (const indexFile of indexFiles) {
-              const indexPath = path.join(extendDirConfig.dir, filePath, indexFile);
+              const indexPath = path.join(
+                extendDirConfig.dir,
+                filePath,
+                indexFile,
+              );
               if (!isPathSafe(indexPath, extendDirConfig.dir)) {
                 continue;
               }
@@ -250,16 +266,18 @@ export function staticFiles(options: StaticOptions): Middleware {
               return;
             }
           }
-          
+
           // 构建完整路径
-					const fullPath = filePath ? path.join(extendDirConfig.dir, filePath) : extendDirConfig.dir;
-					
+          const fullPath = filePath
+            ? path.join(extendDirConfig.dir, filePath)
+            : extendDirConfig.dir;
+
           // 安全检查
           if (!isPathSafe(fullPath, extendDirConfig.dir)) {
             await next();
             return;
           }
-          
+
           // 检查文件是否存在
           let fileStat: Deno.FileInfo;
           try {
@@ -272,7 +290,7 @@ export function staticFiles(options: StaticOptions): Middleware {
             await next();
             return;
           }
-          
+
           // 读取并返回文件
           const served = await serveStaticFile(
             req,
@@ -280,7 +298,7 @@ export function staticFiles(options: StaticOptions): Middleware {
             fullPath,
             fileStat,
             filePath,
-            { etag, lastModified, maxAge }
+            { etag, lastModified, maxAge },
           );
 
           if (served) return;
@@ -289,7 +307,7 @@ export function staticFiles(options: StaticOptions): Middleware {
         }
       }
     }
-    
+
     // 移除主目录的前缀
     if (pathname.startsWith(prefix)) {
       pathname = pathname.slice(prefix.length);
@@ -298,16 +316,16 @@ export function staticFiles(options: StaticOptions): Middleware {
       await next();
       return;
     }
-    
+
     // 处理点文件
-    if (dotfiles === 'deny' && pathname.includes('/.')) {
+    if (dotfiles === "deny" && pathname.includes("/.")) {
       await next();
       return;
     }
-    
+
     // 构建文件路径（主目录）
     let filePath = pathname;
-    if (filePath.endsWith('/')) {
+    if (filePath.endsWith("/")) {
       // 尝试查找索引文件
       const indexFiles = Array.isArray(index) ? index : [index];
       let foundIndex = false;
@@ -336,7 +354,7 @@ export function staticFiles(options: StaticOptions): Middleware {
         return;
       }
     }
-    
+
     // 使用 path.join 规范化路径，防止路径遍历攻击
     const fullPath = path.join(dir, filePath);
     // 安全检查：确保文件路径在 dir 目录内
@@ -345,7 +363,7 @@ export function staticFiles(options: StaticOptions): Middleware {
       await next();
       return;
     }
-    
+
     // 检查文件是否存在且是文件（不是目录）
     let fileStat: Deno.FileInfo;
     try {
@@ -360,7 +378,7 @@ export function staticFiles(options: StaticOptions): Middleware {
       await next();
       return;
     }
-    
+
     // 读取文件并返回（使用流式传输和压缩）
     const served = await serveStaticFile(
       req,
@@ -368,7 +386,7 @@ export function staticFiles(options: StaticOptions): Middleware {
       fullPath,
       fileStat,
       filePath,
-      { etag, lastModified, maxAge }
+      { etag, lastModified, maxAge },
     );
 
     if (!served) {
@@ -376,4 +394,3 @@ export function staticFiles(options: StaticOptions): Middleware {
     }
   };
 }
-

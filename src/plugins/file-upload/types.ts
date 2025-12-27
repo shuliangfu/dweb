@@ -13,7 +13,7 @@ export interface ImageCropConfig {
   /** 目标高度 */
   height: number;
   /** 裁切模式：'center' 居中裁切 */
-  mode?: 'center';
+  mode?: "center";
 }
 
 /**
@@ -23,7 +23,7 @@ export interface ImageCompressConfig {
   /** 是否启用压缩 */
   enabled?: boolean;
   /** 压缩格式：'webp' | 'avif' */
-  format?: 'webp' | 'avif';
+  format?: "webp" | "avif";
   /** 压缩质量（0-100） */
   quality?: number;
   /** 是否同时保留原格式 */
@@ -43,7 +43,7 @@ export interface FileUploadConfig {
   /** 是否允许多文件上传 */
   allowMultiple?: boolean;
   /** 文件命名策略 */
-  namingStrategy?: 'original' | 'timestamp' | 'uuid' | 'hash';
+  namingStrategy?: "original" | "timestamp" | "uuid" | "hash";
   /** 是否创建子目录（按日期） */
   createSubdirs?: boolean;
   /** 文件大小限制（每个文件） */
@@ -97,4 +97,3 @@ export interface FileUploadPluginOptions {
   /** 是否在客户端注入上传脚本 */
   injectClientScript?: boolean;
 }
-

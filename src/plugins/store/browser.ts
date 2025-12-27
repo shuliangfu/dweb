@@ -132,4 +132,3 @@ function initStore(config: StoreConfig): void {
 if (typeof globalThis !== "undefined") {
   (globalThis as any).initStore = initStore;
 }
-

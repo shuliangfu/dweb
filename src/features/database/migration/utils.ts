@@ -2,8 +2,8 @@
  * 迁移工具函数
  */
 
-import { ensureDir, exists } from '@std/fs';
-import { join, basename, extname } from '@std/path';
+import { ensureDir, exists } from "@std/fs";
+import { basename, extname, join } from "@std/path";
 
 /**
  * 迁移文件模板（SQL 数据库）
@@ -98,7 +98,7 @@ export default class {className} implements Migration {
  */
 export function generateMigrationFileName(name: string): string {
   const timestamp = Date.now();
-  const sanitizedName = name.replace(/[^a-zA-Z0-9_]/g, '_');
+  const sanitizedName = name.replace(/[^a-zA-Z0-9_]/g, "_");
   return `${timestamp}_${sanitizedName}.ts`;
 }
 
@@ -107,7 +107,9 @@ export function generateMigrationFileName(name: string): string {
  * @param filename 文件名
  * @returns 迁移信息（时间戳和名称）
  */
-export function parseMigrationFileName(filename: string): { timestamp: number; name: string } | null {
+export function parseMigrationFileName(
+  filename: string,
+): { timestamp: number; name: string } | null {
   const baseName = basename(filename, extname(filename));
   const match = baseName.match(/^(\d+)_(.+)$/);
   if (!match) {
@@ -134,7 +136,7 @@ export function generateClassName(name: string): string {
       }
       return part.charAt(0).toUpperCase() + part.slice(1);
     })
-    .join('');
+    .join("");
 }
 
 /**
@@ -157,4 +159,3 @@ export async function fileExists(filepath: string): Promise<boolean> {
     return false;
   }
 }
-

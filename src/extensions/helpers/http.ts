@@ -1,7 +1,7 @@
 /**
  * 前端 HTTP 请求库
  * 基于 fetch，提供拦截器、错误处理、请求取消、重试、并发请求、文件上传/下载等功能
- * 
+ *
  * 环境兼容性：
  * - 通用：所有函数都可以在服务端和客户端使用
  * - 注意：部分功能（如文件上传/下载、进度追踪）在服务端环境可能受限
@@ -139,7 +139,7 @@ export class HttpClient {
    */
   interceptors = {
     request: {
-      use: (interceptor: RequestInterceptor): (() => void) => {
+      use: (interceptor: RequestInterceptor): () => void => {
         this.requestInterceptors.push(interceptor);
         return () => {
           const index = this.requestInterceptors.indexOf(interceptor);
@@ -153,7 +153,7 @@ export class HttpClient {
       use: (
         onFulfilled?: ResponseInterceptor,
         onRejected?: ErrorInterceptor,
-      ): (() => void) => {
+      ): () => void => {
         if (onFulfilled) {
           this.responseInterceptors.push(onFulfilled);
         }
@@ -367,9 +367,7 @@ export class HttpClient {
     }
     const url = config.url || "";
     const method = config.method || "GET";
-    const params = config.params
-      ? JSON.stringify(config.params)
-      : "";
+    const params = config.params ? JSON.stringify(config.params) : "";
     return `${method}:${url}:${params}`;
   }
 
@@ -732,12 +730,16 @@ export class HttpClient {
     requests: {
       [K in keyof T]: Promise<T[K]>;
     },
-  ): Promise<{
-    [K in keyof T]: PromiseSettledResult<Awaited<T[K]>>;
-  }> {
-    return Promise.allSettled(requests) as Promise<{
+  ): Promise<
+    {
       [K in keyof T]: PromiseSettledResult<Awaited<T[K]>>;
-    }>;
+    }
+  > {
+    return Promise.allSettled(requests) as Promise<
+      {
+        [K in keyof T]: PromiseSettledResult<Awaited<T[K]>>;
+      }
+    >;
   }
 
   /**
@@ -804,11 +806,16 @@ export class HttpClient {
 
     // 创建下载链接
     const downloadUrl = URL.createObjectURL(blob);
-    const doc = (globalThis as unknown as { 
-      document: { 
-        createElement: (tag: string) => { href: string; download: string; click: () => void }; 
-        body: { appendChild: (el: unknown) => void; removeChild: (el: unknown) => void } 
-      } 
+    const doc = (globalThis as unknown as {
+      document: {
+        createElement: (
+          tag: string,
+        ) => { href: string; download: string; click: () => void };
+        body: {
+          appendChild: (el: unknown) => void;
+          removeChild: (el: unknown) => void;
+        };
+      };
     }).document;
     const link = doc.createElement("a");
     link.href = downloadUrl;
@@ -894,9 +901,11 @@ export const allSettled = <T extends readonly unknown[] | []>(
   requests: {
     [K in keyof T]: Promise<T[K]>;
   },
-): Promise<{
-  [K in keyof T]: PromiseSettledResult<Awaited<T[K]>>;
-}> => http.allSettled<T>(requests);
+): Promise<
+  {
+    [K in keyof T]: PromiseSettledResult<Awaited<T[K]>>;
+  }
+> => http.allSettled<T>(requests);
 
 /**
  * 文件上传

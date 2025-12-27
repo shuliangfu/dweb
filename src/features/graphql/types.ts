@@ -1,13 +1,13 @@
 /**
  * GraphQL 功能类型定义
- * 
+ *
  * @module features/graphql/types
  */
 
 /**
  * GraphQL 标量类型
  */
-export type GraphQLScalarType = 'String' | 'Int' | 'Float' | 'Boolean' | 'ID';
+export type GraphQLScalarType = "String" | "Int" | "Float" | "Boolean" | "ID";
 
 /**
  * GraphQL 类型定义
@@ -67,7 +67,7 @@ export interface GraphQLArgument {
 
 /**
  * GraphQL 解析器函数
- * 
+ *
  * @param parent - 父对象（对于嵌套字段）
  * @param args - 查询参数
  * @param context - 上下文对象（包含请求信息、数据库等）
@@ -78,7 +78,7 @@ export type GraphQLResolver = (
   parent: unknown,
   args: Record<string, unknown>,
   context: GraphQLContext,
-  info: GraphQLInfo
+  info: GraphQLInfo,
 ) => unknown | Promise<unknown>;
 
 /**
@@ -184,4 +184,3 @@ export interface GraphQLConfig {
   /** 上下文生成函数 */
   context?: (req: unknown) => GraphQLContext | Promise<GraphQLContext>;
 }
-

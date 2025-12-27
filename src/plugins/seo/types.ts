@@ -9,7 +9,7 @@ export interface OpenGraphConfig {
   /** 网站名称 */
   siteName?: string;
   /** 网站类型 */
-  type?: 'website' | 'article' | 'book' | 'profile' | 'music' | 'video';
+  type?: "website" | "article" | "book" | "profile" | "music" | "video";
   /** 图片 URL */
   image?: string;
   /** 图片宽度 */
@@ -39,7 +39,7 @@ export interface OpenGraphConfig {
  */
 export interface TwitterCardConfig {
   /** 卡片类型 */
-  card?: 'summary' | 'summary_large_image' | 'app' | 'player';
+  card?: "summary" | "summary_large_image" | "app" | "player";
   /** 站点 Twitter 用户名 */
   site?: string;
   /** 创建者 Twitter 用户名 */
@@ -75,7 +75,13 @@ export interface JSONLDConfig {
   /** 是否启用 JSON-LD */
   enabled?: boolean;
   /** 网站类型 */
-  type?: 'WebSite' | 'Organization' | 'Person' | 'Article' | 'BlogPosting' | 'Product';
+  type?:
+    | "WebSite"
+    | "Organization"
+    | "Person"
+    | "Article"
+    | "BlogPosting"
+    | "Product";
   /** 网站名称 */
   name?: string;
   /** 网站描述 */
@@ -145,4 +151,3 @@ export interface SEOPluginOptions {
     content: string;
   }>;
 }
-

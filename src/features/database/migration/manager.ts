@@ -3,18 +3,18 @@
  * 负责迁移文件的生成、执行和回滚
  */
 
-import { join, basename } from '@std/path';
-import { exists } from '@std/fs';
-import type { DatabaseType } from '../types.ts';
-import type { Migration, MigrationConfig, MigrationStatus } from './types.ts';
+import { basename, join } from "@std/path";
+import { exists } from "@std/fs";
+import type { DatabaseType } from "../types.ts";
+import type { Migration, MigrationConfig, MigrationStatus } from "./types.ts";
 import {
-  generateMigrationFileName,
-  parseMigrationFileName,
-  generateClassName,
   ensureMigrationsDir,
-  SQL_MIGRATION_TEMPLATE,
+  generateClassName,
+  generateMigrationFileName,
   MONGO_MIGRATION_TEMPLATE,
-} from './utils.ts';
+  parseMigrationFileName,
+  SQL_MIGRATION_TEMPLATE,
+} from "./utils.ts";
 
 /**
  * 迁移管理器类
@@ -26,8 +26,8 @@ export class MigrationManager {
 
   constructor(config: MigrationConfig) {
     this.config = config;
-    this.historyTableName = config.historyTableName || 'migrations';
-    this.historyCollectionName = config.historyCollectionName || 'migrations';
+    this.historyTableName = config.historyTableName || "migrations";
+    this.historyCollectionName = config.historyCollectionName || "migrations";
   }
 
   /**
@@ -38,17 +38,21 @@ export class MigrationManager {
     const dbType = (db as any).config?.type as DatabaseType | undefined;
 
     if (!dbType) {
-      throw new Error('Cannot determine database type from adapter');
+      throw new Error("Cannot determine database type from adapter");
     }
 
-    if (dbType === 'mongodb') {
+    if (dbType === "mongodb") {
       // MongoDB: 检查集合是否存在，不存在则创建
       try {
         await (db as any).query(this.historyCollectionName, {}, { limit: 1 });
         // 如果查询成功，说明集合已存在
       } catch {
         // 集合不存在，创建它
-        await (db as any).execute('createCollection', this.historyCollectionName, {});
+        await (db as any).execute(
+          "createCollection",
+          this.historyCollectionName,
+          {},
+        );
       }
     } else {
       // SQL 数据库: 创建迁移历史表
@@ -65,7 +69,7 @@ export class MigrationManager {
       } catch (error) {
         // 某些数据库可能需要不同的 SQL 语法
         // PostgreSQL/MySQL 使用不同的语法
-        if (dbType === 'postgresql' || dbType === 'mysql') {
+        if (dbType === "postgresql" || dbType === "mysql") {
           const pgCreateTableSQL = `
             CREATE TABLE IF NOT EXISTS ${this.historyTableName} (
               id SERIAL PRIMARY KEY,
@@ -91,11 +95,15 @@ export class MigrationManager {
     const dbType = (db as any).config?.type as DatabaseType | undefined;
 
     if (!dbType) {
-      throw new Error('Cannot determine database type from adapter');
+      throw new Error("Cannot determine database type from adapter");
     }
 
-    if (dbType === 'mongodb') {
-      const results = await (db as any).query(this.historyCollectionName, {}, {});
+    if (dbType === "mongodb") {
+      const results = await (db as any).query(
+        this.historyCollectionName,
+        {},
+        {},
+      );
       return results.map((r: any) => r.name as string);
     } else {
       const results = await db.query(
@@ -115,11 +123,11 @@ export class MigrationManager {
     const dbType = (db as any).config?.type as DatabaseType | undefined;
 
     if (!dbType) {
-      throw new Error('Cannot determine database type from adapter');
+      throw new Error("Cannot determine database type from adapter");
     }
 
-    if (dbType === 'mongodb') {
-      await (db as any).execute('insert', this.historyCollectionName, {
+    if (dbType === "mongodb") {
+      await (db as any).execute("insert", this.historyCollectionName, {
         name,
         batch,
         executedAt: new Date(),
@@ -141,15 +149,17 @@ export class MigrationManager {
     const dbType = (db as any).config?.type as DatabaseType | undefined;
 
     if (!dbType) {
-      throw new Error('Cannot determine database type from adapter');
+      throw new Error("Cannot determine database type from adapter");
     }
 
-    if (dbType === 'mongodb') {
-      await (db as any).execute('delete', this.historyCollectionName, {
+    if (dbType === "mongodb") {
+      await (db as any).execute("delete", this.historyCollectionName, {
         filter: { name },
       });
     } else {
-      await db.execute(`DELETE FROM ${this.historyTableName} WHERE name = ?`, [name]);
+      await db.execute(`DELETE FROM ${this.historyTableName} WHERE name = ?`, [
+        name,
+      ]);
     }
   }
 
@@ -162,10 +172,10 @@ export class MigrationManager {
     const dbType = (db as any).config?.type as DatabaseType | undefined;
 
     if (!dbType) {
-      throw new Error('Cannot determine database type from adapter');
+      throw new Error("Cannot determine database type from adapter");
     }
 
-    if (dbType === 'mongodb') {
+    if (dbType === "mongodb") {
       const results = await (db as any).query(
         this.historyCollectionName,
         {},
@@ -205,11 +215,15 @@ export class MigrationManager {
 
     // 如果未指定数据库类型，尝试从适配器获取
     if (!dbType) {
-      dbType = (this.config.adapter as any).config?.type as DatabaseType | undefined;
+      dbType = (this.config.adapter as any).config?.type as
+        | DatabaseType
+        | undefined;
     }
 
     // 根据数据库类型选择模板
-    const template = dbType === 'mongodb' ? MONGO_MIGRATION_TEMPLATE : SQL_MIGRATION_TEMPLATE;
+    const template = dbType === "mongodb"
+      ? MONGO_MIGRATION_TEMPLATE
+      : SQL_MIGRATION_TEMPLATE;
 
     const content = template
       .replace(/{timestamp}/g, new Date().toISOString())
@@ -227,7 +241,9 @@ export class MigrationManager {
     // 动态导入迁移文件
     const module = await import(`file://${filepath}`);
     if (!module.default) {
-      throw new Error(`Migration file ${filepath} does not export a default class`);
+      throw new Error(
+        `Migration file ${filepath} does not export a default class`,
+      );
     }
     const MigrationClass = module.default;
     return new MigrationClass() as Migration;
@@ -243,7 +259,7 @@ export class MigrationManager {
 
     const files: string[] = [];
     for await (const entry of Deno.readDir(this.config.migrationsDir)) {
-      if (entry.isFile && entry.name.endsWith('.ts')) {
+      if (entry.isFile && entry.name.endsWith(".ts")) {
         files.push(join(this.config.migrationsDir, entry.name));
       }
     }
@@ -271,7 +287,7 @@ export class MigrationManager {
     }
 
     if (pending.length === 0) {
-      console.log('No pending migrations to run.');
+      console.log("No pending migrations to run.");
       return;
     }
 
@@ -304,7 +320,7 @@ export class MigrationManager {
   async down(count: number = 1): Promise<void> {
     const executed = await this.getExecutedMigrations();
     if (executed.length === 0) {
-      console.log('No migrations to rollback.');
+      console.log("No migrations to rollback.");
       return;
     }
 
@@ -380,4 +396,3 @@ export class MigrationManager {
     });
   }
 }
-

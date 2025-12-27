@@ -97,14 +97,16 @@ export class RouteHandler {
   private config?: AppConfig;
   private graphqlServer?: GraphQLServer;
   private renderAdapter: RenderAdapter;
-  
+
   /**
    * 模块编译缓存
    * Key: 文件绝对路径
    * Value: 修改时间和编译后的代码
    * 使用 LRU 缓存，最大 1000 个条目
    */
-  private moduleCache = new LRUCache<string, { mtime: number; code: string }>(1000);
+  private moduleCache = new LRUCache<string, { mtime: number; code: string }>(
+    1000,
+  );
 
   constructor(
     router: Router,
@@ -204,7 +206,7 @@ export class RouteHandler {
           // 开发环境：从项目根目录加载
           fullPath = path.resolve(cwd, filePath);
         }
-        
+
         // 检查文件是否存在（确保正确等待，使用 await 等待完成）
         let stat: Deno.FileInfo;
         try {
@@ -236,13 +238,19 @@ export class RouteHandler {
         if (cachedEntry && cachedEntry.mtime === mtime) {
           // 缓存命中，直接返回
           const jsCode = cachedEntry.code;
-          
+
           res.status = 200;
-          res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+          res.setHeader(
+            "Content-Type",
+            "application/javascript; charset=utf-8",
+          );
           res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
           res.text(jsCode);
-          
-          if (!res.body || (typeof res.body === "string" && res.body.trim() === "")) {
+
+          if (
+            !res.body ||
+            (typeof res.body === "string" && res.body.trim() === "")
+          ) {
             res.text(jsCode);
           }
           return;
@@ -859,7 +867,13 @@ export class RouteHandler {
 
       // 处理 API 请求
       // 如果发生错误，api-route.ts 会直接设置响应并返回 null（不再抛出异常）
-      const result = await handleApiRoute(handlers, req.method, req, res, apiMode);
+      const result = await handleApiRoute(
+        handlers,
+        req.method,
+        req,
+        res,
+        apiMode,
+      );
 
       // 如果返回 null，说明错误响应已经设置，直接返回
       if (result === null) {
@@ -877,12 +891,12 @@ export class RouteHandler {
       // 向后兼容：如果 api-route.ts 没有传递 res 参数，仍然会抛出异常
       // API 路由错误应该返回 JSON，而不是 HTML
       // 检查是否是 ApiError 类型（从 utils/error.ts 导入）
-      const { ApiError } = await import('../utils/error.ts');
-      
+      const { ApiError } = await import("../utils/error.ts");
+
       let statusCode = 500;
-      let errorMessage = 'API 请求处理失败';
+      let errorMessage = "API 请求处理失败";
       let errorDetails: Record<string, unknown> | undefined = undefined;
-      
+
       if (error instanceof ApiError) {
         // 如果是 ApiError，使用其状态码和详情
         statusCode = error.statusCode;
@@ -891,15 +905,19 @@ export class RouteHandler {
       } else if (error instanceof Error) {
         // 如果是普通 Error，根据错误消息判断状态码
         errorMessage = error.message;
-        if (errorMessage.includes("未找到") || errorMessage.includes("not found")) {
+        if (
+          errorMessage.includes("未找到") || errorMessage.includes("not found")
+        ) {
           statusCode = 404;
-        } else if (errorMessage.includes("格式错误") || errorMessage.includes("格式")) {
+        } else if (
+          errorMessage.includes("格式错误") || errorMessage.includes("格式")
+        ) {
           statusCode = 400;
         }
       } else {
         errorMessage = String(error);
       }
-      
+
       // 记录错误日志（但不抛出异常）
       logger.error("API 路由错误", error instanceof Error ? error : undefined, {
         url: req.url,
@@ -1326,35 +1344,35 @@ export class RouteHandler {
     try {
       // 先尝试加载 _500.tsx
       let errorPagePath = this.router.getErrorPage("500");
-      
+
       // 如果没有 _500.tsx，尝试加载 _error.tsx
       if (!errorPagePath) {
         errorPagePath = this.router.getErrorPage("error");
       }
-      
+
       // 如果都没有，返回 null
       if (!errorPagePath) {
         return null;
       }
-      
+
       // 加载错误页面组件
       const errorPageFullPath = resolveFilePath(errorPagePath);
       const errorPageModule = await import(errorPageFullPath);
       const ErrorPageComponent = errorPageModule.default as (
         props: { error?: { message?: string } },
       ) => unknown;
-      
+
       if (!ErrorPageComponent || typeof ErrorPageComponent !== "function") {
         return null;
       }
-      
+
       // 检查组件是否是异步函数
       const errorProps = {
         error: error instanceof Error
           ? { message: error.message }
           : { message: String(error) },
       };
-      
+
       try {
         const result = ErrorPageComponent(errorProps);
         if (result instanceof Promise) {
@@ -1366,10 +1384,13 @@ export class RouteHandler {
           throw err;
         }
       }
-      
+
       // 创建错误页面 VNode
-      const errorVNode = this.renderAdapter.createElement(ErrorPageComponent as any, errorProps);
-      
+      const errorVNode = this.renderAdapter.createElement(
+        ErrorPageComponent as any,
+        errorProps,
+      );
+
       // 加载 _app.tsx 组件（如果存在）
       const appPath = this.router.getApp();
       if (appPath) {
@@ -1378,20 +1399,28 @@ export class RouteHandler {
         const AppComponent = appModule.default as (props: {
           children: string;
         }) => unknown;
-        
+
         if (AppComponent && typeof AppComponent === "function") {
           const errorHtmlResult = this.renderAdapter.renderToString(errorVNode);
-          const errorHtml = errorHtmlResult instanceof Promise ? await errorHtmlResult : errorHtmlResult;
+          const errorHtml = errorHtmlResult instanceof Promise
+            ? await errorHtmlResult
+            : errorHtmlResult;
           const appResult = AppComponent({ children: errorHtml });
-          const appElement = appResult instanceof Promise ? await appResult : appResult;
+          const appElement = appResult instanceof Promise
+            ? await appResult
+            : appResult;
           const appHtmlResult = this.renderAdapter.renderToString(appElement);
-          return appHtmlResult instanceof Promise ? await appHtmlResult : appHtmlResult;
+          return appHtmlResult instanceof Promise
+            ? await appHtmlResult
+            : appHtmlResult;
         }
       }
-      
+
       // 如果没有 _app.tsx，直接渲染错误页面
       const errorHtmlResult = this.renderAdapter.renderToString(errorVNode);
-      return errorHtmlResult instanceof Promise ? await errorHtmlResult : errorHtmlResult;
+      return errorHtmlResult instanceof Promise
+        ? await errorHtmlResult
+        : errorHtmlResult;
     } catch {
       // 如果渲染错误页面失败，返回 null，使用默认错误页面
       return null;
@@ -1422,18 +1451,20 @@ export class RouteHandler {
     try {
       // 处理页面组件（支持 hooks，但不支持 async）
       // 检查组件函数本身是否是异步函数（不调用函数，避免触发 hooks）
-      if (PageComponent.constructor.name === 'AsyncFunction' || 
-          (PageComponent as any)[Symbol.toStringTag] === 'AsyncFunction') {
+      if (
+        PageComponent.constructor.name === "AsyncFunction" ||
+        (PageComponent as any)[Symbol.toStringTag] === "AsyncFunction"
+      ) {
         throw new Error("页面组件不能是异步函数");
       }
-      
+
       // 初始化 hooks 上下文：先渲染一个简单的组件来初始化 hooks 上下文
       // 这可以确保在使用 createElement() 创建组件 VNode 时，hooks 上下文已经准备好
       try {
         // 创建一个简单的测试组件来初始化 hooks 上下文
         const initComponent = () => null;
         const initResult = this.renderAdapter.renderToString(
-          this.renderAdapter.createElement(initComponent, {})
+          this.renderAdapter.createElement(initComponent, {}),
         );
         // 处理异步 renderToString（Vue3）
         if (initResult instanceof Promise) {
@@ -1442,9 +1473,12 @@ export class RouteHandler {
       } catch {
         // 忽略错误，hooks 上下文可能已经初始化
       }
-      
+
       // 创建页面 VNode（hooks 上下文会在 createElement() 调用时自动初始化）
-      const pageVNode = this.renderAdapter.createElement(PageComponent as any, pageProps);
+      const pageVNode = this.renderAdapter.createElement(
+        PageComponent as any,
+        pageProps,
+      );
 
       // 如果有布局，按顺序嵌套包裹（支持异步布局组件）
       // hooks 上下文会在 renderToString 内部初始化
@@ -1476,7 +1510,8 @@ export class RouteHandler {
                 // 布局的 load 数据作为 data
                 data: layoutProps,
                 // 提供当前路由路径
-                routePath: routeInfo?.path || (req ? new URL(req.url).pathname : "/"),
+                routePath: routeInfo?.path ||
+                  (req ? new URL(req.url).pathname : "/"),
                 // 提供 URL 对象
                 url: req ? new URL(req.url) : undefined,
                 // children 放在最后，确保类型正确且不被覆盖
@@ -1485,22 +1520,33 @@ export class RouteHandler {
             ) as LayoutProps;
 
             // 检查布局组件函数本身是否是异步函数（不调用函数，避免触发 hooks）
-            if (LayoutComponent.constructor.name === 'AsyncFunction' || 
-                (LayoutComponent as any)[Symbol.toStringTag] === 'AsyncFunction') {
+            if (
+              LayoutComponent.constructor.name === "AsyncFunction" ||
+              (LayoutComponent as any)[Symbol.toStringTag] === "AsyncFunction"
+            ) {
               throw new Error("布局组件不能是异步函数");
             }
 
             // 创建布局 VNode（hooks 上下文会在 createElement() 调用时自动初始化）
-            currentElement = this.renderAdapter.createElement(LayoutComponent as any, layoutPropsWithData as unknown as Record<string, unknown>) as any;
+            currentElement = this.renderAdapter.createElement(
+              LayoutComponent as any,
+              layoutPropsWithData as unknown as Record<string, unknown>,
+            ) as any;
           }
-          
-          const renderResult = this.renderAdapter.renderToString(currentElement);
+
+          const renderResult = this.renderAdapter.renderToString(
+            currentElement,
+          );
           // 处理异步 renderToString（Vue3）
-          html = renderResult instanceof Promise ? await renderResult : renderResult;
+          html = renderResult instanceof Promise
+            ? await renderResult
+            : renderResult;
         } else {
           const renderResult = this.renderAdapter.renderToString(pageVNode);
           // 处理异步 renderToString（Vue3）
-          html = renderResult instanceof Promise ? await renderResult : renderResult;
+          html = renderResult instanceof Promise
+            ? await renderResult
+            : renderResult;
         }
 
         // 确保 HTML 内容不为空
@@ -2315,14 +2361,14 @@ export class RouteHandler {
         console.error(error.stack);
       }
       console.error("===================================\n");
-      
+
       // 尝试渲染自定义错误页面
       const errorHtml = await this.renderErrorPage(500, error, req, res);
       if (errorHtml) {
         res.html(errorHtml, { status: 500 });
         return;
       }
-      
+
       // 如果没有自定义错误页面，使用默认错误 HTML
       const defaultErrorHtml = `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -2379,16 +2425,18 @@ export class RouteHandler {
         console.error(error.stack);
       }
       console.error("===================================\n");
-      
+
       // 尝试渲染自定义错误页面
       const errorHtml = await this.renderErrorPage(500, error, req, res);
       if (errorHtml) {
         res.html(errorHtml, { status: 500 });
         return;
       }
-      
+
       // 如果没有自定义错误页面，使用默认错误 HTML
-      res.html(`<h1>500 - App Component Error</h1><p>${errorMsg}</p>`, { status: 500 });
+      res.html(`<h1>500 - App Component Error</h1><p>${errorMsg}</p>`, {
+        status: 500,
+      });
       return;
     }
 
@@ -2397,7 +2445,9 @@ export class RouteHandler {
     try {
       const renderResult = this.renderAdapter.renderToString(appElement);
       // 处理异步 renderToString（Vue3）
-      fullHtml = renderResult instanceof Promise ? await renderResult : renderResult;
+      fullHtml = renderResult instanceof Promise
+        ? await renderResult
+        : renderResult;
       if (!fullHtml || fullHtml.trim() === "") {
         throw new Error("_app.tsx 渲染结果为空");
       }
@@ -2412,16 +2462,18 @@ export class RouteHandler {
         console.error(error.stack);
       }
       console.error("===================================\n");
-      
+
       // 尝试渲染自定义错误页面
       const errorHtml = await this.renderErrorPage(500, error, req, res);
       if (errorHtml) {
         res.html(errorHtml, { status: 500 });
         return;
       }
-      
+
       // 如果没有自定义错误页面，使用默认错误 HTML
-      res.html(`<h1>500 - Render Error</h1><p>${errorMsg}</p>`, { status: 500 });
+      res.html(`<h1>500 - Render Error</h1><p>${errorMsg}</p>`, {
+        status: 500,
+      });
       return;
     }
 
@@ -2456,7 +2508,7 @@ export class RouteHandler {
       console.error("请求方法:", req.method);
       console.error("错误:", errorMsg);
       console.error("===================================\n");
-      
+
       // 尝试渲染自定义错误页面
       const error = new Error(errorMsg);
       const errorHtml = await this.renderErrorPage(500, error, req, res);
@@ -2464,9 +2516,11 @@ export class RouteHandler {
         res.html(errorHtml, { status: 500 });
         return;
       }
-      
+
       // 如果没有自定义错误页面，使用默认错误 HTML
-      res.html(`<h1>500 - Internal Server Error</h1><p>${errorMsg}</p>`, { status: 500 });
+      res.html(`<h1>500 - Internal Server Error</h1><p>${errorMsg}</p>`, {
+        status: 500,
+      });
       return;
     }
 
@@ -2775,9 +2829,14 @@ export class RouteHandler {
         );
         const ErrorComponent = errorModule.default;
         if (ErrorComponent) {
-          const errorVNode = this.renderAdapter.createElement(ErrorComponent as any, {});
+          const errorVNode = this.renderAdapter.createElement(
+            ErrorComponent as any,
+            {},
+          );
           const htmlResult = this.renderAdapter.renderToString(errorVNode);
-          const html = htmlResult instanceof Promise ? await htmlResult : htmlResult;
+          const html = htmlResult instanceof Promise
+            ? await htmlResult
+            : htmlResult;
           res.status = 404;
           res.html(html);
           return;
@@ -2841,10 +2900,12 @@ export class RouteHandler {
         if (ErrorComponent) {
           const errorVNode = this.renderAdapter.createElement(
             ErrorComponent as any,
-            { error: { message: errorMessage, statusCode } }
+            { error: { message: errorMessage, statusCode } },
           );
           const htmlResult = this.renderAdapter.renderToString(errorVNode);
-          const html = htmlResult instanceof Promise ? await htmlResult : htmlResult;
+          const html = htmlResult instanceof Promise
+            ? await htmlResult
+            : htmlResult;
           res.status = statusCode;
           res.html(html);
           return;

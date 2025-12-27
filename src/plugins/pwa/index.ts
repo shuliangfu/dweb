@@ -3,9 +3,18 @@
  * 生成 manifest.json 和 Service Worker
  */
 
-import type { Plugin, Request, Response, BuildConfig } from '../../types/index.ts';
-import type { PWAPluginOptions, PWAManifestConfig, ServiceWorkerConfig } from './types.ts';
-import * as path from '@std/path';
+import type {
+  BuildConfig,
+  Plugin,
+  Request,
+  Response,
+} from "../../types/index.ts";
+import type {
+  PWAManifestConfig,
+  PWAPluginOptions,
+  ServiceWorkerConfig,
+} from "./types.ts";
+import * as path from "@std/path";
 
 /**
  * 生成 Service Worker 代码
@@ -15,7 +24,7 @@ function generateServiceWorker(config: ServiceWorkerConfig): string {
   const precache = config.precache || [];
   const runtimeCache = config.runtimeCache || [];
   const offlinePage = config.offlinePage;
-  
+
   return `// DWeb PWA Service Worker
 // 自动生成，请勿手动编辑
 
@@ -71,7 +80,9 @@ self.addEventListener('fetch', (event) => {
     }
   });
   
-  const strategy = runtimeRule?.handler || '${config.cacheStrategy || 'network-first'}';
+  const strategy = runtimeRule?.handler || '${
+    config.cacheStrategy || "network-first"
+  }';
   
   event.respondWith(handleRequest(event.request, strategy, runtimeRule?.options));
 });
@@ -92,7 +103,11 @@ async function handleRequest(request, strategy, options) {
         }
         return response;
       } catch (error) {
-        ${offlinePage ? `return cache.match('${offlinePage}') || new Response('Offline', { status: 503 });` : `return new Response('Offline', { status: 503 });`}
+        ${
+    offlinePage
+      ? `return cache.match('${offlinePage}') || new Response('Offline', { status: 503 });`
+      : `return new Response('Offline', { status: 503 });`
+  }
       }
       
     case 'network-first':
@@ -107,7 +122,11 @@ async function handleRequest(request, strategy, options) {
         if (cached) {
           return cached;
         }
-        ${offlinePage ? `return cache.match('${offlinePage}') || new Response('Offline', { status: 503 });` : `return new Response('Offline', { status: 503 });`}
+        ${
+    offlinePage
+      ? `return cache.match('${offlinePage}') || new Response('Offline', { status: 503 });`
+      : `return new Response('Offline', { status: 503 });`
+  }
       }
       
     case 'stale-while-revalidate':
@@ -136,22 +155,26 @@ async function handleRequest(request, strategy, options) {
 /**
  * 注入 PWA 链接到 HTML
  */
-function injectPWALinks(html: string, manifestPath: string, swPath?: string): string {
+function injectPWALinks(
+  html: string,
+  manifestPath: string,
+  swPath?: string,
+): string {
   let result = html;
-  
+
   // 注入 manifest 链接
   const manifestLink = `<link rel="manifest" href="${manifestPath}" />`;
-  if (result.includes('</head>')) {
-    result = result.replace('</head>', `    ${manifestLink}\n</head>`);
+  if (result.includes("</head>")) {
+    result = result.replace("</head>", `    ${manifestLink}\n</head>`);
   }
-  
+
   // 注入 theme-color meta
   // 注意：theme-color 应该从 manifest 中获取，这里简化处理
   const themeColorMeta = '<meta name="theme-color" content="#000000" />';
-  if (result.includes('</head>')) {
-    result = result.replace('</head>', `    ${themeColorMeta}\n</head>`);
+  if (result.includes("</head>")) {
+    result = result.replace("</head>", `    ${themeColorMeta}\n</head>`);
   }
-  
+
   // 注入 Service Worker 注册代码
   if (swPath) {
     const swScript = `<script>
@@ -167,14 +190,14 @@ function injectPWALinks(html: string, manifestPath: string, swPath?: string): st
         });
       }
     </script>`;
-    
-    if (result.includes('</body>')) {
-      result = result.replace('</body>', `    ${swScript}\n</body>`);
-    } else if (result.includes('</html>')) {
-      result = result.replace('</html>', `    ${swScript}\n</html>`);
+
+    if (result.includes("</body>")) {
+      result = result.replace("</body>", `    ${swScript}\n</body>`);
+    } else if (result.includes("</html>")) {
+      result = result.replace("</html>", `    ${swScript}\n</html>`);
     }
   }
-  
+
   return result;
 }
 
@@ -183,73 +206,77 @@ function injectPWALinks(html: string, manifestPath: string, swPath?: string): st
  */
 export function pwa(options: PWAPluginOptions): Plugin {
   if (!options.manifest) {
-    throw new Error('PWA 插件需要 manifest 配置');
+    throw new Error("PWA 插件需要 manifest 配置");
   }
-  
+
   return {
-    name: 'pwa',
+    name: "pwa",
     config: options as unknown as Record<string, unknown>,
-    
+
     /**
      * 请求处理钩子 - 注入 PWA 链接
      */
     onRequest(_req: Request, res: Response) {
       // 只处理 HTML 响应
-      if (!res.body || typeof res.body !== 'string') {
+      if (!res.body || typeof res.body !== "string") {
         return;
       }
-      
-      const contentType = res.headers.get('Content-Type') || '';
-      if (!contentType.includes('text/html')) {
+
+      const contentType = res.headers.get("Content-Type") || "";
+      if (!contentType.includes("text/html")) {
         return;
       }
-      
+
       if (options.injectLinks !== false) {
         try {
-          const manifestPath = options.manifestOutputPath || '/manifest.json';
-          const swPath = options.serviceWorker !== false 
-            ? (options.serviceWorker?.swPath || options.swOutputPath || '/sw.js')
+          const manifestPath = options.manifestOutputPath || "/manifest.json";
+          const swPath = options.serviceWorker !== false
+            ? (options.serviceWorker?.swPath || options.swOutputPath ||
+              "/sw.js")
             : undefined;
-          
+
           const html = res.body as string;
           const newHtml = injectPWALinks(html, manifestPath, swPath);
           res.body = newHtml;
         } catch (error) {
-          console.error('[PWA Plugin] 注入 PWA 链接时出错:', error);
+          console.error("[PWA Plugin] 注入 PWA 链接时出错:", error);
         }
       }
     },
-    
+
     /**
      * 构建时钩子 - 生成 manifest.json 和 Service Worker
      */
     async onBuild(buildConfig: BuildConfig) {
-      const outDir = buildConfig.outDir || 'dist';
-      const manifestOutputPath = options.manifestOutputPath || 'manifest.json';
-      const swOutputPath = options.swOutputPath || 'sw.js';
-      
-      console.log('📱 [PWA Plugin] 开始生成 PWA 文件...');
-      
+      const outDir = buildConfig.outDir || "dist";
+      const manifestOutputPath = options.manifestOutputPath || "manifest.json";
+      const swOutputPath = options.swOutputPath || "sw.js";
+
+      console.log("📱 [PWA Plugin] 开始生成 PWA 文件...");
+
       try {
         // 生成 manifest.json
         const manifestPath = path.join(outDir, manifestOutputPath);
         await Deno.mkdir(path.dirname(manifestPath), { recursive: true });
-        
+
         // 确保 manifest 包含必需的字段
         const manifest: PWAManifestConfig = {
           short_name: options.manifest.short_name || options.manifest.name,
-          start_url: options.manifest.start_url || '/',
-          display: options.manifest.display || 'standalone',
-          theme_color: options.manifest.theme_color || '#000000',
-          background_color: options.manifest.background_color || '#ffffff',
+          start_url: options.manifest.start_url || "/",
+          display: options.manifest.display || "standalone",
+          theme_color: options.manifest.theme_color || "#000000",
+          background_color: options.manifest.background_color || "#ffffff",
           ...options.manifest,
           // name 必须在最后，确保使用用户提供的值
           name: options.manifest.name,
         };
-        
-        await Deno.writeTextFile(manifestPath, JSON.stringify(manifest, null, 2));
+
+        await Deno.writeTextFile(
+          manifestPath,
+          JSON.stringify(manifest, null, 2),
+        );
         console.log(`✅ [PWA Plugin] 生成 manifest.json: ${manifestPath}`);
-        
+
         // 生成 Service Worker
         if (options.serviceWorker !== false) {
           const swConfig = options.serviceWorker || {};
@@ -259,12 +286,18 @@ export function pwa(options: PWAPluginOptions): Plugin {
           console.log(`✅ [PWA Plugin] 生成 Service Worker: ${swPath}`);
         }
       } catch (error) {
-        console.error('❌ [PWA Plugin] 生成 PWA 文件时出错:', error);
+        console.error("❌ [PWA Plugin] 生成 PWA 文件时出错:", error);
       }
     },
   };
 }
 
 // 导出类型
-export type { PWAPluginOptions, PWAManifestConfig, ServiceWorkerConfig, ManifestIcon, ManifestShortcut, ManifestRelatedApplication } from './types.ts';
-
+export type {
+  ManifestIcon,
+  ManifestRelatedApplication,
+  ManifestShortcut,
+  PWAManifestConfig,
+  PWAPluginOptions,
+  ServiceWorkerConfig,
+} from "./types.ts";

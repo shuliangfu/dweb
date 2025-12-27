@@ -3,16 +3,16 @@
  * 提供 ODM 功能，支持对象条件查询和字段投影
  */
 
-import type { DatabaseAdapter } from '../types.ts';
-import type { MongoDBAdapter } from '../adapters/mongodb.ts';
+import type { DatabaseAdapter } from "../types.ts";
+import type { MongoDBAdapter } from "../adapters/mongodb.ts";
 import type {
-  IndexDefinitions,
-  SingleFieldIndex,
   CompoundIndex,
-  TextIndex,
   GeospatialIndex,
+  IndexDefinitions,
   IndexDirection,
-} from '../types/index.ts';
+  SingleFieldIndex,
+  TextIndex,
+} from "../types/index.ts";
 
 /**
  * 查询条件类型
@@ -35,7 +35,7 @@ export type MongoWhereCondition = {
 
 /**
  * 字段类型
- * 
+ *
  * - string: 字符串类型
  * - number: 数字类型（整数或浮点数）
  * - bigint: 大整数类型
@@ -52,22 +52,22 @@ export type MongoWhereCondition = {
  * - binary: 二进制数据类型
  * - any: 任意类型
  */
-export type FieldType = 
-  | 'string' 
-  | 'number' 
-  | 'bigint' 
-  | 'decimal' 
-  | 'boolean' 
-  | 'date' 
-  | 'timestamp' 
-  | 'array' 
-  | 'object' 
-  | 'json' 
-  | 'enum' 
-  | 'uuid' 
-  | 'text' 
-  | 'binary' 
-  | 'any';
+export type FieldType =
+  | "string"
+  | "number"
+  | "bigint"
+  | "decimal"
+  | "boolean"
+  | "date"
+  | "timestamp"
+  | "array"
+  | "object"
+  | "json"
+  | "enum"
+  | "uuid"
+  | "text"
+  | "binary"
+  | "any";
 
 /**
  * 验证规则
@@ -108,22 +108,24 @@ export type ModelSchema = {
  */
 export class ValidationError extends Error {
   field: string;
-  
+
   constructor(
     field: string,
     message: string,
   ) {
     super(`Validation failed for field "${field}": ${message}`);
-    this.name = 'ValidationError';
+    this.name = "ValidationError";
     this.field = field;
   }
 }
 
-
 /**
  * 生命周期钩子函数类型
  */
-export type LifecycleHook<T = any> = (instance: T, options?: any) => Promise<void> | void;
+export type LifecycleHook<T = any> = (
+  instance: T,
+  options?: any,
+) => Promise<void> | void;
 
 /**
  * MongoDB 模型基类
@@ -138,7 +140,7 @@ export abstract class MongoModel {
   /**
    * 主键字段名（默认为 '_id'）
    */
-  static primaryKey: string = '_id';
+  static primaryKey: string = "_id";
 
   /**
    * 数据库适配器实例（子类需要设置，必须是 MongoDBAdapter）
@@ -147,7 +149,7 @@ export abstract class MongoModel {
 
   /**
    * 字段定义（可选，用于定义字段类型、默认值和验证规则）
-   * 
+   *
    * @example
    * static schema: ModelSchema = {
    *   name: {
@@ -168,24 +170,24 @@ export abstract class MongoModel {
 
   /**
    * 索引定义（可选，用于定义数据库索引）
-   * 
+   *
    * @example
    * // 单个字段索引
    * static indexes = [
    *   { field: 'email', unique: true },
    *   { field: 'createdAt', direction: -1 }
    * ];
-   * 
+   *
    * // 复合索引
    * static indexes = [
    *   { fields: { userId: 1, createdAt: -1 }, unique: true }
    * ];
-   * 
+   *
    * // 文本索引
    * static indexes = [
    *   { fields: { title: 10, content: 5 }, type: 'text' }
    * ];
-   * 
+   *
    * // 地理空间索引
    * static indexes = [
    *   { field: 'location', type: '2dsphere' }
@@ -203,28 +205,29 @@ export abstract class MongoModel {
    * 软删除字段名（默认为 'deletedAt'）
    * 可以自定义为 'deleted_at' 等
    */
-  static deletedAtField: string = 'deletedAt';
+  static deletedAtField: string = "deletedAt";
 
   /**
    * 是否自动管理时间戳
    * - false: 不启用时间戳
    * - true: 启用时间戳，使用默认字段名（createdAt, updatedAt）
    * - 对象: 启用时间戳并自定义字段名，例如 { createdAt: 'created_at', updatedAt: 'updated_at' }
-   * 
+   *
    * @example
    * static timestamps = true; // 使用默认字段名
    * static timestamps = { createdAt: 'created_at', updatedAt: 'updated_at' }; // 自定义字段名
    */
-  static timestamps: boolean | { createdAt?: string; updatedAt?: string } = false;
+  static timestamps: boolean | { createdAt?: string; updatedAt?: string } =
+    false;
 
   /**
    * 生命周期钩子（可选，子类可以重写这些方法）
-   * 
+   *
    * @example
    * static async beforeCreate(instance: User) {
    *   instance.createdAt = new Date();
    * }
-   * 
+   *
    * static async afterCreate(instance: User) {
    *   console.log('User created:', instance);
    * }
@@ -242,14 +245,14 @@ export abstract class MongoModel {
 
   /**
    * 查询作用域（可选，子类可以定义常用的查询条件）
-   * 
+   *
    * @example
    * static scopes = {
    *   active: () => ({ status: 'active' }),
    *   published: () => ({ published: true, deletedAt: { $exists: false } }),
    *   recent: () => ({ createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } })
    * };
-   * 
+   *
    * // 使用
    * const activeUsers = await User.scope('active').findAll();
    */
@@ -257,13 +260,13 @@ export abstract class MongoModel {
 
   /**
    * 虚拟字段（可选，子类可以定义计算属性）
-   * 
+   *
    * @example
    * static virtuals = {
    *   fullName: (instance: User) => `${instance.firstName} ${instance.lastName}`,
    *   isAdult: (instance: User) => instance.age >= 18
    * };
-   * 
+   *
    * // 使用
    * const user = await User.find(1);
    * console.log(user.fullName); // 自动计算
@@ -278,7 +281,7 @@ export abstract class MongoModel {
   /**
    * 缓存适配器（可选，用于查询结果缓存）
    */
-  static cacheAdapter?: import('../cache/cache-adapter.ts').CacheAdapter;
+  static cacheAdapter?: import("../cache/cache-adapter.ts").CacheAdapter;
 
   /**
    * 缓存 TTL（秒，默认 3600）
@@ -298,18 +301,18 @@ export abstract class MongoModel {
    * 设置数据库适配器并创建索引（如果定义了索引）
    * 这个方法会自动从全局数据库管理器获取适配器
    * 如果数据库未初始化，会自动尝试从 dweb.config.ts 加载配置并初始化
-   * 
+   *
    * @param connectionName 连接名称（默认为 'default'）
    * @returns Promise<void>
-   * 
+   *
    * @example
    * await User.init(); // 使用默认连接，如果数据库未初始化会自动从配置文件加载
    * await User.init('secondary'); // 使用指定连接
    */
-  static async init(connectionName: string = 'default'): Promise<void> {
+  static async init(connectionName: string = "default"): Promise<void> {
     // 动态导入 getDatabaseAsync 以避免循环依赖
-    const { getDatabaseAsync } = await import('../access.ts');
-    
+    const { getDatabaseAsync } = await import("../access.ts");
+
     try {
       // 获取数据库适配器（如果数据库未初始化，会自动尝试从配置文件加载并初始化）
       const adapter = await getDatabaseAsync(connectionName);
@@ -321,7 +324,9 @@ export abstract class MongoModel {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to initialize model ${this.collectionName}: ${message}`);
+      throw new Error(
+        `Failed to initialize model ${this.collectionName}: ${message}`,
+      );
     }
   }
 
@@ -330,7 +335,9 @@ export abstract class MongoModel {
    * 如果适配器未设置，自动尝试初始化
    * @param connectionName 连接名称（默认为 'default'）
    */
-  private static async ensureInitialized(connectionName: string = 'default'): Promise<void> {
+  private static async ensureInitialized(
+    connectionName: string = "default",
+  ): Promise<void> {
     if (!this.adapter) {
       await this.init(connectionName);
     }
@@ -343,37 +350,45 @@ export abstract class MongoModel {
    * @param fieldDef 字段定义
    * @throws ValidationError 验证失败时抛出
    */
-  private static validateField(fieldName: string, value: any, fieldDef: FieldDefinition): void {
+  private static validateField(
+    fieldName: string,
+    value: any,
+    fieldDef: FieldDefinition,
+  ): void {
     const rule = fieldDef.validate;
-    
+
     // 必填验证（优先检查字段定义中的 required，然后是验证规则中的）
     const isRequired = rule?.required || false;
-    if (isRequired && (value === null || value === undefined || value === '')) {
-      throw new ValidationError(fieldName, rule?.message || `${fieldName} is required`);
+    if (isRequired && (value === null || value === undefined || value === "")) {
+      throw new ValidationError(
+        fieldName,
+        rule?.message || `${fieldName} is required`,
+      );
     }
 
     // 如果值为空且不是必填，跳过其他验证
-    if (value === null || value === undefined || value === '') {
+    if (value === null || value === undefined || value === "") {
       return;
     }
 
     // 枚举类型验证（优先检查字段定义中的 enum）
-    if (fieldDef.type === 'enum') {
+    if (fieldDef.type === "enum") {
       if (fieldDef.enum && !fieldDef.enum.includes(value)) {
         throw new ValidationError(
           fieldName,
-          rule?.message || `${fieldName} must be one of: ${fieldDef.enum.join(', ')}`
+          rule?.message ||
+            `${fieldName} must be one of: ${fieldDef.enum.join(", ")}`,
         );
       }
     }
 
     // 类型验证
-    if (fieldDef.type && fieldDef.type !== 'enum') {
+    if (fieldDef.type && fieldDef.type !== "enum") {
       const typeCheck = this.checkType(value, fieldDef.type);
       if (!typeCheck) {
         throw new ValidationError(
           fieldName,
-          rule?.message || `${fieldName} must be of type ${fieldDef.type}`
+          rule?.message || `${fieldName} must be of type ${fieldDef.type}`,
         );
       }
     }
@@ -384,64 +399,68 @@ export abstract class MongoModel {
       if (!typeCheck) {
         throw new ValidationError(
           fieldName,
-          rule.message || `${fieldName} must be of type ${rule.type}`
+          rule.message || `${fieldName} must be of type ${rule.type}`,
         );
       }
     }
 
     // 验证规则中的枚举验证（如果字段定义中没有指定枚举）
-    if (rule?.enum && fieldDef.type !== 'enum' && !rule.enum.includes(value)) {
+    if (rule?.enum && fieldDef.type !== "enum" && !rule.enum.includes(value)) {
       throw new ValidationError(
         fieldName,
-        rule.message || `${fieldName} must be one of: ${rule.enum.join(', ')}`
+        rule.message || `${fieldName} must be one of: ${rule.enum.join(", ")}`,
       );
     }
 
     // 字符串长度验证
-    if (rule && typeof value === 'string') {
+    if (rule && typeof value === "string") {
       if (rule.length !== undefined && value.length !== rule.length) {
         throw new ValidationError(
           fieldName,
-          rule.message || `${fieldName} must be exactly ${rule.length} characters`
+          rule.message ||
+            `${fieldName} must be exactly ${rule.length} characters`,
         );
       }
       if (rule.min !== undefined && value.length < rule.min) {
         throw new ValidationError(
           fieldName,
-          rule.message || `${fieldName} must be at least ${rule.min} characters`
+          rule.message ||
+            `${fieldName} must be at least ${rule.min} characters`,
         );
       }
       if (rule.max !== undefined && value.length > rule.max) {
         throw new ValidationError(
           fieldName,
-          rule.message || `${fieldName} must be at most ${rule.max} characters`
+          rule.message || `${fieldName} must be at most ${rule.max} characters`,
         );
       }
     }
 
     // 数字范围验证
-    if (rule && typeof value === 'number') {
+    if (rule && typeof value === "number") {
       if (rule.min !== undefined && value < rule.min) {
         throw new ValidationError(
           fieldName,
-          rule.message || `${fieldName} must be at least ${rule.min}`
+          rule.message || `${fieldName} must be at least ${rule.min}`,
         );
       }
       if (rule.max !== undefined && value > rule.max) {
         throw new ValidationError(
           fieldName,
-          rule.message || `${fieldName} must be at most ${rule.max}`
+          rule.message || `${fieldName} must be at most ${rule.max}`,
         );
       }
     }
 
     // 正则表达式验证
     if (rule?.pattern) {
-      const regex = typeof rule.pattern === 'string' ? new RegExp(rule.pattern) : rule.pattern;
-      if (typeof value === 'string' && !regex.test(value)) {
+      const regex = typeof rule.pattern === "string"
+        ? new RegExp(rule.pattern)
+        : rule.pattern;
+      if (typeof value === "string" && !regex.test(value)) {
         throw new ValidationError(
           fieldName,
-          rule.message || `${fieldName} format is invalid`
+          rule.message || `${fieldName} format is invalid`,
         );
       }
     }
@@ -452,7 +471,10 @@ export abstract class MongoModel {
       if (result !== true) {
         throw new ValidationError(
           fieldName,
-          rule.message || (typeof result === 'string' ? result : `${fieldName} validation failed`)
+          rule.message ||
+            (typeof result === "string"
+              ? result
+              : `${fieldName} validation failed`),
         );
       }
     }
@@ -463,56 +485,59 @@ export abstract class MongoModel {
    */
   private static checkType(value: any, type: FieldType): boolean {
     switch (type) {
-      case 'string': {
-        return typeof value === 'string';
+      case "string": {
+        return typeof value === "string";
       }
-      case 'number': {
-        return typeof value === 'number' && !isNaN(value);
+      case "number": {
+        return typeof value === "number" && !isNaN(value);
       }
-      case 'bigint': {
-        return typeof value === 'bigint' || (typeof value === 'number' && Number.isInteger(value));
+      case "bigint": {
+        return typeof value === "bigint" ||
+          (typeof value === "number" && Number.isInteger(value));
       }
-      case 'decimal': {
-        return typeof value === 'number' && !isNaN(value);
+      case "decimal": {
+        return typeof value === "number" && !isNaN(value);
       }
-      case 'boolean': {
-        return typeof value === 'boolean';
+      case "boolean": {
+        return typeof value === "boolean";
       }
-      case 'date': {
+      case "date": {
         return value instanceof Date || !isNaN(Date.parse(value));
       }
-      case 'timestamp': {
-        return typeof value === 'number' && value > 0;
+      case "timestamp": {
+        return typeof value === "number" && value > 0;
       }
-      case 'array': {
+      case "array": {
         return Array.isArray(value);
       }
-      case 'object': {
-        return typeof value === 'object' && value !== null && !Array.isArray(value);
+      case "object": {
+        return typeof value === "object" && value !== null &&
+          !Array.isArray(value);
       }
-      case 'json': {
+      case "json": {
         // JSON 类型可以是对象或数组
-        return typeof value === 'object' && value !== null;
+        return typeof value === "object" && value !== null;
       }
-      case 'enum': {
+      case "enum": {
         // 枚举类型检查在 validateField 中处理
         return true;
       }
-      case 'uuid': {
+      case "uuid": {
         // UUID 格式验证: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        return typeof value === 'string' && uuidRegex.test(value);
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        return typeof value === "string" && uuidRegex.test(value);
       }
-      case 'text': {
-        return typeof value === 'string';
+      case "text": {
+        return typeof value === "string";
       }
-      case 'binary': {
+      case "binary": {
         // 检查是否为二进制数据类型
         if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
           return true;
         }
         // 在 Node.js 环境中检查 Buffer
-        if (typeof globalThis !== 'undefined' && 'Buffer' in globalThis) {
+        if (typeof globalThis !== "undefined" && "Buffer" in globalThis) {
           const Buffer = (globalThis as any).Buffer;
           if (Buffer && Buffer.isBuffer && Buffer.isBuffer(value)) {
             return true;
@@ -520,7 +545,7 @@ export abstract class MongoModel {
         }
         return false;
       }
-      case 'any': {
+      case "any": {
         return true;
       }
       default: {
@@ -547,8 +572,13 @@ export abstract class MongoModel {
       let value = data[fieldName];
 
       // 应用默认值
-      if ((value === null || value === undefined) && fieldDef.default !== undefined) {
-        value = typeof fieldDef.default === 'function' ? fieldDef.default() : fieldDef.default;
+      if (
+        (value === null || value === undefined) &&
+        fieldDef.default !== undefined
+      ) {
+        value = typeof fieldDef.default === "function"
+          ? fieldDef.default()
+          : fieldDef.default;
       }
 
       // 应用 setter
@@ -557,7 +587,7 @@ export abstract class MongoModel {
       }
 
       // 类型转换（枚举类型不需要转换）
-      if (value !== undefined && fieldDef.type && fieldDef.type !== 'enum') {
+      if (value !== undefined && fieldDef.type && fieldDef.type !== "enum") {
         value = this.convertType(value, fieldDef.type);
       }
 
@@ -588,77 +618,81 @@ export abstract class MongoModel {
     }
 
     switch (type) {
-      case 'string': {
+      case "string": {
         return String(value);
       }
-      case 'number': {
+      case "number": {
         const num = Number(value);
         return isNaN(num) ? value : num;
       }
-      case 'boolean': {
-        if (typeof value === 'boolean') return value;
-        if (typeof value === 'string') {
-          return value === 'true' || value === '1';
+      case "boolean": {
+        if (typeof value === "boolean") return value;
+        if (typeof value === "string") {
+          return value === "true" || value === "1";
         }
         return Boolean(value);
       }
-      case 'date': {
+      case "date": {
         if (value instanceof Date) return value;
         const date = new Date(value);
         return isNaN(date.getTime()) ? value : date;
       }
-      case 'array': {
+      case "array": {
         return Array.isArray(value) ? value : [value];
       }
-      case 'object': {
-        if (typeof value === 'object' && !Array.isArray(value)) return value;
+      case "object": {
+        if (typeof value === "object" && !Array.isArray(value)) return value;
         try {
-          return typeof value === 'string' ? JSON.parse(value) : value;
+          return typeof value === "string" ? JSON.parse(value) : value;
         } catch {
           return value;
         }
       }
-      case 'json': {
-        if (typeof value === 'object' && value !== null) return value;
+      case "json": {
+        if (typeof value === "object" && value !== null) return value;
         try {
-          return typeof value === 'string' ? JSON.parse(value) : value;
+          return typeof value === "string" ? JSON.parse(value) : value;
         } catch {
           return value;
         }
       }
-      case 'enum': {
+      case "enum": {
         // 枚举类型不需要转换，直接返回
         return value;
       }
-      case 'uuid': {
+      case "uuid": {
         // UUID 保持字符串格式
         return String(value);
       }
-      case 'text': {
+      case "text": {
         return String(value);
       }
-      case 'bigint': {
-        if (typeof value === 'bigint') return value;
-        if (typeof value === 'number' && Number.isInteger(value)) return BigInt(value);
-        if (typeof value === 'string') {
+      case "bigint": {
+        if (typeof value === "bigint") return value;
+        if (typeof value === "number" && Number.isInteger(value)) {
+          return BigInt(value);
+        }
+        if (typeof value === "string") {
           const num = parseInt(value, 10);
           return !isNaN(num) ? BigInt(num) : value;
         }
         return value;
       }
-      case 'decimal': {
+      case "decimal": {
         const num = Number(value);
         return isNaN(num) ? value : num;
       }
-      case 'timestamp': {
-        if (typeof value === 'number') return value;
+      case "timestamp": {
+        if (typeof value === "number") return value;
         if (value instanceof Date) return value.getTime();
         const date = new Date(value);
         return isNaN(date.getTime()) ? value : date.getTime();
       }
-      case 'binary': {
-        if (value instanceof Uint8Array || value instanceof ArrayBuffer) return value;
-        if (typeof value === 'string') {
+      case "binary": {
+        if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
+          return value;
+        }
+        if (typeof value === "string") {
           // 尝试将字符串转换为 Uint8Array
           try {
             return new TextEncoder().encode(value);
@@ -713,7 +747,7 @@ export abstract class MongoModel {
    * @param condition 查询条件（可以是 ID、条件对象）
    * @param fields 要查询的字段数组（可选，用于字段投影）
    * @returns 模型实例或 null
-   * 
+   *
    * @example
    * const user = await User.find('507f1f77bcf86cd799439011');
    * const user = await User.find({ _id: '507f1f77bcf86cd799439011' });
@@ -727,16 +761,18 @@ export abstract class MongoModel {
   ): Promise<InstanceType<T> | null> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
-    
+
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
     // 如果是字符串，作为主键查询
-    if (typeof condition === 'string') {
+    if (typeof condition === "string") {
       filter[this.primaryKey] = condition;
     } else {
       filter = condition;
@@ -757,7 +793,11 @@ export abstract class MongoModel {
       };
     }
 
-    const results = await adapter.query(this.collectionName, queryFilter, options);
+    const results = await adapter.query(
+      this.collectionName,
+      queryFilter,
+      options,
+    );
 
     if (results.length === 0) {
       return null;
@@ -765,7 +805,7 @@ export abstract class MongoModel {
 
     const instance = new (this as any)();
     Object.assign(instance, results[0]);
-    
+
     // 应用虚拟字段
     if ((this as any).virtuals) {
       const Model = this as any;
@@ -778,7 +818,7 @@ export abstract class MongoModel {
         });
       }
     }
-    
+
     return instance as InstanceType<T>;
   }
 
@@ -787,7 +827,7 @@ export abstract class MongoModel {
    * @param condition 查询条件对象（可选，不提供则查询所有）
    * @param fields 要查询的字段数组（可选，用于字段投影）
    * @returns 模型实例数组
-   * 
+   *
    * @example
    * const users = await User.findAll();
    * const users = await User.findAll({ age: 25 });
@@ -801,9 +841,11 @@ export abstract class MongoModel {
   ): Promise<InstanceType<T>[]> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
-    
+
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
@@ -822,12 +864,16 @@ export abstract class MongoModel {
       };
     }
 
-    const results = await adapter.query(this.collectionName, queryFilter, options);
+    const results = await adapter.query(
+      this.collectionName,
+      queryFilter,
+      options,
+    );
 
     return results.map((row: any) => {
       const instance = new (this as any)();
       Object.assign(instance, row);
-      
+
       // 应用虚拟字段
       if ((this as any).virtuals) {
         const Model = this as any;
@@ -840,7 +886,7 @@ export abstract class MongoModel {
           });
         }
       }
-      
+
       return instance as InstanceType<T>;
     });
   }
@@ -849,7 +895,7 @@ export abstract class MongoModel {
    * 应用查询作用域
    * @param scopeName 作用域名称
    * @returns 查询构建器（链式调用）
-   * 
+   *
    * @example
    * const activeUsers = await User.scope('active').findAll();
    */
@@ -877,16 +923,21 @@ export abstract class MongoModel {
         condition: MongoWhereCondition = {},
         fields?: string[],
       ): Promise<InstanceType<T>[]> => {
-        return await this.findAll({ ...scopeCondition, ...condition }, fields) as InstanceType<T>[];
+        return await this.findAll(
+          { ...scopeCondition, ...condition },
+          fields,
+        ) as InstanceType<T>[];
       },
       find: async <T extends typeof MongoModel>(
         condition: MongoWhereCondition | string = {},
         fields?: string[],
       ): Promise<InstanceType<T> | null> => {
-        if (typeof condition === 'string') {
+        if (typeof condition === "string") {
           return await this.find(condition, fields) as InstanceType<T> | null;
         }
-        return await this.find({ ...scopeCondition, ...condition }, fields) as InstanceType<T> | null;
+        return await this.find({ ...scopeCondition, ...condition }, fields) as
+          | InstanceType<T>
+          | null;
       },
       count: async (condition: MongoWhereCondition = {}): Promise<number> => {
         return await this.count({ ...scopeCondition, ...condition });
@@ -898,7 +949,7 @@ export abstract class MongoModel {
    * 创建新记录
    * @param data 要插入的数据对象
    * @returns 创建的模型实例
-   * 
+   *
    * @example
    * const user = await User.create({ name: 'John', email: 'john@example.com' });
    */
@@ -908,9 +959,11 @@ export abstract class MongoModel {
   ): Promise<InstanceType<T>> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
-    
+
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+      );
     }
 
     // 处理字段（应用默认值、类型转换、验证）
@@ -918,13 +971,13 @@ export abstract class MongoModel {
 
     // 自动时间戳
     if (this.timestamps) {
-      const createdAtField = typeof this.timestamps === 'object' 
-        ? (this.timestamps.createdAt || 'createdAt')
-        : 'createdAt';
-      const updatedAtField = typeof this.timestamps === 'object'
-        ? (this.timestamps.updatedAt || 'updatedAt')
-        : 'updatedAt';
-      
+      const createdAtField = typeof this.timestamps === "object"
+        ? (this.timestamps.createdAt || "createdAt")
+        : "createdAt";
+      const updatedAtField = typeof this.timestamps === "object"
+        ? (this.timestamps.updatedAt || "updatedAt")
+        : "updatedAt";
+
       if (!processedData[createdAtField]) {
         processedData[createdAtField] = new Date();
       }
@@ -962,14 +1015,18 @@ export abstract class MongoModel {
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
-    const result = await adapter.execute('insert', this.collectionName, processedData);
+    const result = await adapter.execute(
+      "insert",
+      this.collectionName,
+      processedData,
+    );
 
     // MongoDB insert 返回结果包含 insertedId
     let insertedId: any = null;
-    if (result && typeof result === 'object') {
-      if ('insertedId' in result) {
+    if (result && typeof result === "object") {
+      if ("insertedId" in result) {
         insertedId = (result as any).insertedId;
-      } else if ('_id' in processedData) {
+      } else if ("_id" in processedData) {
         insertedId = processedData._id;
       }
     }
@@ -1009,7 +1066,7 @@ export abstract class MongoModel {
    * @param condition 查询条件（可以是 ID、条件对象）
    * @param data 要更新的数据对象
    * @returns 更新的记录数
-   * 
+   *
    * @example
    * await User.update('507f1f77bcf86cd799439011', { name: 'lisi' });
    * await User.update({ _id: '507f1f77bcf86cd799439011' }, { name: 'lisi' });
@@ -1021,14 +1078,16 @@ export abstract class MongoModel {
   ): Promise<number> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
-    
+
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+      );
     }
 
     // 先查找要更新的记录
     let existingInstance: InstanceType<typeof MongoModel> | null = null;
-    if (typeof condition === 'string') {
+    if (typeof condition === "string") {
       existingInstance = await this.find(condition);
     } else {
       const results = await this.findAll(condition);
@@ -1044,9 +1103,9 @@ export abstract class MongoModel {
 
     // 自动时间戳
     if (this.timestamps) {
-      const updatedAtField = typeof this.timestamps === 'object'
-        ? (this.timestamps.updatedAt || 'updatedAt')
-        : 'updatedAt';
+      const updatedAtField = typeof this.timestamps === "object"
+        ? (this.timestamps.updatedAt || "updatedAt")
+        : "updatedAt";
       processedData[updatedAtField] = new Date();
     }
 
@@ -1082,21 +1141,22 @@ export abstract class MongoModel {
     let filter: any = {};
 
     // 如果是字符串，作为主键查询
-    if (typeof condition === 'string') {
+    if (typeof condition === "string") {
       filter[this.primaryKey] = condition;
     } else {
       filter = condition;
     }
 
-    const result = await adapter.execute('update', this.collectionName, {
+    const result = await adapter.execute("update", this.collectionName, {
       filter,
       update: { $set: processedData },
     });
 
     // MongoDB update 返回结果包含 modifiedCount
-    const modifiedCount = (result && typeof result === 'object' && 'modifiedCount' in result)
-      ? ((result as any).modifiedCount || 0)
-      : 0;
+    const modifiedCount =
+      (result && typeof result === "object" && "modifiedCount" in result)
+        ? ((result as any).modifiedCount || 0)
+        : 0;
 
     if (modifiedCount > 0) {
       // 重新查询更新后的记录
@@ -1121,7 +1181,7 @@ export abstract class MongoModel {
    * 删除记录
    * @param condition 查询条件（可以是 ID、条件对象）
    * @returns 删除的记录数
-   * 
+   *
    * @example
    * await User.delete('507f1f77bcf86cd799439011');
    * await User.delete({ _id: '507f1f77bcf86cd799439011' });
@@ -1132,14 +1192,16 @@ export abstract class MongoModel {
   ): Promise<number> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
-    
+
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+      );
     }
 
     // 先查找要删除的记录
     let instanceToDelete: InstanceType<typeof MongoModel> | null = null;
-    if (typeof condition === 'string') {
+    if (typeof condition === "string") {
       instanceToDelete = await this.find(condition);
     } else {
       const results = await this.findAll(condition);
@@ -1159,7 +1221,7 @@ export abstract class MongoModel {
     let filter: any = {};
 
     // 如果是字符串，作为主键查询
-    if (typeof condition === 'string') {
+    if (typeof condition === "string") {
       filter[this.primaryKey] = condition;
     } else {
       filter = condition;
@@ -1167,13 +1229,14 @@ export abstract class MongoModel {
 
     // 软删除：设置 deletedAt 字段
     if (this.softDelete) {
-      const result = await adapter.execute('update', this.collectionName, {
+      const result = await adapter.execute("update", this.collectionName, {
         filter,
         update: { $set: { [this.deletedAtField]: new Date() } },
       });
-      const modifiedCount = (result && typeof result === 'object' && 'modifiedCount' in result)
-        ? ((result as any).modifiedCount || 0)
-        : 0;
+      const modifiedCount =
+        (result && typeof result === "object" && "modifiedCount" in result)
+          ? ((result as any).modifiedCount || 0)
+          : 0;
 
       if (modifiedCount > 0 && this.afterDelete) {
         await this.afterDelete(instanceToDelete);
@@ -1182,14 +1245,15 @@ export abstract class MongoModel {
     }
 
     // 硬删除：真正删除记录
-    const result = await adapter.execute('delete', this.collectionName, {
+    const result = await adapter.execute("delete", this.collectionName, {
       filter,
     });
 
     // MongoDB delete 返回结果包含 deletedCount
-    const deletedCount = (result && typeof result === 'object' && 'deletedCount' in result)
-      ? ((result as any).deletedCount || 0)
-      : 0;
+    const deletedCount =
+      (result && typeof result === "object" && "deletedCount" in result)
+        ? ((result as any).deletedCount || 0)
+        : 0;
 
     if (deletedCount > 0 && this.afterDelete) {
       await this.afterDelete(instanceToDelete);
@@ -1205,10 +1269,12 @@ export abstract class MongoModel {
   async save<T extends MongoModel>(this: T): Promise<T> {
     const Model = this.constructor as typeof MongoModel;
     if (!Model.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
-    const primaryKey = (Model.constructor as any).primaryKey || '_id';
+    const primaryKey = (Model.constructor as any).primaryKey || "_id";
     const id = (this as any)[primaryKey];
 
     if (id) {
@@ -1227,22 +1293,27 @@ export abstract class MongoModel {
    * 更新当前实例
    * @param data 要更新的数据对象
    * @returns 更新后的实例
-   * 
+   *
    * @example
    * const user = await User.find('507f1f77bcf86cd799439011');
    * await user.update({ age: 26 });
    */
-  async update<T extends MongoModel>(this: T, data: Record<string, any>): Promise<T> {
+  async update<T extends MongoModel>(
+    this: T,
+    data: Record<string, any>,
+  ): Promise<T> {
     const Model = this.constructor as typeof MongoModel;
     if (!Model.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
-    const primaryKey = (Model.constructor as any).primaryKey || '_id';
+    const primaryKey = (Model.constructor as any).primaryKey || "_id";
     const id = (this as any)[primaryKey];
 
     if (!id) {
-      throw new Error('Cannot update instance without primary key');
+      throw new Error("Cannot update instance without primary key");
     }
 
     await Model.update(id, data);
@@ -1258,14 +1329,16 @@ export abstract class MongoModel {
   async delete<T extends MongoModel>(this: T): Promise<boolean> {
     const Model = this.constructor as typeof MongoModel;
     if (!Model.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
-    const primaryKey = (Model.constructor as any).primaryKey || '_id';
+    const primaryKey = (Model.constructor as any).primaryKey || "_id";
     const id = (this as any)[primaryKey];
 
     if (!id) {
-      throw new Error('Cannot delete instance without primary key');
+      throw new Error("Cannot delete instance without primary key");
     }
 
     const deleted = await Model.delete(id);
@@ -1277,7 +1350,7 @@ export abstract class MongoModel {
    * @param condition 查询条件（可以是 ID、条件对象）
    * @param fields 要查询的字段数组（可选，用于字段投影）
    * @returns 模型实例或 null
-   * 
+   *
    * @example
    * const user = await User.findOne('507f1f77bcf86cd799439011');
    * const user = await User.findOne({ email: 'user@example.com' });
@@ -1295,7 +1368,7 @@ export abstract class MongoModel {
    * @param id 主键值
    * @param fields 要查询的字段数组（可选，用于字段投影）
    * @returns 模型实例或 null
-   * 
+   *
    * @example
    * const user = await User.findById('507f1f77bcf86cd799439011');
    * const user = await User.findById('507f1f77bcf86cd799439011', ['_id', 'name', 'email']);
@@ -1313,7 +1386,7 @@ export abstract class MongoModel {
    * @param id 主键值
    * @param data 要更新的数据对象
    * @returns 更新的记录数
-   * 
+   *
    * @example
    * await User.updateById('507f1f77bcf86cd799439011', { name: 'lisi' });
    */
@@ -1328,7 +1401,7 @@ export abstract class MongoModel {
    * 通过主键 ID 删除记录
    * @param id 主键值
    * @returns 删除的记录数
-   * 
+   *
    * @example
    * await User.deleteById('507f1f77bcf86cd799439011');
    */
@@ -1343,7 +1416,7 @@ export abstract class MongoModel {
    * @param condition 查询条件（可以是 ID、条件对象）
    * @param data 要更新的数据对象
    * @returns 更新的记录数
-   * 
+   *
    * @example
    * await User.updateMany({ status: 'active' }, { lastLogin: new Date() });
    * await User.updateMany({ age: { $lt: 18 } }, { isMinor: true });
@@ -1353,7 +1426,9 @@ export abstract class MongoModel {
     data: Record<string, any>,
   ): Promise<number> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     // 处理字段（应用默认值、类型转换、验证）
@@ -1363,19 +1438,19 @@ export abstract class MongoModel {
     let filter: any = {};
 
     // 如果是字符串，作为主键查询
-    if (typeof condition === 'string') {
+    if (typeof condition === "string") {
       filter[this.primaryKey] = condition;
     } else {
       filter = condition;
     }
 
-    const result = await adapter.execute('updateMany', this.collectionName, {
+    const result = await adapter.execute("updateMany", this.collectionName, {
       filter,
       update: processedData,
     });
 
     // MongoDB updateMany 返回结果包含 modifiedCount
-    if (result && typeof result === 'object' && 'modifiedCount' in result) {
+    if (result && typeof result === "object" && "modifiedCount" in result) {
       return (result as any).modifiedCount || 0;
     }
     return 0;
@@ -1385,7 +1460,7 @@ export abstract class MongoModel {
    * 批量删除记录
    * @param condition 查询条件（可以是 ID、条件对象）
    * @returns 删除的记录数
-   * 
+   *
    * @example
    * await User.deleteMany({ status: 'deleted' });
    * await User.deleteMany({ age: { $lt: 18 } });
@@ -1394,25 +1469,27 @@ export abstract class MongoModel {
     condition: MongoWhereCondition | string,
   ): Promise<number> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
     // 如果是字符串，作为主键查询
-    if (typeof condition === 'string') {
+    if (typeof condition === "string") {
       filter[this.primaryKey] = condition;
     } else {
       filter = condition;
     }
 
-    const result = await adapter.execute('deleteMany', this.collectionName, {
+    const result = await adapter.execute("deleteMany", this.collectionName, {
       filter,
     });
 
     // MongoDB deleteMany 返回结果包含 deletedCount
-    if (result && typeof result === 'object' && 'deletedCount' in result) {
+    if (result && typeof result === "object" && "deletedCount" in result) {
       return (result as any).deletedCount || 0;
     }
     return 0;
@@ -1422,7 +1499,7 @@ export abstract class MongoModel {
    * 统计符合条件的记录数量
    * @param condition 查询条件（可选，不提供则统计所有记录）
    * @returns 记录数量
-   * 
+   *
    * @example
    * const total = await User.count();
    * const activeUsers = await User.count({ status: 'active' });
@@ -1432,18 +1509,22 @@ export abstract class MongoModel {
     condition: MongoWhereCondition = {},
   ): Promise<number> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = (adapter as any).getDatabase();
-    
+
     if (!db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     try {
-      const count = await db.collection(this.collectionName).countDocuments(condition);
+      const count = await db.collection(this.collectionName).countDocuments(
+        condition,
+      );
       return count;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -1455,7 +1536,7 @@ export abstract class MongoModel {
    * 检查记录是否存在
    * @param condition 查询条件（可以是 ID、条件对象）
    * @returns 是否存在
-   * 
+   *
    * @example
    * const exists = await User.exists('507f1f77bcf86cd799439011');
    * const exists = await User.exists({ email: 'user@example.com' });
@@ -1464,27 +1545,32 @@ export abstract class MongoModel {
     condition: MongoWhereCondition | string,
   ): Promise<boolean> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
     // 如果是字符串，作为主键查询
-    if (typeof condition === 'string') {
+    if (typeof condition === "string") {
       filter[this.primaryKey] = condition;
     } else {
       filter = condition;
     }
 
     const db = (adapter as any).getDatabase();
-    
+
     if (!db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     try {
-      const count = await db.collection(this.collectionName).countDocuments(filter, { limit: 1 });
+      const count = await db.collection(this.collectionName).countDocuments(
+        filter,
+        { limit: 1 },
+      );
       return count > 0;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -1496,7 +1582,7 @@ export abstract class MongoModel {
    * 批量创建记录
    * @param dataArray 要插入的数据对象数组
    * @returns 创建的模型实例数组
-   * 
+   *
    * @example
    * const users = await User.createMany([
    *   { name: 'John', email: 'john@example.com' },
@@ -1508,24 +1594,32 @@ export abstract class MongoModel {
     dataArray: Record<string, any>[],
   ): Promise<InstanceType<T>[]> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     // 处理每个数据项（应用默认值、类型转换、验证）
-    const processedArray = dataArray.map(data => this.processFields(data));
+    const processedArray = dataArray.map((data) => this.processFields(data));
 
     const adapter = this.adapter as any as MongoDBAdapter;
-    const result = await adapter.execute('insertMany', this.collectionName, processedArray);
+    const result = await adapter.execute(
+      "insertMany",
+      this.collectionName,
+      processedArray,
+    );
 
     // MongoDB insertMany 返回结果包含 insertedIds
     const insertedIds: any[] = [];
-    if (result && typeof result === 'object' && 'insertedIds' in result) {
+    if (result && typeof result === "object" && "insertedIds" in result) {
       insertedIds.push(...Object.values((result as any).insertedIds));
     }
 
     // 如果有插入的 ID，重新查询获取完整记录
     if (insertedIds.length > 0) {
-      const instances = await this.findAll({ [this.primaryKey]: { $in: insertedIds } });
+      const instances = await this.findAll({
+        [this.primaryKey]: { $in: insertedIds },
+      });
       return instances as InstanceType<T>[];
     }
 
@@ -1544,7 +1638,7 @@ export abstract class MongoModel {
    * @param pageSize 每页数量
    * @param fields 要查询的字段数组（可选，用于字段投影）
    * @returns 分页结果对象，包含 data（数据数组）、total（总记录数）、page、pageSize、totalPages
-   * 
+   *
    * @example
    * const result = await User.paginate({ status: 'active' }, 1, 10);
    * console.log(result.data); // 数据数组
@@ -1565,14 +1659,16 @@ export abstract class MongoModel {
     totalPages: number;
   }> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = (adapter as any).getDatabase();
-    
+
     if (!db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     // 确保页码和每页数量有效
@@ -1596,7 +1692,11 @@ export abstract class MongoModel {
     }
 
     // 查询数据
-    const results = await adapter.query(this.collectionName, condition, options);
+    const results = await adapter.query(
+      this.collectionName,
+      condition,
+      options,
+    );
 
     const data = results.map((row: any) => {
       const instance = new (this as any)();
@@ -1619,7 +1719,7 @@ export abstract class MongoModel {
    * @param field 要增加的字段名
    * @param amount 增加的数量（默认为 1）
    * @returns 更新的记录数
-   * 
+   *
    * @example
    * await User.increment('507f1f77bcf86cd799439011', 'views', 1);
    * await User.increment({ status: 'active' }, 'score', 10);
@@ -1630,13 +1730,15 @@ export abstract class MongoModel {
     amount: number = 1,
   ): Promise<number> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
-    if (typeof condition === 'string') {
+    if (typeof condition === "string") {
       filter[this.primaryKey] = condition;
     } else {
       filter = condition;
@@ -1644,13 +1746,13 @@ export abstract class MongoModel {
 
     const db = (adapter as any).getDatabase();
     if (!db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     try {
       const result = await db.collection(this.collectionName).updateOne(
         filter,
-        { $inc: { [field]: amount } }
+        { $inc: { [field]: amount } },
       );
       return result.modifiedCount || 0;
     } catch (error) {
@@ -1665,7 +1767,7 @@ export abstract class MongoModel {
    * @param field 要减少的字段名
    * @param amount 减少的数量（默认为 1）
    * @returns 更新的记录数
-   * 
+   *
    * @example
    * await User.decrement('507f1f77bcf86cd799439011', 'views', 1);
    * await User.decrement({ status: 'active' }, 'score', 10);
@@ -1684,7 +1786,7 @@ export abstract class MongoModel {
    * @param data 要更新的数据对象
    * @param options 更新选项（可选，如 { returnDocument: 'after' }）
    * @returns 更新后的模型实例或 null
-   * 
+   *
    * @example
    * const user = await User.findOneAndUpdate(
    *   '507f1f77bcf86cd799439011',
@@ -1696,16 +1798,20 @@ export abstract class MongoModel {
     this: T,
     condition: MongoWhereCondition | string,
     data: Record<string, any>,
-    options: { returnDocument?: 'before' | 'after' } = { returnDocument: 'after' },
+    options: { returnDocument?: "before" | "after" } = {
+      returnDocument: "after",
+    },
   ): Promise<InstanceType<T> | null> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
-    if (typeof condition === 'string') {
+    if (typeof condition === "string") {
       filter[this.primaryKey] = condition;
     } else {
       filter = condition;
@@ -1713,14 +1819,14 @@ export abstract class MongoModel {
 
     const db = (adapter as any).getDatabase();
     if (!db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     try {
       const result = await db.collection(this.collectionName).findOneAndUpdate(
         filter,
         { $set: data },
-        { returnDocument: options.returnDocument || 'after' }
+        { returnDocument: options.returnDocument || "after" },
       );
 
       if (!result) {
@@ -1740,7 +1846,7 @@ export abstract class MongoModel {
    * 查找并删除记录
    * @param condition 查询条件（可以是 ID、条件对象）
    * @returns 删除的模型实例或 null
-   * 
+   *
    * @example
    * const user = await User.findOneAndDelete('507f1f77bcf86cd799439011');
    * const user = await User.findOneAndDelete({ email: 'user@example.com' });
@@ -1750,13 +1856,15 @@ export abstract class MongoModel {
     condition: MongoWhereCondition | string,
   ): Promise<InstanceType<T> | null> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
-    if (typeof condition === 'string') {
+    if (typeof condition === "string") {
       filter[this.primaryKey] = condition;
     } else {
       filter = condition;
@@ -1764,11 +1872,13 @@ export abstract class MongoModel {
 
     const db = (adapter as any).getDatabase();
     if (!db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     try {
-      const result = await db.collection(this.collectionName).findOneAndDelete(filter);
+      const result = await db.collection(this.collectionName).findOneAndDelete(
+        filter,
+      );
 
       if (!result) {
         return null;
@@ -1788,7 +1898,7 @@ export abstract class MongoModel {
    * @param condition 查询条件（可以是 ID、条件对象）
    * @param data 要更新或插入的数据对象
    * @returns 更新后的模型实例
-   * 
+   *
    * @example
    * const user = await User.upsert(
    *   { email: 'user@example.com' },
@@ -1801,13 +1911,15 @@ export abstract class MongoModel {
     data: Record<string, any>,
   ): Promise<InstanceType<T>> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
-    if (typeof condition === 'string') {
+    if (typeof condition === "string") {
       filter[this.primaryKey] = condition;
     } else {
       filter = condition;
@@ -1815,14 +1927,14 @@ export abstract class MongoModel {
 
     const db = (adapter as any).getDatabase();
     if (!db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     try {
       const result = await db.collection(this.collectionName).findOneAndUpdate(
         filter,
         { $set: data },
-        { upsert: true, returnDocument: 'after' }
+        { upsert: true, returnDocument: "after" },
       );
 
       const instance = new (this as any)();
@@ -1839,7 +1951,7 @@ export abstract class MongoModel {
    * @param field 字段名
    * @param condition 查询条件（可选）
    * @returns 唯一值数组
-   * 
+   *
    * @example
    * const statuses = await User.distinct('status');
    * const emails = await User.distinct('email', { age: { $gte: 18 } });
@@ -1849,14 +1961,16 @@ export abstract class MongoModel {
     condition: MongoWhereCondition = {},
   ): Promise<any[]> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = (adapter as any).getDatabase();
-    
+
     if (!db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     try {
@@ -1868,7 +1982,10 @@ export abstract class MongoModel {
           [this.deletedAtField]: { $exists: false },
         };
       }
-      const values = await db.collection(this.collectionName).distinct(field, queryFilter);
+      const values = await db.collection(this.collectionName).distinct(
+        field,
+        queryFilter,
+      );
       return values;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -1880,7 +1997,7 @@ export abstract class MongoModel {
    * 聚合查询
    * @param pipeline 聚合管道数组
    * @returns 聚合结果数组
-   * 
+   *
    * @example
    * const result = await User.aggregate([
    *   { $match: { status: 'active' } },
@@ -1891,18 +2008,22 @@ export abstract class MongoModel {
     pipeline: any[],
   ): Promise<any[]> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = (adapter as any).getDatabase();
-    
+
     if (!db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     try {
-      const results = await db.collection(this.collectionName).aggregate(pipeline).toArray();
+      const results = await db.collection(this.collectionName).aggregate(
+        pipeline,
+      ).toArray();
       return results;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -1913,7 +2034,7 @@ export abstract class MongoModel {
   /**
    * 查询时包含已软删除的记录
    * @returns 查询构建器（链式调用）
-   * 
+   *
    * @example
    * const allUsers = await User.withTrashed().findAll();
    * const user = await User.withTrashed().find('507f1f77bcf86cd799439011');
@@ -1936,7 +2057,9 @@ export abstract class MongoModel {
       ): Promise<InstanceType<T>[]> => {
         await this.ensureInitialized();
         if (!this.adapter) {
-          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
         }
         const adapter = this.adapter as any as MongoDBAdapter;
         const projection = this.buildProjection(fields);
@@ -1944,12 +2067,18 @@ export abstract class MongoModel {
         if (Object.keys(projection).length > 0) {
           options.projection = projection;
         }
-        const results = await adapter.query(this.collectionName, condition, options);
+        const results = await adapter.query(
+          this.collectionName,
+          condition,
+          options,
+        );
         return results.map((row: any) => {
           const instance = new (this as any)();
           Object.assign(instance, row);
           if ((this as any).virtuals) {
-            for (const [name, getter] of Object.entries((this as any).virtuals)) {
+            for (
+              const [name, getter] of Object.entries((this as any).virtuals)
+            ) {
               const getterFn = getter as (instance: any) => any;
               Object.defineProperty(instance, name, {
                 get: () => getterFn(instance),
@@ -1967,11 +2096,13 @@ export abstract class MongoModel {
       ): Promise<InstanceType<T> | null> => {
         await this.ensureInitialized();
         if (!this.adapter) {
-          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
         }
         const adapter = this.adapter as any as MongoDBAdapter;
         let filter: any = {};
-        if (typeof condition === 'string') {
+        if (typeof condition === "string") {
           filter[this.primaryKey] = condition;
         } else {
           filter = condition;
@@ -1981,7 +2112,11 @@ export abstract class MongoModel {
         if (Object.keys(projection).length > 0) {
           options.projection = projection;
         }
-        const results = await adapter.query(this.collectionName, filter, options);
+        const results = await adapter.query(
+          this.collectionName,
+          filter,
+          options,
+        );
         if (results.length === 0) {
           return null;
         }
@@ -2002,14 +2137,18 @@ export abstract class MongoModel {
       count: async (condition: MongoWhereCondition = {}): Promise<number> => {
         await this.ensureInitialized();
         if (!this.adapter) {
-          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
         }
         const adapter = this.adapter as any as MongoDBAdapter;
         const db = (adapter as any).getDatabase();
         if (!db) {
-          throw new Error('Database not connected');
+          throw new Error("Database not connected");
         }
-        const count = await db.collection(this.collectionName).countDocuments(condition);
+        const count = await db.collection(this.collectionName).countDocuments(
+          condition,
+        );
         return count;
       },
     };
@@ -2018,7 +2157,7 @@ export abstract class MongoModel {
   /**
    * 只查询已软删除的记录
    * @returns 查询构建器（链式调用）
-   * 
+   *
    * @example
    * const deletedUsers = await User.onlyTrashed().findAll();
    * const user = await User.onlyTrashed().find('507f1f77bcf86cd799439011');
@@ -2041,7 +2180,9 @@ export abstract class MongoModel {
       ): Promise<InstanceType<T>[]> => {
         await this.ensureInitialized();
         if (!this.adapter) {
-          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
         }
         const adapter = this.adapter as any as MongoDBAdapter;
         const projection = this.buildProjection(fields);
@@ -2053,12 +2194,18 @@ export abstract class MongoModel {
           ...condition,
           [this.deletedAtField]: { $exists: true },
         };
-        const results = await adapter.query(this.collectionName, queryFilter, options);
+        const results = await adapter.query(
+          this.collectionName,
+          queryFilter,
+          options,
+        );
         return results.map((row: any) => {
           const instance = new (this as any)();
           Object.assign(instance, row);
           if ((this as any).virtuals) {
-            for (const [name, getter] of Object.entries((this as any).virtuals)) {
+            for (
+              const [name, getter] of Object.entries((this as any).virtuals)
+            ) {
               const getterFn = getter as (instance: any) => any;
               Object.defineProperty(instance, name, {
                 get: () => getterFn(instance),
@@ -2076,11 +2223,13 @@ export abstract class MongoModel {
       ): Promise<InstanceType<T> | null> => {
         await this.ensureInitialized();
         if (!this.adapter) {
-          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
         }
         const adapter = this.adapter as any as MongoDBAdapter;
         let filter: any = {};
-        if (typeof condition === 'string') {
+        if (typeof condition === "string") {
           filter[this.primaryKey] = condition;
         } else {
           filter = condition;
@@ -2091,7 +2240,11 @@ export abstract class MongoModel {
         if (Object.keys(projection).length > 0) {
           options.projection = projection;
         }
-        const results = await adapter.query(this.collectionName, filter, options);
+        const results = await adapter.query(
+          this.collectionName,
+          filter,
+          options,
+        );
         if (results.length === 0) {
           return null;
         }
@@ -2112,18 +2265,22 @@ export abstract class MongoModel {
       count: async (condition: MongoWhereCondition = {}): Promise<number> => {
         await this.ensureInitialized();
         if (!this.adapter) {
-          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
         }
         const adapter = this.adapter as any as MongoDBAdapter;
         const db = (adapter as any).getDatabase();
         if (!db) {
-          throw new Error('Database not connected');
+          throw new Error("Database not connected");
         }
         const queryFilter = {
           ...condition,
           [this.deletedAtField]: { $exists: true },
         };
-        const count = await db.collection(this.collectionName).countDocuments(queryFilter);
+        const count = await db.collection(this.collectionName).countDocuments(
+          queryFilter,
+        );
         return count;
       },
     };
@@ -2133,7 +2290,7 @@ export abstract class MongoModel {
    * 恢复软删除的记录
    * @param condition 查询条件（可以是 ID、条件对象）
    * @returns 恢复的记录数
-   * 
+   *
    * @example
    * await User.restore('507f1f77bcf86cd799439011');
    * await User.restore({ email: 'user@example.com' });
@@ -2142,16 +2299,18 @@ export abstract class MongoModel {
     condition: MongoWhereCondition | string,
   ): Promise<number> {
     if (!this.softDelete) {
-      throw new Error('Soft delete is not enabled for this model');
+      throw new Error("Soft delete is not enabled for this model");
     }
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
-    if (typeof condition === 'string') {
+    if (typeof condition === "string") {
       filter[this.primaryKey] = condition;
     } else {
       filter = condition;
@@ -2162,13 +2321,13 @@ export abstract class MongoModel {
 
     const db = (adapter as any).getDatabase();
     if (!db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     try {
       const result = await db.collection(this.collectionName).updateMany(
         filter,
-        { $unset: { [this.deletedAtField]: '' } }
+        { $unset: { [this.deletedAtField]: "" } },
       );
       return result.modifiedCount || 0;
     } catch (error) {
@@ -2181,7 +2340,7 @@ export abstract class MongoModel {
    * 强制删除记录（忽略软删除，真正删除）
    * @param condition 查询条件（可以是 ID、条件对象）
    * @returns 删除的记录数
-   * 
+   *
    * @example
    * await User.forceDelete('507f1f77bcf86cd799439011');
    * await User.forceDelete({ email: 'user@example.com' });
@@ -2190,13 +2349,15 @@ export abstract class MongoModel {
     condition: MongoWhereCondition | string,
   ): Promise<number> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
-    if (typeof condition === 'string') {
+    if (typeof condition === "string") {
       filter[this.primaryKey] = condition;
     } else {
       filter = condition;
@@ -2204,11 +2365,13 @@ export abstract class MongoModel {
 
     const db = (adapter as any).getDatabase();
     if (!db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     try {
-      const result = await db.collection(this.collectionName).deleteMany(filter);
+      const result = await db.collection(this.collectionName).deleteMany(
+        filter,
+      );
       return result.deletedCount || 0;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -2221,7 +2384,7 @@ export abstract class MongoModel {
    * @param condition 查询条件（用于判断是否存在）
    * @param data 要创建的数据对象（如果不存在）
    * @returns 找到或创建的模型实例
-   * 
+   *
    * @example
    * const user = await User.findOrCreate(
    *   { email: 'user@example.com' },
@@ -2235,7 +2398,9 @@ export abstract class MongoModel {
   ): Promise<InstanceType<T>> {
     await this.ensureInitialized();
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+      );
     }
 
     // 先尝试查找（包含软删除的记录）
@@ -2251,19 +2416,21 @@ export abstract class MongoModel {
   /**
    * 清空集合（删除所有记录）
    * @returns 删除的记录数
-   * 
+   *
    * @example
    * await User.truncate();
    */
   static async truncate(): Promise<number> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = (adapter as any).getDatabase();
     if (!db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     try {
@@ -2282,7 +2449,7 @@ export abstract class MongoModel {
    * @param foreignKey 外键字段名（当前模型中的字段）
    * @param localKey 关联模型的主键字段名（默认为关联模型的 primaryKey）
    * @returns 关联的模型实例或 null
-   * 
+   *
    * @example
    * class Post extends MongoModel {
    *   static collectionName = 'posts';
@@ -2300,7 +2467,9 @@ export abstract class MongoModel {
   ): Promise<InstanceType<T> | null> {
     const Model = this.constructor as typeof MongoModel;
     if (!Model.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const relatedKey = localKey || RelatedModel.primaryKey;
@@ -2320,7 +2489,7 @@ export abstract class MongoModel {
    * @param foreignKey 外键字段名（关联模型中的字段）
    * @param localKey 当前模型的主键字段名（默认为当前模型的 primaryKey）
    * @returns 关联的模型实例或 null
-   * 
+   *
    * @example
    * class User extends MongoModel {
    *   static collectionName = 'users';
@@ -2338,7 +2507,9 @@ export abstract class MongoModel {
   ): Promise<InstanceType<T> | null> {
     const Model = this.constructor as typeof MongoModel;
     if (!Model.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const localKeyValue = localKey || Model.primaryKey;
@@ -2358,7 +2529,7 @@ export abstract class MongoModel {
    * @param foreignKey 外键字段名（关联模型中的字段）
    * @param localKey 当前模型的主键字段名（默认为当前模型的 primaryKey）
    * @returns 关联的模型实例数组
-   * 
+   *
    * @example
    * class User extends MongoModel {
    *   static collectionName = 'users';
@@ -2376,7 +2547,9 @@ export abstract class MongoModel {
   ): Promise<InstanceType<T>[]> {
     const Model = this.constructor as typeof MongoModel;
     if (!Model.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const localKeyValue = localKey || Model.primaryKey;
@@ -2393,14 +2566,16 @@ export abstract class MongoModel {
    * 创建索引（如果未定义则自动创建）
    * @param force 是否强制重新创建（删除后重建）
    * @returns 创建的索引信息数组
-   * 
+   *
    * @example
    * await User.createIndexes(); // 创建所有定义的索引
    * await User.createIndexes(true); // 强制重新创建
    */
   static async createIndexes(force: boolean = false): Promise<string[]> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     if (!this.indexes || this.indexes.length === 0) {
@@ -2410,7 +2585,7 @@ export abstract class MongoModel {
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = adapter.getDatabase();
     if (!db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     const collection = db.collection(this.collectionName);
@@ -2422,12 +2597,16 @@ export abstract class MongoModel {
         const indexOptions: any = {};
 
         // 判断索引类型
-        if ('field' in indexDef && !('type' in indexDef && (indexDef.type === '2d' || indexDef.type === '2dsphere'))) {
+        if (
+          "field" in indexDef &&
+          !("type" in indexDef &&
+            (indexDef.type === "2d" || indexDef.type === "2dsphere"))
+        ) {
           // 单个字段索引
           const singleIndex = indexDef as SingleFieldIndex;
           const direction = this.normalizeDirection(singleIndex.direction || 1);
           indexSpec = { [singleIndex.field]: direction };
-          
+
           if (singleIndex.unique) {
             indexOptions.unique = true;
           }
@@ -2437,12 +2616,14 @@ export abstract class MongoModel {
           if (singleIndex.name) {
             indexOptions.name = singleIndex.name;
           }
-        } else if ('fields' in indexDef && 'type' in indexDef && indexDef.type === 'text') {
+        } else if (
+          "fields" in indexDef && "type" in indexDef && indexDef.type === "text"
+        ) {
           // 文本索引
           const textIndex = indexDef as TextIndex;
           indexSpec = {};
           for (const field of Object.keys(textIndex.fields)) {
-            indexSpec[field] = 'text';
+            indexSpec[field] = "text";
           }
           indexOptions.weights = textIndex.fields;
           if (textIndex.defaultLanguage) {
@@ -2451,18 +2632,23 @@ export abstract class MongoModel {
           if (textIndex.name) {
             indexOptions.name = textIndex.name;
           }
-        } else if ('field' in indexDef && 'type' in indexDef && (indexDef.type === '2d' || indexDef.type === '2dsphere')) {
+        } else if (
+          "field" in indexDef && "type" in indexDef &&
+          (indexDef.type === "2d" || indexDef.type === "2dsphere")
+        ) {
           // 地理空间索引
           const geoIndex = indexDef as GeospatialIndex;
           indexSpec = { [geoIndex.field]: geoIndex.type };
           if (geoIndex.name) {
             indexOptions.name = geoIndex.name;
           }
-        } else if ('fields' in indexDef) {
+        } else if ("fields" in indexDef) {
           // 复合索引
           const compoundIndex = indexDef as CompoundIndex;
           indexSpec = {};
-          for (const [field, direction] of Object.entries(compoundIndex.fields)) {
+          for (
+            const [field, direction] of Object.entries(compoundIndex.fields)
+          ) {
             indexSpec[field] = this.normalizeDirection(direction);
           }
           if (compoundIndex.unique) {
@@ -2476,7 +2662,8 @@ export abstract class MongoModel {
         if (force) {
           // 删除现有索引（如果存在）
           try {
-            const indexName = indexOptions.name || this.generateIndexName(indexSpec);
+            const indexName = indexOptions.name ||
+              this.generateIndexName(indexSpec);
             await collection.dropIndex(indexName);
           } catch {
             // 索引不存在，忽略错误
@@ -2501,13 +2688,15 @@ export abstract class MongoModel {
    */
   static async dropIndexes(): Promise<string[]> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = adapter.getDatabase();
     if (!db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     const collection = db.collection(this.collectionName);
@@ -2516,7 +2705,7 @@ export abstract class MongoModel {
 
     for (const index of indexes) {
       // 跳过 _id 索引或没有名称的索引
-      if (!index.name || index.name === '_id_') {
+      if (!index.name || index.name === "_id_") {
         continue;
       }
 
@@ -2538,13 +2727,15 @@ export abstract class MongoModel {
    */
   static async getIndexes(): Promise<any[]> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = adapter.getDatabase();
     if (!db) {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
 
     const collection = db.collection(this.collectionName);
@@ -2555,13 +2746,13 @@ export abstract class MongoModel {
    * 规范化索引方向
    */
   private static normalizeDirection(direction: IndexDirection): number {
-    if (typeof direction === 'number') {
+    if (typeof direction === "number") {
       return direction;
     }
-    if (direction === 'asc' || direction === 'ascending') {
+    if (direction === "asc" || direction === "ascending") {
       return 1;
     }
-    if (direction === 'desc' || direction === 'descending') {
+    if (direction === "desc" || direction === "descending") {
       return -1;
     }
     return 1;
@@ -2575,7 +2766,6 @@ export abstract class MongoModel {
     for (const [field, direction] of Object.entries(indexSpec)) {
       parts.push(`${field}_${direction}`);
     }
-    return parts.join('_');
+    return parts.join("_");
   }
 }
-

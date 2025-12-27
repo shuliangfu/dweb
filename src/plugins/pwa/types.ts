@@ -13,7 +13,7 @@ export interface ManifestIcon {
   /** 图标类型 */
   type?: string;
   /** 图标用途 */
-  purpose?: 'any' | 'maskable' | 'monochrome';
+  purpose?: "any" | "maskable" | "monochrome";
 }
 
 /**
@@ -37,7 +37,7 @@ export interface ManifestShortcut {
  */
 export interface ManifestRelatedApplication {
   /** 平台 */
-  platform: 'web' | 'play' | 'itunes' | 'windows';
+  platform: "web" | "play" | "itunes" | "windows";
   /** 应用 ID */
   id?: string;
   /** 应用 URL */
@@ -59,13 +59,21 @@ export interface PWAManifestConfig {
   /** 应用背景色 */
   background_color?: string;
   /** 显示模式 */
-  display?: 'fullscreen' | 'standalone' | 'minimal-ui' | 'browser';
+  display?: "fullscreen" | "standalone" | "minimal-ui" | "browser";
   /** 起始 URL */
   start_url?: string;
   /** 作用域 */
   scope?: string;
   /** 方向 */
-  orientation?: 'any' | 'natural' | 'landscape' | 'portrait' | 'portrait-primary' | 'portrait-secondary' | 'landscape-primary' | 'landscape-secondary';
+  orientation?:
+    | "any"
+    | "natural"
+    | "landscape"
+    | "portrait"
+    | "portrait-primary"
+    | "portrait-secondary"
+    | "landscape-primary"
+    | "landscape-secondary";
   /** 图标列表 */
   icons?: ManifestIcon[];
   /** 快捷方式 */
@@ -77,7 +85,7 @@ export interface PWAManifestConfig {
   /** 语言 */
   lang?: string;
   /** 目录 */
-  dir?: 'ltr' | 'rtl' | 'auto';
+  dir?: "ltr" | "rtl" | "auto";
 }
 
 /**
@@ -89,13 +97,23 @@ export interface ServiceWorkerConfig {
   /** Service Worker 作用域 */
   scope?: string;
   /** 缓存策略 */
-  cacheStrategy?: 'cache-first' | 'network-first' | 'stale-while-revalidate' | 'network-only' | 'cache-only';
+  cacheStrategy?:
+    | "cache-first"
+    | "network-first"
+    | "stale-while-revalidate"
+    | "network-only"
+    | "cache-only";
   /** 要缓存的资源 */
   precache?: string[];
   /** 运行时缓存规则 */
   runtimeCache?: Array<{
     urlPattern: string | RegExp;
-    handler: 'cache-first' | 'network-first' | 'stale-while-revalidate' | 'network-only' | 'cache-only';
+    handler:
+      | "cache-first"
+      | "network-first"
+      | "stale-while-revalidate"
+      | "network-only"
+      | "cache-only";
     options?: {
       cacheName?: string;
       expiration?: {
@@ -123,4 +141,3 @@ export interface PWAPluginOptions {
   /** 是否在 HTML 中自动注入 manifest 和 Service Worker 链接 */
   injectLinks?: boolean;
 }
-

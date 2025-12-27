@@ -90,4 +90,3 @@ export interface RSSPluginOptions {
     filter: (item: RSSItem) => boolean;
   }>;
 }
-

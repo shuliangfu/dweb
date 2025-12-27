@@ -11,4 +11,3 @@
 export function kebabToCamel(kebabCase: string): string {
   return kebabCase.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
 }
-

@@ -3,34 +3,43 @@
  * 支持 SMTP 邮件发送，支持模板和附件
  */
 
-import type { Plugin, AppLike } from '../../types/index.ts';
-import type { EmailPluginOptions, EmailOptions, EmailResult, EmailTemplate } from './types.ts';
+import type { AppLike, Plugin } from "../../types/index.ts";
+import type {
+  EmailOptions,
+  EmailPluginOptions,
+  EmailResult,
+  EmailTemplate,
+} from "./types.ts";
 
 /**
  * 发送邮件（简化实现，实际需要 SMTP 客户端库）
  */
 export async function sendEmail(
   options: EmailOptions,
-  smtpConfig: EmailPluginOptions['smtp']
+  smtpConfig: EmailPluginOptions["smtp"],
 ): Promise<EmailResult> {
   try {
     // 注意：这是一个简化的实现框架
     // 实际实现需要使用 SMTP 客户端库，例如：
     // - npm:node-smtp 或类似的库
     // - 或使用第三方邮件服务 API（如 SendGrid、Mailgun）
-    
+
     // 这里提供接口和基本验证
     if (!options.to || !options.subject) {
       return {
         success: false,
-        error: '收件人和主题是必需的',
+        error: "收件人和主题是必需的",
       };
     }
 
     // 构建邮件内容
     const to = Array.isArray(options.to) ? options.to : [options.to];
-    const cc = options.cc ? (Array.isArray(options.cc) ? options.cc : [options.cc]) : [];
-    const bcc = options.bcc ? (Array.isArray(options.bcc) ? options.bcc : [options.bcc]) : [];
+    const cc = options.cc
+      ? (Array.isArray(options.cc) ? options.cc : [options.cc])
+      : [];
+    const bcc = options.bcc
+      ? (Array.isArray(options.bcc) ? options.bcc : [options.bcc])
+      : [];
 
     // 实际发送需要使用 SMTP 客户端
     // 示例代码（需要实际的 SMTP 库）：
@@ -46,7 +55,7 @@ export async function sendEmail(
     });
 
     const message = {
-      from: smtpConfig.fromName 
+      from: smtpConfig.fromName
         ? `${smtpConfig.fromName} <${smtpConfig.from}>`
         : smtpConfig.from,
       to: to.join(', '),
@@ -67,7 +76,7 @@ export async function sendEmail(
     */
 
     // 当前实现：返回模拟结果
-    console.warn('[Email Plugin] 邮件发送功能需要安装 SMTP 客户端库');
+    console.warn("[Email Plugin] 邮件发送功能需要安装 SMTP 客户端库");
     return {
       success: true,
       messageId: `mock-${Date.now()}`,
@@ -75,7 +84,7 @@ export async function sendEmail(
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : '邮件发送失败',
+      error: error instanceof Error ? error.message : "邮件发送失败",
     };
   }
 }
@@ -85,12 +94,15 @@ export async function sendEmail(
  */
 export function renderTemplate(
   template: EmailTemplate,
-  variables: Record<string, string>
+  variables: Record<string, string>,
 ): { html: string; text?: string } {
-  const format = template.variableFormat || '{{variable}}';
+  const format = template.variableFormat || "{{variable}}";
   const pattern = new RegExp(
-    format.replace('variable', '(\\w+)').replace(/\{/g, '\\{').replace(/\}/g, '\\}'),
-    'g'
+    format.replace("variable", "(\\w+)").replace(/\{/g, "\\{").replace(
+      /\}/g,
+      "\\}",
+    ),
+    "g",
   );
 
   const html = template.html.replace(pattern, (match, key) => {
@@ -99,8 +111,8 @@ export function renderTemplate(
 
   const text = template.text
     ? template.text.replace(pattern, (match, key) => {
-        return variables[key] || match;
-      })
+      return variables[key] || match;
+    })
     : undefined;
 
   return { html, text };
@@ -111,7 +123,7 @@ export function renderTemplate(
  */
 export function email(options: EmailPluginOptions): Plugin {
   if (!options.smtp) {
-    throw new Error('邮件发送插件需要 smtp 配置');
+    throw new Error("邮件发送插件需要 smtp 配置");
   }
 
   const templates = new Map<string, EmailTemplate>();
@@ -122,7 +134,7 @@ export function email(options: EmailPluginOptions): Plugin {
   }
 
   return {
-    name: 'email',
+    name: "email",
     config: options as unknown as Record<string, unknown>,
 
     /**
@@ -142,7 +154,7 @@ export function email(options: EmailPluginOptions): Plugin {
       (app as any).sendEmailTemplate = async (
         templateName: string,
         variables: Record<string, string>,
-        emailOptions: Partial<EmailOptions>
+        emailOptions: Partial<EmailOptions>,
       ) => {
         const template = templates.get(templateName);
         if (!template) {
@@ -160,10 +172,17 @@ export function email(options: EmailPluginOptions): Plugin {
         return await sendEmail(finalOptions, options.smtp);
       };
 
-      console.log('✅ [Email Plugin] 邮件发送功能已初始化');
+      console.log("✅ [Email Plugin] 邮件发送功能已初始化");
     },
   };
 }
 
 // 导出类型和函数
-export type { EmailPluginOptions, EmailOptions, EmailResult, EmailTemplate, EmailAttachment, SMTPConfig } from './types.ts';
+export type {
+  EmailAttachment,
+  EmailOptions,
+  EmailPluginOptions,
+  EmailResult,
+  EmailTemplate,
+  SMTPConfig,
+} from "./types.ts";

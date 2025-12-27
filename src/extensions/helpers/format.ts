@@ -1,7 +1,7 @@
 /**
  * 格式化辅助函数
  * 提供常用的数据格式化函数，包括数字、日期、文本等格式化
- * 
+ *
  * 环境兼容性：
  * - 通用：所有函数都可以在服务端和客户端使用
  */
@@ -9,11 +9,11 @@
 /**
  * 格式化数字（添加千分位）
  * 将数字格式化为带千分位分隔符的字符串
- * 
+ *
  * @param num 数字
  * @param decimals 小数位数（默认0）
  * @returns 格式化后的字符串
- * 
+ *
  * @example
  * ```typescript
  * formatNumber(1234567); // '1,234,567'
@@ -21,36 +21,40 @@
  * ```
  */
 export function formatNumber(num: number, decimals: number = 0): string {
-  return num.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return num.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 /**
  * 格式化货币
  * 将金额格式化为货币格式，包含货币符号和千分位
- * 
+ *
  * @param amount 金额
  * @param currency 货币符号（默认¥）
  * @param decimals 小数位数（默认2）
  * @returns 格式化后的货币字符串
- * 
+ *
  * @example
  * ```typescript
  * formatCurrency(1234.56); // '¥1,234.56'
  * formatCurrency(1234.56, '$', 2); // '$1,234.56'
  * ```
  */
-export function formatCurrency(amount: number, currency: string = '¥', decimals: number = 2): string {
+export function formatCurrency(
+  amount: number,
+  currency: string = "¥",
+  decimals: number = 2,
+): string {
   return `${currency}${formatNumber(amount, decimals)}`;
 }
 
 /**
  * 格式化文件大小
  * 将字节数格式化为可读的文件大小（Bytes, KB, MB, GB 等）
- * 
+ *
  * @param bytes 字节数
  * @param decimals 小数位数（默认2）
  * @returns 格式化后的文件大小字符串
- * 
+ *
  * @example
  * ```typescript
  * formatFileSize(1024); // '1 KB'
@@ -59,19 +63,21 @@ export function formatCurrency(amount: number, currency: string = '¥', decimals
  * ```
  */
 export function formatFileSize(bytes: number, decimals: number = 2): string {
-  if (bytes === 0) return '0 Bytes';
+  if (bytes === 0) return "0 Bytes";
 
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`;
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${
+    sizes[i]
+  }`;
 }
 
 /**
  * 格式化日期
  * 将日期格式化为指定格式的字符串，支持丰富的格式选项
- * 
+ *
  * @param date 日期对象或时间戳
  * @param pattern 格式模式（默认 YYYY-MM-DD HH:mm:ss）
  *   - YYYY: 年份（4位，如：2024）
@@ -97,7 +103,7 @@ export function formatFileSize(bytes: number, decimals: number = 2): string {
  *   - MMMM: 月份（完整，如：一月）
  *   - Q: 季度（如：Q1）
  * @returns 格式化后的日期字符串
- * 
+ *
  * @example
  * ```typescript
  * formatDate(new Date(), 'YYYY-MM-DD'); // '2024-01-15'
@@ -108,9 +114,12 @@ export function formatFileSize(bytes: number, decimals: number = 2): string {
  * formatDate(new Date(), 'YYYY年MMM'); // '2024年1月'
  * ```
  */
-export function formatDate(date: Date | number, pattern: string = 'YYYY-MM-DD HH:mm:ss'): string {
+export function formatDate(
+  date: Date | number,
+  pattern: string = "YYYY-MM-DD HH:mm:ss",
+): string {
   const d = date instanceof Date ? date : new Date(date);
-  
+
   // 基础值
   const year = d.getFullYear();
   const month = d.getMonth() + 1;
@@ -121,18 +130,52 @@ export function formatDate(date: Date | number, pattern: string = 'YYYY-MM-DD HH
   const seconds = d.getSeconds();
   const milliseconds = d.getMilliseconds();
   const dayOfWeek = d.getDay();
-  
+
   // 星期几名称（中文）
-  const weekdaysShort = ['日', '一', '二', '三', '四', '五', '六'];
-  const weekdaysLong = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-  
+  const weekdaysShort = ["日", "一", "二", "三", "四", "五", "六"];
+  const weekdaysLong = [
+    "星期日",
+    "星期一",
+    "星期二",
+    "星期三",
+    "星期四",
+    "星期五",
+    "星期六",
+  ];
+
   // 月份名称（中文）
-  const monthsShort = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-  const monthsLong = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'];
-  
+  const monthsShort = [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+  ];
+  const monthsLong = [
+    "一",
+    "二",
+    "三",
+    "四",
+    "五",
+    "六",
+    "七",
+    "八",
+    "九",
+    "十",
+    "十一",
+    "十二",
+  ];
+
   // 季度
   const quarter = Math.floor(month / 3) + (month % 3 === 0 ? 0 : 1);
-  
+
   // 替换规则
   const replacements: Record<string, string> = {
     // 年份
@@ -141,58 +184,60 @@ export function formatDate(date: Date | number, pattern: string = 'YYYY-MM-DD HH
     // 月份
     MMMM: `${monthsLong[month - 1]}月`,
     MMM: `${monthsShort[month - 1]}月`,
-    MM: String(month).padStart(2, '0'),
+    MM: String(month).padStart(2, "0"),
     M: String(month),
     // 日期
-    DD: String(day).padStart(2, '0'),
+    DD: String(day).padStart(2, "0"),
     D: String(day),
     // 小时（24小时制）
-    HH: String(hours24).padStart(2, '0'),
+    HH: String(hours24).padStart(2, "0"),
     H: String(hours24),
     // 小时（12小时制）
-    hh: String(hours12).padStart(2, '0'),
+    hh: String(hours12).padStart(2, "0"),
     h: String(hours12),
     // 分钟
-    mm: String(minutes).padStart(2, '0'),
+    mm: String(minutes).padStart(2, "0"),
     m: String(minutes),
     // 秒数
-    ss: String(seconds).padStart(2, '0'),
+    ss: String(seconds).padStart(2, "0"),
     s: String(seconds),
     // 毫秒
-    SSS: String(milliseconds).padStart(3, '0'),
+    SSS: String(milliseconds).padStart(3, "0"),
     // 上午/下午
-    A: hours24 >= 12 ? 'PM' : 'AM',
-    a: hours24 >= 12 ? 'pm' : 'am',
+    A: hours24 >= 12 ? "PM" : "AM",
+    a: hours24 >= 12 ? "pm" : "am",
     // 星期几
     dddd: weekdaysLong[dayOfWeek],
     ddd: `周${weekdaysShort[dayOfWeek]}`,
     // 季度
     Q: `Q${quarter}`,
   };
-  
+
   // 按长度从长到短排序，避免短匹配覆盖长匹配
-  const sortedKeys = Object.keys(replacements).sort((a, b) => b.length - a.length);
-  
+  const sortedKeys = Object.keys(replacements).sort((a, b) =>
+    b.length - a.length
+  );
+
   let result = pattern;
   for (const key of sortedKeys) {
-    result = result.replace(new RegExp(key, 'g'), replacements[key]);
+    result = result.replace(new RegExp(key, "g"), replacements[key]);
   }
-  
+
   return result;
 }
 
 /**
  * 格式化相对时间
  * 将日期格式化为相对时间字符串（如：2小时前、3天前等）
- * 
+ *
  * @param date 日期对象或时间戳
  * @returns 相对时间字符串（如：2小时前、3天前、1个月前等）
- * 
+ *
  * @example
  * ```typescript
  * const oneHourAgo = new Date(Date.now() - 3600000);
  * formatRelativeTime(oneHourAgo); // '1小时前'
- * 
+ *
  * const tomorrow = new Date(Date.now() + 86400000);
  * formatRelativeTime(tomorrow); // '1天后'
  * ```
@@ -226,12 +271,12 @@ export function formatRelativeTime(date: Date | number): string {
 /**
  * 格式化百分比
  * 计算并格式化百分比值
- * 
+ *
  * @param value 数值
  * @param total 总数
  * @param decimals 小数位数（默认2）
  * @returns 百分比字符串
- * 
+ *
  * @example
  * ```typescript
  * formatPercent(25, 100); // '25.00%'
@@ -239,8 +284,12 @@ export function formatRelativeTime(date: Date | number): string {
  * formatPercent(1, 3, 0); // '33%'
  * ```
  */
-export function formatPercent(value: number, total: number, decimals: number = 2): string {
-  if (total === 0) return '0%';
+export function formatPercent(
+  value: number,
+  total: number,
+  decimals: number = 2,
+): string {
+  if (total === 0) return "0%";
   const percent = (value / total) * 100;
   return `${percent.toFixed(decimals)}%`;
 }
@@ -248,10 +297,10 @@ export function formatPercent(value: number, total: number, decimals: number = 2
 /**
  * 格式化手机号（隐藏中间4位）
  * 将手机号格式化为脱敏格式，隐藏中间4位数字
- * 
+ *
  * @param phone 手机号
  * @returns 格式化后的手机号（如：138****5678）
- * 
+ *
  * @example
  * ```typescript
  * formatPhone('13812345678'); // '138****5678'
@@ -265,10 +314,10 @@ export function formatPhone(phone: string): string {
 /**
  * 格式化身份证号（隐藏中间部分）
  * 将身份证号格式化为脱敏格式，隐藏中间11位
- * 
+ *
  * @param idCard 身份证号
  * @returns 格式化后的身份证号（如：110***********1234）
- * 
+ *
  * @example
  * ```typescript
  * formatIdCard('110101199001011234'); // '110***********1234'
@@ -276,47 +325,50 @@ export function formatPhone(phone: string): string {
  */
 export function formatIdCard(idCard: string): string {
   if (idCard.length !== 18) return idCard;
-  return `${idCard.slice(0, 3)}${'*'.repeat(11)}${idCard.slice(14)}`;
+  return `${idCard.slice(0, 3)}${"*".repeat(11)}${idCard.slice(14)}`;
 }
 
 /**
  * 格式化银行卡号（隐藏中间部分）
  * 将银行卡号格式化为脱敏格式，只显示前后各4位
- * 
+ *
  * @param cardNumber 银行卡号
  * @returns 格式化后的银行卡号（如：6222 **** **** 1234）
- * 
+ *
  * @example
  * ```typescript
  * formatBankCard('6222021234567890123'); // '6222 **** **** 0123'
  * ```
  */
 export function formatBankCard(cardNumber: string): string {
-  const cleaned = cardNumber.replace(/\s/g, '');
+  const cleaned = cardNumber.replace(/\s/g, "");
   if (cleaned.length < 8) return cardNumber;
   const visible = 4;
   const start = cleaned.slice(0, visible);
   const end = cleaned.slice(-visible);
-  return `${start} ${'*'.repeat(cleaned.length - visible * 2)} ${end}`;
+  return `${start} ${"*".repeat(cleaned.length - visible * 2)} ${end}`;
 }
 
 /**
  * 格式化文本（截断并添加省略号）
  * 如果文本超过指定长度，则截断并添加省略号
- * 
+ *
  * @param text 文本
  * @param maxLength 最大长度
  * @param suffix 后缀（默认...）
  * @returns 格式化后的文本
- * 
+ *
  * @example
  * ```typescript
  * formatText('这是一段很长的文本', 5); // '这是一段很...'
  * formatText('短文本', 10); // '短文本'（不截断）
  * ```
  */
-export function formatText(text: string, maxLength: number, suffix: string = '...'): string {
+export function formatText(
+  text: string,
+  maxLength: number,
+  suffix: string = "...",
+): string {
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength) + suffix;
 }
-

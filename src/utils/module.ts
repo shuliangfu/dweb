@@ -8,14 +8,14 @@ import * as esbuild from "esbuild";
 /**
  * 判断是否为服务端依赖
  * 服务端依赖应该保持 external，不被打包到客户端代码中
- * 
+ *
  * 判断规则（按优先级）：
  * 1. Deno 标准库和内置模块（@std/*、deno:）- 明确的服务端依赖
  * 2. 数据库驱动（@sqlite、@postgres、@mysql、@mongodb 等）- 明确的服务端依赖
  * 3. 服务端渲染库（preact-render-to-string）- 明确的服务端依赖
  * 4. 图片处理库（sharp）- 明确的服务端依赖
  * 5. 其他包名包含 server、backend、deno 等关键词的包
- * 
+ *
  * @param packageName 包名
  * @returns 是否为服务端依赖
  */
@@ -24,12 +24,12 @@ export function isServerDependency(packageName: string): boolean {
   if (packageName.startsWith("@std/")) {
     return true;
   }
-  
+
   // Deno 内置模块（deno:）
   if (packageName.startsWith("deno:")) {
     return true;
   }
-  
+
   // 数据库驱动（常见的数据库包）
   if (
     packageName.startsWith("@sqlite") ||
@@ -43,17 +43,20 @@ export function isServerDependency(packageName: string): boolean {
   ) {
     return true;
   }
-  
+
   // 服务端渲染库
-  if (packageName === "preact-render-to-string" || packageName.startsWith("preact-render-to-string/")) {
+  if (
+    packageName === "preact-render-to-string" ||
+    packageName.startsWith("preact-render-to-string/")
+  ) {
     return true;
   }
-  
+
   // 图片处理库（服务端）
   if (packageName === "sharp" || packageName.startsWith("sharp/")) {
     return true;
   }
-  
+
   // 构建工具（服务端）
   if (
     packageName === "esbuild" ||
@@ -61,7 +64,7 @@ export function isServerDependency(packageName: string): boolean {
   ) {
     return true;
   }
-  
+
   // CSS 处理工具（服务端构建时使用）
   if (
     packageName === "postcss" ||
@@ -81,7 +84,7 @@ export function isServerDependency(packageName: string): boolean {
   ) {
     return true;
   }
-  
+
   // 包名包含服务端相关关键词（更通用的判断）
   const serverKeywords = [
     "server",
@@ -94,12 +97,12 @@ export function isServerDependency(packageName: string): boolean {
     "http-server",
     "ws-server",
   ];
-  
+
   const lowerPackageName = packageName.toLowerCase();
-  if (serverKeywords.some(keyword => lowerPackageName.includes(keyword))) {
+  if (serverKeywords.some((keyword) => lowerPackageName.includes(keyword))) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -117,8 +120,10 @@ export function isPreactDependency(packageName: string): boolean {
     "preact/signals",
     "preact-router",
   ];
-  
-  return preactPackages.some(pkg => packageName === pkg || packageName.startsWith(`${pkg}/`));
+
+  return preactPackages.some((pkg) =>
+    packageName === pkg || packageName.startsWith(`${pkg}/`)
+  );
 }
 
 /**
@@ -130,7 +135,7 @@ export function isPreactDependency(packageName: string): boolean {
  */
 export function shouldBundleDependency(
   packageName: string,
-  importValue: string
+  importValue: string,
 ): boolean {
   // @dreamer/dweb 相关依赖：如果是 JSR URL，不打包，通过网络请求加载
   if (packageName.startsWith("@dreamer/dweb")) {
@@ -141,35 +146,37 @@ export function shouldBundleDependency(
     // 如果是本地路径，需要打包
     return true;
   }
-  
+
   // 服务端依赖不打包
   if (isServerDependency(packageName)) {
     return false;
   }
-  
+
   // Preact 相关依赖不打包（通过 import map 加载）
   if (isPreactDependency(packageName)) {
     return false;
   }
-  
+
   // 本地路径导入应该被打包（相对路径、绝对路径等）
-  if (!importValue.startsWith("jsr:") && 
-      !importValue.startsWith("npm:") && 
-      !importValue.startsWith("http")) {
+  if (
+    !importValue.startsWith("jsr:") &&
+    !importValue.startsWith("npm:") &&
+    !importValue.startsWith("http")
+  ) {
     return true;
   }
-  
+
   // 通过 npm: 或 http: 导入的客户端依赖不打包，通过 CDN 加载
   // 这样可以减少打包后的代码体积，提高加载速度
   if (importValue.startsWith("npm:") || importValue.startsWith("http")) {
     return false;
   }
-  
+
   // JSR 导入的客户端依赖也不打包，通过 CDN 加载
   if (importValue.startsWith("jsr:")) {
     return false;
   }
-  
+
   // 其他情况默认打包（兜底逻辑）
   return true;
 }
@@ -195,9 +202,9 @@ export function isSharedClientDependency(packageName: string): boolean {
     "yup",
     "validator",
   ];
-  
+
   return sharedDependencies.some(
-    (dep) => packageName === dep || packageName.startsWith(`${dep}/`)
+    (dep) => packageName === dep || packageName.startsWith(`${dep}/`),
   );
 }
 
@@ -222,7 +229,7 @@ export function getExternalPackages(
     "preact",
     "preact-render-to-string",
   ];
-  
+
   for (const [key, value] of Object.entries(importMap)) {
     // @dreamer/dweb 相关依赖：如果是 JSR URL，始终不打包，通过网络请求加载
     if (key.startsWith("@dreamer/dweb")) {
@@ -244,19 +251,19 @@ export function getExternalPackages(
         continue;
       }
     }
-    
+
     // 如果依赖不应该被打包，则添加到 external 列表
     if (!shouldBundleDependency(key, value)) {
       externalPackages.push(key);
       continue;
     }
-    
+
     // 如果使用共享依赖机制，将共享依赖也标记为 external
     if (useSharedDeps && isSharedClientDependency(key)) {
       externalPackages.push(key);
     }
   }
-  
+
   return externalPackages;
 }
 
@@ -381,21 +388,21 @@ export function extractFunctionBody(
  * 提取 load 函数体（支持多种写法）
  *
  * 该函数用于从页面模块中提取 `load` 函数体，支持以下所有格式：
- * 
+ *
  * 1. 函数声明（Function Declaration）：
  *    - `export function load(...) { ... }` - 无 async
  *    - `export async function load(...) { ... }` - 有 async
- * 
+ *
  * 2. 箭头函数（Arrow Function）：
  *    - `export const load = (...) => { ... }` - 无 async，有花括号
  *    - `export const load = async (...) => { ... }` - 有 async，有花括号
  *    - `export const load = (...) => value` - 无 async，无花括号（单行返回，较少见）
  *    - `export const load = async (...) => value` - 有 async，无花括号（单行返回，较少见）
- * 
+ *
  * 3. 函数表达式（Function Expression）：
  *    - `export const load = function(...) { ... }` - 无 async
  *    - `export const load = async function(...) { ... }` - 有 async
- * 
+ *
  * 注意：
  * - 所有格式都支持类型注解：`(...): ReturnType`
  * - 所有格式都支持解构参数：`({ params, query })`
@@ -417,7 +424,7 @@ export function extractFunctionBody(
  * `;
  * const body1 = extractLoadFunctionBody(code1);
  * // body1 = " return await fetchData(params.id); "
- * 
+ *
  * // 示例 2: 箭头函数
  * const code2 = `
  *   export const load = async ({ params }) => {
@@ -426,7 +433,7 @@ export function extractFunctionBody(
  * `;
  * const body2 = extractLoadFunctionBody(code2);
  * // body2 = " return await fetchData(params.id); "
- * 
+ *
  * // 示例 3: 函数表达式
  * const code3 = `
  *   export const load = async function({ params }) {
@@ -451,8 +458,10 @@ export function extractLoadFunctionBody(fileContent: string): string {
     const nextChar = i < fileContent.length - 1 ? fileContent[i + 1] : "";
 
     // 处理字符串字面量
-    if (!inString && !inSingleLineComment && !inMultiLineComment && 
-        (char === '"' || char === "'" || char === "`")) {
+    if (
+      !inString && !inSingleLineComment && !inMultiLineComment &&
+      (char === '"' || char === "'" || char === "`")
+    ) {
       inString = true;
       stringChar = char;
     } else if (inString && char === stringChar && prevChar !== "\\") {
@@ -493,15 +502,17 @@ export function extractLoadFunctionBody(fileContent: string): string {
   stringChar = null;
   inSingleLineComment = false;
   inMultiLineComment = false;
-  
+
   for (let i = 0; i < fileContent.length; i++) {
     const char = fileContent[i];
     const prevChar = i > 0 ? fileContent[i - 1] : "";
     const nextChar = i < fileContent.length - 1 ? fileContent[i + 1] : "";
 
     // 处理字符串字面量
-    if (!inString && !inSingleLineComment && !inMultiLineComment && 
-        (char === '"' || char === "'" || char === "`")) {
+    if (
+      !inString && !inSingleLineComment && !inMultiLineComment &&
+      (char === '"' || char === "'" || char === "`")
+    ) {
       inString = true;
       stringChar = char;
     } else if (inString && char === stringChar && prevChar !== "\\") {
@@ -533,11 +544,13 @@ export function extractLoadFunctionBody(fileContent: string): string {
         // 检查是否是箭头函数
         // 注意：可能是 async (...) => 或 (...) =>，需要跳过 async 关键字
         let searchStart = equalSignIndex;
-        const asyncMatch = fileContent.substring(equalSignIndex).match(/^async\s+/i);
+        const asyncMatch = fileContent.substring(equalSignIndex).match(
+          /^async\s+/i,
+        );
         if (asyncMatch) {
           searchStart = equalSignIndex + asyncMatch[0].length;
         }
-        
+
         const arrowIndex = fileContent.indexOf("=>", searchStart);
         if (arrowIndex !== -1) {
           // 箭头函数
@@ -552,7 +565,11 @@ export function extractLoadFunctionBody(fileContent: string): string {
         if (funcKeywordMatch) {
           const funcKeywordIndex = equalSignIndex +
             (funcKeywordMatch.index || 0);
-          const body = extractFunctionBody(fileContent, funcKeywordIndex, false);
+          const body = extractFunctionBody(
+            fileContent,
+            funcKeywordIndex,
+            false,
+          );
           return body;
         }
       }
@@ -604,7 +621,12 @@ export function collectStaticImports(fileContent: string): Array<{
   const importRegex =
     /^import\s+(?:(?:\{([^}]+)\}|\*\s+as\s+(\w+)|(\w+)|type\s+\{([^}]+)\})(?:\s*,\s*(?:\{[^}]*\}|\*\s+as\s+\w+|\w+))*\s+from\s+)?['"](\.\.?\/[^'"]+)['"];?/gm;
   const importsToCheck: Array<
-    { lineNumber: number; names: string[]; importStatement: string; fromPath: string }
+    {
+      lineNumber: number;
+      names: string[];
+      importStatement: string;
+      fromPath: string;
+    }
   > = [];
 
   importRegex.lastIndex = 0;
@@ -732,7 +754,13 @@ export function collectAllImports(fileContent: string): Array<{
     }
 
     // 记录所有导入（包括没有显式导入名称的情况，如 import 'package'）
-    importsToCheck.push({ lineNumber, names, importStatement, fromPath, isRelative });
+    importsToCheck.push({
+      lineNumber,
+      names,
+      importStatement,
+      fromPath,
+      isRelative,
+    });
   }
 
   return importsToCheck;
@@ -760,8 +788,10 @@ function findLoadFunctionRange(
     const nextChar = i < fileContent.length - 1 ? fileContent[i + 1] : "";
 
     // 处理字符串字面量
-    if (!inString && !inSingleLineComment && !inMultiLineComment && 
-        (char === '"' || char === "'" || char === "`")) {
+    if (
+      !inString && !inSingleLineComment && !inMultiLineComment &&
+      (char === '"' || char === "'" || char === "`")
+    ) {
       inString = true;
       stringChar = char;
     } else if (inString && char === stringChar && prevChar !== "\\") {
@@ -912,8 +942,10 @@ function findLoadFunctionRange(
     const nextChar = i < fileContent.length - 1 ? fileContent[i + 1] : "";
 
     // 处理字符串字面量
-    if (!inString && !inSingleLineComment && !inMultiLineComment && 
-        (char === '"' || char === "'" || char === "`")) {
+    if (
+      !inString && !inSingleLineComment && !inMultiLineComment &&
+      (char === '"' || char === "'" || char === "`")
+    ) {
       inString = true;
       stringChar = char;
     } else if (inString && char === stringChar && prevChar !== "\\") {
@@ -1266,17 +1298,17 @@ export function removeLoadOnlyImports(fileContent: string): string {
   // 重新组合文件内容（移除空行，但保留必要的空行）
   const result = lines
     .map((line, index) => {
-    if (linesToRemove.includes(index)) {
-      return "";
-    }
-    return line;
+      if (linesToRemove.includes(index)) {
+        return "";
+      }
+      return line;
     })
     .filter((line, index, arr) => {
-    // 移除连续的空行，但保留单个空行用于代码可读性
-    if (line.trim() === "") {
-      return index === 0 || arr[index - 1].trim() !== "";
-    }
-    return true;
+      // 移除连续的空行，但保留单个空行用于代码可读性
+      if (line.trim() === "") {
+        return index === 0 || arr[index - 1].trim() !== "";
+      }
+      return true;
     })
     .join("\n");
 

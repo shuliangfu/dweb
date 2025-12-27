@@ -31,7 +31,9 @@ function createTranslateFunction(
     let value: unknown = translations;
 
     for (const k of keys) {
-      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+      if (
+        typeof value === "object" && value !== null && !Array.isArray(value)
+      ) {
         value = (value as Record<string, unknown>)[k];
         // 如果找不到，且是单个键，尝试直接使用整个 key
         if (value === undefined && keys.length === 1) {
@@ -85,7 +87,10 @@ function initI18n(config: I18nConfig): void {
 
   // 全局翻译函数（确保 this 指向 window.__I18N_DATA__）
   // 支持任意类型参数（string、number、boolean 等），自动转换为字符串
-  (globalThis as any).$t = function (key: string, params?: Record<string, any>): string {
+  (globalThis as any).$t = function (
+    key: string,
+    params?: Record<string, any>,
+  ): string {
     if (!i18nData || !i18nData.t) {
       return key;
     }
@@ -97,4 +102,3 @@ function initI18n(config: I18nConfig): void {
 if (typeof globalThis !== "undefined") {
   (globalThis as any).initI18n = initI18n;
 }
-

@@ -91,7 +91,7 @@ function injectCSSLink(
   try {
     const html = res.body as string;
 
-		// 获取 CSS 文件名
+    // 获取 CSS 文件名
     const filename = path.basename(cssPath);
 
     // 构建 CSS 文件 URL

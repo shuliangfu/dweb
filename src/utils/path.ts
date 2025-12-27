@@ -11,7 +11,7 @@
 export function filePathToHttpUrl(filePath: string): string {
   // 清理输入路径，移除空格
   filePath = cleanUrl(filePath);
-  
+
   // 如果是 file:// 协议，转换为 /__modules/ 路径
   if (filePath.startsWith("file://")) {
     // 提取文件路径（去掉 file:// 前缀）
@@ -31,7 +31,7 @@ export function filePathToHttpUrl(filePath: string): string {
   }
   // 如果路径以 ./ 开头，说明是相对路径（生产环境构建后的文件）
   // 转换为 /__modules/ 路径，但保持文件名不变
-  if (filePath.startsWith('./')) {
+  if (filePath.startsWith("./")) {
     const fileName = filePath.substring(2); // 移除 ./ 前缀
     return `/__modules/${encodeURIComponent(cleanUrl(fileName))}`;
   }
@@ -65,37 +65,40 @@ export function resolveFilePath(filePath: string): string {
  * @param relativePath 相对路径
  * @returns 绝对路径
  */
-export function resolveRelativePath(baseDir: string, relativePath: string): string {
-  const parts = baseDir.split('/').filter(p => p);
-  const importParts = relativePath.split('/').filter(p => p);
-  
+export function resolveRelativePath(
+  baseDir: string,
+  relativePath: string,
+): string {
+  const parts = baseDir.split("/").filter((p) => p);
+  const importParts = relativePath.split("/").filter((p) => p);
+
   for (const part of importParts) {
-    if (part === '..') {
+    if (part === "..") {
       parts.pop();
-    } else if (part !== '.') {
+    } else if (part !== ".") {
       parts.push(part);
     }
   }
-  
-  let absolutePath = '/' + parts.join('/');
-  
+
+  let absolutePath = "/" + parts.join("/");
+
   // 如果没有扩展名，尝试添加 .tsx
   if (!absolutePath.match(/\.(tsx?|jsx?)$/)) {
     // 检查是否存在对应的 .tsx 文件
     try {
-      Deno.statSync(absolutePath + '.tsx');
-      absolutePath += '.tsx';
+      Deno.statSync(absolutePath + ".tsx");
+      absolutePath += ".tsx";
     } catch (_e) {
       // 如果 .tsx 不存在，检查 .ts
       try {
-        Deno.statSync(absolutePath + '.ts');
-        absolutePath += '.ts';
+        Deno.statSync(absolutePath + ".ts");
+        absolutePath += ".ts";
       } catch (_e2) {
         // 如果都不存在，保持原样
       }
     }
   }
-  
+
   return absolutePath;
 }
 
@@ -123,8 +126,13 @@ export function normalizeModulePath(pathname: string): string {
  * @param basePath 基础路径，默认为当前工作目录
  * @returns 相对路径
  */
-export function getRelativePath(filePath: string, basePath: string = Deno.cwd()): string {
-  return filePath.startsWith(basePath) ? filePath.slice(basePath.length + 1) : filePath;
+export function getRelativePath(
+  filePath: string,
+  basePath: string = Deno.cwd(),
+): string {
+  return filePath.startsWith(basePath)
+    ? filePath.slice(basePath.length + 1)
+    : filePath;
 }
 
 /**
@@ -133,6 +141,5 @@ export function getRelativePath(filePath: string, basePath: string = Deno.cwd())
  * @returns 清理后的 URL
  */
 export function cleanUrl(url: string): string {
-  return url.trim().replace(/\s+/g, '');
+  return url.trim().replace(/\s+/g, "");
 }
-

@@ -3,8 +3,8 @@
  * 收集 Web Vitals 和性能指标
  */
 
-import type { Plugin, Request, Response } from '../../types/index.ts';
-import type { PerformancePluginOptions, PerformanceMetrics } from './types.ts';
+import type { Plugin, Request, Response } from "../../types/index.ts";
+import type { PerformanceMetrics, PerformancePluginOptions } from "./types.ts";
 
 /**
  * 生成性能监控脚本
@@ -14,7 +14,7 @@ function generatePerformanceScript(options: PerformancePluginOptions): string {
   const collectWebVitals = config.collectWebVitals !== false;
   const collectResourceTiming = config.collectResourceTiming !== false;
   const collectApiTiming = config.collectApiTiming !== false;
-  const endpoint = config.endpoint || '/api/performance';
+  const endpoint = config.endpoint || "/api/performance";
   const reportInterval = config.reportInterval || 5000;
   const logToConsole = config.logToConsole !== false;
   const sampleRate = config.sampleRate ?? 1.0;
@@ -147,7 +147,7 @@ function generatePerformanceScript(options: PerformancePluginOptions): string {
               userAgent: navigator.userAgent
             };
             
-            ${logToConsole ? `console.log('[Performance]', metrics);` : ''}
+            ${logToConsole ? `console.log('[Performance]', metrics);` : ""}
             
             // 发送到服务器
             if (this.endpoint) {
@@ -203,7 +203,7 @@ function generatePerformanceScript(options: PerformancePluginOptions): string {
  */
 export function performance(options: PerformancePluginOptions = {}): Plugin {
   return {
-    name: 'performance',
+    name: "performance",
     config: options as unknown as Record<string, unknown>,
 
     /**
@@ -211,26 +211,26 @@ export function performance(options: PerformancePluginOptions = {}): Plugin {
      */
     onRequest(_req: Request, res: Response) {
       // 只处理 HTML 响应
-      if (!res.body || typeof res.body !== 'string') {
+      if (!res.body || typeof res.body !== "string") {
         return;
       }
 
-      const contentType = res.headers.get('Content-Type') || '';
-      if (!contentType.includes('text/html')) {
+      const contentType = res.headers.get("Content-Type") || "";
+      if (!contentType.includes("text/html")) {
         return;
       }
 
       if (options.injectClientScript !== false) {
         try {
           const html = res.body as string;
-          
+
           // 注入性能监控脚本（在 </head> 之前）
-          if (html.includes('</head>')) {
+          if (html.includes("</head>")) {
             const script = generatePerformanceScript(options);
-            res.body = html.replace('</head>', `${script}\n</head>`);
+            res.body = html.replace("</head>", `${script}\n</head>`);
           }
         } catch (error) {
-          console.error('[Performance Plugin] 注入监控脚本时出错:', error);
+          console.error("[Performance Plugin] 注入监控脚本时出错:", error);
         }
       }
     },
@@ -239,7 +239,7 @@ export function performance(options: PerformancePluginOptions = {}): Plugin {
      * 响应处理钩子 - 记录 API 响应时间
      */
     async onResponse(req: Request, res: Response) {
-      if (options.onMetrics && req.url.includes('/api/')) {
+      if (options.onMetrics && req.url.includes("/api/")) {
         // 这里可以记录 API 响应时间
         // 实际实现中需要从请求开始时间计算
         const metrics: PerformanceMetrics = {
@@ -252,5 +252,9 @@ export function performance(options: PerformancePluginOptions = {}): Plugin {
 }
 
 // 导出类型
-export type { PerformancePluginOptions, PerformanceConfig, PerformanceMetrics, WebVitals } from './types.ts';
-
+export type {
+  PerformanceConfig,
+  PerformanceMetrics,
+  PerformancePluginOptions,
+  WebVitals,
+} from "./types.ts";

@@ -3,9 +3,9 @@
  * 管理多个数据库连接
  */
 
-import type { DatabaseAdapter, DatabaseConfig, DatabaseType } from './types.ts';
-import { PostgreSQLAdapter } from './adapters/postgresql.ts';
-import { MongoDBAdapter } from './adapters/mongodb.ts';
+import type { DatabaseAdapter, DatabaseConfig, DatabaseType } from "./types.ts";
+import { PostgreSQLAdapter } from "./adapters/postgresql.ts";
+import { MongoDBAdapter } from "./adapters/mongodb.ts";
 
 /**
  * 数据库管理器类
@@ -18,7 +18,10 @@ export class DatabaseManager {
    * @param name 连接名称（默认为 'default'）
    * @param config 数据库配置
    */
-  async connect(name: string = 'default', config: DatabaseConfig): Promise<void> {
+  async connect(
+    name: string = "default",
+    config: DatabaseConfig,
+  ): Promise<void> {
     const adapter = this.createAdapter(config.type);
     await adapter.connect(config);
     this.adapters.set(name, adapter);
@@ -29,10 +32,12 @@ export class DatabaseManager {
    * @param name 连接名称（默认为 'default'）
    * @returns 数据库适配器实例
    */
-  getConnection(name: string = 'default'): DatabaseAdapter {
+  getConnection(name: string = "default"): DatabaseAdapter {
     const adapter = this.adapters.get(name);
     if (!adapter) {
-      throw new Error(`Database connection "${name}" not found. Please connect first.`);
+      throw new Error(
+        `Database connection "${name}" not found. Please connect first.`,
+      );
     }
     return adapter;
   }
@@ -44,9 +49,9 @@ export class DatabaseManager {
    */
   private createAdapter(type: DatabaseType): DatabaseAdapter {
     switch (type) {
-      case 'postgresql':
+      case "postgresql":
         return new PostgreSQLAdapter();
-      case 'mongodb':
+      case "mongodb":
         return new MongoDBAdapter();
       default:
         throw new Error(`Unsupported database type: ${type}`);
@@ -84,7 +89,7 @@ export class DatabaseManager {
    * @param name 连接名称
    * @returns 是否存在
    */
-  hasConnection(name: string = 'default'): boolean {
+  hasConnection(name: string = "default"): boolean {
     return this.adapters.has(name);
   }
 
@@ -96,4 +101,3 @@ export class DatabaseManager {
     return Array.from(this.adapters.keys());
   }
 }
-

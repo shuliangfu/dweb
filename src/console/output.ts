@@ -12,7 +12,9 @@ import { colors } from "./ansi.ts";
  * @param message 消息内容
  */
 export function success(message: string): void {
-  console.log(`${colors.green}${colors.bright}✓${colors.reset} ${colors.green}${message}${colors.reset}`);
+  console.log(
+    `${colors.green}${colors.bright}✓${colors.reset} ${colors.green}${message}${colors.reset}`,
+  );
 }
 
 /**
@@ -20,7 +22,9 @@ export function success(message: string): void {
  * @param message 消息内容
  */
 export function error(message: string): void {
-  console.error(`${colors.red}${colors.bright}✗${colors.reset} ${colors.red}${message}${colors.reset}`);
+  console.error(
+    `${colors.red}${colors.bright}✗${colors.reset} ${colors.red}${message}${colors.reset}`,
+  );
 }
 
 /**
@@ -28,7 +32,9 @@ export function error(message: string): void {
  * @param message 消息内容
  */
 export function warning(message: string): void {
-  console.log(`${colors.yellow}${colors.bright}⚠${colors.reset} ${colors.yellow}${message}${colors.reset}`);
+  console.log(
+    `${colors.yellow}${colors.bright}⚠${colors.reset} ${colors.yellow}${message}${colors.reset}`,
+  );
 }
 
 /**
@@ -36,7 +42,9 @@ export function warning(message: string): void {
  * @param message 消息内容
  */
 export function info(message: string): void {
-  console.log(`${colors.blue}${colors.bright}ℹ${colors.reset} ${colors.blue}${message}${colors.reset}`);
+  console.log(
+    `${colors.blue}${colors.bright}ℹ${colors.reset} ${colors.blue}${message}${colors.reset}`,
+  );
 }
 
 /**
@@ -62,7 +70,9 @@ export function title(title: string): void {
  * @param value 值
  */
 export function keyValue(key: string, value: string | number): void {
-  console.log(`${colors.dim}${key}:${colors.reset} ${colors.bright}${value}${colors.reset}`);
+  console.log(
+    `${colors.dim}${key}:${colors.reset} ${colors.bright}${value}${colors.reset}`,
+  );
 }
 
 /**
@@ -97,4 +107,3 @@ export function numberedList(items: string[], start = 1): void {
     console.log(`${colors.dim}[${number}]${colors.reset} ${item}`);
   });
 }
-

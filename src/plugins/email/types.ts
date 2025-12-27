@@ -93,4 +93,3 @@ export interface EmailPluginOptions {
   /** 默认选项 */
   defaults?: Partial<EmailOptions>;
 }
-

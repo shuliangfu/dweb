@@ -1,19 +1,19 @@
 /**
  * GraphQL 查询解析器
- * 
+ *
  * 解析 GraphQL 查询字符串，提取查询信息。
- * 
+ *
  * @module features/graphql/parser
  */
 
-import type { GraphQLError } from './types.ts';
+import type { GraphQLError } from "./types.ts";
 
 /**
  * 解析后的查询信息
  */
 export interface ParsedQuery {
   /** 操作类型（query、mutation、subscription） */
-  operation: 'query' | 'mutation' | 'subscription';
+  operation: "query" | "mutation" | "subscription";
   /** 操作名称 */
   operationName?: string;
   /** 选择的字段 */
@@ -40,11 +40,11 @@ export interface ParsedField {
 
 /**
  * 解析 GraphQL 查询字符串
- * 
+ *
  * @param query - GraphQL 查询字符串
  * @param variables - 查询变量
  * @returns 解析后的查询信息
- * 
+ *
  * @example
  * ```typescript
  * const parsed = parseQuery('{ user(id: 1) { id name } }');
@@ -52,17 +52,22 @@ export interface ParsedField {
  */
 export function parseQuery(
   query: string,
-  variables: Record<string, unknown> = {}
+  variables: Record<string, unknown> = {},
 ): ParsedQuery {
   // 移除注释和多余空白
   const cleaned = query
-    .replace(/#[^\n]*/g, '') // 移除注释
-    .replace(/\s+/g, ' ') // 合并空白
+    .replace(/#[^\n]*/g, "") // 移除注释
+    .replace(/\s+/g, " ") // 合并空白
     .trim();
 
   // 简单的解析实现（支持基本查询语法）
-  const operationMatch = cleaned.match(/^(query|mutation|subscription)\s+(\w+)?/);
-  const operation = (operationMatch?.[1] || 'query') as 'query' | 'mutation' | 'subscription';
+  const operationMatch = cleaned.match(
+    /^(query|mutation|subscription)\s+(\w+)?/,
+  );
+  const operation = (operationMatch?.[1] || "query") as
+    | "query"
+    | "mutation"
+    | "subscription";
   const operationName = operationMatch?.[2];
 
   // 提取字段
@@ -78,14 +83,14 @@ export function parseQuery(
 
 /**
  * 提取字段
- * 
+ *
  * @param query - 查询字符串片段
  * @param path - 当前路径
  * @returns 字段列表
  */
 function extractFields(query: string, path: string[]): ParsedField[] {
   const fields: ParsedField[] = [];
-  
+
   // 查找字段选择集（花括号内的内容）
   const braceMatch = query.match(/\{([^}]+)\}/);
   if (!braceMatch) {
@@ -93,14 +98,15 @@ function extractFields(query: string, path: string[]): ParsedField[] {
   }
 
   const fieldContent = braceMatch[1];
-  const fieldPattern = /(\w+)(?:\s*:\s*(\w+))?\s*(?:\(([^)]*)\))?\s*(\{[^}]*\})?/g;
-  
+  const fieldPattern =
+    /(\w+)(?:\s*:\s*(\w+))?\s*(?:\(([^)]*)\))?\s*(\{[^}]*\})?/g;
+
   let match;
   while ((match = fieldPattern.exec(fieldContent)) !== null) {
     const [, aliasOrName, name, argsStr, subFields] = match;
     const fieldName = name || aliasOrName;
     const fieldAlias = name ? aliasOrName : undefined;
-    
+
     // 解析参数
     const args: Record<string, unknown> = {};
     if (argsStr) {
@@ -113,7 +119,9 @@ function extractFields(query: string, path: string[]): ParsedField[] {
     }
 
     // 提取子字段
-    const nestedFields = subFields ? extractFields(subFields, [...path, fieldName]) : undefined;
+    const nestedFields = subFields
+      ? extractFields(subFields, [...path, fieldName])
+      : undefined;
 
     fields.push({
       name: fieldName,
@@ -129,26 +137,28 @@ function extractFields(query: string, path: string[]): ParsedField[] {
 
 /**
  * 解析值（字符串、数字、布尔值、变量、null）
- * 
+ *
  * @param value - 值字符串
  * @returns 解析后的值
  */
 function parseValue(value: string): unknown {
   // 移除引号
-  if ((value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))) {
+  if (
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"))
+  ) {
     return value.slice(1, -1);
   }
 
   // 布尔值
-  if (value === 'true') return true;
-  if (value === 'false') return false;
+  if (value === "true") return true;
+  if (value === "false") return false;
 
   // null
-  if (value === 'null') return null;
+  if (value === "null") return null;
 
   // 变量（以 $ 开头）
-  if (value.startsWith('$')) {
+  if (value.startsWith("$")) {
     return { __variable: value.slice(1) };
   }
 
@@ -166,7 +176,7 @@ function parseValue(value: string): unknown {
 
 /**
  * 验证 GraphQL 查询
- * 
+ *
  * @param query - GraphQL 查询字符串
  * @param maxDepth - 最大查询深度
  * @param maxComplexity - 最大查询复杂度
@@ -175,7 +185,7 @@ function parseValue(value: string): unknown {
 export function validateQuery(
   query: string,
   maxDepth: number = 10,
-  maxComplexity: number = 1000
+  maxComplexity: number = 1000,
 ): GraphQLError[] {
   const errors: GraphQLError[] = [];
 
@@ -201,7 +211,7 @@ export function validateQuery(
     }
   } catch (error) {
     errors.push({
-      message: error instanceof Error ? error.message : '查询解析失败',
+      message: error instanceof Error ? error.message : "查询解析失败",
     });
   }
 
@@ -210,7 +220,7 @@ export function validateQuery(
 
 /**
  * 计算查询深度
- * 
+ *
  * @param fields - 字段列表
  * @returns 查询深度
  */
@@ -232,7 +242,7 @@ function calculateDepth(fields: ParsedField[]): number {
 
 /**
  * 计算查询复杂度
- * 
+ *
  * @param fields - 字段列表
  * @returns 查询复杂度
  */
@@ -249,4 +259,3 @@ function calculateComplexity(fields: ParsedField[]): number {
 
   return complexity;
 }
-

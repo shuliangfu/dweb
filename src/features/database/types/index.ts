@@ -5,12 +5,24 @@
 /**
  * 索引方向（用于排序）
  */
-export type IndexDirection = 1 | -1 | 'asc' | 'desc' | 'ascending' | 'descending';
+export type IndexDirection =
+  | 1
+  | -1
+  | "asc"
+  | "desc"
+  | "ascending"
+  | "descending";
 
 /**
  * 索引类型
  */
-export type IndexType = 'normal' | 'unique' | 'text' | 'geospatial' | 'hashed' | 'compound';
+export type IndexType =
+  | "normal"
+  | "unique"
+  | "text"
+  | "geospatial"
+  | "hashed"
+  | "compound";
 
 /**
  * 单个字段索引定义
@@ -97,7 +109,7 @@ export interface GeospatialIndex {
   /**
    * 索引类型：'2d', '2dsphere'
    */
-  type: '2d' | '2dsphere';
+  type: "2d" | "2dsphere";
   /**
    * 索引名称（可选，自动生成）
    */
@@ -107,10 +119,13 @@ export interface GeospatialIndex {
 /**
  * 索引定义（可以是单个字段、复合、文本或地理空间）
  */
-export type IndexDefinition = SingleFieldIndex | CompoundIndex | TextIndex | GeospatialIndex;
+export type IndexDefinition =
+  | SingleFieldIndex
+  | CompoundIndex
+  | TextIndex
+  | GeospatialIndex;
 
 /**
  * 索引定义数组
  */
 export type IndexDefinitions = IndexDefinition[];
-

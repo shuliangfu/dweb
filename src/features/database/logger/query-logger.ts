@@ -9,7 +9,7 @@ export interface QueryLogEntry {
   /**
    * 查询类型：'query' | 'execute'
    */
-  type: 'query' | 'execute';
+  type: "query" | "execute";
   /**
    * SQL 或查询操作
    */
@@ -74,7 +74,7 @@ export class QueryLogger {
    * 记录查询日志
    */
   async log(
-    type: 'query' | 'execute',
+    type: "query" | "execute",
     sql: string,
     params?: any[],
     duration?: number,
@@ -90,7 +90,9 @@ export class QueryLogger {
       params,
       duration: duration || 0,
       timestamp: new Date(),
-      slow: duration ? duration > (this.config.slowQueryThreshold || 1000) : false,
+      slow: duration
+        ? duration > (this.config.slowQueryThreshold || 1000)
+        : false,
       error: error?.message,
     };
 
@@ -140,10 +142,9 @@ export class QueryLogger {
     const total = this.logs.length;
     const slow = this.logs.filter((log) => log.slow).length;
     const errors = this.logs.filter((log) => log.error).length;
-    const averageDuration =
-      total > 0
-        ? this.logs.reduce((sum, log) => sum + log.duration, 0) / total
-        : 0;
+    const averageDuration = total > 0
+      ? this.logs.reduce((sum, log) => sum + log.duration, 0) / total
+      : 0;
 
     return {
       total,
@@ -153,4 +154,3 @@ export class QueryLogger {
     };
   }
 }
-

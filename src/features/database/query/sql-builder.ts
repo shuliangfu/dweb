@@ -3,7 +3,7 @@
  * 用于 SQLite、PostgreSQL、MySQL
  */
 
-import type { DatabaseAdapter } from '../types.ts';
+import type { DatabaseAdapter } from "../types.ts";
 
 /**
  * SQL 查询构建器类
@@ -11,9 +11,9 @@ import type { DatabaseAdapter } from '../types.ts';
  */
 export class SQLQueryBuilder {
   private adapter: DatabaseAdapter;
-  private query: string = '';
+  private query: string = "";
   private params: any[] = [];
-  private table: string = '';
+  private table: string = "";
 
   /**
    * 构造函数
@@ -29,7 +29,7 @@ export class SQLQueryBuilder {
    * @returns 查询构建器实例（支持链式调用）
    */
   select(columns: string[]): this {
-    this.query = `SELECT ${columns.join(', ')}`;
+    this.query = `SELECT ${columns.join(", ")}`;
     return this;
   }
 
@@ -51,7 +51,7 @@ export class SQLQueryBuilder {
    * @returns 查询构建器实例（支持链式调用）
    */
   where(condition: string, params?: any[]): this {
-    if (this.query.includes('WHERE')) {
+    if (this.query.includes("WHERE")) {
       this.query += ` AND ${condition}`;
     } else {
       this.query += ` WHERE ${condition}`;
@@ -69,7 +69,7 @@ export class SQLQueryBuilder {
    * @returns 查询构建器实例（支持链式调用）
    */
   orWhere(condition: string, params?: any[]): this {
-    if (this.query.includes('WHERE')) {
+    if (this.query.includes("WHERE")) {
       this.query += ` OR ${condition}`;
     } else {
       this.query += ` WHERE ${condition}`;
@@ -87,7 +87,7 @@ export class SQLQueryBuilder {
    * @param type JOIN 类型（INNER、LEFT、RIGHT、FULL）
    * @returns 查询构建器实例（支持链式调用）
    */
-  join(table: string, condition: string, type: string = 'INNER'): this {
+  join(table: string, condition: string, type: string = "INNER"): this {
     this.query += ` ${type} JOIN ${table} ON ${condition}`;
     return this;
   }
@@ -96,14 +96,14 @@ export class SQLQueryBuilder {
    * 添加 LEFT JOIN
    */
   leftJoin(table: string, condition: string): this {
-    return this.join(table, condition, 'LEFT');
+    return this.join(table, condition, "LEFT");
   }
 
   /**
    * 添加 RIGHT JOIN
    */
   rightJoin(table: string, condition: string): this {
-    return this.join(table, condition, 'RIGHT');
+    return this.join(table, condition, "RIGHT");
   }
 
   /**
@@ -112,8 +112,8 @@ export class SQLQueryBuilder {
    * @param direction 排序方向（ASC 或 DESC）
    * @returns 查询构建器实例（支持链式调用）
    */
-  orderBy(column: string, direction: 'ASC' | 'DESC' = 'ASC'): this {
-    if (this.query.includes('ORDER BY')) {
+  orderBy(column: string, direction: "ASC" | "DESC" = "ASC"): this {
+    if (this.query.includes("ORDER BY")) {
       this.query += `, ${column} ${direction}`;
     } else {
       this.query += ` ORDER BY ${column} ${direction}`;
@@ -150,8 +150,10 @@ export class SQLQueryBuilder {
   insert(table: string, data: Record<string, any>): this {
     const columns = Object.keys(data);
     const values = Object.values(data);
-    const placeholders = values.map(() => '?').join(', ');
-    this.query = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
+    const placeholders = values.map(() => "?").join(", ");
+    this.query = `INSERT INTO ${table} (${
+      columns.join(", ")
+    }) VALUES (${placeholders})`;
     this.params = values;
     this.table = table;
     return this;
@@ -165,8 +167,8 @@ export class SQLQueryBuilder {
    */
   update(table: string, data: Record<string, any>): this {
     const setClause = Object.keys(data)
-      .map(key => `${key} = ?`)
-      .join(', ');
+      .map((key) => `${key} = ?`)
+      .join(", ");
     this.query = `UPDATE ${table} SET ${setClause}`;
     this.params = Object.values(data);
     this.table = table;
@@ -225,4 +227,3 @@ export class SQLQueryBuilder {
     return this.params;
   }
 }
-

@@ -5,7 +5,7 @@
 
 // walk 暂时未使用，保留导入以备将来使用
 // import { walk } from '@std/fs/walk';
-import * as path from '@std/path';
+import * as path from "@std/path";
 
 /**
  * 环境变量存储
@@ -21,9 +21,9 @@ let loaded = false;
  * 环境文件查找顺序
  */
 const ENV_FILES = [
-  '.env.local',
-  `.env.${Deno.env.get('DENO_ENV') || 'development'}`,
-  '.env',
+  ".env.local",
+  `.env.${Deno.env.get("DENO_ENV") || "development"}`,
+  ".env",
 ];
 
 /**
@@ -33,31 +33,33 @@ const ENV_FILES = [
  */
 function parseEnvFile(content: string): Record<string, string> {
   const env: Record<string, string> = {};
-  const lines = content.split('\n');
-  
+  const lines = content.split("\n");
+
   for (const line of lines) {
     // 移除注释和空行
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) {
+    if (!trimmed || trimmed.startsWith("#")) {
       continue;
     }
-    
+
     // 解析 KEY=VALUE 格式
     const match = trimmed.match(/^([^=:#]+)=(.*)$/);
     if (match) {
       const key = match[1].trim();
       let value = match[2].trim();
-      
+
       // 移除引号
-      if ((value.startsWith('"') && value.endsWith('"')) ||
-          (value.startsWith("'") && value.endsWith("'"))) {
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
         value = value.slice(1, -1);
       }
-      
+
       env[key] = value;
     }
   }
-  
+
   return env;
 }
 
@@ -69,7 +71,7 @@ async function loadEnvFile(filePath: string): Promise<void> {
   try {
     const content = await Deno.readTextFile(filePath);
     const env = parseEnvFile(content);
-    
+
     // 合并到环境变量存储（不覆盖已存在的）
     for (const [key, value] of Object.entries(env)) {
       if (!envStore.has(key)) {
@@ -91,22 +93,22 @@ async function loadEnvFiles(): Promise<void> {
   if (loaded) {
     return;
   }
-  
+
   const cwd = Deno.cwd();
-  
+
   // 按顺序加载环境文件（后面的会覆盖前面的）
   for (const envFile of ENV_FILES) {
     const filePath = path.join(cwd, envFile);
     await loadEnvFile(filePath);
   }
-  
+
   // 加载系统环境变量（优先级最高）
   for (const [key, value] of Object.entries(Deno.env.toObject())) {
     if (value) {
       envStore.set(key, value);
     }
   }
-  
+
   loaded = true;
 }
 
@@ -116,14 +118,20 @@ async function loadEnvFiles(): Promise<void> {
  * @param defaultValue 默认值
  * @returns 环境变量值
  */
-export async function env(key: string, defaultValue?: string): Promise<string | undefined>;
+export async function env(
+  key: string,
+  defaultValue?: string,
+): Promise<string | undefined>;
 export function env(key: string, defaultValue?: string): string | undefined;
-export function env(key: string, defaultValue?: string): string | undefined | Promise<string | undefined> {
+export function env(
+  key: string,
+  defaultValue?: string,
+): string | undefined | Promise<string | undefined> {
   // 如果已加载，直接返回
   if (loaded) {
     return envStore.get(key) ?? defaultValue;
   }
-  
+
   // 否则异步加载
   return loadEnvFiles().then(() => envStore.get(key) ?? defaultValue);
 }
@@ -134,12 +142,18 @@ export function env(key: string, defaultValue?: string): string | undefined | Pr
  * @param defaultValue 默认值
  * @returns 环境变量值（整数）
  */
-export async function envInt(key: string, defaultValue?: number): Promise<number | undefined>;
-export function envInt(key: string, defaultValue?: number): number | undefined | Promise<number | undefined> {
+export async function envInt(
+  key: string,
+  defaultValue?: number,
+): Promise<number | undefined>;
+export function envInt(
+  key: string,
+  defaultValue?: number,
+): number | undefined | Promise<number | undefined> {
   const value = env(key);
-  
+
   if (value instanceof Promise) {
-    return value.then(v => {
+    return value.then((v) => {
       if (v === undefined) {
         return defaultValue;
       }
@@ -147,11 +161,11 @@ export function envInt(key: string, defaultValue?: number): number | undefined |
       return isNaN(num) ? defaultValue : num;
     });
   }
-  
+
   if (value === undefined) {
     return defaultValue;
   }
-  
+
   const num = parseInt(value, 10);
   return isNaN(num) ? defaultValue : num;
 }
@@ -162,12 +176,18 @@ export function envInt(key: string, defaultValue?: number): number | undefined |
  * @param defaultValue 默认值
  * @returns 环境变量值（浮点数）
  */
-export async function envFloat(key: string, defaultValue?: number): Promise<number | undefined>;
-export function envFloat(key: string, defaultValue?: number): number | undefined | Promise<number | undefined> {
+export async function envFloat(
+  key: string,
+  defaultValue?: number,
+): Promise<number | undefined>;
+export function envFloat(
+  key: string,
+  defaultValue?: number,
+): number | undefined | Promise<number | undefined> {
   const value = env(key);
-  
+
   if (value instanceof Promise) {
-    return value.then(v => {
+    return value.then((v) => {
       if (v === undefined) {
         return defaultValue;
       }
@@ -175,11 +195,11 @@ export function envFloat(key: string, defaultValue?: number): number | undefined
       return isNaN(num) ? defaultValue : num;
     });
   }
-  
+
   if (value === undefined) {
     return defaultValue;
   }
-  
+
   const num = parseFloat(value);
   return isNaN(num) ? defaultValue : num;
 }
@@ -190,28 +210,35 @@ export function envFloat(key: string, defaultValue?: number): number | undefined
  * @param defaultValue 默认值
  * @returns 环境变量值（布尔值）
  */
-export async function envBool(key: string, defaultValue?: boolean): Promise<boolean | undefined>;
-export function envBool(key: string, defaultValue?: boolean): boolean | undefined | Promise<boolean | undefined> {
+export async function envBool(
+  key: string,
+  defaultValue?: boolean,
+): Promise<boolean | undefined>;
+export function envBool(
+  key: string,
+  defaultValue?: boolean,
+): boolean | undefined | Promise<boolean | undefined> {
   const value = env(key);
-  
+
   if (value instanceof Promise) {
-    return value.then(v => {
+    return value.then((v) => {
       if (v === undefined) {
         return defaultValue;
       }
       const lower = v.toLowerCase();
-      return lower === 'true' || lower === '1' || lower === 'yes' || lower === 'on';
+      return lower === "true" || lower === "1" || lower === "yes" ||
+        lower === "on";
     });
   }
-  
+
   if (value === undefined) {
     return defaultValue;
   }
-  
+
   // 类型断言：经过前面的检查，value 应该是 string 类型
   const strValue = value as string;
   const lower = strValue.toLowerCase();
-  return lower === 'true' || lower === '1' || lower === 'yes' || lower === 'on';
+  return lower === "true" || lower === "1" || lower === "yes" || lower === "on";
 }
 
 /**
@@ -219,11 +246,13 @@ export function envBool(key: string, defaultValue?: boolean): boolean | undefine
  * @returns 环境变量对象
  */
 export async function getAllEnv(): Promise<Record<string, string>>;
-export function getAllEnv(): Record<string, string> | Promise<Record<string, string>> {
+export function getAllEnv():
+  | Record<string, string>
+  | Promise<Record<string, string>> {
   if (loaded) {
     return Object.fromEntries(envStore);
   }
-  
+
   return loadEnvFiles().then(() => Object.fromEntries(envStore));
 }
 
@@ -234,16 +263,16 @@ export function getAllEnv(): Record<string, string> | Promise<Record<string, str
  */
 export async function validateEnv(keys: string[]): Promise<void> {
   await loadEnvFiles();
-  
+
   const missing: string[] = [];
   for (const key of keys) {
     if (!envStore.has(key)) {
       missing.push(key);
     }
   }
-  
+
   if (missing.length > 0) {
-    throw new Error(`缺少必需的环境变量: ${missing.join(', ')}`);
+    throw new Error(`缺少必需的环境变量: ${missing.join(", ")}`);
   }
 }
 
@@ -253,4 +282,3 @@ export async function validateEnv(keys: string[]): Promise<void> {
 export async function initEnv(): Promise<void> {
   await loadEnvFiles();
 }
-

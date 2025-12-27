@@ -3,7 +3,12 @@
  * 管理所有扩展的注册、查询、启用/禁用等操作
  */
 
-import type { Extension, ExtensionRegistry, ExtensionType, ExtensionTarget } from './types.ts';
+import type {
+  Extension,
+  ExtensionRegistry,
+  ExtensionTarget,
+  ExtensionType,
+} from "./types.ts";
 
 /**
  * 扩展注册器实现类
@@ -193,19 +198,19 @@ export class ExtensionRegistryImpl implements ExtensionRegistry {
    */
   private getPrototype(target: ExtensionTarget): unknown {
     switch (target) {
-      case 'String':
+      case "String":
         return String.prototype;
-      case 'Array':
+      case "Array":
         return Array.prototype;
-      case 'Date':
+      case "Date":
         return Date.prototype;
-      case 'Object':
+      case "Object":
         return Object.prototype;
-      case 'Request':
+      case "Request":
         return Request.prototype;
-      case 'Response':
+      case "Response":
         return Response.prototype;
-      case 'global':
+      case "global":
         return globalThis;
       default:
         return null;
@@ -216,7 +221,8 @@ export class ExtensionRegistryImpl implements ExtensionRegistry {
 /**
  * 全局扩展注册器实例
  */
-export const extensionRegistry: ExtensionRegistryImpl = new ExtensionRegistryImpl();
+export const extensionRegistry: ExtensionRegistryImpl =
+  new ExtensionRegistryImpl();
 
 /**
  * 注册扩展（便捷函数）
@@ -270,4 +276,3 @@ export function enableExtension(name: string): boolean {
 export function disableExtension(name: string): boolean {
   return extensionRegistry.disable(name);
 }
-

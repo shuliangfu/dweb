@@ -41,24 +41,26 @@ export interface TableOptions {
  */
 function calculateColumnWidths(
   data: Record<string, any>[],
-  columns: TableColumn[]
+  columns: TableColumn[],
 ): number[] {
   return columns.map((col, index) => {
     if (col.width && col.width > 0) {
       return col.width;
     }
-    
+
     // 计算标题宽度
     let maxWidth = col.header.length;
-    
+
     // 计算数据宽度
     const key = Object.keys(data[0] || {})[index] || "";
     for (const row of data) {
       const value = row[key];
-      const formatted = col.formatter ? col.formatter(value) : String(value || "");
+      const formatted = col.formatter
+        ? col.formatter(value)
+        : String(value || "");
       maxWidth = Math.max(maxWidth, formatted.length);
     }
-    
+
     return maxWidth;
   });
 }
@@ -70,14 +72,18 @@ function calculateColumnWidths(
  * @param align 对齐方式
  * @returns 对齐后的文本
  */
-function alignText(text: string, width: number, align: "left" | "right" | "center" = "left"): string {
+function alignText(
+  text: string,
+  width: number,
+  align: "left" | "right" | "center" = "left",
+): string {
   const textLen = text.length;
   if (textLen >= width) {
     return text;
   }
-  
+
   const padding = width - textLen;
-  
+
   switch (align) {
     case "right": {
       return " ".repeat(padding) + text;
@@ -100,7 +106,10 @@ function alignText(text: string, width: number, align: "left" | "right" | "cente
  * @param style 边框样式
  * @returns 边框字符串
  */
-function drawBorder(widths: number[], style: "single" | "double" | "rounded" = "single"): string {
+function drawBorder(
+  widths: number[],
+  style: "single" | "double" | "rounded" = "single",
+): string {
   const chars = {
     single: {
       topLeft: "┌",
@@ -142,7 +151,7 @@ function drawBorder(widths: number[], style: "single" | "double" | "rounded" = "
       bottomCross: "┴",
     },
   };
-  
+
   const c = chars[style];
   const line = widths.map((w) => c.top.repeat(w + 2)).join(c.topCross);
   return c.topLeft + line + c.topRight;
@@ -154,13 +163,16 @@ function drawBorder(widths: number[], style: "single" | "double" | "rounded" = "
  * @param style 边框样式
  * @returns 分隔线字符串
  */
-function drawSeparator(widths: number[], style: "single" | "double" | "rounded" = "single"): string {
+function drawSeparator(
+  widths: number[],
+  style: "single" | "double" | "rounded" = "single",
+): string {
   const chars = {
     single: { left: "├", right: "┤", cross: "┼", line: "─" },
     double: { left: "╠", right: "╣", cross: "╬", line: "═" },
     rounded: { left: "├", right: "┤", cross: "┼", line: "─" },
   };
-  
+
   const c = chars[style];
   const line = widths.map((w) => c.line.repeat(w + 2)).join(c.cross);
   return c.left + line + c.right;
@@ -178,22 +190,24 @@ function drawRow(
   values: any[],
   widths: number[],
   columns: TableColumn[],
-  style: "single" | "double" | "rounded" = "single"
+  style: "single" | "double" | "rounded" = "single",
 ): string {
   const chars = {
     single: { left: "│", right: "│", separator: "│" },
     double: { left: "║", right: "║", separator: "║" },
     rounded: { left: "│", right: "│", separator: "│" },
   };
-  
+
   const c = chars[style];
   const cells = values.map((value, index) => {
     const col = columns[index] || {};
-    const formatted = col.formatter ? col.formatter(value) : String(value || "");
+    const formatted = col.formatter
+      ? col.formatter(value)
+      : String(value || "");
     const aligned = alignText(formatted, widths[index], col.align || "left");
     return ` ${aligned} `;
   });
-  
+
   return c.left + cells.join(c.separator) + c.right;
 }
 
@@ -206,19 +220,19 @@ function drawRow(
 export function table(
   data: Record<string, any>[],
   columns?: TableColumn[],
-  options: TableOptions = {}
+  options: TableOptions = {},
 ): void {
   if (data.length === 0) {
     console.log(colors.dim + "（无数据）" + colors.reset);
     return;
   }
-  
+
   const {
     border = true,
     borderStyle = "single",
     header = true,
   } = options;
-  
+
   // 如果没有提供列定义，从数据自动推断
   if (!columns) {
     const keys = Object.keys(data[0]);
@@ -228,35 +242,37 @@ export function table(
       align: "left" as const,
     }));
   }
-  
+
   // 计算列宽度
   const widths = calculateColumnWidths(data, columns);
-  
+
   // 绘制表格
   if (border) {
     // 顶部边框
     console.log(colors.gray + drawBorder(widths, borderStyle) + colors.reset);
   }
-  
+
   // 标题行
   if (header) {
     const headerValues = columns.map((col) => col.header);
     const headerRow = drawRow(headerValues, widths, columns, borderStyle);
     console.log(colors.cyan + colors.bright + headerRow + colors.reset);
-    
+
     if (border) {
       // 标题分隔线
-      console.log(colors.gray + drawSeparator(widths, borderStyle) + colors.reset);
+      console.log(
+        colors.gray + drawSeparator(widths, borderStyle) + colors.reset,
+      );
     }
   }
-  
+
   // 数据行
   const keys = Object.keys(data[0]);
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
     const values = keys.map((key) => row[key]);
     const rowStr = drawRow(values, widths, columns, borderStyle);
-    
+
     // 交替行颜色
     if (i % 2 === 0) {
       console.log(rowStr);
@@ -264,7 +280,7 @@ export function table(
       console.log(colors.dim + rowStr + colors.reset);
     }
   }
-  
+
   if (border) {
     // 底部边框
     console.log(colors.gray + drawBorder(widths, borderStyle) + colors.reset);
@@ -278,13 +294,13 @@ export function table(
  */
 export function keyValueTable(
   data: Record<string, any>,
-  options: TableOptions = {}
+  options: TableOptions = {},
 ): void {
   const rows = Object.entries(data).map(([key, value]) => ({
     key,
     value: String(value),
   }));
-  
+
   table(rows, [
     { header: "键", width: 20, align: "left" },
     { header: "值", width: 0, align: "left" },
@@ -302,19 +318,22 @@ export function progressBar(
   current: number,
   total: number,
   width = 30,
-  label = ""
+  label = "",
 ): void {
-  const percentage = Math.min(100, Math.max(0, Math.round((current / total) * 100)));
+  const percentage = Math.min(
+    100,
+    Math.max(0, Math.round((current / total) * 100)),
+  );
   const filled = Math.round((width * percentage) / 100);
   const empty = width - filled;
-  
-  const bar = colors.green + "█".repeat(filled) + colors.gray + "░".repeat(empty) + colors.reset;
+
+  const bar = colors.green + "█".repeat(filled) + colors.gray +
+    "░".repeat(empty) + colors.reset;
   const percentText = `${percentage}%`;
-  
+
   if (label) {
     console.log(`${label} ${bar} ${percentText}`);
   } else {
     console.log(`${bar} ${percentText}`);
   }
 }
-

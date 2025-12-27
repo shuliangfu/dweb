@@ -591,8 +591,8 @@ class ClientRenderer {
 
     // 根据渲染模式决定使用 render 还是 hydrate
     if (mode === "hybrid" && this.hydrateFunc) {
-			try {
-				this.container.innerHTML = "";
+      try {
+        this.container.innerHTML = "";
         this.hydrateFunc(element, this.container);
       } catch (hydrateError) {
         // hydration 失败，使用 render
@@ -745,7 +745,7 @@ class ClientRouter {
       );
 
       if (!pageDataScript) {
-				throw new Error("页面数据未找到");
+        throw new Error("页面数据未找到");
       }
 
       // 解析 JSON
@@ -945,7 +945,6 @@ class ClientRouter {
       if (!container) {
         throw new Error("未找到容器");
       }
-
 
       // container.innerHTML = "";
 

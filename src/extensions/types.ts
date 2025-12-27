@@ -6,19 +6,19 @@
 /**
  * 扩展类型枚举
  */
-export type ExtensionType = 'method' | 'helper' | 'utility';
+export type ExtensionType = "method" | "helper" | "utility";
 
 /**
  * 扩展目标类型（用于原生类型扩展）
  */
 export type ExtensionTarget =
-  | 'String'
-  | 'Array'
-  | 'Date'
-  | 'Object'
-  | 'Request'
-  | 'Response'
-  | 'global';
+  | "String"
+  | "Array"
+  | "Date"
+  | "Object"
+  | "Request"
+  | "Response"
+  | "global";
 
 /**
  * 扩展定义接口
@@ -105,7 +105,7 @@ export interface ArrayExtensions<T> {
   /** 扁平化 */
   flatten(depth?: number): unknown[];
   /** 按条件排序 */
-  sortBy(key: string | ((item: T) => unknown), order?: 'asc' | 'desc'): T[];
+  sortBy(key: string | ((item: T) => unknown), order?: "asc" | "desc"): T[];
   /** 获取第一个元素或默认值 */
   firstOrDefault(defaultValue?: T): T | undefined;
   /** 获取最后一个元素或默认值 */
@@ -167,4 +167,3 @@ export interface ObjectExtensions {
   /** 设置嵌套值 */
   set(path: string, value: unknown): void;
 }
-

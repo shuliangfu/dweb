@@ -3,11 +3,11 @@
 /**
  * 组件子元素类型
  * 兼容 Preact 的 ComponentChildren 类型
- * 
+ *
  * 参考 Preact 的类型定义：
  * - ComponentChild = VNode<any> | object | string | number | bigint | boolean | null | undefined
  * - ComponentChildren = ComponentChild[] | ComponentChild
- * 
+ *
  * 注意：使用 any 代替 unknown，避免类型推断失败
  */
 export type ComponentChild =
@@ -85,17 +85,17 @@ export interface PrefetchConfig {
 }
 
 // 渲染引擎类型
-export type RenderEngine = 'preact' | 'react' | 'vue3';
+export type RenderEngine = "preact" | "react" | "vue3";
 
 // 渲染模式类型
-export type RenderMode = 'ssr' | 'csr' | 'hybrid';
+export type RenderMode = "ssr" | "csr" | "hybrid";
 
 // 渲染适配器配置
 export interface RenderConfig {
-  /** 
+  /**
    * 渲染引擎，可选值：'preact' | 'react' | 'vue3'
    * 默认为 'preact'
-   * 
+   *
    * @example
    * ```typescript
    * export default defineConfig({
@@ -106,16 +106,16 @@ export interface RenderConfig {
    * ```
    */
   engine?: RenderEngine;
-  
-  /** 
+
+  /**
    * 渲染模式，可选值：'ssr' | 'csr' | 'hybrid'
    * 默认为 'ssr'
    * - ssr: 服务端渲染（默认）
    * - csr: 客户端渲染
    * - hybrid: 混合渲染（服务端渲染 + 客户端 hydration）
-   * 
+   *
    * 注意：这个配置是全局的，可以在页面组件中通过导出 `renderMode` 来覆盖
-   * 
+   *
    * @example
    * ```typescript
    * export default defineConfig({
@@ -132,7 +132,7 @@ export interface RenderConfig {
 // 应用配置基础接口（不包含 apps 和 database）
 // 用于定义子应用配置，确保子应用不能配置 database
 interface AppConfigBase {
-	name?: string;
+  name?: string;
   basePath?: string;
   routes?: RouteConfig | string;
   server?: ServerConfig;
@@ -557,10 +557,10 @@ export interface PageProps {
 /**
  * 布局组件属性
  * 传递给布局组件的 props
- * 
+ *
  * 注意：移除了索引签名，确保 children 的类型不会被覆盖
  * 布局自己的 load 数据会通过展开运算符传递，可以通过接口扩展来定义具体类型
- * 
+ *
  * @example
  * ```tsx
  * // 扩展 LayoutProps 来添加自定义属性
@@ -568,7 +568,7 @@ export interface PageProps {
  *   user: User;
  *   theme: string;
  * }
- * 
+ *
  * export default function MyLayout({ children, data, user, theme }: MyLayoutProps) {
  *   return <div className={theme}>{children}</div>;
  * }

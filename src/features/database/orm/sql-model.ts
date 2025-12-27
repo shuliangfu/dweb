@@ -3,9 +3,9 @@
  * 提供 ORM 功能，支持对象条件查询和字段选择
  */
 
-import type { DatabaseAdapter } from '../types.ts';
-import type { IndexDefinitions } from '../types/index.ts';
-import type { CacheAdapter } from '../cache/cache-adapter.ts';
+import type { DatabaseAdapter } from "../types.ts";
+import type { IndexDefinitions } from "../types/index.ts";
+import type { CacheAdapter } from "../cache/cache-adapter.ts";
 
 /**
  * 查询条件类型
@@ -25,7 +25,7 @@ export type WhereCondition = {
 
 /**
  * 字段类型
- * 
+ *
  * - string: 字符串类型
  * - number: 数字类型（整数或浮点数）
  * - bigint: 大整数类型
@@ -42,22 +42,22 @@ export type WhereCondition = {
  * - binary: 二进制数据类型
  * - any: 任意类型
  */
-export type FieldType = 
-  | 'string' 
-  | 'number' 
-  | 'bigint' 
-  | 'decimal' 
-  | 'boolean' 
-  | 'date' 
-  | 'timestamp' 
-  | 'array' 
-  | 'object' 
-  | 'json' 
-  | 'enum' 
-  | 'uuid' 
-  | 'text' 
-  | 'binary' 
-  | 'any';
+export type FieldType =
+  | "string"
+  | "number"
+  | "bigint"
+  | "decimal"
+  | "boolean"
+  | "date"
+  | "timestamp"
+  | "array"
+  | "object"
+  | "json"
+  | "enum"
+  | "uuid"
+  | "text"
+  | "binary"
+  | "any";
 
 /**
  * 验证规则
@@ -98,13 +98,13 @@ export type ModelSchema = {
  */
 export class ValidationError extends Error {
   field: string;
-  
+
   constructor(
     field: string,
     message: string,
   ) {
     super(`Validation failed for field "${field}": ${message}`);
-    this.name = 'ValidationError';
+    this.name = "ValidationError";
     this.field = field;
   }
 }
@@ -112,7 +112,10 @@ export class ValidationError extends Error {
 /**
  * 生命周期钩子函数类型
  */
-export type LifecycleHook<T = any> = (instance: T, options?: any) => Promise<void> | void;
+export type LifecycleHook<T = any> = (
+  instance: T,
+  options?: any,
+) => Promise<void> | void;
 
 /**
  * SQL 模型基类
@@ -127,7 +130,7 @@ export abstract class SQLModel {
   /**
    * 主键字段名（默认为 'id'）
    */
-  static primaryKey: string = 'id';
+  static primaryKey: string = "id";
 
   /**
    * 数据库适配器实例（子类需要设置）
@@ -144,28 +147,29 @@ export abstract class SQLModel {
    * 软删除字段名（默认为 'deletedAt'）
    * 可以自定义为 'deleted_at' 等
    */
-  static deletedAtField: string = 'deletedAt';
+  static deletedAtField: string = "deletedAt";
 
   /**
    * 是否自动管理时间戳
    * - false: 不启用时间戳
    * - true: 启用时间戳，使用默认字段名（createdAt, updatedAt）
    * - 对象: 启用时间戳并自定义字段名，例如 { createdAt: 'created_at', updatedAt: 'updated_at' }
-   * 
+   *
    * @example
    * static timestamps = true; // 使用默认字段名
    * static timestamps = { createdAt: 'created_at', updatedAt: 'updated_at' }; // 自定义字段名
    */
-  static timestamps: boolean | { createdAt?: string; updatedAt?: string } = false;
+  static timestamps: boolean | { createdAt?: string; updatedAt?: string } =
+    false;
 
   /**
    * 生命周期钩子（可选，子类可以重写这些方法）
-   * 
+   *
    * @example
    * static async beforeCreate(instance: User) {
    *   instance.createdAt = new Date();
    * }
-   * 
+   *
    * static async afterCreate(instance: User) {
    *   console.log('User created:', instance);
    * }
@@ -183,14 +187,14 @@ export abstract class SQLModel {
 
   /**
    * 查询作用域（可选，子类可以定义常用的查询条件）
-   * 
+   *
    * @example
    * static scopes = {
    *   active: () => ({ status: 'active' }),
    *   published: () => ({ published: true, deletedAt: null }),
    *   recent: () => ({ createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } })
    * };
-   * 
+   *
    * // 使用
    * const activeUsers = await User.scope('active').findAll();
    */
@@ -198,13 +202,13 @@ export abstract class SQLModel {
 
   /**
    * 虚拟字段（可选，子类可以定义计算属性）
-   * 
+   *
    * @example
    * static virtuals = {
    *   fullName: (instance: User) => `${instance.firstName} ${instance.lastName}`,
    *   isAdult: (instance: User) => instance.age >= 18
    * };
-   * 
+   *
    * // 使用
    * const user = await User.find(1);
    * console.log(user.fullName); // 自动计算
@@ -213,14 +217,14 @@ export abstract class SQLModel {
 
   /**
    * 索引定义（可选，用于定义数据库索引）
-   * 
+   *
    * @example
    * // 单个字段索引
    * static indexes = [
    *   { field: 'email', unique: true },
    *   { field: 'createdAt', direction: -1 }
    * ];
-   * 
+   *
    * // 复合索引
    * static indexes = [
    *   { fields: { userId: 1, createdAt: -1 }, unique: true }
@@ -256,18 +260,18 @@ export abstract class SQLModel {
    * 设置数据库适配器（SQL 模型通常不需要创建索引，索引通过迁移管理）
    * 这个方法会自动从全局数据库管理器获取适配器
    * 如果数据库未初始化，会自动尝试从 dweb.config.ts 加载配置并初始化
-   * 
+   *
    * @param connectionName 连接名称（默认为 'default'）
    * @returns Promise<void>
-   * 
+   *
    * @example
    * await User.init(); // 使用默认连接，如果数据库未初始化会自动从配置文件加载
    * await User.init('secondary'); // 使用指定连接
    */
-  static async init(connectionName: string = 'default'): Promise<void> {
+  static async init(connectionName: string = "default"): Promise<void> {
     // 动态导入 getDatabaseAsync 以避免循环依赖
-    const { getDatabaseAsync } = await import('../access.ts');
-    
+    const { getDatabaseAsync } = await import("../access.ts");
+
     try {
       // 获取数据库适配器（如果数据库未初始化，会自动尝试从配置文件加载并初始化）
       const adapter = await getDatabaseAsync(connectionName);
@@ -276,7 +280,9 @@ export abstract class SQLModel {
       // 注意：SQL 模型的索引通常通过迁移管理，不在这里创建
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to initialize model ${this.tableName}: ${message}`);
+      throw new Error(
+        `Failed to initialize model ${this.tableName}: ${message}`,
+      );
     }
   }
 
@@ -285,7 +291,9 @@ export abstract class SQLModel {
    * 如果适配器未设置，自动尝试初始化
    * @param connectionName 连接名称（默认为 'default'）
    */
-  private static async ensureInitialized(connectionName: string = 'default'): Promise<void> {
+  private static async ensureInitialized(
+    connectionName: string = "default",
+  ): Promise<void> {
     if (!this.adapter) {
       await this.init(connectionName);
     }
@@ -302,10 +310,10 @@ export abstract class SQLModel {
     onlyTrashed: boolean = false,
   ): { where: string; params: any[] } {
     // 如果是数字或字符串，作为主键查询
-    if (typeof condition === 'number' || typeof condition === 'string') {
+    if (typeof condition === "number" || typeof condition === "string") {
       const conditions: string[] = [`${this.primaryKey} = ?`];
       const params: any[] = [condition];
-      
+
       // 处理软删除
       if (this.softDelete) {
         if (onlyTrashed) {
@@ -314,9 +322,9 @@ export abstract class SQLModel {
           conditions.push(`${this.deletedAtField} IS NULL`);
         }
       }
-      
+
       return {
-        where: conditions.join(' AND '),
+        where: conditions.join(" AND "),
         params,
       };
     }
@@ -328,7 +336,7 @@ export abstract class SQLModel {
     for (const [key, value] of Object.entries(condition)) {
       if (value === null || value === undefined) {
         conditions.push(`${key} IS NULL`);
-      } else if (typeof value === 'object' && !Array.isArray(value)) {
+      } else if (typeof value === "object" && !Array.isArray(value)) {
         // 处理操作符
         if (value.$gt !== undefined) {
           conditions.push(`${key} > ?`);
@@ -351,7 +359,7 @@ export abstract class SQLModel {
           params.push(value.$ne);
         }
         if (value.$in !== undefined && Array.isArray(value.$in)) {
-          const placeholders = value.$in.map(() => '?').join(', ');
+          const placeholders = value.$in.map(() => "?").join(", ");
           conditions.push(`${key} IN (${placeholders})`);
           params.push(...value.$in);
         }
@@ -376,7 +384,7 @@ export abstract class SQLModel {
     }
 
     return {
-      where: conditions.length > 0 ? conditions.join(' AND ') : '1=1',
+      where: conditions.length > 0 ? conditions.join(" AND ") : "1=1",
       params,
     };
   }
@@ -401,7 +409,7 @@ export abstract class SQLModel {
 
       // 应用默认值
       if (value === undefined && field.default !== undefined) {
-        processed[fieldName] = typeof field.default === 'function'
+        processed[fieldName] = typeof field.default === "function"
           ? field.default()
           : field.default;
       }
@@ -459,12 +467,17 @@ export abstract class SQLModel {
     }
 
     // 必填验证
-    if (rule.required && (value === null || value === undefined || value === '')) {
-      throw new ValidationError(fieldName, rule.message || `${fieldName} 是必填字段`);
+    if (
+      rule.required && (value === null || value === undefined || value === "")
+    ) {
+      throw new ValidationError(
+        fieldName,
+        rule.message || `${fieldName} 是必填字段`,
+      );
     }
 
     // 如果值为空且不是必填，跳过其他验证
-    if (value === null || value === undefined || value === '') {
+    if (value === null || value === undefined || value === "") {
       return;
     }
 
@@ -472,14 +485,29 @@ export abstract class SQLModel {
     if (rule.type) {
       const expectedType = rule.type;
       const actualType = typeof value;
-      if (expectedType === 'array' && !Array.isArray(value)) {
-        throw new ValidationError(fieldName, rule.message || `${fieldName} 必须是数组类型`);
+      if (expectedType === "array" && !Array.isArray(value)) {
+        throw new ValidationError(
+          fieldName,
+          rule.message || `${fieldName} 必须是数组类型`,
+        );
       }
-      if (expectedType === 'object' && (actualType !== 'object' || Array.isArray(value) || value === null)) {
-        throw new ValidationError(fieldName, rule.message || `${fieldName} 必须是对象类型`);
+      if (
+        expectedType === "object" &&
+        (actualType !== "object" || Array.isArray(value) || value === null)
+      ) {
+        throw new ValidationError(
+          fieldName,
+          rule.message || `${fieldName} 必须是对象类型`,
+        );
       }
-      if (expectedType !== 'array' && expectedType !== 'object' && actualType !== expectedType) {
-        throw new ValidationError(fieldName, rule.message || `${fieldName} 必须是 ${expectedType} 类型`);
+      if (
+        expectedType !== "array" && expectedType !== "object" &&
+        actualType !== expectedType
+      ) {
+        throw new ValidationError(
+          fieldName,
+          rule.message || `${fieldName} 必须是 ${expectedType} 类型`,
+        );
       }
     }
 
@@ -487,56 +515,83 @@ export abstract class SQLModel {
     if (rule.length !== undefined) {
       const len = Array.isArray(value) ? value.length : String(value).length;
       if (len !== rule.length) {
-        throw new ValidationError(fieldName, rule.message || `${fieldName} 长度必须是 ${rule.length}`);
+        throw new ValidationError(
+          fieldName,
+          rule.message || `${fieldName} 长度必须是 ${rule.length}`,
+        );
       }
     }
 
     // 最小值/最大长度验证
     if (rule.min !== undefined) {
-      if (typeof value === 'number') {
+      if (typeof value === "number") {
         if (value < rule.min) {
-          throw new ValidationError(fieldName, rule.message || `${fieldName} 必须大于等于 ${rule.min}`);
+          throw new ValidationError(
+            fieldName,
+            rule.message || `${fieldName} 必须大于等于 ${rule.min}`,
+          );
         }
       } else {
         const len = Array.isArray(value) ? value.length : String(value).length;
         if (len < rule.min) {
-          throw new ValidationError(fieldName, rule.message || `${fieldName} 长度必须大于等于 ${rule.min}`);
+          throw new ValidationError(
+            fieldName,
+            rule.message || `${fieldName} 长度必须大于等于 ${rule.min}`,
+          );
         }
       }
     }
 
     // 最大值/最大长度验证
     if (rule.max !== undefined) {
-      if (typeof value === 'number') {
+      if (typeof value === "number") {
         if (value > rule.max) {
-          throw new ValidationError(fieldName, rule.message || `${fieldName} 必须小于等于 ${rule.max}`);
+          throw new ValidationError(
+            fieldName,
+            rule.message || `${fieldName} 必须小于等于 ${rule.max}`,
+          );
         }
       } else {
         const len = Array.isArray(value) ? value.length : String(value).length;
         if (len > rule.max) {
-          throw new ValidationError(fieldName, rule.message || `${fieldName} 长度必须小于等于 ${rule.max}`);
+          throw new ValidationError(
+            fieldName,
+            rule.message || `${fieldName} 长度必须小于等于 ${rule.max}`,
+          );
         }
       }
     }
 
     // 正则表达式验证
     if (rule.pattern) {
-      const regex = rule.pattern instanceof RegExp ? rule.pattern : new RegExp(rule.pattern);
+      const regex = rule.pattern instanceof RegExp
+        ? rule.pattern
+        : new RegExp(rule.pattern);
       if (!regex.test(String(value))) {
-        throw new ValidationError(fieldName, rule.message || `${fieldName} 格式不正确`);
+        throw new ValidationError(
+          fieldName,
+          rule.message || `${fieldName} 格式不正确`,
+        );
       }
     }
 
     // 枚举验证
     if (rule.enum && !rule.enum.includes(value)) {
-      throw new ValidationError(fieldName, rule.message || `${fieldName} 必须是以下之一: ${rule.enum.join(', ')}`);
+      throw new ValidationError(
+        fieldName,
+        rule.message || `${fieldName} 必须是以下之一: ${rule.enum.join(", ")}`,
+      );
     }
 
     // 自定义验证
     if (rule.custom) {
       const result = rule.custom(value);
       if (result !== true) {
-        throw new ValidationError(fieldName, rule.message || (typeof result === 'string' ? result : `${fieldName} 验证失败`));
+        throw new ValidationError(
+          fieldName,
+          rule.message ||
+            (typeof result === "string" ? result : `${fieldName} 验证失败`),
+        );
       }
     }
   }
@@ -544,78 +599,85 @@ export abstract class SQLModel {
   /**
    * 类型转换
    */
-  private static convertType(value: any, type: FieldType, enumValues?: any[]): any {
+  private static convertType(
+    value: any,
+    type: FieldType,
+    enumValues?: any[],
+  ): any {
     if (value === null || value === undefined) {
       return value;
     }
 
     switch (type) {
-      case 'string': {
+      case "string": {
         return String(value);
       }
-      case 'number': {
+      case "number": {
         const num = Number(value);
         return isNaN(num) ? value : num;
       }
-      case 'boolean': {
-        if (typeof value === 'boolean') return value;
-        if (typeof value === 'string') {
-          return value.toLowerCase() === 'true' || value === '1';
+      case "boolean": {
+        if (typeof value === "boolean") return value;
+        if (typeof value === "string") {
+          return value.toLowerCase() === "true" || value === "1";
         }
         return Boolean(value);
       }
-      case 'date': {
+      case "date": {
         if (value instanceof Date) return value;
-        if (typeof value === 'string' || typeof value === 'number') {
+        if (typeof value === "string" || typeof value === "number") {
           return new Date(value);
         }
         return value;
       }
-      case 'array': {
+      case "array": {
         return Array.isArray(value) ? value : [value];
       }
-      case 'object': {
-        return typeof value === 'object' ? value : JSON.parse(String(value));
+      case "object": {
+        return typeof value === "object" ? value : JSON.parse(String(value));
       }
-      case 'enum': {
+      case "enum": {
         if (enumValues && enumValues.includes(value)) {
           return value;
         }
-        throw new ValidationError('enum', `值必须是以下之一: ${enumValues?.join(', ')}`);
+        throw new ValidationError(
+          "enum",
+          `值必须是以下之一: ${enumValues?.join(", ")}`,
+        );
       }
-      case 'bigint': {
+      case "bigint": {
         return BigInt(value);
       }
-      case 'decimal': {
+      case "decimal": {
         return parseFloat(String(value));
       }
-      case 'timestamp': {
+      case "timestamp": {
         if (value instanceof Date) return value;
-        if (typeof value === 'string' || typeof value === 'number') {
+        if (typeof value === "string" || typeof value === "number") {
           return new Date(value);
         }
         return value;
       }
-      case 'uuid': {
+      case "uuid": {
         return String(value);
       }
-      case 'text': {
+      case "text": {
         return String(value);
       }
-      case 'binary': {
+      case "binary": {
         return value;
       }
-      case 'json': {
-        if (typeof value === 'string') {
+      case "json": {
+        if (typeof value === "string") {
           try {
             return JSON.parse(value);
           } catch {
             return value;
           }
         }
-        return typeof value === 'object' ? value : value;
+        return typeof value === "object" ? value : value;
       }
-      case 'any': {
+      case "any": {
         return value;
       }
       default: {
@@ -629,7 +691,7 @@ export abstract class SQLModel {
    * @param condition 查询条件（可以是 ID、条件对象）
    * @param fields 要查询的字段数组（可选）
    * @returns 模型实例或 null
-   * 
+   *
    * @example
    * const user = await User.find(1);
    * const user = await User.find({ id: 1 });
@@ -643,15 +705,18 @@ export abstract class SQLModel {
   ): Promise<InstanceType<T> | null> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
-    
+
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+      );
     }
 
     const { where, params } = this.buildWhereClause(condition, false, false);
-    const columns = fields && fields.length > 0 ? fields.join(', ') : '*';
+    const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
 
-    const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT 1`;
+    const sql =
+      `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT 1`;
     const results = await this.adapter.query(sql, params);
 
     if (results.length === 0) {
@@ -668,7 +733,7 @@ export abstract class SQLModel {
    * @param condition 查询条件对象（可选，不提供则查询所有）
    * @param fields 要查询的字段数组（可选）
    * @returns 模型实例数组
-   * 
+   *
    * @example
    * const users = await User.findAll();
    * const users = await User.findAll({ age: 25 });
@@ -682,13 +747,15 @@ export abstract class SQLModel {
   ): Promise<InstanceType<T>[]> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
-    
+
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+      );
     }
 
     const { where, params } = this.buildWhereClause(condition, false, false);
-    const columns = fields && fields.length > 0 ? fields.join(', ') : '*';
+    const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
 
     const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
     const results = await this.adapter.query(sql, params);
@@ -704,7 +771,7 @@ export abstract class SQLModel {
    * 创建新记录
    * @param data 要插入的数据对象
    * @returns 创建的模型实例
-   * 
+   *
    * @example
    * const user = await User.create({ name: 'John', email: 'john@example.com' });
    */
@@ -714,9 +781,11 @@ export abstract class SQLModel {
   ): Promise<InstanceType<T>> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
-    
+
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+      );
     }
 
     // 处理字段（应用默认值、类型转换、验证）
@@ -724,13 +793,13 @@ export abstract class SQLModel {
 
     // 自动时间戳
     if (this.timestamps) {
-      const createdAtField = typeof this.timestamps === 'object' 
-        ? (this.timestamps.createdAt || 'createdAt')
-        : 'createdAt';
-      const updatedAtField = typeof this.timestamps === 'object'
-        ? (this.timestamps.updatedAt || 'updatedAt')
-        : 'updatedAt';
-      
+      const createdAtField = typeof this.timestamps === "object"
+        ? (this.timestamps.createdAt || "createdAt")
+        : "createdAt";
+      const updatedAtField = typeof this.timestamps === "object"
+        ? (this.timestamps.updatedAt || "updatedAt")
+        : "updatedAt";
+
       if (!processedData[createdAtField]) {
         processedData[createdAtField] = new Date();
       }
@@ -769,15 +838,20 @@ export abstract class SQLModel {
 
     const keys = Object.keys(processedData);
     const values = Object.values(processedData);
-    const placeholders = keys.map(() => '?').join(', ');
+    const placeholders = keys.map(() => "?").join(", ");
 
-    const sql = `INSERT INTO ${this.tableName} (${keys.join(', ')}) VALUES (${placeholders})`;
+    const sql = `INSERT INTO ${this.tableName} (${
+      keys.join(", ")
+    }) VALUES (${placeholders})`;
     await this.adapter.execute(sql, values);
 
     // 获取插入的 ID（如果支持）
     let insertedId: any = null;
     try {
-      const result = await this.adapter.query(`SELECT last_insert_rowid() as id`, []);
+      const result = await this.adapter.query(
+        `SELECT last_insert_rowid() as id`,
+        [],
+      );
       if (result.length > 0) {
         insertedId = result[0].id;
       }
@@ -833,7 +907,7 @@ export abstract class SQLModel {
    * @param condition 查询条件（可以是 ID、条件对象）
    * @param data 要更新的数据对象
    * @returns 更新的记录数
-   * 
+   *
    * @example
    * await User.update(1, { name: 'lisi' });
    * await User.update({ id: 1 }, { name: 'lisi' });
@@ -845,14 +919,16 @@ export abstract class SQLModel {
   ): Promise<number> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
-    
+
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+      );
     }
 
     // 先查找要更新的记录
     let existingInstance: InstanceType<typeof SQLModel> | null = null;
-    if (typeof condition === 'number' || typeof condition === 'string') {
+    if (typeof condition === "number" || typeof condition === "string") {
       existingInstance = await this.find(condition);
     } else {
       const results = await this.findAll(condition);
@@ -868,9 +944,9 @@ export abstract class SQLModel {
 
     // 自动时间戳
     if (this.timestamps) {
-      const updatedAtField = typeof this.timestamps === 'object'
-        ? (this.timestamps.updatedAt || 'updatedAt')
-        : 'updatedAt';
+      const updatedAtField = typeof this.timestamps === "object"
+        ? (this.timestamps.updatedAt || "updatedAt")
+        : "updatedAt";
       processedData[updatedAtField] = new Date();
     }
 
@@ -902,18 +978,22 @@ export abstract class SQLModel {
       processedData = { ...processedData, ...tempInstance };
     }
 
-    const { where, params: whereParams } = this.buildWhereClause(condition, false, false);
+    const { where, params: whereParams } = this.buildWhereClause(
+      condition,
+      false,
+      false,
+    );
     const keys = Object.keys(processedData);
     const values = Object.values(processedData);
-    const setClause = keys.map(key => `${key} = ?`).join(', ');
+    const setClause = keys.map((key) => `${key} = ?`).join(", ");
 
     const sql = `UPDATE ${this.tableName} SET ${setClause} WHERE ${where}`;
     const result = await this.adapter.execute(sql, [...values, ...whereParams]);
 
     // 返回影响的行数（如果适配器支持）
-    const affectedRows = (typeof result === 'number')
+    const affectedRows = (typeof result === "number")
       ? result
-      : ((result && typeof result === 'object' && 'affectedRows' in result)
+      : ((result && typeof result === "object" && "affectedRows" in result)
         ? ((result as any).affectedRows || 0)
         : 0);
 
@@ -940,7 +1020,7 @@ export abstract class SQLModel {
    * 删除记录
    * @param condition 查询条件（可以是 ID、条件对象）
    * @returns 删除的记录数
-   * 
+   *
    * @example
    * await User.delete(1);
    * await User.delete({ id: 1 });
@@ -951,14 +1031,16 @@ export abstract class SQLModel {
   ): Promise<number> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
-    
+
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+      );
     }
 
     // 先查找要删除的记录
     let instanceToDelete: InstanceType<typeof SQLModel> | null = null;
-    if (typeof condition === 'number' || typeof condition === 'string') {
+    if (typeof condition === "number" || typeof condition === "string") {
       instanceToDelete = await this.find(condition);
     } else {
       const results = await this.findAll(condition);
@@ -978,11 +1060,12 @@ export abstract class SQLModel {
 
     // 软删除：设置 deletedAt 字段
     if (this.softDelete) {
-      const sql = `UPDATE ${this.tableName} SET ${this.deletedAtField} = ? WHERE ${where}`;
+      const sql =
+        `UPDATE ${this.tableName} SET ${this.deletedAtField} = ? WHERE ${where}`;
       const result = await this.adapter.execute(sql, [new Date(), ...params]);
-      const affectedRows = (typeof result === 'number')
+      const affectedRows = (typeof result === "number")
         ? result
-        : ((result && typeof result === 'object' && 'affectedRows' in result)
+        : ((result && typeof result === "object" && "affectedRows" in result)
           ? ((result as any).affectedRows || 0)
           : 0);
 
@@ -997,9 +1080,9 @@ export abstract class SQLModel {
     const result = await this.adapter.execute(sql, params);
 
     // 返回影响的行数（如果适配器支持）
-    const affectedRows = (typeof result === 'number')
+    const affectedRows = (typeof result === "number")
       ? result
-      : ((result && typeof result === 'object' && 'affectedRows' in result)
+      : ((result && typeof result === "object" && "affectedRows" in result)
         ? ((result as any).affectedRows || 0)
         : 0);
 
@@ -1024,10 +1107,12 @@ export abstract class SQLModel {
   async save<T extends SQLModel>(this: T): Promise<T> {
     const Model = this.constructor as typeof SQLModel;
     if (!Model.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
-    const primaryKey = (Model.constructor as any).primaryKey || 'id';
+    const primaryKey = (Model.constructor as any).primaryKey || "id";
     const id = (this as any)[primaryKey];
 
     if (id) {
@@ -1046,22 +1131,27 @@ export abstract class SQLModel {
    * 更新当前实例
    * @param data 要更新的数据对象
    * @returns 更新后的实例
-   * 
+   *
    * @example
    * const user = await User.find(1);
    * await user.update({ age: 26 });
    */
-  async update<T extends SQLModel>(this: T, data: Record<string, any>): Promise<T> {
+  async update<T extends SQLModel>(
+    this: T,
+    data: Record<string, any>,
+  ): Promise<T> {
     const Model = this.constructor as typeof SQLModel;
     if (!Model.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
-    const primaryKey = (Model.constructor as any).primaryKey || 'id';
+    const primaryKey = (Model.constructor as any).primaryKey || "id";
     const id = (this as any)[primaryKey];
 
     if (!id) {
-      throw new Error('Cannot update instance without primary key');
+      throw new Error("Cannot update instance without primary key");
     }
 
     await Model.update(id, data);
@@ -1077,14 +1167,16 @@ export abstract class SQLModel {
   async delete<T extends SQLModel>(this: T): Promise<boolean> {
     const Model = this.constructor as typeof SQLModel;
     if (!Model.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
-    const primaryKey = (Model.constructor as any).primaryKey || 'id';
+    const primaryKey = (Model.constructor as any).primaryKey || "id";
     const id = (this as any)[primaryKey];
 
     if (!id) {
-      throw new Error('Cannot delete instance without primary key');
+      throw new Error("Cannot delete instance without primary key");
     }
 
     const deleted = await Model.delete(id);
@@ -1096,7 +1188,7 @@ export abstract class SQLModel {
    * @param condition 查询条件（可以是 ID、条件对象）
    * @param fields 要查询的字段数组（可选）
    * @returns 模型实例或 null
-   * 
+   *
    * @example
    * const user = await User.findOne(1);
    * const user = await User.findOne({ email: 'user@example.com' });
@@ -1114,7 +1206,7 @@ export abstract class SQLModel {
    * @param id 主键值
    * @param fields 要查询的字段数组（可选）
    * @returns 模型实例或 null
-   * 
+   *
    * @example
    * const user = await User.findById(1);
    * const user = await User.findById(1, ['id', 'name', 'email']);
@@ -1132,7 +1224,7 @@ export abstract class SQLModel {
    * @param id 主键值
    * @param data 要更新的数据对象
    * @returns 更新的记录数
-   * 
+   *
    * @example
    * await User.updateById(1, { name: 'lisi' });
    */
@@ -1147,7 +1239,7 @@ export abstract class SQLModel {
    * 通过主键 ID 删除记录
    * @param id 主键值
    * @returns 删除的记录数
-   * 
+   *
    * @example
    * await User.deleteById(1);
    */
@@ -1162,7 +1254,7 @@ export abstract class SQLModel {
    * @param condition 查询条件（可以是 ID、条件对象）
    * @param data 要更新的数据对象
    * @returns 更新的记录数
-   * 
+   *
    * @example
    * await User.updateMany({ status: 'active' }, { lastLogin: new Date() });
    * await User.updateMany({ age: { $lt: 18 } }, { isMinor: true });
@@ -1179,7 +1271,7 @@ export abstract class SQLModel {
    * 批量删除记录
    * @param condition 查询条件（可以是 ID、条件对象）
    * @returns 删除的记录数
-   * 
+   *
    * @example
    * await User.deleteMany({ status: 'deleted' });
    * await User.deleteMany({ age: { $lt: 18 } });
@@ -1195,7 +1287,7 @@ export abstract class SQLModel {
    * 统计符合条件的记录数量
    * @param condition 查询条件（可选，不提供则统计所有记录）
    * @returns 记录数量
-   * 
+   *
    * @example
    * const total = await User.count();
    * const activeUsers = await User.count({ status: 'active' });
@@ -1206,13 +1298,16 @@ export abstract class SQLModel {
   ): Promise<number> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
-    
+
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+      );
     }
 
     const { where, params } = this.buildWhereClause(condition, false, false);
-    const sql = `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
+    const sql =
+      `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
     const results = await this.adapter.query(sql, params);
 
     if (results.length > 0) {
@@ -1225,7 +1320,7 @@ export abstract class SQLModel {
    * 检查记录是否存在
    * @param condition 查询条件（可以是 ID、条件对象）
    * @returns 是否存在
-   * 
+   *
    * @example
    * const exists = await User.exists(1);
    * const exists = await User.exists({ email: 'user@example.com' });
@@ -1234,17 +1329,21 @@ export abstract class SQLModel {
     condition: WhereCondition | number | string,
   ): Promise<boolean> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const { where, params } = this.buildWhereClause(condition, false, false);
-    const sql = `SELECT EXISTS(SELECT 1 FROM ${this.tableName} WHERE ${where}) as exists`;
+    const sql =
+      `SELECT EXISTS(SELECT 1 FROM ${this.tableName} WHERE ${where}) as exists`;
     const results = await this.adapter.query(sql, params);
 
     if (results.length > 0) {
       // 不同数据库可能返回不同的布尔值表示方式
       const exists = results[0].exists;
-      return exists === true || exists === 1 || exists === '1' || exists === 't';
+      return exists === true || exists === 1 || exists === "1" ||
+        exists === "t";
     }
     return false;
   }
@@ -1253,7 +1352,7 @@ export abstract class SQLModel {
    * 批量创建记录
    * @param dataArray 要插入的数据对象数组
    * @returns 创建的模型实例数组
-   * 
+   *
    * @example
    * const users = await User.createMany([
    *   { name: 'John', email: 'john@example.com' },
@@ -1265,7 +1364,9 @@ export abstract class SQLModel {
     dataArray: Record<string, any>[],
   ): Promise<InstanceType<T>[]> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     if (dataArray.length === 0) {
@@ -1274,13 +1375,15 @@ export abstract class SQLModel {
 
     // 获取所有数据的键（假设所有对象有相同的键）
     const keys = Object.keys(dataArray[0]);
-    const placeholders = keys.map(() => '?').join(', ');
-    
-    // 构建批量插入 SQL
-    const valuesList = dataArray.map(() => `(${placeholders})`).join(', ');
-    const allValues = dataArray.flatMap(data => keys.map(key => data[key]));
+    const placeholders = keys.map(() => "?").join(", ");
 
-    const sql = `INSERT INTO ${this.tableName} (${keys.join(', ')}) VALUES ${valuesList}`;
+    // 构建批量插入 SQL
+    const valuesList = dataArray.map(() => `(${placeholders})`).join(", ");
+    const allValues = dataArray.flatMap((data) => keys.map((key) => data[key]));
+
+    const sql = `INSERT INTO ${this.tableName} (${
+      keys.join(", ")
+    }) VALUES ${valuesList}`;
     await this.adapter.execute(sql, allValues);
 
     // 尝试获取最后插入的 ID（如果支持）
@@ -1312,7 +1415,7 @@ export abstract class SQLModel {
    * @param pageSize 每页数量
    * @param fields 要查询的字段数组（可选）
    * @returns 分页结果对象，包含 data（数据数组）、total（总记录数）、page、pageSize、totalPages
-   * 
+   *
    * @example
    * const result = await User.paginate({ status: 'active' }, 1, 10);
    * console.log(result.data); // 数据数组
@@ -1333,7 +1436,9 @@ export abstract class SQLModel {
     totalPages: number;
   }> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     // 确保页码和每页数量有效
@@ -1348,10 +1453,15 @@ export abstract class SQLModel {
 
     // 构建查询 SQL
     const { where, params } = this.buildWhereClause(condition, false, false);
-    const columns = fields && fields.length > 0 ? fields.join(', ') : '*';
-    const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT ? OFFSET ?`;
+    const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
+    const sql =
+      `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT ? OFFSET ?`;
 
-    const results = await this.adapter.query(sql, [...params, pageSize, offset]);
+    const results = await this.adapter.query(sql, [
+      ...params,
+      pageSize,
+      offset,
+    ]);
 
     const data = results.map((row: any) => {
       const instance = new (this as any)();
@@ -1374,7 +1484,7 @@ export abstract class SQLModel {
    * @param field 要增加的字段名
    * @param amount 增加的数量（默认为 1）
    * @returns 更新的记录数
-   * 
+   *
    * @example
    * await User.increment(1, 'views', 1);
    * await User.increment({ status: 'active' }, 'score', 10);
@@ -1385,17 +1495,20 @@ export abstract class SQLModel {
     amount: number = 1,
   ): Promise<number> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const { where, params } = this.buildWhereClause(condition, false, false);
-    const sql = `UPDATE ${this.tableName} SET ${field} = ${field} + ? WHERE ${where}`;
+    const sql =
+      `UPDATE ${this.tableName} SET ${field} = ${field} + ? WHERE ${where}`;
     const result = await this.adapter.execute(sql, [amount, ...params]);
 
-    if (typeof result === 'number') {
+    if (typeof result === "number") {
       return result;
     }
-    if (result && typeof result === 'object' && 'affectedRows' in result) {
+    if (result && typeof result === "object" && "affectedRows" in result) {
       return (result as any).affectedRows || 0;
     }
     return 0;
@@ -1407,7 +1520,7 @@ export abstract class SQLModel {
    * @param field 要减少的字段名
    * @param amount 减少的数量（默认为 1）
    * @returns 更新的记录数
-   * 
+   *
    * @example
    * await User.decrement(1, 'views', 1);
    * await User.decrement({ status: 'active' }, 'score', 10);
@@ -1426,11 +1539,11 @@ export abstract class SQLModel {
    * PostgreSQL: INSERT ... ON CONFLICT ... DO UPDATE
    * MySQL: INSERT ... ON DUPLICATE KEY UPDATE
    * SQLite: INSERT ... ON CONFLICT ... DO UPDATE
-   * 
+   *
    * @param condition 查询条件（用于判断是否存在，通常包含唯一键）
    * @param data 要更新或插入的数据对象
    * @returns 更新后的模型实例
-   * 
+   *
    * @example
    * const user = await User.upsert(
    *   { email: 'user@example.com' },
@@ -1443,12 +1556,14 @@ export abstract class SQLModel {
     data: Record<string, any>,
   ): Promise<InstanceType<T>> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     // 先尝试查找是否存在（包含软删除的记录）
     const existing = await this.withTrashed().find(condition);
-    
+
     if (existing) {
       // 如果存在，更新
       await this.update(condition, data);
@@ -1468,7 +1583,7 @@ export abstract class SQLModel {
    * @param field 字段名
    * @param condition 查询条件（可选）
    * @returns 唯一值数组
-   * 
+   *
    * @example
    * const statuses = await User.distinct('status');
    * const emails = await User.distinct('email', { age: { $gte: 18 } });
@@ -1478,20 +1593,25 @@ export abstract class SQLModel {
     condition: WhereCondition = {},
   ): Promise<any[]> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const { where, params } = this.buildWhereClause(condition, false, false);
-    const sql = `SELECT DISTINCT ${field} FROM ${this.tableName} WHERE ${where}`;
+    const sql =
+      `SELECT DISTINCT ${field} FROM ${this.tableName} WHERE ${where}`;
     const results = await this.adapter.query(sql, params);
 
-    return results.map((row: any) => row[field]).filter((value: any) => value !== null && value !== undefined);
+    return results.map((row: any) => row[field]).filter((value: any) =>
+      value !== null && value !== undefined
+    );
   }
 
   /**
    * 查询时包含已软删除的记录
    * @returns 查询构建器（链式调用）
-   * 
+   *
    * @example
    * const allUsers = await User.withTrashed().findAll();
    * const user = await User.withTrashed().find(1);
@@ -1514,10 +1634,12 @@ export abstract class SQLModel {
       ): Promise<InstanceType<T>[]> => {
         await this.ensureInitialized();
         if (!this.adapter) {
-          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
         }
         const { where, params } = this.buildWhereClause(condition, true, false);
-        const columns = fields && fields.length > 0 ? fields.join(', ') : '*';
+        const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
         const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
         const results = await this.adapter.query(sql, params);
         return results.map((row: any) => {
@@ -1532,11 +1654,14 @@ export abstract class SQLModel {
       ): Promise<InstanceType<T> | null> => {
         await this.ensureInitialized();
         if (!this.adapter) {
-          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
         }
         const { where, params } = this.buildWhereClause(condition, true, false);
-        const columns = fields && fields.length > 0 ? fields.join(', ') : '*';
-        const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT 1`;
+        const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
+        const sql =
+          `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT 1`;
         const results = await this.adapter.query(sql, params);
         if (results.length === 0) {
           return null;
@@ -1548,10 +1673,13 @@ export abstract class SQLModel {
       count: async (condition: WhereCondition = {}): Promise<number> => {
         await this.ensureInitialized();
         if (!this.adapter) {
-          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
         }
         const { where, params } = this.buildWhereClause(condition, true, false);
-        const sql = `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
+        const sql =
+          `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
         const results = await this.adapter.query(sql, params);
         if (results.length > 0) {
           return parseInt(results[0].count) || 0;
@@ -1564,7 +1692,7 @@ export abstract class SQLModel {
   /**
    * 只查询已软删除的记录
    * @returns 查询构建器（链式调用）
-   * 
+   *
    * @example
    * const deletedUsers = await User.onlyTrashed().findAll();
    * const user = await User.onlyTrashed().find(1);
@@ -1587,10 +1715,12 @@ export abstract class SQLModel {
       ): Promise<InstanceType<T>[]> => {
         await this.ensureInitialized();
         if (!this.adapter) {
-          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
         }
         const { where, params } = this.buildWhereClause(condition, false, true);
-        const columns = fields && fields.length > 0 ? fields.join(', ') : '*';
+        const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
         const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
         const results = await this.adapter.query(sql, params);
         return results.map((row: any) => {
@@ -1605,11 +1735,14 @@ export abstract class SQLModel {
       ): Promise<InstanceType<T> | null> => {
         await this.ensureInitialized();
         if (!this.adapter) {
-          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
         }
         const { where, params } = this.buildWhereClause(condition, false, true);
-        const columns = fields && fields.length > 0 ? fields.join(', ') : '*';
-        const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT 1`;
+        const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
+        const sql =
+          `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT 1`;
         const results = await this.adapter.query(sql, params);
         if (results.length === 0) {
           return null;
@@ -1621,10 +1754,13 @@ export abstract class SQLModel {
       count: async (condition: WhereCondition = {}): Promise<number> => {
         await this.ensureInitialized();
         if (!this.adapter) {
-          throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
         }
         const { where, params } = this.buildWhereClause(condition, false, true);
-        const sql = `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
+        const sql =
+          `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
         const results = await this.adapter.query(sql, params);
         if (results.length > 0) {
           return parseInt(results[0].count) || 0;
@@ -1638,7 +1774,7 @@ export abstract class SQLModel {
    * 恢复软删除的记录
    * @param condition 查询条件（可以是 ID、条件对象）
    * @returns 恢复的记录数
-   * 
+   *
    * @example
    * await User.restore(1);
    * await User.restore({ email: 'user@example.com' });
@@ -1647,19 +1783,22 @@ export abstract class SQLModel {
     condition: WhereCondition | number | string,
   ): Promise<number> {
     if (!this.softDelete) {
-      throw new Error('Soft delete is not enabled for this model');
+      throw new Error("Soft delete is not enabled for this model");
     }
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const { where, params } = this.buildWhereClause(condition, true, true);
-    const sql = `UPDATE ${this.tableName} SET ${this.deletedAtField} = NULL WHERE ${where}`;
+    const sql =
+      `UPDATE ${this.tableName} SET ${this.deletedAtField} = NULL WHERE ${where}`;
     const result = await this.adapter.execute(sql, params);
 
-    const affectedRows = (typeof result === 'number')
+    const affectedRows = (typeof result === "number")
       ? result
-      : ((result && typeof result === 'object' && 'affectedRows' in result)
+      : ((result && typeof result === "object" && "affectedRows" in result)
         ? ((result as any).affectedRows || 0)
         : 0);
 
@@ -1670,7 +1809,7 @@ export abstract class SQLModel {
    * 强制删除记录（忽略软删除，真正删除）
    * @param condition 查询条件（可以是 ID、条件对象）
    * @returns 删除的记录数
-   * 
+   *
    * @example
    * await User.forceDelete(1);
    * await User.forceDelete({ email: 'user@example.com' });
@@ -1679,16 +1818,18 @@ export abstract class SQLModel {
     condition: WhereCondition | number | string,
   ): Promise<number> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const { where, params } = this.buildWhereClause(condition, true, false);
     const sql = `DELETE FROM ${this.tableName} WHERE ${where}`;
     const result = await this.adapter.execute(sql, params);
 
-    const affectedRows = (typeof result === 'number')
+    const affectedRows = (typeof result === "number")
       ? result
-      : ((result && typeof result === 'object' && 'affectedRows' in result)
+      : ((result && typeof result === "object" && "affectedRows" in result)
         ? ((result as any).affectedRows || 0)
         : 0);
 
@@ -1700,7 +1841,7 @@ export abstract class SQLModel {
    * @param condition 查询条件（用于判断是否存在）
    * @param data 要创建的数据对象（如果不存在）
    * @returns 找到或创建的模型实例
-   * 
+   *
    * @example
    * const user = await User.findOrCreate(
    *   { email: 'user@example.com' },
@@ -1714,7 +1855,9 @@ export abstract class SQLModel {
   ): Promise<InstanceType<T>> {
     await this.ensureInitialized();
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+      );
     }
 
     // 先尝试查找
@@ -1730,21 +1873,23 @@ export abstract class SQLModel {
   /**
    * 清空表（删除所有记录）
    * @returns 删除的记录数
-   * 
+   *
    * @example
    * await User.truncate();
    */
   static async truncate(): Promise<number> {
     if (!this.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const sql = `TRUNCATE TABLE ${this.tableName}`;
     const result = await this.adapter.execute(sql, []);
 
-    const affectedRows = (typeof result === 'number')
+    const affectedRows = (typeof result === "number")
       ? result
-      : ((result && typeof result === 'object' && 'affectedRows' in result)
+      : ((result && typeof result === "object" && "affectedRows" in result)
         ? ((result as any).affectedRows || 0)
         : 0);
 
@@ -1758,7 +1903,7 @@ export abstract class SQLModel {
    * @param foreignKey 外键字段名（当前模型中的字段）
    * @param localKey 关联模型的主键字段名（默认为关联模型的 primaryKey）
    * @returns 关联的模型实例或 null
-   * 
+   *
    * @example
    * class Post extends SQLModel {
    *   static tableName = 'posts';
@@ -1776,7 +1921,9 @@ export abstract class SQLModel {
   ): Promise<InstanceType<T> | null> {
     const Model = this.constructor as typeof SQLModel;
     if (!Model.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const relatedKey = localKey || RelatedModel.primaryKey;
@@ -1796,7 +1943,7 @@ export abstract class SQLModel {
    * @param foreignKey 外键字段名（关联模型中的字段）
    * @param localKey 当前模型的主键字段名（默认为当前模型的 primaryKey）
    * @returns 关联的模型实例或 null
-   * 
+   *
    * @example
    * class User extends SQLModel {
    *   static tableName = 'users';
@@ -1814,7 +1961,9 @@ export abstract class SQLModel {
   ): Promise<InstanceType<T> | null> {
     const Model = this.constructor as typeof SQLModel;
     if (!Model.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const localKeyValue = localKey || Model.primaryKey;
@@ -1834,7 +1983,7 @@ export abstract class SQLModel {
    * @param foreignKey 外键字段名（关联模型中的字段）
    * @param localKey 当前模型的主键字段名（默认为当前模型的 primaryKey）
    * @returns 关联的模型实例数组
-   * 
+   *
    * @example
    * class User extends SQLModel {
    *   static tableName = 'users';
@@ -1852,7 +2001,9 @@ export abstract class SQLModel {
   ): Promise<InstanceType<T>[]> {
     const Model = this.constructor as typeof SQLModel;
     if (!Model.adapter) {
-      throw new Error('Database adapter not set. Please call Model.setAdapter() first.');
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
     }
 
     const localKeyValue = localKey || Model.primaryKey;
@@ -1865,4 +2016,3 @@ export abstract class SQLModel {
     return await RelatedModel.findAll({ [foreignKey]: localValue });
   }
 }
-
