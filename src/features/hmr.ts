@@ -25,7 +25,19 @@ const IGNORED_FILE_PATTERNS = [
   (name: string) => name.endsWith("~"),
   (path: string) => path.includes("node_modules"),
   (path: string) => path.includes(".deno"),
-  (path: string) => path.includes("/.git/") || path.includes("\\.git\\"),
+  (path: string) => path.includes(".git"),
+  (path: string) => path.includes(".DS_Store"),
+  (path: string) => path.includes(".idea"),
+  (path: string) => path.includes(".vscode"),
+  (path: string) => path.includes(".npm"),
+  (path: string) => path.includes(".deno"),
+  (path: string) => path.includes(".git"),
+  (path: string) => path.includes(".lock"),
+  (path: string) => path.includes(".log"),
+  (path: string) => path.includes(".env"),
+  (path: string) => path.includes("coverage"),
+  (path: string) => path.includes("build"),
+  (path: string) => path.includes("dist"),
 ];
 
 // ==================== 类型定义 ====================
