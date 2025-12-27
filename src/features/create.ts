@@ -2001,14 +2001,14 @@ async function generateApiForApp(
  * - DELETE /api/examples/:id -> destroy (删除)
  */
 
-import type { Request } from '@dreamer/dweb';
+import type { ApiContext } from '@dreamer/dweb';
 
 /**
  * 获取示例列表
  * 访问方式：GET /api/examples
  */
-export function index(_req: Request) {
-  return {
+export function index({ res }: ApiContext) {
+  return res.json({
     success: true,
     message: '获取数据成功',
     data: [
@@ -2032,17 +2032,17 @@ export function index(_req: Request) {
       }
     ],
     timestamp: new Date().toISOString()
-  };
+  });
 }
 
 /**
  * 获取单个示例
  * 访问方式：GET /api/examples/:id
  */
-export function show(req: Request) {
-  const id = req.params.id || '1';
+export function show({ params, res }: ApiContext) {
+  const id = params.id || '1';
   
-  return {
+  return res.json({
     success: true,
     data: {
       id,
@@ -2050,17 +2050,17 @@ export function show(req: Request) {
       description: '这是示例项目 ' + id + ' 的详细描述',
       createdAt: new Date().toISOString()
     }
-  };
+  });
 }
 
 /**
  * 创建示例
  * 访问方式：POST /api/examples
  */
-export function create(req: Request) {
+export function create({ req, res }: ApiContext) {
   const body = req.body as { name?: string; description?: string };
   
-  return {
+  return res.json({
     success: true,
     message: '创建成功',
     data: {
@@ -2069,18 +2069,18 @@ export function create(req: Request) {
       description: body?.description || '',
       createdAt: new Date().toISOString()
     }
-  };
+  });
 }
 
 /**
  * 更新示例
  * 访问方式：PUT /api/examples/:id
  */
-export function update(req: Request) {
-  const id = req.params.id || '1';
+export function update({ params, req, res }: ApiContext) {
+  const id = params.id || '1';
   const body = req.body as { name?: string; description?: string };
   
-  return {
+  return res.json({
     success: true,
     message: '更新成功',
     data: {
@@ -2089,22 +2089,22 @@ export function update(req: Request) {
       description: body?.description || '更新后的描述',
       updatedAt: new Date().toISOString()
     }
-  };
+  });
 }
 
 /**
  * 删除示例
  * 访问方式：DELETE /api/examples/:id
  */
-export function destroy(req: Request) {
-  const id = req.params.id || '1';
+export function destroy({ params, res }: ApiContext) {
+  const id = params.id || '1';
   
-  return {
+  return res.json({
     success: true,
     message: '删除成功',
     deletedId: id,
     timestamp: new Date().toISOString()
-  };
+  });
 }
 `;
   } else {
@@ -2115,30 +2115,30 @@ export function destroy(req: Request) {
  * 例如：POST /api/examples/get-user 或 POST /api/examples/getUser
  */
 
-import type { Request } from '@dreamer/dweb';
+import type { ApiContext } from '@dreamer/dweb';
 
 /**
  * 测试方法
  * 访问方式：POST /api/examples/test
  */
-export function test(req: Request) {
-  return {
+export function test({ req, url, res }: ApiContext) {
+  return res.json({
     success: true,
     message: 'API 测试成功',
     method: req.method,
-    url: req.url,
+    url: url.href,
     timestamp: new Date().toISOString()
-  };
+  });
 }
 
 /**
  * 获取用户信息
  * 访问方式：POST /api/examples/get-user?id=123
  */
-export function getUser(req: Request) {
-  const userId = req.query.id || '1';
+export function getUser({ query, res }: ApiContext) {
+  const userId = query.id || '1';
   
-  return {
+  return res.json({
     success: true,
     data: {
       id: userId,
@@ -2146,17 +2146,17 @@ export function getUser(req: Request) {
       email: 'test@example.com',
       createdAt: new Date().toISOString()
     }
-  };
+  });
 }
 
 /**
  * 创建数据
  * 访问方式：POST /api/examples/create-data
  */
-export function createData(req: Request) {
+export function createData({ req, res }: ApiContext) {
   const body = req.body as { name?: string; description?: string };
   
-  return {
+  return res.json({
     success: true,
     message: '创建成功',
     data: {
@@ -2165,15 +2165,15 @@ export function createData(req: Request) {
       description: body?.description || '',
       createdAt: new Date().toISOString()
     }
-  };
+  });
 }
 
 /**
  * 获取示例数据列表
  * 访问方式：POST /api/examples/get-data
  */
-export function getData(_req: Request) {
-  return {
+export function getData({ res }: ApiContext) {
+  return res.json({
     success: true,
     message: '获取数据成功',
     data: [
@@ -2197,7 +2197,7 @@ export function getData(_req: Request) {
       }
     ],
     timestamp: new Date().toISOString()
-  };
+  });
 }
 `;
   }
