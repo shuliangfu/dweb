@@ -175,61 +175,71 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
     },
 
     /**
-     * 响应处理钩子（开发环境实时编译并注入 CSS）
-     * 当 TS/TSX 路由返回 HTML 响应时，编译 CSS 并注入到 <head> 中
-     * 注意：只在开发环境中执行，生产环境不处理（CSS 已通过 link 标签引入）
+     * 请求处理钩子（拦截 /assets/tailwind.css 请求，返回编译后的 CSS）
+     * 在开发环境中，实时编译 CSS 并返回
      */
-    async onResponse(_req: Request, res: Response) {
-      // 生产环境不处理，直接返回
-      if (isProduction) {
-        const cssPath = options.cssPath || "tailwind.css";
-        // 注入 CSS link 标签
-        injectCSSLink(res, cssPath, staticPrefix);
-      } else {
-        // 只处理 HTML 响应
-        if (!res.body || typeof res.body !== "string") {
+    async onRequest(req: Request, res: Response) {
+      // 构建 CSS 文件 URL（基于配置的 cssPath 和 staticPrefix）
+      const cssPath = options.cssPath || "tailwind.css";
+      const cssFileName = path.basename(cssPath);
+      const cssUrl = path.join(staticPrefix, cssFileName).replace(/\\/g, "/");
+
+      // 检查请求路径是否匹配 CSS URL
+      const url = new URL(req.url);
+      if (url.pathname !== cssUrl) {
+        // 不是 CSS 请求，继续处理
+        return;
+      }
+
+      // 如果没有配置 cssPath，跳过处理
+      if (!options.cssPath) {
+        return;
+      }
+
+      try {
+        // 获取 CSS 文件路径
+        const filePath = options.cssPath.startsWith("/")
+          ? options.cssPath.slice(1)
+          : options.cssPath;
+
+        // 安全检查：确保文件路径在当前工作目录内（防止路径遍历攻击）
+        const cwd = Deno.cwd();
+        if (!isPathSafe(filePath, cwd)) {
+          // 路径不安全，返回 404
+          res.status = 404;
+          res.text("Not Found");
           return;
         }
 
-        const contentType = res.headers.get("Content-Type") || "";
-        if (!contentType.includes("text/html")) {
-          return;
-        }
-
-        // 如果没有配置 cssPath，跳过处理
-        if (!options.cssPath) {
-          return;
-        }
+        // 检查文件是否存在
+        let fileContent: string;
+        let fileStat: Deno.FileInfo;
 
         try {
-          // 获取 CSS 文件路径
-          const cssPath = options.cssPath.startsWith("/")
-            ? options.cssPath.slice(1)
-            : options.cssPath;
+          fileContent = await Deno.readTextFile(filePath);
+          fileStat = await Deno.stat(filePath);
+        } catch {
+          // 文件不存在，返回 404
+          res.status = 404;
+          res.text("Not Found");
+          return;
+        }
 
-          // 安全检查：确保文件路径在当前工作目录内（防止路径遍历攻击）
-          const cwd = Deno.cwd();
-          if (!isPathSafe(cssPath, cwd)) {
-            // 路径不安全，跳过处理
-            return;
-          }
-
-          // 检查文件是否存在
-          let fileContent: string;
-          let fileStat: Deno.FileInfo;
-
-          try {
-            fileContent = await Deno.readTextFile(cssPath);
-            fileStat = await Deno.stat(cssPath);
-          } catch {
-            // 文件不存在，跳过处理
-            return;
-          }
-
-          // 检查缓存
-          // 在开发环境中，为了支持 Tailwind class 的实时更新，
-          // 我们降低缓存的有效性：如果缓存时间超过 1 秒，就重新编译
-          const cacheKey = cssPath;
+        // 检查缓存（开发环境）
+        let compiledCSS: string;
+        if (isProduction) {
+          // 生产环境：直接处理（不使用缓存）
+          const processed = await processCSS(
+            fileContent,
+            filePath,
+            version,
+            isProduction,
+            options,
+          );
+          compiledCSS = processed.content;
+        } else {
+          // 开发环境：使用缓存（缓存有效期 1 秒）
+          const cacheKey = filePath;
           const cached = cssCache.get(cacheKey);
           const fileModified = fileStat.mtime?.getTime() || 0;
 
@@ -238,7 +248,6 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
             cached.timestamp >= fileModified &&
             cacheAge < 1000; // 缓存有效期 1 秒
 
-          let compiledCSS: string;
           if (shouldUseCache) {
             // 使用缓存
             compiledCSS = cached.content;
@@ -246,9 +255,9 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
             // 处理 CSS
             const processed = await processCSS(
               fileContent,
-              cssPath,
+              filePath,
               version,
-              true,
+              false,
               options,
             );
 
@@ -261,88 +270,54 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
 
             compiledCSS = processed.content;
           }
-
-          // 将编译后的 CSS 注入到 HTML 的 <head> 中（优先插入到现有的 <style> 标签中）
-          const html = res.body as string;
-
-          // 查找 head 中的 style 标签
-          const styleTagRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
-          const styleMatches = [...html.matchAll(styleTagRegex)];
-
-          if (styleMatches.length > 0) {
-            // 如果存在 style 标签，将 CSS 插入到最后一个 style 标签的内容中
-            const lastStyleTag = styleMatches[styleMatches.length - 1][0];
-            const lastStyleIndex = html.lastIndexOf(lastStyleTag);
-
-            // 提取 style 标签的内容（不包含标签本身）
-            const styleContentMatch = lastStyleTag.match(
-              /<style[^>]*>([\s\S]*?)<\/style>/i,
-            );
-            if (styleContentMatch) {
-              const existingContent = styleContentMatch[1];
-              const styleTagStart = lastStyleTag.substring(
-                0,
-                lastStyleTag.indexOf(">") + 1,
-              );
-              const styleTagEnd = "</style>";
-
-              // 检查是否已经包含相同的 Tailwind CSS（避免重复）
-              // 简单检查：如果已包含 Tailwind 的典型类名或注释，则认为已存在
-              if (
-                !existingContent.includes("@tailwind") &&
-                !existingContent.includes("tailwind")
-              ) {
-                const newStyleContent = styleTagStart + existingContent +
-                  "\n        " + compiledCSS + styleTagEnd;
-                res.body = html.slice(0, lastStyleIndex) +
-                  newStyleContent +
-                  html.slice(lastStyleIndex + lastStyleTag.length);
-              } else {
-                // 如果已包含 Tailwind CSS，不重复注入
-                res.body = html;
-              }
-            } else {
-              res.body = html;
-            }
-          } else {
-            // 如果不存在 style 标签，创建新的 style 标签
-            const styleTag = `<style>${compiledCSS}</style>`;
-
-            // 查找 link[rel="stylesheet"]，在其后插入
-            const linkRegex = /<link[^>]*rel\s*=\s*["']stylesheet["'][^>]*>/gi;
-            const linkMatches = html.match(linkRegex);
-
-            if (linkMatches && linkMatches.length > 0) {
-              // 在最后一个 link[rel="stylesheet"] 后插入
-              const lastLinkIndex = html.lastIndexOf(
-                linkMatches[linkMatches.length - 1],
-              );
-              const insertIndex = lastLinkIndex +
-                linkMatches[linkMatches.length - 1].length;
-              res.body = html.slice(0, insertIndex) +
-                `\n${styleTag}` +
-                html.slice(insertIndex);
-            } else if (html.includes("</head>")) {
-              // 如果没有找到 link，在 </head> 之前插入
-              res.body = html.replace("</head>", `${styleTag}\n</head>`);
-            } else if (html.includes("<head>")) {
-              // 如果没有 </head>，在 <head> 后插入
-              res.body = html.replace("<head>", `<head>\n${styleTag}`);
-            } else {
-              // 如果没有 <head>，则在 <html> 后面添加 <head> 和 <style>
-              const headWithStyle = `<head>\n  ${styleTag}\n</head>`;
-              if (html.includes("<html>")) {
-                res.body = html.replace("<html>", `<html>\n${headWithStyle}`);
-              } else {
-                // 如果连 <html> 都没有，在开头添加
-                res.body = `${headWithStyle}\n${html}`;
-              }
-            }
-          }
-        } catch (error) {
-          console.error("[Tailwind Plugin] 处理 CSS 时出错:", error);
-          // 出错时不修改响应，让原始响应返回
         }
+
+        // 返回 CSS
+        res.status = 200;
+        res.setHeader("Content-Type", "text/css; charset=utf-8");
+        res.setHeader(
+          "Cache-Control",
+          isProduction ? "public, max-age=31536000" : "no-cache",
+        );
+        res.text(compiledCSS);
+      } catch (error) {
+        console.error("[Tailwind Plugin] 处理 CSS 请求时出错:", error);
+        res.status = 500;
+        res.text("Internal Server Error");
+      }
+    },
+
+    /**
+     * 响应处理钩子（在 HTML 中注入 CSS link 标签）
+     * 当 TS/TSX 路由返回 HTML 响应时，注入 <link rel="stylesheet" href="/assets/tailwind.css"> 标签
+     */
+    onResponse(_req: Request, res: Response) {
+      // 只处理 HTML 响应
+      if (!res.body || typeof res.body !== "string") {
+        return;
+      }
+
+      const contentType = res.headers.get("Content-Type") || "";
+      if (!contentType.includes("text/html")) {
+        return;
+      }
+
+      // 如果没有配置 cssPath，跳过处理
+      if (!options.cssPath) {
+        return;
+      }
+
+      try {
+        // 获取 CSS 文件路径
+        const cssPath = options.cssPath.startsWith("/")
+          ? options.cssPath.slice(1)
+          : options.cssPath;
+
+        // 注入 CSS link 标签到 HTML
+        injectCSSLink(res, cssPath, staticPrefix);
+      } catch (error) {
+        console.error("[Tailwind Plugin] 注入 CSS link 时出错:", error);
+        // 出错时不修改响应，让原始响应返回
       }
     },
 

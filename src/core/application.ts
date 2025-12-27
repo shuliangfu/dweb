@@ -35,6 +35,7 @@ import { normalizeRouteConfig } from "./config.ts";
 import { RenderAdapterManager } from "./render/manager.ts";
 import { PreactRenderAdapter } from "./render/preact.ts";
 import type { RenderAdapter, RenderEngine } from "./render/adapter.ts";
+import * as path from "@std/path";
 
 /**
  * 应用核心类
@@ -245,9 +246,6 @@ export class Application {
     const hmrScript = await createHMRClientScript(hmrPort);
     setHMRClientScript(hmrScript);
 
-    // 注册 HMR 服务器到服务容器
-    this.serviceContainer.registerSingleton("hmrServer", () => hmrServer);
-
     // 创建文件监听器
     if (config.routes) {
       const { FileWatcher } = await import("../features/hmr.ts");
@@ -260,9 +258,26 @@ export class Application {
       // 监听配置文件变化
       fileWatcher.watch(".");
 
+      let cssPath = "/assets/tailwind.css";
+      const tailwindPlugin = this.pluginManager.get("tailwind");
+      if (tailwindPlugin?.config) {
+        if (tailwindPlugin.config.cssPath) {
+          cssPath = path.join(
+            "/",
+            config.static!.dir,
+            path.basename(tailwindPlugin.config.cssPath as string),
+          );
+        }
+      }
+
       // 将文件变化事件连接到 HMR 服务器（智能更新）
       fileWatcher.onReload((changeInfo) => {
         hmrServer.notifyFileChange(changeInfo);
+
+        hmrServer.notifyFileChange({
+          path: cssPath,
+          kind: "modify",
+        });
       });
 
       // 注册文件监听器到服务容器

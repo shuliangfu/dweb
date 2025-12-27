@@ -333,9 +333,66 @@ class HMRClient {
           layoutPath?: string;
           allLayoutPaths?: string[];
           route?: string;
+          [key: string]: unknown; // 允许其他属性（如 load 函数返回的数据）
         }
         | undefined;
-      const props = pageData?.props || {};
+
+      // 参考客户端渲染的处理方式，从 pageData 中提取 load 数据
+      // 排除一些系统键，其余的都是 load 函数返回的数据
+      const excludeKeys = [
+        "route",
+        "renderMode",
+        "layoutPath",
+        "allLayoutPaths",
+        "props",
+        "shouldHydrate",
+        "basePath",
+        "metadata",
+        "layout",
+        "prefetchRoutes",
+        "prefetchLoading",
+        "prefetchMode",
+        "layoutData",
+      ];
+      const loadData: Record<string, unknown> = {};
+      if (pageData) {
+        for (const key in pageData) {
+          if (!excludeKeys.includes(key)) {
+            loadData[key] = pageData[key];
+          }
+        }
+      }
+
+      // 构建 props，确保包含 data（load 函数返回的数据）
+      const props: Record<string, unknown> = {
+        params: (pageData?.props as Record<string, unknown>)?.params || {},
+        query: (pageData?.props as Record<string, unknown>)?.query || {},
+        data: loadData,
+        ...(pageData?.props || {}),
+      };
+
+      // 确保 data 存在（如果 props 中没有，使用 loadData）
+      if (
+        !props.data ||
+        Object.keys(props.data as Record<string, unknown>).length === 0
+      ) {
+        props.data = loadData;
+      }
+
+      // 确保 routePath 和 url 存在（与服务端 props 保持一致）
+      if (!props.routePath) {
+        props.routePath = globalThis.location.pathname;
+      }
+      if (!props.url) {
+        props.url = new URL(globalThis.location.href);
+      } else if (typeof props.url === "string") {
+        // 如果 url 是字符串，转换为 URL 对象
+        try {
+          props.url = new URL(props.url);
+        } catch {
+          props.url = new URL(globalThis.location.href);
+        }
+      }
 
       if (isLayoutFile) {
         // 更新的是布局文件：清除布局组件缓存，重新加载布局组件
