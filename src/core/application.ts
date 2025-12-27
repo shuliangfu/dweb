@@ -274,10 +274,13 @@ export class Application {
       fileWatcher.onReload((changeInfo) => {
         hmrServer.notifyFileChange(changeInfo);
 
-        hmrServer.notifyFileChange({
-          path: cssPath,
-          kind: "modify",
-        });
+        // 1秒后通知css文件变化
+        setTimeout(() => {
+          hmrServer.notifyFileChange({
+            path: cssPath,
+            kind: "modify",
+          });
+        }, 500);
       });
 
       // 注册文件监听器到服务容器
