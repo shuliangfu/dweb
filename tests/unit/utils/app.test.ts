@@ -4,7 +4,7 @@
 
 import { assertEquals, assert } from '@std/assert';
 import { findMainFile, getMiddlewaresFromApp, getPluginsFromApp } from '../../../src/utils/app.ts';
-import { createApp } from '../../../src/mod.ts';
+import { Application } from '../../../src/mod.ts';
 import type { Middleware, Plugin } from '../../../src/types/index.ts';
 import { ensureDir, ensureFile } from '@std/fs';
 import * as path from '@std/path';
@@ -53,7 +53,7 @@ Deno.test('App Utils - findMainFile - 找不到文件返回 null', async () => {
 });
 
 Deno.test('App Utils - getMiddlewaresFromApp - 从应用实例获取中间件', () => {
-  const app = createApp();
+  const app = new Application();
   
   const middleware1: Middleware = async (_req, _res, next) => {
     await next();
@@ -72,7 +72,7 @@ Deno.test('App Utils - getMiddlewaresFromApp - 从应用实例获取中间件', 
 });
 
 Deno.test('App Utils - getPluginsFromApp - 从应用实例获取插件', () => {
-  const app = createApp();
+  const app = new Application();
   
   const plugin1: Plugin = {
     name: 'plugin1',
@@ -93,7 +93,7 @@ Deno.test('App Utils - getPluginsFromApp - 从应用实例获取插件', () => {
 });
 
 Deno.test('App Utils - getMiddlewaresFromApp - 空应用返回空数组', () => {
-  const app = createApp();
+  const app = new Application();
   
   const middlewares = getMiddlewaresFromApp(app);
   
@@ -101,7 +101,7 @@ Deno.test('App Utils - getMiddlewaresFromApp - 空应用返回空数组', () => 
 });
 
 Deno.test('App Utils - getPluginsFromApp - 空应用返回空数组', () => {
-  const app = createApp();
+  const app = new Application();
   
   const plugins = getPluginsFromApp(app);
   

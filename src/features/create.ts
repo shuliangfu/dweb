@@ -2592,10 +2592,10 @@ async function generateMainTs(
  * 服务启动通过 CLI 命令：deno task dev 或 deno task start
  */
 
-import { createApp, cors, staticFiles } from '@dreamer/dweb';
+import { Application, cors, staticFiles } from '@dreamer/dweb';
 
 // 创建应用实例
-const app = createApp();
+const app = new Application();
 
 // 配置中间件
 app.use(cors({

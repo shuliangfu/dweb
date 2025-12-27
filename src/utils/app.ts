@@ -3,8 +3,10 @@
  * 用于加载 main.ts 文件并获取应用实例中的中间件和插件
  */
 
-import type { App } from "../mod.ts";
+import type { AppLike } from "../types/index.ts";
 import type { Middleware, Plugin } from "../types/index.ts";
+import type { MiddlewareManager } from "../core/middleware.ts";
+import type { PluginManager } from "../core/plugin.ts";
 import * as path from "@std/path";
 
 /**
@@ -55,7 +57,7 @@ export async function findMainFile(appName?: string): Promise<string | null> {
  * @param appName 应用名称（多应用模式下使用，如 'backend'）
  * @returns 应用实例，如果找不到 main.ts 返回 null
  */
-export async function loadMainApp(appName?: string): Promise<App | null> {
+export async function loadMainApp(appName?: string): Promise<AppLike | null> {
   try {
     const mainPath = await findMainFile(appName);
     if (!mainPath) {
@@ -74,7 +76,7 @@ export async function loadMainApp(appName?: string): Promise<App | null> {
     const mainModule = await import(mainUrl);
 
     // 获取默认导出（应用实例）
-    const app: App = mainModule.default || mainModule.app || mainModule;
+    const app: AppLike = mainModule.default || mainModule.app || mainModule;
 
     // 验证是否是有效的应用实例
     if (
@@ -99,9 +101,14 @@ export async function loadMainApp(appName?: string): Promise<App | null> {
  * @param app 应用实例
  * @returns 中间件数组
  */
-export function getMiddlewaresFromApp(app: App): Middleware[] {
+export function getMiddlewaresFromApp(app: AppLike): Middleware[] {
   // 从中间件管理器中获取所有中间件
-  return app.middleware.getAll();
+  // AppLike 的 middleware 是 unknown 类型，需要进行类型断言
+  const middlewareManager = app.middleware as MiddlewareManager | undefined;
+  if (!middlewareManager || typeof middlewareManager.getAll !== "function") {
+    return [];
+  }
+  return middlewareManager.getAll();
 }
 
 /**
@@ -109,7 +116,12 @@ export function getMiddlewaresFromApp(app: App): Middleware[] {
  * @param app 应用实例
  * @returns 插件数组
  */
-export function getPluginsFromApp(app: App): Plugin[] {
+export function getPluginsFromApp(app: AppLike): Plugin[] {
   // 从插件管理器中获取所有插件
-  return app.plugins.getAll();
+  // AppLike 的 plugins 是 unknown 类型，需要进行类型断言
+  const pluginManager = app.plugins as PluginManager | undefined;
+  if (!pluginManager || typeof pluginManager.getAll !== "function") {
+    return [];
+  }
+  return pluginManager.getAll();
 }

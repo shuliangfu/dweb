@@ -173,27 +173,8 @@ export {
 export { startDevServer } from "./features/dev.ts";
 export { startProdServer } from "./features/prod.ts";
 
-// 导入核心类用于创建应用
-import { Server } from "./core/server.ts";
-import { MiddlewareManager } from "./core/middleware.ts";
-import { PluginManager } from "./core/plugin.ts";
-import type { Middleware, MiddlewareConfig, Plugin } from "./types/index.ts";
-
 // 导出控制台工具
 export * from "./console/mod.ts";
 
 // 导出数据库工具
 export * from "./features/database/mod.ts";
-
-/**
- * 应用实例接口
- */
-export interface App {
-  server: Server;
-  middleware: MiddlewareManager;
-  plugins: PluginManager;
-  use: (middleware: Middleware | MiddlewareConfig) => void;
-  plugin: (
-    plugin: Plugin | { name: string; config?: Record<string, unknown> },
-  ) => void;
-}

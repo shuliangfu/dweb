@@ -63,7 +63,7 @@ export class Application {
   /** 生命周期管理器 */
   private lifecycleManager: LifecycleManager;
   /** 服务器实例 */
-  private server: Server;
+  private _server: Server;
   /** 路由管理器 */
   private router: Router | null = null;
   /** 路由处理器 */
@@ -99,7 +99,7 @@ export class Application {
     this.renderAdapterManager.register(new PreactRenderAdapter());
 
     // 创建服务器实例
-    this.server = new Server();
+    this._server = new Server();
 
     // 注册核心服务
     this.registerCoreServices();
@@ -320,7 +320,7 @@ export class Application {
         }
       }
 
-      this.server.close();
+      this._server.close();
       Deno.exit(0);
     };
 
@@ -339,7 +339,7 @@ export class Application {
     setupSignalHandlers({
       close: async () => {
         await closeDatabase();
-        this.server.close();
+        this._server.close();
       },
     });
   }
@@ -355,6 +355,30 @@ export class Application {
    */
   async stop(): Promise<void> {
     await this.lifecycleManager.stop();
+  }
+
+  /**
+   * 获取服务器实例（实现 AppLike 接口）
+   * @returns 服务器实例
+   */
+  get server(): Server {
+    return this._server;
+  }
+
+  /**
+   * 获取中间件管理器（实现 AppLike 接口）
+   * @returns 中间件管理器实例
+   */
+  get middleware(): MiddlewareManager {
+    return this.middlewareManager;
+  }
+
+  /**
+   * 获取插件管理器（实现 AppLike 接口）
+   * @returns 插件管理器实例
+   */
+  get plugins(): PluginManager {
+    return this.pluginManager;
   }
 
   /**
@@ -497,7 +521,7 @@ export class Application {
     );
 
     // 注册服务器
-    this.serviceContainer.registerSingleton("server", () => this.server);
+    this.serviceContainer.registerSingleton("server", () => this._server);
 
     // 注册中间件管理器
     this.serviceContainer.registerSingleton(
@@ -695,7 +719,7 @@ export class Application {
       }
 
       // 设置 WebSocket 升级处理器
-      this.server.setWebSocketUpgradeHandler((req: globalThis.Request) => {
+      this._server.setWebSocketUpgradeHandler((req: globalThis.Request) => {
         const url = new URL(req.url);
         const wsPath = config.websocket!.path || "/ws";
         if (url.pathname === wsPath || url.pathname.startsWith(wsPath + "/")) {
@@ -948,7 +972,7 @@ export class Application {
       cookieManager,
       sessionManager,
     );
-    this.server.setHandler(requestHandler);
+    this._server.setHandler(requestHandler);
   }
 
   /**

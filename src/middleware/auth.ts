@@ -183,7 +183,7 @@ export async function verifyJWT(
     }
 
     return payload;
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }

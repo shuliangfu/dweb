@@ -6,12 +6,12 @@
  * 服务启动通过 CLI 命令：deno task dev 或 deno task start
  */
 
-import { createApp, cors, i18n, theme, store } from '@dreamer/dweb';
+import { Application, cors, i18n, theme, store } from '@dreamer/dweb';
 import { services } from './services/mod.ts';
 import { createServicePlugin } from './plugins/register-services.ts';
 
 // 创建应用实例
-const app = createApp();
+const app = new Application();
 
 // 配置中间件
 app.use(cors({
