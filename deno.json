@@ -76,16 +76,8 @@
     "@mongodb": "npm:mongodb@^6.3.0",
     "sharp": "npm:sharp@^0.34.5"
   },
-  "scopes": {
-    "https://esm.sh/": {
-      "preact": "https://esm.sh/preact@10.28.0",
-      "preact/": "https://esm.sh/preact@10.28.0/"
-    }
-  },
   "fmt": {
-    "files": {
-      "include": ["src/"]
-    }
+    "include": ["src/", "example/"]
   },
   "lint": {
     "include": ["src/"],
