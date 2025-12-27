@@ -98,25 +98,11 @@ async function serveStaticFile(
     let body: ReadableStream<Uint8Array> = file.readable;
     const mimeType = getContentType(filePath);
 
-    // 内容协商和压缩
-    const acceptEncoding = req.headers.get("accept-encoding") || "";
-    const isTextFile = mimeType.startsWith('text/') ||
-      mimeType.includes('javascript') ||
-      mimeType.includes('json') ||
-      mimeType.includes('xml') ||
-      mimeType.includes('svg');
-
-    if (isTextFile && acceptEncoding.includes("gzip")) {
-      res.setHeader("Content-Encoding", "gzip");
-      res.setHeader("Vary", "Accept-Encoding");
-      // 使用 gzip 压缩流
-      body = body.pipeThrough(new CompressionStream("gzip"));
-      // 压缩后长度未知，不设置 Content-Length，使用 Transfer-Encoding: chunked
-    } else {
-      res.setHeader("Content-Length", fileStat.size.toString());
-    }
-
+    // 设置 Content-Type
     res.setHeader("Content-Type", mimeType);
+    // 设置 Content-Length
+    res.setHeader("Content-Length", fileStat.size.toString());
+
     res.status = 200;
     res.body = body;
     return true;
