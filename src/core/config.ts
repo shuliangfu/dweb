@@ -96,19 +96,40 @@ export async function loadConfig(
           },
           server: matchedApp.server,
           routes: matchedApp.routes,
-          cookie: matchedApp.cookie || config.cookie,
-          session: matchedApp.session || config.session,
+          cookie: { ...config.cookie, ...matchedApp.cookie },
+          // 合并 session：确保 secret 字段存在（必需字段）
+          session: config.session || matchedApp.session
+            ? {
+              ...config.session,
+              ...matchedApp.session,
+              secret: matchedApp.session?.secret || config.session?.secret ||
+                "",
+            }
+            : undefined,
           middleware: [
             ...(config.middleware || []),
             ...(matchedApp.middleware || []),
           ],
           plugins: [...(config.plugins || []), ...(matchedApp.plugins || [])],
-          build: matchedApp.build,
-          dev: config.dev,
-          // 合并 static：优先使用应用配置，否则使用顶层配置
-          static: matchedApp.static || config.static,
+          // 合并 build：确保 outDir 字段存在（必需字段）
+          build: config.build || matchedApp.build
+            ? {
+              ...config.build,
+              ...matchedApp.build,
+              outDir: matchedApp.build?.outDir || config.build?.outDir || "",
+            }
+            : undefined,
+          dev: { ...config.dev, ...matchedApp.dev },
+          // 合并 static：确保 dir 字段存在（必需字段）
+          static: config.static || matchedApp.static
+            ? {
+              ...config.static,
+              ...matchedApp.static,
+              dir: matchedApp.static?.dir || config.static?.dir || "",
+            }
+            : undefined,
           // 合并 prefetch：优先使用应用配置，否则使用顶层配置
-          prefetch: matchedApp.prefetch || config.prefetch,
+          prefetch: { ...config.prefetch, ...matchedApp.prefetch }, //matchedApp.prefetch || config.prefetch,
           // 数据库配置只能来自根配置（子应用配置中不允许包含 database）
           database: config.database,
           // WebSocket 配置（如果根配置中有）
