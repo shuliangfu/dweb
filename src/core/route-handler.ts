@@ -1380,7 +1380,20 @@ export class RouteHandler {
     layoutDisabled: boolean;
   }> {
     // 获取渲染模式（优先级：页面组件导出 > 自动检测 > 配置 > 默认 SSR）
-    const pageRenderMode = pageModule.renderMode as RenderMode | undefined;
+    // 支持 renderMode = true（表示 hybrid 模式）或 renderMode = 'ssr' | 'csr' | 'hybrid'
+    let pageRenderMode: RenderMode | undefined;
+    const rawRenderMode = pageModule.renderMode;
+    if (rawRenderMode === true) {
+      // renderMode = true 表示 hybrid 模式
+      pageRenderMode = "hybrid";
+    } else if (
+      typeof rawRenderMode === "string" &&
+      (rawRenderMode === "ssr" || rawRenderMode === "csr" ||
+        rawRenderMode === "hybrid")
+    ) {
+      // 字符串类型的有效渲染模式
+      pageRenderMode = rawRenderMode as RenderMode;
+    }
 
     // 获取所有布局组件（从最具体到最通用）
     const LayoutComponents: ((props: LayoutProps) => unknown)[] = [];
