@@ -420,11 +420,11 @@ export async function createApp(
   );
   const useTailwindV4 = tailwindVersion === "V4 (推荐)";
 
-  // 交互式选择：渲染模式（默认 hybrid）
+  // 交互式选择：渲染模式（默认 ssr）
   const renderModeIndex = await interactiveSelect(
     "\n请选择渲染模式:",
     ["SSR (服务端渲染)", "CSR (客户端渲染)", "Hybrid (混合渲染)"],
-    2, // 默认选择第三个（Hybrid）
+    0, // 默认选择第一个（SSR）
   );
   const renderMode = [
     "SSR (服务端渲染)",
@@ -985,9 +985,13 @@ export default menus;
  */
 
 import { useState, useEffect } from 'preact/hooks';
-import Button from '../components/Button.tsx';
-import { exampleStore, type ExampleStoreState } from '../stores/example.ts';
+import Button from '@components/Button.tsx';
+import { exampleStore, type ExampleStoreState } from '@store/example.ts';
 import type { PageProps, LoadContext } from '@dreamer/dweb';
+
+// 页面级渲染模式：hybrid（混合渲染）
+// 即使全局配置为 SSR，此页面也会使用混合渲染模式
+export const renderMode = true;
 
 /**
  * 页面元数据（用于 SEO）
@@ -1623,7 +1627,7 @@ export default function About() {
  * 当访问不存在的路由时显示
  */
 
-import Button from '../components/Button.tsx';
+import Button from '@components/Button.tsx';
 
 /**
  * 404 页面组件

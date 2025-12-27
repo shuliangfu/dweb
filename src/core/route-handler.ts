@@ -23,7 +23,9 @@ import { removeLoadOnlyImports } from "../utils/module.ts";
 import { buildFromStdin } from "../utils/esbuild.ts";
 import {
   filePathToHttpUrl,
+  findProjectRoot,
   normalizeModulePath,
+  replaceImportAliasesInContent,
   resolveFilePath,
 } from "../utils/path.ts";
 import { createImportMapScript } from "../utils/import-map.ts";
@@ -600,7 +602,7 @@ export class RouteHandler {
   ): Promise<Middleware[]> {
     try {
       const filePath = resolveFilePath(middlewarePath);
-      const module = await import(filePath);
+      const module = await this.importModuleWithAlias(filePath);
 
       // 支持默认导出中间件函数
       if (module.default) {
@@ -972,13 +974,211 @@ export class RouteHandler {
    * const metadata = pageModule.metadata;
    * ```
    */
+  /**
+   * 动态导入模块（支持路径别名解析）
+   * 当 Deno 无法自动解析 deno.json 中的导入映射时，手动处理路径别名
+   *
+   * @param filePath 文件路径（file:// 协议）
+   * @returns 导入的模块
+   */
+  private async importModuleWithAlias(
+    filePath: string,
+  ): Promise<Record<string, unknown>> {
+    try {
+      // 先尝试直接导入（如果文件没有使用路径别名，这样可以更快）
+      return await import(filePath);
+    } catch (error) {
+      // 如果导入失败，可能是路径别名问题
+      const errorMessage = error instanceof Error
+        ? error.message
+        : String(error);
+      if (errorMessage.includes("not a dependency and not in import map")) {
+        // 这是路径别名问题，需要特殊处理
+        // 读取文件内容，替换路径别名，然后使用临时文件导入
+        try {
+          const filePathWithoutPrefix = filePath.replace(/^file:\/\//, "");
+          const fileDir = path.dirname(filePathWithoutPrefix);
+
+          // 读取 deno.json 获取导入映射
+          // 从文件所在目录向上查找 deno.json 或 deno.jsonc
+          let importMap: Record<string, string> = {};
+          try {
+            const { readDenoJson } = await import("../utils/file.ts");
+            // 向上查找项目根目录的 deno.json
+            let searchDir = fileDir;
+            let denoJson = null;
+
+            // 向上查找，直到找到 deno.json 或到达根目录
+            while (searchDir !== "/" && searchDir !== "") {
+              denoJson = await readDenoJson(searchDir);
+              if (denoJson && denoJson.imports) {
+                importMap = denoJson.imports;
+                break;
+              }
+              // 继续向上查找
+              const parts = searchDir.split("/").filter((p) => p);
+              if (parts.length === 0) break;
+              parts.pop();
+              searchDir = "/" + parts.join("/");
+            }
+
+            if (Object.keys(importMap).length === 0) {
+              logger.warn(
+                `警告：未找到 deno.json 或 deno.jsonc 文件。搜索路径: ${fileDir}`,
+              );
+            }
+          } catch (readError) {
+            // deno.json 不存在或读取失败，无法处理路径别名
+            logger.warn(
+              `警告：读取 deno.json 失败: ${
+                readError instanceof Error
+                  ? readError.message
+                  : String(readError)
+              }`,
+            );
+            throw new Error(
+              `无法读取 deno.json 来解析路径别名: ${errorMessage}`,
+            );
+          }
+
+          // 读取文件内容
+          const fileContent = await Deno.readTextFile(filePathWithoutPrefix);
+
+          // 替换路径别名
+          const processedContent = replaceImportAliasesInContent(
+            fileContent,
+            importMap,
+            fileDir,
+          );
+
+          // 注意：import.meta.resolve 在动态导入的上下文中无法解析导入映射
+          // 所以我们需要使用 data: URL 方案
+
+          // 方案：使用 data: URL，但需要将相对路径转换为绝对路径
+          // 匹配所有相对路径导入（如 import ... from "./xxx" 或 import ... from "../xxx"）
+          // 同时也需要处理可能遗留的路径别名（不应该发生，但为了安全起见）
+          const relativeImportRegex =
+            /(?:from\s+['"]|import\s*\(\s*['"])(\.\.?\/[^'"]+)(['"])/g;
+          const processedWithAbsolutePaths = processedContent.replace(
+            relativeImportRegex,
+            (match, importPath, _quote) => {
+              // 将相对路径转换为绝对路径（不添加 file:// 协议，esbuild 需要普通路径）
+              const absolutePath = path.resolve(fileDir, importPath);
+              return match.replace(importPath, absolutePath);
+            },
+          );
+
+          // 检查是否还有未替换的路径别名（不应该发生）
+          const aliasCheckRegex =
+            /(?:from\s+['"]|import\s*\(\s*['"])(@[^'"]+)(['"])/g;
+          if (aliasCheckRegex.test(processedWithAbsolutePaths)) {
+            logger.warn(
+              `警告：文件中仍有未替换的路径别名。文件: ${filePathWithoutPrefix}`,
+            );
+            logger.warn(`importMap: ${JSON.stringify(importMap, null, 2)}`);
+          }
+
+          // 使用 esbuild 编译 TypeScript/JSX 代码
+          // 因为 Deno 无法直接解析 data: URL 中的 TypeScript/JSX 语法
+          let compiledCode: string;
+          try {
+            // 确定文件扩展名以选择正确的 loader
+            const ext = path.extname(filePathWithoutPrefix);
+            const loader = ext === ".tsx" || ext === ".jsx" ? "tsx" : "ts";
+
+            // 找到项目根目录作为 cwd
+            const projectRoot = findProjectRoot(fileDir);
+
+            // 使用 esbuild 编译代码
+            compiledCode = await buildFromStdin(
+              processedWithAbsolutePaths,
+              filePathWithoutPrefix,
+              projectRoot,
+              loader,
+              {
+                importMap,
+                cwd: projectRoot,
+                bundleClient: false, // 服务端构建，不打包客户端依赖
+                minify: false, // 开发环境不压缩
+                sourcemap: false,
+                keepNames: true, // 保留函数名，便于调试
+              },
+            );
+          } catch (compileError) {
+            logger.warn(
+              `esbuild 编译失败: ${
+                compileError instanceof Error
+                  ? compileError.message
+                  : String(compileError)
+              }`,
+            );
+            throw new Error(
+              `无法编译模块: ${
+                compileError instanceof Error
+                  ? compileError.message
+                  : String(compileError)
+              }`,
+            );
+          }
+
+          // 编译后的代码可能包含绝对路径的导入（如果 esbuild 没有完全打包）
+          // 需要将这些绝对路径转换为 HTTP URL，以便浏览器可以访问
+          // 匹配所有绝对路径导入（如 import ... from "/Users/.../xxx"）
+          const absolutePathRegex =
+            /(?:from\s+['"]|import\s*\(\s*['"])(\/[^'"]+\.(?:ts|tsx|js|jsx))(['"])/g;
+          const finalCompiledCode = compiledCode.replace(
+            absolutePathRegex,
+            (match, importPath, _quote) => {
+              // 将绝对路径转换为 HTTP URL
+              const httpUrl = filePathToHttpUrl(importPath);
+              return match.replace(importPath, httpUrl);
+            },
+          );
+
+          // 使用 data: URL 导入编译后的 JavaScript 代码
+          // 创建 data: URL
+          // 使用 base64 编码，确保特殊字符正确处理
+          const base64Content = btoa(
+            unescape(encodeURIComponent(finalCompiledCode)),
+          );
+          const dataUrl = `data:application/javascript;base64,${base64Content}`;
+
+          // 导入 data: URL
+          const module = await import(dataUrl);
+
+          if (!module) {
+            throw new Error("模块导入返回空值");
+          }
+
+          return module;
+        } catch (processError) {
+          // 处理路径别名失败，返回原始错误
+          logger.warn(
+            `加载模块失败（路径别名处理失败）: ${filePath}`,
+          );
+          logger.warn(
+            `错误信息: ${
+              processError instanceof Error
+                ? processError.message
+                : String(processError)
+            }`,
+          );
+          throw error; // 抛出原始错误
+        }
+      } else {
+        // 其他错误，直接抛出
+        throw error;
+      }
+    }
+  }
+
   private async loadPageModule(
     routeInfo: RouteInfo,
     res: Response,
   ): Promise<Record<string, unknown>> {
     const pagePath = resolveFilePath(routeInfo.filePath);
     try {
-      const pageModule = await import(pagePath);
+      const pageModule = await this.importModuleWithAlias(pagePath);
       if (!pageModule) {
         throw new Error("模块导入返回空值");
       }
@@ -1183,7 +1383,7 @@ export class RouteHandler {
     const pageRenderMode = pageModule.renderMode as RenderMode | undefined;
 
     // 获取所有布局组件（从最具体到最通用）
-    const LayoutComponents: ((props: { children: unknown }) => unknown)[] = [];
+    const LayoutComponents: ((props: LayoutProps) => unknown)[] = [];
     // 存储每个布局的 load 数据
     const layoutData: Record<string, unknown>[] = [];
 
@@ -1203,8 +1403,12 @@ export class RouteHandler {
         for (const layoutPath of layoutPaths) {
           try {
             const layoutFullPath = resolveFilePath(layoutPath);
-            const layoutModule = await import(layoutFullPath);
-            const LayoutComponent = layoutModule.default;
+            const layoutModule = await this.importModuleWithAlias(
+              layoutFullPath,
+            );
+            const LayoutComponent = layoutModule.default as
+              | ((props: LayoutProps) => unknown)
+              | undefined;
             if (!LayoutComponent) {
               logger.warn(`布局文件 ${layoutPath} 没有默认导出`);
               continue;
@@ -1365,7 +1569,9 @@ export class RouteHandler {
 
       // 加载错误页面组件
       const errorPageFullPath = resolveFilePath(errorPagePath);
-      const errorPageModule = await import(errorPageFullPath);
+      const errorPageModule = await this.importModuleWithAlias(
+        errorPageFullPath,
+      );
       const ErrorPageComponent = errorPageModule.default as (
         props: { error?: { message?: string } },
       ) => unknown;
@@ -1403,7 +1609,7 @@ export class RouteHandler {
       const appPath = this.router.getApp();
       if (appPath) {
         const appFullPath = resolveFilePath(appPath);
-        const appModule = await import(appFullPath);
+        const appModule = await this.importModuleWithAlias(appFullPath);
         const AppComponent = appModule.default as (props: {
           children: string;
         }) => unknown;
@@ -1697,7 +1903,9 @@ export class RouteHandler {
             try {
               // 加载布局模块以检查 layout 属性
               const layoutFullPath = resolveFilePath(layoutFilePath);
-              const layoutModule = await import(layoutFullPath);
+              const layoutModule = await this.importModuleWithAlias(
+                layoutFullPath,
+              );
 
               // 检查是否设置了 layout = false（禁用继承）
               // 如果设置了 layout = false，则停止继承，只使用到当前布局为止的布局链
