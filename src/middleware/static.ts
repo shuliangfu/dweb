@@ -95,7 +95,7 @@ async function serveStaticFile(
 
   try {
     const file = await Deno.open(fullPath, { read: true });
-    let body: ReadableStream<Uint8Array> = file.readable;
+    const body: ReadableStream<Uint8Array> = file.readable;
     const mimeType = getContentType(filePath);
 
     // 设置 Content-Type
