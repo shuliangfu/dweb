@@ -991,7 +991,7 @@ import type { PageProps, LoadContext } from '@dreamer/dweb';
 
 // 页面级渲染模式：hybrid（混合渲染）
 // 即使全局配置为 SSR，此页面也会使用混合渲染模式
-export const renderMode = true;
+export const renderMode = "hybrid";
 
 /**
  * 页面元数据（用于 SEO）
