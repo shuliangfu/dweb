@@ -290,7 +290,7 @@ export class Server {
   private createResponse(): Response {
     const headers = new Headers();
     const cookies: Array<{ name: string; value: string; options?: CookieOptions }> = [];
-    let body: string | Uint8Array | undefined = undefined;
+    let body: string | Uint8Array | ReadableStream<Uint8Array> | undefined = undefined;
     let status = 200;
     let statusText = 'OK';
 
@@ -309,9 +309,9 @@ export class Server {
       },
       headers,
       get body() {
-        return body;
+        return body as any;
       },
-      set body(value: string | Uint8Array | undefined) {
+      set body(value: any) {
         body = value;
       },
       setCookie(name: string, value: string, options?: CookieOptions) {
@@ -497,12 +497,36 @@ export class Server {
    * 执行中间件链
    */
   private async runMiddlewares(req: Request, res: Response): Promise<void> {
+    const middlewares = this.middlewares;
     let index = 0;
 
     const next = async (): Promise<void> => {
-      if (index < this.middlewares.length) {
-        const middleware = this.middlewares[index++];
-        await middleware(req, res, next);
+      if (index >= middlewares.length) {
+        return;
+      }
+
+      // 获取当前要执行的中间件索引
+      const i = index;
+      // 预先增加索引，以便下一次调用 next 时获取下一个中间件
+      index++;
+      
+      const middleware = middlewares[i];
+      
+      // 防止在同一个中间件中多次调用 next()
+      let nextCalled = false;
+      const wrappedNext = async () => {
+        if (nextCalled) {
+          console.warn(`[Middleware] Warning: next() called multiple times in middleware at index ${i}`);
+          return;
+        }
+        nextCalled = true;
+        await next();
+      };
+
+      try {
+        await middleware(req, res, wrappedNext);
+      } catch (error) {
+        throw error;
       }
     };
 
@@ -531,7 +555,7 @@ export class Server {
     }
 
     // 确保 body 不为 undefined，如果为空则使用空字符串
-    const finalBody: string | Uint8Array | undefined = responseBody ?? '';
+    const finalBody: string | Uint8Array | ReadableStream<Uint8Array> | undefined = responseBody ?? '';
 
     // 调试：如果 body 为空但状态是 200，记录详细日志
     // 注意：此检查已在 handleRequest 中处理，这里保留用于未来扩展

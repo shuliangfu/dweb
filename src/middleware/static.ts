@@ -3,7 +3,7 @@
  * 服务静态文件
  */
 
-import type { Middleware, StaticOptions } from '../types/index.ts';
+import type { Middleware, Request, Response, StaticOptions } from '../types/index.ts';
 import * as path from '@std/path';
 import { isPathSafe } from '../utils/security.ts';
 
@@ -45,6 +45,85 @@ function getContentType(filePath: string): string {
     'ogg': 'audio/ogg',
   };
   return mimeTypes[ext] || 'application/octet-stream';
+}
+
+/**
+ * 服务静态文件
+ * 使用流式传输和动态压缩
+ */
+async function serveStaticFile(
+  req: Request,
+  res: Response,
+  fullPath: string,
+  fileStat: Deno.FileInfo,
+  filePath: string,
+  options: {
+    etag?: boolean;
+    lastModified?: boolean;
+    maxAge?: number;
+  }
+): Promise<boolean> {
+  const { etag = true, lastModified = true, maxAge = 0 } = options;
+
+  if (etag) {
+    const etagValue = `"${fileStat.mtime?.getTime() || fileStat.size}"`;
+    res.setHeader('ETag', etagValue);
+    const ifNoneMatch = req.headers.get('if-none-match');
+    if (ifNoneMatch === etagValue) {
+      res.status = 304;
+      res.body = undefined;
+      return true;
+    }
+  }
+
+  if (lastModified && fileStat.mtime) {
+    res.setHeader('Last-Modified', fileStat.mtime.toUTCString());
+    const ifModifiedSince = req.headers.get('if-modified-since');
+    if (ifModifiedSince) {
+      const modifiedSince = new Date(ifModifiedSince);
+      if (fileStat.mtime <= modifiedSince) {
+        res.status = 304;
+        res.body = undefined;
+        return true;
+      }
+    }
+  }
+
+  if (maxAge > 0) {
+    res.setHeader('Cache-Control', `public, max-age=${maxAge}`);
+  }
+
+  try {
+    const file = await Deno.open(fullPath, { read: true });
+    let body: ReadableStream<Uint8Array> = file.readable;
+    const mimeType = getContentType(filePath);
+
+    // 内容协商和压缩
+    const acceptEncoding = req.headers.get("accept-encoding") || "";
+    const isTextFile = mimeType.startsWith('text/') ||
+      mimeType.includes('javascript') ||
+      mimeType.includes('json') ||
+      mimeType.includes('xml') ||
+      mimeType.includes('svg');
+
+    if (isTextFile && acceptEncoding.includes("gzip")) {
+      res.setHeader("Content-Encoding", "gzip");
+      res.setHeader("Vary", "Accept-Encoding");
+      // 使用 gzip 压缩流
+      body = body.pipeThrough(new CompressionStream("gzip"));
+      // 压缩后长度未知，不设置 Content-Length，使用 Transfer-Encoding: chunked
+    } else {
+      res.setHeader("Content-Length", fileStat.size.toString());
+    }
+
+    res.setHeader("Content-Type", mimeType);
+    res.status = 200;
+    res.body = body;
+    return true;
+  } catch (error) {
+    console.error('打开静态文件失败:', error);
+    return false;
+  }
 }
 
 /**
@@ -209,64 +288,18 @@ export function staticFiles(options: StaticOptions): Middleware {
           }
           
           // 读取并返回文件
-          try {
-            const file = await Deno.readFile(fullPath);
-            const mimeType = getContentType(filePath);
-            res.setHeader('Content-Type', mimeType);
-            res.setHeader('Content-Length', fileStat.size.toString());
-            
-            if (etag) {
-              const etagValue = `"${fileStat.mtime?.getTime() || fileStat.size}"`;
-              res.setHeader('ETag', etagValue);
-              const ifNoneMatch = req.headers.get('if-none-match');
-              if (ifNoneMatch === etagValue) {
-                res.status = 304;
-                res.body = undefined;
-                return;
-              }
-            }
-            
-            if (lastModified && fileStat.mtime) {
-              res.setHeader('Last-Modified', fileStat.mtime.toUTCString());
-              const ifModifiedSince = req.headers.get('if-modified-since');
-              if (ifModifiedSince) {
-                const modifiedSince = new Date(ifModifiedSince);
-                if (fileStat.mtime <= modifiedSince) {
-                  res.status = 304;
-                  res.body = undefined;
-                  return;
-                }
-              }
-            }
-            
-            if (maxAge > 0) {
-              res.setHeader('Cache-Control', `public, max-age=${maxAge}`);
-            }
-            
-            const isTextFile = mimeType.startsWith('text/') || 
-                               mimeType.includes('javascript') || 
-                               mimeType.includes('json') || 
-                               mimeType.includes('xml') ||
-                               mimeType.includes('svg');
-            
-            if (isTextFile) {
-              try {
-                const decoder = new TextDecoder('utf-8');
-                res.body = decoder.decode(file);
-              } catch {
-                res.body = file;
-              }
-            } else {
-              res.body = file;
-            }
-            
-            res.status = 200;
-            return;
-          } catch (error) {
-            console.error('读取静态文件失败:', error);
-            await next();
-            return;
-          }
+          const served = await serveStaticFile(
+            req,
+            res,
+            fullPath,
+            fileStat,
+            filePath,
+            { etag, lastModified, maxAge }
+          );
+
+          if (served) return;
+          await next();
+          return;
         }
       }
     }
@@ -342,81 +375,17 @@ export function staticFiles(options: StaticOptions): Middleware {
       return;
     }
     
-    try {
-      // 读取文件
-      const file = await Deno.readFile(fullPath);
-      
-      // 设置内容类型
-      const mimeType = getContentType(filePath);
-      res.setHeader('Content-Type', mimeType);
-      
-      // 设置内容长度
-      res.setHeader('Content-Length', fileStat.size.toString());
-      
-      // 设置 ETag
-      if (etag) {
-        const etagValue = `"${fileStat.mtime?.getTime() || fileStat.size}"`;
-        res.setHeader('ETag', etagValue);
-        
-        // 检查 If-None-Match
-        const ifNoneMatch = req.headers.get('if-none-match');
-        if (ifNoneMatch === etagValue) {
-          res.status = 304;
-          res.body = undefined;  // 304 响应不应该有 body
-          return;
-        }
-      }
-      
-      // 设置 Last-Modified
-      if (lastModified && fileStat.mtime) {
-        res.setHeader('Last-Modified', fileStat.mtime.toUTCString());
-        
-        // 检查 If-Modified-Since
-        const ifModifiedSince = req.headers.get('if-modified-since');
-        if (ifModifiedSince) {
-          const modifiedSince = new Date(ifModifiedSince);
-          if (fileStat.mtime <= modifiedSince) {
-            res.status = 304;
-            res.body = undefined;  // 304 响应不应该有 body
-            return;
-          }
-        }
-      }
-      
-      // 设置缓存控制
-      if (maxAge > 0) {
-        res.setHeader('Cache-Control', `public, max-age=${maxAge}`);
-      }
-      
-      // 返回文件内容
-      // 注意：静态文件中间件应该直接设置响应并返回，不调用 next()
-      // 对于文本文件（如 HTML、CSS、JS），可以转换为字符串
-      // 对于二进制文件（如图片、字体），直接使用 Uint8Array
-      const isTextFile = mimeType.startsWith('text/') || 
-                         mimeType.includes('javascript') || 
-                         mimeType.includes('json') || 
-                         mimeType.includes('xml') ||
-                         mimeType.includes('svg');
-      
-      if (isTextFile) {
-        // 文本文件：转换为字符串
-        try {
-          const decoder = new TextDecoder('utf-8');
-          res.body = decoder.decode(file);
-        } catch {
-          // 如果解码失败，使用原始数据（可能是二进制文件被误判为文本）
-          res.body = file;
-        }
-      } else {
-        // 二进制文件：直接使用 Uint8Array
-        res.body = file;
-      }
-      
-      res.status = 200;
-      // 不调用 next()，直接返回文件
-      return;
-    } catch (error) {
-      console.error('读取静态文件失败:', error);
+    // 读取文件并返回（使用流式传输和压缩）
+    const served = await serveStaticFile(
+      req,
+      res,
+      fullPath,
+      fileStat,
+      filePath,
+      { etag, lastModified, maxAge }
+    );
+
+    if (!served) {
       await next();
     }
   };

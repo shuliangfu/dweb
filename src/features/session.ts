@@ -41,7 +41,7 @@ class MemorySessionStore implements SessionStore {
     // 定期清理过期 Session
     this.cleanupInterval = setInterval(() => {
       this.cleanup();
-    }, 60000); // 每分钟清理一次
+    }, 5 * 60 * 1000); // 每 5 分钟清理一次
   }
   
   async get(sessionId: string): Promise<SessionData | null> {
@@ -484,7 +484,7 @@ class FileSessionStore implements SessionStore {
     // 定期清理过期 Session
     this.cleanupInterval = setInterval(() => {
       this.cleanup();
-    }, 60000); // 每分钟清理一次
+    }, 60 * 60 * 1000); // 每小时清理一次
   }
   
   private async init(): Promise<void> {

@@ -7,6 +7,7 @@ import { walk } from "@std/fs/walk";
 import { globToRegExp } from "@std/path/glob-to-regexp";
 import * as path from "@std/path";
 import { isValidIdentifier, sanitizeRouteParams } from "../utils/security.ts";
+import { RadixTree } from "../utils/router-radix-tree.ts";
 
 /**
  * 路由信息
@@ -55,6 +56,7 @@ export interface RouteInfo {
  */
 export class Router {
   private routes: Map<string, RouteInfo> = new Map();
+  private radixTree = new RadixTree();
   private layouts: Map<string, string> = new Map(); // 路径 -> layout 文件路径
   private middlewares: Map<string, string> = new Map(); // 路径 -> middleware 文件路径
   private errorPages: Map<string, string> = new Map(); // 错误类型 -> 文件路径
@@ -119,6 +121,7 @@ export class Router {
     outDir: string,
   ): Promise<void> {
     this.routes.clear();
+    this.radixTree = new RadixTree();
     this.layouts.clear();
     this.middlewares.clear();
     this.errorPages.clear();
@@ -231,6 +234,7 @@ export class Router {
 				
         // 添加到路由映射
         this.routes.set(routePath, routeInfo);
+        this.radixTree.insert(routePath, routeInfo);
 
         // 处理特殊文件
         if (type === "layout") {
@@ -278,6 +282,7 @@ export class Router {
    */
   async scan(): Promise<void> {
     this.routes.clear();
+    this.radixTree = new RadixTree();
     this.layouts.clear();
     this.middlewares.clear();
     this.errorPages.clear();
@@ -458,13 +463,18 @@ export class Router {
       routePath = base + routePath;
     }
 
-    this.routes.set(routePath, {
+    const routeInfo = {
       path: routePath,
       filePath,
-      type: "api",
+      type: "api" as const,
       params,
       isCatchAll,
-    });
+    };
+    this.routes.set(routePath, routeInfo);
+    this.radixTree.insert(routePath, routeInfo);
+    // 同时注册捕获所有路由，支持 API Action 模式（如 /api/users/get 匹配 /api/users）
+    // 注意：如果有更具体的路由（如 /api/users/details），RadixTree 会优先匹配更具体的
+    this.radixTree.insert(routePath + "/*", routeInfo);
   }
 
   /**
@@ -502,14 +512,17 @@ export class Router {
 
       // 注册基础路径（例如 /page）
       this.routes.set(path, routeInfo);
+      this.radixTree.insert(path, routeInfo);
 
       // 同时注册带 /index 的路径（例如 /page/index），支持两种访问方式
       if (path !== "/") {
         const pathWithIndex = path + "/index";
         this.routes.set(pathWithIndex, routeInfo);
+        this.radixTree.insert(pathWithIndex, routeInfo);
       } else {
         // 根路径的 index 文件，也注册 /index 路径
         this.routes.set("/index", routeInfo);
+        this.radixTree.insert("/index", routeInfo);
       }
 
       return;
@@ -527,13 +540,15 @@ export class Router {
       routePath = base + path;
     }
 
-    this.routes.set(routePath, {
+    const routeInfo = {
       path: routePath,
       filePath,
-      type: "page",
+      type: "page" as const,
       params,
       isCatchAll,
-    });
+    };
+    this.routes.set(routePath, routeInfo);
+    this.radixTree.insert(routePath, routeInfo);
   }
 
   /**
@@ -599,6 +614,16 @@ export class Router {
     if (this.routes.has(urlPath)) {
       return this.routes.get(urlPath)!;
     }
+    
+    // 尝试 Radix Tree 匹配（性能优化：O(K) vs O(N)）
+    // Radix Tree 已包含：
+    // 1. 精确路由
+    // 2. 动态路由
+    // 3. API 路由（包括 Action 模式的通配符匹配）
+    const radixMatch = this.radixTree.match(urlPath);
+    if (radixMatch) {
+      return radixMatch;
+    }
 
     // 如果精确匹配失败，尝试匹配对应的 index 文件
     // 例如：访问 /docs 时，如果没有 /docs 路由，尝试匹配 /docs/index
@@ -607,35 +632,6 @@ export class Router {
       const indexPath = urlPath + "/index";
       if (this.routes.has(indexPath)) {
         return this.routes.get(indexPath)!;
-      }
-    }
-
-    // API 路由前缀匹配（支持 Action 模式，如 /api/examples/getExamples 匹配 /api/examples）
-    if (
-      urlPath.startsWith("/api/") ||
-      (this.basePath !== "/" && urlPath.includes("/api/"))
-    ) {
-      // 按路径长度从长到短排序，优先匹配更具体的路由
-      const apiRoutes = Array.from(this.routes.entries())
-        .filter(([_, routeInfo]) => routeInfo.type === "api")
-        .sort(([a], [b]) => b.length - a.length);
-
-      for (const [routePath, routeInfo] of apiRoutes) {
-        // 如果请求路径以路由路径开头，且下一个字符是 / 或路径结束，则匹配
-        if (
-          urlPath.startsWith(routePath) &&
-          (urlPath.length === routePath.length ||
-            urlPath[routePath.length] === "/")
-        ) {
-          return routeInfo;
-        }
-      }
-    }
-
-    // 动态路由匹配
-    for (const [routePath, routeInfo] of this.routes.entries()) {
-      if (this.matchDynamicRoute(routePath, urlPath, routeInfo)) {
-        return routeInfo;
       }
     }
 

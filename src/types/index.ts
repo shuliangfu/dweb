@@ -166,7 +166,7 @@ export interface Response {
   status: number;
   statusText: string;
   headers: Headers;
-  body?: string | Uint8Array; // 支持字符串和二进制数据
+  body?: string | Uint8Array | ReadableStream<Uint8Array>; // 支持字符串、二进制数据和流
   setCookie(name: string, value: string, options?: CookieOptions): void;
   setHeader(name: string, value: string): void;
   json<T = unknown>(
@@ -218,10 +218,10 @@ export interface CookieOptions {
 }
 
 // Session 对象
-export interface Session {
+export interface Session<T = Record<string, any>> {
   id: string;
-  data: Record<string, any>;
-  update(data: Record<string, any>): Promise<void>;
+  data: T;
+  update(data: Partial<T>): Promise<void>;
   destroy(): Promise<void>;
   regenerate(): Promise<void>;
 }

@@ -34,6 +34,7 @@ import { minifyJavaScript } from "../utils/minify.ts";
 import * as path from "@std/path";
 import { logger } from "../utils/logger.ts";
 import { isMultiAppMode } from "./config.ts";
+import { LRUCache } from "../utils/lru-cache.ts";
 
 /**
  * HMR 客户端脚本注入函数
@@ -97,6 +98,14 @@ export class RouteHandler {
   private sessionManager?: SessionManager;
   private config?: AppConfig;
   private graphqlServer?: GraphQLServer;
+  
+  /**
+   * 模块编译缓存
+   * Key: 文件绝对路径
+   * Value: 修改时间和编译后的代码
+   * 使用 LRU 缓存，最大 1000 个条目
+   */
+  private moduleCache = new LRUCache<string, { mtime: number; code: string }>(1000);
 
   constructor(
     router: Router,
@@ -194,10 +203,12 @@ export class RouteHandler {
           // 开发环境：从项目根目录加载
           fullPath = path.resolve(cwd, filePath);
         }
+        
         // 检查文件是否存在（确保正确等待，使用 await 等待完成）
+        let stat: Deno.FileInfo;
         try {
           // 直接等待 stat 操作完成，确保异步操作完成
-          await Deno.stat(fullPath);
+          stat = await Deno.stat(fullPath);
         } catch (_statError) {
           res.status = 404;
           res.setHeader("Content-Type", "text/plain; charset=utf-8");
@@ -209,6 +220,29 @@ export class RouteHandler {
           // 确保在返回前响应体已设置
           if (!res.body) {
             res.text(errorMsg);
+          }
+          return;
+        }
+
+        // 检查缓存
+        // Key: 文件完整路径
+        // Value: { mtime, code }
+        // 如果文件未修改，直接使用缓存的编译结果
+        const mtime = stat.mtime?.getTime() || 0;
+        const cacheKey = fullPath;
+        const cachedEntry = this.moduleCache.get(cacheKey);
+
+        if (cachedEntry && cachedEntry.mtime === mtime) {
+          // 缓存命中，直接返回
+          const jsCode = cachedEntry.code;
+          
+          res.status = 200;
+          res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+          res.text(jsCode);
+          
+          if (!res.body || (typeof res.body === "string" && res.body.trim() === "")) {
+            res.text(jsCode);
           }
           return;
         }
@@ -277,6 +311,12 @@ export class RouteHandler {
           // 直接使用原始内容
           jsCode = fileContent;
         }
+
+        // 更新缓存
+        this.moduleCache.set(cacheKey, {
+          mtime,
+          code: jsCode,
+        });
 
         // 设置响应头和状态码（在所有异步操作完成后）
         const contentType = "application/javascript; charset=utf-8";
@@ -1445,6 +1485,9 @@ export class RouteHandler {
     _req?: Request,
     layoutData?: Record<string, unknown>[],
   ): Promise<string> {
+    const headScripts: string[] = [];
+    const bodyScripts: string[] = [];
+
     // 只在需要客户端脚本时注入 import map
     // 纯 SSR 模式（ssr + !shouldHydrate）不需要 import map，因为不需要客户端脚本
     // CSR、Hybrid 和 SSR + Hydration 模式需要 import map
@@ -1465,19 +1508,7 @@ export class RouteHandler {
       }
 
       if (importMapScript) {
-        if (fullHtml.includes("</head>")) {
-          fullHtml = fullHtml.replace(
-            "</head>",
-            `  ${importMapScript}\n</head>`,
-          );
-        } else if (fullHtml.includes("<head>")) {
-          fullHtml = fullHtml.replace("<head>", `<head>\n  ${importMapScript}`);
-        } else {
-          fullHtml = fullHtml.replace(
-            "<html",
-            `<html>\n<head>\n  ${importMapScript}\n</head>`,
-          );
-        }
+        headScripts.push(importMapScript);
       }
     }
 
@@ -1530,26 +1561,9 @@ export class RouteHandler {
       const preactPreloadScript =
         `<script type="module" data-type="dweb-preact-preload">${minifiedContent}</script>`;
 
-      // 注入到 head 中（在 import map 之后）
-      // 注意：预加载脚本会在 import map 之后执行，确保 import map 已生效
-      if (fullHtml.includes("</head>")) {
-        fullHtml = fullHtml.replace(
-          "</head>",
-          `  ${preactPreloadScript}\n</head>`,
-        );
-      } else if (fullHtml.includes("<head>")) {
-        fullHtml = fullHtml.replace(
-          "<head>",
-          `<head>\n  ${preactPreloadScript}`,
-        );
-      }
+      // 注入到 head 中
+      headScripts.push(preactPreloadScript);
     }
-
-    // 构建要注入到 head 的脚本（链接拦截器，需要尽早执行）
-    const headScriptsToInject: string[] = [];
-
-    // 构建要注入到 body 的脚本
-    const scriptsToInject: string[] = [];
 
     // 注入客户端 JS（CSR、Hybrid 模式或明确启用 hydration 时需要）
     if (renderMode === "csr" || renderMode === "hybrid" || shouldHydrate) {
@@ -1685,66 +1699,11 @@ export class RouteHandler {
         );
       }
 
-      // 如果启用了预加载加载状态，注入预加载动画样式（插入到现有的 style 标签中，或创建新的 style 标签）
+      // 如果启用了预加载加载状态，注入预加载动画样式
       if (prefetchLoading) {
         const prefetchSpinCss =
           `@keyframes spin { to { transform: rotate(360deg); }}`;
-
-        // 查找 head 中的 style 标签
-        const styleMatch = fullHtml.match(/<style[^>]*>([\s\S]*?)<\/style>/gi);
-
-        if (styleMatch && styleMatch.length > 0) {
-          // 如果存在 style 标签，将 CSS 插入到最后一个 style 标签的内容中
-          const lastStyleTag = styleMatch[styleMatch.length - 1];
-          const lastStyleIndex = fullHtml.lastIndexOf(lastStyleTag);
-
-          // 提取 style 标签的内容（不包含标签本身）
-          const styleContentMatch = lastStyleTag.match(
-            /<style[^>]*>([\s\S]*?)<\/style>/i,
-          );
-          if (styleContentMatch) {
-            const existingContent = styleContentMatch[1];
-            const styleTagStart = lastStyleTag.substring(
-              0,
-              lastStyleTag.indexOf(">") + 1,
-            );
-            const styleTagEnd = "</style>";
-
-            // 检查是否已经包含 spin 动画（避免重复）
-            if (!existingContent.includes("@keyframes spin")) {
-              const newStyleContent = styleTagStart + existingContent +
-                prefetchSpinCss + styleTagEnd;
-              fullHtml = fullHtml.slice(0, lastStyleIndex) + newStyleContent +
-                fullHtml.slice(lastStyleIndex + lastStyleTag.length);
-            }
-          }
-        } else {
-          // 如果不存在 style 标签，创建新的 style 标签
-          const prefetchSpinStyle = `<style>${prefetchSpinCss}</style>`;
-
-          // 查找 link[rel="stylesheet"]，在其后插入
-          const linkMatch = fullHtml.match(
-            /<link[^>]*rel=["']stylesheet["'][^>]*>/gi,
-          );
-
-          if (linkMatch && linkMatch.length > 0) {
-            // 在最后一个 link[rel="stylesheet"] 后插入
-            const lastLinkIndex = fullHtml.lastIndexOf(
-              linkMatch[linkMatch.length - 1],
-            );
-            const insertIndex = lastLinkIndex +
-              linkMatch[linkMatch.length - 1].length;
-            fullHtml = fullHtml.slice(0, insertIndex) +
-              `\n      ${prefetchSpinStyle}` +
-              fullHtml.slice(insertIndex);
-          } else if (fullHtml.includes("</head>")) {
-            // 如果没有找到 link，在 </head> 之前插入
-            fullHtml = fullHtml.replace(
-              "</head>",
-              `      ${prefetchSpinStyle}\n</head>`,
-            );
-          }
-        }
+        headScripts.push(`<style>${prefetchSpinCss}</style>`);
       }
 
       // 只在有客户端脚本时才注入
@@ -1756,7 +1715,7 @@ export class RouteHandler {
             /<script>([\s\S]*?)<\/script>/,
           );
           if (linkInterceptorMatch) {
-            headScriptsToInject.push(
+            headScripts.push(
               `<script>${linkInterceptorMatch[1]}</script>`,
             );
             // 从 body 脚本中移除链接拦截器，只保留模块脚本
@@ -1764,45 +1723,65 @@ export class RouteHandler {
               /<script>[\s\S]*?<\/script>\s*/,
               "",
             );
-            scriptsToInject.push(moduleScript);
+            bodyScripts.push(moduleScript);
           } else {
-            scriptsToInject.push(clientScript);
+            bodyScripts.push(clientScript);
           }
         } else {
-          scriptsToInject.push(clientScript);
+          bodyScripts.push(clientScript);
         }
       }
     }
 
     // 在开发模式下注入 HMR 客户端脚本
     if (hmrClientScript) {
-      scriptsToInject.push(hmrClientScript);
+      bodyScripts.push(hmrClientScript);
     }
 
-    // 将脚本注入到 </head> 之前（尽早执行）
-    if (headScriptsToInject.length > 0) {
-      const allHeadContent = headScriptsToInject.join("\n");
-      if (fullHtml.includes("</head>")) {
-        fullHtml = fullHtml.replace("</head>", `${allHeadContent}\n</head>`);
-      } else if (fullHtml.includes("<head>")) {
-        fullHtml = fullHtml.replace("<head>", `<head>\n${allHeadContent}`);
+    // 执行注入
+    let resultHtml = fullHtml;
+
+    if (headScripts.length > 0) {
+      const headContent = headScripts.join("\n");
+      const headEndIndex = resultHtml.indexOf("</head>");
+      if (headEndIndex !== -1) {
+        resultHtml = resultHtml.slice(0, headEndIndex) +
+          headContent + "\n" +
+          resultHtml.slice(headEndIndex);
+      } else if (resultHtml.indexOf("<head>") !== -1) {
+        // 如果没有 </head> 但有 <head>，追加到 <head> 后
+        const headStartIndex = resultHtml.indexOf("<head>") + 6;
+        resultHtml = resultHtml.slice(0, headStartIndex) +
+          "\n" + headContent +
+          resultHtml.slice(headStartIndex);
       } else {
-        // 如果没有 head 标签，在开头添加
-        fullHtml = `<head>${allHeadContent}</head>${fullHtml}`;
+        // 如果没有 head 标签，尝试插入到 html 标签后
+        const htmlStartIndex = resultHtml.indexOf("<html");
+        if (htmlStartIndex !== -1) {
+          const htmlEndIndex = resultHtml.indexOf(">", htmlStartIndex) + 1;
+          resultHtml = resultHtml.slice(0, htmlEndIndex) +
+            "\n<head>\n" + headContent + "\n</head>" +
+            resultHtml.slice(htmlEndIndex);
+        } else {
+          // 最坏情况，插入到最前面
+          resultHtml = "<head>\n" + headContent + "\n</head>\n" + resultHtml;
+        }
       }
     }
 
-    // 将所有脚本注入到 </body> 之前
-    if (scriptsToInject.length > 0) {
-      const allScripts = scriptsToInject.join("\n");
-      if (fullHtml.includes("</body>")) {
-        fullHtml = fullHtml.replace("</body>", `${allScripts}\n</body>`);
+    if (bodyScripts.length > 0) {
+      const bodyContent = bodyScripts.join("\n");
+      const bodyEndIndex = resultHtml.indexOf("</body>");
+      if (bodyEndIndex !== -1) {
+        resultHtml = resultHtml.slice(0, bodyEndIndex) +
+          bodyContent + "\n" +
+          resultHtml.slice(bodyEndIndex);
       } else {
-        fullHtml += allScripts;
+        resultHtml += "\n" + bodyContent;
       }
     }
 
-    return fullHtml;
+    return resultHtml;
   }
 
   /**

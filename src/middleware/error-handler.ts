@@ -197,9 +197,38 @@ export function errorHandler(options: ErrorHandlerOptions = {}): Middleware {
         ? formatError(err, { url: req.url, method: req.method })
         : formatErrorResponse(err, { url: req.url, method: req.method }, { debug, logStack, defaultMessage });
       
-      // 设置响应
+      // 设置响应状态码
       res.status = errorResponse.statusCode;
-      res.json(errorResponse);
+
+      // 内容协商：根据 Accept 头返回 HTML 或 JSON
+      const accept = req.headers.get("accept") || "";
+      if (accept.includes("text/html")) {
+        const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Error ${errorResponse.statusCode}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; line-height: 1.5; }
+    h1 { color: #e11d48; margin-bottom: 0.5rem; }
+    .status { font-size: 3rem; font-weight: bold; color: #94a3b8; }
+    .message { font-size: 1.5rem; margin-bottom: 1.5rem; }
+    .details { background: #f1f5f9; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
+    pre { margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="status">${errorResponse.statusCode}</div>
+  <h1>${errorResponse.error}</h1>
+  <div class="message">${errorResponse.message}</div>
+  ${errorResponse.details ? `<div class="details"><pre>${JSON.stringify(errorResponse.details, null, 2)}</pre></div>` : ''}
+</body>
+</html>`;
+        res.html(htmlContent);
+      } else {
+        res.json(errorResponse);
+      }
     }
   };
 }
