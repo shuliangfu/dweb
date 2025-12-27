@@ -78,6 +78,9 @@ export class PluginManager extends BaseManager implements IService {
     // 检查是否已经注册了同名插件，避免重复注册
     if (pluginName && this.plugins.some((p) => p.name === pluginName)) {
       // 如果已经存在同名插件，跳过注册（避免重复执行钩子）
+      console.warn(
+        `⚠️  插件 "${pluginName}" 已注册，跳过重复注册（避免重复执行钩子）`,
+      );
       return;
     }
 

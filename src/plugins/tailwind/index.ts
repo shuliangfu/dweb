@@ -97,20 +97,6 @@ function injectCSSLink(
     // 构建 CSS 文件 URL
     const cssUrl = path.join(staticPrefix, filename);
 
-    // 检查是否已经存在相同的 CSS 链接，避免重复注入
-    // 匹配 href 属性，支持单引号、双引号，以及属性顺序不同的情况
-    // 转义 CSS URL 中的特殊字符，用于正则表达式匹配
-    const escapedCssUrl = cssUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    // 匹配包含该 CSS URL 的 link 标签（rel="stylesheet" 且 href 包含该 URL）
-    const existingLinkRegex = new RegExp(
-      `<link[^>]*rel\\s*=\\s*["']stylesheet["'][^>]*href\\s*=\\s*["'][^"']*${escapedCssUrl}[^"']*["'][^>]*>|<link[^>]*href\\s*=\\s*["'][^"']*${escapedCssUrl}[^"']*["'][^>]*rel\\s*=\\s*["']stylesheet["'][^>]*>`,
-      "i",
-    );
-    if (existingLinkRegex.test(html)) {
-      // 如果已经存在相同的 CSS 链接，直接返回，不重复注入
-      return;
-    }
-
     const linkTag = `<link rel="stylesheet" href="${cssUrl}" />`;
 
     // 检查 <head> 中是否有 <link> 标签（CSS 文件）
