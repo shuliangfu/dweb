@@ -18,6 +18,7 @@ import { processCSSV4 } from "./v4.ts";
 import { ensureTailwindCli } from "./fetch-cli.ts";
 import * as path from "@std/path";
 import { isPathSafe } from "../../utils/security.ts";
+import { exists } from "@std/fs/exists";
 
 /**
  * 处理 CSS 文件
@@ -29,12 +30,88 @@ import { isPathSafe } from "../../utils/security.ts";
  * @returns 处理后的 CSS 内容和 source map
  */
 /**
+ * 使用 Tailwind CLI 编译 CSS
+ * @param cssContent CSS 内容
+ * @param filePath CSS 文件路径
+ * @param cliPath CLI 可执行文件路径
+ * @param configPath Tailwind 配置文件路径
+ * @param isProduction 是否为生产环境
+ * @returns 处理后的 CSS 内容
+ */
+async function processCSSWithCLI(
+  cssContent: string,
+  filePath: string,
+  cliPath: string,
+  configPath: string | null,
+  isProduction: boolean,
+): Promise<{ content: string; map?: string }> {
+  // 处理文件路径
+  const absoluteFilePath = path.isAbsolute(filePath)
+    ? filePath
+    : path.resolve(Deno.cwd(), filePath);
+  const fileDir = path.dirname(absoluteFilePath);
+
+  // 构建 CLI 命令参数
+  const args: string[] = [];
+
+  // 输入文件（使用 stdin）
+  args.push("-i", "-");
+
+  // 输出文件（使用 stdout）
+  args.push("-o", "-");
+
+  // 如果有配置文件，指定配置文件路径
+  if (configPath) {
+    args.push("--config", configPath);
+  }
+
+  // 生产环境启用压缩
+  if (isProduction) {
+    args.push("--minify");
+  }
+
+  // 执行 CLI 命令
+  const command = new Deno.Command(cliPath, {
+    args,
+    stdin: "piped",
+    stdout: "piped",
+    stderr: "piped",
+    cwd: fileDir,
+  });
+
+  const process = command.spawn();
+
+  // 写入 CSS 内容到 stdin
+  const writer = process.stdin.getWriter();
+  await writer.write(new TextEncoder().encode(cssContent));
+  await writer.close();
+
+  // 等待命令执行完成
+  const { code, stdout, stderr } = await process.output();
+
+  if (code !== 0) {
+    const errorText = new TextDecoder().decode(stderr);
+    throw new Error(
+      `Tailwind CLI 编译失败 (退出码: ${code}):\n${errorText}`,
+    );
+  }
+
+  const compiledCSS = new TextDecoder().decode(stdout);
+
+  return {
+    content: compiledCSS,
+  };
+}
+
+/**
  * 处理 CSS 文件（根据版本调用对应的处理方法）
+ * 如果 CLI 存在，优先使用 CLI 编译；否则使用 PostCSS
  * @param cssContent CSS 内容
  * @param filePath CSS 文件路径
  * @param version Tailwind 版本
  * @param isProduction 是否为生产环境
  * @param options 插件选项
+ * @param cliPath CLI 可执行文件路径（可选）
  * @returns 处理后的 CSS 内容和 source map
  */
 async function processCSS(
@@ -43,11 +120,31 @@ async function processCSS(
   version: "v3" | "v4",
   isProduction: boolean,
   options: TailwindPluginOptions,
+  cliPath?: string,
 ): Promise<{ content: string; map?: string }> {
   // 查找 Tailwind 配置文件
   const configPath = await findTailwindConfigFile(Deno.cwd());
 
-  // 根据版本调用对应的处理方法
+  // 如果提供了 CLI 路径且文件存在，使用 CLI 编译
+  if (cliPath && await exists(cliPath)) {
+    try {
+      return await processCSSWithCLI(
+        cssContent,
+        filePath,
+        cliPath,
+        configPath,
+        isProduction,
+      );
+    } catch (error) {
+      console.warn(
+        `⚠️  [Tailwind ${version}] CLI 编译失败，回退到 PostCSS:`,
+        error instanceof Error ? error.message : String(error),
+      );
+      // 回退到 PostCSS
+    }
+  }
+
+  // 使用 PostCSS 处理（回退方案）
   if (version === "v3") {
     return await processCSSV3(
       cssContent,
@@ -159,6 +256,8 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
   let isProduction = false;
   let staticPrefix = "/";
   let staticDir = "assets";
+  // CLI 路径（在 onInit 中获取）
+  let cliPath: string | undefined;
 
   return {
     name: "tailwind",
@@ -179,7 +278,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
       // - 如果未配置 cliPath，自动下载到项目根目录的隐藏目录 .bin/
       // 这样用户可以将 CLI 移动到共享目录，通过 cliPath 配置使用，避免重复下载
       // 注意：CLI 是必需的，如果下载失败将直接终止程序启动
-      await ensureTailwindCli(
+      cliPath = await ensureTailwindCli(
         options.cliPath,
         version,
       );
@@ -247,6 +346,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
             version,
             isProduction,
             options,
+            cliPath,
           );
           compiledCSS = processed.content;
         } else {
@@ -271,6 +371,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
               version,
               false,
               options,
+              cliPath,
             );
 
             // 更新缓存
@@ -376,6 +477,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
               version,
               isProduction,
               options,
+              cliPath,
             );
 
             // 计算输出路径
