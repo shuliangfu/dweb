@@ -388,9 +388,9 @@ export function i18n(options: I18nPluginOptions): Plugin {
      * 请求处理钩子 - 检测语言并注入到请求对象，处理语言包 API 请求
      */
     onRequest: async (req: Request, res: Response) => {
-      // 处理语言包 API 请求（如 /__i18n/locales/en-US.json）
+      // 处理语言包 API 请求（如 /i18n/locales/en-US.json）
       const url = new URL(req.url);
-      const i18nApiPrefix = "/__i18n/locales/";
+      const i18nApiPrefix = "/i18n/locales/";
 
       if (url.pathname.startsWith(i18nApiPrefix)) {
         // 提取语言代码（如 /__i18n/locales/en-US.json -> en-US）
@@ -516,7 +516,7 @@ export function i18n(options: I18nPluginOptions): Plugin {
                   console.warn("[i18n Plugin] 客户端脚本编译失败，跳过注入");
                 } else {
                   // 生成 API 端点 URL
-                  const apiEndpoint = `/__i18n/locales/${langCode}.json`;
+                  const apiEndpoint = `/i18n/locales/${langCode}.json`;
 
                   // 生成初始化脚本（只包含语言代码和 API 端点）
                   const initScript = generateInitScript({
