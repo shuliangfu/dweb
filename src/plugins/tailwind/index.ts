@@ -212,11 +212,17 @@ async function processCSS(
         configPath,
         isProduction,
       );
-    } catch (_error) {
-      console.warn(
-        `💡 提示: Tailwind CLI 可能未安装请，需要回退到PostCSS处理\n
-				💡 检查 deno.json 请将 "nodeModulesDir" 设置为 "auto"`,
-      );
+    } catch (error) {
+      // 只在真正失败时才显示警告（不是编译结果为空的情况，因为那已经在 processCSSWithCLI 中处理了）
+      if (error instanceof Error && !error.message.includes("编译结果为空")) {
+        console.warn(
+          `⚠️  [Tailwind ${version}] CLI 编译失败，回退到 PostCSS:`,
+          error.message,
+        );
+        console.warn(
+          `💡 提示: 如果 CLI 编译失败，请检查 deno.json 中的 "nodeModulesDir" 是否设置为 "auto"`,
+        );
+      }
       // 回退到 PostCSS
     }
   }
