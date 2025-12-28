@@ -156,6 +156,9 @@ async function processCSS(
         `⚠️  [Tailwind ${version}] CLI 编译失败，回退到 PostCSS:`,
         error instanceof Error ? error.message : String(error),
       );
+      console.warn(
+        `💡 提示: 如果 CLI 编译失败，请检查 deno.json 中的 "nodeModulesDir" 是否设置为 "auto"`,
+      );
       // 回退到 PostCSS
     }
   }
