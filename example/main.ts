@@ -27,6 +27,7 @@ app.plugin(
       { code: 'zh-CN', name: '中文' },
     ],
     defaultLanguage: 'en-US',
+    // defaultLanguage: 'zh-CN',
     translationsDir: 'locales',
     detection: { fromCookie: true },
   })
