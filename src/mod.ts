@@ -179,3 +179,26 @@ export * from "./console/mod.ts";
 
 // 导出数据库工具
 export * from "./features/database/mod.ts";
+
+// 导入 Application 用于 createApp 函数
+import { Application } from "./core/application.ts";
+
+/**
+ * 创建应用实例
+ * 这是一个便捷函数，用于创建新的 Application 实例
+ *
+ * @returns 新的 Application 实例
+ *
+ * @example
+ * ```ts
+ * import { createApp, cors } from '@dreamer/dweb';
+ *
+ * const app = createApp();
+ * app.use(cors());
+ *
+ * export default app;
+ * ```
+ */
+export function createApp(): Application {
+  return new Application();
+}
