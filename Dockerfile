@@ -42,6 +42,9 @@ COPY --from=builder /app/example/global.d.ts ./example/
 # 切换到 example 目录（deno.json 和 dweb.config.ts 所在目录）
 WORKDIR /app/example
 
+# 修改 dweb.config.ts，将 host 从 127.0.0.1 改为 0.0.0.0（Docker 环境需要监听所有网络接口）
+RUN sed -i 's/host: "127.0.0.1"/host: "0.0.0.0"/' dweb.config.ts
+
 # 暴露端口（根据 dweb.config.ts 中的配置）
 EXPOSE 3000
 
