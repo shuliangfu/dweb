@@ -62,7 +62,7 @@ example/build/
 .husky/_/
 .githooks/
 
-bin/
+.bin/
 
 docs/api.json
 

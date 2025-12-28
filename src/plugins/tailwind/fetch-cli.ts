@@ -72,10 +72,10 @@ export async function ensureTailwindCli(
   }
 
   // 默认路径：项目根目录下的 bin 目录
+  // 文件名根据版本区分：v3 -> tailwindcss-v3, v4 -> tailwindcss-v4
   const binDir = path.resolve(Deno.cwd(), "bin");
-  const exeName = Deno.build.os === "windows"
-    ? "tailwindcss.exe"
-    : "tailwindcss";
+  const baseName = `tailwindcss-${version}`;
+  const exeName = Deno.build.os === "windows" ? `${baseName}.exe` : baseName;
   const targetPath = path.join(binDir, exeName);
 
   // 1. 检查是否已存在
