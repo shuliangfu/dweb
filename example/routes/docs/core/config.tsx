@@ -2,7 +2,7 @@
  * 核心模块 - 配置管理 (Config) 文档页面
  */
 
-import CodeBlock from "../../../components/CodeBlock.tsx";
+import CodeBlock from "@components/CodeBlock.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {

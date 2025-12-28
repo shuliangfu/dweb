@@ -3,7 +3,7 @@
  * 展示如何创建自定义插件
  */
 
-import CodeBlock from "../../../components/CodeBlock.tsx";
+import CodeBlock from "@components/CodeBlock.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {

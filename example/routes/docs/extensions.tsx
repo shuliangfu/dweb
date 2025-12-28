@@ -3,7 +3,7 @@
  * 展示 DWeb 框架的扩展系统功能和使用方法
  */
 
-import CodeBlock from "../../../components/CodeBlock.tsx";
+import CodeBlock from "@components/CodeBlock.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {

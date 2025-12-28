@@ -3,7 +3,7 @@
  * 详细介绍 dweb.config.ts 配置选项
  */
 
-import CodeBlock from "../../../components/CodeBlock.tsx";
+import CodeBlock from "@components/CodeBlock.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {

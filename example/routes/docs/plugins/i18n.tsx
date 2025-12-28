@@ -2,7 +2,7 @@
  * 插件 - i18n 文档页面
  */
 
-import CodeBlock from "../../../components/CodeBlock.tsx";
+import CodeBlock from "@components/CodeBlock.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {

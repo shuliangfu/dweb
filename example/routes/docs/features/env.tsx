@@ -3,7 +3,7 @@
  * 展示 DWeb 框架的环境变量管理功能
  */
 
-import CodeBlock from "../../../components/CodeBlock.tsx";
+import CodeBlock from "@components/CodeBlock.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {

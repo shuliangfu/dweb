@@ -3,7 +3,7 @@
  * 展示如何使用 _middleware.ts 文件创建路由级中间件
  */
 
-import CodeBlock from "../../../components/CodeBlock.tsx";
+import CodeBlock from "@components/CodeBlock.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {

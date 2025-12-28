@@ -3,7 +3,7 @@
  * 展示 DWeb 框架的 API 路由功能，包括 Method 模式和 REST 模式
  */
 
-import CodeBlock from "../../../components/CodeBlock.tsx";
+import CodeBlock from "@components/CodeBlock.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {

@@ -3,7 +3,7 @@
  * 展示如何使用 Docker 部署 DWeb 应用
  */
 
-import CodeBlock from "../../../components/CodeBlock.tsx";
+import CodeBlock from "@components/CodeBlock.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
