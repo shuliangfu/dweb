@@ -2,7 +2,7 @@
   "version": "1.9.10",
   "nodeModulesDir": "auto",
   "tasks": {
-    "dev": "deno run -A --watch=../src,./example ../src/cli.ts dev",
+    "dev": "deno run -A ../src/cli.ts dev",
     "build": "deno run -A ../src/cli.ts build",
     "start": "deno run -A ../src/cli.ts start"
   },
