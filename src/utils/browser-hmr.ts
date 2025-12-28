@@ -155,6 +155,8 @@ class HMRClient {
 
   /**
    * 加载布局组件
+   * @param layoutPath 布局文件路径（HTTP URL）
+   * @returns 布局组件，如果加载失败则返回 null
    */
   private async loadLayoutComponent(
     layoutPath: string | null,
@@ -164,13 +166,66 @@ class HMRClient {
     }
 
     try {
+      // 先尝试从缓存中获取布局组件
+      const moduleCache = (globalThis as Record<string, unknown>)
+        .__moduleCache as Map<string, unknown> | undefined;
+
+      if (moduleCache) {
+        const cachedLayout = moduleCache.get(layoutPath);
+        if (
+          cachedLayout && typeof cachedLayout === "object" &&
+          "default" in cachedLayout
+        ) {
+          const cachedComponent =
+            (cachedLayout as { default: unknown }).default;
+          if (cachedComponent && typeof cachedComponent === "function") {
+            // 返回缓存的布局组件
+            return cachedComponent;
+          }
+        }
+      }
+
+      // 如果缓存中没有，尝试加载布局组件
       const separator = layoutPath.includes("?") ? "&" : "?";
       const timestamp = Date.now();
       const layoutModule = await import(
         `${layoutPath}${separator}t=${timestamp}`
       );
-      return layoutModule.default;
-    } catch {
+
+      const layoutComponent = layoutModule.default;
+
+      // 将布局组件缓存起来
+      if (moduleCache && layoutComponent) {
+        moduleCache.set(layoutPath, layoutModule);
+      }
+
+      return layoutComponent;
+    } catch (error) {
+      // 加载失败，尝试从缓存中获取（即使可能过期）
+      const moduleCache = (globalThis as Record<string, unknown>)
+        .__moduleCache as Map<string, unknown> | undefined;
+
+      if (moduleCache) {
+        const cachedLayout = moduleCache.get(layoutPath);
+        if (
+          cachedLayout && typeof cachedLayout === "object" &&
+          "default" in cachedLayout
+        ) {
+          const cachedComponent =
+            (cachedLayout as { default: unknown }).default;
+          if (cachedComponent && typeof cachedComponent === "function") {
+            // 即使加载失败，也返回缓存的布局组件（避免布局丢失）
+            console.warn(
+              `[HMR] 布局组件加载失败，使用缓存版本: ${layoutPath}`,
+              error,
+            );
+            return cachedComponent;
+          }
+        }
+      }
+
+      // 如果缓存中也没有，记录错误并返回 null
+      console.error(`[HMR] 布局组件加载失败且无缓存: ${layoutPath}`, error);
       return null;
     }
   }
@@ -558,7 +613,29 @@ class HMRClient {
 
         // 获取布局路径并加载布局组件（保持原有布局）
         const layoutPath = pageData?.layoutPath ?? null;
-        const LayoutComponent = await this.loadLayoutComponent(layoutPath);
+        let LayoutComponent = await this.loadLayoutComponent(layoutPath);
+
+        // 如果布局组件加载失败，尝试从 allLayoutPaths 加载（支持多布局）
+        if (
+          !LayoutComponent && pageData?.allLayoutPaths &&
+          Array.isArray(pageData.allLayoutPaths) &&
+          pageData.allLayoutPaths.length > 0
+        ) {
+          // 尝试加载第一个布局路径
+          for (const path of pageData.allLayoutPaths) {
+            LayoutComponent = await this.loadLayoutComponent(path);
+            if (LayoutComponent) {
+              break;
+            }
+          }
+        }
+
+        // 如果仍然没有布局组件，但布局路径存在，记录警告
+        if (!LayoutComponent && layoutPath) {
+          console.warn(
+            `[HMR] 布局组件加载失败，页面将不包含布局: ${layoutPath}`,
+          );
+        }
 
         // 创建页面元素（包含布局，支持异步组件）
         const finalElement = await this.createPageElement(
