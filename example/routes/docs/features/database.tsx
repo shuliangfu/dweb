@@ -18,7 +18,7 @@ export default function DatabasePage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   // 初始化数据库 - 方式 1：使用初始化工具（推荐）
-  const initDbFromConfigCode = `import { initDatabaseFromConfig } from '@dreamer/dweb/features/database';
+  const initDbFromConfigCode = `import { initDatabaseFromConfig } from '@dreamer/dweb/database';
 
 // 自动从 dweb.config.ts 加载配置并初始化数据库
 await initDatabaseFromConfig();
@@ -28,7 +28,7 @@ import config from './dweb.config.ts';
 await initDatabaseFromConfig(config);`;
 
   // 初始化数据库 - 方式 2：手动初始化
-  const initDbCode = `import { initDatabase } from '@dreamer/dweb/features/database';
+  const initDbCode = `import { initDatabase } from '@dreamer/dweb/database';
 
 // 初始化默认数据库连接
 await initDatabase({
@@ -44,18 +44,18 @@ await initDatabase({
 
   // 解决 "Database config loader not set" 错误
   const setupConfigLoaderCode = `// 方法 1：使用初始化工具（最简单）
-import { initDatabaseFromConfig } from '@dreamer/dweb/features/database';
+import { initDatabaseFromConfig } from '@dreamer/dweb/database';
 await initDatabaseFromConfig();
 
 // 方法 2：仅设置配置加载器（延迟初始化）
-import { setupDatabaseConfigLoader } from '@dreamer/dweb/features/database';
+import { setupDatabaseConfigLoader } from '@dreamer/dweb/database';
 await setupDatabaseConfigLoader();
 
 // 之后使用模型时，会自动初始化数据库
 await User.init();
 
 // 方法 3：手动设置配置加载器
-import { setDatabaseConfigLoader } from '@dreamer/dweb/features/database';
+import { setDatabaseConfigLoader } from '@dreamer/dweb/database';
 import { loadConfig } from '@dreamer/dweb/core/config';
 
 const { config } = await loadConfig();
@@ -65,7 +65,7 @@ setDatabaseConfigLoader(() => {
 
   // SQLModel 完整示例
   const sqlModelFullCode = `// models/User.ts
-import { getDatabase, SQLModel } from '@dreamer/dweb/features/database';
+import { getDatabase, SQLModel } from '@dreamer/dweb/database';
 
 /**
  * 用户模型（PostgreSQL）
@@ -434,7 +434,7 @@ await User.init('secondary'); // 使用指定连接`;
 
   // MongoModel 完整示例
   const mongoModelFullCode = `// models/User.ts
-import { getDatabase, MongoModel } from '@dreamer/dweb/features/database';
+import { getDatabase, MongoModel } from '@dreamer/dweb/database';
 
 /**
  * 用户模型（MongoDB）
@@ -580,7 +580,7 @@ export default User;`;
 
   // MongoDB 适配器
   const mongoAdapterCode =
-    `import { MongoDBAdapter } from '@dreamer/dweb/features/database';
+    `import { MongoDBAdapter } from '@dreamer/dweb/database';
 
 const adapter = new MongoDBAdapter();
 await adapter.connect({
@@ -609,7 +609,7 @@ await adapter.execute('insert', 'users', { name: 'John', age: 25 });`;
 
   // PostgreSQL 适配器
   const postgresAdapterCode =
-    `import { PostgreSQLAdapter } from '@dreamer/dweb/features/database';
+    `import { PostgreSQLAdapter } from '@dreamer/dweb/database';
 
 const adapter = new PostgreSQLAdapter();
 await adapter.connect({
@@ -650,7 +650,7 @@ const post = await Post.find(1);
 const author = await post.belongsTo(User, 'userId');`;
 
   // SQL 查询构建器
-  const sqlQueryBuilderCode = `import { getDatabase, SQLQueryBuilder } from '@dreamer/dweb/features/database';
+  const sqlQueryBuilderCode = `import { getDatabase, SQLQueryBuilder } from '@dreamer/dweb/database';
 
 const db = await getDatabase();
 const query = new SQLQueryBuilder(db, 'users');
@@ -665,7 +665,7 @@ const results = await query
   .get();`;
 
   // MongoDB 查询构建器
-  const mongoQueryBuilderCode = `import { getDatabase, MongoQueryBuilder } from '@dreamer/dweb/features/database';
+  const mongoQueryBuilderCode = `import { getDatabase, MongoQueryBuilder } from '@dreamer/dweb/database';
 
 const db = await getDatabase();
 const query = new MongoQueryBuilder(db, 'users');
@@ -680,7 +680,7 @@ const results = await query
   .get();`;
 
   // 数据库迁移
-  const migrationCode = `import { MigrationManager } from '@dreamer/dweb/features/database';
+  const migrationCode = `import { MigrationManager } from '@dreamer/dweb/database';
 
 const manager = new MigrationManager({
   adapter: await getDatabase(),
@@ -697,7 +697,7 @@ await manager.down();
 await manager.create('create_users_table');`;
 
   // 查询缓存
-  const cacheCode = `import { MemoryCacheAdapter } from '@dreamer/dweb/features/database';
+  const cacheCode = `import { MemoryCacheAdapter } from '@dreamer/dweb/database';
 
 // 设置缓存适配器
 User.cacheAdapter = new MemoryCacheAdapter();
@@ -708,8 +708,8 @@ const user = await User.find(1); // 第一次查询数据库
 const cachedUser = await User.find(1); // 从缓存获取`;
 
   // 查询日志
-  const queryLoggerCode = `import { QueryLogger } from '@dreamer/dweb/features/database/logger';
-import { getDatabase } from '@dreamer/dweb/features/database';
+  const queryLoggerCode = `import { QueryLogger } from '@dreamer/dweb/database/logger';
+import { getDatabase } from '@dreamer/dweb/database';
 
 const logger = new QueryLogger({
   enabled: true,
@@ -731,7 +731,7 @@ console.log('Slow queries:', stats.slow);
 console.log('Average duration:', stats.averageDuration);`;
 
   // 连接池监控
-  const poolMonitorCode = `import { getDatabase } from '@dreamer/dweb/features/database';
+  const poolMonitorCode = `import { getDatabase } from '@dreamer/dweb/database';
 
 const db = await getDatabase();
 
@@ -743,7 +743,7 @@ console.log('Idle connections:', status.idle);
 console.log('Waiting connections:', status.waiting);`;
 
   // 健康检查
-  const healthCheckCode = `import { getDatabase } from '@dreamer/dweb/features/database';
+  const healthCheckCode = `import { getDatabase } from '@dreamer/dweb/database';
 
 const db = await getDatabase();
 

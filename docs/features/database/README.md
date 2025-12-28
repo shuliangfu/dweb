@@ -42,7 +42,7 @@ src/features/database/
 在项目入口文件（如 `main.ts` 或 `init.ts`）中调用初始化工具，自动从 `dweb.config.ts` 加载配置：
 
 ```typescript
-import { initDatabaseFromConfig } from "@dreamer/dweb/features/database";
+import { initDatabaseFromConfig } from "@dreamer/dweb/database";
 
 // 自动从 dweb.config.ts 加载配置并初始化数据库
 await initDatabaseFromConfig();
@@ -51,7 +51,7 @@ await initDatabaseFromConfig();
 或者手动传入配置：
 
 ```typescript
-import { initDatabaseFromConfig } from "@dreamer/dweb/features/database";
+import { initDatabaseFromConfig } from "@dreamer/dweb/database";
 import config from "./dweb.config.ts";
 
 // 使用配置对象初始化数据库
@@ -61,7 +61,7 @@ await initDatabaseFromConfig(config);
 #### 方式 2：手动初始化
 
 ```typescript
-import { initDatabase } from "@dreamer/dweb/features/database";
+import { initDatabase } from "@dreamer/dweb/database";
 
 // 初始化默认数据库连接
 await initDatabase({
@@ -84,7 +84,7 @@ await initDatabase({
 
 ```typescript
 // 在项目入口文件（如 main.ts 或 init.ts）中
-import { initDatabaseFromConfig } from "@dreamer/dweb/features/database";
+import { initDatabaseFromConfig } from "@dreamer/dweb/database";
 
 // 自动设置配置加载器并初始化数据库
 await initDatabaseFromConfig();
@@ -94,7 +94,7 @@ await initDatabaseFromConfig();
 
 ```typescript
 // 在项目入口文件中
-import { setupDatabaseConfigLoader } from "@dreamer/dweb/features/database";
+import { setupDatabaseConfigLoader } from "@dreamer/dweb/database";
 
 // 仅设置配置加载器，数据库会在首次使用模型时自动初始化
 await setupDatabaseConfigLoader();
@@ -106,7 +106,7 @@ await User.init();
 **方法 3：手动设置配置加载器**
 
 ```typescript
-import { setDatabaseConfigLoader } from "@dreamer/dweb/features/database";
+import { setDatabaseConfigLoader } from "@dreamer/dweb/database";
 import { loadConfig } from "@dreamer/dweb/core/config";
 
 // 加载配置
@@ -121,7 +121,7 @@ setDatabaseConfigLoader(() => {
 ### 使用 ORM 模型
 
 ```typescript
-import { SQLModel } from "@dreamer/dweb/features/database";
+import { SQLModel } from "@dreamer/dweb/database";
 
 // 定义用户模型
 class User extends SQLModel {
@@ -177,7 +177,7 @@ await user.delete();
 ### PostgreSQL 适配器
 
 ```typescript
-import { PostgreSQLAdapter } from "@dreamer/dweb/features/database";
+import { PostgreSQLAdapter } from "@dreamer/dweb/database";
 
 const adapter = new PostgreSQLAdapter();
 await adapter.connect({
@@ -208,7 +208,7 @@ await adapter.execute("UPDATE users SET age = ? WHERE id = ?", [25, 1]);
 ### MongoDB 适配器
 
 ```typescript
-import { MongoDBAdapter } from "@dreamer/dweb/features/database";
+import { MongoDBAdapter } from "@dreamer/dweb/database";
 
 const adapter = new MongoDBAdapter();
 await adapter.connect({
@@ -244,8 +244,8 @@ await adapter.execute("insert", "users", { name: "John", age: 25 });
 
 ```typescript
 // models/User.ts
-import { getDatabase, SQLModel } from "@dreamer/dweb/features/database";
-import type { DatabaseAdapter } from "@dreamer/dweb/features/database/types";
+import { getDatabase, SQLModel } from "@dreamer/dweb/database";
+import type { DatabaseAdapter } from "@dreamer/dweb/database/types";
 
 /**
  * 用户模型（PostgreSQL）
@@ -566,8 +566,8 @@ export default User;
 
 ```typescript
 // models/User.ts
-import { getDatabase, MongoModel } from "@dreamer/dweb/features/database";
-import type { DatabaseAdapter } from "@dreamer/dweb/features/database/types";
+import { getDatabase, MongoModel } from "@dreamer/dweb/database";
+import type { DatabaseAdapter } from "@dreamer/dweb/database/types";
 
 /**
  * 用户模型（MongoDB）
@@ -1083,7 +1083,7 @@ const stats = await User.countByStatus();
 ### SQLModel (PostgreSQL)
 
 ```typescript
-import { SQLModel } from "@dreamer/dweb/features/database";
+import { SQLModel } from "@dreamer/dweb/database";
 
 class Post extends SQLModel {
   static tableName = "posts";
@@ -1163,7 +1163,7 @@ console.log(post.isRecent); // 虚拟字段
 ### MongoModel (MongoDB)
 
 ```typescript
-import { MongoModel } from "@dreamer/dweb/features/database";
+import { MongoModel } from "@dreamer/dweb/database";
 
 class Product extends MongoModel {
   static collectionName = "products";
@@ -1223,7 +1223,7 @@ const stats = await Product.aggregate([
 ### SQL 查询构建器
 
 ```typescript
-import { getDatabase, SQLQueryBuilder } from "@dreamer/dweb/features/database";
+import { getDatabase, SQLQueryBuilder } from "@dreamer/dweb/database";
 
 const db = await getDatabase();
 const query = new SQLQueryBuilder(db, "users");
@@ -1244,7 +1244,7 @@ const results = await query
 import {
   getDatabase,
   MongoQueryBuilder,
-} from "@dreamer/dweb/features/database";
+} from "@dreamer/dweb/database";
 
 const db = await getDatabase();
 const query = new MongoQueryBuilder(db, "users");
@@ -1262,7 +1262,7 @@ const results = await query
 ## 数据库迁移
 
 ```typescript
-import { MigrationManager } from "@dreamer/dweb/features/database";
+import { MigrationManager } from "@dreamer/dweb/database";
 
 const manager = new MigrationManager({
   adapter: await getDatabase(),
@@ -1285,7 +1285,7 @@ await manager.create("create_users_table");
 import {
   MemoryCacheAdapter,
   MongoModel,
-} from "@dreamer/dweb/features/database";
+} from "@dreamer/dweb/database";
 
 // 设置缓存适配器
 User.cacheAdapter = new MemoryCacheAdapter();
@@ -1299,8 +1299,8 @@ const cachedUser = await User.find(1); // 从缓存获取
 ## 查询日志
 
 ```typescript
-import { QueryLogger } from "@dreamer/dweb/features/database/logger";
-import { getDatabase } from "@dreamer/dweb/features/database";
+import { QueryLogger } from "@dreamer/dweb/database/logger";
+import { getDatabase } from "@dreamer/dweb/database";
 
 const logger = new QueryLogger({
   enabled: true,
@@ -1325,7 +1325,7 @@ console.log("Average duration:", stats.averageDuration);
 ## 连接池监控
 
 ```typescript
-import { getDatabase } from "@dreamer/dweb/features/database";
+import { getDatabase } from "@dreamer/dweb/database";
 
 const db = await getDatabase();
 
@@ -1340,7 +1340,7 @@ console.log("Waiting connections:", status.waiting);
 ## 健康检查
 
 ```typescript
-import { getDatabase } from "@dreamer/dweb/features/database";
+import { getDatabase } from "@dreamer/dweb/database";
 
 const db = await getDatabase();
 
@@ -1588,7 +1588,7 @@ class Post extends MongoModel {
 管理多个数据库连接。
 
 ```typescript
-import { DatabaseManager } from "@dreamer/dweb/features/database";
+import { DatabaseManager } from "@dreamer/dweb/database";
 
 const manager = new DatabaseManager();
 

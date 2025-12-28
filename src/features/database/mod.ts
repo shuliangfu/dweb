@@ -12,8 +12,8 @@ export type { DatabaseAdapter, DatabaseConfig, DatabaseType } from "./types.ts";
 // 导出适配器
 // 注意：SQLiteAdapter 和 MySQLAdapter 使用 https:// 导入，JSR 不支持
 // 如果需要使用这些适配器，请直接从适配器文件导入：
-// import { SQLiteAdapter } from '@dreamer/dweb/features/database/adapters/sqlite';
-// import { MySQLAdapter } from '@dreamer/dweb/features/database/adapters/mysql';
+// import { SQLiteAdapter } from '@dreamer/dweb/database/adapters/sqlite';
+// import { MySQLAdapter } from '@dreamer/dweb/database/adapters/mysql';
 export {
   BaseAdapter,
   // MySQLAdapter,  // 使用 https:// 导入，JSR 不支持

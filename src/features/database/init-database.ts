@@ -4,11 +4,11 @@
  *
  * 使用方法：
  * 1. 在项目入口文件（如 main.ts 或 init.ts）中导入并调用：
- *    import { initDatabaseFromConfig } from '@dreamer/dweb/features/database/init-database';
+ *    import { initDatabaseFromConfig } from '@dreamer/dweb/database/init-database';
  *    await initDatabaseFromConfig();
  *
  * 2. 或者直接导入配置文件并初始化：
- *    import { initDatabaseFromConfig } from '@dreamer/dweb/features/database/init-database';
+ *    import { initDatabaseFromConfig } from '@dreamer/dweb/database/init-database';
  *    import config from './dweb.config.ts';
  *    await initDatabaseFromConfig(config);
  */
@@ -29,11 +29,11 @@ import type { DWebConfig } from "../../types/index.ts";
  * @example
  * ```typescript
  * // 方式 1: 自动加载配置
- * import { initDatabaseFromConfig } from '@dreamer/dweb/features/database/init-database';
+ * import { initDatabaseFromConfig } from '@dreamer/dweb/database/init-database';
  * await initDatabaseFromConfig();
  *
  * // 方式 2: 手动传入配置
- * import { initDatabaseFromConfig } from '@dreamer/dweb/features/database/init-database';
+ * import { initDatabaseFromConfig } from '@dreamer/dweb/database/init-database';
  * import config from './dweb.config.ts';
  * await initDatabaseFromConfig(config);
  * ```
@@ -115,7 +115,7 @@ export async function initDatabaseFromConfig(
  *
  * @example
  * ```typescript
- * import { setupDatabaseConfigLoader } from '@dreamer/dweb/features/database/init-database';
+ * import { setupDatabaseConfigLoader } from '@dreamer/dweb/database/init-database';
  * await setupDatabaseConfigLoader();
  *
  * // 之后使用模型时，会自动初始化数据库

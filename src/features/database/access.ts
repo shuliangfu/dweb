@@ -36,7 +36,7 @@ let configLoader: DatabaseConfigLoader | null = null;
  *
  * @example
  * ```typescript
- * import { setDatabaseConfigLoader } from '@dreamer/dweb/features/database';
+ * import { setDatabaseConfigLoader } from '@dreamer/dweb/database';
  *
  * // 在框架启动时设置配置加载器
  * setDatabaseConfigLoader(async () => {

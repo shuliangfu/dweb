@@ -89,7 +89,7 @@ export async function post({ req, res }: ApiContext) {
   // 使用数据源
   const dataSourceCode =
     `import { GraphQLServer } from "@dreamer/dweb/features/graphql";
-import { getDatabase } from "@dreamer/dweb/features/database";
+import { getDatabase } from "@dreamer/dweb/database";
 
 const graphqlServer = new GraphQLServer({
   typeDefs: \`

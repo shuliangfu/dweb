@@ -50,7 +50,7 @@ export default function HomePage({ data }: PageProps) {
 
 ```typescript
 // models/User.ts
-import { getDatabase, SQLModel } from "@dreamer/dweb/features/database";
+import { getDatabase, SQLModel } from "@dreamer/dweb/database";
 
 class User extends SQLModel {
   static tableName = "users";
@@ -163,7 +163,7 @@ export default function HomePage() {
 
 ```typescript
 // models/User.ts
-import { getDatabase, SQLModel } from "@dreamer/dweb/features/database";
+import { getDatabase, SQLModel } from "@dreamer/dweb/database";
 import { getI18n } from "@dreamer/dweb/plugins";
 
 class User extends SQLModel {

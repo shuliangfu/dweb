@@ -75,7 +75,7 @@ const sessionManager = new SessionManager({
 ### 使用 MongoDB 存储
 
 ```typescript
-import { initDatabase } from "@dreamer/dweb/features/database";
+import { initDatabase } from "@dreamer/dweb/database";
 
 // 先初始化数据库
 await initDatabase({
