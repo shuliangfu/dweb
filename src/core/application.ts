@@ -262,9 +262,11 @@ export class Application {
       const tailwindPlugin = this.pluginManager.get("tailwind");
       if (tailwindPlugin?.config) {
         if (tailwindPlugin.config.cssPath) {
+          // 获取静态资源前缀，如果未配置则使用默认值 "/assets"
+          const staticPrefix = config.static?.prefix || "/assets";
           cssPath = path.join(
             "/",
-            config.static!.prefix || "/assets",
+            staticPrefix,
             path.basename(tailwindPlugin.config.cssPath as string),
           );
         }
