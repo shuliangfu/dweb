@@ -60,6 +60,4 @@ export interface TailwindPluginOptions {
   // 如果不指定，默认下载到项目根目录的 bin/ 目录
   // 用户可以指定自定义路径，例如移动到共享目录以避免重复下载
   cliPath?: string;
-  // Tailwind CLI 版本（仅在自动下载时使用），默认为 "v4.0.0"
-  cliVersion?: string;
 }
