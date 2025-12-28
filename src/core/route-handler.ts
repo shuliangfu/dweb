@@ -1853,9 +1853,7 @@ export class RouteHandler {
     // 纯 SSR 模式（ssr + !shouldHydrate）不需要 import map，因为不需要客户端脚本
     // CSR、Hybrid 和 SSR + Hydration 模式需要 import map
     const needsClientScript = renderMode === "csr" ||
-      renderMode === "hybrid" ||
-      (renderMode === "ssr" && shouldHydrate) ||
-      hmrClientScript;
+      renderMode === "hybrid" || shouldHydrate || hmrClientScript;
 
     if (needsClientScript) {
       // 注入 import map
@@ -1875,10 +1873,7 @@ export class RouteHandler {
 
     // 预加载 Preact 模块到全局作用域（CSR/Hybrid 模式或 HMR 时需要）
     // CSR 和 Hybrid 模式需要 Preact 进行客户端渲染，所以必须预加载
-    if (
-      renderMode === "csr" || renderMode === "hybrid" || shouldHydrate ||
-      hmrClientScript
-    ) {
+    if (needsClientScript) {
       const preactPreloadScriptContent = `
 // 预加载 Preact 模块到全局作用域，供客户端渲染和 HMR 使用
 (async function() {
@@ -1927,7 +1922,7 @@ export class RouteHandler {
     }
 
     // 注入客户端 JS（CSR、Hybrid 模式或明确启用 hydration 时需要）
-    if (renderMode === "csr" || renderMode === "hybrid" || shouldHydrate) {
+    if (needsClientScript) {
       // 生产环境：如果存在 clientModulePath，使用它（只包含文件名）
       // 开发环境：使用完整的 filePath
       let modulePath: string;
