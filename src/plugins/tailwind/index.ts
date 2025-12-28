@@ -108,9 +108,8 @@ async function processCSSWithCLI(
     const data = encoder.encode(cssContent);
     await writer.write(data);
   } finally {
+    // 关闭 writer 会自动关闭 stdin，不需要再次调用 process.stdin.close()
     await writer.close();
-    // 确保 stdin 完全关闭
-    await process.stdin.close();
   }
 
   // 等待命令执行完成
