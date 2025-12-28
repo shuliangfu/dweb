@@ -801,7 +801,7 @@ ${
   "imports": {
 ${importsConfig}${tailwindImports}
   },
-  "nodeModulesDir": "none",
+  "nodeModulesDir": "auto",
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "preact"
