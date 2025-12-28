@@ -155,7 +155,7 @@ await session.save();
 await session.destroy();`;
 
   // SessionConfig
-  const sessionConfigCode = `interface SessionConfig {
+  const sessionConfigInterfaceCode = `interface SessionConfig {
   store?: "memory" | "file" | "kv" | "mongodb" | "redis";
   secret: string;
   maxAge?: number;
@@ -260,7 +260,7 @@ await session.destroy();`;
           code={`new SessionManager(config: SessionConfig)`}
           language="typescript"
         />
-        <CodeBlock code={sessionConfigCode} language="typescript" />
+        <CodeBlock code={sessionConfigInterfaceCode} language="typescript" />
 
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           方法

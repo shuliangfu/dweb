@@ -76,7 +76,7 @@ plugins: [
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               content
             </code>{" "}
-            - 内容扫描路径（用于 Tailwind CSS 扫描项目文件）。默认为 ['./routes/**/*.{tsx,ts,jsx,js}', './components/**/*.{tsx,ts,jsx,js}']
+            - 内容扫描路径（用于 Tailwind CSS 扫描项目文件）。默认为 <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">["./routes/**/*.{`{`}tsx,ts,jsx,js{`}`}", "./components/**/*.{`{`}tsx,ts,jsx,js{`}`}"]</code>
           </li>
           <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">

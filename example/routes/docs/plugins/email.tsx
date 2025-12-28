@@ -81,7 +81,7 @@ plugins: [
               <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">name</code> - 模板名称</li>
               <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">html</code> - 模板内容（HTML）</li>
               <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">text</code> - 文本版本（可选）</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">variableFormat</code> - 变量占位符格式（默认 '{{variable}}'）</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">variableFormat</code> - 变量占位符格式（默认 <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">{"{{"}variable{"}}"}</code>）</li>
             </ul>
           </li>
           <li>
