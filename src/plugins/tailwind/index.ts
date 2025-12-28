@@ -15,6 +15,7 @@ import type { TailwindPluginOptions } from "./types.ts";
 import { findTailwindConfigFile } from "./utils.ts";
 import { processCSSV3 } from "./v3.ts";
 import { processCSSV4 } from "./v4.ts";
+import { ensureTailwindCli } from "./fetch-cli.ts";
 import * as path from "@std/path";
 import { isPathSafe } from "../../utils/security.ts";
 
@@ -330,6 +331,33 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
       // staticDir 从构建配置中获取，如果没有则默认为 'assets'
       // 注意：buildConfig 可能包含 staticDir（向后兼容）或从 config.static?.dir 获取
       const staticDir = buildConfig.staticDir || "assets";
+
+      // 在构建时自动确保 Tailwind CLI 存在
+      // - 如果配置了 cliPath，使用指定的路径（不自动下载）
+      // - 如果未配置 cliPath，自动下载到项目根目录的 bin/ 目录
+      // 这样用户可以将 CLI 移动到共享目录，通过 cliPath 配置使用，避免重复下载
+      try {
+        const cliPath = await ensureTailwindCli(
+          options.cliPath,
+          options.cliVersion || "v4.0.0",
+        );
+        // 输出 CLI 路径信息（帮助用户了解 CLI 位置）
+        if (options.cliPath) {
+          console.log(
+            `✅ [Tailwind ${version}] 使用自定义 CLI 路径: ${cliPath}`,
+          );
+        } else {
+          console.log(`✅ [Tailwind ${version}] CLI 已就绪: ${cliPath}`);
+        }
+      } catch (error) {
+        // 如果下载失败，只输出警告，继续使用 PostCSS 插件处理
+        // 注意：当前实现使用 PostCSS 插件处理 CSS，CLI 下载是可选的
+        console.warn(
+          `⚠️  [Tailwind ${version}] CLI 检查/下载失败，将使用 PostCSS 插件处理:`,
+          error instanceof Error ? error.message : String(error),
+        );
+        // 继续使用 PostCSS 插件处理，不中断构建
+      }
 
       console.log(`🎨 [Tailwind ${version}] 开始编译 CSS 文件...`);
 
