@@ -564,10 +564,10 @@ async function generateConfigFile(
         apiMode: '${apiMode}'
       },
       // 静态资源目录，默认为 'assets', prefix 为 /assets
-      // static: {
-      //   dir: '${appName}/assets',
-      //   prefix: '/assets'
-      // },
+      static: {
+        dir: '${appName}/assets',
+        prefix: '/assets'
+      },
       plugins: [
         tailwind({
           version: '${useTailwindV4 ? "v4" : "v3"}',
@@ -665,10 +665,10 @@ const config: AppConfig = {
   },
   
   // 静态资源目录，默认为 'assets', prefix 为 /assets
-  // static: {
-  //   dir: 'assets',
-  //   prefix: '/assets'
-  // },
+  static: {
+    dir: 'assets',
+    prefix: '/assets'
+  },
   
   // 开发配置
   dev: {
