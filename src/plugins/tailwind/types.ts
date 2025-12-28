@@ -61,4 +61,8 @@ export interface TailwindPluginOptions {
   // 用户可以指定自定义路径，例如移动到共享目录以避免重复下载
   // 注意：如果指定系统目录（如 /usr/local/bin），需要确保有写入权限
   cliPath?: string;
+  // Tailwind 配置文件路径（可选）
+  // 如果不指定，插件会自动从项目根目录向上查找 tailwind.config.ts、tailwind.config.js 或 tailwind.config.mjs
+  // 如果配置文件不在标准位置，可以显式指定路径
+  configPath?: string;
 }

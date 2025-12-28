@@ -112,6 +112,7 @@ const config: AppConfig = {
 		tailwind({
       version: "v3",
       cssPath: "assets/tailwind.css", // 指定主 CSS 文件路径
+      configPath: "tailwind.config.ts", // 显式指定配置文件路径（可选，如果不指定会自动查找）
       // v3 使用 autoprefixer 配置，optimize 选项在 v3 中通过 cssnano 自动处理
     }),
     seo({

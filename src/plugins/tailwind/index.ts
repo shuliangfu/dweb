@@ -145,7 +145,18 @@ async function processCSS(
   cliPath?: string,
 ): Promise<{ content: string; map?: string }> {
   // 查找 Tailwind 配置文件
-  const configPath = await findTailwindConfigFile(Deno.cwd());
+  // 如果用户显式指定了 configPath，使用它；否则自动查找
+  let configPath: string | null = null;
+  if (options.configPath) {
+    // 用户显式指定的配置文件路径
+    const absoluteConfigPath = path.isAbsolute(options.configPath)
+      ? options.configPath
+      : path.resolve(Deno.cwd(), options.configPath);
+    configPath = absoluteConfigPath;
+  } else {
+    // 自动查找配置文件
+    configPath = await findTailwindConfigFile(Deno.cwd());
+  }
 
   // 确定要使用的 CLI 路径
   // 如果提供了 cliPath，使用它；否则尝试使用默认路径
