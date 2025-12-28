@@ -27,10 +27,8 @@ FROM denoland/deno:latest
 # 设置工作目录（保持目录结构，使 ../src 路径正确）
 WORKDIR /app
 
-# 从构建阶段复制框架源码和 example 项目的运行时文件
-COPY --from=builder /app/src ./src
-# 直接复制整个 example 目录（包含所有运行时需要的文件：.dist、deno.json、dweb.config.ts、node_modules 等）
-COPY --from=builder /app/example ./example
+# 从构建阶段直接复制整个 /app 目录（包含 src 和 example 等所有内容）
+COPY --from=builder /app ./
 
 # 切换到 example 目录（deno.json 和 dweb.config.ts 所在目录）
 WORKDIR /app/example
