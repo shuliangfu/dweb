@@ -104,6 +104,18 @@ async function processCSSWithCLI(
 }
 
 /**
+ * 获取默认的 CLI 路径
+ * @param version Tailwind 版本
+ * @returns 默认 CLI 路径
+ */
+function getDefaultCliPath(version: "v3" | "v4"): string {
+  const binDir = path.resolve(Deno.cwd(), ".bin");
+  const baseName = `tailwindcss-${version}`;
+  const exeName = Deno.build.os === "windows" ? `${baseName}.exe` : baseName;
+  return path.join(binDir, exeName);
+}
+
+/**
  * 处理 CSS 文件（根据版本调用对应的处理方法）
  * 如果 CLI 存在，优先使用 CLI 编译；否则使用 PostCSS
  * @param cssContent CSS 内容
@@ -111,7 +123,7 @@ async function processCSSWithCLI(
  * @param version Tailwind 版本
  * @param isProduction 是否为生产环境
  * @param options 插件选项
- * @param cliPath CLI 可执行文件路径（可选）
+ * @param cliPath CLI 可执行文件路径（可选，如果未提供则尝试使用默认路径）
  * @returns 处理后的 CSS 内容和 source map
  */
 async function processCSS(
@@ -125,13 +137,17 @@ async function processCSS(
   // 查找 Tailwind 配置文件
   const configPath = await findTailwindConfigFile(Deno.cwd());
 
-  // 如果提供了 CLI 路径且文件存在，使用 CLI 编译
-  if (cliPath && await exists(cliPath)) {
+  // 确定要使用的 CLI 路径
+  // 如果提供了 cliPath，使用它；否则尝试使用默认路径
+  const actualCliPath = cliPath || getDefaultCliPath(version);
+
+  // 如果 CLI 路径存在，尝试使用 CLI 编译
+  if (await exists(actualCliPath)) {
     try {
       return await processCSSWithCLI(
         cssContent,
         filePath,
-        cliPath,
+        actualCliPath,
         configPath,
         isProduction,
       );
