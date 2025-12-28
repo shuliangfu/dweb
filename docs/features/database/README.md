@@ -33,6 +33,55 @@ src/features/database/
 └── types.ts           # 数据库类型定义
 ```
 
+## 导入方式
+
+所有数据库相关的功能都可以从 `@dreamer/dweb/database` 统一导入，无需从子目录导入：
+
+```typescript
+import {
+  // 管理器
+  DatabaseManager,
+  // 类型
+  type DatabaseAdapter,
+  type DatabaseConfig,
+  type DatabaseType,
+  // 适配器
+  BaseAdapter,
+  PostgreSQLAdapter,
+  MongoDBAdapter,
+  // 查询构建器
+  SQLQueryBuilder,
+  MongoQueryBuilder,
+  // ORM/ODM 模型
+  SQLModel,
+  MongoModel,
+  type WhereCondition,
+  type MongoWhereCondition,
+  // 迁移管理
+  MigrationManager,
+  type Migration,
+  type MigrationConfig,
+  type MigrationStatus,
+  // 缓存
+  type CacheAdapter,
+  MemoryCacheAdapter,
+  // 查询日志
+  QueryLogger,
+  type QueryLogEntry,
+  type QueryLoggerConfig,
+  // 索引类型
+  type IndexDefinition,
+  type IndexDefinitions,
+  // 访问函数
+  getDatabase,
+  initDatabase,
+  closeDatabase,
+  // 初始化工具
+  initDatabaseFromConfig,
+  setupDatabaseConfigLoader,
+} from "@dreamer/dweb/database";
+```
+
 ## 快速开始
 
 ### 初始化数据库
@@ -244,8 +293,7 @@ await adapter.execute("insert", "users", { name: "John", age: 25 });
 
 ```typescript
 // models/User.ts
-import { getDatabase, SQLModel } from "@dreamer/dweb/database";
-import type { DatabaseAdapter } from "@dreamer/dweb/database/types";
+import { getDatabase, SQLModel, type DatabaseAdapter } from "@dreamer/dweb/database";
 
 /**
  * 用户模型（PostgreSQL）
@@ -566,8 +614,7 @@ export default User;
 
 ```typescript
 // models/User.ts
-import { getDatabase, MongoModel } from "@dreamer/dweb/database";
-import type { DatabaseAdapter } from "@dreamer/dweb/database/types";
+import { getDatabase, MongoModel, type DatabaseAdapter } from "@dreamer/dweb/database";
 
 /**
  * 用户模型（MongoDB）
@@ -1299,8 +1346,7 @@ const cachedUser = await User.find(1); // 从缓存获取
 ## 查询日志
 
 ```typescript
-import { QueryLogger } from "@dreamer/dweb/database/logger";
-import { getDatabase } from "@dreamer/dweb/database";
+import { QueryLogger, getDatabase } from "@dreamer/dweb/database";
 
 const logger = new QueryLogger({
   enabled: true,

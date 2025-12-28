@@ -708,8 +708,7 @@ const user = await User.find(1); // 第一次查询数据库
 const cachedUser = await User.find(1); // 从缓存获取`;
 
   // 查询日志
-  const queryLoggerCode = `import { QueryLogger } from '@dreamer/dweb/database/logger';
-import { getDatabase } from '@dreamer/dweb/database';
+  const queryLoggerCode = `import { QueryLogger, getDatabase } from '@dreamer/dweb/database';
 
 const logger = new QueryLogger({
   enabled: true,
@@ -823,6 +822,61 @@ const comments = await post.comments();`;
         DWeb 框架提供了强大的数据库支持，支持 PostgreSQL 和
         MongoDB，包含查询构建器、ORM/ODM、迁移管理等功能。
       </p>
+
+      {/* 导入方式 */}
+      <section className="mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+          导入方式
+        </h2>
+        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+          所有数据库相关的功能都可以从 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">@dreamer/dweb/database</code> 统一导入，无需从子目录导入：
+        </p>
+        <CodeBlock
+          code={`import {
+  // 管理器
+  DatabaseManager,
+  // 类型
+  type DatabaseAdapter,
+  type DatabaseConfig,
+  type DatabaseType,
+  // 适配器
+  BaseAdapter,
+  PostgreSQLAdapter,
+  MongoDBAdapter,
+  // 查询构建器
+  SQLQueryBuilder,
+  MongoQueryBuilder,
+  // ORM/ODM 模型
+  SQLModel,
+  MongoModel,
+  type WhereCondition,
+  type MongoWhereCondition,
+  // 迁移管理
+  MigrationManager,
+  type Migration,
+  type MigrationConfig,
+  type MigrationStatus,
+  // 缓存
+  type CacheAdapter,
+  MemoryCacheAdapter,
+  // 查询日志
+  QueryLogger,
+  type QueryLogEntry,
+  type QueryLoggerConfig,
+  // 索引类型
+  type IndexDefinition,
+  type IndexDefinitions,
+  // 访问函数
+  getDatabase,
+  initDatabase,
+  closeDatabase,
+  // 初始化工具
+  initDatabaseFromConfig,
+  setupDatabaseConfigLoader,
+} from '@dreamer/dweb/database';`}
+          language="typescript"
+        />
+      </section>
 
       {/* 目录结构 */}
       <section className="mb-12">
