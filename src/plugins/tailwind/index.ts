@@ -176,7 +176,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
 
       // 在启动时确保 Tailwind CLI 存在（自动下载或验证路径）
       // - 如果配置了 cliPath，使用指定的路径（不自动下载）
-      // - 如果未配置 cliPath，自动下载到项目根目录的 bin/ 目录
+      // - 如果未配置 cliPath，自动下载到项目根目录的隐藏目录 .bin/
       // 这样用户可以将 CLI 移动到共享目录，通过 cliPath 配置使用，避免重复下载
       try {
         const cliPath = await ensureTailwindCli(

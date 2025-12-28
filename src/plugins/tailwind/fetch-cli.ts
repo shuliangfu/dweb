@@ -48,7 +48,7 @@ function showProgress(loaded: number, total: number): void {
  * @example
  * ```ts
  * const cliPath = await ensureTailwindCli(undefined, "v4");
- * // 返回: ./bin/tailwindcss (或 ./bin/tailwindcss.exe)
+ * // 返回: ./.bin/tailwindcss-v4 (或 ./.bin/tailwindcss-v4.exe)
  * ```
  */
 export async function ensureTailwindCli(
@@ -71,9 +71,9 @@ export async function ensureTailwindCli(
     );
   }
 
-  // 默认路径：项目根目录下的 bin 目录
+  // 默认路径：项目根目录下的隐藏目录 .bin
   // 文件名根据版本区分：v3 -> tailwindcss-v3, v4 -> tailwindcss-v4
-  const binDir = path.resolve(Deno.cwd(), "bin");
+  const binDir = path.resolve(Deno.cwd(), ".bin");
   const baseName = `tailwindcss-${version}`;
   const exeName = Deno.build.os === "windows" ? `${baseName}.exe` : baseName;
   const targetPath = path.join(binDir, exeName);
