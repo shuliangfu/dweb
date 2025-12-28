@@ -9,6 +9,7 @@
   "imports": {
     "@components/": "./components/",
     "@services/": "./services/",
+		"@plugins/": "./plugins/",
     "@config/": "./config/",
     "@store/": "./stores/",
     "@hooks/": "./hooks/",

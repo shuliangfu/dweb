@@ -29,25 +29,114 @@ import { compileWithEsbuild } from "../../utils/module.ts";
 
 /**
  * 加载翻译文件
+ * 支持从构建输出目录（生产环境）或原始项目目录（开发环境）加载
+ *
+ * @param translationsDir - 翻译文件目录（相对路径或绝对路径）
+ * @param languageCode - 语言代码
+ * @param app - 应用实例（可选，用于获取配置信息）
+ * @returns 翻译数据，如果加载失败则返回 null
  */
 async function loadTranslations(
   translationsDir: string,
   languageCode: string,
+  app?: AppLike,
 ): Promise<TranslationData | null> {
-  try {
-    // 解析翻译文件路径
-    // 如果 translationsDir 是相对路径，从当前工作目录解析
-    let filePath: string;
-    if (path.isAbsolute(translationsDir)) {
-      filePath = path.join(translationsDir, `${languageCode}.json`);
-    } else {
-      // 相对路径：从当前工作目录解析
-      const cwd = Deno.cwd();
-      filePath = path.join(cwd, translationsDir, `${languageCode}.json`);
+  const cwd = Deno.cwd();
+
+  // 如果 translationsDir 是绝对路径，直接使用
+  if (path.isAbsolute(translationsDir)) {
+    const filePath = path.join(translationsDir, `${languageCode}.json`);
+    try {
+      const content = await Deno.readTextFile(filePath);
+      const translations = JSON.parse(content) as TranslationData;
+      return translations;
+    } catch {
+      return null;
+    }
+  }
+
+  // 相对路径：尝试从多个位置加载
+  // 1. 首先尝试从构建输出目录加载（生产环境）
+  // 检查是否为生产环境，以及是否有构建输出目录
+  const isProduction = app?.isProduction ?? false;
+
+  if (isProduction) {
+    // 尝试从配置中获取构建输出目录
+    let outDir: string | undefined;
+
+    // 尝试从 app 实例获取配置
+    if (app) {
+      // 尝试通过 getConfig 方法获取配置（ApplicationContext）
+      const getConfig = (app as any).getConfig;
+      if (typeof getConfig === "function") {
+        try {
+          const config = getConfig();
+          outDir = config?.build?.outDir;
+        } catch {
+          // 忽略错误
+        }
+      }
+
+      // 如果无法从 getConfig 获取，尝试通过 getService 获取配置管理器
+      if (!outDir) {
+        const getService = (app as any).getService;
+        if (typeof getService === "function") {
+          try {
+            const configManager = getService("configManager");
+            if (
+              configManager && typeof configManager.getConfig === "function"
+            ) {
+              const config = configManager.getConfig();
+              outDir = config?.build?.outDir;
+            }
+          } catch {
+            // 忽略错误
+          }
+        }
+      }
     }
 
-    // 尝试加载语言文件
-    const content = await Deno.readTextFile(filePath);
+    // 如果从配置中获取到了 outDir，使用它
+    if (outDir) {
+      const buildPath = path.join(
+        cwd,
+        outDir,
+        translationsDir,
+        `${languageCode}.json`,
+      );
+      try {
+        const content = await Deno.readTextFile(buildPath);
+        const translations = JSON.parse(content) as TranslationData;
+        return translations;
+      } catch {
+        // 继续尝试其他位置
+      }
+    }
+
+    // 如果无法从配置获取，尝试从常见的构建输出目录查找
+    const possibleOutDirs = ["dist", ".dist", "build", "out"];
+
+    for (const possibleOutDir of possibleOutDirs) {
+      const buildPath = path.join(
+        cwd,
+        possibleOutDir,
+        translationsDir,
+        `${languageCode}.json`,
+      );
+      try {
+        const content = await Deno.readTextFile(buildPath);
+        const translations = JSON.parse(content) as TranslationData;
+        return translations;
+      } catch {
+        // 继续尝试下一个位置
+      }
+    }
+  }
+
+  // 2. 从原始项目目录加载（开发环境或回退）
+  const projectPath = path.join(cwd, translationsDir, `${languageCode}.json`);
+  try {
+    const content = await Deno.readTextFile(projectPath);
     const translations = JSON.parse(content) as TranslationData;
     return translations;
   } catch {
@@ -364,6 +453,7 @@ export function i18n(options: I18nPluginOptions): Plugin {
           const translations = await loadTranslations(
             translationsDir,
             lang.code,
+            app,
           );
           if (translations) {
             translationCache.set(lang.code, translations);
@@ -410,8 +500,19 @@ export function i18n(options: I18nPluginOptions): Plugin {
         let translations = translationCache.get(langCode);
 
         // 如果缓存中没有，尝试加载
+        // 注意：这里无法直接访问 app 实例，但可以通过 req.getApplication() 获取
+        // 为了简化，我们使用一个全局变量来存储 app 实例
+        // 或者，我们可以从请求上下文中获取应用实例
         if (!translations) {
-          const loaded = await loadTranslations(translationsDir, langCode);
+          // 尝试从请求对象获取应用实例（如果可用）
+          const appInstance = (req as any).getApplication?.() as
+            | AppLike
+            | undefined;
+          const loaded = await loadTranslations(
+            translationsDir,
+            langCode,
+            appInstance,
+          );
           if (loaded) {
             translations = loaded;
             translationCache.set(langCode, translations);

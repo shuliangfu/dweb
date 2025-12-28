@@ -2119,7 +2119,61 @@ class BuildManager {
       }
     }
 
-    // 4. 配置文件不再复制到构建输出目录
+    // 4. 复制 locales 目录（i18n 翻译文件）
+    // 检查是否有 i18n 插件配置，如果有则复制 locales 目录
+    const hasI18nPlugin = config.plugins?.some((plugin: any) => {
+      return plugin?.name === "i18n" || plugin?.config?.languages;
+    });
+
+    if (hasI18nPlugin) {
+      // 尝试从插件配置中获取 translationsDir
+      let translationsDir = "locales";
+      const i18nPlugin = config.plugins?.find((plugin: any) => {
+        return plugin?.name === "i18n" || plugin?.config?.languages;
+      });
+      if (i18nPlugin?.config?.translationsDir) {
+        translationsDir = i18nPlugin.config.translationsDir;
+      }
+
+      // 检查 locales 目录是否存在
+      const translationsDirAbsolute = PathUtils.toAbsolutePath(translationsDir);
+      const translationsDirExists = await Deno.stat(translationsDirAbsolute)
+        .then(() => true)
+        .catch(() => false);
+
+      if (translationsDirExists) {
+        const translationsOutDir = path.join(outDir, translationsDir);
+        try {
+          // 复制 locales 目录到输出目录
+          await ensureDir(translationsOutDir);
+          let copiedCount = 0;
+
+          for await (const entry of walk(translationsDirAbsolute)) {
+            if (entry.isFile && entry.path.endsWith(".json")) {
+              const relativePath = path.relative(
+                translationsDirAbsolute,
+                entry.path,
+              );
+              const outputPath = path.join(translationsOutDir, relativePath);
+              const outputDir = path.dirname(outputPath);
+              await ensureDir(outputDir);
+              await Deno.copyFile(entry.path, outputPath);
+              copiedCount++;
+            }
+          }
+
+          if (copiedCount > 0) {
+            console.log(
+              `   ✅ 复制翻译文件完成 (${translationsDir}): ${copiedCount} 个文件`,
+            );
+          }
+        } catch (error) {
+          console.warn(`⚠️  复制翻译文件失败: ${translationsDir}`, error);
+        }
+      }
+    }
+
+    // 5. 配置文件不再复制到构建输出目录
     // 注意：以下文件不再复制：
     // - tailwind.config.ts (由 Tailwind 插件处理)
     // - deno.json (运行时从项目根目录读取)
@@ -2128,10 +2182,10 @@ class BuildManager {
 
     console.log("   ✅ 跳过配置文件复制（运行时从项目根目录读取）");
 
-    // 5. 不再复制 deno.json 到输出目录
+    // 6. 不再复制 deno.json 到输出目录
     // 注意：运行时从项目根目录读取 deno.json，不需要复制到 dist 目录
 
-    // 6. 创建插件管理器并执行构建钩子
+    // 7. 创建插件管理器并执行构建钩子
     const pluginManager = new PluginManager();
 
     // 注册配置中的插件
@@ -2146,10 +2200,10 @@ class BuildManager {
       isProduction: true,
     });
 
-    // 7. 后处理：替换所有编译文件中的相对路径导入为编译后的文件名
+    // 8. 后处理：替换所有编译文件中的相对路径导入为编译后的文件名
     await this.importPostProcessor.postProcessImports(outDir, fileMap);
 
-    // 8. 生成路由映射文件
+    // 9. 生成路由映射文件
     await this.routeMapGenerator.generateRouteMap(
       fileMap,
       routesDir,
@@ -2157,7 +2211,7 @@ class BuildManager {
       routeConfig.apiDir,
     );
 
-    // 9. 不再生成服务器入口文件和构建信息
+    // 10. 不再生成服务器入口文件和构建信息
     // 注意：server.js 和 .build-info.json 不再生成，运行时使用 CLI 命令启动
     console.log(`\n📊 构建统计:`);
     console.log(`   • 输出目录: ${outDir}`);

@@ -527,3 +527,10 @@ function isObject(value: unknown): value is Record<string, unknown> {
     !(value instanceof Date) && !(value instanceof RegExp) &&
     !(value instanceof Map) && !(value instanceof Set);
 }
+
+/**
+ * 安全地根据路径获取对象属性值 (例如: "user.profile.name")
+ */
+export function getByPath(obj: Record<string, any>, path: string): any {
+  return path.split(".").reduce((acc, part) => acc && acc[part], obj);
+}
