@@ -26,9 +26,17 @@ const navItems: NavItem[] = [
   {
     title: '核心模块',
     children: [
+      { title: 'Application (应用核心)', path: '/docs/core/application' },
+      { title: 'ApplicationContext (应用上下文)', path: '/docs/core/application-context' },
+      { title: 'ConfigManager (配置管理器)', path: '/docs/core/config-manager' },
+      { title: 'ServiceContainer (服务容器)', path: '/docs/core/service-container' },
+      { title: 'LifecycleManager (生命周期管理器)', path: '/docs/core/lifecycle-manager' },
+      { title: 'IService (服务接口)', path: '/docs/core/iservice' },
+      { title: 'BaseManager (基础管理器)', path: '/docs/core/base-manager' },
       { title: '服务器 (Server)', path: '/docs/core/server' },
       { title: '路由系统 (Router)', path: '/docs/core/router' },
       { title: '配置管理 (Config)', path: '/docs/core/config' },
+      { title: 'RouteHandler (路由处理器)', path: '/docs/core/route-handler' },
       { title: '中间件系统', path: '/docs/core/middleware' },
       { title: '插件系统', path: '/docs/core/plugin' },
       { title: 'API 路由', path: '/docs/core/api' },
@@ -37,6 +45,14 @@ const navItems: NavItem[] = [
   {
     title: '功能模块',
     children: [
+      { title: '项目创建 (create)', path: '/docs/features/create' },
+      { title: '开发服务器 (dev)', path: '/docs/features/dev' },
+      { title: '热模块替换 (HMR)', path: '/docs/features/hmr' },
+      { title: '环境变量 (env)', path: '/docs/features/env' },
+      { title: '构建 (build)', path: '/docs/features/build' },
+      { title: '生产服务器 (prod)', path: '/docs/features/prod' },
+      { title: '性能监控 (monitoring)', path: '/docs/features/monitoring' },
+      { title: '优雅关闭 (shutdown)', path: '/docs/features/shutdown' },
       { title: '数据库', path: '/docs/features/database' },
       { title: 'GraphQL', path: '/docs/features/graphql' },
       { title: 'WebSocket', path: '/docs/features/websocket' },
@@ -66,6 +82,7 @@ const navItems: NavItem[] = [
     title: '插件',
     children: [
       { title: 'tailwind', path: '/docs/plugins/tailwind' },
+      { title: 'store', path: '/docs/plugins/store' },
       { title: 'seo', path: '/docs/plugins/seo' },
       { title: 'sitemap', path: '/docs/plugins/sitemap' },
       { title: 'pwa', path: '/docs/plugins/pwa' },
@@ -78,6 +95,14 @@ const navItems: NavItem[] = [
       { title: 'performance', path: '/docs/plugins/performance' },
       { title: 'theme', path: '/docs/plugins/theme' },
       { title: 'rss', path: '/docs/plugins/rss' },
+    ],
+  },
+  {
+    title: '扩展模块',
+    children: [
+      { title: '扩展系统', path: '/docs/extensions' },
+      { title: '控制台工具', path: '/docs/console' },
+      { title: '渲染适配器', path: '/docs/render' },
     ],
   },
   {
