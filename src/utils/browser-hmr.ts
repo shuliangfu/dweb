@@ -398,6 +398,12 @@ class HMRClient {
 
     try {
       // 获取页面数据
+      console.log("[HMR] 开始获取 pageData");
+      console.log(
+        "[HMR] globalThis.__PAGE_DATA__:",
+        (globalThis as Record<string, unknown>).__PAGE_DATA__,
+      );
+
       let pageData = (globalThis as Record<string, unknown>).__PAGE_DATA__ as
         | {
           props?: Record<string, unknown>;
@@ -408,36 +414,109 @@ class HMRClient {
         }
         | undefined;
 
+      console.log("[HMR] 从 globalThis 获取的 pageData:", pageData);
+
       // 如果 __PAGE_DATA__ 不存在，尝试从 DOM 中的 JSON script 标签读取
       if (!pageData) {
+        console.log("[HMR] __PAGE_DATA__ 不存在，尝试从 DOM 读取");
         try {
           const pageDataScript = document.querySelector(
             'script[data-type="dweb-page-data"]',
           );
-          if (pageDataScript && pageDataScript.textContent) {
-            const pageDataJson = pageDataScript.textContent.trim().replace(
-              /;+$/,
-              "",
+          console.log(
+            "[HMR] 查找 script[data-type='dweb-page-data']:",
+            pageDataScript,
+          );
+
+          if (pageDataScript) {
+            console.log("[HMR] 找到 pageData script 标签");
+            console.log(
+              "[HMR] script.textContent 长度:",
+              pageDataScript.textContent?.length || 0,
             );
-            pageData = JSON.parse(pageDataJson) as {
-              props?: Record<string, unknown>;
-              layoutPath?: string;
-              allLayoutPaths?: string[];
-              route?: string;
-              [key: string]: unknown;
-            };
-            // 将读取到的 pageData 设置回 globalThis，供后续使用
-            (globalThis as Record<string, unknown>).__PAGE_DATA__ = pageData;
-            console.log("[HMR] 从 DOM 读取 pageData 成功", pageData);
+
+            if (pageDataScript.textContent) {
+              const pageDataJson = pageDataScript.textContent.trim().replace(
+                /;+$/,
+                "",
+              );
+              console.log(
+                "[HMR] 解析前的 JSON 字符串长度:",
+                pageDataJson.length,
+              );
+              console.log(
+                "[HMR] JSON 字符串前 200 个字符:",
+                pageDataJson.substring(0, 200),
+              );
+
+              try {
+                pageData = JSON.parse(pageDataJson) as {
+                  props?: Record<string, unknown>;
+                  layoutPath?: string;
+                  allLayoutPaths?: string[];
+                  route?: string;
+                  [key: string]: unknown;
+                };
+                console.log("[HMR] 从 DOM 解析 pageData 成功:", pageData);
+                console.log("[HMR] pageData.layoutPath:", pageData?.layoutPath);
+                console.log(
+                  "[HMR] pageData.allLayoutPaths:",
+                  pageData?.allLayoutPaths,
+                );
+
+                // 将读取到的 pageData 设置回 globalThis，供后续使用
+                (globalThis as Record<string, unknown>).__PAGE_DATA__ =
+                  pageData;
+                console.log(
+                  "[HMR] 已将 pageData 设置回 globalThis.__PAGE_DATA__",
+                );
+              } catch (parseError) {
+                console.error("[HMR] JSON 解析失败:", parseError);
+                console.error("[HMR] 解析失败的 JSON 字符串:", pageDataJson);
+              }
+            } else {
+              console.warn("[HMR] pageData script 标签存在但 textContent 为空");
+            }
+          } else {
+            console.warn(
+              "[HMR] 未找到 script[data-type='dweb-page-data'] 标签",
+            );
+            // 列出所有 script 标签，帮助调试
+            const allScripts = document.querySelectorAll("script");
+            console.log("[HMR] 页面中所有 script 标签数量:", allScripts.length);
+            allScripts.forEach((script, index) => {
+              console.log(`[HMR] script[${index}]:`, {
+                type: script.type,
+                dataType: script.getAttribute("data-type"),
+                src: script.getAttribute("src"),
+                hasTextContent: !!script.textContent,
+                textContentLength: script.textContent?.length || 0,
+              });
+            });
           }
         } catch (error) {
-          console.warn("[HMR] 从 DOM 读取 pageData 失败", error);
+          console.error("[HMR] 从 DOM 读取 pageData 失败:", error);
         }
+      } else {
+        console.log("[HMR] 从 globalThis 成功获取 pageData");
+        console.log("[HMR] pageData.layoutPath:", pageData?.layoutPath);
+        console.log("[HMR] pageData.allLayoutPaths:", pageData?.allLayoutPaths);
       }
 
       // 如果仍然没有 pageData，记录警告
       if (!pageData) {
-        console.warn("[HMR] pageData 未找到，布局可能无法正确加载");
+        console.error("[HMR] pageData 未找到，布局可能无法正确加载");
+        console.error("[HMR] 当前 URL:", globalThis.location.href);
+        console.error("[HMR] 当前路径:", globalThis.location.pathname);
+      } else {
+        console.log("[HMR] 最终获取到的 pageData:", {
+          hasLayoutPath: !!pageData.layoutPath,
+          layoutPath: pageData.layoutPath,
+          hasAllLayoutPaths: !!pageData.allLayoutPaths,
+          allLayoutPaths: pageData.allLayoutPaths,
+          hasProps: !!pageData.props,
+          route: pageData.route,
+        });
       }
 
       // 参考客户端渲染的处理方式，从 pageData 中提取 load 数据
