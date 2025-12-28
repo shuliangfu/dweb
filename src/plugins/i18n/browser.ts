@@ -12,7 +12,8 @@ interface I18nData {
 
 interface I18nConfig {
   lang: string;
-  translations: Record<string, unknown>;
+  apiEndpoint?: string; // API 端点（用于获取语言包）
+  translations?: Record<string, unknown>; // 向后兼容：如果提供了 translations，直接使用
 }
 
 /**
@@ -68,17 +69,60 @@ function createTranslateFunction(
 }
 
 /**
+ * 通过 API 加载语言包
+ */
+async function loadTranslationsFromAPI(
+  apiEndpoint: string,
+): Promise<Record<string, unknown>> {
+  try {
+    const response = await fetch(apiEndpoint, {
+      headers: {
+        "Accept": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `加载语言包失败: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    const translations = await response.json() as Record<string, unknown>;
+    return translations;
+  } catch (error) {
+    console.error("[i18n] 加载语言包失败:", error);
+    // 返回空对象，避免后续错误
+    return {};
+  }
+}
+
+/**
  * 初始化 i18n 系统
  * 暴露到全局，供内联脚本调用
+ * 支持两种方式：
+ * 1. 直接提供 translations（向后兼容）
+ * 2. 通过 apiEndpoint 异步加载语言包（新方式）
  */
-function initI18n(config: I18nConfig): void {
+async function initI18n(config: I18nConfig): Promise<void> {
+  let translations: Record<string, unknown> = {};
+
+  // 如果提供了 translations，直接使用（向后兼容）
+  if (config.translations) {
+    translations = config.translations;
+  } else if (config.apiEndpoint) {
+    // 通过 API 加载语言包
+    translations = await loadTranslationsFromAPI(config.apiEndpoint);
+  } else {
+    console.warn("[i18n] 未提供 translations 或 apiEndpoint，使用空语言包");
+  }
+
   // 创建翻译函数
-  const tFunction = createTranslateFunction(config.translations);
+  const tFunction = createTranslateFunction(translations);
 
   // 创建 i18n 数据对象
   const i18nData: I18nData = {
     lang: config.lang,
-    translations: config.translations,
+    translations,
     t: tFunction,
   };
 

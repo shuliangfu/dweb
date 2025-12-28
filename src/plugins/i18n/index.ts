@@ -326,18 +326,28 @@ export function i18n(options: I18nPluginOptions): Plugin {
   }
 
   /**
-   * 生成 i18n 初始化脚本（包含配置）
+   * 生成 i18n 初始化脚本（只包含语言代码和 API 端点）
+   * 使用立即执行的异步函数来加载语言包
    */
   function generateInitScript(config: {
     lang: string;
-    translations: Record<string, unknown>;
+    apiEndpoint: string;
   }): string {
-    return `initI18n(${
-      JSON.stringify({
-        lang: config.lang,
-        translations: config.translations,
-      })
-    });`;
+    // 转义 JSON 中的 HTML 特殊字符，防止 XSS
+    const configJson = JSON.stringify({
+      lang: config.lang,
+      apiEndpoint: config.apiEndpoint,
+    })
+      .replace(/</g, "\\u003c")
+      .replace(/>/g, "\\u003e");
+
+    return `(async function() {
+  try {
+    await initI18n(${configJson});
+  } catch (error) {
+    console.error('[i18n] 初始化失败:', error);
+  }
+})();`;
   }
 
   return {
@@ -375,9 +385,54 @@ export function i18n(options: I18nPluginOptions): Plugin {
     },
 
     /**
-     * 请求处理钩子 - 检测语言并注入到请求对象
+     * 请求处理钩子 - 检测语言并注入到请求对象，处理语言包 API 请求
      */
-    onRequest(req: Request, res: Response) {
+    onRequest: async (req: Request, res: Response) => {
+      // 处理语言包 API 请求（如 /__i18n/locales/en-US.json）
+      const url = new URL(req.url);
+      const i18nApiPrefix = "/__i18n/locales/";
+
+      if (url.pathname.startsWith(i18nApiPrefix)) {
+        // 提取语言代码（如 /__i18n/locales/en-US.json -> en-US）
+        const langCode = url.pathname.substring(i18nApiPrefix.length).replace(
+          /\.json$/,
+          "",
+        );
+
+        // 检查语言是否支持
+        const langConfig = options.languages.find((l) => l.code === langCode);
+        if (!langConfig) {
+          res.json({ error: `不支持的语言: ${langCode}` }, { status: 404 });
+          return;
+        }
+
+        // 从缓存获取翻译数据
+        let translations = translationCache.get(langCode);
+
+        // 如果缓存中没有，尝试加载
+        if (!translations) {
+          const loaded = await loadTranslations(translationsDir, langCode);
+          if (loaded) {
+            translations = loaded;
+            translationCache.set(langCode, translations);
+          }
+        }
+
+        if (!translations) {
+          res.json({ error: `语言包未找到: ${langCode}` }, { status: 404 });
+          return;
+        }
+
+        // 返回 JSON 格式的语言包
+        res.json(translations, {
+          headers: {
+            "Cache-Control": "public, max-age=3600", // 缓存 1 小时
+          },
+        });
+        return;
+      }
+
+      // 原有的语言检测逻辑
       // 检测语言
       const langCode = detectLanguage(req, options);
       const langConfig = options.languages.find((l) => l.code === langCode) ||
@@ -451,19 +506,22 @@ export function i18n(options: I18nPluginOptions): Plugin {
             const isRtl = langConfig?.rtl || false;
             let newHtml = injectLangAttribute(html, langCode, isRtl);
 
-            // 注入翻译数据到客户端（在 </head> 之前）
-            const translations = translationCache.get(langCode) || null;
-            if (translations && newHtml.includes("</head>")) {
+            // 注入 i18n 客户端脚本（在 </head> 之前）
+            // 不再直接注入翻译数据，而是通过 API 请求获取
+            if (newHtml.includes("</head>")) {
               try {
                 // 编译客户端脚本
                 const clientScript = await compileClientScript();
                 if (!clientScript) {
                   console.warn("[i18n Plugin] 客户端脚本编译失败，跳过注入");
                 } else {
-                  // 生成初始化脚本
+                  // 生成 API 端点 URL
+                  const apiEndpoint = `/__i18n/locales/${langCode}.json`;
+
+                  // 生成初始化脚本（只包含语言代码和 API 端点）
                   const initScript = generateInitScript({
                     lang: langCode,
-                    translations,
+                    apiEndpoint,
                   });
 
                   // 组合完整的脚本
