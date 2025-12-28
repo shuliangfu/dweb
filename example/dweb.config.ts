@@ -37,7 +37,7 @@ const config: AppConfig = {
   // 服务器配置
   server: {
     port: 3000,
-    host: "127.0.0.1", // Docker 环境需要监听所有网络接口
+    host: "0.0.0.0", // Docker 环境需要监听所有网络接口
     tls: false, // 使用默认证书
   },
 

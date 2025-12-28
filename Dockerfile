@@ -11,10 +11,8 @@ COPY . .
 # 切换到 example 目录
 WORKDIR /app/example
 
-# 临时修改 deno.json，将 nodeModulesDir 改为 auto，以便自动安装 npm 依赖
-RUN sed -i 's/"nodeModulesDir": "manual"/"nodeModulesDir": "auto"/' deno.json
-
 # 缓存依赖（这会触发 npm 依赖的自动安装）
+# 注意：deno.json 中 nodeModulesDir 已经是 "auto"，无需修改
 RUN deno cache --lock=deno.lock deno.json
 
 # 预先缓存健康检查脚本（避免运行时下载依赖）
@@ -31,12 +29,14 @@ WORKDIR /app
 
 # 从构建阶段复制框架源码和 example 项目的运行时文件
 COPY --from=builder /app/src ./src
-COPY --from=builder /app/example/.dist ./example/
+COPY --from=builder /app/example/.dist ./example/.dist
 COPY --from=builder /app/example/deno.json ./example/
 COPY --from=builder /app/example/dweb.config.ts ./example/
 COPY --from=builder /app/example/healthcheck.ts ./example/
+COPY --from=builder /app/example/deno.lock ./example/
 # 复制 node_modules（避免运行时重新下载依赖）
-COPY --from=builder /app/example/node_modules ./example/
+# 注意：nodeModulesDir 为 "auto" 时，node_modules 在项目根目录下
+COPY --from=builder /app/example/node_modules ./example/node_modules
 COPY --from=builder /app/example/global.d.ts ./example/
 
 # 切换到 example 目录（deno.json 和 dweb.config.ts 所在目录）
