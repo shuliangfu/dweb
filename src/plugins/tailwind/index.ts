@@ -108,8 +108,6 @@ async function processCSSWithCLI(
 
   const compiledCSS = new TextDecoder().decode(stdout);
 
-  console.log(compiledCSS);
-
   return {
     content: compiledCSS,
   };
