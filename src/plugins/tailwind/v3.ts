@@ -6,10 +6,11 @@ import type { TailwindPluginOptions } from "./types.ts";
 import * as path from "@std/path";
 
 // 导入 Tailwind CSS v3 相关包
-import tailwindcss from "tailwindcss-v3";
-import postcss from "postcss-v3";
-import autoprefixer from "autoprefixer";
-import cssnano from "cssnano";
+// 使用完整的 npm: URL，不依赖 deno.json 的 imports 配置
+import tailwindcss from "npm:tailwindcss@^3.4.0";
+import postcss from "npm:postcss@^8.4.35";
+import autoprefixer from "npm:autoprefixer@^10.4.17";
+import cssnano from "npm:cssnano@^6.0.3";
 
 /**
  * 初始化 Tailwind CSS v3 PostCSS 处理器
