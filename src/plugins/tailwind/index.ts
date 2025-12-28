@@ -95,11 +95,20 @@ async function processCSSWithCLI(
   const process = command.spawn();
 
   // 写入 CSS 内容到 stdin
+  // 注意：需要确保所有数据都写入并关闭 stdin，CLI 才能开始处理
   const writer = process.stdin.getWriter();
-  await writer.write(new TextEncoder().encode(cssContent));
-  await writer.close();
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(cssContent);
+    await writer.write(data);
+  } finally {
+    await writer.close();
+    // 确保 stdin 完全关闭
+    await process.stdin.close();
+  }
 
   // 等待命令执行完成
+  // 注意：需要等待 stdin 完全关闭后，CLI 才会开始处理并输出结果
   const { code, stdout, stderr } = await process.output();
 
   const stderrText = new TextDecoder().decode(stderr);
@@ -119,6 +128,8 @@ async function processCSSWithCLI(
     console.warn(`   配置文件路径: ${configPath || "未指定"}`);
     console.warn(`   CSS 文件路径: ${filePath}`);
     console.warn(`   CLI 路径: ${cliPath}`);
+    console.warn(`   输入内容长度: ${cssContent.length} 字符`);
+    console.warn(`   CLI 命令参数: ${args.join(" ")}`);
     if (stderrText) {
       console.warn(`   CLI 错误输出: ${stderrText}`);
     }

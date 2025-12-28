@@ -27,6 +27,7 @@
     "./extensions/math": "./src/extensions/helpers/math.ts",
     "./extensions/file": "./src/extensions/helpers/file.ts"
   },
+  "nodeModulesDir": "none",
   "description": "A modern full-stack web framework based on Deno + Preact + Tailwind CSS",
   "tasks": {
     "dev": "deno run -A src/cli.ts dev",
@@ -120,7 +121,6 @@
     "jsxImportSource": "preact",
     "lib": ["deno.window", "dom", "dom.iterable", "dom.asynciterable", "deno.ns"]
   },
-  "nodeModulesDir": "auto",
   "allowScripts": {
     "allow": [],
     "deny": ["npm:esbuild@0.19.12", "npm:fsevents@2.3.3", "npm:sharp@0.34.5"]
