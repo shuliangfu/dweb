@@ -104,10 +104,15 @@ const config: AppConfig = {
   // 插件配置
   plugins: [
     // Tailwind CSS v4 插件（默认使用 v4）
-    tailwind({
-      version: "v4",
+    // tailwind({
+    //   version: "v4",
+    //   cssPath: "assets/tailwind.css", // 指定主 CSS 文件路径
+    //   optimize: true, // 生产环境优化
+		// }),
+		tailwind({
+      version: "v3",
       cssPath: "assets/tailwind.css", // 指定主 CSS 文件路径
-      optimize: true, // 生产环境优化
+      // v3 使用 autoprefixer 配置，optimize 选项在 v3 中通过 cssnano 自动处理
     }),
     seo({
       title: "DWeb - 现代化的全栈 Web 框架",
