@@ -63,6 +63,77 @@ class HMRClient {
   }
 
   /**
+   * 从文件路径推断对应的路由路径
+   * @param filePath 文件路径（如 routes/about.tsx 或 routes/index.tsx）
+   * @returns 路由路径（如 /about 或 /），如果是布局文件或应用文件返回 null（表示应该更新）
+   */
+  private inferRouteFromFilePath(filePath: string): string | null {
+    // 移除路径前缀（如 routes/ 或 app/routes/）
+    // 支持多应用模式：app1/routes/about.tsx -> about.tsx
+    let normalizedPath = filePath.replace(/^.*\/routes\//, "");
+
+    // 如果路径中不包含 routes/，可能是绝对路径或其他格式，尝试直接使用文件名
+    if (normalizedPath === filePath) {
+      // 尝试从路径中提取文件名（最后一个 / 之后的部分）
+      const lastSlashIndex = filePath.lastIndexOf("/");
+      if (lastSlashIndex >= 0) {
+        normalizedPath = filePath.substring(lastSlashIndex + 1);
+      } else {
+        normalizedPath = filePath;
+      }
+    }
+
+    // 如果是布局文件或应用文件，返回 null（表示应该更新，因为它们是共享的）
+    if (normalizedPath.includes("_layout") || normalizedPath.includes("_app")) {
+      return null;
+    }
+
+    // 如果是 API 路由，不应该更新页面组件
+    if (normalizedPath.startsWith("api/") || filePath.includes("/api/")) {
+      return "";
+    }
+
+    // 移除文件扩展名
+    normalizedPath = normalizedPath.replace(/\.(tsx?|jsx?)$/, "");
+
+    // 如果是 index，转换为根路径
+    if (normalizedPath === "index" || normalizedPath === "") {
+      return "/";
+    }
+
+    // 转换为路由路径（添加前导斜杠）
+    return `/${normalizedPath}`;
+  }
+
+  /**
+   * 检查文件是否应该更新当前页面
+   * @param filePath 文件路径
+   * @returns true 如果应该更新，false 如果不应该更新
+   */
+  private shouldUpdateCurrentPage(filePath: string): boolean {
+    // 获取当前路由路径
+    const currentRoute = globalThis.location.pathname;
+
+    // 推断文件对应的路由路径
+    const fileRoute = this.inferRouteFromFilePath(filePath);
+
+    // 如果返回 null，说明是布局文件或应用文件，应该更新（因为它们是共享的）
+    if (fileRoute === null) {
+      return true;
+    }
+
+    // 如果返回空字符串，说明是 API 路由或其他不应该更新页面的文件
+    if (fileRoute === "") {
+      return false;
+    }
+
+    // 检查路由是否匹配
+    // 精确匹配或当前路由以文件路由开头（支持嵌套路由）
+    return currentRoute === fileRoute ||
+      currentRoute.startsWith(fileRoute + "/");
+  }
+
+  /**
    * 重新加载 CSS 文件
    */
   private reloadStylesheet(filePath: string): void {
@@ -615,6 +686,13 @@ class HMRClient {
       } else if (
         data.type === "component" && data.action === "update-component"
       ) {
+        // 组件文件：检查是否应该更新当前页面
+        if (data.file && !this.shouldUpdateCurrentPage(data.file)) {
+          // 文件不属于当前路由，跳过更新
+          // console.log(`[HMR] 跳过更新：${data.file} 不属于当前路由 ${globalThis.location.pathname}`);
+          return;
+        }
+
         // 组件文件：通过 GET 请求获取编译后的模块
         if (data.moduleUrl && data.file) {
           await this.updateComponent(data.moduleUrl, data.file);
@@ -625,6 +703,13 @@ class HMRClient {
       } else if (
         data.type === "component" && data.action === "reload-component"
       ) {
+        // 组件文件：检查是否应该更新当前页面
+        if (data.file && !this.shouldUpdateCurrentPage(data.file)) {
+          // 文件不属于当前路由，跳过更新
+          // console.log(`[HMR] 跳过更新：${data.file} 不属于当前路由 ${globalThis.location.pathname}`);
+          return;
+        }
+
         // 组件文件：重新加载组件内容（降级方案）
         await this.reloadComponent();
       } else {
