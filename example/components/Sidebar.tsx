@@ -324,7 +324,7 @@ export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarP
         }
       `}</style>
       <aside className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen sticky top-0 overflow-y-auto sidebar-scrollbar">
-        <div className="p-4">
+        <div className="pt-4 px-4 pb-8">
         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">文档目录</h2>
         <nav className="space-y-1">
           {navItems.map((item) => {
