@@ -57,7 +57,8 @@ export interface TailwindPluginOptions {
   // v4 特定选项：是否优化（生产环境默认 true）
   optimize?: boolean;
   // Tailwind CLI 可执行文件路径（可选）
-  // 如果不指定，默认下载到项目根目录的 bin/ 目录
+  // 如果不指定，默认下载到当前项目根目录的 bin/ 目录（例如：./bin/tailwindcss）
   // 用户可以指定自定义路径，例如移动到共享目录以避免重复下载
+  // 注意：如果指定系统目录（如 /usr/local/bin），需要确保有写入权限
   cliPath?: string;
 }
