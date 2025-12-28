@@ -774,7 +774,7 @@ ${
     "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact"
   }
   },
-  "nodeModulesDir": "auto",
+  "nodeModulesDir": "none",
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "preact"
