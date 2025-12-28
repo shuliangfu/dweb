@@ -15,7 +15,8 @@ export default function CustomPluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   // 基本结构
-  const basicStructureCode = `import type { Plugin } from "@dreamer/dweb/core/plugin";
+  const basicStructureCode =
+    `import type { Plugin } from "@dreamer/dweb/core/plugin";
 
 const myPlugin: Plugin = {
   name: "my-plugin",
@@ -44,7 +45,8 @@ const myPlugin: Plugin = {
 app.plugin(myPlugin);`;
 
   // 简单插件
-  const simplePluginCode = `import type { Plugin } from "@dreamer/dweb/core/plugin";
+  const simplePluginCode =
+    `import type { Plugin } from "@dreamer/dweb/core/plugin";
 
 const helloPlugin: Plugin = {
   name: "hello",
@@ -60,7 +62,8 @@ const helloPlugin: Plugin = {
 app.plugin(helloPlugin);`;
 
   // 配置化插件
-  const configurablePluginCode = `import type { Plugin } from "@dreamer/dweb/core/plugin";
+  const configurablePluginCode =
+    `import type { Plugin } from "@dreamer/dweb/core/plugin";
 
 interface MyPluginOptions {
   prefix: string;
@@ -90,7 +93,8 @@ app.plugin(createMyPlugin({
 }));`;
 
   // 异步插件
-  const asyncPluginCode = `import type { Plugin } from "@dreamer/dweb/core/plugin";
+  const asyncPluginCode =
+    `import type { Plugin } from "@dreamer/dweb/core/plugin";
 
 const asyncPlugin: Plugin = {
   name: "async-plugin",
@@ -109,7 +113,8 @@ const asyncPlugin: Plugin = {
 app.plugin(asyncPlugin);`;
 
   // 带清理的插件
-  const cleanupPluginCode = `import type { Plugin } from "@dreamer/dweb/core/plugin";
+  const cleanupPluginCode =
+    `import type { Plugin } from "@dreamer/dweb/core/plugin";
 
 let intervalId: number | null = null;
 
@@ -133,7 +138,8 @@ const cleanupPlugin: Plugin = {
 app.plugin(cleanupPlugin);`;
 
   // 处理 API 请求的插件
-  const apiPluginCode = `import type { Plugin } from "@dreamer/dweb/core/plugin";
+  const apiPluginCode =
+    `import type { Plugin } from "@dreamer/dweb/core/plugin";
 
 const apiPlugin: Plugin = {
   name: "api-plugin",
@@ -163,7 +169,11 @@ app.plugin(apiPlugin);`;
           基本结构
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          插件是一个对象，包含 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">name</code> 和生命周期钩子：
+          插件是一个对象，包含{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            name
+          </code>{" "}
+          和生命周期钩子：
         </p>
         <CodeBlock code={basicStructureCode} language="typescript" />
       </section>
@@ -173,7 +183,7 @@ app.plugin(apiPlugin);`;
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           插件示例
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           简单插件
         </h3>
@@ -205,23 +215,27 @@ app.plugin(apiPlugin);`;
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           API 参考
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           Plugin 接口
         </h3>
-        <CodeBlock code={`interface Plugin {
+        <CodeBlock
+          code={`interface Plugin {
   name: string;
   onInit?: (app: AppLike) => Promise<void> | void;
   onRequest?: (req: Request, res: Response) => Promise<void> | void;
   onResponse?: (req: Request, res: Response, html: string) => Promise<string> | string;
   onError?: (error: Error, req: Request, res: Response) => Promise<void> | void;
   onBuild?: (config: AppConfig) => Promise<void> | void;
-}`} language="typescript" />
+}`}
+          language="typescript"
+        />
 
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           使用插件
         </h3>
-        <CodeBlock code={`// 在 Application 上使用
+        <CodeBlock
+          code={`// 在 Application 上使用
 app.plugin(plugin);
 
 // 在配置文件中使用
@@ -229,7 +243,9 @@ export default {
   plugins: [
     myPlugin(),
   ],
-};`} language="typescript" />
+};`}
+          language="typescript"
+        />
       </section>
 
       {/* 相关文档 */}
@@ -238,9 +254,31 @@ export default {
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/plugins" className="text-blue-600 dark:text-blue-400 hover:underline">插件概述</a></li>
-          <li><a href="/docs/core/plugin" className="text-blue-600 dark:text-blue-400 hover:underline">插件系统</a></li>
-          <li><a href="/docs/core/application" className="text-blue-600 dark:text-blue-400 hover:underline">Application</a> - 应用核心</li>
+          <li>
+            <a
+              href="/docs/plugins"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              插件概述
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/core/plugin"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              插件系统
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/core/application"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Application
+            </a>{" "}
+            - 应用核心
+          </li>
         </ul>
       </section>
     </article>

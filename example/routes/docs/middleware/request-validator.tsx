@@ -45,23 +45,33 @@ server.use(requestValidator({
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">type</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              type
+            </code>{" "}
             - 数据类型：'string' | 'number' | 'boolean' | 'array' | 'object'
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">required</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              required
+            </code>{" "}
             - 是否必填
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">min</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              min
+            </code>{" "}
             - 最小值或最小长度
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">max</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              max
+            </code>{" "}
             - 最大值或最大长度
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">pattern</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              pattern
+            </code>{" "}
             - 正则表达式模式
           </li>
         </ul>

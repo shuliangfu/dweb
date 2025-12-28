@@ -99,7 +99,9 @@ await server.start(3000);`;
 
   return (
     <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">服务器 (Server)</h1>
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
+        服务器 (Server)
+      </h1>
       <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
         Server 类是框架的核心，提供了 HTTP 服务器功能。它基于 Deno 的原生 HTTP
         服务器，提供了简洁易用的 API。
@@ -124,7 +126,9 @@ await server.start(3000);`;
         </p>
         <CodeBlock code={serverResponseCode} language="typescript" />
         <div className="mt-4">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">响应方法说明</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+            响应方法说明
+          </h3>
           <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
             <li>
               <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
@@ -221,11 +225,15 @@ await server.start(3000);`;
         </p>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
           <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">port</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              port
+            </code>{" "}
             - 服务器监听端口（默认: 3000）
           </li>
           <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">host</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              host
+            </code>{" "}
             - 服务器监听地址（默认: 'localhost'）
           </li>
         </ul>
@@ -236,7 +244,7 @@ await server.start(3000);`;
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           API 参考
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           构造函数
         </h3>
@@ -248,21 +256,28 @@ await server.start(3000);`;
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           方法
         </h3>
-        
+
         <div className="space-y-6">
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">start(port, host?)</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                start(port, host?)
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               启动服务器。
             </p>
-            <CodeBlock code={`await server.start(3000, 'localhost');`} language="typescript" />
+            <CodeBlock
+              code={`await server.start(3000, 'localhost');`}
+              language="typescript"
+            />
           </div>
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">stop()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                stop()
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               停止服务器。
@@ -272,25 +287,35 @@ await server.start(3000);`;
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">setHandler(handler)</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                setHandler(handler)
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               设置请求处理器。
             </p>
-            <CodeBlock code={`server.setHandler(async (req, res) => {
+            <CodeBlock
+              code={`server.setHandler(async (req, res) => {
   res.text('Hello World');
-});`} language="typescript" />
+});`}
+              language="typescript"
+            />
           </div>
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">use(middleware)</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                use(middleware)
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               添加中间件。
             </p>
-            <CodeBlock code={`server.use(logger());
-server.use(cors({ origin: '*' }));`} language="typescript" />
+            <CodeBlock
+              code={`server.use(logger());
+server.use(cors({ origin: '*' }));`}
+              language="typescript"
+            />
           </div>
         </div>
       </section>
@@ -301,9 +326,30 @@ server.use(cors({ origin: '*' }));`} language="typescript" />
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/core/application" className="text-blue-600 dark:text-blue-400 hover:underline">Application (应用核心)</a></li>
-          <li><a href="/docs/core/middleware" className="text-blue-600 dark:text-blue-400 hover:underline">中间件系统</a></li>
-          <li><a href="/docs/features/shutdown" className="text-blue-600 dark:text-blue-400 hover:underline">优雅关闭</a></li>
+          <li>
+            <a
+              href="/docs/core/application"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Application (应用核心)
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/core/middleware"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              中间件系统
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/features/shutdown"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              优雅关闭
+            </a>
+          </li>
         </ul>
       </section>
     </article>

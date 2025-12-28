@@ -8,7 +8,8 @@ import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
   title: "ApplicationContext (应用上下文) - DWeb 框架文档",
-  description: "DWeb 框架的 ApplicationContext 类介绍，提供应用状态和服务的统一访问接口",
+  description:
+    "DWeb 框架的 ApplicationContext 类介绍，提供应用状态和服务的统一访问接口",
 };
 
 export default function CoreApplicationContextPage(
@@ -73,8 +74,14 @@ const service = application.getService("myService");`;
         ApplicationContext (应用上下文)
       </h1>
       <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">ApplicationContext</code> 提供应用状态和服务的统一访问接口，
-        实现 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">AppLike</code> 接口，供插件系统使用。
+        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+          ApplicationContext
+        </code>{" "}
+        提供应用状态和服务的统一访问接口， 实现{" "}
+        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+          AppLike
+        </code>{" "}
+        接口，供插件系统使用。
       </p>
 
       {/* 概述 */}
@@ -83,8 +90,10 @@ const service = application.getService("myService");`;
           概述
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">ApplicationContext</code> 封装了对应用核心组件的访问，
-          提供统一的接口供插件和中间件使用。
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            ApplicationContext
+          </code>{" "}
+          封装了对应用核心组件的访问， 提供统一的接口供插件和中间件使用。
         </p>
       </section>
 
@@ -102,8 +111,14 @@ const service = application.getService("myService");`;
           在插件中使用
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">ApplicationContext</code> 实现了 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">AppLike</code> 接口，
-          可以直接传递给插件：
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            ApplicationContext
+          </code>{" "}
+          实现了{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            AppLike
+          </code>{" "}
+          接口， 可以直接传递给插件：
         </p>
         <CodeBlock code={pluginUsageCode} language="typescript" />
       </section>
@@ -121,105 +136,145 @@ const service = application.getService("myService");`;
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           API 参考
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           属性
         </h3>
-        
+
         <div className="space-y-6">
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">server</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                server
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               获取服务器实例。
             </p>
-            <CodeBlock code={`const server = context.server;
-await server.start(3000);`} language="typescript" />
+            <CodeBlock
+              code={`const server = context.server;
+await server.start(3000);`}
+              language="typescript"
+            />
           </div>
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">router</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                router
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               获取路由管理器。
             </p>
-            <CodeBlock code={`const router = context.router;
-const route = router.match("/users/123");`} language="typescript" />
+            <CodeBlock
+              code={`const router = context.router;
+const route = router.match("/users/123");`}
+              language="typescript"
+            />
           </div>
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">routeHandler</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                routeHandler
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               获取路由处理器。
             </p>
-            <CodeBlock code={`const routeHandler = context.routeHandler;
-await routeHandler.handle(req, res);`} language="typescript" />
+            <CodeBlock
+              code={`const routeHandler = context.routeHandler;
+await routeHandler.handle(req, res);`}
+              language="typescript"
+            />
           </div>
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">middleware</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                middleware
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               获取中间件管理器。
             </p>
-            <CodeBlock code={`const middleware = context.middleware;
-middleware.add(myMiddleware);`} language="typescript" />
+            <CodeBlock
+              code={`const middleware = context.middleware;
+middleware.add(myMiddleware);`}
+              language="typescript"
+            />
           </div>
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">plugins</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                plugins
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               获取插件管理器。
             </p>
-            <CodeBlock code={`const plugins = context.plugins;
-plugins.register(myPlugin);`} language="typescript" />
+            <CodeBlock
+              code={`const plugins = context.plugins;
+plugins.register(myPlugin);`}
+              language="typescript"
+            />
           </div>
         </div>
 
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           方法
         </h3>
-        
+
         <div className="space-y-6">
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">getConfig()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                getConfig()
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               获取应用配置。
             </p>
-            <CodeBlock code={`const config = context.getConfig();
-const port = config.server?.port;`} language="typescript" />
+            <CodeBlock
+              code={`const config = context.getConfig();
+const port = config.server?.port;`}
+              language="typescript"
+            />
           </div>
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">isProd()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                isProd()
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               检查是否为生产环境。
             </p>
-            <CodeBlock code={`if (context.isProd()) {
+            <CodeBlock
+              code={`if (context.isProd()) {
   // 生产环境逻辑
-}`} language="typescript" />
+}`}
+              language="typescript"
+            />
           </div>
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">getApplication()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                getApplication()
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               获取应用实例（用于扩展）。
             </p>
-            <CodeBlock code={`const app = context.getApplication();
-const service = app.getService("myService");`} language="typescript" />
+            <CodeBlock
+              code={`const app = context.getApplication();
+const service = app.getService("myService");`}
+              language="typescript"
+            />
           </div>
         </div>
       </section>
@@ -230,8 +285,22 @@ const service = app.getService("myService");`} language="typescript" />
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/core/application" className="text-blue-600 dark:text-blue-400 hover:underline">Application (应用核心)</a></li>
-          <li><a href="/docs/core/plugin" className="text-blue-600 dark:text-blue-400 hover:underline">插件系统</a></li>
+          <li>
+            <a
+              href="/docs/core/application"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Application (应用核心)
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/core/plugin"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              插件系统
+            </a>
+          </li>
         </ul>
       </section>
     </article>

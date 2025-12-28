@@ -175,7 +175,9 @@ const results = await adapter.query(query.sql, query.params);`;
   return (
     <article className="prose prose-lg max-w-none dark:prose-invert">
       {/* 标题 */}
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">数据库模块</h1>
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
+        数据库模块
+      </h1>
 
       <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
         DWeb 框架提供了强大的数据库支持，支持 PostgreSQL 和
@@ -218,8 +220,9 @@ const results = await adapter.query(query.sql, query.params);`;
         </h3>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
           使用{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">initDatabase</code>
-          {" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            initDatabase
+          </code>{" "}
           函数初始化数据库连接：
         </p>
         <CodeBlock code={initDbCode} language="typescript" />
@@ -267,13 +270,17 @@ const results = await adapter.query(query.sql, query.params);`;
           模型特性
         </h3>
         <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700 dark:text-gray-300">字段定义和类型验证</li>
+          <li className="text-gray-700 dark:text-gray-300">
+            字段定义和类型验证
+          </li>
           <li className="text-gray-700 dark:text-gray-300">自动时间戳管理</li>
           <li className="text-gray-700 dark:text-gray-300">软删除支持</li>
           <li className="text-gray-700 dark:text-gray-300">查询作用域</li>
           <li className="text-gray-700 dark:text-gray-300">虚拟字段</li>
           <li className="text-gray-700 dark:text-gray-300">生命周期钩子</li>
-          <li className="text-gray-700 dark:text-gray-300">关联查询（一对一、一对多、多对多）</li>
+          <li className="text-gray-700 dark:text-gray-300">
+            关联查询（一对一、一对多、多对多）
+          </li>
           <li className="text-gray-700 dark:text-gray-300">索引管理</li>
           <li className="text-gray-700 dark:text-gray-300">查询缓存</li>
         </ul>

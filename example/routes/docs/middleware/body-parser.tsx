@@ -45,20 +45,27 @@ server.use(bodyParser({
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">json</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              json
+            </code>{" "}
             - JSON 解析配置
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">urlencoded</code>
-            {" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              urlencoded
+            </code>{" "}
             - URL-encoded 解析配置
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">text</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              text
+            </code>{" "}
             - 文本解析配置
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">raw</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              raw
+            </code>{" "}
             - 原始数据解析配置
           </li>
         </ul>

@@ -8,7 +8,8 @@ import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
   title: "API 路由 - DWeb 框架文档",
-  description: "DWeb 框架的 API 路由介绍，包括 Method 模式和 REST 模式的使用方法",
+  description:
+    "DWeb 框架的 API 路由介绍，包括 Method 模式和 REST 模式的使用方法",
 };
 
 export default function CoreApiPage(
@@ -312,10 +313,21 @@ export default {
 
   return (
     <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">API 路由</h1>
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
+        API 路由
+      </h1>
       <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 框架支持两种 API 路由模式：<strong>Method 模式</strong>（默认）和 <strong>REST 模式</strong>。
-        两种模式是互斥的，通过 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">dweb.config.ts</code> 中的 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">routes.apiMode</code> 配置项选择。
+        DWeb 框架支持两种 API 路由模式：<strong>Method 模式</strong>（默认）和
+        {" "}
+        <strong>REST 模式</strong>。 两种模式是互斥的，通过{" "}
+        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+          dweb.config.ts
+        </code>{" "}
+        中的{" "}
+        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+          routes.apiMode
+        </code>{" "}
+        配置项选择。
       </p>
 
       {/* 配置说明 */}
@@ -324,12 +336,19 @@ export default {
           配置 API 路由模式
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          在 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">dweb.config.ts</code> 中配置 API 路由模式：
+          在{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            dweb.config.ts
+          </code>{" "}
+          中配置 API 路由模式：
         </p>
         <CodeBlock code={configCode} language="typescript" />
         <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-600 p-4 my-4 rounded">
           <p className="text-blue-800 dark:text-blue-200 text-sm">
-            <strong>注意：</strong>两种模式是互斥的，不能混用。选择一种模式后，所有 API 路由都应遵循该模式的规则。
+            <strong>
+              注意：
+            </strong>两种模式是互斥的，不能混用。选择一种模式后，所有 API
+            路由都应遵循该模式的规则。
           </p>
         </div>
       </section>
@@ -340,16 +359,36 @@ export default {
           Method 模式（默认）
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          Method 模式通过 URL 路径指定方法名，<strong>URL 必须使用中划线格式（kebab-case）</strong>，函数名可以使用驼峰格式（camelCase）。
+          Method 模式通过 URL 路径指定方法名，<strong>
+            URL 必须使用中划线格式（kebab-case）
+          </strong>，函数名可以使用驼峰格式（camelCase）。
         </p>
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-600 p-4 my-4 rounded">
           <p className="text-yellow-800 dark:text-yellow-200 text-sm mb-2">
             <strong>⚠️ 重要：URL 格式要求</strong>
           </p>
           <ul className="list-disc list-inside space-y-1 text-yellow-800 dark:text-yellow-200 text-sm">
-            <li>✅ <strong>允许</strong>：URL 必须使用中划线格式，例如 <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">/api/users/get-user</code></li>
-            <li>❌ <strong>不允许</strong>：URL 不能使用驼峰格式，例如 <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">/api/users/getUser</code> 会返回 400 错误</li>
-            <li>✅ <strong>允许</strong>：函数名可以使用驼峰格式，例如 <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">getUser</code>、<code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">createUser</code></li>
+            <li>
+              ✅ <strong>允许</strong>：URL 必须使用中划线格式，例如{" "}
+              <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">
+                /api/users/get-user
+              </code>
+            </li>
+            <li>
+              ❌ <strong>不允许</strong>：URL 不能使用驼峰格式，例如{" "}
+              <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">
+                /api/users/getUser
+              </code>{" "}
+              会返回 400 错误
+            </li>
+            <li>
+              ✅ <strong>允许</strong>：函数名可以使用驼峰格式，例如{" "}
+              <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">
+                getUser
+              </code>、<code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">
+                createUser
+              </code>
+            </li>
           </ul>
         </div>
         <CodeBlock code={methodModeCode} language="typescript" />
@@ -357,7 +396,8 @@ export default {
           <p className="text-gray-700 dark:text-gray-300 text-sm mb-2">
             <strong>访问示例：</strong>
           </p>
-          <CodeBlock code={`# ✅ 正确：使用中划线格式
+          <CodeBlock
+            code={`# ✅ 正确：使用中划线格式
 curl -X POST http://localhost:3000/api/users/get-user
 
 # ❌ 错误：使用驼峰格式会返回 400 错误
@@ -366,7 +406,9 @@ curl -X POST http://localhost:3000/api/users/getUser
 # ✅ 正确：创建用户
 curl -X POST http://localhost:3000/api/users/create-user \\
   -H "Content-Type: application/json" \\
-  -d '{"name":"John","email":"john@example.com"}'`} language="bash" />
+  -d '{"name":"John","email":"john@example.com"}'`}
+            language="bash"
+          />
         </div>
       </section>
 
@@ -378,7 +420,7 @@ curl -X POST http://localhost:3000/api/users/create-user \\
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
           REST 模式基于 HTTP 方法和资源路径，支持两种命名方式：
         </p>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           方式 1：直接使用 HTTP 方法名（推荐）
         </h3>
@@ -387,7 +429,8 @@ curl -X POST http://localhost:3000/api/users/create-user \\
           <p className="text-gray-700 dark:text-gray-300 text-sm mb-2">
             <strong>访问示例：</strong>
           </p>
-          <CodeBlock code={`# GET 请求（获取列表）
+          <CodeBlock
+            code={`# GET 请求（获取列表）
 curl http://localhost:3000/api/users
 
 # GET 请求（获取单个）
@@ -404,7 +447,9 @@ curl -X PUT http://localhost:3000/api/users/123 \\
   -d '{"name":"Jane","email":"jane@example.com"}'
 
 # DELETE 请求（删除）
-curl -X DELETE http://localhost:3000/api/users/123`} language="bash" />
+curl -X DELETE http://localhost:3000/api/users/123`}
+            language="bash"
+          />
         </div>
 
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
@@ -419,8 +464,11 @@ curl -X DELETE http://localhost:3000/api/users/123`} language="bash" />
           ApiContext 上下文对象
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          所有 API 路由处理函数都接收一个 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">ApiContext</code> 对象作为参数，
-          该对象包含处理请求所需的所有信息。
+          所有 API 路由处理函数都接收一个{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            ApiContext
+          </code>{" "}
+          对象作为参数， 该对象包含处理请求所需的所有信息。
         </p>
         <CodeBlock code={apiContextExampleCode} language="typescript" />
       </section>
@@ -459,10 +507,14 @@ curl -X DELETE http://localhost:3000/api/users/123`} language="bash" />
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
               <tr>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">req</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    req
+                  </code>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Request</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    Request
+                  </code>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   请求对象，包含请求方法、URL、请求体等信息
@@ -470,10 +522,14 @@ curl -X DELETE http://localhost:3000/api/users/123`} language="bash" />
               </tr>
               <tr>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">res</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    res
+                  </code>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Response</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    Response
+                  </code>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   响应对象，用于设置响应状态码、响应体等
@@ -481,10 +537,14 @@ curl -X DELETE http://localhost:3000/api/users/123`} language="bash" />
               </tr>
               <tr>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">app</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    app
+                  </code>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">ApplicationLike</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    ApplicationLike
+                  </code>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   Application 实例，用于访问服务容器、配置等应用级别的功能
@@ -492,10 +552,14 @@ curl -X DELETE http://localhost:3000/api/users/123`} language="bash" />
               </tr>
               <tr>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">cookie</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    cookie
+                  </code>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Record&lt;string, string&gt;</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    Record&lt;string, string&gt;
+                  </code>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   Cookie 对象，包含所有请求的 Cookie
@@ -503,10 +567,14 @@ curl -X DELETE http://localhost:3000/api/users/123`} language="bash" />
               </tr>
               <tr>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">session</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    session
+                  </code>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Session | null</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    Session | null
+                  </code>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   Session 对象（如果存在），用于存储会话数据
@@ -514,43 +582,76 @@ curl -X DELETE http://localhost:3000/api/users/123`} language="bash" />
               </tr>
               <tr>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">params</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    params
+                  </code>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Record&lt;string, string&gt;</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    Record&lt;string, string&gt;
+                  </code>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  路由参数，例如 <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">/api/users/:id</code> 中的 <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">id</code>
+                  路由参数，例如{" "}
+                  <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                    /api/users/:id
+                  </code>{" "}
+                  中的{" "}
+                  <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                    id
+                  </code>
                 </td>
               </tr>
               <tr>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">query</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    query
+                  </code>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Record&lt;string, string&gt;</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    Record&lt;string, string&gt;
+                  </code>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  查询参数，例如 <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">/api/users?id=123</code> 中的 <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">id</code>
+                  查询参数，例如{" "}
+                  <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                    /api/users?id=123
+                  </code>{" "}
+                  中的{" "}
+                  <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                    id
+                  </code>
                 </td>
               </tr>
               <tr>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">routePath</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    routePath
+                  </code>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">string</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    string
+                  </code>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  当前路由路径，例如 <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">/api/users</code>
+                  当前路由路径，例如{" "}
+                  <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                    /api/users
+                  </code>
                 </td>
               </tr>
               <tr>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">url</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    url
+                  </code>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">URL</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    URL
+                  </code>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   URL 对象，包含完整的 URL 信息（协议、主机、路径、查询参数等）
@@ -587,14 +688,22 @@ curl -X DELETE http://localhost:3000/api/users/123`} language="bash" />
                   URL 格式
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">GET /api/users</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    GET /api/users
+                  </code>
                   <br />
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">GET /api/users/123</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    GET /api/users/123
+                  </code>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">POST /api/users/get-user</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    POST /api/users/get-user
+                  </code>
                   <br />
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">POST /api/users/get-user-by-id</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    POST /api/users/get-user-by-id
+                  </code>
                 </td>
               </tr>
               <tr>
@@ -613,7 +722,8 @@ curl -X DELETE http://localhost:3000/api/users/123`} language="bash" />
                   函数命名
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  标准 RESTful 命名（GET, GET_ID, POST, PUT_ID, DELETE_ID）或（index, show, create, update, destroy）
+                  标准 RESTful 命名（GET, GET_ID, POST, PUT_ID,
+                  DELETE_ID）或（index, show, create, update, destroy）
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   自定义函数名（getUser, createUser 等），URL 必须使用中划线格式
@@ -649,8 +759,17 @@ curl -X DELETE http://localhost:3000/api/users/123`} language="bash" />
             <strong>选择建议：</strong>
           </p>
           <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-200 text-sm mt-2">
-            <li>如果需要标准的 CRUD 操作，使用 <strong>REST 模式</strong></li>
-            <li>如果需要自定义的业务方法（如 <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">sendEmail</code>、<code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">resetPassword</code>），使用 <strong>Method 模式</strong></li>
+            <li>
+              如果需要标准的 CRUD 操作，使用 <strong>REST 模式</strong>
+            </li>
+            <li>
+              如果需要自定义的业务方法（如{" "}
+              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
+                sendEmail
+              </code>、<code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
+                resetPassword
+              </code>），使用 <strong>Method 模式</strong>
+            </li>
           </ul>
         </div>
       </section>

@@ -44,15 +44,21 @@ server.use(staticFiles({
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">dir</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              dir
+            </code>{" "}
             - 静态文件目录
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">prefix</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              prefix
+            </code>{" "}
             - URL 前缀
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">maxAge</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              maxAge
+            </code>{" "}
             - 缓存时间（秒）
           </li>
         </ul>

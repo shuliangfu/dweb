@@ -217,32 +217,54 @@ export default defineConfig({
 
       <CodeBlock language="bash" code={createProjectCode} />
 
-      <p><strong>创建过程说明：</strong></p>
+      <p>
+        <strong>创建过程说明：</strong>
+      </p>
 
       <ol>
         <li>
-          <strong>项目名称输入</strong>：如果未提供项目名称，会提示输入（只允许字母、数字、连字符和下划线）
+          <strong>
+            项目名称输入
+          </strong>：如果未提供项目名称，会提示输入（只允许字母、数字、连字符和下划线）
         </li>
         <li>
           <strong>应用模式选择</strong>：
           <ul>
-            <li><strong>单应用模式</strong>（默认）：适合简单的单页面应用或 API 服务</li>
-            <li><strong>多应用模式</strong>：适合需要多个独立应用的场景（如前端 + 后端）</li>
+            <li>
+              <strong>单应用模式</strong>（默认）：适合简单的单页面应用或 API
+              服务
+            </li>
+            <li>
+              <strong>多应用模式</strong>：适合需要多个独立应用的场景（如前端 +
+              后端）
+            </li>
           </ul>
         </li>
         <li>
           <strong>Tailwind CSS 版本选择</strong>：
           <ul>
-            <li><strong>V4（推荐）</strong>：最新版本，性能更好</li>
-            <li><strong>V3</strong>：稳定版本，兼容性更好</li>
+            <li>
+              <strong>V4（推荐）</strong>：最新版本，性能更好
+            </li>
+            <li>
+              <strong>V3</strong>：稳定版本，兼容性更好
+            </li>
           </ul>
         </li>
         <li>
           <strong>渲染模式选择</strong>：
           <ul>
-            <li><strong>SSR（服务端渲染）</strong>：所有页面在服务端渲染，SEO 友好</li>
-            <li><strong>CSR（客户端渲染）</strong>：所有页面在客户端渲染，交互性强</li>
-            <li><strong>Hybrid（混合渲染）</strong>（默认）：根据路由自动选择渲染方式</li>
+            <li>
+              <strong>SSR（服务端渲染）</strong>：所有页面在服务端渲染，SEO 友好
+            </li>
+            <li>
+              <strong>CSR（客户端渲染）</strong>：所有页面在客户端渲染，交互性强
+            </li>
+            <li>
+              <strong>
+                Hybrid（混合渲染）
+              </strong>（默认）：根据路由自动选择渲染方式
+            </li>
           </ul>
         </li>
       </ol>
@@ -256,22 +278,40 @@ export default defineConfig({
       <h3>入口文件 (main.ts)</h3>
 
       <p>
-        <strong>注意：<code>main.ts</code> 文件是可选的，不是必须的。</strong> 框架可以通过 CLI
-        命令（<code>deno task dev</code> 或
+        <strong>
+          注意：<code>main.ts</code> 文件是可选的，不是必须的。
+        </strong>{" "}
+        框架可以通过 CLI 命令（<code>deno task dev</code> 或
         <code>deno task start</code>）自动启动服务器，无需手动创建入口文件。
       </p>
 
-      <p>如果你需要自定义应用配置（如添加中间件、插件等），可以创建 <code>main.ts</code> 文件：</p>
+      <p>
+        如果你需要自定义应用配置（如添加中间件、插件等），可以创建{" "}
+        <code>main.ts</code> 文件：
+      </p>
 
       <CodeBlock language="typescript" code={mainTsCode} />
 
-      <p><strong>使用说明：</strong></p>
+      <p>
+        <strong>使用说明：</strong>
+      </p>
 
       <ul>
-        <li>如果存在 <code>main.ts</code> 文件，框架会自动加载并应用其中的配置</li>
-        <li>如果不存在 <code>main.ts</code> 文件，框架会使用 <code>dweb.config.ts</code> 中的配置</li>
-        <li><code>main.ts</code> 主要用于需要编程式配置的场景，如动态添加中间件或插件</li>
-        <li>在多应用模式下，每个应用可以有自己的 <code>main.ts</code> 文件（位于应用目录下）</li>
+        <li>
+          如果存在 <code>main.ts</code> 文件，框架会自动加载并应用其中的配置
+        </li>
+        <li>
+          如果不存在 <code>main.ts</code> 文件，框架会使用{" "}
+          <code>dweb.config.ts</code> 中的配置
+        </li>
+        <li>
+          <code>main.ts</code>{" "}
+          主要用于需要编程式配置的场景，如动态添加中间件或插件
+        </li>
+        <li>
+          在多应用模式下，每个应用可以有自己的 <code>main.ts</code>{" "}
+          文件（位于应用目录下）
+        </li>
       </ul>
 
       <h2>开发流程</h2>
@@ -297,12 +337,18 @@ deno run -A src/cli.ts dev
 
       <CodeBlock language="bash" code={devServerCode} />
 
-      <p><strong>开发服务器特性：</strong></p>
+      <p>
+        <strong>开发服务器特性：</strong>
+      </p>
 
       <ul>
         <li>自动热更新（HMR）：修改代码后自动重新加载</li>
-        <li>自动路由扫描：自动发现 <code>routes/</code> 目录下的路由文件</li>
-        <li>自动加载中间件和插件：从 <code>main.ts</code> 或配置文件中加载</li>
+        <li>
+          自动路由扫描：自动发现 <code>routes/</code> 目录下的路由文件
+        </li>
+        <li>
+          自动加载中间件和插件：从 <code>main.ts</code> 或配置文件中加载
+        </li>
         <li>错误提示：详细的错误信息和堆栈跟踪</li>
       </ul>
 
@@ -311,9 +357,15 @@ deno run -A src/cli.ts dev
       <p>开发服务器支持热更新，修改代码后自动刷新：</p>
 
       <ul>
-        <li><strong>服务端组件</strong>：自动重新加载</li>
-        <li><strong>客户端组件</strong>：通过 WebSocket 推送更新</li>
-        <li><strong>样式文件</strong>：自动重新编译</li>
+        <li>
+          <strong>服务端组件</strong>：自动重新加载
+        </li>
+        <li>
+          <strong>客户端组件</strong>：通过 WebSocket 推送更新
+        </li>
+        <li>
+          <strong>样式文件</strong>：自动重新编译
+        </li>
       </ul>
 
       <h2>开发工具</h2>
@@ -338,7 +390,9 @@ deno run -A src/cli.ts dev
 
       <h3>构建配置</h3>
 
-      <p>在 <code>dweb.config.ts</code> 中配置构建选项：</p>
+      <p>
+        在 <code>dweb.config.ts</code> 中配置构建选项：
+      </p>
 
       <CodeBlock language="typescript" code={buildConfigCode} />
 
@@ -348,7 +402,9 @@ deno run -A src/cli.ts dev
 
       <CodeBlock language="bash" code={prodServerCode} />
 
-      <p><strong>生产服务器特性：</strong></p>
+      <p>
+        <strong>生产服务器特性：</strong>
+      </p>
 
       <ul>
         <li>优化的性能：代码已编译和压缩</li>
@@ -368,7 +424,9 @@ docker build -t dweb-app .
 docker run -p 3000:3000 dweb-app`}
       />
 
-      <p>详细说明请参考 <a href="/docs/docker">Docker 文档</a>。</p>
+      <p>
+        详细说明请参考 <a href="/docs/docker">Docker 文档</a>。
+      </p>
 
       <h2>调试</h2>
 
@@ -382,7 +440,9 @@ docker run -p 3000:3000 dweb-app`}
 
       <h4>VS Code 调试配置</h4>
 
-      <p>创建 <code>.vscode/launch.json</code> 配置：</p>
+      <p>
+        创建 <code>.vscode/launch.json</code> 配置：
+      </p>
 
       <CodeBlock language="json" code={vscodeDebugCode} />
 
@@ -416,7 +476,9 @@ deno coverage coverage/`}
 
       <h3>开发环境</h3>
 
-      <p>创建 <code>.env.development</code>：</p>
+      <p>
+        创建 <code>.env.development</code>：
+      </p>
 
       <CodeBlock language="text" code={envCode} />
 
@@ -443,7 +505,9 @@ export default defineConfig({
 
       <h3>模块导入错误</h3>
 
-      <p>确保 <code>deno.json</code> 中配置了正确的导入映射：</p>
+      <p>
+        确保 <code>deno.json</code> 中配置了正确的导入映射：
+      </p>
 
       <CodeBlock
         language="json"
@@ -457,13 +521,27 @@ export default defineConfig({
       <h2>最佳实践</h2>
 
       <ol>
-        <li><strong>使用 TypeScript</strong>：充分利用类型检查</li>
-        <li><strong>代码格式化</strong>：保持代码风格一致</li>
-        <li><strong>错误处理</strong>：使用 try-catch 处理异步错误</li>
-        <li><strong>日志记录</strong>：使用框架提供的日志功能</li>
-        <li><strong>环境变量</strong>：敏感信息使用环境变量</li>
-        <li><strong>测试覆盖</strong>：编写单元测试和集成测试</li>
-        <li><strong>性能监控</strong>：使用性能监控插件</li>
+        <li>
+          <strong>使用 TypeScript</strong>：充分利用类型检查
+        </li>
+        <li>
+          <strong>代码格式化</strong>：保持代码风格一致
+        </li>
+        <li>
+          <strong>错误处理</strong>：使用 try-catch 处理异步错误
+        </li>
+        <li>
+          <strong>日志记录</strong>：使用框架提供的日志功能
+        </li>
+        <li>
+          <strong>环境变量</strong>：敏感信息使用环境变量
+        </li>
+        <li>
+          <strong>测试覆盖</strong>：编写单元测试和集成测试
+        </li>
+        <li>
+          <strong>性能监控</strong>：使用性能监控插件
+        </li>
       </ol>
 
       <h2>相关文档</h2>
@@ -476,7 +554,8 @@ export default defineConfig({
           <a href="/docs/docker">Docker 部署</a> - 了解 Docker 部署方法
         </li>
         <li>
-          <a href="/docs/features/hmr">热模块替换 (HMR)</a> - 了解 HMR 的详细说明
+          <a href="/docs/features/hmr">热模块替换 (HMR)</a>{" "}
+          - 了解 HMR 的详细说明
         </li>
       </ul>
     </article>

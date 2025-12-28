@@ -8,14 +8,16 @@ import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
   title: "优雅关闭 (shutdown) - DWeb 框架文档",
-  description: "DWeb 框架的优雅关闭功能使用指南，确保服务器在关闭时能够正确处理未完成的请求和清理资源",
+  description:
+    "DWeb 框架的优雅关闭功能使用指南，确保服务器在关闭时能够正确处理未完成的请求和清理资源",
 };
 
 export default function FeaturesShutdownPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   // 基本使用
-  const basicUsageCode = `import { setupSignalHandlers, registerShutdownHandler } from "@dreamer/dweb/features/shutdown";
+  const basicUsageCode =
+    `import { setupSignalHandlers, registerShutdownHandler } from "@dreamer/dweb/features/shutdown";
 import { Server } from "@dreamer/dweb/core/server";
 
 const server = new Server();
@@ -46,7 +48,8 @@ await server.start(3000);`;
 4. 退出进程：正常退出或错误退出`;
 
   // 完整示例
-  const completeExampleCode = `import { Server } from "@dreamer/dweb/core/server";
+  const completeExampleCode =
+    `import { Server } from "@dreamer/dweb/core/server";
 import { setupSignalHandlers, registerShutdownHandler } from "@dreamer/dweb/features/shutdown";
 import { Database } from "./database";
 
@@ -100,7 +103,8 @@ setupSignalHandlers(server);
 await server.start(3000);`;
 
   // 关闭处理器执行顺序
-  const executionOrderCode = `// 关闭处理器按照注册顺序的逆序执行（后注册的先执行）
+  const executionOrderCode =
+    `// 关闭处理器按照注册顺序的逆序执行（后注册的先执行）
 
 // 注册顺序
 registerShutdownHandler(() => console.log("1"));
@@ -119,7 +123,8 @@ registerShutdownHandler(() => console.log("3"));
         优雅关闭 (shutdown)
       </h1>
       <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 框架提供了优雅关闭功能，确保服务器在关闭时能够正确处理未完成的请求和清理资源。
+        DWeb
+        框架提供了优雅关闭功能，确保服务器在关闭时能够正确处理未完成的请求和清理资源。
       </p>
 
       {/* 快速开始 */}
@@ -174,16 +179,19 @@ registerShutdownHandler(() => console.log("3"));
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           API 参考
         </h2>
-        
+
         <div className="space-y-6">
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">registerShutdownHandler(handler)</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                registerShutdownHandler(handler)
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               注册一个关闭处理器，在服务器关闭时执行。
             </p>
-            <CodeBlock code={`registerShutdownHandler(async () => {
+            <CodeBlock
+              code={`registerShutdownHandler(async () => {
   // 关闭数据库连接
   await db.close();
   
@@ -192,28 +200,48 @@ registerShutdownHandler(() => console.log("3"));
   
   // 保存状态
   await saveState();
-});`} language="typescript" />
+});`}
+              language="typescript"
+            />
           </div>
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">setupSignalHandlers(server)</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                setupSignalHandlers(server)
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              设置系统信号监听器，自动处理 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">SIGTERM</code> 和 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">SIGINT</code> 信号。
+              设置系统信号监听器，自动处理{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                SIGTERM
+              </code>{" "}
+              和{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                SIGINT
+              </code>{" "}
+              信号。
             </p>
-            <CodeBlock code={`const server = new Server();
-setupSignalHandlers(server);`} language="typescript" />
+            <CodeBlock
+              code={`const server = new Server();
+setupSignalHandlers(server);`}
+              language="typescript"
+            />
           </div>
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">gracefulShutdown(signal, server)</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                gracefulShutdown(signal, server)
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               手动触发优雅关闭流程。
             </p>
-            <CodeBlock code={`await gracefulShutdown("SIGTERM", server);`} language="typescript" />
+            <CodeBlock
+              code={`await gracefulShutdown("SIGTERM", server);`}
+              language="typescript"
+            />
           </div>
         </div>
       </section>
@@ -224,10 +252,28 @@ setupSignalHandlers(server);`} language="typescript" />
           最佳实践
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><strong>注册所有资源清理</strong>：数据库连接、Redis 连接、文件句柄、定时器、WebSocket 连接</li>
-          <li><strong>处理异步操作</strong>：确保所有异步操作在关闭前完成，使用 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">await</code> 等待异步清理</li>
-          <li><strong>错误处理</strong>：关闭处理器中的错误不会阻止其他处理器执行，记录所有错误以便调试</li>
-          <li><strong>测试优雅关闭</strong>：在开发环境中测试关闭流程，确保所有资源正确清理</li>
+          <li>
+            <strong>注册所有资源清理</strong>：数据库连接、Redis
+            连接、文件句柄、定时器、WebSocket 连接
+          </li>
+          <li>
+            <strong>处理异步操作</strong>：确保所有异步操作在关闭前完成，使用
+            {" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              await
+            </code>{" "}
+            等待异步清理
+          </li>
+          <li>
+            <strong>
+              错误处理
+            </strong>：关闭处理器中的错误不会阻止其他处理器执行，记录所有错误以便调试
+          </li>
+          <li>
+            <strong>
+              测试优雅关闭
+            </strong>：在开发环境中测试关闭流程，确保所有资源正确清理
+          </li>
         </ul>
       </section>
 
@@ -237,8 +283,22 @@ setupSignalHandlers(server);`} language="typescript" />
           注意事项
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>优雅关闭仅在收到 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">SIGTERM</code> 或 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">SIGINT</code> 信号时触发</li>
-          <li>强制终止（<code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">SIGKILL</code>）无法被捕获，不会执行关闭处理器</li>
+          <li>
+            优雅关闭仅在收到{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              SIGTERM
+            </code>{" "}
+            或{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              SIGINT
+            </code>{" "}
+            信号时触发
+          </li>
+          <li>
+            强制终止（<code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              SIGKILL
+            </code>）无法被捕获，不会执行关闭处理器
+          </li>
           <li>确保关闭处理器不会执行过长时间的操作</li>
           <li>在生产环境中，确保进程管理器配置了合理的超时时间</li>
         </ul>
@@ -250,9 +310,30 @@ setupSignalHandlers(server);`} language="typescript" />
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/features/dev" className="text-blue-600 dark:text-blue-400 hover:underline">开发服务器</a></li>
-          <li><a href="/docs/features/prod" className="text-blue-600 dark:text-blue-400 hover:underline">生产服务器</a></li>
-          <li><a href="/docs/features/monitoring" className="text-blue-600 dark:text-blue-400 hover:underline">性能监控</a></li>
+          <li>
+            <a
+              href="/docs/features/dev"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              开发服务器
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/features/prod"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              生产服务器
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/features/monitoring"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              性能监控
+            </a>
+          </li>
         </ul>
       </section>
     </article>

@@ -136,7 +136,8 @@ export default function MyLayout({ children }: { children: ComponentChildren }) 
 }`;
 
   // 响应式布局
-  const responsiveLayoutCode = `export default function ResponsiveLayout({ children }: LayoutProps) {
+  const responsiveLayoutCode =
+    `export default function ResponsiveLayout({ children }: LayoutProps) {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -152,13 +153,15 @@ export default function MyLayout({ children }: { children: ComponentChildren }) 
       <h1>布局系统</h1>
 
       <p>
-        DWeb 框架支持布局继承，允许你创建可复用的布局组件，并在多个页面之间共享。
+        DWeb
+        框架支持布局继承，允许你创建可复用的布局组件，并在多个页面之间共享。
       </p>
 
       <h2>布局继承</h2>
 
       <p>
-        布局继承是 DWeb 框架的核心特性之一。通过创建 <code>_layout.tsx</code>{" "}
+        布局继承是 DWeb 框架的核心特性之一。通过创建 <code>_layout.tsx</code>
+        {" "}
         文件，你可以为特定路径下的所有页面提供统一的布局结构。
       </p>
 
@@ -171,7 +174,9 @@ export default function MyLayout({ children }: { children: ComponentChildren }) 
 
       <h3>布局文件结构</h3>
 
-      <CodeBlock language="text" code={`routes/
+      <CodeBlock
+        language="text"
+        code={`routes/
 ├── _layout.tsx          # 根布局（应用到所有页面）
 ├── index.tsx            # 首页
 ├── about.tsx            # 关于页面
@@ -179,15 +184,22 @@ export default function MyLayout({ children }: { children: ComponentChildren }) 
     ├── _layout.tsx      # 文档布局（应用到 /docs 下的所有页面）
     ├── index.tsx         # /docs
     └── core/
-        └── router.tsx   # /docs/core/router`} />
+        └── router.tsx   # /docs/core/router`}
+      />
 
       <h3>布局继承顺序</h3>
 
-      <p>当访问 <code>/docs/core/router</code> 时，布局的嵌套顺序为：</p>
+      <p>
+        当访问 <code>/docs/core/router</code> 时，布局的嵌套顺序为：
+      </p>
 
       <ol>
-        <li><code>routes/docs/_layout.tsx</code>（最具体）</li>
-        <li><code>routes/_layout.tsx</code>（根布局）</li>
+        <li>
+          <code>routes/docs/_layout.tsx</code>（最具体）
+        </li>
+        <li>
+          <code>routes/_layout.tsx</code>（根布局）
+        </li>
       </ol>
 
       <p>布局组件会从最内层到最外层嵌套，最终结构为：</p>
@@ -221,10 +233,13 @@ export default function MyLayout({ children }: { children: ComponentChildren }) 
         在某些情况下，你可能不希望某个布局继承父布局。例如，你可能希望文档页面使用完全独立的布局，而不继承根布局。
       </p>
 
-      <h4>使用 <code>layout = false</code></h4>
+      <h4>
+        使用 <code>layout = false</code>
+      </h4>
 
       <p>
-        在布局文件中导出 <code>export const layout = false</code> 可以禁用布局继承：
+        在布局文件中导出 <code>export const layout = false</code>{" "}
+        可以禁用布局继承：
       </p>
 
       <CodeBlock language="tsx" code={disableLayoutCode} />
@@ -236,10 +251,14 @@ export default function MyLayout({ children }: { children: ComponentChildren }) 
           <strong>默认行为</strong>：布局会自动继承所有父级布局
         </li>
         <li>
-          <strong><code>layout = false</code></strong>（布局级别）：设置后，该布局及其所有子页面将不再继承更上层的布局
+          <strong>
+            <code>layout = false</code>
+          </strong>（布局级别）：设置后，该布局及其所有子页面将不再继承更上层的布局
         </li>
         <li>
-          <strong><code>layout = false</code></strong>（页面级别）：设置后，该页面将不使用任何布局，包括父级布局
+          <strong>
+            <code>layout = false</code>
+          </strong>（页面级别）：设置后，该页面将不使用任何布局，包括父级布局
         </li>
         <li>
           <strong>继承链中断</strong>：当遇到 <code>layout = false</code>{" "}
@@ -249,7 +268,9 @@ export default function MyLayout({ children }: { children: ComponentChildren }) 
 
       <h2>布局组件属性</h2>
 
-      <p>布局组件接收一个 <code>children</code> 属性，包含子页面或子布局的内容：</p>
+      <p>
+        布局组件接收一个 <code>children</code> 属性，包含子页面或子布局的内容：
+      </p>
 
       <CodeBlock
         language="tsx"
@@ -278,7 +299,9 @@ export default function MyLayout({ children }: { children: ComponentChildren }) 
       <h3>⚠️ 布局组件不能是异步函数</h3>
 
       <p>
-        <strong>布局组件不能定义为 <code>async function</code></strong>。如果需要进行异步操作（如数据获取），请在组件内部使用{" "}
+        <strong>
+          布局组件不能定义为 <code>async function</code>
+        </strong>。如果需要进行异步操作（如数据获取），请在组件内部使用{" "}
         <code>useEffect</code> 钩子处理。
       </p>
 
@@ -310,14 +333,20 @@ export default async function MyLayout({ children }: LayoutProps) {
       <ul>
         <li>使用根布局提供全局结构（HTML、导航、页脚等）</li>
         <li>使用子布局提供特定区域的布局（如文档侧边栏、管理后台菜单等）</li>
-        <li>在需要完全独立布局时使用 <code>layout = false</code></li>
+        <li>
+          在需要完全独立布局时使用 <code>layout = false</code>
+        </li>
       </ul>
 
       <h3>3. 布局与页面分离</h3>
 
       <ul>
-        <li>布局文件：<code>_layout.tsx</code> - 提供结构</li>
-        <li>页面文件：<code>*.tsx</code> - 提供内容</li>
+        <li>
+          布局文件：<code>_layout.tsx</code> - 提供结构
+        </li>
+        <li>
+          页面文件：<code>*.tsx</code> - 提供内容
+        </li>
       </ul>
 
       <h3>4. 响应式设计</h3>
@@ -335,21 +364,31 @@ export default async function MyLayout({ children }: LayoutProps) {
       <p>A: 布局继承从最具体到最通用：</p>
 
       <ol>
-        <li>当前路径的布局（如 <code>/docs/core</code> 的布局）</li>
-        <li>父路径的布局（如 <code>/docs</code> 的布局）</li>
-        <li>根布局（<code>/</code> 的布局）</li>
+        <li>
+          当前路径的布局（如 <code>/docs/core</code> 的布局）
+        </li>
+        <li>
+          父路径的布局（如 <code>/docs</code> 的布局）
+        </li>
+        <li>
+          根布局（<code>/</code> 的布局）
+        </li>
       </ol>
 
       <h3>Q: 如何让某个页面不使用任何布局？</h3>
 
       <p>
-        A: 在页面组件中导出 <code>export const layout = false</code>，该页面将不使用任何布局。
+        A: 在页面组件中导出{" "}
+        <code>export const layout = false</code>，该页面将不使用任何布局。
       </p>
 
-      <h3>Q: <code>layout = false</code> 在布局文件中会影响子布局吗？</h3>
+      <h3>
+        Q: <code>layout = false</code> 在布局文件中会影响子布局吗？
+      </h3>
 
       <p>
-        A: 是的。如果父布局设置了 <code>layout = false</code>，子布局也不会继承更上层的布局。
+        A: 是的。如果父布局设置了{" "}
+        <code>layout = false</code>，子布局也不会继承更上层的布局。
       </p>
 
       <h3>Q: 布局可以访问页面数据吗？</h3>

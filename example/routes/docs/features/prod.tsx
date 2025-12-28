@@ -77,7 +77,7 @@ docker run -p 3000:3000 -e DENO_ENV=production -e PORT=8080 dweb-app`;
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           启动生产服务器
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           单应用模式
         </h3>
@@ -112,7 +112,14 @@ docker run -p 3000:3000 -e DENO_ENV=production -e PORT=8080 dweb-app`;
         </h2>
         <CodeBlock code={dockerCode} language="bash" />
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mt-4">
-          详细说明请参考 <a href="/docs/deployment/docker" className="text-blue-600 dark:text-blue-400 hover:underline">Docker 部署</a> 文档。
+          详细说明请参考{" "}
+          <a
+            href="/docs/deployment/docker"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            Docker 部署
+          </a>{" "}
+          文档。
         </p>
       </section>
 
@@ -122,9 +129,30 @@ docker run -p 3000:3000 -e DENO_ENV=production -e PORT=8080 dweb-app`;
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/features/build" className="text-blue-600 dark:text-blue-400 hover:underline">构建</a></li>
-          <li><a href="/docs/features/shutdown" className="text-blue-600 dark:text-blue-400 hover:underline">优雅关闭</a></li>
-          <li><a href="/docs/deployment/docker" className="text-blue-600 dark:text-blue-400 hover:underline">Docker 部署</a></li>
+          <li>
+            <a
+              href="/docs/features/build"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              构建
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/features/shutdown"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              优雅关闭
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/deployment/docker"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Docker 部署
+            </a>
+          </li>
         </ul>
       </section>
     </article>

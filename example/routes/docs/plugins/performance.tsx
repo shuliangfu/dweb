@@ -44,11 +44,15 @@ plugins: [
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">enabled</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              enabled
+            </code>{" "}
             - 是否启用性能监控
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">metrics</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              metrics
+            </code>{" "}
             - 要收集的性能指标
           </li>
         </ul>

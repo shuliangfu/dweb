@@ -42,12 +42,15 @@ server.use(requestId({
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">header</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              header
+            </code>{" "}
             - 请求 ID 的响应头名称
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">generator</code>
-            {" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              generator
+            </code>{" "}
             - ID 生成函数
           </li>
         </ul>

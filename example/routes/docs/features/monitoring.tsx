@@ -8,14 +8,16 @@ import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
   title: "性能监控 (monitoring) - DWeb 框架文档",
-  description: "DWeb 框架的性能监控功能使用指南，包括请求监控、性能指标收集和错误追踪",
+  description:
+    "DWeb 框架的性能监控功能使用指南，包括请求监控、性能指标收集和错误追踪",
 };
 
 export default function FeaturesMonitoringPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   // 基本使用
-  const basicUsageCode = `import { Monitor } from "@dreamer/dweb/features/monitoring";
+  const basicUsageCode =
+    `import { Monitor } from "@dreamer/dweb/features/monitoring";
 
 // 创建监控器
 const monitor = new Monitor({
@@ -77,7 +79,8 @@ server.setHandler(async (req, res) => {
 });`;
 
   // 集成第三方服务
-  const thirdPartyCode = `import { Monitor } from "@dreamer/dweb/features/monitoring";
+  const thirdPartyCode =
+    `import { Monitor } from "@dreamer/dweb/features/monitoring";
 
 const monitor = new Monitor({
   onRequest: async (metrics) => {
@@ -136,7 +139,8 @@ console.log("错误总数:", metrics.errorCount);`;
         性能监控 (monitoring)
       </h1>
       <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 框架提供了完整的性能监控功能，包括请求监控、性能指标收集和错误追踪。
+        DWeb
+        框架提供了完整的性能监控功能，包括请求监控、性能指标收集和错误追踪。
       </p>
 
       {/* 快速开始 */}
@@ -155,14 +159,15 @@ console.log("错误总数:", metrics.errorCount);`;
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           监控选项
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           请求监控
         </h3>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
           记录每个请求的详细信息：
         </p>
-        <CodeBlock code={`interface RequestMetrics {
+        <CodeBlock
+          code={`interface RequestMetrics {
   method: string;        // HTTP 方法
   path: string;          // 请求路径
   statusCode: number;  // 状态码
@@ -170,7 +175,9 @@ console.log("错误总数:", metrics.errorCount);`;
   timestamp: number;     // 时间戳
   userAgent?: string;   // 用户代理
   ip?: string;          // IP 地址
-}`} language="typescript" />
+}`}
+          language="typescript"
+        />
 
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           性能监控
@@ -178,7 +185,8 @@ console.log("错误总数:", metrics.errorCount);`;
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
           收集系统性能指标：
         </p>
-        <CodeBlock code={`interface PerformanceMetrics {
+        <CodeBlock
+          code={`interface PerformanceMetrics {
   cpuUsage?: number;              // CPU 使用率
   memoryUsage?: {                 // 内存使用情况
     rss: number;                  // 常驻集大小
@@ -189,7 +197,9 @@ console.log("错误总数:", metrics.errorCount);`;
   uptime: number;                 // 运行时间（毫秒）
   requestCount: number;           // 请求总数
   errorCount: number;             // 错误总数
-}`} language="typescript" />
+}`}
+          language="typescript"
+        />
 
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           错误监控
@@ -197,7 +207,8 @@ console.log("错误总数:", metrics.errorCount);`;
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
           追踪应用错误：
         </p>
-        <CodeBlock code={`interface ErrorMetrics {
+        <CodeBlock
+          code={`interface ErrorMetrics {
   message: string;       // 错误消息
   stack?: string;        // 堆栈跟踪
   path: string;          // 请求路径
@@ -206,7 +217,9 @@ console.log("错误总数:", metrics.errorCount);`;
   timestamp: number;     // 时间戳
   userAgent?: string;   // 用户代理
   ip?: string;          // IP 地址
-}`} language="typescript" />
+}`}
+          language="typescript"
+        />
       </section>
 
       {/* 配置选项 */}
@@ -222,7 +235,7 @@ console.log("错误总数:", metrics.errorCount);`;
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           使用示例
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           自定义回调
         </h3>
@@ -245,10 +258,28 @@ console.log("错误总数:", metrics.errorCount);`;
           最佳实践
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><strong>生产环境监控</strong>：启用所有监控功能，配置外部监控服务集成，设置合理的性能监控间隔</li>
-          <li><strong>开发环境监控</strong>：可以禁用部分监控以减少开销，使用控制台输出进行调试</li>
-          <li><strong>错误追踪</strong>：记录完整的错误信息，包含请求上下文（路径、方法、IP 等），发送到专业的错误追踪服务</li>
-          <li><strong>性能优化</strong>：监控响应时间，识别慢请求；监控内存使用，防止内存泄漏；监控 CPU 使用率，优化资源消耗</li>
+          <li>
+            <strong>
+              生产环境监控
+            </strong>：启用所有监控功能，配置外部监控服务集成，设置合理的性能监控间隔
+          </li>
+          <li>
+            <strong>
+              开发环境监控
+            </strong>：可以禁用部分监控以减少开销，使用控制台输出进行调试
+          </li>
+          <li>
+            <strong>
+              错误追踪
+            </strong>：记录完整的错误信息，包含请求上下文（路径、方法、IP
+            等），发送到专业的错误追踪服务
+          </li>
+          <li>
+            <strong>
+              性能优化
+            </strong>：监控响应时间，识别慢请求；监控内存使用，防止内存泄漏；监控
+            CPU 使用率，优化资源消耗
+          </li>
         </ul>
       </section>
 
@@ -258,9 +289,30 @@ console.log("错误总数:", metrics.errorCount);`;
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/features/dev" className="text-blue-600 dark:text-blue-400 hover:underline">开发服务器</a></li>
-          <li><a href="/docs/features/prod" className="text-blue-600 dark:text-blue-400 hover:underline">生产服务器</a></li>
-          <li><a href="/docs/features/logger" className="text-blue-600 dark:text-blue-400 hover:underline">日志系统</a></li>
+          <li>
+            <a
+              href="/docs/features/dev"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              开发服务器
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/features/prod"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              生产服务器
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/features/logger"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              日志系统
+            </a>
+          </li>
         </ul>
       </section>
     </article>

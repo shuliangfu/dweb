@@ -96,7 +96,8 @@ const config: DWebConfig = {
 export default config;`;
 
   // 配置规范化
-  const normalizeCode = `import { normalizeRouteConfig } from "@dreamer/dweb/core/config";
+  const normalizeCode =
+    `import { normalizeRouteConfig } from "@dreamer/dweb/core/config";
 
 // 规范化路由配置
 const routeConfig = normalizeRouteConfig({
@@ -123,8 +124,9 @@ const routeConfig = normalizeRouteConfig({
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
           框架会自动查找并加载{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">dweb.config.ts</code>
-          {" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            dweb.config.ts
+          </code>{" "}
           配置文件。你也可以手动加载配置：
         </p>
         <CodeBlock code={configCode} language="typescript" />
@@ -139,42 +141,56 @@ const routeConfig = normalizeRouteConfig({
         </p>
         <CodeBlock code={basicConfigCode} language="typescript" />
         <div className="mt-4">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">配置选项</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+            配置选项
+          </h3>
           <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
             <li>
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">server</code>{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                server
+              </code>{" "}
               - 服务器配置（端口、主机等）
             </li>
             <li>
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">routes</code>{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                routes
+              </code>{" "}
               - 路由配置（目录、忽略规则等）
             </li>
             <li>
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">static</code>{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                static
+              </code>{" "}
               - 静态资源配置（目录、前缀、缓存等）
             </li>
             <li>
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">plugins</code>
-              {" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                plugins
+              </code>{" "}
               - 插件列表
             </li>
             <li>
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">middleware</code>
-              {" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                middleware
+              </code>{" "}
               - 中间件列表
             </li>
             <li>
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">cookie</code>{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                cookie
+              </code>{" "}
               - Cookie 配置
             </li>
             <li>
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">session</code>
-              {" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                session
+              </code>{" "}
               - Session 配置
             </li>
             <li>
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">database</code>
-              {" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                database
+              </code>{" "}
               - 数据库配置
             </li>
           </ul>
@@ -212,7 +228,11 @@ const routeConfig = normalizeRouteConfig({
           配置规范化
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          使用 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">normalizeRouteConfig</code> 函数规范化路由配置：
+          使用{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            normalizeRouteConfig
+          </code>{" "}
+          函数规范化路由配置：
         </p>
         <CodeBlock code={normalizeCode} language="typescript" />
       </section>
@@ -252,33 +272,56 @@ const routeConfig = normalizeRouteConfig({
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           API 参考
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           loadConfig
         </h3>
-        <CodeBlock code={`function loadConfig(
+        <CodeBlock
+          code={`function loadConfig(
   configPath?: string,
   appName?: string
-): Promise<{ config: AppConfig; configDir: string }>`} language="typescript" />
+): Promise<{ config: AppConfig; configDir: string }>`}
+          language="typescript"
+        />
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
           <strong>参数：</strong>
         </p>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">configPath</code>: 配置文件路径（可选，默认为 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">dweb.config.ts</code>）</li>
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">appName</code>: 应用名称（多应用模式使用）</li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              configPath
+            </code>: 配置文件路径（可选，默认为{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              dweb.config.ts
+            </code>）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              appName
+            </code>: 应用名称（多应用模式使用）
+          </li>
         </ul>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
           <strong>返回：</strong>
         </p>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">config</code>: 配置对象</li>
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">configDir</code>: 配置文件所在目录</li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              config
+            </code>: 配置对象
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              configDir
+            </code>: 配置文件所在目录
+          </li>
         </ul>
 
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           normalizeRouteConfig
         </h3>
-        <CodeBlock code={`function normalizeRouteConfig(
+        <CodeBlock
+          code={`function normalizeRouteConfig(
   routes: string | {
     dir: string;
     ignore?: string[];
@@ -292,12 +335,18 @@ const routeConfig = normalizeRouteConfig({
   cache: boolean;
   priority: "specific-first" | "order";
   apiDir: string;
-}`} language="typescript" />
+}`}
+          language="typescript"
+        />
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
           <strong>参数：</strong>
         </p>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">routes</code>: 路由配置（字符串或配置对象）</li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              routes
+            </code>: 路由配置（字符串或配置对象）
+          </li>
         </ul>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
           <strong>返回：</strong>
@@ -312,9 +361,32 @@ const routeConfig = normalizeRouteConfig({
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/core/config-manager" className="text-blue-600 dark:text-blue-400 hover:underline">ConfigManager (配置管理器)</a></li>
-          <li><a href="/docs/deployment/configuration" className="text-blue-600 dark:text-blue-400 hover:underline">配置文档</a> - 完整的配置选项说明</li>
-          <li><a href="/docs/core/router" className="text-blue-600 dark:text-blue-400 hover:underline">路由系统</a> - 文件系统路由</li>
+          <li>
+            <a
+              href="/docs/core/config-manager"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              ConfigManager (配置管理器)
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/deployment/configuration"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              配置文档
+            </a>{" "}
+            - 完整的配置选项说明
+          </li>
+          <li>
+            <a
+              href="/docs/core/router"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              路由系统
+            </a>{" "}
+            - 文件系统路由
+          </li>
         </ul>
       </section>
     </article>

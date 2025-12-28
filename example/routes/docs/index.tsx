@@ -50,7 +50,7 @@ export default function DocsPage(
     jsrPackageUrlWithCli: string;
   };
 
-	// console.log({ jsrPackageUrl, jsrPackageUrlWithCli });
+  // console.log({ jsrPackageUrl, jsrPackageUrlWithCli });
 
   // 安装代码
   const installCode = `# 创建新项目
@@ -183,9 +183,13 @@ export default app;`;
     <div className="prose prose-lg max-w-none dark:prose-invert">
       {/* 快速开始 */}
       <section className="mb-16">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">快速开始</h2>
+        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
+          快速开始
+        </h2>
 
-        <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">创建新项目</h3>
+        <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+          创建新项目
+        </h3>
         <CodeBlock code={installCode} language="bash" />
 
         <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 mt-8">
@@ -196,11 +200,14 @@ export default app;`;
 
       {/* 配置 */}
       <section className="mb-16">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">配置</h2>
+        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
+          配置
+        </h2>
         <p className="text-gray-600 dark:text-gray-300 mb-4">
           在项目根目录创建{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">dweb.config.ts</code>
-          {" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            dweb.config.ts
+          </code>{" "}
           文件：
         </p>
         <CodeBlock code={configCode} language="typescript" />
@@ -208,41 +215,61 @@ export default app;`;
 
       {/* 创建页面 */}
       <section className="mb-16">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">创建页面</h2>
+        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
+          创建页面
+        </h2>
         <p className="text-gray-600 dark:text-gray-300 mb-4">
-          在 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">routes</code>{" "}
+          在{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            routes
+          </code>{" "}
           目录下创建文件即可自动生成路由：
         </p>
         <CodeBlock code={pageCode} language="typescript" />
-        <p className="text-gray-600 dark:text-gray-300 mt-4">文件路径会自动映射为路由路径：</p>
+        <p className="text-gray-600 dark:text-gray-300 mt-4">
+          文件路径会自动映射为路由路径：
+        </p>
         <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 space-y-2 mt-4">
           <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               routes/index.tsx
             </code>{" "}
-            → <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/</code>
+            →{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              /
+            </code>
           </li>
           <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               routes/about.tsx
             </code>{" "}
-            → <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/about</code>
+            →{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              /about
+            </code>
           </li>
           <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               routes/blog/[id].tsx
             </code>{" "}
-            → <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/blog/:id</code>
+            →{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              /blog/:id
+            </code>
           </li>
         </ul>
       </section>
 
       {/* API 路由 */}
       <section className="mb-16">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">API 路由</h2>
+        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
+          API 路由
+        </h2>
         <p className="text-gray-600 dark:text-gray-300 mb-4">
-          在 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">routes/api</code>
-          {" "}
+          在{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            routes/api
+          </code>{" "}
           目录下创建 API 路由：
         </p>
         <CodeBlock code={apiCode} language="typescript" />
@@ -250,9 +277,14 @@ export default app;`;
 
       {/* 中间件 */}
       <section className="mb-16">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">使用中间件</h2>
+        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
+          使用中间件
+        </h2>
         <p className="text-gray-600 dark:text-gray-300 mb-4">
-          在 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">main.ts</code>{" "}
+          在{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            main.ts
+          </code>{" "}
           文件中注册中间件：
         </p>
         <CodeBlock code={middlewareCode} language="typescript" />
@@ -260,8 +292,12 @@ export default app;`;
 
       {/* 渲染模式 */}
       <section className="mb-16">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">渲染模式</h2>
-        <p className="text-gray-600 dark:text-gray-300 mb-4">DWeb 支持三种渲染模式：</p>
+        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
+          渲染模式
+        </h2>
+        <p className="text-gray-600 dark:text-gray-300 mb-4">
+          DWeb 支持三种渲染模式：
+        </p>
         <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 space-y-2">
           <li>
             <strong>SSR（服务端渲染）</strong>：在服务器端渲染 HTML，适合 SEO
@@ -276,7 +312,9 @@ export default app;`;
             hydration，兼顾 SEO 和交互性
           </li>
         </ul>
-        <p className="text-gray-600 dark:text-gray-300 mt-4">可以在页面组件中配置渲染模式：</p>
+        <p className="text-gray-600 dark:text-gray-300 mt-4">
+          可以在页面组件中配置渲染模式：
+        </p>
         <CodeBlock
           code={`export const renderMode = 'hybrid';`}
           language="typescript"
@@ -285,7 +323,9 @@ export default app;`;
 
       {/* 更多资源 */}
       <section className="mb-16">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">更多资源</h2>
+        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
+          更多资源
+        </h2>
         <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-600 p-6 rounded">
           <ul className="space-y-3 text-gray-700 dark:text-gray-300">
             <li>

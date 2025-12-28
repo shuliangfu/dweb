@@ -200,12 +200,26 @@ deno task build:app2`;
         </h2>
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-600 p-4 my-4 rounded">
           <p className="text-yellow-800 dark:text-yellow-200 text-sm">
-            <strong>注意：</strong><code className="bg-yellow-100 dark:bg-yellow-900/50 px-2 py-1 rounded">main.ts</code> 文件是可选的，不是必须的。
-            框架可以通过 CLI 命令（<code className="bg-yellow-100 dark:bg-yellow-900/50 px-2 py-1 rounded">deno task dev</code> 或 <code className="bg-yellow-100 dark:bg-yellow-900/50 px-2 py-1 rounded">deno task start</code>）自动启动服务器，无需手动创建入口文件。
+            <strong>注意：</strong>
+            <code className="bg-yellow-100 dark:bg-yellow-900/50 px-2 py-1 rounded">
+              main.ts
+            </code>{" "}
+            文件是可选的，不是必须的。 框架可以通过 CLI
+            命令（<code className="bg-yellow-100 dark:bg-yellow-900/50 px-2 py-1 rounded">
+              deno task dev
+            </code>{" "}
+            或{" "}
+            <code className="bg-yellow-100 dark:bg-yellow-900/50 px-2 py-1 rounded">
+              deno task start
+            </code>）自动启动服务器，无需手动创建入口文件。
           </p>
         </div>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          如果你需要自定义应用配置（如添加中间件、插件等），可以创建 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">main.ts</code> 文件：
+          如果你需要自定义应用配置（如添加中间件、插件等），可以创建{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            main.ts
+          </code>{" "}
+          文件：
         </p>
         <CodeBlock code={mainTsCode} language="typescript" />
         <div className="mt-4">
@@ -238,10 +252,38 @@ deno task build:app2`;
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/deployment/configuration" className="text-blue-600 dark:text-blue-400 hover:underline">配置文档</a></li>
-          <li><a href="/docs/deployment/development" className="text-blue-600 dark:text-blue-400 hover:underline">开发指南</a></li>
-          <li><a href="/docs/features/dev" className="text-blue-600 dark:text-blue-400 hover:underline">开发服务器</a></li>
-          <li><a href="/docs/features/build" className="text-blue-600 dark:text-blue-400 hover:underline">构建</a></li>
+          <li>
+            <a
+              href="/docs/deployment/configuration"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              配置文档
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/deployment/development"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              开发指南
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/features/dev"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              开发服务器
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/features/build"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              构建
+            </a>
+          </li>
         </ul>
       </section>
     </article>

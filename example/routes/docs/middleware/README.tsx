@@ -65,7 +65,8 @@ server.use(bodyParser());  // 3. 最后执行
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           目录结构
         </h2>
-        <CodeBlock code={`src/middleware/
+        <CodeBlock
+          code={`src/middleware/
 ├── auth.ts              # JWT 认证
 ├── body-parser.ts       # 请求体解析
 ├── cors.ts              # CORS 支持
@@ -78,7 +79,9 @@ server.use(bodyParser());  // 3. 最后执行
 ├── request-validator.ts # 请求验证
 ├── security.ts          # 安全头
 ├── static.ts            # 静态文件
-└── mod.ts               # 模块导出`} language="text" />
+└── mod.ts               # 模块导出`}
+          language="text"
+        />
       </section>
 
       {/* 使用中间件 */}
@@ -86,7 +89,7 @@ server.use(bodyParser());  // 3. 最后执行
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           使用中间件
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           基本用法
         </h3>
@@ -111,75 +114,153 @@ server.use(bodyParser());  // 3. 最后执行
         <div className="grid md:grid-cols-2 gap-4 my-4">
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a href="/docs/middleware/logger" className="text-blue-600 dark:text-blue-400 hover:underline">logger</a>
+              <a
+                href="/docs/middleware/logger"
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                logger
+              </a>
             </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">请求日志记录</p>
+            <p className="text-gray-700 dark:text-gray-300 text-sm">
+              请求日志记录
+            </p>
           </div>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a href="/docs/middleware/cors" className="text-blue-600 dark:text-blue-400 hover:underline">cors</a>
+              <a
+                href="/docs/middleware/cors"
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                cors
+              </a>
             </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">跨域资源共享</p>
+            <p className="text-gray-700 dark:text-gray-300 text-sm">
+              跨域资源共享
+            </p>
           </div>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a href="/docs/middleware/body-parser" className="text-blue-600 dark:text-blue-400 hover:underline">bodyParser</a>
+              <a
+                href="/docs/middleware/body-parser"
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                bodyParser
+              </a>
             </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">请求体解析</p>
+            <p className="text-gray-700 dark:text-gray-300 text-sm">
+              请求体解析
+            </p>
           </div>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a href="/docs/middleware/security" className="text-blue-600 dark:text-blue-400 hover:underline">security</a>
+              <a
+                href="/docs/middleware/security"
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                security
+              </a>
             </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">安全头设置</p>
+            <p className="text-gray-700 dark:text-gray-300 text-sm">
+              安全头设置
+            </p>
           </div>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a href="/docs/middleware/rate-limit" className="text-blue-600 dark:text-blue-400 hover:underline">rateLimit</a>
+              <a
+                href="/docs/middleware/rate-limit"
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                rateLimit
+              </a>
             </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">请求频率限制</p>
+            <p className="text-gray-700 dark:text-gray-300 text-sm">
+              请求频率限制
+            </p>
           </div>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a href="/docs/middleware/auth" className="text-blue-600 dark:text-blue-400 hover:underline">auth</a>
+              <a
+                href="/docs/middleware/auth"
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                auth
+              </a>
             </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">JWT 身份验证</p>
+            <p className="text-gray-700 dark:text-gray-300 text-sm">
+              JWT 身份验证
+            </p>
           </div>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a href="/docs/middleware/static-files" className="text-blue-600 dark:text-blue-400 hover:underline">staticFiles</a>
+              <a
+                href="/docs/middleware/static-files"
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                staticFiles
+              </a>
             </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">静态文件服务</p>
+            <p className="text-gray-700 dark:text-gray-300 text-sm">
+              静态文件服务
+            </p>
           </div>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a href="/docs/middleware/error-handler" className="text-blue-600 dark:text-blue-400 hover:underline">errorHandler</a>
+              <a
+                href="/docs/middleware/error-handler"
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                errorHandler
+              </a>
             </h3>
             <p className="text-gray-700 dark:text-gray-300 text-sm">错误处理</p>
           </div>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a href="/docs/middleware/health" className="text-blue-600 dark:text-blue-400 hover:underline">health</a>
+              <a
+                href="/docs/middleware/health"
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                health
+              </a>
             </h3>
             <p className="text-gray-700 dark:text-gray-300 text-sm">健康检查</p>
           </div>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a href="/docs/middleware/request-id" className="text-blue-600 dark:text-blue-400 hover:underline">requestId</a>
+              <a
+                href="/docs/middleware/request-id"
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                requestId
+              </a>
             </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">请求 ID 生成</p>
+            <p className="text-gray-700 dark:text-gray-300 text-sm">
+              请求 ID 生成
+            </p>
           </div>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a href="/docs/middleware/request-validator" className="text-blue-600 dark:text-blue-400 hover:underline">requestValidator</a>
+              <a
+                href="/docs/middleware/request-validator"
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                requestValidator
+              </a>
             </h3>
             <p className="text-gray-700 dark:text-gray-300 text-sm">请求验证</p>
           </div>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a href="/docs/middleware/ip-filter" className="text-blue-600 dark:text-blue-400 hover:underline">ipFilter</a>
+              <a
+                href="/docs/middleware/ip-filter"
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                ipFilter
+              </a>
             </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">IP 地址过滤</p>
+            <p className="text-gray-700 dark:text-gray-300 text-sm">
+              IP 地址过滤
+            </p>
           </div>
         </div>
       </section>
@@ -190,8 +271,24 @@ server.use(bodyParser());  // 3. 最后执行
           其他
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/middleware/route-middleware" className="text-blue-600 dark:text-blue-400 hover:underline">路由级中间件</a> - 使用 _middleware.ts 文件</li>
-          <li><a href="/docs/middleware/custom" className="text-blue-600 dark:text-blue-400 hover:underline">创建自定义中间件</a> - 编写自己的中间件</li>
+          <li>
+            <a
+              href="/docs/middleware/route-middleware"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              路由级中间件
+            </a>{" "}
+            - 使用 _middleware.ts 文件
+          </li>
+          <li>
+            <a
+              href="/docs/middleware/custom"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              创建自定义中间件
+            </a>{" "}
+            - 编写自己的中间件
+          </li>
         </ul>
       </section>
 
@@ -201,9 +298,33 @@ server.use(bodyParser());  // 3. 最后执行
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/core/middleware" className="text-blue-600 dark:text-blue-400 hover:underline">中间件系统</a> - 框架核心功能</li>
-          <li><a href="/docs/core/application" className="text-blue-600 dark:text-blue-400 hover:underline">Application</a> - 应用核心</li>
-          <li><a href="/docs/plugins" className="text-blue-600 dark:text-blue-400 hover:underline">插件系统</a> - 插件系统</li>
+          <li>
+            <a
+              href="/docs/core/middleware"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              中间件系统
+            </a>{" "}
+            - 框架核心功能
+          </li>
+          <li>
+            <a
+              href="/docs/core/application"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Application
+            </a>{" "}
+            - 应用核心
+          </li>
+          <li>
+            <a
+              href="/docs/plugins"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              插件系统
+            </a>{" "}
+            - 插件系统
+          </li>
         </ul>
       </section>
     </article>

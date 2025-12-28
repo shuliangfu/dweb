@@ -94,7 +94,8 @@ export default {
         开发服务器 (dev)
       </h1>
       <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 框架的开发服务器提供了强大的开发体验，包括热更新、自动路由扫描、错误提示等功能。
+        DWeb
+        框架的开发服务器提供了强大的开发体验，包括热更新、自动路由扫描、错误提示等功能。
       </p>
 
       {/* 启动开发服务器 */}
@@ -102,7 +103,7 @@ export default {
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           启动开发服务器
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           单应用模式
         </h3>
@@ -117,9 +118,29 @@ export default {
             <strong>命令格式说明：</strong>
           </p>
           <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-200 text-sm mt-2">
-            <li><code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">dev</code> - 单应用模式，启动默认应用</li>
-            <li><code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">dev:app-name</code> - 多应用模式，启动指定名称的应用</li>
-            <li>应用名称必须与 <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">dweb.config.ts</code> 中 <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">apps</code> 配置的键名一致</li>
+            <li>
+              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
+                dev
+              </code>{" "}
+              - 单应用模式，启动默认应用
+            </li>
+            <li>
+              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
+                dev:app-name
+              </code>{" "}
+              - 多应用模式，启动指定名称的应用
+            </li>
+            <li>
+              应用名称必须与{" "}
+              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
+                dweb.config.ts
+              </code>{" "}
+              中{" "}
+              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
+                apps
+              </code>{" "}
+              配置的键名一致
+            </li>
           </ul>
         </div>
       </section>
@@ -139,7 +160,14 @@ export default {
         </h2>
         <CodeBlock code={hmrCode} language="text" />
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mt-4">
-          更多关于 HMR 的详细信息，请参考 <a href="/docs/features/hmr" className="text-blue-600 dark:text-blue-400 hover:underline">热模块替换 (HMR)</a> 文档。
+          更多关于 HMR 的详细信息，请参考{" "}
+          <a
+            href="/docs/features/hmr"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            热模块替换 (HMR)
+          </a>{" "}
+          文档。
         </p>
       </section>
 
@@ -165,10 +193,38 @@ export default {
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/features/hmr" className="text-blue-600 dark:text-blue-400 hover:underline">热模块替换 (HMR)</a></li>
-          <li><a href="/docs/features/build" className="text-blue-600 dark:text-blue-400 hover:underline">构建</a></li>
-          <li><a href="/docs/features/prod" className="text-blue-600 dark:text-blue-400 hover:underline">生产服务器</a></li>
-          <li><a href="/docs/deployment/development" className="text-blue-600 dark:text-blue-400 hover:underline">开发指南</a></li>
+          <li>
+            <a
+              href="/docs/features/hmr"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              热模块替换 (HMR)
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/features/build"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              构建
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/features/prod"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              生产服务器
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/deployment/development"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              开发指南
+            </a>
+          </li>
         </ul>
       </section>
     </article>

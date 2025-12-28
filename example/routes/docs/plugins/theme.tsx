@@ -133,7 +133,9 @@ function getThemeValue(): 'light' | 'dark' | null`;
         theme - 主题插件
       </h1>
       <p className="text-gray-700 leading-relaxed mb-8">
-        theme 插件提供主题切换功能，支持亮色、暗色和自动模式（跟随系统主题）。插件会自动在 HTML 元素上添加相应的 class，方便与 Tailwind CSS 的 dark mode 配合使用。
+        theme
+        插件提供主题切换功能，支持亮色、暗色和自动模式（跟随系统主题）。插件会自动在
+        HTML 元素上添加相应的 class，方便与 Tailwind CSS 的 dark mode 配合使用。
       </p>
 
       <section className="mb-12">
@@ -141,7 +143,15 @@ function getThemeValue(): 'light' | 'dark' | null`;
           基本使用
         </h2>
         <p className="text-gray-700 leading-relaxed mb-4">
-          在 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">dweb.config.ts</code> 或 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">main.ts</code> 中配置 theme 插件：
+          在{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            dweb.config.ts
+          </code>{" "}
+          或{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            main.ts
+          </code>{" "}
+          中配置 theme 插件：
         </p>
         <CodeBlock code={basicUsageCode} language="typescript" />
       </section>
@@ -151,7 +161,11 @@ function getThemeValue(): 'light' | 'dark' | null`;
           客户端 API
         </h2>
         <p className="text-gray-700 leading-relaxed mb-4">
-          在客户端组件中使用主题功能（从 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">@dreamer/dweb/client</code> 导入）：
+          在客户端组件中使用主题功能（从{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            @dreamer/dweb/client
+          </code>{" "}
+          导入）：
         </p>
         <CodeBlock code={clientUsageCode} language="typescript" />
       </section>
@@ -172,24 +186,64 @@ function getThemeValue(): 'light' | 'dark' | null`;
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">defaultTheme</code>{" "}
-            - 默认主题（<code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'light'</code> | <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'dark'</code> | <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'auto'</code>），默认 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'auto'</code>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              defaultTheme
+            </code>{" "}
+            -
+            默认主题（<code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              'light'
+            </code>{" "}
+            |{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              'dark'
+            </code>{" "}
+            |{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              'auto'
+            </code>），默认{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              'auto'
+            </code>
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">storageKey</code>{" "}
-            - localStorage 存储键名（默认 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'theme'</code>）
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              storageKey
+            </code>{" "}
+            - localStorage 存储键名（默认{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              'theme'
+            </code>）
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">transition</code>{" "}
-            - 是否启用主题切换过渡动画（默认 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">true</code>）
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              transition
+            </code>{" "}
+            - 是否启用主题切换过渡动画（默认{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              true
+            </code>）
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">injectDataAttribute</code>{" "}
-            - 是否在 HTML 元素上添加 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">data-theme</code> 属性（默认 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">true</code>）
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              injectDataAttribute
+            </code>{" "}
+            - 是否在 HTML 元素上添加{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              data-theme
+            </code>{" "}
+            属性（默认{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              true
+            </code>）
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">injectBodyClass</code>{" "}
-            - 是否在 body 元素上添加主题类名（默认 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">true</code>）
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              injectBodyClass
+            </code>{" "}
+            - 是否在 body 元素上添加主题类名（默认{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              true
+            </code>）
           </li>
         </ul>
       </section>
@@ -202,33 +256,60 @@ function getThemeValue(): 'light' | 'dark' | null`;
         <div className="mt-6 space-y-4">
           <div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">getTheme()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                getTheme()
+              </code>
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
-              获取当前主题设置。返回 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'light' | 'dark' | 'auto' | null</code>。
-              如果设置为 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'auto'</code>，会跟随系统主题。
+              获取当前主题设置。返回{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                'light' | 'dark' | 'auto' | null
+              </code>。 如果设置为{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                'auto'
+              </code>，会跟随系统主题。
             </p>
           </div>
           <div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">getActualTheme()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                getActualTheme()
+              </code>
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
-              获取实际主题（处理 auto 模式）。返回 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'light' | 'dark' | null</code>。
-              如果主题设置为 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'auto'</code>，会返回当前系统主题。
+              获取实际主题（处理 auto 模式）。返回{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                'light' | 'dark' | null
+              </code>。 如果主题设置为{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                'auto'
+              </code>，会返回当前系统主题。
             </p>
           </div>
           <div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">setTheme()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                setTheme()
+              </code>
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
-              设置主题。接受 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'light'</code>、<code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'dark'</code> 或 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'auto'</code>。
+              设置主题。接受{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                'light'
+              </code>、<code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                'dark'
+              </code>{" "}
+              或{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                'auto'
+              </code>。
             </p>
           </div>
           <div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">toggleTheme()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                toggleTheme()
+              </code>
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
               切换主题（在 dark 和 light 之间切换）。返回切换后的主题。
@@ -236,7 +317,9 @@ function getThemeValue(): 'light' | 'dark' | null`;
           </div>
           <div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">switchTheme()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                switchTheme()
+              </code>
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
               切换到指定主题。返回切换后的主题。
@@ -244,10 +327,19 @@ function getThemeValue(): 'light' | 'dark' | null`;
           </div>
           <div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">subscribeTheme()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                subscribeTheme()
+              </code>
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
-              订阅主题变化。监听器会在实际主题变化时调用（接收 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'light'</code> 或 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'dark'</code>）。
+              订阅主题变化。监听器会在实际主题变化时调用（接收{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                'light'
+              </code>{" "}
+              或{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                'dark'
+              </code>）。
             </p>
           </div>
         </div>
@@ -259,16 +351,29 @@ function getThemeValue(): 'light' | 'dark' | null`;
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
           <li className="text-gray-700 dark:text-gray-300">
-            <strong>三种模式：</strong>支持亮色（light）、暗色（dark）和自动（auto）模式
+            <strong>
+              三种模式：
+            </strong>支持亮色（light）、暗色（dark）和自动（auto）模式
           </li>
           <li className="text-gray-700 dark:text-gray-300">
             <strong>自动检测：</strong>auto 模式会自动检测系统主题偏好
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <strong>持久化存储：</strong>主题设置会保存到 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">localStorage</code>
+            <strong>持久化存储：</strong>主题设置会保存到{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              localStorage
+            </code>
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <strong>Tailwind CSS 集成：</strong>自动在 HTML 元素上添加 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">dark</code> 或 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">light</code> class
+            <strong>Tailwind CSS 集成：</strong>自动在 HTML 元素上添加{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              dark
+            </code>{" "}
+            或{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              light
+            </code>{" "}
+            class
           </li>
           <li className="text-gray-700 dark:text-gray-300">
             <strong>过渡动画：</strong>支持主题切换时的平滑过渡效果
@@ -284,15 +389,26 @@ function getThemeValue(): 'light' | 'dark' | null`;
           与 Tailwind CSS 配合使用
         </h2>
         <p className="text-gray-700 leading-relaxed mb-4">
-          主题插件会自动在 HTML 元素上添加 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">dark</code> 或 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">light</code> class，配合 Tailwind CSS v4 的 dark mode 使用：
+          主题插件会自动在 HTML 元素上添加{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            dark
+          </code>{" "}
+          或{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            light
+          </code>{" "}
+          class，配合 Tailwind CSS v4 的 dark mode 使用：
         </p>
-        <CodeBlock code={`// Tailwind CSS v4 配置
+        <CodeBlock
+          code={`// Tailwind CSS v4 配置
 @custom-variant dark (&:is(.dark *));
 
 // 使用示例
 <div className="bg-white dark:bg-gray-800 text-black dark:text-white">
   内容
-</div>`} language="css" />
+</div>`}
+          language="css"
+        />
       </section>
 
       <section className="mb-12">
@@ -301,23 +417,51 @@ function getThemeValue(): 'light' | 'dark' | null`;
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
           <li className="text-gray-700 dark:text-gray-300">
-            所有客户端 API 函数在服务端渲染时返回 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">null</code>，不会报错
+            所有客户端 API 函数在服务端渲染时返回{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              null
+            </code>，不会报错
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            主题设置会保存到 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">localStorage</code>，仅在浏览器环境中可用
+            主题设置会保存到{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              localStorage
+            </code>，仅在浏览器环境中可用
           </li>
           <li className="text-gray-700 dark:text-gray-300">
             建议在组件卸载时取消订阅，避免内存泄漏
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            客户端 API 需要从 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">@dreamer/dweb/client</code> 导入，而不是从 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">@dreamer/dweb</code>
+            客户端 API 需要从{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              @dreamer/dweb/client
+            </code>{" "}
+            导入，而不是从{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              @dreamer/dweb
+            </code>
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">getTheme()</code> 返回用户设置的主题（可能是 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'auto'</code>），而 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">getActualTheme()</code> 返回实际应用的主题（<code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'light'</code> 或 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'dark'</code>）
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              getTheme()
+            </code>{" "}
+            返回用户设置的主题（可能是{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              'auto'
+            </code>），而{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              getActualTheme()
+            </code>{" "}
+            返回实际应用的主题（<code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              'light'
+            </code>{" "}
+            或{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              'dark'
+            </code>）
           </li>
         </ul>
       </section>
     </article>
   );
 }
-

@@ -25,7 +25,9 @@ plugins: [
 
   return (
     <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">rss - RSS 插件</h1>
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
+        rss - RSS 插件
+      </h1>
       <p className="text-gray-700 leading-relaxed mb-8">
         rss 插件用于生成 RSS Feed，支持内容订阅。
       </p>
@@ -43,16 +45,21 @@ plugins: [
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">title</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              title
+            </code>{" "}
             - RSS Feed 标题
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">description</code>
-            {" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              description
+            </code>{" "}
             - RSS Feed 描述
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">feedUrl</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              feedUrl
+            </code>{" "}
             - RSS Feed URL
           </li>
         </ul>

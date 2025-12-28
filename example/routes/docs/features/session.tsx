@@ -58,7 +58,8 @@ export default function Page({ data }: PageProps) {
 }`;
 
   // 基本使用
-  const basicUsageCode = `import { SessionManager } from "@dreamer/dweb/features/session";
+  const basicUsageCode =
+    `import { SessionManager } from "@dreamer/dweb/features/session";
 
 // 创建 Session 管理器
 const sessionManager = new SessionManager({
@@ -176,7 +177,9 @@ await session.destroy();`;
 
   return (
     <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">Session</h1>
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
+        Session
+      </h1>
       <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
         DWeb 框架提供了完整的 Session 管理功能，支持多种存储方式。
       </p>
@@ -197,8 +200,9 @@ await session.destroy();`;
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
           在{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">dweb.config.ts</code>
-          {" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            dweb.config.ts
+          </code>{" "}
           中配置 Session：
         </p>
         <CodeBlock code={sessionConfigCode} language="typescript" />
@@ -220,7 +224,9 @@ await session.destroy();`;
         </h2>
         <CodeBlock code={storageTypesCode} language="typescript" />
         <div className="mt-4">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">存储方式说明</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+            存储方式说明
+          </h3>
           <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
             <li>
               <strong>memory</strong> - 内存存储（开发环境，重启后丢失）
@@ -246,20 +252,38 @@ await session.destroy();`;
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           API 参考
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           SessionManager
         </h3>
-        <CodeBlock code={`new SessionManager(config: SessionConfig)`} language="typescript" />
+        <CodeBlock
+          code={`new SessionManager(config: SessionConfig)`}
+          language="typescript"
+        />
         <CodeBlock code={sessionConfigCode} language="typescript" />
 
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           方法
         </h3>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">get(req: Request): Promise&lt;Session&gt;</code> - 获取或创建 Session</li>
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">destroy(sessionId: string): Promise&lt;void&gt;</code> - 销毁 Session</li>
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">clear(): Promise&lt;void&gt;</code> - 清空所有 Session</li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              get(req: Request): Promise&lt;Session&gt;
+            </code>{" "}
+            - 获取或创建 Session
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              destroy(sessionId: string): Promise&lt;void&gt;
+            </code>{" "}
+            - 销毁 Session
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              clear(): Promise&lt;void&gt;
+            </code>{" "}
+            - 清空所有 Session
+          </li>
         </ul>
 
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
@@ -270,13 +294,48 @@ await session.destroy();`;
           <strong>Session 方法：</strong>
         </p>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">get(key: string): any</code> - 获取 Session 值</li>
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">set(key: string, value: any): void</code> - 设置 Session 值</li>
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">has(key: string): boolean</code> - 检查键是否存在</li>
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">delete(key: string): void</code> - 删除 Session 值</li>
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">clear(): void</code> - 清空所有值</li>
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">save(): Promise&lt;void&gt;</code> - 保存 Session</li>
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">destroy(): Promise&lt;void&gt;</code> - 销毁 Session</li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              get(key: string): any
+            </code>{" "}
+            - 获取 Session 值
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              set(key: string, value: any): void
+            </code>{" "}
+            - 设置 Session 值
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              has(key: string): boolean
+            </code>{" "}
+            - 检查键是否存在
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              delete(key: string): void
+            </code>{" "}
+            - 删除 Session 值
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              clear(): void
+            </code>{" "}
+            - 清空所有值
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              save(): Promise&lt;void&gt;
+            </code>{" "}
+            - 保存 Session
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              destroy(): Promise&lt;void&gt;
+            </code>{" "}
+            - 销毁 Session
+          </li>
         </ul>
       </section>
 
@@ -286,9 +345,33 @@ await session.destroy();`;
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/features/cookie" className="text-blue-600 dark:text-blue-400 hover:underline">Cookie</a> - Cookie 管理</li>
-          <li><a href="/docs/features/database" className="text-blue-600 dark:text-blue-400 hover:underline">Database</a> - 数据库</li>
-          <li><a href="/docs/core/application" className="text-blue-600 dark:text-blue-400 hover:underline">Application</a> - 应用核心</li>
+          <li>
+            <a
+              href="/docs/features/cookie"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Cookie
+            </a>{" "}
+            - Cookie 管理
+          </li>
+          <li>
+            <a
+              href="/docs/features/database"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Database
+            </a>{" "}
+            - 数据库
+          </li>
+          <li>
+            <a
+              href="/docs/core/application"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Application
+            </a>{" "}
+            - 应用核心
+          </li>
         </ul>
       </section>
     </article>

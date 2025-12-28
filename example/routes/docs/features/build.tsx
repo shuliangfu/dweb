@@ -69,7 +69,8 @@ dist/
         构建 (build)
       </h1>
       <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 框架提供了强大的构建功能，可以将项目编译为生产版本，优化代码并生成静态资源。
+        DWeb
+        框架提供了强大的构建功能，可以将项目编译为生产版本，优化代码并生成静态资源。
       </p>
 
       {/* 构建生产版本 */}
@@ -77,7 +78,7 @@ dist/
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           构建生产版本
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           单应用模式
         </h3>
@@ -95,7 +96,11 @@ dist/
           构建配置
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          在 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">dweb.config.ts</code> 中配置构建选项：
+          在{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            dweb.config.ts
+          </code>{" "}
+          中配置构建选项：
         </p>
         <CodeBlock code={buildConfigCode} language="typescript" />
       </section>
@@ -114,9 +119,30 @@ dist/
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/features/prod" className="text-blue-600 dark:text-blue-400 hover:underline">生产服务器</a></li>
-          <li><a href="/docs/features/dev" className="text-blue-600 dark:text-blue-400 hover:underline">开发服务器</a></li>
-          <li><a href="/docs/deployment/development" className="text-blue-600 dark:text-blue-400 hover:underline">开发指南</a></li>
+          <li>
+            <a
+              href="/docs/features/prod"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              生产服务器
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/features/dev"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              开发服务器
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/deployment/development"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              开发指南
+            </a>
+          </li>
         </ul>
       </section>
     </article>

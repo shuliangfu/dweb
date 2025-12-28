@@ -8,7 +8,8 @@ import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
   title: "配置文档 - DWeb 框架文档",
-  description: "DWeb 框架的完整配置选项说明，包括服务器、路由、构建、开发等配置",
+  description:
+    "DWeb 框架的完整配置选项说明，包括服务器、路由、构建、开发等配置",
 };
 
 export default function ConfigurationPage(
@@ -127,7 +128,8 @@ export default defineConfig({
 });`;
 
   // 中间件配置
-  const middlewareConfigCode = `import { bodyParser, cors, logger } from "@dreamer/dweb/middleware";
+  const middlewareConfigCode =
+    `import { bodyParser, cors, logger } from "@dreamer/dweb/middleware";
 
 export default defineConfig({
   middleware: [
@@ -138,7 +140,8 @@ export default defineConfig({
 });`;
 
   // 插件配置
-  const pluginsConfigCode = `import { seo, tailwind } from "@dreamer/dweb/plugins";
+  const pluginsConfigCode =
+    `import { seo, tailwind } from "@dreamer/dweb/plugins";
 
 export default defineConfig({
   plugins: [
@@ -392,12 +395,15 @@ export default defineConfig({
       <h1>配置文档</h1>
 
       <p>
-        DWeb 框架使用 <code>dweb.config.ts</code> 文件进行配置，支持单应用和多应用模式。
+        DWeb 框架使用 <code>dweb.config.ts</code>{" "}
+        文件进行配置，支持单应用和多应用模式。
       </p>
 
       <h2>配置文件位置</h2>
 
-      <p>配置文件应位于项目根目录，命名为 <code>dweb.config.ts</code>。</p>
+      <p>
+        配置文件应位于项目根目录，命名为 <code>dweb.config.ts</code>。
+      </p>
 
       <CodeBlock
         language="typescript"
@@ -425,7 +431,9 @@ export default defineConfig({
 
       <h4>渲染适配器配置</h4>
 
-      <p><code>render</code> 选项用于配置渲染引擎：</p>
+      <p>
+        <code>render</code> 选项用于配置渲染引擎：
+      </p>
 
       <CodeBlock
         language="typescript"
@@ -438,21 +446,28 @@ export default defineConfig({
 });`}
       />
 
-      <p><strong>支持的渲染引擎：</strong></p>
+      <p>
+        <strong>支持的渲染引擎：</strong>
+      </p>
 
       <ul>
         <li>
-          <strong>preact</strong>（默认）：使用 Preact 作为渲染引擎，轻量级，性能优秀
+          <strong>preact</strong>（默认）：使用 Preact
+          作为渲染引擎，轻量级，性能优秀
         </li>
         <li>
-          <strong>react</strong>：使用 React 作为渲染引擎，需要安装 <code>react</code> 和 <code>react-dom</code> 依赖
+          <strong>react</strong>：使用 React 作为渲染引擎，需要安装{" "}
+          <code>react</code> 和 <code>react-dom</code> 依赖
         </li>
         <li>
-          <strong>vue3</strong>：使用 Vue 3 作为渲染引擎，需要安装 <code>vue</code> 和 <code>@vue/server-renderer</code> 依赖
+          <strong>vue3</strong>：使用 Vue 3 作为渲染引擎，需要安装{" "}
+          <code>vue</code> 和 <code>@vue/server-renderer</code> 依赖
         </li>
       </ul>
 
-      <p><strong>注意事项：</strong></p>
+      <p>
+        <strong>注意事项：</strong>
+      </p>
 
       <ul>
         <li>如果使用 React 或 Vue3，需要确保已安装对应的依赖包</li>
@@ -462,15 +477,18 @@ export default defineConfig({
 
       <h4>API 目录配置说明</h4>
 
-      <p><code>apiDir</code> 选项用于配置 API 路由文件的存放目录：</p>
+      <p>
+        <code>apiDir</code> 选项用于配置 API 路由文件的存放目录：
+      </p>
 
       <ul>
         <li>
-          <strong>默认值</strong>：<code>routes/api</code> - API 文件放在 <code>routes</code> 目录下的 <code>api</code> 子目录中
+          <strong>默认值</strong>：<code>routes/api</code> - API 文件放在{" "}
+          <code>routes</code> 目录下的 <code>api</code> 子目录中
         </li>
         <li>
-          <strong>自定义配置</strong>：可以设置为 <code>'api'</code> 等相对路径，此时 API
-          文件应放在项目根目录的对应文件夹中
+          <strong>自定义配置</strong>：可以设置为 <code>'api'</code>{" "}
+          等相对路径，此时 API 文件应放在项目根目录的对应文件夹中
         </li>
       </ul>
 
@@ -546,8 +564,16 @@ deno task dev:app-name`}
       <p>框架会自动验证配置，如果配置不正确会抛出错误：</p>
 
       <ul>
-        <li>单应用模式：必须配置 <code>server.port</code>、<code>routes</code> 和 <code>build.outDir</code></li>
-        <li>多应用模式：每个应用必须配置 <code>server.port</code>、<code>routes</code> 和 <code>build.outDir</code></li>
+        <li>
+          单应用模式：必须配置 <code>server.port</code>、<code>routes</code> 和
+          {" "}
+          <code>build.outDir</code>
+        </li>
+        <li>
+          多应用模式：每个应用必须配置{" "}
+          <code>server.port</code>、<code>routes</code> 和{" "}
+          <code>build.outDir</code>
+        </li>
       </ul>
 
       <h2>完整配置示例</h2>

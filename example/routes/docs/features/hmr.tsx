@@ -8,7 +8,8 @@ import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
   title: "热模块替换 (HMR) - DWeb 框架文档",
-  description: "DWeb 框架的热模块替换功能使用指南，在开发模式下自动监听文件变化并实时更新页面",
+  description:
+    "DWeb 框架的热模块替换功能使用指南，在开发模式下自动监听文件变化并实时更新页面",
 };
 
 export default function FeaturesHmrPage(
@@ -107,7 +108,8 @@ export default function Home() {
         热模块替换 (HMR)
       </h1>
       <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 框架提供了强大的热模块替换（HMR）功能，在开发模式下自动监听文件变化并实时更新页面，无需手动刷新浏览器。
+        DWeb
+        框架提供了强大的热模块替换（HMR）功能，在开发模式下自动监听文件变化并实时更新页面，无需手动刷新浏览器。
       </p>
 
       {/* 快速开始 */}
@@ -164,8 +166,22 @@ export default function Home() {
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/features/dev" className="text-blue-600 dark:text-blue-400 hover:underline">开发服务器</a></li>
-          <li><a href="/docs/core/router" className="text-blue-600 dark:text-blue-400 hover:underline">路由系统</a></li>
+          <li>
+            <a
+              href="/docs/features/dev"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              开发服务器
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/core/router"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              路由系统
+            </a>
+          </li>
         </ul>
       </section>
     </article>

@@ -160,7 +160,9 @@ export default function UserPage({ params }: PageProps) {
       </h1>
       <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
         DWeb 使用文件系统路由，路由文件位于{" "}
-        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">routes</code>{" "}
+        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+          routes
+        </code>{" "}
         目录。文件路径自动映射为 URL 路径，无需手动配置路由表。
       </p>
 
@@ -272,8 +274,15 @@ export default function UserPage({ params }: PageProps) {
           使用 load 函数获取数据
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">load</code> 函数在服务端执行，用于在页面渲染前获取数据。
-          返回的数据会自动传递给页面组件的 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">data</code> 属性。
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            load
+          </code>{" "}
+          函数在服务端执行，用于在页面渲染前获取数据。
+          返回的数据会自动传递给页面组件的{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            data
+          </code>{" "}
+          属性。
         </p>
         <CodeBlock code={loadFunctionCode} language="typescript" />
         <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 dark:border-green-600 p-4 my-4 rounded">
@@ -294,22 +303,36 @@ export default function UserPage({ params }: PageProps) {
           ⚠️ 重要限制：页面组件不能是异步函数
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <strong>页面组件不能定义为 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">async function</code></strong>。
-          如果需要进行异步操作（如数据获取），请使用以下方式：
+          <strong>
+            页面组件不能定义为{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              async function
+            </code>
+          </strong>。 如果需要进行异步操作（如数据获取），请使用以下方式：
         </p>
         <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-600 p-4 my-4 rounded">
-          <p className="text-red-800 dark:text-red-200 text-sm font-semibold mb-2">❌ 错误示例：</p>
+          <p className="text-red-800 dark:text-red-200 text-sm font-semibold mb-2">
+            ❌ 错误示例：
+          </p>
           <CodeBlock code={asyncComponentErrorCode} language="typescript" />
         </div>
         <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 dark:border-green-600 p-4 my-4 rounded">
-          <p className="text-green-800 dark:text-green-200 text-sm font-semibold mb-2">✅ 正确示例：使用 useEffect</p>
+          <p className="text-green-800 dark:text-green-200 text-sm font-semibold mb-2">
+            ✅ 正确示例：使用 useEffect
+          </p>
           <CodeBlock code={useEffectCode} language="typescript" />
         </div>
         <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-600 p-4 my-4 rounded">
-          <p className="text-blue-800 dark:text-blue-200 text-sm font-semibold mb-2">✅ 推荐：使用 load 函数（见上方示例）</p>
+          <p className="text-blue-800 dark:text-blue-200 text-sm font-semibold mb-2">
+            ✅ 推荐：使用 load 函数（见上方示例）
+          </p>
           <p className="text-blue-800 dark:text-blue-200 text-sm">
-            使用 <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">load</code> 函数在服务端获取数据是最佳实践，
-            可以充分利用 SSR 的优势，提高性能和 SEO。
+            使用{" "}
+            <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
+              load
+            </code>{" "}
+            函数在服务端获取数据是最佳实践， 可以充分利用 SSR 的优势，提高性能和
+            SEO。
           </p>
         </div>
       </section>
@@ -349,7 +372,9 @@ export default function UserPage({ params }: PageProps) {
         </ol>
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-600 p-4 my-4 rounded">
           <p className="text-yellow-800 dark:text-yellow-200 text-sm">
-            <strong>注意：</strong>当多个路由都能匹配同一个路径时，框架会选择优先级最高的路由。
+            <strong>
+              注意：
+            </strong>当多个路由都能匹配同一个路径时，框架会选择优先级最高的路由。
           </p>
         </div>
       </section>
@@ -379,64 +404,90 @@ export default function UserPage({ params }: PageProps) {
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
               <tr>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">_app.tsx</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    _app.tsx
+                  </code>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   根应用组件，提供 HTML 文档结构（DOCTYPE、head、body 等）
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">routes/_app.tsx</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    routes/_app.tsx
+                  </code>
                 </td>
               </tr>
               <tr>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">_layout.tsx</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    _layout.tsx
+                  </code>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   布局组件，提供页面布局结构
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">routes/_layout.tsx</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    routes/_layout.tsx
+                  </code>
                 </td>
               </tr>
               <tr>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">_middleware.ts</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    _middleware.ts
+                  </code>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   中间件文件，在请求处理前执行
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">routes/_middleware.ts</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    routes/_middleware.ts
+                  </code>
                 </td>
               </tr>
               <tr>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">_404.tsx</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    _404.tsx
+                  </code>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   404 错误页面，当路由不匹配时显示
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">routes/_404.tsx</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    routes/_404.tsx
+                  </code>
                 </td>
               </tr>
               <tr>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">_error.tsx</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    _error.tsx
+                  </code>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   错误页面，当发生错误时显示
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">routes/_error.tsx</code>
+                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    routes/_error.tsx
+                  </code>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
         <p className="text-gray-700 dark:text-gray-300 text-sm mt-4">
-          更多关于约定文件的说明，请参考 <a href="/docs/routing-conventions" className="text-blue-600 dark:text-blue-400 hover:underline">路由约定文档</a>。
+          更多关于约定文件的说明，请参考{" "}
+          <a
+            href="/docs/routing-conventions"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            路由约定文档
+          </a>。
         </p>
       </section>
     </article>

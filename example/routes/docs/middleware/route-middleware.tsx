@@ -171,8 +171,11 @@ export default apiRateLimitMiddleware;`;
         路由级中间件 (_middleware.ts)
       </h1>
       <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 框架支持路由级中间件，通过创建 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">_middleware.ts</code> 文件，
-        可以为特定路径及其子路径应用中间件。
+        DWeb 框架支持路由级中间件，通过创建{" "}
+        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+          _middleware.ts
+        </code>{" "}
+        文件， 可以为特定路径及其子路径应用中间件。
       </p>
 
       {/* 基本概念 */}
@@ -181,7 +184,11 @@ export default apiRateLimitMiddleware;`;
           基本概念
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          路由中间件文件使用 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">_middleware.ts</code> 命名约定，放置在路由目录中。
+          路由中间件文件使用{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            _middleware.ts
+          </code>{" "}
+          命名约定，放置在路由目录中。
           中间件会自动应用到该目录及其所有子目录的请求。
         </p>
       </section>
@@ -200,11 +207,23 @@ export default apiRateLimitMiddleware;`;
           中间件继承顺序
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          当访问 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/users/123</code> 时，中间件的执行顺序为：
+          当访问{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            /users/123
+          </code>{" "}
+          时，中间件的执行顺序为：
         </p>
         <ol className="list-decimal list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">routes/_middleware.ts</code>（根中间件）</li>
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">routes/users/_middleware.ts</code>（用户路由中间件）</li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              routes/_middleware.ts
+            </code>（根中间件）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              routes/users/_middleware.ts
+            </code>（用户路由中间件）
+          </li>
         </ol>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mt-4">
           中间件会按照从根到具体路径的顺序执行。
@@ -216,7 +235,7 @@ export default apiRateLimitMiddleware;`;
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           创建路由中间件
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           单个中间件
         </h3>
@@ -233,7 +252,7 @@ export default apiRateLimitMiddleware;`;
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           路由中间件示例
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           认证中间件
         </h3>
@@ -259,9 +278,19 @@ export default apiRateLimitMiddleware;`;
           路由中间件会在以下时机执行：
         </p>
         <ol className="list-decimal list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><strong>全局中间件</strong>（通过 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">server.use()</code> 添加）</li>
-          <li><strong>路由中间件</strong>（从根到具体路径，按路径层级顺序）</li>
-          <li><strong>路由处理器</strong>（页面组件或 API 处理器）</li>
+          <li>
+            <strong>全局中间件</strong>（通过{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              server.use()
+            </code>{" "}
+            添加）
+          </li>
+          <li>
+            <strong>路由中间件</strong>（从根到具体路径，按路径层级顺序）
+          </li>
+          <li>
+            <strong>路由处理器</strong>（页面组件或 API 处理器）
+          </li>
         </ol>
       </section>
 
@@ -341,9 +370,19 @@ export default apiRateLimitMiddleware;`;
           最佳实践
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><strong>使用路由中间件处理路径特定的逻辑</strong>：认证和授权、路径特定的日志记录、路径特定的速率限制</li>
-          <li><strong>使用全局中间件处理通用功能</strong>：CORS 配置、全局错误处理</li>
-          <li><strong>合理组织中间件</strong>：将认证中间件放在需要保护的路径、将日志中间件放在需要记录的路径、避免在根路径放置过多中间件</li>
+          <li>
+            <strong>
+              使用路由中间件处理路径特定的逻辑
+            </strong>：认证和授权、路径特定的日志记录、路径特定的速率限制
+          </li>
+          <li>
+            <strong>使用全局中间件处理通用功能</strong>：CORS 配置、全局错误处理
+          </li>
+          <li>
+            <strong>
+              合理组织中间件
+            </strong>：将认证中间件放在需要保护的路径、将日志中间件放在需要记录的路径、避免在根路径放置过多中间件
+          </li>
         </ul>
       </section>
 
@@ -353,9 +392,30 @@ export default apiRateLimitMiddleware;`;
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/middleware" className="text-blue-600 dark:text-blue-400 hover:underline">中间件概述</a></li>
-          <li><a href="/docs/middleware/custom" className="text-blue-600 dark:text-blue-400 hover:underline">创建自定义中间件</a></li>
-          <li><a href="/docs/core/middleware" className="text-blue-600 dark:text-blue-400 hover:underline">中间件系统</a></li>
+          <li>
+            <a
+              href="/docs/middleware"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              中间件概述
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/middleware/custom"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              创建自定义中间件
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/core/middleware"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              中间件系统
+            </a>
+          </li>
         </ul>
       </section>
     </article>

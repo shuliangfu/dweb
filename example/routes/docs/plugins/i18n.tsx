@@ -28,7 +28,9 @@ plugins: [
 
   return (
     <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">i18n - 国际化</h1>
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
+        i18n - 国际化
+      </h1>
       <p className="text-gray-700 leading-relaxed mb-8">
         i18n 插件提供国际化支持，支持多语言切换。
       </p>
@@ -46,16 +48,21 @@ plugins: [
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">defaultLocale</code>
-            {" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              defaultLocale
+            </code>{" "}
             - 默认语言
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">locales</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              locales
+            </code>{" "}
             - 支持的语言列表
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">messages</code>{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              messages
+            </code>{" "}
             - 翻译消息对象
           </li>
         </ul>

@@ -8,7 +8,8 @@ import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
   title: "控制台工具 - DWeb 框架文档",
-  description: "DWeb 框架的控制台工具使用指南，用于创建美观的命令行界面、处理用户输入、输出格式化信息等",
+  description:
+    "DWeb 框架的控制台工具使用指南，用于创建美观的命令行界面、处理用户输入、输出格式化信息等",
 };
 
 export default function ConsolePage(
@@ -114,7 +115,8 @@ bar.finish();`;
         控制台工具
       </h1>
       <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 框架提供了强大的控制台工具集，用于创建美观的命令行界面、处理用户输入、输出格式化信息等。
+        DWeb
+        框架提供了强大的控制台工具集，用于创建美观的命令行界面、处理用户输入、输出格式化信息等。
       </p>
 
       {/* 快速开始 */}
@@ -122,7 +124,7 @@ bar.finish();`;
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           快速开始
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           导入模块
         </h3>
@@ -140,7 +142,10 @@ bar.finish();`;
           Command 类
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">Command</code> 类用于创建命令行命令，支持选项、参数和子命令：
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            Command
+          </code>{" "}
+          类用于创建命令行命令，支持选项、参数和子命令：
         </p>
         <CodeBlock code={commandCode} language="typescript" />
       </section>
@@ -158,25 +163,89 @@ bar.finish();`;
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           文档导航
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           核心模块
         </h3>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/console/ansi" className="text-blue-600 dark:text-blue-400 hover:underline">ANSI 颜色和格式化工具</a> - 颜色、样式、光标控制</li>
-          <li><a href="/docs/console/output" className="text-blue-600 dark:text-blue-400 hover:underline">命令行输出工具</a> - 消息输出、格式化输出</li>
-          <li><a href="/docs/console/command" className="text-blue-600 dark:text-blue-400 hover:underline">命令行命令封装类</a> - Command 类、选项、参数、子命令</li>
-          <li><a href="/docs/console/prompt" className="text-blue-600 dark:text-blue-400 hover:underline">命令行输入工具</a> - 用户输入、确认、选择、交互式菜单</li>
-          <li><a href="/docs/console/table" className="text-blue-600 dark:text-blue-400 hover:underline">表格输出工具</a> - 表格、键值对表格、进度条</li>
+          <li>
+            <a
+              href="/docs/console/ansi"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              ANSI 颜色和格式化工具
+            </a>{" "}
+            - 颜色、样式、光标控制
+          </li>
+          <li>
+            <a
+              href="/docs/console/output"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              命令行输出工具
+            </a>{" "}
+            - 消息输出、格式化输出
+          </li>
+          <li>
+            <a
+              href="/docs/console/command"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              命令行命令封装类
+            </a>{" "}
+            - Command 类、选项、参数、子命令
+          </li>
+          <li>
+            <a
+              href="/docs/console/prompt"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              命令行输入工具
+            </a>{" "}
+            - 用户输入、确认、选择、交互式菜单
+          </li>
+          <li>
+            <a
+              href="/docs/console/table"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              表格输出工具
+            </a>{" "}
+            - 表格、键值对表格、进度条
+          </li>
         </ul>
 
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           其他
         </h3>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/console/examples" className="text-blue-600 dark:text-blue-400 hover:underline">完整示例</a> - 实际使用示例</li>
-          <li><a href="/docs/console/api" className="text-blue-600 dark:text-blue-400 hover:underline">API 参考</a> - 完整 API 文档</li>
-          <li><a href="/docs/console/best-practices" className="text-blue-600 dark:text-blue-400 hover:underline">最佳实践</a> - 使用建议和注意事项</li>
+          <li>
+            <a
+              href="/docs/console/examples"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              完整示例
+            </a>{" "}
+            - 实际使用示例
+          </li>
+          <li>
+            <a
+              href="/docs/console/api"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              API 参考
+            </a>{" "}
+            - 完整 API 文档
+          </li>
+          <li>
+            <a
+              href="/docs/console/best-practices"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              最佳实践
+            </a>{" "}
+            - 使用建议和注意事项
+          </li>
         </ul>
       </section>
 
@@ -186,10 +255,42 @@ bar.finish();`;
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/core/application" className="text-blue-600 dark:text-blue-400 hover:underline">核心模块</a> - 框架核心功能</li>
-          <li><a href="/docs/extensions" className="text-blue-600 dark:text-blue-400 hover:underline">扩展系统</a> - 扩展系统</li>
-          <li><a href="/docs/middleware" className="text-blue-600 dark:text-blue-400 hover:underline">中间件</a> - 中间件系统</li>
-          <li><a href="/docs/plugins" className="text-blue-600 dark:text-blue-400 hover:underline">插件</a> - 插件系统</li>
+          <li>
+            <a
+              href="/docs/core/application"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              核心模块
+            </a>{" "}
+            - 框架核心功能
+          </li>
+          <li>
+            <a
+              href="/docs/extensions"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              扩展系统
+            </a>{" "}
+            - 扩展系统
+          </li>
+          <li>
+            <a
+              href="/docs/middleware"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              中间件
+            </a>{" "}
+            - 中间件系统
+          </li>
+          <li>
+            <a
+              href="/docs/plugins"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              插件
+            </a>{" "}
+            - 插件系统
+          </li>
         </ul>
       </section>
     </article>

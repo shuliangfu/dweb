@@ -8,7 +8,8 @@ import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
   title: "Docker 部署 - DWeb 框架文档",
-  description: "DWeb 框架的 Docker 部署指南，包括 Dockerfile、docker-compose 等",
+  description:
+    "DWeb 框架的 Docker 部署指南，包括 Dockerfile、docker-compose 等",
 };
 
 export default function DockerPage(
@@ -199,7 +200,9 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone`;
 
       <h3>使用 Dockerfile</h3>
 
-      <p>项目根目录已包含 <code>Dockerfile</code>，可以直接使用：</p>
+      <p>
+        项目根目录已包含 <code>Dockerfile</code>，可以直接使用：
+      </p>
 
       <CodeBlock
         language="bash"
@@ -212,7 +215,9 @@ docker run -p 3000:3000 dweb-app`}
 
       <h3>使用 docker-compose</h3>
 
-      <p>项目根目录已包含 <code>docker-compose.yml</code>，可以直接使用：</p>
+      <p>
+        项目根目录已包含 <code>docker-compose.yml</code>，可以直接使用：
+      </p>
 
       <CodeBlock
         language="bash"
@@ -244,7 +249,9 @@ docker-compose down`}
 
       <h3>修改端口</h3>
 
-      <p>在 <code>docker-compose.yml</code> 中修改端口映射：</p>
+      <p>
+        在 <code>docker-compose.yml</code> 中修改端口映射：
+      </p>
 
       <CodeBlock language="yaml" code={customPortCode} />
 
@@ -254,11 +261,15 @@ docker-compose down`}
 
       <h3>使用 .env 文件</h3>
 
-      <p>创建 <code>.env</code> 文件：</p>
+      <p>
+        创建 <code>.env</code> 文件：
+      </p>
 
       <CodeBlock language="text" code={envFileCode} />
 
-      <p>在 <code>docker-compose.yml</code> 中使用：</p>
+      <p>
+        在 <code>docker-compose.yml</code> 中使用：
+      </p>
 
       <CodeBlock language="yaml" code={useEnvFileCode} />
 
@@ -272,7 +283,9 @@ docker-compose down`}
 
       <h2>健康检查</h2>
 
-      <p>框架提供了健康检查脚本 <code>healthcheck.ts</code>：</p>
+      <p>
+        框架提供了健康检查脚本 <code>healthcheck.ts</code>：
+      </p>
 
       <CodeBlock language="typescript" code={healthcheckCode} />
 
@@ -286,7 +299,9 @@ docker-compose down`}
 
       <h3>使用 .dockerignore</h3>
 
-      <p>创建 <code>.dockerignore</code> 文件，排除不需要的文件：</p>
+      <p>
+        创建 <code>.dockerignore</code> 文件，排除不需要的文件：
+      </p>
 
       <CodeBlock language="text" code={dockerignoreCode} />
 

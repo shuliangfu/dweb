@@ -290,7 +290,8 @@ function resetStore(): void`;
         store - 状态管理插件
       </h1>
       <p className="text-gray-700 leading-relaxed mb-8">
-        store 插件提供客户端状态管理功能，支持响应式状态更新、持久化存储和跨组件状态共享。
+        store
+        插件提供客户端状态管理功能，支持响应式状态更新、持久化存储和跨组件状态共享。
       </p>
 
       <section className="mb-12">
@@ -298,7 +299,15 @@ function resetStore(): void`;
           基本使用
         </h2>
         <p className="text-gray-700 leading-relaxed mb-4">
-          在 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">dweb.config.ts</code> 或 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">main.ts</code> 中配置 store 插件：
+          在{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            dweb.config.ts
+          </code>{" "}
+          或{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            main.ts
+          </code>{" "}
+          中配置 store 插件：
         </p>
         <CodeBlock code={basicUsageCode} language="typescript" />
       </section>
@@ -308,7 +317,11 @@ function resetStore(): void`;
           客户端 API
         </h2>
         <p className="text-gray-700 leading-relaxed mb-4">
-          在客户端组件中使用 store（从 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">@dreamer/dweb/client</code> 导入）：
+          在客户端组件中使用 store（从{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            @dreamer/dweb/client
+          </code>{" "}
+          导入）：
         </p>
         <CodeBlock code={clientUsageCode} language="typescript" />
       </section>
@@ -318,23 +331,35 @@ function resetStore(): void`;
           defineStore API（推荐，声明式 API）
         </h2>
         <p className="text-gray-700 leading-relaxed mb-4">
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">defineStore</code> 提供了声明式的 API，让 store 的定义和使用更加简洁和类型安全。
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            defineStore
+          </code>{" "}
+          提供了声明式的 API，让 store 的定义和使用更加简洁和类型安全。
           <br />
           <span className="text-sm text-gray-500">
-            支持两种定义方式：<strong>对象式（Options API）</strong> 和 <strong>函数式（Setup API）</strong>
+            支持两种定义方式：<strong>对象式（Options API）</strong> 和{" "}
+            <strong>函数式（Setup API）</strong>
           </span>
         </p>
         <div className="mb-6">
           <h3 className="text-2xl font-semibold text-gray-900 mt-8 mb-4">
             定义 Store
           </h3>
-          <CodeBlock code={defineStoreCode} language="typescript" title="defineStore 定义示例（包含对象式和函数式两种方式）" />
-          
+          <CodeBlock
+            code={defineStoreCode}
+            language="typescript"
+            title="defineStore 定义示例（包含对象式和函数式两种方式）"
+          />
+
           <div className="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 my-4">
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">📝 两种定义方式对比</h4>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+              📝 两种定义方式对比
+            </h4>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <h5 className="font-semibold text-gray-800 mb-2">✅ 对象式（Options API）</h5>
+                <h5 className="font-semibold text-gray-800 mb-2">
+                  ✅ 对象式（Options API）
+                </h5>
                 <ul className="list-disc list-inside space-y-1 text-gray-700 text-sm">
                   <li>结构清晰，易于理解</li>
                   <li>this 类型自动推断，无需手动指定</li>
@@ -343,11 +368,15 @@ function resetStore(): void`;
                 </ul>
               </div>
               <div>
-                <h5 className="font-semibold text-gray-800 mb-2">✅ 函数式（Setup API）</h5>
+                <h5 className="font-semibold text-gray-800 mb-2">
+                  ✅ 函数式（Setup API）
+                </h5>
                 <ul className="list-disc list-inside space-y-1 text-gray-700 text-sm">
                   <li>更灵活，可以定义局部变量和函数</li>
                   <li>适合复杂的逻辑和计算</li>
-                  <li>使用 storeAction 辅助函数，需指定类型参数，this 类型自动推断</li>
+                  <li>
+                    使用 storeAction 辅助函数，需指定类型参数，this 类型自动推断
+                  </li>
                   <li>适合需要更多控制权的场景</li>
                 </ul>
               </div>
@@ -362,7 +391,16 @@ function resetStore(): void`;
         </div>
         <div className="bg-blue-50 border-l-4 border-blue-400 p-4 my-4">
           <p className="text-blue-800">
-            <strong>💡 提示：</strong>使用 <code className="bg-blue-100 px-2 py-1 rounded">defineStore</code> 时，store 插件会自动收集所有已定义的 store 的初始状态，无需手动配置 <code className="bg-blue-100 px-2 py-1 rounded">initialState</code>。只需在 <code className="bg-blue-100 px-2 py-1 rounded">main.ts</code> 中导入 stores 文件即可。
+            <strong>💡 提示：</strong>使用{" "}
+            <code className="bg-blue-100 px-2 py-1 rounded">defineStore</code>
+            {" "}
+            时，store 插件会自动收集所有已定义的 store 的初始状态，无需手动配置
+            {" "}
+            <code className="bg-blue-100 px-2 py-1 rounded">
+              initialState
+            </code>。只需在{" "}
+            <code className="bg-blue-100 px-2 py-1 rounded">main.ts</code>{" "}
+            中导入 stores 文件即可。
           </p>
         </div>
       </section>
@@ -372,7 +410,10 @@ function resetStore(): void`;
           传统 API 使用示例
         </h2>
         <p className="text-gray-700 leading-relaxed mb-4">
-          如果不使用 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">defineStore</code>，也可以使用传统的 API 方式：
+          如果不使用{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            defineStore
+          </code>，也可以使用传统的 API 方式：
         </p>
         <CodeBlock code={reactExampleCode} language="typescript" />
       </section>
@@ -383,20 +424,43 @@ function resetStore(): void`;
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">persist</code>{" "}
-            - 是否启用持久化（默认 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">false</code>）。启用后，状态会保存到 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">localStorage</code>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              persist
+            </code>{" "}
+            - 是否启用持久化（默认{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              false
+            </code>）。启用后，状态会保存到{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              localStorage
+            </code>
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">storageKey</code>{" "}
-            - 持久化存储键名（默认 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">'dweb-store'</code>）
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              storageKey
+            </code>{" "}
+            - 持久化存储键名（默认{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              'dweb-store'
+            </code>）
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">enableServer</code>{" "}
-            - 是否在服务端启用（默认 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">true</code>）
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              enableServer
+            </code>{" "}
+            - 是否在服务端启用（默认{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              true
+            </code>）
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">initialState</code>{" "}
-            - 初始状态对象（默认 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">{}</code>）
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              initialState
+            </code>{" "}
+            - 初始状态对象（默认{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              {}
+            </code>）
           </li>
         </ul>
       </section>
@@ -409,25 +473,35 @@ function resetStore(): void`;
         <div className="mt-6 space-y-4">
           <div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">getStore()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                getStore()
+              </code>
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
-              获取 Store 实例。返回 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">Store | null</code>。
-              适用于需要多次操作 Store 的场景。
+              获取 Store 实例。返回{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                Store | null
+              </code>。 适用于需要多次操作 Store 的场景。
             </p>
           </div>
           <div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">getStoreState()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                getStoreState()
+              </code>
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
-              直接获取当前状态值。返回 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">T | null</code>。
-              适用于只需要读取一次状态的场景，更简洁。
+              直接获取当前状态值。返回{" "}
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                T | null
+              </code>。 适用于只需要读取一次状态的场景，更简洁。
             </p>
           </div>
           <div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">setStoreState()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                setStoreState()
+              </code>
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
               更新状态。接受部分状态对象或更新函数。会自动触发所有订阅者。
@@ -435,7 +509,9 @@ function resetStore(): void`;
           </div>
           <div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">subscribeStore()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                subscribeStore()
+              </code>
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
               订阅状态变化。返回取消订阅函数。监听器会在状态变化时自动调用。
@@ -443,7 +519,9 @@ function resetStore(): void`;
           </div>
           <div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">resetStore()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                resetStore()
+              </code>
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
               重置状态到初始值。会清除持久化存储（如果启用）并触发所有订阅者。
@@ -461,10 +539,14 @@ function resetStore(): void`;
             <strong>响应式更新：</strong>状态变化时自动通知所有订阅者
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <strong>持久化存储：</strong>支持将状态保存到 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">localStorage</code>
+            <strong>持久化存储：</strong>支持将状态保存到{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              localStorage
+            </code>
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <strong>类型安全：</strong>完整的 TypeScript 类型支持，自动推断 actions 类型
+            <strong>类型安全：</strong>完整的 TypeScript 类型支持，自动推断
+            actions 类型
           </li>
           <li className="text-gray-700 dark:text-gray-300">
             <strong>跨组件共享：</strong>状态可以在任意组件间共享
@@ -473,10 +555,18 @@ function resetStore(): void`;
             <strong>服务端支持：</strong>支持服务端状态初始化
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <strong>声明式 API：</strong>提供 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">defineStore</code> API，使用简洁直观
+            <strong>声明式 API：</strong>提供{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              defineStore
+            </code>{" "}
+            API，使用简洁直观
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            <strong>自动收集：</strong>使用 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">defineStore</code> 时，初始状态会自动收集，无需手动配置
+            <strong>自动收集：</strong>使用{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              defineStore
+            </code>{" "}
+            时，初始状态会自动收集，无需手动配置
           </li>
         </ul>
       </section>
@@ -487,23 +577,35 @@ function resetStore(): void`;
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
           <li className="text-gray-700 dark:text-gray-300">
-            所有客户端 API 函数在服务端渲染时返回 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">null</code>，不会报错
+            所有客户端 API 函数在服务端渲染时返回{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              null
+            </code>，不会报错
           </li>
           <li className="text-gray-700 dark:text-gray-300">
             状态更新是同步的，会立即触发所有订阅者
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            持久化存储使用 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">localStorage</code>，仅在浏览器环境中可用
+            持久化存储使用{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              localStorage
+            </code>，仅在浏览器环境中可用
           </li>
           <li className="text-gray-700 dark:text-gray-300">
             建议在组件卸载时取消订阅，避免内存泄漏
           </li>
           <li className="text-gray-700 dark:text-gray-300">
-            客户端 API 需要从 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">@dreamer/dweb/client</code> 导入，而不是从 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">@dreamer/dweb</code>
+            客户端 API 需要从{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              @dreamer/dweb/client
+            </code>{" "}
+            导入，而不是从{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              @dreamer/dweb
+            </code>
           </li>
         </ul>
       </section>
     </article>
   );
 }
-

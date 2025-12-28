@@ -82,7 +82,11 @@ const response = await fetch(\`https://api.example.com/data?key=\${apiKey}\`);`;
           开发环境
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          创建 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">.env.development</code> 文件：
+          创建{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            .env.development
+          </code>{" "}
+          文件：
         </p>
         <CodeBlock code={devEnvCode} language="env" />
       </section>
@@ -93,7 +97,11 @@ const response = await fetch(\`https://api.example.com/data?key=\${apiKey}\`);`;
           生产环境
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          创建 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">.env.production</code> 文件：
+          创建{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            .env.production
+          </code>{" "}
+          文件：
         </p>
         <CodeBlock code={prodEnvCode} language="env" />
       </section>
@@ -104,7 +112,11 @@ const response = await fetch(\`https://api.example.com/data?key=\${apiKey}\`);`;
           使用环境变量
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          在 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">dweb.config.ts</code> 中使用环境变量：
+          在{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            dweb.config.ts
+          </code>{" "}
+          中使用环境变量：
         </p>
         <CodeBlock code={usageCode} language="typescript" />
       </section>
@@ -125,7 +137,18 @@ const response = await fetch(\`https://api.example.com/data?key=\${apiKey}\`);`;
         <CodeBlock code={priorityCode} language="text" />
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-600 p-4 my-4 rounded">
           <p className="text-yellow-800 dark:text-yellow-200 text-sm">
-            <strong>安全提示：</strong>请确保 <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">.env.local</code> 和包含敏感信息的 <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">.env</code> 文件已添加到 <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">.gitignore</code>，不要提交到版本控制系统。
+            <strong>安全提示：</strong>请确保{" "}
+            <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">
+              .env.local
+            </code>{" "}
+            和包含敏感信息的{" "}
+            <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">
+              .env
+            </code>{" "}
+            文件已添加到{" "}
+            <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">
+              .gitignore
+            </code>，不要提交到版本控制系统。
           </p>
         </div>
       </section>
@@ -136,9 +159,30 @@ const response = await fetch(\`https://api.example.com/data?key=\${apiKey}\`);`;
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/deployment/configuration" className="text-blue-600 dark:text-blue-400 hover:underline">配置文档</a></li>
-          <li><a href="/docs/features/dev" className="text-blue-600 dark:text-blue-400 hover:underline">开发服务器</a></li>
-          <li><a href="/docs/features/prod" className="text-blue-600 dark:text-blue-400 hover:underline">生产服务器</a></li>
+          <li>
+            <a
+              href="/docs/deployment/configuration"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              配置文档
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/features/dev"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              开发服务器
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/features/prod"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              生产服务器
+            </a>
+          </li>
         </ul>
       </section>
     </article>

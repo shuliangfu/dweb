@@ -128,7 +128,10 @@ console.log("应用已启动，访问 http://localhost:3000");`;
         Application (应用核心)
       </h1>
       <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">Application</code> 类是 DWeb 框架的统一入口，
+        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+          Application
+        </code>{" "}
+        类是 DWeb 框架的统一入口，
         管理所有组件和服务，提供面向对象的应用管理方式。
       </p>
 
@@ -138,7 +141,10 @@ console.log("应用已启动，访问 http://localhost:3000");`;
           概述
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">Application</code> 类整合了框架的所有核心功能：
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            Application
+          </code>{" "}
+          类整合了框架的所有核心功能：
         </p>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
           <li>配置管理</li>
@@ -155,7 +161,7 @@ console.log("应用已启动，访问 http://localhost:3000");`;
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           快速开始
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           基本使用
         </h3>
@@ -186,7 +192,11 @@ console.log("应用已启动，访问 http://localhost:3000");`;
           获取服务
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          通过 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">getService</code> 方法获取已注册的服务：
+          通过{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            getService
+          </code>{" "}
+          方法获取已注册的服务：
         </p>
         <CodeBlock code={getServiceCode} language="typescript" />
       </section>
@@ -204,27 +214,45 @@ console.log("应用已启动，访问 http://localhost:3000");`;
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           API 参考
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           构造函数
         </h3>
-        <CodeBlock code={`constructor(configPath?: string, appName?: string)`} language="typescript" />
+        <CodeBlock
+          code={`constructor(configPath?: string, appName?: string)`}
+          language="typescript"
+        />
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
           <strong>参数：</strong>
         </p>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">configPath</code> (可选): 配置文件路径，如果不提供则自动查找 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">dweb.config.ts</code></li>
-          <li><code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">appName</code> (可选): 应用名称，用于多应用模式</li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              configPath
+            </code>{" "}
+            (可选): 配置文件路径，如果不提供则自动查找{" "}
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              dweb.config.ts
+            </code>
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              appName
+            </code>{" "}
+            (可选): 应用名称，用于多应用模式
+          </li>
         </ul>
 
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           方法
         </h3>
-        
+
         <div className="space-y-6">
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">initialize()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                initialize()
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               初始化应用，加载配置、注册服务、初始化路由和服务器。
@@ -235,7 +263,9 @@ console.log("应用已启动，访问 http://localhost:3000");`;
             </p>
             <ol className="list-decimal list-inside space-y-1 my-2 text-gray-700 dark:text-gray-300 text-sm">
               <li>加载配置</li>
-              <li>注册服务（Logger、Monitor、CookieManager、SessionManager 等）</li>
+              <li>
+                注册服务（Logger、Monitor、CookieManager、SessionManager 等）
+              </li>
               <li>初始化数据库（如果配置了）</li>
               <li>初始化 GraphQL 服务器（如果配置了）</li>
               <li>初始化渲染适配器</li>
@@ -250,7 +280,9 @@ console.log("应用已启动，访问 http://localhost:3000");`;
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">start()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                start()
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               启动应用，启动服务器并进入运行状态。
@@ -267,7 +299,9 @@ console.log("应用已启动，访问 http://localhost:3000");`;
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">stop()</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                stop()
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               停止应用，停止服务器并清理资源。
@@ -277,40 +311,55 @@ console.log("应用已启动，访问 http://localhost:3000");`;
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">use(middleware)</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                use(middleware)
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               注册中间件。
             </p>
-            <CodeBlock code={`app.use(async (req, res, next) => {
+            <CodeBlock
+              code={`app.use(async (req, res, next) => {
   // 中间件逻辑
   await next();
-});`} language="typescript" />
+});`}
+              language="typescript"
+            />
           </div>
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">plugin(plugin)</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                plugin(plugin)
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               注册插件。
             </p>
-            <CodeBlock code={`app.plugin({
+            <CodeBlock
+              code={`app.plugin({
   name: "my-plugin",
   onInit: async (app) => {
     // 插件初始化逻辑
   },
-});`} language="typescript" />
+});`}
+              language="typescript"
+            />
           </div>
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">getService&lt;T&gt;(token)</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                getService&lt;T&gt;(token)
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               获取已注册的服务。
             </p>
-            <CodeBlock code={`const logger = app.getService<Logger>("logger");`} language="typescript" />
+            <CodeBlock
+              code={`const logger = app.getService<Logger>("logger");`}
+              language="typescript"
+            />
           </div>
         </div>
       </section>
@@ -321,11 +370,46 @@ console.log("应用已启动，访问 http://localhost:3000");`;
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/core/application-context" className="text-blue-600 dark:text-blue-400 hover:underline">ApplicationContext (应用上下文)</a></li>
-          <li><a href="/docs/core/config-manager" className="text-blue-600 dark:text-blue-400 hover:underline">ConfigManager (配置管理器)</a></li>
-          <li><a href="/docs/core/service-container" className="text-blue-600 dark:text-blue-400 hover:underline">ServiceContainer (服务容器)</a></li>
-          <li><a href="/docs/core/lifecycle-manager" className="text-blue-600 dark:text-blue-400 hover:underline">LifecycleManager (生命周期管理器)</a></li>
-          <li><a href="/docs/core/server" className="text-blue-600 dark:text-blue-400 hover:underline">服务器 (Server)</a></li>
+          <li>
+            <a
+              href="/docs/core/application-context"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              ApplicationContext (应用上下文)
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/core/config-manager"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              ConfigManager (配置管理器)
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/core/service-container"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              ServiceContainer (服务容器)
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/core/lifecycle-manager"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              LifecycleManager (生命周期管理器)
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/core/server"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              服务器 (Server)
+            </a>
+          </li>
         </ul>
       </section>
     </article>

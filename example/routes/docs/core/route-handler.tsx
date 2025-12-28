@@ -8,7 +8,8 @@ import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
   title: "RouteHandler (路由处理器) - DWeb 框架文档",
-  description: "DWeb 框架的路由处理器使用指南，负责处理页面路由、API 路由、模块请求等",
+  description:
+    "DWeb 框架的路由处理器使用指南，负责处理页面路由、API 路由、模块请求等",
 };
 
 export default function CoreRouteHandlerPage(
@@ -98,7 +99,15 @@ export default {
         <CodeBlock code={basicUsageCode} language="typescript" />
         <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-600 p-4 my-4 rounded">
           <p className="text-blue-800 dark:text-blue-200 text-sm">
-            <strong>注意：</strong><code className="bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded">RouteHandler</code> 通常由 <code className="bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded">Application</code> 类内部使用，
+            <strong>注意：</strong>
+            <code className="bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded">
+              RouteHandler
+            </code>{" "}
+            通常由{" "}
+            <code className="bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded">
+              Application
+            </code>{" "}
+            类内部使用，
             不需要手动创建。如果需要自定义路由处理逻辑，可以通过中间件或插件来实现。
           </p>
         </div>
@@ -109,13 +118,15 @@ export default {
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           处理流程
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           页面路由处理
         </h3>
         <CodeBlock code={pageRouteFlowCode} language="text" />
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-600 p-4 my-4 rounded">
-          <p className="text-yellow-800 dark:text-yellow-200 text-sm font-semibold mb-2">⚠️ 重要提示：</p>
+          <p className="text-yellow-800 dark:text-yellow-200 text-sm font-semibold mb-2">
+            ⚠️ 重要提示：
+          </p>
           <CodeBlock code={importantNoteCode} language="text" />
         </div>
 
@@ -139,9 +150,30 @@ export default {
             <strong>配置说明：</strong>
           </p>
           <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-200 text-sm mt-2">
-            <li><code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">routes</code>：支持通配符模式（<code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">*</code>）和否定模式（<code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">!</code>）</li>
-            <li><code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">mode</code>：<code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">single</code>（逐个请求）或 <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">batch</code>（批量请求，默认）</li>
-            <li><code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">loading</code>：是否在预加载时显示全屏加载状态</li>
+            <li>
+              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
+                routes
+              </code>：支持通配符模式（<code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
+                *
+              </code>）和否定模式（<code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
+                !
+              </code>）
+            </li>
+            <li>
+              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
+                mode
+              </code>：<code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
+                single
+              </code>（逐个请求）或{" "}
+              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
+                batch
+              </code>（批量请求，默认）
+            </li>
+            <li>
+              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
+                loading
+              </code>：是否在预加载时显示全屏加载状态
+            </li>
           </ul>
         </div>
       </section>
@@ -151,61 +183,86 @@ export default {
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           API 参考
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           构造函数
         </h3>
-        <CodeBlock code={`constructor(
+        <CodeBlock
+          code={`constructor(
   router: Router,
   cookieManager?: CookieManager,
   sessionManager?: SessionManager,
   config?: AppConfig,
   graphqlServer?: GraphQLServer
-)`} language="typescript" />
+)`}
+          language="typescript"
+        />
 
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
           主要方法
         </h3>
-        
+
         <div className="space-y-6">
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">handle(req, res)</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                handle(req, res)
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               处理请求的统一入口。
             </p>
-            <CodeBlock code={`await routeHandler.handle(req, res);`} language="typescript" />
+            <CodeBlock
+              code={`await routeHandler.handle(req, res);`}
+              language="typescript"
+            />
           </div>
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">handlePageRoute(routeInfo, req, res)</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                handlePageRoute(routeInfo, req, res)
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               处理页面路由。
             </p>
-            <CodeBlock code={`await routeHandler.handlePageRoute(routeInfo, req, res);`} language="typescript" />
+            <CodeBlock
+              code={`await routeHandler.handlePageRoute(routeInfo, req, res);`}
+              language="typescript"
+            />
           </div>
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">handleApiRoute(routeInfo, req, res)</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                handleApiRoute(routeInfo, req, res)
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
               处理 API 路由。
             </p>
-            <CodeBlock code={`await routeHandler.handleApiRoute(routeInfo, req, res);`} language="typescript" />
+            <CodeBlock
+              code={`await routeHandler.handleApiRoute(routeInfo, req, res);`}
+              language="typescript"
+            />
           </div>
 
           <div>
             <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">handleModuleRequest(req, res)</code>
+              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                handleModuleRequest(req, res)
+              </code>
             </h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              处理模块请求（<code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">/__modules/</code>）。
+              处理模块请求（<code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+                /__modules/
+              </code>）。
             </p>
-            <CodeBlock code={`await routeHandler.handleModuleRequest(req, res);`} language="typescript" />
+            <CodeBlock
+              code={`await routeHandler.handleModuleRequest(req, res);`}
+              language="typescript"
+            />
           </div>
         </div>
       </section>
@@ -216,10 +273,38 @@ export default {
           相关文档
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><a href="/docs/core/server" className="text-blue-600 dark:text-blue-400 hover:underline">服务器 (Server)</a></li>
-          <li><a href="/docs/core/router" className="text-blue-600 dark:text-blue-400 hover:underline">路由系统 (Router)</a></li>
-          <li><a href="/docs/core/api" className="text-blue-600 dark:text-blue-400 hover:underline">API 路由</a></li>
-          <li><a href="/docs/features/hmr" className="text-blue-600 dark:text-blue-400 hover:underline">热模块替换 (HMR)</a></li>
+          <li>
+            <a
+              href="/docs/core/server"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              服务器 (Server)
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/core/router"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              路由系统 (Router)
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/core/api"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              API 路由
+            </a>
+          </li>
+          <li>
+            <a
+              href="/docs/features/hmr"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              热模块替换 (HMR)
+            </a>
+          </li>
         </ul>
       </section>
     </article>
