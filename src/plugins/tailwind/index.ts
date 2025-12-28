@@ -54,6 +54,12 @@ async function processCSSWithCLI(
   // 构建 CLI 命令参数
   const args: string[] = [];
 
+  // Tailwind CLI v3 需要使用 'build' 子命令
+  // v4 可以直接运行，但为了兼容性，我们根据版本决定
+  if (_version === "v3") {
+    args.push("build");
+  }
+
   // 输入文件（使用 stdin）
   args.push("-i", "-");
 
@@ -67,12 +73,12 @@ async function processCSSWithCLI(
     const absoluteConfigPath = path.isAbsolute(configPath)
       ? configPath
       : path.resolve(cwd, configPath);
-    args.push("--config", absoluteConfigPath);
+    args.push("-c", absoluteConfigPath); // v3 使用 -c 而不是 --config
   }
 
   // 生产环境启用压缩（v3 和 v4 都支持 --minify）
   if (isProduction) {
-    args.push("--minify");
+    args.push("-m"); // v3 使用 -m 而不是 --minify
   }
 
   // v3 和 v4 的 CLI 基本参数相同：
