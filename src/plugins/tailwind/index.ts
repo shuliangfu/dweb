@@ -179,18 +179,11 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
       // - 如果未配置 cliPath，自动下载到项目根目录的隐藏目录 .bin/
       // 这样用户可以将 CLI 移动到共享目录，通过 cliPath 配置使用，避免重复下载
       try {
-        const cliPath = await ensureTailwindCli(
+        await ensureTailwindCli(
           options.cliPath,
           version,
         );
-        // 输出 CLI 路径信息（帮助用户了解 CLI 位置）
-        if (options.cliPath) {
-          console.log(
-            `✅ [Tailwind ${version}] 使用自定义 CLI 路径: ${cliPath}`,
-          );
-        } else {
-          console.log(`✅ [Tailwind ${version}] CLI 已就绪: ${cliPath}`);
-        }
+        // 静默处理，不输出提示信息（下载时会有进度条提示）
       } catch (error) {
         // 如果下载失败，只输出警告，继续使用 PostCSS 插件处理
         // 注意：当前实现使用 PostCSS 插件处理 CSS，CLI 下载是可选的
