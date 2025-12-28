@@ -43,32 +43,24 @@ async function processCSSWithCLI(
   cssContent: string,
   filePath: string,
   cliPath: string,
-  _version: "v3" | "v4", // 版本参数，目前 v3 和 v4 的 CLI 参数相同，保留以备将来扩展
+  version: "v3" | "v4", // 版本参数，目前 v3 和 v4 的 CLI 参数相同，保留以备将来扩展
   configPath: string | null,
   isProduction: boolean,
 ): Promise<{ content: string; map?: string }> {
-  // 工作目录应该是项目根目录，而不是 CSS 文件所在目录
-  // 这样配置文件路径和 content 路径才能正确解析
   const cwd = Deno.cwd();
 
   // 构建 CLI 命令参数
   const args: string[] = [];
 
-  // Tailwind CLI v3 需要使用 'build' 子命令
-  // v4 可以直接运行，但为了兼容性，我们根据版本决定
-  if (_version === "v3") {
-    args.push("build");
-  }
-
   // 输入文件（使用 stdin）
-  args.push("-i", "-");
+  args.push("-i", filePath);
 
   // 输出文件（使用 stdout）
-  args.push("-o", "-");
+  // args.push("-o", "-");
 
   // v3 和 v4 的配置文件处理方式相同
   // 注意：v4 虽然不需要配置文件，但 CLI 仍然支持 --config 参数
-  if (configPath) {
+  if (configPath && version === "v3") {
     // 配置文件路径需要转换为绝对路径，或者相对于项目根目录的路径
     const absoluteConfigPath = path.isAbsolute(configPath)
       ? configPath
@@ -78,15 +70,8 @@ async function processCSSWithCLI(
 
   // 生产环境启用压缩（v3 和 v4 都支持 --minify）
   if (isProduction) {
-    args.push("-m"); // v3 使用 -m 而不是 --minify
+    args.push("-m");
   }
-
-  // v3 和 v4 的 CLI 基本参数相同：
-  // - -i, -o: 输入输出文件
-  // - --config: 配置文件路径（v4 虽然不需要配置文件，但 CLI 仍支持此参数）
-  // - --minify: 压缩输出
-  // 如果将来需要版本特定的参数，可以在这里根据 version 参数添加判断
-  // 例如：if (version === "v4") { args.push("--some-v4-only-flag"); }
 
   // 执行 CLI 命令
   // 注意：cwd 应该设置为项目根目录，这样配置文件路径和 content 路径才能正确解析
@@ -108,7 +93,6 @@ async function processCSSWithCLI(
     const data = encoder.encode(cssContent);
     await writer.write(data);
   } finally {
-    // 关闭 writer 会自动关闭 stdin，不需要再次调用 process.stdin.close()
     await writer.close();
   }
 
@@ -128,7 +112,7 @@ async function processCSSWithCLI(
   // 如果输出为空，检查是否有错误信息
   if (!stdoutText || stdoutText.trim().length === 0) {
     console.warn(
-      `⚠️  [Tailwind ${_version}] CLI 编译结果为空`,
+      `⚠️  [Tailwind ${version}] CLI 编译结果为空`,
     );
     console.warn(`   配置文件路径: ${configPath || "未指定"}`);
     console.warn(`   CSS 文件路径: ${filePath}`);

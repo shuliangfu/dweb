@@ -186,7 +186,7 @@ import { createApp, startDevServer } from 'jsr:@dreamer/dweb';`;
       />
 
       {/* 快速开始区域 */}
-      <div className="py-20 bg-linear-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="py-20 bg-linear-to-br bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">

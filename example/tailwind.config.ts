@@ -9,8 +9,7 @@ export default {
   // 这些文件中的类名会被 Tailwind 识别并生成对应的 CSS
   content: [
     './routes/**/*.{tsx,ts,jsx,js}',
-    './components/**/*.{tsx,ts,jsx,js}',
-    './common/**/*.{tsx,ts,jsx,js}',
+    './components/**/*.{tsx,ts,jsx,js}'
   ],
   
   // 主题配置：可以扩展或覆盖 Tailwind 的默认主题
