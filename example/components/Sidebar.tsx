@@ -290,8 +290,41 @@ export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarP
 
 
   return (
-    <aside className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen sticky top-0 overflow-y-auto">
-      <div className="p-4">
+    <>
+      <style>{`
+        /* 美化滚动条 */
+        aside::-webkit-scrollbar {
+          width: 6px;
+        }
+        aside::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        aside::-webkit-scrollbar-thumb {
+          background: rgba(156, 163, 175, 0.3);
+          border-radius: 3px;
+        }
+        aside::-webkit-scrollbar-thumb:hover {
+          background: rgba(156, 163, 175, 0.5);
+        }
+        /* 暗色模式 */
+        @media (prefers-color-scheme: dark) {
+          aside::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.4);
+          }
+          aside::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.6);
+          }
+        }
+        /* 支持 dark 类 */
+        .dark aside::-webkit-scrollbar-thumb {
+          background: rgba(156, 163, 175, 0.4);
+        }
+        .dark aside::-webkit-scrollbar-thumb:hover {
+          background: rgba(156, 163, 175, 0.6);
+        }
+      `}</style>
+      <aside className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen sticky top-0 overflow-y-auto sidebar-scrollbar">
+        <div className="p-4">
         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">文档目录</h2>
         <nav className="space-y-1">
           {navItems.map((item) => {
@@ -348,6 +381,7 @@ export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarP
         </nav>
       </div>
     </aside>
+    </>
   );
 }
 
