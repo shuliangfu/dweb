@@ -612,38 +612,145 @@ class HMRClient {
         }
 
         // 获取布局路径并加载布局组件（保持原有布局）
+        // 参考 browser-client.ts 的实现，支持多布局嵌套
         const layoutPath = pageData?.layoutPath ?? null;
-        let LayoutComponent = await this.loadLayoutComponent(layoutPath);
+        const allLayoutPaths = pageData?.allLayoutPaths ?? [];
+        const layoutDisabled = pageData?.layout === false;
 
-        // 如果布局组件加载失败，尝试从 allLayoutPaths 加载（支持多布局）
-        if (
-          !LayoutComponent && pageData?.allLayoutPaths &&
-          Array.isArray(pageData.allLayoutPaths) &&
-          pageData.allLayoutPaths.length > 0
-        ) {
-          // 尝试加载第一个布局路径
-          for (const path of pageData.allLayoutPaths) {
-            LayoutComponent = await this.loadLayoutComponent(path);
-            if (LayoutComponent) {
-              break;
+        console.log("[HMR] 开始加载布局组件", {
+          layoutPath,
+          allLayoutPaths,
+          layoutDisabled,
+          hasPageData: !!pageData,
+        });
+
+        // 检查页面是否禁用了布局
+        if (layoutDisabled) {
+          console.log("[HMR] 页面禁用了布局，直接渲染页面组件");
+          // 页面禁用了布局，直接渲染页面组件
+          const finalElement = await this.createPageElement(
+            PageComponent,
+            null,
+            props,
+            jsx,
+          );
+          this.renderComponent(root, finalElement, render);
+          return;
+        }
+
+        // 加载所有布局组件（从最具体到最通用）
+        const LayoutComponents: unknown[] = [];
+
+        if (allLayoutPaths.length > 0) {
+          // 使用 allLayoutPaths（支持多布局嵌套）
+          console.log("[HMR] 使用 allLayoutPaths 加载布局", allLayoutPaths);
+          for (const path of allLayoutPaths) {
+            console.log("[HMR] 加载布局组件:", path);
+            const LayoutComponent = await this.loadLayoutComponent(path);
+            if (LayoutComponent && typeof LayoutComponent === "function") {
+              console.log("[HMR] 布局组件加载成功:", path);
+              LayoutComponents.push(LayoutComponent);
+
+              // 检查是否设置了 layout = false（禁用继承）
+              const moduleCache = (globalThis as Record<string, unknown>)
+                .__moduleCache as Map<string, unknown> | undefined;
+              if (moduleCache) {
+                const layoutModule = moduleCache.get(path) as {
+                  layout?: boolean;
+                } | undefined;
+                if (layoutModule?.layout === false) {
+                  console.log(
+                    "[HMR] 布局设置了 layout = false，停止加载更多布局",
+                  );
+                  break;
+                }
+              }
+            } else {
+              console.warn(
+                "[HMR] 布局组件加载失败或不是函数:",
+                path,
+                LayoutComponent,
+              );
             }
           }
+        } else if (layoutPath) {
+          // 使用单个布局路径（向后兼容）
+          console.log("[HMR] 使用单个布局路径加载布局:", layoutPath);
+          const LayoutComponent = await this.loadLayoutComponent(layoutPath);
+          if (LayoutComponent && typeof LayoutComponent === "function") {
+            console.log("[HMR] 布局组件加载成功:", layoutPath);
+            LayoutComponents.push(LayoutComponent);
+          } else {
+            console.warn(
+              "[HMR] 布局组件加载失败或不是函数:",
+              layoutPath,
+              LayoutComponent,
+            );
+          }
+        } else {
+          console.log("[HMR] 没有布局路径，页面将不包含布局");
         }
 
         // 如果仍然没有布局组件，但布局路径存在，记录警告
-        if (!LayoutComponent && layoutPath) {
+        if (
+          LayoutComponents.length === 0 &&
+          (layoutPath || allLayoutPaths.length > 0)
+        ) {
           console.warn(
-            `[HMR] 布局组件加载失败，页面将不包含布局: ${layoutPath}`,
+            `[HMR] 布局组件加载失败，页面将不包含布局`,
+            { layoutPath, allLayoutPaths },
           );
+        } else {
+          console.log(`[HMR] 成功加载 ${LayoutComponents.length} 个布局组件`);
         }
 
-        // 创建页面元素（包含布局，支持异步组件）
-        const finalElement = await this.createPageElement(
+        // 创建页面元素（包含布局，支持多布局嵌套）
+        // 如果有多个布局，需要嵌套包裹
+        let finalElement = await this.createPageElement(
           PageComponent,
-          LayoutComponent,
+          LayoutComponents.length > 0 ? LayoutComponents[0] : null,
           props,
           jsx,
         );
+
+        // 如果有多个布局，从第二个开始嵌套包裹
+        for (let i = 1; i < LayoutComponents.length; i++) {
+          const LayoutComponent = LayoutComponents[i];
+          if (LayoutComponent && typeof LayoutComponent === "function") {
+            // 获取布局的 load 数据（如果有）
+            const pageDataForLayout = (globalThis as Record<string, unknown>)
+              .__PAGE_DATA__ as
+                | { layoutData?: Record<string, unknown>[] }
+                | undefined;
+            const layoutData = pageDataForLayout?.layoutData?.[i] || {};
+
+            try {
+              const layoutResult = (LayoutComponent as (props: {
+                children: unknown;
+                data?: Record<string, unknown>;
+              }) => unknown | Promise<unknown>)({
+                children: finalElement,
+                data: layoutData,
+              });
+
+              if (layoutResult instanceof Promise) {
+                finalElement = await layoutResult;
+              } else {
+                finalElement = layoutResult;
+              }
+            } catch {
+              // 如果直接调用失败，尝试用 jsx 函数调用
+              try {
+                finalElement = jsx(LayoutComponent, {
+                  children: finalElement,
+                  data: layoutData,
+                });
+              } catch {
+                // 如果都失败，使用原始元素
+              }
+            }
+          }
+        }
 
         // 渲染组件
         this.renderComponent(root, finalElement, render);
