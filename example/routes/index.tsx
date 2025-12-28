@@ -190,7 +190,7 @@ import { createApp, startDevServer } from 'jsr:@dreamer/dweb';`;
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              快速开始 22
+              快速开始
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               只需几分钟，即可开始使用 DWeb 构建您的下一个 Web 应用
