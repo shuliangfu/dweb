@@ -34,6 +34,7 @@ import { exists } from "@std/fs/exists";
  * @param cssContent CSS 内容
  * @param filePath CSS 文件路径
  * @param cliPath CLI 可执行文件路径
+ * @param version Tailwind 版本（"v3" 或 "v4"）
  * @param configPath Tailwind 配置文件路径
  * @param isProduction 是否为生产环境
  * @returns 处理后的 CSS 内容
@@ -42,6 +43,7 @@ async function processCSSWithCLI(
   cssContent: string,
   filePath: string,
   cliPath: string,
+  _version: "v3" | "v4", // 版本参数，目前 v3 和 v4 的 CLI 参数相同，保留以备将来扩展
   configPath: string | null,
   isProduction: boolean,
 ): Promise<{ content: string; map?: string }> {
@@ -60,15 +62,23 @@ async function processCSSWithCLI(
   // 输出文件（使用 stdout）
   args.push("-o", "-");
 
-  // 如果有配置文件，指定配置文件路径
+  // v3 和 v4 的配置文件处理方式相同
+  // 注意：v4 虽然不需要配置文件，但 CLI 仍然支持 --config 参数
   if (configPath) {
     args.push("--config", configPath);
   }
 
-  // 生产环境启用压缩
+  // 生产环境启用压缩（v3 和 v4 都支持 --minify）
   if (isProduction) {
     args.push("--minify");
   }
+
+  // v3 和 v4 的 CLI 基本参数相同：
+  // - -i, -o: 输入输出文件
+  // - --config: 配置文件路径（v4 虽然不需要配置文件，但 CLI 仍支持此参数）
+  // - --minify: 压缩输出
+  // 如果将来需要版本特定的参数，可以在这里根据 version 参数添加判断
+  // 例如：if (version === "v4") { args.push("--some-v4-only-flag"); }
 
   // 执行 CLI 命令
   const command = new Deno.Command(cliPath, {
@@ -97,6 +107,8 @@ async function processCSSWithCLI(
   }
 
   const compiledCSS = new TextDecoder().decode(stdout);
+
+  console.log(compiledCSS);
 
   return {
     content: compiledCSS,
@@ -148,16 +160,14 @@ async function processCSS(
         cssContent,
         filePath,
         actualCliPath,
+        version,
         configPath,
         isProduction,
       );
-    } catch (error) {
+    } catch (_error) {
       console.warn(
-        `⚠️  [Tailwind ${version}] CLI 编译失败，回退到 PostCSS:`,
-        error instanceof Error ? error.message : String(error),
-      );
-      console.warn(
-        `💡 提示: 如果 CLI 编译失败，请检查 deno.json 中的 "nodeModulesDir" 是否设置为 "auto"`,
+        `💡 提示: Tailwind CLI 可能未安装请，需要回退到PostCSS处理\n
+				💡 检查 deno.json 请将 "nodeModulesDir" 设置为 "auto"`,
       );
       // 回退到 PostCSS
     }
