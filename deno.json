@@ -113,7 +113,7 @@
     "jsxImportSource": "preact",
     "lib": ["deno.window", "dom", "dom.iterable", "dom.asynciterable", "deno.ns"]
   },
-  "nodeModulesDir": "auto",
+  "nodeModulesDir": "none",
   "allowScripts": {
     "allow": [],
     "deny": ["npm:esbuild@0.19.12", "npm:fsevents@2.3.3", "npm:sharp@0.34.5"]

@@ -311,43 +311,65 @@ export function replaceImportAliasesInContent(
   const importRegex = /(?:from\s+['"]|import\s*\(\s*['"])(@[^'"]+)(['"])/g;
 
   return content.replace(importRegex, (match, importPath, _quote) => {
-    // 解析路径别名
+    // 先尝试直接使用 importMap 查找（优先处理路径别名）
+    for (const [alias, aliasValue] of Object.entries(importMap)) {
+      if (alias.endsWith("/") && importPath.startsWith(alias)) {
+        // 找到匹配的路径别名，直接处理
+        const subPath = importPath.substring(alias.length);
+        const resolved = aliasValue.endsWith("/")
+          ? `${aliasValue}${subPath}`
+          : `${aliasValue}/${subPath}`;
+
+        // 基于项目根目录解析为绝对路径
+        const projectRoot = findProjectRoot(fileDir);
+        const normalizedRoot = projectRoot.replace(/\/$/, "") || "/";
+        const normalizedPath = resolved.replace(/^\.\//, "");
+
+        // 处理路径
+        const rootParts = normalizedRoot === "/"
+          ? []
+          : normalizedRoot.split("/").filter((p) => p);
+        const pathParts = normalizedPath.split("/").filter((p) => p);
+
+        for (const part of pathParts) {
+          if (part === "..") {
+            if (rootParts.length > 0) {
+              rootParts.pop();
+            }
+          } else if (part !== ".") {
+            rootParts.push(part);
+          }
+        }
+
+        const absolutePath = "/" + rootParts.join("/");
+
+        // 转换为相对路径（相对于文件所在目录）
+        const fileParts = fileDir.split("/").filter((p) => p);
+        const resolvedParts = absolutePath.split("/").filter((p) => p);
+        let commonLength = 0;
+        while (
+          commonLength < fileParts.length &&
+          commonLength < resolvedParts.length &&
+          fileParts[commonLength] === resolvedParts[commonLength]
+        ) {
+          commonLength++;
+        }
+        const upLevels = fileParts.length - commonLength;
+        const downParts = resolvedParts.slice(commonLength);
+        const upPath = upLevels > 0 ? "../".repeat(upLevels) : "./";
+        const relativePath = upPath + downParts.join("/");
+
+        return match.replace(importPath, relativePath);
+      }
+    }
+
+    // 如果没有匹配到路径别名，使用 resolveImportAlias 解析
     const resolvedPath = resolveImportAlias(importPath, importMap, fileDir);
 
     // 如果解析后的路径仍然包含 @，说明没有匹配到别名
     // 这可能是 importMap 为空或者别名配置不正确
     if (resolvedPath.startsWith("@")) {
-      // 尝试直接使用 importMap 查找（可能是 importMap 没有正确传递）
-      // 这种情况不应该发生，但为了安全起见，尝试手动解析
-      for (const [alias, aliasValue] of Object.entries(importMap)) {
-        if (alias.endsWith("/") && importPath.startsWith(alias)) {
-          const subPath = importPath.substring(alias.length);
-          const resolved = aliasValue.endsWith("/")
-            ? `${aliasValue}${subPath}`
-            : `${aliasValue}/${subPath}`;
-          // 递归调用 resolveImportAlias（但这次应该能匹配到）
-          const finalPath = resolveImportAlias(resolved, importMap, fileDir);
-          if (!finalPath.startsWith("@")) {
-            // 找到了，继续处理
-            const fileParts = fileDir.split("/").filter((p) => p);
-            const resolvedParts = finalPath.split("/").filter((p) => p);
-            let commonLength = 0;
-            while (
-              commonLength < fileParts.length &&
-              commonLength < resolvedParts.length &&
-              fileParts[commonLength] === resolvedParts[commonLength]
-            ) {
-              commonLength++;
-            }
-            const upLevels = fileParts.length - commonLength;
-            const downParts = resolvedParts.slice(commonLength);
-            const upPath = upLevels > 0 ? "../".repeat(upLevels) : "./";
-            const relativePath = upPath + downParts.join("/");
-            return match.replace(importPath, relativePath);
-          }
-        }
-      }
-      // 如果还是找不到，返回原始匹配（会报错，但至少不会破坏代码结构）
+      // 如果还是找不到，返回原始匹配（esbuild 插件会处理）
       return match;
     }
 

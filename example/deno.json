@@ -1,6 +1,6 @@
 {
   "version": "1.9.10",
-  "nodeModulesDir": "auto",
+  "nodeModulesDir": "none",
   "tasks": {
     "dev": "deno run -A ../src/cli.ts dev",
     "build": "deno run -A ../src/cli.ts build",

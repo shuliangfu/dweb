@@ -1117,15 +1117,17 @@ export class RouteHandler {
             },
           );
 
-          // 检查是否还有未替换的路径别名（不应该发生）
-          const aliasCheckRegex =
-            /(?:from\s+['"]|import\s*\(\s*['"])(@[^'"]+)(['"])/g;
-          if (aliasCheckRegex.test(processedWithAbsolutePaths)) {
-            logger.warn(
-              `警告：文件中仍有未替换的路径别名。文件: ${filePathWithoutPrefix}`,
-            );
-            logger.warn(`importMap: ${JSON.stringify(importMap, null, 2)}`);
-          }
+          // 注意：即使 replaceImportAliasesInContent 没有替换所有路径别名，
+          // esbuild 的 JSR resolver 插件也会处理路径别名，所以这里不需要警告
+          // 检查是否还有未替换的路径别名（esbuild 插件会处理，所以只是调试信息）
+          // const aliasCheckRegex =
+          //   /(?:from\s+['"]|import\s*\(\s*['"])(@[^'"]+)(['"])/g;
+          // if (aliasCheckRegex.test(processedWithAbsolutePaths)) {
+          //   logger.warn(
+          //     `警告：文件中仍有未替换的路径别名。文件: ${filePathWithoutPrefix}`,
+          //   );
+          //   logger.warn(`importMap: ${JSON.stringify(importMap, null, 2)}`);
+          // }
 
           // 使用 esbuild 编译 TypeScript/JSX 代码
           // 因为 Deno 无法直接解析 data: URL 中的 TypeScript/JSX 语法
