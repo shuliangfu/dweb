@@ -29,15 +29,8 @@ WORKDIR /app
 
 # 从构建阶段复制框架源码和 example 项目的运行时文件
 COPY --from=builder /app/src ./src
-COPY --from=builder /app/example/.dist ./example/.dist
-COPY --from=builder /app/example/deno.json ./example/
-COPY --from=builder /app/example/dweb.config.ts ./example/
-COPY --from=builder /app/example/healthcheck.ts ./example/
-COPY --from=builder /app/example/deno.lock ./example/
-# 复制 node_modules（避免运行时重新下载依赖）
-# 注意：nodeModulesDir 为 "auto" 时，node_modules 在项目根目录下
-COPY --from=builder /app/example/node_modules ./example/node_modules
-COPY --from=builder /app/example/global.d.ts ./example/
+# 直接复制整个 example 目录（包含所有运行时需要的文件：.dist、deno.json、dweb.config.ts、node_modules 等）
+COPY --from=builder /app/example ./example
 
 # 切换到 example 目录（deno.json 和 dweb.config.ts 所在目录）
 WORKDIR /app/example
