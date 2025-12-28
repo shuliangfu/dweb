@@ -39,33 +39,49 @@ server.use(cors({
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           配置选项
         </h2>
-        <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700 dark:text-gray-300">
+        
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
+          可选参数
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               origin
             </code>{" "}
-            - 允许的源，可以是字符串、数组或函数
+            - 允许的源，可以是字符串、数组或函数（默认 '*'）
           </li>
-          <li className="text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               methods
             </code>{" "}
-            - 允许的 HTTP 方法
+            - 允许的 HTTP 方法（默认 ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']）
           </li>
-          <li className="text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               allowedHeaders
             </code>{" "}
-            - 允许的请求头
+            - 允许的请求头（默认 ['Content-Type', 'Authorization']）
           </li>
-          <li className="text-gray-700 dark:text-gray-300">
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              exposedHeaders
+            </code>{" "}
+            - 暴露的响应头（默认 []）
+          </li>
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               credentials
             </code>{" "}
-            - 是否允许发送凭证
+            - 是否允许发送凭证（默认 false）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              maxAge
+            </code>{" "}
+            - 预检请求的缓存时间（秒，默认 86400）
           </li>
         </ul>
       </section>

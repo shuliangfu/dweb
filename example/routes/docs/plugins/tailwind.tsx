@@ -40,27 +40,64 @@ plugins: [
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           配置选项
         </h2>
-        <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700 dark:text-gray-300">
+        
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
+          可选参数
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               version
             </code>{" "}
-            - Tailwind CSS 版本：'v3' | 'v4'
+            - Tailwind CSS 版本：'v3' | 'v4'（默认为 'v4'）
           </li>
-          <li className="text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               cssPath
             </code>{" "}
-            - CSS 文件路径
+            - 主 CSS 文件路径（如 'assets/style.css'），用于开发环境实时编译。如果不指定，默认查找 'assets/style.css'
           </li>
-          <li className="text-gray-700 dark:text-gray-300">
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              cssFiles
+            </code>{" "}
+            - CSS 文件路径（支持 glob 模式），用于构建时处理多个文件。默认为 'assets/**/*.css'
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              exclude
+            </code>{" "}
+            - 排除的文件（支持 glob 模式）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              content
+            </code>{" "}
+            - 内容扫描路径（用于 Tailwind CSS 扫描项目文件）。默认为 ['./routes/**/*.{tsx,ts,jsx,js}', './components/**/*.{tsx,ts,jsx,js}']
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              autoprefixer
+            </code>{" "}
+            - v3 特定选项：Autoprefixer 配置对象，包含：
+            <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">env</code> - Browserslist 环境</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">cascade</code> - 是否使用 Visual Cascade</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">add</code> - 是否添加前缀</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">remove</code> - 是否移除过时的前缀</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">flexbox</code> - 是否为 flexbox 属性添加前缀</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">grid</code> - 是否为 Grid Layout 属性添加前缀</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">overrideBrowserslist</code> - 目标浏览器查询列表</li>
+            </ul>
+          </li>
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               optimize
             </code>{" "}
-            - 是否优化 CSS
+            - v4 特定选项：是否优化（生产环境默认 true）
           </li>
         </ul>
       </section>

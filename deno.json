@@ -9,6 +9,8 @@
     "./init": "./src/init.ts",
     "./client": "./src/client.ts",
     "./console": "./src/console/mod.ts",
+    "./plugins": "./src/plugins/mod.ts",
+    "./middleware": "./src/middleware/mod.ts",
     "./database": "./src/features/database/mod.ts",
     "./extensions": "./src/extensions/mod.ts",
     "./extensions/validation": "./src/extensions/helpers/validation.ts",
