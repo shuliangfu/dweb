@@ -5,14 +5,33 @@ import { ipFilter } from "@dreamer/dweb/middleware";
 
 // 白名单
 server.use(ipFilter({
-  whitelist: ["192.168.1.0/24", "10.0.0.0/8"],
+  whitelist: ["192.168.1.0/24", "10.0.0.0/8"], // IP 白名单数组（允许的 IP 列表），支持单个 IP 或 CIDR 格式
+  whitelistMode: true, // 是否启用白名单模式（默认 false）。true: 只允许白名单中的 IP；false: 允许所有 IP，除非在黑名单中
 }));
 
 // 黑名单
 server.use(ipFilter({
-  blacklist: ["192.168.1.100"],
+  blacklist: ["192.168.1.100"], // IP 黑名单数组（禁止的 IP 列表），支持单个 IP 或 CIDR 格式
+  skip: ["/health"], // 跳过过滤的路径数组（支持 glob 模式）
+  message: "Access denied", // 自定义错误消息
+  statusCode: 403, // 自定义错误状态码（默认 403）
+  getClientIP: (req) => { // 获取客户端 IP 的函数（默认使用标准方法，会尝试从 X-Forwarded-For、X-Real-IP、CF-Connecting-IP 等请求头获取）
+    return req.headers.get("x-forwarded-for") || "unknown";
+  },
 }));
 ```
+
+#### 配置选项
+
+**可选参数：**
+
+- `whitelist` - IP 白名单数组（允许的 IP 列表），支持单个 IP 或 CIDR 格式（如 '192.168.1.0/24'）
+- `blacklist` - IP 黑名单数组（禁止的 IP 列表），支持单个 IP 或 CIDR 格式
+- `whitelistMode` - 是否启用白名单模式（默认 false）。true: 只允许白名单中的 IP；false: 允许所有 IP，除非在黑名单中
+- `skip` - 跳过过滤的路径数组（支持 glob 模式）
+- `message` - 自定义错误消息
+- `statusCode` - 自定义错误状态码（默认 403）
+- `getClientIP` - 获取客户端 IP 的函数（默认使用标准方法，会尝试从 X-Forwarded-For、X-Real-IP、CF-Connecting-IP 等请求头获取）
 
 ## 路由级中间件 (_middleware.ts)
 

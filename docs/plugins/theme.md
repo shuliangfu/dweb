@@ -26,7 +26,8 @@ app.plugin(theme({
 | `injectDataAttribute` | `boolean` | `true` | 是否在 HTML 元素上添加 `data-theme` 属性 |
 | `injectBodyClass` | `boolean` | `true` | 是否在 body 元素上添加主题类名 |
 | `transition` | `boolean` | `true` | 是否启用主题切换过渡动画 |
-| `injectScript` | `boolean` | `true` | 是否注入客户端脚本 |
+| `themes` | `string[]` | `undefined` | 自定义主题列表数组 |
+| `injectScript` | `boolean` | `true` | 是否在服务端注入主题脚本 |
 
 **客户端 API（推荐方式）：**
 
