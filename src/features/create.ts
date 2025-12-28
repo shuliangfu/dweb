@@ -741,6 +741,41 @@ async function generateDenoJson(
 ): Promise<void> {
   const frameworkUrl = await getFrameworkUrl();
 
+  // 生成 imports 配置
+  let importsConfig = "";
+  if (isMultiApp) {
+    // 多应用模式：为每个应用生成路径别名（如 @backend/）
+    const appImports = appNames.map((appName) => {
+      return `    "@${appName}/": "./${appName}/"`;
+    }).join(",\n");
+    importsConfig = `${appImports},
+    "@dreamer/dweb": "${frameworkUrl}",
+    "preact": "npm:preact@10.28.0",
+    "preact/hooks": "npm:preact@10.28.0/hooks",
+    "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
+    "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact"`;
+  } else {
+    // 单应用模式：使用通用的路径别名
+    importsConfig = `    "@components/": "./components/",
+    "@config/": "./config/",
+    "@store/": "./stores/",
+    "@dreamer/dweb": "${frameworkUrl}",
+    "preact": "npm:preact@10.28.0",
+    "preact/hooks": "npm:preact@10.28.0/hooks",
+    "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
+    "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact"`;
+  }
+
+  // 添加 Tailwind CSS 相关依赖
+  const tailwindImports = useTailwindV4
+    ? `,
+    "tailwindcss": "npm:tailwindcss@^4.1.10",
+    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@^4.1.10"`
+    : `,
+    "tailwindcss": "npm:tailwindcss@^3.4.0",
+    "autoprefixer": "npm:autoprefixer@^10.4.20",
+    "postcss": "npm:postcss@^8.4.47"`;
+
   const denoJsonContent = `{
   "version": "1.0.0",
   "description": "A DWeb framework project",
@@ -764,14 +799,7 @@ ${
   }
   },
   "imports": {
-    "@components/": "./components/",
-    "@config/": "./config/",
-    "@store/": "./stores/",
-    "@dreamer/dweb": "${frameworkUrl}",
-    "preact": "npm:preact@10.28.0",
-    "preact/hooks": "npm:preact@10.28.0/hooks",
-    "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
-    "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact"
+${importsConfig}${tailwindImports}
   },
   "nodeModulesDir": "none",
   "compilerOptions": {
@@ -806,10 +834,16 @@ async function generateExampleRoutes(
       await ensureDir(appComponentsDir);
 
       // 生成示例路由
-      await generateRoutesForApp(appRoutesDir, appName, apiMode, useTailwindV4);
+      await generateRoutesForApp(
+        appRoutesDir,
+        appName,
+        apiMode,
+        useTailwindV4,
+        true,
+      );
 
       // 生成示例组件
-      await generateComponentsForApp(appComponentsDir, appName);
+      await generateComponentsForApp(appComponentsDir, appName, true);
 
       // 生成示例 API
       await generateApiForApp(appRoutesDir, appName, apiMode);
@@ -829,10 +863,16 @@ async function generateExampleRoutes(
     const projectName = path.basename(projectDir);
 
     // 生成示例路由
-    await generateRoutesForApp(routesDir, projectName, apiMode, useTailwindV4);
+    await generateRoutesForApp(
+      routesDir,
+      projectName,
+      apiMode,
+      useTailwindV4,
+      false,
+    );
 
     // 生成示例组件
-    await generateComponentsForApp(componentsDir, projectName);
+    await generateComponentsForApp(componentsDir, projectName, false);
 
     // 生成示例 API
     await generateApiForApp(routesDir, projectName, apiMode);
@@ -841,12 +881,18 @@ async function generateExampleRoutes(
 
 /**
  * 为单个应用生成路由文件
+ * @param routesDir 路由目录路径
+ * @param appName 应用名称
+ * @param apiMode API 模式
+ * @param useTailwindV4 是否使用 Tailwind CSS v4
+ * @param isMultiApp 是否为多应用模式（影响路径别名的使用）
  */
 async function generateRoutesForApp(
   routesDir: string,
   appName: string,
   apiMode: string,
   useTailwindV4: boolean,
+  isMultiApp: boolean = false,
 ): Promise<void> {
   // 获取框架版本号
   const frameworkVersion = await getFrameworkVersion();
@@ -893,15 +939,20 @@ export default function App({ children }: AppProps) {
   console.log(`✅ 已创建: ${routesDir}/_app.tsx`);
 
   // 生成 _layout.tsx（根布局组件）
+  // 根据是否为多应用模式，使用不同的路径别名
+  const componentAlias = isMultiApp ? `@${appName}/components` : "@components";
+  const configAlias = isMultiApp ? `@${appName}/config` : "@config";
+  const storeAlias = isMultiApp ? `@${appName}/stores` : "@store";
+
   const layoutContent = `/**
  * 根布局组件
  * 提供网站的整体布局结构
  * 注意：HTML 文档结构由 _app.tsx 提供
  */
 
-import Navbar from "@components/Navbar.tsx";
+import Navbar from "${componentAlias}/Navbar.tsx";
 import type { LayoutProps } from "@dreamer/dweb";
-import menus from "@config/menus.ts";
+import menus from "${configAlias}/menus.ts";
 
 export const load = () => {
   return {
@@ -976,8 +1027,8 @@ export default menus;
  */
 
 import { useState, useEffect } from 'preact/hooks';
-import Button from '@components/Button.tsx';
-import { exampleStore, type ExampleStoreState } from '@store/example.ts';
+import Button from '${componentAlias}/Button.tsx';
+import { exampleStore, type ExampleStoreState } from '${storeAlias}/example.ts';
 import type { PageProps, LoadContext } from '@dreamer/dweb';
 
 // 页面级渲染模式：hybrid（混合渲染）
@@ -1618,7 +1669,7 @@ export default function About() {
  * 当访问不存在的路由时显示
  */
 
-import Button from '@components/Button.tsx';
+import Button from '${componentAlias}/Button.tsx';
 
 /**
  * 404 页面组件
@@ -1744,11 +1795,17 @@ export const exampleStore = defineStore('example', {
 
 /**
  * 为单个应用生成组件文件
+ * @param componentsDir 组件目录路径
+ * @param appName 应用名称
+ * @param isMultiApp 是否为多应用模式（影响路径别名的使用）
  */
 async function generateComponentsForApp(
   componentsDir: string,
-  _appName: string,
+  appName: string,
+  isMultiApp: boolean = false,
 ): Promise<void> {
+  // 根据是否为多应用模式，使用不同的路径别名
+  const configAlias = isMultiApp ? `@${appName}/config` : "@config";
   // 生成示例组件 Button.tsx（美化后的按钮组件）
   const buttonContent = `/**
  * 按钮组件
@@ -1859,7 +1916,7 @@ export default function Button({
  */
 
 import { useEffect, useState } from "preact/hooks";
-import { menus } from "@config/menus.ts";
+import { menus } from "${configAlias}/menus.ts";
 
 interface NavbarProps {
   /** 当前路径（服务端渲染时使用） */
@@ -1924,7 +1981,7 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
           <div className="flex items-center">
             <a href="/" className="flex items-center space-x-2">
               <span className="text-2xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                ${_appName}
+                ${appName}
               </span>
             </a>
           </div>
