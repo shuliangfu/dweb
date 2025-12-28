@@ -47,11 +47,9 @@ async function processCSSWithCLI(
   configPath: string | null,
   isProduction: boolean,
 ): Promise<{ content: string; map?: string }> {
-  // 处理文件路径
-  const absoluteFilePath = path.isAbsolute(filePath)
-    ? filePath
-    : path.resolve(Deno.cwd(), filePath);
-  const fileDir = path.dirname(absoluteFilePath);
+  // 工作目录应该是项目根目录，而不是 CSS 文件所在目录
+  // 这样配置文件路径和 content 路径才能正确解析
+  const cwd = Deno.cwd();
 
   // 构建 CLI 命令参数
   const args: string[] = [];
@@ -65,7 +63,11 @@ async function processCSSWithCLI(
   // v3 和 v4 的配置文件处理方式相同
   // 注意：v4 虽然不需要配置文件，但 CLI 仍然支持 --config 参数
   if (configPath) {
-    args.push("--config", configPath);
+    // 配置文件路径需要转换为绝对路径，或者相对于项目根目录的路径
+    const absoluteConfigPath = path.isAbsolute(configPath)
+      ? configPath
+      : path.resolve(cwd, configPath);
+    args.push("--config", absoluteConfigPath);
   }
 
   // 生产环境启用压缩（v3 和 v4 都支持 --minify）
@@ -81,12 +83,13 @@ async function processCSSWithCLI(
   // 例如：if (version === "v4") { args.push("--some-v4-only-flag"); }
 
   // 执行 CLI 命令
+  // 注意：cwd 应该设置为项目根目录，这样配置文件路径和 content 路径才能正确解析
   const command = new Deno.Command(cliPath, {
     args,
     stdin: "piped",
     stdout: "piped",
     stderr: "piped",
-    cwd: fileDir,
+    cwd: cwd, // 使用项目根目录作为工作目录
   });
 
   const process = command.spawn();
@@ -99,17 +102,36 @@ async function processCSSWithCLI(
   // 等待命令执行完成
   const { code, stdout, stderr } = await process.output();
 
+  const stderrText = new TextDecoder().decode(stderr);
+  const stdoutText = new TextDecoder().decode(stdout);
+
   if (code !== 0) {
-    const errorText = new TextDecoder().decode(stderr);
     throw new Error(
-      `Tailwind CLI 编译失败 (退出码: ${code}):\n${errorText}`,
+      `Tailwind CLI 编译失败 (退出码: ${code}):\n${stderrText}`,
     );
   }
 
-  const compiledCSS = new TextDecoder().decode(stdout);
+  // 如果输出为空，检查是否有错误信息
+  if (!stdoutText || stdoutText.trim().length === 0) {
+    console.warn(
+      `⚠️  [Tailwind ${_version}] CLI 编译结果为空`,
+    );
+    console.warn(`   配置文件路径: ${configPath || "未指定"}`);
+    console.warn(`   CSS 文件路径: ${filePath}`);
+    console.warn(`   CLI 路径: ${cliPath}`);
+    if (stderrText) {
+      console.warn(`   CLI 错误输出: ${stderrText}`);
+    }
+    // 如果 CLI 返回空，可能是配置问题，但不抛出错误，让 PostCSS 处理
+    throw new Error(
+      `Tailwind CLI 编译结果为空。请检查配置文件路径和内容扫描路径是否正确。\n${
+        stderrText || ""
+      }`,
+    );
+  }
 
   return {
-    content: compiledCSS,
+    content: stdoutText,
   };
 }
 
