@@ -10,7 +10,6 @@ import * as path from "@std/path";
 // @tailwindcss/postcss 插件在解析 @import "tailwindcss" 时，内部会尝试解析 tailwindcss 模块
 // 在 Deno 环境中，需要预先导入 tailwindcss 包，让插件的模块解析器能够找到它
 // 注意：虽然我们不直接使用 tailwindcss，但需要导入它以便 @tailwindcss/postcss 插件能够解析
-// 使用完整的 npm: URL，不依赖 deno.json 的 imports 配置
 import twPostcss from "@tailwindcss/postcss";
 import postcss from "postcss";
 

@@ -225,10 +225,8 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
           return;
         }
 
-        console.log({ isProduction });
-
         // 检查缓存（开发环境）
-        let compiledCSS: string | null = "";
+        let compiledCSS: string;
         if (isProduction) {
           // 生产环境：直接处理（不使用缓存）
           const processed = await processCSS(
@@ -238,7 +236,7 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
             isProduction,
             options,
           );
-          // compiledCSS = processed.content;
+          compiledCSS = processed.content;
         } else {
           // 开发环境：使用缓存（缓存有效期 1 秒）
           const cacheKey = filePath;
