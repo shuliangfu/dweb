@@ -771,15 +771,7 @@ ${
     "preact": "npm:preact@10.28.0",
     "preact/hooks": "npm:preact@10.28.0/hooks",
     "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
-    "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact"${
-    useTailwindV4
-      ? `,
-    "tailwindcss": "npm:tailwindcss@^4.1.10",
-    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@^4.1.10"`
-      : `,
-    "tailwindcss": "npm:tailwindcss@^3.4.0",
-    "autoprefixer": "npm:autoprefixer@^10.4.20",
-    "postcss": "npm:postcss@^8.4.47"`
+    "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact"
   }
   },
   "nodeModulesDir": "auto",
