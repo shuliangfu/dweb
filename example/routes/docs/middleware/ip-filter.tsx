@@ -42,21 +42,55 @@ server.use(ipFilter({
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           配置选项
         </h2>
-        <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700 dark:text-gray-300">
+        
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
+          可选参数
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               whitelist
             </code>{" "}
-            - IP 白名单（CIDR 格式）
+            - IP 白名单数组（允许的 IP 列表），支持单个 IP 或 CIDR 格式（如 '192.168.1.0/24'）
           </li>
-          <li className="text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               blacklist
             </code>{" "}
-            - IP 黑名单
+            - IP 黑名单数组（禁止的 IP 列表），支持单个 IP 或 CIDR 格式
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              whitelistMode
+            </code>{" "}
+            - 是否启用白名单模式（默认 false）。true: 只允许白名单中的 IP；false: 允许所有 IP，除非在黑名单中
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              skip
+            </code>{" "}
+            - 跳过过滤的路径数组（支持 glob 模式）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              message
+            </code>{" "}
+            - 自定义错误消息
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              statusCode
+            </code>{" "}
+            - 自定义错误状态码（默认 403）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              getClientIP
+            </code>{" "}
+            - 获取客户端 IP 的函数（默认使用标准方法，会尝试从 X-Forwarded-For、X-Real-IP、CF-Connecting-IP 等请求头获取）
           </li>
         </ul>
       </section>

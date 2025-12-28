@@ -38,33 +38,108 @@ server.use(security({
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          安全头说明
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+          配置选项
         </h2>
-        <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700 dark:text-gray-300">
+        
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
+          可选参数
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              Content-Security-Policy
+              xssProtection
             </code>{" "}
-            - 内容安全策略
+            - 是否启用 XSS 防护（默认 true）
           </li>
-          <li className="text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              X-Frame-Options
+              csrfProtection
             </code>{" "}
-            - 防止点击劫持
+            - 是否启用 CSRF 防护（默认 true）
           </li>
-          <li className="text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              X-Content-Type-Options
+              csrfCookieName
             </code>{" "}
-            - 防止 MIME 类型嗅探
+            - CSRF Token Cookie 名称（默认 '_csrf'）
           </li>
-          <li className="text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              X-XSS-Protection
+              csrfHeaderName
             </code>{" "}
-            - XSS 保护
+            - CSRF Token 请求头名称（默认 'X-CSRF-Token'）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              csrfFieldName
+            </code>{" "}
+            - CSRF Token 表单字段名称（默认 '_csrf'）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              csrfMethods
+            </code>{" "}
+            - 需要 CSRF 验证的方法（默认 ['POST', 'PUT', 'DELETE', 'PATCH']）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              csrfSkip
+            </code>{" "}
+            - 跳过 CSRF 验证的路径数组（支持 glob 模式）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              contentSecurityPolicy
+            </code>{" "}
+            - 内容安全策略（CSP），可以是字符串或配置对象：
+            <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
+              <li>字符串：直接设置 CSP 头</li>
+              <li>对象：包含 defaultSrc, scriptSrc, styleSrc, imgSrc, connectSrc, fontSrc, objectSrc, mediaSrc, frameSrc, baseUri, formAction, frameAncestors, upgradeInsecureRequests 等配置</li>
+            </ul>
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              hsts
+            </code>{" "}
+            - 是否启用严格传输安全（HSTS），可以是布尔值或配置对象（默认 false，生产环境建议 true）：
+            <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
+              <li>布尔值：启用或禁用</li>
+              <li>对象：包含 maxAge（最大年龄，秒）、includeSubDomains（是否包含子域）、preload（是否预加载）</li>
+            </ul>
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              frameOptions
+            </code>{" "}
+            - X-Frame-Options（默认 'SAMEORIGIN'）：'DENY' | 'SAMEORIGIN' | 'ALLOW-FROM'
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              contentTypeOptions
+            </code>{" "}
+            - X-Content-Type-Options（默认 'nosniff'）：'nosniff' | 'none'
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              xssProtectionHeader
+            </code>{" "}
+            - X-XSS-Protection（默认 '1; mode=block'）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              referrerPolicy
+            </code>{" "}
+            - Referrer-Policy（默认 'no-referrer'）：
+            <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
+              <li>'no-referrer' | 'no-referrer-when-downgrade' | 'origin' | 'origin-when-cross-origin' | 'same-origin' | 'strict-origin' | 'strict-origin-when-cross-origin' | 'unsafe-url'</li>
+            </ul>
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              permissionsPolicy
+            </code>{" "}
+            - Permissions-Policy（功能策略），对象格式，键为功能名，值为允许的来源数组
           </li>
         </ul>
       </section>

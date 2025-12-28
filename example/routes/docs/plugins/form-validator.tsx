@@ -42,15 +42,32 @@ plugins: [
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           配置选项
         </h2>
-        <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700 dark:text-gray-300">
+        
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
+          可选参数
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              rules
+              injectClientScript
             </code>{" "}
-            - 验证规则对象
+            - 是否在客户端注入验证脚本（默认 true）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              defaultConfig
+            </code>{" "}
+            - 默认验证配置对象，包含：
+            <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">fields</code> - 字段验证配置数组，每个字段包含 name, rules, label</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">messages</code> - 全局错误消息模板对象</li>
+            </ul>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+              验证规则类型：'required' | 'email' | 'url' | 'number' | 'min' | 'max' | 'minLength' | 'maxLength' | 'pattern' | 'custom'
+            </p>
           </li>
         </ul>
       </section>

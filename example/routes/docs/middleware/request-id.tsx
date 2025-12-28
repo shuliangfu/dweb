@@ -37,21 +37,43 @@ server.use(requestId({
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           配置选项
         </h2>
-        <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700 dark:text-gray-300">
+        
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
+          可选参数
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              header
+              headerName
             </code>{" "}
-            - 请求 ID 的响应头名称
+            - 请求 ID 响应头名称（默认 'X-Request-Id'）
           </li>
-          <li className="text-gray-700 dark:text-gray-300">
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              exposeHeader
+            </code>{" "}
+            - 是否在响应头中包含请求 ID（默认 true）
+          </li>
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               generator
             </code>{" "}
-            - ID 生成函数
+            - 自定义 ID 生成器函数（如果不提供，使用默认的 UUID v4 生成器）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              skip
+            </code>{" "}
+            - 跳过生成请求 ID 的路径数组（支持 glob 模式）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              useHeader
+            </code>{" "}
+            - 是否从请求头中读取现有的请求 ID（默认 true）。如果请求头中已有请求 ID，则使用它而不是生成新的
           </li>
         </ul>
       </section>

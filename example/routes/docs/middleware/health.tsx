@@ -42,21 +42,49 @@ server.use(health({
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           配置选项
         </h2>
-        <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700 dark:text-gray-300">
+        
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
+          可选参数
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               path
             </code>{" "}
-            - 健康检查端点路径
+            - 健康检查路径（默认 '/health'）
           </li>
-          <li className="text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              checks
+              readyPath
             </code>{" "}
-            - 健康检查函数对象
+            - 就绪检查路径（默认 '/health/ready'）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              livePath
+            </code>{" "}
+            - 存活检查路径（默认 '/health/live'）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              healthCheck
+            </code>{" "}
+            - 自定义健康检查函数，返回 Promise，包含 status（'ok' | 'error'）、message 和 details
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              readyCheck
+            </code>{" "}
+            - 自定义就绪检查函数，返回 Promise，包含 status（'ready' | 'not-ready'）、message 和 details
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              liveCheck
+            </code>{" "}
+            - 自定义存活检查函数，返回 Promise，包含 status（'alive' | 'dead'）、message 和 details
           </li>
         </ul>
       </section>

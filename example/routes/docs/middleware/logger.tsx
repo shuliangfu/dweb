@@ -38,15 +38,32 @@ server.use(logger({
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           配置选项
         </h2>
-        <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700 dark:text-gray-300">
+        
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
+          可选参数
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               format
             </code>{" "}
-            - 日志格式：'combined' | 'common' | 'dev' | 'short' | 'tiny'
+            - 日志格式（默认 'combined'）：
+            <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">'combined'</code> - 完整格式，包含方法、路径、状态码、耗时和 User-Agent</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">'common'</code> - 通用格式，类似 Apache 日志</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">'dev'</code> - 开发格式，带颜色标记</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">'short'</code> - 简短格式</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">'tiny'</code> - 最简格式</li>
+            </ul>
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              skip
+            </code>{" "}
+            - 跳过日志记录的函数，接收请求对象，返回布尔值（默认跳过 Chrome DevTools 的自动请求）
           </li>
         </ul>
       </section>

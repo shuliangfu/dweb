@@ -245,6 +245,18 @@ function getThemeValue(): 'light' | 'dark' | null`;
               true
             </code>）
           </li>
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              themes
+            </code>{" "}
+            - 自定义主题列表数组（字符串数组）
+          </li>
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              injectScript
+            </code>{" "}
+            - 是否在服务端注入主题脚本（默认 true）
+          </li>
         </ul>
       </section>
 

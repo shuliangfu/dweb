@@ -39,21 +39,28 @@ plugins: [
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           配置选项
         </h2>
-        <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700 dark:text-gray-300">
+        
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
+          可选参数
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              type
+              config
             </code>{" "}
-            - 缓存类型：'memory' | 'redis'
-          </li>
-          <li className="text-gray-700 dark:text-gray-300">
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              ttl
-            </code>{" "}
-            - 缓存时间（秒）
+            - 缓存配置对象，包含：
+            <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">store</code> - 存储类型（'memory' | 'redis' | 'file'）</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">redis</code> - Redis 配置（如果使用 Redis），包含 host, port, password, db</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">cacheDir</code> - 文件缓存目录（如果使用文件缓存）</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">defaultTTL</code> - 默认过期时间（秒）</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">maxSize</code> - 最大缓存大小（内存缓存，字节）</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">maxEntries</code> - 最大缓存条目数（内存缓存）</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">keyPrefix</code> - 缓存键前缀</li>
+            </ul>
           </li>
         </ul>
       </section>

@@ -39,27 +39,83 @@ server.use(staticFiles({
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           配置选项
         </h2>
-        <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700 dark:text-gray-300">
+        
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
+          必需参数
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               dir
             </code>{" "}
-            - 静态文件目录
+            - 静态文件根目录
           </li>
-          <li className="text-gray-700 dark:text-gray-300">
+        </ul>
+        
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
+          可选参数
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               prefix
             </code>{" "}
-            - URL 前缀
+            - URL 前缀（如果未配置，默认使用 dir 的名称）
           </li>
-          <li className="text-gray-700 dark:text-gray-300">
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              index
+            </code>{" "}
+            - 索引文件名（字符串或数组，默认 ['index.html']）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              dotfiles
+            </code>{" "}
+            - 点文件处理方式（'allow' | 'deny' | 'ignore'，默认 'ignore'）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              etag
+            </code>{" "}
+            - 是否启用 ETag（默认 true）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              lastModified
+            </code>{" "}
+            - 是否发送 Last-Modified（默认 true）
+          </li>
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               maxAge
             </code>{" "}
-            - 缓存时间（秒）
+            - 缓存时间（秒，默认 0）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              outDir
+            </code>{" "}
+            - 构建输出目录（生产环境使用，如果未提供则自动检测）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              isProduction
+            </code>{" "}
+            - 是否为生产环境（如果未提供则自动检测）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              extendDirs
+            </code>{" "}
+            - 扩展的静态资源目录数组（如上传目录，这些目录不会被打包，始终从项目根目录读取），可以是字符串或对象：
+            <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
+              <li>字符串：目录路径</li>
+              <li>对象：<code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">{'{ dir: string, prefix?: string }'}</code> - 目录路径和 URL 前缀</li>
+            </ul>
           </li>
         </ul>
       </section>

@@ -40,27 +40,80 @@ plugins: [
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           配置选项
         </h2>
-        <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700 dark:text-gray-300">
+        
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
+          必需参数
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              title
+              feed
             </code>{" "}
-            - RSS Feed 标题
+            - RSS Feed 配置对象，包含：
+            <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">title</code> - Feed 标题（必需）</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">description</code> - Feed 描述（必需）</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">siteUrl</code> - 网站 URL（必需）</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">feedUrl</code> - Feed URL（可选）</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">language</code> - 语言代码</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">copyright</code> - 版权信息</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">managingEditor</code> - 管理邮箱</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">webMaster</code> - Web Master 邮箱</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">lastBuildDate</code> - 最后构建日期</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">ttl</code> - 更新频率（分钟）</li>
+              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">image</code> - 图片 URL（Feed 图标）对象，包含 url, title, link, width, height</li>
+            </ul>
           </li>
-          <li className="text-gray-700 dark:text-gray-300">
+        </ul>
+        
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
+          可选参数
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              description
+              items
             </code>{" "}
-            - RSS Feed 描述
+            - RSS 条目列表数组，每个条目包含 title, link, description, pubDate, author, category, tags, content, image, guid, comments, commentsUrl
           </li>
-          <li className="text-gray-700 dark:text-gray-300">
+          <li>
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              feedUrl
+              autoScan
             </code>{" "}
-            - RSS Feed URL
+            - 是否自动扫描路由生成条目（默认 false）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              routesDir
+            </code>{" "}
+            - 路由目录（用于自动扫描）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              outputPath
+            </code>{" "}
+            - 输出路径（相对于构建输出目录）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              filename
+            </code>{" "}
+            - 输出文件名
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              generateByCategory
+            </code>{" "}
+            - 是否生成多个 Feed（按分类，默认 false）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              categories
+            </code>{" "}
+            - 分类配置数组，每个分类包含 name 和 filter 函数
           </li>
         </ul>
       </section>
