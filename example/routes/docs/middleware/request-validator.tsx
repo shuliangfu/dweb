@@ -24,8 +24,8 @@ server.use(requestValidator({
 }));`;
 
   return (
-    <article className="prose prose-lg max-w-none">
-      <h1 className="text-4xl font-bold text-gray-900 mb-8">
+    <article className="prose prose-lg max-w-none dark:prose-invert">
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
         requestValidator - 请求验证
       </h1>
       <p className="text-gray-700 leading-relaxed mb-8">
@@ -33,35 +33,35 @@ server.use(requestValidator({
       </p>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           基本使用
         </h2>
         <CodeBlock code={requestValidatorCode} language="typescript" />
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           验证规则
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">type</code>{" "}
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">type</code>{" "}
             - 数据类型：'string' | 'number' | 'boolean' | 'array' | 'object'
           </li>
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">required</code>{" "}
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">required</code>{" "}
             - 是否必填
           </li>
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">min</code>{" "}
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">min</code>{" "}
             - 最小值或最小长度
           </li>
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">max</code>{" "}
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">max</code>{" "}
             - 最大值或最大长度
           </li>
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">pattern</code>{" "}
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">pattern</code>{" "}
             - 正则表达式模式
           </li>
         </ul>

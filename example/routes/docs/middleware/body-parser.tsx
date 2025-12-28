@@ -23,8 +23,8 @@ server.use(bodyParser({
 }));`;
 
   return (
-    <article className="prose prose-lg max-w-none">
-      <h1 className="text-4xl font-bold text-gray-900 mb-8">
+    <article className="prose prose-lg max-w-none dark:prose-invert">
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
         bodyParser - 请求体解析
       </h1>
       <p className="text-gray-700 leading-relaxed mb-8">
@@ -33,32 +33,32 @@ server.use(bodyParser({
       </p>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           基本使用
         </h2>
         <CodeBlock code={bodyParserCode} language="typescript" />
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           配置选项
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">json</code>{" "}
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">json</code>{" "}
             - JSON 解析配置
           </li>
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">urlencoded</code>
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">urlencoded</code>
             {" "}
             - URL-encoded 解析配置
           </li>
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">text</code>{" "}
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">text</code>{" "}
             - 文本解析配置
           </li>
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">raw</code>{" "}
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">raw</code>{" "}
             - 原始数据解析配置
           </li>
         </ul>

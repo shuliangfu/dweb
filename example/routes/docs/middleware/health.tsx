@@ -26,8 +26,8 @@ server.use(health({
 }));`;
 
   return (
-    <article className="prose prose-lg max-w-none">
-      <h1 className="text-4xl font-bold text-gray-900 mb-8">
+    <article className="prose prose-lg max-w-none dark:prose-invert">
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
         health - 健康检查
       </h1>
       <p className="text-gray-700 leading-relaxed mb-8">
@@ -35,23 +35,23 @@ server.use(health({
       </p>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           基本使用
         </h2>
         <CodeBlock code={healthCode} language="typescript" />
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           配置选项
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">path</code>{" "}
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">path</code>{" "}
             - 健康检查端点路径
           </li>
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">checks</code>{" "}
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">checks</code>{" "}
             - 健康检查函数对象
           </li>
         </ul>

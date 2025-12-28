@@ -23,40 +23,40 @@ server.use(cors({
 }));`;
 
   return (
-    <article className="prose prose-lg max-w-none">
-      <h1 className="text-4xl font-bold text-gray-900 mb-8">cors - 跨域支持</h1>
+    <article className="prose prose-lg max-w-none dark:prose-invert">
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">cors - 跨域支持</h1>
       <p className="text-gray-700 leading-relaxed mb-8">
         cors 中间件用于处理跨域资源共享（CORS）请求。
       </p>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           基本使用
         </h2>
         <CodeBlock code={corsCode} language="typescript" />
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           配置选项
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">origin</code>{" "}
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">origin</code>{" "}
             - 允许的源，可以是字符串、数组或函数
           </li>
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">methods</code>{" "}
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">methods</code>{" "}
             - 允许的 HTTP 方法
           </li>
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
               allowedHeaders
             </code>{" "}
             - 允许的请求头
           </li>
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">credentials</code>
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">credentials</code>
             {" "}
             - 是否允许发送凭证
           </li>

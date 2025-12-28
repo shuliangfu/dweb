@@ -31,44 +31,44 @@ plugins: [
 ],`;
 
   return (
-    <article className="prose prose-lg max-w-none">
-      <h1 className="text-4xl font-bold text-gray-900 mb-8">seo - SEO 优化</h1>
+    <article className="prose prose-lg max-w-none dark:prose-invert">
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">seo - SEO 优化</h1>
       <p className="text-gray-700 leading-relaxed mb-8">
         seo 插件自动生成 SEO 元数据，包括 Open Graph 和 Twitter Card。
       </p>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           基本使用
         </h2>
         <CodeBlock code={seoCode} language="typescript" />
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
+        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           配置选项
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">title</code>{" "}
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">title</code>{" "}
             - 页面标题
           </li>
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">description</code>
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">description</code>
             {" "}
             - 页面描述
           </li>
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">keywords</code>{" "}
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">keywords</code>{" "}
             - 关键词数组
           </li>
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">openGraph</code>
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">openGraph</code>
             {" "}
             - Open Graph 配置
           </li>
-          <li className="text-gray-700">
-            <code className="bg-gray-100 px-2 py-1 rounded">twitter</code>{" "}
+          <li className="text-gray-700 dark:text-gray-300">
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">twitter</code>{" "}
             - Twitter Card 配置
           </li>
         </ul>
