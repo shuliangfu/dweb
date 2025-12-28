@@ -37,7 +37,7 @@ COPY --from=builder /app/example/dweb.config.ts ./example/
 COPY --from=builder /app/example/healthcheck.ts ./example/
 # 复制 node_modules（避免运行时重新下载依赖）
 COPY --from=builder /app/example/node_modules ./example/
-COPY --from=builder /app/example/i18n-global.d.ts ./example/
+COPY --from=builder /app/example/global.d.ts ./example/
 
 # 切换到 example 目录（deno.json 和 dweb.config.ts 所在目录）
 WORKDIR /app/example
