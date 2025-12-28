@@ -2040,11 +2040,13 @@ export class RouteHandler {
       // 只在需要客户端渲染时注入客户端脚本
       // 纯 SSR 模式（ssr + !shouldHydrate）不需要客户端脚本，因为页面是静态的
       // CSR、Hybrid 和 SSR + Hydration 模式需要客户端脚本
+      // 如果存在 HMR 脚本，即使 SSR 模式也需要注入 pageData（供 HMR 使用）
       let clientScript: string | null = null;
       if (
         renderMode === "csr" ||
         renderMode === "hybrid" ||
-        (renderMode === "ssr" && shouldHydrate)
+        (renderMode === "ssr" && shouldHydrate) ||
+        hmrClientScript // 如果存在 HMR 脚本，也需要注入 pageData
       ) {
         clientScript = await createClientScript(
           modulePath,
