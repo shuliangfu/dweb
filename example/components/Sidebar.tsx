@@ -3,7 +3,7 @@
  * 用于文档网站的导航菜单，支持二级菜单
  */
 
-import { useState, useEffect } from 'preact/hooks';
+import { useEffect, useState } from "preact/hooks";
 
 interface NavItem {
   title: string;
@@ -19,98 +19,128 @@ interface SidebarProps {
  * 文档导航结构
  */
 const navItems: NavItem[] = [
-	{
-		title: '快速开始',
-		path: '/docs',
-	},
   {
-    title: '核心模块',
+    title: "快速开始",
+    path: "/docs",
+  },
+  {
+    title: "核心模块",
     children: [
-      { title: '应用核心 (Application)', path: '/docs/core/application' },
-      { title: '应用上下文 (ApplicationContext)', path: '/docs/core/application-context' },
-      { title: '配置管理器 (ConfigManager)', path: '/docs/core/config-manager' },
-      { title: '服务容器 (ServiceContainer)', path: '/docs/core/service-container' },
-      { title: '生命周期管理器 (LifecycleManager)', path: '/docs/core/lifecycle-manager' },
-      { title: '服务接口 (IService)', path: '/docs/core/iservice' },
-      { title: '基础管理器 (BaseManager)', path: '/docs/core/base-manager' },
-      { title: '服务器 (Server)', path: '/docs/core/server' },
-      { title: '路由系统 (Router)', path: '/docs/core/router' },
-      { title: '配置管理 (Config)', path: '/docs/core/config' },
-      { title: '路由处理器 (RouteHandler)', path: '/docs/core/route-handler' },
-      { title: '中间件系统 (Middleware)', path: '/docs/core/middleware' },
-      { title: '插件系统 (Plugin)', path: '/docs/core/plugin' },
-      { title: 'API 路由 (API Route)', path: '/docs/core/api' },
+      { title: "应用核心 (Application)", path: "/docs/core/application" },
+      {
+        title: "应用上下文 (ApplicationContext)",
+        path: "/docs/core/application-context",
+      },
+      {
+        title: "配置管理器 (ConfigManager)",
+        path: "/docs/core/config-manager",
+      },
+      {
+        title: "服务容器 (ServiceContainer)",
+        path: "/docs/core/service-container",
+      },
+      {
+        title: "生命周期管理器 (LifecycleManager)",
+        path: "/docs/core/lifecycle-manager",
+      },
+      { title: "服务接口 (IService)", path: "/docs/core/iservice" },
+      { title: "基础管理器 (BaseManager)", path: "/docs/core/base-manager" },
+      { title: "服务器 (Server)", path: "/docs/core/server" },
+      { title: "路由系统 (Router)", path: "/docs/core/router" },
+      { title: "配置管理 (Config)", path: "/docs/core/config" },
+      { title: "路由处理器 (RouteHandler)", path: "/docs/core/route-handler" },
+      { title: "中间件系统 (Middleware)", path: "/docs/core/middleware" },
+      { title: "插件系统 (Plugin)", path: "/docs/core/plugin" },
+      { title: "API 路由 (API Route)", path: "/docs/core/api" },
     ],
   },
   {
-    title: '功能模块',
+    title: "功能模块",
     children: [
-      { title: '项目创建 (Create)', path: '/docs/features/create' },
-      { title: '开发服务器 (Dev)', path: '/docs/features/dev' },
-      { title: '热模块替换 (HMR)', path: '/docs/features/hmr' },
-      { title: '环境变量 (Env)', path: '/docs/features/env' },
-      { title: '构建 (Build)', path: '/docs/features/build' },
-      { title: '生产服务器 (Prod)', path: '/docs/features/prod' },
-      { title: '性能监控 (Monitoring)', path: '/docs/features/monitoring' },
-      { title: '优雅关闭 (Shutdown)', path: '/docs/features/shutdown' },
-      { title: '数据库 (Database)', path: '/docs/features/database' },
-      { title: 'GraphQL', path: '/docs/features/graphql' },
-      { title: 'WebSocket', path: '/docs/features/websocket' },
-      { title: 'Session', path: '/docs/features/session' },
-      { title: 'Cookie', path: '/docs/features/cookie' },
-      { title: 'Logger', path: '/docs/features/logger' },
+      { title: "项目创建 (Create)", path: "/docs/features/create" },
+      { title: "开发服务器 (Dev)", path: "/docs/features/dev" },
+      { title: "热模块替换 (HMR)", path: "/docs/features/hmr" },
+      { title: "环境变量 (Env)", path: "/docs/features/env" },
+      { title: "构建 (Build)", path: "/docs/features/build" },
+      { title: "生产服务器 (Prod)", path: "/docs/features/prod" },
+      { title: "性能监控 (Monitoring)", path: "/docs/features/monitoring" },
+      { title: "优雅关闭 (Shutdown)", path: "/docs/features/shutdown" },
+      { title: "数据库 (Database)", path: "/docs/features/database" },
+      { title: "GraphQL", path: "/docs/features/graphql" },
+      { title: "WebSocket", path: "/docs/features/websocket" },
+      { title: "Session", path: "/docs/features/session" },
+      { title: "Cookie", path: "/docs/features/cookie" },
+      { title: "Logger", path: "/docs/features/logger" },
     ],
   },
   {
-    title: '中间件',
+    title: "中间件",
     children: [
-      { title: '日志记录 (logger)', path: '/docs/middleware/logger' },
-      { title: '跨域支持 (cors)', path: '/docs/middleware/cors' },
-      { title: '请求体解析 (bodyParser)', path: '/docs/middleware/body-parser' },
-      { title: '静态文件 (staticFiles)', path: '/docs/middleware/static-files' },
-      { title: '安全头 (security)', path: '/docs/middleware/security' },
-      { title: '速率限制 (rateLimit)', path: '/docs/middleware/rate-limit' },
-      { title: 'JWT 认证 (auth)', path: '/docs/middleware/auth' },
-      { title: '健康检查 (health)', path: '/docs/middleware/health' },
-      { title: '请求 ID (requestId)', path: '/docs/middleware/request-id' },
-      { title: '请求验证 (requestValidator)', path: '/docs/middleware/request-validator' },
-      { title: 'IP 过滤 (ipFilter)', path: '/docs/middleware/ip-filter' },
-      { title: '错误处理 (errorHandler)', path: '/docs/middleware/error-handler' },
+      { title: "日志记录 (logger)", path: "/docs/middleware/logger" },
+      { title: "跨域支持 (cors)", path: "/docs/middleware/cors" },
+      {
+        title: "请求体解析 (bodyParser)",
+        path: "/docs/middleware/body-parser",
+      },
+      {
+        title: "静态文件 (staticFiles)",
+        path: "/docs/middleware/static-files",
+      },
+      { title: "安全头 (security)", path: "/docs/middleware/security" },
+      { title: "速率限制 (rateLimit)", path: "/docs/middleware/rate-limit" },
+      { title: "JWT 认证 (auth)", path: "/docs/middleware/auth" },
+      { title: "健康检查 (health)", path: "/docs/middleware/health" },
+      { title: "请求 ID (requestId)", path: "/docs/middleware/request-id" },
+      {
+        title: "请求验证 (requestValidator)",
+        path: "/docs/middleware/request-validator",
+      },
+      { title: "IP 过滤 (ipFilter)", path: "/docs/middleware/ip-filter" },
+      {
+        title: "错误处理 (errorHandler)",
+        path: "/docs/middleware/error-handler",
+      },
     ],
   },
   {
-    title: '插件',
+    title: "插件",
     children: [
-      { title: 'Tailwind CSS (tailwind)', path: '/docs/plugins/tailwind' },
-      { title: '状态管理 (store)', path: '/docs/plugins/store' },
-      { title: 'SEO 优化 (seo)', path: '/docs/plugins/seo' },
-      { title: '网站地图 (sitemap)', path: '/docs/plugins/sitemap' },
-      { title: '渐进式 Web 应用 (pwa)', path: '/docs/plugins/pwa' },
-      { title: '缓存 (cache)', path: '/docs/plugins/cache' },
-      { title: '邮件发送 (email)', path: '/docs/plugins/email' },
-      { title: '文件上传 (fileUpload)', path: '/docs/plugins/file-upload' },
-      { title: '表单验证 (formValidator)', path: '/docs/plugins/form-validator' },
-      { title: '国际化 (i18n)', path: '/docs/plugins/i18n' },
-      { title: '图片优化 (imageOptimizer)', path: '/docs/plugins/image-optimizer' },
-      { title: '性能监控 (performance)', path: '/docs/plugins/performance' },
-      { title: '主题切换 (theme)', path: '/docs/plugins/theme' },
-      { title: 'RSS 订阅 (rss)', path: '/docs/plugins/rss' },
+      { title: "Tailwind CSS (tailwind)", path: "/docs/plugins/tailwind" },
+      { title: "状态管理 (store)", path: "/docs/plugins/store" },
+      { title: "SEO 优化 (seo)", path: "/docs/plugins/seo" },
+      { title: "网站地图 (sitemap)", path: "/docs/plugins/sitemap" },
+      { title: "渐进式 Web 应用 (pwa)", path: "/docs/plugins/pwa" },
+      { title: "缓存 (cache)", path: "/docs/plugins/cache" },
+      { title: "邮件发送 (email)", path: "/docs/plugins/email" },
+      { title: "文件上传 (fileUpload)", path: "/docs/plugins/file-upload" },
+      {
+        title: "表单验证 (formValidator)",
+        path: "/docs/plugins/form-validator",
+      },
+      { title: "国际化 (i18n)", path: "/docs/plugins/i18n" },
+      {
+        title: "图片优化 (imageOptimizer)",
+        path: "/docs/plugins/image-optimizer",
+      },
+      { title: "性能监控 (performance)", path: "/docs/plugins/performance" },
+      { title: "主题切换 (theme)", path: "/docs/plugins/theme" },
+      { title: "RSS 订阅 (rss)", path: "/docs/plugins/rss" },
     ],
   },
   {
-    title: '扩展模块',
+    title: "扩展模块",
     children: [
-      { title: '扩展系统', path: '/docs/extensions' },
-      { title: '控制台工具', path: '/docs/console' },
-      { title: '渲染适配器', path: '/docs/render' },
+      { title: "扩展系统", path: "/docs/extensions" },
+      { title: "控制台工具", path: "/docs/console" },
+      { title: "渲染适配器", path: "/docs/render" },
     ],
   },
   {
-    title: '配置与部署',
+    title: "配置与部署",
     children: [
-      { title: '配置文档', path: '/docs/deployment/configuration' },
-      { title: 'Docker 部署', path: '/docs/deployment/docker' },
-      { title: '开发指南', path: '/docs/deployment/development' },
+      { title: "配置文档", path: "/docs/deployment/configuration" },
+      { title: "Docker 部署", path: "/docs/deployment/docker" },
+      { title: "开发指南", path: "/docs/deployment/development" },
     ],
   },
 ];
@@ -124,11 +154,11 @@ const navItems: NavItem[] = [
 function isItemActive(item: NavItem, path: string): boolean {
   // 如果菜单项有 path，检查是否匹配
   if (item.path) {
-    if (item.path === '/docs') {
-      return path === '/docs';
+    if (item.path === "/docs") {
+      return path === "/docs";
     }
     // 检查是否匹配路径或锚点
-    if (path === item.path || path.startsWith(item.path + '#')) {
+    if (path === item.path || path.startsWith(item.path + "#")) {
       return true;
     }
   }
@@ -137,12 +167,12 @@ function isItemActive(item: NavItem, path: string): boolean {
     return item.children.some((child) => {
       // 子项必须有 path
       if (!child.path) return false;
-      if (child.path.includes('#')) {
+      if (child.path.includes("#")) {
         // 锚点链接，检查基础路径
-        const basePath = child.path.split('#')[0];
-        return path === basePath || path.startsWith(basePath + '#');
+        const basePath = child.path.split("#")[0];
+        return path === basePath || path.startsWith(basePath + "#");
       }
-      return path === child.path || path.startsWith(child.path + '/');
+      return path === child.path || path.startsWith(child.path + "/");
     });
   }
   return false;
@@ -153,7 +183,9 @@ function isItemActive(item: NavItem, path: string): boolean {
  * @param props 组件属性
  * @returns JSX 元素
  */
-export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarProps) {
+export default function Sidebar(
+  { currentPath: initialPath = "/docs" }: SidebarProps,
+) {
   // 在客户端使用 state 跟踪当前路径，支持客户端路由导航
   // 服务端渲染时使用传入的 routePath，客户端初始化时也优先使用传入的值
   const [currentPath, setCurrentPath] = useState<string>(() => {
@@ -162,15 +194,15 @@ export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarP
       return initialPath;
     }
     // 客户端回退：使用 window.location.pathname
-    if (typeof globalThis !== 'undefined' && globalThis.window) {
+    if (typeof globalThis !== "undefined" && globalThis.window) {
       return globalThis.window.location.pathname;
     }
-    return '/docs';
+    return "/docs";
   });
 
   // 监听 URL 变化（客户端路由导航和浏览器前进/后退）
   useEffect(() => {
-    if (typeof globalThis === 'undefined' || !globalThis.window) {
+    if (typeof globalThis === "undefined" || !globalThis.window) {
       return;
     }
 
@@ -184,17 +216,17 @@ export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarP
     updatePath();
 
     // 监听 popstate 事件（浏览器前进/后退）
-    globalThis.window.addEventListener('popstate', updatePath);
+    globalThis.window.addEventListener("popstate", updatePath);
 
     // 监听自定义路由事件（客户端路由导航时触发）
     const handleRouteChange = () => {
       updatePath();
     };
-    globalThis.window.addEventListener('routechange', handleRouteChange);
+    globalThis.window.addEventListener("routechange", handleRouteChange);
 
     return () => {
-      globalThis.window.removeEventListener('popstate', updatePath);
-      globalThis.window.removeEventListener('routechange', handleRouteChange);
+      globalThis.window.removeEventListener("popstate", updatePath);
+      globalThis.window.removeEventListener("routechange", handleRouteChange);
     };
   }, []);
 
@@ -205,7 +237,7 @@ export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarP
     const expanded = new Set<string>();
     navItems.forEach((item) => {
       if (item.children) {
-          expanded.add(item.title);
+        expanded.add(item.title);
       }
     });
     return expanded;
@@ -258,16 +290,16 @@ export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarP
    * @returns 是否激活
    */
   const isChildActive = (childPath: string, path: string): boolean => {
-    if (childPath.includes('#')) {
+    if (childPath.includes("#")) {
       // 锚点链接
-      const basePath = childPath.split('#')[0];
+      const basePath = childPath.split("#")[0];
       if (path === basePath) {
         // 如果当前路径匹配基础路径，检查是否有对应的锚点
         return true;
       }
-      return path.startsWith(basePath + '#');
+      return path.startsWith(basePath + "#");
     }
-    return path === childPath || path.startsWith(childPath + '/');
+    return path === childPath || path.startsWith(childPath + "/");
   };
 
   /**
@@ -288,10 +320,10 @@ export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarP
     });
   };
 
-
   return (
     <>
-      <style>{`
+      <style>
+        {`
         /* 美化滚动条 */
         aside::-webkit-scrollbar {
           width: 6px;
@@ -322,66 +354,73 @@ export default function Sidebar({ currentPath: initialPath = '/docs' }: SidebarP
         .dark aside::-webkit-scrollbar-thumb:hover {
           background: rgba(156, 163, 175, 0.6);
         }
-      `}</style>
-      <aside className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen sticky top-0 overflow-y-auto sidebar-scrollbar">
+      `}
+      </style>
+      <aside className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen sticky top-0 overflow-y-auto sidebar-scrollbar mb-20">
         <div className="pt-4 px-4 pb-8">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">文档目录</h2>
-        <nav className="space-y-1">
-          {navItems.map((item) => {
-            const isActive = isItemActive(item, currentPath);
-            const isExpanded = finalExpandedItems.has(item.title);
-            const hasChildren = item.children && item.children.length > 0;
-            // 使用 title 作为 key，因为不是所有菜单项都有 path
-            const itemKey = item.path || item.title;
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 mt-6 ml-2">
+            文档目录
+          </h2>
+          <nav className="space-y-1">
+            {navItems.map((item) => {
+              const isActive = isItemActive(item, currentPath);
+              const isExpanded = finalExpandedItems.has(item.title);
+              const hasChildren = item.children && item.children.length > 0;
+              // 使用 title 作为 key，因为不是所有菜单项都有 path
+              const itemKey = item.path || item.title;
 
-            return (
-              <div key={itemKey}>
-                {/* 快速开始菜单保留链接，其他一级菜单作为可点击的分组标题 */}
-                {!hasChildren && item.path ? (
-                  <a
-                    href={item.path}
-                    className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    {item.title}
-                  </a>
-                ) : (
-                  <div className="px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white">
-                    {item.title}
-                  </div>
-                )}
-                {hasChildren && (
-                  <div className="ml-4 mt-1 space-y-1">
-                    {item.children!.map((child) => {
-                      // 子项必须有 path
-                      if (!child.path) return null;
-                      const childIsActive = isChildActive(child.path, currentPath);
-                      return (
-                        <a
-                          key={child.path}
-                          href={child.path}
-                          className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                            childIsActive
-                              ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium'
-                              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                          }`}
-                        >
-                          {child.title}
-                        </a>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </nav>
-      </div>
-    </aside>
+              return (
+                <div key={itemKey}>
+                  {/* 快速开始菜单保留链接，其他一级菜单作为可点击的分组标题 */}
+                  {!hasChildren && item.path
+                    ? (
+                      <a
+                        href={item.path}
+                        className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
+                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                      >
+                        {item.title}
+                      </a>
+                    )
+                    : (
+                      <div className="px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white">
+                        {item.title}
+                      </div>
+                    )}
+                  {hasChildren && (
+                    <div className="ml-4 mt-1 space-y-1">
+                      {item.children!.map((child) => {
+                        // 子项必须有 path
+                        if (!child.path) return null;
+                        const childIsActive = isChildActive(
+                          child.path,
+                          currentPath,
+                        );
+                        return (
+                          <a
+                            key={child.path}
+                            href={child.path}
+                            className={`block px-3 py-2 rounded-md text-sm transition-colors ${
+                              childIsActive
+                                ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium"
+                                : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            }`}
+                          >
+                            {child.title}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </nav>
+        </div>
+      </aside>
     </>
   );
 }
-
