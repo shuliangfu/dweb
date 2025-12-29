@@ -132,10 +132,9 @@ export async function createImportMapScript(
     // 默认的 import map（作为后备）
     const defaultImports: Record<string, string> = {
       "preact": "https://esm.sh/preact@10.28.0",
-      "preact/hooks": "https://esm.sh/preact@10.28.0/hooks?external=preact",
-      "preact/jsx-runtime":
-        "https://esm.sh/preact@10.28.0/jsx-runtime?external=preact",
-      "preact/compat": "https://esm.sh/preact@10.28.0/compat?external=preact",
+      "preact/hooks": "https://esm.sh/preact@10.28.0/hooks",
+      "preact/compat": "https://esm.sh/preact@10.28.0/compat",
+      "preact/jsx-runtime": "https://esm.sh/preact@10.28.0/jsx-runtime",
       "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact",
     };
 
