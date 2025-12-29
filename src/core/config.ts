@@ -325,5 +325,8 @@ export function mergeConfig(
     throw new Error("应用配置必须包含 routes");
   }
 
+  // 删除 apps 字段
+  delete merged.apps;
+
   return merged;
 }
