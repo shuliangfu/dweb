@@ -132,11 +132,22 @@ export async function loadConfig(
         if (!isAppLike) {
           const mainConfig = mainAppOrConfig as AppConfig;
           // 合并 main.ts 配置到 finalConfig
+          // 注意：这里 finalConfig 作为 baseConfig，mainConfig 作为 appConfig
+          // 所以 main.ts 的配置会追加到 finalConfig 的配置后面
           finalConfig = mergeConfig(finalConfig, mainConfig);
+          console.debug(
+            `[Config] 合并 main.ts 配置: plugins=${
+              mainConfig.plugins?.length || 0
+            }, middleware=${mainConfig.middleware?.length || 0}`,
+          );
         }
       }
-    } catch (_e) {
-      // 忽略 main.ts 加载错误
+    } catch (error) {
+      // 记录 main.ts 加载错误，但不抛出异常（main.ts 是可选的）
+      console.warn(
+        "[Config] 加载 main.ts 失败:",
+        error instanceof Error ? error.message : String(error),
+      );
     }
 
     // 验证合并后的配置
@@ -281,24 +292,27 @@ export function mergeConfig(
   appConfig: AppConfig,
 ): AppConfig {
   // 使用 deepMerge 进行基础合并
+  // deepMerge 会递归合并所有嵌套对象（如 cookie、session、build、static、dev、render、prefetch、websocket、graphql、logging、cache、security、database 等）
+  // 对于基本类型（如 name、basePath、isProduction），会直接覆盖
+  // 对于数组类型（如 middleware、plugins），deepMerge 会直接覆盖，所以我们需要特殊处理
   const merged = deepMerge(
     baseConfig as Record<string, unknown>,
     appConfig as Record<string, unknown>,
   ) as AppConfig;
 
   // 特殊处理：数组配置（中间件和插件）需要拼接而不是覆盖
-  if (baseConfig.middleware && appConfig.middleware) {
-    merged.middleware = [
-      ...(baseConfig.middleware || []),
-      ...(appConfig.middleware || []),
-    ];
+  // 注意：deepMerge 会直接覆盖数组，所以我们需要在这里重新合并数组
+  // 这样可以确保 dweb.config.ts 和 main.ts 中的插件/中间件都能被保留
+  const baseMiddleware = baseConfig.middleware || [];
+  const appMiddleware = appConfig.middleware || [];
+  if (baseMiddleware.length > 0 || appMiddleware.length > 0) {
+    merged.middleware = [...baseMiddleware, ...appMiddleware];
   }
 
-  if (baseConfig.plugins && appConfig.plugins) {
-    merged.plugins = [
-      ...(baseConfig.plugins || []),
-      ...(appConfig.plugins || []),
-    ];
+  const basePlugins = baseConfig.plugins || [];
+  const appPlugins = appConfig.plugins || [];
+  if (basePlugins.length > 0 || appPlugins.length > 0) {
+    merged.plugins = [...basePlugins, ...appPlugins];
   }
 
   // 特殊处理：路由配置规范化
