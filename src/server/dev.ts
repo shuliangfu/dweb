@@ -8,6 +8,7 @@
 
 import type { AppConfig } from "../common/types/index.ts";
 import { Application } from "../core/application.ts";
+import { ConfigManager } from "../core/config-manager.ts";
 
 /**
  * 启动开发服务器
@@ -42,7 +43,7 @@ export async function startDevServer(config: AppConfig): Promise<void> {
   const app = new Application(undefined, config.name);
 
   // 加载配置（先加载默认配置，然后合并传入的配置）
-  const configManager = app.getService("configManager") as any;
+  const configManager = app.getService<ConfigManager>("configManager") as any;
   try {
     await configManager.load();
   } catch {

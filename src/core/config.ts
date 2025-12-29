@@ -271,8 +271,13 @@ export async function loadConfig(
     // 尝试加载并合并 main.ts 中的配置（如果有）
     // 优先级：main.ts > appConfig > baseConfig
     try {
+      // 注意：在单应用模式下，appName 应该是 undefined（在项目根目录查找 main.ts）
+      // 在多应用模式下，appName 应该是应用目录名（如 'backend'，在 backend/main.ts 查找）
+      // 这里 isMultiApp 表示是否为多应用模式，如果是多应用模式，使用 finalConfig.name 作为应用目录名
+      // 如果是单应用模式，appName 应该是 undefined
+      const mainConfigAppName = isMultiApp ? appName : undefined;
       const mainConfig = await loadMainConfig(
-        finalConfig.name,
+        mainConfigAppName,
         finalConfig.build?.outDir,
       );
 

@@ -790,9 +790,6 @@ export class Application extends EventEmitter {
     if (config.plugins) {
       this.pluginManager.registerMany(config.plugins);
     }
-
-    // 注意：main.ts 的配置已经在 loadConfig 阶段被合并到 config 中了
-    // 这里不需要再次加载，避免重复注册中间件和插件
   }
 
   /**
