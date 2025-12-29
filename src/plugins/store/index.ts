@@ -229,7 +229,14 @@ if (typeof globalThis !== "undefined") {
 
     return minifiedCode;
   } catch (error) {
-    console.error("[Store Plugin] 编译客户端脚本失败222:", error);
+    console.error("[Store Plugin] 编译客户端脚本失败:", error);
+    if (error instanceof Error) {
+      console.error("[Store Plugin] 错误详情:", {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      });
+    }
     // 如果编译失败，返回空字符串
     return "";
   }

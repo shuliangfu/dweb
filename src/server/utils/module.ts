@@ -1352,28 +1352,46 @@ export async function compileWithEsbuild(
   fileContent: string,
   fullPath: string,
 ): Promise<string> {
-  // esbuild 可能导出为 default 或命名导出
-  const esbuildTransform = esbuild.transform ||
-    (esbuild as any).default?.transform;
-  if (!esbuildTransform || typeof esbuildTransform !== "function") {
-    throw new Error("esbuild.transform 方法不存在");
+  try {
+    // esbuild 可能导出为 default 或命名导出
+    const esbuildTransform = esbuild.transform ||
+      (esbuild as any).default?.transform;
+    if (!esbuildTransform || typeof esbuildTransform !== "function") {
+      const errorMsg =
+        `esbuild.transform 方法不存在。esbuild 对象: ${typeof esbuild}, 可用方法: ${
+          Object.keys(esbuild).join(", ")
+        }`;
+      console.error("[compileWithEsbuild]", errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    const transformPromise = esbuildTransform(fileContent, {
+      loader: fullPath.endsWith(".tsx") ? "tsx" : "ts",
+      jsx: "automatic",
+      jsxImportSource: "preact",
+      format: "esm",
+      target: "esnext",
+      sourcefile: fullPath,
+    });
+
+    const result = await transformPromise;
+    if (!result || !result.code) {
+      const errorMsg = `esbuild 编译结果为空。结果: ${JSON.stringify(result)}`;
+      console.error("[compileWithEsbuild]", errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    return result.code;
+  } catch (error) {
+    console.error(
+      "[compileWithEsbuild] 编译失败:",
+      error instanceof Error ? error.message : String(error),
+    );
+    if (error instanceof Error && error.stack) {
+      console.error("[compileWithEsbuild] 错误堆栈:", error.stack);
+    }
+    throw error;
   }
-
-  const transformPromise = esbuildTransform(fileContent, {
-    loader: fullPath.endsWith(".tsx") ? "tsx" : "ts",
-    jsx: "automatic",
-    jsxImportSource: "preact",
-    format: "esm",
-    target: "esnext",
-    sourcefile: fullPath,
-  });
-
-  const result = await transformPromise;
-  if (!result || !result.code) {
-    throw new Error("esbuild 编译结果为空");
-  }
-
-  return result.code;
 }
 
 /**

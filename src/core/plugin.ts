@@ -148,9 +148,33 @@ export class PluginManager extends BaseManager implements IService {
    * @param res 响应对象
    */
   async executeOnResponse(req: Request, res: Response): Promise<void> {
+    // 调试：记录插件数量和响应钩子数量
+    const pluginsWithOnResponse = this.plugins.filter((p) => p.onResponse);
+    if (pluginsWithOnResponse.length > 0) {
+      console.debug(
+        `[Plugin Manager] 执行 ${pluginsWithOnResponse.length} 个插件的 onResponse 钩子`,
+      );
+    }
+
     for (const plugin of this.plugins) {
       if (plugin.onResponse) {
-        await plugin.onResponse(req, res);
+        try {
+          console.debug(
+            `[Plugin Manager] 执行插件 "${plugin.name}" 的 onResponse 钩子`,
+          );
+          await plugin.onResponse(req, res);
+          console.debug(
+            `[Plugin Manager] 插件 "${plugin.name}" 的 onResponse 钩子执行完成`,
+          );
+        } catch (error) {
+          console.error(
+            `[Plugin Manager] 插件 "${plugin.name}" 的 onResponse 钩子执行失败:`,
+            error instanceof Error ? error.message : String(error),
+          );
+          if (error instanceof Error && error.stack) {
+            console.error(`[Plugin Manager] 错误堆栈:`, error.stack);
+          }
+        }
       }
     }
   }

@@ -787,6 +787,9 @@ export class Application extends EventEmitter {
 
     // 添加配置的插件
     if (config.plugins) {
+      console.debug(
+        `[Application] 注册 ${config.plugins.length} 个配置插件`,
+      );
       this.pluginManager.registerMany(config.plugins);
     }
 
@@ -818,6 +821,9 @@ export class Application extends EventEmitter {
           // 加载插件
           const mainPlugins = getPluginsFromApp(mainApp);
           if (mainPlugins.length > 0) {
+            console.debug(
+              `[Application] 从 main.ts 加载 ${mainPlugins.length} 个插件`,
+            );
             this.pluginManager.registerMany(mainPlugins);
           }
         }
