@@ -62,32 +62,11 @@ export async function findMainFile(
   if (appName) {
     possiblePaths.push(
       // src 下的多应用结构
-      `src/${appName}/main.ts`,
-      `src/${appName}/main.js`,
+      `main.ts`,
       // 兼容根目录多应用结构
       `${appName}/main.ts`,
-      `${appName}/main.js`,
     );
   }
-
-  // 然后查找根目录和 example 目录
-  possiblePaths.push(
-    // 优先 src 目录
-    "src/main.ts",
-    "src/main.js",
-    // 兼容根目录
-    "main.ts",
-    "main.js",
-    // 示例项目两种结构
-    "src/example/main.ts",
-    "src/example/main.js",
-    "example/main.ts",
-    "example/main.js",
-  );
-
-  console.debug(
-    `[findMainFile] 尝试查找路径: ${possiblePaths.join(", ")}`,
-  );
 
   for (const filePath of possiblePaths) {
     try {
@@ -158,8 +137,28 @@ export async function loadMainApp(
     );
 
     // 获取默认导出（应用实例或配置对象）
-    const appOrConfig = mainModule.default || mainModule.app ||
-      mainModule.config || mainModule;
+    // 优先级：default > app > config > appConfig > 整个模块
+    let appOrConfig = mainModule.default;
+    if (!appOrConfig && mainModule.app) {
+      appOrConfig = mainModule.app;
+    }
+    if (!appOrConfig && mainModule.config) {
+      appOrConfig = mainModule.config;
+    }
+    // 兼容 appConfig 导出（有些项目可能使用 export const appConfig）
+    if (!appOrConfig && (mainModule as any).appConfig) {
+      appOrConfig = (mainModule as any).appConfig;
+    }
+    // 如果都没有，检查模块本身是否是配置对象
+    if (!appOrConfig && typeof mainModule === "object" && mainModule !== null) {
+      // 如果模块本身有 middleware 或 plugins，说明模块本身就是配置对象
+      if (
+        Array.isArray((mainModule as any).middleware) ||
+        Array.isArray((mainModule as any).plugins)
+      ) {
+        appOrConfig = mainModule as any;
+      }
+    }
 
     console.debug(
       `[loadMainApp] 导出对象类型: ${typeof appOrConfig}, 是否为对象: ${
