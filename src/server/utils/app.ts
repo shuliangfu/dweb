@@ -19,12 +19,15 @@ export async function findMainFile(
   outDir?: string,
 ): Promise<string | null> {
   const cwd = Deno.cwd();
-  const isDev = Deno.env.get("DENO_ENV") === "development";
+  // 判断是否为开发环境：检查 DENO_ENV 或 isProduction 标志
+  const denoEnv = Deno.env.get("DENO_ENV");
+  const isDev = denoEnv === "development" || denoEnv !== "production";
 
   console.debug(
-    `[findMainFile] 开始查找: appName=${appName}, outDir=${outDir}, cwd=${cwd}, isDev=${isDev}`,
+    `[findMainFile] 开始查找: appName=${appName}, outDir=${outDir}, cwd=${cwd}, isDev=${isDev}, DENO_ENV=${denoEnv}`,
   );
 
+  // 只在生产环境且提供了 outDir 时才查找 manifest.json
   if (!isDev && outDir) {
     const distDirs = [
       appName ? `${outDir}/${appName}` : null,

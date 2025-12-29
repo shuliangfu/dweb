@@ -90,7 +90,15 @@ export async function loadConfig(
 
         // 合并应用配置和顶层配置，返回 AppConfig
         // 注意：database 配置只能来自根配置，子应用配置中不允许包含 database
+        console.debug(
+          `[Config] 合并应用配置: appName=${matchedApp.name}, basePlugins=${
+            config.plugins?.length || 0
+          }, appPlugins=${matchedApp.plugins?.length || 0}`,
+        );
         finalConfig = mergeConfig(config, matchedApp as AppConfig);
+        console.debug(
+          `[Config] 合并后插件数量: ${finalConfig.plugins?.length || 0}`,
+        );
 
         // 强制 database 配置只能来自根配置
         finalConfig.database = config.database;
@@ -291,6 +299,12 @@ export function mergeConfig(
   baseConfig: Partial<AppConfig>,
   appConfig: AppConfig,
 ): AppConfig {
+  // 先保存数组配置（在 deepMerge 之前），因为 deepMerge 会覆盖数组
+  const baseMiddleware = (baseConfig.middleware || []) as any[];
+  const appMiddleware = (appConfig.middleware || []) as any[];
+  const basePlugins = (baseConfig.plugins || []) as any[];
+  const appPlugins = (appConfig.plugins || []) as any[];
+
   // 使用 deepMerge 进行基础合并
   // deepMerge 会递归合并所有嵌套对象（如 cookie、session、build、static、dev、render、prefetch、websocket、graphql、logging、cache、security、database 等）
   // 对于基本类型（如 name、basePath、isProduction），会直接覆盖
@@ -302,17 +316,69 @@ export function mergeConfig(
 
   // 特殊处理：数组配置（中间件和插件）需要拼接而不是覆盖
   // 注意：deepMerge 会直接覆盖数组，所以我们需要在这里重新合并数组
-  // 这样可以确保 dweb.config.ts 和 main.ts 中的插件/中间件都能被保留
-  const baseMiddleware = baseConfig.middleware || [];
-  const appMiddleware = appConfig.middleware || [];
+  // 使用之前保存的数组配置，确保不会重复
+  // 去重：根据插件的 name 属性去重，保留第一个出现的
   if (baseMiddleware.length > 0 || appMiddleware.length > 0) {
-    merged.middleware = [...baseMiddleware, ...appMiddleware];
+    const allMiddleware = [...baseMiddleware, ...appMiddleware];
+    // 中间件去重：根据 name 属性（如果有）或函数引用去重
+    const uniqueMiddleware: any[] = [];
+    const seenMiddlewareNames = new Set<string>();
+    const seenMiddlewareFuncs = new WeakSet<(...args: any[]) => any>();
+    for (const middleware of allMiddleware) {
+      let shouldAdd = false;
+      if (
+        middleware && typeof middleware === "object" && "name" in middleware
+      ) {
+        const name = (middleware as any).name;
+        if (name && !seenMiddlewareNames.has(name)) {
+          seenMiddlewareNames.add(name);
+          shouldAdd = true;
+        }
+      } else if (typeof middleware === "function") {
+        if (!seenMiddlewareFuncs.has(middleware)) {
+          seenMiddlewareFuncs.add(middleware);
+          shouldAdd = true;
+        }
+      } else {
+        // 其他类型，直接添加
+        shouldAdd = true;
+      }
+      if (shouldAdd) {
+        uniqueMiddleware.push(middleware);
+      }
+    }
+    merged.middleware = uniqueMiddleware;
+    console.debug(
+      `[mergeConfig] 合并中间件: base=${baseMiddleware.length}, app=${appMiddleware.length}, 去重后=${merged.middleware.length}`,
+    );
   }
 
-  const basePlugins = baseConfig.plugins || [];
-  const appPlugins = appConfig.plugins || [];
   if (basePlugins.length > 0 || appPlugins.length > 0) {
-    merged.plugins = [...basePlugins, ...appPlugins];
+    const allPlugins = [...basePlugins, ...appPlugins];
+    // 插件去重：根据插件的 name 属性去重，保留第一个出现的
+    const uniquePlugins: any[] = [];
+    const seenPluginNames = new Set<string>();
+    for (const plugin of allPlugins) {
+      const pluginName = (plugin as any)?.name;
+      if (pluginName && !seenPluginNames.has(pluginName)) {
+        seenPluginNames.add(pluginName);
+        uniquePlugins.push(plugin);
+      } else if (!pluginName) {
+        // 没有 name 的插件，直接添加（可能是配置对象）
+        uniquePlugins.push(plugin);
+      }
+      // 如果有 name 且已存在，跳过（去重）
+    }
+    merged.plugins = uniquePlugins;
+    console.debug(
+      `[mergeConfig] 合并插件: base=${basePlugins.length}, app=${appPlugins.length}, 去重后=${merged.plugins.length}`,
+    );
+    // 调试：打印每个插件的名称
+    merged.plugins.forEach((plugin: any, index: number) => {
+      console.debug(
+        `[mergeConfig] plugin[${index}]: name=${plugin.name || "unknown"}`,
+      );
+    });
   }
 
   // 特殊处理：路由配置规范化
