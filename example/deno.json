@@ -44,8 +44,7 @@
     "@mysql": "https://deno.land/x/mysql@v2.12.1/mod.ts",
     "@mongodb": "npm:mongodb@^6.3.0",
     "sharp": "npm:sharp@^0.34.5",
-    "chart": "npm:chart.js@4.4.7",
-    "shiki": "npm:shiki@1.24.0"
+    "chart": "npm:chart.js@4.4.7"
   },
   "compilerOptions": {
     "jsx": "react-jsx",

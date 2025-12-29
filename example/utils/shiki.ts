@@ -1,73 +1,28 @@
-let highlighter: any | null = null;
+/**
+ * 代码高亮工具（已简化）
+ * 为了减少 JS 体积，移除了 Shiki 依赖，仅保留基本的 HTML 转义功能
+ */
 
 /**
- * 初始化 Shiki 高亮器
- * 必须在服务器启动时调用
+ * 初始化 Shiki 高亮器 (空实现)
+ * 保持接口兼容性，但不再加载 Shiki
  */
 export async function initShiki() {
-  if (highlighter) return;
-
-  const { createHighlighter } = await import("npm:shiki@1.24.0");
-  highlighter = await createHighlighter({
-    themes: ["github-dark"],
-    langs: [
-      "javascript",
-      "typescript",
-      "tsx",
-      "jsx",
-      "json",
-      "css",
-      "html",
-      "bash",
-      "shell",
-      "sh",
-      "markdown",
-      "yaml",
-      "sql",
-      "docker",
-      "dockerfile",
-    ],
-  });
+  // 不做任何事
+  return Promise.resolve();
 }
 
 /**
- * 高亮代码
+ * 高亮代码 (仅转义)
  * @param code 代码内容
  * @param lang 语言
- * @returns 高亮后的 HTML
+ * @returns 转义后的 HTML，包裹在 pre code 标签中
  */
 export function highlight(code: string, lang: string = "text"): string {
-  if (!highlighter) {
-    // 如果在客户端调用或者未初始化，返回原始内容（经过转义）
-    return `<pre class="shiki"><code class="language-${lang}">${
-      escapeHtml(code)
-    }</code></pre>`;
-  }
-
-  try {
-    // 语言别名映射
-    const langMap: Record<string, string> = {
-      "ts": "typescript",
-      "js": "javascript",
-      "sh": "bash",
-      "shell": "bash",
-      "dockerfile": "docker",
-    };
-
-    const mappedLang = langMap[lang] || lang;
-    const loadedLangs = highlighter.getLoadedLanguages();
-
-    // 如果语言不支持，降级为 text
-    const finalLang = loadedLangs.includes(mappedLang) ? mappedLang : "text";
-
-    return highlighter.codeToHtml(code, {
-      lang: finalLang,
-      theme: "github-dark",
-    });
-  } catch (e) {
-    console.error(`Shiki highlight error for lang ${lang}:`, e);
-    return escapeHtml(code);
-  }
+  // 直接返回原始内容（经过转义）
+  return `<pre class="shiki"><code class="language-${lang}">${
+    escapeHtml(code)
+  }</code></pre>`;
 }
 
 function escapeHtml(unsafe: string): string {

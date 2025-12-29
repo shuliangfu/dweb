@@ -9,11 +9,6 @@
 import { AppConfig, cors, i18n, store, theme } from "@dreamer/dweb";
 import { services } from "./services/mod.ts";
 import { createServicePlugin } from "./plugins/register-services.ts";
-import { shikiPlugin } from "./plugins/shiki.ts";
-import { initShiki } from "./utils/shiki.ts";
-
-// 确保在配置导出前初始化 Shiki，以保证 SSR 渲染时高亮可用
-await initShiki();
 
 const config: AppConfig = {
   middleware: [
@@ -54,8 +49,6 @@ const config: AppConfig = {
     }),
     // 注册自定义服务
     createServicePlugin(services),
-    // 初始化 Shiki
-    shikiPlugin(),
     // 可以在这里注册更多插件
   ],
 };
