@@ -177,6 +177,8 @@ export function staticFiles(options: StaticOptions): Middleware {
     },
   );
 
+  console.log({ isProduction, outDir, dir });
+
   // 如果 dir 是相对路径，根据环境自动选择目录
   // 开发环境：使用项目目录
   // 生产环境：使用构建输出目录

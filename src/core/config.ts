@@ -12,6 +12,160 @@ import { deepMerge } from "../common/utils/utils.ts";
 import { findConfigFile } from "../server/utils/file.ts";
 
 /**
+ * 查找 main.ts 文件
+ * @param appName 应用名称（多应用模式下使用，如 'backend'）
+ * @param outDir 构建输出目录（可选）
+ * @returns main.ts 文件路径，如果找不到返回 null
+ */
+async function findMainFile(
+  appName?: string,
+  outDir?: string,
+): Promise<string | null> {
+  const cwd = Deno.cwd();
+  // 判断是否为开发环境：检查 DENO_ENV 或 isProduction 标志
+  const denoEnv = Deno.env.get("DENO_ENV");
+  const isDev = denoEnv === "development" || denoEnv !== "production";
+
+  // 只在生产环境且提供了 outDir 时才查找 manifest.json
+  if (!isDev && outDir) {
+    const distDirs = [
+      appName ? `${outDir}/${appName}` : null,
+      outDir,
+    ].filter(Boolean) as string[];
+
+    for (const dir of distDirs) {
+      try {
+        const manifestPath = path.join(cwd, dir, "manifest.json");
+        const content = await Deno.readTextFile(manifestPath);
+        const manifest = JSON.parse(content);
+
+        if (manifest.entry) {
+          const entryPath = path.join(cwd, dir, manifest.entry);
+          const stat = await Deno.stat(entryPath);
+          if (stat.isFile) {
+            return entryPath;
+          }
+        }
+      } catch {
+        // 忽略错误，继续查找
+      }
+    }
+  }
+
+  const possiblePaths: string[] = [];
+
+  // 根据是否有 appName 判断是单应用还是多应用模式
+  if (appName) {
+    // 多应用模式：只在应用目录下查找 main.ts
+    // 例如：backend/main.ts
+    possiblePaths.push(`${appName}/main.ts`);
+  } else {
+    // 单应用模式：只在项目根目录查找 main.ts
+    possiblePaths.push("main.ts");
+  }
+
+  for (const filePath of possiblePaths) {
+    try {
+      const fullPath = path.isAbsolute(filePath)
+        ? filePath
+        : path.join(cwd, filePath);
+      const stat = await Deno.stat(fullPath);
+      if (stat.isFile) {
+        return fullPath;
+      }
+    } catch {
+      // 文件不存在，继续查找
+      continue;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * 加载 main.ts 文件并获取配置对象
+ * @param appName 应用名称（多应用模式下使用，如 'backend'）
+ * @param outDir 构建输出目录（可选，默认为 "dist"）
+ * @returns 配置对象，如果找不到 main.ts 或不是配置对象返回 null
+ */
+async function loadMainConfig(
+  appName?: string,
+  outDir?: string,
+): Promise<AppConfig | null> {
+  try {
+    const mainPath = await findMainFile(appName, outDir);
+    if (!mainPath) {
+      return null;
+    }
+
+    // 转换为绝对路径
+    const absolutePath = path.isAbsolute(mainPath)
+      ? mainPath
+      : path.resolve(Deno.cwd(), mainPath);
+
+    // 转换为 file:// URL
+    const mainUrl = path.toFileUrl(absolutePath).href;
+
+    // 导入 main.ts
+    const mainModule = await import(mainUrl);
+
+    // 获取默认导出（配置对象）
+    // 优先级：default > app > config > appConfig > 整个模块
+    let config = mainModule.default;
+    if (!config && mainModule.app) {
+      config = mainModule.app;
+    }
+    if (!config && mainModule.config) {
+      config = mainModule.config;
+    }
+    // 兼容 appConfig 导出（有些项目可能使用 export const appConfig）
+    if (!config && (mainModule as any).appConfig) {
+      config = (mainModule as any).appConfig;
+    }
+    // 如果都没有，检查模块本身是否是配置对象
+    if (!config && typeof mainModule === "object" && mainModule !== null) {
+      // 如果模块本身有 middleware 或 plugins，说明模块本身就是配置对象
+      if (
+        Array.isArray((mainModule as any).middleware) ||
+        Array.isArray((mainModule as any).plugins)
+      ) {
+        config = mainModule as any;
+      }
+    }
+
+    // 验证是否是配置对象 (AppConfig)
+    // 检查是否包含 plugins 或 middleware 数组，或者是空对象（如果用户只配置了其他选项）
+    if (config && typeof config === "object") {
+      // 简单的鸭子类型检查：如果有 middleware 或 plugins 数组，或者它看起来像个配置对象
+      if (
+        Array.isArray(config.middleware) ||
+        Array.isArray(config.plugins)
+      ) {
+        return config as AppConfig;
+      }
+      // 如果它既不是 AppLike 也不是显式的 AppConfig（没有 middleware/plugins），
+      // 但它是一个对象，我们可能需要更宽松的检查，或者假设它就是 Config？
+      // 但 main.ts 可能会导出其他东西。
+      // 让我们保守一点，只接受有 middleware 或 plugins 的对象，或者显式声明为 config 的（我们无法检查类型声明）。
+      // 或者我们可以假设如果它不是 AppLike，且是 main.ts 的 default export，那它就是 Config。
+      return config as AppConfig;
+    }
+
+    return null;
+  } catch (error) {
+    // 加载失败时记录详细错误信息
+    console.warn(
+      "⚠️  加载 main.ts 失败:",
+      error instanceof Error ? error.message : String(error),
+    );
+    if (error instanceof Error && error.stack) {
+      console.warn("⚠️  错误堆栈:", error.stack);
+    }
+    return null;
+  }
+}
+
+/**
  * 加载配置文件
  *
  * 从指定路径加载 DWeb 配置文件，支持单应用和多应用模式。
@@ -39,6 +193,9 @@ export async function loadConfig(
   appName?: string,
 ): Promise<{ config: AppConfig; configDir: string }> {
   try {
+    console.debug(
+      `[loadConfig] 开始加载配置: configPath=${configPath}, appName=${appName}`,
+    );
     const originalCwd = Deno.cwd();
 
     // 如果没有提供路径，自动查找
@@ -125,30 +282,21 @@ export async function loadConfig(
     // 尝试加载并合并 main.ts 中的配置（如果有）
     // 优先级：main.ts > appConfig > baseConfig
     try {
-      const { loadMainApp } = await import("../server/utils/app.ts");
-      const mainAppOrConfig = await loadMainApp(
+      const mainConfig = await loadMainConfig(
         finalConfig.name,
         finalConfig.build?.outDir,
       );
 
-      if (mainAppOrConfig && typeof mainAppOrConfig === "object") {
-        // 检查是否为 AppConfig (具有 middleware 或 plugins 数组，且不是 AppLike 实例)
-        // AppLike 实例通常有 use 和 plugin 方法
-        const isAppLike = typeof (mainAppOrConfig as any).use === "function" &&
-          typeof (mainAppOrConfig as any).plugin === "function";
-
-        if (!isAppLike) {
-          const mainConfig = mainAppOrConfig as AppConfig;
-          // 合并 main.ts 配置到 finalConfig
-          // 注意：这里 finalConfig 作为 baseConfig，mainConfig 作为 appConfig
-          // 所以 main.ts 的配置会追加到 finalConfig 的配置后面
-          finalConfig = mergeConfig(finalConfig, mainConfig);
-          console.debug(
-            `[Config] 合并 main.ts 配置: plugins=${
-              mainConfig.plugins?.length || 0
-            }, middleware=${mainConfig.middleware?.length || 0}`,
-          );
-        }
+      if (mainConfig) {
+        // 合并 main.ts 配置到 finalConfig
+        // 注意：这里 finalConfig 作为 baseConfig，mainConfig 作为 appConfig
+        // 所以 main.ts 的配置会追加到 finalConfig 的配置后面
+        finalConfig = mergeConfig(finalConfig, mainConfig);
+        console.debug(
+          `[Config] 合并 main.ts 配置: plugins=${
+            mainConfig.plugins?.length || 0
+          }, middleware=${mainConfig.middleware?.length || 0}`,
+        );
       }
     } catch (error) {
       // 记录 main.ts 加载错误，但不抛出异常（main.ts 是可选的）
@@ -160,6 +308,12 @@ export async function loadConfig(
 
     // 验证合并后的配置
     validateConfig(finalConfig);
+
+    console.debug(
+      `[loadConfig] 配置加载完成: plugins=${
+        finalConfig.plugins?.length || 0
+      }, middleware=${finalConfig.middleware?.length || 0}`,
+    );
 
     return { config: finalConfig, configDir: Deno.cwd() };
   } catch (error) {

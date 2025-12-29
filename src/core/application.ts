@@ -779,9 +779,9 @@ export class Application extends EventEmitter {
    * 初始化中间件和插件
    * 从配置和 main.ts 加载中间件和插件
    */
-  private async initializeMiddlewareAndPlugins(
+  private initializeMiddlewareAndPlugins(
     config: AppConfig,
-  ): Promise<void> {
+  ): void {
     // 添加配置的中间件
     if (config.middleware) {
       this.middlewareManager.addMany(config.middleware);
@@ -789,60 +789,13 @@ export class Application extends EventEmitter {
 
     // 添加配置的插件
     if (config.plugins) {
-      console.debug(
-        `[Application] 注册 ${config.plugins.length} 个配置插件`,
-      );
-      // 记录每个插件的名称和是否有 onResponse 钩子
-      config.plugins.forEach((plugin) => {
-        const pluginName = (plugin as any).name || "unknown";
-        const hasOnResponse = !!(plugin as any).onResponse;
-        console.debug(
-          `[Application] 插件 "${pluginName}": onResponse=${hasOnResponse}`,
-        );
-      });
       this.pluginManager.registerMany(config.plugins);
     }
 
     // console.log(config)
 
-    // 尝试从 main.ts 加载中间件和插件（只加载一次，避免重复）
-    const { getMiddlewaresFromApp, getPluginsFromApp, loadMainApp } =
-      await import(
-        "../server/utils/app.ts"
-      );
-    try {
-      const mainAppOrConfig = await loadMainApp(
-        config.name,
-        config.build?.outDir,
-      );
-      if (mainAppOrConfig) {
-        // 检查是否是 AppLike 实例（具有 use 和 plugin 方法）
-        if (
-          typeof (mainAppOrConfig as any).use === "function" &&
-          typeof (mainAppOrConfig as any).plugin === "function"
-        ) {
-          const mainApp = mainAppOrConfig as any;
-          // 加载中间件
-          const mainMiddlewares = getMiddlewaresFromApp(mainApp);
-          if (mainMiddlewares.length > 0) {
-            this.middlewareManager.addMany(mainMiddlewares);
-          }
-
-          // 加载插件
-          const mainPlugins = getPluginsFromApp(mainApp);
-          if (mainPlugins.length > 0) {
-            console.debug(
-              `[Application] 从 main.ts 加载 ${mainPlugins.length} 个插件`,
-            );
-            this.pluginManager.registerMany(mainPlugins);
-          }
-        }
-        // 注意：如果 main.ts 导出的是 AppConfig 对象，它已经在 loadConfig 阶段被合并到 config 中了
-        // 所以这里不需要再次处理，避免重复注册中间件和插件
-      }
-    } catch (_error) {
-      // 加载 main.ts 失败时静默忽略（main.ts 是可选的）
-    }
+    // 注意：main.ts 的配置已经在 loadConfig 阶段被合并到 config 中了
+    // 这里不需要再次加载，避免重复注册中间件和插件
   }
 
   /**
