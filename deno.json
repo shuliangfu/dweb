@@ -104,6 +104,7 @@
       "**/deno.lock",
       "**/.git/**",
       "**/docs/**",
+      "src/features/database/adapters/mysql.ts",
       "!src/server/build/**"
     ]
   },

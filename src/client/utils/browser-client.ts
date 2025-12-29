@@ -1537,8 +1537,8 @@ class BrowserClient {
       } else {
         // 如果预加载超时，动态导入 Preact 模块
         const [preactModule, jsxRuntimeModule] = await Promise.all([
-          import("https://esm.sh/preact@10.28.0"),
-          import("https://esm.sh/preact@10.28.0/jsx-runtime"),
+          import("preact"),
+          import("preact/jsx-runtime"),
         ]);
         hydrate = preactModule.hydrate as (
           element: unknown,

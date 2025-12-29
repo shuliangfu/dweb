@@ -6,7 +6,6 @@
 import type { DatabaseAdapter, DatabaseConfig, DatabaseType } from "./types.ts";
 import { PostgreSQLAdapter } from "./adapters/postgresql.ts";
 import { MongoDBAdapter } from "./adapters/mongodb.ts";
-import { MySQLAdapter } from "./adapters/mysql.ts";
 
 /**
  * 数据库管理器类
@@ -54,8 +53,6 @@ export class DatabaseManager {
         return new PostgreSQLAdapter();
       case "mongodb":
         return new MongoDBAdapter();
-      case "mysql":
-        return new MySQLAdapter();
       default:
         throw new Error(`Unsupported database type: ${type}`);
     }
