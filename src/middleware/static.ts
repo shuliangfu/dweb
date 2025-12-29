@@ -132,8 +132,6 @@ export function staticFiles(options: StaticOptions): Middleware {
     etag = true,
     lastModified = true,
     maxAge = 0,
-    outDir,
-    isProduction,
     extendDirs = [],
   } = options;
 
@@ -183,34 +181,7 @@ export function staticFiles(options: StaticOptions): Middleware {
   // 生产环境：使用构建输出目录
   if (dir && !path.isAbsolute(dir)) {
     const cwd = Deno.cwd();
-
-    // 如果明确指定了 isProduction 和 outDir，使用它们
-    if (isProduction !== undefined && outDir) {
-      // 生产环境：使用构建输出目录
-      dir = path.join(cwd, outDir, dir);
-    } else if (isProduction !== undefined && !isProduction) {
-      // 明确指定为开发环境：使用项目目录
-      dir = path.join(cwd, dir);
-    } else {
-      // 自动检测环境：检查构建输出目录是否存在
-      // 如果提供了 outDir，使用它；否则默认使用 'dist'
-      const buildOutDir = outDir || "dist";
-      const buildPath = path.join(cwd, buildOutDir, dir);
-
-      try {
-        const buildStat = Deno.statSync(buildPath);
-        if (buildStat.isDirectory) {
-          // 构建输出目录存在，使用构建输出目录（生产环境）
-          dir = buildPath;
-        } else {
-          // 构建输出目录不存在，使用项目目录（开发环境）
-          dir = path.join(cwd, dir);
-        }
-      } catch {
-        // 构建输出目录不存在，使用项目目录（开发环境）
-        dir = path.join(cwd, dir);
-      }
-    }
+    dir = path.join(cwd, dir);
   }
 
   return async (req, res, next) => {

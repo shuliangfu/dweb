@@ -1097,45 +1097,25 @@ export class Application extends EventEmitter {
     isProduction: boolean,
   ): Promise<void> {
     const { staticFiles } = await import("../middleware/static.ts");
-    const staticDir = config.static?.dir || "assets";
 
     try {
-      let staticPath: string;
-      let outDir: string;
+      let staticDir: string;
       if (isProduction) {
-        // 生产环境：从构建输出目录加载
-        const isMultiApp = await isMultiAppMode();
-        outDir = isMultiApp && config.name
-          ? `${config.build?.outDir}/${config.name}`
-          : config.build?.outDir || "dist";
-        staticPath = `${outDir}/${staticDir}`;
+        const outDir = config.build?.outDir || "dist";
+        staticDir = path.join(outDir, config.static?.dir || "assets");
       } else {
-        // 开发环境：从项目根目录加载
-        staticPath = staticDir;
-        outDir = config.build?.outDir || "dist";
+        staticDir = config.static?.dir || "assets";
       }
 
-      console.log({ staticPath, outDir });
-
-      const exists = await Deno.stat(staticPath)
-        .then(() => true)
-        .catch(() => false);
-
-      if (exists) {
-        if (config.static) {
-          this.middlewareManager.add(staticFiles({
-            ...config.static,
-            dir: staticDir,
-            outDir: isProduction ? config.build?.outDir : "dist",
-            isProduction,
-          }));
-        } else {
-          this.middlewareManager.add(staticFiles({
-            dir: staticDir,
-            outDir: isProduction ? config.build?.outDir : "dist",
-            isProduction,
-          }));
-        }
+      if (config.static) {
+        this.middlewareManager.add(staticFiles({
+          ...config.static,
+          dir: staticDir,
+        }));
+      } else {
+        this.middlewareManager.add(staticFiles({
+          dir: staticDir,
+        }));
       }
     } catch {
       // 静态资源目录不存在时忽略

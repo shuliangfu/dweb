@@ -37,8 +37,6 @@ export interface StaticOptions {
   etag?: boolean; // 是否启用 ETag
   lastModified?: boolean; // 是否发送 Last-Modified
   maxAge?: number; // 缓存时间（秒）
-  outDir?: string; // 构建输出目录（生产环境使用，如果未提供则自动检测）
-  isProduction?: boolean; // 是否为生产环境（如果未提供则自动检测）
   extendDirs?: (string | ExtendDirConfig)[]; // 扩展的静态资源目录（如上传目录，这些目录不会被打包，始终从项目根目录读取）
 }
 
