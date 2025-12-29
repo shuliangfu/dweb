@@ -306,6 +306,14 @@ export function replaceImportAliasesInContent(
   importMap: Record<string, string>,
   fileDir: string,
 ): string {
+  // 预处理：移除针对路径别名的 type-only 导入，避免将类型导入转成运行时依赖
+  // 例如：import type { PageProps } from "@dreamer/dweb";
+  // 保留普通的相对路径 type 导入（不匹配 @ 开头）
+  content = content.replace(
+    /import\s+type[\s\S]*?\sfrom\s+['"]@[^'"]+['"];?/g,
+    "",
+  );
+
   // 匹配 import 语句中的路径别名
   // 支持: import ... from "@components/..." 或 import("@components/...")
   const importRegex = /(?:from\s+['"]|import\s*\(\s*['"])(@[^'"]+)(['"])/g;

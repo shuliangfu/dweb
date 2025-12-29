@@ -743,6 +743,48 @@ export abstract class MongoModel {
   }
 
   /**
+   * 应用软删除过滤（内部辅助）
+   * @param filter 原始查询条件
+   * @param includeTrashed 是否包含软删除
+   * @param onlyTrashed 是否仅软删除
+   */
+  private static applySoftDeleteFilter(
+    filter: Record<string, any>,
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
+  ): Record<string, any> {
+    if (!this.softDelete || includeTrashed) {
+      return filter;
+    }
+    return {
+      ...filter,
+      [this.deletedAtField]: { $exists: onlyTrashed ? true : false },
+    };
+  }
+
+  /**
+   * 规范化排序参数（支持字符串 asc/desc）
+   */
+  private static normalizeSort(
+    sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc",
+  ): Record<string, 1 | -1> | undefined {
+    if (!sort) return undefined;
+    if (typeof sort === "string") {
+      const dir = sort.toLowerCase() === "desc" ? -1 : 1;
+      return { [this.primaryKey]: dir };
+    }
+    const normalized: Record<string, 1 | -1> = {};
+    for (const [field, dir] of Object.entries(sort)) {
+      if (typeof dir === "string") {
+        normalized[field] = dir.toLowerCase() === "desc" ? -1 : 1;
+      } else {
+        normalized[field] = dir;
+      }
+    }
+    return normalized;
+  }
+
+  /**
    * 查找单条记录
    * @param condition 查询条件（可以是 ID、条件对象）
    * @param fields 要查询的字段数组（可选，用于字段投影）
@@ -758,6 +800,11 @@ export abstract class MongoModel {
     this: T,
     condition: MongoWhereCondition | string,
     fields?: string[],
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
+    options?: {
+      sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+    },
   ): Promise<InstanceType<T> | null> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
@@ -779,24 +826,26 @@ export abstract class MongoModel {
     }
 
     const projection = this.buildProjection(fields);
-    const options: any = { limit: 1 };
+    const queryOptions: any = { limit: 1 };
     if (Object.keys(projection).length > 0) {
-      options.projection = projection;
+      queryOptions.projection = projection;
+    }
+    const normalizedSort = this.normalizeSort(options?.sort);
+    if (normalizedSort) {
+      queryOptions.sort = normalizedSort;
     }
 
     // 软删除：自动过滤已删除的记录（默认排除软删除）
-    let queryFilter = filter;
-    if (this.softDelete) {
-      queryFilter = {
-        ...filter,
-        [this.deletedAtField]: { $exists: false },
-      };
-    }
+    const queryFilter = this.applySoftDeleteFilter(
+      filter,
+      includeTrashed,
+      onlyTrashed,
+    );
 
     const results = await adapter.query(
       this.collectionName,
       queryFilter,
-      options,
+      queryOptions,
     );
 
     if (results.length === 0) {
@@ -838,6 +887,13 @@ export abstract class MongoModel {
     this: T,
     condition: MongoWhereCondition = {},
     fields?: string[],
+    options?: {
+      sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+      skip?: number;
+      limit?: number;
+    },
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
   ): Promise<InstanceType<T>[]> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
@@ -850,24 +906,32 @@ export abstract class MongoModel {
 
     const adapter = this.adapter as any as MongoDBAdapter;
     const projection = this.buildProjection(fields);
-    const options: any = {};
+    const queryOptions: any = {};
     if (Object.keys(projection).length > 0) {
-      options.projection = projection;
+      queryOptions.projection = projection;
+    }
+    const normalizedSort = this.normalizeSort(options?.sort);
+    if (normalizedSort) {
+      queryOptions.sort = normalizedSort;
+    }
+    if (typeof options?.skip === "number") {
+      queryOptions.skip = options.skip;
+    }
+    if (typeof options?.limit === "number") {
+      queryOptions.limit = options.limit;
     }
 
     // 软删除：自动过滤已删除的记录（默认排除软删除）
-    let queryFilter = condition;
-    if (this.softDelete) {
-      queryFilter = {
-        ...condition,
-        [this.deletedAtField]: { $exists: false },
-      };
-    }
+    const queryFilter = this.applySoftDeleteFilter(
+      condition,
+      includeTrashed,
+      onlyTrashed,
+    );
 
     const results = await adapter.query(
       this.collectionName,
       queryFilter,
-      options,
+      queryOptions,
     );
 
     return results.map((row: any) => {
@@ -904,6 +968,11 @@ export abstract class MongoModel {
       this: T,
       condition?: MongoWhereCondition,
       fields?: string[],
+      options?: {
+        sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+        skip?: number;
+        limit?: number;
+      },
     ) => Promise<InstanceType<T>[]>;
     find: <T extends typeof MongoModel>(
       this: T,
@@ -922,10 +991,16 @@ export abstract class MongoModel {
       findAll: async <T extends typeof MongoModel>(
         condition: MongoWhereCondition = {},
         fields?: string[],
+        options?: {
+          sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+          skip?: number;
+          limit?: number;
+        },
       ): Promise<InstanceType<T>[]> => {
         return await this.findAll(
           { ...scopeCondition, ...condition },
           fields,
+          options,
         ) as InstanceType<T>[];
       },
       find: async <T extends typeof MongoModel>(
@@ -1031,21 +1106,23 @@ export abstract class MongoModel {
       }
     }
 
-    // 如果插入成功且有 ID，重新查询获取完整记录
-    let instance: InstanceType<T>;
-    if (insertedId) {
-      const found = await this.find(insertedId);
-      if (found) {
-        instance = found;
-      } else {
-        instance = new (this as any)();
-        Object.assign(instance, processedData);
-        (instance as any)[this.primaryKey] = insertedId;
+    const instance = new (this as any)();
+    Object.assign(instance, processedData);
+    if (insertedId != null) {
+      (instance as any)[this.primaryKey] = insertedId;
+    }
+
+    // 应用虚拟字段
+    if ((this as any).virtuals) {
+      const Model = this as any;
+      for (const [name, getter] of Object.entries(Model.virtuals)) {
+        const getterFn = getter as (instance: any) => any;
+        Object.defineProperty(instance, name, {
+          get: () => getterFn(instance),
+          enumerable: true,
+          configurable: true,
+        });
       }
-    } else {
-      // 否则返回包含插入数据的实例
-      instance = new (this as any)();
-      Object.assign(instance, processedData);
     }
 
     // afterCreate 钩子
@@ -1072,10 +1149,25 @@ export abstract class MongoModel {
    * await User.update({ _id: '507f1f77bcf86cd799439011' }, { name: 'lisi' });
    * await User.update({ email: 'user@example.com' }, { name: 'lisi' });
    */
-  static async update(
+  static async update<T extends typeof MongoModel>(
+    this: T,
     condition: MongoWhereCondition | string,
     data: Record<string, any>,
-  ): Promise<number> {
+  ): Promise<number>;
+  static async update<T extends typeof MongoModel>(
+    this: T,
+    condition: MongoWhereCondition | string,
+    data: Record<string, any>,
+    returnLatest: true,
+    fields?: string[],
+  ): Promise<InstanceType<T>>;
+  static async update<T extends typeof MongoModel>(
+    this: T,
+    condition: MongoWhereCondition | string,
+    data: Record<string, any>,
+    returnLatest: boolean = false,
+    fields?: string[],
+  ): Promise<number | InstanceType<T>> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
 
@@ -1147,34 +1239,71 @@ export abstract class MongoModel {
       filter = condition;
     }
 
-    const result = await adapter.execute("update", this.collectionName, {
-      filter,
-      update: { $set: processedData },
-    });
+    if (this.softDelete) {
+      filter = {
+        ...filter,
+        [this.deletedAtField]: { $exists: false },
+      };
+    }
 
-    // MongoDB update 返回结果包含 modifiedCount
-    const modifiedCount =
-      (result && typeof result === "object" && "modifiedCount" in result)
-        ? ((result as any).modifiedCount || 0)
-        : 0;
-
-    if (modifiedCount > 0) {
-      // 重新查询更新后的记录
-      const updatedInstance = await this.find(filter);
-      if (updatedInstance) {
-        // afterUpdate 钩子
+    const db = (adapter as any).getDatabase();
+    if (!db) {
+      throw new Error("Database not connected");
+    }
+    if (returnLatest) {
+      const projection = this.buildProjection(fields);
+      const opts: any = { returnDocument: "after" };
+      if (Object.keys(projection).length > 0) {
+        opts.projection = projection;
+      }
+      const result = await db.collection(this.collectionName).findOneAndUpdate(
+        filter,
+        { $set: processedData },
+        opts,
+      );
+      if (!result) {
+        return 0;
+      }
+      const updatedInstance = new (this as any)();
+      Object.assign(updatedInstance, result);
+      if ((this as any).virtuals) {
+        for (const [name, getter] of Object.entries((this as any).virtuals)) {
+          const getterFn = getter as (instance: any) => any;
+          Object.defineProperty(updatedInstance, name, {
+            get: () => getterFn(updatedInstance),
+            enumerable: true,
+            configurable: true,
+          });
+        }
+      }
+      if (this.afterUpdate) {
+        await this.afterUpdate(updatedInstance);
+      }
+      if (this.afterSave) {
+        await this.afterSave(updatedInstance);
+      }
+      return updatedInstance as InstanceType<T>;
+    } else {
+      const result = await db.collection(this.collectionName).updateOne(
+        filter,
+        { $set: processedData },
+      );
+      const modifiedCount = result.modifiedCount || 0;
+      if (modifiedCount > 0) {
+        const updatedInstance = new (this as any)();
+        Object.assign(updatedInstance, {
+          ...existingInstance,
+          ...processedData,
+        });
         if (this.afterUpdate) {
           await this.afterUpdate(updatedInstance);
         }
-
-        // afterSave 钩子
         if (this.afterSave) {
           await this.afterSave(updatedInstance);
         }
       }
+      return modifiedCount;
     }
-
-    return modifiedCount;
   }
 
   /**
@@ -1316,9 +1445,16 @@ export abstract class MongoModel {
       throw new Error("Cannot update instance without primary key");
     }
 
-    await Model.update(id, data);
-    // 重新加载更新后的数据
-    await this.reload();
+    const updated = await Model.update(
+      Model.primaryKey === "_id" ? id : id,
+      data,
+      true,
+    );
+    if (updated) {
+      Object.assign(this, updated);
+    } else {
+      await this.reload();
+    }
     return this;
   }
 
@@ -1411,6 +1547,14 @@ export abstract class MongoModel {
     return await this.delete(id);
   }
 
+  static async restoreById(id: string): Promise<number> {
+    return await this.restore(id) as number;
+  }
+
+  static async forceDeleteById(id: string): Promise<number> {
+    return await this.forceDelete(id) as number;
+  }
+
   /**
    * 批量更新记录
    * @param condition 查询条件（可以是 ID、条件对象）
@@ -1431,8 +1575,14 @@ export abstract class MongoModel {
       );
     }
 
-    // 处理字段（应用默认值、类型转换、验证）
+    // 处理字段并设置时间戳
     const processedData = this.processFields(data);
+    if (this.timestamps) {
+      const updatedAtField = typeof this.timestamps === "object"
+        ? (this.timestamps.updatedAt || "updatedAt")
+        : "updatedAt";
+      processedData[updatedAtField] = new Date();
+    }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
@@ -1443,6 +1593,8 @@ export abstract class MongoModel {
     } else {
       filter = condition;
     }
+
+    filter = this.applySoftDeleteFilter(filter);
 
     const result = await adapter.execute("updateMany", this.collectionName, {
       filter,
@@ -1457,6 +1609,72 @@ export abstract class MongoModel {
   }
 
   /**
+   * 批量自增字段
+   * @param condition 查询条件（可以是 ID、条件对象）
+   * @param fieldOrMap 字段名或字段-增量映射
+   * @param amount 增量（当提供单个字段名时生效）
+   */
+  static async incrementMany(
+    condition: MongoWhereCondition | string,
+    fieldOrMap: string | Record<string, number>,
+    amount: number = 1,
+  ): Promise<number> {
+    if (!this.adapter) {
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
+    }
+    const adapter = this.adapter as any as MongoDBAdapter;
+    const db = (adapter as any).getDatabase();
+    if (!db) {
+      throw new Error("Database not connected");
+    }
+    let filter: any = {};
+    if (typeof condition === "string") {
+      filter[this.primaryKey] = condition;
+    } else {
+      filter = condition;
+    }
+    filter = this.applySoftDeleteFilter(filter);
+    const incSpec: Record<string, number> = typeof fieldOrMap === "string"
+      ? { [fieldOrMap]: amount }
+      : fieldOrMap;
+    const update: any = { $inc: incSpec };
+    if (this.timestamps) {
+      const updatedAtField = typeof this.timestamps === "object"
+        ? (this.timestamps.updatedAt || "updatedAt")
+        : "updatedAt";
+      update.$set = { [updatedAtField]: new Date() };
+    }
+    const result = await db.collection(this.collectionName).updateMany(
+      filter,
+      update,
+    );
+    return result.modifiedCount || 0;
+  }
+
+  /**
+   * 批量自减字段
+   * @param condition 查询条件（可以是 ID、条件对象）
+   * @param fieldOrMap 字段名或字段-减量映射
+   * @param amount 减量（当提供单个字段名时生效）
+   */
+  static async decrementMany(
+    condition: MongoWhereCondition | string,
+    fieldOrMap: string | Record<string, number>,
+    amount: number = 1,
+  ): Promise<number> {
+    if (typeof fieldOrMap === "string") {
+      return await this.incrementMany(condition, fieldOrMap, -amount);
+    }
+    const map: Record<string, number> = {};
+    for (const [k, v] of Object.entries(fieldOrMap)) {
+      map[k] = -Math.abs(v);
+    }
+    return await this.incrementMany(condition, map);
+  }
+
+  /**
    * 批量删除记录
    * @param condition 查询条件（可以是 ID、条件对象）
    * @returns 删除的记录数
@@ -1467,7 +1685,8 @@ export abstract class MongoModel {
    */
   static async deleteMany(
     condition: MongoWhereCondition | string,
-  ): Promise<number> {
+    options?: { returnIds?: boolean },
+  ): Promise<number | { count: number; ids: any[] }> {
     if (!this.adapter) {
       throw new Error(
         "Database adapter not set. Please call Model.setAdapter() first.",
@@ -1484,15 +1703,55 @@ export abstract class MongoModel {
       filter = condition;
     }
 
-    const result = await adapter.execute("deleteMany", this.collectionName, {
-      filter,
-    });
+    // 软删除：批量设置 deletedAt 字段；否则执行物理删除
+    if (this.softDelete) {
+      const db = (adapter as any).getDatabase();
+      if (!db) {
+        throw new Error("Database not connected");
+      }
+      let ids: any[] = [];
+      if (options?.returnIds) {
+        ids = await db.collection(this.collectionName)
+          .find(filter, { projection: { [this.primaryKey]: 1 } })
+          .map((doc: any) => doc[this.primaryKey])
+          .toArray();
+      }
+      const result = await db.collection(this.collectionName).updateMany(
+        filter,
+        { $set: { [this.deletedAtField]: new Date() } },
+      );
+      if (options?.returnIds) {
+        return { count: result.modifiedCount || 0, ids };
+      }
+      return result.modifiedCount || 0;
+    }
+
+    let preIds: any[] = [];
+    if (options?.returnIds) {
+      const db = (adapter as any).getDatabase();
+      if (!db) {
+        throw new Error("Database not connected");
+      }
+      preIds = await db.collection(this.collectionName)
+        .find(filter, { projection: { [this.primaryKey]: 1 } })
+        .map((doc: any) => doc[this.primaryKey])
+        .toArray();
+    }
+    const result = await adapter.execute(
+      "deleteMany",
+      this.collectionName,
+      { filter },
+    );
 
     // MongoDB deleteMany 返回结果包含 deletedCount
-    if (result && typeof result === "object" && "deletedCount" in result) {
-      return (result as any).deletedCount || 0;
+    const deletedCount =
+      (result && typeof result === "object" && "deletedCount" in result)
+        ? ((result as any).deletedCount || 0)
+        : 0;
+    if (options?.returnIds) {
+      return { count: deletedCount, ids: preIds };
     }
-    return 0;
+    return deletedCount;
   }
 
   /**
@@ -1507,6 +1766,8 @@ export abstract class MongoModel {
    */
   static async count(
     condition: MongoWhereCondition = {},
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
   ): Promise<number> {
     if (!this.adapter) {
       throw new Error(
@@ -1522,8 +1783,13 @@ export abstract class MongoModel {
     }
 
     try {
-      const count = await db.collection(this.collectionName).countDocuments(
+      const queryFilter = this.applySoftDeleteFilter(
         condition,
+        includeTrashed,
+        onlyTrashed,
+      );
+      const count = await db.collection(this.collectionName).countDocuments(
+        queryFilter,
       );
       return count;
     } catch (error) {
@@ -1543,6 +1809,8 @@ export abstract class MongoModel {
    */
   static async exists(
     condition: MongoWhereCondition | string,
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
   ): Promise<boolean> {
     if (!this.adapter) {
       throw new Error(
@@ -1559,6 +1827,8 @@ export abstract class MongoModel {
     } else {
       filter = condition;
     }
+
+    filter = this.applySoftDeleteFilter(filter, includeTrashed, onlyTrashed);
 
     const db = (adapter as any).getDatabase();
 
@@ -1599,8 +1869,44 @@ export abstract class MongoModel {
       );
     }
 
-    // 处理每个数据项（应用默认值、类型转换、验证）
-    const processedArray = dataArray.map((data) => this.processFields(data));
+    // 处理每个数据项（应用默认值、类型转换、验证、时间戳与钩子）
+    const processedArray = [];
+    for (const data of dataArray) {
+      let item = this.processFields(data);
+      if (this.timestamps) {
+        const createdAtField = typeof this.timestamps === "object"
+          ? (this.timestamps.createdAt || "createdAt")
+          : "createdAt";
+        const updatedAtField = typeof this.timestamps === "object"
+          ? (this.timestamps.updatedAt || "updatedAt")
+          : "updatedAt";
+        if (!item[createdAtField]) {
+          item[createdAtField] = new Date();
+        }
+        if (!item[updatedAtField]) {
+          item[updatedAtField] = new Date();
+        }
+      }
+      const tempInstance = new (this as any)();
+      Object.assign(tempInstance, item);
+      if (this.beforeValidate) {
+        await this.beforeValidate(tempInstance);
+        item = { ...item, ...tempInstance };
+      }
+      if (this.afterValidate) {
+        await this.afterValidate(tempInstance);
+        item = { ...item, ...tempInstance };
+      }
+      if (this.beforeCreate) {
+        await this.beforeCreate(tempInstance);
+        item = { ...item, ...tempInstance };
+      }
+      if (this.beforeSave) {
+        await this.beforeSave(tempInstance);
+        item = { ...item, ...tempInstance };
+      }
+      processedArray.push(item);
+    }
 
     const adapter = this.adapter as any as MongoDBAdapter;
     const result = await adapter.execute(
@@ -1609,26 +1915,40 @@ export abstract class MongoModel {
       processedArray,
     );
 
-    // MongoDB insertMany 返回结果包含 insertedIds
-    const insertedIds: any[] = [];
-    if (result && typeof result === "object" && "insertedIds" in result) {
-      insertedIds.push(...Object.values((result as any).insertedIds));
-    }
-
-    // 如果有插入的 ID，重新查询获取完整记录
-    if (insertedIds.length > 0) {
-      const instances = await this.findAll({
-        [this.primaryKey]: { $in: insertedIds },
-      });
-      return instances as InstanceType<T>[];
-    }
-
-    // 否则返回包含插入数据的实例数组
-    return dataArray.map((data) => {
+    // 构造实例并应用 insertedIds
+    const instances: InstanceType<T>[] = [];
+    const insertedIdsMap = (result && typeof result === "object" &&
+        "insertedIds" in result)
+      ? (result as any).insertedIds
+      : undefined;
+    for (let i = 0; i < processedArray.length; i++) {
       const instance = new (this as any)();
-      Object.assign(instance, data);
-      return instance as InstanceType<T>;
-    });
+      const item = { ...processedArray[i] };
+      const insertedId = insertedIdsMap ? insertedIdsMap[i] : undefined;
+      if (insertedId != null) {
+        (item as any)[this.primaryKey] = insertedId;
+      }
+      Object.assign(instance, item);
+      if ((this as any).virtuals) {
+        const Model = this as any;
+        for (const [name, getter] of Object.entries(Model.virtuals)) {
+          const getterFn = getter as (instance: any) => any;
+          Object.defineProperty(instance, name, {
+            get: () => getterFn(instance),
+            enumerable: true,
+            configurable: true,
+          });
+        }
+      }
+      if (this.afterCreate) {
+        await this.afterCreate(instance);
+      }
+      if (this.afterSave) {
+        await this.afterSave(instance);
+      }
+      instances.push(instance as InstanceType<T>);
+    }
+    return instances;
   }
 
   /**
@@ -1651,6 +1971,8 @@ export abstract class MongoModel {
     page: number = 1,
     pageSize: number = 10,
     fields?: string[],
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
   ): Promise<{
     data: InstanceType<T>[];
     total: number;
@@ -1679,7 +2001,7 @@ export abstract class MongoModel {
     const skip = (page - 1) * pageSize;
 
     // 统计总数
-    const total = await this.count(condition);
+    const total = await this.count(condition, includeTrashed, onlyTrashed);
 
     // 构建查询选项
     const projection = this.buildProjection(fields);
@@ -1692,9 +2014,14 @@ export abstract class MongoModel {
     }
 
     // 查询数据
+    const queryFilter = this.applySoftDeleteFilter(
+      condition,
+      includeTrashed,
+      onlyTrashed,
+    );
     const results = await adapter.query(
       this.collectionName,
-      condition,
+      queryFilter,
       options,
     );
 
@@ -1724,11 +2051,14 @@ export abstract class MongoModel {
    * await User.increment('507f1f77bcf86cd799439011', 'views', 1);
    * await User.increment({ status: 'active' }, 'score', 10);
    */
-  static async increment(
+  static async increment<T extends typeof MongoModel>(
+    this: T,
     condition: MongoWhereCondition | string,
     field: string,
     amount: number = 1,
-  ): Promise<number> {
+    returnLatest: boolean = false,
+    fields?: string[],
+  ): Promise<number | InstanceType<T>> {
     if (!this.adapter) {
       throw new Error(
         "Database adapter not set. Please call Model.setAdapter() first.",
@@ -1744,17 +2074,49 @@ export abstract class MongoModel {
       filter = condition;
     }
 
+    filter = this.applySoftDeleteFilter(filter);
+
     const db = (adapter as any).getDatabase();
     if (!db) {
       throw new Error("Database not connected");
     }
 
     try {
-      const result = await db.collection(this.collectionName).updateOne(
-        filter,
-        { $inc: { [field]: amount } },
-      );
-      return result.modifiedCount || 0;
+      if (returnLatest) {
+        const projection = this.buildProjection(fields);
+        const opts: any = { returnDocument: "after" };
+        if (Object.keys(projection).length > 0) {
+          opts.projection = projection;
+        }
+        const result = await db.collection(this.collectionName)
+          .findOneAndUpdate(
+            filter,
+            { $inc: { [field]: amount } },
+            opts,
+          );
+        if (!result) {
+          return 0;
+        }
+        const instance = new (this as any)();
+        Object.assign(instance, result);
+        if ((this as any).virtuals) {
+          for (const [name, getter] of Object.entries((this as any).virtuals)) {
+            const getterFn = getter as (instance: any) => any;
+            Object.defineProperty(instance, name, {
+              get: () => getterFn(instance),
+              enumerable: true,
+              configurable: true,
+            });
+          }
+        }
+        return instance as InstanceType<T>;
+      } else {
+        const result = await db.collection(this.collectionName).updateOne(
+          filter,
+          { $inc: { [field]: amount } },
+        );
+        return result.modifiedCount || 0;
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`MongoDB increment error: ${message}`);
@@ -1772,12 +2134,21 @@ export abstract class MongoModel {
    * await User.decrement('507f1f77bcf86cd799439011', 'views', 1);
    * await User.decrement({ status: 'active' }, 'score', 10);
    */
-  static async decrement(
+  static async decrement<T extends typeof MongoModel>(
+    this: T,
     condition: MongoWhereCondition | string,
     field: string,
     amount: number = 1,
-  ): Promise<number> {
-    return await this.increment(condition, field, -amount);
+    returnLatest: boolean = false,
+    fields?: string[],
+  ): Promise<number | InstanceType<T>> {
+    return await this.increment(
+      condition,
+      field,
+      -amount,
+      returnLatest,
+      fields,
+    );
   }
 
   /**
@@ -1801,6 +2172,7 @@ export abstract class MongoModel {
     options: { returnDocument?: "before" | "after" } = {
       returnDocument: "after",
     },
+    fields?: string[],
   ): Promise<InstanceType<T> | null> {
     if (!this.adapter) {
       throw new Error(
@@ -1817,16 +2189,29 @@ export abstract class MongoModel {
       filter = condition;
     }
 
+    filter = this.applySoftDeleteFilter(filter);
+
     const db = (adapter as any).getDatabase();
     if (!db) {
       throw new Error("Database not connected");
     }
 
     try {
+      if (this.timestamps) {
+        const updatedAtField = typeof this.timestamps === "object"
+          ? (this.timestamps.updatedAt || "updatedAt")
+          : "updatedAt";
+        data = { ...data, [updatedAtField]: new Date() };
+      }
+      const projection = this.buildProjection(fields);
+      const opts: any = { returnDocument: options.returnDocument || "after" };
+      if (Object.keys(projection).length > 0) {
+        opts.projection = projection;
+      }
       const result = await db.collection(this.collectionName).findOneAndUpdate(
         filter,
         { $set: data },
-        { returnDocument: options.returnDocument || "after" },
+        opts,
       );
 
       if (!result) {
@@ -1835,6 +2220,16 @@ export abstract class MongoModel {
 
       const instance = new (this as any)();
       Object.assign(instance, result);
+      if ((this as any).virtuals) {
+        for (const [name, getter] of Object.entries((this as any).virtuals)) {
+          const getterFn = getter as (instance: any) => any;
+          Object.defineProperty(instance, name, {
+            get: () => getterFn(instance),
+            enumerable: true,
+            configurable: true,
+          });
+        }
+      }
       return instance as InstanceType<T>;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -1854,6 +2249,7 @@ export abstract class MongoModel {
   static async findOneAndDelete<T extends typeof MongoModel>(
     this: T,
     condition: MongoWhereCondition | string,
+    fields?: string[],
   ): Promise<InstanceType<T> | null> {
     if (!this.adapter) {
       throw new Error(
@@ -1876,17 +2272,59 @@ export abstract class MongoModel {
     }
 
     try {
-      const result = await db.collection(this.collectionName).findOneAndDelete(
-        filter,
-      );
-
-      if (!result) {
-        return null;
+      const projection = this.buildProjection(fields);
+      const optsUpdate: any = { returnDocument: "after" };
+      const optsDelete: any = {};
+      if (Object.keys(projection).length > 0) {
+        optsUpdate.projection = projection;
+        optsDelete.projection = projection;
       }
-
-      const instance = new (this as any)();
-      Object.assign(instance, result);
-      return instance as InstanceType<T>;
+      if (this.softDelete) {
+        const result = await db.collection(this.collectionName)
+          .findOneAndUpdate(
+            filter,
+            { $set: { [this.deletedAtField]: new Date() } },
+            optsUpdate,
+          );
+        if (!result) {
+          return null;
+        }
+        const instance = new (this as any)();
+        Object.assign(instance, result);
+        if ((this as any).virtuals) {
+          for (const [name, getter] of Object.entries((this as any).virtuals)) {
+            const getterFn = getter as (instance: any) => any;
+            Object.defineProperty(instance, name, {
+              get: () => getterFn(instance),
+              enumerable: true,
+              configurable: true,
+            });
+          }
+        }
+        return instance as InstanceType<T>;
+      } else {
+        const result = await db.collection(this.collectionName)
+          .findOneAndDelete(
+            filter,
+            optsDelete,
+          );
+        if (!result) {
+          return null;
+        }
+        const instance = new (this as any)();
+        Object.assign(instance, result);
+        if ((this as any).virtuals) {
+          for (const [name, getter] of Object.entries((this as any).virtuals)) {
+            const getterFn = getter as (instance: any) => any;
+            Object.defineProperty(instance, name, {
+              get: () => getterFn(instance),
+              enumerable: true,
+              configurable: true,
+            });
+          }
+        }
+        return instance as InstanceType<T>;
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`MongoDB findOneAndDelete error: ${message}`);
@@ -1909,6 +2347,9 @@ export abstract class MongoModel {
     this: T,
     condition: MongoWhereCondition | string,
     data: Record<string, any>,
+    returnLatest: boolean = true,
+    resurrect: boolean = false,
+    fields?: string[],
   ): Promise<InstanceType<T>> {
     if (!this.adapter) {
       throw new Error(
@@ -1925,16 +2366,33 @@ export abstract class MongoModel {
       filter = condition;
     }
 
+    if (!resurrect) {
+      filter = this.applySoftDeleteFilter(filter);
+    }
+
     const db = (adapter as any).getDatabase();
     if (!db) {
       throw new Error("Database not connected");
     }
 
     try {
+      const projection = this.buildProjection(fields);
+      const opts: any = {
+        upsert: true,
+        returnDocument: returnLatest ? "after" : "before",
+      };
+      if (Object.keys(projection).length > 0) {
+        opts.projection = projection;
+      }
       const result = await db.collection(this.collectionName).findOneAndUpdate(
         filter,
-        { $set: data },
-        { upsert: true, returnDocument: "after" },
+        {
+          $set: data,
+          ...(resurrect && this.softDelete
+            ? { $unset: { [this.deletedAtField]: "" } }
+            : {}),
+        },
+        opts,
       );
 
       const instance = new (this as any)();
@@ -1943,6 +2401,74 @@ export abstract class MongoModel {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`MongoDB upsert error: ${message}`);
+    }
+  }
+
+  static async findOneAndReplace<T extends typeof MongoModel>(
+    this: T,
+    condition: MongoWhereCondition | string,
+    replacement: Record<string, any>,
+    returnLatest: boolean = true,
+    fields?: string[],
+  ): Promise<InstanceType<T> | null> {
+    if (!this.adapter) {
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
+    }
+
+    const adapter = this.adapter as any as MongoDBAdapter;
+    let filter: any = {};
+
+    if (typeof condition === "string") {
+      filter[this.primaryKey] = condition;
+    } else {
+      filter = condition;
+    }
+
+    filter = this.applySoftDeleteFilter(filter);
+
+    const db = (adapter as any).getDatabase();
+    if (!db) {
+      throw new Error("Database not connected");
+    }
+
+    try {
+      if (this.timestamps) {
+        const updatedAtField = typeof this.timestamps === "object"
+          ? (this.timestamps.updatedAt || "updatedAt")
+          : "updatedAt";
+        replacement = { ...replacement, [updatedAtField]: new Date() };
+      }
+      const projection = this.buildProjection(fields);
+      const opts: any = { returnDocument: returnLatest ? "after" : "before" };
+      if (Object.keys(projection).length > 0) {
+        opts.projection = projection;
+      }
+      const result = await db.collection(this.collectionName).findOneAndReplace(
+        filter,
+        replacement,
+        opts,
+      );
+      if (!result) {
+        return null;
+      }
+      const instance = new (this as any)();
+      Object.assign(instance, result);
+      if ((this as any).virtuals) {
+        for (const [name, getter] of Object.entries((this as any).virtuals)) {
+          const getterFn = getter as (instance: any) => any;
+          Object.defineProperty(instance, name, {
+            get: () => getterFn(instance),
+            enumerable: true,
+            configurable: true,
+          });
+        }
+      }
+      return instance as InstanceType<T>;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`MongoDB findOneAndReplace error: ${message}`);
     }
   }
 
@@ -1959,6 +2485,8 @@ export abstract class MongoModel {
   static async distinct(
     field: string,
     condition: MongoWhereCondition = {},
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
   ): Promise<any[]> {
     if (!this.adapter) {
       throw new Error(
@@ -1974,14 +2502,11 @@ export abstract class MongoModel {
     }
 
     try {
-      // 软删除：自动过滤已删除的记录（默认排除软删除）
-      let queryFilter = condition;
-      if (this.softDelete) {
-        queryFilter = {
-          ...condition,
-          [this.deletedAtField]: { $exists: false },
-        };
-      }
+      const queryFilter = this.applySoftDeleteFilter(
+        condition,
+        includeTrashed,
+        onlyTrashed,
+      );
       const values = await db.collection(this.collectionName).distinct(
         field,
         queryFilter,
@@ -2006,6 +2531,8 @@ export abstract class MongoModel {
    */
   static async aggregate(
     pipeline: any[],
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
   ): Promise<any[]> {
     if (!this.adapter) {
       throw new Error(
@@ -2021,8 +2548,15 @@ export abstract class MongoModel {
     }
 
     try {
+      let effectivePipeline = pipeline;
+      if (this.softDelete && !includeTrashed) {
+        const match = onlyTrashed
+          ? { [this.deletedAtField]: { $exists: true } }
+          : { [this.deletedAtField]: { $exists: false } };
+        effectivePipeline = [{ $match: match }, ...pipeline];
+      }
       const results = await db.collection(this.collectionName).aggregate(
-        pipeline,
+        effectivePipeline,
       ).toArray();
       return results;
     } catch (error) {
@@ -2039,10 +2573,15 @@ export abstract class MongoModel {
    * const allUsers = await User.withTrashed().findAll();
    * const user = await User.withTrashed().find('507f1f77bcf86cd799439011');
    */
-  static withTrashed<T extends typeof MongoModel>(this: T): {
+  static onlyTrashed<T extends typeof MongoModel>(this: T): {
     findAll: (
       condition?: MongoWhereCondition,
       fields?: string[],
+      options?: {
+        sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+        skip?: number;
+        limit?: number;
+      },
     ) => Promise<InstanceType<T>[]>;
     find: (
       condition?: MongoWhereCondition | string,
@@ -2054,6 +2593,11 @@ export abstract class MongoModel {
       findAll: async (
         condition: MongoWhereCondition = {},
         fields?: string[],
+        options?: {
+          sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+          skip?: number;
+          limit?: number;
+        },
       ): Promise<InstanceType<T>[]> => {
         await this.ensureInitialized();
         if (!this.adapter) {
@@ -2063,14 +2607,24 @@ export abstract class MongoModel {
         }
         const adapter = this.adapter as any as MongoDBAdapter;
         const projection = this.buildProjection(fields);
-        const options: any = {};
+        const queryOptions: any = {};
         if (Object.keys(projection).length > 0) {
-          options.projection = projection;
+          queryOptions.projection = projection;
+        }
+        const normalizedSort = this.normalizeSort(options?.sort);
+        if (normalizedSort) {
+          queryOptions.sort = normalizedSort;
+        }
+        if (typeof options?.skip === "number") {
+          queryOptions.skip = options.skip;
+        }
+        if (typeof options?.limit === "number") {
+          queryOptions.limit = options.limit;
         }
         const results = await adapter.query(
           this.collectionName,
           condition,
-          options,
+          queryOptions,
         );
         return results.map((row: any) => {
           const instance = new (this as any)();
@@ -2162,10 +2716,15 @@ export abstract class MongoModel {
    * const deletedUsers = await User.onlyTrashed().findAll();
    * const user = await User.onlyTrashed().find('507f1f77bcf86cd799439011');
    */
-  static onlyTrashed<T extends typeof MongoModel>(this: T): {
+  static withTrashed<T extends typeof MongoModel>(this: T): {
     findAll: (
       condition?: MongoWhereCondition,
       fields?: string[],
+      options?: {
+        sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+        skip?: number;
+        limit?: number;
+      },
     ) => Promise<InstanceType<T>[]>;
     find: (
       condition?: MongoWhereCondition | string,
@@ -2177,6 +2736,11 @@ export abstract class MongoModel {
       findAll: async (
         condition: MongoWhereCondition = {},
         fields?: string[],
+        options?: {
+          sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+          skip?: number;
+          limit?: number;
+        },
       ): Promise<InstanceType<T>[]> => {
         await this.ensureInitialized();
         if (!this.adapter) {
@@ -2186,9 +2750,19 @@ export abstract class MongoModel {
         }
         const adapter = this.adapter as any as MongoDBAdapter;
         const projection = this.buildProjection(fields);
-        const options: any = {};
+        const queryOptions: any = {};
         if (Object.keys(projection).length > 0) {
-          options.projection = projection;
+          queryOptions.projection = projection;
+        }
+        const normalizedSort = this.normalizeSort(options?.sort);
+        if (normalizedSort) {
+          queryOptions.sort = normalizedSort;
+        }
+        if (typeof options?.skip === "number") {
+          queryOptions.skip = options.skip;
+        }
+        if (typeof options?.limit === "number") {
+          queryOptions.limit = options.limit;
         }
         const queryFilter = {
           ...condition,
@@ -2197,7 +2771,7 @@ export abstract class MongoModel {
         const results = await adapter.query(
           this.collectionName,
           queryFilter,
-          options,
+          queryOptions,
         );
         return results.map((row: any) => {
           const instance = new (this as any)();
@@ -2297,7 +2871,8 @@ export abstract class MongoModel {
    */
   static async restore(
     condition: MongoWhereCondition | string,
-  ): Promise<number> {
+    options?: { returnIds?: boolean },
+  ): Promise<number | { count: number; ids: any[] }> {
     if (!this.softDelete) {
       throw new Error("Soft delete is not enabled for this model");
     }
@@ -2325,11 +2900,22 @@ export abstract class MongoModel {
     }
 
     try {
+      let ids: any[] = [];
+      if (options?.returnIds) {
+        ids = await db.collection(this.collectionName)
+          .find(filter, { projection: { [this.primaryKey]: 1 } })
+          .map((doc: any) => doc[this.primaryKey])
+          .toArray();
+      }
       const result = await db.collection(this.collectionName).updateMany(
         filter,
         { $unset: { [this.deletedAtField]: "" } },
       );
-      return result.modifiedCount || 0;
+      const count = result.modifiedCount || 0;
+      if (options?.returnIds) {
+        return { count, ids };
+      }
+      return count;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`MongoDB restore error: ${message}`);
@@ -2347,7 +2933,8 @@ export abstract class MongoModel {
    */
   static async forceDelete(
     condition: MongoWhereCondition | string,
-  ): Promise<number> {
+    options?: { returnIds?: boolean },
+  ): Promise<number | { count: number; ids: any[] }> {
     if (!this.adapter) {
       throw new Error(
         "Database adapter not set. Please call Model.setAdapter() first.",
@@ -2369,14 +2956,442 @@ export abstract class MongoModel {
     }
 
     try {
+      let ids: any[] = [];
+      if (options?.returnIds) {
+        ids = await db.collection(this.collectionName)
+          .find(filter, { projection: { [this.primaryKey]: 1 } })
+          .map((doc: any) => doc[this.primaryKey])
+          .toArray();
+      }
       const result = await db.collection(this.collectionName).deleteMany(
         filter,
       );
-      return result.deletedCount || 0;
+      const count = result.deletedCount || 0;
+      if (options?.returnIds) {
+        return { count, ids };
+      }
+      return count;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`MongoDB forceDelete error: ${message}`);
     }
+  }
+
+  /**
+   * 链式查询构建器
+   * @example
+   * const rows = await User.query()
+   *   .where({ status: 'active' })
+   *   .fields(['_id', 'name'])
+   *   .sort({ createdAt: 'desc' })
+   *   .skip(10)
+   *   .limit(20)
+   *   .findAll();
+   */
+  static query<T extends typeof MongoModel>(this: T): {
+    where: (condition: MongoWhereCondition | string) => ReturnType<T["query"]>;
+    fields: (fields: string[]) => ReturnType<T["query"]>;
+    sort: (
+      sort: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc",
+    ) => ReturnType<T["query"]>;
+    skip: (n: number) => ReturnType<T["query"]>;
+    limit: (n: number) => ReturnType<T["query"]>;
+    includeTrashed: () => ReturnType<T["query"]>;
+    onlyTrashed: () => ReturnType<T["query"]>;
+    findAll: () => Promise<InstanceType<T>[]>;
+    find: () => Promise<InstanceType<T> | null>;
+    count: () => Promise<number>;
+    exists: () => Promise<boolean>;
+    update: (
+      data: Record<string, any>,
+      returnLatest?: boolean,
+    ) => Promise<number | InstanceType<T>>;
+    updateMany: (data: Record<string, any>) => Promise<number>;
+    increment: (
+      field: string,
+      amount?: number,
+      returnLatest?: boolean,
+    ) => Promise<number | InstanceType<T>>;
+    decrement: (
+      field: string,
+      amount?: number,
+      returnLatest?: boolean,
+    ) => Promise<number | InstanceType<T>>;
+    deleteMany: (
+      options?: { returnIds?: boolean },
+    ) => Promise<number | { count: number; ids: any[] }>;
+    restore: (
+      options?: { returnIds?: boolean },
+    ) => Promise<number | { count: number; ids: any[] }>;
+    forceDelete: (
+      options?: { returnIds?: boolean },
+    ) => Promise<number | { count: number; ids: any[] }>;
+    distinct: (field: string) => Promise<any[]>;
+    aggregate: (pipeline: any[]) => Promise<any[]>;
+    findOneAndUpdate: (
+      data: Record<string, any>,
+      options?: { returnDocument?: "before" | "after" },
+    ) => Promise<InstanceType<T> | null>;
+    findOneAndDelete: () => Promise<InstanceType<T> | null>;
+    findOneAndReplace: (
+      replacement: Record<string, any>,
+      returnLatest?: boolean,
+    ) => Promise<InstanceType<T> | null>;
+    upsert: (
+      data: Record<string, any>,
+      returnLatest?: boolean,
+      resurrect?: boolean,
+    ) => Promise<InstanceType<T>>;
+    findOrCreate: (
+      data: Record<string, any>,
+      resurrect?: boolean,
+    ) => Promise<InstanceType<T>>;
+    incrementMany: (
+      fieldOrMap: string | Record<string, number>,
+      amount?: number,
+    ) => Promise<number>;
+    decrementMany: (
+      fieldOrMap: string | Record<string, number>,
+      amount?: number,
+    ) => Promise<number>;
+  } {
+    let _condition: MongoWhereCondition | string = {};
+    let _fields: string[] | undefined;
+    let _sort:
+      | Record<string, 1 | -1 | "asc" | "desc">
+      | "asc"
+      | "desc"
+      | undefined;
+    let _skip: number | undefined;
+    let _limit: number | undefined;
+    let _includeTrashed = false;
+    let _onlyTrashed = false;
+
+    const builder = {
+      where: (condition: MongoWhereCondition | string) => {
+        _condition = condition;
+        return builder;
+      },
+      fields: (fields: string[]) => {
+        _fields = fields;
+        return builder;
+      },
+      sort: (
+        sort: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc",
+      ) => {
+        _sort = sort;
+        return builder;
+      },
+      skip: (n: number) => {
+        _skip = Math.max(0, Math.floor(n));
+        return builder;
+      },
+      limit: (n: number) => {
+        _limit = Math.max(1, Math.floor(n));
+        return builder;
+      },
+      includeTrashed: () => {
+        _includeTrashed = true;
+        _onlyTrashed = false;
+        return builder;
+      },
+      onlyTrashed: () => {
+        _onlyTrashed = true;
+        _includeTrashed = false;
+        return builder;
+      },
+      findAll: async (): Promise<InstanceType<T>[]> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        const adapter = this.adapter as any as MongoDBAdapter;
+        const projection = this.buildProjection(_fields);
+        const queryOptions: any = {};
+        if (Object.keys(projection).length > 0) {
+          queryOptions.projection = projection;
+        }
+        const normalizedSort = this.normalizeSort(_sort);
+        if (normalizedSort) {
+          queryOptions.sort = normalizedSort;
+        }
+        if (typeof _skip === "number") {
+          queryOptions.skip = _skip;
+        }
+        if (typeof _limit === "number") {
+          queryOptions.limit = _limit;
+        }
+
+        let filter: any = {};
+        if (typeof _condition === "string") {
+          filter[this.primaryKey] = _condition;
+        } else {
+          filter = _condition;
+        }
+        const queryFilter = this.applySoftDeleteFilter(
+          filter,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+
+        const results = await adapter.query(
+          this.collectionName,
+          queryFilter,
+          queryOptions,
+        );
+
+        return results.map((row: any) => {
+          const instance = new (this as any)();
+          Object.assign(instance, row);
+          if ((this as any).virtuals) {
+            const Model = this as any;
+            for (const [name, getter] of Object.entries(Model.virtuals)) {
+              const getterFn = getter as (instance: any) => any;
+              Object.defineProperty(instance, name, {
+                get: () => getterFn(instance),
+                enumerable: true,
+                configurable: true,
+              });
+            }
+          }
+          return instance as InstanceType<T>;
+        });
+      },
+      find: async (): Promise<InstanceType<T> | null> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        const adapter = this.adapter as any as MongoDBAdapter;
+        const projection = this.buildProjection(_fields);
+        const queryOptions: any = { limit: 1 };
+        if (Object.keys(projection).length > 0) {
+          queryOptions.projection = projection;
+        }
+        const normalizedSort = this.normalizeSort(_sort);
+        if (normalizedSort) {
+          queryOptions.sort = normalizedSort;
+        }
+
+        let filter: any = {};
+        if (typeof _condition === "string") {
+          filter[this.primaryKey] = _condition;
+        } else {
+          filter = _condition;
+        }
+        const queryFilter = this.applySoftDeleteFilter(
+          filter,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+
+        const results = await adapter.query(
+          this.collectionName,
+          queryFilter,
+          queryOptions,
+        );
+        if (results.length === 0) {
+          return null;
+        }
+        const instance = new (this as any)();
+        Object.assign(instance, results[0]);
+        if ((this as any).virtuals) {
+          const Model = this as any;
+          for (const [name, getter] of Object.entries(Model.virtuals)) {
+            const getterFn = getter as (instance: any) => any;
+            Object.defineProperty(instance, name, {
+              get: () => getterFn(instance),
+              enumerable: true,
+              configurable: true,
+            });
+          }
+        }
+        return instance as InstanceType<T>;
+      },
+      count: async (): Promise<number> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        const adapter = this.adapter as any as MongoDBAdapter;
+        const db = (adapter as any).getDatabase();
+        if (!db) {
+          throw new Error("Database not connected");
+        }
+
+        let filter: any = {};
+        if (typeof _condition === "string") {
+          filter[this.primaryKey] = _condition;
+        } else {
+          filter = _condition;
+        }
+        const queryFilter = this.applySoftDeleteFilter(
+          filter,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+        const count = await db.collection(this.collectionName).countDocuments(
+          queryFilter,
+        );
+        return count;
+      },
+      exists: async (): Promise<boolean> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        return await this.exists(
+          _condition as any,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+      },
+      update: async (
+        data: Record<string, any>,
+        returnLatest: boolean = false,
+      ): Promise<number | InstanceType<T>> => {
+        if (returnLatest) {
+          return await this.update(
+            _condition as any,
+            data,
+            true,
+            _fields,
+          );
+        }
+        return await this.update(_condition as any, data);
+      },
+      updateMany: async (data: Record<string, any>): Promise<number> => {
+        return await this.updateMany(_condition as any, data);
+      },
+      increment: async (
+        field: string,
+        amount: number = 1,
+        returnLatest: boolean = false,
+      ): Promise<number | InstanceType<T>> => {
+        return await this.increment(
+          _condition as any,
+          field,
+          amount,
+          returnLatest,
+          _fields,
+        );
+      },
+      decrement: async (
+        field: string,
+        amount: number = 1,
+        returnLatest: boolean = false,
+      ): Promise<number | InstanceType<T>> => {
+        return await this.decrement(
+          _condition as any,
+          field,
+          amount,
+          returnLatest,
+          _fields,
+        );
+      },
+      deleteMany: async (
+        options?: { returnIds?: boolean },
+      ): Promise<number | { count: number; ids: any[] }> => {
+        return await this.deleteMany(_condition as any, options);
+      },
+      restore: async (
+        options?: { returnIds?: boolean },
+      ): Promise<number | { count: number; ids: any[] }> => {
+        return await this.restore(_condition as any, options);
+      },
+      forceDelete: async (
+        options?: { returnIds?: boolean },
+      ): Promise<number | { count: number; ids: any[] }> => {
+        return await this.forceDelete(_condition as any, options);
+      },
+      distinct: async (field: string): Promise<any[]> => {
+        const cond = typeof _condition === "string"
+          ? { [this.primaryKey]: _condition }
+          : (_condition as any);
+        return await this.distinct(field, cond, _includeTrashed, _onlyTrashed);
+      },
+      aggregate: async (pipeline: any[]): Promise<any[]> => {
+        let match: any = {};
+        if (typeof _condition === "string") {
+          match[this.primaryKey] = _condition;
+        } else if (_condition && Object.keys(_condition).length > 0) {
+          match = _condition;
+        }
+        const effective = Object.keys(match).length > 0
+          ? [{ $match: match }, ...pipeline]
+          : pipeline;
+        return await this.aggregate(effective, _includeTrashed, _onlyTrashed);
+      },
+      findOneAndUpdate: async (
+        data: Record<string, any>,
+        options?: { returnDocument?: "before" | "after" },
+      ): Promise<InstanceType<T> | null> => {
+        return await this.findOneAndUpdate(
+          _condition as any,
+          data,
+          options ?? { returnDocument: "after" },
+          _fields,
+        );
+      },
+      findOneAndDelete: async (): Promise<InstanceType<T> | null> => {
+        return await this.findOneAndDelete(_condition as any, _fields);
+      },
+      findOneAndReplace: async (
+        replacement: Record<string, any>,
+        returnLatest: boolean = true,
+      ): Promise<InstanceType<T> | null> => {
+        return await this.findOneAndReplace(
+          _condition as any,
+          replacement,
+          returnLatest,
+          _fields,
+        );
+      },
+      upsert: async (
+        data: Record<string, any>,
+        returnLatest: boolean = true,
+        resurrect: boolean = false,
+      ): Promise<InstanceType<T>> => {
+        return await this.upsert(
+          _condition as any,
+          data,
+          returnLatest,
+          resurrect,
+          _fields,
+        );
+      },
+      findOrCreate: async (
+        data: Record<string, any>,
+        resurrect: boolean = false,
+      ): Promise<InstanceType<T>> => {
+        const cond = typeof _condition === "string"
+          ? { [this.primaryKey]: _condition }
+          : (_condition as any);
+        return await this.findOrCreate(cond, data, resurrect, _fields);
+      },
+      incrementMany: async (
+        fieldOrMap: string | Record<string, number>,
+        amount: number = 1,
+      ): Promise<number> => {
+        return await this.incrementMany(_condition as any, fieldOrMap, amount);
+      },
+      decrementMany: async (
+        fieldOrMap: string | Record<string, number>,
+        amount: number = 1,
+      ): Promise<number> => {
+        return await this.decrementMany(_condition as any, fieldOrMap, amount);
+      },
+    };
+
+    return builder as any;
   }
 
   /**
@@ -2395,6 +3410,8 @@ export abstract class MongoModel {
     this: T,
     condition: MongoWhereCondition,
     data: Record<string, any>,
+    resurrect: boolean = false,
+    fields?: string[],
   ): Promise<InstanceType<T>> {
     await this.ensureInitialized();
     if (!this.adapter) {
@@ -2404,8 +3421,18 @@ export abstract class MongoModel {
     }
 
     // 先尝试查找（包含软删除的记录）
-    const existing = await this.withTrashed().find(condition);
+    const existing = await this.withTrashed().find(condition, fields);
     if (existing) {
+      if (resurrect && this.softDelete) {
+        const id = (existing as any)[this.primaryKey];
+        if (id) {
+          await this.restore(id);
+          const latest = await this.find(id, fields);
+          if (latest) {
+            return latest as InstanceType<T>;
+          }
+        }
+      }
       return existing as InstanceType<T>;
     }
 
@@ -2443,6 +3470,29 @@ export abstract class MongoModel {
   }
 
   /**
+   * 在事务中执行一段逻辑（需要 MongoDB 事务支持）
+   * @param callback 事务回调，传入当前模型绑定的适配器
+   * @returns 回调的返回值
+   *
+   * @example
+   * await User.transaction(async (db) => {
+   *   await User.update({ _id: id }, { name: 'tx' });
+   *   await Profile.update({ userId: id }, { nickname: 'tx-nick' });
+   * });
+   */
+  static async transaction<T>(
+    callback: (db: DatabaseAdapter) => Promise<T>,
+  ): Promise<T> {
+    if (!this.adapter) {
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() first.",
+      );
+    }
+    const adapter = this.adapter as any as MongoDBAdapter;
+    return await adapter.transaction(callback);
+  }
+
+  /**
    * 关联查询：属于（多对一关系）
    * 例如：Post belongsTo User（一个帖子属于一个用户）
    * @param RelatedModel 关联的模型类
@@ -2464,6 +3514,9 @@ export abstract class MongoModel {
     RelatedModel: T,
     foreignKey: string,
     localKey?: string,
+    fields?: string[],
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
   ): Promise<InstanceType<T> | null> {
     const Model = this.constructor as typeof MongoModel;
     if (!Model.adapter) {
@@ -2479,7 +3532,12 @@ export abstract class MongoModel {
       return null;
     }
 
-    return await RelatedModel.find({ [relatedKey]: foreignValue });
+    return await RelatedModel.find(
+      { [relatedKey]: foreignValue },
+      fields,
+      includeTrashed,
+      onlyTrashed,
+    );
   }
 
   /**
@@ -2504,6 +3562,9 @@ export abstract class MongoModel {
     RelatedModel: T,
     foreignKey: string,
     localKey?: string,
+    fields?: string[],
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
   ): Promise<InstanceType<T> | null> {
     const Model = this.constructor as typeof MongoModel;
     if (!Model.adapter) {
@@ -2519,7 +3580,12 @@ export abstract class MongoModel {
       return null;
     }
 
-    return await RelatedModel.find({ [foreignKey]: localValue });
+    return await RelatedModel.find(
+      { [foreignKey]: localValue },
+      fields,
+      includeTrashed,
+      onlyTrashed,
+    );
   }
 
   /**
@@ -2544,6 +3610,14 @@ export abstract class MongoModel {
     RelatedModel: T,
     foreignKey: string,
     localKey?: string,
+    fields?: string[],
+    options?: {
+      sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+      skip?: number;
+      limit?: number;
+    },
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
   ): Promise<InstanceType<T>[]> {
     const Model = this.constructor as typeof MongoModel;
     if (!Model.adapter) {
@@ -2559,7 +3633,13 @@ export abstract class MongoModel {
       return [];
     }
 
-    return await RelatedModel.findAll({ [foreignKey]: localValue });
+    return await RelatedModel.findAll(
+      { [foreignKey]: localValue },
+      fields,
+      options,
+      includeTrashed,
+      onlyTrashed,
+    );
   }
 
   /**

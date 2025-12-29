@@ -17,7 +17,7 @@
 
     "@dreamer/dweb": "../src/mod.ts",
     "@dreamer/dweb/cli": "../src/cli.ts",
-    "@dreamer/dweb/client": "../src/client.ts",
+    "@dreamer/dweb/client": "../src/client/mod.ts",
     "@dreamer/dweb/console": "../src/console/mod.ts",
     "@dreamer/dweb/database": "../src/features/database/mod.ts",
     "@dreamer/dweb/extensions": "../src/extensions/mod.ts",
@@ -35,6 +35,8 @@
     "preact/hooks": "npm:preact@10.28.0/hooks",
     "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
     "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact",
+
+		"tailwind-merge": "npm:tailwind-merge@2.5.4",
    
     "esbuild": "npm:esbuild@0.19.12",
     "@sqlite": "https://deno.land/x/sqlite@v3.7.3/mod.ts",

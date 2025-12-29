@@ -390,6 +390,43 @@ export abstract class SQLModel {
   }
 
   /**
+   * 规范化排序参数（支持字符串 asc/desc）
+   */
+  private static normalizeSort(
+    sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc",
+  ): Record<string, "ASC" | "DESC"> | undefined {
+    if (!sort) return undefined;
+    if (typeof sort === "string") {
+      const dir = sort.toLowerCase() === "desc" ? "DESC" : "ASC";
+      return { [this.primaryKey]: dir };
+    }
+    const normalized: Record<string, "ASC" | "DESC"> = {};
+    for (const [field, dir] of Object.entries(sort)) {
+      if (typeof dir === "string") {
+        normalized[field] = dir.toLowerCase() === "desc" ? "DESC" : "ASC";
+      } else {
+        normalized[field] = dir === -1 ? "DESC" : "ASC";
+      }
+    }
+    return normalized;
+  }
+
+  /**
+   * 构建 ORDER BY 子句内容（不包含关键字）
+   */
+  private static buildOrderByClause(
+    sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc",
+  ): string | undefined {
+    const normalized = this.normalizeSort(sort);
+    if (!normalized) return undefined;
+    const parts: string[] = [];
+    for (const [field, dir] of Object.entries(normalized)) {
+      parts.push(`${field} ${dir}`);
+    }
+    return parts.join(", ");
+  }
+
+  /**
    * 处理字段（应用默认值、类型转换、验证）
    * @param data 原始数据
    * @returns 处理后的数据
@@ -702,6 +739,11 @@ export abstract class SQLModel {
     this: T,
     condition: WhereCondition | number | string,
     fields?: string[],
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
+    options?: {
+      sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+    },
   ): Promise<InstanceType<T> | null> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
@@ -712,11 +754,18 @@ export abstract class SQLModel {
       );
     }
 
-    const { where, params } = this.buildWhereClause(condition, false, false);
+    const { where, params } = this.buildWhereClause(
+      condition,
+      includeTrashed,
+      onlyTrashed,
+    );
     const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
-
-    const sql =
-      `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT 1`;
+    const orderBy = this.buildOrderByClause(options?.sort);
+    let sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
+    if (orderBy) {
+      sql = `${sql} ORDER BY ${orderBy}`;
+    }
+    sql = `${sql} LIMIT 1`;
     const results = await this.adapter.query(sql, params);
 
     if (results.length === 0) {
@@ -744,6 +793,13 @@ export abstract class SQLModel {
     this: T,
     condition: WhereCondition = {},
     fields?: string[],
+    options?: {
+      sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+      skip?: number;
+      limit?: number;
+    },
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
   ): Promise<InstanceType<T>[]> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
@@ -754,11 +810,32 @@ export abstract class SQLModel {
       );
     }
 
-    const { where, params } = this.buildWhereClause(condition, false, false);
+    const { where, params } = this.buildWhereClause(
+      condition,
+      includeTrashed,
+      onlyTrashed,
+    );
     const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
 
-    const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
-    const results = await this.adapter.query(sql, params);
+    const orderBy = this.buildOrderByClause(options?.sort);
+    const useLimit = typeof options?.limit === "number";
+    const useSkip = typeof options?.skip === "number";
+    let sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
+    if (orderBy) {
+      sql = `${sql} ORDER BY ${orderBy}`;
+    }
+    if (useLimit) {
+      sql = `${sql} LIMIT ?`;
+    }
+    if (useLimit && useSkip) {
+      sql = `${sql} OFFSET ?`;
+    }
+    const extraParams = [];
+    if (useLimit) extraParams.push(Math.max(1, Math.floor(options!.limit!)));
+    if (useLimit && useSkip) {
+      extraParams.push(Math.max(0, Math.floor(options!.skip!)));
+    }
+    const results = await this.adapter.query(sql, [...params, ...extraParams]);
 
     return results.map((row: any) => {
       const instance = new (this as any)();
@@ -840,23 +917,41 @@ export abstract class SQLModel {
     const values = Object.values(processedData);
     const placeholders = keys.map(() => "?").join(", ");
 
-    const sql = `INSERT INTO ${this.tableName} (${
+    let sql = `INSERT INTO ${this.tableName} (${
       keys.join(", ")
     }) VALUES (${placeholders})`;
-    await this.adapter.execute(sql, values);
+    if ((this.adapter as any)?.config?.type === "postgresql") {
+      sql = `${sql} RETURNING ${this.primaryKey}`;
+    }
+    const execResult = await this.adapter.execute(sql, values);
 
-    // 获取插入的 ID（如果支持）
     let insertedId: any = null;
-    try {
-      const result = await this.adapter.query(
-        `SELECT last_insert_rowid() as id`,
-        [],
-      );
-      if (result.length > 0) {
-        insertedId = result[0].id;
+    if (
+      execResult && typeof execResult === "object" && "insertId" in execResult
+    ) {
+      insertedId = (execResult as any).insertId ?? null;
+    }
+    if (
+      !insertedId && execResult && typeof execResult === "object" &&
+      "rows" in execResult
+    ) {
+      const rows = (execResult as any).rows;
+      if (Array.isArray(rows) && rows.length > 0) {
+        insertedId = rows[0]?.[this.primaryKey] ?? rows[0]?.id ?? null;
       }
-    } catch {
-      // 某些数据库可能不支持 last_insert_rowid，忽略错误
+    }
+    if (!insertedId) {
+      try {
+        const result = await this.adapter.query(
+          `SELECT last_insert_rowid() as id`,
+          [],
+        );
+        if (result.length > 0) {
+          insertedId = result[0].id;
+        }
+      } catch {
+        void 0;
+      }
     }
 
     // 如果插入成功且有 ID，重新查询获取完整记录
@@ -987,7 +1082,11 @@ export abstract class SQLModel {
     const values = Object.values(processedData);
     const setClause = keys.map((key) => `${key} = ?`).join(", ");
 
-    const sql = `UPDATE ${this.tableName} SET ${setClause} WHERE ${where}`;
+    let sql = `UPDATE ${this.tableName} SET ${setClause} WHERE ${where}`;
+    const isPostgres = (this.adapter as any)?.config?.type === "postgresql";
+    if (isPostgres) {
+      sql = `${sql} RETURNING *`;
+    }
     const result = await this.adapter.execute(sql, [...values, ...whereParams]);
 
     // 返回影响的行数（如果适配器支持）
@@ -998,15 +1097,25 @@ export abstract class SQLModel {
         : 0);
 
     if (affectedRows > 0) {
-      // 重新查询更新后的记录
-      const updatedInstance = await this.find(condition);
+      let updatedInstance: any | null = null;
+      if (
+        isPostgres && result && typeof result === "object" && "rows" in result
+      ) {
+        const rows = (result as any).rows as any[];
+        if (Array.isArray(rows) && rows.length > 0) {
+          const instance = new (this as any)();
+          Object.assign(instance, rows[0]);
+          updatedInstance = instance;
+        }
+      } else {
+        const instance = new (this as any)();
+        Object.assign(instance, existingInstance || {}, processedData);
+        updatedInstance = instance;
+      }
       if (updatedInstance) {
-        // afterUpdate 钩子
         if (this.afterUpdate) {
           await this.afterUpdate(updatedInstance);
         }
-
-        // afterSave 钩子
         if (this.afterSave) {
           await this.afterSave(updatedInstance);
         }
@@ -1197,8 +1306,19 @@ export abstract class SQLModel {
     this: T,
     condition: WhereCondition | number | string,
     fields?: string[],
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
+    options?: {
+      sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+    },
   ): Promise<InstanceType<T> | null> {
-    return await this.find(condition, fields);
+    return await this.find(
+      condition,
+      fields,
+      includeTrashed,
+      onlyTrashed,
+      options,
+    );
   }
 
   /**
@@ -1295,6 +1415,8 @@ export abstract class SQLModel {
    */
   static async count(
     condition: WhereCondition = {},
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
   ): Promise<number> {
     // 自动初始化（如果未初始化）
     await this.ensureInitialized();
@@ -1305,7 +1427,11 @@ export abstract class SQLModel {
       );
     }
 
-    const { where, params } = this.buildWhereClause(condition, false, false);
+    const { where, params } = this.buildWhereClause(
+      condition,
+      includeTrashed,
+      onlyTrashed,
+    );
     const sql =
       `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
     const results = await this.adapter.query(sql, params);
@@ -1327,6 +1453,8 @@ export abstract class SQLModel {
    */
   static async exists(
     condition: WhereCondition | number | string,
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
   ): Promise<boolean> {
     if (!this.adapter) {
       throw new Error(
@@ -1334,7 +1462,11 @@ export abstract class SQLModel {
       );
     }
 
-    const { where, params } = this.buildWhereClause(condition, false, false);
+    const { where, params } = this.buildWhereClause(
+      condition,
+      includeTrashed,
+      onlyTrashed,
+    );
     const sql =
       `SELECT EXISTS(SELECT 1 FROM ${this.tableName} WHERE ${where}) as exists`;
     const results = await this.adapter.query(sql, params);
@@ -1381,31 +1513,41 @@ export abstract class SQLModel {
     const valuesList = dataArray.map(() => `(${placeholders})`).join(", ");
     const allValues = dataArray.flatMap((data) => keys.map((key) => data[key]));
 
-    const sql = `INSERT INTO ${this.tableName} (${
+    let sql = `INSERT INTO ${this.tableName} (${
       keys.join(", ")
     }) VALUES ${valuesList}`;
-    await this.adapter.execute(sql, allValues);
+    const isPostgres = (this.adapter as any)?.config?.type === "postgresql";
+    if (isPostgres) {
+      sql = `${sql} RETURNING ${this.primaryKey}`;
+    }
+    const execResult = await this.adapter.execute(sql, allValues);
 
     // 尝试获取最后插入的 ID（如果支持）
     // 注意：批量插入时，不同数据库获取 ID 的方式不同
     // 这里简化处理，重新查询所有记录
     // 实际应用中可能需要根据业务逻辑优化
-    try {
-      // 如果有主键且是自增的，尝试获取插入的 ID 范围
-      // 这里简化处理，返回包含插入数据的实例数组
-      return dataArray.map((data) => {
-        const instance = new (this as any)();
-        Object.assign(instance, data);
-        return instance as InstanceType<T>;
-      });
-    } catch {
-      // 如果获取失败，返回包含插入数据的实例数组
-      return dataArray.map((data) => {
-        const instance = new (this as any)();
-        Object.assign(instance, data);
-        return instance as InstanceType<T>;
-      });
+    if (
+      isPostgres && execResult && typeof execResult === "object" &&
+      "rows" in execResult
+    ) {
+      const rows = (execResult as any).rows;
+      if (Array.isArray(rows) && rows.length === dataArray.length) {
+        return dataArray.map((data, idx) => {
+          const instance = new (this as any)();
+          Object.assign(instance, data);
+          const idVal = rows[idx]?.[this.primaryKey] ?? rows[idx]?.id ?? null;
+          if (idVal != null) {
+            (instance as any)[this.primaryKey] = idVal;
+          }
+          return instance as InstanceType<T>;
+        });
+      }
     }
+    return dataArray.map((data) => {
+      const instance = new (this as any)();
+      Object.assign(instance, data);
+      return instance as InstanceType<T>;
+    });
   }
 
   /**
@@ -1489,11 +1631,13 @@ export abstract class SQLModel {
    * await User.increment(1, 'views', 1);
    * await User.increment({ status: 'active' }, 'score', 10);
    */
-  static async increment(
+  static async increment<T extends typeof SQLModel>(
+    this: T,
     condition: WhereCondition | number | string,
     field: string,
     amount: number = 1,
-  ): Promise<number> {
+    returnLatest: boolean = false,
+  ): Promise<number | InstanceType<T>> {
     if (!this.adapter) {
       throw new Error(
         "Database adapter not set. Please call Model.setAdapter() first.",
@@ -1501,17 +1645,45 @@ export abstract class SQLModel {
     }
 
     const { where, params } = this.buildWhereClause(condition, false, false);
-    const sql =
+    let sql =
       `UPDATE ${this.tableName} SET ${field} = ${field} + ? WHERE ${where}`;
+    const isPostgres = (this.adapter as any)?.config?.type === "postgresql";
+    if (isPostgres && returnLatest) {
+      sql = `${sql} RETURNING *`;
+    }
     const result = await this.adapter.execute(sql, [amount, ...params]);
 
-    if (typeof result === "number") {
-      return result;
+    if (!returnLatest) {
+      if (typeof result === "number") {
+        return result;
+      }
+      if (result && typeof result === "object" && "affectedRows" in result) {
+        return (result as any).affectedRows || 0;
+      }
+      return 0;
     }
-    if (result && typeof result === "object" && "affectedRows" in result) {
-      return (result as any).affectedRows || 0;
+
+    let instance: any | null = null;
+    if (
+      isPostgres && result && typeof result === "object" && "rows" in result
+    ) {
+      const rows = (result as any).rows as any[];
+      if (Array.isArray(rows) && rows.length > 0) {
+        instance = new (this as any)();
+        Object.assign(instance, rows[0]);
+      }
+    } else {
+      const existing = await this.find(condition);
+      if (existing) {
+        instance = new (this as any)();
+        Object.assign(instance, existing);
+        const prevVal = (instance as any)[field];
+        (instance as any)[field] = (typeof prevVal === "number" ? prevVal : 0) +
+          amount;
+      }
     }
-    return 0;
+
+    return instance as InstanceType<T>;
   }
 
   /**
@@ -1525,12 +1697,19 @@ export abstract class SQLModel {
    * await User.decrement(1, 'views', 1);
    * await User.decrement({ status: 'active' }, 'score', 10);
    */
-  static async decrement(
+  static async decrement<T extends typeof SQLModel>(
+    this: T,
     condition: WhereCondition | number | string,
     field: string,
     amount: number = 1,
-  ): Promise<number> {
-    return await this.increment(condition, field, -amount);
+    returnLatest: boolean = false,
+  ): Promise<number | InstanceType<T>> {
+    return await (this as any).increment(
+      condition,
+      field,
+      -amount,
+      returnLatest,
+    );
   }
 
   /**
@@ -1554,6 +1733,7 @@ export abstract class SQLModel {
     this: T,
     condition: WhereCondition,
     data: Record<string, any>,
+    options?: { useDialectUpsert?: boolean; conflictKeys?: string[] },
   ): Promise<InstanceType<T>> {
     if (!this.adapter) {
       throw new Error(
@@ -1561,20 +1741,97 @@ export abstract class SQLModel {
       );
     }
 
-    // 先尝试查找是否存在（包含软删除的记录）
-    const existing = await this.withTrashed().find(condition);
+    const useDialect = options?.useDialectUpsert ??
+      ((this as any).useDialectUpsert === true);
+    const type = (this.adapter as any)?.config?.type;
+    const conflictKeys = options?.conflictKeys ??
+      (this as any).upsertConflictKeys ??
+      (typeof condition === "object" && !Array.isArray(condition)
+        ? Object.keys(condition)
+        : []);
 
+    if (useDialect && type === "postgresql" && conflictKeys.length > 0) {
+      try {
+        const processedData = this.processFields(data);
+        if (this.timestamps) {
+          const updatedAtField = typeof this.timestamps === "object"
+            ? (this.timestamps.updatedAt || "updatedAt")
+            : "updatedAt";
+          processedData[updatedAtField] = new Date();
+        }
+        if (typeof condition === "object" && condition) {
+          for (const k of conflictKeys) {
+            if (
+              processedData[k] === undefined &&
+              (condition as any)[k] !== undefined
+            ) {
+              const v = (condition as any)[k];
+              processedData[k] = (v && typeof v === "object") ? undefined : v;
+            }
+          }
+        }
+        const keys = Object.keys(processedData).filter((k) =>
+          k !== this.primaryKey
+        );
+        const values = keys.map((k) => processedData[k]);
+        const placeholders = keys.map(() => "?").join(", ");
+        const updateSet = keys.map((k) => `${k} = EXCLUDED.${k}`).join(", ");
+        const sql = `INSERT INTO ${this.tableName} (${
+          keys.join(", ")
+        }) VALUES (${placeholders}) ON CONFLICT (${
+          conflictKeys.join(", ")
+        }) DO UPDATE SET ${updateSet} RETURNING *`;
+        const result = await this.adapter.execute(sql, values);
+        if (result && typeof result === "object" && "rows" in result) {
+          const rows = (result as any).rows as any[];
+          if (Array.isArray(rows) && rows.length > 0) {
+            const instance = new (this as any)();
+            Object.assign(instance, rows[0]);
+            return instance as InstanceType<T>;
+          }
+        }
+      } catch (_e) {
+        void 0;
+      }
+    }
+
+    if (useDialect && type === "mysql") {
+      const processedData = this.processFields(data);
+      if (this.timestamps) {
+        const updatedAtField = typeof this.timestamps === "object"
+          ? (this.timestamps.updatedAt || "updatedAt")
+          : "updatedAt";
+        processedData[updatedAtField] = new Date();
+      }
+      const keys = Object.keys(processedData).filter((k) =>
+        k !== this.primaryKey
+      );
+      const values = keys.map((k) => processedData[k]);
+      const placeholders = keys.map(() => "?").join(", ");
+      const updateSet = keys.map((k) => `${k} = VALUES(${k})`).join(", ");
+      const sql = `INSERT INTO ${this.tableName} (${
+        keys.join(", ")
+      }) VALUES (${placeholders}) ON DUPLICATE KEY UPDATE ${updateSet}`;
+      const result = await this.adapter.execute(sql, values);
+      const instance = new (this as any)();
+      Object.assign(instance, processedData);
+      if (result && typeof result === "object" && "insertId" in result) {
+        const insertedId = (result as any).insertId ?? null;
+        if (insertedId != null) {
+          (instance as any)[this.primaryKey] = insertedId;
+        }
+      }
+      return instance as InstanceType<T>;
+    }
+
+    const existing = await this.withTrashed().find(condition);
     if (existing) {
-      // 如果存在，更新
       await this.update(condition, data);
-      // 重新查询获取更新后的记录
       const updated = await this.find(condition);
       if (updated) {
         return updated as InstanceType<T>;
       }
     }
-
-    // 如果不存在，插入
     return await this.create(data);
   }
 
@@ -1591,6 +1848,8 @@ export abstract class SQLModel {
   static async distinct(
     field: string,
     condition: WhereCondition = {},
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
   ): Promise<any[]> {
     if (!this.adapter) {
       throw new Error(
@@ -1598,7 +1857,11 @@ export abstract class SQLModel {
       );
     }
 
-    const { where, params } = this.buildWhereClause(condition, false, false);
+    const { where, params } = this.buildWhereClause(
+      condition,
+      includeTrashed,
+      onlyTrashed,
+    );
     const sql =
       `SELECT DISTINCT ${field} FROM ${this.tableName} WHERE ${where}`;
     const results = await this.adapter.query(sql, params);
@@ -1620,6 +1883,11 @@ export abstract class SQLModel {
     findAll: (
       condition?: WhereCondition,
       fields?: string[],
+      options?: {
+        sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+        skip?: number;
+        limit?: number;
+      },
     ) => Promise<InstanceType<T>[]>;
     find: (
       condition?: WhereCondition | number | string,
@@ -1631,6 +1899,11 @@ export abstract class SQLModel {
       findAll: async (
         condition: WhereCondition = {},
         fields?: string[],
+        options?: {
+          sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+          skip?: number;
+          limit?: number;
+        },
       ): Promise<InstanceType<T>[]> => {
         await this.ensureInitialized();
         if (!this.adapter) {
@@ -1640,8 +1913,30 @@ export abstract class SQLModel {
         }
         const { where, params } = this.buildWhereClause(condition, true, false);
         const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
-        const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
-        const results = await this.adapter.query(sql, params);
+        const orderBy = this.buildOrderByClause(options?.sort);
+        const useLimit = typeof options?.limit === "number";
+        const useSkip = typeof options?.skip === "number";
+        let sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
+        if (orderBy) {
+          sql = `${sql} ORDER BY ${orderBy}`;
+        }
+        if (useLimit) {
+          sql = `${sql} LIMIT ?`;
+        }
+        if (useLimit && useSkip) {
+          sql = `${sql} OFFSET ?`;
+        }
+        const extraParams = [];
+        if (useLimit) {
+          extraParams.push(Math.max(1, Math.floor(options!.limit!)));
+        }
+        if (useLimit && useSkip) {
+          extraParams.push(Math.max(0, Math.floor(options!.skip!)));
+        }
+        const results = await this.adapter.query(sql, [
+          ...params,
+          ...extraParams,
+        ]);
         return results.map((row: any) => {
           const instance = new (this as any)();
           Object.assign(instance, row);
@@ -1701,6 +1996,11 @@ export abstract class SQLModel {
     findAll: (
       condition?: WhereCondition,
       fields?: string[],
+      options?: {
+        sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+        skip?: number;
+        limit?: number;
+      },
     ) => Promise<InstanceType<T>[]>;
     find: (
       condition?: WhereCondition | number | string,
@@ -1712,6 +2012,11 @@ export abstract class SQLModel {
       findAll: async (
         condition: WhereCondition = {},
         fields?: string[],
+        options?: {
+          sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+          skip?: number;
+          limit?: number;
+        },
       ): Promise<InstanceType<T>[]> => {
         await this.ensureInitialized();
         if (!this.adapter) {
@@ -1721,8 +2026,30 @@ export abstract class SQLModel {
         }
         const { where, params } = this.buildWhereClause(condition, false, true);
         const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
-        const sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
-        const results = await this.adapter.query(sql, params);
+        const orderBy = this.buildOrderByClause(options?.sort);
+        const useLimit = typeof options?.limit === "number";
+        const useSkip = typeof options?.skip === "number";
+        let sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
+        if (orderBy) {
+          sql = `${sql} ORDER BY ${orderBy}`;
+        }
+        if (useLimit) {
+          sql = `${sql} LIMIT ?`;
+        }
+        if (useLimit && useSkip) {
+          sql = `${sql} OFFSET ?`;
+        }
+        const extraParams = [];
+        if (useLimit) {
+          extraParams.push(Math.max(1, Math.floor(options!.limit!)));
+        }
+        if (useLimit && useSkip) {
+          extraParams.push(Math.max(0, Math.floor(options!.skip!)));
+        }
+        const results = await this.adapter.query(sql, [
+          ...params,
+          ...extraParams,
+        ]);
         return results.map((row: any) => {
           const instance = new (this as any)();
           Object.assign(instance, row);
@@ -1771,6 +2098,275 @@ export abstract class SQLModel {
   }
 
   /**
+   * 链式查询构建器
+   */
+  static query<T extends typeof SQLModel>(this: T): {
+    where: (
+      condition: WhereCondition | number | string,
+    ) => ReturnType<T["query"]>;
+    fields: (fields: string[]) => ReturnType<T["query"]>;
+    sort: (
+      sort: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc",
+    ) => ReturnType<T["query"]>;
+    skip: (n: number) => ReturnType<T["query"]>;
+    limit: (n: number) => ReturnType<T["query"]>;
+    includeTrashed: () => ReturnType<T["query"]>;
+    onlyTrashed: () => ReturnType<T["query"]>;
+    findAll: () => Promise<InstanceType<T>[]>;
+    find: () => Promise<InstanceType<T> | null>;
+    count: () => Promise<number>;
+    exists: () => Promise<boolean>;
+    update: (data: Record<string, any>) => Promise<number>;
+    updateMany: (data: Record<string, any>) => Promise<number>;
+    increment: (field: string, amount?: number) => Promise<number>;
+    decrement: (field: string, amount?: number) => Promise<number>;
+    deleteMany: () => Promise<number>;
+    restore: (
+      options?: { returnIds?: boolean },
+    ) => Promise<number | { count: number; ids: any[] }>;
+    forceDelete: (
+      options?: { returnIds?: boolean },
+    ) => Promise<number | { count: number; ids: any[] }>;
+    distinct: (field: string) => Promise<any[]>;
+    upsert: (data: Record<string, any>) => Promise<InstanceType<T>>;
+    findOrCreate: (data: Record<string, any>) => Promise<InstanceType<T>>;
+    findOneAndUpdate: (
+      data: Record<string, any>,
+    ) => Promise<InstanceType<T> | null>;
+    findOneAndDelete: () => Promise<InstanceType<T> | null>;
+  } {
+    let _condition: WhereCondition | number | string = {};
+    let _fields: string[] | undefined;
+    let _sort:
+      | Record<string, 1 | -1 | "asc" | "desc">
+      | "asc"
+      | "desc"
+      | undefined;
+    let _skip: number | undefined;
+    let _limit: number | undefined;
+    let _includeTrashed = false;
+    let _onlyTrashed = false;
+
+    const builder = {
+      where: (condition: WhereCondition | number | string) => {
+        _condition = condition;
+        return builder;
+      },
+      fields: (fields: string[]) => {
+        _fields = fields;
+        return builder;
+      },
+      sort: (
+        sort: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc",
+      ) => {
+        _sort = sort;
+        return builder;
+      },
+      skip: (n: number) => {
+        _skip = Math.max(0, Math.floor(n));
+        return builder;
+      },
+      limit: (n: number) => {
+        _limit = Math.max(1, Math.floor(n));
+        return builder;
+      },
+      includeTrashed: () => {
+        _includeTrashed = true;
+        _onlyTrashed = false;
+        return builder;
+      },
+      onlyTrashed: () => {
+        _onlyTrashed = true;
+        _includeTrashed = false;
+        return builder;
+      },
+      findAll: async (): Promise<InstanceType<T>[]> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        const { where, params } = this.buildWhereClause(
+          _condition as any,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+        const columns = _fields && _fields.length > 0
+          ? _fields.join(", ")
+          : "*";
+        const orderBy = this.buildOrderByClause(_sort);
+        const useLimit = typeof _limit === "number";
+        const useSkip = typeof _skip === "number";
+        let sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
+        if (orderBy) {
+          sql = `${sql} ORDER BY ${orderBy}`;
+        }
+        const extraParams: any[] = [];
+        if (useLimit) {
+          sql = `${sql} LIMIT ?`;
+          extraParams.push(Math.max(1, Math.floor(_limit!)));
+        }
+        if (useLimit && useSkip) {
+          sql = `${sql} OFFSET ?`;
+          extraParams.push(Math.max(0, Math.floor(_skip!)));
+        }
+        const results = await this.adapter.query(sql, [
+          ...params,
+          ...extraParams,
+        ]);
+        return results.map((row: any) => {
+          const instance = new (this as any)();
+          Object.assign(instance, row);
+          return instance as InstanceType<T>;
+        });
+      },
+      find: async (): Promise<InstanceType<T> | null> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        const { where, params } = this.buildWhereClause(
+          _condition as any,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+        const columns = _fields && _fields.length > 0
+          ? _fields.join(", ")
+          : "*";
+        const orderBy = this.buildOrderByClause(_sort);
+        let sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
+        if (orderBy) {
+          sql = `${sql} ORDER BY ${orderBy}`;
+        }
+        sql = `${sql} LIMIT 1`;
+        const results = await this.adapter.query(sql, params);
+        if (results.length === 0) {
+          return null;
+        }
+        const instance = new (this as any)();
+        Object.assign(instance, results[0]);
+        return instance as InstanceType<T>;
+      },
+      count: async (): Promise<number> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        const { where, params } = this.buildWhereClause(
+          _condition as any,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+        const sql =
+          `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
+        const results = await this.adapter.query(sql, params);
+        return results.length > 0 ? (parseInt(results[0].count) || 0) : 0;
+      },
+      exists: async (): Promise<boolean> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        return await this.exists(
+          _condition as any,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+      },
+      update: async (data: Record<string, any>): Promise<number> => {
+        return await this.update(_condition as any, data);
+      },
+      updateMany: async (data: Record<string, any>): Promise<number> => {
+        return await this.updateMany(_condition as any, data);
+      },
+      increment: async (field: string, amount: number = 1): Promise<number> => {
+        const res = await this.increment(
+          _condition as any,
+          field,
+          amount,
+          false,
+        );
+        return typeof res === "number" ? res : 1;
+      },
+      decrement: async (field: string, amount: number = 1): Promise<number> => {
+        const res = await this.decrement(
+          _condition as any,
+          field,
+          amount,
+          false,
+        );
+        return typeof res === "number" ? res : 1;
+      },
+      deleteMany: async (): Promise<number> => {
+        return await this.deleteMany(_condition as any);
+      },
+      restore: async (
+        options?: { returnIds?: boolean },
+      ): Promise<number | { count: number; ids: any[] }> => {
+        return await this.restore(_condition as any, options);
+      },
+      forceDelete: async (
+        options?: { returnIds?: boolean },
+      ): Promise<number | { count: number; ids: any[] }> => {
+        return await this.forceDelete(_condition as any, options);
+      },
+      distinct: async (field: string): Promise<any[]> => {
+        const cond =
+          typeof _condition === "number" || typeof _condition === "string"
+            ? { [this.primaryKey]: _condition }
+            : (_condition as any);
+        return await this.distinct(field, cond, _includeTrashed, _onlyTrashed);
+      },
+      upsert: async (data: Record<string, any>): Promise<InstanceType<T>> => {
+        return await this.upsert(_condition as any, data);
+      },
+      findOrCreate: async (
+        data: Record<string, any>,
+      ): Promise<InstanceType<T>> => {
+        const cond =
+          typeof _condition === "number" || typeof _condition === "string"
+            ? { [this.primaryKey]: _condition }
+            : (_condition as any);
+        return await this.findOrCreate(cond, data);
+      },
+      findOneAndUpdate: async (
+        data: Record<string, any>,
+      ): Promise<InstanceType<T> | null> => {
+        const updated = await this.update(_condition as any, data);
+        if (updated > 0) {
+          return await this.find(
+            _condition as any,
+            _fields,
+            _includeTrashed,
+            _onlyTrashed,
+          );
+        }
+        return null;
+      },
+      findOneAndDelete: async (): Promise<InstanceType<T> | null> => {
+        const existing = await this.find(
+          _condition as any,
+          _fields,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+        if (!existing) return null;
+        const deleted = await this.delete(_condition as any);
+        return deleted > 0 ? existing as InstanceType<T> : null;
+      },
+    };
+
+    return builder as any;
+  }
+
+  /**
    * 恢复软删除的记录
    * @param condition 查询条件（可以是 ID、条件对象）
    * @returns 恢复的记录数
@@ -1781,7 +2377,8 @@ export abstract class SQLModel {
    */
   static async restore(
     condition: WhereCondition | number | string,
-  ): Promise<number> {
+    options?: { returnIds?: boolean },
+  ): Promise<number | { count: number; ids: any[] }> {
     if (!this.softDelete) {
       throw new Error("Soft delete is not enabled for this model");
     }
@@ -1792,9 +2389,22 @@ export abstract class SQLModel {
     }
 
     const { where, params } = this.buildWhereClause(condition, true, true);
-    const sql =
-      `UPDATE ${this.tableName} SET ${this.deletedAtField} = NULL WHERE ${where}`;
-    const result = await this.adapter.execute(sql, params);
+
+    let ids: any[] = [];
+    if (options?.returnIds) {
+      const rows = await this.adapter.query(
+        `SELECT ${this.primaryKey} FROM ${this.tableName} WHERE ${where}`,
+        params,
+      );
+      ids = rows.map((r: any) => r[this.primaryKey]).filter((v: any) =>
+        v !== null && v !== undefined
+      );
+    }
+
+    const result = await this.adapter.execute(
+      `UPDATE ${this.tableName} SET ${this.deletedAtField} = NULL WHERE ${where}`,
+      params,
+    );
 
     const affectedRows = (typeof result === "number")
       ? result
@@ -1802,6 +2412,9 @@ export abstract class SQLModel {
         ? ((result as any).affectedRows || 0)
         : 0);
 
+    if (options?.returnIds) {
+      return { count: affectedRows, ids };
+    }
     return affectedRows;
   }
 
@@ -1816,7 +2429,8 @@ export abstract class SQLModel {
    */
   static async forceDelete(
     condition: WhereCondition | number | string,
-  ): Promise<number> {
+    options?: { returnIds?: boolean },
+  ): Promise<number | { count: number; ids: any[] }> {
     if (!this.adapter) {
       throw new Error(
         "Database adapter not set. Please call Model.setAdapter() first.",
@@ -1824,8 +2438,22 @@ export abstract class SQLModel {
     }
 
     const { where, params } = this.buildWhereClause(condition, true, false);
-    const sql = `DELETE FROM ${this.tableName} WHERE ${where}`;
-    const result = await this.adapter.execute(sql, params);
+
+    let ids: any[] = [];
+    if (options?.returnIds) {
+      const rows = await this.adapter.query(
+        `SELECT ${this.primaryKey} FROM ${this.tableName} WHERE ${where}`,
+        params,
+      );
+      ids = rows.map((r: any) => r[this.primaryKey]).filter((v: any) =>
+        v !== null && v !== undefined
+      );
+    }
+
+    const result = await this.adapter.execute(
+      `DELETE FROM ${this.tableName} WHERE ${where}`,
+      params,
+    );
 
     const affectedRows = (typeof result === "number")
       ? result
@@ -1833,6 +2461,9 @@ export abstract class SQLModel {
         ? ((result as any).affectedRows || 0)
         : 0);
 
+    if (options?.returnIds) {
+      return { count: affectedRows, ids };
+    }
     return affectedRows;
   }
 
@@ -1918,6 +2549,9 @@ export abstract class SQLModel {
     RelatedModel: T,
     foreignKey: string,
     localKey?: string,
+    fields?: string[],
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
   ): Promise<InstanceType<T> | null> {
     const Model = this.constructor as typeof SQLModel;
     if (!Model.adapter) {
@@ -1933,7 +2567,12 @@ export abstract class SQLModel {
       return null;
     }
 
-    return await RelatedModel.find({ [relatedKey]: foreignValue });
+    return await RelatedModel.find(
+      { [relatedKey]: foreignValue },
+      fields,
+      includeTrashed,
+      onlyTrashed,
+    );
   }
 
   /**
@@ -1958,6 +2597,9 @@ export abstract class SQLModel {
     RelatedModel: T,
     foreignKey: string,
     localKey?: string,
+    fields?: string[],
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
   ): Promise<InstanceType<T> | null> {
     const Model = this.constructor as typeof SQLModel;
     if (!Model.adapter) {
@@ -1973,7 +2615,12 @@ export abstract class SQLModel {
       return null;
     }
 
-    return await RelatedModel.find({ [foreignKey]: localValue });
+    return await RelatedModel.find(
+      { [foreignKey]: localValue },
+      fields,
+      includeTrashed,
+      onlyTrashed,
+    );
   }
 
   /**
@@ -1998,6 +2645,12 @@ export abstract class SQLModel {
     RelatedModel: T,
     foreignKey: string,
     localKey?: string,
+    fields?: string[],
+    options?: {
+      sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
+      skip?: number;
+      limit?: number;
+    },
   ): Promise<InstanceType<T>[]> {
     const Model = this.constructor as typeof SQLModel;
     if (!Model.adapter) {
@@ -2013,6 +2666,10 @@ export abstract class SQLModel {
       return [];
     }
 
-    return await RelatedModel.findAll({ [foreignKey]: localValue });
+    return await RelatedModel.findAll(
+      { [foreignKey]: localValue },
+      fields,
+      options,
+    );
   }
 }

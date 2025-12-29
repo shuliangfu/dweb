@@ -292,18 +292,6 @@ export class RouteHandler {
               ? fullPath
               : path.resolve(cwd, fullPath);
 
-            // 读取 deno.json 或 deno.jsonc 获取 import map（用于解析外部依赖）
-            let importMap: Record<string, string> = {};
-            try {
-              const { readDenoJson } = await import("../server/utils/file.ts");
-              const denoJson = await readDenoJson(cwd);
-              if (denoJson && denoJson.imports) {
-                importMap = denoJson.imports;
-              }
-            } catch {
-              // deno.json 或 deno.jsonc 不存在或解析失败，使用空 import map
-            }
-
             // 收集外部依赖（只包含 preact 和服务端依赖，其他客户端依赖会被打包）
             // 开发环境：不使用共享依赖机制（每个组件独立打包，便于热更新）
             // 生产环境：通过代码分割自动去重
@@ -316,6 +304,22 @@ export class RouteHandler {
             // 根据文件扩展名确定 loader
             const loader = fullPath.endsWith(".tsx") ? "tsx" : "ts";
 
+            // 读取 deno.json 或 deno.jsonc 获取 import map（用于解析外部依赖）
+            // 优先使用页面所在项目的 deno.json（支持示例项目与多应用场景）
+            let importMap: Record<string, string> = {};
+            let projectRoot = cwd;
+            try {
+              // 根据原始文件目录查找项目根目录
+              projectRoot = findProjectRoot(originalDir);
+              const { readDenoJson } = await import("../server/utils/file.ts");
+              const denoJson = await readDenoJson(projectRoot);
+              if (denoJson && denoJson.imports) {
+                importMap = denoJson.imports;
+              }
+            } catch {
+              // deno.json 或 deno.jsonc 不存在或解析失败，使用空 import map
+            }
+
             // 使用统一的构建函数
             jsCode = await buildFromStdin(
               processedContent,
@@ -324,7 +328,7 @@ export class RouteHandler {
               loader,
               {
                 importMap,
-                cwd,
+                cwd: projectRoot,
                 bundleClient: true,
                 minify: false, // 开发环境不压缩，便于调试
               },

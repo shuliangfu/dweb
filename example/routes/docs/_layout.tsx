@@ -8,6 +8,7 @@ import type { LayoutProps } from "@dreamer/dweb";
 
 // export const layout = false; // 禁用布局继承
 
+
 /**
  * 文档布局组件
  * @param props 组件属性

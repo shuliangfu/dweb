@@ -238,7 +238,7 @@ export function performance(options: PerformancePluginOptions = {}): Plugin {
     /**
      * 响应处理钩子 - 记录 API 响应时间
      */
-    async onResponse(req: Request, res: Response) {
+    async onResponse(req: Request, _res: Response) {
       if (options.onMetrics && req.url.includes("/api/")) {
         // 这里可以记录 API 响应时间
         // 实际实现中需要从请求开始时间计算

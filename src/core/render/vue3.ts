@@ -23,15 +23,14 @@ export class Vue3RenderAdapter implements RenderAdapter {
   readonly name: RenderEngine = "vue3";
 
   /** Vue 3 的 h 函数 */
-  private h?: typeof import("npm:vue@^3.5.13").h;
+  private h?: typeof import("npm:vue@^3.5.26").h;
   /** Vue 3 的 renderToString 函数 */
   private vueRenderToString?:
-    typeof import("npm:@vue/server-renderer@^3.5.13").renderToString;
+    typeof import("npm:@vue/server-renderer@^3.5.26").renderToString;
   /** Vue 3 的 renderToWebStream 函数 */
-  private vueRenderToStream?:
-    typeof import("npm:@vue/server-renderer@^3.5.13").renderToWebStream;
+  private vueRenderToStream?: any;
   /** Vue 3 的 createApp 函数 */
-  private createApp?: typeof import("npm:vue@^3.5.13").createApp;
+  private createApp?: typeof import("npm:vue@^3.5.26").createApp;
 
   /**
    * 初始化适配器
@@ -39,13 +38,13 @@ export class Vue3RenderAdapter implements RenderAdapter {
    */
   async initialize(): Promise<void> {
     const [vueModule, serverRenderer] = await Promise.all([
-      import("npm:vue@^3.5.13"),
-      import("npm:@vue/server-renderer@^3.5.13"),
+      import("npm:vue@^3.5.26"),
+      import("npm:@vue/server-renderer@^3.5.26"),
     ]);
 
     this.h = vueModule.h;
     this.vueRenderToString = serverRenderer.renderToString;
-    this.vueRenderToStream = serverRenderer.renderToWebStream;
+    this.vueRenderToStream = serverRenderer.renderToWebStream as any;
     this.createApp = vueModule.createApp;
   }
 
@@ -91,7 +90,7 @@ export class Vue3RenderAdapter implements RenderAdapter {
    * @param element - 虚拟节点
    * @returns 可读流
    */
-  async renderToStream(element: VNode): Promise<ReadableStream> {
+  renderToStream(element: VNode): ReadableStream {
     if (!this.vueRenderToStream) {
       throw new Error("Vue 3 适配器未初始化，请先调用 initialize()");
     }
@@ -103,7 +102,7 @@ export class Vue3RenderAdapter implements RenderAdapter {
     const app = this.createApp({
       render: () => element as any,
     });
-    return this.vueRenderToStream(app);
+    return this.vueRenderToStream(app as any);
   }
 
   /**

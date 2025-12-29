@@ -71,40 +71,6 @@ function createServerStore<T = Record<string, unknown>>(
 let cachedClientScript: string | null = null;
 
 /**
- * 读取文件内容（支持本地文件和 JSR 包）
- * @param relativePath 相对于当前文件的路径
- * @returns 文件内容
- */
-async function readFileContent(relativePath: string): Promise<string> {
-  const currentUrl = new URL(import.meta.url);
-
-  // 如果是 HTTP/HTTPS URL（JSR 包），使用 fetch
-  if (currentUrl.protocol === "http:" || currentUrl.protocol === "https:") {
-    // 构建 JSR URL：将当前文件的 URL 替换为相对路径的文件
-    const currentPath = currentUrl.pathname;
-    const currentDir = currentPath.substring(0, currentPath.lastIndexOf("/"));
-    const targetPath = `${currentDir}/${relativePath}`;
-
-    // 构建完整的 JSR URL
-    const baseUrl = currentUrl.origin;
-    const fullUrl = `${baseUrl}${targetPath}`;
-
-    const response = await fetch(fullUrl);
-    if (!response.ok) {
-      throw new Error(`无法从 JSR 包读取文件: ${fullUrl} (${response.status})`);
-    }
-    return await response.text();
-  } else {
-    // 本地文件系统，使用 Deno.readTextFile
-    const browserScriptPath = path.join(
-      path.dirname(new URL(import.meta.url).pathname),
-      relativePath,
-    );
-    return await Deno.readTextFile(browserScriptPath);
-  }
-}
-
-/**
  * 编译客户端 Store 脚本
  */
 async function compileClientScript(): Promise<string> {
@@ -113,25 +79,144 @@ async function compileClientScript(): Promise<string> {
   }
 
   try {
-    // 读取浏览器端脚本文件（支持本地文件和 JSR 包）
-    const browserScriptContent = await readFileContent("browser.ts");
+    // 内联浏览器端脚本内容，避免生产环境无法读取文件的问题
+    const browserScriptContent = `/// <reference lib="dom" />
+/**
+ * Store 客户端脚本
+ * 在浏览器中运行的状态管理代码
+ */
 
-    // 获取文件路径用于 esbuild（用于错误报告）
-    const currentUrl = new URL(import.meta.url);
-    let browserScriptPath: string;
-    if (currentUrl.protocol === "http:" || currentUrl.protocol === "https:") {
-      // JSR 包：使用 URL 作为路径标识
-      const currentPath = currentUrl.pathname;
-      const currentDir = currentPath.substring(0, currentPath.lastIndexOf("/"));
-      browserScriptPath = `${currentUrl.origin}${currentDir}/browser.ts`;
-    } else {
-      // 本地文件系统
-      browserScriptPath = path.join(
-        path.dirname(new URL(import.meta.url).pathname),
-        "browser.ts",
-      );
+interface StoreConfig {
+  persist: boolean;
+  storageKey: string;
+  initialState: Record<string, unknown>;
+  serverState?: Record<string, unknown>;
+}
+
+interface Store<T = Record<string, unknown>> {
+  getState(): T;
+  setState(updater: T | ((prevState: T) => T)): void;
+  subscribe(listener: (state: T) => void): () => void;
+  unsubscribe(listener: (state: T) => void): void;
+  reset(): void;
+}
+
+/**
+ * 创建客户端 Store
+ */
+function createClientStore(config: StoreConfig): Store {
+  // 获取服务端状态（如果存在）
+  const serverState = config.serverState;
+
+  // 从 localStorage 恢复状态
+  let state: Record<string, unknown> = { ...config.initialState };
+  if (config.persist) {
+    try {
+      const stored = localStorage.getItem(config.storageKey);
+      if (stored) {
+        // 合并：服务端状态 > localStorage > 初始状态
+        const storedState = JSON.parse(stored);
+        state = { ...config.initialState, ...storedState };
+      }
+    } catch (error) {
+      console.warn("[Store Plugin] 无法从 localStorage 恢复状态:", error);
     }
+  }
 
+  // 如果有服务端状态，合并到当前状态中（服务端状态优先级最高）
+  if (serverState && typeof serverState === "object") {
+    state = { ...state, ...serverState };
+  }
+
+  const listeners = new Set<(state: Record<string, unknown>) => void>();
+
+  return {
+    getState: () => state,
+
+    setState: (updater) => {
+      const prevState = state;
+      const nextState = typeof updater === "function"
+        ? { ...prevState, ...updater(prevState) }
+        : { ...prevState, ...updater };
+
+      state = nextState;
+
+      // 持久化到 localStorage
+      if (config.persist) {
+        try {
+          localStorage.setItem(config.storageKey, JSON.stringify(nextState));
+        } catch (error) {
+          console.warn("[Store Plugin] 无法保存状态到 localStorage:", error);
+        }
+      }
+
+      // 通知所有监听者
+      listeners.forEach((listener) => {
+        try {
+          listener(state);
+        } catch (error) {
+          console.error("[Store Plugin] 监听器执行错误:", error);
+        }
+      });
+    },
+
+    subscribe: (listener) => {
+      listeners.add(listener);
+      // 立即调用一次，传递当前状态
+      try {
+        listener(state);
+      } catch (error) {
+        console.error("[Store Plugin] 监听器执行错误:", error);
+      }
+      // 返回取消订阅函数
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+
+    unsubscribe: (listener) => {
+      listeners.delete(listener);
+    },
+
+    reset: () => {
+      state = { ...config.initialState };
+      if (config.persist) {
+        try {
+          localStorage.removeItem(config.storageKey);
+        } catch (error) {
+          console.warn("[Store Plugin] 无法清除 localStorage:", error);
+        }
+      }
+      listeners.forEach((listener) => {
+        try {
+          listener(state);
+        } catch (error) {
+          console.error("[Store Plugin] 监听器执行错误:", error);
+        }
+      });
+    },
+  };
+}
+
+/**
+ * 初始化 Store 系统
+ * 暴露到全局，供内联脚本调用
+ */
+function initStore(config: StoreConfig): void {
+  // 创建客户端 Store
+  const store = createClientStore(config);
+
+  // 暴露到全局
+  (globalThis as any).__STORE__ = store;
+}
+
+// 暴露到全局，供内联脚本调用
+if (typeof globalThis !== "undefined") {
+  (globalThis as any).initStore = initStore;
+}
+`;
+    // 虚拟路径，用于错误报告
+    const browserScriptPath = "browser.ts";
     // 使用 esbuild 编译 TypeScript 为 JavaScript
     const compiledCode = await compileWithEsbuild(
       browserScriptContent,
@@ -144,7 +229,7 @@ async function compileClientScript(): Promise<string> {
 
     return minifiedCode;
   } catch (error) {
-    console.error("[Store Plugin] 编译客户端脚本失败:", error);
+    console.error("[Store Plugin] 编译客户端脚本失败222:", error);
     // 如果编译失败，返回空字符串
     return "";
   }

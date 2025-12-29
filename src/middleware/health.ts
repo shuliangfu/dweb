@@ -61,58 +61,58 @@ export interface HealthOptions {
 /**
  * 默认健康检查函数
  */
-async function defaultHealthCheck(): Promise<
+function defaultHealthCheck(): Promise<
   {
     status: "ok" | "error";
     message?: string;
     details?: Record<string, unknown>;
   }
 > {
-  return {
+  return Promise.resolve({
     status: "ok",
     message: "Service is healthy",
     details: {
       timestamp: new Date().toISOString(),
     },
-  };
+  });
 }
 
 /**
  * 默认就绪检查函数
  */
-async function defaultReadyCheck(): Promise<
+function defaultReadyCheck(): Promise<
   {
     status: "ready" | "not-ready";
     message?: string;
     details?: Record<string, unknown>;
   }
 > {
-  return {
+  return Promise.resolve({
     status: "ready",
     message: "Service is ready",
     details: {
       timestamp: new Date().toISOString(),
     },
-  };
+  });
 }
 
 /**
  * 默认存活检查函数
  */
-async function defaultLiveCheck(): Promise<
+function defaultLiveCheck(): Promise<
   {
     status: "alive" | "dead";
     message?: string;
     details?: Record<string, unknown>;
   }
 > {
-  return {
+  return Promise.resolve({
     status: "alive",
     message: "Service is alive",
     details: {
       timestamp: new Date().toISOString(),
     },
-  };
+  });
 }
 
 /**

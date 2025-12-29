@@ -135,6 +135,7 @@ function convertToBrowserUrl(importValue: string): string {
 function createImportReplacerPlugin(
   importMap: Record<string, string>,
   isServerBuild: boolean = false,
+  cwd: string,
 ): esbuild.Plugin {
   return {
     name: "import-replacer",
@@ -143,6 +144,23 @@ function createImportReplacerPlugin(
       // 注意：这个插件只处理外部依赖（npm、jsr），本地依赖会被其他插件处理并打包
       build.onResolve({ filter: /.*/ }, (args) => {
         const importPath = args.path;
+
+        // 直接处理 npm: 协议导入
+        if (importPath.startsWith("npm:")) {
+          // 服务端构建：保留 npm: 导入并标记为 external，让 Deno 在运行时解析
+          if (isServerBuild) {
+            return {
+              path: importPath,
+              external: true,
+            };
+          }
+          // 客户端构建：转换为可在浏览器加载的 URL（使用 esm.sh）
+          const httpUrl = convertNpmToBrowserUrl(importPath);
+          return {
+            path: httpUrl,
+            external: true,
+          };
+        }
 
         // 跳过相对路径导入（这些是本地依赖，应该被打包）
         if (importPath.startsWith("./") || importPath.startsWith("../")) {
@@ -225,16 +243,20 @@ function createImportReplacerPlugin(
         // 1. 直接检查 importMap 中是否有这个路径
         if (importPath in importMap) {
           const mappedValue = importMap[importPath];
-          // 检查是否是本地路径（以 ./ 或 ../ 开头）
+          // 本地路径（以 ./ 或 ../ 开头）：解析为绝对路径并让 esbuild 直接加载
           if (mappedValue.startsWith("./") || mappedValue.startsWith("../")) {
-            // 本地路径，应该被打包，不替换
-            isLocalPath = true;
-          } else {
-            // 外部依赖，转换为浏览器 URL（仅客户端构建）
-            resolvedPath = isServerBuild
+            const abs = path.isAbsolute(mappedValue)
               ? mappedValue
-              : convertToBrowserUrl(mappedValue);
+              : path.resolve(cwd, mappedValue);
+            return {
+              path: abs,
+              external: false,
+            };
           }
+          // 外部依赖：转换为浏览器 URL（仅客户端构建）
+          resolvedPath = isServerBuild
+            ? mappedValue
+            : convertToBrowserUrl(mappedValue);
         } else {
           // 2. 检查是否是子路径，尝试从父包生成
           if (importPath.includes("/") && !importPath.startsWith("@")) {
@@ -902,6 +924,7 @@ export async function buildFromStdin(
   const importReplacerPlugin = createImportReplacerPlugin(
     importMap,
     isServerBuild,
+    cwd,
   );
 
   // 创建 JSR 解析插件
@@ -928,7 +951,7 @@ export async function buildFromStdin(
     sourcemap,
     keepNames,
     legalComments,
-    external: finalExternalPackages,
+    external: [...finalExternalPackages, "node:*"],
     plugins: [importReplacerPlugin, jsrResolverPlugin, ...plugins],
     alias,
   });
@@ -1012,6 +1035,7 @@ export async function buildFromEntryPoints(
   const importReplacerPlugin = createImportReplacerPlugin(
     importMap,
     isServerBuild,
+    cwd,
   );
 
   // 创建 JSR 解析插件
@@ -1034,7 +1058,7 @@ export async function buildFromEntryPoints(
     sourcemap,
     keepNames,
     legalComments,
-    external: finalExternalPackages,
+    external: [...finalExternalPackages, "node:*"],
     plugins: [
       ...prePlugins,
       importReplacerPlugin,

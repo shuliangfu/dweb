@@ -3,7 +3,7 @@
  */
 
 import { ensureDir, exists } from "@std/fs";
-import { basename, extname, join } from "@std/path";
+import { basename, extname } from "@std/path";
 
 /**
  * 迁移文件模板（SQL 数据库）

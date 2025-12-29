@@ -495,7 +495,7 @@ export function seo(options: SEOPluginOptions = {}): Plugin {
     /**
      * 构建时钩子 - 可以生成静态 SEO 文件
      */
-    async onBuild(buildConfig: BuildConfig) {
+    async onBuild(_buildConfig: BuildConfig) {
       // 构建时可以生成 robots.txt、sitemap.xml 等
       // 这里暂时不实现，可以单独创建 sitemap 插件
     },

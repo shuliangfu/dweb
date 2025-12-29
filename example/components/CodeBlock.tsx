@@ -3,8 +3,13 @@
  * 用于展示代码示例，支持服务端语法高亮 (Shiki)
  */
 
-import { useId } from "preact/hooks";
-import { highlight } from "../utils/shiki.ts";
+import { IS_SERVER } from "@dreamer/dweb/client";
+import { useEffect, useState } from "preact/hooks";
+import { highlight, initShiki } from "../utils/shiki.ts";
+
+if (IS_SERVER) {
+  await initShiki();
+}
 
 interface CodeBlockProps {
   /** 代码内容 */
@@ -15,10 +20,18 @@ interface CodeBlockProps {
   title?: string;
 }
 
-declare global {
-  interface Window {
-    __CODE_BLOCKS__?: Record<string, string>;
+/**
+ * 简单的字符串哈希函数
+ * 用于生成确定的 ID，确保服务端和客户端一致，避免 Hydration Mismatch
+ */
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0; // Convert to 32bit integer
   }
+  return `cb-${hash.toString(36)}`;
 }
 
 /**
@@ -32,14 +45,13 @@ declare global {
 export default function CodeBlock(
   { code, language = "text", title }: CodeBlockProps,
 ) {
-  const id = useId();
-  // 移除冒号以确保作为 key 安全
-  const safeId = `cb-${id.replace(/:/g, "-")}`;
-  const isServer = typeof Deno !== "undefined";
+  // 使用代码内容的哈希作为 ID，确保 SSR 和 CSR 一致
+  const safeId = simpleHash(code);
 
+  const [clientContent, setClientContent] = useState<string>("");
   let content = "";
 
-  if (isServer) {
+  if (IS_SERVER) {
     try {
       content = highlight(code, language);
     } catch (e) {
@@ -48,20 +60,70 @@ export default function CodeBlock(
         `<pre class="shiki"><code class="language-${language}">${code}</code></pre>`;
     }
   } else {
-    // 客户端：尝试从全局存储获取，如果失败则降级显示原始内容
+    // 客户端：优先使用 SSR 注入的内容
+    // deno-lint-ignore no-explicit-any
+    const win = window as any;
     if (
-      typeof window !== "undefined" && window.__CODE_BLOCKS__ &&
-      window.__CODE_BLOCKS__[safeId]
+      typeof window !== "undefined" && win.__CODE_BLOCKS__ &&
+      win.__CODE_BLOCKS__[safeId]
     ) {
-      content = window.__CODE_BLOCKS__[safeId];
+      content = win.__CODE_BLOCKS__[safeId];
     } else {
-      // 最后的降级：显示未高亮的代码
-      // 注意：这可能会导致 hydration mismatch 如果服务端成功渲染了但脚本没执行
-      // 但通常脚本会随 HTML 一起下发并执行
-      content =
+      content = clientContent ||
         `<pre class="shiki"><code class="language-${language}">${code}</code></pre>`;
     }
   }
+
+  // 客户端：在挂载后进行按需高亮（用于 CSR 或混合渲染但无 SSR 注入的情况）
+  useEffect(() => {
+    if (IS_SERVER) return;
+    // deno-lint-ignore no-explicit-any
+    const win = window as any;
+    if (win.__CODE_BLOCKS__ && win.__CODE_BLOCKS__[safeId]) {
+      setClientContent(win.__CODE_BLOCKS__[safeId]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        // 直接使用浏览器可用的 CDN URL，避免 npm: 前缀在浏览器无法解析
+        const { createHighlighter } = await import("shiki");
+        const highlighter = await createHighlighter({
+          themes: ["github-dark"],
+          langs: [
+            "javascript",
+            "typescript",
+            "tsx",
+            "jsx",
+            "json",
+            "css",
+            "html",
+            "bash",
+            "shell",
+            "sh",
+            "markdown",
+            "yaml",
+            "sql",
+            "docker",
+            "dockerfile",
+          ],
+        });
+        const html = highlighter.codeToHtml(code, {
+          lang: language,
+          theme: "github-dark",
+        });
+        if (!cancelled) {
+          setClientContent(html);
+        }
+      } catch {
+        // 忽略失败，保持降级内容
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // 依赖 ID、代码和语言，确保内容变化时重新渲染
+  }, [safeId, code, language]);
 
   return (
     <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-lg my-4">
@@ -75,7 +137,7 @@ export default function CodeBlock(
       </div>
 
       {/* 仅在服务端注入数据脚本 */}
-      {isServer && (
+      {IS_SERVER && (
         <script
           dangerouslySetInnerHTML={{
             __html:

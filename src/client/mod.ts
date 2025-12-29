@@ -6,6 +6,9 @@
 export * from "./utils/browser-client.ts";
 export * from "./utils/browser-hmr.ts";
 
+// 导出通用常量（对浏览器安全）
+export { IS_CLIENT, IS_SERVER } from "../common/constants.ts";
+
 // 导出客户端 Store 函数
 export {
   getStore,

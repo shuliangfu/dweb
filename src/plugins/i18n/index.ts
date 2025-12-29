@@ -68,6 +68,7 @@ async function loadTranslations(
   if (isProduction) {
     // 尝试从配置中获取构建输出目录
     let outDir: string | undefined;
+    let appName: string | undefined;
 
     // 尝试从 app 实例获取配置
     if (app) {
@@ -77,6 +78,7 @@ async function loadTranslations(
         try {
           const config = getConfig();
           outDir = config?.build?.outDir;
+          appName = config?.name;
         } catch {
           // 忽略错误
         }
@@ -93,6 +95,7 @@ async function loadTranslations(
             ) {
               const config = configManager.getConfig();
               outDir = config?.build?.outDir;
+              appName = config?.name;
             }
           } catch {
             // 忽略错误
@@ -103,37 +106,14 @@ async function loadTranslations(
 
     // 如果从配置中获取到了 outDir，使用它
     if (outDir) {
-      const buildPath = path.join(
-        cwd,
-        outDir,
-        translationsDir,
-        `${languageCode}.json`,
-      );
+      const dir = appName ? path.join(outDir, appName) : outDir;
+      const buildPath = path.join(dir, translationsDir, `${languageCode}.json`);
       try {
-        const content = await Deno.readTextFile(buildPath);
+        const content = await Deno.readTextFile(path.join(cwd, buildPath));
         const translations = JSON.parse(content) as TranslationData;
         return translations;
       } catch {
         // 继续尝试其他位置
-      }
-    }
-
-    // 如果无法从配置获取，尝试从常见的构建输出目录查找
-    const possibleOutDirs = ["dist", ".dist", "build", "out"];
-
-    for (const possibleOutDir of possibleOutDirs) {
-      const buildPath = path.join(
-        cwd,
-        possibleOutDir,
-        translationsDir,
-        `${languageCode}.json`,
-      );
-      try {
-        const content = await Deno.readTextFile(buildPath);
-        const translations = JSON.parse(content) as TranslationData;
-        return translations;
-      } catch {
-        // 继续尝试下一个位置
       }
     }
   }
@@ -335,42 +315,6 @@ export function i18n(options: I18nPluginOptions): Plugin {
   let cachedClientScript: string | null = null;
 
   /**
-   * 读取文件内容（支持本地文件和 JSR 包）
-   * @param relativePath 相对于当前文件的路径
-   * @returns 文件内容
-   */
-  async function readFileContent(relativePath: string): Promise<string> {
-    const currentUrl = new URL(import.meta.url);
-
-    // 如果是 HTTP/HTTPS URL（JSR 包），使用 fetch
-    if (currentUrl.protocol === "http:" || currentUrl.protocol === "https:") {
-      // 构建 JSR URL：将当前文件的 URL 替换为相对路径的文件
-      const currentPath = currentUrl.pathname;
-      const currentDir = currentPath.substring(0, currentPath.lastIndexOf("/"));
-      const targetPath = `${currentDir}/${relativePath}`;
-
-      // 构建完整的 JSR URL
-      const baseUrl = currentUrl.origin;
-      const fullUrl = `${baseUrl}${targetPath}`;
-
-      const response = await fetch(fullUrl);
-      if (!response.ok) {
-        throw new Error(
-          `无法从 JSR 包读取文件: ${fullUrl} (${response.status})`,
-        );
-      }
-      return await response.text();
-    } else {
-      // 本地文件系统，使用 Deno.readTextFile
-      const browserScriptPath = path.join(
-        path.dirname(new URL(import.meta.url).pathname),
-        relativePath,
-      );
-      return await Deno.readTextFile(browserScriptPath);
-    }
-  }
-
-  /**
    * 编译客户端 i18n 脚本
    */
   async function compileClientScript(): Promise<string> {
@@ -379,28 +323,158 @@ export function i18n(options: I18nPluginOptions): Plugin {
     }
 
     try {
-      // 读取浏览器端脚本文件（支持本地文件和 JSR 包）
-      const browserScriptContent = await readFileContent("browser.ts");
+      // 内联浏览器端脚本内容，避免生产环境无法读取文件的问题
+      const browserScriptContent = `/// <reference lib="dom" />
+/**
+ * i18n 客户端脚本
+ * 在浏览器中运行的国际化代码
+ */
 
-      // 获取文件路径用于 esbuild（用于错误报告）
-      const currentUrl = new URL(import.meta.url);
-      let browserScriptPath: string;
-      if (currentUrl.protocol === "http:" || currentUrl.protocol === "https:") {
-        // JSR 包：使用 URL 作为路径标识
-        const currentPath = currentUrl.pathname;
-        const currentDir = currentPath.substring(
-          0,
-          currentPath.lastIndexOf("/"),
-        );
-        browserScriptPath = `${currentUrl.origin}${currentDir}/browser.ts`;
+interface I18nData {
+  lang: string;
+  translations: Record<string, unknown>;
+  t: (key: string, params?: Record<string, any>) => string;
+}
+
+interface I18nConfig {
+  lang: string;
+  apiEndpoint?: string; // API 端点（用于获取语言包）
+  translations?: Record<string, unknown>; // 向后兼容：如果提供了 translations，直接使用
+}
+
+/**
+ * 翻译函数（支持嵌套键和参数替换）
+ */
+function createTranslateFunction(
+  translations: Record<string, unknown>,
+): (key: string, params?: Record<string, any>) => string {
+  return function (key: string, params?: Record<string, any>): string {
+    if (!translations || typeof translations !== "object") {
+      return key;
+    }
+
+    // 支持嵌套键（如 'common.title'）和直接键（如 '你好，世界！'）
+    const keys = key.split(".");
+    let value: unknown = translations;
+
+    for (const k of keys) {
+      if (
+        typeof value === "object" && value !== null && !Array.isArray(value)
+      ) {
+        value = (value as Record<string, unknown>)[k];
+        // 如果找不到，且是单个键，尝试直接使用整个 key
+        if (value === undefined && keys.length === 1) {
+          value = (translations as Record<string, unknown>)[key];
+        }
+        if (value === undefined) {
+          return key;
+        }
       } else {
-        // 本地文件系统
-        browserScriptPath = path.join(
-          path.dirname(new URL(import.meta.url).pathname),
-          "browser.ts",
-        );
+        return key;
       }
+    }
 
+    if (typeof value !== "string") {
+      return key;
+    }
+
+    // 替换参数（如 {name} -> 实际值）
+    // 支持 string、number、boolean 类型，自动转换为字符串
+    if (params) {
+      return value.replace(/\\{(\\w+)\\}/g, (match, paramKey) => {
+        const paramValue = params[paramKey];
+        if (paramValue !== undefined && paramValue !== null) {
+          return String(paramValue);
+        }
+        return match;
+      });
+    }
+
+    return value;
+  };
+}
+
+/**
+ * 通过 API 加载语言包
+ */
+async function loadTranslationsFromAPI(
+  apiEndpoint: string,
+): Promise<Record<string, unknown>> {
+  try {
+    const response = await fetch(apiEndpoint, {
+      headers: {
+        "Accept": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        \`加载语言包失败: \${response.status} \${response.statusText}\`,
+      );
+    }
+
+    const translations = await response.json() as Record<string, unknown>;
+    return translations;
+  } catch (error) {
+    console.error("[i18n] 加载语言包失败:", error);
+    // 返回空对象，避免后续错误
+    return {};
+  }
+}
+
+/**
+ * 初始化 i18n 系统
+ * 暴露到全局，供内联脚本调用
+ * 支持两种方式：
+ * 1. 直接提供 translations（向后兼容）
+ * 2. 通过 apiEndpoint 异步加载语言包（新方式）
+ */
+async function initI18n(config: I18nConfig): Promise<void> {
+  let translations: Record<string, unknown> = {};
+
+  // 如果提供了 translations，直接使用（向后兼容）
+  if (config.translations) {
+    translations = config.translations;
+  } else if (config.apiEndpoint) {
+    // 通过 API 加载语言包
+    translations = await loadTranslationsFromAPI(config.apiEndpoint);
+  } else {
+    console.warn("[i18n] 未提供 translations 或 apiEndpoint，使用空语言包");
+  }
+
+  // 创建翻译函数
+  const tFunction = createTranslateFunction(translations);
+
+  // 创建 i18n 数据对象
+  const i18nData: I18nData = {
+    lang: config.lang,
+    translations,
+    t: tFunction,
+  };
+
+  // 暴露到全局
+  (globalThis as any).__I18N_DATA__ = i18nData;
+
+  // 全局翻译函数（确保 this 指向 window.__I18N_DATA__）
+  // 支持任意类型参数（string、number、boolean 等），自动转换为字符串
+  (globalThis as any).$t = function (
+    key: string,
+    params?: Record<string, any>,
+  ): string {
+    if (!i18nData || !i18nData.t) {
+      return key;
+    }
+    return i18nData.t.call(i18nData, key, params);
+  };
+}
+
+// 暴露到全局，供内联脚本调用
+if (typeof globalThis !== "undefined") {
+  (globalThis as any).initI18n = initI18n;
+}
+`;
+      // 虚拟路径，用于错误报告
+      const browserScriptPath = "browser.ts";
       // 使用 esbuild 编译 TypeScript 为 JavaScript
       const compiledCode = await compileWithEsbuild(
         browserScriptContent,
@@ -462,11 +536,6 @@ export function i18n(options: I18nPluginOptions): Plugin {
           );
           if (translations) {
             translationCache.set(lang.code, translations);
-            // console.log(
-            //   `[i18n] Loaded translations for ${lang.code}, keys: ${
-            //     Object.keys(translations).length
-            //   }`,
-            // );
           }
         } catch (error) {
           console.warn(`[i18n Plugin] 无法加载语言文件 ${lang.code}:`, error);
@@ -548,12 +617,6 @@ export function i18n(options: I18nPluginOptions): Plugin {
       const langCode = detectLanguage(req, options);
       const langConfig = options.languages.find((l) => l.code === langCode) ||
         options.languages[0];
-
-      // console.log(
-      //   `[i18n] onRequest: Detected lang=${langCode}, Cache hit=${
-      //     translationCache.has(langCode)
-      //   }`,
-      // );
 
       // 设置当前语言（用于全局访问）
       // 注意：在多应用场景下，需要从请求对象获取应用实例

@@ -55,49 +55,52 @@ export interface CacheAdapter {
 export class MemoryCacheAdapter implements CacheAdapter {
   private cache: Map<string, { value: any; expiry: number | null }> = new Map();
 
-  async get<T>(key: string): Promise<T | null> {
+  get<T>(key: string): Promise<T | null> {
     const item = this.cache.get(key);
     if (!item) {
-      return null;
+      return Promise.resolve(null);
     }
 
     if (item.expiry && item.expiry < Date.now()) {
       this.cache.delete(key);
-      return null;
+      return Promise.resolve(null);
     }
 
-    return item.value as T;
+    return Promise.resolve(item.value as T);
   }
 
-  async set<T>(key: string, value: T, options?: CacheOptions): Promise<void> {
+  set<T>(key: string, value: T, options?: CacheOptions): Promise<void> {
     let expiry: number | null = null;
     if (options?.ttl) {
       expiry = Date.now() + options.ttl * 1000;
     }
 
     this.cache.set(key, { value, expiry });
+    return Promise.resolve();
   }
 
-  async delete(key: string): Promise<void> {
+  delete(key: string): Promise<void> {
     this.cache.delete(key);
+    return Promise.resolve();
   }
 
-  async clear(): Promise<void> {
+  clear(): Promise<void> {
     this.cache.clear();
+    return Promise.resolve();
   }
 
-  async has(key: string): Promise<boolean> {
+  has(key: string): Promise<boolean> {
     const item = this.cache.get(key);
     if (!item) {
-      return false;
+      return Promise.resolve(false);
     }
 
     if (item.expiry && item.expiry < Date.now()) {
       this.cache.delete(key);
-      return false;
+      return Promise.resolve(false);
     }
 
-    return true;
+    return Promise.resolve(true);
   }
 }
 

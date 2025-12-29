@@ -29,26 +29,26 @@ class MemoryCache {
     }, 5 * 60 * 1000) as unknown as number;
   }
 
-  async get<T>(key: string): Promise<T | null> {
+  get<T>(key: string): Promise<T | null> {
     const item = this.cache.get(key);
     if (!item) {
-      return null;
+      return Promise.resolve(null);
     }
 
     // 检查是否过期
     if (item.expires > 0 && Date.now() > item.expires) {
       this.cache.delete(key);
       this.removeFromAccessOrder(key);
-      return null;
+      return Promise.resolve(null);
     }
 
     // 更新访问顺序（LRU）
     this.updateAccessOrder(key);
 
-    return item.value as T;
+    return Promise.resolve(item.value as T);
   }
 
-  async set(key: string, value: unknown, ttl: number = 0): Promise<void> {
+  set(key: string, value: unknown, ttl: number = 0): Promise<void> {
     const expires = ttl > 0 ? Date.now() + ttl * 1000 : 0;
 
     if (this.cache.has(key)) {
@@ -68,6 +68,7 @@ class MemoryCache {
       this.cache.set(key, { value, expires });
       this.accessOrder.push(key);
     }
+    return Promise.resolve();
   }
 
   private updateAccessOrder(key: string): void {
@@ -109,27 +110,29 @@ class MemoryCache {
     this.accessOrder = [];
   }
 
-  async delete(key: string): Promise<void> {
+  delete(key: string): Promise<void> {
     this.cache.delete(key);
+    return Promise.resolve();
   }
 
-  async clear(): Promise<void> {
+  clear(): Promise<void> {
     this.cache.clear();
+    return Promise.resolve();
   }
 
-  async has(key: string): Promise<boolean> {
+  has(key: string): Promise<boolean> {
     const item = this.cache.get(key);
     if (!item) {
-      return false;
+      return Promise.resolve(false);
     }
 
     // 检查是否过期
     if (item.expires > 0 && Date.now() > item.expires) {
       this.cache.delete(key);
-      return false;
+      return Promise.resolve(false);
     }
 
-    return true;
+    return Promise.resolve(true);
   }
 }
 
@@ -307,11 +310,12 @@ class RedisCache {
     this.config = config;
   }
 
-  async connect(): Promise<void> {
+  connect(): Promise<void> {
     // 这里需要实际的 Redis 客户端实现
     // 例如使用 npm:redis 或 deno.land/x/redis
     // 为了简化，这里只提供接口
     console.warn("[Cache Plugin] Redis 缓存需要安装 Redis 客户端库");
+    return Promise.resolve();
   }
 
   async get<T>(_key: string): Promise<T | null> {
@@ -456,7 +460,7 @@ export function cache(options: CachePluginOptions = {}): Plugin {
     /**
      * 初始化钩子 - 创建缓存管理器
      */
-    async onInit(app: AppLike) {
+    onInit(app: AppLike) {
       try {
         cacheManager = new CacheManager(options.config);
         // 将缓存管理器存储到 app 中，供其他代码使用

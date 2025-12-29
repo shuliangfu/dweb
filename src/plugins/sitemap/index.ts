@@ -3,7 +3,7 @@
  * 自动生成 sitemap.xml 和 robots.txt
  */
 
-import type { AppLike, BuildConfig, Plugin } from "../../common/types/index.ts";
+import type { BuildConfig, Plugin } from "../../common/types/index.ts";
 import type { SitemapPluginOptions, SitemapUrl } from "./types.ts";
 import * as path from "@std/path";
 

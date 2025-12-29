@@ -66,15 +66,35 @@ async function loadImportsFromDenoJson(
           const browserImports: Record<string, string> = {};
 
           for (const [key, value] of Object.entries(imports)) {
-            if (typeof value === "string") {
-              // 只保留 preact 相关的导入（检查 value 中是否包含 @preact 或 preact@）
-              if (value.includes("@preact") || value.includes("preact@")) {
-                // 转换 specifier
-                const browserUrl = convertSpecifierToBrowserUrl(value);
-                if (browserUrl) {
-                  browserImports[key] = browserUrl;
-                }
+            if (typeof value !== "string") continue;
+            // 预处理：转换 npm:/jsr:/http 为浏览器 URL
+            const browserUrl = convertSpecifierToBrowserUrl(value);
+            if (!browserUrl) continue;
+
+            // 规则 1：preact 相关导入
+            if (
+              value.includes("@preact") || value.includes("preact@") ||
+              key.startsWith("preact")
+            ) {
+              browserImports[key] = browserUrl;
+              continue;
+            }
+
+            // 规则 2：框架导入（@dreamer/dweb）
+            if (key === "@dreamer/dweb" || key.startsWith("@dreamer/dweb")) {
+              // 根映射
+              browserImports[key] = browserUrl;
+              // 前缀映射（支持子路径，如 @dreamer/dweb/client）
+              const withSlashKey = "@dreamer/dweb/";
+              // 仅当未显式配置子路径时，提供前缀映射
+              if (!(withSlashKey in browserImports)) {
+                // 确保末尾带 /
+                const baseUrl = browserUrl.endsWith("/")
+                  ? browserUrl
+                  : `${browserUrl}/`;
+                browserImports[withSlashKey] = baseUrl;
               }
+              continue;
             }
           }
 
@@ -116,6 +136,7 @@ export async function createImportMapScript(
       "preact/jsx-runtime": "https://esm.sh/preact@10.28.0/jsx-runtime",
       "preact/compat": "https://esm.sh/preact@10.28.0/compat",
       "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact",
+      "shiki": "https://esm.sh/shiki@1.24.0",
     };
 
     // 从用户的 deno.json 读取 imports 配置

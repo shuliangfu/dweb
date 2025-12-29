@@ -1,8 +1,8 @@
 /**
- * PostgreSQL 数据库适配器
+ * MySQL/MariaDB 数据库适配器
  */
 
-import postgres from "@postgres";
+import { Client } from "@mysql";
 import {
   BaseAdapter,
   type HealthCheckResult,
@@ -11,20 +11,13 @@ import {
 import type { DatabaseAdapter, DatabaseConfig } from "../types.ts";
 
 /**
- * PostgreSQL 适配器实现
+ * MySQL 适配器实现（兼容 MariaDB）
  */
-export class PostgreSQLAdapter extends BaseAdapter {
-  private sql: ReturnType<typeof postgres> | null = null;
-
-  //
-
-  private toPostgresParams(sql: string): string {
-    let i = 0;
-    return sql.replace(/\?/g, () => `$${++i}`);
-  }
+export class MySQLAdapter extends BaseAdapter {
+  private client: Client | null = null;
 
   /**
-   * 连接 PostgreSQL 数据库
+   * 连接 MySQL/MariaDB 数据库
    * @param retryCount 重试次数（内部使用）
    */
   async connect(config: DatabaseConfig, retryCount: number = 0): Promise<void> {
@@ -40,17 +33,17 @@ export class PostgreSQLAdapter extends BaseAdapter {
 
       const { host, port, database, username, password } = config.connection;
 
-      // 构建连接字符串
-      const connectionString = `postgres://${username || ""}:${
-        password || ""
-      }@${host || "localhost"}:${port || 5432}/${database || ""}`;
-
-      // 创建连接池
-      this.sql = postgres(connectionString, {
-        max: config.pool?.max || 10,
-        idle_timeout: config.pool?.idleTimeout || 30,
+      // 创建客户端并连接
+      const client = new Client();
+      await client.connect({
+        hostname: host || "localhost",
+        port: port || 3306,
+        username: username || "",
+        db: database || "",
+        password: password || "",
       });
 
+      this.client = client;
       this.connected = true;
     } catch (error) {
       // 自动重连机制
@@ -68,7 +61,7 @@ export class PostgreSQLAdapter extends BaseAdapter {
    * 检查连接并自动重连
    */
   private async ensureConnection(): Promise<void> {
-    if (!this.connected || !this.sql) {
+    if (!this.connected || !this.client) {
       if (this.config) {
         await this.connect(this.config);
       } else {
@@ -95,27 +88,26 @@ export class PostgreSQLAdapter extends BaseAdapter {
   }
 
   /**
-   * 执行查询
+   * 执行查询（返回结果集）
    */
   async query(sql: string, params: any[] = []): Promise<any[]> {
     await this.ensureConnection();
-    if (!this.sql) {
+    if (!this.client) {
       throw new Error("Database not connected");
     }
 
     const startTime = Date.now();
 
     try {
-      const pgSql = this.toPostgresParams(sql);
-      const result = await this.sql.unsafe(pgSql, params);
+      const result = await this.client.query(sql, params);
       const duration = Date.now() - startTime;
 
       // 记录查询日志
       if (this.queryLogger) {
-        await this.queryLogger.log("query", pgSql, params, duration);
+        await this.queryLogger.log("query", sql, params, duration);
       }
 
-      return result;
+      return Array.isArray(result) ? result : [];
     } catch (error) {
       const duration = Date.now() - startTime;
       const message = error instanceof Error ? error.message : String(error);
@@ -124,14 +116,14 @@ export class PostgreSQLAdapter extends BaseAdapter {
       if (this.queryLogger) {
         await this.queryLogger.log(
           "query",
-          this.toPostgresParams(sql),
+          sql,
           params,
           duration,
           error as Error,
         );
       }
 
-      throw new Error(`PostgreSQL query error: ${message}`);
+      throw new Error(`MySQL query error: ${message}`);
     }
   }
 
@@ -140,27 +132,27 @@ export class PostgreSQLAdapter extends BaseAdapter {
    */
   async execute(sql: string, params: any[] = []): Promise<any> {
     await this.ensureConnection();
-    if (!this.sql) {
+    if (!this.client) {
       throw new Error("Database not connected");
     }
 
     const startTime = Date.now();
 
     try {
-      const pgSql = this.toPostgresParams(sql);
-      const result = await this.sql.unsafe(pgSql, params);
+      const result = await this.client.execute(sql, params);
       const duration = Date.now() - startTime;
 
       // 记录执行日志
       if (this.queryLogger) {
-        await this.queryLogger.log("execute", pgSql, params, duration);
+        await this.queryLogger.log("execute", sql, params, duration);
       }
 
-      const rows = Array.isArray(result) ? result : [];
-      const affectedRows = Array.isArray(result)
-        ? rows.length
-        : (result as any).count || 0;
-      return { affectedRows, rows };
+      // deno_mysql 的 execute 返回 OK 包，包含 affectedRows 等
+      const ok: any = result;
+      return {
+        affectedRows: ok?.affectedRows || 0,
+        insertId: ok?.lastInsertId ?? null,
+      };
     } catch (error) {
       const duration = Date.now() - startTime;
       const message = error instanceof Error ? error.message : String(error);
@@ -169,14 +161,14 @@ export class PostgreSQLAdapter extends BaseAdapter {
       if (this.queryLogger) {
         await this.queryLogger.log(
           "execute",
-          this.toPostgresParams(sql),
+          sql,
           params,
           duration,
           error as Error,
         );
       }
 
-      throw new Error(`PostgreSQL execute error: ${message}`);
+      throw new Error(`MySQL execute error: ${message}`);
     }
   }
 
@@ -186,69 +178,31 @@ export class PostgreSQLAdapter extends BaseAdapter {
   async transaction<T>(
     callback: (db: DatabaseAdapter) => Promise<T>,
   ): Promise<T> {
-    if (!this.sql) {
+    if (!this.client) {
       throw new Error("Database not connected");
     }
 
-    try {
-      const result = await this.sql.begin(async (sql) => {
-        // 创建一个临时适配器用于事务
-        const txAdapter = new PostgreSQLAdapter();
-        txAdapter.sql = sql;
-        txAdapter.connected = true;
-        return await callback(txAdapter);
-      });
-      return result as T;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`PostgreSQL transaction error: ${message}`);
-    }
+    // 使用客户端的事务 API
+    const result = await this.client.transaction(async (conn) => {
+      const txAdapter = new MySQLAdapter();
+      txAdapter.client = conn as unknown as Client;
+      txAdapter.connected = true;
+      txAdapter.setQueryLogger(this.getQueryLogger()!);
+      return await callback(txAdapter);
+    });
+    return result as T;
   }
 
   /**
-   * 获取连接池状态
+   * 获取连接池状态（deno_mysql 未提供池信息，返回占位值）
    */
-  async getPoolStatus(): Promise<PoolStatus> {
-    if (!this.sql) {
-      return {
-        total: 0,
-        active: 0,
-        idle: 0,
-        waiting: 0,
-      };
-    }
-
-    // postgres 库的连接池信息
-    const pool = (this.sql as any).options?.pool;
-    if (pool) {
-      return {
-        total: pool.totalCount || 0,
-        active: pool.usedCount || 0,
-        idle: (pool.totalCount || 0) - (pool.usedCount || 0),
-        waiting: pool.waitingCount || 0,
-      };
-    }
-
-    // 尝试从连接池获取统计信息
-    try {
-      const result = await this
-        .sql`SELECT * FROM pg_stat_activity WHERE datname = current_database()`;
-      const active = result.length || 0;
-
-      return {
-        total: active,
-        active,
-        idle: 0,
-        waiting: 0,
-      };
-    } catch {
-      return {
-        total: 0,
-        active: 0,
-        idle: 0,
-        waiting: 0,
-      };
-    }
+  getPoolStatus(): Promise<PoolStatus> {
+    return Promise.resolve({
+      total: 0,
+      active: 0,
+      idle: 0,
+      waiting: 0,
+    });
   }
 
   /**
@@ -259,7 +213,7 @@ export class PostgreSQLAdapter extends BaseAdapter {
     this.lastHealthCheck = new Date();
 
     try {
-      if (!this.sql) {
+      if (!this.client) {
         return {
           healthy: false,
           error: "Database not connected",
@@ -267,8 +221,7 @@ export class PostgreSQLAdapter extends BaseAdapter {
         };
       }
 
-      // 执行简单查询
-      await this.sql`SELECT 1`;
+      await this.client.query("SELECT 1");
       const latency = Date.now() - startTime;
 
       return {
@@ -293,10 +246,13 @@ export class PostgreSQLAdapter extends BaseAdapter {
    * 关闭连接
    */
   async close(): Promise<void> {
-    if (this.sql) {
-      await this.sql.end();
-      this.sql = null;
-      this.connected = false;
+    if (this.client) {
+      try {
+        await this.client.close();
+      } finally {
+        this.client = null;
+        this.connected = false;
+      }
     }
   }
 }

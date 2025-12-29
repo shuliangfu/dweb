@@ -28,6 +28,11 @@ import { Application } from "../core/application.ts";
  * ```
  */
 export async function startProdServer(config: AppConfig): Promise<void> {
+  try {
+    Deno.env.set("DENO_ENV", "production");
+  } catch {
+    // ignore env set errors
+  }
   // 验证必需配置
   if (!config.routes) {
     throw new Error("路由配置 (routes) 是必需的");

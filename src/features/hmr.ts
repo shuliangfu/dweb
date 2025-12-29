@@ -326,7 +326,7 @@ export class HMRServer {
    * 读取 import map 配置
    */
   private async loadImportMap(): Promise<Record<string, string>> {
-    const { readDenoJson } = await import("../utils/file.ts");
+    const { readDenoJson } = await import("../server/utils/file.ts");
     const possiblePaths = [Deno.cwd(), ".", "./"];
 
     for (const basePath of possiblePaths) {
@@ -408,7 +408,7 @@ export class HMRServer {
     // 读取 deno.json 或 deno.jsonc 获取 import map（用于解析外部依赖）
     let importMap: Record<string, string> = {};
     try {
-      const { readDenoJson } = await import("../utils/file.ts");
+      const { readDenoJson } = await import("../server/utils/file.ts");
       const denoJson = await readDenoJson(cwd);
       if (denoJson && denoJson.imports) {
         importMap = denoJson.imports;

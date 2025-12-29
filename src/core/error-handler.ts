@@ -6,7 +6,7 @@
  */
 
 import type { Request, Response } from "../common/types/index.ts";
-import { type Logger, LogLevel } from "../features/logger.ts";
+import { type Logger } from "../features/logger.ts";
 
 /**
  * 错误响应格式接口
@@ -78,7 +78,7 @@ export class DefaultErrorHandler implements ErrorHandler {
   /**
    * 处理错误
    */
-  async handle(error: unknown, req: Request, res: Response): Promise<void> {
+  handle(error: unknown, req: Request, res: Response): void {
     const status = this.getStatusFromError(error) || this.config.defaultStatus!;
     const message = this.getMessageFromError(error);
     const stack = error instanceof Error ? error.stack : undefined;

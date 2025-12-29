@@ -14,6 +14,7 @@
 
 import type { AppConfig } from "../../common/types/index.ts";
 import { normalizeRouteConfig } from "../../core/config.ts";
+import { IS_SERVER } from "../../common/constants.ts";
 import { ensureDir } from "@std/fs/ensure-dir";
 import { walk } from "@std/fs/walk";
 import { PluginManager } from "../../core/plugin.ts";
@@ -1458,7 +1459,7 @@ class FileCompiler {
       let cpuCount = 4; // 默认值
       try {
         // Deno 环境：尝试获取 CPU 核心数
-        if (typeof Deno !== "undefined") {
+        if (IS_SERVER) {
           // Deno 没有直接获取 CPU 核心数的 API，使用环境变量或默认值
           const envCores = Deno.env.get("DENO_CPU_COUNT");
           if (envCores) {

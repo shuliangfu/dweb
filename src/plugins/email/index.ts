@@ -14,9 +14,9 @@ import type {
 /**
  * 发送邮件（简化实现，实际需要 SMTP 客户端库）
  */
-export async function sendEmail(
+export function sendEmail(
   options: EmailOptions,
-  smtpConfig: EmailPluginOptions["smtp"],
+  _smtpConfig: EmailPluginOptions["smtp"],
 ): Promise<EmailResult> {
   try {
     // 注意：这是一个简化的实现框架
@@ -26,18 +26,18 @@ export async function sendEmail(
 
     // 这里提供接口和基本验证
     if (!options.to || !options.subject) {
-      return {
+      return Promise.resolve({
         success: false,
         error: "收件人和主题是必需的",
-      };
+      });
     }
 
     // 构建邮件内容
-    const to = Array.isArray(options.to) ? options.to : [options.to];
-    const cc = options.cc
+    const _to = Array.isArray(options.to) ? options.to : [options.to];
+    const _cc = options.cc
       ? (Array.isArray(options.cc) ? options.cc : [options.cc])
       : [];
-    const bcc = options.bcc
+    const _bcc = options.bcc
       ? (Array.isArray(options.bcc) ? options.bcc : [options.bcc])
       : [];
 
@@ -77,15 +77,15 @@ export async function sendEmail(
 
     // 当前实现：返回模拟结果
     console.warn("[Email Plugin] 邮件发送功能需要安装 SMTP 客户端库");
-    return {
+    return Promise.resolve({
       success: true,
       messageId: `mock-${Date.now()}`,
-    };
+    });
   } catch (error) {
-    return {
+    return Promise.resolve({
       success: false,
       error: error instanceof Error ? error.message : "邮件发送失败",
-    };
+    });
   }
 }
 
@@ -140,7 +140,7 @@ export function email(options: EmailPluginOptions): Plugin {
     /**
      * 初始化钩子 - 验证 SMTP 配置
      */
-    async onInit(app: AppLike) {
+    onInit(app: AppLike) {
       // 将邮件发送函数存储到 app 中，供其他代码使用
       (app as any).sendEmail = async (emailOptions: EmailOptions) => {
         const finalOptions: EmailOptions = {

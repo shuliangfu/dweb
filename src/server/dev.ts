@@ -27,6 +27,11 @@ import { Application } from "../core/application.ts";
  * ```
  */
 export async function startDevServer(config: AppConfig): Promise<void> {
+  try {
+    Deno.env.set("DENO_ENV", "development");
+  } catch {
+    // ignore env set errors
+  }
   // 确保配置为开发环境
   const devConfig: AppConfig = {
     ...config,

@@ -42,7 +42,7 @@ import { contentSecurityPolicy, helmet } from "../middleware/security.ts";
 import {
   type CacheAdapter,
   MemoryCacheAdapter,
-  RedisCacheAdapter,
+  RedisCacheAdapter as _RedisCacheAdapter,
 } from "./cache/adapter.ts";
 
 /**
@@ -309,7 +309,7 @@ export class Application extends EventEmitter {
   /**
    * 初始化缓存服务
    */
-  private async initializeCache(config: AppConfig): Promise<void> {
+  private initializeCache(config: AppConfig): void {
     let adapter: CacheAdapter;
 
     if (config.cache?.adapter === "redis" && config.cache.redis) {
@@ -330,7 +330,7 @@ export class Application extends EventEmitter {
   /**
    * 初始化安全中间件
    */
-  private async initializeSecurity(config: AppConfig): Promise<void> {
+  private initializeSecurity(config: AppConfig): void {
     // 如果没有配置 security，或者 explicitly enabled
     if (config.security) {
       if (config.security.helmet) {
@@ -352,7 +352,7 @@ export class Application extends EventEmitter {
   /**
    * 初始化错误处理器
    */
-  private async initializeErrorHandler(): Promise<void> {
+  private initializeErrorHandler(): void {
     // 如果已经设置了错误处理器，则不进行任何操作
     if (this.errorHandler) {
       return;

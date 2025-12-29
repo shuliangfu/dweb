@@ -23,26 +23,26 @@ export class MemoryCacheAdapter implements CacheAdapter {
   /**
    * 获取缓存值
    */
-  async get<T = any>(key: string): Promise<T | null> {
+  get<T = any>(key: string): Promise<T | null> {
     const item = this.cache.get(key);
     if (!item) {
-      return null;
+      return Promise.resolve(null);
     }
 
     // 检查是否过期
     if (item.expiresAt && Date.now() > item.expiresAt) {
       this.cache.delete(key);
       this.removeFromTags(key, item.tags);
-      return null;
+      return Promise.resolve(null);
     }
 
-    return item.value as T;
+    return Promise.resolve(item.value as T);
   }
 
   /**
    * 设置缓存值
    */
-  async set(
+  set(
     key: string,
     value: any,
     ttl?: number,
@@ -72,48 +72,48 @@ export class MemoryCacheAdapter implements CacheAdapter {
       this.tagIndex.get(tag)!.add(key);
     }
 
-    return true;
+    return Promise.resolve(true);
   }
 
   /**
    * 删除缓存
    */
-  async delete(key: string): Promise<boolean> {
+  delete(key: string): Promise<boolean> {
     const item = this.cache.get(key);
     if (item) {
       this.removeFromTags(key, item.tags);
       this.cache.delete(key);
-      return true;
+      return Promise.resolve(true);
     }
-    return false;
+    return Promise.resolve(false);
   }
 
   /**
    * 清空所有缓存
    */
-  async clear(): Promise<boolean> {
+  clear(): Promise<boolean> {
     this.cache.clear();
     this.tagIndex.clear();
-    return true;
+    return Promise.resolve(true);
   }
 
   /**
    * 检查缓存是否存在
    */
-  async has(key: string): Promise<boolean> {
+  has(key: string): Promise<boolean> {
     const item = this.cache.get(key);
     if (!item) {
-      return false;
+      return Promise.resolve(false);
     }
 
     // 检查是否过期
     if (item.expiresAt && Date.now() > item.expiresAt) {
       this.cache.delete(key);
       this.removeFromTags(key, item.tags);
-      return false;
+      return Promise.resolve(false);
     }
 
-    return true;
+    return Promise.resolve(true);
   }
 
   /**

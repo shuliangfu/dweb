@@ -16,38 +16,33 @@ import * as path from "@std/path";
  */
 export async function findMainFile(
   appName?: string,
-  outDir: string = "dist",
+  outDir?: string,
 ): Promise<string | null> {
   const cwd = Deno.cwd();
+  const isDev = Deno.env.get("DENO_ENV") === "development";
 
-  // 1. 尝试查找 manifest.json (构建后的入口)
-  // 检查是否存在 dist/manifest.json 或 .dist/manifest.json
-  // 如果是多应用模式，可能是 dist/appName/manifest.json
-  const distDirs = [
-    appName ? `${outDir}/${appName}` : null,
-    outDir,
-    // 如果 outDir 不是 .dist，也尝试 .dist (常见约定)
-    outDir !== ".dist" ? (appName ? `.dist/${appName}` : null) : null,
-    outDir !== ".dist" ? ".dist" : null,
-  ].filter(Boolean) as string[];
+  if (!isDev && outDir) {
+    const distDirs = [
+      appName ? `${outDir}/${appName}` : null,
+      outDir,
+    ].filter(Boolean) as string[];
 
-  for (const dir of distDirs) {
-    try {
-      const manifestPath = path.join(cwd, dir, "manifest.json");
-      const content = await Deno.readTextFile(manifestPath);
-      const manifest = JSON.parse(content);
+    for (const dir of distDirs) {
+      try {
+        const manifestPath = path.join(cwd, dir, "manifest.json");
+        const content = await Deno.readTextFile(manifestPath);
+        const manifest = JSON.parse(content);
 
-      if (manifest.entry) {
-        const entryPath = path.join(cwd, dir, manifest.entry);
-        // 验证文件是否存在
-        const stat = await Deno.stat(entryPath);
-        if (stat.isFile) {
-          // console.log(`📦 使用编译后的入口文件: ${entryPath}`);
-          return entryPath;
+        if (manifest.entry) {
+          const entryPath = path.join(cwd, dir, manifest.entry);
+          const stat = await Deno.stat(entryPath);
+          if (stat.isFile) {
+            return entryPath;
+          }
         }
+      } catch {
+        // 忽略错误，继续查找
       }
-    } catch {
-      // 忽略错误，继续查找
     }
   }
 
@@ -56,6 +51,10 @@ export async function findMainFile(
   // 如果指定了应用名称（多应用模式），优先查找应用目录下的 main.ts
   if (appName) {
     possiblePaths.push(
+      // src 下的多应用结构
+      `src/${appName}/main.ts`,
+      `src/${appName}/main.js`,
+      // 兼容根目录多应用结构
       `${appName}/main.ts`,
       `${appName}/main.js`,
     );
@@ -63,8 +62,15 @@ export async function findMainFile(
 
   // 然后查找根目录和 example 目录
   possiblePaths.push(
+    // 优先 src 目录
+    "src/main.ts",
+    "src/main.js",
+    // 兼容根目录
     "main.ts",
     "main.js",
+    // 示例项目两种结构
+    "src/example/main.ts",
+    "src/example/main.js",
     "example/main.ts",
     "example/main.js",
   );

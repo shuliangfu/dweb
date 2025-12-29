@@ -136,7 +136,7 @@ export class LifecycleManager {
 
       await server.start(
         config.server.port,
-        config.server.host || "localhost",
+        config.server.host || "127.0.0.1",
         config.server.tls,
       );
 

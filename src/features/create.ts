@@ -149,10 +149,6 @@ export async function getFrameworkUrl(): Promise<string> {
 /**
  * 项目模板配置
  */
-interface ProjectTemplate {
-  name: string;
-  description: string;
-}
 
 /**
  * 交互式输入提示
@@ -481,7 +477,7 @@ export async function createApp(
   );
 
   // 生成 deno.json
-  await generateDenoJson(projectDir, useTailwindV4, isMultiApp, appNames);
+  await generateDenoJson(projectDir, isMultiApp, appNames);
 
   // 生成示例路由和组件
   await generateExampleRoutes(
@@ -735,7 +731,6 @@ export default config;
  */
 async function generateDenoJson(
   projectDir: string,
-  useTailwindV4: boolean,
   isMultiApp: boolean = false,
   appNames: string[] = [],
 ): Promise<void> {

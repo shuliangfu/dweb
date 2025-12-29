@@ -2,6 +2,8 @@
  * 性能优化工具函数
  */
 
+import { IS_SERVER } from "../constants.ts";
+
 /**
  * 防抖函数（用于优化频繁调用）
  */
@@ -69,7 +71,7 @@ export function getMemoryUsage(): {
   heapUsed: number;
   external: number;
 } {
-  if (typeof Deno !== "undefined" && Deno.memoryUsage) {
+  if (IS_SERVER && Deno.memoryUsage) {
     return Deno.memoryUsage();
   }
   // 浏览器环境或 Deno 不可用时的降级处理

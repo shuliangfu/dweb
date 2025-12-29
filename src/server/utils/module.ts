@@ -225,7 +225,6 @@ export function getExternalPackages(
   useSharedDeps: boolean = false,
 ): string[] {
   const externalPackages: string[] = [
-    "@dreamer/dweb",
     "preact",
     "preact-render-to-string",
   ];
@@ -233,20 +232,25 @@ export function getExternalPackages(
   for (const [key, value] of Object.entries(importMap)) {
     // @dreamer/dweb 相关依赖：如果是 JSR URL，始终不打包，通过网络请求加载
     if (key.startsWith("@dreamer/dweb")) {
-      // 如果是 JSR URL，始终保持 external
+      // 如果是 JSR URL，保持 external（由浏览器通过 CDN/代理加载）
       if (value.startsWith("jsr:")) {
         externalPackages.push(key);
         continue;
       }
-      // @dreamer/dweb/client 根据 bundleClient 参数决定是否打包（仅限本地路径）
+      // @dreamer/dweb/client：仅当需要外部化时才 external（本地路径在 bundleClient=true 时应打包）
       if (key === "@dreamer/dweb/client") {
         if (!bundleClient) {
           externalPackages.push(key);
         }
         continue;
       }
-      // 其他 @dreamer/dweb/* 依赖，如果是本地路径，默认不打包（保持 external）
-      if (!value.startsWith("http")) {
+      // 其他 @dreamer/dweb/* 子路径：
+      // - 本地路径：参与打包（让浏览器不再看到裸的 "@dreamer/dweb" 导入）
+      // - 远程 URL（http/npm/jsr）：保持 external，由浏览器加载
+      if (
+        value.startsWith("http") || value.startsWith("npm:") ||
+        value.startsWith("jsr:")
+      ) {
         externalPackages.push(key);
         continue;
       }

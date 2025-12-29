@@ -5,7 +5,7 @@
 /**
  * 数据库类型
  */
-export type DatabaseType = "postgresql" | "mongodb";
+export type DatabaseType = "postgresql" | "mongodb" | "mysql";
 
 /**
  * 数据库连接配置

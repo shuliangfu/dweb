@@ -31,7 +31,7 @@ export interface Extension {
   /** 扩展目标（如果是原生类型扩展） */
   target?: ExtensionTarget;
   /** 扩展处理函数 */
-  handler: Function;
+  handler: (this: any, ...args: any[]) => any;
   /** 扩展描述 */
   description?: string;
   /** 扩展版本 */

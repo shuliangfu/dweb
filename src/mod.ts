@@ -81,6 +81,7 @@ export * from "./plugins/mod.ts";
 // 导出扩展系统
 export * from "./common/extensions/mod.ts";
 export * from "./common/utils/mod.ts";
+export * from "./common/constants.ts";
 
 // 导出功能模块
 export { CookieManager } from "./features/cookie.ts";

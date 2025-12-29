@@ -2,7 +2,11 @@
  * MongoDB 数据库适配器
  */
 
-import { type Db, MongoClient, type MongoClientOptions } from "@mongodb";
+import {
+  type Db,
+  MongoClient,
+  type MongoClientOptions as _MongoClientOptions,
+} from "@mongodb";
 import {
   BaseAdapter,
   type HealthCheckResult,
