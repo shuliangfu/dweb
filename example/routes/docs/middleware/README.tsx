@@ -15,8 +15,8 @@ export default function MiddlewareOverviewPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   // 基本用法
-  const basicUsageCode = `import { Server } from "@dreamer/dweb/core/server";
-import { bodyParser, cors, logger } from "@dreamer/dweb/middleware";
+  const basicUsageCode = `import { Server } from "@dreamer/dweb";
+import { bodyParser, cors, logger } from "@dreamer/dweb";
 
 const server = new Server();
 
@@ -33,7 +33,7 @@ await server.start(3000);`;
 
   // 在配置文件中使用
   const configUsageCode = `// dweb.config.ts
-import { logger, cors, bodyParser } from '@dreamer/dweb/middleware';
+import { logger, cors, bodyParser } from '@dreamer/dweb';
 
 export default {
   middleware: [

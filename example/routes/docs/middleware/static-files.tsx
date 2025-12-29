@@ -14,7 +14,7 @@ export default function StaticFilesMiddlewarePage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   const staticFilesCode =
-    `import { staticFiles } from '@dreamer/dweb/middleware';
+    `import { staticFiles } from '@dreamer/dweb';
 
 server.use(staticFiles({
   dir: 'assets',

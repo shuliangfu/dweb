@@ -8,7 +8,7 @@ import type {
   Plugin,
   Request,
   Response,
-} from "../../types/index.ts";
+} from "../../common/types/index.ts";
 import type {
   PWAManifestConfig,
   PWAPluginOptions,

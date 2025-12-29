@@ -59,7 +59,7 @@ export default function Page({ data }: PageProps) {
 
   // 基本使用
   const basicUsageCode =
-    `import { SessionManager } from "@dreamer/dweb/features/session";
+    `import { SessionManager } from "@dreamer/dweb";
 
 // 创建 Session 管理器
 const sessionManager = new SessionManager({

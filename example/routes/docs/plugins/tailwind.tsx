@@ -13,7 +13,7 @@ export const metadata = {
 export default function TailwindPluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const tailwindCode = `import { tailwind } from '@dreamer/dweb/plugins';
+  const tailwindCode = `import { tailwind } from '@dreamer/dweb';
 
 plugins: [
   tailwind({
@@ -31,6 +31,29 @@ plugins: [
       <p className="text-gray-700 leading-relaxed mb-8">
         tailwind 插件集成 Tailwind CSS，支持 V3 和 V4 版本。
       </p>
+
+      <section className="mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+          特性与优化
+        </h2>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
+            <strong>智能回退机制</strong>：
+            优先尝试使用 Tailwind CLI（支持 v3 和 v4）进行编译，如果失败则自动回退到 PostCSS 处理，确保环境兼容性。
+          </li>
+          <li>
+            <strong>自动化运维</strong>：
+            能够自动检测并下载所需的 Tailwind CLI 二进制文件，实现开箱即用，无需用户手动安装依赖。
+          </li>
+          <li>
+            <strong>环境自适应优化</strong>：
+            <ul>
+              <li className="ml-6 mt-1 text-sm">开发环境：使用内存缓存 (Map) 存储编译结果，带 TTL 控制，实现毫秒级热更新。</li>
+              <li className="ml-6 mt-1 text-sm">生产环境：在构建阶段编译 CSS 并输出文件，运行时自动注入 link 标签，实现最佳性能。</li>
+            </ul>
+          </li>
+        </ul>
+      </section>
 
       <section className="mb-12">
         <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">

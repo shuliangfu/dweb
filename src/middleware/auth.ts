@@ -3,7 +3,7 @@
  * 提供 JWT 认证支持
  */
 
-import type { Middleware } from "../types/index.ts";
+import type { Middleware } from "../common/types/index.ts";
 import { crypto } from "@std/crypto";
 
 /**

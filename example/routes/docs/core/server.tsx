@@ -14,7 +14,7 @@ export default function CoreServerPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   // 服务器基本使用
-  const serverBasicCode = `import { Server } from '@dreamer/dweb/core/server';
+  const serverBasicCode = `import { Server } from '@dreamer/dweb';
 
 const server = new Server();
 
@@ -51,8 +51,8 @@ await server.start(3000, 'localhost');`;
 });`;
 
   // 中间件使用
-  const middlewareCode = `import { Server } from '@dreamer/dweb/core/server';
-import { logger, cors } from '@dreamer/dweb/middleware';
+  const middlewareCode = `import { Server } from '@dreamer/dweb';
+import { logger, cors } from '@dreamer/dweb';
 
 const server = new Server();
 
@@ -235,6 +235,70 @@ await server.start(3000);`;
               host
             </code>{" "}
             - 服务器监听地址（默认: 'localhost'）
+          </li>
+        </ul>
+      </section>
+
+      <section className="mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+          核心架构与优化
+        </h2>
+
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
+          设计模式
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
+            <strong>适配器与代理模式 (Adapter & Proxy Pattern)</strong>：
+            服务器不直接使用 Deno 原生的 Request 对象，而是通过 Proxy
+            创建了一个扩展的请求对象。这允许框架在不破坏原生 API
+            的前提下，无缝添加 session、cookies、query 等便捷属性。
+          </li>
+          <li>
+            <strong>中间件链 (Middleware Chain)</strong>：
+            实现了经典的洋葱模型（责任链模式），支持 next()
+            控制流，允许中间件在请求处理前后执行逻辑，提供了极高的扩展性。
+          </li>
+          <li>
+            <strong>统一错误处理 (Unified Error Handling)</strong>： 内置了
+            ErrorHandler
+            接口和降级处理机制，确保即使自定义错误处理器失败，服务器也能优雅降级，防止崩溃。
+          </li>
+        </ul>
+
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
+          关键优化
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
+            <strong>惰性求值 (Lazy Evaluation)</strong>： 利用 Proxy 的 get
+            拦截器，只有在用户真正访问扩展属性（如 req.cookies 或
+            req.session）时才进行解析。这避免了对每个请求都进行昂贵的解析操作，显著提升了吞吐量。
+          </li>
+          <li>
+            <strong>零拷贝/高效内存处理</strong>： 在处理响应体时，明确检查
+            Uint8Array 并使用 slice().buffer
+            创建视图，避免了不必要的数据拷贝，提升了 I/O 性能。
+          </li>
+        </ul>
+
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
+          新特性
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
+            <strong>WebSocket 升级支持</strong>： 内置了
+            setWebSocketUpgradeHandler，允许在 HTTP 握手阶段平滑升级到 WebSocket
+            连接。
+          </li>
+          <li>
+            <strong>集群感知</strong>： 通过读取 PUP_CLUSTER_INSTANCE
+            环境变量支持集群模式，自动调整端口，适合多实例部署。
+          </li>
+          <li>
+            <strong>开发体验增强</strong>：
+            内置了对自签名证书（开发环境）和自定义 TLS
+            证书（生产环境）的支持，简化了安全配置。
           </li>
         </ul>
       </section>

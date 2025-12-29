@@ -71,6 +71,15 @@ export interface RenderAdapter {
   renderToString(element: VNode): string | Promise<string>;
 
   /**
+   * 服务端流式渲染（Streaming SSR）
+   * 将组件树渲染为可读流
+   *
+   * @param element - 虚拟节点
+   * @returns 可读流
+   */
+  renderToStream?(element: VNode): ReadableStream | Promise<ReadableStream>;
+
+  /**
    * 客户端水合（Hydration）
    * 将服务端渲染的 HTML 与客户端组件关联
    *

@@ -13,7 +13,7 @@ export const metadata = {
 export default function FileUploadPluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const fileUploadCode = `import { fileUpload } from '@dreamer/dweb/plugins';
+  const fileUploadCode = `import { fileUpload } from '@dreamer/dweb';
 
 plugins: [
   fileUpload({

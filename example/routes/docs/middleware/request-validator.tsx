@@ -14,7 +14,7 @@ export default function RequestValidatorMiddlewarePage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   const requestValidatorCode =
-    `import { requestValidator } from '@dreamer/dweb/middleware';
+    `import { requestValidator } from '@dreamer/dweb';
 
 server.use(requestValidator({
   body: {

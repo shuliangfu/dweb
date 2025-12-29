@@ -13,7 +13,7 @@ export const metadata = {
 export default function RssPluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const rssCode = `import { rss } from '@dreamer/dweb/plugins';
+  const rssCode = `import { rss } from '@dreamer/dweb';
 
 plugins: [
   rss({

@@ -28,7 +28,7 @@ export default function CoreIServicePage(
 
   // 基本实现
   const basicImplementationCode =
-    `import type { IService } from "@dreamer/dweb/core/iservice";
+    `import type { IService } from "@dreamer/dweb";
 
 class MyService implements IService {
   readonly name = "MyService";
@@ -71,8 +71,8 @@ class MyService implements IService {
   // 使用 BaseManager（推荐）
   const baseManagerCode =
     `// 推荐使用 BaseManager 基类，它已经实现了 IService 接口
-import { BaseManager } from "@dreamer/dweb/core/base-manager";
-import type { IService } from "@dreamer/dweb/core/iservice";
+import { BaseManager } from "@dreamer/dweb";
+import type { IService } from "@dreamer/dweb";
 
 class MyManager extends BaseManager implements IService {
   constructor() {
@@ -101,9 +101,8 @@ class MyManager extends BaseManager implements IService {
 }`;
 
   // 完整示例
-  const completeExampleCode =
-    `import { BaseManager } from "@dreamer/dweb/core/base-manager";
-import type { IService } from "@dreamer/dweb/core/iservice";
+  const completeExampleCode = `import { BaseManager } from "@dreamer/dweb";
+import type { IService } from "@dreamer/dweb";
 
 class DatabaseManager extends BaseManager implements IService {
   private connection: DatabaseConnection | null = null;

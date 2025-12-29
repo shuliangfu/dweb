@@ -3,7 +3,7 @@
  * 记录请求日志
  */
 
-import type { Middleware } from "../types/index.ts";
+import type { Middleware } from "../common/types/index.ts";
 
 /**
  * 创建日志中间件
@@ -20,7 +20,8 @@ export function logger(options: {
   const defaultSkip = (req: { url: string; method: string }) => {
     const url = new URL(req.url);
     return url.pathname.startsWith("/.well-known/") ||
-      url.pathname.endsWith("/com.chrome.devtools.json");
+      url.pathname.endsWith("/com.chrome.devtools.json") ||
+      url.pathname === "/@vite/client";
   };
 
   return async (req, res, next) => {

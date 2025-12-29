@@ -90,6 +90,26 @@ dist/
         <CodeBlock code={multiAppCode} language="bash" />
       </section>
 
+      <section className="mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+          构建优化
+        </h2>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
+            <strong>Tree Shaking</strong>：
+            基于 esbuild 的高效 Tree Shaking，自动移除未使用的代码，显著减小生产环境包体积。
+          </li>
+          <li>
+            <strong>资源哈希</strong>：
+            自动为静态资源生成内容哈希文件名（如 style.a1b2c3.css），配合永久缓存策略，最大化利用浏览器缓存。
+          </li>
+          <li>
+            <strong>预渲染优化</strong>：
+            构建时自动识别静态路由并进行预渲染（SSG），提升首屏加载速度和 SEO 表现。
+          </li>
+        </ul>
+      </section>
+
       {/* 构建配置 */}
       <section className="mb-12">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">

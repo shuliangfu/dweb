@@ -5,7 +5,7 @@ DWeb 框架的配置管理系统，支持加载和解析配置文件。
 ## 加载配置
 
 ```typescript
-import { loadConfig } from "@dreamer/dweb/core/config";
+import { loadConfig } from "@dreamer/dweb";
 
 // 加载默认配置
 const { config, configDir } = await loadConfig();
@@ -39,7 +39,7 @@ export default defineConfig({
 ## 配置规范化
 
 ```typescript
-import { normalizeRouteConfig } from "@dreamer/dweb/core/config";
+import { normalizeRouteConfig } from "@dreamer/dweb";
 
 // 规范化路由配置
 const routeConfig = normalizeRouteConfig({

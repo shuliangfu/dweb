@@ -43,7 +43,11 @@
  * exampleStore.$reset(); // 重置状态
  */
 
-import { getStoreState, setStoreState, subscribeStore } from "../../client.ts";
+import {
+  getStoreState,
+  setStoreState,
+  subscribeStore,
+} from "../../client/mod.ts";
 
 /**
  * Store 状态类型（支持任意对象类型）

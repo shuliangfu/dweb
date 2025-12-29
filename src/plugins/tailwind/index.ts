@@ -10,14 +10,14 @@ import type {
   Plugin,
   Request,
   Response,
-} from "../../types/index.ts";
+} from "../../common/types/index.ts";
 import type { TailwindPluginOptions } from "./types.ts";
 import { findTailwindConfigFile } from "./utils.ts";
 import { processCSSV3 } from "./v3.ts";
 import { processCSSV4 } from "./v4.ts";
 import { ensureTailwindCli } from "./fetch-cli.ts";
 import * as path from "@std/path";
-import { isPathSafe } from "../../utils/security.ts";
+import { isPathSafe } from "../../server/utils/security.ts";
 import { exists } from "@std/fs/exists";
 
 /**

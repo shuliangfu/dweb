@@ -15,7 +15,7 @@ export default function LoggerMiddlewarePage({
   query: _query,
   data: _data,
 }: PageProps) {
-  const loggerCode = `import { logger } from '@dreamer/dweb/middleware';
+  const loggerCode = `import { logger } from '@dreamer/dweb';
 
 server.use(logger({
   format: 'combined', // 'combined' | 'common' | 'dev' | 'short' | 'tiny'

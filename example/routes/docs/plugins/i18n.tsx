@@ -13,7 +13,7 @@ export const metadata = {
 export default function I18nPluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const i18nCode = `import { i18n } from '@dreamer/dweb/plugins';
+  const i18nCode = `import { i18n } from '@dreamer/dweb';
 
 plugins: [
   i18n({
@@ -63,6 +63,29 @@ plugins: [
 
       <section className="mb-12">
         <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+          架构与特性
+        </h2>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
+            <strong>混合加载策略 (Hybrid Loading)</strong>：
+            支持从构建目录（生产环境）或源码目录（开发环境）灵活加载翻译文件。同时提供了
+            API 端点
+            (/i18n/locales/:lang.json)，允许客户端按需获取翻译包，减少首屏体积。
+          </li>
+          <li>
+            <strong>多维语言检测</strong>： 实现了基于 路径 -&gt; 查询参数 -&gt;
+            Cookie -&gt; Header
+            的多级语言检测策略，确保用户始终能获得正确的语言体验。
+          </li>
+          <li>
+            <strong>全局注入</strong>： 在服务端和客户端均注入全局 $t
+            函数，保证同构代码的一致性，使得在组件中进行国际化变得异常简单。
+          </li>
+        </ul>
+      </section>
+
+      <section className="mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           基本使用
         </h2>
         <CodeBlock code={i18nCode} language="typescript" />
@@ -72,7 +95,7 @@ plugins: [
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
           配置选项
         </h2>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
           必需参数
         </h3>
@@ -83,15 +106,40 @@ plugins: [
             </code>{" "}
             - 支持的语言列表，每个语言对象包含：
             <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">code</code> - 语言代码（如 'en', 'zh-CN'）</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">name</code> - 语言名称（可选）</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">file</code> - 语言文件路径（可选）</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">default</code> - 是否为默认语言（可选）</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">rtl</code> - 是否为 RTL 语言（可选）</li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                  code
+                </code>{" "}
+                - 语言代码（如 'en', 'zh-CN'）
+              </li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                  name
+                </code>{" "}
+                - 语言名称（可选）
+              </li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                  file
+                </code>{" "}
+                - 语言文件路径（可选）
+              </li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                  default
+                </code>{" "}
+                - 是否为默认语言（可选）
+              </li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                  rtl
+                </code>{" "}
+                - 是否为 RTL 语言（可选）
+              </li>
             </ul>
           </li>
         </ul>
-        
+
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
           可选参数
         </h3>
@@ -114,11 +162,36 @@ plugins: [
             </code>{" "}
             - 语言检测方式配置对象：
             <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">fromPath</code> - 是否从 URL 路径检测（如 /en/page），默认 true</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">fromQuery</code> - 是否从查询参数检测（如 ?lang=en），默认 true</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">fromCookie</code> - 是否从 Cookie 检测，默认 true</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">cookieName</code> - Cookie 名称（默认为 'lang'）</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">fromHeader</code> - 是否从 Accept-Language 头检测，默认 true</li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                  fromPath
+                </code>{" "}
+                - 是否从 URL 路径检测（如 /en/page），默认 true
+              </li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                  fromQuery
+                </code>{" "}
+                - 是否从查询参数检测（如 ?lang=en），默认 true
+              </li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                  fromCookie
+                </code>{" "}
+                - 是否从 Cookie 检测，默认 true
+              </li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                  cookieName
+                </code>{" "}
+                - Cookie 名称（默认为 'lang'）
+              </li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                  fromHeader
+                </code>{" "}
+                - 是否从 Accept-Language 头检测，默认 true
+              </li>
             </ul>
           </li>
           <li>
@@ -139,8 +212,18 @@ plugins: [
             </code>{" "}
             - 日期格式化选项：
             <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">format</code> - 日期格式（'short' | 'medium' | 'long' | 'full' | string）</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">timeZone</code> - 时区</li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                  format
+                </code>{" "}
+                - 日期格式（'short' | 'medium' | 'long' | 'full' | string）
+              </li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                  timeZone
+                </code>{" "}
+                - 时区
+              </li>
             </ul>
           </li>
           <li>
@@ -149,10 +232,30 @@ plugins: [
             </code>{" "}
             - 数字格式化选项：
             <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">style</code> - 样式（'decimal' | 'currency' | 'percent'）</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">currency</code> - 货币代码</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">minimumFractionDigits</code> - 最小小数位数</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">maximumFractionDigits</code> - 最大小数位数</li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                  style
+                </code>{" "}
+                - 样式（'decimal' | 'currency' | 'percent'）
+              </li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                  currency
+                </code>{" "}
+                - 货币代码
+              </li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                  minimumFractionDigits
+                </code>{" "}
+                - 最小小数位数
+              </li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
+                  maximumFractionDigits
+                </code>{" "}
+                - 最大小数位数
+              </li>
             </ul>
           </li>
         </ul>

@@ -13,7 +13,7 @@ src/features/cookie.ts  # Cookie 管理实现
 ### 基本使用
 
 ```typescript
-import { CookieManager } from "@dreamer/dweb/features/cookie";
+import { CookieManager } from "@dreamer/dweb";
 
 // 创建 Cookie 管理器
 const cookieManager = new CookieManager("your-secret-key");

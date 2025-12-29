@@ -27,7 +27,7 @@ export type {
   ServerConfig,
   Session,
   SessionConfig,
-} from "./types/index.ts";
+} from "./common/types/index.ts";
 
 // 导出核心类
 export { Server } from "./core/server.ts";
@@ -52,6 +52,12 @@ export type {
   RenderEngine,
   VNode,
 } from "./core/render/adapter.ts";
+export {
+  type CacheAdapter,
+  type CacheOptions,
+  MemoryCacheAdapter,
+  RedisCacheAdapter,
+} from "./core/cache/adapter.ts";
 
 // 导出配置管理
 import {
@@ -73,14 +79,15 @@ export * from "./middleware/mod.ts";
 export * from "./plugins/mod.ts";
 
 // 导出扩展系统
-export * from "./extensions/mod.ts";
+export * from "./common/extensions/mod.ts";
+export * from "./common/utils/mod.ts";
 
 // 导出功能模块
 export { CookieManager } from "./features/cookie.ts";
 export { SessionManager } from "./features/session.ts";
 
 // 导出统一的日志工具（便捷访问）
-export { logger } from "./utils/logger.ts";
+export { logger } from "./server/utils/logger.ts";
 
 // 导出错误类
 export {
@@ -94,63 +101,17 @@ export {
   logError,
   RenderError,
   RouteError,
-} from "./utils/error.ts";
+} from "./common/errors/index.ts";
 
 // 导出 WebSocket 相关 API
-export {
-  getWebSocketServer,
-  initWebSocket,
-  isWebSocketInitialized,
-  WebSocketClient,
-  type WebSocketClientConfig,
-  type WebSocketClientEventType,
-  type WebSocketClientHandlers,
-  type WebSocketClientState,
-  type WebSocketConfig,
-  type WebSocketConnection,
-  type WebSocketHandlers,
-  type WebSocketMessage,
-  type WebSocketMessageType,
-  WebSocketServer,
-  type WebSocketStats,
-} from "./features/websocket/mod.ts";
+export * from "./features/websocket/mod.ts";
+
 // 导出 GraphQL 相关 API
-export {
-  executeQuery,
-  type GraphQLArgument,
-  type GraphQLConfig,
-  type GraphQLContext,
-  type GraphQLError,
-  type GraphQLField,
-  type GraphQLInfo,
-  type GraphQLRequest,
-  type GraphQLResolver,
-  type GraphQLResponse,
-  type GraphQLScalarType,
-  type GraphQLSchema,
-  GraphQLServer,
-  type GraphQLType,
-  type ParsedField,
-  type ParsedQuery,
-  parseQuery,
-  validateQuery,
-} from "./features/graphql/mod.ts";
-export {
-  env,
-  envBool,
-  envFloat,
-  envInt,
-  getAllEnv,
-  initEnv,
-  validateEnv,
-} from "./features/env.ts";
-export {
-  gracefulShutdown,
-  isShuttingDownState,
-  registerShutdownHandler,
-  setupSignalHandlers,
-  unregisterShutdownHandler,
-} from "./features/shutdown.ts";
+export * from "./features/graphql/mod.ts";
+
+// 导出其他功能模块
+export * from "./features/env.ts";
+export * from "./features/shutdown.ts";
 export {
   getLogger,
   type LogEntry,
@@ -167,15 +128,15 @@ export {
   getMonitor,
   Monitor,
   type MonitoringOptions,
-  type PerformanceMetrics,
+  type PerformanceMetrics as MonitorPerformanceMetrics,
   type RequestMetrics,
   setMonitor,
 } from "./features/monitoring.ts";
-export { startDevServer } from "./features/dev.ts";
-export { startProdServer } from "./features/prod.ts";
+export { startDevServer } from "./server/dev.ts";
+export { startProdServer } from "./server/prod.ts";
 
 // 导出控制台工具
-export * from "./console/mod.ts";
+export * from "./server/console/mod.ts";
 
 // 导出数据库工具
 export * from "./features/database/mod.ts";

@@ -13,7 +13,7 @@ export const metadata = {
 export default function StorePluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const basicUsageCode = `import { store } from '@dreamer/dweb/plugins';
+  const basicUsageCode = `import { store } from '@dreamer/dweb';
 
 // 方式1：手动配置 initialState（传统方式）
 app.plugin(
@@ -293,6 +293,25 @@ function resetStore(): void`;
         store
         插件提供客户端状态管理功能，支持响应式状态更新、持久化存储和跨组件状态共享。
       </p>
+
+      <section className="mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+          技术亮点
+        </h2>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
+            <strong>同构架构 (Isomorphic Architecture)</strong>： 支持服务端渲染
+            (SSR) 和客户端激活 (Hydration)。服务端为每个请求创建独立的 Store
+            实例，防止跨请求状态污染；客户端通过 onResponse
+            钩子自动获取服务端状态，实现无缝接管。
+          </li>
+          <li>
+            <strong>即时编译 (JIT Compilation)</strong>： 利用 esbuild
+            在运行时即时编译和压缩客户端脚本 (browser.ts)，并支持从 JSR
+            包中远程加载代码，无需复杂的构建配置。
+          </li>
+        </ul>
+      </section>
 
       <section className="mb-12">
         <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">

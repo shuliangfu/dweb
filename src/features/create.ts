@@ -5,7 +5,7 @@
 
 import * as path from "@std/path";
 import { ensureDir } from "@std/fs/ensure-dir";
-import { readDenoJson } from "../utils/file.ts";
+import { readDenoJson } from "../server/utils/file.ts";
 
 /**
  * 从框架的 deno.json 读取版本号
@@ -740,6 +740,9 @@ async function generateDenoJson(
   appNames: string[] = [],
 ): Promise<void> {
   const frameworkUrl = await getFrameworkUrl();
+  const clientUrl = frameworkUrl.endsWith("mod.ts")
+    ? frameworkUrl.replace(/mod\.ts$/, "client/mod.ts")
+    : `${frameworkUrl}/client`;
 
   // 生成 imports 配置
   let importsConfig = "";
@@ -750,6 +753,7 @@ async function generateDenoJson(
     }).join(",\n");
     importsConfig = `${appImports},
     "@dreamer/dweb": "${frameworkUrl}",
+    "@dreamer/dweb/client": "${clientUrl}",
     "preact": "npm:preact@10.28.0",
     "preact/hooks": "npm:preact@10.28.0/hooks",
     "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
@@ -760,21 +764,12 @@ async function generateDenoJson(
     "@config/": "./config/",
     "@store/": "./stores/",
     "@dreamer/dweb": "${frameworkUrl}",
+    "@dreamer/dweb/client": "${clientUrl}",
     "preact": "npm:preact@10.28.0",
     "preact/hooks": "npm:preact@10.28.0/hooks",
     "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
     "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact"`;
   }
-
-  // 添加 Tailwind CSS 相关依赖
-  const tailwindImports = useTailwindV4
-    ? `,
-    "tailwindcss": "npm:tailwindcss@^4.1.10",
-    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@^4.1.10"`
-    : `,
-    "tailwindcss": "npm:tailwindcss@^3.4.0",
-    "autoprefixer": "npm:autoprefixer@^10.4.20",
-    "postcss": "npm:postcss@^8.4.47"`;
 
   const denoJsonContent = `{
   "version": "1.0.0",
@@ -799,9 +794,9 @@ ${
   }
   },
   "imports": {
-${importsConfig}${tailwindImports}
+${importsConfig}
   },
-  "nodeModulesDir": "auto",
+  "nodeModulesDir": "none",
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "preact"

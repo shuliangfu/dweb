@@ -3,7 +3,7 @@
  * 解析请求体（JSON、Form Data、Multipart）
  */
 
-import type { Middleware, Request } from "../types/index.ts";
+import type { Middleware, Request } from "../common/types/index.ts";
 
 /**
  * Body Parser 选项

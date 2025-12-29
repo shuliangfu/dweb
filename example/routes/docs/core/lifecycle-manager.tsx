@@ -28,7 +28,7 @@ export default function CoreLifecycleManagerPage(
   // 基本使用
   const basicUsageCode =
     `// LifecycleManager 由 Application 类内部使用，通常不需要直接创建
-import { Application } from "@dreamer/dweb/core/application";
+import { Application } from "@dreamer/dweb";
 
 const app = new Application();
 await app.initialize(); // 内部使用 LifecycleManager
@@ -37,8 +37,8 @@ await app.stop();       // 内部使用 LifecycleManager`;
 
   // 注册生命周期钩子
   const registerHooksCode = `// 注册生命周期钩子
-import { Application } from "@dreamer/dweb/core/application";
-import type { LifecycleHooks } from "@dreamer/dweb/core/lifecycle-manager";
+import { Application } from "@dreamer/dweb";
+import type { LifecycleHooks } from "@dreamer/dweb";
 
 const app = new Application();
 await app.initialize();

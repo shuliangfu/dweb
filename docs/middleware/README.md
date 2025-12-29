@@ -26,7 +26,7 @@ src/middleware/
 ### 基本用法
 
 ```typescript
-import { Server } from "@dreamer/dweb/core/server";
+import { Server } from "@dreamer/dweb";
 import { bodyParser, cors, logger } from "@dreamer/dweb/middleware";
 
 const server = new Server();

@@ -28,7 +28,7 @@ src/plugins/
 ### 基本用法
 
 ```typescript
-import { usePlugin } from "@dreamer/dweb/core/plugin";
+import { usePlugin } from "@dreamer/dweb";
 import { seo } from "@dreamer/dweb/plugins";
 
 usePlugin(seo({

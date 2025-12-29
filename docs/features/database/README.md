@@ -3,6 +3,23 @@
 DWeb 框架提供了强大的数据库支持，支持 PostgreSQL 和
 MongoDB，包含查询构建器、ORM/ODM、迁移管理等功能。
 
+## 核心架构
+
+DWeb 数据库模块采用了多层抽象架构，旨在提供统一且强大的数据访问能力。
+
+*   **Active Record 模式**：
+    `SQLModel` 和 `MongoModel` 实现了 Active Record 模式，让模型类直接具备 `find`、`create`、`update` 等能力，开发体验直观高效。
+
+*   **多适配器策略 (Multi-Adapter Strategy)**：
+    通过 `DatabaseAdapter` 接口抽象底层差异，实现了业务逻辑与数据库实现的解耦。支持在同一应用中同时连接 PostgreSQL 和 MongoDB。
+
+*   **流式查询构建器 (Fluent Query Builder)**：
+    `SQLQueryBuilder` 提供了链式调用的 API (`select().from().where().join()`)，不仅编写流畅，还能自动参数化查询以防止 SQL 注入。
+
+*   **性能优化**：
+    *   **自动连接管理**：模型采用 `ensureInitialized` 机制，实现按需连接，加快应用启动速度。
+    *   **集成缓存层**：内置 `CacheAdapter` 支持，可在 ORM 层级配置 `cacheTTL`，自动缓存查询结果，显著减轻数据库压力。
+
 ## 目录结构
 
 ```
@@ -156,7 +173,7 @@ await User.init();
 
 ```typescript
 import { setDatabaseConfigLoader } from "@dreamer/dweb/database";
-import { loadConfig } from "@dreamer/dweb/core/config";
+import { loadConfig } from "@dreamer/dweb";
 
 // 加载配置
 const { config } = await loadConfig();

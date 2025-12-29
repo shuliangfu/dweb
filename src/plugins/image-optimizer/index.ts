@@ -8,7 +8,7 @@ import type {
   Plugin,
   Request,
   Response,
-} from "../../types/index.ts";
+} from "../../common/types/index.ts";
 import type { ImageFormat, ImageOptimizerPluginOptions } from "./types.ts";
 import * as path from "@std/path";
 import { walk } from "@std/fs/walk";

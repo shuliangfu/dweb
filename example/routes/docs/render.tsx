@@ -25,8 +25,7 @@ export default function RenderPage(
 - 保持统一的 API`;
 
   // 使用默认引擎（Preact）
-  const defaultEngineCode =
-    `import { Application } from "@dreamer/dweb/core/application";
+  const defaultEngineCode = `import { Application } from "@dreamer/dweb";
 
 const app = new Application();
 await app.initialize();
@@ -34,8 +33,7 @@ await app.start();
 // 自动使用 Preact`;
 
   // 切换渲染引擎
-  const switchEngineCode =
-    `import { Application } from "@dreamer/dweb/core/application";
+  const switchEngineCode = `import { Application } from "@dreamer/dweb";
 
 const app = new Application();
 await app.initialize();
@@ -83,11 +81,10 @@ export default defineConfig({
 }`;
 
   // 渲染适配器管理器
-  const managerCode =
-    `import { RenderAdapterManager } from "@dreamer/dweb/core/render/manager";
-import { PreactRenderAdapter } from "@dreamer/dweb/core/render/preact";
-import { ReactRenderAdapter } from "@dreamer/dweb/core/render/react";
-import { Vue3RenderAdapter } from "@dreamer/dweb/core/render/vue3";
+  const managerCode = `import { RenderAdapterManager } from "@dreamer/dweb";
+import { PreactRenderAdapter } from "@dreamer/dweb";
+import { ReactRenderAdapter } from "@dreamer/dweb";
+import { Vue3RenderAdapter } from "@dreamer/dweb";
 
 const manager = new RenderAdapterManager();
 

@@ -15,8 +15,7 @@ export default function CoreMiddlewarePage({
   query: _query,
   data: _data,
 }: PageProps) {
-  const middlewareCode =
-    `import type { Middleware } from '@dreamer/dweb/core/middleware';
+  const middlewareCode = `import type { Middleware } from '@dreamer/dweb';
 
 const myMiddleware: Middleware = async (req, res, next) => {
   // 请求前处理
@@ -29,8 +28,8 @@ const myMiddleware: Middleware = async (req, res, next) => {
   console.log('After:', res.status);
 };`;
 
-  const useMiddlewareCode = `import { Server } from '@dreamer/dweb/core/server';
-import { logger, cors } from '@dreamer/dweb/middleware';
+  const useMiddlewareCode = `import { Server } from '@dreamer/dweb';
+import { logger, cors } from '@dreamer/dweb';
 
 const server = new Server();
 

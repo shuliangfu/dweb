@@ -14,7 +14,7 @@ export default function ImageOptimizerPluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   const imageOptimizerCode =
-    `import { imageOptimizer } from '@dreamer/dweb/plugins';
+    `import { imageOptimizer } from '@dreamer/dweb';
 
 plugins: [
   imageOptimizer({

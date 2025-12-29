@@ -13,7 +13,7 @@ export const metadata = {
 export default function SitemapPluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const sitemapCode = `import { sitemap } from '@dreamer/dweb/plugins';
+  const sitemapCode = `import { sitemap } from '@dreamer/dweb';
 
 plugins: [
   sitemap({

@@ -3,12 +3,12 @@
  * 监听文件变化并自动重载
  */
 
-import { buildFromEntryPoints } from "../utils/esbuild.ts";
+import { buildFromEntryPoints } from "../server/utils/esbuild.ts";
 import * as path from "@std/path";
-import { cleanUrl, getRelativePath } from "../utils/path.ts";
-import { shouldIgnoreFile } from "../utils/file.ts";
+import { cleanUrl, getRelativePath } from "../common/utils/path.ts";
+import { shouldIgnoreFile } from "../server/utils/file.ts";
 // HMR 客户端脚本生成函数已迁移到 src/utils/script-hmr.ts
-export { createHMRClientScript } from "../utils/script-hmr.ts";
+export { createHMRClientScript } from "../client/utils/script-hmr.ts";
 
 // ==================== 常量定义 ====================
 

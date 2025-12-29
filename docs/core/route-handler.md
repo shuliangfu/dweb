@@ -16,8 +16,8 @@ DWeb 框架的路由处理器，负责处理页面路由、API 路由、模块�
 ## 基本使用
 
 ```typescript
-import { RouteHandler } from "@dreamer/dweb/core/route-handler";
-import { Router } from "@dreamer/dweb/core/router";
+import { RouteHandler } from "@dreamer/dweb";
+import { Router } from "@dreamer/dweb";
 
 const router = new Router("routes");
 await router.scan();

@@ -7,7 +7,7 @@
 中间件是一个异步函数，接收 `req`、`res` 和 `next` 三个参数：
 
 ```typescript
-import type { Middleware } from "@dreamer/dweb/core/middleware";
+import type { Middleware } from "@dreamer/dweb";
 
 const myMiddleware: Middleware = async (req, res, next) => {
   // 请求前处理
@@ -29,7 +29,7 @@ server.use(myMiddleware);
 ### 响应时间中间件
 
 ```typescript
-import type { Middleware } from "@dreamer/dweb/core/middleware";
+import type { Middleware } from "@dreamer/dweb";
 
 const responseTime: Middleware = async (req, res, next) => {
   const start = Date.now();
@@ -44,7 +44,7 @@ server.use(responseTime);
 ### 请求 ID 中间件
 
 ```typescript
-import type { Middleware } from "@dreamer/dweb/core/middleware";
+import type { Middleware } from "@dreamer/dweb";
 import { randomUUID } from "@std/uuid";
 
 const requestId: Middleware = async (req, res, next) => {
@@ -61,7 +61,7 @@ server.use(requestId);
 ### 条件中间件
 
 ```typescript
-import type { Middleware } from "@dreamer/dweb/core/middleware";
+import type { Middleware } from "@dreamer/dweb";
 
 const conditionalMiddleware = (condition: (req: Request) => boolean) => {
   const middleware: Middleware = async (req, res, next) => {
@@ -85,7 +85,7 @@ server.use(conditionalMiddleware((req) => {
 中间件可以捕获和处理错误：
 
 ```typescript
-import type { Middleware } from "@dreamer/dweb/core/middleware";
+import type { Middleware } from "@dreamer/dweb";
 
 const errorHandling: Middleware = async (req, res, next) => {
   try {
@@ -105,7 +105,7 @@ server.use(errorHandling);
 中间件可以在不调用 `next()` 的情况下提前返回响应：
 
 ```typescript
-import type { Middleware } from "@dreamer/dweb/core/middleware";
+import type { Middleware } from "@dreamer/dweb";
 
 const authCheck: Middleware = async (req, res, next) => {
   const token = req.headers.get("Authorization");

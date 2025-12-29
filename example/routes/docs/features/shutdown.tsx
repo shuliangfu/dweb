@@ -17,8 +17,8 @@ export default function FeaturesShutdownPage(
 ) {
   // 基本使用
   const basicUsageCode =
-    `import { setupSignalHandlers, registerShutdownHandler } from "@dreamer/dweb/features/shutdown";
-import { Server } from "@dreamer/dweb/core/server";
+    `import { setupSignalHandlers, registerShutdownHandler } from "@dreamer/dweb";
+import { Server } from "@dreamer/dweb";
 
 const server = new Server();
 
@@ -49,8 +49,8 @@ await server.start(3000);`;
 
   // 完整示例
   const completeExampleCode =
-    `import { Server } from "@dreamer/dweb/core/server";
-import { setupSignalHandlers, registerShutdownHandler } from "@dreamer/dweb/features/shutdown";
+    `import { Server } from "@dreamer/dweb";
+import { setupSignalHandlers, registerShutdownHandler } from "@dreamer/dweb";
 import { Database } from "./database";
 
 const server = new Server();
@@ -95,7 +95,7 @@ STOPSIGNAL SIGTERM
 CMD ["deno", "run", "-A", "main.ts"]`;
 
   const dockerMainCode = `// main.ts
-import { setupSignalHandlers } from "@dreamer/dweb/features/shutdown";
+import { setupSignalHandlers } from "@dreamer/dweb";
 
 const server = new Server();
 setupSignalHandlers(server);

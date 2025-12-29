@@ -15,8 +15,8 @@
 ### 创建自定义管理器
 
 ```typescript
-import { BaseManager } from "@dreamer/dweb/core/base-manager";
-import type { IService } from "@dreamer/dweb/core/iservice";
+import { BaseManager } from "@dreamer/dweb";
+import type { IService } from "@dreamer/dweb";
 
 class MyManager extends BaseManager implements IService {
   constructor() {
@@ -265,8 +265,8 @@ enum ServiceState {
 ## 完整示例
 
 ```typescript
-import { BaseManager } from "@dreamer/dweb/core/base-manager";
-import type { IService } from "@dreamer/dweb/core/iservice";
+import { BaseManager } from "@dreamer/dweb";
+import type { IService } from "@dreamer/dweb";
 
 class CacheManager extends BaseManager implements IService {
   private cache: Map<string, any> = new Map();

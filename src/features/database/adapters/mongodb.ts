@@ -54,12 +54,28 @@ export class MongoDBAdapter extends BaseAdapter {
         }`;
       }
 
-      // 创建 MongoDB 客户端
-      const clientOptions: Partial<MongoClientOptions> = {
-        maxPoolSize: config.mongoOptions?.maxPoolSize || 10,
-        minPoolSize: config.mongoOptions?.minPoolSize || 1,
-        serverSelectionTimeoutMS: config.mongoOptions?.timeoutMS || 5000,
+      // 连接选项
+      const clientOptions: any = {
+        // 默认选项
+        serverSelectionTimeoutMS: mongoOptions?.timeoutMS || 30000,
       };
+
+      if (mongoOptions?.authSource) {
+        clientOptions.authSource = mongoOptions.authSource;
+      }
+
+      if (mongoOptions?.replicaSet) {
+        clientOptions.replicaSet = mongoOptions.replicaSet;
+      }
+
+      if (mongoOptions?.maxPoolSize) {
+        clientOptions.maxPoolSize = mongoOptions.maxPoolSize;
+      }
+
+      if (mongoOptions?.minPoolSize) {
+        clientOptions.minPoolSize = mongoOptions.minPoolSize;
+      }
+
       this.client = new MongoClient(url, clientOptions);
 
       await this.client.connect();

@@ -27,7 +27,7 @@ export default function CoreRouteHandlerPage(
 
   // 基本使用
   const basicUsageCode = `// RouteHandler 通常由 Application 类内部使用
-import { Application } from "@dreamer/dweb/core/application";
+import { Application } from "@dreamer/dweb";
 
 const app = new Application("dweb.config.ts");
 await app.initialize();

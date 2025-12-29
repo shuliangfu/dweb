@@ -3,7 +3,7 @@
  * 提供客户端和服务端表单验证功能
  */
 
-import type { Plugin, Request, Response } from "../../types/index.ts";
+import type { Plugin, Request, Response } from "../../common/types/index.ts";
 import type {
   FormValidatorPluginOptions,
   ValidationResult,

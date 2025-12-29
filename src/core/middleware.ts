@@ -5,7 +5,7 @@
  * @module core/middleware
  */
 
-import type { Middleware, MiddlewareConfig } from "../types/index.ts";
+import type { Middleware, MiddlewareConfig } from "../common/types/index.ts";
 import { BaseManager } from "./base-manager.ts";
 import type { IService } from "./iservice.ts";
 

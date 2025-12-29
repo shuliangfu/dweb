@@ -15,9 +15,7 @@ export default function WebSocketPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   // 创建 WebSocket 服务器
-  const serverCode =
-    `import { WebSocketServer } from "@dreamer/dweb/features/websocket";
-import { Server } from "@dreamer/dweb/core/server";
+  const serverCode = `import { WebSocketServer, Server } from "@dreamer/dweb";
 
 const server = new Server();
 const wsServer = new WebSocketServer({
@@ -59,7 +57,7 @@ await server.start(3000);`;
   const helperCode = `import {
   getWebSocketServer,
   initWebSocket,
-} from "@dreamer/dweb/features/websocket";
+} from "@dreamer/dweb";
 
 // 初始化 WebSocket
 await initWebSocket({
@@ -75,8 +73,7 @@ const wsServer = getWebSocketServer();
 wsServer.broadcast({ type: "notification", message: "系统通知" });`;
 
   // WebSocket 客户端
-  const clientCode =
-    `import { WebSocketClient } from "@dreamer/dweb/features/websocket";
+  const clientCode = `import { WebSocketClient } from "@dreamer/dweb";
 
 const client = new WebSocketClient({
   url: "ws://localhost:3000/ws",
@@ -108,7 +105,7 @@ await client.disconnect();`;
 
   // 在路由中使用
   const routeUsageCode = `// routes/api/ws.ts
-import { WebSocketServer } from "@dreamer/dweb/features/websocket";
+import { WebSocketServer } from "@dreamer/dweb";
 import type { ApiContext } from "@dreamer/dweb";
 
 const wsServer = new WebSocketServer({

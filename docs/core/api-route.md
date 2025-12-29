@@ -336,7 +336,7 @@ export async function DELETE_ID(req: Request, res: Response) {
 ## 加载 API 路由
 
 ```typescript
-import { loadApiRoute } from "@dreamer/dweb/core/api-route";
+import { loadApiRoute } from "@dreamer/dweb";
 
 // 加载 API 路由模块
 const handlers = await loadApiRoute("routes/api/users.ts");

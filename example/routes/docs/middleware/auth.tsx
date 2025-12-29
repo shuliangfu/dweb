@@ -13,7 +13,7 @@ export const metadata = {
 export default function AuthMiddlewarePage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const authCode = `import { auth } from '@dreamer/dweb/middleware';
+  const authCode = `import { auth } from '@dreamer/dweb';
 
 server.use(auth({
   secret: 'your-secret-key',

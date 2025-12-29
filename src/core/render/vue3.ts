@@ -23,12 +23,15 @@ export class Vue3RenderAdapter implements RenderAdapter {
   readonly name: RenderEngine = "vue3";
 
   /** Vue 3 的 h 函数 */
-  private h?: typeof import("vue").h;
+  private h?: typeof import("npm:vue@^3.5.13").h;
   /** Vue 3 的 renderToString 函数 */
   private vueRenderToString?:
-    typeof import("@vue/server-renderer").renderToString;
+    typeof import("npm:@vue/server-renderer@^3.5.13").renderToString;
+  /** Vue 3 的 renderToWebStream 函数 */
+  private vueRenderToStream?:
+    typeof import("npm:@vue/server-renderer@^3.5.13").renderToWebStream;
   /** Vue 3 的 createApp 函数 */
-  private createApp?: typeof import("vue").createApp;
+  private createApp?: typeof import("npm:vue@^3.5.13").createApp;
 
   /**
    * 初始化适配器
@@ -36,12 +39,13 @@ export class Vue3RenderAdapter implements RenderAdapter {
    */
   async initialize(): Promise<void> {
     const [vueModule, serverRenderer] = await Promise.all([
-      import("vue"),
-      import("@vue/server-renderer"),
+      import("npm:vue@^3.5.13"),
+      import("npm:@vue/server-renderer@^3.5.13"),
     ]);
 
     this.h = vueModule.h;
     this.vueRenderToString = serverRenderer.renderToString;
+    this.vueRenderToStream = serverRenderer.renderToWebStream;
     this.createApp = vueModule.createApp;
   }
 
@@ -79,6 +83,27 @@ export class Vue3RenderAdapter implements RenderAdapter {
     }
     // Vue 3 的 renderToString 是异步的
     return await this.vueRenderToString(element as any);
+  }
+
+  /**
+   * 服务端流式渲染
+   *
+   * @param element - 虚拟节点
+   * @returns 可读流
+   */
+  async renderToStream(element: VNode): Promise<ReadableStream> {
+    if (!this.vueRenderToStream) {
+      throw new Error("Vue 3 适配器未初始化，请先调用 initialize()");
+    }
+    // Vue 3 的 renderToWebStream 需要 app 实例
+    // 这里我们创建一个临时的 app 实例
+    if (!this.createApp) {
+      throw new Error("Vue 3 适配器未初始化，请先调用 initialize()");
+    }
+    const app = this.createApp({
+      render: () => element as any,
+    });
+    return this.vueRenderToStream(app);
   }
 
   /**

@@ -44,6 +44,8 @@ export interface DatabaseConfig {
     timeoutMS?: number; // 服务器选择超时时间（毫秒）
     maxRetries?: number; // 最大重试次数
     retryDelay?: number; // 重试延迟（毫秒）
+    authSource?: string;
+    replicaSet?: string;
   };
 }
 

@@ -7,7 +7,7 @@
 插件是一个对象，包含 `name`、`setup` 和可选的 `teardown` 方法：
 
 ```typescript
-import type { Plugin } from "@dreamer/dweb/core/plugin";
+import type { Plugin } from "@dreamer/dweb";
 
 const myPlugin: Plugin = {
   name: "my-plugin",
@@ -36,8 +36,8 @@ usePlugin(myPlugin);
 ### 简单插件
 
 ```typescript
-import type { Plugin } from "@dreamer/dweb/core/plugin";
-import { usePlugin } from "@dreamer/dweb/core/plugin";
+import type { Plugin } from "@dreamer/dweb";
+import { usePlugin } from "@dreamer/dweb";
 
 const helloPlugin: Plugin = {
   name: "hello",
@@ -55,8 +55,8 @@ usePlugin(helloPlugin);
 ### 配置化插件
 
 ```typescript
-import type { Plugin } from "@dreamer/dweb/core/plugin";
-import { usePlugin } from "@dreamer/dweb/core/plugin";
+import type { Plugin } from "@dreamer/dweb";
+import { usePlugin } from "@dreamer/dweb";
 
 interface MyPluginOptions {
   prefix: string;
@@ -88,8 +88,8 @@ usePlugin(createMyPlugin({
 ### 异步插件
 
 ```typescript
-import type { Plugin } from "@dreamer/dweb/core/plugin";
-import { usePlugin } from "@dreamer/dweb/core/plugin";
+import type { Plugin } from "@dreamer/dweb";
+import { usePlugin } from "@dreamer/dweb";
 
 const asyncPlugin: Plugin = {
   name: "async-plugin",
@@ -110,8 +110,8 @@ usePlugin(asyncPlugin);
 ### 带清理的插件
 
 ```typescript
-import type { Plugin } from "@dreamer/dweb/core/plugin";
-import { usePlugin } from "@dreamer/dweb/core/plugin";
+import type { Plugin } from "@dreamer/dweb";
+import { usePlugin } from "@dreamer/dweb";
 
 let intervalId: number | null = null;
 
@@ -151,7 +151,7 @@ interface Plugin {
 ### 使用插件
 
 ```typescript
-import { usePlugin } from "@dreamer/dweb/core/plugin";
+import { usePlugin } from "@dreamer/dweb";
 
 usePlugin(plugin);
 ```

@@ -13,7 +13,7 @@ export const metadata = {
 export default function CachePluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const cacheCode = `import { cache } from '@dreamer/dweb/plugins';
+  const cacheCode = `import { cache } from '@dreamer/dweb';
 
 plugins: [
   cache({
@@ -30,6 +30,26 @@ plugins: [
       <p className="text-gray-700 leading-relaxed mb-8">
         cache 插件提供缓存功能，支持内存缓存和 Redis 缓存。
       </p>
+
+      <section className="mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+          架构与性能
+        </h2>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
+            <strong>多级存储策略</strong>：
+            支持 memory (内存)、file (文件系统) 和 redis 三种后端，可根据场景灵活切换。
+          </li>
+          <li>
+            <strong>改进的 LRU 算法</strong>：
+            内存缓存实现了带有访问顺序追踪 (accessOrder) 和定期清理机制的 LRU 策略，有效防止内存泄漏，保证高并发下的稳定性。
+          </li>
+          <li>
+            <strong>文件缓存哈希</strong>：
+            文件缓存使用 SHA-256 对 Key 进行哈希作为文件名，解决了特殊字符和文件系统长度限制的问题，提高了文件系统的兼容性。
+          </li>
+        </ul>
+      </section>
 
       <section className="mb-12">
         <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">

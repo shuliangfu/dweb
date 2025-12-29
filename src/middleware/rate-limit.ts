@@ -3,7 +3,7 @@
  * 提供请求频率限制功能
  */
 
-import type { Middleware } from "../types/index.ts";
+import type { Middleware } from "../common/types/index.ts";
 
 /**
  * 限流选项

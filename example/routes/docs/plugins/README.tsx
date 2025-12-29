@@ -15,9 +15,8 @@ export default function PluginsOverviewPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   // 基本用法
-  const basicUsageCode =
-    `import { Application } from "@dreamer/dweb/core/application";
-import { tailwind, seo } from "@dreamer/dweb/plugins";
+  const basicUsageCode = `import { Application } from "@dreamer/dweb";
+import { tailwind, seo } from "@dreamer/dweb";
 
 const app = new Application();
 await app.initialize();
@@ -30,7 +29,7 @@ await app.start();`;
 
   // 在配置文件中使用
   const configUsageCode = `// dweb.config.ts
-import { tailwind, seo, store } from '@dreamer/dweb/plugins';
+import { tailwind, seo, store } from '@dreamer/dweb';
 
 export default {
   plugins: [

@@ -15,9 +15,8 @@ export default function GraphQLPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   // 基本使用
-  const basicUsageCode =
-    `import { GraphQLServer } from "@dreamer/dweb/features/graphql";
-import { Server } from "@dreamer/dweb/core/server";
+  const basicUsageCode = `import { GraphQLServer } from "@dreamer/dweb";
+import { Server } from "@dreamer/dweb";
 
 // 定义 GraphQL Schema
 const typeDefs = \`
@@ -66,7 +65,7 @@ await server.start(3000);`;
 
   // 在路由中使用
   const routeUsageCode = `// routes/api/graphql.ts
-import { GraphQLServer } from "@dreamer/dweb/features/graphql";
+import { GraphQLServer } from "@dreamer/dweb";
 import type { ApiContext } from "@dreamer/dweb";
 
 const graphqlServer = new GraphQLServer({
@@ -87,9 +86,8 @@ export async function post({ req, res }: ApiContext) {
 }`;
 
   // 使用数据源
-  const dataSourceCode =
-    `import { GraphQLServer } from "@dreamer/dweb/features/graphql";
-import { getDatabase } from "@dreamer/dweb/database";
+  const dataSourceCode = `import { GraphQLServer } from "@dreamer/dweb";
+import { getDatabase } from "@dreamer/dweb";
 
 const graphqlServer = new GraphQLServer({
   typeDefs: \`
@@ -113,8 +111,7 @@ const graphqlServer = new GraphQLServer({
 });`;
 
   // 订阅支持
-  const subscriptionCode =
-    `import { GraphQLServer } from "@dreamer/dweb/features/graphql";
+  const subscriptionCode = `import { GraphQLServer } from "@dreamer/dweb";
 
 const graphqlServer = new GraphQLServer({
   typeDefs: \`

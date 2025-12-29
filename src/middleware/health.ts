@@ -3,7 +3,7 @@
  * 提供健康检查端点
  */
 
-import type { Middleware } from "../types/index.ts";
+import type { Middleware } from "../common/types/index.ts";
 
 /**
  * 健康检查选项

@@ -6,7 +6,7 @@
 import FeatureSection from "../components/FeatureSection.tsx";
 import CodeBlock from "../components/CodeBlock.tsx";
 import type { PageProps } from "@dreamer/dweb";
-import { getStore } from "@dreamer/dweb/client";
+import { getStore } from "../../src/client/mod.ts";
 
 export const metadata = {
   title: "功能特性 - DWeb 框架完整功能列表",

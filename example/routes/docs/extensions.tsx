@@ -16,7 +16,7 @@ export default function ExtensionsPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   // 初始化扩展系统
-  const initCode = `import { setupExtensions } from "@dreamer/dweb/extensions";
+  const initCode = `import { setupExtensions } from "@dreamer/dweb";
 
 // 初始化所有内置扩展
 setupExtensions();`;
@@ -50,7 +50,7 @@ user.omit(['id']); // { name: 'Alice', email: 'alice@example.com' }`;
   http,
   all,
   upload,
-} from "@dreamer/dweb/extensions";
+} from "@dreamer/dweb";
 
 // 验证函数
 validateEmail("test@example.com"); // true

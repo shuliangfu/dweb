@@ -13,7 +13,7 @@ export const metadata = {
 export default function CorePluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const pluginCode = `import type { Plugin } from '@dreamer/dweb/core/plugin';
+  const pluginCode = `import type { Plugin } from '@dreamer/dweb';
 
 const myPlugin: Plugin = {
   name: 'my-plugin',
@@ -24,7 +24,7 @@ const myPlugin: Plugin = {
 };`;
 
   const usePluginCode = `import { createApp } from '@dreamer/dweb';
-import { tailwind, seo } from '@dreamer/dweb/plugins';
+import { tailwind, seo } from '@dreamer/dweb';
 
 const app = createApp();
 
@@ -36,7 +36,7 @@ export default app;`;
 
   // 插件生命周期钩子示例
   const lifecycleHooksCode =
-    `import type { Plugin } from '@dreamer/dweb/core/plugin';
+    `import type { Plugin } from '@dreamer/dweb';
 
 const myPlugin: Plugin = {
   name: 'my-plugin',

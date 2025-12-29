@@ -13,7 +13,7 @@ export const metadata = {
 export default function BodyParserMiddlewarePage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const bodyParserCode = `import { bodyParser } from '@dreamer/dweb/middleware';
+  const bodyParserCode = `import { bodyParser } from '@dreamer/dweb';
 
 server.use(bodyParser({
   json: { limit: '1mb' },

@@ -8,9 +8,9 @@ import type {
   Request,
   Response,
   StaticOptions,
-} from "../types/index.ts";
+} from "../common/types/index.ts";
 import * as path from "@std/path";
-import { isPathSafe } from "../utils/security.ts";
+import { isPathSafe } from "../server/utils/security.ts";
 
 /**
  * 根据文件扩展名获取 MIME 类型

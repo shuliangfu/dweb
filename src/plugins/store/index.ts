@@ -3,10 +3,10 @@
  * 提供跨组件的响应式状态管理功能
  */
 
-import type { Plugin, Request, Response } from "../../types/index.ts";
+import type { Plugin, Request, Response } from "../../common/types/index.ts";
 import type { Store, StorePluginOptions } from "./types.ts";
-import { minifyJavaScript } from "../../utils/minify.ts";
-import { compileWithEsbuild } from "../../utils/module.ts";
+import { minifyJavaScript } from "../../server/utils/minify.ts";
+import { compileWithEsbuild } from "../../server/utils/module.ts";
 import * as path from "@std/path";
 import { getAllStoreInitialStates } from "./define-store.ts";
 

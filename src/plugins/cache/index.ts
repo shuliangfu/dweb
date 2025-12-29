@@ -3,7 +3,7 @@
  * 提供内存、Redis 和文件缓存支持
  */
 
-import type { AppLike, Plugin } from "../../types/index.ts";
+import type { AppLike, Plugin } from "../../common/types/index.ts";
 import type { CacheConfig, CacheOptions, CachePluginOptions } from "./types.ts";
 import * as path from "@std/path";
 import { ensureDir } from "@std/fs/ensure-dir";

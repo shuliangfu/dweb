@@ -13,7 +13,7 @@ export const metadata = {
 export default function PwaPluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const pwaCode = `import { pwa } from '@dreamer/dweb/plugins';
+  const pwaCode = `import { pwa } from '@dreamer/dweb';
 
 plugins: [
   pwa({

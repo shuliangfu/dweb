@@ -13,7 +13,7 @@ export const metadata = {
 export default function RateLimitMiddlewarePage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const rateLimitCode = `import { rateLimit } from '@dreamer/dweb/middleware';
+  const rateLimitCode = `import { rateLimit } from '@dreamer/dweb';
 
 server.use(rateLimit({
   windowMs: 15 * 60 * 1000, // 时间窗口（毫秒）

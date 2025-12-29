@@ -6,8 +6,11 @@
 import { walk } from "@std/fs/walk";
 import { globToRegExp } from "@std/path/glob-to-regexp";
 import * as path from "@std/path";
-import { isValidIdentifier, sanitizeRouteParams } from "../utils/security.ts";
-import { RadixTree } from "../utils/router-radix-tree.ts";
+import {
+  isValidIdentifier,
+  sanitizeRouteParams,
+} from "../server/utils/security.ts";
+import { RadixTree } from "../common/utils/router-radix-tree.ts";
 
 /**
  * 路由信息

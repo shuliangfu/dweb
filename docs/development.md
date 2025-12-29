@@ -468,7 +468,7 @@ tests/
 ```typescript
 // tests/unit/server.test.ts
 import { assertEquals } from "@std/assert";
-import { Server } from "@dreamer/dweb/core/server";
+import { Server } from "@dreamer/dweb";
 
 Deno.test("Server should start on specified port", async () => {
   const server = new Server();

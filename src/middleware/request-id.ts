@@ -3,7 +3,7 @@
  * 为每个请求生成唯一 ID，便于日志追踪和问题排查
  */
 
-import type { Middleware } from "../types/index.ts";
+import type { Middleware } from "../common/types/index.ts";
 import { crypto } from "@std/crypto";
 
 /**

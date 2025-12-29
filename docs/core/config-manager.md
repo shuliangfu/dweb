@@ -11,7 +11,7 @@
 ### 基本使用
 
 ```typescript
-import { ConfigManager } from "@dreamer/dweb/core/config-manager";
+import { ConfigManager } from "@dreamer/dweb";
 
 // 创建配置管理器
 const configManager = new ConfigManager("dweb.config.ts");
@@ -36,7 +36,7 @@ const config = configManager.getConfig();
 ### 程序化设置配置
 
 ```typescript
-import { ConfigManager } from "@dreamer/dweb/core/config-manager";
+import { ConfigManager } from "@dreamer/dweb";
 import type { AppConfig } from "@dreamer/dweb";
 
 const configManager = new ConfigManager();
@@ -167,7 +167,7 @@ if (configManager.isLoaded()) {
 ## 完整示例
 
 ```typescript
-import { ConfigManager } from "@dreamer/dweb/core/config-manager";
+import { ConfigManager } from "@dreamer/dweb";
 import type { AppConfig } from "@dreamer/dweb";
 
 // 方式 1: 从文件加载
@@ -202,7 +202,7 @@ const merged = configManager2.merge(baseConfig, appConfig);
 `Application` 类内部使用 `ConfigManager` 管理配置：
 
 ```typescript
-import { Application } from "@dreamer/dweb/core/application";
+import { Application } from "@dreamer/dweb";
 
 const app = new Application("dweb.config.ts");
 await app.initialize();

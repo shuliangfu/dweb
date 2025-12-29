@@ -13,7 +13,7 @@ export const metadata = {
 export default function EmailPluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const emailCode = `import { email } from '@dreamer/dweb/plugins';
+  const emailCode = `import { email } from '@dreamer/dweb';
 
 plugins: [
   email({

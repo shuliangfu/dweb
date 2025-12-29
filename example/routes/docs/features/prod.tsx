@@ -97,6 +97,26 @@ docker run -p 3000:3000 -e DENO_ENV=production -e PORT=8080 dweb-app`;
         <CodeBlock code={featuresCode} language="text" />
       </section>
 
+      <section className="mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+          生产环境优化
+        </h2>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
+            <strong>集群模式 (Cluster Mode)</strong>：
+            支持 PUP_CLUSTER_INSTANCE 环境变量，自动适配端口偏移，无需手动配置即可实现多实例负载均衡部署。
+          </li>
+          <li>
+            <strong>零拷贝服务 (Zero-Copy Serving)</strong>：
+            静态文件服务采用零拷贝技术，直接将文件流传输到网络 socket，极大降低了 CPU 和内存占用。
+          </li>
+          <li>
+            <strong>优雅关闭 (Graceful Shutdown)</strong>：
+            内置信号处理机制（SIGINT, SIGTERM），确保在服务停止前完成正在处理的请求并正确释放数据库连接等资源。
+          </li>
+        </ul>
+      </section>
+
       {/* 环境变量 */}
       <section className="mb-12">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">

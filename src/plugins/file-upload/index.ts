@@ -3,7 +3,7 @@
  * 处理文件上传，支持多文件、文件类型验证、大小限制
  */
 
-import type { Plugin, Request, Response } from "../../types/index.ts";
+import type { Plugin, Request, Response } from "../../common/types/index.ts";
 import type {
   FileUploadPluginOptions,
   ImageCompressConfig,

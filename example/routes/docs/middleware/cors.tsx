@@ -13,7 +13,7 @@ export const metadata = {
 export default function CorsMiddlewarePage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const corsCode = `import { cors } from '@dreamer/dweb/middleware';
+  const corsCode = `import { cors } from '@dreamer/dweb';
 
 server.use(cors({
   origin: '*', // 或指定域名 ['https://example.com']

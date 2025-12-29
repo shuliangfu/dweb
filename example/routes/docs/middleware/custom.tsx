@@ -16,7 +16,7 @@ export default function CustomMiddlewarePage(
 ) {
   // 基本结构
   const basicStructureCode =
-    `import type { Middleware } from "@dreamer/dweb/core/middleware";
+    `import type { Middleware } from "@dreamer/dweb";
 
 const myMiddleware: Middleware = async (req, res, next) => {
   // 请求前处理
@@ -34,7 +34,7 @@ server.use(myMiddleware);`;
 
   // 响应时间中间件
   const responseTimeCode =
-    `import type { Middleware } from "@dreamer/dweb/core/middleware";
+    `import type { Middleware } from "@dreamer/dweb";
 
 const responseTime: Middleware = async (req, res, next) => {
   const start = Date.now();
@@ -47,7 +47,7 @@ server.use(responseTime);`;
 
   // 请求 ID 中间件
   const requestIdCode =
-    `import type { Middleware } from "@dreamer/dweb/core/middleware";
+    `import type { Middleware } from "@dreamer/dweb";
 import { randomUUID } from "@std/uuid";
 
 const requestId: Middleware = async (req, res, next) => {
@@ -62,7 +62,7 @@ server.use(requestId);`;
 
   // 条件中间件
   const conditionalCode =
-    `import type { Middleware } from "@dreamer/dweb/core/middleware";
+    `import type { Middleware } from "@dreamer/dweb";
 
 const conditionalMiddleware = (condition: (req: Request) => boolean) => {
   const middleware: Middleware = async (req, res, next) => {
@@ -82,7 +82,7 @@ server.use(conditionalMiddleware((req) => {
 
   // 错误处理
   const errorHandlingCode =
-    `import type { Middleware } from "@dreamer/dweb/core/middleware";
+    `import type { Middleware } from "@dreamer/dweb";
 
 const errorHandling: Middleware = async (req, res, next) => {
   try {
@@ -98,7 +98,7 @@ server.use(errorHandling);`;
 
   // 提前返回
   const earlyReturnCode =
-    `import type { Middleware } from "@dreamer/dweb/core/middleware";
+    `import type { Middleware } from "@dreamer/dweb";
 
 const authCheck: Middleware = async (req, res, next) => {
   const token = req.headers.get("Authorization");

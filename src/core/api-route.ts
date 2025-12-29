@@ -12,8 +12,8 @@ import type {
   Request,
   Response,
   RouteHandler,
-} from "../types/index.ts";
-import { isSafeMethodName } from "../utils/security.ts";
+} from "../common/types/index.ts";
+import { isSafeMethodName } from "../server/utils/security.ts";
 
 /**
  * 加载 API 路由模块
@@ -73,7 +73,7 @@ export async function loadApiRoute(
   }
 }
 
-import { kebabToCamel } from "../utils/string.ts";
+import { kebabToCamel } from "../common/utils/string.ts";
 
 /**
  * 检查字符串是否为驼峰格式（包含大写字母）
@@ -200,7 +200,7 @@ export async function handleMethodApiRoute(
       return null; // 响应已设置，直接返回
     }
     // 如果 res 不存在，抛出错误（向后兼容）
-    const { ApiError } = await import("../utils/error.ts");
+    const { ApiError } = await import("../common/errors/index.ts");
     throw new ApiError(errorResponse.error, 400, errorResponse.details);
   }
 
@@ -219,7 +219,7 @@ export async function handleMethodApiRoute(
       return null; // 响应已设置，直接返回
     }
     // 如果 res 不存在，抛出错误（向后兼容）
-    const { ApiError } = await import("../utils/error.ts");
+    const { ApiError } = await import("../common/errors/index.ts");
     throw new ApiError(errorResponse.error, 400, errorResponse.details);
   }
 
@@ -242,7 +242,7 @@ export async function handleMethodApiRoute(
       return null; // 响应已设置，直接返回
     }
     // 如果 res 不存在，抛出错误（向后兼容）
-    const { ApiError } = await import("../utils/error.ts");
+    const { ApiError } = await import("../common/errors/index.ts");
     throw new ApiError(errorResponse.error, 400, errorResponse.details);
   }
 
@@ -258,7 +258,7 @@ export async function handleMethodApiRoute(
       return null; // 响应已设置，直接返回
     }
     // 如果 res 不存在，抛出错误（向后兼容）
-    const { ApiError } = await import("../utils/error.ts");
+    const { ApiError } = await import("../common/errors/index.ts");
     throw new ApiError(errorResponse.error, 400, errorResponse.details);
   }
 
@@ -284,7 +284,7 @@ export async function handleMethodApiRoute(
       return null; // 响应已设置，直接返回
     }
     // 如果 res 不存在，抛出错误（向后兼容）
-    const { ApiError } = await import("../utils/error.ts");
+    const { ApiError } = await import("../common/errors/index.ts");
     throw new ApiError(errorResponse.error, 404, errorResponse.details);
   }
 
@@ -399,7 +399,7 @@ export async function handleRestApiRoute(
       return null; // 响应已设置，直接返回
     }
     // 如果 res 不存在，抛出错误（向后兼容）
-    const { ApiError } = await import("../utils/error.ts");
+    const { ApiError } = await import("../common/errors/index.ts");
     throw new ApiError(errorResponse.error, 400, errorResponse.details);
   }
 
@@ -480,7 +480,7 @@ export async function handleRestApiRoute(
         return null; // 响应已设置，直接返回
       }
       // 如果 res 不存在，抛出错误（向后兼容）
-      const { ApiError } = await import("../utils/error.ts");
+      const { ApiError } = await import("../common/errors/index.ts");
       throw new ApiError(errorResponse.error, 405, errorResponse.details);
     }
   }
@@ -496,7 +496,7 @@ export async function handleRestApiRoute(
       return null; // 响应已设置，直接返回
     }
     // 如果 res 不存在，抛出错误（向后兼容）
-    const { ApiError } = await import("../utils/error.ts");
+    const { ApiError } = await import("../common/errors/index.ts");
     throw new ApiError(errorResponse.error, 500, errorResponse.details);
   }
 
@@ -521,7 +521,7 @@ export async function handleRestApiRoute(
       return null; // 响应已设置，直接返回
     }
     // 如果 res 不存在，抛出错误（向后兼容）
-    const { ApiError } = await import("../utils/error.ts");
+    const { ApiError } = await import("../common/errors/index.ts");
     throw new ApiError(errorResponse.error, 404, errorResponse.details);
   }
 

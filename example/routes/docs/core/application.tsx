@@ -16,7 +16,7 @@ export default function CoreApplicationPage(
 ) {
   // 基本使用示例
   const basicUsageCode = `// main.ts
-import { Application } from "@dreamer/dweb/core/application";
+import { Application } from "@dreamer/dweb";
 
 // 创建应用实例
 const app = new Application("dweb.config.ts");
@@ -29,7 +29,7 @@ await app.start();`;
 
   // 使用配置文件
   const configFileCode = `// main.ts
-import { Application } from "@dreamer/dweb/core/application";
+import { Application } from "@dreamer/dweb";
 
 // 自动查找 dweb.config.ts
 const app = new Application();
@@ -45,7 +45,7 @@ await app.start();`;
 
   // 程序化配置
   const programmaticConfigCode = `// main.ts
-import { Application } from "@dreamer/dweb/core/application";
+import { Application } from "@dreamer/dweb";
 import type { AppConfig } from "@dreamer/dweb";
 
 const config: AppConfig = {
@@ -63,7 +63,7 @@ await app.start();`;
 
   // 注册中间件和插件
   const middlewarePluginCode = `// main.ts
-import { Application } from "@dreamer/dweb/core/application";
+import { Application } from "@dreamer/dweb";
 
 const app = new Application("dweb.config.ts");
 await app.initialize();
@@ -86,7 +86,7 @@ await app.start();`;
 
   // 获取服务
   const getServiceCode = `// 在中间件或插件中获取服务
-import type { Application } from "@dreamer/dweb/core/application";
+import type { Application } from "@dreamer/dweb";
 import type { Logger } from "@dreamer/dweb";
 
 // 获取 Logger 服务
@@ -97,9 +97,23 @@ logger.info("应用已启动");
 const configManager = app.getService("configManager");
 const server = app.getService("server");`;
 
+  // 事件驱动架构
+  const eventDrivenCode = `// 监听事件
+app.on("server:start", () => {
+  console.log("Server started!");
+});
+
+// 自定义事件
+app.on("user:login", (user) => {
+  // 处理用户登录
+});
+
+// 在其他服务中触发事件 (需要获取 Application 实例)
+app.emit("user:login", { id: 1, name: "Alice" });`;
+
   // 完整示例
   const completeExampleCode = `// main.ts
-import { Application } from "@dreamer/dweb/core/application";
+import { Application } from "@dreamer/dweb";
 import { cors, logger } from "@dreamer/dweb";
 
 const app = new Application("dweb.config.ts");
@@ -135,24 +149,47 @@ console.log("应用已启动，访问 http://localhost:3000");`;
         管理所有组件和服务，提供面向对象的应用管理方式。
       </p>
 
-      {/* 概述 */}
+      {/* 核心特性 */}
       <section className="mb-12">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          概述
+          核心特性
+        </h2>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li><strong>生命周期管理</strong>: 完整的应用生命周期钩子（Initialize, Start, Stop, Error）。</li>
+          <li><strong>依赖注入容器</strong>: 内置 <code>ServiceContainer</code>，支持 Singleton、Transient、Scoped 三种生命周期，实现模块解耦。</li>
+          <li><strong>事件驱动架构</strong>: 基于 <code>EventEmitter</code>，支持全局事件总线，实现组件间的解耦通信。</li>
+          <li><strong>多应用支持</strong>: 支持单体和多应用（Monorepo）架构。</li>
+          <li><strong>统一错误处理</strong>: 内置全局异常捕获和统一的错误响应格式。</li>
+          <li><strong>自动配置</strong>: 支持约定优于配置，自动加载 <code>dweb.config.ts</code> 和环境变量。</li>
+        </ul>
+      </section>
+
+      {/* 事件驱动架构 */}
+      <section className="mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+          事件驱动架构
         </h2>
         <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
           <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
             Application
           </code>{" "}
-          类整合了框架的所有核心功能：
+          类继承自 <code>EventEmitter</code>，作为全局事件总线，允许不同组件通过事件进行通信，而无需直接依赖。
+        </p>
+        <CodeBlock code={eventDrivenCode} language="typescript" />
+      </section>
+
+      {/* 统一错误处理 */}
+      <section className="mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+          统一错误处理
+        </h2>
+        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+          框架内置了全局错误处理机制，能够捕获路由处理、中间件和生命周期中的异常，并返回统一格式的错误响应。
         </p>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>配置管理</li>
-          <li>服务容器（依赖注入）</li>
-          <li>生命周期管理</li>
-          <li>路由系统</li>
-          <li>中间件和插件</li>
-          <li>渲染适配器</li>
+          <li><strong>自动捕获</strong>: 自动捕获同步和异步错误。</li>
+          <li><strong>内容协商</strong>: 根据请求头自动返回 JSON 或 HTML 格式的错误信息。</li>
+          <li><strong>自定义处理</strong>: 支持注册自定义 <code>ErrorHandler</code> 来覆盖默认行为。</li>
         </ul>
       </section>
 
@@ -258,24 +295,6 @@ console.log("应用已启动，访问 http://localhost:3000");`;
               初始化应用，加载配置、注册服务、初始化路由和服务器。
             </p>
             <CodeBlock code={`await app.initialize();`} language="typescript" />
-            <p className="text-gray-700 dark:text-gray-300 text-sm mt-2">
-              <strong>执行顺序：</strong>
-            </p>
-            <ol className="list-decimal list-inside space-y-1 my-2 text-gray-700 dark:text-gray-300 text-sm">
-              <li>加载配置</li>
-              <li>
-                注册服务（Logger、Monitor、CookieManager、SessionManager 等）
-              </li>
-              <li>初始化数据库（如果配置了）</li>
-              <li>初始化 GraphQL 服务器（如果配置了）</li>
-              <li>初始化渲染适配器</li>
-              <li>初始化路由</li>
-              <li>初始化路由处理器</li>
-              <li>初始化中间件和插件</li>
-              <li>初始化服务器</li>
-              <li>初始化 WebSocket 服务器（如果配置了）</li>
-              <li>执行插件初始化钩子</li>
-            </ol>
           </div>
 
           <div>
@@ -288,13 +307,6 @@ console.log("应用已启动，访问 http://localhost:3000");`;
               启动应用，启动服务器并进入运行状态。
             </p>
             <CodeBlock code={`await app.start();`} language="typescript" />
-            <p className="text-gray-700 dark:text-gray-300 text-sm mt-2">
-              <strong>功能：</strong>
-            </p>
-            <ul className="list-disc list-inside space-y-1 my-2 text-gray-700 dark:text-gray-300 text-sm">
-              <li>开发环境：启动 HMR 服务器、文件监听、自动打开浏览器</li>
-              <li>生产环境：验证 TLS 配置、设置优雅关闭</li>
-            </ul>
           </div>
 
           <div>

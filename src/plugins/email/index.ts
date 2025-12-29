@@ -3,7 +3,7 @@
  * 支持 SMTP 邮件发送，支持模板和附件
  */
 
-import type { AppLike, Plugin } from "../../types/index.ts";
+import type { AppLike, Plugin } from "../../common/types/index.ts";
 import type {
   EmailOptions,
   EmailPluginOptions,

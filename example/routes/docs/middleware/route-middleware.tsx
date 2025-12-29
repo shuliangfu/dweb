@@ -58,7 +58,7 @@ export default routeMiddleware;`;
   // 多个中间件
   const multipleMiddlewareCode = `// routes/users/_middleware.ts
 import type { Middleware } from "@dreamer/dweb";
-import { auth } from "@dreamer/dweb/middleware";
+import { auth } from "@dreamer/dweb";
 
 // 认证中间件（只应用到 /users 路径）
 const userAuthMiddleware: Middleware = async (req, res, next) => {

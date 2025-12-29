@@ -10,7 +10,7 @@ import type { LoadContext, PageProps } from "@dreamer/dweb";
 import { getJsrPackageUrl, getVersionString } from "../utils.ts";
 import { useExampleStore } from "../stores/example.ts";
 import { useEffect } from "preact/hooks";
-import { useThemeStore } from "@dreamer/dweb/client";
+import { useThemeStore } from "../../src/client/mod.ts";
 import { twMerge } from "tailwind-merge";
 import Chart from "chart/auto";
 

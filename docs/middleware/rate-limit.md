@@ -1,6 +1,16 @@
 ### rateLimit - 速率限制
 
-```typescript
+速率限制中间件用于防止接口滥用和 DDoS 攻击，提供了灵活的限流策略。
+
+#### 特性
+
+*   **高性能存储**：
+    默认实现高效的内存存储 (`MemoryStore`)，适合单机高并发场景。同时也支持自定义存储接口，方便扩展 Redis 等分布式存储。
+
+*   **智能跳过策略**：
+    支持配置 `skipSuccessfulRequests` 或 `skipFailedRequests`，允许仅针对特定结果类型的请求进行限流（例如只限制失败的登录尝试，而不影响正常用户）。
+
+#### 基本配置
 import { rateLimit } from "@dreamer/dweb/middleware";
 
 server.use(rateLimit({

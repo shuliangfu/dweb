@@ -14,9 +14,9 @@
  */
 
 import { initDatabase, setDatabaseConfigLoader } from "./access.ts";
-import { findConfigFile } from "../../utils/file.ts";
+import { findConfigFile } from "../../server/utils/file.ts";
 import type { DatabaseConfig } from "./types.ts";
-import type { DWebConfig } from "../../types/index.ts";
+import type { DWebConfig } from "../../common/types/index.ts";
 
 /**
  * 从配置文件初始化数据库

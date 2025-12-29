@@ -5,10 +5,11 @@
  * @module core/config
  */
 
-import type { AppConfig, DWebConfig } from "../types/index.ts";
+import type { AppConfig, DWebConfig } from "../common/types/index.ts";
 import * as path from "@std/path";
+import { deepMerge } from "../common/utils/utils.ts";
 
-import { findConfigFile } from "../utils/file.ts";
+import { findConfigFile } from "../server/utils/file.ts";
 
 /**
  * 加载配置文件
@@ -70,6 +71,9 @@ export async function loadConfig(
     // 获取默认导出
     const config: DWebConfig = configModule.default || configModule;
 
+    // 验证配置
+    let finalConfig: AppConfig;
+
     // 如果是多应用模式
     const isMultiApp = "apps" in config && Array.isArray(config.apps);
     if (isMultiApp) {
@@ -86,60 +90,18 @@ export async function loadConfig(
 
         // 合并应用配置和顶层配置，返回 AppConfig
         // 注意：database 配置只能来自根配置，子应用配置中不允许包含 database
-        const mergedConfig: AppConfig = {
-          name: matchedApp.name,
-          basePath: matchedApp.basePath || "/",
-          // 渲染适配器配置（包含渲染引擎和渲染模式）
-          render: {
-            ...config.render,
-            ...matchedApp.render,
-          },
-          server: matchedApp.server,
-          routes: matchedApp.routes,
-          cookie: { ...config.cookie, ...matchedApp.cookie },
-          // 合并 session：确保 secret 字段存在（必需字段）
-          session: config.session || matchedApp.session
-            ? {
-              ...config.session,
-              ...matchedApp.session,
-              secret: matchedApp.session?.secret || config.session?.secret ||
-                "",
-            }
-            : undefined,
-          middleware: [
-            ...(config.middleware || []),
-            ...(matchedApp.middleware || []),
-          ],
-          plugins: [...(config.plugins || []), ...(matchedApp.plugins || [])],
-          // 合并 build：确保 outDir 字段存在（必需字段）
-          build: config.build || matchedApp.build
-            ? {
-              ...config.build,
-              ...matchedApp.build,
-              outDir: matchedApp.build?.outDir || config.build?.outDir || "",
-            }
-            : undefined,
-          dev: { ...config.dev, ...matchedApp.dev },
-          // 合并 static：确保 dir 字段存在（必需字段）
-          static: config.static || matchedApp.static
-            ? {
-              ...config.static,
-              ...matchedApp.static,
-              dir: matchedApp.static?.dir || config.static?.dir || "",
-            }
-            : undefined,
-          // 合并 prefetch：优先使用应用配置，否则使用顶层配置
-          prefetch: { ...config.prefetch, ...matchedApp.prefetch }, //matchedApp.prefetch || config.prefetch,
-          // 数据库配置只能来自根配置（子应用配置中不允许包含 database）
-          database: config.database,
-          // WebSocket 配置（如果根配置中有）
-          websocket: config.websocket,
-          // GraphQL 配置（如果根配置中有）
-          graphql: config.graphql,
-        };
-        // 验证合并后的单应用配置
-        validateConfig(mergedConfig);
-        return { config: mergedConfig, configDir: Deno.cwd() };
+        finalConfig = mergeConfig(config, matchedApp as AppConfig);
+
+        // 强制 database 配置只能来自根配置
+        finalConfig.database = config.database;
+
+        // 确保 name 和 basePath 正确
+        finalConfig.name = matchedApp.name;
+        if (matchedApp.basePath) {
+          finalConfig.basePath = matchedApp.basePath;
+        } else if (!finalConfig.basePath) {
+          finalConfig.basePath = "/";
+        }
       } else {
         // 多应用模式下，如果没有指定应用名称，抛出错误
         throw new Error(
@@ -148,13 +110,39 @@ export async function loadConfig(
           }`,
         );
       }
+    } else {
+      finalConfig = config as AppConfig;
     }
 
-    // 验证配置
-    validateConfig(config);
+    // 尝试加载并合并 main.ts 中的配置（如果有）
+    // 优先级：main.ts > appConfig > baseConfig
+    try {
+      const { loadMainApp } = await import("../server/utils/app.ts");
+      const mainAppOrConfig = await loadMainApp(
+        finalConfig.name,
+        finalConfig.build?.outDir,
+      );
 
-    // 单应用模式，直接返回（已经是 AppConfig）
-    return { config: config as AppConfig, configDir: Deno.cwd() };
+      if (mainAppOrConfig && typeof mainAppOrConfig === "object") {
+        // 检查是否为 AppConfig (具有 middleware 或 plugins 数组，且不是 AppLike 实例)
+        // AppLike 实例通常有 use 和 plugin 方法
+        const isAppLike = typeof (mainAppOrConfig as any).use === "function" &&
+          typeof (mainAppOrConfig as any).plugin === "function";
+
+        if (!isAppLike) {
+          const mainConfig = mainAppOrConfig as AppConfig;
+          // 合并 main.ts 配置到 finalConfig
+          finalConfig = mergeConfig(finalConfig, mainConfig);
+        }
+      }
+    } catch (_e) {
+      // 忽略 main.ts 加载错误
+    }
+
+    // 验证合并后的配置
+    validateConfig(finalConfig);
+
+    return { config: finalConfig, configDir: Deno.cwd() };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`加载配置文件失败: ${message}`);
@@ -287,88 +275,41 @@ export function normalizeRouteConfig(
  * @param baseConfig - 基础配置（顶层配置，部分配置）
  * @param appConfig - 应用配置（完整配置）
  * @returns 合并后的完整配置对象
- *
- * @example
- * ```ts
- * import { mergeConfig } from "@dreamer/dweb";
- *
- * const base = {
- *   server: { port: 3000 },
- *   cookie: { secret: "base-secret" },
- * };
- * const app = {
- *   server: { port: 3001, host: "localhost" },
- *   routes: { dir: "routes" },
- *   cookie: { secret: "app-secret", httpOnly: true },
- * };
- *
- * const merged = mergeConfig(base, app);
- * // {
- * //   server: { port: 3001, host: "localhost" },
- * //   routes: { dir: "routes" },
- * //   cookie: { secret: "app-secret", httpOnly: true }
- * // }
- * ```
  */
 export function mergeConfig(
   baseConfig: Partial<AppConfig>,
   appConfig: AppConfig,
 ): AppConfig {
-  const merged = { ...baseConfig };
+  // 使用 deepMerge 进行基础合并
+  const merged = deepMerge(
+    baseConfig as Record<string, unknown>,
+    appConfig as Record<string, unknown>,
+  ) as AppConfig;
 
-  // 深度合并对象配置
-  if (baseConfig.cookie && appConfig.cookie) {
-    merged.cookie = { ...baseConfig.cookie, ...appConfig.cookie };
-  } else if (appConfig.cookie) {
-    merged.cookie = appConfig.cookie;
-  }
-
-  if (baseConfig.session && appConfig.session) {
-    merged.session = { ...baseConfig.session, ...appConfig.session };
-  } else if (appConfig.session) {
-    merged.session = appConfig.session;
-  }
-
-  if (baseConfig.routes && appConfig.routes) {
-    const baseRoutes = normalizeRouteConfig(baseConfig.routes);
-    const appRoutes = normalizeRouteConfig(appConfig.routes);
-    merged.routes = { ...baseRoutes, ...appRoutes };
-  } else if (appConfig.routes) {
-    merged.routes = appConfig.routes;
-  } else if (baseConfig.routes) {
-    merged.routes = baseConfig.routes;
-  }
-
-  // 合并数组配置（中间件和插件）
-  if (baseConfig.middleware || appConfig.middleware) {
+  // 特殊处理：数组配置（中间件和插件）需要拼接而不是覆盖
+  if (baseConfig.middleware && appConfig.middleware) {
     merged.middleware = [
       ...(baseConfig.middleware || []),
       ...(appConfig.middleware || []),
     ];
   }
 
-  if (baseConfig.plugins || appConfig.plugins) {
+  if (baseConfig.plugins && appConfig.plugins) {
     merged.plugins = [
       ...(baseConfig.plugins || []),
       ...(appConfig.plugins || []),
     ];
   }
 
-  // 应用配置覆盖基础配置
-  // 确保 routes 不为 undefined（appConfig.routes 是必需的）
-  const finalRoutes = merged.routes || appConfig.routes;
-  if (!finalRoutes) {
+  // 特殊处理：路由配置规范化
+  if (merged.routes) {
+    merged.routes = normalizeRouteConfig(merged.routes);
+  }
+
+  // 确保 routes 不为 undefined
+  if (!merged.routes) {
     throw new Error("应用配置必须包含 routes");
   }
 
-  return {
-    ...merged,
-    ...appConfig,
-    // 确保这些配置不被覆盖
-    cookie: merged.cookie,
-    session: merged.session,
-    routes: finalRoutes,
-    middleware: merged.middleware,
-    plugins: merged.plugins,
-  };
+  return merged;
 }

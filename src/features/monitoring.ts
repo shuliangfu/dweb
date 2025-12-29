@@ -3,7 +3,7 @@
  * 提供请求监控、性能监控、错误监控等功能
  */
 
-import type { Request, Response } from "../types/index.ts";
+import type { Request, Response } from "../common/types/index.ts";
 
 /**
  * 请求指标

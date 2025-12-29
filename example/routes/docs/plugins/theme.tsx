@@ -13,7 +13,7 @@ export const metadata = {
 export default function ThemePluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const basicUsageCode = `import { theme } from '@dreamer/dweb/plugins';
+  const basicUsageCode = `import { theme } from '@dreamer/dweb';
 
 plugins: [
   theme({

@@ -3,13 +3,13 @@
  * 使用 defineStore 定义，声明式 API
  */
 
-import { defineStore, useStore } from "@dreamer/dweb/client";
+import { defineStore, useStore } from "../../src/client/mod.ts";
 
 export interface ExampleStoreState extends Record<string, unknown> {
   count: number;
   message: string;
-	items: string[];
-	isLoading: boolean;
+  items: string[];
+  isLoading: boolean;
 }
 
 /**
@@ -69,10 +69,10 @@ export const exampleStore = defineStore("example", {
     },
     removeItem(index: number) {
       this.items = this.items.filter((_item: string, i: number) => i !== index);
-		},
-		toggleIsLoading() {
-			this.isLoading = !this.isLoading;
-		},
+    },
+    toggleIsLoading() {
+      this.isLoading = !this.isLoading;
+    },
   },
 });
 

@@ -44,7 +44,7 @@ import {
   // 表格工具
   table,
   progressBar,
-} from "@dreamer/dweb/console";`;
+} from "@dreamer/dweb";`;
 
   // 基本使用示例
   const basicUsageCode = `// 输出彩色消息
@@ -76,7 +76,7 @@ const confirmed = await confirm("确认继续？");
 const choice = await select("请选择选项：", ["选项1", "选项2", "选项3"]);`;
 
   // Command 类示例
-  const commandCode = `import { Command } from "@dreamer/dweb/console";
+  const commandCode = `import { Command } from "@dreamer/dweb";
 
 // 创建命令
 const cmd = new Command("my-command")
@@ -91,7 +91,7 @@ const cmd = new Command("my-command")
 await cmd.parse(Deno.args);`;
 
   // 进度条示例
-  const progressCode = `import { progressBar } from "@dreamer/dweb/console";
+  const progressCode = `import { progressBar } from "@dreamer/dweb";
 
 // 创建进度条
 const bar = progressBar({

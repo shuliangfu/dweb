@@ -182,6 +182,22 @@ deno task build:app2`;
         <CodeBlock code={processCode} language="text" />
       </section>
 
+      <section className="mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+          模板特性
+        </h2>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
+            <strong>现代化技术栈</strong>：
+            默认集成 Tailwind CSS v4、TypeScript 5.x 和 Deno 2.x，直接使用最新技术构建应用。
+          </li>
+          <li>
+            <strong>最佳实践集成</strong>：
+            模板内置了目录结构规范、代码风格配置（deno.json）、Git 钩子和 VS Code 推荐设置，统一团队开发规范。
+          </li>
+        </ul>
+      </section>
+
       {/* 项目结构 */}
       <section className="mb-12">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">

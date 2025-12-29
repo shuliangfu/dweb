@@ -13,7 +13,7 @@ import type {
   Request,
   Response,
   Session,
-} from "../types/index.ts";
+} from "../common/types/index.ts";
 import type { Logger } from "../features/logger.ts";
 import { Server } from "./server.ts";
 import { Router } from "./router.ts";
@@ -35,7 +35,15 @@ import { normalizeRouteConfig } from "./config.ts";
 import { RenderAdapterManager } from "./render/manager.ts";
 import { PreactRenderAdapter } from "./render/preact.ts";
 import type { RenderAdapter, RenderEngine } from "./render/adapter.ts";
+import { DefaultErrorHandler, type ErrorHandler } from "./error-handler.ts";
 import * as path from "@std/path";
+import { EventEmitter } from "node:events";
+import { contentSecurityPolicy, helmet } from "../middleware/security.ts";
+import {
+  type CacheAdapter,
+  MemoryCacheAdapter,
+  RedisCacheAdapter,
+} from "./cache/adapter.ts";
 
 /**
  * 应用核心类
@@ -54,7 +62,7 @@ import * as path from "@std/path";
  * await app.start();
  * ```
  */
-export class Application {
+export class Application extends EventEmitter {
   /** 应用上下文 */
   private context: ApplicationContext;
   /** 配置管理器 */
@@ -75,6 +83,8 @@ export class Application {
   private pluginManager: PluginManager;
   /** 渲染适配器管理器 */
   private renderAdapterManager: RenderAdapterManager;
+  /** 错误处理器 */
+  private errorHandler: ErrorHandler | null = null;
 
   /**
    * 构造函数
@@ -83,6 +93,7 @@ export class Application {
    * @param appName - 应用名称（可选，用于多应用模式）
    */
   constructor(configPath?: string, appName?: string) {
+    super();
     // 初始化核心组件
     this.configManager = new ConfigManager(configPath, appName);
     this.serviceContainer = new ServiceContainer();
@@ -136,31 +147,40 @@ export class Application {
       // 2. 注册服务
       await this.registerServices();
 
-      // 3. 初始化数据库（如果配置了）
+      // 3. 初始化错误处理器
+      await this.initializeErrorHandler();
+
+      // 4. 初始化缓存服务
+      await this.initializeCache(config);
+
+      // 5. 初始化数据库（如果配置了）
       await this.initializeDatabase(config);
 
-      // 4. 初始化 GraphQL 服务器（如果配置了）
+      // 6. 初始化 GraphQL 服务器（如果配置了）
       await this.initializeGraphQL(config);
 
-      // 5. 初始化渲染适配器（必须在 RouteHandler 之前）
+      // 7. 初始化安全中间件
+      await this.initializeSecurity(config);
+
+      // 8. 初始化渲染适配器（必须在 RouteHandler 之前）
       await this.initializeRenderAdapter(config);
 
-      // 6. 初始化路由
+      // 9. 初始化路由
       await this.initializeRouter();
 
-      // 7. 初始化路由处理器
+      // 10. 初始化路由处理器
       await this.initializeRouteHandler();
 
-      // 8. 初始化中间件和插件
+      // 11. 初始化中间件和插件
       await this.initializeMiddlewareAndPlugins(config);
 
-      // 9. 初始化服务器
+      // 12. 初始化服务器
       await this.initializeServer();
 
-      // 10. 初始化 WebSocket 服务器（如果配置了）
+      // 13. 初始化 WebSocket 服务器（如果配置了）
       await this.initializeWebSocket(config);
 
-      // 11. 执行插件初始化钩子
+      // 14. 执行插件初始化钩子
       await this.pluginManager.executeOnInit(this.context, config);
 
       // 设置生命周期阶段为已初始化
@@ -283,6 +303,95 @@ export class Application {
 
       // 注册文件监听器到服务容器
       this.serviceContainer.registerSingleton("fileWatcher", () => fileWatcher);
+    }
+  }
+
+  /**
+   * 初始化缓存服务
+   */
+  private async initializeCache(config: AppConfig): Promise<void> {
+    let adapter: CacheAdapter;
+
+    if (config.cache?.adapter === "redis" && config.cache.redis) {
+      // 如果配置了 Redis，尝试连接
+      // 注意：这里需要引入 Redis 客户端，目前仅作为接口预留
+      // 实际项目中应引入 redis 库，例如：import { connect } from "https://deno.land/x/redis/mod.ts";
+      const logger = this.serviceContainer.get<Logger>("logger");
+      logger?.warn("Redis 缓存适配器尚未完全实现，降级为内存缓存");
+      adapter = new MemoryCacheAdapter();
+    } else {
+      // 默认使用内存缓存
+      adapter = new MemoryCacheAdapter();
+    }
+
+    this.serviceContainer.registerSingleton("cache", () => adapter);
+  }
+
+  /**
+   * 初始化安全中间件
+   */
+  private async initializeSecurity(config: AppConfig): Promise<void> {
+    // 如果没有配置 security，或者 explicitly enabled
+    if (config.security) {
+      if (config.security.helmet) {
+        const options = typeof config.security.helmet === "object"
+          ? config.security.helmet
+          : {};
+        this.middlewareManager.add(helmet(options));
+      }
+
+      if (config.security.csp) {
+        const options = typeof config.security.csp === "object"
+          ? config.security.csp
+          : {};
+        this.middlewareManager.add(contentSecurityPolicy(options));
+      }
+    }
+  }
+
+  /**
+   * 初始化错误处理器
+   */
+  private async initializeErrorHandler(): Promise<void> {
+    // 如果已经设置了错误处理器，则不进行任何操作
+    if (this.errorHandler) {
+      return;
+    }
+
+    // 获取日志服务
+    let logger;
+    if (this.serviceContainer.has("logger")) {
+      logger = this.serviceContainer.get("logger") as Logger;
+    }
+
+    // 获取配置
+    const config = this.configManager.getConfig();
+    const isProduction = config.isProduction ?? false;
+
+    // 创建默认错误处理器
+    this.errorHandler = new DefaultErrorHandler(
+      {
+        includeStack: !isProduction,
+        format: "auto",
+      },
+      logger,
+    );
+
+    // 注册到服务容器
+    this.serviceContainer.registerSingleton(
+      "errorHandler",
+      () => this.errorHandler!,
+    );
+  }
+
+  /**
+   * 设置自定义错误处理器
+   * @param errorHandler - 错误处理器
+   */
+  setErrorHandler(errorHandler: ErrorHandler): void {
+    this.errorHandler = errorHandler;
+    if (this._server) {
+      this._server.setErrorHandler(errorHandler);
     }
   }
 
@@ -677,25 +786,39 @@ export class Application {
       this.pluginManager.registerMany(config.plugins);
     }
 
+    // console.log(config)
+
     // 尝试从 main.ts 加载中间件和插件（只加载一次，避免重复）
     const { getMiddlewaresFromApp, getPluginsFromApp, loadMainApp } =
       await import(
-        "../utils/app.ts"
+        "../server/utils/app.ts"
       );
     try {
-      const mainApp = await loadMainApp(config.name);
-      if (mainApp) {
-        // 加载中间件
-        const mainMiddlewares = getMiddlewaresFromApp(mainApp);
-        if (mainMiddlewares.length > 0) {
-          this.middlewareManager.addMany(mainMiddlewares);
-        }
+      const mainAppOrConfig = await loadMainApp(
+        config.name,
+        config.build?.outDir,
+      );
+      if (mainAppOrConfig) {
+        // 检查是否是 AppLike 实例（具有 use 和 plugin 方法）
+        if (
+          typeof (mainAppOrConfig as any).use === "function" &&
+          typeof (mainAppOrConfig as any).plugin === "function"
+        ) {
+          const mainApp = mainAppOrConfig as any;
+          // 加载中间件
+          const mainMiddlewares = getMiddlewaresFromApp(mainApp);
+          if (mainMiddlewares.length > 0) {
+            this.middlewareManager.addMany(mainMiddlewares);
+          }
 
-        // 加载插件
-        const mainPlugins = getPluginsFromApp(mainApp);
-        if (mainPlugins.length > 0) {
-          this.pluginManager.registerMany(mainPlugins);
+          // 加载插件
+          const mainPlugins = getPluginsFromApp(mainApp);
+          if (mainPlugins.length > 0) {
+            this.pluginManager.registerMany(mainPlugins);
+          }
         }
+        // 注意：如果 main.ts 导出的是 AppConfig 对象，它已经在 loadConfig 阶段被合并到 config 中了
+        // 所以这里不需要再次处理，避免重复注册中间件和插件
       }
     } catch (_error) {
       // 加载 main.ts 失败时静默忽略（main.ts 是可选的）
@@ -911,6 +1034,11 @@ export class Application {
       ? (this.serviceContainer.get("graphqlServer") as any)
       : undefined;
 
+    // 获取缓存适配器
+    const cacheAdapter = this.serviceContainer.has("cache")
+      ? this.serviceContainer.get<CacheAdapter>("cache")
+      : undefined;
+
     // 创建路由处理器
     // 传递 Application 实例，以便在 API 路由中可以通过 req.getApplication() 获取
     this.routeHandler = new RouteHandler(
@@ -921,6 +1049,7 @@ export class Application {
       config,
       graphqlServer,
       this, // 传递 Application 实例
+      cacheAdapter,
     );
 
     // 注册路由处理器到服务容器
@@ -958,12 +1087,13 @@ export class Application {
     this.middlewareManager.add(
       logger({
         format: isProduction ? "combined" : "dev",
-        // 开发环境：跳过 .well-known 路径的请求
+        // 开发环境：跳过 .well-known 路径的请求和 Vite 客户端请求
         skip: isProduction
           ? undefined
           : (req: { url: string; method: string }) => {
             const url = new URL(req.url);
-            return url.pathname.startsWith("/.well-known/");
+            return url.pathname.startsWith("/.well-known/") ||
+              url.pathname === "/@vite/client";
           },
       }),
     );
@@ -983,6 +1113,11 @@ export class Application {
       sessionManager,
     );
     this._server.setHandler(requestHandler);
+
+    // 设置错误处理器
+    if (this.errorHandler) {
+      this._server.setErrorHandler(this.errorHandler);
+    }
   }
 
   /**

@@ -3,7 +3,7 @@
  * 收集 Web Vitals 和性能指标
  */
 
-import type { Plugin, Request, Response } from "../../types/index.ts";
+import type { Plugin, Request, Response } from "../../common/types/index.ts";
 import type { PerformanceMetrics, PerformancePluginOptions } from "./types.ts";
 
 /**

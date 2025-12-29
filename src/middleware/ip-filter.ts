@@ -3,7 +3,7 @@
  * 支持 IP 白名单和黑名单
  */
 
-import type { Middleware } from "../types/index.ts";
+import type { Middleware } from "../common/types/index.ts";
 
 /**
  * IP 过滤选项

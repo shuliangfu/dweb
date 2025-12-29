@@ -9,7 +9,7 @@
 ## 快速开始
 
 ```typescript
-import { Application } from "@dreamer/dweb/core/application";
+import { Application } from "@dreamer/dweb";
 
 const app = new Application();
 await app.initialize();

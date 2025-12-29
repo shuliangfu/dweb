@@ -153,6 +153,26 @@ export default {
         <CodeBlock code={featuresCode} language="text" />
       </section>
 
+      <section className="mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+          开发体验优化
+        </h2>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
+            <strong>智能 HMR</strong>：
+            基于 WebSocket 的即时热更新机制，支持 CSS 毫秒级更新和组件状态保留，修改代码无需手动刷新浏览器。
+          </li>
+          <li>
+            <strong>自动 TLS</strong>：
+            开发环境自动生成自签名证书，一键开启 HTTPS 调试，方便测试 HTTP/2 和 Service Worker 等特性。
+          </li>
+          <li>
+            <strong>惰性启动</strong>：
+            路由和中间件采用按需加载策略，即使在大型项目中也能保持秒级启动速度。
+          </li>
+        </ul>
+      </section>
+
       {/* 热更新 */}
       <section className="mb-12">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">

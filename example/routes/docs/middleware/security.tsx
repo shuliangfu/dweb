@@ -13,7 +13,7 @@ export const metadata = {
 export default function SecurityMiddlewarePage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const securityCode = `import { security } from '@dreamer/dweb/middleware';
+  const securityCode = `import { security } from '@dreamer/dweb';
 
 server.use(security({
   contentSecurityPolicy: true,

@@ -16,9 +16,8 @@ export default function CoreBaseManagerPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   // 创建自定义管理器
-  const createManagerCode =
-    `import { BaseManager } from "@dreamer/dweb/core/base-manager";
-import type { IService } from "@dreamer/dweb/core/iservice";
+  const createManagerCode = `import { BaseManager } from "@dreamer/dweb";
+import type { IService } from "@dreamer/dweb";
 
 class MyManager extends BaseManager implements IService {
   constructor() {
@@ -69,9 +68,8 @@ await manager.stop();
 await manager.destroy();`;
 
   // 完整示例
-  const completeExampleCode =
-    `import { BaseManager } from "@dreamer/dweb/core/base-manager";
-import type { IService } from "@dreamer/dweb/core/iservice";
+  const completeExampleCode = `import { BaseManager } from "@dreamer/dweb";
+import type { IService } from "@dreamer/dweb";
 
 class CacheManager extends BaseManager implements IService {
   private cache: Map<string, any> = new Map();

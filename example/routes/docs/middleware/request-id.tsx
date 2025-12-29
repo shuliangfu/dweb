@@ -13,7 +13,7 @@ export const metadata = {
 export default function RequestIdMiddlewarePage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const requestIdCode = `import { requestId } from '@dreamer/dweb/middleware';
+  const requestIdCode = `import { requestId } from '@dreamer/dweb';
 
 server.use(requestId({
   header: 'X-Request-ID',

@@ -15,7 +15,12 @@ if (typeof globalThis !== "undefined") {
   }
 }
 
-import type { AppLike, Plugin, Request, Response } from "../../types/index.ts";
+import type {
+  AppLike,
+  Plugin,
+  Request,
+  Response,
+} from "../../common/types/index.ts";
 import type { I18nPluginOptions, TranslationData } from "./types.ts";
 import * as path from "@std/path";
 import {
@@ -24,8 +29,8 @@ import {
   initI18nAccess,
   setCurrentLanguage,
 } from "./access.ts";
-import { minifyJavaScript } from "../../utils/minify.ts";
-import { compileWithEsbuild } from "../../utils/module.ts";
+import { minifyJavaScript } from "../../server/utils/minify.ts";
+import { compileWithEsbuild } from "../../server/utils/module.ts";
 
 /**
  * 加载翻译文件
@@ -457,6 +462,11 @@ export function i18n(options: I18nPluginOptions): Plugin {
           );
           if (translations) {
             translationCache.set(lang.code, translations);
+            // console.log(
+            //   `[i18n] Loaded translations for ${lang.code}, keys: ${
+            //     Object.keys(translations).length
+            //   }`,
+            // );
           }
         } catch (error) {
           console.warn(`[i18n Plugin] 无法加载语言文件 ${lang.code}:`, error);
@@ -538,6 +548,12 @@ export function i18n(options: I18nPluginOptions): Plugin {
       const langCode = detectLanguage(req, options);
       const langConfig = options.languages.find((l) => l.code === langCode) ||
         options.languages[0];
+
+      // console.log(
+      //   `[i18n] onRequest: Detected lang=${langCode}, Cache hit=${
+      //     translationCache.has(langCode)
+      //   }`,
+      // );
 
       // 设置当前语言（用于全局访问）
       // 注意：在多应用场景下，需要从请求对象获取应用实例

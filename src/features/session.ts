@@ -4,7 +4,7 @@
  * 支持多种存储方式：memory、file、kv、mongodb、redis
  */
 
-import type { Session, SessionConfig } from "../types/index.ts";
+import type { Session, SessionConfig } from "../common/types/index.ts";
 import { crypto } from "@std/crypto";
 import { getDatabase } from "./database/access.ts";
 import type { MongoDBAdapter } from "./database/adapters/mongodb.ts";

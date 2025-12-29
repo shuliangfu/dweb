@@ -4,20 +4,23 @@
  */
 
 import { useEffect, useState } from "preact/hooks";
-import { toggleTheme } from "@dreamer/dweb/client";
-import { menus } from "../config/menus.ts";
+import { toggleTheme } from "../../src/client/mod.ts";
+
 
 interface NavbarProps {
   /** 当前路径（服务端渲染时使用） */
-  currentPath?: string;
+	currentPath?: string;
+	menus: any;
 }
+
+
 
 /**
  * 导航栏组件
  * @param props 组件属性
  * @returns JSX 元素
  */
-export default function Navbar({ currentPath: initialPath }: NavbarProps) {
+export default function Navbar({ currentPath: initialPath, menus }: NavbarProps) {
   // 在客户端使用 state 跟踪当前路径，支持客户端路由导航
   // 服务端渲染时使用传入的 routePath，客户端初始化时也优先使用传入的值
   const [currentPath, setCurrentPath] = useState<string>(() => {
@@ -62,7 +65,6 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
     };
   }, []);
 
-
   return (
     <nav className="bg-gray-100/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -78,7 +80,7 @@ export default function Navbar({ currentPath: initialPath }: NavbarProps) {
 
           {/* 导航链接 */}
           <div className="hidden md:flex items-center space-x-8">
-            {menus.map((item) => {
+            {menus.map((item: { label: string; href: string }) => {
               // 精确匹配路径，支持根路径和子路径
               const isActive = currentPath === item.href ||
                 (item.href !== "/" && currentPath.startsWith(item.href));

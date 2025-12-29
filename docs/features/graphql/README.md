@@ -18,7 +18,7 @@ src/features/graphql/
 ### 创建 GraphQL 服务器
 
 ```typescript
-import { GraphQLServer } from "@dreamer/dweb/features/graphql";
+import { GraphQLServer } from "@dreamer/dweb";
 
 const server = new GraphQLServer({
   schema: {
@@ -94,8 +94,8 @@ const schema = {
 ### 在 HTTP 路由中使用
 
 ```typescript
-import { Server } from "@dreamer/dweb/core/server";
-import { GraphQLServer } from "@dreamer/dweb/features/graphql";
+import { Server } from "@dreamer/dweb";
+import { GraphQLServer } from "@dreamer/dweb";
 
 const server = new Server();
 const graphqlServer = new GraphQLServer({ schema });

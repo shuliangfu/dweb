@@ -13,7 +13,7 @@ export const metadata = {
 export default function IpFilterMiddlewarePage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const ipFilterCode = `import { ipFilter } from '@dreamer/dweb/middleware';
+  const ipFilterCode = `import { ipFilter } from '@dreamer/dweb';
 
 // 白名单
 server.use(ipFilter({

@@ -5,7 +5,7 @@ DWeb 框架的插件管理系统，支持插件注册和生命周期钩子。
 ## 创建插件
 
 ```typescript
-import type { Plugin } from "@dreamer/dweb/core/plugin";
+import type { Plugin } from "@dreamer/dweb";
 
 const myPlugin: Plugin = {
   name: "my-plugin",
@@ -34,7 +34,7 @@ const myPlugin: Plugin = {
 ## 使用插件
 
 ```typescript
-import { PluginManager } from "@dreamer/dweb/core/plugin";
+import { PluginManager } from "@dreamer/dweb";
 
 const manager = new PluginManager();
 

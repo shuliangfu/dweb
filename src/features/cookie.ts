@@ -3,7 +3,7 @@
  * 提供 Cookie 的设置、读取、删除功能
  */
 
-import type { CookieOptions } from "../types/index.ts";
+import type { CookieOptions } from "../common/types/index.ts";
 
 /**
  * Cookie 管理器

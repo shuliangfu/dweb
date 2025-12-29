@@ -5,7 +5,7 @@
  * @module core/application-context
  */
 
-import type { AppConfig, AppLike } from "../types/index.ts";
+import type { AppConfig, AppLike } from "../common/types/index.ts";
 import type { Application } from "./application.ts";
 import type { Server } from "./server.ts";
 import type { Router } from "./router.ts";

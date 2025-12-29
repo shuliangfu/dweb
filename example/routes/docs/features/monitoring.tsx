@@ -16,8 +16,7 @@ export default function FeaturesMonitoringPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   // 基本使用
-  const basicUsageCode =
-    `import { Monitor } from "@dreamer/dweb/features/monitoring";
+  const basicUsageCode = `import { Monitor } from "@dreamer/dweb";
 
 // 创建监控器
 const monitor = new Monitor({
@@ -79,8 +78,7 @@ server.setHandler(async (req, res) => {
 });`;
 
   // 集成第三方服务
-  const thirdPartyCode =
-    `import { Monitor } from "@dreamer/dweb/features/monitoring";
+  const thirdPartyCode = `import { Monitor } from "@dreamer/dweb";
 
 const monitor = new Monitor({
   onRequest: async (metrics) => {

@@ -65,6 +65,7 @@ const navItems: NavItem[] = [
       { title: "生产服务器 (Prod)", path: "/docs/features/prod" },
       { title: "性能监控 (Monitoring)", path: "/docs/features/monitoring" },
       { title: "优雅关闭 (Shutdown)", path: "/docs/features/shutdown" },
+      { title: "缓存系统 (Cache)", path: "/docs/features/cache" },
       { title: "数据库 (Database)", path: "/docs/features/database" },
       { title: "GraphQL (GraphQL)", path: "/docs/features/graphql" },
       { title: "WebSocket (WebSocket)", path: "/docs/features/websocket" },

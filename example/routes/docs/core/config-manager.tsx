@@ -17,7 +17,7 @@ export default function CoreConfigManagerPage(
 ) {
   // 基本使用
   const basicUsageCode = `// main.ts
-import { ConfigManager } from "@dreamer/dweb/core/config-manager";
+import { ConfigManager } from "@dreamer/dweb";
 
 // 创建配置管理器
 const configManager = new ConfigManager("dweb.config.ts");
@@ -37,7 +37,7 @@ const config = configManager.getConfig();`;
 
   // 程序化设置配置
   const programmaticCode = `// 直接设置配置（用于测试或特殊场景）
-import { ConfigManager } from "@dreamer/dweb/core/config-manager";
+import { ConfigManager } from "@dreamer/dweb";
 import type { AppConfig } from "@dreamer/dweb";
 
 const configManager = new ConfigManager();

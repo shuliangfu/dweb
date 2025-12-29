@@ -3,7 +3,7 @@
  * 处理跨域资源共享
  */
 
-import type { Middleware } from "../types/index.ts";
+import type { Middleware } from "../common/types/index.ts";
 
 /**
  * CORS 选项

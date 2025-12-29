@@ -129,7 +129,7 @@ export default defineConfig({
 
   // 中间件配置
   const middlewareConfigCode =
-    `import { bodyParser, cors, logger } from "@dreamer/dweb/middleware";
+    `import { bodyParser, cors, logger } from "@dreamer/dweb";
 
 export default defineConfig({
   middleware: [
@@ -141,7 +141,7 @@ export default defineConfig({
 
   // 插件配置
   const pluginsConfigCode =
-    `import { seo, tailwind } from "@dreamer/dweb/plugins";
+    `import { seo, tailwind } from "@dreamer/dweb";
 
 export default defineConfig({
   plugins: [
@@ -318,8 +318,8 @@ export default defineConfig({
 
   // 完整配置示例
   const fullConfigCode = `import { defineConfig } from "@dreamer/dweb";
-import { bodyParser, cors, logger } from "@dreamer/dweb/middleware";
-import { seo, tailwind } from "@dreamer/dweb/plugins";
+import { bodyParser, cors, logger } from "@dreamer/dweb";
+import { seo, tailwind } from "@dreamer/dweb";
 
 export default defineConfig({
   name: "my-app",

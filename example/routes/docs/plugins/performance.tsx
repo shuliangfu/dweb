@@ -13,7 +13,7 @@ export const metadata = {
 export default function PerformancePluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const performanceCode = `import { performance } from '@dreamer/dweb/plugins';
+  const performanceCode = `import { performance } from '@dreamer/dweb';
 
 plugins: [
   performance({

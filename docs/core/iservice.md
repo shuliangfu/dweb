@@ -26,7 +26,7 @@ export interface IService {
 ### 基本实现
 
 ```typescript
-import type { IService } from "@dreamer/dweb/core/iservice";
+import type { IService } from "@dreamer/dweb";
 
 class MyService implements IService {
   readonly name = "MyService";
@@ -72,8 +72,8 @@ class MyService implements IService {
 推荐使用 `BaseManager` 基类，它已经实现了 `IService` 接口：
 
 ```typescript
-import { BaseManager } from "@dreamer/dweb/core/base-manager";
-import type { IService } from "@dreamer/dweb/core/iservice";
+import { BaseManager } from "@dreamer/dweb";
+import type { IService } from "@dreamer/dweb";
 
 class MyManager extends BaseManager implements IService {
   constructor() {
@@ -200,8 +200,8 @@ isRunning?(): boolean;
 ## 完整示例
 
 ```typescript
-import { BaseManager } from "@dreamer/dweb/core/base-manager";
-import type { IService } from "@dreamer/dweb/core/iservice";
+import { BaseManager } from "@dreamer/dweb";
+import type { IService } from "@dreamer/dweb";
 
 class DatabaseManager extends BaseManager implements IService {
   private connection: DatabaseConnection | null = null;

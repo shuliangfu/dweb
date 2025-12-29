@@ -14,8 +14,8 @@ src/features/
 ### 基本使用
 
 ```typescript
-import { setupSignalHandlers, registerShutdownHandler } from "@dreamer/dweb/features/shutdown";
-import { Server } from "@dreamer/dweb/core/server";
+import { setupSignalHandlers, registerShutdownHandler } from "@dreamer/dweb";
+import { Server } from "@dreamer/dweb";
 
 const server = new Server();
 
@@ -139,8 +139,8 @@ await gracefulShutdown("SIGTERM", server);
 ### 完整示例
 
 ```typescript
-import { Server } from "@dreamer/dweb/core/server";
-import { setupSignalHandlers, registerShutdownHandler } from "@dreamer/dweb/features/shutdown";
+import { Server } from "@dreamer/dweb";
+import { setupSignalHandlers, registerShutdownHandler } from "@dreamer/dweb";
 import { Database } from "./database";
 
 const server = new Server();
@@ -192,7 +192,7 @@ CMD ["deno", "run", "-A", "main.ts"]
 
 ```typescript
 // main.ts
-import { setupSignalHandlers } from "@dreamer/dweb/features/shutdown";
+import { setupSignalHandlers } from "@dreamer/dweb";
 
 const server = new Server();
 setupSignalHandlers(server);

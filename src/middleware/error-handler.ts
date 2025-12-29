@@ -3,7 +3,7 @@
  * 捕获和处理应用程序中的错误，提供统一的错误响应格式
  */
 
-import type { Middleware } from "../types/index.ts";
+import type { Middleware } from "../common/types/index.ts";
 
 /**
  * 错误处理选项

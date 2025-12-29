@@ -13,7 +13,7 @@ export const metadata = {
 export default function SeoPluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const seoCode = `import { seo } from '@dreamer/dweb/plugins';
+  const seoCode = `import { seo } from '@dreamer/dweb';
 
 plugins: [
   seo({

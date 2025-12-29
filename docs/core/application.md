@@ -2,6 +2,42 @@
 
 `Application` 类是 DWeb 框架的统一入口，管理所有组件和服务，提供面向对象的应用管理方式。
 
+## 核心特性
+
+- **生命周期管理**: 完整的应用生命周期钩子（Initialize, Start, Stop, Error）。
+- **依赖注入容器**: 内置 `ServiceContainer`，支持 Singleton、Transient、Scoped 三种生命周期，实现模块解耦。
+- **事件驱动架构**: 基于 `EventEmitter`，支持全局事件总线，实现组件间的解耦通信。
+- **多应用支持**: 支持单体和多应用（Monorepo）架构。
+- **统一错误处理**: 内置全局异常捕获和统一的错误响应格式。
+- **自动配置**: 支持约定优于配置，自动加载 `dweb.config.ts` 和环境变量。
+
+## 事件驱动架构
+
+`Application` 类继承自 `EventEmitter`，作为全局事件总线，允许不同组件通过事件进行通信，而无需直接依赖。
+
+```typescript
+// 监听事件
+app.on("server:start", () => {
+  console.log("Server started!");
+});
+
+// 自定义事件
+app.on("user:login", (user) => {
+  // 处理用户登录
+});
+
+// 在其他服务中触发事件 (需要获取 Application 实例)
+app.emit("user:login", { id: 1, name: "Alice" });
+```
+
+## 统一错误处理
+
+框架内置了全局错误处理机制，能够捕获路由处理、中间件和生命周期中的异常，并返回统一格式的错误响应。
+
+- **自动捕获**: 自动捕获同步和异步错误。
+- **内容协商**: 根据请求头自动返回 JSON 或 HTML 格式的错误信息。
+- **自定义处理**: 支持注册自定义 `ErrorHandler` 来覆盖默认行为。
+
 ## 概述
 
 `Application` 类整合了框架的所有核心功能：
@@ -17,7 +53,7 @@
 ### 基本使用
 
 ```typescript
-import { Application } from "@dreamer/dweb/core/application";
+import { Application } from "@dreamer/dweb";
 
 // 创建应用实例
 const app = new Application("dweb.config.ts");
@@ -46,7 +82,7 @@ await app.start();
 ### 使用配置文件
 
 ```typescript
-import { Application } from "@dreamer/dweb/core/application";
+import { Application } from "@dreamer/dweb";
 
 // 自动查找 dweb.config.ts
 const app = new Application();
@@ -64,7 +100,7 @@ await app.start();
 ### 程序化配置
 
 ```typescript
-import { Application } from "@dreamer/dweb/core/application";
+import { Application } from "@dreamer/dweb";
 import type { AppConfig } from "@dreamer/dweb";
 
 const config: AppConfig = {
@@ -191,7 +227,7 @@ const server = app.getService<Server>("server");
 向服务容器注册服务。
 
 ```typescript
-import { ServiceLifetime } from "@dreamer/dweb/core/service-container";
+import { ServiceLifetime } from "@dreamer/dweb";
 
 // 注册单例服务
 app.registerService("myService", () => new MyService(), ServiceLifetime.Singleton);
@@ -268,7 +304,7 @@ await app.setRenderEngine("preact");
 ## 完整示例
 
 ```typescript
-import { Application } from "@dreamer/dweb/core/application";
+import { Application } from "@dreamer/dweb";
 import { logger, cors } from "@dreamer/dweb/middleware";
 import { tailwind } from "@dreamer/dweb/plugins/tailwind";
 

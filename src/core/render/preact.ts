@@ -25,14 +25,17 @@ export class PreactRenderAdapter implements RenderAdapter {
   readonly name: RenderEngine = "preact";
 
   /** Preact 的 h 函数 */
-  private h?: typeof import("preact").h;
+  private h?: typeof import("npm:preact@10.28.0").h;
   /** Preact 的 renderToString 函数 */
   private preactRenderToString?:
-    typeof import("preact-render-to-string").renderToString;
+    typeof import("npm:preact-render-to-string@6.5.1").renderToString;
+  /** Preact 的 renderToReadableStream 函数 */
+  // deno-lint-ignore no-explicit-any
+  private preactRenderToStream?: any;
   /** Preact 的 hydrate 函数 */
-  private preactHydrate?: typeof import("preact").hydrate;
+  private preactHydrate?: typeof import("npm:preact@10.28.0").hydrate;
   /** Preact 的 render 函数 */
-  private preactRender?: typeof import("preact").render;
+  private preactRender?: typeof import("npm:preact@10.28.0").render;
 
   /**
    * 初始化适配器
@@ -40,15 +43,32 @@ export class PreactRenderAdapter implements RenderAdapter {
    */
   async initialize(): Promise<void> {
     // 动态导入 Preact 模块
-    const [preactModule, renderToStringModule] = await Promise.all([
-      import("preact"),
-      import("preact-render-to-string"),
-    ]);
+    const { h } = await import("npm:preact@10.28.0");
+    this.h = h;
 
-    this.h = preactModule.h;
-    this.preactRenderToString = renderToStringModule.renderToString;
-    this.preactHydrate = preactModule.hydrate;
-    this.preactRender = preactModule.render;
+    const { renderToString } = await import(
+      "npm:preact-render-to-string@6.5.1"
+    );
+    this.preactRenderToString = renderToString;
+
+    try {
+      // deno-lint-ignore no-explicit-any
+      const preactServer: any = await import(
+        "npm:preact-render-to-string@6.5.1"
+      );
+      this.preactRenderToStream = preactServer.renderToReadableStream;
+      if (!this.preactRenderToStream) {
+        // console.warn(
+        //   "preact-render-to-string 模块中未找到 renderToReadableStream，流式渲染将不可用",
+        // );
+      }
+    } catch {
+      // 忽略，可能版本不支持
+    }
+
+    const { hydrate, render } = await import("npm:preact@10.28.0");
+    this.preactHydrate = hydrate;
+    this.preactRender = render;
   }
 
   /**
@@ -87,6 +107,19 @@ export class PreactRenderAdapter implements RenderAdapter {
       throw new Error("Preact 适配器未初始化，请先调用 initialize()");
     }
     return this.preactRenderToString(element as any);
+  }
+
+  /**
+   * 服务端流式渲染
+   *
+   * @param element - 虚拟节点
+   * @returns 可读流
+   */
+  renderToStream(element: VNode): ReadableStream {
+    if (!this.preactRenderToStream) {
+      throw new Error("Preact 适配器未初始化或不支持流式渲染");
+    }
+    return this.preactRenderToStream(element as any);
   }
 
   /**

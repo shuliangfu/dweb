@@ -12,30 +12,31 @@ import type {
   RenderMode,
   Request,
   Response,
-} from "../types/index.ts";
+} from "../common/types/index.ts";
 import type { RouteInfo, Router } from "./router.ts";
 import { handleApiRoute, loadApiRoute } from "./api-route.ts";
 import type { GraphQLServer } from "../features/graphql/server.ts";
-import type { RenderAdapter } from "./render/adapter.ts";
+import type { RenderAdapter, VNode } from "./render/adapter.ts";
+import type { CacheAdapter } from "./cache/adapter.ts";
 
 import type { CookieManager } from "../features/cookie.ts";
 import type { SessionManager } from "../features/session.ts";
-import { removeLoadOnlyImports } from "../utils/module.ts";
-import { buildFromStdin } from "../utils/esbuild.ts";
+import { removeLoadOnlyImports } from "../server/utils/module.ts";
+import { buildFromStdin } from "../server/utils/esbuild.ts";
 import {
   filePathToHttpUrl,
   findProjectRoot,
   normalizeModulePath,
   replaceImportAliasesInContent,
   resolveFilePath,
-} from "../utils/path.ts";
-import { createImportMapScript } from "../utils/import-map.ts";
-import { createClientScript } from "../utils/script-client.ts";
-import { minifyJavaScript } from "../utils/minify.ts";
+} from "../common/utils/path.ts";
+import { createImportMapScript } from "../server/utils/import-map.ts";
+import { createClientScript } from "../client/utils/script-client.ts";
+import { minifyJavaScript } from "../server/utils/minify.ts";
 import * as path from "@std/path";
-import { logger } from "../utils/logger.ts";
+import { logger } from "../server/utils/logger.ts";
 import { isMultiAppMode } from "./config.ts";
-import { LRUCache } from "../utils/lru-cache.ts";
+import { LRUCache } from "../common/utils/lru-cache.ts";
 
 /**
  * HMR 客户端脚本注入函数
@@ -101,6 +102,7 @@ export class RouteHandler {
   private graphqlServer?: GraphQLServer;
   private renderAdapter: RenderAdapter;
   private application?: any; // Application 实例（可选，避免循环依赖）
+  private cacheAdapter?: CacheAdapter;
 
   /**
    * 模块编译缓存
@@ -120,6 +122,7 @@ export class RouteHandler {
     config?: AppConfig,
     graphqlServer?: GraphQLServer,
     application?: any, // Application 实例（可选，避免循环依赖）
+    cacheAdapter?: CacheAdapter,
   ) {
     this.router = router;
     this.renderAdapter = renderAdapter;
@@ -128,6 +131,7 @@ export class RouteHandler {
     this.config = config;
     this.graphqlServer = graphqlServer;
     this.application = application;
+    this.cacheAdapter = cacheAdapter;
   }
 
   /**
@@ -239,7 +243,15 @@ export class RouteHandler {
         // 如果文件未修改，直接使用缓存的编译结果
         const mtime = stat.mtime?.getTime() || 0;
         const cacheKey = fullPath;
-        const cachedEntry = this.moduleCache.get(cacheKey);
+
+        let cachedEntry: { mtime: number; code: string } | null | undefined;
+        if (this.cacheAdapter) {
+          cachedEntry = await this.cacheAdapter.get<
+            { mtime: number; code: string }
+          >(cacheKey);
+        } else {
+          cachedEntry = this.moduleCache.get(cacheKey);
+        }
 
         if (cachedEntry && cachedEntry.mtime === mtime) {
           // 缓存命中，直接返回
@@ -283,7 +295,7 @@ export class RouteHandler {
             // 读取 deno.json 或 deno.jsonc 获取 import map（用于解析外部依赖）
             let importMap: Record<string, string> = {};
             try {
-              const { readDenoJson } = await import("../utils/file.ts");
+              const { readDenoJson } = await import("../server/utils/file.ts");
               const denoJson = await readDenoJson(cwd);
               if (denoJson && denoJson.imports) {
                 importMap = denoJson.imports;
@@ -328,10 +340,17 @@ export class RouteHandler {
         }
 
         // 更新缓存
-        this.moduleCache.set(cacheKey, {
-          mtime,
-          code: jsCode,
-        });
+        if (this.cacheAdapter) {
+          await this.cacheAdapter.set(cacheKey, {
+            mtime,
+            code: jsCode,
+          });
+        } else {
+          this.moduleCache.set(cacheKey, {
+            mtime,
+            code: jsCode,
+          });
+        }
 
         // 设置响应头和状态码（在所有异步操作完成后）
         const contentType = "application/javascript; charset=utf-8";
@@ -471,7 +490,7 @@ export class RouteHandler {
           // 读取 deno.json 获取 import map
           let importMap: Record<string, string> = {};
           try {
-            const { readDenoJson } = await import("../utils/file.ts");
+            const { readDenoJson } = await import("../server/utils/file.ts");
             const denoJson = await readDenoJson(cwd);
             if (denoJson && denoJson.imports) {
               importMap = denoJson.imports;
@@ -757,6 +776,14 @@ export class RouteHandler {
       return;
     }
 
+    // 忽略 Vite 客户端请求（开发环境可能会有浏览器插件或遗留代码发起此请求）
+    if (pathname === "/@vite/client") {
+      res.status = 200;
+      res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+      res.text("export default {}");
+      return;
+    }
+
     // 处理 GraphQL 请求
     if (this.graphqlServer && this.config) {
       const graphqlPath = this.config.graphql?.config?.path || "/graphql";
@@ -949,8 +976,8 @@ export class RouteHandler {
     } catch (error) {
       // 向后兼容：如果 api-route.ts 没有传递 res 参数，仍然会抛出异常
       // API 路由错误应该返回 JSON，而不是 HTML
-      // 检查是否是 ApiError 类型（从 utils/error.ts 导入）
-      const { ApiError } = await import("../utils/error.ts");
+      // 检查是否是 ApiError 类型（从 common/errors/index.ts 导入）
+      const { ApiError } = await import("../common/errors/index.ts");
 
       let statusCode = 500;
       let errorMessage = "API 请求处理失败";
@@ -1052,7 +1079,7 @@ export class RouteHandler {
           // 从文件所在目录向上查找 deno.json 或 deno.jsonc
           let importMap: Record<string, string> = {};
           try {
-            const { readDenoJson } = await import("../utils/file.ts");
+            const { readDenoJson } = await import("../server/utils/file.ts");
             // 向上查找项目根目录的 deno.json
             let searchDir = fileDir;
             let denoJson = null;
@@ -1692,6 +1719,100 @@ export class RouteHandler {
     }
   }
 
+  /**
+   * 创建页面 VNode（包含布局）
+   */
+  private async createPageVNode(
+    PageComponent: (props: Record<string, unknown>) => unknown,
+    LayoutComponents: ((props: LayoutProps) => unknown)[],
+    layoutData: Record<string, unknown>[],
+    pageProps: Record<string, unknown>,
+    req?: Request,
+    routeInfo?: RouteInfo,
+  ): Promise<VNode> {
+    // 处理页面组件（支持 hooks，但不支持 async）
+    // 检查组件函数本身是否是异步函数（不调用函数，避免触发 hooks）
+    if (
+      PageComponent.constructor.name === "AsyncFunction" ||
+      (PageComponent as any)[Symbol.toStringTag] === "AsyncFunction"
+    ) {
+      throw new Error("页面组件不能是异步函数");
+    }
+
+    // 初始化 hooks 上下文：先渲染一个简单的组件来初始化 hooks 上下文
+    try {
+      // 创建一个简单的测试组件来初始化 hooks 上下文
+      const initComponent = () => null;
+      const initResult = this.renderAdapter.renderToString(
+        this.renderAdapter.createElement(initComponent, {}),
+      );
+      // 处理异步 renderToString（Vue3）
+      if (initResult instanceof Promise) {
+        await initResult;
+      }
+    } catch {
+      // 忽略错误，hooks 上下文可能已经初始化
+    }
+
+    // 创建页面 VNode（hooks 上下文会在 createElement() 调用时自动初始化）
+    const pageVNode = this.renderAdapter.createElement(
+      PageComponent as any,
+      pageProps,
+    );
+
+    let currentElement = pageVNode;
+
+    if (LayoutComponents.length > 0) {
+      // 从最内层到最外层嵌套布局组件
+      for (let i = 0; i < LayoutComponents.length; i++) {
+        const LayoutComponent = LayoutComponents[i];
+        // 获取对应布局的 load 数据（如果有）
+        const layoutProps = layoutData[i] || {};
+        // 支持异步布局组件：如果组件返回 Promise，则等待它
+        // 将布局的 load 数据和页面数据作为 props 传递给布局组件
+        // 布局数据直接展开，页面数据通过 data 字段传递（与页面组件保持一致）
+        // 确保 children 的类型正确，并且放在最后以避免被 layoutProps 覆盖
+        // 从 layoutProps 中排除 children 和 data，避免类型冲突和数据覆盖
+        const { children: _, data: __, ...restLayoutProps } = layoutProps;
+        // 显式声明 children 的类型，确保类型正确传递
+        const children: ComponentChildren = currentElement as ComponentChildren;
+        // 构建 layoutPropsWithData
+        // data: 布局的 load 数据（layoutProps）
+        const layoutPropsWithData = Object.assign(
+          {},
+          restLayoutProps,
+          {
+            // 布局的 load 数据作为 data
+            data: layoutProps,
+            // 提供当前路由路径
+            routePath: routeInfo?.path ||
+              (req ? new URL(req.url).pathname : "/"),
+            // 提供 URL 对象
+            url: req ? new URL(req.url) : undefined,
+            // children 放在最后，确保类型正确且不被覆盖
+            children,
+          },
+        ) as LayoutProps;
+
+        // 检查布局组件函数本身是否是异步函数（不调用函数，避免触发 hooks）
+        if (
+          LayoutComponent.constructor.name === "AsyncFunction" ||
+          (LayoutComponent as any)[Symbol.toStringTag] === "AsyncFunction"
+        ) {
+          throw new Error("布局组件不能是异步函数");
+        }
+
+        // 创建布局 VNode（hooks 上下文会在 createElement() 调用时自动初始化）
+        currentElement = this.renderAdapter.createElement(
+          LayoutComponent as any,
+          layoutPropsWithData as unknown as Record<string, unknown>,
+        ) as any;
+      }
+    }
+
+    return currentElement;
+  }
+
   private async renderPageContent(
     PageComponent: (
       props: Record<string, unknown>,
@@ -1714,105 +1835,24 @@ export class RouteHandler {
     }
 
     try {
-      // 处理页面组件（支持 hooks，但不支持 async）
-      // 检查组件函数本身是否是异步函数（不调用函数，避免触发 hooks）
-      if (
-        PageComponent.constructor.name === "AsyncFunction" ||
-        (PageComponent as any)[Symbol.toStringTag] === "AsyncFunction"
-      ) {
-        throw new Error("页面组件不能是异步函数");
-      }
-
-      // 初始化 hooks 上下文：先渲染一个简单的组件来初始化 hooks 上下文
-      // 这可以确保在使用 createElement() 创建组件 VNode 时，hooks 上下文已经准备好
-      try {
-        // 创建一个简单的测试组件来初始化 hooks 上下文
-        const initComponent = () => null;
-        const initResult = this.renderAdapter.renderToString(
-          this.renderAdapter.createElement(initComponent, {}),
-        );
-        // 处理异步 renderToString（Vue3）
-        if (initResult instanceof Promise) {
-          await initResult;
-        }
-      } catch {
-        // 忽略错误，hooks 上下文可能已经初始化
-      }
-
-      // 创建页面 VNode（hooks 上下文会在 createElement() 调用时自动初始化）
-      const pageVNode = this.renderAdapter.createElement(
-        PageComponent as any,
-        pageProps,
-      );
-
-      // 如果有布局，按顺序嵌套包裹（支持异步布局组件）
-      // hooks 上下文会在 renderToString 内部初始化
       let html: string;
       try {
-        let currentElement = pageVNode;
+        const currentElement = await this.createPageVNode(
+          PageComponent,
+          LayoutComponents,
+          layoutData,
+          pageProps,
+          req,
+          routeInfo,
+        );
 
-        if (LayoutComponents.length > 0) {
-          // 从最内层到最外层嵌套布局组件
-          for (let i = 0; i < LayoutComponents.length; i++) {
-            const LayoutComponent = LayoutComponents[i];
-            // 获取对应布局的 load 数据（如果有）
-            const layoutProps = layoutData[i] || {};
-            // 支持异步布局组件：如果组件返回 Promise，则等待它
-            // 将布局的 load 数据和页面数据作为 props 传递给布局组件
-            // 布局数据直接展开，页面数据通过 data 字段传递（与页面组件保持一致）
-            // 确保 children 的类型正确，并且放在最后以避免被 layoutProps 覆盖
-            // 从 layoutProps 中排除 children 和 data，避免类型冲突和数据覆盖
-            const { children: _, data: __, ...restLayoutProps } = layoutProps;
-            // 显式声明 children 的类型，确保类型正确传递
-            const children: ComponentChildren =
-              currentElement as ComponentChildren;
-            // 构建 layoutPropsWithData
-            // data: 布局的 load 数据（layoutProps）
-            const layoutPropsWithData = Object.assign(
-              {},
-              restLayoutProps,
-              {
-                // 布局的 load 数据作为 data
-                data: layoutProps,
-                // 提供当前路由路径
-                routePath: routeInfo?.path ||
-                  (req ? new URL(req.url).pathname : "/"),
-                // 提供 URL 对象
-                url: req ? new URL(req.url) : undefined,
-                // children 放在最后，确保类型正确且不被覆盖
-                children,
-              },
-            ) as LayoutProps;
-
-            // 检查布局组件函数本身是否是异步函数（不调用函数，避免触发 hooks）
-            if (
-              LayoutComponent.constructor.name === "AsyncFunction" ||
-              (LayoutComponent as any)[Symbol.toStringTag] === "AsyncFunction"
-            ) {
-              throw new Error("布局组件不能是异步函数");
-            }
-
-            // 创建布局 VNode（hooks 上下文会在 createElement() 调用时自动初始化）
-            currentElement = this.renderAdapter.createElement(
-              LayoutComponent as any,
-              layoutPropsWithData as unknown as Record<string, unknown>,
-            ) as any;
-          }
-
-          const renderResult = this.renderAdapter.renderToString(
-            currentElement,
-          );
-          // 处理异步 renderToString（Vue3）
-          html = renderResult instanceof Promise
-            ? await renderResult
-            : renderResult;
-        } else {
-          const renderResult = this.renderAdapter.renderToString(pageVNode);
-          // 处理异步 renderToString（Vue3）
-          html = renderResult instanceof Promise
-            ? await renderResult
-            : renderResult;
-        }
+        const renderResult = this.renderAdapter.renderToString(
+          currentElement,
+        );
+        // 处理异步 renderToString（Vue3）
+        html = renderResult instanceof Promise
+          ? await renderResult
+          : renderResult;
 
         // 确保 HTML 内容不为空
         if (!html || html.trim() === "") {
@@ -1835,19 +1875,17 @@ export class RouteHandler {
   }
 
   /**
-   * 注入脚本到 HTML（import map 和客户端脚本）
-   * 同时注入预加载和预取链接
+   * 获取注入脚本（import map 和客户端脚本）
+   * 分离脚本生成和 HTML 注入，以便支持流式渲染
    */
-  private async injectScripts(
-    fullHtml: string,
+  private async getInjectionScripts(
     routeInfo: RouteInfo,
     renderMode: RenderMode,
     shouldHydrate: boolean,
     pageProps: Record<string, unknown>,
     layoutDisabled: boolean,
-    _req?: Request,
     layoutData?: Record<string, unknown>[],
-  ): Promise<string> {
+  ): Promise<{ headScripts: string[]; bodyScripts: string[] }> {
     const headScripts: string[] = [];
     const bodyScripts: string[] = [];
 
@@ -2100,6 +2138,32 @@ export class RouteHandler {
       bodyScripts.push(hmrClientScript);
     }
 
+    return { headScripts, bodyScripts };
+  }
+
+  /**
+   * 注入脚本到 HTML（import map 和客户端脚本）
+   * 同时注入预加载和预取链接
+   */
+  private async injectScripts(
+    fullHtml: string,
+    routeInfo: RouteInfo,
+    renderMode: RenderMode,
+    shouldHydrate: boolean,
+    pageProps: Record<string, unknown>,
+    layoutDisabled: boolean,
+    _req?: Request,
+    layoutData?: Record<string, unknown>[],
+  ): Promise<string> {
+    const { headScripts, bodyScripts } = await this.getInjectionScripts(
+      routeInfo,
+      renderMode,
+      shouldHydrate,
+      pageProps,
+      layoutDisabled,
+      layoutData,
+    );
+
     // 执行注入
     let resultHtml = fullHtml;
 
@@ -2144,6 +2208,111 @@ export class RouteHandler {
     }
 
     return resultHtml;
+  }
+
+  /**
+   * 注入脚本到流中
+   * 用于流式渲染模式，支持边渲染边传输
+   */
+  private injectScriptsToStream(
+    inputStream: ReadableStream<Uint8Array>,
+    headScripts: string[],
+    bodyScripts: string[],
+  ): ReadableStream<Uint8Array> {
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let headInjected = false;
+    let streamEnded = false;
+
+    return new ReadableStream({
+      async start(controller) {
+        const reader = inputStream.getReader();
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              streamEnded = true;
+              break;
+            }
+
+            const chunk = decoder.decode(value, { stream: true });
+            buffer += chunk;
+
+            // 尝试注入 head 脚本
+            if (!headInjected && headScripts.length > 0) {
+              // 查找 </head> 闭合标签
+              const headEndIndex = buffer.indexOf("</head>");
+              if (headEndIndex !== -1) {
+                const pre = buffer.slice(0, headEndIndex);
+                const post = buffer.slice(headEndIndex);
+                const scriptContent = headScripts.join("\n");
+
+                // 注入脚本
+                controller.enqueue(
+                  encoder.encode(pre + "\n" + scriptContent + "\n"),
+                );
+
+                // 更新 buffer 为剩余内容
+                buffer = post;
+                headInjected = true;
+              }
+            }
+
+            // 如果 head 已经注入，或者 buffer 过大（防止内存溢出），刷新 buffer
+            // 注意：我们需要保留一部分 buffer 以防 </head> 被截断（如果还没注入）
+            // 但为了简化，如果 headInjected 为 true，我们直接刷新
+            // 如果 headInjected 为 false，我们最多保留 1KB 用于匹配 </head>
+            if (headInjected) {
+              if (buffer.length > 0) {
+                controller.enqueue(encoder.encode(buffer));
+                buffer = "";
+              }
+            } else if (buffer.length > 1024 * 10) {
+              // 如果 buffer 超过 10KB 还没找到 </head>，可能没有 head 或 head 巨大
+              // 强制刷新一部分，避免无限缓冲
+              const keepLength = 1024; // 保留 1KB 用于匹配
+              const flushPart = buffer.slice(0, buffer.length - keepLength);
+              controller.enqueue(encoder.encode(flushPart));
+              buffer = buffer.slice(buffer.length - keepLength);
+            }
+          }
+
+          //流结束处理
+          if (streamEnded) {
+            // 如果 head 还没注入（例如没有 </head> 标签），尝试注入到 buffer 前面
+            if (!headInjected && headScripts.length > 0) {
+              // 这是一个回退策略，如果找不到 </head>，我们最好不要乱注入，以免破坏结构
+              // 或者我们可以注入到 buffer 的最前面（假设它是 body 的一部分）
+              // 这里选择不注入，或者注入到最前面？
+              // 为了安全，如果找不到 </head>，我们假设 HTML 结构不完整，但也许应该注入到最前面
+              // let's inject at the beginning of remaining buffer
+              const scriptContent = headScripts.join("\n");
+              buffer = scriptContent + "\n" + buffer;
+            }
+
+            // 输出剩余 buffer
+            if (buffer.length > 0) {
+              controller.enqueue(encoder.encode(buffer));
+            }
+
+            // 注入 body 脚本（在流的最末尾）
+            if (bodyScripts.length > 0) {
+              controller.enqueue(
+                encoder.encode("\n" + bodyScripts.join("\n")),
+              );
+            }
+
+            controller.close();
+          }
+        } catch (e) {
+          controller.error(e);
+        } finally {
+          reader.releaseLock();
+        }
+      },
+    });
   }
 
   /**
@@ -2601,6 +2770,92 @@ export class RouteHandler {
         res,
       );
 
+    // 尝试流式渲染
+    // 如果适配器支持 renderToStream 且不是 CSR 模式，则尝试使用流式渲染
+    const supportStreaming = this.renderAdapter.renderToStream &&
+      renderMode !== "csr";
+
+    if (supportStreaming) {
+      try {
+        // 1. 创建页面 VNode
+        // createPageVNode 会处理 Layout(Layout(Page)) 的嵌套结构
+        const pageVNode = await this.createPageVNode(
+          PageComponent,
+          LayoutComponents,
+          layoutData,
+          pageProps,
+          req,
+          routeInfo,
+        );
+
+        // 2. 加载 _app.tsx 组件
+        const appPath = this.router.getApp();
+        if (!appPath) {
+          throw new Error("_app.tsx 文件不存在，这是框架必需的文件");
+        }
+        const appFullPath = resolveFilePath(appPath);
+        const appModule = await this.importModuleWithAlias(appFullPath);
+        const AppComponent = appModule.default;
+
+        if (!AppComponent || typeof AppComponent !== "function") {
+          throw new Error("_app.tsx 必须导出默认组件函数");
+        }
+
+        // 3. 创建 App VNode (包裹页面 VNode)
+        // 将 pageVNode 作为 children 传递给 App 组件
+        const appElement = this.renderAdapter.createElement(
+          AppComponent as any,
+          { children: pageVNode },
+        );
+
+        // 4. 准备注入脚本
+        // 获取所有需要在 head 和 body 中注入的脚本
+        const { headScripts, bodyScripts } = await this.getInjectionScripts(
+          routeInfo,
+          renderMode,
+          shouldHydrate,
+          pageProps,
+          layoutDisabled,
+          layoutData,
+        );
+
+        // 5. 渲染为流
+        // 使用非空断言，因为我们已经检查了 supportStreaming
+        const stream = await this.renderAdapter.renderToStream!(appElement);
+
+        // 6. 注入脚本到流中
+        // 使用 TransformStream 动态注入脚本
+        const finalStream = this.injectScriptsToStream(
+          stream,
+          headScripts,
+          bodyScripts,
+        );
+
+        // 7. 发送响应
+        res.status = 200;
+        res.headers.set("Content-Type", "text/html; charset=utf-8");
+        res.body = finalStream;
+        return;
+      } catch (error) {
+        // 如果流式渲染失败，记录警告并降级到普通渲染
+        // 这保证了系统的健壮性
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        // 如果是已知的“不支持流式渲染”错误，仅在调试模式下记录
+        if (
+          errorMsg.includes("不支持流式渲染") ||
+          errorMsg.includes("Preact 适配器")
+        ) {
+          logger.debug(`[Streaming] 适配器不支持流式渲染，降级到 SSR`);
+        } else {
+          // 其他流式渲染错误也降级为 debug，避免干扰开发
+          logger.debug(
+            `[Streaming] 流式渲染失败，降级到 SSR: ${errorMsg}`,
+          );
+        }
+        // 继续执行后续的 renderPageContent 逻辑
+      }
+    }
+
     // 渲染页面内容
     // 支持异步页面组件和异步布局组件
     let html: string;
@@ -2657,7 +2912,7 @@ export class RouteHandler {
     }
 
     const appFullPath = resolveFilePath(appPath);
-    const appModule = await import(appFullPath);
+    const appModule = await this.importModuleWithAlias(appFullPath);
     const AppComponent = appModule.default as (props: {
       children: string;
     }) => unknown | Promise<unknown>;
@@ -2897,7 +3152,9 @@ export class RouteHandler {
                 try {
                   // 加载布局模块以检查 layout 属性
                   const layoutFullPath = resolveFilePath(layoutFilePath);
-                  const layoutModule = await import(layoutFullPath);
+                  const layoutModule = await this.importModuleWithAlias(
+                    layoutFullPath,
+                  );
 
                   // 检查是否设置了 layout = false（禁用继承）
                   if (layoutModule.layout === false) {
@@ -3125,7 +3382,7 @@ export class RouteHandler {
   ): Promise<void> {
     // 使用统一的错误日志工具
     const { logError, getErrorStatusCode, getErrorMessage } = await import(
-      "../utils/error.ts"
+      "../common/errors/index.ts"
     );
 
     // 获取当前路由信息（如果有）

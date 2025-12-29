@@ -16,8 +16,7 @@ export default function LoggerPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   // 基本使用
-  const basicUsageCode =
-    `import { Logger, LogLevel } from "@dreamer/dweb/features/logger";
+  const basicUsageCode = `import { Logger, LogLevel } from "@dreamer/dweb";
 
 // 创建日志器
 const logger = new Logger({
@@ -31,8 +30,7 @@ logger.warn("警告信息", { message: "内存使用率较高" });
 logger.error("错误信息", new Error("Something went wrong"), { userId: 123 });`;
 
   // 使用默认日志器
-  const defaultLoggerCode =
-    `import { getLogger } from "@dreamer/dweb/features/logger";
+  const defaultLoggerCode = `import { getLogger } from "@dreamer/dweb";
 
 const logger = getLogger();
 logger.info("Hello World");`;
@@ -42,7 +40,7 @@ logger.info("Hello World");`;
   Logger,
   Logger as LoggerClass,
   LogLevel,
-} from "@dreamer/dweb/features/logger";
+} from "@dreamer/dweb";
 
 // 创建文件日志目标
 const fileTarget = LoggerClass.createFileTarget("./logs/app.log", {
@@ -62,7 +60,7 @@ const logger = new Logger({
   Logger,
   Logger as LoggerClass,
   LogLevel,
-} from "@dreamer/dweb/features/logger";
+} from "@dreamer/dweb";
 
 const consoleTarget = LoggerClass.createConsoleTarget();
 const fileTarget = LoggerClass.createFileTarget("./logs/app.log");
@@ -95,7 +93,7 @@ logger.error("会记录"); // 会输出`;
   Logger,
   Logger as LoggerClass,
   LogLevel,
-} from "@dreamer/dweb/features/logger";
+} from "@dreamer/dweb";
 
 const logger = new Logger({
   level: LogLevel.INFO,
@@ -110,7 +108,7 @@ logger.info("用户登录", { userId: 123 });
   Logger,
   Logger as LoggerClass,
   LogLevel,
-} from "@dreamer/dweb/features/logger";
+} from "@dreamer/dweb";
 
 const logger = new Logger({
   level: LogLevel.INFO,
@@ -126,7 +124,7 @@ logger.info("用户登录", { userId: 123 });
   type LogFormatter,
   Logger,
   LogLevel,
-} from "@dreamer/dweb/features/logger";
+} from "@dreamer/dweb";
 
 class CustomFormatter implements LogFormatter {
   format(entry: LogEntry): string {
@@ -144,7 +142,7 @@ const logger = new Logger({
   Logger,
   Logger as LoggerClass,
   LogLevel,
-} from "@dreamer/dweb/features/logger";
+} from "@dreamer/dweb";
 
 const fileTarget = LoggerClass.createFileTarget("./logs/app.log", {
   maxSize: 10 * 1024 * 1024, // 10MB，超过此大小会轮转
@@ -165,7 +163,7 @@ const logger = new Logger({
 
   // 在框架中使用
   const frameworkUsageCode =
-    `import { Logger, LogLevel, setLogger } from "@dreamer/dweb/features/logger";
+    `import { Logger, LogLevel, setLogger } from "@dreamer/dweb";
 
 // 创建自定义日志器
 const logger = new Logger({
@@ -180,13 +178,12 @@ const logger = new Logger({
 setLogger(logger);
 
 // 在其他地方使用
-import { getLogger } from "@dreamer/dweb/features/logger";
+import { getLogger } from "@dreamer/dweb";
 const logger = getLogger();
 logger.info("使用全局日志器");`;
 
   // 在中间件中使用
-  const middlewareUsageCode =
-    `import { getLogger } from "@dreamer/dweb/features/logger";
+  const middlewareUsageCode = `import { getLogger } from "@dreamer/dweb";
 import type { Middleware } from "@dreamer/dweb";
 
 const logger = getLogger();

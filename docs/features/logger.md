@@ -2,6 +2,13 @@
 
 DWeb 框架提供了强大的日志系统，支持结构化日志、日志级别、日志轮转等功能。
 
+## 核心特性
+
+- **结构化日志**: 所有日志默认采用 JSON 格式，包含 TraceID、Level、Timestamp、Context 等字段，便于 ELK/Datadog 等系统聚合。
+- **敏感数据脱敏**: 内置自动脱敏过滤器，防止 Token、密码等敏感信息泄露。
+- **多目标输出**: 支持同时输出到控制台、文件或其他自定义目标。
+- **日志轮转**: 支持按文件大小和时间进行日志轮转。
+
 ## 目录结构
 
 ```
@@ -13,7 +20,7 @@ src/features/logger.ts  # 日志系统实现
 ### 基本使用
 
 ```typescript
-import { Logger, LogLevel } from "@dreamer/dweb/features/logger";
+import { Logger, LogLevel } from "@dreamer/dweb";
 
 // 创建日志器
 const logger = new Logger({
@@ -30,7 +37,7 @@ logger.error("错误信息", new Error("Something went wrong"), { userId: 123 })
 ### 使用默认日志器
 
 ```typescript
-import { getLogger } from "@dreamer/dweb/features/logger";
+import { getLogger } from "@dreamer/dweb";
 
 const logger = getLogger();
 logger.info("Hello World");
@@ -43,7 +50,7 @@ import {
   Logger,
   Logger as LoggerClass,
   LogLevel,
-} from "@dreamer/dweb/features/logger";
+} from "@dreamer/dweb";
 
 // 创建文件日志目标
 const fileTarget = LoggerClass.createFileTarget("./logs/app.log", {
@@ -66,7 +73,7 @@ import {
   Logger,
   Logger as LoggerClass,
   LogLevel,
-} from "@dreamer/dweb/features/logger";
+} from "@dreamer/dweb";
 
 const consoleTarget = LoggerClass.createConsoleTarget();
 const fileTarget = LoggerClass.createFileTarget("./logs/app.log");
@@ -110,7 +117,7 @@ import {
   Logger,
   Logger as LoggerClass,
   LogLevel,
-} from "@dreamer/dweb/features/logger";
+} from "@dreamer/dweb";
 
 const logger = new Logger({
   level: LogLevel.INFO,
@@ -128,7 +135,7 @@ import {
   Logger,
   Logger as LoggerClass,
   LogLevel,
-} from "@dreamer/dweb/features/logger";
+} from "@dreamer/dweb";
 
 const logger = new Logger({
   level: LogLevel.INFO,
@@ -147,7 +154,7 @@ import {
   type LogFormatter,
   Logger,
   LogLevel,
-} from "@dreamer/dweb/features/logger";
+} from "@dreamer/dweb";
 
 class CustomFormatter implements LogFormatter {
   format(entry: LogEntry): string {
@@ -170,7 +177,7 @@ import {
   Logger,
   Logger as LoggerClass,
   LogLevel,
-} from "@dreamer/dweb/features/logger";
+} from "@dreamer/dweb";
 
 const logger = new Logger({
   level: LogLevel.INFO,
@@ -185,7 +192,7 @@ import {
   Logger,
   Logger as LoggerClass,
   LogLevel,
-} from "@dreamer/dweb/features/logger";
+} from "@dreamer/dweb";
 
 const fileTarget = LoggerClass.createFileTarget("./logs/app.log", {
   maxSize: 10 * 1024 * 1024, // 10MB
@@ -207,7 +214,7 @@ import {
   Logger,
   LogLevel,
   type LogTarget,
-} from "@dreamer/dweb/features/logger";
+} from "@dreamer/dweb";
 
 class DatabaseTarget implements LogTarget {
   async write(entry: LogEntry): Promise<void> {
@@ -235,7 +242,7 @@ import {
   Logger,
   Logger as LoggerClass,
   LogLevel,
-} from "@dreamer/dweb/features/logger";
+} from "@dreamer/dweb";
 
 const fileTarget = LoggerClass.createFileTarget("./logs/app.log", {
   maxSize: 10 * 1024 * 1024, // 10MB，超过此大小会轮转
@@ -261,7 +268,7 @@ const logger = new Logger({
 ### 设置全局日志器
 
 ```typescript
-import { Logger, LogLevel, setLogger } from "@dreamer/dweb/features/logger";
+import { Logger, LogLevel, setLogger } from "@dreamer/dweb";
 
 // 创建自定义日志器
 const logger = new Logger({
@@ -276,7 +283,7 @@ const logger = new Logger({
 setLogger(logger);
 
 // 在其他地方使用
-import { getLogger } from "@dreamer/dweb/features/logger";
+import { getLogger } from "@dreamer/dweb";
 const logger = getLogger();
 logger.info("使用全局日志器");
 ```
@@ -284,7 +291,7 @@ logger.info("使用全局日志器");
 ### 在中间件中使用
 
 ```typescript
-import { getLogger } from "@dreamer/dweb/features/logger";
+import { getLogger } from "@dreamer/dweb";
 
 const logger = getLogger();
 

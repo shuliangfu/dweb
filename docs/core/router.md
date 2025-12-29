@@ -20,7 +20,7 @@ routes/
 ## 基本使用
 
 ```typescript
-import { Router } from "@dreamer/dweb/core/router";
+import { Router } from "@dreamer/dweb";
 
 const router = new Router("routes");
 

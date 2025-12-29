@@ -4,13 +4,13 @@
  */
 
 import { loadConfig } from "./core/config.ts";
-import { startDevServer } from "./features/dev.ts";
-import { build } from "./features/build.ts";
-import { startProdServer } from "./features/prod.ts";
-import { Command } from "./console/command.ts";
-import { info, success } from "./console/output.ts";
-import { interactiveMenu } from "./console/prompt.ts";
-import { readDenoJson } from "./utils/file.ts";
+import { startDevServer } from "./server/dev.ts";
+import { build } from "./server/build/build.ts";
+import { startProdServer } from "./server/prod.ts";
+import { Command } from "./server/console/command.ts";
+import { info, success } from "./server/console/output.ts";
+import { interactiveMenu } from "./server/console/prompt.ts";
+import { readDenoJson } from "./server/utils/file.ts";
 
 /**
  * 尝试从指定路径读取版本号
@@ -121,7 +121,7 @@ async function loadConfigForDetection(): Promise<any | null> {
       loadError instanceof Error && loadError.message.includes("多应用模式下")
     ) {
       // 直接读取配置文件来获取应用列表
-      const { findConfigFile } = await import("./utils/file.ts");
+      const { findConfigFile } = await import("./server/utils/file.ts");
       const configPath = await findConfigFile();
       if (!configPath) {
         return null;

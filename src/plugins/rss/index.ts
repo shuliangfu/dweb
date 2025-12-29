@@ -3,7 +3,7 @@
  * 自动生成 RSS Feed
  */
 
-import type { BuildConfig, Plugin } from "../../types/index.ts";
+import type { BuildConfig, Plugin } from "../../common/types/index.ts";
 import type { RSSFeedConfig, RSSItem, RSSPluginOptions } from "./types.ts";
 import * as path from "@std/path";
 

@@ -14,7 +14,7 @@ src/features/
 ### 基本使用
 
 ```typescript
-import { Monitor } from "@dreamer/dweb/features/monitoring";
+import { Monitor } from "@dreamer/dweb";
 
 // 创建监控器
 const monitor = new Monitor({
@@ -165,7 +165,7 @@ const monitor = new Monitor({
 ### 集成第三方服务
 
 ```typescript
-import { Monitor } from "@dreamer/dweb/features/monitoring";
+import { Monitor } from "@dreamer/dweb";
 
 const monitor = new Monitor({
   onRequest: async (metrics) => {

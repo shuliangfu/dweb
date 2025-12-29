@@ -3,10 +3,10 @@
  * 支持深色/浅色主题切换，自动检测系统主题
  */
 
-import type { Plugin, Request, Response } from "../../types/index.ts";
+import type { Plugin, Request, Response } from "../../common/types/index.ts";
 import type { ThemeMode, ThemePluginOptions } from "./types.ts";
-import { minifyJavaScript } from "../../utils/minify.ts";
-import { compileWithEsbuild } from "../../utils/module.ts";
+import { minifyJavaScript } from "../../server/utils/minify.ts";
+import { compileWithEsbuild } from "../../server/utils/module.ts";
 import * as path from "@std/path";
 
 // 缓存编译后的客户端脚本

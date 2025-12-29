@@ -23,14 +23,17 @@ export class ReactRenderAdapter implements RenderAdapter {
   readonly name: RenderEngine = "react";
 
   /** React 的 createElement 函数 */
-  private reactCreateElement?: typeof import("react").createElement;
+  private reactCreateElement?: typeof import("npm:react@^18.3.1").createElement;
   /** React 的 renderToString 函数 */
   private reactRenderToString?:
-    typeof import("react-dom/server").renderToString;
+    typeof import("npm:react-dom@^18.3.1/server").renderToString;
+  /** React 的 renderToReadableStream 函数 */
+  private reactRenderToStream?: any;
   /** React 的 hydrateRoot 函数 */
-  private hydrateRoot?: typeof import("react-dom/client").hydrateRoot;
+  private hydrateRoot?:
+    typeof import("npm:react-dom@^18.3.1/client").hydrateRoot;
   /** React 的 createRoot 函数 */
-  private createRoot?: typeof import("react-dom/client").createRoot;
+  private createRoot?: typeof import("npm:react-dom@^18.3.1/client").createRoot;
 
   /**
    * 初始化适配器
@@ -38,13 +41,24 @@ export class ReactRenderAdapter implements RenderAdapter {
    */
   async initialize(): Promise<void> {
     const [reactModule, reactDomServer, reactDomClient] = await Promise.all([
-      import("react"),
-      import("react-dom/server"),
-      import("react-dom/client"),
+      import("npm:react@^18.3.1"),
+      import("npm:react-dom@^18.3.1/server"),
+      import("npm:react-dom@^18.3.1/client"),
     ]);
 
     this.reactCreateElement = reactModule.createElement;
     this.reactRenderToString = reactDomServer.renderToString;
+
+    try {
+      // @ts-ignore: React 18+ 特性
+      const { renderToReadableStream } = await import(
+        "npm:react-dom@^18.3.1/server"
+      );
+      this.reactRenderToStream = renderToReadableStream;
+    } catch {
+      // 忽略
+    }
+
     this.hydrateRoot = reactDomClient.hydrateRoot;
     this.createRoot = reactDomClient.createRoot;
   }
@@ -85,6 +99,19 @@ export class ReactRenderAdapter implements RenderAdapter {
       throw new Error("React 适配器未初始化，请先调用 initialize()");
     }
     return this.reactRenderToString(element as any);
+  }
+
+  /**
+   * 服务端流式渲染
+   *
+   * @param element - 虚拟节点
+   * @returns 可读流
+   */
+  async renderToStream(element: VNode): Promise<ReadableStream> {
+    if (!this.reactRenderToStream) {
+      throw new Error("React 适配器未初始化或不支持流式渲染");
+    }
+    return await this.reactRenderToStream(element as any);
   }
 
   /**

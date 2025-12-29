@@ -18,8 +18,8 @@ src/features/websocket/
 ### 创建 WebSocket 服务器
 
 ```typescript
-import { WebSocketServer } from "@dreamer/dweb/features/websocket";
-import { Server } from "@dreamer/dweb/core/server";
+import { WebSocketServer } from "@dreamer/dweb";
+import { Server } from "@dreamer/dweb";
 
 const server = new Server();
 const wsServer = new WebSocketServer({
@@ -62,7 +62,7 @@ server.setHandler(async (req, res) => {
 import {
   getWebSocketServer,
   initWebSocket,
-} from "@dreamer/dweb/features/websocket";
+} from "@dreamer/dweb";
 
 // 初始化 WebSocket
 await initWebSocket({
@@ -81,7 +81,7 @@ wsServer.broadcast({ type: "notification", message: "系统通知" });
 ### WebSocket 客户端
 
 ```typescript
-import { WebSocketClient } from "@dreamer/dweb/features/websocket";
+import { WebSocketClient } from "@dreamer/dweb";
 
 const client = new WebSocketClient({
   url: "ws://localhost:3000/ws",

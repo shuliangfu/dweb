@@ -13,7 +13,7 @@ export const metadata = {
 export default function HealthMiddlewarePage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const healthCode = `import { health } from '@dreamer/dweb/middleware';
+  const healthCode = `import { health } from '@dreamer/dweb';
 
 server.use(health({
   path: '/health',

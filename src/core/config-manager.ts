@@ -5,7 +5,7 @@
  * @module core/config-manager
  */
 
-import type { AppConfig } from "../types/index.ts";
+import type { AppConfig } from "../common/types/index.ts";
 import { loadConfig as loadConfigFile, mergeConfig } from "./config.ts";
 
 /**

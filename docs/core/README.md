@@ -49,7 +49,7 @@ src/core/
 ### 基本服务器
 
 ```typescript
-import { Server } from "@dreamer/dweb/core/server";
+import { Server } from "@dreamer/dweb";
 
 const server = new Server();
 
@@ -63,7 +63,7 @@ await server.start(3000);
 ### 使用路由
 
 ```typescript
-import { Router } from "@dreamer/dweb/core/router";
+import { Router } from "@dreamer/dweb";
 
 const router = new Router("routes");
 await router.scan();
@@ -77,7 +77,7 @@ if (route) {
 ### 使用 Application（推荐）
 
 ```typescript
-import { Application } from "@dreamer/dweb/core/application";
+import { Application } from "@dreamer/dweb";
 
 const app = new Application("dweb.config.ts");
 await app.initialize();
@@ -87,7 +87,7 @@ await app.start();
 ### 加载配置（旧 API）
 
 ```typescript
-import { loadConfig } from "@dreamer/dweb/core/config";
+import { loadConfig } from "@dreamer/dweb";
 
 const { config } = await loadConfig();
 console.log("服务器端口:", config.server?.port);

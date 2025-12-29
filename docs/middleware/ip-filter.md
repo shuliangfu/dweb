@@ -1,6 +1,16 @@
 ### ipFilter - IP 过滤
 
-```typescript
+IP 过滤中间件提供了强大的访问控制能力，支持黑白名单、CIDR 子网匹配和智能 IP 检测。
+
+#### 高级特性
+
+*   **CIDR 支持**：
+    不仅支持单 IP，还支持 CIDR 子网掩码匹配 (如 `192.168.1.0/24`)，内部实现了高效的 IP 转数字位运算逻辑，能够快速判断 IP 是否在指定网段内。
+
+*   **智能 IP 获取**：
+    自动按优先级探测 `X-Forwarded-For` (代理)、`X-Real-IP`、`CF-Connecting-IP` (Cloudflare) 等头信息，确保在反向代理后也能正确获取客户端真实 IP。
+
+#### 基本配置
 import { ipFilter } from "@dreamer/dweb/middleware";
 
 // 白名单
@@ -264,7 +274,7 @@ export default apiRateLimitMiddleware;
 ## 创建自定义中间件
 
 ```typescript
-import type { Middleware } from "@dreamer/dweb/core/middleware";
+import type { Middleware } from "@dreamer/dweb";
 
 const myMiddleware: Middleware = async (req, res, next) => {
   // 请求前处理

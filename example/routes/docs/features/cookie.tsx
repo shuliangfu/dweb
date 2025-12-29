@@ -44,7 +44,7 @@ export async function load({ getCookie, setCookie }: LoadContext) {
 
   // 基本使用
   const basicUsageCode =
-    `import { CookieManager } from "@dreamer/dweb/features/cookie";
+    `import { CookieManager } from "@dreamer/dweb";
 
 // 创建 Cookie 管理器
 const cookieManager = new CookieManager("your-secret-key");

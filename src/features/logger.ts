@@ -37,6 +37,7 @@ export interface LogFormatter {
 export interface LogTarget {
   write(entry: LogEntry): Promise<void> | void;
   flush?(): Promise<void> | void;
+  setFormatter?(formatter: LogFormatter): void;
 }
 
 /**
@@ -82,12 +83,37 @@ export interface LoggerOptions {
    * 是否启用日志轮转（默认 false）
    */
   rotation?: LogRotationConfig;
+
+  /**
+   * 需要脱敏的字段（默认 ["password", "token", "secret", "authorization"]）
+   */
+  maskFields?: string[];
 }
 
 /**
  * JSON 格式化器
  */
 class JSONFormatter implements LogFormatter {
+  private maskFields: string[];
+
+  constructor(
+    maskFields: string[] = ["password", "token", "secret", "authorization"],
+  ) {
+    this.maskFields = maskFields;
+  }
+
+  private maskData(data: Record<string, unknown>): Record<string, unknown> {
+    const masked = { ...data };
+    for (const key in masked) {
+      if (this.maskFields.some((field) => key.toLowerCase().includes(field))) {
+        masked[key] = "******";
+      } else if (typeof masked[key] === "object" && masked[key] !== null) {
+        masked[key] = this.maskData(masked[key] as Record<string, unknown>);
+      }
+    }
+    return masked;
+  }
+
   format(entry: LogEntry): string {
     const logData: Record<string, unknown> = {
       level: LogLevel[entry.level],
@@ -96,7 +122,7 @@ class JSONFormatter implements LogFormatter {
     };
 
     if (entry.data) {
-      Object.assign(logData, entry.data);
+      Object.assign(logData, this.maskData(entry.data));
     }
 
     if (entry.error) {
@@ -121,7 +147,11 @@ class SimpleFormatter implements LogFormatter {
     let output = `[${timestamp}] ${levelName}: ${entry.message}`;
 
     if (entry.data) {
-      output += ` ${JSON.stringify(entry.data)}`;
+      try {
+        output += ` ${JSON.stringify(entry.data)}`;
+      } catch {
+        output += " [Error: Circular data]";
+      }
     }
 
     if (entry.error) {
@@ -136,35 +166,27 @@ class SimpleFormatter implements LogFormatter {
  * 控制台输出目标
  */
 class ConsoleTarget implements LogTarget {
+  private formatter: LogFormatter = new SimpleFormatter();
+
+  setFormatter(formatter: LogFormatter): void {
+    this.formatter = formatter;
+  }
+
   write(entry: LogEntry): void {
-    const levelName = LogLevel[entry.level];
-    const timestamp = entry.timestamp;
+    const output = this.formatter.format(entry);
 
     switch (entry.level) {
       case LogLevel.DEBUG:
-        console.debug(
-          `[${timestamp}] ${levelName}: ${entry.message}`,
-          entry.data || "",
-        );
+        console.debug(output);
         break;
       case LogLevel.INFO:
-        console.info(
-          `[${timestamp}] ${levelName}: ${entry.message}`,
-          entry.data || "",
-        );
+        console.info(output);
         break;
       case LogLevel.WARN:
-        console.warn(
-          `[${timestamp}] ${levelName}: ${entry.message}`,
-          entry.data || "",
-        );
+        console.warn(output);
         break;
       case LogLevel.ERROR:
-        console.error(
-          `[${timestamp}] ${levelName}: ${entry.message}`,
-          entry.data || "",
-          entry.error || "",
-        );
+        console.error(output);
         break;
     }
   }
@@ -178,6 +200,7 @@ class FileTarget implements LogTarget {
   private rotationConfig?: LogRotationConfig;
   private currentSize: number = 0;
   private rotationTimer?: number;
+  private formatter: LogFormatter = new SimpleFormatter();
 
   constructor(filePath: string, rotationConfig?: LogRotationConfig) {
     this.filePath = filePath;
@@ -192,6 +215,10 @@ class FileTarget implements LogTarget {
         this.rotate();
       }, rotationConfig.interval);
     }
+  }
+
+  setFormatter(formatter: LogFormatter): void {
+    this.formatter = formatter;
   }
 
   private async updateFileSize(): Promise<void> {
@@ -275,8 +302,15 @@ export class Logger {
 
   constructor(options: LoggerOptions = {}) {
     this.level = options.level ?? LogLevel.INFO;
-    this.formatter = options.formatter ?? new JSONFormatter();
+    this.formatter = options.formatter ?? new JSONFormatter(options.maskFields);
     this.targets = options.targets ?? [new ConsoleTarget()];
+
+    // 将格式化器注入到所有目标中
+    for (const target of this.targets) {
+      if (target.setFormatter) {
+        target.setFormatter(this.formatter);
+      }
+    }
 
     // 如果启用了文件输出和轮转
     if (options.rotation) {
@@ -381,8 +415,8 @@ export class Logger {
   /**
    * 创建 JSON 格式化器
    */
-  static createJSONFormatter(): JSONFormatter {
-    return new JSONFormatter();
+  static createJSONFormatter(maskFields?: string[]): JSONFormatter {
+    return new JSONFormatter(maskFields);
   }
 }
 

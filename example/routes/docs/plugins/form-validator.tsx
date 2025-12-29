@@ -14,7 +14,7 @@ export default function FormValidatorPluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   const formValidatorCode =
-    `import { formValidator } from '@dreamer/dweb/plugins';
+    `import { formValidator } from '@dreamer/dweb';
 
 plugins: [
   formValidator({

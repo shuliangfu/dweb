@@ -5,7 +5,7 @@ DWeb 框架的中间件管理系统，支持请求和响应的中间件处理。
 ## 创建中间件
 
 ```typescript
-import type { Middleware } from "@dreamer/dweb/core/middleware";
+import type { Middleware } from "@dreamer/dweb";
 
 const myMiddleware: Middleware = async (req, res, next) => {
   // 请求前处理
@@ -22,8 +22,8 @@ const myMiddleware: Middleware = async (req, res, next) => {
 ## 使用中间件
 
 ```typescript
-import { Server } from "@dreamer/dweb/core/server";
-import { MiddlewareManager } from "@dreamer/dweb/core/middleware";
+import { Server } from "@dreamer/dweb";
+import { MiddlewareManager } from "@dreamer/dweb";
 
 const server = new Server();
 const middlewareManager = new MiddlewareManager();

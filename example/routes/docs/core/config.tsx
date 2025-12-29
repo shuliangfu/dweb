@@ -14,7 +14,7 @@ export default function CoreConfigPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   // 加载配置
-  const configCode = `import { loadConfig } from '@dreamer/dweb/core/config';
+  const configCode = `import { loadConfig } from '@dreamer/dweb';
 
 // 加载默认配置
 const { config, configDir } = await loadConfig();
@@ -96,8 +96,7 @@ const config: DWebConfig = {
 export default config;`;
 
   // 配置规范化
-  const normalizeCode =
-    `import { normalizeRouteConfig } from "@dreamer/dweb/core/config";
+  const normalizeCode = `import { normalizeRouteConfig } from "@dreamer/dweb";
 
 // 规范化路由配置
 const routeConfig = normalizeRouteConfig({

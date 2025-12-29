@@ -24,7 +24,7 @@
 `LifecycleManager` 由 `Application` 类内部使用，通常不需要直接创建：
 
 ```typescript
-import { Application } from "@dreamer/dweb/core/application";
+import { Application } from "@dreamer/dweb";
 
 const app = new Application();
 await app.initialize(); // 内部使用 LifecycleManager
@@ -35,8 +35,8 @@ await app.stop();       // 内部使用 LifecycleManager
 ### 注册生命周期钩子
 
 ```typescript
-import { Application } from "@dreamer/dweb/core/application";
-import type { LifecycleHooks } from "@dreamer/dweb/core/lifecycle-manager";
+import { Application } from "@dreamer/dweb";
+import type { LifecycleHooks } from "@dreamer/dweb";
 
 const app = new Application();
 await app.initialize();
@@ -207,8 +207,8 @@ lifecycleManager.registerHooks({
 ## 完整示例
 
 ```typescript
-import { Application } from "@dreamer/dweb/core/application";
-import type { LifecycleHooks } from "@dreamer/dweb/core/lifecycle-manager";
+import { Application } from "@dreamer/dweb";
+import type { LifecycleHooks } from "@dreamer/dweb";
 
 const app = new Application("dweb.config.ts");
 
