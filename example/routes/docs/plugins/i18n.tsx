@@ -260,6 +260,135 @@ plugins: [
           </li>
         </ul>
       </section>
+
+      <section className="mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+          客户端 API
+        </h2>
+        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
+          在客户端组件中，可以使用专门的客户端 API 来操作 i18n：
+        </p>
+
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
+          导入客户端 API
+        </h3>
+        <CodeBlock
+          code={`import { 
+  getCurrentLanguage, 
+  setCurrentLanguage, 
+  translate,
+  getI18n,
+  getTranslations,
+  isI18nInitialized
+} from "@dreamer/dweb/client";`}
+          language="typescript"
+        />
+
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
+          API 方法
+        </h3>
+        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              getCurrentLanguage()
+            </code>{" "}
+            - 获取当前语言代码
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              setCurrentLanguage(langCode: string)
+            </code>{" "}
+            - 设置当前语言（会重新加载语言包并更新 Cookie）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              translate(key: string, params?: Record&lt;string, any&gt;)
+            </code>{" "}
+            - 翻译函数
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              getI18n()
+            </code>{" "}
+            - 获取 i18n 数据对象（包含 lang、translations、t 函数）
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              getTranslations()
+            </code>{" "}
+            - 获取当前语言的翻译数据对象
+          </li>
+          <li>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+              isI18nInitialized()
+            </code>{" "}
+            - 检查 i18n 是否已初始化
+          </li>
+        </ul>
+
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
+          使用示例
+        </h3>
+        <CodeBlock
+          code={`import { 
+  getCurrentLanguage, 
+  setCurrentLanguage, 
+  translate 
+} from "@dreamer/dweb/client";
+
+// 获取当前语言
+const currentLang = getCurrentLanguage(); // 'zh-CN' | 'en-US' | null
+
+// 翻译文本
+const text = translate('common.welcome', { name: 'John' });
+
+// 切换语言
+await setCurrentLanguage('en-US');`}
+          language="typescript"
+        />
+
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
+          语言切换组件示例
+        </h3>
+        <CodeBlock
+          code={`import { 
+  getCurrentLanguage, 
+  setCurrentLanguage, 
+  translate 
+} from "@dreamer/dweb/client";
+import { useState, useEffect } from "preact/hooks";
+
+export default function LanguageSwitcher() {
+  const [currentLang, setCurrentLang] = useState<string | null>(null);
+  
+  useEffect(() => {
+    setCurrentLang(getCurrentLanguage());
+  }, []);
+  
+  const handleLanguageChange = async (lang: string) => {
+    try {
+      await setCurrentLanguage(lang);
+      setCurrentLang(lang);
+    } catch (error) {
+      console.error('切换语言失败:', error);
+    }
+  };
+  
+  return (
+    <div>
+      <p>{translate('common.currentLanguage')}: {currentLang}</p>
+      <button onClick={() => handleLanguageChange('zh-CN')}>
+        切换到中文
+      </button>
+      <button onClick={() => handleLanguageChange('en-US')}>
+        Switch to English
+      </button>
+    </div>
+  );
+}`}
+          language="typescript"
+        />
+      </section>
     </article>
   );
 }

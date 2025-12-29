@@ -51,6 +51,16 @@ export {
 export { themeStore, useThemeStore } from "../plugins/theme/store.ts";
 export type { ThemeStoreState } from "../plugins/theme/store.ts";
 
+// 导出 i18n 客户端函数
+export {
+  getCurrentLanguage,
+  getI18n,
+  getTranslations,
+  isI18nInitialized,
+  setCurrentLanguage,
+  translate,
+} from "../plugins/i18n/client.ts";
+
 // 导出类型（这些只是类型，不会在运行时导入任何代码）
 export type {
   ComponentChild,

@@ -315,6 +315,101 @@ i18n 插件支持多种语言检测方式，按以下优先级顺序：
 4. **使用嵌套键**：使用 `validation.email.exists` 这样的嵌套键，便于组织翻译
 5. **参数化消息**：使用 `{field}` 这样的占位符，支持动态内容
 
+## 客户端 API 使用
+
+在客户端组件中，可以使用专门的客户端 API 来操作 i18n：
+
+### 导入客户端 API
+
+```typescript
+import { 
+  getCurrentLanguage, 
+  setCurrentLanguage, 
+  translate,
+  getI18n,
+  getTranslations,
+  isI18nInitialized
+} from "@dreamer/dweb/client";
+```
+
+### 基本使用
+
+```typescript
+// 获取当前语言
+const currentLang = getCurrentLanguage(); // 'zh-CN' | 'en-US' | null
+
+// 翻译文本
+const text = translate('common.welcome', { name: 'John' });
+
+// 获取 i18n 数据对象
+const i18nData = getI18n();
+if (i18nData) {
+  console.log(i18nData.lang); // 当前语言
+  console.log(i18nData.translations); // 翻译数据
+  console.log(i18nData.t('common.title')); // 使用翻译函数
+}
+
+// 获取翻译数据
+const translations = getTranslations();
+
+// 检查是否已初始化
+if (isI18nInitialized()) {
+  // i18n 已初始化
+}
+```
+
+### 切换语言
+
+```typescript
+import { setCurrentLanguage } from "@dreamer/dweb/client";
+
+// 切换语言（会重新加载语言包并更新 Cookie）
+await setCurrentLanguage('en-US');
+```
+
+### 完整示例：语言切换组件
+
+```typescript
+import { 
+  getCurrentLanguage, 
+  setCurrentLanguage, 
+  translate 
+} from "@dreamer/dweb/client";
+import { useState, useEffect } from "preact/hooks";
+
+export default function LanguageSwitcher() {
+  const [currentLang, setCurrentLang] = useState<string | null>(null);
+  
+  useEffect(() => {
+    // 获取当前语言
+    setCurrentLang(getCurrentLanguage());
+  }, []);
+  
+  const handleLanguageChange = async (lang: string) => {
+    try {
+      await setCurrentLanguage(lang);
+      setCurrentLang(lang);
+      // 可选：刷新页面以应用新语言
+      // window.location.reload();
+    } catch (error) {
+      console.error('切换语言失败:', error);
+    }
+  };
+  
+  return (
+    <div>
+      <p>{translate('common.currentLanguage')}: {currentLang}</p>
+      <button onClick={() => handleLanguageChange('zh-CN')}>
+        切换到中文
+      </button>
+      <button onClick={() => handleLanguageChange('en-US')}>
+        Switch to English
+      </button>
+    </div>
+  );
+}
+```
+
 ## 注意事项
 
 - **`$t()` 始终可用**：
@@ -323,11 +418,17 @@ i18n 插件支持多种语言检测方式，按以下优先级顺序：
   - 如果 i18n 插件未初始化，会返回 key 本身（不会报错）
   - 在 TypeScript 中，需要引用全局类型声明文件才能获得类型支持
 
-- **`getI18n()` 备选方案**：
+- **`getI18n()` 备选方案（服务端）**：
   - 在请求上下文中，会自动使用当前请求的语言
   - 在非请求上下文（如后台任务）中，会使用默认语言
   - 如果 i18n 插件未初始化，会返回一个返回 key 的函数（不会报错）
   - 可以指定特定语言：`getI18n('zh-CN')`
+
+- **客户端 API**：
+  - 只能在客户端组件中使用（浏览器环境）
+  - `setCurrentLanguage()` 会自动通过 API 重新加载语言包
+  - `setCurrentLanguage()` 会自动更新 Cookie，下次访问时会使用新语言
+  - 切换语言后，可能需要刷新页面或重新渲染组件才能看到效果
 
 - **语言检测**：
   - 默认不启用 `fromHeader`，避免浏览器语言覆盖默认语言

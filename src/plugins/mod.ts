@@ -13,6 +13,12 @@ export {
   i18n,
   isI18nInitialized,
 } from "./i18n/index.ts";
+export {
+  getI18n as getI18nClient,
+  getTranslations,
+  setCurrentLanguage,
+  translate,
+} from "./i18n/client.ts";
 export { rss } from "./rss/index.ts";
 export { theme } from "./theme/index.ts";
 export {
