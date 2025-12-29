@@ -113,11 +113,6 @@ export const load = async ({
 export default function HomePage(
   { params: _params, query: _query, data }: PageProps,
 ) {
-
-
-
-
-
   // 使用 useStore hook 获取响应式状态，类似 useState(exampleStore)
   const state = useExampleStore();
   const themeState = useThemeStore();
@@ -141,19 +136,11 @@ export default function HomePage(
   //   return () => {
   //     clearTimeout(timer);
   //   };
-	// }, []) // 空依赖数组，确保只执行一次
-	
+  // }, []) // 空依赖数组，确保只执行一次
 
-
-	// const mergedClassName = twMerge("text-red-500", "text-blue-500");
-	// console.log(mergedClassName);
-	// console.log(Chart);
-
-
-
-
-
-
+  // const mergedClassName = twMerge("text-red-500", "text-blue-500");
+  // console.log(mergedClassName);
+  // console.log(Chart);
 
   const { versionString } = data as {
     versionString: string;

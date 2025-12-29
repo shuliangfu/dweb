@@ -593,15 +593,19 @@ export class HMRServer {
       return "css";
     }
 
-    // 判断是否为路由文件（支持多应用模式，如 backend/routes/、frontend/routes/ 等）
+    // 判断是否为路由或组件文件（支持多应用模式，如 backend/routes/、frontend/routes/ 等）
     // 路由目录可能是 'routes' 或 'backend/routes'、'frontend/routes' 等
     const normalizedRoutesDir = this.routesDir.replace(/\/$/, ""); // 移除末尾的 /
     const isRoute = (filePath.startsWith(`${normalizedRoutesDir}/`) ||
       filePath.startsWith("routes/")) &&
       (filePath.endsWith(".tsx") || filePath.endsWith(".ts"));
+    // 组件目录识别：当 components/ 下的 .tsx/.ts 发生变化时，按组件更新处理，避免整页刷新
+    const isComponent = (filePath.includes("/components/") ||
+      filePath.startsWith("components/")) &&
+      (filePath.endsWith(".tsx") || filePath.endsWith(".ts"));
     const isLayout = filePath.includes("_layout") || filePath.includes("_app");
 
-    return isRoute || isLayout ? "component" : "other";
+    return isRoute || isComponent || isLayout ? "component" : "other";
   }
 
   /**
@@ -649,7 +653,6 @@ export class HMRServer {
   }): void {
     const filePath = changeInfo.relativePath || changeInfo.path;
     const fileType = this.getFileType(filePath);
-
     switch (fileType) {
       case "css":
         this.notify("update", {

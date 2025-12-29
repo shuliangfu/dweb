@@ -15,10 +15,8 @@ import type { TailwindPluginOptions } from "./types.ts";
 import { findTailwindConfigFile } from "./utils.ts";
 import { processCSSV3 } from "./v3.ts";
 import { processCSSV4 } from "./v4.ts";
-import { ensureTailwindCli } from "./fetch-cli.ts";
 import * as path from "@std/path";
 import { isPathSafe } from "../../server/utils/security.ts";
-import { exists } from "@std/fs/exists";
 
 /**
  * 处理 CSS 文件
@@ -30,132 +28,12 @@ import { exists } from "@std/fs/exists";
  * @returns 处理后的 CSS 内容和 source map
  */
 /**
- * 使用 Tailwind CLI 编译 CSS
- * @param cssContent CSS 内容
- * @param filePath CSS 文件路径
- * @param cliPath CLI 可执行文件路径
- * @param version Tailwind 版本（"v3" 或 "v4"）
- * @param configPath Tailwind 配置文件路径
- * @param isProduction 是否为生产环境
- * @returns 处理后的 CSS 内容
- */
-async function processCSSWithCLI(
-  cssContent: string,
-  filePath: string,
-  cliPath: string,
-  version: "v3" | "v4", // 版本参数，目前 v3 和 v4 的 CLI 参数相同，保留以备将来扩展
-  configPath: string | null,
-  isProduction: boolean,
-): Promise<{ content: string; map?: string }> {
-  const cwd = Deno.cwd();
-
-  // 构建 CLI 命令参数
-  const args: string[] = [];
-
-  // 输入文件（使用 stdin）
-  args.push("-i", filePath);
-
-  // 输出文件（使用 stdout）
-  // args.push("-o", "-");
-
-  // v3 和 v4 的配置文件处理方式相同
-  // 注意：v4 虽然不需要配置文件，但 CLI 仍然支持 --config 参数
-  if (configPath && version === "v3") {
-    // 配置文件路径需要转换为绝对路径，或者相对于项目根目录的路径
-    const absoluteConfigPath = path.isAbsolute(configPath)
-      ? configPath
-      : path.resolve(cwd, configPath);
-    args.push("-c", absoluteConfigPath); // v3 使用 -c 而不是 --config
-  }
-
-  // 生产环境启用压缩（v3 和 v4 都支持 --minify）
-  if (isProduction) {
-    args.push("-m");
-  }
-
-  // 执行 CLI 命令
-  // 注意：cwd 应该设置为项目根目录，这样配置文件路径和 content 路径才能正确解析
-  const command = new Deno.Command(cliPath, {
-    args,
-    stdin: "piped",
-    stdout: "piped",
-    stderr: "piped",
-    cwd: cwd, // 使用项目根目录作为工作目录
-  });
-
-  const process = command.spawn();
-
-  // 写入 CSS 内容到 stdin
-  // 注意：需要确保所有数据都写入并关闭 stdin，CLI 才能开始处理
-  const writer = process.stdin.getWriter();
-  try {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(cssContent);
-    await writer.write(data);
-  } finally {
-    await writer.close();
-  }
-
-  // 等待命令执行完成
-  // 注意：需要等待 stdin 完全关闭后，CLI 才会开始处理并输出结果
-  const { code, stdout, stderr } = await process.output();
-
-  const stderrText = new TextDecoder().decode(stderr);
-  const stdoutText = new TextDecoder().decode(stdout);
-
-  if (code !== 0) {
-    throw new Error(
-      `Tailwind CLI 编译失败 (退出码: ${code}):\n${stderrText}`,
-    );
-  }
-
-  // 如果输出为空，检查是否有错误信息
-  if (!stdoutText || stdoutText.trim().length === 0) {
-    console.warn(
-      `⚠️  [Tailwind ${version}] CLI 编译结果为空`,
-    );
-    console.warn(`   配置文件路径: ${configPath || "未指定"}`);
-    console.warn(`   CSS 文件路径: ${filePath}`);
-    console.warn(`   CLI 路径: ${cliPath}`);
-    console.warn(`   输入内容长度: ${cssContent.length} 字符`);
-    console.warn(`   CLI 命令参数: ${args.join(" ")}`);
-    if (stderrText) {
-      console.warn(`   CLI 错误输出: ${stderrText}`);
-    }
-    // 如果 CLI 返回空，可能是配置问题，但不抛出错误，让 PostCSS 处理
-    throw new Error(
-      `Tailwind CLI 编译结果为空。请检查配置文件路径和内容扫描路径是否正确。\n${
-        stderrText || ""
-      }`,
-    );
-  }
-
-  return {
-    content: stdoutText,
-  };
-}
-
-/**
- * 获取默认的 CLI 路径
- * @param version Tailwind 版本
- * @returns 默认 CLI 路径
- */
-function getDefaultCliPath(version: "v3" | "v4"): string {
-  const binDir = path.resolve(Deno.cwd(), ".bin");
-  const baseName = `tailwindcss-${version}`;
-  const exeName = Deno.build.os === "windows" ? `${baseName}.exe` : baseName;
-  return path.join(binDir, exeName);
-}
-
-/**
  * 处理 CSS 文件（根据版本调用对应的处理方法）
- * 如果 CLI 存在，优先使用 CLI 编译；否则使用 PostCSS
  * @param cssContent CSS 内容
  * @param filePath CSS 文件路径
  * @param version Tailwind 版本
  * @param isProduction 是否为生产环境
  * @param options 插件选项
- * @param cliPath CLI 可执行文件路径（可选，如果未提供则尝试使用默认路径）
  * @returns 处理后的 CSS 内容和 source map
  */
 async function processCSS(
@@ -164,7 +42,6 @@ async function processCSS(
   version: "v3" | "v4",
   isProduction: boolean,
   options: TailwindPluginOptions,
-  cliPath?: string,
 ): Promise<{ content: string; map?: string }> {
   // 查找 Tailwind 配置文件
   // 如果用户显式指定了 configPath，使用它；否则自动查找
@@ -180,37 +57,7 @@ async function processCSS(
     configPath = await findTailwindConfigFile(Deno.cwd());
   }
 
-  // 确定要使用的 CLI 路径
-  // 如果提供了 cliPath，使用它；否则尝试使用默认路径
-  const actualCliPath = cliPath || getDefaultCliPath(version);
-
-  // 如果 CLI 路径存在，尝试使用 CLI 编译
-  if (await exists(actualCliPath)) {
-    try {
-      return await processCSSWithCLI(
-        cssContent,
-        filePath,
-        actualCliPath,
-        version,
-        configPath,
-        isProduction,
-      );
-    } catch (error) {
-      // 只在真正失败时才显示警告（不是编译结果为空的情况，因为那已经在 processCSSWithCLI 中处理了）
-      if (error instanceof Error && !error.message.includes("编译结果为空")) {
-        console.warn(
-          `⚠️  [Tailwind ${version}] CLI 编译失败，回退到 PostCSS:`,
-          error.message,
-        );
-        console.warn(
-          `💡 提示: 如果 CLI 编译失败，请检查 deno.json 中的 "nodeModulesDir" 是否设置为 "auto"`,
-        );
-      }
-      // 回退到 PostCSS
-    }
-  }
-
-  // 使用 PostCSS 处理（回退方案）
+  // 使用 PostCSS 处理
   if (version === "v3") {
     return await processCSSV3(
       cssContent,
@@ -322,33 +169,16 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
   let isProduction = false;
   let staticPrefix = "/";
   let staticDir = "assets";
-  // CLI 路径（在 onInit 中获取）
-  let cliPath: string | undefined;
 
   return {
     name: "tailwind",
     config: options as Record<string, unknown>,
 
-    /**
-     * 初始化钩子
-     * 从 app.isProduction 获取环境信息，并确保 Tailwind CLI 存在
-     */
-    async onInit(app: AppLike, config: AppConfig) {
+    onInit(app: AppLike, config: AppConfig) {
       // 从 app 中获取环境标志
       isProduction = (app.isProduction as boolean) ?? false;
       staticDir = config.static?.dir || "assets";
       staticPrefix = config.static?.prefix || "/" + staticDir;
-
-      // 在启动时确保 Tailwind CLI 存在（自动下载或验证路径）
-      // - 如果配置了 cliPath，使用指定的路径（不自动下载）
-      // - 如果未配置 cliPath，自动下载到项目根目录的隐藏目录 .bin/
-      // 这样用户可以将 CLI 移动到共享目录，通过 cliPath 配置使用，避免重复下载
-      // 注意：CLI 是必需的，如果下载失败将直接终止程序启动
-      cliPath = await ensureTailwindCli(
-        options.cliPath,
-        version,
-      );
-      // 静默处理，不输出提示信息（下载时会有进度条提示）
     },
 
     /**
@@ -412,7 +242,6 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
             version,
             isProduction,
             options,
-            cliPath,
           );
           compiledCSS = processed.content;
         } else {
@@ -437,7 +266,6 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
               version,
               false,
               options,
-              cliPath,
             );
 
             // 更新缓存
@@ -543,7 +371,6 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
               version,
               isProduction,
               options,
-              cliPath,
             );
 
             // 计算输出路径

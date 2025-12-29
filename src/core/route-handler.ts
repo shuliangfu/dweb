@@ -177,6 +177,8 @@ export class RouteHandler {
     return await Promise.resolve().then(async () => {
       // 确保函数是同步开始的，所有异步操作都在 try 块内
       const url = new URL(req.url);
+      // 当请求携带 t 时间戳参数时，强制跳过编译缓存，确保依赖更新能被打包到页面
+      const skipCache = url.searchParams.has("t");
       const encodedPath = url.pathname.replace(/^\/__modules\//, "");
 
       // 立即进入 try 块，确保所有操作都在 try 块内
@@ -253,7 +255,8 @@ export class RouteHandler {
           cachedEntry = this.moduleCache.get(cacheKey);
         }
 
-        if (cachedEntry && cachedEntry.mtime === mtime) {
+        // 仅当未显式跳过缓存时才命中
+        if (!skipCache && cachedEntry && cachedEntry.mtime === mtime) {
           // 缓存命中，直接返回
           const jsCode = cachedEntry.code;
 
@@ -343,17 +346,21 @@ export class RouteHandler {
           jsCode = fileContent;
         }
 
-        // 更新缓存
-        if (this.cacheAdapter) {
-          await this.cacheAdapter.set(cacheKey, {
-            mtime,
-            code: jsCode,
-          });
-        } else {
-          this.moduleCache.set(cacheKey, {
-            mtime,
-            code: jsCode,
-          });
+        // 更新缓存（带 t 参数跳过读取缓存，但仍写入最新编译结果）
+        try {
+          if (this.cacheAdapter) {
+            await this.cacheAdapter.set(cacheKey, {
+              mtime,
+              code: jsCode,
+            });
+          } else {
+            this.moduleCache.set(cacheKey, {
+              mtime,
+              code: jsCode,
+            });
+          }
+        } catch {
+          // 忽略缓存写入失败，继续返回编译结果
         }
 
         // 设置响应头和状态码（在所有异步操作完成后）
@@ -593,7 +600,7 @@ export class RouteHandler {
     // 创建模块请求对象
     const moduleReqUrl = pathname.startsWith("http")
       ? pathname
-      : `${url.origin}${pathname}`;
+      : `${url.origin}${pathname}${url.search || ""}`;
     const moduleReq = new Request(moduleReqUrl, {
       method: req.method,
       headers: req.headers,

@@ -111,7 +111,7 @@ export default function Hero({
                     clipRule="evenodd"
                   />
                 </svg>
-                最新版本 {versionString}
+                最新版本 {versionString} 22 dd
               </span>
             </div>
           )}

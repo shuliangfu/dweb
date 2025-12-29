@@ -636,6 +636,32 @@ const results = await adapter.query('SELECT * FROM users WHERE age > ?', [18]);
 // 执行更新
 await adapter.execute('UPDATE users SET age = ? WHERE id = ?', [25, 1]);`;
 
+  // MySQL 适配器
+  const mysqlAdapterCode =
+    `import { MySQLAdapter } from '@dreamer/dweb/database/adapters/mysql';
+
+const adapter = new MySQLAdapter();
+await adapter.connect({
+  type: 'mysql',
+  connection: {
+    host: 'localhost',
+    port: 3306,
+    database: 'mydb',
+    username: 'user',
+    password: 'password',
+  },
+  pool: {
+    maxRetries: 3,
+    retryDelay: 1000,
+  },
+});
+
+// 执行查询
+const results = await adapter.query('SELECT * FROM users WHERE age > ?', [18]);
+
+// 执行更新
+await adapter.execute('UPDATE users SET age = ? WHERE id = ?', [25, 1]);`;
+
   // 关联查询
   const associationCode = `// 一对一关联
 const user = await User.find(1);
@@ -949,6 +975,17 @@ const comments = await post.comments();`;
 } from '@dreamer/dweb';`}
           language="typescript"
         />
+        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mt-2">
+          使用 MySQL 时，请从{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            @dreamer/dweb/database/adapters/mysql
+          </code>{" "}
+          导入{" "}
+          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
+            MySQLAdapter
+          </code>
+          。
+        </p>
       </section>
 
       {/* 目录结构 */}
@@ -961,6 +998,7 @@ const comments = await post.comments();`;
 ├── adapters/          # 数据库适配器
 │   ├── base.ts        # 基础适配器抽象类
 │   ├── mongodb.ts     # MongoDB 适配器
+│   ├── mysql.ts       # MySQL 适配器
 │   └── postgresql.ts  # PostgreSQL 适配器
 ├── cache/             # 查询缓存
 ├── logger/            # 查询日志
@@ -1083,6 +1121,14 @@ const comments = await post.comments();`;
           MongoDB 适配器支持文档查询、聚合、索引等功能：
         </p>
         <CodeBlock code={mongoAdapterCode} language="typescript" />
+
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
+          MySQL 适配器
+        </h3>
+        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+          MySQL/MariaDB 适配器支持基本查询、执行、事务与自动重连：
+        </p>
+        <CodeBlock code={mysqlAdapterCode} language="typescript" />
       </section>
 
       {/* ORM/ODM 模型 */}

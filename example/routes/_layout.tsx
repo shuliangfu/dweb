@@ -45,8 +45,6 @@ export const load = () => {
 export default function AppLayout(
   { children, data: { menus }, routePath }: LayoutProps,
 ) {
-  // console.log('布局 data:', data.menus);
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* 导航栏 */}

@@ -477,7 +477,7 @@ export async function createApp(
   );
 
   // 生成 deno.json
-  await generateDenoJson(projectDir, isMultiApp, appNames);
+  await generateDenoJson(projectDir, isMultiApp, appNames, useTailwindV4);
 
   // 生成示例路由和组件
   await generateExampleRoutes(
@@ -733,6 +733,7 @@ async function generateDenoJson(
   projectDir: string,
   isMultiApp: boolean = false,
   appNames: string[] = [],
+  useTailwindV4: boolean = true,
 ): Promise<void> {
   const frameworkUrl = await getFrameworkUrl();
   const clientUrl = frameworkUrl.endsWith("mod.ts")
@@ -752,7 +753,18 @@ async function generateDenoJson(
     "preact": "npm:preact@10.28.0",
     "preact/hooks": "npm:preact@10.28.0/hooks",
     "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
-    "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact"`;
+    "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact",${
+      useTailwindV4
+        ? `
+    "tailwindcss": "npm:tailwindcss@4.1.10",
+    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@4.1.10",
+    "postcss": "npm:postcss@8.5.6"`
+        : `
+    "tailwindcss": "npm:tailwindcss@3.4.0",
+    "postcss": "npm:postcss@8.4.35",
+    "autoprefixer": "npm:autoprefixer@10.4.17",
+    "cssnano": "npm:cssnano@6.0.3"`
+    }`;
   } else {
     // 单应用模式：使用通用的路径别名
     importsConfig = `    "@components/": "./components/",
@@ -763,7 +775,18 @@ async function generateDenoJson(
     "preact": "npm:preact@10.28.0",
     "preact/hooks": "npm:preact@10.28.0/hooks",
     "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
-    "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact"`;
+    "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact",${
+      useTailwindV4
+        ? `
+    "tailwindcss": "npm:tailwindcss@4.1.10",
+    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@4.1.10",
+    "postcss": "npm:postcss@8.5.6"`
+        : `
+    "tailwindcss": "npm:tailwindcss@3.4.0",
+    "postcss": "npm:postcss@8.4.35",
+    "autoprefixer": "npm:autoprefixer@10.4.17",
+    "cssnano": "npm:cssnano@6.0.3"`
+    }`;
   }
 
   const denoJsonContent = `{
@@ -791,7 +814,7 @@ ${
   "imports": {
 ${importsConfig}
   },
-  "nodeModulesDir": "none",
+  "nodeModulesDir": "auto",
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "preact"

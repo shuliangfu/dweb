@@ -18,7 +18,7 @@
     "./utils": "./src/common/utils/mod.ts",
     "./server": "./src/server/mod.ts"
   },
-  "nodeModulesDir": "none",
+  "nodeModulesDir": "auto",
   "description": "A modern full-stack web framework based on Deno + Preact + Tailwind CSS",
   "tasks": {
     "dev": "deno run -A src/cli.ts dev",

@@ -1,6 +1,6 @@
 {
   "version": "1.9.10",
-  "nodeModulesDir": "none",
+  "nodeModulesDir": "auto",
   "tasks": {
     "dev": "deno run -A ../src/cli.ts dev",
     "build": "deno run -A ../src/cli.ts build",
@@ -9,7 +9,7 @@
   "imports": {
     "@components/": "./components/",
     "@services/": "./services/",
-		"@plugins/": "./plugins/",
+    "@plugins/": "./plugins/",
     "@config/": "./config/",
     "@store/": "./stores/",
     "@hooks/": "./hooks/",
@@ -36,8 +36,8 @@
     "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
     "preact/signals": "https://esm.sh/@preact/signals@1.2.2?external=preact",
 
-		"tailwind-merge": "npm:tailwind-merge@2.5.4",
-   
+    "tailwind-merge": "npm:tailwind-merge@2.5.4",
+
     "esbuild": "npm:esbuild@0.19.12",
     "@sqlite": "https://deno.land/x/sqlite@v3.7.3/mod.ts",
     "@postgres": "npm:postgres@^3.4.3",

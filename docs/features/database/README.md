@@ -1,6 +1,6 @@
 # 数据库模块
 
-DWeb 框架提供了强大的数据库支持，支持 PostgreSQL 和
+DWeb 框架提供了强大的数据库支持，支持 PostgreSQL、MySQL 和
 MongoDB，包含查询构建器、ORM/ODM、迁移管理等功能。
 
 ## 核心架构
@@ -11,7 +11,7 @@ DWeb 数据库模块采用了多层抽象架构，旨在提供统一且强大的
     `SQLModel` 和 `MongoModel` 实现了 Active Record 模式，让模型类直接具备 `find`、`create`、`update` 等能力，开发体验直观高效。
 
 *   **多适配器策略 (Multi-Adapter Strategy)**：
-    通过 `DatabaseAdapter` 接口抽象底层差异，实现了业务逻辑与数据库实现的解耦。支持在同一应用中同时连接 PostgreSQL 和 MongoDB。
+    通过 `DatabaseAdapter` 接口抽象底层差异，实现了业务逻辑与数据库实现的解耦。支持在同一应用中同时连接 PostgreSQL、MySQL 和 MongoDB。
 
 *   **流式查询构建器 (Fluent Query Builder)**：
     `SQLQueryBuilder` 提供了链式调用的 API (`select().from().where().join()`)，不仅编写流畅，还能自动参数化查询以防止 SQL 注入。
@@ -27,6 +27,7 @@ src/features/database/
 ├── adapters/          # 数据库适配器
 │   ├── base.ts        # 基础适配器抽象类
 │   ├── mongodb.ts     # MongoDB 适配器
+│   ├── mysql.ts       # MySQL 适配器
 │   └── postgresql.ts  # PostgreSQL 适配器
 ├── cache/             # 查询缓存
 │   ├── cache-adapter.ts
@@ -97,6 +98,12 @@ import {
   initDatabaseFromConfig,
   setupDatabaseConfigLoader,
 } from "@dreamer/dweb/database";
+```
+
+使用 MySQL 适配器时，请从适配器子路径导入：
+
+```typescript
+import { MySQLAdapter } from "@dreamer/dweb/database/adapters/mysql";
 ```
 
 ## 快速开始
@@ -300,6 +307,34 @@ const results = await adapter.query("users", { age: { $gt: 18 } });
 
 // 执行插入
 await adapter.execute("insert", "users", { name: "John", age: 25 });
+```
+
+### MySQL 适配器
+
+```typescript
+import { MySQLAdapter } from "@dreamer/dweb/database/adapters/mysql";
+
+const adapter = new MySQLAdapter();
+await adapter.connect({
+  type: "mysql",
+  connection: {
+    host: "localhost",
+    port: 3306,
+    database: "mydb",
+    username: "user",
+    password: "password",
+  },
+  pool: {
+    maxRetries: 3,
+    retryDelay: 1000,
+  },
+});
+
+// 执行查询
+const results = await adapter.query("SELECT * FROM users WHERE age > ?", [18]);
+
+// 执行更新
+await adapter.execute("UPDATE users SET age = ? WHERE id = ?", [25, 1]);
 ```
 
 ## ORM/ODM 模型
@@ -1323,6 +1358,44 @@ const results = await query
   .get();
 ```
 
+### 模型链式查询（SQL 与 Mongo 一致）
+
+两种模型都提供统一的链式查询 API：`Model.query()`。它支持 where/fields/sort/skip/limit，以及软删除控制 includeTrashed/onlyTrashed，并提供常用聚合/写操作。
+
+```typescript
+// SQLModel 示例
+const rows = await User.query()
+  .where({ status: "active" })
+  .fields(["id", "name"])
+  .sort({ created_at: "desc" }) // 支持 "asc"/"desc" 字符串或对象
+  .skip(10)
+  .limit(20)
+  .findAll();
+
+const one = await User.query()
+  .where({ id: 1 })
+  .sort("desc")
+  .find();
+
+const total = await User.query()
+  .where({ role: "admin" })
+  .includeTrashed()
+  .count();
+
+const exists = await User.query()
+  .where({ email: "a@b.com" })
+  .exists();
+
+// MongoModel 示例（方法与 SQLModel 对齐）
+const docs = await User.query()
+  .where({ status: "active" })
+  .fields(["_id", "name"])
+  .sort({ createdAt: "desc" })
+  .skip(10)
+  .limit(20)
+  .findAll();
+```
+
 ## 数据库迁移
 
 ```typescript
@@ -1667,13 +1740,14 @@ const db = manager.get("default");
 
 #### 查询方法
 
-- `find(condition, fields?)` - 查找单条记录
-- `findAll(condition?, fields?)` - 查找多条记录
+- `find(condition, fields?, includeTrashed?, onlyTrashed?, options?)` - 查找单条记录（options 支持 { sort }）
+- `findAll(condition?, fields?, options?, includeTrashed?, onlyTrashed?)` - 查找多条记录（options 支持 { sort, skip, limit }）
 - `findById(id, fields?)` - 根据 ID 查找
-- `findOne(condition, fields?)` - 查找一条记录
-- `count(condition?)` - 统计数量
-- `exists(condition)` - 检查是否存在
+- `findOne(condition, fields?, includeTrashed?, onlyTrashed?, options?)` - 查找一条记录（支持排序）
+- `count(condition?, includeTrashed?, onlyTrashed?)` - 统计数量
+- `exists(condition, includeTrashed?, onlyTrashed?)` - 检查是否存在
 - `paginate(condition, page, pageSize)` - 分页查询
+- `distinct(field, condition?, includeTrashed?, onlyTrashed?)` - 去重查询
 
 #### 创建方法
 
@@ -1700,16 +1774,15 @@ const db = manager.get("default");
 
 #### 软删除相关方法
 
-- `restore(condition)` - 恢复软删除的记录（静态方法）
-- `forceDelete(condition)` - 强制删除记录，忽略软删除（静态方法）
-- `withTrashed()` - 查询时包含已软删除的记录（静态方法，返回查询构建器）
-- `onlyTrashed()` - 只查询已软删除的记录（静态方法，返回查询构建器）
+- `restore(condition, options?: { returnIds?: boolean })` - 恢复软删除的记录（返回数量或 { count, ids }）
+- `forceDelete(condition, options?: { returnIds?: boolean })` - 强制删除记录（返回数量或 { count, ids }）
+- `withTrashed()` - 查询时包含已软删除的记录（静态方法，返回查询构建器；findAll 支持 sort/skip/limit）
+- `onlyTrashed()` - 只查询已软删除的记录（静态方法，返回查询构建器；findAll 支持 sort/skip/limit）
 
 #### 其他方法
 
 - `upsert(condition, data)` - 更新或插入
 - `findOrCreate(condition, data)` - 查找或创建（如果不存在则创建）
-- `distinct(field, condition?)` - 去重查询
 - `aggregate(pipeline)` - 聚合查询（仅 MongoDB）
 - `truncate()` - 清空表/集合（删除所有记录）
 - `save()` - 保存当前实例（实例方法）
@@ -1728,22 +1801,28 @@ const db = manager.get("default");
 
 #### 关联查询方法（实例方法）
 
-- `belongsTo(RelatedModel, foreignKey, localKey?)` - 属于关系（多对一）
+- `belongsTo(RelatedModel, foreignKey, localKey?, fields?, includeTrashed?, onlyTrashed?)` - 属于关系（多对一）
   - `RelatedModel`: 关联的模型类
   - `foreignKey`: 外键字段名（当前模型中的字段）
   - `localKey`: 关联模型的主键字段名（默认为关联模型的 primaryKey）
+  - `fields?`: 查询字段
+  - `includeTrashed?/onlyTrashed?`: 软删除控制
   - 返回：关联的模型实例或 `null`
 
-- `hasOne(RelatedModel, foreignKey, localKey?)` - 有一个关系（一对一）
+- `hasOne(RelatedModel, foreignKey, localKey?, fields?, includeTrashed?, onlyTrashed?)` - 有一个关系（一对一）
   - `RelatedModel`: 关联的模型类
   - `foreignKey`: 外键字段名（关联模型中的字段）
   - `localKey`: 当前模型的主键字段名（默认为当前模型的 primaryKey）
+  - `fields?`: 查询字段
+  - `includeTrashed?/onlyTrashed?`: 软删除控制
   - 返回：关联的模型实例或 `null`
 
-- `hasMany(RelatedModel, foreignKey, localKey?)` - 有多个关系（一对多）
+- `hasMany(RelatedModel, foreignKey, localKey?, fields?, options?)` - 有多个关系（一对多）
   - `RelatedModel`: 关联的模型类
   - `foreignKey`: 外键字段名（关联模型中的字段）
   - `localKey`: 当前模型的主键字段名（默认为当前模型的 primaryKey）
+  - `fields?`: 查询字段
+  - `options?`: { sort, skip, limit }
   - 返回：关联的模型实例数组
 
 ### 索引管理

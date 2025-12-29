@@ -294,11 +294,15 @@ export class Application extends EventEmitter {
 
       // 将文件变化事件连接到 HMR 服务器（智能更新）
       fileWatcher.onReload((changeInfo) => {
+        // 通知 HMR 服务器文件变化
         hmrServer.notifyFileChange(changeInfo);
-        hmrServer.notifyFileChange({
-          path: cssPath,
-          kind: "modify",
-        });
+        // 仅当文件不是 CSS 时触发 CSS 刷新
+        if (!changeInfo.path.endsWith(".css")) {
+          hmrServer.notifyFileChange({
+            path: cssPath,
+            kind: "modify",
+          });
+        }
       });
 
       // 注册文件监听器到服务容器

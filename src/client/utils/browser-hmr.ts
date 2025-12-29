@@ -86,6 +86,12 @@ class HMRClient {
     if (normalizedPath.includes("_layout") || normalizedPath.includes("_app")) {
       return null;
     }
+    // 共享组件：components/ 目录视为全局共享，应更新当前页面
+    if (
+      filePath.includes("/components/") || filePath.startsWith("components/")
+    ) {
+      return null;
+    }
 
     // 如果是 API 路由，不应该更新页面组件
     if (normalizedPath.startsWith("api/") || filePath.includes("/api/")) {
@@ -144,7 +150,7 @@ class HMRClient {
 
     links.forEach((link) => {
       const href = link.getAttribute("href");
-      if (href && (href.includes(filePath) || filePath.includes("style.css"))) {
+      if (href && (href.includes(filePath))) {
         // 添加时间戳强制重新加载
         const baseUrl = href.split("?")[0];
         link.setAttribute("href", `${baseUrl}?t=${timestamp}`);
@@ -394,6 +400,9 @@ class HMRClient {
     // 判断更新的是布局文件还是页面文件
     const isLayoutFile = filePath.includes("_layout") ||
       filePath.includes("_app");
+    // 共享组件（components 目录）
+    const isSharedComponent = filePath.includes("/components/") ||
+      filePath.startsWith("components/");
 
     try {
       // 获取页面数据
@@ -537,6 +546,57 @@ class HMRClient {
         );
 
         // 渲染组件
+        this.renderComponent(root, finalElement, render);
+      } else if (isSharedComponent) {
+        // 共享组件：先破缓存加载该组件，再重新加载当前页面组件并渲染
+        const compSeparator = moduleUrl.includes("?") ? "&" : "?";
+        const compTimestamp = Date.now();
+        const compUrlWithTimestamp =
+          `${moduleUrl}${compSeparator}t=${compTimestamp}`;
+        try {
+          await import(compUrlWithTimestamp);
+        } catch {
+          // 忽略组件导入错误，继续页面级更新
+        }
+
+        // 清理模块缓存，避免第二次更新仍命中旧模块
+        const moduleCache = (globalThis as Record<string, unknown>)
+          .__moduleCache as Map<string, unknown> | undefined;
+
+        console.log(moduleCache);
+
+        if (moduleCache) {
+          moduleCache.delete(filePath);
+          if (pageData?.route && typeof pageData.route === "string") {
+            moduleCache.delete(pageData.route);
+          }
+        }
+
+        const currentRoute = pageData?.route || globalThis.location.pathname;
+        const pageModuleUrl =
+          typeof currentRoute === "string" && currentRoute.startsWith("http")
+            ? currentRoute
+            : `${globalThis.location.origin}${currentRoute}`;
+
+        const pageSeparator = pageModuleUrl.includes("?") ? "&" : "?";
+        const pageTimestamp = Date.now();
+        const pageUrlWithTimestamp =
+          `${pageModuleUrl}${pageSeparator}t=${pageTimestamp}`;
+
+        const pageModule = await import(pageUrlWithTimestamp);
+        const PageComponent = pageModule.default;
+        if (!PageComponent || typeof PageComponent !== "function") {
+          throw new Error("页面组件未导出默认组件或组件不是函数");
+        }
+
+        const layoutPath = pageData?.layoutPath ?? null;
+        const LayoutComponent = await this.loadLayoutComponent(layoutPath);
+        const finalElement = await this.createPageElement(
+          PageComponent,
+          LayoutComponent,
+          props,
+          jsx,
+        );
         this.renderComponent(root, finalElement, render);
       } else {
         // 更新的是页面文件：正常处理
@@ -741,7 +801,15 @@ class HMRClient {
       };
 
       if (message.type === "reload") {
-        globalThis.location.reload();
+        // 无感刷新：不进行整页重载，尝试重载当前路由组件
+        try {
+          const routePath = globalThis.location.pathname;
+          const moduleUrl = `${globalThis.location.origin}${routePath}`;
+          await this.updateComponent(moduleUrl, routePath);
+        } catch (_error) {
+          // 回退到组件级降级刷新
+          await this.reloadComponent();
+        }
       } else if (message.type === "update") {
         await this.handleUpdateMessage(message.data || {});
       }
