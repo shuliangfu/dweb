@@ -1,4 +1,3 @@
-/// <reference lib="dom" />
 /**
  * HMR 客户端脚本
  * 在浏览器中运行的 HMR 代码

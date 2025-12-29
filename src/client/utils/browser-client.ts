@@ -1,4 +1,3 @@
-/// <reference lib="dom" />
 /**
  * 客户端脚本
  * 在浏览器中运行的客户端渲染和路由代码
@@ -1538,8 +1537,8 @@ class BrowserClient {
       } else {
         // 如果预加载超时，动态导入 Preact 模块
         const [preactModule, jsxRuntimeModule] = await Promise.all([
-          import("preact"),
-          import("preact/jsx-runtime"),
+          import("https://esm.sh/preact@10.28.0"),
+          import("https://esm.sh/preact@10.28.0/jsx-runtime"),
         ]);
         hydrate = preactModule.hydrate as (
           element: unknown,

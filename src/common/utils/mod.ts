@@ -1,7 +1,17 @@
 export * from "./array.ts";
 export * from "./cache.ts";
 export * from "./crypto.ts";
-export * from "./format.ts";
+export {
+  formatBankCard,
+  formatCurrency,
+  formatFileSize,
+  formatIdCard,
+  formatNumber,
+  formatPercent,
+  formatPhone,
+  formatRelativeTime,
+  formatText,
+} from "./format.ts";
 export * from "./http.ts";
 export * from "./lru-cache.ts";
 export * from "./math.ts";
