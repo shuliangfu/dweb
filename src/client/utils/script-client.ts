@@ -83,6 +83,13 @@ async function compileClientScript(): Promise<string> {
     const importMap: Record<string, string> =
       (denoJson && typeof denoJson === "object" && denoJson.imports) || {};
 
+    // 强制将 preact 相关包映射到自身，以保持 import("preact") 在编译后不变
+    // 这样浏览器端运行时会使用 import map 解析它们
+    // @ts-ignore: importMap is treated as Record<string, string>
+    importMap["preact"] = "preact";
+    // @ts-ignore: importMap is treated as Record<string, string>
+    importMap["preact/jsx-runtime"] = "preact/jsx-runtime";
+
     // 使用统一的构建函数进行客户端打包（替换外部依赖为浏览器 URL）
     const compiledCode = await buildFromStdin(
       browserScriptContent,
