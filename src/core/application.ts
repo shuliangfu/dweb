@@ -44,6 +44,7 @@ import {
   MemoryCacheAdapter,
   RedisCacheAdapter as _RedisCacheAdapter,
 } from "./cache/adapter.ts";
+import { isMultiAppMode } from "./config.ts";
 
 /**
  * 应用核心类
@@ -143,8 +144,6 @@ export class Application extends EventEmitter {
       // 更新应用上下文
       this.context.setConfig(config);
       this.context.setIsProduction(config.isProduction ?? false);
-
-      console.log(config);
 
       // 2. 注册服务
       await this.registerServices();
@@ -792,8 +791,6 @@ export class Application extends EventEmitter {
       this.pluginManager.registerMany(config.plugins);
     }
 
-    // console.log(config)
-
     // 注意：main.ts 的配置已经在 loadConfig 阶段被合并到 config 中了
     // 这里不需要再次加载，避免重复注册中间件和插件
   }
@@ -856,7 +853,6 @@ export class Application extends EventEmitter {
     const isProduction = config.isProduction ?? false;
     if (isProduction && config.build?.outDir) {
       // 生产环境：从构建映射文件加载
-      const { isMultiAppMode } = await import("./config.ts");
       let outDir = config.build.outDir;
       if (await isMultiAppMode() && config.name) {
         outDir = `${outDir}/${config.name}`;
@@ -1105,17 +1101,21 @@ export class Application extends EventEmitter {
 
     try {
       let staticPath: string;
-      if (isProduction && config.build?.outDir) {
+      let outDir: string;
+      if (isProduction) {
         // 生产环境：从构建输出目录加载
-        const { isMultiAppMode } = await import("./config.ts");
-        const outDir = await isMultiAppMode() && config.name
-          ? `${config.build.outDir}/${config.name}`
-          : config.build.outDir;
+        const isMultiApp = await isMultiAppMode();
+        outDir = isMultiApp && config.name
+          ? `${config.build?.outDir}/${config.name}`
+          : config.build?.outDir || "dist";
         staticPath = `${outDir}/${staticDir}`;
       } else {
         // 开发环境：从项目根目录加载
         staticPath = staticDir;
+        outDir = config.build?.outDir || "dist";
       }
+
+      console.log({ staticPath, outDir });
 
       const exists = await Deno.stat(staticPath)
         .then(() => true)
@@ -1126,13 +1126,13 @@ export class Application extends EventEmitter {
           this.middlewareManager.add(staticFiles({
             ...config.static,
             dir: staticDir,
-            outDir: isProduction ? config.build?.outDir : undefined,
+            outDir: isProduction ? config.build?.outDir : "dist",
             isProduction,
           }));
         } else {
           this.middlewareManager.add(staticFiles({
             dir: staticDir,
-            outDir: isProduction ? config.build?.outDir : undefined,
+            outDir: isProduction ? config.build?.outDir : "dist",
             isProduction,
           }));
         }
@@ -1173,7 +1173,7 @@ export class Application extends EventEmitter {
         try {
           if (index < middlewares.length) {
             const middleware = middlewares[index++];
-            await middleware(req, res, next);
+            await middleware(req, res, next, this.context);
           } else {
             // 所有中间件执行完毕，处理路由
             if (this.routeHandler) {

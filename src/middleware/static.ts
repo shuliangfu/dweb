@@ -11,6 +11,7 @@ import type {
 } from "../common/types/index.ts";
 import * as path from "@std/path";
 import { isPathSafe } from "../server/utils/security.ts";
+import type { AppLike } from "../common/types/index.ts";
 
 /**
  * 根据文件扩展名获取 MIME 类型
@@ -176,8 +177,6 @@ export function staticFiles(options: StaticOptions): Middleware {
       }
     },
   );
-
-  console.log({ isProduction, outDir, dir });
 
   // 如果 dir 是相对路径，根据环境自动选择目录
   // 开发环境：使用项目目录

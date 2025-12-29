@@ -59,14 +59,8 @@ export class ConfigManager {
   async load(): Promise<void> {
     // 如果已经加载过，跳过重复加载
     if (this.config !== null) {
-      console.debug(
-        `[ConfigManager] 配置已加载，跳过重复加载: configPath=${this.configPath}, appName=${this.appName}`,
-      );
       return;
     }
-    console.debug(
-      `[ConfigManager] 开始加载配置: configPath=${this.configPath}, appName=${this.appName}`,
-    );
     const { config, configDir } = await loadConfigFile(
       this.configPath,
       this.appName,
@@ -74,11 +68,6 @@ export class ConfigManager {
     this.config = config;
     this.configDir = configDir;
     this.validate();
-    console.debug(
-      `[ConfigManager] 配置加载完成: plugins=${
-        config.plugins?.length || 0
-      }, middleware=${config.middleware?.length || 0}`,
-    );
   }
 
   /**

@@ -326,6 +326,7 @@ export type Middleware = (
   req: Request,
   res: Response,
   next: () => Promise<void>,
+  app: AppLike,
 ) => Promise<void> | void;
 
 // 中间件配置

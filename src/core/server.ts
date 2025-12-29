@@ -146,7 +146,7 @@ export class Server {
         await this.handler(req, res);
       } else {
         // 如果没有设置 handler，执行中间件链
-        await this.runMiddlewares(req, res);
+        await this.runMiddlewares(req, res, undefined);
       }
 
       // 确保响应体已设置（在 handler 完成后检查）
@@ -489,10 +489,17 @@ export class Server {
 
   /**
    * 执行中间件链
+   * @param app 应用上下文对象（可选，如果未提供则传入空对象）
    */
-  private async runMiddlewares(req: Request, res: Response): Promise<void> {
+  private async runMiddlewares(
+    req: Request,
+    res: Response,
+    app?: any,
+  ): Promise<void> {
     const middlewares = this.middlewares;
     let index = 0;
+    // 如果没有提供 app，创建一个空对象（满足类型要求）
+    const appContext = app || ({} as any);
 
     const next = async (): Promise<void> => {
       if (index >= middlewares.length) {
@@ -520,7 +527,7 @@ export class Server {
       };
 
       try {
-        await middleware(req, res, wrappedNext);
+        await middleware(req, res, wrappedNext, appContext);
       } catch (error) {
         throw error;
       }

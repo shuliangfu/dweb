@@ -606,8 +606,6 @@ export class RouteHandler {
       headers: req.headers,
     });
 
-    // console.log({ pathname, url})
-
     // 转换为扩展的请求对象
     const extendedModuleReq = this.createExtendedRequest(req, moduleReq);
 
@@ -677,10 +675,14 @@ export class RouteHandler {
     handler: () => Promise<void>,
   ): Promise<void> {
     let index = 0;
+    // 创建 app 对象（如果 application 存在，使用它创建 AppLike 接口）
+    const app = this.application
+      ? (this.application.context as any)
+      : ({} as any);
     const next = async (): Promise<void> => {
       if (index < middlewares.length) {
         const middleware = middlewares[index++];
-        await middleware(req, res, next);
+        await middleware(req, res, next, app);
       } else {
         // 所有中间件执行完毕，执行路由处理
         await handler();

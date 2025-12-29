@@ -54,7 +54,6 @@ const config: AppConfig = {
     dir: "assets",
     prefix: "/assets", // 访问前缀，例如 /assets/logo.png
     maxAge: 86400, // 缓存 1 天
-    index: ["index.html", "index.htm"],
     dotfiles: "deny", // 禁止访问隐藏文件
     extendDirs: ["uploads"], // 扩展的静态资源目录
   },

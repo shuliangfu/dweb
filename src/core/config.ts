@@ -193,9 +193,6 @@ export async function loadConfig(
   appName?: string,
 ): Promise<{ config: AppConfig; configDir: string }> {
   try {
-    console.debug(
-      `[loadConfig] 开始加载配置: configPath=${configPath}, appName=${appName}`,
-    );
     const originalCwd = Deno.cwd();
 
     // 如果没有提供路径，自动查找
@@ -247,15 +244,7 @@ export async function loadConfig(
 
         // 合并应用配置和顶层配置，返回 AppConfig
         // 注意：database 配置只能来自根配置，子应用配置中不允许包含 database
-        console.debug(
-          `[Config] 合并应用配置: appName=${matchedApp.name}, basePlugins=${
-            config.plugins?.length || 0
-          }, appPlugins=${matchedApp.plugins?.length || 0}`,
-        );
         finalConfig = mergeConfig(config, matchedApp as AppConfig);
-        console.debug(
-          `[Config] 合并后插件数量: ${finalConfig.plugins?.length || 0}`,
-        );
 
         // 强制 database 配置只能来自根配置
         finalConfig.database = config.database;
@@ -292,11 +281,6 @@ export async function loadConfig(
         // 注意：这里 finalConfig 作为 baseConfig，mainConfig 作为 appConfig
         // 所以 main.ts 的配置会追加到 finalConfig 的配置后面
         finalConfig = mergeConfig(finalConfig, mainConfig);
-        console.debug(
-          `[Config] 合并 main.ts 配置: plugins=${
-            mainConfig.plugins?.length || 0
-          }, middleware=${mainConfig.middleware?.length || 0}`,
-        );
       }
     } catch (error) {
       // 记录 main.ts 加载错误，但不抛出异常（main.ts 是可选的）
@@ -308,12 +292,6 @@ export async function loadConfig(
 
     // 验证合并后的配置
     validateConfig(finalConfig);
-
-    console.debug(
-      `[loadConfig] 配置加载完成: plugins=${
-        finalConfig.plugins?.length || 0
-      }, middleware=${finalConfig.middleware?.length || 0}`,
-    );
 
     return { config: finalConfig, configDir: Deno.cwd() };
   } catch (error) {
@@ -502,9 +480,6 @@ export function mergeConfig(
       }
     }
     merged.middleware = uniqueMiddleware;
-    console.debug(
-      `[mergeConfig] 合并中间件: base=${baseMiddleware.length}, app=${appMiddleware.length}, 去重后=${merged.middleware.length}`,
-    );
   }
 
   if (basePlugins.length > 0 || appPlugins.length > 0) {
@@ -524,15 +499,6 @@ export function mergeConfig(
       // 如果有 name 且已存在，跳过（去重）
     }
     merged.plugins = uniquePlugins;
-    console.debug(
-      `[mergeConfig] 合并插件: base=${basePlugins.length}, app=${appPlugins.length}, 去重后=${merged.plugins.length}`,
-    );
-    // 调试：打印每个插件的名称
-    merged.plugins.forEach((plugin: any, index: number) => {
-      console.debug(
-        `[mergeConfig] plugin[${index}]: name=${plugin.name || "unknown"}`,
-      );
-    });
   }
 
   // 特殊处理：路由配置规范化

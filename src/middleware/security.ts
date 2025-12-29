@@ -150,15 +150,20 @@ export function security(options: SecurityOptions = {}): Middleware {
     : options.csp;
   const cspMiddleware = cspOptions ? contentSecurityPolicy(cspOptions) : null;
 
-  return async (req: Request, res: Response, next: () => Promise<void>) => {
+  return async (
+    req: Request,
+    res: Response,
+    next: () => Promise<void>,
+    app: any,
+  ) => {
     // 执行 Helmet 中间件
     await helmetMiddleware(req, res, async () => {
       // 执行 CSP 中间件（如果启用）
       if (cspMiddleware) {
-        await cspMiddleware(req, res, next);
+        await cspMiddleware(req, res, next, app);
       } else {
         await next();
       }
-    });
+    }, app);
   };
 }
