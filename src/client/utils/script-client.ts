@@ -5,7 +5,8 @@
 
 import { filePathToHttpUrl } from "../../common/utils/path.ts";
 import { minifyJavaScript } from "../../server/utils/minify.ts";
-import { compileWithEsbuild } from "../../server/utils/module.ts";
+import { buildFromStdin } from "../../server/utils/esbuild.ts";
+import { readDenoJson } from "../../server/utils/file.ts";
 import * as path from "@std/path";
 
 // 缓存编译后的客户端脚本
@@ -57,26 +58,45 @@ async function compileClientScript(): Promise<string> {
     // 读取浏览器端脚本文件（支持本地文件和 JSR 包）
     const browserScriptContent = await readFileContent("browser-client.ts");
 
-    // 获取文件路径用于 esbuild（用于错误报告）
+    // 获取文件路径用于错误报告和解析
     const currentUrl = new URL(import.meta.url);
     let browserScriptPath: string;
+    let resolveDir: string;
     if (currentUrl.protocol === "http:" || currentUrl.protocol === "https:") {
       // JSR 包：使用 URL 作为路径标识
       const currentPath = currentUrl.pathname;
       const currentDir = currentPath.substring(0, currentPath.lastIndexOf("/"));
       browserScriptPath = `${currentUrl.origin}${currentDir}/browser-client.ts`;
+      // 远程环境下无法使用 URL 作为解析目录，使用项目根目录提升解析稳定性
+      resolveDir = Deno.cwd();
     } else {
       // 本地文件系统
       browserScriptPath = path.join(
         path.dirname(new URL(import.meta.url).pathname),
         "browser-client.ts",
       );
+      resolveDir = path.dirname(browserScriptPath);
     }
 
-    // 使用 esbuild 编译 TypeScript 为 JavaScript
-    const compiledCode = await compileWithEsbuild(
+    // 读取项目 import map（如果存在）
+    const denoJson = await readDenoJson().catch(() => null);
+    const importMap: Record<string, string> =
+      (denoJson && typeof denoJson === "object" && denoJson.imports) || {};
+
+    // 使用统一的构建函数进行客户端打包（替换外部依赖为浏览器 URL）
+    const compiledCode = await buildFromStdin(
       browserScriptContent,
-      browserScriptPath,
+      path.basename(browserScriptPath),
+      resolveDir,
+      "ts",
+      {
+        importMap,
+        cwd: Deno.cwd(),
+        bundleClient: true,
+        minify: false,
+        keepNames: true,
+        legalComments: "none",
+      },
     );
 
     // 压缩代码
