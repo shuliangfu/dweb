@@ -148,11 +148,26 @@ export class PluginManager extends BaseManager implements IService {
    * @param res 响应对象
    */
   async executeOnResponse(req: Request, res: Response): Promise<void> {
+    // 调试：记录所有插件和它们的钩子状态
+    console.debug(
+      `[Plugin Manager] 当前注册的插件总数: ${this.plugins.length}`,
+    );
+    this.plugins.forEach((plugin) => {
+      console.debug(
+        `[Plugin Manager] 插件 "${plugin.name}": onResponse=${!!plugin
+          .onResponse}`,
+      );
+    });
+
     // 调试：记录插件数量和响应钩子数量
     const pluginsWithOnResponse = this.plugins.filter((p) => p.onResponse);
     if (pluginsWithOnResponse.length > 0) {
       console.debug(
         `[Plugin Manager] 执行 ${pluginsWithOnResponse.length} 个插件的 onResponse 钩子`,
+      );
+    } else {
+      console.warn(
+        `[Plugin Manager] 警告：没有找到任何有 onResponse 钩子的插件`,
       );
     }
 

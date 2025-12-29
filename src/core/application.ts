@@ -144,6 +144,8 @@ export class Application extends EventEmitter {
       this.context.setConfig(config);
       this.context.setIsProduction(config.isProduction ?? false);
 
+      console.log(config);
+
       // 2. 注册服务
       await this.registerServices();
 
@@ -790,6 +792,14 @@ export class Application extends EventEmitter {
       console.debug(
         `[Application] 注册 ${config.plugins.length} 个配置插件`,
       );
+      // 记录每个插件的名称和是否有 onResponse 钩子
+      config.plugins.forEach((plugin) => {
+        const pluginName = (plugin as any).name || "unknown";
+        const hasOnResponse = !!(plugin as any).onResponse;
+        console.debug(
+          `[Application] 插件 "${pluginName}": onResponse=${hasOnResponse}`,
+        );
+      });
       this.pluginManager.registerMany(config.plugins);
     }
 
