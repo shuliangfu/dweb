@@ -1082,8 +1082,6 @@ class HMRClient {
     moduleUrl?: string;
   }): Promise<void> {
     try {
-      console.log(data);
-
       if (data.type === "css" && data.action === "reload-stylesheet") {
         // CSS 文件：只更新样式表
         if (data.file) {
