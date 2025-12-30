@@ -1978,6 +1978,7 @@ export class RouteHandler {
     pageProps: Record<string, unknown>,
     layoutDisabled: boolean,
     layoutData?: Record<string, unknown>[],
+    req?: Request,
   ): Promise<{ headScripts: string[]; bodyScripts: string[] }> {
     const headScripts: string[] = [];
     const bodyScripts: string[] = [];
@@ -2075,6 +2076,28 @@ export class RouteHandler {
       // 如果页面禁用了布局，不加载任何布局路径
       if (!layoutDisabled) {
         try {
+          // 在导入布局文件之前，确保 $t 函数已设置（避免布局文件顶层代码使用 $t 时报错）
+          if (typeof globalThis !== "undefined") {
+            // 如果 req.t 存在（i18n 插件已设置），使用实际的翻译函数
+            if (req && (req as any).t) {
+              (globalThis as any).$t = (req as any).t;
+            } else {
+              // 如果 req.t 不存在，尝试从 i18n access 模块获取
+              try {
+                const { ensureGlobalI18n } = await import(
+                  "../plugins/i18n/access.ts"
+                );
+                ensureGlobalI18n();
+              } catch {
+                // i18n 模块未加载，设置默认函数（返回 key 本身）
+                if (!(globalThis as any).$t) {
+                  const defaultT = (key: string) => key;
+                  (globalThis as any).$t = defaultT;
+                }
+              }
+            }
+          }
+
           const layoutFilePaths = this.router.getAllLayouts(routeInfo.path);
           for (const layoutFilePath of layoutFilePaths) {
             try {
@@ -2245,7 +2268,7 @@ export class RouteHandler {
     shouldHydrate: boolean,
     pageProps: Record<string, unknown>,
     layoutDisabled: boolean,
-    _req?: Request,
+    req?: Request,
     layoutData?: Record<string, unknown>[],
   ): Promise<string> {
     const { headScripts, bodyScripts } = await this.getInjectionScripts(
@@ -2255,6 +2278,7 @@ export class RouteHandler {
       pageProps,
       layoutDisabled,
       layoutData,
+      req,
     );
 
     // 执行注入
@@ -2910,6 +2934,7 @@ export class RouteHandler {
           pageProps,
           layoutDisabled,
           layoutData,
+          req,
         );
 
         // 5. 渲染为流
