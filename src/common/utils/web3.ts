@@ -6,7 +6,24 @@
  * - 客户端：大部分功能需要在浏览器环境使用（需要钱包扩展如 MetaMask）
  * - 服务端：部分功能（如 RPC 调用、合约交互）可以在服务端使用
  * - 注意：钱包连接、签名等功能只能在客户端使用
+ *
+ * 依赖：
+ * - 需要安装 ethers.js: npm:ethers@^6.0.0
  */
+
+// 静态导入 ethers.js 核心模块（提升性能和类型检查）
+import {
+  Contract as EthersContract,
+  formatUnits,
+  getAddress as ethersGetAddress,
+  Interface as EthersInterface,
+  isAddress as ethersIsAddress,
+  JsonRpcProvider as EthersJsonRpcProvider,
+  keccak256 as ethersKeccak256,
+  solidityPackedKeccak256,
+  verifyMessage as ethersVerifyMessage,
+  Wallet as EthersWallet,
+} from "npm:ethers@^6.0.0";
 
 /**
  * 扩展 Window 接口以支持 ethereum
@@ -14,10 +31,48 @@
 interface WindowWithEthereum extends Window {
   ethereum?: {
     request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+    on?: (event: string, callback: (...args: unknown[]) => void) => void;
+    removeListener?: (
+      event: string,
+      callback: (...args: unknown[]) => void,
+    ) => void;
   };
 }
 
 declare const window: WindowWithEthereum;
+
+/**
+ * 区块事件回调函数类型
+ */
+export type BlockListener = (
+  blockNumber: number,
+  block: unknown,
+) => void | Promise<void>;
+
+/**
+ * 交易事件回调函数类型
+ */
+export type TransactionListener = (
+  txHash: string,
+  tx: unknown,
+) => void | Promise<void>;
+
+/**
+ * 合约事件回调函数类型
+ */
+export type ContractEventListener = (event: unknown) => void | Promise<void>;
+
+/**
+ * 账户变化回调函数类型
+ */
+export type AccountsChangedListener = (
+  accounts: string[],
+) => void | Promise<void>;
+
+/**
+ * 链切换回调函数类型
+ */
+export type ChainChangedListener = (chainId: string) => void | Promise<void>;
 
 /**
  * Web3 配置选项
@@ -99,6 +154,20 @@ export class Web3Client {
   private config: Web3Config;
   private provider: unknown = null;
   private signer: unknown = null;
+  // 事件监听器存储
+  private blockListeners: Set<BlockListener> = new Set();
+  private transactionListeners: Set<TransactionListener> = new Set();
+  private contractEventListeners: Map<string, Set<ContractEventListener>> =
+    new Map();
+  private accountsChangedListeners: Set<AccountsChangedListener> = new Set();
+  private chainChangedListeners: Set<ChainChangedListener> = new Set();
+  // 事件监听器是否已启动
+  private blockListenerStarted: boolean = false;
+  private transactionListenerStarted: boolean = false;
+  private walletListenersStarted: boolean = false;
+  // 钱包事件监听器的包装函数（用于移除）
+  private walletAccountsChangedWrapper?: (...args: unknown[]) => void;
+  private walletChainChangedWrapper?: (...args: unknown[]) => void;
 
   /**
    * 创建 Web3 客户端实例
@@ -131,7 +200,7 @@ export class Web3Client {
    * 初始化 Provider（懒加载）
    * @returns Provider 实例
    */
-  private async getProvider(): Promise<any> {
+  private getProvider(): any {
     if (this.provider) {
       return this.provider;
     }
@@ -140,17 +209,16 @@ export class Web3Client {
       throw new Error("RPC URL 未配置，请设置 rpcUrl");
     }
 
-    // 动态导入 ethers（如果可用）
+    // 使用静态导入的 ethers.js
     try {
-      const { JsonRpcProvider } = await import("npm:ethers@^6.0.0");
-      this.provider = new JsonRpcProvider(
+      this.provider = new EthersJsonRpcProvider(
         this.config.rpcUrl,
         this.config.chainId,
       );
       return this.provider;
     } catch (error) {
       throw new Error(
-        `无法加载 ethers.js，请确保已安装: npm:ethers@^6.0.0。错误: ${
+        `创建 Provider 失败: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );
@@ -161,7 +229,7 @@ export class Web3Client {
    * 初始化 Signer（懒加载）
    * @returns Signer 实例
    */
-  private async getSigner(): Promise<any> {
+  private getSigner(): any {
     if (this.signer) {
       return this.signer;
     }
@@ -170,14 +238,13 @@ export class Web3Client {
       throw new Error("私钥未配置，请设置 privateKey");
     }
 
-    const provider = await this.getProvider();
+    const provider = this.getProvider();
     try {
-      const { Wallet } = await import("npm:ethers@^6.0.0");
-      this.signer = new Wallet(this.config.privateKey, provider);
+      this.signer = new EthersWallet(this.config.privateKey, provider);
       return this.signer;
     } catch (error) {
       throw new Error(
-        `无法创建 Wallet，请确保已安装: npm:ethers@^6.0.0。错误: ${
+        `创建 Wallet 失败: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );
@@ -240,7 +307,7 @@ export class Web3Client {
    * @returns 余额（wei，字符串格式）
    */
   async getBalance(address: string): Promise<string> {
-    const provider = await this.getProvider();
+    const provider = this.getProvider();
     try {
       const balance = await (provider as any).getBalance(address);
       return balance.toString();
@@ -261,10 +328,9 @@ export class Web3Client {
   async getBalanceInEth(address: string): Promise<string> {
     const balance = await this.getBalance(address);
     try {
-      const { formatUnits } = await import("npm:ethers@^6.0.0");
       return formatUnits(balance, 18);
     } catch {
-      // 如果 ethers 不可用，手动转换（1 ETH = 10^18 wei）
+      // 如果 formatUnits 失败，手动转换（1 ETH = 10^18 wei）
       const balanceBigInt = BigInt(balance);
       const ethValue = Number(balanceBigInt) / 1e18;
       return ethValue.toString();
@@ -277,7 +343,7 @@ export class Web3Client {
    * @returns nonce 值
    */
   async getTransactionCount(address: string): Promise<number> {
-    const provider = await this.getProvider();
+    const provider = this.getProvider();
     try {
       const count = await (provider as {
         getTransactionCount: (address: string) => Promise<number>;
@@ -298,7 +364,7 @@ export class Web3Client {
    * @returns 交易哈希
    */
   async sendTransaction(options: TransactionOptions): Promise<string> {
-    const signer = await this.getSigner();
+    const signer = this.getSigner();
     try {
       const tx = await (signer as {
         sendTransaction: (
@@ -334,7 +400,7 @@ export class Web3Client {
     txHash: string,
     confirmations: number = 1,
   ): Promise<unknown> {
-    const provider = await this.getProvider();
+    const provider = this.getProvider();
     try {
       const receipt = await (provider as {
         waitForTransaction: (
@@ -358,10 +424,9 @@ export class Web3Client {
    * @returns 交易哈希
    */
   async callContract(options: ContractCallOptions): Promise<string> {
-    const signer = await this.getSigner();
+    const signer = this.getSigner();
     try {
-      const { Contract } = await import("npm:ethers@^6.0.0");
-      const contract = new Contract(
+      const contract = new EthersContract(
         options.address,
         [`function ${options.functionName}(${
           options.args?.map(() => "uint256").join(",") || ""
@@ -388,10 +453,9 @@ export class Web3Client {
    * @returns 函数返回值
    */
   async readContract(options: ContractReadOptions): Promise<unknown> {
-    const provider = await this.getProvider();
+    const provider = this.getProvider();
     try {
-      const { Contract } = await import("npm:ethers@^6.0.0");
-      const contract = new Contract(
+      const contract = new EthersContract(
         options.address,
         [`function ${options.functionName}(${
           options.args?.map(() => "uint256").join(",") || ""
@@ -417,7 +481,7 @@ export class Web3Client {
    * @returns 签名结果
    */
   async signMessage(message: string): Promise<string> {
-    const signer = await this.getSigner();
+    const signer = this.getSigner();
     try {
       const signature =
         await (signer as { signMessage: (message: string) => Promise<string> })
@@ -439,14 +503,13 @@ export class Web3Client {
    * @param address 签名者地址
    * @returns 是否验证通过
    */
-  async verifyMessage(
+  verifyMessage(
     message: string,
     signature: string,
     address: string,
-  ): Promise<boolean> {
+  ): boolean {
     try {
-      const { verifyMessage } = await import("npm:ethers@^6.0.0");
-      const recoveredAddress = verifyMessage(message, signature);
+      const recoveredAddress = ethersVerifyMessage(message, signature);
       return recoveredAddress.toLowerCase() === address.toLowerCase();
     } catch (error) {
       throw new Error(
@@ -462,7 +525,7 @@ export class Web3Client {
    * @returns Gas 价格（wei）
    */
   async getGasPrice(): Promise<string> {
-    const provider = await this.getProvider();
+    const provider = this.getProvider();
     try {
       const feeData = await (provider as {
         getFeeData: () => Promise<{ gasPrice: bigint | null }>;
@@ -483,7 +546,7 @@ export class Web3Client {
    * @returns 估算的 Gas 数量
    */
   async estimateGas(options: TransactionOptions): Promise<string> {
-    const provider = await this.getProvider();
+    const provider = this.getProvider();
     try {
       const gasEstimate = await (provider as {
         estimateGas: (tx: TransactionOptions) => Promise<bigint>;
@@ -509,7 +572,7 @@ export class Web3Client {
    * @returns 区块信息
    */
   async getBlock(blockNumber?: number): Promise<unknown> {
-    const provider = await this.getProvider();
+    const provider = this.getProvider();
     try {
       const block = await (provider as {
         getBlock: (blockNumber?: number) => Promise<unknown>;
@@ -530,7 +593,7 @@ export class Web3Client {
    * @returns 交易信息
    */
   async getTransaction(txHash: string): Promise<unknown> {
-    const provider = await this.getProvider();
+    const provider = this.getProvider();
     try {
       const tx = await (provider as {
         getTransaction: (hash: string) => Promise<unknown>;
@@ -551,7 +614,7 @@ export class Web3Client {
    * @returns 交易收据
    */
   async getTransactionReceipt(txHash: string): Promise<unknown> {
-    const provider = await this.getProvider();
+    const provider = this.getProvider();
     try {
       const receipt = await (provider as {
         getTransactionReceipt: (hash: string) => Promise<unknown>;
@@ -560,6 +623,961 @@ export class Web3Client {
     } catch (error) {
       throw new Error(
         `获取交易收据失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  // ==================== 事件监听方法 ====================
+
+  /**
+   * 监听新区块
+   * @param callback 回调函数，接收区块号和区块信息
+   * @returns 取消监听的函数
+   */
+  onBlock(callback: BlockListener): () => void {
+    this.blockListeners.add(callback);
+
+    // 如果还没有启动监听，则启动
+    if (!this.blockListenerStarted) {
+      this.startBlockListener();
+    }
+
+    // 返回取消监听的函数
+    return () => {
+      this.blockListeners.delete(callback);
+      // 如果没有监听器了，停止监听
+      if (this.blockListeners.size === 0) {
+        this.stopBlockListener();
+      }
+    };
+  }
+
+  /**
+   * 启动区块监听
+   */
+  private startBlockListener(): void {
+    if (this.blockListenerStarted) {
+      return;
+    }
+
+    this.blockListenerStarted = true;
+    const provider = this.getProvider();
+
+    try {
+      // 使用 ethers.js 的 on 方法监听区块
+      (provider as any).on("block", async (blockNumber: number) => {
+        try {
+          const block = await (provider as any).getBlock(blockNumber);
+          // 调用所有监听器
+          for (const listener of this.blockListeners) {
+            try {
+              await Promise.resolve(listener(blockNumber, block));
+            } catch (error) {
+              console.error("[Web3Client] 区块监听器错误:", error);
+            }
+          }
+        } catch (error) {
+          console.error("[Web3Client] 获取区块信息失败:", error);
+        }
+      });
+    } catch (error) {
+      console.error("[Web3Client] 启动区块监听失败:", error);
+      this.blockListenerStarted = false;
+    }
+  }
+
+  /**
+   * 停止区块监听
+   */
+  private stopBlockListener(): void {
+    if (!this.blockListenerStarted) {
+      return;
+    }
+
+    try {
+      const provider = this.getProvider();
+      (provider as any).removeAllListeners("block");
+      this.blockListenerStarted = false;
+    } catch (error) {
+      console.error("[Web3Client] 停止区块监听失败:", error);
+    }
+  }
+
+  /**
+   * 取消所有区块监听
+   */
+  offBlock(): void {
+    this.blockListeners.clear();
+    this.stopBlockListener();
+  }
+
+  /**
+   * 监听交易
+   * @param callback 回调函数，接收交易哈希和交易信息
+   * @returns 取消监听的函数
+   */
+  onTransaction(callback: TransactionListener): () => void {
+    this.transactionListeners.add(callback);
+
+    // 如果还没有启动监听，则启动
+    if (!this.transactionListenerStarted) {
+      this.startTransactionListener();
+    }
+
+    // 返回取消监听的函数
+    return () => {
+      this.transactionListeners.delete(callback);
+      // 如果没有监听器了，停止监听
+      if (this.transactionListeners.size === 0) {
+        this.stopTransactionListener();
+      }
+    };
+  }
+
+  /**
+   * 启动交易监听
+   */
+  private startTransactionListener(): void {
+    if (this.transactionListenerStarted) {
+      return;
+    }
+
+    this.transactionListenerStarted = true;
+    const provider = this.getProvider();
+
+    try {
+      // 监听待处理交易
+      (provider as any).on("pending", async (txHash: string) => {
+        try {
+          const tx = await (provider as any).getTransaction(txHash);
+          // 调用所有监听器
+          for (const listener of this.transactionListeners) {
+            try {
+              await Promise.resolve(listener(txHash, tx));
+            } catch (error) {
+              console.error("[Web3Client] 交易监听器错误:", error);
+            }
+          }
+        } catch (error) {
+          console.error("[Web3Client] 获取交易信息失败:", error);
+        }
+      });
+    } catch (error) {
+      console.error("[Web3Client] 启动交易监听失败:", error);
+      this.transactionListenerStarted = false;
+    }
+  }
+
+  /**
+   * 停止交易监听
+   */
+  private stopTransactionListener(): void {
+    if (!this.transactionListenerStarted) {
+      return;
+    }
+
+    try {
+      const provider = this.getProvider();
+      (provider as any).removeAllListeners("pending");
+      this.transactionListenerStarted = false;
+    } catch (error) {
+      console.error("[Web3Client] 停止交易监听失败:", error);
+    }
+  }
+
+  /**
+   * 取消所有交易监听
+   */
+  offTransaction(): void {
+    this.transactionListeners.clear();
+    this.stopTransactionListener();
+  }
+
+  /**
+   * 监听合约事件
+   * @param contractAddress 合约地址
+   * @param eventName 事件名称（如 'Transfer'）
+   * @param abi 合约 ABI（可选，如果提供则使用，否则使用默认 ABI）
+   * @param callback 回调函数，接收事件数据
+   * @returns 取消监听的函数
+   */
+  onContractEvent(
+    contractAddress: string,
+    eventName: string,
+    callback: ContractEventListener,
+    abi?: string[],
+  ): () => void {
+    const key = `${contractAddress}:${eventName}`;
+    if (!this.contractEventListeners.has(key)) {
+      this.contractEventListeners.set(key, new Set());
+    }
+    const listeners = this.contractEventListeners.get(key)!;
+    listeners.add(callback);
+
+    // 启动合约事件监听
+    this.startContractEventListener(contractAddress, eventName, abi);
+
+    // 返回取消监听的函数
+    return () => {
+      listeners.delete(callback);
+      // 如果没有监听器了，停止监听
+      if (listeners.size === 0) {
+        this.stopContractEventListener(contractAddress, eventName);
+        this.contractEventListeners.delete(key);
+      }
+    };
+  }
+
+  /**
+   * 启动合约事件监听
+   */
+  private startContractEventListener(
+    contractAddress: string,
+    eventName: string,
+    abi?: string[],
+  ): void {
+    try {
+      const provider = this.getProvider();
+
+      // 构建 ABI（如果提供了则使用，否则使用默认的事件 ABI）
+      const eventAbi = abi || [`event ${eventName}()`];
+      const contract = new EthersContract(contractAddress, eventAbi, provider);
+
+      // 监听事件
+      contract.on(eventName, async (...args: unknown[]) => {
+        const key = `${contractAddress}:${eventName}`;
+        const listeners = this.contractEventListeners.get(key);
+        if (listeners) {
+          // 最后一个参数通常是事件对象
+          const event = args[args.length - 1];
+          for (const listener of listeners) {
+            try {
+              await Promise.resolve(listener(event));
+            } catch (error) {
+              console.error("[Web3Client] 合约事件监听器错误:", error);
+            }
+          }
+        }
+      });
+    } catch (error) {
+      console.error(
+        `[Web3Client] 启动合约事件监听失败 (${contractAddress}:${eventName}):`,
+        error,
+      );
+    }
+  }
+
+  /**
+   * 停止合约事件监听
+   */
+  private stopContractEventListener(
+    contractAddress: string,
+    eventName: string,
+  ): void {
+    try {
+      const provider = this.getProvider();
+      const contract = new EthersContract(contractAddress, [
+        `event ${eventName}()`,
+      ], provider);
+      contract.removeAllListeners(eventName);
+    } catch (error) {
+      console.error(
+        `[Web3Client] 停止合约事件监听失败 (${contractAddress}:${eventName}):`,
+        error,
+      );
+    }
+  }
+
+  /**
+   * 取消合约事件监听
+   * @param contractAddress 合约地址
+   * @param eventName 事件名称（可选，如果不提供则取消该合约的所有事件监听）
+   */
+  offContractEvent(contractAddress: string, eventName?: string): void {
+    if (eventName) {
+      const key = `${contractAddress}:${eventName}`;
+      this.contractEventListeners.delete(key);
+      this.stopContractEventListener(contractAddress, eventName);
+    } else {
+      // 取消该合约的所有事件监听
+      for (const [key, listeners] of this.contractEventListeners.entries()) {
+        if (key.startsWith(`${contractAddress}:`)) {
+          const eventName = key.split(":")[1];
+          this.stopContractEventListener(contractAddress, eventName);
+          listeners.clear();
+          this.contractEventListeners.delete(key);
+        }
+      }
+    }
+  }
+
+  /**
+   * 监听账户变化（钱包环境）
+   * @param callback 回调函数，接收账户地址数组
+   * @returns 取消监听的函数
+   */
+  onAccountsChanged(callback: AccountsChangedListener): () => void {
+    this.accountsChangedListeners.add(callback);
+
+    // 如果还没有启动监听，则启动
+    if (!this.walletListenersStarted) {
+      this.startWalletListeners();
+    }
+
+    // 返回取消监听的函数
+    return () => {
+      this.accountsChangedListeners.delete(callback);
+      // 如果没有监听器了，停止监听
+      if (
+        this.accountsChangedListeners.size === 0 &&
+        this.chainChangedListeners.size === 0
+      ) {
+        this.stopWalletListeners();
+      }
+    };
+  }
+
+  /**
+   * 监听链切换（钱包环境）
+   * @param callback 回调函数，接收链 ID（十六进制字符串）
+   * @returns 取消监听的函数
+   */
+  onChainChanged(callback: ChainChangedListener): () => void {
+    this.chainChangedListeners.add(callback);
+
+    // 如果还没有启动监听，则启动
+    if (!this.walletListenersStarted) {
+      this.startWalletListeners();
+    }
+
+    // 返回取消监听的函数
+    return () => {
+      this.chainChangedListeners.delete(callback);
+      // 如果没有监听器了，停止监听
+      if (
+        this.accountsChangedListeners.size === 0 &&
+        this.chainChangedListeners.size === 0
+      ) {
+        this.stopWalletListeners();
+      }
+    };
+  }
+
+  /**
+   * 启动钱包事件监听
+   */
+  private startWalletListeners(): void {
+    if (this.walletListenersStarted) {
+      return;
+    }
+
+    if (typeof globalThis !== "undefined" && "window" in globalThis) {
+      const win = globalThis.window as WindowWithEthereum;
+      if (!win.ethereum || !win.ethereum.on) {
+        return;
+      }
+
+      this.walletListenersStarted = true;
+
+      // 创建包装函数用于账户变化监听
+      this.walletAccountsChangedWrapper = (...args: unknown[]) => {
+        const accounts = args[0] as string[];
+        for (const listener of this.accountsChangedListeners) {
+          try {
+            Promise.resolve(listener(accounts)).catch((error) => {
+              console.error("[Web3Client] 账户变化监听器错误:", error);
+            });
+          } catch (error) {
+            console.error("[Web3Client] 账户变化监听器错误:", error);
+          }
+        }
+      };
+
+      // 创建包装函数用于链切换监听
+      this.walletChainChangedWrapper = (...args: unknown[]) => {
+        const chainId = args[0] as string;
+        for (const listener of this.chainChangedListeners) {
+          try {
+            Promise.resolve(listener(chainId)).catch((error) => {
+              console.error("[Web3Client] 链切换监听器错误:", error);
+            });
+          } catch (error) {
+            console.error("[Web3Client] 链切换监听器错误:", error);
+          }
+        }
+      };
+
+      // 监听账户变化
+      win.ethereum.on("accountsChanged", this.walletAccountsChangedWrapper);
+
+      // 监听链切换
+      win.ethereum.on("chainChanged", this.walletChainChangedWrapper);
+    }
+  }
+
+  /**
+   * 停止钱包事件监听
+   */
+  private stopWalletListeners(): void {
+    if (!this.walletListenersStarted) {
+      return;
+    }
+
+    if (typeof globalThis !== "undefined" && "window" in globalThis) {
+      const win = globalThis.window as WindowWithEthereum;
+      if (win.ethereum && win.ethereum.removeListener) {
+        // 移除账户变化监听器
+        if (this.walletAccountsChangedWrapper) {
+          win.ethereum.removeListener(
+            "accountsChanged",
+            this.walletAccountsChangedWrapper,
+          );
+          this.walletAccountsChangedWrapper = undefined;
+        }
+        // 移除链切换监听器
+        if (this.walletChainChangedWrapper) {
+          win.ethereum.removeListener(
+            "chainChanged",
+            this.walletChainChangedWrapper,
+          );
+          this.walletChainChangedWrapper = undefined;
+        }
+      }
+    }
+
+    this.walletListenersStarted = false;
+  }
+
+  /**
+   * 取消所有账户变化监听
+   */
+  offAccountsChanged(): void {
+    this.accountsChangedListeners.clear();
+    if (this.chainChangedListeners.size === 0) {
+      this.stopWalletListeners();
+    }
+  }
+
+  /**
+   * 取消所有链切换监听
+   */
+  offChainChanged(): void {
+    this.chainChangedListeners.clear();
+    if (this.accountsChangedListeners.size === 0) {
+      this.stopWalletListeners();
+    }
+  }
+
+  // ==================== 其他常用方法 ====================
+
+  /**
+   * 获取当前区块号
+   * @returns 当前区块号
+   */
+  async getBlockNumber(): Promise<number> {
+    const provider = this.getProvider();
+    try {
+      const blockNumber = await (provider as {
+        getBlockNumber: () => Promise<number>;
+      }).getBlockNumber();
+      return blockNumber;
+    } catch (error) {
+      throw new Error(
+        `获取区块号失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
+   * 获取网络信息
+   * @returns 网络信息（包含 chainId、name 等）
+   */
+  async getNetwork(): Promise<{ chainId: number; name: string }> {
+    const provider = this.getProvider();
+    try {
+      const network = await (provider as {
+        getNetwork: () => Promise<{ chainId: bigint; name: string }>;
+      }).getNetwork();
+      return {
+        chainId: Number(network.chainId),
+        name: network.name,
+      };
+    } catch (error) {
+      throw new Error(
+        `获取网络信息失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
+   * 获取链 ID
+   * @returns 链 ID
+   */
+  async getChainId(): Promise<number> {
+    const network = await this.getNetwork();
+    return network.chainId;
+  }
+
+  /**
+   * 获取 Gas 限制
+   * @param blockNumber 区块号（可选，默认最新区块）
+   * @returns Gas 限制
+   */
+  async getGasLimit(blockNumber?: number): Promise<string> {
+    const provider = this.getProvider();
+    try {
+      const block = await (provider as {
+        getBlock: (blockNumber?: number) => Promise<{ gasLimit: bigint }>;
+      }).getBlock(blockNumber);
+      return block.gasLimit.toString();
+    } catch (error) {
+      throw new Error(
+        `获取 Gas 限制失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
+   * 获取费用数据（EIP-1559）
+   * @returns 费用数据（包含 gasPrice、maxFeePerGas、maxPriorityFeePerGas）
+   */
+  async getFeeData(): Promise<{
+    gasPrice: string | null;
+    maxFeePerGas: string | null;
+    maxPriorityFeePerGas: string | null;
+  }> {
+    const provider = this.getProvider();
+    try {
+      const feeData = await (provider as {
+        getFeeData: () => Promise<{
+          gasPrice: bigint | null;
+          maxFeePerGas: bigint | null;
+          maxPriorityFeePerGas: bigint | null;
+        }>;
+      }).getFeeData();
+      return {
+        gasPrice: feeData.gasPrice?.toString() || null,
+        maxFeePerGas: feeData.maxFeePerGas?.toString() || null,
+        maxPriorityFeePerGas: feeData.maxPriorityFeePerGas?.toString() || null,
+      };
+    } catch (error) {
+      throw new Error(
+        `获取费用数据失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
+   * 批量获取账户余额
+   * @param addresses 地址数组
+   * @returns 余额数组（wei，字符串格式）
+   */
+  async getBalances(addresses: string[]): Promise<string[]> {
+    const provider = this.getProvider();
+    try {
+      const balances = await Promise.all(
+        addresses.map((address) => (provider as any).getBalance(address)),
+      );
+      return balances.map((balance) => balance.toString());
+    } catch (error) {
+      throw new Error(
+        `批量获取余额失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
+   * 获取 ERC20 代币余额
+   * @param tokenAddress 代币合约地址
+   * @param ownerAddress 持有者地址
+   * @returns 代币余额（字符串格式）
+   */
+  async getTokenBalance(
+    tokenAddress: string,
+    ownerAddress: string,
+  ): Promise<string> {
+    try {
+      const provider = this.getProvider();
+
+      // ERC20 标准接口：balanceOf(address) returns (uint256)
+      const erc20Abi = [
+        "function balanceOf(address owner) view returns (uint256)",
+        "function decimals() view returns (uint8)",
+      ];
+      const contract = new EthersContract(tokenAddress, erc20Abi, provider);
+      const balance = await contract.balanceOf(ownerAddress);
+      return balance.toString();
+    } catch (error) {
+      throw new Error(
+        `获取代币余额失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
+   * 获取 ERC20 代币信息
+   * @param tokenAddress 代币合约地址
+   * @returns 代币信息（名称、符号、精度）
+   */
+  async getTokenInfo(tokenAddress: string): Promise<{
+    name: string;
+    symbol: string;
+    decimals: number;
+    totalSupply: string;
+  }> {
+    try {
+      const provider = this.getProvider();
+
+      // ERC20 标准接口
+      const erc20Abi = [
+        "function name() view returns (string)",
+        "function symbol() view returns (string)",
+        "function decimals() view returns (uint8)",
+        "function totalSupply() view returns (uint256)",
+      ];
+      const contract = new EthersContract(tokenAddress, erc20Abi, provider);
+
+      const [name, symbol, decimals, totalSupply] = await Promise.all([
+        contract.name(),
+        contract.symbol(),
+        contract.decimals(),
+        contract.totalSupply(),
+      ]);
+
+      return {
+        name,
+        symbol,
+        decimals: Number(decimals),
+        totalSupply: totalSupply.toString(),
+      };
+    } catch (error) {
+      throw new Error(
+        `获取代币信息失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
+   * 获取历史区块（从指定区块号开始，获取指定数量的区块）
+   * @param fromBlock 起始区块号
+   * @param toBlock 结束区块号（可选，默认最新区块）
+   * @returns 区块信息数组
+   */
+  async getHistoryBlocks(
+    fromBlock: number,
+    toBlock?: number,
+  ): Promise<unknown[]> {
+    const provider = this.getProvider();
+    try {
+      const currentBlock = toBlock ?? await this.getBlockNumber();
+      const blocks: unknown[] = [];
+
+      // 从 fromBlock 到 toBlock（或当前区块）
+      for (let i = fromBlock; i <= currentBlock; i++) {
+        try {
+          const block = await (provider as {
+            getBlock: (blockNumber: number) => Promise<unknown>;
+          }).getBlock(i);
+          blocks.push(block);
+        } catch (error) {
+          console.warn(`获取区块 ${i} 失败:`, error);
+        }
+      }
+
+      return blocks;
+    } catch (error) {
+      throw new Error(
+        `获取历史区块失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
+   * 获取区块中的交易
+   * @param blockNumber 区块号
+   * @param includeTransactions 是否包含完整交易信息（默认 false，只返回交易哈希）
+   * @returns 交易数组
+   */
+  async getBlockTransactions(
+    blockNumber: number,
+    includeTransactions: boolean = false,
+  ): Promise<unknown[]> {
+    const provider = this.getProvider();
+    try {
+      const block = await (provider as {
+        getBlock: (
+          blockNumber: number,
+          includeTransactions?: boolean,
+        ) => Promise<{ transactions: unknown[] }>;
+      }).getBlock(blockNumber, includeTransactions);
+      return block.transactions || [];
+    } catch (error) {
+      throw new Error(
+        `获取区块交易失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
+   * 获取地址的交易历史（通过区块扫描）
+   * @param address 地址
+   * @param fromBlock 起始区块号（可选）
+   * @param toBlock 结束区块号（可选，默认最新区块）
+   * @returns 交易数组
+   */
+  async getAddressTransactions(
+    address: string,
+    fromBlock?: number,
+    toBlock?: number,
+  ): Promise<unknown[]> {
+    const provider = this.getProvider();
+    try {
+      // 使用 ethers.js 的 getLogs 方法查询交易
+      const currentBlock = toBlock ?? await this.getBlockNumber();
+      const startBlock = fromBlock ?? Math.max(0, currentBlock - 1000); // 默认查询最近 1000 个区块
+
+      // 查询该地址作为 from 或 to 的交易
+      const logs = await (provider as {
+        getLogs: (filter: {
+          fromBlock: number;
+          toBlock: number;
+          address?: string;
+        }) => Promise<unknown[]>;
+      }).getLogs({
+        fromBlock: startBlock,
+        toBlock: currentBlock,
+        address: address,
+      });
+
+      // 从日志中提取交易哈希并获取完整交易信息
+      const transactions: unknown[] = [];
+      const txHashes = new Set<string>();
+
+      for (const log of logs) {
+        const txHash = (log as any).transactionHash;
+        if (txHash && !txHashes.has(txHash)) {
+          txHashes.add(txHash);
+          try {
+            const tx = await this.getTransaction(txHash);
+            // 只包含与该地址相关的交易
+            if (
+              (tx as any).from?.toLowerCase() === address.toLowerCase() ||
+              (tx as any).to?.toLowerCase() === address.toLowerCase()
+            ) {
+              transactions.push(tx);
+            }
+          } catch (error) {
+            console.warn(`获取交易 ${txHash} 失败:`, error);
+          }
+        }
+      }
+
+      return transactions;
+    } catch (error) {
+      throw new Error(
+        `获取地址交易历史失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
+   * 调用合约函数（支持完整 ABI）
+   * @param contractAddress 合约地址
+   * @param abi 合约 ABI（函数定义数组）
+   * @param functionName 函数名
+   * @param args 函数参数
+   * @param options 调用选项（from、value、gasLimit 等）
+   * @returns 函数返回值或交易哈希（取决于是否为写入操作）
+   */
+  async callContractWithABI(
+    contractAddress: string,
+    abi: string[],
+    functionName: string,
+    args: unknown[] = [],
+    options: {
+      from?: string;
+      value?: string | bigint;
+      gasLimit?: string | bigint;
+      readOnly?: boolean;
+    } = {},
+  ): Promise<unknown> {
+    try {
+      const provider = this.getProvider();
+
+      // 判断是读取还是写入操作
+      const isReadOnly = options.readOnly ?? false;
+      const signerOrProvider = isReadOnly ? provider : this.getSigner();
+
+      const contract = new EthersContract(
+        contractAddress,
+        abi,
+        signerOrProvider,
+      );
+      const result = await contract[functionName](...args, {
+        value: options.value,
+        gasLimit: options.gasLimit,
+      });
+
+      // 如果是交易，返回交易哈希；否则返回结果
+      if (result && typeof result === "object" && "hash" in result) {
+        return result.hash;
+      }
+
+      return result;
+    } catch (error) {
+      throw new Error(
+        `调用合约失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
+   * 读取合约事件日志
+   * @param contractAddress 合约地址
+   * @param eventName 事件名称
+   * @param abi 合约 ABI（事件定义数组）
+   * @param fromBlock 起始区块号（可选）
+   * @param toBlock 结束区块号（可选，默认最新区块）
+   * @param filter 事件参数过滤器（可选）
+   * @returns 事件日志数组
+   */
+  async getContractEventLogs(
+    contractAddress: string,
+    eventName: string,
+    abi: string[],
+    fromBlock?: number,
+    toBlock?: number,
+    filter?: Record<string, unknown>,
+  ): Promise<unknown[]> {
+    try {
+      const provider = this.getProvider();
+
+      const contract = new EthersContract(contractAddress, abi, provider);
+      const iface = new EthersInterface(abi);
+
+      const currentBlock = toBlock ?? await this.getBlockNumber();
+      const startBlock = fromBlock ?? Math.max(0, currentBlock - 1000);
+
+      // 构建过滤器
+      const eventFilter = contract.filters[eventName](
+        ...(filter ? Object.values(filter) : []),
+      );
+
+      // 查询事件日志
+      const logs = await contract.queryFilter(
+        eventFilter,
+        startBlock,
+        currentBlock,
+      );
+
+      // 解析日志
+      return logs.map((log) => {
+        const parsed = iface.parseLog({
+          topics: log.topics as string[],
+          data: log.data,
+        });
+        return {
+          ...log,
+          args: parsed?.args,
+          eventName: parsed?.name,
+        };
+      });
+    } catch (error) {
+      throw new Error(
+        `获取合约事件日志失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
+   * 检查地址是否为合约地址
+   * @param address 地址
+   * @returns 是否为合约地址
+   */
+  async isContract(address: string): Promise<boolean> {
+    const provider = this.getProvider();
+    try {
+      const code = await (provider as {
+        getCode: (address: string) => Promise<string>;
+      }).getCode(address);
+      return code !== "0x" && code.length > 2;
+    } catch (error) {
+      throw new Error(
+        `检查合约地址失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
+   * 获取地址的代码
+   * @param address 地址
+   * @returns 合约代码（十六进制字符串）
+   */
+  async getCode(address: string): Promise<string> {
+    const provider = this.getProvider();
+    try {
+      const code = await (provider as {
+        getCode: (address: string) => Promise<string>;
+      }).getCode(address);
+      return code;
+    } catch (error) {
+      throw new Error(
+        `获取合约代码失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
+   * 获取存储槽的值
+   * @param address 合约地址
+   * @param slot 存储槽位置（十六进制字符串或数字）
+   * @returns 存储值（十六进制字符串）
+   */
+  async getStorageAt(address: string, slot: string | number): Promise<string> {
+    const provider = this.getProvider();
+    try {
+      const slotHex = typeof slot === "number"
+        ? "0x" + slot.toString(16)
+        : slot.startsWith("0x")
+        ? slot
+        : "0x" + slot;
+      const value = await (provider as {
+        getStorage: (address: string, slot: string) => Promise<string>;
+      }).getStorage(address, slotHex);
+      return value;
+    } catch (error) {
+      throw new Error(
+        `获取存储值失败: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );
@@ -666,12 +1684,11 @@ export async function isAddress(address: string): Promise<boolean> {
     return false;
   }
 
-  // 尝试使用 ethers.js 的 isAddress（如果可用）
+  // 使用 ethers.js 的 isAddress
   try {
-    const { isAddress: ethersIsAddress } = await import("npm:ethers@^6.0.0");
     return ethersIsAddress(address);
   } catch {
-    // ethers.js 不可用，使用自己的实现
+    // 如果失败，使用自己的实现
   }
 
   // 移除 0x 前缀（如果有）
@@ -773,12 +1790,11 @@ export async function toChecksumAddressAsync(address: string): Promise<string> {
     ? address.slice(2).toLowerCase()
     : address.toLowerCase();
 
-  // 尝试使用 ethers.js 的 getAddress（如果可用）
+  // 使用 ethers.js 的 getAddress
   try {
-    const { getAddress } = await import("npm:ethers@^6.0.0");
-    return getAddress("0x" + addr);
+    return ethersGetAddress("0x" + addr);
   } catch {
-    // ethers.js 不可用，使用自己的实现
+    // 如果失败，使用自己的实现
   }
 
   // 计算地址的 Keccak-256 哈希
@@ -812,7 +1828,6 @@ export async function toChecksumAddressAsync(address: string): Promise<string> {
  */
 export async function keccak256(data: string | Uint8Array): Promise<string> {
   try {
-    const { keccak256: ethersKeccak256 } = await import("npm:ethers@^6.0.0");
     return ethersKeccak256(data);
   } catch {
     // 如果 ethers 不可用，使用 Web Crypto API 的 SHA-256 作为替代
@@ -841,7 +1856,6 @@ export async function solidityKeccak256(
   values: unknown[],
 ): Promise<string> {
   try {
-    const { solidityPackedKeccak256 } = await import("npm:ethers@^6.0.0");
     return solidityPackedKeccak256(types, values);
   } catch {
     // 如果 ethers 不可用，简化实现
@@ -1112,8 +2126,7 @@ export async function encodeFunctionCall(
   args: unknown[],
 ): Promise<string> {
   try {
-    const { Interface } = await import("npm:ethers@^6.0.0");
-    const iface = new Interface([`function ${functionSignature}`]);
+    const iface = new EthersInterface([`function ${functionSignature}`]);
     return iface.encodeFunctionData(functionSignature.split("(")[0], args);
   } catch {
     // 简化实现

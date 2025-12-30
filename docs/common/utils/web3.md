@@ -293,3 +293,212 @@ const web3 = createWeb3Client({
 - `getTransaction(txHash)` - 获取交易信息
 - `getTransactionReceipt(txHash)` - 获取交易收据
 - `getBlock(blockNumber)` - 获取区块信息
+
+#### 事件监听方法
+
+```typescript
+import { createWeb3Client } from "@dreamer/dweb/utils";
+
+const web3 = createWeb3Client({
+  rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
+});
+
+// 监听新区块
+const offBlock = web3.onBlock((blockNumber, block) => {
+  console.log(`新区块: ${blockNumber}`, block);
+});
+
+// 取消区块监听
+offBlock();
+
+// 监听交易
+const offTransaction = web3.onTransaction((txHash, tx) => {
+  console.log(`新交易: ${txHash}`, tx);
+});
+
+// 取消交易监听
+offTransaction();
+
+// 监听合约事件（如 ERC20 Transfer 事件）
+const offEvent = web3.onContractEvent(
+  "0x...", // 合约地址
+  "Transfer", // 事件名称
+  (event) => {
+    console.log("Transfer 事件:", event);
+  },
+  [
+    "event Transfer(address indexed from, address indexed to, uint256 value)",
+  ], // 可选：合约 ABI
+);
+
+// 取消合约事件监听
+offEvent();
+
+// 监听账户变化（钱包环境）
+const offAccounts = web3.onAccountsChanged((accounts) => {
+  console.log("账户变化:", accounts);
+});
+
+// 监听链切换（钱包环境）
+const offChain = web3.onChainChanged((chainId) => {
+  console.log("链切换:", chainId);
+});
+
+// 取消所有监听
+web3.offBlock();
+web3.offTransaction();
+web3.offContractEvent("0x...", "Transfer");
+web3.offAccountsChanged();
+web3.offChainChanged();
+```
+
+#### 其他常用方法
+
+```typescript
+import { createWeb3Client } from "@dreamer/dweb/utils";
+
+const web3 = createWeb3Client({
+  rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
+});
+
+// 获取当前区块号
+const blockNumber = await web3.getBlockNumber();
+
+// 获取网络信息
+const network = await web3.getNetwork();
+// { chainId: 1, name: "mainnet" }
+
+// 获取链 ID
+const chainId = await web3.getChainId();
+
+// 获取 Gas 限制
+const gasLimit = await web3.getGasLimit();
+
+// 获取费用数据（EIP-1559）
+const feeData = await web3.getFeeData();
+// { gasPrice: "...", maxFeePerGas: "...", maxPriorityFeePerGas: "..." }
+
+// 批量获取账户余额
+const balances = await web3.getBalances([
+  "0x...",
+  "0x...",
+  "0x...",
+]);
+
+// 获取 ERC20 代币余额
+const tokenBalance = await web3.getTokenBalance(
+  "0x...", // 代币合约地址
+  "0x...", // 持有者地址
+);
+
+// 获取 ERC20 代币信息
+const tokenInfo = await web3.getTokenInfo("0x...");
+// { name: "...", symbol: "...", decimals: 18, totalSupply: "..." }
+
+// 获取历史区块
+const blocks = await web3.getHistoryBlocks(1000, 2000);
+
+// 获取区块中的交易
+const transactions = await web3.getBlockTransactions(1000, true);
+
+// 获取地址的交易历史
+const txHistory = await web3.getAddressTransactions(
+  "0x...",
+  1000, // 起始区块（可选）
+  2000, // 结束区块（可选）
+);
+
+// 使用完整 ABI 调用合约
+const result = await web3.callContractWithABI(
+  "0x...", // 合约地址
+  [
+    "function transfer(address to, uint256 amount) returns (bool)",
+  ], // 完整 ABI
+  "transfer", // 函数名
+  ["0x...", "100"], // 参数
+  {
+    readOnly: false, // 是否为只读操作
+    value: "0",
+    gasLimit: "100000",
+  },
+);
+
+// 读取合约事件日志
+const logs = await web3.getContractEventLogs(
+  "0x...", // 合约地址
+  "Transfer", // 事件名称
+  [
+    "event Transfer(address indexed from, address indexed to, uint256 value)",
+  ], // 事件 ABI
+  1000, // 起始区块（可选）
+  2000, // 结束区块（可选）
+  { from: "0x..." }, // 事件参数过滤器（可选）
+);
+
+// 检查地址是否为合约地址
+const isContract = await web3.isContract("0x...");
+
+// 获取合约代码
+const code = await web3.getCode("0x...");
+
+// 获取存储槽的值
+const storageValue = await web3.getStorageAt("0x...", "0x0");
+```
+
+**完整方法列表**
+
+**基础方法：**
+- `connectWallet()` - 连接钱包（浏览器环境）
+- `getAccounts()` - 获取当前连接的账户
+- `getBalance(address)` - 获取余额（wei）
+- `getBalanceInEth(address)` - 获取余额（ETH）
+- `getBalances(addresses[])` - 批量获取余额
+- `getTransactionCount(address)` - 获取交易计数（nonce）
+- `getBlockNumber()` - 获取当前区块号
+- `getNetwork()` - 获取网络信息
+- `getChainId()` - 获取链 ID
+- `getGasLimit(blockNumber?)` - 获取 Gas 限制
+- `getFeeData()` - 获取费用数据（EIP-1559）
+
+**交易方法：**
+- `sendTransaction(options)` - 发送交易
+- `waitForTransaction(txHash, confirmations?)` - 等待交易确认
+- `getTransaction(txHash)` - 获取交易信息
+- `getTransactionReceipt(txHash)` - 获取交易收据
+- `getGasPrice()` - 获取 Gas 价格
+- `estimateGas(options)` - 估算 Gas
+
+**合约方法：**
+- `callContract(options)` - 调用合约函数（写入）
+- `readContract(options)` - 读取合约数据（只读）
+- `callContractWithABI(address, abi, functionName, args, options)` - 使用完整 ABI 调用合约
+- `getContractEventLogs(address, eventName, abi, fromBlock?, toBlock?, filter?)` - 读取合约事件日志
+- `isContract(address)` - 检查是否为合约地址
+- `getCode(address)` - 获取合约代码
+- `getStorageAt(address, slot)` - 获取存储槽的值
+
+**代币方法：**
+- `getTokenBalance(tokenAddress, ownerAddress)` - 获取 ERC20 代币余额
+- `getTokenInfo(tokenAddress)` - 获取 ERC20 代币信息
+
+**区块方法：**
+- `getBlock(blockNumber?)` - 获取区块信息
+- `getHistoryBlocks(fromBlock, toBlock?)` - 获取历史区块
+- `getBlockTransactions(blockNumber, includeTransactions?)` - 获取区块中的交易
+- `getAddressTransactions(address, fromBlock?, toBlock?)` - 获取地址的交易历史
+
+**事件监听方法：**
+- `onBlock(callback)` - 监听新区块，返回取消函数
+- `offBlock()` - 取消所有区块监听
+- `onTransaction(callback)` - 监听交易，返回取消函数
+- `offTransaction()` - 取消所有交易监听
+- `onContractEvent(address, eventName, callback, abi?)` - 监听合约事件，返回取消函数
+- `offContractEvent(address, eventName?)` - 取消合约事件监听
+- `onAccountsChanged(callback)` - 监听账户变化（钱包环境），返回取消函数
+- `offAccountsChanged()` - 取消账户变化监听
+- `onChainChanged(callback)` - 监听链切换（钱包环境），返回取消函数
+- `offChainChanged()` - 取消链切换监听
+
+**签名方法：**
+- `signMessage(message)` - 签名消息
+- `verifyMessage(message, signature, address)` - 验证消息签名

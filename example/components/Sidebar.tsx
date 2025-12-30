@@ -134,6 +134,7 @@ const navItems: NavItem[] = [
       { title: "扩展系统", path: "/docs/extensions" },
       { title: "控制台工具", path: "/docs/console" },
       { title: "渲染适配器", path: "/docs/render" },
+      { title: "Web3 工具函数", path: "/docs/common/utils/web3" },
     ],
   },
   {
