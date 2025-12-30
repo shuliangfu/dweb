@@ -166,6 +166,7 @@ class PrefetchRouters {
             for (const item of batchData) {
               if (item && item.route && item.body && item.pageData) {
                 // 规范化路径（与 navigateTo 中的逻辑一致）
+                // 注意：item.route 是路径名（如 /docs/xxx），不包含查询参数和哈希
                 let normalizedRoute = item.route;
                 if (basePath !== "/") {
                   const base = basePath.endsWith("/")
@@ -180,6 +181,8 @@ class PrefetchRouters {
                 }
 
                 // 缓存页面数据（使用规范化后的路径作为 key，与 loadPageData 中的逻辑一致）
+                // 注意：只使用路径名（pathname），不包含查询参数和哈希
+                // 这样即使 navigateTo 时传入的路径包含查询参数和哈希，也能正确匹配缓存
                 if (pageDataCache && typeof pageDataCache.set === "function") {
                   pageDataCache.set(normalizedRoute, item.pageData);
                 }
@@ -710,21 +713,56 @@ class ClientRouter {
    */
   async loadPageData(pathname: string): Promise<ClientConfig | null> {
     try {
+      // 规范化路径：只使用路径名（pathname），移除查询参数和哈希
+      // 这样即使传入的路径包含查询参数和哈希，也能正确匹配缓存
+      let normalizedPathname = pathname;
+      try {
+        // 尝试解析为 URL，提取 pathname
+        const url = new URL(pathname, globalThis.location.origin);
+        normalizedPathname = url.pathname;
+      } catch {
+        // 如果解析失败，尝试手动移除查询参数和哈希
+        const queryIndex = normalizedPathname.indexOf("?");
+        const hashIndex = normalizedPathname.indexOf("#");
+        if (queryIndex !== -1 || hashIndex !== -1) {
+          const endIndex = queryIndex !== -1 && hashIndex !== -1
+            ? Math.min(queryIndex, hashIndex)
+            : queryIndex !== -1
+            ? queryIndex
+            : hashIndex;
+          normalizedPathname = normalizedPathname.substring(0, endIndex);
+        }
+      }
+
+      // 处理 basePath：确保规范化后的路径包含 basePath（与 batch 模式缓存时使用的 key 一致）
+      if (this.basePath !== "/") {
+        const base = this.basePath.endsWith("/")
+          ? this.basePath.slice(0, -1)
+          : this.basePath;
+        if (
+          !normalizedPathname.startsWith(base) &&
+          normalizedPathname.startsWith("/")
+        ) {
+          normalizedPathname = base + normalizedPathname;
+        }
+      }
+
       // 如果是当前页面，直接返回已有的数据
       if (
-        pathname === globalThis.location.pathname &&
+        normalizedPathname === globalThis.location.pathname &&
         this.currentPageData
       ) {
         return this.currentPageData;
       }
 
       // 检查缓存（直接访问类属性，更快）
-      const cached = this.pageDataCache.get(pathname);
+      // 使用规范化后的路径名作为 key，与 batch 模式缓存时使用的 key 一致
+      const cached = this.pageDataCache.get(normalizedPathname);
       if (cached) {
         return cached;
       }
 
-      // 获取目标页面的 HTML
+      // 获取目标页面的 HTML（使用原始 pathname，可能包含查询参数和哈希）
       const response = await fetch(pathname, {
         headers: { "Accept": "text/html" },
       });
@@ -767,8 +805,8 @@ class ClientRouter {
         throw new Error("页面数据格式无效");
       }
 
-      // 存入缓存（直接访问类属性，更快）
-      this.pageDataCache.set(pathname, pageData);
+      // 存入缓存（使用规范化后的路径名作为 key，与 batch 模式缓存时使用的 key 一致）
+      this.pageDataCache.set(normalizedPathname, pageData);
 
       return pageData;
     } catch (error: unknown) {
@@ -853,7 +891,7 @@ class ClientRouter {
           this.moduleCache.set(pageData.route, pageModule);
         } catch (importError: unknown) {
           console.error(
-            "[navigateTo] 组件导入失败:",
+            "[navigateTo] ❌ 组件导入失败:",
             pageData.route,
             importError,
           );
@@ -1098,20 +1136,52 @@ class ClientRouter {
    */
   async prefetchPageData(pathname: string): Promise<void> {
     try {
+      // 规范化路径：只使用路径名（pathname），移除查询参数和哈希
+      // 与 loadPageData 中的逻辑一致
+      let normalizedPathname = pathname;
+      try {
+        const url = new URL(pathname, globalThis.location.origin);
+        normalizedPathname = url.pathname;
+      } catch {
+        const queryIndex = normalizedPathname.indexOf("?");
+        const hashIndex = normalizedPathname.indexOf("#");
+        if (queryIndex !== -1 || hashIndex !== -1) {
+          const endIndex = queryIndex !== -1 && hashIndex !== -1
+            ? Math.min(queryIndex, hashIndex)
+            : queryIndex !== -1
+            ? queryIndex
+            : hashIndex;
+          normalizedPathname = normalizedPathname.substring(0, endIndex);
+        }
+      }
+
+      // 处理 basePath：确保规范化后的路径包含 basePath（与 batch 模式缓存时使用的 key 一致）
+      if (this.basePath !== "/") {
+        const base = this.basePath.endsWith("/")
+          ? this.basePath.slice(0, -1)
+          : this.basePath;
+        if (
+          !normalizedPathname.startsWith(base) &&
+          normalizedPathname.startsWith("/")
+        ) {
+          normalizedPathname = base + normalizedPathname;
+        }
+      }
+
       // 如果已经在缓存中，不需要预取
-      if (this.pageDataCache.has(pathname)) {
+      if (this.pageDataCache.has(normalizedPathname)) {
         return;
       }
 
       // 如果是当前页面，不需要预取
       if (
-        pathname === globalThis.location.pathname &&
+        normalizedPathname === globalThis.location.pathname &&
         this.currentPageData
       ) {
         return;
       }
 
-      // 加载页面数据
+      // 加载页面数据（loadPageData 内部会再次规范化，但这里先检查缓存可以避免不必要的请求）
       const pageData = await this.loadPageData(pathname);
 
       // 预加载页面组件模块

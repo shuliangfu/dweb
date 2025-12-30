@@ -289,41 +289,33 @@ export class RouteHandler {
           const processedContent = removeLoadOnlyImports(fileContent);
 
           // 使用 esbuild.build 打包文件（包含所有依赖）
+          // 先定义变量，确保在 catch 块中也能访问
+          const cwd = Deno.cwd();
+          const absoluteFilePath = path.isAbsolute(fullPath)
+            ? fullPath
+            : path.resolve(cwd, fullPath);
+          const originalDir = path.dirname(absoluteFilePath);
+          const originalBasename = path.basename(absoluteFilePath);
+          const loader = fullPath.endsWith(".tsx") ? "tsx" : "ts";
+
+          // 读取 deno.json 或 deno.jsonc 获取 import map（用于解析外部依赖）
+          // 优先使用页面所在项目的 deno.json（支持示例项目与多应用场景）
+          let importMap: Record<string, string> = {};
+          let projectRoot = cwd;
           try {
-            const cwd = Deno.cwd();
-            const absoluteFilePath = path.isAbsolute(fullPath)
-              ? fullPath
-              : path.resolve(cwd, fullPath);
-
-            // 收集外部依赖（只包含 preact 和服务端依赖，其他客户端依赖会被打包）
-            // 开发环境：不使用共享依赖机制（每个组件独立打包，便于热更新）
-            // 生产环境：通过代码分割自动去重
-            // 外部依赖由 buildFromStdin 自动处理
-
-            // 使用 stdin 选项直接传入处理后的代码，确保 load 函数被移除
-            // resolveDir 设置为原始文件所在目录，用于解析相对路径导入
-            const originalDir = path.dirname(absoluteFilePath);
-            const originalBasename = path.basename(absoluteFilePath);
-            // 根据文件扩展名确定 loader
-            const loader = fullPath.endsWith(".tsx") ? "tsx" : "ts";
-
-            // 读取 deno.json 或 deno.jsonc 获取 import map（用于解析外部依赖）
-            // 优先使用页面所在项目的 deno.json（支持示例项目与多应用场景）
-            let importMap: Record<string, string> = {};
-            let projectRoot = cwd;
-            try {
-              // 根据原始文件目录查找项目根目录
-              projectRoot = findProjectRoot(originalDir);
-              const { readDenoJson } = await import("../server/utils/file.ts");
-              const denoJson = await readDenoJson(projectRoot);
-              if (denoJson && denoJson.imports) {
-                importMap = denoJson.imports;
-              }
-            } catch {
-              // deno.json 或 deno.jsonc 不存在或解析失败，使用空 import map
+            // 根据原始文件目录查找项目根目录
+            projectRoot = findProjectRoot(originalDir);
+            const { readDenoJson } = await import("../server/utils/file.ts");
+            const denoJson = await readDenoJson(projectRoot);
+            if (denoJson && denoJson.imports) {
+              importMap = denoJson.imports;
             }
+          } catch {
+            // deno.json 或 deno.jsonc 不存在或解析失败，使用空 import map
+          }
 
-            // 使用统一的构建函数
+          // 使用统一的构建函数
+          try {
             jsCode = await buildFromStdin(
               processedContent,
               originalBasename,
@@ -336,9 +328,49 @@ export class RouteHandler {
                 minify: false, // 开发环境不压缩，便于调试
               },
             );
-          } catch (_esbuildError) {
-            // 如果 esbuild 失败，使用原始内容
-            jsCode = fileContent;
+          } catch (esbuildError) {
+            // 如果 esbuild 失败，尝试处理路径别名后再使用原始内容
+            // 这样可以确保即使编译失败，路径别名也能被正确处理
+            try {
+              // 如果 importMap 不为空，尝试替换路径别名
+              if (Object.keys(importMap).length > 0) {
+                const processedWithAliases = replaceImportAliasesInContent(
+                  fileContent,
+                  importMap,
+                  originalDir,
+                );
+                // 再次尝试编译（使用处理后的内容）
+                try {
+                  jsCode = await buildFromStdin(
+                    processedWithAliases,
+                    originalBasename,
+                    originalDir,
+                    loader,
+                    {
+                      importMap,
+                      cwd: projectRoot,
+                      bundleClient: true,
+                      minify: false,
+                    },
+                  );
+                } catch {
+                  // 如果还是失败，使用处理后的内容（即使包含路径别名，esbuild 插件会处理）
+                  jsCode = processedWithAliases;
+                }
+              } else {
+                // 如果 importMap 为空，直接使用原始内容
+                jsCode = fileContent;
+              }
+            } catch {
+              // 如果处理路径别名也失败，使用原始内容
+              jsCode = fileContent;
+            }
+            // 记录警告，但不影响继续处理
+            if (esbuildError instanceof Error) {
+              logger.warn(
+                `[handleModuleRequest] esbuild 编译失败，已尝试处理路径别名: ${esbuildError.message}`,
+              );
+            }
           }
         } else {
           // 非 TS/TSX 文件（可能是已编译的 JS 文件）
@@ -1109,44 +1141,44 @@ export class RouteHandler {
           const fileDir = path.dirname(filePathWithoutPrefix);
 
           // 读取 deno.json 获取导入映射
-          // 从文件所在目录向上查找 deno.json 或 deno.jsonc
+          // 使用 findProjectRoot 查找项目根目录（更可靠）
+          const projectRoot = findProjectRoot(fileDir);
           let importMap: Record<string, string> = {};
           try {
             const { readDenoJson } = await import("../server/utils/file.ts");
-            // 向上查找项目根目录的 deno.json
-            let searchDir = fileDir;
-            let denoJson = null;
-
-            // 向上查找，直到找到 deno.json 或到达根目录
-            while (searchDir !== "/" && searchDir !== "") {
-              denoJson = await readDenoJson(searchDir);
-              if (denoJson && denoJson.imports) {
-                importMap = denoJson.imports;
-                break;
-              }
-              // 继续向上查找
-              const parts = searchDir.split("/").filter((p) => p);
-              if (parts.length === 0) break;
-              parts.pop();
-              searchDir = "/" + parts.join("/");
-            }
-
-            if (Object.keys(importMap).length === 0) {
+            const denoJson = await readDenoJson(projectRoot);
+            if (denoJson && denoJson.imports) {
+              importMap = denoJson.imports;
+              logger.debug(
+                `[importModuleWithAlias] 成功读取 deno.json，找到 ${
+                  Object.keys(importMap).length
+                } 个导入映射。项目根目录: ${projectRoot}`,
+              );
+            } else {
               logger.warn(
-                `警告：未找到 deno.json 或 deno.jsonc 文件。搜索路径: ${fileDir}`,
+                `[importModuleWithAlias] 未找到 deno.json 或 deno.jsonc 文件中的 imports。项目根目录: ${projectRoot}, 文件目录: ${fileDir}`,
               );
             }
           } catch (readError) {
-            // deno.json 不存在或读取失败，无法处理路径别名
+            // deno.json 不存在或读取失败，记录警告但继续处理
+            // 因为 buildFromStdin 会通过 jsrResolverPlugin 处理路径别名
+            // 但是，如果 importMap 为空，jsrResolverPlugin 可能无法处理路径别名
+            // 所以我们需要确保 importMap 不为空
             logger.warn(
-              `警告：读取 deno.json 失败: ${
+              `[importModuleWithAlias] 读取 deno.json 失败（将依赖 esbuild 插件处理路径别名）: ${
                 readError instanceof Error
                   ? readError.message
                   : String(readError)
-              }`,
+              }, 项目根目录: ${projectRoot}, 文件目录: ${fileDir}`,
             );
-            throw new Error(
-              `无法读取 deno.json 来解析路径别名: ${errorMessage}`,
+            // 不抛出错误，继续处理，让 buildFromStdin 的 jsrResolverPlugin 处理路径别名
+            // 但是，如果 importMap 为空，我们需要确保 buildFromStdin 能够正确处理
+          }
+
+          // 如果 importMap 为空，记录警告（这可能导致路径别名无法处理）
+          if (Object.keys(importMap).length === 0) {
+            logger.warn(
+              `[importModuleWithAlias] importMap 为空，路径别名可能无法处理。项目根目录: ${projectRoot}, 文件: ${filePathWithoutPrefix}`,
             );
           }
 
@@ -1159,6 +1191,17 @@ export class RouteHandler {
             importMap,
             fileDir,
           );
+
+          // 检查是否还有未替换的路径别名（esbuild 插件会处理，但我们需要确保 importMap 正确传递）
+          const aliasCheckRegex =
+            /(?:from\s+['"]|import\s*\(\s*['"])(@[^'"]+)(['"])/g;
+          const remainingAliases = processedContent.match(aliasCheckRegex);
+          if (remainingAliases && remainingAliases.length > 0) {
+            logger.debug(
+              `[importModuleWithAlias] 文件中仍有未替换的路径别名（将由 esbuild 插件处理）: ${filePathWithoutPrefix}`,
+              { remainingAliases: Array.from(remainingAliases) },
+            );
+          }
 
           // 注意：import.meta.resolve 在动态导入的上下文中无法解析导入映射
           // 所以我们需要使用 data: URL 方案
@@ -1177,18 +1220,6 @@ export class RouteHandler {
             },
           );
 
-          // 注意：即使 replaceImportAliasesInContent 没有替换所有路径别名，
-          // esbuild 的 JSR resolver 插件也会处理路径别名，所以这里不需要警告
-          // 检查是否还有未替换的路径别名（esbuild 插件会处理，所以只是调试信息）
-          // const aliasCheckRegex =
-          //   /(?:from\s+['"]|import\s*\(\s*['"])(@[^'"]+)(['"])/g;
-          // if (aliasCheckRegex.test(processedWithAbsolutePaths)) {
-          //   logger.warn(
-          //     `警告：文件中仍有未替换的路径别名。文件: ${filePathWithoutPrefix}`,
-          //   );
-          //   logger.warn(`importMap: ${JSON.stringify(importMap, null, 2)}`);
-          // }
-
           // 使用 esbuild 编译 TypeScript/JSX 代码
           // 因为 Deno 无法直接解析 data: URL 中的 TypeScript/JSX 语法
           let compiledCode: string;
@@ -1201,6 +1232,8 @@ export class RouteHandler {
             const projectRoot = findProjectRoot(fileDir);
 
             // 使用 esbuild 编译代码
+            // 注意：即使 processedWithAbsolutePaths 中还有未替换的路径别名，
+            // buildFromStdin 会通过 jsrResolverPlugin 来处理它们
             compiledCode = await buildFromStdin(
               processedWithAbsolutePaths,
               filePathWithoutPrefix,
@@ -1210,69 +1243,114 @@ export class RouteHandler {
                 importMap,
                 cwd: projectRoot,
                 bundleClient: false, // 服务端构建，不打包客户端依赖
+                isServerBuild: true, // 明确标记为服务端构建
                 minify: false, // 开发环境不压缩
                 sourcemap: false,
                 keepNames: true, // 保留函数名，便于调试
               },
             );
           } catch (compileError) {
+            // 编译失败，记录详细错误信息
+            const errorMessage = compileError instanceof Error
+              ? compileError.message
+              : String(compileError);
             logger.warn(
-              `esbuild 编译失败: ${
-                compileError instanceof Error
-                  ? compileError.message
-                  : String(compileError)
-              }`,
+              `[importModuleWithAlias] esbuild 编译失败: ${errorMessage}`,
+              {
+                file: filePathWithoutPrefix,
+                projectRoot,
+                importMapKeys: Object.keys(importMap),
+              },
             );
             throw new Error(
-              `无法编译模块: ${
-                compileError instanceof Error
-                  ? compileError.message
-                  : String(compileError)
-              }`,
+              `无法编译模块: ${errorMessage}`,
             );
           }
 
           // 编译后的代码可能包含绝对路径的导入（如果 esbuild 没有完全打包）
-          // 需要将这些绝对路径转换为 HTTP URL，以便浏览器可以访问
-          // 匹配所有绝对路径导入（如 import ... from "/Users/.../xxx"）
-          const absolutePathRegex =
-            /(?:from\s+['"]|import\s*\(\s*['"])(\/[^'"]+\.(?:ts|tsx|js|jsx))(['"])/g;
-          const finalCompiledCode = compiledCode.replace(
-            absolutePathRegex,
-            (match, importPath, _quote) => {
-              // 将绝对路径转换为 HTTP URL
-              const httpUrl = filePathToHttpUrl(importPath);
-              return match.replace(importPath, httpUrl);
-            },
-          );
+          // 在服务端使用临时文件导入时，绝对路径应该保留为绝对路径
+          // Deno 的 import map 会处理这些路径，不需要转换为 file:// URL
+          // 注意：临时文件中的代码在 Deno 的上下文中执行，可以访问文件系统
+          // 所以绝对路径可以直接使用，Deno 会根据 import map 解析
+          const finalCompiledCode = compiledCode;
 
-          // 使用 data: URL 导入编译后的 JavaScript 代码
-          // 创建 data: URL
-          // 使用 base64 编码，确保特殊字符正确处理
-          const base64Content = btoa(
-            unescape(encodeURIComponent(finalCompiledCode)),
-          );
-          const dataUrl = `data:application/javascript;base64,${base64Content}`;
-
-          // 导入 data: URL
-          const module = await import(dataUrl);
-
-          if (!module) {
-            throw new Error("模块导入返回空值");
+          // 调试：检查编译后的代码中是否包含问题导入
+          if (finalCompiledCode.includes("@dreamer/dweb/client")) {
+            logger.debug(
+              `[importModuleWithAlias] 编译后的代码中仍包含 @dreamer/dweb/client 导入`,
+              { file: filePathWithoutPrefix },
+            );
           }
 
-          return module;
+          // 注意：data: URL 中的代码无法访问文件系统，所以即使转换为 file:// URL 也无法解析
+          // 解决方案：使用临时文件而不是 data: URL
+          // 创建临时文件
+          const tempDir = await Deno.makeTempDir({ prefix: "dweb-import-" });
+          const tempFilePath = path.join(tempDir, "module.js");
+          await Deno.writeTextFile(tempFilePath, finalCompiledCode);
+
+          try {
+            // 导入临时文件（需要处理 Windows 路径）
+            let importPath = `file://${tempFilePath}`;
+            if (Deno.build.os === "windows") {
+              // Windows 路径需要特殊处理
+              importPath = `file:///${tempFilePath.replace(/\\/g, "/")}`;
+            }
+
+            // 添加超时处理，避免导入挂起
+            const importPromise = import(importPath);
+            const timeoutPromise = new Promise((_, reject) => {
+              setTimeout(() => reject(new Error("模块导入超时")), 10000); // 10秒超时
+            });
+
+            const module = await Promise.race([
+              importPromise,
+              timeoutPromise,
+            ]) as Record<string, unknown>;
+
+            if (!module) {
+              throw new Error("模块导入返回空值");
+            }
+
+            return module;
+          } catch (importError) {
+            // 导入失败，记录详细错误信息
+            logger.warn(
+              `[importModuleWithAlias] 临时文件导入失败: ${
+                importError instanceof Error
+                  ? importError.message
+                  : String(importError)
+              }`,
+              { filePath: filePathWithoutPrefix, tempFilePath },
+            );
+            throw importError;
+          } finally {
+            // 清理临时文件（异步，不阻塞）
+            Deno.remove(tempDir, { recursive: true }).catch(() => {
+              // 忽略清理错误
+            });
+          }
         } catch (processError) {
           // 处理路径别名失败，返回原始错误
           logger.warn(
             `加载模块失败（路径别名处理失败）: ${filePath}`,
           );
+          // 处理错误信息，避免输出过长的 base64 data URL
+          let errorMessage = processError instanceof Error
+            ? processError.message
+            : String(processError);
+          // 如果错误信息包含 data: URL，只保留前面的部分，不输出 base64 内容
+          if (errorMessage.includes("data:application/javascript;base64,")) {
+            const dataUrlIndex = errorMessage.indexOf(
+              "data:application/javascript;base64,",
+            );
+            const beforeDataUrl = errorMessage.substring(0, dataUrlIndex);
+            // 只保留 "data:application/javascript;base64," 部分，不输出后面的 base64 内容
+            errorMessage = beforeDataUrl +
+              "data:application/javascript;base64,[...]";
+          }
           logger.warn(
-            `错误信息: ${
-              processError instanceof Error
-                ? processError.message
-                : String(processError)
-            }`,
+            `错误信息: ${errorMessage}`,
           );
           throw error; // 抛出原始错误
         }
@@ -3123,6 +3201,7 @@ export class RouteHandler {
       const url = new URL(req.url);
 
       // 处理每个路由，获取模块路径和页面数据
+      // 使用并行处理提高性能，但限制并发数量避免资源耗尽
       const batchData: Array<{
         route: string;
         body: string;
@@ -3130,231 +3209,24 @@ export class RouteHandler {
         layouts?: Record<string, string>; // 布局组件代码映射（key: 布局路径, value: 布局代码）
       }> = [];
 
-      for (const route of routes) {
-        try {
-          // 匹配路由
-          const routeInfo = this.router.match(route);
-          if (!routeInfo || routeInfo.type !== "page") {
-            continue;
+      // 并行处理所有路由，但限制并发数量（最多同时处理 10 个路由）
+      const CONCURRENT_LIMIT = 10;
+      const routeChunks: string[][] = [];
+      for (let i = 0; i < routes.length; i += CONCURRENT_LIMIT) {
+        routeChunks.push(routes.slice(i, i + CONCURRENT_LIMIT));
+      }
+
+      for (const routeChunk of routeChunks) {
+        const chunkResults = await Promise.allSettled(
+          routeChunk.map((route) =>
+            this.processRouteForPrefetch(route, req, url, res)
+          ),
+        );
+
+        for (const result of chunkResults) {
+          if (result.status === "fulfilled" && result.value) {
+            batchData.push(result.value);
           }
-
-          // 创建模拟请求对象用于加载页面数据
-          // 需要包含所有扩展方法（getCookie, getHeader, getSession 等）
-          const routeUrl = new URL(route, req.url);
-          const mockNativeReq = new Request(routeUrl.toString(), {
-            method: "GET",
-            headers: req.headers,
-          });
-          const mockReq = this.createExtendedRequest(req, mockNativeReq);
-          // 更新 params/query（路由匹配后的参数，url 是只读的，不能设置）
-          (mockReq as any).params = {};
-          (mockReq as any).query = {};
-
-          // 加载页面模块
-          const pageModule = await this.loadPageModule(routeInfo, res);
-          if (!pageModule || !pageModule.default) {
-            continue;
-          }
-
-          // 加载页面数据（load 函数返回的数据）
-          const loadData = await this.loadPageData(pageModule, mockReq, res);
-
-          // 构建模块路径
-          let modulePath: string;
-          if (routeInfo.clientModulePath) {
-            modulePath = `./${routeInfo.clientModulePath}`;
-          } else {
-            modulePath = resolveFilePath(routeInfo.filePath);
-          }
-
-          // 转换为 HTTP URL（模块请求路径，filePathToHttpUrl 已经包含了 /__modules/ 前缀）
-          const moduleHttpUrl = filePathToHttpUrl(modulePath);
-
-          // 获取渲染配置（用于获取布局路径）
-          const { renderMode, layoutDisabled } = await this.getRenderConfig(
-            pageModule,
-            routeInfo,
-          );
-
-          // 获取布局路径（参考 injectScripts 中的逻辑）
-          const layoutPathsForClient: string[] = [];
-          if (!layoutDisabled) {
-            try {
-              const layoutFilePaths = this.router.getAllLayouts(routeInfo.path);
-              for (const layoutFilePath of layoutFilePaths) {
-                try {
-                  // 加载布局模块以检查 layout 属性
-                  const layoutFullPath = resolveFilePath(layoutFilePath);
-                  const layoutModule = await this.importModuleWithAlias(
-                    layoutFullPath,
-                  );
-
-                  // 检查是否设置了 layout = false（禁用继承）
-                  if (layoutModule.layout === false) {
-                    // 添加当前布局到客户端路径列表
-                    const layoutRoute = this.router.getAllRoutes().find((r) =>
-                      r.filePath === layoutFilePath
-                    );
-                    if (layoutRoute?.clientModulePath) {
-                      layoutPathsForClient.push(layoutRoute.clientModulePath);
-                    } else {
-                      const layoutHttpUrl = filePathToHttpUrl(layoutFullPath);
-                      layoutPathsForClient.push(layoutHttpUrl);
-                    }
-                    // 停止继承，不再加载后续的布局
-                    break;
-                  }
-
-                  // 检查布局路由信息，看是否有 clientModulePath
-                  const layoutRoute = this.router.getAllRoutes().find((r) =>
-                    r.filePath === layoutFilePath
-                  );
-                  if (layoutRoute?.clientModulePath) {
-                    layoutPathsForClient.push(layoutRoute.clientModulePath);
-                  } else {
-                    const layoutHttpUrl = filePathToHttpUrl(layoutFullPath);
-                    layoutPathsForClient.push(layoutHttpUrl);
-                  }
-                } catch (_layoutError) {
-                  // 布局加载失败不影响，跳过该布局
-                }
-              }
-            } catch (_error) {
-              // 静默处理错误
-            }
-          }
-
-          // 构建完整的 pageData（包含客户端预加载需要的所有字段）
-          const pageData = {
-            ...loadData, // load 函数返回的数据（如 jsrPackageUrl）
-            route: moduleHttpUrl, // 组件路径（用于 import）
-            renderMode: renderMode || "csr", // 渲染模式
-            layoutPath: layoutPathsForClient.length > 0
-              ? layoutPathsForClient[0]
-              : null, // 单个布局路径（向后兼容）
-            allLayoutPaths: layoutPathsForClient.length > 0
-              ? layoutPathsForClient
-              : null, // 所有布局路径
-            props: {
-              params: (mockReq as any).params || {},
-              query: (mockReq as any).query || {},
-            },
-          };
-
-          // 创建模块请求来获取组件代码
-          const moduleReqUrl = moduleHttpUrl.startsWith("http")
-            ? moduleHttpUrl
-            : `${url.origin}${moduleHttpUrl}`;
-          const moduleReq = new Request(moduleReqUrl, {
-            method: "GET",
-            headers: req.headers,
-          });
-
-          // 转换为扩展的请求对象
-          const extendedModuleReq = this.createExtendedRequest(req, moduleReq);
-
-          // 创建临时响应对象来获取模块代码
-          const tempRes = {
-            status: 200,
-            body: null as string | null,
-            headers: new Headers(),
-            setHeader: function (key: string, value: string) {
-              this.headers.set(key, value);
-            },
-            json: function (data: unknown) {
-              this.body = JSON.stringify(data);
-            },
-            text: function (data: string) {
-              this.body = data;
-            },
-          } as any;
-
-          // 处理模块请求（获取页面组件代码）
-          await this.handleModuleRequest(extendedModuleReq, tempRes);
-
-          // 如果成功获取页面组件代码，继续获取布局组件代码
-          if (tempRes.body && tempRes.status === 200) {
-            const layouts: Record<string, string> = {};
-
-            // 获取所有布局组件的代码
-            if (layoutPathsForClient && layoutPathsForClient.length > 0) {
-              for (const layoutPath of layoutPathsForClient) {
-                // 如果布局已经存在，跳过（避免重复获取相同的布局组件）
-                if (layouts[layoutPath]) {
-                  continue;
-                }
-
-                try {
-                  // 构建布局模块的 HTTP URL
-                  let layoutHttpUrl: string;
-                  if (layoutPath.startsWith("http")) {
-                    layoutHttpUrl = layoutPath;
-                  } else if (layoutPath.startsWith("/")) {
-                    // 绝对路径（开发环境）
-                    layoutHttpUrl = layoutPath.startsWith("/__modules/")
-                      ? layoutPath
-                      : `/__modules/${layoutPath}`;
-                    if (!layoutHttpUrl.startsWith("http")) {
-                      layoutHttpUrl = `${url.origin}${layoutHttpUrl}`;
-                    }
-                  } else {
-                    // 相对路径（生产环境的 clientModulePath，如 "81e2f5821399146.js"）
-                    layoutHttpUrl = `${url.origin}/__modules/${layoutPath}`;
-                  }
-
-                  // 创建布局模块请求
-                  const layoutModuleReq = new Request(layoutHttpUrl, {
-                    method: "GET",
-                    headers: req.headers,
-                  });
-                  const extendedLayoutReq = this.createExtendedRequest(
-                    req,
-                    layoutModuleReq,
-                  );
-
-                  // 创建临时响应对象来获取布局代码
-                  const layoutTempRes = {
-                    status: 200,
-                    body: null as string | null,
-                    headers: new Headers(),
-                    setHeader: function (key: string, value: string) {
-                      this.headers.set(key, value);
-                    },
-                    json: function (data: any) {
-                      this.body = JSON.stringify(data);
-                    },
-                    text: function (data: string) {
-                      this.body = data;
-                    },
-                  } as any;
-
-                  // 处理布局模块请求
-                  await this.handleModuleRequest(
-                    extendedLayoutReq,
-                    layoutTempRes,
-                  );
-
-                  // 如果成功获取布局代码，存储到 layouts 中（使用原始路径作为 key）
-                  if (layoutTempRes.body && layoutTempRes.status === 200) {
-                    layouts[layoutPath] = layoutTempRes.body;
-                  }
-                } catch (_layoutError) {
-                  // 布局加载失败不影响，跳过该布局
-                }
-              }
-            }
-
-            // 存储页面组件代码和布局组件代码
-            batchData.push({
-              route,
-              body: tempRes.body,
-              pageData,
-              layouts: Object.keys(layouts).length > 0 ? layouts : undefined,
-            });
-          }
-        } catch (error) {
-          // 单个路由处理失败时静默处理，继续处理下一个
-          console.warn(`[Batch Prefetch] 处理路由失败: ${route}`, error);
         }
       }
 
@@ -3365,6 +3237,297 @@ export class RouteHandler {
       const errorMsg = error instanceof Error ? error.message : String(error);
       res.status = 500;
       res.json({ error: `Batch prefetch failed: ${errorMsg}` });
+    }
+  }
+
+  /**
+   * 处理单个路由的预加载（用于并行处理）
+   * @param route 路由路径
+   * @param req 原始请求对象
+   * @param url URL 对象
+   * @param res 响应对象（用于错误处理）
+   * @returns 路由数据，如果处理失败返回 null
+   */
+  private async processRouteForPrefetch(
+    route: string,
+    req: Request,
+    url: URL,
+    res: Response,
+  ): Promise<
+    {
+      route: string;
+      body: string;
+      pageData: Record<string, unknown>;
+      layouts?: Record<string, string>;
+    } | null
+  > {
+    try {
+      // 匹配路由
+      const routeInfo = this.router.match(route);
+      if (!routeInfo || routeInfo.type !== "page") {
+        return null;
+      }
+
+      // 创建模拟请求对象用于加载页面数据
+      // 需要包含所有扩展方法（getCookie, getHeader, getSession 等）
+      const routeUrl = new URL(route, req.url);
+      const mockNativeReq = new Request(routeUrl.toString(), {
+        method: "GET",
+        headers: req.headers,
+      });
+      const mockReq = this.createExtendedRequest(req, mockNativeReq);
+      // 更新 params/query（路由匹配后的参数，url 是只读的，不能设置）
+      (mockReq as any).params = {};
+      (mockReq as any).query = {};
+
+      // 加载页面模块（支持路径别名）
+      // 注意：即使 loadPageModule 失败，我们仍然可以继续处理，因为 handleModuleRequest 会处理路径别名
+      let pageModule: Record<string, unknown> | null = null;
+      let loadData: Record<string, unknown> = {};
+      let renderMode: string | undefined;
+      let layoutDisabled: boolean = false;
+      let layoutData: Record<string, unknown>[] | undefined;
+
+      try {
+        // 添加超时处理，避免 loadPageModule 挂起
+        const loadPageModulePromise = this.loadPageModule(routeInfo, res);
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error("加载页面模块超时")), 15000); // 15秒超时
+        });
+        pageModule = await Promise.race([
+          loadPageModulePromise,
+          timeoutPromise,
+        ]);
+        if (pageModule && pageModule.default) {
+          // 加载页面数据（load 函数返回的数据）
+          try {
+            loadData = await this.loadPageData(pageModule, mockReq, res);
+          } catch (loadDataError) {
+            // load 函数执行失败不影响预加载，使用空数据
+            console.warn(
+              `[Batch Prefetch] 加载页面数据失败: ${route}`,
+              loadDataError,
+            );
+          }
+
+          // 获取渲染配置（用于获取布局路径和布局数据）
+          const renderConfig = await this.getRenderConfig(
+            pageModule,
+            routeInfo,
+            mockReq,
+            res,
+          );
+          renderMode = renderConfig.renderMode;
+          layoutDisabled = renderConfig.layoutDisabled;
+          layoutData = renderConfig.layoutData; // 保存布局数据
+        }
+      } catch (loadError) {
+        // 如果加载失败（可能是路径别名问题），记录警告但继续处理
+        // 因为 handleModuleRequest 会正确处理路径别名并编译代码
+        console.warn(
+          `[Batch Prefetch] 加载页面模块失败（将跳过页面数据和布局）: ${route}`,
+          loadError instanceof Error ? loadError.message : String(loadError),
+        );
+        // 使用默认渲染模式
+        renderMode = "csr";
+        layoutDisabled = false;
+        layoutData = undefined;
+      }
+
+      // 构建模块路径
+      let modulePath: string;
+      if (routeInfo.clientModulePath) {
+        modulePath = `./${routeInfo.clientModulePath}`;
+      } else {
+        modulePath = resolveFilePath(routeInfo.filePath);
+      }
+
+      // 转换为 HTTP URL（模块请求路径，filePathToHttpUrl 已经包含了 /__modules/ 前缀）
+      const moduleHttpUrl = filePathToHttpUrl(modulePath);
+
+      // 获取布局路径（参考 injectScripts 中的逻辑）
+      const layoutPathsForClient: string[] = [];
+      if (!layoutDisabled) {
+        try {
+          const layoutFilePaths = this.router.getAllLayouts(routeInfo.path);
+          for (const layoutFilePath of layoutFilePaths) {
+            try {
+              // 加载布局模块以检查 layout 属性
+              const layoutFullPath = resolveFilePath(layoutFilePath);
+              const layoutModule = await this.importModuleWithAlias(
+                layoutFullPath,
+              );
+
+              // 检查是否设置了 layout = false（禁用继承）
+              if (layoutModule.layout === false) {
+                // 添加当前布局到客户端路径列表
+                const layoutRoute = this.router.getAllRoutes().find((r) =>
+                  r.filePath === layoutFilePath
+                );
+                if (layoutRoute?.clientModulePath) {
+                  layoutPathsForClient.push(layoutRoute.clientModulePath);
+                } else {
+                  const layoutHttpUrl = filePathToHttpUrl(layoutFullPath);
+                  layoutPathsForClient.push(layoutHttpUrl);
+                }
+                // 停止继承，不再加载后续的布局
+                break;
+              }
+
+              // 检查布局路由信息，看是否有 clientModulePath
+              const layoutRoute = this.router.getAllRoutes().find((r) =>
+                r.filePath === layoutFilePath
+              );
+              if (layoutRoute?.clientModulePath) {
+                layoutPathsForClient.push(layoutRoute.clientModulePath);
+              } else {
+                const layoutHttpUrl = filePathToHttpUrl(layoutFullPath);
+                layoutPathsForClient.push(layoutHttpUrl);
+              }
+            } catch (_layoutError) {
+              // 布局加载失败不影响，跳过该布局
+            }
+          }
+        } catch (_error) {
+          // 静默处理错误
+        }
+      }
+
+      // 构建完整的 pageData（包含客户端预加载需要的所有字段）
+      const pageData = {
+        ...loadData, // load 函数返回的数据（如 jsrPackageUrl）
+        route: moduleHttpUrl, // 组件路径（用于 import）
+        renderMode: renderMode || "csr", // 渲染模式
+        layoutPath: layoutPathsForClient.length > 0
+          ? layoutPathsForClient[0]
+          : null, // 单个布局路径（向后兼容）
+        allLayoutPaths: layoutPathsForClient.length > 0
+          ? layoutPathsForClient
+          : null, // 所有布局路径
+        layoutData: layoutData || undefined, // 布局的 load 数据（例如 menus）
+        props: {
+          params: (mockReq as any).params || {},
+          query: (mockReq as any).query || {},
+        },
+      };
+
+      // 创建模块请求来获取组件代码
+      const moduleReqUrl = moduleHttpUrl.startsWith("http")
+        ? moduleHttpUrl
+        : `${url.origin}${moduleHttpUrl}`;
+      const moduleReq = new Request(moduleReqUrl, {
+        method: "GET",
+        headers: req.headers,
+      });
+
+      // 转换为扩展的请求对象
+      const extendedModuleReq = this.createExtendedRequest(req, moduleReq);
+
+      // 创建临时响应对象来获取模块代码
+      const tempRes = {
+        status: 200,
+        body: null as string | null,
+        headers: new Headers(),
+        setHeader: function (key: string, value: string) {
+          this.headers.set(key, value);
+        },
+        json: function (data: unknown) {
+          this.body = JSON.stringify(data);
+        },
+        text: function (data: string) {
+          this.body = data;
+        },
+      } as any;
+
+      // 处理模块请求（获取页面组件代码）
+      await this.handleModuleRequest(extendedModuleReq, tempRes);
+
+      // 如果成功获取页面组件代码，继续获取布局组件代码
+      if (tempRes.body && tempRes.status === 200) {
+        const layouts: Record<string, string> = {};
+
+        // 获取所有布局组件的代码
+        if (layoutPathsForClient && layoutPathsForClient.length > 0) {
+          for (const layoutPath of layoutPathsForClient) {
+            // 如果布局已经存在，跳过（避免重复获取相同的布局组件）
+            if (layouts[layoutPath]) {
+              continue;
+            }
+
+            try {
+              // 构建布局模块的 HTTP URL
+              let layoutHttpUrl: string;
+              if (layoutPath.startsWith("http")) {
+                layoutHttpUrl = layoutPath;
+              } else if (layoutPath.startsWith("/")) {
+                // 绝对路径（开发环境）
+                layoutHttpUrl = layoutPath.startsWith("/__modules/")
+                  ? layoutPath
+                  : `/__modules/${layoutPath}`;
+                if (!layoutHttpUrl.startsWith("http")) {
+                  layoutHttpUrl = `${url.origin}${layoutHttpUrl}`;
+                }
+              } else {
+                // 相对路径（生产环境的 clientModulePath，如 "81e2f5821399146.js"）
+                layoutHttpUrl = `${url.origin}/__modules/${layoutPath}`;
+              }
+
+              // 创建布局模块请求
+              const layoutModuleReq = new Request(layoutHttpUrl, {
+                method: "GET",
+                headers: req.headers,
+              });
+              const extendedLayoutReq = this.createExtendedRequest(
+                req,
+                layoutModuleReq,
+              );
+
+              // 创建临时响应对象来获取布局代码
+              const layoutTempRes = {
+                status: 200,
+                body: null as string | null,
+                headers: new Headers(),
+                setHeader: function (key: string, value: string) {
+                  this.headers.set(key, value);
+                },
+                json: function (data: any) {
+                  this.body = JSON.stringify(data);
+                },
+                text: function (data: string) {
+                  this.body = data;
+                },
+              } as any;
+
+              // 处理布局模块请求
+              await this.handleModuleRequest(
+                extendedLayoutReq,
+                layoutTempRes,
+              );
+
+              // 如果成功获取布局代码，存储到 layouts 中（使用原始路径作为 key）
+              if (layoutTempRes.body && layoutTempRes.status === 200) {
+                layouts[layoutPath] = layoutTempRes.body;
+              }
+            } catch (_layoutError) {
+              // 布局加载失败不影响，跳过该布局
+            }
+          }
+        }
+
+        // 返回页面组件代码和布局组件代码
+        return {
+          route,
+          body: tempRes.body,
+          pageData,
+          layouts: Object.keys(layouts).length > 0 ? layouts : undefined,
+        };
+      }
+
+      return null;
+    } catch (error: unknown) {
+      // 单个路由处理失败时静默处理，返回 null
+      console.warn(`[Batch Prefetch] 处理路由失败: ${route}`, error);
+      return null;
     }
   }
 

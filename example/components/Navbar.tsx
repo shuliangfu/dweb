@@ -80,24 +80,26 @@ export default function Navbar({ currentPath: initialPath, menus }: NavbarProps)
 
           {/* 导航链接 */}
           <div className="hidden md:flex items-center space-x-8">
-            {menus.map((item: { label: string; href: string }) => {
-              // 精确匹配路径，支持根路径和子路径
-              const isActive = currentPath === item.href ||
-                (item.href !== "/" && currentPath.startsWith(item.href));
-              return (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive
-                      ? "text-blue-800 dark:text-blue-400 bg-blue-200 dark:bg-blue-900/20"
-                      : "text-gray-900 dark:text-gray-300 hover:text-blue-800 dark:hover:text-blue-400 hover:bg-gray-200 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  {item.label}
-                </a>
-              );
-            })}
+            {menus && Array.isArray(menus) && menus.length > 0
+              ? menus.map((item: { label: string; href: string }) => {
+                // 精确匹配路径，支持根路径和子路径
+                const isActive = currentPath === item.href ||
+                  (item.href !== "/" && currentPath.startsWith(item.href));
+                return (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isActive
+                        ? "text-blue-800 dark:text-blue-400 bg-blue-200 dark:bg-blue-900/20"
+                        : "text-gray-900 dark:text-gray-300 hover:text-blue-800 dark:hover:text-blue-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    {item.label}
+                  </a>
+                );
+              })
+              : null}
           </div>
 
           {/* 主题切换按钮和 CTA 按钮 */}

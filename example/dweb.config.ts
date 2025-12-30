@@ -19,7 +19,15 @@ const config: AppConfig = {
     // - hybrid: 混合渲染（服务端渲染 + 客户端 hydration）
     // 注意：这个配置是全局的，可以在页面组件中通过导出 renderMode 来覆盖
     mode: "hybrid",
+	},
+	
+	prefetch: {
+    enabled: true,
+    loading: false,
+    routes: ["*", "!/docs/*"],
+    mode: "batch",
   },
+
 
   // 开发配置
   dev: {
@@ -70,13 +78,6 @@ const config: AppConfig = {
     maxAge: 3600, // 1小时（单位：秒）
     secure: false,
     httpOnly: true,
-  },
-
-  prefetch: {
-    enabled: true,
-    loading: false,
-    routes: ["*", "!/"],
-    mode: "batch",
   },
 
   // // 数据库配置
