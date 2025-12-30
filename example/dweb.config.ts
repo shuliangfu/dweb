@@ -73,9 +73,9 @@ const config: AppConfig = {
   },
 
   prefetch: {
-    enabled: false,
+    enabled: true,
     loading: false,
-    routes: ["*", "!/docs/*"],
+    routes: ["*", "!/"],
     mode: "batch",
   },
 
