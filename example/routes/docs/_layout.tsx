@@ -9,6 +9,22 @@ import type { LayoutProps } from "@dreamer/dweb";
 // export const layout = false; // 禁用布局继承
 
 
+export const metadata = {
+  title: "文档",
+  description: "快速开始使用 DWeb 框架，构建现代化的 Web 应用",
+  keywords: "DWeb, 文档, 快速开始, 教程, 使用指南, Deno, Preact, Web 框架",
+  author: "DWeb",
+};
+
+export const load = async () => {
+  return {
+    title: "文档",
+    description: "快速开始使用 DWeb 框架，构建现代化的 Web 应用",
+    keywords: "DWeb, 文档, 快速开始, 教程, 使用指南, Deno, Preact, Web 框架",
+    author: "DWeb",
+  };
+};
+
 /**
  * 文档布局组件
  * @param props 组件属性
