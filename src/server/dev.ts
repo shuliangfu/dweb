@@ -61,6 +61,27 @@ export async function startDevServer(config: AppConfig): Promise<void> {
     }
   }
 
+  // 获取最终配置（用于验证）
+  const finalConfig = configManager.getConfig() || devConfig;
+
+  // 验证配置：SSR 模式不允许开启预加载
+  // 预加载功能需要客户端路由支持，而 SSR 模式是纯服务端渲染，不支持客户端路由
+  const renderMode = finalConfig.render?.mode || "ssr"; // 默认是 ssr
+  const prefetchEnabled = finalConfig.prefetch?.enabled !== false; // 默认是 true
+
+  if (renderMode === "ssr" && prefetchEnabled) {
+    throw new Error(
+      `\n❌ 配置错误：渲染模式为 SSR 时不允许开启预加载功能\n\n` +
+        `   原因：预加载功能需要客户端路由支持，而 SSR 模式是纯服务端渲染，不支持客户端路由。\n\n` +
+        `   解决方案（二选一）：\n` +
+        `   1. 将 dweb.config.ts 中的 prefetch.enabled 设置为 false\n` +
+        `   2. 将 render.mode 设置为 'csr' 或 'hybrid'\n\n` +
+        `   当前配置：\n` +
+        `   - render.mode = '${renderMode}'\n` +
+        `   - prefetch.enabled = ${prefetchEnabled}\n`,
+    );
+  }
+
   // 初始化应用
   await app.initialize();
 
