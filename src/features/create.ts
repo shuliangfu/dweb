@@ -983,11 +983,11 @@ export default function AppLayout({ children, data: _data, routePath }: LayoutPr
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* 导航栏 */}
       <Navbar currentPath={routePath} />
-
+      
       {/* 主内容区域 */}
       <main className="grow">
-        {children}
-      </main>
+          {children}
+        </main>
     </div>
   );
 }
@@ -2650,26 +2650,26 @@ async function generateMainTs(
 ): Promise<void> {
   // main.ts 文件内容模板
   const mainTsContent = `/**
-   * DWeb 框架应用配置文件
+ * DWeb 框架应用配置文件
    * 用于配置中间件和插件
-   * 
-   * 注意：此文件只用于配置，不直接启动服务
-   * 服务启动通过 CLI 命令：deno task dev 或 deno task start
-   */
+ * 
+ * 注意：此文件只用于配置，不直接启动服务
+ * 服务启动通过 CLI 命令：deno task dev 或 deno task start
+ */
 
 import { AppConfig, cors } from '@dreamer/dweb';
 
 const config: AppConfig = {
   middleware: [
     cors({
-      origin: '*',
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
     }),
     // 可以在这里添加更多中间件
     // (req, res, next) => {
-    //   console.log('request', req.url);
-    //   next();
+//   console.log('request', req.url);
+//   next();
     // }
   ],
   plugins: [

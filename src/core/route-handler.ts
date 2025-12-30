@@ -633,17 +633,37 @@ export class RouteHandler {
       const filePath = resolveFilePath(middlewarePath);
       const module = await this.importModuleWithAlias(filePath);
 
-      // 支持默认导出中间件函数
+      // 支持默认导出中间件函数或中间件配置对象
       if (module.default) {
-        // 如果是数组，返回数组中的所有中间件
+        // 如果是数组，处理数组中的中间件（支持函数和配置对象）
         if (Array.isArray(module.default)) {
-          return module.default.filter((m: unknown): m is Middleware =>
-            typeof m === "function"
-          );
+          return module.default.map((m: unknown): Middleware => {
+            // 如果是函数，直接返回
+            if (typeof m === "function") {
+              return m as Middleware;
+            }
+            // 如果是配置对象，提取 handler
+            if (
+              m && typeof m === "object" && "handler" in m &&
+              typeof (m as any).handler === "function"
+            ) {
+              return (m as any).handler as Middleware;
+            }
+            // 其他情况，返回一个空函数（避免错误）
+            return async () => {};
+          }).filter((m) => typeof m === "function");
         }
         // 如果是单个函数，返回包含该函数的数组
         if (typeof module.default === "function") {
           return [module.default as Middleware];
+        }
+        // 如果是配置对象，提取 handler
+        if (
+          module.default && typeof module.default === "object" &&
+          "handler" in module.default &&
+          typeof (module.default as any).handler === "function"
+        ) {
+          return [(module.default as any).handler as Middleware];
         }
       }
 

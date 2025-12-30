@@ -321,16 +321,23 @@ export interface Session<T = Record<string, any>> {
 
 // 中间件函数类型
 export type Middleware = (
+  // 请求对象
   req: Request,
+  // 响应对象
   res: Response,
+  // 下一个中间件
   next: () => Promise<void>,
-  app: AppLike,
+  // 应用实例
+  app?: AppLike,
 ) => Promise<void> | void;
 
 // 中间件配置
 export interface MiddlewareConfig {
+  // 中间件名称
   name?: string;
+  // 中间件处理函数
   handler: Middleware;
+  // 中间件配置选项
   options?: Record<string, unknown>;
 }
 

@@ -285,7 +285,7 @@ function initTheme(config: ThemeConfig): void {
     document.addEventListener("DOMContentLoaded", init);
   } else {
     init();
-  }
+    }
 
   // 注意：过渡效果的 style 标签由服务端注入，不需要在客户端创建
 }
