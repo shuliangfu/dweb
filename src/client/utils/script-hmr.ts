@@ -124,7 +124,7 @@ export async function createHMRClientScript(hmrPort: number): Promise<string> {
     // 注册脚本到脚本服务并生成 script 标签
     const scriptPath = generateScriptPath("hmr");
     registerScript(scriptPath, fullScript);
-    return `<script type="module" src="${scriptPath}" data-type="dweb-hmr"></script>`;
+    return `<script type="module" src="${scriptPath}"></script>`;
   } catch (error) {
     console.error("[HMR] 创建客户端脚本时出错:", error);
     return "";

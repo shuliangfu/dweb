@@ -638,7 +638,7 @@ export function i18n(options: I18nPluginOptions): Plugin {
                   const scriptPath = generateScriptPath("i18n");
                   registerScript(scriptPath, fullScript);
                   const scriptTag =
-                    `<script type="module" src="${scriptPath}" data-type="dweb-i18n"></script>`;
+                    `<script type="module" src="${scriptPath}"></script>`;
 
                   // 使用 lastIndexOf 确保在最后一个 </head> 之前注入
                   const lastHeadIndex = newHtml.lastIndexOf("</head>");

@@ -33,9 +33,8 @@ export function getScript(scriptPath: string): string | null {
  * @returns 唯一的脚本路径
  */
 export function generateScriptPath(prefix: string): string {
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 9);
-  return `/__scripts/${prefix}-${timestamp}-${random}.js`;
+  const random = Math.random().toString(36).substring(2, 12);
+  return `/__scripts/${prefix}-${random}.js`;
 }
 
 /**

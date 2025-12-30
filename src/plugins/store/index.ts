@@ -318,7 +318,7 @@ export function store(options: StorePluginOptions = {}): Plugin {
           const scriptPath = generateScriptPath("store");
           registerScript(scriptPath, fullScript);
           const scriptTag =
-            `<script type="module" src="${scriptPath}" data-type="dweb-store"></script>`;
+            `<script type="module" src="${scriptPath}"></script>`;
 
           // 使用 lastIndexOf 确保在最后一个 </head> 之前注入
           const lastHeadIndex = html.lastIndexOf("</head>");

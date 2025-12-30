@@ -302,7 +302,7 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
             const scriptPath = generateScriptPath("theme");
             registerScript(scriptPath, fullScript);
             const scriptTag =
-              `<script type="module" src="${scriptPath}" data-type="dweb-theme"></script>`;
+              `<script type="module" src="${scriptPath}"></script>`;
             const lastHeadIndex = newHtml.lastIndexOf("</head>");
             if (lastHeadIndex !== -1) {
               newHtml = newHtml.slice(0, lastHeadIndex) +
