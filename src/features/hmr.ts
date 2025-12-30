@@ -16,7 +16,7 @@ export { createHMRClientScript } from "../client/utils/script-hmr.ts";
 const DEFAULT_HMR_PORT = 24678;
 
 /** 默认服务器 origin */
-const DEFAULT_SERVER_ORIGIN = "http://localhost:3000";
+const DEFAULT_SERVER_ORIGIN = "http://127.0.0.1:3000";
 
 /** 需要忽略的文件模式 */
 const IGNORED_FILE_PATTERNS = [
@@ -35,6 +35,8 @@ const IGNORED_FILE_PATTERNS = [
   (path: string) => path.includes(".lock"),
   (path: string) => path.includes(".log"),
   (path: string) => path.includes(".env"),
+  (path: string) => path.includes("runtime"),
+  (path: string) => path.includes(".runtime"),
   (path: string) => path.includes("coverage"),
   (path: string) => path.includes("build"),
   (path: string) => path.includes("dist"),

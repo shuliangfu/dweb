@@ -17,7 +17,7 @@ import type { RouteInfo, Router } from "./router.ts";
 import { handleApiRoute, loadApiRoute } from "./api-route.ts";
 import type { GraphQLServer } from "../features/graphql/server.ts";
 import type { RenderAdapter, VNode } from "./render/adapter.ts";
-import type { CacheAdapter } from "./cache/adapter.ts";
+import type { CacheAdapter } from "./cache/mod.ts";
 
 import type { CookieManager } from "../features/cookie.ts";
 import type { SessionManager } from "../features/session.ts";
@@ -36,7 +36,7 @@ import { minifyJavaScript } from "../server/utils/minify.ts";
 import * as path from "@std/path";
 import { logger } from "../server/utils/logger.ts";
 import { isMultiAppMode } from "./config.ts";
-import { LRUCache } from "../common/utils/lru-cache.ts";
+import { MemoryCacheAdapter } from "./cache/mod.ts";
 
 /**
  * HMR 客户端脚本注入函数
@@ -102,17 +102,13 @@ export class RouteHandler {
   private graphqlServer?: GraphQLServer;
   private renderAdapter: RenderAdapter;
   private application?: any; // Application 实例（可选，避免循环依赖）
-  private cacheAdapter?: CacheAdapter;
-
+  private cacheAdapter: CacheAdapter;
   /**
-   * 模块编译缓存
-   * Key: 文件绝对路径
-   * Value: 修改时间和编译后的代码
-   * 使用 LRU 缓存，最大 1000 个条目
+   * 文件修改时间映射（用于开发环境下绕过 Deno 模块缓存）
+   * key: 文件路径（绝对路径）
+   * value: 文件修改时间戳
    */
-  private moduleCache = new LRUCache<string, { mtime: number; code: string }>(
-    1000,
-  );
+  private fileMtimeMap: Map<string, number> = new Map();
 
   constructor(
     router: Router,
@@ -131,7 +127,78 @@ export class RouteHandler {
     this.config = config;
     this.graphqlServer = graphqlServer;
     this.application = application;
-    this.cacheAdapter = cacheAdapter;
+    this.cacheAdapter = this.initializeCacheAdapter(cacheAdapter);
+  }
+
+  /**
+   * 初始化缓存适配器
+   * 如果没有提供 cacheAdapter，使用默认的内存缓存
+   */
+  private initializeCacheAdapter(cacheAdapter?: CacheAdapter): CacheAdapter {
+    return cacheAdapter || new MemoryCacheAdapter();
+  }
+
+  /**
+   * 清除模块缓存（用于 HMR 文件变化时主动清除缓存）
+   * @param filePath 文件路径（相对路径或绝对路径），如果未提供则清除所有缓存
+   */
+  async clearModuleCache(filePath?: string): Promise<void> {
+    if (!filePath) {
+      // 清除所有缓存
+      await this.cacheAdapter.clear();
+      this.fileMtimeMap.clear();
+      return;
+    }
+
+    // 使用与 handleModuleRequest 完全相同的路径计算逻辑
+    const cwd = Deno.cwd();
+    let fullPath: string;
+
+    // 模拟 handleModuleRequest 中的路径计算逻辑（第 248-273 行）
+    const outDir = this.config?.build?.outDir || "dist";
+    if (outDir) {
+      // 客户端请求：从 client 目录加载（不包含 load 函数）
+      let clientOutDir;
+      if (await isMultiAppMode()) {
+        clientOutDir = path.join(outDir, this.config!.name!, "client");
+      } else {
+        clientOutDir = path.join(outDir, "client");
+      }
+
+      if (filePath.startsWith("./")) {
+        // 生产环境：相对路径（如 ./components_Hero.4fce6e4f85.js），从 dist/client 目录加载
+        const relativePath = filePath.substring(2); // 移除 ./ 前缀
+        fullPath = path.resolve(cwd, clientOutDir, relativePath);
+      } else if (!filePath.includes("/") && !filePath.includes("\\")) {
+        // 生产环境：只有文件名（如 components_Hero.4fce6e4f85.js），从 dist/client 目录加载
+        fullPath = path.resolve(cwd, clientOutDir, filePath);
+      } else {
+        // 开发环境：从项目根目录加载
+        fullPath = path.resolve(cwd, filePath);
+      }
+    } else {
+      // 开发环境：从项目根目录加载
+      fullPath = path.resolve(cwd, filePath);
+    }
+
+    // 注意：handleModuleRequest 中的 cacheKey 就是 fullPath（第 300 行：const cacheKey = fullPath;）
+    // 所以不需要标准化，直接使用 fullPath 作为缓存 key
+    const cacheKey = fullPath;
+
+    // 清除缓存适配器的缓存
+    try {
+      await this.cacheAdapter.delete(cacheKey);
+    } catch (_error) {
+      // 忽略删除失败，继续执行
+    }
+
+    // 在开发环境下，删除文件的修改时间映射，强制下次导入时检测到变化并使用临时文件
+    const isDev = !this.config?.isProduction;
+    if (isDev) {
+      // 删除文件修改时间映射，这样下次 importModuleWithAlias 调用时会检测到文件已修改
+      // 并使用临时文件导入，绕过 Deno 的模块缓存
+      this.fileMtimeMap.delete(fullPath);
+    }
   }
 
   /**
@@ -246,14 +313,10 @@ export class RouteHandler {
         const mtime = stat.mtime?.getTime() || 0;
         const cacheKey = fullPath;
 
-        let cachedEntry: { mtime: number; code: string } | null | undefined;
-        if (this.cacheAdapter) {
-          cachedEntry = await this.cacheAdapter.get<
-            { mtime: number; code: string }
-          >(cacheKey);
-        } else {
-          cachedEntry = this.moduleCache.get(cacheKey);
-        }
+        const cachedEntry = await this.cacheAdapter.get<{
+          mtime: number;
+          code: string;
+        }>(cacheKey);
 
         // 仅当未显式跳过缓存时才命中
         if (!skipCache && cachedEntry && cachedEntry.mtime === mtime) {
@@ -380,17 +443,10 @@ export class RouteHandler {
 
         // 更新缓存（带 t 参数跳过读取缓存，但仍写入最新编译结果）
         try {
-          if (this.cacheAdapter) {
-            await this.cacheAdapter.set(cacheKey, {
-              mtime,
-              code: jsCode,
-            });
-          } else {
-            this.moduleCache.set(cacheKey, {
-              mtime,
-              code: jsCode,
-            });
-          }
+          await this.cacheAdapter.set(cacheKey, {
+            mtime,
+            code: jsCode,
+          });
         } catch {
           // 忽略缓存写入失败，继续返回编译结果
         }
@@ -1118,269 +1174,195 @@ export class RouteHandler {
   /**
    * 动态导入模块（支持路径别名解析）
    * 当 Deno 无法自动解析 deno.json 中的导入映射时，手动处理路径别名
+   * 在开发环境下，通过检查文件修改时间来绕过 Deno 的模块缓存
    *
    * @param filePath 文件路径（file:// 协议）
    * @returns 导入的模块
    */
-  private async importModuleWithAlias(
-    filePath: string,
-  ): Promise<Record<string, unknown>> {
+  /**
+   * 清理错误信息中的 data URL，避免输出 base64 乱码
+   */
+  private sanitizeErrorMessage(message: string): string {
+    if (!message) return message;
+
+    // 匹配所有可能的 data URL 格式
+    const dataUrlPatterns = [
+      /data:application\/javascript;base64,[^\s"']+/g,
+      /data:text\/javascript;base64,[^\s"']+/g,
+      /data:application\/javascript,[^\s"']+/g,
+      /data:text\/javascript,[^\s"']+/g,
+    ];
+
+    let sanitized = message;
+    for (const pattern of dataUrlPatterns) {
+      sanitized = sanitized.replace(pattern, (match) => {
+        const prefix = match.substring(0, match.indexOf(",") + 1);
+        return prefix + "[...]";
+      });
+    }
+
+    return sanitized;
+  }
+
+  /**
+   * 读取项目的 import map
+   */
+  private async loadImportMap(
+    fileDir: string,
+  ): Promise<Record<string, string>> {
+    const projectRoot = findProjectRoot(fileDir);
     try {
-      // 先尝试直接导入（如果文件没有使用路径别名，这样可以更快）
-      return await import(filePath);
-    } catch (error) {
-      // 如果导入失败，可能是路径别名问题
-      const errorMessage = error instanceof Error
-        ? error.message
-        : String(error);
-      if (errorMessage.includes("not a dependency and not in import map")) {
-        // 这是路径别名问题，需要特殊处理
-        // 读取文件内容，替换路径别名，然后使用临时文件导入
-        try {
-          const filePathWithoutPrefix = filePath.replace(/^file:\/\//, "");
-          const fileDir = path.dirname(filePathWithoutPrefix);
+      const { readDenoJson } = await import("../server/utils/file.ts");
+      const denoJson = await readDenoJson(projectRoot);
+      return (denoJson?.imports as Record<string, string>) || {};
+    } catch {
+      return {};
+    }
+  }
 
-          // 读取 deno.json 获取导入映射
-          // 使用 findProjectRoot 查找项目根目录（更可靠）
-          const projectRoot = findProjectRoot(fileDir);
-          let importMap: Record<string, string> = {};
-          try {
-            const { readDenoJson } = await import("../server/utils/file.ts");
-            const denoJson = await readDenoJson(projectRoot);
-            if (denoJson && denoJson.imports) {
-              importMap = denoJson.imports;
-              logger.debug(
-                `[importModuleWithAlias] 成功读取 deno.json，找到 ${
-                  Object.keys(importMap).length
-                } 个导入映射。项目根目录: ${projectRoot}`,
-              );
-            } else {
-              logger.warn(
-                `[importModuleWithAlias] 未找到 deno.json 或 deno.jsonc 文件中的 imports。项目根目录: ${projectRoot}, 文件目录: ${fileDir}`,
-              );
-            }
-          } catch (readError) {
-            // deno.json 不存在或读取失败，记录警告但继续处理
-            // 因为 buildFromStdin 会通过 jsrResolverPlugin 处理路径别名
-            // 但是，如果 importMap 为空，jsrResolverPlugin 可能无法处理路径别名
-            // 所以我们需要确保 importMap 不为空
-            logger.warn(
-              `[importModuleWithAlias] 读取 deno.json 失败（将依赖 esbuild 插件处理路径别名）: ${
-                readError instanceof Error
-                  ? readError.message
-                  : String(readError)
-              }, 项目根目录: ${projectRoot}, 文件目录: ${fileDir}`,
-            );
-            // 不抛出错误，继续处理，让 buildFromStdin 的 jsrResolverPlugin 处理路径别名
-            // 但是，如果 importMap 为空，我们需要确保 buildFromStdin 能够正确处理
-          }
+  /**
+   * 编译模块代码（处理路径别名和相对路径）
+   */
+  private async compileModuleCode(
+    filePath: string,
+    importMap: Record<string, string>,
+  ): Promise<string> {
+    const filePathWithoutPrefix = filePath.replace(/^file:\/\//, "");
+    const fileDir = path.dirname(filePathWithoutPrefix);
+    const fileContent = await Deno.readTextFile(filePathWithoutPrefix);
 
-          // 如果 importMap 为空，记录警告（这可能导致路径别名无法处理）
-          if (Object.keys(importMap).length === 0) {
-            logger.warn(
-              `[importModuleWithAlias] importMap 为空，路径别名可能无法处理。项目根目录: ${projectRoot}, 文件: ${filePathWithoutPrefix}`,
-            );
-          }
+    // 替换路径别名
+    let processedContent = replaceImportAliasesInContent(
+      fileContent,
+      importMap,
+      fileDir,
+    );
 
-          // 读取文件内容
-          const fileContent = await Deno.readTextFile(filePathWithoutPrefix);
+    // 将相对路径转换为绝对路径
+    const relativeImportRegex =
+      /(?:from\s+['"]|import\s*\(\s*['"])(\.\.?\/[^'"]+)(['"])/g;
+    processedContent = processedContent.replace(
+      relativeImportRegex,
+      (match, importPath) => {
+        const absolutePath = path.resolve(fileDir, importPath);
+        return match.replace(importPath, absolutePath);
+      },
+    );
 
-          // 替换路径别名
-          const processedContent = replaceImportAliasesInContent(
-            fileContent,
-            importMap,
-            fileDir,
-          );
+    // 使用 esbuild 编译
+    const ext = path.extname(filePathWithoutPrefix);
+    const loader = ext === ".tsx" || ext === ".jsx" ? "tsx" : "ts";
+    const projectRoot = findProjectRoot(fileDir);
 
-          // 检查是否还有未替换的路径别名（esbuild 插件会处理，但我们需要确保 importMap 正确传递）
-          const aliasCheckRegex =
-            /(?:from\s+['"]|import\s*\(\s*['"])(@[^'"]+)(['"])/g;
-          const remainingAliases = processedContent.match(aliasCheckRegex);
-          if (remainingAliases && remainingAliases.length > 0) {
-            logger.debug(
-              `[importModuleWithAlias] 文件中仍有未替换的路径别名（将由 esbuild 插件处理）: ${filePathWithoutPrefix}`,
-              { remainingAliases: Array.from(remainingAliases) },
-            );
-          }
+    const compiledCode = await buildFromStdin(
+      processedContent,
+      filePathWithoutPrefix,
+      projectRoot,
+      loader,
+      {
+        importMap,
+        cwd: projectRoot,
+        bundleClient: false,
+        isServerBuild: true,
+        minify: false,
+        sourcemap: false,
+        keepNames: true,
+      },
+    );
 
-          // 注意：import.meta.resolve 在动态导入的上下文中无法解析导入映射
-          // 所以我们需要使用 data: URL 方案
+    // 在编译后的代码开头注入 import.meta.url 的定义
+    // 这样即使通过临时文件导入，import.meta.url 也会指向原始文件路径
+    const originalFileUrl = filePath.startsWith("file://")
+      ? filePath
+      : `file://${filePathWithoutPrefix}`;
+    const importMetaUrlInjection =
+      `Object.defineProperty(import.meta, 'url', { value: ${
+        JSON.stringify(originalFileUrl)
+      }, writable: false, configurable: false });\n`;
 
-          // 方案：使用 data: URL，但需要将相对路径转换为绝对路径
-          // 匹配所有相对路径导入（如 import ... from "./xxx" 或 import ... from "../xxx"）
-          // 同时也需要处理可能遗留的路径别名（不应该发生，但为了安全起见）
-          const relativeImportRegex =
-            /(?:from\s+['"]|import\s*\(\s*['"])(\.\.?\/[^'"]+)(['"])/g;
-          const processedWithAbsolutePaths = processedContent.replace(
-            relativeImportRegex,
-            (match, importPath, _quote) => {
-              // 将相对路径转换为绝对路径（不添加 file:// 协议，esbuild 需要普通路径）
-              const absolutePath = path.resolve(fileDir, importPath);
-              return match.replace(importPath, absolutePath);
-            },
-          );
+    return importMetaUrlInjection + compiledCode;
+  }
 
-          // 使用 esbuild 编译 TypeScript/JSX 代码
-          // 因为 Deno 无法直接解析 data: URL 中的 TypeScript/JSX 语法
-          let compiledCode: string;
-          try {
-            // 确定文件扩展名以选择正确的 loader
-            const ext = path.extname(filePathWithoutPrefix);
-            const loader = ext === ".tsx" || ext === ".jsx" ? "tsx" : "ts";
+  /**
+   * 通过临时文件导入编译后的模块
+   */
+  private async importFromTempFile(
+    compiledCode: string,
+  ): Promise<Record<string, unknown>> {
+    const tempFile = await Deno.makeTempFile({
+      prefix: "dweb-module-",
+      suffix: ".js",
+    });
 
-            // 找到项目根目录作为 cwd
-            const projectRoot = findProjectRoot(fileDir);
+    try {
+      await Deno.writeTextFile(tempFile, compiledCode);
+      const fileUrl = `file://${tempFile}`;
 
-            // 使用 esbuild 编译代码
-            // 注意：即使 processedWithAbsolutePaths 中还有未替换的路径别名，
-            // buildFromStdin 会通过 jsrResolverPlugin 来处理它们
-            compiledCode = await buildFromStdin(
-              processedWithAbsolutePaths,
-              filePathWithoutPrefix,
-              projectRoot,
-              loader,
-              {
-                importMap,
-                cwd: projectRoot,
-                bundleClient: false, // 服务端构建，不打包客户端依赖
-                isServerBuild: true, // 明确标记为服务端构建
-                minify: false, // 开发环境不压缩
-                sourcemap: false,
-                keepNames: true, // 保留函数名，便于调试
-              },
-            );
-          } catch (compileError) {
-            // 编译失败，记录详细错误信息
-            const errorMessage = compileError instanceof Error
-              ? compileError.message
-              : String(compileError);
-            logger.warn(
-              `[importModuleWithAlias] esbuild 编译失败: ${errorMessage}`,
-              {
-                file: filePathWithoutPrefix,
-                projectRoot,
-                importMapKeys: Object.keys(importMap),
-              },
-            );
-            throw new Error(
-              `无法编译模块: ${errorMessage}`,
-            );
-          }
+      const importPromise = import(fileUrl);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("模块导入超时")), 10000);
+      });
 
-          // 编译后的代码可能包含绝对路径的导入（如果 esbuild 没有完全打包）
-          // 在服务端使用临时文件导入时，绝对路径应该保留为绝对路径
-          // Deno 的 import map 会处理这些路径，不需要转换为 file:// URL
-          // 注意：临时文件中的代码在 Deno 的上下文中执行，可以访问文件系统
-          // 所以绝对路径可以直接使用，Deno 会根据 import map 解析
-          const finalCompiledCode = compiledCode;
+      const module = await Promise.race([
+        importPromise,
+        timeoutPromise,
+      ]) as Record<string, unknown>;
 
-          // 调试：检查编译后的代码中是否包含问题导入
-          if (finalCompiledCode.includes("@dreamer/dweb/client")) {
-            logger.debug(
-              `[importModuleWithAlias] 编译后的代码中仍包含 @dreamer/dweb/client 导入`,
-              { file: filePathWithoutPrefix },
-            );
-          }
+      if (!module) {
+        throw new Error("模块导入返回空值");
+      }
 
-          // 注意：data: URL 中的代码无法访问文件系统，所以即使转换为 file:// URL 也无法解析
-          // 解决方案：使用临时文件而不是 data: URL
-          // 创建临时文件
-          const tempDir = await Deno.makeTempDir({ prefix: "dweb-import-" });
-          const tempFilePath = path.join(tempDir, "module.js");
-          await Deno.writeTextFile(tempFilePath, finalCompiledCode);
-
-          try {
-            // 导入临时文件（需要处理 Windows 路径）
-            let importPath = `file://${tempFilePath}`;
-            if (Deno.build.os === "windows") {
-              // Windows 路径需要特殊处理
-              importPath = `file:///${tempFilePath.replace(/\\/g, "/")}`;
-            }
-
-            // 添加超时处理，避免导入挂起
-            const importPromise = import(importPath);
-            const timeoutPromise = new Promise((_, reject) => {
-              setTimeout(() => reject(new Error("模块导入超时")), 10000); // 10秒超时
-            });
-
-            const module = await Promise.race([
-              importPromise,
-              timeoutPromise,
-            ]) as Record<string, unknown>;
-
-            if (!module) {
-              throw new Error("模块导入返回空值");
-            }
-
-            return module;
-          } catch (importError) {
-            // 导入失败，记录详细错误信息
-            logger.warn(
-              `[importModuleWithAlias] 临时文件导入失败: ${
-                importError instanceof Error
-                  ? importError.message
-                  : String(importError)
-              }`,
-              { filePath: filePathWithoutPrefix, tempFilePath },
-            );
-            throw importError;
-          } finally {
-            // 清理临时文件（异步，不阻塞）
-            Deno.remove(tempDir, { recursive: true }).catch(() => {
-              // 忽略清理错误
-            });
-          }
-        } catch (processError) {
-          // 处理路径别名失败，返回原始错误
-          logger.warn(
-            `加载模块失败（路径别名处理失败）: ${filePath}`,
-          );
-          // 处理错误信息，避免输出过长的 base64 data URL
-          let errorMessage = processError instanceof Error
-            ? processError.message
-            : String(processError);
-          // 如果错误信息包含 data: URL，只保留前面的部分，不输出 base64 内容
-          if (errorMessage.includes("data:application/javascript;base64,")) {
-            const dataUrlIndex = errorMessage.indexOf(
-              "data:application/javascript;base64,",
-            );
-            const beforeDataUrl = errorMessage.substring(0, dataUrlIndex);
-            // 只保留 "data:application/javascript;base64," 部分，不输出后面的 base64 内容
-            errorMessage = beforeDataUrl +
-              "data:application/javascript;base64,[...]";
-          }
-          logger.warn(
-            `错误信息: ${errorMessage}`,
-          );
-          throw error; // 抛出原始错误
-        }
-      } else {
-        // 其他错误，直接抛出
-        throw error;
+      return module;
+    } finally {
+      try {
+        await Deno.remove(tempFile);
+      } catch {
+        // 忽略清理失败
       }
     }
   }
 
+  /**
+   * 导入模块（支持路径别名，开发环境绕过 Deno 缓存）
+   */
+  private async importModuleWithAlias(
+    filePath: string,
+  ): Promise<Record<string, unknown>> {
+    const isDev = !this.config?.isProduction;
+
+    // 生产环境：尝试直接导入
+    if (!isDev) {
+      try {
+        return await import(filePath);
+      } catch (error) {
+        const errorMessage = error instanceof Error
+          ? error.message
+          : String(error);
+        if (!errorMessage.includes("not a dependency and not in import map")) {
+          throw error;
+        }
+        // 路径别名问题，继续处理
+      }
+    }
+
+    // 开发环境或路径别名问题：使用 esbuild 编译 + 临时文件导入
+    const filePathWithoutPrefix = filePath.replace(/^file:\/\//, "");
+    const fileDir = path.dirname(filePathWithoutPrefix);
+    const importMap = await this.loadImportMap(fileDir);
+    const compiledCode = await this.compileModuleCode(filePath, importMap);
+    return await this.importFromTempFile(compiledCode);
+  }
+
   private async loadPageModule(
     routeInfo: RouteInfo,
-    res: Response,
+    _res: Response,
   ): Promise<Record<string, unknown>> {
     const pagePath = resolveFilePath(routeInfo.filePath);
-    try {
-      const pageModule = await this.importModuleWithAlias(pagePath);
-      if (!pageModule) {
-        throw new Error("模块导入返回空值");
-      }
-      return pageModule;
-    } catch (error) {
-      res.status = 500;
-      res.text(
-        `Failed to load page module: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-      throw error;
+    const pageModule = await this.importModuleWithAlias(pagePath);
+    if (!pageModule) {
+      throw new Error("模块导入返回空值");
     }
+    return pageModule;
   }
 
   /**

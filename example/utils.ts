@@ -3,60 +3,41 @@
  * 用于获取 DWeb 框架的版本信息和相关 URL
  */
 
-// 读取根目录的 deno.json 或 deno.jsonc 获取版本号
-let _dwebVersion: string = "";
-let _denoJson: any = null;
-
-/**
- * 同步读取 deno.json 或 deno.jsonc
- */
-function readDenoJsonSync(basePath: string): Record<string, any> | null {
-  // 优先尝试 deno.json
-  const denoJsonPath = `${basePath}/deno.json`;
-  try {
-    const content = Deno.readTextFileSync(denoJsonPath);
-    return JSON.parse(content);
-  } catch {
-    // deno.json 不存在，尝试 deno.jsonc
-    try {
-      const denoJsoncPath = `${basePath}/deno.jsonc`;
-      const content = Deno.readTextFileSync(denoJsoncPath);
-      return JSON.parse(content);
-    } catch {
-      return null;
-    }
-  }
-}
+import * as path from "@std/path";
 
 /**
  * 获取 DWeb 版本号
  */
-function getDwebVersion(): string {
-  if (!_dwebVersion) {
+function getDwebVersion(): string { 
+	let basePath1 = new URL("../", import.meta.url).pathname;        
+	
+  const jsonPath = path.join(basePath1, "deno.json");
+	const jsoncPath = path.join(basePath1, "deno.jsonc");
+	
+  try {
+    const json = Deno.readTextFileSync(jsonPath);
+    return JSON.parse(json).version;
+  } catch {
     try {
-      const basePath1 = new URL("../../", import.meta.url).pathname;
-      _denoJson = readDenoJsonSync(basePath1);
-      if (_denoJson && _denoJson.version) {
-        _dwebVersion = _denoJson.version;
-      } else {
-        throw new Error("Version not found");
-      }
-    } catch (_error) {
+      const jsonc = Deno.readTextFileSync(jsoncPath);
+      return JSON.parse(jsonc).version;
+    } catch {
+      basePath1 = new URL("../../", import.meta.url).pathname;
+      const jsonPath = path.join(basePath1, "deno.json");
+			const jsoncPath = path.join(basePath1, "deno.jsonc");
       try {
-        const basePath2 = new URL("../", import.meta.url).pathname;
-        _denoJson = readDenoJsonSync(basePath2);
-        if (_denoJson && _denoJson.version) {
-          _dwebVersion = _denoJson.version;
-        } else {
-          throw new Error("Version not found");
+        const json = Deno.readTextFileSync(jsonPath);
+        return JSON.parse(json).version;
+      } catch {
+        try {
+          const jsonc = Deno.readTextFileSync(jsoncPath);
+          return JSON.parse(jsonc).version;
+        } catch {
+          return "1.0.0";
         }
-      } catch (_error) {
-        // 无法读取 deno.json 或 deno.jsonc，使用默认版本号
-        _dwebVersion = "0.1.0";
       }
     }
   }
-  return _dwebVersion;
 }
 
 /**

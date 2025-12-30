@@ -55,9 +55,11 @@ export type {
 export {
   type CacheAdapter,
   type CacheOptions,
+  FileCacheAdapter,
+  LRUCache,
   MemoryCacheAdapter,
   RedisCacheAdapter,
-} from "./core/cache/adapter.ts";
+} from "./core/cache/mod.ts";
 
 // 导出配置管理
 import {

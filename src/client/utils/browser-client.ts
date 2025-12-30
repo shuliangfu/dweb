@@ -1589,6 +1589,7 @@ class BrowserClient {
             } | undefined;
         }
       }
+
       if (modules) {
         // 使用预加载的 Preact 模块（避免重复导入）
         hydrate = modules.hydrate as (

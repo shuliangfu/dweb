@@ -159,6 +159,68 @@ class HMRClient {
   }
 
   /**
+   * 提取并更新 i18n 数据（从 HTML 中提取）
+   * 与客户端渲染保持一致
+   */
+  private extractAndUpdateI18nData(html: string): void {
+    try {
+      const scriptTagRegex =
+        /<script[^>]*>[\s\S]*?window\.__I18N_DATA__[\s\S]*?<\/script>/i;
+      const i18nScriptMatch = html.match(scriptTagRegex);
+      if (i18nScriptMatch) {
+        const scriptContent = i18nScriptMatch[0];
+        const dataRegex = /window\.__I18N_DATA__\s*=\s*(\{[\s\S]*?\});/;
+        const dataMatch = scriptContent.match(dataRegex);
+        if (dataMatch) {
+          try {
+            const i18nData = new Function("return " + dataMatch[1])() as {
+              t?: (key: string, params?: Record<string, string>) => string;
+            };
+
+            if (i18nData && typeof i18nData === "object") {
+              (globalThis as Record<string, unknown>).__I18N_DATA__ = i18nData;
+
+              if (i18nData.t && typeof i18nData.t === "function") {
+                (globalThis as Record<string, unknown>).$t = function (
+                  key: string,
+                  params?: Record<string, string>,
+                ): string {
+                  const i18n = (globalThis as Record<string, unknown>)
+                    .__I18N_DATA__ as {
+                      t?: (
+                        key: string,
+                        params?: Record<string, string>,
+                      ) => string;
+                    } | undefined;
+                  if (!i18n?.t) {
+                    return key;
+                  }
+                  return i18n.t.call(i18n, key, params);
+                };
+              }
+            }
+          } catch (e) {
+            console.warn("[HMR] i18n 数据解析失败:", e);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("[HMR] 提取 i18n 数据失败:", e);
+    }
+
+    // 确保 $t 函数始终可用
+    // 支持任意类型参数（string、number、boolean 等），自动转换为字符串
+    if (typeof (globalThis as Record<string, unknown>).$t !== "function") {
+      (globalThis as Record<string, unknown>).$t = function (
+        key: string,
+        _params?: Record<string, any>,
+      ): string {
+        return key;
+      };
+    }
+  }
+
+  /**
    * 加载布局组件
    */
   private async loadLayoutComponent(
@@ -171,11 +233,12 @@ class HMRClient {
     try {
       const separator = layoutPath.includes("?") ? "&" : "?";
       const timestamp = Date.now();
-      const layoutModule = await import(
-        `${layoutPath}${separator}t=${timestamp}`
-      );
-      return layoutModule.default;
-    } catch {
+      const layoutUrl = `${layoutPath}${separator}t=${timestamp}`;
+      const layoutModule = await import(layoutUrl);
+      const layoutComponent = layoutModule.default;
+      return layoutComponent;
+    } catch (error) {
+      console.error("[HMR] 布局组件加载失败:", error);
       return null;
     }
   }
@@ -270,7 +333,7 @@ class HMRClient {
           throw new Error("布局组件返回了空值");
         }
         return finalElement;
-      } catch {
+      } catch (_layoutError) {
         // 如果直接调用失败，尝试用 jsx 函数调用（同步组件）
         try {
           // 获取布局的 load 数据（如果有）
@@ -317,7 +380,12 @@ class HMRClient {
     // 直接使用 Preact 的 render 函数更新内容
     // Preact 会自动 diff 并更新 DOM，不需要手动清空容器
     // 这样可以避免闪动，实现平滑的热更新
-    render(finalElement, root);
+    try {
+      render(finalElement, root);
+    } catch (renderError) {
+      console.error("[HMR] render 调用失败:", renderError);
+      throw renderError;
+    }
 
     // 验证渲染结果（不抛出错误，只记录警告）
     setTimeout(() => {
@@ -382,6 +450,236 @@ class HMRClient {
   }
 
   /**
+   * 重新加载当前页面（根据 pageData 加载路由和布局组件）
+   */
+  private async reloadCurrentPage(): Promise<void> {
+    try {
+      // 获取页面数据
+      const pageData = (globalThis as Record<string, unknown>)
+        .__PAGE_DATA__ as {
+          route?: string;
+          layoutPath?: string;
+          allLayoutPaths?: string[];
+          props?: Record<string, unknown>;
+          layoutData?: Record<string, unknown>[];
+          renderMode?: string;
+          layout?: boolean;
+          [key: string]: unknown;
+        } | undefined;
+
+      if (!pageData || !pageData.route) {
+        // 如果没有页面数据，执行整页刷新
+        globalThis.location.reload();
+        return;
+      }
+
+      // 动态获取 Preact 模块
+      const { render, jsx } = this.getPreactModules();
+
+      // 获取根容器
+      const root = this.rootElement;
+      if (!root) {
+        throw new Error("未找到 #root 容器");
+      }
+
+      // 加载页面组件（添加时间戳参数强制绕过缓存）
+      const routeUrl = pageData.route.startsWith("http")
+        ? pageData.route
+        : `${globalThis.location.origin}${pageData.route}`;
+      // 添加时间戳参数，强制浏览器发起新的网络请求，绕过缓存
+      const timestamp = Date.now();
+      const routeUrlWithCacheBust = `${routeUrl}${
+        routeUrl.includes("?") ? "&" : "?"
+      }t=${timestamp}`;
+
+      const pageModule = await import(routeUrlWithCacheBust) as {
+        default: unknown;
+        renderMode?: string;
+      };
+
+      const PageComponent = pageModule.default;
+
+      if (!PageComponent || typeof PageComponent !== "function") {
+        throw new Error("页面组件未导出默认组件或组件不是函数");
+      }
+
+      // 加载布局组件
+      const LayoutComponents: unknown[] = [];
+      if (pageData.layout !== false) {
+        // 优先使用 allLayoutPaths（多个布局）
+        if (
+          pageData.allLayoutPaths && Array.isArray(pageData.allLayoutPaths) &&
+          pageData.allLayoutPaths.length > 0
+        ) {
+          for (let i = 0; i < pageData.allLayoutPaths.length; i++) {
+            const layoutPath = pageData.allLayoutPaths[i];
+            const layoutUrl = layoutPath.startsWith("http")
+              ? layoutPath
+              : `${globalThis.location.origin}${layoutPath}`;
+            // 添加时间戳参数，强制浏览器发起新的网络请求，绕过缓存
+            const timestamp = Date.now();
+            const layoutUrlWithCacheBust = `${layoutUrl}${
+              layoutUrl.includes("?") ? "&" : "?"
+            }t=${timestamp}`;
+            try {
+              const layoutModule = await import(layoutUrlWithCacheBust) as {
+                default: unknown;
+              };
+              if (layoutModule.default) {
+                LayoutComponents.push(layoutModule.default);
+              }
+            } catch {
+              // 忽略布局组件加载失败
+            }
+          }
+        } else if (
+          pageData.layoutPath && pageData.layoutPath !== "null" &&
+          typeof pageData.layoutPath === "string"
+        ) {
+          // 使用单个布局路径
+          const layoutUrl = pageData.layoutPath.startsWith("http")
+            ? pageData.layoutPath
+            : `${globalThis.location.origin}${pageData.layoutPath}`;
+          // 添加时间戳参数，强制浏览器发起新的网络请求，绕过缓存
+          const timestamp = Date.now();
+          const layoutUrlWithCacheBust = `${layoutUrl}${
+            layoutUrl.includes("?") ? "&" : "?"
+          }t=${timestamp}`;
+          try {
+            const layoutModule = await import(layoutUrlWithCacheBust) as {
+              default: unknown;
+            };
+            if (layoutModule.default) {
+              LayoutComponents.push(layoutModule.default);
+            }
+          } catch {
+            // 忽略布局组件加载失败
+          }
+        }
+      }
+
+      // 准备页面 props
+      const excludeKeys = [
+        "route",
+        "layoutPath",
+        "allLayoutPaths",
+        "layout",
+        "props",
+        "renderMode",
+        "layoutData",
+      ];
+      const loadData: Record<string, unknown> = {};
+      for (const key in pageData) {
+        if (!excludeKeys.includes(key)) {
+          loadData[key] = pageData[key];
+        }
+      }
+
+      const pageProps: Record<string, unknown> = {
+        params: (pageData.props as Record<string, unknown>)?.params || {},
+        query: (pageData.props as Record<string, unknown>)?.query || {},
+        data: loadData,
+        ...(pageData.props || {}),
+      };
+
+      // 确保 routePath 和 url 存在
+      if (!pageProps.routePath) {
+        pageProps.routePath = globalThis.location.pathname;
+      }
+      if (!pageProps.url) {
+        pageProps.url = new URL(globalThis.location.href);
+      } else if (typeof pageProps.url === "string") {
+        try {
+          pageProps.url = new URL(pageProps.url);
+        } catch {
+          pageProps.url = new URL(globalThis.location.href);
+        }
+      }
+
+      // 添加 Store 到 props
+      const store = (globalThis as Record<string, unknown>).__STORE__;
+      if (store) {
+        pageProps.store = store;
+      }
+
+      // 创建页面元素
+      let pageElement: unknown;
+      try {
+        const componentResult = (PageComponent as (
+          props: Record<string, unknown>,
+        ) => unknown)(pageProps);
+        if (componentResult instanceof Promise) {
+          pageElement = await componentResult;
+        } else {
+          pageElement = componentResult;
+        }
+      } catch {
+        pageElement = jsx(PageComponent, pageProps);
+      }
+
+      if (!pageElement) {
+        throw new Error("页面元素创建失败");
+      }
+
+      // 嵌套布局组件（从最内层到最外层，与 browser-client.ts 保持一致）
+      let finalElement: unknown = pageElement;
+      const layoutData = pageData.layoutData || [];
+
+      // 从最内层到最外层嵌套布局组件（与 browser-client.ts 保持一致）
+      for (let i = 0; i < LayoutComponents.length; i++) {
+        const LayoutComponent = LayoutComponents[i];
+        // 获取对应布局的 load 数据（如果有）
+        const layoutLoadData = (layoutData[i] as Record<string, unknown>) || {};
+        // 从 layoutLoadData 中排除 children 和 data，避免类型冲突和数据覆盖
+        const { children: _, data: __, ...restLayoutProps } = layoutLoadData;
+
+        if (typeof LayoutComponent === "function") {
+          try {
+            // 构建布局 props（与 browser-client.ts 保持一致）
+            const layoutProps = {
+              ...restLayoutProps, // 布局的 load 数据中的其他属性（如果有）
+              data: layoutLoadData, // 布局的 load 数据（例如 menus）
+              children: finalElement,
+            };
+            const layoutResult = (LayoutComponent as (props: {
+              children: unknown;
+              data: Record<string, unknown>;
+              [key: string]: unknown;
+            }) => unknown | Promise<unknown>)(layoutProps);
+            if (layoutResult instanceof Promise) {
+              finalElement = await layoutResult;
+            } else {
+              finalElement = layoutResult as unknown;
+            }
+          } catch {
+            try {
+              const layoutProps = {
+                ...restLayoutProps,
+                data: layoutLoadData,
+                children: finalElement,
+              };
+              const layoutResult = jsx(LayoutComponent, layoutProps);
+              if (layoutResult instanceof Promise) {
+                finalElement = await layoutResult;
+              } else {
+                finalElement = layoutResult as unknown;
+              }
+            } catch {
+              // 如果都失败，跳过该布局，继续使用当前元素（与 browser-client.ts 保持一致）
+            }
+          }
+        }
+      }
+
+      // 使用 renderComponent 方法渲染（与 updateComponent 保持一致）
+      this.renderComponent(root, finalElement, render);
+    } catch (_error) {
+      // 如果重新加载失败，执行整页刷新
+      globalThis.location.reload();
+    }
+  }
+
+  /**
    * 更新组件（通过 GET 请求获取编译后的模块）
    */
   private async updateComponent(
@@ -406,15 +704,64 @@ class HMRClient {
 
     try {
       // 获取页面数据
-      const pageData = (globalThis as Record<string, unknown>).__PAGE_DATA__ as
+      let pageData = (globalThis as Record<string, unknown>).__PAGE_DATA__ as
         | {
           props?: Record<string, unknown>;
           layoutPath?: string;
           allLayoutPaths?: string[];
           route?: string;
+          renderMode?: string;
           [key: string]: unknown; // 允许其他属性（如 load 函数返回的数据）
         }
         | undefined;
+
+      // SSR 模式下，如果页面数据不存在或为空，需要重新请求页面获取最新的页面数据
+      const isSSR = pageData?.renderMode === "ssr" ||
+        (!pageData &&
+          document.querySelector('script[data-type="dweb-page-data"]'));
+
+      if (isSSR && (!pageData || !pageData.route || !pageData.props)) {
+        try {
+          // 重新请求当前页面，获取最新的页面数据（包括 layout）
+          const response = await fetch(globalThis.location.href, {
+            headers: {
+              "Cache-Control": "no-cache",
+              "Pragma": "no-cache",
+            },
+          });
+          const html = await response.text();
+
+          // 提取并更新 i18n 数据（与客户端渲染保持一致）
+          this.extractAndUpdateI18nData(html);
+
+          // 解析 HTML，提取 JSON script 标签中的页面数据
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+          const pageDataScript = doc.querySelector(
+            'script[data-type="dweb-page-data"]',
+          );
+
+          if (pageDataScript && pageDataScript.textContent) {
+            try {
+              // 解析 JSON 数据（移除末尾的分号）
+              const jsonText = pageDataScript.textContent.trim().replace(
+                /;$/,
+                "",
+              );
+              const newPageData = JSON.parse(jsonText);
+
+              // 更新全局页面数据
+              (globalThis as Record<string, unknown>).__PAGE_DATA__ =
+                newPageData;
+              pageData = newPageData;
+            } catch (parseError) {
+              console.error("[HMR] 解析页面数据失败:", parseError);
+            }
+          }
+        } catch (fetchError) {
+          console.error("[HMR] 重新请求页面数据失败:", fetchError);
+        }
+      }
 
       // 参考客户端渲染的处理方式，从 pageData 中提取 load 数据
       // 排除一些系统键，其余的都是 load 函数返回的数据
@@ -562,8 +909,6 @@ class HMRClient {
         // 清理模块缓存，避免第二次更新仍命中旧模块
         const moduleCache = (globalThis as Record<string, unknown>)
           .__moduleCache as Map<string, unknown> | undefined;
-
-        console.log(moduleCache);
 
         if (moduleCache) {
           moduleCache.delete(filePath);
@@ -737,6 +1082,8 @@ class HMRClient {
     moduleUrl?: string;
   }): Promise<void> {
     try {
+      console.log(data);
+
       if (data.type === "css" && data.action === "reload-stylesheet") {
         // CSS 文件：只更新样式表
         if (data.file) {
@@ -800,18 +1147,11 @@ class HMRClient {
         };
       };
 
-      if (message.type === "reload") {
-        // 无感刷新：不进行整页重载，尝试重载当前路由组件
-        try {
-          const routePath = globalThis.location.pathname;
-          const moduleUrl = `${globalThis.location.origin}${routePath}`;
-          await this.updateComponent(moduleUrl, routePath);
-        } catch (_error) {
-          // 回退到组件级降级刷新
-          await this.reloadComponent();
-        }
-      } else if (message.type === "update") {
+      if (message.type === "update") {
         await this.handleUpdateMessage(message.data || {});
+      } else if (message.type === "reload") {
+        // 无感刷新：不进行整页重载，尝试重载当前路由组件
+        await this.reloadCurrentPage();
       }
     } catch {
       // 静默处理错误

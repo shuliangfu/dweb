@@ -169,15 +169,41 @@ export interface LoggingConfig {
   maskFields?: string[];
 }
 
+// 缓存适配器类型
+export type CacheAdapterType = "memory" | "redis" | "file";
+
 // 缓存配置
 export interface CacheConfig {
-  adapter?: "memory" | "redis";
+  /**
+   * 缓存适配器类型
+   * - "memory": 内存缓存（使用 Map，支持 TTL）
+   * - "redis": Redis 缓存（需要配置 Redis 连接）
+   * - "file": 文件缓存（将缓存存储到文件系统）
+   * @default "memory"
+   */
+  adapter?: CacheAdapterType;
+  /**
+   * Redis 配置（仅在 adapter 为 "redis" 时使用）
+   */
   redis?: {
     host: string;
     port: number;
     password?: string;
     db?: number;
   };
+  /**
+   * 文件缓存配置（仅在 adapter 为 "file" 时使用）
+   */
+  file?: {
+    /**
+     * 缓存目录路径
+     * @default ".cache"
+     */
+    dir?: string;
+  };
+  /**
+   * 默认过期时间（秒，仅对支持 TTL 的适配器有效：memory, redis, file）
+   */
   ttl?: number;
 }
 

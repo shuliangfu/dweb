@@ -41,9 +41,9 @@ import { EventEmitter } from "node:events";
 import { contentSecurityPolicy, helmet } from "../middleware/security.ts";
 import {
   type CacheAdapter,
+  FileCacheAdapter,
   MemoryCacheAdapter,
-  RedisCacheAdapter as _RedisCacheAdapter,
-} from "./cache/adapter.ts";
+} from "./cache/mod.ts";
 import { isMultiAppMode } from "./config.ts";
 
 /**
@@ -152,7 +152,7 @@ export class Application extends EventEmitter {
       await this.initializeErrorHandler();
 
       // 4. 初始化缓存服务
-      await this.initializeCache(config);
+      this.initializeCache(config);
 
       // 5. 初始化数据库（如果配置了）
       await this.initializeDatabase(config);
@@ -294,7 +294,11 @@ export class Application extends EventEmitter {
       }
 
       // 将文件变化事件连接到 HMR 服务器（智能更新）
-      fileWatcher.onReload((changeInfo) => {
+      fileWatcher.onReload(async (changeInfo) => {
+        // 清除 route-handler 的模块缓存（确保文件变化后立即失效缓存）
+        if (this.routeHandler) {
+          await this.routeHandler.clearModuleCache(changeInfo.path);
+        }
         // 通知 HMR 服务器文件变化
         hmrServer.notifyFileChange(changeInfo);
         // 仅当文件不是 CSS 时触发 CSS 刷新
@@ -315,18 +319,37 @@ export class Application extends EventEmitter {
    * 初始化缓存服务
    */
   private initializeCache(config: AppConfig): void {
+    const cacheConfig = config.cache || {};
+    const adapterType = cacheConfig.adapter || "memory";
+    const logger = this.serviceContainer.get<Logger>("logger");
+
     let adapter: CacheAdapter;
 
-    if (config.cache?.adapter === "redis" && config.cache.redis) {
-      // 如果配置了 Redis，尝试连接
-      // 注意：这里需要引入 Redis 客户端，目前仅作为接口预留
-      // 实际项目中应引入 redis 库，例如：import { connect } from "https://deno.land/x/redis/mod.ts";
-      const logger = this.serviceContainer.get<Logger>("logger");
-      logger?.warn("Redis 缓存适配器尚未完全实现，降级为内存缓存");
-      adapter = new MemoryCacheAdapter();
-    } else {
-      // 默认使用内存缓存
-      adapter = new MemoryCacheAdapter();
+    switch (adapterType) {
+      case "redis":
+        if (cacheConfig.redis) {
+          // 如果配置了 Redis，尝试连接
+          // 注意：这里需要引入 Redis 客户端，目前仅作为接口预留
+          // 实际项目中应引入 redis 库，例如：import { connect } from "https://deno.land/x/redis/mod.ts";
+          logger?.warn("Redis 缓存适配器尚未完全实现，降级为内存缓存");
+          adapter = new MemoryCacheAdapter();
+        } else {
+          logger?.warn("Redis 缓存配置不完整，降级为内存缓存");
+          adapter = new MemoryCacheAdapter();
+        }
+        break;
+
+      case "file": {
+        const cacheDir = cacheConfig.file?.dir || ".cache";
+        adapter = new FileCacheAdapter(cacheDir, cacheConfig.ttl);
+        break;
+      }
+
+      case "memory":
+      default:
+        // 默认使用内存缓存
+        adapter = new MemoryCacheAdapter();
+        break;
     }
 
     this.serviceContainer.registerSingleton("cache", () => adapter);

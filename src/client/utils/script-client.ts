@@ -230,6 +230,9 @@ initClient(${pageDataJson});
     registerScript(scriptPath, fullScript);
 
     // 返回：JSON script 标签 + 模块化的渲染代码（使用 script 标签引用）
+    if (renderMode === "ssr") {
+      return `<script type="application/json" data-type="dweb-page-data">${pageDataJson};</script>`;
+    }
     return `<script type="application/json" data-type="dweb-page-data">${pageDataJson};</script>\n<script type="module" src="${scriptPath}"></script>`;
   } catch (error) {
     console.error("[Client Script] 创建客户端脚本时出错:", error);
