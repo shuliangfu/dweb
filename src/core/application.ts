@@ -1094,6 +1094,12 @@ export class Application extends EventEmitter {
     isProduction: boolean,
   ): Promise<void> {
     const { staticFiles } = await import("../middleware/static.ts");
+    const { createScriptServerMiddleware } = await import(
+      "../server/utils/script-server.ts"
+    );
+
+    // 添加脚本服务中间件（在静态文件中间件之前）
+    this.middlewareManager.add(createScriptServerMiddleware());
 
     try {
       let staticDir: string;

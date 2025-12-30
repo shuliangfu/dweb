@@ -217,12 +217,14 @@ export function isSharedClientDependency(packageName: string): boolean {
  * @param importMap import map 配置
  * @param bundleClient 是否打包 @dreamer/dweb/client（默认 false，表示保持 external）
  * @param useSharedDeps 是否使用共享依赖机制（默认 false，开发环境可启用）
+ * @param isServerBuild 是否为服务端构建（默认 false）
  * @returns 外部依赖包名数组（子路径导入由插件处理）
  */
 export function getExternalPackages(
   importMap: Record<string, string>,
   bundleClient: boolean = false,
   useSharedDeps: boolean = false,
+  isServerBuild: boolean = false,
 ): string[] {
   const externalPackages: string[] = [
     "preact",
@@ -234,6 +236,12 @@ export function getExternalPackages(
     if (key.startsWith("@dreamer/dweb")) {
       // 如果是 JSR URL，保持 external（由浏览器通过 CDN/代理加载）
       if (value.startsWith("jsr:")) {
+        externalPackages.push(key);
+        continue;
+      }
+      // 服务端构建时：即使 @dreamer/dweb 是本地路径，也标记为 external
+      // 这样插件代码不会被编译打包，import.meta.url 可以正确指向原始位置
+      if (isServerBuild) {
         externalPackages.push(key);
         continue;
       }

@@ -7,6 +7,10 @@ import { filePathToHttpUrl } from "../../common/utils/path.ts";
 import { minifyJavaScript } from "../../server/utils/minify.ts";
 import { buildFromStdin } from "../../server/utils/esbuild.ts";
 import { readDenoJson } from "../../server/utils/file.ts";
+import {
+  generateScriptPath,
+  registerScript,
+} from "../../server/utils/script-server.ts";
 import * as path from "@std/path";
 
 // 缓存编译后的客户端脚本
@@ -221,8 +225,12 @@ initClient(${pageDataJson});
     // 组合完整的脚本
     const fullScript = `${clientScript}\n${initScript}`;
 
-    // 返回：JSON script 标签 + 模块化的渲染代码
-    return `<script type="application/json" data-type="dweb-page-data">${pageDataJson};</script>\n<script type="module" data-type="dweb-client">${fullScript}</script>`;
+    // 注册脚本到脚本服务并生成 script 标签
+    const scriptPath = generateScriptPath("client");
+    registerScript(scriptPath, fullScript);
+
+    // 返回：JSON script 标签 + 模块化的渲染代码（使用 script 标签引用）
+    return `<script type="application/json" data-type="dweb-page-data">${pageDataJson};</script>\n<script type="module" src="${scriptPath}" data-type="dweb-client"></script>`;
   } catch (error) {
     console.error("[Client Script] 创建客户端脚本时出错:", error);
     return "";

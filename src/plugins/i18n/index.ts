@@ -6,6 +6,11 @@
 // 注意：全局类型声明在 example/i18n-global.d.ts 中
 // 由于 JSR 不允许修改全局类型，用户需要在项目中手动引用 i18n-global.d.ts
 
+import {
+  generateScriptPath,
+  registerScript,
+} from "../../server/utils/script-server.ts";
+
 // 在模块加载时初始化默认全局函数
 // 这确保即使 i18n 插件未使用，$t() 也可以使用（返回 key 本身）
 if (typeof globalThis !== "undefined") {
@@ -315,6 +320,47 @@ export function i18n(options: I18nPluginOptions): Plugin {
   let cachedClientScript: string | null = null;
 
   /**
+   * 读取文件内容（支持本地文件和 JSR 包）
+   * @param relativePath 相对于当前文件的路径
+   * @returns 文件内容
+   */
+  async function readFileContent(relativePath: string): Promise<string> {
+    const currentUrl = new URL(import.meta.url);
+
+    // 如果是 HTTP/HTTPS URL（JSR 包），使用 fetch
+    if (currentUrl.protocol.startsWith("http")) {
+      // 构建 JSR URL：将当前文件的 URL 替换为相对路径的文件
+      const currentPath = currentUrl.pathname;
+      const currentDir = currentPath.substring(0, currentPath.lastIndexOf("/"));
+      const targetPath = `${currentDir}/${relativePath}`;
+
+      // 构建完整的 JSR URL
+      const baseUrl = currentUrl.origin;
+      const fullUrl = `${baseUrl}${targetPath}`;
+
+      const response = await fetch(fullUrl);
+      if (!response.ok) {
+        throw new Error(
+          `无法从 JSR 包读取文件: ${fullUrl} (${response.status})`,
+        );
+      }
+      return await response.text();
+    } else {
+      // 本地文件系统，使用 Deno.readTextFile
+      const browserScriptPath = path.join(
+        path.dirname(new URL(import.meta.url).pathname),
+        relativePath,
+      );
+      // Windows 路径处理
+      let filePath = browserScriptPath;
+      if (Deno.build.os === "windows" && filePath.startsWith("/")) {
+        filePath = filePath.substring(1);
+      }
+      return await Deno.readTextFile(filePath);
+    }
+  }
+
+  /**
    * 编译客户端 i18n 脚本
    */
   async function compileClientScript(): Promise<string> {
@@ -323,158 +369,32 @@ export function i18n(options: I18nPluginOptions): Plugin {
     }
 
     try {
-      // 内联浏览器端脚本内容，避免生产环境无法读取文件的问题
-      const browserScriptContent = `/// <reference lib="dom" />
-/**
- * i18n 客户端脚本
- * 在浏览器中运行的国际化代码
- */
+      // 读取浏览器端脚本文件（支持本地文件和 JSR 包）
+      const browserScriptContent = await readFileContent("browser.ts");
 
-interface I18nData {
-  lang: string;
-  translations: Record<string, unknown>;
-  t: (key: string, params?: Record<string, any>) => string;
-}
-
-interface I18nConfig {
-  lang: string;
-  apiEndpoint?: string; // API 端点（用于获取语言包）
-  translations?: Record<string, unknown>; // 向后兼容：如果提供了 translations，直接使用
-}
-
-/**
- * 翻译函数（支持嵌套键和参数替换）
- */
-function createTranslateFunction(
-  translations: Record<string, unknown>,
-): (key: string, params?: Record<string, any>) => string {
-  return function (key: string, params?: Record<string, any>): string {
-    if (!translations || typeof translations !== "object") {
-      return key;
-    }
-
-    // 支持嵌套键（如 'common.title'）和直接键（如 '你好，世界！'）
-    const keys = key.split(".");
-    let value: unknown = translations;
-
-    for (const k of keys) {
-      if (
-        typeof value === "object" && value !== null && !Array.isArray(value)
-      ) {
-        value = (value as Record<string, unknown>)[k];
-        // 如果找不到，且是单个键，尝试直接使用整个 key
-        if (value === undefined && keys.length === 1) {
-          value = (translations as Record<string, unknown>)[key];
-        }
-        if (value === undefined) {
-          return key;
-        }
+      // 获取文件路径用于错误报告和解析
+      const currentUrl = new URL(import.meta.url);
+      let browserScriptPath: string;
+      if (currentUrl.protocol === "http:" || currentUrl.protocol === "https:") {
+        // JSR 包：使用 URL 作为路径标识
+        const currentPath = currentUrl.pathname;
+        const currentDir = currentPath.substring(
+          0,
+          currentPath.lastIndexOf("/"),
+        );
+        browserScriptPath = `${currentUrl.origin}${currentDir}/browser.ts`;
       } else {
-        return key;
-      }
-    }
-
-    if (typeof value !== "string") {
-      return key;
-    }
-
-    // 替换参数（如 {name} -> 实际值）
-    // 支持 string、number、boolean 类型，自动转换为字符串
-    if (params) {
-      return value.replace(/\\{(\\w+)\\}/g, (match, paramKey) => {
-        const paramValue = params[paramKey];
-        if (paramValue !== undefined && paramValue !== null) {
-          return String(paramValue);
+        // 本地文件系统
+        browserScriptPath = path.join(
+          path.dirname(new URL(import.meta.url).pathname),
+          "browser.ts",
+        );
+        // Windows 路径处理
+        if (Deno.build.os === "windows" && browserScriptPath.startsWith("/")) {
+          browserScriptPath = browserScriptPath.substring(1);
         }
-        return match;
-      });
-    }
+      }
 
-    return value;
-  };
-}
-
-/**
- * 通过 API 加载语言包
- */
-async function loadTranslationsFromAPI(
-  apiEndpoint: string,
-): Promise<Record<string, unknown>> {
-  try {
-    const response = await fetch(apiEndpoint, {
-      headers: {
-        "Accept": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        \`加载语言包失败: \${response.status} \${response.statusText}\`,
-      );
-    }
-
-    const translations = await response.json() as Record<string, unknown>;
-    return translations;
-  } catch (error) {
-    console.error("[i18n] 加载语言包失败:", error);
-    // 返回空对象，避免后续错误
-    return {};
-  }
-}
-
-/**
- * 初始化 i18n 系统
- * 暴露到全局，供内联脚本调用
- * 支持两种方式：
- * 1. 直接提供 translations（向后兼容）
- * 2. 通过 apiEndpoint 异步加载语言包（新方式）
- */
-async function initI18n(config: I18nConfig): Promise<void> {
-  let translations: Record<string, unknown> = {};
-
-  // 如果提供了 translations，直接使用（向后兼容）
-  if (config.translations) {
-    translations = config.translations;
-  } else if (config.apiEndpoint) {
-    // 通过 API 加载语言包
-    translations = await loadTranslationsFromAPI(config.apiEndpoint);
-  } else {
-    console.warn("[i18n] 未提供 translations 或 apiEndpoint，使用空语言包");
-  }
-
-  // 创建翻译函数
-  const tFunction = createTranslateFunction(translations);
-
-  // 创建 i18n 数据对象
-  const i18nData: I18nData = {
-    lang: config.lang,
-    translations,
-    t: tFunction,
-  };
-
-  // 暴露到全局
-  (globalThis as any).__I18N_DATA__ = i18nData;
-
-  // 全局翻译函数（确保 this 指向 window.__I18N_DATA__）
-  // 支持任意类型参数（string、number、boolean 等），自动转换为字符串
-  (globalThis as any).$t = function (
-    key: string,
-    params?: Record<string, any>,
-  ): string {
-    if (!i18nData || !i18nData.t) {
-      return key;
-    }
-    return i18nData.t.call(i18nData, key, params);
-  };
-}
-
-// 暴露到全局，供内联脚本调用
-if (typeof globalThis !== "undefined") {
-  (globalThis as any).initI18n = initI18n;
-}
-`;
-      // 虚拟路径，用于错误报告
-      const browserScriptPath = "browser.ts";
       // 使用 esbuild 编译 TypeScript 为 JavaScript
       const compiledCode = await compileWithEsbuild(
         browserScriptContent,
@@ -564,12 +484,12 @@ if (typeof globalThis !== "undefined") {
      * 请求处理钩子 - 检测语言并注入到请求对象，处理语言包 API 请求
      */
     onRequest: async (req: Request, res: Response) => {
-      // 处理语言包 API 请求（如 /i18n/locales/en-US.json）
+      // 处理语言包 API 请求（如 /__i18n/en-US.json）
       const url = new URL(req.url);
-      const i18nApiPrefix = "/i18n/locales/";
+      const i18nApiPrefix = "/__i18n/";
 
       if (url.pathname.startsWith(i18nApiPrefix)) {
-        // 提取语言代码（如 /__i18n/locales/en-US.json -> en-US）
+        // 提取语言代码（如 /__i18n/en-US.json -> en-US）
         const langCode = url.pathname.substring(i18nApiPrefix.length).replace(
           /\.json$/,
           "",
@@ -703,7 +623,7 @@ if (typeof globalThis !== "undefined") {
                   console.warn("[i18n Plugin] 客户端脚本编译失败，跳过注入");
                 } else {
                   // 生成 API 端点 URL
-                  const apiEndpoint = `/i18n/locales/${langCode}.json`;
+                  const apiEndpoint = `/__i18n/${langCode}.json`;
 
                   // 生成初始化脚本（只包含语言代码和 API 端点）
                   const initScript = generateInitScript({
@@ -713,8 +633,12 @@ if (typeof globalThis !== "undefined") {
 
                   // 组合完整的脚本
                   const fullScript = `${clientScript}\n${initScript}`;
+
+                  // 注册脚本到脚本服务并生成 script 标签
+                  const scriptPath = generateScriptPath("i18n");
+                  registerScript(scriptPath, fullScript);
                   const scriptTag =
-                    `<script data-type="dweb-i18n">${fullScript}</script>`;
+                    `<script type="module" src="${scriptPath}" data-type="dweb-i18n"></script>`;
 
                   // 使用 lastIndexOf 确保在最后一个 </head> 之前注入
                   const lastHeadIndex = newHtml.lastIndexOf("</head>");

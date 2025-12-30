@@ -2202,7 +2202,17 @@ class BuildManager {
     });
 
     // 7.5. 编译入口文件 (main.ts 或 config.build.entry)
-    const entryFile = config.build.entry || "main.ts";
+    let entryFile: string;
+    if (config.build.entry) {
+      entryFile = config.build.entry;
+    } else {
+      if (isMultApp) {
+        entryFile = path.join(config.name || "", "main.ts");
+      } else {
+        entryFile = "main.ts";
+      }
+    }
+
     const entryFileAbsolute = PathUtils.toAbsolutePath(entryFile);
     const entryFileExists = await Deno.stat(entryFileAbsolute)
       .then((stat) => stat.isFile)

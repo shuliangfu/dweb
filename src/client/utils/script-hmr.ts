@@ -5,6 +5,10 @@
 
 import { minifyJavaScript } from "../../server/utils/minify.ts";
 import { compileWithEsbuild } from "../../server/utils/module.ts";
+import {
+  generateScriptPath,
+  registerScript,
+} from "../../server/utils/script-server.ts";
 import * as path from "@std/path";
 
 // 缓存编译后的客户端脚本
@@ -117,7 +121,10 @@ export async function createHMRClientScript(hmrPort: number): Promise<string> {
     // 组合完整的脚本
     const fullScript = `${clientScript}\n${initScript}`;
 
-    return `<script type="module" data-type="dweb-hmr">${fullScript}</script>`;
+    // 注册脚本到脚本服务并生成 script 标签
+    const scriptPath = generateScriptPath("hmr");
+    registerScript(scriptPath, fullScript);
+    return `<script type="module" src="${scriptPath}" data-type="dweb-hmr"></script>`;
   } catch (error) {
     console.error("[HMR] 创建客户端脚本时出错:", error);
     return "";

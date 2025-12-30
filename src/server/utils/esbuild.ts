@@ -136,6 +136,7 @@ function createImportReplacerPlugin(
   importMap: Record<string, string>,
   isServerBuild: boolean = false,
   cwd: string,
+  externalPackages: string[] = [],
 ): esbuild.Plugin {
   return {
     name: "import-replacer",
@@ -243,8 +244,20 @@ function createImportReplacerPlugin(
         // 1. 直接检查 importMap 中是否有这个路径
         if (importPath in importMap) {
           const mappedValue = importMap[importPath];
-          // 本地路径（以 ./ 或 ../ 开头）：解析为绝对路径并让 esbuild 直接加载
+          // 本地路径（以 ./ 或 ../ 开头）：检查是否在 externalPackages 列表中
           if (mappedValue.startsWith("./") || mappedValue.startsWith("../")) {
+            // 如果包在 externalPackages 列表中，即使它是本地路径，也标记为 external
+            // 这样在服务端构建时，插件代码不会被编译打包，import.meta.url 可以正确指向原始位置
+            if (externalPackages.includes(importPath)) {
+              const abs = path.isAbsolute(mappedValue)
+                ? mappedValue
+                : path.resolve(cwd, mappedValue);
+              return {
+                path: abs,
+                external: true,
+              };
+            }
+            // 如果不在 externalPackages 列表中，正常打包
             const abs = path.isAbsolute(mappedValue)
               ? mappedValue
               : path.resolve(cwd, mappedValue);
@@ -268,6 +281,20 @@ function createImportReplacerPlugin(
               if (
                 parentImport.startsWith("./") || parentImport.startsWith("../")
               ) {
+                // 如果父包在 externalPackages 列表中，即使它是本地路径，也标记为 external
+                if (externalPackages.includes(parentPackage)) {
+                  // 父包在 external 列表中，子路径也应该标记为 external
+                  const subPath = importPath.substring(
+                    parentPackage.length + 1,
+                  );
+                  const abs = path.isAbsolute(parentImport)
+                    ? path.join(parentImport, subPath)
+                    : path.resolve(cwd, parentImport, subPath);
+                  return {
+                    path: abs,
+                    external: true,
+                  };
+                }
                 // 父包是本地路径，子路径也应该是本地路径，应该被打包
                 isLocalPath = true;
               } else {
@@ -291,6 +318,18 @@ function createImportReplacerPlugin(
               if (
                 parentImport.startsWith("./") || parentImport.startsWith("../")
               ) {
+                // 如果父包在 externalPackages 列表中，即使它是本地路径，也标记为 external
+                if (externalPackages.includes(parentPackage)) {
+                  // 父包在 external 列表中，子路径也应该标记为 external
+                  const subPath = parts.slice(2).join("/");
+                  const abs = path.isAbsolute(parentImport)
+                    ? path.join(parentImport, subPath)
+                    : path.resolve(cwd, parentImport, subPath);
+                  return {
+                    path: abs,
+                    external: true,
+                  };
+                }
                 // 父包是本地路径，子路径也应该是本地路径，应该被打包
                 isLocalPath = true;
               } else {
@@ -310,6 +349,16 @@ function createImportReplacerPlugin(
               if (
                 mappedValue.startsWith("./") || mappedValue.startsWith("../")
               ) {
+                // 如果包在 externalPackages 列表中，即使它是本地路径，也标记为 external
+                if (externalPackages.includes(importPath)) {
+                  const abs = path.isAbsolute(mappedValue)
+                    ? mappedValue
+                    : path.resolve(cwd, mappedValue);
+                  return {
+                    path: abs,
+                    external: true,
+                  };
+                }
                 // 本地路径，应该被打包，不替换
                 isLocalPath = true;
               } else {
@@ -510,11 +559,10 @@ export function createJSRResolverPlugin(
         }
 
         // 特别处理 @dreamer/dweb/* 的其他子路径
-        // 如果是 JSR URL，转换为 HTTP URL 后标记为 external，通过网络请求加载
+        // 如果父包在 external 列表中，子路径也应该标记为 external
         if (args.path.startsWith("@dreamer/dweb/")) {
           const parentPackage = "@dreamer/dweb";
           const parentImport = importMap[parentPackage];
-          // 如果父包是 JSR URL，构建子路径的 JSR URL 并转换为 HTTP URL
           if (parentImport && parentImport.startsWith("jsr:")) {
             // 提取子路径（如 "@dreamer/dweb/console" -> "console"）
             const subPath = args.path.substring("@dreamer/dweb/".length);
@@ -878,6 +926,7 @@ export async function buildFromStdin(
     importMap,
     cwd,
     bundleClient = false,
+    isServerBuild: explicitIsServerBuild,
     minify = false,
     sourcemap = false,
     keepNames = false,
@@ -886,9 +935,12 @@ export async function buildFromStdin(
     plugins = [],
   } = options;
 
+  // 判断是否为服务端构建：如果明确指定了 isServerBuild，使用它；否则根据 bundleClient 推断
+  const isServerBuild = explicitIsServerBuild ?? !bundleClient;
+
   // 如果没有提供外部依赖列表，自动生成
   const finalExternalPackages = externalPackages ??
-    getExternalPackages(importMap, bundleClient, false);
+    getExternalPackages(importMap, bundleClient, false, isServerBuild);
 
   // 注入框架默认依赖（如果 import map 中缺失）
   // 这样即使用户的 deno.json 中没有配置这些依赖，框架也能正常构建和运行
@@ -920,11 +972,11 @@ export async function buildFromStdin(
 
   // 创建导入替换插件（在编译时直接替换代码中的依赖导入）
   // 服务端构建时，preact 相关依赖保持原始导入，不转换为 HTTP URL
-  const isServerBuild = !bundleClient;
   const importReplacerPlugin = createImportReplacerPlugin(
     importMap,
     isServerBuild,
     cwd,
+    finalExternalPackages,
   );
 
   // 创建 JSR 解析插件
@@ -1000,9 +1052,13 @@ export async function buildFromEntryPoints(
     prePlugins = [],
   } = options;
 
+  // 判断是否为服务端构建：如果明确指定了 isServerBuild，使用它；否则根据 bundleClient 推断
+  // 注意：服务端构建时，preact 相关依赖应该保持原始导入，不转换为 HTTP URL
+  const isServerBuild = explicitIsServerBuild ?? !bundleClient;
+
   // 如果没有提供外部依赖列表，自动生成
   const finalExternalPackages = externalPackages ??
-    getExternalPackages(importMap, bundleClient, false);
+    getExternalPackages(importMap, bundleClient, false, isServerBuild);
 
   // 注入框架默认依赖（如果 import map 中缺失）
   // 这样即使用户的 deno.json 中没有配置这些依赖，框架也能正常构建和运行
@@ -1026,16 +1082,13 @@ export async function buildFromEntryPoints(
     importMap["@vue/server-renderer"] = "npm:@vue/server-renderer@^3.5.13";
   }
 
-  // 判断是否为服务端构建：如果明确指定了 isServerBuild，使用它；否则根据 bundleClient 推断
-  // 注意：服务端构建时，preact 相关依赖应该保持原始导入，不转换为 HTTP URL
-  const isServerBuild = explicitIsServerBuild ?? !bundleClient;
-
   // 创建导入替换插件（在编译时直接替换代码中的依赖导入）
   // 服务端构建时，preact 相关依赖保持原始导入，不转换为 HTTP URL
   const importReplacerPlugin = createImportReplacerPlugin(
     importMap,
     isServerBuild,
     cwd,
+    finalExternalPackages,
   );
 
   // 创建 JSR 解析插件

@@ -7,9 +7,55 @@ import type { Plugin, Request, Response } from "../../common/types/index.ts";
 import type { ThemeMode, ThemePluginOptions } from "./types.ts";
 import { minifyJavaScript } from "../../server/utils/minify.ts";
 import { compileWithEsbuild } from "../../server/utils/module.ts";
+import {
+  generateScriptPath,
+  registerScript,
+} from "../../server/utils/script-server.ts";
+import * as path from "@std/path";
 
 // 缓存编译后的客户端脚本
 let cachedClientScript: string | null = null;
+
+/**
+ * 读取文件内容（支持本地文件和 JSR 包）
+ * @param relativePath 相对于当前文件的路径
+ * @returns 文件内容
+ */
+async function readFileContent(relativePath: string): Promise<string> {
+  const currentUrl = new URL(import.meta.url);
+
+  // 如果是 HTTP/HTTPS URL（JSR 包），使用 fetch
+  if (currentUrl.protocol.startsWith("http")) {
+    // 构建 JSR URL：将当前文件的 URL 替换为相对路径的文件
+    const currentPath = currentUrl.pathname;
+    const currentDir = currentPath.substring(0, currentPath.lastIndexOf("/"));
+    const targetPath = `${currentDir}/${relativePath}`;
+
+    // 构建完整的 JSR URL
+    const baseUrl = currentUrl.origin;
+    const fullUrl = `${baseUrl}${targetPath}`;
+
+    const response = await fetch(fullUrl);
+    if (!response.ok) {
+      throw new Error(
+        `无法从 JSR 包读取文件: ${fullUrl} (${response.status})`,
+      );
+    }
+    return await response.text();
+  } else {
+    // 本地文件系统，使用 Deno.readTextFile
+    const browserScriptPath = path.join(
+      path.dirname(new URL(import.meta.url).pathname),
+      relativePath,
+    );
+    // Windows 路径处理
+    let filePath = browserScriptPath;
+    if (Deno.build.os === "windows" && filePath.startsWith("/")) {
+      filePath = filePath.substring(1);
+    }
+    return await Deno.readTextFile(filePath);
+  }
+}
 
 /**
  * 编译客户端主题脚本
@@ -20,283 +66,31 @@ async function compileClientScript(): Promise<string> {
   }
 
   try {
-    // 内联浏览器端脚本内容，避免生产环境无法读取文件的问题
-    const browserScriptContent = `/// <reference lib="dom" />
-/**
- * 主题切换客户端脚本
- * 在浏览器中运行的主题管理代码
- */
+    // 读取浏览器端脚本文件（支持本地文件和 JSR 包）
+    const browserScriptContent = await readFileContent("browser.ts");
 
-interface ThemeConfig {
-  storageKey: string;
-  defaultTheme: "light" | "dark" | "auto";
-  transition?: boolean;
-}
-
-interface ThemeManager {
-  storageKey: string;
-  defaultTheme: "light" | "dark" | "auto";
-  getSystemTheme(): "light" | "dark";
-  getTheme(): "light" | "dark" | "auto";
-  getActualTheme(): "light" | "dark";
-  setTheme(theme: "light" | "dark" | "auto"): void;
-  applyTheme(theme: "light" | "dark" | "auto"): void;
-  init(): void;
-  toggleTheme(): "dark" | "light";
-  switchTheme(theme: "light" | "dark" | "auto"): "light" | "dark" | "auto";
-}
-
-/**
- * Store 接口（从 store 插件）
- */
-interface Store {
-  getState(): Record<string, unknown>;
-  setState(
-    updater: (prev: Record<string, unknown>) => Record<string, unknown>,
-  ): void;
-  subscribe(listener: (state: Record<string, unknown>) => void): () => void;
-  unsubscribe(listener: (state: Record<string, unknown>) => void): void;
-  reset(): void;
-}
-
-/**
- * 创建主题管理器
- */
-function createThemeManager(config: ThemeConfig): ThemeManager {
-  return {
-    storageKey: config.storageKey,
-    defaultTheme: config.defaultTheme,
-
-    // 获取系统主题
-    getSystemTheme(): "light" | "dark" {
-      if (typeof globalThis !== "undefined" && globalThis.matchMedia) {
-        return globalThis.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light";
-      }
-      return "light";
-    },
-
-    // 获取当前主题
-    getTheme(): "light" | "dark" | "auto" {
-      if (typeof globalThis === "undefined") return this.defaultTheme;
-      const stored = localStorage.getItem(this.storageKey);
-      if (stored === "dark" || stored === "light" || stored === "auto") {
-        return stored;
-      }
-      return this.defaultTheme;
-    },
-
-    // 获取实际主题（处理 auto 模式）
-    getActualTheme(): "light" | "dark" {
-      const theme = this.getTheme();
-      if (theme === "auto") {
-        return this.getSystemTheme();
-      }
-      return theme;
-    },
-
-    // 设置主题
-    setTheme(theme: "light" | "dark" | "auto"): void {
-      if (typeof globalThis === "undefined") {
-        return;
-      }
-      localStorage.setItem(this.storageKey, theme);
-      this.applyTheme(theme);
-
-      // 触发自定义事件
-      const actualTheme = this.getActualTheme();
-      globalThis.dispatchEvent(
-        new CustomEvent("themechange", {
-          detail: { theme, actualTheme },
-        }),
+    // 获取文件路径用于错误报告和解析
+    const currentUrl = new URL(import.meta.url);
+    let browserScriptPath: string;
+    if (currentUrl.protocol === "http:" || currentUrl.protocol === "https:") {
+      // JSR 包：使用 URL 作为路径标识
+      const currentPath = currentUrl.pathname;
+      const currentDir = currentPath.substring(
+        0,
+        currentPath.lastIndexOf("/"),
       );
-    },
-
-    // 应用主题
-    applyTheme(theme: "light" | "dark" | "auto"): void {
-      if (typeof document === "undefined") {
-        return;
+      browserScriptPath = `${currentUrl.origin}${currentDir}/browser.ts`;
+    } else {
+      // 本地文件系统
+      browserScriptPath = path.join(
+        path.dirname(new URL(import.meta.url).pathname),
+        "browser.ts",
+      );
+      // Windows 路径处理
+      if (Deno.build.os === "windows" && browserScriptPath.startsWith("/")) {
+        browserScriptPath = browserScriptPath.substring(1);
       }
-      const actualTheme = theme === "auto" ? this.getSystemTheme() : theme;
-
-      // 在 html 元素上设置 class（用于 Tailwind CSS dark mode）
-      if (document.documentElement) {
-        const htmlElement = document.documentElement;
-
-        // 移除旧的 dark/light class
-        htmlElement.classList.remove("dark", "light");
-        // 添加新的主题 class
-        if (actualTheme === "dark") {
-          htmlElement.classList.add("dark");
-        } else {
-          htmlElement.classList.add("light");
-        }
-      }
-
-      // 更新主题 store（如果存在）
-      // 使用全局 store 来更新主题状态
-      if (typeof globalThis !== "undefined" && (globalThis as any).__STORE__) {
-        const store = (globalThis as any).__STORE__ as Store;
-        const currentState = store.getState();
-        const themeState = (currentState.theme as {
-          mode?: "light" | "dark" | "auto";
-          value?: "light" | "dark";
-        }) || {};
-        const currentTheme = this.getTheme();
-        store.setState((prev) => ({
-          ...prev,
-          theme: {
-            ...themeState,
-            mode: currentTheme,
-            value: actualTheme,
-          },
-        }));
-      }
-    },
-
-    // 初始化
-    init(): void {
-      const theme = this.getTheme();
-      this.applyTheme(theme);
-
-      // 监听系统主题变化
-      if (typeof globalThis !== "undefined" && globalThis.matchMedia) {
-        globalThis
-          .matchMedia("(prefers-color-scheme: dark)")
-          .addEventListener("change", (_e) => {
-            if (this.getTheme() === "auto") {
-              this.applyTheme("auto");
-              // 触发主题变化事件
-              globalThis.dispatchEvent(
-                new CustomEvent("themechange", {
-                  detail: {
-                    theme: "auto",
-                    actualTheme: this.getActualTheme(),
-                  },
-                }),
-              );
-            }
-          });
-      }
-    },
-
-    // 切换主题（仅在 dark 和 light 之间切换）
-    toggleTheme(): "dark" | "light" {
-      const current = this.getTheme();
-      // 如果当前是 auto，切换到 dark；否则在 dark 和 light 之间切换
-      const next = current === "dark" ? "light" : "dark";
-      this.setTheme(next);
-      return next;
-    },
-
-    // 切换到指定主题
-    switchTheme(theme: "light" | "dark" | "auto"): "light" | "dark" | "auto" {
-      if (theme === "dark" || theme === "light" || theme === "auto") {
-        this.setTheme(theme);
-        return theme;
-      }
-      return this.getTheme();
-    },
-  };
-}
-
-/**
- * 初始化主题系统
- * 暴露到全局，供内联脚本调用
- */
-function initTheme(config: ThemeConfig): void {
-  // 创建主题管理器
-  const themeManager = createThemeManager(config);
-
-  // 当主题变化时，更新全局 store 的值
-  globalThis.addEventListener(
-    "themechange",
-    ((event: CustomEvent) => {
-      if (event.detail && event.detail.actualTheme) {
-        // 更新全局 store 中的主题状态
-        if (
-          typeof globalThis !== "undefined" && (globalThis as any).__STORE__
-        ) {
-          const store = (globalThis as any).__STORE__ as Store;
-          const currentState = store.getState();
-          const themeState = (currentState.theme as {
-            mode?: "light" | "dark" | "auto";
-            value?: "light" | "dark";
-          }) || {};
-          const currentTheme = themeManager.getTheme();
-          store.setState((prev) => ({
-            ...prev,
-            theme: {
-              ...themeState,
-              mode: currentTheme,
-              value: event.detail.actualTheme,
-            },
-          }));
-        }
-      }
-    }) as EventListener,
-  );
-
-  // 暴露到全局
-  (globalThis as any).__THEME_MANAGER__ = themeManager;
-  (globalThis as any).setTheme = (theme: "light" | "dark" | "auto") => {
-    return themeManager.setTheme(theme);
-  };
-  (globalThis as any).getTheme = () => {
-    return themeManager.getTheme();
-  };
-  (globalThis as any).getActualTheme = () => {
-    return themeManager.getActualTheme();
-  };
-  (globalThis as any).toggleTheme = () => {
-    return themeManager.toggleTheme();
-  };
-  (globalThis as any).switchTheme = (theme: "light" | "dark" | "auto") => {
-    return themeManager.switchTheme(theme);
-  };
-
-  // 初始化函数
-  const init = () => {
-    themeManager.init();
-    // 初始化全局 store 中的主题状态
-    const currentTheme = themeManager.getTheme();
-    const actualTheme = themeManager.getActualTheme();
-    if (typeof globalThis !== "undefined" && (globalThis as any).__STORE__) {
-      const store = (globalThis as any).__STORE__ as Store;
-      const currentState = store.getState();
-      const themeState = (currentState.theme as {
-        mode?: "light" | "dark" | "auto";
-        value?: "light" | "dark";
-      }) || {};
-      store.setState((prev) => ({
-        ...prev,
-        theme: {
-          ...themeState,
-          mode: currentTheme,
-          value: actualTheme,
-        },
-      }));
     }
-  };
-
-  // 初始化
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-    }
-
-  // 注意：过渡效果的 style 标签由服务端注入，不需要在客户端创建
-}
-
-// 暴露到全局，供内联脚本调用
-if (typeof globalThis !== "undefined") {
-  (globalThis as any).initTheme = initTheme;
-}
-`;
-    // 虚拟路径，用于错误报告
-    const browserScriptPath = "browser.ts";
     // 使用 esbuild 编译 TypeScript 为 JavaScript
     const compiledCode = await compileWithEsbuild(
       browserScriptContent,
@@ -504,9 +298,11 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
               }
             }
 
-            // 注入 script 标签（在 </head> 之前）
+            // 注册脚本到脚本服务并生成 script 标签
+            const scriptPath = generateScriptPath("theme");
+            registerScript(scriptPath, fullScript);
             const scriptTag =
-              `<script data-type="dweb-theme">${fullScript}</script>`;
+              `<script type="module" src="${scriptPath}" data-type="dweb-theme"></script>`;
             const lastHeadIndex = newHtml.lastIndexOf("</head>");
             if (lastHeadIndex !== -1) {
               newHtml = newHtml.slice(0, lastHeadIndex) +
