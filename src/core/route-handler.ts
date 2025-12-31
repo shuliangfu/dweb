@@ -1348,6 +1348,26 @@ export class RouteHandler {
       // 调试信息：在开发环境下输出导入信息
       if (!this.config?.isProduction) {
         logger.info(`[调试] 从临时文件导入模块: ${tempFile}`);
+        // 检查编译后的代码中是否包含 defaultMenuItems
+        const hasDefaultMenuItems = compiledCode.includes("defaultMenuItems");
+        if (hasDefaultMenuItems) {
+          // 查找 defaultMenuItems 相关的代码片段
+          const menuItemsIndex = compiledCode.indexOf("defaultMenuItems");
+          const contextStart = Math.max(0, menuItemsIndex - 100);
+          const contextEnd = Math.min(
+            compiledCode.length,
+            menuItemsIndex + 200,
+          );
+          logger.info(
+            `[调试] 发现 defaultMenuItems 引用 (位置 ${menuItemsIndex}):\n${
+              compiledCode.substring(contextStart, contextEnd)
+            }`,
+          );
+        } else {
+          logger.warn(
+            `[调试] 编译后的代码中未找到 defaultMenuItems，可能已被重命名或未打包`,
+          );
+        }
         // 输出编译后代码的前 200 个字符，方便查看
         logger.info(
           `[调试] 编译后代码预览 (前200字符):\n${
@@ -1378,6 +1398,13 @@ export class RouteHandler {
             exports.length > 0 ? exports.join(", ") : "(无导出)"
           }`,
         );
+        // 如果模块有 load 函数，输出其源代码（如果可能）
+        if (module.load && typeof module.load === "function") {
+          const loadCode = module.load.toString();
+          logger.info(
+            `[调试] load 函数代码 (前500字符):\n${loadCode.substring(0, 500)}`,
+          );
+        }
       }
 
       return module;
