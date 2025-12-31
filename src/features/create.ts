@@ -599,13 +599,6 @@ async function generateConfigFile(
 import { tailwind, cors, store, type DWebConfig } from '@dreamer/dweb';
 
 const config: DWebConfig = {
-  // 开发配置（全局，也可以在每个应用中配置）
-  dev: {
-    // open: true,
-    hmrPort: 24678,
-    reloadDelay: 300
-  },
-  
   // Cookie 配置（全局）
   cookie: {
     secret: 'your-secret-key-here'

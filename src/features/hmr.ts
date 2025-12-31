@@ -512,6 +512,23 @@ export class HMRServer {
       socket.send(JSON.stringify({ type: "connected" }));
     };
 
+    socket.onmessage = (event) => {
+      try {
+        const data = typeof event.data === "string"
+          ? JSON.parse(event.data)
+          : event.data;
+        if (data && data.type === "ping") {
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.send(
+              JSON.stringify({ type: "pong", timestamp: Date.now() }),
+            );
+          }
+        }
+      } catch {
+        void 0;
+      }
+    };
+
     socket.onclose = () => {
       this.connections.delete(socket);
     };

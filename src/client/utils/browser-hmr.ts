@@ -5,9 +5,20 @@
 
 interface ClientConfig {
   route: string;
-  renderMode?: string;
+  renderMode: "ssr" | "csr" | "hybrid";
+  props: Record<string, unknown>;
+  shouldHydrate: boolean;
+  layoutPath: string | null;
+  allLayoutPaths: string[] | null;
+  basePath: string;
+  metadata: Record<string, unknown>;
+  layout: boolean | undefined;
+  prefetchRoutes?: string[];
+  prefetchLoading?: boolean;
+  prefetchMode?: "single" | "batch";
+  layoutData?: Record<string, unknown>[]; // 布局的 load 数据
   isDev?: boolean; // 是否为开发环境
-  [key: string]: unknown;
+  [key: string]: unknown; // 允许动态属性（如 load 函数返回的数据）
 }
 
 /**
@@ -32,7 +43,7 @@ interface HMRConfig {
  * 负责处理热模块替换（Hot Module Replacement）
  */
 class HMRClient {
-  private ws: WebSocket;
+  private ws!: WebSocket;
   private config: HMRConfig;
   private rootElement: HTMLElement | null = null;
   private preactModules: {
@@ -43,11 +54,18 @@ class HMRClient {
       ...children: unknown[]
     ) => unknown;
   } | null = null;
+  private reconnectAttempts: number = 0;
+  private reconnectTimer: number | null = null;
+  private heartbeatTimer: number | null = null;
+  private heartbeatTimeoutTimer: number | null = null;
+  private lastHeartbeatTime: number = 0;
+  private heartbeatInterval: number = 30000;
+  private heartbeatTimeout: number = 10000;
 
   constructor(config: HMRConfig) {
     this.config = config;
-    this.ws = new WebSocket(`ws://localhost:${config.hmrPort}`);
     this.init();
+    this.connect();
   }
 
   /**
@@ -67,18 +85,79 @@ class HMRClient {
           ...children: unknown[]
         ) => unknown;
       } | undefined || null;
+  }
 
-    // 设置 WebSocket 事件处理器
+  private connect(): void {
+    this.ws = new WebSocket(`ws://localhost:${this.config.hmrPort}`);
     this.ws.onmessage = (event: MessageEvent) => this.handleHMRMessage(event);
     this.ws.onopen = () => {
-      // console.log('✅ HMR WebSocket 连接已建立');
+      this.reconnectAttempts = 0;
+      if (this.reconnectTimer !== null) {
+        clearTimeout(this.reconnectTimer as unknown as number);
+        this.reconnectTimer = null;
+      }
+      this.startHeartbeat();
     };
     this.ws.onerror = () => {
-      // 静默处理错误
+      this.scheduleReconnect();
     };
     this.ws.onclose = () => {
-      // console.log('❌ HMR WebSocket 连接已关闭');
+      this.scheduleReconnect();
+      this.stopHeartbeat();
     };
+  }
+
+  private scheduleReconnect(): void {
+    if (this.reconnectTimer !== null) return;
+    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000);
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.reconnectAttempts++;
+      this.connect();
+    }, delay) as unknown as number;
+  }
+
+  private startHeartbeat(): void {
+    this.stopHeartbeat();
+    this.lastHeartbeatTime = Date.now();
+    this.heartbeatTimer = setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        try {
+          this.ws.send(JSON.stringify({ type: "ping", timestamp: Date.now() }));
+          if (this.heartbeatTimeoutTimer) {
+            clearTimeout(this.heartbeatTimeoutTimer as unknown as number);
+            this.heartbeatTimeoutTimer = null;
+          }
+          this.heartbeatTimeoutTimer = setTimeout(() => {
+            const delta = Date.now() - this.lastHeartbeatTime;
+            if (delta > this.heartbeatTimeout) {
+              try {
+                this.ws.close();
+              } catch {
+                void 0;
+              }
+            }
+          }, this.heartbeatTimeout) as unknown as number;
+        } catch {
+          try {
+            this.ws.close();
+          } catch {
+            void 0;
+          }
+        }
+      }
+    }, this.heartbeatInterval) as unknown as number;
+  }
+
+  private stopHeartbeat(): void {
+    if (this.heartbeatTimer !== null) {
+      clearInterval(this.heartbeatTimer as unknown as number);
+      this.heartbeatTimer = null;
+    }
+    if (this.heartbeatTimeoutTimer !== null) {
+      clearTimeout(this.heartbeatTimeoutTimer as unknown as number);
+      this.heartbeatTimeoutTimer = null;
+    }
   }
 
   /**
@@ -325,9 +404,7 @@ class HMRClient {
         }
         // 获取布局的 load 数据（如果有）
         const pageData = (globalThis as Record<string, unknown>)
-          .__PAGE_DATA__ as
-            | { layoutData?: Record<string, unknown>[] }
-            | undefined;
+          .__PAGE_DATA__ as ClientConfig;
         const layoutData = pageData?.layoutData?.[0] || {};
 
         // 先尝试直接调用布局组件（支持异步组件）
@@ -356,9 +433,7 @@ class HMRClient {
         try {
           // 获取布局的 load 数据（如果有）
           const pageData = (globalThis as Record<string, unknown>)
-            .__PAGE_DATA__ as
-              | { layoutData?: Record<string, unknown>[] }
-              | undefined;
+            .__PAGE_DATA__ as ClientConfig;
           const layoutData = pageData?.layoutData?.[0] || {};
 
           const layoutResult = jsx(LayoutComponent, {
@@ -474,16 +549,7 @@ class HMRClient {
     try {
       // 获取页面数据
       const pageData = (globalThis as Record<string, unknown>)
-        .__PAGE_DATA__ as {
-          route?: string;
-          layoutPath?: string;
-          allLayoutPaths?: string[];
-          props?: Record<string, unknown>;
-          layoutData?: Record<string, unknown>[];
-          renderMode?: string;
-          layout?: boolean;
-          [key: string]: unknown;
-        } | undefined;
+        .__PAGE_DATA__ as ClientConfig;
 
       if (!pageData || !pageData.route) {
         // 如果没有页面数据，执行整页刷新
@@ -710,16 +776,8 @@ class HMRClient {
 
     try {
       // 获取页面数据
-      let pageData = (globalThis as Record<string, unknown>).__PAGE_DATA__ as
-        | {
-          props?: Record<string, unknown>;
-          layoutPath?: string;
-          allLayoutPaths?: string[];
-          route?: string;
-          renderMode?: string;
-          [key: string]: unknown; // 允许其他属性（如 load 函数返回的数据）
-        }
-        | undefined;
+      let pageData = (globalThis as Record<string, unknown>)
+        .__PAGE_DATA__ as ClientConfig;
 
       // SSR 模式下，如果页面数据不存在或为空，需要重新请求页面获取最新的页面数据
       const isSSR = pageData?.renderMode === "ssr" ||
@@ -1136,6 +1194,15 @@ class HMRClient {
           moduleUrl?: string;
         };
       };
+
+      if (message.type === "pong") {
+        this.lastHeartbeatTime = Date.now();
+        if (this.heartbeatTimeoutTimer !== null) {
+          clearTimeout(this.heartbeatTimeoutTimer as unknown as number);
+          this.heartbeatTimeoutTimer = null;
+        }
+        return;
+      }
 
       if (message.type === "update") {
         await this.handleUpdateMessage(message.data || {});

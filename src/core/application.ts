@@ -246,7 +246,11 @@ export class Application extends EventEmitter {
    */
   private async initializeDevFeatures(config: AppConfig): Promise<void> {
     if (!config.dev) {
-      return;
+      config.dev = {
+        open: false,
+        hmrPort: 24678,
+        reloadDelay: 300,
+      };
     }
 
     // 启动 HMR 服务器
@@ -255,15 +259,20 @@ export class Application extends EventEmitter {
     const { setHMRClientScript } = await import("./route-handler.ts");
 
     const hmrServer = new HMRServer();
-    const hmrPort = config.dev.hmrPort || 24678;
+    const preferredPort = config.dev.hmrPort ?? 24678;
+    const hmrPort = this.findAvailablePort(preferredPort);
     hmrServer.start(hmrPort);
 
     // 设置服务器 origin（用于 HMR 编译组件时生成完整的 HTTP URL）
     if (config.server) {
       const protocol = config.server.tls ? "https" : "http";
-      const serverOrigin = `${protocol}://${
-        config.server.host || "localhost"
-      }:${config.server.port || 3000}`;
+      const host = config.server.host || "localhost";
+      const preferredAppPort = config.server.port || 3000;
+      const appPort = this.findAvailablePort(preferredAppPort);
+      if (appPort !== preferredAppPort) {
+        config.server.port = appPort;
+      }
+      const serverOrigin = `${protocol}://${host}:${appPort}`;
       hmrServer.setServerOrigin(serverOrigin);
     }
 
@@ -323,6 +332,24 @@ export class Application extends EventEmitter {
       // 注册文件监听器到服务容器
       this.serviceContainer.registerSingleton("fileWatcher", () => fileWatcher);
     }
+  }
+
+  /**
+   * 查找可用端口（从首选端口开始顺序递增）
+   */
+  private findAvailablePort(startPort: number): number {
+    const maxTries = 50;
+    for (let i = 0; i < maxTries; i++) {
+      const port = startPort + i;
+      try {
+        const listener = Deno.listen({ hostname: "127.0.0.1", port });
+        listener.close();
+        return port;
+      } catch {
+        continue;
+      }
+    }
+    return startPort;
   }
 
   /**
