@@ -144,13 +144,14 @@ function createImportReplacerPlugin(
     setup(build: esbuild.PluginBuild) {
       // 在解析模块时替换导入路径
       // 注意：这个插件只处理外部依赖（npm、jsr），本地依赖会被其他插件处理并打包
+      // 相对路径和路径别名应该先被 createJSRResolverPlugin 处理
       build.onResolve({ filter: /.*/ }, (args) => {
         const importPath = args.path;
 
         // 直接处理 npm: 协议导入
         if (importPath.startsWith("npm:")) {
           // 服务端构建：保留 npm: 导入并标记为 external，让 Deno 在运行时解析
-          if (isServerBuild) {
+          if (isServerBuild || isServerRender) {
             return {
               path: importPath,
               external: true,
@@ -164,7 +165,7 @@ function createImportReplacerPlugin(
           };
         }
 
-        // 跳过相对路径导入（这些是本地依赖，应该被打包）
+        // 跳过相对路径导入（这些是本地依赖，应该被打包，由其他插件处理）
         if (importPath.startsWith("./") || importPath.startsWith("../")) {
           return undefined;
         }
@@ -1125,7 +1126,8 @@ export async function buildFromStdin(
     keepNames,
     legalComments,
     external: [...finalExternalPackages, "node:*"],
-    plugins: [importReplacerPlugin, jsrResolverPlugin, ...plugins],
+    // 插件执行顺序很重要：jsrResolverPlugin 先处理相对路径和路径别名，然后 importReplacerPlugin 处理外部依赖
+    plugins: [jsrResolverPlugin, importReplacerPlugin, ...plugins],
     alias,
   });
 
