@@ -2184,8 +2184,8 @@ export class RouteHandler {
         : basePath;
 
       // 获取 prefetch 配置并解析通配符模式
-      // 检查是否启用了预加载（enabled 默认为 true，只有显式设置为 false 时才禁用）
-      const prefetchEnabled = this.config?.prefetch?.enabled !== false;
+      // 检查是否启用了预加载（默认关闭，只有显式设置为 true 时才启用）
+      const prefetchEnabled = this.config?.prefetch?.enabled === true;
       const prefetchConfig = this.config?.prefetch?.routes;
       const prefetchLoading = this.config?.prefetch?.loading ?? false;
       const prefetchMode = this.config?.prefetch?.mode ?? "batch";
@@ -3194,8 +3194,8 @@ export class RouteHandler {
     }
 
     try {
-      // 检查是否启用了预加载（enabled 默认为 true，只有显式设置为 false 时才禁用）
-      const prefetchEnabled = this.config?.prefetch?.enabled !== false;
+      // 检查是否启用了预加载（默认关闭，只有显式设置为 true 时才启用）
+      const prefetchEnabled = this.config?.prefetch?.enabled === true;
       if (!prefetchEnabled) {
         res.status = 200;
         res.json({});

@@ -67,7 +67,7 @@ export async function startDevServer(config: AppConfig): Promise<void> {
   // 验证配置：SSR 模式不允许开启预加载
   // 预加载功能需要客户端路由支持，而 SSR 模式是纯服务端渲染，不支持客户端路由
   const renderMode = finalConfig.render?.mode || "ssr"; // 默认是 ssr
-  const prefetchEnabled = finalConfig.prefetch?.enabled !== false; // 默认是 true
+  const prefetchEnabled = finalConfig.prefetch?.enabled === true; // 默认是 false
 
   if (renderMode === "ssr" && prefetchEnabled) {
     throw new Error(
