@@ -25,7 +25,7 @@ export default defineConfig({
     enabled: true,
     loading: false,
     routes: ["*", "!/docs/*"],
-    mode: "batch",
+    mode: "batch", 
   },
 
 
