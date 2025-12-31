@@ -6,7 +6,6 @@
 
 import { colors } from "./ansi.ts";
 import { error as outputError, warning } from "./output.ts";
-import { loadConfig } from "../../core/config.ts";
 import { initDatabaseFromConfig } from "../../features/database/init-database.ts";
 import {
   closeDatabase,
@@ -1090,8 +1089,6 @@ export class Command {
 
     // 执行命令处理函数
     if (this.handler) {
-      let exitCode = 0; // 默认退出码为 0（成功）
-
       try {
         // 执行前置钩子
         if (this.beforeHook) {
@@ -1106,14 +1103,18 @@ export class Command {
           await this.afterHook(parsedArgs, parsedOptions);
         }
       } catch (err) {
-        // 记录错误，但不立即退出
+        // 记录错误并退出
         outputError(
           `执行命令时出错: ${err instanceof Error ? err.message : String(err)}`,
         );
-        exitCode = 1; // 设置退出码为 1（失败）
+        Deno.exit(1);
       } finally {
-        // 命令执行完成后，关闭数据库连接（如果已连接）
-        // 这样可以确保进程正常退出，不会因为数据库连接而卡住
+        // 在 finally 中关闭数据库连接，确保无论成功还是失败都会执行
+        // 注意：
+        // 1. 对于一次性命令（如 build、create-user），执行完成后关闭数据库连接是合理的
+        // 2. 对于长期运行的命令（如 dev、start），它们通常不会"完成"（await app.start() 会一直运行），
+        //    所以 finally 块不会执行，数据库连接由 Application 管理
+        // 3. 如果长期运行的命令出错，finally 会执行并关闭数据库连接，这是合理的
         try {
           await closeDatabase();
         } catch (err) {
@@ -1121,10 +1122,6 @@ export class Command {
           const message = err instanceof Error ? err.message : String(err);
           console.warn(`关闭数据库连接时出错（已忽略）: ${message}`);
         }
-
-        // 在 finally 中退出，确保数据库连接已关闭
-        // 无论成功还是失败，都显式调用 exit，确保进程正常退出
-        Deno.exit(exitCode);
       }
     } else {
       warning("命令未设置处理函数");
