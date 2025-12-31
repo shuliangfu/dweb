@@ -267,10 +267,12 @@ async function loadConfigWithServerOptions(
 }
 
 /**
- * 显示应用名称信息
+ * 显示应用名称和框架版本信息
  * @param appName 应用名称
  */
 function displayAppName(appName: string | undefined): void {
+  // 显示框架版本号，方便确认是否使用了旧版本的缓存
+  info(`框架版本: ${frameworkVersion}`);
   if (appName) {
     info(`应用: ${appName}`);
   }
