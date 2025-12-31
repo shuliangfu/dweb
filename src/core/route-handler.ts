@@ -1284,6 +1284,13 @@ export class RouteHandler {
         JSON.stringify(originalFileUrl)
       }, writable: false, configurable: false });\n`;
 
+    // 调试信息：在开发环境下输出 import.meta.url 注入信息
+    if (!this.config?.isProduction) {
+      logger.debug(
+        `注入 import.meta.url: ${originalFileUrl} (源文件: ${filePathWithoutPrefix})`,
+      );
+    }
+
     // 检查编译后的代码是否包含相对路径导入（应该被打包，不应该有相对路径导入）
     // 如果还有相对路径导入，说明 esbuild 没有正确打包它们
     const hasRelativeImports = /(?:from|import)\s+['"]\.\.?\/[^'"]+['"]/.test(

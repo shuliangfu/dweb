@@ -59,6 +59,18 @@ function extractVersionFromJsrUrl(url: URL): string | null {
 async function getFrameworkVersion(): Promise<string> {
   const currentFileUrl = new URL(import.meta.url);
 
+  // 方法0: 尝试从 JSR URL 的路径中提取版本号（更详细的匹配）
+  // JSR URL 格式可能是：https://jsr.io/@dreamer/dweb/2.0.7-beta.3/src/cli.ts
+  if (currentFileUrl.protocol.startsWith("http")) {
+    // 尝试匹配更详细的 JSR 路径格式
+    const jsrDetailedMatch = currentFileUrl.pathname.match(
+      /\/@[\w-]+\/[\w-]+\/([\d.]+(?:-[\w.]+)?)\//,
+    );
+    if (jsrDetailedMatch && jsrDetailedMatch[1]) {
+      return jsrDetailedMatch[1];
+    }
+  }
+
   // 方法1: 从 JSR URL 中提取版本号（如果是从 JSR 导入）
   const jsrVersion = extractVersionFromJsrUrl(currentFileUrl);
   if (jsrVersion) {
