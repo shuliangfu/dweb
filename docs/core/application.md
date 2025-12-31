@@ -97,24 +97,41 @@ await app.initialize();
 await app.start();
 ```
 
-### 程序化配置
+### 使用配置文件（推荐）
 
 ```typescript
-import { Application } from "@dreamer/dweb";
-import type { AppConfig } from "@dreamer/dweb";
+// main.ts（可选）
+import { AppConfig, cors, i18n, store, theme } from "@dreamer/dweb";
 
 const config: AppConfig = {
-  server: { port: 3000 },
-  routes: { dir: "routes" },
-  isProduction: false,
+  middleware: [
+    cors({
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    }),
+  ],
+  plugins: [
+    i18n({
+      languages: [
+        { code: "en-US", name: "English" },
+        { code: "zh-CN", name: "中文" },
+      ],
+      defaultLanguage: "en-US",
+      translationsDir: "locales",
+    }),
+    theme({
+      defaultTheme: "light",
+      storageKey: "theme",
+    }),
+    store({
+      persist: true,
+      storageKey: "store",
+    }),
+  ],
 };
 
-const app = new Application();
-const configManager = app.getService("configManager") as any;
-configManager.setConfig(config);
-
-await app.initialize();
-await app.start();
+export default config;
 ```
 
 ## API 参考
@@ -172,40 +189,7 @@ await app.start();
 await app.stop();
 ```
 
-#### `use(middleware)`
-
-注册中间件。
-
-```typescript
-app.use(async (req, res, next) => {
-  // 中间件逻辑
-  await next();
-});
-
-// 或使用配置对象
-app.use({
-  name: "my-middleware",
-  handler: async (req, res, next) => {
-    await next();
-  },
-});
-```
-
-#### `plugin(plugin)`
-
-注册插件。
-
-```typescript
-app.plugin({
-  name: "my-plugin",
-  onInit: async (app, config) => {
-    // 初始化逻辑
-  },
-  onRequest: async (req, res) => {
-    // 请求处理逻辑
-  },
-});
-```
+**注意：** 现在推荐使用配置文件方式（`main.ts` 或 `dweb.config.ts`）来配置中间件和插件，而不是在代码中调用 `app.use()` 或 `app.plugin()`。这些方法已不再使用。
 
 #### `getService<T>(token)`
 

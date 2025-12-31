@@ -103,15 +103,41 @@ cd my-app
 deno task dev
 ```
 
-### 基本使用（推荐使用 Application）
+### 基本使用（推荐使用配置文件）
 
 ```typescript
-// main.ts
-import { Application } from "@dreamer/dweb";
+// main.ts（可选，用于自定义配置）
+import { AppConfig, cors, i18n, store, theme } from "@dreamer/dweb";
 
-const app = new Application("dweb.config.ts");
-await app.initialize();
-await app.start();
+const config: AppConfig = {
+  middleware: [
+    cors({
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    }),
+  ],
+  plugins: [
+    i18n({
+      languages: [
+        { code: "en-US", name: "English" },
+        { code: "zh-CN", name: "中文" },
+      ],
+      defaultLanguage: "en-US",
+      translationsDir: "locales",
+    }),
+    theme({
+      defaultTheme: "light",
+      storageKey: "theme",
+    }),
+    store({
+      persist: true,
+      storageKey: "store",
+    }),
+  ],
+};
+
+export default config;
 ```
 
 ### 传统方式（仍然支持）

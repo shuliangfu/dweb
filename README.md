@@ -99,11 +99,16 @@ deno run -A jsr:@dreamer/dweb/init
 
 ```typescript
 // dweb.config.ts
-import { tailwind, cors, seo, type AppConfig } from "@dreamer/dweb";
+import { defineConfig, tailwind, cors, seo } from "@dreamer/dweb";
 
-const config: AppConfig = {
+export default defineConfig({
   name: "my-app",
-  renderMode: "hybrid", // 'ssr' | 'csr' | 'hybrid'
+  
+  // 渲染配置
+  render: {
+    engine: "preact", // 'preact' | 'react' | 'vue3'
+    mode: "hybrid", // 'ssr' | 'csr' | 'hybrid'
+  },
   
   // 服务器配置
   server: {
@@ -144,9 +149,7 @@ const config: AppConfig = {
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     }),
   ],
-};
-
-export default config;
+});
 ```
 
 ### 3. 创建路由
@@ -371,17 +374,25 @@ DWeb 框架使用配置文件（`dweb.config.ts`）来管理应用配置。框�
 
 ```typescript
 // dweb.config.ts
-import { tailwind, cors, seo, type AppConfig } from "@dreamer/dweb";
+import { defineConfig, tailwind, cors, seo } from "@dreamer/dweb";
 
-const config: AppConfig = {
+export default defineConfig({
   // ========== 基础配置 ==========
   
   // 应用名称（可选，多应用模式下用于区分应用）
   name: "my-app",
   
-  // 全局渲染模式（可选，默认: 'ssr'）
-  // 可选值: 'ssr' | 'csr' | 'hybrid'
-  renderMode: "hybrid",
+  // ========== 渲染配置 ==========
+  render: {
+    // 渲染引擎，可选值：'preact' | 'react' | 'vue3'
+    // 默认为 'preact'
+    engine: "preact",
+    // 渲染模式，可选值：'ssr' | 'csr' | 'hybrid'
+    // - ssr: 服务端渲染（默认）
+    // - csr: 客户端渲染
+    // - hybrid: 混合渲染（服务端渲染 + 客户端 hydration）
+    mode: "hybrid",
+  },
   
   // ========== 服务器配置 ==========
   server: {
@@ -449,9 +460,7 @@ const config: AppConfig = {
       allowedHeaders: ["Content-Type", "Authorization"],
     }),
   ],
-};
-
-export default config;
+});
 ```
 
 ### 启动服务器
@@ -478,9 +487,9 @@ deno task start
 
 ```typescript
 // dweb.config.ts
-import { tailwind, cors, type DWebConfig } from "@dreamer/dweb";
+import { defineConfig, tailwind, cors } from "@dreamer/dweb";
 
-const config: DWebConfig = {
+export default defineConfig({
   cookie: {
     secret: "your-secret-key-here",
   },
@@ -503,9 +512,7 @@ const config: DWebConfig = {
       plugins: [cors()],
     },
   ],
-};
-
-export default config;
+});
 ```
 
 启动指定应用：

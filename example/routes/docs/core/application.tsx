@@ -15,74 +15,161 @@ export default function CoreApplicationPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   // 基本使用示例
-  const basicUsageCode = `// main.ts
-import { Application } from "@dreamer/dweb";
-
-// 创建应用实例
-const app = new Application("dweb.config.ts");
-
-// 初始化应用（加载配置、注册服务、初始化路由等）
-await app.initialize();
-
-// 启动应用
-await app.start();`;
-
-  // 使用配置文件
-  const configFileCode = `// main.ts
-import { Application } from "@dreamer/dweb";
-
-// 自动查找 dweb.config.ts
-const app = new Application();
-
-// 或指定配置文件路径
-const app = new Application("./config/dweb.config.ts");
-
-// 多应用模式
-const app = new Application("./dweb.config.ts", "backend");
-
-await app.initialize();
-await app.start();`;
-
-  // 程序化配置
-  const programmaticConfigCode = `// main.ts
-import { Application } from "@dreamer/dweb";
-import type { AppConfig } from "@dreamer/dweb";
+  const basicUsageCode = `// main.ts（可选）
+import { AppConfig, cors, i18n, store, theme } from "@dreamer/dweb";
 
 const config: AppConfig = {
-  server: { port: 3000 },
-  routes: { dir: "routes" },
-  isProduction: false,
+  middleware: [
+    cors({
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    }),
+  ],
+  plugins: [
+    i18n({
+      languages: [
+        { code: "en-US", name: "English" },
+        { code: "zh-CN", name: "中文" },
+      ],
+      defaultLanguage: "en-US",
+      translationsDir: "locales",
+    }),
+    theme({
+      defaultTheme: "light",
+      storageKey: "theme",
+    }),
+    store({
+      persist: true,
+      storageKey: "store",
+    }),
+  ],
 };
 
-const app = new Application();
-const configManager = app.getService("configManager") as any;
-configManager.setConfig(config);
+export default config;
 
-await app.initialize();
-await app.start();`;
+// 注意：服务启动通过 CLI 命令
+// deno task dev  # 开发模式
+// deno task start  # 生产模式`;
 
-  // 注册中间件和插件
-  const middlewarePluginCode = `// main.ts
-import { Application } from "@dreamer/dweb";
+  // 使用配置文件
+  const configFileCode = `// main.ts（可选）
+import { AppConfig, cors, i18n, store, theme } from "@dreamer/dweb";
 
-const app = new Application("dweb.config.ts");
-await app.initialize();
+const config: AppConfig = {
+  middleware: [
+    cors({
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    }),
+  ],
+  plugins: [
+    i18n({
+      languages: [
+        { code: "en-US", name: "English" },
+        { code: "zh-CN", name: "中文" },
+      ],
+      defaultLanguage: "en-US",
+      translationsDir: "locales",
+    }),
+    theme({
+      defaultTheme: "light",
+      storageKey: "theme",
+    }),
+    store({
+      persist: true,
+      storageKey: "store",
+    }),
+  ],
+};
 
-// 注册中间件
-app.use(async (req, res, next) => {
-  console.log("请求:", req.url);
-  await next();
-});
+export default config;
 
-// 注册插件
-app.plugin({
-  name: "my-plugin",
-  onInit: async (app) => {
-    console.log("插件初始化");
-  },
-});
+// 注意：框架会自动加载 main.ts 或 dweb.config.ts 中的配置
+// 服务启动通过 CLI 命令：deno task dev 或 deno task start`;
 
-await app.start();`;
+  // 程序化配置（推荐使用配置文件）
+  const programmaticConfigCode = `// main.ts（可选）
+import { AppConfig, cors, i18n, store, theme } from "@dreamer/dweb";
+
+const config: AppConfig = {
+  middleware: [
+    cors({
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    }),
+  ],
+  plugins: [
+    i18n({
+      languages: [
+        { code: "en-US", name: "English" },
+        { code: "zh-CN", name: "中文" },
+      ],
+      defaultLanguage: "en-US",
+      translationsDir: "locales",
+    }),
+    theme({
+      defaultTheme: "light",
+      storageKey: "theme",
+    }),
+    store({
+      persist: true,
+      storageKey: "store",
+    }),
+  ],
+};
+
+export default config;
+
+// 注意：服务启动通过 CLI 命令
+// deno task dev  # 开发模式
+// deno task start  # 生产模式`;
+
+  // 注册中间件和插件（推荐使用配置文件）
+  const middlewarePluginCode = `// main.ts（可选）
+import { AppConfig, cors, i18n, store, theme } from "@dreamer/dweb";
+
+const config: AppConfig = {
+  middleware: [
+    cors({
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    }),
+    // 自定义中间件
+    async (req, res, next) => {
+      console.log("请求:", req.url);
+      await next();
+    },
+  ],
+  plugins: [
+    i18n({
+      languages: [
+        { code: "en-US", name: "English" },
+        { code: "zh-CN", name: "中文" },
+      ],
+      defaultLanguage: "en-US",
+      translationsDir: "locales",
+    }),
+    theme({
+      defaultTheme: "light",
+      storageKey: "theme",
+    }),
+    store({
+      persist: true,
+      storageKey: "store",
+    }),
+    // 可以在这里注册更多插件
+  ],
+};
+
+export default config;
+
+// 注意：服务启动通过 CLI 命令
+// deno task dev  # 开发模式
+// deno task start  # 生产模式`;
 
   // 获取服务
   const getServiceCode = `// 在中间件或插件中获取服务
@@ -112,29 +199,48 @@ app.on("user:login", (user) => {
 app.emit("user:login", { id: 1, name: "Alice" });`;
 
   // 完整示例
-  const completeExampleCode = `// main.ts
-import { Application } from "@dreamer/dweb";
-import { cors, logger } from "@dreamer/dweb";
+  const completeExampleCode = `// main.ts（可选）
+import { AppConfig, cors, i18n, store, theme } from "@dreamer/dweb";
 
-const app = new Application("dweb.config.ts");
+const config: AppConfig = {
+  middleware: [
+    cors({
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    }),
+    // 自定义中间件
+    async (req, res, next) => {
+      console.log(\`[\${new Date().toISOString()}] \${req.method} \${req.url}\`);
+      await next();
+    },
+  ],
+  plugins: [
+    i18n({
+      languages: [
+        { code: "en-US", name: "English" },
+        { code: "zh-CN", name: "中文" },
+      ],
+      defaultLanguage: "en-US",
+      translationsDir: "locales",
+    }),
+    theme({
+      defaultTheme: "light",
+      storageKey: "theme",
+    }),
+    store({
+      persist: true,
+      storageKey: "store",
+    }),
+  ],
+};
 
-// 初始化应用
-await app.initialize();
+export default config;
 
-// 注册中间件
-app.use(logger());
-app.use(cors({ origin: "*" }));
-
-// 自定义中间件
-app.use(async (req, res, next) => {
-  console.log(\`[\${new Date().toISOString()}] \${req.method} \${req.url}\`);
-  await next();
-});
-
-// 启动应用
-await app.start();
-
-console.log("应用已启动，访问 http://localhost:3000");`;
+// 注意：服务启动通过 CLI 命令
+// deno task dev  # 开发模式
+// deno task start  # 生产模式
+// 应用启动后，访问 http://localhost:3000`;
 
   return (
     <article className="prose prose-lg max-w-none dark:prose-invert">
@@ -319,44 +425,6 @@ console.log("应用已启动，访问 http://localhost:3000");`;
               停止应用，停止服务器并清理资源。
             </p>
             <CodeBlock code={`await app.stop();`} language="typescript" />
-          </div>
-
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                use(middleware)
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              注册中间件。
-            </p>
-            <CodeBlock
-              code={`app.use(async (req, res, next) => {
-  // 中间件逻辑
-  await next();
-});`}
-              language="typescript"
-            />
-          </div>
-
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                plugin(plugin)
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              注册插件。
-            </p>
-            <CodeBlock
-              code={`app.plugin({
-  name: "my-plugin",
-  onInit: async (app) => {
-    // 插件初始化逻辑
-  },
-});`}
-              language="typescript"
-            />
           </div>
 
           <div>

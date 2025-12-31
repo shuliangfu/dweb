@@ -3,9 +3,9 @@
  * 单应用模式
  */
 
-import { type AppConfig, cors, seo, tailwind } from "@dreamer/dweb";
+import { defineConfig, cors, seo, tailwind } from "@dreamer/dweb";
 
-const config: AppConfig = {
+export default defineConfig({
   name: "example",
   
   // 渲染适配器配置
@@ -170,6 +170,4 @@ const config: AppConfig = {
       allowedHeaders: ["Content-Type", "Authorization"],
     }),
   ],
-};
-
-export default config;
+});

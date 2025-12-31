@@ -12,6 +12,29 @@ import { deepMerge } from "../common/utils/utils.ts";
 import { findConfigFile } from "../server/utils/file.ts";
 
 /**
+ * 定义配置的辅助函数
+ * 提供类型检查和更好的开发体验
+ *
+ * @param config 应用配置对象
+ * @returns 配置对象本身（用于类型推断和验证）
+ *
+ * @example
+ * ```typescript
+ * import { defineConfig } from "@dreamer/dweb";
+ *
+ * export default defineConfig({
+ *   name: "my-app",
+ *   server: {
+ *     port: 3000,
+ *   },
+ * });
+ * ```
+ */
+export function defineConfig<T extends AppConfig>(config: T): T {
+  return config;
+}
+
+/**
  * 查找 main.ts 文件
  * @param appName 应用名称（多应用模式下使用，如 'backend'）
  * @param outDir 构建输出目录（可选）

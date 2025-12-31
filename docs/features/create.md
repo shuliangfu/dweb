@@ -61,49 +61,43 @@ my-app/
  * 服务启动通过 CLI 命令：deno task dev 或 deno task start
  */
 
-import { cors, createApp, staticFiles } from "@dreamer/dweb";
+import { AppConfig, cors, i18n, store, theme } from "@dreamer/dweb";
 
-// 创建应用实例
-// createApp() 函数签名：
-// function createApp(): App
-//
-// 返回值 App 接口包含：
-// - server: Server - 服务器实例
-// - middleware: MiddlewareManager - 中间件管理器
-// - plugins: PluginManager - 插件管理器
-// - use(middleware: Middleware | MiddlewareConfig): void - 添加中间件
-// - plugin(plugin: Plugin | { name: string; config?: Record<string, unknown> }): void - 注册插件
-const app = createApp();
+const config: AppConfig = {
+  middleware: [
+    cors({
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    }),
+    // 可以在这里添加更多中间件
+    // (req, res, next) => {
+    //   console.log('request', req.url);
+    //   next();
+    // }
+  ],
+  plugins: [
+    i18n({
+      languages: [
+        { code: "en-US", name: "English" },
+        { code: "zh-CN", name: "中文" },
+      ],
+      defaultLanguage: "en-US",
+      translationsDir: "locales",
+    }),
+    theme({
+      defaultTheme: "light",
+      storageKey: "theme",
+    }),
+    store({
+      persist: true,
+      storageKey: "store",
+    }),
+    // 可以在这里注册更多插件
+  ],
+};
 
-// 配置中间件
-// app.use() 方法可以接受：
-// 1. 中间件函数：app.use((req, res, next) => { ... })
-// 2. 中间件配置对象：app.use({ name: 'cors', options: { ... } })
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
-
-// 配置静态文件服务
-app.use(staticFiles({
-  dir: "assets",
-  prefix: "/assets",
-  maxAge: 86400, // 缓存 1 天
-}));
-
-// 可以添加更多中间件
-// app.use(customMiddleware);
-
-// 可以注册插件
-// app.plugin() 方法可以接受：
-// 1. 插件对象：app.plugin({ name: 'my-plugin', setup: (app) => { ... } })
-// 2. 插件配置对象：app.plugin({ name: 'my-plugin', config: { ... } })
-// app.plugin(customPlugin);
-
-// 导出应用实例
-// 框架会自动检测并加载导出的应用实例
-export default app;
+export default config;
 ```
 
 **使用说明：**

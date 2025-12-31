@@ -62,14 +62,13 @@ export {
 } from "./core/cache/mod.ts";
 
 // 导出配置管理
-import {
+export {
+  defineConfig,
   isMultiAppMode,
   loadConfig,
   mergeConfig,
   normalizeRouteConfig,
 } from "./core/config.ts";
-
-export { isMultiAppMode, loadConfig, mergeConfig, normalizeRouteConfig };
 
 // 导出 API 路由处理
 export { handleApiRoute, loadApiRoute } from "./core/api-route.ts";
