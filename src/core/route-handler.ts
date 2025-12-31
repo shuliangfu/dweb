@@ -1232,22 +1232,18 @@ export class RouteHandler {
     const fileContent = await Deno.readTextFile(filePathWithoutPrefix);
 
     // 替换路径别名
-    let processedContent = replaceImportAliasesInContent(
+    const processedContent = replaceImportAliasesInContent(
       fileContent,
       importMap,
       fileDir,
     );
 
-    // 将相对路径转换为绝对路径
-    const relativeImportRegex =
-      /(?:from\s+['"]|import\s*\(\s*['"])(\.\.?\/[^'"]+)(['"])/g;
-    processedContent = processedContent.replace(
-      relativeImportRegex,
-      (match, importPath) => {
-        const absolutePath = path.resolve(fileDir, importPath);
-        return match.replace(importPath, absolutePath);
-      },
-    );
+    // 注意：不将相对路径转换为绝对路径
+    // 因为：
+    // 1. esbuild 在 isServerBuild=true 时会正确处理相对路径导入
+    // 2. 通过临时文件导入时，import.meta.url 被设置为原始文件路径
+    // 3. 相对路径应该基于原始文件路径解析，而不是临时文件路径
+    // 如果转换为绝对路径，可能会导致路径解析错误
 
     // 使用 esbuild 编译
     const ext = path.extname(filePathWithoutPrefix);
@@ -1257,13 +1253,13 @@ export class RouteHandler {
     const compiledCode = await buildFromStdin(
       processedContent,
       filePathWithoutPrefix,
-      projectRoot,
+      fileDir, // 使用源文件所在目录作为 resolveDir，确保相对路径能正确解析
       loader,
       {
         importMap,
         cwd: projectRoot,
-        bundleClient: false,
-        isServerBuild: true,
+        bundleClient: true, // 启用打包以处理相对路径导入
+        isServerBuild: true, // 服务端构建，Preact 等外部依赖会保持 external
         minify: false,
         sourcemap: false,
         keepNames: true,
