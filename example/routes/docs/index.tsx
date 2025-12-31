@@ -184,7 +184,7 @@ export default app;`;
       {/* 快速开始 */}
       <section className="mb-16">
         <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
-          快速开始
+          快速开始 
         </h2>
 
         <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">

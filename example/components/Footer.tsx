@@ -11,29 +11,29 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gray-900 dark:bg-gray-950 text-gray-300 dark:text-gray-400 border-t border-gray-800 dark:border-gray-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid md:grid-cols-4 gap-8">
+    <footer className="bg-gray-50 dark:bg-gray-950 text-gray-600 dark:text-gray-400 border-t border-gray-200 dark:border-gray-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid md:grid-cols-4 gap-12">
           {/* 关于 */}
-          <div>
-            <h3 className="text-white dark:text-gray-100 text-lg font-bold mb-4">
+          <div className="space-y-4">
+            <h3 className="text-gray-900 dark:text-white text-lg font-bold">
               DWeb
             </h3>
-            <p className="text-sm text-gray-400 dark:text-gray-500 leading-relaxed">
-              基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web 框架 333
+            <p className="text-sm leading-relaxed">
+              基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web 框架，为开发者提供极致的开发体验。
             </p>
           </div>
 
           {/* 快速链接 */}
           <div>
-            <h4 className="text-white dark:text-gray-100 text-sm font-semibold mb-4">
+            <h4 className="text-gray-900 dark:text-white text-sm font-bold uppercase tracking-wider mb-4">
               快速链接
             </h4>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-3 text-sm">
               <li>
                 <a
                   href="/"
-                  className="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-200 transition-colors"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   首页
                 </a>
@@ -41,7 +41,7 @@ export default function Footer() {
               <li>
                 <a
                   href="/features"
-                  className="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-200 transition-colors"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   特性
                 </a>
@@ -49,7 +49,7 @@ export default function Footer() {
               <li>
                 <a
                   href="/docs"
-                  className="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-200 transition-colors"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   文档
                 </a>
@@ -57,7 +57,7 @@ export default function Footer() {
               <li>
                 <a
                   href="/about"
-                  className="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-200 transition-colors"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   关于
                 </a>
@@ -67,19 +67,19 @@ export default function Footer() {
 
           {/* 资源 */}
           <div>
-            <h4 className="text-white dark:text-gray-100 text-sm font-semibold mb-4">
+            <h4 className="text-gray-900 dark:text-white text-sm font-bold uppercase tracking-wider mb-4">
               资源
             </h4>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-3 text-sm">
               <li>
                 <a
                   href="https://github.com/shuliangfu/dweb"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-200 transition-colors inline-flex items-center"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center group"
                 >
                   <svg
-                    className="w-4 h-4 mr-2"
+                    className="w-4 h-4 mr-2 group-hover:text-gray-900 dark:group-hover:text-white transition-colors"
                     fill="currentColor"
                     viewBox="0 0 24 24"
                   >
@@ -93,30 +93,33 @@ export default function Footer() {
                   href="https://jsr.io/@dreamer/dweb"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-200 transition-colors"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center group"
                 >
+                  <span className="w-4 h-4 mr-2 flex items-center justify-center font-bold text-xs bg-yellow-400 text-black rounded-sm group-hover:bg-yellow-300">J</span>
                   JSR 包
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* 联系 */}
+          {/* 社区 */}
           <div>
-            <h4 className="text-white dark:text-gray-100 text-sm font-semibold mb-4">
+            <h4 className="text-gray-900 dark:text-white text-sm font-bold uppercase tracking-wider mb-4">
               社区
             </h4>
-            <p className="text-sm text-gray-400 dark:text-gray-500">
-              欢迎贡献代码和提出建议
+            <p className="text-sm leading-relaxed mb-4">
+              加入我们的社区，一起构建更好的 Web 开发未来。
             </p>
+            <div className="flex space-x-4">
+                {/* 社交图标占位 */}
+            </div>
           </div>
         </div>
 
         {/* 版权信息 */}
-        <div className="mt-8 pt-8 border-t border-gray-800 dark:border-gray-700 text-center text-sm text-gray-400 dark:text-gray-500">
+        <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800 text-center text-sm">
           <p>
-            © {currentYear}{" "}
-            DWeb Framework. Built with ❤️ using Deno + Preact + Tailwind CSS
+            © {currentYear} DWeb Framework. Built with ❤️ by the community.
           </p>
         </div>
       </div>

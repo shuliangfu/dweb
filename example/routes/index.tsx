@@ -176,43 +176,45 @@ deno task dev`;
       />
 
       {/* 快速开始区域 */}
-      <div className="py-20 bg-linear-to-br bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              {$t("快速开始")}
+      <div className="py-24 bg-gray-50 dark:bg-gray-900 relative overflow-hidden">
+        {/* 背景装饰 */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight">
+              {$t("快速开始")}  
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
               只需几分钟，即可开始使用 DWeb 构建您的下一个 Web 应用
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
             {/* 创建项目 */}
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                创建新项目
-              </h3>
-              <CodeBlock code={quickStartCode} language="bash" />
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">创建新项目</h3>
+              <CodeBlock code={quickStartCode} language="bash" variant="terminal" title="Create App" />
             </div>
-
+            
             {/* 安装依赖 */}
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                安装依赖
-              </h3>
-              <CodeBlock code={installCode} language="bash" />
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">安装依赖</h3>
+              <CodeBlock code={installCode} language="bash" variant="terminal" title="Add Dependency" />
             </div>
           </div>
 
-          <div className="text-center mt-12">
+          <div className="text-center mt-16">
             <a
               href="/docs"
-              className="inline-flex items-center px-8 py-4 text-lg font-semibold text-white bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 rounded-lg hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-600 dark:hover:to-indigo-600 transition-all shadow-lg hover:shadow-xl"
+              className="group inline-flex items-center px-8 py-4 text-lg font-semibold text-white bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 rounded-full hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-600 dark:hover:to-indigo-600 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
             >
               查看完整文档
               <svg
-                className="ml-2 w-5 h-5"
+                className="ml-2 w-5 h-5 transform group-hover:translate-x-1 transition-transform"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -230,47 +232,53 @@ deno task dev`;
       </div>
 
       {/* 技术栈展示区域 */}
-      <div className="py-20 bg-white dark:bg-gray-900">
+      <div className="py-24 bg-white dark:bg-gray-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight">
               技术栈
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
               基于现代 Web 技术构建，提供最佳开发体验
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Deno */}
-            <div className="text-center p-8 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg dark:hover:shadow-xl transition-all bg-white dark:bg-gray-800">
-              <div className="text-6xl mb-4">🦕</div>
+            <div className="group text-center p-8 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+              <div className="w-20 h-20 mx-auto mb-6 flex items-center justify-center bg-blue-50 dark:bg-blue-900/20 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                <div className="text-5xl">🦕</div>
+              </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
                 Deno
               </h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                 现代 JavaScript/TypeScript 运行时，内置安全性和现代 Web API 支持
               </p>
             </div>
 
             {/* Preact */}
-            <div className="text-center p-8 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg dark:hover:shadow-xl transition-all bg-white dark:bg-gray-800">
-              <div className="text-6xl mb-4">⚛️</div>
+            <div className="group text-center p-8 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+              <div className="w-20 h-20 mx-auto mb-6 flex items-center justify-center bg-purple-50 dark:bg-purple-900/20 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                <div className="text-5xl">⚛️</div>
+              </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
                 Preact
               </h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                 轻量级 React 替代品，提供相同的 API 但体积更小、性能更好
               </p>
             </div>
 
             {/* Tailwind CSS */}
-            <div className="text-center p-8 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg dark:hover:shadow-xl transition-all bg-white dark:bg-gray-800">
-              <div className="text-6xl mb-4">🎨</div>
+            <div className="group text-center p-8 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+              <div className="w-20 h-20 mx-auto mb-6 flex items-center justify-center bg-teal-50 dark:bg-teal-900/20 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                <div className="text-5xl">🎨</div>
+              </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
                 Tailwind CSS
               </h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                 实用优先的 CSS 框架，快速构建现代化的用户界面
               </p>
             </div>

@@ -175,7 +175,10 @@ class HMRClient {
   private inferRouteFromFilePath(filePath: string): string | null {
     // 移除路径前缀（如 routes/ 或 app/routes/）
     // 支持多应用模式：app1/routes/about.tsx -> about.tsx
-    let normalizedPath = filePath.replace(/^.*\/routes\//, "");
+    let normalizedPath = filePath.replace(/^.*\/routes\//, "").replace(
+      "routes",
+      "",
+    );
 
     // 如果路径中不包含 routes/，可能是绝对路径或其他格式，尝试直接使用文件名
     if (normalizedPath === filePath) {
@@ -208,12 +211,15 @@ class HMRClient {
     normalizedPath = normalizedPath.replace(/\.(tsx?|jsx?)$/, "");
 
     // 如果是 index，转换为根路径
-    if (normalizedPath === "index" || normalizedPath === "") {
+    if (
+      normalizedPath === "/index" || normalizedPath === "/" ||
+      normalizedPath === "" || normalizedPath === "index"
+    ) {
       return "/";
     }
 
     // 转换为路由路径（添加前导斜杠）
-    return `/${normalizedPath}`;
+    return normalizedPath;
   }
 
   /**
@@ -240,8 +246,13 @@ class HMRClient {
 
     // 检查路由是否匹配
     // 精确匹配或当前路由以文件路由开头（支持嵌套路由）
-    return currentRoute === fileRoute ||
-      currentRoute.startsWith(fileRoute + "/");
+    const hasMatch = currentRoute === fileRoute ||
+      currentRoute.startsWith(fileRoute + "/") ||
+      currentRoute + "/index" == fileRoute;
+
+    console.log({ hasMatch, currentRoute, fileRoute });
+
+    return hasMatch;
   }
 
   /**
@@ -327,24 +338,143 @@ class HMRClient {
   }
 
   /**
-   * 加载布局组件
+   * 加载所有布局组件（支持多个布局）
+   * @param pageData 页面数据配置
+   * @returns 布局组件数组（从最具体到最通用）
    */
-  private async loadLayoutComponent(
-    layoutPath: string | null,
-  ): Promise<unknown> {
-    if (!layoutPath) {
-      return null;
+  private async loadAllLayoutComponents(
+    pageData: ClientConfig,
+  ): Promise<unknown[]> {
+    const LayoutComponents: unknown[] = [];
+
+    // 检查页面是否禁用了布局
+    if (pageData.layout === false) {
+      return LayoutComponents;
     }
 
-    try {
-      const layoutUrlWithCacheBust = addCacheBustParam(layoutPath);
-      const layoutModule = await import(layoutUrlWithCacheBust);
-      const layoutComponent = layoutModule.default;
-      return layoutComponent;
-    } catch (error) {
-      console.error("[HMR] 布局组件加载失败:", error);
-      return null;
+    // 获取模块缓存
+    const moduleCache = (globalThis as Record<string, unknown>)
+      .__moduleCache as Map<string, unknown> | undefined;
+
+    // 使用 allLayoutPaths（多个布局）
+    if (
+      pageData.allLayoutPaths && Array.isArray(pageData.allLayoutPaths) &&
+      pageData.allLayoutPaths.length > 0
+    ) {
+      // 加载所有布局组件（从最具体到最通用）
+      for (const layoutPath of pageData.allLayoutPaths) {
+        try {
+          // 先检查模块缓存
+          let layoutModule = moduleCache?.get(layoutPath) as {
+            default?: unknown;
+            layout?: boolean;
+          } | undefined;
+
+          // 如果缓存中没有，则动态导入
+          if (!layoutModule) {
+            const layoutUrl = layoutPath.startsWith("http")
+              ? layoutPath
+              : `${globalThis.location.origin}${layoutPath}`;
+            const layoutUrlWithCacheBust = addCacheBustParam(layoutUrl);
+            layoutModule = await import(layoutUrlWithCacheBust) as {
+              default?: unknown;
+              layout?: boolean;
+            };
+            // 缓存布局模块，避免重复导入
+            if (moduleCache) {
+              moduleCache.set(layoutPath, layoutModule);
+            }
+          }
+
+          const LayoutComponent = layoutModule?.default;
+          if (LayoutComponent && typeof LayoutComponent === "function") {
+            LayoutComponents.push(LayoutComponent);
+
+            // 检查是否设置了 layout = false（禁用继承）
+            if (layoutModule.layout === false) {
+              break;
+            }
+          }
+        } catch (layoutError) {
+          console.warn(
+            "[HMR] 布局加载失败，跳过该布局:",
+            layoutPath,
+            layoutError,
+          );
+        }
+      }
     }
+
+    return LayoutComponents;
+  }
+
+  /**
+   * 嵌套多个布局组件（从最内层到最外层）
+   * @param pageElement 页面元素
+   * @param LayoutComponents 布局组件数组（从最具体到最通用）
+   * @param layoutData 布局的 load 数据数组
+   * @param jsx JSX 函数
+   * @returns 嵌套后的最终元素
+   */
+  private async nestLayoutComponents(
+    pageElement: unknown,
+    LayoutComponents: unknown[],
+    layoutData: Record<string, unknown>[],
+    jsx: (
+      type: unknown,
+      props: Record<string, unknown> | null,
+      ...children: unknown[]
+    ) => unknown,
+  ): Promise<unknown> {
+    let finalElement: unknown = pageElement;
+
+    // 从最内层到最外层嵌套布局组件（与 browser-client.ts 保持一致）
+    for (let i = 0; i < LayoutComponents.length; i++) {
+      const LayoutComponent = LayoutComponents[i];
+      // 获取对应布局的 load 数据（如果有）
+      const layoutLoadData = (layoutData[i] as Record<string, unknown>) || {};
+      // 从 layoutLoadData 中排除 children 和 data，避免类型冲突和数据覆盖
+      const { children: _, data: __, ...restLayoutProps } = layoutLoadData;
+
+      if (typeof LayoutComponent === "function") {
+        try {
+          // 构建布局 props（与 browser-client.ts 保持一致）
+          const layoutProps = {
+            ...restLayoutProps, // 布局的 load 数据中的其他属性（如果有）
+            data: layoutLoadData, // 布局的 load 数据（例如 menus）
+            children: finalElement,
+          };
+          const layoutResult = (LayoutComponent as (props: {
+            children: unknown;
+            data: Record<string, unknown>;
+            [key: string]: unknown;
+          }) => unknown | Promise<unknown>)(layoutProps);
+          if (layoutResult instanceof Promise) {
+            finalElement = await layoutResult;
+          } else {
+            finalElement = layoutResult as unknown;
+          }
+        } catch {
+          try {
+            const layoutProps = {
+              ...restLayoutProps,
+              data: layoutLoadData,
+              children: finalElement,
+            };
+            const layoutResult = jsx(LayoutComponent, layoutProps);
+            if (layoutResult instanceof Promise) {
+              finalElement = await layoutResult;
+            } else {
+              finalElement = layoutResult as unknown;
+            }
+          } catch {
+            // 如果都失败，跳过该布局，继续使用当前元素（与 browser-client.ts 保持一致）
+          }
+        }
+      }
+    }
+
+    return finalElement;
   }
 
   /**
@@ -590,52 +720,8 @@ class HMRClient {
         throw new Error("页面组件未导出默认组件或组件不是函数");
       }
 
-      // 加载布局组件
-      const LayoutComponents: unknown[] = [];
-      if (pageData.layout !== false) {
-        // 优先使用 allLayoutPaths（多个布局）
-        if (
-          pageData.allLayoutPaths && Array.isArray(pageData.allLayoutPaths) &&
-          pageData.allLayoutPaths.length > 0
-        ) {
-          for (let i = 0; i < pageData.allLayoutPaths.length; i++) {
-            const layoutPath = pageData.allLayoutPaths[i];
-            const layoutUrl = layoutPath.startsWith("http")
-              ? layoutPath
-              : `${globalThis.location.origin}${layoutPath}`;
-            const layoutUrlWithCacheBust = addCacheBustParam(layoutUrl);
-            try {
-              const layoutModule = await import(layoutUrlWithCacheBust) as {
-                default: unknown;
-              };
-              if (layoutModule.default) {
-                LayoutComponents.push(layoutModule.default);
-              }
-            } catch {
-              // 忽略布局组件加载失败
-            }
-          }
-        } else if (
-          pageData.layoutPath && pageData.layoutPath !== "null" &&
-          typeof pageData.layoutPath === "string"
-        ) {
-          // 使用单个布局路径
-          const layoutUrl = pageData.layoutPath.startsWith("http")
-            ? pageData.layoutPath
-            : `${globalThis.location.origin}${pageData.layoutPath}`;
-          const layoutUrlWithCacheBust = addCacheBustParam(layoutUrl);
-          try {
-            const layoutModule = await import(layoutUrlWithCacheBust) as {
-              default: unknown;
-            };
-            if (layoutModule.default) {
-              LayoutComponents.push(layoutModule.default);
-            }
-          } catch {
-            // 忽略布局组件加载失败
-          }
-        }
-      }
+      // 加载所有布局组件（使用统一的方法）
+      const LayoutComponents = await this.loadAllLayoutComponents(pageData);
 
       // 准备页面 props
       const excludeKeys = [
@@ -786,52 +872,56 @@ class HMRClient {
       let pageData = (globalThis as Record<string, unknown>)
         .__PAGE_DATA__ as ClientConfig;
 
-      // SSR 模式下，如果页面数据不存在或为空，需要重新请求页面获取最新的页面数据
-      const isSSR = pageData?.renderMode === "ssr" ||
-        (!pageData &&
-          document.querySelector('script[data-type="dweb-page-data"]'));
+      // HMR 更新时，总是重新获取当前页面的数据，确保 pageData 始终是最新的
+      // 这样可以确保 allLayoutPaths 与当前页面匹配，避免布局渲染错误
+      // 注意：只在开发环境下这样做（HMR 只在开发环境下运行）
+      try {
+        // 重新请求当前页面，获取最新的页面数据（包括 layout）
+        const response = await fetch(globalThis.location.href, {
+          headers: {
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+          },
+        });
+        const html = await response.text();
 
-      if (isSSR && (!pageData || !pageData.route || !pageData.props)) {
-        try {
-          // 重新请求当前页面，获取最新的页面数据（包括 layout）
-          const response = await fetch(globalThis.location.href, {
-            headers: {
-              "Cache-Control": "no-cache",
-              "Pragma": "no-cache",
-            },
-          });
-          const html = await response.text();
+        // 提取并更新 i18n 数据（与客户端渲染保持一致）
+        this.extractAndUpdateI18nData(html);
 
-          // 提取并更新 i18n 数据（与客户端渲染保持一致）
-          this.extractAndUpdateI18nData(html);
+        // 解析 HTML，提取 JSON script 标签中的页面数据
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        const pageDataScript = doc.querySelector(
+          'script[data-type="dweb-page-data"]',
+        );
 
-          // 解析 HTML，提取 JSON script 标签中的页面数据
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, "text/html");
-          const pageDataScript = doc.querySelector(
-            'script[data-type="dweb-page-data"]',
-          );
+        if (pageDataScript && pageDataScript.textContent) {
+          try {
+            // 解析 JSON 数据（移除末尾的分号）
+            const jsonText = pageDataScript.textContent.trim().replace(
+              /;$/,
+              "",
+            );
+            const newPageData = JSON.parse(jsonText);
 
-          if (pageDataScript && pageDataScript.textContent) {
-            try {
-              // 解析 JSON 数据（移除末尾的分号）
-              const jsonText = pageDataScript.textContent.trim().replace(
-                /;$/,
-                "",
-              );
-              const newPageData = JSON.parse(jsonText);
-
-              // 更新全局页面数据
-              (globalThis as Record<string, unknown>).__PAGE_DATA__ =
-                newPageData;
-              pageData = newPageData;
-            } catch (parseError) {
-              console.error("[HMR] 解析页面数据失败:", parseError);
-            }
+            // 更新全局页面数据
+            (globalThis as Record<string, unknown>).__PAGE_DATA__ = newPageData;
+            pageData = newPageData;
+          } catch (parseError) {
+            console.error("[HMR] 解析页面数据失败:", parseError);
+            // 如果解析失败，继续使用旧的 pageData
           }
-        } catch (fetchError) {
-          console.error("[HMR] 重新请求页面数据失败:", fetchError);
+        } else {
+          // 如果没有找到页面数据脚本，继续使用旧的 pageData
+          // 这可能发生在某些特殊情况下
         }
+      } catch (fetchError) {
+        // 如果获取失败，继续使用旧的 pageData
+        // 这样可以避免网络错误导致 HMR 完全失败
+        console.warn(
+          "[HMR] 重新请求页面数据失败，使用缓存的 pageData:",
+          fetchError,
+        );
       }
 
       // 参考客户端渲染的处理方式，从 pageData 中提取 load 数据
@@ -892,30 +982,28 @@ class HMRClient {
       }
 
       if (isLayoutFile) {
-        // 更新的是布局文件：清除布局组件缓存，重新加载布局组件
-        const layoutPath = pageData?.layoutPath ?? null;
+        // 更新的是布局文件：清除布局组件缓存，重新加载所有布局组件
         const allLayoutPaths = pageData?.allLayoutPaths ?? [];
 
         // 清除布局组件的缓存
         const moduleCache = (globalThis as Record<string, unknown>)
           .__moduleCache as Map<string, unknown> | undefined;
-        if (moduleCache) {
+        if (moduleCache && allLayoutPaths.length > 0) {
           // 清除所有布局路径的缓存
-          if (allLayoutPaths.length > 0) {
-            allLayoutPaths.forEach((path) => {
-              moduleCache.delete(path);
-            });
-          } else if (layoutPath) {
-            moduleCache.delete(layoutPath);
-          }
+          allLayoutPaths.forEach((path) => {
+            moduleCache.delete(path);
+          });
         }
 
         // 重新加载布局组件（使用新的模块 URL，带时间戳避免缓存）
         const moduleUrlWithTimestamp = addCacheBustParam(moduleUrl);
         const layoutModule = await import(moduleUrlWithTimestamp);
-        const LayoutComponent = layoutModule.default;
+        const updatedLayoutComponent = layoutModule.default;
 
-        if (!LayoutComponent || typeof LayoutComponent !== "function") {
+        if (
+          !updatedLayoutComponent ||
+          typeof updatedLayoutComponent !== "function"
+        ) {
           throw new Error("布局组件未导出默认组件或组件不是函数");
         }
 
@@ -950,11 +1038,61 @@ class HMRClient {
           throw new Error("页面组件未找到或不是函数");
         }
 
-        // 创建页面元素（包含更新的布局，支持异步组件）
-        const finalElement = await this.createPageElement(
-          PageComponent,
-          LayoutComponent,
-          props,
+        // 创建页面元素
+        let pageElement: unknown;
+        try {
+          const componentResult = (PageComponent as (
+            props: Record<string, unknown>,
+          ) => unknown)(props);
+          if (componentResult instanceof Promise) {
+            pageElement = await componentResult;
+          } else {
+            pageElement = componentResult;
+          }
+        } catch {
+          pageElement = jsx(PageComponent, props);
+        }
+
+        if (!pageElement) {
+          throw new Error("页面元素创建失败");
+        }
+
+        // 加载所有布局组件（由于缓存已清除，会重新加载所有布局）
+        // 但我们需要确保更新的布局使用最新的模块 URL（带时间戳）
+        const LayoutComponents = await this.loadAllLayoutComponents(pageData);
+
+        // 根据 filePath 找到对应的布局索引并替换为更新的布局组件
+        // 这样可以确保使用最新的代码（带时间戳的 moduleUrl）
+        const updatedLayoutIndex = allLayoutPaths.findIndex((path) => {
+          // 匹配布局路径：检查 filePath 是否包含在布局路径中，或布局路径是否包含在 filePath 中
+          const normalizedPath = path.replace(/^.*\/routes\//, "").replace(
+            /\.(tsx?|jsx?)$/,
+            "",
+          );
+          const normalizedFilePath = filePath.replace(/^.*\/routes\//, "")
+            .replace(/\.(tsx?|jsx?)$/, "");
+          return normalizedPath === normalizedFilePath ||
+            path.includes(normalizedFilePath) ||
+            normalizedFilePath.includes(normalizedPath);
+        });
+
+        if (
+          updatedLayoutIndex >= 0 &&
+          updatedLayoutIndex < LayoutComponents.length
+        ) {
+          // 替换对应位置的布局组件为更新的版本（使用带时间戳的 moduleUrl）
+          LayoutComponents[updatedLayoutIndex] = updatedLayoutComponent;
+        } else if (LayoutComponents.length === 0 && updatedLayoutComponent) {
+          // 如果没有加载到任何布局，但更新了布局，使用更新的布局
+          LayoutComponents.push(updatedLayoutComponent);
+        }
+
+        // 嵌套所有布局组件（从最内层到最外层）
+        const layoutData = pageData?.layoutData || [];
+        const finalElement = await this.nestLayoutComponents(
+          pageElement,
+          LayoutComponents,
+          layoutData,
           jsx,
         );
 
@@ -993,14 +1131,37 @@ class HMRClient {
           throw new Error("页面组件未导出默认组件或组件不是函数");
         }
 
-        const layoutPath = pageData?.layoutPath ?? null;
-        const LayoutComponent = await this.loadLayoutComponent(layoutPath);
-        const finalElement = await this.createPageElement(
-          PageComponent,
-          LayoutComponent,
-          props,
+        // 创建页面元素
+        let pageElement: unknown;
+        try {
+          const componentResult = (PageComponent as (
+            props: Record<string, unknown>,
+          ) => unknown)(props);
+          if (componentResult instanceof Promise) {
+            pageElement = await componentResult;
+          } else {
+            pageElement = componentResult;
+          }
+        } catch {
+          pageElement = jsx(PageComponent, props);
+        }
+
+        if (!pageElement) {
+          throw new Error("页面元素创建失败");
+        }
+
+        // 加载所有布局组件（支持多个布局）
+        const LayoutComponents = await this.loadAllLayoutComponents(pageData);
+
+        // 嵌套所有布局组件（从最内层到最外层）
+        const layoutData = pageData?.layoutData || [];
+        const finalElement = await this.nestLayoutComponents(
+          pageElement,
+          LayoutComponents,
+          layoutData,
           jsx,
         );
+
         this.renderComponent(root, finalElement, render);
       } else {
         // 更新的是页面文件：正常处理
@@ -1017,15 +1178,34 @@ class HMRClient {
           throw new Error("组件未导出默认组件或组件不是函数");
         }
 
-        // 获取布局路径并加载布局组件（保持原有布局）
-        const layoutPath = pageData?.layoutPath ?? null;
-        const LayoutComponent = await this.loadLayoutComponent(layoutPath);
+        // 创建页面元素
+        let pageElement: unknown;
+        try {
+          const componentResult = (PageComponent as (
+            props: Record<string, unknown>,
+          ) => unknown)(props);
+          if (componentResult instanceof Promise) {
+            pageElement = await componentResult;
+          } else {
+            pageElement = componentResult;
+          }
+        } catch {
+          pageElement = jsx(PageComponent, props);
+        }
 
-        // 创建页面元素（包含布局，支持异步组件）
-        const finalElement = await this.createPageElement(
-          PageComponent,
-          LayoutComponent,
-          props,
+        if (!pageElement) {
+          throw new Error("页面元素创建失败");
+        }
+
+        // 加载所有布局组件（支持多个布局）
+        const LayoutComponents = await this.loadAllLayoutComponents(pageData);
+
+        // 嵌套所有布局组件（从最内层到最外层）
+        const layoutData = pageData?.layoutData || [];
+        const finalElement = await this.nestLayoutComponents(
+          pageElement,
+          LayoutComponents,
+          layoutData,
           jsx,
         );
 
@@ -1148,7 +1328,7 @@ class HMRClient {
         data.type === "component" && data.action === "update-component"
       ) {
         // 组件文件：检查是否应该更新当前页面
-        if (data.file && !this.shouldUpdateCurrentPage(data.file)) {
+        if (data.file && !this.shouldUpdateCurrentPage(data.file || "")) {
           // 文件不属于当前路由，跳过更新
           // console.log(`[HMR] 跳过更新：${data.file} 不属于当前路由 ${globalThis.location.pathname}`);
           return;

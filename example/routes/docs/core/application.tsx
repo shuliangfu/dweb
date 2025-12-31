@@ -245,7 +245,7 @@ export default config;
   return (
     <article className="prose prose-lg max-w-none dark:prose-invert">
       <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        Application (应用核心)
+        Application (应用核心) 1122
       </h1>
       <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
         <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
@@ -261,12 +261,30 @@ export default config;
           核心特性
         </h2>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><strong>生命周期管理</strong>: 完整的应用生命周期钩子（Initialize, Start, Stop, Error）。</li>
-          <li><strong>依赖注入容器</strong>: 内置 <code>ServiceContainer</code>，支持 Singleton、Transient、Scoped 三种生命周期，实现模块解耦。</li>
-          <li><strong>事件驱动架构</strong>: 基于 <code>EventEmitter</code>，支持全局事件总线，实现组件间的解耦通信。</li>
-          <li><strong>多应用支持</strong>: 支持单体和多应用（Monorepo）架构。</li>
-          <li><strong>统一错误处理</strong>: 内置全局异常捕获和统一的错误响应格式。</li>
-          <li><strong>自动配置</strong>: 支持约定优于配置，自动加载 <code>dweb.config.ts</code> 和环境变量。</li>
+          <li>
+            <strong>生命周期管理</strong>: 完整的应用生命周期钩子（Initialize,
+            Start, Stop, Error）。
+          </li>
+          <li>
+            <strong>依赖注入容器</strong>: 内置{" "}
+            <code>ServiceContainer</code>，支持 Singleton、Transient、Scoped
+            三种生命周期，实现模块解耦。
+          </li>
+          <li>
+            <strong>事件驱动架构</strong>: 基于{" "}
+            <code>EventEmitter</code>，支持全局事件总线，实现组件间的解耦通信。
+          </li>
+          <li>
+            <strong>多应用支持</strong>: 支持单体和多应用（Monorepo）架构。
+          </li>
+          <li>
+            <strong>统一错误处理</strong>:
+            内置全局异常捕获和统一的错误响应格式。
+          </li>
+          <li>
+            <strong>自动配置</strong>: 支持约定优于配置，自动加载{" "}
+            <code>dweb.config.ts</code> 和环境变量。
+          </li>
         </ul>
       </section>
 
@@ -279,7 +297,10 @@ export default config;
           <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
             Application
           </code>{" "}
-          类继承自 <code>EventEmitter</code>，作为全局事件总线，允许不同组件通过事件进行通信，而无需直接依赖。
+          类继承自{" "}
+          <code>
+            EventEmitter
+          </code>，作为全局事件总线，允许不同组件通过事件进行通信，而无需直接依赖。
         </p>
         <CodeBlock code={eventDrivenCode} language="typescript" />
       </section>
@@ -293,9 +314,17 @@ export default config;
           框架内置了全局错误处理机制，能够捕获路由处理、中间件和生命周期中的异常，并返回统一格式的错误响应。
         </p>
         <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li><strong>自动捕获</strong>: 自动捕获同步和异步错误。</li>
-          <li><strong>内容协商</strong>: 根据请求头自动返回 JSON 或 HTML 格式的错误信息。</li>
-          <li><strong>自定义处理</strong>: 支持注册自定义 <code>ErrorHandler</code> 来覆盖默认行为。</li>
+          <li>
+            <strong>自动捕获</strong>: 自动捕获同步和异步错误。
+          </li>
+          <li>
+            <strong>内容协商</strong>: 根据请求头自动返回 JSON 或 HTML
+            格式的错误信息。
+          </li>
+          <li>
+            <strong>自定义处理</strong>: 支持注册自定义{" "}
+            <code>ErrorHandler</code> 来覆盖默认行为。
+          </li>
         </ul>
       </section>
 

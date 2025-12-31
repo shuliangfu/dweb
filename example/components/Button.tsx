@@ -32,12 +32,12 @@ export default function Button({
 }: ButtonProps) {
   // 根据 variant 设置样式类
   const variantClasses = {
-    primary: 'text-white bg-indigo-600 hover:bg-indigo-700',
-    secondary: 'text-gray-700 bg-white hover:bg-gray-50',
+    primary: 'text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg',
+    secondary: 'text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 shadow-sm',
     outline: 'text-indigo-600 bg-transparent border-2 border-indigo-600 hover:bg-indigo-50'
   };
 
-  const baseClasses = 'inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md transition-colors';
+  const baseClasses = 'inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-xl transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500';
 
   const combinedClasses = `${baseClasses} ${variantClasses[variant]} ${className}`;
 

@@ -53,13 +53,13 @@ export default function FeatureSection({
               key={index}
               className={`relative p-8 rounded-2xl border-2 transition-all hover:shadow-xl ${
                 feature.highlighted
-                  ? 'border-blue-500 dark:border-blue-600 bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 shadow-lg dark:shadow-xl'
+                  ? 'border-blue-500 dark:border-blue-600 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 shadow-lg dark:shadow-xl'
                   : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg dark:hover:shadow-xl'
               }`}
             >
               {/* 图标 */}
               <div className="mb-4">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 text-white text-3xl shadow-lg">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 text-white text-3xl shadow-lg">
                   {feature.icon}
                 </div>
               </div>

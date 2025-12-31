@@ -358,12 +358,12 @@ export default function Sidebar(
         }
       `}
       </style>
-      <aside className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen sticky top-0 overflow-y-auto sidebar-scrollbar pb-20">
-        <div className="pt-4 px-4 pb-8">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 mt-6 pl-3 text-center">
+      <aside className="w-80 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border-r border-gray-200 dark:border-gray-700 h-screen sticky top-0 overflow-y-auto sidebar-scrollbar pb-20">
+        <div className="pt-8 px-6 pb-8">
+          <h2 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent mb-6 pl-2">
             文档目录
           </h2>
-          <nav className="space-y-1">
+          <nav className="space-y-1.5">
             {navItems.map((item) => {
               const isActive = isItemActive(item, currentPath);
               const isExpanded = finalExpandedItems.has(item.title);
@@ -372,28 +372,30 @@ export default function Sidebar(
               const itemKey = item.path || item.title;
 
               return (
-                <div key={itemKey}>
+                <div key={itemKey} className="mb-2">
                   {/* 快速开始菜单保留链接，其他一级菜单作为可点击的分组标题 */}
                   {!hasChildren && item.path
                     ? (
                       <a
                         href={item.path}
-                        className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                           isActive
-                            ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
-                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            ? "bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/40 dark:to-blue-900/40 text-indigo-700 dark:text-indigo-300 shadow-sm"
+                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:pl-5"
                         }`}
                       >
                         {item.title}
                       </a>
                     )
                     : (
-                      <div className="px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white">
+                      <div className="px-4 py-2 text-sm font-bold text-gray-900 dark:text-gray-100 mt-6 mb-2 uppercase tracking-wider opacity-80">
                         {item.title}
                       </div>
                     )}
                   {hasChildren && (
-                    <div className="ml-4 mt-1 space-y-1">
+                    <div className="space-y-1 relative">
+                      {/* 连接线 */}
+                      <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700 hidden"></div>
                       {item.children!.map((child) => {
                         // 子项必须有 path
                         if (!child.path) return null;
@@ -405,10 +407,10 @@ export default function Sidebar(
                           <a
                             key={child.path}
                             href={child.path}
-                            className={`block px-3 py-2 rounded-md text-sm transition-colors ${
+                            className={`block px-4 py-2 pl-4 rounded-lg text-sm transition-all duration-200 border-l-2 ${
                               childIsActive
-                                ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium"
-                                : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 font-medium translate-x-1"
+                                : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600 hover:translate-x-1"
                             }`}
                           >
                             {child.title}

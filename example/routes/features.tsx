@@ -141,80 +141,93 @@ app.use(cors());
   return (
     <div className="space-y-0">
       {/* 页面标题 */}
-      <div className="bg-linear-to-r bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 py-24">
+        {/* 背景装饰 */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+           <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
+           <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
+          <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-6 tracking-tight">
             功能特性
           </h1>
-          <p className="text-xl text-blue-100 dark:text-blue-200 max-w-3xl mx-auto">
+          <p className="text-xl text-blue-100 dark:text-blue-200 max-w-3xl mx-auto leading-relaxed">
             DWeb 提供了现代化 Web 开发所需的所有功能，让您专注于业务逻辑
           </p>
         </div>
       </div>
 
       {/* 特性展示 */}
-      <FeatureSection
-        features={allFeatures}
-        title="完整功能列表"
-        subtitle="探索 DWeb 框架的所有强大功能"
-      />
+      <div className="py-12">
+        <FeatureSection
+          features={allFeatures}
+          title="完整功能列表"
+          subtitle="探索 DWeb 框架的所有强大功能"
+        />
+      </div>
 
       {/* 代码示例区域 */}
-      <div className="py-20 bg-gray-50 dark:bg-gray-800">
+      <div className="py-24 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight">
               代码示例
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
               看看使用 DWeb 开发有多简单
             </p>
           </div>
 
-          <div className="space-y-12">
+          <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
             {/* 文件系统路由示例 */}
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                文件系统路由
-              </h3>
-              <CodeBlock code={routingExample} language="typescript" />
-            </div>
+            <CodeBlock 
+              code={routingExample} 
+              language="typescript" 
+              title="文件系统路由" 
+            />
 
             {/* 渲染模式示例 */}
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                渲染模式配置
-              </h3>
-              <CodeBlock code={renderModeExample} language="typescript" />
-            </div>
+            <CodeBlock 
+              code={renderModeExample} 
+              language="typescript" 
+              title="渲染模式配置" 
+            />
 
             {/* 中间件示例 */}
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                中间件使用
-              </h3>
-              <CodeBlock code={middlewareExample} language="typescript" />
+            <div className="md:col-span-2">
+              <CodeBlock 
+                code={middlewareExample} 
+                language="typescript" 
+                title="中间件使用" 
+              />
             </div>
           </div>
         </div>
       </div>
 
       {/* CTA 区域 */}
-      <div className="py-20 bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+      <div className="py-24 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 relative overflow-hidden">
+        {/* 背景装饰 */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+           <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
+           <div className="absolute right-0 top-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight">
             准备开始了吗？
           </h2>
-          <p className="text-xl text-blue-100 dark:text-blue-200 mb-8">
+          <p className="text-xl text-blue-100 dark:text-blue-200 mb-10 leading-relaxed">
             立即开始使用 DWeb，体验现代化的 Web 开发方式
           </p>
           <a
             href="/docs"
-            className="inline-flex items-center px-8 py-4 text-lg font-semibold text-blue-600 dark:text-blue-500 bg-white dark:bg-gray-100 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-200 transition-all shadow-lg hover:shadow-xl"
+            className="group inline-flex items-center px-10 py-5 text-lg font-bold text-blue-600 dark:text-blue-500 bg-white dark:bg-gray-100 rounded-full hover:bg-gray-50 dark:hover:bg-gray-200 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1"
           >
             查看文档
             <svg
-              className="ml-2 w-5 h-5"
+              className="ml-2 w-5 h-5 transform group-hover:translate-x-1 transition-transform"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

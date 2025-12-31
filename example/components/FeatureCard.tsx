@@ -26,22 +26,24 @@ export default function FeatureCard({
   highlighted = false
 }: FeatureCardProps) {
   return (
-    <li className={`flex items-center text-gray-700 ${highlighted ? 'font-semibold' : ''}`}>
-      <svg 
-        className={`w-5 h-5 ${iconColor} mr-3`} 
-        fill="currentColor" 
-        viewBox="0 0 20 20"
-      >
-        <path 
-          fillRule="evenodd" 
-          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
-          clipRule="evenodd" 
-        />
-      </svg>
+    <li className={`flex items-start p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${highlighted ? 'font-semibold' : ''}`}>
+      <div className={`mt-1 flex-shrink-0 w-6 h-6 ${iconColor} mr-4`}>
+        <svg 
+          className="w-full h-full" 
+          fill="currentColor" 
+          viewBox="0 0 20 20"
+        >
+          <path 
+            fillRule="evenodd" 
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
+            clipRule="evenodd" 
+          />
+        </svg>
+      </div>
       <div>
-        <span className="text-lg">{title}</span>
+        <span className="text-lg text-gray-900 dark:text-gray-100">{title}</span>
         {description && (
-          <p className="text-sm text-gray-500 mt-1">{description}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{description}</p>
         )}
       </div>
     </li>
