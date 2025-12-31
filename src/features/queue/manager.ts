@@ -135,8 +135,18 @@ export class QueueManager extends BaseManager implements IService {
   /**
    * 获取队列状态
    * @param name 队列名称
+   * @returns 队列状态信息，如果队列不存在则返回 undefined
    */
-  async getQueueStatus(name: string) {
+  async getQueueStatus(name: string): Promise<
+    {
+      name: string;
+      pending: number;
+      running: number;
+      completed: number;
+      failed: number;
+      concurrency: number;
+    } | undefined
+  > {
     const queue = this.queues.get(name);
     if (!queue) {
       return undefined;
