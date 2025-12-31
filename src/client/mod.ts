@@ -1,10 +1,10 @@
 /**
  * DWeb 客户端模块
  * 导出客户端运行时核心
+ *
+ * 注意：browser-client.ts 和 browser-hmr.ts 不应该从这里导出
+ * 它们应该通过 <script> 标签单独加载，避免被打包到页面组件代码中
  */
-
-export * from "./utils/browser-client.ts";
-export * from "./utils/browser-hmr.ts";
 
 // 导出通用常量（对浏览器安全）
 export { IS_CLIENT, IS_SERVER } from "../common/constants.ts";

@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from "preact/hooks";
-import { toggleTheme } from "../../src/client/mod.ts";
+import { toggleTheme } from "@dreamer/dweb/client";
 
 
 interface NavbarProps {
@@ -91,8 +91,8 @@ export default function Navbar({ currentPath: initialPath, menus }: NavbarProps)
                     href={item.href}
                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive
-                        ? "text-blue-800 dark:text-blue-400 bg-blue-200 dark:bg-blue-900/20"
-                        : "text-gray-900 dark:text-gray-300 hover:text-blue-800 dark:hover:text-blue-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+                        ? "text-blue-800 dark:text-blue-300 bg-blue-200 dark:bg-blue-900/20"
+                        : "text-gray-900 dark:text-gray-100 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-gray-200 dark:hover:bg-gray-800"
                     }`}
                   >
                     {item.label}
@@ -108,7 +108,7 @@ export default function Navbar({ currentPath: initialPath, menus }: NavbarProps)
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 rounded-md text-gray-800 hover:text-gray-900 hover:bg-gray-300 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-md text-gray-800 hover:text-gray-900 hover:bg-gray-300 dark:text-gray-100 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
               title="切换主题"
               aria-label="切换主题"
             >
@@ -147,7 +147,7 @@ export default function Navbar({ currentPath: initialPath, menus }: NavbarProps)
               href="https://github.com/shuliangfu/dweb"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden md:inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+              className="hidden md:inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
               <svg
                 className="w-5 h-5 mr-2"

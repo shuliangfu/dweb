@@ -376,7 +376,12 @@ function createImportReplacerPlugin(
 
         // 跳过路径别名（以 @ 开头且可能是路径别名，由 createJSRResolverPlugin 处理）
         // 路径别名会被解析为本地文件路径并打包
+        // 同时跳过 @dreamer/dweb/* 子路径，让 createJSRResolverPlugin 专门处理
         if (importPath.startsWith("@")) {
+          // 排除 @dreamer/dweb/* 子路径，让专门处理器处理
+          if (importPath.startsWith("@dreamer/dweb")) {
+            return undefined;
+          }
           // 检查是否是路径别名（在 importMap 中以 / 结尾）
           for (const [aliasKey] of Object.keys(importMap)) {
             if (aliasKey.endsWith("/") && importPath.startsWith(aliasKey)) {
@@ -489,6 +494,11 @@ function createImportReplacerPlugin(
               external: true,
             };
           }
+        }
+
+        // 排除 @dreamer/dweb/* 子路径，让 createJSRResolverPlugin 专门处理
+        if (importPath.startsWith("@dreamer/dweb")) {
+          return undefined;
         }
 
         // 检查是否是外部依赖（npm、jsr）
@@ -680,9 +690,162 @@ export function createJSRResolverPlugin(
   return {
     name: "jsr-resolver",
     setup(build: esbuild.PluginBuild) {
+      // 统一处理 @dreamer/dweb/* 的所有子路径（如 client、plugins、middleware 等）
+      // 必须在所有其他处理器之前执行，确保能拦截到所有 @dreamer/dweb/* 子路径
+      // 使用正则匹配 @dreamer/dweb/xxxx，其中 xxxx 表示任意子路径
+      // 根据框架的 deno.json 的 exports 配置来解析子路径
+      build.onResolve({ filter: /^@dreamer\/dweb\/.+$/ }, async (args) => {
+        const subPathImport = args.path; // 如 "@dreamer/dweb/plugins" 或 "@dreamer/dweb/database/mongodb"
+
+        // 步骤 1: 从导入路径中提取子路径名称
+        // 例如: "@dreamer/dweb/plugins" -> "plugins"
+        //      "@dreamer/dweb/database/mongodb" -> "database/mongodb"
+        const subPath = subPathImport.substring("@dreamer/dweb/".length);
+
+        // 步骤 2: 判断是 JSR 包还是本地路径
+        // 从 importMap 中获取 @dreamer/dweb 的主路径
+        const mainImport = importMap["@dreamer/dweb"];
+
+        // 情况 1: JSR 包（jsr:@dreamer/dweb@^2.1.0）
+        // 直接拼接子路径，转换为 HTTP URL，标记为 external，不需要读取 deno.json
+        if (mainImport && mainImport.startsWith("jsr:")) {
+          const jsrUrl = `${mainImport}/${subPath}`;
+          // 将 JSR URL 转换为浏览器可访问的 HTTP URL（esm.sh）
+          const httpUrl = convertJsrToHttpUrl(jsrUrl);
+          // 标记为 external，浏览器会通过 esm.sh CDN 加载
+          return {
+            path: httpUrl,
+            external: true,
+          };
+        }
+
+        // 情况 2: 本地路径（../src/mod.ts 或绝对路径）
+        // 需要读取框架的 deno.json，从 exports 配置中查找对应的值
+        // 步骤 3: 构建 exports 配置中的 key（必须以 ./ 开头）
+        // 例如: "plugins" -> "./plugins"
+        //      "database/mongodb" -> "./database/mongodb"
+        const exportKey = `./${subPath}`;
+
+        let resolvedImport: string | undefined;
+
+        // 步骤 4: 查找框架根目录（包含 deno.json 的目录）
+        // 优先从框架的 deno.json 的 exports 配置读取（这是最权威的配置源）
+        // 注意：需要读取框架根目录的 deno.json，而不是项目目录的 deno.json
+        try {
+          const { readDenoJson } = await import("./file.ts");
+
+          // 从 importMap 中获取 @dreamer/dweb 的路径，推断框架根目录
+          let frameworkRoot: string | null = null;
+
+          if (
+            mainImport && !mainImport.startsWith("http://") &&
+            !mainImport.startsWith("https://")
+          ) {
+            // 本地路径：解析为绝对路径，然后向上查找框架根目录
+            const mainImportPath = path.isAbsolute(mainImport)
+              ? mainImport
+              : path.resolve(cwd, mainImport);
+
+            // 从 src/mod.ts 向上查找，找到包含 deno.json 的目录（框架根目录）
+            let currentDir = path.dirname(mainImportPath); // src/
+            while (currentDir !== path.dirname(currentDir)) { // 直到根目录
+              const denoJsonPath = path.join(currentDir, "deno.json");
+              try {
+                await Deno.stat(denoJsonPath);
+                frameworkRoot = currentDir;
+                break;
+              } catch {
+                // 继续向上查找
+                currentDir = path.dirname(currentDir);
+              }
+            }
+          }
+
+          // 步骤 4: 读取框架的 deno.json（如果找到了框架根目录）
+          // 如果找到了框架根目录，读取框架的 deno.json；否则读取项目的 deno.json（作为后备）
+          const denoJsonPath = frameworkRoot || cwd;
+          const denoJson = await readDenoJson(denoJsonPath);
+
+          // 步骤 5: 从 exports 配置中查找对应的值
+          if (
+            denoJson && typeof denoJson === "object" && "exports" in denoJson
+          ) {
+            const exports = denoJson.exports as Record<string, string>;
+
+            // 步骤 6: 如果找到了对应的 exportKey，获取其值
+            if (
+              exports && typeof exports === "object" && exportKey in exports
+            ) {
+              const exportPath = exports[exportKey]; // 例如: "./src/plugins/mod.ts"
+
+              if (typeof exportPath === "string") {
+                // 本地路径: exports 中的路径是相对于框架根目录的，需要转换为绝对路径
+                // 例如: "./src/plugins/mod.ts" -> "/Users/shuliangfu/worker/deno/dweb/src/plugins/mod.ts"
+                // 注意：JSR URL 的情况已经在最开始处理并返回了，这里只处理本地路径
+                const projectRoot = frameworkRoot || cwd;
+                const exportAbsolutePath = path.isAbsolute(exportPath)
+                  ? exportPath
+                  : path.resolve(projectRoot, exportPath);
+                resolvedImport = exportAbsolutePath;
+              }
+            }
+          }
+        } catch {
+          // 如果读取 deno.json 失败，继续使用 importMap 或推断逻辑
+        }
+
+        // 如果 exports 配置中没有找到，尝试从 importMap 中读取（作为后备方案）
+        if (!resolvedImport) {
+          resolvedImport = importMap[subPathImport];
+
+          if (resolvedImport) {
+            // 如果是相对路径，需要转换为绝对路径
+            if (
+              resolvedImport && !resolvedImport.startsWith("jsr:") &&
+              !resolvedImport.startsWith("http://") &&
+              !resolvedImport.startsWith("https://") &&
+              !path.isAbsolute(resolvedImport)
+            ) {
+              resolvedImport = path.resolve(cwd, resolvedImport);
+            }
+          }
+        }
+
+        if (!resolvedImport) {
+          return undefined; // 让 esbuild 使用默认解析
+        }
+
+        // 注意：JSR URL 的情况已经在最开始处理并返回了，这里只处理本地路径
+        // 如果已经是 HTTP URL，直接使用（这种情况不应该出现在本地路径处理中，但保留作为安全措施）
+        if (
+          resolvedImport.startsWith("http://") ||
+          resolvedImport.startsWith("https://")
+        ) {
+          return {
+            path: resolvedImport,
+            external: true,
+          };
+        }
+
+        // 本地路径需要打包
+        const resolvedPath = path.isAbsolute(resolvedImport)
+          ? resolvedImport
+          : path.resolve(cwd, resolvedImport);
+
+        return {
+          path: resolvedPath,
+          external: false, // 本地路径需要打包
+        };
+      });
+
       // 处理路径别名（以 / 结尾的别名，如 @store/、@components/）
       // 必须在其他处理器之前执行，确保能拦截到路径别名导入
+      // 但排除 @dreamer/dweb/*，因为它有专门的处理逻辑
       build.onResolve({ filter: /^@[^/]+\// }, async (args) => {
+        // 排除 @dreamer/dweb/*，让它由专门的处理逻辑处理
+        if (args.path.startsWith("@dreamer/dweb/")) {
+          return undefined;
+        }
         // 查找匹配的路径别名（以 / 结尾的 import map 条目）
         for (const [aliasKey, aliasValue] of Object.entries(importMap)) {
           // 检查是否是路径别名（以 / 结尾）
@@ -884,30 +1047,12 @@ export function createJSRResolverPlugin(
       });
 
       // 处理 @ 开头的子路径导入（如 @scope/package/subpath）
-      // 排除 @dreamer/dweb/client，因为它有专门的处理逻辑
+      // 处理其他 @scope/package/subpath 格式的导入
+      // 排除 @dreamer/dweb/*，因为它有专门的处理逻辑（在下面）
       build.onResolve({ filter: /^@[^/]+\/[^/]+\/.+/ }, (args) => {
-        // 排除 @dreamer/dweb/client，它有专门的处理逻辑
-        if (args.path === "@dreamer/dweb/client") {
-          return undefined;
-        }
-
-        // 特别处理 @dreamer/dweb/* 的其他子路径
-        // 如果父包在 external 列表中，子路径也应该标记为 external
+        // 排除所有 @dreamer/dweb/* 子路径，让专门处理器处理
         if (args.path.startsWith("@dreamer/dweb/")) {
-          const parentPackage = "@dreamer/dweb";
-          const parentImport = importMap[parentPackage];
-          if (parentImport && parentImport.startsWith("jsr:")) {
-            // 提取子路径（如 "@dreamer/dweb/console" -> "console"）
-            const subPath = args.path.substring("@dreamer/dweb/".length);
-            // 构建完整的 JSR URL
-            const jsrUrl = `${parentImport}/${subPath}`;
-            // 转换为 HTTP URL
-            const httpUrl = convertJsrToHttpUrl(jsrUrl);
-            return {
-              path: httpUrl,
-              external: true,
-            };
-          }
+          return undefined;
         }
 
         // 首先检查子路径本身是否在 import map 中（如 "@scope/package/subpath"）
@@ -931,7 +1076,22 @@ export function createJSRResolverPlugin(
               external: true,
             };
           }
-          // 其他情况（HTTP URL 或本地路径），直接标记为 external
+          // 如果是本地路径，不应该在这里处理，应该让专门处理器处理
+          // 但如果是 HTTP URL，直接标记为 external
+          if (
+            importValue.startsWith("http://") ||
+            importValue.startsWith("https://")
+          ) {
+            return {
+              path: importValue,
+              external: true,
+            };
+          }
+          // 本地路径：如果是 @dreamer/dweb/*，让专门处理器处理
+          if (args.path.startsWith("@dreamer/dweb/")) {
+            return undefined;
+          }
+          // 其他本地路径，直接标记为 external（让浏览器通过 import map 解析）
           return {
             path: args.path,
             external: true,
@@ -1029,74 +1189,6 @@ export function createJSRResolverPlugin(
           };
         }
         return undefined;
-      });
-
-      // 处理 @dreamer/dweb/client（必须在其他处理器之前，确保优先级最高）
-      build.onResolve({ filter: /^@dreamer\/dweb\/client$/ }, (_args) => {
-        let clientImport = importMap["@dreamer/dweb/client"];
-
-        // 如果没有显式配置 @dreamer/dweb/client，尝试从 @dreamer/dweb 推断
-        if (!clientImport) {
-          const mainImport = importMap["@dreamer/dweb"];
-          if (mainImport) {
-            // 从主包配置推断 client 路径
-            if (mainImport.startsWith("jsr:")) {
-              // JSR URL: jsr:@dreamer/dweb@^1.6.9 -> jsr:@dreamer/dweb@^1.6.9/client
-              clientImport = `${mainImport}/client`;
-            } else if (mainImport.includes("/mod.ts")) {
-              // 本地路径: ./src/mod.ts -> ./src/client.ts
-              clientImport = mainImport.replace("/mod.ts", "/client.ts");
-            } else if (mainImport.endsWith(".ts")) {
-              // 本地路径: ./src/mod.ts -> ./src/client.ts
-              const basePath = mainImport.substring(
-                0,
-                mainImport.lastIndexOf("/"),
-              );
-              clientImport = `${basePath}/client.ts`;
-            }
-          }
-        }
-
-        if (!clientImport) {
-          return undefined; // 让 esbuild 使用默认解析
-        }
-
-        // 如果是 JSR URL，转换为代理路径后标记为 external，不打包，通过网络请求加载
-        if (clientImport.startsWith("jsr:")) {
-          // 将 JSR URL 转换为浏览器可访问的 HTTP URL（esm.sh）
-          const httpUrl = convertJsrToHttpUrl(clientImport);
-          // 标记为 external，浏览器会通过 esm.sh CDN 加载
-          // 注意：即使 @dreamer/dweb/client 在 externalPackages 列表中，
-          // 插件返回的 path 会覆盖 esbuild 的默认行为，输出代码中会使用 HTTP URL
-          return {
-            path: httpUrl,
-            external: true,
-          };
-        }
-
-        // 如果已经是 HTTP URL，直接使用
-        if (
-          clientImport.startsWith("http://") ||
-          clientImport.startsWith("https://")
-        ) {
-          return {
-            path: clientImport,
-            external: true,
-          };
-        }
-
-        // 如果是本地路径，解析为绝对路径并打包
-        if (!clientImport.startsWith("http")) {
-          const resolvedPath = path.isAbsolute(clientImport)
-            ? clientImport
-            : path.resolve(cwd, clientImport);
-          return {
-            path: resolvedPath,
-            external: false, // 明确标记为不 external，强制打包
-          };
-        }
-
-        return undefined; // 不是 JSR URL，使用默认解析
       });
 
       // 处理相对路径导入（从 http-url namespace 中的模块）

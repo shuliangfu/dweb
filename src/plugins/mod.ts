@@ -2,7 +2,6 @@
  * 插件导出
  */
 
-export { tailwind } from "./tailwind/index.ts";
 export { seo } from "./seo/index.ts";
 export { sitemap } from "./sitemap/index.ts";
 export { pwa } from "./pwa/index.ts";
@@ -43,11 +42,6 @@ export { cache, CacheManager } from "./cache/index.ts";
 export { email, renderTemplate, sendEmail } from "./email/index.ts";
 export { store } from "./store/index.ts";
 
-// 导出类型
-export type {
-  AutoprefixerOptions,
-  TailwindPluginOptions,
-} from "./tailwind/types.ts";
 export type {
   JSONLDConfig,
   OpenGraphConfig,

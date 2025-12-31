@@ -78,6 +78,11 @@ export * from "./middleware/mod.ts";
 
 // 导出内置插件
 export * from "./plugins/mod.ts";
+export { tailwind } from "./plugins/tailwind/index.ts";
+export type {
+  AutoprefixerOptions,
+  TailwindPluginOptions,
+} from "./plugins/tailwind/types.ts";
 
 // 导出扩展系统
 export * from "./common/extensions/mod.ts";

@@ -24,7 +24,7 @@ export default defineConfig({
 	prefetch: {
     enabled: false,
     loading: false,
-    routes: ["*", "!/docs/*"],
+    routes: ["*"],
     mode: "batch",
   },
 
