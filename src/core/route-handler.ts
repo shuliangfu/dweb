@@ -1231,12 +1231,40 @@ export class RouteHandler {
     const fileDir = path.dirname(filePathWithoutPrefix);
     const fileContent = await Deno.readTextFile(filePathWithoutPrefix);
 
+    // 如果是 _layout.tsx 文件，打印原始文件内容用于调试
+    if (
+      !this.config?.isProduction &&
+      filePathWithoutPrefix.endsWith("_layout.tsx")
+    ) {
+      console.log(
+        `[调试] ========== ${filePathWithoutPrefix} 从文件读取的原始内容 ==========`,
+      );
+      console.log(fileContent);
+      console.log(
+        `[调试] ========== 原始文件内容结束 (共 ${fileContent.length} 字符) ==========`,
+      );
+    }
+
     // 替换路径别名
     const processedContent = replaceImportAliasesInContent(
       fileContent,
       importMap,
       fileDir,
     );
+
+    // 如果是 _layout.tsx 文件，打印路径别名替换后的内容用于调试
+    if (
+      !this.config?.isProduction &&
+      filePathWithoutPrefix.endsWith("_layout.tsx")
+    ) {
+      console.log(
+        `[调试] ========== ${filePathWithoutPrefix} 路径别名替换后的内容 ==========`,
+      );
+      console.log(processedContent);
+      console.log(
+        `[调试] ========== 路径别名替换后内容结束 (共 ${processedContent.length} 字符) ==========`,
+      );
+    }
 
     // 注意：不将相对路径转换为绝对路径
     // 因为：
