@@ -1,7 +1,7 @@
 {
   "vendor": true,
   "name": "@dreamer/dweb",
-  "version": "2.0.6",
+  "version": "2.0.7-beta.1",
   "license": "MIT",
   "exports": {
     ".": "./src/mod.ts",
@@ -67,6 +67,7 @@
     "@postgres": "npm:postgres@^3.4.3",
     "@mysql": "https://deno.land/x/mysql@v2.12.1/mod.ts",
     "@mongodb": "npm:mongodb@^6.3.0",
+    "redis": "npm:redis@^4.6.0",
     "sharp": "npm:sharp@^0.34.5"
   },
   "fmt": {

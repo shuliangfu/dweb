@@ -1,10 +1,18 @@
 /**
  * 命令行命令封装类
  * 用于创建和管理命令行命令，支持参数解析、选项处理和帮助信息
+ * 所有命令自动支持数据库连接功能（如果配置了数据库）
  */
 
 import { colors } from "./ansi.ts";
 import { error as outputError, warning } from "./output.ts";
+import { loadConfig } from "../../core/config.ts";
+import { initDatabaseFromConfig } from "../../features/database/init-database.ts";
+import {
+  closeDatabase,
+  getDatabaseAsync,
+} from "../../features/database/access.ts";
+import type { DatabaseAdapter } from "../../features/database/types.ts";
 
 /**
  * 选项值类型
@@ -76,10 +84,14 @@ export interface ParsedOptions {
 
 /**
  * 命令执行函数类型
+ * @param args 命令行参数
+ * @param options 解析后的选项
+ * @param command Command 实例，可以用于访问 getDatabase() 等方法
  */
 export type CommandHandler = (
   args: string[],
   options: ParsedOptions,
+  command?: Command,
 ) => Promise<void> | void;
 
 /**
@@ -120,6 +132,8 @@ export class Command {
   private subcommands: Map<string, Command> = new Map();
   /** 子命令别名映射 */
   private subcommandAliases: Map<string, string> = new Map();
+  /** 数据库是否已初始化 */
+  private dbInitialized = false;
 
   /**
    * 创建命令实例
@@ -129,6 +143,11 @@ export class Command {
   constructor(name: string, description?: string) {
     this.name = name;
     this.description = description;
+
+    // 在所有命令执行前自动初始化数据库（如果配置了数据库）
+    this.before(async (_args, _options) => {
+      await this.ensureDatabase();
+    });
   }
 
   /**
@@ -574,6 +593,11 @@ export class Command {
       // 否则自动生成用法
       let usage = `  ${this.name}`;
 
+      // 如果有子命令，添加子命令提示
+      if (this.subcommands.size > 0) {
+        usage += " <command>";
+      }
+
       // 添加选项
       const optionalOptions = this.options.filter((opt) => !opt.requiresValue);
       const requiredOptions = this.options.filter((opt) => opt.requiresValue);
@@ -591,9 +615,6 @@ export class Command {
       }
 
       console.log(usage + "\n");
-
-      // 退出程序
-      Deno.exit(0);
     }
 
     // 显示参数
@@ -804,14 +825,45 @@ export class Command {
       // 获取第一个子命令作为示例
       const firstSubcommand = this.subcommands.keys().next().value;
       if (firstSubcommand) {
-        // 从 usage 中提取命令前缀，或使用默认格式
-        let commandPrefix = `deno run -A src/cli.ts ${firstSubcommand} --help`;
+        // 尝试获取当前脚本路径
+        let scriptPath = "deno run -A <script>";
+        try {
+          const mainModule = Deno.mainModule;
+          if (mainModule) {
+            // 从主模块路径中提取脚本路径
+            // 例如：file:///path/to/console/cli.ts -> console/cli.ts
+            const url = new URL(mainModule);
+            if (url.protocol === "file:") {
+              const path = url.pathname;
+              // 获取相对于当前工作目录的路径
+              const cwd = Deno.cwd();
+              const scriptRelativePath = path.startsWith(cwd)
+                ? path.substring(cwd.length + 1)
+                : path.substring(path.lastIndexOf("/") + 1);
+              scriptPath = `deno run -A ${scriptRelativePath}`;
+            }
+          }
+        } catch {
+          // 如果获取失败，使用默认值
+        }
+
+        // 构建完整的命令路径（包含父命令名称）
+        // 例如：如果当前命令是 "db"，子命令是 "create-user"，则生成 "deno run -A console/cli.ts db create-user --help"
+        let commandPrefix =
+          `${scriptPath} ${this.name} ${firstSubcommand} --help`;
         if (this.usage) {
-          // 提取第一行，替换 <command> 为实际子命令，替换 [选项] 为 --help
+          // 从 usage 中提取命令前缀，替换 <command> 为实际子命令，替换 [选项] 为 --help
           const firstLine = this.usage.split("\n")[0].trim();
-          commandPrefix = firstLine
-            .replace(/<command>/g, firstSubcommand)
-            .replace(/\[选项\]/g, "--help");
+          // 如果 usage 中已经包含 deno run，则直接使用；否则添加脚本路径
+          if (firstLine.includes("deno run")) {
+            commandPrefix = firstLine
+              .replace(/<command>/g, `${this.name} ${firstSubcommand}`)
+              .replace(/\[选项\]/g, "--help");
+          } else {
+            commandPrefix = `${scriptPath} ${firstLine}`
+              .replace(/<command>/g, `${this.name} ${firstSubcommand}`)
+              .replace(/\[选项\]/g, "--help");
+          }
         }
         console.log(
           `${colors.dim}提示: 查看子命令详细帮助，例如: ${colors.reset}${colors.cyan}${commandPrefix}${colors.reset}${colors.dim}${colors.reset}\n`,
@@ -940,6 +992,64 @@ export class Command {
   }
 
   /**
+   * 确保数据库已连接
+   * 如果已初始化则直接返回，否则加载配置并初始化数据库
+   * 如果未配置数据库，则不连接（静默处理）
+   *
+   * @throws {Error} 如果数据库初始化失败
+   */
+  protected async ensureDatabase(): Promise<void> {
+    if (this.dbInitialized) {
+      return;
+    }
+
+    this.dbInitialized = true;
+
+    try {
+      // 加载配置（loadConfig 会自动合并 dweb.config.ts 和 main.ts）
+      // 命令行工具使用单应用模式，不需要 appName
+      const { config } = await loadConfig();
+
+      // 如果配置了数据库，则初始化连接
+      if (config.database) {
+        await initDatabaseFromConfig({ database: config.database });
+      }
+      // 如果没有配置数据库，静默处理，不连接
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`数据库初始化失败: ${message}`);
+    }
+  }
+
+  /**
+   * 获取数据库连接
+   * 如果数据库未初始化，会先自动初始化
+   *
+   * 注意：Command 类会在执行前自动初始化数据库（通过 before 钩子），
+   * 所以在 action 回调中可以直接使用此方法获取数据库连接
+   *
+   * @returns 数据库适配器实例，如果未配置数据库则返回 null
+   * @throws {Error} 如果获取数据库连接失败
+   *
+   * @example
+   * ```typescript
+   * const db = await this.getDatabase();
+   * if (db) {
+   *   const result = await db.query("SELECT * FROM users");
+   * }
+   * ```
+   */
+  public async getDatabase(): Promise<DatabaseAdapter | null> {
+    await this.ensureDatabase();
+    try {
+      return await getDatabaseAsync();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`获取数据库连接失败: ${message}`);
+    }
+  }
+
+  /**
    * 执行命令
    * @param args 命令行参数（默认使用 Deno.args）
    */
@@ -987,24 +1097,41 @@ export class Command {
 
     // 执行命令处理函数
     if (this.handler) {
+      let exitCode = 0; // 默认退出码为 0（成功）
+
       try {
         // 执行前置钩子
         if (this.beforeHook) {
           await this.beforeHook(parsedArgs, parsedOptions);
         }
 
-        // 执行主处理函数
-        await this.handler(parsedArgs, parsedOptions);
+        // 执行主处理函数，传递 Command 实例作为第三个参数
+        await this.handler(parsedArgs, parsedOptions, this);
 
         // 执行后置钩子
         if (this.afterHook) {
           await this.afterHook(parsedArgs, parsedOptions);
         }
       } catch (err) {
+        // 记录错误，但不立即退出
         outputError(
           `执行命令时出错: ${err instanceof Error ? err.message : String(err)}`,
         );
-        Deno.exit(1);
+        exitCode = 1; // 设置退出码为 1（失败）
+      } finally {
+        // 命令执行完成后，关闭数据库连接（如果已连接）
+        // 这样可以确保进程正常退出，不会因为数据库连接而卡住
+        try {
+          await closeDatabase();
+        } catch (err) {
+          // 关闭数据库失败时静默处理，不影响命令执行结果
+          const message = err instanceof Error ? err.message : String(err);
+          console.warn(`关闭数据库连接时出错（已忽略）: ${message}`);
+        }
+
+        // 在 finally 中退出，确保数据库连接已关闭
+        // 无论成功还是失败，都显式调用 exit，确保进程正常退出
+        Deno.exit(exitCode);
       }
     } else {
       warning("命令未设置处理函数");

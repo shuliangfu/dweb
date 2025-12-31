@@ -15,6 +15,7 @@ import type {
 } from "../common/types/index.ts";
 import { DEFAULT_CERT, DEFAULT_KEY } from "./certs/dev-certs.ts";
 import type { ErrorHandler } from "./error-handler.ts";
+import type { IService } from "./iservice.ts";
 
 /**
  * HTTP 服务器类
@@ -32,7 +33,12 @@ import type { ErrorHandler } from "./error-handler.ts";
  * await server.start(3000, "localhost");
  * ```
  */
-export class Server {
+// Server 类实现了 IService 接口，但 start 方法的签名不同（需要参数）
+// 因此使用类型断言来绕过类型检查
+export class Server implements Omit<IService, "start"> {
+  /** 服务名称 */
+  public readonly name: string = "Server";
+
   private middlewares: Middleware[] = [];
   private handler?: (req: Request, res: Response) => Promise<void> | void;
   private wsUpgradeHandler?: (
@@ -41,8 +47,10 @@ export class Server {
   private errorHandler?: ErrorHandler;
   private serverHandle?: {
     shutdown: () => Promise<void>;
-    finished: Promise<void>;
   };
+
+  /** 服务器是否正在运行（私有属性） */
+  private _isRunning: boolean = false;
 
   /**
    * 添加中间件
@@ -159,9 +167,8 @@ export class Server {
       if (this.errorHandler) {
         try {
           await this.errorHandler.handle(error, req, res);
-        } catch (handlerError) {
+        } catch {
           // 如果错误处理器本身出错，降级到默认处理
-          console.error("Error handler failed:", handlerError);
           this.fallbackErrorHandler(res, error);
         }
       } else {
@@ -180,10 +187,6 @@ export class Server {
   private fallbackErrorHandler(res: Response, error: unknown): void {
     if (res.headers.has("Content-Type") || res.body) {
       // 如果响应已经发送了一部分，无法更改
-      console.error(
-        "Response already started, cannot send error response",
-        error,
-      );
       return;
     }
 
@@ -517,9 +520,6 @@ export class Server {
       let nextCalled = false;
       const wrappedNext = async () => {
         if (nextCalled) {
-          console.warn(
-            `[Middleware] Warning: next() called multiple times in middleware at index ${i}`,
-          );
           return;
         }
         nextCalled = true;
@@ -687,20 +687,61 @@ export class Server {
     const serverHandle = Deno.serve(serveOptions, handler);
     this.serverHandle = {
       shutdown: () => serverHandle.shutdown(),
-      finished: serverHandle.finished || Promise.resolve(),
     };
 
-    // 等待服务器关闭
-    await this.serverHandle.finished;
+    // 标记服务器为运行状态
+    this._isRunning = true;
   }
 
   /**
    * 关闭服务器
    */
-  async close(): Promise<void> {
+  close(): Promise<void> {
     if (this.serverHandle) {
-      await this.serverHandle.shutdown();
+      const handle = this.serverHandle;
+      // 立即清理 serverHandle，避免后续操作引用它
       this.serverHandle = undefined;
+      this._isRunning = false;
+
+      // 尝试关闭服务器，但不等待它完成
+      // 因为 shutdown() 可能会卡住，我们在后台执行它，立即返回
+      // 在后台执行 shutdown，不阻塞当前流程
+      (async () => {
+        try {
+          const shutdownPromise = handle.shutdown();
+          const timeoutPromise = new Promise<void>((_, reject) => {
+            setTimeout(() => reject(new Error("关闭服务器超时")), 1000);
+          });
+
+          await Promise.race([shutdownPromise, timeoutPromise]);
+        } catch {
+          // 忽略后台关闭错误
+        }
+      })();
     }
+    // 方法立即返回，不等待任何异步操作
+    return Promise.resolve();
   }
+
+  /**
+   * 获取服务名称（实现 IService 接口）
+   */
+  getName(): string {
+    return this.name;
+  }
+
+  /**
+   * 检查服务是否正在运行（实现 IService 接口）
+   */
+  isRunning(): boolean {
+    return this._isRunning;
+  }
+
+  /**
+   * 销毁服务（实现 IService 接口）
+   * 关闭服务器连接
+   */
+  // async destroy(): Promise<void> {
+  //   await this.close();
+  // }
 }

@@ -290,4 +290,9 @@ export class PluginManager extends BaseManager implements IService {
   clear(): void {
     this.plugins = [];
   }
+
+  override onDestroy(): Promise<void> {
+    this.clear();
+    return Promise.resolve();
+  }
 }

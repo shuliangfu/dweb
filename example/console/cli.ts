@@ -14,11 +14,11 @@
  *   deno run -A console/cli.ts db count-users
  *
  * 注意：使用数据库命令前，请确保在 dweb.config.ts 中配置了数据库连接信息
+ * Command 类会自动处理数据库连接，配置了就连接，没配置就不连接
  */
 
-import { Command } from "../../src/console/command.ts";
+import { Command } from "@dreamer/dweb/console";
 import { error, info, success, warning } from "@dreamer/dweb/console";
-import { initDatabaseFromConfig } from "@dreamer/dweb/database";
 import { User } from "../models/User.ts";
 
 /**
@@ -56,7 +56,7 @@ cli
     type: "boolean",
     defaultValue: false,
   })
-  .action((_args, options) => {
+  .action((_args: string[], options: Record<string, unknown>) => {
     const name = options.name as string;
     const age = options.age as number | undefined;
     const formal = options.formal as boolean;
@@ -92,7 +92,7 @@ calcCommand
     description: "第二个数字",
     required: true,
   })
-  .action((args, _options) => {
+  .action((args: string[], _options: Record<string, unknown>) => {
     const a = parseFloat(args[0]);
     const b = parseFloat(args[1]);
 
@@ -127,7 +127,7 @@ calcCommand
     requiresValue: true,
     defaultValue: 2,
   })
-  .action((args, options) => {
+  .action((args: string[], options: Record<string, unknown>) => {
     const a = parseFloat(args[0]);
     const b = parseFloat(args[1]);
     const round = (options.round as number) || 2;
@@ -160,13 +160,13 @@ cli
     choices: ["read", "write", "delete"],
     required: true,
   })
-  .before((_args, _options) => {
+  .before((_args: string[], _options: Record<string, unknown>) => {
     info("准备执行文件操作...");
   })
-  .after((_args, _options) => {
+  .after((_args: string[], _options: Record<string, unknown>) => {
     success("文件操作完成！");
   })
-  .action(async (_args, options) => {
+  .action(async (_args: string[], options: Record<string, unknown>) => {
     const path = options.path as string;
     const action = options.action as string;
 
@@ -204,41 +204,29 @@ cli
   });
 
 /**
+ * 初始化用户模型（如果数据库已连接）
+ * Command 类会在执行前自动初始化数据库（如果配置了数据库）
+ * 通过 command 参数可以访问 getDatabase() 方法
+ */
+async function initUserModel(command: Command): Promise<void> {
+  const db = await command.getDatabase();
+  if (db) {
+    // 数据库已连接，初始化模型
+    await User.init();
+  } else {
+    // 数据库未配置
+    throw new Error(
+      "数据库未配置。请在 dweb.config.ts 中配置 database 连接信息",
+    );
+  }
+}
+
+/**
  * 数据库操作命令
  */
 const dbCommand = cli
   .command("db", "数据库操作")
   .info("执行数据库相关操作");
-
-// 初始化数据库连接（在数据库命令执行前）
-let dbInitialized = false;
-
-/**
- * 初始化数据库连接
- */
-async function ensureDatabaseInitialized(): Promise<void> {
-  if (dbInitialized) {
-    return;
-  }
-
-  try {
-    info("正在初始化数据库连接...");
-
-    // 先初始化数据库连接（会自动设置配置加载器）
-    await initDatabaseFromConfig();
-
-    // 然后初始化模型（此时配置加载器已设置，数据库已连接）
-    await User.init();
-
-    dbInitialized = true;
-    success("数据库连接初始化成功");
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    error(`数据库初始化失败: ${message}`);
-    error("请确保 dweb.config.ts 中配置了数据库连接信息");
-    Deno.exit(1);
-  }
-}
 
 // 创建用户命令
 dbCommand
@@ -277,8 +265,12 @@ dbCommand
     type: "number",
     requiresValue: true,
   })
-  .action(async (_args, options) => {
-    await ensureDatabaseInitialized();
+  .action(async (_args: string[], options: Record<string, unknown>, command?: Command) => {
+    if (!command) {
+      error("无法获取 Command 实例");
+      Deno.exit(1);
+    }
+    await initUserModel(command);
 
     const username = options.username as string;
     const email = options.email as string;
@@ -333,8 +325,12 @@ dbCommand
     requiresValue: true,
     choices: ["active", "inactive", "suspended"],
   })
-  .action(async (_args, options) => {
-    await ensureDatabaseInitialized();
+  .action(async (_args: string[], options: Record<string, unknown>, command?: Command) => {
+    if (!command) {
+      error("无法获取 Command 实例");
+      Deno.exit(1);
+    }
+    await initUserModel(command);
 
     const limit = (options.limit as number) || 10;
     const status = options.status as string | undefined;
@@ -388,8 +384,12 @@ dbCommand
     requiresValue: true,
     required: true,
   })
-  .action(async (_args, options) => {
-    await ensureDatabaseInitialized();
+  .action(async (_args: string[], options: Record<string, unknown>, command?: Command) => {
+    if (!command) {
+      error("无法获取 Command 实例");
+      Deno.exit(1);
+    }
+    await initUserModel(command);
 
     const email = options.email as string;
 
@@ -424,8 +424,12 @@ dbCommand
 // 统计用户数量命令
 dbCommand
   .command("count-users", "统计用户数量")
-  .action(async () => {
-    await ensureDatabaseInitialized();
+  .action(async (_args: string[], _options: Record<string, unknown>, command?: Command) => {
+    if (!command) {
+      error("无法获取 Command 实例");
+      Deno.exit(1);
+    }
+    await initUserModel(command);
 
     try {
       const allUsers = await User.findAll({});

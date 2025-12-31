@@ -75,7 +75,7 @@ export abstract class BaseManager implements IService {
    * 初始化管理器
    * 调用子类的 onInitialize 方法
    *
-   * @throws {Error} 如果初始化失败
+   * @throws {Error} 如果初始化失败或超时
    */
   async initialize(): Promise<void> {
     if (this.state !== ServiceState.Uninitialized) {
@@ -83,7 +83,16 @@ export abstract class BaseManager implements IService {
     }
 
     try {
-      await this.onInitialize();
+      // 为 onInitialize 添加超时保护（30秒）
+      const initPromise = this.onInitialize();
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        setTimeout(
+          () => reject(new Error(`${this.name} 初始化超时（30秒）`)),
+          30000,
+        );
+      });
+
+      await Promise.race([initPromise, timeoutPromise]);
       this.state = ServiceState.Initialized;
       this.initializedAt = Date.now();
     } catch (error) {
@@ -96,7 +105,7 @@ export abstract class BaseManager implements IService {
    * 启动管理器
    * 调用子类的 onStart 方法
    *
-   * @throws {Error} 如果启动失败
+   * @throws {Error} 如果启动失败或超时
    */
   async start(): Promise<void> {
     if (this.state === ServiceState.Uninitialized) {
@@ -114,7 +123,16 @@ export abstract class BaseManager implements IService {
     }
 
     try {
-      await this.onStart();
+      // 为 onStart 添加超时保护（30秒）
+      const startPromise = this.onStart();
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        setTimeout(
+          () => reject(new Error(`${this.name} 启动超时（30秒）`)),
+          30000,
+        );
+      });
+
+      await Promise.race([startPromise, timeoutPromise]);
       this.state = ServiceState.Running;
       this.startedAt = Date.now();
     } catch (error) {
@@ -127,7 +145,7 @@ export abstract class BaseManager implements IService {
    * 停止管理器
    * 调用子类的 onStop 方法
    *
-   * @throws {Error} 如果停止失败
+   * @throws {Error} 如果停止失败或超时
    */
   async stop(): Promise<void> {
     if (this.state !== ServiceState.Running) {
@@ -136,7 +154,16 @@ export abstract class BaseManager implements IService {
     }
 
     try {
-      await this.onStop();
+      // 为 onStop 添加超时保护（10秒）
+      const stopPromise = this.onStop();
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        setTimeout(
+          () => reject(new Error(`${this.name} 停止超时（10秒）`)),
+          10000,
+        );
+      });
+
+      await Promise.race([stopPromise, timeoutPromise]);
       this.state = ServiceState.Stopped;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -150,18 +177,36 @@ export abstract class BaseManager implements IService {
    *
    * @throws {Error} 如果销毁失败
    */
-  async destroy(): Promise<void> {
-    // 如果正在运行，先停止
+  destroy(): Promise<void> {
+    // 如果正在运行，先停止（添加超时保护，但不阻塞）
     if (this.state === ServiceState.Running) {
-      await this.stop();
+      // 在后台停止，不等待
+      this.stop().catch(() => {
+        // 忽略后台停止错误
+      });
     }
 
     try {
-      await this.onDestroy();
+      // 调用 onDestroy，但不等待它完成（避免阻塞）
+      const destroyResult = this.onDestroy();
+
+      // 如果 onDestroy 返回 Promise，在后台处理，不阻塞主流程
+      if (destroyResult instanceof Promise) {
+        // 在后台等待，但不阻塞
+        destroyResult.catch(() => {
+          // 忽略后台销毁错误
+        });
+      }
+
+      // 立即更新状态，不等待 onDestroy 完成
       this.state = ServiceState.Destroyed;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`${this.name} 销毁失败: ${message}`);
+      // 立即返回 resolved Promise
+      return Promise.resolve();
+    } catch {
+      // 即使失败也更新状态，避免阻塞
+      this.state = ServiceState.Destroyed;
+      // 立即返回 resolved Promise
+      return Promise.resolve();
     }
   }
 

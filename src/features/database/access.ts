@@ -50,19 +50,30 @@ export function setDatabaseConfigLoader(loader: DatabaseConfigLoader): void {
 }
 
 /**
+ * 设置数据库管理器实例（内部使用，用于向后兼容）
+ * 框架在初始化数据库时调用此函数，设置全局数据库管理器实例
+ *
+ * @param manager 数据库管理器实例
+ */
+export function setDatabaseManager(manager: DatabaseManager): void {
+  dbManager = manager;
+}
+
+/**
  * 初始化数据库连接
  * @param config 数据库配置
  * @param connectionName 连接名称（默认为 'default'）
+ * @returns 连接状态信息
  */
 export async function initDatabase(
   config: DatabaseConfig,
   connectionName: string = "default",
-): Promise<void> {
+): Promise<import("./manager.ts").ConnectionStatus> {
   if (!dbManager) {
     dbManager = new DatabaseManager();
   }
 
-  await dbManager.connect(connectionName, config);
+  return await dbManager.connect(connectionName, config);
 }
 
 /**

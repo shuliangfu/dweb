@@ -144,6 +144,9 @@ export * from "./server/console/mod.ts";
 // 导出数据库工具
 export * from "./features/database/mod.ts";
 
+// 导出任务队列
+export * from "./features/queue/mod.ts";
+
 // 导入 Application 用于 createApp 函数
 import { Application } from "./core/application.ts";
 

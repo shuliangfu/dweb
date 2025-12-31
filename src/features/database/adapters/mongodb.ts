@@ -62,6 +62,10 @@ export class MongoDBAdapter extends BaseAdapter {
       const clientOptions: any = {
         // 默认选项
         serverSelectionTimeoutMS: mongoOptions?.timeoutMS || 30000,
+        // 关闭连接时的超时时间（毫秒），避免 close() 卡住
+        // 设置为较短的时间，确保关闭操作不会无限等待
+        connectTimeoutMS: 5000, // 连接超时 5 秒
+        socketTimeoutMS: 5000, // Socket 超时 5 秒
       };
 
       if (mongoOptions?.authSource) {
@@ -375,13 +379,44 @@ export class MongoDBAdapter extends BaseAdapter {
 
   /**
    * 关闭连接
+   * 添加超时保护，避免关闭操作阻塞
    */
-  async close(): Promise<void> {
+  /**
+   * 关闭连接
+   * MongoDB 的 close() 可能会等待所有操作完成，导致阻塞
+   * 因此立即清理状态，并在后台执行关闭，不阻塞主流程
+   */
+  close(): Promise<void> {
     if (this.client) {
-      await this.client.close();
+      const client = this.client;
+      // 立即清理状态，不等待 close() 完成
       this.client = null;
       this.db = null;
       this.connected = false;
+
+      // 在后台执行关闭，不阻塞主流程
+      (async () => {
+        try {
+          // 添加超时保护（1秒），如果超时就强制放弃
+          const closePromise = client.close();
+          const timeoutPromise = new Promise<void>((_, reject) => {
+            setTimeout(
+              () => reject(new Error("MongoDB 关闭连接超时（1秒）")),
+              1000,
+            );
+          });
+
+          await Promise.race([closePromise, timeoutPromise]);
+        } catch (error) {
+          // 关闭失败或超时，忽略错误（状态已清理）
+          const message = error instanceof Error
+            ? error.message
+            : String(error);
+          console.warn(`MongoDB 关闭连接时出错（已忽略）: ${message}`);
+        }
+      })();
     }
+    // 立即返回 resolved Promise，不等待关闭完成
+    return Promise.resolve();
   }
 }

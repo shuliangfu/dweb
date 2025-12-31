@@ -80,6 +80,47 @@ const config: AppConfig = {
     httpOnly: true,
   },
 
+  // // 队列配置
+  // queue: {
+  //   // 队列适配器类型：'memory' | 'redis'
+  //   // - memory: 内存队列（使用内存存储，进程重启后数据丢失）
+  //   // - redis: Redis 队列（使用 Redis 存储，支持持久化和分布式）
+  //   // adapter: "memory", // 或 "redis"
+  //   // Redis 配置（仅在 adapter 为 "redis" 时使用）
+  //   // redis: {
+  //   //   host: "127.0.0.1",
+  //   //   port: 6379,
+  //   //   password: "your_password", // 可选
+  //   //   db: 0, // 可选，默认为 0
+  //   // },
+  //   // 队列列表配置
+  //   // queues: {
+  //   //   // 默认队列
+  //   //   default: {
+  //   //     concurrency: 1, // 最大并发数
+  //   //     retry: 3, // 重试次数
+  //   //     retryInterval: 1000, // 重试间隔（毫秒）
+  //   //     priority: "normal", // 队列优先级：'low' | 'normal' | 'high' | 'urgent'
+  //   //     // storage: "memory", // 存储类型（如果不指定，使用全局 adapter）
+  //   //     // keyPrefix: "queue:", // Redis Key 前缀（仅在 storage 为 redis 时使用）
+  //   //   },
+  //   //   // 高优先级队列
+  //   //   high: {
+  //   //     concurrency: 5,
+  //   //     retry: 5,
+  //   //     retryInterval: 500,
+  //   //     priority: "high",
+  //   //   },
+  //   //   // 低优先级队列
+  //   //   low: {
+  //   //     concurrency: 1,
+  //   //     retry: 1,
+  //   //     retryInterval: 2000,
+  //   //     priority: "low",
+  //   //   },
+  //   // },
+  // },
+
   // // 数据库配置
   // database: {
   //   type: "mongodb",
@@ -99,8 +140,28 @@ const config: AppConfig = {
   //     maxRetries: 3, // 最大重试次数
   //     retryDelay: 1000, // 重试延迟（毫秒）
   //   },
-  // },
+	// },
 
+	database: {
+    type: "mongodb",
+    connection: {
+      host: "127.0.0.1",
+      port: 27017,
+      database: "admindemo",
+      username: "admindemo", // 如果需要认证，取消注释并填写
+      password: "admindemo8866231", // 如果需要认证，取消注释并填写
+      authSource: "admindemo", // 认证数据库，默认为 admin
+    },
+    // MongoDB 连接池配置
+    mongoOptions: {
+      maxPoolSize: 10, // 最大连接池大小
+      minPoolSize: 1, // 最小连接池大小
+      timeoutMS: 5000, // 服务器选择超时时间（毫秒）
+      maxRetries: 3, // 最大重试次数
+      retryDelay: 1000, // 重试延迟（毫秒）
+    },
+  },
+	
   // 插件配置
   plugins: [
     // Tailwind CSS v4 插件（默认使用 v4）

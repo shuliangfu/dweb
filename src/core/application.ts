@@ -39,11 +39,13 @@ import { DefaultErrorHandler, type ErrorHandler } from "./error-handler.ts";
 import * as path from "@std/path";
 import { EventEmitter } from "node:events";
 import { contentSecurityPolicy, helmet } from "../middleware/security.ts";
+import { DatabaseManager } from "../features/database/manager.ts";
 import {
   type CacheAdapter,
   FileCacheAdapter,
   MemoryCacheAdapter,
 } from "./cache/mod.ts";
+import { QueueManager } from "../features/queue/manager.ts";
 import { isMultiAppMode } from "./config.ts";
 
 /**
@@ -84,6 +86,8 @@ export class Application extends EventEmitter {
   private pluginManager: PluginManager;
   /** 渲染适配器管理器 */
   private renderAdapterManager: RenderAdapterManager;
+  /** 队列管理器 */
+  private queueManager: QueueManager | null = null;
   /** 错误处理器 */
   private errorHandler: ErrorHandler | null = null;
 
@@ -110,6 +114,9 @@ export class Application extends EventEmitter {
 
     // 注册默认适配器（Preact）
     this.renderAdapterManager.register(new PreactRenderAdapter());
+
+    // 初始化队列管理器
+    this.queueManager = new QueueManager();
 
     // 创建服务器实例
     this._server = new Server();
@@ -154,31 +161,34 @@ export class Application extends EventEmitter {
       // 4. 初始化缓存服务
       this.initializeCache(config);
 
-      // 5. 初始化数据库（如果配置了）
-      await this.initializeDatabase(config);
+      // 5. 初始化队列服务（如果配置了）
+      await this.initializeQueue(config);
 
-      // 6. 初始化 GraphQL 服务器（如果配置了）
+      // 6. 初始化数据库（如果配置了）
+      // await this.initializeDatabase(config);
+
+      // 7. 初始化 GraphQL 服务器（如果配置了）
       await this.initializeGraphQL(config);
 
-      // 7. 初始化安全中间件
+      // 8. 初始化安全中间件
       await this.initializeSecurity(config);
 
-      // 8. 初始化渲染适配器（必须在 RouteHandler 之前）
+      // 9. 初始化渲染适配器（必须在 RouteHandler 之前）
       await this.initializeRenderAdapter(config);
 
-      // 9. 初始化路由
+      // 10. 初始化路由
       await this.initializeRouter();
 
-      // 10. 初始化路由处理器
+      // 11. 初始化路由处理器
       await this.initializeRouteHandler();
 
-      // 11. 初始化中间件和插件
+      // 12. 初始化中间件和插件
       await this.initializeMiddlewareAndPlugins(config);
 
-      // 12. 初始化服务器
+      // 13. 初始化服务器
       await this.initializeServer();
 
-      // 13. 初始化 WebSocket 服务器（如果配置了）
+      // 14. 初始化 WebSocket 服务器（如果配置了）
       await this.initializeWebSocket(config);
 
       // 14. 执行插件初始化钩子
@@ -218,16 +228,16 @@ export class Application extends EventEmitter {
       this.validateProductionConfig(config);
     }
 
-    // 启动服务器
-    await this.lifecycleManager.start();
-
     // 开发环境：自动打开浏览器和设置信号处理
     if (!isProduction) {
       this.setupDevStartup(config);
     } else {
       // 生产环境：设置优雅关闭信号处理
-      await this.setupProductionShutdown();
+      this.setupProductionShutdown();
     }
+
+    // 启动服务器
+    await this.lifecycleManager.start();
   }
 
   /**
@@ -356,6 +366,95 @@ export class Application extends EventEmitter {
   }
 
   /**
+   * 初始化队列服务
+   * 根据配置创建队列管理器并初始化队列
+   */
+  private async initializeQueue(config: AppConfig): Promise<void> {
+    const queueConfig = config.queue;
+    if (!queueConfig) {
+      // 如果没有配置队列，则不初始化
+      return;
+    }
+
+    const logger = this.serviceContainer.get<Logger>("logger");
+    const adapterType = queueConfig.adapter || "memory";
+
+    // 如果使用 Redis 适配器，需要创建 Redis 客户端
+    if (adapterType === "redis") {
+      if (!queueConfig.redis) {
+        logger?.warn(
+          "队列配置为 Redis 但未提供 Redis 连接配置，降级为内存队列",
+        );
+      } else {
+        try {
+          // 动态导入 Redis 客户端（只在需要时导入，避免命令行工具加载 Application 时出错）
+          const { createClient } = await import("redis");
+
+          // 创建 Redis 客户端
+          const redisClient = createClient({
+            socket: {
+              host: queueConfig.redis.host,
+              port: queueConfig.redis.port,
+            },
+            password: queueConfig.redis.password,
+            database: queueConfig.redis.db || 0,
+          });
+
+          await redisClient.connect();
+          this.queueManager?.setRedisClient(redisClient);
+          logger?.info(
+            `队列服务已连接到 Redis: ${queueConfig.redis.host}:${queueConfig.redis.port}`,
+          );
+        } catch (err) {
+          logger?.error(
+            `连接 Redis 失败: ${
+              err instanceof Error ? err.message : String(err)
+            }`,
+          );
+          logger?.warn("队列服务降级为内存队列");
+          throw new Error(
+            `Failed to connect to Redis: ${
+              err instanceof Error ? err.message : String(err)
+            }. Please install Redis client: deno add npm:redis@^4.6.0`,
+          );
+        }
+      }
+    }
+
+    // 初始化队列列表
+    if (queueConfig.queues) {
+      for (
+        const [queueName, queueOptions] of Object.entries(
+          queueConfig.queues,
+        )
+      ) {
+        const storage = queueOptions.storage || adapterType;
+        const redisConfig =
+          storage === "redis" && this.queueManager?.getRedisClient()
+            ? {
+              client: this.queueManager?.getRedisClient(),
+              keyPrefix: queueOptions.keyPrefix,
+            }
+            : undefined;
+
+        this.queueManager?.addQueue(queueName, {
+          concurrency: queueOptions.concurrency || 1,
+          retry: queueOptions.retry || 0,
+          retryInterval: queueOptions.retryInterval || 1000,
+          priority: queueOptions.priority || "normal",
+          storage: storage as "memory" | "redis",
+          redis: redisConfig,
+        });
+
+        logger?.info(`队列 "${queueName}" 已初始化`);
+      }
+    }
+
+    // 初始化队列管理器
+    await this.queueManager?.initialize();
+  }
+
+  /**
    * 初始化安全中间件
    */
   private initializeSecurity(config: AppConfig): void {
@@ -436,6 +535,9 @@ export class Application extends EventEmitter {
     }
   }
 
+  /** 是否已设置信号监听器（防止重复注册） */
+  private signalListenersSetup: boolean = false;
+
   /**
    * 设置开发环境启动逻辑
    * 包括自动打开浏览器和信号处理
@@ -461,40 +563,54 @@ export class Application extends EventEmitter {
       }, 1000);
     }
 
-    // 设置信号监听器（开发环境直接关闭，不执行优雅关闭）
+    // 设置信号监听器（开发环境也执行优雅关闭，确保队列等服务的生命周期方法被调用）
+    // 防止重复注册信号监听器
+    if (this.signalListenersSetup) {
+      return;
+    }
+    this.signalListenersSetup = true;
+
     const cleanup = async () => {
-      const { closeDatabase } = await import("../features/database/access.ts");
-      await closeDatabase().catch(() => {});
-
-      if (this.serviceContainer.has("hmrServer")) {
-        const hmrServer = this.serviceContainer.get("hmrServer");
-        if (hmrServer && typeof (hmrServer as any).stop === "function") {
-          await (hmrServer as any).stop().catch(() => {});
-        }
+      try {
+        await this.lifecycleManager.stop();
+      } catch (error) {
+        console.error("优雅关闭失败:", error);
+      } finally {
+        // 确保进程退出
+        Deno.exit(0);
       }
-
-      this._server.close();
-      Deno.exit(0);
     };
 
-    Deno.addSignalListener("SIGTERM", cleanup);
-    Deno.addSignalListener("SIGINT", cleanup);
+    Deno.addSignalListener("SIGTERM", async () => await cleanup());
+    Deno.addSignalListener("SIGINT", async () => await cleanup());
   }
 
   /**
    * 设置生产环境关闭逻辑
    * 使用优雅关闭
    */
-  private async setupProductionShutdown(): Promise<void> {
-    const { setupSignalHandlers } = await import("../features/shutdown.ts");
-    const { closeDatabase } = await import("../features/database/access.ts");
+  private setupProductionShutdown(): void {
+    // 防止重复注册信号监听器
+    if (this.signalListenersSetup) {
+      return;
+    }
+    this.signalListenersSetup = true;
 
-    setupSignalHandlers({
-      close: async () => {
-        await closeDatabase();
-        this._server.close();
-      },
-    });
+    // 设置信号监听器（开发环境也执行优雅关闭，确保队列等服务的生命周期方法被调用）
+    const cleanup = async () => {
+      try {
+        // 调用生命周期管理器的 stop 方法，这会触发所有服务的 stop 和 destroy 方法
+        await this.lifecycleManager.stop();
+      } catch (error) {
+        console.error("优雅关闭失败:", error);
+      } finally {
+        // 确保进程退出
+        Deno.exit(0);
+      }
+    };
+
+    Deno.addSignalListener("SIGTERM", async () => await cleanup());
+    Deno.addSignalListener("SIGINT", async () => await cleanup());
   }
 
   /**
@@ -687,6 +803,11 @@ export class Application extends EventEmitter {
       "plugins",
       () => this.pluginManager,
     );
+    // 注册队列管理器
+    this.serviceContainer.registerSingleton(
+      "queueManager",
+      () => this.queueManager,
+    );
   }
 
   /**
@@ -731,39 +852,77 @@ export class Application extends EventEmitter {
         () => sessionManager,
       );
     }
+
+    if (config.database) {
+      const databaseManager = new DatabaseManager();
+      // 初始化数据库管理器（会自动连接数据库）
+      await databaseManager.initialize();
+      // 注册到服务容器
+      this.serviceContainer.registerSingleton(
+        "databaseManager",
+        () => databaseManager,
+      );
+    }
   }
 
   /**
    * 初始化数据库
    * 如果配置了数据库，则初始化数据库连接
    */
-  private async initializeDatabase(config: AppConfig): Promise<void> {
-    // 设置数据库配置加载器（用于 CLI 工具中的自动初始化）
-    const { setDatabaseConfigLoader, initDatabase } = await import(
-      "../features/database/access.ts"
-    );
-    setDatabaseConfigLoader(() => {
-      return Promise.resolve(config.database || null);
-    });
+  // private async initializeDatabase(config: AppConfig): Promise<void> {
+  //   // 设置数据库配置加载器（用于 DatabaseManager 的自动初始化）
+  //   const { setDatabaseConfigLoader } = await import(
+  //     "../features/database/access.ts"
+  //   );
+  //   setDatabaseConfigLoader(() => {
+  //     return Promise.resolve(config.database || null);
+  //   });
 
-    // 初始化数据库连接（如果配置了数据库）
-    if (config.database) {
-      try {
-        await initDatabase(config.database);
-        const logger = this.serviceContainer.get<Logger>("logger");
-        if (logger) {
-          logger.info("数据库连接已初始化");
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        const logger = this.serviceContainer.get<Logger>("logger");
-        if (logger) {
-          logger.error(`数据库连接失败: ${message}`);
-        }
-        // 不阻止服务器启动，但记录错误
-      }
-    }
-  }
+  //   // 如果配置了数据库，创建并初始化 DatabaseManager
+  //   // 数据库连接会在 DatabaseManager.onInitialize() 中自动完成
+  //   if (config.database) {
+  //     console.log("[Application] 开始初始化数据库，配置存在");
+  //     try {
+  //       const { DatabaseManager } = await import(
+  //         "../features/database/manager.ts"
+  //       );
+  //       const databaseManager = new DatabaseManager();
+  //       console.log(
+  //         "[Application] DatabaseManager 实例已创建，准备调用 initialize()",
+  //       );
+
+  //       // 初始化数据库管理器（会自动连接数据库）
+  //       await databaseManager.initialize();
+  //       console.log("[Application] DatabaseManager.initialize() 已完成");
+
+  //       // 注册到服务容器
+  //       this.serviceContainer.registerSingleton(
+  //         "databaseManager",
+  //         () => databaseManager,
+  //       );
+
+  //       // 为了向后兼容，同时设置全局变量（access.ts 中使用）
+  //       const accessModule = await import(
+  //         "../features/database/access.ts"
+  //       ) as { setDatabaseManager?: (manager: typeof databaseManager) => void };
+  //       if (accessModule.setDatabaseManager) {
+  //         accessModule.setDatabaseManager(databaseManager);
+  //       }
+
+  //       const logger = this.serviceContainer.get<Logger>("logger");
+  //       if (logger) {
+  //         logger.info("数据库连接已初始化");
+  //       }
+  //     } catch (error) {
+  //       const message = error instanceof Error ? error.message : String(error);
+  //       const logger = this.serviceContainer.get<Logger>("logger");
+  //       if (logger) {
+  //         logger.error(`数据库连接失败: ${message}`);
+  //       }
+  //       // 不阻止服务器启动，但记录错误
+  //     }
+  //   }
+  // }
 
   /**
    * 初始化 GraphQL 服务器

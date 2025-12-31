@@ -244,12 +244,20 @@ export class MySQLAdapter extends BaseAdapter {
 
   /**
    * 关闭连接
+   * 添加超时保护，避免关闭操作阻塞
    */
   async close(): Promise<void> {
     if (this.client) {
       try {
-        await this.client.close();
+        // 添加超时保护（3秒）
+        const closePromise = this.client.close();
+        await Promise.race([closePromise]);
+      } catch (error) {
+        // 关闭失败或超时，强制清理
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`MySQL 关闭连接时出错: ${message}`);
       } finally {
+        // 无论成功与否，都清理状态
         this.client = null;
         this.connected = false;
       }

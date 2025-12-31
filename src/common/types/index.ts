@@ -159,6 +159,8 @@ interface AppConfigBase {
   logging?: LoggingConfig;
   // 缓存配置
   cache?: CacheConfig;
+  // 队列配置
+  queue?: QueueConfig;
   // 安全配置
   security?: SecurityConfig;
 }
@@ -205,6 +207,54 @@ export interface CacheConfig {
    * 默认过期时间（秒，仅对支持 TTL 的适配器有效：memory, redis, file）
    */
   ttl?: number;
+}
+
+// 队列适配器类型
+export type QueueAdapterType = "memory" | "redis";
+
+// 队列配置
+export interface QueueConfig {
+  /**
+   * 队列适配器类型
+   * - "memory": 内存队列（使用内存存储，进程重启后数据丢失）
+   * - "redis": Redis 队列（使用 Redis 存储，支持持久化和分布式）
+   * @default "memory"
+   */
+  adapter?: QueueAdapterType;
+  /**
+   * Redis 配置（仅在 adapter 为 "redis" 时使用）
+   */
+  redis?: {
+    /** Redis 服务器地址 */
+    host: string;
+    /** Redis 服务器端口 */
+    port: number;
+    /** Redis 密码（可选） */
+    password?: string;
+    /** Redis 数据库编号（可选，默认为 0） */
+    db?: number;
+  };
+  /**
+   * 队列列表配置
+   * 可以配置多个队列，每个队列可以有自己的配置
+   */
+  queues?: Record<
+    string,
+    {
+      /** 最大并发数 */
+      concurrency?: number;
+      /** 重试次数 */
+      retry?: number;
+      /** 重试间隔（毫秒） */
+      retryInterval?: number;
+      /** 队列优先级 */
+      priority?: "low" | "normal" | "high" | "urgent";
+      /** 存储类型（如果不指定，使用全局 adapter） */
+      storage?: QueueAdapterType;
+      /** Redis Key 前缀（仅在 storage 为 redis 时使用） */
+      keyPrefix?: string;
+    }
+  >;
 }
 
 // 安全配置

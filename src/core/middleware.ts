@@ -271,4 +271,11 @@ export class MiddlewareManager extends BaseManager implements IService {
   clear(): void {
     this.middlewares = [];
   }
+
+  override onDestroy(): Promise<void> {
+    // 清空中间件列表
+    this.clear();
+    // 返回一个立即 resolve 的 Promise
+    return Promise.resolve();
+  }
 }

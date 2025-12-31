@@ -17,6 +17,7 @@ import { initDatabase, setDatabaseConfigLoader } from "./access.ts";
 import { findConfigFile } from "../../server/utils/file.ts";
 import type { DatabaseConfig } from "./types.ts";
 import type { DWebConfig } from "../../common/types/index.ts";
+import type { ConnectionStatus } from "./manager.ts";
 
 /**
  * 从配置文件初始化数据库
@@ -41,7 +42,7 @@ import type { DWebConfig } from "../../common/types/index.ts";
 export async function initDatabaseFromConfig(
   config?: { database?: DatabaseConfig },
   connectionName: string = "default",
-): Promise<void> {
+): Promise<ConnectionStatus | void> {
   // 如果没有提供配置，则自动加载
   let databaseConfig: DatabaseConfig | null = null;
 
@@ -103,7 +104,7 @@ export async function initDatabaseFromConfig(
   });
 
   // 初始化数据库连接
-  await initDatabase(databaseConfig, connectionName);
+  return await initDatabase(databaseConfig, connectionName);
 }
 
 /**
