@@ -95,6 +95,7 @@ async function compileClientScript(): Promise<string> {
     importMap["preact/jsx-runtime"] = "preact/jsx-runtime";
 
     // 使用统一的构建函数进行客户端打包（替换外部依赖为浏览器 URL）
+    // 客户端脚本编译时，isServerRender 必须为 false，确保 npm:/jsr: 协议转换为 HTTP URL
     const compiledCode = await buildFromStdin(
       browserScriptContent,
       path.basename(browserScriptPath),
@@ -104,6 +105,7 @@ async function compileClientScript(): Promise<string> {
         importMap,
         cwd: Deno.cwd(),
         bundleClient: true,
+        isServerRender: false, // 客户端渲染，必须转换为 HTTP URL
         minify: false,
         keepNames: true,
         legalComments: "none",

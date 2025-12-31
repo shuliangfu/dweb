@@ -165,6 +165,23 @@ function createImportReplacerPlugin(
           };
         }
 
+        // 直接处理 jsr: 协议导入
+        if (importPath.startsWith("jsr:")) {
+          // 服务端构建：保留 jsr: 导入并标记为 external，让 Deno 在运行时解析
+          if (isServerBuild || isServerRender) {
+            return {
+              path: importPath,
+              external: true,
+            };
+          }
+          // 客户端构建：转换为可在浏览器加载的 URL（使用 esm.sh）
+          const httpUrl = convertJsrToBrowserUrl(importPath);
+          return {
+            path: httpUrl,
+            external: true,
+          };
+        }
+
         // 跳过相对路径导入（这些是本地依赖，应该被打包，由其他插件处理）
         if (importPath.startsWith("./") || importPath.startsWith("../")) {
           return undefined;
@@ -175,6 +192,53 @@ function createImportReplacerPlugin(
           importPath.startsWith("http://") || importPath.startsWith("https://")
         ) {
           return undefined;
+        }
+
+        // 处理子路径导入（如 chart/auto），必须在路径别名检查之前
+        // 因为子路径导入可能被误判为路径别名
+        if (importPath.includes("/") && !importPath.startsWith("@")) {
+          // 普通包的子路径（如 chart/auto）
+          const parentPackage = importPath.split("/")[0];
+          if (parentPackage in importMap) {
+            const parentImport = importMap[parentPackage];
+            // 如果父包是外部依赖（npm:/jsr:/http:），需要将子路径转换为完整的 URL
+            // 服务端渲染：chart/auto -> npm:chart.js@4.4.7/auto
+            // 客户端渲染：chart/auto -> https://esm.sh/chart.js@4.4.7/auto
+            if (
+              parentImport.startsWith("npm:") ||
+              parentImport.startsWith("jsr:") ||
+              parentImport.startsWith("http://") ||
+              parentImport.startsWith("https://")
+            ) {
+              // 提取子路径（如 "chart/auto" -> "auto"）
+              const subPath = importPath.substring(parentPackage.length + 1);
+              // 构建完整的导入路径
+              let fullImportPath: string;
+              if (
+                parentImport.startsWith("npm:") ||
+                parentImport.startsWith("jsr:")
+              ) {
+                // 构建完整的 npm/jsr URL（如 npm:chart.js@4.4.7/auto）
+                const fullNpmJsrPath = `${parentImport}/${subPath}`;
+                // 如果是服务端渲染或服务端构建，保持 npm:/jsr: 格式
+                // 如果是客户端渲染，转换为 HTTP URL
+                if (isServerBuild || isServerRender) {
+                  fullImportPath = fullNpmJsrPath;
+                } else {
+                  // 客户端渲染：转换为浏览器可访问的 HTTP URL
+                  fullImportPath = convertToBrowserUrl(fullNpmJsrPath);
+                }
+              } else {
+                // http:// 或 https://，直接拼接子路径
+                fullImportPath = `${parentImport}/${subPath}`;
+              }
+              // 返回转换后的完整路径，标记为 external
+              return {
+                path: fullImportPath,
+                external: true,
+              };
+            }
+          }
         }
 
         // 跳过路径别名（以 @ 开头且可能是路径别名，由 createJSRResolverPlugin 处理）
@@ -311,7 +375,9 @@ function createImportReplacerPlugin(
             };
           }
           // 外部依赖：转换为浏览器 URL（仅客户端构建）
-          resolvedPath = isServerBuild
+          // 如果是服务端渲染或服务端构建，保持原始格式
+          // 如果是客户端渲染，转换为 HTTP URL
+          resolvedPath = (isServerBuild || isServerRender)
             ? mappedValue
             : convertToBrowserUrl(mappedValue);
         } else {
@@ -342,12 +408,34 @@ function createImportReplacerPlugin(
                 // 父包是本地路径，子路径也应该是本地路径，应该被打包
                 isLocalPath = true;
               } else {
-                // 父包是外部依赖，生成子路径的 URL（服务端保持原始，客户端转换为浏览器 URL）
-                const subPath = importPath.substring(parentPackage.length + 1);
-                const subPathImport = `${parentImport}/${subPath}`;
-                resolvedPath = isServerBuild
-                  ? subPathImport
-                  : convertToBrowserUrl(subPathImport);
+                // 父包是外部依赖（npm:/jsr:/http:），子路径应该标记为 external
+                // 构建完整的导入路径
+                const subPath = importPath.substring(
+                  parentPackage.length + 1,
+                );
+                let fullImportPath: string;
+                if (
+                  parentImport.startsWith("npm:") ||
+                  parentImport.startsWith("jsr:")
+                ) {
+                  // 构建完整的 npm/jsr URL（如 npm:chart.js@4.4.7/auto）
+                  const fullNpmJsrPath = `${parentImport}/${subPath}`;
+                  // 如果是服务端渲染或服务端构建，保持 npm:/jsr: 格式
+                  // 如果是客户端渲染，转换为 HTTP URL
+                  if (isServerBuild || isServerRender) {
+                    fullImportPath = fullNpmJsrPath;
+                  } else {
+                    // 客户端渲染：转换为浏览器可访问的 HTTP URL
+                    fullImportPath = convertToBrowserUrl(fullNpmJsrPath);
+                  }
+                } else {
+                  // http:// 或 https://，直接拼接子路径
+                  fullImportPath = `${parentImport}/${subPath}`;
+                }
+                return {
+                  path: fullImportPath,
+                  external: true,
+                };
               }
             }
           } else if (
@@ -380,7 +468,9 @@ function createImportReplacerPlugin(
                 // 父包是外部依赖，生成子路径的 URL（服务端保持原始，客户端转换为浏览器 URL）
                 const subPath = parts.slice(2).join("/");
                 const subPathImport = `${parentImport}/${subPath}`;
-                resolvedPath = isServerBuild
+                // 如果是服务端渲染或服务端构建，保持原始格式
+                // 如果是客户端渲染，转换为 HTTP URL
+                resolvedPath = (isServerBuild || isServerRender)
                   ? subPathImport
                   : convertToBrowserUrl(subPathImport);
               }
@@ -407,7 +497,9 @@ function createImportReplacerPlugin(
                 isLocalPath = true;
               } else {
                 // 外部依赖，转换为浏览器 URL（仅客户端构建）
-                resolvedPath = isServerBuild
+                // 如果是服务端渲染或服务端构建，保持原始格式
+                // 如果是客户端渲染，转换为 HTTP URL
+                resolvedPath = (isServerBuild || isServerRender)
                   ? mappedValue
                   : convertToBrowserUrl(mappedValue);
               }
@@ -533,32 +625,43 @@ export function createJSRResolverPlugin(
         ) {
           // 提取父包名（如 "chart/auto" -> "chart"）
           const parentPackage = args.path.split("/")[0];
-          // 只有当父包在 external 列表中时，才将子路径标记为 external
-          // 如果父包不在 external 列表中，子路径应该被打包
-          if (externalPackages.includes(parentPackage)) {
-            return {
-              path: args.path,
-              external: true,
-            };
-          }
-          // 如果父包不在 external 列表中，检查父包是否是 npm/jsr/http 导入
-          // 如果是，子路径也应该标记为 external，通过网络访问，不打包
           // 从 import map 中查找父包的映射
           const parentImport = importMap[parentPackage];
           if (parentImport) {
-            // 如果父包是 npm:、jsr: 或 http: 导入，子路径应该标记为 external
-            // 这些依赖应该通过网络访问，不应该被打包
+            // 如果父包是 npm:、jsr: 或 http: 导入，需要将子路径转换为完整的 URL
+            // 服务端渲染：chart/auto -> npm:chart.js@4.4.7/auto
+            // 客户端渲染：chart/auto -> https://esm.sh/chart.js@4.4.7/auto
+            // 注意：createJSRResolverPlugin 主要用于服务端渲染，客户端渲染由 createImportReplacerPlugin 处理
+            // 但为了完整性，这里也处理客户端渲染的情况
             if (
               parentImport.startsWith("npm:") ||
               parentImport.startsWith("jsr:") ||
               parentImport.startsWith("http://") ||
               parentImport.startsWith("https://")
             ) {
-              // 子路径也应该通过网络访问，标记为 external
-              return {
-                path: args.path,
-                external: true,
-              };
+              // 提取子路径（如 "chart/auto" -> "auto"）
+              const subPath = args.path.substring(parentPackage.length + 1);
+              // 构建完整的导入路径
+              let fullImportPath: string;
+              if (
+                parentImport.startsWith("npm:") ||
+                parentImport.startsWith("jsr:")
+              ) {
+                // createJSRResolverPlugin 主要用于服务端，但为了支持客户端渲染，需要检查
+                // 由于 createJSRResolverPlugin 没有 isServerRender 参数，这里返回 undefined
+                // 让 createImportReplacerPlugin 处理（它会在后面执行，但通过 filter 优先级可以处理）
+                // 实际上，由于插件执行顺序，createJSRResolverPlugin 先执行，所以这里需要返回 undefined
+                // 让 createImportReplacerPlugin 的 onResolve({ filter: /.*/ }) 处理
+                return undefined;
+              } else {
+                // http:// 或 https://，直接拼接子路径
+                fullImportPath = `${parentImport}/${subPath}`;
+                // 返回转换后的完整路径，标记为 external
+                return {
+                  path: fullImportPath,
+                  external: true,
+                };
+              }
             }
 
             // 如果父包是本地路径，需要解析子路径以便打包
@@ -577,19 +680,59 @@ export function createJSRResolverPlugin(
               return {
                 path: resolvedPath,
               };
-            } catch (error) {
+            } catch (_error) {
               // 如果解析失败，返回错误
               return {
                 errors: [{
                   text:
                     `Failed to resolve subpath "${args.path}" from parent package "${parentPackage}": ${
-                      error instanceof Error ? error.message : String(error)
+                      _error instanceof Error ? _error.message : String(_error)
                     }`,
                 }],
               };
             }
           }
-          // 如果父包不在 import map 中，返回 undefined，让 esbuild 处理
+          // 只有当父包在 external 列表中时，才将子路径标记为 external
+          // 如果父包不在 external 列表中，子路径应该被打包
+          if (externalPackages.includes(parentPackage)) {
+            return {
+              path: args.path,
+              external: true,
+            };
+          }
+          // 如果父包不在 import map 中，尝试通过 Deno 解析来判断是否是 npm/jsr 包
+          // 如果是，应该标记为 external，让 Deno 运行时处理
+          try {
+            const resolved = await import.meta.resolve(args.path);
+            // 如果解析成功，说明它是一个有效的 npm/jsr 包，应该标记为 external
+            // 检查解析后的路径是否是 npm: 或 jsr: 协议
+            if (resolved.startsWith("npm:") || resolved.startsWith("jsr:")) {
+              return {
+                path: args.path,
+                external: true,
+              };
+            }
+            // 如果是 file:// 协议，说明是本地路径，应该被打包
+            // 将 file:// URL 转换为绝对路径
+            if (resolved.startsWith("file://")) {
+              const url = new URL(resolved);
+              return {
+                path: url.pathname,
+              };
+            }
+            // 其他情况（如 http:），标记为 external
+            return {
+              path: args.path,
+              external: true,
+            };
+          } catch (_error) {
+            // 如果解析失败，假设它是一个 npm 包，标记为 external
+            // 让 Deno 运行时处理，如果确实不存在，运行时会有更清晰的错误提示
+            return {
+              path: args.path,
+              external: true,
+            };
+          }
         }
         return undefined; // 让其他处理器处理
       });
@@ -1113,6 +1256,13 @@ export async function buildFromStdin(
   // 构建 alias 配置
   const alias = buildAliasConfig(importMap, cwd);
 
+  // 确保 chart 及其子路径也被标记为 external（如果 chart 在 importMap 中）
+  // 这样 chart/auto 等子路径也会被正确标记为 external
+  const additionalExternals: string[] = [];
+  if ("chart" in importMap) {
+    additionalExternals.push("chart", "chart/");
+  }
+
   // 执行构建
   // 使用导入替换插件在编译时替换依赖导入，然后使用 jsrResolverPlugin 处理其他模块解析
   // 服务端渲染时，确保 bundle: true 以打包所有相对路径和路径别名
@@ -1130,7 +1280,7 @@ export async function buildFromStdin(
     sourcemap,
     keepNames,
     legalComments,
-    external: [...finalExternalPackages, "node:*"],
+    external: [...finalExternalPackages, ...additionalExternals, "node:*"],
     // 插件执行顺序很重要：jsrResolverPlugin 先处理相对路径和路径别名，然后 importReplacerPlugin 处理外部依赖
     plugins: [jsrResolverPlugin, importReplacerPlugin, ...plugins],
     alias,

@@ -378,6 +378,7 @@ export class RouteHandler {
           }
 
           // 使用统一的构建函数
+          // 客户端模块请求：isServerRender 必须为 false，确保 npm:/jsr: 协议转换为 HTTP URL
           try {
             jsCode = await buildFromStdin(
               processedContent,
@@ -388,6 +389,7 @@ export class RouteHandler {
                 importMap,
                 cwd: projectRoot,
                 bundleClient: true,
+                isServerRender: false, // 客户端模块请求，必须转换为 HTTP URL
                 minify: false, // 开发环境不压缩，便于调试
               },
             );
@@ -403,6 +405,7 @@ export class RouteHandler {
                   originalDir,
                 );
                 // 再次尝试编译（使用处理后的内容）
+                // 客户端模块请求：isServerRender 必须为 false，确保 npm:/jsr: 协议转换为 HTTP URL
                 try {
                   jsCode = await buildFromStdin(
                     processedWithAliases,
@@ -413,6 +416,7 @@ export class RouteHandler {
                       importMap,
                       cwd: projectRoot,
                       bundleClient: true,
+                      isServerRender: false, // 客户端模块请求，必须转换为 HTTP URL
                       minify: false,
                     },
                   );

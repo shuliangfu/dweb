@@ -26,19 +26,8 @@ export async function minifyJavaScript(code: string): Promise<string> {
       return code;
     }
 
-    // 验证压缩后的代码是否有效（基本检查）
-    try {
-      // 尝试解析压缩后的代码，检查是否有语法错误
-      new Function(result.code);
-    } catch (parseError) {
-      // 如果解析失败，返回原始代码
-      console.warn(
-        "[Minify] 压缩后的代码有语法错误，使用原始代码:",
-        parseError,
-      );
-      return code;
-    }
-
+    // 注意：不验证包含 import/export 的代码，因为 new Function() 无法解析 ES 模块语法
+    // esbuild 已经验证过语法，所以可以直接返回压缩后的代码
     return result.code;
   } catch (error) {
     // 如果压缩失败，返回原始代码，避免破坏功能

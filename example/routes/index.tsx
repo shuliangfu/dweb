@@ -138,9 +138,12 @@ export default function HomePage(
   //   };
   // }, []) // 空依赖数组，确保只执行一次
 
-  // const mergedClassName = twMerge("text-red-500", "text-blue-500");
-  // console.log(mergedClassName);
-  // console.log(Chart);
+	const mergedClassName = twMerge("text-red-500", "text-blue-500");
+	
+	if(typeof window !== "undefined") {
+		console.log(mergedClassName);
+		console.log(Chart);
+	}
 
   const { versionString } = data as {
     versionString: string;
