@@ -835,6 +835,61 @@ export function createJSRResolverPlugin(
         },
       );
 
+      // 处理普通文件中的相对路径导入（服务端渲染时需要打包）
+      // 确保相对路径被正确解析为绝对路径，以便 esbuild 能够打包
+      build.onResolve({ filter: /^\.\.?\/.*/ }, async (args) => {
+        // 跳过已经在其他 namespace 中处理的相对路径
+        if (args.namespace && args.namespace !== "file") {
+          return undefined;
+        }
+
+        // 解析相对路径为绝对路径
+        try {
+          const importerDir = args.importer ? path.dirname(args.importer) : cwd;
+          const resolvedPath = path.isAbsolute(args.path)
+            ? args.path
+            : path.resolve(importerDir, args.path);
+
+          // 检查文件是否存在，如果不存在，尝试添加扩展名
+          try {
+            await Deno.stat(resolvedPath);
+            return {
+              path: resolvedPath,
+              external: false, // 明确标记为不 external，强制打包
+            };
+          } catch {
+            // 尝试添加 .ts 或 .tsx 扩展名
+            const ext = path.extname(resolvedPath);
+            if (!ext || ext === "") {
+              const tsxPath = `${resolvedPath}.tsx`;
+              try {
+                await Deno.stat(tsxPath);
+                return {
+                  path: tsxPath,
+                  external: false,
+                };
+              } catch {
+                const tsPath = `${resolvedPath}.ts`;
+                try {
+                  await Deno.stat(tsPath);
+                  return {
+                    path: tsPath,
+                    external: false,
+                  };
+                } catch {
+                  // 文件不存在，返回 undefined 让 esbuild 处理错误
+                  return undefined;
+                }
+              }
+            }
+            return undefined;
+          }
+        } catch (_error) {
+          // 解析失败，返回 undefined 让 esbuild 处理
+          return undefined;
+        }
+      });
+
       // 加载 HTTP URL 内容
       build.onLoad({ filter: /.*/, namespace: "http-url" }, async (args) => {
         try {
@@ -1054,6 +1109,8 @@ export async function buildFromStdin(
 
   // 执行构建
   // 使用导入替换插件在编译时替换依赖导入，然后使用 jsrResolverPlugin 处理其他模块解析
+  // 服务端渲染时，确保 bundle: true 以打包所有相对路径和路径别名
+  const baseConfig = getBaseConfig();
   const result = await esbuild.build({
     stdin: {
       contents: code,
@@ -1061,7 +1118,8 @@ export async function buildFromStdin(
       resolveDir,
       loader,
     },
-    ...getBaseConfig(),
+    ...baseConfig,
+    bundle: isServerRender ? true : baseConfig.bundle, // 服务端渲染时强制启用 bundle
     minify,
     sourcemap,
     keepNames,
