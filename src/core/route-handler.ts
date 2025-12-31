@@ -1285,46 +1285,17 @@ export class RouteHandler {
         JSON.stringify(originalFileUrl)
       }, writable: false, configurable: false });\n`;
 
-    // 调试信息：在开发环境下输出 import.meta.url 注入信息
-    if (!this.config?.isProduction) {
+    // 如果是 _layout.tsx 文件，打印完整的编译后代码用于调试
+    if (
+      !this.config?.isProduction &&
+      filePathWithoutPrefix.endsWith("_layout.tsx")
+    ) {
       logger.info(
-        `[调试] 注入 import.meta.url: ${originalFileUrl} (源文件: ${filePathWithoutPrefix})`,
+        `[调试] ========== ${filePathWithoutPrefix} 编译后的完整代码 ==========`,
       );
-    }
-
-    // 检查编译后的代码是否包含相对路径导入（应该被打包，不应该有相对路径导入）
-    // 如果还有相对路径导入，说明 esbuild 没有正确打包它们
-    const hasRelativeImports = /(?:from|import)\s+['"]\.\.?\/[^'"]+['"]/.test(
-      compiledCode,
-    );
-    if (hasRelativeImports) {
-      logger.warn(
-        `编译后的代码仍包含相对路径导入，可能导致导入失败: ${filePathWithoutPrefix}`,
-      );
-      // 在开发环境下，输出编译后的代码片段以便调试
-      if (!this.config?.isProduction) {
-        const relativeImportMatches = Array.from(
-          compiledCode.matchAll(/(?:from|import)\s+['"]\.\.?\/[^'"]+['"]/g),
-        );
-        const imports = relativeImportMatches.map((m) => m[0]);
-        if (imports.length > 0) {
-          logger.warn(
-            `[调试] 发现相对路径导入 (${imports.length} 个): ${
-              imports.join(", ")
-            }`,
-          );
-          // 输出编译后代码的前 500 个字符，方便查看
-          logger.info(
-            `[调试] 编译后代码预览 (前500字符):\n${
-              compiledCode.substring(0, 500)
-            }`,
-          );
-        }
-      }
-    } else if (!this.config?.isProduction) {
-      // 如果没有相对路径导入，也输出确认信息
+      logger.info(compiledCode);
       logger.info(
-        `[调试] 编译成功，相对路径导入已打包: ${filePathWithoutPrefix}`,
+        `[调试] ========== 编译后代码结束 (共 ${compiledCode.length} 字符) ==========`,
       );
     }
 
@@ -1345,37 +1316,6 @@ export class RouteHandler {
     try {
       await Deno.writeTextFile(tempFile, compiledCode);
       const fileUrl = `file://${tempFile}`;
-
-      // 调试信息：在开发环境下输出导入信息
-      if (!this.config?.isProduction) {
-        logger.info(`[调试] 从临时文件导入模块: ${tempFile}`);
-        // 检查编译后的代码中是否包含 defaultMenuItems
-        const hasDefaultMenuItems = compiledCode.includes("defaultMenuItems");
-        if (hasDefaultMenuItems) {
-          // 查找 defaultMenuItems 相关的代码片段
-          const menuItemsIndex = compiledCode.indexOf("defaultMenuItems");
-          const contextStart = Math.max(0, menuItemsIndex - 100);
-          const contextEnd = Math.min(
-            compiledCode.length,
-            menuItemsIndex + 200,
-          );
-          logger.info(
-            `[调试] 发现 defaultMenuItems 引用 (位置 ${menuItemsIndex}):\n${
-              compiledCode.substring(contextStart, contextEnd)
-            }`,
-          );
-        } else {
-          logger.warn(
-            `[调试] 编译后的代码中未找到 defaultMenuItems，可能已被重命名或未打包`,
-          );
-        }
-        // 输出编译后代码的前 200 个字符，方便查看
-        logger.info(
-          `[调试] 编译后代码预览 (前200字符):\n${
-            compiledCode.substring(0, 200)
-          }`,
-        );
-      }
 
       const importPromise = import(fileUrl);
       const timeoutPromise = new Promise<never>((_, reject) => {
