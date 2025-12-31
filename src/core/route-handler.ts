@@ -1554,6 +1554,7 @@ export class RouteHandler {
     routeInfo: RouteInfo,
     req?: Request,
     res?: Response,
+    preloadedLayoutPaths?: string[],
   ): Promise<{
     renderMode: RenderMode;
     shouldHydrate: boolean;
@@ -1573,90 +1574,106 @@ export class RouteHandler {
     const pageLayoutDisabled = pageModule.layout === false;
 
     // 获取所有匹配的布局路径（用于后续检测 Hooks）
-    const layoutPaths: string[] = [];
+    // 如果已经预加载了布局路径，直接使用；否则重新获取
+    const layoutPaths: string[] = preloadedLayoutPaths || [];
 
     // 如果页面禁用了布局，直接返回空数组，不加载任何布局
     if (!pageLayoutDisabled) {
       try {
-        // 获取所有匹配的布局路径
-        layoutPaths.push(...this.router.getAllLayouts(routeInfo.path));
+        // 如果没有预加载布局路径，则获取所有匹配的布局路径
+        if (layoutPaths.length === 0) {
+          layoutPaths.push(...this.router.getAllLayouts(routeInfo.path));
+        }
 
-        // 加载所有布局组件，如果某个布局设置了 layout = false，则停止继承
-        for (const layoutPath of layoutPaths) {
+        // 优化：并行加载所有布局模块，然后按顺序处理 load 函数和检查 layout = false
+        // 这样可以减少模块导入的等待时间
+        const layoutModulePromises = layoutPaths.map(async (layoutPath) => {
           try {
             const layoutFullPath = resolveFilePath(layoutPath);
             const layoutModule = await this.importModuleWithAlias(
               layoutFullPath,
             );
-            const LayoutComponent = layoutModule.default as
-              | ((props: LayoutProps) => unknown)
-              | undefined;
-            if (!LayoutComponent) {
-              logger.warn(`布局文件 ${layoutPath} 没有默认导出`);
-              continue;
-            }
-
-            // 检查并执行布局的 load 方法（如果存在）
-            let layoutLoadData: Record<string, unknown> = {};
-            if (
-              req && res && layoutModule.load &&
-              typeof layoutModule.load === "function"
-            ) {
-              try {
-                layoutLoadData = await this.loadPageData(
-                  layoutModule,
-                  req,
-                  res,
-                  routeInfo.path,
-                );
-
-                // 检查是否在 load 函数中进行了重定向
-                // 如果响应状态码是 301 或 302，并且设置了 location header，说明已经重定向
-                if (
-                  (res.status === 301 || res.status === 302) &&
-                  res.headers.get("location")
-                ) {
-                  // 布局重定向，停止加载后续布局，直接返回
-                  // 注意：布局重定向会中断整个页面渲染流程
-                  return {
-                    renderMode: "ssr",
-                    shouldHydrate: false,
-                    LayoutComponents: [],
-                    layoutData: [],
-                    layoutDisabled: true,
-                  };
-                }
-              } catch (loadError) {
-                // load 函数执行失败，记录警告但继续加载布局组件
-                const errorMessage = loadError instanceof Error
-                  ? loadError.message
-                  : String(loadError);
-                logger.warn(`布局文件 ${layoutPath} 的 load 函数执行失败:`, {
-                  error: errorMessage,
-                });
-              }
-            }
-
-            // 检查是否设置了 layout = false（禁用继承）
-            // 如果设置了 layout = false，则停止继承，只使用到当前布局为止的布局链
-            if (layoutModule.layout === false) {
-              LayoutComponents.push(LayoutComponent);
-              layoutData.push(layoutLoadData);
-              // 停止继承，不再加载后续的布局
-              break;
-            }
-
-            LayoutComponents.push(LayoutComponent);
-            layoutData.push(layoutLoadData);
+            return { layoutPath, layoutModule, error: null };
           } catch (error) {
-            // 布局加载失败不影响页面渲染，跳过该布局
             const errorMessage = error instanceof Error
               ? error.message
               : String(error);
             logger.warn(`加载布局文件失败: ${layoutPath}`, {
               error: errorMessage,
             });
+            return { layoutPath, layoutModule: null, error: errorMessage };
           }
+        });
+
+        // 等待所有布局模块加载完成
+        const layoutModules = await Promise.all(layoutModulePromises);
+
+        // 按顺序处理布局组件（保持原有逻辑：load 函数和 layout = false 检查）
+        for (const { layoutPath, layoutModule, error } of layoutModules) {
+          if (error || !layoutModule) {
+            continue; // 跳过加载失败的布局
+          }
+
+          const LayoutComponent = layoutModule.default as
+            | ((props: LayoutProps) => unknown)
+            | undefined;
+          if (!LayoutComponent) {
+            logger.warn(`布局文件 ${layoutPath} 没有默认导出`);
+            continue;
+          }
+
+          // 检查并执行布局的 load 方法（如果存在）
+          let layoutLoadData: Record<string, unknown> = {};
+          if (
+            req && res && layoutModule.load &&
+            typeof layoutModule.load === "function"
+          ) {
+            try {
+              layoutLoadData = await this.loadPageData(
+                layoutModule,
+                req,
+                res,
+                routeInfo.path,
+              );
+
+              // 检查是否在 load 函数中进行了重定向
+              // 如果响应状态码是 301 或 302，并且设置了 location header，说明已经重定向
+              if (
+                (res.status === 301 || res.status === 302) &&
+                res.headers.get("location")
+              ) {
+                // 布局重定向，停止加载后续布局，直接返回
+                // 注意：布局重定向会中断整个页面渲染流程
+                return {
+                  renderMode: "ssr",
+                  shouldHydrate: false,
+                  LayoutComponents: [],
+                  layoutData: [],
+                  layoutDisabled: true,
+                };
+              }
+            } catch (loadError) {
+              // load 函数执行失败，记录警告但继续加载布局组件
+              const errorMessage = loadError instanceof Error
+                ? loadError.message
+                : String(loadError);
+              logger.warn(`布局文件 ${layoutPath} 的 load 函数执行失败:`, {
+                error: errorMessage,
+              });
+            }
+          }
+
+          // 检查是否设置了 layout = false（禁用继承）
+          // 如果设置了 layout = false，则停止继承，只使用到当前布局为止的布局链
+          if (layoutModule.layout === false) {
+            LayoutComponents.push(LayoutComponent);
+            layoutData.push(layoutLoadData);
+            // 停止继承，不再加载后续的布局
+            break;
+          }
+
+          LayoutComponents.push(LayoutComponent);
+          layoutData.push(layoutLoadData);
         }
       } catch (error) {
         // 继续执行，不使用布局
@@ -2734,8 +2751,17 @@ export class RouteHandler {
     const routePath = routeInfo.path;
     const routeFilePath = routeInfo.filePath;
 
-    // 加载页面模块
-    const pageModule = await this.loadPageModule(routeInfo, res);
+    // 优化：并行加载页面模块和获取布局路径（布局路径不依赖页面模块）
+    const [pageModule, layoutPaths] = await Promise.all([
+      this.loadPageModule(routeInfo, res),
+      Promise.resolve().then(() => {
+        try {
+          return this.router.getAllLayouts(routePath);
+        } catch {
+          return [];
+        }
+      }),
+    ]);
 
     // 先执行 load 函数（如果存在），因为 load 函数可能会进行重定向
     // 如果 load 函数进行了重定向，就不需要默认导出的页面组件了
@@ -2885,7 +2911,7 @@ export class RouteHandler {
       url: new URL(req.url),
     };
 
-    // 获取渲染配置
+    // 获取渲染配置（传入预加载的布局路径以优化性能）
     const {
       renderMode,
       shouldHydrate,
@@ -2898,6 +2924,7 @@ export class RouteHandler {
         routeInfo,
         req,
         res,
+        layoutPaths,
       );
 
     // 尝试流式渲染
@@ -3336,6 +3363,7 @@ export class RouteHandler {
             routeInfo,
             mockReq,
             res,
+            undefined, // 预加载布局路径（可选，这里不需要）
           );
           renderMode = renderConfig.renderMode;
           layoutDisabled = renderConfig.layoutDisabled;

@@ -1495,6 +1495,10 @@ export async function buildFromStdin(
     keepNames,
     legalComments,
     external: [...finalExternalPackages, ...additionalExternals, "node:*"],
+    // 优化：根据构建类型设置 platform，提高构建性能
+    platform: isServerBuildFinal ? "node" : "browser",
+    // 优化：减少日志输出，提高性能（开发环境可以设置为 "info" 或 "debug"）
+    logLevel: "warning",
     // 插件执行顺序很重要：jsrResolverPlugin 先处理相对路径和路径别名，然后 importReplacerPlugin 处理外部依赖
     plugins: [jsrResolverPlugin, importReplacerPlugin, ...plugins],
     alias,
@@ -1603,6 +1607,10 @@ export async function buildFromEntryPoints(
     keepNames,
     legalComments,
     external: [...finalExternalPackages, "node:*"],
+    // 优化：根据构建类型设置 platform，提高构建性能
+    platform: isServerBuildFinal ? "node" : "browser",
+    // 优化：减少日志输出，提高性能（开发环境可以设置为 "info" 或 "debug"）
+    logLevel: "warning",
     plugins: [
       ...prePlugins,
       importReplacerPlugin,
