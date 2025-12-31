@@ -141,26 +141,7 @@ const config: AppConfig = {
   //     retryDelay: 1000, // 重试延迟（毫秒）
   //   },
 	// },
-
-	database: {
-    type: "mongodb",
-    connection: {
-      host: "127.0.0.1",
-      port: 27017,
-      database: "admindemo",
-      username: "admindemo", // 如果需要认证，取消注释并填写
-      password: "admindemo8866231", // 如果需要认证，取消注释并填写
-      authSource: "admindemo", // 认证数据库，默认为 admin
-    },
-    // MongoDB 连接池配置
-    mongoOptions: {
-      maxPoolSize: 10, // 最大连接池大小
-      minPoolSize: 1, // 最小连接池大小
-      timeoutMS: 5000, // 服务器选择超时时间（毫秒）
-      maxRetries: 3, // 最大重试次数
-      retryDelay: 1000, // 重试延迟（毫秒）
-    },
-  },
+	
 	
   // 插件配置
   plugins: [
