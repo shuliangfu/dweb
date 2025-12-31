@@ -1006,14 +1006,7 @@ export class Command {
     this.dbInitialized = true;
 
     try {
-      // 加载配置（loadConfig 会自动合并 dweb.config.ts 和 main.ts）
-      // 命令行工具使用单应用模式，不需要 appName
-      const { config } = await loadConfig();
-
-      // 如果配置了数据库，则初始化连接
-      if (config.database) {
-        await initDatabaseFromConfig({ database: config.database });
-      }
+      await initDatabaseFromConfig();
       // 如果没有配置数据库，静默处理，不连接
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

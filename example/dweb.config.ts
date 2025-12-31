@@ -142,7 +142,6 @@ const config: AppConfig = {
   //   },
 	// },
 	
-	
   // 插件配置
   plugins: [
     // Tailwind CSS v4 插件（默认使用 v4）
