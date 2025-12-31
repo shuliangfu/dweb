@@ -1286,8 +1286,8 @@ export class RouteHandler {
 
     // 调试信息：在开发环境下输出 import.meta.url 注入信息
     if (!this.config?.isProduction) {
-      logger.debug(
-        `注入 import.meta.url: ${originalFileUrl} (源文件: ${filePathWithoutPrefix})`,
+      logger.info(
+        `[调试] 注入 import.meta.url: ${originalFileUrl} (源文件: ${filePathWithoutPrefix})`,
       );
     }
 
@@ -1302,15 +1302,29 @@ export class RouteHandler {
       );
       // 在开发环境下，输出编译后的代码片段以便调试
       if (!this.config?.isProduction) {
-        const relativeImportMatch = compiledCode.match(
-          /(?:from|import)\s+['"]\.\.?\/[^'"]+['"]/,
+        const relativeImportMatches = Array.from(
+          compiledCode.matchAll(/(?:from|import)\s+['"]\.\.?\/[^'"]+['"]/g),
         );
-        if (relativeImportMatch) {
+        const imports = relativeImportMatches.map((m) => m[0]);
+        if (imports.length > 0) {
           logger.warn(
-            `发现相对路径导入: ${relativeImportMatch[0]} (在编译后的代码中)`,
+            `[调试] 发现相对路径导入 (${imports.length} 个): ${
+              imports.join(", ")
+            }`,
+          );
+          // 输出编译后代码的前 500 个字符，方便查看
+          logger.info(
+            `[调试] 编译后代码预览 (前500字符):\n${
+              compiledCode.substring(0, 500)
+            }`,
           );
         }
       }
+    } else if (!this.config?.isProduction) {
+      // 如果没有相对路径导入，也输出确认信息
+      logger.info(
+        `[调试] 编译成功，相对路径导入已打包: ${filePathWithoutPrefix}`,
+      );
     }
 
     return importMetaUrlInjection + compiledCode;
@@ -1331,6 +1345,17 @@ export class RouteHandler {
       await Deno.writeTextFile(tempFile, compiledCode);
       const fileUrl = `file://${tempFile}`;
 
+      // 调试信息：在开发环境下输出导入信息
+      if (!this.config?.isProduction) {
+        logger.info(`[调试] 从临时文件导入模块: ${tempFile}`);
+        // 输出编译后代码的前 200 个字符，方便查看
+        logger.info(
+          `[调试] 编译后代码预览 (前200字符):\n${
+            compiledCode.substring(0, 200)
+          }`,
+        );
+      }
+
       const importPromise = import(fileUrl);
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error("模块导入超时")), 10000);
@@ -1345,7 +1370,31 @@ export class RouteHandler {
         throw new Error("模块导入返回空值");
       }
 
+      // 调试信息：输出导入的模块导出内容
+      if (!this.config?.isProduction) {
+        const exports = Object.keys(module);
+        logger.info(
+          `[调试] 模块导入成功，导出内容: ${
+            exports.length > 0 ? exports.join(", ") : "(无导出)"
+          }`,
+        );
+      }
+
       return module;
+    } catch (error) {
+      // 调试信息：输出导入错误
+      if (!this.config?.isProduction) {
+        logger.error(
+          `[调试] 模块导入失败: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+        // 输出编译后代码的前 500 个字符，方便排查问题
+        logger.info(
+          `[调试] 编译后代码 (前500字符):\n${compiledCode.substring(0, 500)}`,
+        );
+      }
+      throw error;
     } finally {
       try {
         await Deno.remove(tempFile);
