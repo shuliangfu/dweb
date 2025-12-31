@@ -846,7 +846,12 @@ export function createJSRResolverPlugin(
 
         // 解析相对路径为绝对路径
         try {
-          const importerDir = args.importer ? path.dirname(args.importer) : cwd;
+          // 使用 importer 或 resolveDir 来确定基础目录
+          // args.importer 是导入该模块的文件路径（sourcefile）
+          // args.resolveDir 是解析目录（resolveDir）
+          const importerDir = args.importer
+            ? path.dirname(args.importer)
+            : (args.resolveDir || cwd);
           const resolvedPath = path.isAbsolute(args.path)
             ? args.path
             : path.resolve(importerDir, args.path);

@@ -1285,17 +1285,27 @@ export class RouteHandler {
         JSON.stringify(originalFileUrl)
       }, writable: false, configurable: false });\n`;
 
-    // 如果是 _layout.tsx 文件，打印完整的编译后代码用于调试
+    // 如果是 _layout.tsx 文件，打印完整的编译后代码和原始代码用于调试
     if (
       !this.config?.isProduction &&
       filePathWithoutPrefix.endsWith("_layout.tsx")
     ) {
+      console.log(
+        `[调试] ========== ${filePathWithoutPrefix} 原始代码 ==========`,
+      );
+      console.log(processedContent);
+      console.log(
+        `[调试] ========== 原始代码结束 (共 ${processedContent.length} 字符) ==========`,
+      );
       console.log(
         `[调试] ========== ${filePathWithoutPrefix} 编译后的完整代码 ==========`,
       );
       console.log(compiledCode);
       console.log(
         `[调试] ========== 编译后代码结束 (共 ${compiledCode.length} 字符) ==========`,
+      );
+      console.log(
+        `[调试] resolveDir: ${absoluteFileDir}, sourcefile: ${absoluteFilePath}`,
       );
     }
 
