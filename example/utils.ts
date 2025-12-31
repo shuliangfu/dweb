@@ -44,7 +44,7 @@ function getDwebVersion(): string {
  * 获取 DWeb 版本号（带 v 前缀，用于显示）
  */
 export function getVersionString(): string {
-  return `v${getDwebVersion()}`;
+  return `${getDwebVersion()}`;
 }
 
 /**
