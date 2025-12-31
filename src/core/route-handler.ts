@@ -1231,40 +1231,12 @@ export class RouteHandler {
     const fileDir = path.dirname(filePathWithoutPrefix);
     const fileContent = await Deno.readTextFile(filePathWithoutPrefix);
 
-    // 如果是 _layout.tsx 文件，打印原始文件内容用于调试
-    if (
-      !this.config?.isProduction &&
-      filePathWithoutPrefix.endsWith("_layout.tsx")
-    ) {
-      console.log(
-        `[调试] ========== ${filePathWithoutPrefix} 从文件读取的原始内容 ==========`,
-      );
-      console.log(fileContent);
-      console.log(
-        `[调试] ========== 原始文件内容结束 (共 ${fileContent.length} 字符) ==========`,
-      );
-    }
-
     // 替换路径别名
     const processedContent = replaceImportAliasesInContent(
       fileContent,
       importMap,
       fileDir,
     );
-
-    // 如果是 _layout.tsx 文件，打印路径别名替换后的内容用于调试
-    if (
-      !this.config?.isProduction &&
-      filePathWithoutPrefix.endsWith("_layout.tsx")
-    ) {
-      console.log(
-        `[调试] ========== ${filePathWithoutPrefix} 路径别名替换后的内容 ==========`,
-      );
-      console.log(processedContent);
-      console.log(
-        `[调试] ========== 路径别名替换后内容结束 (共 ${processedContent.length} 字符) ==========`,
-      );
-    }
 
     // 注意：不将相对路径转换为绝对路径
     // 因为：
@@ -1313,30 +1285,6 @@ export class RouteHandler {
         JSON.stringify(originalFileUrl)
       }, writable: false, configurable: false });\n`;
 
-    // 如果是 _layout.tsx 文件，打印完整的编译后代码和原始代码用于调试
-    if (
-      !this.config?.isProduction &&
-      filePathWithoutPrefix.endsWith("_layout.tsx")
-    ) {
-      console.log(
-        `[调试] ========== ${filePathWithoutPrefix} 原始代码 ==========`,
-      );
-      console.log(processedContent);
-      console.log(
-        `[调试] ========== 原始代码结束 (共 ${processedContent.length} 字符) ==========`,
-      );
-      console.log(
-        `[调试] ========== ${filePathWithoutPrefix} 编译后的完整代码 ==========`,
-      );
-      console.log(compiledCode);
-      console.log(
-        `[调试] ========== 编译后代码结束 (共 ${compiledCode.length} 字符) ==========`,
-      );
-      console.log(
-        `[调试] resolveDir: ${absoluteFileDir}, sourcefile: ${absoluteFilePath}`,
-      );
-    }
-
     return importMetaUrlInjection + compiledCode;
   }
 
@@ -1369,37 +1317,8 @@ export class RouteHandler {
         throw new Error("模块导入返回空值");
       }
 
-      // 调试信息：输出导入的模块导出内容
-      if (!this.config?.isProduction) {
-        const exports = Object.keys(module);
-        logger.info(
-          `[调试] 模块导入成功，导出内容: ${
-            exports.length > 0 ? exports.join(", ") : "(无导出)"
-          }`,
-        );
-        // 如果模块有 load 函数，输出其源代码（如果可能）
-        if (module.load && typeof module.load === "function") {
-          const loadCode = module.load.toString();
-          logger.info(
-            `[调试] load 函数代码 (前500字符):\n${loadCode.substring(0, 500)}`,
-          );
-        }
-      }
-
       return module;
     } catch (error) {
-      // 调试信息：输出导入错误
-      if (!this.config?.isProduction) {
-        logger.error(
-          `[调试] 模块导入失败: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
-        );
-        // 输出编译后代码的前 500 个字符，方便排查问题
-        logger.info(
-          `[调试] 编译后代码 (前500字符):\n${compiledCode.substring(0, 500)}`,
-        );
-      }
       throw error;
     } finally {
       try {

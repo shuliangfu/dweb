@@ -18,7 +18,7 @@ const config: AppConfig = {
     // - csr: 客户端渲染
     // - hybrid: 混合渲染（服务端渲染 + 客户端 hydration）
     // 注意：这个配置是全局的，可以在页面组件中通过导出 renderMode 来覆盖
-    mode: "ssr",
+    mode: "hybrid",
 	},
 	
 	prefetch: {
