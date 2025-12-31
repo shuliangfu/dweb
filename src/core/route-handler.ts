@@ -1290,11 +1290,11 @@ export class RouteHandler {
       !this.config?.isProduction &&
       filePathWithoutPrefix.endsWith("_layout.tsx")
     ) {
-      logger.info(
+      console.log(
         `[调试] ========== ${filePathWithoutPrefix} 编译后的完整代码 ==========`,
       );
-      logger.info(compiledCode);
-      logger.info(
+      console.log(compiledCode);
+      console.log(
         `[调试] ========== 编译后代码结束 (共 ${compiledCode.length} 字符) ==========`,
       );
     }
