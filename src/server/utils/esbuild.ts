@@ -300,7 +300,33 @@ function createImportReplacerPlugin(
         // 处理子路径导入（如 chart/auto），必须在路径别名检查之前
         // 因为子路径导入可能被误判为路径别名
         if (importPath.includes("/") && !importPath.startsWith("@")) {
-          // 普通包的子路径（如 chart/auto）
+          // 先检查 importMap 中是否有完整的子路径映射（如 preact/signals）
+          // 这样可以处理像 preact/signals 这样的独立包，它们不是父包的子路径
+          if (importPath in importMap) {
+            const mappedValue = importMap[importPath];
+            // 如果是服务端渲染或服务端构建，保持原始格式
+            // 如果是客户端渲染，转换为 HTTP URL（如果还不是 HTTP URL）
+            let finalPath: string;
+            if (isServerBuild || isServerRender) {
+              finalPath = mappedValue;
+            } else {
+              // 客户端渲染：如果还不是 HTTP URL，转换为 HTTP URL
+              if (
+                mappedValue.startsWith("http://") ||
+                mappedValue.startsWith("https://")
+              ) {
+                finalPath = mappedValue;
+              } else {
+                finalPath = convertToBrowserUrl(mappedValue);
+              }
+            }
+            return {
+              path: finalPath,
+              external: true,
+            };
+          }
+
+          // 如果没有完整映射，尝试从父包拼接（如 chart/auto）
           const parentPackage = importPath.split("/")[0];
           if (parentPackage in importMap) {
             const parentImport = importMap[parentPackage];
