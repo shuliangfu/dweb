@@ -226,9 +226,14 @@ export function getExternalPackages(
   useSharedDeps: boolean = false,
   isServerBuild: boolean = false,
 ): string[] {
+  // Preact 及其所有子路径都应该保持 external，避免多个 Preact 实例导致 hooks 上下文错误
   const externalPackages: string[] = [
     "preact",
     "preact-render-to-string",
+    "preact/hooks",
+    "preact/jsx-runtime",
+    "preact/signals",
+    "preact/compat",
   ];
 
   for (const [key, value] of Object.entries(importMap)) {

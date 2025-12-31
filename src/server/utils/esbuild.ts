@@ -137,6 +137,7 @@ function createImportReplacerPlugin(
   isServerBuild: boolean = false,
   cwd: string,
   externalPackages: string[] = [],
+  isServerRender: boolean = false,
 ): esbuild.Plugin {
   return {
     name: "import-replacer",
@@ -187,54 +188,96 @@ function createImportReplacerPlugin(
           }
         }
 
-        // 服务端构建时，preact 相关依赖保持原始导入，不转换为 HTTP URL
-        // 这样运行时可以使用项目的 import map，确保与 route-handler.ts 使用同一个 preact 实例
-        // 2024-03-24 更新：由于 preact 已从 deno.json 移除，我们需要使用 import map 中的值（如果有）
-        // 如果 import map 中没有值，下面的逻辑会返回 undefined，然后 esbuild 会尝试解析
-        if (
-          isServerBuild && (
-            importPath === "preact" ||
-            importPath.startsWith("preact/") ||
-            importPath === "preact-render-to-string" ||
-            importPath.startsWith("preact-render-to-string/")
-          )
-        ) {
-          // 检查 import map 中是否有值，如果有则使用 mapped value（通常是 npm:preact@...）
-          // 这样 Deno 运行时就能解析到具体的 npm 包
-          if (importPath in importMap) {
-            const mappedValue = importMap[importPath];
+        // Preact 相关依赖应该保持 external，避免多个 Preact 实例导致 hooks 上下文错误
+        // 检查是否在 externalPackages 列表中，或者是否是服务端构建
+        const isPreactRelated = importPath === "preact" ||
+          importPath.startsWith("preact/") ||
+          importPath === "preact-render-to-string" ||
+          importPath.startsWith("preact-render-to-string/");
+
+        // 如果 Preact 在 externalPackages 列表中，或者是服务端构建/渲染，都应该标记为 external
+        // 服务端渲染时，即使 isServerBuild 为 false，也应该使用 npm: 协议（服务端运行）
+        // 客户端渲染时，应该转换为 HTTP URL（浏览器加载）
+        const shouldKeepPreactExternal = isPreactRelated && (
+          isServerBuild ||
+          isServerRender ||
+          externalPackages.includes(importPath) ||
+          externalPackages.some((pkg) => importPath.startsWith(pkg + "/"))
+        );
+
+        if (shouldKeepPreactExternal) {
+          // 服务端渲染或服务端构建时，使用 npm: 协议（Deno 运行时解析）
+          // 客户端渲染时，转换为 HTTP URL（浏览器加载）
+          const useNpmProtocol = isServerBuild || isServerRender;
+
+          if (useNpmProtocol) {
+            // 服务端渲染或服务端构建：使用 npm: 协议（Deno 运行时解析）
+            // 检查 import map 中是否有值，如果有则使用 mapped value（通常是 npm:preact@...）
+            if (importPath in importMap) {
+              const mappedValue = importMap[importPath];
+              return {
+                path: mappedValue,
+                external: true,
+              };
+            }
+
+            // 如果是子路径（如 preact/hooks），尝试从父包解析
+            if (importPath.includes("/")) {
+              const parentPackage = importPath.split("/")[0];
+              if (parentPackage in importMap) {
+                const mappedValue = importMap[parentPackage];
+                // 如果 mappedValue 是 npm:preact@x.y.z，我们需要追加子路径
+                // 例如：npm:preact@10.28.0/hooks
+                if (mappedValue.startsWith("npm:")) {
+                  // 移除可能的末尾斜杠
+                  const cleanMapped = mappedValue.endsWith("/")
+                    ? mappedValue.slice(0, -1)
+                    : mappedValue;
+                  const subPath = importPath.substring(parentPackage.length); // /hooks
+                  return {
+                    path: cleanMapped + subPath,
+                    external: true,
+                  };
+                }
+              }
+            }
+
+            // 保持原始导入（作为最后的后备方案，虽然这在没有 import map 的情况下会失败）
             return {
-              path: mappedValue,
+              path: importPath,
               external: true,
             };
-          }
-
-          // 如果是子路径（如 preact/hooks），尝试从父包解析
-          if (importPath.includes("/")) {
-            const parentPackage = importPath.split("/")[0];
-            if (parentPackage in importMap) {
-              const mappedValue = importMap[parentPackage];
-              // 如果 mappedValue 是 npm:preact@x.y.z，我们需要追加子路径
-              // 例如：npm:preact@10.28.0/hooks
-              if (mappedValue.startsWith("npm:")) {
-                // 移除可能的末尾斜杠
-                const cleanMapped = mappedValue.endsWith("/")
-                  ? mappedValue.slice(0, -1)
-                  : mappedValue;
-                const subPath = importPath.substring(parentPackage.length); // /hooks
+          } else {
+            // 客户端渲染：转换为 HTTP URL（浏览器加载）
+            // 检查 import map 中是否有值
+            if (importPath in importMap) {
+              const mappedValue = importMap[importPath];
+              // 如果已经是 HTTP URL，直接使用
+              if (
+                mappedValue.startsWith("http://") ||
+                mappedValue.startsWith("https://")
+              ) {
                 return {
-                  path: cleanMapped + subPath,
+                  path: mappedValue,
+                  external: true,
+                };
+              }
+              // 如果是 npm: 协议，转换为 HTTP URL
+              if (mappedValue.startsWith("npm:")) {
+                const httpUrl = convertNpmToBrowserUrl(mappedValue);
+                return {
+                  path: httpUrl,
                   external: true,
                 };
               }
             }
+            // 如果没有 import map，使用默认转换
+            const httpUrl = convertNpmToBrowserUrl(`npm:${importPath}`);
+            return {
+              path: httpUrl,
+              external: true,
+            };
           }
-
-          // 保持原始导入（作为最后的后备方案，虽然这在没有 import map 的情况下会失败）
-          return {
-            path: importPath,
-            external: true,
-          };
         }
 
         // 检查是否是外部依赖（npm、jsr）
@@ -892,6 +935,8 @@ export interface BuildOptions {
   bundleClient?: boolean;
   /** 是否为服务端构建（默认根据 bundleClient 推断：!bundleClient） */
   isServerBuild?: boolean;
+  /** 是否为服务端渲染（默认 false，用于区分服务端渲染和普通服务端构建） */
+  isServerRender?: boolean;
   /** 是否压缩代码（默认 false，开发环境） */
   minify?: boolean;
   /** 是否生成 sourcemap（默认 false） */
@@ -927,6 +972,7 @@ export async function buildFromStdin(
     cwd,
     bundleClient = false,
     isServerBuild: explicitIsServerBuild,
+    isServerRender = false,
     minify = false,
     sourcemap = false,
     keepNames = false,
@@ -935,12 +981,27 @@ export async function buildFromStdin(
     plugins = [],
   } = options;
 
-  // 判断是否为服务端构建：如果明确指定了 isServerBuild，使用它；否则根据 bundleClient 推断
-  const isServerBuild = explicitIsServerBuild ?? !bundleClient;
+  // 根据 isServerRender 独立判断编译行为
+  // isServerRender 和 bundleClient 是"或者"关系：只要其中一个为 true，就打包
+  // 服务端渲染时：需要打包所有相对路径和路径别名，但 Preact 等外部依赖仍保持 external
+  const bundleClientFinal = bundleClient || isServerRender;
+
+  // isServerBuild 的判断：
+  // - 如果 isServerRender 为 true，设置为 false 确保打包
+  // - 否则使用原有逻辑
+  const isServerBuildFinal = isServerRender
+    ? false // 服务端渲染时，设置为 false 确保打包
+    : (explicitIsServerBuild ?? !bundleClient);
 
   // 如果没有提供外部依赖列表，自动生成
+  // 服务端渲染时，传递给 getExternalPackages 的 isServerBuild 参数应该是 false
   const finalExternalPackages = externalPackages ??
-    getExternalPackages(importMap, bundleClient, false, isServerBuild);
+    getExternalPackages(
+      importMap,
+      bundleClientFinal,
+      false,
+      isServerBuildFinal,
+    );
 
   // 注入框架默认依赖（如果 import map 中缺失）
   // 这样即使用户的 deno.json 中没有配置这些依赖，框架也能正常构建和运行
@@ -972,11 +1033,13 @@ export async function buildFromStdin(
 
   // 创建导入替换插件（在编译时直接替换代码中的依赖导入）
   // 服务端构建时，preact 相关依赖保持原始导入，不转换为 HTTP URL
+  // 服务端渲染时，需要打包所有相对路径和路径别名，但 Preact 等外部依赖仍保持 external
   const importReplacerPlugin = createImportReplacerPlugin(
     importMap,
-    isServerBuild,
+    isServerBuildFinal, // 使用计算后的 isServerBuildFinal 值
     cwd,
     finalExternalPackages,
+    isServerRender, // 传递 isServerRender 参数
   );
 
   // 创建 JSR 解析插件
@@ -1040,6 +1103,7 @@ export async function buildFromEntryPoints(
     cwd,
     bundleClient = false,
     isServerBuild: explicitIsServerBuild,
+    isServerRender = false,
     minify = false,
     sourcemap = false,
     keepNames = false,
@@ -1052,13 +1116,27 @@ export async function buildFromEntryPoints(
     prePlugins = [],
   } = options;
 
-  // 判断是否为服务端构建：如果明确指定了 isServerBuild，使用它；否则根据 bundleClient 推断
-  // 注意：服务端构建时，preact 相关依赖应该保持原始导入，不转换为 HTTP URL
-  const isServerBuild = explicitIsServerBuild ?? !bundleClient;
+  // 根据 isServerRender 独立判断编译行为
+  // isServerRender 和 bundleClient 是"或者"关系：只要其中一个为 true，就打包
+  // 服务端渲染时：需要打包所有相对路径和路径别名，但 Preact 等外部依赖仍保持 external
+  const bundleClientFinal = bundleClient || isServerRender;
+
+  // isServerBuild 的判断：
+  // - 如果 isServerRender 为 true，设置为 false 确保打包
+  // - 否则使用原有逻辑
+  const isServerBuildFinal = isServerRender
+    ? false // 服务端渲染时，设置为 false 确保打包
+    : (explicitIsServerBuild ?? !bundleClient);
 
   // 如果没有提供外部依赖列表，自动生成
+  // 服务端渲染时，传递给 getExternalPackages 的 isServerBuild 参数应该是 false
   const finalExternalPackages = externalPackages ??
-    getExternalPackages(importMap, bundleClient, false, isServerBuild);
+    getExternalPackages(
+      importMap,
+      bundleClientFinal,
+      false,
+      isServerBuildFinal,
+    );
 
   // 注入框架默认依赖（如果 import map 中缺失）
   // 这样即使用户的 deno.json 中没有配置这些依赖，框架也能正常构建和运行
@@ -1084,11 +1162,13 @@ export async function buildFromEntryPoints(
 
   // 创建导入替换插件（在编译时直接替换代码中的依赖导入）
   // 服务端构建时，preact 相关依赖保持原始导入，不转换为 HTTP URL
+  // 服务端渲染时，需要打包所有相对路径和路径别名，但 Preact 等外部依赖仍保持 external
   const importReplacerPlugin = createImportReplacerPlugin(
     importMap,
-    isServerBuild,
+    isServerBuildFinal, // 使用计算后的 isServerBuildFinal 值
     cwd,
     finalExternalPackages,
+    isServerRender, // 传递 isServerRender 参数
   );
 
   // 创建 JSR 解析插件

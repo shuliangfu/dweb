@@ -1258,6 +1258,8 @@ export class RouteHandler {
       ? filePathWithoutPrefix
       : path.resolve(projectRoot, filePathWithoutPrefix);
 
+    // 编译配置：服务端渲染时，强制打包所有相对路径和路径别名导入
+    // 这样所有项目内的依赖都会被打包进代码中，避免运行时导入错误
     const compiledCode = await buildFromStdin(
       processedContent,
       absoluteFilePath, // 使用绝对路径作为 sourcefile
@@ -1266,11 +1268,10 @@ export class RouteHandler {
       {
         importMap,
         cwd: projectRoot,
-        bundleClient: true, // 启用打包以处理相对路径导入
-        isServerBuild: true, // 服务端构建，Preact 等外部依赖会保持 external
+        isServerRender: true, // 服务端渲染，需要打包所有相对路径和路径别名
         minify: false,
         sourcemap: false,
-        keepNames: true,
+        keepNames: true, // 保留变量名，避免 defaultMenuItems 被重命名
       },
     );
 
