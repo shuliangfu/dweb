@@ -1250,10 +1250,18 @@ export class RouteHandler {
     const loader = ext === ".tsx" || ext === ".jsx" ? "tsx" : "ts";
     const projectRoot = findProjectRoot(fileDir);
 
+    // 确保 fileDir 是绝对路径，这样 esbuild 才能正确解析相对路径导入
+    const absoluteFileDir = path.isAbsolute(fileDir)
+      ? fileDir
+      : path.resolve(projectRoot, fileDir);
+    const absoluteFilePath = path.isAbsolute(filePathWithoutPrefix)
+      ? filePathWithoutPrefix
+      : path.resolve(projectRoot, filePathWithoutPrefix);
+
     const compiledCode = await buildFromStdin(
       processedContent,
-      filePathWithoutPrefix,
-      fileDir, // 使用源文件所在目录作为 resolveDir，确保相对路径能正确解析
+      absoluteFilePath, // 使用绝对路径作为 sourcefile
+      absoluteFileDir, // 使用绝对路径作为 resolveDir，确保相对路径能正确解析
       loader,
       {
         importMap,
@@ -1275,6 +1283,28 @@ export class RouteHandler {
       `Object.defineProperty(import.meta, 'url', { value: ${
         JSON.stringify(originalFileUrl)
       }, writable: false, configurable: false });\n`;
+
+    // 检查编译后的代码是否包含相对路径导入（应该被打包，不应该有相对路径导入）
+    // 如果还有相对路径导入，说明 esbuild 没有正确打包它们
+    const hasRelativeImports = /(?:from|import)\s+['"]\.\.?\/[^'"]+['"]/.test(
+      compiledCode,
+    );
+    if (hasRelativeImports) {
+      logger.warn(
+        `编译后的代码仍包含相对路径导入，可能导致导入失败: ${filePathWithoutPrefix}`,
+      );
+      // 在开发环境下，输出编译后的代码片段以便调试
+      if (!this.config?.isProduction) {
+        const relativeImportMatch = compiledCode.match(
+          /(?:from|import)\s+['"]\.\.?\/[^'"]+['"]/,
+        );
+        if (relativeImportMatch) {
+          logger.warn(
+            `发现相对路径导入: ${relativeImportMatch[0]} (在编译后的代码中)`,
+          );
+        }
+      }
+    }
 
     return importMetaUrlInjection + compiledCode;
   }
