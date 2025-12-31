@@ -194,14 +194,6 @@ app.use(cors());
               title="渲染模式配置" 
             />
 
-            {/* 中间件示例 */}
-            <div className="md:col-span-2">
-              <CodeBlock 
-                code={middlewareExample} 
-                language="typescript" 
-                title="中间件使用" 
-              />
-            </div>
           </div>
         </div>
       </div>
