@@ -3,6 +3,28 @@
  * 在浏览器中运行的客户端渲染和路由代码
  */
 
+/**
+ * 为模块 URL 添加时间戳参数（开发环境）
+ * 用于强制浏览器绕过缓存，获取最新代码
+ * @param url 模块 URL
+ * @returns 添加了时间戳参数的 URL（开发环境）或原始 URL（生产环境）
+ */
+function addCacheBustParam(url: string): string {
+  // 从全局页面数据中获取 isDev 配置
+  const pageData = (globalThis as Record<string, unknown>)
+    .__PAGE_DATA__ as ClientConfig | undefined;
+  const isDev = pageData?.isDev ?? false;
+
+  // 只在开发环境且是 __modules 路径时才添加时间戳
+  if (!isDev || !url.includes("/__modules/")) {
+    return url;
+  }
+
+  // 如果 URL 已经包含查询参数，使用 & 连接，否则使用 ?
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}t=${Date.now()}`;
+}
+
 interface ClientConfig {
   route: string;
   renderMode: "ssr" | "csr" | "hybrid";
@@ -17,6 +39,7 @@ interface ClientConfig {
   prefetchLoading?: boolean;
   prefetchMode?: "single" | "batch";
   layoutData?: Record<string, unknown>[]; // 布局的 load 数据
+  isDev?: boolean; // 是否为开发环境
   [key: string]: unknown; // 允许动态属性（如 load 函数返回的数据）
 }
 
@@ -379,11 +402,12 @@ class ClientRenderer {
 
           // 如果缓存中没有，则动态导入
           if (!layoutModule) {
-            layoutModule = await import(layoutPath) as {
+            const layoutUrlWithCacheBust = addCacheBustParam(layoutPath);
+            layoutModule = await import(layoutUrlWithCacheBust) as {
               default?: unknown;
               layout?: boolean;
             };
-            // 缓存布局模块，避免重复导入
+            // 缓存布局模块，避免重复导入（使用原始路径作为缓存键）
             this.moduleCache.set(layoutPath, layoutModule);
           }
 
@@ -417,10 +441,11 @@ class ClientRenderer {
 
         // 如果缓存中没有，则动态导入
         if (!layoutModule) {
-          layoutModule = await import(pageData.layoutPath) as {
+          const layoutUrlWithCacheBust = addCacheBustParam(pageData.layoutPath);
+          layoutModule = await import(layoutUrlWithCacheBust) as {
             default?: unknown;
           };
-          // 缓存布局模块，避免重复导入
+          // 缓存布局模块，避免重复导入（使用原始路径作为缓存键）
           this.moduleCache.set(pageData.layoutPath, layoutModule);
         }
 
@@ -876,7 +901,8 @@ class ClientRouter {
           if (typeof routeUrl === "string") {
             routeUrl = routeUrl.replace(/\s+/g, "");
           }
-          pageModule = await import(routeUrl as string) as {
+          const routeUrlWithCacheBust = addCacheBustParam(routeUrl);
+          pageModule = await import(routeUrlWithCacheBust as string) as {
             default?: unknown;
             renderMode?: string;
           };
@@ -1197,7 +1223,9 @@ class ClientRouter {
           }
           // 清理 URL 中的空格
           routeUrl = routeUrl.replace(/\s+/g, "");
-          const module = await import(routeUrl);
+          const routeUrlWithCacheBust = addCacheBustParam(routeUrl);
+          const module = await import(routeUrlWithCacheBust);
+          // 缓存模块（使用原始路径作为缓存键）
           this.moduleCache.set(pageData.route, module);
         } catch (_importError) {
           // 组件导入失败时静默处理
@@ -1209,7 +1237,9 @@ class ClientRouter {
         const layoutPromises = pageData.allLayoutPaths.map(
           async (layoutPath: string) => {
             try {
-              const layoutModule = await import(layoutPath);
+              const layoutUrlWithCacheBust = addCacheBustParam(layoutPath);
+              const layoutModule = await import(layoutUrlWithCacheBust);
+              // 缓存模块（使用原始路径作为缓存键）
               this.moduleCache.set(layoutPath, layoutModule);
             } catch (_layoutError) {
               // 布局导入失败时静默处理
@@ -1222,7 +1252,9 @@ class ClientRouter {
         pageData.layoutPath !== "null"
       ) {
         try {
-          const layoutModule = await import(pageData.layoutPath);
+          const layoutUrlWithCacheBust = addCacheBustParam(pageData.layoutPath);
+          const layoutModule = await import(layoutUrlWithCacheBust);
+          // 缓存模块（使用原始路径作为缓存键）
           this.moduleCache.set(pageData.layoutPath, layoutModule);
         } catch (_layoutError) {
           // 布局导入失败时静默处理
@@ -1510,17 +1542,7 @@ class BrowserClient {
     }
 
     // 设置页面数据
-    (globalThis as Record<string, unknown>).__PAGE_DATA__ = {
-      route: this.config.route,
-      renderMode: this.config.renderMode,
-      props: this.config.props,
-      layoutPath: this.config.layoutPath,
-      allLayoutPaths: this.config.allLayoutPaths,
-      basePath: this.config.basePath,
-      metadata: this.config.metadata,
-      layout: this.config.layout,
-      layoutData: this.config.layoutData, // 布局的 load 数据
-    };
+    (globalThis as Record<string, unknown>).__PAGE_DATA__ = this.config;
 
     // 设置更新 meta 标签的函数
     this.setupUpdateMetaTagsFunction();
@@ -1648,10 +1670,11 @@ class BrowserClient {
       }
       // 清理 URL 中的空格（防止 URL 中有空格导致导入失败）
       routeUrl = routeUrl.replace(/\s+/g, "");
+      const routeUrlWithCacheBust = addCacheBustParam(routeUrl);
 
       let module: { default: unknown; renderMode?: string; hydrate?: boolean };
       try {
-        module = await import(routeUrl) as {
+        module = await import(routeUrlWithCacheBust) as {
           default: unknown;
           renderMode?: string;
           hydrate?: boolean;

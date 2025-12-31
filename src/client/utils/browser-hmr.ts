@@ -3,6 +3,26 @@
  * 在浏览器中运行的 HMR 代码
  */
 
+interface ClientConfig {
+  route: string;
+  renderMode?: string;
+  isDev?: boolean; // 是否为开发环境
+  [key: string]: unknown;
+}
+
+/**
+ * 为模块 URL 添加时间戳参数（开发环境）
+ * 用于强制浏览器绕过缓存，获取最新代码
+ * @param url 模块 URL
+ * @returns 添加了时间戳参数的 URL（开发环境）或原始 URL（生产环境）
+ */
+function addCacheBustParam(url: string): string {
+  // HMR 模式下，所有模块都添加时间戳参数 因为只有DEV环境才需要HMR
+  // 如果 URL 已经包含查询参数，使用 & 连接，否则使用 ?
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}t=${Date.now()}`;
+}
+
 interface HMRConfig {
   hmrPort: number;
 }
@@ -231,10 +251,8 @@ class HMRClient {
     }
 
     try {
-      const separator = layoutPath.includes("?") ? "&" : "?";
-      const timestamp = Date.now();
-      const layoutUrl = `${layoutPath}${separator}t=${timestamp}`;
-      const layoutModule = await import(layoutUrl);
+      const layoutUrlWithCacheBust = addCacheBustParam(layoutPath);
+      const layoutModule = await import(layoutUrlWithCacheBust);
       const layoutComponent = layoutModule.default;
       return layoutComponent;
     } catch (error) {
@@ -486,11 +504,7 @@ class HMRClient {
       const routeUrl = pageData.route.startsWith("http")
         ? pageData.route
         : `${globalThis.location.origin}${pageData.route}`;
-      // 添加时间戳参数，强制浏览器发起新的网络请求，绕过缓存
-      const timestamp = Date.now();
-      const routeUrlWithCacheBust = `${routeUrl}${
-        routeUrl.includes("?") ? "&" : "?"
-      }t=${timestamp}`;
+      const routeUrlWithCacheBust = addCacheBustParam(routeUrl);
 
       const pageModule = await import(routeUrlWithCacheBust) as {
         default: unknown;
@@ -516,11 +530,7 @@ class HMRClient {
             const layoutUrl = layoutPath.startsWith("http")
               ? layoutPath
               : `${globalThis.location.origin}${layoutPath}`;
-            // 添加时间戳参数，强制浏览器发起新的网络请求，绕过缓存
-            const timestamp = Date.now();
-            const layoutUrlWithCacheBust = `${layoutUrl}${
-              layoutUrl.includes("?") ? "&" : "?"
-            }t=${timestamp}`;
+            const layoutUrlWithCacheBust = addCacheBustParam(layoutUrl);
             try {
               const layoutModule = await import(layoutUrlWithCacheBust) as {
                 default: unknown;
@@ -540,11 +550,7 @@ class HMRClient {
           const layoutUrl = pageData.layoutPath.startsWith("http")
             ? pageData.layoutPath
             : `${globalThis.location.origin}${pageData.layoutPath}`;
-          // 添加时间戳参数，强制浏览器发起新的网络请求，绕过缓存
-          const timestamp = Date.now();
-          const layoutUrlWithCacheBust = `${layoutUrl}${
-            layoutUrl.includes("?") ? "&" : "?"
-          }t=${timestamp}`;
+          const layoutUrlWithCacheBust = addCacheBustParam(layoutUrl);
           try {
             const layoutModule = await import(layoutUrlWithCacheBust) as {
               default: unknown;
@@ -840,9 +846,7 @@ class HMRClient {
         }
 
         // 重新加载布局组件（使用新的模块 URL，带时间戳避免缓存）
-        const separator = moduleUrl.includes("?") ? "&" : "?";
-        const timestamp = Date.now();
-        const moduleUrlWithTimestamp = `${moduleUrl}${separator}t=${timestamp}`;
+        const moduleUrlWithTimestamp = addCacheBustParam(moduleUrl);
         const layoutModule = await import(moduleUrlWithTimestamp);
         const LayoutComponent = layoutModule.default;
 
@@ -872,10 +876,7 @@ class HMRClient {
             typeof currentRoute === "string" && currentRoute.startsWith("http")
               ? currentRoute
               : `${globalThis.location.origin}${currentRoute}`;
-          const pageSeparator = pageModuleUrl.includes("?") ? "&" : "?";
-          const pageTimestamp = Date.now();
-          const pageModuleUrlWithTimestamp =
-            `${pageModuleUrl}${pageSeparator}t=${pageTimestamp}`;
+          const pageModuleUrlWithTimestamp = addCacheBustParam(pageModuleUrl);
           const pageModule = await import(pageModuleUrlWithTimestamp);
           PageComponent = pageModule.default;
         }
@@ -896,10 +897,7 @@ class HMRClient {
         this.renderComponent(root, finalElement, render);
       } else if (isSharedComponent) {
         // 共享组件：先破缓存加载该组件，再重新加载当前页面组件并渲染
-        const compSeparator = moduleUrl.includes("?") ? "&" : "?";
-        const compTimestamp = Date.now();
-        const compUrlWithTimestamp =
-          `${moduleUrl}${compSeparator}t=${compTimestamp}`;
+        const compUrlWithTimestamp = addCacheBustParam(moduleUrl);
         try {
           await import(compUrlWithTimestamp);
         } catch {
@@ -922,11 +920,7 @@ class HMRClient {
           typeof currentRoute === "string" && currentRoute.startsWith("http")
             ? currentRoute
             : `${globalThis.location.origin}${currentRoute}`;
-
-        const pageSeparator = pageModuleUrl.includes("?") ? "&" : "?";
-        const pageTimestamp = Date.now();
-        const pageUrlWithTimestamp =
-          `${pageModuleUrl}${pageSeparator}t=${pageTimestamp}`;
+        const pageUrlWithTimestamp = addCacheBustParam(pageModuleUrl);
 
         const pageModule = await import(pageUrlWithTimestamp);
         const PageComponent = pageModule.default;
@@ -947,9 +941,7 @@ class HMRClient {
         // 更新的是页面文件：正常处理
         // 通过 GET 请求获取编译后的模块
         // 添加时间戳避免缓存
-        const separator = moduleUrl.includes("?") ? "&" : "?";
-        const timestamp = Date.now();
-        const moduleUrlWithTimestamp = `${moduleUrl}${separator}t=${timestamp}`;
+        const moduleUrlWithTimestamp = addCacheBustParam(moduleUrl);
 
         // 直接导入模块（服务器会编译并返回）
         const module = await import(moduleUrlWithTimestamp);

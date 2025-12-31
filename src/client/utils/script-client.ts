@@ -154,6 +154,7 @@ export async function createClientScript(
   prefetchLoading: boolean = false,
   prefetchMode: "single" | "batch" = "batch",
   layoutData?: Record<string, unknown>[] | null,
+  isProduction: boolean = false,
 ): Promise<string> {
   // 将文件路径转换为 HTTP URL
   const httpUrl = filePathToHttpUrl(routePath);
@@ -211,6 +212,7 @@ export async function createClientScript(
       prefetchLoading: prefetchLoading || undefined,
       prefetchMode: prefetchMode || undefined,
       layoutData: layoutData || undefined, // 布局的 load 数据
+      isDev: !isProduction, // 是否为开发环境（确保总是包含）
     };
 
     // 转义 JSON 中的 HTML 特殊字符，防止 XSS

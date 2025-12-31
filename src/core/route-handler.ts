@@ -2210,6 +2210,7 @@ export class RouteHandler {
         (renderMode === "ssr" && shouldHydrate) ||
         hmrClientScript // 如果存在 HMR 脚本，也需要注入 pageData
       ) {
+        const isProduction = this.config?.isProduction ?? false;
         clientScript = await createClientScript(
           modulePath,
           renderMode,
@@ -2223,6 +2224,7 @@ export class RouteHandler {
           prefetchLoading,
           prefetchMode,
           layoutData, // 传递布局的 load 数据到客户端
+          isProduction, // 传递 isProduction 配置
         );
       }
 
