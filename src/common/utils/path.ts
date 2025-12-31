@@ -309,8 +309,11 @@ export function replaceImportAliasesInContent(
   // 预处理：移除针对路径别名的 type-only 导入，避免将类型导入转成运行时依赖
   // 例如：import type { PageProps } from "@dreamer/dweb";
   // 保留普通的相对路径 type 导入（不匹配 @ 开头）
+  // 注意：使用更精确的正则表达式，避免匹配到多行内容
+  // 匹配 import type 语句，但不匹配包含其他 import 语句的内容
+  // 使用负向前瞻确保不会匹配到下一个 import 语句
   content = content.replace(
-    /import\s+type[\s\S]*?\sfrom\s+['"]@[^'"]+['"];?/g,
+    /import\s+type\s+(?:(?!import\s)[\s\S])*?\s+from\s+['"]@[^'"]+['"];?\n?/g,
     "",
   );
 
