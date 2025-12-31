@@ -126,6 +126,109 @@ function convertToBrowserUrl(importValue: string): string {
 }
 
 /**
+ * 智能注入框架默认依赖
+ * 检查 importMap 中是否已有相关依赖（通过 key 前缀匹配），如果没有则使用默认值
+ * @param importMap import map 对象（会被修改）
+ */
+function injectDefaultDependencies(importMap: Record<string, string>): void {
+  // 处理 preact 相关依赖
+  const preactBase = importMap["preact"] ||
+    importMap["preact/"]?.replace(/\/$/, "");
+
+  if (preactBase) {
+    // 从 deno.json 读取到 preact 配置，自动拼接子路径（如果不存在）
+    // 确保 preact/ 存在（用于子路径匹配）
+    if (!importMap["preact/"]) {
+      importMap["preact/"] = preactBase.endsWith("/")
+        ? preactBase
+        : `${preactBase}/`;
+    }
+    // 自动拼接子路径（如果用户没有在 deno.json 中定义）
+    if (!importMap["preact/jsx-runtime"]) {
+      importMap["preact/jsx-runtime"] = `${preactBase}/jsx-runtime`;
+    }
+    if (!importMap["preact/hooks"]) {
+      importMap["preact/hooks"] = `${preactBase}/hooks`;
+    }
+    // preact/signals 是独立包 @preact/signals，不是 preact 的子路径
+    // 如果用户没有配置，使用默认值
+    if (!importMap["preact/signals"]) {
+      importMap["preact/signals"] = "npm:@preact/signals@1.2.2";
+    }
+    // preact-render-to-string 是独立包
+    if (!importMap["preact-render-to-string"]) {
+      importMap["preact-render-to-string"] =
+        "npm:preact-render-to-string@6.5.1";
+    }
+  } else {
+    // 检查是否存在 @preact/ 开头的依赖（如 @preact/signals）
+    const hasAtPreact = Object.keys(importMap).some((key) =>
+      key.startsWith("@preact/")
+    );
+
+    // 如果 deno.json 中完全没有 preact 相关配置，才使用默认值
+    if (!hasAtPreact) {
+      importMap["preact"] = "npm:preact@10.28.0";
+      importMap["preact/"] = "npm:preact@10.28.0/";
+      importMap["preact/jsx-runtime"] = "npm:preact@10.28.0/jsx-runtime";
+      importMap["preact/hooks"] = "npm:preact@10.28.0/hooks";
+      importMap["preact/signals"] = "npm:@preact/signals@1.2.2";
+      importMap["preact-render-to-string"] =
+        "npm:preact-render-to-string@6.5.1";
+    }
+  }
+
+  // 处理 react 相关依赖
+  const reactBase = importMap["react"];
+  if (reactBase) {
+    // 从 deno.json 读取到 react 配置，自动推断 react-dom 的版本（如果不存在）
+    if (!importMap["react-dom"]) {
+      // 尝试从 react 的版本推断 react-dom 的版本
+      // 如果 react 是 npm:react@^18.3.1，则 react-dom 应该是 npm:react-dom@^18.3.1
+      const reactVersion = reactBase.match(/@([^/]+)/)?.[1] || "^18.3.1";
+      importMap["react-dom"] = reactBase.replace(
+        /react(@|$)/,
+        `react-dom@${reactVersion}`,
+      );
+    }
+  } else {
+    // 检查是否存在 react 相关的依赖（如 react-dom、react/ 等）
+    const hasReact = Object.keys(importMap).some((key) =>
+      key.startsWith("react/") || key.startsWith("react-")
+    );
+
+    // 如果 deno.json 中完全没有 react 相关配置，才使用默认值
+    if (!hasReact) {
+      importMap["react"] = "npm:react@^18.3.1";
+      importMap["react-dom"] = "npm:react-dom@^18.3.1";
+    }
+  }
+
+  // 处理 vue 相关依赖
+  const vueBase = importMap["vue"];
+  if (vueBase) {
+    // 从 deno.json 读取到 vue 配置，自动推断 @vue/server-renderer 的版本（如果不存在）
+    if (!importMap["@vue/server-renderer"]) {
+      // 尝试从 vue 的版本推断 @vue/server-renderer 的版本
+      const vueVersion = vueBase.match(/@([^/]+)/)?.[1] || "^3.5.13";
+      importMap["@vue/server-renderer"] =
+        `npm:@vue/server-renderer@${vueVersion}`;
+    }
+  } else {
+    // 检查是否存在 vue 相关的依赖（如 @vue/ 开头的）
+    const hasVue = Object.keys(importMap).some((key) =>
+      key.startsWith("vue/") || key.startsWith("@vue/")
+    );
+
+    // 如果 deno.json 中完全没有 vue 相关配置，才使用默认值
+    if (!hasVue) {
+      importMap["vue"] = "npm:vue@^3.5.13";
+      importMap["@vue/server-renderer"] = "npm:@vue/server-renderer@^3.5.13";
+    }
+  }
+}
+
+/**
  * 创建导入替换插件
  * 在编译时直接替换代码中的依赖导入为浏览器可访问的 URL
  * 例如：import Chart from "chart/auto" -> import Chart from "https://esm.sh/chart.js@4.4.7/auto"
@@ -287,12 +390,25 @@ function createImportReplacerPlugin(
             }
 
             // 如果是子路径（如 preact/hooks），尝试从父包解析
+            // 注意：preact/signals 是独立包 @preact/signals，不是 preact 的子路径
             if (importPath.includes("/")) {
+              // 先检查 importMap 中是否有完整的子路径映射（如 preact/signals）
+              // 这样可以处理像 preact/signals 这样的独立包
+              if (importPath in importMap) {
+                const mappedValue = importMap[importPath];
+                return {
+                  path: mappedValue,
+                  external: true,
+                };
+              }
+
+              // 如果没有完整映射，尝试从父包解析
               const parentPackage = importPath.split("/")[0];
               if (parentPackage in importMap) {
                 const mappedValue = importMap[parentPackage];
                 // 如果 mappedValue 是 npm:preact@x.y.z，我们需要追加子路径
                 // 例如：npm:preact@10.28.0/hooks
+                // 但 preact/signals 是独立包，不应该这样处理
                 if (mappedValue.startsWith("npm:")) {
                   // 移除可能的末尾斜杠
                   const cleanMapped = mappedValue.endsWith("/")
@@ -1207,33 +1323,9 @@ export async function buildFromStdin(
       isServerBuildFinal,
     );
 
-  // 注入框架默认依赖（如果 import map 中缺失）
-  // 这样即使用户的 deno.json 中没有配置这些依赖，框架也能正常构建和运行
-  if (!importMap["preact"]) {
-    importMap["preact"] = "npm:preact@10.28.0";
-    importMap["preact/"] = "npm:preact@10.28.0/";
-  }
-  if (!importMap["preact/jsx-runtime"]) {
-    importMap["preact/jsx-runtime"] = "npm:preact@10.28.0/jsx-runtime";
-  }
-  if (!importMap["preact/hooks"]) {
-    importMap["preact/hooks"] = "npm:preact@10.28.0/hooks";
-  }
-  if (!importMap["preact-render-to-string"]) {
-    importMap["preact-render-to-string"] = "npm:preact-render-to-string@6.5.1";
-  }
-  if (!importMap["react"]) {
-    importMap["react"] = "npm:react@^18.3.1";
-  }
-  if (!importMap["react-dom"]) {
-    importMap["react-dom"] = "npm:react-dom@^18.3.1";
-  }
-  if (!importMap["vue"]) {
-    importMap["vue"] = "npm:vue@^3.5.13";
-  }
-  if (!importMap["@vue/server-renderer"]) {
-    importMap["@vue/server-renderer"] = "npm:@vue/server-renderer@^3.5.13";
-  }
+  // 智能注入框架默认依赖（如果 import map 中缺失）
+  // 检查 importMap 中是否已有相关依赖，如果没有则使用默认值
+  injectDefaultDependencies(importMap);
 
   // 创建导入替换插件（在编译时直接替换代码中的依赖导入）
   // 服务端构建时，preact 相关依赖保持原始导入，不转换为 HTTP URL
@@ -1353,27 +1445,9 @@ export async function buildFromEntryPoints(
       isServerBuildFinal,
     );
 
-  // 注入框架默认依赖（如果 import map 中缺失）
-  // 这样即使用户的 deno.json 中没有配置这些依赖，框架也能正常构建和运行
-  if (!importMap["preact"]) {
-    importMap["preact"] = "npm:preact@10.28.0";
-    importMap["preact/"] = "npm:preact@10.28.0/";
-  }
-  if (!importMap["preact-render-to-string"]) {
-    importMap["preact-render-to-string"] = "npm:preact-render-to-string@6.5.1";
-  }
-  if (!importMap["react"]) {
-    importMap["react"] = "npm:react@^18.3.1";
-  }
-  if (!importMap["react-dom"]) {
-    importMap["react-dom"] = "npm:react-dom@^18.3.1";
-  }
-  if (!importMap["vue"]) {
-    importMap["vue"] = "npm:vue@^3.5.13";
-  }
-  if (!importMap["@vue/server-renderer"]) {
-    importMap["@vue/server-renderer"] = "npm:@vue/server-renderer@^3.5.13";
-  }
+  // 智能注入框架默认依赖（如果 import map 中缺失）
+  // 检查 importMap 中是否已有相关依赖，如果没有则使用默认值
+  injectDefaultDependencies(importMap);
 
   // 创建导入替换插件（在编译时直接替换代码中的依赖导入）
   // 服务端构建时，preact 相关依赖保持原始导入，不转换为 HTTP URL
