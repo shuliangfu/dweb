@@ -109,6 +109,12 @@ export class RouteHandler {
    * value: 文件修改时间戳
    */
   private fileMtimeMap: Map<string, number> = new Map();
+  /**
+   * 模块缓存（生产环境优化）
+   * key: 文件路径（绝对路径）
+   * value: 已导入的模块对象
+   */
+  private moduleCache: Map<string, Record<string, unknown>> = new Map();
 
   constructor(
     router: Router,
@@ -147,6 +153,7 @@ export class RouteHandler {
       // 清除所有缓存
       await this.cacheAdapter.clear();
       this.fileMtimeMap.clear();
+      this.moduleCache.clear(); // 清除模块缓存
       return;
     }
 
@@ -198,6 +205,9 @@ export class RouteHandler {
       // 删除文件修改时间映射，这样下次 importModuleWithAlias 调用时会检测到文件已修改
       // 并使用临时文件导入，绕过 Deno 的模块缓存
       this.fileMtimeMap.delete(fullPath);
+    } else {
+      // 生产环境：清除模块缓存（虽然生产环境文件不会变化，但为了安全起见）
+      this.moduleCache.delete(fullPath);
     }
   }
 
@@ -328,7 +338,12 @@ export class RouteHandler {
             "Content-Type",
             "application/javascript; charset=utf-8",
           );
-          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+          // 优化：生产环境设置更长的缓存时间（1年），开发环境不缓存
+          const isProduction = this.config?.isProduction ?? false;
+          const cacheControl = isProduction
+            ? "public, max-age=31536000, immutable"
+            : "no-cache, no-store, must-revalidate";
+          res.setHeader("Cache-Control", cacheControl);
           res.text(jsCode);
 
           if (
@@ -345,9 +360,14 @@ export class RouteHandler {
         const fileContent = await Deno.readTextFile(fullPath);
         // 检查文件类型
         const isTsx = fullPath.endsWith(".tsx") || fullPath.endsWith(".ts");
+        // 优化：生产环境如果文件已经是 .js 文件（构建后的文件），直接返回，不需要编译
+        const isProduction = this.config?.isProduction ?? false;
         let jsCode: string;
 
-        if (isTsx) {
+        if (isProduction && !isTsx) {
+          // 生产环境：直接返回构建后的 JS 文件，不需要编译
+          jsCode = fileContent;
+        } else if (isTsx) {
           // 移除只在 load 函数中使用的静态导入和 load 函数本身
           const processedContent = removeLoadOnlyImports(fileContent);
 
@@ -461,7 +481,11 @@ export class RouteHandler {
         // 先设置状态码为 200，确保在设置响应体之前状态码是正确的
         res.status = 200;
         res.setHeader("Content-Type", contentType);
-        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        // 优化：生产环境设置更长的缓存时间（1年），开发环境不缓存
+        const cacheControl = isProduction
+          ? "public, max-age=31536000, immutable"
+          : "no-cache, no-store, must-revalidate";
+        res.setHeader("Cache-Control", cacheControl);
         res.text(jsCode);
 
         // 确保响应体已设置
@@ -1341,10 +1365,19 @@ export class RouteHandler {
   ): Promise<Record<string, unknown>> {
     const isDev = !this.config?.isProduction;
 
-    // 生产环境：尝试直接导入
+    // 生产环境：尝试直接导入（使用模块缓存优化）
     if (!isDev) {
+      // 优化：检查内存缓存，避免重复 import
+      const cachedModule = this.moduleCache.get(filePath);
+      if (cachedModule) {
+        return cachedModule;
+      }
+
       try {
-        return await import(filePath);
+        const module = await import(filePath);
+        // 优化：缓存已导入的模块（生产环境文件不会变化，可以安全缓存）
+        this.moduleCache.set(filePath, module);
+        return module;
       } catch (error) {
         const errorMessage = error instanceof Error
           ? error.message

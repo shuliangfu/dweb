@@ -1336,14 +1336,20 @@ export class Application extends EventEmitter {
         staticDir = config.static?.dir || "assets";
       }
 
+      // 优化：生产环境设置更长的缓存时间
+      const defaultMaxAge = isProduction ? 31536000 : 0; // 生产环境：1年，开发环境：不缓存
+
       if (config.static) {
         this.middlewareManager.add(staticFiles({
           ...config.static,
           dir: staticDir,
+          // 如果用户没有设置 maxAge，使用默认值
+          maxAge: config.static.maxAge ?? defaultMaxAge,
         }));
       } else {
         this.middlewareManager.add(staticFiles({
           dir: staticDir,
+          maxAge: defaultMaxAge,
         }));
       }
     } catch {
