@@ -98,8 +98,15 @@ class HMRClient {
       }
       this.startHeartbeat();
     };
-    this.ws.onerror = () => {
-      this.scheduleReconnect();
+    this.ws.onerror = (event) => {
+      // 静默处理连接错误，不打印日志
+      // 注意：浏览器原生的 WebSocket 连接失败错误可能无法完全屏蔽
+      try {
+        event.preventDefault();
+      } catch {
+        // 忽略
+      }
+      // 错误发生后通常会触发 onclose，由 onclose 统一处理重连，避免重复调度
     };
     this.ws.onclose = () => {
       this.scheduleReconnect();

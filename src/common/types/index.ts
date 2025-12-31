@@ -590,6 +590,7 @@ export interface DevConfig {
   hmr?: boolean;
   open?: boolean;
   hmrPort?: number; // HMR WebSocket 服务器端口
+  hmrHost?: string; // HMR WebSocket 服务器主机
   reloadDelay?: number; // 文件变化后重载延迟（毫秒）
 }
 

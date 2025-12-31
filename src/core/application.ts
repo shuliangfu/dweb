@@ -249,8 +249,14 @@ export class Application extends EventEmitter {
       config.dev = {
         open: false,
         hmrPort: 24678,
+        hmrHost: "127.0.0.1",
         reloadDelay: 300,
       };
+    } else {
+      config.dev.open = config.dev.open ?? false;
+      config.dev.hmrPort = config.dev.hmrPort ?? 24678;
+      config.dev.hmrHost = config.dev.hmrHost ?? "127.0.0.1";
+      config.dev.reloadDelay = config.dev.reloadDelay ?? 300;
     }
 
     // 启动 HMR 服务器
@@ -260,19 +266,27 @@ export class Application extends EventEmitter {
 
     const hmrServer = new HMRServer();
     const preferredPort = config.dev.hmrPort ?? 24678;
-    const hmrPort = this.findAvailablePort(preferredPort);
-    hmrServer.start(hmrPort);
+    // HMR 默认绑定本地回环地址
+    const hmrPort = this.findAvailablePort(preferredPort, config.dev.hmrHost);
+    hmrServer.start(hmrPort, config.dev.hmrHost);
 
     // 设置服务器 origin（用于 HMR 编译组件时生成完整的 HTTP URL）
     if (config.server) {
       const protocol = config.server.tls ? "https" : "http";
-      const host = config.server.host || "localhost";
+      // 与 Server.start 保持一致，默认使用 127.0.0.1
+      const host = config.server.host || "127.0.0.1";
       const preferredAppPort = config.server.port || 3000;
-      const appPort = this.findAvailablePort(preferredAppPort);
+      // 使用配置的主机名检测端口
+      const appPort = this.findAvailablePort(preferredAppPort, host);
       if (appPort !== preferredAppPort) {
         config.server.port = appPort;
+        console.log(
+          `[Dev] 端口 ${preferredAppPort} 被占用，自动切换到 ${appPort}`,
+        );
       }
-      const serverOrigin = `${protocol}://${host}:${appPort}`;
+      // 如果是 0.0.0.0，构建 URL 时使用 127.0.0.1 或 localhost
+      const appHost = host;
+      const serverOrigin = `${protocol}://${appHost}:${appPort}`;
       hmrServer.setServerOrigin(serverOrigin);
     }
 
@@ -337,12 +351,15 @@ export class Application extends EventEmitter {
   /**
    * 查找可用端口（从首选端口开始顺序递增）
    */
-  private findAvailablePort(startPort: number): number {
+  private findAvailablePort(
+    startPort: number,
+    hostname: string = "127.0.0.1",
+  ): number {
     const maxTries = 50;
     for (let i = 0; i < maxTries; i++) {
       const port = startPort + i;
       try {
-        const listener = Deno.listen({ hostname: "127.0.0.1", port });
+        const listener = Deno.listen({ hostname, port, transport: "tcp" });
         listener.close();
         return port;
       } catch {

@@ -543,7 +543,11 @@ export class HMRServer {
   /**
    * 启动 HMR WebSocket 服务器
    */
-  start(port: number = DEFAULT_HMR_PORT, enableCache: boolean = true): void {
+  start(
+    port: number = DEFAULT_HMR_PORT,
+    hostname: string = "127.0.0.1",
+    enableCache: boolean = true,
+  ): void {
     // 启用组件编译缓存（改进 HMR 响应速度）
     if (enableCache) {
       this.componentCache = new Map();
@@ -577,6 +581,7 @@ export class HMRServer {
     this.server = Deno.serve(
       {
         port,
+        hostname,
         onListen: () => {},
       },
       handler,

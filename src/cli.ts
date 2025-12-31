@@ -331,7 +331,6 @@ cli.command("dev", "启动开发服务器")
   .action(async (args, options) => {
     const appName = await parseAppName(args, options);
     displayAppName(appName);
-
     // 加载配置并更新服务器设置
     const config = await loadConfigWithServerOptions(appName, options);
 
@@ -342,7 +341,6 @@ cli.command("dev", "启动开发服务器")
       }
       config.dev.open = true;
     }
-
     // 启动开发服务器
     await startDevServer(config);
   });
