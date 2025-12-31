@@ -138,12 +138,12 @@ export default function HomePage(
   //   };
   // }, []) // 空依赖数组，确保只执行一次
 
-	// const mergedClassName = twMerge("text-red-500", "text-blue-500");
-	
-	if(typeof window !== "undefined") {
-		// console.log(mergedClassName);
-		// console.log(Chart);
-	}
+  // const mergedClassName = twMerge("text-red-500", "text-blue-500");
+
+  if (typeof window !== "undefined") {
+    // console.log(mergedClassName);
+    // console.log(Chart);
+  }
 
   const { versionString } = data as {
     versionString: string;
@@ -159,8 +159,8 @@ deno task dev`;
   const installCode = `# 安装依赖
 deno add jsr:@dreamer/dweb
 
-# 或直接在代码中导入
-import { createApp, startDevServer } from 'jsr:@dreamer/dweb';`;
+运行命令：
+deno task dev`;
 
   return (
     <div className="space-y-0">
