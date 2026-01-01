@@ -310,6 +310,7 @@ dbCommand
 // 查询用户命令
 dbCommand
   .command("list-users", "列出所有用户")
+  .keepAlive()
   .option({
     name: "limit",
     alias: "l",

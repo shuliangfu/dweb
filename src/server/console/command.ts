@@ -114,6 +114,8 @@ export class Command {
   private version?: string;
   /** 自定义用法字符串（如果设置，将覆盖自动生成的用法） */
   private usage?: string;
+  /** 是否保持应用运行 */
+  private isKeepAlive?: boolean;
   /** 使用示例列表 */
   private examples: Array<{ command: string; description?: string }> = [];
   /** 命令选项列表 */
@@ -186,6 +188,11 @@ export class Command {
    */
   setUsage(usage: string): this {
     this.usage = usage;
+    return this;
+  }
+
+  keepAlive(): this {
+    this.isKeepAlive = true;
     return this;
   }
 
@@ -1105,6 +1112,10 @@ export class Command {
     } else {
       warning("命令未设置处理函数");
       this.showHelp();
+    }
+
+    if (!this.isKeepAlive) {
+      Deno.exit(0);
     }
   }
 }

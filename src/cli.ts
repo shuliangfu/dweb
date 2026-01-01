@@ -311,6 +311,7 @@ const cli = new Command("dweb", "DWeb 框架 CLI 工具")
 
 // dev 子命令：启动开发服务器
 cli.command("dev", "启动开发服务器")
+  .keepAlive()
   .option(appOption)
   .option({
     name: "port",
@@ -384,12 +385,11 @@ cli.command("build", "构建生产版本")
     await build(config);
 
     success("构建完成");
-
-    Deno.exit(0);
   });
 
 // start 子命令：启动生产服务器
 cli.command("start", "启动生产服务器")
+  .keepAlive()
   .option(appOption)
   .option({
     name: "port",
