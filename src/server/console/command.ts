@@ -6,12 +6,11 @@
 
 import { colors } from "./ansi.ts";
 import { error as outputError, warning } from "./output.ts";
-import { initDatabaseFromConfig } from "../../features/database/init-database.ts";
-import {
-  closeDatabase,
-  getDatabaseAsync,
-} from "../../features/database/access.ts";
+import { getDatabaseAsync } from "../../features/database/access.ts";
 import type { DatabaseAdapter } from "../../features/database/types.ts";
+import { loadConfigForConsole } from "../../core/config.ts";
+import { Application } from "../../core/application.ts";
+import { ConfigManager } from "../../core/config-manager.ts";
 
 /**
  * 选项值类型
@@ -131,8 +130,10 @@ export class Command {
   private subcommands: Map<string, Command> = new Map();
   /** 子命令别名映射 */
   private subcommandAliases: Map<string, string> = new Map();
-  /** 数据库是否已初始化 */
-  private dbInitialized = false;
+  /** 配置是否已初始化 */
+  private appInitialized = false;
+  /** 应用实例 */
+  private app: Application | null = null;
 
   /**
    * 创建命令实例
@@ -143,9 +144,8 @@ export class Command {
     this.name = name;
     this.description = description;
 
-    // 在所有命令执行前自动初始化数据库（如果配置了数据库）
     this.before(async (_args, _options) => {
-      await this.ensureDatabase();
+      await this.initializedApp();
     });
   }
 
@@ -990,27 +990,21 @@ export class Command {
     console.log(optionStr);
   }
 
-  /**
-   * 确保数据库已连接
-   * 如果已初始化则直接返回，否则加载配置并初始化数据库
-   * 如果未配置数据库，则不连接（静默处理）
-   *
-   * @throws {Error} 如果数据库初始化失败
-   */
-  protected async ensureDatabase(): Promise<void> {
-    if (this.dbInitialized) {
+  private async initializedApp(): Promise<void> {
+    if (this.appInitialized) {
       return;
     }
+    this.appInitialized = true;
 
-    this.dbInitialized = true;
+    const config = await loadConfigForConsole();
+    config.isProduction = false;
 
-    try {
-      await initDatabaseFromConfig();
-      // 如果没有配置数据库，静默处理，不连接
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`数据库初始化失败: ${message}`);
-    }
+    this.app = new Application();
+
+    const configManager = this.app.getService<ConfigManager>("configManager");
+    configManager?.setConfig(config);
+
+    await this.app.initializeConsole();
   }
 
   /**
@@ -1032,7 +1026,6 @@ export class Command {
    * ```
    */
   public async getDatabase(): Promise<DatabaseAdapter | null> {
-    await this.ensureDatabase();
     try {
       return await getDatabaseAsync();
     } catch (error) {
@@ -1108,20 +1101,6 @@ export class Command {
           `执行命令时出错: ${err instanceof Error ? err.message : String(err)}`,
         );
         Deno.exit(1);
-      } finally {
-        // 在 finally 中关闭数据库连接，确保无论成功还是失败都会执行
-        // 注意：
-        // 1. 对于一次性命令（如 build、create-user），执行完成后关闭数据库连接是合理的
-        // 2. 对于长期运行的命令（如 dev、start），它们通常不会"完成"（await app.start() 会一直运行），
-        //    所以 finally 块不会执行，数据库连接由 Application 管理
-        // 3. 如果长期运行的命令出错，finally 会执行并关闭数据库连接，这是合理的
-        try {
-          await closeDatabase();
-        } catch (err) {
-          // 关闭数据库失败时静默处理，不影响命令执行结果
-          const message = err instanceof Error ? err.message : String(err);
-          console.warn(`关闭数据库连接时出错（已忽略）: ${message}`);
-        }
       }
     } else {
       warning("命令未设置处理函数");

@@ -67,9 +67,9 @@ function parseEnvFile(content: string): Record<string, string> {
  * 加载环境变量文件
  * @param filePath 文件路径
  */
-async function loadEnvFile(filePath: string): Promise<void> {
+function loadEnvFile(filePath: string): void {
   try {
-    const content = await Deno.readTextFile(filePath);
+    const content = Deno.readTextFileSync(filePath);
     const env = parseEnvFile(content);
 
     // 合并到环境变量存储（不覆盖已存在的）
@@ -89,7 +89,7 @@ async function loadEnvFile(filePath: string): Promise<void> {
 /**
  * 加载所有环境变量文件
  */
-async function loadEnvFiles(): Promise<void> {
+function loadEnvFiles(): void {
   if (loaded) {
     return;
   }
@@ -99,7 +99,7 @@ async function loadEnvFiles(): Promise<void> {
   // 按顺序加载环境文件（后面的会覆盖前面的）
   for (const envFile of ENV_FILES) {
     const filePath = path.join(cwd, envFile);
-    await loadEnvFile(filePath);
+    loadEnvFile(filePath);
   }
 
   // 加载系统环境变量（优先级最高）
@@ -118,22 +118,17 @@ async function loadEnvFiles(): Promise<void> {
  * @param defaultValue 默认值
  * @returns 环境变量值
  */
-export async function env(
-  key: string,
-  defaultValue?: string,
-): Promise<string | undefined>;
-export function env(key: string, defaultValue?: string): string | undefined;
 export function env(
   key: string,
   defaultValue?: string,
-): string | undefined | Promise<string | undefined> {
+): any {
   // 如果已加载，直接返回
   if (loaded) {
     return envStore.get(key) ?? defaultValue;
   }
 
-  // 否则异步加载
-  return loadEnvFiles().then(() => envStore.get(key) ?? defaultValue);
+  loadEnvFiles();
+  return envStore.get(key) ?? defaultValue;
 }
 
 /**
@@ -150,7 +145,7 @@ export function envInt(
   key: string,
   defaultValue?: number,
 ): number | undefined | Promise<number | undefined> {
-  const value = env(key);
+  const value = env(key) as any;
 
   if (value instanceof Promise) {
     return value.then((v) => {
@@ -184,7 +179,7 @@ export function envFloat(
   key: string,
   defaultValue?: number,
 ): number | undefined | Promise<number | undefined> {
-  const value = env(key);
+  const value = env(key) as any;
 
   if (value instanceof Promise) {
     return value.then((v) => {
@@ -218,7 +213,7 @@ export function envBool(
   key: string,
   defaultValue?: boolean,
 ): boolean | undefined | Promise<boolean | undefined> {
-  const value = env(key);
+  const value = env(key) as any;
 
   if (value instanceof Promise) {
     return value.then((v) => {
@@ -245,15 +240,16 @@ export function envBool(
  * 获取所有环境变量
  * @returns 环境变量对象
  */
-export async function getAllEnv(): Promise<Record<string, string>>;
+export function getAllEnv(): Record<string, string>;
 export function getAllEnv():
   | Record<string, string>
-  | Promise<Record<string, string>> {
+  | Record<string, string> {
   if (loaded) {
     return Object.fromEntries(envStore);
+  } else {
+    loadEnvFiles();
+    return Object.fromEntries(envStore);
   }
-
-  return loadEnvFiles().then(() => Object.fromEntries(envStore));
 }
 
 /**
@@ -261,8 +257,8 @@ export function getAllEnv():
  * @param keys 必需的环境变量键名数组
  * @throws 如果缺少必需的环境变量
  */
-export async function validateEnv(keys: string[]): Promise<void> {
-  await loadEnvFiles();
+export function validateEnv(keys: string[]): void {
+  loadEnvFiles();
 
   const missing: string[] = [];
   for (const key of keys) {
@@ -279,6 +275,6 @@ export async function validateEnv(keys: string[]): Promise<void> {
 /**
  * 初始化环境变量（在应用启动时调用）
  */
-export async function initEnv(): Promise<void> {
-  await loadEnvFiles();
+export function initEnv(): void {
+  loadEnvFiles();
 }

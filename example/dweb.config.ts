@@ -3,11 +3,15 @@
  * 单应用模式
  */
 
-import { defineConfig, cors, seo, tailwind } from "@dreamer/dweb";
+import { cors, defineConfig, seo, tailwind } from "@dreamer/dweb";
+import { env, initEnv } from "@dreamer/dweb";
+import type { DatabaseType } from "@dreamer/dweb/database";
+
+initEnv();
 
 export default defineConfig({
   name: "example",
-  
+
   // 渲染适配器配置
   render: {
     // 渲染引擎，可选值：'preact' | 'react' | 'vue3'
@@ -19,15 +23,14 @@ export default defineConfig({
     // - hybrid: 混合渲染（服务端渲染 + 客户端 hydration）
     // 注意：这个配置是全局的，可以在页面组件中通过导出 renderMode 来覆盖
     mode: "hybrid",
-	},
-	
-	prefetch: {
+  },
+
+  prefetch: {
     enabled: true,
     loading: false,
     routes: ["*", "!/docs/*"],
-    mode: "batch", 
+    mode: "batch",
   },
-
 
   // 开发配置
   dev: {
@@ -38,8 +41,8 @@ export default defineConfig({
 
   // 构建配置
   build: {
-		outDir: ".dist",
-		split: true,
+    outDir: ".dist",
+    split: true,
   },
 
   // 服务器配置
@@ -80,68 +83,27 @@ export default defineConfig({
     httpOnly: true,
   },
 
-  // // 队列配置
-  // queue: {
-  //   // 队列适配器类型：'memory' | 'redis'
-  //   // - memory: 内存队列（使用内存存储，进程重启后数据丢失）
-  //   // - redis: Redis 队列（使用 Redis 存储，支持持久化和分布式）
-  //   // adapter: "memory", // 或 "redis"
-  //   // Redis 配置（仅在 adapter 为 "redis" 时使用）
-  //   // redis: {
-  //   //   host: "127.0.0.1",
-  //   //   port: 6379,
-  //   //   password: "your_password", // 可选
-  //   //   db: 0, // 可选，默认为 0
-  //   // },
-  //   // 队列列表配置
-  //   // queues: {
-  //   //   // 默认队列
-  //   //   default: {
-  //   //     concurrency: 1, // 最大并发数
-  //   //     retry: 3, // 重试次数
-  //   //     retryInterval: 1000, // 重试间隔（毫秒）
-  //   //     priority: "normal", // 队列优先级：'low' | 'normal' | 'high' | 'urgent'
-  //   //     // storage: "memory", // 存储类型（如果不指定，使用全局 adapter）
-  //   //     // keyPrefix: "queue:", // Redis Key 前缀（仅在 storage 为 redis 时使用）
-  //   //   },
-  //   //   // 高优先级队列
-  //   //   high: {
-  //   //     concurrency: 5,
-  //   //     retry: 5,
-  //   //     retryInterval: 500,
-  //   //     priority: "high",
-  //   //   },
-  //   //   // 低优先级队列
-  //   //   low: {
-  //   //     concurrency: 1,
-  //   //     retry: 1,
-  //   //     retryInterval: 2000,
-  //   //     priority: "low",
-  //   //   },
-  //   // },
-  // },
+  // 数据库配置
+  database: {
+    type: env("DB_TYPE"),
+    connection: {
+      host: env("DB_HOST"),
+      port: env("DB_PORT"),
+      database: env("DB_NAME"),
+      username: env("DB_USER"),
+      password: env("DB_PASS"),
+      authSource: env("DB_AUTH"),
+    },
+    // MongoDB 连接池配置
+    mongoOptions: {
+      maxPoolSize: 10, // 最大连接池大小
+      minPoolSize: 1, // 最小连接池大小
+      timeoutMS: 5000, // 服务器选择超时时间（毫秒）
+      maxRetries: 3, // 最大重试次数
+      retryDelay: 1000, // 重试延迟（毫秒）
+    },
+  },
 
-  // // 数据库配置
-  // database: {
-  //   type: "mongodb",
-  //   connection: {
-  //     host: "127.0.0.1",
-  //     port: 27017,
-  //     database: "dweb_example",
-  //     // username: "your_username", // 如果需要认证，取消注释并填写
-  //     // password: "your_password", // 如果需要认证，取消注释并填写
-  //     // authSource: "admin", // 认证数据库，默认为 admin
-  //   },
-  //   // MongoDB 连接池配置
-  //   mongoOptions: {
-  //     maxPoolSize: 10, // 最大连接池大小
-  //     minPoolSize: 1, // 最小连接池大小
-  //     timeoutMS: 5000, // 服务器选择超时时间（毫秒）
-  //     maxRetries: 3, // 最大重试次数
-  //     retryDelay: 1000, // 重试延迟（毫秒）
-  //   },
-	// },
-	
   // 插件配置
   plugins: [
     // Tailwind CSS v4 插件（默认使用 v4）
@@ -149,10 +111,10 @@ export default defineConfig({
       version: "v4",
       cssPath: "assets/tailwind-v4.css", // 指定主 CSS 文件路径
       optimize: true, // 生产环境优化
-		}),
-		// tailwind({
+    }),
+    // tailwind({
     //   version: "v3",
-		// 	cssPath: "assets/tailwind-v3.css", // 指定主 CSS 文件路径
+    // 	cssPath: "assets/tailwind-v3.css", // 指定主 CSS 文件路径
     // }),
     seo({
       title: "DWeb - 现代化的全栈 Web 框架",

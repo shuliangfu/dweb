@@ -156,7 +156,7 @@ export class Application extends EventEmitter {
       await this.registerServices();
 
       // 3. 初始化错误处理器
-      await this.initializeErrorHandler();
+      this.initializeErrorHandler();
 
       // 4. 初始化缓存服务
       this.initializeCache(config);
@@ -171,7 +171,7 @@ export class Application extends EventEmitter {
       await this.initializeGraphQL(config);
 
       // 8. 初始化安全中间件
-      await this.initializeSecurity(config);
+      this.initializeSecurity(config);
 
       // 9. 初始化渲染适配器（必须在 RouteHandler 之前）
       await this.initializeRenderAdapter(config);
@@ -180,13 +180,56 @@ export class Application extends EventEmitter {
       await this.initializeRouter();
 
       // 11. 初始化路由处理器
-      await this.initializeRouteHandler();
+      this.initializeRouteHandler();
 
       // 12. 初始化中间件和插件
-      await this.initializeMiddlewareAndPlugins(config);
+      this.initializeMiddlewareAndPlugins(config);
 
       // 13. 初始化服务器
       await this.initializeServer();
+
+      // 14. 初始化 WebSocket 服务器（如果配置了）
+      await this.initializeWebSocket(config);
+
+      // 14. 执行插件初始化钩子
+      await this.pluginManager.executeOnInit(this.context, config);
+
+      // 设置生命周期阶段为已初始化
+      this.lifecycleManager.setPhase(LifecyclePhase.Initialized);
+    } catch (error) {
+      this.lifecycleManager.setPhase(LifecyclePhase.Stopped);
+      throw error;
+    }
+  }
+
+  /**
+   * 初始化应用（控制台模式）
+   * 加载配置、注册服务、初始化中间件和插件
+   *
+   * @throws {Error} 如果初始化失败
+   */
+  async initializeConsole(): Promise<void> {
+    // 设置生命周期阶段
+    this.lifecycleManager.setPhase(LifecyclePhase.Initializing);
+
+    try {
+      const config = this.configManager.getConfig();
+
+      // 更新应用上下文
+      this.context.setConfig(config);
+      this.context.setIsProduction(config.isProduction ?? false);
+
+      // 2. 注册服务
+      await this.registerServices();
+
+      // 4. 初始化缓存服务
+      this.initializeCache(config);
+
+      // 5. 初始化队列服务（如果配置了）
+      await this.initializeQueue(config);
+
+      // 12. 初始化中间件和插件
+      this.initializeMiddlewareAndPlugins(config);
 
       // 14. 初始化 WebSocket 服务器（如果配置了）
       await this.initializeWebSocket(config);

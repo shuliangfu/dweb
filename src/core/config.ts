@@ -328,6 +328,109 @@ export async function loadConfig(
   }
 }
 
+export async function loadConfigForConsole(): Promise<AppConfig> {
+  try {
+    const originalCwd = Deno.cwd();
+    let configPath = await findConfigFile();
+
+    // 如果没有提供路径，自动查找
+    if (!configPath) {
+      const foundPath = await findConfigFile();
+      if (!foundPath) {
+        throw new Error(
+          "未找到 dweb.config.ts 文件，请确保在项目根目录或 example 目录下运行",
+        );
+      }
+      configPath = foundPath;
+    }
+
+    // 如果配置文件在子目录中，切换到该目录
+    const configDir = configPath.includes("/")
+      ? configPath.substring(0, configPath.lastIndexOf("/"))
+      : originalCwd;
+
+    if (configDir !== originalCwd && configDir !== ".") {
+      Deno.chdir(configDir);
+    }
+
+    // 读取配置文件（使用相对于配置目录的路径）
+    const configFileName = configPath.includes("/")
+      ? configPath.substring(configPath.lastIndexOf("/") + 1)
+      : configPath;
+    const configUrl = new URL(configFileName, `file://${Deno.cwd()}/`).href;
+    const configModule = await import(configUrl);
+
+    // 获取默认导出
+    const config: DWebConfig = configModule.default || configModule;
+
+    // 验证配置
+    let finalConfig: AppConfig | null = null;
+
+    // 如果是多应用模式
+    const isMultiApp = "apps" in config && Array.isArray(config.apps);
+    if (isMultiApp) {
+      for (const app of config.apps || []) {
+        const appName = app.name;
+        // 如果指定了应用名称，查找对应的应用配置
+
+        const matchedApp = app;
+        // 合并应用配置和顶层配置，返回 AppConfig
+        // 注意：database 配置只能来自根配置，子应用配置中不允许包含 database
+        finalConfig = mergeConfig(config, matchedApp as AppConfig);
+
+        // 强制 database 配置只能来自根配置
+        finalConfig.database = config.database;
+
+        // 确保 name 和 basePath 正确
+        finalConfig.name = matchedApp.name;
+        if (matchedApp.basePath) {
+          finalConfig.basePath = matchedApp.basePath;
+        } else if (!finalConfig.basePath) {
+          finalConfig.basePath = "/";
+        }
+
+        // 尝试加载并合并 main.ts 中的配置（如果有）
+        // 优先级：main.ts > appConfig > baseConfig
+        try {
+          // 注意：在单应用模式下，appName 应该是 undefined（在项目根目录查找 main.ts）
+          // 在多应用模式下，appName 应该是应用目录名（如 'backend'，在 backend/main.ts 查找）
+          // 这里 isMultiApp 表示是否为多应用模式，如果是多应用模式，使用 finalConfig.name 作为应用目录名
+          // 如果是单应用模式，appName 应该是 undefined
+          const mainConfigAppName = isMultiApp ? appName : undefined;
+          const mainConfig = await loadMainConfig(
+            mainConfigAppName,
+            finalConfig.build?.outDir,
+          );
+
+          if (mainConfig) {
+            // 合并 main.ts 配置到 finalConfig
+            // 注意：这里 finalConfig 作为 baseConfig，mainConfig 作为 appConfig
+            // 所以 main.ts 的配置会追加到 finalConfig 的配置后面
+            finalConfig = mergeConfig(finalConfig, mainConfig);
+          }
+        } catch (error) {
+          // 记录 main.ts 加载错误，但不抛出异常（main.ts 是可选的）
+          console.warn(
+            "[Config] 加载 main.ts 失败:",
+            error instanceof Error ? error.message : String(error),
+          );
+        }
+      }
+    } else {
+      finalConfig = config as AppConfig;
+    }
+
+    if (!finalConfig) {
+      throw new Error("加载配置文件失败: 未生成有效的配置");
+    }
+
+    return finalConfig;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`加载配置文件失败: ${message}`);
+  }
+}
+
 /**
  * 验证配置
  * @param config 配置对象
