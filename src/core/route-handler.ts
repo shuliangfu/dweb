@@ -1394,9 +1394,6 @@ export class RouteHandler {
     const fileDir = path.dirname(filePathWithoutPrefix);
     const importMap = await this.loadImportMap(fileDir);
     const compiledCode = await this.compileModuleCode(filePath, importMap);
-
-    console.log(compiledCode);
-
     return await this.importFromTempFile(compiledCode);
   }
 
