@@ -5,7 +5,6 @@
 
 import { cors, defineConfig, seo, tailwind } from "@dreamer/dweb";
 import { env, initEnv } from "@dreamer/dweb";
-import type { DatabaseType } from "@dreamer/dweb/database";
 
 initEnv();
 
@@ -60,6 +59,27 @@ export default defineConfig({
     // apiDir: 'api',  // 如果配置为 'api'，则 API 文件应放在项目根目录的 api 文件夹中
   },
 
+	 // 数据库配置
+  database: {
+    type: 'mongodb',
+    connection: {
+      host: env("DB_HOST"),
+      port: env("DB_PORT"),
+      database: env("DB_NAME"),
+      username: env("DB_USER"),
+      password: env("DB_PASS"),
+      authSource: env("DB_AUTH"),
+    },
+    // MongoDB 连接池配置
+    mongoOptions: {
+      maxPoolSize: 10, // 最大连接池大小
+      minPoolSize: 1, // 最小连接池大小
+      timeoutMS: 5000, // 服务器选择超时时间（毫秒）
+      maxRetries: 3, // 最大重试次数
+      retryDelay: 1000, // 重试延迟（毫秒）
+    },
+  },
+
   // 静态资源目录，默认为 'assets'
   static: {
     dir: "assets",
@@ -81,27 +101,6 @@ export default defineConfig({
     maxAge: 3600, // 1小时（单位：秒）
     secure: false,
     httpOnly: true,
-  },
-
-  // 数据库配置
-  database: {
-    type: env("DB_TYPE"),
-    connection: {
-      host: env("DB_HOST"),
-      port: env("DB_PORT"),
-      database: env("DB_NAME"),
-      username: env("DB_USER"),
-      password: env("DB_PASS"),
-      authSource: env("DB_AUTH"),
-    },
-    // MongoDB 连接池配置
-    mongoOptions: {
-      maxPoolSize: 10, // 最大连接池大小
-      minPoolSize: 1, // 最小连接池大小
-      timeoutMS: 5000, // 服务器选择超时时间（毫秒）
-      maxRetries: 3, // 最大重试次数
-      retryDelay: 1000, // 重试延迟（毫秒）
-    },
   },
 
   // 插件配置

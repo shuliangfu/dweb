@@ -384,6 +384,8 @@ cli.command("build", "构建生产版本")
     await build(config);
 
     success("构建完成");
+
+    Deno.exit(0);
   });
 
 // start 子命令：启动生产服务器
