@@ -3,7 +3,7 @@
  * 展示 DWeb 框架的配置管理器功能和使用方法
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -51,212 +51,150 @@ const config: AppConfig = {
 configManager.setConfig(config);
 const loadedConfig = configManager.getConfig();`;
 
-  return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        ConfigManager (配置管理器)
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-          ConfigManager
-        </code>{" "}
-        统一管理应用配置的加载、验证和访问，
-        提供类型安全的配置访问和配置合并功能。
-      </p>
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "ConfigManager (配置管理器)",
+    description: "`ConfigManager` 统一管理应用配置的加载、验证和访问，提供类型安全的配置访问和配置合并功能。",
+    sections: [
+      {
+        title: "概述",
+        blocks: [
+          {
+            type: "text",
+            content: "`ConfigManager` 封装了配置加载逻辑，提供统一的配置访问接口。",
+          },
+        ],
+      },
+      {
+        title: "快速开始",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "基本使用",
+            blocks: [
+              {
+                type: "code",
+                code: basicUsageCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "多应用模式",
+            blocks: [
+              {
+                type: "code",
+                code: multiAppCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "程序化设置配置",
+            blocks: [
+              {
+                type: "code",
+                code: programmaticCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
 
-      {/* 概述 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          概述
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            ConfigManager
-          </code>{" "}
-          封装了配置加载逻辑， 提供统一的配置访问接口。
-        </p>
-      </section>
-
-      {/* 快速开始 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          快速开始
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          基本使用
-        </h3>
-        <CodeBlock code={basicUsageCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          多应用模式
-        </h3>
-        <CodeBlock code={multiAppCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          程序化设置配置
-        </h3>
-        <CodeBlock code={programmaticCode} language="typescript" />
-      </section>
-
-      {/* API 参考 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          API 参考
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          构造函数
-        </h3>
-        <CodeBlock
-          code={`constructor(configPath?: string, appName?: string)`}
-          language="typescript"
-        />
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <strong>参数：</strong>
-        </p>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              configPath
-            </code>{" "}
-            (可选): 配置文件路径，如果不提供则自动查找{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              dweb.config.ts
-            </code>
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              appName
-            </code>{" "}
-            (可选): 应用名称，用于多应用模式
-          </li>
-        </ul>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          方法
-        </h3>
-
-        <div className="space-y-6">
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                load()
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              加载配置文件。
-            </p>
-            <CodeBlock
-              code={`await configManager.load();`}
-              language="typescript"
-            />
-            <p className="text-gray-700 dark:text-gray-300 text-sm mt-2">
-              <strong>功能：</strong>
-            </p>
-            <ul className="list-disc list-inside space-y-1 my-2 text-gray-700 dark:text-gray-300 text-sm">
-              <li>从配置文件加载配置</li>
-              <li>验证配置格式</li>
-              <li>规范化配置值</li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                getConfig()
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              获取配置对象。
-            </p>
-            <CodeBlock
-              code={`const config = configManager.getConfig();`}
-              language="typescript"
-            />
-          </div>
-
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                getConfigDir()
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              获取配置文件所在目录。
-            </p>
-            <CodeBlock
-              code={`const configDir = configManager.getConfigDir();`}
-              language="typescript"
-            />
-          </div>
-
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                setConfig(config)
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              直接设置配置（用于测试或特殊场景）。
-            </p>
-            <CodeBlock
-              code={`configManager.setConfig(config);`}
-              language="typescript"
-            />
-          </div>
-
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                isLoaded()
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              检查配置是否已加载。
-            </p>
-            <CodeBlock
-              code={`if (configManager.isLoaded()) {
+      {
+        title: "API 参考",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "构造函数",
+            blocks: [
+              {
+                type: "code",
+                code: "constructor(configPath?: string, appName?: string)",
+                language: "typescript",
+              },
+              {
+                type: "text",
+                content: "**参数：**",
+              },
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`configPath`** (可选): 配置文件路径，如果不提供则自动查找 `dweb.config.ts`",
+                  "**`appName`** (可选): 应用名称，用于多应用模式",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "方法",
+            blocks: [
+              {
+                type: "api",
+                name: "load()",
+                description: "加载配置文件。功能：从配置文件加载配置、验证配置格式、规范化配置值。",
+                code: "await configManager.load();",
+              },
+              {
+                type: "api",
+                name: "getConfig()",
+                description: "获取配置对象。",
+                code: "const config = configManager.getConfig();",
+              },
+              {
+                type: "api",
+                name: "getConfigDir()",
+                description: "获取配置文件所在目录。",
+                code: "const configDir = configManager.getConfigDir();",
+              },
+              {
+                type: "api",
+                name: "setConfig(config)",
+                description: "直接设置配置（用于测试或特殊场景）。",
+                code: "configManager.setConfig(config);",
+              },
+              {
+                type: "api",
+                name: "isLoaded()",
+                description: "检查配置是否已加载。",
+                code: `if (configManager.isLoaded()) {
   const config = configManager.getConfig();
-}`}
-              language="typescript"
-            />
-          </div>
-        </div>
-      </section>
+}`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[Application (应用核心)](/docs/core/application)",
+              "[配置管理 (Config)](/docs/core/config)",
+              "[配置文档](/docs/deployment/configuration)",
+            ],
+          },
+        ],
+      },
+    ],
+  };
 
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/core/application"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Application (应用核心)
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/core/config"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              配置管理 (Config)
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/deployment/configuration"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              配置文档
-            </a>
-          </li>
-        </ul>
-      </section>
-    </article>
+  return (
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

@@ -2,7 +2,7 @@
  * 核心模块 - 配置管理 (Config) 文档页面
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -107,220 +107,175 @@ const routeConfig = normalizeRouteConfig({
   apiDir: "routes/api",
 });`;
 
-  return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        配置管理 (Config)
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 框架提供了灵活的配置加载机制，支持单应用和多应用模式。配置文件使用
-        TypeScript，提供完整的类型支持。
-      </p>
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "配置管理 (Config)",
+    description: "DWeb 框架提供了灵活的配置加载机制，支持单应用和多应用模式。配置文件使用 TypeScript，提供完整的类型支持。",
+    sections: [
+      {
+        title: "加载配置",
+        blocks: [
+          {
+            type: "text",
+            content: "框架会自动查找并加载 `dweb.config.ts` 配置文件。你也可以手动加载配置：",
+          },
+          {
+            type: "code",
+            code: configCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "基本配置",
+        blocks: [
+          {
+            type: "text",
+            content: "单应用模式的基本配置示例：",
+          },
+          {
+            type: "code",
+            code: basicConfigCode,
+            language: "typescript",
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "配置选项",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`server`** - 服务器配置（端口、主机等）",
+                  "**`routes`** - 路由配置（目录、忽略规则等）",
+                  "**`static`** - 静态资源配置（目录、前缀、缓存等）",
+                  "**`plugins`** - 插件列表",
+                  "**`middleware`** - 中间件列表",
+                  "**`cookie`** - Cookie 配置",
+                  "**`session`** - Session 配置",
+                  "**`database`** - 数据库配置",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "多应用模式",
+        blocks: [
+          {
+            type: "text",
+            content: "多应用模式允许你在一个配置文件中定义多个应用，每个应用有独立的服务器、路由和插件配置：",
+          },
+          {
+            type: "code",
+            code: multiAppConfigCode,
+            language: "typescript",
+          },
+          {
+            type: "text",
+            content: "启动指定应用：`deno run -A jsr:@dreamer/dweb/cli dev:app-name`",
+          },
+        ],
+      },
+      {
+        title: "环境变量",
+        blocks: [
+          {
+            type: "text",
+            content: "可以在配置文件中使用环境变量，方便在不同环境中使用不同的配置：",
+          },
+          {
+            type: "code",
+            code: envConfigCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "配置规范化",
+        blocks: [
+          {
+            type: "text",
+            content: "使用 `normalizeRouteConfig` 函数规范化路由配置：",
+          },
+          {
+            type: "code",
+            code: normalizeCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "配置文件位置",
+        blocks: [
+          {
+            type: "text",
+            content: "框架会按以下顺序查找配置文件：",
+          },
+          {
+            type: "list",
+            ordered: true,
+            items: [
+              "当前工作目录的 `dweb.config.ts`",
+              "当前工作目录的 `dweb.config.js`",
+              "如果使用 `loadConfig(path)`，则加载指定路径的配置文件",
+            ],
+          },
+        ],
+      },
 
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          加载配置
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          框架会自动查找并加载{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            dweb.config.ts
-          </code>{" "}
-          配置文件。你也可以手动加载配置：
-        </p>
-        <CodeBlock code={configCode} language="typescript" />
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          基本配置
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          单应用模式的基本配置示例：
-        </p>
-        <CodeBlock code={basicConfigCode} language="typescript" />
-        <div className="mt-4">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
-            配置选项
-          </h3>
-          <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-            <li>
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                server
-              </code>{" "}
-              - 服务器配置（端口、主机等）
-            </li>
-            <li>
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                routes
-              </code>{" "}
-              - 路由配置（目录、忽略规则等）
-            </li>
-            <li>
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                static
-              </code>{" "}
-              - 静态资源配置（目录、前缀、缓存等）
-            </li>
-            <li>
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                plugins
-              </code>{" "}
-              - 插件列表
-            </li>
-            <li>
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                middleware
-              </code>{" "}
-              - 中间件列表
-            </li>
-            <li>
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                cookie
-              </code>{" "}
-              - Cookie 配置
-            </li>
-            <li>
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                session
-              </code>{" "}
-              - Session 配置
-            </li>
-            <li>
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                database
-              </code>{" "}
-              - 数据库配置
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          多应用模式
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          多应用模式允许你在一个配置文件中定义多个应用，每个应用有独立的服务器、路由和插件配置：
-        </p>
-        <CodeBlock code={multiAppConfigCode} language="typescript" />
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mt-4">
-          启动指定应用：
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            deno run -A jsr:@dreamer/dweb/cli dev:app-name
-          </code>
-        </p>
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          环境变量
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          可以在配置文件中使用环境变量，方便在不同环境中使用不同的配置：
-        </p>
-        <CodeBlock code={envConfigCode} language="typescript" />
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          配置规范化
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          使用{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            normalizeRouteConfig
-          </code>{" "}
-          函数规范化路由配置：
-        </p>
-        <CodeBlock code={normalizeCode} language="typescript" />
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          配置文件位置
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          框架会按以下顺序查找配置文件：
-        </p>
-        <ol className="list-decimal list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            当前工作目录的{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              dweb.config.ts
-            </code>
-          </li>
-          <li>
-            当前工作目录的{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              dweb.config.js
-            </code>
-          </li>
-          <li>
-            如果使用{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              loadConfig(path)
-            </code>
-            ，则加载指定路径的配置文件
-          </li>
-        </ol>
-      </section>
-
-      {/* API 参考 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          API 参考
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          loadConfig
-        </h3>
-        <CodeBlock
-          code={`function loadConfig(
+      {
+        title: "API 参考",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "loadConfig",
+            blocks: [
+              {
+                type: "code",
+                code: `function loadConfig(
   configPath?: string,
   appName?: string
-): Promise<{ config: AppConfig; configDir: string }>`}
-          language="typescript"
-        />
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <strong>参数：</strong>
-        </p>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              configPath
-            </code>: 配置文件路径（可选，默认为{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              dweb.config.ts
-            </code>）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              appName
-            </code>: 应用名称（多应用模式使用）
-          </li>
-        </ul>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <strong>返回：</strong>
-        </p>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              config
-            </code>: 配置对象
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              configDir
-            </code>: 配置文件所在目录
-          </li>
-        </ul>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          normalizeRouteConfig
-        </h3>
-        <CodeBlock
-          code={`function normalizeRouteConfig(
+): Promise<{ config: AppConfig; configDir: string }>`,
+                language: "typescript",
+              },
+              {
+                type: "text",
+                content: "**参数：**",
+              },
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`configPath`**: 配置文件路径（可选，默认为 `dweb.config.ts`）",
+                  "**`appName`**: 应用名称（多应用模式使用）",
+                ],
+              },
+              {
+                type: "text",
+                content: "**返回：**",
+              },
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`config`**: 配置对象",
+                  "**`configDir`**: 配置文件所在目录",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "normalizeRouteConfig",
+            blocks: [
+              {
+                type: "code",
+                code: `function normalizeRouteConfig(
   routes: string | {
     dir: string;
     ignore?: string[];
@@ -334,60 +289,48 @@ const routeConfig = normalizeRouteConfig({
   cache: boolean;
   priority: "specific-first" | "order";
   apiDir: string;
-}`}
-          language="typescript"
-        />
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <strong>参数：</strong>
-        </p>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              routes
-            </code>: 路由配置（字符串或配置对象）
-          </li>
-        </ul>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <strong>返回：</strong>
-        </p>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>规范化后的路由配置对象</li>
-        </ul>
-      </section>
+}`,
+                language: "typescript",
+              },
+              {
+                type: "text",
+                content: "**参数：**",
+              },
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`routes`**: 路由配置（字符串或配置对象）",
+                ],
+              },
+              {
+                type: "text",
+                content: "**返回：**规范化后的路由配置对象",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[ConfigManager (配置管理器)](/docs/core/config-manager)",
+              "[配置文档](/docs/deployment/configuration) - 完整的配置选项说明",
+              "[路由系统](/docs/core/router) - 文件系统路由",
+            ],
+          },
+        ],
+      },
+    ],
+  };
 
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/core/config-manager"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              ConfigManager (配置管理器)
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/deployment/configuration"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              配置文档
-            </a>{" "}
-            - 完整的配置选项说明
-          </li>
-          <li>
-            <a
-              href="/docs/core/router"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              路由系统
-            </a>{" "}
-            - 文件系统路由
-          </li>
-        </ul>
-      </section>
-    </article>
+  return (
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

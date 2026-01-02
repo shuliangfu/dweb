@@ -3,7 +3,7 @@
  * 展示 DWeb 框架的生命周期管理器功能和使用方法
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -73,136 +73,117 @@ interface LifecycleHooks {
   onShutdown?: () => Promise<void> | void;     // 关闭钩子
 }`;
 
-  return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        LifecycleManager (生命周期管理器)
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-          LifecycleManager
-        </code>{" "}
-        管理应用的生命周期， 统一处理启动、运行、关闭流程，支持生命周期钩子。
-      </p>
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "LifecycleManager (生命周期管理器)",
+    description: "`LifecycleManager` 管理应用的生命周期，统一处理启动、运行、关闭流程，支持生命周期钩子。",
+    sections: [
+      {
+        title: "概述",
+        blocks: [
+          {
+            type: "text",
+            content: "`LifecycleManager` 负责管理应用的生命周期阶段，支持生命周期钩子，确保应用的正确启动和关闭。",
+          },
+        ],
+      },
+      {
+        title: "生命周期阶段",
+        blocks: [
+          {
+            type: "code",
+            code: lifecyclePhasesCode,
+            language: "text",
+          },
+        ],
+      },
+      {
+        title: "快速开始",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "基本使用",
+            blocks: [
+              {
+                type: "code",
+                code: basicUsageCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "注册生命周期钩子",
+            blocks: [
+              {
+                type: "code",
+                code: registerHooksCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "生命周期钩子",
+        blocks: [
+          {
+            type: "code",
+            code: hooksCode,
+            language: "typescript",
+          },
+          {
+            type: "alert",
+            level: "info",
+            content: [
+              "**说明：**",
+              "**`onInitialize`**：在应用初始化时调用",
+              "**`onStart`**：在应用启动时调用",
+              "**`onStop`**：在应用停止时调用",
+              "**`onShutdown`**：在应用关闭时调用",
+            ],
+          },
+        ],
+      },
 
-      {/* 概述 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          概述
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            LifecycleManager
-          </code>{" "}
-          负责管理应用的生命周期阶段，
-          支持生命周期钩子，确保应用的正确启动和关闭。
-        </p>
-      </section>
-
-      {/* 生命周期阶段 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          生命周期阶段
-        </h2>
-        <CodeBlock code={lifecyclePhasesCode} language="text" />
-      </section>
-
-      {/* 快速开始 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          快速开始
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          基本使用
-        </h3>
-        <CodeBlock code={basicUsageCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          注册生命周期钩子
-        </h3>
-        <CodeBlock code={registerHooksCode} language="typescript" />
-      </section>
-
-      {/* 生命周期钩子 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          生命周期钩子
-        </h2>
-        <CodeBlock code={hooksCode} language="typescript" />
-        <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-600 p-4 my-4 rounded">
-          <p className="text-blue-800 dark:text-blue-200 text-sm">
-            <strong>说明：</strong>
-          </p>
-          <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-200 text-sm mt-2">
-            <li>
-              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
-                onInitialize
-              </code>：在应用初始化时调用
-            </li>
-            <li>
-              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
-                onStart
-              </code>：在应用启动时调用
-            </li>
-            <li>
-              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
-                onStop
-              </code>：在应用停止时调用
-            </li>
-            <li>
-              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
-                onShutdown
-              </code>：在应用关闭时调用
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      {/* API 参考 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          API 参考
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          构造函数
-        </h3>
-        <CodeBlock
-          code={`constructor(application: Application)`}
-          language="typescript"
-        />
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <strong>参数：</strong>
-        </p>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              application
-            </code>:{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              Application
-            </code>{" "}
-            - 应用实例
-          </li>
-        </ul>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          方法
-        </h3>
-
-        <div className="space-y-6">
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                registerHooks(hooks)
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              注册生命周期钩子。
-            </p>
-            <CodeBlock
-              code={`lifecycleManager.registerHooks({
+      {
+        title: "API 参考",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "构造函数",
+            blocks: [
+              {
+                type: "code",
+                code: "constructor(application: Application)",
+                language: "typescript",
+              },
+              {
+                type: "text",
+                content: "**参数：**",
+              },
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`application`**: `Application` - 应用实例",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "方法",
+            blocks: [
+              {
+                type: "api",
+                name: "registerHooks(hooks)",
+                description: "注册生命周期钩子。",
+                code: `lifecycleManager.registerHooks({
   onInitialize: async () => {
     // 初始化钩子
   },
@@ -215,68 +196,44 @@ interface LifecycleHooks {
   onShutdown: async () => {
     // 关闭钩子
   },
-});`}
-              language="typescript"
-            />
-          </div>
+});`,
+              },
+              {
+                type: "api",
+                name: "getPhase()",
+                description: "获取当前生命周期阶段。",
+                code: `const phase = lifecycleManager.getPhase();
+console.log("当前阶段:", phase);`,
+              },
+              {
+                type: "api",
+                name: "setPhase(phase)",
+                description: "设置生命周期阶段（通常由框架内部调用）。",
+                code: "lifecycleManager.setPhase(LifecyclePhase.Running);",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[Application (应用核心)](/docs/core/application)",
+              "[优雅关闭](/docs/features/shutdown)",
+            ],
+          },
+        ],
+      },
+    ],
+  };
 
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                getPhase()
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              获取当前生命周期阶段。
-            </p>
-            <CodeBlock
-              code={`const phase = lifecycleManager.getPhase();
-console.log("当前阶段:", phase);`}
-              language="typescript"
-            />
-          </div>
-
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                setPhase(phase)
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              设置生命周期阶段（通常由框架内部调用）。
-            </p>
-            <CodeBlock
-              code={`lifecycleManager.setPhase(LifecyclePhase.Running);`}
-              language="typescript"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/core/application"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Application (应用核心)
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/features/shutdown"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              优雅关闭
-            </a>
-          </li>
-        </ul>
-      </section>
-    </article>
+  return (
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

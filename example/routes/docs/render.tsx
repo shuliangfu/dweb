@@ -3,7 +3,7 @@
  * 展示 DWeb 框架的渲染适配器系统功能和使用方法
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -112,183 +112,152 @@ Preact 是框架的默认渲染引擎，轻量级且性能优秀。
 
 使用 Vue 3 作为渲染引擎。`;
 
-  return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        渲染适配器系统
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb
-        框架支持多种渲染引擎，通过统一的渲染适配器接口抽象不同渲染引擎的差异。
-      </p>
-
-      {/* 概述 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          概述
-        </h2>
-        <CodeBlock code={overviewCode} language="text" />
-      </section>
-
-      {/* 支持的渲染引擎 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          支持的渲染引擎
-        </h2>
-        <CodeBlock code={enginesCode} language="text" />
-      </section>
-
-      {/* 快速开始 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          快速开始
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          使用默认引擎（Preact）
-        </h3>
-        <CodeBlock code={defaultEngineCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          切换渲染引擎
-        </h3>
-        <CodeBlock code={switchEngineCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          在配置文件中指定
-        </h3>
-        <CodeBlock code={configCode} language="typescript" />
-      </section>
-
-      {/* 渲染适配器接口 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          渲染适配器接口
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          所有渲染适配器都实现{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            RenderAdapter
-          </code>{" "}
-          接口：
-        </p>
-        <CodeBlock code={adapterInterfaceCode} language="typescript" />
-      </section>
-
-      {/* 渲染适配器管理器 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          渲染适配器管理器
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            RenderAdapterManager
-          </code>{" "}
-          负责管理多个渲染适配器：
-        </p>
-        <CodeBlock code={managerCode} language="typescript" />
-      </section>
-
-      {/* 在 RouteHandler 中使用 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          在 RouteHandler 中使用
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            RouteHandler
-          </code>{" "}
-          内部使用渲染适配器进行页面渲染：
-        </p>
-        <CodeBlock
-          code={`// 框架内部使用
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "渲染适配器系统",
+    description: "DWeb 框架支持多种渲染引擎，通过统一的渲染适配器接口抽象不同渲染引擎的差异。",
+    sections: [
+      {
+        title: "概述",
+        blocks: [
+          {
+            type: "code",
+            code: overviewCode,
+            language: "text",
+          },
+        ],
+      },
+      {
+        title: "支持的渲染引擎",
+        blocks: [
+          {
+            type: "code",
+            code: enginesCode,
+            language: "text",
+          },
+        ],
+      },
+      {
+        title: "快速开始",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "使用默认引擎（Preact）",
+            blocks: [
+              {
+                type: "code",
+                code: defaultEngineCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "切换渲染引擎",
+            blocks: [
+              {
+                type: "code",
+                code: switchEngineCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "在配置文件中指定",
+            blocks: [
+              {
+                type: "code",
+                code: configCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "渲染适配器接口",
+        blocks: [
+          {
+            type: "text",
+            content: "所有渲染适配器都实现 `RenderAdapter` 接口：",
+          },
+          {
+            type: "code",
+            code: adapterInterfaceCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "渲染适配器管理器",
+        blocks: [
+          {
+            type: "text",
+            content: "`RenderAdapterManager` 负责管理多个渲染适配器：",
+          },
+          {
+            type: "code",
+            code: managerCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "在 RouteHandler 中使用",
+        blocks: [
+          {
+            type: "text",
+            content: "`RouteHandler` 内部使用渲染适配器进行页面渲染：",
+          },
+          {
+            type: "code",
+            code: `// 框架内部使用
 const adapter = app.getRenderAdapter();
 const vnode = adapter.createElement(PageComponent, pageProps);
-const html = await adapter.renderToString(vnode);`}
-          language="typescript"
-        />
-      </section>
+const html = await adapter.renderToString(vnode);`,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "文档导航",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[渲染适配器接口](/docs/render/adapter) - RenderAdapter 接口说明",
+              "[Preact 适配器](/docs/render/preact) - Preact 渲染适配器",
+              "[React 适配器](/docs/render/react) - React 渲染适配器",
+              "[Vue 3 适配器](/docs/render/vue3) - Vue 3 渲染适配器",
+              "[适配器管理器](/docs/render/manager) - RenderAdapterManager 使用指南",
+            ],
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[应用核心类](/docs/core/application) - Application 类的使用",
+              "[路由处理器](/docs/core/route-handler) - 路由处理逻辑",
+            ],
+          },
+        ],
+      },
+    ],
+  };
 
-      {/* 文档导航 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          文档导航
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/render/adapter"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              渲染适配器接口
-            </a>{" "}
-            - RenderAdapter 接口说明
-          </li>
-          <li>
-            <a
-              href="/docs/render/preact"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Preact 适配器
-            </a>{" "}
-            - Preact 渲染适配器
-          </li>
-          <li>
-            <a
-              href="/docs/render/react"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              React 适配器
-            </a>{" "}
-            - React 渲染适配器
-          </li>
-          <li>
-            <a
-              href="/docs/render/vue3"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Vue 3 适配器
-            </a>{" "}
-            - Vue 3 渲染适配器
-          </li>
-          <li>
-            <a
-              href="/docs/render/manager"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              适配器管理器
-            </a>{" "}
-            - RenderAdapterManager 使用指南
-          </li>
-        </ul>
-      </section>
-
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/core/application"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              应用核心类
-            </a>{" "}
-            - Application 类的使用
-          </li>
-          <li>
-            <a
-              href="/docs/core/route-handler"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              路由处理器
-            </a>{" "}
-            - 路由处理逻辑
-          </li>
-        </ul>
-      </section>
-    </article>
+  return (
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

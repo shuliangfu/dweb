@@ -12,12 +12,10 @@ export {
   formatRelativeTime,
   formatText,
 } from "./format.ts";
+export * from "./file.ts";
 export * from "./http.ts";
-// LRU 缓存已移动到 src/core/cache/lru.ts
 export * from "./math.ts";
-export * from "./path.ts";
 export * from "./performance.ts";
-export * from "./router-radix-tree.ts";
 export * from "./storage.ts";
 export * from "./string.ts";
 export * from "./time.ts";

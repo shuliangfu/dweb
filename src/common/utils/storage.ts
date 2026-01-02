@@ -7,6 +7,8 @@
  * - 服务端：在服务端环境会静默失败或返回默认值（不会抛出错误）
  */
 
+import { IS_CLIENT } from "../constants.ts";
+
 /**
  * 存储类型
  */
@@ -70,6 +72,9 @@ export function setStorage(
   value: unknown,
   type: StorageType = "localStorage",
 ): boolean {
+  if (!IS_CLIENT) {
+    throw new Error("setStorage 只能在客户端环境使用");
+  }
   const storage = getStorageObject(type);
   if (!storage) {
     return false;
@@ -107,6 +112,9 @@ export function getStorage<T = unknown>(
   key: string,
   type: StorageType = "localStorage",
 ): T | undefined {
+  if (!IS_CLIENT) {
+    throw new Error("getStorage 只能在客户端环境使用");
+  }
   const storage = getStorageObject(type);
   if (!storage) {
     return undefined;
@@ -151,6 +159,9 @@ export function removeStorage(
   key: string,
   type: StorageType = "localStorage",
 ): boolean {
+  if (!IS_CLIENT) {
+    throw new Error("removeStorage 只能在客户端环境使用");
+  }
   const storage = getStorageObject(type);
   if (!storage) {
     return false;
@@ -179,6 +190,9 @@ export function removeStorage(
  * ```
  */
 export function clearStorage(type: StorageType = "localStorage"): boolean {
+  if (!IS_CLIENT) {
+    throw new Error("clearStorage 只能在客户端环境使用");
+  }
   const storage = getStorageObject(type);
   if (!storage) {
     return false;
@@ -211,6 +225,9 @@ export function hasStorage(
   key: string,
   type: StorageType = "localStorage",
 ): boolean {
+  if (!IS_CLIENT) {
+    throw new Error("hasStorage 只能在客户端环境使用");
+  }
   const storage = getStorageObject(type);
   if (!storage) {
     return false;
@@ -236,6 +253,9 @@ export function hasStorage(
  * ```
  */
 export function getStorageKeys(type: StorageType = "localStorage"): string[] {
+  if (!IS_CLIENT) {
+    throw new Error("getStorageKeys 只能在客户端环境使用");
+  }
   const storage = getStorageObject(type);
   if (!storage) {
     return [];
@@ -280,6 +300,9 @@ export function setStorageWithExpiry(
   ttl: number,
   type: StorageType = "localStorage",
 ): boolean {
+  if (!IS_CLIENT) {
+    throw new Error("setStorageWithExpiry 只能在客户端环境使用");
+  }
   const storage = getStorageObject(type);
   if (!storage) {
     return false;
@@ -318,6 +341,9 @@ export function getStorageWithExpiry<T = unknown>(
   key: string,
   type: StorageType = "localStorage",
 ): T | undefined {
+  if (!IS_CLIENT) {
+    throw new Error("getStorageWithExpiry 只能在客户端环境使用");
+  }
   return getStorage<T>(key, type);
 }
 
@@ -339,6 +365,9 @@ export function getStorageSize(
   key: string,
   type: StorageType = "localStorage",
 ): number {
+  if (!IS_CLIENT) {
+    throw new Error("getStorageSize 只能在客户端环境使用");
+  }
   const storage = getStorageObject(type);
   if (!storage) {
     return 0;
@@ -372,6 +401,9 @@ export function getStorageSize(
 export function getTotalStorageSize(
   type: StorageType = "localStorage",
 ): number {
+  if (!IS_CLIENT) {
+    throw new Error("getTotalStorageSize 只能在客户端环境使用");
+  }
   const storage = getStorageObject(type);
   if (!storage) {
     return 0;

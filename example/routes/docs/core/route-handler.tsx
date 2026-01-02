@@ -3,7 +3,7 @@
  * 展示 DWeb 框架的路由处理器功能和使用方法
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -74,239 +74,174 @@ export default {
   },
 };`;
 
-  return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        RouteHandler (路由处理器)
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 框架的路由处理器，负责处理页面路由、API 路由、模块请求等。
-      </p>
-
-      {/* 功能概述 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          功能概述
-        </h2>
-        <CodeBlock code={overviewCode} language="text" />
-      </section>
-
-      {/* 基本使用 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          基本使用
-        </h2>
-        <CodeBlock code={basicUsageCode} language="typescript" />
-        <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-600 p-4 my-4 rounded">
-          <p className="text-blue-800 dark:text-blue-200 text-sm">
-            <strong>注意：</strong>
-            <code className="bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded">
-              RouteHandler
-            </code>{" "}
-            通常由{" "}
-            <code className="bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded">
-              Application
-            </code>{" "}
-            类内部使用，
-            不需要手动创建。如果需要自定义路由处理逻辑，可以通过中间件或插件来实现。
-          </p>
-        </div>
-      </section>
-
-      {/* 处理流程 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          处理流程
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          页面路由处理
-        </h3>
-        <CodeBlock code={pageRouteFlowCode} language="text" />
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-600 p-4 my-4 rounded">
-          <p className="text-yellow-800 dark:text-yellow-200 text-sm font-semibold mb-2">
-            ⚠️ 重要提示：
-          </p>
-          <CodeBlock code={importantNoteCode} language="text" />
-        </div>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          API 路由处理
-        </h3>
-        <CodeBlock code={apiRouteFlowCode} language="text" />
-      </section>
-
-      {/* 资源预加载 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          资源预加载
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          资源预加载（Prefetch）可以在用户访问前提前加载路由组件，提升用户体验。
-        </p>
-        <CodeBlock code={prefetchCode} language="typescript" />
-        <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-600 p-4 my-4 rounded">
-          <p className="text-blue-800 dark:text-blue-200 text-sm">
-            <strong>配置说明：</strong>
-          </p>
-          <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-200 text-sm mt-2">
-            <li>
-              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
-                routes
-              </code>：支持通配符模式（<code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
-                *
-              </code>）和否定模式（<code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
-                !
-              </code>）
-            </li>
-            <li>
-              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
-                mode
-              </code>：<code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
-                single
-              </code>（逐个请求）或{" "}
-              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
-                batch
-              </code>（批量请求，默认）
-            </li>
-            <li>
-              <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
-                loading
-              </code>：是否在预加载时显示全屏加载状态
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      {/* API 参考 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          API 参考
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          构造函数
-        </h3>
-        <CodeBlock
-          code={`constructor(
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "RouteHandler (路由处理器)",
+    description: "DWeb 框架的路由处理器，负责处理页面路由、API 路由、模块请求等。",
+    sections: [
+      {
+        title: "功能概述",
+        blocks: [
+          {
+            type: "code",
+            code: overviewCode,
+            language: "text",
+          },
+        ],
+      },
+      {
+        title: "基本使用",
+        blocks: [
+          {
+            type: "code",
+            code: basicUsageCode,
+            language: "typescript",
+          },
+          {
+            type: "alert",
+            level: "info",
+            content: [
+              "**注意：** `RouteHandler` 通常由 `Application` 类内部使用，不需要手动创建。如果需要自定义路由处理逻辑，可以通过中间件或插件来实现。",
+            ],
+          },
+        ],
+      },
+      {
+        title: "处理流程",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "页面路由处理",
+            blocks: [
+              {
+                type: "code",
+                code: pageRouteFlowCode,
+                language: "text",
+              },
+              {
+                type: "alert",
+                level: "warning",
+                content: [
+                  "**⚠️ 重要提示：**",
+                  importantNoteCode,
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "API 路由处理",
+            blocks: [
+              {
+                type: "code",
+                code: apiRouteFlowCode,
+                language: "text",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "资源预加载",
+        blocks: [
+          {
+            type: "text",
+            content: "资源预加载（Prefetch）可以在用户访问前提前加载路由组件，提升用户体验。",
+          },
+          {
+            type: "code",
+            code: prefetchCode,
+            language: "typescript",
+          },
+          {
+            type: "alert",
+            level: "info",
+            content: [
+              "**配置说明：**",
+              "**`routes`**：支持通配符模式（`*`）和否定模式（`!`）",
+              "**`mode`**：`single`（逐个请求）或 `batch`（批量请求，默认）",
+              "**`loading`**：是否在预加载时显示全屏加载状态",
+            ],
+          },
+        ],
+      },
+      {
+        title: "API 参考",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "构造函数",
+            blocks: [
+              {
+                type: "code",
+                code: `constructor(
   router: Router,
   cookieManager?: CookieManager,
   sessionManager?: SessionManager,
   config?: AppConfig,
   graphqlServer?: GraphQLServer
-)`}
-          language="typescript"
-        />
+)`,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "主要方法",
+            blocks: [
+              {
+                type: "api",
+                name: "handle(req, res)",
+                description: "处理请求的统一入口。",
+                code: "await routeHandler.handle(req, res);",
+              },
+              {
+                type: "api",
+                name: "handlePageRoute(routeInfo, req, res)",
+                description: "处理页面路由。",
+                code: "await routeHandler.handlePageRoute(routeInfo, req, res);",
+              },
+              {
+                type: "api",
+                name: "handleApiRoute(routeInfo, req, res)",
+                description: "处理 API 路由。",
+                code: "await routeHandler.handleApiRoute(routeInfo, req, res);",
+              },
+              {
+                type: "api",
+                name: "handleModuleRequest(req, res)",
+                description: "处理模块请求（`/__modules/`）。",
+                code: "await routeHandler.handleModuleRequest(req, res);",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[服务器 (Server)](/docs/core/server)",
+              "[路由系统 (Router)](/docs/core/router)",
+              "[API 路由](/docs/core/api)",
+              "[热模块替换 (HMR)](/docs/features/hmr)",
+            ],
+          },
+        ],
+      },
+    ],
+  };
 
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          主要方法
-        </h3>
-
-        <div className="space-y-6">
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                handle(req, res)
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              处理请求的统一入口。
-            </p>
-            <CodeBlock
-              code={`await routeHandler.handle(req, res);`}
-              language="typescript"
-            />
-          </div>
-
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                handlePageRoute(routeInfo, req, res)
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              处理页面路由。
-            </p>
-            <CodeBlock
-              code={`await routeHandler.handlePageRoute(routeInfo, req, res);`}
-              language="typescript"
-            />
-          </div>
-
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                handleApiRoute(routeInfo, req, res)
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              处理 API 路由。
-            </p>
-            <CodeBlock
-              code={`await routeHandler.handleApiRoute(routeInfo, req, res);`}
-              language="typescript"
-            />
-          </div>
-
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                handleModuleRequest(req, res)
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              处理模块请求（<code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                /__modules/
-              </code>）。
-            </p>
-            <CodeBlock
-              code={`await routeHandler.handleModuleRequest(req, res);`}
-              language="typescript"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/core/server"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              服务器 (Server)
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/core/router"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              路由系统 (Router)
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/core/api"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              API 路由
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/features/hmr"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              热模块替换 (HMR)
-            </a>
-          </li>
-        </ul>
-      </section>
-    </article>
+  return (
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

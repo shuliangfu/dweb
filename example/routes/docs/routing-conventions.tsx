@@ -3,7 +3,7 @@
  * 展示 DWeb 框架的路由约定文件使用方法
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -191,85 +191,39 @@ export default function ErrorPage({ error }: ErrorProps) {
   );
 }`;
 
-  return (
-    <article className="prose dark:prose-invert max-w-none">
-      <h1>路由约定文件</h1>
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "路由约定文件",
+    description: "DWeb 框架使用文件系统路由，并支持以 `_` 开头的特殊约定文件。这些文件具有特殊的功能，用于定义布局、中间件、错误页面等。",
+    sections: [
+      {
+        title: "约定文件概览",
+        blocks: [
+          {
+            type: "text",
+            content: "DWeb 框架支持以下约定文件：",
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "**`_app.tsx`** - 应用组件，✅ 必需，根应用组件，包裹所有页面",
+              "**`_layout.tsx`** - 布局组件，❌ 可选，布局组件，支持继承",
+              "**`_middleware.ts`** - 中间件，❌ 可选，路由级中间件",
+              "**`_404.tsx`** - 错误页面，❌ 可选，404 页面未找到",
+              "**`_error.tsx`** - 错误页面，❌ 可选，通用错误页面",
+              "**`_500.tsx`** - 错误页面，❌ 可选，500 服务器错误",
+            ],
+          },
+        ],
+      },
 
-      <p>
-        DWeb 框架使用文件系统路由，并支持以 <code>_</code>{" "}
-        开头的特殊约定文件。这些文件具有特殊的功能，用于定义布局、中间件、错误页面等。
-      </p>
-
-      <h2>约定文件概览</h2>
-
-      <p>DWeb 框架支持以下约定文件：</p>
-
-      <table>
-        <thead>
-          <tr>
-            <th>文件名</th>
-            <th>类型</th>
-            <th>必需</th>
-            <th>说明</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>
-              <code>_app.tsx</code>
-            </td>
-            <td>应用组件</td>
-            <td>✅ 必需</td>
-            <td>根应用组件，包裹所有页面</td>
-          </tr>
-          <tr>
-            <td>
-              <code>_layout.tsx</code>
-            </td>
-            <td>布局组件</td>
-            <td>❌ 可选</td>
-            <td>布局组件，支持继承</td>
-          </tr>
-          <tr>
-            <td>
-              <code>_middleware.ts</code>
-            </td>
-            <td>中间件</td>
-            <td>❌ 可选</td>
-            <td>路由级中间件</td>
-          </tr>
-          <tr>
-            <td>
-              <code>_404.tsx</code>
-            </td>
-            <td>错误页面</td>
-            <td>❌ 可选</td>
-            <td>404 页面未找到</td>
-          </tr>
-          <tr>
-            <td>
-              <code>_error.tsx</code>
-            </td>
-            <td>错误页面</td>
-            <td>❌ 可选</td>
-            <td>通用错误页面</td>
-          </tr>
-          <tr>
-            <td>
-              <code>_500.tsx</code>
-            </td>
-            <td>错误页面</td>
-            <td>❌ 可选</td>
-            <td>500 服务器错误</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <h2>文件结构示例</h2>
-
-      <CodeBlock
-        language="text"
-        code={`routes/
+      {
+        title: "文件结构示例",
+        blocks: [
+          {
+            type: "code",
+            code: `routes/
 ├── _app.tsx              # 根应用组件（必需）
 ├── _layout.tsx            # 根布局（可选）
 ├── _middleware.ts         # 根中间件（可选）
@@ -284,439 +238,602 @@ export default function ErrorPage({ error }: ErrorProps) {
 │   ├── index.tsx           # /users
 │   └── [id].tsx            # /users/:id
 └── api/
-    └── _middleware.ts      # API 中间件（应用到 /api 下的所有路由）`}
-      />
+    └── _middleware.ts      # API 中间件（应用到 /api 下的所有路由）`,
+            language: "text",
+          },
+        ],
+      },
+      {
+        title: "_app.tsx - 根应用组件",
+        blocks: [
+          {
+            type: "text",
+            content: "`_app.tsx` 是框架**必需**的文件，用于提供完整的 HTML 文档结构，包裹所有页面内容。",
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "位置",
+            blocks: [
+              {
+                type: "text",
+                content: "必须放在 `routes` 目录的根目录下：",
+              },
+              {
+                type: "code",
+                code: `routes/
+└── _app.tsx  ✅ 正确`,
+                language: "text",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "基本结构",
+            blocks: [
+              {
+                type: "code",
+                code: appCode,
+                language: "tsx",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "重要说明",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**必需文件**：`_app.tsx` 是框架必需的文件，如果不存在会导致应用无法启动",
+                  "**HTML 结构**：必须包含完整的 HTML 文档结构（`<html>`、`<head>`、`<body>`）",
+                  "**children 属性**：接收已渲染的页面 HTML 字符串",
+                  "**自动注入**：框架会自动注入客户端脚本、HMR 脚本等，无需手动添加",
+                ],
+              },
+            ],
+          },
+        ],
+      },
 
-      <h2>_app.tsx - 根应用组件</h2>
-
-      <p>
-        <code>_app.tsx</code>{" "}
-        是框架<strong>必需</strong>的文件，用于提供完整的 HTML
-        文档结构，包裹所有页面内容。
-      </p>
-
-      <h3>位置</h3>
-
-      <p>
-        必须放在 <code>routes</code> 目录的根目录下：
-      </p>
-
-      <CodeBlock
-        language="text"
-        code={`routes/
-└── _app.tsx  ✅ 正确`}
-      />
-
-      <h3>基本结构</h3>
-
-      <CodeBlock language="tsx" code={appCode} />
-
-      <h3>重要说明</h3>
-
-      <ul>
-        <li>
-          <strong>必需文件</strong>：<code>_app.tsx</code>{" "}
-          是框架必需的文件，如果不存在会导致应用无法启动
-        </li>
-        <li>
-          <strong>HTML 结构</strong>：必须包含完整的 HTML 文档结构（<code>
-            &lt;html&gt;
-          </code>、<code>&lt;head&gt;</code>、<code>&lt;body&gt;</code>）
-        </li>
-        <li>
-          <strong>children 属性</strong>：接收已渲染的页面 HTML 字符串
-        </li>
-        <li>
-          <strong>自动注入</strong>：框架会自动注入客户端脚本、HMR
-          脚本等，无需手动添加
-        </li>
-      </ul>
-
-      <h2>_layout.tsx - 布局组件</h2>
-
-      <p>
-        <code>_layout.tsx</code> 用于定义页面布局，支持布局继承。详细说明请参考
-        {" "}
-        <a href="/docs/layout">布局系统文档</a>。
-      </p>
-
-      <h3>位置</h3>
-
-      <p>可以放在任何目录下：</p>
-
-      <CodeBlock
-        language="text"
-        code={`routes/
+      {
+        title: "_layout.tsx - 布局组件",
+        blocks: [
+          {
+            type: "text",
+            content: "`_layout.tsx` 用于定义页面布局，支持布局继承。详细说明请参考 [布局系统文档](/docs/layout)。",
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "位置",
+            blocks: [
+              {
+                type: "text",
+                content: "可以放在任何目录下：",
+              },
+              {
+                type: "code",
+                code: `routes/
 ├── _layout.tsx            # 根布局（应用到所有页面）
 └── docs/
-    └── _layout.tsx        # 文档布局（应用到 /docs 下的所有页面）`}
-      />
+    └── _layout.tsx        # 文档布局（应用到 /docs 下的所有页面）`,
+                language: "text",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "基本结构",
+            blocks: [
+              {
+                type: "code",
+                code: layoutCode,
+                language: "tsx",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "⚠️ 重要限制：布局组件不能是异步函数",
+            blocks: [
+              {
+                type: "text",
+                content: "**布局组件不能定义为 `async function`**。如果需要进行异步操作（如数据获取），请在组件内部使用 `useEffect` 钩子处理。",
+              },
+            ],
+          },
+        ],
+      },
 
-      <h3>基本结构</h3>
-
-      <CodeBlock language="tsx" code={layoutCode} />
-
-      <h3>⚠️ 重要限制：布局组件不能是异步函数</h3>
-
-      <p>
-        <strong>
-          布局组件不能定义为 <code>async function</code>
-        </strong>。如果需要进行异步操作（如数据获取），请在组件内部使用{" "}
-        <code>useEffect</code> 钩子处理。
-      </p>
-
-      <h2>_middleware.ts - 路由中间件</h2>
-
-      <p>
-        <code>_middleware.ts</code>{" "}
-        用于定义路由级中间件，可以为特定路径及其子路径应用中间件逻辑。详细说明请参考
-        {" "}
-        <a href="/docs/middleware/route-middleware">路由级中间件文档</a>。
-      </p>
-
-      <h3>位置</h3>
-
-      <p>可以放在任何目录下：</p>
-
-      <CodeBlock
-        language="text"
-        code={`routes/
+      {
+        title: "_middleware.ts - 路由中间件",
+        blocks: [
+          {
+            type: "text",
+            content: "`_middleware.ts` 用于定义路由级中间件，可以为特定路径及其子路径应用中间件逻辑。详细说明请参考 [路由级中间件文档](/docs/middleware/route-middleware)。",
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "位置",
+            blocks: [
+              {
+                type: "text",
+                content: "可以放在任何目录下：",
+              },
+              {
+                type: "code",
+                code: `routes/
 ├── _middleware.ts          # 根中间件（应用到所有路由）
 └── api/
-    └── _middleware.ts      # API 中间件（应用到 /api 下的所有路由）`}
-      />
-
-      <h3>基本结构</h3>
-
-      <h4>单个中间件</h4>
-
-      <CodeBlock language="tsx" code={middlewareCode} />
-
-      <h4>多个中间件</h4>
-
-      <CodeBlock language="tsx" code={multipleMiddlewareCode} />
-
-      <h3>中间件继承</h3>
-
-      <p>中间件会按照路径层级从根到具体路径依次执行：</p>
-
-      <ul>
-        <li>
-          访问 <code>/api/users</code> 时：
-          <ol>
-            <li>
-              <code>routes/_middleware.ts</code>（根中间件）
-            </li>
-            <li>
-              <code>routes/api/_middleware.ts</code>（API 中间件）
-            </li>
-          </ol>
-        </li>
-      </ul>
-
-      <h2>页面组件</h2>
-
-      <p>
-        页面组件是路由目录中的普通文件（如 <code>index.tsx</code>、<code>
-          about.tsx
-        </code>），用于定义页面的内容和逻辑。
-      </p>
-
-      <h3>基本结构</h3>
-
-      <CodeBlock language="tsx" code={pageComponentCode} />
-
-      <h3>⚠️ 重要限制：页面组件不能是异步函数</h3>
-
-      <p>
-        <strong>
-          页面组件不能定义为 <code>async function</code>
-        </strong>。如果需要进行异步操作（如数据获取），请在组件内部使用{" "}
-        <code>useEffect</code> 钩子处理，或者使用 <code>load</code>{" "}
-        函数在服务端获取数据。
-      </p>
-
-      <h4>✅ 正确示例：使用 load 函数在服务端获取数据</h4>
-
-      <CodeBlock language="tsx" code={loadFunctionCode} />
-
-      <h3>页面组件 Props</h3>
-
-      <p>页面组件接收以下 props：</p>
-
-      <ul>
-        <li>
-          <code>params</code>: 路由参数（如 <code>/users/:id</code> 中的{" "}
-          <code>id</code>）
-        </li>
-        <li>
-          <code>query</code>: 查询参数（URL 中的 <code>?key=value</code>）
-        </li>
-        <li>
-          <code>data</code>: <code>load</code> 函数返回的数据
-        </li>
-        <li>
-          <code>lang</code>: 当前语言代码（如果配置了 i18n 插件）
-        </li>
-        <li>
-          <code>store</code>: 状态管理 Store（如果配置了 store 插件）
-        </li>
-        <li>
-          <code>metadata</code>: 页面元数据
-        </li>
-        <li>
-          <code>routePath</code>: 当前路由路径
-        </li>
-        <li>
-          <code>url</code>: URL 对象
-        </li>
-      </ul>
-
-      <h2>_404.tsx - 404 错误页面</h2>
-
-      <p>
-        <code>_404.tsx</code> 用于定义 404 页面未找到时的错误页面。
-      </p>
-
-      <h3>位置</h3>
-
-      <p>
-        必须放在 <code>routes</code> 目录的根目录下：
-      </p>
-
-      <CodeBlock
-        language="text"
-        code={`routes/
-└── _404.tsx  ✅ 正确`}
-      />
-
-      <h3>基本结构</h3>
-
-      <CodeBlock language="tsx" code={notFoundCode} />
-
-      <h3>使用说明</h3>
-
-      <ul>
-        <li>
-          <strong>自动触发</strong>：当访问不存在的路由时，框架会自动使用{" "}
-          <code>_404.tsx</code> 渲染 404 页面
-        </li>
-        <li>
-          <strong>状态码</strong>：框架会自动设置响应状态码为 404
-        </li>
-        <li>
-          <strong>SEO</strong>：建议设置{" "}
-          <code>metadata.robots = false</code>，避免搜索引擎索引 404 页面
-        </li>
-      </ul>
-
-      <h2>_error.tsx - 通用错误页面</h2>
-
-      <p>
-        <code>_error.tsx</code>{" "}
-        用于定义通用错误页面，处理服务器错误、渲染错误等。
-      </p>
-
-      <h3>位置</h3>
-
-      <p>
-        必须放在 <code>routes</code> 目录的根目录下：
-      </p>
-
-      <CodeBlock
-        language="text"
-        code={`routes/
-└── _error.tsx  ✅ 正确`}
-      />
-
-      <h3>基本结构</h3>
-
-      <CodeBlock language="tsx" code={errorCode} />
-
-      <h3>使用说明</h3>
-
-      <ul>
-        <li>
-          <strong>
-            自动触发
-          </strong>：当发生服务器错误、渲染错误等时，框架会自动使用{" "}
-          <code>_error.tsx</code> 渲染错误页面
-        </li>
-        <li>
-          <strong>错误信息</strong>：组件会接收 <code>error</code>{" "}
-          属性，包含错误信息
-        </li>
-        <li>
-          <strong>状态码</strong>：框架会根据错误类型自动设置响应状态码（通常是
-          500）
-        </li>
-      </ul>
-
-      <h2>错误页面优先级</h2>
-
-      <p>当发生错误时，框架会按以下优先级选择错误页面：</p>
-
-      <ol>
-        <li>
-          <code>_500.tsx</code> - 专门处理 500 错误
-        </li>
-        <li>
-          <code>_error.tsx</code> - 处理其他错误
-        </li>
-        <li>
-          <code>_404.tsx</code> - 处理 404 错误
-        </li>
-        <li>默认错误页面 - 如果以上都不存在</li>
-      </ol>
-
-      <h2>约定文件总结</h2>
-
-      <h3>必需文件</h3>
-
-      <ul>
-        <li>
-          ✅ <code>_app.tsx</code> - 根应用组件（必需）
-        </li>
-      </ul>
-
-      <h3>可选文件</h3>
-
-      <ul>
-        <li>
-          ❌ <code>_layout.tsx</code> - 布局组件（可选，支持继承）
-        </li>
-        <li>
-          ❌ <code>_middleware.ts</code> - 路由中间件（可选）
-        </li>
-        <li>
-          ❌ <code>_404.tsx</code> - 404 错误页面（可选）
-        </li>
-        <li>
-          ❌ <code>_error.tsx</code> - 通用错误页面（可选）
-        </li>
-        <li>
-          ❌ <code>_500.tsx</code> - 500 错误页面（可选）
-        </li>
-      </ul>
-
-      <h3>文件命名规则</h3>
-
-      <ul>
-        <li>
-          所有约定文件都以 <code>_</code> 下划线开头
-        </li>
-        <li>
-          支持 <code>.tsx</code> 和 <code>.ts</code>{" "}
-          扩展名（<code>_middleware.ts</code> 只支持 <code>.ts</code>）
-        </li>
-        <li>文件名必须完全匹配（区分大小写）</li>
-      </ul>
-
-      <h2>最佳实践</h2>
-
-      <h3>1. 保持 _app.tsx 简洁</h3>
-
-      <p>
-        <code>_app.tsx</code>{" "}
-        应该只包含 HTML 文档结构，业务逻辑应该放在布局或页面组件中。
-      </p>
-
-      <h3>2. 合理使用布局继承</h3>
-
-      <ul>
-        <li>使用根布局提供全局结构</li>
-        <li>使用子布局提供特定区域的布局</li>
-        <li>
-          在需要完全独立布局时使用 <code>layout = false</code>
-        </li>
-      </ul>
-
-      <h3>3. 中间件职责分离</h3>
-
-      <ul>
-        <li>使用全局中间件处理通用功能（CORS、压缩等）</li>
-        <li>使用路由中间件处理路径特定的逻辑（认证、日志等）</li>
-      </ul>
-
-      <h3>4. 错误页面友好</h3>
-
-      <ul>
-        <li>提供清晰的错误信息</li>
-        <li>提供返回首页或相关页面的链接</li>
-        <li>
-          设置合适的 SEO 元数据（<code>robots: false</code>）
-        </li>
-      </ul>
-
-      <h2>常见问题</h2>
-
-      <h3>Q: 可以创建多个 _app.tsx 吗？</h3>
-
-      <p>
-        A: 不可以。<code>_app.tsx</code> 只能有一个，必须放在{" "}
-        <code>routes/</code> 根目录。
-      </p>
-
-      <h3>Q: _layout.tsx 和 _app.tsx 的区别是什么？</h3>
-
-      <p>A:</p>
-
-      <ul>
-        <li>
-          <code>_app.tsx</code>：提供 HTML 文档结构（<code>
-            &lt;html&gt;
-          </code>、<code>&lt;head&gt;</code>、<code>&lt;body&gt;</code>），必需
-        </li>
-        <li>
-          <code>
-            _layout.tsx
-          </code>：提供页面布局结构（导航、侧边栏等），可选，支持继承
-        </li>
-      </ul>
-
-      <h3>Q: 中间件和布局的执行顺序是什么？</h3>
-
-      <p>A:</p>
-
-      <ol>
-        <li>
-          全局中间件（<code>server.use()</code>）
-        </li>
-        <li>路由中间件（从根到具体路径）</li>
-        <li>布局组件（从最具体到最通用）</li>
-        <li>页面组件</li>
-      </ol>
-
-      <h3>Q: 错误页面可以访问错误信息吗？</h3>
-
-      <p>
-        A: 可以。错误页面组件会接收 <code>error</code> 属性，包含错误信息：
-      </p>
-
-      <CodeBlock
-        language="tsx"
-        code={`export default function ErrorPage({ error }: { error?: { message?: string } }) {
+    └── _middleware.ts      # API 中间件（应用到 /api 下的所有路由）`,
+                language: "text",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "基本结构",
+            blocks: [
+              {
+                type: "text",
+                content: "**单个中间件**",
+              },
+              {
+                type: "code",
+                code: middlewareCode,
+                language: "tsx",
+              },
+              {
+                type: "text",
+                content: "**多个中间件**",
+              },
+              {
+                type: "code",
+                code: multipleMiddlewareCode,
+                language: "tsx",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "中间件继承",
+            blocks: [
+              {
+                type: "text",
+                content: "中间件会按照路径层级从根到具体路径依次执行：",
+              },
+              {
+                type: "text",
+                content: "访问 `/api/users` 时：",
+              },
+              {
+                type: "list",
+                ordered: true,
+                items: [
+                  "`routes/_middleware.ts`（根中间件）",
+                  "`routes/api/_middleware.ts`（API 中间件）",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+
+      {
+        title: "页面组件",
+        blocks: [
+          {
+            type: "text",
+            content: "页面组件是路由目录中的普通文件（如 `index.tsx`、`about.tsx`），用于定义页面的内容和逻辑。",
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "基本结构",
+            blocks: [
+              {
+                type: "code",
+                code: pageComponentCode,
+                language: "tsx",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "⚠️ 重要限制：页面组件不能是异步函数",
+            blocks: [
+              {
+                type: "text",
+                content: "**页面组件不能定义为 `async function`**。如果需要进行异步操作（如数据获取），请在组件内部使用 `useEffect` 钩子处理，或者使用 `load` 函数在服务端获取数据。",
+              },
+              {
+                type: "text",
+                content: "**✅ 正确示例：使用 load 函数在服务端获取数据**",
+              },
+              {
+                type: "code",
+                code: loadFunctionCode,
+                language: "tsx",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "页面组件 Props",
+            blocks: [
+              {
+                type: "text",
+                content: "页面组件接收以下 props：",
+              },
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`params`**: 路由参数（如 `/users/:id` 中的 `id`）",
+                  "**`query`**: 查询参数（URL 中的 `?key=value`）",
+                  "**`data`**: `load` 函数返回的数据",
+                  "**`lang`**: 当前语言代码（如果配置了 i18n 插件）",
+                  "**`store`**: 状态管理 Store（如果配置了 store 插件）",
+                  "**`metadata`**: 页面元数据",
+                  "**`routePath`**: 当前路由路径",
+                  "**`url`**: URL 对象",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+
+      {
+        title: "_404.tsx - 404 错误页面",
+        blocks: [
+          {
+            type: "text",
+            content: "`_404.tsx` 用于定义 404 页面未找到时的错误页面。",
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "位置",
+            blocks: [
+              {
+                type: "text",
+                content: "必须放在 `routes` 目录的根目录下：",
+              },
+              {
+                type: "code",
+                code: `routes/
+└── _404.tsx  ✅ 正确`,
+                language: "text",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "基本结构",
+            blocks: [
+              {
+                type: "code",
+                code: notFoundCode,
+                language: "tsx",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "使用说明",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**自动触发**：当访问不存在的路由时，框架会自动使用 `_404.tsx` 渲染 404 页面",
+                  "**状态码**：框架会自动设置响应状态码为 404",
+                  "**SEO**：建议设置 `metadata.robots = false`，避免搜索引擎索引 404 页面",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "_error.tsx - 通用错误页面",
+        blocks: [
+          {
+            type: "text",
+            content: "`_error.tsx` 用于定义通用错误页面，处理服务器错误、渲染错误等。",
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "位置",
+            blocks: [
+              {
+                type: "text",
+                content: "必须放在 `routes` 目录的根目录下：",
+              },
+              {
+                type: "code",
+                code: `routes/
+└── _error.tsx  ✅ 正确`,
+                language: "text",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "基本结构",
+            blocks: [
+              {
+                type: "code",
+                code: errorCode,
+                language: "tsx",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "使用说明",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**自动触发**：当发生服务器错误、渲染错误等时，框架会自动使用 `_error.tsx` 渲染错误页面",
+                  "**错误信息**：组件会接收 `error` 属性，包含错误信息",
+                  "**状态码**：框架会根据错误类型自动设置响应状态码（通常是 500）",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "错误页面优先级",
+        blocks: [
+          {
+            type: "text",
+            content: "当发生错误时，框架会按以下优先级选择错误页面：",
+          },
+          {
+            type: "list",
+            ordered: true,
+            items: [
+              "`_500.tsx` - 专门处理 500 错误",
+              "`_error.tsx` - 处理其他错误",
+              "`_404.tsx` - 处理 404 错误",
+              "默认错误页面 - 如果以上都不存在",
+            ],
+          },
+        ],
+      },
+
+      {
+        title: "约定文件总结",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "必需文件",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "✅ **`_app.tsx`** - 根应用组件（必需）",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "可选文件",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "❌ **`_layout.tsx`** - 布局组件（可选，支持继承）",
+                  "❌ **`_middleware.ts`** - 路由中间件（可选）",
+                  "❌ **`_404.tsx`** - 404 错误页面（可选）",
+                  "❌ **`_error.tsx`** - 通用错误页面（可选）",
+                  "❌ **`_500.tsx`** - 500 错误页面（可选）",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "文件命名规则",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "所有约定文件都以 `_` 下划线开头",
+                  "支持 `.tsx` 和 `.ts` 扩展名（`_middleware.ts` 只支持 `.ts`）",
+                  "文件名必须完全匹配（区分大小写）",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "最佳实践",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "1. 保持 _app.tsx 简洁",
+            blocks: [
+              {
+                type: "text",
+                content: "`_app.tsx` 应该只包含 HTML 文档结构，业务逻辑应该放在布局或页面组件中。",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "2. 合理使用布局继承",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "使用根布局提供全局结构",
+                  "使用子布局提供特定区域的布局",
+                  "在需要完全独立布局时使用 `layout = false`",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "3. 中间件职责分离",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "使用全局中间件处理通用功能（CORS、压缩等）",
+                  "使用路由中间件处理路径特定的逻辑（认证、日志等）",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "4. 错误页面友好",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "提供清晰的错误信息",
+                  "提供返回首页或相关页面的链接",
+                  "设置合适的 SEO 元数据（`robots: false`）",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "常见问题",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "Q: 可以创建多个 _app.tsx 吗？",
+            blocks: [
+              {
+                type: "text",
+                content: "A: 不可以。`_app.tsx` 只能有一个，必须放在 `routes/` 根目录。",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "Q: _layout.tsx 和 _app.tsx 的区别是什么？",
+            blocks: [
+              {
+                type: "text",
+                content: "A:",
+              },
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`_app.tsx`**：提供 HTML 文档结构（`<html>`、`<head>`、`<body>`），必需",
+                  "**`_layout.tsx`**：提供页面布局结构（导航、侧边栏等），可选，支持继承",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "Q: 中间件和布局的执行顺序是什么？",
+            blocks: [
+              {
+                type: "text",
+                content: "A:",
+              },
+              {
+                type: "list",
+                ordered: true,
+                items: [
+                  "全局中间件（`server.use()`）",
+                  "路由中间件（从根到具体路径）",
+                  "布局组件（从最具体到最通用）",
+                  "页面组件",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "Q: 错误页面可以访问错误信息吗？",
+            blocks: [
+              {
+                type: "text",
+                content: "A: 可以。错误页面组件会接收 `error` 属性，包含错误信息：",
+              },
+              {
+                type: "code",
+                code: `export default function ErrorPage({ error }: { error?: { message?: string } }) {
   return <div>{error?.message || "未知错误"}</div>;
-}`}
-      />
+}`,
+                language: "tsx",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[路由系统](/docs/core/router) - 了解路由的基本概念",
+              "[布局系统](/docs/layout) - 了解布局继承的详细说明",
+              "[路由级中间件](/docs/middleware/route-middleware) - 了解中间件的详细说明",
+              "[配置](/docs/configuration) - 了解如何配置应用",
+            ],
+          },
+        ],
+      },
+    ],
+  };
 
-      <h2>相关文档</h2>
-
-      <ul>
-        <li>
-          <a href="/docs/core/router">路由系统</a> - 了解路由的基本概念
-        </li>
-        <li>
-          <a href="/docs/layout">布局系统</a> - 了解布局继承的详细说明
-        </li>
-        <li>
-          <a href="/docs/middleware/route-middleware">路由级中间件</a>{" "}
-          - 了解中间件的详细说明
-        </li>
-        <li>
-          <a href="/docs/configuration">配置</a> - 了解如何配置应用
-        </li>
-      </ul>
-    </article>
+  return (
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

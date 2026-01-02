@@ -3,8 +3,7 @@
  * 展示 DWeb 框架的 HMR 功能和使用方法
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
-import type { PageProps } from "@dreamer/dweb";
+import DocRenderer from "@components/DocRenderer.tsx";
 
 export const metadata = {
   title: "热模块替换 (HMR) - DWeb 框架文档",
@@ -12,9 +11,7 @@ export const metadata = {
     "DWeb 框架的热模块替换功能使用指南，在开发模式下自动监听文件变化并实时更新页面",
 };
 
-export default function FeaturesHmrPage(
-  { params: _params, query: _query, data: _data }: PageProps,
-) {
+export default function FeaturesHmrPage() {
   // 快速开始
   const quickStartCode = `# HMR 功能在开发模式下自动启用，无需额外配置
 deno task dev
@@ -102,88 +99,89 @@ export default function Home() {
 // 4. 客户端接收更新并替换组件
 // 5. 保持组件状态（count 的值不会丢失）`;
 
+  const content = {
+    title: "热模块替换 (HMR)",
+    description: "DWeb 框架提供了强大的热模块替换（HMR）功能，在开发模式下自动监听文件变化并实时更新页面，无需手动刷新浏览器。",
+    sections: [
+      {
+        title: "快速开始",
+        blocks: [
+          {
+            type: "code",
+            code: quickStartCode,
+            language: "bash",
+          },
+        ],
+      },
+      {
+        title: "工作原理",
+        blocks: [
+          {
+            type: "code",
+            code: howItWorksCode,
+            language: "text",
+          },
+        ],
+      },
+      {
+        title: "配置选项",
+        blocks: [
+          {
+            type: "code",
+            code: configCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "文件监听范围",
+        blocks: [
+          {
+            type: "code",
+            code: watchScopeCode,
+            language: "text",
+          },
+        ],
+      },
+      {
+        title: "性能优化",
+        blocks: [
+          {
+            type: "code",
+            code: performanceCode,
+            language: "text",
+          },
+        ],
+      },
+      {
+        title: "使用示例",
+        blocks: [
+          {
+            type: "code",
+            code: exampleCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[开发服务器](/docs/features/dev)",
+              "[路由系统](/docs/core/router)",
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
   return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        热模块替换 (HMR)
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb
-        框架提供了强大的热模块替换（HMR）功能，在开发模式下自动监听文件变化并实时更新页面，无需手动刷新浏览器。
-      </p>
-
-      {/* 快速开始 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          快速开始
-        </h2>
-        <CodeBlock code={quickStartCode} language="bash" />
-      </section>
-
-      {/* 工作原理 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          工作原理
-        </h2>
-        <CodeBlock code={howItWorksCode} language="text" />
-      </section>
-
-      {/* 配置选项 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          配置选项
-        </h2>
-        <CodeBlock code={configCode} language="typescript" />
-      </section>
-
-      {/* 文件监听范围 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          文件监听范围
-        </h2>
-        <CodeBlock code={watchScopeCode} language="text" />
-      </section>
-
-      {/* 性能优化 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          性能优化
-        </h2>
-        <CodeBlock code={performanceCode} language="text" />
-      </section>
-
-      {/* 使用示例 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          使用示例
-        </h2>
-        <CodeBlock code={exampleCode} language="typescript" />
-      </section>
-
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/features/dev"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              开发服务器
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/core/router"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              路由系统
-            </a>
-          </li>
-        </ul>
-      </section>
-    </article>
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

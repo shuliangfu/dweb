@@ -2,7 +2,7 @@
  * 插件 - tailwind 文档页面
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -23,107 +23,75 @@ plugins: [
   }),
 ],`;
 
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "tailwind - Tailwind CSS 支持",
+    description: "tailwind 插件集成 Tailwind CSS，支持 V3 和 V4 版本。",
+    sections: [
+      {
+        title: "特性与优化",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "**智能回退机制**：优先尝试使用 Tailwind CLI（支持 v3 和 v4）进行编译，如果失败则自动回退到 PostCSS 处理，确保环境兼容性。",
+              "**自动化运维**：能够自动检测并下载所需的 Tailwind CLI 二进制文件，实现开箱即用，无需用户手动安装依赖。",
+              "**环境自适应优化**：",
+              "  - 开发环境：使用内存缓存 (Map) 存储编译结果，带 TTL 控制，实现毫秒级热更新。",
+              "  - 生产环境：在构建阶段编译 CSS 并输出文件，运行时自动注入 link 标签，实现最佳性能。",
+            ],
+          },
+        ],
+      },
+      {
+        title: "基本使用",
+        blocks: [
+          {
+            type: "code",
+            code: tailwindCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "配置选项",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "可选参数",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`version`** - Tailwind CSS 版本：'v3' | 'v4'（默认为 'v4'）",
+                  "**`cssPath`** - 主 CSS 文件路径（如 'assets/style.css'），用于开发环境实时编译。如果不指定，默认查找 'assets/style.css'",
+                  "**`cssFiles`** - CSS 文件路径（支持 glob 模式），用于构建时处理多个文件。默认为 'assets/**/*.css'",
+                  "**`exclude`** - 排除的文件（支持 glob 模式）",
+                  "**`content`** - 内容扫描路径（用于 Tailwind CSS 扫描项目文件）。默认为 `[\"./routes/**/*.{tsx,ts,jsx,js}\", \"./components/**/*.{tsx,ts,jsx,js}\"]`",
+                  "**`autoprefixer`** - v3 特定选项：Autoprefixer 配置对象，包含：",
+                  "  - `env` - Browserslist 环境",
+                  "  - `cascade` - 是否使用 Visual Cascade",
+                  "  - `add` - 是否添加前缀",
+                  "  - `remove` - 是否移除过时的前缀",
+                  "  - `flexbox` - 是否为 flexbox 属性添加前缀",
+                  "  - `grid` - 是否为 Grid Layout 属性添加前缀",
+                  "  - `overrideBrowserslist` - 目标浏览器查询列表",
+                  "**`optimize`** - v4 特定选项：是否优化（生产环境默认 true）",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
   return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        tailwind - Tailwind CSS 支持
-      </h1>
-      <p className="text-gray-700 leading-relaxed mb-8">
-        tailwind 插件集成 Tailwind CSS，支持 V3 和 V4 版本。
-      </p>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          特性与优化
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <strong>智能回退机制</strong>：
-            优先尝试使用 Tailwind CLI（支持 v3 和 v4）进行编译，如果失败则自动回退到 PostCSS 处理，确保环境兼容性。
-          </li>
-          <li>
-            <strong>自动化运维</strong>：
-            能够自动检测并下载所需的 Tailwind CLI 二进制文件，实现开箱即用，无需用户手动安装依赖。
-          </li>
-          <li>
-            <strong>环境自适应优化</strong>：
-            <ul>
-              <li className="ml-6 mt-1 text-sm">开发环境：使用内存缓存 (Map) 存储编译结果，带 TTL 控制，实现毫秒级热更新。</li>
-              <li className="ml-6 mt-1 text-sm">生产环境：在构建阶段编译 CSS 并输出文件，运行时自动注入 link 标签，实现最佳性能。</li>
-            </ul>
-          </li>
-        </ul>
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          基本使用
-        </h2>
-        <CodeBlock code={tailwindCode} language="typescript" />
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          配置选项
-        </h2>
-        
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
-          可选参数
-        </h3>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              version
-            </code>{" "}
-            - Tailwind CSS 版本：'v3' | 'v4'（默认为 'v4'）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              cssPath
-            </code>{" "}
-            - 主 CSS 文件路径（如 'assets/style.css'），用于开发环境实时编译。如果不指定，默认查找 'assets/style.css'
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              cssFiles
-            </code>{" "}
-            - CSS 文件路径（支持 glob 模式），用于构建时处理多个文件。默认为 'assets/**/*.css'
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              exclude
-            </code>{" "}
-            - 排除的文件（支持 glob 模式）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              content
-            </code>{" "}
-            - 内容扫描路径（用于 Tailwind CSS 扫描项目文件）。默认为 <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">["./routes/**/*.{`{`}tsx,ts,jsx,js{`}`}", "./components/**/*.{`{`}tsx,ts,jsx,js{`}`}"]</code>
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              autoprefixer
-            </code>{" "}
-            - v3 特定选项：Autoprefixer 配置对象，包含：
-            <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">env</code> - Browserslist 环境</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">cascade</code> - 是否使用 Visual Cascade</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">add</code> - 是否添加前缀</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">remove</code> - 是否移除过时的前缀</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">flexbox</code> - 是否为 flexbox 属性添加前缀</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">grid</code> - 是否为 Grid Layout 属性添加前缀</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">overrideBrowserslist</code> - 目标浏览器查询列表</li>
-            </ul>
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              optimize
-            </code>{" "}
-            - v4 特定选项：是否优化（生产环境默认 true）
-          </li>
-        </ul>
-      </section>
-    </article>
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

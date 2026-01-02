@@ -3,8 +3,7 @@
  * 展示 DWeb 框架的性能监控功能和使用方法
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
-import type { PageProps } from "@dreamer/dweb";
+import DocRenderer from "@components/DocRenderer.tsx";
 
 export const metadata = {
   title: "性能监控 (monitoring) - DWeb 框架文档",
@@ -12,9 +11,7 @@ export const metadata = {
     "DWeb 框架的性能监控功能使用指南，包括请求监控、性能指标收集和错误追踪",
 };
 
-export default function FeaturesMonitoringPage(
-  { params: _params, query: _query, data: _data }: PageProps,
-) {
+export default function FeaturesMonitoringPage() {
   // 基本使用
   const basicUsageCode = `import { Monitor } from "@dreamer/dweb";
 
@@ -131,41 +128,7 @@ console.log("错误总数:", metrics.errorCount);`;
   onError?: (metrics: ErrorMetrics) => void;
 }`;
 
-  return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        性能监控 (monitoring)
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb
-        框架提供了完整的性能监控功能，包括请求监控、性能指标收集和错误追踪。
-      </p>
-
-      {/* 快速开始 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          快速开始
-        </h2>
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          基本使用
-        </h3>
-        <CodeBlock code={basicUsageCode} language="typescript" />
-      </section>
-
-      {/* 监控选项 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          监控选项
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          请求监控
-        </h3>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          记录每个请求的详细信息：
-        </p>
-        <CodeBlock
-          code={`interface RequestMetrics {
+  const requestMetricsCode = `interface RequestMetrics {
   method: string;        // HTTP 方法
   path: string;          // 请求路径
   statusCode: number;  // 状态码
@@ -173,18 +136,9 @@ console.log("错误总数:", metrics.errorCount);`;
   timestamp: number;     // 时间戳
   userAgent?: string;   // 用户代理
   ip?: string;          // IP 地址
-}`}
-          language="typescript"
-        />
+}`;
 
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          性能监控
-        </h3>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          收集系统性能指标：
-        </p>
-        <CodeBlock
-          code={`interface PerformanceMetrics {
+  const performanceMetricsCode = `interface PerformanceMetrics {
   cpuUsage?: number;              // CPU 使用率
   memoryUsage?: {                 // 内存使用情况
     rss: number;                  // 常驻集大小
@@ -195,18 +149,9 @@ console.log("错误总数:", metrics.errorCount);`;
   uptime: number;                 // 运行时间（毫秒）
   requestCount: number;           // 请求总数
   errorCount: number;             // 错误总数
-}`}
-          language="typescript"
-        />
+}`;
 
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          错误监控
-        </h3>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          追踪应用错误：
-        </p>
-        <CodeBlock
-          code={`interface ErrorMetrics {
+  const errorMetricsCode = `interface ErrorMetrics {
   message: string;       // 错误消息
   stack?: string;        // 堆栈跟踪
   path: string;          // 请求路径
@@ -215,104 +160,168 @@ console.log("错误总数:", metrics.errorCount);`;
   timestamp: number;     // 时间戳
   userAgent?: string;   // 用户代理
   ip?: string;          // IP 地址
-}`}
-          language="typescript"
-        />
-      </section>
+}`;
 
-      {/* 配置选项 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          配置选项
-        </h2>
-        <CodeBlock code={configCode} language="typescript" />
-      </section>
+  const content = {
+    title: "性能监控 (monitoring)",
+    description: "DWeb 框架提供了完整的性能监控功能，包括请求监控、性能指标收集和错误追踪。",
+    sections: [
+      {
+        title: "快速开始",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "基本使用",
+            blocks: [
+              {
+                type: "code",
+                code: basicUsageCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "监控选项",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "请求监控",
+            blocks: [
+              {
+                type: "text",
+                content: "记录每个请求的详细信息：",
+              },
+              {
+                type: "code",
+                code: requestMetricsCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "性能监控",
+            blocks: [
+              {
+                type: "text",
+                content: "收集系统性能指标：",
+              },
+              {
+                type: "code",
+                code: performanceMetricsCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "错误监控",
+            blocks: [
+              {
+                type: "text",
+                content: "追踪应用错误：",
+              },
+              {
+                type: "code",
+                code: errorMetricsCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "配置选项",
+        blocks: [
+          {
+            type: "code",
+            code: configCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "使用示例",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "自定义回调",
+            blocks: [
+              {
+                type: "code",
+                code: customCallbacksCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "集成第三方服务",
+            blocks: [
+              {
+                type: "code",
+                code: thirdPartyCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "获取性能指标",
+            blocks: [
+              {
+                type: "code",
+                code: getMetricsCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "最佳实践",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "**生产环境监控**：启用所有监控功能，配置外部监控服务集成，设置合理的性能监控间隔",
+              "**开发环境监控**：可以禁用部分监控以减少开销，使用控制台输出进行调试",
+              "**错误追踪**：记录完整的错误信息，包含请求上下文（路径、方法、IP 等），发送到专业的错误追踪服务",
+              "**性能优化**：监控响应时间，识别慢请求；监控内存使用，防止内存泄漏；监控 CPU 使用率，优化资源消耗",
+            ],
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[开发服务器](/docs/features/dev)",
+              "[生产服务器](/docs/features/prod)",
+              "[日志系统](/docs/features/logger)",
+            ],
+          },
+        ],
+      },
+    ],
+  };
 
-      {/* 使用示例 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          使用示例
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          自定义回调
-        </h3>
-        <CodeBlock code={customCallbacksCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          集成第三方服务
-        </h3>
-        <CodeBlock code={thirdPartyCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          获取性能指标
-        </h3>
-        <CodeBlock code={getMetricsCode} language="typescript" />
-      </section>
-
-      {/* 最佳实践 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          最佳实践
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <strong>
-              生产环境监控
-            </strong>：启用所有监控功能，配置外部监控服务集成，设置合理的性能监控间隔
-          </li>
-          <li>
-            <strong>
-              开发环境监控
-            </strong>：可以禁用部分监控以减少开销，使用控制台输出进行调试
-          </li>
-          <li>
-            <strong>
-              错误追踪
-            </strong>：记录完整的错误信息，包含请求上下文（路径、方法、IP
-            等），发送到专业的错误追踪服务
-          </li>
-          <li>
-            <strong>
-              性能优化
-            </strong>：监控响应时间，识别慢请求；监控内存使用，防止内存泄漏；监控
-            CPU 使用率，优化资源消耗
-          </li>
-        </ul>
-      </section>
-
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/features/dev"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              开发服务器
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/features/prod"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              生产服务器
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/features/logger"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              日志系统
-            </a>
-          </li>
-        </ul>
-      </section>
-    </article>
+  return (
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

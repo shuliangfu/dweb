@@ -3,7 +3,7 @@
  * 展示 DWeb 框架的客户端 API 和使用方法
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -252,179 +252,177 @@ function getCurrentPath(): string
 function getQueryParams(): Record<string, string>
 function getCurrentUrl(): string`;
 
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "客户端 API",
+    description: "DWeb 框架提供了丰富的客户端 API，用于在浏览器环境中进行状态管理、主题切换、国际化、路由导航等操作。所有客户端 API 都从 `@dreamer/dweb/client` 模块导出。",
+    sections: [
+      {
+        title: "",
+        blocks: [
+          {
+            type: "alert",
+            level: "info",
+            content: [
+              "**注意：**所有客户端 API 在服务端环境中会返回 `null` 或执行空操作，这是正常行为。",
+            ],
+          },
+        ],
+      },
+      {
+        title: "快速开始",
+        blocks: [
+          {
+            type: "text",
+            content: "在组件中导入并使用客户端 API：",
+          },
+          {
+            type: "code",
+            code: quickStartCode,
+            language: "tsx",
+          },
+        ],
+      },
+      {
+        title: "Store 状态管理",
+        blocks: [
+          {
+            type: "text",
+            content: "DWeb 框架提供了完整的状态管理解决方案，支持全局状态管理和响应式更新。",
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "基本 API",
+            blocks: [
+              {
+                type: "code",
+                code: storeCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "defineStore - 声明式定义 Store",
+            blocks: [
+              {
+                type: "text",
+                content: "使用 `defineStore` 可以声明式地定义 Store，支持 Options API 和 Setup API 两种方式。",
+              },
+              {
+                type: "code",
+                code: defineStoreCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "主题管理",
+        blocks: [
+          {
+            type: "text",
+            content: "DWeb 框架内置了主题切换功能，支持浅色、深色和自动（跟随系统）三种模式。",
+          },
+          {
+            type: "code",
+            code: themeCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "国际化 (i18n)",
+        blocks: [
+          {
+            type: "text",
+            content: "DWeb 框架提供了完整的国际化支持，支持多语言切换和动态翻译。",
+          },
+          {
+            type: "code",
+            code: i18nCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "路由工具",
+        blocks: [
+          {
+            type: "text",
+            content: "DWeb 框架提供了路由导航工具函数，支持 SPA 无刷新导航和参数传递。",
+          },
+          {
+            type: "code",
+            code: routeCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "React/Preact 组件示例",
+        blocks: [
+          {
+            type: "text",
+            content: "在 Preact/React 组件中使用客户端 API 的完整示例：",
+          },
+          {
+            type: "code",
+            code: reactExampleCode,
+            language: "tsx",
+          },
+        ],
+      },
+      {
+        title: "API 参考",
+        blocks: [
+          {
+            type: "code",
+            code: apiReferenceCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "注意事项",
+        blocks: [
+          {
+            type: "list",
+            ordered: true,
+            items: [
+              "**客户端环境检查**：所有客户端 API 在服务端环境中会返回 `null` 或执行空操作，这是正常行为。",
+              "**类型安全**：使用 TypeScript 时，建议为 Store 状态定义明确的类型，以获得更好的类型提示。",
+              "**响应式更新**：使用 `useStore` 和 `useThemeStore` Hook 时，状态变化会自动触发组件重新渲染。",
+              "**路由导航**：`route` 函数优先使用框架的 SPA 导航，如果不可用会回退到整页跳转。",
+              "**i18n 初始化**：使用 i18n 相关 API 前，确保 i18n 插件已正确初始化。",
+            ],
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[Store 插件文档](/docs/plugins/store)",
+              "[主题插件文档](/docs/plugins/theme)",
+              "[i18n 插件文档](/docs/plugins/i18n)",
+              "[路由约定文档](/docs/routing-conventions)",
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
   return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        客户端 API
-      </h1>
-      <p className="text-gray-700 leading-relaxed mb-8">
-        DWeb 框架提供了丰富的客户端 API，用于在浏览器环境中进行状态管理、主题切换、国际化、路由导航等操作。
-        所有客户端 API 都从{" "}
-        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-          @dreamer/dweb/client
-        </code>{" "}
-        模块导出。
-      </p>
-
-      <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 my-6 rounded">
-        <p className="text-blue-800 dark:text-blue-200 m-0">
-          <strong>注意：</strong>所有客户端 API 在服务端环境中会返回{" "}
-          <code className="bg-blue-100 dark:bg-blue-800 px-1 py-0.5 rounded text-blue-900 dark:text-blue-100">
-            null
-          </code>{" "}
-          或执行空操作，这是正常行为。
-        </p>
-      </div>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          快速开始
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          在组件中导入并使用客户端 API：
-        </p>
-        <CodeBlock code={quickStartCode} language="tsx" />
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          Store 状态管理
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          DWeb 框架提供了完整的状态管理解决方案，支持全局状态管理和响应式更新。
-        </p>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          基本 API
-        </h3>
-        <CodeBlock code={storeCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          defineStore - 声明式定义 Store
-        </h3>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          使用 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">defineStore</code>{" "}
-          可以声明式地定义 Store，支持 Options API 和 Setup API 两种方式。
-        </p>
-        <CodeBlock code={defineStoreCode} language="typescript" />
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          主题管理
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          DWeb 框架内置了主题切换功能，支持浅色、深色和自动（跟随系统）三种模式。
-        </p>
-        <CodeBlock code={themeCode} language="typescript" />
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          国际化 (i18n)
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          DWeb 框架提供了完整的国际化支持，支持多语言切换和动态翻译。
-        </p>
-        <CodeBlock code={i18nCode} language="typescript" />
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          路由工具
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          DWeb 框架提供了路由导航工具函数，支持 SPA 无刷新导航和参数传递。
-        </p>
-        <CodeBlock code={routeCode} language="typescript" />
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          React/Preact 组件示例
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          在 Preact/React 组件中使用客户端 API 的完整示例：
-        </p>
-        <CodeBlock code={reactExampleCode} language="tsx" />
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          API 参考
-        </h2>
-        <CodeBlock code={apiReferenceCode} language="typescript" />
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          注意事项
-        </h2>
-        <ol className="list-decimal list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <strong>客户端环境检查</strong>：所有客户端 API 在服务端环境中会返回{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              null
-            </code>{" "}
-            或执行空操作，这是正常行为。
-          </li>
-          <li>
-            <strong>类型安全</strong>：使用 TypeScript 时，建议为 Store 状态定义明确的类型，以获得更好的类型提示。
-          </li>
-          <li>
-            <strong>响应式更新</strong>：使用 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">useStore</code>{" "}
-            和 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">useThemeStore</code>{" "}
-            Hook 时，状态变化会自动触发组件重新渲染。
-          </li>
-          <li>
-            <strong>路由导航</strong>：<code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">route</code>{" "}
-            函数优先使用框架的 SPA 导航，如果不可用会回退到整页跳转。
-          </li>
-          <li>
-            <strong>i18n 初始化</strong>：使用 i18n 相关 API 前，确保 i18n 插件已正确初始化。
-          </li>
-        </ol>
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/plugins/store"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Store 插件文档
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/plugins/theme"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              主题插件文档
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/plugins/i18n"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              i18n 插件文档
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/routing-conventions"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              路由约定文档
-            </a>
-          </li>
-        </ul>
-      </section>
-    </article>
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

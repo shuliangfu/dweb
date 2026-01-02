@@ -3,8 +3,7 @@
  * 展示 DWeb 框架的日志系统功能和使用方法
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
-import type { PageProps } from "@dreamer/dweb";
+import DocRenderer from "@components/DocRenderer.tsx";
 
 export const metadata = {
   title: "Logger (日志系统) - DWeb 框架文档",
@@ -12,9 +11,7 @@ export const metadata = {
     "DWeb 框架的日志系统使用指南，支持结构化日志、日志级别、日志轮转等功能",
 };
 
-export default function LoggerPage(
-  { params: _params, query: _query, data: _data }: PageProps,
-) {
+export default function LoggerPage() {
   // 基本使用
   const basicUsageCode = `import { Logger, LogLevel } from "@dreamer/dweb";
 
@@ -216,239 +213,7 @@ interface LogRotationConfig {
   interval?: number; // 轮转间隔（毫秒）
 }`;
 
-  return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        Logger (日志系统)
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb
-        框架提供了强大的日志系统，支持结构化日志、日志级别、日志轮转等功能。
-      </p>
-
-      {/* 快速开始 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          快速开始
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          基本使用
-        </h3>
-        <CodeBlock code={basicUsageCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          使用默认日志器
-        </h3>
-        <CodeBlock code={defaultLoggerCode} language="typescript" />
-      </section>
-
-      {/* 文件日志 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          文件日志
-        </h2>
-        <CodeBlock code={fileLoggerCode} language="typescript" />
-      </section>
-
-      {/* 控制台和文件日志 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          控制台和文件日志
-        </h2>
-        <CodeBlock code={multiTargetCode} language="typescript" />
-      </section>
-
-      {/* 日志级别 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          日志级别
-        </h2>
-        <CodeBlock code={logLevelsCode} language="typescript" />
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mt-4">
-          只有大于等于设置级别的日志才会被记录。
-        </p>
-      </section>
-
-      {/* 日志格式化 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          日志格式化
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          JSON 格式化器（默认）
-        </h3>
-        <CodeBlock code={jsonFormatterCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          简单文本格式化器
-        </h3>
-        <CodeBlock code={simpleFormatterCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          自定义格式化器
-        </h3>
-        <CodeBlock code={customFormatterCode} language="typescript" />
-      </section>
-
-      {/* 日志轮转 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          日志轮转
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          日志轮转可以防止日志文件过大，支持按大小和时间轮转。
-        </p>
-        <CodeBlock code={rotationCode} language="typescript" />
-      </section>
-
-      {/* 在框架中使用 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          在框架中使用
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          设置全局日志器
-        </h3>
-        <CodeBlock code={frameworkUsageCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          在中间件中使用
-        </h3>
-        <CodeBlock code={middlewareUsageCode} language="typescript" />
-      </section>
-
-      {/* API 参考 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          API 参考
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          Logger
-        </h3>
-        <CodeBlock
-          code={`new Logger(options?: LoggerOptions)`}
-          language="typescript"
-        />
-        <CodeBlock code={loggerOptionsCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          方法
-        </h3>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              debug(message, data?)
-            </code>{" "}
-            - 调试日志
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              info(message, data?)
-            </code>{" "}
-            - 信息日志
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              warn(message, data?)
-            </code>{" "}
-            - 警告日志
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              error(message, error?, data?)
-            </code>{" "}
-            - 错误日志
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              flush()
-            </code>{" "}
-            - 刷新所有输出目标
-          </li>
-        </ul>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          静态方法
-        </h3>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              createFileTarget(filePath, rotationConfig?)
-            </code>{" "}
-            - 创建文件目标
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              createConsoleTarget()
-            </code>{" "}
-            - 创建控制台目标
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              createSimpleFormatter()
-            </code>{" "}
-            - 创建简单格式化器
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              createJSONFormatter()
-            </code>{" "}
-            - 创建 JSON 格式化器
-          </li>
-        </ul>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          全局函数
-        </h3>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              getLogger()
-            </code>{" "}
-            - 获取默认日志器
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              setLogger(logger)
-            </code>{" "}
-            - 设置默认日志器
-          </li>
-        </ul>
-      </section>
-
-      {/* 最佳实践 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          最佳实践
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <strong>选择合适的日志级别</strong>：生产环境使用 INFO 或
-            WARN，开发环境使用 DEBUG
-          </li>
-          <li>
-            <strong>结构化日志</strong>：使用{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              data
-            </code>{" "}
-            参数传递结构化数据，而不是字符串拼接
-          </li>
-          <li>
-            <strong>日志轮转</strong>：配置日志轮转，防止日志文件过大
-          </li>
-          <li>
-            <strong>错误日志</strong>：记录完整的错误信息，包括堆栈跟踪
-          </li>
-          <li>
-            <strong>性能考虑</strong>：在高并发场景下，考虑使用异步日志目标
-          </li>
-        </ul>
-        <CodeBlock
-          code={`// 好的实践
+  const bestPracticeCode = `// 好的实践
 logger.info("用户登录", {
   userId: 123,
   ip: "192.168.1.1",
@@ -456,44 +221,272 @@ logger.info("用户登录", {
 });
 
 // 不好的实践
-logger.info(\`用户 \${userId} 从 \${ip} 登录\`);`}
-          language="typescript"
-        />
-      </section>
+logger.info(\`用户 \${userId} 从 \${ip} 登录\`);`;
 
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/middleware/logger"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              logger 中间件
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/features/monitoring"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              性能监控
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/core/application"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Application
-            </a>{" "}
-            - 应用核心
-          </li>
-        </ul>
-      </section>
-    </article>
+  const content = {
+    title: "Logger (日志系统)",
+    description: "DWeb 框架提供了强大的日志系统，支持结构化日志、日志级别、日志轮转等功能。",
+    sections: [
+      {
+        title: "快速开始",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "基本使用",
+            blocks: [
+              {
+                type: "code",
+                code: basicUsageCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "使用默认日志器",
+            blocks: [
+              {
+                type: "code",
+                code: defaultLoggerCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "文件日志",
+        blocks: [
+          {
+            type: "code",
+            code: fileLoggerCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "控制台和文件日志",
+        blocks: [
+          {
+            type: "code",
+            code: multiTargetCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "日志级别",
+        blocks: [
+          {
+            type: "code",
+            code: logLevelsCode,
+            language: "typescript",
+          },
+          {
+            type: "text",
+            content: "只有大于等于设置级别的日志才会被记录。",
+          },
+        ],
+      },
+      {
+        title: "日志格式化",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "JSON 格式化器（默认）",
+            blocks: [
+              {
+                type: "code",
+                code: jsonFormatterCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "简单文本格式化器",
+            blocks: [
+              {
+                type: "code",
+                code: simpleFormatterCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "自定义格式化器",
+            blocks: [
+              {
+                type: "code",
+                code: customFormatterCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "日志轮转",
+        blocks: [
+          {
+            type: "text",
+            content: "日志轮转可以防止日志文件过大，支持按大小和时间轮转。",
+          },
+          {
+            type: "code",
+            code: rotationCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "在框架中使用",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "设置全局日志器",
+            blocks: [
+              {
+                type: "code",
+                code: frameworkUsageCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "在中间件中使用",
+            blocks: [
+              {
+                type: "code",
+                code: middlewareUsageCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "API 参考",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "Logger",
+            blocks: [
+              {
+                type: "code",
+                code: `new Logger(options?: LoggerOptions)`,
+                language: "typescript",
+              },
+              {
+                type: "code",
+                code: loggerOptionsCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "方法",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`debug(message, data?)`** - 调试日志",
+                  "**`info(message, data?)`** - 信息日志",
+                  "**`warn(message, data?)`** - 警告日志",
+                  "**`error(message, error?, data?)`** - 错误日志",
+                  "**`flush()`** - 刷新所有输出目标",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "静态方法",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`createFileTarget(filePath, rotationConfig?)`** - 创建文件目标",
+                  "**`createConsoleTarget()`** - 创建控制台目标",
+                  "**`createSimpleFormatter()`** - 创建简单格式化器",
+                  "**`createJSONFormatter()`** - 创建 JSON 格式化器",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "全局函数",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`getLogger()`** - 获取默认日志器",
+                  "**`setLogger(logger)`** - 设置默认日志器",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "最佳实践",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "**选择合适的日志级别**：生产环境使用 INFO 或 WARN，开发环境使用 DEBUG",
+              "**结构化日志**：使用 `data` 参数传递结构化数据，而不是字符串拼接",
+              "**日志轮转**：配置日志轮转，防止日志文件过大",
+              "**错误日志**：记录完整的错误信息，包括堆栈跟踪",
+              "**性能考虑**：在高并发场景下，考虑使用异步日志目标",
+            ],
+          },
+          {
+            type: "code",
+            code: bestPracticeCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[logger 中间件](/docs/middleware/logger)",
+              "[性能监控](/docs/features/monitoring)",
+              "[Application](/docs/core/application) - 应用核心",
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  return (
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

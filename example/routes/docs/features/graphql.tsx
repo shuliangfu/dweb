@@ -3,17 +3,14 @@
  * 展示 DWeb 框架的 GraphQL 功能和使用方法
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
-import type { PageProps } from "@dreamer/dweb";
+import DocRenderer from "@components/DocRenderer.tsx";
 
 export const metadata = {
   title: "GraphQL - DWeb 框架文档",
   description: "DWeb 框架的 GraphQL 服务器支持，可以轻松构建 GraphQL API",
 };
 
-export default function GraphQLPage(
-  { params: _params, query: _query, data: _data }: PageProps,
-) {
+export default function GraphQLPage() {
   // 基本使用
   const basicUsageCode = `import { GraphQLServer } from "@dreamer/dweb";
 import { Server } from "@dreamer/dweb";
@@ -141,133 +138,127 @@ const graphqlServer = new GraphQLServer({
   },
 });`;
 
-  return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        GraphQL
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 框架提供了 GraphQL 服务器支持，可以轻松构建 GraphQL API。
-      </p>
-
-      {/* 快速开始 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          快速开始
-        </h2>
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          基本使用
-        </h3>
-        <CodeBlock code={basicUsageCode} language="typescript" />
-      </section>
-
-      {/* 在路由中使用 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          在路由中使用
-        </h2>
-        <CodeBlock code={routeUsageCode} language="typescript" />
-      </section>
-
-      {/* 使用数据源 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          使用数据源
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          在 GraphQL Resolver 中使用数据库：
-        </p>
-        <CodeBlock code={dataSourceCode} language="typescript" />
-      </section>
-
-      {/* 订阅支持 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          订阅支持
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          GraphQL 服务器支持订阅（Subscriptions）功能，可以实现实时数据推送：
-        </p>
-        <CodeBlock code={subscriptionCode} language="typescript" />
-      </section>
-
-      {/* API 参考 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          API 参考
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          GraphQLServer
-        </h3>
-        <CodeBlock
-          code={`new GraphQLServer(config: GraphQLServerConfig)`}
-          language="typescript"
-        />
-        <CodeBlock
-          code={`interface GraphQLServerConfig {
+  const content = {
+    title: "GraphQL",
+    description: "DWeb 框架提供了 GraphQL 服务器支持，可以轻松构建 GraphQL API。",
+    sections: [
+      {
+        title: "快速开始",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "基本使用",
+            blocks: [
+              {
+                type: "code",
+                code: basicUsageCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "在路由中使用",
+        blocks: [
+          {
+            type: "code",
+            code: routeUsageCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "使用数据源",
+        blocks: [
+          {
+            type: "text",
+            content: "在 GraphQL Resolver 中使用数据库：",
+          },
+          {
+            type: "code",
+            code: dataSourceCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "订阅支持",
+        blocks: [
+          {
+            type: "text",
+            content: "GraphQL 服务器支持订阅（Subscriptions）功能，可以实现实时数据推送：",
+          },
+          {
+            type: "code",
+            code: subscriptionCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "API 参考",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "GraphQLServer",
+            blocks: [
+              {
+                type: "code",
+                code: `new GraphQLServer(config: GraphQLServerConfig)`,
+                language: "typescript",
+              },
+              {
+                type: "code",
+                code: `interface GraphQLServerConfig {
   typeDefs: string;
   resolvers: Resolvers;
   context?: (req: Request) => any;
   formatError?: (error: GraphQLError) => any;
-}`}
-          language="typescript"
-        />
+}`,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "方法",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`handleRequest(req, res)`** - 处理 GraphQL 请求",
+                  "**`executeQuery(query, variables?, context?)`** - 执行 GraphQL 查询",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[Database](/docs/features/database) - 数据库",
+              "[API 路由](/docs/core/api) - API 路由系统",
+              "[Application](/docs/core/application) - 应用核心",
+            ],
+          },
+        ],
+      },
+    ],
+  };
 
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          方法
-        </h3>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              handleRequest(req, res)
-            </code>{" "}
-            - 处理 GraphQL 请求
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              executeQuery(query, variables?, context?)
-            </code>{" "}
-            - 执行 GraphQL 查询
-          </li>
-        </ul>
-      </section>
-
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/features/database"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Database
-            </a>{" "}
-            - 数据库
-          </li>
-          <li>
-            <a
-              href="/docs/core/api"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              API 路由
-            </a>{" "}
-            - API 路由系统
-          </li>
-          <li>
-            <a
-              href="/docs/core/application"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Application
-            </a>{" "}
-            - 应用核心
-          </li>
-        </ul>
-      </section>
-    </article>
+  return (
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

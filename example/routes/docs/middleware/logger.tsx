@@ -2,7 +2,7 @@
  * 中间件 - logger 文档页面
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -21,52 +21,52 @@ server.use(logger({
   format: 'combined', // 'combined' | 'common' | 'dev' | 'short' | 'tiny'
 }));`;
 
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "logger - 请求日志",
+    description: "logger 中间件用于记录 HTTP 请求日志，支持多种日志格式。",
+    sections: [
+      {
+        title: "基本使用",
+        blocks: [
+          {
+            type: "code",
+            code: loggerCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "配置选项",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "可选参数",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`format`** - 日志格式（默认 'combined'）：",
+                  "  - `'combined'` - 完整格式，包含方法、路径、状态码、耗时和 User-Agent",
+                  "  - `'common'` - 通用格式，类似 Apache 日志",
+                  "  - `'dev'` - 开发格式，带颜色标记",
+                  "  - `'short'` - 简短格式",
+                  "  - `'tiny'` - 最简格式",
+                  "**`skip`** - 跳过日志记录的函数，接收请求对象，返回布尔值（默认跳过 Chrome DevTools 的自动请求）",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
   return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        logger - 请求日志
-      </h1>
-      <p className="text-gray-700 leading-relaxed mb-8">
-        logger 中间件用于记录 HTTP 请求日志，支持多种日志格式。
-      </p>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          基本使用
-        </h2>
-        <CodeBlock code={loggerCode} language="typescript" />
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          配置选项
-        </h2>
-        
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
-          可选参数
-        </h3>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              format
-            </code>{" "}
-            - 日志格式（默认 'combined'）：
-            <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">'combined'</code> - 完整格式，包含方法、路径、状态码、耗时和 User-Agent</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">'common'</code> - 通用格式，类似 Apache 日志</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">'dev'</code> - 开发格式，带颜色标记</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">'short'</code> - 简短格式</li>
-              <li><code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">'tiny'</code> - 最简格式</li>
-            </ul>
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              skip
-            </code>{" "}
-            - 跳过日志记录的函数，接收请求对象，返回布尔值（默认跳过 Chrome DevTools 的自动请求）
-          </li>
-        </ul>
-      </section>
-    </article>
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

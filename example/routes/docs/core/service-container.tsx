@@ -3,7 +3,7 @@
  * 展示 DWeb 框架的服务容器功能和使用方法
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -194,320 +194,237 @@ const user = await userService.getUser("123");`;
 const logger = app.getService<Logger>("logger");
 logger.info("应用已启动");`;
 
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "ServiceContainer (服务容器)",
+    description: "DWeb 框架提供了服务容器（Service Container）功能，支持依赖注入（DI）模式。服务容器支持三种生命周期：**Singleton（单例）**、**Transient（瞬态）** 和 **Scoped（作用域）**。",
+    sections: [
+
+      {
+        title: "概述",
+        blocks: [
+          {
+            type: "code",
+            code: overviewCode,
+            language: "typescript",
+          },
+        ],
+      },
+
+      {
+        title: "注册服务",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "方式 1：使用 services/mod.ts 统一管理（推荐）",
+            blocks: [
+              {
+                type: "text",
+                content: "在 `services/mod.ts` 中统一管理所有服务配置，然后在 `main.ts` 中一键注册：",
+              },
+              {
+                type: "code",
+                code: servicesModCode,
+                language: "typescript",
+              },
+              {
+                type: "code",
+                code: mainTsCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "方式 2：直接在插件中配置服务",
+            blocks: [
+              {
+                type: "code",
+                code: directConfigCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "方式 3：手动在插件中注册",
+            blocks: [
+              {
+                type: "code",
+                code: manualRegisterCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "方式 4：直接使用 Application 类",
+            blocks: [
+              {
+                type: "code",
+                code: applicationClassCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+
+      {
+        title: "获取服务",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "通过 Application 实例获取",
+            blocks: [
+              {
+                type: "code",
+                code: getServiceCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "在 API 路由中获取（推荐使用 ApiContext）",
+            blocks: [
+              {
+                type: "code",
+                code: apiRouteCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+
+      {
+        title: "服务生命周期",
+        blocks: [
+          {
+            type: "code",
+            code: lifecycleCode,
+            language: "typescript",
+          },
+          {
+            type: "alert",
+            level: "info",
+            content: [
+              "**说明：**",
+              "**Singleton**：整个应用生命周期内只有一个实例，适合共享状态的服务",
+              "**Transient**：每次获取都创建新实例，适合无状态的服务",
+              "**Scoped**：在作用域内单例，适合请求级别的服务",
+            ],
+          },
+        ],
+      },
+      {
+        title: "依赖注入示例",
+        blocks: [
+          {
+            type: "code",
+            code: dependencyInjectionCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "内置服务",
+        blocks: [
+          {
+            type: "text",
+            content: "框架已经注册了一些内置服务，可以直接使用：",
+          },
+          {
+            type: "code",
+            code: builtinServicesCode,
+            language: "typescript",
+          },
+        ],
+      },
+
+      {
+        title: "API 参考",
+        blocks: [
+          {
+            type: "api",
+            name: "registerSingleton<T>(token, factory)",
+            description: "注册单例服务，整个应用生命周期内只有一个实例",
+            code: 'container.registerSingleton("logger", () => new Logger())',
+          },
+          {
+            type: "api",
+            name: "registerTransient<T>(token, factory)",
+            description: "注册瞬态服务，每次获取都创建新实例",
+            code: 'container.registerTransient("requestId", () => generateId())',
+          },
+          {
+            type: "api",
+            name: "registerScoped<T>(token, factory)",
+            description: "注册作用域服务，在作用域内单例",
+            code: 'container.registerScoped("requestContext", () => new RequestContext())',
+          },
+          {
+            type: "api",
+            name: "get<T>(token)",
+            description: "获取服务实例",
+            code: 'const logger = container.get<Logger>("logger")',
+          },
+          {
+            type: "api",
+            name: "has(token)",
+            description: "检查服务是否已注册",
+            code: 'if (container.has("logger")) { ... }',
+          },
+          {
+            type: "api",
+            name: "clearScope()",
+            description: "清除作用域实例（用于请求结束后清理）",
+            code: "container.clearScope()",
+          },
+        ],
+      },
+      {
+        title: "注意事项",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "**服务注册时机**：服务应该在应用初始化之前注册，推荐在插件的 `onInit` 钩子中注册。",
+              "**类型安全**：使用泛型可以确保类型安全：`const userService = app.getService<UserService>('userService')`",
+              "**服务依赖**：服务可以依赖其他服务，通过服务容器解析。",
+              "**错误处理**：如果服务未注册，`getService` 会抛出错误。可以使用 `has` 方法检查。",
+            ],
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[Application (应用核心)](/docs/core/application)",
+              "[IService (服务接口)](/docs/core/iservice)",
+              "[API 路由](/docs/core/api) - 在 API 路由中使用服务容器",
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
   return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        ServiceContainer (服务容器)
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 框架提供了服务容器（Service
-        Container）功能，支持依赖注入（DI）模式。
-        服务容器支持三种生命周期：<strong>Singleton（单例）</strong>、<strong>
-          Transient（瞬态）
-        </strong>{" "}
-        和 <strong>Scoped（作用域）</strong>。
-      </p>
-
-      {/* 概述 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          概述
-        </h2>
-        <CodeBlock code={overviewCode} language="typescript" />
-      </section>
-
-      {/* 注册服务 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          注册服务
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          方式 1：使用 services/mod.ts 统一管理（推荐）
-        </h3>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          在{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            services/mod.ts
-          </code>{" "}
-          中统一管理所有服务配置， 然后在{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            main.ts
-          </code>{" "}
-          中一键注册：
-        </p>
-        <CodeBlock code={servicesModCode} language="typescript" />
-        <CodeBlock code={mainTsCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          方式 2：直接在插件中配置服务
-        </h3>
-        <CodeBlock code={directConfigCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          方式 3：手动在插件中注册
-        </h3>
-        <CodeBlock code={manualRegisterCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          方式 4：直接使用 Application 类
-        </h3>
-        <CodeBlock code={applicationClassCode} language="typescript" />
-      </section>
-
-      {/* 获取服务 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          获取服务
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          通过 Application 实例获取
-        </h3>
-        <CodeBlock code={getServiceCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          在 API 路由中获取（推荐使用 ApiContext）
-        </h3>
-        <CodeBlock code={apiRouteCode} language="typescript" />
-      </section>
-
-      {/* 服务生命周期 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          服务生命周期
-        </h2>
-        <CodeBlock code={lifecycleCode} language="typescript" />
-        <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-600 p-4 my-4 rounded">
-          <p className="text-blue-800 dark:text-blue-200 text-sm">
-            <strong>说明：</strong>
-          </p>
-          <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-200 text-sm mt-2">
-            <li>
-              <strong>
-                Singleton
-              </strong>：整个应用生命周期内只有一个实例，适合共享状态的服务
-            </li>
-            <li>
-              <strong>Transient</strong>：每次获取都创建新实例，适合无状态的服务
-            </li>
-            <li>
-              <strong>Scoped</strong>：在作用域内单例，适合请求级别的服务
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      {/* 依赖注入 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          依赖注入示例
-        </h2>
-        <CodeBlock code={dependencyInjectionCode} language="typescript" />
-      </section>
-
-      {/* 内置服务 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          内置服务
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          框架已经注册了一些内置服务，可以直接使用：
-        </p>
-        <CodeBlock code={builtinServicesCode} language="typescript" />
-      </section>
-
-      {/* API 参考 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          API 参考
-        </h2>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  方法
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  说明
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  示例
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    registerSingleton&lt;T&gt;(token, factory)
-                  </code>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  注册单例服务，整个应用生命周期内只有一个实例
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    {'container.registerSingleton("logger", () => new Logger())'}
-                  </code>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    registerTransient&lt;T&gt;(token, factory)
-                  </code>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  注册瞬态服务，每次获取都创建新实例
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    {'container.registerTransient("requestId", () => generateId())'}
-                  </code>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    registerScoped&lt;T&gt;(token, factory)
-                  </code>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  注册作用域服务，在作用域内单例
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    {'container.registerScoped("requestContext", () => new RequestContext())'}
-                  </code>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    get&lt;T&gt;(token)
-                  </code>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  获取服务实例
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    const logger = container.get&lt;Logger&gt;("logger")
-                  </code>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    has(token)
-                  </code>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  检查服务是否已注册
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    if (container.has("logger")) {"{ ... }"}
-                  </code>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    clearScope()
-                  </code>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  清除作用域实例（用于请求结束后清理）
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    container.clearScope()
-                  </code>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* 注意事项 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          注意事项
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <strong>
-              服务注册时机
-            </strong>：服务应该在应用初始化之前注册，推荐在插件的{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              onInit
-            </code>{" "}
-            钩子中注册。
-          </li>
-          <li>
-            <strong>
-              类型安全
-            </strong>：使用泛型可以确保类型安全：<code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              const userService =
-              app.getService&lt;UserService&gt;('userService')
-            </code>
-          </li>
-          <li>
-            <strong>服务依赖</strong>：服务可以依赖其他服务，通过服务容器解析。
-          </li>
-          <li>
-            <strong>
-              错误处理
-            </strong>：如果服务未注册，<code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              getService
-            </code>{" "}
-            会抛出错误。可以使用{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              has
-            </code>{" "}
-            方法检查。
-          </li>
-        </ul>
-      </section>
-
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/core/application"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Application (应用核心)
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/core/iservice"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              IService (服务接口)
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/core/api"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              API 路由
-            </a>{" "}
-            - 在 API 路由中使用服务容器
-          </li>
-        </ul>
-      </section>
-    </article>
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

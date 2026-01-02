@@ -3,17 +3,14 @@
  * 展示 DWeb 框架的环境变量管理功能
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
-import type { PageProps } from "@dreamer/dweb";
+import DocRenderer from "@components/DocRenderer.tsx";
 
 export const metadata = {
   title: "环境变量 (env) - DWeb 框架文档",
   description: "DWeb 框架的环境变量管理使用指南",
 };
 
-export default function FeaturesEnvPage(
-  { params: _params, query: _query, data: _data }: PageProps,
-) {
+export default function FeaturesEnvPage() {
   // 开发环境
   const devEnvCode = `# .env.development
 PORT=3000
@@ -67,124 +64,97 @@ const response = await fetch(\`https://api.example.com/data?key=\${apiKey}\`);`;
 
 注意：.env.local 中的变量会覆盖其他文件中的同名变量`;
 
+  const content = {
+    title: "环境变量 (env)",
+    description: "DWeb 框架支持使用环境变量来配置应用，支持不同环境的配置文件。",
+    sections: [
+      {
+        title: "开发环境",
+        blocks: [
+          {
+            type: "text",
+            content: "创建 `.env.development` 文件：",
+          },
+          {
+            type: "code",
+            code: devEnvCode,
+            language: "env",
+          },
+        ],
+      },
+      {
+        title: "生产环境",
+        blocks: [
+          {
+            type: "text",
+            content: "创建 `.env.production` 文件：",
+          },
+          {
+            type: "code",
+            code: prodEnvCode,
+            language: "env",
+          },
+        ],
+      },
+      {
+        title: "使用环境变量",
+        blocks: [
+          {
+            type: "text",
+            content: "在 `dweb.config.ts` 中使用环境变量：",
+          },
+          {
+            type: "code",
+            code: usageCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "在代码中使用",
+        blocks: [
+          {
+            type: "code",
+            code: codeUsageCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "环境变量文件优先级",
+        blocks: [
+          {
+            type: "code",
+            code: priorityCode,
+            language: "text",
+          },
+          {
+            type: "alert",
+            level: "warning",
+            content: "**安全提示**：请确保 `.env.local` 和包含敏感信息的 `.env` 文件已添加到 `.gitignore`，不要提交到版本控制系统。",
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[配置文档](/docs/deployment/configuration)",
+              "[开发服务器](/docs/features/dev)",
+              "[生产服务器](/docs/features/prod)",
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
   return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        环境变量 (env)
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 框架支持使用环境变量来配置应用，支持不同环境的配置文件。
-      </p>
-
-      {/* 开发环境 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          开发环境
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          创建{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            .env.development
-          </code>{" "}
-          文件：
-        </p>
-        <CodeBlock code={devEnvCode} language="env" />
-      </section>
-
-      {/* 生产环境 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          生产环境
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          创建{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            .env.production
-          </code>{" "}
-          文件：
-        </p>
-        <CodeBlock code={prodEnvCode} language="env" />
-      </section>
-
-      {/* 使用环境变量 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          使用环境变量
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          在{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            dweb.config.ts
-          </code>{" "}
-          中使用环境变量：
-        </p>
-        <CodeBlock code={usageCode} language="typescript" />
-      </section>
-
-      {/* 在代码中使用 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          在代码中使用
-        </h2>
-        <CodeBlock code={codeUsageCode} language="typescript" />
-      </section>
-
-      {/* 环境变量文件优先级 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          环境变量文件优先级
-        </h2>
-        <CodeBlock code={priorityCode} language="text" />
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-600 p-4 my-4 rounded">
-          <p className="text-yellow-800 dark:text-yellow-200 text-sm">
-            <strong>安全提示：</strong>请确保{" "}
-            <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">
-              .env.local
-            </code>{" "}
-            和包含敏感信息的{" "}
-            <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">
-              .env
-            </code>{" "}
-            文件已添加到{" "}
-            <code className="bg-yellow-100 dark:bg-yellow-900/50 px-1 py-0.5 rounded">
-              .gitignore
-            </code>，不要提交到版本控制系统。
-          </p>
-        </div>
-      </section>
-
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/deployment/configuration"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              配置文档
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/features/dev"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              开发服务器
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/features/prod"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              生产服务器
-            </a>
-          </li>
-        </ul>
-      </section>
-    </article>
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

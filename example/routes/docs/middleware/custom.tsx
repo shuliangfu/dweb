@@ -3,7 +3,7 @@
  * 展示如何创建自定义中间件
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -112,140 +112,147 @@ const authCheck: Middleware = async (req, res, next) => {
 
 server.use(authCheck);`;
 
-  return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        创建自定义中间件
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        你可以创建自己的中间件来处理特定的业务逻辑。
-      </p>
-
-      {/* 基本结构 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          基本结构
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          中间件是一个异步函数，接收{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            req
-          </code>、<code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            res
-          </code>{" "}
-          和{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            next
-          </code>{" "}
-          三个参数：
-        </p>
-        <CodeBlock code={basicStructureCode} language="typescript" />
-      </section>
-
-      {/* 中间件示例 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          中间件示例
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          响应时间中间件
-        </h3>
-        <CodeBlock code={responseTimeCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          请求 ID 中间件
-        </h3>
-        <CodeBlock code={requestIdCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          条件中间件
-        </h3>
-        <CodeBlock code={conditionalCode} language="typescript" />
-      </section>
-
-      {/* 错误处理 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          错误处理
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          中间件可以捕获和处理错误：
-        </p>
-        <CodeBlock code={errorHandlingCode} language="typescript" />
-      </section>
-
-      {/* 提前返回 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          提前返回
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          中间件可以在不调用{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            next()
-          </code>{" "}
-          的情况下提前返回响应：
-        </p>
-        <CodeBlock code={earlyReturnCode} language="typescript" />
-      </section>
-
-      {/* API 参考 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          API 参考
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          Middleware 类型
-        </h3>
-        <CodeBlock
-          code={`type Middleware = (
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "创建自定义中间件",
+    description: "你可以创建自己的中间件来处理特定的业务逻辑。",
+    sections: [
+      {
+        title: "基本结构",
+        blocks: [
+          {
+            type: "text",
+            content: "中间件是一个异步函数，接收 `req`、`res` 和 `next` 三个参数：",
+          },
+          {
+            type: "code",
+            code: basicStructureCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "中间件示例",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "响应时间中间件",
+            blocks: [
+              {
+                type: "code",
+                code: responseTimeCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "请求 ID 中间件",
+            blocks: [
+              {
+                type: "code",
+                code: requestIdCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "条件中间件",
+            blocks: [
+              {
+                type: "code",
+                code: conditionalCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "错误处理",
+        blocks: [
+          {
+            type: "text",
+            content: "中间件可以捕获和处理错误：",
+          },
+          {
+            type: "code",
+            code: errorHandlingCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "提前返回",
+        blocks: [
+          {
+            type: "text",
+            content: "中间件可以在不调用 `next()` 的情况下提前返回响应：",
+          },
+          {
+            type: "code",
+            code: earlyReturnCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "API 参考",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "Middleware 类型",
+            blocks: [
+              {
+                type: "code",
+                code: `type Middleware = (
   req: Request,
   res: Response,
   next: () => Promise<void>
-) => Promise<void>;`}
-          language="typescript"
-        />
+) => Promise<void>;`,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "使用中间件",
+            blocks: [
+              {
+                type: "code",
+                code: `server.use(middleware);`,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[中间件概述](/docs/middleware)",
+              "[路由级中间件](/docs/middleware/route-middleware)",
+              "[中间件系统](/docs/core/middleware)",
+            ],
+          },
+        ],
+      },
+    ],
+  };
 
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          使用中间件
-        </h3>
-        <CodeBlock code={`server.use(middleware);`} language="typescript" />
-      </section>
-
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/middleware"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              中间件概述
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/middleware/route-middleware"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              路由级中间件
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/core/middleware"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              中间件系统
-            </a>
-          </li>
-        </ul>
-      </section>
-    </article>
+  return (
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

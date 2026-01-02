@@ -3,7 +3,7 @@
  * 展示 DWeb 框架的控制台工具功能和使用方法
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -124,206 +124,147 @@ for (let i = 0; i <= 100; i++) {
 
 bar.finish();`;
 
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "控制台工具",
+    description: "DWeb 框架提供了强大的控制台工具集，用于创建美观的命令行界面、处理用户输入、输出格式化信息等。",
+    sections: [
+      {
+        title: "快速开始",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "导入模块",
+            blocks: [
+              {
+                type: "code",
+                code: importCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "基本使用",
+            blocks: [
+              {
+                type: "code",
+                code: basicUsageCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Command 类",
+        blocks: [
+          {
+            type: "text",
+            content: "`Command` 类用于创建命令行命令，支持选项、参数和子命令：",
+          },
+          {
+            type: "code",
+            code: commandCode,
+            language: "typescript",
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "保持进程运行 (keepAlive)",
+            blocks: [
+              {
+                type: "text",
+                content: "使用 `keepAlive()` 方法可以保持进程运行，防止命令执行完成后自动退出。这对于需要长时间运行的服务（如开发服务器、WebSocket 服务器等）非常有用。",
+              },
+              {
+                type: "alert",
+                level: "info",
+                content: [
+                  "**说明：**默认情况下，命令执行完成后会自动调用 `Deno.exit(0)` 退出进程。调用 `keepAlive()` 后，命令执行完成不会退出，进程会继续运行。",
+                ],
+              },
+              {
+                type: "code",
+                code: keepAliveCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "进度条",
+        blocks: [
+          {
+            type: "code",
+            code: progressCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "文档导航",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "核心模块",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "[ANSI 颜色和格式化工具](/docs/console/ansi) - 颜色、样式、光标控制",
+                  "[命令行输出工具](/docs/console/output) - 消息输出、格式化输出",
+                  "[命令行命令封装类](/docs/console/command) - Command 类、选项、参数、子命令",
+                  "[命令行输入工具](/docs/console/prompt) - 用户输入、确认、选择、交互式菜单",
+                  "[表格输出工具](/docs/console/table) - 表格、键值对表格、进度条",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "其他",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "[完整示例](/docs/console/examples) - 实际使用示例",
+                  "[API 参考](/docs/console/api) - 完整 API 文档",
+                  "[最佳实践](/docs/console/best-practices) - 使用建议和注意事项",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[核心模块](/docs/core/application) - 框架核心功能",
+              "[扩展系统](/docs/extensions) - 扩展系统",
+              "[中间件](/docs/middleware) - 中间件系统",
+              "[插件](/docs/plugins) - 插件系统",
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
   return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        控制台工具
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb
-        框架提供了强大的控制台工具集，用于创建美观的命令行界面、处理用户输入、输出格式化信息等。
-      </p>
-
-      {/* 快速开始 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          快速开始
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          导入模块
-        </h3>
-        <CodeBlock code={importCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          基本使用
-        </h3>
-        <CodeBlock code={basicUsageCode} language="typescript" />
-      </section>
-
-      {/* Command 类 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          Command 类
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            Command
-          </code>{" "}
-          类用于创建命令行命令，支持选项、参数和子命令：
-        </p>
-        <CodeBlock code={commandCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          保持进程运行 (keepAlive)
-        </h3>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          使用 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">keepAlive()</code>{" "}
-          方法可以保持进程运行，防止命令执行完成后自动退出。这对于需要长时间运行的服务（如开发服务器、WebSocket 服务器等）非常有用。
-        </p>
-        <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 my-4 rounded">
-          <p className="text-blue-800 dark:text-blue-200 m-0 text-sm">
-            <strong>说明：</strong>默认情况下，命令执行完成后会自动调用 <code className="bg-blue-100 dark:bg-blue-800 px-1 py-0.5 rounded text-blue-900 dark:text-blue-100">Deno.exit(0)</code>{" "}
-            退出进程。调用 <code className="bg-blue-100 dark:bg-blue-800 px-1 py-0.5 rounded text-blue-900 dark:text-blue-100">keepAlive()</code>{" "}
-            后，命令执行完成不会退出，进程会继续运行。
-          </p>
-        </div>
-        <CodeBlock code={keepAliveCode} language="typescript" />
-      </section>
-
-      {/* 进度条 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          进度条
-        </h2>
-        <CodeBlock code={progressCode} language="typescript" />
-      </section>
-
-      {/* 文档导航 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          文档导航
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          核心模块
-        </h3>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/console/ansi"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              ANSI 颜色和格式化工具
-            </a>{" "}
-            - 颜色、样式、光标控制
-          </li>
-          <li>
-            <a
-              href="/docs/console/output"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              命令行输出工具
-            </a>{" "}
-            - 消息输出、格式化输出
-          </li>
-          <li>
-            <a
-              href="/docs/console/command"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              命令行命令封装类
-            </a>{" "}
-            - Command 类、选项、参数、子命令
-          </li>
-          <li>
-            <a
-              href="/docs/console/prompt"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              命令行输入工具
-            </a>{" "}
-            - 用户输入、确认、选择、交互式菜单
-          </li>
-          <li>
-            <a
-              href="/docs/console/table"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              表格输出工具
-            </a>{" "}
-            - 表格、键值对表格、进度条
-          </li>
-        </ul>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          其他
-        </h3>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/console/examples"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              完整示例
-            </a>{" "}
-            - 实际使用示例
-          </li>
-          <li>
-            <a
-              href="/docs/console/api"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              API 参考
-            </a>{" "}
-            - 完整 API 文档
-          </li>
-          <li>
-            <a
-              href="/docs/console/best-practices"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              最佳实践
-            </a>{" "}
-            - 使用建议和注意事项
-          </li>
-        </ul>
-      </section>
-
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/core/application"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              核心模块
-            </a>{" "}
-            - 框架核心功能
-          </li>
-          <li>
-            <a
-              href="/docs/extensions"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              扩展系统
-            </a>{" "}
-            - 扩展系统
-          </li>
-          <li>
-            <a
-              href="/docs/middleware"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              中间件
-            </a>{" "}
-            - 中间件系统
-          </li>
-          <li>
-            <a
-              href="/docs/plugins"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              插件
-            </a>{" "}
-            - 插件系统
-          </li>
-        </ul>
-      </section>
-    </article>
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

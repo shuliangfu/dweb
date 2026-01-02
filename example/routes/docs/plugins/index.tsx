@@ -3,12 +3,12 @@
  * 展示 DWeb 框架的插件系统概述
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
-  title: $t("插件概述 - DWeb 框架文档"),
-  description: $t("DWeb 框架的插件系统概述，包括内置插件和使用方法"),
+  title: "插件概述 - DWeb 框架文档",
+  description: "DWeb 框架的插件系统概述，包括内置插件和使用方法",
 };
 
 export default function PluginsOverviewPage(
@@ -39,22 +39,17 @@ export default {
   ],
 };`;
 
-  return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        {$t("插件概述")}
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        {$t("DWeb 框架提供了强大的插件系统，支持各种功能扩展。")}
-      </p>
-
-      {/* 目录结构 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          {$t("目录结构")}
-        </h2>
-        <CodeBlock
-          code={`src/plugins/
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "插件概述",
+    description: "DWeb 框架提供了强大的插件系统，支持各种功能扩展。",
+    sections: [
+      {
+        title: "目录结构",
+        blocks: [
+          {
+            type: "code",
+            code: `src/plugins/
 ├── cache/              # 缓存插件
 ├── email/              # 邮件插件
 ├── file-upload/        # 文件上传插件
@@ -69,250 +64,97 @@ export default {
 ├── store/              # 状态管理插件
 ├── tailwind/           # Tailwind CSS 插件
 ├── theme/              # 主题插件
-└── mod.ts              # 模块导出`}
-          language="text"
-        />
-      </section>
+└── mod.ts              # 模块导出`,
+            language: "text",
+          },
+        ],
+      },
+      {
+        title: "使用插件",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "基本用法",
+            blocks: [
+              {
+                type: "code",
+                code: basicUsageCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "在配置文件中使用",
+            blocks: [
+              {
+                type: "code",
+                code: configUsageCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "内置插件",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[tailwind](/docs/plugins/tailwind) - Tailwind CSS 支持",
+              "[store](/docs/plugins/store) - 状态管理",
+              "[seo](/docs/plugins/seo) - SEO 优化",
+              "[sitemap](/docs/plugins/sitemap) - 网站地图生成",
+              "[pwa](/docs/plugins/pwa) - 渐进式 Web 应用",
+              "[cache](/docs/plugins/cache) - 缓存管理",
+              "[email](/docs/plugins/email) - 邮件发送",
+              "[fileUpload](/docs/plugins/file-upload) - 文件上传",
+              "[formValidator](/docs/plugins/form-validator) - 表单验证",
+              "[i18n](/docs/plugins/i18n) - 国际化",
+              "[imageOptimizer](/docs/plugins/image-optimizer) - 图片优化",
+              "[performance](/docs/plugins/performance) - 性能监控",
+              "[theme](/docs/plugins/theme) - 主题切换",
+              "[rss](/docs/plugins/rss) - RSS 订阅",
+            ],
+          },
+        ],
+      },
+      {
+        title: "其他",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[创建自定义插件](/docs/plugins/custom) - 编写自己的插件",
+            ],
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[插件系统](/docs/core/plugin) - 框架核心功能",
+              "[Application](/docs/core/application) - 应用核心",
+              "[中间件系统](/docs/middleware) - 中间件系统",
+            ],
+          },
+        ],
+      },
+    ],
+  };
 
-      {/* 使用插件 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          {$t("使用插件")}
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          {$t("基本用法")}
-        </h3>
-        <CodeBlock code={basicUsageCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          {$t("在配置文件中使用")}
-        </h3>
-        <CodeBlock code={configUsageCode} language="typescript" />
-      </section>
-
-      {/* 内置插件 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          {$t("内置插件")}
-        </h2>
-        <div className="grid md:grid-cols-2 gap-4 my-4">
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a
-                href="/docs/plugins/tailwind"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                tailwind
-              </a>
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">
-              {$t("Tailwind CSS 支持")}
-            </p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a
-                href="/docs/plugins/store"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                store
-              </a>
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">{$t("状态管理")}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a
-                href="/docs/plugins/seo"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                seo
-              </a>
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">{$t("SEO 优化")}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a
-                href="/docs/plugins/sitemap"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                sitemap
-              </a>
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">
-              {$t("网站地图生成")}
-            </p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a
-                href="/docs/plugins/pwa"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                pwa
-              </a>
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">
-              {$t("渐进式 Web 应用")}
-            </p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a
-                href="/docs/plugins/cache"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                cache
-              </a>
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">{$t("缓存管理")}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a
-                href="/docs/plugins/email"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                email
-              </a>
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">{$t("邮件发送")}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a
-                href="/docs/plugins/file-upload"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                fileUpload
-              </a>
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">{$t("文件上传")}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a
-                href="/docs/plugins/form-validator"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                formValidator
-              </a>
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">{$t("表单验证")}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a
-                href="/docs/plugins/i18n"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                i18n
-              </a>
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">{$t("国际化")}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a
-                href="/docs/plugins/image-optimizer"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                imageOptimizer
-              </a>
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">{$t("图片优化")}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a
-                href="/docs/plugins/performance"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                performance
-              </a>
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">{$t("性能监控")}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a
-                href="/docs/plugins/theme"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                theme
-              </a>
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">{$t("主题切换")}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              <a
-                href="/docs/plugins/rss"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                rss
-              </a>
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300 text-sm">{$t("RSS 订阅")}</p>
-          </div>
-        </div>
-      </section>
-
-      {/* 其他 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          {$t("其他")}
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/plugins/custom"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              {$t("创建自定义插件")}
-            </a>{" "}
-            - {$t("编写自己的插件")}
-          </li>
-        </ul>
-      </section>
-
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          {$t("相关文档")}
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/core/plugin"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              {$t("插件系统")}
-            </a>{" "}
-            - {$t("框架核心功能")}
-          </li>
-          <li>
-            <a
-              href="/docs/core/application"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Application
-            </a>{" "}
-            - {$t("应用核心")}
-          </li>
-          <li>
-            <a
-              href="/docs/middleware"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              {$t("中间件系统")}
-            </a>{" "}
-            - {$t("中间件系统")}
-          </li>
-        </ul>
-      </section>
-    </article>
+  return (
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

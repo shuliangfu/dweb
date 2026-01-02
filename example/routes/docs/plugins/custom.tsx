@@ -3,7 +3,7 @@
  * 展示如何创建自定义插件
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -154,88 +154,120 @@ const apiPlugin: Plugin = {
 
 app.plugin(apiPlugin);`;
 
-  return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        创建自定义插件
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        你可以创建自己的插件来扩展框架功能。
-      </p>
-
-      {/* 基本结构 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          基本结构
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          插件是一个对象，包含{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            name
-          </code>{" "}
-          和生命周期钩子：
-        </p>
-        <CodeBlock code={basicStructureCode} language="typescript" />
-      </section>
-
-      {/* 插件示例 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          插件示例
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          简单插件
-        </h3>
-        <CodeBlock code={simplePluginCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          配置化插件
-        </h3>
-        <CodeBlock code={configurablePluginCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          异步插件
-        </h3>
-        <CodeBlock code={asyncPluginCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          带清理的插件
-        </h3>
-        <CodeBlock code={cleanupPluginCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          处理 API 请求的插件
-        </h3>
-        <CodeBlock code={apiPluginCode} language="typescript" />
-      </section>
-
-      {/* API 参考 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          API 参考
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          Plugin 接口
-        </h3>
-        <CodeBlock
-          code={`interface Plugin {
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "创建自定义插件",
+    description: "你可以创建自己的插件来扩展框架功能。",
+    sections: [
+      {
+        title: "基本结构",
+        blocks: [
+          {
+            type: "text",
+            content: "插件是一个对象，包含 `name` 和生命周期钩子：",
+          },
+          {
+            type: "code",
+            code: basicStructureCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "插件示例",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "简单插件",
+            blocks: [
+              {
+                type: "code",
+                code: simplePluginCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "配置化插件",
+            blocks: [
+              {
+                type: "code",
+                code: configurablePluginCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "异步插件",
+            blocks: [
+              {
+                type: "code",
+                code: asyncPluginCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "带清理的插件",
+            blocks: [
+              {
+                type: "code",
+                code: cleanupPluginCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "处理 API 请求的插件",
+            blocks: [
+              {
+                type: "code",
+                code: apiPluginCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "API 参考",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "Plugin 接口",
+            blocks: [
+              {
+                type: "code",
+                code: `interface Plugin {
   name: string;
   onInit?: (app: AppLike) => Promise<void> | void;
   onRequest?: (req: Request, res: Response) => Promise<void> | void;
   onResponse?: (req: Request, res: Response, html: string) => Promise<string> | string;
   onError?: (error: Error, req: Request, res: Response) => Promise<void> | void;
   onBuild?: (config: AppConfig) => Promise<void> | void;
-}`}
-          language="typescript"
-        />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          使用插件
-        </h3>
-        <CodeBlock
-          code={`// 在 Application 上使用
+}`,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "使用插件",
+            blocks: [
+              {
+                type: "code",
+                code: `// 在 Application 上使用
 app.plugin(plugin);
 
 // 在配置文件中使用
@@ -243,44 +275,33 @@ export default {
   plugins: [
     myPlugin(),
   ],
-};`}
-          language="typescript"
-        />
-      </section>
+};`,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[插件概述](/docs/plugins)",
+              "[插件系统](/docs/core/plugin)",
+              "[Application](/docs/core/application) - 应用核心",
+            ],
+          },
+        ],
+      },
+    ],
+  };
 
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/plugins"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              插件概述
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/core/plugin"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              插件系统
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/core/application"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Application
-            </a>{" "}
-            - 应用核心
-          </li>
-        </ul>
-      </section>
-    </article>
+  return (
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

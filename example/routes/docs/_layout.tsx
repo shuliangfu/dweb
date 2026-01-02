@@ -53,14 +53,14 @@ export default function DocsLayout({ children, routePath }: LayoutProps) {
       </div>
 
       {/* 主要内容区域：左侧菜单 + 文档内容 */}
-      <div className="flex flex-1 max-w-8xl mx-auto w-full px-4 sm:px-6 lg:px-8 gap-8">
+      <div className="flex flex-1 max-w-8xl mx-auto w-full px-4 lg:px-8 gap-8">
         {/* 侧边栏导航 */}
         <Sidebar currentPath={routePath} />
 
         {/* 文档内容区域 */}
-        <div className="flex-1 min-w-0 py-10 lg:py-12">
+        <div className="flex-1 min-w-0 py-0 px-0">
           {/* 文档内容 */}
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-8 lg:p-12 min-h-[calc(100vh-20rem)]">
+          <div className="bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 lg:p-12 min-h-[calc(100vh-20rem)]">
             {children}
           </div>
         </div>

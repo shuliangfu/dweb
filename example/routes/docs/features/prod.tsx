@@ -3,17 +3,14 @@
  * 展示 DWeb 框架的生产服务器功能和使用方法
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
-import type { PageProps } from "@dreamer/dweb";
+import DocRenderer from "@components/DocRenderer.tsx";
 
 export const metadata = {
   title: "生产服务器 (prod) - DWeb 框架文档",
   description: "DWeb 框架的生产服务器使用指南，部署生产版本",
 };
 
-export default function FeaturesProdPage(
-  { params: _params, query: _query, data: _data }: PageProps,
-) {
+export default function FeaturesProdPage() {
   // 生产服务器 - 单应用模式
   const singleAppCode = `# 启动生产服务器
 deno task start
@@ -63,118 +60,107 @@ docker run -p 3000:3000 dweb-app
 # 使用环境变量
 docker run -p 3000:3000 -e DENO_ENV=production -e PORT=8080 dweb-app`;
 
+  const content = {
+    title: "生产服务器 (prod)",
+    description: "DWeb 框架的生产服务器提供了优化的性能和安全性，适合部署到生产环境。",
+    sections: [
+      {
+        title: "启动生产服务器",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "单应用模式",
+            blocks: [
+              {
+                type: "code",
+                code: singleAppCode,
+                language: "bash",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "多应用模式",
+            blocks: [
+              {
+                type: "code",
+                code: multiAppCode,
+                language: "bash",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "生产服务器特性",
+        blocks: [
+          {
+            type: "code",
+            code: featuresCode,
+            language: "text",
+          },
+        ],
+      },
+      {
+        title: "生产环境优化",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "**集群模式 (Cluster Mode)**：支持 PUP_CLUSTER_INSTANCE 环境变量，自动适配端口偏移，无需手动配置即可实现多实例负载均衡部署。",
+              "**零拷贝服务 (Zero-Copy Serving)**：静态文件服务采用零拷贝技术，直接将文件流传输到网络 socket，极大降低了 CPU 和内存占用。",
+              "**优雅关闭 (Graceful Shutdown)**：内置信号处理机制（SIGINT, SIGTERM），确保在服务停止前完成正在处理的请求并正确释放数据库连接等资源。",
+            ],
+          },
+        ],
+      },
+      {
+        title: "环境变量",
+        blocks: [
+          {
+            type: "code",
+            code: envVarsCode,
+            language: "text",
+          },
+        ],
+      },
+      {
+        title: "Docker 部署",
+        blocks: [
+          {
+            type: "code",
+            code: dockerCode,
+            language: "bash",
+          },
+          {
+            type: "text",
+            content: "详细说明请参考 [Docker 部署](/docs/deployment/docker) 文档。",
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[构建](/docs/features/build)",
+              "[优雅关闭](/docs/features/shutdown)",
+              "[Docker 部署](/docs/deployment/docker)",
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
   return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        生产服务器 (prod)
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 框架的生产服务器提供了优化的性能和安全性，适合部署到生产环境。
-      </p>
-
-      {/* 启动生产服务器 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          启动生产服务器
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          单应用模式
-        </h3>
-        <CodeBlock code={singleAppCode} language="bash" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          多应用模式
-        </h3>
-        <CodeBlock code={multiAppCode} language="bash" />
-      </section>
-
-      {/* 生产服务器特性 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          生产服务器特性
-        </h2>
-        <CodeBlock code={featuresCode} language="text" />
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          生产环境优化
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <strong>集群模式 (Cluster Mode)</strong>：
-            支持 PUP_CLUSTER_INSTANCE 环境变量，自动适配端口偏移，无需手动配置即可实现多实例负载均衡部署。
-          </li>
-          <li>
-            <strong>零拷贝服务 (Zero-Copy Serving)</strong>：
-            静态文件服务采用零拷贝技术，直接将文件流传输到网络 socket，极大降低了 CPU 和内存占用。
-          </li>
-          <li>
-            <strong>优雅关闭 (Graceful Shutdown)</strong>：
-            内置信号处理机制（SIGINT, SIGTERM），确保在服务停止前完成正在处理的请求并正确释放数据库连接等资源。
-          </li>
-        </ul>
-      </section>
-
-      {/* 环境变量 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          环境变量
-        </h2>
-        <CodeBlock code={envVarsCode} language="text" />
-      </section>
-
-      {/* Docker 部署 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          Docker 部署
-        </h2>
-        <CodeBlock code={dockerCode} language="bash" />
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mt-4">
-          详细说明请参考{" "}
-          <a
-            href="/docs/deployment/docker"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Docker 部署
-          </a>{" "}
-          文档。
-        </p>
-      </section>
-
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/features/build"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              构建
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/features/shutdown"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              优雅关闭
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/deployment/docker"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Docker 部署
-            </a>
-          </li>
-        </ul>
-      </section>
-    </article>
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

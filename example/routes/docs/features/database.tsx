@@ -3,8 +3,7 @@
  * 详细介绍 DWeb 框架的数据库功能
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
-import type { PageProps } from "@dreamer/dweb";
+import DocRenderer from "@components/DocRenderer.tsx";
 
 export const metadata = {
   title: "数据库模块 - DWeb 框架文档",
@@ -14,9 +13,7 @@ export const metadata = {
 /**
  * 数据库模块文档页面
  */
-export default function DatabasePage(
-  { params: _params, query: _query, data: _data }: PageProps,
-) {
+export default function DatabasePage() {
   // 初始化数据库 - 方式 1：使用初始化工具（推荐）
   const initDbFromConfigCode =
     `import { initDatabaseFromConfig } from '@dreamer/dweb';
@@ -840,98 +837,7 @@ const post = await Post.find(1);
 const user = await post.user();
 const comments = await post.comments();`;
 
-  return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      {/* 标题 */}
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        数据库模块
-      </h1>
-
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 框架提供了强大的数据库支持，支持 PostgreSQL 和
-        MongoDB，包含查询构建器、ORM/ODM、迁移管理等功能。
-      </p>
-
-      {/* 架构深度与优化 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          架构深度与优化
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          ORM 架构
-        </h3>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <strong>Active Record 模式</strong>： SQLModel
-            类实现了一个功能丰富的 Active Record 模式。模型类（如 User）直接拥有
-            find, create, update 等方法，使用直观便捷。
-          </li>
-          <li>
-            <strong>多适配器策略 (Multi-Adapter Strategy)</strong>：
-            DatabaseManager 管理多个连接，并通过 DatabaseAdapter
-            接口抽象了底层数据库（支持 PostgreSQL 和
-            MongoDB），实现了业务逻辑与数据库实现的解耦。
-          </li>
-          <li>
-            <strong>流式查询构建器 (Fluent Query Builder)</strong>：
-            SQLQueryBuilder 提供了链式调用的 API
-            (select().from().where().join())，用于构建复杂的 SQL
-            查询，并自动防止 SQL 注入。
-          </li>
-        </ul>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          性能优化
-        </h3>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <strong>自动连接管理</strong>： 模型类使用 ensureInitialized
-            机制，只有在第一次执行查询时才建立连接或加载配置，加快了应用启动速度。
-          </li>
-          <li>
-            <strong>集成缓存层</strong>： SQLModel 直接集成了
-            CacheAdapter，支持在 ORM 层级配置
-            cacheTTL，能够自动缓存查询结果，显著减少数据库负载。
-          </li>
-        </ul>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          高级特性
-        </h3>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <strong>软删除 (Soft Deletes)</strong>：
-            原生支持软删除逻辑（deletedAt），并提供了
-            withTrashed()、onlyTrashed() 和 restore() 等 API
-            进行全生命周期管理。
-          </li>
-          <li>
-            <strong>虚拟字段与作用域</strong>： 支持 virtuals（计算属性）和
-            scopes（预定义查询条件），增强了模型的表达能力和代码复用性。
-          </li>
-          <li>
-            <strong>内置验证器</strong>： 在 ORM 层实现了字段级的 Schema
-            验证（required, min, max, pattern
-            等），保证入库数据的完整性和一致性。
-          </li>
-        </ul>
-      </section>
-
-      {/* 导入方式 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          导入方式
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          所有数据库相关的功能都可以从{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            @dreamer/dweb/database
-          </code>{" "}
-          统一导入，无需从子目录导入：
-        </p>
-        <CodeBlock
-          code={`import {
+  const importCode = `import {
   // 管理器
   DatabaseManager,
   // 类型
@@ -972,29 +878,9 @@ const comments = await post.comments();`;
   // 初始化工具
   initDatabaseFromConfig,
   setupDatabaseConfigLoader,
-} from '@dreamer/dweb';`}
-          language="typescript"
-        />
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mt-2">
-          使用 MySQL 时，请从{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            @dreamer/dweb/database/adapters/mysql
-          </code>{" "}
-          导入{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            MySQLAdapter
-          </code>
-          。
-        </p>
-      </section>
+} from '@dreamer/dweb';`;
 
-      {/* 目录结构 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          目录结构
-        </h2>
-        <CodeBlock
-          code={`src/features/database/
+  const directoryStructureCode = `src/features/database/
 ├── adapters/          # 数据库适配器
 │   ├── base.ts        # 基础适配器抽象类
 │   ├── mongodb.ts     # MongoDB 适配器
@@ -1009,666 +895,643 @@ const comments = await post.comments();`;
 ├── query/             # 查询构建器
 │   ├── mongo-builder.ts
 │   └── sql-builder.ts
-└── types.ts           # 数据库类型定义`}
-          language="text"
-        />
-      </section>
+└── types.ts           # 数据库类型定义`;
 
-      {/* 快速开始 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          快速开始
-        </h2>
+  const content = {
+    title: "数据库模块",
+    description: "DWeb 框架提供了强大的数据库支持，支持 PostgreSQL 和 MongoDB，包含查询构建器、ORM/ODM、迁移管理等功能。",
+    sections: [
 
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
-          初始化数据库
-        </h3>
+      {
+        title: "架构深度与优化",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "ORM 架构",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**Active Record 模式**：SQLModel 类实现了一个功能丰富的 Active Record 模式。模型类（如 User）直接拥有 find, create, update 等方法，使用直观便捷。",
+                  "**多适配器策略 (Multi-Adapter Strategy)**：DatabaseManager 管理多个连接，并通过 DatabaseAdapter 接口抽象了底层数据库（支持 PostgreSQL 和 MongoDB），实现了业务逻辑与数据库实现的解耦。",
+                  "**流式查询构建器 (Fluent Query Builder)**：SQLQueryBuilder 提供了链式调用的 API (select().from().where().join())，用于构建复杂的 SQL 查询，并自动防止 SQL 注入。",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "性能优化",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**自动连接管理**：模型类使用 ensureInitialized 机制，只有在第一次执行查询时才建立连接或加载配置，加快了应用启动速度。",
+                  "**集成缓存层**：SQLModel 直接集成了 CacheAdapter，支持在 ORM 层级配置 cacheTTL，能够自动缓存查询结果，显著减少数据库负载。",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "高级特性",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**软删除 (Soft Deletes)**：原生支持软删除逻辑（deletedAt），并提供了 withTrashed()、onlyTrashed() 和 restore() 等 API 进行全生命周期管理。",
+                  "**虚拟字段与作用域**：支持 virtuals（计算属性）和 scopes（预定义查询条件），增强了模型的表达能力和代码复用性。",
+                  "**内置验证器**：在 ORM 层实现了字段级的 Schema 验证（required, min, max, pattern 等），保证入库数据的完整性和一致性。",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "导入方式",
+        blocks: [
+          {
+            type: "text",
+            content: "所有数据库相关的功能都可以从 `@dreamer/dweb/database` 统一导入，无需从子目录导入：",
+          },
+          {
+            type: "code",
+            code: importCode,
+            language: "typescript",
+          },
+          {
+            type: "text",
+            content: "使用 MySQL 时，请从 `@dreamer/dweb/database/adapters/mysql` 导入 `MySQLAdapter`。",
+          },
+        ],
+      },
+      {
+        title: "目录结构",
+        blocks: [
+          {
+            type: "code",
+            code: directoryStructureCode,
+            language: "text",
+          },
+        ],
+      },
 
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          方式 1：使用初始化工具（推荐）
-        </h4>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          在项目入口文件（如{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            main.ts
-          </code>{" "}
-          或{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            init.ts
-          </code>）中调用初始化工具，自动从{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            dweb.config.ts
-          </code>{" "}
-          加载配置：
-        </p>
-        <CodeBlock code={initDbFromConfigCode} language="typescript" />
+      {
+        title: "快速开始",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "初始化数据库",
+            blocks: [
+              {
+                type: "subsection",
+                level: 4,
+                title: "方式 1：使用初始化工具（推荐）",
+                blocks: [
+                  {
+                    type: "text",
+                    content: "在项目入口文件（如 `main.ts` 或 `init.ts`）中调用初始化工具，自动从 `dweb.config.ts` 加载配置：",
+                  },
+                  {
+                    type: "code",
+                    code: initDbFromConfigCode,
+                    language: "typescript",
+                  },
+                ],
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "方式 2：手动初始化",
+                blocks: [
+                  {
+                    type: "text",
+                    content: "使用 `initDatabase` 函数手动初始化数据库连接：",
+                  },
+                  {
+                    type: "code",
+                    code: initDbCode,
+                    language: "typescript",
+                  },
+                ],
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "解决 \"Database config loader not set\" 错误",
+                blocks: [
+                  {
+                    type: "text",
+                    content: "如果在使用模型时遇到 `Database config loader not set` 错误，需要在项目启动时设置配置加载器：",
+                  },
+                  {
+                    type: "code",
+                    code: setupConfigLoaderCode,
+                    language: "typescript",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "使用 ORM 模型",
+            blocks: [
+              {
+                type: "text",
+                content: "框架提供了强大的 ORM/ODM 功能，支持字段定义、验证、时间戳、软删除、作用域、虚拟字段、生命周期钩子等特性。",
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "SQLModel 完整示例",
+                blocks: [
+                  {
+                    type: "text",
+                    content: "以下是一个完整的 SQLModel 示例，展示了所有特性：",
+                  },
+                  {
+                    type: "code",
+                    code: sqlModelFullCode,
+                    language: "typescript",
+                  },
+                ],
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "使用示例",
+                blocks: [
+                  {
+                    type: "text",
+                    content: "使用 User 模型的各种方法：",
+                  },
+                  {
+                    type: "code",
+                    code: sqlModelUsageCode,
+                    language: "typescript",
+                  },
+                ],
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "MongoModel 完整示例",
+                blocks: [
+                  {
+                    type: "text",
+                    content: "MongoDB 模型示例，支持地理空间查询和聚合查询：",
+                  },
+                  {
+                    type: "code",
+                    code: mongoModelFullCode,
+                    language: "typescript",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
 
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          方式 2：手动初始化
-        </h4>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          使用{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            initDatabase
-          </code>{" "}
-          函数手动初始化数据库连接：
-        </p>
-        <CodeBlock code={initDbCode} language="typescript" />
+      {
+        title: "数据库适配器",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "PostgreSQL 适配器",
+            blocks: [
+              {
+                type: "text",
+                content: "PostgreSQL 适配器支持连接池、事务、查询构建等功能：",
+              },
+              {
+                type: "code",
+                code: postgresAdapterCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "MongoDB 适配器",
+            blocks: [
+              {
+                type: "text",
+                content: "MongoDB 适配器支持文档查询、聚合、索引等功能：",
+              },
+              {
+                type: "code",
+                code: mongoAdapterCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "MySQL 适配器",
+            blocks: [
+              {
+                type: "text",
+                content: "MySQL/MariaDB 适配器支持基本查询、执行、事务与自动重连：",
+              },
+              {
+                type: "code",
+                code: mysqlAdapterCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
 
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          解决 "Database config loader not set" 错误
-        </h4>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          如果在使用模型时遇到{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            Database config loader not set
-          </code>{" "}
-          错误，需要在项目启动时设置配置加载器：
-        </p>
-        <CodeBlock code={setupConfigLoaderCode} language="typescript" />
+      {
+        title: "ORM/ODM 模型",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "模型特性",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "字段定义和类型验证",
+                  "自动时间戳管理",
+                  "软删除支持",
+                  "查询作用域",
+                  "虚拟字段",
+                  "生命周期钩子",
+                  "关联查询（一对一、一对多、多对多）",
+                  "索引管理",
+                  "查询缓存",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "关联查询",
+            blocks: [
+              {
+                type: "text",
+                content: "关联查询用于处理模型之间的关系，支持一对一、一对多和多对一关系。",
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "关联方法",
+                blocks: [
+                  {
+                    type: "text",
+                    content: "**belongsTo(RelatedModel, foreignKey, localKey?)** - 属于关系（多对一）\n\n例如：Post belongsTo User（一个帖子属于一个用户）\n\n- `RelatedModel`: 关联的模型类\n- `foreignKey`: 外键字段名（当前模型中的字段）\n- `localKey`: 关联模型的主键字段名（默认为关联模型的 primaryKey）",
+                  },
+                  {
+                    type: "text",
+                    content: "**hasOne(RelatedModel, foreignKey, localKey?)** - 有一个关系（一对一）\n\n例如：User hasOne Profile（一个用户有一个资料）\n\n- `foreignKey`: 外键字段名（关联模型中的字段）\n- `localKey`: 当前模型的主键字段名（默认为当前模型的 primaryKey）",
+                  },
+                  {
+                    type: "text",
+                    content: "**hasMany(RelatedModel, foreignKey, localKey?)** - 有多个关系（一对多）\n\n例如：User hasMany Posts（一个用户有多个帖子）\n\n- `foreignKey`: 外键字段名（关联模型中的字段）\n- `localKey`: 当前模型的主键字段名（默认为当前模型的 primaryKey）",
+                  },
+                ],
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "完整示例",
+                blocks: [
+                  {
+                    type: "code",
+                    code: associationDetailCode,
+                    language: "typescript",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
 
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
-          使用 ORM 模型
-        </h3>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          框架提供了强大的 ORM/ODM
-          功能，支持字段定义、验证、时间戳、软删除、作用域、虚拟字段、生命周期钩子等特性。
-        </p>
+      {
+        title: "查询构建器",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "SQL 查询构建器",
+            blocks: [
+              {
+                type: "text",
+                content: "使用查询构建器可以方便地构建复杂的 SQL 查询：",
+              },
+              {
+                type: "code",
+                code: sqlQueryBuilderCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "MongoDB 查询构建器",
+            blocks: [
+              {
+                type: "text",
+                content: "MongoDB 查询构建器支持文档查询：",
+              },
+              {
+                type: "code",
+                code: mongoQueryBuilderCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "数据库迁移",
+        blocks: [
+          {
+            type: "text",
+            content: "使用 `MigrationManager` 管理数据库迁移：",
+          },
+          {
+            type: "code",
+            code: migrationCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "查询缓存",
+        blocks: [
+          {
+            type: "text",
+            content: "框架支持查询缓存，可以显著提高查询性能：",
+          },
+          {
+            type: "code",
+            code: cacheCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "查询日志",
+        blocks: [
+          {
+            type: "text",
+            content: "使用 `QueryLogger` 记录和监控数据库查询：",
+          },
+          {
+            type: "code",
+            code: queryLoggerCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "连接池监控",
+        blocks: [
+          {
+            type: "text",
+            content: "监控数据库连接池的状态，了解连接使用情况：",
+          },
+          {
+            type: "code",
+            code: poolMonitorCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "健康检查",
+        blocks: [
+          {
+            type: "text",
+            content: "执行数据库健康检查，确保数据库连接正常：",
+          },
+          {
+            type: "code",
+            code: healthCheckCode,
+            language: "typescript",
+          },
+        ],
+      },
 
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          SQLModel 完整示例
-        </h4>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          以下是一个完整的 SQLModel 示例，展示了所有特性：
-        </p>
-        <CodeBlock code={sqlModelFullCode} language="typescript" />
+      {
+        title: "API 参考",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "模型方法",
+            blocks: [
+              {
+                type: "subsection",
+                level: 4,
+                title: "查询方法",
+                blocks: [
+                  {
+                    type: "list",
+                    ordered: false,
+                    items: [
+                      "**`find(condition, fields?)`** - 查找单条记录",
+                      "**`findAll(condition?, fields?)`** - 查找多条记录",
+                      "**`findById(id, fields?)`** - 根据 ID 查找",
+                      "**`findOne(condition, fields?)`** - 查找一条记录",
+                      "**`count(condition?)`** - 统计数量",
+                      "**`exists(condition)`** - 检查是否存在",
+                      "**`paginate(condition, page, pageSize)`** - 分页查询",
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "创建方法",
+                blocks: [
+                  {
+                    type: "list",
+                    ordered: false,
+                    items: [
+                      "**`create(data)`** - 创建单条记录",
+                      "**`createMany(data[])`** - 批量创建",
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "更新方法",
+                blocks: [
+                  {
+                    type: "list",
+                    ordered: false,
+                    items: [
+                      "**`update(condition, data)`** - 更新记录（静态方法）",
+                      "**`update(data)`** - 更新当前实例（实例方法）",
+                      "**`updateById(id, data)`** - 通过主键 ID 更新记录（静态方法）",
+                      "**`updateMany(condition, data)`** - 批量更新",
+                      "**`increment(condition, field, amount)`** - 递增字段（静态方法）",
+                      "**`decrement(condition, field, amount)`** - 递减字段（静态方法）",
+                      "**`findOneAndUpdate(condition, data)`** - 查找并更新（仅 MongoDB）",
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "删除方法",
+                blocks: [
+                  {
+                    type: "list",
+                    ordered: false,
+                    items: [
+                      "**`delete(condition)`** - 删除记录（静态方法）",
+                      "**`deleteById(id)`** - 通过主键 ID 删除记录（静态方法）",
+                      "**`delete()`** - 删除当前实例（实例方法）",
+                      "**`deleteMany(condition)`** - 批量删除",
+                      "**`findOneAndDelete(condition)`** - 查找并删除（仅 MongoDB）",
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "软删除相关方法",
+                blocks: [
+                  {
+                    type: "list",
+                    ordered: false,
+                    items: [
+                      "**`restore(condition)`** - 恢复软删除的记录（静态方法）",
+                      "**`forceDelete(condition)`** - 强制删除记录，忽略软删除（静态方法）",
+                      "**`withTrashed()`** - 查询时包含已软删除的记录（静态方法，返回查询构建器）",
+                      "**`onlyTrashed()`** - 只查询已软删除的记录（静态方法，返回查询构建器）",
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "其他方法",
+                blocks: [
+                  {
+                    type: "list",
+                    ordered: false,
+                    items: [
+                      "**`upsert(condition, data)`** - 更新或插入",
+                      "**`findOrCreate(condition, data)`** - 查找或创建（如果不存在则创建）",
+                      "**`distinct(field, condition?)`** - 去重查询",
+                      "**`aggregate(pipeline)`** - 聚合查询（仅 MongoDB）",
+                      "**`truncate()`** - 清空表/集合（删除所有记录）",
+                      "**`save()`** - 保存当前实例（实例方法）",
+                      "**`reload()`** - 重新加载当前实例（实例方法）",
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "查询作用域方法",
+                blocks: [
+                  {
+                    type: "list",
+                    ordered: false,
+                    items: [
+                      "**`scope(scopeName)`** - 应用查询作用域（静态方法，返回查询构建器）",
+                    ],
+                  },
+                  {
+                    type: "text",
+                    content: "返回的查询构建器支持 `findAll()`, `find()`, `count()` 方法",
+                  },
+                ],
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "初始化方法",
+                blocks: [
+                  {
+                    type: "list",
+                    ordered: false,
+                    items: [
+                      "**`init(connectionName?)`** - 初始化模型，设置数据库适配器并创建索引（静态方法）",
+                    ],
+                  },
+                  {
+                    type: "text",
+                    content: "`connectionName`: 连接名称，默认为 'default'。如果数据库未初始化，会自动尝试从 dweb.config.ts 加载配置并初始化。",
+                  },
+                ],
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "关联查询方法（实例方法）",
+                blocks: [
+                  {
+                    type: "list",
+                    ordered: false,
+                    items: [
+                      "**`belongsTo(RelatedModel, foreignKey, localKey?)`** - 属于关系（多对一）",
+                      "**`hasOne(RelatedModel, foreignKey, localKey?)`** - 有一个关系（一对一）",
+                      "**`hasMany(RelatedModel, foreignKey, localKey?)`** - 有多个关系（一对多）",
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "索引管理",
+                blocks: [
+                  {
+                    type: "list",
+                    ordered: false,
+                    items: [
+                      "**`createIndexes()`** - 创建索引",
+                      "**`createIndexes(true)`** - 强制重新创建索引",
+                      "**`dropIndexes()`** - 删除所有索引",
+                      "**`getIndexes()`** - 获取所有索引",
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
 
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          使用示例
-        </h4>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          使用 User 模型的各种方法：
-        </p>
-        <CodeBlock code={sqlModelUsageCode} language="typescript" />
-
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          MongoModel 完整示例
-        </h4>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          MongoDB 模型示例，支持地理空间查询和聚合查询：
-        </p>
-        <CodeBlock code={mongoModelFullCode} language="typescript" />
-      </section>
-
-      {/* 数据库适配器 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          数据库适配器
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
-          PostgreSQL 适配器
-        </h3>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          PostgreSQL 适配器支持连接池、事务、查询构建等功能：
-        </p>
-        <CodeBlock code={postgresAdapterCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
-          MongoDB 适配器
-        </h3>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          MongoDB 适配器支持文档查询、聚合、索引等功能：
-        </p>
-        <CodeBlock code={mongoAdapterCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
-          MySQL 适配器
-        </h3>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          MySQL/MariaDB 适配器支持基本查询、执行、事务与自动重连：
-        </p>
-        <CodeBlock code={mysqlAdapterCode} language="typescript" />
-      </section>
-
-      {/* ORM/ODM 模型 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          ORM/ODM 模型
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
-          模型特性
-        </h3>
-        <ul className="list-disc list-inside space-y-2 my-4">
-          <li className="text-gray-700 dark:text-gray-300">
-            字段定义和类型验证
-          </li>
-          <li className="text-gray-700 dark:text-gray-300">自动时间戳管理</li>
-          <li className="text-gray-700 dark:text-gray-300">软删除支持</li>
-          <li className="text-gray-700 dark:text-gray-300">查询作用域</li>
-          <li className="text-gray-700 dark:text-gray-300">虚拟字段</li>
-          <li className="text-gray-700 dark:text-gray-300">生命周期钩子</li>
-          <li className="text-gray-700 dark:text-gray-300">
-            关联查询（一对一、一对多、多对多）
-          </li>
-          <li className="text-gray-700 dark:text-gray-300">索引管理</li>
-          <li className="text-gray-700 dark:text-gray-300">查询缓存</li>
-        </ul>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
-          关联查询
-        </h3>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          关联查询用于处理模型之间的关系，支持一对一、一对多和多对一关系。
-        </p>
-
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          关联方法
-        </h4>
-        <div className="space-y-4 mb-6">
-          <div>
-            <p className="text-gray-700 dark:text-gray-300 mb-2">
-              <strong>belongsTo(RelatedModel, foreignKey, localKey?)</strong>
-              {" "}
-              - 属于关系（多对一）
-            </p>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-              例如：Post belongsTo User（一个帖子属于一个用户）
-            </p>
-            <ul className="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-400 text-sm ml-4">
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  RelatedModel
-                </code>: 关联的模型类
-              </li>
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  foreignKey
-                </code>: 外键字段名（当前模型中的字段）
-              </li>
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  localKey
-                </code>: 关联模型的主键字段名（默认为关联模型的 primaryKey）
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <p className="text-gray-700 dark:text-gray-300 mb-2">
-              <strong>hasOne(RelatedModel, foreignKey, localKey?)</strong>{" "}
-              - 有一个关系（一对一）
-            </p>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-              例如：User hasOne Profile（一个用户有一个资料）
-            </p>
-            <ul className="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-400 text-sm ml-4">
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  foreignKey
-                </code>: 外键字段名（关联模型中的字段）
-              </li>
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  localKey
-                </code>: 当前模型的主键字段名（默认为当前模型的 primaryKey）
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <p className="text-gray-700 dark:text-gray-300 mb-2">
-              <strong>hasMany(RelatedModel, foreignKey, localKey?)</strong>{" "}
-              - 有多个关系（一对多）
-            </p>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-              例如：User hasMany Posts（一个用户有多个帖子）
-            </p>
-            <ul className="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-400 text-sm ml-4">
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  foreignKey
-                </code>: 外键字段名（关联模型中的字段）
-              </li>
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  localKey
-                </code>: 当前模型的主键字段名（默认为当前模型的 primaryKey）
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          完整示例
-        </h4>
-        <CodeBlock code={associationDetailCode} language="typescript" />
-      </section>
-
-      {/* 查询构建器 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          查询构建器
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
-          SQL 查询构建器
-        </h3>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          使用查询构建器可以方便地构建复杂的 SQL 查询：
-        </p>
-        <CodeBlock code={sqlQueryBuilderCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
-          MongoDB 查询构建器
-        </h3>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          MongoDB 查询构建器支持文档查询：
-        </p>
-        <CodeBlock code={mongoQueryBuilderCode} language="typescript" />
-      </section>
-
-      {/* 数据库迁移 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          数据库迁移
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          使用{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            MigrationManager
-          </code>{" "}
-          管理数据库迁移：
-        </p>
-        <CodeBlock code={migrationCode} language="typescript" />
-      </section>
-
-      {/* 查询缓存 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          查询缓存
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          框架支持查询缓存，可以显著提高查询性能：
-        </p>
-        <CodeBlock code={cacheCode} language="typescript" />
-      </section>
-
-      {/* 查询日志 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          查询日志
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          使用{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            QueryLogger
-          </code>{" "}
-          记录和监控数据库查询：
-        </p>
-        <CodeBlock code={queryLoggerCode} language="typescript" />
-      </section>
-
-      {/* 连接池监控 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          连接池监控
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          监控数据库连接池的状态，了解连接使用情况：
-        </p>
-        <CodeBlock code={poolMonitorCode} language="typescript" />
-      </section>
-
-      {/* 健康检查 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          健康检查
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          执行数据库健康检查，确保数据库连接正常：
-        </p>
-        <CodeBlock code={healthCheckCode} language="typescript" />
-      </section>
-
-      {/* API 参考 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          API 参考
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
-          模型方法
-        </h3>
-
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          查询方法
-        </h4>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              find(condition, fields?)
-            </code>{" "}
-            - 查找单条记录
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              findAll(condition?, fields?)
-            </code>{" "}
-            - 查找多条记录
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              findById(id, fields?)
-            </code>{" "}
-            - 根据 ID 查找
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              findOne(condition, fields?)
-            </code>{" "}
-            - 查找一条记录
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              count(condition?)
-            </code>{" "}
-            - 统计数量
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              exists(condition)
-            </code>{" "}
-            - 检查是否存在
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              paginate(condition, page, pageSize)
-            </code>{" "}
-            - 分页查询
-          </li>
-        </ul>
-
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          创建方法
-        </h4>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              create(data)
-            </code>{" "}
-            - 创建单条记录
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              createMany(data[])
-            </code>{" "}
-            - 批量创建
-          </li>
-        </ul>
-
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          更新方法
-        </h4>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              update(condition, data)
-            </code>{" "}
-            - 更新记录（静态方法）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              update(data)
-            </code>{" "}
-            - 更新当前实例（实例方法）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              updateById(id, data)
-            </code>{" "}
-            - 通过主键 ID 更新记录（静态方法）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              updateMany(condition, data)
-            </code>{" "}
-            - 批量更新
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              increment(condition, field, amount)
-            </code>{" "}
-            - 递增字段（静态方法）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              decrement(condition, field, amount)
-            </code>{" "}
-            - 递减字段（静态方法）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              findOneAndUpdate(condition, data)
-            </code>{" "}
-            - 查找并更新（仅 MongoDB）
-          </li>
-        </ul>
-
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          删除方法
-        </h4>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              delete(condition)
-            </code>{" "}
-            - 删除记录（静态方法）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              deleteById(id)
-            </code>{" "}
-            - 通过主键 ID 删除记录（静态方法）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              delete()
-            </code>{" "}
-            - 删除当前实例（实例方法）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              deleteMany(condition)
-            </code>{" "}
-            - 批量删除
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              findOneAndDelete(condition)
-            </code>{" "}
-            - 查找并删除（仅 MongoDB）
-          </li>
-        </ul>
-
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          软删除相关方法
-        </h4>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              restore(condition)
-            </code>{" "}
-            - 恢复软删除的记录（静态方法）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              forceDelete(condition)
-            </code>{" "}
-            - 强制删除记录，忽略软删除（静态方法）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              withTrashed()
-            </code>{" "}
-            - 查询时包含已软删除的记录（静态方法，返回查询构建器）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              onlyTrashed()
-            </code>{" "}
-            - 只查询已软删除的记录（静态方法，返回查询构建器）
-          </li>
-        </ul>
-
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          其他方法
-        </h4>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              upsert(condition, data)
-            </code>{" "}
-            - 更新或插入
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              findOrCreate(condition, data)
-            </code>{" "}
-            - 查找或创建（如果不存在则创建）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              distinct(field, condition?)
-            </code>{" "}
-            - 去重查询
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              aggregate(pipeline)
-            </code>{" "}
-            - 聚合查询（仅 MongoDB）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              truncate()
-            </code>{" "}
-            - 清空表/集合（删除所有记录）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              save()
-            </code>{" "}
-            - 保存当前实例（实例方法）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              reload()
-            </code>{" "}
-            - 重新加载当前实例（实例方法）
-          </li>
-        </ul>
-
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          查询作用域方法
-        </h4>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              scope(scopeName)
-            </code>{" "}
-            - 应用查询作用域（静态方法，返回查询构建器）
-          </li>
-          <li className="text-gray-600 dark:text-gray-400 text-sm ml-4">
-            返回的查询构建器支持{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-              findAll()
-            </code>,{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-              find()
-            </code>,{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-              count()
-            </code>{" "}
-            方法
-          </li>
-        </ul>
-
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          初始化方法
-        </h4>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              init(connectionName?)
-            </code>{" "}
-            - 初始化模型，设置数据库适配器并创建索引（静态方法）
-          </li>
-          <li className="text-gray-600 dark:text-gray-400 text-sm ml-4">
-            <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-              connectionName
-            </code>: 连接名称，默认为 'default'
-          </li>
-          <li className="text-gray-600 dark:text-gray-400 text-sm ml-4">
-            如果数据库未初始化，会自动尝试从 dweb.config.ts 加载配置并初始化
-          </li>
-        </ul>
-
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          关联查询方法（实例方法）
-        </h4>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              belongsTo(RelatedModel, foreignKey, localKey?)
-            </code>{" "}
-            - 属于关系（多对一）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              hasOne(RelatedModel, foreignKey, localKey?)
-            </code>{" "}
-            - 有一个关系（一对一）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              hasMany(RelatedModel, foreignKey, localKey?)
-            </code>{" "}
-            - 有多个关系（一对多）
-          </li>
-        </ul>
-
-        <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-8 mb-3">
-          索引管理
-        </h4>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              createIndexes()
-            </code>{" "}
-            - 创建索引
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              createIndexes(true)
-            </code>{" "}
-            - 强制重新创建索引
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              dropIndexes()
-            </code>{" "}
-            - 删除所有索引
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              getIndexes()
-            </code>{" "}
-            - 获取所有索引
-          </li>
-        </ul>
-      </section>
-    </article>
+  return (
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

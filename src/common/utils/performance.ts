@@ -71,16 +71,13 @@ export function getMemoryUsage(): {
   heapUsed: number;
   external: number;
 } {
-  if (IS_SERVER && Deno.memoryUsage) {
-    return Deno.memoryUsage();
+  if (!IS_SERVER) {
+    throw new Error("getMemoryUsage 只能在服务端环境使用");
   }
-  // 浏览器环境或 Deno 不可用时的降级处理
-  return {
-    rss: 0,
-    heapTotal: 0,
-    heapUsed: 0,
-    external: 0,
-  };
+  if (!Deno.memoryUsage) {
+    throw new Error("Deno.memoryUsage 不可用");
+  }
+  return Deno.memoryUsage();
 }
 
 /**

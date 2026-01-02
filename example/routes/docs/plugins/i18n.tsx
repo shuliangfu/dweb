@@ -2,7 +2,7 @@
  * 插件 - i18n 文档页面
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -52,285 +52,143 @@ plugins: [
   }),
 ],`;
 
-  return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        i18n - 国际化
-      </h1>
-      <p className="text-gray-700 leading-relaxed mb-8">
-        i18n 插件提供国际化支持，支持多语言切换。
-      </p>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          架构与特性
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <strong>混合加载策略 (Hybrid Loading)</strong>：
-            支持从构建目录（生产环境）或源码目录（开发环境）灵活加载翻译文件。同时提供了
-            API 端点
-            (/i18n/locales/:lang.json)，允许客户端按需获取翻译包，减少首屏体积。
-          </li>
-          <li>
-            <strong>多维语言检测</strong>： 实现了基于 路径 -&gt; 查询参数 -&gt;
-            Cookie -&gt; Header
-            的多级语言检测策略，确保用户始终能获得正确的语言体验。
-          </li>
-          <li>
-            <strong>全局注入</strong>： 在服务端和客户端均注入全局 $t
-            函数，保证同构代码的一致性，使得在组件中进行国际化变得异常简单。
-          </li>
-        </ul>
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          基本使用
-        </h2>
-        <CodeBlock code={i18nCode} language="typescript" />
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          配置选项
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
-          必需参数
-        </h3>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              languages
-            </code>{" "}
-            - 支持的语言列表，每个语言对象包含：
-            <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  code
-                </code>{" "}
-                - 语言代码（如 'en', 'zh-CN'）
-              </li>
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  name
-                </code>{" "}
-                - 语言名称（可选）
-              </li>
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  file
-                </code>{" "}
-                - 语言文件路径（可选）
-              </li>
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  default
-                </code>{" "}
-                - 是否为默认语言（可选）
-              </li>
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  rtl
-                </code>{" "}
-                - 是否为 RTL 语言（可选）
-              </li>
-            </ul>
-          </li>
-        </ul>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
-          可选参数
-        </h3>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              translationsDir
-            </code>{" "}
-            - 翻译文件目录（默认为 'locales'）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              defaultLanguage
-            </code>{" "}
-            - 默认语言代码（如果不指定，使用 languages 中标记为 default 的语言）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              detection
-            </code>{" "}
-            - 语言检测方式配置对象：
-            <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  fromPath
-                </code>{" "}
-                - 是否从 URL 路径检测（如 /en/page），默认 true
-              </li>
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  fromQuery
-                </code>{" "}
-                - 是否从查询参数检测（如 ?lang=en），默认 true
-              </li>
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  fromCookie
-                </code>{" "}
-                - 是否从 Cookie 检测，默认 true
-              </li>
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  cookieName
-                </code>{" "}
-                - Cookie 名称（默认为 'lang'）
-              </li>
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  fromHeader
-                </code>{" "}
-                - 是否从 Accept-Language 头检测，默认 true
-              </li>
-            </ul>
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              routePrefix
-            </code>{" "}
-            - 路由前缀（如 '/:lang/'），可选
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              injectLangAttribute
-            </code>{" "}
-            - 是否在 HTML 中注入语言属性（默认为 true）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              dateFormat
-            </code>{" "}
-            - 日期格式化选项：
-            <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  format
-                </code>{" "}
-                - 日期格式（'short' | 'medium' | 'long' | 'full' | string）
-              </li>
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  timeZone
-                </code>{" "}
-                - 时区
-              </li>
-            </ul>
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              numberFormat
-            </code>{" "}
-            - 数字格式化选项：
-            <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm">
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  style
-                </code>{" "}
-                - 样式（'decimal' | 'currency' | 'percent'）
-              </li>
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  currency
-                </code>{" "}
-                - 货币代码
-              </li>
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  minimumFractionDigits
-                </code>{" "}
-                - 最小小数位数
-              </li>
-              <li>
-                <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">
-                  maximumFractionDigits
-                </code>{" "}
-                - 最大小数位数
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          客户端 API
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
-          在客户端组件中，可以使用专门的客户端 API 来操作 i18n：
-        </p>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          导入客户端 API
-        </h3>
-        <CodeBlock
-          code={`import { 
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "i18n - 国际化",
+    description: "i18n 插件提供国际化支持，支持多语言切换。",
+    sections: [
+      {
+        title: "架构与特性",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "**混合加载策略 (Hybrid Loading)**：支持从构建目录（生产环境）或源码目录（开发环境）灵活加载翻译文件。同时提供了 API 端点 (/i18n/locales/:lang.json)，允许客户端按需获取翻译包，减少首屏体积。",
+              "**多维语言检测**：实现了基于 路径 -> 查询参数 -> Cookie -> Header 的多级语言检测策略，确保用户始终能获得正确的语言体验。",
+              "**全局注入**：在服务端和客户端均注入全局 $t 函数，保证同构代码的一致性，使得在组件中进行国际化变得异常简单。",
+            ],
+          },
+        ],
+      },
+      {
+        title: "基本使用",
+        blocks: [
+          {
+            type: "code",
+            code: i18nCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "配置选项",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "必需参数",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`languages`** - 支持的语言列表，每个语言对象包含：",
+                  "  - `code` - 语言代码（如 'en', 'zh-CN'）",
+                  "  - `name` - 语言名称（可选）",
+                  "  - `file` - 语言文件路径（可选）",
+                  "  - `default` - 是否为默认语言（可选）",
+                  "  - `rtl` - 是否为 RTL 语言（可选）",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "可选参数",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`translationsDir`** - 翻译文件目录（默认为 'locales'）",
+                  "**`defaultLanguage`** - 默认语言代码（如果不指定，使用 languages 中标记为 default 的语言）",
+                  "**`detection`** - 语言检测方式配置对象：",
+                  "  - `fromPath` - 是否从 URL 路径检测（如 /en/page），默认 true",
+                  "  - `fromQuery` - 是否从查询参数检测（如 ?lang=en），默认 true",
+                  "  - `fromCookie` - 是否从 Cookie 检测，默认 true",
+                  "  - `cookieName` - Cookie 名称（默认为 'lang'）",
+                  "  - `fromHeader` - 是否从 Accept-Language 头检测，默认 true",
+                  "**`routePrefix`** - 路由前缀（如 '/:lang/'），可选",
+                  "**`injectLangAttribute`** - 是否在 HTML 中注入语言属性（默认为 true）",
+                  "**`dateFormat`** - 日期格式化选项：",
+                  "  - `format` - 日期格式（'short' | 'medium' | 'long' | 'full' | string）",
+                  "  - `timeZone` - 时区",
+                  "**`numberFormat`** - 数字格式化选项：",
+                  "  - `style` - 样式（'decimal' | 'currency' | 'percent'）",
+                  "  - `currency` - 货币代码",
+                  "  - `minimumFractionDigits` - 最小小数位数",
+                  "  - `maximumFractionDigits` - 最大小数位数",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "客户端 API",
+        blocks: [
+          {
+            type: "text",
+            content: "在客户端组件中，可以使用专门的客户端 API 来操作 i18n：",
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "导入客户端 API",
+            blocks: [
+              {
+                type: "code",
+                code: `import { 
   getCurrentLanguage, 
   setCurrentLanguage, 
   translate,
   getI18n,
   getTranslations,
   isI18nInitialized
-} from "@dreamer/dweb/client";`}
-          language="typescript"
-        />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          API 方法
-        </h3>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              getCurrentLanguage()
-            </code>{" "}
-            - 获取当前语言代码
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              setCurrentLanguage(langCode: string)
-            </code>{" "}
-            - 设置当前语言（会重新加载语言包并更新 Cookie）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              translate(key: string, params?: Record&lt;string, any&gt;)
-            </code>{" "}
-            - 翻译函数
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              getI18n()
-            </code>{" "}
-            - 获取 i18n 数据对象（包含 lang、translations、t 函数）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              getTranslations()
-            </code>{" "}
-            - 获取当前语言的翻译数据对象
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              isI18nInitialized()
-            </code>{" "}
-            - 检查 i18n 是否已初始化
-          </li>
-        </ul>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          使用示例
-        </h3>
-        <CodeBlock
-          code={`import { 
+} from "@dreamer/dweb/client";`,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "API 方法",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`getCurrentLanguage()`** - 获取当前语言代码",
+                  "**`setCurrentLanguage(langCode: string)`** - 设置当前语言（会重新加载语言包并更新 Cookie）",
+                  "**`translate(key: string, params?: Record<string, any>)`** - 翻译函数",
+                  "**`getI18n()`** - 获取 i18n 数据对象（包含 lang、translations、t 函数）",
+                  "**`getTranslations()`** - 获取当前语言的翻译数据对象",
+                  "**`isI18nInitialized()`** - 检查 i18n 是否已初始化",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "使用示例",
+            blocks: [
+              {
+                type: "code",
+                code: `import { 
   getCurrentLanguage, 
   setCurrentLanguage, 
   translate 
@@ -343,15 +201,19 @@ const currentLang = getCurrentLanguage(); // 'zh-CN' | 'en-US' | null
 const text = translate('common.welcome', { name: 'John' });
 
 // 切换语言
-await setCurrentLanguage('en-US');`}
-          language="typescript"
-        />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          语言切换组件示例
-        </h3>
-        <CodeBlock
-          code={`import { 
+await setCurrentLanguage('en-US');`,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "语言切换组件示例",
+            blocks: [
+              {
+                type: "code",
+                code: `import { 
   getCurrentLanguage, 
   setCurrentLanguage, 
   translate 
@@ -385,10 +247,19 @@ export default function LanguageSwitcher() {
       </button>
     </div>
   );
-}`}
-          language="typescript"
-        />
-      </section>
-    </article>
+}`,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  return (
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

@@ -25,10 +25,3 @@ export {
 export { ipFilter, type IPFilterOptions } from "./ip-filter.ts";
 export { requestId, type RequestIdOptions } from "./request-id.ts";
 export { errorHandler, type ErrorHandlerOptions } from "./error-handler.ts";
-export {
-  requestValidator,
-  type RequestValidatorOptions,
-  type ValidationConfig,
-  type ValidationError,
-  type ValidationRule,
-} from "./request-validator.ts";

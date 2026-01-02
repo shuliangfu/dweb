@@ -15,7 +15,6 @@ src/middleware/
 ├── logger.ts            # 请求日志
 ├── rate-limit.ts        # 速率限制
 ├── request-id.ts        # 请求 ID
-├── request-validator.ts # 请求验证
 ├── security.ts          # 安全头
 ├── static.ts            # 静态文件
 └── mod.ts               # 模块导出
@@ -57,7 +56,6 @@ await server.start(3000);
 - [errorHandler - 错误处理](./error-handler.md)
 - [health - 健康检查](./health.md)
 - [requestId - 请求 ID](./request-id.md)
-- [requestValidator - 请求验证](./request-validator.md)
 - [ipFilter - IP 过滤](./ip-filter.md)
 
 ### 其他

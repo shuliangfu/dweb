@@ -108,7 +108,7 @@ export default function Navbar({ currentPath: initialPath, menus }: NavbarProps)
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 rounded-md text-gray-800 hover:text-gray-900 hover:bg-gray-300 dark:text-gray-100 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-md text-gray-900 hover:text-gray-900 hover:bg-gray-300 dark:text-gray-100 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
               title="切换主题"
               aria-label="切换主题"
             >

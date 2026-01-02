@@ -92,10 +92,6 @@ const navItems: NavItem[] = [
       { title: "JWT 认证 (auth)", path: "/docs/middleware/auth" },
       { title: "健康检查 (health)", path: "/docs/middleware/health" },
       { title: "请求 ID (requestId)", path: "/docs/middleware/request-id" },
-      {
-        title: "请求验证 (requestValidator)",
-        path: "/docs/middleware/request-validator",
-      },
       { title: "IP 过滤 (ipFilter)", path: "/docs/middleware/ip-filter" },
       {
         title: "错误处理 (errorHandler)",
@@ -135,7 +131,27 @@ const navItems: NavItem[] = [
       { title: "控制台工具", path: "/docs/console" },
       { title: "渲染适配器", path: "/docs/render" },
       { title: "客户端 API", path: "/docs/client" },
-      { title: "Web3 工具函数", path: "/docs/common/utils/web3" },
+      { title: "工具函数", path: "/docs/utils" },
+    ],
+  },
+  {
+    title: "工具函数库",
+    children: [
+      { title: "数组工具", path: "/docs/utils/array" },
+      { title: "缓存函数", path: "/docs/utils/cache" },
+      { title: "加密函数", path: "/docs/utils/crypto" },
+      { title: "文件工具", path: "/docs/utils/file" },
+      { title: "格式化函数", path: "/docs/utils/format" },
+      { title: "HTTP 请求库", path: "/docs/utils/http" },
+      { title: "数学工具", path: "/docs/utils/math" },
+      { title: "性能优化工具", path: "/docs/utils/performance" },
+      { title: "存储工具", path: "/docs/utils/storage" },
+      { title: "字符串工具", path: "/docs/utils/string" },
+      { title: "时间工具", path: "/docs/utils/time" },
+      { title: "URL 工具", path: "/docs/utils/url" },
+      { title: "工具函数库", path: "/docs/utils/utils" },
+      { title: "验证函数", path: "/docs/utils/validation" },
+      { title: "Web3 工具函数", path: "/docs/utils/web3" },
     ],
   },
   {
@@ -361,13 +377,13 @@ export default function Sidebar(
       </style>
       <aside className="w-80 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border-r border-gray-200 dark:border-gray-700 h-screen sticky top-0 overflow-y-auto sidebar-scrollbar pb-20">
         <div className="pt-8 px-6 pb-8">
-          <h2 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent mb-6 pl-2">
+          <h2 className="text-xl font-bold text-blue-700 dark:text-blue-200 mb-6 pl-2">
             文档目录
           </h2>
           <nav className="space-y-1.5">
             {navItems.map((item) => {
               const isActive = isItemActive(item, currentPath);
-              const isExpanded = finalExpandedItems.has(item.title);
+              // const isExpanded = finalExpandedItems.has(item.title);
               const hasChildren = item.children && item.children.length > 0;
               // 使用 title 作为 key，因为不是所有菜单项都有 path
               const itemKey = item.path || item.title;
@@ -410,8 +426,8 @@ export default function Sidebar(
                             href={child.path}
                             className={`block px-4 py-2 pl-4 rounded-lg text-sm transition-all duration-200 border-l-2 ${
                               childIsActive
-                                ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 font-medium translate-x-1"
-                                : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600 hover:translate-x-1"
+                                ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/20 text-indigo-700 dark:text-gray-50 font-medium translate-x-1"
+                                : "border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600 hover:translate-x-1"
                             }`}
                           >
                             {child.title}

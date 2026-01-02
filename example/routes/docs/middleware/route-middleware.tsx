@@ -3,17 +3,14 @@
  * 展示如何使用 _middleware.ts 文件创建路由级中间件
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
-import type { PageProps } from "@dreamer/dweb";
+import DocRenderer from "@components/DocRenderer.tsx";
 
 export const metadata = {
   title: "路由级中间件 - DWeb 框架文档",
   description: "使用 _middleware.ts 文件为特定路径及其子路径应用中间件",
 };
 
-export default function RouteMiddlewarePage(
-  { params: _params, query: _query, data: _data }: PageProps,
-) {
+export default function RouteMiddlewarePage() {
   // 中间件文件结构
   const fileStructureCode = `routes/
 ├── _middleware.ts        # 根中间件（应用到所有路由）
@@ -165,259 +162,182 @@ const apiRateLimitMiddleware: Middleware = async (req, res, next) => {
 
 export default apiRateLimitMiddleware;`;
 
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "路由级中间件 (_middleware.ts)",
+    description: "DWeb 框架支持路由级中间件，通过创建 `_middleware.ts` 文件，可以为特定路径及其子路径应用中间件。",
+    sections: [
+      {
+        title: "基本概念",
+        blocks: [
+          {
+            type: "text",
+            content: "路由中间件文件使用 `_middleware.ts` 命名约定，放置在路由目录中。中间件会自动应用到该目录及其所有子目录的请求。",
+          },
+        ],
+      },
+      {
+        title: "中间件文件结构",
+        blocks: [
+          {
+            type: "code",
+            code: fileStructureCode,
+            language: "text",
+          },
+        ],
+      },
+      {
+        title: "中间件继承顺序",
+        blocks: [
+          {
+            type: "text",
+            content: "当访问 `/users/123` 时，中间件的执行顺序为：",
+          },
+          {
+            type: "list",
+            ordered: true,
+            items: [
+              "`routes/_middleware.ts`（根中间件）",
+              "`routes/users/_middleware.ts`（用户路由中间件）",
+            ],
+          },
+          {
+            type: "text",
+            content: "中间件会按照从根到具体路径的顺序执行。",
+          },
+        ],
+      },
+      {
+        title: "创建路由中间件",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "单个中间件",
+            blocks: [
+              {
+                type: "code",
+                code: singleMiddlewareCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "多个中间件（数组）",
+            blocks: [
+              {
+                type: "code",
+                code: multipleMiddlewareCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "路由中间件示例",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "认证中间件",
+            blocks: [
+              {
+                type: "code",
+                code: authMiddlewareCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "请求日志中间件",
+            blocks: [
+              {
+                type: "code",
+                code: apiLoggerCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "速率限制中间件",
+            blocks: [
+              {
+                type: "code",
+                code: rateLimitCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "中间件执行顺序",
+        blocks: [
+          {
+            type: "text",
+            content: "路由中间件会在以下时机执行：",
+          },
+          {
+            type: "list",
+            ordered: true,
+            items: [
+              "**全局中间件**（通过 `server.use()` 添加）",
+              "**路由中间件**（从根到具体路径，按路径层级顺序）",
+              "**路由处理器**（页面组件或 API 处理器）",
+            ],
+          },
+        ],
+      },
+      {
+        title: "路由中间件 vs 全局中间件",
+        blocks: [
+          {
+            type: "text",
+            content: "| 特性 | 路由中间件 (_middleware.ts) | 全局中间件 (server.use()) |\n|------|---------------------------|--------------------------|\n| 作用范围 | 特定路径及其子路径 | 所有请求 |\n| 配置位置 | 路由目录中 | main.ts 或配置文件中 |\n| 路径匹配 | 自动匹配路径层级 | 需要手动配置路径匹配 |\n| 适用场景 | 路径特定的逻辑（如认证、日志） | 全局功能（如 CORS、压缩） |",
+          },
+        ],
+      },
+      {
+        title: "最佳实践",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "**使用路由中间件处理路径特定的逻辑**：认证和授权、路径特定的日志记录、路径特定的速率限制",
+              "**使用全局中间件处理通用功能**：CORS 配置、全局错误处理",
+              "**合理组织中间件**：将认证中间件放在需要保护的路径、将日志中间件放在需要记录的路径、避免在根路径放置过多中间件",
+            ],
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[中间件概述](/docs/middleware)",
+              "[创建自定义中间件](/docs/middleware/custom)",
+              "[中间件系统](/docs/core/middleware)",
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
   return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        路由级中间件 (_middleware.ts)
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 框架支持路由级中间件，通过创建{" "}
-        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-          _middleware.ts
-        </code>{" "}
-        文件， 可以为特定路径及其子路径应用中间件。
-      </p>
-
-      {/* 基本概念 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          基本概念
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          路由中间件文件使用{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            _middleware.ts
-          </code>{" "}
-          命名约定，放置在路由目录中。
-          中间件会自动应用到该目录及其所有子目录的请求。
-        </p>
-      </section>
-
-      {/* 中间件文件结构 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          中间件文件结构
-        </h2>
-        <CodeBlock code={fileStructureCode} language="text" />
-      </section>
-
-      {/* 中间件继承顺序 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          中间件继承顺序
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          当访问{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            /users/123
-          </code>{" "}
-          时，中间件的执行顺序为：
-        </p>
-        <ol className="list-decimal list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              routes/_middleware.ts
-            </code>（根中间件）
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              routes/users/_middleware.ts
-            </code>（用户路由中间件）
-          </li>
-        </ol>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mt-4">
-          中间件会按照从根到具体路径的顺序执行。
-        </p>
-      </section>
-
-      {/* 创建路由中间件 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          创建路由中间件
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          单个中间件
-        </h3>
-        <CodeBlock code={singleMiddlewareCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          多个中间件（数组）
-        </h3>
-        <CodeBlock code={multipleMiddlewareCode} language="typescript" />
-      </section>
-
-      {/* 路由中间件示例 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          路由中间件示例
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          认证中间件
-        </h3>
-        <CodeBlock code={authMiddlewareCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          请求日志中间件
-        </h3>
-        <CodeBlock code={apiLoggerCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          速率限制中间件
-        </h3>
-        <CodeBlock code={rateLimitCode} language="typescript" />
-      </section>
-
-      {/* 中间件执行顺序 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          中间件执行顺序
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          路由中间件会在以下时机执行：
-        </p>
-        <ol className="list-decimal list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <strong>全局中间件</strong>（通过{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              server.use()
-            </code>{" "}
-            添加）
-          </li>
-          <li>
-            <strong>路由中间件</strong>（从根到具体路径，按路径层级顺序）
-          </li>
-          <li>
-            <strong>路由处理器</strong>（页面组件或 API 处理器）
-          </li>
-        </ol>
-      </section>
-
-      {/* 路由中间件 vs 全局中间件 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          路由中间件 vs 全局中间件
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  特性
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  路由中间件 (_middleware.ts)
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  全局中间件 (server.use())
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  作用范围
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  特定路径及其子路径
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  所有请求
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  配置位置
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  路由目录中
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  main.ts 或配置文件中
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  路径匹配
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  自动匹配路径层级
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  需要手动配置路径匹配
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  适用场景
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  路径特定的逻辑（如认证、日志）
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  全局功能（如 CORS、压缩）
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* 最佳实践 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          最佳实践
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <strong>
-              使用路由中间件处理路径特定的逻辑
-            </strong>：认证和授权、路径特定的日志记录、路径特定的速率限制
-          </li>
-          <li>
-            <strong>使用全局中间件处理通用功能</strong>：CORS 配置、全局错误处理
-          </li>
-          <li>
-            <strong>
-              合理组织中间件
-            </strong>：将认证中间件放在需要保护的路径、将日志中间件放在需要记录的路径、避免在根路径放置过多中间件
-          </li>
-        </ul>
-      </section>
-
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/middleware"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              中间件概述
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/middleware/custom"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              创建自定义中间件
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/core/middleware"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              中间件系统
-            </a>
-          </li>
-        </ul>
-      </section>
-    </article>
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

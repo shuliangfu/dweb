@@ -3,17 +3,14 @@
  * 展示如何使用 DWeb CLI 创建新项目
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
-import type { PageProps } from "@dreamer/dweb";
+import DocRenderer from "@components/DocRenderer.tsx";
 
 export const metadata = {
   title: "项目创建 (create) - DWeb 框架文档",
   description: "使用 DWeb CLI 创建新项目的完整指南",
 };
 
-export default function FeaturesCreatePage(
-  { params: _params, query: _query, data: _data }: PageProps,
-) {
+export default function FeaturesCreatePage() {
   // 基本使用
   const basicUsageCode = `# 交互式创建项目（会提示输入项目名称和配置选项）
 deno run -A jsr:@dreamer/dweb/init
@@ -157,151 +154,126 @@ deno task dev:app2
 deno task build:app1
 deno task build:app2`;
 
+  const content = {
+    title: "项目创建 (create)",
+    description: "使用 DWeb CLI 可以快速创建新项目，支持交互式配置和多种项目模板。",
+    sections: [
+      {
+        title: "使用 CLI 创建项目",
+        blocks: [
+          {
+            type: "code",
+            code: basicUsageCode,
+            language: "bash",
+          },
+        ],
+      },
+      {
+        title: "创建过程说明",
+        blocks: [
+          {
+            type: "code",
+            code: processCode,
+            language: "text",
+          },
+        ],
+      },
+      {
+        title: "模板特性",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "**现代化技术栈**：默认集成 Tailwind CSS v4、TypeScript 5.x 和 Deno 2.x，直接使用最新技术构建应用。",
+              "**最佳实践集成**：模板内置了目录结构规范、代码风格配置（deno.json）、Git 钩子和 VS Code 推荐设置，统一团队开发规范。",
+            ],
+          },
+        ],
+      },
+      {
+        title: "项目结构",
+        blocks: [
+          {
+            type: "text",
+            content: "创建的项目结构如下：",
+          },
+          {
+            type: "code",
+            code: projectStructureCode,
+            language: "text",
+          },
+        ],
+      },
+      {
+        title: "入口文件 (main.ts)",
+        blocks: [
+          {
+            type: "alert",
+            level: "warning",
+            content: "**注意**：`main.ts` 文件是可选的，不是必须的。框架可以通过 CLI 命令（`deno task dev` 或 `deno task start`）自动启动服务器，无需手动创建入口文件。",
+          },
+          {
+            type: "text",
+            content: "如果你需要自定义应用配置（如添加中间件、插件等），可以创建 `main.ts` 文件：",
+          },
+          {
+            type: "code",
+            code: mainTsCode,
+            language: "typescript",
+          },
+          {
+            type: "code",
+            code: usageCode,
+            language: "text",
+          },
+        ],
+      },
+      {
+        title: "启动项目",
+        blocks: [
+          {
+            type: "code",
+            code: startProjectCode,
+            language: "bash",
+          },
+        ],
+      },
+      {
+        title: "多应用模式",
+        blocks: [
+          {
+            type: "text",
+            content: "多应用模式适合需要多个独立应用的场景（如前端 + 后端）：",
+          },
+          {
+            type: "code",
+            code: multiAppCode,
+            language: "text",
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[配置文档](/docs/deployment/configuration)",
+              "[开发指南](/docs/deployment/development)",
+              "[开发服务器](/docs/features/dev)",
+              "[构建](/docs/features/build)",
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
   return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        项目创建 (create)
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        使用 DWeb CLI 可以快速创建新项目，支持交互式配置和多种项目模板。
-      </p>
-
-      {/* 使用 CLI 创建项目 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          使用 CLI 创建项目
-        </h2>
-        <CodeBlock code={basicUsageCode} language="bash" />
-      </section>
-
-      {/* 创建过程说明 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          创建过程说明
-        </h2>
-        <CodeBlock code={processCode} language="text" />
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          模板特性
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <strong>现代化技术栈</strong>：
-            默认集成 Tailwind CSS v4、TypeScript 5.x 和 Deno 2.x，直接使用最新技术构建应用。
-          </li>
-          <li>
-            <strong>最佳实践集成</strong>：
-            模板内置了目录结构规范、代码风格配置（deno.json）、Git 钩子和 VS Code 推荐设置，统一团队开发规范。
-          </li>
-        </ul>
-      </section>
-
-      {/* 项目结构 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          项目结构
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          创建的项目结构如下：
-        </p>
-        <CodeBlock code={projectStructureCode} language="text" />
-      </section>
-
-      {/* 入口文件 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          入口文件 (main.ts)
-        </h2>
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-600 p-4 my-4 rounded">
-          <p className="text-yellow-800 dark:text-yellow-200 text-sm">
-            <strong>注意：</strong>
-            <code className="bg-yellow-100 dark:bg-yellow-900/50 px-2 py-1 rounded">
-              main.ts
-            </code>{" "}
-            文件是可选的，不是必须的。 框架可以通过 CLI
-            命令（<code className="bg-yellow-100 dark:bg-yellow-900/50 px-2 py-1 rounded">
-              deno task dev
-            </code>{" "}
-            或{" "}
-            <code className="bg-yellow-100 dark:bg-yellow-900/50 px-2 py-1 rounded">
-              deno task start
-            </code>）自动启动服务器，无需手动创建入口文件。
-          </p>
-        </div>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          如果你需要自定义应用配置（如添加中间件、插件等），可以创建{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            main.ts
-          </code>{" "}
-          文件：
-        </p>
-        <CodeBlock code={mainTsCode} language="typescript" />
-        <div className="mt-4">
-          <CodeBlock code={usageCode} language="text" />
-        </div>
-      </section>
-
-      {/* 启动项目 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          启动项目
-        </h2>
-        <CodeBlock code={startProjectCode} language="bash" />
-      </section>
-
-      {/* 多应用模式 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          多应用模式
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          多应用模式适合需要多个独立应用的场景（如前端 + 后端）：
-        </p>
-        <CodeBlock code={multiAppCode} language="text" />
-      </section>
-
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/deployment/configuration"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              配置文档
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/deployment/development"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              开发指南
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/features/dev"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              开发服务器
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/features/build"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              构建
-            </a>
-          </li>
-        </ul>
-      </section>
-    </article>
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }
