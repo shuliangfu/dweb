@@ -10,7 +10,7 @@ import type { LoadContext, PageProps } from "@dreamer/dweb";
 import { getJsrPackageUrl, getVersionString } from "../utils.ts";
 import { useExampleStore } from "@stores/example.ts";
 import { useEffect } from "preact/hooks";
-import { useThemeStore, route } from "@dreamer/dweb/client";
+import { route, useThemeStore } from "@dreamer/dweb/client";
 
 /**
  * 页面元数据（用于 SEO）
@@ -147,6 +147,9 @@ export default function HomePage(
     versionString: string;
   };
   useEffect(() => {
+    // 翻译测试
+    // console.log($t("总共{count}条数据", { count: 100 }));
+
     const timer = setTimeout(() => {
       // 使用框架提供的 route 函数进行导航
       // 支持字符串路径或对象形式传递参数

@@ -55,7 +55,7 @@ function createTranslateFunction(
     // 替换参数（如 {name} -> 实际值）
     // 支持 string、number、boolean 类型，自动转换为字符串
     if (params) {
-      return value.replace(/\\{(\\w+)\\}/g, (match, paramKey) => {
+      return value.replace(/\{(\w+)\}/g, (match, paramKey) => {
         const paramValue = params[paramKey];
         if (paramValue !== undefined && paramValue !== null) {
           return String(paramValue);
