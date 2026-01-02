@@ -209,6 +209,102 @@ const cmd = new Command("dev", "启动开发服务器")
 - 调用 `keepAlive()` 后，命令执行完成不会退出，进程会继续运行
 - 适用于需要长时间运行的服务，如开发服务器、WebSocket 服务器、定时任务等
 
+### 获取应用实例和服务
+
+在命令的 `action` 回调中，可以通过 `command` 参数获取应用实例，然后访问已注册的服务：
+
+```typescript
+import { Command } from "@dreamer/dweb/console";
+import { success, error } from "@dreamer/dweb/console";
+
+const cmd = new Command("my-command", "示例命令")
+  .action(async (args, options, command) => {
+    if (!command) {
+      error("无法获取 Command 实例");
+      Deno.exit(1);
+    }
+
+    // 获取应用实例（应用会在 before 钩子中自动初始化）
+    const app = command.getApp();
+    if (app) {
+      // 通过应用实例获取服务
+      const userService = app.getService<UserService>("userService");
+      const users = userService.getAllUsers();
+      success(`找到 ${users.length} 个用户`);
+    } else {
+      error("应用实例未初始化");
+      Deno.exit(1);
+    }
+  });
+```
+
+**说明**：
+- `Command` 类会在构造函数中自动启动应用初始化（异步），并在执行前确保初始化完成（通过 `before` 钩子）
+- 在 `action` 回调中可以直接使用 `command.getApp()` 获取应用实例
+- 通过应用实例可以访问所有已注册的服务（如数据库服务、缓存服务等）
+- 如果应用未初始化，`getApp()` 会返回 `null`
+- 如果需要等待初始化完成，可以使用 `await command.waitForAppInit()`
+
+### 手动初始化应用
+
+如果需要手动控制应用的初始化时机（例如在某些条件下才初始化），可以使用 `initializeApp()` 方法：
+
+```typescript
+const cmd = new Command("my-command", "示例命令")
+  .action(async (args, options, command) => {
+    if (!command) {
+      error("无法获取 Command 实例");
+      Deno.exit(1);
+    }
+
+    // 根据条件决定是否初始化
+    if (shouldInitialize) {
+      // 手动初始化应用
+      await command.initializeApp();
+    }
+
+    // 获取应用实例
+    const app = command.getApp();
+    if (app) {
+      // 使用应用和服务...
+    }
+  });
+```
+
+**说明**：
+- `initializeApp()` 是幂等操作，多次调用不会重复初始化
+- 如果应用已经初始化（通过 `before` 钩子），再次调用 `initializeApp()` 不会产生任何效果
+- 适用于需要根据条件延迟初始化的场景
+
+### 获取数据库连接
+
+在命令的 `action` 回调中，可以通过 `command` 参数获取数据库连接：
+
+```typescript
+const cmd = new Command("db-command", "数据库操作命令")
+  .action(async (args, options, command) => {
+    if (!command) {
+      error("无法获取 Command 实例");
+      Deno.exit(1);
+    }
+
+    // 获取数据库连接
+    const db = await command.getDatabase();
+    if (db) {
+      // 使用数据库连接
+      const result = await db.query("SELECT * FROM users");
+      success(`查询到 ${result.length} 条记录`);
+    } else {
+      warning("数据库未配置");
+    }
+  });
+```
+
+**说明**：
+- `Command` 类会在执行前自动初始化数据库（如果配置了数据库）
+- 在 `action` 回调中可以直接使用 `command.getDatabase()` 获取数据库连接
+- 如果未配置数据库，`getDatabase()` 会返回 `null`
+
 ### 命令钩子
 
 ```typescript

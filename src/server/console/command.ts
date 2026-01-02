@@ -997,6 +997,18 @@ export class Command {
     console.log(optionStr);
   }
 
+  /**
+   * 内部初始化应用实例的方法
+   * 执行应用的实际初始化逻辑，包括加载配置、创建 Application 实例和初始化控制台
+   *
+   * 注意：
+   * - 此方法是幂等的，多次调用不会重复初始化
+   * - 通过 `appInitialized` 标志确保只初始化一次
+   * - 此方法是私有方法，仅供内部使用
+   *
+   * @private
+   * @returns Promise<void> 当应用初始化完成时 resolve
+   */
   private async initializedApp(): Promise<void> {
     if (this.appInitialized) {
       return;
@@ -1012,6 +1024,37 @@ export class Command {
     configManager?.setConfig(config);
 
     await this.app.initializeConsole();
+  }
+
+  /**
+   * 初始化应用实例
+   * 可以手动调用此方法来初始化应用，而不依赖于 before 钩子
+   *
+   * 注意：
+   * - 如果应用已经初始化，此方法不会重复初始化（幂等操作）
+   * - Command 类默认会在执行前自动初始化应用（通过 before 钩子）
+   * - 但在某些场景下，你可能需要手动控制初始化的时机
+   *
+   * @returns Promise<void> 当应用初始化完成时 resolve
+   *
+   * @example
+   * ```typescript
+   * const cmd = new Command("my-command")
+   *   .action(async (args, options, command) => {
+   *     // 手动初始化应用
+   *     await command.initializeApp();
+   *
+   *     // 现在可以使用应用实例
+   *     const app = command.getApp();
+   *     if (app) {
+   *       const service = app.getService<MyService>("myService");
+   *       // 使用服务...
+   *     }
+   *   });
+   * ```
+   */
+  public async initializeApp(): Promise<void> {
+    await this.initializedApp();
   }
 
   /**
@@ -1039,6 +1082,28 @@ export class Command {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`获取数据库连接失败: ${message}`);
     }
+  }
+
+  /**
+   * 获取应用实例
+   * 如果应用未初始化，会先自动初始化
+   *
+   * 注意：Command 类会在执行前自动初始化应用（通过 before 钩子），
+   * 所以在 action 回调中可以直接使用此方法获取应用实例
+   *
+   * @returns 应用实例，如果未初始化则返回 null
+   *
+   * @example
+   * ```typescript
+   * const app = command.getApp();
+   * if (app) {
+   *   const userService = app.getService<UserService>("userService");
+   *   const users = userService.getAllUsers();
+   * }
+   * ```
+   */
+  public getApp(): Application | null {
+    return this.app;
   }
 
   /**

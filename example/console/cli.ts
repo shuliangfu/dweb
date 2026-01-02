@@ -21,6 +21,7 @@ import { Command } from "@dreamer/dweb/console";
 import { error, info, success, warning } from "@dreamer/dweb/console";
 import { User } from "../models/User.ts";
 
+
 /**
  * 创建主命令
  */
@@ -330,7 +331,8 @@ dbCommand
     if (!command) {
       error("无法获取 Command 实例");
       Deno.exit(1);
-    }
+		}
+		
     await initUserModel(command);
 
     const limit = (options.limit as number) || 10;

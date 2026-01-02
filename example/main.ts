@@ -17,11 +17,6 @@ const config: AppConfig = {
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],
     }),
-    // 可以在这里添加更多中间件
-    // (req, res, next) => {
-    //   console.log('request', req.url);
-    //   next();
-    // }
   ],
   plugins: [
     i18n({

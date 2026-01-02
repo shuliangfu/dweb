@@ -376,55 +376,86 @@ export async function loadConfigForConsole(): Promise<AppConfig> {
     // 如果是多应用模式
     const isMultiApp = "apps" in config && Array.isArray(config.apps);
     if (isMultiApp) {
-      for (const app of config.apps || []) {
-        const appName = app.name;
-        // 如果指定了应用名称，查找对应的应用配置
+      // 多应用模式：合并所有应用的配置
+      // 1. 先合并所有应用的配置（使用第一个应用作为基础，其他应用合并进来）
+      // 2. 然后加载所有应用的 main.ts 配置并合并
 
-        const matchedApp = app;
-        // 合并应用配置和顶层配置，返回 AppConfig
-        // 注意：database 配置只能来自根配置，子应用配置中不允许包含 database
-        finalConfig = mergeConfig(config, matchedApp as AppConfig);
+      const apps = config.apps || [];
+      if (apps.length === 0) {
+        throw new Error("多应用模式下，apps 数组不能为空");
+      }
 
-        // 强制 database 配置只能来自根配置
+      // 使用第一个应用作为基础配置
+      const firstApp = apps[0];
+      finalConfig = mergeConfig(config, firstApp as AppConfig);
+
+      // 强制 database 配置只能来自根配置
+      finalConfig.database = config.database;
+
+      // 确保 name 和 basePath 正确（使用第一个应用的）
+      finalConfig.name = firstApp.name;
+      if (firstApp.basePath) {
+        finalConfig.basePath = firstApp.basePath;
+      } else if (!finalConfig.basePath) {
+        finalConfig.basePath = "/";
+      }
+
+      // 合并其他应用的配置（如果有）
+      for (let i = 1; i < apps.length; i++) {
+        const app = apps[i];
+        const appConfig = mergeConfig(config, app as AppConfig);
+        // 合并到 finalConfig（mergeConfig 会自动去重 middleware 和 plugins）
+        finalConfig = mergeConfig(finalConfig, appConfig);
+        // 再次强制 database 配置只能来自根配置
         finalConfig.database = config.database;
+      }
 
-        // 确保 name 和 basePath 正确
-        finalConfig.name = matchedApp.name;
-        if (matchedApp.basePath) {
-          finalConfig.basePath = matchedApp.basePath;
-        } else if (!finalConfig.basePath) {
-          finalConfig.basePath = "/";
-        }
-
-        // 尝试加载并合并 main.ts 中的配置（如果有）
-        // 优先级：main.ts > appConfig > baseConfig
+      // 加载所有应用的 main.ts 配置并合并
+      // 优先级：main.ts > appConfig > baseConfig
+      for (const app of apps) {
         try {
-          // 注意：在单应用模式下，appName 应该是 undefined（在项目根目录查找 main.ts）
-          // 在多应用模式下，appName 应该是应用目录名（如 'backend'，在 backend/main.ts 查找）
-          // 这里 isMultiApp 表示是否为多应用模式，如果是多应用模式，使用 finalConfig.name 作为应用目录名
-          // 如果是单应用模式，appName 应该是 undefined
-          const mainConfigAppName = isMultiApp ? appName : undefined;
           const mainConfig = await loadMainConfig(
-            mainConfigAppName,
+            app.name,
             finalConfig.build?.outDir,
           );
 
           if (mainConfig) {
-            // 合并 main.ts 配置到 finalConfig
-            // 注意：这里 finalConfig 作为 baseConfig，mainConfig 作为 appConfig
-            // 所以 main.ts 的配置会追加到 finalConfig 的配置后面
+            // 合并 main.ts 配置到 finalConfig（mergeConfig 会自动去重）
             finalConfig = mergeConfig(finalConfig, mainConfig);
+            // 再次强制 database 配置只能来自根配置
+            finalConfig.database = config.database;
           }
         } catch (error) {
           // 记录 main.ts 加载错误，但不抛出异常（main.ts 是可选的）
           console.warn(
-            "[Config] 加载 main.ts 失败:",
+            `[Config] 加载应用 ${app.name} 的 main.ts 失败:`,
             error instanceof Error ? error.message : String(error),
           );
         }
       }
     } else {
+      // 单应用模式：直接使用配置，然后加载 main.ts
       finalConfig = config as AppConfig;
+
+      // 尝试加载并合并 main.ts 中的配置（如果有）
+      // 优先级：main.ts > appConfig > baseConfig
+      try {
+        const mainConfig = await loadMainConfig(
+          undefined, // 单应用模式，在项目根目录查找 main.ts
+          finalConfig.build?.outDir,
+        );
+
+        if (mainConfig) {
+          // 合并 main.ts 配置到 finalConfig（mergeConfig 会自动去重）
+          finalConfig = mergeConfig(finalConfig, mainConfig);
+        }
+      } catch (error) {
+        // 记录 main.ts 加载错误，但不抛出异常（main.ts 是可选的）
+        console.warn(
+          "[Config] 加载 main.ts 失败:",
+          error instanceof Error ? error.message : String(error),
+        );
+      }
     }
 
     if (!finalConfig) {

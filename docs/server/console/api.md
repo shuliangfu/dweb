@@ -16,6 +16,10 @@
 - `after(hook: CommandHook): this` - 设置命令执行后钩子（支持链式调用）
 - `command(name: string, description?: string): Command` - 添加子命令（description 可选）
 - `subcommandAlias(alias: string, commandName: string): this` - 为子命令添加别名（支持链式调用）
+- `initializeApp(): Promise<void>` - 手动初始化应用实例（如果未初始化）
+- `waitForAppInit(): Promise<void>` - 等待应用初始化完成
+- `getDatabase(): Promise<DatabaseAdapter | null>` - 获取数据库连接（如果已配置）
+- `getApp(): Application | null` - 获取应用实例（如果已初始化）
 - `showHelp(): void` - 显示帮助信息
 - `execute(args?: string[]): Promise<void>` - 执行命令（无参数时自动显示帮助）
 

@@ -738,6 +738,14 @@ export class Application extends EventEmitter {
   }
 
   /**
+   * 获取服务容器（实现 AppLike 接口）
+   * @returns 服务容器实例
+   */
+  getServiceContainer(): ServiceContainer {
+    return this.serviceContainer as ServiceContainer;
+  }
+
+  /**
    * 注册中间件
    *
    * @param middleware - 中间件函数或配置对象
