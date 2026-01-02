@@ -320,19 +320,39 @@ const offTransaction = web3.onTransaction((txHash, tx) => {
 offTransaction();
 
 // 监听合约事件（如 ERC20 Transfer 事件）
+// 方式1：只监听新事件（从当前区块开始）
 const offEvent = web3.onContractEvent(
   "0x...", // 合约地址
   "Transfer", // 事件名称
   (event) => {
     console.log("Transfer 事件:", event);
   },
-  [
-    "event Transfer(address indexed from, address indexed to, uint256 value)",
-  ], // 可选：合约 ABI
+  {
+    abi: [
+      "event Transfer(address indexed from, address indexed to, uint256 value)",
+    ], // 可选：合约 ABI
+  },
+);
+
+// 方式2：从指定区块开始监听（先扫描历史事件，然后继续监听新事件）
+const offEventWithHistory = web3.onContractEvent(
+  "0x...", // 合约地址
+  "Transfer", // 事件名称
+  (event) => {
+    console.log("Transfer 事件:", event);
+  },
+  {
+    fromBlock: 1000, // 从区块 1000 开始（会先扫描历史事件）
+    toBlock: 2000, // 可选：限制历史扫描范围（默认到当前区块）
+    abi: [
+      "event Transfer(address indexed from, address indexed to, uint256 value)",
+    ],
+  },
 );
 
 // 取消合约事件监听
 offEvent();
+offEventWithHistory();
 
 // 监听账户变化（钱包环境）
 const offAccounts = web3.onAccountsChanged((accounts) => {
@@ -351,6 +371,43 @@ web3.offContractEvent("0x...", "Transfer");
 web3.offAccountsChanged();
 web3.offChainChanged();
 ```
+
+#### 自动重连机制
+
+所有事件监听（区块监听、交易监听、合约事件监听）都支持自动重连功能。当连接中断时，系统会自动尝试重新连接。
+
+**特性：**
+- **自动检测**：监听 provider 错误事件和操作失败，自动检测连接中断
+- **指数退避**：重连延迟随重连次数递增（延迟 = 基础延迟 × 重连次数）
+- **智能重置**：成功接收到事件后自动重置重连计数
+- **最大重连次数**：默认最多重连 10 次，可配置
+- **自动清理**：如果没有监听器了，自动停止重连
+
+**配置重连参数：**
+
+```typescript
+import { createWeb3Client } from "@dreamer/dweb/utils";
+
+const web3 = createWeb3Client({
+  rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
+});
+
+// 设置重连配置
+// delay: 重连延迟（毫秒，默认 3000）
+// maxAttempts: 最大重连次数（默认 10）
+web3.setReconnectConfig(5000, 20); // 5秒延迟，最多重连20次
+
+// 监听新区块（连接中断时会自动重连）
+const offBlock = web3.onBlock((blockNumber, block) => {
+  console.log(`新区块: ${blockNumber}`, block);
+});
+```
+
+**重连行为：**
+- 当 provider 发生错误时，自动触发重连
+- 当获取区块/交易/事件失败时，自动触发重连
+- 重连时会重置 provider，强制重新创建连接
+- 重连成功后，监听器会继续正常工作
 
 #### 其他常用方法
 
@@ -445,6 +502,89 @@ const code = await web3.getCode("0x...");
 const storageValue = await web3.getStorageAt("0x...", "0x0");
 ```
 
+#### 扫描合约方法交易
+
+扫描合约指定方法的所有调用交易，支持分页和参数解析。
+
+```typescript
+import { createWeb3Client } from "@dreamer/dweb/utils";
+
+const web3 = createWeb3Client({
+  rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
+});
+
+// 扫描 register 方法的所有调用
+const result = await web3.scanContractMethodTransactions(
+  "0x...", // 合约地址
+  "register(address,string)", // 函数签名
+  {
+    fromBlock: 1000, // 起始区块（可选，默认最近 10000 个区块）
+    toBlock: 2000, // 结束区块（可选，默认最新区块）
+    page: 1, // 页码（默认 1）
+    pageSize: 20, // 每页数量（默认 20）
+    abi: [
+      // 可选：完整 ABI，用于解析函数参数
+      "function register(address user, string name)",
+    ],
+  },
+);
+
+// 返回结果
+// {
+//   transactions: [
+//     {
+//       hash: "0x...",
+//       from: "0x...",
+//       to: "0x...",
+//       blockNumber: 1500,
+//       blockHash: "0x...",
+//       timestamp: 1234567890,
+//       gasUsed: "21000",
+//       gasPrice: "20000000000",
+//       value: "0",
+//       data: "0x...",
+//       args: ["0x...", "用户名"], // 解析后的函数参数（如果提供了 ABI）
+//       receipt: {...}, // 交易收据（可选）
+//     },
+//     // ...
+//   ],
+//   total: 100, // 总交易数
+//   page: 1, // 当前页码
+//   pageSize: 20, // 每页数量
+//   totalPages: 5, // 总页数
+// }
+
+// 遍历所有页
+let currentPage = 1;
+let hasMore = true;
+
+while (hasMore) {
+  const result = await web3.scanContractMethodTransactions(
+    "0x...",
+    "register(address,string)",
+    {
+      page: currentPage,
+      pageSize: 20,
+    },
+  );
+
+  console.log(`第 ${currentPage} 页，共 ${result.totalPages} 页`);
+  console.log(`找到 ${result.transactions.length} 条交易`);
+
+  // 处理交易
+  for (const tx of result.transactions) {
+    console.log(`交易哈希: ${tx.hash}`);
+    if (tx.args) {
+      console.log(`参数:`, tx.args);
+    }
+  }
+
+  // 检查是否还有下一页
+  hasMore = currentPage < result.totalPages;
+  currentPage++;
+}
+```
+
 **完整方法列表**
 
 **基础方法：**
@@ -486,18 +626,28 @@ const storageValue = await web3.getStorageAt("0x...", "0x0");
 - `getHistoryBlocks(fromBlock, toBlock?)` - 获取历史区块
 - `getBlockTransactions(blockNumber, includeTransactions?)` - 获取区块中的交易
 - `getAddressTransactions(address, fromBlock?, toBlock?)` - 获取地址的交易历史
+- `scanContractMethodTransactions(contractAddress, functionSignature, options?)` - 扫描合约指定方法的交易信息（支持分页和参数解析）
 
 **事件监听方法：**
-- `onBlock(callback)` - 监听新区块，返回取消函数
+- `onBlock(callback)` - 监听新区块，返回取消函数（支持自动重连）
 - `offBlock()` - 取消所有区块监听
-- `onTransaction(callback)` - 监听交易，返回取消函数
+- `onTransaction(callback)` - 监听交易，返回取消函数（支持自动重连）
 - `offTransaction()` - 取消所有交易监听
-- `onContractEvent(address, eventName, callback, abi?)` - 监听合约事件，返回取消函数
+- `onContractEvent(address, eventName, callback, options?)` - 监听合约事件，返回取消函数（支持自动重连）
+  - `options.abi` - 合约 ABI（可选）
+  - `options.fromBlock` - 起始区块号（可选，如果指定则先扫描历史事件，然后继续监听新事件）
+  - `options.toBlock` - 结束区块号（可选，仅在 fromBlock 指定时有效，用于限制历史扫描范围）
 - `offContractEvent(address, eventName?)` - 取消合约事件监听
 - `onAccountsChanged(callback)` - 监听账户变化（钱包环境），返回取消函数
 - `offAccountsChanged()` - 取消账户变化监听
 - `onChainChanged(callback)` - 监听链切换（钱包环境），返回取消函数
 - `offChainChanged()` - 取消链切换监听
+- `setReconnectConfig(delay?, maxAttempts?)` - 设置重连配置（延迟和最大重连次数）
+
+**注意：**
+- 事件监听默认只监听新事件（从当前区块开始）
+- 对于旧区块的事件，需要指定 `fromBlock` 参数，系统会先扫描历史事件，然后继续监听新事件
+- 历史事件扫描是异步的，不会阻塞新事件的监听
 
 **签名方法：**
 - `signMessage(message)` - 签名消息

@@ -136,7 +136,12 @@ const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
 });
 
-// 监听新区块
+// 设置重连配置（可选）
+// delay: 重连延迟（毫秒，默认 3000）
+// maxAttempts: 最大重连次数（默认 10）
+web3.setReconnectConfig(5000, 20); // 5秒延迟，最多重连20次
+
+// 监听新区块（支持自动重连）
 const offBlock = web3.onBlock((blockNumber, block) => {
   console.log(\`新区块: \${blockNumber}\`, block);
 });
@@ -144,7 +149,7 @@ const offBlock = web3.onBlock((blockNumber, block) => {
 // 取消区块监听
 offBlock();
 
-// 监听交易
+// 监听交易（支持自动重连）
 const offTransaction = web3.onTransaction((txHash, tx) => {
   console.log(\`新交易: \${txHash}\`, tx);
 });
@@ -152,20 +157,40 @@ const offTransaction = web3.onTransaction((txHash, tx) => {
 // 取消交易监听
 offTransaction();
 
-// 监听合约事件（如 ERC20 Transfer 事件）
+// 监听合约事件（如 ERC20 Transfer 事件，支持自动重连）
+// 方式1：只监听新事件（从当前区块开始）
 const offEvent = web3.onContractEvent(
   "0x...", // 合约地址
   "Transfer", // 事件名称
   (event) => {
     console.log("Transfer 事件:", event);
   },
-  [
-    "event Transfer(address indexed from, address indexed to, uint256 value)",
-  ], // 可选：合约 ABI
+  {
+    abi: [
+      "event Transfer(address indexed from, address indexed to, uint256 value)",
+    ], // 可选：合约 ABI
+  },
+);
+
+// 方式2：从指定区块开始监听（先扫描历史事件，然后继续监听新事件）
+const offEventWithHistory = web3.onContractEvent(
+  "0x...", // 合约地址
+  "Transfer", // 事件名称
+  (event) => {
+    console.log("Transfer 事件:", event);
+  },
+  {
+    fromBlock: 1000, // 从区块 1000 开始（会先扫描历史事件）
+    toBlock: 2000, // 可选：限制历史扫描范围（默认到当前区块）
+    abi: [
+      "event Transfer(address indexed from, address indexed to, uint256 value)",
+    ],
+  },
 );
 
 // 取消合约事件监听
 offEvent();
+offEventWithHistory();
 
 // 监听账户变化（钱包环境）
 const offAccounts = web3.onAccountsChanged((accounts) => {
@@ -249,6 +274,55 @@ const logs = await web3.getContractEventLogs(
   2000, // 结束区块（可选）
   { from: "0x..." }, // 事件参数过滤器（可选）
 );`;
+
+  // 扫描合约方法交易
+  const scanMethodCode = `import { createWeb3Client } from "@dreamer/dweb/utils";
+
+const web3 = createWeb3Client({
+  rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
+});
+
+// 扫描 register 方法的所有调用（支持分页）
+const result = await web3.scanContractMethodTransactions(
+  "0x...", // 合约地址
+  "register(address,string)", // 函数签名
+  {
+    fromBlock: 1000, // 起始区块（可选，默认最近 10000 个区块）
+    toBlock: 2000, // 结束区块（可选，默认最新区块）
+    page: 1, // 页码（默认 1）
+    pageSize: 20, // 每页数量（默认 20）
+    abi: [
+      // 可选：完整 ABI，用于解析函数参数
+      "function register(address user, string name)",
+    ],
+  },
+);
+
+// 返回结果包含：
+// - transactions: 交易数组（包含解析后的参数）
+// - total: 总交易数
+// - page: 当前页码
+// - pageSize: 每页数量
+// - totalPages: 总页数
+
+// 遍历所有页
+let currentPage = 1;
+while (currentPage <= result.totalPages) {
+  const pageResult = await web3.scanContractMethodTransactions(
+    "0x...",
+    "register(address,string)",
+    { page: currentPage, pageSize: 20 },
+  );
+  
+  for (const tx of pageResult.transactions) {
+    console.log(\`交易: \${tx.hash}\`);
+    if (tx.args) {
+      console.log(\`参数: \${tx.args}\`);
+    }
+  }
+  
+  currentPage++;
+}`;
 
   // 其他常用方法
   const otherMethodsCode = `import { createWeb3Client } from "@dreamer/dweb/utils";
@@ -363,8 +437,21 @@ const hex = bytesToHex(bytes);`;
           事件监听
         </h2>
         <p className="text-gray-700 dark:text-gray-300 mb-4">
-          支持监听新区块、交易、合约事件以及钱包账户变化和链切换。
+          支持监听新区块、交易、合约事件以及钱包账户变化和链切换。所有事件监听都支持自动重连功能。
         </p>
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 my-4">
+          <p className="text-green-800 dark:text-green-200 m-0">
+            <strong>自动重连特性：</strong>
+            当连接中断时，区块监听、交易监听和合约事件监听会自动尝试重新连接。支持指数退避策略和最大重连次数限制。
+          </p>
+        </div>
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 my-4">
+          <p className="text-blue-800 dark:text-blue-200 m-0">
+            <strong>历史事件支持：</strong>
+            合约事件监听支持指定 <code className="bg-blue-100 dark:bg-blue-800 px-1 py-0.5 rounded">fromBlock</code> 参数。
+            当指定起始区块时，系统会先扫描历史事件并触发回调，然后继续监听新事件。历史事件扫描是异步的，不会阻塞新事件的监听。
+          </p>
+        </div>
         <CodeBlock language="typescript" code={eventCode} />
       </section>
 
@@ -390,6 +477,17 @@ const hex = bytesToHex(bytes);`;
           合约事件日志
         </h2>
         <CodeBlock language="typescript" code={eventLogsCode} />
+      </section>
+
+      {/* 扫描合约方法交易 */}
+      <section className="mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+          扫描合约方法交易
+        </h2>
+        <p className="text-gray-700 dark:text-gray-300 mb-4">
+          扫描合约指定方法的所有调用交易，支持分页和参数解析。适用于获取合约方法的完整调用历史，如用户注册记录等。
+        </p>
+        <CodeBlock language="typescript" code={scanMethodCode} />
       </section>
 
       {/* 其他常用方法 */}
@@ -544,6 +642,12 @@ const hex = bytesToHex(bytes);`;
               </li>
               <li>
                 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                  scanContractMethodTransactions(...)
+                </code>{" "}
+                - 扫描合约指定方法的交易（支持分页）
+              </li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
                   isContract(address)
                 </code>{" "}
                 - 检查是否为合约地址
@@ -560,19 +664,19 @@ const hex = bytesToHex(bytes);`;
                 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
                   onBlock(callback)
                 </code>{" "}
-                - 监听新区块
+                - 监听新区块（支持自动重连）
               </li>
               <li>
                 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
                   onTransaction(callback)
                 </code>{" "}
-                - 监听交易
+                - 监听交易（支持自动重连）
               </li>
               <li>
                 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
                   onContractEvent(...)
                 </code>{" "}
-                - 监听合约事件
+                - 监听合约事件（支持自动重连）
               </li>
               <li>
                 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
@@ -585,6 +689,12 @@ const hex = bytesToHex(bytes);`;
                   onChainChanged(callback)
                 </code>{" "}
                 - 监听链切换
+              </li>
+              <li>
+                <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                  setReconnectConfig(delay?, maxAttempts?)
+                </code>{" "}
+                - 设置重连配置
               </li>
             </ul>
           </div>

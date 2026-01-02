@@ -168,6 +168,15 @@ export class Web3Client {
   // 钱包事件监听器的包装函数（用于移除）
   private walletAccountsChangedWrapper?: (...args: unknown[]) => void;
   private walletChainChangedWrapper?: (...args: unknown[]) => void;
+  // 自动重连相关
+  private blockReconnectTimer?: number;
+  private transactionReconnectTimer?: number;
+  private contractReconnectTimers: Map<string, number> = new Map();
+  private reconnectDelay: number = 3000; // 重连延迟（毫秒）
+  private maxReconnectAttempts: number = 10; // 最大重连次数
+  private blockReconnectAttempts: number = 0;
+  private transactionReconnectAttempts: number = 0;
+  private contractReconnectAttempts: Map<string, number> = new Map();
 
   /**
    * 创建 Web3 客户端实例
@@ -663,12 +672,21 @@ export class Web3Client {
     }
 
     this.blockListenerStarted = true;
+    this.blockReconnectAttempts = 0;
     const provider = this.getProvider();
 
     try {
+      // 监听 provider 错误事件，用于检测连接中断
+      (provider as any).on?.("error", (error: unknown) => {
+        console.error("[Web3Client] Provider 错误:", error);
+        this.handleBlockListenerError();
+      });
+
       // 使用 ethers.js 的 on 方法监听区块
       (provider as any).on("block", async (blockNumber: number) => {
         try {
+          // 重置重连计数（成功接收到区块）
+          this.blockReconnectAttempts = 0;
           const block = await (provider as any).getBlock(blockNumber);
           // 调用所有监听器
           for (const listener of this.blockListeners) {
@@ -680,11 +698,14 @@ export class Web3Client {
           }
         } catch (error) {
           console.error("[Web3Client] 获取区块信息失败:", error);
+          // 如果获取区块失败，可能是连接问题，触发重连
+          this.handleBlockListenerError();
         }
       });
     } catch (error) {
       console.error("[Web3Client] 启动区块监听失败:", error);
       this.blockListenerStarted = false;
+      this.scheduleBlockReconnect();
     }
   }
 
@@ -696,10 +717,18 @@ export class Web3Client {
       return;
     }
 
+    // 清除重连定时器
+    if (this.blockReconnectTimer) {
+      clearTimeout(this.blockReconnectTimer);
+      this.blockReconnectTimer = undefined;
+    }
+
     try {
       const provider = this.getProvider();
       (provider as any).removeAllListeners("block");
+      (provider as any).removeAllListeners?.("error");
       this.blockListenerStarted = false;
+      this.blockReconnectAttempts = 0;
     } catch (error) {
       console.error("[Web3Client] 停止区块监听失败:", error);
     }
@@ -711,6 +740,54 @@ export class Web3Client {
   offBlock(): void {
     this.blockListeners.clear();
     this.stopBlockListener();
+  }
+
+  /**
+   * 处理区块监听错误并安排重连
+   */
+  private handleBlockListenerError(): void {
+    if (this.blockReconnectAttempts >= this.maxReconnectAttempts) {
+      console.error(
+        `[Web3Client] 区块监听重连次数已达上限 (${this.maxReconnectAttempts})，停止自动重连`,
+      );
+      return;
+    }
+
+    this.blockListenerStarted = false;
+    this.scheduleBlockReconnect();
+  }
+
+  /**
+   * 安排区块监听重连
+   */
+  private scheduleBlockReconnect(): void {
+    // 清除之前的重连定时器
+    if (this.blockReconnectTimer) {
+      clearTimeout(this.blockReconnectTimer);
+    }
+
+    // 如果已经没有监听器了，不重连
+    if (this.blockListeners.size === 0) {
+      return;
+    }
+
+    this.blockReconnectAttempts++;
+    const delay = this.reconnectDelay * this.blockReconnectAttempts; // 指数退避
+
+    console.log(
+      `[Web3Client] ${delay}ms 后尝试重新连接区块监听 (第 ${this.blockReconnectAttempts}/${this.maxReconnectAttempts} 次)`,
+    );
+
+    this.blockReconnectTimer = setTimeout(() => {
+      try {
+        // 重置 provider，强制重新创建连接
+        this.provider = null;
+        this.startBlockListener();
+      } catch (error) {
+        console.error("[Web3Client] 区块监听重连失败:", error);
+        this.scheduleBlockReconnect();
+      }
+    }, delay) as unknown as number;
   }
 
   /**
@@ -745,12 +822,21 @@ export class Web3Client {
     }
 
     this.transactionListenerStarted = true;
+    this.transactionReconnectAttempts = 0;
     const provider = this.getProvider();
 
     try {
+      // 监听 provider 错误事件，用于检测连接中断
+      (provider as any).on?.("error", (error: unknown) => {
+        console.error("[Web3Client] Provider 错误:", error);
+        this.handleTransactionListenerError();
+      });
+
       // 监听待处理交易
       (provider as any).on("pending", async (txHash: string) => {
         try {
+          // 重置重连计数（成功接收到交易）
+          this.transactionReconnectAttempts = 0;
           const tx = await (provider as any).getTransaction(txHash);
           // 调用所有监听器
           for (const listener of this.transactionListeners) {
@@ -762,12 +848,63 @@ export class Web3Client {
           }
         } catch (error) {
           console.error("[Web3Client] 获取交易信息失败:", error);
+          // 如果获取交易失败，可能是连接问题，触发重连
+          this.handleTransactionListenerError();
         }
       });
     } catch (error) {
       console.error("[Web3Client] 启动交易监听失败:", error);
       this.transactionListenerStarted = false;
+      this.scheduleTransactionReconnect();
     }
+  }
+
+  /**
+   * 处理交易监听错误并安排重连
+   */
+  private handleTransactionListenerError(): void {
+    if (this.transactionReconnectAttempts >= this.maxReconnectAttempts) {
+      console.error(
+        `[Web3Client] 交易监听重连次数已达上限 (${this.maxReconnectAttempts})，停止自动重连`,
+      );
+      return;
+    }
+
+    this.transactionListenerStarted = false;
+    this.scheduleTransactionReconnect();
+  }
+
+  /**
+   * 安排交易监听重连
+   */
+  private scheduleTransactionReconnect(): void {
+    // 清除之前的重连定时器
+    if (this.transactionReconnectTimer) {
+      clearTimeout(this.transactionReconnectTimer);
+    }
+
+    // 如果已经没有监听器了，不重连
+    if (this.transactionListeners.size === 0) {
+      return;
+    }
+
+    this.transactionReconnectAttempts++;
+    const delay = this.reconnectDelay * this.transactionReconnectAttempts; // 指数退避
+
+    console.log(
+      `[Web3Client] ${delay}ms 后尝试重新连接交易监听 (第 ${this.transactionReconnectAttempts}/${this.maxReconnectAttempts} 次)`,
+    );
+
+    this.transactionReconnectTimer = setTimeout(() => {
+      try {
+        // 重置 provider，强制重新创建连接
+        this.provider = null;
+        this.startTransactionListener();
+      } catch (error) {
+        console.error("[Web3Client] 交易监听重连失败:", error);
+        this.scheduleTransactionReconnect();
+      }
+    }, delay) as unknown as number;
   }
 
   /**
@@ -778,10 +915,18 @@ export class Web3Client {
       return;
     }
 
+    // 清除重连定时器
+    if (this.transactionReconnectTimer) {
+      clearTimeout(this.transactionReconnectTimer);
+      this.transactionReconnectTimer = undefined;
+    }
+
     try {
       const provider = this.getProvider();
       (provider as any).removeAllListeners("pending");
+      (provider as any).removeAllListeners?.("error");
       this.transactionListenerStarted = false;
+      this.transactionReconnectAttempts = 0;
     } catch (error) {
       console.error("[Web3Client] 停止交易监听失败:", error);
     }
@@ -799,15 +944,41 @@ export class Web3Client {
    * 监听合约事件
    * @param contractAddress 合约地址
    * @param eventName 事件名称（如 'Transfer'）
-   * @param abi 合约 ABI（可选，如果提供则使用，否则使用默认 ABI）
    * @param callback 回调函数，接收事件数据
+   * @param options 监听选项
+   * @param options.abi 合约 ABI（可选，如果提供则使用，否则使用默认 ABI）
+   * @param options.fromBlock 起始区块号（可选，如果指定则先扫描历史事件，然后继续监听新事件）
+   * @param options.toBlock 结束区块号（可选，仅在 fromBlock 指定时有效，用于限制历史扫描范围）
    * @returns 取消监听的函数
+   *
+   * @example
+   * // 只监听新事件（从当前区块开始）
+   * const off = web3.onContractEvent("0x...", "Transfer", (event) => {
+   *   console.log("新事件:", event);
+   * });
+   *
+   * // 从指定区块开始监听（先扫描历史，然后监听新事件）
+   * const off = web3.onContractEvent(
+   *   "0x...",
+   *   "Transfer",
+   *   (event) => {
+   *     console.log("事件:", event);
+   *   },
+   *   {
+   *     fromBlock: 1000, // 从区块 1000 开始
+   *     abi: ["event Transfer(address indexed from, address indexed to, uint256 value)"],
+   *   }
+   * );
    */
   onContractEvent(
     contractAddress: string,
     eventName: string,
     callback: ContractEventListener,
-    abi?: string[],
+    options?: {
+      abi?: string[];
+      fromBlock?: number;
+      toBlock?: number;
+    },
   ): () => void {
     const key = `${contractAddress}:${eventName}`;
     if (!this.contractEventListeners.has(key)) {
@@ -816,8 +987,25 @@ export class Web3Client {
     const listeners = this.contractEventListeners.get(key)!;
     listeners.add(callback);
 
-    // 启动合约事件监听
-    this.startContractEventListener(contractAddress, eventName, abi);
+    // 如果指定了 fromBlock，先扫描历史事件
+    if (options?.fromBlock !== undefined) {
+      this.scanHistoricalContractEvents(
+        contractAddress,
+        eventName,
+        callback,
+        options.fromBlock,
+        options.toBlock,
+        options.abi,
+      ).catch((error) => {
+        console.error(
+          `[Web3Client] 扫描历史合约事件失败 (${contractAddress}:${eventName}):`,
+          error,
+        );
+      });
+    }
+
+    // 启动合约事件监听（监听新事件）
+    this.startContractEventListener(contractAddress, eventName, options?.abi);
 
     // 返回取消监听的函数
     return () => {
@@ -831,6 +1019,66 @@ export class Web3Client {
   }
 
   /**
+   * 扫描历史合约事件
+   * @private
+   */
+  private async scanHistoricalContractEvents(
+    contractAddress: string,
+    eventName: string,
+    callback: ContractEventListener,
+    fromBlock: number,
+    toBlock?: number,
+    abi?: string[],
+  ): Promise<void> {
+    try {
+      const provider = this.getProvider();
+      const currentBlock = toBlock ?? await this.getBlockNumber();
+      const startBlock = Math.max(fromBlock, 0);
+
+      // 构建事件 ABI
+      const eventAbi = abi || [`event ${eventName}()`];
+      const contract = new EthersContract(contractAddress, eventAbi, provider);
+      const iface = new EthersInterface(eventAbi);
+
+      // 查询历史事件日志
+      const filter = contract.filters[eventName]();
+      const logs = await contract.queryFilter(filter, startBlock, currentBlock);
+
+      // 按区块号和时间戳排序（从旧到新）
+      logs.sort((a, b) => {
+        if (a.blockNumber !== b.blockNumber) {
+          return Number(a.blockNumber) - Number(b.blockNumber);
+        }
+        return (a.index || 0) - (b.index || 0);
+      });
+
+      // 调用回调函数处理每个历史事件
+      for (const log of logs) {
+        try {
+          const parsed = iface.parseLog({
+            topics: log.topics as string[],
+            data: log.data,
+          });
+          if (parsed) {
+            await Promise.resolve(callback(parsed));
+          }
+        } catch (error) {
+          console.warn(
+            `[Web3Client] 解析历史事件失败 (${contractAddress}:${eventName}):`,
+            error,
+          );
+        }
+      }
+    } catch (error) {
+      throw new Error(
+        `扫描历史合约事件失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
    * 启动合约事件监听
    */
   private startContractEventListener(
@@ -838,8 +1086,21 @@ export class Web3Client {
     eventName: string,
     abi?: string[],
   ): void {
+    const key = `${contractAddress}:${eventName}`;
+
+    // 初始化重连计数
+    if (!this.contractReconnectAttempts.has(key)) {
+      this.contractReconnectAttempts.set(key, 0);
+    }
+
     try {
       const provider = this.getProvider();
+
+      // 监听 provider 错误事件，用于检测连接中断
+      (provider as any).on?.("error", (error: unknown) => {
+        console.error("[Web3Client] Provider 错误:", error);
+        this.handleContractEventListenerError(contractAddress, eventName);
+      });
 
       // 构建 ABI（如果提供了则使用，否则使用默认的事件 ABI）
       const eventAbi = abi || [`event ${eventName}()`];
@@ -847,17 +1108,24 @@ export class Web3Client {
 
       // 监听事件
       contract.on(eventName, async (...args: unknown[]) => {
-        const key = `${contractAddress}:${eventName}`;
         const listeners = this.contractEventListeners.get(key);
         if (listeners) {
-          // 最后一个参数通常是事件对象
-          const event = args[args.length - 1];
-          for (const listener of listeners) {
-            try {
-              await Promise.resolve(listener(event));
-            } catch (error) {
-              console.error("[Web3Client] 合约事件监听器错误:", error);
+          try {
+            // 重置重连计数（成功接收到事件）
+            this.contractReconnectAttempts.set(key, 0);
+            // 最后一个参数通常是事件对象
+            const event = args[args.length - 1];
+            for (const listener of listeners) {
+              try {
+                await Promise.resolve(listener(event));
+              } catch (error) {
+                console.error("[Web3Client] 合约事件监听器错误:", error);
+              }
             }
+          } catch (error) {
+            console.error("[Web3Client] 处理合约事件失败:", error);
+            // 如果处理事件失败，可能是连接问题，触发重连
+            this.handleContractEventListenerError(contractAddress, eventName);
           }
         }
       });
@@ -866,7 +1134,72 @@ export class Web3Client {
         `[Web3Client] 启动合约事件监听失败 (${contractAddress}:${eventName}):`,
         error,
       );
+      this.scheduleContractReconnect(contractAddress, eventName, abi);
     }
+  }
+
+  /**
+   * 处理合约事件监听错误并安排重连
+   */
+  private handleContractEventListenerError(
+    contractAddress: string,
+    eventName: string,
+  ): void {
+    const key = `${contractAddress}:${eventName}`;
+    const attempts = this.contractReconnectAttempts.get(key) || 0;
+
+    if (attempts >= this.maxReconnectAttempts) {
+      console.error(
+        `[Web3Client] 合约事件监听重连次数已达上限 (${this.maxReconnectAttempts})，停止自动重连: ${key}`,
+      );
+      return;
+    }
+
+    this.scheduleContractReconnect(contractAddress, eventName);
+  }
+
+  /**
+   * 安排合约事件监听重连
+   */
+  private scheduleContractReconnect(
+    contractAddress: string,
+    eventName: string,
+    abi?: string[],
+  ): void {
+    const key = `${contractAddress}:${eventName}`;
+
+    // 清除之前的重连定时器
+    const existingTimer = this.contractReconnectTimers.get(key);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    // 如果已经没有监听器了，不重连
+    const listeners = this.contractEventListeners.get(key);
+    if (!listeners || listeners.size === 0) {
+      return;
+    }
+
+    const attempts = (this.contractReconnectAttempts.get(key) || 0) + 1;
+    this.contractReconnectAttempts.set(key, attempts);
+    const delay = this.reconnectDelay * attempts; // 指数退避
+
+    console.log(
+      `[Web3Client] ${delay}ms 后尝试重新连接合约事件监听 (第 ${attempts}/${this.maxReconnectAttempts} 次): ${key}`,
+    );
+
+    const timer = setTimeout(() => {
+      try {
+        // 重置 provider，强制重新创建连接
+        this.provider = null;
+        this.startContractEventListener(contractAddress, eventName, abi);
+      } catch (error) {
+        console.error("[Web3Client] 合约事件监听重连失败:", error);
+        this.scheduleContractReconnect(contractAddress, eventName, abi);
+      }
+    }, delay) as unknown as number;
+
+    this.contractReconnectTimers.set(key, timer);
   }
 
   /**
@@ -876,12 +1209,25 @@ export class Web3Client {
     contractAddress: string,
     eventName: string,
   ): void {
+    const key = `${contractAddress}:${eventName}`;
+
+    // 清除重连定时器
+    const timer = this.contractReconnectTimers.get(key);
+    if (timer) {
+      clearTimeout(timer);
+      this.contractReconnectTimers.delete(key);
+    }
+
+    // 清除重连计数
+    this.contractReconnectAttempts.delete(key);
+
     try {
       const provider = this.getProvider();
       const contract = new EthersContract(contractAddress, [
         `event ${eventName}()`,
       ], provider);
       contract.removeAllListeners(eventName);
+      (provider as any).removeAllListeners?.("error");
     } catch (error) {
       console.error(
         `[Web3Client] 停止合约事件监听失败 (${contractAddress}:${eventName}):`,
@@ -910,6 +1256,20 @@ export class Web3Client {
           this.contractEventListeners.delete(key);
         }
       }
+    }
+  }
+
+  /**
+   * 设置重连配置
+   * @param delay 重连延迟（毫秒，默认 3000）
+   * @param maxAttempts 最大重连次数（默认 10）
+   */
+  setReconnectConfig(delay?: number, maxAttempts?: number): void {
+    if (delay !== undefined) {
+      this.reconnectDelay = delay;
+    }
+    if (maxAttempts !== undefined) {
+      this.maxReconnectAttempts = maxAttempts;
     }
   }
 
@@ -1396,6 +1756,209 @@ export class Web3Client {
     } catch (error) {
       throw new Error(
         `获取地址交易历史失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  /**
+   * 扫描合约指定方法的交易信息
+   * @param contractAddress 合约地址
+   * @param functionSignature 函数签名（如 'register(address,string)'）
+   * @param options 扫描选项
+   * @returns 交易信息数组和分页信息
+   *
+   * @example
+   * // 扫描 register 方法的所有调用
+   * const result = await web3.scanContractMethodTransactions(
+   *   "0x...",
+   *   "register(address,string)",
+   *   {
+   *     fromBlock: 1000,
+   *     toBlock: 2000,
+   *     page: 1,
+   *     pageSize: 20,
+   *   }
+   * );
+   * // result: { transactions: [...], total: 100, page: 1, pageSize: 20, totalPages: 5 }
+   */
+  async scanContractMethodTransactions(
+    contractAddress: string,
+    functionSignature: string,
+    options: {
+      fromBlock?: number;
+      toBlock?: number;
+      page?: number;
+      pageSize?: number;
+      abi?: string[]; // 可选：完整 ABI，用于解析参数
+    } = {},
+  ): Promise<{
+    transactions: Array<{
+      hash: string;
+      from: string;
+      to: string;
+      blockNumber: number;
+      blockHash: string;
+      timestamp?: number;
+      gasUsed?: string;
+      gasPrice?: string;
+      value: string;
+      data: string;
+      args?: unknown[]; // 解析后的函数参数
+      receipt?: unknown; // 交易收据（可选）
+    }>;
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }> {
+    const provider = this.getProvider();
+    try {
+      // 获取函数选择器
+      const functionSelector = await getFunctionSelector(functionSignature);
+      const selectorLower = functionSelector.toLowerCase();
+
+      // 设置默认值
+      const currentBlock = options.toBlock ?? await this.getBlockNumber();
+      const startBlock = options.fromBlock ?? Math.max(0, currentBlock - 10000); // 默认查询最近 10000 个区块
+      const page = options.page ?? 1;
+      const pageSize = options.pageSize ?? 20;
+
+      // 扫描区块范围
+      const allTransactions: Array<{
+        hash: string;
+        from: string;
+        to: string;
+        blockNumber: number;
+        blockHash: string;
+        timestamp?: number;
+        gasUsed?: string;
+        gasPrice?: string;
+        value: string;
+        data: string;
+        args?: unknown[];
+        receipt?: unknown;
+      }> = [];
+
+      // 批量扫描区块（每次扫描 100 个区块以提高效率）
+      const batchSize = 100;
+      for (
+        let blockNum = startBlock;
+        blockNum <= currentBlock;
+        blockNum += batchSize
+      ) {
+        const endBlock = Math.min(blockNum + batchSize - 1, currentBlock);
+        const blockPromises: Promise<void>[] = [];
+
+        for (let i = blockNum; i <= endBlock; i++) {
+          blockPromises.push(
+            (async () => {
+              try {
+                const block = await (provider as {
+                  getBlock: (
+                    blockNumber: number,
+                    includeTransactions?: boolean,
+                  ) => Promise<{
+                    transactions: unknown[];
+                    timestamp: bigint;
+                    hash: string;
+                  }>;
+                }).getBlock(i, true);
+
+                if (block.transactions && Array.isArray(block.transactions)) {
+                  for (const tx of block.transactions) {
+                    const txObj = tx as any;
+                    // 检查是否调用了目标合约和方法
+                    if (
+                      txObj.to &&
+                      txObj.to.toLowerCase() ===
+                        contractAddress.toLowerCase() &&
+                      txObj.data &&
+                      txObj.data.toLowerCase().startsWith(selectorLower)
+                    ) {
+                      // 解析函数参数（如果提供了 ABI）
+                      let args: unknown[] | undefined;
+                      if (options.abi) {
+                        try {
+                          const iface = new EthersInterface(options.abi);
+                          const decoded = iface.decodeFunctionData(
+                            functionSignature.split("(")[0],
+                            txObj.data,
+                          );
+                          args = Array.from(decoded);
+                        } catch (error) {
+                          // 解析失败，忽略参数
+                          console.warn(
+                            `解析交易参数失败 ${txObj.hash}:`,
+                            error,
+                          );
+                        }
+                      }
+
+                      // 获取交易收据（可选）
+                      let receipt: unknown | undefined;
+                      let gasUsed: string | undefined;
+                      try {
+                        receipt = await this.getTransactionReceipt(txObj.hash);
+                        gasUsed = (receipt as any).gasUsed?.toString();
+                      } catch {
+                        // 获取收据失败，忽略
+                      }
+
+                      allTransactions.push({
+                        hash: txObj.hash,
+                        from: txObj.from,
+                        to: txObj.to,
+                        blockNumber: i,
+                        blockHash: block.hash,
+                        timestamp: Number(block.timestamp),
+                        gasUsed,
+                        gasPrice: txObj.gasPrice?.toString(),
+                        value: txObj.value?.toString() || "0",
+                        data: txObj.data,
+                        args,
+                        receipt,
+                      });
+                    }
+                  }
+                }
+              } catch (error) {
+                console.warn(`扫描区块 ${i} 失败:`, error);
+              }
+            })(),
+          );
+        }
+
+        // 等待当前批次完成
+        await Promise.all(blockPromises);
+      }
+
+      // 按区块号和时间戳倒序排序（最新的在前）
+      allTransactions.sort((a, b) => {
+        if (b.blockNumber !== a.blockNumber) {
+          return b.blockNumber - a.blockNumber;
+        }
+        return (b.timestamp || 0) - (a.timestamp || 0);
+      });
+
+      // 分页
+      const total = allTransactions.length;
+      const totalPages = Math.ceil(total / pageSize);
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedTransactions = allTransactions.slice(startIndex, endIndex);
+
+      return {
+        transactions: paginatedTransactions,
+        total,
+        page,
+        pageSize,
+        totalPages,
+      };
+    } catch (error) {
+      throw new Error(
+        `扫描合约方法交易失败: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );
