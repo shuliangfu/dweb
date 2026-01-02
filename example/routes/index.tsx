@@ -150,7 +150,7 @@ export default function HomePage(
     const timer = setTimeout(() => {
       // 使用框架提供的 route 函数进行导航
       // 支持字符串路径或对象形式传递参数
-      route({ path: "/docs", params: { id: "123" } });
+      // route({ path: "/docs", params: { id: "123" } });
     }, 1000);
 
     return () => {
