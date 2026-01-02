@@ -4,9 +4,6 @@
  */
 
 import { cors, defineConfig, seo, tailwind } from "@dreamer/dweb";
-import { env, initEnv } from "@dreamer/dweb";
-
-initEnv();
 
 export default defineConfig({
   name: "example",
@@ -63,12 +60,12 @@ export default defineConfig({
   database: {
     type: 'mongodb',
     connection: {
-      host: env("DB_HOST"),
-      port: env("DB_PORT"),
-      database: env("DB_NAME"),
-      username: env("DB_USER"),
-      password: env("DB_PASS"),
-      authSource: env("DB_AUTH"),
+      host: Deno.env.get("DB_HOST"),
+      port: Deno.env.get("DB_PORT") as unknown as number,
+      database: Deno.env.get("DB_NAME"),
+      username: Deno.env.get("DB_USER"),
+      password: Deno.env.get("DB_PASS"),
+      authSource: Deno.env.get("DB_AUTH"),
     },
     // MongoDB 连接池配置
     mongoOptions: {

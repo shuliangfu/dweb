@@ -8,6 +8,7 @@
 import type { AppConfig, DWebConfig } from "../common/types/index.ts";
 import * as path from "@std/path";
 import { deepMerge } from "../common/utils/utils.ts";
+import { initEnv } from "../features/env.ts";
 
 import { findConfigFile } from "../server/utils/file.ts";
 
@@ -238,6 +239,9 @@ export async function loadConfig(
       Deno.chdir(configDir);
     }
 
+    // 在导入配置文件之前初始化环境变量，这样配置文件就可以直接使用 Deno.env.get()
+    initEnv();
+
     // 读取配置文件（使用相对于配置目录的路径）
     const configFileName = configPath.includes("/")
       ? configPath.substring(configPath.lastIndexOf("/") + 1)
@@ -352,6 +356,9 @@ export async function loadConfigForConsole(): Promise<AppConfig> {
     if (configDir !== originalCwd && configDir !== ".") {
       Deno.chdir(configDir);
     }
+
+    // 在导入配置文件之前初始化环境变量，这样配置文件就可以直接使用 Deno.env.get()
+    initEnv();
 
     // 读取配置文件（使用相对于配置目录的路径）
     const configFileName = configPath.includes("/")

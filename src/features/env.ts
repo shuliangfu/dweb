@@ -96,17 +96,17 @@ function loadEnvFiles(): void {
 
   const cwd = Deno.cwd();
 
-  // 按顺序加载环境文件（后面的会覆盖前面的）
-  for (const envFile of ENV_FILES) {
-    const filePath = path.join(cwd, envFile);
-    loadEnvFile(filePath);
-  }
-
-  // 加载系统环境变量（优先级最高）
+  // 先加载系统环境变量（优先级最高）
   for (const [key, value] of Object.entries(Deno.env.toObject())) {
     if (value) {
       envStore.set(key, value);
     }
+  }
+
+  // 按顺序加载环境文件（.env 文件中的值不会覆盖系统环境变量，只填充不存在的变量）
+  for (const envFile of ENV_FILES) {
+    const filePath = path.join(cwd, envFile);
+    loadEnvFile(filePath);
   }
 
   loaded = true;
@@ -274,7 +274,22 @@ export function validateEnv(keys: string[]): void {
 
 /**
  * 初始化环境变量（在应用启动时调用）
+ * 加载环境变量文件并通过 Deno.env.set 设置，这样就不需要导入 env 模块来读取环境变量了
  */
 export function initEnv(): void {
   loadEnvFiles();
+
+  // 将所有加载的环境变量设置到 Deno.env 中
+  // 注意：系统环境变量（Deno.env.toObject()）的优先级最高，不会被覆盖
+  for (const [key, value] of envStore.entries()) {
+    // 只有当 Deno.env 中不存在该变量时才设置，避免覆盖系统环境变量
+    if (!Deno.env.get(key)) {
+      try {
+        Deno.env.set(key, value);
+      } catch (error) {
+        // 某些环境变量可能无法设置（如只读变量），忽略错误
+        console.warn(`无法设置环境变量 ${key}:`, error);
+      }
+    }
+  }
 }
