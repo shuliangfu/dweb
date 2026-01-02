@@ -185,15 +185,16 @@ deno task dev`;
         secondaryCTA="查看特性"
         secondaryCTALink="/features"
         version={versionString}
+        enableBackground
       />
 
       {/* 快速开始区域 */}
       <div className="py-24 bg-gray-50 dark:bg-gray-900 relative overflow-hidden">
         {/* 背景装饰 */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl">
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-200/10 rounded-full blur-3xl">
           </div>
-          <div className="absolute top-1/2 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl">
+          <div className="absolute top-1/2 right-0 w-64 h-64 bg-purple-200/10 rounded-full blur-3xl">
           </div>
         </div>
 

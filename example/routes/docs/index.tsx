@@ -3,7 +3,7 @@
  * 提供 DWeb 框架的使用文档和快速开始指南
  */
 
-import CodeBlock from "../../components/CodeBlock.tsx";
+import DocRenderer from "../../components/DocRenderer.tsx";
 import type { LoadContext, PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -45,7 +45,8 @@ export default function DocsPage(
   { params: _params, query: _query, data }: PageProps,
 ) {
   // 从 load 函数返回的数据中获取 JSR 包 URL
-  const { jsrPackageUrl, jsrPackageUrlWithCli } = data as {
+  // 保留用于未来使用
+  const { jsrPackageUrl: _jsrPackageUrl, jsrPackageUrlWithCli: _jsrPackageUrlWithCli } = data as {
     jsrPackageUrl: string;
     jsrPackageUrlWithCli: string;
   };
@@ -179,189 +180,156 @@ app.use(cors());
 
 export default app;`;
 
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "",
+    description: "",
+    sections: [
+        {
+          title: "快速开始",
+          blocks: [
+            {
+              type: "subsection",
+              level: 3,
+              title: "创建新项目",
+              blocks: [
+                {
+                  type: "code",
+                  code: installCode,
+                  language: "bash",
+                },
+              ],
+            },
+            {
+              type: "subsection",
+              level: 3,
+              title: "作为库使用",
+              blocks: [
+                {
+                  type: "code",
+                  code: libraryCode,
+                  language: "bash",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          title: "配置",
+          blocks: [
+            {
+              type: "text",
+              content: "在项目根目录创建 `dweb.config.ts` 文件：",
+            },
+            {
+              type: "code",
+              code: configCode,
+              language: "typescript",
+            },
+          ],
+        },
+        {
+          title: "创建页面",
+          blocks: [
+            {
+              type: "text",
+              content: "在 `routes` 目录下创建文件即可自动生成路由：",
+            },
+            {
+              type: "code",
+              code: pageCode,
+              language: "typescript",
+            },
+            {
+              type: "text",
+              content: "文件路径会自动映射为路由路径：",
+            },
+            {
+              type: "list",
+              ordered: false,
+              items: [
+                "`routes/index.tsx` → `/`",
+                "`routes/about.tsx` → `/about`",
+                "`routes/blog/[id].tsx` → `/blog/:id`",
+              ],
+            },
+          ],
+        },
+        {
+          title: "API 路由",
+          blocks: [
+            {
+              type: "text",
+              content: "在 `routes/api` 目录下创建 API 路由：",
+            },
+            {
+              type: "code",
+              code: apiCode,
+              language: "typescript",
+            },
+          ],
+        },
+        {
+          title: "使用中间件",
+          blocks: [
+            {
+              type: "text",
+              content: "在 `main.ts` 文件中注册中间件：",
+            },
+            {
+              type: "code",
+              code: middlewareCode,
+              language: "typescript",
+            },
+          ],
+        },
+        {
+          title: "渲染模式",
+          blocks: [
+            {
+              type: "text",
+              content: "DWeb 支持三种渲染模式：",
+            },
+            {
+              type: "list",
+              ordered: false,
+              items: [
+                "**SSR（服务端渲染）**：在服务器端渲染 HTML，适合 SEO 和首屏性能",
+                "**CSR（客户端渲染）**：完全在客户端渲染，支持 SPA 无刷新切换",
+                "**Hybrid（混合渲染）**：服务端渲染 + 客户端 hydration，兼顾 SEO 和交互性",
+              ],
+            },
+            {
+              type: "text",
+              content: "可以在页面组件中配置渲染模式：",
+            },
+            {
+              type: "code",
+              code: "export const renderMode = 'hybrid';",
+              language: "typescript",
+            },
+          ],
+        },
+        {
+          title: "更多资源",
+          blocks: [
+            {
+              type: "alert",
+              level: "info",
+              content: [
+                "[GitHub 仓库](https://github.com/shuliangfu/dweb) - 查看源代码和提交问题",
+                "[JSR 包页面](https://jsr.io/@dreamer/dweb) - 查看包信息和版本",
+                "[功能特性](/features) - 了解所有功能",
+              ],
+            },
+          ],
+        },
+      ],
+  };
+
   return (
-    <div className="prose prose-lg max-w-none dark:prose-invert">
-      {/* 快速开始 */}
-      <section className="mb-16">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
-          快速开始 
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
-          创建新项目
-        </h3>
-        <CodeBlock code={installCode} language="bash" />
-
-        <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 mt-8">
-          作为库使用
-        </h3>
-        <CodeBlock code={libraryCode} language="bash" />
-      </section>
-
-      {/* 配置 */}
-      <section className="mb-16">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
-          配置
-        </h2>
-        <p className="text-gray-600 dark:text-gray-300 mb-4">
-          在项目根目录创建{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            dweb.config.ts
-          </code>{" "}
-          文件：
-        </p>
-        <CodeBlock code={configCode} language="typescript" />
-      </section>
-
-      {/* 创建页面 */}
-      <section className="mb-16">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
-          创建页面
-        </h2>
-        <p className="text-gray-600 dark:text-gray-300 mb-4">
-          在{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            routes
-          </code>{" "}
-          目录下创建文件即可自动生成路由：
-        </p>
-        <CodeBlock code={pageCode} language="typescript" />
-        <p className="text-gray-600 dark:text-gray-300 mt-4">
-          文件路径会自动映射为路由路径：
-        </p>
-        <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 space-y-2 mt-4">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              routes/index.tsx
-            </code>{" "}
-            →{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              /
-            </code>
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              routes/about.tsx
-            </code>{" "}
-            →{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              /about
-            </code>
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              routes/blog/[id].tsx
-            </code>{" "}
-            →{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              /blog/:id
-            </code>
-          </li>
-        </ul>
-      </section>
-
-      {/* API 路由 */}
-      <section className="mb-16">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
-          API 路由
-        </h2>
-        <p className="text-gray-600 dark:text-gray-300 mb-4">
-          在{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            routes/api
-          </code>{" "}
-          目录下创建 API 路由：
-        </p>
-        <CodeBlock code={apiCode} language="typescript" />
-      </section>
-
-      {/* 中间件 */}
-      <section className="mb-16">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
-          使用中间件
-        </h2>
-        <p className="text-gray-600 dark:text-gray-300 mb-4">
-          在{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            main.ts
-          </code>{" "}
-          文件中注册中间件：
-        </p>
-        <CodeBlock code={middlewareCode} language="typescript" />
-      </section>
-
-      {/* 渲染模式 */}
-      <section className="mb-16">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
-          渲染模式
-        </h2>
-        <p className="text-gray-600 dark:text-gray-300 mb-4">
-          DWeb 支持三种渲染模式：
-        </p>
-        <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 space-y-2">
-          <li>
-            <strong>SSR（服务端渲染）</strong>：在服务器端渲染 HTML，适合 SEO
-            和首屏性能
-          </li>
-          <li>
-            <strong>CSR（客户端渲染）</strong>：完全在客户端渲染，支持 SPA
-            无刷新切换
-          </li>
-          <li>
-            <strong>Hybrid（混合渲染）</strong>：服务端渲染 + 客户端
-            hydration，兼顾 SEO 和交互性
-          </li>
-        </ul>
-        <p className="text-gray-600 dark:text-gray-300 mt-4">
-          可以在页面组件中配置渲染模式：
-        </p>
-        <CodeBlock
-          code={`export const renderMode = 'hybrid';`}
-          language="typescript"
-        />
-      </section>
-
-      {/* 更多资源 */}
-      <section className="mb-16">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
-          更多资源
-        </h2>
-        <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-600 p-6 rounded">
-          <ul className="space-y-3 text-gray-700 dark:text-gray-300">
-            <li>
-              <a
-                href="https://github.com/shuliangfu/dweb"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
-              >
-                GitHub 仓库
-              </a>
-              - 查看源代码和提交问题
-            </li>
-            <li>
-              <a
-                href="https://jsr.io/@dreamer/dweb"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
-              >
-                JSR 包页面
-              </a>
-              - 查看包信息和版本
-            </li>
-            <li>
-              <a
-                href="/features"
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
-              >
-                功能特性
-              </a>
-              - 了解所有功能
-            </li>
-          </ul>
-        </div>
-      </section>
-    </div>
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

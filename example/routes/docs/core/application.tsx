@@ -3,7 +3,7 @@
  * 展示 DWeb 框架的 Application 类的使用方法
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -242,285 +242,217 @@ export default config;
 // deno task start  # 生产模式
 // 应用启动后，访问 http://localhost:3000`;
 
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "Application (应用核心)",
+    description: "`Application` 类是 DWeb 框架的统一入口，管理所有组件和服务，提供面向对象的应用管理方式。",
+    sections: [
+        {
+          title: "核心特性",
+          blocks: [
+            {
+              type: "list",
+              ordered: false,
+              items: [
+                "**生命周期管理**: 完整的应用生命周期钩子（Initialize, Start, Stop, Error）。",
+                "**依赖注入容器**: 内置 `ServiceContainer`，支持 Singleton、Transient、Scoped 三种生命周期，实现模块解耦。",
+                "**事件驱动架构**: 基于 `EventEmitter`，支持全局事件总线，实现组件间的解耦通信。",
+                "**多应用支持**: 支持单体和多应用（Monorepo）架构。",
+                "**统一错误处理**: 内置全局异常捕获和统一的错误响应格式。",
+                "**自动配置**: 支持约定优于配置，自动加载 `dweb.config.ts` 和环境变量。",
+              ],
+            },
+          ],
+        },
+        {
+          title: "事件驱动架构",
+          blocks: [
+            {
+              type: "text",
+              content: "`Application` 类继承自 `EventEmitter`，作为全局事件总线，允许不同组件通过事件进行通信，而无需直接依赖。",
+            },
+            {
+              type: "code",
+              code: eventDrivenCode,
+              language: "typescript",
+            },
+          ],
+        },
+        {
+          title: "统一错误处理",
+          blocks: [
+            {
+              type: "text",
+              content: "框架内置了全局错误处理机制，能够捕获路由处理、中间件和生命周期中的异常，并返回统一格式的错误响应。",
+            },
+            {
+              type: "list",
+              ordered: false,
+              items: [
+                "**自动捕获**: 自动捕获同步和异步错误。",
+                "**内容协商**: 根据请求头自动返回 JSON 或 HTML 格式的错误信息。",
+                "**自定义处理**: 支持注册自定义 `ErrorHandler` 来覆盖默认行为。",
+              ],
+            },
+          ],
+        },
+        {
+          title: "快速开始",
+          blocks: [
+            {
+              type: "subsection",
+              level: 3,
+              title: "基本使用",
+              blocks: [
+                {
+                  type: "code",
+                  code: basicUsageCode,
+                  language: "typescript",
+                },
+              ],
+            },
+            {
+              type: "subsection",
+              level: 3,
+              title: "使用配置文件",
+              blocks: [
+                {
+                  type: "code",
+                  code: configFileCode,
+                  language: "typescript",
+                },
+              ],
+            },
+            {
+              type: "subsection",
+              level: 3,
+              title: "程序化配置",
+              blocks: [
+                {
+                  type: "code",
+                  code: programmaticConfigCode,
+                  language: "typescript",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          title: "注册中间件和插件",
+          blocks: [
+            {
+              type: "code",
+              code: middlewarePluginCode,
+              language: "typescript",
+            },
+          ],
+        },
+        {
+          title: "获取服务",
+          blocks: [
+            {
+              type: "text",
+              content: "通过 `getService` 方法获取已注册的服务：",
+            },
+            {
+              type: "code",
+              code: getServiceCode,
+              language: "typescript",
+            },
+          ],
+        },
+        {
+          title: "完整示例",
+          blocks: [
+            {
+              type: "code",
+              code: completeExampleCode,
+              language: "typescript",
+            },
+          ],
+        },
+        {
+          title: "API 参考",
+          blocks: [
+            {
+              type: "subsection",
+              level: 3,
+              title: "构造函数",
+              blocks: [
+                {
+                  type: "code",
+                  code: "constructor(configPath?: string, appName?: string)",
+                  language: "typescript",
+                },
+                {
+                  type: "text",
+                  content: "**参数：**",
+                },
+                {
+                  type: "list",
+                  ordered: false,
+                  items: [
+                    "`configPath` (可选): 配置文件路径，如果不提供则自动查找 `dweb.config.ts`",
+                    "`appName` (可选): 应用名称，用于多应用模式",
+                  ],
+                },
+              ],
+            },
+            {
+              type: "subsection",
+              level: 3,
+              title: "方法",
+              blocks: [
+                {
+                  type: "api",
+                  name: "initialize()",
+                  description: "初始化应用，加载配置、注册服务、初始化路由和服务器。",
+                  code: "await app.initialize();",
+                },
+                {
+                  type: "api",
+                  name: "start()",
+                  description: "启动应用，启动服务器并进入运行状态。",
+                  code: "await app.start();",
+                },
+                {
+                  type: "api",
+                  name: "stop()",
+                  description: "停止应用，停止服务器并清理资源。",
+                  code: "await app.stop();",
+                },
+                {
+                  type: "api",
+                  name: "getService<T>(token)",
+                  description: "获取已注册的服务。",
+                  code: 'const logger = app.getService<Logger>("logger");',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          title: "相关文档",
+          blocks: [
+            {
+              type: "list",
+              ordered: false,
+              items: [
+                "[ApplicationContext (应用上下文)](/docs/core/application-context)",
+                "[ConfigManager (配置管理器)](/docs/core/config-manager)",
+                "[ServiceContainer (服务容器)](/docs/core/service-container)",
+                "[LifecycleManager (生命周期管理器)](/docs/core/lifecycle-manager)",
+                "[服务器 (Server)](/docs/core/server)",
+              ],
+            },
+          ],
+        },
+      ],
+  };
+
   return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        Application (应用核心) 1122
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-          Application
-        </code>{" "}
-        类是 DWeb 框架的统一入口，
-        管理所有组件和服务，提供面向对象的应用管理方式。
-      </p>
-
-      {/* 核心特性 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          核心特性
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <strong>生命周期管理</strong>: 完整的应用生命周期钩子（Initialize,
-            Start, Stop, Error）。
-          </li>
-          <li>
-            <strong>依赖注入容器</strong>: 内置{" "}
-            <code>ServiceContainer</code>，支持 Singleton、Transient、Scoped
-            三种生命周期，实现模块解耦。
-          </li>
-          <li>
-            <strong>事件驱动架构</strong>: 基于{" "}
-            <code>EventEmitter</code>，支持全局事件总线，实现组件间的解耦通信。
-          </li>
-          <li>
-            <strong>多应用支持</strong>: 支持单体和多应用（Monorepo）架构。
-          </li>
-          <li>
-            <strong>统一错误处理</strong>:
-            内置全局异常捕获和统一的错误响应格式。
-          </li>
-          <li>
-            <strong>自动配置</strong>: 支持约定优于配置，自动加载{" "}
-            <code>dweb.config.ts</code> 和环境变量。
-          </li>
-        </ul>
-      </section>
-
-      {/* 事件驱动架构 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          事件驱动架构
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            Application
-          </code>{" "}
-          类继承自{" "}
-          <code>
-            EventEmitter
-          </code>，作为全局事件总线，允许不同组件通过事件进行通信，而无需直接依赖。
-        </p>
-        <CodeBlock code={eventDrivenCode} language="typescript" />
-      </section>
-
-      {/* 统一错误处理 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          统一错误处理
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          框架内置了全局错误处理机制，能够捕获路由处理、中间件和生命周期中的异常，并返回统一格式的错误响应。
-        </p>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <strong>自动捕获</strong>: 自动捕获同步和异步错误。
-          </li>
-          <li>
-            <strong>内容协商</strong>: 根据请求头自动返回 JSON 或 HTML
-            格式的错误信息。
-          </li>
-          <li>
-            <strong>自定义处理</strong>: 支持注册自定义{" "}
-            <code>ErrorHandler</code> 来覆盖默认行为。
-          </li>
-        </ul>
-      </section>
-
-      {/* 快速开始 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          快速开始
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          基本使用
-        </h3>
-        <CodeBlock code={basicUsageCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          使用配置文件
-        </h3>
-        <CodeBlock code={configFileCode} language="typescript" />
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          程序化配置
-        </h3>
-        <CodeBlock code={programmaticConfigCode} language="typescript" />
-      </section>
-
-      {/* 注册中间件和插件 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          注册中间件和插件
-        </h2>
-        <CodeBlock code={middlewarePluginCode} language="typescript" />
-      </section>
-
-      {/* 获取服务 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          获取服务
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          通过{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            getService
-          </code>{" "}
-          方法获取已注册的服务：
-        </p>
-        <CodeBlock code={getServiceCode} language="typescript" />
-      </section>
-
-      {/* 完整示例 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          完整示例
-        </h2>
-        <CodeBlock code={completeExampleCode} language="typescript" />
-      </section>
-
-      {/* API 参考 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          API 参考
-        </h2>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          构造函数
-        </h3>
-        <CodeBlock
-          code={`constructor(configPath?: string, appName?: string)`}
-          language="typescript"
-        />
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <strong>参数：</strong>
-        </p>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              configPath
-            </code>{" "}
-            (可选): 配置文件路径，如果不提供则自动查找{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              dweb.config.ts
-            </code>
-          </li>
-          <li>
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              appName
-            </code>{" "}
-            (可选): 应用名称，用于多应用模式
-          </li>
-        </ul>
-
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
-          方法
-        </h3>
-
-        <div className="space-y-6">
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                initialize()
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              初始化应用，加载配置、注册服务、初始化路由和服务器。
-            </p>
-            <CodeBlock code={`await app.initialize();`} language="typescript" />
-          </div>
-
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                start()
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              启动应用，启动服务器并进入运行状态。
-            </p>
-            <CodeBlock code={`await app.start();`} language="typescript" />
-          </div>
-
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                stop()
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              停止应用，停止服务器并清理资源。
-            </p>
-            <CodeBlock code={`await app.stop();`} language="typescript" />
-          </div>
-
-          <div>
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-                getService&lt;T&gt;(token)
-              </code>
-            </h4>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
-              获取已注册的服务。
-            </p>
-            <CodeBlock
-              code={`const logger = app.getService<Logger>("logger");`}
-              language="typescript"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 相关文档 */}
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          相关文档
-        </h2>
-        <ul className="list-disc list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            <a
-              href="/docs/core/application-context"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              ApplicationContext (应用上下文)
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/core/config-manager"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              ConfigManager (配置管理器)
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/core/service-container"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              ServiceContainer (服务容器)
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/core/lifecycle-manager"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              LifecycleManager (生命周期管理器)
-            </a>
-          </li>
-          <li>
-            <a
-              href="/docs/core/server"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              服务器 (Server)
-            </a>
-          </li>
-        </ul>
-      </section>
-    </article>
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

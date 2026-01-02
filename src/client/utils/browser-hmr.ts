@@ -250,8 +250,6 @@ class HMRClient {
       currentRoute.startsWith(fileRoute + "/") ||
       currentRoute + "/index" == fileRoute;
 
-    console.log({ hasMatch, currentRoute, fileRoute });
-
     return hasMatch;
   }
 

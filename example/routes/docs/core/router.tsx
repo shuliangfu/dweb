@@ -2,7 +2,7 @@
  * 核心模块 - 路由系统 (Router) 文档页面
  */
 
-import CodeBlock from "@components/CodeBlock.tsx";
+import DocRenderer from "@components/DocRenderer.tsx";
 import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
@@ -153,343 +153,216 @@ export default function UserPage({ params }: PageProps) {
   return <div>User: {user.name}</div>;
 }`;
 
+  // 页面文档数据（用于数据提取和翻译）
+  const content = {
+    title: "路由系统 (Router)",
+    description: "DWeb 使用文件系统路由，路由文件位于 `routes` 目录。文件路径自动映射为 URL 路径，无需手动配置路由表。",
+    sections: [
+
+      {
+        title: "文件系统路由",
+        blocks: [
+          {
+            type: "text",
+            content: "路由文件位于 `routes` 目录。文件路径自动映射为 URL 路径：",
+          },
+          {
+            type: "code",
+            code: routerCode,
+            language: "text",
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "路由规则",
+            blocks: [
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "**`index.tsx`** - 映射到目录的根路径",
+                  "**`[id].tsx`** - 动态路由参数",
+                  "**`[...slug].tsx`** - 捕获所有路由",
+                  "**`[[slug]].tsx`** - 可选参数路由",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+
+      {
+        title: "动态路由",
+        blocks: [
+          {
+            type: "text",
+            content: "使用方括号 `[id]` 创建动态路由参数：",
+          },
+          {
+            type: "code",
+            code: dynamicRouteCode,
+            language: "typescript",
+          },
+          {
+            type: "text",
+            content: "访问 `/users/123` 时，`params.id` 将是 `'123'`。",
+          },
+        ],
+      },
+      {
+        title: "捕获所有路由",
+        blocks: [
+          {
+            type: "text",
+            content: "使用 `[...slug]` 捕获所有剩余路径段：",
+          },
+          {
+            type: "code",
+            code: catchAllRouteCode,
+            language: "typescript",
+          },
+          {
+            type: "text",
+            content: "访问 `/docs/getting-started/installation` 时，`params.slug` 将是 `['getting-started', 'installation']`。",
+          },
+        ],
+      },
+      {
+        title: "可选参数路由",
+        blocks: [
+          {
+            type: "text",
+            content: "使用双括号 `[[slug]]` 创建可选参数路由：",
+          },
+          {
+            type: "code",
+            code: optionalRouteCode,
+            language: "typescript",
+          },
+          {
+            type: "text",
+            content: "`/posts` 和 `/posts/hello-world` 都会匹配此路由。",
+          },
+        ],
+      },
+
+      {
+        title: "使用 load 函数获取数据",
+        blocks: [
+          {
+            type: "text",
+            content: "`load` 函数在服务端执行，用于在页面渲染前获取数据。返回的数据会自动传递给页面组件的 `data` 属性。",
+          },
+          {
+            type: "code",
+            code: loadFunctionCode,
+            language: "typescript",
+          },
+          {
+            type: "alert",
+            level: "success",
+            content: [
+              "**优势：**",
+              "在服务端执行，减少客户端请求",
+              "支持 SSR，提高 SEO 和首屏性能",
+              "可以访问数据库、文件系统等服务器资源",
+              "数据在服务端获取，更安全",
+            ],
+          },
+        ],
+      },
+
+      {
+        title: "⚠️ 重要限制：页面组件不能是异步函数",
+        blocks: [
+          {
+            type: "text",
+            content: "**页面组件不能定义为 `async function`**。如果需要进行异步操作（如数据获取），请使用以下方式：",
+          },
+          {
+            type: "alert",
+            level: "error",
+            content: [
+              "**❌ 错误示例：**",
+              asyncComponentErrorCode,
+            ],
+          },
+          {
+            type: "alert",
+            level: "success",
+            content: [
+              "**✅ 正确示例：使用 useEffect**",
+              useEffectCode,
+            ],
+          },
+          {
+            type: "alert",
+            level: "info",
+            content: [
+              "**✅ 推荐：使用 load 函数（见上方示例）**",
+              "使用 `load` 函数在服务端获取数据是最佳实践，可以充分利用 SSR 的优势，提高性能和 SEO。",
+            ],
+          },
+        ],
+      },
+
+      {
+        title: "路由优先级",
+        blocks: [
+          {
+            type: "text",
+            content: "路由匹配按以下优先级（从高到低）：",
+          },
+          {
+            type: "list",
+            ordered: true,
+            items: [
+              "精确匹配（如 `/users/index.tsx`）",
+              "动态路由（如 `/users/[id].tsx`）",
+              "捕获所有路由（如 `/users/[...slug].tsx`）",
+              "可选参数路由（如 `/users/[[slug]].tsx`）",
+            ],
+          },
+          {
+            type: "alert",
+            level: "warning",
+            content: [
+              "**注意：**当多个路由都能匹配同一个路径时，框架会选择优先级最高的路由。",
+            ],
+          },
+        ],
+      },
+
+      {
+        title: "路由约定文件",
+        blocks: [
+          {
+            type: "text",
+            content: "DWeb 框架支持以下约定文件，它们有特殊的作用：",
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "**`_app.tsx`** - 根应用组件，提供 HTML 文档结构（DOCTYPE、head、body 等），示例：`routes/_app.tsx`",
+              "**`_layout.tsx`** - 布局组件，提供页面布局结构，示例：`routes/_layout.tsx`",
+              "**`_middleware.ts`** - 中间件文件，在请求处理前执行，示例：`routes/_middleware.ts`",
+              "**`_404.tsx`** - 404 错误页面，当路由不匹配时显示，示例：`routes/_404.tsx`",
+              "**`_error.tsx`** - 错误页面，当发生错误时显示，示例：`routes/_error.tsx`",
+            ],
+          },
+          {
+            type: "text",
+            content: "更多关于约定文件的说明，请参考 [路由约定文档](/docs/routing-conventions)。",
+          },
+        ],
+      },
+    ],
+  };
+
   return (
-    <article className="prose prose-lg max-w-none dark:prose-invert">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-        路由系统 (Router)
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8">
-        DWeb 使用文件系统路由，路由文件位于{" "}
-        <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-          routes
-        </code>{" "}
-        目录。文件路径自动映射为 URL 路径，无需手动配置路由表。
-      </p>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
-          文件系统路由
-        </h2>
-        <p className="text-gray-700 leading-relaxed mb-4">
-          路由文件位于{" "}
-          <code className="bg-gray-100 px-2 py-1 rounded">routes</code>{" "}
-          目录。文件路径自动映射为 URL 路径：
-        </p>
-        <CodeBlock code={routerCode} language="text" />
-        <div className="mt-4">
-          <h3 className="text-xl font-bold text-gray-900 mb-3">路由规则</h3>
-          <ul className="list-disc list-inside space-y-2 my-4">
-            <li className="text-gray-700">
-              <code className="bg-gray-100 px-2 py-1 rounded">index.tsx</code>
-              {" "}
-              - 映射到目录的根路径
-            </li>
-            <li className="text-gray-700">
-              <code className="bg-gray-100 px-2 py-1 rounded">[id].tsx</code>
-              {" "}
-              - 动态路由参数
-            </li>
-            <li className="text-gray-700">
-              <code className="bg-gray-100 px-2 py-1 rounded">
-                [...slug].tsx
-              </code>{" "}
-              - 捕获所有路由
-            </li>
-            <li className="text-gray-700">
-              <code className="bg-gray-100 px-2 py-1 rounded">
-                [[slug]].tsx
-              </code>{" "}
-              - 可选参数路由
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
-          动态路由
-        </h2>
-        <p className="text-gray-700 leading-relaxed mb-4">
-          使用方括号 <code className="bg-gray-100 px-2 py-1 rounded">[id]</code>
-          {" "}
-          创建动态路由参数：
-        </p>
-        <CodeBlock code={dynamicRouteCode} language="typescript" />
-        <p className="text-gray-700 leading-relaxed mt-4">
-          访问 <code className="bg-gray-100 px-2 py-1 rounded">/users/123</code>
-          {" "}
-          时，
-          <code className="bg-gray-100 px-2 py-1 rounded">params.id</code> 将是
-          {" "}
-          <code className="bg-gray-100 px-2 py-1 rounded">'123'</code>。
-        </p>
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
-          捕获所有路由
-        </h2>
-        <p className="text-gray-700 leading-relaxed mb-4">
-          使用 <code className="bg-gray-100 px-2 py-1 rounded">[...slug]</code>
-          {" "}
-          捕获所有剩余路径段：
-        </p>
-        <CodeBlock code={catchAllRouteCode} language="typescript" />
-        <p className="text-gray-700 leading-relaxed mt-4">
-          访问{" "}
-          <code className="bg-gray-100 px-2 py-1 rounded">
-            /docs/getting-started/installation
-          </code>{" "}
-          时，<code className="bg-gray-100 px-2 py-1 rounded">params.slug</code>
-          {" "}
-          将是{" "}
-          <code className="bg-gray-100 px-2 py-1 rounded">
-            ['getting-started', 'installation']
-          </code>
-          。
-        </p>
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 mt-12 mb-6 border-b border-gray-200 pb-2">
-          可选参数路由
-        </h2>
-        <p className="text-gray-700 leading-relaxed mb-4">
-          使用双括号{" "}
-          <code className="bg-gray-100 px-2 py-1 rounded">[[slug]]</code>{" "}
-          创建可选参数路由：
-        </p>
-        <CodeBlock code={optionalRouteCode} language="typescript" />
-        <p className="text-gray-700 leading-relaxed mt-4">
-          <code className="bg-gray-100 px-2 py-1 rounded">/posts</code> 和{" "}
-          <code className="bg-gray-100 px-2 py-1 rounded">
-            /posts/hello-world
-          </code>{" "}
-          都会匹配此路由。
-        </p>
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          使用 load 函数获取数据
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            load
-          </code>{" "}
-          函数在服务端执行，用于在页面渲染前获取数据。
-          返回的数据会自动传递给页面组件的{" "}
-          <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-            data
-          </code>{" "}
-          属性。
-        </p>
-        <CodeBlock code={loadFunctionCode} language="typescript" />
-        <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 dark:border-green-600 p-4 my-4 rounded">
-          <p className="text-green-800 dark:text-green-200 text-sm">
-            <strong>优势：</strong>
-          </p>
-          <ul className="list-disc list-inside space-y-1 text-green-800 dark:text-green-200 text-sm mt-2">
-            <li>在服务端执行，减少客户端请求</li>
-            <li>支持 SSR，提高 SEO 和首屏性能</li>
-            <li>可以访问数据库、文件系统等服务器资源</li>
-            <li>数据在服务端获取，更安全</li>
-          </ul>
-        </div>
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          ⚠️ 重要限制：页面组件不能是异步函数
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          <strong>
-            页面组件不能定义为{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              async function
-            </code>
-          </strong>。 如果需要进行异步操作（如数据获取），请使用以下方式：
-        </p>
-        <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-600 p-4 my-4 rounded">
-          <p className="text-red-800 dark:text-red-200 text-sm font-semibold mb-2">
-            ❌ 错误示例：
-          </p>
-          <CodeBlock code={asyncComponentErrorCode} language="typescript" />
-        </div>
-        <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 dark:border-green-600 p-4 my-4 rounded">
-          <p className="text-green-800 dark:text-green-200 text-sm font-semibold mb-2">
-            ✅ 正确示例：使用 useEffect
-          </p>
-          <CodeBlock code={useEffectCode} language="typescript" />
-        </div>
-        <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-600 p-4 my-4 rounded">
-          <p className="text-blue-800 dark:text-blue-200 text-sm font-semibold mb-2">
-            ✅ 推荐：使用 load 函数（见上方示例）
-          </p>
-          <p className="text-blue-800 dark:text-blue-200 text-sm">
-            使用{" "}
-            <code className="bg-blue-100 dark:bg-blue-900/50 px-1 py-0.5 rounded">
-              load
-            </code>{" "}
-            函数在服务端获取数据是最佳实践， 可以充分利用 SSR 的优势，提高性能和
-            SEO。
-          </p>
-        </div>
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          路由优先级
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          路由匹配按以下优先级（从高到低）：
-        </p>
-        <ol className="list-decimal list-inside space-y-2 my-4 text-gray-700 dark:text-gray-300">
-          <li>
-            精确匹配（如{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              /users/index.tsx
-            </code>）
-          </li>
-          <li>
-            动态路由（如{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              /users/[id].tsx
-            </code>）
-          </li>
-          <li>
-            捕获所有路由（如{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              /users/[...slug].tsx
-            </code>）
-          </li>
-          <li>
-            可选参数路由（如{" "}
-            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
-              /users/[[slug]].tsx
-            </code>）
-          </li>
-        </ol>
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-600 p-4 my-4 rounded">
-          <p className="text-yellow-800 dark:text-yellow-200 text-sm">
-            <strong>
-              注意：
-            </strong>当多个路由都能匹配同一个路径时，框架会选择优先级最高的路由。
-          </p>
-        </div>
-      </section>
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-12 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-          路由约定文件
-        </h2>
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-          DWeb 框架支持以下约定文件，它们有特殊的作用：
-        </p>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  文件名
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  说明
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  示例
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    _app.tsx
-                  </code>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  根应用组件，提供 HTML 文档结构（DOCTYPE、head、body 等）
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    routes/_app.tsx
-                  </code>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    _layout.tsx
-                  </code>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  布局组件，提供页面布局结构
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    routes/_layout.tsx
-                  </code>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    _middleware.ts
-                  </code>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  中间件文件，在请求处理前执行
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    routes/_middleware.ts
-                  </code>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    _404.tsx
-                  </code>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  404 错误页面，当路由不匹配时显示
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    routes/_404.tsx
-                  </code>
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    _error.tsx
-                  </code>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  错误页面，当发生错误时显示
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                    routes/_error.tsx
-                  </code>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p className="text-gray-700 dark:text-gray-300 text-sm mt-4">
-          更多关于约定文件的说明，请参考{" "}
-          <a
-            href="/docs/routing-conventions"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            路由约定文档
-          </a>。
-        </p>
-      </section>
-    </article>
+    <DocRenderer
+      content={content as Parameters<typeof DocRenderer>[0]["content"]}
+    />
   );
 }

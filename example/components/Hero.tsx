@@ -20,6 +20,8 @@ interface HeroProps {
   secondaryCTALink?: string;
   /** 版本号（可选，如果不提供则尝试从 globalThis.__PAGE_DATA__ 获取） */
   version?: string;
+  /** 是否启用彩色背景动画（默认 false，只有首页的第一个 Hero 开启） */
+  enableBackground?: boolean;
 }
 
 /**
@@ -35,6 +37,7 @@ export default function Hero({
   secondaryCTA = "查看文档",
   secondaryCTALink = "/docs",
   version,
+  enableBackground = false,
 }: HeroProps) {
   // 获取版本号：优先使用 props，其次从 globalThis.__PAGE_DATA__ 获取
   const versionString = version ||
@@ -50,8 +53,9 @@ export default function Hero({
   // 这里我们采用一种简单的策略：使用 CSS 类来定义大致区域，具体的随机性交给动画本身（动画路径已经是复杂的了）。
   // 如果需要每次刷新位置都不同，可以在 useEffect 中设置 style。
 
-  // 状态用于控制是否显示背景（作为开关）
-  const [showBackground, setShowBackground] = useState(true);
+  // 状态用于控制是否显示背景（作为开关，用于开发调试）
+  // 默认使用 enableBackground prop 的值
+  const [showBackground, setShowBackground] = useState(enableBackground);
 
   // 客户端随机化位置 (可选，为了增强随机感)
   const [positions, setPositions] = useState([
@@ -71,14 +75,17 @@ export default function Hero({
 
   return (
     <div className="relative overflow-hidden bg-white dark:bg-gray-950 py-24 lg:py-36">
-      {/* 背景开关按钮 (开发/演示用，实际生产环境可能不需要，或者放在设置里) */}
-      <button
-        onClick={() => setShowBackground(!showBackground)}
-        className="absolute top-4 right-4 z-20 p-2 text-xs text-gray-400 hover:text-gray-600 bg-white/50 rounded-full opacity-0 hover:opacity-100 transition-opacity"
-        title="Toggle Background Animation"
-      >
-        {showBackground ? "Hide BG" : "Show BG"}
-      </button>
+      {/* 背景开关按钮 (开发/演示用，仅在启用背景时显示) */}
+      {enableBackground && (
+        <button
+          type="button"
+          onClick={() => setShowBackground(!showBackground)}
+          className="absolute top-4 right-4 z-20 p-2 text-xs text-gray-400 hover:text-gray-600 bg-white/50 rounded-full opacity-0 hover:opacity-100 transition-opacity"
+          title="Toggle Background Animation"
+        >
+          {showBackground ? "Hide BG" : "Show BG"}
+        </button>
+      )}
 
       {/* 背景装饰 */}
       {showBackground && (
