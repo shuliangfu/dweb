@@ -222,7 +222,7 @@ export default function ExamplesSidebar(
         }
       `}
       </style>
-      <aside className="w-80 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 h-[calc(100vh-12rem)] sticky top-24 overflow-y-auto sidebar-scrollbar">
+      <aside className="w-80 max-w-[320px] bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 h-[calc(100vh-12rem)] sticky top-24 overflow-y-auto sidebar-scrollbar">
         <div className="pt-8 px-6 pb-8">
           <h2 className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-6 pl-2">
             示例目录

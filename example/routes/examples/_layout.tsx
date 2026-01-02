@@ -71,7 +71,7 @@ export default function ExamplesLayout({ children, routePath }: LayoutProps) {
   return (
     <div className="space-y-0">
       {/* 页面标题 */}
-      <div className={`relative overflow-hidden bg-linear-to-r bg-gradient-to-r ${theme.from} ${theme.to} ${theme.darkFrom} ${theme.darkTo} py-24`}>
+      <div className="relative overflow-hidden bg-linear-to-r bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 py-24">
         {/* 背景装饰 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2">
@@ -92,14 +92,16 @@ export default function ExamplesLayout({ children, routePath }: LayoutProps) {
 
       {/* 主要内容区域：左侧菜单 + 示例内容 */}
       <div className="py-24 bg-white dark:bg-gray-950">
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-8">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex">
             {/* 侧边栏导航 */}
             <ExamplesSidebar currentPath={routePath} />
 
             {/* 示例内容区域 */}
-            <div className="flex-1 min-w-0">
-              {children}
+            <div className="flex-1 min-w-0 pl-8">
+              <div className="py-8">
+                {children}
+              </div>
             </div>
           </div>
         </div>
