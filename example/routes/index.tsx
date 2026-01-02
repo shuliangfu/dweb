@@ -8,11 +8,9 @@ import Hero from "../components/Hero.tsx";
 import CodeBlock from "../components/CodeBlock.tsx";
 import type { LoadContext, PageProps } from "@dreamer/dweb";
 import { getJsrPackageUrl, getVersionString } from "../utils.ts";
-import { useExampleStore } from "../stores/example.ts";
+import { useExampleStore } from "@stores/example.ts";
 import { useEffect } from "preact/hooks";
-import { useThemeStore } from "../../src/client/mod.ts";
-import { twMerge } from "tailwind-merge";
-import Chart from "chart/auto";
+import { useThemeStore, route } from "@dreamer/dweb/client";
 
 /**
  * 页面元数据（用于 SEO）
@@ -148,6 +146,17 @@ export default function HomePage(
   const { versionString } = data as {
     versionString: string;
   };
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // 使用框架提供的 route 函数进行导航
+      // 支持字符串路径或对象形式传递参数
+      route({ path: "/docs", params: { id: "123" } });
+    }, 1000);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, []);
 
   // 快速开始代码示例
   const quickStartCode = `# 创建新项目
@@ -179,14 +188,16 @@ deno task dev`;
       <div className="py-24 bg-gray-50 dark:bg-gray-900 relative overflow-hidden">
         {/* 背景装饰 */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-          <div className="absolute top-1/2 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl">
+          </div>
+          <div className="absolute top-1/2 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl">
+          </div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight">
-              {$t("快速开始")}  
+              {$t("快速开始")}
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
               只需几分钟，即可开始使用 DWeb 构建您的下一个 Web 应用
@@ -196,14 +207,28 @@ deno task dev`;
           <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
             {/* 创建项目 */}
             <div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">创建新项目</h3>
-              <CodeBlock code={quickStartCode} language="bash" variant="terminal" title="Create App" />
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">
+                创建新项目
+              </h3>
+              <CodeBlock
+                code={quickStartCode}
+                language="bash"
+                variant="terminal"
+                title="Create App"
+              />
             </div>
-            
+
             {/* 安装依赖 */}
             <div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">安装依赖</h3>
-              <CodeBlock code={installCode} language="bash" variant="terminal" title="Add Dependency" />
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">
+                安装依赖
+              </h3>
+              <CodeBlock
+                code={installCode}
+                language="bash"
+                variant="terminal"
+                title="Add Dependency"
+              />
             </div>
           </div>
 
