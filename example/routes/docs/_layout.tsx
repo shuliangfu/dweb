@@ -3,6 +3,7 @@
  * 为所有文档页面提供统一的布局，包括头部标题和左侧菜单
  */
 
+import { useEffect, useRef } from "preact/hooks";
 import Sidebar from "../../components/Sidebar.tsx";
 import type { LayoutProps } from "@dreamer/dweb";
 
@@ -15,7 +16,7 @@ export const metadata = {
   author: "DWeb",
 };
 
-export const load = async () => {
+export const load = () => {
   return {
     title: "文档",
     description: "快速开始使用 DWeb 框架，构建现代化的 Web 应用",
@@ -30,6 +31,24 @@ export const load = async () => {
  * @returns JSX 元素
  */
 export default function DocsLayout({ children, routePath }: LayoutProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const prevRoutePathRef = useRef<string | undefined>(routePath);
+
+  // 当路由变化时，滚动内容区域到顶部
+  useEffect(() => {
+    if (prevRoutePathRef.current !== routePath && routePath) {
+      // 路由已变化，滚动内容区域到顶部
+      const timer = setTimeout(() => {
+        if (contentRef.current) {
+          contentRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+      prevRoutePathRef.current = routePath;
+      return () => clearTimeout(timer);
+    }
+    prevRoutePathRef.current = routePath;
+  }, [routePath]);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* 页面标题 */}
@@ -53,14 +72,17 @@ export default function DocsLayout({ children, routePath }: LayoutProps) {
       </div>
 
       {/* 主要内容区域：左侧菜单 + 文档内容 */}
-      <div className="flex flex-1 max-w-8xl mx-auto w-full px-4 lg:px-8 gap-8">
+      <div className="flex flex-1 max-w-[1600px] mx-auto w-full px-4 lg:px-8">
         {/* 侧边栏导航 */}
         <Sidebar currentPath={routePath} />
 
         {/* 文档内容区域 */}
         <div className="flex-1 min-w-0 py-0 px-0">
           {/* 文档内容 */}
-          <div className="bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 lg:p-12 min-h-[calc(100vh-20rem)]">
+          <div
+            ref={contentRef}
+            className="bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 lg:p-12 min-h-[calc(100vh-20rem)]"
+          >
             {children}
           </div>
         </div>

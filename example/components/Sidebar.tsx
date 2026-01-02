@@ -339,6 +339,22 @@ export default function Sidebar(
     });
   };
 
+  /**
+   * 处理链接点击，保持侧边栏滚动位置
+   */
+  const handleLinkClick = (e: MouseEvent) => {
+    // 保存当前侧边栏滚动位置
+    const sidebar = (e.currentTarget as HTMLElement)?.closest("aside");
+    const scrollTop = sidebar?.scrollTop || 0;
+    
+    // 延迟恢复滚动位置，确保导航完成后再恢复
+    setTimeout(() => {
+      if (sidebar) {
+        sidebar.scrollTop = scrollTop;
+      }
+    }, 0);
+  };
+
   return (
     <>
       <style>
@@ -375,9 +391,9 @@ export default function Sidebar(
         }
       `}
       </style>
-      <aside className="w-80 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border-r border-gray-200 dark:border-gray-700 h-screen sticky top-0 overflow-y-auto sidebar-scrollbar pb-20">
+      <aside className="w-80 max-w-[320px] bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border-r border-gray-200 dark:border-gray-700 h-screen sticky top-0 overflow-y-auto sidebar-scrollbar pb-20">
         <div className="pt-8 px-6 pb-8">
-          <h2 className="text-xl font-bold text-blue-700 dark:text-blue-200 mb-6 pl-2">
+          <h2 className="text-xl font-bold text-blue-700 dark:text-blue-300 mb-6 pl-2">
             文档目录
           </h2>
           <nav className="space-y-1.5">
@@ -395,6 +411,7 @@ export default function Sidebar(
                     ? (
                       <a
                         href={item.path}
+                        onClick={handleLinkClick}
                         className={`block px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                           isActive
                             ? "bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/40 dark:to-blue-900/40 text-indigo-700 dark:text-indigo-300 shadow-sm"
@@ -424,6 +441,7 @@ export default function Sidebar(
                           <a
                             key={child.path}
                             href={child.path}
+                            onClick={handleLinkClick}
                             className={`block px-4 py-2 pl-4 rounded-lg text-sm transition-all duration-200 border-l-2 ${
                               childIsActive
                                 ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/20 text-indigo-700 dark:text-gray-50 font-medium translate-x-1"
