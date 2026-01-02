@@ -171,6 +171,20 @@
 	--color-yellow-950: #451a03;
 	--color-yellow-1000: #2c1102;
 
+	/* 琥珀色 (amber) */
+	--color-amber-50: #fffbeb;
+	--color-amber-100: #fef3c7;
+	--color-amber-200: #fde68a;
+	--color-amber-300: #fcd34d;
+	--color-amber-400: #fbbf24;
+	--color-amber-500: #f59e0b;
+	--color-amber-600: #d97706;
+	--color-amber-700: #b45309;
+	--color-amber-800: #92400e;
+	--color-amber-900: #78350f;
+	--color-amber-950: #451a03;
+	--color-amber-1000: #2c1102;
+
 	/* 紫色颜色 */
 	--color-purple-50: #faf5ff;
 	--color-purple-100: #f3e8ff;
@@ -240,6 +254,76 @@
 	--color-pink-900: #831843;
 	--color-pink-950: #500724;
 	--color-pink-1000: #290312;
+
+	/* 靛蓝色 (indigo) */
+	--color-indigo-50: #eef2ff;
+	--color-indigo-100: #e0e7ff;
+	--color-indigo-200: #c7d2fe;
+	--color-indigo-300: #a5b4fc;
+	--color-indigo-400: #818cf8;
+	--color-indigo-500: #6366f1;
+	--color-indigo-600: #4f46e5;
+	--color-indigo-700: #4338ca;
+	--color-indigo-800: #3730a3;
+	--color-indigo-900: #312e81;
+	--color-indigo-950: #1e1b4b;
+	--color-indigo-1000: #0f0e2e;
+
+	/* 翠绿色 (emerald) */
+	--color-emerald-50: #ecfdf5;
+	--color-emerald-100: #d1fae5;
+	--color-emerald-200: #a7f3d0;
+	--color-emerald-300: #6ee7b7;
+	--color-emerald-400: #34d399;
+	--color-emerald-500: #10b981;
+	--color-emerald-600: #059669;
+	--color-emerald-700: #047857;
+	--color-emerald-800: #065f46;
+	--color-emerald-900: #064e3b;
+	--color-emerald-950: #022c22;
+	--color-emerald-1000: #011a15;
+
+	/* 青色 (cyan) */
+	--color-cyan-50: #ecfeff;
+	--color-cyan-100: #cffafe;
+	--color-cyan-200: #a5f3fc;
+	--color-cyan-300: #67e8f9;
+	--color-cyan-400: #22d3ee;
+	--color-cyan-500: #06b6d4;
+	--color-cyan-600: #0891b2;
+	--color-cyan-700: #0e7490;
+	--color-cyan-800: #155e75;
+	--color-cyan-900: #164e63;
+	--color-cyan-950: #083344;
+	--color-cyan-1000: #05202a;
+
+	/* 青柠色 (lime) */
+	--color-lime-50: #f7fee7;
+	--color-lime-100: #ecfccb;
+	--color-lime-200: #d9f99d;
+	--color-lime-300: #bef264;
+	--color-lime-400: #a3e635;
+	--color-lime-500: #84cc16;
+	--color-lime-600: #65a30d;
+	--color-lime-700: #4d7c0f;
+	--color-lime-800: #365314;
+	--color-lime-900: #365314;
+	--color-lime-950: #1a2e05;
+	--color-lime-1000: #0f1a03;
+
+	/* 青绿色 (teal) */
+	--color-teal-50: #f0fdfa;
+	--color-teal-100: #ccfbf1;
+	--color-teal-200: #99f6e4;
+	--color-teal-300: #5eead4;
+	--color-teal-400: #2dd4bf;
+	--color-teal-500: #14b8a6;
+	--color-teal-600: #0d9488;
+	--color-teal-700: #0f766e;
+	--color-teal-800: #115e59;
+	--color-teal-900: #134e4a;
+	--color-teal-950: #042f2e;
+	--color-teal-1000: #021a19;
 
   /* 高度配置 */
   --height-screen: 100vh;

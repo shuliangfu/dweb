@@ -1,5 +1,5 @@
 {
-  "version": "2.1.7",
+  "version": "2.1.8",
   "nodeModulesDir": "auto",
   "tasks": {
     "dev": "deno run -A ../src/cli.ts dev",
@@ -11,7 +11,7 @@
     "@services/": "./services/",
     "@plugins/": "./plugins/",
     "@config/": "./config/",
-    "@store/": "./stores/",
+    "@stores/": "./stores/",
     "@hooks/": "./hooks/",
     "@utils/": "./utils/",
 

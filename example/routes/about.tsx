@@ -108,12 +108,12 @@ export default function AboutPage(
   return (
     <div className="space-y-0">
       {/* 页面标题 */}
-      <div className="relative overflow-hidden bg-linear-to-r bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 py-24">
+      <div className="relative overflow-hidden bg-linear-to-r bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-900 dark:to-pink-900 py-24">
         {/* 背景装饰 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2">
           </div>
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2">
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-pink-500/20 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2">
           </div>
         </div>
 
@@ -121,7 +121,7 @@ export default function AboutPage(
           <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-6 tracking-tight">
             关于 DWeb
           </h1>
-          <p className="text-xl text-blue-100 dark:text-blue-200 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-purple-100 dark:text-purple-200 max-w-3xl mx-auto leading-relaxed">
             DWeb 是一个现代化的全栈 Web 框架，基于 Deno + Preact + Tailwind CSS
             构建
           </p>
@@ -202,7 +202,7 @@ export default function AboutPage(
                 className="p-10 rounded-3xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
               >
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                  <span className="w-2 h-8 bg-blue-500 rounded-full mr-3">
+                  <span className="w-2 h-8 bg-purple-500 rounded-full mr-3">
                   </span>
                   {principle.title}
                 </h3>
@@ -216,12 +216,12 @@ export default function AboutPage(
       </div>
 
       {/* 开始使用 */}
-      <div className="py-24 bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 relative overflow-hidden">
+      <div className="py-24 bg-linear-to-r from-purple-600 to-pink-600 dark:from-purple-900 dark:to-pink-900 relative overflow-hidden">
         {/* 背景装饰 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-white/10 rounded-full blur-3xl">
           </div>
-          <div className="absolute right-0 top-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl">
+          <div className="absolute right-0 top-0 w-64 h-64 bg-pink-500/20 rounded-full blur-3xl">
           </div>
         </div>
 
@@ -229,13 +229,13 @@ export default function AboutPage(
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight">
             准备开始了吗？
           </h2>
-          <p className="text-xl text-blue-100 dark:text-blue-200 mb-10 leading-relaxed">
+          <p className="text-xl text-purple-100 dark:text-purple-200 mb-10 leading-relaxed">
             立即开始使用 DWeb，体验现代化的 Web 开发方式
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <a
               href="/docs"
-              className="group inline-flex items-center px-10 py-5 text-lg font-bold text-blue-600 dark:text-blue-500 bg-white dark:bg-gray-100 rounded-full hover:bg-gray-50 dark:hover:bg-gray-200 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1"
+              className="group inline-flex items-center px-10 py-5 text-lg font-bold text-purple-600 dark:text-purple-500 bg-white dark:bg-gray-100 rounded-full hover:bg-gray-50 dark:hover:bg-gray-200 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1"
             >
               查看文档
             </a>
@@ -243,7 +243,7 @@ export default function AboutPage(
               href="https://github.com/shuliangfu/dweb"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center px-10 py-5 text-lg font-bold text-white bg-blue-700 dark:bg-blue-800 rounded-full hover:bg-blue-800 dark:hover:bg-blue-900 transition-all shadow-xl hover:shadow-2xl border-2 border-white/20 dark:border-white/30 hover:-translate-y-1"
+              className="inline-flex items-center px-10 py-5 text-lg font-bold text-white bg-purple-700 dark:bg-purple-800 rounded-full hover:bg-purple-800 dark:hover:bg-purple-900 transition-all shadow-xl hover:shadow-2xl border-2 border-white/20 dark:border-white/30 hover:-translate-y-1"
             >
               <svg
                 className="w-5 h-5 mr-2"

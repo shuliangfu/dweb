@@ -3,34 +3,6 @@
  */
 
 /**
- * 图片裁切配置
- */
-export interface ImageCropConfig {
-  /** 是否启用裁切 */
-  enabled?: boolean;
-  /** 目标宽度 */
-  width: number;
-  /** 目标高度 */
-  height: number;
-  /** 裁切模式：'center' 居中裁切 */
-  mode?: "center";
-}
-
-/**
- * 图片压缩配置
- */
-export interface ImageCompressConfig {
-  /** 是否启用压缩 */
-  enabled?: boolean;
-  /** 压缩格式：'webp' | 'avif' */
-  format?: "webp" | "avif";
-  /** 压缩质量（0-100） */
-  quality?: number;
-  /** 是否同时保留原格式 */
-  keepOriginal?: boolean;
-}
-
-/**
  * 文件上传配置
  */
 export interface FileUploadConfig {
@@ -46,14 +18,23 @@ export interface FileUploadConfig {
   namingStrategy?: "original" | "timestamp" | "uuid" | "hash";
   /** 是否创建子目录（按日期） */
   createSubdirs?: boolean;
+  /**
+   * 子目录创建策略（模板格式或预设值）
+   * - 模板格式：如 'YYYY/mm/dd'、'YY/m/d'、'YYYY-MM-DD' 等
+   *   - YYYY: 4位年份（如：2026）
+   *   - YY: 2位年份（如：26）
+   *   - mm: 2位月份（如：01）
+   *   - m: 1-2位月份（如：1, 12）
+   *   - dd: 2位日期（如：02）
+   *   - d: 1-2位日期（如：2, 31）
+   * - 预设值（向后兼容）：'year' | 'year-month' | 'year-month-day'
+   * - 默认：'YYYY/mm/dd'（等同于 'year-month-day'）
+   */
+  subdirStrategy?: string;
   /** 文件大小限制（每个文件） */
   perFileLimit?: number;
   /** 总大小限制（所有文件） */
   totalLimit?: number;
-  /** 图片裁切配置 */
-  imageCrop?: ImageCropConfig;
-  /** 图片压缩配置 */
-  imageCompress?: ImageCompressConfig;
 }
 
 /**

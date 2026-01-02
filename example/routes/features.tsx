@@ -141,18 +141,18 @@ app.use(cors());
   return (
     <div className="space-y-0">
       {/* 页面标题 */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 py-24">
+      <div className="relative overflow-hidden bg-gradient-to-r from-orange-600 to-amber-600 dark:from-orange-900 dark:to-amber-900 py-24">
         {/* 背景装饰 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
            <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
-           <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
+           <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-500/20 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
         </div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
           <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-6 tracking-tight">
             功能特性
           </h1>
-          <p className="text-xl text-blue-100 dark:text-blue-200 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-orange-100 dark:text-orange-200 max-w-3xl mx-auto leading-relaxed">
             DWeb 提供了现代化 Web 开发所需的所有功能，让您专注于业务逻辑
           </p>
         </div>
@@ -199,23 +199,23 @@ app.use(cors());
       </div>
 
       {/* CTA 区域 */}
-      <div className="py-24 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 relative overflow-hidden">
+      <div className="py-24 bg-gradient-to-r from-orange-600 to-amber-600 dark:from-orange-900 dark:to-amber-900 relative overflow-hidden">
         {/* 背景装饰 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
            <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
-           <div className="absolute right-0 top-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl"></div>
+           <div className="absolute right-0 top-0 w-64 h-64 bg-amber-500/20 rounded-full blur-3xl"></div>
         </div>
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight">
             准备开始了吗？
           </h2>
-          <p className="text-xl text-blue-100 dark:text-blue-200 mb-10 leading-relaxed">
+          <p className="text-xl text-orange-100 dark:text-orange-200 mb-10 leading-relaxed">
             立即开始使用 DWeb，体验现代化的 Web 开发方式
           </p>
           <a
             href="/docs"
-            className="group inline-flex items-center px-10 py-5 text-lg font-bold text-blue-600 dark:text-blue-500 bg-white dark:bg-gray-100 rounded-full hover:bg-gray-50 dark:hover:bg-gray-200 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1"
+            className="group inline-flex items-center px-10 py-5 text-lg font-bold text-orange-600 dark:text-orange-500 bg-white dark:bg-gray-100 rounded-full hover:bg-gray-50 dark:hover:bg-gray-200 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1"
           >
             查看文档
             <svg
