@@ -190,6 +190,25 @@ cmd.subcommandAlias("c", "create");  // 可以使用 app c 代替 app create
 await cmd.execute();
 ```
 
+### 保持进程运行
+
+使用 `keepAlive()` 方法可以保持进程运行，防止命令执行完成后自动退出。这对于需要长时间运行的服务（如开发服务器、WebSocket 服务器等）非常有用。
+
+```typescript
+const cmd = new Command("dev", "启动开发服务器")
+  .keepAlive()  // 保持进程运行，不自动退出
+  .action(async (args, options) => {
+    // 启动开发服务器
+    await startDevServer();
+    // 命令执行完成后，进程不会退出，服务器会继续运行
+  });
+```
+
+**说明**：
+- 默认情况下，命令执行完成后会自动调用 `Deno.exit(0)` 退出进程
+- 调用 `keepAlive()` 后，命令执行完成不会退出，进程会继续运行
+- 适用于需要长时间运行的服务，如开发服务器、WebSocket 服务器、定时任务等
+
 ### 命令钩子
 
 ```typescript

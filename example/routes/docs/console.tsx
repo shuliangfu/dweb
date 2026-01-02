@@ -88,7 +88,22 @@ const cmd = new Command("my-command")
   });
 
 // 执行命令
-await cmd.parse(Deno.args);`;
+await cmd.execute();`;
+
+  // keepAlive 示例
+  const keepAliveCode = `import { Command } from "@dreamer/dweb";
+
+// 创建需要长时间运行的服务命令
+const cmd = new Command("dev", "启动开发服务器")
+  .keepAlive()  // 保持进程运行，不自动退出
+  .option("-p, --port <port>", "端口号", "3000")
+  .action(async (args, options) => {
+    // 启动开发服务器
+    await startDevServer(options.port);
+    // 命令执行完成后，进程不会退出，服务器会继续运行
+  });
+
+await cmd.execute();`;
 
   // 进度条示例
   const progressCode = `import { progressBar } from "@dreamer/dweb";
@@ -148,6 +163,22 @@ bar.finish();`;
           类用于创建命令行命令，支持选项、参数和子命令：
         </p>
         <CodeBlock code={commandCode} language="typescript" />
+
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">
+          保持进程运行 (keepAlive)
+        </h3>
+        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+          使用 <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-900 dark:text-gray-100">keepAlive()</code>{" "}
+          方法可以保持进程运行，防止命令执行完成后自动退出。这对于需要长时间运行的服务（如开发服务器、WebSocket 服务器等）非常有用。
+        </p>
+        <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 my-4 rounded">
+          <p className="text-blue-800 dark:text-blue-200 m-0 text-sm">
+            <strong>说明：</strong>默认情况下，命令执行完成后会自动调用 <code className="bg-blue-100 dark:bg-blue-800 px-1 py-0.5 rounded text-blue-900 dark:text-blue-100">Deno.exit(0)</code>{" "}
+            退出进程。调用 <code className="bg-blue-100 dark:bg-blue-800 px-1 py-0.5 rounded text-blue-900 dark:text-blue-100">keepAlive()</code>{" "}
+            后，命令执行完成不会退出，进程会继续运行。
+          </p>
+        </div>
+        <CodeBlock code={keepAliveCode} language="typescript" />
       </section>
 
       {/* 进度条 */}
