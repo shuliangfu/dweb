@@ -724,18 +724,24 @@ export abstract class SQLModel {
   }
 
   /**
-   * 查找单条记录
+   * 查询构建器（支持链式调用，可查找单条或多条记录）
    * @param condition 查询条件（可以是 ID、条件对象）
-   * @param fields 要查询的字段数组（可选）
-   * @returns 模型实例或 null
+   * @param fields 要查询的字段数组（可选，用于字段投影）
+   * @returns 查询构建器（支持链式调用，也可以直接 await）
    *
    * @example
+   * // 直接查询单条记录（向后兼容）
    * const user = await User.find(1);
-   * const user = await User.find({ id: 1 });
    * const user = await User.find({ email: 'user@example.com' });
-   * const user = await User.find(1, ['id', 'name', 'email']);
+   *
+   * // 链式调用查找单条记录
+   * const user = await User.find({ status: 'active' }).sort({ createdAt: -1 });
+   *
+   * // 链式调用查找多条记录
+   * const users = await User.find({ status: 'active' }).sort({ createdAt: -1 }).findAll();
+   * const users = await User.find({ status: 'active' }).sort({ sort: -1 }).limit(10).findAll();
    */
-  static async find<T extends typeof SQLModel>(
+  static find<T extends typeof SQLModel>(
     this: T,
     condition: WhereCondition | number | string,
     fields?: string[],
@@ -744,37 +750,210 @@ export abstract class SQLModel {
     options?: {
       sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
     },
-  ): Promise<InstanceType<T> | null> {
-    // 自动初始化（如果未初始化）
-    await this.ensureInitialized();
+  ): {
+    sort: (
+      sort: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc",
+    ) => ReturnType<T["find"]>;
+    skip: (n: number) => ReturnType<T["find"]>;
+    limit: (n: number) => ReturnType<T["find"]>;
+    fields: (fields: string[]) => ReturnType<T["find"]>;
+    includeTrashed: () => ReturnType<T["find"]>;
+    onlyTrashed: () => ReturnType<T["find"]>;
+    findAll: () => Promise<InstanceType<T>[]>;
+    findOne: () => Promise<InstanceType<T> | null>;
+    count: () => Promise<number>;
+    exists: () => Promise<boolean>;
+    then: (
+      onfulfilled?: (value: InstanceType<T> | null) => any,
+      onrejected?: (reason: any) => any,
+    ) => Promise<any>;
+    catch: (onrejected?: (reason: any) => any) => Promise<any>;
+    finally: (onfinally?: () => void) => Promise<any>;
+  } {
+    // 创建查询构建器状态
+    const _condition: WhereCondition | number | string = condition;
+    let _fields: string[] | undefined = fields;
+    let _sort:
+      | Record<string, 1 | -1 | "asc" | "desc">
+      | "asc"
+      | "desc"
+      | undefined = options?.sort;
+    let _skip: number | undefined;
+    let _limit: number | undefined;
+    let _includeTrashed = includeTrashed;
+    let _onlyTrashed = onlyTrashed;
 
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+    // 执行查询单条记录的函数
+    const executeFindOne = async (): Promise<InstanceType<T> | null> => {
+      // 自动初始化（如果未初始化）
+      await this.ensureInitialized();
+
+      if (!this.adapter) {
+        throw new Error(
+          "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+        );
+      }
+
+      const { where, params } = this.buildWhereClause(
+        _condition,
+        _includeTrashed,
+        _onlyTrashed,
       );
-    }
+      const columns = _fields && _fields.length > 0 ? _fields.join(", ") : "*";
+      const orderBy = this.buildOrderByClause(_sort);
+      let sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
+      if (orderBy) {
+        sql = `${sql} ORDER BY ${orderBy}`;
+      }
+      const extraParams: any[] = [];
+      if (typeof _limit === "number") {
+        sql = `${sql} LIMIT ?`;
+        extraParams.push(Math.max(1, Math.floor(_limit)));
+      } else {
+        sql = `${sql} LIMIT 1`;
+      }
+      if (typeof _limit === "number" && typeof _skip === "number") {
+        sql = `${sql} OFFSET ?`;
+        extraParams.push(Math.max(0, Math.floor(_skip)));
+      }
+      const results = await this.adapter.query(sql, [
+        ...params,
+        ...extraParams,
+      ]);
 
-    const { where, params } = this.buildWhereClause(
-      condition,
-      includeTrashed,
-      onlyTrashed,
-    );
-    const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
-    const orderBy = this.buildOrderByClause(options?.sort);
-    let sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
-    if (orderBy) {
-      sql = `${sql} ORDER BY ${orderBy}`;
-    }
-    sql = `${sql} LIMIT 1`;
-    const results = await this.adapter.query(sql, params);
+      if (results.length === 0) {
+        return null;
+      }
 
-    if (results.length === 0) {
-      return null;
-    }
+      const instance = new (this as any)();
+      Object.assign(instance, results[0]);
+      return instance as InstanceType<T>;
+    };
 
-    const instance = new (this as any)();
-    Object.assign(instance, results[0]);
-    return instance as InstanceType<T>;
+    // 执行查询多条的函数
+    const executeFindAll = async (): Promise<InstanceType<T>[]> => {
+      await this.ensureInitialized();
+      if (!this.adapter) {
+        throw new Error(
+          "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+        );
+      }
+
+      const { where, params } = this.buildWhereClause(
+        _condition,
+        _includeTrashed,
+        _onlyTrashed,
+      );
+      const columns = _fields && _fields.length > 0 ? _fields.join(", ") : "*";
+      const orderBy = this.buildOrderByClause(_sort);
+      const useLimit = typeof _limit === "number";
+      const useSkip = typeof _skip === "number";
+      let sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
+      if (orderBy) {
+        sql = `${sql} ORDER BY ${orderBy}`;
+      }
+      const extraParams: any[] = [];
+      if (useLimit) {
+        sql = `${sql} LIMIT ?`;
+        extraParams.push(Math.max(1, Math.floor(_limit!)));
+      }
+      if (useLimit && useSkip) {
+        sql = `${sql} OFFSET ?`;
+        extraParams.push(Math.max(0, Math.floor(_skip!)));
+      }
+      const results = await this.adapter.query(sql, [
+        ...params,
+        ...extraParams,
+      ]);
+
+      return results.map((row: any) => {
+        const instance = new (this as any)();
+        Object.assign(instance, row);
+        return instance as InstanceType<T>;
+      });
+    };
+
+    // 创建 Promise（用于直接 await）
+    const queryPromise = executeFindOne();
+
+    // 构建查询构建器对象
+    const builder = {
+      sort: (
+        sort: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc",
+      ) => {
+        _sort = sort;
+        return builder;
+      },
+      skip: (n: number) => {
+        _skip = Math.max(0, Math.floor(n));
+        return builder;
+      },
+      limit: (n: number) => {
+        _limit = Math.max(1, Math.floor(n));
+        return builder;
+      },
+      fields: (fields: string[]) => {
+        _fields = fields;
+        return builder;
+      },
+      includeTrashed: () => {
+        _includeTrashed = true;
+        _onlyTrashed = false;
+        return builder;
+      },
+      onlyTrashed: () => {
+        _onlyTrashed = true;
+        _includeTrashed = false;
+        return builder;
+      },
+      findAll: () => executeFindAll(),
+      findOne: () => executeFindOne(),
+      one: () => executeFindOne(),
+      all: () => executeFindAll(),
+      count: async (): Promise<number> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        const { where, params } = this.buildWhereClause(
+          _condition,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+        const sql =
+          `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
+        const results = await this.adapter.query(sql, params);
+        if (results.length > 0) {
+          return parseInt(results[0].count) || 0;
+        }
+        return 0;
+      },
+      exists: async (): Promise<boolean> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        return await this.exists(
+          _condition,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+      },
+      // Promise 接口方法（用于直接 await）
+      then: (
+        onfulfilled?: (value: InstanceType<T> | null) => any,
+        onrejected?: (reason: any) => any,
+      ) => queryPromise.then(onfulfilled, onrejected),
+      catch: (onrejected?: (reason: any) => any) =>
+        queryPromise.catch(onrejected),
+      finally: (onfinally?: () => void) => queryPromise.finally(onfinally),
+    };
+
+    return builder as any;
   }
 
   /**
@@ -2113,7 +2292,9 @@ export abstract class SQLModel {
     includeTrashed: () => ReturnType<T["query"]>;
     onlyTrashed: () => ReturnType<T["query"]>;
     findAll: () => Promise<InstanceType<T>[]>;
-    find: () => Promise<InstanceType<T> | null>;
+    findOne: () => Promise<InstanceType<T> | null>;
+    one: () => Promise<InstanceType<T> | null>;
+    all: () => Promise<InstanceType<T>[]>;
     count: () => Promise<number>;
     exists: () => Promise<boolean>;
     update: (data: Record<string, any>) => Promise<number>;
@@ -2221,7 +2402,7 @@ export abstract class SQLModel {
           return instance as InstanceType<T>;
         });
       },
-      find: async (): Promise<InstanceType<T> | null> => {
+      findOne: async (): Promise<InstanceType<T> | null> => {
         await this.ensureInitialized();
         if (!this.adapter) {
           throw new Error(
@@ -2249,6 +2430,12 @@ export abstract class SQLModel {
         const instance = new (this as any)();
         Object.assign(instance, results[0]);
         return instance as InstanceType<T>;
+      },
+      one: async (): Promise<InstanceType<T> | null> => {
+        return await builder.findOne();
+      },
+      all: async (): Promise<InstanceType<T>[]> => {
+        return await builder.findAll();
       },
       count: async (): Promise<number> => {
         await this.ensureInitialized();

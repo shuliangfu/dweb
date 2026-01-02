@@ -785,18 +785,24 @@ export abstract class MongoModel {
   }
 
   /**
-   * 查找单条记录
+   * 查询构建器（支持链式调用，可查找单条或多条记录）
    * @param condition 查询条件（可以是 ID、条件对象）
    * @param fields 要查询的字段数组（可选，用于字段投影）
-   * @returns 模型实例或 null
+   * @returns 查询构建器（支持链式调用，也可以直接 await）
    *
    * @example
+   * // 直接查询单条记录（向后兼容）
    * const user = await User.find('507f1f77bcf86cd799439011');
-   * const user = await User.find({ _id: '507f1f77bcf86cd799439011' });
    * const user = await User.find({ email: 'user@example.com' });
-   * const user = await User.find('507f1f77bcf86cd799439011', ['_id', 'name', 'email']);
+   *
+   * // 链式调用查找单条记录
+   * const user = await User.find({ status: 'active' }).sort({ createdAt: -1 });
+   *
+   * // 链式调用查找多条记录
+   * const users = await User.find({ status: 'active' }).sort({ createdAt: -1 }).findAll();
+   * const users = await User.find({ status: 'active' }).sort({ sort: -1 }).limit(10).findAll();
    */
-  static async find<T extends typeof MongoModel>(
+  static find<T extends typeof MongoModel>(
     this: T,
     condition: MongoWhereCondition | string,
     fields?: string[],
@@ -805,70 +811,263 @@ export abstract class MongoModel {
     options?: {
       sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc";
     },
-  ): Promise<InstanceType<T> | null> {
-    // 自动初始化（如果未初始化）
-    await this.ensureInitialized();
+  ): {
+    sort: (
+      sort: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc",
+    ) => ReturnType<T["find"]>;
+    skip: (n: number) => ReturnType<T["find"]>;
+    limit: (n: number) => ReturnType<T["find"]>;
+    fields: (fields: string[]) => ReturnType<T["find"]>;
+    includeTrashed: () => ReturnType<T["find"]>;
+    onlyTrashed: () => ReturnType<T["find"]>;
+    findAll: () => Promise<InstanceType<T>[]>;
+    findOne: () => Promise<InstanceType<T> | null>;
+    count: () => Promise<number>;
+    exists: () => Promise<boolean>;
+    then: (
+      onfulfilled?: (value: InstanceType<T> | null) => any,
+      onrejected?: (reason: any) => any,
+    ) => Promise<any>;
+    catch: (onrejected?: (reason: any) => any) => Promise<any>;
+    finally: (onfinally?: () => void) => Promise<any>;
+  } {
+    // 创建查询构建器状态
+    const _condition: MongoWhereCondition | string = condition;
+    let _fields: string[] | undefined = fields;
+    let _sort:
+      | Record<string, 1 | -1 | "asc" | "desc">
+      | "asc"
+      | "desc"
+      | undefined = options?.sort;
+    let _skip: number | undefined;
+    let _limit: number | undefined;
+    let _includeTrashed = includeTrashed;
+    let _onlyTrashed = onlyTrashed;
 
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-      );
-    }
+    // 执行查询单条记录的函数
+    const executeFindOne = async (): Promise<InstanceType<T> | null> => {
+      // 自动初始化（如果未初始化）
+      await this.ensureInitialized();
 
-    const adapter = this.adapter as any as MongoDBAdapter;
-    let filter: any = {};
-
-    // 如果是字符串，作为主键查询
-    if (typeof condition === "string") {
-      filter[this.primaryKey] = condition;
-    } else {
-      filter = condition;
-    }
-
-    const projection = this.buildProjection(fields);
-    const queryOptions: any = { limit: 1 };
-    if (Object.keys(projection).length > 0) {
-      queryOptions.projection = projection;
-    }
-    const normalizedSort = this.normalizeSort(options?.sort);
-    if (normalizedSort) {
-      queryOptions.sort = normalizedSort;
-    }
-
-    // 软删除：自动过滤已删除的记录（默认排除软删除）
-    const queryFilter = this.applySoftDeleteFilter(
-      filter,
-      includeTrashed,
-      onlyTrashed,
-    );
-
-    const results = await adapter.query(
-      this.collectionName,
-      queryFilter,
-      queryOptions,
-    );
-
-    if (results.length === 0) {
-      return null;
-    }
-
-    const instance = new (this as any)();
-    Object.assign(instance, results[0]);
-
-    // 应用虚拟字段
-    if ((this as any).virtuals) {
-      const Model = this as any;
-      for (const [name, getter] of Object.entries(Model.virtuals)) {
-        const getterFn = getter as (instance: any) => any;
-        Object.defineProperty(instance, name, {
-          get: () => getterFn(instance),
-          enumerable: true,
-          configurable: true,
-        });
+      if (!this.adapter) {
+        throw new Error(
+          "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+        );
       }
-    }
 
-    return instance as InstanceType<T>;
+      const adapter = this.adapter as any as MongoDBAdapter;
+      let filter: any = {};
+
+      // 如果是字符串，作为主键查询
+      if (typeof _condition === "string") {
+        filter[this.primaryKey] = _condition;
+      } else {
+        filter = _condition;
+      }
+
+      const projection = this.buildProjection(_fields);
+      const queryOptions: any = { limit: 1 };
+      if (Object.keys(projection).length > 0) {
+        queryOptions.projection = projection;
+      }
+      const normalizedSort = this.normalizeSort(_sort);
+      if (normalizedSort) {
+        queryOptions.sort = normalizedSort;
+      }
+      if (typeof _skip === "number") {
+        queryOptions.skip = _skip;
+      }
+      if (typeof _limit === "number") {
+        queryOptions.limit = _limit;
+      }
+
+      // 软删除：自动过滤已删除的记录（默认排除软删除）
+      const queryFilter = this.applySoftDeleteFilter(
+        filter,
+        _includeTrashed,
+        _onlyTrashed,
+      );
+
+      const results = await adapter.query(
+        this.collectionName,
+        queryFilter,
+        queryOptions,
+      );
+
+      if (results.length === 0) {
+        return null;
+      }
+
+      const instance = new (this as any)();
+      Object.assign(instance, results[0]);
+
+      // 应用虚拟字段
+      if ((this as any).virtuals) {
+        const Model = this as any;
+        for (const [name, getter] of Object.entries(Model.virtuals)) {
+          const getterFn = getter as (instance: any) => any;
+          Object.defineProperty(instance, name, {
+            get: () => getterFn(instance),
+            enumerable: true,
+            configurable: true,
+          });
+        }
+      }
+
+      return instance as InstanceType<T>;
+    };
+
+    // 执行查询多条的函数
+    const executeFindAll = async (): Promise<InstanceType<T>[]> => {
+      await this.ensureInitialized();
+      if (!this.adapter) {
+        throw new Error(
+          "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+        );
+      }
+      const adapter = this.adapter as any as MongoDBAdapter;
+      const projection = this.buildProjection(_fields);
+      const queryOptions: any = {};
+      if (Object.keys(projection).length > 0) {
+        queryOptions.projection = projection;
+      }
+      const normalizedSort = this.normalizeSort(_sort);
+      if (normalizedSort) {
+        queryOptions.sort = normalizedSort;
+      }
+      if (typeof _skip === "number") {
+        queryOptions.skip = _skip;
+      }
+      if (typeof _limit === "number") {
+        queryOptions.limit = _limit;
+      }
+
+      let filter: any = {};
+      if (typeof _condition === "string") {
+        filter[this.primaryKey] = _condition;
+      } else {
+        filter = _condition;
+      }
+      const queryFilter = this.applySoftDeleteFilter(
+        filter,
+        _includeTrashed,
+        _onlyTrashed,
+      );
+
+      const results = await adapter.query(
+        this.collectionName,
+        queryFilter,
+        queryOptions,
+      );
+
+      return results.map((row: any) => {
+        const instance = new (this as any)();
+        Object.assign(instance, row);
+        if ((this as any).virtuals) {
+          const Model = this as any;
+          for (const [name, getter] of Object.entries(Model.virtuals)) {
+            const getterFn = getter as (instance: any) => any;
+            Object.defineProperty(instance, name, {
+              get: () => getterFn(instance),
+              enumerable: true,
+              configurable: true,
+            });
+          }
+        }
+        return instance as InstanceType<T>;
+      });
+    };
+
+    // 创建 Promise（用于直接 await）
+    const queryPromise = executeFindOne();
+
+    // 构建查询构建器对象
+    const builder = {
+      sort: (
+        sort: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc",
+      ) => {
+        _sort = sort;
+        return builder;
+      },
+      skip: (n: number) => {
+        _skip = Math.max(0, Math.floor(n));
+        return builder;
+      },
+      limit: (n: number) => {
+        _limit = Math.max(1, Math.floor(n));
+        return builder;
+      },
+      fields: (fields: string[]) => {
+        _fields = fields;
+        return builder;
+      },
+      includeTrashed: () => {
+        _includeTrashed = true;
+        _onlyTrashed = false;
+        return builder;
+      },
+      onlyTrashed: () => {
+        _onlyTrashed = true;
+        _includeTrashed = false;
+        return builder;
+      },
+      findAll: () => executeFindAll(),
+      findOne: () => executeFindOne(),
+      one: () => executeFindOne(),
+      all: () => executeFindAll(),
+      count: async (): Promise<number> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        const adapter = this.adapter as any as MongoDBAdapter;
+        const db = (adapter as any).getDatabase();
+        if (!db) {
+          throw new Error("Database not connected");
+        }
+
+        let filter: any = {};
+        if (typeof _condition === "string") {
+          filter[this.primaryKey] = _condition;
+        } else {
+          filter = _condition;
+        }
+        const queryFilter = this.applySoftDeleteFilter(
+          filter,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+        const count = await db.collection(this.collectionName).countDocuments(
+          queryFilter,
+        );
+        return count;
+      },
+      exists: async (): Promise<boolean> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        return await this.exists(
+          _condition as any,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+      },
+      // Promise 接口方法（用于直接 await）
+      then: (
+        onfulfilled?: (value: InstanceType<T> | null) => any,
+        onrejected?: (reason: any) => any,
+      ) => queryPromise.then(onfulfilled, onrejected),
+      catch: (onrejected?: (reason: any) => any) =>
+        queryPromise.catch(onrejected),
+      finally: (onfinally?: () => void) => queryPromise.finally(onfinally),
+    };
+
+    return builder as any;
   }
 
   /**
@@ -2999,7 +3198,9 @@ export abstract class MongoModel {
     includeTrashed: () => ReturnType<T["query"]>;
     onlyTrashed: () => ReturnType<T["query"]>;
     findAll: () => Promise<InstanceType<T>[]>;
-    find: () => Promise<InstanceType<T> | null>;
+    findOne: () => Promise<InstanceType<T> | null>;
+    one: () => Promise<InstanceType<T> | null>;
+    all: () => Promise<InstanceType<T>[]>;
     count: () => Promise<number>;
     exists: () => Promise<boolean>;
     update: (
@@ -3159,7 +3360,7 @@ export abstract class MongoModel {
           return instance as InstanceType<T>;
         });
       },
-      find: async (): Promise<InstanceType<T> | null> => {
+      findOne: async (): Promise<InstanceType<T> | null> => {
         await this.ensureInitialized();
         if (!this.adapter) {
           throw new Error(
@@ -3211,6 +3412,12 @@ export abstract class MongoModel {
           }
         }
         return instance as InstanceType<T>;
+      },
+      one: async (): Promise<InstanceType<T> | null> => {
+        return await builder.findOne();
+      },
+      all: async (): Promise<InstanceType<T>[]> => {
+        return await builder.findAll();
       },
       count: async (): Promise<number> => {
         await this.ensureInitialized();
