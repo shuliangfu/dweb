@@ -361,25 +361,74 @@ class RouteMapGenerator {
           originalPathAbsolute,
         );
 
-        // 移除扩展名，转换为路由路径
-        const routePath = routeRelativePath
-          .replace(/\.tsx?$/, "")
-          .replace(/^_/, "/_")
-          .replace(/\/index$/, "/")
-          .replace(/\/$/, "");
+        // 移除扩展名
+        const pathWithoutExt = routeRelativePath.replace(/\.tsx?$/, "");
 
-        // 如果路由路径为空，设置为根路径
-        const finalRoutePath = routePath || "/";
+        // 检查是否是 index 文件
+        const isIndexFile = pathWithoutExt === "index" ||
+          pathWithoutExt.endsWith("/index");
 
-        // 根据 hashName 判断是 server 还是 client，并添加到路由映射
-        this.addRouteToMap(
-          hashName,
-          originalPath,
-          finalRoutePath,
-          fileMap,
-          serverRouteMap,
-          clientRouteMap,
-        );
+        if (isIndexFile) {
+          // 处理 index 文件：计算基础路径
+          const basePath = pathWithoutExt.replace(/\/?index$/, "") || "/";
+          // 确保路径以 / 开头（除非是根路径）
+          let finalRoutePath = basePath === "/"
+            ? "/"
+            : (basePath.startsWith("/") ? basePath : "/" + basePath);
+
+          // 根据 hashName 判断是 server 还是 client，并添加到路由映射
+          // 注册基础路径（例如 /docs）
+          this.addRouteToMap(
+            hashName,
+            originalPath,
+            finalRoutePath,
+            fileMap,
+            serverRouteMap,
+            clientRouteMap,
+          );
+
+          // 同时注册带 /index 的路径（例如 /docs/index），支持两种访问方式
+          if (finalRoutePath !== "/") {
+            const pathWithIndex = finalRoutePath + "/index";
+            this.addRouteToMap(
+              hashName,
+              originalPath,
+              pathWithIndex,
+              fileMap,
+              serverRouteMap,
+              clientRouteMap,
+            );
+          } else {
+            // 根路径的 index 文件，也注册 /index 路径
+            this.addRouteToMap(
+              hashName,
+              originalPath,
+              "/index",
+              fileMap,
+              serverRouteMap,
+              clientRouteMap,
+            );
+          }
+        } else {
+          // 处理非 index 文件
+          // 移除扩展名，转换为路由路径
+          const routePath = pathWithoutExt
+            .replace(/^_/, "/_")
+            .replace(/\/$/, "");
+
+          // 如果路由路径为空，设置为根路径
+          const finalRoutePath = routePath || "/";
+
+          // 根据 hashName 判断是 server 还是 client，并添加到路由映射
+          this.addRouteToMap(
+            hashName,
+            originalPath,
+            finalRoutePath,
+            fileMap,
+            serverRouteMap,
+            clientRouteMap,
+          );
+        }
       } // 处理 API 路由
       else if (isApiRoute) {
         // 计算路由路径（从 API 目录开始的相对路径）
