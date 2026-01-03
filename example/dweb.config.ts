@@ -56,16 +56,15 @@ export default defineConfig({
     // apiDir: 'api',  // 如果配置为 'api'，则 API 文件应放在项目根目录的 api 文件夹中
   },
 
-	 // 数据库配置
+  // 数据库配置
   database: {
-    type: 'mongodb',
+    type: "mongodb",
     connection: {
       host: Deno.env.get("DB_HOST"),
       port: Deno.env.get("DB_PORT") as unknown as number,
       database: Deno.env.get("DB_NAME"),
       username: Deno.env.get("DB_USER"),
       password: Deno.env.get("DB_PASS"),
-      authSource: Deno.env.get("DB_AUTH"),
     },
     // MongoDB 连接池配置
     mongoOptions: {
