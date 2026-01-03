@@ -686,6 +686,8 @@ export function createJSRResolverPlugin(
   importMap: Record<string, string>,
   cwd: string,
   externalPackages: string[],
+  isServerBuild: boolean = false,
+  isServerRender: boolean = false,
 ): esbuild.Plugin {
   return {
     name: "jsr-resolver",
@@ -707,12 +709,19 @@ export function createJSRResolverPlugin(
         const mainImport = importMap["@dreamer/dweb"];
 
         // 情况 1: JSR 包（jsr:@dreamer/dweb@^2.1.0）
-        // 直接拼接子路径，转换为 HTTP URL，标记为 external，不需要读取 deno.json
+        // 对于服务端构建，保留 JSR URL 让 Deno 运行时解析（Deno 会自动从 JSR 包的 exports 配置中解析子路径）
+        // 对于客户端构建，转换为 HTTP URL
         if (mainImport && mainImport.startsWith("jsr:")) {
           const jsrUrl = `${mainImport}/${subPath}`;
-          // 将 JSR URL 转换为浏览器可访问的 HTTP URL（esm.sh）
+          // 服务端构建：保留 JSR URL，让 Deno 在运行时从 JSR 包的 exports 配置中自动解析子路径
+          if (isServerBuild || isServerRender) {
+            return {
+              path: jsrUrl,
+              external: true,
+            };
+          }
+          // 客户端构建：转换为浏览器可访问的 HTTP URL（esm.sh）
           const httpUrl = convertJsrToHttpUrl(jsrUrl);
-          // 标记为 external，浏览器会通过 esm.sh CDN 加载
           return {
             path: httpUrl,
             external: true,
@@ -1465,6 +1474,8 @@ export async function buildFromStdin(
     importMap,
     cwd,
     finalExternalPackages,
+    isServerBuildFinal,
+    isServerRender,
   );
 
   // 构建 alias 配置
@@ -1591,6 +1602,8 @@ export async function buildFromEntryPoints(
     importMap,
     cwd,
     finalExternalPackages,
+    isServerBuildFinal,
+    isServerRender,
   );
 
   // 构建 alias 配置

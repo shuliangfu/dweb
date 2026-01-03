@@ -19,7 +19,7 @@
 
 import { Command } from "@dreamer/dweb/console";
 import { error, info, success, warning } from "@dreamer/dweb/console";
-import { User } from "../models/User.ts";
+import { User } from "../models/user.ts";
 
 
 /**
