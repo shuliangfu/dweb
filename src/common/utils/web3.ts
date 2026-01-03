@@ -24,6 +24,7 @@ import {
   verifyMessage as ethersVerifyMessage,
   Wallet as EthersWallet,
 } from "npm:ethers@^6.0.0";
+import { IS_CLIENT } from "../constants.ts";
 
 /**
  * 扩展 Window 接口以支持 ethereum
@@ -265,26 +266,27 @@ export class Web3Client {
    * @returns 钱包地址数组
    */
   async connectWallet(): Promise<string[]> {
-    if (typeof globalThis !== "undefined" && "window" in globalThis) {
-      const win = globalThis.window as WindowWithEthereum;
-      if (!win.ethereum) {
-        throw new Error("未检测到钱包，请安装 MetaMask 或其他 Web3 钱包");
-      }
-
-      try {
-        const accounts = await win.ethereum.request({
-          method: "eth_requestAccounts",
-        });
-        return accounts as string[];
-      } catch (error) {
-        throw new Error(
-          `连接钱包失败: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
-        );
-      }
+    if (!IS_CLIENT) {
+      return [];
     }
-    throw new Error("当前环境不支持钱包连接（非浏览器环境）");
+
+    const win = globalThis.window as WindowWithEthereum;
+    if (!win.ethereum) {
+      throw new Error("未检测到钱包，请安装 MetaMask 或其他 Web3 钱包");
+    }
+
+    try {
+      const accounts = await win.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+      return accounts as string[];
+    } catch (error) {
+      throw new Error(
+        `连接钱包失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
   /**

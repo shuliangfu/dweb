@@ -20,7 +20,11 @@
 import { Command } from "@dreamer/dweb/console";
 import { error, info, success, warning } from "@dreamer/dweb/console";
 import { User } from "../models/user.ts";
+import { initEnv } from "@dreamer/dweb";
 
+initEnv();
+
+console.log(Deno.env.get("DB_HOST"));
 
 /**
  * 创建主命令
@@ -266,52 +270,58 @@ dbCommand
     type: "number",
     requiresValue: true,
   })
-  .action(async (_args: string[], options: Record<string, unknown>, command?: Command) => {
-    if (!command) {
-      error("无法获取 Command 实例");
-      Deno.exit(1);
-    }
-    await initUserModel(command);
-
-    const username = options.username as string;
-    const email = options.email as string;
-    const password = options.password as string;
-    const nickname = options.nickname as string | undefined;
-    const age = options.age as number | undefined;
-
-    try {
-      const user = await User.create({
-        username,
-        email,
-        password,
-        nickname: nickname || null,
-        age: age || null,
-        status: "active",
-        roles: ["user"],
-      });
-
-      success(`用户创建成功！`);
-      info(`用户 ID: ${user._id}`);
-      info(`用户名: ${user.username}`);
-      info(`邮箱: ${user.email}`);
-      if (user.nickname) {
-        info(`昵称: ${user.nickname}`);
+  .action(
+    async (
+      _args: string[],
+      options: Record<string, unknown>,
+      command?: Command,
+    ) => {
+      if (!command) {
+        error("无法获取 Command 实例");
+        Deno.exit(1);
       }
-      if (user.age) {
-        info(`年龄: ${user.age}`);
+      await initUserModel(command);
+
+      const username = options.username as string;
+      const email = options.email as string;
+      const password = options.password as string;
+      const nickname = options.nickname as string | undefined;
+      const age = options.age as number | undefined;
+
+      try {
+        const user = await User.create({
+          username,
+          email,
+          password,
+          nickname: nickname || null,
+          age: age || null,
+          status: "active",
+          roles: ["user"],
+        });
+
+        success(`用户创建成功！`);
+        info(`用户 ID: ${user._id}`);
+        info(`用户名: ${user.username}`);
+        info(`邮箱: ${user.email}`);
+        if (user.nickname) {
+          info(`昵称: ${user.nickname}`);
+        }
+        if (user.age) {
+          info(`年龄: ${user.age}`);
+        }
+      } catch (err) {
+        error(
+          `创建用户失败: ${err instanceof Error ? err.message : String(err)}`,
+        );
+        Deno.exit(1);
       }
-    } catch (err) {
-      error(
-        `创建用户失败: ${err instanceof Error ? err.message : String(err)}`,
-      );
-      Deno.exit(1);
-    }
-  });
+    },
+  );
 
 // 查询用户命令
 dbCommand
   .command("list-users", "列出所有用户")
-  .keepAlive()
+  // .keepAlive()
   .option({
     name: "limit",
     alias: "l",
@@ -327,55 +337,61 @@ dbCommand
     requiresValue: true,
     choices: ["active", "inactive", "suspended"],
   })
-  .action(async (_args: string[], options: Record<string, unknown>, command?: Command) => {
-    if (!command) {
-      error("无法获取 Command 实例");
-      Deno.exit(1);
-		}
-		
-    await initUserModel(command);
-
-    const limit = (options.limit as number) || 10;
-    const status = options.status as string | undefined;
-
-    try {
-      const condition: Record<string, unknown> = {};
-      if (status) {
-        condition.status = status;
+  .action(
+    async (
+      _args: string[],
+      options: Record<string, unknown>,
+      command?: Command,
+    ) => {
+      if (!command) {
+        error("无法获取 Command 实例");
+        Deno.exit(1);
       }
 
-      const users = await User.findAll(condition);
-      const limitedUsers = users.slice(0, limit);
+      await initUserModel(command);
 
-      if (limitedUsers.length === 0) {
-        warning("没有找到用户");
-        return;
-      }
+      const limit = (options.limit as number) || 10;
+      const status = options.status as string | undefined;
 
-      success(`找到 ${limitedUsers.length} 个用户：`);
-      console.log("");
-
-      for (const user of limitedUsers) {
-        info(`用户 ID: ${user._id}`);
-        info(`  用户名: ${user.username}`);
-        info(`  邮箱: ${user.email}`);
-        if (user.nickname) {
-          info(`  昵称: ${user.nickname}`);
+      try {
+        const condition: Record<string, unknown> = {};
+        if (status) {
+          condition.status = status;
         }
-        if (user.age) {
-          info(`  年龄: ${user.age}`);
+
+        const users = await User.findAll(condition);
+        const limitedUsers = users.slice(0, limit);
+
+        if (limitedUsers.length === 0) {
+          warning("没有找到用户");
+          return;
         }
-        info(`  状态: ${user.status}`);
-        info(`  创建时间: ${user.createdAt}`);
+
+        success(`找到 ${limitedUsers.length} 个用户：`);
         console.log("");
+
+        for (const user of limitedUsers) {
+          info(`用户 ID: ${user._id}`);
+          info(`  用户名: ${user.username}`);
+          info(`  邮箱: ${user.email}`);
+          if (user.nickname) {
+            info(`  昵称: ${user.nickname}`);
+          }
+          if (user.age) {
+            info(`  年龄: ${user.age}`);
+          }
+          info(`  状态: ${user.status}`);
+          info(`  创建时间: ${user.createdAt}`);
+          console.log("");
+        }
+      } catch (err) {
+        error(
+          `查询用户失败: ${err instanceof Error ? err.message : String(err)}`,
+        );
+        Deno.exit(1);
       }
-    } catch (err) {
-      error(
-        `查询用户失败: ${err instanceof Error ? err.message : String(err)}`,
-      );
-      Deno.exit(1);
-    }
-  });
+    },
+  );
 
 // 根据邮箱查找用户命令
 dbCommand
@@ -387,69 +403,81 @@ dbCommand
     requiresValue: true,
     required: true,
   })
-  .action(async (_args: string[], options: Record<string, unknown>, command?: Command) => {
-    if (!command) {
-      error("无法获取 Command 实例");
-      Deno.exit(1);
-    }
-    await initUserModel(command);
-
-    const email = options.email as string;
-
-    try {
-      const user = await User.findByEmail(email);
-
-      if (!user) {
-        warning(`未找到邮箱为 ${email} 的用户`);
-        return;
+  .action(
+    async (
+      _args: string[],
+      options: Record<string, unknown>,
+      command?: Command,
+    ) => {
+      if (!command) {
+        error("无法获取 Command 实例");
+        Deno.exit(1);
       }
+      await initUserModel(command);
 
-      success(`找到用户：`);
-      info(`用户 ID: ${user._id}`);
-      info(`用户名: ${user.username}`);
-      info(`邮箱: ${user.email}`);
-      if (user.nickname) {
-        info(`昵称: ${user.nickname}`);
+      const email = options.email as string;
+
+      try {
+        const user = await User.findByEmail(email);
+
+        if (!user) {
+          warning(`未找到邮箱为 ${email} 的用户`);
+          return;
+        }
+
+        success(`找到用户：`);
+        info(`用户 ID: ${user._id}`);
+        info(`用户名: ${user.username}`);
+        info(`邮箱: ${user.email}`);
+        if (user.nickname) {
+          info(`昵称: ${user.nickname}`);
+        }
+        if (user.age) {
+          info(`年龄: ${user.age}`);
+        }
+        info(`状态: ${user.status}`);
+        info(`创建时间: ${user.createdAt}`);
+      } catch (err) {
+        error(
+          `查找用户失败: ${err instanceof Error ? err.message : String(err)}`,
+        );
+        Deno.exit(1);
       }
-      if (user.age) {
-        info(`年龄: ${user.age}`);
-      }
-      info(`状态: ${user.status}`);
-      info(`创建时间: ${user.createdAt}`);
-    } catch (err) {
-      error(
-        `查找用户失败: ${err instanceof Error ? err.message : String(err)}`,
-      );
-      Deno.exit(1);
-    }
-  });
+    },
+  );
 
 // 统计用户数量命令
 dbCommand
   .command("count-users", "统计用户数量")
-  .action(async (_args: string[], _options: Record<string, unknown>, command?: Command) => {
-    if (!command) {
-      error("无法获取 Command 实例");
-      Deno.exit(1);
-    }
-    await initUserModel(command);
+  .action(
+    async (
+      _args: string[],
+      _options: Record<string, unknown>,
+      command?: Command,
+    ) => {
+      if (!command) {
+        error("无法获取 Command 实例");
+        Deno.exit(1);
+      }
+      await initUserModel(command);
 
-    try {
-      const allUsers = await User.findAll({});
-      const activeUsers = await User.findAll({ status: "active" });
-      const inactiveUsers = await User.findAll({ status: "inactive" });
+      try {
+        const allUsers = await User.findAll({});
+        const activeUsers = await User.findAll({ status: "active" });
+        const inactiveUsers = await User.findAll({ status: "inactive" });
 
-      success("用户统计：");
-      info(`总用户数: ${allUsers.length}`);
-      info(`活跃用户: ${activeUsers.length}`);
-      info(`非活跃用户: ${inactiveUsers.length}`);
-    } catch (err) {
-      error(
-        `统计用户失败: ${err instanceof Error ? err.message : String(err)}`,
-      );
-      Deno.exit(1);
-    }
-  });
+        success("用户统计：");
+        info(`总用户数: ${allUsers.length}`);
+        info(`活跃用户: ${activeUsers.length}`);
+        info(`非活跃用户: ${inactiveUsers.length}`);
+      } catch (err) {
+        error(
+          `统计用户失败: ${err instanceof Error ? err.message : String(err)}`,
+        );
+        Deno.exit(1);
+      }
+    },
+  );
 
 /**
  * 执行命令

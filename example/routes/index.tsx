@@ -9,8 +9,9 @@ import CodeBlock from "../components/CodeBlock.tsx";
 import type { LoadContext, PageProps } from "@dreamer/dweb";
 import { getJsrPackageUrl, getVersionString } from "../utils.ts";
 import { useExampleStore } from "@stores/example.ts";
-import { useEffect } from "preact/hooks";
-import { route, useThemeStore } from "@dreamer/dweb/client";
+import { useEffect, useState } from "preact/hooks";
+import { useThemeStore } from "@dreamer/dweb/client";
+import { Web3Client } from "@dreamer/dweb/utils";
 
 /**
  * 页面元数据（用于 SEO）
@@ -113,7 +114,18 @@ export default function HomePage(
 ) {
   // 使用 useStore hook 获取响应式状态，类似 useState(exampleStore)
   const state = useExampleStore();
-  const themeState = useThemeStore();
+	const themeState = useThemeStore();
+	
+	const [defaultAccount, setDefaultAccount] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    // 在 useEffect 内部创建异步函数并立即调用
+    (async () => {
+      const web3 = new Web3Client();
+      const accounts = await web3.connectWallet();
+      setDefaultAccount(accounts[0]);
+    })();
+  }, []);
 
   // useEffect(() => {
   //   console.log({
@@ -145,21 +157,8 @@ export default function HomePage(
 
   const { versionString } = data as {
     versionString: string;
-  };
-  useEffect(() => {
-    // 翻译测试
-    // console.log($t("总共{count}条数据", { count: 100 }));
-
-    const timer = setTimeout(() => {
-      // 使用框架提供的 route 函数进行导航
-      // 支持字符串路径或对象形式传递参数
-      // route({ path: "/docs", params: { id: "123" } });
-    }, 1000);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, []);
+	};
+	
 
   // 快速开始代码示例
   const quickStartCode = `# 创建新项目
