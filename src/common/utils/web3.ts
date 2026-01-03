@@ -152,9 +152,9 @@ export interface ContractReadOptions {
   from?: string;
   /** 函数签名（可选，如 "getUserInfo(address)"），如果不提供则自动推断 */
   functionSignature?: string;
-  /** 完整 ABI（可选），如果提供则优先使用 */
-  abi?: string[];
-  /** 返回类型（可选，默认 "uint256"） */
+  /** 完整 ABI（可选），如果提供则优先使用。可以是字符串数组或 ABI JSON 对象数组 */
+  abi?: string[] | Array<Record<string, unknown>>;
+  /** 返回类型（可选，默认 "uint256"）。对于 tuple 类型，格式如 "tuple(address,address,string,uint256,uint256,uint256)" */
   returnType?: string;
 }
 
@@ -541,6 +541,26 @@ export class Web3Client {
   }
 
   /**
+   * 从 ABI JSON 对象数组中查找并提取函数信息
+   * @param abi ABI JSON 对象数组
+   * @param functionName 函数名
+   * @returns 匹配的函数 ABI 项，如果找不到则返回 null
+   */
+  private findFunctionInAbi(
+    abi: Array<Record<string, unknown>>,
+    functionName: string,
+  ): Record<string, unknown> | null {
+    // 查找匹配的函数
+    const func = abi.find((item) => {
+      const type = item.type as string;
+      const name = item.name as string;
+      return type === "function" && name === functionName;
+    });
+
+    return func || null;
+  }
+
+  /**
    * 读取合约数据（只读操作）
    * @param options 合约读取选项
    * @returns 函数返回值
@@ -548,11 +568,25 @@ export class Web3Client {
   async readContract(options: ContractReadOptions): Promise<unknown> {
     const provider = this.getProvider();
     try {
-      let abi: string[];
+      // ethers.js 的 Contract 构造函数可以接受字符串数组或 ABI JSON 对象数组
+      let abi: string[] | Array<Record<string, unknown>>;
 
-      // 如果提供了完整 ABI，直接使用
+      // 如果提供了完整 ABI，直接使用（推荐方式，可以正确处理复杂返回类型如 tuple）
       if (options.abi && options.abi.length > 0) {
-        abi = options.abi;
+        // 检查是否是 ABI JSON 对象数组
+        const firstItem = options.abi[0];
+        const isAbiJson = typeof firstItem === "object" &&
+          firstItem !== null &&
+          !Array.isArray(firstItem);
+
+        if (isAbiJson) {
+          // 如果是 ABI JSON 对象数组，直接使用
+          // ethers.js 会自动从 ABI 中查找对应的函数，不需要手动指定 functionSignature 和 returnType
+          abi = options.abi as Array<Record<string, unknown>>;
+        } else {
+          // 已经是字符串数组
+          abi = options.abi as string[];
+        }
       } // 如果提供了函数签名，使用它
       else if (options.functionSignature) {
         const returnType = options.returnType || "uint256";
@@ -563,6 +597,8 @@ export class Web3Client {
       else {
         const paramTypes = options.args?.map((arg) => this.inferArgType(arg)) ||
           [];
+        // 如果没有指定返回类型，默认使用 uint256
+        // 注意：如果返回的是 tuple（结构体），必须通过 returnType 或 abi 指定
         const returnType = options.returnType || "uint256";
         abi = [
           `function ${options.functionName}(${
@@ -573,7 +609,7 @@ export class Web3Client {
 
       const contract = new EthersContract(
         options.address,
-        abi,
+        abi as any, // ethers.js 接受 string[] 或 ABI JSON 对象数组
         provider as any,
       );
       const result = await contract[options.functionName](
