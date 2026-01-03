@@ -4,6 +4,7 @@
  */
 
 import type { Middleware } from "../common/types/index.ts";
+import { shouldUseColor } from "../server/console/ansi.ts";
 
 /**
  * 创建日志中间件
@@ -72,13 +73,18 @@ export function logger(options: {
         );
         break;
       case "dev": {
-        const statusColor = res.status >= 500
-          ? "\x1b[31m"
-          : res.status >= 400
-          ? "\x1b[33m"
-          : "\x1b[32m";
+        // 使用共用的颜色检测函数
+        const useColor = shouldUseColor();
+        const statusColor = useColor
+          ? (res.status >= 500
+            ? "\x1b[31m"
+            : res.status >= 400
+            ? "\x1b[33m"
+            : "\x1b[32m")
+          : "";
+        const resetColor = useColor ? "\x1b[0m" : "";
         console.log(
-          `${statusColor}${req.method}\x1b[0m ${url.pathname} ${statusColor}${res.status}\x1b[0m ${duration}ms`,
+          `${statusColor}${req.method}${resetColor} ${url.pathname} ${statusColor}${res.status}${resetColor} ${duration}ms`,
         );
         break;
       }

@@ -4,36 +4,6 @@
  */
 
 /**
- * 检查是否应该使用颜色输出
- * 只检查 DWEB_NO_COLOR 环境变量
- *
- * @returns 如果应该使用颜色返回 true，否则返回 false
- */
-export function shouldUseColor(): boolean {
-  // 只检查 DWEB_NO_COLOR 环境变量
-  const dwebNoColor = Deno.env.get("DWEB_NO_COLOR");
-
-  // 添加调试日志
-  console.error(
-    `[shouldUseColor] DWEB_NO_COLOR=${dwebNoColor}, 所有相关环境变量:`,
-    Object.keys(Deno.env.toObject())
-      .filter((key) => key.includes("COLOR") || key.includes("DWEB"))
-      .map((key) => `${key}=${Deno.env.get(key)}`)
-      .join(", "),
-  );
-
-  if (dwebNoColor) {
-    console.error(
-      `[shouldUseColor] 检测到 DWEB_NO_COLOR=${dwebNoColor}，禁用颜色输出`,
-    );
-    return false;
-  }
-
-  console.error(`[shouldUseColor] 未设置 DWEB_NO_COLOR，启用颜色输出`);
-  return true;
-}
-
-/**
  * 日志级别
  */
 export enum LogLevel {

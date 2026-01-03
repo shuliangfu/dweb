@@ -16,6 +16,7 @@ import type {
 import { DEFAULT_CERT, DEFAULT_KEY } from "./certs/dev-certs.ts";
 import type { ErrorHandler } from "./error-handler.ts";
 import type { IService } from "./iservice.ts";
+import { success } from "../server/console/output.ts";
 
 /**
  * HTTP 服务器类
@@ -643,7 +644,7 @@ export class Server implements Omit<IService, "start"> {
       hostname: host,
       onListen: () => {
         const protocol = tls ? "https" : "http";
-        console.log(`✅ 服务器已启动: ${protocol}://${host}:${port}`);
+        success(`✅ 服务器已启动: ${protocol}://${host}:${port}`);
       },
     };
 

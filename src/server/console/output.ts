@@ -3,7 +3,7 @@
  * 提供美化的输出方法，包括成功、错误、警告、信息等消息
  */
 
-import { colors } from "./ansi.ts";
+import { colorize } from "./ansi.ts";
 
 // ==================== 输出方法 ====================
 
@@ -13,7 +13,7 @@ import { colors } from "./ansi.ts";
  */
 export function success(message: string): void {
   console.log(
-    `${colors.green}${colors.bright}✓${colors.reset} ${colors.green}${message}${colors.reset}`,
+    `${colorize("✓", "green", true)} ${colorize(message, "green")}`,
   );
 }
 
@@ -23,7 +23,7 @@ export function success(message: string): void {
  */
 export function error(message: string): void {
   console.error(
-    `${colors.red}${colors.bright}✗${colors.reset} ${colors.red}${message}${colors.reset}`,
+    `${colorize("✗", "red", true)} ${colorize(message, "red")}`,
   );
 }
 
@@ -33,7 +33,7 @@ export function error(message: string): void {
  */
 export function warning(message: string): void {
   console.log(
-    `${colors.yellow}${colors.bright}⚠${colors.reset} ${colors.yellow}${message}${colors.reset}`,
+    `${colorize("⚠", "yellow", true)} ${colorize(message, "yellow")}`,
   );
 }
 
@@ -43,7 +43,7 @@ export function warning(message: string): void {
  */
 export function info(message: string): void {
   console.log(
-    `${colors.blue}${colors.bright}ℹ${colors.reset} ${colors.blue}${message}${colors.reset}`,
+    `${colorize("ℹ", "blue", true)} ${colorize(message, "blue")}`,
   );
 }
 
@@ -53,7 +53,7 @@ export function info(message: string): void {
  * @param length 长度（默认：50）
  */
 export function separator(char = "━", length = 50): void {
-  console.log(colors.gray + char.repeat(length) + colors.reset);
+  console.log(colorize(char.repeat(length), "gray"));
 }
 
 /**
@@ -61,7 +61,7 @@ export function separator(char = "━", length = 50): void {
  * @param title 标题内容
  */
 export function title(title: string): void {
-  console.log(`\n${colors.cyan}${colors.bright}${title}${colors.reset}\n`);
+  console.log(`\n${colorize(title, "cyan", true)}\n`);
 }
 
 /**
@@ -71,7 +71,7 @@ export function title(title: string): void {
  */
 export function keyValue(key: string, value: string | number): void {
   console.log(
-    `${colors.dim}${key}:${colors.reset} ${colors.bright}${value}${colors.reset}`,
+    `${colorize(key + ":", "gray")} ${colorize(String(value), "white", true)}`,
   );
 }
 
@@ -92,7 +92,7 @@ export function keyValuePairs(data: Record<string, string | number>): void {
  */
 export function list(items: string[], prefix = "•"): void {
   items.forEach((item) => {
-    console.log(`${colors.dim}${prefix}${colors.reset} ${item}`);
+    console.log(`${colorize(prefix, "gray")} ${item}`);
   });
 }
 
@@ -104,6 +104,6 @@ export function list(items: string[], prefix = "•"): void {
 export function numberedList(items: string[], start = 1): void {
   items.forEach((item, index) => {
     const number = start + index;
-    console.log(`${colors.dim}[${number}]${colors.reset} ${item}`);
+    console.log(`${colorize(`[${number}]`, "gray")} ${item}`);
   });
 }

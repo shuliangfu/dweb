@@ -5,6 +5,8 @@
  * @module utils/cli-output
  */
 
+import { shouldUseColor } from "../console/ansi.ts";
+
 /**
  * ANSI 颜色代码
  */
@@ -21,34 +23,6 @@ const colors = {
   white: "\x1b[37m",
 } as const;
 
-/**
- * 检查是否支持颜色输出
- * 只检查 DWEB_NO_COLOR 环境变量
- */
-function supportsColor(): boolean {
-  // 检查 DWEB_NO_COLOR 环境变量
-  const dwebNoColor = Deno.env.get("DWEB_NO_COLOR");
-
-  // 添加调试日志
-  console.error(
-    `[supportsColor] DWEB_NO_COLOR=${dwebNoColor}, 所有环境变量:`,
-    Object.keys(Deno.env.toObject())
-      .filter((key) => key.includes("COLOR") || key.includes("DWEB"))
-      .map((key) => `${key}=${Deno.env.get(key)}`)
-      .join(", "),
-  );
-
-  if (dwebNoColor) {
-    console.error(
-      `[supportsColor] 检测到 DWEB_NO_COLOR=${dwebNoColor}，禁用颜色输出`,
-    );
-    return false;
-  }
-
-  console.error(`[supportsColor] 未设置 DWEB_NO_COLOR，启用颜色输出`);
-  return true;
-}
-
 // 模块加载时立即输出调试日志
 console.error(
   `[cli-output.ts] 模块加载时检查 - DWEB_NO_COLOR=${
@@ -56,7 +30,8 @@ console.error(
   }`,
 );
 
-const useColor = supportsColor();
+// 使用共用的颜色检测函数
+const useColor = shouldUseColor();
 
 /**
  * 应用颜色
