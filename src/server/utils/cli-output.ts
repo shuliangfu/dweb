@@ -47,9 +47,10 @@ function supportsColor(): boolean {
   }
 
   // 检查是否在 Docker 容器中运行
-  // Docker 容器通常有 .dockerenv 文件或 /proc/1/cgroup 包含 docker
+  // 多种检测方式确保能正确识别 Docker 环境
+  // 注意：在 Docker 中使用 tee 时，stdout 仍然是 TTY，所以必须依赖容器检测
   try {
-    // 检查 .dockerenv 文件
+    // 方式1: 检查 .dockerenv 文件（Docker 容器的标志文件）
     try {
       Deno.statSync("/.dockerenv");
       return false; // 在 Docker 容器中，禁用颜色
@@ -57,13 +58,42 @@ function supportsColor(): boolean {
       // 文件不存在，继续检查
     }
 
-    // 检查 /proc/1/cgroup 是否包含 docker
+    // 方式2: 检查 /proc/1/cgroup 是否包含 docker 或 containerd
     try {
       const cgroupContent = Deno.readTextFileSync("/proc/1/cgroup");
       if (
-        cgroupContent.includes("docker") || cgroupContent.includes("containerd")
+        cgroupContent.includes("docker") ||
+        cgroupContent.includes("containerd") ||
+        cgroupContent.includes("kubepods") ||
+        cgroupContent.includes("/docker/") ||
+        cgroupContent.includes("/containerd/")
       ) {
         return false; // 在容器中，禁用颜色
+      }
+    } catch {
+      // 文件不存在或读取失败，继续检查
+    }
+
+    // 方式3: 检查环境变量（某些容器运行时会设置）
+    const containerEnv = Deno.env.get("container");
+    if (
+      containerEnv === "docker" ||
+      Deno.env.get("DOCKER_CONTAINER") === "true" ||
+      containerEnv !== undefined // 如果设置了 container 环境变量（通常是容器环境）
+    ) {
+      return false;
+    }
+
+    // 方式4: 检查 /proc/self/mountinfo 是否包含 docker
+    try {
+      const mountInfo = Deno.readTextFileSync("/proc/self/mountinfo");
+      if (
+        mountInfo.includes("docker") ||
+        mountInfo.includes("containerd") ||
+        mountInfo.includes("/docker/") ||
+        mountInfo.includes("/containerd/")
+      ) {
+        return false;
       }
     } catch {
       // 文件不存在或读取失败，继续检查
