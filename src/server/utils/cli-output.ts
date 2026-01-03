@@ -23,13 +23,6 @@ const colors = {
   white: "\x1b[37m",
 } as const;
 
-// 模块加载时立即输出调试日志
-console.error(
-  `[cli-output.ts] 模块加载时检查 - DWEB_NO_COLOR=${
-    Deno.env.get("DWEB_NO_COLOR")
-  }`,
-);
-
 // 使用共用的颜色检测函数
 const useColor = shouldUseColor();
 

@@ -20,22 +20,17 @@ export function shouldUseColor(): boolean {
   // 1. 检查 DWEB_NO_COLOR 环境变量（框架特定变量，优先级最高）
   const dwebNoColor = Deno.env.get("DWEB_NO_COLOR");
   if (dwebNoColor) {
-    console.error(
-      `[shouldUseColor] 检测到 DWEB_NO_COLOR=${dwebNoColor}，禁用颜色输出`,
-    );
     return false;
   }
 
   // 2. 检查 NO_COLOR 环境变量（标准环境变量，用于禁用颜色）
   if (Deno.env.get("NO_COLOR")) {
-    console.error(`[shouldUseColor] 检测到 NO_COLOR，禁用颜色输出`);
     return false;
   }
 
   // 3. 检查 TERM 环境变量
   const term = Deno.env.get("TERM");
   if (term === "dumb") {
-    console.error(`[shouldUseColor] 检测到 TERM=dumb，禁用颜色输出`);
     return false;
   }
 
@@ -46,9 +41,6 @@ export function shouldUseColor(): boolean {
     // 方式1: 检查 .dockerenv 文件（Docker 容器的标志文件）
     try {
       Deno.statSync("/.dockerenv");
-      console.error(
-        `[shouldUseColor] 检测到 /.dockerenv 文件，在 Docker 容器中，禁用颜色输出`,
-      );
       return false;
     } catch {
       // 文件不存在，继续检查
@@ -64,9 +56,6 @@ export function shouldUseColor(): boolean {
         cgroupContent.includes("/docker/") ||
         cgroupContent.includes("/containerd/")
       ) {
-        console.error(
-          `[shouldUseColor] 检测到容器标识（/proc/1/cgroup），禁用颜色输出`,
-        );
         return false;
       }
     } catch {
@@ -80,7 +69,6 @@ export function shouldUseColor(): boolean {
       Deno.env.get("DOCKER_CONTAINER") === "true" ||
       containerEnv !== undefined // 如果设置了 container 环境变量（通常是容器环境）
     ) {
-      console.error(`[shouldUseColor] 检测到容器环境变量，禁用颜色输出`);
       return false;
     }
 
@@ -93,9 +81,6 @@ export function shouldUseColor(): boolean {
         mountInfo.includes("/docker/") ||
         mountInfo.includes("/containerd/")
       ) {
-        console.error(
-          `[shouldUseColor] 检测到容器挂载信息（/proc/self/mountinfo），禁用颜色输出`,
-        );
         return false;
       }
     } catch {
@@ -114,19 +99,14 @@ export function shouldUseColor(): boolean {
     // 只有当 stdout 和 stderr 都是 TTY 时才使用颜色
     // 这样可以检测到使用 tee 等工具重定向输出的情况
     if (!stdoutIsTTY || !stderrIsTTY) {
-      console.error(
-        `[shouldUseColor] 检测到非 TTY 环境（stdout: ${stdoutIsTTY}, stderr: ${stderrIsTTY}），禁用颜色输出`,
-      );
       return false;
     }
   } catch {
     // 如果检查失败，默认禁用颜色（更安全）
-    console.error(`[shouldUseColor] TTY 检测失败，禁用颜色输出`);
     return false;
   }
 
   // 所有检查都通过，启用颜色输出
-  console.error(`[shouldUseColor] 所有检查通过，启用颜色输出`);
   return true;
 }
 
