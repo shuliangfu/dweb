@@ -132,6 +132,10 @@ export interface ContractCallOptions {
   value?: string | bigint;
   /** Gas 限制 */
   gasLimit?: string | bigint;
+  /** 函数签名（可选，如 "getUserInfo(address)"），如果不提供则自动推断 */
+  functionSignature?: string;
+  /** 完整 ABI（可选），如果提供则优先使用 */
+  abi?: string[];
 }
 
 /**
@@ -146,6 +150,12 @@ export interface ContractReadOptions {
   args?: unknown[];
   /** 调用方地址 */
   from?: string;
+  /** 函数签名（可选，如 "getUserInfo(address)"），如果不提供则自动推断 */
+  functionSignature?: string;
+  /** 完整 ABI（可选），如果提供则优先使用 */
+  abi?: string[];
+  /** 返回类型（可选，默认 "uint256"） */
+  returnType?: string;
 }
 
 /**
@@ -460,14 +470,32 @@ export class Web3Client {
    * @param options 合约调用选项
    * @returns 交易哈希
    */
+  /**
+   * 调用合约方法（写入操作）
+   * @param options 合约调用选项
+   * @returns 交易哈希
+   */
   async callContract(options: ContractCallOptions): Promise<string> {
     const signer = this.getSigner();
     try {
+      let abi: string[];
+
+      // 如果提供了完整 ABI，直接使用
+      if (options.abi && options.abi.length > 0) {
+        abi = options.abi;
+      } // 如果提供了函数签名，使用它
+      else if (options.functionSignature) {
+        abi = [`function ${options.functionSignature}`];
+      } // 否则根据参数自动推断类型
+      else {
+        const paramTypes = options.args?.map((arg) => this.inferArgType(arg)) ||
+          [];
+        abi = [`function ${options.functionName}(${paramTypes.join(",")})`];
+      }
+
       const contract = new EthersContract(
         options.address,
-        [`function ${options.functionName}(${
-          options.args?.map(() => "uint256").join(",") || ""
-        })`],
+        abi,
         signer as any,
       );
       const tx = await contract[options.functionName](...(options.args || []), {
@@ -485,6 +513,34 @@ export class Web3Client {
   }
 
   /**
+   * 推断参数类型（根据参数值自动推断）
+   * @param arg 参数值
+   * @returns Solidity 类型
+   */
+  private inferArgType(arg: unknown): string {
+    if (typeof arg === "string") {
+      // 检查是否是地址格式（0x 开头，42 字符）
+      if (arg.startsWith("0x") && arg.length === 42) {
+        return "address";
+      }
+      // 检查是否是十六进制数字
+      if (arg.startsWith("0x")) {
+        return "uint256";
+      }
+      // 其他字符串可能是 bytes 或 string
+      return "string";
+    }
+    if (typeof arg === "number" || typeof arg === "bigint") {
+      return "uint256";
+    }
+    if (typeof arg === "boolean") {
+      return "bool";
+    }
+    // 默认返回 uint256
+    return "uint256";
+  }
+
+  /**
    * 读取合约数据（只读操作）
    * @param options 合约读取选项
    * @returns 函数返回值
@@ -492,11 +548,32 @@ export class Web3Client {
   async readContract(options: ContractReadOptions): Promise<unknown> {
     const provider = this.getProvider();
     try {
+      let abi: string[];
+
+      // 如果提供了完整 ABI，直接使用
+      if (options.abi && options.abi.length > 0) {
+        abi = options.abi;
+      } // 如果提供了函数签名，使用它
+      else if (options.functionSignature) {
+        const returnType = options.returnType || "uint256";
+        abi = [
+          `function ${options.functionSignature} view returns (${returnType})`,
+        ];
+      } // 否则根据参数自动推断类型
+      else {
+        const paramTypes = options.args?.map((arg) => this.inferArgType(arg)) ||
+          [];
+        const returnType = options.returnType || "uint256";
+        abi = [
+          `function ${options.functionName}(${
+            paramTypes.join(",")
+          }) view returns (${returnType})`,
+        ];
+      }
+
       const contract = new EthersContract(
         options.address,
-        [`function ${options.functionName}(${
-          options.args?.map(() => "uint256").join(",") || ""
-        }) view returns (uint256)`],
+        abi,
         provider as any,
       );
       const result = await contract[options.functionName](
