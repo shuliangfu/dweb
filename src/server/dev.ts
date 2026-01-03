@@ -28,6 +28,16 @@ import { ConfigManager } from "../core/config-manager.ts";
  * ```
  */
 export async function startDevServer(config: AppConfig): Promise<void> {
+  // 立即输出调试日志，检查环境变量
+  const dwebNoColor = Deno.env.get("DWEB_NO_COLOR");
+  console.error(
+    `[startDevServer] 启动时检查 - DWEB_NO_COLOR=${dwebNoColor}, 所有相关环境变量:`,
+    Object.keys(Deno.env.toObject())
+      .filter((key) => key.includes("COLOR") || key.includes("DWEB"))
+      .map((key) => `${key}=${Deno.env.get(key)}`)
+      .join(", "),
+  );
+
   try {
     Deno.env.set("DENO_ENV", "development");
   } catch {

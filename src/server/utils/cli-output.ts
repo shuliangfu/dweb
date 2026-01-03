@@ -49,6 +49,13 @@ function supportsColor(): boolean {
   return true;
 }
 
+// 模块加载时立即输出调试日志
+console.error(
+  `[cli-output.ts] 模块加载时检查 - DWEB_NO_COLOR=${
+    Deno.env.get("DWEB_NO_COLOR")
+  }`,
+);
+
 const useColor = supportsColor();
 
 /**
