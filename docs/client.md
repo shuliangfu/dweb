@@ -661,6 +661,73 @@ const url = getCurrentUrl();
 console.log("当前 URL:", url); // 'https://example.com/docs?page=1#section'
 ```
 
+### `routeTo(path, replace?)`
+
+路由导航函数（`routeTo` 是 `route` 的别名）。
+
+提供与 `route` 方法相同的功能，用于更语义化的方法命名。
+
+**参数**:
+- `path`: `string | { path: string; params?: Record<string, string | number | boolean> }` - 目标路径
+  - 字符串形式：直接路径或带查询参数的路径
+  - 对象形式：包含 `path` 和 `params` 的对象
+- `replace?`: `boolean` - 是否替换当前历史记录（默认 `false`，使用 `pushState`）
+
+**返回值**: `boolean` - 如果导航成功返回 `true`，否则返回 `false`
+
+**说明**: 
+- 优先使用框架的 SPA 导航函数（无刷新切换）
+- 如果框架导航函数不可用，回退到整页跳转
+- 功能与 `route` 方法完全相同
+
+**示例**:
+```typescript
+import { routeTo } from "@dreamer/dweb/client";
+
+// 基本用法
+routeTo("/docs");
+
+// 带查询参数（字符串形式）
+routeTo("/docs?page=1&sort=name");
+
+// 使用对象形式传递参数
+routeTo({ 
+  path: "/docs", 
+  params: { page: 1, sort: "name" } 
+});
+
+// 替换当前历史记录
+routeTo("/docs", true);
+```
+
+### `goBack(steps?)`
+
+返回上一页，使用浏览器的历史记录 API 返回到上一个页面。
+
+**参数**:
+- `steps?`: `number` - 返回的步数，默认为 `1`（返回上一页）。可以传入负数表示前进
+
+**返回值**: `boolean` - 如果成功返回 `true`，否则返回 `false`
+
+**说明**:
+- 使用浏览器的 `history.go()` API 进行导航
+- 正数表示后退，负数表示前进
+- 如果浏览器不支持 history API 或没有历史记录，返回 `false`
+
+**示例**:
+```typescript
+import { goBack } from "@dreamer/dweb/client";
+
+// 返回上一页
+goBack();
+
+// 返回上两页
+goBack(2);
+
+// 前进一页（如果历史记录中有）
+goBack(-1);
+```
+
 ---
 
 ## 类型定义

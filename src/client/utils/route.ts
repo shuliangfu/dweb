@@ -121,3 +121,72 @@ export function getQueryParams(): Record<string, string> {
 export function getCurrentUrl(): string {
   return globalThis.location.href;
 }
+
+/**
+ * 路由导航函数（routeTo 是 route 的别名）
+ * 提供与 route 方法相同的功能，用于更语义化的方法命名
+ * @param path 目标路径，可以是字符串路径或包含 path 和 params 的对象
+ * @param replace 是否替换当前历史记录（默认 false，使用 pushState）
+ * @returns 如果导航成功返回 true，否则返回 false
+ *
+ * @example
+ * // 基本用法
+ * routeTo("/docs");
+ *
+ * // 带查询参数
+ * routeTo("/docs?page=1&sort=name");
+ *
+ * // 使用对象形式传递参数
+ * routeTo({ path: "/docs", params: { page: 1, sort: "name" } });
+ *
+ * // 替换当前历史记录
+ * routeTo("/docs", true);
+ */
+export function routeTo(
+  path: string | {
+    path: string;
+    params?: Record<string, string | number | boolean>;
+  },
+  replace?: boolean,
+): boolean {
+  return route(path, replace);
+}
+
+/**
+ * 返回上一页
+ * 使用浏览器的历史记录 API 返回到上一个页面
+ *
+ * @param steps 返回的步数，默认为 1（返回上一页）。可以传入负数表示前进
+ * @returns 如果成功返回 true，否则返回 false
+ *
+ * @example
+ * // 返回上一页
+ * goBack();
+ *
+ * // 返回上两页
+ * goBack(2);
+ *
+ * // 前进一页（如果历史记录中有）
+ * goBack(-1);
+ */
+export function goBack(steps: number = 1): boolean {
+  try {
+    // 检查浏览器是否支持 history API
+    if (typeof globalThis.history === "undefined") {
+      return false;
+    }
+
+    // 检查是否有历史记录可以返回
+    if (steps > 0 && globalThis.history.length <= 1) {
+      return false;
+    }
+
+    // 使用 history.go 进行导航
+    // 正数表示后退，负数表示前进
+    globalThis.history.go(-steps);
+    return true;
+  } catch (error) {
+    console.warn("[goBack] 返回失败:", error);
+    return false;
+  }
+}

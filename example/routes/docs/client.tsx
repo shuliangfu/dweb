@@ -18,6 +18,8 @@ export default function ClientPage(
   // 快速开始
   const quickStartCode = `import { 
   route, 
+  routeTo,
+  goBack,
   getCurrentPath, 
   useThemeStore,
   translate,
@@ -31,7 +33,11 @@ export default function MyPage() {
   const counter = useStore(counterStore);
   
   const handleNavigate = () => {
-    route({ path: "/docs", params: { page: 1 } });
+    routeTo({ path: "/docs", params: { page: 1 } });
+  };
+  
+  const handleGoBack = () => {
+    goBack();
   };
   
   return (
@@ -40,6 +46,7 @@ export default function MyPage() {
       <p>当前主题: {theme.value}</p>
       <p>计数: {counter.count}</p>
       <button onClick={handleNavigate}>跳转</button>
+      <button onClick={handleGoBack}>返回</button>
     </div>
   );
 }`;
@@ -148,6 +155,8 @@ await setCurrentLanguage("en-US");`;
   // 路由工具
   const routeCode = `import { 
   route, 
+  routeTo,
+  goBack,
   getCurrentPath, 
   getQueryParams,
   getCurrentUrl 
@@ -155,6 +164,9 @@ await setCurrentLanguage("en-US");`;
 
 // 基本导航
 route("/docs");
+
+// routeTo 是 route 的别名，功能完全相同
+routeTo("/docs");
 
 // 带查询参数（字符串形式）
 route("/docs?page=1&sort=name");
@@ -167,6 +179,15 @@ route({
 
 // 替换当前历史记录
 route("/docs", true);
+
+// 返回上一页
+goBack();
+
+// 返回上两页
+goBack(2);
+
+// 前进一页（如果历史记录中有）
+goBack(-1);
 
 // 获取当前路径
 const path = getCurrentPath(); // '/docs'
@@ -181,6 +202,8 @@ const url = getCurrentUrl(); // 'https://example.com/docs?page=1'`;
   const reactExampleCode = `import { useEffect, useState } from 'preact/hooks';
 import { 
   route, 
+  routeTo,
+  goBack,
   getCurrentPath,
   useThemeStore,
   translate,
@@ -198,7 +221,11 @@ export default function ExamplePage() {
   }, []);
 
   const handleNavigate = () => {
-    route({ path: '/docs', params: { page: 1 } });
+    routeTo({ path: '/docs', params: { page: 1 } });
+  };
+
+  const handleGoBack = () => {
+    goBack();
   };
 
   return (
@@ -208,6 +235,7 @@ export default function ExamplePage() {
       <p>当前路径: {currentPath}</p>
       <p>计数: {counter.count}</p>
       <button onClick={handleNavigate}>跳转到文档</button>
+      <button onClick={handleGoBack}>返回上一页</button>
       <button onClick={() => counter.increment()}>增加计数</button>
     </div>
   );
@@ -248,6 +276,11 @@ function route(
   path: string | { path: string; params?: Record<string, string | number | boolean> },
   replace?: boolean
 ): boolean
+function routeTo(
+  path: string | { path: string; params?: Record<string, string | number | boolean> },
+  replace?: boolean
+): boolean
+function goBack(steps?: number): boolean
 function getCurrentPath(): string
 function getQueryParams(): Record<string, string>
 function getCurrentUrl(): string`;
@@ -396,7 +429,7 @@ function getCurrentUrl(): string`;
               "**客户端环境检查**：所有客户端 API 在服务端环境中会返回 `null` 或执行空操作，这是正常行为。",
               "**类型安全**：使用 TypeScript 时，建议为 Store 状态定义明确的类型，以获得更好的类型提示。",
               "**响应式更新**：使用 `useStore` 和 `useThemeStore` Hook 时，状态变化会自动触发组件重新渲染。",
-              "**路由导航**：`route` 函数优先使用框架的 SPA 导航，如果不可用会回退到整页跳转。",
+              "**路由导航**：`route` 和 `routeTo` 函数优先使用框架的 SPA 导航，如果不可用会回退到整页跳转。`goBack` 函数使用浏览器的历史记录 API 返回上一页。",
               "**i18n 初始化**：使用 i18n 相关 API 前，确保 i18n 插件已正确初始化。",
             ],
           },
