@@ -131,7 +131,6 @@ const navItems: NavItem[] = [
       { title: "控制台工具", path: "/docs/console" },
       { title: "渲染适配器", path: "/docs/render" },
       { title: "客户端 API", path: "/docs/client" },
-      { title: "工具函数", path: "/docs/utils" },
     ],
   },
   {
