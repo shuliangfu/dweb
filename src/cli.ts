@@ -11,6 +11,17 @@ import { Command } from "./server/console/command.ts";
 import { info, success } from "./server/console/output.ts";
 import { interactiveMenu } from "./server/console/prompt.ts";
 import { readDenoJson } from "./server/utils/file.ts";
+import { shouldUseColor } from "./server/console/ansi.ts";
+
+// 在 CLI 启动时检查是否应该禁用颜色，如果应该禁用，设置 NO_COLOR 环境变量
+// 这样 Deno task runner 也会禁用颜色输出
+if (!shouldUseColor()) {
+  try {
+    Deno.env.set("DWEB_NO_COLOR", "1");
+  } catch {
+    // 忽略设置环境变量失败的情况
+  }
+}
 
 /**
  * 尝试从指定路径读取版本号
