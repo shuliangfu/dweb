@@ -24,13 +24,20 @@ const colors = {
 /**
  * 检查是否支持颜色输出
  * 在以下情况下禁用颜色：
- * 1. 设置了 NO_COLOR 环境变量
- * 2. TERM 环境变量为 "dumb"
- * 3. stdout 不是 TTY（守护进程或重定向到文件）
+ * 1. 设置了 NO_COLOR 环境变量（标准环境变量）
+ * 2. 设置了 DWEB_NO_COLOR 环境变量（框架特定变量）
+ * 3. TERM 环境变量为 "dumb"
+ * 4. 检测到在 Docker 容器中运行
+ * 5. stdout 或 stderr 不是 TTY（守护进程或重定向到文件）
  */
 function supportsColor(): boolean {
   // 检查 NO_COLOR 环境变量（标准环境变量，用于禁用颜色）
   if (Deno.env.get("NO_COLOR")) {
+    return false;
+  }
+
+  // 检查框架特定的环境变量
+  if (Deno.env.get("DWEB_NO_COLOR")) {
     return false;
   }
 
@@ -39,10 +46,41 @@ function supportsColor(): boolean {
     return false;
   }
 
-  // 检查 stdout 是否是 TTY
-  // 如果不是 TTY，通常是守护进程或输出被重定向到文件，应该禁用颜色
+  // 检查是否在 Docker 容器中运行
+  // Docker 容器通常有 .dockerenv 文件或 /proc/1/cgroup 包含 docker
   try {
-    return Deno.stdout.isTerminal();
+    // 检查 .dockerenv 文件
+    try {
+      Deno.statSync("/.dockerenv");
+      return false; // 在 Docker 容器中，禁用颜色
+    } catch {
+      // 文件不存在，继续检查
+    }
+
+    // 检查 /proc/1/cgroup 是否包含 docker
+    try {
+      const cgroupContent = Deno.readTextFileSync("/proc/1/cgroup");
+      if (
+        cgroupContent.includes("docker") || cgroupContent.includes("containerd")
+      ) {
+        return false; // 在容器中，禁用颜色
+      }
+    } catch {
+      // 文件不存在或读取失败，继续检查
+    }
+  } catch {
+    // 忽略错误，继续检查
+  }
+
+  // 检查 stdout 和 stderr 是否都是 TTY
+  // 如果其中任何一个不是 TTY，通常意味着是守护进程或输出被重定向，应该禁用颜色
+  try {
+    const stdoutIsTTY = Deno.stdout.isTerminal();
+    const stderrIsTTY = Deno.stderr.isTerminal();
+
+    // 只有当 stdout 和 stderr 都是 TTY 时才使用颜色
+    // 这样可以检测到使用 tee 等工具重定向输出的情况
+    return stdoutIsTTY && stderrIsTTY;
   } catch {
     // 如果检查失败，默认禁用颜色（更安全）
     return false;
