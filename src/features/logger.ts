@@ -4,6 +4,37 @@
  */
 
 /**
+ * 检查是否应该使用颜色输出
+ * 在以下情况下禁用颜色：
+ * 1. 设置了 NO_COLOR 环境变量
+ * 2. TERM 环境变量为 "dumb"
+ * 3. stdout 不是 TTY（守护进程或重定向到文件）
+ *
+ * @returns 如果应该使用颜色返回 true，否则返回 false
+ */
+export function shouldUseColor(): boolean {
+  // 检查 NO_COLOR 环境变量（标准环境变量，用于禁用颜色）
+  if (Deno.env.get("NO_COLOR")) {
+    return false;
+  }
+
+  // 检查 TERM 环境变量
+  const term = Deno.env.get("TERM");
+  if (term === "dumb") {
+    return false;
+  }
+
+  // 检查 stdout 是否是 TTY
+  // 如果不是 TTY，通常是守护进程或输出被重定向到文件，应该禁用颜色
+  try {
+    return Deno.stdout.isTerminal();
+  } catch {
+    // 如果检查失败，默认禁用颜色（更安全）
+    return false;
+  }
+}
+
+/**
  * 日志级别
  */
 export enum LogLevel {
