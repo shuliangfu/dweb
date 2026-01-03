@@ -66,7 +66,8 @@ const response = await fetch(\`https://api.example.com/data?key=\${apiKey}\`);`;
 
   const content = {
     title: "环境变量 (env)",
-    description: "DWeb 框架支持使用环境变量来配置应用，支持不同环境的配置文件。",
+    description:
+      "DWeb 框架支持使用环境变量来配置应用，支持不同环境的配置文件。",
     sections: [
       {
         title: "开发环境",
@@ -131,7 +132,8 @@ const response = await fetch(\`https://api.example.com/data?key=\${apiKey}\`);`;
           {
             type: "alert",
             level: "warning",
-            content: "**安全提示**：请确保 `.env.local` 和包含敏感信息的 `.env` 文件已添加到 `.gitignore`，不要提交到版本控制系统。",
+            content:
+              "**安全提示**：请确保 `.env.local` 和包含敏感信息的 `.env` 文件已添加到 `.gitignore`，不要提交到版本控制系统。",
           },
         ],
       },

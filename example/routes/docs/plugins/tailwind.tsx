@@ -70,7 +70,7 @@ plugins: [
                   "**`cssPath`** - 主 CSS 文件路径（如 'assets/style.css'），用于开发环境实时编译。如果不指定，默认查找 'assets/style.css'",
                   "**`cssFiles`** - CSS 文件路径（支持 glob 模式），用于构建时处理多个文件。默认为 'assets/**/*.css'",
                   "**`exclude`** - 排除的文件（支持 glob 模式）",
-                  "**`content`** - 内容扫描路径（用于 Tailwind CSS 扫描项目文件）。默认为 `[\"./routes/**/*.{tsx,ts,jsx,js}\", \"./components/**/*.{tsx,ts,jsx,js}\"]`",
+                  '**`content`** - 内容扫描路径（用于 Tailwind CSS 扫描项目文件）。默认为 `["./routes/**/*.{tsx,ts,jsx,js}", "./components/**/*.{tsx,ts,jsx,js}"]`',
                   "**`autoprefixer`** - v3 特定选项：Autoprefixer 配置对象，包含：",
                   "  - `env` - Browserslist 环境",
                   "  - `cascade` - 是否使用 Visual Cascade",

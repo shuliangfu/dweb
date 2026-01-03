@@ -25,7 +25,8 @@ server.use(bodyParser({
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "bodyParser - 请求体解析",
-    description: "bodyParser 中间件用于解析 HTTP 请求体，支持 JSON、URL-encoded、文本和原始数据。",
+    description:
+      "bodyParser 中间件用于解析 HTTP 请求体，支持 JSON、URL-encoded、文本和原始数据。",
     sections: [
       {
         title: "基本使用",

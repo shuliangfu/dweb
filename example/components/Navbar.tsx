@@ -6,21 +6,20 @@
 import { useEffect, useState } from "preact/hooks";
 import { toggleTheme } from "@dreamer/dweb/client";
 
-
 interface NavbarProps {
   /** 当前路径（服务端渲染时使用） */
-	currentPath?: string;
-	menus: any;
+  currentPath?: string;
+  menus: any;
 }
-
-
 
 /**
  * 导航栏组件
  * @param props 组件属性
  * @returns JSX 元素
  */
-export default function Navbar({ currentPath: initialPath, menus }: NavbarProps) {
+export default function Navbar(
+  { currentPath: initialPath, menus }: NavbarProps,
+) {
   // 在客户端使用 state 跟踪当前路径，支持客户端路由导航
   // 服务端渲染时使用传入的 routePath，客户端初始化时也优先使用传入的值
   const [currentPath, setCurrentPath] = useState<string>(() => {

@@ -345,7 +345,7 @@ export default function Sidebar(
     // 保存当前侧边栏滚动位置
     const sidebar = (e.currentTarget as HTMLElement)?.closest("aside");
     const scrollTop = sidebar?.scrollTop || 0;
-    
+
     // 延迟恢复滚动位置，确保导航完成后再恢复
     setTimeout(() => {
       if (sidebar) {
@@ -428,7 +428,8 @@ export default function Sidebar(
                   {hasChildren && (
                     <div className="space-y-1 relative">
                       {/* 连接线 */}
-                      <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700 hidden"></div>
+                      <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700 hidden">
+                      </div>
                       {item.children!.map((child) => {
                         // 子项必须有 path
                         if (!child.path) return null;

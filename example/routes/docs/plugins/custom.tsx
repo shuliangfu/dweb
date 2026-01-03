@@ -15,8 +15,7 @@ export default function CustomPluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
   // 基本结构
-  const basicStructureCode =
-    `import type { Plugin } from "@dreamer/dweb";
+  const basicStructureCode = `import type { Plugin } from "@dreamer/dweb";
 
 const myPlugin: Plugin = {
   name: "my-plugin",
@@ -45,8 +44,7 @@ const myPlugin: Plugin = {
 app.plugin(myPlugin);`;
 
   // 简单插件
-  const simplePluginCode =
-    `import type { Plugin } from "@dreamer/dweb";
+  const simplePluginCode = `import type { Plugin } from "@dreamer/dweb";
 
 const helloPlugin: Plugin = {
   name: "hello",
@@ -62,8 +60,7 @@ const helloPlugin: Plugin = {
 app.plugin(helloPlugin);`;
 
   // 配置化插件
-  const configurablePluginCode =
-    `import type { Plugin } from "@dreamer/dweb";
+  const configurablePluginCode = `import type { Plugin } from "@dreamer/dweb";
 
 interface MyPluginOptions {
   prefix: string;
@@ -93,8 +90,7 @@ app.plugin(createMyPlugin({
 }));`;
 
   // 异步插件
-  const asyncPluginCode =
-    `import type { Plugin } from "@dreamer/dweb";
+  const asyncPluginCode = `import type { Plugin } from "@dreamer/dweb";
 
 const asyncPlugin: Plugin = {
   name: "async-plugin",
@@ -113,8 +109,7 @@ const asyncPlugin: Plugin = {
 app.plugin(asyncPlugin);`;
 
   // 带清理的插件
-  const cleanupPluginCode =
-    `import type { Plugin } from "@dreamer/dweb";
+  const cleanupPluginCode = `import type { Plugin } from "@dreamer/dweb";
 
 let intervalId: number | null = null;
 
@@ -138,8 +133,7 @@ const cleanupPlugin: Plugin = {
 app.plugin(cleanupPlugin);`;
 
   // 处理 API 请求的插件
-  const apiPluginCode =
-    `import type { Plugin } from "@dreamer/dweb";
+  const apiPluginCode = `import type { Plugin } from "@dreamer/dweb";
 
 const apiPlugin: Plugin = {
   name: "api-plugin",

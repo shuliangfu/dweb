@@ -13,8 +13,7 @@ export const metadata = {
 export default function ErrorHandlerMiddlewarePage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const errorHandlerCode =
-    `import { errorHandler } from '@dreamer/dweb';
+  const errorHandlerCode = `import { errorHandler } from '@dreamer/dweb';
 
 server.use(errorHandler({
   format: 'json', // 'json' | 'html' | 'text'

@@ -1,7 +1,7 @@
 /**
  * @file Chart.tsx
  * @description 图表组件 - 支持服务端渲染和客户端渲染
- * 
+ *
  * 这个组件解决了 Chart.js 在 SSR 中的问题：
  * 1. 服务端渲染时：渲染一个占位符（空的 canvas 元素）
  * 2. 客户端 hydration 时：使用 useEffect 在组件挂载后初始化图表
@@ -14,7 +14,15 @@ import Chart from "chart/auto";
 import { getThemeStore } from "@dreamer/dweb/client";
 // Chart.js 类型定义（从 chart.js 包中导入）
 // 注意：chart/auto 会自动注册所有图表类型
-type ChartType = "line" | "bar" | "pie" | "doughnut" | "polarArea" | "radar" | "scatter" | "bubble";
+type ChartType =
+  | "line"
+  | "bar"
+  | "pie"
+  | "doughnut"
+  | "polarArea"
+  | "radar"
+  | "scatter"
+  | "bubble";
 interface ChartConfiguration {
   type?: ChartType;
   data?: {
@@ -85,7 +93,7 @@ export interface ChartProps {
 
 /**
  * 图表组件
- * 
+ *
  * 使用示例：
  * ```tsx
  * <Chart
@@ -179,37 +187,51 @@ export default function ChartComponent({
         color: textColor,
         plugins: {
           ...(baseOptions.plugins as Record<string, unknown> || {}),
-          title: baseOptions.plugins && typeof baseOptions.plugins === "object" && "title" in baseOptions.plugins
-            ? {
-              ...(baseOptions.plugins.title as Record<string, unknown>),
-              color: textColor,
-            }
-            : undefined,
-          legend: baseOptions.plugins && typeof baseOptions.plugins === "object" && "legend" in baseOptions.plugins
-            ? {
-              ...(baseOptions.plugins.legend as Record<string, unknown>),
-              labels: {
-                ...(baseOptions.plugins.legend && typeof baseOptions.plugins.legend === "object" && "labels" in baseOptions.plugins.legend
-                  ? baseOptions.plugins.legend.labels as Record<string, unknown>
-                  : {}),
+          title:
+            baseOptions.plugins && typeof baseOptions.plugins === "object" &&
+              "title" in baseOptions.plugins
+              ? {
+                ...(baseOptions.plugins.title as Record<string, unknown>),
                 color: textColor,
-              },
-            }
-            : undefined,
+              }
+              : undefined,
+          legend:
+            baseOptions.plugins && typeof baseOptions.plugins === "object" &&
+              "legend" in baseOptions.plugins
+              ? {
+                ...(baseOptions.plugins.legend as Record<string, unknown>),
+                labels: {
+                  ...(baseOptions.plugins.legend &&
+                      typeof baseOptions.plugins.legend === "object" &&
+                      "labels" in baseOptions.plugins.legend
+                    ? baseOptions.plugins.legend.labels as Record<
+                      string,
+                      unknown
+                    >
+                    : {}),
+                  color: textColor,
+                },
+              }
+              : undefined,
         } as Record<string, unknown>,
         scales: {
           ...(baseOptions.scales as Record<string, unknown> || {}),
-          x: baseOptions.scales && typeof baseOptions.scales === "object" && "x" in baseOptions.scales
+          x: baseOptions.scales && typeof baseOptions.scales === "object" &&
+              "x" in baseOptions.scales
             ? {
               ...(baseOptions.scales.x as Record<string, unknown>),
               ticks: {
-                ...(baseOptions.scales.x && typeof baseOptions.scales.x === "object" && "ticks" in baseOptions.scales.x
+                ...(baseOptions.scales.x &&
+                    typeof baseOptions.scales.x === "object" &&
+                    "ticks" in baseOptions.scales.x
                   ? baseOptions.scales.x.ticks as Record<string, unknown>
                   : {}),
                 color: textColor,
               },
               grid: {
-                ...(baseOptions.scales.x && typeof baseOptions.scales.x === "object" && "grid" in baseOptions.scales.x
+                ...(baseOptions.scales.x &&
+                    typeof baseOptions.scales.x === "object" &&
+                    "grid" in baseOptions.scales.x
                   ? baseOptions.scales.x.grid as Record<string, unknown>
                   : {}),
                 color: gridColor,
@@ -219,17 +241,22 @@ export default function ChartComponent({
               ticks: { color: textColor },
               grid: { color: gridColor },
             },
-          y: baseOptions.scales && typeof baseOptions.scales === "object" && "y" in baseOptions.scales
+          y: baseOptions.scales && typeof baseOptions.scales === "object" &&
+              "y" in baseOptions.scales
             ? {
               ...(baseOptions.scales.y as Record<string, unknown>),
               ticks: {
-                ...(baseOptions.scales.y && typeof baseOptions.scales.y === "object" && "ticks" in baseOptions.scales.y
+                ...(baseOptions.scales.y &&
+                    typeof baseOptions.scales.y === "object" &&
+                    "ticks" in baseOptions.scales.y
                   ? baseOptions.scales.y.ticks as Record<string, unknown>
                   : {}),
                 color: textColor,
               },
               grid: {
-                ...(baseOptions.scales.y && typeof baseOptions.scales.y === "object" && "grid" in baseOptions.scales.y
+                ...(baseOptions.scales.y &&
+                    typeof baseOptions.scales.y === "object" &&
+                    "grid" in baseOptions.scales.y
                   ? baseOptions.scales.y.grid as Record<string, unknown>
                   : {}),
                 color: gridColor,
@@ -319,17 +346,20 @@ export default function ChartComponent({
     ? style
     : style
     ? Object.entries(style)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join("; ")
+      .map(([key, value]) => `${key}: ${value}`)
+      .join("; ")
     : "";
 
   return (
-    <div className={`chart-container w-full h-full ${className}`} style={styleAttr}>
+    <div
+      className={`chart-container w-full h-full ${className}`}
+      style={styleAttr}
+    >
       {/* 加载状态（仅在客户端 hydration 前显示） */}
       {loading && typeof globalThis !== "undefined" && globalThis.window && (
         <div className="chart-loading">{loading}</div>
       )}
-      
+
       {/* Canvas 元素 - 服务端和客户端都会渲染这个元素 */}
       <canvas
         ref={canvasRef}

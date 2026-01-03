@@ -899,9 +899,9 @@ const comments = await post.comments();`;
 
   const content = {
     title: "数据库模块",
-    description: "DWeb 框架提供了强大的数据库支持，支持 PostgreSQL 和 MongoDB，包含查询构建器、ORM/ODM、迁移管理等功能。",
+    description:
+      "DWeb 框架提供了强大的数据库支持，支持 PostgreSQL 和 MongoDB，包含查询构建器、ORM/ODM、迁移管理等功能。",
     sections: [
-
       {
         title: "架构深度与优化",
         blocks: [
@@ -959,7 +959,8 @@ const comments = await post.comments();`;
         blocks: [
           {
             type: "text",
-            content: "所有数据库相关的功能都可以从 `@dreamer/dweb/database` 统一导入，无需从子目录导入：",
+            content:
+              "所有数据库相关的功能都可以从 `@dreamer/dweb/database` 统一导入，无需从子目录导入：",
           },
           {
             type: "code",
@@ -968,7 +969,8 @@ const comments = await post.comments();`;
           },
           {
             type: "text",
-            content: "使用 MySQL 时，请从 `@dreamer/dweb/database/adapters/mysql` 导入 `MySQLAdapter`。",
+            content:
+              "使用 MySQL 时，请从 `@dreamer/dweb/database/adapters/mysql` 导入 `MySQLAdapter`。",
           },
         ],
       },
@@ -998,7 +1000,8 @@ const comments = await post.comments();`;
                 blocks: [
                   {
                     type: "text",
-                    content: "在项目入口文件（如 `main.ts` 或 `init.ts`）中调用初始化工具，自动从 `dweb.config.ts` 加载配置：",
+                    content:
+                      "在项目入口文件（如 `main.ts` 或 `init.ts`）中调用初始化工具，自动从 `dweb.config.ts` 加载配置：",
                   },
                   {
                     type: "code",
@@ -1026,11 +1029,12 @@ const comments = await post.comments();`;
               {
                 type: "subsection",
                 level: 4,
-                title: "解决 \"Database config loader not set\" 错误",
+                title: '解决 "Database config loader not set" 错误',
                 blocks: [
                   {
                     type: "text",
-                    content: "如果在使用模型时遇到 `Database config loader not set` 错误，需要在项目启动时设置配置加载器：",
+                    content:
+                      "如果在使用模型时遇到 `Database config loader not set` 错误，需要在项目启动时设置配置加载器：",
                   },
                   {
                     type: "code",
@@ -1048,7 +1052,8 @@ const comments = await post.comments();`;
             blocks: [
               {
                 type: "text",
-                content: "框架提供了强大的 ORM/ODM 功能，支持字段定义、验证、时间戳、软删除、作用域、虚拟字段、生命周期钩子等特性。",
+                content:
+                  "框架提供了强大的 ORM/ODM 功能，支持字段定义、验证、时间戳、软删除、作用域、虚拟字段、生命周期钩子等特性。",
               },
               {
                 type: "subsection",
@@ -1145,7 +1150,8 @@ const comments = await post.comments();`;
             blocks: [
               {
                 type: "text",
-                content: "MySQL/MariaDB 适配器支持基本查询、执行、事务与自动重连：",
+                content:
+                  "MySQL/MariaDB 适配器支持基本查询、执行、事务与自动重连：",
               },
               {
                 type: "code",
@@ -1189,7 +1195,8 @@ const comments = await post.comments();`;
             blocks: [
               {
                 type: "text",
-                content: "关联查询用于处理模型之间的关系，支持一对一、一对多和多对一关系。",
+                content:
+                  "关联查询用于处理模型之间的关系，支持一对一、一对多和多对一关系。",
               },
               {
                 type: "subsection",
@@ -1198,15 +1205,18 @@ const comments = await post.comments();`;
                 blocks: [
                   {
                     type: "text",
-                    content: "**belongsTo(RelatedModel, foreignKey, localKey?)** - 属于关系（多对一）\n\n例如：Post belongsTo User（一个帖子属于一个用户）\n\n- `RelatedModel`: 关联的模型类\n- `foreignKey`: 外键字段名（当前模型中的字段）\n- `localKey`: 关联模型的主键字段名（默认为关联模型的 primaryKey）",
+                    content:
+                      "**belongsTo(RelatedModel, foreignKey, localKey?)** - 属于关系（多对一）\n\n例如：Post belongsTo User（一个帖子属于一个用户）\n\n- `RelatedModel`: 关联的模型类\n- `foreignKey`: 外键字段名（当前模型中的字段）\n- `localKey`: 关联模型的主键字段名（默认为关联模型的 primaryKey）",
                   },
                   {
                     type: "text",
-                    content: "**hasOne(RelatedModel, foreignKey, localKey?)** - 有一个关系（一对一）\n\n例如：User hasOne Profile（一个用户有一个资料）\n\n- `foreignKey`: 外键字段名（关联模型中的字段）\n- `localKey`: 当前模型的主键字段名（默认为当前模型的 primaryKey）",
+                    content:
+                      "**hasOne(RelatedModel, foreignKey, localKey?)** - 有一个关系（一对一）\n\n例如：User hasOne Profile（一个用户有一个资料）\n\n- `foreignKey`: 外键字段名（关联模型中的字段）\n- `localKey`: 当前模型的主键字段名（默认为当前模型的 primaryKey）",
                   },
                   {
                     type: "text",
-                    content: "**hasMany(RelatedModel, foreignKey, localKey?)** - 有多个关系（一对多）\n\n例如：User hasMany Posts（一个用户有多个帖子）\n\n- `foreignKey`: 外键字段名（关联模型中的字段）\n- `localKey`: 当前模型的主键字段名（默认为当前模型的 primaryKey）",
+                    content:
+                      "**hasMany(RelatedModel, foreignKey, localKey?)** - 有多个关系（一对多）\n\n例如：User hasMany Posts（一个用户有多个帖子）\n\n- `foreignKey`: 外键字段名（关联模型中的字段）\n- `localKey`: 当前模型的主键字段名（默认为当前模型的 primaryKey）",
                   },
                 ],
               },
@@ -1467,7 +1477,8 @@ const comments = await post.comments();`;
                   },
                   {
                     type: "text",
-                    content: "返回的查询构建器支持 `findAll()`, `find()`, `count()` 方法",
+                    content:
+                      "返回的查询构建器支持 `findAll()`, `find()`, `count()` 方法",
                   },
                 ],
               },
@@ -1485,7 +1496,8 @@ const comments = await post.comments();`;
                   },
                   {
                     type: "text",
-                    content: "`connectionName`: 连接名称，默认为 'default'。如果数据库未初始化，会自动尝试从 dweb.config.ts 加载配置并初始化。",
+                    content:
+                      "`connectionName`: 连接名称，默认为 'default'。如果数据库未初始化，会自动尝试从 dweb.config.ts 加载配置并初始化。",
                   },
                 ],
               },

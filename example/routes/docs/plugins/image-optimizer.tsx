@@ -13,8 +13,7 @@ export const metadata = {
 export default function ImageOptimizerPluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const imageOptimizerCode =
-    `import { imageOptimizer } from '@dreamer/dweb';
+  const imageOptimizerCode = `import { imageOptimizer } from '@dreamer/dweb';
 
 plugins: [
   imageOptimizer({

@@ -157,14 +157,16 @@ await dbManager.destroy();`;
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "IService (服务接口)",
-    description: "`IService` 接口定义了所有框架服务必须实现的接口，提供统一的生命周期管理。",
+    description:
+      "`IService` 接口定义了所有框架服务必须实现的接口，提供统一的生命周期管理。",
     sections: [
       {
         title: "概述",
         blocks: [
           {
             type: "text",
-            content: "`IService` 接口确保所有服务都有一致的生命周期管理，包括初始化、启动、停止和销毁。",
+            content:
+              "`IService` 接口确保所有服务都有一致的生命周期管理，包括初始化、启动、停止和销毁。",
           },
         ],
       },
@@ -200,7 +202,8 @@ await dbManager.destroy();`;
             blocks: [
               {
                 type: "text",
-                content: "推荐使用 `BaseManager` 基类，它已经实现了 `IService` 接口：",
+                content:
+                  "推荐使用 `BaseManager` 基类，它已经实现了 `IService` 接口：",
               },
               {
                 type: "code",

@@ -225,7 +225,8 @@ logger.info(\`用户 \${userId} 从 \${ip} 登录\`);`;
 
   const content = {
     title: "Logger (日志系统)",
-    description: "DWeb 框架提供了强大的日志系统，支持结构化日志、日志级别、日志轮转等功能。",
+    description:
+      "DWeb 框架提供了强大的日志系统，支持结构化日志、日志级别、日志轮转等功能。",
     sections: [
       {
         title: "快速开始",

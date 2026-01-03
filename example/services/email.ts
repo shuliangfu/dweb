@@ -18,18 +18,22 @@ export class EmailService {
    */
   async sendEmail(options: EmailOptions): Promise<boolean> {
     // 模拟发送邮件
-    console.log(`📧 发送邮件到: ${Array.isArray(options.to) ? options.to.join(', ') : options.to}`);
+    console.log(
+      `📧 发送邮件到: ${
+        Array.isArray(options.to) ? options.to.join(", ") : options.to
+      }`,
+    );
     console.log(`主题: ${options.subject}`);
     console.log(`内容: ${options.body}`);
-    
+
     this.sentEmails.push({
       ...options,
       sentAt: new Date().toISOString(),
     });
-    
+
     // 模拟异步操作
     await new Promise((resolve) => setTimeout(resolve, 100));
-    
+
     return true;
   }
 

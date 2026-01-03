@@ -3,8 +3,8 @@
  * 提供登录、登出、用户状态管理等功能
  */
 
-import { useState, useEffect, useCallback } from 'preact/hooks';
-import { getStoreState, setStoreState } from '@dreamer/dweb/client';
+import { useCallback, useEffect, useState } from "preact/hooks";
+import { getStoreState, setStoreState } from "@dreamer/dweb/client";
 
 /**
  * 用户信息类型
@@ -82,7 +82,7 @@ export interface UseAuthReturn {
  * 认证相关 Hook
  * @param options 配置选项
  * @returns 认证相关对象
- * 
+ *
  * @example
  * ```typescript
  * const auth = useAuth({
@@ -91,22 +91,22 @@ export interface UseAuthReturn {
  *   userApi: '/api/users/me',
  *   registerApi: '/api/users/register',
  * });
- * 
+ *
  * // 在组件中使用
  * if (auth.isLoading) {
  *   return <div>加载中...</div>;
  * }
- * 
+ *
  * if (auth.isAuthenticated) {
  *   return <div>欢迎, {auth.user?.username}</div>;
  * }
- * 
+ *
  * // 登录
  * await auth.login({
  *   username: 'john',
  *   password: 'password123'
  * });
- * 
+ *
  * // 登出
  * await auth.logout();
  * ```
@@ -124,16 +124,16 @@ export function useAuth(options?: {
   userField?: string;
 }): UseAuthReturn {
   const {
-    loginApi = '/api/users/login',
-    logoutApi = '/api/users/logout',
-    userApi = '/api/users/me',
-    registerApi = '/api/users/register',
-    userField = 'user',
+    loginApi = "/api/users/login",
+    logoutApi = "/api/users/logout",
+    userApi = "/api/users/me",
+    registerApi = "/api/users/register",
+    userField = "user",
   } = options || {};
 
   // 用户信息
   const [user, setUser] = useState<User | null>(null);
-  
+
   // 是否正在加载
   const [isLoading, setIsLoading] = useState(true);
 
@@ -159,7 +159,7 @@ export function useAuth(options?: {
         [userField]: userData,
       }));
     } catch (error) {
-      console.error('[useAuth] 更新 Store 失败:', error);
+      console.error("[useAuth] 更新 Store 失败:", error);
     }
   }, [userField]);
 
@@ -179,9 +179,9 @@ export function useAuth(options?: {
 
       // 从 API 获取当前用户
       const response = await fetch(userApi, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
@@ -194,7 +194,7 @@ export function useAuth(options?: {
         }
       }
     } catch (error) {
-      console.error('[useAuth] 检查登录状态失败:', error);
+      console.error("[useAuth] 检查登录状态失败:", error);
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -204,41 +204,46 @@ export function useAuth(options?: {
   /**
    * 登录
    */
-  const login = useCallback(async (credentials: LoginCredentials): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(loginApi, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
+  const login = useCallback(
+    async (credentials: LoginCredentials): Promise<boolean> => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(loginApi, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(credentials),
+        });
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: '登录失败' }));
-        throw new Error(error.message || '登录失败');
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({
+            message: "登录失败",
+          }));
+          throw new Error(error.message || "登录失败");
+        }
+
+        const result = await response.json();
+
+        // 获取用户信息
+        const userData = result.user || result.data;
+        if (userData) {
+          setUser(userData);
+          updateUserInStore(userData);
+          return true;
+        }
+
+        return false;
+      } catch (error) {
+        console.error("[useAuth] 登录失败:", error);
+        setUser(null);
+        return false;
+      } finally {
+        setIsLoading(false);
       }
-
-      const result = await response.json();
-      
-      // 获取用户信息
-      const userData = result.user || result.data;
-      if (userData) {
-        setUser(userData);
-        updateUserInStore(userData);
-        return true;
-      }
-
-      return false;
-    } catch (error) {
-      console.error('[useAuth] 登录失败:', error);
-      setUser(null);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [loginApi, updateUserInStore]);
+    },
+    [loginApi, updateUserInStore],
+  );
 
   /**
    * 登出
@@ -248,13 +253,13 @@ export function useAuth(options?: {
     try {
       // 调用登出 API
       await fetch(logoutApi, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
     } catch (error) {
-      console.error('[useAuth] 登出 API 调用失败:', error);
+      console.error("[useAuth] 登出 API 调用失败:", error);
     } finally {
       // 无论 API 调用是否成功，都清除本地状态
       setUser(null);
@@ -270,20 +275,22 @@ export function useAuth(options?: {
     setIsLoading(true);
     try {
       const response = await fetch(registerApi, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: '注册失败' }));
-        throw new Error(error.message || '注册失败');
+        const error = await response.json().catch(() => ({
+          message: "注册失败",
+        }));
+        throw new Error(error.message || "注册失败");
       }
 
       const result = await response.json();
-      
+
       // 注册成功后，如果有用户信息，自动登录
       const userData = result.user || result.data;
       if (userData) {
@@ -294,7 +301,7 @@ export function useAuth(options?: {
 
       return false;
     } catch (error) {
-      console.error('[useAuth] 注册失败:', error);
+      console.error("[useAuth] 注册失败:", error);
       return false;
     } finally {
       setIsLoading(false);
@@ -339,4 +346,3 @@ export function useAuth(options?: {
     checkAuth,
   };
 }
-

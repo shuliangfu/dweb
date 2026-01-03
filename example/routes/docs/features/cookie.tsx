@@ -40,8 +40,7 @@ export async function load({ getCookie, setCookie }: LoadContext) {
 }`;
 
   // 基本使用
-  const basicUsageCode =
-    `import { CookieManager } from "@dreamer/dweb";
+  const basicUsageCode = `import { CookieManager } from "@dreamer/dweb";
 
 // 创建 Cookie 管理器
 const cookieManager = new CookieManager("your-secret-key");
@@ -125,16 +124,19 @@ const cookie = cookieManager.set("cart", cartData, {
 });
 res.setHeader("Set-Cookie", cookie);`;
 
-  const setAsyncCode = `const cookie = await cookieManager.setAsync("session", "session-id", {
+  const setAsyncCode =
+    `const cookie = await cookieManager.setAsync("session", "session-id", {
   maxAge: 3600,
   httpOnly: true,
 });
 res.setHeader("Set-Cookie", cookie);`;
 
-  const parseCode = `const cookies = cookieManager.parse(req.headers.get("Cookie"));
+  const parseCode =
+    `const cookies = cookieManager.parse(req.headers.get("Cookie"));
 const theme = cookies.theme;`;
 
-  const parseAsyncCode = `const cookies = await cookieManager.parseAsync(req.headers.get("Cookie"));
+  const parseAsyncCode =
+    `const cookies = await cookieManager.parseAsync(req.headers.get("Cookie"));
 const session = cookies.session; // 已通过签名验证`;
 
   const deleteCode = `const deleteCookie = cookieManager.delete("session", {
@@ -154,7 +156,8 @@ const cookie = await cookieManager.setAsync("session", sessionId, {
 
   const content = {
     title: "Cookie",
-    description: "DWeb 框架提供了完整的 Cookie 管理功能，支持 Cookie 的设置、读取、删除和签名。",
+    description:
+      "DWeb 框架提供了完整的 Cookie 管理功能，支持 Cookie 的设置、读取、删除和签名。",
     sections: [
       {
         title: "快速开始",

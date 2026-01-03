@@ -7,7 +7,7 @@ export interface Order {
   userId: string;
   items: Array<{ productId: string; quantity: number; price: number }>;
   total: number;
-  status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
+  status: "pending" | "paid" | "shipped" | "delivered" | "cancelled";
   createdAt: string;
 }
 

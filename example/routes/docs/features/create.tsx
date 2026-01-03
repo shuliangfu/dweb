@@ -156,7 +156,8 @@ deno task build:app2`;
 
   const content = {
     title: "项目创建 (create)",
-    description: "使用 DWeb CLI 可以快速创建新项目，支持交互式配置和多种项目模板。",
+    description:
+      "使用 DWeb CLI 可以快速创建新项目，支持交互式配置和多种项目模板。",
     sections: [
       {
         title: "使用 CLI 创建项目",
@@ -211,11 +212,13 @@ deno task build:app2`;
           {
             type: "alert",
             level: "warning",
-            content: "**注意**：`main.ts` 文件是可选的，不是必须的。框架可以通过 CLI 命令（`deno task dev` 或 `deno task start`）自动启动服务器，无需手动创建入口文件。",
+            content:
+              "**注意**：`main.ts` 文件是可选的，不是必须的。框架可以通过 CLI 命令（`deno task dev` 或 `deno task start`）自动启动服务器，无需手动创建入口文件。",
           },
           {
             type: "text",
-            content: "如果你需要自定义应用配置（如添加中间件、插件等），可以创建 `main.ts` 文件：",
+            content:
+              "如果你需要自定义应用配置（如添加中间件、插件等），可以创建 `main.ts` 文件：",
           },
           {
             type: "code",

@@ -151,14 +151,16 @@ export default function MyLayout({ children }: { children: ComponentChildren }) 
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "布局系统",
-    description: "DWeb 框架支持布局继承，允许你创建可复用的布局组件，并在多个页面之间共享。",
+    description:
+      "DWeb 框架支持布局继承，允许你创建可复用的布局组件，并在多个页面之间共享。",
     sections: [
       {
         title: "布局继承",
         blocks: [
           {
             type: "text",
-            content: "布局继承是 DWeb 框架的核心特性之一。通过创建 `_layout.tsx` 文件，你可以为特定路径下的所有页面提供统一的布局结构。",
+            content:
+              "布局继承是 DWeb 框架的核心特性之一。通过创建 `_layout.tsx` 文件，你可以为特定路径下的所有页面提供统一的布局结构。",
           },
           {
             type: "subsection",
@@ -167,7 +169,8 @@ export default function MyLayout({ children }: { children: ComponentChildren }) 
             blocks: [
               {
                 type: "text",
-                content: "布局文件使用 `_layout.tsx` 命名约定，放置在路由目录中。布局会自动应用到该目录及其所有子目录的页面。",
+                content:
+                  "布局文件使用 `_layout.tsx` 命名约定，放置在路由目录中。布局会自动应用到该目录及其所有子目录的页面。",
               },
             ],
           },
@@ -269,7 +272,8 @@ export default function MyLayout({ children }: { children: ComponentChildren }) 
             blocks: [
               {
                 type: "text",
-                content: "在某些情况下，你可能不希望某个布局继承父布局。例如，你可能希望文档页面使用完全独立的布局，而不继承根布局。",
+                content:
+                  "在某些情况下，你可能不希望某个布局继承父布局。例如，你可能希望文档页面使用完全独立的布局，而不继承根布局。",
               },
               {
                 type: "text",
@@ -277,7 +281,8 @@ export default function MyLayout({ children }: { children: ComponentChildren }) 
               },
               {
                 type: "text",
-                content: "在布局文件中导出 `export const layout = false` 可以禁用布局继承：",
+                content:
+                  "在布局文件中导出 `export const layout = false` 可以禁用布局继承：",
               },
               {
                 type: "code",
@@ -311,7 +316,8 @@ export default function MyLayout({ children }: { children: ComponentChildren }) 
         blocks: [
           {
             type: "text",
-            content: "布局组件接收一个 `children` 属性，包含子页面或子布局的内容：",
+            content:
+              "布局组件接收一个 `children` 属性，包含子页面或子布局的内容：",
           },
           {
             type: "code",
@@ -327,7 +333,8 @@ export default function MyLayout({ children }: { children: ComponentChildren }) 
             blocks: [
               {
                 type: "code",
-                code: `export default function MyLayout({ children }: LayoutProps) {
+                code:
+                  `export default function MyLayout({ children }: LayoutProps) {
   return (
     <div className="layout-wrapper">
       <header>导航栏</header>
@@ -352,7 +359,8 @@ export default function MyLayout({ children }: { children: ComponentChildren }) 
             blocks: [
               {
                 type: "text",
-                content: "**布局组件不能定义为 `async function`**。如果需要进行异步操作（如数据获取），请在组件内部使用 `useEffect` 钩子处理。",
+                content:
+                  "**布局组件不能定义为 `async function`**。如果需要进行异步操作（如数据获取），请在组件内部使用 `useEffect` 钩子处理。",
               },
               {
                 type: "text",
@@ -391,7 +399,8 @@ export default async function MyLayout({ children }: LayoutProps) {
             blocks: [
               {
                 type: "text",
-                content: "布局应该只包含结构性的内容，业务逻辑应该放在页面组件中。",
+                content:
+                  "布局应该只包含结构性的内容，业务逻辑应该放在页面组件中。",
               },
             ],
           },
@@ -433,7 +442,8 @@ export default async function MyLayout({ children }: LayoutProps) {
             blocks: [
               {
                 type: "text",
-                content: "在布局中使用响应式类（如 Tailwind CSS）确保在不同设备上正常显示：",
+                content:
+                  "在布局中使用响应式类（如 Tailwind CSS）确保在不同设备上正常显示：",
               },
               {
                 type: "code",
@@ -474,7 +484,8 @@ export default async function MyLayout({ children }: LayoutProps) {
             blocks: [
               {
                 type: "text",
-                content: "A: 在页面组件中导出 `export const layout = false`，该页面将不使用任何布局。",
+                content:
+                  "A: 在页面组件中导出 `export const layout = false`，该页面将不使用任何布局。",
               },
             ],
           },
@@ -485,7 +496,8 @@ export default async function MyLayout({ children }: LayoutProps) {
             blocks: [
               {
                 type: "text",
-                content: "A: 是的。如果父布局设置了 `layout = false`，子布局也不会继承更上层的布局。",
+                content:
+                  "A: 是的。如果父布局设置了 `layout = false`，子布局也不会继承更上层的布局。",
               },
             ],
           },
@@ -496,7 +508,8 @@ export default async function MyLayout({ children }: LayoutProps) {
             blocks: [
               {
                 type: "text",
-                content: "A: 布局组件只接收 `children` 属性，不能直接访问页面数据。如果需要共享数据，可以使用 Context 或其他状态管理方案。",
+                content:
+                  "A: 布局组件只接收 `children` 属性，不能直接访问页面数据。如果需要共享数据，可以使用 Context 或其他状态管理方案。",
               },
             ],
           },

@@ -11,7 +11,8 @@ export const metadata = {
 };
 
 export default function UrlPage() {
-  const quickStartCode = `import { parseUrl, buildUrl, getQueryParams } from "@dreamer/dweb/utils";
+  const quickStartCode =
+    `import { parseUrl, buildUrl, getQueryParams } from "@dreamer/dweb/utils";
 
 // 解析 URL
 const parsed = parseUrl('https://example.com:8080/path?key=value#hash');
@@ -46,7 +47,8 @@ buildUrl('/api/users', { page: 1, limit: 10 });
 buildUrl('/api/users', { page: 1 }, 'https://api.example.com');
 // 'https://api.example.com/api/users?page=1'`;
 
-  const queryParamsCode = `import { getQueryParams, getQueryParam, setQueryParams, updateQueryParams, removeQueryParams } from "@dreamer/dweb/utils";
+  const queryParamsCode =
+    `import { getQueryParams, getQueryParam, setQueryParams, updateQueryParams, removeQueryParams } from "@dreamer/dweb/utils";
 
 // 获取所有查询参数
 const params = getQueryParams('https://example.com?page=1&limit=10');
@@ -82,7 +84,8 @@ getHash(); // 使用当前页面 URL
 setHash('https://example.com', 'section1');
 // 'https://example.com#section1'`;
 
-  const utilsCode = `import { isAbsoluteUrl, joinUrl, normalizeUrl } from "@dreamer/dweb/utils";
+  const utilsCode =
+    `import { isAbsoluteUrl, joinUrl, normalizeUrl } from "@dreamer/dweb/utils";
 
 // 判断是否为绝对 URL
 isAbsoluteUrl('https://example.com'); // true

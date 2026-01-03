@@ -6,12 +6,12 @@ import DocRenderer from "@components/DocRenderer.tsx";
 
 export const metadata = {
   title: "时间工具 - DWeb 框架文档",
-  description:
-    "DWeb 框架的时间计算工具函数，提供时间计算、转换、判断等功能",
+  description: "DWeb 框架的时间计算工具函数，提供时间计算、转换、判断等功能",
 };
 
 export default function TimePage() {
-  const quickStartCode = `import { addDays, diffDays, isToday, startOfDay } from "@dreamer/dweb/utils";
+  const quickStartCode =
+    `import { addDays, diffDays, isToday, startOfDay } from "@dreamer/dweb/utils";
 
 // 添加天数
 const tomorrow = addDays(new Date(), 1);
@@ -27,7 +27,8 @@ if (isToday(date)) {
 // 获取一天的开始时间
 const start = startOfDay(new Date());`;
 
-  const addTimeCode = `import { addDays, addHours, addMinutes, addMonths, addYears } from "@dreamer/dweb/utils";
+  const addTimeCode =
+    `import { addDays, addHours, addMinutes, addMonths, addYears } from "@dreamer/dweb/utils";
 
 // 添加天数
 addDays(new Date(), 7); // 7 天后
@@ -46,7 +47,8 @@ addMonths(new Date(), 1); // 1 个月后
 // 添加年数
 addYears(new Date(), 1); // 1 年后`;
 
-  const diffCode = `import { diffDays, diffHours, diffMinutes, diffSeconds } from "@dreamer/dweb/utils";
+  const diffCode =
+    `import { diffDays, diffHours, diffMinutes, diffSeconds } from "@dreamer/dweb/utils";
 
 // 计算天数差
 diffDays(new Date('2024-01-01'), new Date('2024-01-10')); // 9
@@ -60,7 +62,8 @@ diffMinutes(new Date('2024-01-01 10:00'), new Date('2024-01-01 10:30')); // 30
 // 计算秒数差
 diffSeconds(new Date('2024-01-01 10:00:00'), new Date('2024-01-01 10:00:30')); // 30`;
 
-  const isDateCode = `import { isToday, isYesterday, isTomorrow, isSameDay } from "@dreamer/dweb/utils";
+  const isDateCode =
+    `import { isToday, isYesterday, isTomorrow, isSameDay } from "@dreamer/dweb/utils";
 
 // 判断是否为今天
 isToday(new Date()); // true

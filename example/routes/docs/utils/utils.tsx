@@ -6,12 +6,12 @@ import DocRenderer from "@components/DocRenderer.tsx";
 
 export const metadata = {
   title: "工具函数库 - DWeb 框架文档",
-  description:
-    "DWeb 框架的常用工具函数，包括防抖、节流、深拷贝、对象操作等",
+  description: "DWeb 框架的常用工具函数，包括防抖、节流、深拷贝、对象操作等",
 };
 
 export default function UtilsPage() {
-  const quickStartCode = `import { debounce, deepClone, isEmpty, pick } from "@dreamer/dweb/utils";
+  const quickStartCode =
+    `import { debounce, deepClone, isEmpty, pick } from "@dreamer/dweb/utils";
 
 // 防抖函数
 const debouncedSearch = debounce((query: string) => {
@@ -262,8 +262,7 @@ const result = await retry(
             blocks: [
               {
                 type: "text",
-                content:
-                  "使用路径字符串安全地获取或设置嵌套对象的属性值。",
+                content: "使用路径字符串安全地获取或设置嵌套对象的属性值。",
               },
               {
                 type: "code",

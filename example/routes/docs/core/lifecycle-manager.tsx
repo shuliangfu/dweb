@@ -76,14 +76,16 @@ interface LifecycleHooks {
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "LifecycleManager (生命周期管理器)",
-    description: "`LifecycleManager` 管理应用的生命周期，统一处理启动、运行、关闭流程，支持生命周期钩子。",
+    description:
+      "`LifecycleManager` 管理应用的生命周期，统一处理启动、运行、关闭流程，支持生命周期钩子。",
     sections: [
       {
         title: "概述",
         blocks: [
           {
             type: "text",
-            content: "`LifecycleManager` 负责管理应用的生命周期阶段，支持生命周期钩子，确保应用的正确启动和关闭。",
+            content:
+              "`LifecycleManager` 负责管理应用的生命周期阶段，支持生命周期钩子，确保应用的正确启动和关闭。",
           },
         ],
       },

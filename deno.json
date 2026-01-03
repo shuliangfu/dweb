@@ -1,7 +1,7 @@
 {
   "vendor": true,
   "name": "@dreamer/dweb",
-  "version": "2.3.2-beta.4",
+  "version": "2.3.2-beta.5",
   "license": "MIT",
   "exports": {
     ".": "./src/mod.ts",
@@ -93,35 +93,6 @@
       "tags": ["recommended"],
       "exclude": ["no-explicit-any"]
     }
-  },
-  "exclude": [
-    "**/example/**",
-    "**/tests/**",
-    "**/coverage/**",
-    "**/node_modules/**",
-    "**/vendor/**",
-    "**/dist/**",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/deno.lock"
-  ],
-  "publish": {
-    "include": ["src/**", "deno.json", "README.md", "LICENSE", "SECURITY.md"],
-    "exclude": [
-      "**/example/**",
-      "**/tests/**",
-      "**/coverage/**",
-      "**/node_modules/**",
-      "**/vendor/**",
-      "**/dist/**",
-      "**/*.test.ts",
-      "**/*.test.tsx",
-      "**/deno.lock",
-      "**/.git/**",
-      "**/docs/**",
-      "src/features/database/adapters/mysql.ts",
-      "!src/server/build/**"
-    ]
   },
   "compilerOptions": {
     "jsx": "react-jsx",

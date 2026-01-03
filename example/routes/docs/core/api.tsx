@@ -314,7 +314,8 @@ export default {
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "API 路由",
-    description: "DWeb 框架支持两种 API 路由模式：**Method 模式**（默认）和 **REST 模式**。两种模式是互斥的，通过 `dweb.config.ts` 中的 `routes.apiMode` 配置项选择。",
+    description:
+      "DWeb 框架支持两种 API 路由模式：**Method 模式**（默认）和 **REST 模式**。两种模式是互斥的，通过 `dweb.config.ts` 中的 `routes.apiMode` 配置项选择。",
     sections: [
       {
         title: "配置 API 路由模式",
@@ -343,7 +344,8 @@ export default {
         blocks: [
           {
             type: "text",
-            content: "Method 模式通过 URL 路径指定方法名，**URL 必须使用中划线格式（kebab-case）**，函数名可以使用驼峰格式（camelCase）。",
+            content:
+              "Method 模式通过 URL 路径指定方法名，**URL 必须使用中划线格式（kebab-case）**，函数名可以使用驼峰格式（camelCase）。",
           },
           {
             type: "alert",
@@ -445,7 +447,8 @@ curl -X DELETE http://localhost:3000/api/users/123`,
         blocks: [
           {
             type: "text",
-            content: "所有 API 路由处理函数都接收一个 `ApiContext` 对象作为参数，该对象包含处理请求所需的所有信息。",
+            content:
+              "所有 API 路由处理函数都接收一个 `ApiContext` 对象作为参数，该对象包含处理请求所需的所有信息。",
           },
           {
             type: "code",

@@ -17,12 +17,12 @@ interface HeaderProps {
  * @param props 组件属性
  * @returns JSX 元素
  */
-export default function Header({ 
-  title, 
-  subtitle, 
-  centered = true 
+export default function Header({
+  title,
+  subtitle,
+  centered = true,
 }: HeaderProps) {
-  const containerClasses = centered ? 'text-center' : '';
+  const containerClasses = centered ? "text-center" : "";
 
   return (
     <div className={containerClasses}>
@@ -37,4 +37,3 @@ export default function Header({
     </div>
   );
 }
-

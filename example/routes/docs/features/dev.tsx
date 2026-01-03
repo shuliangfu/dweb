@@ -87,7 +87,8 @@ export default {
 
   const content = {
     title: "开发服务器 (dev)",
-    description: "DWeb 框架的开发服务器提供了强大的开发体验，包括热更新、自动路由扫描、错误提示等功能。",
+    description:
+      "DWeb 框架的开发服务器提供了强大的开发体验，包括热更新、自动路由扫描、错误提示等功能。",
     sections: [
       {
         title: "启动开发服务器",
@@ -119,7 +120,8 @@ export default {
           {
             type: "alert",
             level: "info",
-            content: "**命令格式说明**：\n- `dev` - 单应用模式，启动默认应用\n- `dev:app-name` - 多应用模式，启动指定名称的应用\n- 应用名称必须与 `dweb.config.ts` 中 `apps` 配置的键名一致",
+            content:
+              "**命令格式说明**：\n- `dev` - 单应用模式，启动默认应用\n- `dev:app-name` - 多应用模式，启动指定名称的应用\n- 应用名称必须与 `dweb.config.ts` 中 `apps` 配置的键名一致",
           },
         ],
       },
@@ -157,7 +159,8 @@ export default {
           },
           {
             type: "text",
-            content: "更多关于 HMR 的详细信息，请参考 [热模块替换 (HMR)](/docs/features/hmr) 文档。",
+            content:
+              "更多关于 HMR 的详细信息，请参考 [热模块替换 (HMR)](/docs/features/hmr) 文档。",
           },
         ],
       },

@@ -7,19 +7,22 @@ import type { PageProps } from "@dreamer/dweb";
 
 export const metadata = {
   title: "交互示例 - DWeb 框架使用示例",
-  description: "DWeb 框架的交互示例，包括点击事件、接口请求、表单提交、状态管理等完整示例代码",
+  description:
+    "DWeb 框架的交互示例，包括点击事件、接口请求、表单提交、状态管理等完整示例代码",
   keywords: "DWeb, 示例, 交互示例, API 路由, 表单提交, Preact Hooks, 状态管理",
   author: "DWeb",
 };
 
-export const renderMode = 'csr';
+export const renderMode = "csr";
 
 /**
  * 示例列表页面组件
  * @param props 页面属性
  * @returns JSX 元素
  */
-export default function ExamplesIndexPage({ params: _params, query: _query, data: _data }: PageProps) {
+export default function ExamplesIndexPage(
+  { params: _params, query: _query, data: _data }: PageProps,
+) {
   const examples = [
     {
       title: "点击事件",
@@ -51,7 +54,8 @@ export default function ExamplesIndexPage({ params: _params, query: _query, data
     },
     {
       title: "图片上传",
-      description: "演示如何上传图片文件到服务器，支持多文件选择、图片预览等功能",
+      description:
+        "演示如何上传图片文件到服务器，支持多文件选择、图片预览等功能",
       path: "/examples/image-upload",
       icon: "🖼️",
       category: "高级示例",
@@ -73,7 +77,8 @@ export default function ExamplesIndexPage({ params: _params, query: _query, data
           欢迎来到示例中心
         </h1>
         <p className="text-lg text-gray-600 dark:text-gray-300">
-          这里展示了 DWeb 框架的各种交互功能示例，帮助你快速学习和理解框架的使用方法。
+          这里展示了 DWeb
+          框架的各种交互功能示例，帮助你快速学习和理解框架的使用方法。
         </p>
       </div>
 

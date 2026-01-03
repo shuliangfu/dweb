@@ -101,7 +101,8 @@ export default function Home() {
 
   const content = {
     title: "热模块替换 (HMR)",
-    description: "DWeb 框架提供了强大的热模块替换（HMR）功能，在开发模式下自动监听文件变化并实时更新页面，无需手动刷新浏览器。",
+    description:
+      "DWeb 框架提供了强大的热模块替换（HMR）功能，在开发模式下自动监听文件变化并实时更新页面，无需手动刷新浏览器。",
     sections: [
       {
         title: "快速开始",

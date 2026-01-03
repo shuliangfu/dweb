@@ -97,14 +97,16 @@ server.use(errorHandler);`;
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "中间件系统",
-    description: "DWeb 框架提供了强大的中间件系统，允许你在请求处理流程中插入自定义逻辑。",
+    description:
+      "DWeb 框架提供了强大的中间件系统，允许你在请求处理流程中插入自定义逻辑。",
     sections: [
       {
         title: "什么是中间件",
         blocks: [
           {
             type: "text",
-            content: "中间件是一个函数，接收请求、响应和下一个中间件函数作为参数。中间件可以：",
+            content:
+              "中间件是一个函数，接收请求、响应和下一个中间件函数作为参数。中间件可以：",
           },
           {
             type: "list",
@@ -151,7 +153,8 @@ server.use(errorHandler);`;
         blocks: [
           {
             type: "text",
-            content: "中间件按照添加的顺序执行。在调用 `next()` 之前执行的代码会在请求处理前运行，在调用 `next()` 之后执行的代码会在请求处理后运行：",
+            content:
+              "中间件按照添加的顺序执行。在调用 `next()` 之前执行的代码会在请求处理前运行，在调用 `next()` 之后执行的代码会在请求处理后运行：",
           },
           {
             type: "code",

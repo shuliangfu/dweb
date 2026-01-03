@@ -110,14 +110,16 @@ const routeConfig = normalizeRouteConfig({
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "配置管理 (Config)",
-    description: "DWeb 框架提供了灵活的配置加载机制，支持单应用和多应用模式。配置文件使用 TypeScript，提供完整的类型支持。",
+    description:
+      "DWeb 框架提供了灵活的配置加载机制，支持单应用和多应用模式。配置文件使用 TypeScript，提供完整的类型支持。",
     sections: [
       {
         title: "加载配置",
         blocks: [
           {
             type: "text",
-            content: "框架会自动查找并加载 `dweb.config.ts` 配置文件。你也可以手动加载配置：",
+            content:
+              "框架会自动查找并加载 `dweb.config.ts` 配置文件。你也可以手动加载配置：",
           },
           {
             type: "code",
@@ -166,7 +168,8 @@ const routeConfig = normalizeRouteConfig({
         blocks: [
           {
             type: "text",
-            content: "多应用模式允许你在一个配置文件中定义多个应用，每个应用有独立的服务器、路由和插件配置：",
+            content:
+              "多应用模式允许你在一个配置文件中定义多个应用，每个应用有独立的服务器、路由和插件配置：",
           },
           {
             type: "code",
@@ -175,7 +178,8 @@ const routeConfig = normalizeRouteConfig({
           },
           {
             type: "text",
-            content: "启动指定应用：`deno run -A jsr:@dreamer/dweb/cli dev:app-name`",
+            content:
+              "启动指定应用：`deno run -A jsr:@dreamer/dweb/cli dev:app-name`",
           },
         ],
       },
@@ -184,7 +188,8 @@ const routeConfig = normalizeRouteConfig({
         blocks: [
           {
             type: "text",
-            content: "可以在配置文件中使用环境变量，方便在不同环境中使用不同的配置：",
+            content:
+              "可以在配置文件中使用环境变量，方便在不同环境中使用不同的配置：",
           },
           {
             type: "code",

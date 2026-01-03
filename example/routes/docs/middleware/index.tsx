@@ -51,7 +51,8 @@ server.use(bodyParser());  // 3. 最后执行
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "中间件概述",
-    description: "DWeb 框架提供了丰富的内置中间件，用于处理常见的 HTTP 请求和响应任务。",
+    description:
+      "DWeb 框架提供了丰富的内置中间件，用于处理常见的 HTTP 请求和响应任务。",
     sections: [
       {
         title: "目录结构",

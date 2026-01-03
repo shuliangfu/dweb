@@ -194,7 +194,8 @@ export default function ErrorPage({ error }: ErrorProps) {
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "路由约定文件",
-    description: "DWeb 框架使用文件系统路由，并支持以 `_` 开头的特殊约定文件。这些文件具有特殊的功能，用于定义布局、中间件、错误页面等。",
+    description:
+      "DWeb 框架使用文件系统路由，并支持以 `_` 开头的特殊约定文件。这些文件具有特殊的功能，用于定义布局、中间件、错误页面等。",
     sections: [
       {
         title: "约定文件概览",
@@ -248,7 +249,8 @@ export default function ErrorPage({ error }: ErrorProps) {
         blocks: [
           {
             type: "text",
-            content: "`_app.tsx` 是框架**必需**的文件，用于提供完整的 HTML 文档结构，包裹所有页面内容。",
+            content:
+              "`_app.tsx` 是框架**必需**的文件，用于提供完整的 HTML 文档结构，包裹所有页面内容。",
           },
           {
             type: "subsection",
@@ -304,7 +306,8 @@ export default function ErrorPage({ error }: ErrorProps) {
         blocks: [
           {
             type: "text",
-            content: "`_layout.tsx` 用于定义页面布局，支持布局继承。详细说明请参考 [布局系统文档](/docs/layout)。",
+            content:
+              "`_layout.tsx` 用于定义页面布局，支持布局继承。详细说明请参考 [布局系统文档](/docs/layout)。",
           },
           {
             type: "subsection",
@@ -344,7 +347,8 @@ export default function ErrorPage({ error }: ErrorProps) {
             blocks: [
               {
                 type: "text",
-                content: "**布局组件不能定义为 `async function`**。如果需要进行异步操作（如数据获取），请在组件内部使用 `useEffect` 钩子处理。",
+                content:
+                  "**布局组件不能定义为 `async function`**。如果需要进行异步操作（如数据获取），请在组件内部使用 `useEffect` 钩子处理。",
               },
             ],
           },
@@ -356,7 +360,8 @@ export default function ErrorPage({ error }: ErrorProps) {
         blocks: [
           {
             type: "text",
-            content: "`_middleware.ts` 用于定义路由级中间件，可以为特定路径及其子路径应用中间件逻辑。详细说明请参考 [路由级中间件文档](/docs/middleware/route-middleware)。",
+            content:
+              "`_middleware.ts` 用于定义路由级中间件，可以为特定路径及其子路径应用中间件逻辑。详细说明请参考 [路由级中间件文档](/docs/middleware/route-middleware)。",
           },
           {
             type: "subsection",
@@ -433,7 +438,8 @@ export default function ErrorPage({ error }: ErrorProps) {
         blocks: [
           {
             type: "text",
-            content: "页面组件是路由目录中的普通文件（如 `index.tsx`、`about.tsx`），用于定义页面的内容和逻辑。",
+            content:
+              "页面组件是路由目录中的普通文件（如 `index.tsx`、`about.tsx`），用于定义页面的内容和逻辑。",
           },
           {
             type: "subsection",
@@ -454,7 +460,8 @@ export default function ErrorPage({ error }: ErrorProps) {
             blocks: [
               {
                 type: "text",
-                content: "**页面组件不能定义为 `async function`**。如果需要进行异步操作（如数据获取），请在组件内部使用 `useEffect` 钩子处理，或者使用 `load` 函数在服务端获取数据。",
+                content:
+                  "**页面组件不能定义为 `async function`**。如果需要进行异步操作（如数据获取），请在组件内部使用 `useEffect` 钩子处理，或者使用 `load` 函数在服务端获取数据。",
               },
               {
                 type: "text",
@@ -554,7 +561,8 @@ export default function ErrorPage({ error }: ErrorProps) {
         blocks: [
           {
             type: "text",
-            content: "`_error.tsx` 用于定义通用错误页面，处理服务器错误、渲染错误等。",
+            content:
+              "`_error.tsx` 用于定义通用错误页面，处理服务器错误、渲染错误等。",
           },
           {
             type: "subsection",
@@ -686,7 +694,8 @@ export default function ErrorPage({ error }: ErrorProps) {
             blocks: [
               {
                 type: "text",
-                content: "`_app.tsx` 应该只包含 HTML 文档结构，业务逻辑应该放在布局或页面组件中。",
+                content:
+                  "`_app.tsx` 应该只包含 HTML 文档结构，业务逻辑应该放在布局或页面组件中。",
               },
             ],
           },
@@ -749,7 +758,8 @@ export default function ErrorPage({ error }: ErrorProps) {
             blocks: [
               {
                 type: "text",
-                content: "A: 不可以。`_app.tsx` 只能有一个，必须放在 `routes/` 根目录。",
+                content:
+                  "A: 不可以。`_app.tsx` 只能有一个，必须放在 `routes/` 根目录。",
               },
             ],
           },
@@ -800,11 +810,13 @@ export default function ErrorPage({ error }: ErrorProps) {
             blocks: [
               {
                 type: "text",
-                content: "A: 可以。错误页面组件会接收 `error` 属性，包含错误信息：",
+                content:
+                  "A: 可以。错误页面组件会接收 `error` 属性，包含错误信息：",
               },
               {
                 type: "code",
-                code: `export default function ErrorPage({ error }: { error?: { message?: string } }) {
+                code:
+                  `export default function ErrorPage({ error }: { error?: { message?: string } }) {
   return <div>{error?.message || "未知错误"}</div>;
 }`,
                 language: "tsx",

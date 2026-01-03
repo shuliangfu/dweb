@@ -54,14 +54,16 @@ const loadedConfig = configManager.getConfig();`;
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "ConfigManager (配置管理器)",
-    description: "`ConfigManager` 统一管理应用配置的加载、验证和访问，提供类型安全的配置访问和配置合并功能。",
+    description:
+      "`ConfigManager` 统一管理应用配置的加载、验证和访问，提供类型安全的配置访问和配置合并功能。",
     sections: [
       {
         title: "概述",
         blocks: [
           {
             type: "text",
-            content: "`ConfigManager` 封装了配置加载逻辑，提供统一的配置访问接口。",
+            content:
+              "`ConfigManager` 封装了配置加载逻辑，提供统一的配置访问接口。",
           },
         ],
       },
@@ -142,7 +144,8 @@ const loadedConfig = configManager.getConfig();`;
               {
                 type: "api",
                 name: "load()",
-                description: "加载配置文件。功能：从配置文件加载配置、验证配置格式、规范化配置值。",
+                description:
+                  "加载配置文件。功能：从配置文件加载配置、验证配置格式、规范化配置值。",
                 code: "await configManager.load();",
               },
               {

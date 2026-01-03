@@ -4,9 +4,9 @@
  * 访问方式：POST /api/upload/upload-image
  */
 
-import type { ApiContext } from '@dreamer/dweb';
-import { handleFileUpload } from '@dreamer/dweb/plugins';
-import * as path from '@std/path';
+import type { ApiContext } from "@dreamer/dweb";
+import { handleFileUpload } from "@dreamer/dweb/plugins";
+import * as path from "@std/path";
 
 /**
  * 存储待删除的文件路径和定时器
@@ -35,7 +35,7 @@ function scheduleFileDeletion(filePath: string): void {
           // 删除文件
           await Deno.remove(filePath);
           console.log(`✅ [自动删除] 文件已删除: ${filePath}`);
-          
+
           // 尝试删除空目录
           const dirPath = path.dirname(filePath);
           try {
@@ -59,7 +59,7 @@ function scheduleFileDeletion(filePath: string): void {
         // 文件不存在，忽略
         console.log(`ℹ️  [自动删除] 文件不存在，跳过: ${filePath}`);
       }
-      
+
       // 从 Map 中移除定时器
       deletionTimers.delete(filePath);
     } catch (error) {
@@ -79,11 +79,11 @@ function scheduleFileDeletion(filePath: string): void {
 export async function uploadImage({ req, res }: ApiContext) {
   try {
     const result = await handleFileUpload(req, {
-      uploadDir: './uploads',
+      uploadDir: "./uploads",
       maxFileSize: 10 * 1024 * 1024, // 10MB
-      allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+      allowedTypes: ["image/jpeg", "image/png", "image/gif", "image/webp"],
       allowMultiple: true,
-      namingStrategy: 'uuid',
+      namingStrategy: "uuid",
       createSubdirs: true,
       // 子目录策略（支持模板格式或预设值）
       // 模板格式示例：
@@ -96,7 +96,7 @@ export async function uploadImage({ req, res }: ApiContext) {
       //   'year-month-day' - 等同于 'YYYY/mm/dd'
       //   'year-month' - 等同于 'YYYY/mm'
       //   'year' - 等同于 'YYYY'
-      subdirStrategy: 'YYYY',
+      subdirStrategy: "YYYY",
     });
 
     if (result.success && result.files) {
@@ -106,28 +106,28 @@ export async function uploadImage({ req, res }: ApiContext) {
         const filePath = path.isAbsolute(file.path)
           ? file.path
           : path.resolve(Deno.cwd(), file.path);
-        
+
         // 设置定时删除
         scheduleFileDeletion(filePath);
       });
 
       return res.json({
         success: true,
-        message: '上传成功，文件将在 1 分钟后自动删除',
+        message: "上传成功，文件将在 1 分钟后自动删除",
         data: result.files,
-        warning: '注意：上传的文件会在 1 分钟后自动删除，请及时保存',
+        warning: "注意：上传的文件会在 1 分钟后自动删除，请及时保存",
       });
     } else {
       return res.json({
         success: false,
-        message: result.error || '上传失败',
+        message: result.error || "上传失败",
         errors: result.errors,
       }, { status: 400 });
     }
   } catch (error) {
     return res.json({
       success: false,
-      message: error instanceof Error ? error.message : '上传失败',
+      message: error instanceof Error ? error.message : "上传失败",
     }, { status: 500 });
   }
 }

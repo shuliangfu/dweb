@@ -144,10 +144,12 @@ app.use(cors());
       <div className="relative overflow-hidden bg-linear-to-r bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 py-24">
         {/* 背景装饰 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-           <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
-           <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-500/20 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2">
+          </div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-500/20 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2">
+          </div>
         </div>
-        
+
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
           <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-6 tracking-tight">
             功能特性
@@ -181,19 +183,18 @@ app.use(cors());
 
           <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
             {/* 文件系统路由示例 */}
-            <CodeBlock 
-              code={routingExample} 
-              language="typescript" 
-              title="文件系统路由" 
+            <CodeBlock
+              code={routingExample}
+              language="typescript"
+              title="文件系统路由"
             />
 
             {/* 渲染模式示例 */}
-            <CodeBlock 
-              code={renderModeExample} 
-              language="typescript" 
-              title="渲染模式配置" 
+            <CodeBlock
+              code={renderModeExample}
+              language="typescript"
+              title="渲染模式配置"
             />
-
           </div>
         </div>
       </div>
@@ -202,8 +203,10 @@ app.use(cors());
       <div className="py-24 bg-gradient-to-r from-orange-600 to-amber-600 dark:from-orange-900 dark:to-amber-900 relative overflow-hidden">
         {/* 背景装饰 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-           <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
-           <div className="absolute right-0 top-0 w-64 h-64 bg-amber-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-white/10 rounded-full blur-3xl">
+          </div>
+          <div className="absolute right-0 top-0 w-64 h-64 bg-amber-500/20 rounded-full blur-3xl">
+          </div>
         </div>
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">

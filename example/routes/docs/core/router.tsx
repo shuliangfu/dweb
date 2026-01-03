@@ -156,15 +156,16 @@ export default function UserPage({ params }: PageProps) {
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "路由系统 (Router)",
-    description: "DWeb 使用文件系统路由，路由文件位于 `routes` 目录。文件路径自动映射为 URL 路径，无需手动配置路由表。",
+    description:
+      "DWeb 使用文件系统路由，路由文件位于 `routes` 目录。文件路径自动映射为 URL 路径，无需手动配置路由表。",
     sections: [
-
       {
         title: "文件系统路由",
         blocks: [
           {
             type: "text",
-            content: "路由文件位于 `routes` 目录。文件路径自动映射为 URL 路径：",
+            content:
+              "路由文件位于 `routes` 目录。文件路径自动映射为 URL 路径：",
           },
           {
             type: "code",
@@ -223,7 +224,8 @@ export default function UserPage({ params }: PageProps) {
           },
           {
             type: "text",
-            content: "访问 `/docs/getting-started/installation` 时，`params.slug` 将是 `['getting-started', 'installation']`。",
+            content:
+              "访问 `/docs/getting-started/installation` 时，`params.slug` 将是 `['getting-started', 'installation']`。",
           },
         ],
       },
@@ -251,7 +253,8 @@ export default function UserPage({ params }: PageProps) {
         blocks: [
           {
             type: "text",
-            content: "`load` 函数在服务端执行，用于在页面渲染前获取数据。返回的数据会自动传递给页面组件的 `data` 属性。",
+            content:
+              "`load` 函数在服务端执行，用于在页面渲染前获取数据。返回的数据会自动传递给页面组件的 `data` 属性。",
           },
           {
             type: "code",
@@ -277,7 +280,8 @@ export default function UserPage({ params }: PageProps) {
         blocks: [
           {
             type: "text",
-            content: "**页面组件不能定义为 `async function`**。如果需要进行异步操作（如数据获取），请使用以下方式：",
+            content:
+              "**页面组件不能定义为 `async function`**。如果需要进行异步操作（如数据获取），请使用以下方式：",
           },
           {
             type: "alert",
@@ -353,7 +357,8 @@ export default function UserPage({ params }: PageProps) {
           },
           {
             type: "text",
-            content: "更多关于约定文件的说明，请参考 [路由约定文档](/docs/routing-conventions)。",
+            content:
+              "更多关于约定文件的说明，请参考 [路由约定文档](/docs/routing-conventions)。",
           },
         ],
       },

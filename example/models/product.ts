@@ -192,12 +192,12 @@ export class Product extends MongoModel {
       return false;
     }
     this["stock"] = currentStock - quantity;
-    
+
     // 如果库存为0，更新状态为售罄
     if (this["stock"] === 0) {
       this["status"] = "sold_out";
     }
-    
+
     await this.save();
     return true;
   }
@@ -209,12 +209,12 @@ export class Product extends MongoModel {
   async increaseStock(quantity: number): Promise<void> {
     const currentStock = this["stock"] as number;
     this["stock"] = currentStock + quantity;
-    
+
     // 如果之前是售罄状态，恢复为活跃状态
     if (this["status"] === "sold_out") {
       this["status"] = "active";
     }
-    
+
     await this.save();
   }
 

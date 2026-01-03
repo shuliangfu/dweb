@@ -40,7 +40,10 @@ export default function DocsLayout({ children, routePath }: LayoutProps) {
       // 路由已变化，滚动内容区域到顶部
       const timer = setTimeout(() => {
         if (contentRef.current) {
-          contentRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+          contentRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         }
       }, 100);
       prevRoutePathRef.current = routePath;

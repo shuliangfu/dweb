@@ -169,7 +169,8 @@ interface WebSocketClientHandlers {
 
   const content = {
     title: "WebSocket",
-    description: "DWeb 框架提供了完整的 WebSocket 支持，包括服务器端和客户端实现，可以实现实时通信功能。",
+    description:
+      "DWeb 框架提供了完整的 WebSocket 支持，包括服务器端和客户端实现，可以实现实时通信功能。",
     sections: [
       {
         title: "快速开始",
@@ -227,7 +228,8 @@ interface WebSocketClientHandlers {
         blocks: [
           {
             type: "text",
-            content: "WebSocket 服务器支持心跳检测，可以自动检测和关闭无效连接：",
+            content:
+              "WebSocket 服务器支持心跳检测，可以自动检测和关闭无效连接：",
           },
           {
             type: "code",

@@ -105,7 +105,8 @@ await upload("/api/upload", file);`;
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "扩展系统",
-    description: "DWeb 框架提供了强大的扩展系统，为原生类型（String、Array、Date、Object、Request）提供实用的扩展方法，以及丰富的辅助函数库，帮助开发者提高开发效率。",
+    description:
+      "DWeb 框架提供了强大的扩展系统，为原生类型（String、Array、Date、Object、Request）提供实用的扩展方法，以及丰富的辅助函数库，帮助开发者提高开发效率。",
     sections: [
       {
         title: "快速开始",
@@ -224,7 +225,8 @@ await upload("/api/upload", file);`;
         blocks: [
           {
             type: "text",
-            content: "你可以注册自定义扩展方法，扩展原生类型的功能。详细说明请参考 [自定义扩展](/docs/extensions/custom) 文档。",
+            content:
+              "你可以注册自定义扩展方法，扩展原生类型的功能。详细说明请参考 [自定义扩展](/docs/extensions/custom) 文档。",
           },
         ],
       },

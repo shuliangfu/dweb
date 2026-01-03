@@ -114,16 +114,30 @@ export default function HomePage(
 ) {
   // 使用 useStore hook 获取响应式状态，类似 useState(exampleStore)
   const state = useExampleStore();
-	const themeState = useThemeStore();
-	
-	const [defaultAccount, setDefaultAccount] = useState<string | undefined>(undefined);
+  const themeState = useThemeStore();
+
+  const [defaultAccount, setDefaultAccount] = useState<string | undefined>(
+    undefined,
+  );
 
   useEffect(() => {
     // 在 useEffect 内部创建异步函数并立即调用
     (async () => {
       const web3 = new Web3Client();
-      // const accounts = await web3.connectWallet();
-      // setDefaultAccount(accounts[0]);
+      const accounts = await web3.connectWallet();
+      setDefaultAccount(accounts[0]);
+
+      console.log({ defaultAccount });
+      console.log({ account: accounts[0] });
+
+      const userInfo = await web3.readContract({
+        address: "0x1462D558A62893CA0Cb249d17d286e4423cFc333",
+        abi: [],
+        functionName: "getUserInfo",
+        args: [accounts[0]],
+        returnType: "tuple(address,address,string,uint256,uint256,uint256)",
+      });
+      console.log(userInfo);
     })();
   }, []);
 
@@ -157,8 +171,7 @@ export default function HomePage(
 
   const { versionString } = data as {
     versionString: string;
-	};
-	
+  };
 
   // 快速开始代码示例
   const quickStartCode = `# 创建新项目

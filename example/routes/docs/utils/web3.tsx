@@ -13,7 +13,8 @@ export const metadata = {
 
 export default function Web3Page() {
   // 快速开始
-  const quickStartCode = `import { createWeb3Client } from "@dreamer/dweb/utils";
+  const quickStartCode =
+    `import { createWeb3Client } from "@dreamer/dweb/utils";
 
 // 创建 Web3 客户端
 const web3 = createWeb3Client({
@@ -66,7 +67,8 @@ const balances = await web3.getBalances([
 ]);`;
 
   // 发送交易
-  const transactionCode = `import { createWeb3Client } from "@dreamer/dweb/utils";
+  const transactionCode =
+    `import { createWeb3Client } from "@dreamer/dweb/utils";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -273,7 +275,8 @@ const logs = await web3.getContractEventLogs(
 );`;
 
   // 扫描合约方法交易
-  const scanMethodCode = `import { createWeb3Client } from "@dreamer/dweb/utils";
+  const scanMethodCode =
+    `import { createWeb3Client } from "@dreamer/dweb/utils";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -322,7 +325,8 @@ while (currentPage <= result.totalPages) {
 }`;
 
   // 其他常用方法
-  const otherMethodsCode = `import { createWeb3Client } from "@dreamer/dweb/utils";
+  const otherMethodsCode =
+    `import { createWeb3Client } from "@dreamer/dweb/utils";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -379,7 +383,8 @@ const hex = bytesToHex(bytes);`;
 
   const content = {
     title: "Web3 工具函数",
-    description: "Web3 操作库提供完整的 Web3 相关功能，包括钱包连接、合约交互、交易处理、事件监听等。支持浏览器钱包（如 MetaMask）和服务端操作。",
+    description:
+      "Web3 操作库提供完整的 Web3 相关功能，包括钱包连接、合约交互、交易处理、事件监听等。支持浏览器钱包（如 MetaMask）和服务端操作。",
     sections: [
       {
         title: "",
@@ -387,7 +392,8 @@ const hex = bytesToHex(bytes);`;
           {
             type: "alert",
             level: "info",
-            content: "**环境兼容性**：客户端/服务端混合使用（钱包连接、签名等功能需要在浏览器环境使用，RPC 调用、合约交互等功能可以在服务端使用）",
+            content:
+              "**环境兼容性**：客户端/服务端混合使用（钱包连接、签名等功能需要在浏览器环境使用，RPC 调用、合约交互等功能可以在服务端使用）",
           },
         ],
       },
@@ -446,17 +452,20 @@ const hex = bytesToHex(bytes);`;
         blocks: [
           {
             type: "text",
-            content: "支持监听新区块、交易、合约事件以及钱包账户变化和链切换。所有事件监听都支持自动重连功能。",
+            content:
+              "支持监听新区块、交易、合约事件以及钱包账户变化和链切换。所有事件监听都支持自动重连功能。",
           },
           {
             type: "alert",
             level: "success",
-            content: "**自动重连特性**：当连接中断时，区块监听、交易监听和合约事件监听会自动尝试重新连接。支持指数退避策略和最大重连次数限制。",
+            content:
+              "**自动重连特性**：当连接中断时，区块监听、交易监听和合约事件监听会自动尝试重新连接。支持指数退避策略和最大重连次数限制。",
           },
           {
             type: "alert",
             level: "info",
-            content: "**历史事件支持**：合约事件监听支持指定 `fromBlock` 参数。当指定起始区块时，系统会先扫描历史事件并触发回调，然后继续监听新事件。历史事件扫描是异步的，不会阻塞新事件的监听。",
+            content:
+              "**历史事件支持**：合约事件监听支持指定 `fromBlock` 参数。当指定起始区块时，系统会先扫描历史事件并触发回调，然后继续监听新事件。历史事件扫描是异步的，不会阻塞新事件的监听。",
           },
           {
             type: "code",
@@ -500,7 +509,8 @@ const hex = bytesToHex(bytes);`;
         blocks: [
           {
             type: "text",
-            content: "扫描合约指定方法的所有调用交易，支持分页和参数解析。适用于获取合约方法的完整调用历史，如用户注册记录等。",
+            content:
+              "扫描合约指定方法的所有调用交易，支持分页和参数解析。适用于获取合约方法的完整调用历史，如用户注册记录等。",
           },
           {
             type: "code",

@@ -30,8 +30,8 @@ interface FeatureSectionProps {
  */
 export default function FeatureSection({
   features,
-  title = '核心特性',
-  subtitle = 'DWeb 提供了现代化 Web 开发所需的所有功能',
+  title = "核心特性",
+  subtitle = "DWeb 提供了现代化 Web 开发所需的所有功能",
 }: FeatureSectionProps) {
   return (
     <div className="py-20 bg-white dark:bg-gray-900">
@@ -53,8 +53,8 @@ export default function FeatureSection({
               key={index}
               className={`relative p-8 rounded-2xl border-2 transition-all hover:shadow-xl ${
                 feature.highlighted
-                  ? 'border-blue-500 dark:border-blue-600 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 shadow-lg dark:shadow-xl'
-                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg dark:hover:shadow-xl'
+                  ? "border-blue-500 dark:border-blue-600 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 shadow-lg dark:shadow-xl"
+                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg dark:hover:shadow-xl"
               }`}
             >
               {/* 图标 */}
@@ -89,4 +89,3 @@ export default function FeatureSection({
     </div>
   );
 }
-

@@ -260,11 +260,13 @@ export default defineConfig({
             blocks: [
               {
                 type: "text",
-                content: "**注意：`main.ts` 文件是可选的，不是必须的。** 框架可以通过 CLI 命令（`deno task dev` 或 `deno task start`）自动启动服务器，无需手动创建入口文件。",
+                content:
+                  "**注意：`main.ts` 文件是可选的，不是必须的。** 框架可以通过 CLI 命令（`deno task dev` 或 `deno task start`）自动启动服务器，无需手动创建入口文件。",
               },
               {
                 type: "text",
-                content: "如果你需要自定义应用配置（如添加中间件、插件等），可以创建 `main.ts` 文件：",
+                content:
+                  "如果你需要自定义应用配置（如添加中间件、插件等），可以创建 `main.ts` 文件：",
               },
               {
                 type: "code",
@@ -497,7 +499,8 @@ docker run -p 3000:3000 dweb-app`,
             blocks: [
               {
                 type: "text",
-                content: "Deno 内置了调试器支持，可以使用 Chrome DevTools 进行调试。",
+                content:
+                  "Deno 内置了调试器支持，可以使用 Chrome DevTools 进行调试。",
               },
               {
                 type: "text",

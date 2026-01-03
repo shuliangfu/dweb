@@ -149,7 +149,8 @@ enum ServiceState {
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "BaseManager (基础管理器)",
-    description: "`BaseManager` 是所有管理器的抽象基类，提供统一的生命周期管理和通用功能。",
+    description:
+      "`BaseManager` 是所有管理器的抽象基类，提供统一的生命周期管理和通用功能。",
     sections: [
       {
         title: "概述",
@@ -254,13 +255,15 @@ enum ServiceState {
               {
                 type: "api",
                 name: "initialize()",
-                description: "初始化管理器。功能：检查是否已初始化、调用 `onInitialize()` 方法、设置状态为 `Initialized`、记录初始化时间戳。",
+                description:
+                  "初始化管理器。功能：检查是否已初始化、调用 `onInitialize()` 方法、设置状态为 `Initialized`、记录初始化时间戳。",
                 code: "await manager.initialize();",
               },
               {
                 type: "api",
                 name: "start()",
-                description: "启动管理器。功能：如果未初始化，先调用 `initialize()`、调用 `onStart()` 方法、设置状态为 `Running`、记录启动时间戳。",
+                description:
+                  "启动管理器。功能：如果未初始化，先调用 `initialize()`、调用 `onStart()` 方法、设置状态为 `Running`、记录启动时间戳。",
                 code: "await manager.start();",
               },
               {
@@ -278,7 +281,8 @@ enum ServiceState {
               {
                 type: "api",
                 name: "getState()",
-                description: "获取当前状态。返回: 'uninitialized' | 'initialized' | 'running' | 'stopped' | 'destroyed'",
+                description:
+                  "获取当前状态。返回: 'uninitialized' | 'initialized' | 'running' | 'stopped' | 'destroyed'",
                 code: `const state = manager.getState();`,
               },
               {

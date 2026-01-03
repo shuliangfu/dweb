@@ -98,7 +98,9 @@ function renderBlock(block: ContentBlock) {
                 (_match: string, text: string, url: string) => {
                   const isExternal = url.startsWith("http");
                   return `<a href="${url}" ${
-                    isExternal ? 'target="_blank" rel="noopener noreferrer" ' : ""
+                    isExternal
+                      ? 'target="_blank" rel="noopener noreferrer" '
+                      : ""
                   }class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline">${text}</a>`;
                 },
               )
@@ -233,9 +235,7 @@ export default function DocRenderer({
           {content.description}
         </p>
       )}
-      {content.sections.map((section) =>
-        renderSection(section as Section)
-      )}
+      {content.sections.map((section) => renderSection(section as Section))}
     </div>
   );
 }

@@ -90,7 +90,8 @@ formatDate(date, 'YYYY年Q季度'); // "2024年Q1季度"`;
 - **星期几：** \`ddd\`（简写，如：周一）、\`dddd\`（完整，如：星期一）
 - **季度：** \`Q\`（如：Q1）`;
 
-  const relativeTimeCode = `import { formatRelativeTime } from "@dreamer/dweb/utils";
+  const relativeTimeCode =
+    `import { formatRelativeTime } from "@dreamer/dweb/utils";
 
 const oneHourAgo = new Date(Date.now() - 3600000);
 formatRelativeTime(oneHourAgo); // "1小时前"
@@ -246,7 +247,8 @@ const shortText = formatText(longText, 10); // "这是一段很长的文本..."`
             blocks: [
               {
                 type: "text",
-                content: "将字节数格式化为可读的文件大小（Bytes, KB, MB, GB 等）。",
+                content:
+                  "将字节数格式化为可读的文件大小（Bytes, KB, MB, GB 等）。",
               },
               {
                 type: "code",
@@ -287,7 +289,8 @@ const shortText = formatText(longText, 10); // "这是一段很长的文本..."`
             blocks: [
               {
                 type: "text",
-                content: "将日期格式化为相对时间字符串（如：2小时前、3天前等）。",
+                content:
+                  "将日期格式化为相对时间字符串（如：2小时前、3天前等）。",
               },
               {
                 type: "code",

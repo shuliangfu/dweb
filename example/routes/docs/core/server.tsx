@@ -98,9 +98,9 @@ await server.start(3000);`;
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "服务器 (Server)",
-    description: "Server 类是框架的核心，提供了 HTTP 服务器功能。它基于 Deno 的原生 HTTP 服务器，提供了简洁易用的 API。",
+    description:
+      "Server 类是框架的核心，提供了 HTTP 服务器功能。它基于 Deno 的原生 HTTP 服务器，提供了简洁易用的 API。",
     sections: [
-
       {
         title: "基本使用",
         blocks: [
@@ -121,7 +121,8 @@ await server.start(3000);`;
         blocks: [
           {
             type: "text",
-            content: "Response 对象提供了多种响应方法，方便处理不同类型的响应：",
+            content:
+              "Response 对象提供了多种响应方法，方便处理不同类型的响应：",
           },
           {
             type: "code",
@@ -165,7 +166,8 @@ await server.start(3000);`;
           },
           {
             type: "text",
-            content: "更多中间件使用说明，请查看 [中间件系统文档](/docs/core/middleware)。",
+            content:
+              "更多中间件使用说明，请查看 [中间件系统文档](/docs/core/middleware)。",
           },
         ],
       },

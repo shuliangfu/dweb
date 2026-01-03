@@ -288,7 +288,8 @@ function getCurrentUrl(): string`;
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "客户端 API",
-    description: "DWeb 框架提供了丰富的客户端 API，用于在浏览器环境中进行状态管理、主题切换、国际化、路由导航等操作。所有客户端 API 都从 `@dreamer/dweb/client` 模块导出。",
+    description:
+      "DWeb 框架提供了丰富的客户端 API，用于在浏览器环境中进行状态管理、主题切换、国际化、路由导航等操作。所有客户端 API 都从 `@dreamer/dweb/client` 模块导出。",
     sections: [
       {
         title: "",
@@ -321,7 +322,8 @@ function getCurrentUrl(): string`;
         blocks: [
           {
             type: "text",
-            content: "DWeb 框架提供了完整的状态管理解决方案，支持全局状态管理和响应式更新。",
+            content:
+              "DWeb 框架提供了完整的状态管理解决方案，支持全局状态管理和响应式更新。",
           },
           {
             type: "subsection",
@@ -342,7 +344,8 @@ function getCurrentUrl(): string`;
             blocks: [
               {
                 type: "text",
-                content: "使用 `defineStore` 可以声明式地定义 Store，支持 Options API 和 Setup API 两种方式。",
+                content:
+                  "使用 `defineStore` 可以声明式地定义 Store，支持 Options API 和 Setup API 两种方式。",
               },
               {
                 type: "code",
@@ -358,7 +361,8 @@ function getCurrentUrl(): string`;
         blocks: [
           {
             type: "text",
-            content: "DWeb 框架内置了主题切换功能，支持浅色、深色和自动（跟随系统）三种模式。",
+            content:
+              "DWeb 框架内置了主题切换功能，支持浅色、深色和自动（跟随系统）三种模式。",
           },
           {
             type: "code",
@@ -372,7 +376,8 @@ function getCurrentUrl(): string`;
         blocks: [
           {
             type: "text",
-            content: "DWeb 框架提供了完整的国际化支持，支持多语言切换和动态翻译。",
+            content:
+              "DWeb 框架提供了完整的国际化支持，支持多语言切换和动态翻译。",
           },
           {
             type: "code",
@@ -386,7 +391,8 @@ function getCurrentUrl(): string`;
         blocks: [
           {
             type: "text",
-            content: "DWeb 框架提供了路由导航工具函数，支持 SPA 无刷新导航和参数传递。",
+            content:
+              "DWeb 框架提供了路由导航工具函数，支持 SPA 无刷新导航和参数传递。",
           },
           {
             type: "code",

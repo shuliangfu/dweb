@@ -35,8 +35,7 @@ app.plugin(seo({ title: 'My App' }));
 export default app;`;
 
   // 插件生命周期钩子示例
-  const lifecycleHooksCode =
-    `import type { Plugin } from '@dreamer/dweb';
+  const lifecycleHooksCode = `import type { Plugin } from '@dreamer/dweb';
 
 const myPlugin: Plugin = {
   name: 'my-plugin',

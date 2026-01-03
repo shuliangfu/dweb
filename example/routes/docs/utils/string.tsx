@@ -6,8 +6,7 @@ import DocRenderer from "@components/DocRenderer.tsx";
 
 export const metadata = {
   title: "字符串工具 - DWeb 框架文档",
-  description:
-    "DWeb 框架的字符串处理工具函数，提供字符串格式转换等功能",
+  description: "DWeb 框架的字符串处理工具函数，提供字符串格式转换等功能",
 };
 
 export default function StringPage() {
@@ -63,7 +62,8 @@ toSnakeCase("HelloWorld");      // "hello_world"`;
 
 kebabToCamel("hello-world"); // "helloWorld"`;
 
-  const componentExampleCode = `import { toCamelCase, toKebabCase } from "@dreamer/dweb/utils";
+  const componentExampleCode =
+    `import { toCamelCase, toKebabCase } from "@dreamer/dweb/utils";
 
 // 从文件名生成组件名
 const fileName = "user-profile";
@@ -75,7 +75,8 @@ const componentName = "UserProfile";
 const className = toKebabCase(componentName);
 // "user-profile"`;
 
-  const apiRouteExampleCode = `import { toKebabCase, toSnakeCase } from "@dreamer/dweb/utils";
+  const apiRouteExampleCode =
+    `import { toKebabCase, toSnakeCase } from "@dreamer/dweb/utils";
 
 // 从函数名生成路由路径
 const functionName = "getUserProfile";
@@ -87,7 +88,8 @@ const functionName = "getUserProfile";
 const tableName = toSnakeCase(functionName);
 // "get_user_profile"`;
 
-  const formFieldExampleCode = `import { toCamelCase, toSnakeCase } from "@dreamer/dweb/utils";
+  const formFieldExampleCode =
+    `import { toCamelCase, toSnakeCase } from "@dreamer/dweb/utils";
 
 // 从 HTML 表单字段名转换为对象属性名
 const fieldName = "user-name";
@@ -139,8 +141,7 @@ function kebabToCamel(kebabCase: string): string`;
             blocks: [
               {
                 type: "text",
-                content:
-                  "将字符串的首字母转换为大写，其余字母转换为小写。",
+                content: "将字符串的首字母转换为大写，其余字母转换为小写。",
               },
               {
                 type: "code",
@@ -233,8 +234,7 @@ function kebabToCamel(kebabCase: string): string`;
               {
                 type: "alert",
                 level: "warning",
-                content:
-                  "此函数已废弃，请使用 `toCamelCase` 代替。",
+                content: "此函数已废弃，请使用 `toCamelCase` 代替。",
               },
               {
                 type: "text",

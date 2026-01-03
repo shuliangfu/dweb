@@ -127,7 +127,8 @@ bar.finish();`;
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "控制台工具",
-    description: "DWeb 框架提供了强大的控制台工具集，用于创建美观的命令行界面、处理用户输入、输出格式化信息等。",
+    description:
+      "DWeb 框架提供了强大的控制台工具集，用于创建美观的命令行界面、处理用户输入、输出格式化信息等。",
     sections: [
       {
         title: "快速开始",
@@ -177,7 +178,8 @@ bar.finish();`;
             blocks: [
               {
                 type: "text",
-                content: "使用 `keepAlive()` 方法可以保持进程运行，防止命令执行完成后自动退出。这对于需要长时间运行的服务（如开发服务器、WebSocket 服务器等）非常有用。",
+                content:
+                  "使用 `keepAlive()` 方法可以保持进程运行，防止命令执行完成后自动退出。这对于需要长时间运行的服务（如开发服务器、WebSocket 服务器等）非常有用。",
               },
               {
                 type: "alert",

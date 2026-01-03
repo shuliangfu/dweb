@@ -11,7 +11,8 @@ export const metadata = {
 };
 
 export default function FilePage() {
-  const quickStartCode = `import { readFile, saveFile, getFileExtension, isImageFile } from "@dreamer/dweb/utils";
+  const quickStartCode =
+    `import { readFile, saveFile, getFileExtension, isImageFile } from "@dreamer/dweb/utils";
 
 // 读取文件
 const file = input.files[0];
@@ -29,7 +30,8 @@ if (isImageFile(file)) {
   // 处理图片
 }`;
 
-  const readFileCode = `import { readFile, readFileAsDataUrl, readFileAsArrayBuffer } from "@dreamer/dweb/utils";
+  const readFileCode =
+    `import { readFile, readFileAsDataUrl, readFileAsArrayBuffer } from "@dreamer/dweb/utils";
 
 // 读取文件为文本
 const file = input.files[0];
@@ -53,7 +55,8 @@ const response = await fetch('/api/file');
 const blob = await response.blob();
 saveFile(blob, 'document.pdf');`;
 
-  const fileInfoCode = `import { getFileExtension, getFileName, getFileSize } from "@dreamer/dweb/utils";
+  const fileInfoCode =
+    `import { getFileExtension, getFileName, getFileSize } from "@dreamer/dweb/utils";
 
 getFileExtension('document.pdf'); // 'pdf'
 getFileExtension('image.JPG'); // 'jpg'
@@ -66,7 +69,8 @@ const file = input.files[0];
 const size = getFileSize(file);
 console.log(\`文件大小: \${size} 字节\`);`;
 
-  const fileTypeCode = `import { isImageFile, isVideoFile, isAudioFile } from "@dreamer/dweb/utils";
+  const fileTypeCode =
+    `import { isImageFile, isVideoFile, isAudioFile } from "@dreamer/dweb/utils";
 
 const file = input.files[0];
 
@@ -90,7 +94,8 @@ if (isImageFile('image.jpg')) {
   // 处理图片
 }`;
 
-  const compressImageCode = `import { compressImage } from "@dreamer/dweb/utils";
+  const compressImageCode =
+    `import { compressImage } from "@dreamer/dweb/utils";
 
 const file = input.files[0];
 const compressed = await compressImage(file, {

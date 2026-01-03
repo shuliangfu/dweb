@@ -8,12 +8,12 @@ import * as path from "@std/path";
 /**
  * 获取 DWeb 版本号
  */
-function getDwebVersion(): string { 
-	let basePath1 = new URL("../", import.meta.url).pathname;        
-	
+function getDwebVersion(): string {
+  let basePath1 = new URL("../", import.meta.url).pathname;
+
   const jsonPath = path.join(basePath1, "deno.json");
-	const jsoncPath = path.join(basePath1, "deno.jsonc");
-	
+  const jsoncPath = path.join(basePath1, "deno.jsonc");
+
   try {
     const json = Deno.readTextFileSync(jsonPath);
     return JSON.parse(json).version;
@@ -24,7 +24,7 @@ function getDwebVersion(): string {
     } catch {
       basePath1 = new URL("../../", import.meta.url).pathname;
       const jsonPath = path.join(basePath1, "deno.json");
-			const jsoncPath = path.join(basePath1, "deno.jsonc");
+      const jsoncPath = path.join(basePath1, "deno.jsonc");
       try {
         const json = Deno.readTextFileSync(jsonPath);
         return JSON.parse(json).version;

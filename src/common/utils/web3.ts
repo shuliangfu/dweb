@@ -24,7 +24,7 @@ import {
   solidityPackedKeccak256,
   verifyMessage as ethersVerifyMessage,
   Wallet as EthersWallet,
-} from "npm:ethers@^6.0.0";
+} from "npm:ethers@^6.16.0";
 import { IS_CLIENT } from "../constants.ts";
 
 /**
@@ -2461,7 +2461,8 @@ export async function checkAddressChecksum(address: string): Promise<boolean> {
  * // '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
  */
 export function toChecksumAddress(address: string): string {
-  if (!isAddress(address)) {
+  // 使用 ethers.js 的同步 isAddress 函数
+  if (!ethersIsAddress(address)) {
     throw new Error(`无效的地址: ${address}`);
   }
 
@@ -2746,7 +2747,8 @@ export function isTxHash(txHash: string): boolean {
  * // '0x742d35cc6634c0532925a3b844bc9e7595f0beb'
  */
 export function formatAddress(address: string): string {
-  if (!isAddress(address)) {
+  // 使用 ethers.js 的同步 isAddress 函数
+  if (!ethersIsAddress(address)) {
     throw new Error(`无效的地址: ${address}`);
   }
 

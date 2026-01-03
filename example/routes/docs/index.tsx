@@ -46,7 +46,10 @@ export default function DocsPage(
 ) {
   // 从 load 函数返回的数据中获取 JSR 包 URL
   // 保留用于未来使用
-  const { jsrPackageUrl: _jsrPackageUrl, jsrPackageUrlWithCli: _jsrPackageUrlWithCli } = data as {
+  const {
+    jsrPackageUrl: _jsrPackageUrl,
+    jsrPackageUrlWithCli: _jsrPackageUrlWithCli,
+  } = data as {
     jsrPackageUrl: string;
     jsrPackageUrlWithCli: string;
   };
@@ -185,146 +188,146 @@ export default app;`;
     title: "",
     description: "",
     sections: [
-        {
-          title: "快速开始",
-          blocks: [
-            {
-              type: "subsection",
-              level: 3,
-              title: "创建新项目",
-              blocks: [
-                {
-                  type: "code",
-                  code: installCode,
-                  language: "bash",
-                },
-              ],
-            },
-            {
-              type: "subsection",
-              level: 3,
-              title: "作为库使用",
-              blocks: [
-                {
-                  type: "code",
-                  code: libraryCode,
-                  language: "bash",
-                },
-              ],
-            },
-          ],
-        },
-        {
-          title: "配置",
-          blocks: [
-            {
-              type: "text",
-              content: "在项目根目录创建 `dweb.config.ts` 文件：",
-            },
-            {
-              type: "code",
-              code: configCode,
-              language: "typescript",
-            },
-          ],
-        },
-        {
-          title: "创建页面",
-          blocks: [
-            {
-              type: "text",
-              content: "在 `routes` 目录下创建文件即可自动生成路由：",
-            },
-            {
-              type: "code",
-              code: pageCode,
-              language: "typescript",
-            },
-            {
-              type: "text",
-              content: "文件路径会自动映射为路由路径：",
-            },
-            {
-              type: "list",
-              ordered: false,
-              items: [
-                "`routes/index.tsx` → `/`",
-                "`routes/about.tsx` → `/about`",
-                "`routes/blog/[id].tsx` → `/blog/:id`",
-              ],
-            },
-          ],
-        },
-        {
-          title: "API 路由",
-          blocks: [
-            {
-              type: "text",
-              content: "在 `routes/api` 目录下创建 API 路由：",
-            },
-            {
-              type: "code",
-              code: apiCode,
-              language: "typescript",
-            },
-          ],
-        },
-        {
-          title: "使用中间件",
-          blocks: [
-            {
-              type: "text",
-              content: "在 `main.ts` 文件中注册中间件：",
-            },
-            {
-              type: "code",
-              code: middlewareCode,
-              language: "typescript",
-            },
-          ],
-        },
-        {
-          title: "渲染模式",
-          blocks: [
-            {
-              type: "text",
-              content: "DWeb 支持三种渲染模式：",
-            },
-            {
-              type: "list",
-              ordered: false,
-              items: [
-                "**SSR（服务端渲染）**：在服务器端渲染 HTML，适合 SEO 和首屏性能",
-                "**CSR（客户端渲染）**：完全在客户端渲染，支持 SPA 无刷新切换",
-                "**Hybrid（混合渲染）**：服务端渲染 + 客户端 hydration，兼顾 SEO 和交互性",
-              ],
-            },
-            {
-              type: "text",
-              content: "可以在页面组件中配置渲染模式：",
-            },
-            {
-              type: "code",
-              code: "export const renderMode = 'hybrid';",
-              language: "typescript",
-            },
-          ],
-        },
-        {
-          title: "更多资源",
-          blocks: [
-            {
-              type: "alert",
-              level: "info",
-              content: [
-                "[GitHub 仓库](https://github.com/shuliangfu/dweb) - 查看源代码和提交问题",
-                "[JSR 包页面](https://jsr.io/@dreamer/dweb) - 查看包信息和版本",
-                "[功能特性](/features) - 了解所有功能",
-              ],
-            },
-          ],
-        },
-      ],
+      {
+        title: "快速开始",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "创建新项目",
+            blocks: [
+              {
+                type: "code",
+                code: installCode,
+                language: "bash",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "作为库使用",
+            blocks: [
+              {
+                type: "code",
+                code: libraryCode,
+                language: "bash",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "配置",
+        blocks: [
+          {
+            type: "text",
+            content: "在项目根目录创建 `dweb.config.ts` 文件：",
+          },
+          {
+            type: "code",
+            code: configCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "创建页面",
+        blocks: [
+          {
+            type: "text",
+            content: "在 `routes` 目录下创建文件即可自动生成路由：",
+          },
+          {
+            type: "code",
+            code: pageCode,
+            language: "typescript",
+          },
+          {
+            type: "text",
+            content: "文件路径会自动映射为路由路径：",
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "`routes/index.tsx` → `/`",
+              "`routes/about.tsx` → `/about`",
+              "`routes/blog/[id].tsx` → `/blog/:id`",
+            ],
+          },
+        ],
+      },
+      {
+        title: "API 路由",
+        blocks: [
+          {
+            type: "text",
+            content: "在 `routes/api` 目录下创建 API 路由：",
+          },
+          {
+            type: "code",
+            code: apiCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "使用中间件",
+        blocks: [
+          {
+            type: "text",
+            content: "在 `main.ts` 文件中注册中间件：",
+          },
+          {
+            type: "code",
+            code: middlewareCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "渲染模式",
+        blocks: [
+          {
+            type: "text",
+            content: "DWeb 支持三种渲染模式：",
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "**SSR（服务端渲染）**：在服务器端渲染 HTML，适合 SEO 和首屏性能",
+              "**CSR（客户端渲染）**：完全在客户端渲染，支持 SPA 无刷新切换",
+              "**Hybrid（混合渲染）**：服务端渲染 + 客户端 hydration，兼顾 SEO 和交互性",
+            ],
+          },
+          {
+            type: "text",
+            content: "可以在页面组件中配置渲染模式：",
+          },
+          {
+            type: "code",
+            code: "export const renderMode = 'hybrid';",
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "更多资源",
+        blocks: [
+          {
+            type: "alert",
+            level: "info",
+            content: [
+              "[GitHub 仓库](https://github.com/shuliangfu/dweb) - 查看源代码和提交问题",
+              "[JSR 包页面](https://jsr.io/@dreamer/dweb) - 查看包信息和版本",
+              "[功能特性](/features) - 了解所有功能",
+            ],
+          },
+        ],
+      },
+    ],
   };
 
   return (

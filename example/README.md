@@ -51,26 +51,28 @@ deno run --allow-all src/cli.ts start
 ## 主要文件说明
 
 ### main.ts
+
 应用入口文件，用于动态注册中间件和插件。框架会在启动时自动加载此文件。
 
 示例：
+
 ```typescript
-import { createApp } from '../src/mod.ts';
+import { createApp } from "../src/mod.ts";
 
 const app = createApp();
 
 // 注册中间件
 app.use((req, res, next) => {
-  res.setHeader('X-Powered-By', 'DWeb');
+  res.setHeader("X-Powered-By", "DWeb");
   next();
 });
 
 // 注册插件
 app.plugin({
-  name: 'my-plugin',
+  name: "my-plugin",
   onInit: async (app) => {
-    console.log('插件初始化');
-  }
+    console.log("插件初始化");
+  },
 });
 
 export default app;
@@ -96,7 +98,9 @@ export default app;
   ```
 - 登出: http://localhost:3000/api/test/logout
 
-**注意**：API 路由 URL 必须使用中划线格式（kebab-case），例如 `/api/test/get-user`，不允许使用驼峰格式（camelCase），例如 `/api/test/getUser` 会返回 400 错误。
+**注意**：API 路由 URL 必须使用中划线格式（kebab-case），例如
+`/api/test/get-user`，不允许使用驼峰格式（camelCase），例如 `/api/test/getUser`
+会返回 400 错误。
 
 ### 热更新测试
 
@@ -115,4 +119,3 @@ export default app;
 1. 确保 Deno 版本 >= 2.0.0
 2. 首次运行会下载依赖，可能需要一些时间
 3. 如果端口被占用，可以在 `dweb.config.ts` 中修改端口号
-

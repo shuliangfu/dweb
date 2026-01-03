@@ -197,9 +197,9 @@ logger.info("应用已启动");`;
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "ServiceContainer (服务容器)",
-    description: "DWeb 框架提供了服务容器（Service Container）功能，支持依赖注入（DI）模式。服务容器支持三种生命周期：**Singleton（单例）**、**Transient（瞬态）** 和 **Scoped（作用域）**。",
+    description:
+      "DWeb 框架提供了服务容器（Service Container）功能，支持依赖注入（DI）模式。服务容器支持三种生命周期：**Singleton（单例）**、**Transient（瞬态）** 和 **Scoped（作用域）**。",
     sections: [
-
       {
         title: "概述",
         blocks: [
@@ -221,7 +221,8 @@ logger.info("应用已启动");`;
             blocks: [
               {
                 type: "text",
-                content: "在 `services/mod.ts` 中统一管理所有服务配置，然后在 `main.ts` 中一键注册：",
+                content:
+                  "在 `services/mod.ts` 中统一管理所有服务配置，然后在 `main.ts` 中一键注册：",
               },
               {
                 type: "code",
@@ -362,13 +363,15 @@ logger.info("应用已启动");`;
             type: "api",
             name: "registerTransient<T>(token, factory)",
             description: "注册瞬态服务，每次获取都创建新实例",
-            code: 'container.registerTransient("requestId", () => generateId())',
+            code:
+              'container.registerTransient("requestId", () => generateId())',
           },
           {
             type: "api",
             name: "registerScoped<T>(token, factory)",
             description: "注册作用域服务，在作用域内单例",
-            code: 'container.registerScoped("requestContext", () => new RequestContext())',
+            code:
+              'container.registerScoped("requestContext", () => new RequestContext())',
           },
           {
             type: "api",

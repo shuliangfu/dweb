@@ -130,7 +130,8 @@ function getThemeValue(): 'light' | 'dark' | null`;
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "theme - 主题插件",
-    description: "theme 插件提供主题切换功能，支持亮色、暗色和自动模式（跟随系统主题）。插件会自动在 HTML 元素上添加相应的 class，方便与 Tailwind CSS 的 dark mode 配合使用。",
+    description:
+      "theme 插件提供主题切换功能，支持亮色、暗色和自动模式（跟随系统主题）。插件会自动在 HTML 元素上添加相应的 class，方便与 Tailwind CSS 的 dark mode 配合使用。",
     sections: [
       {
         title: "基本使用",
@@ -151,7 +152,8 @@ function getThemeValue(): 'light' | 'dark' | null`;
         blocks: [
           {
             type: "text",
-            content: "在客户端组件中使用主题功能（从 `@dreamer/dweb/client` 导入）：",
+            content:
+              "在客户端组件中使用主题功能（从 `@dreamer/dweb/client` 导入）：",
           },
           {
             type: "code",
@@ -202,19 +204,23 @@ function getThemeValue(): 'light' | 'dark' | null`;
           },
           {
             type: "text",
-            content: "**`getTheme()`** - 获取当前主题设置。返回 'light' | 'dark' | 'auto' | null。如果设置为 'auto'，会跟随系统主题。",
+            content:
+              "**`getTheme()`** - 获取当前主题设置。返回 'light' | 'dark' | 'auto' | null。如果设置为 'auto'，会跟随系统主题。",
           },
           {
             type: "text",
-            content: "**`getActualTheme()`** - 获取实际主题（处理 auto 模式）。返回 'light' | 'dark' | null。如果主题设置为 'auto'，会返回当前系统主题。",
+            content:
+              "**`getActualTheme()`** - 获取实际主题（处理 auto 模式）。返回 'light' | 'dark' | null。如果主题设置为 'auto'，会返回当前系统主题。",
           },
           {
             type: "text",
-            content: "**`setTheme()`** - 设置主题。接受 'light'、'dark' 或 'auto'。",
+            content:
+              "**`setTheme()`** - 设置主题。接受 'light'、'dark' 或 'auto'。",
           },
           {
             type: "text",
-            content: "**`toggleTheme()`** - 切换主题（在 dark 和 light 之间切换）。返回切换后的主题。",
+            content:
+              "**`toggleTheme()`** - 切换主题（在 dark 和 light 之间切换）。返回切换后的主题。",
           },
           {
             type: "text",
@@ -222,7 +228,8 @@ function getThemeValue(): 'light' | 'dark' | null`;
           },
           {
             type: "text",
-            content: "**`subscribeTheme()`** - 订阅主题变化。监听器会在实际主题变化时调用（接收 'light' 或 'dark'）。",
+            content:
+              "**`subscribeTheme()`** - 订阅主题变化。监听器会在实际主题变化时调用（接收 'light' 或 'dark'）。",
           },
         ],
       },
@@ -248,7 +255,8 @@ function getThemeValue(): 'light' | 'dark' | null`;
         blocks: [
           {
             type: "text",
-            content: "主题插件会自动在 HTML 元素上添加 `dark` 或 `light` class，配合 Tailwind CSS v4 的 dark mode 使用：",
+            content:
+              "主题插件会自动在 HTML 元素上添加 `dark` 或 `light` class，配合 Tailwind CSS v4 的 dark mode 使用：",
           },
           {
             type: "code",

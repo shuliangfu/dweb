@@ -21,7 +21,8 @@ const result = await http.post("/api/users", { name: "Alice" });
 const users = await get("/api/users");
 const newUser = await post("/api/users", { name: "Bob" });`;
 
-  const createInstanceCode = `import { createHttpClient } from "@dreamer/dweb/utils";
+  const createInstanceCode =
+    `import { createHttpClient } from "@dreamer/dweb/utils";
 
 const api = createHttpClient({
   baseURL: "https://api.example.com",
@@ -66,7 +67,8 @@ http.interceptors.response.use(
   },
 );`;
 
-  const fullExampleCode = `import { createHttpClient } from "@dreamer/dweb/utils";
+  const fullExampleCode =
+    `import { createHttpClient } from "@dreamer/dweb/utils";
 
 // 创建 API 客户端
 const api = createHttpClient({
@@ -144,7 +146,8 @@ await http.get("/api/data", {
   },
 });`;
 
-  const concurrentCode = `import { http, all, allSettled } from "@dreamer/dweb/utils";
+  const concurrentCode =
+    `import { http, all, allSettled } from "@dreamer/dweb/utils";
 
 // 并发请求所有接口（类似 Promise.all）
 const [users, posts, comments] = await http.all([
@@ -196,7 +199,8 @@ if (file) {
 // 使用便捷方法
 await upload("/api/upload", file);`;
 
-  const downloadCode = `import { http, download, downloadFile } from "@dreamer/dweb/utils";
+  const downloadCode =
+    `import { http, download, downloadFile } from "@dreamer/dweb/utils";
 
 // 下载文件（返回 Blob）
 const blob = await http.download("/api/files/report.pdf", {
@@ -484,8 +488,7 @@ import { http } from "@dreamer/dweb/utils";
         blocks: [
           {
             type: "text",
-            content:
-              "HTTP 客户端支持多种响应类型：",
+            content: "HTTP 客户端支持多种响应类型：",
           },
           {
             type: "code",

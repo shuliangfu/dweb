@@ -140,8 +140,7 @@ export default defineConfig({
 });`;
 
   // 插件配置
-  const pluginsConfigCode =
-    `import { seo, tailwind } from "@dreamer/dweb";
+  const pluginsConfigCode = `import { seo, tailwind } from "@dreamer/dweb";
 
 export default defineConfig({
   plugins: [
@@ -393,7 +392,8 @@ export default defineConfig({
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "配置文档",
-    description: "DWeb 框架使用 `dweb.config.ts` 文件进行配置，支持单应用和多应用模式。",
+    description:
+      "DWeb 框架使用 `dweb.config.ts` 文件进行配置，支持单应用和多应用模式。",
     sections: [
       {
         title: "配置文件位置",

@@ -3,8 +3,8 @@
  * 提供用户信息的获取、更新、刷新等功能
  */
 
-import { useState, useEffect, useCallback } from 'preact/hooks';
-import { getStoreState, setStoreState } from '@dreamer/dweb/client';
+import { useCallback, useEffect, useState } from "preact/hooks";
+import { getStoreState, setStoreState } from "@dreamer/dweb/client";
 
 /**
  * 用户信息类型
@@ -51,7 +51,10 @@ export interface UseUserReturn {
   /** 获取用户信息 */
   fetchUser: (userId?: string | number) => Promise<User | null>;
   /** 更新用户信息 */
-  updateUser: (userId: string | number, data: Partial<User>) => Promise<User | null>;
+  updateUser: (
+    userId: string | number,
+    data: Partial<User>,
+  ) => Promise<User | null>;
   /** 刷新当前用户信息 */
   refreshUser: () => Promise<User | null>;
   /** 清除用户信息 */
@@ -64,7 +67,7 @@ export interface UseUserReturn {
  * 用户信息管理 Hook
  * @param options 配置选项
  * @returns 用户信息管理对象
- * 
+ *
  * @example
  * ```typescript
  * // 获取当前用户信息
@@ -73,17 +76,17 @@ export interface UseUserReturn {
  *   updateApi: '/api/users/update',
  *   autoFetch: true, // 自动获取当前用户
  * });
- * 
+ *
  * // 获取指定用户信息
  * const { user, fetchUser } = useUser();
  * useEffect(() => {
  *   fetchUser('123');
  * }, []);
- * 
+ *
  * // 更新用户信息
  * const { updateUser } = useUser();
  * await updateUser('123', { nickname: '新昵称' });
- * 
+ *
  * // 在组件中使用
  * if (isLoading) return <div>加载中...</div>;
  * if (error) return <div>错误: {error.message}</div>;
@@ -105,19 +108,19 @@ export function useUser(options?: {
   userField?: string;
 }): UseUserReturn {
   const {
-    userApi = '/api/users/me',
-    updateApi = '/api/users/update',
+    userApi = "/api/users/me",
+    updateApi = "/api/users/update",
     autoFetch = false,
     userId: initialUserId = null,
-    userField = 'user',
+    userField = "user",
   } = options || {};
 
   // 用户信息
   const [user, setUserState] = useState<User | null>(null);
-  
+
   // 是否正在加载
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // 错误信息
   const [error, setError] = useState<Error | null>(null);
 
@@ -144,24 +147,60 @@ export function useUser(options?: {
         [userField]: userData,
       }));
     } catch (err) {
-      console.error('[useUser] 更新 Store 失败:', err);
+      console.error("[useUser] 更新 Store 失败:", err);
     }
   }, [userField]);
 
   /**
    * 获取用户信息
    */
-  const fetchUser = useCallback(async (targetUserId?: string | number): Promise<User | null> => {
-    setIsLoading(true);
-    setError(null);
+  const fetchUser = useCallback(
+    async (targetUserId?: string | number): Promise<User | null> => {
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      // 如果指定了用户 ID，获取指定用户信息
-      if (targetUserId) {
-        const response = await fetch(`/api/users/get-user?id=${targetUserId}`, {
-          method: 'POST',
+      try {
+        // 如果指定了用户 ID，获取指定用户信息
+        if (targetUserId) {
+          const response = await fetch(
+            `/api/users/get-user?id=${targetUserId}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            },
+          );
+
+          if (!response.ok) {
+            throw new Error(`获取用户信息失败: ${response.status}`);
+          }
+
+          const result = await response.json();
+          const userData = result.user || result.data || result;
+
+          if (userData) {
+            setUserState(userData);
+            return userData as User;
+          }
+
+          return null;
+        }
+
+        // 否则获取当前用户信息
+        // 先从 Store 获取
+        const storeUser = getUserFromStore();
+        if (storeUser && !targetUserId) {
+          setUserState(storeUser);
+          setIsLoading(false);
+          return storeUser;
+        }
+
+        // 从 API 获取
+        const response = await fetch(userApi, {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         });
 
@@ -171,55 +210,25 @@ export function useUser(options?: {
 
         const result = await response.json();
         const userData = result.user || result.data || result;
-        
+
         if (userData) {
           setUserState(userData);
+          updateUserInStore(userData);
           return userData as User;
         }
 
         return null;
-      }
-
-      // 否则获取当前用户信息
-      // 先从 Store 获取
-      const storeUser = getUserFromStore();
-      if (storeUser && !targetUserId) {
-        setUserState(storeUser);
+      } catch (err) {
+        const apiError = err instanceof Error ? err : new Error(String(err));
+        setError(apiError);
+        console.error("[useUser] 获取用户信息失败:", apiError);
+        return null;
+      } finally {
         setIsLoading(false);
-        return storeUser;
       }
-
-      // 从 API 获取
-      const response = await fetch(userApi, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`获取用户信息失败: ${response.status}`);
-      }
-
-      const result = await response.json();
-      const userData = result.user || result.data || result;
-      
-      if (userData) {
-        setUserState(userData);
-        updateUserInStore(userData);
-        return userData as User;
-      }
-
-      return null;
-    } catch (err) {
-      const apiError = err instanceof Error ? err : new Error(String(err));
-      setError(apiError);
-      console.error('[useUser] 获取用户信息失败:', apiError);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userApi, getUserFromStore, updateUserInStore]);
+    },
+    [userApi, getUserFromStore, updateUserInStore],
+  );
 
   /**
    * 更新用户信息
@@ -233,9 +242,9 @@ export function useUser(options?: {
 
     try {
       const response = await fetch(updateApi, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           id: targetUserId,
@@ -244,20 +253,26 @@ export function useUser(options?: {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: '更新失败' }));
-        throw new Error(errorData.message || `更新用户信息失败: ${response.status}`);
+        const errorData = await response.json().catch(() => ({
+          message: "更新失败",
+        }));
+        throw new Error(
+          errorData.message || `更新用户信息失败: ${response.status}`,
+        );
       }
 
       const result = await response.json();
       const updatedUser = result.user || result.data || result;
-      
+
       if (updatedUser) {
         // 如果是当前用户，更新状态
-        if (user && (user.id === targetUserId || user.id === String(targetUserId))) {
+        if (
+          user && (user.id === targetUserId || user.id === String(targetUserId))
+        ) {
           setUserState(updatedUser);
           updateUserInStore(updatedUser);
         }
-        
+
         return updatedUser as User;
       }
 
@@ -265,7 +280,7 @@ export function useUser(options?: {
     } catch (err) {
       const apiError = err instanceof Error ? err : new Error(String(err));
       setError(apiError);
-      console.error('[useUser] 更新用户信息失败:', apiError);
+      console.error("[useUser] 更新用户信息失败:", apiError);
       return null;
     } finally {
       setIsLoading(false);
@@ -328,4 +343,3 @@ export function useUser(options?: {
     setUser,
   };
 }
-

@@ -11,7 +11,8 @@ export const metadata = {
 };
 
 export default function PerformancePage() {
-  const quickStartCode = `import { debounce, throttle, batchProcess, getMemoryUsage, formatMemorySize } from "@dreamer/dweb/utils";
+  const quickStartCode =
+    `import { debounce, throttle, batchProcess, getMemoryUsage, formatMemorySize } from "@dreamer/dweb/utils";
 
 // 防抖函数
 const debouncedSearch = debounce((query: string) => {
@@ -69,7 +70,8 @@ const results = await batchProcess(
   10 // 每批处理 10 个项目
 );`;
 
-  const memoryCode = `import { getMemoryUsage, formatMemorySize } from "@dreamer/dweb/utils";
+  const memoryCode =
+    `import { getMemoryUsage, formatMemorySize } from "@dreamer/dweb/utils";
 
 // 获取内存使用情况
 const memory = getMemoryUsage();
@@ -129,7 +131,8 @@ const uploadResults = await batchProcess(
   5 // 每批上传 5 个文件
 );`;
 
-  const memoryExampleCode = `import { getMemoryUsage, formatMemorySize } from "@dreamer/dweb/utils";
+  const memoryExampleCode =
+    `import { getMemoryUsage, formatMemorySize } from "@dreamer/dweb/utils";
 
 // 定期监控内存使用
 setInterval(() => {

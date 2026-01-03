@@ -5,7 +5,6 @@
 @import "tailwindcss/preflight.css" layer(base);
 @import "tailwindcss/utilities.css" layer(utilities);
 
-
 @source "../components/**/*.{tsx,ts,jsx,js}";
 @source "../routes/**/*.{tsx,ts,jsx,js}";
 
@@ -115,215 +114,215 @@
   --color-info-950: #083344;
   --color-info-1000: #05202a;
 
-	/* 绿色颜色 */
-	--color-green-50: #f0fdf4;
-	--color-green-100: #dcfce7;
-	--color-green-200: #bbf7d0;
-	--color-green-300: #86efac;
-	--color-green-400: #4ade80;
-	--color-green-500: #22c55e;
-	--color-green-600: #16a34a;
-	--color-green-700: #15803d;
-	--color-green-800: #166534;
-	--color-green-900: #14532d;
-	--color-green-950: #052e16;
-	--color-green-1000: #031b0d;
+  /* 绿色颜色 */
+  --color-green-50: #f0fdf4;
+  --color-green-100: #dcfce7;
+  --color-green-200: #bbf7d0;
+  --color-green-300: #86efac;
+  --color-green-400: #4ade80;
+  --color-green-500: #22c55e;
+  --color-green-600: #16a34a;
+  --color-green-700: #15803d;
+  --color-green-800: #166534;
+  --color-green-900: #14532d;
+  --color-green-950: #052e16;
+  --color-green-1000: #031b0d;
 
-	/* 红色颜色 */
-	--color-red-50: #fef2f2;
-	--color-red-100: #fee2e2;
-	--color-red-200: #fecaca;
-	--color-red-300: #fca5a5;
-	--color-red-400: #f87171;
-	--color-red-500: #ef4444;
-	--color-red-600: #dc2626;
-	--color-red-700: #b91c1c;
-	--color-red-800: #991b1b;
-	--color-red-900: #7f1d1d;
-	--color-red-950: #450a0a;
-	--color-red-1000: #2c0707;
+  /* 红色颜色 */
+  --color-red-50: #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-200: #fecaca;
+  --color-red-300: #fca5a5;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-red-800: #991b1b;
+  --color-red-900: #7f1d1d;
+  --color-red-950: #450a0a;
+  --color-red-1000: #2c0707;
 
-	/* 蓝色颜色 */
-	--color-blue-50: #f0f9ff;
-	--color-blue-100: #e0f2fe;
-	--color-blue-200: #bae6fd;
-	--color-blue-300: #7dd3fc;
-	--color-blue-400: #38bdf8;
-	--color-blue-500: #0ea5e9;
-	--color-blue-600: #0284c7;
-	--color-blue-700: #0369a1;
-	--color-blue-800: #075985;
-	--color-blue-900: #0c4a6e;
-	--color-blue-950: #082f49;
-	--color-blue-1000: #051d2c;
+  /* 蓝色颜色 */
+  --color-blue-50: #f0f9ff;
+  --color-blue-100: #e0f2fe;
+  --color-blue-200: #bae6fd;
+  --color-blue-300: #7dd3fc;
+  --color-blue-400: #38bdf8;
+  --color-blue-500: #0ea5e9;
+  --color-blue-600: #0284c7;
+  --color-blue-700: #0369a1;
+  --color-blue-800: #075985;
+  --color-blue-900: #0c4a6e;
+  --color-blue-950: #082f49;
+  --color-blue-1000: #051d2c;
 
-	/* 黄色颜色 */
-	--color-yellow-50: #fffbeb;
-	--color-yellow-100: #fef3c7;
-	--color-yellow-200: #fde68a;
-	--color-yellow-300: #fcd34d;
-	--color-yellow-400: #fbbf24;
-	--color-yellow-500: #f59e0b;
-	--color-yellow-600: #d97706;
-	--color-yellow-700: #b45309;
-	--color-yellow-800: #92400e;
-	--color-yellow-900: #78350f;
-	--color-yellow-950: #451a03;
-	--color-yellow-1000: #2c1102;
+  /* 黄色颜色 */
+  --color-yellow-50: #fffbeb;
+  --color-yellow-100: #fef3c7;
+  --color-yellow-200: #fde68a;
+  --color-yellow-300: #fcd34d;
+  --color-yellow-400: #fbbf24;
+  --color-yellow-500: #f59e0b;
+  --color-yellow-600: #d97706;
+  --color-yellow-700: #b45309;
+  --color-yellow-800: #92400e;
+  --color-yellow-900: #78350f;
+  --color-yellow-950: #451a03;
+  --color-yellow-1000: #2c1102;
 
-	/* 琥珀色 (amber) */
-	--color-amber-50: #fffbeb;
-	--color-amber-100: #fef3c7;
-	--color-amber-200: #fde68a;
-	--color-amber-300: #fcd34d;
-	--color-amber-400: #fbbf24;
-	--color-amber-500: #f59e0b;
-	--color-amber-600: #d97706;
-	--color-amber-700: #b45309;
-	--color-amber-800: #92400e;
-	--color-amber-900: #78350f;
-	--color-amber-950: #451a03;
-	--color-amber-1000: #2c1102;
+  /* 琥珀色 (amber) */
+  --color-amber-50: #fffbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-amber-300: #fcd34d;
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
+  --color-amber-800: #92400e;
+  --color-amber-900: #78350f;
+  --color-amber-950: #451a03;
+  --color-amber-1000: #2c1102;
 
-	/* 紫色颜色 */
-	--color-purple-50: #faf5ff;
-	--color-purple-100: #f3e8ff;
-	--color-purple-200: #e9d5ff;
-	--color-purple-300: #d8b4fe;
-	--color-purple-400: #c084fc;
-	--color-purple-500: #a855f7;
-	--color-purple-600: #9333ea;
-	--color-purple-700: #7e22ce;
-	--color-purple-800: #6b21a8;
-	--color-purple-900: #581c87;
-	--color-purple-950: #3b0764;
-	--color-purple-1000: #2d0353;
+  /* 紫色颜色 */
+  --color-purple-50: #faf5ff;
+  --color-purple-100: #f3e8ff;
+  --color-purple-200: #e9d5ff;
+  --color-purple-300: #d8b4fe;
+  --color-purple-400: #c084fc;
+  --color-purple-500: #a855f7;
+  --color-purple-600: #9333ea;
+  --color-purple-700: #7e22ce;
+  --color-purple-800: #6b21a8;
+  --color-purple-900: #581c87;
+  --color-purple-950: #3b0764;
+  --color-purple-1000: #2d0353;
 
-	/* 灰色颜色 */
-	--color-gray-50: #f9fafb;
-	--color-gray-100: #f3f4f6;
-	--color-gray-200: #e5e7eb;
-	--color-gray-300: #d1d5db;
-	--color-gray-400: #9ca3af;
-	--color-gray-500: #6b7280;
-	--color-gray-600: #4b5563;
-	--color-gray-700: #374151;
-	--color-gray-800: #1f2937;
-	--color-gray-900: #111827;
-	--color-gray-950: #030712;
-	--color-gray-1000: #000000;
+  /* 灰色颜色 */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+  --color-gray-1000: #000000;
 
-	/* 棕色颜色 */
-	--color-brown-50: #efebe9;
-	--color-brown-100: #d7ccc8;
-	--color-brown-200: #bcaaa4;
-	--color-brown-300: #a1887f;
-	--color-brown-400: #8d6e63;
-	--color-brown-500: #795548;
-	--color-brown-600: #6d4c41;
-	--color-brown-700: #5d4037;
-	--color-brown-800: #4e342e;
-	--color-brown-900: #3e2723;
-	--color-brown-950: #2b1b18;
-	--color-brown-1000: #1a100e;
+  /* 棕色颜色 */
+  --color-brown-50: #efebe9;
+  --color-brown-100: #d7ccc8;
+  --color-brown-200: #bcaaa4;
+  --color-brown-300: #a1887f;
+  --color-brown-400: #8d6e63;
+  --color-brown-500: #795548;
+  --color-brown-600: #6d4c41;
+  --color-brown-700: #5d4037;
+  --color-brown-800: #4e342e;
+  --color-brown-900: #3e2723;
+  --color-brown-950: #2b1b18;
+  --color-brown-1000: #1a100e;
 
-	/* 橙色颜色 */
-	--color-orange-50: #fff7ed;
-	--color-orange-100: #ffedd5;
-	--color-orange-200: #fed7aa;
-	--color-orange-300: #fdba74;
-	--color-orange-400: #fb923c;
-	--color-orange-500: #f97316;
-	--color-orange-600: #ea580c;
-	--color-orange-700: #c2410c;
-	--color-orange-800: #9a3412;
-	--color-orange-900: #7c2d12;
-	--color-orange-950: #431407;
-	--color-orange-1000: #260b03;
+  /* 橙色颜色 */
+  --color-orange-50: #fff7ed;
+  --color-orange-100: #ffedd5;
+  --color-orange-200: #fed7aa;
+  --color-orange-300: #fdba74;
+  --color-orange-400: #fb923c;
+  --color-orange-500: #f97316;
+  --color-orange-600: #ea580c;
+  --color-orange-700: #c2410c;
+  --color-orange-800: #9a3412;
+  --color-orange-900: #7c2d12;
+  --color-orange-950: #431407;
+  --color-orange-1000: #260b03;
 
-	/* 粉色颜色 */
-	--color-pink-50: #fdf2f8;
-	--color-pink-100: #fce7f3;
-	--color-pink-200: #fbcfe8;
-	--color-pink-300: #f9a8d4;
-	--color-pink-400: #f472b6;
-	--color-pink-500: #ec4899;
-	--color-pink-600: #db2777;
-	--color-pink-700: #be185d;
-	--color-pink-800: #9d174d;
-	--color-pink-900: #831843;
-	--color-pink-950: #500724;
-	--color-pink-1000: #290312;
+  /* 粉色颜色 */
+  --color-pink-50: #fdf2f8;
+  --color-pink-100: #fce7f3;
+  --color-pink-200: #fbcfe8;
+  --color-pink-300: #f9a8d4;
+  --color-pink-400: #f472b6;
+  --color-pink-500: #ec4899;
+  --color-pink-600: #db2777;
+  --color-pink-700: #be185d;
+  --color-pink-800: #9d174d;
+  --color-pink-900: #831843;
+  --color-pink-950: #500724;
+  --color-pink-1000: #290312;
 
-	/* 靛蓝色 (indigo) */
-	--color-indigo-50: #eef2ff;
-	--color-indigo-100: #e0e7ff;
-	--color-indigo-200: #c7d2fe;
-	--color-indigo-300: #a5b4fc;
-	--color-indigo-400: #818cf8;
-	--color-indigo-500: #6366f1;
-	--color-indigo-600: #4f46e5;
-	--color-indigo-700: #4338ca;
-	--color-indigo-800: #3730a3;
-	--color-indigo-900: #312e81;
-	--color-indigo-950: #1e1b4b;
-	--color-indigo-1000: #0f0e2e;
+  /* 靛蓝色 (indigo) */
+  --color-indigo-50: #eef2ff;
+  --color-indigo-100: #e0e7ff;
+  --color-indigo-200: #c7d2fe;
+  --color-indigo-300: #a5b4fc;
+  --color-indigo-400: #818cf8;
+  --color-indigo-500: #6366f1;
+  --color-indigo-600: #4f46e5;
+  --color-indigo-700: #4338ca;
+  --color-indigo-800: #3730a3;
+  --color-indigo-900: #312e81;
+  --color-indigo-950: #1e1b4b;
+  --color-indigo-1000: #0f0e2e;
 
-	/* 翠绿色 (emerald) */
-	--color-emerald-50: #ecfdf5;
-	--color-emerald-100: #d1fae5;
-	--color-emerald-200: #a7f3d0;
-	--color-emerald-300: #6ee7b7;
-	--color-emerald-400: #34d399;
-	--color-emerald-500: #10b981;
-	--color-emerald-600: #059669;
-	--color-emerald-700: #047857;
-	--color-emerald-800: #065f46;
-	--color-emerald-900: #064e3b;
-	--color-emerald-950: #022c22;
-	--color-emerald-1000: #011a15;
+  /* 翠绿色 (emerald) */
+  --color-emerald-50: #ecfdf5;
+  --color-emerald-100: #d1fae5;
+  --color-emerald-200: #a7f3d0;
+  --color-emerald-300: #6ee7b7;
+  --color-emerald-400: #34d399;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+  --color-emerald-800: #065f46;
+  --color-emerald-900: #064e3b;
+  --color-emerald-950: #022c22;
+  --color-emerald-1000: #011a15;
 
-	/* 青色 (cyan) */
-	--color-cyan-50: #ecfeff;
-	--color-cyan-100: #cffafe;
-	--color-cyan-200: #a5f3fc;
-	--color-cyan-300: #67e8f9;
-	--color-cyan-400: #22d3ee;
-	--color-cyan-500: #06b6d4;
-	--color-cyan-600: #0891b2;
-	--color-cyan-700: #0e7490;
-	--color-cyan-800: #155e75;
-	--color-cyan-900: #164e63;
-	--color-cyan-950: #083344;
-	--color-cyan-1000: #05202a;
+  /* 青色 (cyan) */
+  --color-cyan-50: #ecfeff;
+  --color-cyan-100: #cffafe;
+  --color-cyan-200: #a5f3fc;
+  --color-cyan-300: #67e8f9;
+  --color-cyan-400: #22d3ee;
+  --color-cyan-500: #06b6d4;
+  --color-cyan-600: #0891b2;
+  --color-cyan-700: #0e7490;
+  --color-cyan-800: #155e75;
+  --color-cyan-900: #164e63;
+  --color-cyan-950: #083344;
+  --color-cyan-1000: #05202a;
 
-	/* 青柠色 (lime) */
-	--color-lime-50: #f7fee7;
-	--color-lime-100: #ecfccb;
-	--color-lime-200: #d9f99d;
-	--color-lime-300: #bef264;
-	--color-lime-400: #a3e635;
-	--color-lime-500: #84cc16;
-	--color-lime-600: #65a30d;
-	--color-lime-700: #4d7c0f;
-	--color-lime-800: #365314;
-	--color-lime-900: #365314;
-	--color-lime-950: #1a2e05;
-	--color-lime-1000: #0f1a03;
+  /* 青柠色 (lime) */
+  --color-lime-50: #f7fee7;
+  --color-lime-100: #ecfccb;
+  --color-lime-200: #d9f99d;
+  --color-lime-300: #bef264;
+  --color-lime-400: #a3e635;
+  --color-lime-500: #84cc16;
+  --color-lime-600: #65a30d;
+  --color-lime-700: #4d7c0f;
+  --color-lime-800: #365314;
+  --color-lime-900: #365314;
+  --color-lime-950: #1a2e05;
+  --color-lime-1000: #0f1a03;
 
-	/* 青绿色 (teal) */
-	--color-teal-50: #f0fdfa;
-	--color-teal-100: #ccfbf1;
-	--color-teal-200: #99f6e4;
-	--color-teal-300: #5eead4;
-	--color-teal-400: #2dd4bf;
-	--color-teal-500: #14b8a6;
-	--color-teal-600: #0d9488;
-	--color-teal-700: #0f766e;
-	--color-teal-800: #115e59;
-	--color-teal-900: #134e4a;
-	--color-teal-950: #042f2e;
-	--color-teal-1000: #021a19;
+  /* 青绿色 (teal) */
+  --color-teal-50: #f0fdfa;
+  --color-teal-100: #ccfbf1;
+  --color-teal-200: #99f6e4;
+  --color-teal-300: #5eead4;
+  --color-teal-400: #2dd4bf;
+  --color-teal-500: #14b8a6;
+  --color-teal-600: #0d9488;
+  --color-teal-700: #0f766e;
+  --color-teal-800: #115e59;
+  --color-teal-900: #134e4a;
+  --color-teal-950: #042f2e;
+  --color-teal-1000: #021a19;
 
   /* 高度配置 */
   --height-screen: 100vh;

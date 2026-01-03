@@ -3,7 +3,7 @@
  * 提供表单状态管理、验证、提交等功能
  */
 
-import { useState, useCallback } from 'preact/hooks';
+import { useCallback, useState } from "preact/hooks";
 
 /**
  * 表单验证规则
@@ -70,7 +70,9 @@ export interface UseFormReturn<T extends Record<string, any>> {
   /** 重置表单 */
   reset: (values?: Partial<T>) => void;
   /** 提交表单 */
-  handleSubmit: (onSubmit: (values: T) => Promise<void> | void) => (e: Event) => Promise<void>;
+  handleSubmit: (
+    onSubmit: (values: T) => Promise<void> | void,
+  ) => (e: Event) => Promise<void>;
   /** 获取字段值 */
   getValue: <K extends keyof T>(field: K) => T[K];
 }
@@ -80,7 +82,7 @@ export interface UseFormReturn<T extends Record<string, any>> {
  * @param initialValues 初始表单值
  * @param validationRules 验证规则（可选）
  * @returns 表单处理对象
- * 
+ *
  * @example
  * ```typescript
  * const form = useForm({
@@ -103,7 +105,7 @@ export interface UseFormReturn<T extends Record<string, any>> {
  *     min: 8
  *   }
  * });
- * 
+ *
  * // 在组件中使用
  * <form onSubmit={form.handleSubmit(async (values) => {
  *   console.log('提交数据:', values);
@@ -125,13 +127,13 @@ export function useForm<T extends Record<string, any>>(
 ): UseFormReturn<T> {
   // 表单数据
   const [values, setValuesState] = useState<T>(initialValues);
-  
+
   // 表单错误信息
   const [errors, setErrors] = useState<FormErrors<T>>({});
-  
+
   // 是否正在提交
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // 是否已提交过
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -148,7 +150,7 @@ export function useForm<T extends Record<string, any>>(
 
     // 必填验证
     if (rule.required) {
-      if (value === null || value === undefined || value === '') {
+      if (value === null || value === undefined || value === "") {
         const error = rule.message || `${String(field)} 是必填字段`;
         setErrors((prev) => ({ ...prev, [field]: error }));
         return false;
@@ -156,7 +158,7 @@ export function useForm<T extends Record<string, any>>(
     }
 
     // 如果值为空且不是必填，跳过其他验证
-    if (value === null || value === undefined || value === '') {
+    if (value === null || value === undefined || value === "") {
       setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[field];
@@ -167,24 +169,30 @@ export function useForm<T extends Record<string, any>>(
 
     // 类型检查
     const valueType = typeof value;
-    const isString = valueType === 'string';
-    const isNumber = valueType === 'number';
+    const isString = valueType === "string";
+    const isNumber = valueType === "number";
     const isArray = Array.isArray(value);
 
     // 长度验证（字符串或数组）
     if (rule.min !== undefined) {
-      const length = isString || isArray ? (value as string | any[]).length : (isNumber ? value : 0);
+      const length = isString || isArray
+        ? (value as string | any[]).length
+        : (isNumber ? value : 0);
       if (length < rule.min) {
-        const error = rule.message || `${String(field)} 长度不能少于 ${rule.min}`;
+        const error = rule.message ||
+          `${String(field)} 长度不能少于 ${rule.min}`;
         setErrors((prev) => ({ ...prev, [field]: error }));
         return false;
       }
     }
 
     if (rule.max !== undefined) {
-      const length = isString || isArray ? (value as string | any[]).length : (isNumber ? value : 0);
+      const length = isString || isArray
+        ? (value as string | any[]).length
+        : (isNumber ? value : 0);
       if (length > rule.max) {
-        const error = rule.message || `${String(field)} 长度不能超过 ${rule.max}`;
+        const error = rule.message ||
+          `${String(field)} 长度不能超过 ${rule.max}`;
         setErrors((prev) => ({ ...prev, [field]: error }));
         return false;
       }
@@ -241,14 +249,17 @@ export function useForm<T extends Record<string, any>>(
   /**
    * 更新字段值
    */
-  const setValue = useCallback(<K extends keyof T>(field: K, value: T[K]): void => {
-    setValuesState((prev) => ({ ...prev, [field]: value }));
-    
-    // 如果已提交过，实时验证
-    if (isSubmitted && validationRules?.[field]) {
-      validateField(field);
-    }
-  }, [isSubmitted, validationRules, validateField]);
+  const setValue = useCallback(
+    <K extends keyof T>(field: K, value: T[K]): void => {
+      setValuesState((prev) => ({ ...prev, [field]: value }));
+
+      // 如果已提交过，实时验证
+      if (isSubmitted && validationRules?.[field]) {
+        validateField(field);
+      }
+    },
+    [isSubmitted, validationRules, validateField],
+  );
 
   /**
    * 更新多个字段值
@@ -260,16 +271,22 @@ export function useForm<T extends Record<string, any>>(
   /**
    * 设置字段错误
    */
-  const setError = useCallback(<K extends keyof T>(field: K, error: string): void => {
-    setErrors((prev) => ({ ...prev, [field]: error }));
-  }, []);
+  const setError = useCallback(
+    <K extends keyof T>(field: K, error: string): void => {
+      setErrors((prev) => ({ ...prev, [field]: error }));
+    },
+    [],
+  );
 
   /**
    * 设置多个字段错误
    */
-  const setErrorsCallback = useCallback((newErrors: Partial<FormErrors<T>>): void => {
-    setErrors((prev) => ({ ...prev, ...newErrors }));
-  }, []);
+  const setErrorsCallback = useCallback(
+    (newErrors: Partial<FormErrors<T>>): void => {
+      setErrors((prev) => ({ ...prev, ...newErrors }));
+    },
+    [],
+  );
 
   /**
    * 清除字段错误
@@ -293,7 +310,9 @@ export function useForm<T extends Record<string, any>>(
    * 重置表单
    */
   const reset = useCallback((newValues?: Partial<T>): void => {
-    setValuesState(newValues ? { ...initialValues, ...newValues } : initialValues);
+    setValuesState(
+      newValues ? { ...initialValues, ...newValues } : initialValues,
+    );
     setErrors({});
     setIsSubmitting(false);
     setIsSubmitted(false);
@@ -309,30 +328,37 @@ export function useForm<T extends Record<string, any>>(
   /**
    * 提交表单处理函数
    */
-  const handleSubmit = useCallback((onSubmit: (values: T) => Promise<void> | void) => {
-    return async (e: Event): Promise<void> => {
-      e.preventDefault();
-      setIsSubmitted(true);
+  const handleSubmit = useCallback(
+    (onSubmit: (values: T) => Promise<void> | void) => {
+      return async (e: Event): Promise<void> => {
+        e.preventDefault();
+        setIsSubmitted(true);
 
-      // 验证表单
-      const isValid = validate();
-      if (!isValid) {
-        return;
-      }
+        // 验证表单
+        const isValid = validate();
+        if (!isValid) {
+          return;
+        }
 
-      // 提交表单
-      setIsSubmitting(true);
-      try {
-        await onSubmit(values);
-      } catch (error) {
-        // 提交失败，可以设置错误信息
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        setErrorsCallback({ _submit: errorMessage } as Partial<FormErrors<T>>);
-      } finally {
-        setIsSubmitting(false);
-      }
-    };
-  }, [values, validate, setErrorsCallback]);
+        // 提交表单
+        setIsSubmitting(true);
+        try {
+          await onSubmit(values);
+        } catch (error) {
+          // 提交失败，可以设置错误信息
+          const errorMessage = error instanceof Error
+            ? error.message
+            : String(error);
+          setErrorsCallback(
+            { _submit: errorMessage } as Partial<FormErrors<T>>,
+          );
+        } finally {
+          setIsSubmitting(false);
+        }
+      };
+    },
+    [values, validate, setErrorsCallback],
+  );
 
   // 计算是否验证通过
   const isValid = Object.keys(errors).length === 0;
@@ -356,4 +382,3 @@ export function useForm<T extends Record<string, any>>(
     getValue,
   };
 }
-

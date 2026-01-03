@@ -165,14 +165,16 @@ export default apiRateLimitMiddleware;`;
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "路由级中间件 (_middleware.ts)",
-    description: "DWeb 框架支持路由级中间件，通过创建 `_middleware.ts` 文件，可以为特定路径及其子路径应用中间件。",
+    description:
+      "DWeb 框架支持路由级中间件，通过创建 `_middleware.ts` 文件，可以为特定路径及其子路径应用中间件。",
     sections: [
       {
         title: "基本概念",
         blocks: [
           {
             type: "text",
-            content: "路由中间件文件使用 `_middleware.ts` 命名约定，放置在路由目录中。中间件会自动应用到该目录及其所有子目录的请求。",
+            content:
+              "路由中间件文件使用 `_middleware.ts` 命名约定，放置在路由目录中。中间件会自动应用到该目录及其所有子目录的请求。",
           },
         ],
       },
@@ -300,7 +302,8 @@ export default apiRateLimitMiddleware;`;
         blocks: [
           {
             type: "text",
-            content: "| 特性 | 路由中间件 (_middleware.ts) | 全局中间件 (server.use()) |\n|------|---------------------------|--------------------------|\n| 作用范围 | 特定路径及其子路径 | 所有请求 |\n| 配置位置 | 路由目录中 | main.ts 或配置文件中 |\n| 路径匹配 | 自动匹配路径层级 | 需要手动配置路径匹配 |\n| 适用场景 | 路径特定的逻辑（如认证、日志） | 全局功能（如 CORS、压缩） |",
+            content:
+              "| 特性 | 路由中间件 (_middleware.ts) | 全局中间件 (server.use()) |\n|------|---------------------------|--------------------------|\n| 作用范围 | 特定路径及其子路径 | 所有请求 |\n| 配置位置 | 路由目录中 | main.ts 或配置文件中 |\n| 路径匹配 | 自动匹配路径层级 | 需要手动配置路径匹配 |\n| 适用场景 | 路径特定的逻辑（如认证、日志） | 全局功能（如 CORS、压缩） |",
           },
         ],
       },

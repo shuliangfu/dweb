@@ -245,209 +245,213 @@ export default config;
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "Application (应用核心)",
-    description: "`Application` 类是 DWeb 框架的统一入口，管理所有组件和服务，提供面向对象的应用管理方式。",
+    description:
+      "`Application` 类是 DWeb 框架的统一入口，管理所有组件和服务，提供面向对象的应用管理方式。",
     sections: [
-        {
-          title: "核心特性",
-          blocks: [
-            {
-              type: "list",
-              ordered: false,
-              items: [
-                "**生命周期管理**: 完整的应用生命周期钩子（Initialize, Start, Stop, Error）。",
-                "**依赖注入容器**: 内置 `ServiceContainer`，支持 Singleton、Transient、Scoped 三种生命周期，实现模块解耦。",
-                "**事件驱动架构**: 基于 `EventEmitter`，支持全局事件总线，实现组件间的解耦通信。",
-                "**多应用支持**: 支持单体和多应用（Monorepo）架构。",
-                "**统一错误处理**: 内置全局异常捕获和统一的错误响应格式。",
-                "**自动配置**: 支持约定优于配置，自动加载 `dweb.config.ts` 和环境变量。",
-              ],
-            },
-          ],
-        },
-        {
-          title: "事件驱动架构",
-          blocks: [
-            {
-              type: "text",
-              content: "`Application` 类继承自 `EventEmitter`，作为全局事件总线，允许不同组件通过事件进行通信，而无需直接依赖。",
-            },
-            {
-              type: "code",
-              code: eventDrivenCode,
-              language: "typescript",
-            },
-          ],
-        },
-        {
-          title: "统一错误处理",
-          blocks: [
-            {
-              type: "text",
-              content: "框架内置了全局错误处理机制，能够捕获路由处理、中间件和生命周期中的异常，并返回统一格式的错误响应。",
-            },
-            {
-              type: "list",
-              ordered: false,
-              items: [
-                "**自动捕获**: 自动捕获同步和异步错误。",
-                "**内容协商**: 根据请求头自动返回 JSON 或 HTML 格式的错误信息。",
-                "**自定义处理**: 支持注册自定义 `ErrorHandler` 来覆盖默认行为。",
-              ],
-            },
-          ],
-        },
-        {
-          title: "快速开始",
-          blocks: [
-            {
-              type: "subsection",
-              level: 3,
-              title: "基本使用",
-              blocks: [
-                {
-                  type: "code",
-                  code: basicUsageCode,
-                  language: "typescript",
-                },
-              ],
-            },
-            {
-              type: "subsection",
-              level: 3,
-              title: "使用配置文件",
-              blocks: [
-                {
-                  type: "code",
-                  code: configFileCode,
-                  language: "typescript",
-                },
-              ],
-            },
-            {
-              type: "subsection",
-              level: 3,
-              title: "程序化配置",
-              blocks: [
-                {
-                  type: "code",
-                  code: programmaticConfigCode,
-                  language: "typescript",
-                },
-              ],
-            },
-          ],
-        },
-        {
-          title: "注册中间件和插件",
-          blocks: [
-            {
-              type: "code",
-              code: middlewarePluginCode,
-              language: "typescript",
-            },
-          ],
-        },
-        {
-          title: "获取服务",
-          blocks: [
-            {
-              type: "text",
-              content: "通过 `getService` 方法获取已注册的服务：",
-            },
-            {
-              type: "code",
-              code: getServiceCode,
-              language: "typescript",
-            },
-          ],
-        },
-        {
-          title: "完整示例",
-          blocks: [
-            {
-              type: "code",
-              code: completeExampleCode,
-              language: "typescript",
-            },
-          ],
-        },
-        {
-          title: "API 参考",
-          blocks: [
-            {
-              type: "subsection",
-              level: 3,
-              title: "构造函数",
-              blocks: [
-                {
-                  type: "code",
-                  code: "constructor(configPath?: string, appName?: string)",
-                  language: "typescript",
-                },
-                {
-                  type: "text",
-                  content: "**参数：**",
-                },
-                {
-                  type: "list",
-                  ordered: false,
-                  items: [
-                    "`configPath` (可选): 配置文件路径，如果不提供则自动查找 `dweb.config.ts`",
-                    "`appName` (可选): 应用名称，用于多应用模式",
-                  ],
-                },
-              ],
-            },
-            {
-              type: "subsection",
-              level: 3,
-              title: "方法",
-              blocks: [
-                {
-                  type: "api",
-                  name: "initialize()",
-                  description: "初始化应用，加载配置、注册服务、初始化路由和服务器。",
-                  code: "await app.initialize();",
-                },
-                {
-                  type: "api",
-                  name: "start()",
-                  description: "启动应用，启动服务器并进入运行状态。",
-                  code: "await app.start();",
-                },
-                {
-                  type: "api",
-                  name: "stop()",
-                  description: "停止应用，停止服务器并清理资源。",
-                  code: "await app.stop();",
-                },
-                {
-                  type: "api",
-                  name: "getService<T>(token)",
-                  description: "获取已注册的服务。",
-                  code: 'const logger = app.getService<Logger>("logger");',
-                },
-              ],
-            },
-          ],
-        },
-        {
-          title: "相关文档",
-          blocks: [
-            {
-              type: "list",
-              ordered: false,
-              items: [
-                "[ApplicationContext (应用上下文)](/docs/core/application-context)",
-                "[ConfigManager (配置管理器)](/docs/core/config-manager)",
-                "[ServiceContainer (服务容器)](/docs/core/service-container)",
-                "[LifecycleManager (生命周期管理器)](/docs/core/lifecycle-manager)",
-                "[服务器 (Server)](/docs/core/server)",
-              ],
-            },
-          ],
-        },
-      ],
+      {
+        title: "核心特性",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "**生命周期管理**: 完整的应用生命周期钩子（Initialize, Start, Stop, Error）。",
+              "**依赖注入容器**: 内置 `ServiceContainer`，支持 Singleton、Transient、Scoped 三种生命周期，实现模块解耦。",
+              "**事件驱动架构**: 基于 `EventEmitter`，支持全局事件总线，实现组件间的解耦通信。",
+              "**多应用支持**: 支持单体和多应用（Monorepo）架构。",
+              "**统一错误处理**: 内置全局异常捕获和统一的错误响应格式。",
+              "**自动配置**: 支持约定优于配置，自动加载 `dweb.config.ts` 和环境变量。",
+            ],
+          },
+        ],
+      },
+      {
+        title: "事件驱动架构",
+        blocks: [
+          {
+            type: "text",
+            content:
+              "`Application` 类继承自 `EventEmitter`，作为全局事件总线，允许不同组件通过事件进行通信，而无需直接依赖。",
+          },
+          {
+            type: "code",
+            code: eventDrivenCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "统一错误处理",
+        blocks: [
+          {
+            type: "text",
+            content:
+              "框架内置了全局错误处理机制，能够捕获路由处理、中间件和生命周期中的异常，并返回统一格式的错误响应。",
+          },
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "**自动捕获**: 自动捕获同步和异步错误。",
+              "**内容协商**: 根据请求头自动返回 JSON 或 HTML 格式的错误信息。",
+              "**自定义处理**: 支持注册自定义 `ErrorHandler` 来覆盖默认行为。",
+            ],
+          },
+        ],
+      },
+      {
+        title: "快速开始",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "基本使用",
+            blocks: [
+              {
+                type: "code",
+                code: basicUsageCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "使用配置文件",
+            blocks: [
+              {
+                type: "code",
+                code: configFileCode,
+                language: "typescript",
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "程序化配置",
+            blocks: [
+              {
+                type: "code",
+                code: programmaticConfigCode,
+                language: "typescript",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "注册中间件和插件",
+        blocks: [
+          {
+            type: "code",
+            code: middlewarePluginCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "获取服务",
+        blocks: [
+          {
+            type: "text",
+            content: "通过 `getService` 方法获取已注册的服务：",
+          },
+          {
+            type: "code",
+            code: getServiceCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "完整示例",
+        blocks: [
+          {
+            type: "code",
+            code: completeExampleCode,
+            language: "typescript",
+          },
+        ],
+      },
+      {
+        title: "API 参考",
+        blocks: [
+          {
+            type: "subsection",
+            level: 3,
+            title: "构造函数",
+            blocks: [
+              {
+                type: "code",
+                code: "constructor(configPath?: string, appName?: string)",
+                language: "typescript",
+              },
+              {
+                type: "text",
+                content: "**参数：**",
+              },
+              {
+                type: "list",
+                ordered: false,
+                items: [
+                  "`configPath` (可选): 配置文件路径，如果不提供则自动查找 `dweb.config.ts`",
+                  "`appName` (可选): 应用名称，用于多应用模式",
+                ],
+              },
+            ],
+          },
+          {
+            type: "subsection",
+            level: 3,
+            title: "方法",
+            blocks: [
+              {
+                type: "api",
+                name: "initialize()",
+                description:
+                  "初始化应用，加载配置、注册服务、初始化路由和服务器。",
+                code: "await app.initialize();",
+              },
+              {
+                type: "api",
+                name: "start()",
+                description: "启动应用，启动服务器并进入运行状态。",
+                code: "await app.start();",
+              },
+              {
+                type: "api",
+                name: "stop()",
+                description: "停止应用，停止服务器并清理资源。",
+                code: "await app.stop();",
+              },
+              {
+                type: "api",
+                name: "getService<T>(token)",
+                description: "获取已注册的服务。",
+                code: 'const logger = app.getService<Logger>("logger");',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "相关文档",
+        blocks: [
+          {
+            type: "list",
+            ordered: false,
+            items: [
+              "[ApplicationContext (应用上下文)](/docs/core/application-context)",
+              "[ConfigManager (配置管理器)](/docs/core/config-manager)",
+              "[ServiceContainer (服务容器)](/docs/core/service-container)",
+              "[LifecycleManager (生命周期管理器)](/docs/core/lifecycle-manager)",
+              "[服务器 (Server)](/docs/core/server)",
+            ],
+          },
+        ],
+      },
+    ],
   };
 
   return (

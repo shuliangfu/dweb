@@ -77,7 +77,8 @@ export default {
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "RouteHandler (路由处理器)",
-    description: "DWeb 框架的路由处理器，负责处理页面路由、API 路由、模块请求等。",
+    description:
+      "DWeb 框架的路由处理器，负责处理页面路由、API 路由、模块请求等。",
     sections: [
       {
         title: "功能概述",
@@ -148,7 +149,8 @@ export default {
         blocks: [
           {
             type: "text",
-            content: "资源预加载（Prefetch）可以在用户访问前提前加载路由组件，提升用户体验。",
+            content:
+              "资源预加载（Prefetch）可以在用户访问前提前加载路由组件，提升用户体验。",
           },
           {
             type: "code",
@@ -203,7 +205,8 @@ export default {
                 type: "api",
                 name: "handlePageRoute(routeInfo, req, res)",
                 description: "处理页面路由。",
-                code: "await routeHandler.handlePageRoute(routeInfo, req, res);",
+                code:
+                  "await routeHandler.handlePageRoute(routeInfo, req, res);",
               },
               {
                 type: "api",

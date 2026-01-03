@@ -11,7 +11,8 @@ export const metadata = {
 };
 
 export default function StoragePage() {
-  const quickStartCode = `import { setStorage, getStorage, removeStorage } from "@dreamer/dweb/utils";
+  const quickStartCode =
+    `import { setStorage, getStorage, removeStorage } from "@dreamer/dweb/utils";
 
 // 存储数据（自动序列化）
 setStorage('user', { id: 1, name: 'Alice' });
@@ -23,7 +24,8 @@ const user = getStorage('user');
 // 删除数据
 removeStorage('user');`;
 
-  const basicCode = `import { setStorage, getStorage, removeStorage, clearStorage } from "@dreamer/dweb/utils";
+  const basicCode =
+    `import { setStorage, getStorage, removeStorage, clearStorage } from "@dreamer/dweb/utils";
 
 // 存储对象
 setStorage('user', { id: 1, name: 'Alice' });
@@ -48,7 +50,8 @@ removeStorage('token', 'sessionStorage');
 clearStorage(); // 清空 localStorage
 clearStorage('sessionStorage'); // 清空 sessionStorage`;
 
-  const expiryCode = `import { setStorageWithExpiry, getStorageWithExpiry } from "@dreamer/dweb/utils";
+  const expiryCode =
+    `import { setStorageWithExpiry, getStorageWithExpiry } from "@dreamer/dweb/utils";
 
 // 存储 token，1 小时后过期
 setStorageWithExpiry('token', 'abc123', 3600);
@@ -62,7 +65,8 @@ if (!token) {
   // token 不存在或已过期，需要重新获取
 }`;
 
-  const managementCode = `import { hasStorage, getStorageKeys, getStorageSize, getTotalStorageSize } from "@dreamer/dweb/utils";
+  const managementCode =
+    `import { hasStorage, getStorageKeys, getStorageSize, getTotalStorageSize } from "@dreamer/dweb/utils";
 
 // 检查存储是否存在
 if (hasStorage('user')) {

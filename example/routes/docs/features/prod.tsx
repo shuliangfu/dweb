@@ -62,7 +62,8 @@ docker run -p 3000:3000 -e DENO_ENV=production -e PORT=8080 dweb-app`;
 
   const content = {
     title: "生产服务器 (prod)",
-    description: "DWeb 框架的生产服务器提供了优化的性能和安全性，适合部署到生产环境。",
+    description:
+      "DWeb 框架的生产服务器提供了优化的性能和安全性，适合部署到生产环境。",
     sections: [
       {
         title: "启动生产服务器",
@@ -137,7 +138,8 @@ docker run -p 3000:3000 -e DENO_ENV=production -e PORT=8080 dweb-app`;
           },
           {
             type: "text",
-            content: "详细说明请参考 [Docker 部署](/docs/deployment/docker) 文档。",
+            content:
+              "详细说明请参考 [Docker 部署](/docs/deployment/docker) 文档。",
           },
         ],
       },

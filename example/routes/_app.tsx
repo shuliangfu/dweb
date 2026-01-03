@@ -39,4 +39,3 @@ export default function App({ children }: AppProps) {
     </html>
   );
 }
-

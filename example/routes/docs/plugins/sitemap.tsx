@@ -28,7 +28,8 @@ plugins: [
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "sitemap - 网站地图",
-    description: "sitemap 插件自动生成网站地图（sitemap.xml），帮助搜索引擎索引网站。",
+    description:
+      "sitemap 插件自动生成网站地图（sitemap.xml），帮助搜索引擎索引网站。",
     sections: [
       {
         title: "基本使用",

@@ -52,7 +52,8 @@ export default defineConfig({
 
   const content = {
     title: "缓存系统",
-    description: "DWeb 框架内置了灵活的缓存抽象层，支持多种缓存策略，旨在提高应用性能并减轻数据库压力。",
+    description:
+      "DWeb 框架内置了灵活的缓存抽象层，支持多种缓存策略，旨在提高应用性能并减轻数据库压力。",
     sections: [
       {
         title: "核心特性",
@@ -92,7 +93,8 @@ export default defineConfig({
             blocks: [
               {
                 type: "text",
-                content: "默认使用的缓存适配器，基于 `lru-cache` 实现，适合单实例部署。",
+                content:
+                  "默认使用的缓存适配器，基于 `lru-cache` 实现，适合单实例部署。",
               },
               {
                 type: "list",
@@ -116,7 +118,8 @@ export default defineConfig({
               {
                 type: "alert",
                 level: "warning",
-                content: "目前 Redis 适配器处于接口预留状态，实际使用需要引入 Redis 客户端库并自行配置。",
+                content:
+                  "目前 Redis 适配器处于接口预留状态，实际使用需要引入 Redis 客户端库并自行配置。",
               },
               {
                 type: "code",
@@ -132,7 +135,8 @@ export default defineConfig({
         blocks: [
           {
             type: "text",
-            content: "为了支持微服务和多实例部署，框架设计了标准的缓存接口，允许开发者轻松接入 Redis、Memcached 等分布式缓存系统。这确保了在扩容应用实例时，缓存命中率不会大幅下降，且能保持数据一致性。",
+            content:
+              "为了支持微服务和多实例部署，框架设计了标准的缓存接口，允许开发者轻松接入 Redis、Memcached 等分布式缓存系统。这确保了在扩容应用实例时，缓存命中率不会大幅下降，且能保持数据一致性。",
           },
         ],
       },

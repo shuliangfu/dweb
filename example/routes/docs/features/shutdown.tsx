@@ -45,8 +45,7 @@ await server.start(3000);`;
 4. 退出进程：正常退出或错误退出`;
 
   // 完整示例
-  const completeExampleCode =
-    `import { Server } from "@dreamer/dweb";
+  const completeExampleCode = `import { Server } from "@dreamer/dweb";
 import { setupSignalHandlers, registerShutdownHandler } from "@dreamer/dweb";
 import { Database } from "./database";
 
@@ -132,7 +131,8 @@ setupSignalHandlers(server);`;
 
   const content = {
     title: "优雅关闭 (shutdown)",
-    description: "DWeb 框架提供了优雅关闭功能，确保服务器在关闭时能够正确处理未完成的请求和清理资源。",
+    description:
+      "DWeb 框架提供了优雅关闭功能，确保服务器在关闭时能够正确处理未完成的请求和清理资源。",
     sections: [
       {
         title: "快速开始",
@@ -212,7 +212,8 @@ setupSignalHandlers(server);`;
           {
             type: "api",
             name: "setupSignalHandlers(server)",
-            description: "设置系统信号监听器，自动处理 `SIGTERM` 和 `SIGINT` 信号。",
+            description:
+              "设置系统信号监听器，自动处理 `SIGTERM` 和 `SIGINT` 信号。",
             code: setupSignalHandlersCode,
           },
           {

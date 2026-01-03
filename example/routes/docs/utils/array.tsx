@@ -11,7 +11,8 @@ export const metadata = {
 };
 
 export default function ArrayPage() {
-  const quickStartCode = `import { chunk, unique, groupBy, intersection } from "@dreamer/dweb/utils";
+  const quickStartCode =
+    `import { chunk, unique, groupBy, intersection } from "@dreamer/dweb/utils";
 
 // 数组分块
 const chunks = chunk([1, 2, 3, 4, 5], 2);
@@ -103,7 +104,8 @@ zip([1, 2, 3], ['a', 'b', 'c']);
 unzip([[1, 'a'], [2, 'b'], [3, 'c']]);
 // [[1, 2, 3], ['a', 'b', 'c']]`;
 
-  const intersectionCode = `import { intersection, union, difference } from "@dreamer/dweb/utils";
+  const intersectionCode =
+    `import { intersection, union, difference } from "@dreamer/dweb/utils";
 
 // 数组交集
 intersection([1, 2, 3], [2, 3, 4], [3, 4, 5]);

@@ -20,7 +20,8 @@ export default function Footer() {
               DWeb
             </h3>
             <p className="text-sm leading-relaxed">
-              基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web 框架，为开发者提供极致的开发体验。
+              基于 Deno + Preact + Tailwind CSS 的现代化全栈 Web
+              框架，为开发者提供极致的开发体验。
             </p>
           </div>
 
@@ -95,7 +96,9 @@ export default function Footer() {
                   rel="noopener noreferrer"
                   className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center group"
                 >
-                  <span className="w-4 h-4 mr-2 flex items-center justify-center font-bold text-xs bg-yellow-400 text-black rounded-sm group-hover:bg-yellow-300">J</span>
+                  <span className="w-4 h-4 mr-2 flex items-center justify-center font-bold text-xs bg-yellow-400 text-black rounded-sm group-hover:bg-yellow-300">
+                    J
+                  </span>
                   JSR 包
                 </a>
               </li>
@@ -111,7 +114,7 @@ export default function Footer() {
               加入我们的社区，一起构建更好的 Web 开发未来。
             </p>
             <div className="flex space-x-4">
-                {/* 社交图标占位 */}
+              {/* 社交图标占位 */}
             </div>
           </div>
         </div>

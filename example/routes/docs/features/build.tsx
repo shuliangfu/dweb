@@ -62,7 +62,8 @@ dist/
 
   const content = {
     title: "构建 (build)",
-    description: "DWeb 框架提供了强大的构建功能，可以将项目编译为生产版本，优化代码并生成静态资源。",
+    description:
+      "DWeb 框架提供了强大的构建功能，可以将项目编译为生产版本，优化代码并生成静态资源。",
     sections: [
       {
         title: "构建生产版本",

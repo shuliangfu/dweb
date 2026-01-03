@@ -287,7 +287,8 @@ function resetStore(): void`;
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "store - 状态管理插件",
-    description: "store 插件提供客户端状态管理功能，支持响应式状态更新、持久化存储和跨组件状态共享。",
+    description:
+      "store 插件提供客户端状态管理功能，支持响应式状态更新、持久化存储和跨组件状态共享。",
     sections: [
       {
         title: "技术亮点",
@@ -321,7 +322,8 @@ function resetStore(): void`;
         blocks: [
           {
             type: "text",
-            content: "在客户端组件中使用 store（从 `@dreamer/dweb/client` 导入）：",
+            content:
+              "在客户端组件中使用 store（从 `@dreamer/dweb/client` 导入）：",
           },
           {
             type: "code",
@@ -335,7 +337,8 @@ function resetStore(): void`;
         blocks: [
           {
             type: "text",
-            content: "`defineStore` 提供了声明式的 API，让 store 的定义和使用更加简洁和类型安全。支持两种定义方式：**对象式（Options API）** 和 **函数式（Setup API）**",
+            content:
+              "`defineStore` 提供了声明式的 API，让 store 的定义和使用更加简洁和类型安全。支持两种定义方式：**对象式（Options API）** 和 **函数式（Setup API）**",
           },
           {
             type: "subsection",
@@ -373,7 +376,8 @@ function resetStore(): void`;
           {
             type: "alert",
             level: "info",
-            content: "**提示**：使用 `defineStore` 时，store 插件会自动收集所有已定义的 store 的初始状态，无需手动配置 `initialState`。只需在 `main.ts` 中导入 stores 文件即可。",
+            content:
+              "**提示**：使用 `defineStore` 时，store 插件会自动收集所有已定义的 store 的初始状态，无需手动配置 `initialState`。只需在 `main.ts` 中导入 stores 文件即可。",
           },
         ],
       },
@@ -416,23 +420,28 @@ function resetStore(): void`;
           },
           {
             type: "text",
-            content: "**`getStore()`** - 获取 Store 实例。返回 `Store | null`。适用于需要多次操作 Store 的场景。",
+            content:
+              "**`getStore()`** - 获取 Store 实例。返回 `Store | null`。适用于需要多次操作 Store 的场景。",
           },
           {
             type: "text",
-            content: "**`getStoreState()`** - 直接获取当前状态值。返回 `T | null`。适用于只需要读取一次状态的场景，更简洁。",
+            content:
+              "**`getStoreState()`** - 直接获取当前状态值。返回 `T | null`。适用于只需要读取一次状态的场景，更简洁。",
           },
           {
             type: "text",
-            content: "**`setStoreState()`** - 更新状态。接受部分状态对象或更新函数。会自动触发所有订阅者。",
+            content:
+              "**`setStoreState()`** - 更新状态。接受部分状态对象或更新函数。会自动触发所有订阅者。",
           },
           {
             type: "text",
-            content: "**`subscribeStore()`** - 订阅状态变化。返回取消订阅函数。监听器会在状态变化时自动调用。",
+            content:
+              "**`subscribeStore()`** - 订阅状态变化。返回取消订阅函数。监听器会在状态变化时自动调用。",
           },
           {
             type: "text",
-            content: "**`resetStore()`** - 重置状态到初始值。会清除持久化存储（如果启用）并触发所有订阅者。",
+            content:
+              "**`resetStore()`** - 重置状态到初始值。会清除持久化存储（如果启用）并触发所有订阅者。",
           },
         ],
       },

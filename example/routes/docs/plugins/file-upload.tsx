@@ -13,7 +13,8 @@ export const metadata = {
 export default function FileUploadPluginPage(
   { params: _params, query: _query, data: _data }: PageProps,
 ) {
-  const fileUploadCode = `import { fileUpload, handleFileUpload } from '@dreamer/dweb/plugins';
+  const fileUploadCode =
+    `import { fileUpload, handleFileUpload } from '@dreamer/dweb/plugins';
 
 // 注册插件
 usePlugin(fileUpload({
@@ -42,7 +43,8 @@ server.setHandler(async (req, res) => {
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "fileUpload - 文件上传",
-    description: "fileUpload 插件用于处理文件上传，支持多文件上传和文件验证。该插件专注于文件上传功能，不包含图片处理功能。如需图片优化（压缩、裁切、格式转换等），请使用独立的 `image-optimizer` 插件。",
+    description:
+      "fileUpload 插件用于处理文件上传，支持多文件上传和文件验证。该插件专注于文件上传功能，不包含图片处理功能。如需图片优化（压缩、裁切、格式转换等），请使用独立的 `image-optimizer` 插件。",
     sections: [
       {
         title: "基本使用",

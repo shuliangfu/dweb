@@ -6,12 +6,12 @@ import DocRenderer from "@components/DocRenderer.tsx";
 
 export const metadata = {
   title: "数学工具 - DWeb 框架文档",
-  description:
-    "DWeb 框架的数学计算工具函数，提供数学计算辅助功能",
+  description: "DWeb 框架的数学计算工具函数，提供数学计算辅助功能",
 };
 
 export default function MathPage() {
-  const quickStartCode = `import { clamp, round, random, sum, percent } from "@dreamer/dweb/utils";
+  const quickStartCode =
+    `import { clamp, round, random, sum, percent } from "@dreamer/dweb/utils";
 
 // 限制数值范围
 const value = clamp(150, 0, 100); // 100
@@ -59,7 +59,8 @@ random(); // 0 到 1 之间的随机数
 randomInt(1, 10); // 1 到 10 之间的随机整数（包含 1 和 10）
 randomInt(0, 100); // 0 到 100 之间的随机整数`;
 
-  const statsCode = `import { sum, average, max, min } from "@dreamer/dweb/utils";
+  const statsCode =
+    `import { sum, average, max, min } from "@dreamer/dweb/utils";
 
 // 求和
 sum([1, 2, 3, 4, 5]); // 15
@@ -169,8 +170,7 @@ if (inRange(userInput, 0, 100)) {
 
   const content = {
     title: "数学工具",
-    description:
-      "提供数学计算辅助函数。所有函数在服务端和客户端都可用。",
+    description: "提供数学计算辅助函数。所有函数在服务端和客户端都可用。",
     sections: [
       {
         title: "快速开始",

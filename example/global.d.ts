@@ -1,12 +1,12 @@
 /**
  * i18n 全局类型声明
  * 使 $t() 函数可以在全局作用域中直接使用，无需导入
- * 
+ *
  * 使用方法：
  * 1. 将此文件复制到项目根目录
  * 2. 或者在项目的 TypeScript 配置中引用此文件
  * 3. 或者在需要使用 $t() 的文件顶部添加：/// <reference path="./i18n-global.d.ts" />
- * 
+ *
  * 注意：由于 JSR 不允许在发布的包中修改全局类型，此文件位于 example 目录
  * 用户需要在项目中手动引用此文件或创建类似的文件
  */
@@ -35,7 +35,7 @@ declare global {
    * const message = $t('common.welcome');
    * const messageWithParams = $t('user.greeting', { name: 'John' });
    */
-	var $t: TranslationFunction;
+  var $t: TranslationFunction;
 }
 
 /**
@@ -45,8 +45,7 @@ interface Window {
   /**
    * 客户端全局翻译函数 $t
    */
-	$t?: TranslationFunction;
+  $t?: TranslationFunction;
 }
 
 export {};
-

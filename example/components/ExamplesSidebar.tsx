@@ -256,7 +256,8 @@ export default function ExamplesSidebar(
                     )}
                   {hasChildren && (
                     <div className="space-y-1 relative ml-4">
-                      <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700 hidden"></div>
+                      <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700 hidden">
+                      </div>
                       {item.children!.map((child) => {
                         if (!child.path) return null;
                         const childIsActive = isChildActive(

@@ -140,7 +140,8 @@ const graphqlServer = new GraphQLServer({
 
   const content = {
     title: "GraphQL",
-    description: "DWeb 框架提供了 GraphQL 服务器支持，可以轻松构建 GraphQL API。",
+    description:
+      "DWeb 框架提供了 GraphQL 服务器支持，可以轻松构建 GraphQL API。",
     sections: [
       {
         title: "快速开始",
@@ -188,7 +189,8 @@ const graphqlServer = new GraphQLServer({
         blocks: [
           {
             type: "text",
-            content: "GraphQL 服务器支持订阅（Subscriptions）功能，可以实现实时数据推送：",
+            content:
+              "GraphQL 服务器支持订阅（Subscriptions）功能，可以实现实时数据推送：",
           },
           {
             type: "code",

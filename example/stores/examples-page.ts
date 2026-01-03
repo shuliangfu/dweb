@@ -63,7 +63,9 @@ export const examplesPageStore = defineStore("examplesPage", {
     /**
      * 设置示例数据
      */
-    setExamples(examples: Array<{ id: number; name: string; description: string }>) {
+    setExamples(
+      examples: Array<{ id: number; name: string; description: string }>,
+    ) {
       this.examples = examples;
     },
     /**
@@ -87,7 +89,7 @@ export const examplesPageStore = defineStore("examplesPage", {
     /**
      * 获取示例数据列表（使用函数式 API - 必须使用中划线格式）
      */
-		async fetchExamples() {
+    async fetchExamples() {
       this.setLoading(true);
       this.setMessage("正在加载数据...");
       try {
@@ -222,4 +224,3 @@ export const examplesPageStore = defineStore("examplesPage", {
 export const useExamplesPageStore = () => {
   return useStore(examplesPageStore);
 };
-

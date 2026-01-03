@@ -33,7 +33,8 @@ plugins: [
   // 页面文档数据（用于数据提取和翻译）
   const content = {
     title: "seo - SEO 优化",
-    description: "seo 插件自动生成 SEO 元数据，包括 Open Graph 和 Twitter Card。",
+    description:
+      "seo 插件自动生成 SEO 元数据，包括 Open Graph 和 Twitter Card。",
     sections: [
       {
         title: "基本使用",

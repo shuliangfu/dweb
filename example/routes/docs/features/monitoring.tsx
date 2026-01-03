@@ -164,7 +164,8 @@ console.log("错误总数:", metrics.errorCount);`;
 
   const content = {
     title: "性能监控 (monitoring)",
-    description: "DWeb 框架提供了完整的性能监控功能，包括请求监控、性能指标收集和错误追踪。",
+    description:
+      "DWeb 框架提供了完整的性能监控功能，包括请求监控、性能指标收集和错误追踪。",
     sections: [
       {
         title: "快速开始",

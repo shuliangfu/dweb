@@ -223,7 +223,8 @@ docker run -p 3000:3000 dweb-app`,
             blocks: [
               {
                 type: "text",
-                content: "项目根目录已包含 `docker-compose.yml`，可以直接使用：",
+                content:
+                  "项目根目录已包含 `docker-compose.yml`，可以直接使用：",
               },
               {
                 type: "code",

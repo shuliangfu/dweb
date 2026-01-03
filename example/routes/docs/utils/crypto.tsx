@@ -6,8 +6,7 @@ import DocRenderer from "@components/DocRenderer.tsx";
 
 export const metadata = {
   title: "加密函数 - DWeb 框架文档",
-  description:
-    "DWeb 框架的加密工具函数，提供常用的加密、哈希、签名等功能",
+  description: "DWeb 框架的加密工具函数，提供常用的加密、哈希、签名等功能",
 };
 
 export default function CryptoPage() {
