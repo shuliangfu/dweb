@@ -122,8 +122,8 @@ export default function HomePage(
     // 在 useEffect 内部创建异步函数并立即调用
     (async () => {
       const web3 = new Web3Client();
-      const accounts = await web3.connectWallet();
-      setDefaultAccount(accounts[0]);
+      // const accounts = await web3.connectWallet();
+      // setDefaultAccount(accounts[0]);
     })();
   }, []);
 
