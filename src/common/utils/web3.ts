@@ -13,6 +13,7 @@
 
 // 静态导入 ethers.js 核心模块（提升性能和类型检查）
 import {
+  BrowserProvider,
   Contract as EthersContract,
   formatUnits,
   getAddress as ethersGetAddress,
@@ -208,6 +209,8 @@ export class Web3Client {
 
   /**
    * 初始化 Provider（懒加载）
+   * 在客户端环境中，如果检测到 window.ethereum，优先使用它作为 provider
+   * 在服务端环境或没有 window.ethereum 时，使用 rpcUrl 创建 JsonRpcProvider
    * @returns Provider 实例
    */
   private getProvider(): any {
@@ -215,11 +218,34 @@ export class Web3Client {
       return this.provider;
     }
 
-    if (!this.config.rpcUrl) {
-      throw new Error("RPC URL 未配置，请设置 rpcUrl");
+    // 客户端环境：优先使用 window.ethereum（MetaMask 等钱包）
+    if (IS_CLIENT) {
+      const win = globalThis.window as WindowWithEthereum;
+      if (win.ethereum) {
+        try {
+          // 使用 BrowserProvider 从 window.ethereum 创建 provider
+          this.provider = new BrowserProvider(win.ethereum);
+          return this.provider;
+        } catch (error) {
+          throw new Error(
+            `从钱包创建 Provider 失败: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+        }
+      }
     }
 
-    // 使用静态导入的 ethers.js
+    // 如果没有 window.ethereum，检查是否配置了 rpcUrl
+    if (!this.config.rpcUrl) {
+      throw new Error(
+        IS_CLIENT
+          ? "未检测到钱包且 RPC URL 未配置，请连接钱包或设置 rpcUrl"
+          : "RPC URL 未配置，请设置 rpcUrl",
+      );
+    }
+
+    // 使用静态导入的 ethers.js 创建 JsonRpcProvider
     try {
       this.provider = new EthersJsonRpcProvider(
         this.config.rpcUrl,
