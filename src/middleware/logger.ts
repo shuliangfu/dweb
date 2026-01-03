@@ -17,15 +17,36 @@ export function logger(options: {
 } = {}): Middleware {
   const { format = "combined", skip } = options;
 
-  // 默认跳过 Chrome DevTools 的自动请求
+  // 默认跳过 Chrome DevTools 的自动请求和 Docker 健康检查请求
   const defaultSkip = (req: { url: string; method: string }) => {
     const url = new URL(req.url);
-    return url.pathname.startsWith("/.well-known/") ||
+    // 跳过 Chrome DevTools 请求
+    if (
+      url.pathname.startsWith("/.well-known/") ||
       url.pathname.endsWith("/com.chrome.devtools.json") ||
-      url.pathname === "/@vite/client";
+      url.pathname === "/@vite/client"
+    ) {
+      return true;
+    }
+    // 跳过 Docker 健康检查请求（通常是 GET / 且 user-agent 是 curl）
+    // 注意：这里无法直接访问 headers，需要在中间件内部检查
+    return false;
   };
 
   return async (req, res, next) => {
+    const url = new URL(req.url);
+    const userAgent = req.headers.get("user-agent") || "";
+
+    // 跳过 Docker 健康检查请求（GET / 且 user-agent 是 curl）
+    if (
+      req.method === "GET" &&
+      url.pathname === "/" &&
+      userAgent.toLowerCase().includes("curl")
+    ) {
+      await next();
+      return;
+    }
+
     // 跳过某些请求（默认跳过 Chrome DevTools 请求，以及用户自定义的 skip 函数）
     if (
       defaultSkip({ url: req.url, method: req.method }) ||
@@ -36,7 +57,6 @@ export function logger(options: {
     }
 
     const start = Date.now();
-    const url = new URL(req.url);
 
     // 执行下一个中间件
     await next();
