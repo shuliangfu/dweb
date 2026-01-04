@@ -43,7 +43,7 @@ function convertJsrToHttpUrl(jsrUrl: string): string {
   let queryParams = "bundle";
   if (subPath && subPath.includes("utils")) {
     // web3 子路径包含大量 npm 依赖（ethers），使用 external 参数避免打包
-    queryParams = "external=npm:*";
+    queryParams = "external";
   }
 
   if (subPath) {
@@ -106,7 +106,7 @@ function convertJsrToBrowserUrl(jsrUrl: string): string {
   let queryParams = "bundle";
   if (subPath && subPath.includes("utils")) {
     // web3 子路径包含大量 npm 依赖（ethers），使用 external 参数避免打包
-    queryParams = "external=npm:*";
+    queryParams = "external";
   }
 
   if (subPath) {
