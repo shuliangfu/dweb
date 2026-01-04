@@ -18,7 +18,7 @@
     "@dreamer/dweb": "../src/mod.ts",
     "@dreamer/dweb/cli": "../src/cli.ts",
     "@dreamer/dweb/client": "../src/client/mod.ts",
-    "@dreamer/dweb/utils": "../src/common/utils/mod.ts",
+    "@dreamer/dweb/utils/web3": "../src/common/utils/web3.ts",
     "@dreamer/dweb/plugins": "../src/plugins/mod.ts",
     "@dreamer/dweb/console": "../src/server/console/mod.ts",
     "@dreamer/dweb/database": "../src/features/database/mod.ts",

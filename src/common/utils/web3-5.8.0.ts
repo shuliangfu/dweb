@@ -10,26 +10,14 @@
  * API 使用说明：
  * - 本实现使用现代的 EIP-1193 标准（window.ethereum.request()）
  * - 不使用已弃用的 window.web3 API
- * - 使用 ethers.js 的 BrowserProvider 来与钱包交互
+ * - 使用 ethers.js 5.8.0 的 Web3Provider 来与钱包交互
  *
  * 依赖：
- * - 需要安装 ethers.js: npm:ethers@^6.0.0
+ * - 需要安装 ethers.js: npm:ethers@5.8.0
  */
 
-// 静态导入 ethers.js 核心模块（提升性能和类型检查）
-import {
-  BrowserProvider,
-  Contract as EthersContract,
-  formatUnits,
-  getAddress as ethersGetAddress,
-  Interface as EthersInterface,
-  isAddress as ethersIsAddress,
-  JsonRpcProvider as EthersJsonRpcProvider,
-  keccak256 as ethersKeccak256,
-  solidityPackedKeccak256,
-  verifyMessage as ethersVerifyMessage,
-  Wallet as EthersWallet,
-} from "npm:ethers@^6.16.0";
+// 按需导入 ethers.js 5.8.0 的模块
+import { Contract, providers, utils, Wallet } from "npm:ethers@5.8.0";
 import { IS_CLIENT } from "../constants.ts";
 
 /**
@@ -39,6 +27,18 @@ import { IS_CLIENT } from "../constants.ts";
 interface WindowWithEthereum extends Window {
   ethereum?: {
     request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+    sendAsync?: (
+      payload: {
+        method: string;
+        params?: unknown[];
+        id?: number;
+        jsonrpc?: string;
+      },
+      callback: (
+        error: Error | null,
+        result?: { result: unknown; error?: unknown },
+      ) => void,
+    ) => void;
     on?: (event: string, callback: (...args: unknown[]) => void) => void;
     removeListener?: (
       event: string,
@@ -46,6 +46,11 @@ interface WindowWithEthereum extends Window {
     ) => void;
     // 明确排除已弃用的 web3 属性，避免意外访问
     web3?: never;
+    // 某些钱包可能使用 addListener 而不是 on
+    addListener?: (
+      event: string,
+      callback: (...args: unknown[]) => void,
+    ) => void;
   };
   // 明确排除已弃用的 window.web3，避免意外访问
   web3?: never;
@@ -231,9 +236,31 @@ export class Web3Client {
    * 初始化 Provider（懒加载）
    * 在客户端环境中，如果检测到 window.ethereum，优先使用它作为 provider
    * 在服务端环境或没有 window.ethereum 时，使用 rpcUrl 创建 JsonRpcProvider
+   *
+   * 注意：对于只读操作（readContract），建议使用 JsonRpcProvider 以避免 MetaMask 的兼容性问题
+   * 对于需要签名的操作，使用 Web3Provider
+   *
+   * @param forReadOnly 是否用于只读操作（默认 false）
    * @returns Provider 实例
    */
-  private getProvider(): any {
+  private getProvider(forReadOnly: boolean = false): any {
+    // 如果是只读操作且配置了 rpcUrl，优先使用 JsonRpcProvider（避免 MetaMask 兼容性问题）
+    if (forReadOnly && this.config.rpcUrl) {
+      try {
+        return new providers.JsonRpcProvider(
+          this.config.rpcUrl,
+          this.config.chainId,
+        );
+      } catch (error) {
+        // 如果创建失败，继续使用默认逻辑
+        console.warn(
+          `创建 JsonRpcProvider 失败，将使用默认 Provider: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    }
+
     if (this.provider) {
       return this.provider;
     }
@@ -243,8 +270,11 @@ export class Web3Client {
       const win = globalThis.window as WindowWithEthereum;
       if (win.ethereum) {
         try {
-          // 使用 BrowserProvider 从 window.ethereum 创建 provider
-          this.provider = new BrowserProvider(win.ethereum);
+          // 使用 Web3Provider 从 window.ethereum 创建 provider (ethers.js 5.x)
+          this.provider = new providers.Web3Provider(win.ethereum);
+
+          console.log(win.ethereum);
+
           return this.provider;
         } catch (error) {
           throw new Error(
@@ -265,9 +295,9 @@ export class Web3Client {
       );
     }
 
-    // 使用静态导入的 ethers.js 创建 JsonRpcProvider
+    // 使用 ethers.js 创建 JsonRpcProvider
     try {
-      this.provider = new EthersJsonRpcProvider(
+      this.provider = new providers.JsonRpcProvider(
         this.config.rpcUrl,
         this.config.chainId,
       );
@@ -296,7 +326,7 @@ export class Web3Client {
 
     const provider = this.getProvider();
     try {
-      this.signer = new EthersWallet(this.config.privateKey, provider);
+      this.signer = new Wallet(this.config.privateKey, provider);
       return this.signer;
     } catch (error) {
       throw new Error(
@@ -385,7 +415,7 @@ export class Web3Client {
   async getBalanceInEth(address: string): Promise<string> {
     const balance = await this.getBalance(address);
     try {
-      return formatUnits(balance, 18);
+      return utils.formatUnits(balance, 18);
     } catch {
       // 如果 formatUnits 失败，手动转换（1 ETH = 10^18 wei）
       const balanceBigInt = BigInt(balance);
@@ -503,7 +533,7 @@ export class Web3Client {
         abi = [`function ${options.functionName}(${paramTypes.join(",")})`];
       }
 
-      const contract = new EthersContract(
+      const contract = new Contract(
         options.address,
         abi,
         signer as any,
@@ -576,7 +606,8 @@ export class Web3Client {
    * @returns 函数返回值
    */
   async readContract(options: ContractReadOptions): Promise<unknown> {
-    const provider = this.getProvider();
+    // 对于只读操作，优先使用 JsonRpcProvider（避免 MetaMask 兼容性问题）
+    const provider = this.getProvider(true);
     try {
       // 如果提供了完整 ABI JSON 对象数组，直接使用（推荐方式，可以正确处理复杂返回类型如 tuple）
       if (
@@ -588,7 +619,7 @@ export class Web3Client {
       ) {
         // 使用 ABI JSON 对象数组，ethers.js 会自动处理 tuple 类型
         try {
-          const contract = new EthersContract(
+          const contract = new Contract(
             options.address,
             options.abi as Array<Record<string, unknown>>,
             provider as any,
@@ -604,12 +635,12 @@ export class Web3Client {
             ? error.message
             : String(error);
 
-          // 检查是否是 BAD_DATA 错误（可能是 BrowserProvider 和 JsonRpcProvider 的差异）
+          // 检查是否是 BAD_DATA 错误（可能是 Web3Provider 和 JsonRpcProvider 的差异）
           if (
             errorMessage.includes("BAD_DATA") ||
             errorMessage.includes('value="0x"')
           ) {
-            // 尝试使用更底层的方式调用，以兼容 BrowserProvider
+            // 尝试使用更底层的方式调用，以兼容 Web3Provider
             try {
               // 查找函数 ABI
               const funcAbi = (options.abi as Array<Record<string, unknown>>)
@@ -620,8 +651,8 @@ export class Web3Client {
                 );
 
               if (funcAbi) {
-                // 使用 Interface 和 provider.call 来调用（兼容 BrowserProvider）
-                const iface = new EthersInterface(
+                // 使用 Interface 和 provider.call 来调用（兼容 Web3Provider）
+                const iface = new utils.Interface(
                   options.abi as Array<Record<string, unknown>>,
                 );
                 const funcFragment = iface.getFunction(options.functionName);
@@ -693,7 +724,7 @@ export class Web3Client {
         const returnType = options.returnType;
 
         // 使用 Interface 来编码/解码，确保 tuple 类型正确处理
-        const iface = new EthersInterface([
+        const iface = new utils.Interface([
           `function ${functionSignature} view returns (${returnType})`,
         ]);
         const funcFragment = iface.getFunction(options.functionName);
@@ -773,7 +804,7 @@ export class Web3Client {
         ];
       }
 
-      const contract = new EthersContract(
+      const contract = new Contract(
         options.address,
         abi as any,
         provider as any,
@@ -825,7 +856,7 @@ export class Web3Client {
     address: string,
   ): boolean {
     try {
-      const recoveredAddress = ethersVerifyMessage(message, signature);
+      const recoveredAddress = utils.verifyMessage(message, signature);
       return recoveredAddress.toLowerCase() === address.toLowerCase();
     } catch (error) {
       throw new Error(
@@ -1344,8 +1375,8 @@ export class Web3Client {
 
       // 构建事件 ABI
       const eventAbi = abi || [`event ${eventName}()`];
-      const contract = new EthersContract(contractAddress, eventAbi, provider);
-      const iface = new EthersInterface(eventAbi);
+      const contract = new Contract(contractAddress, eventAbi, provider);
+      const iface = new utils.Interface(eventAbi);
 
       // 查询历史事件日志
       const filter = contract.filters[eventName]();
@@ -1356,7 +1387,10 @@ export class Web3Client {
         if (a.blockNumber !== b.blockNumber) {
           return Number(a.blockNumber) - Number(b.blockNumber);
         }
-        return (a.index || 0) - (b.index || 0);
+        // ethers.js 5.x 的事件对象可能没有 index 属性，使用 logIndex 或 transactionIndex
+        const aIndex = (a as any).logIndex || (a as any).transactionIndex || 0;
+        const bIndex = (b as any).logIndex || (b as any).transactionIndex || 0;
+        return aIndex - bIndex;
       });
 
       // 调用回调函数处理每个历史事件
@@ -1411,7 +1445,7 @@ export class Web3Client {
 
       // 构建 ABI（如果提供了则使用，否则使用默认的事件 ABI）
       const eventAbi = abi || [`event ${eventName}()`];
-      const contract = new EthersContract(contractAddress, eventAbi, provider);
+      const contract = new Contract(contractAddress, eventAbi, provider);
 
       // 监听事件
       contract.on(eventName, async (...args: unknown[]) => {
@@ -1530,7 +1564,7 @@ export class Web3Client {
 
     try {
       const provider = this.getProvider();
-      const contract = new EthersContract(contractAddress, [
+      const contract = new Contract(contractAddress, [
         `event ${eventName}()`,
       ], provider);
       contract.removeAllListeners(eventName);
@@ -1612,16 +1646,31 @@ export class Web3Client {
    * @returns 取消监听的函数
    */
   onChainChanged(callback: ChainChangedListener): () => void {
+    console.log(
+      "[Web3Client] 添加 chainChanged 监听器，当前数量:",
+      this.chainChangedListeners.size,
+    );
     this.chainChangedListeners.add(callback);
+    console.log(
+      "[Web3Client] 添加后 chainChanged 监听器数量:",
+      this.chainChangedListeners.size,
+    );
 
     // 如果还没有启动监听，则启动
     if (!this.walletListenersStarted) {
+      console.log("[Web3Client] 启动钱包事件监听器...");
       this.startWalletListeners();
+    } else {
+      console.log("[Web3Client] 钱包事件监听器已启动");
     }
 
     // 返回取消监听的函数
     return () => {
       this.chainChangedListeners.delete(callback);
+      console.log(
+        "[Web3Client] 移除 chainChanged 监听器，剩余数量:",
+        this.chainChangedListeners.size,
+      );
       // 如果没有监听器了，停止监听
       if (
         this.accountsChangedListeners.size === 0 &&
@@ -1634,23 +1683,35 @@ export class Web3Client {
 
   /**
    * 启动钱包事件监听
+   * 直接尝试注册事件监听器，如果失败则静默处理
+   * 这样不会阻塞其他功能，用户仍然可以使用 Web3Client 的其他方法
    */
   private startWalletListeners(): void {
     if (this.walletListenersStarted) {
       return;
     }
 
+    // 只在客户端环境启动钱包事件监听
+    if (!IS_CLIENT) {
+      return;
+    }
+
     if (typeof globalThis !== "undefined" && "window" in globalThis) {
       const win = globalThis.window as WindowWithEthereum;
-      if (!win.ethereum || !win.ethereum.on) {
+      if (!win.ethereum) {
+        console.warn(
+          "[Web3Client] window.ethereum 不可用，无法启动钱包事件监听",
+        );
         return;
       }
 
+      // 标记为已启动（防止重复调用）
       this.walletListenersStarted = true;
 
       // 创建包装函数用于账户变化监听
       this.walletAccountsChangedWrapper = (...args: unknown[]) => {
         const accounts = args[0] as string[];
+        console.log("[Web3Client] 检测到账户变化:", accounts);
         for (const listener of this.accountsChangedListeners) {
           try {
             Promise.resolve(listener(accounts)).catch((error) => {
@@ -1663,18 +1724,34 @@ export class Web3Client {
       };
 
       // 创建包装函数用于链切换监听
+      // 注意：ethers.js 5.x 的 Web3Provider 会自动监听 chainChanged 事件
+      // 所以我们必须手动清除 provider 缓存，并通知所有监听器
       this.walletChainChangedWrapper = (...args: unknown[]) => {
+        console.log("[Web3Client] ========== chainChanged 事件触发 ==========");
+        console.log("[Web3Client] 事件参数:", args);
         const chainId = args[0] as string;
-
-        // 清除 provider 和 signer 缓存，避免使用旧的网络信息
-        // ethers.js 6.x 的 BrowserProvider 在网络切换时会抛出错误，清除缓存可以避免这个问题
-        this.provider = null;
-        this.signer = null;
+        const chainIdNum = parseInt(
+          chainId.startsWith("0x") ? chainId.slice(2) : chainId,
+          16,
+        );
         console.log(
-          "[Web3Client] 检测到链切换，已清除 provider 缓存，chainId:",
+          "[Web3Client] 检测到链切换，chainId (hex):",
           chainId,
+          "=> (decimal):",
+          chainIdNum,
+        );
+        console.log(
+          "[Web3Client] 当前监听器数量:",
+          this.chainChangedListeners.size,
         );
 
+        // 清除 provider 和 signer 缓存，确保下次获取时使用新的网络信息
+        // 清除缓存，确保下次获取时使用新的网络信息
+        this.provider = null;
+        this.signer = null;
+        console.log("[Web3Client] ✓ 已清除 provider 和 signer 缓存");
+
+        // 通知所有注册的监听器
         for (const listener of this.chainChangedListeners) {
           try {
             Promise.resolve(listener(chainId)).catch((error) => {
@@ -1684,13 +1761,105 @@ export class Web3Client {
             console.error("[Web3Client] 链切换监听器错误:", error);
           }
         }
+
+        console.log(
+          "[Web3Client] ========== chainChanged 事件处理完成 ==========",
+        );
       };
 
-      // 监听账户变化
-      win.ethereum.on("accountsChanged", this.walletAccountsChangedWrapper);
+      // 直接注册事件监听器
+      const ethereum = win.ethereum;
+      if (!ethereum) {
+        console.warn(
+          "[Web3Client] window.ethereum 不可用，无法启动钱包事件监听",
+        );
+        this.walletListenersStarted = false;
+        return;
+      }
 
-      // 监听链切换
-      win.ethereum.on("chainChanged", this.walletChainChangedWrapper);
+      // 检查包装函数是否已创建
+      const accountsChangedWrapper = this.walletAccountsChangedWrapper;
+      const chainChangedWrapper = this.walletChainChangedWrapper;
+
+      if (!accountsChangedWrapper || !chainChangedWrapper) {
+        console.warn("[Web3Client] 事件监听器包装函数未创建");
+        this.walletListenersStarted = false;
+        return;
+      }
+
+      // 检查是否有 on 方法
+      if (!ethereum.on) {
+        console.warn(
+          "[Web3Client] window.ethereum.on 方法不可用，无法启动钱包事件监听",
+        );
+        this.walletListenersStarted = false;
+        return;
+      }
+
+      // 直接注册账户变化监听器
+      try {
+        ethereum.on("accountsChanged", accountsChangedWrapper);
+        console.log("[Web3Client] ✓ 已注册 accountsChanged 事件监听器");
+      } catch (error) {
+        console.error(
+          "[Web3Client] 注册 accountsChanged 事件监听器失败:",
+          error instanceof Error ? error.message : String(error),
+        );
+        this.walletListenersStarted = false;
+        return;
+      }
+
+      // 直接注册链切换监听器
+      // 注意：ethers.js 5.x 的 Web3Provider 会自动监听 chainChanged 事件
+      // 但我们仍然直接监听 window.ethereum 的 chainChanged 事件以确保及时响应
+      try {
+        console.log("[Web3Client] 准备注册 chainChanged 事件监听器...");
+        console.log("[Web3Client] ethereum.on 类型:", typeof ethereum.on);
+        console.log(
+          "[Web3Client] chainChangedWrapper 类型:",
+          typeof chainChangedWrapper,
+        );
+
+        // 直接监听 window.ethereum 的 chainChanged 事件
+        // 这是必需的，因为 ethers.js 6.x 的 BrowserProvider 不会自动处理网络切换
+        ethereum.on("chainChanged", chainChangedWrapper);
+        console.log("[Web3Client] ✓ 已注册 chainChanged 事件监听器");
+        console.log(
+          "[Web3Client] 当前 chainChanged 监听器数量:",
+          this.chainChangedListeners.size,
+        );
+
+        // 验证：立即获取当前链 ID，确保获取的是最新值
+        ethereum.request({ method: "eth_chainId" }).then((currentChainId) => {
+          const chainIdNum = parseInt(currentChainId as string, 16);
+          console.log(
+            "[Web3Client] 当前链 ID (eth_chainId):",
+            currentChainId,
+            "=>",
+            chainIdNum,
+          );
+          console.log(
+            "[Web3Client] 提示：请在 MetaMask 中切换网络以测试 chainChanged 事件",
+          );
+          console.log(
+            "[Web3Client] 注意：如果链 ID 不正确，请确保 MetaMask 已切换到正确的网络",
+          );
+        }).catch((error) => {
+          console.warn("[Web3Client] 无法获取当前链 ID:", error);
+        });
+
+        console.log("[Web3Client] chainChanged 事件监听器注册完成");
+      } catch (error) {
+        console.error(
+          "[Web3Client] 注册 chainChanged 事件监听器失败:",
+          error instanceof Error ? error.message : String(error),
+        );
+        console.error(
+          "[Web3Client] 错误堆栈:",
+          error instanceof Error ? error.stack : String(error),
+        );
+        this.walletListenersStarted = false;
+      }
     }
   }
 
@@ -1774,24 +1943,185 @@ export class Web3Client {
    * @returns 网络信息（包含 chainId、name 等）
    */
   async getNetwork(): Promise<{ chainId: number; name: string }> {
-    // 优先使用 provider 获取网络信息（包括名称）
-    // 这样可以获取到完整的网络信息，而不是硬编码映射
+    // 在客户端环境，优先直接从 window.ethereum 获取链 ID
+    // 注意：ethers.js 5.x 的 Web3Provider 会自动监听 chainChanged 事件，但为了确保获取最新值，仍优先从 window.ethereum 获取
+    if (IS_CLIENT) {
+      const win = globalThis.window as WindowWithEthereum;
+      if (win.ethereum) {
+        try {
+          console.log(
+            "[Web3Client] 开始从 window.ethereum.request 获取链 ID...",
+          );
+
+          // 直接从 MetaMask 获取链 ID，确保获取的是最新值
+          // 清除缓存，确保下次获取时使用新的网络信息
+          const chainIdHex = await win.ethereum.request({
+            method: "eth_chainId",
+          }) as string;
+
+          console.log("[Web3Client] 获取到的链 ID (hex):", chainIdHex);
+
+          // 确保 chainIdHex 是有效的十六进制字符串
+          if (!chainIdHex || typeof chainIdHex !== "string") {
+            throw new Error(`无效的链 ID: ${chainIdHex}`);
+          }
+
+          // 移除 '0x' 前缀（如果有）
+          const cleanHex = chainIdHex.startsWith("0x")
+            ? chainIdHex.slice(2)
+            : chainIdHex;
+          const chainId = parseInt(cleanHex, 16);
+
+          if (isNaN(chainId)) {
+            throw new Error(`无法解析链 ID: ${chainIdHex}`);
+          }
+
+          // 根据链 ID 映射网络名称
+          const chainIdToName: Record<number, string> = {
+            1: "mainnet",
+            3: "ropsten",
+            4: "rinkeby",
+            5: "goerli",
+            42: "kovan",
+            56: "bsc",
+            97: "bsc-testnet",
+            137: "polygon",
+            80001: "polygon-mumbai",
+            43114: "avalanche",
+            43113: "avalanche-fuji",
+            250: "fantom",
+            4002: "fantom-testnet",
+          };
+
+          const networkName = chainIdToName[chainId] || `chain-${chainId}`;
+
+          console.log(
+            "[Web3Client] ✓ 从 ethereum.request 获取链 ID:",
+            chainIdHex,
+            "=>",
+            chainId,
+            "网络:",
+            networkName,
+          );
+
+          // 检查是否是主网，如果是主网但用户期望测试网，给出明确提示
+          const isMainnet = chainId === 1 || chainId === 56 ||
+            chainId === 137 || chainId === 43114 || chainId === 250;
+          if (isMainnet) {
+            console.warn(
+              `[Web3Client] ⚠️  检测到主网 (链 ID: ${chainId}, 网络: ${networkName})`,
+            );
+            console.warn(
+              "[Web3Client] 如果您想使用测试网，请确保：",
+            );
+            console.warn(
+              "  1. 在 MetaMask 中切换到测试网络（例如 BSC 测试网，链 ID: 97）",
+            );
+            console.warn(
+              "  2. 或者检查您的自定义网络配置是否正确",
+            );
+            console.warn(
+              "  3. 请查看 MetaMask 顶部显示的网络名称，确认是否真的是测试网",
+            );
+          }
+
+          // 尝试获取更多网络信息（如果 MetaMask 支持）
+          try {
+            const networkVersion = await win.ethereum.request({
+              method: "net_version",
+            }) as string;
+            console.log("[Web3Client] 网络版本 (net_version):", networkVersion);
+
+            // 检查 chainId 和 net_version 是否一致
+            if (networkVersion !== chainId.toString()) {
+              console.warn(
+                `[Web3Client] ⚠️  链 ID (${chainId}) 和网络版本 (${networkVersion}) 不一致，可能是 MetaMask 配置问题`,
+              );
+            }
+          } catch (_error) {
+            // 忽略错误，net_version 可能不可用
+          }
+
+          // 诊断信息：帮助用户检查 MetaMask 配置
+          console.log("[Web3Client] ========== 网络诊断信息 ==========");
+          console.log(`[Web3Client] 当前链 ID: ${chainId} (${chainIdHex})`);
+          console.log(`[Web3Client] 网络名称: ${networkName}`);
+
+          // 如果检测到主网但用户期望测试网
+          if (chainId === 56) {
+            console.warn("[Web3Client] ⚠️  检测到 BSC 主网 (链 ID: 56)");
+            console.warn(
+              "[Web3Client] 您的 MetaMask 配置中可能有测试网，但当前选中的是主网",
+            );
+            console.warn("[Web3Client] 请执行以下步骤切换到测试网：");
+            console.warn("  1. 点击 MetaMask 扩展图标");
+            console.warn(
+              "  2. 点击顶部网络名称（应该显示 'BNB Smart Chain' 或类似）",
+            );
+            console.warn("  3. 在下拉列表中选择 'BNB Smart Chain Testnet'");
+            console.warn("  4. 如果列表中没有，点击 '添加网络' 或 '编辑网络'");
+            console.warn("  5. 确认测试网的链 ID 是 97");
+            console.warn("  6. 切换后，刷新此页面");
+            console.warn(
+              "[Web3Client] 重要：MetaMask 顶部必须显示 'BNB Smart Chain Testnet' 才算切换成功",
+            );
+          } else if (chainId === 97) {
+            console.log(
+              "[Web3Client] ✓ 检测到 BSC 测试网 (链 ID: 97)，配置正确！",
+            );
+          } else {
+            console.log(
+              `[Web3Client] 当前链 ID: ${chainId}，网络: ${networkName}`,
+            );
+          }
+
+          console.log("[Web3Client] ====================================");
+
+          return {
+            chainId,
+            name: networkName,
+          };
+        } catch (error) {
+          // 如果直接从 ethereum 获取失败，回退到使用 provider
+          console.error(
+            "[Web3Client] 直接从 ethereum 获取链 ID 失败，使用 provider:",
+            error instanceof Error ? error.message : String(error),
+          );
+          console.error(
+            "[Web3Client] 错误堆栈:",
+            error instanceof Error ? error.stack : String(error),
+          );
+        }
+      } else {
+        console.warn(
+          "[Web3Client] window.ethereum 不可用，使用 provider 获取网络信息",
+        );
+      }
+    }
+
+    // 使用 provider 获取网络信息（服务端或回退方案）
+    // 注意：ethers.js 5.x 的 Web3Provider 会自动监听 chainChanged 事件
+    console.log("[Web3Client] 使用 provider 获取网络信息...");
     const provider = this.getProvider();
     try {
       const network = await (provider as {
-        getNetwork: () => Promise<{ chainId: bigint; name: string }>;
+        getNetwork: () => Promise<{ chainId: number; name: string }>;
       }).getNetwork();
+      console.log(
+        "[Web3Client] 从 provider 获取链 ID:",
+        network.chainId,
+        "网络:",
+        network.name,
+      );
       return {
-        chainId: Number(network.chainId),
+        chainId: network.chainId,
         name: network.name,
       };
     } catch (error) {
-      // 处理 ethers.js 6.x 的网络切换错误
-      const errorMessage = error instanceof Error
-        ? error.message
-        : String(error);
       throw new Error(
-        `获取网络信息失败: ${errorMessage}`,
+        `获取网络信息失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       );
     }
   }
@@ -1897,7 +2227,7 @@ export class Web3Client {
         "function balanceOf(address owner) view returns (uint256)",
         "function decimals() view returns (uint8)",
       ];
-      const contract = new EthersContract(tokenAddress, erc20Abi, provider);
+      const contract = new Contract(tokenAddress, erc20Abi, provider);
       const balance = await contract.balanceOf(ownerAddress);
       return balance.toString();
     } catch (error) {
@@ -1930,7 +2260,7 @@ export class Web3Client {
         "function decimals() view returns (uint8)",
         "function totalSupply() view returns (uint256)",
       ];
-      const contract = new EthersContract(tokenAddress, erc20Abi, provider);
+      const contract = new Contract(tokenAddress, erc20Abi, provider);
 
       const [name, symbol, decimals, totalSupply] = await Promise.all([
         contract.name(),
@@ -2202,7 +2532,7 @@ export class Web3Client {
                       let args: unknown[] | undefined;
                       if (options.abi) {
                         try {
-                          const iface = new EthersInterface(options.abi);
+                          const iface = new utils.Interface(options.abi);
                           const decoded = iface.decodeFunctionData(
                             functionSignature.split("(")[0],
                             txObj.data,
@@ -2314,7 +2644,7 @@ export class Web3Client {
       const isReadOnly = options.readOnly ?? false;
       const signerOrProvider = isReadOnly ? provider : this.getSigner();
 
-      const contract = new EthersContract(
+      const contract = new Contract(
         contractAddress,
         abi,
         signerOrProvider,
@@ -2360,8 +2690,8 @@ export class Web3Client {
     try {
       const provider = this.getProvider();
 
-      const contract = new EthersContract(contractAddress, abi, provider);
-      const iface = new EthersInterface(abi);
+      const contract = new Contract(contractAddress, abi, provider);
+      const iface = new utils.Interface(abi);
 
       const currentBlock = toBlock ?? await this.getBlockNumber();
       const startBlock = fromBlock ?? Math.max(0, currentBlock - 1000);
@@ -2570,7 +2900,7 @@ export async function isAddress(address: string): Promise<boolean> {
 
   // 使用 ethers.js 的 isAddress
   try {
-    return ethersIsAddress(address);
+    return utils.isAddress(address);
   } catch {
     // 如果失败，使用自己的实现
   }
@@ -2642,7 +2972,7 @@ export async function checkAddressChecksum(address: string): Promise<boolean> {
  */
 export function toChecksumAddress(address: string): string {
   // 使用 ethers.js 的同步 isAddress 函数
-  if (!ethersIsAddress(address)) {
+  if (!utils.isAddress(address)) {
     throw new Error(`无效的地址: ${address}`);
   }
 
@@ -2677,7 +3007,7 @@ export async function toChecksumAddressAsync(address: string): Promise<string> {
 
   // 使用 ethers.js 的 getAddress
   try {
-    return ethersGetAddress("0x" + addr);
+    return utils.getAddress("0x" + addr);
   } catch {
     // 如果失败，使用自己的实现
   }
@@ -2713,7 +3043,7 @@ export async function toChecksumAddressAsync(address: string): Promise<string> {
  */
 export async function keccak256(data: string | Uint8Array): Promise<string> {
   try {
-    return ethersKeccak256(data);
+    return utils.keccak256(data);
   } catch {
     // 如果 ethers 不可用，使用 Web Crypto API 的 SHA-256 作为替代
     const encoder = new TextEncoder();
@@ -2741,7 +3071,8 @@ export async function solidityKeccak256(
   values: unknown[],
 ): Promise<string> {
   try {
-    return solidityPackedKeccak256(types, values);
+    // ethers.js 5.x 使用 solidityKeccak256，注意参数格式可能不同
+    return utils.solidityKeccak256(types, values);
   } catch {
     // 如果 ethers 不可用，简化实现
     const encoded = types.map((type, i) => {
@@ -2928,7 +3259,7 @@ export function isTxHash(txHash: string): boolean {
  */
 export function formatAddress(address: string): string {
   // 使用 ethers.js 的同步 isAddress 函数
-  if (!ethersIsAddress(address)) {
+  if (!utils.isAddress(address)) {
     throw new Error(`无效的地址: ${address}`);
   }
 
@@ -3012,7 +3343,7 @@ export async function encodeFunctionCall(
   args: unknown[],
 ): Promise<string> {
   try {
-    const iface = new EthersInterface([`function ${functionSignature}`]);
+    const iface = new utils.Interface([`function ${functionSignature}`]);
     return iface.encodeFunctionData(functionSignature.split("(")[0], args);
   } catch {
     // 简化实现

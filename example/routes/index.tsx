@@ -11,7 +11,7 @@ import { getJsrPackageUrl, getVersionString } from "../utils.ts";
 import { useExampleStore } from "@stores/example.ts";
 import { useEffect, useState } from "preact/hooks";
 import { useThemeStore } from "@dreamer/dweb/client";
-import { Web3Client } from "@dreamer/dweb/utils";
+import { Web3Client } from "@dreamer/dweb/utils/web3";
 
 /**
  * 页面元数据（用于 SEO）
@@ -113,33 +113,56 @@ export default function HomePage(
   { params: _params, query: _query, data }: PageProps,
 ) {
   // 使用 useStore hook 获取响应式状态，类似 useState(exampleStore)
-  const state = useExampleStore();
-  const themeState = useThemeStore();
+  const _state = useExampleStore();
+  const _themeState = useThemeStore();
 
   const [defaultAccount, setDefaultAccount] = useState<string | undefined>(
     undefined,
   );
+
+  const [web3, setWeb3] = useState<Web3Client | undefined>(undefined);
+
+  const { versionString } = data as {
+    versionString: string;
+  };
 
   useEffect(() => {
     // 在 useEffect 内部创建异步函数并立即调用
     (async () => {
       const web3 = new Web3Client();
       const accounts = await web3.connectWallet();
+      setWeb3(web3);
       setDefaultAccount(accounts[0]);
 
-      console.log({ defaultAccount });
       console.log({ account: accounts[0] });
 
-      const userInfo = await web3.readContract({
-        address: "0x1462D558A62893CA0Cb249d17d286e4423cFc333",
-        abi: [],
-        functionName: "getUserInfo",
-        args: [accounts[0]],
-        returnType: "tuple(address,address,string,uint256,uint256,uint256)",
+      // 获取并显示当前网络信息
+      const network = await web3.getNetwork();
+      console.log("当前网络信息:", { network: JSON.stringify(network) });
+
+      // 监听账户变化
+      const _unsubscribeAccounts = web3.onAccountsChanged((accounts) => {
+        console.log("账户变化:", { accounts });
       });
-      console.log(userInfo);
+
+      // 监听链切换
+      const _unsubscribeChain = web3.onChainChanged((chainId) => {
+        console.log("链切换事件触发，chainId:", chainId);
+        // 当链切换时，重新获取网络信息
+        web3.getNetwork().then((network) => {
+          console.log("新网络信息:", { network });
+        }).catch((error) => {
+          console.error("获取网络信息失败:", error);
+        });
+      });
     })();
   }, []);
+
+  useEffect(() => {
+    if (defaultAccount) {
+      console.log({ defaultAccount });
+    }
+  }, [defaultAccount]);
 
   // useEffect(() => {
   //   console.log({
@@ -168,10 +191,6 @@ export default function HomePage(
     // console.log(mergedClassName);
     // console.log(Chart);
   }
-
-  const { versionString } = data as {
-    versionString: string;
-  };
 
   // 快速开始代码示例
   const quickStartCode = `# 创建新项目
