@@ -40,11 +40,11 @@ function convertJsrToHttpUrl(jsrUrl: string): string {
   // 对于包含 npm 依赖的子路径（如 utils/web3），使用 ?bundle=false 让依赖保持 external
   // 这样可以减小包体积，npm 依赖（如 ethers）通过 esm.sh 自动转换的 URL 单独加载
   // 格式：https://esm.sh/jsr/@scope/package@version/subpath?bundle=false
-  let queryParams = "bundle";
-  if (subPath && subPath.includes("utils")) {
-    // web3 子路径包含大量 npm 依赖（ethers），使用 bundle=false 避免打包
-    queryParams = "bundle";
-  }
+  const queryParams = "bundle";
+  // if (subPath && subPath.includes("utils")) {
+  //   // web3 子路径包含大量 npm 依赖（ethers），使用 bundle=false 避免打包
+  //   queryParams = "bundle=false";
+  // }
 
   if (subPath) {
     // 有子路径，直接使用子路径（不需要映射到文件路径）
@@ -103,11 +103,11 @@ function convertJsrToBrowserUrl(jsrUrl: string): string {
   // 使用 esm.sh 的 /jsr/ 路径格式
   // 对于包含 npm 依赖的子路径（如 utils/web3），使用 ?bundle=false 让依赖保持 external
   // 这样可以减小包体积，npm 依赖（如 ethers）通过 esm.sh 自动转换的 URL 单独加载
-  let queryParams = "bundle";
-  if (subPath && subPath.includes("utils")) {
-    // web3 子路径包含大量 npm 依赖（ethers），使用 bundle=false 避免打包
-    queryParams = "bundle";
-  }
+  const queryParams = "bundle";
+  // if (subPath && subPath.includes("utils")) {
+  //   // web3 子路径包含大量 npm 依赖（ethers），使用 bundle=false 避免打包
+  //   queryParams = "bundle=false";
+  // }
 
   if (subPath) {
     return `https://esm.sh/jsr/@${scope}/${packageName}@${version}/${subPath}?${queryParams}`;
