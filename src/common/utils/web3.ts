@@ -642,21 +642,28 @@ export class Web3Client {
         const receipt = await client.waitForTransactionReceipt({
           hash: hash as Hash,
           confirmations: 1,
-        });
+        }) as unknown as {
+          success: boolean | undefined;
+          error: string | undefined;
+        };
 
         // 检查交易状态
         if ((receipt as any).status === "success") {
-          return { receipt, success: true };
+          receipt.success = true;
+          return receipt;
         } else if ((receipt as any).status === "reverted") {
-          return { receipt, success: false, error: "交易执行失败，已被回滚" };
+          receipt.error = "交易执行失败，已被回滚" as const;
+          receipt.success = false;
+          return receipt;
         } else {
           // 未知状态，返回收据让调用者判断
-          return { receipt, success: undefined };
+          receipt.error = "未知状态" as const;
+          receipt.success = undefined;
+          return receipt;
         }
       } catch (receiptError) {
         // 如果等待交易确认失败，可能是交易被回滚
         return {
-          receipt: undefined,
           success: false,
           error: "交易确认失败",
           message: receiptError instanceof Error
@@ -2473,21 +2480,28 @@ export class Web3Client {
           const receipt = await client.waitForTransactionReceipt({
             hash: hash as Hash,
             confirmations: 1,
-          });
+          }) as unknown as {
+            success: boolean | undefined;
+            error: string | undefined;
+          };
 
           // 检查交易状态
           if ((receipt as any).status === "success") {
-            return { receipt, success: true };
+            receipt.success = true;
+            return receipt;
           } else if ((receipt as any).status === "reverted") {
-            return { receipt, success: false, error: "交易执行失败，已被回滚" };
+            receipt.error = "交易执行失败，已被回滚" as const;
+            receipt.success = false;
+            return receipt;
           } else {
             // 未知状态，返回收据让调用者判断
-            return { receipt, success: undefined };
+            receipt.error = "未知状态" as const;
+            receipt.success = undefined;
+            return receipt;
           }
         } catch (receiptError) {
           // 如果等待交易确认失败，可能是交易被回滚
           return {
-            receipt: undefined,
             success: false,
             error: "交易确认失败",
             message: receiptError instanceof Error
