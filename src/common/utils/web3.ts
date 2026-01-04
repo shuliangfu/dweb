@@ -646,18 +646,18 @@ export class Web3Client {
 
         // 检查交易状态
         if ((receipt as any).status === "success") {
-          return { hash, receipt };
+          return { receipt, success: true };
         } else if ((receipt as any).status === "reverted") {
-          return { hash, receipt, error: "交易执行失败，已被回滚" };
+          return { receipt, success: false, error: "交易执行失败，已被回滚" };
         } else {
           // 未知状态，返回收据让调用者判断
-          return { hash, receipt };
+          return { receipt, success: undefined };
         }
       } catch (receiptError) {
         // 如果等待交易确认失败，可能是交易被回滚
         return {
-          hash,
           receipt: undefined,
+          success: false,
           error: "交易确认失败",
           message: receiptError instanceof Error
             ? receiptError.message
@@ -2439,41 +2439,11 @@ export class Web3Client {
 
         // 如果还是没有 chain，尝试从 PublicClient 获取
         if (!chain) {
-          try {
-            const publicClient = this.getPublicClient();
-            chain = (publicClient as any).chain;
-            if (chain) {
-              this.chain = chain;
-            }
-          } catch {
-            // 如果获取失败，尝试从 window.ethereum 获取 chainId 并创建简单的 chain 对象
-            if (IS_CLIENT) {
-              try {
-                const win = globalThis.window as WindowWithEthereum;
-                if (win.ethereum) {
-                  const chainIdHex = String(
-                    await win.ethereum.request({
-                      method: "eth_chainId",
-                    }),
-                  );
-                  const chainId = parseInt(
-                    chainIdHex.startsWith("0x")
-                      ? chainIdHex
-                      : "0x" + chainIdHex,
-                    16,
-                  );
-                  // 创建一个基本的 chain 对象
-                  chain = {
-                    id: chainId,
-                    name: `chain-${chainId}`,
-                  } as Chain;
-                  this.chain = chain;
-                }
-              } catch {
-                // 如果获取失败，chain 保持为 undefined，让 viem 抛出错误
-              }
-            }
-          }
+          const network = await this.getNetwork();
+          chain = {
+            id: Number(network.chainId.toString()),
+            name: network.name,
+          } as unknown as Chain;
         }
 
         // 如果还是没有 chain，抛出明确的错误
@@ -2507,18 +2477,18 @@ export class Web3Client {
 
           // 检查交易状态
           if ((receipt as any).status === "success") {
-            return { hash, receipt };
+            return { receipt, success: true };
           } else if ((receipt as any).status === "reverted") {
-            return { hash, receipt, error: "交易执行失败，已被回滚" };
+            return { receipt, success: false, error: "交易执行失败，已被回滚" };
           } else {
             // 未知状态，返回收据让调用者判断
-            return { hash, receipt };
+            return { receipt, success: undefined };
           }
         } catch (receiptError) {
           // 如果等待交易确认失败，可能是交易被回滚
           return {
-            hash,
             receipt: undefined,
+            success: false,
             error: "交易确认失败",
             message: receiptError instanceof Error
               ? receiptError.message
