@@ -601,6 +601,17 @@ export class Web3Client {
       let chain: Chain | undefined = (walletClient as any).chain ||
         this.chain || undefined;
 
+      console.log("chain.......1", { chain });
+
+      const network = await this.getNetwork();
+      console.log("network.......2", { network });
+      chain = {
+        id: Number(network.chainId.toString()),
+        name: network.name,
+      } as unknown as Chain;
+
+      console.log("chain.......3", { chain });
+
       // 如果还是没有 chain，尝试从 PublicClient 获取
       if (!chain) {
         try {
