@@ -551,9 +551,13 @@ export class Web3Client {
   /**
    * 调用合约方法（写入操作）
    * @param options 合约调用选项
-   * @returns 交易哈希
+   * @param waitForConfirmation 是否等待交易确认（默认 true）
+   * @returns 如果 waitForConfirmation 为 true，返回交易收据；否则返回交易哈希
    */
-  async callContract(options: ContractCallOptions): Promise<string> {
+  async callContract(
+    options: ContractCallOptions,
+    waitForConfirmation: boolean = true,
+  ): Promise<unknown> {
     const walletClient = this.getWalletClient();
     const accounts = await walletClient.getAddresses();
     if (accounts.length === 0) {
@@ -601,53 +605,12 @@ export class Web3Client {
       let chain: Chain | undefined = (walletClient as any).chain ||
         this.chain || undefined;
 
-      console.log("chain.......1", { chain });
-
+      // 如果还是没有 chain，尝试从 PublicClient 获取
       const network = await this.getNetwork();
-      console.log("network.......2", { network });
       chain = {
         id: Number(network.chainId.toString()),
         name: network.name,
       } as unknown as Chain;
-
-      console.log("chain.......3", { chain });
-
-      // 如果还是没有 chain，尝试从 PublicClient 获取
-      if (!chain) {
-        try {
-          const publicClient = this.getPublicClient();
-          chain = (publicClient as any).chain;
-          if (chain) {
-            this.chain = chain;
-          }
-        } catch {
-          // 如果获取失败，尝试从 window.ethereum 获取 chainId 并创建简单的 chain 对象
-          if (IS_CLIENT) {
-            try {
-              const win = globalThis.window as WindowWithEthereum;
-              if (win.ethereum) {
-                const chainIdHex = String(
-                  await win.ethereum.request({
-                    method: "eth_chainId",
-                  }),
-                );
-                const chainId = parseInt(
-                  chainIdHex.startsWith("0x") ? chainIdHex : "0x" + chainIdHex,
-                  16,
-                );
-                // 创建一个基本的 chain 对象
-                chain = {
-                  id: chainId,
-                  name: `chain-${chainId}`,
-                } as Chain;
-                this.chain = chain;
-              }
-            } catch {
-              // 如果获取失败，chain 保持为 undefined，让 viem 抛出错误
-            }
-          }
-        }
-      }
 
       // 如果还是没有 chain，抛出明确的错误
       if (!chain) {
@@ -656,6 +619,7 @@ export class Web3Client {
         );
       }
 
+      // 发送交易
       const hash = await walletClient.writeContract({
         account: accounts[0],
         address: contractAddress as Address,
@@ -666,12 +630,56 @@ export class Web3Client {
         gas: options.gasLimit ? BigInt(options.gasLimit.toString()) : undefined,
         chain: chain,
       });
-      return hash;
+
+      // 如果不需要等待确认，直接返回交易哈希
+      if (!waitForConfirmation) {
+        return hash;
+      }
+
+      // 等待交易确认并检查状态
+      const client = this.getPublicClient();
+      try {
+        const receipt = await client.waitForTransactionReceipt({
+          hash: hash as Hash,
+          confirmations: 1,
+        });
+
+        // 检查交易状态
+        if ((receipt as any).status === "success") {
+          return { receipt, hash };
+        } else if ((receipt as any).status === "reverted") {
+          throw new Error("交易执行失败，已被回滚");
+        } else {
+          // 未知状态，返回收据让调用者判断
+          return { receipt, hash };
+        }
+      } catch (receiptError) {
+        // 如果等待交易确认失败，可能是交易被回滚
+        throw new Error(
+          `交易确认失败: ${
+            receiptError instanceof Error
+              ? receiptError.message
+              : String(receiptError)
+          }`,
+        );
+      }
     } catch (error) {
+      // 检查是否是用户取消交易
+      const errorMessage = error instanceof Error
+        ? error.message
+        : String(error);
+      if (
+        errorMessage.includes("User rejected") ||
+        errorMessage.includes("user rejected") ||
+        errorMessage.includes("用户取消") ||
+        errorMessage.includes("用户拒绝")
+      ) {
+        // 用户取消交易，抛出特殊错误，不包含原始错误消息
+        throw new Error("交易已取消");
+      }
+      // 其他错误正常抛出
       throw new Error(
-        `调用合约失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        `调用合约失败: ${errorMessage}`,
       );
     }
   }
@@ -2442,10 +2450,17 @@ export class Web3Client {
               try {
                 const win = globalThis.window as WindowWithEthereum;
                 if (win.ethereum) {
-                  const chainIdHex = await win.ethereum.request({
-                    method: "eth_chainId",
-                  }) as string;
-                  const chainId = parseInt(chainIdHex, 16);
+                  const chainIdHex = String(
+                    await win.ethereum.request({
+                      method: "eth_chainId",
+                    }),
+                  );
+                  const chainId = parseInt(
+                    chainIdHex.startsWith("0x")
+                      ? chainIdHex
+                      : "0x" + chainIdHex,
+                    16,
+                  );
                   // 创建一个基本的 chain 对象
                   chain = {
                     id: chainId,
@@ -2467,6 +2482,7 @@ export class Web3Client {
           );
         }
 
+        // 发送交易
         const hash = await walletClient.writeContract({
           account: accounts[0],
           address: contractAddress as Address,
@@ -2479,13 +2495,52 @@ export class Web3Client {
             : undefined,
           chain: chain,
         });
-        return hash;
+
+        // 等待交易确认并检查状态
+        const client = this.getPublicClient();
+        try {
+          const receipt = await client.waitForTransactionReceipt({
+            hash: hash as Hash,
+            confirmations: 1,
+          });
+
+          // 检查交易状态
+          if ((receipt as any).status === "success") {
+            return { receipt, hash };
+          } else if ((receipt as any).status === "reverted") {
+            throw new Error("交易执行失败，已被回滚");
+          } else {
+            // 未知状态，返回收据让调用者判断
+            return { receipt, hash };
+          }
+        } catch (receiptError) {
+          // 如果等待交易确认失败，可能是交易被回滚
+          throw new Error(
+            `交易确认失败: ${
+              receiptError instanceof Error
+                ? receiptError.message
+                : String(receiptError)
+            }`,
+          );
+        }
       }
     } catch (error) {
+      // 检查是否是用户取消交易
+      const errorMessage = error instanceof Error
+        ? error.message
+        : String(error);
+      if (
+        errorMessage.includes("User rejected") ||
+        errorMessage.includes("user rejected") ||
+        errorMessage.includes("用户取消") ||
+        errorMessage.includes("用户拒绝")
+      ) {
+        // 用户取消交易，抛出特殊错误，不包含原始错误消息
+        throw new Error("交易已取消");
+      }
+      // 其他错误正常抛出
       throw new Error(
-        `调用合约失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        `调用合约失败: ${errorMessage}`,
       );
     }
   }
