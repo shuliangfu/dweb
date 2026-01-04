@@ -1081,10 +1081,6 @@ export class Web3Client {
     this.blockReconnectAttempts++;
     const delay = this.reconnectDelay * this.blockReconnectAttempts; // 指数退避
 
-    console.log(
-      `[Web3Client] ${delay}ms 后尝试重新连接区块监听 (第 ${this.blockReconnectAttempts}/${this.maxReconnectAttempts} 次)`,
-    );
-
     this.blockReconnectTimer = setTimeout(() => {
       try {
         // 重置 provider，强制重新创建连接
@@ -1197,10 +1193,6 @@ export class Web3Client {
 
     this.transactionReconnectAttempts++;
     const delay = this.reconnectDelay * this.transactionReconnectAttempts; // 指数退避
-
-    console.log(
-      `[Web3Client] ${delay}ms 后尝试重新连接交易监听 (第 ${this.transactionReconnectAttempts}/${this.maxReconnectAttempts} 次)`,
-    );
 
     this.transactionReconnectTimer = setTimeout(() => {
       try {
@@ -1491,10 +1483,6 @@ export class Web3Client {
     this.contractReconnectAttempts.set(key, attempts);
     const delay = this.reconnectDelay * attempts; // 指数退避
 
-    console.log(
-      `[Web3Client] ${delay}ms 后尝试重新连接合约事件监听 (第 ${attempts}/${this.maxReconnectAttempts} 次): ${key}`,
-    );
-
     const timer = setTimeout(() => {
       try {
         // 重置 provider，强制重新创建连接
@@ -1670,10 +1658,6 @@ export class Web3Client {
         // ethers.js 6.x 的 BrowserProvider 在网络切换时会抛出错误，清除缓存可以避免这个问题
         this.provider = null;
         this.signer = null;
-        console.log(
-          "[Web3Client] 检测到链切换，已清除 provider 缓存，chainId:",
-          chainId,
-        );
 
         for (const listener of this.chainChangedListeners) {
           try {
