@@ -183,24 +183,24 @@ Deno.test("isTxHash - 无效交易哈希", () => {
 
 // ==================== Provider 相关测试（需要 Mock）====================
 
-Deno.test("Web3Client - getProvider 需要 rpcUrl（服务端）", async () => {
+Deno.test("Web3Client - getPublicClient 需要 rpcUrl（服务端）", async () => {
   const client = new Web3Client();
   // 在服务端环境中，没有 rpcUrl 应该抛出错误
   await assertRejects(
     async () => {
       // @ts-ignore: 访问私有方法进行测试
-      await client.getProvider();
+      await client.getPublicClient();
     },
     Error,
     "RPC URL 未配置",
   );
 });
 
-Deno.test("Web3Client - getProvider 使用 rpcUrl", () => {
+Deno.test("Web3Client - getPublicClient 使用 rpcUrl", () => {
   const client = new Web3Client({ rpcUrl: TEST_RPC_URL });
   // @ts-ignore: 访问私有方法进行测试
-  const provider = client.getProvider();
-  assertExists(provider);
+  const publicClient = client.getPublicClient();
+  assertExists(publicClient);
 });
 
 // ==================== 余额查询测试（需要 Mock）====================

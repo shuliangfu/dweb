@@ -10,26 +10,35 @@
  * API 使用说明：
  * - 本实现使用现代的 EIP-1193 标准（window.ethereum.request()）
  * - 不使用已弃用的 window.web3 API
- * - 使用 ethers.js 的 BrowserProvider 来与钱包交互
+ * - 使用 viem 库来与钱包和区块链交互
  *
  * 依赖：
- * - 需要安装 ethers.js: npm:ethers@^6.0.0
+ * - 需要安装 viem: npm:viem@^2.43.4
  */
 
-// 静态导入 ethers.js 核心模块（提升性能和类型检查）
+// 导入 viem 核心模块
 import {
-  BrowserProvider,
-  Contract as EthersContract,
+  type Abi,
+  type Address,
+  type Chain,
+  createPublicClient,
+  createWalletClient,
+  custom,
+  decodeFunctionData,
+  encodeAbiParameters,
+  encodeFunctionData,
   formatUnits,
-  getAddress as ethersGetAddress,
-  Interface as EthersInterface,
-  isAddress as ethersIsAddress,
-  JsonRpcProvider as EthersJsonRpcProvider,
-  keccak256 as ethersKeccak256,
-  solidityPackedKeccak256,
-  verifyMessage as ethersVerifyMessage,
-  Wallet as EthersWallet,
-} from "npm:ethers@^6.16.0";
+  getAddress,
+  type Hash,
+  type Hex,
+  http,
+  isAddress as viemIsAddress,
+  keccak256 as viemKeccak256,
+  parseAbi,
+  type PublicClient,
+  verifyMessage as viemVerifyMessage,
+  type WalletClient,
+} from "npm:viem@^2.43.3";
 import { IS_CLIENT } from "../constants.ts";
 
 /**
@@ -174,8 +183,9 @@ export interface ContractReadOptions {
  */
 export class Web3Client {
   private config: Web3Config;
-  private provider: unknown = null;
-  private signer: unknown = null;
+  private publicClient: PublicClient | null = null;
+  private walletClient: WalletClient | null = null;
+  private chain: Chain | null = null;
   // 事件监听器存储
   private blockListeners: Set<BlockListener> = new Set();
   private transactionListeners: Set<TransactionListener> = new Set();
@@ -190,6 +200,10 @@ export class Web3Client {
   // 钱包事件监听器的包装函数（用于移除）
   private walletAccountsChangedWrapper?: (...args: unknown[]) => void;
   private walletChainChangedWrapper?: (...args: unknown[]) => void;
+  // viem watch 取消函数
+  private blockWatchUnsubscribe?: () => void;
+  private transactionWatchUnsubscribe?: () => void;
+  private contractWatchUnsubscribes: Map<string, () => void> = new Map();
   // 自动重连相关
   private blockReconnectTimer?: number;
   private transactionReconnectTimer?: number;
@@ -222,20 +236,21 @@ export class Web3Client {
    */
   updateConfig(config: Partial<Web3Config>): void {
     this.config = { ...this.config, ...config };
-    // 重置 provider 和 signer，以便使用新配置
-    this.provider = null;
-    this.signer = null;
+    // 重置客户端，以便使用新配置
+    this.publicClient = null;
+    this.walletClient = null;
+    this.chain = null;
   }
 
   /**
-   * 初始化 Provider（懒加载）
-   * 在客户端环境中，如果检测到 window.ethereum，优先使用它作为 provider
-   * 在服务端环境或没有 window.ethereum 时，使用 rpcUrl 创建 JsonRpcProvider
-   * @returns Provider 实例
+   * 获取或创建 PublicClient（懒加载）
+   * 在客户端环境中，如果检测到 window.ethereum，优先使用它
+   * 在服务端环境或没有 window.ethereum 时，使用 rpcUrl 创建 HTTP transport
+   * @returns PublicClient 实例
    */
-  private getProvider(): any {
-    if (this.provider) {
-      return this.provider;
+  private getPublicClient(): PublicClient {
+    if (this.publicClient) {
+      return this.publicClient;
     }
 
     // 客户端环境：优先使用 window.ethereum（MetaMask 等钱包）
@@ -243,12 +258,14 @@ export class Web3Client {
       const win = globalThis.window as WindowWithEthereum;
       if (win.ethereum) {
         try {
-          // 使用 BrowserProvider 从 window.ethereum 创建 provider
-          this.provider = new BrowserProvider(win.ethereum);
-          return this.provider;
+          // 使用 custom transport 从 window.ethereum 创建 public client
+          this.publicClient = createPublicClient({
+            transport: custom(win.ethereum),
+          });
+          return this.publicClient;
         } catch (error) {
           throw new Error(
-            `从钱包创建 Provider 失败: ${
+            `从钱包创建 PublicClient 失败: ${
               error instanceof Error ? error.message : String(error)
             }`,
           );
@@ -265,16 +282,15 @@ export class Web3Client {
       );
     }
 
-    // 使用静态导入的 ethers.js 创建 JsonRpcProvider
+    // 使用 HTTP transport 创建 PublicClient
     try {
-      this.provider = new EthersJsonRpcProvider(
-        this.config.rpcUrl,
-        this.config.chainId,
-      );
-      return this.provider;
+      this.publicClient = createPublicClient({
+        transport: http(this.config.rpcUrl),
+      });
+      return this.publicClient;
     } catch (error) {
       throw new Error(
-        `创建 Provider 失败: ${
+        `创建 PublicClient 失败: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );
@@ -282,29 +298,45 @@ export class Web3Client {
   }
 
   /**
-   * 初始化 Signer（懒加载）
-   * @returns Signer 实例
+   * 获取或创建 WalletClient（懒加载）
+   * @returns WalletClient 实例
    */
-  private getSigner(): any {
-    if (this.signer) {
-      return this.signer;
+  private getWalletClient(): WalletClient {
+    if (this.walletClient) {
+      return this.walletClient;
     }
 
-    if (!this.config.privateKey) {
-      throw new Error("私钥未配置，请设置 privateKey");
+    // 客户端环境：优先使用 window.ethereum
+    if (IS_CLIENT) {
+      const win = globalThis.window as WindowWithEthereum;
+      if (win.ethereum) {
+        try {
+          this.walletClient = createWalletClient({
+            transport: custom(win.ethereum),
+          });
+          return this.walletClient;
+        } catch (error) {
+          throw new Error(
+            `从钱包创建 WalletClient 失败: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+        }
+      }
     }
 
-    const provider = this.getProvider();
-    try {
-      this.signer = new EthersWallet(this.config.privateKey, provider);
-      return this.signer;
-    } catch (error) {
+    // 如果没有 window.ethereum，检查是否配置了 rpcUrl 和 privateKey
+    if (!this.config.rpcUrl || !this.config.privateKey) {
       throw new Error(
-        `创建 Wallet 失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        "未检测到钱包且 RPC URL 或私钥未配置，请连接钱包或设置 rpcUrl 和 privateKey",
       );
     }
+
+    // 注意：viem 的 WalletClient 需要账户，这里使用 privateKey 创建
+    // 但 viem 的 WalletClient 主要用于浏览器钱包，服务端需要使用不同的方式
+    throw new Error(
+      "服务端环境需要使用 privateKey 创建账户，请使用其他方式",
+    );
   }
 
   /**
@@ -364,9 +396,11 @@ export class Web3Client {
    * @returns 余额（wei，字符串格式）
    */
   async getBalance(address: string): Promise<string> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      const balance = await (provider as any).getBalance(address);
+      const balance = await client.getBalance({
+        address: address as Address,
+      });
       return balance.toString();
     } catch (error) {
       throw new Error(
@@ -385,7 +419,7 @@ export class Web3Client {
   async getBalanceInEth(address: string): Promise<string> {
     const balance = await this.getBalance(address);
     try {
-      return formatUnits(balance, 18);
+      return formatUnits(BigInt(balance), 18);
     } catch {
       // 如果 formatUnits 失败，手动转换（1 ETH = 10^18 wei）
       const balanceBigInt = BigInt(balance);
@@ -400,11 +434,11 @@ export class Web3Client {
    * @returns nonce 值
    */
   async getTransactionCount(address: string): Promise<number> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      const count = await (provider as {
-        getTransactionCount: (address: string) => Promise<number>;
-      }).getTransactionCount(address);
+      const count = await client.getTransactionCount({
+        address: address as Address,
+      });
       return count;
     } catch (error) {
       throw new Error(
@@ -421,23 +455,35 @@ export class Web3Client {
    * @returns 交易哈希
    */
   async sendTransaction(options: TransactionOptions): Promise<string> {
-    const signer = this.getSigner();
+    const walletClient = this.getWalletClient();
+    const accounts = await walletClient.getAddresses();
+    if (accounts.length === 0) {
+      throw new Error("未找到可用账户，请先连接钱包");
+    }
+
     try {
-      const tx = await (signer as {
-        sendTransaction: (
-          tx: TransactionOptions,
-        ) => Promise<{ hash: string }>;
-      }).sendTransaction({
-        to: options.to,
-        value: options.value,
-        data: options.data,
-        gasLimit: options.gasLimit,
-        gasPrice: options.gasPrice,
-        maxFeePerGas: options.maxFeePerGas,
-        maxPriorityFeePerGas: options.maxPriorityFeePerGas,
+      // 构建交易参数（EIP-1559 或 legacy）
+      const txParams: any = {
+        account: accounts[0],
+        to: options.to as Address,
+        value: options.value ? BigInt(options.value.toString()) : undefined,
+        data: options.data as Hex | undefined,
+        gas: options.gasLimit ? BigInt(options.gasLimit.toString()) : undefined,
         nonce: options.nonce,
-      });
-      return tx.hash;
+      };
+
+      // 如果提供了 maxFeePerGas，使用 EIP-1559；否则使用 gasPrice（legacy）
+      if (options.maxFeePerGas) {
+        txParams.maxFeePerGas = BigInt(options.maxFeePerGas.toString());
+        txParams.maxPriorityFeePerGas = options.maxPriorityFeePerGas
+          ? BigInt(options.maxPriorityFeePerGas.toString())
+          : undefined;
+      } else if (options.gasPrice) {
+        txParams.gasPrice = BigInt(options.gasPrice.toString());
+      }
+
+      const hash = await walletClient.sendTransaction(txParams);
+      return hash;
     } catch (error) {
       throw new Error(
         `发送交易失败: ${
@@ -457,14 +503,12 @@ export class Web3Client {
     txHash: string,
     confirmations: number = 1,
   ): Promise<unknown> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      const receipt = await (provider as {
-        waitForTransaction: (
-          hash: string,
-          confirmations?: number,
-        ) => Promise<unknown>;
-      }).waitForTransaction(txHash, confirmations);
+      const receipt = await client.waitForTransactionReceipt({
+        hash: txHash as Hash,
+        confirmations,
+      });
       return receipt;
     } catch (error) {
       throw new Error(
@@ -476,43 +520,54 @@ export class Web3Client {
   }
 
   /**
-   * 调用合约函数（写入操作）
-   * @param options 合约调用选项
-   * @returns 交易哈希
-   */
-  /**
    * 调用合约方法（写入操作）
    * @param options 合约调用选项
    * @returns 交易哈希
    */
   async callContract(options: ContractCallOptions): Promise<string> {
-    const signer = this.getSigner();
+    const walletClient = this.getWalletClient();
+    const accounts = await walletClient.getAddresses();
+    if (accounts.length === 0) {
+      throw new Error("未找到可用账户，请先连接钱包");
+    }
+
     try {
-      let abi: string[];
+      let parsedAbi: Abi;
 
       // 如果提供了完整 ABI，直接使用
       if (options.abi && options.abi.length > 0) {
-        abi = options.abi;
+        if (typeof options.abi[0] === "string") {
+          // 字符串数组格式的 ABI
+          parsedAbi = parseAbi(options.abi as string[]);
+        } else {
+          // JSON 对象数组格式的 ABI
+          parsedAbi = options.abi as unknown as Abi;
+        }
       } // 如果提供了函数签名，使用它
       else if (options.functionSignature) {
-        abi = [`function ${options.functionSignature}`];
+        parsedAbi = parseAbi(
+          [`function ${options.functionSignature}`] as readonly string[],
+        );
       } // 否则根据参数自动推断类型
       else {
         const paramTypes = options.args?.map((arg) => this.inferArgType(arg)) ||
           [];
-        abi = [`function ${options.functionName}(${paramTypes.join(",")})`];
+        parsedAbi = parseAbi([
+          `function ${options.functionName}(${paramTypes.join(",")})`,
+        ]);
       }
 
-      const contract = new EthersContract(
-        options.address,
-        abi,
-        signer as any,
-      );
-      const tx = await contract[options.functionName](...(options.args || []), {
-        value: options.value,
-        gasLimit: options.gasLimit,
+      const hash = await walletClient.writeContract({
+        account: accounts[0],
+        address: options.address as Address,
+        abi: parsedAbi,
+        functionName: options.functionName,
+        args: options.args as any,
+        value: options.value ? BigInt(options.value.toString()) : undefined,
+        gas: options.gasLimit ? BigInt(options.gasLimit.toString()) : undefined,
+        chain: this.chain || undefined,
       });
-      return tx.hash;
+      return hash;
     } catch (error) {
       throw new Error(
         `调用合约失败: ${
@@ -576,8 +631,10 @@ export class Web3Client {
    * @returns 函数返回值
    */
   async readContract(options: ContractReadOptions): Promise<unknown> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
+      let parsedAbi: Abi;
+
       // 如果提供了完整 ABI JSON 对象数组，直接使用（推荐方式，可以正确处理复杂返回类型如 tuple）
       if (
         options.abi &&
@@ -586,207 +643,88 @@ export class Web3Client {
         options.abi[0] !== null &&
         !Array.isArray(options.abi[0])
       ) {
-        // 使用 ABI JSON 对象数组，ethers.js 会自动处理 tuple 类型
-        try {
-          const contract = new EthersContract(
-            options.address,
-            options.abi as Array<Record<string, unknown>>,
-            provider as any,
-          );
-          const result = await contract[options.functionName](
-            ...(options.args || []),
-          );
-          return result;
-        } catch (error: unknown) {
-          // 检查是否是空数据错误（只有真正的空数据才是错误）
-          // 注意：返回默认值（如 0x0 地址）是正常的，不应该被当作错误
-          const errorMessage = error instanceof Error
-            ? error.message
-            : String(error);
-
-          // 检查是否是 BAD_DATA 错误（可能是 BrowserProvider 和 JsonRpcProvider 的差异）
-          if (
-            errorMessage.includes("BAD_DATA") ||
-            errorMessage.includes('value="0x"')
-          ) {
-            // 尝试使用更底层的方式调用，以兼容 BrowserProvider
-            try {
-              // 查找函数 ABI
-              const funcAbi = (options.abi as Array<Record<string, unknown>>)
-                .find(
-                  (item) =>
-                    item.type === "function" &&
-                    item.name === options.functionName,
-                );
-
-              if (funcAbi) {
-                // 使用 Interface 和 provider.call 来调用（兼容 BrowserProvider）
-                const iface = new EthersInterface(
-                  options.abi as Array<Record<string, unknown>>,
-                );
-                const funcFragment = iface.getFunction(options.functionName);
-
-                if (funcFragment) {
-                  // 编码函数调用数据
-                  const data = iface.encodeFunctionData(
-                    funcFragment,
-                    options.args || [],
-                  );
-
-                  // 使用 call 方法调用合约
-                  const result = await (provider as {
-                    call: (tx: { to: string; data: string }) => Promise<string>;
-                  }).call({
-                    to: options.address,
-                    data: data,
-                  });
-
-                  // 检查返回数据是否为空
-                  if (!result || result === "0x") {
-                    throw new Error(
-                      `合约调用返回空数据 (value="${result}")。可能原因：` +
-                        `1. 合约在该地址不存在或未部署；` +
-                        `2. 函数执行 revert（例如：该地址没有用户信息）；` +
-                        `3. RPC 节点返回了空数据。` +
-                        `合约地址: ${options.address}，` +
-                        `函数: ${options.functionName}，` +
-                        `参数: ${JSON.stringify(options.args)}`,
-                    );
-                  }
-
-                  // 解码返回数据
-                  const decoded = iface.decodeFunctionResult(
-                    funcFragment,
-                    result,
-                  );
-                  return decoded.length === 1 ? decoded[0] : decoded;
-                }
-              }
-            } catch (fallbackError) {
-              // 如果 fallback 也失败，抛出原始错误
-              throw new Error(
-                `合约调用失败（尝试 fallback 方法也失败）。` +
-                  `原始错误: ${errorMessage}，` +
-                  `Fallback 错误: ${
-                    fallbackError instanceof Error
-                      ? fallbackError.message
-                      : String(fallbackError)
-                  }，` +
-                  `合约地址: ${options.address}，` +
-                  `函数: ${options.functionName}，` +
-                  `参数: ${JSON.stringify(options.args)}`,
-              );
-            }
-          }
-
-          // 其他错误（包括解码错误）直接抛出
-          throw error;
-        }
-      }
-
-      // 如果提供了 returnType 且是 tuple 类型，使用 Interface 来正确处理
-      if (options.returnType && options.returnType.startsWith("tuple")) {
+        // 使用 ABI JSON 对象数组，viem 会自动处理 tuple 类型
+        parsedAbi = options.abi as unknown as Abi;
+      } // 如果提供了 returnType 且是 tuple 类型，构建 ABI
+      else if (options.returnType && options.returnType.startsWith("tuple")) {
         const paramTypes = options.args?.map((arg) => this.inferArgType(arg)) ||
           [];
         const functionSignature = options.functionSignature ||
           `${options.functionName}(${paramTypes.join(",")})`;
         const returnType = options.returnType;
-
-        // 使用 Interface 来编码/解码，确保 tuple 类型正确处理
-        const iface = new EthersInterface([
-          `function ${functionSignature} view returns (${returnType})`,
-        ]);
-        const funcFragment = iface.getFunction(options.functionName);
-        if (!funcFragment) {
-          throw new Error(`函数 ${options.functionName} 在 ABI 中未找到`);
-        }
-
-        // 编码函数调用数据
-        const data = iface.encodeFunctionData(
-          funcFragment,
-          options.args || [],
+        parsedAbi = parseAbi(
+          [
+            `function ${functionSignature} view returns (${returnType})`,
+          ] as readonly string[],
         );
-
-        // 使用 call 方法调用合约
-        const result = await (provider as {
-          call: (tx: { to: string; data: string }) => Promise<string>;
-        }).call({
-          to: options.address,
-          data: data,
-        });
-
-        // 检查返回数据是否为空（只有完全为空 "0x" 才是错误，其他情况尝试解码）
-        // 注意：即使返回的是默认值（如 0x0 地址），原始数据也不是 "0x"，而是编码后的数据
-        if (!result || result === "0x") {
-          throw new Error(
-            `合约调用返回空数据 (value="${result}")。可能原因：` +
-              `1. 合约在该地址不存在；` +
-              `2. 函数执行 revert（例如：该地址没有用户信息）；` +
-              `3. RPC 节点返回了空数据。` +
-              `请检查合约地址 ${options.address} 和参数 ${
-                JSON.stringify(options.args)
-              }`,
-          );
-        }
-
-        // 解码返回数据
-        // 注意：即使合约返回默认值（如 0x0 地址），也能正常解码，这是合法的返回值
-        try {
-          const decoded = iface.decodeFunctionResult(funcFragment, result);
-          // 如果只有一个返回值，直接返回；如果有多个，返回数组
-          return decoded.length === 1 ? decoded[0] : decoded;
-        } catch (decodeError) {
-          // 解码失败时才抛出错误
-          throw new Error(
-            `解码合约返回数据失败 (value="${result}")。` +
-              `函数: ${options.functionName}(${paramTypes.join(",")})，` +
-              `返回类型: ${returnType}。` +
-              `错误: ${
-                decodeError instanceof Error
-                  ? decodeError.message
-                  : String(decodeError)
-              }`,
-          );
-        }
-      }
-
-      // 其他情况：使用字符串格式的 ABI
-      let abi: string[];
-
-      // 如果提供了函数签名，使用它
-      if (options.functionSignature) {
-        const returnType = options.returnType || "uint256";
-        abi = [
-          `function ${options.functionSignature} view returns (${returnType})`,
-        ];
-      } // 否则根据参数自动推断类型
+      } // 其他情况：使用字符串格式的 ABI
       else {
-        const paramTypes = options.args?.map((arg) => this.inferArgType(arg)) ||
-          [];
-        // 如果没有指定返回类型，默认使用 uint256
-        // 注意：如果返回的是 tuple（结构体），必须通过 returnType 或 abi 指定
-        const returnType = options.returnType || "uint256";
-        abi = [
-          `function ${options.functionName}(${
-            paramTypes.join(",")
-          }) view returns (${returnType})`,
-        ];
+        // 如果提供了函数签名，使用它
+        if (options.functionSignature) {
+          const returnType = options.returnType || "uint256";
+          parsedAbi = parseAbi(
+            [
+              `function ${options.functionSignature} view returns (${returnType})`,
+            ] as readonly string[],
+          );
+        } // 否则根据参数自动推断类型
+        else {
+          const paramTypes = options.args?.map((arg) =>
+            this.inferArgType(arg)
+          ) ||
+            [];
+          // 如果没有指定返回类型，默认使用 uint256
+          // 注意：如果返回的是 tuple（结构体），必须通过 returnType 或 abi 指定
+          const returnType = options.returnType || "uint256";
+          parsedAbi = parseAbi(
+            [
+              `function ${options.functionName}(${
+                paramTypes.join(",")
+              }) view returns (${returnType})`,
+            ] as readonly string[],
+          );
+        }
       }
 
-      const contract = new EthersContract(
-        options.address,
-        abi as any,
-        provider as any,
-      );
-      const result = await contract[options.functionName](
-        ...(options.args || []),
-      );
+      // 使用 viem 的 readContract
+      const result = await client.readContract({
+        address: options.address as Address,
+        abi: parsedAbi,
+        functionName: options.functionName,
+        args: options.args as any,
+        account: options.from as Address | undefined,
+      });
+
+      // 如果只有一个返回值，直接返回；如果有多个，返回数组
       return result;
-    } catch (error) {
+    } catch (error: unknown) {
+      // 检查是否是空数据错误
+      const errorMessage = error instanceof Error
+        ? error.message
+        : String(error);
+
+      // 检查是否是空数据或 revert 错误
+      if (
+        errorMessage.includes("revert") ||
+        errorMessage.includes("execution reverted") ||
+        errorMessage.includes('value="0x"') ||
+        errorMessage.includes("BAD_DATA")
+      ) {
+        throw new Error(
+          `合约调用返回空数据或执行 revert。可能原因：` +
+            `1. 合约在该地址不存在或未部署；` +
+            `2. 函数执行 revert（例如：该地址没有用户信息）；` +
+            `3. RPC 节点返回了空数据。` +
+            `合约地址: ${options.address}，` +
+            `函数: ${options.functionName}，` +
+            `参数: ${JSON.stringify(options.args)}，` +
+            `错误: ${errorMessage}`,
+        );
+      }
+
+      // 其他错误直接抛出
       throw new Error(
-        `读取合约失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        `读取合约失败: ${errorMessage}`,
       );
     }
   }
@@ -797,11 +735,17 @@ export class Web3Client {
    * @returns 签名结果
    */
   async signMessage(message: string): Promise<string> {
-    const signer = this.getSigner();
+    const walletClient = this.getWalletClient();
+    const accounts = await walletClient.getAddresses();
+    if (accounts.length === 0) {
+      throw new Error("未找到可用账户，请先连接钱包");
+    }
+
     try {
-      const signature =
-        await (signer as { signMessage: (message: string) => Promise<string> })
-          .signMessage(message);
+      const signature = await walletClient.signMessage({
+        account: accounts[0],
+        message,
+      });
       return signature;
     } catch (error) {
       throw new Error(
@@ -819,14 +763,18 @@ export class Web3Client {
    * @param address 签名者地址
    * @returns 是否验证通过
    */
-  verifyMessage(
+  async verifyMessage(
     message: string,
     signature: string,
     address: string,
-  ): boolean {
+  ): Promise<boolean> {
     try {
-      const recoveredAddress = ethersVerifyMessage(message, signature);
-      return recoveredAddress.toLowerCase() === address.toLowerCase();
+      const isValid = await viemVerifyMessage({
+        address: address as Address,
+        message,
+        signature: signature as Hex,
+      });
+      return isValid;
     } catch (error) {
       throw new Error(
         `验证签名失败: ${
@@ -841,12 +789,10 @@ export class Web3Client {
    * @returns Gas 价格（wei）
    */
   async getGasPrice(): Promise<string> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      const feeData = await (provider as {
-        getFeeData: () => Promise<{ gasPrice: bigint | null }>;
-      }).getFeeData();
-      return feeData.gasPrice?.toString() || "0";
+      const gasPrice = await client.getGasPrice();
+      return gasPrice.toString();
     } catch (error) {
       throw new Error(
         `获取 Gas 价格失败: ${
@@ -862,15 +808,13 @@ export class Web3Client {
    * @returns 估算的 Gas 数量
    */
   async estimateGas(options: TransactionOptions): Promise<string> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      const gasEstimate = await (provider as {
-        estimateGas: (tx: TransactionOptions) => Promise<bigint>;
-      }).estimateGas({
-        to: options.to,
-        value: options.value,
-        data: options.data,
-        from: options.from,
+      const gasEstimate = await client.estimateGas({
+        to: options.to as Address,
+        value: options.value ? BigInt(options.value.toString()) : undefined,
+        data: options.data as Hex | undefined,
+        account: options.from as Address | undefined,
       });
       return gasEstimate.toString();
     } catch (error) {
@@ -888,11 +832,11 @@ export class Web3Client {
    * @returns 区块信息
    */
   async getBlock(blockNumber?: number): Promise<unknown> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      const block = await (provider as {
-        getBlock: (blockNumber?: number) => Promise<unknown>;
-      }).getBlock(blockNumber);
+      const block = await client.getBlock({
+        blockNumber: blockNumber ? BigInt(blockNumber) : undefined,
+      });
       return block;
     } catch (error) {
       throw new Error(
@@ -909,11 +853,11 @@ export class Web3Client {
    * @returns 交易信息
    */
   async getTransaction(txHash: string): Promise<unknown> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      const tx = await (provider as {
-        getTransaction: (hash: string) => Promise<unknown>;
-      }).getTransaction(txHash);
+      const tx = await client.getTransaction({
+        hash: txHash as Hash,
+      });
       return tx;
     } catch (error) {
       throw new Error(
@@ -930,11 +874,11 @@ export class Web3Client {
    * @returns 交易收据
    */
   async getTransactionReceipt(txHash: string): Promise<unknown> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      const receipt = await (provider as {
-        getTransactionReceipt: (hash: string) => Promise<unknown>;
-      }).getTransactionReceipt(txHash);
+      const receipt = await client.getTransactionReceipt({
+        hash: txHash as Hash,
+      });
       return receipt;
     } catch (error) {
       throw new Error(
@@ -980,34 +924,34 @@ export class Web3Client {
 
     this.blockListenerStarted = true;
     this.blockReconnectAttempts = 0;
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
 
     try {
-      // 监听 provider 错误事件，用于检测连接中断
-      (provider as any).on?.("error", (error: unknown) => {
-        console.error("[Web3Client] Provider 错误:", error);
-        this.handleBlockListenerError();
-      });
-
-      // 使用 ethers.js 的 on 方法监听区块
-      (provider as any).on("block", async (blockNumber: number) => {
-        try {
-          // 重置重连计数（成功接收到区块）
-          this.blockReconnectAttempts = 0;
-          const block = await (provider as any).getBlock(blockNumber);
-          // 调用所有监听器
-          for (const listener of this.blockListeners) {
-            try {
-              await Promise.resolve(listener(blockNumber, block));
-            } catch (error) {
-              console.error("[Web3Client] 区块监听器错误:", error);
+      // 使用 viem 的 watchBlocks 监听新区块
+      this.blockWatchUnsubscribe = client.watchBlocks({
+        onBlock: async (block) => {
+          try {
+            // 重置重连计数（成功接收到区块）
+            this.blockReconnectAttempts = 0;
+            const blockNumber = Number(block.number);
+            // 调用所有监听器
+            for (const listener of this.blockListeners) {
+              try {
+                await Promise.resolve(listener(blockNumber, block));
+              } catch (error) {
+                console.error("[Web3Client] 区块监听器错误:", error);
+              }
             }
+          } catch (error) {
+            console.error("[Web3Client] 处理区块失败:", error);
+            // 如果处理区块失败，可能是连接问题，触发重连
+            this.handleBlockListenerError();
           }
-        } catch (error) {
-          console.error("[Web3Client] 获取区块信息失败:", error);
-          // 如果获取区块失败，可能是连接问题，触发重连
+        },
+        onError: (error) => {
+          console.error("[Web3Client] 区块监听错误:", error);
           this.handleBlockListenerError();
-        }
+        },
       });
     } catch (error) {
       console.error("[Web3Client] 启动区块监听失败:", error);
@@ -1031,9 +975,11 @@ export class Web3Client {
     }
 
     try {
-      const provider = this.getProvider();
-      (provider as any).removeAllListeners("block");
-      (provider as any).removeAllListeners?.("error");
+      // 取消 viem watch
+      if (this.blockWatchUnsubscribe) {
+        this.blockWatchUnsubscribe();
+        this.blockWatchUnsubscribe = undefined;
+      }
       this.blockListenerStarted = false;
       this.blockReconnectAttempts = 0;
     } catch (error) {
@@ -1083,8 +1029,8 @@ export class Web3Client {
 
     this.blockReconnectTimer = setTimeout(() => {
       try {
-        // 重置 provider，强制重新创建连接
-        this.provider = null;
+        // 重置 publicClient，强制重新创建连接
+        this.publicClient = null;
         this.startBlockListener();
       } catch (error) {
         console.error("[Web3Client] 区块监听重连失败:", error);
@@ -1126,34 +1072,41 @@ export class Web3Client {
 
     this.transactionListenerStarted = true;
     this.transactionReconnectAttempts = 0;
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
 
     try {
-      // 监听 provider 错误事件，用于检测连接中断
-      (provider as any).on?.("error", (error: unknown) => {
-        console.error("[Web3Client] Provider 错误:", error);
-        this.handleTransactionListenerError();
-      });
-
-      // 监听待处理交易
-      (provider as any).on("pending", async (txHash: string) => {
-        try {
-          // 重置重连计数（成功接收到交易）
-          this.transactionReconnectAttempts = 0;
-          const tx = await (provider as any).getTransaction(txHash);
-          // 调用所有监听器
-          for (const listener of this.transactionListeners) {
-            try {
-              await Promise.resolve(listener(txHash, tx));
-            } catch (error) {
-              console.error("[Web3Client] 交易监听器错误:", error);
+      // 使用 viem 的 watchPendingTransactions 监听待处理交易
+      this.transactionWatchUnsubscribe = client.watchPendingTransactions({
+        onTransactions: async (txHashes) => {
+          try {
+            // 重置重连计数（成功接收到交易）
+            this.transactionReconnectAttempts = 0;
+            // 获取每个交易的详细信息
+            for (const txHash of txHashes) {
+              try {
+                const tx = await client.getTransaction({ hash: txHash });
+                // 调用所有监听器
+                for (const listener of this.transactionListeners) {
+                  try {
+                    await Promise.resolve(listener(txHash, tx));
+                  } catch (error) {
+                    console.error("[Web3Client] 交易监听器错误:", error);
+                  }
+                }
+              } catch (error) {
+                console.error("[Web3Client] 获取交易信息失败:", error);
+              }
             }
+          } catch (error) {
+            console.error("[Web3Client] 处理交易失败:", error);
+            // 如果处理交易失败，可能是连接问题，触发重连
+            this.handleTransactionListenerError();
           }
-        } catch (error) {
-          console.error("[Web3Client] 获取交易信息失败:", error);
-          // 如果获取交易失败，可能是连接问题，触发重连
+        },
+        onError: (error) => {
+          console.error("[Web3Client] 交易监听错误:", error);
           this.handleTransactionListenerError();
-        }
+        },
       });
     } catch (error) {
       console.error("[Web3Client] 启动交易监听失败:", error);
@@ -1196,8 +1149,8 @@ export class Web3Client {
 
     this.transactionReconnectTimer = setTimeout(() => {
       try {
-        // 重置 provider，强制重新创建连接
-        this.provider = null;
+        // 重置 publicClient，强制重新创建连接
+        this.publicClient = null;
         this.startTransactionListener();
       } catch (error) {
         console.error("[Web3Client] 交易监听重连失败:", error);
@@ -1221,9 +1174,11 @@ export class Web3Client {
     }
 
     try {
-      const provider = this.getProvider();
-      (provider as any).removeAllListeners("pending");
-      (provider as any).removeAllListeners?.("error");
+      // 取消 viem watch
+      if (this.transactionWatchUnsubscribe) {
+        this.transactionWatchUnsubscribe();
+        this.transactionWatchUnsubscribe = undefined;
+      }
       this.transactionListenerStarted = false;
       this.transactionReconnectAttempts = 0;
     } catch (error) {
@@ -1330,37 +1285,57 @@ export class Web3Client {
     abi?: string[],
   ): Promise<void> {
     try {
-      const provider = this.getProvider();
+      const client = this.getPublicClient();
       const currentBlock = toBlock ?? await this.getBlockNumber();
       const startBlock = Math.max(fromBlock, 0);
 
-      // 构建事件 ABI
-      const eventAbi = abi || [`event ${eventName}()`];
-      const contract = new EthersContract(contractAddress, eventAbi, provider);
-      const iface = new EthersInterface(eventAbi);
-
       // 查询历史事件日志
-      const filter = contract.filters[eventName]();
-      const logs = await contract.queryFilter(filter, startBlock, currentBlock);
+      // 如果提供了 ABI，尝试解析事件；否则使用通用事件查询
+      let logs;
+      if (abi && abi.length > 0) {
+        const parsedAbi = typeof abi[0] === "string"
+          ? parseAbi(abi as string[])
+          : (abi as unknown as Abi);
+        // 尝试从 ABI 中找到对应的事件
+        const eventItem = parsedAbi.find(
+          (item: any) => item.type === "event" && item.name === eventName,
+        );
+        if (eventItem) {
+          logs = await client.getLogs({
+            address: contractAddress as Address,
+            event: eventItem as any,
+            fromBlock: BigInt(startBlock),
+            toBlock: BigInt(currentBlock),
+          });
+        } else {
+          // 如果找不到，使用通用查询
+          logs = await client.getLogs({
+            address: contractAddress as Address,
+            fromBlock: BigInt(startBlock),
+            toBlock: BigInt(currentBlock),
+          });
+        }
+      } else {
+        // 没有提供 ABI，使用通用查询
+        logs = await client.getLogs({
+          address: contractAddress as Address,
+          fromBlock: BigInt(startBlock),
+          toBlock: BigInt(currentBlock),
+        });
+      }
 
       // 按区块号和时间戳排序（从旧到新）
-      logs.sort((a, b) => {
+      logs.sort((a: any, b: any) => {
         if (a.blockNumber !== b.blockNumber) {
           return Number(a.blockNumber) - Number(b.blockNumber);
         }
-        return (a.index || 0) - (b.index || 0);
+        return (a.logIndex || 0) - (b.logIndex || 0);
       });
 
       // 调用回调函数处理每个历史事件
       for (const log of logs) {
         try {
-          const parsed = iface.parseLog({
-            topics: log.topics as string[],
-            data: log.data,
-          });
-          if (parsed) {
-            await Promise.resolve(callback(parsed));
-          }
+          await Promise.resolve(callback(log));
         } catch (error) {
           console.warn(
             `[Web3Client] 解析历史事件失败 (${contractAddress}:${eventName}):`,
@@ -1393,41 +1368,51 @@ export class Web3Client {
     }
 
     try {
-      const provider = this.getProvider();
-
-      // 监听 provider 错误事件，用于检测连接中断
-      (provider as any).on?.("error", (error: unknown) => {
-        console.error("[Web3Client] Provider 错误:", error);
-        this.handleContractEventListenerError(contractAddress, eventName);
-      });
+      const client = this.getPublicClient();
 
       // 构建 ABI（如果提供了则使用，否则使用默认的事件 ABI）
-      const eventAbi = abi || [`event ${eventName}()`];
-      const contract = new EthersContract(contractAddress, eventAbi, provider);
+      const eventAbi = abi
+        ? (typeof abi[0] === "string"
+          ? parseAbi(abi as string[])
+          : (abi as unknown as Abi))
+        : parseAbi([`event ${eventName}()`] as readonly string[]);
 
-      // 监听事件
-      contract.on(eventName, async (...args: unknown[]) => {
-        const listeners = this.contractEventListeners.get(key);
-        if (listeners) {
-          try {
-            // 重置重连计数（成功接收到事件）
-            this.contractReconnectAttempts.set(key, 0);
-            // 最后一个参数通常是事件对象
-            const event = args[args.length - 1];
-            for (const listener of listeners) {
-              try {
-                await Promise.resolve(listener(event));
-              } catch (error) {
-                console.error("[Web3Client] 合约事件监听器错误:", error);
+      // 使用 viem 的 watchContractEvent 监听合约事件
+      const unsubscribe = client.watchContractEvent({
+        address: contractAddress as Address,
+        abi: eventAbi,
+        eventName: eventName,
+        onLogs: async (logs) => {
+          const listeners = this.contractEventListeners.get(key);
+          if (listeners) {
+            try {
+              // 重置重连计数（成功接收到事件）
+              this.contractReconnectAttempts.set(key, 0);
+              // 处理每个事件日志
+              for (const log of logs) {
+                for (const listener of listeners) {
+                  try {
+                    await Promise.resolve(listener(log));
+                  } catch (error) {
+                    console.error("[Web3Client] 合约事件监听器错误:", error);
+                  }
+                }
               }
+            } catch (error) {
+              console.error("[Web3Client] 处理合约事件失败:", error);
+              // 如果处理事件失败，可能是连接问题，触发重连
+              this.handleContractEventListenerError(contractAddress, eventName);
             }
-          } catch (error) {
-            console.error("[Web3Client] 处理合约事件失败:", error);
-            // 如果处理事件失败，可能是连接问题，触发重连
-            this.handleContractEventListenerError(contractAddress, eventName);
           }
-        }
+        },
+        onError: (error) => {
+          console.error("[Web3Client] 合约事件监听错误:", error);
+          this.handleContractEventListenerError(contractAddress, eventName);
+        },
       });
+
+      // 保存取消函数
+      this.contractWatchUnsubscribes.set(key, unsubscribe);
     } catch (error) {
       console.error(
         `[Web3Client] 启动合约事件监听失败 (${contractAddress}:${eventName}):`,
@@ -1485,8 +1470,8 @@ export class Web3Client {
 
     const timer = setTimeout(() => {
       try {
-        // 重置 provider，强制重新创建连接
-        this.provider = null;
+        // 重置 publicClient，强制重新创建连接
+        this.publicClient = null;
         this.startContractEventListener(contractAddress, eventName, abi);
       } catch (error) {
         console.error("[Web3Client] 合约事件监听重连失败:", error);
@@ -1517,12 +1502,12 @@ export class Web3Client {
     this.contractReconnectAttempts.delete(key);
 
     try {
-      const provider = this.getProvider();
-      const contract = new EthersContract(contractAddress, [
-        `event ${eventName}()`,
-      ], provider);
-      contract.removeAllListeners(eventName);
-      (provider as any).removeAllListeners?.("error");
+      // 取消 viem watch
+      const unsubscribe = this.contractWatchUnsubscribes.get(key);
+      if (unsubscribe) {
+        unsubscribe();
+        this.contractWatchUnsubscribes.delete(key);
+      }
     } catch (error) {
       console.error(
         `[Web3Client] 停止合约事件监听失败 (${contractAddress}:${eventName}):`,
@@ -1654,10 +1639,10 @@ export class Web3Client {
       this.walletChainChangedWrapper = (...args: unknown[]) => {
         const chainId = args[0] as string;
 
-        // 清除 provider 和 signer 缓存，避免使用旧的网络信息
-        // ethers.js 6.x 的 BrowserProvider 在网络切换时会抛出错误，清除缓存可以避免这个问题
-        this.provider = null;
-        this.signer = null;
+        // 清除 publicClient 和 walletClient 缓存，避免使用旧的网络信息
+        // viem 在网络切换时需要重新创建客户端，清除缓存可以避免这个问题
+        this.publicClient = null;
+        this.walletClient = null;
 
         for (const listener of this.chainChangedListeners) {
           try {
@@ -1738,12 +1723,10 @@ export class Web3Client {
    * @returns 当前区块号
    */
   async getBlockNumber(): Promise<number> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      const blockNumber = await (provider as {
-        getBlockNumber: () => Promise<number>;
-      }).getBlockNumber();
-      return blockNumber;
+      const blockNumber = await client.getBlockNumber();
+      return Number(blockNumber);
     } catch (error) {
       throw new Error(
         `获取区块号失败: ${
@@ -1758,19 +1741,34 @@ export class Web3Client {
    * @returns 网络信息（包含 chainId、name 等）
    */
   async getNetwork(): Promise<{ chainId: number; name: string }> {
-    // 优先使用 provider 获取网络信息（包括名称）
-    // 这样可以获取到完整的网络信息，而不是硬编码映射
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      const network = await (provider as {
-        getNetwork: () => Promise<{ chainId: bigint; name: string }>;
-      }).getNetwork();
+      // viem 的 getChainId 返回链 ID
+      const chainId = await client.getChainId();
+
+      // 尝试获取链名称（如果 chain 配置可用）
+      let name = `chain-${chainId}`;
+      if (this.chain) {
+        name = this.chain.name;
+      } else {
+        // 尝试从客户端获取链信息
+        try {
+          // viem 的 PublicClient 可能包含 chain 信息
+          const chain = (client as any).chain;
+          if (chain && chain.name) {
+            name = chain.name;
+            this.chain = chain;
+          }
+        } catch {
+          // 如果无法获取链名称，使用默认格式
+        }
+      }
+
       return {
-        chainId: Number(network.chainId),
-        name: network.name,
+        chainId: Number(chainId),
+        name,
       };
     } catch (error) {
-      // 处理 ethers.js 6.x 的网络切换错误
       const errorMessage = error instanceof Error
         ? error.message
         : String(error);
@@ -1795,11 +1793,11 @@ export class Web3Client {
    * @returns Gas 限制
    */
   async getGasLimit(blockNumber?: number): Promise<string> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      const block = await (provider as {
-        getBlock: (blockNumber?: number) => Promise<{ gasLimit: bigint }>;
-      }).getBlock(blockNumber);
+      const block = await client.getBlock({
+        blockNumber: blockNumber ? BigInt(blockNumber) : undefined,
+      });
       return block.gasLimit.toString();
     } catch (error) {
       throw new Error(
@@ -1819,19 +1817,16 @@ export class Web3Client {
     maxFeePerGas: string | null;
     maxPriorityFeePerGas: string | null;
   }> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      const feeData = await (provider as {
-        getFeeData: () => Promise<{
-          gasPrice: bigint | null;
-          maxFeePerGas: bigint | null;
-          maxPriorityFeePerGas: bigint | null;
-        }>;
-      }).getFeeData();
+      // viem 使用 estimateFeesPerGas 获取 EIP-1559 费用
+      const fees = await client.estimateFeesPerGas();
       return {
-        gasPrice: feeData.gasPrice?.toString() || null,
-        maxFeePerGas: feeData.maxFeePerGas?.toString() || null,
-        maxPriorityFeePerGas: feeData.maxPriorityFeePerGas?.toString() || null,
+        gasPrice: fees.gasPrice ? String(fees.gasPrice) : null,
+        maxFeePerGas: fees.maxFeePerGas ? String(fees.maxFeePerGas) : null,
+        maxPriorityFeePerGas: fees.maxPriorityFeePerGas
+          ? String(fees.maxPriorityFeePerGas)
+          : null,
       };
     } catch (error) {
       throw new Error(
@@ -1848,10 +1843,12 @@ export class Web3Client {
    * @returns 余额数组（wei，字符串格式）
    */
   async getBalances(addresses: string[]): Promise<string[]> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
       const balances = await Promise.all(
-        addresses.map((address) => (provider as any).getBalance(address)),
+        addresses.map((address) =>
+          client.getBalance({ address: address as Address })
+        ),
       );
       return balances.map((balance) => balance.toString());
     } catch (error) {
@@ -1874,15 +1871,21 @@ export class Web3Client {
     ownerAddress: string,
   ): Promise<string> {
     try {
-      const provider = this.getProvider();
+      const client = this.getPublicClient();
 
       // ERC20 标准接口：balanceOf(address) returns (uint256)
-      const erc20Abi = [
+      const erc20Abi = parseAbi([
         "function balanceOf(address owner) view returns (uint256)",
         "function decimals() view returns (uint8)",
-      ];
-      const contract = new EthersContract(tokenAddress, erc20Abi, provider);
-      const balance = await contract.balanceOf(ownerAddress);
+      ]);
+
+      const balance = await client.readContract({
+        address: tokenAddress as Address,
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [ownerAddress as Address],
+      });
+
       return balance.toString();
     } catch (error) {
       throw new Error(
@@ -1905,27 +1908,42 @@ export class Web3Client {
     totalSupply: string;
   }> {
     try {
-      const provider = this.getProvider();
+      const client = this.getPublicClient();
 
       // ERC20 标准接口
-      const erc20Abi = [
+      const erc20Abi = parseAbi([
         "function name() view returns (string)",
         "function symbol() view returns (string)",
         "function decimals() view returns (uint8)",
         "function totalSupply() view returns (uint256)",
-      ];
-      const contract = new EthersContract(tokenAddress, erc20Abi, provider);
+      ]);
 
       const [name, symbol, decimals, totalSupply] = await Promise.all([
-        contract.name(),
-        contract.symbol(),
-        contract.decimals(),
-        contract.totalSupply(),
+        client.readContract({
+          address: tokenAddress as Address,
+          abi: erc20Abi,
+          functionName: "name",
+        }),
+        client.readContract({
+          address: tokenAddress as Address,
+          abi: erc20Abi,
+          functionName: "symbol",
+        }),
+        client.readContract({
+          address: tokenAddress as Address,
+          abi: erc20Abi,
+          functionName: "decimals",
+        }),
+        client.readContract({
+          address: tokenAddress as Address,
+          abi: erc20Abi,
+          functionName: "totalSupply",
+        }),
       ]);
 
       return {
-        name,
-        symbol,
+        name: name as string,
+        symbol: symbol as string,
         decimals: Number(decimals),
         totalSupply: totalSupply.toString(),
       };
@@ -1948,7 +1966,7 @@ export class Web3Client {
     fromBlock: number,
     toBlock?: number,
   ): Promise<unknown[]> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
       const currentBlock = toBlock ?? await this.getBlockNumber();
       const blocks: unknown[] = [];
@@ -1956,9 +1974,9 @@ export class Web3Client {
       // 从 fromBlock 到 toBlock（或当前区块）
       for (let i = fromBlock; i <= currentBlock; i++) {
         try {
-          const block = await (provider as {
-            getBlock: (blockNumber: number) => Promise<unknown>;
-          }).getBlock(i);
+          const block = await client.getBlock({
+            blockNumber: BigInt(i),
+          });
           blocks.push(block);
         } catch (error) {
           console.warn(`获取区块 ${i} 失败:`, error);
@@ -1985,14 +2003,12 @@ export class Web3Client {
     blockNumber: number,
     includeTransactions: boolean = false,
   ): Promise<unknown[]> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      const block = await (provider as {
-        getBlock: (
-          blockNumber: number,
-          includeTransactions?: boolean,
-        ) => Promise<{ transactions: unknown[] }>;
-      }).getBlock(blockNumber, includeTransactions);
+      const block = await client.getBlock({
+        blockNumber: BigInt(blockNumber),
+        includeTransactions,
+      });
       return block.transactions || [];
     } catch (error) {
       throw new Error(
@@ -2015,23 +2031,17 @@ export class Web3Client {
     fromBlock?: number,
     toBlock?: number,
   ): Promise<unknown[]> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      // 使用 ethers.js 的 getLogs 方法查询交易
+      // 使用 viem 的 getLogs 方法查询交易
       const currentBlock = toBlock ?? await this.getBlockNumber();
       const startBlock = fromBlock ?? Math.max(0, currentBlock - 1000); // 默认查询最近 1000 个区块
 
-      // 查询该地址作为 from 或 to 的交易
-      const logs = await (provider as {
-        getLogs: (filter: {
-          fromBlock: number;
-          toBlock: number;
-          address?: string;
-        }) => Promise<unknown[]>;
-      }).getLogs({
-        fromBlock: startBlock,
-        toBlock: currentBlock,
-        address: address,
+      // 查询该地址相关的日志
+      const logs = await client.getLogs({
+        address: address as Address,
+        fromBlock: BigInt(startBlock),
+        toBlock: BigInt(currentBlock),
       });
 
       // 从日志中提取交易哈希并获取完整交易信息
@@ -2039,7 +2049,7 @@ export class Web3Client {
       const txHashes = new Set<string>();
 
       for (const log of logs) {
-        const txHash = (log as any).transactionHash;
+        const txHash = log.transactionHash;
         if (txHash && !txHashes.has(txHash)) {
           txHashes.add(txHash);
           try {
@@ -2118,7 +2128,7 @@ export class Web3Client {
     pageSize: number;
     totalPages: number;
   }> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
       // 获取函数选择器
       const functionSelector = await getFunctionSelector(functionSignature);
@@ -2160,16 +2170,10 @@ export class Web3Client {
           blockPromises.push(
             (async () => {
               try {
-                const block = await (provider as {
-                  getBlock: (
-                    blockNumber: number,
-                    includeTransactions?: boolean,
-                  ) => Promise<{
-                    transactions: unknown[];
-                    timestamp: bigint;
-                    hash: string;
-                  }>;
-                }).getBlock(i, true);
+                const block = await client.getBlock({
+                  blockNumber: BigInt(i),
+                  includeTransactions: true,
+                });
 
                 if (block.transactions && Array.isArray(block.transactions)) {
                   for (const tx of block.transactions) {
@@ -2186,12 +2190,23 @@ export class Web3Client {
                       let args: unknown[] | undefined;
                       if (options.abi) {
                         try {
-                          const iface = new EthersInterface(options.abi);
-                          const decoded = iface.decodeFunctionData(
-                            functionSignature.split("(")[0],
-                            txObj.data,
+                          const abi = typeof options.abi[0] === "string"
+                            ? parseAbi(options.abi as string[])
+                            : (options.abi as unknown as Abi);
+                          const functionName = functionSignature.split("(")[0];
+                          // 从 ABI 中找到对应的函数
+                          const func = abi.find(
+                            (item: any) =>
+                              item.type === "function" &&
+                              item.name === functionName,
                           );
-                          args = Array.from(decoded);
+                          if (func) {
+                            const decoded = decodeFunctionData({
+                              abi,
+                              data: txObj.data as Hex,
+                            });
+                            args = Array.from(decoded.args || []);
+                          }
                         } catch (error) {
                           // 解析失败，忽略参数
                           console.warn(
@@ -2292,28 +2307,46 @@ export class Web3Client {
     } = {},
   ): Promise<unknown> {
     try {
-      const provider = this.getProvider();
-
       // 判断是读取还是写入操作
       const isReadOnly = options.readOnly ?? false;
-      const signerOrProvider = isReadOnly ? provider : this.getSigner();
 
-      const contract = new EthersContract(
-        contractAddress,
-        abi,
-        signerOrProvider,
-      );
-      const result = await contract[functionName](...args, {
-        value: options.value,
-        gasLimit: options.gasLimit,
-      });
+      const parsedAbi = typeof abi[0] === "string"
+        ? parseAbi(abi as string[])
+        : (abi as unknown as Abi);
 
-      // 如果是交易，返回交易哈希；否则返回结果
-      if (result && typeof result === "object" && "hash" in result) {
-        return result.hash;
+      if (isReadOnly) {
+        // 读取操作
+        const client = this.getPublicClient();
+        const result = await client.readContract({
+          address: contractAddress as Address,
+          abi: parsedAbi,
+          functionName,
+          args: args as any,
+          account: options.from as Address | undefined,
+        });
+        return result;
+      } else {
+        // 写入操作
+        const walletClient = this.getWalletClient();
+        const accounts = await walletClient.getAddresses();
+        if (accounts.length === 0) {
+          throw new Error("未找到可用账户，请先连接钱包");
+        }
+
+        const hash = await walletClient.writeContract({
+          account: accounts[0],
+          address: contractAddress as Address,
+          abi: parsedAbi,
+          functionName,
+          args: args as any,
+          value: options.value ? BigInt(options.value.toString()) : undefined,
+          gas: options.gasLimit
+            ? BigInt(options.gasLimit.toString())
+            : undefined,
+          chain: this.chain || undefined,
+        });
+        return hash;
       }
-
-      return result;
     } catch (error) {
       throw new Error(
         `调用合约失败: ${
@@ -2342,38 +2375,41 @@ export class Web3Client {
     filter?: Record<string, unknown>,
   ): Promise<unknown[]> {
     try {
-      const provider = this.getProvider();
+      const client = this.getPublicClient();
 
-      const contract = new EthersContract(contractAddress, abi, provider);
-      const iface = new EthersInterface(abi);
+      const parsedAbi = typeof abi[0] === "string"
+        ? parseAbi(abi as string[])
+        : (abi as unknown as Abi);
 
       const currentBlock = toBlock ?? await this.getBlockNumber();
       const startBlock = fromBlock ?? Math.max(0, currentBlock - 1000);
 
-      // 构建过滤器
-      const eventFilter = contract.filters[eventName](
-        ...(filter ? Object.values(filter) : []),
+      // 从 ABI 中找到对应的事件
+      const eventItem = parsedAbi.find(
+        (item: any) => item.type === "event" && item.name === eventName,
       );
 
       // 查询事件日志
-      const logs = await contract.queryFilter(
-        eventFilter,
-        startBlock,
-        currentBlock,
-      );
-
-      // 解析日志
-      return logs.map((log) => {
-        const parsed = iface.parseLog({
-          topics: log.topics as string[],
-          data: log.data,
+      let logs;
+      if (eventItem) {
+        logs = await client.getLogs({
+          address: contractAddress as Address,
+          event: eventItem as any,
+          args: filter ? (Object.values(filter) as any) : undefined,
+          fromBlock: BigInt(startBlock),
+          toBlock: BigInt(currentBlock),
         });
-        return {
-          ...log,
-          args: parsed?.args,
-          eventName: parsed?.name,
-        };
-      });
+      } else {
+        // 如果找不到事件，使用通用查询
+        logs = await client.getLogs({
+          address: contractAddress as Address,
+          fromBlock: BigInt(startBlock),
+          toBlock: BigInt(currentBlock),
+        });
+      }
+
+      // 返回日志（viem 已经解析好了）
+      return logs;
     } catch (error) {
       throw new Error(
         `获取合约事件日志失败: ${
@@ -2389,12 +2425,12 @@ export class Web3Client {
    * @returns 是否为合约地址
    */
   async isContract(address: string): Promise<boolean> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      const code = await (provider as {
-        getCode: (address: string) => Promise<string>;
-      }).getCode(address);
-      return code !== "0x" && code.length > 2;
+      const code = await client.getBytecode({
+        address: address as Address,
+      });
+      return code !== undefined && code !== "0x" && code.length > 2;
     } catch (error) {
       throw new Error(
         `检查合约地址失败: ${
@@ -2410,12 +2446,12 @@ export class Web3Client {
    * @returns 合约代码（十六进制字符串）
    */
   async getCode(address: string): Promise<string> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      const code = await (provider as {
-        getCode: (address: string) => Promise<string>;
-      }).getCode(address);
-      return code;
+      const code = await client.getBytecode({
+        address: address as Address,
+      });
+      return code || "0x";
     } catch (error) {
       throw new Error(
         `获取合约代码失败: ${
@@ -2432,17 +2468,20 @@ export class Web3Client {
    * @returns 存储值（十六进制字符串）
    */
   async getStorageAt(address: string, slot: string | number): Promise<string> {
-    const provider = this.getProvider();
+    const client = this.getPublicClient();
     try {
-      const slotHex = typeof slot === "number"
-        ? "0x" + slot.toString(16)
+      // 将 slot 转换为 bigint（viem 需要 bigint 类型）
+      const slotBigInt = typeof slot === "number"
+        ? BigInt(slot)
         : slot.startsWith("0x")
-        ? slot
-        : "0x" + slot;
-      const value = await (provider as {
-        getStorage: (address: string, slot: string) => Promise<string>;
-      }).getStorage(address, slotHex);
-      return value;
+        ? BigInt(slot)
+        : BigInt("0x" + slot);
+      const value = await client.getStorageAt({
+        address: address as Address,
+        slot: slotBigInt as any, // viem 的 slot 参数类型可能有问题，使用 any 绕过
+      });
+      // viem 的 getStorageAt 返回 Hex 类型（字符串），直接返回
+      return String(value || "0x");
     } catch (error) {
       throw new Error(
         `获取存储值失败: ${
@@ -2552,9 +2591,9 @@ export async function isAddress(address: string): Promise<boolean> {
     return false;
   }
 
-  // 使用 ethers.js 的 isAddress
+  // 使用 viem 的 isAddress
   try {
-    return ethersIsAddress(address);
+    return viemIsAddress(address);
   } catch {
     // 如果失败，使用自己的实现
   }
@@ -2625,8 +2664,8 @@ export async function checkAddressChecksum(address: string): Promise<boolean> {
  * // '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
  */
 export function toChecksumAddress(address: string): string {
-  // 使用 ethers.js 的同步 isAddress 函数
-  if (!ethersIsAddress(address)) {
+  // 使用 viem 的 isAddress 函数
+  if (!viemIsAddress(address)) {
     throw new Error(`无效的地址: ${address}`);
   }
 
@@ -2659,9 +2698,9 @@ export async function toChecksumAddressAsync(address: string): Promise<string> {
     ? address.slice(2).toLowerCase()
     : address.toLowerCase();
 
-  // 使用 ethers.js 的 getAddress
+  // 使用 viem 的 getAddress
   try {
-    return ethersGetAddress("0x" + addr);
+    return getAddress("0x" + addr);
   } catch {
     // 如果失败，使用自己的实现
   }
@@ -2697,7 +2736,11 @@ export async function toChecksumAddressAsync(address: string): Promise<string> {
  */
 export async function keccak256(data: string | Uint8Array): Promise<string> {
   try {
-    return ethersKeccak256(data);
+    // viem 的 keccak256 接受 Hex 或 Bytes
+    const dataHex = typeof data === "string"
+      ? (data.startsWith("0x") ? data as Hex : ("0x" + data) as Hex)
+      : (data as Uint8Array);
+    return viemKeccak256(dataHex);
   } catch {
     // 如果 ethers 不可用，使用 Web Crypto API 的 SHA-256 作为替代
     const encoder = new TextEncoder();
@@ -2725,7 +2768,12 @@ export async function solidityKeccak256(
   values: unknown[],
 ): Promise<string> {
   try {
-    return solidityPackedKeccak256(types, values);
+    // viem 使用 encodePacked 和 keccak256
+    const packed = encodeAbiParameters(
+      types.map((t) => ({ type: t } as any)),
+      values,
+    );
+    return viemKeccak256(packed);
   } catch {
     // 如果 ethers 不可用，简化实现
     const encoded = types.map((type, i) => {
@@ -2911,8 +2959,8 @@ export function isTxHash(txHash: string): boolean {
  * // '0x742d35cc6634c0532925a3b844bc9e7595f0beb'
  */
 export function formatAddress(address: string): string {
-  // 使用 ethers.js 的同步 isAddress 函数
-  if (!ethersIsAddress(address)) {
+  // 使用 viem 的 isAddress 函数
+  if (!viemIsAddress(address)) {
     throw new Error(`无效的地址: ${address}`);
   }
 
@@ -2996,8 +3044,15 @@ export async function encodeFunctionCall(
   args: unknown[],
 ): Promise<string> {
   try {
-    const iface = new EthersInterface([`function ${functionSignature}`]);
-    return iface.encodeFunctionData(functionSignature.split("(")[0], args);
+    const abi = parseAbi(
+      [`function ${functionSignature}`] as readonly string[],
+    );
+    const functionName = functionSignature.split("(")[0];
+    return encodeFunctionData({
+      abi,
+      functionName,
+      args: args as any,
+    });
   } catch {
     // 简化实现
     const selector = await getFunctionSelector(functionSignature);

@@ -126,43 +126,43 @@ export default function HomePage(
     versionString: string;
   };
 
-  // useEffect(() => {
-  //   // 在 useEffect 内部创建异步函数并立即调用
-  //   (async () => {
-  //     const web3 = new Web3Client();
-  //     const accounts = await web3.connectWallet();
-  //     setWeb3(web3);
-  //     setDefaultAccount(accounts[0]);
+  useEffect(() => {
+    // 在 useEffect 内部创建异步函数并立即调用
+    (async () => {
+      const web3 = new Web3Client();
+      const accounts = await web3.connectWallet();
+      setWeb3(web3);
+      setDefaultAccount(accounts[0]);
 
-  //     console.log({ account: accounts[0] });
+      console.log({ account: accounts[0] });
 
-  //     // 获取并显示当前网络信息
-  //     const network = await web3.getNetwork();
-  //     console.log("当前网络信息:", { network: JSON.stringify(network) });
+      // 获取并显示当前网络信息
+      const network = await web3.getNetwork();
+      console.log("当前网络信息:", { network: JSON.stringify(network) });
 
-  //     // 监听账户变化
-  //     const _unsubscribeAccounts = web3.onAccountsChanged((accounts) => {
-  //       console.log("账户变化:", { accounts });
-  //     });
+      // 监听账户变化
+      const _unsubscribeAccounts = web3.onAccountsChanged((accounts) => {
+        console.log("账户变化:", { accounts });
+      });
 
-  //     // 监听链切换
-  //     const _unsubscribeChain = web3.onChainChanged((chainId) => {
-  //       console.log("链切换事件触发，chainId:", chainId);
-  //       // 当链切换时，重新获取网络信息
-  //       web3.getNetwork().then((network) => {
-  //         console.log("新网络信息:", { network });
-  //       }).catch((error) => {
-  //         console.error("获取网络信息失败:", error);
-  //       });
-  //     });
-  //   })();
-  // }, []);
+      // 监听链切换
+      const _unsubscribeChain = web3.onChainChanged((chainId) => {
+        console.log("链切换事件触发，chainId:", chainId);
+        // 当链切换时，重新获取网络信息
+        web3.getNetwork().then((network) => {
+          console.log("新网络信息:", { network });
+        }).catch((error) => {
+          console.error("获取网络信息失败:", error);
+        });
+      });
+    })();
+  }, []);
 
-  // useEffect(() => {
-  //   if (defaultAccount) {
-  //     console.log({ defaultAccount });
-  //   }
-  // }, [defaultAccount]);
+  useEffect(() => {
+    if (defaultAccount) {
+      console.log({ defaultAccount });
+    }
+  }, [defaultAccount]);
 
   // useEffect(() => {
   //   console.log({
