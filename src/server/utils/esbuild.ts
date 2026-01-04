@@ -37,22 +37,15 @@ function convertJsrToHttpUrl(jsrUrl: string): string {
   const version = versionWithPrefix.replace(/^[\^~]/, "");
 
   // 使用 esm.sh 的 /jsr/ 路径格式
-  // 对于包含 npm 依赖的子路径（如 utils/web3），使用 ?external 参数让 npm 依赖保持 external
-  // 这样可以减小包体积，npm 依赖通过 import map 或 esm.sh 自动转换的 URL 单独加载
-  // 格式：https://esm.sh/jsr/@scope/package@version/subpath?external=npm:*
-  let queryParams = "bundle";
-  if (subPath && subPath.includes("utils")) {
-    // web3 子路径包含大量 npm 依赖（ethers），使用 external 参数避免打包
-    queryParams = "external";
-  }
-
+  // 格式：https://esm.sh/jsr/@scope/package@version/subpath?bundle
+  // 注意：虽然打包会增加文件大小，但可以避免 external 参数导致的处理卡住问题
   if (subPath) {
     // 有子路径，直接使用子路径（不需要映射到文件路径）
     // esm.sh 会自动处理 JSR 包的子路径解析
-    return `https://esm.sh/jsr/@${scope}/${packageName}@${version}/${subPath}?${queryParams}`;
+    return `https://esm.sh/jsr/@${scope}/${packageName}@${version}/${subPath}?bundle`;
   } else {
     // 没有子路径，指向包的默认入口（esm.sh 会自动处理）
-    return `https://esm.sh/jsr/@${scope}/${packageName}@${version}?${queryParams}`;
+    return `https://esm.sh/jsr/@${scope}/${packageName}@${version}?bundle`;
   }
 }
 
@@ -101,18 +94,12 @@ function convertJsrToBrowserUrl(jsrUrl: string): string {
   const version = versionWithPrefix.replace(/^[\^~]/, "");
 
   // 使用 esm.sh 的 /jsr/ 路径格式
-  // 对于包含 npm 依赖的子路径（如 utils/web3），使用 ?external 参数让 npm 依赖保持 external
-  // 这样可以减小包体积，npm 依赖通过 import map 或 esm.sh 自动转换的 URL 单独加载
-  let queryParams = "bundle";
-  if (subPath && subPath.includes("utils")) {
-    // web3 子路径包含大量 npm 依赖（ethers），使用 external 参数避免打包
-    queryParams = "external";
-  }
-
+  // 格式：https://esm.sh/jsr/@scope/package@version/subpath?bundle
+  // 注意：虽然打包会增加文件大小，但可以避免 external 参数导致的处理卡住问题
   if (subPath) {
-    return `https://esm.sh/jsr/@${scope}/${packageName}@${version}/${subPath}?${queryParams}`;
+    return `https://esm.sh/jsr/@${scope}/${packageName}@${version}/${subPath}?bundle`;
   } else {
-    return `https://esm.sh/jsr/@${scope}/${packageName}@${version}?${queryParams}`;
+    return `https://esm.sh/jsr/@${scope}/${packageName}@${version}?bundle`;
   }
 }
 
