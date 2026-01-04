@@ -646,22 +646,23 @@ export class Web3Client {
 
         // 检查交易状态
         if ((receipt as any).status === "success") {
-          return { receipt, hash };
+          return { hash, receipt };
         } else if ((receipt as any).status === "reverted") {
-          throw new Error("交易执行失败，已被回滚");
+          return { hash, receipt, error: "交易执行失败，已被回滚" };
         } else {
           // 未知状态，返回收据让调用者判断
-          return { receipt, hash };
+          return { hash, receipt };
         }
       } catch (receiptError) {
         // 如果等待交易确认失败，可能是交易被回滚
-        throw new Error(
-          `交易确认失败: ${
-            receiptError instanceof Error
-              ? receiptError.message
-              : String(receiptError)
-          }`,
-        );
+        return {
+          hash,
+          receipt: undefined,
+          error: "交易确认失败",
+          message: receiptError instanceof Error
+            ? receiptError.message
+            : String(receiptError),
+        };
       }
     } catch (error) {
       // 检查是否是用户取消交易
@@ -2506,22 +2507,23 @@ export class Web3Client {
 
           // 检查交易状态
           if ((receipt as any).status === "success") {
-            return { receipt, hash };
+            return { hash, receipt };
           } else if ((receipt as any).status === "reverted") {
-            throw new Error("交易执行失败，已被回滚");
+            return { hash, receipt, error: "交易执行失败，已被回滚" };
           } else {
             // 未知状态，返回收据让调用者判断
-            return { receipt, hash };
+            return { hash, receipt };
           }
         } catch (receiptError) {
           // 如果等待交易确认失败，可能是交易被回滚
-          throw new Error(
-            `交易确认失败: ${
-              receiptError instanceof Error
-                ? receiptError.message
-                : String(receiptError)
-            }`,
-          );
+          return {
+            hash,
+            receipt: undefined,
+            error: "交易确认失败",
+            message: receiptError instanceof Error
+              ? receiptError.message
+              : String(receiptError),
+          };
         }
       }
     } catch (error) {
