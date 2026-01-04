@@ -6,7 +6,11 @@
 import { useEffect, useState } from "preact/hooks";
 import CodeBlock from "@components/CodeBlock.tsx";
 import type { PageProps } from "@dreamer/dweb";
-import { exampleStore, type ExampleStoreState } from "@stores/example.ts";
+import {
+  exampleStore,
+  type ExampleStoreState,
+  useExampleStore,
+} from "@stores/example.ts";
 
 export const metadata = {
   title: "状态管理示例 - DWeb 框架使用示例",
@@ -28,6 +32,13 @@ export default function StorePage(
   const [storeState, setStoreState] = useState<ExampleStoreState>(
     exampleStore.$state,
   );
+
+  const store = useExampleStore();
+
+  useEffect(() => {
+    const listItems = store.getListItems();
+    console.log({ listItems });
+  }, [store]);
 
   useEffect(() => {
     // 订阅状态变化

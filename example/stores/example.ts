@@ -10,6 +10,7 @@ export interface ExampleStoreState extends Record<string, unknown> {
   message: string;
   items: string[];
   isLoading: boolean;
+  listItems: Record<string, unknown>;
 }
 
 /**
@@ -23,6 +24,12 @@ export const exampleStore = defineStore("example", {
     message: "",
     items: [] as string[],
     isLoading: false,
+    listItems: {
+      items: [],
+      total: 0,
+      page: 1,
+      limit: 10,
+    },
   }),
   getters: {
     // 计算属性：在 getters 中，可以通过 this.xxx 访问状态和其他 getters
@@ -72,6 +79,10 @@ export const exampleStore = defineStore("example", {
     },
     toggleIsLoading() {
       this.isLoading = !this.isLoading;
+    },
+
+    getListItems() {
+      return this.listItems;
     },
   },
 });

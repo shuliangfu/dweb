@@ -396,8 +396,15 @@ export function defineStore<
 
   // 获取当前状态
   const getCurrentState = (): Record<string, unknown> => {
-    return (getStoreState<{ [key: string]: Record<string, unknown> }>()
-      ?.[name] || initialState) as Record<string, unknown>;
+    const globalState = getStoreState<
+      { [key: string]: Record<string, unknown> }
+    >();
+    // 如果全局状态不存在，或者该 store 的状态不存在，使用初始状态
+    if (!globalState || !globalState[name]) {
+      return initialState as Record<string, unknown>;
+    }
+    // 合并初始状态和当前状态，确保所有初始定义的属性都存在
+    return { ...initialState, ...globalState[name] } as Record<string, unknown>;
   };
 
   // 创建 actions 的代理，绑定 this（仅用于对象式）
@@ -476,10 +483,13 @@ export function defineStore<
               (allState) => {
                 const state = allState?.[name];
                 if (state) {
-                  listener(state);
+                  // 合并初始状态和当前状态，确保所有初始定义的属性都存在
+                  listener(
+                    { ...initialState, ...state } as Record<string, unknown>,
+                  );
                 } else {
                   // 如果 store 中还没有这个状态，使用初始状态
-                  listener(initialState);
+                  listener(initialState as Record<string, unknown>);
                 }
               },
             );
