@@ -1477,7 +1477,13 @@ class BrowserClient {
           if (!meta) {
             meta = document.createElement("meta");
             meta.setAttribute(attr, value);
-            document.head.appendChild(meta);
+            // 获取 title 元素，如果存在则在 title 之前插入，否则追加到 head
+            const titleElement = document.querySelector("title");
+            if (titleElement && titleElement.parentNode) {
+              titleElement.parentNode.insertBefore(meta, titleElement);
+            } else {
+              document.head.appendChild(meta);
+            }
           }
           meta.setAttribute("content", escapeHtml(content));
         };
