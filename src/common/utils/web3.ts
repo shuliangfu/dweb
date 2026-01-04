@@ -107,6 +107,11 @@ export interface Web3Config {
   network?: string;
   /** 私钥（可选，用于服务端操作） */
   privateKey?: string;
+  /** 合约 ABI */
+  abi?: Abi;
+  /** 合约地址 */
+  address?: string;
+
   /** 其他配置选项 */
   [key: string]: unknown;
 }
@@ -139,8 +144,8 @@ export interface TransactionOptions {
  * 合约调用选项
  */
 export interface ContractCallOptions {
-  /** 合约地址 */
-  address: string;
+  /** 合约地址（可选，如果未提供则使用配置中的 address） */
+  address?: string;
   /** 函数名 */
   functionName: string;
   /** 函数参数 */
@@ -153,16 +158,16 @@ export interface ContractCallOptions {
   gasLimit?: string | bigint;
   /** 函数签名（可选，如 "getUserInfo(address)"），如果不提供则自动推断 */
   functionSignature?: string;
-  /** 完整 ABI（可选），如果提供则优先使用 */
-  abi?: string[];
+  /** 完整 ABI（可选），如果提供则优先使用，如果未提供则使用配置中的 abi */
+  abi?: string[] | Abi;
 }
 
 /**
  * 合约读取选项
  */
 export interface ContractReadOptions {
-  /** 合约地址 */
-  address: string;
+  /** 合约地址（可选，如果未提供则使用配置中的 address） */
+  address?: string;
   /** 函数名 */
   functionName: string;
   /** 函数参数 */
@@ -171,8 +176,8 @@ export interface ContractReadOptions {
   from?: string;
   /** 函数签名（可选，如 "getUserInfo(address)"），如果不提供则自动推断 */
   functionSignature?: string;
-  /** 完整 ABI（可选），如果提供则优先使用。可以是字符串数组或 ABI JSON 对象数组 */
-  abi?: string[] | Array<Record<string, unknown>>;
+  /** 完整 ABI（可选），如果提供则优先使用，如果未提供则使用配置中的 abi。可以是字符串数组或 ABI JSON 对象数组 */
+  abi?: string[] | Array<Record<string, unknown>> | Abi;
   /** 返回类型（可选，默认 "uint256"）。对于 tuple 类型，格式如 "tuple(address,address,string,uint256,uint256,uint256)" */
   returnType?: string;
 }
@@ -532,16 +537,27 @@ export class Web3Client {
     }
 
     try {
+      // 从配置或选项中获取合约地址
+      const contractAddress = options.address || this.config.address;
+      if (!contractAddress) {
+        throw new Error(
+          "合约地址未提供，请在 options 中提供 address 或在配置中设置 address",
+        );
+      }
+
       let parsedAbi: Abi;
 
+      // 优先使用 options.abi，如果没有则使用配置中的 abi
+      const abiSource = options.abi || this.config.abi;
+
       // 如果提供了完整 ABI，直接使用
-      if (options.abi && options.abi.length > 0) {
-        if (typeof options.abi[0] === "string") {
+      if (abiSource && Array.isArray(abiSource) && abiSource.length > 0) {
+        if (typeof abiSource[0] === "string") {
           // 字符串数组格式的 ABI
-          parsedAbi = parseAbi(options.abi as string[]);
+          parsedAbi = parseAbi(abiSource as string[]);
         } else {
           // JSON 对象数组格式的 ABI
-          parsedAbi = options.abi as unknown as Abi;
+          parsedAbi = abiSource as unknown as Abi;
         }
       } // 如果提供了函数签名，使用它
       else if (options.functionSignature) {
@@ -559,7 +575,7 @@ export class Web3Client {
 
       const hash = await walletClient.writeContract({
         account: accounts[0],
-        address: options.address as Address,
+        address: contractAddress as Address,
         abi: parsedAbi,
         functionName: options.functionName,
         args: options.args as any,
@@ -606,45 +622,37 @@ export class Web3Client {
   }
 
   /**
-   * 从 ABI JSON 对象数组中查找并提取函数信息
-   * @param abi ABI JSON 对象数组
-   * @param functionName 函数名
-   * @returns 匹配的函数 ABI 项，如果找不到则返回 null
-   */
-  private findFunctionInAbi(
-    abi: Array<Record<string, unknown>>,
-    functionName: string,
-  ): Record<string, unknown> | null {
-    // 查找匹配的函数
-    const func = abi.find((item) => {
-      const type = item.type as string;
-      const name = item.name as string;
-      return type === "function" && name === functionName;
-    });
-
-    return func || null;
-  }
-
-  /**
    * 读取合约数据（只读操作）
    * @param options 合约读取选项
    * @returns 函数返回值
    */
   async readContract(options: ContractReadOptions): Promise<unknown> {
     const client = this.getPublicClient();
+    // 从配置或选项中获取合约地址（在 try 块外定义，以便在 catch 中使用）
+    const contractAddress = options.address || this.config.address;
+    if (!contractAddress) {
+      throw new Error(
+        "合约地址未提供，请在 options 中提供 address 或在配置中设置 address",
+      );
+    }
+
     try {
       let parsedAbi: Abi;
 
+      // 优先使用 options.abi，如果没有则使用配置中的 abi
+      const abiSource = options.abi || this.config.abi;
+
       // 如果提供了完整 ABI JSON 对象数组，直接使用（推荐方式，可以正确处理复杂返回类型如 tuple）
       if (
-        options.abi &&
-        options.abi.length > 0 &&
-        typeof options.abi[0] === "object" &&
-        options.abi[0] !== null &&
-        !Array.isArray(options.abi[0])
+        abiSource &&
+        Array.isArray(abiSource) &&
+        abiSource.length > 0 &&
+        typeof abiSource[0] === "object" &&
+        abiSource[0] !== null &&
+        !Array.isArray(abiSource[0])
       ) {
         // 使用 ABI JSON 对象数组，viem 会自动处理 tuple 类型
-        parsedAbi = options.abi as unknown as Abi;
+        parsedAbi = abiSource as unknown as Abi;
       } // 如果提供了 returnType 且是 tuple 类型，构建 ABI
       else if (options.returnType && options.returnType.startsWith("tuple")) {
         const paramTypes = options.args?.map((arg) => this.inferArgType(arg)) ||
@@ -688,7 +696,7 @@ export class Web3Client {
 
       // 使用 viem 的 readContract
       const result = await client.readContract({
-        address: options.address as Address,
+        address: contractAddress as Address,
         abi: parsedAbi,
         functionName: options.functionName,
         args: options.args as any,
@@ -715,7 +723,7 @@ export class Web3Client {
             `1. 合约在该地址不存在或未部署；` +
             `2. 函数执行 revert（例如：该地址没有用户信息）；` +
             `3. RPC 节点返回了空数据。` +
-            `合约地址: ${options.address}，` +
+            `合约地址: ${contractAddress}，` +
             `函数: ${options.functionName}，` +
             `参数: ${JSON.stringify(options.args)}，` +
             `错误: ${errorMessage}`,
