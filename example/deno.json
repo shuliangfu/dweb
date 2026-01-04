@@ -1,5 +1,5 @@
 {
-  "version": "2.3.3",
+  "version": "2.3.4",
   "nodeModulesDir": "auto",
   "tasks": {
     "dev": "deno run -A ../src/cli.ts dev",

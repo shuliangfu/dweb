@@ -316,9 +316,33 @@ export class Web3Client {
       const win = globalThis.window as WindowWithEthereum;
       if (win.ethereum) {
         try {
+          // 尝试获取 chain（从 PublicClient 或配置中）
+          let chain: Chain | undefined = this.chain || undefined;
+
+          // 如果还没有 chain，尝试从 PublicClient 获取
+          if (!chain) {
+            try {
+              const publicClient = this.getPublicClient();
+              chain = (publicClient as any).chain;
+              if (chain) {
+                this.chain = chain;
+              }
+            } catch {
+              // 如果获取失败，chain 保持为 undefined
+              // 注意：chain 将在调用 writeContract 时动态获取
+            }
+          }
+
           this.walletClient = createWalletClient({
+            chain: chain,
             transport: custom(win.ethereum),
           });
+
+          // 如果 walletClient 有 chain 属性，保存它
+          if ((this.walletClient as any).chain && !this.chain) {
+            this.chain = (this.walletClient as any).chain;
+          }
+
           return this.walletClient;
         } catch (error) {
           throw new Error(
@@ -573,6 +597,54 @@ export class Web3Client {
         ]);
       }
 
+      // 获取 chain（优先从 walletClient 获取，否则使用 this.chain）
+      let chain: Chain | undefined = (walletClient as any).chain ||
+        this.chain || undefined;
+
+      // 如果还是没有 chain，尝试从 PublicClient 获取
+      if (!chain) {
+        try {
+          const publicClient = this.getPublicClient();
+          chain = (publicClient as any).chain;
+          if (chain) {
+            this.chain = chain;
+          }
+        } catch {
+          // 如果获取失败，尝试从 window.ethereum 获取 chainId 并创建简单的 chain 对象
+          if (IS_CLIENT) {
+            try {
+              const win = globalThis.window as WindowWithEthereum;
+              if (win.ethereum) {
+                const chainIdHex = String(
+                  await win.ethereum.request({
+                    method: "eth_chainId",
+                  }),
+                );
+                const chainId = parseInt(
+                  chainIdHex.startsWith("0x") ? chainIdHex : "0x" + chainIdHex,
+                  16,
+                );
+                // 创建一个基本的 chain 对象
+                chain = {
+                  id: chainId,
+                  name: `chain-${chainId}`,
+                } as Chain;
+                this.chain = chain;
+              }
+            } catch {
+              // 如果获取失败，chain 保持为 undefined，让 viem 抛出错误
+            }
+          }
+        }
+      }
+
+      // 如果还是没有 chain，抛出明确的错误
+      if (!chain) {
+        throw new Error(
+          "无法获取链信息，请在配置中设置 chainId 或确保钱包已连接",
+        );
+      }
+
       const hash = await walletClient.writeContract({
         account: accounts[0],
         address: contractAddress as Address,
@@ -581,7 +653,7 @@ export class Web3Client {
         args: options.args as any,
         value: options.value ? BigInt(options.value.toString()) : undefined,
         gas: options.gasLimit ? BigInt(options.gasLimit.toString()) : undefined,
-        chain: this.chain || undefined,
+        chain: chain,
       });
       return hash;
     } catch (error) {
@@ -2341,6 +2413,49 @@ export class Web3Client {
           throw new Error("未找到可用账户，请先连接钱包");
         }
 
+        // 获取 chain（优先从 walletClient 获取，否则使用 this.chain）
+        let chain: Chain | undefined = (walletClient as any).chain ||
+          this.chain || undefined;
+
+        // 如果还是没有 chain，尝试从 PublicClient 获取
+        if (!chain) {
+          try {
+            const publicClient = this.getPublicClient();
+            chain = (publicClient as any).chain;
+            if (chain) {
+              this.chain = chain;
+            }
+          } catch {
+            // 如果获取失败，尝试从 window.ethereum 获取 chainId 并创建简单的 chain 对象
+            if (IS_CLIENT) {
+              try {
+                const win = globalThis.window as WindowWithEthereum;
+                if (win.ethereum) {
+                  const chainIdHex = await win.ethereum.request({
+                    method: "eth_chainId",
+                  }) as string;
+                  const chainId = parseInt(chainIdHex, 16);
+                  // 创建一个基本的 chain 对象
+                  chain = {
+                    id: chainId,
+                    name: `chain-${chainId}`,
+                  } as Chain;
+                  this.chain = chain;
+                }
+              } catch {
+                // 如果获取失败，chain 保持为 undefined，让 viem 抛出错误
+              }
+            }
+          }
+        }
+
+        // 如果还是没有 chain，抛出明确的错误
+        if (!chain) {
+          throw new Error(
+            "无法获取链信息，请在配置中设置 chainId 或确保钱包已连接",
+          );
+        }
+
         const hash = await walletClient.writeContract({
           account: accounts[0],
           address: contractAddress as Address,
@@ -2351,7 +2466,7 @@ export class Web3Client {
           gas: options.gasLimit
             ? BigInt(options.gasLimit.toString())
             : undefined,
-          chain: this.chain || undefined,
+          chain: chain,
         });
         return hash;
       }
