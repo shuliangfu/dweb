@@ -5,6 +5,7 @@
 
 import type { DatabaseAdapter } from "../types.ts";
 import type { MongoDBAdapter } from "../adapters/mongodb.ts";
+import { ObjectId } from "@mongodb";
 import type {
   CompoundIndex,
   GeospatialIndex,
@@ -730,6 +731,21 @@ export abstract class MongoModel {
    * @param fields 要查询的字段数组
    * @returns MongoDB 投影对象
    */
+  /**
+   * 将字符串 ID 转换为 ObjectId（如果是有效的 ObjectId 格式）
+   * @param id 字符串 ID
+   * @param primaryKey 主键字段名
+   * @returns ObjectId 对象或原始值
+   */
+  private static normalizeId(id: string, primaryKey: string): any {
+    // MongoDB 的 _id 字段需要 ObjectId 类型
+    // 如果 primaryKey 是 _id 且字符串是有效的 ObjectId 格式，转换为 ObjectId
+    if (primaryKey === "_id" && ObjectId.isValid(id)) {
+      return new ObjectId(id);
+    }
+    return id;
+  }
+
   private static buildProjection(fields?: string[]): any {
     if (!fields || fields.length === 0) {
       return {};
@@ -860,7 +876,7 @@ export abstract class MongoModel {
 
       // 如果是字符串，作为主键查询
       if (typeof _condition === "string") {
-        filter[this.primaryKey] = _condition;
+        filter[this.primaryKey] = this.normalizeId(_condition, this.primaryKey);
       } else {
         filter = _condition;
       }
@@ -1433,7 +1449,7 @@ export abstract class MongoModel {
 
     // 如果是字符串，作为主键查询
     if (typeof condition === "string") {
-      filter[this.primaryKey] = condition;
+      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
     } else {
       filter = condition;
     }
@@ -1550,7 +1566,7 @@ export abstract class MongoModel {
 
     // 如果是字符串，作为主键查询
     if (typeof condition === "string") {
-      filter[this.primaryKey] = condition;
+      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
     } else {
       filter = condition;
     }
@@ -1603,7 +1619,12 @@ export abstract class MongoModel {
     }
 
     const primaryKey = (Model.constructor as any).primaryKey || "_id";
-    const id = (this as any)[primaryKey];
+    let id = (this as any)[primaryKey];
+
+    // 如果 id 是 ObjectId 对象，转换为字符串
+    if (id && typeof id === "object" && id.toString) {
+      id = id.toString();
+    }
 
     if (id) {
       // 更新现有记录
@@ -1621,14 +1642,16 @@ export abstract class MongoModel {
         }
       }
       // 检查更新是否成功（受影响的行数 > 0）
-      const affectedRows = await Model.update(id, data);
+      // 确保 id 是字符串格式
+      const affectedRows = await Model.update(String(id), data);
       if (affectedRows === 0) {
         throw new Error(
           `更新失败：未找到 ID 为 ${id} 的记录或记录已被删除`,
         );
       }
       // 重新查询更新后的数据，确保获取最新状态
-      const updated = await Model.find(id);
+      // 确保 id 是字符串格式
+      const updated = await Model.find(String(id));
       if (!updated) {
         throw new Error(`更新后无法找到 ID 为 ${id} 的记录`);
       }
@@ -1663,15 +1686,21 @@ export abstract class MongoModel {
     }
 
     const primaryKey = (Model.constructor as any).primaryKey || "_id";
-    const id = (this as any)[primaryKey];
+    let id = (this as any)[primaryKey];
+
+    // 如果 id 是 ObjectId 对象，转换为字符串
+    if (id && typeof id === "object" && id.toString) {
+      id = id.toString();
+    }
 
     if (!id) {
       throw new Error("Cannot update instance without primary key");
     }
 
     // 使用 returnLatest: true 获取更新后的实例
+    // 确保 id 是字符串格式
     const updated = await Model.update(
-      Model.primaryKey === "_id" ? id : id,
+      String(id),
       data,
       true,
     );
@@ -1817,7 +1846,7 @@ export abstract class MongoModel {
 
     // 如果是字符串，作为主键查询
     if (typeof condition === "string") {
-      filter[this.primaryKey] = condition;
+      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
     } else {
       filter = condition;
     }
@@ -1859,7 +1888,7 @@ export abstract class MongoModel {
     }
     let filter: any = {};
     if (typeof condition === "string") {
-      filter[this.primaryKey] = condition;
+      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
     } else {
       filter = condition;
     }
@@ -1926,7 +1955,7 @@ export abstract class MongoModel {
 
     // 如果是字符串，作为主键查询
     if (typeof condition === "string") {
-      filter[this.primaryKey] = condition;
+      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
     } else {
       filter = condition;
     }
@@ -2051,7 +2080,7 @@ export abstract class MongoModel {
 
     // 如果是字符串，作为主键查询
     if (typeof condition === "string") {
-      filter[this.primaryKey] = condition;
+      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
     } else {
       filter = condition;
     }
@@ -2297,7 +2326,7 @@ export abstract class MongoModel {
     let filter: any = {};
 
     if (typeof condition === "string") {
-      filter[this.primaryKey] = condition;
+      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
     } else {
       filter = condition;
     }
@@ -2412,7 +2441,7 @@ export abstract class MongoModel {
     let filter: any = {};
 
     if (typeof condition === "string") {
-      filter[this.primaryKey] = condition;
+      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
     } else {
       filter = condition;
     }
@@ -2489,7 +2518,7 @@ export abstract class MongoModel {
     let filter: any = {};
 
     if (typeof condition === "string") {
-      filter[this.primaryKey] = condition;
+      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
     } else {
       filter = condition;
     }
@@ -2589,7 +2618,7 @@ export abstract class MongoModel {
     let filter: any = {};
 
     if (typeof condition === "string") {
-      filter[this.primaryKey] = condition;
+      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
     } else {
       filter = condition;
     }
@@ -2649,7 +2678,7 @@ export abstract class MongoModel {
     let filter: any = {};
 
     if (typeof condition === "string") {
-      filter[this.primaryKey] = condition;
+      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
     } else {
       filter = condition;
     }
@@ -2885,7 +2914,10 @@ export abstract class MongoModel {
         const adapter = this.adapter as any as MongoDBAdapter;
         let filter: any = {};
         if (typeof condition === "string") {
-          filter[this.primaryKey] = condition;
+          filter[this.primaryKey] = this.normalizeId(
+            condition,
+            this.primaryKey,
+          );
         } else {
           filter = condition;
         }
@@ -3032,7 +3064,10 @@ export abstract class MongoModel {
         const adapter = this.adapter as any as MongoDBAdapter;
         let filter: any = {};
         if (typeof condition === "string") {
-          filter[this.primaryKey] = condition;
+          filter[this.primaryKey] = this.normalizeId(
+            condition,
+            this.primaryKey,
+          );
         } else {
           filter = condition;
         }
@@ -3114,7 +3149,7 @@ export abstract class MongoModel {
     let filter: any = {};
 
     if (typeof condition === "string") {
-      filter[this.primaryKey] = condition;
+      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
     } else {
       filter = condition;
     }
@@ -3173,7 +3208,7 @@ export abstract class MongoModel {
     let filter: any = {};
 
     if (typeof condition === "string") {
-      filter[this.primaryKey] = condition;
+      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
     } else {
       filter = condition;
     }
