@@ -2076,16 +2076,16 @@ export class RouteHandler {
     const [preactModule, jsxRuntimeModule, hooksModule, ] = await Promise.all([
       import('preact'),
       import('preact/jsx-runtime'),
-      import('preact/hooks').catch(() => null), 
-      import('preact/signals').catch(() => null) 
+      import('preact/hooks').catch(() => null),
+      import('preact/signals').catch(() => null)
     ]);
-    
+
     globalThis.__PREACT_MODULES__ = {
       render: preactModule.render,
       hydrate: preactModule.hydrate,
       jsx: jsxRuntimeModule.jsx
     };
-    
+
     // 如果 preact/hooks 可用，也预加载到全局作用域
     if (hooksModule) {
       globalThis.__PREACT_HOOKS__ = {
@@ -2321,6 +2321,24 @@ export class RouteHandler {
   }
 
   /**
+   * 检查并确保 HTML 包含 DOCTYPE 声明
+   * @param html HTML 字符串
+   * @returns 包含 DOCTYPE 的 HTML 字符串
+   */
+  private ensureDOCTYPE(html: string): string {
+    const trimmed = html.trim();
+    // 检查是否已经包含 DOCTYPE（不区分大小写）
+    if (
+      !trimmed.startsWith("<!DOCTYPE") &&
+      !trimmed.startsWith("<!doctype") &&
+      !trimmed.startsWith("<!Doctype")
+    ) {
+      return "<!DOCTYPE html>\n" + html;
+    }
+    return html;
+  }
+
+  /**
    * 注入脚本到 HTML（import map 和客户端脚本）
    * 同时注入预加载和预取链接
    */
@@ -2387,6 +2405,9 @@ export class RouteHandler {
       }
     }
 
+    // 确保 HTML 包含 DOCTYPE 声明
+    resultHtml = this.ensureDOCTYPE(resultHtml);
+
     return resultHtml;
   }
 
@@ -2404,6 +2425,7 @@ export class RouteHandler {
     let buffer = "";
     let headInjected = false;
     let streamEnded = false;
+    let doctypeInjected = false; // 标记是否已注入 DOCTYPE
 
     return new ReadableStream({
       async start(controller) {
@@ -2419,6 +2441,21 @@ export class RouteHandler {
 
             const chunk = decoder.decode(value, { stream: true });
             buffer += chunk;
+
+            // 在第一个 chunk 中检查并注入 DOCTYPE
+            if (!doctypeInjected) {
+              const trimmed = buffer.trim();
+              // 检查是否已经包含 DOCTYPE（不区分大小写）
+              if (
+                !trimmed.startsWith("<!DOCTYPE") &&
+                !trimmed.startsWith("<!doctype") &&
+                !trimmed.startsWith("<!Doctype")
+              ) {
+                // 在 buffer 开头添加 DOCTYPE
+                buffer = "<!DOCTYPE html>\n" + buffer;
+              }
+              doctypeInjected = true;
+            }
 
             // 尝试注入 head 脚本
             if (!headInjected && headScripts.length > 0) {
