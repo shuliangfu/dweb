@@ -103,32 +103,32 @@ import { defineConfig, tailwind, cors, seo } from "@dreamer/dweb";
 
 export default defineConfig({
   name: "my-app",
-  
+
   // 渲染配置
   render: {
     engine: "preact", // 'preact' | 'react' | 'vue3'
     mode: "hybrid", // 'ssr' | 'csr' | 'hybrid'
   },
-  
+
   // 服务器配置
   server: {
     port: 3000,
     host: "localhost",
   },
-  
+
   // 路由配置
   routes: {
     dir: "routes",
     ignore: ["**/*.test.ts", "**/*.test.tsx"],
   },
-  
+
   // 静态资源目录
   static: {
     dir: "assets",
     prefix: "/assets",
     maxAge: 86400, // 缓存 1 天
   },
-  
+
   // 插件配置
   plugins: [
     tailwind({
@@ -141,7 +141,7 @@ export default defineConfig({
       description: "基于 DWeb 框架构建的应用",
     }),
   ],
-  
+
   // 中间件配置
   middleware: [
     cors({
@@ -282,7 +282,7 @@ import { MongoModel } from "@dreamer/dweb/database";
 
 class User extends MongoModel {
   static collection = "users";
-  
+
   static schema = {
     name: String,
     email: String,
@@ -378,10 +378,10 @@ import { defineConfig, tailwind, cors, seo } from "@dreamer/dweb";
 
 export default defineConfig({
   // ========== 基础配置 ==========
-  
+
   // 应用名称（可选，多应用模式下用于区分应用）
   name: "my-app",
-  
+
   // ========== 渲染配置 ==========
   render: {
     // 渲染引擎，可选值：'preact' | 'react' | 'vue3'
@@ -393,42 +393,42 @@ export default defineConfig({
     // - hybrid: 混合渲染（服务端渲染 + 客户端 hydration）
     mode: "hybrid",
   },
-  
+
   // ========== 服务器配置 ==========
   server: {
     port: 3000,
     host: "localhost", // 或 "127.0.0.1" 或 "0.0.0.0"
   },
-  
+
   // ========== 路由配置 ==========
   routes: {
     dir: "routes",
     ignore: ["**/*.test.ts", "**/*.test.tsx"],
   },
-  
+
   // ========== 静态资源目录 ==========
   static: {
     dir: "assets",
     prefix: "/assets",
     maxAge: 86400, // 缓存 1 天
   },
-  
+
   // ========== 开发配置 ==========
   dev: {
     hmrPort: 24678,
     reloadDelay: 300,
   },
-  
+
   // ========== 构建配置 ==========
   build: {
     outDir: "dist",
   },
-  
+
   // ========== Cookie 配置 ==========
   cookie: {
     secret: "your-secret-key-here",
   },
-  
+
   // ========== Session 配置 ==========
   session: {
     secret: "your-session-secret-here",
@@ -437,7 +437,7 @@ export default defineConfig({
     secure: false,
     httpOnly: true,
   },
-  
+
   // ========== 插件配置 ==========
   plugins: [
     tailwind({
@@ -451,7 +451,7 @@ export default defineConfig({
       keywords: "关键词1, 关键词2",
     }),
   ],
-  
+
   // ========== 中间件配置 ==========
   middleware: [
     cors({
