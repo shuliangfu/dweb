@@ -72,10 +72,10 @@ import { getDatabase, SQLModel } from '@dreamer/dweb';
 class User extends SQLModel {
   // 表名
   static tableName = 'users';
-  
+
   // 主键字段名
   static primaryKey = 'id';
-  
+
   // 字段定义和验证规则
   static schema = {
     // 用户名：必填，长度 2-50
@@ -93,7 +93,7 @@ class User extends SQLModel {
         },
       },
     },
-    
+
     // 邮箱：必填，邮箱格式验证
     email: {
       type: 'string',
@@ -109,7 +109,7 @@ class User extends SQLModel {
         },
       },
     },
-    
+
     // 密码：必填，最小长度 8
     password: {
       type: 'string',
@@ -124,7 +124,7 @@ class User extends SQLModel {
         },
       },
     },
-    
+
     // 年龄：可选，范围 0-150
     age: {
       type: 'number',
@@ -135,7 +135,7 @@ class User extends SQLModel {
       },
       default: null,
     },
-    
+
     // 状态：枚举类型
     status: {
       type: 'enum',
@@ -145,7 +145,7 @@ class User extends SQLModel {
         required: true,
       },
     },
-    
+
     // 角色：数组类型
     roles: {
       type: 'array',
@@ -154,7 +154,7 @@ class User extends SQLModel {
         required: false,
       },
     },
-    
+
     // 元数据：对象类型
     metadata: {
       type: 'object',
@@ -163,7 +163,7 @@ class User extends SQLModel {
         required: false,
       },
     },
-    
+
     // 余额：小数类型
     balance: {
       type: 'decimal',
@@ -173,7 +173,7 @@ class User extends SQLModel {
         min: 0,
       },
     },
-    
+
     // 最后登录时间
     lastLoginAt: {
       type: 'timestamp',
@@ -183,7 +183,7 @@ class User extends SQLModel {
       },
     },
   };
-  
+
   // 索引定义
   static indexes = [
     // 唯一索引：用户名
@@ -197,17 +197,17 @@ class User extends SQLModel {
     // 复合索引：角色
     { fields: { roles: 1 } },
   ];
-  
+
   // 自动时间戳（自定义字段名）
   static timestamps = {
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   };
-  
+
   // 软删除
   static softDelete = true;
   static deletedAtField = 'deleted_at';
-  
+
   // 查询作用域
   static scopes = {
     // 活跃用户
@@ -221,7 +221,7 @@ class User extends SQLModel {
     // 有余额的用户
     withBalance: () => ({ balance: { $gt: 0 } }),
   };
-  
+
   // 虚拟字段
   static virtuals = {
     // 全名（如果有名字和姓氏）
@@ -245,7 +245,7 @@ class User extends SQLModel {
       return statusMap[instance.status] || '未知';
     },
   };
-  
+
   // 生命周期钩子
   static async beforeCreate(instance: User) {
     // 模拟密码加密（实际应使用 bcrypt 等）
@@ -257,56 +257,56 @@ class User extends SQLModel {
       instance.roles = ['user'];
     }
   }
-  
+
   static async afterCreate(instance: User) {
     console.log(\`用户 \${instance.username} 创建成功，ID: \${instance.id}\`);
   }
-  
+
   static async beforeUpdate(instance: User) {
     // 如果密码被修改，重新加密
     if (instance.password && !instance.password.startsWith('$2b$')) {
       instance.password = \`hashed_\${instance.password}\`;
     }
   }
-  
+
   static async afterUpdate(instance: User) {
     console.log(\`用户 \${instance.username} 已更新\`);
   }
-  
+
   static async beforeDelete(instance: User) {
     if (instance.status === 'active') {
       throw new Error('不能删除活跃用户，请先停用');
     }
   }
-  
+
   static async afterDelete(instance: User) {
     console.log(\`用户 \${instance.username} 已删除\`);
   }
-  
+
   static async beforeSave(instance: User) {
     // 统一的数据处理逻辑
     if (instance.email) {
       instance.email = instance.email.toLowerCase().trim();
     }
   }
-  
+
   static async beforeValidate(instance: User) {
     // 自定义验证逻辑
     if (instance.age && instance.age < 13) {
       throw new Error('用户年龄不能小于 13 岁');
     }
   }
-  
+
   // 实例方法
   async updateLastLogin() {
     await this.update({ lastLoginAt: new Date() });
   }
-  
+
   async addBalance(amount: number) {
     await this.increment('balance', amount);
     await this.reload(); // 重新加载以获取最新数据
   }
-  
+
   async deductBalance(amount: number) {
     if (this.balance < amount) {
       throw new Error('余额不足');
@@ -314,13 +314,13 @@ class User extends SQLModel {
     await this.decrement('balance', amount);
     await this.reload();
   }
-  
+
   // 关联查询：用户的帖子（一对多）
   async posts() {
     const Post = (await import('./Post')).default;
     return await this.hasMany(Post, 'userId', 'id');
   }
-  
+
   // 关联查询：用户的资料（一对一）
   async profile() {
     const Profile = (await import('./Profile')).default;
@@ -365,8 +365,22 @@ const recentUsers = await User.scope('recent').findAll();
 const usersWithBalance = await User.scope('withBalance').findAll();
 
 // 4. 更新用户
-await user.update({ age: 26 });
-await user.updateLastLogin();
+try {
+  await user.update({ age: 26 }); // 如果更新失败（记录不存在），会抛出错误
+  await user.updateLastLogin();
+} catch (error) {
+  console.error("更新失败:", error.message);
+}
+
+// 4.1. 使用 save() 方法保存实例
+try {
+  user.quantity += 10;
+  user.amount += 100;
+  const saved = await user.save(); // 返回实例表示保存成功
+  console.log("保存成功:", saved);
+} catch (error) {
+  console.error("保存失败:", error.message);
+}
 
 // 5. 通过 ID 更新（静态方法）
 await User.updateById(user.id, { age: 27 });
@@ -441,10 +455,10 @@ import { getDatabase, MongoModel } from '@dreamer/dweb';
 class User extends MongoModel {
   // 集合名
   static collectionName = 'users';
-  
+
   // 主键字段名（MongoDB 默认使用 _id）
   static primaryKey = '_id';
-  
+
   // 字段定义和验证规则
   static schema = {
     username: {
@@ -494,7 +508,7 @@ class User extends MongoModel {
       },
     },
   };
-  
+
   // 索引定义
   static indexes = [
     { field: 'username', unique: true },
@@ -506,14 +520,14 @@ class User extends MongoModel {
     // 地理空间索引：位置信息
     { field: 'location', type: '2dsphere' },
   ];
-  
+
   // 自动时间戳
   static timestamps = true;
-  
+
   // 软删除
   static softDelete = true;
   static deletedAtField = 'deletedAt';
-  
+
   // 查询作用域
   static scopes = {
     active: () => ({ status: 'active' }),
@@ -522,7 +536,7 @@ class User extends MongoModel {
     }),
     withLocation: () => ({ location: { $ne: null } }),
   };
-  
+
   // 虚拟字段
   static virtuals = {
     fullName: (instance: User) => {
@@ -531,14 +545,14 @@ class User extends MongoModel {
         : instance.username;
     },
   };
-  
+
   // 生命周期钩子
   static async beforeCreate(instance: User) {
     if (instance.password && !instance.password.startsWith('$2b$')) {
       instance.password = \`hashed_\${instance.password}\`;
     }
   }
-  
+
   // 地理空间查询：查找附近的用户
   static async findNearby(
     longitude: number,
@@ -557,7 +571,7 @@ class User extends MongoModel {
       },
     });
   }
-  
+
   // 聚合查询：按状态统计用户数
   static async countByStatus() {
     return await User.aggregate([
@@ -785,7 +799,7 @@ if (health.healthy) {
 class User extends SQLModel {
   static tableName = 'users';
   static primaryKey = 'id';
-  
+
   // 用户有一个资料
   async profile() {
     return await this.hasOne(Profile, 'userId', 'id');
@@ -795,7 +809,7 @@ class User extends SQLModel {
 class Profile extends SQLModel {
   static tableName = 'profiles';
   static primaryKey = 'id';
-  
+
   // 资料属于一个用户
   async user() {
     return await this.belongsTo(User, 'userId', 'id');
@@ -822,7 +836,7 @@ class Post extends SQLModel {
   async user() {
     return await this.belongsTo(User, 'userId', 'id');
   }
-  
+
   // 帖子有多个评论
   async comments() {
     return await this.hasMany(Comment, 'postId', 'id');

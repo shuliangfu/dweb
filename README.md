@@ -585,7 +585,7 @@ docker logs -f dweb-app
 ### 功能模块
 
 - **[功能模块](./docs/features/README.md)** - 所有功能模块的完整文档
-  - [数据库 (database)](./docs/features/database/README.md) - 数据库支持、ORM/ODM、查询构建器
+  - [数据库 (database)](./docs/features/database.md) - 数据库支持、ORM/ODM、查询构建器
   - [GraphQL](./docs/features/graphql/README.md) - GraphQL 服务器和查询处理
   - [WebSocket](./docs/features/websocket/README.md) - WebSocket 服务器和客户端
   - [Session](./docs/features/session.md) - Session 管理和多种存储方式

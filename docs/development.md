@@ -604,7 +604,7 @@ export default defineConfig({
 
 ### 功能模块
 
-- [数据库](./database.md)
+- [数据库](./features/database.md)
 - [GraphQL](./graphql.md)
 - [WebSocket](./websocket.md)
 - [Session](./session.md)

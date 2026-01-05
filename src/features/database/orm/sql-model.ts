@@ -1405,7 +1405,32 @@ export abstract class SQLModel {
 
     if (id) {
       // 更新现有记录
-      await Model.update(id, this);
+      // 将实例对象转换为普通数据对象，排除主键字段
+      const data: Record<string, any> = {};
+      // 使用 Object.keys 避免 hasOwnProperty 的问题
+      const keys = Object.keys(this);
+      for (const key of keys) {
+        if (key !== primaryKey) {
+          const value = (this as any)[key];
+          // 只包含数据属性，排除方法
+          if (typeof value !== "function") {
+            data[key] = value;
+          }
+        }
+      }
+      // 检查更新是否成功（受影响的行数 > 0）
+      const affectedRows = await Model.update(id, data);
+      if (affectedRows === 0) {
+        throw new Error(
+          `更新失败：未找到 ID 为 ${id} 的记录或记录已被删除`,
+        );
+      }
+      // 重新查询更新后的数据，确保获取最新状态
+      const updated = await Model.find(id);
+      if (!updated) {
+        throw new Error(`更新后无法找到 ID 为 ${id} 的记录`);
+      }
+      Object.assign(this, updated);
       return this;
     } else {
       // 插入新记录
@@ -1442,7 +1467,13 @@ export abstract class SQLModel {
       throw new Error("Cannot update instance without primary key");
     }
 
-    await Model.update(id, data);
+    // 检查更新是否成功（受影响的行数 > 0）
+    const affectedRows = await Model.update(id, data);
+    if (affectedRows === 0) {
+      throw new Error(
+        `更新失败：未找到 ID 为 ${id} 的记录或记录已被删除`,
+      );
+    }
     // 重新加载更新后的数据
     await this.reload();
     return this;

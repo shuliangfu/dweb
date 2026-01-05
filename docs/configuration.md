@@ -50,13 +50,13 @@ export default defineConfig({
   server: {
     // 端口号（必需）
     port: 3000,
-    
+
     // 主机名
     host: 'localhost',
-    
+
     // 是否启用 HTTPS
     https: false,
-    
+
     // HTTPS 证书配置
     cert?: string,
     key?: string,
@@ -89,7 +89,7 @@ export default defineConfig({
     // 默认为 'routes/api'，也可以配置为 'api' 等相对路径
     // 如果配置为 'api'，则 API 文件应放在项目根目录的 api 文件夹中
     apiDir: "routes/api", // 或 'api'
-    
+
     // API 路由模式配置（可选）
     // - "method": 方法路由模式（默认），通过 URL 路径指定方法名，必须使用中划线格式，例如 /api/users/get-user
     // - "restful": RESTful 模式，基于 HTTP 方法和资源路径，例如 GET /api/users, POST /api/users
@@ -560,7 +560,7 @@ export default defineConfig({
 
 ### 功能模块
 
-- [数据库](./database.md)
+- [数据库](./features/database.md)
 - [GraphQL](./graphql.md)
 - [WebSocket](./websocket.md)
 - [Session](./session.md)

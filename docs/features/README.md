@@ -26,7 +26,7 @@ src/features/
 
 ### 核心功能
 
-- [数据库 (database)](./database/README.md) - 数据库支持、ORM/ODM、查询构建器
+- [数据库 (database)](./database.md) - 数据库支持、ORM/ODM、查询构建器
 - [GraphQL](./graphql/README.md) - GraphQL 服务器和查询处理
 - [WebSocket](./websocket/README.md) - WebSocket 服务器和客户端
 - [Session](./session.md) - Session 管理和多种存储方式
@@ -49,4 +49,3 @@ src/features/
 - [中间件](../middleware/README.md) - 中间件系统
 - [插件](../plugins/README.md) - 插件系统
 - [控制台工具](../console/README.md) - 命令行工具
-

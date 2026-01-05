@@ -96,15 +96,39 @@ const receipt = await web3.getTransactionReceipt(txHash);`;
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
   privateKey: "YOUR_PRIVATE_KEY",
+  // 可选：在配置中设置默认的合约地址和 ABI
+  address: "0x...", // 默认合约地址
+  abi: [...], // 默认合约 ABI
 });
 
 // 调用合约函数（写入操作）
+// 默认会等待交易确认并返回交易收据
+try {
+  const receipt = await web3.callContract({
+    address: "0x...", // 可选：如果配置中已设置，可以不传
+    abi: [...], // 可选：如果配置中已设置，可以不传
+    functionName: "transfer",
+    args: ["0x...", "1000000000000000000"],
+    value: "0",
+  });
+  // receipt 包含交易收据，如果 receipt.status === "success" 表示交易成功
+  console.log("交易成功:", receipt);
+} catch (error) {
+  // 如果用户取消交易，会抛出 "交易已取消" 错误
+  if (error.message === "交易已取消") {
+    console.log("用户取消了交易");
+  } else {
+    console.error("调用合约失败:", error);
+  }
+}
+
+// 如果只需要交易哈希，不等待确认
 const txHash = await web3.callContract({
   address: "0x...",
   functionName: "transfer",
   args: ["0x...", "1000000000000000000"],
   value: "0",
-});
+}, false); // 第二个参数设为 false，不等待确认
 
 // 读取合约数据（只读操作）
 const result = await web3.readContract({
@@ -313,14 +337,14 @@ while (currentPage <= result.totalPages) {
     "register(address,string)",
     { page: currentPage, pageSize: 20 },
   );
-  
+
   for (const tx of pageResult.transactions) {
     console.log(\`交易: \${tx.hash}\`);
     if (tx.args) {
       console.log(\`参数: \${tx.args}\`);
     }
   }
-  
+
   currentPage++;
 }`;
 
@@ -605,7 +629,12 @@ const hex = bytesToHex(bytes);`;
                     type: "list",
                     ordered: false,
                     items: [
-                      "**`callContract(options)`** - 调用合约函数（写入）",
+                      "**`callContract(options, waitForConfirmation?)`** - 调用合约函数（写入）",
+                      "  - `waitForConfirmation`: 是否等待交易确认（默认 `true`）",
+                      "  - 如果 `waitForConfirmation` 为 `true`，返回交易收据（包含 `status` 字段）",
+                      "  - 如果 `waitForConfirmation` 为 `false`，返回交易哈希",
+                      '  - 如果用户取消交易，会抛出 "交易已取消" 错误',
+                      "  - `options.address` 和 `options.abi` 可选，如果未提供会使用配置中的默认值",
                       "**`readContract(options)`** - 读取合约数据（只读）",
                       "**`callContractWithABI(...)`** - 使用完整 ABI 调用合约",
                       "**`getContractEventLogs(...)`** - 读取合约事件日志",
