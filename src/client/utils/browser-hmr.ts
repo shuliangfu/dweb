@@ -54,12 +54,19 @@ class HMRClient {
       ...children: unknown[]
     ) => unknown;
   } | null = null;
+  // 重连尝试次数
   private reconnectAttempts: number = 0;
+  // 重连定时器
   private reconnectTimer: number | null = null;
+  // 心跳定时器
   private heartbeatTimer: number | null = null;
+  // 心跳超时定时器
   private heartbeatTimeoutTimer: number | null = null;
+  // 上次心跳时间
   private lastHeartbeatTime: number = 0;
+  // 心跳间隔
   private heartbeatInterval: number = 30000;
+  // 心跳超时时间
   private heartbeatTimeout: number = 10000;
 
   constructor(config: HMRConfig) {
@@ -88,6 +95,28 @@ class HMRClient {
   }
 
   private connect(): void {
+    // 如果已有连接，先清理旧连接
+    if (this.ws) {
+      // 停止心跳，避免旧连接的心跳定时器继续运行
+      this.stopHeartbeat();
+      // 如果旧连接还在，尝试关闭它（但不抛出错误）
+      try {
+        if (
+          this.ws.readyState === WebSocket.OPEN ||
+          this.ws.readyState === WebSocket.CONNECTING
+        ) {
+          this.ws.close();
+        }
+      } catch {
+        // 忽略关闭错误
+      }
+      // 清除旧连接的事件处理器
+      this.ws.onopen = null;
+      this.ws.onmessage = null;
+      this.ws.onerror = null;
+      this.ws.onclose = null;
+    }
+
     this.ws = new WebSocket(`ws://localhost:${this.config.hmrPort}`);
     this.ws.onmessage = (event: MessageEvent) => this.handleHMRMessage(event);
     this.ws.onopen = () => {
@@ -114,9 +143,15 @@ class HMRClient {
     };
   }
 
+  /**
+   * 安排重连
+   * 使用线性退避策略：每次重连延迟增加 1 秒
+   * 例如：第1次重连延迟1秒，第2次延迟2秒，第3次延迟3秒，以此类推
+   */
   private scheduleReconnect(): void {
     if (this.reconnectTimer !== null) return;
-    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000);
+    // 线性增长：每次重连增加 1 秒，最大延迟 30 秒
+    const delay = Math.min((this.reconnectAttempts + 1) * 1000, 30000);
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       this.reconnectAttempts++;
@@ -124,6 +159,9 @@ class HMRClient {
     }, delay) as unknown as number;
   }
 
+  /**
+   * 启动心跳检测
+   */
   private startHeartbeat(): void {
     this.stopHeartbeat();
     this.lastHeartbeatTime = Date.now();
@@ -138,24 +176,43 @@ class HMRClient {
           this.heartbeatTimeoutTimer = setTimeout(() => {
             const delta = Date.now() - this.lastHeartbeatTime;
             if (delta > this.heartbeatTimeout) {
-              try {
-                this.ws.close();
-              } catch {
-                void 0;
+              // 心跳超时，关闭连接
+              // 但需要先检查连接状态，避免在已关闭的连接上再次调用 close()
+              if (
+                this.ws &&
+                (this.ws.readyState === WebSocket.OPEN ||
+                  this.ws.readyState === WebSocket.CONNECTING)
+              ) {
+                try {
+                  this.ws.close();
+                } catch {
+                  // 忽略关闭错误（连接可能已经关闭）
+                }
               }
             }
           }, this.heartbeatTimeout) as unknown as number;
         } catch {
-          try {
-            this.ws.close();
-          } catch {
-            void 0;
+          // 发送失败，尝试关闭连接
+          // 但需要先检查连接状态，避免在已关闭的连接上再次调用 close()
+          if (
+            this.ws &&
+            (this.ws.readyState === WebSocket.OPEN ||
+              this.ws.readyState === WebSocket.CONNECTING)
+          ) {
+            try {
+              this.ws.close();
+            } catch {
+              // 忽略关闭错误（连接可能已经关闭）
+            }
           }
         }
       }
     }, this.heartbeatInterval) as unknown as number;
   }
 
+  /**
+   * 停止心跳检测
+   */
   private stopHeartbeat(): void {
     if (this.heartbeatTimer !== null) {
       clearInterval(this.heartbeatTimer as unknown as number);
