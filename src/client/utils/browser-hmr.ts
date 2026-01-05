@@ -56,6 +56,8 @@ class HMRClient {
   } | null = null;
   // 重连尝试次数
   private reconnectAttempts: number = 0;
+  // 最大重连次数（超过此次数后停止重连）
+  private maxReconnectAttempts: number = 5;
   // 重连定时器
   private reconnectTimer: number | null = null;
   // 心跳定时器
@@ -72,6 +74,7 @@ class HMRClient {
   constructor(config: HMRConfig) {
     this.config = config;
     this.init();
+    this.setupVisibilityCheck();
     this.connect();
   }
 
@@ -92,6 +95,30 @@ class HMRClient {
           ...children: unknown[]
         ) => unknown;
       } | undefined || null;
+  }
+
+  /**
+   * 设置页面可见性检测
+   * 当页面重新可见时，重置重连计数并尝试连接
+   */
+  private setupVisibilityCheck(): void {
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        // 页面重新可见，如果之前已放弃重连，重置计数并尝试连接
+        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+          this.reconnectAttempts = 0;
+          this.connect();
+        } else if (
+          this.ws &&
+          this.ws.readyState !== WebSocket.OPEN &&
+          this.ws.readyState !== WebSocket.CONNECTING &&
+          this.reconnectTimer === null
+        ) {
+          // 连接已断开且未在重连中，尝试连接
+          this.connect();
+        }
+      }
+    });
   }
 
   private connect(): void {
@@ -120,6 +147,7 @@ class HMRClient {
     this.ws = new WebSocket(`ws://localhost:${this.config.hmrPort}`);
     this.ws.onmessage = (event: MessageEvent) => this.handleHMRMessage(event);
     this.ws.onopen = () => {
+      // 连接成功，重置重连计数
       this.reconnectAttempts = 0;
       if (this.reconnectTimer !== null) {
         clearTimeout(this.reconnectTimer as unknown as number);
@@ -138,25 +166,57 @@ class HMRClient {
       // 错误发生后通常会触发 onclose，由 onclose 统一处理重连，避免重复调度
     };
     this.ws.onclose = () => {
-      this.scheduleReconnect();
       this.stopHeartbeat();
+      // 检查是否超过最大重连次数
+      if (this.reconnectAttempts < this.maxReconnectAttempts) {
+        this.scheduleReconnect();
+      } else {
+        // 超过最大重连次数，停止重连
+        // 只在页面可见时，每隔较长时间（30秒）检查一次
+        this.scheduleLongIntervalCheck();
+      }
     };
   }
 
   /**
    * 安排重连
-   * 使用线性退避策略：每次重连延迟增加 1 秒
-   * 例如：第1次重连延迟1秒，第2次延迟2秒，第3次延迟3秒，以此类推
+   * 使用线性退避策略：每次重连延迟增加 2 秒
+   * 例如：第1次重连延迟2秒，第2次延迟4秒，第3次延迟6秒，以此类推
+   * 最多重连 5 次，超过后停止自动重连
    */
   private scheduleReconnect(): void {
     if (this.reconnectTimer !== null) return;
-    // 线性增长：每次重连增加 1 秒，最大延迟 30 秒
-    const delay = Math.min((this.reconnectAttempts + 1) * 1000, 30000);
+    // 检查是否超过最大重连次数
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      return;
+    }
+    // 线性增长：每次重连增加 2 秒
+    const delay = (this.reconnectAttempts + 1) * 2000;
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       this.reconnectAttempts++;
       this.connect();
     }, delay) as unknown as number;
+  }
+
+  /**
+   * 长时间间隔检查（超过最大重连次数后）
+   * 只在页面可见时，每隔 30 秒检查一次连接状态
+   */
+  private scheduleLongIntervalCheck(): void {
+    if (this.reconnectTimer !== null) return;
+    // 每隔 30 秒检查一次（只在页面可见时）
+    this.reconnectTimer = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        // 重置重连计数，重新尝试连接
+        this.reconnectAttempts = 0;
+        if (this.reconnectTimer !== null) {
+          clearInterval(this.reconnectTimer as unknown as number);
+          this.reconnectTimer = null;
+        }
+        this.connect();
+      }
+    }, 30000) as unknown as number;
   }
 
   /**
