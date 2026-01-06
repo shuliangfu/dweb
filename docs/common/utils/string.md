@@ -13,7 +13,7 @@ import {
   toKebabCase,
   toSnakeCase,
   kebabToCamel,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/string";
 
 // 首字母大写
 capitalize("hello world"); // "Hello world"
@@ -35,7 +35,7 @@ toSnakeCase("helloWorld"); // "hello_world"
 将字符串的首字母转换为大写，其余字母转换为小写。
 
 ```typescript
-import { capitalize } from "@dreamer/dweb/utils";
+import { capitalize } from "@dreamer/dweb/utils/string";
 
 capitalize("hello");     // "Hello"
 capitalize("HELLO");     // "Hello"
@@ -53,7 +53,7 @@ capitalize("");          // ""
 将短横线、下划线或空格分隔的字符串转换为驼峰格式（camelCase）。
 
 ```typescript
-import { toCamelCase } from "@dreamer/dweb/utils";
+import { toCamelCase } from "@dreamer/dweb/utils/string";
 
 toCamelCase("hello-world");      // "helloWorld"
 toCamelCase("hello_world");      // "helloWorld"
@@ -71,7 +71,7 @@ toCamelCase("hello-world-test"); // "helloWorldTest"
 将驼峰、下划线或空格分隔的字符串转换为短横线格式（kebab-case）。
 
 ```typescript
-import { toKebabCase } from "@dreamer/dweb/utils";
+import { toKebabCase } from "@dreamer/dweb/utils/string";
 
 toKebabCase("helloWorld");      // "hello-world"
 toKebabCase("hello_world");     // "hello-world"
@@ -89,7 +89,7 @@ toKebabCase("HelloWorld");      // "hello-world"
 将驼峰、短横线或空格分隔的字符串转换为下划线格式（snake_case）。
 
 ```typescript
-import { toSnakeCase } from "@dreamer/dweb/utils";
+import { toSnakeCase } from "@dreamer/dweb/utils/string";
 
 toSnakeCase("helloWorld");      // "hello_world"
 toSnakeCase("hello-world");     // "hello_world"
@@ -107,7 +107,7 @@ toSnakeCase("HelloWorld");      // "hello_world"
 将短横线格式转换为驼峰格式。
 
 ```typescript
-import { kebabToCamel } from "@dreamer/dweb/utils";
+import { kebabToCamel } from "@dreamer/dweb/utils/string";
 
 kebabToCamel("hello-world"); // "helloWorld"
 ```
@@ -124,7 +124,7 @@ kebabToCamel("hello-world"); // "helloWorld"
 ### 组件名称转换
 
 ```typescript
-import { toCamelCase, toKebabCase } from "@dreamer/dweb/utils";
+import { toCamelCase, toKebabCase } from "@dreamer/dweb/utils/string";
 
 // 从文件名生成组件名
 const fileName = "user-profile";
@@ -140,7 +140,7 @@ const className = toKebabCase(componentName);
 ### API 路由名称转换
 
 ```typescript
-import { toKebabCase, toSnakeCase } from "@dreamer/dweb/utils";
+import { toKebabCase, toSnakeCase } from "@dreamer/dweb/utils/string";
 
 // 从函数名生成路由路径
 const functionName = "getUserProfile";
@@ -156,7 +156,7 @@ const tableName = toSnakeCase(functionName);
 ### 表单字段名称转换
 
 ```typescript
-import { toCamelCase, toSnakeCase } from "@dreamer/dweb/utils";
+import { toCamelCase, toSnakeCase } from "@dreamer/dweb/utils/string";
 
 // 从 HTML 表单字段名转换为对象属性名
 const fieldName = "user-name";

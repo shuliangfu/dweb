@@ -12,7 +12,7 @@ export const metadata = {
 
 export default function ArrayPage() {
   const quickStartCode =
-    `import { chunk, unique, groupBy, intersection } from "@dreamer/dweb/utils";
+    `import { chunk, unique, groupBy, intersection } from "@dreamer/dweb/utils/array";
 
 // 数组分块
 const chunks = chunk([1, 2, 3, 4, 5], 2);
@@ -26,12 +26,12 @@ const grouped = groupBy(users, 'role');
 // 数组交集
 const common = intersection([1, 2, 3], [2, 3, 4]);`;
 
-  const chunkCode = `import { chunk } from "@dreamer/dweb/utils";
+  const chunkCode = `import { chunk } from "@dreamer/dweb/utils/array";
 
 chunk([1, 2, 3, 4, 5], 2);
 // [[1, 2], [3, 4], [5]]`;
 
-  const flattenCode = `import { flatten } from "@dreamer/dweb/utils";
+  const flattenCode = `import { flatten } from "@dreamer/dweb/utils/array";
 
 flatten([1, [2, 3], [4, [5, 6]]]);
 // [1, 2, 3, 4, 5, 6]
@@ -39,7 +39,7 @@ flatten([1, [2, 3], [4, [5, 6]]]);
 flatten([1, [2, [3, [4]]]], 2);
 // [1, 2, 3, [4]]（只扁平化两层）`;
 
-  const uniqueCode = `import { unique } from "@dreamer/dweb/utils";
+  const uniqueCode = `import { unique } from "@dreamer/dweb/utils/array";
 
 unique([1, 2, 2, 3, 3, 3]);
 // [1, 2, 3]
@@ -47,7 +47,7 @@ unique([1, 2, 2, 3, 3, 3]);
 unique(['a', 'b', 'a', 'c']);
 // ['a', 'b', 'c']`;
 
-  const groupByCode = `import { groupBy } from "@dreamer/dweb/utils";
+  const groupByCode = `import { groupBy } from "@dreamer/dweb/utils/array";
 
 const users = [
   { id: 1, role: 'admin', name: 'Alice' },
@@ -63,7 +63,7 @@ groupBy(users, 'role');
 groupBy(users, (user) => user.name.length);
 // { 5: [{ id: 1, ... }, { id: 2, ... }], 7: [{ id: 3, ... }] }`;
 
-  const sortByCode = `import { sortBy } from "@dreamer/dweb/utils";
+  const sortByCode = `import { sortBy } from "@dreamer/dweb/utils/array";
 
 const users = [
   { id: 1, name: 'Alice', age: 30 },
@@ -79,22 +79,22 @@ sortBy(users, 'age');
 sortBy(users, (user) => user.name.length, 'desc');
 // 按名字长度降序排序`;
 
-  const shuffleCode = `import { shuffle } from "@dreamer/dweb/utils";
+  const shuffleCode = `import { shuffle } from "@dreamer/dweb/utils/array";
 
 shuffle([1, 2, 3, 4, 5]);
 // [3, 1, 5, 2, 4]（随机顺序）`;
 
-  const sampleCode = `import { sample } from "@dreamer/dweb/utils";
+  const sampleCode = `import { sample } from "@dreamer/dweb/utils/array";
 
 sample([1, 2, 3, 4, 5], 3);
 // [2, 5, 1]（随机选择 3 个元素）`;
 
-  const partitionCode = `import { partition } from "@dreamer/dweb/utils";
+  const partitionCode = `import { partition } from "@dreamer/dweb/utils/array";
 
 partition([1, 2, 3, 4, 5], (n) => n % 2 === 0);
 // [[2, 4], [1, 3, 5]]`;
 
-  const zipCode = `import { zip, unzip } from "@dreamer/dweb/utils";
+  const zipCode = `import { zip, unzip } from "@dreamer/dweb/utils/array";
 
 // 数组压缩
 zip([1, 2, 3], ['a', 'b', 'c']);
@@ -105,7 +105,7 @@ unzip([[1, 'a'], [2, 'b'], [3, 'c']]);
 // [[1, 2, 3], ['a', 'b', 'c']]`;
 
   const intersectionCode =
-    `import { intersection, union, difference } from "@dreamer/dweb/utils";
+    `import { intersection, union, difference } from "@dreamer/dweb/utils/array";
 
 // 数组交集
 intersection([1, 2, 3], [2, 3, 4], [3, 4, 5]);
@@ -125,9 +125,8 @@ difference([1, 2, 3, 4], [2, 3], [3, 4]);
   sortBy,
   intersection,
   union,
-  sum,
-  average,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/array";
+import { sum, average } from "@dreamer/dweb/utils/math";
 
 // 分页处理
 const items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];

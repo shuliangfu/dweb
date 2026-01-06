@@ -9,7 +9,7 @@
 ## 快速开始
 
 ```typescript
-import { debounce, throttle, batchProcess, getMemoryUsage, formatMemorySize } from "@dreamer/dweb/utils";
+import { debounce, throttle, batchProcess, getMemoryUsage, formatMemorySize } from "@dreamer/dweb/utils/performance";
 
 // 防抖函数
 const debouncedSearch = debounce((query: string) => {
@@ -38,7 +38,7 @@ console.log(formatMemorySize(memory.heapUsed));
 防抖函数用于优化频繁调用的函数，在指定时间内只执行最后一次调用。
 
 ```typescript
-import { debounce } from "@dreamer/dweb/utils";
+import { debounce } from "@dreamer/dweb/utils/performance";
 
 // 搜索输入防抖
 const debouncedSearch = debounce((query: string) => {
@@ -63,7 +63,7 @@ input.addEventListener("input", (e) => {
 节流函数用于限制函数调用频率，在指定时间内最多执行一次。
 
 ```typescript
-import { throttle } from "@dreamer/dweb/utils";
+import { throttle } from "@dreamer/dweb/utils/performance";
 
 // 滚动事件节流
 const throttledScroll = throttle(() => {
@@ -88,7 +88,7 @@ window.addEventListener("scroll", throttledScroll);
 批量处理函数用于优化大量数据的处理，将数据分批处理以避免内存溢出或性能问题。
 
 ```typescript
-import { batchProcess } from "@dreamer/dweb/utils";
+import { batchProcess } from "@dreamer/dweb/utils/performance";
 
 // 批量处理数据
 const items = [/* 大量数据 */];
@@ -122,7 +122,7 @@ const results = await batchProcess(
 获取当前进程的内存使用情况（仅在服务端 Deno 环境中可用）。
 
 ```typescript
-import { getMemoryUsage } from "@dreamer/dweb/utils";
+import { getMemoryUsage } from "@dreamer/dweb/utils/performance";
 
 const memory = getMemoryUsage();
 console.log({
@@ -146,7 +146,7 @@ console.log({
 将字节数格式化为可读的内存大小字符串。
 
 ```typescript
-import { formatMemorySize } from "@dreamer/dweb/utils";
+import { formatMemorySize } from "@dreamer/dweb/utils/performance";
 
 formatMemorySize(1024);        // "1.00 KB"
 formatMemorySize(1048576);    // "1.00 MB"
@@ -163,16 +163,16 @@ formatMemorySize(1073741824); // "1.00 GB"
 ### 搜索输入防抖
 
 ```typescript
-import { debounce } from "@dreamer/dweb/utils";
+import { debounce } from "@dreamer/dweb/utils/performance";
 
 const searchInput = document.getElementById("search");
 
 const debouncedSearch = debounce(async (query: string) => {
   if (query.length < 2) return;
-  
+
   const results = await fetch(`/api/search?q=${query}`)
     .then(res => res.json());
-  
+
   renderResults(results);
 }, 300);
 
@@ -184,7 +184,7 @@ searchInput.addEventListener("input", (e) => {
 ### 窗口大小调整节流
 
 ```typescript
-import { throttle } from "@dreamer/dweb/utils";
+import { throttle } from "@dreamer/dweb/utils/performance";
 
 const throttledResize = throttle(() => {
   // 更新布局
@@ -197,7 +197,7 @@ window.addEventListener("resize", throttledResize);
 ### 批量数据处理
 
 ```typescript
-import { batchProcess } from "@dreamer/dweb/utils";
+import { batchProcess } from "@dreamer/dweb/utils/performance";
 
 // 批量上传文件
 const files = [/* 文件列表 */];
@@ -219,7 +219,7 @@ const uploadResults = await batchProcess(
 ### 内存监控示例
 
 ```typescript
-import { getMemoryUsage, formatMemorySize } from "@dreamer/dweb/utils";
+import { getMemoryUsage, formatMemorySize } from "@dreamer/dweb/utils/performance";
 
 // 定期监控内存使用
 setInterval(() => {

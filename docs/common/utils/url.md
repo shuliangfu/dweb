@@ -7,7 +7,7 @@
 ## 快速开始
 
 ```typescript
-import { parseUrl, buildUrl, getQueryParams } from "@dreamer/dweb/utils";
+import { parseUrl, buildUrl, getQueryParams } from "@dreamer/dweb/utils/url";
 
 // 解析 URL
 const parsed = parseUrl('https://example.com:8080/path?key=value#hash');
@@ -26,7 +26,7 @@ const params = getQueryParams('https://example.com?page=1&limit=10');
 将 URL 字符串解析为对象。
 
 ```typescript
-import { parseUrl } from "@dreamer/dweb/utils";
+import { parseUrl } from "@dreamer/dweb/utils/url";
 
 const parsed = parseUrl('https://example.com:8080/path?key=value#hash');
 // {
@@ -48,7 +48,7 @@ const parsed = parseUrl('https://example.com:8080/path?key=value#hash');
 根据路径和查询参数构建完整的 URL。
 
 ```typescript
-import { buildUrl } from "@dreamer/dweb/utils";
+import { buildUrl } from "@dreamer/dweb/utils/url";
 
 // 构建相对 URL
 buildUrl('/api/users', { page: 1, limit: 10 });
@@ -66,7 +66,7 @@ buildUrl('/api/users', { page: 1 }, 'https://api.example.com');
 从 URL 中提取查询参数并返回对象。
 
 ```typescript
-import { getQueryParams, getQueryParam } from "@dreamer/dweb/utils";
+import { getQueryParams, getQueryParam } from "@dreamer/dweb/utils/url";
 
 // 获取所有查询参数
 const params = getQueryParams('https://example.com?page=1&limit=10');
@@ -86,7 +86,7 @@ const currentPage = getQueryParam('page');
 在 URL 中设置或更新查询参数，返回新的 URL。
 
 ```typescript
-import { setQueryParams } from "@dreamer/dweb/utils";
+import { setQueryParams } from "@dreamer/dweb/utils/url";
 
 setQueryParams('https://example.com', { page: 1, limit: 10 });
 // 'https://example.com?page=1&limit=10'
@@ -100,7 +100,7 @@ setQueryParams('https://example.com?page=1', { limit: 10 });
 更新 URL 中的查询参数（保留其他参数）。
 
 ```typescript
-import { updateQueryParams } from "@dreamer/dweb/utils";
+import { updateQueryParams } from "@dreamer/dweb/utils/url";
 
 updateQueryParams('https://example.com?page=1&limit=10', { page: 2 });
 // 'https://example.com?page=2&limit=10'
@@ -111,7 +111,7 @@ updateQueryParams('https://example.com?page=1&limit=10', { page: 2 });
 从 URL 中删除指定的查询参数。
 
 ```typescript
-import { removeQueryParams } from "@dreamer/dweb/utils";
+import { removeQueryParams } from "@dreamer/dweb/utils/url";
 
 removeQueryParams('https://example.com?page=1&limit=10&sort=name', ['page', 'limit']);
 // 'https://example.com?sort=name'
@@ -122,7 +122,7 @@ removeQueryParams('https://example.com?page=1&limit=10&sort=name', ['page', 'lim
 ### 获取和设置 Hash
 
 ```typescript
-import { getHash, setHash } from "@dreamer/dweb/utils";
+import { getHash, setHash } from "@dreamer/dweb/utils/url";
 
 // 获取 hash
 getHash('https://example.com#section1'); // 'section1'
@@ -138,7 +138,7 @@ setHash('https://example.com', 'section1');
 ### 判断是否为绝对 URL
 
 ```typescript
-import { isAbsoluteUrl } from "@dreamer/dweb/utils";
+import { isAbsoluteUrl } from "@dreamer/dweb/utils/url";
 
 isAbsoluteUrl('https://example.com'); // true
 isAbsoluteUrl('/api/users'); // false
@@ -148,7 +148,7 @@ isAbsoluteUrl('api/users'); // false
 ### 拼接 URL 路径
 
 ```typescript
-import { joinUrl } from "@dreamer/dweb/utils";
+import { joinUrl } from "@dreamer/dweb/utils/url";
 
 joinUrl(['api', 'users', '1']);
 // 'api/users/1'
@@ -165,7 +165,7 @@ joinUrl(['https://example.com', 'api', 'users']);
 规范化 URL，移除多余的斜杠。
 
 ```typescript
-import { normalizeUrl } from "@dreamer/dweb/utils";
+import { normalizeUrl } from "@dreamer/dweb/utils/url";
 
 normalizeUrl('https://example.com//api///users');
 // 'https://example.com/api/users'
@@ -180,7 +180,7 @@ import {
   getQueryParams,
   setQueryParams,
   updateQueryParams,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/url";
 
 // 解析 URL
 const parsed = parseUrl('https://api.example.com/users?page=1&limit=10');
@@ -225,4 +225,3 @@ const nextPageUrl = updateQueryParams(
 
 ### 类型
 - `ParsedUrl` - 解析后的 URL 对象接口
-

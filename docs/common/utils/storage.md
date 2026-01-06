@@ -7,7 +7,7 @@
 ## 快速开始
 
 ```typescript
-import { setStorage, getStorage, removeStorage } from "@dreamer/dweb/utils";
+import { setStorage, getStorage, removeStorage } from "@dreamer/dweb/utils/storage";
 
 // 存储数据（自动序列化）
 setStorage('user', { id: 1, name: 'Alice' });
@@ -27,7 +27,7 @@ removeStorage('user');
 自动将值序列化为 JSON 字符串存储。
 
 ```typescript
-import { setStorage } from "@dreamer/dweb/utils";
+import { setStorage } from "@dreamer/dweb/utils/storage";
 
 // 存储对象
 setStorage('user', { id: 1, name: 'Alice' });
@@ -44,7 +44,7 @@ setStorage('token', 'abc123', 'sessionStorage');
 自动将 JSON 字符串反序列化为原始值。
 
 ```typescript
-import { getStorage } from "@dreamer/dweb/utils";
+import { getStorage } from "@dreamer/dweb/utils/storage";
 
 const user = getStorage<User>('user');
 // { id: 1, name: 'Alice' }
@@ -55,7 +55,7 @@ const token = getStorage('token', 'sessionStorage');
 ### 删除和清空
 
 ```typescript
-import { removeStorage, clearStorage } from "@dreamer/dweb/utils";
+import { removeStorage, clearStorage } from "@dreamer/dweb/utils/storage";
 
 // 删除指定键
 removeStorage('user');
@@ -73,7 +73,7 @@ clearStorage('sessionStorage'); // 清空 sessionStorage
 存储的值会在指定时间后自动过期。
 
 ```typescript
-import { setStorageWithExpiry, getStorageWithExpiry } from "@dreamer/dweb/utils";
+import { setStorageWithExpiry, getStorageWithExpiry } from "@dreamer/dweb/utils/storage";
 
 // 存储 token，1 小时后过期
 setStorageWithExpiry('token', 'abc123', 3600);
@@ -87,7 +87,7 @@ setStorageWithExpiry('temp', { data: 'xxx' }, 300);
 自动检查是否过期，如果过期则删除并返回 undefined。
 
 ```typescript
-import { getStorageWithExpiry } from "@dreamer/dweb/utils";
+import { getStorageWithExpiry } from "@dreamer/dweb/utils/storage";
 
 const token = getStorageWithExpiry('token');
 if (!token) {
@@ -100,7 +100,7 @@ if (!token) {
 ### 检查存储是否存在
 
 ```typescript
-import { hasStorage } from "@dreamer/dweb/utils";
+import { hasStorage } from "@dreamer/dweb/utils/storage";
 
 if (hasStorage('user')) {
   const user = getStorage('user');
@@ -110,7 +110,7 @@ if (hasStorage('user')) {
 ### 获取所有存储键
 
 ```typescript
-import { getStorageKeys } from "@dreamer/dweb/utils";
+import { getStorageKeys } from "@dreamer/dweb/utils/storage";
 
 const keys = getStorageKeys();
 // ['user', 'token', 'settings']
@@ -119,7 +119,7 @@ const keys = getStorageKeys();
 ### 获取存储大小
 
 ```typescript
-import { getStorageSize, getTotalStorageSize } from "@dreamer/dweb/utils";
+import { getStorageSize, getTotalStorageSize } from "@dreamer/dweb/utils/storage";
 
 // 获取指定键的存储大小
 const size = getStorageSize('user');
@@ -139,7 +139,7 @@ import {
   setStorageWithExpiry,
   getStorageWithExpiry,
   hasStorage,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/storage";
 
 // 存储用户信息
 setStorage('user', {
@@ -186,4 +186,3 @@ if (token) {
 
 ### 类型
 - `StorageType` - 存储类型（'localStorage' | 'sessionStorage'）
-

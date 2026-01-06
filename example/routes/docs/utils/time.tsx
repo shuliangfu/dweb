@@ -11,7 +11,7 @@ export const metadata = {
 
 export default function TimePage() {
   const quickStartCode =
-    `import { addDays, diffDays, isToday, startOfDay } from "@dreamer/dweb/utils";
+    `import { addDays, diffDays, isToday, startOfDay } from "@dreamer/dweb/utils/time";
 
 // 添加天数
 const tomorrow = addDays(new Date(), 1);
@@ -28,7 +28,7 @@ if (isToday(date)) {
 const start = startOfDay(new Date());`;
 
   const addTimeCode =
-    `import { addDays, addHours, addMinutes, addMonths, addYears } from "@dreamer/dweb/utils";
+    `import { addDays, addHours, addMinutes, addMonths, addYears } from "@dreamer/dweb/utils/time";
 
 // 添加天数
 addDays(new Date(), 7); // 7 天后
@@ -48,7 +48,7 @@ addMonths(new Date(), 1); // 1 个月后
 addYears(new Date(), 1); // 1 年后`;
 
   const diffCode =
-    `import { diffDays, diffHours, diffMinutes, diffSeconds } from "@dreamer/dweb/utils";
+    `import { diffDays, diffHours, diffMinutes, diffSeconds } from "@dreamer/dweb/utils/time";
 
 // 计算天数差
 diffDays(new Date('2024-01-01'), new Date('2024-01-10')); // 9
@@ -63,7 +63,7 @@ diffMinutes(new Date('2024-01-01 10:00'), new Date('2024-01-01 10:30')); // 30
 diffSeconds(new Date('2024-01-01 10:00:00'), new Date('2024-01-01 10:00:30')); // 30`;
 
   const isDateCode =
-    `import { isToday, isYesterday, isTomorrow, isSameDay } from "@dreamer/dweb/utils";
+    `import { isToday, isYesterday, isTomorrow, isSameDay } from "@dreamer/dweb/utils/time";
 
 // 判断是否为今天
 isToday(new Date()); // true
@@ -79,7 +79,7 @@ isTomorrow(tomorrow); // true
 // 判断是否为同一天
 isSameDay(new Date('2024-01-01 10:00'), new Date('2024-01-01 15:00')); // true`;
 
-  const isInRangeCode = `import { isInRange } from "@dreamer/dweb/utils";
+  const isInRangeCode = `import { isInRange } from "@dreamer/dweb/utils/time";
 
 isInRange(
   new Date('2024-01-15'),
@@ -97,7 +97,7 @@ isInRange(
   endOfMonth,
   startOfYear,
   endOfYear,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/time";
 
 // 一天的边界
 startOfDay(new Date('2024-01-01 15:30:45'));
@@ -138,7 +138,7 @@ endOfYear(new Date('2024-06-15'));
   endOfDay,
   startOfWeek,
   endOfWeek,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/time";
 
 // 计算未来日期
 const nextWeek = addDays(new Date(), 7);

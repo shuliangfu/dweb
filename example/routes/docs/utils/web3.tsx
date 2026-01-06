@@ -14,7 +14,7 @@ export const metadata = {
 export default function Web3Page() {
   // 快速开始
   const quickStartCode =
-    `import { createWeb3Client } from "@dreamer/dweb/utils";
+    `import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 // 创建 Web3 客户端
 const web3 = createWeb3Client({
@@ -28,11 +28,12 @@ const accounts = await web3.connectWallet();
 // 获取余额（wei）
 const balance = await web3.getBalance(accounts[0]);
 // 转换为 ETH：使用 fromWei 工具函数
-import { fromWei } from "@dreamer/dweb/utils";
+import { fromWei } from "@dreamer/dweb/utils/web3";
 const balanceEth = fromWei(balance, "ether");`;
 
   // 钱包连接
-  const walletCode = `import { createWeb3Client } from "@dreamer/dweb/utils";
+  const walletCode =
+    `import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client();
 
@@ -48,7 +49,8 @@ try {
 const accounts = await web3.getAccounts();`;
 
   // 余额查询
-  const balanceCode = `import { createWeb3Client } from "@dreamer/dweb/utils";
+  const balanceCode =
+    `import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -60,7 +62,7 @@ const address = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb";
 const balanceWei = await web3.getBalance(address);
 
 // 转换为 ETH：使用 fromWei 工具函数
-import { fromWei } from "@dreamer/dweb/utils";
+import { fromWei } from "@dreamer/dweb/utils/web3";
 const balanceEth = fromWei(balanceWei, "ether");
 
 // 批量获取余额
@@ -72,7 +74,7 @@ const balances = await web3.getBalances([
 
   // 发送交易
   const transactionCode =
-    `import { createWeb3Client } from "@dreamer/dweb/utils";
+    `import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -95,7 +97,8 @@ const tx = await web3.getTransaction(txHash);
 const receipt = await web3.getTransactionReceipt(txHash);`;
 
   // 合约交互
-  const contractCode = `import { createWeb3Client } from "@dreamer/dweb/utils";
+  const contractCode =
+    `import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -154,7 +157,8 @@ const result = await web3.callContract({
 });`;
 
   // 事件监听
-  const eventCode = `import { createWeb3Client } from "@dreamer/dweb/utils";
+  const eventCode =
+    `import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -234,7 +238,8 @@ web3.offAccountsChanged();
 web3.offChainChanged();`;
 
   // 区块和交易历史
-  const historyCode = `import { createWeb3Client } from "@dreamer/dweb/utils";
+  const historyCode =
+    `import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -262,7 +267,7 @@ const txHistory = await web3.getAddressTransactions(
 
   // 扫描合约方法交易
   const scanMethodCode =
-    `import { createWeb3Client } from "@dreamer/dweb/utils";
+    `import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -312,7 +317,7 @@ while (currentPage <= result.totalPages) {
 
   // 其他常用方法
   const otherMethodsCode =
-    `import { createWeb3Client } from "@dreamer/dweb/utils";
+    `import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -341,7 +346,7 @@ const isContract = await web3.isContract("0x...");`;
   keccak256,
   hexToBytes,
   bytesToHex,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/web3";
 
 // 单位转换
 const eth = fromWei("1000000000000000000", "ether"); // "1.0"

@@ -18,7 +18,7 @@ export default function FormatPage() {
   formatDate,
   formatRelativeTime,
   formatPercent,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/format";
 
 // 格式化数字
 formatNumber(1234567.89, 2); // "1,234,567.89"
@@ -35,26 +35,28 @@ formatDate(new Date(), "YYYY-MM-DD"); // "2024-01-15"
 // 格式化相对时间
 formatRelativeTime(new Date(Date.now() - 3600000)); // "1小时前"`;
 
-  const numberCode = `import { formatNumber } from "@dreamer/dweb/utils";
+  const numberCode = `import { formatNumber } from "@dreamer/dweb/utils/format";
 
 formatNumber(1234567); // "1,234,567"
 formatNumber(1234.567, 2); // "1,234.57"
 formatNumber(999.99, 2); // "999.99"`;
 
-  const currencyCode = `import { formatCurrency } from "@dreamer/dweb/utils";
+  const currencyCode =
+    `import { formatCurrency } from "@dreamer/dweb/utils/format";
 
 formatCurrency(1234.56); // "¥1,234.56"
 formatCurrency(1234.56, '$', 2); // "$1,234.56"
 formatCurrency(999.99, '€', 0); // "€1,000"`;
 
-  const fileSizeCode = `import { formatFileSize } from "@dreamer/dweb/utils";
+  const fileSizeCode =
+    `import { formatFileSize } from "@dreamer/dweb/utils/format";
 
 formatFileSize(1024); // "1 KB"
 formatFileSize(1048576); // "1 MB"
 formatFileSize(1073741824); // "1 GB"
 formatFileSize(0); // "0 Bytes"`;
 
-  const dateCode = `import { formatDate } from "@dreamer/dweb/utils";
+  const dateCode = `import { formatDate } from "@dreamer/dweb/utils/format";
 
 const date = new Date('2024-01-15 14:30:45');
 
@@ -91,7 +93,7 @@ formatDate(date, 'YYYY年Q季度'); // "2024年Q1季度"`;
 - **季度：** \`Q\`（如：Q1）`;
 
   const relativeTimeCode =
-    `import { formatRelativeTime } from "@dreamer/dweb/utils";
+    `import { formatRelativeTime } from "@dreamer/dweb/utils/format";
 
 const oneHourAgo = new Date(Date.now() - 3600000);
 formatRelativeTime(oneHourAgo); // "1小时前"
@@ -102,31 +104,33 @@ formatRelativeTime(tomorrow); // "1天后"
 const oneMinuteAgo = new Date(Date.now() - 60000);
 formatRelativeTime(oneMinuteAgo); // "1分钟前"`;
 
-  const percentCode = `import { formatPercent } from "@dreamer/dweb/utils";
+  const percentCode =
+    `import { formatPercent } from "@dreamer/dweb/utils/format";
 
 formatPercent(25, 100); // "25.00%"
 formatPercent(1, 3); // "33.33%"
 formatPercent(1, 3, 0); // "33%"
 formatPercent(0, 0); // "0%"（避免除零错误）`;
 
-  const phoneCode = `import { formatPhone } from "@dreamer/dweb/utils";
+  const phoneCode = `import { formatPhone } from "@dreamer/dweb/utils/format";
 
 formatPhone('13812345678'); // "138****5678"
 formatPhone('13900139000'); // "139****9000"
 formatPhone('123'); // "123"（长度不符合，返回原值）`;
 
-  const idCardCode = `import { formatIdCard } from "@dreamer/dweb/utils";
+  const idCardCode = `import { formatIdCard } from "@dreamer/dweb/utils/format";
 
 formatIdCard('110101199001011234'); // "110***********1234"
 formatIdCard('123'); // "123"（长度不符合，返回原值）`;
 
-  const bankCardCode = `import { formatBankCard } from "@dreamer/dweb/utils";
+  const bankCardCode =
+    `import { formatBankCard } from "@dreamer/dweb/utils/format";
 
 formatBankCard('6222021234567890123'); // "6222 **** **** 0123"
 formatBankCard('6222 0212 3456 7890 123'); // "6222 **** **** 0123"（自动去除空格）
 formatBankCard('123'); // "123"（长度不符合，返回原值）`;
 
-  const textCode = `import { formatText } from "@dreamer/dweb/utils";
+  const textCode = `import { formatText } from "@dreamer/dweb/utils/format";
 
 formatText('这是一段很长的文本', 5); // "这是一段很..."
 formatText('短文本', 10); // "短文本"（不截断）
@@ -142,7 +146,7 @@ formatText('测试文本', 3, '…'); // "测试文…"（自定义后缀）`;
   formatPercent,
   formatPhone,
   formatText,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/format";
 
 // 商品价格显示
 const price = 1234.56;

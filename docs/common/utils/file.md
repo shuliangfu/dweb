@@ -7,7 +7,7 @@
 ## 快速开始
 
 ```typescript
-import { readFile, saveFile, getFileExtension, isImageFile } from "@dreamer/dweb/utils";
+import { readFile, saveFile, getFileExtension, isImageFile } from "@dreamer/dweb/utils/file";
 
 // 读取文件
 const file = input.files[0];
@@ -33,7 +33,7 @@ if (isImageFile(file)) {
 将文件读取为文本字符串。
 
 ```typescript
-import { readFile } from "@dreamer/dweb/utils";
+import { readFile } from "@dreamer/dweb/utils/file";
 
 const file = input.files[0];
 const text = await readFile(file);
@@ -45,7 +45,7 @@ console.log(text);
 将文件读取为 Data URL 字符串（base64 编码），可直接用作图片源。
 
 ```typescript
-import { readFileAsDataUrl } from "@dreamer/dweb/utils";
+import { readFileAsDataUrl } from "@dreamer/dweb/utils/file";
 
 const file = input.files[0];
 const dataUrl = await readFileAsDataUrl(file);
@@ -57,7 +57,7 @@ img.src = dataUrl; // 可以直接用作图片源
 将文件读取为 ArrayBuffer 对象，用于处理二进制数据。
 
 ```typescript
-import { readFileAsArrayBuffer } from "@dreamer/dweb/utils";
+import { readFileAsArrayBuffer } from "@dreamer/dweb/utils/file";
 
 const file = input.files[0];
 const buffer = await readFileAsArrayBuffer(file);
@@ -71,7 +71,7 @@ const buffer = await readFileAsArrayBuffer(file);
 在浏览器中将 Blob 或字符串保存为文件。
 
 ```typescript
-import { saveFile } from "@dreamer/dweb/utils";
+import { saveFile } from "@dreamer/dweb/utils/file";
 
 // 从 Blob 保存
 const blob = new Blob(['Hello World'], { type: 'text/plain' });
@@ -90,7 +90,7 @@ saveFile(blob, 'document.pdf');
 从文件名中提取扩展名。
 
 ```typescript
-import { getFileExtension } from "@dreamer/dweb/utils";
+import { getFileExtension } from "@dreamer/dweb/utils/file";
 
 getFileExtension('document.pdf'); // 'pdf'
 getFileExtension('image.JPG'); // 'jpg'
@@ -102,7 +102,7 @@ getFileExtension('file'); // ''
 从完整文件名中提取不含扩展名的文件名。
 
 ```typescript
-import { getFileName } from "@dreamer/dweb/utils";
+import { getFileName } from "@dreamer/dweb/utils/file";
 
 getFileName('document.pdf'); // 'document'
 getFileName('path/to/image.jpg'); // 'image'
@@ -114,7 +114,7 @@ getFileName('file'); // 'file'
 获取文件对象的大小（字节）。
 
 ```typescript
-import { getFileSize } from "@dreamer/dweb/utils";
+import { getFileSize } from "@dreamer/dweb/utils/file";
 
 const file = input.files[0];
 const size = getFileSize(file);
@@ -128,7 +128,7 @@ console.log(`文件大小: ${size} 字节`);
 根据文件扩展名判断文件类型。
 
 ```typescript
-import { isImageFile, isVideoFile, isAudioFile } from "@dreamer/dweb/utils";
+import { isImageFile, isVideoFile, isAudioFile } from "@dreamer/dweb/utils/file";
 
 const file = input.files[0];
 
@@ -160,7 +160,7 @@ if (isImageFile('image.jpg')) {
 在浏览器中压缩图片文件，返回压缩后的 Blob。
 
 ```typescript
-import { compressImage } from "@dreamer/dweb/utils";
+import { compressImage } from "@dreamer/dweb/utils/file";
 
 const file = input.files[0];
 const compressed = await compressImage(file, {
@@ -181,7 +181,7 @@ await uploadFile(compressed);
 从数据创建 File 或 Blob 对象。
 
 ```typescript
-import { createFile } from "@dreamer/dweb/utils";
+import { createFile } from "@dreamer/dweb/utils/file";
 
 // 从字符串创建
 const file = createFile('Hello World', 'hello.txt', 'text/plain');
@@ -198,7 +198,7 @@ const file2 = createFile(buffer, 'data.bin');
 根据文件扩展名获取对应的 MIME 类型。
 
 ```typescript
-import { getMimeType } from "@dreamer/dweb/utils";
+import { getMimeType } from "@dreamer/dweb/utils/file";
 
 getMimeType('image.jpg'); // 'image/jpeg'
 getMimeType('document.pdf'); // 'application/pdf'
@@ -215,7 +215,7 @@ import {
   isImageFile,
   getFileExtension,
   saveFile,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/file";
 
 // 处理文件上传
 const handleFileUpload = async (file: File) => {
@@ -233,7 +233,7 @@ const handleFileUpload = async (file: File) => {
       maxHeight: 1080,
       quality: 0.8,
     });
-    
+
     // 上传压缩后的图片
     await uploadFile(compressed);
   } else {
@@ -284,4 +284,3 @@ const saveReport = async () => {
 
 ### MIME 类型
 - `getMimeType(filename)` - 获取 MIME 类型
-

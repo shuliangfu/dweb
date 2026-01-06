@@ -7,7 +7,7 @@
 ## 快速开始
 
 ```typescript
-import { http, get, post } from "@dreamer/dweb/utils";
+import { http, get, post } from "@dreamer/dweb/utils/http";
 
 // 使用默认实例
 const data = await http.get("/api/users");
@@ -21,7 +21,7 @@ const newUser = await post("/api/users", { name: "Bob" });
 ## 创建自定义实例
 
 ```typescript
-import { createHttpClient } from "@dreamer/dweb/utils";
+import { createHttpClient } from "@dreamer/dweb/utils/http";
 
 const api = createHttpClient({
   baseURL: "https://api.example.com",
@@ -38,7 +38,7 @@ const data = await api.get("/users");
 ## 请求拦截器
 
 ```typescript
-import { http } from "@dreamer/dweb/utils";
+import { http } from "@dreamer/dweb/utils/http";
 
 // 请求拦截器：添加 token
 http.interceptors.request.use((config) => {
@@ -56,7 +56,7 @@ http.interceptors.request.use((config) => {
 ## 响应拦截器
 
 ```typescript
-import { http } from "@dreamer/dweb/utils";
+import { http } from "@dreamer/dweb/utils/http";
 
 // 响应拦截器：统一处理错误
 http.interceptors.response.use(
@@ -78,7 +78,7 @@ http.interceptors.response.use(
 ## 完整示例
 
 ```typescript
-import { createHttpClient } from "@dreamer/dweb/utils";
+import { createHttpClient } from "@dreamer/dweb/utils/http";
 
 // 创建 API 客户端
 const api = createHttpClient({
@@ -125,7 +125,7 @@ const newUser = await api.post("/users", {
 ## 取消请求
 
 ```typescript
-import { http } from "@dreamer/dweb/utils";
+import { http } from "@dreamer/dweb/utils/http";
 
 const controller = new AbortController();
 
@@ -151,7 +151,7 @@ await api.get("/api/data", { timeout: 3000 });
 ## 请求重试
 
 ```typescript
-import { http } from "@dreamer/dweb/utils";
+import { http } from "@dreamer/dweb/utils/http";
 
 // 配置重试
 await http.get("/api/data", {
@@ -172,7 +172,7 @@ await http.get("/api/data", {
 ## 并发请求
 
 ```typescript
-import { http, all, allSettled } from "@dreamer/dweb/utils";
+import { http, all, allSettled } from "@dreamer/dweb/utils/http";
 
 // 并发请求所有接口（类似 Promise.all）
 const [users, posts, comments] = await http.all([
@@ -198,7 +198,7 @@ const data = await all([
 ## 请求去重
 
 ```typescript
-import { http } from "@dreamer/dweb/utils";
+import { http } from "@dreamer/dweb/utils/http";
 
 // 启用请求去重（防止重复请求）
 await http.get("/api/users", {
@@ -217,7 +217,7 @@ Promise.all([
 ## 文件上传
 
 ```typescript
-import { http, upload } from "@dreamer/dweb/utils";
+import { http, upload } from "@dreamer/dweb/utils/http";
 
 // 上传文件
 const file = document.querySelector('input[type="file"]')?.files?.[0];
@@ -236,7 +236,7 @@ await upload("/api/upload", file);
 ## 文件下载
 
 ```typescript
-import { http, download, downloadFile } from "@dreamer/dweb/utils";
+import { http, download, downloadFile } from "@dreamer/dweb/utils/http";
 
 // 下载文件（返回 Blob）
 const blob = await http.download("/api/files/report.pdf", {
@@ -255,7 +255,7 @@ await downloadFile("/api/files/report.pdf", "report.pdf");
 ## 请求进度追踪
 
 ```typescript
-import { http } from "@dreamer/dweb/utils";
+import { http } from "@dreamer/dweb/utils/http";
 
 // 上传进度
 await http.post("/api/upload", formData, {
@@ -280,7 +280,7 @@ await http.get("/api/files/data.zip", {
 HTTP 客户端支持多种响应类型：
 
 ```typescript
-import { http } from "@dreamer/dweb/utils";
+import { http } from "@dreamer/dweb/utils/http";
 
 // JSON 响应（默认）
 const jsonData = await http.get("/api/users", {
@@ -313,7 +313,7 @@ const formData = await http.get("/api/form", {
 ### 基础配置
 
 ```typescript
-import { http } from "@dreamer/dweb/utils";
+import { http } from "@dreamer/dweb/utils/http";
 
 await http.get("/api/data", {
   // 请求头
@@ -321,29 +321,29 @@ await http.get("/api/data", {
     "Content-Type": "application/json",
     "Authorization": "Bearer token",
   },
-  
+
   // URL 查询参数
   params: {
     page: 1,
     limit: 10,
     keyword: "search",
   },
-  
+
   // 超时时间（毫秒）
   timeout: 5000,
-  
+
   // 是否携带凭证（cookies）
   credentials: "include",
-  
+
   // 请求模式
   mode: "cors", // "cors" | "no-cors" | "same-origin"
-  
+
   // 缓存模式
   cache: "default", // "default" | "no-store" | "reload" | "no-cache" | "force-cache" | "only-if-cached"
-  
+
   // 重定向模式
   redirect: "follow", // "follow" | "error" | "manual"
-  
+
   // 响应类型
   responseType: "json", // "json" | "text" | "blob" | "arrayBuffer" | "formData"
 });
@@ -352,7 +352,7 @@ await http.get("/api/data", {
 ### 请求/响应转换器
 
 ```typescript
-import { http } from "@dreamer/dweb/utils";
+import { http } from "@dreamer/dweb/utils/http";
 
 // 请求转换器（在发送前修改配置）
 await http.post("/api/users", userData, {
@@ -384,7 +384,7 @@ await http.get("/api/users", {
 ### 状态码验证
 
 ```typescript
-import { http } from "@dreamer/dweb/utils";
+import { http } from "@dreamer/dweb/utils/http";
 
 // 自定义状态码验证（默认只接受 200-299）
 await http.get("/api/data", {
@@ -461,7 +461,7 @@ const client = new HttpClient({
 ### 默认实例
 
 ```typescript
-import { http } from "@dreamer/dweb/utils";
+import { http } from "@dreamer/dweb/utils/http";
 
 // http 是默认的 HttpClient 实例，可以直接使用
 await http.get("/api/users");

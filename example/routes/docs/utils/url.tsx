@@ -12,7 +12,7 @@ export const metadata = {
 
 export default function UrlPage() {
   const quickStartCode =
-    `import { parseUrl, buildUrl, getQueryParams } from "@dreamer/dweb/utils";
+    `import { parseUrl, buildUrl, getQueryParams } from "@dreamer/dweb/utils/url";
 
 // 解析 URL
 const parsed = parseUrl('https://example.com:8080/path?key=value#hash');
@@ -23,7 +23,7 @@ const url = buildUrl('/api/users', { page: 1, limit: 10 });
 // 获取查询参数
 const params = getQueryParams('https://example.com?page=1&limit=10');`;
 
-  const parseUrlCode = `import { parseUrl } from "@dreamer/dweb/utils";
+  const parseUrlCode = `import { parseUrl } from "@dreamer/dweb/utils/url";
 
 const parsed = parseUrl('https://example.com:8080/path?key=value#hash');
 // {
@@ -37,7 +37,7 @@ const parsed = parseUrl('https://example.com:8080/path?key=value#hash');
 //   href: 'https://example.com:8080/path?key=value#hash'
 // }`;
 
-  const buildUrlCode = `import { buildUrl } from "@dreamer/dweb/utils";
+  const buildUrlCode = `import { buildUrl } from "@dreamer/dweb/utils/url";
 
 // 构建相对 URL
 buildUrl('/api/users', { page: 1, limit: 10 });
@@ -48,7 +48,7 @@ buildUrl('/api/users', { page: 1 }, 'https://api.example.com');
 // 'https://api.example.com/api/users?page=1'`;
 
   const queryParamsCode =
-    `import { getQueryParams, getQueryParam, setQueryParams, updateQueryParams, removeQueryParams } from "@dreamer/dweb/utils";
+    `import { getQueryParams, getQueryParam, setQueryParams, updateQueryParams, removeQueryParams } from "@dreamer/dweb/utils/url";
 
 // 获取所有查询参数
 const params = getQueryParams('https://example.com?page=1&limit=10');
@@ -74,7 +74,7 @@ updateQueryParams('https://example.com?page=1&limit=10', { page: 2 });
 removeQueryParams('https://example.com?page=1&limit=10&sort=name', ['page', 'limit']);
 // 'https://example.com?sort=name'`;
 
-  const hashCode = `import { getHash, setHash } from "@dreamer/dweb/utils";
+  const hashCode = `import { getHash, setHash } from "@dreamer/dweb/utils/url";
 
 // 获取 hash
 getHash('https://example.com#section1'); // 'section1'
@@ -85,7 +85,7 @@ setHash('https://example.com', 'section1');
 // 'https://example.com#section1'`;
 
   const utilsCode =
-    `import { isAbsoluteUrl, joinUrl, normalizeUrl } from "@dreamer/dweb/utils";
+    `import { isAbsoluteUrl, joinUrl, normalizeUrl } from "@dreamer/dweb/utils/url";
 
 // 判断是否为绝对 URL
 isAbsoluteUrl('https://example.com'); // true
@@ -112,7 +112,7 @@ normalizeUrl('https://example.com//api///users');
   getQueryParams,
   setQueryParams,
   updateQueryParams,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/url";
 
 // 解析 URL
 const parsed = parseUrl('https://api.example.com/users?page=1&limit=10');

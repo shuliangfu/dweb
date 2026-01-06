@@ -7,7 +7,7 @@
 ## 快速开始
 
 ```typescript
-import { createWeb3Client } from "@dreamer/dweb/utils";
+import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 // 创建 Web3 客户端
 const web3 = createWeb3Client({
@@ -21,14 +21,14 @@ const accounts = await web3.connectWallet();
 // 获取余额（wei）
 const balance = await web3.getBalance(accounts[0]);
 // 转换为 ETH：使用 fromWei 工具函数
-import { fromWei } from "@dreamer/dweb/utils";
+import { fromWei } from "@dreamer/dweb/utils/web3";
 const balanceEth = fromWei(balance, "ether");
 ```
 
 #### 钱包连接
 
 ```typescript
-import { createWeb3Client } from "@dreamer/dweb/utils";
+import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client();
 
@@ -47,7 +47,7 @@ const accounts = await web3.getAccounts();
 #### 余额查询
 
 ```typescript
-import { createWeb3Client } from "@dreamer/dweb/utils";
+import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -59,14 +59,14 @@ const address = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb";
 const balanceWei = await web3.getBalance(address);
 
 // 转换为 ETH：使用 fromWei 工具函数
-import { fromWei } from "@dreamer/dweb/utils";
+import { fromWei } from "@dreamer/dweb/utils/web3";
 const balanceEth = fromWei(balanceWei, "ether");
 ```
 
 #### 发送交易
 
 ```typescript
-import { createWeb3Client } from "@dreamer/dweb/utils";
+import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -86,7 +86,7 @@ const receipt = await web3.waitForTransaction(txHash, 1);
 #### 合约交互
 
 ```typescript
-import { createWeb3Client } from "@dreamer/dweb/utils";
+import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -136,7 +136,7 @@ const result = await web3.readContract({
 #### 消息签名
 
 ```typescript
-import { createWeb3Client } from "@dreamer/dweb/utils";
+import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -157,7 +157,7 @@ const isValid = await web3.verifyMessage(
 #### 单位转换
 
 ```typescript
-import { fromWei, toWei } from "@dreamer/dweb/utils";
+import { fromWei, toWei } from "@dreamer/dweb/utils/web3";
 
 // Wei 转 Ether
 const eth = fromWei("1000000000000000000", "ether"); // "1.0"
@@ -177,7 +177,7 @@ import {
   toChecksumAddress,
   formatAddress,
   shortenAddress,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/web3";
 
 // 验证地址格式（包含校验和验证）
 const isValid = isAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"); // true
@@ -206,7 +206,7 @@ import {
   bytesToHex,
   hexToNumber,
   numberToHex,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/web3";
 
 // Keccak-256 哈希
 const hash = await keccak256("hello world"); // "0x..."
@@ -234,7 +234,7 @@ import {
   addHexPrefix,
   padLeft,
   padRight,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/web3";
 
 // 移除/添加 0x 前缀
 const withoutPrefix = stripHexPrefix("0xff"); // "ff"
@@ -248,7 +248,7 @@ const rightPadded = padRight("ff", 4); // "ff00"
 #### 验证工具
 
 ```typescript
-import { isPrivateKey, isTxHash, generateWallet } from "@dreamer/dweb/utils";
+import { isPrivateKey, isTxHash, generateWallet } from "@dreamer/dweb/utils/web3";
 
 // 验证私钥格式
 const isValidKey = isPrivateKey("0x..."); // true
@@ -267,7 +267,7 @@ console.log(wallet.privateKey); // '0x...'
 ```typescript
 import {
   computeContractAddress,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/web3";
 
 // 计算合约地址（CREATE）
 const contractAddress = await computeContractAddress(
@@ -312,7 +312,7 @@ const web3 = createWeb3Client({
 #### 事件监听方法
 
 ```typescript
-import { createWeb3Client } from "@dreamer/dweb/utils";
+import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -401,7 +401,7 @@ web3.offChainChanged();
 **配置重连参数：**
 
 ```typescript
-import { createWeb3Client } from "@dreamer/dweb/utils";
+import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -427,7 +427,7 @@ const offBlock = web3.onBlock((blockNumber, block) => {
 #### 其他常用方法
 
 ```typescript
-import { createWeb3Client } from "@dreamer/dweb/utils";
+import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
@@ -476,7 +476,7 @@ const isContract = await web3.isContract("0x...");
 扫描合约指定方法的所有调用交易，支持分页和参数解析。
 
 ```typescript
-import { createWeb3Client } from "@dreamer/dweb/utils";
+import { createWeb3Client } from "@dreamer/dweb/utils/web3";
 
 const web3 = createWeb3Client({
   rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",

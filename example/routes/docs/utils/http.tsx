@@ -11,7 +11,8 @@ export const metadata = {
 };
 
 export default function HttpPage() {
-  const quickStartCode = `import { http, get, post } from "@dreamer/dweb/utils";
+  const quickStartCode =
+    `import { http, get, post } from "@dreamer/dweb/utils/http";
 
 // 使用默认实例
 const data = await http.get("/api/users");
@@ -22,7 +23,7 @@ const users = await get("/api/users");
 const newUser = await post("/api/users", { name: "Bob" });`;
 
   const createInstanceCode =
-    `import { createHttpClient } from "@dreamer/dweb/utils";
+    `import { createHttpClient } from "@dreamer/dweb/utils/http";
 
 const api = createHttpClient({
   baseURL: "https://api.example.com",
@@ -35,7 +36,8 @@ const api = createHttpClient({
 // 使用自定义实例
 const data = await api.get("/users");`;
 
-  const requestInterceptorCode = `import { http } from "@dreamer/dweb/utils";
+  const requestInterceptorCode =
+    `import { http } from "@dreamer/dweb/utils/http";
 
 // 请求拦截器：添加 token
 http.interceptors.request.use((config) => {
@@ -49,7 +51,8 @@ http.interceptors.request.use((config) => {
   return config;
 });`;
 
-  const responseInterceptorCode = `import { http } from "@dreamer/dweb/utils";
+  const responseInterceptorCode =
+    `import { http } from "@dreamer/dweb/utils/http";
 
 // 响应拦截器：统一处理错误
 http.interceptors.response.use(
@@ -68,7 +71,7 @@ http.interceptors.response.use(
 );`;
 
   const fullExampleCode =
-    `import { createHttpClient } from "@dreamer/dweb/utils";
+    `import { createHttpClient } from "@dreamer/dweb/utils/http";
 
 // 创建 API 客户端
 const api = createHttpClient({
@@ -111,7 +114,7 @@ const newUser = await api.post("/users", {
   email: "alice@example.com",
 });`;
 
-  const cancelCode = `import { http } from "@dreamer/dweb/utils";
+  const cancelCode = `import { http } from "@dreamer/dweb/utils/http";
 
 const controller = new AbortController();
 
@@ -129,7 +132,7 @@ const api = createHttpClient({ timeout: 5000 });
 // 单次请求超时
 await api.get("/api/data", { timeout: 3000 });`;
 
-  const retryCode = `import { http } from "@dreamer/dweb/utils";
+  const retryCode = `import { http } from "@dreamer/dweb/utils/http";
 
 // 配置重试
 await http.get("/api/data", {
@@ -147,7 +150,7 @@ await http.get("/api/data", {
 });`;
 
   const concurrentCode =
-    `import { http, all, allSettled } from "@dreamer/dweb/utils";
+    `import { http, all, allSettled } from "@dreamer/dweb/utils/http";
 
 // 并发请求所有接口（类似 Promise.all）
 const [users, posts, comments] = await http.all([
@@ -169,7 +172,7 @@ const data = await all([
   http.get("/api/posts"),
 ]);`;
 
-  const dedupeCode = `import { http } from "@dreamer/dweb/utils";
+  const dedupeCode = `import { http } from "@dreamer/dweb/utils/http";
 
 // 启用请求去重（防止重复请求）
 await http.get("/api/users", {
@@ -184,7 +187,7 @@ Promise.all([
   http.get("/api/users", { dedupe: true }),
 ]); // 只会发送一次请求`;
 
-  const uploadCode = `import { http, upload } from "@dreamer/dweb/utils";
+  const uploadCode = `import { http, upload } from "@dreamer/dweb/utils/http";
 
 // 上传文件
 const file = document.querySelector('input[type="file"]')?.files?.[0];
@@ -200,7 +203,7 @@ if (file) {
 await upload("/api/upload", file);`;
 
   const downloadCode =
-    `import { http, download, downloadFile } from "@dreamer/dweb/utils";
+    `import { http, download, downloadFile } from "@dreamer/dweb/utils/http";
 
 // 下载文件（返回 Blob）
 const blob = await http.download("/api/files/report.pdf", {
@@ -215,7 +218,7 @@ await http.downloadFile("/api/files/report.pdf", "report.pdf");
 // 使用便捷方法
 await downloadFile("/api/files/report.pdf", "report.pdf");`;
 
-  const progressCode = `import { http } from "@dreamer/dweb/utils";
+  const progressCode = `import { http } from "@dreamer/dweb/utils/http";
 
 // 上传进度
 await http.post("/api/upload", formData, {
@@ -234,7 +237,7 @@ await http.get("/api/files/data.zip", {
   },
 });`;
 
-  const responseTypeCode = `import { http } from "@dreamer/dweb/utils";
+  const responseTypeCode = `import { http } from "@dreamer/dweb/utils/http";
 
 // JSON 响应（默认）
 const jsonData = await http.get("/api/users", {
@@ -261,7 +264,7 @@ const formData = await http.get("/api/form", {
   responseType: "formData",
 });`;
 
-  const configCode = `import { http } from "@dreamer/dweb/utils";
+  const configCode = `import { http } from "@dreamer/dweb/utils/http";
 
 await http.get("/api/data", {
   // 请求头
@@ -269,29 +272,29 @@ await http.get("/api/data", {
     "Content-Type": "application/json",
     "Authorization": "Bearer token",
   },
-  
+
   // URL 查询参数
   params: {
     page: 1,
     limit: 10,
     keyword: "search",
   },
-  
+
   // 超时时间（毫秒）
   timeout: 5000,
-  
+
   // 是否携带凭证（cookies）
   credentials: "include",
-  
+
   // 请求模式
   mode: "cors", // "cors" | "no-cors" | "same-origin"
-  
+
   // 缓存模式
   cache: "default", // "default" | "no-store" | "reload" | "no-cache" | "force-cache" | "only-if-cached"
-  
+
   // 重定向模式
   redirect: "follow", // "follow" | "error" | "manual"
-  
+
   // 响应类型
   responseType: "json", // "json" | "text" | "blob" | "arrayBuffer" | "formData"
 });`;
@@ -345,7 +348,7 @@ const client = new HttpClient({
 - createHttpClient(config?) - 创建 HTTP 客户端实例
 
 // 默认实例
-import { http } from "@dreamer/dweb/utils";
+import { http } from "@dreamer/dweb/utils/http";
 // http 是默认的 HttpClient 实例，可以直接使用`;
 
   const content = {

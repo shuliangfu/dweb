@@ -12,7 +12,7 @@ export const metadata = {
 
 export default function PerformancePage() {
   const quickStartCode =
-    `import { debounce, throttle, batchProcess, getMemoryUsage, formatMemorySize } from "@dreamer/dweb/utils";
+    `import { debounce, throttle, batchProcess, getMemoryUsage, formatMemorySize } from "@dreamer/dweb/utils/performance";
 
 // 防抖函数
 const debouncedSearch = debounce((query: string) => {
@@ -33,7 +33,8 @@ const results = await batchProcess(items, async (item) => {
 const memory = getMemoryUsage();
 console.log(formatMemorySize(memory.heapUsed));`;
 
-  const debounceCode = `import { debounce } from "@dreamer/dweb/utils";
+  const debounceCode =
+    `import { debounce } from "@dreamer/dweb/utils/performance";
 
 // 搜索输入防抖
 const debouncedSearch = debounce((query: string) => {
@@ -46,7 +47,8 @@ input.addEventListener("input", (e) => {
   debouncedSearch(e.target.value);
 });`;
 
-  const throttleCode = `import { throttle } from "@dreamer/dweb/utils";
+  const throttleCode =
+    `import { throttle } from "@dreamer/dweb/utils/performance";
 
 // 滚动事件节流
 const throttledScroll = throttle(() => {
@@ -57,7 +59,8 @@ const throttledScroll = throttle(() => {
 // 使用
 window.addEventListener("scroll", throttledScroll);`;
 
-  const batchProcessCode = `import { batchProcess } from "@dreamer/dweb/utils";
+  const batchProcessCode =
+    `import { batchProcess } from "@dreamer/dweb/utils/performance";
 
 // 批量处理数据
 const items = [/* 大量数据 */];
@@ -71,7 +74,7 @@ const results = await batchProcess(
 );`;
 
   const memoryCode =
-    `import { getMemoryUsage, formatMemorySize } from "@dreamer/dweb/utils";
+    `import { getMemoryUsage, formatMemorySize } from "@dreamer/dweb/utils/performance";
 
 // 获取内存使用情况
 const memory = getMemoryUsage();
@@ -87,16 +90,17 @@ formatMemorySize(1024);        // "1.00 KB"
 formatMemorySize(1048576);      // "1.00 MB"
 formatMemorySize(1073741824);   // "1.00 GB"`;
 
-  const searchExampleCode = `import { debounce } from "@dreamer/dweb/utils";
+  const searchExampleCode =
+    `import { debounce } from "@dreamer/dweb/utils/performance";
 
 const searchInput = document.getElementById("search");
 
 const debouncedSearch = debounce(async (query: string) => {
   if (query.length < 2) return;
-  
+
   const results = await fetch(\`/api/search?q=\${query}\`)
     .then(res => res.json());
-  
+
   renderResults(results);
 }, 300);
 
@@ -104,7 +108,8 @@ searchInput.addEventListener("input", (e) => {
   debouncedSearch(e.target.value);
 });`;
 
-  const resizeExampleCode = `import { throttle } from "@dreamer/dweb/utils";
+  const resizeExampleCode =
+    `import { throttle } from "@dreamer/dweb/utils/performance";
 
 const throttledResize = throttle(() => {
   // 更新布局
@@ -113,7 +118,8 @@ const throttledResize = throttle(() => {
 
 window.addEventListener("resize", throttledResize);`;
 
-  const batchExampleCode = `import { batchProcess } from "@dreamer/dweb/utils";
+  const batchExampleCode =
+    `import { batchProcess } from "@dreamer/dweb/utils/performance";
 
 // 批量上传文件
 const files = [/* 文件列表 */];
@@ -132,7 +138,7 @@ const uploadResults = await batchProcess(
 );`;
 
   const memoryExampleCode =
-    `import { getMemoryUsage, formatMemorySize } from "@dreamer/dweb/utils";
+    `import { getMemoryUsage, formatMemorySize } from "@dreamer/dweb/utils/performance";
 
 // 定期监控内存使用
 setInterval(() => {

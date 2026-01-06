@@ -18,7 +18,7 @@ export default function CachePage() {
   deleteCache,
   clearCache,
   cached,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/cache";
 
 // 设置缓存（TTL 为秒）
 setCache("user:1", { id: 1, name: "Alice" }, 3600); // 缓存1小时

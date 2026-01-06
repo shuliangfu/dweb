@@ -7,7 +7,7 @@
 ## 快速开始
 
 ```typescript
-import { addDays, diffDays, isToday, startOfDay } from "@dreamer/dweb/utils";
+import { addDays, diffDays, isToday, startOfDay } from "@dreamer/dweb/utils/time";
 
 // 添加天数
 const tomorrow = addDays(new Date(), 1);
@@ -29,7 +29,7 @@ const start = startOfDay(new Date());
 ### 添加时间
 
 ```typescript
-import { addDays, addHours, addMinutes, addMonths, addYears } from "@dreamer/dweb/utils";
+import { addDays, addHours, addMinutes, addMonths, addYears } from "@dreamer/dweb/utils/time";
 
 // 添加天数
 addDays(new Date(), 7); // 7 天后
@@ -56,7 +56,7 @@ addYears(new Date(), 1); // 1 年后
 计算两个日期之间的时间差。
 
 ```typescript
-import { diffDays, diffHours, diffMinutes, diffSeconds } from "@dreamer/dweb/utils";
+import { diffDays, diffHours, diffMinutes, diffSeconds } from "@dreamer/dweb/utils/time";
 
 // 计算天数差
 diffDays(new Date('2024-01-01'), new Date('2024-01-10')); // 9
@@ -76,7 +76,7 @@ diffSeconds(new Date('2024-01-01 10:00:00'), new Date('2024-01-01 10:00:30')); /
 ### 判断日期
 
 ```typescript
-import { isToday, isYesterday, isTomorrow, isSameDay } from "@dreamer/dweb/utils";
+import { isToday, isYesterday, isTomorrow, isSameDay } from "@dreamer/dweb/utils/time";
 
 // 判断是否为今天
 isToday(new Date()); // true
@@ -96,7 +96,7 @@ isSameDay(new Date('2024-01-01 10:00'), new Date('2024-01-01 15:00')); // true
 ### 判断日期范围
 
 ```typescript
-import { isInRange } from "@dreamer/dweb/utils";
+import { isInRange } from "@dreamer/dweb/utils/time";
 
 isInRange(
   new Date('2024-01-15'),
@@ -111,7 +111,7 @@ isInRange(
 ### 一天的边界
 
 ```typescript
-import { startOfDay, endOfDay } from "@dreamer/dweb/utils";
+import { startOfDay, endOfDay } from "@dreamer/dweb/utils/time";
 
 // 获取一天的开始时间（00:00:00.000）
 startOfDay(new Date('2024-01-01 15:30:45'));
@@ -125,7 +125,7 @@ endOfDay(new Date('2024-01-01 15:30:45'));
 ### 一周的边界
 
 ```typescript
-import { startOfWeek, endOfWeek } from "@dreamer/dweb/utils";
+import { startOfWeek, endOfWeek } from "@dreamer/dweb/utils/time";
 
 // 获取一周的开始时间（周一 00:00:00.000）
 startOfWeek(new Date('2024-01-05')); // 假设是周五
@@ -142,7 +142,7 @@ startOfWeek(new Date('2024-01-05'), 0); // 0=周日，1=周一
 ### 一月的边界
 
 ```typescript
-import { startOfMonth, endOfMonth } from "@dreamer/dweb/utils";
+import { startOfMonth, endOfMonth } from "@dreamer/dweb/utils/time";
 
 // 获取一月的开始时间
 startOfMonth(new Date('2024-01-15'));
@@ -156,7 +156,7 @@ endOfMonth(new Date('2024-01-15'));
 ### 一年的边界
 
 ```typescript
-import { startOfYear, endOfYear } from "@dreamer/dweb/utils";
+import { startOfYear, endOfYear } from "@dreamer/dweb/utils/time";
 
 // 获取一年的开始时间
 startOfYear(new Date('2024-06-15'));
@@ -178,7 +178,7 @@ import {
   endOfDay,
   startOfWeek,
   endOfWeek,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/time";
 
 // 计算未来日期
 const nextWeek = addDays(new Date(), 7);
@@ -231,4 +231,3 @@ const weekEnd = endOfWeek(new Date());
 - `endOfMonth(date)` - 获取一月的结束时间
 - `startOfYear(date)` - 获取一年的开始时间
 - `endOfYear(date)` - 获取一年的结束时间
-

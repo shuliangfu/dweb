@@ -17,7 +17,7 @@ import {
   validateInteger,
   validatePositive,
   validateEmpty,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/validation";
 
 // 验证邮箱
 validateEmail("test@example.com"); // true

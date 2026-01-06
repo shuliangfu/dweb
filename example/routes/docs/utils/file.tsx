@@ -12,7 +12,7 @@ export const metadata = {
 
 export default function FilePage() {
   const quickStartCode =
-    `import { readFile, saveFile, getFileExtension, isImageFile } from "@dreamer/dweb/utils";
+    `import { readFile, saveFile, getFileExtension, isImageFile } from "@dreamer/dweb/utils/file";
 
 // 读取文件
 const file = input.files[0];
@@ -31,7 +31,7 @@ if (isImageFile(file)) {
 }`;
 
   const readFileCode =
-    `import { readFile, readFileAsDataUrl, readFileAsArrayBuffer } from "@dreamer/dweb/utils";
+    `import { readFile, readFileAsDataUrl, readFileAsArrayBuffer } from "@dreamer/dweb/utils/file";
 
 // 读取文件为文本
 const file = input.files[0];
@@ -44,7 +44,7 @@ img.src = dataUrl; // 可以直接用作图片源
 // 读取文件为 ArrayBuffer
 const buffer = await readFileAsArrayBuffer(file);`;
 
-  const saveFileCode = `import { saveFile } from "@dreamer/dweb/utils";
+  const saveFileCode = `import { saveFile } from "@dreamer/dweb/utils/file";
 
 // 从 Blob 保存
 const blob = new Blob(['Hello World'], { type: 'text/plain' });
@@ -56,7 +56,7 @@ const blob = await response.blob();
 saveFile(blob, 'document.pdf');`;
 
   const fileInfoCode =
-    `import { getFileExtension, getFileName, getFileSize } from "@dreamer/dweb/utils";
+    `import { getFileExtension, getFileName, getFileSize } from "@dreamer/dweb/utils/file";
 
 getFileExtension('document.pdf'); // 'pdf'
 getFileExtension('image.JPG'); // 'jpg'
@@ -70,7 +70,7 @@ const size = getFileSize(file);
 console.log(\`文件大小: \${size} 字节\`);`;
 
   const fileTypeCode =
-    `import { isImageFile, isVideoFile, isAudioFile } from "@dreamer/dweb/utils";
+    `import { isImageFile, isVideoFile, isAudioFile } from "@dreamer/dweb/utils/file";
 
 const file = input.files[0];
 
@@ -95,7 +95,7 @@ if (isImageFile('image.jpg')) {
 }`;
 
   const compressImageCode =
-    `import { compressImage } from "@dreamer/dweb/utils";
+    `import { compressImage } from "@dreamer/dweb/utils/file";
 
 const file = input.files[0];
 const compressed = await compressImage(file, {
@@ -108,7 +108,7 @@ const compressed = await compressImage(file, {
 // 上传压缩后的图片
 await uploadFile(compressed);`;
 
-  const createFileCode = `import { createFile } from "@dreamer/dweb/utils";
+  const createFileCode = `import { createFile } from "@dreamer/dweb/utils/file";
 
 // 从字符串创建
 const file = createFile('Hello World', 'hello.txt', 'text/plain');
@@ -117,7 +117,7 @@ const file = createFile('Hello World', 'hello.txt', 'text/plain');
 const buffer = new ArrayBuffer(8);
 const file2 = createFile(buffer, 'data.bin');`;
 
-  const mimeTypeCode = `import { getMimeType } from "@dreamer/dweb/utils";
+  const mimeTypeCode = `import { getMimeType } from "@dreamer/dweb/utils/file";
 
 getMimeType('image.jpg'); // 'image/jpeg'
 getMimeType('document.pdf'); // 'application/pdf'
@@ -130,7 +130,7 @@ getMimeType('unknown.xyz'); // 'application/octet-stream'`;
   isImageFile,
   getFileExtension,
   saveFile,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/file";
 
 // 处理文件上传
 const handleFileUpload = async (file: File) => {
@@ -148,7 +148,7 @@ const handleFileUpload = async (file: File) => {
       maxHeight: 1080,
       quality: 0.8,
     });
-    
+
     // 上传压缩后的图片
     await uploadFile(compressed);
   } else {

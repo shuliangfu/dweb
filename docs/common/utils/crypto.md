@@ -17,7 +17,7 @@ import {
   simpleDecrypt,
   sign,
   verifySignature,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/crypto";
 
 // 生成随机字符串
 randomString(32); // "aB3dEf9gHiJkLmNoPqRsTuVwXyZ0123456789"

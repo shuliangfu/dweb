@@ -14,7 +14,7 @@ import {
   formatDate,
   formatRelativeTime,
   formatPercent,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/format";
 
 // 格式化数字
 formatNumber(1234567.89, 2); // "1,234,567.89"
@@ -39,7 +39,7 @@ formatRelativeTime(new Date(Date.now() - 3600000)); // "1小时前"
 将数字格式化为带千分位分隔符的字符串。
 
 ```typescript
-import { formatNumber } from "@dreamer/dweb/utils";
+import { formatNumber } from "@dreamer/dweb/utils/format";
 
 formatNumber(1234567); // "1,234,567"
 formatNumber(1234.567, 2); // "1,234.57"
@@ -51,7 +51,7 @@ formatNumber(999.99, 2); // "999.99"
 将金额格式化为货币格式，包含货币符号和千分位。
 
 ```typescript
-import { formatCurrency } from "@dreamer/dweb/utils";
+import { formatCurrency } from "@dreamer/dweb/utils/format";
 
 formatCurrency(1234.56); // "¥1,234.56"
 formatCurrency(1234.56, '$', 2); // "$1,234.56"
@@ -63,7 +63,7 @@ formatCurrency(999.99, '€', 0); // "€1,000"
 将字节数格式化为可读的文件大小（Bytes, KB, MB, GB 等）。
 
 ```typescript
-import { formatFileSize } from "@dreamer/dweb/utils";
+import { formatFileSize } from "@dreamer/dweb/utils/format";
 
 formatFileSize(1024); // "1 KB"
 formatFileSize(1048576); // "1 MB"
@@ -78,7 +78,7 @@ formatFileSize(0); // "0 Bytes"
 将日期格式化为指定格式的字符串，支持丰富的格式选项。
 
 ```typescript
-import { formatDate } from "@dreamer/dweb/utils";
+import { formatDate } from "@dreamer/dweb/utils/format";
 
 const date = new Date('2024-01-15 14:30:45');
 
@@ -120,7 +120,7 @@ formatDate(date, 'YYYY年Q季度'); // "2024年Q1季度"
 将日期格式化为相对时间字符串（如：2小时前、3天前等）。
 
 ```typescript
-import { formatRelativeTime } from "@dreamer/dweb/utils";
+import { formatRelativeTime } from "@dreamer/dweb/utils/format";
 
 const oneHourAgo = new Date(Date.now() - 3600000);
 formatRelativeTime(oneHourAgo); // "1小时前"
@@ -139,7 +139,7 @@ formatRelativeTime(oneMinuteAgo); // "1分钟前"
 计算并格式化百分比值。
 
 ```typescript
-import { formatPercent } from "@dreamer/dweb/utils";
+import { formatPercent } from "@dreamer/dweb/utils/format";
 
 formatPercent(25, 100); // "25.00%"
 formatPercent(1, 3); // "33.33%"
@@ -154,7 +154,7 @@ formatPercent(0, 0); // "0%"（避免除零错误）
 将手机号格式化为脱敏格式，隐藏中间4位数字。
 
 ```typescript
-import { formatPhone } from "@dreamer/dweb/utils";
+import { formatPhone } from "@dreamer/dweb/utils/format";
 
 formatPhone('13812345678'); // "138****5678"
 formatPhone('13900139000'); // "139****9000"
@@ -166,7 +166,7 @@ formatPhone('123'); // "123"（长度不符合，返回原值）
 将身份证号格式化为脱敏格式，隐藏中间11位。
 
 ```typescript
-import { formatIdCard } from "@dreamer/dweb/utils";
+import { formatIdCard } from "@dreamer/dweb/utils/format";
 
 formatIdCard('110101199001011234'); // "110***********1234"
 formatIdCard('123'); // "123"（长度不符合，返回原值）
@@ -177,7 +177,7 @@ formatIdCard('123'); // "123"（长度不符合，返回原值）
 将银行卡号格式化为脱敏格式，只显示前后各4位。
 
 ```typescript
-import { formatBankCard } from "@dreamer/dweb/utils";
+import { formatBankCard } from "@dreamer/dweb/utils/format";
 
 formatBankCard('6222021234567890123'); // "6222 **** **** 0123"
 formatBankCard('6222 0212 3456 7890 123'); // "6222 **** **** 0123"（自动去除空格）
@@ -191,7 +191,7 @@ formatBankCard('123'); // "123"（长度不符合，返回原值）
 如果文本超过指定长度，则截断并添加省略号。
 
 ```typescript
-import { formatText } from "@dreamer/dweb/utils";
+import { formatText } from "@dreamer/dweb/utils/format";
 
 formatText('这是一段很长的文本', 5); // "这是一段很..."
 formatText('短文本', 10); // "短文本"（不截断）
@@ -211,7 +211,7 @@ import {
   formatPercent,
   formatPhone,
   formatText,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/format";
 
 // 商品价格显示
 const price = 1234.56;

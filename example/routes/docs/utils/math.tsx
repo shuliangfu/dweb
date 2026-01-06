@@ -11,7 +11,7 @@ export const metadata = {
 
 export default function MathPage() {
   const quickStartCode =
-    `import { clamp, round, random, sum, percent } from "@dreamer/dweb/utils";
+    `import { clamp, round, random, sum, percent } from "@dreamer/dweb/utils/math";
 
 // 限制数值范围
 const value = clamp(150, 0, 100); // 100
@@ -28,13 +28,14 @@ const total = sum([1, 2, 3, 4, 5]);
 // 计算百分比
 const pct = percent(25, 100); // 25`;
 
-  const clampCode = `import { clamp } from "@dreamer/dweb/utils";
+  const clampCode = `import { clamp } from "@dreamer/dweb/utils/math";
 
 clamp(150, 0, 100); // 100
 clamp(-10, 0, 100); // 0
 clamp(50, 0, 100); // 50`;
 
-  const roundCode = `import { round, floor, ceil } from "@dreamer/dweb/utils";
+  const roundCode =
+    `import { round, floor, ceil } from "@dreamer/dweb/utils/math";
 
 // 四舍五入（指定小数位）
 round(3.14159, 2); // 3.14
@@ -48,7 +49,8 @@ floor(3.9, 0); // 3
 ceil(3.14159, 2); // 3.15
 ceil(3.1, 0); // 4`;
 
-  const randomCode = `import { random, randomInt } from "@dreamer/dweb/utils";
+  const randomCode =
+    `import { random, randomInt } from "@dreamer/dweb/utils/math";
 
 // 生成随机浮点数
 random(1, 10); // 1 到 10 之间的随机数
@@ -60,7 +62,7 @@ randomInt(1, 10); // 1 到 10 之间的随机整数（包含 1 和 10）
 randomInt(0, 100); // 0 到 100 之间的随机整数`;
 
   const statsCode =
-    `import { sum, average, max, min } from "@dreamer/dweb/utils";
+    `import { sum, average, max, min } from "@dreamer/dweb/utils/math";
 
 // 求和
 sum([1, 2, 3, 4, 5]); // 15
@@ -78,24 +80,24 @@ max([-10, -5, -20]); // -5
 min([1, 5, 3, 9, 2]); // 1
 min([-10, -5, -20]); // -20`;
 
-  const percentCode = `import { percent } from "@dreamer/dweb/utils";
+  const percentCode = `import { percent } from "@dreamer/dweb/utils/math";
 
 percent(25, 100); // 25
 percent(1, 3); // 33.33
 percent(1, 3, 0); // 33（指定小数位为 0）`;
 
-  const lerpCode = `import { lerp } from "@dreamer/dweb/utils";
+  const lerpCode = `import { lerp } from "@dreamer/dweb/utils/math";
 
 lerp(0, 100, 0.5); // 50
 lerp(10, 20, 0.3); // 13
 lerp(0, 100, 0); // 0
 lerp(0, 100, 1); // 100`;
 
-  const distanceCode = `import { distance } from "@dreamer/dweb/utils";
+  const distanceCode = `import { distance } from "@dreamer/dweb/utils/math";
 
 distance(0, 0, 3, 4); // 5（勾股定理：3-4-5 三角形）`;
 
-  const inRangeCode = `import { inRange } from "@dreamer/dweb/utils";
+  const inRangeCode = `import { inRange } from "@dreamer/dweb/utils/math";
 
 inRange(5, 0, 10); // true
 inRange(15, 0, 10); // false
@@ -111,7 +113,7 @@ inRange(0, 0, 10); // true（包含边界）`;
   lerp,
   distance,
   inRange,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/math";
 
 // 限制进度值在 0-100 之间
 const progress = clamp(userProgress, 0, 100);

@@ -7,7 +7,7 @@
 ## 快速开始
 
 ```typescript
-import { chunk, unique, groupBy, intersection } from "@dreamer/dweb/utils";
+import { chunk, unique, groupBy, intersection } from "@dreamer/dweb/utils/array";
 
 // 数组分块
 const chunks = chunk([1, 2, 3, 4, 5], 2);
@@ -29,7 +29,7 @@ const common = intersection([1, 2, 3], [2, 3, 4]);
 将数组分割成指定大小的块。
 
 ```typescript
-import { chunk } from "@dreamer/dweb/utils";
+import { chunk } from "@dreamer/dweb/utils/array";
 
 chunk([1, 2, 3, 4, 5], 2);
 // [[1, 2], [3, 4], [5]]
@@ -40,7 +40,7 @@ chunk([1, 2, 3, 4, 5], 2);
 将嵌套数组扁平化为一维数组。
 
 ```typescript
-import { flatten } from "@dreamer/dweb/utils";
+import { flatten } from "@dreamer/dweb/utils/array";
 
 flatten([1, [2, 3], [4, [5, 6]]]);
 // [1, 2, 3, 4, 5, 6]
@@ -54,7 +54,7 @@ flatten([1, [2, [3, [4]]]], 2);
 去除数组中的重复元素。
 
 ```typescript
-import { unique } from "@dreamer/dweb/utils";
+import { unique } from "@dreamer/dweb/utils/array";
 
 unique([1, 2, 2, 3, 3, 3]);
 // [1, 2, 3]
@@ -70,7 +70,7 @@ unique(['a', 'b', 'a', 'c']);
 根据指定的键或函数对数组进行分组。
 
 ```typescript
-import { groupBy } from "@dreamer/dweb/utils";
+import { groupBy } from "@dreamer/dweb/utils/array";
 
 const users = [
   { id: 1, role: 'admin', name: 'Alice' },
@@ -92,7 +92,7 @@ groupBy(users, (user) => user.name.length);
 根据指定的键或函数对数组进行排序。
 
 ```typescript
-import { sortBy } from "@dreamer/dweb/utils";
+import { sortBy } from "@dreamer/dweb/utils/array";
 
 const users = [
   { id: 1, name: 'Alice', age: 30 },
@@ -116,7 +116,7 @@ sortBy(users, (user) => user.name.length, 'desc');
 随机打乱数组元素的顺序。
 
 ```typescript
-import { shuffle } from "@dreamer/dweb/utils";
+import { shuffle } from "@dreamer/dweb/utils/array";
 
 shuffle([1, 2, 3, 4, 5]);
 // [3, 1, 5, 2, 4]（随机顺序）
@@ -127,7 +127,7 @@ shuffle([1, 2, 3, 4, 5]);
 从数组中随机选择指定数量的元素。
 
 ```typescript
-import { sample } from "@dreamer/dweb/utils";
+import { sample } from "@dreamer/dweb/utils/array";
 
 sample([1, 2, 3, 4, 5], 3);
 // [2, 5, 1]（随机选择 3 个元素）
@@ -140,7 +140,7 @@ sample([1, 2, 3, 4, 5], 3);
 将数组分割为满足条件和不满足条件的两部分。
 
 ```typescript
-import { partition } from "@dreamer/dweb/utils";
+import { partition } from "@dreamer/dweb/utils/array";
 
 partition([1, 2, 3, 4, 5], (n) => n % 2 === 0);
 // [[2, 4], [1, 3, 5]]
@@ -153,7 +153,7 @@ partition([1, 2, 3, 4, 5], (n) => n % 2 === 0);
 将多个数组压缩成一个二维数组。
 
 ```typescript
-import { zip } from "@dreamer/dweb/utils";
+import { zip } from "@dreamer/dweb/utils/array";
 
 zip([1, 2, 3], ['a', 'b', 'c']);
 // [[1, 'a'], [2, 'b'], [3, 'c']]
@@ -164,7 +164,7 @@ zip([1, 2, 3], ['a', 'b', 'c']);
 将压缩后的二维数组解压为多个数组。
 
 ```typescript
-import { unzip } from "@dreamer/dweb/utils";
+import { unzip } from "@dreamer/dweb/utils/array";
 
 unzip([[1, 'a'], [2, 'b'], [3, 'c']]);
 // [[1, 2, 3], ['a', 'b', 'c']]
@@ -177,7 +177,7 @@ unzip([[1, 'a'], [2, 'b'], [3, 'c']]);
 获取多个数组的交集（出现在所有数组中的元素）。
 
 ```typescript
-import { intersection } from "@dreamer/dweb/utils";
+import { intersection } from "@dreamer/dweb/utils/array";
 
 intersection([1, 2, 3], [2, 3, 4], [3, 4, 5]);
 // [3]
@@ -188,7 +188,7 @@ intersection([1, 2, 3], [2, 3, 4], [3, 4, 5]);
 获取多个数组的并集（所有数组中的唯一元素）。
 
 ```typescript
-import { union } from "@dreamer/dweb/utils";
+import { union } from "@dreamer/dweb/utils/array";
 
 union([1, 2, 3], [2, 3, 4], [3, 4, 5]);
 // [1, 2, 3, 4, 5]
@@ -199,7 +199,7 @@ union([1, 2, 3], [2, 3, 4], [3, 4, 5]);
 获取第一个数组相对于其他数组的差集。
 
 ```typescript
-import { difference } from "@dreamer/dweb/utils";
+import { difference } from "@dreamer/dweb/utils/array";
 
 difference([1, 2, 3, 4], [2, 3], [3, 4]);
 // [1]
@@ -209,10 +209,10 @@ difference([1, 2, 3, 4], [2, 3], [3, 4]);
 
 ### 数组统计函数
 
-> **注意：** `sum`, `average`, `max`, `min` 函数已移至 `math.ts`。如需使用，请从 `@dreamer/dweb/utils` 导入，这些函数在 `math.ts` 中提供相同的功能。
+> **注意：** `sum`, `average`, `max`, `min` 函数已移至 `math.ts`。如需使用，请从 `@dreamer/dweb/utils/math` 导入，这些函数在 `math.ts` 中提供相同的功能。
 
 ```typescript
-import { sum, average, max, min } from "@dreamer/dweb/utils";
+import { sum, average, max, min } from "@dreamer/dweb/utils/math";
 
 // 求和
 sum([1, 2, 3, 4, 5]); // 15
@@ -240,7 +240,7 @@ import {
   union,
   sum,
   average,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/array";
 
 // 分页处理
 const items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];

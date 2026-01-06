@@ -7,7 +7,7 @@
 ## 快速开始
 
 ```typescript
-import { clamp, round, random, sum, percent } from "@dreamer/dweb/utils";
+import { clamp, round, random, sum, percent } from "@dreamer/dweb/utils/math";
 
 // 限制数值范围
 const value = clamp(150, 0, 100); // 100
@@ -32,7 +32,7 @@ const pct = percent(25, 100); // 25
 将数值限制在指定的最小值和最大值之间。
 
 ```typescript
-import { clamp } from "@dreamer/dweb/utils";
+import { clamp } from "@dreamer/dweb/utils/math";
 
 clamp(150, 0, 100); // 100
 clamp(-10, 0, 100); // 0
@@ -42,7 +42,7 @@ clamp(50, 0, 100); // 50
 ### 取整函数
 
 ```typescript
-import { round, floor, ceil } from "@dreamer/dweb/utils";
+import { round, floor, ceil } from "@dreamer/dweb/utils/math";
 
 // 四舍五入（指定小数位）
 round(3.14159, 2); // 3.14
@@ -62,7 +62,7 @@ ceil(3.1, 0); // 4
 ### 生成随机数
 
 ```typescript
-import { random, randomInt } from "@dreamer/dweb/utils";
+import { random, randomInt } from "@dreamer/dweb/utils/math";
 
 // 生成随机浮点数
 random(1, 10); // 1 到 10 之间的随机数
@@ -79,7 +79,7 @@ randomInt(0, 100); // 0 到 100 之间的随机整数
 ### 数组统计函数
 
 ```typescript
-import { sum, average, max, min } from "@dreamer/dweb/utils";
+import { sum, average, max, min } from "@dreamer/dweb/utils/math";
 
 // 求和
 sum([1, 2, 3, 4, 5]); // 15
@@ -103,7 +103,7 @@ min([-10, -5, -20]); // -20
 ### 计算百分比
 
 ```typescript
-import { percent } from "@dreamer/dweb/utils";
+import { percent } from "@dreamer/dweb/utils/math";
 
 percent(25, 100); // 25
 percent(1, 3); // 33.33
@@ -115,7 +115,7 @@ percent(1, 3, 0); // 33（指定小数位为 0）
 在两个值之间进行线性插值。
 
 ```typescript
-import { lerp } from "@dreamer/dweb/utils";
+import { lerp } from "@dreamer/dweb/utils/math";
 
 lerp(0, 100, 0.5); // 50
 lerp(10, 20, 0.3); // 13
@@ -130,7 +130,7 @@ lerp(0, 100, 1); // 100
 计算二维平面上两点之间的欧几里得距离。
 
 ```typescript
-import { distance } from "@dreamer/dweb/utils";
+import { distance } from "@dreamer/dweb/utils/math";
 
 distance(0, 0, 3, 4); // 5（勾股定理：3-4-5 三角形）
 ```
@@ -140,7 +140,7 @@ distance(0, 0, 3, 4); // 5（勾股定理：3-4-5 三角形）
 ### 判断数值是否在范围内
 
 ```typescript
-import { inRange } from "@dreamer/dweb/utils";
+import { inRange } from "@dreamer/dweb/utils/math";
 
 inRange(5, 0, 10); // true
 inRange(15, 0, 10); // false
@@ -160,7 +160,7 @@ import {
   lerp,
   distance,
   inRange,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/math";
 
 // 限制进度值在 0-100 之间
 const progress = clamp(userProgress, 0, 100);
@@ -219,4 +219,3 @@ if (inRange(userInput, 0, 100)) {
 ### 距离和范围
 - `distance(x1, y1, x2, y2)` - 计算两点距离
 - `inRange(value, min, max)` - 判断数值是否在范围内
-

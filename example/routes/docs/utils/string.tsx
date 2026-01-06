@@ -16,7 +16,7 @@ export default function StringPage() {
   toKebabCase,
   toSnakeCase,
   kebabToCamel,
-} from "@dreamer/dweb/utils";
+} from "@dreamer/dweb/utils/string";
 
 // 首字母大写
 capitalize("hello world"); // "Hello world"
@@ -30,40 +30,45 @@ toKebabCase("helloWorld"); // "hello-world"
 // 转换为下划线格式
 toSnakeCase("helloWorld"); // "hello_world"`;
 
-  const capitalizeCode = `import { capitalize } from "@dreamer/dweb/utils";
+  const capitalizeCode =
+    `import { capitalize } from "@dreamer/dweb/utils/string";
 
 capitalize("hello");     // "Hello"
 capitalize("HELLO");     // "Hello"
 capitalize("hello world"); // "Hello world"
 capitalize("");          // ""`;
 
-  const toCamelCaseCode = `import { toCamelCase } from "@dreamer/dweb/utils";
+  const toCamelCaseCode =
+    `import { toCamelCase } from "@dreamer/dweb/utils/string";
 
 toCamelCase("hello-world");      // "helloWorld"
 toCamelCase("hello_world");      // "helloWorld"
 toCamelCase("hello world");      // "helloWorld"
 toCamelCase("hello-world-test"); // "helloWorldTest"`;
 
-  const toKebabCaseCode = `import { toKebabCase } from "@dreamer/dweb/utils";
+  const toKebabCaseCode =
+    `import { toKebabCase } from "@dreamer/dweb/utils/string";
 
 toKebabCase("helloWorld");      // "hello-world"
 toKebabCase("hello_world");      // "hello-world"
 toKebabCase("hello world");     // "hello-world"
 toKebabCase("HelloWorld");      // "hello-world"`;
 
-  const toSnakeCaseCode = `import { toSnakeCase } from "@dreamer/dweb/utils";
+  const toSnakeCaseCode =
+    `import { toSnakeCase } from "@dreamer/dweb/utils/string";
 
 toSnakeCase("helloWorld");      // "hello_world"
 toSnakeCase("hello-world");     // "hello_world"
 toSnakeCase("hello world");     // "hello_world"
 toSnakeCase("HelloWorld");      // "hello_world"`;
 
-  const kebabToCamelCode = `import { kebabToCamel } from "@dreamer/dweb/utils";
+  const kebabToCamelCode =
+    `import { kebabToCamel } from "@dreamer/dweb/utils/string";
 
 kebabToCamel("hello-world"); // "helloWorld"`;
 
   const componentExampleCode =
-    `import { toCamelCase, toKebabCase } from "@dreamer/dweb/utils";
+    `import { toCamelCase, toKebabCase } from "@dreamer/dweb/utils/string";
 
 // 从文件名生成组件名
 const fileName = "user-profile";
@@ -76,7 +81,7 @@ const className = toKebabCase(componentName);
 // "user-profile"`;
 
   const apiRouteExampleCode =
-    `import { toKebabCase, toSnakeCase } from "@dreamer/dweb/utils";
+    `import { toKebabCase, toSnakeCase } from "@dreamer/dweb/utils/string";
 
 // 从函数名生成路由路径
 const functionName = "getUserProfile";
@@ -89,7 +94,7 @@ const tableName = toSnakeCase(functionName);
 // "get_user_profile"`;
 
   const formFieldExampleCode =
-    `import { toCamelCase, toSnakeCase } from "@dreamer/dweb/utils";
+    `import { toCamelCase, toSnakeCase } from "@dreamer/dweb/utils/string";
 
 // 从 HTML 表单字段名转换为对象属性名
 const fieldName = "user-name";

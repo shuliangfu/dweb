@@ -11,7 +11,7 @@ export const metadata = {
 
 export default function UtilsPage() {
   const quickStartCode =
-    `import { debounce, deepClone, isEmpty, pick } from "@dreamer/dweb/utils";
+    `import { debounce, deepClone, isEmpty, pick } from "@dreamer/dweb/utils/utils";
 
 // 防抖函数
 const debouncedSearch = debounce((query: string) => {
@@ -29,7 +29,7 @@ if (isEmpty(value)) {
 // 对象选择
 const selected = pick(user, ['name', 'email']);`;
 
-  const debounceCode = `import { debounce } from "@dreamer/dweb/utils";
+  const debounceCode = `import { debounce } from "@dreamer/dweb/utils/utils";
 
 const debouncedSearch = debounce((query: string) => {
   console.log('搜索:', query);
@@ -40,7 +40,7 @@ debouncedSearch('a');
 debouncedSearch('ab');
 debouncedSearch('abc'); // 只会执行这一次`;
 
-  const throttleCode = `import { throttle } from "@dreamer/dweb/utils";
+  const throttleCode = `import { throttle } from "@dreamer/dweb/utils/utils";
 
 const throttledScroll = throttle(() => {
   console.log('滚动事件');
@@ -49,7 +49,7 @@ const throttledScroll = throttle(() => {
 // 频繁触发，但每 100ms 最多执行一次
 window.addEventListener('scroll', throttledScroll);`;
 
-  const deepCloneCode = `import { deepClone } from "@dreamer/dweb/utils";
+  const deepCloneCode = `import { deepClone } from "@dreamer/dweb/utils/utils";
 
 const obj = { a: 1, b: { c: 2 }, d: [3, 4] };
 const cloned = deepClone(obj);
@@ -60,14 +60,14 @@ const date = new Date();
 const clonedDate = deepClone(date);
 // clonedDate 是新的 Date 对象`;
 
-  const deepMergeCode = `import { deepMerge } from "@dreamer/dweb/utils";
+  const deepMergeCode = `import { deepMerge } from "@dreamer/dweb/utils/utils";
 
 const obj1 = { a: 1, b: { c: 2, d: 3 } };
 const obj2 = { b: { c: 4, e: 5 }, f: 6 };
 const merged = deepMerge(obj1, obj2);
 // { a: 1, b: { c: 4, d: 3, e: 5 }, f: 6 }`;
 
-  const pickOmitCode = `import { pick, omit } from "@dreamer/dweb/utils";
+  const pickOmitCode = `import { pick, omit } from "@dreamer/dweb/utils/utils";
 
 const user = { id: 1, name: 'Alice', email: 'alice@example.com', age: 30 };
 
@@ -79,7 +79,8 @@ const selected = pick(user, ['name', 'email']);
 const omitted = omit(user, ['id', 'age']);
 // { name: 'Alice', email: 'alice@example.com' }`;
 
-  const getValueCode = `import { getValue, set } from "@dreamer/dweb/utils";
+  const getValueCode =
+    `import { getValue, set } from "@dreamer/dweb/utils/utils";
 
 const user = { profile: { name: 'Alice' } };
 
@@ -96,7 +97,7 @@ set(user2, 'profile.name', 'Alice');
 set(user2, ['profile', 'age'], 30);
 // { profile: { name: 'Alice', age: 30 } }`;
 
-  const isEmptyCode = `import { isEmpty } from "@dreamer/dweb/utils";
+  const isEmptyCode = `import { isEmpty } from "@dreamer/dweb/utils/utils";
 
 isEmpty(null); // true
 isEmpty(undefined); // true
@@ -107,13 +108,13 @@ isEmpty({}); // true
 isEmpty(0); // false
 isEmpty(false); // false`;
 
-  const isEqualCode = `import { isEqual } from "@dreamer/dweb/utils";
+  const isEqualCode = `import { isEqual } from "@dreamer/dweb/utils/utils";
 
 isEqual({ a: 1, b: { c: 2 } }, { a: 1, b: { c: 2 } }); // true
 isEqual([1, 2, 3], [1, 2, 3]); // true
 isEqual({ a: 1 }, { a: 2 }); // false`;
 
-  const asyncCode = `import { sleep, retry } from "@dreamer/dweb/utils";
+  const asyncCode = `import { sleep, retry } from "@dreamer/dweb/utils/utils";
 
 // 延迟函数
 await sleep(1000); // 等待 1 秒
