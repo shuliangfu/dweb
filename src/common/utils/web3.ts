@@ -64,8 +64,6 @@ interface WindowWithEthereum extends Window {
   web3?: never;
 }
 
-declare const window: WindowWithEthereum;
-
 /**
  * 区块事件回调函数类型
  */
