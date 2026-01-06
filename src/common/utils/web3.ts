@@ -26,8 +26,6 @@ import {
   custom,
   decodeFunctionData,
   encodeAbiParameters,
-  encodeFunctionData,
-  formatUnits,
   getAddress,
   type Hash,
   type Hex,
@@ -39,6 +37,11 @@ import {
   verifyMessage as viemVerifyMessage,
   type WalletClient,
 } from "npm:viem@^2.43.3";
+// 导入 viem 账户模块（用于生成钱包）
+import {
+  generatePrivateKey,
+  privateKeyToAccount,
+} from "npm:viem@^2.43.3/accounts";
 import { IS_CLIENT } from "../constants.ts";
 
 /**
@@ -437,23 +440,6 @@ export class Web3Client {
           error instanceof Error ? error.message : String(error)
         }`,
       );
-    }
-  }
-
-  /**
-   * 获取账户余额（ETH 单位）
-   * @param address 账户地址
-   * @returns 余额（ETH）
-   */
-  async getBalanceInEth(address: string): Promise<string> {
-    const balance = await this.getBalance(address);
-    try {
-      return formatUnits(BigInt(balance), 18);
-    } catch {
-      // 如果 formatUnits 失败，手动转换（1 ETH = 10^18 wei）
-      const balanceBigInt = BigInt(balance);
-      const ethValue = Number(balanceBigInt) / 1e18;
-      return ethValue.toString();
     }
   }
 
@@ -1968,139 +1954,6 @@ export class Web3Client {
   }
 
   /**
-   * 获取 ERC20 代币余额
-   * @param tokenAddress 代币合约地址
-   * @param ownerAddress 持有者地址
-   * @returns 代币余额（字符串格式）
-   */
-  async getTokenBalance(
-    tokenAddress: string,
-    ownerAddress: string,
-  ): Promise<string> {
-    try {
-      const client = this.getPublicClient();
-
-      // ERC20 标准接口：balanceOf(address) returns (uint256)
-      const erc20Abi = parseAbi([
-        "function balanceOf(address owner) view returns (uint256)",
-        "function decimals() view returns (uint8)",
-      ]);
-
-      const balance = await client.readContract({
-        address: tokenAddress as Address,
-        abi: erc20Abi,
-        functionName: "balanceOf",
-        args: [ownerAddress as Address],
-      });
-
-      return balance.toString();
-    } catch (error) {
-      throw new Error(
-        `获取代币余额失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    }
-  }
-
-  /**
-   * 获取 ERC20 代币信息
-   * @param tokenAddress 代币合约地址
-   * @returns 代币信息（名称、符号、精度）
-   */
-  async getTokenInfo(tokenAddress: string): Promise<{
-    name: string;
-    symbol: string;
-    decimals: number;
-    totalSupply: string;
-  }> {
-    try {
-      const client = this.getPublicClient();
-
-      // ERC20 标准接口
-      const erc20Abi = parseAbi([
-        "function name() view returns (string)",
-        "function symbol() view returns (string)",
-        "function decimals() view returns (uint8)",
-        "function totalSupply() view returns (uint256)",
-      ]);
-
-      const [name, symbol, decimals, totalSupply] = await Promise.all([
-        client.readContract({
-          address: tokenAddress as Address,
-          abi: erc20Abi,
-          functionName: "name",
-        }),
-        client.readContract({
-          address: tokenAddress as Address,
-          abi: erc20Abi,
-          functionName: "symbol",
-        }),
-        client.readContract({
-          address: tokenAddress as Address,
-          abi: erc20Abi,
-          functionName: "decimals",
-        }),
-        client.readContract({
-          address: tokenAddress as Address,
-          abi: erc20Abi,
-          functionName: "totalSupply",
-        }),
-      ]);
-
-      return {
-        name: name as string,
-        symbol: symbol as string,
-        decimals: Number(decimals),
-        totalSupply: totalSupply.toString(),
-      };
-    } catch (error) {
-      throw new Error(
-        `获取代币信息失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    }
-  }
-
-  /**
-   * 获取历史区块（从指定区块号开始，获取指定数量的区块）
-   * @param fromBlock 起始区块号
-   * @param toBlock 结束区块号（可选，默认最新区块）
-   * @returns 区块信息数组
-   */
-  async getHistoryBlocks(
-    fromBlock: number,
-    toBlock?: number,
-  ): Promise<unknown[]> {
-    const client = this.getPublicClient();
-    try {
-      const currentBlock = toBlock ?? await this.getBlockNumber();
-      const blocks: unknown[] = [];
-
-      // 从 fromBlock 到 toBlock（或当前区块）
-      for (let i = fromBlock; i <= currentBlock; i++) {
-        try {
-          const block = await client.getBlock({
-            blockNumber: BigInt(i),
-          });
-          blocks.push(block);
-        } catch (error) {
-          console.warn(`获取区块 ${i} 失败:`, error);
-        }
-      }
-
-      return blocks;
-    } catch (error) {
-      throw new Error(
-        `获取历史区块失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    }
-  }
-
-  /**
    * 获取区块中的交易
    * @param blockNumber 区块号
    * @param includeTransactions 是否包含完整交易信息（默认 false，只返回交易哈希）
@@ -2237,8 +2090,9 @@ export class Web3Client {
   }> {
     const client = this.getPublicClient();
     try {
-      // 获取函数选择器
-      const functionSelector = await getFunctionSelector(functionSignature);
+      // 获取函数选择器（内联实现：计算函数签名的 Keccak-256 哈希的前 4 字节）
+      const hash = viemKeccak256(functionSignature as Hex);
+      const functionSelector = hash.slice(0, 10); // 前 4 字节（8 个十六进制字符 + 0x）
       const selectorLower = functionSelector.toLowerCase();
 
       // 设置默认值
@@ -2393,208 +2247,6 @@ export class Web3Client {
   }
 
   /**
-   * 调用合约函数（支持完整 ABI）
-   * @param contractAddress 合约地址
-   * @param abi 合约 ABI（函数定义数组）
-   * @param functionName 函数名
-   * @param args 函数参数
-   * @param options 调用选项（from、value、gasLimit 等）
-   * @returns 函数返回值或交易哈希（取决于是否为写入操作）
-   */
-  async callContractWithABI(
-    contractAddress: string,
-    abi: string[],
-    functionName: string,
-    args: unknown[] = [],
-    options: {
-      from?: string;
-      value?: string | bigint;
-      gasLimit?: string | bigint;
-      readOnly?: boolean;
-    } = {},
-  ): Promise<unknown> {
-    try {
-      // 判断是读取还是写入操作
-      const isReadOnly = options.readOnly ?? false;
-
-      const parsedAbi = typeof abi[0] === "string"
-        ? parseAbi(abi as string[])
-        : (abi as unknown as Abi);
-
-      if (isReadOnly) {
-        // 读取操作
-        const client = this.getPublicClient();
-        const result = await client.readContract({
-          address: contractAddress as Address,
-          abi: parsedAbi,
-          functionName,
-          args: args as any,
-          account: options.from as Address | undefined,
-        });
-        return result;
-      } else {
-        // 写入操作
-        const walletClient = this.getWalletClient();
-        const accounts = await walletClient.getAddresses();
-        if (accounts.length === 0) {
-          throw new Error("未找到可用账户，请先连接钱包");
-        }
-
-        // 获取 chain（优先从 walletClient 获取，否则使用 this.chain）
-        let chain: Chain | undefined = (walletClient as any).chain ||
-          this.chain || undefined;
-
-        // 如果还是没有 chain，尝试从 PublicClient 获取
-        if (!chain) {
-          const network = await this.getNetwork();
-          chain = {
-            id: Number(network.chainId.toString()),
-            name: network.name,
-          } as unknown as Chain;
-        }
-
-        // 如果还是没有 chain，抛出明确的错误
-        if (!chain) {
-          throw new Error(
-            "无法获取链信息，请在配置中设置 chainId 或确保钱包已连接",
-          );
-        }
-
-        // 发送交易
-        const hash = await walletClient.writeContract({
-          account: accounts[0],
-          address: contractAddress as Address,
-          abi: parsedAbi,
-          functionName,
-          args: args as any,
-          value: options.value ? BigInt(options.value.toString()) : undefined,
-          gas: options.gasLimit
-            ? BigInt(options.gasLimit.toString())
-            : undefined,
-          chain: chain,
-        });
-
-        // 等待交易确认并检查状态
-        const client = this.getPublicClient();
-        try {
-          const receipt = await client.waitForTransactionReceipt({
-            hash: hash as Hash,
-            confirmations: 1,
-          }) as unknown as {
-            success: boolean | undefined;
-            error: string | undefined;
-          };
-
-          // 检查交易状态
-          if ((receipt as any).status === "success") {
-            receipt.success = true;
-            return receipt;
-          } else if ((receipt as any).status === "reverted") {
-            receipt.error = "交易执行失败，已被回滚" as const;
-            receipt.success = false;
-            return receipt;
-          } else {
-            // 未知状态，返回收据让调用者判断
-            receipt.error = "未知状态" as const;
-            receipt.success = undefined;
-            return receipt;
-          }
-        } catch (receiptError) {
-          // 如果等待交易确认失败，可能是交易被回滚
-          return {
-            success: false,
-            error: "交易确认失败",
-            message: receiptError instanceof Error
-              ? receiptError.message
-              : String(receiptError),
-          };
-        }
-      }
-    } catch (error) {
-      // 检查是否是用户取消交易
-      const errorMessage = error instanceof Error
-        ? error.message
-        : String(error);
-      if (
-        errorMessage.includes("User rejected") ||
-        errorMessage.includes("user rejected") ||
-        errorMessage.includes("用户取消") ||
-        errorMessage.includes("用户拒绝")
-      ) {
-        // 用户取消交易，抛出特殊错误，不包含原始错误消息
-        throw new Error("交易已取消");
-      }
-      // 其他错误正常抛出
-      throw new Error(
-        `调用合约失败: ${errorMessage}`,
-      );
-    }
-  }
-
-  /**
-   * 读取合约事件日志
-   * @param contractAddress 合约地址
-   * @param eventName 事件名称
-   * @param abi 合约 ABI（事件定义数组）
-   * @param fromBlock 起始区块号（可选）
-   * @param toBlock 结束区块号（可选，默认最新区块）
-   * @param filter 事件参数过滤器（可选）
-   * @returns 事件日志数组
-   */
-  async getContractEventLogs(
-    contractAddress: string,
-    eventName: string,
-    abi: string[],
-    fromBlock?: number,
-    toBlock?: number,
-    filter?: Record<string, unknown>,
-  ): Promise<unknown[]> {
-    try {
-      const client = this.getPublicClient();
-
-      const parsedAbi = typeof abi[0] === "string"
-        ? parseAbi(abi as string[])
-        : (abi as unknown as Abi);
-
-      const currentBlock = toBlock ?? await this.getBlockNumber();
-      const startBlock = fromBlock ?? Math.max(0, currentBlock - 1000);
-
-      // 从 ABI 中找到对应的事件
-      const eventItem = parsedAbi.find(
-        (item: any) => item.type === "event" && item.name === eventName,
-      );
-
-      // 查询事件日志
-      let logs;
-      if (eventItem) {
-        logs = await client.getLogs({
-          address: contractAddress as Address,
-          event: eventItem as any,
-          args: filter ? (Object.values(filter) as any) : undefined,
-          fromBlock: BigInt(startBlock),
-          toBlock: BigInt(currentBlock),
-        });
-      } else {
-        // 如果找不到事件，使用通用查询
-        logs = await client.getLogs({
-          address: contractAddress as Address,
-          fromBlock: BigInt(startBlock),
-          toBlock: BigInt(currentBlock),
-        });
-      }
-
-      // 返回日志（viem 已经解析好了）
-      return logs;
-    } catch (error) {
-      throw new Error(
-        `获取合约事件日志失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    }
-  }
-
-  /**
    * 检查地址是否为合约地址
    * @param address 地址
    * @returns 是否为合约地址
@@ -2609,57 +2261,6 @@ export class Web3Client {
     } catch (error) {
       throw new Error(
         `检查合约地址失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    }
-  }
-
-  /**
-   * 获取地址的代码
-   * @param address 地址
-   * @returns 合约代码（十六进制字符串）
-   */
-  async getCode(address: string): Promise<string> {
-    const client = this.getPublicClient();
-    try {
-      const code = await client.getBytecode({
-        address: address as Address,
-      });
-      return code || "0x";
-    } catch (error) {
-      throw new Error(
-        `获取合约代码失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    }
-  }
-
-  /**
-   * 获取存储槽的值
-   * @param address 合约地址
-   * @param slot 存储槽位置（十六进制字符串或数字）
-   * @returns 存储值（十六进制字符串）
-   */
-  async getStorageAt(address: string, slot: string | number): Promise<string> {
-    const client = this.getPublicClient();
-    try {
-      // 将 slot 转换为 bigint（viem 需要 bigint 类型）
-      const slotBigInt = typeof slot === "number"
-        ? BigInt(slot)
-        : slot.startsWith("0x")
-        ? BigInt(slot)
-        : BigInt("0x" + slot);
-      const value = await client.getStorageAt({
-        address: address as Address,
-        slot: slotBigInt as any, // viem 的 slot 参数类型可能有问题，使用 any 绕过
-      });
-      // viem 的 getStorageAt 返回 Hex 类型（字符串），直接返回
-      return String(value || "0x");
-    } catch (error) {
-      throw new Error(
-        `获取存储值失败: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );
@@ -2754,14 +2355,14 @@ export function toWei(value: string | number, unit: string = "ether"): string {
 }
 
 /**
- * 异步验证以太坊地址格式（包含校验和验证）
+ * 验证以太坊地址格式（包含校验和验证）
  * @param address 地址字符串
  * @returns 是否为有效地址
  *
  * @example
- * await isAddressAsync('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb') // true
+ * isAddress('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb') // true
  */
-export async function isAddress(address: string): Promise<boolean> {
+export function isAddress(address: string): boolean {
   if (!address || typeof address !== "string") {
     return false;
   }
@@ -2789,7 +2390,7 @@ export async function isAddress(address: string): Promise<boolean> {
   // 如果地址包含大小写混合，验证校验和（EIP-55）
   const hasMixedCase = /[a-f]/.test(addr) && /[A-F]/.test(addr);
   if (hasMixedCase) {
-    return await checkAddressChecksum(address);
+    return checkAddressChecksum(address);
   }
 
   return true;
@@ -2801,9 +2402,9 @@ export async function isAddress(address: string): Promise<boolean> {
  * @returns 校验和是否正确
  *
  * @example
- * await checkAddressChecksum('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb') // true
+ * checkAddressChecksum('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb') // true
  */
-export async function checkAddressChecksum(address: string): Promise<boolean> {
+export function checkAddressChecksum(address: string): boolean {
   if (!address || typeof address !== "string") {
     return false;
   }
@@ -2819,7 +2420,7 @@ export async function checkAddressChecksum(address: string): Promise<boolean> {
 
   // 使用 toChecksumAddress 计算正确的校验和地址，然后比较
   try {
-    const checksummed = await toChecksumAddressAsync("0x" + addr);
+    const checksummed = toChecksumAddress("0x" + addr);
     return checksummed === address;
   } catch {
     return false;
@@ -2827,10 +2428,7 @@ export async function checkAddressChecksum(address: string): Promise<boolean> {
 }
 
 /**
- * 转换为校验和地址（EIP-55）- 同步版本（简化实现）
- * 注意：此版本使用简化实现，不进行真正的 Keccak-256 哈希
- * 如需准确的校验和地址，请使用 toChecksumAddressAsync
- *
+ * 转换为校验和地址（EIP-55）
  * @param address 地址字符串
  * @returns 校验和地址
  *
@@ -2849,56 +2447,13 @@ export function toChecksumAddress(address: string): string {
     ? address.slice(2).toLowerCase()
     : address.toLowerCase();
 
-  // 注意：同步版本无法使用真正的 Keccak-256，返回小写地址
-  // 如果需要真正的校验和地址，请使用 toChecksumAddressAsync
-  return "0x" + addr;
-}
-
-/**
- * 转换为校验和地址（EIP-55）- 异步版本（使用真正的 Keccak-256）
- * @param address 地址字符串
- * @returns 校验和地址
- *
- * @example
- * await toChecksumAddressAsync('0x742d35cc6634c0532925a3b844bc9e7595f0beb')
- * // '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
- */
-export async function toChecksumAddressAsync(address: string): Promise<string> {
-  if (!isAddress(address)) {
-    throw new Error(`无效的地址: ${address}`);
-  }
-
-  // 移除 0x 前缀并转为小写
-  const addr = address.startsWith("0x")
-    ? address.slice(2).toLowerCase()
-    : address.toLowerCase();
-
-  // 使用 viem 的 getAddress
+  // 使用 viem 的 getAddress 生成校验和地址
   try {
     return getAddress("0x" + addr);
   } catch {
-    // 如果失败，使用自己的实现
+    // 如果失败，返回小写地址
+    return "0x" + addr;
   }
-
-  // 计算地址的 Keccak-256 哈希
-  const hash = await keccak256(addr);
-  const hashHex = hash.startsWith("0x") ? hash.slice(2) : hash;
-
-  // 根据哈希值决定每个字符的大小写
-  let checksum = "0x";
-  for (let i = 0; i < addr.length; i++) {
-    const char = addr[i];
-    const hashChar = hashHex[i];
-
-    // 如果哈希字符 >= 8，则大写；否则小写
-    if (parseInt(hashChar, 16) >= 8) {
-      checksum += char.toUpperCase();
-    } else {
-      checksum += char;
-    }
-  }
-
-  return checksum;
 }
 
 /**
@@ -3087,6 +2642,31 @@ export function padRight(
 }
 
 /**
+ * 生成新的钱包地址和私钥
+ * @returns 包含钱包地址和私钥的对象
+ *
+ * @example
+ * const wallet = generateWallet();
+ * console.log(wallet.address); // '0x...'
+ * console.log(wallet.privateKey); // '0x...'
+ */
+export function generateWallet(): {
+  address: string;
+  privateKey: string;
+} {
+  // 生成随机私钥
+  const privateKey = generatePrivateKey();
+
+  // 从私钥派生钱包地址
+  const account = privateKeyToAccount(privateKey as Hex);
+
+  return {
+    address: account.address,
+    privateKey: privateKey,
+  };
+}
+
+/**
  * 验证私钥格式
  * @param privateKey 私钥字符串
  * @returns 是否为有效私钥
@@ -3125,13 +2705,13 @@ export function isTxHash(txHash: string): boolean {
 }
 
 /**
- * 格式化地址（添加 0x 前缀，转换为小写）
+ * 格式化地址（添加 0x 前缀，转换为校验和地址）
  * @param address 地址字符串
- * @returns 格式化后的地址
+ * @returns 格式化后的地址（校验和格式）
  *
  * @example
  * formatAddress('742d35cc6634c0532925a3b844bc9e7595f0beb')
- * // '0x742d35cc6634c0532925a3b844bc9e7595f0beb'
+ * // '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
  */
 export function formatAddress(address: string): string {
   // 使用 viem 的 isAddress 函数
@@ -3139,8 +2719,11 @@ export function formatAddress(address: string): string {
     throw new Error(`无效的地址: ${address}`);
   }
 
-  const addr = address.startsWith("0x") ? address.slice(2) : address;
-  return "0x" + addr.toLowerCase();
+  // 确保有 0x 前缀
+  const addrWithPrefix = address.startsWith("0x") ? address : "0x" + address;
+
+  // 使用 toChecksumAddress 转换为校验和地址
+  return toChecksumAddress(addrWithPrefix);
 }
 
 /**
@@ -3189,49 +2772,4 @@ export async function computeContractAddress(
   const data = formatAddress(deployerAddress) + numberToHex(nonce).slice(2);
   const hash = await keccak256(data);
   return "0x" + hash.slice(-40);
-}
-
-/**
- * 解析函数选择器（从函数签名）
- * @param signature 函数签名（如 'transfer(address,uint256)'）
- * @returns 函数选择器（4 字节）
- *
- * @example
- * await getFunctionSelector('transfer(address,uint256)')
- * // '0xa9059cbb'
- */
-export async function getFunctionSelector(signature: string): Promise<string> {
-  const hash = await keccak256(signature);
-  return hash.slice(0, 10); // 前 4 字节（8 个十六进制字符 + 0x）
-}
-
-/**
- * 编码函数调用数据
- * @param functionSignature 函数签名
- * @param args 参数数组
- * @returns 编码后的数据
- *
- * @example
- * await encodeFunctionCall('transfer(address,uint256)', ['0x...', '100'])
- */
-export async function encodeFunctionCall(
-  functionSignature: string,
-  args: unknown[],
-): Promise<string> {
-  try {
-    const abi = parseAbi(
-      [`function ${functionSignature}`] as readonly string[],
-    );
-    const functionName = functionSignature.split("(")[0];
-    return encodeFunctionData({
-      abi,
-      functionName,
-      args: args as any,
-    });
-  } catch {
-    // 简化实现
-    const selector = await getFunctionSelector(functionSignature);
-    // 实际应该使用 ABI 编码参数
-    return selector;
-  }
 }

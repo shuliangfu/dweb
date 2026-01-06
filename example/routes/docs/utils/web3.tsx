@@ -25,8 +25,11 @@ const web3 = createWeb3Client({
 // 连接钱包（浏览器环境）
 const accounts = await web3.connectWallet();
 
-// 获取余额
-const balance = await web3.getBalanceInEth(accounts[0]);`;
+// 获取余额（wei）
+const balance = await web3.getBalance(accounts[0]);
+// 转换为 ETH：使用 fromWei 工具函数
+import { fromWei } from "@dreamer/dweb/utils";
+const balanceEth = fromWei(balance, "ether");`;
 
   // 钱包连接
   const walletCode = `import { createWeb3Client } from "@dreamer/dweb/utils";
@@ -56,8 +59,9 @@ const address = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb";
 // 获取余额（wei）
 const balanceWei = await web3.getBalance(address);
 
-// 获取余额（ETH）
-const balanceEth = await web3.getBalanceInEth(address);
+// 转换为 ETH：使用 fromWei 工具函数
+import { fromWei } from "@dreamer/dweb/utils";
+const balanceEth = fromWei(balanceWei, "ether");
 
 // 批量获取余额
 const balances = await web3.getBalances([
@@ -137,20 +141,17 @@ const result = await web3.readContract({
   args: ["0x..."],
 });
 
-// 使用完整 ABI 调用合约
-const result = await web3.callContractWithABI(
-  "0x...", // 合约地址
-  [
+// 调用合约函数（写入操作）
+const result = await web3.callContract({
+  address: "0x...", // 合约地址
+  abi: [
     "function transfer(address to, uint256 amount) returns (bool)",
-  ], // 完整 ABI
-  "transfer", // 函数名
-  ["0x...", "100"], // 参数
-  {
-    readOnly: false, // 是否为只读操作
-    value: "0",
-    gasLimit: "100000",
-  },
-);`;
+  ], // 合约 ABI
+  functionName: "transfer", // 函数名
+  args: ["0x...", "100"], // 参数
+  value: "0",
+  gasLimit: "100000",
+});`;
 
   // 事件监听
   const eventCode = `import { createWeb3Client } from "@dreamer/dweb/utils";
@@ -232,23 +233,6 @@ web3.offContractEvent("0x...", "Transfer");
 web3.offAccountsChanged();
 web3.offChainChanged();`;
 
-  // 代币操作
-  const tokenCode = `import { createWeb3Client } from "@dreamer/dweb/utils";
-
-const web3 = createWeb3Client({
-  rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
-});
-
-// 获取 ERC20 代币余额
-const tokenBalance = await web3.getTokenBalance(
-  "0x...", // 代币合约地址
-  "0x...", // 持有者地址
-);
-
-// 获取 ERC20 代币信息
-const tokenInfo = await web3.getTokenInfo("0x...");
-// { name: "...", symbol: "...", decimals: 18, totalSupply: "..." }`;
-
   // 区块和交易历史
   const historyCode = `import { createWeb3Client } from "@dreamer/dweb/utils";
 
@@ -266,9 +250,6 @@ const network = await web3.getNetwork();
 // 获取链 ID
 const chainId = await web3.getChainId();
 
-// 获取历史区块
-const blocks = await web3.getHistoryBlocks(1000, 2000);
-
 // 获取区块中的交易
 const transactions = await web3.getBlockTransactions(1000, true);
 
@@ -277,25 +258,6 @@ const txHistory = await web3.getAddressTransactions(
   "0x...",
   1000, // 起始区块（可选）
   2000, // 结束区块（可选）
-);`;
-
-  // 合约事件日志
-  const eventLogsCode = `import { createWeb3Client } from "@dreamer/dweb/utils";
-
-const web3 = createWeb3Client({
-  rpcUrl: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
-});
-
-// 读取合约事件日志
-const logs = await web3.getContractEventLogs(
-  "0x...", // 合约地址
-  "Transfer", // 事件名称
-  [
-    "event Transfer(address indexed from, address indexed to, uint256 value)",
-  ], // 事件 ABI
-  1000, // 起始区块（可选）
-  2000, // 结束区块（可选）
-  { from: "0x..." }, // 事件参数过滤器（可选）
 );`;
 
   // 扫描合约方法交易
@@ -364,13 +326,7 @@ const feeData = await web3.getFeeData();
 // { gasPrice: "...", maxFeePerGas: "...", maxPriorityFeePerGas: "..." }
 
 // 检查地址是否为合约地址
-const isContract = await web3.isContract("0x...");
-
-// 获取合约代码
-const code = await web3.getCode("0x...");
-
-// 获取存储槽的值
-const storageValue = await web3.getStorageAt("0x...", "0x0");`;
+const isContract = await web3.isContract("0x...");`;
 
   // 工具函数
   const utilsCode = `import {
@@ -379,6 +335,9 @@ const storageValue = await web3.getStorageAt("0x...", "0x0");`;
   isAddress,
   formatAddress,
   shortenAddress,
+  generateWallet,
+  isPrivateKey,
+  isTxHash,
   keccak256,
   hexToBytes,
   bytesToHex,
@@ -391,7 +350,17 @@ const wei = toWei("1", "ether"); // "1000000000000000000"
 // 地址验证和格式化
 const isValid = isAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
 const formatted = formatAddress("742d35cc6634c0532925a3b844bc9e7595f0beb");
+// "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb" (校验和格式)
 const short = shortenAddress("0x742d35cc6634c0532925a3b844bc9e7595f0beb");
+
+// 生成新钱包
+const wallet = generateWallet();
+console.log(wallet.address); // '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
+console.log(wallet.privateKey); // '0x...'
+
+// 验证工具
+const isValidKey = isPrivateKey("0x..."); // true
+const isValidHash = isTxHash("0x..."); // true
 
 // 哈希和编码
 const hash = await keccak256("hello world");
@@ -499,31 +468,11 @@ const hex = bytesToHex(bytes);`;
         ],
       },
       {
-        title: "代币操作",
-        blocks: [
-          {
-            type: "code",
-            code: tokenCode,
-            language: "typescript",
-          },
-        ],
-      },
-      {
         title: "区块和交易历史",
         blocks: [
           {
             type: "code",
             code: historyCode,
-            language: "typescript",
-          },
-        ],
-      },
-      {
-        title: "合约事件日志",
-        blocks: [
-          {
-            type: "code",
-            code: eventLogsCode,
             language: "typescript",
           },
         ],
@@ -595,7 +544,6 @@ const hex = bytesToHex(bytes);`;
                       "**`connectWallet()`** - 连接钱包（浏览器环境）",
                       "**`getAccounts()`** - 获取当前连接的账户",
                       "**`getBalance(address)`** - 获取余额（wei）",
-                      "**`getBalanceInEth(address)`** - 获取余额（ETH）",
                       "**`getBlockNumber()`** - 获取当前区块号",
                       "**`getNetwork()`** - 获取网络信息",
                     ],
@@ -636,8 +584,6 @@ const hex = bytesToHex(bytes);`;
                       '  - 如果用户取消交易，会抛出 "交易已取消" 错误',
                       "  - `options.address` 和 `options.abi` 可选，如果未提供会使用配置中的默认值",
                       "**`readContract(options)`** - 读取合约数据（只读）",
-                      "**`callContractWithABI(...)`** - 使用完整 ABI 调用合约",
-                      "**`getContractEventLogs(...)`** - 读取合约事件日志",
                       "**`scanContractMethodTransactions(...)`** - 扫描合约指定方法的交易（支持分页）",
                       "**`isContract(address)`** - 检查是否为合约地址",
                     ],

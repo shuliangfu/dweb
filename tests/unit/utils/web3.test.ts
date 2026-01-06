@@ -72,27 +72,27 @@ Deno.test("Web3Client - getConfig 返回配置副本", () => {
 
 // ==================== 地址验证工具函数测试 ====================
 
-Deno.test("isAddress - 异步验证地址（有效）", async () => {
+Deno.test("isAddress - 验证地址（有效）", () => {
   // 使用有效的 42 字符地址（以太坊地址格式：0x + 40 个十六进制字符）
   // 使用零地址作为测试（这是一个有效的以太坊地址）
   const validAddress = "0x0000000000000000000000000000000000000000";
-  assertEquals(await isAddress(validAddress), true);
+  assertEquals(isAddress(validAddress), true);
   assertEquals(
-    await isAddress(validAddress.toLowerCase()),
+    isAddress(validAddress.toLowerCase()),
     true,
   );
   // 测试另一个有效地址
   const validAddress2 = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb";
   // 如果地址长度不是42，跳过这个测试
   if (validAddress2.length === 42) {
-    assertEquals(await isAddress(validAddress2), true);
+    assertEquals(isAddress(validAddress2), true);
   }
 });
 
-Deno.test("isAddress - 异步验证地址（无效）", async () => {
-  assertEquals(await isAddress("invalid"), false);
-  assertEquals(await isAddress("0x123"), false);
-  assertEquals(await isAddress(""), false);
+Deno.test("isAddress - 验证地址（无效）", () => {
+  assertEquals(isAddress("invalid"), false);
+  assertEquals(isAddress("0x123"), false);
+  assertEquals(isAddress(""), false);
 });
 
 Deno.test("toChecksumAddress - 转换为校验和地址", () => {
@@ -211,12 +211,6 @@ Deno.test("Web3Client - getBalance 方法存在", () => {
   assert(typeof client.getBalance === "function");
 });
 
-Deno.test("Web3Client - getBalanceInEth 方法存在", () => {
-  const client = new Web3Client({ rpcUrl: TEST_RPC_URL });
-  assertExists(client.getBalanceInEth);
-  assert(typeof client.getBalanceInEth === "function");
-});
-
 Deno.test("Web3Client - getBalances 方法存在", () => {
   const client = new Web3Client({ rpcUrl: TEST_RPC_URL });
   assertExists(client.getBalances);
@@ -269,12 +263,6 @@ Deno.test("Web3Client - callContract 方法存在", () => {
   assert(typeof client.callContract === "function");
 });
 
-Deno.test("Web3Client - callContractWithABI 方法存在", () => {
-  const client = new Web3Client({ rpcUrl: TEST_RPC_URL });
-  assertExists(client.callContractWithABI);
-  assert(typeof client.callContractWithABI === "function");
-});
-
 // ==================== Gas 相关测试 ====================
 
 Deno.test("Web3Client - getGasPrice 方法存在", () => {
@@ -315,12 +303,6 @@ Deno.test("Web3Client - getBlock 方法存在", () => {
   assert(typeof client.getBlock === "function");
 });
 
-Deno.test("Web3Client - getHistoryBlocks 方法存在", () => {
-  const client = new Web3Client({ rpcUrl: TEST_RPC_URL });
-  assertExists(client.getHistoryBlocks);
-  assert(typeof client.getHistoryBlocks === "function");
-});
-
 Deno.test("Web3Client - getBlockTransactions 方法存在", () => {
   const client = new Web3Client({ rpcUrl: TEST_RPC_URL });
   assertExists(client.getBlockTransactions);
@@ -342,18 +324,7 @@ Deno.test("Web3Client - getChainId 方法存在", () => {
 });
 
 // ==================== Token 相关测试 ====================
-
-Deno.test("Web3Client - getTokenBalance 方法存在", () => {
-  const client = new Web3Client({ rpcUrl: TEST_RPC_URL });
-  assertExists(client.getTokenBalance);
-  assert(typeof client.getTokenBalance === "function");
-});
-
-Deno.test("Web3Client - getTokenInfo 方法存在", () => {
-  const client = new Web3Client({ rpcUrl: TEST_RPC_URL });
-  assertExists(client.getTokenInfo);
-  assert(typeof client.getTokenInfo === "function");
-});
+// 注意：getTokenBalance 和 getTokenInfo 方法已移除，可通过 readContract 实现
 
 // ==================== 交易历史相关测试 ====================
 
@@ -468,23 +439,7 @@ Deno.test("Web3Client - isContract 方法存在", () => {
   assert(typeof client.isContract === "function");
 });
 
-Deno.test("Web3Client - getCode 方法存在", () => {
-  const client = new Web3Client({ rpcUrl: TEST_RPC_URL });
-  assertExists(client.getCode);
-  assert(typeof client.getCode === "function");
-});
-
-Deno.test("Web3Client - getStorageAt 方法存在", () => {
-  const client = new Web3Client({ rpcUrl: TEST_RPC_URL });
-  assertExists(client.getStorageAt);
-  assert(typeof client.getStorageAt === "function");
-});
-
-Deno.test("Web3Client - getContractEventLogs 方法存在", () => {
-  const client = new Web3Client({ rpcUrl: TEST_RPC_URL });
-  assertExists(client.getContractEventLogs);
-  assert(typeof client.getContractEventLogs === "function");
-});
+// 注意：getCode、getStorageAt 和 getContractEventLogs 方法已移除
 
 // ==================== 钱包连接测试 ====================
 

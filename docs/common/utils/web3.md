@@ -18,8 +18,11 @@ const web3 = createWeb3Client({
 // 连接钱包（浏览器环境）
 const accounts = await web3.connectWallet();
 
-// 获取余额
-const balance = await web3.getBalanceInEth(accounts[0]);
+// 获取余额（wei）
+const balance = await web3.getBalance(accounts[0]);
+// 转换为 ETH：使用 fromWei 工具函数
+import { fromWei } from "@dreamer/dweb/utils";
+const balanceEth = fromWei(balance, "ether");
 ```
 
 #### 钱包连接
@@ -55,8 +58,9 @@ const address = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb";
 // 获取余额（wei）
 const balanceWei = await web3.getBalance(address);
 
-// 获取余额（ETH）
-const balanceEth = await web3.getBalanceInEth(address);
+// 转换为 ETH：使用 fromWei 工具函数
+import { fromWei } from "@dreamer/dweb/utils";
+const balanceEth = fromWei(balanceWei, "ether");
 ```
 
 #### 发送交易
@@ -170,29 +174,22 @@ const gwei = toWei("1", "gwei"); // "1000000000"
 ```typescript
 import {
   isAddress,
-  isAddressAsync,
   toChecksumAddress,
-  toChecksumAddressAsync,
   formatAddress,
   shortenAddress,
 } from "@dreamer/dweb/utils";
 
-// 验证地址格式（同步，基本检查）
+// 验证地址格式（包含校验和验证）
 const isValid = isAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"); // true
 
-// 验证地址（异步，包含校验和验证）
-const isValidFull = await isAddressAsync(
-  "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
-); // true
-
-// 转换为校验和地址（异步，推荐）
-const checksummed = await toChecksumAddressAsync(
+// 转换为校验和地址
+const checksummed = toChecksumAddress(
   "0x742d35cc6634c0532925a3b844bc9e7595f0beb",
 ); // "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
 
-// 格式化地址（添加 0x 前缀，转小写）
+// 格式化地址（添加 0x 前缀，转换为校验和地址）
 const formatted = formatAddress("742d35cc6634c0532925a3b844bc9e7595f0beb");
-// "0x742d35cc6634c0532925a3b844bc9e7595f0beb"
+// "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
 
 // 缩短地址显示（用于 UI）
 const short = shortenAddress("0x742d35cc6634c0532925a3b844bc9e7595f0beb");
@@ -251,13 +248,18 @@ const rightPadded = padRight("ff", 4); // "ff00"
 #### 验证工具
 
 ```typescript
-import { isPrivateKey, isTxHash } from "@dreamer/dweb/utils";
+import { isPrivateKey, isTxHash, generateWallet } from "@dreamer/dweb/utils";
 
 // 验证私钥格式
 const isValidKey = isPrivateKey("0x..."); // true
 
 // 验证交易哈希格式
 const isValidHash = isTxHash("0x..."); // true
+
+// 生成新钱包（返回地址和私钥）
+const wallet = generateWallet();
+console.log(wallet.address); // '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
+console.log(wallet.privateKey); // '0x...'
 ```
 
 #### 合约工具
@@ -265,8 +267,6 @@ const isValidHash = isTxHash("0x..."); // true
 ```typescript
 import {
   computeContractAddress,
-  getFunctionSelector,
-  encodeFunctionCall,
 } from "@dreamer/dweb/utils";
 
 // 计算合约地址（CREATE）
@@ -274,16 +274,6 @@ const contractAddress = await computeContractAddress(
   "0x...",
   0, // nonce
 );
-
-// 获取函数选择器
-const selector = await getFunctionSelector("transfer(address,uint256)");
-// "0xa9059cbb"
-
-// 编码函数调用数据
-const encoded = await encodeFunctionCall("transfer(address,uint256)", [
-  "0x...",
-  "100",
-]);
 ```
 
 #### Web3Client API
@@ -306,7 +296,6 @@ const web3 = createWeb3Client({
 - `connectWallet()` - 连接钱包（浏览器环境）
 - `getAccounts()` - 获取当前连接的账户
 - `getBalance(address)` - 获取余额（wei）
-- `getBalanceInEth(address)` - 获取余额（ETH）
 - `getTransactionCount(address)` - 获取交易计数（nonce）
 - `sendTransaction(options)` - 发送交易
 - `waitForTransaction(txHash, confirmations?)` - 等待交易确认
@@ -468,19 +457,6 @@ const balances = await web3.getBalances([
   "0x...",
 ]);
 
-// 获取 ERC20 代币余额
-const tokenBalance = await web3.getTokenBalance(
-  "0x...", // 代币合约地址
-  "0x...", // 持有者地址
-);
-
-// 获取 ERC20 代币信息
-const tokenInfo = await web3.getTokenInfo("0x...");
-// { name: "...", symbol: "...", decimals: 18, totalSupply: "..." }
-
-// 获取历史区块
-const blocks = await web3.getHistoryBlocks(1000, 2000);
-
 // 获取区块中的交易
 const transactions = await web3.getBlockTransactions(1000, true);
 
@@ -491,41 +467,8 @@ const txHistory = await web3.getAddressTransactions(
   2000, // 结束区块（可选）
 );
 
-// 使用完整 ABI 调用合约
-const result = await web3.callContractWithABI(
-  "0x...", // 合约地址
-  [
-    "function transfer(address to, uint256 amount) returns (bool)",
-  ], // 完整 ABI
-  "transfer", // 函数名
-  ["0x...", "100"], // 参数
-  {
-    readOnly: false, // 是否为只读操作
-    value: "0",
-    gasLimit: "100000",
-  },
-);
-
-// 读取合约事件日志
-const logs = await web3.getContractEventLogs(
-  "0x...", // 合约地址
-  "Transfer", // 事件名称
-  [
-    "event Transfer(address indexed from, address indexed to, uint256 value)",
-  ], // 事件 ABI
-  1000, // 起始区块（可选）
-  2000, // 结束区块（可选）
-  { from: "0x..." }, // 事件参数过滤器（可选）
-);
-
 // 检查地址是否为合约地址
 const isContract = await web3.isContract("0x...");
-
-// 获取合约代码
-const code = await web3.getCode("0x...");
-
-// 获取存储槽的值
-const storageValue = await web3.getStorageAt("0x...", "0x0");
 ```
 
 #### 扫描合约方法交易
@@ -617,7 +560,6 @@ while (hasMore) {
 - `connectWallet()` - 连接钱包（浏览器环境）
 - `getAccounts()` - 获取当前连接的账户
 - `getBalance(address)` - 获取余额（wei）
-- `getBalanceInEth(address)` - 获取余额（ETH）
 - `getBalances(addresses[])` - 批量获取余额
 - `getTransactionCount(address)` - 获取交易计数（nonce）
 - `getBlockNumber()` - 获取当前区块号
@@ -642,19 +584,10 @@ while (hasMore) {
   - 如果用户取消交易，会抛出 "交易已取消" 错误
   - `options.address` 和 `options.abi` 可选，如果未提供会使用配置中的默认值
 - `readContract(options)` - 读取合约数据（只读）
-- `callContractWithABI(address, abi, functionName, args, options)` - 使用完整 ABI 调用合约
-- `getContractEventLogs(address, eventName, abi, fromBlock?, toBlock?, filter?)` - 读取合约事件日志
 - `isContract(address)` - 检查是否为合约地址
-- `getCode(address)` - 获取合约代码
-- `getStorageAt(address, slot)` - 获取存储槽的值
-
-**代币方法：**
-- `getTokenBalance(tokenAddress, ownerAddress)` - 获取 ERC20 代币余额
-- `getTokenInfo(tokenAddress)` - 获取 ERC20 代币信息
 
 **区块方法：**
 - `getBlock(blockNumber?)` - 获取区块信息
-- `getHistoryBlocks(fromBlock, toBlock?)` - 获取历史区块
 - `getBlockTransactions(blockNumber, includeTransactions?)` - 获取区块中的交易
 - `getAddressTransactions(address, fromBlock?, toBlock?)` - 获取地址的交易历史
 - `scanContractMethodTransactions(contractAddress, functionSignature, options?)` - 扫描合约指定方法的交易信息（支持分页和参数解析）
