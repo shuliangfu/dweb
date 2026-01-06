@@ -39,6 +39,8 @@
  * // 使用扩展方法
  * const slug = "Hello World".toSlug(); // "hello-world"
  * ```
+ *
+ * @module
  */
 
 // 导出类型定义

@@ -32,6 +32,8 @@
  * // 构建项目
  * await build();
  * ```
+ *
+ * @module
  */
 
 export * from "./prod.ts";

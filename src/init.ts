@@ -10,6 +10,8 @@
  *
  * 注意：此文件调用 createApp 函数来创建项目，所有项目生成逻辑都在 create.ts 中
  * 包括路径别名配置（@components/、@config/、@store/）等都会自动应用
+ *
+ * @module
  */
 
 import { createApp } from "./features/create.ts";

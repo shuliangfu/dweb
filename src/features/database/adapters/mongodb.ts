@@ -1,5 +1,7 @@
 /**
  * MongoDB 数据库适配器
+ *
+ * @module
  */
 
 import {

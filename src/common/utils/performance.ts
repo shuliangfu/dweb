@@ -11,6 +11,8 @@
  * - **节流（throttle）**：限制执行频率，适用于滚动、鼠标移动等场景
  * - **批量处理（batchProcess）**：批量处理数据，提高处理效率
  * - **内存监控（getMemoryUsage, formatMemorySize）**：监控和格式化内存使用情况
+ *
+ * @module
  */
 
 import { IS_SERVER } from "../constants.ts";

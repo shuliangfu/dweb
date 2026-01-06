@@ -1,6 +1,8 @@
 /**
  * CLI 工具入口
  * 使用 Command 类提供 dev、build、start 命令
+ *
+ * @module
  */
 
 import { loadConfig } from "./core/config.ts";

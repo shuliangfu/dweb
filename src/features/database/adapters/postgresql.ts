@@ -1,5 +1,7 @@
 /**
  * PostgreSQL 数据库适配器
+ *
+ * @module
  */
 
 import postgres from "@postgres";

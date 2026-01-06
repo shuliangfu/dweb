@@ -45,6 +45,8 @@
  * const currentTheme = getTheme();
  * setTheme("dark");
  * ```
+ *
+ * @module
  */
 
 // 导出通用常量（对浏览器安全）

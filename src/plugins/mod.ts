@@ -39,6 +39,8 @@
  *
  * await app.start();
  * ```
+ *
+ * @module
  */
 
 export { seo } from "./seo/index.ts";

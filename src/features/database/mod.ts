@@ -47,6 +47,8 @@
  *   initDatabaseFromConfig,
  * } from '@dreamer/dweb/database';
  * ```
+ *
+ * @module
  */
 
 // ==================== 管理器 ====================

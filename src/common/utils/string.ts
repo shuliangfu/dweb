@@ -18,6 +18,8 @@
  * toKebabCase("helloWorld"); // "hello-world"
  * capitalize("hello"); // "Hello"
  * ```
+ *
+ * @module
  */
 
 /**

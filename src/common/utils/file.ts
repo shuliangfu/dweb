@@ -5,6 +5,8 @@
  * 环境兼容性：
  * - 客户端：所有函数只能在浏览器环境使用（需要 File/Blob API）
  * - 服务端：在服务端环境调用会抛出异常
+ *
+ * @module
  */
 
 import { IS_CLIENT } from "../constants.ts";

@@ -37,6 +37,8 @@
  *
  * await app.start();
  * ```
+ *
+ * @module
  */
 
 export { logger } from "./logger.ts";
