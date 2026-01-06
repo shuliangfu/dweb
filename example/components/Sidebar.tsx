@@ -27,7 +27,6 @@ const navItems: NavItem[] = [
     title: "核心模块",
     path: "/docs/core",
     children: [
-      { title: "核心模块概述", path: "/docs/core" },
       { title: "应用核心 (Application)", path: "/docs/core/application" },
       {
         title: "应用上下文 (ApplicationContext)",
@@ -60,7 +59,6 @@ const navItems: NavItem[] = [
     title: "功能模块",
     path: "/docs/features",
     children: [
-      { title: "功能模块概述", path: "/docs/features" },
       { title: "项目创建 (Create)", path: "/docs/features/create" },
       { title: "开发服务器 (Dev)", path: "/docs/features/dev" },
       { title: "热模块替换 (HMR)", path: "/docs/features/hmr" },
@@ -82,7 +80,6 @@ const navItems: NavItem[] = [
     title: "中间件",
     path: "/docs/middleware",
     children: [
-      { title: "中间件概述", path: "/docs/middleware" },
       { title: "日志记录 (logger)", path: "/docs/middleware/logger" },
       { title: "跨域支持 (cors)", path: "/docs/middleware/cors" },
       {
@@ -109,7 +106,6 @@ const navItems: NavItem[] = [
     title: "插件",
     path: "/docs/plugins",
     children: [
-      { title: "插件概述", path: "/docs/plugins" },
       { title: "Tailwind CSS (tailwind)", path: "/docs/plugins/tailwind" },
       { title: "状态管理 (store)", path: "/docs/plugins/store" },
       { title: "SEO 优化 (seo)", path: "/docs/plugins/seo" },
@@ -136,7 +132,6 @@ const navItems: NavItem[] = [
     title: "扩展模块",
     path: "/docs/extensions",
     children: [
-      { title: "扩展系统", path: "/docs/extensions" },
       { title: "控制台工具", path: "/docs/console" },
       { title: "渲染适配器", path: "/docs/render" },
       { title: "客户端 API", path: "/docs/client" },
@@ -146,7 +141,6 @@ const navItems: NavItem[] = [
     title: "工具函数库",
     path: "/docs/utils",
     children: [
-      { title: "工具函数概述", path: "/docs/utils" },
       { title: "数组工具", path: "/docs/utils/array" },
       { title: "缓存函数", path: "/docs/utils/cache" },
       { title: "加密函数", path: "/docs/utils/crypto" },
@@ -168,7 +162,6 @@ const navItems: NavItem[] = [
     title: "配置与部署",
     path: "/docs/deployment",
     children: [
-      { title: "配置与部署概述", path: "/docs/deployment" },
       { title: "配置文档", path: "/docs/deployment/configuration" },
       { title: "Docker 部署", path: "/docs/deployment/docker" },
       { title: "开发指南", path: "/docs/deployment/development" },
