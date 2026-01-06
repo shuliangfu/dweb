@@ -1,6 +1,23 @@
 /**
  * 字符串处理工具函数
- * 用于字符串转换、格式化等
+ * 提供字符串转换、格式化、大小写转换等功能
+ *
+ * 环境兼容性：
+ * - 通用：所有函数都可以在服务端和客户端使用
+ *
+ * 主要功能：
+ * - **大小写转换**：首字母大写（capitalize）
+ * - **命名风格转换**：驼峰命名（toCamelCase）、短横线命名（toKebabCase）、蛇形命名（toSnakeCase）
+ * - **命名风格互转**：短横线转驼峰（kebabToCamel）
+ *
+ * @example
+ * ```typescript
+ * import { toCamelCase, toKebabCase, capitalize } from "@dreamer/dweb/utils/string";
+ *
+ * toCamelCase("hello-world"); // "helloWorld"
+ * toKebabCase("helloWorld"); // "hello-world"
+ * capitalize("hello"); // "Hello"
+ * ```
  */
 
 /**

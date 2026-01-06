@@ -1,6 +1,44 @@
 /**
- * 扩展系统统一导出
- * 提供框架扩展功能的统一入口
+ * 扩展系统模块
+ * 提供框架扩展功能的统一入口，允许为内置类型添加自定义方法
+ *
+ * 此模块提供以下功能：
+ *
+ * **扩展注册和管理**
+ * - 注册自定义扩展方法
+ * - 启用/禁用扩展
+ * - 查询已注册的扩展
+ *
+ * **内置扩展**
+ * - `StringExtensions` - 字符串扩展方法
+ * - `ArrayExtensions` - 数组扩展方法
+ * - `DateExtensions` - 日期扩展方法
+ * - `ObjectExtensions` - 对象扩展方法
+ * - `RequestExtensions` - 请求扩展方法
+ *
+ * **扩展初始化**
+ * - `initExtensions()` - 初始化所有内置扩展
+ * - `setupExtensions()` - 初始化内置扩展和用户扩展
+ *
+ * @example
+ * ```typescript
+ * import { setupExtensions, registerExtension } from "@dreamer/dweb/extensions";
+ *
+ * // 初始化所有内置扩展
+ * setupExtensions();
+ *
+ * // 注册自定义扩展
+ * registerExtension({
+ *   target: "String",
+ *   name: "toSlug",
+ *   implementation: function() {
+ *     return this.toLowerCase().replace(/\s+/g, "-");
+ *   },
+ * });
+ *
+ * // 使用扩展方法
+ * const slug = "Hello World".toSlug(); // "hello-world"
+ * ```
  */
 
 // 导出类型定义

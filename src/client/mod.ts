@@ -1,9 +1,50 @@
 /**
  * DWeb 客户端模块
- * 导出客户端运行时核心
+ * 导出客户端运行时核心功能，用于浏览器环境
  *
- * 注意：browser-client.ts 和 browser-hmr.ts 不应该从这里导出
- * 它们应该通过 <script> 标签单独加载，避免被打包到页面组件代码中
+ * 此模块提供以下功能：
+ *
+ * **状态管理（Store）**
+ * - 客户端状态管理 API
+ * - 声明式 Store 定义（defineStore）
+ * - Store 状态订阅和更新
+ *
+ * **主题管理（Theme）**
+ * - 主题切换功能
+ * - 明暗主题支持
+ * - 主题状态管理
+ *
+ * **国际化（i18n）**
+ * - 多语言支持
+ * - 翻译函数
+ * - 语言切换
+ *
+ * **路由工具**
+ * - 获取当前路径和 URL
+ * - 查询参数处理
+ * - 客户端路由导航
+ *
+ * **类型定义**
+ * - 组件类型（ComponentChild, ComponentChildren）
+ * - 页面属性类型（PageProps, LayoutProps）
+ * - 请求响应类型（Request, Response, Session）
+ *
+ * **注意**
+ * - `browser-client.ts` 和 `browser-hmr.ts` 不应该从这里导出
+ * - 它们应该通过 `<script>` 标签单独加载，避免被打包到页面组件代码中
+ *
+ * @example
+ * ```typescript
+ * import { getStore, setStoreState, getTheme, setTheme } from "@dreamer/dweb/client";
+ *
+ * // 使用 Store
+ * const store = getStore("myStore");
+ * setStoreState("myStore", { count: 1 });
+ *
+ * // 使用主题
+ * const currentTheme = getTheme();
+ * setTheme("dark");
+ * ```
  */
 
 // 导出通用常量（对浏览器安全）
