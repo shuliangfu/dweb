@@ -267,6 +267,9 @@ console.log(wallet.privateKey); // '0x...'
 ```typescript
 import {
   computeContractAddress,
+  getCode,
+  getFunctionSelector,
+  encodeFunctionCall,
 } from "@dreamer/dweb/utils/web3";
 
 // 计算合约地址（CREATE）
@@ -274,6 +277,23 @@ const contractAddress = await computeContractAddress(
   "0x...",
   0, // nonce
 );
+
+// 获取合约代码
+const code = await getCode(
+  "0x...", // 合约地址
+  "https://mainnet.infura.io/v3/YOUR_PROJECT_ID", // RPC URL
+);
+
+// 获取函数选择器
+const selector = getFunctionSelector("transfer(address,uint256)");
+// "0xa9059cbb"
+
+// 编码函数调用数据
+const data = encodeFunctionCall("transfer(address,uint256)", [
+  "0x...", // to
+  "1000000000000000000", // amount
+]);
+// "0xa9059cbb000000000000000000000000..."
 ```
 
 #### Web3Client API
@@ -584,6 +604,7 @@ while (hasMore) {
   - 如果用户取消交易，会抛出 "交易已取消" 错误
   - `options.address` 和 `options.abi` 可选，如果未提供会使用配置中的默认值
 - `readContract(options)` - 读取合约数据（只读）
+- `getCode(address)` - 获取合约代码（字节码）
 - `isContract(address)` - 检查是否为合约地址
 
 **区块方法：**
@@ -616,3 +637,8 @@ while (hasMore) {
 **签名方法：**
 - `signMessage(message)` - 签名消息
 - `verifyMessage(message, signature, address)` - 验证消息签名
+
+**合约工具函数：**
+- `getCode(address, rpcUrl?)` - 获取合约代码（独立函数，需要提供 rpcUrl）
+- `getFunctionSelector(functionSignature)` - 获取函数选择器（函数签名的前 4 字节）
+- `encodeFunctionCall(functionSignature, args)` - 编码函数调用数据

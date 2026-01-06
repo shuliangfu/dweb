@@ -26,6 +26,7 @@ import {
   custom,
   decodeFunctionData,
   encodeAbiParameters,
+  encodeFunctionData,
   getAddress,
   type Hash,
   type Hex,
@@ -2251,10 +2252,31 @@ export class Web3Client {
    * @param address 地址
    * @returns 是否为合约地址
    */
+  /**
+   * 获取合约代码
+   * @param address 合约地址
+   * @returns 合约代码（十六进制字符串）
+   */
+  async getCode(address: string): Promise<string> {
+    const client = this.getPublicClient();
+    try {
+      const code = await client.getCode({
+        address: address as Address,
+      });
+      return code || "0x";
+    } catch (error) {
+      throw new Error(
+        `获取合约代码失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
   async isContract(address: string): Promise<boolean> {
     const client = this.getPublicClient();
     try {
-      const code = await client.getBytecode({
+      const code = await client.getCode({
         address: address as Address,
       });
       return code !== undefined && code !== "0x" && code.length > 2;
@@ -2772,4 +2794,102 @@ export async function computeContractAddress(
   const data = formatAddress(deployerAddress) + numberToHex(nonce).slice(2);
   const hash = await keccak256(data);
   return "0x" + hash.slice(-40);
+}
+
+/**
+ * 获取合约代码
+ * @param address 合约地址
+ * @param rpcUrl RPC 节点 URL（可选，如果不提供则需要通过 createWeb3Client 创建客户端）
+ * @returns 合约代码（十六进制字符串）
+ *
+ * @example
+ * const code = await getCode('0x...', 'https://mainnet.infura.io/v3/YOUR_PROJECT_ID')
+ */
+export async function getCode(
+  address: string,
+  rpcUrl?: string,
+): Promise<string> {
+  if (!viemIsAddress(address)) {
+    throw new Error(`无效的地址: ${address}`);
+  }
+
+  const formattedAddress = formatAddress(address);
+
+  // 如果提供了 rpcUrl，创建临时客户端
+  if (rpcUrl) {
+    const publicClient = createPublicClient({
+      transport: http(rpcUrl),
+    });
+    const code = await publicClient.getCode({
+      address: formattedAddress as Address,
+    });
+    return code || "0x";
+  }
+
+  // 如果没有提供 rpcUrl，抛出错误
+  throw new Error(
+    "需要提供 rpcUrl 参数或使用 Web3Client 实例的 getCode 方法",
+  );
+}
+
+/**
+ * 获取函数选择器（函数签名的前 4 字节）
+ * @param functionSignature 函数签名，如 "transfer(address,uint256)"
+ * @returns 函数选择器（十六进制字符串，如 "0xa9059cbb"）
+ *
+ * @example
+ * getFunctionSelector('transfer(address,uint256)') // '0xa9059cbb'
+ */
+export function getFunctionSelector(functionSignature: string): string {
+  if (!functionSignature || typeof functionSignature !== "string") {
+    throw new Error("函数签名不能为空");
+  }
+
+  // 计算函数签名的 Keccak-256 哈希
+  const hash = viemKeccak256(functionSignature as Hex);
+
+  // 返回前 4 字节（8 个十六进制字符 + 0x 前缀）
+  return hash.slice(0, 10); // "0x" + 8 个字符
+}
+
+/**
+ * 编码函数调用数据
+ * @param functionSignature 函数签名，如 "transfer(address,uint256)"
+ * @param args 函数参数数组
+ * @returns 编码后的函数调用数据（十六进制字符串）
+ *
+ * @example
+ * encodeFunctionCall('transfer(address,uint256)', ['0x...', '1000000000000000000'])
+ * // '0xa9059cbb000000000000000000000000...'
+ */
+export function encodeFunctionCall(
+  functionSignature: string,
+  args: unknown[] = [],
+): string {
+  if (!functionSignature || typeof functionSignature !== "string") {
+    throw new Error("函数签名不能为空");
+  }
+
+  try {
+    // 提取函数名（函数签名格式：functionName(param1,param2)）
+    const functionName = functionSignature.split("(")[0].trim();
+
+    // 解析函数签名
+    const abi = parseAbi(
+      [`function ${functionSignature}`] as readonly string[],
+    );
+
+    // 使用 viem 的 encodeFunctionData 编码
+    return encodeFunctionData({
+      abi,
+      functionName: functionName,
+      args: args as any[],
+    });
+  } catch (error) {
+    throw new Error(
+      `编码函数调用失败: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
 }

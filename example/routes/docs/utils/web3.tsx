@@ -331,7 +331,10 @@ const feeData = await web3.getFeeData();
 // { gasPrice: "...", maxFeePerGas: "...", maxPriorityFeePerGas: "..." }
 
 // 检查地址是否为合约地址
-const isContract = await web3.isContract("0x...");`;
+const isContract = await web3.isContract("0x...");
+
+// 获取合约代码
+const code = await web3.getCode("0x...");`;
 
   // 工具函数
   const utilsCode = `import {
@@ -346,6 +349,9 @@ const isContract = await web3.isContract("0x...");`;
   keccak256,
   hexToBytes,
   bytesToHex,
+  getCode,
+  getFunctionSelector,
+  encodeFunctionCall,
 } from "@dreamer/dweb/utils/web3";
 
 // 单位转换
@@ -370,7 +376,17 @@ const isValidHash = isTxHash("0x..."); // true
 // 哈希和编码
 const hash = await keccak256("hello world");
 const bytes = hexToBytes("0x48656c6c6f");
-const hex = bytesToHex(bytes);`;
+const hex = bytesToHex(bytes);
+
+// 合约工具函数
+const code = await getCode("0x...", "https://mainnet.infura.io/v3/YOUR_PROJECT_ID");
+const selector = getFunctionSelector("transfer(address,uint256)");
+// "0xa9059cbb"
+const data = encodeFunctionCall("transfer(address,uint256)", [
+  "0x...",
+  "1000000000000000000",
+]);
+// "0xa9059cbb000000000000000000000000...";`;
 
   const createWeb3ClientCode = `const web3 = createWeb3Client({
   rpcUrl?: string; // RPC 节点 URL
@@ -589,8 +605,25 @@ const hex = bytesToHex(bytes);`;
                       '  - 如果用户取消交易，会抛出 "交易已取消" 错误',
                       "  - `options.address` 和 `options.abi` 可选，如果未提供会使用配置中的默认值",
                       "**`readContract(options)`** - 读取合约数据（只读）",
+                      "**`getCode(address)`** - 获取合约代码（字节码）",
                       "**`scanContractMethodTransactions(...)`** - 扫描合约指定方法的交易（支持分页）",
                       "**`isContract(address)`** - 检查是否为合约地址",
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "subsection",
+                level: 4,
+                title: "合约工具函数",
+                blocks: [
+                  {
+                    type: "list",
+                    ordered: false,
+                    items: [
+                      "**`getCode(address, rpcUrl?)`** - 获取合约代码（独立函数，需要提供 rpcUrl）",
+                      "**`getFunctionSelector(functionSignature)`** - 获取函数选择器（函数签名的前 4 字节）",
+                      "**`encodeFunctionCall(functionSignature, args)`** - 编码函数调用数据",
                     ],
                   },
                 ],
