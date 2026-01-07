@@ -96,12 +96,13 @@ const extendDirPrefixMap = new Map<string, string>();
 
 /**
  * 标准化目录路径（去掉 ./ 前缀，统一为相对路径格式）
+ * 注意：保留以 . 开头的路径（如 .data/uploads），只去掉 ./ 前缀
  * @param dir 目录路径
  * @returns 标准化后的目录路径
  */
 function normalizeDir(dir: string): string {
   const original = dir;
-  // 去掉 ./ 前缀
+  // 去掉 ./ 前缀（但保留 . 开头的路径，如 .data/uploads）
   let normalized = dir.replace(/^\.\//, "");
   // 去掉开头的 /（如果是相对路径）
   if (!path.isAbsolute(normalized)) {
@@ -122,7 +123,13 @@ function normalizeDir(dir: string): string {
  */
 function getPrefixFromStaticConfig(uploadDir: string): string {
   console.log(
-    `[File Upload Plugin] 开始查找 prefix，上传目录: "${uploadDir}"`,
+    `[File Upload Plugin] ========== 开始查找 prefix ==========`,
+  );
+  console.log(
+    `[File Upload Plugin] 上传目录: "${uploadDir}"`,
+  );
+  console.log(
+    `[File Upload Plugin] 映射表大小: ${extendDirPrefixMap.size}`,
   );
 
   // 标准化上传目录路径（去掉 ./ 前缀）
@@ -485,6 +492,14 @@ export function fileUpload(options: FileUploadPluginOptions = {}): Plugin {
      * 初始化钩子 - 从配置中读取 extendDirs 并构建映射
      */
     onInit(_app: AppLike, config: AppConfig) {
+      console.log(
+        `[File Upload Plugin] onInit 被调用，开始初始化...`,
+      );
+      console.log(
+        `[File Upload Plugin] 配置中的 static:`,
+        config.static ? JSON.stringify(config.static, null, 2) : "undefined",
+      );
+
       // 清空之前的映射
       extendDirPrefixMap.clear();
 
@@ -492,6 +507,15 @@ export function fileUpload(options: FileUploadPluginOptions = {}): Plugin {
       console.log(
         `[File Upload Plugin] 初始化，找到 ${extendDirs.length} 个 extendDirs 配置`,
       );
+      if (extendDirs.length === 0) {
+        console.log(
+          `[File Upload Plugin] 警告: config.static?.extendDirs 为空或未定义`,
+        );
+        console.log(
+          `[File Upload Plugin] config.static =`,
+          config.static,
+        );
+      }
 
       // 构建目录到 prefix 的映射
       for (let i = 0; i < extendDirs.length; i++) {
