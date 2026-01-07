@@ -3,7 +3,13 @@
  * 处理文件上传，支持多文件、文件类型验证、大小限制
  */
 
-import type { Plugin, Request, Response } from "../../common/types/index.ts";
+import type {
+  AppConfig,
+  AppLike,
+  Plugin,
+  Request,
+  Response,
+} from "../../common/types/index.ts";
 import type {
   FileUploadPluginOptions,
   UploadedFile,
@@ -13,7 +19,6 @@ import type { ExtendDirConfig } from "../../common/types/index.ts";
 import * as path from "@std/path";
 import { ensureDir } from "@std/fs/ensure-dir";
 import { crypto } from "@std/crypto";
-import { ConfigManager } from "../../core/config-manager.ts";
 
 /**
  * 生成文件名
@@ -86,66 +91,49 @@ function validateFileType(
   });
 }
 
+// 存储 extendDirs 映射（在 onInit 中初始化）
+// key: 目录路径（标准化后的绝对路径或目录名），value: prefix
+const extendDirPrefixMap = new Map<string, string>();
+
 /**
  * 从静态资源配置中获取匹配的 prefix
  * @param uploadDir 上传目录
  * @returns 匹配的 prefix，如果没有找到则返回空字符串
  */
 function getPrefixFromStaticConfig(uploadDir: string): string {
-  try {
-    const configManager = new ConfigManager();
+  // 标准化上传目录路径用于比较
+  const normalizedUploadDir = path.isAbsolute(uploadDir)
+    ? uploadDir
+    : path.resolve(Deno.cwd(), uploadDir);
+  const uploadDirBasename = path.basename(normalizedUploadDir);
 
-    // 尝试加载配置（如果未加载）
-    if (!configManager.isLoaded()) {
-      // 使用异步加载，但这里我们同步调用，如果失败则返回空字符串
-      // 注意：这里不等待加载完成，因为 handleFileUpload 是异步函数
-      // 实际使用中，配置应该在应用启动时已加载
-    }
-
-    // 如果配置已加载，尝试获取
-    if (configManager.isLoaded()) {
-      const appConfig = configManager.getConfig();
-      const extendDirs = appConfig.static?.extendDirs || [];
-
-      // 标准化上传目录路径用于比较
-      const normalizedUploadDir = path.isAbsolute(uploadDir)
-        ? uploadDir
-        : path.resolve(Deno.cwd(), uploadDir);
-      const uploadDirBasename = path.basename(normalizedUploadDir);
-
-      // 查找匹配的目录配置
-      for (const extendDir of extendDirs) {
-        let dir: string;
-        let prefix: string | undefined;
-
-        if (typeof extendDir === "string") {
-          dir = extendDir;
-          // 字符串格式：使用目录名作为 prefix
-          prefix = `/${path.basename(dir)}`;
-        } else {
-          dir = extendDir.dir;
-          prefix = extendDir.prefix || `/${path.basename(dir)}`;
-        }
-
-        // 标准化扩展目录路径
-        const normalizedExtendDir = path.isAbsolute(dir)
-          ? dir
-          : path.resolve(Deno.cwd(), dir);
-        const extendDirBasename = path.basename(normalizedExtendDir);
-
-        // 检查是否匹配（支持完全匹配或目录名匹配）
-        if (
-          normalizedUploadDir === normalizedExtendDir ||
-          uploadDirBasename === extendDirBasename
-        ) {
-          // 确保 prefix 以 / 开头
-          return prefix.startsWith("/") ? prefix : `/${prefix}`;
-        }
-      }
-    }
-  } catch {
-    // 如果获取配置失败，静默返回空字符串
+  // 先尝试完全路径匹配
+  if (extendDirPrefixMap.has(normalizedUploadDir)) {
+    const prefix = extendDirPrefixMap.get(normalizedUploadDir)!;
+    console.log(
+      `[File Upload Plugin] 找到匹配的 prefix (完全路径): ${uploadDir} -> ${prefix}`,
+    );
+    return prefix;
   }
+
+  // 再尝试目录名匹配
+  if (extendDirPrefixMap.has(uploadDirBasename)) {
+    const prefix = extendDirPrefixMap.get(uploadDirBasename)!;
+    console.log(
+      `[File Upload Plugin] 找到匹配的 prefix (目录名): ${uploadDirBasename} -> ${prefix}`,
+    );
+    return prefix;
+  }
+
+  // 如果没有找到匹配，打印调试信息
+  if (extendDirPrefixMap.size > 0) {
+    console.log(
+      `[File Upload Plugin] 未找到匹配的 prefix，上传目录: ${uploadDir}，已配置的目录: ${
+        Array.from(extendDirPrefixMap.keys()).join(", ")
+      }`,
+    );
+  }
+
   return "";
 }
 
@@ -421,6 +409,57 @@ export function fileUpload(options: FileUploadPluginOptions = {}): Plugin {
   return {
     name: "file-upload",
     config: options as unknown as Record<string, unknown>,
+
+    /**
+     * 初始化钩子 - 从配置中读取 extendDirs 并构建映射
+     */
+    onInit(_app: AppLike, config: AppConfig) {
+      // 清空之前的映射
+      extendDirPrefixMap.clear();
+
+      const extendDirs = config.static?.extendDirs || [];
+      console.log(
+        `[File Upload Plugin] 初始化，找到 ${extendDirs.length} 个 extendDirs 配置`,
+      );
+
+      // 构建目录到 prefix 的映射
+      for (const extendDir of extendDirs) {
+        let dir: string;
+        let prefix: string | undefined;
+
+        if (typeof extendDir === "string") {
+          dir = extendDir;
+          // 字符串格式：使用目录名作为 prefix
+          prefix = `/${path.basename(dir)}`;
+        } else {
+          dir = extendDir.dir;
+          prefix = extendDir.prefix || `/${path.basename(dir)}`;
+        }
+
+        // 标准化扩展目录路径
+        const normalizedExtendDir = path.isAbsolute(dir)
+          ? dir
+          : path.resolve(Deno.cwd(), dir);
+        const extendDirBasename = path.basename(normalizedExtendDir);
+
+        // 确保 prefix 以 / 开头
+        const normalizedPrefix = prefix.startsWith("/") ? prefix : `/${prefix}`;
+
+        // 同时存储完全路径和目录名作为 key
+        extendDirPrefixMap.set(normalizedExtendDir, normalizedPrefix);
+        extendDirPrefixMap.set(extendDirBasename, normalizedPrefix);
+
+        console.log(
+          `[File Upload Plugin] 注册目录映射: ${dir} (${normalizedExtendDir}) -> ${normalizedPrefix}`,
+        );
+      }
+
+      if (extendDirPrefixMap.size === 0) {
+        console.log(
+          `[File Upload Plugin] 警告: 未找到 extendDirs 配置，将使用文件系统相对路径作为返回路径`,
+        );
+      }
+    },
 
     /**
      * 请求处理钩子 - 注入客户端上传脚本
