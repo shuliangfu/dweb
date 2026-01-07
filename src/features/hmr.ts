@@ -73,10 +73,20 @@ export class FileWatcher {
   private reloadTimer?: number;
   private reloadDelay: number;
   private routesDir: string;
+  /** 需要忽略的扩展目录列表（static.extendDirs 配置的目录） */
+  private ignoredExtendDirs: string[] = [];
 
   constructor(reloadDelay: number = 300, routesDir: string = "routes") {
     this.reloadDelay = reloadDelay;
     this.routesDir = routesDir;
+  }
+
+  /**
+   * 设置需要忽略的扩展目录列表（static.extendDirs 配置的目录）
+   * @param dirs 扩展目录列表（标准化后的路径）
+   */
+  setIgnoredExtendDirs(dirs: string[]): void {
+    this.ignoredExtendDirs = dirs;
   }
 
   /**
@@ -130,9 +140,17 @@ export class FileWatcher {
           ) {
             // 处理每个变化的文件
             for (const filePath of event.paths) {
-              if (!shouldIgnoreFile(filePath, IGNORED_FILE_PATTERNS)) {
-                this.debouncedReload(filePath, event.kind);
+              // 检查是否应该忽略此文件
+              if (shouldIgnoreFile(filePath, IGNORED_FILE_PATTERNS)) {
+                continue;
               }
+
+              // 检查是否在扩展目录中（static.extendDirs 配置的目录）
+              if (this.isInIgnoredExtendDir(filePath)) {
+                continue;
+              }
+
+              this.debouncedReload(filePath, event.kind);
             }
           }
         }
@@ -142,6 +160,40 @@ export class FileWatcher {
     } catch (_error) {
       // 静默处理错误
     }
+  }
+
+  /**
+   * 检查文件是否在需要忽略的扩展目录中
+   * @param filePath 文件路径
+   * @returns 如果在扩展目录中返回 true，否则返回 false
+   */
+  private isInIgnoredExtendDir(filePath: string): boolean {
+    if (this.ignoredExtendDirs.length === 0) {
+      return false;
+    }
+
+    // 标准化文件路径为绝对路径
+    const normalizedFilePath = path.isAbsolute(filePath)
+      ? path.resolve(filePath)
+      : path.resolve(Deno.cwd(), filePath);
+
+    for (const ignoredDir of this.ignoredExtendDirs) {
+      // 标准化忽略目录路径
+      const normalizedIgnoredDir = path.isAbsolute(ignoredDir)
+        ? path.resolve(ignoredDir)
+        : path.resolve(Deno.cwd(), ignoredDir);
+
+      // 检查文件路径是否以忽略目录开头（支持不同的路径分隔符）
+      const dirWithSep = normalizedIgnoredDir + path.SEPARATOR;
+      if (
+        normalizedFilePath.startsWith(dirWithSep) ||
+        normalizedFilePath === normalizedIgnoredDir
+      ) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**

@@ -188,6 +188,17 @@ export default defineConfig({
 
     // 是否打开浏览器
     open: false,
+
+    // HMR 服务器端口（默认 24678）
+    hmrPort: 24678,
+
+    // 文件变化重载延迟（毫秒，默认 300）
+    reloadDelay: 300,
+
+    // HMR 需要忽略的目录列表（文件变化时不会触发页面重新加载）
+    // 例如：上传目录、临时文件目录等
+    // 注意：static.extendDirs 配置的目录会自动忽略，无需在此重复配置
+    ignoredDirs: ['.data/uploads', 'temp', 'cache'],
   },
 });
 ```

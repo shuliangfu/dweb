@@ -67,19 +67,36 @@ export default defineConfig({
     
     // 文件变化重载延迟（毫秒，默认 300）
     reloadDelay: 300,
+    
+    // HMR 需要忽略的目录列表（文件变化时不会触发页面重新加载）
+    // 例如：上传目录、临时文件目录等
+    ignoredDirs: ['.data/uploads', 'temp', 'cache'],
+  },
+  static: {
+    // static.extendDirs 配置的目录也会自动被 HMR 忽略
+    extendDirs: [{ dir: '.data/uploads', prefix: '/uploads' }],
   },
 });
 ```
 
 ## 文件监听范围
 
-HMR 会自动忽略以下文件：
+HMR 会自动忽略以下文件和目录：
+
+### 默认忽略的文件
 
 - 以 `.` 开头的文件（隐藏文件）
 - 以 `.tmp` 结尾的文件
 - 以 `~` 结尾的文件
 - `node_modules/` 目录
 - `.deno/` 目录
+
+### 配置忽略的目录
+
+- **`static.extendDirs` 配置的目录**：自动忽略，无需额外配置
+  - 例如：上传目录、静态资源扩展目录等
+- **`dev.ignoredDirs` 配置的目录**：手动指定需要忽略的目录
+  - 例如：临时文件目录、缓存目录等
 
 ## 性能优化
 

@@ -592,6 +592,8 @@ export interface DevConfig {
   hmrPort?: number; // HMR WebSocket 服务器端口
   hmrHost?: string; // HMR WebSocket 服务器主机
   reloadDelay?: number; // 文件变化后重载延迟（毫秒）
+  /** HMR 需要忽略的目录列表（文件变化时不会触发页面重新加载） */
+  ignoredDirs?: string[]; // 例如：['uploads', '.data/uploads', 'temp']
 }
 
 // 构建配置

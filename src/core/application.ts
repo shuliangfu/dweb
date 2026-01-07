@@ -352,6 +352,43 @@ export class Application extends EventEmitter {
         routeConfigForWatcher.dir,
       );
 
+      // 设置需要忽略的目录（合并 static.extendDirs 和 dev.ignoredDirs）
+      const ignoredDirs: string[] = [];
+
+      // 1. 从 static.extendDirs 配置中获取需要忽略的目录
+      const extendDirs = config.static?.extendDirs || [];
+      for (const extendDir of extendDirs) {
+        const dir = typeof extendDir === "string" ? extendDir : extendDir.dir;
+        // 标准化路径（去掉 ./ 前缀）
+        let normalizedDir = dir.replace(/^\.\//, "");
+        // 如果是相对路径，转换为绝对路径用于比较
+        if (!path.isAbsolute(normalizedDir)) {
+          normalizedDir = path.resolve(Deno.cwd(), normalizedDir);
+        } else {
+          normalizedDir = path.resolve(normalizedDir);
+        }
+        ignoredDirs.push(normalizedDir);
+      }
+
+      // 2. 从 dev.ignoredDirs 配置中获取需要忽略的目录
+      const devIgnoredDirs = config.dev?.ignoredDirs || [];
+      for (const dir of devIgnoredDirs) {
+        // 标准化路径（去掉 ./ 前缀）
+        let normalizedDir = dir.replace(/^\.\//, "");
+        // 如果是相对路径，转换为绝对路径用于比较
+        if (!path.isAbsolute(normalizedDir)) {
+          normalizedDir = path.resolve(Deno.cwd(), normalizedDir);
+        } else {
+          normalizedDir = path.resolve(normalizedDir);
+        }
+        // 避免重复添加
+        if (!ignoredDirs.includes(normalizedDir)) {
+          ignoredDirs.push(normalizedDir);
+        }
+      }
+
+      fileWatcher.setIgnoredExtendDirs(ignoredDirs);
+
       // 监听配置文件变化
       fileWatcher.watch(".");
 
