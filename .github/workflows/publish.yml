@@ -3,7 +3,8 @@ on:
   push:
     branches:
       - main
-      - dev
+    tags:
+      - "v*"
 
 jobs:
   publish:
