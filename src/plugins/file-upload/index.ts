@@ -101,17 +101,11 @@ const extendDirPrefixMap = new Map<string, string>();
  * @returns 标准化后的目录路径
  */
 function normalizeDir(dir: string): string {
-  const original = dir;
   // 去掉 ./ 前缀（但保留 . 开头的路径，如 .data/uploads）
   let normalized = dir.replace(/^\.\//, "");
   // 去掉开头的 /（如果是相对路径）
   if (!path.isAbsolute(normalized)) {
     normalized = normalized.replace(/^\//, "");
-  }
-  if (original !== normalized) {
-    console.log(
-      `[File Upload Plugin] 路径标准化: "${original}" -> "${normalized}"`,
-    );
   }
   return normalized;
 }
@@ -122,77 +116,18 @@ function normalizeDir(dir: string): string {
  * @returns 匹配的 prefix，如果没有找到则返回空字符串
  */
 function getPrefixFromStaticConfig(uploadDir: string): string {
-  console.log(
-    `[File Upload Plugin] ========== 开始查找 prefix ==========`,
-  );
-  console.log(
-    `[File Upload Plugin] 上传目录: "${uploadDir}"`,
-  );
-  console.log(
-    `[File Upload Plugin] 映射表大小: ${extendDirPrefixMap.size}`,
-  );
-
   // 标准化上传目录路径（去掉 ./ 前缀）
   const normalizedUploadDir = normalizeDir(uploadDir);
-  console.log(
-    `[File Upload Plugin] 标准化后的上传目录: "${normalizedUploadDir}"`,
-  );
-
-  // 打印当前映射表内容（用于调试）
-  if (extendDirPrefixMap.size > 0) {
-    console.log(
-      `[File Upload Plugin] 当前映射表内容 (${extendDirPrefixMap.size} 项):`,
-    );
-    for (const [dir, prefix] of extendDirPrefixMap.entries()) {
-      console.log(
-        `  - "${dir}" -> ${prefix ? `"${prefix}"` : "(空)"}`,
-      );
-    }
-  } else {
-    console.log(
-      `[File Upload Plugin] 警告: 映射表为空，未找到任何 extendDirs 配置`,
-    );
-  }
 
   // 直接查找匹配的目录（Map 的 key 已经是标准化后的路径）
   if (extendDirPrefixMap.has(normalizedUploadDir)) {
     const prefix = extendDirPrefixMap.get(normalizedUploadDir)!;
-    console.log(
-      `[File Upload Plugin] ✓ 找到匹配的目录: "${normalizedUploadDir}"`,
-    );
     // 如果匹配且 prefix 存在，返回 prefix
     if (prefix) {
-      console.log(
-        `[File Upload Plugin] ✓ prefix 存在: "${prefix}"，返回路径将使用此前缀`,
-      );
       return prefix;
     } else {
-      console.log(
-        `[File Upload Plugin] ⚠ 找到匹配的目录但 prefix 为空，将使用文件系统相对路径`,
-      );
       return "";
     }
-  }
-
-  // 如果没有找到匹配，打印调试信息
-  if (extendDirPrefixMap.size > 0) {
-    const configuredDirs = Array.from(extendDirPrefixMap.keys()).join(", ");
-    console.log(
-      `[File Upload Plugin] ✗ 未找到匹配的目录`,
-    );
-    console.log(
-      `[File Upload Plugin]   上传目录: "${uploadDir}" (标准化: "${normalizedUploadDir}")`,
-    );
-    console.log(
-      `[File Upload Plugin]   已配置的目录: ${configuredDirs}`,
-    );
-    console.log(
-      `[File Upload Plugin]   将使用文件系统相对路径作为返回路径`,
-    );
-  } else {
-    console.log(
-      `[File Upload Plugin] ✗ 映射表为空，无法匹配，将使用文件系统相对路径`,
-    );
   }
 
   return "";
@@ -357,34 +292,17 @@ export async function handleFileUpload(
 
       // 构建 URL 路径（使用 prefix 和日期子目录）
       let urlPath: string;
-      console.log(
-        `[File Upload Plugin] 构建文件 URL 路径，prefix: ${
-          prefix ? `"${prefix}"` : "(空)"
-        }, 日期子目录: ${urlSubdirPath || "(无)"}, 文件名: "${finalFilename}"`,
-      );
       if (prefix) {
         // 如果设置了 prefix，使用 prefix + 日期子目录 + 文件名
         const prefixNormalized = prefix.startsWith("/") ? prefix : `/${prefix}`;
-        console.log(
-          `[File Upload Plugin]   使用 prefix 模式，标准化后的 prefix: "${prefixNormalized}"`,
-        );
         if (urlSubdirPath) {
           urlPath = `${prefixNormalized}/${urlSubdirPath}/${finalFilename}`;
-          console.log(
-            `[File Upload Plugin]   生成的 URL 路径 (带日期子目录): "${urlPath}"`,
-          );
         } else {
           urlPath = `${prefixNormalized}/${finalFilename}`;
-          console.log(
-            `[File Upload Plugin]   生成的 URL 路径 (无日期子目录): "${urlPath}"`,
-          );
         }
       } else {
         // 如果没有设置 prefix，使用文件系统的相对路径（向后兼容）
         urlPath = path.relative(Deno.cwd(), filePath).replace(/\\/g, "/");
-        console.log(
-          `[File Upload Plugin]   使用文件系统相对路径模式: "${urlPath}"`,
-        );
       }
 
       files.push({
@@ -492,109 +410,41 @@ export function fileUpload(options: FileUploadPluginOptions = {}): Plugin {
      * 初始化钩子 - 从配置中读取 extendDirs 并构建映射
      */
     onInit(_app: AppLike, config: AppConfig) {
-      console.log(
-        `[File Upload Plugin] onInit 被调用，开始初始化...`,
-      );
-      console.log(
-        `[File Upload Plugin] 配置中的 static:`,
-        config.static ? JSON.stringify(config.static, null, 2) : "undefined",
-      );
-
       // 清空之前的映射
       extendDirPrefixMap.clear();
 
       const extendDirs = config.static?.extendDirs || [];
-      console.log(
-        `[File Upload Plugin] 初始化，找到 ${extendDirs.length} 个 extendDirs 配置`,
-      );
-      if (extendDirs.length === 0) {
-        console.log(
-          `[File Upload Plugin] 警告: config.static?.extendDirs 为空或未定义`,
-        );
-        console.log(
-          `[File Upload Plugin] config.static =`,
-          config.static,
-        );
-      }
 
       // 构建目录到 prefix 的映射
-      for (let i = 0; i < extendDirs.length; i++) {
-        const extendDir = extendDirs[i];
-        console.log(
-          `[File Upload Plugin] 处理第 ${
-            i + 1
-          }/${extendDirs.length} 个 extendDir:`,
-          typeof extendDir === "string"
-            ? `"${extendDir}"`
-            : JSON.stringify(extendDir),
-        );
-
+      for (const extendDir of extendDirs) {
         let dir: string;
         let prefix: string | undefined;
 
         if (typeof extendDir === "string") {
           // 字符串格式：没有 prefix，使用 extendDir 作为 prefix
           dir = extendDir;
-          console.log(
-            `[File Upload Plugin]   类型: 字符串格式，dir = "${dir}"`,
-          );
           // 去掉 ./ 前缀（如果有），然后加上 /
           const dirForPrefix = extendDir.replace(/^\.\//, "");
-          console.log(
-            `[File Upload Plugin]   去掉 ./ 前缀后: "${dirForPrefix}"`,
-          );
           // 确保以 / 开头
           prefix = dirForPrefix.startsWith("/")
             ? dirForPrefix
             : `/${dirForPrefix}`;
-          console.log(
-            `[File Upload Plugin]   生成的 prefix: "${prefix}"`,
-          );
         } else {
           // 对象格式：使用配置的 dir 和 prefix
           dir = extendDir.dir;
           prefix = extendDir.prefix;
-          console.log(
-            `[File Upload Plugin]   类型: 对象格式，dir = "${dir}", prefix = ${
-              prefix ? `"${prefix}"` : "undefined"
-            }`,
-          );
         }
 
         // 标准化目录路径（去掉 ./ 前缀）
         const normalizedDir = normalizeDir(dir);
-        console.log(
-          `[File Upload Plugin]   标准化后的 dir: "${normalizedDir}"`,
-        );
 
         // 如果 prefix 存在，确保以 / 开头
-        let normalizedPrefix: string;
-        if (prefix) {
-          normalizedPrefix = prefix.startsWith("/") ? prefix : `/${prefix}`;
-          console.log(
-            `[File Upload Plugin]   标准化后的 prefix: "${normalizedPrefix}"`,
-          );
-        } else {
-          normalizedPrefix = "";
-          console.log(
-            `[File Upload Plugin]   prefix 为空，将使用空字符串`,
-          );
-        }
+        const normalizedPrefix = prefix
+          ? (prefix.startsWith("/") ? prefix : `/${prefix}`)
+          : "";
 
         // 存储映射：key 使用标准化后的 dir（用于匹配），value 是 prefix（如果存在）
         extendDirPrefixMap.set(normalizedDir, normalizedPrefix);
-        console.log(
-          `[File Upload Plugin]   ✓ 已注册映射: "${normalizedDir}" -> ${
-            normalizedPrefix ? `"${normalizedPrefix}"` : "(空)"
-          }`,
-        );
-        console.log(""); // 空行分隔
-      }
-
-      if (extendDirPrefixMap.size === 0) {
-        console.log(
-          `[File Upload Plugin] 警告: 未找到 extendDirs 配置，将使用文件系统相对路径作为返回路径`,
-        );
       }
     },
 
