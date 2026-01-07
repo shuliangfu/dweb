@@ -82,7 +82,7 @@ export default defineConfig({
     prefix: "/assets", // 访问前缀，例如 /assets/logo.png
     maxAge: 86400, // 缓存 1 天
     dotfiles: "deny", // 禁止访问隐藏文件
-    extendDirs: ["uploads"], // 扩展的静态资源目录
+    extendDirs: [{ dir: "uploads", prefix: "/uploads" }], // 扩展的静态资源目录
   },
 
   // Cookie 配置

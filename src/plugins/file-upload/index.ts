@@ -9,9 +9,11 @@ import type {
   UploadedFile,
   UploadResult,
 } from "./types.ts";
+import type { ExtendDirConfig } from "../../common/types/index.ts";
 import * as path from "@std/path";
 import { ensureDir } from "@std/fs/ensure-dir";
 import { crypto } from "@std/crypto";
+import { ConfigManager } from "../../core/config-manager.ts";
 
 /**
  * 生成文件名
@@ -85,6 +87,69 @@ function validateFileType(
 }
 
 /**
+ * 从静态资源配置中获取匹配的 prefix
+ * @param uploadDir 上传目录
+ * @returns 匹配的 prefix，如果没有找到则返回空字符串
+ */
+function getPrefixFromStaticConfig(uploadDir: string): string {
+  try {
+    const configManager = new ConfigManager();
+
+    // 尝试加载配置（如果未加载）
+    if (!configManager.isLoaded()) {
+      // 使用异步加载，但这里我们同步调用，如果失败则返回空字符串
+      // 注意：这里不等待加载完成，因为 handleFileUpload 是异步函数
+      // 实际使用中，配置应该在应用启动时已加载
+    }
+
+    // 如果配置已加载，尝试获取
+    if (configManager.isLoaded()) {
+      const appConfig = configManager.getConfig();
+      const extendDirs = appConfig.static?.extendDirs || [];
+
+      // 标准化上传目录路径用于比较
+      const normalizedUploadDir = path.isAbsolute(uploadDir)
+        ? uploadDir
+        : path.resolve(Deno.cwd(), uploadDir);
+      const uploadDirBasename = path.basename(normalizedUploadDir);
+
+      // 查找匹配的目录配置
+      for (const extendDir of extendDirs) {
+        let dir: string;
+        let prefix: string | undefined;
+
+        if (typeof extendDir === "string") {
+          dir = extendDir;
+          // 字符串格式：使用目录名作为 prefix
+          prefix = `/${path.basename(dir)}`;
+        } else {
+          dir = extendDir.dir;
+          prefix = extendDir.prefix || `/${path.basename(dir)}`;
+        }
+
+        // 标准化扩展目录路径
+        const normalizedExtendDir = path.isAbsolute(dir)
+          ? dir
+          : path.resolve(Deno.cwd(), dir);
+        const extendDirBasename = path.basename(normalizedExtendDir);
+
+        // 检查是否匹配（支持完全匹配或目录名匹配）
+        if (
+          normalizedUploadDir === normalizedExtendDir ||
+          uploadDirBasename === extendDirBasename
+        ) {
+          // 确保 prefix 以 / 开头
+          return prefix.startsWith("/") ? prefix : `/${prefix}`;
+        }
+      }
+    }
+  } catch {
+    // 如果获取配置失败，静默返回空字符串
+  }
+  return "";
+}
+
+/**
  * 处理文件上传
  */
 export async function handleFileUpload(
@@ -97,7 +162,9 @@ export async function handleFileUpload(
   const allowMultiple = config.allowMultiple !== false;
   const namingStrategy = config.namingStrategy || "timestamp";
   const createSubdirs = config.createSubdirs !== false;
-  const prefix = config.prefix || "";
+
+  // 自动从 static.extendDirs 配置中获取 prefix
+  const prefix = getPrefixFromStaticConfig(uploadDir);
 
   try {
     // 解析 multipart/form-data
