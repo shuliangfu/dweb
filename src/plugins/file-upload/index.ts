@@ -97,6 +97,7 @@ export async function handleFileUpload(
   const allowMultiple = config.allowMultiple !== false;
   const namingStrategy = config.namingStrategy || "timestamp";
   const createSubdirs = config.createSubdirs !== false;
+  const prefix = config.prefix || "";
 
   try {
     // 解析 multipart/form-data
@@ -146,6 +147,8 @@ export async function handleFileUpload(
 
     // 创建上传目录
     let targetDir = uploadDir;
+    let urlSubdirPath = ""; // 用于构建 URL 路径的日期子目录
+
     if (createSubdirs) {
       const date = new Date();
       const year = date.getFullYear();
@@ -199,6 +202,9 @@ export async function handleFileUpload(
       // 构建完整路径（处理不同的路径分隔符）
       const subdirParts = subdirPath.split(/[/\\-]/);
       targetDir = path.join(uploadDir, ...subdirParts);
+
+      // 保存用于 URL 路径的子目录（统一使用 / 作为分隔符）
+      urlSubdirPath = subdirPath.replace(/[\\-]/g, "/");
     }
     await ensureDir(targetDir);
 
@@ -233,10 +239,25 @@ export async function handleFileUpload(
       const filePath = path.join(targetDir, finalFilename);
       await Deno.writeFile(filePath, fileData);
 
+      // 构建 URL 路径（使用 prefix 和日期子目录）
+      let urlPath: string;
+      if (prefix) {
+        // 如果设置了 prefix，使用 prefix + 日期子目录 + 文件名
+        const prefixNormalized = prefix.startsWith("/") ? prefix : `/${prefix}`;
+        if (urlSubdirPath) {
+          urlPath = `${prefixNormalized}/${urlSubdirPath}/${finalFilename}`;
+        } else {
+          urlPath = `${prefixNormalized}/${finalFilename}`;
+        }
+      } else {
+        // 如果没有设置 prefix，使用文件系统的相对路径（向后兼容）
+        urlPath = path.relative(Deno.cwd(), filePath).replace(/\\/g, "/");
+      }
+
       files.push({
         originalName: file.name,
         filename: finalFilename,
-        path: path.relative(Deno.cwd(), filePath),
+        path: urlPath,
         size: finalSize,
         mimeType: finalMimeType,
         extension: finalExtension,
@@ -280,29 +301,29 @@ function generateClientScript(): string {
                 body: formData,
                 headers: options.headers || {}
               });
-              
+
               if (!response.ok) {
                 throw new Error('上传失败: ' + response.statusText);
               }
-              
+
               return await response.json();
             } catch (error) {
               throw error;
             }
           },
-          
+
           validateFile: function(file, options = {}) {
             const maxSize = options.maxSize || 10 * 1024 * 1024; // 10MB
             const allowedTypes = options.allowedTypes || [];
-            
+
             if (file.size > maxSize) {
               return { valid: false, error: '文件大小超过限制' };
             }
-            
+
             if (allowedTypes.length > 0) {
               const ext = file.name.split('.').pop()?.toLowerCase();
               const mimeType = file.type;
-              
+
               const isAllowed = allowedTypes.some(type => {
                 if (type.startsWith('.')) {
                   return type.slice(1).toLowerCase() === ext;
@@ -312,12 +333,12 @@ function generateClientScript(): string {
                 }
                 return type.toLowerCase() === ext;
               });
-              
+
               if (!isAllowed) {
                 return { valid: false, error: '不允许的文件类型' };
               }
             }
-            
+
             return { valid: true };
           }
         };

@@ -35,6 +35,8 @@ export interface FileUploadConfig {
   perFileLimit?: number;
   /** 总大小限制（所有文件） */
   totalLimit?: number;
+  /** URL 路径前缀（用于生成访问路径，如 '/uploads'） */
+  prefix?: string;
 }
 
 /**
