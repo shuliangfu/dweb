@@ -1454,9 +1454,24 @@ export class Application extends EventEmitter {
     sessionManager: SessionManager | null,
   ) {
     return async (req: Request, res: Response): Promise<void> => {
-      // 设置 Session 支持
+      // 设置 Session 支持（只有在配置了 session 时才初始化）
       if (sessionManager) {
         this.setupSessionSupport(req, res, sessionManager, cookieManager);
+      } else {
+        // 如果没有配置 session，确保 getSession 和 createSession 方法返回 null 或抛出错误
+        // 这样可以避免在没有配置时误用 session 功能
+        (req as any).getSession = (): Promise<Session | null> => {
+          return Promise.resolve(null);
+        };
+        (req as any).createSession = (
+          _data?: Record<string, unknown>,
+        ): Promise<Session> => {
+          return Promise.reject(
+            new Error(
+              "Session 功能未启用。请在 dweb.config.ts 中配置 session 选项。",
+            ),
+          );
+        };
       }
 
       // 执行插件请求钩子
@@ -1571,13 +1586,42 @@ export class Application extends EventEmitter {
     };
 
     // 添加 getSession 方法
+    // 如果 session 不存在，自动创建一个新的 session
     (req as any).getSession = async (): Promise<Session | null> => {
+      // 如果已经有缓存的 session，直接返回
+      if ((req as any).__session) {
+        return (req as any).__session;
+      }
+
+      // 如果 Cookie 中有 sessionId，尝试获取
       if (sessionId) {
         const session = await sessionManager.get(sessionId);
-        (req as any).session = session;
-        return session;
+        if (session) {
+          (req as any).session = session;
+          return session;
+        }
+        // 如果 session 已过期或不存在，继续创建新的
       }
-      return null;
+
+      // 如果没有 session，自动创建一个新的
+      const newSession = await sessionManager.create({});
+      (req as any).session = newSession;
+
+      // 设置 Session Cookie
+      if (cookieManager) {
+        const cookieValue = await cookieManager.setAsync(
+          cookieName,
+          newSession.id,
+          {
+            httpOnly: true,
+            secure: (sessionManager as any).config?.secure || false,
+            maxAge: (sessionManager as any).config?.maxAge || 3600,
+          },
+        );
+        res.setHeader("Set-Cookie", cookieValue);
+      }
+
+      return newSession;
     };
 
     // 设置 session 属性（延迟加载）
