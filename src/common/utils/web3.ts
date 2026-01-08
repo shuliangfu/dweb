@@ -365,11 +365,48 @@ export class Web3Client {
       );
     }
 
-    // 注意：viem 的 WalletClient 需要账户，这里使用 privateKey 创建
-    // 但 viem 的 WalletClient 主要用于浏览器钱包，服务端需要使用不同的方式
-    throw new Error(
-      "服务端环境需要使用 privateKey 创建账户，请使用其他方式",
-    );
+    // 服务端环境：使用 privateKey 创建账户，然后创建 WalletClient
+    try {
+      // 从私钥创建账户
+      const account = privateKeyToAccount(this.config.privateKey as Hex);
+
+      // 尝试获取 chain（从 PublicClient 或配置中）
+      let chain: Chain | undefined = this.chain || undefined;
+
+      // 如果还没有 chain，尝试从 PublicClient 获取
+      if (!chain) {
+        try {
+          const publicClient = this.getPublicClient();
+          chain = (publicClient as any).chain;
+          if (chain) {
+            this.chain = chain;
+          }
+        } catch {
+          // 如果获取失败，chain 保持为 undefined
+          // 注意：chain 将在调用 writeContract 时动态获取
+        }
+      }
+
+      // 创建 WalletClient，使用 http transport 和 privateKey 账户
+      this.walletClient = createWalletClient({
+        account: account,
+        chain: chain,
+        transport: http(this.config.rpcUrl),
+      });
+
+      // 如果 walletClient 有 chain 属性，保存它
+      if ((this.walletClient as any).chain && !this.chain) {
+        this.chain = (this.walletClient as any).chain;
+      }
+
+      return this.walletClient;
+    } catch (error) {
+      throw new Error(
+        `服务端创建 WalletClient 失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
   /**
