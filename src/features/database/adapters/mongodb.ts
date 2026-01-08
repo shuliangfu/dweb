@@ -225,10 +225,25 @@ export class MongoDBAdapter extends BaseAdapter {
           result = await coll.insertMany(data);
           break;
         case "update":
-          result = await coll.updateOne(data.filter, { $set: data.update });
+          // data.update 可能已经包含 $set 等操作符，直接使用
+          // 如果没有操作符，则包装为 $set
+          const updateDoc = data.update && typeof data.update === "object" &&
+              ("$set" in data.update || "$unset" in data.update ||
+                "$inc" in data.update)
+            ? data.update
+            : { $set: data.update };
+          result = await coll.updateOne(data.filter, updateDoc);
           break;
         case "updateMany":
-          result = await coll.updateMany(data.filter, { $set: data.update });
+          // data.update 可能已经包含 $set 等操作符，直接使用
+          // 如果没有操作符，则包装为 $set
+          const updateManyDoc =
+            data.update && typeof data.update === "object" &&
+              ("$set" in data.update || "$unset" in data.update ||
+                "$inc" in data.update)
+              ? data.update
+              : { $set: data.update };
+          result = await coll.updateMany(data.filter, updateManyDoc);
           break;
         case "delete":
           result = await coll.deleteOne(data.filter);

@@ -1750,11 +1750,16 @@ export abstract class MongoModel {
       );
     }
 
-    const primaryKey = (Model.constructor as any).primaryKey || "_id";
-    const id = (this as any)[primaryKey];
+    const primaryKey = Model.primaryKey || "_id";
+    let id = (this as any)[primaryKey];
 
     if (!id) {
       throw new Error("Cannot delete instance without primary key");
+    }
+
+    // 如果 id 是 ObjectId 对象，转换为字符串
+    if (id && typeof id === "object" && id.toString) {
+      id = id.toString();
     }
 
     const deleted = await Model.delete(id);
@@ -2899,6 +2904,8 @@ export abstract class MongoModel {
           );
         }
         const adapter = this.adapter as any as MongoDBAdapter;
+        // 应用软删除过滤器（onlyTrashed: true）
+        const queryFilter = this.applySoftDeleteFilter(condition, false, true);
         const projection = this.buildProjection(fields);
         const queryOptions: any = {};
         if (Object.keys(projection).length > 0) {
@@ -2916,7 +2923,7 @@ export abstract class MongoModel {
         }
         const results = await adapter.query(
           this.collectionName,
-          condition,
+          queryFilter,
           queryOptions,
         );
         return results.map((row: any) => {
@@ -2957,6 +2964,8 @@ export abstract class MongoModel {
         } else {
           filter = condition;
         }
+        // 应用软删除过滤器（onlyTrashed: true）
+        filter = this.applySoftDeleteFilter(filter, false, true);
         const projection = this.buildProjection(fields);
         const options: any = { limit: 1 };
         if (Object.keys(projection).length > 0) {
@@ -2992,12 +3001,14 @@ export abstract class MongoModel {
           );
         }
         const adapter = this.adapter as any as MongoDBAdapter;
+        // 应用软删除过滤器（onlyTrashed: true）
+        const queryFilter = this.applySoftDeleteFilter(condition, false, true);
         const db = (adapter as any).getDatabase();
         if (!db) {
           throw new Error("Database not connected");
         }
         const count = await db.collection(this.collectionName).countDocuments(
-          condition,
+          queryFilter,
         );
         return count;
       },
