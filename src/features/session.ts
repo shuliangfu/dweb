@@ -801,13 +801,43 @@ export class SessionManager {
         return sessionData.id;
       },
       data: sessionData.data,
+      /**
+       * 获取 Session 数据中的指定键值
+       * @param key 键名
+       * @returns 键值，如果不存在则返回 undefined
+       */
+      get<K extends keyof typeof sessionData.data>(key: K) {
+        return sessionData.data[key];
+      },
+      /**
+       * 设置 Session 数据中的指定键值
+       * @param key 键名
+       * @param value 键值
+       */
+      async set<K extends keyof typeof sessionData.data>(
+        key: K,
+        value: typeof sessionData.data[K],
+      ): Promise<void> {
+        sessionData.data[key] = value;
+        await store.set(sessionData.id, sessionData, maxAge);
+      },
+      /**
+       * 更新 Session 数据（合并方式）
+       * @param newData 要更新的数据
+       */
       async update(newData: Record<string, unknown>): Promise<void> {
         sessionData.data = { ...sessionData.data, ...newData };
         await store.set(sessionData.id, sessionData, maxAge);
       },
+      /**
+       * 销毁 Session
+       */
       async destroy(): Promise<void> {
         await store.delete(sessionData.id);
       },
+      /**
+       * 重新生成 Session ID
+       */
       async regenerate(): Promise<void> {
         const oldId = sessionData.id;
         const newId = generateSessionId();

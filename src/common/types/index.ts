@@ -390,8 +390,30 @@ export interface CookieOptions {
 export interface Session<T = Record<string, any>> {
   id: string;
   data: T;
+  /**
+   * 获取 Session 数据中的指定键值
+   * @param key 键名
+   * @returns 键值，如果不存在则返回 undefined
+   */
+  get<K extends keyof T>(key: K): T[K] | undefined;
+  /**
+   * 设置 Session 数据中的指定键值
+   * @param key 键名
+   * @param value 键值
+   */
+  set<K extends keyof T>(key: K, value: T[K]): Promise<void>;
+  /**
+   * 更新 Session 数据（合并方式）
+   * @param data 要更新的数据
+   */
   update(data: Partial<T>): Promise<void>;
+  /**
+   * 销毁 Session
+   */
   destroy(): Promise<void>;
+  /**
+   * 重新生成 Session ID
+   */
   regenerate(): Promise<void>;
 }
 
