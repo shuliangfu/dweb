@@ -105,12 +105,7 @@ export {
 } from "../plugins/i18n/client.ts";
 
 // 导出路由工具函数
-export {
-  getCurrentPath,
-  getCurrentUrl,
-  getQueryParams,
-  route,
-} from "./utils/route.ts";
+export * from "./utils/route.ts";
 
 // 导出类型（这些只是类型，不会在运行时导入任何代码）
 export type {

@@ -1,7 +1,7 @@
 {
   "vendor": true,
   "name": "@dreamer/dweb",
-  "version": "2.5.6",
+  "version": "2.5.7",
   "license": "MIT",
   "exports": {
     ".": "./src/mod.ts",
