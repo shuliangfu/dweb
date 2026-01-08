@@ -39,6 +39,7 @@ import {
   type PublicClient,
   verifyMessage as viemVerifyMessage,
   type WalletClient,
+  webSocket,
 } from "npm:viem@^2.43.3";
 // 导入 viem 账户模块（用于生成钱包）
 import {
@@ -103,8 +104,10 @@ export type ChainChangedListener = (chainId: string) => void | Promise<void>;
  * Web3 配置选项
  */
 export interface Web3Config {
-  /** RPC 节点 URL */
+  /** RPC 节点 URL（HTTP） */
   rpcUrl?: string;
+  /** WebSocket 节点 URL（WSS，用于事件监听，如果提供则优先使用） */
+  wssUrl?: string;
   /** 链 ID */
   chainId?: number;
   /** 网络名称 */
@@ -193,6 +196,7 @@ export interface ContractReadOptions {
 export class Web3Client {
   private config: Web3Config;
   private publicClient: PublicClient | null = null;
+  private eventClient: PublicClient | null = null; // 专门用于事件监听的客户端（使用 WSS）
   private walletClient: WalletClient | null = null;
   private chain: Chain | null = null;
   // 事件监听器存储
@@ -247,6 +251,7 @@ export class Web3Client {
     this.config = { ...this.config, ...config };
     // 重置客户端，以便使用新配置
     this.publicClient = null;
+    this.eventClient = null; // 重置事件客户端
     this.walletClient = null;
     this.chain = null;
   }
@@ -291,7 +296,7 @@ export class Web3Client {
       );
     }
 
-    // 使用 HTTP transport 创建 PublicClient
+    // 使用 HTTP transport 创建 PublicClient（用于普通 RPC 调用）
     try {
       this.publicClient = createPublicClient({
         transport: http(this.config.rpcUrl),
@@ -304,6 +309,39 @@ export class Web3Client {
         }`,
       );
     }
+  }
+
+  /**
+   * 获取或创建用于事件监听的 PublicClient（懒加载）
+   * 如果配置了 wssUrl，则使用 WebSocket transport；否则使用普通的 PublicClient
+   * @returns PublicClient 实例（用于事件监听）
+   */
+  private getEventClient(): PublicClient {
+    // 如果已经创建了事件客户端，直接返回
+    if (this.eventClient) {
+      return this.eventClient;
+    }
+
+    // 如果配置了 wssUrl，使用 WebSocket transport 创建专门的事件监听客户端
+    if (this.config.wssUrl) {
+      try {
+        this.eventClient = createPublicClient({
+          transport: webSocket(this.config.wssUrl),
+        });
+        return this.eventClient;
+      } catch (error) {
+        console.warn(
+          `[Web3Client] 使用 WSS 创建事件客户端失败，回退到 HTTP: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+        // 如果 WSS 创建失败，回退到使用普通的 PublicClient
+        return this.getPublicClient();
+      }
+    }
+
+    // 如果没有配置 wssUrl，使用普通的 PublicClient（HTTP transport）
+    return this.getPublicClient();
   }
 
   /**
@@ -387,7 +425,13 @@ export class Web3Client {
         }
       }
 
-      // 创建 WalletClient，使用 http transport 和 privateKey 账户
+      // 创建 WalletClient
+      // 注意：WalletClient 主要用于发送交易，始终使用 HTTP transport（即使配置了 wssUrl）
+      // wssUrl 仅用于事件监听，不用于发送交易
+      if (!this.config.rpcUrl) {
+        throw new Error("服务端创建 WalletClient 需要 rpcUrl 配置");
+      }
+
       this.walletClient = createWalletClient({
         account: account,
         chain: chain,
@@ -1233,7 +1277,8 @@ export class Web3Client {
 
     this.blockListenerStarted = true;
     this.blockReconnectAttempts = 0;
-    const client = this.getPublicClient();
+    // 使用事件客户端（如果配置了 wssUrl 则使用 WebSocket，否则使用 HTTP）
+    const client = this.getEventClient();
 
     try {
       // 使用 viem 的 watchBlocks 监听新区块
@@ -1381,7 +1426,8 @@ export class Web3Client {
 
     this.transactionListenerStarted = true;
     this.transactionReconnectAttempts = 0;
-    const client = this.getPublicClient();
+    // 使用事件客户端（如果配置了 wssUrl 则使用 WebSocket，否则使用 HTTP）
+    const client = this.getEventClient();
 
     try {
       // 使用 viem 的 watchPendingTransactions 监听待处理交易
@@ -1677,7 +1723,8 @@ export class Web3Client {
     }
 
     try {
-      const client = this.getPublicClient();
+      // 使用事件客户端（如果配置了 wssUrl 则使用 WebSocket，否则使用 HTTP）
+      const client = this.getEventClient();
 
       // 构建 ABI（如果提供了则使用，否则使用默认的事件 ABI）
       const eventAbi = abi

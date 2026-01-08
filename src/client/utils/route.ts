@@ -67,7 +67,28 @@ export function route(
       }
     }
 
-    // 获取框架的导航函数
+    // 优先使用直接暴露的 navigateTo 方法（更可靠）
+    const navigateToFunc = (globalThis as Record<string, unknown>)
+      .__CSR_NAVIGATE_TO as
+        | ((path: string, replace?: boolean) => Promise<void>)
+        | undefined;
+
+    if (navigateToFunc && typeof navigateToFunc === "function") {
+      // 直接调用 navigateTo 方法（支持 SPA 无刷新导航）
+      navigateToFunc(fullPath, replace).catch((error) => {
+        console.warn("[route] 导航失败:", error);
+        // 如果导航失败，回退到整页跳转
+        if (replace) {
+          globalThis.history.replaceState({}, "", fullPath);
+          globalThis.location.replace(fullPath);
+        } else {
+          globalThis.location.href = fullPath;
+        }
+      });
+      return true;
+    }
+
+    // 回退到使用 __CSR_NAVIGATE（向后兼容）
     const navigateFunc = (globalThis as Record<string, unknown>)
       .__CSR_NAVIGATE as
         | ((path: string, replace?: boolean) => void)
@@ -77,16 +98,16 @@ export function route(
       // 使用框架的导航函数（支持 SPA 无刷新导航）
       navigateFunc(fullPath, replace);
       return true;
-    } else {
-      // 如果框架导航函数不可用，回退到整页跳转
-      if (replace) {
-        globalThis.history.replaceState({}, "", fullPath);
-        globalThis.location.replace(fullPath);
-      } else {
-        globalThis.location.href = fullPath;
-      }
-      return false;
     }
+
+    // 如果框架导航函数不可用，回退到整页跳转
+    if (replace) {
+      globalThis.history.replaceState({}, "", fullPath);
+      globalThis.location.replace(fullPath);
+    } else {
+      globalThis.location.href = fullPath;
+    }
+    return false;
   } catch (error) {
     console.warn("[route] 路由导航失败:", error);
     return false;
@@ -183,6 +204,7 @@ export function goBack(steps: number = 1): boolean {
 
     // 使用 history.go 进行导航
     // 正数表示后退，负数表示前进
+    // 这会触发 popstate 事件，popstate 处理器会调用 navigateTo 来渲染正确的页面
     globalThis.history.go(-steps);
     return true;
   } catch (error) {

@@ -1426,6 +1426,7 @@ class BrowserClient {
 
     /**
      * 处理浏览器前进/后退
+     * 当用户点击浏览器的前进/后退按钮，或调用 history.go() 时会触发此事件
      */
     const popstateHandler = (e: PopStateEvent) => {
       if (navigateToFunc) {
@@ -1433,7 +1434,20 @@ class BrowserClient {
         const targetPath = (e.state?.path as string) ||
           (globalThis.location.pathname + globalThis.location.search +
             globalThis.location.hash);
+
+        // 使用 replace=true，因为这是历史记录导航，不是新的导航
+        // 这样不会在历史记录中创建新条目
         navigateToFunc(targetPath, true);
+      } else {
+        // 如果导航函数还未初始化，等待一下再尝试
+        setTimeout(() => {
+          if (navigateToFunc) {
+            const targetPath = (e.state?.path as string) ||
+              (globalThis.location.pathname + globalThis.location.search +
+                globalThis.location.hash);
+            navigateToFunc(targetPath, true);
+          }
+        }, 100);
       }
     };
 
@@ -1973,6 +1987,17 @@ class BrowserClient {
       replace?: boolean,
     ) => {
       this.router!.navigateTo(path, replace);
+    };
+
+    // 暴露 ClientRouter 实例到全局，供 route.ts 直接调用
+    (globalThis as Record<string, unknown>).__CSR_ROUTER = this.router;
+
+    // 暴露 navigateTo 方法到全局，供 route.ts 直接调用
+    (globalThis as Record<string, unknown>).__CSR_NAVIGATE_TO = (
+      path: string,
+      replace?: boolean,
+    ) => {
+      return this.router!.navigateTo(path, replace);
     };
   }
 }
