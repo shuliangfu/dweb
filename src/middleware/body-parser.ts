@@ -97,7 +97,12 @@ export function bodyParser(options: BodyParserOptions = {}): Middleware {
       if (contentType.includes("application/json")) {
         const text = await req.text();
         if (text) {
-          extendedReq.body = JSON.parse(text);
+          try {
+            extendedReq.body = JSON.parse(text);
+          } catch {
+            // 如果解析失败，保持为字符串
+            extendedReq.body = text;
+          }
         } else {
           extendedReq.body = {};
         }
@@ -112,14 +117,54 @@ export function bodyParser(options: BodyParserOptions = {}): Middleware {
         extendedReq.body = body;
       } // 解析文本
       else if (contentType.includes("text/")) {
-        extendedReq.body = await req.text();
+        const text = await req.text();
+        // 尝试解析为 JSON（如果文本是 JSON 格式）
+        if (text.trim().startsWith("{") || text.trim().startsWith("[")) {
+          try {
+            extendedReq.body = JSON.parse(text);
+          } catch {
+            // 如果解析失败，保持为字符串
+            extendedReq.body = text;
+          }
+        } else {
+          extendedReq.body = text;
+        }
       } // 解析 FormData
       else if (contentType.includes("multipart/form-data")) {
         extendedReq.body = await req.formData();
-      } // 其他情况，解析为原始数据
+      } // 其他情况，尝试解析为 JSON 或原始数据
       else {
-        const arrayBuffer = await req.arrayBuffer();
-        extendedReq.body = new Uint8Array(arrayBuffer);
+        const text = await req.text();
+        // 如果文本看起来像 JSON，尝试解析
+        if (
+          text && (text.trim().startsWith("{") || text.trim().startsWith("["))
+        ) {
+          try {
+            extendedReq.body = JSON.parse(text);
+          } catch {
+            // 如果解析失败，使用原始文本
+            extendedReq.body = text;
+          }
+        } else if (text) {
+          // 如果不是 JSON 格式，使用原始文本
+          extendedReq.body = text;
+        } else {
+          // 如果没有文本内容，解析为原始数据
+          const arrayBuffer = await req.arrayBuffer();
+          extendedReq.body = new Uint8Array(arrayBuffer);
+        }
+      }
+
+      // 如果 body 是字符串且看起来像 JSON，尝试再次解析
+      if (typeof extendedReq.body === "string") {
+        const trimmed = extendedReq.body.trim();
+        if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+          try {
+            extendedReq.body = JSON.parse(extendedReq.body);
+          } catch {
+            // 如果解析失败，保持为字符串
+          }
+        }
       }
     } catch (error) {
       res.status = 400;
