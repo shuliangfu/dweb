@@ -261,6 +261,7 @@ class KVSessionStore implements SessionStore {
 class MongoDBSessionStore implements SessionStore {
   private collectionName: string;
   private db: ReturnType<typeof getDatabase> | null = null;
+  private cleanupInterval?: number;
 
   constructor(collectionName: string = "sessions") {
     this.collectionName = collectionName;
@@ -272,6 +273,14 @@ class MongoDBSessionStore implements SessionStore {
         "[Session] MongoDB not initialized, will use when available",
       );
     }
+
+    // 定期清理过期 Session
+    // 注意：使用 setInterval 而不是 Deno 的定时器，因为这是浏览器和 Node.js 兼容的 API
+    this.cleanupInterval = setInterval(() => {
+      this.cleanup().catch((error) => {
+        console.error("[Session] MongoDB cleanup error:", error);
+      });
+    }, 60 * 60 * 1000); // 每小时清理一次
   }
 
   private getMongoDBAdapter(): MongoDBAdapter {
@@ -379,6 +388,48 @@ class MongoDBSessionStore implements SessionStore {
       await collection.deleteMany({});
     } catch (error) {
       console.error("[Session] MongoDB clear error:", error);
+    }
+  }
+
+  /**
+   * 清理过期的 Session
+   * 定期调用此方法可以删除所有已过期的 session 记录
+   */
+  private async cleanup(): Promise<void> {
+    try {
+      const adapter = this.getMongoDBAdapter();
+      const db = adapter.getDatabase();
+
+      if (!db) {
+        return;
+      }
+
+      const collection = db.collection(this.collectionName);
+      const now = Date.now();
+
+      // 删除所有过期的 session
+      const result = await collection.deleteMany({
+        expires: { $lt: now },
+      });
+
+      if (result.deletedCount > 0) {
+        console.log(
+          `[Session] MongoDB 清理了 ${result.deletedCount} 个过期 session`,
+        );
+      }
+    } catch (error) {
+      // 忽略清理错误，避免影响正常功能
+      console.error("[Session] MongoDB cleanup error:", error);
+    }
+  }
+
+  /**
+   * 销毁清理定时器
+   */
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = undefined;
     }
   }
 }
@@ -854,6 +905,17 @@ export class SessionManager {
    */
   async destroy(sessionId: string): Promise<void> {
     await this.store.delete(sessionId);
+  }
+
+  /**
+   * 销毁 Session 管理器
+   * 清理定时器和资源
+   */
+  destroyManager(): void {
+    // 如果 store 实现了 destroy 方法，调用它来清理定时器
+    if (this.store && typeof (this.store as any).destroy === "function") {
+      (this.store as any).destroy();
+    }
   }
 
   /**
