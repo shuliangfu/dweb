@@ -577,7 +577,35 @@ export class Web3Client {
       if (!walletAccount) {
         throw new Error("服务端未找到账户对象，请检查 privateKey 配置");
       }
+
+      // 获取 chain（如果没有，尝试从 walletClient 或 network 获取）
+      let chain: Chain | undefined = (walletClient as any).chain || this.chain;
+      if (!chain) {
+        try {
+          const network = await this.getNetwork();
+          chain = {
+            id: Number(network.chainId.toString()),
+            name: network.name,
+          } as unknown as Chain;
+        } catch {
+          // 如果无法获取 chain，尝试使用配置中的 chainId
+          if (this.config.chainId) {
+            chain = {
+              id: this.config.chainId,
+              name: this.config.network || `chain-${this.config.chainId}`,
+            } as unknown as Chain;
+          }
+        }
+      }
+
+      if (!chain) {
+        throw new Error(
+          "无法获取链信息，请在配置中设置 chainId 或确保 RPC 节点可用",
+        );
+      }
+
       txParams.account = walletAccount;
+      txParams.chain = chain;
       const serializedTx = await walletClient.signTransaction(txParams);
       const hash = await publicClient.sendRawTransaction({
         serializedTransaction: serializedTx,
@@ -796,7 +824,9 @@ export class Web3Client {
         if (!walletAccount) {
           throw new Error("服务端未找到账户对象，请检查 privateKey 配置");
         }
+        // 添加 chain 参数，signTransaction 需要 chain 来正确签名交易
         txParams.account = walletAccount;
+        txParams.chain = chain;
         const serializedTx = await walletClient.signTransaction(txParams);
         hash = await publicClient.sendRawTransaction({
           serializedTransaction: serializedTx,
