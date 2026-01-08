@@ -510,18 +510,32 @@ export class Web3Client {
    */
   async sendTransaction(options: TransactionOptions): Promise<string> {
     const walletClient = this.getWalletClient();
-    const accounts = await walletClient.getAddresses();
-    if (accounts.length === 0) {
-      throw new Error("未找到可用账户，请先连接钱包");
-    }
+    const publicClient = this.getPublicClient();
 
     try {
-      const account = accounts[0];
-      const publicClient = this.getPublicClient();
+      // 获取账户：服务端可以直接从 walletClient 获取 account 对象，客户端需要从 getAddresses 获取地址
+      let account: Address;
+      let walletAccount: any = null; // 服务端使用的账户对象
+
+      if (IS_CLIENT) {
+        // 客户端环境：从钱包获取地址
+        const accounts = await walletClient.getAddresses();
+        if (accounts.length === 0) {
+          throw new Error("未找到可用账户，请先连接钱包");
+        }
+        account = accounts[0] as Address;
+      } else {
+        // 服务端环境：直接从 walletClient 获取 account 对象
+        // walletClient 在服务端创建时已经传入了 account，可以直接访问
+        walletAccount = (walletClient as any).account;
+        if (!walletAccount || !walletAccount.address) {
+          throw new Error("服务端未找到账户，请检查 privateKey 配置");
+        }
+        account = walletAccount.address as Address;
+      }
 
       // 构建交易参数（EIP-1559 或 legacy）
       const txParams: any = {
-        account: account,
         to: options.to as Address,
         value: options.value ? BigInt(options.value.toString()) : undefined,
         data: options.data as Hex | undefined,
@@ -552,6 +566,7 @@ export class Web3Client {
       if (IS_CLIENT) {
         const win = globalThis.window as WindowWithEthereum;
         if (win.ethereum) {
+          txParams.account = account;
           const hash = await walletClient.sendTransaction(txParams);
           return hash;
         }
@@ -559,6 +574,10 @@ export class Web3Client {
 
       // 服务端环境或没有钱包：使用 signTransaction + sendRawTransaction
       // 这样可以兼容不支持 eth_sendTransaction 的节点
+      if (!walletAccount) {
+        throw new Error("服务端未找到账户对象，请检查 privateKey 配置");
+      }
+      txParams.account = walletAccount;
       const serializedTx = await walletClient.signTransaction(txParams);
       const hash = await publicClient.sendRawTransaction({
         serializedTransaction: serializedTx,
@@ -610,10 +629,7 @@ export class Web3Client {
     waitForConfirmation: boolean = true,
   ): Promise<unknown> {
     const walletClient = this.getWalletClient();
-    const accounts = await walletClient.getAddresses();
-    if (accounts.length === 0) {
-      throw new Error("未找到可用账户，请先连接钱包");
-    }
+    const publicClient = this.getPublicClient();
 
     try {
       // 从配置或选项中获取合约地址
@@ -670,17 +686,122 @@ export class Web3Client {
         );
       }
 
-      // 发送交易
-      const hash = await walletClient.writeContract({
-        account: accounts[0],
-        address: contractAddress as Address,
-        abi: parsedAbi,
-        functionName: options.functionName,
-        args: options.args as any,
-        value: options.value ? BigInt(options.value.toString()) : undefined,
-        gas: options.gasLimit ? BigInt(options.gasLimit.toString()) : undefined,
-        chain: chain,
-      });
+      // 获取账户：服务端可以直接从 walletClient 获取 account 对象，客户端需要从 getAddresses 获取地址
+      let account: Address;
+      let walletAccount: any = null; // 服务端使用的账户对象
+
+      if (IS_CLIENT) {
+        // 客户端环境：从钱包获取地址
+        const accounts = await walletClient.getAddresses();
+        if (accounts.length === 0) {
+          throw new Error("未找到可用账户，请先连接钱包");
+        }
+        account = accounts[0] as Address;
+      } else {
+        // 服务端环境：直接从 walletClient 获取 account 对象
+        // walletClient 在服务端创建时已经传入了 account，可以直接访问
+        walletAccount = (walletClient as any).account;
+        if (!walletAccount || !walletAccount.address) {
+          throw new Error("服务端未找到账户，请检查 privateKey 配置");
+        }
+        account = walletAccount.address as Address;
+      }
+
+      // 客户端环境（使用 MetaMask 等钱包）：使用钱包的 writeContract
+      // 钱包会自动处理签名和发送
+      let hash: string;
+      if (IS_CLIENT) {
+        const win = globalThis.window as WindowWithEthereum;
+        if (win.ethereum) {
+          hash = await walletClient.writeContract({
+            account: account,
+            address: contractAddress as Address,
+            abi: parsedAbi,
+            functionName: options.functionName,
+            args: options.args as any,
+            value: options.value ? BigInt(options.value.toString()) : undefined,
+            gas: options.gasLimit
+              ? BigInt(options.gasLimit.toString())
+              : undefined,
+            chain: chain,
+          });
+        } else {
+          // 客户端但没有钱包，使用服务端方式
+          throw new Error(
+            "未检测到钱包，请连接钱包或使用服务端配置（privateKey）",
+          );
+        }
+      } else {
+        // 服务端环境：使用 encodeFunctionData + signTransaction + sendRawTransaction
+        // 这样可以兼容不支持 eth_sendTransaction 的节点
+
+        // 编码函数调用数据
+        const data = encodeFunctionData({
+          abi: parsedAbi,
+          functionName: options.functionName,
+          args: options.args as any,
+        });
+
+        // 构建交易参数
+        // 注意：在服务端，account 需要是账户对象（包含签名方法），而不是地址字符串
+        const txParams: any = {
+          to: contractAddress as Address,
+          data: data,
+          value: options.value ? BigInt(options.value.toString()) : undefined,
+          gas: options.gasLimit
+            ? BigInt(options.gasLimit.toString())
+            : undefined,
+        };
+
+        // 获取 nonce（如果没有提供）
+        txParams.nonce = await publicClient.getTransactionCount({
+          address: account as Address,
+        });
+
+        // 获取 gas 价格（如果没有提供 gasLimit）
+        if (!txParams.gas) {
+          try {
+            const gasEstimate = await publicClient.estimateGas({
+              account: account,
+              to: contractAddress as Address,
+              data: data,
+              value: txParams.value,
+            });
+            txParams.gas = gasEstimate;
+          } catch {
+            // 如果估算失败，使用默认值
+            txParams.gas = 21000n;
+          }
+        }
+
+        // 获取费用数据（EIP-1559 或 legacy）
+        try {
+          const feeData = await publicClient.estimateFeesPerGas();
+          if (feeData.maxFeePerGas) {
+            txParams.maxFeePerGas = feeData.maxFeePerGas;
+            txParams.maxPriorityFeePerGas = feeData.maxPriorityFeePerGas ||
+              feeData.maxFeePerGas / 2n;
+          } else {
+            const gasPrice = await publicClient.getGasPrice();
+            txParams.gasPrice = gasPrice;
+          }
+        } catch {
+          // 如果获取费用数据失败，使用默认值
+          const gasPrice = await publicClient.getGasPrice();
+          txParams.gasPrice = gasPrice;
+        }
+
+        // 签名并发送交易
+        // 在服务端，walletClient 已经包含了 account，可以直接使用
+        if (!walletAccount) {
+          throw new Error("服务端未找到账户对象，请检查 privateKey 配置");
+        }
+        txParams.account = walletAccount;
+        const serializedTx = await walletClient.signTransaction(txParams);
+        hash = await publicClient.sendRawTransaction({
+          serializedTransaction: serializedTx,
+        });
+      }
 
       // 如果不需要等待确认，直接返回交易哈希
       if (!waitForConfirmation) {
