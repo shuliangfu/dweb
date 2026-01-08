@@ -844,8 +844,18 @@ class ClientRouter {
    * 导航到指定路径（优化：使用类方法，减少全局变量访问）
    */
   async navigateTo(path: string, replace = false): Promise<void> {
-    // 规范化路径
+    // 规范化路径（保留查询参数和哈希）
     let normalizedPath = path;
+
+    // 如果路径是完整的 URL，提取 pathname + search + hash
+    try {
+      const url = new URL(path, globalThis.location.origin);
+      normalizedPath = url.pathname + url.search + url.hash;
+    } catch {
+      // 如果不是有效的 URL，直接使用原路径
+    }
+
+    // 处理 basePath
     if (this.basePath !== "/") {
       const base = this.basePath.endsWith("/")
         ? this.basePath.slice(0, -1)
@@ -1014,20 +1024,31 @@ class ClientRouter {
       // 渲染（使用渲染器的方法）
       let hasContent = await this.renderer.render(finalElement, targetMode);
 
-      // 如果渲染成功，立即更新历史记录
+      // 如果渲染成功，更新历史记录
+      // 注意：我们需要在渲染成功后更新历史记录，确保 state 中包含正确的 path
+      // 这样当用户使用浏览器前进/后退按钮时，popstate 事件可以正确获取路径
       if (hasContent) {
-        if (replace) {
-          globalThis.history.replaceState(
-            { path: normalizedPath },
-            "",
-            normalizedPath,
-          );
-        } else {
-          globalThis.history.pushState(
-            { path: normalizedPath },
-            "",
-            normalizedPath,
-          );
+        // 检查当前历史记录的 state 是否已经包含正确的 path
+        // 如果已经包含且路径相同，则不需要更新（避免重复更新）
+        const currentState = globalThis.history.state;
+        const needsUpdate = !currentState ||
+          !currentState.path ||
+          currentState.path !== normalizedPath;
+
+        if (needsUpdate) {
+          if (replace) {
+            globalThis.history.replaceState(
+              { path: normalizedPath },
+              "",
+              normalizedPath,
+            );
+          } else {
+            globalThis.history.pushState(
+              { path: normalizedPath },
+              "",
+              normalizedPath,
+            );
+          }
         }
 
         // 触发自定义事件
@@ -1109,12 +1130,26 @@ class ClientRouter {
             container.children.length > 0 || container.textContent.trim() !== ""
           ) {
             hasContent = true;
-            if (!replace) {
-              globalThis.history.pushState(
-                { path: normalizedPath },
-                "",
-                normalizedPath,
-              );
+            // 更新历史记录（与上面的逻辑保持一致）
+            const currentState = globalThis.history.state;
+            const needsUpdate = !currentState ||
+              !currentState.path ||
+              currentState.path !== normalizedPath;
+
+            if (needsUpdate) {
+              if (replace) {
+                globalThis.history.replaceState(
+                  { path: normalizedPath },
+                  "",
+                  normalizedPath,
+                );
+              } else {
+                globalThis.history.pushState(
+                  { path: normalizedPath },
+                  "",
+                  normalizedPath,
+                );
+              }
             }
           }
         }
@@ -1394,10 +1429,11 @@ class BrowserClient {
      */
     const popstateHandler = (e: PopStateEvent) => {
       if (navigateToFunc) {
-        navigateToFunc(
-          (e.state?.path as string) || globalThis.location.pathname,
-          true,
-        );
+        // 优先使用 state 中的 path，如果没有则使用当前 location 的完整路径（包含查询参数和哈希）
+        const targetPath = (e.state?.path as string) ||
+          (globalThis.location.pathname + globalThis.location.search +
+            globalThis.location.hash);
+        navigateToFunc(targetPath, true);
       }
     };
 
@@ -1424,6 +1460,8 @@ class BrowserClient {
       replace?: boolean,
     ) {
       if (navigateToFunc) {
+        // 直接调用导航函数，不要在这里更新历史记录
+        // 历史记录会在 navigateTo 方法中，渲染成功后更新
         navigateToFunc(path, replace);
       } else {
         // 如果导航函数还未初始化，等待一下再尝试
@@ -1432,7 +1470,12 @@ class BrowserClient {
             navigateToFunc(path, replace);
           } else {
             // 如果等待后还是没有，回退到整页跳转
-            globalThis.location.href = path;
+            if (replace) {
+              globalThis.history.replaceState({}, "", path);
+              globalThis.location.replace(path);
+            } else {
+              globalThis.location.href = path;
+            }
           }
         }, 100);
       }
