@@ -7,12 +7,14 @@
 
 import type {
   AppConfig,
+  CookieConfig,
   Middleware,
   MiddlewareConfig,
   Plugin,
   Request,
   Response,
   Session,
+  SessionConfig,
 } from "../common/types/index.ts";
 import type { Logger } from "../features/logger.ts";
 import { Server } from "./server.ts";
@@ -1561,7 +1563,22 @@ export class Application extends EventEmitter {
     cookieManager: CookieManager | null,
   ): void {
     const cookieName = sessionManager.getCookieName();
-    const sessionId = req.getCookie(cookieName);
+    const config = this.configManager.getConfig();
+    const sessionConfig = (sessionManager as any).config as SessionConfig;
+    const cookieConfig = config.cookie as CookieConfig;
+
+    // 从配置中读取 Cookie 选项，设置默认值
+    // 优先级：session 配置 > cookie 配置 > 默认值
+    const cookieOptions = {
+      httpOnly: sessionConfig?.httpOnly ?? cookieConfig?.httpOnly ?? true,
+      secure: sessionConfig?.secure ?? cookieConfig?.secure ?? false,
+      maxAge: sessionConfig?.maxAge ?? cookieConfig?.maxAge ?? 3600,
+      path: sessionConfig?.path ?? cookieConfig?.path ?? "/", // 优先从 session 配置读取，其次从 cookie 配置读取，默认为根路径
+      sameSite: (sessionConfig?.sameSite ?? cookieConfig?.sameSite ?? "lax") as
+        | "strict"
+        | "lax"
+        | "none", // 优先从 session 配置读取，其次从 cookie 配置读取，默认 "lax"
+    };
 
     // 添加 createSession 方法
     (req as any).createSession = async (data: Record<string, unknown> = {}) => {
@@ -1573,11 +1590,7 @@ export class Application extends EventEmitter {
         const cookieValue = await cookieManager.setAsync(
           cookieName,
           session.id,
-          {
-            httpOnly: true,
-            secure: (sessionManager as any).config?.secure || false,
-            maxAge: (sessionManager as any).config?.maxAge || 3600,
-          },
+          cookieOptions,
         );
         res.setHeader("Set-Cookie", cookieValue);
       }
@@ -1593,9 +1606,12 @@ export class Application extends EventEmitter {
         return (req as any).__session;
       }
 
+      // 每次调用时重新从 Cookie 中读取 sessionId（不使用闭包中的值）
+      const currentSessionId = req.getCookie(cookieName);
+
       // 如果 Cookie 中有 sessionId，尝试获取
-      if (sessionId) {
-        const session = await sessionManager.get(sessionId);
+      if (currentSessionId) {
+        const session = await sessionManager.get(currentSessionId);
         if (session) {
           (req as any).session = session;
           return session;
@@ -1612,11 +1628,7 @@ export class Application extends EventEmitter {
         const cookieValue = await cookieManager.setAsync(
           cookieName,
           newSession.id,
-          {
-            httpOnly: true,
-            secure: (sessionManager as any).config?.secure || false,
-            maxAge: (sessionManager as any).config?.maxAge || 3600,
-          },
+          cookieOptions,
         );
         res.setHeader("Set-Cookie", cookieValue);
       }
@@ -1636,10 +1648,16 @@ export class Application extends EventEmitter {
       configurable: true,
     });
 
-    // 初始化 Session（如果存在 sessionId）
-    if (sessionId) {
-      sessionManager.get(sessionId).then((session) => {
-        (req as any).session = session;
+    // 初始化 Session（如果存在 sessionId，异步加载但不阻塞）
+    const initialSessionId = req.getCookie(cookieName);
+    if (initialSessionId) {
+      sessionManager.get(initialSessionId).then((session) => {
+        if (session) {
+          (req as any).session = session;
+        }
+      }).catch(() => {
+        // 如果获取失败（例如 session 已过期），忽略错误
+        // getSession 方法会在需要时自动创建新的 session
       });
     }
   }

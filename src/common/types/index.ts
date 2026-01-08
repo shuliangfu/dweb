@@ -583,6 +583,7 @@ export interface CookieConfig {
   httpOnly?: boolean;
   sameSite?: "strict" | "lax" | "none";
   maxAge?: number;
+  path?: string; // Cookie 路径，默认为 '/'
 }
 
 // Session 配置
@@ -592,6 +593,8 @@ export interface SessionConfig {
   maxAge?: number;
   secure?: boolean;
   httpOnly?: boolean;
+  path?: string; // Cookie 路径，默认为 '/'
+  sameSite?: "strict" | "lax" | "none"; // Cookie SameSite 属性，默认 'lax'
   redis?: {
     host: string;
     port: number;
