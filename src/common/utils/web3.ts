@@ -504,6 +504,7 @@ export class Web3Client {
 
   /**
    * 发送交易
+   * 使用 eth_sendRawTransaction 方法发送交易，兼容不支持 eth_sendTransaction 的节点
    * @param options 交易选项
    * @returns 交易哈希
    */
@@ -515,14 +516,16 @@ export class Web3Client {
     }
 
     try {
+      const account = accounts[0];
+      const publicClient = this.getPublicClient();
+
       // 构建交易参数（EIP-1559 或 legacy）
       const txParams: any = {
-        account: accounts[0],
+        account: account,
         to: options.to as Address,
         value: options.value ? BigInt(options.value.toString()) : undefined,
         data: options.data as Hex | undefined,
         gas: options.gasLimit ? BigInt(options.gasLimit.toString()) : undefined,
-        nonce: options.nonce,
       };
 
       // 如果提供了 maxFeePerGas，使用 EIP-1559；否则使用 gasPrice（legacy）
@@ -535,7 +538,31 @@ export class Web3Client {
         txParams.gasPrice = BigInt(options.gasPrice.toString());
       }
 
-      const hash = await walletClient.sendTransaction(txParams);
+      // 如果没有提供 nonce，自动获取
+      if (options.nonce === undefined) {
+        txParams.nonce = await publicClient.getTransactionCount({
+          address: account,
+        });
+      } else {
+        txParams.nonce = options.nonce;
+      }
+
+      // 客户端环境（使用 MetaMask 等钱包）：使用钱包的 sendTransaction
+      // 钱包会自动处理签名和发送
+      if (IS_CLIENT) {
+        const win = globalThis.window as WindowWithEthereum;
+        if (win.ethereum) {
+          const hash = await walletClient.sendTransaction(txParams);
+          return hash;
+        }
+      }
+
+      // 服务端环境或没有钱包：使用 signTransaction + sendRawTransaction
+      // 这样可以兼容不支持 eth_sendTransaction 的节点
+      const serializedTx = await walletClient.signTransaction(txParams);
+      const hash = await publicClient.sendRawTransaction({
+        serializedTransaction: serializedTx,
+      });
       return hash;
     } catch (error) {
       throw new Error(
