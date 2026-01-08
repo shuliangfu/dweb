@@ -772,9 +772,20 @@ export abstract class MongoModel {
     if (!this.softDelete || includeTrashed) {
       return filter;
     }
+    // 只查询已软删除的记录：deletedAt 存在且不为 null
+    if (onlyTrashed) {
+      return {
+        ...filter,
+        [this.deletedAtField]: { $exists: true, $ne: null },
+      };
+    }
+    // 排除已软删除的记录：deletedAt 不存在或为 null
     return {
       ...filter,
-      [this.deletedAtField]: { $exists: onlyTrashed ? true : false },
+      $or: [
+        { [this.deletedAtField]: { $exists: false } },
+        { [this.deletedAtField]: null },
+      ],
     };
   }
 
@@ -1455,9 +1466,13 @@ export abstract class MongoModel {
     }
 
     if (this.softDelete) {
+      // 排除已软删除的记录（deletedAt 不存在或为 null）
       filter = {
         ...filter,
-        [this.deletedAtField]: { $exists: false },
+        $or: [
+          { [this.deletedAtField]: { $exists: false } },
+          { [this.deletedAtField]: null },
+        ],
       };
     }
 
@@ -1571,8 +1586,16 @@ export abstract class MongoModel {
       filter = condition;
     }
 
-    // 软删除：设置 deletedAt 字段
+    // 软删除：设置 deletedAt 字段（排除已删除的记录，避免重复删除）
     if (this.softDelete) {
+      // 排除已软删除的记录，避免重复删除
+      filter = {
+        ...filter,
+        $or: [
+          { [this.deletedAtField]: { $exists: false } },
+          { [this.deletedAtField]: null },
+        ],
+      };
       const result = await adapter.execute("update", this.collectionName, {
         filter,
         update: { $set: { [this.deletedAtField]: new Date() } },
@@ -1966,6 +1989,14 @@ export abstract class MongoModel {
       if (!db) {
         throw new Error("Database not connected");
       }
+      // 排除已软删除的记录，避免重复删除
+      filter = {
+        ...filter,
+        $or: [
+          { [this.deletedAtField]: { $exists: false } },
+          { [this.deletedAtField]: null },
+        ],
+      };
       let ids: any[] = [];
       if (options?.returnIds) {
         ids = await db.collection(this.collectionName)
@@ -2808,8 +2839,13 @@ export abstract class MongoModel {
       let effectivePipeline = pipeline;
       if (this.softDelete && !includeTrashed) {
         const match = onlyTrashed
-          ? { [this.deletedAtField]: { $exists: true } }
-          : { [this.deletedAtField]: { $exists: false } };
+          ? { [this.deletedAtField]: { $exists: true, $ne: null } }
+          : {
+            $or: [
+              { [this.deletedAtField]: { $exists: false } },
+              { [this.deletedAtField]: null },
+            ],
+          };
         effectivePipeline = [{ $match: match }, ...pipeline];
       }
       const results = await db.collection(this.collectionName).aggregate(
@@ -3026,7 +3062,7 @@ export abstract class MongoModel {
         }
         const queryFilter = {
           ...condition,
-          [this.deletedAtField]: { $exists: true },
+          [this.deletedAtField]: { $exists: true, $ne: null },
         };
         const results = await adapter.query(
           this.collectionName,
@@ -3071,7 +3107,7 @@ export abstract class MongoModel {
         } else {
           filter = condition;
         }
-        filter[this.deletedAtField] = { $exists: true };
+        filter[this.deletedAtField] = { $exists: true, $ne: null };
         const projection = this.buildProjection(fields);
         const options: any = { limit: 1 };
         if (Object.keys(projection).length > 0) {
@@ -3113,7 +3149,7 @@ export abstract class MongoModel {
         }
         const queryFilter = {
           ...condition,
-          [this.deletedAtField]: { $exists: true },
+          [this.deletedAtField]: { $exists: true, $ne: null },
         };
         const count = await db.collection(this.collectionName).countDocuments(
           queryFilter,
@@ -3154,8 +3190,8 @@ export abstract class MongoModel {
       filter = condition;
     }
 
-    // 只恢复已软删除的记录
-    filter[this.deletedAtField] = { $exists: true };
+    // 只恢复已软删除的记录（deletedAt 存在且不为 null）
+    filter[this.deletedAtField] = { $exists: true, $ne: null };
 
     const db = (adapter as any).getDatabase();
     if (!db) {

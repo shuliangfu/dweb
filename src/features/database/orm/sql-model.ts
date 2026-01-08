@@ -1344,10 +1344,10 @@ export abstract class SQLModel {
       await this.beforeDelete(instanceToDelete);
     }
 
-    const { where, params } = this.buildWhereClause(condition, true, false);
-
-    // 软删除：设置 deletedAt 字段
+    // 软删除：设置 deletedAt 字段（排除已删除的记录，避免重复删除）
     if (this.softDelete) {
+      // 排除已软删除的记录，避免重复删除
+      const { where, params } = this.buildWhereClause(condition, false, false);
       const sql =
         `UPDATE ${this.tableName} SET ${this.deletedAtField} = ? WHERE ${where}`;
       const result = await this.adapter.execute(sql, [new Date(), ...params]);
@@ -1363,7 +1363,8 @@ export abstract class SQLModel {
       return affectedRows;
     }
 
-    // 硬删除：真正删除记录
+    // 硬删除：真正删除记录（包含已软删除的记录）
+    const { where, params } = this.buildWhereClause(condition, true, false);
     const sql = `DELETE FROM ${this.tableName} WHERE ${where}`;
     const result = await this.adapter.execute(sql, params);
 
