@@ -426,11 +426,19 @@ export default function ImageUpload() {
             type="button"
             onClick={handleImageUpload}
             disabled={loading || selectedFiles.length === 0}
-            className="px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl font-bold text-lg flex items-center justify-center min-w-[160px]"
+            className={`px-8 py-4 rounded-xl transition-all shadow-lg font-bold text-lg flex items-center justify-center min-w-[160px] ${
+              !loading && selectedFiles.length > 0 ? "hover:shadow-xl" : ""
+            }`}
             style={{
-              backgroundColor: loading ? "#9ca3af" : "#16a34a",
+              backgroundColor: loading || selectedFiles.length === 0
+                ? "#9ca3af"
+                : "#16a34a",
               color: "#ffffff",
               border: "none",
+              cursor: loading || selectedFiles.length === 0
+                ? "not-allowed"
+                : "pointer",
+              opacity: loading || selectedFiles.length === 0 ? 0.6 : 1,
             }}
           >
             {loading

@@ -1119,6 +1119,10 @@ export class Command {
       if (this.subcommandAliases.has(firstArg)) {
         const commandName = this.subcommandAliases.get(firstArg)!;
         const subcommand = this.subcommands.get(commandName)!;
+        // 如果父命令调用了 keepAlive()，子命令也应该保持进程运行
+        if (this.isKeepAlive && !subcommand.isKeepAlive) {
+          subcommand.keepAlive();
+        }
         await subcommand.execute(args.slice(1));
         return;
       }
@@ -1126,6 +1130,10 @@ export class Command {
       // 检查子命令
       if (this.subcommands.has(firstArg)) {
         const subcommand = this.subcommands.get(firstArg)!;
+        // 如果父命令调用了 keepAlive()，子命令也应该保持进程运行
+        if (this.isKeepAlive && !subcommand.isKeepAlive) {
+          subcommand.keepAlive();
+        }
         await subcommand.execute(args.slice(1));
         return;
       }
