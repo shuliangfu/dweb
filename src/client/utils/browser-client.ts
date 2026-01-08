@@ -772,13 +772,9 @@ class ClientRouter {
         }
       }
 
-      // 如果是当前页面，直接返回已有的数据
-      if (
-        normalizedPathname === globalThis.location.pathname &&
-        this.currentPageData
-      ) {
-        return this.currentPageData;
-      }
+      // 注意：不要在这里检查是否是当前页面
+      // 因为 navigateTo 调用时，location.pathname 可能还是旧路径
+      // 我们需要根据传入的 pathname 来加载对应的页面数据
 
       // 检查缓存（直接访问类属性，更快）
       // 使用规范化后的路径名作为 key，与 batch 模式缓存时使用的 key 一致
@@ -787,8 +783,12 @@ class ClientRouter {
         return cached;
       }
 
-      // 获取目标页面的 HTML（使用原始 pathname，可能包含查询参数和哈希）
-      const response = await fetch(pathname, {
+      // 获取目标页面的 HTML
+      // 使用规范化后的路径名（不包含查询参数和哈希）来获取页面数据
+      // 注意：fetch 时使用规范化后的路径名，确保能正确匹配服务端路由
+      // 查询参数和哈希不会影响页面组件的选择
+      const fetchPath = normalizedPathname;
+      const response = await fetch(fetchPath, {
         headers: { "Accept": "text/html" },
       });
       if (!response.ok) {
@@ -830,6 +830,14 @@ class ClientRouter {
         throw new Error("页面数据格式无效");
       }
 
+      // 验证页面数据的 route 字段是否与请求路径匹配
+      // 如果 route 字段不存在或为空，说明可能获取到了错误的页面
+      if (!pageData.route || typeof pageData.route !== "string") {
+        console.warn(
+          `[loadPageData] 警告: 页面数据缺少 route 字段，请求路径: ${fetchPath}`,
+        );
+      }
+
       // 存入缓存（使用规范化后的路径名作为 key，与 batch 模式缓存时使用的 key 一致）
       this.pageDataCache.set(normalizedPathname, pageData);
 
@@ -866,7 +874,8 @@ class ClientRouter {
     }
 
     try {
-      // 加载页面数据（使用类方法，更快）
+      // 加载页面数据（传入完整路径，包含查询参数和哈希）
+      // loadPageData 内部会规范化路径用于缓存 key 和 fetch
       const pageData = await this.loadPageData(normalizedPath);
 
       if (!pageData || typeof pageData !== "object") {
@@ -875,6 +884,54 @@ class ClientRouter {
 
       if (!pageData.route || typeof pageData.route !== "string") {
         throw new Error("页面数据缺少 route 字段，无法加载组件");
+      }
+
+      // 验证：确保获取到的页面数据的 route 路径与请求路径匹配
+      // 如果 route 路径不匹配，可能是获取到了错误的页面（如首页）
+      const pageRoutePath = pageData.route;
+      // 规范化 pageRoutePath 用于比较（移除查询参数和哈希）
+      let normalizedPageRoute = pageRoutePath;
+      try {
+        const url = new URL(pageRoutePath, globalThis.location.origin);
+        normalizedPageRoute = url.pathname;
+      } catch {
+        // 如果不是有效 URL，尝试手动移除查询参数和哈希
+        const queryIndex = normalizedPageRoute.indexOf("?");
+        const hashIndex = normalizedPageRoute.indexOf("#");
+        if (queryIndex !== -1 || hashIndex !== -1) {
+          const endIndex = queryIndex !== -1 && hashIndex !== -1
+            ? Math.min(queryIndex, hashIndex)
+            : queryIndex !== -1
+            ? queryIndex
+            : hashIndex;
+          normalizedPageRoute = normalizedPageRoute.substring(0, endIndex);
+        }
+      }
+
+      // 规范化 normalizedPath 用于比较（移除查询参数和哈希）
+      let normalizedTargetPath = normalizedPath;
+      try {
+        const url = new URL(normalizedPath, globalThis.location.origin);
+        normalizedTargetPath = url.pathname;
+      } catch {
+        const queryIndex = normalizedTargetPath.indexOf("?");
+        const hashIndex = normalizedTargetPath.indexOf("#");
+        if (queryIndex !== -1 || hashIndex !== -1) {
+          const endIndex = queryIndex !== -1 && hashIndex !== -1
+            ? Math.min(queryIndex, hashIndex)
+            : queryIndex !== -1
+            ? queryIndex
+            : hashIndex;
+          normalizedTargetPath = normalizedTargetPath.substring(0, endIndex);
+        }
+      }
+
+      // 如果路径不匹配，说明获取到了错误的页面数据
+      if (normalizedPageRoute !== normalizedTargetPath) {
+        console.warn(
+          `[navigateTo] 警告: 页面数据路径不匹配，请求: ${normalizedTargetPath}，获取到: ${normalizedPageRoute}`,
+        );
+        // 不抛出错误，继续使用获取到的页面数据（可能是服务端路由配置问题）
       }
 
       // 加载组件（先检查模块缓存，直接访问类属性）
@@ -1024,6 +1081,11 @@ class ClientRouter {
       // 渲染（使用渲染器的方法）
       let hasContent = await this.renderer.render(finalElement, targetMode);
 
+      // 如果渲染成功，更新当前页面数据
+      if (hasContent) {
+        this.setCurrentPageData(pageData);
+      }
+
       // 如果渲染成功，更新历史记录
       // 注意：我们需要在渲染成功后更新历史记录，确保 state 中包含正确的 path
       // 这样当用户使用浏览器前进/后退按钮时，popstate 事件可以正确获取路径
@@ -1130,6 +1192,9 @@ class ClientRouter {
             container.children.length > 0 || container.textContent.trim() !== ""
           ) {
             hasContent = true;
+            // 更新当前页面数据
+            this.setCurrentPageData(pageData);
+
             // 更新历史记录（与上面的逻辑保持一致）
             const currentState = globalThis.history.state;
             const needsUpdate = !currentState ||
@@ -1427,14 +1492,20 @@ class BrowserClient {
     /**
      * 处理浏览器前进/后退
      * 当用户点击浏览器的前进/后退按钮，或调用 history.go() 时会触发此事件
+     *
+     * 工作流程：
+     * 1. goBack() 调用 history.go(-steps)
+     * 2. history.go() 触发 popstate 事件
+     * 3. popstateHandler 捕获事件
+     * 4. popstateHandler 调用 navigateToFunc (即 navigateTo) 来渲染正确的页面
      */
     const popstateHandler = (e: PopStateEvent) => {
-      if (navigateToFunc) {
-        // 优先使用 state 中的 path，如果没有则使用当前 location 的完整路径（包含查询参数和哈希）
-        const targetPath = (e.state?.path as string) ||
-          (globalThis.location.pathname + globalThis.location.search +
-            globalThis.location.hash);
+      // 优先使用 state 中的 path，如果没有则使用当前 location 的完整路径（包含查询参数和哈希）
+      const targetPath = (e.state?.path as string) ||
+        (globalThis.location.pathname + globalThis.location.search +
+          globalThis.location.hash);
 
+      if (navigateToFunc) {
         // 使用 replace=true，因为这是历史记录导航，不是新的导航
         // 这样不会在历史记录中创建新条目
         navigateToFunc(targetPath, true);
@@ -1442,10 +1513,15 @@ class BrowserClient {
         // 如果导航函数还未初始化，等待一下再尝试
         setTimeout(() => {
           if (navigateToFunc) {
-            const targetPath = (e.state?.path as string) ||
+            // 重新获取路径（因为 location 可能已经更新）
+            const currentPath = (e.state?.path as string) ||
               (globalThis.location.pathname + globalThis.location.search +
                 globalThis.location.hash);
-            navigateToFunc(targetPath, true);
+            navigateToFunc(currentPath, true);
+          } else {
+            console.warn(
+              "[popstateHandler] 导航函数未初始化，无法处理历史记录导航",
+            );
           }
         }, 100);
       }

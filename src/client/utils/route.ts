@@ -204,7 +204,14 @@ export function goBack(steps: number = 1): boolean {
 
     // 使用 history.go 进行导航
     // 正数表示后退，负数表示前进
-    // 这会触发 popstate 事件，popstate 处理器会调用 navigateTo 来渲染正确的页面
+    //
+    // 工作流程：
+    // 1. history.go(-steps) 会触发浏览器的 popstate 事件
+    // 2. popstate 事件处理器（在 browser-client.ts 中）会捕获这个事件
+    // 3. popstate 处理器会从 e.state?.path 或 location.pathname 获取目标路径
+    // 4. 然后调用 navigateToFunc(targetPath, true) 来渲染正确的页面
+    //
+    // 注意：goBack() 本身不会直接调用 navigateTo，而是通过 popstate 事件间接触发
     globalThis.history.go(-steps);
     return true;
   } catch (error) {
