@@ -1607,13 +1607,24 @@ export class Application extends EventEmitter {
       }
 
       // 每次调用时重新从 Cookie 中读取 sessionId（不使用闭包中的值）
-      const currentSessionId = req.getCookie(cookieName);
+      // 如果 cookie 是签名的，需要使用 cookieManager.parseAsync 来解析
+      let currentSessionId: string | null = null;
+      if (cookieManager) {
+        // 使用 cookieManager 解析签名 cookie
+        const cookieHeader = req.headers.get("cookie");
+        const parsedCookies = await cookieManager.parseAsync(cookieHeader);
+        currentSessionId = parsedCookies[cookieName] || null;
+      } else {
+        // 如果没有 cookieManager，使用简单的 getCookie 方法
+        currentSessionId = req.getCookie(cookieName);
+      }
 
       // 如果 Cookie 中有 sessionId，尝试获取
       if (currentSessionId) {
         const session = await sessionManager.get(currentSessionId);
         if (session) {
           (req as any).session = session;
+          (req as any).__session = session; // 同时设置缓存
           return session;
         }
         // 如果 session 已过期或不存在，继续创建新的
@@ -1622,6 +1633,7 @@ export class Application extends EventEmitter {
       // 如果没有 session，自动创建一个新的
       const newSession = await sessionManager.create({});
       (req as any).session = newSession;
+      (req as any).__session = newSession; // 同时设置缓存
 
       // 设置 Session Cookie
       if (cookieManager) {
@@ -1649,17 +1661,31 @@ export class Application extends EventEmitter {
     });
 
     // 初始化 Session（如果存在 sessionId，异步加载但不阻塞）
-    const initialSessionId = req.getCookie(cookieName);
-    if (initialSessionId) {
-      sessionManager.get(initialSessionId).then((session) => {
-        if (session) {
-          (req as any).session = session;
-        }
-      }).catch(() => {
-        // 如果获取失败（例如 session 已过期），忽略错误
-        // getSession 方法会在需要时自动创建新的 session
-      });
-    }
+    // 如果 cookie 是签名的，需要使用 cookieManager.parseAsync 来解析
+    (async () => {
+      let initialSessionId: string | null = null;
+      if (cookieManager) {
+        // 使用 cookieManager 解析签名 cookie
+        const cookieHeader = req.headers.get("cookie");
+        const parsedCookies = await cookieManager.parseAsync(cookieHeader);
+        initialSessionId = parsedCookies[cookieName] || null;
+      } else {
+        // 如果没有 cookieManager，使用简单的 getCookie 方法
+        initialSessionId = req.getCookie(cookieName);
+      }
+
+      if (initialSessionId) {
+        sessionManager.get(initialSessionId).then((session) => {
+          if (session) {
+            (req as any).session = session;
+            (req as any).__session = session; // 同时设置缓存
+          }
+        }).catch(() => {
+          // 如果获取失败（例如 session 已过期），忽略错误
+          // getSession 方法会在需要时自动创建新的 session
+        });
+      }
+    })();
   }
 
   /**
