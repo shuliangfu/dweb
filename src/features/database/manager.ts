@@ -8,7 +8,6 @@ import type { IService } from "../../core/iservice.ts";
 import type { DatabaseAdapter, DatabaseConfig, DatabaseType } from "./types.ts";
 import { PostgreSQLAdapter } from "./adapters/postgresql.ts";
 import { MongoDBAdapter } from "./adapters/mongodb.ts";
-import { MySQLAdapter } from "./adapters/mysql.ts";
 import { initDatabaseFromConfig } from "./init-database.ts";
 import { setDatabaseManager } from "./access.ts";
 
@@ -117,8 +116,6 @@ export class DatabaseManager extends BaseManager implements IService {
         return new MongoDBAdapter();
       case "postgresql":
         return new PostgreSQLAdapter();
-      case "mysql":
-        return new MySQLAdapter();
       default:
         throw new Error(`Unsupported database type: ${type}`);
     }
