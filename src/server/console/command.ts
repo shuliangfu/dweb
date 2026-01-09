@@ -1035,14 +1035,22 @@ export class Command {
    * - Command 类默认会在执行前自动初始化应用（通过 before 钩子）
    * - 但在某些场景下，你可能需要手动控制初始化的时机
    *
-   * @returns Promise<void> 当应用初始化完成时 resolve
+   * @returns Promise<this> 当应用初始化完成时 resolve，返回当前命令实例（支持异步链式调用）
    *
    * @example
    * ```typescript
+   * // 方式1：在 action 中手动初始化
    * const cmd = new Command("my-command")
    *   .action(async (args, options, command) => {
+   *     // args: 位置参数数组（不以 -- 或 - 开头的参数）
+   *     // options: 选项对象（以 -- 或 - 开头的选项）
+   *     // command: Command 实例本身
+   *
+   *     console.log("位置参数:", args);      // 例如: ['user123']
+   *     console.log("选项:", options);        // 例如: { verbose: true }
+   *
    *     // 手动初始化应用
-   *     await command.initializeApp();
+   *     await command.initApp();
    *
    *     // 现在可以使用应用实例
    *     const app = command.getApp();
@@ -1051,10 +1059,20 @@ export class Command {
    *       // 使用服务...
    *     }
    *   });
+   *
+   * // 方式2：使用异步链式调用（需要 await）
+   * const cmd = await new Command("my-command")
+   *   .initApp()
+   *   .action(async (args, options, command) => {
+   *     // 应用已经初始化，可以直接使用
+   *     const app = command.getApp();
+   *     // ...
+   *   });
    * ```
    */
-  public async initializeApp(): Promise<void> {
+  public async initApp(): Promise<this> {
     await this.initializedApp();
+    return this;
   }
 
   /**
