@@ -149,9 +149,31 @@ export async function getDatabaseAsync(
   try {
     return dbManager.getConnection(connectionName);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    // 如果连接不存在，尝试自动初始化（可能是配置加载器已设置但连接未建立）
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (
+      errorMessage.includes("not found") ||
+      errorMessage.includes("Please connect first")
+    ) {
+      // 如果配置加载器已设置，尝试自动初始化
+      if (configLoader) {
+        try {
+          await autoInitDatabase(connectionName);
+          // 再次尝试获取连接
+          return dbManager.getConnection(connectionName);
+        } catch (autoInitError) {
+          const autoInitMessage = autoInitError instanceof Error
+            ? autoInitError.message
+            : String(autoInitError);
+          throw new Error(
+            `Failed to get database connection "${connectionName}": ${autoInitMessage}. Please ensure database is properly configured in dweb.config.ts.`,
+          );
+        }
+      }
+    }
+    // 其他错误直接抛出
     throw new Error(
-      `Failed to get database connection "${connectionName}": ${message}. Please ensure database is properly initialized.`,
+      `Failed to get database connection "${connectionName}": ${errorMessage}. Please ensure database is properly initialized.`,
     );
   }
 }

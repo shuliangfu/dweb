@@ -313,6 +313,7 @@ export class Application extends EventEmitter {
         const service = serviceContainer.get<any>(token) as
           | IService
           | undefined;
+
         if (service && typeof service.start === "function") {
           await service.start();
         }
@@ -1009,7 +1010,9 @@ export class Application extends EventEmitter {
     setMonitor(monitor);
 
     if (config.database) {
-      const databaseManager = new DatabaseManager();
+      // 传递数据库配置给 DatabaseManager 构造函数
+      // 这样 initDatabaseFromConfig 会使用传入的配置，确保使用正确的配置
+      const databaseManager = new DatabaseManager(config.database);
       // 初始化数据库管理器（会自动连接数据库）
       await databaseManager.initialize();
       // 注册到服务容器

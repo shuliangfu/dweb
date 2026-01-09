@@ -40,6 +40,13 @@ class TestMongoModel extends MongoModel {
   static override deletedAtField = 'deletedAt';
 }
 
+// 测试自定义主键的模型类
+class TestCustomPrimaryKeyModel extends MongoModel {
+  static override collectionName = 'test_custom_pk_users';
+  static override primaryKey = 'id';  // 自定义主键字段名
+  static override softDelete = false;
+}
+
 // 全局变量
 let databaseConnected = false;
 let databaseAdapter: MongoDBAdapter | null = null;
@@ -589,6 +596,33 @@ Deno.test({
 
       assertExists(found);
       assertEquals(found.name, 'FindById User');
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - findOne 使用对象条件查询 _id（字符串自动转换为 ObjectId）',
+  fn: async () => {
+    await setupTestDatabase();
+
+    try {
+      const created = await TestMongoModel.create({
+        name: 'FindOne By ObjectId User',
+        email: 'findonebyid@example.com',
+      });
+
+      const userId = idToString(created._id);
+
+      // 测试使用对象条件 { _id: string } 查询，应该自动转换为 ObjectId
+      const found = await TestMongoModel.findOne({ _id: userId });
+
+      assertExists(found);
+      assertEquals(found.name, 'FindOne By ObjectId User');
+      assertEquals(found.email, 'findonebyid@example.com');
     } finally {
       await cleanupTestDatabase();
     }
@@ -1599,6 +1633,101 @@ Deno.test({
 
       const found = await TestMongoModel.withTrashed().find(userId);
       assertEquals(found, null);
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - 自定义主键字段名（primaryKey = id）',
+  fn: async () => {
+    await setupTestDatabase();
+
+    try {
+      // 设置自定义主键模型的适配器
+      if (databaseAdapter) {
+        TestCustomPrimaryKeyModel.setAdapter(databaseAdapter);
+        (TestCustomPrimaryKeyModel as any).adapter = databaseAdapter;
+      }
+
+      // 创建记录（MongoDB 会自动生成 _id，但代码中使用 id 作为主键字段名）
+      const user = await TestCustomPrimaryKeyModel.create({
+        name: 'Custom PK User',
+        email: 'custompk@example.com',
+      });
+
+      // 验证创建成功，id 字段存在（实际映射到 MongoDB 的 _id）
+      assertExists(user.id);
+      assertEquals(user.name, 'Custom PK User');
+
+      const userId = idToString(user.id);
+
+      // 测试使用字符串 ID 查询（应该自动转换为 ObjectId 并查询 _id 字段）
+      const found1 = await TestCustomPrimaryKeyModel.find(userId);
+      assertExists(found1);
+      assertEquals(found1.name, 'Custom PK User');
+
+      // 测试使用对象条件查询（{ id: string } 应该映射到 { _id: ObjectId }）
+      const found2 = await TestCustomPrimaryKeyModel.findOne({ id: userId });
+      assertExists(found2);
+      assertEquals(found2.name, 'Custom PK User');
+
+      // 测试使用 findById
+      const found3 = await TestCustomPrimaryKeyModel.findById(userId);
+      assertExists(found3);
+      assertEquals(found3.name, 'Custom PK User');
+
+      // 清理测试数据
+      const db = databaseAdapter?.getDatabase();
+      if (db) {
+        await db.collection('test_custom_pk_users').deleteMany({});
+      }
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - normalizeId 无效 ObjectId 格式抛出异常',
+  fn: async () => {
+    await setupTestDatabase();
+
+    try {
+      // 测试使用无效的 ObjectId 格式查询，应该抛出异常
+      let errorThrown = false;
+      try {
+        await TestMongoModel.find('invalid-id-format');
+      } catch (error) {
+        errorThrown = true;
+        const message = error instanceof Error ? error.message : String(error);
+        assertEquals(
+          message.includes('Invalid ObjectId format'),
+          true,
+          '应该抛出 Invalid ObjectId format 异常',
+        );
+      }
+      assertEquals(errorThrown, true, '应该抛出异常');
+
+      // 测试使用无效的 ObjectId 格式查询（对象条件）
+      errorThrown = false;
+      try {
+        await TestMongoModel.findOne({ _id: 'invalid-id-format' });
+      } catch (error) {
+        errorThrown = true;
+        const message = error instanceof Error ? error.message : String(error);
+        assertEquals(
+          message.includes('Invalid ObjectId format'),
+          true,
+          '应该抛出 Invalid ObjectId format 异常',
+        );
+      }
+      assertEquals(errorThrown, true, '应该抛出异常');
     } finally {
       await cleanupTestDatabase();
     }

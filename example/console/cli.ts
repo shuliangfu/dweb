@@ -24,8 +24,6 @@ import { initEnv } from "@dreamer/dweb";
 
 initEnv();
 
-console.log(Deno.env.get("DB_HOST"));
-
 /**
  * 创建主命令
  */

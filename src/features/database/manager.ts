@@ -32,12 +32,16 @@ export interface ConnectionStatus {
  */
 export class DatabaseManager extends BaseManager implements IService {
   private adapters: Map<string, DatabaseAdapter> = new Map();
+  /** 数据库配置（在创建时设置，用于初始化） */
+  private databaseConfig: import("./types.ts").DatabaseConfig | null = null;
 
   /**
    * 构造函数
+   * @param config 可选的数据库配置，如果不提供则从 dweb.config.ts 自动加载
    */
-  constructor() {
+  constructor(config?: import("./types.ts").DatabaseConfig) {
     super("DatabaseManager");
+    this.databaseConfig = config || null;
   }
 
   /**
@@ -46,10 +50,16 @@ export class DatabaseManager extends BaseManager implements IService {
    */
   protected override async onInitialize(): Promise<void> {
     try {
+      // 先设置数据库管理器实例，这样 getDatabaseAsync 可以找到它
       setDatabaseManager(this);
       // 自动从配置文件加载配置并连接数据库
-      await initDatabaseFromConfig();
-      console.log("数据库初始化完成...");
+      // 如果构造函数传入了 config，使用传入的配置；否则 initDatabaseFromConfig 会自动从 dweb.config.ts 加载
+      // 如果配置存在，会设置 configLoader 并初始化连接
+      // 如果配置不存在，会返回 void（不报错，允许项目不使用数据库）
+      const config = this.databaseConfig
+        ? { database: this.databaseConfig }
+        : undefined;
+      await initDatabaseFromConfig(config);
     } catch (error) {
       // 重新抛出错误，而不是静默吞掉，这样调用者可以知道初始化失败
       const message = error instanceof Error ? error.message : String(error);

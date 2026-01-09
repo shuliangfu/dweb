@@ -224,7 +224,7 @@ export class MongoDBAdapter extends BaseAdapter {
         case "insertMany":
           result = await coll.insertMany(data);
           break;
-        case "update":
+        case "update": {
           // data.update 可能已经包含 $set 等操作符，直接使用
           // 如果没有操作符，则包装为 $set
           const updateDoc = data.update && typeof data.update === "object" &&
@@ -234,7 +234,8 @@ export class MongoDBAdapter extends BaseAdapter {
             : { $set: data.update };
           result = await coll.updateOne(data.filter, updateDoc);
           break;
-        case "updateMany":
+        }
+        case "updateMany": {
           // data.update 可能已经包含 $set 等操作符，直接使用
           // 如果没有操作符，则包装为 $set
           const updateManyDoc =
@@ -245,6 +246,7 @@ export class MongoDBAdapter extends BaseAdapter {
               : { $set: data.update };
           result = await coll.updateMany(data.filter, updateManyDoc);
           break;
+        }
         case "delete":
           result = await coll.deleteOne(data.filter);
           break;

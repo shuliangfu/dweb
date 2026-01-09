@@ -812,17 +812,103 @@ export abstract class MongoModel {
    */
   /**
    * 将字符串 ID 转换为 ObjectId（如果是有效的 ObjectId 格式）
-   * @param id 字符串 ID
-   * @param primaryKey 主键字段名
-   * @returns ObjectId 对象或原始值
+   * 注意：MongoDB 总是使用 _id 字段作为主键（ObjectId 类型），无论 primaryKey 是什么
+   * @param id 字符串 ID 或 ObjectId 对象
+   * @returns ObjectId 对象
+   * @throws {Error} 如果 id 不是有效的 ObjectId 格式
    */
-  private static normalizeId(id: string, primaryKey: string): any {
-    // MongoDB 的 _id 字段需要 ObjectId 类型
-    // 如果 primaryKey 是 _id 且字符串是有效的 ObjectId 格式，转换为 ObjectId
-    if (primaryKey === "_id" && ObjectId.isValid(id)) {
-      return new ObjectId(id);
+  private static normalizeId(id: string | any): any {
+    // 如果已经是 ObjectId 对象，直接返回
+    if (id instanceof ObjectId) {
+      return id;
     }
+
+    // 如果是字符串，检查是否为有效的 ObjectId 格式
+    if (typeof id === "string") {
+      if (ObjectId.isValid(id)) {
+        return new ObjectId(id);
+      }
+      // 如果不是有效的 ObjectId 格式，抛出异常
+      // 因为 MongoDB 的 _id 字段必须是 ObjectId 类型，无效的 ID 会导致查询失败
+      throw new Error(
+        `Invalid ObjectId format: "${id}". MongoDB _id field requires a valid ObjectId.`,
+      );
+    }
+
+    // 其他类型（如数字等）直接返回，让 MongoDB 处理
     return id;
+  }
+
+  /**
+   * 规范化查询条件，将条件对象中的主键字段（如果是字符串）转换为 ObjectId
+   * 注意：MongoDB 总是使用 _id 字段作为主键（ObjectId 类型），即使自定义了 primaryKey
+   * 如果 primaryKey !== "_id"，需要将查询条件中的 primaryKey 映射到 _id 字段
+   * @param condition 查询条件对象
+   * @returns 规范化后的查询条件
+   */
+  private static normalizeCondition(condition: MongoWhereCondition): any {
+    if (
+      !condition || typeof condition !== "object" || Array.isArray(condition)
+    ) {
+      return condition;
+    }
+
+    const normalized: any = { ...condition };
+
+    // 如果条件中包含主键字段
+    if (normalized[this.primaryKey] !== undefined) {
+      const idValue = normalized[this.primaryKey];
+
+      // 如果主键字段的值是字符串，需要转换为 ObjectId
+      // 注意：MongoDB 的 _id 字段总是 ObjectId 类型，无论 primaryKey 是什么
+      if (typeof idValue === "string") {
+        // 使用 normalizeId 方法进行转换和验证（会抛出异常如果格式无效）
+        const objectId = this.normalizeId(idValue);
+        // 如果 primaryKey 不是 "_id"，需要映射到 MongoDB 的 _id 字段
+        if (this.primaryKey !== "_id") {
+          // 删除自定义主键字段，使用 _id 字段
+          delete normalized[this.primaryKey];
+          normalized._id = objectId;
+        } else {
+          // primaryKey 就是 _id，直接转换
+          normalized[this.primaryKey] = objectId;
+        }
+      }
+    }
+
+    // 如果条件中直接包含 _id 字段（即使 primaryKey 不是 "_id"）
+    if (
+      normalized._id !== undefined &&
+      normalized._id !== normalized[this.primaryKey]
+    ) {
+      const idValue = normalized._id;
+      // 如果是字符串，需要转换为 ObjectId
+      if (typeof idValue === "string") {
+        normalized._id = this.normalizeId(idValue);
+      }
+    }
+
+    // 递归处理嵌套对象（如 $in, $nin 等操作符中的数组）
+    for (const [key, value] of Object.entries(normalized)) {
+      // 跳过已经处理过的主键字段
+      if (key === this.primaryKey || key === "_id") {
+        continue;
+      }
+
+      // 处理 $in 和 $nin 操作符中的数组
+      if ((key === "$in" || key === "$nin") && Array.isArray(value)) {
+        normalized[key] = value.map((item: any) => {
+          // 如果数组项是字符串且是有效的 ObjectId 格式，转换为 ObjectId
+          // 注意：这里只处理主键相关的查询，所以需要检查是否是主键字段的 $in/$nin
+          if (typeof item === "string" && ObjectId.isValid(item)) {
+            return new ObjectId(item);
+          }
+          return item;
+        });
+      }
+    }
+
+    return normalized;
   }
 
   private static buildProjection(fields?: string[]): any {
@@ -966,9 +1052,13 @@ export abstract class MongoModel {
 
       // 如果是字符串，作为主键查询
       if (typeof _condition === "string") {
-        filter[this.primaryKey] = this.normalizeId(_condition, this.primaryKey);
+        // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+        // 所以查询时应该使用 _id 字段
+        filter._id = this.normalizeId(_condition);
       } else {
-        filter = _condition;
+        // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+        // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+        filter = this.normalizeCondition(_condition);
       }
 
       const projection = this.buildProjection(_fields);
@@ -1050,9 +1140,12 @@ export abstract class MongoModel {
 
       let filter: any = {};
       if (typeof _condition === "string") {
-        filter[this.primaryKey] = _condition;
+        // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+        filter._id = this.normalizeId(_condition);
       } else {
-        filter = _condition;
+        // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+        // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+        filter = this.normalizeCondition(_condition);
       }
       const queryFilter = this.applySoftDeleteFilter(
         filter,
@@ -1539,9 +1632,12 @@ export abstract class MongoModel {
 
     // 如果是字符串，作为主键查询
     if (typeof condition === "string") {
-      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
+      // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+      filter._id = this.normalizeId(condition);
     } else {
-      filter = condition;
+      // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+      // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+      filter = this.normalizeCondition(condition);
     }
 
     if (this.softDelete) {
@@ -1660,9 +1756,12 @@ export abstract class MongoModel {
 
     // 如果是字符串，作为主键查询
     if (typeof condition === "string") {
-      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
+      // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+      filter._id = this.normalizeId(condition);
     } else {
-      filter = condition;
+      // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+      // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+      filter = this.normalizeCondition(condition);
     }
 
     // 软删除：设置 deletedAt 字段（排除已删除的记录，避免重复删除）
@@ -1953,9 +2052,12 @@ export abstract class MongoModel {
 
     // 如果是字符串，作为主键查询
     if (typeof condition === "string") {
-      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
+      // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+      filter._id = this.normalizeId(condition);
     } else {
-      filter = condition;
+      // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+      // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+      filter = this.normalizeCondition(condition);
     }
 
     filter = this.applySoftDeleteFilter(filter);
@@ -1995,9 +2097,12 @@ export abstract class MongoModel {
     }
     let filter: any = {};
     if (typeof condition === "string") {
-      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
+      // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+      filter._id = this.normalizeId(condition);
     } else {
-      filter = condition;
+      // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+      // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+      filter = this.normalizeCondition(condition);
     }
     filter = this.applySoftDeleteFilter(filter);
     const incSpec: Record<string, number> = typeof fieldOrMap === "string"
@@ -2062,9 +2167,12 @@ export abstract class MongoModel {
 
     // 如果是字符串，作为主键查询
     if (typeof condition === "string") {
-      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
+      // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+      filter._id = this.normalizeId(condition);
     } else {
-      filter = condition;
+      // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+      // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+      filter = this.normalizeCondition(condition);
     }
 
     // 软删除：批量设置 deletedAt 字段；否则执行物理删除
@@ -2195,9 +2303,12 @@ export abstract class MongoModel {
 
     // 如果是字符串，作为主键查询
     if (typeof condition === "string") {
-      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
+      // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+      filter._id = this.normalizeId(condition);
     } else {
-      filter = condition;
+      // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+      // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+      filter = this.normalizeCondition(condition);
     }
 
     filter = this.applySoftDeleteFilter(filter, includeTrashed, onlyTrashed);
@@ -2441,9 +2552,12 @@ export abstract class MongoModel {
     let filter: any = {};
 
     if (typeof condition === "string") {
-      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
+      // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+      filter._id = this.normalizeId(condition);
     } else {
-      filter = condition;
+      // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+      // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+      filter = this.normalizeCondition(condition);
     }
 
     filter = this.applySoftDeleteFilter(filter);
@@ -2556,9 +2670,12 @@ export abstract class MongoModel {
     let filter: any = {};
 
     if (typeof condition === "string") {
-      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
+      // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+      filter._id = this.normalizeId(condition);
     } else {
-      filter = condition;
+      // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+      // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+      filter = this.normalizeCondition(condition);
     }
 
     filter = this.applySoftDeleteFilter(filter);
@@ -2633,9 +2750,12 @@ export abstract class MongoModel {
     let filter: any = {};
 
     if (typeof condition === "string") {
-      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
+      // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+      filter._id = this.normalizeId(condition);
     } else {
-      filter = condition;
+      // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+      // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+      filter = this.normalizeCondition(condition);
     }
 
     const db = (adapter as any).getDatabase();
@@ -2733,9 +2853,12 @@ export abstract class MongoModel {
     let filter: any = {};
 
     if (typeof condition === "string") {
-      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
+      // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+      filter._id = this.normalizeId(condition);
     } else {
-      filter = condition;
+      // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+      // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+      filter = this.normalizeCondition(condition);
     }
 
     if (!resurrect) {
@@ -2793,9 +2916,12 @@ export abstract class MongoModel {
     let filter: any = {};
 
     if (typeof condition === "string") {
-      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
+      // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+      filter._id = this.normalizeId(condition);
     } else {
-      filter = condition;
+      // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+      // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+      filter = this.normalizeCondition(condition);
     }
 
     filter = this.applySoftDeleteFilter(filter);
@@ -3036,12 +3162,12 @@ export abstract class MongoModel {
         const adapter = this.adapter as any as MongoDBAdapter;
         let filter: any = {};
         if (typeof condition === "string") {
-          filter[this.primaryKey] = this.normalizeId(
-            condition,
-            this.primaryKey,
-          );
+          // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+          filter._id = this.normalizeId(condition);
         } else {
-          filter = condition;
+          // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+          // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+          filter = this.normalizeCondition(condition);
         }
         // 应用软删除过滤器（onlyTrashed: true）
         filter = this.applySoftDeleteFilter(filter, false, true);
@@ -3190,12 +3316,12 @@ export abstract class MongoModel {
         const adapter = this.adapter as any as MongoDBAdapter;
         let filter: any = {};
         if (typeof condition === "string") {
-          filter[this.primaryKey] = this.normalizeId(
-            condition,
-            this.primaryKey,
-          );
+          // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+          filter._id = this.normalizeId(condition);
         } else {
-          filter = condition;
+          // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+          // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+          filter = this.normalizeCondition(condition);
         }
         filter[this.deletedAtField] = { $exists: true, $ne: null };
         const projection = this.buildProjection(fields);
@@ -3275,9 +3401,12 @@ export abstract class MongoModel {
     let filter: any = {};
 
     if (typeof condition === "string") {
-      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
+      // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+      filter._id = this.normalizeId(condition);
     } else {
-      filter = condition;
+      // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+      // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+      filter = this.normalizeCondition(condition);
     }
 
     // 只恢复已软删除的记录（deletedAt 存在且不为 null）
@@ -3334,9 +3463,12 @@ export abstract class MongoModel {
     let filter: any = {};
 
     if (typeof condition === "string") {
-      filter[this.primaryKey] = this.normalizeId(condition, this.primaryKey);
+      // MongoDB 总是使用 _id 字段作为主键，无论 primaryKey 是什么
+      filter._id = this.normalizeId(condition);
     } else {
-      filter = condition;
+      // 规范化查询条件，将主键字段（如果是字符串）转换为 ObjectId
+      // 如果 primaryKey !== "_id"，会自动映射到 _id 字段
+      filter = this.normalizeCondition(condition);
     }
 
     const db = (adapter as any).getDatabase();
