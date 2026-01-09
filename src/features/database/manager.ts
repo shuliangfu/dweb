@@ -50,10 +50,8 @@ export class DatabaseManager extends BaseManager implements IService {
    */
   protected override async onInitialize(): Promise<void> {
     try {
-      console.log("[DatabaseManager] 开始初始化数据库管理器...");
       // 先设置数据库管理器实例，这样 getDatabaseAsync 可以找到它
       setDatabaseManager(this);
-      console.log("[DatabaseManager] 已设置全局 dbManager 实例");
       // 自动从配置文件加载配置并连接数据库
       // 如果构造函数传入了 config，使用传入的配置；否则 initDatabaseFromConfig 会自动从 dweb.config.ts 加载
       // 如果配置存在，会设置 configLoader 并初始化连接
@@ -61,26 +59,10 @@ export class DatabaseManager extends BaseManager implements IService {
       const config = this.databaseConfig
         ? { database: this.databaseConfig }
         : undefined;
-      console.log(
-        `[DatabaseManager] 准备调用 initDatabaseFromConfig，config: ${
-          config ? "已提供" : "未提供（将从配置文件加载）"
-        }`,
-      );
-      const result = await initDatabaseFromConfig(config);
-      console.log(
-        `[DatabaseManager] initDatabaseFromConfig 完成，result: ${
-          result ? "已建立连接" : "未建立连接（可能没有配置）"
-        }`,
-      );
-      if (result) {
-        console.log(
-          `[DatabaseManager] 数据库连接已建立: ${result.type}@${result.host}/${result.database}`,
-        );
-      }
+      await initDatabaseFromConfig(config);
     } catch (error) {
       // 重新抛出错误，而不是静默吞掉，这样调用者可以知道初始化失败
       const message = error instanceof Error ? error.message : String(error);
-      console.error(`[DatabaseManager] 初始化失败: ${message}`);
       throw new Error(`数据库初始化失败: ${message}`);
     }
   }

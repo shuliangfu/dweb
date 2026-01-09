@@ -253,15 +253,7 @@ export abstract class MongoModel {
    * 注意：由于 getter 不能是异步的，所以需要在异步方法中先初始化
    */
   static get adapter(): DatabaseAdapter {
-    console.log(
-      `[Model.adapter getter] 访问 adapter: ${this.collectionName}, _adapter: ${
-        this._adapter ? "存在" : "null"
-      }`,
-    );
     if (!this._adapter) {
-      console.error(
-        `[Model.adapter getter] adapter 未初始化: ${this.collectionName}`,
-      );
       throw new Error(
         `Database adapter not initialized for model "${this.collectionName}". Please call 'await ${this.collectionName}.ensureInitialized()' or 'await ${this.collectionName}.init()' before accessing this property.`,
       );
@@ -419,15 +411,7 @@ export abstract class MongoModel {
    * @param adapter 数据库适配器实例（必须是 MongoDBAdapter）
    */
   static setAdapter(adapter: DatabaseAdapter): void {
-    console.log(
-      `[Model.setAdapter] 设置 adapter 到模型: ${this.collectionName}`,
-    );
     this._adapter = adapter;
-    console.log(
-      `[Model.setAdapter] adapter 已设置: ${this.collectionName}, adapter: ${
-        adapter ? "存在" : "null"
-      }`,
-    );
   }
 
   /**
@@ -444,37 +428,20 @@ export abstract class MongoModel {
    * await User.init('secondary'); // 使用指定连接
    */
   static async init(connectionName: string = "default"): Promise<void> {
-    console.log(
-      `[Model.init] 开始初始化模型: ${this.collectionName}, connectionName: ${connectionName}`,
-    );
     // 动态导入 getDatabaseAsync 以避免循环依赖
     const { getDatabaseAsync } = await import("../access.ts");
 
     try {
       // 获取数据库适配器（如果数据库未初始化，会自动尝试从配置文件加载并初始化）
-      console.log(
-        `[Model.init] 调用 getDatabaseAsync(${connectionName})...`,
-      );
       const adapter = await getDatabaseAsync(connectionName);
-      console.log(
-        `[Model.init] 成功获取 adapter，设置到模型: ${this.collectionName}`,
-      );
       // 设置适配器
       this.setAdapter(adapter);
-      console.log(`[Model.init] adapter 已设置: ${this.collectionName}`);
       // 创建索引（如果定义了索引）
       if (this.indexes && this.indexes.length > 0) {
-        console.log(
-          `[Model.init] 创建索引: ${this.collectionName}, 索引数: ${this.indexes.length}`,
-        );
         await this.createIndexes();
       }
-      console.log(`[Model.init] 模型初始化完成: ${this.collectionName}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error(
-        `[Model.init] 模型初始化失败: ${this.collectionName}, 错误: ${message}`,
-      );
       throw new Error(
         `Failed to initialize model ${this.collectionName}: ${message}`,
       );
@@ -489,20 +456,8 @@ export abstract class MongoModel {
   private static async ensureInitialized(
     connectionName: string = "default",
   ): Promise<void> {
-    console.log(
-      `[Model.ensureInitialized] 检查模型: ${this.collectionName}, adapter: ${
-        this._adapter ? "已设置" : "未设置"
-      }`,
-    );
     if (!this._adapter) {
-      console.log(
-        `[Model.ensureInitialized] adapter 未设置，调用 init()...`,
-      );
       await this.init(connectionName);
-    } else {
-      console.log(
-        `[Model.ensureInitialized] adapter 已设置，跳过初始化: ${this.collectionName}`,
-      );
     }
   }
 
@@ -1888,27 +1843,13 @@ export abstract class MongoModel {
    */
   async save<T extends MongoModel>(this: T): Promise<T> {
     const Model = this.constructor as typeof MongoModel;
-    console.log(
-      `[Model.save] 实例方法被调用，Model: ${Model.collectionName}, this.constructor: ${
-        (this.constructor as any).name
-      }`,
-    );
     // 自动初始化（懒加载）
     await Model.ensureInitialized();
-    console.log(
-      `[Model.save] ensureInitialized 完成，检查 adapter: ${Model.collectionName}`,
-    );
     if (!Model.adapter) {
-      console.error(
-        `[Model.save] adapter 检查失败: ${Model.collectionName}`,
-      );
       throw new Error(
         "Database adapter not set. Please call Model.setAdapter() first.",
       );
     }
-    console.log(
-      `[Model.save] adapter 检查通过，继续执行: ${Model.collectionName}`,
-    );
 
     const primaryKey = (Model.constructor as any).primaryKey || "_id";
     let id = (this as any)[primaryKey];
@@ -3316,12 +3257,6 @@ export abstract class MongoModel {
           limit?: number;
         },
       ): Promise<InstanceType<T>[]> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
         // 自动初始化（懒加载）
         await this.ensureInitialized();
         const adapter = this.adapter as any as MongoDBAdapter;
