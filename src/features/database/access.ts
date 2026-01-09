@@ -46,6 +46,7 @@ let configLoader: DatabaseConfigLoader | null = null;
  * ```
  */
 export function setDatabaseConfigLoader(loader: DatabaseConfigLoader): void {
+  console.log("[Database] 设置 configLoader");
   configLoader = loader;
 }
 
@@ -83,9 +84,12 @@ export async function initDatabase(
 async function autoInitDatabase(
   connectionName: string = "default",
 ): Promise<void> {
+  console.log(`[autoInitDatabase] 开始自动初始化数据库: ${connectionName}`);
   // 如果已经有初始化任务在进行，等待它完成
   if (autoInitPromise) {
+    console.log("[autoInitDatabase] 已有初始化任务在进行，等待完成...");
     await autoInitPromise;
+    console.log("[autoInitDatabase] 等待完成");
     return;
   }
 
@@ -94,24 +98,37 @@ async function autoInitDatabase(
     try {
       // 如果没有设置配置加载器，抛出错误
       if (!configLoader) {
+        console.error("[autoInitDatabase] configLoader 未设置");
         throw new Error(
           "Database config loader not set. Please call setDatabaseConfigLoader() first or call initDatabase() manually.",
         );
       }
 
+      console.log("[autoInitDatabase] 调用 configLoader 获取配置...");
       // 调用配置加载器获取数据库配置
       const config = await configLoader();
+      console.log(
+        `[autoInitDatabase] configLoader 返回: ${config ? "有配置" : "无配置"}`,
+      );
 
       // 如果配置加载器返回了配置，则初始化
       if (config) {
+        console.log(
+          `[autoInitDatabase] 开始初始化数据库连接: ${config.type}@${config.connection.host}/${config.connection.database}`,
+        );
         await initDatabase(config, connectionName);
+        console.log(
+          `[autoInitDatabase] 数据库连接初始化完成: ${connectionName}`,
+        );
       } else {
+        console.error("[autoInitDatabase] configLoader 返回 null");
         throw new Error(
           "Database not configured. Please add database configuration in dweb.config.ts or call initDatabase() manually.",
         );
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      console.error(`[autoInitDatabase] 自动初始化失败: ${message}`);
       throw new Error(
         `Failed to auto-initialize database: ${message}`,
       );
@@ -135,36 +152,74 @@ async function autoInitDatabase(
 export async function getDatabaseAsync(
   connectionName: string = "default",
 ): Promise<DatabaseAdapter> {
+  console.log(
+    `[getDatabaseAsync] 开始获取数据库连接: ${connectionName}`,
+  );
+  console.log(
+    `[getDatabaseAsync] dbManager 状态: ${dbManager ? "存在" : "不存在"}`,
+  );
+  console.log(
+    `[getDatabaseAsync] configLoader 状态: ${
+      configLoader ? "已设置" : "未设置"
+    }`,
+  );
+
   // 如果数据库未初始化，尝试自动初始化
   if (!dbManager) {
+    console.log("[getDatabaseAsync] dbManager 不存在，尝试自动初始化...");
     await autoInitDatabase(connectionName);
   }
 
   if (!dbManager) {
+    console.error("[getDatabaseAsync] 自动初始化后 dbManager 仍为 null");
     throw new Error(
       "Database not initialized. Please call initDatabase() first or configure database in dweb.config.ts",
     );
   }
 
   try {
-    return dbManager.getConnection(connectionName);
+    console.log(
+      `[getDatabaseAsync] 尝试从 dbManager 获取连接: ${connectionName}`,
+    );
+    const adapter = dbManager.getConnection(connectionName);
+    console.log(`[getDatabaseAsync] 成功获取连接: ${connectionName}`);
+    return adapter;
   } catch (error) {
     // 如果连接不存在，尝试自动初始化（可能是配置加载器已设置但连接未建立）
     const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(
+      `[getDatabaseAsync] 获取连接失败: ${errorMessage}`,
+    );
     if (
       errorMessage.includes("not found") ||
       errorMessage.includes("Please connect first")
     ) {
+      console.log(
+        `[getDatabaseAsync] 连接不存在，尝试自动初始化... configLoader: ${
+          configLoader ? "已设置" : "未设置"
+        }`,
+      );
       // 如果配置加载器已设置，尝试自动初始化
       if (configLoader) {
         try {
+          console.log("[getDatabaseAsync] 调用 autoInitDatabase...");
           await autoInitDatabase(connectionName);
+          console.log(
+            "[getDatabaseAsync] autoInitDatabase 完成，再次尝试获取连接...",
+          );
           // 再次尝试获取连接
-          return dbManager.getConnection(connectionName);
+          const adapter = dbManager.getConnection(connectionName);
+          console.log(
+            `[getDatabaseAsync] 自动初始化后成功获取连接: ${connectionName}`,
+          );
+          return adapter;
         } catch (autoInitError) {
           const autoInitMessage = autoInitError instanceof Error
             ? autoInitError.message
             : String(autoInitError);
+          console.error(
+            `[getDatabaseAsync] 自动初始化失败: ${autoInitMessage}`,
+          );
           throw new Error(
             `Failed to get database connection "${connectionName}": ${autoInitMessage}. Please ensure database is properly configured in dweb.config.ts.`,
           );
@@ -172,15 +227,24 @@ export async function getDatabaseAsync(
       } else {
         // 如果配置加载器未设置，但 dbManager 存在，说明初始化过程中可能出错了
         // 尝试重新初始化数据库（从配置文件加载）
+        console.log(
+          "[getDatabaseAsync] configLoader 未设置，尝试重新初始化数据库...",
+        );
         try {
           const { initDatabaseFromConfig } = await import("./init-database.ts");
           await initDatabaseFromConfig(undefined, connectionName);
+          console.log("[getDatabaseAsync] 重新初始化完成，再次尝试获取连接...");
           // 再次尝试获取连接
-          return dbManager.getConnection(connectionName);
+          const adapter = dbManager.getConnection(connectionName);
+          console.log(
+            `[getDatabaseAsync] 重新初始化后成功获取连接: ${connectionName}`,
+          );
+          return adapter;
         } catch (retryError) {
           const retryMessage = retryError instanceof Error
             ? retryError.message
             : String(retryError);
+          console.error(`[getDatabaseAsync] 重新初始化失败: ${retryMessage}`);
           throw new Error(
             `Failed to get database connection "${connectionName}": ${retryMessage}. Please ensure database is properly configured in dweb.config.ts.`,
           );
@@ -188,6 +252,7 @@ export async function getDatabaseAsync(
       }
     }
     // 其他错误直接抛出
+    console.error(`[getDatabaseAsync] 其他错误: ${errorMessage}`);
     throw new Error(
       `Failed to get database connection "${connectionName}": ${errorMessage}. Please ensure database is properly initialized.`,
     );

@@ -43,19 +43,30 @@ export async function initDatabaseFromConfig(
   config?: { database?: DatabaseConfig },
   connectionName: string = "default",
 ): Promise<ConnectionStatus | void> {
+  console.log(
+    `[initDatabaseFromConfig] 开始初始化，connectionName: ${connectionName}, config: ${
+      config?.database ? "已提供" : "未提供"
+    }`,
+  );
   // 如果没有提供配置，则自动加载
   let databaseConfig: DatabaseConfig | null = null;
 
   if (config?.database) {
     databaseConfig = config.database;
+    console.log(
+      `[initDatabaseFromConfig] 使用传入的配置: ${databaseConfig.type}@${databaseConfig.connection.host}/${databaseConfig.connection.database}`,
+    );
   } else {
     // 直接从 dweb.config.ts 读取配置（不使用 loadConfig，避免多应用模式下的问题）
+    console.log("[initDatabaseFromConfig] 从配置文件加载...");
     try {
       const configPath = await findConfigFile();
       if (!configPath) {
         // 如果没有找到配置文件，直接返回（不报错，允许项目不使用数据库）
+        console.log("[initDatabaseFromConfig] 未找到配置文件，返回");
         return;
       }
+      console.log(`[initDatabaseFromConfig] 找到配置文件: ${configPath}`);
 
       // 读取配置文件
       const originalCwd = Deno.cwd();
@@ -73,6 +84,7 @@ export async function initDatabaseFromConfig(
         ? configPath.substring(configPath.lastIndexOf("/") + 1)
         : configPath;
       const configUrl = new URL(configFileName, `file://${Deno.cwd()}/`).href;
+      console.log(`[initDatabaseFromConfig] 导入配置文件: ${configUrl}`);
       const configModule = await import(configUrl);
 
       // 恢复工作目录
@@ -85,8 +97,16 @@ export async function initDatabaseFromConfig(
 
       // 提取 database 配置（只能从根配置中获取）
       databaseConfig = loadedConfig.database || null;
+      console.log(
+        `[initDatabaseFromConfig] 从配置文件加载的 database 配置: ${
+          databaseConfig
+            ? `${databaseConfig.type}@${databaseConfig.connection.host}/${databaseConfig.connection.database}`
+            : "null"
+        }`,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      console.error(`[initDatabaseFromConfig] 加载配置文件失败: ${message}`);
       throw new Error(
         `Failed to load database config from dweb.config.ts: ${message}. Please ensure dweb.config.ts exists and contains database configuration.`,
       );
@@ -95,18 +115,34 @@ export async function initDatabaseFromConfig(
 
   // 如果没有数据库配置，直接返回（不报错，允许项目不使用数据库）
   if (!databaseConfig) {
+    console.log("[initDatabaseFromConfig] 没有数据库配置，返回");
     return;
   }
 
   // 设置配置加载器（用于模型的自动初始化）
   // 注意：即使连接初始化失败，也要设置 configLoader，这样 Model 可以稍后自动初始化
+  console.log("[initDatabaseFromConfig] 设置 configLoader...");
   setDatabaseConfigLoader(() => {
+    console.log("[initDatabaseFromConfig] configLoader 被调用，返回配置");
     return Promise.resolve(databaseConfig);
   });
 
   // 初始化数据库连接
   // 如果连接失败，会抛出异常，但 configLoader 已经设置，Model 可以稍后重试
-  return await initDatabase(databaseConfig, connectionName);
+  console.log(
+    `[initDatabaseFromConfig] 开始初始化数据库连接: ${databaseConfig.type}@${databaseConfig.connection.host}/${databaseConfig.connection.database}`,
+  );
+  try {
+    const result = await initDatabase(databaseConfig, connectionName);
+    console.log(
+      `[initDatabaseFromConfig] 数据库连接初始化成功: ${result.type}@${result.host}/${result.database}`,
+    );
+    return result;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[initDatabaseFromConfig] 数据库连接初始化失败: ${message}`);
+    throw error;
+  }
 }
 
 /**

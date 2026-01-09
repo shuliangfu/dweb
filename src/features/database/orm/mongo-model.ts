@@ -390,20 +390,37 @@ export abstract class MongoModel {
    * await User.init('secondary'); // 使用指定连接
    */
   static async init(connectionName: string = "default"): Promise<void> {
+    console.log(
+      `[Model.init] 开始初始化模型: ${this.collectionName}, connectionName: ${connectionName}`,
+    );
     // 动态导入 getDatabaseAsync 以避免循环依赖
     const { getDatabaseAsync } = await import("../access.ts");
 
     try {
       // 获取数据库适配器（如果数据库未初始化，会自动尝试从配置文件加载并初始化）
+      console.log(
+        `[Model.init] 调用 getDatabaseAsync(${connectionName})...`,
+      );
       const adapter = await getDatabaseAsync(connectionName);
+      console.log(
+        `[Model.init] 成功获取 adapter，设置到模型: ${this.collectionName}`,
+      );
       // 设置适配器
       this.setAdapter(adapter);
+      console.log(`[Model.init] adapter 已设置: ${this.collectionName}`);
       // 创建索引（如果定义了索引）
       if (this.indexes && this.indexes.length > 0) {
+        console.log(
+          `[Model.init] 创建索引: ${this.collectionName}, 索引数: ${this.indexes.length}`,
+        );
         await this.createIndexes();
       }
+      console.log(`[Model.init] 模型初始化完成: ${this.collectionName}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      console.error(
+        `[Model.init] 模型初始化失败: ${this.collectionName}, 错误: ${message}`,
+      );
       throw new Error(
         `Failed to initialize model ${this.collectionName}: ${message}`,
       );
@@ -418,8 +435,20 @@ export abstract class MongoModel {
   private static async ensureInitialized(
     connectionName: string = "default",
   ): Promise<void> {
+    console.log(
+      `[Model.ensureInitialized] 检查模型: ${this.collectionName}, adapter: ${
+        this.adapter ? "已设置" : "未设置"
+      }`,
+    );
     if (!this.adapter) {
+      console.log(
+        `[Model.ensureInitialized] adapter 未设置，调用 init()...`,
+      );
       await this.init(connectionName);
+    } else {
+      console.log(
+        `[Model.ensureInitialized] adapter 已设置，跳过初始化: ${this.collectionName}`,
+      );
     }
   }
 
