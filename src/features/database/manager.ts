@@ -8,6 +8,7 @@ import type { IService } from "../../core/iservice.ts";
 import type { DatabaseAdapter, DatabaseConfig, DatabaseType } from "./types.ts";
 import { PostgreSQLAdapter } from "./adapters/postgresql.ts";
 import { MongoDBAdapter } from "./adapters/mongodb.ts";
+import { MySQLAdapter } from "./adapters/mysql.ts";
 import { initDatabaseFromConfig } from "./init-database.ts";
 import { setDatabaseManager } from "./access.ts";
 
@@ -51,7 +52,9 @@ export class DatabaseManager extends BaseManager implements IService {
       await initDatabaseFromConfig();
       // console.log("数据库初始化完成...");
     } catch (error) {
-      console.error("数据库初始化出错:", error);
+      // 重新抛出错误，而不是静默吞掉，这样调用者可以知道初始化失败
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`数据库初始化失败: ${message}`);
     }
   }
 
@@ -110,10 +113,12 @@ export class DatabaseManager extends BaseManager implements IService {
    */
   private createAdapter(type: DatabaseType): DatabaseAdapter {
     switch (type) {
-      case "postgresql":
-        return new PostgreSQLAdapter();
       case "mongodb":
         return new MongoDBAdapter();
+      case "postgresql":
+        return new PostgreSQLAdapter();
+      case "mysql":
+        return new MySQLAdapter();
       default:
         throw new Error(`Unsupported database type: ${type}`);
     }
@@ -139,9 +144,11 @@ export class DatabaseManager extends BaseManager implements IService {
    * 关闭所有连接
    */
   async closeAll(): Promise<void> {
-    for (const [_name, adapter] of this.adapters) {
-      adapter.close();
-    }
+    // 并行关闭所有连接以提高效率
+    const closePromises = Array.from(this.adapters.values()).map((adapter) =>
+      adapter.close()
+    );
+    await Promise.allSettled(closePromises);
     this.adapters.clear();
   }
 

@@ -68,10 +68,6 @@ export async function initDatabaseFromConfig(
         Deno.chdir(configDir);
       }
 
-      // 在导入配置文件之前初始化环境变量，这样配置文件就可以直接使用 Deno.env.get()
-      const { initEnv } = await import("../../features/env.ts");
-      initEnv();
-
       // 读取配置文件（使用相对于配置目录的路径）
       const configFileName = configPath.includes("/")
         ? configPath.substring(configPath.lastIndexOf("/") + 1)

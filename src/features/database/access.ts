@@ -146,7 +146,14 @@ export async function getDatabaseAsync(
     );
   }
 
-  return dbManager.getConnection(connectionName);
+  try {
+    return dbManager.getConnection(connectionName);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to get database connection "${connectionName}": ${message}. Please ensure database is properly initialized.`,
+    );
+  }
 }
 
 /**
