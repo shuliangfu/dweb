@@ -969,6 +969,17 @@ export class Application extends EventEmitter {
     const { setMonitor } = await import("../features/monitoring.ts");
     setMonitor(monitor);
 
+    if (config.database) {
+      const databaseManager = new DatabaseManager();
+      // 初始化数据库管理器（会自动连接数据库）
+      await databaseManager.initialize();
+      // 注册到服务容器
+      this.serviceContainer.registerSingleton(
+        "databaseManager",
+        () => databaseManager,
+      );
+    }
+
     // 注册 Cookie 管理器（如果配置了）
     if (config.cookie) {
       const cookieManager = new CookieManager(config.cookie.secret);
@@ -984,17 +995,6 @@ export class Application extends EventEmitter {
       this.serviceContainer.registerSingleton(
         "sessionManager",
         () => sessionManager,
-      );
-    }
-
-    if (config.database) {
-      const databaseManager = new DatabaseManager();
-      // 初始化数据库管理器（会自动连接数据库）
-      await databaseManager.initialize();
-      // 注册到服务容器
-      this.serviceContainer.registerSingleton(
-        "databaseManager",
-        () => databaseManager,
       );
     }
   }
