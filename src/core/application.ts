@@ -48,6 +48,7 @@ import {
   MemoryCacheAdapter,
 } from "./cache/mod.ts";
 import { QueueManager } from "../features/queue/manager.ts";
+import type { IService } from "./iservice.ts";
 import { isMultiAppMode } from "./config.ts";
 
 /**
@@ -224,6 +225,12 @@ export class Application extends EventEmitter {
       // 2. 注册服务
       await this.registerServices();
 
+      // 3. 启动已注册的服务（确保所有服务都已初始化）
+      // 在 console 模式下，虽然 DatabaseManager 在 registerServices 中已初始化，
+      // 但其他服务（如 Logger, Monitor 等）需要启动才能完全初始化
+      // 注意：这里只启动服务，不启动服务器
+      await this.startServicesOnly();
+
       // 4. 初始化缓存服务
       this.initializeCache(config);
 
@@ -283,6 +290,38 @@ export class Application extends EventEmitter {
 
     // 启动服务器
     await this.lifecycleManager.start();
+  }
+
+  /**
+   * 只启动服务，不启动服务器（用于 console 模式）
+   * 启动所有注册的服务，确保它们都已初始化
+   */
+  private async startServicesOnly(): Promise<void> {
+    const serviceContainer = this.serviceContainer;
+    if (!serviceContainer) {
+      return;
+    }
+
+    const tokens = serviceContainer.getRegisteredTokens();
+    for (const token of tokens) {
+      // 跳过 Server 和 LifecycleManager
+      if (token === "server" || token === "lifecycleManager") {
+        continue;
+      }
+
+      try {
+        const service = serviceContainer.get<any>(token) as
+          | IService
+          | undefined;
+        if (service && typeof service.start === "function") {
+          await service.start();
+        }
+      } catch (error) {
+        // 服务启动失败，记录错误但不中断流程
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`服务 ${String(token)} 启动失败: ${message}`);
+      }
+    }
   }
 
   /**
