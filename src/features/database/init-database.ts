@@ -99,11 +99,13 @@ export async function initDatabaseFromConfig(
   }
 
   // 设置配置加载器（用于模型的自动初始化）
+  // 注意：即使连接初始化失败，也要设置 configLoader，这样 Model 可以稍后自动初始化
   setDatabaseConfigLoader(() => {
     return Promise.resolve(databaseConfig);
   });
 
   // 初始化数据库连接
+  // 如果连接失败，会抛出异常，但 configLoader 已经设置，Model 可以稍后重试
   return await initDatabase(databaseConfig, connectionName);
 }
 

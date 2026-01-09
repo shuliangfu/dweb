@@ -169,6 +169,22 @@ export async function getDatabaseAsync(
             `Failed to get database connection "${connectionName}": ${autoInitMessage}. Please ensure database is properly configured in dweb.config.ts.`,
           );
         }
+      } else {
+        // 如果配置加载器未设置，但 dbManager 存在，说明初始化过程中可能出错了
+        // 尝试重新初始化数据库（从配置文件加载）
+        try {
+          const { initDatabaseFromConfig } = await import("./init-database.ts");
+          await initDatabaseFromConfig(undefined, connectionName);
+          // 再次尝试获取连接
+          return dbManager.getConnection(connectionName);
+        } catch (retryError) {
+          const retryMessage = retryError instanceof Error
+            ? retryError.message
+            : String(retryError);
+          throw new Error(
+            `Failed to get database connection "${connectionName}": ${retryMessage}. Please ensure database is properly configured in dweb.config.ts.`,
+          );
+        }
       }
     }
     // 其他错误直接抛出
