@@ -129,6 +129,85 @@ export type LifecycleHook<T = any> = (
 ) => Promise<void> | void;
 
 /**
+ * MongoDB 链式查询构建器类型
+ * 使用递归类型定义，避免循环引用
+ */
+export type MongoQueryBuilder<T extends typeof MongoModel> = {
+  where: (condition: MongoWhereCondition | string) => MongoQueryBuilder<T>;
+  fields: (fields: string[]) => MongoQueryBuilder<T>;
+  sort: (
+    sort: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc",
+  ) => MongoQueryBuilder<T>;
+  skip: (n: number) => MongoQueryBuilder<T>;
+  limit: (n: number) => MongoQueryBuilder<T>;
+  includeTrashed: () => MongoQueryBuilder<T>;
+  onlyTrashed: () => MongoQueryBuilder<T>;
+  findAll: () => Promise<InstanceType<T>[]>;
+  findOne: () => Promise<InstanceType<T> | null>;
+  one: () => Promise<InstanceType<T> | null>;
+  all: () => Promise<InstanceType<T>[]>;
+  findById: (id: string, fields?: string[]) => Promise<InstanceType<T> | null>;
+  count: () => Promise<number>;
+  exists: () => Promise<boolean>;
+  update: (
+    data: Record<string, any>,
+    returnLatest?: boolean,
+  ) => Promise<number | InstanceType<T>>;
+  updateById: (id: string, data: Record<string, any>) => Promise<number>;
+  updateMany: (data: Record<string, any>) => Promise<number>;
+  deleteById: (id: string) => Promise<number>;
+  increment: (
+    field: string,
+    amount?: number,
+    returnLatest?: boolean,
+  ) => Promise<number | InstanceType<T>>;
+  decrement: (
+    field: string,
+    amount?: number,
+    returnLatest?: boolean,
+  ) => Promise<number | InstanceType<T>>;
+  deleteMany: (
+    options?: { returnIds?: boolean },
+  ) => Promise<number | { count: number; ids: any[] }>;
+  restore: (
+    options?: { returnIds?: boolean },
+  ) => Promise<number | { count: number; ids: any[] }>;
+  restoreById: (id: string) => Promise<number>;
+  forceDelete: (
+    options?: { returnIds?: boolean },
+  ) => Promise<number | { count: number; ids: any[] }>;
+  forceDeleteById: (id: string) => Promise<number>;
+  distinct: (field: string) => Promise<any[]>;
+  aggregate: (pipeline: any[]) => Promise<any[]>;
+  findOneAndUpdate: (
+    data: Record<string, any>,
+    options?: { returnDocument?: "before" | "after" },
+  ) => Promise<InstanceType<T> | null>;
+  findOneAndDelete: () => Promise<InstanceType<T> | null>;
+  findOneAndReplace: (
+    replacement: Record<string, any>,
+    returnLatest?: boolean,
+  ) => Promise<InstanceType<T> | null>;
+  upsert: (
+    data: Record<string, any>,
+    returnLatest?: boolean,
+    resurrect?: boolean,
+  ) => Promise<InstanceType<T>>;
+  findOrCreate: (
+    data: Record<string, any>,
+    resurrect?: boolean,
+  ) => Promise<InstanceType<T>>;
+  incrementMany: (
+    fieldOrMap: string | Record<string, number>,
+    amount?: number,
+  ) => Promise<number>;
+  decrementMany: (
+    fieldOrMap: string | Record<string, number>,
+    amount?: number,
+  ) => Promise<number>;
+};
+
+/**
  * MongoDB 模型基类
  * 所有 MongoDB 模型都应该继承此类
  */
@@ -3298,75 +3377,7 @@ export abstract class MongoModel {
    *   .limit(20)
    *   .findAll();
    */
-  static query<T extends typeof MongoModel>(this: T): {
-    where: (condition: MongoWhereCondition | string) => ReturnType<T["query"]>;
-    fields: (fields: string[]) => ReturnType<T["query"]>;
-    sort: (
-      sort: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc",
-    ) => ReturnType<T["query"]>;
-    skip: (n: number) => ReturnType<T["query"]>;
-    limit: (n: number) => ReturnType<T["query"]>;
-    includeTrashed: () => ReturnType<T["query"]>;
-    onlyTrashed: () => ReturnType<T["query"]>;
-    findAll: () => Promise<InstanceType<T>[]>;
-    findOne: () => Promise<InstanceType<T> | null>;
-    one: () => Promise<InstanceType<T> | null>;
-    all: () => Promise<InstanceType<T>[]>;
-    count: () => Promise<number>;
-    exists: () => Promise<boolean>;
-    update: (
-      data: Record<string, any>,
-      returnLatest?: boolean,
-    ) => Promise<number | InstanceType<T>>;
-    updateMany: (data: Record<string, any>) => Promise<number>;
-    increment: (
-      field: string,
-      amount?: number,
-      returnLatest?: boolean,
-    ) => Promise<number | InstanceType<T>>;
-    decrement: (
-      field: string,
-      amount?: number,
-      returnLatest?: boolean,
-    ) => Promise<number | InstanceType<T>>;
-    deleteMany: (
-      options?: { returnIds?: boolean },
-    ) => Promise<number | { count: number; ids: any[] }>;
-    restore: (
-      options?: { returnIds?: boolean },
-    ) => Promise<number | { count: number; ids: any[] }>;
-    forceDelete: (
-      options?: { returnIds?: boolean },
-    ) => Promise<number | { count: number; ids: any[] }>;
-    distinct: (field: string) => Promise<any[]>;
-    aggregate: (pipeline: any[]) => Promise<any[]>;
-    findOneAndUpdate: (
-      data: Record<string, any>,
-      options?: { returnDocument?: "before" | "after" },
-    ) => Promise<InstanceType<T> | null>;
-    findOneAndDelete: () => Promise<InstanceType<T> | null>;
-    findOneAndReplace: (
-      replacement: Record<string, any>,
-      returnLatest?: boolean,
-    ) => Promise<InstanceType<T> | null>;
-    upsert: (
-      data: Record<string, any>,
-      returnLatest?: boolean,
-      resurrect?: boolean,
-    ) => Promise<InstanceType<T>>;
-    findOrCreate: (
-      data: Record<string, any>,
-      resurrect?: boolean,
-    ) => Promise<InstanceType<T>>;
-    incrementMany: (
-      fieldOrMap: string | Record<string, number>,
-      amount?: number,
-    ) => Promise<number>;
-    decrementMany: (
-      fieldOrMap: string | Record<string, number>,
-      amount?: number,
-    ) => Promise<number>;
-  } {
+  static query<T extends typeof MongoModel>(this: T): MongoQueryBuilder<T> {
     let _condition: MongoWhereCondition | string = {};
     let _fields: string[] | undefined;
     let _sort:
@@ -3379,7 +3390,8 @@ export abstract class MongoModel {
     let _includeTrashed = false;
     let _onlyTrashed = false;
 
-    const builder = {
+    // 使用类型断言确保 builder 的类型是 MongoQueryBuilder<T>
+    const builder: MongoQueryBuilder<T> = {
       where: (condition: MongoWhereCondition | string) => {
         _condition = condition;
         return builder;
@@ -3530,6 +3542,18 @@ export abstract class MongoModel {
       all: async (): Promise<InstanceType<T>[]> => {
         return await builder.findAll();
       },
+      findById: async (
+        id: string,
+        fields?: string[],
+      ): Promise<InstanceType<T> | null> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        return await this.findById(id, fields);
+      },
       count: async (): Promise<number> => {
         await this.ensureInitialized();
         if (!this.adapter) {
@@ -3571,6 +3595,18 @@ export abstract class MongoModel {
           _includeTrashed,
           _onlyTrashed,
         );
+      },
+      updateById: async (
+        id: string,
+        data: Record<string, any>,
+      ): Promise<number> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        return await this.updateById(id, data);
       },
       update: async (
         data: Record<string, any>,
@@ -3615,6 +3651,15 @@ export abstract class MongoModel {
           _fields,
         );
       },
+      deleteById: async (id: string): Promise<number> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        return await this.deleteById(id);
+      },
       deleteMany: async (
         options?: { returnIds?: boolean },
       ): Promise<number | { count: number; ids: any[] }> => {
@@ -3625,10 +3670,28 @@ export abstract class MongoModel {
       ): Promise<number | { count: number; ids: any[] }> => {
         return await this.restore(_condition as any, options);
       },
+      restoreById: async (id: string): Promise<number> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        return await this.restoreById(id);
+      },
       forceDelete: async (
         options?: { returnIds?: boolean },
       ): Promise<number | { count: number; ids: any[] }> => {
         return await this.forceDelete(_condition as any, options);
+      },
+      forceDeleteById: async (id: string): Promise<number> => {
+        await this.ensureInitialized();
+        if (!this.adapter) {
+          throw new Error(
+            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+          );
+        }
+        return await this.forceDeleteById(id);
       },
       distinct: async (field: string): Promise<any[]> => {
         const cond = typeof _condition === "string"

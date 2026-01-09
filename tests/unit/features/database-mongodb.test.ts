@@ -1378,6 +1378,157 @@ Deno.test({
   sanitizeOps: false,
 });
 
+Deno.test({
+  name: 'MongoDB ORM - query 链式查询 findById',
+  fn: async () => {
+    await setupTestDatabase();
+
+    try {
+      const user = await TestMongoModel.create({
+        name: 'Query FindById User',
+        email: 'queryfindbyid@example.com',
+      });
+
+      const userId = idToString(user._id);
+      const found = await TestMongoModel.query().findById(userId);
+
+      assertExists(found);
+      assertEquals(found.name, 'Query FindById User');
+      assertEquals(found.email, 'queryfindbyid@example.com');
+
+      // 测试带字段投影
+      const foundWithFields = await TestMongoModel.query().findById(userId, ['name', 'email']);
+      assertExists(foundWithFields);
+      assertEquals(foundWithFields.name, 'Query FindById User');
+      assertEquals(foundWithFields.email, 'queryfindbyid@example.com');
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - query 链式查询 updateById',
+  fn: async () => {
+    await setupTestDatabase();
+
+    try {
+      const user = await TestMongoModel.create({
+        name: 'Before Update',
+        email: 'beforeupdate@example.com',
+      });
+
+      const userId = idToString(user._id);
+      const updatedCount = await TestMongoModel.query().updateById(userId, {
+        name: 'After Update',
+        age: 30,
+      });
+
+      assertEquals(updatedCount, 1);
+
+      const updated = await TestMongoModel.find(userId);
+      assertExists(updated);
+      assertEquals(updated.name, 'After Update');
+      assertEquals(updated.age, 30);
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - query 链式查询 deleteById',
+  fn: async () => {
+    await setupTestDatabase();
+
+    try {
+      const user = await TestMongoModel.create({
+        name: 'Delete By Id User',
+        email: 'deletebyid@example.com',
+      });
+
+      const userId = idToString(user._id);
+      const deletedCount = await TestMongoModel.query().deleteById(userId);
+
+      assertEquals(deletedCount, 1);
+
+      // 验证记录已被软删除
+      const deletedUser = await TestMongoModel.withTrashed().find(userId);
+      assertExists(deletedUser);
+      assertExists(deletedUser.deletedAt);
+
+      // 验证正常查询找不到已删除的记录
+      const found = await TestMongoModel.find(userId);
+      assertEquals(found, null);
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - query 链式查询 restoreById',
+  fn: async () => {
+    await setupTestDatabase();
+
+    try {
+      const user = await TestMongoModel.create({
+        name: 'Restore By Id User',
+        email: 'restorebyid@example.com',
+      });
+
+      const userId = idToString(user._id);
+      await TestMongoModel.delete(userId);
+
+      // 使用链式查询恢复
+      const restoredCount = await TestMongoModel.query().restoreById(userId);
+      assertEquals(restoredCount, 1);
+
+      // 验证记录已恢复
+      const restored = await TestMongoModel.find(userId);
+      assertExists(restored);
+      assertEquals(restored.deletedAt, undefined);
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - query 链式查询 forceDeleteById',
+  fn: async () => {
+    await setupTestDatabase();
+
+    try {
+      const user = await TestMongoModel.create({
+        name: 'Force Delete By Id User',
+        email: 'forcedeletebyid@example.com',
+      });
+
+      const userId = idToString(user._id);
+      const deletedCount = await TestMongoModel.query().forceDeleteById(userId);
+
+      assertEquals(deletedCount, 1);
+
+      // 验证记录已被物理删除
+      const found = await TestMongoModel.withTrashed().find(userId);
+      assertEquals(found, null);
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
 // ==================== 其他方法测试 ====================
 
 Deno.test({

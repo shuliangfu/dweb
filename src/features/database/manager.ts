@@ -49,7 +49,7 @@ export class DatabaseManager extends BaseManager implements IService {
       setDatabaseManager(this);
       // 自动从配置文件加载配置并连接数据库
       await initDatabaseFromConfig();
-      // console.log("数据库初始化完成...");
+      console.log("数据库初始化完成...");
     } catch (error) {
       // 重新抛出错误，而不是静默吞掉，这样调用者可以知道初始化失败
       const message = error instanceof Error ? error.message : String(error);
