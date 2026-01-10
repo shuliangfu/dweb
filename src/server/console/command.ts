@@ -146,9 +146,9 @@ export class Command {
     this.name = name;
     this.description = description;
 
-    this.before(async (_args, _options) => {
-      await this.initializedApp();
-    });
+    // this.before(async (_args, _options) => {
+    //   await this.initializedApp();
+    // });
   }
 
   /**
