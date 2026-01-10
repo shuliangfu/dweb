@@ -370,6 +370,8 @@ cli.command("build", "构建生产版本")
 
     info("开始构建...");
 
+    Deno.env.set("BUILD_MODE", "true");
+
     // 加载配置
     const { config } = await loadConfig(undefined, appName);
 
