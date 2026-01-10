@@ -50,6 +50,9 @@ export class DatabaseManager extends BaseManager implements IService {
    */
   protected override async onInitialize(): Promise<void> {
     try {
+      // 如果构建模式，不初始化数据库
+      if (Deno.env.get("BUILD_MODE") == "true") return;
+
       // 先设置数据库管理器实例，这样 getDatabaseAsync 可以找到它
       setDatabaseManager(this);
       // 自动从配置文件加载配置并连接数据库
