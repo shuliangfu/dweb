@@ -70,7 +70,7 @@ export async function setCurrentLanguage(langCode: string): Promise<void> {
   }
 
   // 生成 API 端点 URL
-  const apiEndpoint = `/i18n/locales/${langCode}.json`;
+  const apiEndpoint = `/__i18n/${langCode}.json`;
 
   try {
     // 调用全局 initI18n 函数重新加载语言包
