@@ -198,7 +198,8 @@ function generateInitScript(config: {
  */
 export function store(options: StorePluginOptions = {}): Plugin {
   const config = options;
-  const persist = config.persist !== false;
+  // 只有明确设置为 true 时才开启持久化
+  const persist = config.persist === true;
   const storageKey = config.storageKey || "dweb-store";
   const enableServer = config.enableServer !== false;
 
