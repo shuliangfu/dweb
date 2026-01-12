@@ -59,6 +59,7 @@ export class MongoDBAdapter extends BaseAdapter {
       // 如果提供了 URI，直接使用（优先级最高）
       if (uri) {
         url = uri;
+        // URI 中可能已经包含了 directConnection 参数，不需要额外处理
       } else if (hosts && hosts.length > 0) {
         // 支持多个主机地址（副本集）
         // 构建主机列表：host1:port1,host2:port2,host3:port3
@@ -95,7 +96,11 @@ export class MongoDBAdapter extends BaseAdapter {
 
         url = `mongodb://${authPart}${hostList}${dbPart}${queryString}`;
       } else {
-        // 单个主机连接（原有逻辑）
+        // 单个主机连接
+        // 判断是否是单节点副本集：设置了 replicaSet 但没有使用 hosts（多节点）配置
+        const isSingleNodeReplicaSet = mongoOptions?.replicaSet &&
+          (!hosts || hosts.length === 0);
+
         if (username && password) {
           url = `mongodb://${username}:${password}@${host || "localhost"}:${
             port || 27017
@@ -106,6 +111,11 @@ export class MongoDBAdapter extends BaseAdapter {
           }
           if (mongoOptions?.replicaSet) {
             queryParams.push(`replicaSet=${mongoOptions.replicaSet}`);
+            // 仅对单节点副本集添加 directConnection=true
+            // 多节点副本集（使用 hosts 配置）不使用此参数，以便驱动能够发现所有节点
+            if (isSingleNodeReplicaSet) {
+              queryParams.push(`directConnection=true`);
+            }
           }
           if (queryParams.length > 0) {
             url += `?${queryParams.join("&")}`;
@@ -117,6 +127,11 @@ export class MongoDBAdapter extends BaseAdapter {
           const queryParams: string[] = [];
           if (mongoOptions?.replicaSet) {
             queryParams.push(`replicaSet=${mongoOptions.replicaSet}`);
+            // 仅对单节点副本集添加 directConnection=true
+            // 多节点副本集（使用 hosts 配置）不使用此参数，以便驱动能够发现所有节点
+            if (isSingleNodeReplicaSet) {
+              queryParams.push(`directConnection=true`);
+            }
           }
           if (queryParams.length > 0) {
             url += `?${queryParams.join("&")}`;

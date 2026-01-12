@@ -52,34 +52,91 @@ let databaseConnected = false;
 let databaseAdapter: MongoDBAdapter | null = null;
 
 /**
- * 从环境变量加载 MongoDB 配置
+ * 从环境变量加载 MongoDB 配置（支持副本集）
+ * 支持两种环境变量格式：
+ * 1. MONGODB_* 前缀（标准格式）
+ * 2. DB_* 前缀（兼容格式）
  */
 function loadMongoDBConfigFromEnv(): DatabaseConfig | null {
-  const uri = Deno.env.get('MONGODB_URI');
-  const host = Deno.env.get('MONGODB_HOST') || 'localhost';
-  const port = parseInt(Deno.env.get('MONGODB_PORT') || '27017');
-  const database = Deno.env.get('MONGODB_DATABASE') || 'test_db';
-  const username = Deno.env.get('MONGODB_USERNAME');
-  const password = Deno.env.get('MONGODB_PASSWORD');
+  // 优先使用 MONGODB_* 前缀，如果没有则使用 DB_* 前缀
+  const uri = Deno.env.get('MONGODB_URI') || Deno.env.get('DB_URI');
+  const host = Deno.env.get('MONGODB_HOST') || Deno.env.get('DB_HOST');
+  const port = parseInt(
+    Deno.env.get('MONGODB_PORT') || 
+    Deno.env.get('DB_PORT') || 
+    '27017'
+  );
+  const database = Deno.env.get('MONGODB_DATABASE') || 
+                   Deno.env.get('DB_NAME') || 
+                   Deno.env.get('DB_DATABASE') || 
+                   'test_db';
+  const username = Deno.env.get('MONGODB_USERNAME') || 
+                   Deno.env.get('DB_USER') || 
+                   Deno.env.get('DB_USERNAME');
+  const password = Deno.env.get('MONGODB_PASSWORD') || 
+                  Deno.env.get('DB_PASS') || 
+                  Deno.env.get('DB_PASSWORD');
+  const authSource = Deno.env.get('MONGODB_AUTH_SOURCE') || 
+                     Deno.env.get('DB_AUTH_SOURCE');
+  const hosts = Deno.env.get('MONGODB_HOSTS') || 
+                Deno.env.get('DB_HOSTS');
+  const replicaSet = Deno.env.get('MONGODB_REPLICA_SET') || 
+                     Deno.env.get('REPLICA_SET') || 
+                     Deno.env.get('DB_REPLICA_SET');
+  const timeoutMS = parseInt(
+    Deno.env.get('MONGODB_TIMEOUT_MS') || 
+    Deno.env.get('DB_TIMEOUT_MS') || 
+    '15000'
+  );
 
+  // 如果提供了 URI，直接使用（优先级最高）
   if (uri) {
-    // 解析 URI
     try {
       const url = new URL(uri);
+      const replicaSetParam = url.searchParams.get('replicaSet');
+
       return {
         type: 'mongodb',
         connection: {
-          host: url.hostname,
-          port: url.port ? parseInt(url.port) : 27017,
-          database: url.pathname.slice(1) || database,
-          username: url.username || username,
-          password: url.password || password,
+          uri: uri, // 直接使用 URI
+        },
+        mongoOptions: {
+          timeoutMS,
+          maxRetries: 3,
+          retryDelay: 1000,
+          replicaSet: replicaSetParam || undefined,
         },
       };
     } catch {
       return null;
     }
-  } else if (host && database) {
+  }
+
+  // 如果提供了 hosts（副本集配置）
+  if (hosts && hosts.length > 0) {
+    const hostList = hosts.split(',').map(h => h.trim());
+
+    return {
+      type: 'mongodb',
+      connection: {
+        hosts: hostList,
+        database,
+        username,
+        password,
+        authSource,
+      },
+      mongoOptions: {
+        replicaSet: replicaSet || undefined, // 副本集名称（如果提供）
+        timeoutMS,
+        maxRetries: 3,
+        retryDelay: 1000,
+        authSource,
+      },
+    };
+  }
+
+  // 单机连接配置（如果设置了 replicaSet，则使用副本集配置）
+  if (host && database) {
     return {
       type: 'mongodb',
       connection: {
@@ -88,6 +145,14 @@ function loadMongoDBConfigFromEnv(): DatabaseConfig | null {
         database,
         username,
         password,
+        authSource,
+      },
+      mongoOptions: {
+        timeoutMS,
+        maxRetries: 3,
+        retryDelay: 1000,
+        authSource,
+        replicaSet: replicaSet || undefined, // 单机副本集也需要设置 replicaSet
       },
     };
   }
@@ -96,7 +161,7 @@ function loadMongoDBConfigFromEnv(): DatabaseConfig | null {
 }
 
 /**
- * 检查 MongoDB 连接
+ * 检查 MongoDB 连接（带超时处理）
  */
 async function checkMongoDBConnection(): Promise<boolean> {
   const config = loadMongoDBConfigFromEnv();
@@ -106,24 +171,58 @@ async function checkMongoDBConnection(): Promise<boolean> {
   }
 
   try {
-    // 初始化数据库连接
-    await initDatabase(config, 'default');
+    // 设置超时时间（从配置中获取，默认15秒）
+    const timeoutMS = (config.mongoOptions?.timeoutMS || 15000);
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`连接超时（${timeoutMS}ms）`));
+      }, timeoutMS + 3000); // 比配置的超时时间稍长
+    });
 
-    // 获取适配器并测试连接
-    const adapter = await getDatabaseAsync('default') as MongoDBAdapter;
+    const connectPromise = (async () => {
+      // 初始化数据库连接
+      await initDatabase(config, 'default');
 
-    // 检查连接状态
-    if (adapter.isConnected()) {
-      databaseAdapter = adapter;
-      databaseConnected = true;
-      console.log('✅ MongoDB 连接成功');
-      return true;
-    } else {
-      console.log('⚠️  MongoDB 适配器未连接');
-      return false;
-    }
+      // 获取适配器并测试连接
+      const adapter = await getDatabaseAsync('default') as MongoDBAdapter;
+
+      // 检查连接状态
+      if (adapter.isConnected()) {
+        // 尝试执行 ping 操作验证连接
+        const db = adapter.getDatabase();
+        if (db) {
+          await db.admin().ping();
+        }
+        databaseAdapter = adapter;
+        databaseConnected = true;
+        console.log('✅ MongoDB 连接成功');
+        return true;
+      } else {
+        console.log('⚠️  MongoDB 适配器未连接');
+        return false;
+      }
+    })();
+
+    // 使用 Promise.race 实现超时控制
+    return await Promise.race([connectPromise, timeoutPromise]) as boolean;
   } catch (error) {
-    console.warn(`⚠️  MongoDB 连接失败: ${error instanceof Error ? error.message : String(error)}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.warn(`⚠️  MongoDB 连接失败: ${errorMessage}`);
+
+    // 提供诊断建议
+    if (errorMessage.includes('timeout') || errorMessage.includes('超时')) {
+      console.warn('💡 提示：连接超时，请检查：');
+      console.warn('  1. MongoDB 服务是否运行');
+      console.warn('  2. 网络连接是否正常');
+      console.warn('  3. 如果是副本集，检查所有节点是否可访问');
+      console.warn('  4. 尝试增加 MONGODB_TIMEOUT_MS 环境变量');
+    } else if (errorMessage.includes('replicaSet') || errorMessage.includes('副本集')) {
+      console.warn('💡 提示：副本集连接问题，请检查：');
+      console.warn('  1. 副本集名称是否正确（MONGODB_REPLICA_SET）');
+      console.warn('  2. 所有副本集节点是否在 hosts 列表中');
+      console.warn('  3. 副本集是否已正确初始化');
+    }
+
     return false;
   }
 }
