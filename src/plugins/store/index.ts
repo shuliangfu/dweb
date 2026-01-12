@@ -200,7 +200,7 @@ export function store(options: StorePluginOptions = {}): Plugin {
   const config = options;
   // 只有明确设置为 true 时才开启持久化
   const persist = config.persist === true;
-  const storageKey = config.storageKey || "dweb-store";
+  const storageKey = config.storageKey || "";
   const enableServer = config.enableServer !== false;
 
   // 如果用户提供了 initialState，使用用户的；否则自动从注册表收集
@@ -216,7 +216,7 @@ export function store(options: StorePluginOptions = {}): Plugin {
     /**
      * 初始化钩子
      */
-    onInit: async (app) => {
+    onInit: async (app, _config) => {
       // 在应用实例上添加 getStore 方法
       (app as any).getStore = () => {
         if (typeof globalThis !== "undefined" && globalThis.window) {
@@ -259,7 +259,7 @@ export function store(options: StorePluginOptions = {}): Plugin {
     /**
      * 请求处理钩子 - 为每个请求创建独立的 Store 实例（服务端）
      */
-    onRequest: (req: Request) => {
+    onRequest: (req: Request, _res: Response) => {
       if (enableServer) {
         const serverStore = createServerStore(initialState);
         serverStores.set(req, serverStore);

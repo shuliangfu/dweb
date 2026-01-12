@@ -57,8 +57,18 @@ type StoreState = Record<string, unknown>;
 /**
  * Store 注册表（全局）
  * 用于自动收集所有已定义的 store 的初始状态
+ * 使用全局变量初始化，确保在任何地方使用前都已初始化
  */
-const __STORE_REGISTRY__: Map<string, Record<string, unknown>> = new Map();
+function getStoreRegistry(): Map<string, Record<string, unknown>> {
+  // 使用全局变量缓存，避免重复创建
+  if (!(globalThis as any).__STORE_REGISTRY_INTERNAL__) {
+    (globalThis as any).__STORE_REGISTRY_INTERNAL__ = new Map<
+      string,
+      Record<string, unknown>
+    >();
+  }
+  return (globalThis as any).__STORE_REGISTRY_INTERNAL__;
+}
 
 /**
  * 获取所有已注册的 store 初始状态
@@ -66,7 +76,8 @@ const __STORE_REGISTRY__: Map<string, Record<string, unknown>> = new Map();
  */
 export function getAllStoreInitialStates(): Record<string, unknown> {
   const states: Record<string, unknown> = {};
-  for (const [name, state] of __STORE_REGISTRY__.entries()) {
+  const registry = getStoreRegistry();
+  for (const [name, state] of registry.entries()) {
     states[name] = state;
   }
   return states;
@@ -76,7 +87,7 @@ export function getAllStoreInitialStates(): Record<string, unknown> {
  * 清除所有已注册的 store（主要用于测试）
  */
 export function clearStoreRegistry(): void {
-  __STORE_REGISTRY__.clear();
+  getStoreRegistry().clear();
 }
 
 /**
@@ -392,7 +403,7 @@ export function defineStore<
   }
 
   // 自动注册初始状态到全局注册表（用于自动收集）
-  __STORE_REGISTRY__.set(name, initialState as Record<string, unknown>);
+  getStoreRegistry().set(name, initialState as Record<string, unknown>);
 
   // 获取当前状态
   const getCurrentState = (): Record<string, unknown> => {
