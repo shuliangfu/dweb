@@ -42,22 +42,86 @@ export class MongoDBAdapter extends BaseAdapter {
       this.validateConfig(config);
       this.config = config;
 
-      const { host, port, database, username, password, authSource } =
-        config.connection;
+      const {
+        host,
+        port,
+        database,
+        username,
+        password,
+        authSource,
+        hosts,
+        uri,
+      } = config.connection;
 
       // 构建连接 URL
       let url: string;
-      if (username && password) {
-        url = `mongodb://${username}:${password}@${host || "localhost"}:${
-          port || 27017
-        }/${database || ""}`;
-        if (authSource) {
-          url += `?authSource=${authSource}`;
+
+      // 如果提供了 URI，直接使用（优先级最高）
+      if (uri) {
+        url = uri;
+      } else if (hosts && hosts.length > 0) {
+        // 支持多个主机地址（副本集）
+        // 构建主机列表：host1:port1,host2:port2,host3:port3
+        const hostList = hosts
+          .map((h) => {
+            // 如果主机地址已经包含端口，直接使用；否则添加默认端口
+            if (h.includes(":")) {
+              return h;
+            }
+            return `${h}:${port || 27017}`;
+          })
+          .join(",");
+
+        // 构建认证部分
+        const authPart = username && password ? `${username}:${password}@` : "";
+
+        // 构建数据库部分
+        const dbPart = database ? `/${database}` : "";
+
+        // 构建查询参数
+        const queryParams: string[] = [];
+        if (mongoOptions?.replicaSet) {
+          queryParams.push(`replicaSet=${mongoOptions?.replicaSet}`);
         }
+        if (authSource || mongoOptions?.authSource) {
+          queryParams.push(
+            `authSource=${authSource || mongoOptions?.authSource}`,
+          );
+        }
+
+        const queryString = queryParams.length > 0
+          ? `?${queryParams.join("&")}`
+          : "";
+
+        url = `mongodb://${authPart}${hostList}${dbPart}${queryString}`;
       } else {
-        url = `mongodb://${host || "localhost"}:${port || 27017}/${
-          database || ""
-        }`;
+        // 单个主机连接（原有逻辑）
+        if (username && password) {
+          url = `mongodb://${username}:${password}@${host || "localhost"}:${
+            port || 27017
+          }/${database || ""}`;
+          const queryParams: string[] = [];
+          if (authSource) {
+            queryParams.push(`authSource=${authSource}`);
+          }
+          if (mongoOptions?.replicaSet) {
+            queryParams.push(`replicaSet=${mongoOptions.replicaSet}`);
+          }
+          if (queryParams.length > 0) {
+            url += `?${queryParams.join("&")}`;
+          }
+        } else {
+          url = `mongodb://${host || "localhost"}:${port || 27017}/${
+            database || ""
+          }`;
+          const queryParams: string[] = [];
+          if (mongoOptions?.replicaSet) {
+            queryParams.push(`replicaSet=${mongoOptions.replicaSet}`);
+          }
+          if (queryParams.length > 0) {
+            url += `?${queryParams.join("&")}`;
+          }
+        }
       }
 
       // 连接选项
@@ -71,19 +135,19 @@ export class MongoDBAdapter extends BaseAdapter {
       };
 
       if (mongoOptions?.authSource) {
-        clientOptions.authSource = mongoOptions.authSource;
+        clientOptions.authSource = mongoOptions?.authSource;
       }
 
       if (mongoOptions?.replicaSet) {
-        clientOptions.replicaSet = mongoOptions.replicaSet;
+        clientOptions.replicaSet = mongoOptions?.replicaSet;
       }
 
       if (mongoOptions?.maxPoolSize) {
-        clientOptions.maxPoolSize = mongoOptions.maxPoolSize;
+        clientOptions.maxPoolSize = mongoOptions?.maxPoolSize;
       }
 
       if (mongoOptions?.minPoolSize) {
-        clientOptions.minPoolSize = mongoOptions.minPoolSize;
+        clientOptions.minPoolSize = mongoOptions?.minPoolSize;
       }
 
       this.client = new MongoClient(url, clientOptions);

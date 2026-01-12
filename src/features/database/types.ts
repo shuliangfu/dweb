@@ -26,6 +26,11 @@ export interface DatabaseConfig {
     // MongoDB 特定
     authSource?: string;
     replicaSet?: string;
+    // MongoDB 副本集：支持多个主机地址
+    // 格式：["host1:port1", "host2:port2", "host3:port3"] 或 ["host1", "host2", "host3"]（使用默认端口）
+    hosts?: string[];
+    // MongoDB 连接 URI（如果提供，将优先使用此 URI，忽略其他连接参数）
+    uri?: string;
   };
 
   /** 连接池配置（SQL 数据库） */
@@ -45,7 +50,7 @@ export interface DatabaseConfig {
     maxRetries?: number; // 最大重试次数
     retryDelay?: number; // 重试延迟（毫秒）
     authSource?: string;
-    replicaSet?: string;
+    replicaSet?: string; // 副本集名称（如果使用 hosts 配置多个主机，此参数必须设置）
   };
 }
 
