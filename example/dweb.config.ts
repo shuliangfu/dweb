@@ -73,6 +73,7 @@ export default defineConfig({
       timeoutMS: 5000, // 服务器选择超时时间（毫秒）
       maxRetries: 3, // 最大重试次数
       retryDelay: 1000, // 重试延迟（毫秒）
+      replicaSet: "rs0",
     },
   },
 

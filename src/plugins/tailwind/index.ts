@@ -17,6 +17,7 @@ import { processCSSV3 } from "./v3.ts";
 import { processCSSV4 } from "./v4.ts";
 import * as path from "@std/path";
 import { isPathSafe } from "../../server/utils/security.ts";
+import { HashCalculator } from "../../server/build/hash-calculator.ts";
 
 /**
  * 处理 CSS 文件
@@ -78,6 +79,90 @@ async function processCSS(
 }
 
 /**
+ * 加载 CSS hash 映射文件（运行时使用）
+ * 从构建输出目录读取 css-manifest.json
+ */
+async function loadCSSHashMap(): Promise<void> {
+  try {
+    // 尝试从多个可能的位置读取 manifest 文件
+    const possiblePaths = [
+      path.join(Deno.cwd(), ".dist", "css-manifest.json"),
+      path.join(Deno.cwd(), "dist", "css-manifest.json"),
+      path.join(Deno.cwd(), "css-manifest.json"),
+    ];
+
+    for (const manifestPath of possiblePaths) {
+      try {
+        const content = await Deno.readTextFile(manifestPath);
+        const manifest = JSON.parse(content) as Record<string, string>;
+
+        // 将 manifest 数据加载到 Map 中
+        cssHashMap.clear();
+        for (const [original, hashed] of Object.entries(manifest)) {
+          cssHashMap.set(original, hashed);
+        }
+
+        console.log(
+          `   ✅ [Tailwind] 已加载 CSS hash 映射: ${
+            Object.keys(manifest).length
+          } 个文件`,
+        );
+        return;
+      } catch {
+        // 文件不存在，继续尝试下一个路径
+        continue;
+      }
+    }
+
+    // 如果所有路径都失败，使用空映射（开发环境或未构建）
+    cssHashMap.clear();
+  } catch (error) {
+    console.warn(`   ⚠️  [Tailwind] 加载 CSS hash 映射失败:`, error);
+    cssHashMap.clear();
+  }
+}
+
+/**
+ * 保存 CSS hash 映射文件（构建时使用）
+ * @param originalFileName 原始文件名（例如：style.css）
+ * @param hashedFileName hash 化的文件名（例如：style.abc123.css）
+ * @param outDir 输出目录
+ */
+async function saveCSSHashMap(
+  originalFileName: string,
+  hashedFileName: string,
+  outDir: string,
+): Promise<void> {
+  try {
+    const manifestPath = path.join(outDir, "css-manifest.json");
+
+    // 读取现有的 manifest（如果存在）
+    let manifest: Record<string, string> = {};
+    try {
+      const content = await Deno.readTextFile(manifestPath);
+      manifest = JSON.parse(content);
+    } catch {
+      // 文件不存在，使用空对象
+    }
+
+    // 更新映射
+    manifest[originalFileName] = hashedFileName;
+
+    // 写入文件
+    await Deno.writeTextFile(
+      manifestPath,
+      JSON.stringify(manifest, null, 2),
+    );
+
+    console.log(
+      `   ✅ [Tailwind] 已保存 CSS hash 映射: ${originalFileName} -> ${hashedFileName}`,
+    );
+  } catch (error) {
+    console.error(`   ❌ [Tailwind] 保存 CSS hash 映射失败:`, error);
+  }
+}
+
+/**
  * 在生产环境中注入 CSS link 标签到 HTML 响应
  * @param res 响应对象
  * @param cssPath CSS 文件路径（相对于静态资源目录）
@@ -88,6 +173,8 @@ function injectCSSLink(
   res: Response,
   cssPath: string,
   staticPrefix: string,
+  isProduction: boolean,
+  cssHashMap: Map<string, string>,
 ): void {
   // 只处理 HTML 响应
   if (!res.body || typeof res.body !== "string") {
@@ -103,10 +190,16 @@ function injectCSSLink(
     const html = res.body as string;
 
     // 获取 CSS 文件名
-    const filename = path.basename(cssPath);
+    const originalFilename = path.basename(cssPath);
+
+    // 在生产环境中，尝试使用 hash 化的文件名
+    let filename = originalFilename;
+    if (isProduction && cssHashMap.has(originalFilename)) {
+      filename = cssHashMap.get(originalFilename)!;
+    }
 
     // 构建 CSS 文件 URL
-    const cssUrl = path.join(staticPrefix, filename);
+    const cssUrl = path.join(staticPrefix, filename).replace(/\\/g, "/");
 
     const linkTag = `<link rel="stylesheet" href="${cssUrl}" />`;
 
@@ -156,6 +249,10 @@ function injectCSSLink(
  * @param options 插件选项
  * @returns 插件对象
  */
+// CSS hash 文件名映射（全局，用于运行时）
+// key: 原始文件名, value: hash 化的文件名
+let cssHashMap: Map<string, string> = new Map();
+
 export function tailwind(options: TailwindPluginOptions = {}): Plugin {
   const version = options.version || "v4";
 
@@ -174,11 +271,16 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
     name: "tailwind",
     config: options as Record<string, unknown>,
 
-    onInit(app: AppLike, config: AppConfig) {
+    async onInit(app: AppLike, config: AppConfig) {
       // 从 app 中获取环境标志
       isProduction = (app.isProduction as boolean) ?? false;
       staticDir = config.static?.dir || "assets";
       staticPrefix = config.static?.prefix || "/" + staticDir;
+
+      // 在生产环境中，加载 CSS hash 映射文件
+      if (isProduction) {
+        await loadCSSHashMap();
+      }
     },
 
     /**
@@ -320,8 +422,14 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
           ? options.cssPath.slice(1)
           : options.cssPath;
 
-        // 注入 CSS link 标签到 HTML
-        injectCSSLink(res, cssPath, staticPrefix);
+        // 注入 CSS link 标签到 HTML（使用 hash 化的文件名）
+        injectCSSLink(
+          res,
+          cssPath,
+          staticPrefix,
+          isProduction,
+          cssHashMap,
+        );
       } catch (error) {
         console.error("[Tailwind Plugin] 注入 CSS link 时出错:", error);
         // 出错时不修改响应，让原始响应返回
@@ -389,19 +497,42 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
             }
             const outPath = path.join(outDir, staticDir, relativePath);
 
-            // 确保输出目录存在
-            await Deno.mkdir(path.dirname(outPath), { recursive: true });
+            // 计算 CSS 内容的 hash
+            const hashCalculator = new HashCalculator();
+            const hash = await hashCalculator.calculateHash(processed.content);
 
-            // 写入处理后的 CSS
-            await Deno.writeTextFile(outPath, processed.content);
-            // 如果有 source map，也写入
+            // 生成 hash 化的文件名
+            // 例如：style.css -> style.abc123.css
+            const originalFileName = path.basename(relativePath);
+            const ext = path.extname(originalFileName);
+            const nameWithoutExt = path.basename(originalFileName, ext);
+            const hashedFileName = `${nameWithoutExt}.${hash}${ext}`;
+            const hashedRelativePath = path.join(
+              path.dirname(relativePath),
+              hashedFileName,
+            );
+            const hashedOutPath = path.join(
+              outDir,
+              staticDir,
+              hashedRelativePath,
+            );
+
+            // 确保输出目录存在
+            await Deno.mkdir(path.dirname(hashedOutPath), { recursive: true });
+
+            // 写入处理后的 CSS（使用 hash 化的文件名）
+            await Deno.writeTextFile(hashedOutPath, processed.content);
+            // 如果有 source map，也写入（使用 hash 化的文件名）
             if (processed.map) {
-              await Deno.writeTextFile(`${outPath}.map`, processed.map);
+              await Deno.writeTextFile(`${hashedOutPath}.map`, processed.map);
             }
 
             console.log(
-              `   ✅ [Tailwind ${version}] CSS 编译完成: ${cssFile}`,
+              `   ✅ [Tailwind ${version}] CSS 编译完成: ${cssFile} -> ${hashedFileName}`,
             );
+
+            // 保存 CSS hash 映射到 manifest 文件（用于运行时读取）
+            await saveCSSHashMap(originalFileName, hashedFileName, outDir);
           } catch (error) {
             console.error(
               `❌ [Tailwind ${version}] 编译失败: ${cssFile}`,
