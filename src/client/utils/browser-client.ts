@@ -1986,95 +1986,129 @@ class BrowserClient {
     }
     (globalThis as Record<string, unknown>).__CSR_ROUTER_INITIALIZED__ = true;
 
-    // 验证传入的 render 和 jsx 函数
-    if (typeof render !== "function" || typeof jsx !== "function") {
-      throw new Error("render 或 jsx 函数无效");
-    }
+    // 标记 i18n 事件监听器已添加，避免重复添加
+    const i18nListenerKey = "__I18N_LISTENER_ADDED__";
+    if (!(globalThis as Record<string, unknown>)[i18nListenerKey]) {
+      (globalThis as Record<string, unknown>)[i18nListenerKey] = true;
 
-    // 确保全局 Preact 模块已设置（如果还没有设置，使用传入的参数设置）
-    let modules = (globalThis as Record<string, unknown>).__PREACT_MODULES__ as
-      | { render?: unknown; jsx?: unknown; hydrate?: unknown }
-      | undefined;
-    if (!modules) {
-      // 如果全局模块未设置，使用传入的参数设置它
-      modules = { render, jsx };
-      (globalThis as Record<string, unknown>).__PREACT_MODULES__ = modules;
-    }
+      // 验证传入的 render 和 jsx 函数
+      if (typeof render !== "function" || typeof jsx !== "function") {
+        throw new Error("render 或 jsx 函数无效");
+      }
 
-    const renderFunc = (modules.render || render) as (
-      element: unknown,
-      container: HTMLElement,
-    ) => void;
-    const jsxFunc = (modules.jsx || jsx) as (
-      type: unknown,
-      props: Record<string, unknown> | null,
-      ...children: unknown[]
-    ) => unknown;
-    const hydrateFunc = modules.hydrate as
-      | ((element: unknown, container: HTMLElement) => void)
-      | undefined;
+      // 确保全局 Preact 模块已设置（如果还没有设置，使用传入的参数设置）
+      let modules = (globalThis as Record<string, unknown>)
+        .__PREACT_MODULES__ as
+          | { render?: unknown; jsx?: unknown; hydrate?: unknown }
+          | undefined;
+      if (!modules) {
+        // 如果全局模块未设置，使用传入的参数设置它
+        modules = { render, jsx };
+        (globalThis as Record<string, unknown>).__PREACT_MODULES__ = modules;
+      }
 
-    // 创建渲染器（如果还没有创建）
-    if (!this.renderer) {
-      this.renderer = new ClientRenderer(
-        renderFunc,
-        jsxFunc,
-        this.moduleCache,
-        hydrateFunc,
-      );
-    }
-
-    // 创建路由器实例（优化：使用类结构）
-    const basePath = this.config.basePath || "/";
-    this.router = new ClientRouter(
-      this.pageDataCache,
-      this.moduleCache,
-      this.renderer,
-      basePath,
-    );
-
-    // 设置当前页面数据
-    const currentPageData = (globalThis as Record<string, unknown>)
-      .__PAGE_DATA__ as ClientConfig | undefined;
-    if (currentPageData) {
-      this.router.setCurrentPageData(currentPageData);
-    }
-
-    // 暴露导航函数给链接拦截器（使用类方法，性能更好）
-    const setNavigateFunction = (globalThis as Record<string, unknown>)
-      .__setCSRNavigateFunction as
-        | ((fn: (path: string, replace?: boolean) => void) => void)
+      const renderFunc = (modules.render || render) as (
+        element: unknown,
+        container: HTMLElement,
+      ) => void;
+      const jsxFunc = (modules.jsx || jsx) as (
+        type: unknown,
+        props: Record<string, unknown> | null,
+        ...children: unknown[]
+      ) => unknown;
+      const hydrateFunc = modules.hydrate as
+        | ((element: unknown, container: HTMLElement) => void)
         | undefined;
-    if (typeof setNavigateFunction === "function") {
-      setNavigateFunction((path: string, replace?: boolean) =>
-        this.router!.navigateTo(path, replace)
+
+      // 创建渲染器（如果还没有创建）
+      if (!this.renderer) {
+        this.renderer = new ClientRenderer(
+          renderFunc,
+          jsxFunc,
+          this.moduleCache,
+          hydrateFunc,
+        );
+      }
+
+      // 创建路由器实例（优化：使用类结构）
+      const basePath = this.config.basePath || "/";
+      this.router = new ClientRouter(
+        this.pageDataCache,
+        this.moduleCache,
+        this.renderer,
+        basePath,
+      );
+
+      // 设置当前页面数据
+      const currentPageData = (globalThis as Record<string, unknown>)
+        .__PAGE_DATA__ as ClientConfig | undefined;
+      if (currentPageData) {
+        this.router.setCurrentPageData(currentPageData);
+      }
+
+      // 暴露导航函数给链接拦截器（使用类方法，性能更好）
+      const setNavigateFunction = (globalThis as Record<string, unknown>)
+        .__setCSRNavigateFunction as
+          | ((fn: (path: string, replace?: boolean) => void) => void)
+          | undefined;
+      if (typeof setNavigateFunction === "function") {
+        setNavigateFunction((path: string, replace?: boolean) =>
+          this.router!.navigateTo(path, replace)
+        );
+      }
+
+      // 暴露预取函数给链接拦截器（使用类方法，性能更好）
+      (globalThis as Record<string, unknown>).__prefetchPageData = (
+        pathname: string,
+      ) => this.router!.prefetchPageData(pathname);
+
+      // 暴露导航函数到全局，支持 preact-router 的 route 函数
+      // 这样组件中可以直接使用 route() 函数进行导航
+      (globalThis as Record<string, unknown>).__CSR_NAVIGATE = (
+        path: string,
+        replace?: boolean,
+      ) => {
+        this.router!.navigateTo(path, replace);
+      };
+
+      // 暴露 ClientRouter 实例到全局，供 route.ts 直接调用
+      (globalThis as Record<string, unknown>).__CSR_ROUTER = this.router;
+
+      // 暴露 navigateTo 方法到全局，供 route.ts 直接调用
+      (globalThis as Record<string, unknown>).__CSR_NAVIGATE_TO = (
+        path: string,
+        replace?: boolean,
+      ) => {
+        return this.router!.navigateTo(path, replace);
+      };
+
+      // 监听 i18n 语言切换事件，触发页面重新渲染
+      // 当语言切换时，重新导航到当前页面，触发重新渲染以应用新的翻译
+      globalThis.addEventListener(
+        "i18n:language-changed",
+        async (event: Event) => {
+          try {
+            // 重新导航到当前路径，触发重新渲染
+            // 使用 replace=true 避免添加历史记录
+            if (this.router && typeof globalThis.location !== "undefined") {
+              const currentPath = globalThis.location.pathname +
+                globalThis.location.search +
+                globalThis.location.hash;
+              await this.router.navigateTo(currentPath, true);
+            }
+          } catch (error) {
+            console.warn(
+              "[BrowserClient] i18n 语言切换后重新渲染失败:",
+              error,
+            );
+            // 如果重新导航失败，尝试整页刷新（最后的后备方案）
+            if (typeof globalThis.location !== "undefined") {
+              globalThis.location.reload();
+            }
+          }
+        },
       );
     }
-
-    // 暴露预取函数给链接拦截器（使用类方法，性能更好）
-    (globalThis as Record<string, unknown>).__prefetchPageData = (
-      pathname: string,
-    ) => this.router!.prefetchPageData(pathname);
-
-    // 暴露导航函数到全局，支持 preact-router 的 route 函数
-    // 这样组件中可以直接使用 route() 函数进行导航
-    (globalThis as Record<string, unknown>).__CSR_NAVIGATE = (
-      path: string,
-      replace?: boolean,
-    ) => {
-      this.router!.navigateTo(path, replace);
-    };
-
-    // 暴露 ClientRouter 实例到全局，供 route.ts 直接调用
-    (globalThis as Record<string, unknown>).__CSR_ROUTER = this.router;
-
-    // 暴露 navigateTo 方法到全局，供 route.ts 直接调用
-    (globalThis as Record<string, unknown>).__CSR_NAVIGATE_TO = (
-      path: string,
-      replace?: boolean,
-    ) => {
-      return this.router!.navigateTo(path, replace);
-    };
   }
 }
 

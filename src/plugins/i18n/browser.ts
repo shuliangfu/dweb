@@ -140,6 +140,24 @@ async function initI18n(config: I18nConfig): Promise<void> {
     }
     return i18nData.t.call(i18nData, key, params);
   };
+
+  // 触发语言切换事件，通知所有组件重新渲染
+  // 这允许使用 i18n 的组件监听此事件并更新显示
+  try {
+    if (typeof globalThis.dispatchEvent !== "undefined") {
+      globalThis.dispatchEvent(
+        new CustomEvent("i18n:language-changed", {
+          detail: {
+            lang: config.lang,
+            translations,
+          },
+        }),
+      );
+    }
+  } catch (error) {
+    // 如果事件触发失败，不影响语言切换功能
+    console.warn("[i18n] 触发语言切换事件失败:", error);
+  }
 }
 
 // 暴露到全局，供内联脚本调用
