@@ -763,6 +763,16 @@ export abstract class SQLModel {
     findOne: () => Promise<InstanceType<T> | null>;
     count: () => Promise<number>;
     exists: () => Promise<boolean>;
+    paginate: (
+      page?: number,
+      pageSize?: number,
+    ) => Promise<{
+      data: InstanceType<T>[];
+      total: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+    }>;
     then: (
       onfulfilled?: (value: InstanceType<T> | null) => any,
       onrejected?: (reason: any) => any,
@@ -939,6 +949,31 @@ export abstract class SQLModel {
         }
         return await this.exists(
           _condition,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+      },
+      paginate: async (
+        page: number = 1,
+        pageSize: number = 10,
+      ): Promise<{
+        data: InstanceType<T>[];
+        total: number;
+        page: number;
+        pageSize: number;
+        totalPages: number;
+      }> => {
+        // 使用链式构建器中的条件、排序、字段等参数调用静态 paginate 方法
+        const condition =
+          typeof _condition === "string" || typeof _condition === "number"
+            ? { [this.primaryKey]: _condition }
+            : (_condition as WhereCondition);
+        return await this.paginate(
+          condition,
+          page,
+          pageSize,
+          _sort,
+          _fields,
           _includeTrashed,
           _onlyTrashed,
         );
@@ -1766,21 +1801,34 @@ export abstract class SQLModel {
    * @param condition 查询条件（可选）
    * @param page 页码（从 1 开始）
    * @param pageSize 每页数量
-   * @param fields 要查询的字段数组（可选）
+   * @param sort 排序规则（可选，支持对象形式或字符串形式）
+   * @param fields 要查询的字段数组（可选，用于字段投影）
+   * @param includeTrashed 是否包含已删除的记录
+   * @param onlyTrashed 是否只查询已删除的记录
    * @returns 分页结果对象，包含 data（数据数组）、total（总记录数）、page、pageSize、totalPages
    *
    * @example
+   * // 基本分页查询
    * const result = await User.paginate({ status: 'active' }, 1, 10);
-   * console.log(result.data); // 数据数组
-   * console.log(result.total); // 总记录数
-   * console.log(result.totalPages); // 总页数
+   *
+   * // 带排序的分页查询（按创建时间倒序）
+   * const result = await User.paginate({ status: 'active' }, 1, 10, { createdAt: 'desc' });
+   *
+   * // 使用字符串排序（按主键倒序）
+   * const result = await User.paginate({ status: 'active' }, 1, 10, 'desc');
+   *
+   * // 多字段排序
+   * const result = await User.paginate({ status: 'active' }, 1, 10, { createdAt: 'desc', name: 'asc' });
    */
   static async paginate<T extends typeof SQLModel>(
     this: T,
     condition: WhereCondition = {},
     page: number = 1,
     pageSize: number = 10,
+    sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc",
     fields?: string[],
+    includeTrashed: boolean = false,
+    onlyTrashed: boolean = false,
   ): Promise<{
     data: InstanceType<T>[];
     total: number;
@@ -1802,13 +1850,21 @@ export abstract class SQLModel {
     const offset = (page - 1) * pageSize;
 
     // 统计总数
-    const total = await this.count(condition);
+    const total = await this.count(condition, includeTrashed, onlyTrashed);
 
     // 构建查询 SQL
-    const { where, params } = this.buildWhereClause(condition, false, false);
+    const { where, params } = this.buildWhereClause(
+      condition,
+      includeTrashed,
+      onlyTrashed,
+    );
     const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
-    const sql =
-      `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT ? OFFSET ?`;
+    const orderBy = this.buildOrderByClause(sort);
+    let sql = `SELECT ${columns} FROM ${this.tableName} WHERE ${where}`;
+    if (orderBy) {
+      sql = `${sql} ORDER BY ${orderBy}`;
+    }
+    sql = `${sql} LIMIT ? OFFSET ?`;
 
     const results = await this.adapter.query(sql, [
       ...params,
@@ -2310,6 +2366,10 @@ export abstract class SQLModel {
 
   /**
    * 链式查询构建器
+   *
+   * @example
+   * // 链式调用分页查询
+   * const result = await User.query().where({ status: 'active' }).sort({ createdAt: 'desc' }).paginate(1, 10);
    */
   static query<T extends typeof SQLModel>(this: T): {
     where: (
@@ -2329,6 +2389,16 @@ export abstract class SQLModel {
     all: () => Promise<InstanceType<T>[]>;
     count: () => Promise<number>;
     exists: () => Promise<boolean>;
+    paginate: (
+      page?: number,
+      pageSize?: number,
+    ) => Promise<{
+      data: InstanceType<T>[];
+      total: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+    }>;
     update: (data: Record<string, any>) => Promise<number>;
     updateMany: (data: Record<string, any>) => Promise<number>;
     increment: (field: string, amount?: number) => Promise<number>;
@@ -2495,6 +2565,31 @@ export abstract class SQLModel {
         }
         return await this.exists(
           _condition as any,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+      },
+      paginate: async (
+        page: number = 1,
+        pageSize: number = 10,
+      ): Promise<{
+        data: InstanceType<T>[];
+        total: number;
+        page: number;
+        pageSize: number;
+        totalPages: number;
+      }> => {
+        // 使用链式构建器中的条件、排序、字段等参数调用静态 paginate 方法
+        const condition =
+          typeof _condition === "string" || typeof _condition === "number"
+            ? { [this.primaryKey]: _condition }
+            : (_condition as WhereCondition);
+        return await this.paginate(
+          condition,
+          page,
+          pageSize,
+          _sort,
+          _fields,
           _includeTrashed,
           _onlyTrashed,
         );

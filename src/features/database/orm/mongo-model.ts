@@ -149,6 +149,16 @@ export type MongoQueryBuilder<T extends typeof MongoModel> = {
   findById: (id: string, fields?: string[]) => Promise<InstanceType<T> | null>;
   count: () => Promise<number>;
   exists: () => Promise<boolean>;
+  paginate: (
+    page?: number,
+    pageSize?: number,
+  ) => Promise<{
+    data: InstanceType<T>[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }>;
   update: (
     data: Record<string, any>,
     returnLatest?: boolean,
@@ -1071,6 +1081,16 @@ export abstract class MongoModel {
     findOne: () => Promise<InstanceType<T> | null>;
     count: () => Promise<number>;
     exists: () => Promise<boolean>;
+    paginate: (
+      page?: number,
+      pageSize?: number,
+    ) => Promise<{
+      data: InstanceType<T>[];
+      total: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+    }>;
     then: (
       onfulfilled?: (value: InstanceType<T> | null) => any,
       onrejected?: (reason: any) => any,
@@ -1298,6 +1318,30 @@ export abstract class MongoModel {
         }
         return await this.exists(
           _condition as any,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+      },
+      paginate: async (
+        page: number = 1,
+        pageSize: number = 10,
+      ): Promise<{
+        data: InstanceType<T>[];
+        total: number;
+        page: number;
+        pageSize: number;
+        totalPages: number;
+      }> => {
+        // 使用链式构建器中的条件、排序、字段等参数调用静态 paginate 方法
+        const condition = typeof _condition === "string"
+          ? { [this.primaryKey]: _condition }
+          : (_condition as MongoWhereCondition);
+        return await this.paginate(
+          condition,
+          page,
+          pageSize,
+          _sort,
+          _fields,
           _includeTrashed,
           _onlyTrashed,
         );
@@ -2460,20 +2504,31 @@ export abstract class MongoModel {
    * @param condition 查询条件（可选）
    * @param page 页码（从 1 开始）
    * @param pageSize 每页数量
+   * @param sort 排序规则（可选，支持对象形式或字符串形式）
    * @param fields 要查询的字段数组（可选，用于字段投影）
+   * @param includeTrashed 是否包含已删除的记录
+   * @param onlyTrashed 是否只查询已删除的记录
    * @returns 分页结果对象，包含 data（数据数组）、total（总记录数）、page、pageSize、totalPages
    *
    * @example
+   * // 基本分页查询
    * const result = await User.paginate({ status: 'active' }, 1, 10);
-   * console.log(result.data); // 数据数组
-   * console.log(result.total); // 总记录数
-   * console.log(result.totalPages); // 总页数
+   *
+   * // 带排序的分页查询（按创建时间倒序）
+   * const result = await User.paginate({ status: 'active' }, 1, 10, undefined, false, false, { createdAt: -1 });
+   *
+   * // 使用字符串排序（按主键倒序）
+   * const result = await User.paginate({ status: 'active' }, 1, 10, undefined, false, false, 'desc');
+   *
+   * // 多字段排序
+   * const result = await User.paginate({ status: 'active' }, 1, 10, undefined, false, false, { createdAt: 'desc', name: 'asc' });
    */
   static async paginate<T extends typeof MongoModel>(
     this: T,
     condition: MongoWhereCondition = {},
     page: number = 1,
     pageSize: number = 10,
+    sort?: Record<string, 1 | -1 | "asc" | "desc"> | "asc" | "desc",
     fields?: string[],
     includeTrashed: boolean = false,
     onlyTrashed: boolean = false,
@@ -2485,8 +2540,14 @@ export abstract class MongoModel {
     totalPages: number;
   }> {
     // 自动初始化（懒加载）
-    // 自动初始化（懒加载）
     await this.ensureInitialized();
+
+    if (!this.adapter) {
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+      );
+    }
+
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = (adapter as any).getDatabase();
 
@@ -2512,6 +2573,12 @@ export abstract class MongoModel {
     };
     if (Object.keys(projection).length > 0) {
       options.projection = projection;
+    }
+
+    // 处理排序参数
+    const normalizedSort = this.normalizeSort(sort);
+    if (normalizedSort) {
+      options.sort = normalizedSort;
     }
 
     // 查询数据
@@ -3505,6 +3572,9 @@ export abstract class MongoModel {
    *   .skip(10)
    *   .limit(20)
    *   .findAll();
+   *
+   * // 链式调用分页查询
+   * const result = await User.query().where({ status: 'active' }).sort({ createdAt: 'desc' }).paginate(1, 10);
    */
   static query<T extends typeof MongoModel>(this: T): MongoQueryBuilder<T> {
     let _condition: MongoWhereCondition | string = {};
@@ -3727,6 +3797,30 @@ export abstract class MongoModel {
         }
         return await this.exists(
           _condition as any,
+          _includeTrashed,
+          _onlyTrashed,
+        );
+      },
+      paginate: async (
+        page: number = 1,
+        pageSize: number = 10,
+      ): Promise<{
+        data: InstanceType<T>[];
+        total: number;
+        page: number;
+        pageSize: number;
+        totalPages: number;
+      }> => {
+        // 使用链式构建器中的条件、排序、字段等参数调用静态 paginate 方法
+        const condition = typeof _condition === "string"
+          ? { [this.primaryKey]: _condition }
+          : (_condition as MongoWhereCondition);
+        return await this.paginate(
+          condition,
+          page,
+          pageSize,
+          _sort,
+          _fields,
           _includeTrashed,
           _onlyTrashed,
         );
