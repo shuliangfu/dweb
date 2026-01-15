@@ -623,7 +623,8 @@ export function i18n(options: I18nPluginOptions): Plugin {
                   console.warn("[i18n Plugin] 客户端脚本编译失败，跳过注入");
                 } else {
                   // 生成 API 端点 URL
-                  const apiEndpoint = `/__i18n/${langCode}.json`;
+                  const apiEndpoint =
+                    `/__i18n/${langCode}.json?t=${Date.now()}`;
 
                   // 生成初始化脚本（只包含语言代码和 API 端点）
                   const initScript = generateInitScript({
