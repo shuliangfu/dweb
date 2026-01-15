@@ -300,6 +300,22 @@ export abstract class SQLModel {
   }
 
   /**
+   * 确保模型已初始化并检查适配器
+   * 这是一个辅助方法，用于在方法开始时自动初始化和验证适配器
+   * @param connectionName 连接名称（默认为 'default'）
+   */
+  private static async ensureAdapter(
+    connectionName: string = "default",
+  ): Promise<void> {
+    await this.ensureInitialized(connectionName);
+    if (!this.adapter) {
+      throw new Error(
+        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
+      );
+    }
+  }
+
+  /**
    * 将查询条件对象转换为 SQL WHERE 子句
    * @param condition 查询条件对象
    * @returns SQL WHERE 子句和参数数组
@@ -795,14 +811,8 @@ export abstract class SQLModel {
 
     // 执行查询单条记录的函数
     const executeFindOne = async (): Promise<InstanceType<T> | null> => {
-      // 自动初始化（如果未初始化）
-      await this.ensureInitialized();
-
-      if (!this.adapter) {
-        throw new Error(
-          "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-        );
-      }
+      // 自动初始化（通过 ensureAdapter）
+      await this.ensureAdapter();
 
       const { where, params } = this.buildWhereClause(
         _condition,
@@ -826,7 +836,7 @@ export abstract class SQLModel {
         sql = `${sql} OFFSET ?`;
         extraParams.push(Math.max(0, Math.floor(_skip)));
       }
-      const results = await this.adapter.query(sql, [
+      const results = await this.adapter!.query(sql, [
         ...params,
         ...extraParams,
       ]);
@@ -842,12 +852,8 @@ export abstract class SQLModel {
 
     // 执行查询多条的函数
     const executeFindAll = async (): Promise<InstanceType<T>[]> => {
-      await this.ensureInitialized();
-      if (!this.adapter) {
-        throw new Error(
-          "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-        );
-      }
+      // 自动初始化（通过 ensureAdapter）
+      await this.ensureAdapter();
 
       const { where, params } = this.buildWhereClause(
         _condition,
@@ -871,7 +877,7 @@ export abstract class SQLModel {
         sql = `${sql} OFFSET ?`;
         extraParams.push(Math.max(0, Math.floor(_skip!)));
       }
-      const results = await this.adapter.query(sql, [
+      const results = await this.adapter!.query(sql, [
         ...params,
         ...extraParams,
       ]);
@@ -921,12 +927,8 @@ export abstract class SQLModel {
       one: () => executeFindOne(),
       all: () => executeFindAll(),
       count: async (): Promise<number> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const { where, params } = this.buildWhereClause(
           _condition,
           _includeTrashed,
@@ -934,19 +936,15 @@ export abstract class SQLModel {
         );
         const sql =
           `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
-        const results = await this.adapter.query(sql, params);
+        const results = await this.adapter!.query(sql, params);
         if (results.length > 0) {
           return parseInt(results[0].count) || 0;
         }
         return 0;
       },
       exists: async (): Promise<boolean> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         return await this.exists(
           _condition,
           _includeTrashed,
@@ -1015,14 +1013,8 @@ export abstract class SQLModel {
     includeTrashed: boolean = false,
     onlyTrashed: boolean = false,
   ): Promise<InstanceType<T>[]> {
-    // 自动初始化（如果未初始化）
-    await this.ensureInitialized();
-
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-      );
-    }
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
 
     const { where, params } = this.buildWhereClause(
       condition,
@@ -1049,7 +1041,7 @@ export abstract class SQLModel {
     if (useLimit && useSkip) {
       extraParams.push(Math.max(0, Math.floor(options!.skip!)));
     }
-    const results = await this.adapter.query(sql, [...params, ...extraParams]);
+    const results = await this.adapter!.query(sql, [...params, ...extraParams]);
 
     return results.map((row: any) => {
       const instance = new (this as any)();
@@ -1070,14 +1062,8 @@ export abstract class SQLModel {
     this: T,
     data: Record<string, any>,
   ): Promise<InstanceType<T>> {
-    // 自动初始化（如果未初始化）
-    await this.ensureInitialized();
-
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-      );
-    }
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
 
     // 处理字段（应用默认值、类型转换、验证）
     let processedData = this.processFields(data);
@@ -1137,7 +1123,7 @@ export abstract class SQLModel {
     if ((this.adapter as any)?.config?.type === "postgresql") {
       sql = `${sql} RETURNING ${this.primaryKey}`;
     }
-    const execResult = await this.adapter.execute(sql, values);
+    const execResult = await this.adapter!.execute(sql, values);
 
     let insertedId: any = null;
     if (
@@ -1156,7 +1142,7 @@ export abstract class SQLModel {
     }
     if (!insertedId) {
       try {
-        const result = await this.adapter.query(
+        const result = await this.adapter!.query(
           `SELECT last_insert_rowid() as id`,
           [],
         );
@@ -1226,15 +1212,6 @@ export abstract class SQLModel {
     condition: WhereCondition | number | string,
     data: Record<string, any>,
   ): Promise<number> {
-    // 自动初始化（如果未初始化）
-    await this.ensureInitialized();
-
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-      );
-    }
-
     // 先查找要更新的记录
     let existingInstance: InstanceType<typeof SQLModel> | null = null;
     if (typeof condition === "number" || typeof condition === "string") {
@@ -1287,6 +1264,8 @@ export abstract class SQLModel {
       processedData = { ...processedData, ...tempInstance };
     }
 
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const { where, params: whereParams } = this.buildWhereClause(
       condition,
       false,
@@ -1301,7 +1280,10 @@ export abstract class SQLModel {
     if (isPostgres) {
       sql = `${sql} RETURNING *`;
     }
-    const result = await this.adapter.execute(sql, [...values, ...whereParams]);
+    const result = await this.adapter!.execute(sql, [
+      ...values,
+      ...whereParams,
+    ]);
 
     // 返回影响的行数（如果适配器支持）
     const affectedRows = (typeof result === "number")
@@ -1352,15 +1334,6 @@ export abstract class SQLModel {
   static async delete(
     condition: WhereCondition | number | string,
   ): Promise<number> {
-    // 自动初始化（如果未初始化）
-    await this.ensureInitialized();
-
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-      );
-    }
-
     // 先查找要删除的记录
     let instanceToDelete: InstanceType<typeof SQLModel> | null = null;
     if (typeof condition === "number" || typeof condition === "string") {
@@ -1379,13 +1352,15 @@ export abstract class SQLModel {
       await this.beforeDelete(instanceToDelete);
     }
 
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     // 软删除：设置 deletedAt 字段（排除已删除的记录，避免重复删除）
     if (this.softDelete) {
       // 排除已软删除的记录，避免重复删除
       const { where, params } = this.buildWhereClause(condition, false, false);
       const sql =
         `UPDATE ${this.tableName} SET ${this.deletedAtField} = ? WHERE ${where}`;
-      const result = await this.adapter.execute(sql, [new Date(), ...params]);
+      const result = await this.adapter!.execute(sql, [new Date(), ...params]);
       const affectedRows = (typeof result === "number")
         ? result
         : ((result && typeof result === "object" && "affectedRows" in result)
@@ -1401,7 +1376,7 @@ export abstract class SQLModel {
     // 硬删除：真正删除记录（包含已软删除的记录）
     const { where, params } = this.buildWhereClause(condition, true, false);
     const sql = `DELETE FROM ${this.tableName} WHERE ${where}`;
-    const result = await this.adapter.execute(sql, params);
+    const result = await this.adapter!.execute(sql, params);
 
     // 返回影响的行数（如果适配器支持）
     const affectedRows = (typeof result === "number")
@@ -1664,15 +1639,8 @@ export abstract class SQLModel {
     includeTrashed: boolean = false,
     onlyTrashed: boolean = false,
   ): Promise<number> {
-    // 自动初始化（如果未初始化）
-    await this.ensureInitialized();
-
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-      );
-    }
-
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const { where, params } = this.buildWhereClause(
       condition,
       includeTrashed,
@@ -1680,7 +1648,7 @@ export abstract class SQLModel {
     );
     const sql =
       `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
-    const results = await this.adapter.query(sql, params);
+    const results = await this.adapter!.query(sql, params);
 
     if (results.length > 0) {
       return parseInt(results[0].count) || 0;
@@ -1702,12 +1670,8 @@ export abstract class SQLModel {
     includeTrashed: boolean = false,
     onlyTrashed: boolean = false,
   ): Promise<boolean> {
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() first.",
-      );
-    }
-
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const { where, params } = this.buildWhereClause(
       condition,
       includeTrashed,
@@ -1715,7 +1679,7 @@ export abstract class SQLModel {
     );
     const sql =
       `SELECT EXISTS(SELECT 1 FROM ${this.tableName} WHERE ${where}) as exists`;
-    const results = await this.adapter.query(sql, params);
+    const results = await this.adapter!.query(sql, params);
 
     if (results.length > 0) {
       // 不同数据库可能返回不同的布尔值表示方式
@@ -1741,11 +1705,8 @@ export abstract class SQLModel {
     this: T,
     dataArray: Record<string, any>[],
   ): Promise<InstanceType<T>[]> {
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() first.",
-      );
-    }
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
 
     if (dataArray.length === 0) {
       return [];
@@ -1766,7 +1727,7 @@ export abstract class SQLModel {
     if (isPostgres) {
       sql = `${sql} RETURNING ${this.primaryKey}`;
     }
-    const execResult = await this.adapter.execute(sql, allValues);
+    const execResult = await this.adapter!.execute(sql, allValues);
 
     // 尝试获取最后插入的 ID（如果支持）
     // 注意：批量插入时，不同数据库获取 ID 的方式不同
@@ -1836,11 +1797,8 @@ export abstract class SQLModel {
     pageSize: number;
     totalPages: number;
   }> {
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() first.",
-      );
-    }
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
 
     // 确保页码和每页数量有效
     page = Math.max(1, Math.floor(page));
@@ -1866,7 +1824,7 @@ export abstract class SQLModel {
     }
     sql = `${sql} LIMIT ? OFFSET ?`;
 
-    const results = await this.adapter.query(sql, [
+    const results = await this.adapter!.query(sql, [
       ...params,
       pageSize,
       offset,
@@ -1905,12 +1863,8 @@ export abstract class SQLModel {
     amount: number = 1,
     returnLatest: boolean = false,
   ): Promise<number | InstanceType<T>> {
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() first.",
-      );
-    }
-
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const { where, params } = this.buildWhereClause(condition, false, false);
     let sql =
       `UPDATE ${this.tableName} SET ${field} = ${field} + ? WHERE ${where}`;
@@ -1918,7 +1872,7 @@ export abstract class SQLModel {
     if (isPostgres && returnLatest) {
       sql = `${sql} RETURNING *`;
     }
-    const result = await this.adapter.execute(sql, [amount, ...params]);
+    const result = await this.adapter!.execute(sql, [amount, ...params]);
 
     if (!returnLatest) {
       if (typeof result === "number") {
@@ -2002,12 +1956,8 @@ export abstract class SQLModel {
     data: Record<string, any>,
     options?: { useDialectUpsert?: boolean; conflictKeys?: string[] },
   ): Promise<InstanceType<T>> {
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() first.",
-      );
-    }
-
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const useDialect = options?.useDialectUpsert ??
       ((this as any).useDialectUpsert === true);
     const type = (this.adapter as any)?.config?.type;
@@ -2048,7 +1998,7 @@ export abstract class SQLModel {
         }) VALUES (${placeholders}) ON CONFLICT (${
           conflictKeys.join(", ")
         }) DO UPDATE SET ${updateSet} RETURNING *`;
-        const result = await this.adapter.execute(sql, values);
+        const result = await this.adapter!.execute(sql, values);
         if (result && typeof result === "object" && "rows" in result) {
           const rows = (result as any).rows as any[];
           if (Array.isArray(rows) && rows.length > 0) {
@@ -2079,7 +2029,7 @@ export abstract class SQLModel {
       const sql = `INSERT INTO ${this.tableName} (${
         keys.join(", ")
       }) VALUES (${placeholders}) ON DUPLICATE KEY UPDATE ${updateSet}`;
-      const result = await this.adapter.execute(sql, values);
+      const result = await this.adapter!.execute(sql, values);
       const instance = new (this as any)();
       Object.assign(instance, processedData);
       if (result && typeof result === "object" && "insertId" in result) {
@@ -2118,12 +2068,8 @@ export abstract class SQLModel {
     includeTrashed: boolean = false,
     onlyTrashed: boolean = false,
   ): Promise<any[]> {
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() first.",
-      );
-    }
-
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const { where, params } = this.buildWhereClause(
       condition,
       includeTrashed,
@@ -2131,7 +2077,7 @@ export abstract class SQLModel {
     );
     const sql =
       `SELECT DISTINCT ${field} FROM ${this.tableName} WHERE ${where}`;
-    const results = await this.adapter.query(sql, params);
+    const results = await this.adapter!.query(sql, params);
 
     return results.map((row: any) => row[field]).filter((value: any) =>
       value !== null && value !== undefined
@@ -2172,12 +2118,8 @@ export abstract class SQLModel {
           limit?: number;
         },
       ): Promise<InstanceType<T>[]> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const { where, params } = this.buildWhereClause(condition, true, false);
         const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
         const orderBy = this.buildOrderByClause(options?.sort);
@@ -2200,7 +2142,7 @@ export abstract class SQLModel {
         if (useLimit && useSkip) {
           extraParams.push(Math.max(0, Math.floor(options!.skip!)));
         }
-        const results = await this.adapter.query(sql, [
+        const results = await this.adapter!.query(sql, [
           ...params,
           ...extraParams,
         ]);
@@ -2214,17 +2156,13 @@ export abstract class SQLModel {
         condition: WhereCondition | number | string = {},
         fields?: string[],
       ): Promise<InstanceType<T> | null> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const { where, params } = this.buildWhereClause(condition, true, false);
         const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
         const sql =
           `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT 1`;
-        const results = await this.adapter.query(sql, params);
+        const results = await this.adapter!.query(sql, params);
         if (results.length === 0) {
           return null;
         }
@@ -2233,16 +2171,12 @@ export abstract class SQLModel {
         return instance as InstanceType<T>;
       },
       count: async (condition: WhereCondition = {}): Promise<number> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const { where, params } = this.buildWhereClause(condition, true, false);
         const sql =
           `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
-        const results = await this.adapter.query(sql, params);
+        const results = await this.adapter!.query(sql, params);
         if (results.length > 0) {
           return parseInt(results[0].count) || 0;
         }
@@ -2285,12 +2219,8 @@ export abstract class SQLModel {
           limit?: number;
         },
       ): Promise<InstanceType<T>[]> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const { where, params } = this.buildWhereClause(condition, false, true);
         const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
         const orderBy = this.buildOrderByClause(options?.sort);
@@ -2313,7 +2243,7 @@ export abstract class SQLModel {
         if (useLimit && useSkip) {
           extraParams.push(Math.max(0, Math.floor(options!.skip!)));
         }
-        const results = await this.adapter.query(sql, [
+        const results = await this.adapter!.query(sql, [
           ...params,
           ...extraParams,
         ]);
@@ -2327,17 +2257,13 @@ export abstract class SQLModel {
         condition: WhereCondition | number | string = {},
         fields?: string[],
       ): Promise<InstanceType<T> | null> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const { where, params } = this.buildWhereClause(condition, false, true);
         const columns = fields && fields.length > 0 ? fields.join(", ") : "*";
         const sql =
           `SELECT ${columns} FROM ${this.tableName} WHERE ${where} LIMIT 1`;
-        const results = await this.adapter.query(sql, params);
+        const results = await this.adapter!.query(sql, params);
         if (results.length === 0) {
           return null;
         }
@@ -2346,16 +2272,12 @@ export abstract class SQLModel {
         return instance as InstanceType<T>;
       },
       count: async (condition: WhereCondition = {}): Promise<number> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const { where, params } = this.buildWhereClause(condition, false, true);
         const sql =
           `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
-        const results = await this.adapter.query(sql, params);
+        const results = await this.adapter!.query(sql, params);
         if (results.length > 0) {
           return parseInt(results[0].count) || 0;
         }
@@ -2464,12 +2386,8 @@ export abstract class SQLModel {
         return builder;
       },
       findAll: async (): Promise<InstanceType<T>[]> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const { where, params } = this.buildWhereClause(
           _condition as any,
           _includeTrashed,
@@ -2494,7 +2412,7 @@ export abstract class SQLModel {
           sql = `${sql} OFFSET ?`;
           extraParams.push(Math.max(0, Math.floor(_skip!)));
         }
-        const results = await this.adapter.query(sql, [
+        const results = await this.adapter!.query(sql, [
           ...params,
           ...extraParams,
         ]);
@@ -2505,12 +2423,8 @@ export abstract class SQLModel {
         });
       },
       findOne: async (): Promise<InstanceType<T> | null> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const { where, params } = this.buildWhereClause(
           _condition as any,
           _includeTrashed,
@@ -2525,7 +2439,7 @@ export abstract class SQLModel {
           sql = `${sql} ORDER BY ${orderBy}`;
         }
         sql = `${sql} LIMIT 1`;
-        const results = await this.adapter.query(sql, params);
+        const results = await this.adapter!.query(sql, params);
         if (results.length === 0) {
           return null;
         }
@@ -2540,12 +2454,8 @@ export abstract class SQLModel {
         return await builder.findAll();
       },
       count: async (): Promise<number> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const { where, params } = this.buildWhereClause(
           _condition as any,
           _includeTrashed,
@@ -2553,16 +2463,12 @@ export abstract class SQLModel {
         );
         const sql =
           `SELECT COUNT(*) as count FROM ${this.tableName} WHERE ${where}`;
-        const results = await this.adapter.query(sql, params);
+        const results = await this.adapter!.query(sql, params);
         return results.length > 0 ? (parseInt(results[0].count) || 0) : 0;
       },
       exists: async (): Promise<boolean> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         return await this.exists(
           _condition as any,
           _includeTrashed,
@@ -2696,17 +2602,13 @@ export abstract class SQLModel {
     if (!this.softDelete) {
       throw new Error("Soft delete is not enabled for this model");
     }
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() first.",
-      );
-    }
-
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const { where, params } = this.buildWhereClause(condition, true, true);
 
     let ids: any[] = [];
     if (options?.returnIds) {
-      const rows = await this.adapter.query(
+      const rows = await this.adapter!.query(
         `SELECT ${this.primaryKey} FROM ${this.tableName} WHERE ${where}`,
         params,
       );
@@ -2715,7 +2617,7 @@ export abstract class SQLModel {
       );
     }
 
-    const result = await this.adapter.execute(
+    const result = await this.adapter!.execute(
       `UPDATE ${this.tableName} SET ${this.deletedAtField} = NULL WHERE ${where}`,
       params,
     );
@@ -2745,17 +2647,13 @@ export abstract class SQLModel {
     condition: WhereCondition | number | string,
     options?: { returnIds?: boolean },
   ): Promise<number | { count: number; ids: any[] }> {
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() first.",
-      );
-    }
-
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const { where, params } = this.buildWhereClause(condition, true, false);
 
     let ids: any[] = [];
     if (options?.returnIds) {
-      const rows = await this.adapter.query(
+      const rows = await this.adapter!.query(
         `SELECT ${this.primaryKey} FROM ${this.tableName} WHERE ${where}`,
         params,
       );
@@ -2764,7 +2662,7 @@ export abstract class SQLModel {
       );
     }
 
-    const result = await this.adapter.execute(
+    const result = await this.adapter!.execute(
       `DELETE FROM ${this.tableName} WHERE ${where}`,
       params,
     );
@@ -2798,12 +2696,8 @@ export abstract class SQLModel {
     condition: WhereCondition,
     data: Record<string, any>,
   ): Promise<InstanceType<T>> {
-    await this.ensureInitialized();
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-      );
-    }
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
 
     // 先尝试查找
     const existing = await this.find(condition);
@@ -2830,7 +2724,7 @@ export abstract class SQLModel {
     }
 
     const sql = `TRUNCATE TABLE ${this.tableName}`;
-    const result = await this.adapter.execute(sql, []);
+    const result = await this.adapter!.execute(sql, []);
 
     const affectedRows = (typeof result === "number")
       ? result

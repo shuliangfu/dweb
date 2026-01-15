@@ -239,25 +239,6 @@ export abstract class MongoModel {
   private static _adapter: DatabaseAdapter | null = null;
 
   /**
-   * 获取数据库适配器（自动初始化）
-   * 在访问 adapter 时自动初始化，避免在每个方法中手动调用 ensureAdapter
-   * @param connectionName 连接名称（默认为 'default'）
-   * @returns 数据库适配器实例
-   * @throws {Error} 如果适配器未设置
-   */
-  private static async getAdapter(
-    connectionName: string = "default",
-  ): Promise<DatabaseAdapter> {
-    await this.ensureInitialized(connectionName);
-    if (!this._adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-      );
-    }
-    return this._adapter;
-  }
-
-  /**
    * 数据库适配器实例（自动初始化）
    * 访问此属性前需要先调用 await this.ensureInitialized() 确保初始化
    * 注意：由于 getter 不能是异步的，所以需要在异步方法中先初始化
@@ -1113,8 +1094,8 @@ export abstract class MongoModel {
 
     // 执行查询单条记录的函数
     const executeFindOne = async (): Promise<InstanceType<T> | null> => {
-      // 自动初始化（懒加载）
-      await this.ensureInitialized();
+      // 自动初始化（通过 ensureAdapter）
+      await this.ensureAdapter();
       const adapter = this.adapter as any as MongoDBAdapter;
       let filter: any = {};
 
@@ -1183,8 +1164,8 @@ export abstract class MongoModel {
 
     // 执行查询多条的函数
     const executeFindAll = async (): Promise<InstanceType<T>[]> => {
-      // 自动初始化（懒加载）
-      await this.ensureInitialized();
+      // 自动初始化（通过 ensureAdapter）
+      await this.ensureAdapter();
       const adapter = this.adapter as any as MongoDBAdapter;
       const projection = this.buildProjection(_fields);
       const queryOptions: any = {};
@@ -1279,14 +1260,8 @@ export abstract class MongoModel {
       one: () => executeFindOne(),
       all: () => executeFindAll(),
       count: async (): Promise<number> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
-        // 自动初始化（懒加载）
-        await this.ensureInitialized();
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const adapter = this.adapter as any as MongoDBAdapter;
         const db = (adapter as any).getDatabase();
         if (!db) {
@@ -1310,12 +1285,7 @@ export abstract class MongoModel {
         return count;
       },
       exists: async (): Promise<boolean> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        await this.ensureAdapter();
         return await this.exists(
           _condition as any,
           _includeTrashed,
@@ -1383,8 +1353,8 @@ export abstract class MongoModel {
     includeTrashed: boolean = false,
     onlyTrashed: boolean = false,
   ): Promise<InstanceType<T>[]> {
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     const projection = this.buildProjection(fields);
     const queryOptions: any = {};
@@ -1561,8 +1531,8 @@ export abstract class MongoModel {
       processedData = { ...processedData, ...tempInstance };
     }
 
-    // 自动初始化（懒加载）- 在需要使用 adapter 时才初始化
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     const result = await adapter.execute(
       "insert",
@@ -1642,15 +1612,6 @@ export abstract class MongoModel {
     returnLatest: boolean = false,
     fields?: string[],
   ): Promise<number | InstanceType<T>> {
-    // 自动初始化（如果未初始化）
-    await this.ensureInitialized();
-
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-      );
-    }
-
     // 先查找要更新的记录
     let existingInstance: InstanceType<typeof MongoModel> | null = null;
     if (typeof condition === "string") {
@@ -1703,8 +1664,8 @@ export abstract class MongoModel {
       processedData = { ...processedData, ...tempInstance };
     }
 
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
@@ -1802,9 +1763,6 @@ export abstract class MongoModel {
   static async delete(
     condition: MongoWhereCondition | string,
   ): Promise<number> {
-    // 自动初始化（通过 ensureAdapter）
-    await this.ensureAdapter();
-
     // 先查找要删除的记录
     let instanceToDelete: InstanceType<typeof MongoModel> | null = null;
     if (typeof condition === "string") {
@@ -1823,8 +1781,8 @@ export abstract class MongoModel {
       await this.beforeDelete(instanceToDelete);
     }
 
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
@@ -2112,8 +2070,6 @@ export abstract class MongoModel {
     condition: MongoWhereCondition | string,
     data: Record<string, any>,
   ): Promise<number> {
-    await this.ensureAdapter();
-
     // 处理字段并设置时间戳
     const processedData = this.processFields(data);
     if (this.timestamps) {
@@ -2123,8 +2079,8 @@ export abstract class MongoModel {
       processedData[updatedAtField] = new Date();
     }
 
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
@@ -2164,8 +2120,8 @@ export abstract class MongoModel {
     amount: number = 1,
   ): Promise<number> {
     // 自动初始化（懒加载）
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = (adapter as any).getDatabase();
     if (!db) {
@@ -2233,8 +2189,8 @@ export abstract class MongoModel {
     options?: { returnIds?: boolean },
   ): Promise<number | { count: number; ids: any[] }> {
     // 自动初始化（懒加载）
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
@@ -2323,8 +2279,8 @@ export abstract class MongoModel {
     onlyTrashed: boolean = false,
   ): Promise<number> {
     // 自动初始化（懒加载）
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = (adapter as any).getDatabase();
 
@@ -2363,8 +2319,8 @@ export abstract class MongoModel {
     onlyTrashed: boolean = false,
   ): Promise<boolean> {
     // 自动初始化（懒加载）
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
@@ -2413,8 +2369,6 @@ export abstract class MongoModel {
     this: T,
     dataArray: Record<string, any>[],
   ): Promise<InstanceType<T>[]> {
-    await this.ensureAdapter();
-
     // 处理每个数据项（应用默认值、类型转换、验证、时间戳与钩子）
     const processedArray = [];
     for (const data of dataArray) {
@@ -2454,8 +2408,8 @@ export abstract class MongoModel {
       processedArray.push(item);
     }
 
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     const result = await adapter.execute(
       "insertMany",
@@ -2539,15 +2493,8 @@ export abstract class MongoModel {
     pageSize: number;
     totalPages: number;
   }> {
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
-
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-      );
-    }
-
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = (adapter as any).getDatabase();
 
@@ -2628,8 +2575,8 @@ export abstract class MongoModel {
     fields?: string[],
   ): Promise<number | InstanceType<T>> {
     // 自动初始化（懒加载）
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
@@ -2743,8 +2690,8 @@ export abstract class MongoModel {
     fields?: string[],
   ): Promise<InstanceType<T> | null> {
     // 自动初始化（懒加载）
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
@@ -2820,8 +2767,8 @@ export abstract class MongoModel {
     fields?: string[],
   ): Promise<InstanceType<T> | null> {
     // 自动初始化（懒加载）
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
@@ -2920,8 +2867,8 @@ export abstract class MongoModel {
     fields?: string[],
   ): Promise<InstanceType<T>> {
     // 自动初始化（懒加载）
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
@@ -2980,8 +2927,8 @@ export abstract class MongoModel {
     fields?: string[],
   ): Promise<InstanceType<T> | null> {
     // 自动初始化（懒加载）
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
@@ -3057,8 +3004,8 @@ export abstract class MongoModel {
     onlyTrashed: boolean = false,
   ): Promise<any[]> {
     // 自动初始化（懒加载）
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = (adapter as any).getDatabase();
 
@@ -3100,8 +3047,8 @@ export abstract class MongoModel {
     onlyTrashed: boolean = false,
   ): Promise<any[]> {
     // 自动初始化（懒加载）
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = (adapter as any).getDatabase();
 
@@ -3166,14 +3113,8 @@ export abstract class MongoModel {
           limit?: number;
         },
       ): Promise<InstanceType<T>[]> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
-        // 自动初始化（懒加载）
-        await this.ensureInitialized();
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const adapter = this.adapter as any as MongoDBAdapter;
         // 应用软删除过滤器（onlyTrashed: true）
         const queryFilter = this.applySoftDeleteFilter(condition, false, true);
@@ -3219,14 +3160,8 @@ export abstract class MongoModel {
         condition: MongoWhereCondition | string = {},
         fields?: string[],
       ): Promise<InstanceType<T> | null> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
-        // 自动初始化（懒加载）
-        await this.ensureInitialized();
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const adapter = this.adapter as any as MongoDBAdapter;
         let filter: any = {};
         if (typeof condition === "string") {
@@ -3267,14 +3202,8 @@ export abstract class MongoModel {
         return instance as InstanceType<T>;
       },
       count: async (condition: MongoWhereCondition = {}): Promise<number> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
-        // 自动初始化（懒加载）
-        await this.ensureInitialized();
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const adapter = this.adapter as any as MongoDBAdapter;
         // 应用软删除过滤器（onlyTrashed: true）
         const queryFilter = this.applySoftDeleteFilter(condition, false, true);
@@ -3324,8 +3253,8 @@ export abstract class MongoModel {
           limit?: number;
         },
       ): Promise<InstanceType<T>[]> => {
-        // 自动初始化（懒加载）
-        await this.ensureInitialized();
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const adapter = this.adapter as any as MongoDBAdapter;
         const projection = this.buildProjection(fields);
         const queryOptions: any = {};
@@ -3373,14 +3302,8 @@ export abstract class MongoModel {
         condition: MongoWhereCondition | string = {},
         fields?: string[],
       ): Promise<InstanceType<T> | null> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
-        // 自动初始化（懒加载）
-        await this.ensureInitialized();
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const adapter = this.adapter as any as MongoDBAdapter;
         let filter: any = {};
         if (typeof condition === "string") {
@@ -3420,14 +3343,8 @@ export abstract class MongoModel {
         return instance as InstanceType<T>;
       },
       count: async (condition: MongoWhereCondition = {}): Promise<number> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
-        // 自动初始化（懒加载）
-        await this.ensureInitialized();
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const adapter = this.adapter as any as MongoDBAdapter;
         const db = (adapter as any).getDatabase();
         if (!db) {
@@ -3462,8 +3379,8 @@ export abstract class MongoModel {
       throw new Error("Soft delete is not enabled for this model");
     }
     // 自动初始化（懒加载）
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
@@ -3521,8 +3438,8 @@ export abstract class MongoModel {
     options?: { returnIds?: boolean },
   ): Promise<number | { count: number; ids: any[] }> {
     // 自动初始化（懒加载）
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     let filter: any = {};
 
@@ -3624,14 +3541,8 @@ export abstract class MongoModel {
         return builder;
       },
       findAll: async (): Promise<InstanceType<T>[]> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
-        // 自动初始化（懒加载）
-        await this.ensureInitialized();
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const adapter = this.adapter as any as MongoDBAdapter;
         const projection = this.buildProjection(_fields);
         const queryOptions: any = {};
@@ -3685,14 +3596,8 @@ export abstract class MongoModel {
         });
       },
       findOne: async (): Promise<InstanceType<T> | null> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
-        // 自动初始化（懒加载）
-        await this.ensureInitialized();
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const adapter = this.adapter as any as MongoDBAdapter;
         const projection = this.buildProjection(_fields);
         const queryOptions: any = { limit: 1 };
@@ -3749,23 +3654,12 @@ export abstract class MongoModel {
         id: string,
         fields?: string[],
       ): Promise<InstanceType<T> | null> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        await this.ensureAdapter();
         return await this.findById(id, fields);
       },
       count: async (): Promise<number> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
-        // 自动初始化（懒加载）
-        await this.ensureInitialized();
+        // 自动初始化（通过 ensureAdapter）
+        await this.ensureAdapter();
         const adapter = this.adapter as any as MongoDBAdapter;
         const db = (adapter as any).getDatabase();
         if (!db) {
@@ -3789,12 +3683,7 @@ export abstract class MongoModel {
         return count;
       },
       exists: async (): Promise<boolean> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        await this.ensureAdapter();
         return await this.exists(
           _condition as any,
           _includeTrashed,
@@ -3829,12 +3718,7 @@ export abstract class MongoModel {
         id: string,
         data: Record<string, any>,
       ): Promise<number> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        await this.ensureAdapter();
         return await this.updateById(id, data);
       },
       update: async (
@@ -3881,12 +3765,7 @@ export abstract class MongoModel {
         );
       },
       deleteById: async (id: string): Promise<number> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        await this.ensureAdapter();
         return await this.deleteById(id);
       },
       deleteMany: async (
@@ -3900,12 +3779,7 @@ export abstract class MongoModel {
         return await this.restore(_condition as any, options);
       },
       restoreById: async (id: string): Promise<number> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        await this.ensureAdapter();
         return await this.restoreById(id);
       },
       forceDelete: async (
@@ -3914,12 +3788,7 @@ export abstract class MongoModel {
         return await this.forceDelete(_condition as any, options);
       },
       forceDeleteById: async (id: string): Promise<number> => {
-        await this.ensureInitialized();
-        if (!this.adapter) {
-          throw new Error(
-            "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-          );
-        }
+        await this.ensureAdapter();
         return await this.forceDeleteById(id);
       },
       distinct: async (field: string): Promise<any[]> => {
@@ -4023,12 +3892,7 @@ export abstract class MongoModel {
     resurrect: boolean = false,
     fields?: string[],
   ): Promise<InstanceType<T>> {
-    await this.ensureInitialized();
-    if (!this.adapter) {
-      throw new Error(
-        "Database adapter not set. Please call Model.setAdapter() or ensure database is initialized.",
-      );
-    }
+    await this.ensureAdapter();
 
     // 先尝试查找（包含软删除的记录）
     const existing = await this.withTrashed().find(condition, fields);
@@ -4064,8 +3928,8 @@ export abstract class MongoModel {
       );
     }
 
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = (adapter as any).getDatabase();
     if (!db) {
@@ -4100,8 +3964,8 @@ export abstract class MongoModel {
         "Database adapter not set. Please call Model.setAdapter() first.",
       );
     }
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     return await adapter.transaction(callback);
   }
@@ -4276,8 +4140,8 @@ export abstract class MongoModel {
       return [];
     }
 
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = adapter.getDatabase();
     if (!db) {
@@ -4389,8 +4253,8 @@ export abstract class MongoModel {
       );
     }
 
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = adapter.getDatabase();
     if (!db) {
@@ -4430,8 +4294,8 @@ export abstract class MongoModel {
       );
     }
 
-    // 自动初始化（懒加载）
-    await this.ensureInitialized();
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
     const adapter = this.adapter as any as MongoDBAdapter;
     const db = adapter.getDatabase();
     if (!db) {

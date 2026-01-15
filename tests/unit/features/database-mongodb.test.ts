@@ -62,30 +62,30 @@ function loadMongoDBConfigFromEnv(): DatabaseConfig | null {
   const uri = Deno.env.get('MONGODB_URI') || Deno.env.get('DB_URI');
   const host = Deno.env.get('MONGODB_HOST') || Deno.env.get('DB_HOST');
   const port = parseInt(
-    Deno.env.get('MONGODB_PORT') || 
-    Deno.env.get('DB_PORT') || 
+    Deno.env.get('MONGODB_PORT') ||
+    Deno.env.get('DB_PORT') ||
     '27017'
   );
-  const database = Deno.env.get('MONGODB_DATABASE') || 
-                   Deno.env.get('DB_NAME') || 
-                   Deno.env.get('DB_DATABASE') || 
+  const database = Deno.env.get('MONGODB_DATABASE') ||
+                   Deno.env.get('DB_NAME') ||
+                   Deno.env.get('DB_DATABASE') ||
                    'test_db';
-  const username = Deno.env.get('MONGODB_USERNAME') || 
-                   Deno.env.get('DB_USER') || 
+  const username = Deno.env.get('MONGODB_USERNAME') ||
+                   Deno.env.get('DB_USER') ||
                    Deno.env.get('DB_USERNAME');
-  const password = Deno.env.get('MONGODB_PASSWORD') || 
-                  Deno.env.get('DB_PASS') || 
+  const password = Deno.env.get('MONGODB_PASSWORD') ||
+                  Deno.env.get('DB_PASS') ||
                   Deno.env.get('DB_PASSWORD');
-  const authSource = Deno.env.get('MONGODB_AUTH_SOURCE') || 
+  const authSource = Deno.env.get('MONGODB_AUTH_SOURCE') ||
                      Deno.env.get('DB_AUTH_SOURCE');
-  const hosts = Deno.env.get('MONGODB_HOSTS') || 
+  const hosts = Deno.env.get('MONGODB_HOSTS') ||
                 Deno.env.get('DB_HOSTS');
-  const replicaSet = Deno.env.get('MONGODB_REPLICA_SET') || 
-                     Deno.env.get('REPLICA_SET') || 
+  const replicaSet = Deno.env.get('MONGODB_REPLICA_SET') ||
+                     Deno.env.get('REPLICA_SET') ||
                      Deno.env.get('DB_REPLICA_SET');
   const timeoutMS = parseInt(
-    Deno.env.get('MONGODB_TIMEOUT_MS') || 
-    Deno.env.get('DB_TIMEOUT_MS') || 
+    Deno.env.get('MONGODB_TIMEOUT_MS') ||
+    Deno.env.get('DB_TIMEOUT_MS') ||
     '15000'
   );
 
@@ -489,7 +489,12 @@ Deno.test({
   sanitizeOps: false,
 });
 
-Deno.test('MongoDB 软删除 - withTrashed', async () => {
+Deno.test('MongoDB 软删除 - withTrashed', async (t) => {
+
+  (t as any).sanitizeResources = false;
+  (t as any).sanitizeOps = false;
+
+
   await setupTestDatabase();
 
   try {

@@ -1,5 +1,5 @@
 {
-  "version": "2.6.0-beta.22",
+  "version": "2.6.0-beta.24",
   "nodeModulesDir": "auto",
   "tasks": {
     "dev": "deno run -A ../src/cli.ts dev",
