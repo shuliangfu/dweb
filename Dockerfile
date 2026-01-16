@@ -24,6 +24,9 @@ RUN deno task build
 # 生产阶段：使用更小的镜像
 FROM denoland/deno:latest
 
+# 安装 curl（用于健康检测）
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # 设置工作目录（保持目录结构，使 ../src 路径正确）
 WORKDIR /app
 
