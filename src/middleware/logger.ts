@@ -87,6 +87,13 @@ export function logger(options: {
     ) {
       return true;
     }
+    // 跳过健康检查请求
+    if (
+      url.pathname === "/health" || url.pathname === "/?health" ||
+      url.searchParams.has("health")
+    ) {
+      return true;
+    }
     // 跳过静态资源请求
     if (isStaticResource(url.pathname)) {
       return true;
