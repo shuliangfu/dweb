@@ -1697,92 +1697,97 @@ export class Application extends EventEmitter {
         return await getSessionPromise;
       }
 
-      // 判断是否是路由请求（页面路由或 API 路由）
-      // 静态资源请求不应该创建新的 session
-      const url = new URL(req.url);
-      const pathname = url.pathname;
-      const isRouteRequest = this.router
-        ? this.router.match(pathname) !== null
-        : true; // 如果 router 未初始化，默认允许创建 session（向后兼容）
-
-      // 每次调用时重新从 Cookie 中读取 sessionId（不使用闭包中的值）
-      // 如果 cookie 是签名的，需要使用 cookieManager.parseAsync 来解析
-      let currentSessionId: string | null = null;
-      const cookieHeader = req.headers.get("cookie");
-
-      if (cookieManager) {
-        // 使用 cookieManager 解析签名 cookie
-        const parsedCookies = await cookieManager.parseAsync(cookieHeader);
-        currentSessionId = parsedCookies[cookieName] || null;
-
-        // 调试：检查 Cookie 解析情况
-        if (!currentSessionId && cookieHeader) {
-          // 检查原始 Cookie 值
-          const rawCookies = cookieHeader.split(";").map((c) => c.trim());
-          const rawSessionCookie = rawCookies.find((c) =>
-            c.startsWith(`${cookieName}=`)
-          );
-          if (rawSessionCookie) {
-            const rawValue = rawSessionCookie.split("=")[1];
-            console.log(
-              `[Session Debug] Cookie 存在但解析失败: ${cookieName}=${
-                rawValue?.substring(0, 50)
-              }...`,
-            );
-            // 如果 Cookie 值以 . 开头，说明格式错误（只有签名部分）
-            if (rawValue && rawValue.startsWith(".")) {
-              console.log(
-                `[Session Debug] Cookie 格式错误（只有签名部分），删除它`,
-              );
-              // 删除格式错误的 Cookie
-              // 注意：删除 Cookie 时，必须使用与设置时完全相同的 path、domain 等选项
-              // 否则浏览器可能无法正确删除
-              res.setCookie(cookieName, "", {
-                ...cookieOptions,
-                maxAge: 0,
-                expires: new Date(0), // 设置为过去的时间，确保删除
-              });
-            }
-          }
-        }
-      } else {
-        // 如果没有 cookieManager，使用简单的 getCookie 方法
-        currentSessionId = req.getCookie(cookieName);
-      }
-
-      // 如果 Cookie 中有 sessionId，尝试获取
-      if (currentSessionId) {
-        const session = await sessionManager.get(currentSessionId);
-        if (session) {
-          (req as any).session = session;
-          (req as any).__session = session; // 同时设置缓存
-          return session;
-        }
-        // 如果 session 已过期或不存在，先删除旧的 cookie
-        // 这样可以确保旧的 sessionId 不会一直留在 cookie 中
-        // 注意：这里不创建新的 session，让后续逻辑处理
-        // 注意：使用 res.setCookie() 方法删除 cookie，而不是 res.setHeader("Set-Cookie", ...)
-        // 删除 Cookie 时，必须使用与设置时完全相同的 path、domain 等选项
-        res.setCookie(cookieName, "", {
-          ...cookieOptions,
-          maxAge: 0,
-          expires: new Date(0), // 设置为过去的时间，确保删除
-        });
-        // 清除 currentSessionId，避免后续逻辑误判
-        currentSessionId = null;
-      } else {
-        // 调试：记录没有 sessionId 的情况
-        console.log(`[Session Debug] 没有 sessionId，pathname=${pathname}`);
-      }
-
-      // 如果不是路由请求（静态资源请求），不创建新的 session，直接返回 null
-      if (!isRouteRequest) {
-        return null;
-      }
-
-      // 创建 session 的 Promise（使用锁机制）
+      // 立即创建 Promise 锁，防止并发调用
       getSessionPromise = (async (): Promise<Session | null> => {
         try {
+          // 再次检查缓存（可能在等待期间已经设置了）
+          if ((req as any).__session) {
+            return (req as any).__session;
+          }
+
+          // 判断是否是路由请求（页面路由或 API 路由）
+          // 静态资源请求不应该创建新的 session
+          const url = new URL(req.url);
+          const pathname = url.pathname;
+          const isRouteRequest = this.router
+            ? this.router.match(pathname) !== null
+            : true; // 如果 router 未初始化，默认允许创建 session（向后兼容）
+
+          // 每次调用时重新从 Cookie 中读取 sessionId（不使用闭包中的值）
+          // 如果 cookie 是签名的，需要使用 cookieManager.parseAsync 来解析
+          let currentSessionId: string | null = null;
+          const cookieHeader = req.headers.get("cookie");
+
+          if (cookieManager) {
+            // 使用 cookieManager 解析签名 cookie
+            const parsedCookies = await cookieManager.parseAsync(cookieHeader);
+            currentSessionId = parsedCookies[cookieName] || null;
+
+            // 调试：检查 Cookie 解析情况
+            if (!currentSessionId && cookieHeader) {
+              // 检查原始 Cookie 值
+              const rawCookies = cookieHeader.split(";").map((c) => c.trim());
+              const rawSessionCookie = rawCookies.find((c) =>
+                c.startsWith(`${cookieName}=`)
+              );
+              if (rawSessionCookie) {
+                const rawValue = rawSessionCookie.split("=")[1];
+                console.log(
+                  `[Session Debug] Cookie 存在但解析失败: ${cookieName}=${
+                    rawValue?.substring(0, 50)
+                  }...`,
+                );
+                // 如果 Cookie 值以 . 开头，说明格式错误（只有签名部分）
+                if (rawValue && rawValue.startsWith(".")) {
+                  console.log(
+                    `[Session Debug] Cookie 格式错误（只有签名部分），删除它`,
+                  );
+                  // 删除格式错误的 Cookie
+                  // 注意：删除 Cookie 时，必须使用与设置时完全相同的 path、domain 等选项
+                  // 否则浏览器可能无法正确删除
+                  res.setCookie(cookieName, "", {
+                    ...cookieOptions,
+                    maxAge: 0,
+                    expires: new Date(0), // 设置为过去的时间，确保删除
+                  });
+                }
+              }
+            }
+          } else {
+            // 如果没有 cookieManager，使用简单的 getCookie 方法
+            currentSessionId = req.getCookie(cookieName);
+          }
+
+          // 如果 Cookie 中有 sessionId，尝试获取
+          if (currentSessionId) {
+            const session = await sessionManager.get(currentSessionId);
+            if (session) {
+              (req as any).session = session;
+              (req as any).__session = session; // 同时设置缓存
+              return session;
+            }
+            // 如果 session 已过期或不存在，先删除旧的 cookie
+            // 这样可以确保旧的 sessionId 不会一直留在 cookie 中
+            // 注意：这里不创建新的 session，让后续逻辑处理
+            // 注意：使用 res.setCookie() 方法删除 cookie，而不是 res.setHeader("Set-Cookie", ...)
+            // 删除 Cookie 时，必须使用与设置时完全相同的 path、domain 等选项
+            res.setCookie(cookieName, "", {
+              ...cookieOptions,
+              maxAge: 0,
+              expires: new Date(0), // 设置为过去的时间，确保删除
+            });
+            // 清除 currentSessionId，避免后续逻辑误判
+            currentSessionId = null;
+          } else {
+            // 调试：记录没有 sessionId 的情况
+            console.log(`[Session Debug] 没有 sessionId，pathname=${pathname}`);
+          }
+
+          // 如果不是路由请求（静态资源请求），不创建新的 session，直接返回 null
+          if (!isRouteRequest) {
+            return null;
+          }
+
           // 如果是路由请求且没有 session，自动创建一个新的
           const newSession = await sessionManager.create({});
           (req as any).session = newSession;
