@@ -1701,11 +1701,37 @@ export class Application extends EventEmitter {
       // 每次调用时重新从 Cookie 中读取 sessionId（不使用闭包中的值）
       // 如果 cookie 是签名的，需要使用 cookieManager.parseAsync 来解析
       let currentSessionId: string | null = null;
+      const cookieHeader = req.headers.get("cookie");
+
       if (cookieManager) {
         // 使用 cookieManager 解析签名 cookie
-        const cookieHeader = req.headers.get("cookie");
         const parsedCookies = await cookieManager.parseAsync(cookieHeader);
         currentSessionId = parsedCookies[cookieName] || null;
+
+        // 调试：检查 Cookie 解析情况
+        if (!currentSessionId && cookieHeader) {
+          // 检查原始 Cookie 值
+          const rawCookies = cookieHeader.split(";").map((c) => c.trim());
+          const rawSessionCookie = rawCookies.find((c) =>
+            c.startsWith(`${cookieName}=`)
+          );
+          if (rawSessionCookie) {
+            const rawValue = rawSessionCookie.split("=")[1];
+            console.log(
+              `[Session Debug] Cookie 存在但解析失败: ${cookieName}=${
+                rawValue?.substring(0, 50)
+              }...`,
+            );
+            // 如果 Cookie 值以 . 开头，说明格式错误（只有签名部分）
+            if (rawValue && rawValue.startsWith(".")) {
+              console.log(
+                `[Session Debug] Cookie 格式错误（只有签名部分），删除它`,
+              );
+              // 删除格式错误的 Cookie
+              res.setCookie(cookieName, "", { ...cookieOptions, maxAge: 0 });
+            }
+          }
+        }
       } else {
         // 如果没有 cookieManager，使用简单的 getCookie 方法
         currentSessionId = req.getCookie(cookieName);
@@ -1726,6 +1752,9 @@ export class Application extends EventEmitter {
         res.setCookie(cookieName, "", { ...cookieOptions, maxAge: 0 });
         // 清除 currentSessionId，避免后续逻辑误判
         currentSessionId = null;
+      } else {
+        // 调试：记录没有 sessionId 的情况
+        console.log(`[Session Debug] 没有 sessionId，pathname=${pathname}`);
       }
 
       // 如果不是路由请求（静态资源请求），不创建新的 session，直接返回 null
@@ -1749,9 +1778,19 @@ export class Application extends EventEmitter {
         // 使用 res.setCookie 方法设置签名 cookie
         // 注意：这里直接传递签名后的值，options 中的其他配置仍然有效
         res.setCookie(cookieName, signedValue, cookieOptions);
+        console.log(
+          `[Session Debug] 创建新 session: ${
+            newSession.id.substring(0, 20)
+          }..., Cookie值: ${signedValue.substring(0, 50)}...`,
+        );
       } else {
         // 如果没有 cookieManager，使用 res.setCookie 方法设置普通 cookie
         res.setCookie(cookieName, newSession.id, cookieOptions);
+        console.log(
+          `[Session Debug] 创建新 session: ${
+            newSession.id.substring(0, 20)
+          }...`,
+        );
       }
 
       return newSession;
