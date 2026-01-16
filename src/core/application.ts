@@ -1634,6 +1634,13 @@ export class Application extends EventEmitter {
   /**
    * 设置 Session 支持
    */
+  // 用于防止并发请求创建多个 session 的锁
+  // key: 客户端标识（IP + User-Agent），value: 锁的 Promise
+  private static sessionCreationLocks = new Map<
+    string,
+    Promise<Session | null>
+  >();
+
   private setupSessionSupport(
     req: Request,
     res: Response,
