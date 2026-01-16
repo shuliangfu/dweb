@@ -192,6 +192,10 @@ export class Router {
         } else if (routePath === "/_layout" || routePath.endsWith("/_layout")) {
           type = "layout";
         } else if (
+          routePath === "/_middleware" || routePath.endsWith("/_middleware")
+        ) {
+          type = "middleware";
+        } else if (
           routePath === "/_404" || routePath === "/_error" ||
           routePath === "/_500"
         ) {
@@ -202,7 +206,10 @@ export class Router {
         }
 
         // 加上 basePath 前缀（如果 basePath 不是根路径，且不是特殊文件）
-        if (this.basePath !== "/" && type !== "layout" && type !== "error") {
+        if (
+          this.basePath !== "/" && type !== "layout" && type !== "error" &&
+          type !== "middleware"
+        ) {
           const base = this.basePath.endsWith("/")
             ? this.basePath.slice(0, -1)
             : this.basePath;
@@ -257,6 +264,22 @@ export class Router {
               : this.basePath;
           }
           this.layouts.set(layoutPath, buildFilePath);
+        } else if (type === "middleware") {
+          // 处理中间件文件
+          // 如果路径是 /_middleware，则添加到根路径
+          // 如果路径是 /path/_middleware，则添加到 /path
+          let middlewarePath = routePath === "/_middleware"
+            ? "/"
+            : routePath.replace("/_middleware", "");
+          // 如果 basePath 不是根路径，且 middlewarePath 是根路径，使用 basePath
+          if (this.basePath !== "/" && middlewarePath === "/") {
+            middlewarePath = this.basePath.endsWith("/")
+              ? this.basePath.slice(0, -1)
+              : this.basePath;
+          }
+          this.middlewares.set(middlewarePath, buildFilePath);
+          // 中间件不需要添加到路由映射和 RadixTree，直接 continue
+          continue;
         } else if (type === "error") {
           const errorType = routePath.replace("/_", "");
           this.errorPages.set(errorType, buildFilePath);
