@@ -206,12 +206,23 @@ export class CookieManager {
           // 如果 actualValue 为空字符串，说明 Cookie 格式错误（可能是旧代码遗留的问题）
           if (actualValue === "") {
             // Cookie 值以 . 开头，格式错误，忽略这个 Cookie
+            // 注意：这里不抛出错误，只是忽略，让调用方知道 Cookie 格式错误
+            console.log(
+              `[Cookie] 检测到格式错误的 Cookie（只有签名部分）: ${decodedName}=.${
+                signature?.substring(0, 20)
+              }...`,
+            );
             continue;
           }
           if (signature && await this.verify(actualValue, signature)) {
             decodedValue = actualValue;
           } else {
             // 签名验证失败，忽略这个 Cookie
+            console.log(
+              `[Cookie] 签名验证失败: ${decodedName}=${
+                decodedValue.substring(0, 50)
+              }...`,
+            );
             continue;
           }
         }
