@@ -1708,7 +1708,20 @@ export class Application extends EventEmitter {
           (req as any).__session = session; // 同时设置缓存
           return session;
         }
-        // 如果 session 已过期或不存在，继续创建新的
+        // 如果 session 已过期或不存在，先删除旧的 cookie，然后创建新的
+        // 这样可以确保旧的 sessionId 不会一直留在 cookie 中
+        if (cookieManager) {
+          // 删除旧的签名 cookie
+          const deleteCookieValue = await cookieManager.setAsync(
+            cookieName,
+            "",
+            { ...cookieOptions, maxAge: 0 },
+          );
+          res.setHeader("Set-Cookie", deleteCookieValue);
+        } else {
+          // 删除旧的普通 cookie
+          res.setCookie(cookieName, "", { ...cookieOptions, maxAge: 0 });
+        }
       }
 
       // 如果没有 session，自动创建一个新的
