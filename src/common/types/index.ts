@@ -418,6 +418,8 @@ export interface Session<T = Record<string, any>> {
 }
 
 // 中间件函数类型
+// 允许返回 void 或 Response 对象（例如 res.json(), res.redirect(), res.text(), res.html() 等的返回值）
+// 如果返回 Response，框架会自动检测并停止执行后续中间件
 export type Middleware = (
   // 请求对象
   req: Request,
@@ -427,7 +429,7 @@ export type Middleware = (
   next: () => Promise<void>,
   // 应用实例
   app?: AppLike,
-) => Promise<void> | void;
+) => Promise<Response | void> | Response | void;
 
 // 中间件配置
 export interface MiddlewareConfig {
