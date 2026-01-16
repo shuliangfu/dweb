@@ -133,11 +133,11 @@ export class CookieManager {
   }
 
   /**
-   * 签名 Cookie 值
+   * 签名 Cookie 值（公共方法，供外部使用）
    * @param value Cookie 值
    * @returns 签名
    */
-  private async sign(value: string): Promise<string> {
+  async sign(value: string): Promise<string> {
     if (!this.secret) {
       return "";
     }

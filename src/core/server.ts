@@ -571,9 +571,72 @@ export class Server implements Omit<IService, "start"> {
    * 创建原生响应对象
    */
   private createNativeResponse(res: Response): globalThis.Response {
-    // 处理 Cookie
-    if (res.headers) {
-      // Cookie 设置逻辑将在 features/cookie.ts 中实现
+    // 处理 Cookie：将 cookies 数组转换为 Set-Cookie 头
+    // 注意：需要处理多个 Set-Cookie 头，因为 Headers 对象不支持同名头
+    // 所以需要将多个 Set-Cookie 头合并为一个，用逗号分隔（但这不是标准做法）
+    // 实际上，HTTP/2 支持多个 Set-Cookie 头，但 HTTP/1.1 不支持
+    // 这里我们使用 append 方法，但 Headers 对象可能不支持 append
+    // 更好的方法是：在创建 Response 时，手动构建 headers 对象
+    const finalHeaders = new Headers(res.headers);
+
+    // 处理通过 setCookie() 方法设置的 cookies
+    // 注意：cookies 数组是在 createResponse() 的闭包中定义的
+    // 我们需要通过类型断言访问它
+    const cookies = (res as any).__cookies as
+      | Array<{
+        name: string;
+        value: string;
+        options?: CookieOptions;
+      }>
+      | undefined;
+
+    if (cookies && cookies.length > 0) {
+      // 构建 cookie 字符串
+      for (const cookie of cookies) {
+        let cookieString = `${encodeURIComponent(cookie.name)}=${
+          encodeURIComponent(cookie.value)
+        }`;
+        const opts = cookie.options || {};
+
+        // 设置路径
+        if (opts.path) {
+          cookieString += `; Path=${opts.path}`;
+        } else {
+          cookieString += "; Path=/";
+        }
+
+        // 设置域名
+        if (opts.domain) {
+          cookieString += `; Domain=${opts.domain}`;
+        }
+
+        // 设置过期时间
+        if (opts.expires) {
+          cookieString += `; Expires=${opts.expires.toUTCString()}`;
+        } else if (opts.maxAge) {
+          cookieString += `; Max-Age=${opts.maxAge}`;
+        }
+
+        // 设置 Secure
+        if (opts.secure) {
+          cookieString += "; Secure";
+        }
+
+        // 设置 HttpOnly
+        if (opts.httpOnly !== false) {
+          cookieString += "; HttpOnly";
+        }
+
+        // 设置 SameSite
+        if (opts.sameSite) {
+          cookieString += `; SameSite=${opts.sameSite}`;
+        }
+
+        // 追加 Set-Cookie 头
+        // 注意：HTTP/1.1 规范允许在响应中有多个 Set-Cookie 头
+        // Deno 的 Headers 对象支持 append 方法，可以添加多个同名头
+        finalHeaders.append("Set-Cookie", cookieString);
+      }
     }
 
     // 读取响应体（通过 getter）
@@ -615,7 +678,7 @@ export class Server implements Omit<IService, "start"> {
     return new globalThis.Response(bodyInit, {
       status: res.status,
       statusText: res.statusText,
-      headers: res.headers,
+      headers: finalHeaders,
     });
   }
 

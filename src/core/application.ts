@@ -1663,14 +1663,15 @@ export class Application extends EventEmitter {
       (req as any).session = session;
 
       // 设置 Session Cookie
+      // 注意：使用 res.setCookie() 方法，而不是 res.setHeader("Set-Cookie", ...)
+      // 因为 setHeader 会覆盖之前的 Set-Cookie 头，而 setCookie 会追加到 cookies 数组
       if (cookieManager) {
-        // 使用 cookieManager 设置签名 cookie
-        const cookieValue = await cookieManager.setAsync(
-          cookieName,
-          session.id,
-          cookieOptions,
-        );
-        res.setHeader("Set-Cookie", cookieValue);
+        // 对于签名 cookie，需要先获取签名
+        // 签名 cookie 的 value 格式是 "value.signature"
+        const signature = await cookieManager.sign(session.id);
+        const signedValue = `${session.id}.${signature}`;
+        // 使用 res.setCookie 方法设置签名 cookie
+        res.setCookie(cookieName, signedValue, cookieOptions);
       } else {
         // 如果没有 cookieManager，使用 res.setCookie 方法设置普通 cookie
         res.setCookie(cookieName, session.id, cookieOptions);
@@ -1775,14 +1776,16 @@ export class Application extends EventEmitter {
       (req as any).__session = newSession; // 同时设置缓存
 
       // 设置 Session Cookie（无论是否有 cookieManager 都要设置）
+      // 注意：使用 res.setCookie() 方法，而不是 res.setHeader("Set-Cookie", ...)
+      // 因为 setHeader 会覆盖之前的 Set-Cookie 头，而 setCookie 会追加到 cookies 数组
       if (cookieManager) {
-        // 使用 cookieManager 设置签名 cookie
-        const cookieValue = await cookieManager.setAsync(
-          cookieName,
-          newSession.id,
-          cookieOptions,
-        );
-        res.setHeader("Set-Cookie", cookieValue);
+        // 对于签名 cookie，需要先获取签名
+        // 签名 cookie 的 value 格式是 "value.signature"
+        const signature = await cookieManager.sign(newSession.id);
+        const signedValue = `${newSession.id}.${signature}`;
+        // 使用 res.setCookie 方法设置签名 cookie
+        // 注意：这里直接传递签名后的值，options 中的其他配置仍然有效
+        res.setCookie(cookieName, signedValue, cookieOptions);
         console.log(
           `[Session] 设置签名 Cookie: ${cookieName}=${
             newSession.id.substring(0, 20)
