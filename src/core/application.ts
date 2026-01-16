@@ -1664,12 +1664,16 @@ export class Application extends EventEmitter {
 
       // 设置 Session Cookie
       if (cookieManager) {
+        // 使用 cookieManager 设置签名 cookie
         const cookieValue = await cookieManager.setAsync(
           cookieName,
           session.id,
           cookieOptions,
         );
         res.setHeader("Set-Cookie", cookieValue);
+      } else {
+        // 如果没有 cookieManager，使用 res.setCookie 方法设置普通 cookie
+        res.setCookie(cookieName, session.id, cookieOptions);
       }
 
       return session;
@@ -1712,14 +1716,18 @@ export class Application extends EventEmitter {
       (req as any).session = newSession;
       (req as any).__session = newSession; // 同时设置缓存
 
-      // 设置 Session Cookie
+      // 设置 Session Cookie（无论是否有 cookieManager 都要设置）
       if (cookieManager) {
+        // 使用 cookieManager 设置签名 cookie
         const cookieValue = await cookieManager.setAsync(
           cookieName,
           newSession.id,
           cookieOptions,
         );
         res.setHeader("Set-Cookie", cookieValue);
+      } else {
+        // 如果没有 cookieManager，使用 res.setCookie 方法设置普通 cookie
+        res.setCookie(cookieName, newSession.id, cookieOptions);
       }
 
       return newSession;
