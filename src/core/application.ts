@@ -1892,6 +1892,10 @@ export class Application extends EventEmitter {
 
           // 等待 session 创建完成
           const newSession = await sessionCreationLock;
+          if (!newSession) {
+            // 如果创建失败，返回 null
+            return null;
+          }
           (req as any).session = newSession;
           (req as any).__session = newSession; // 同时设置缓存
 
