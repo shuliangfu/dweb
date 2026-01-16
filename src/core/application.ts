@@ -1874,20 +1874,40 @@ export class Application extends EventEmitter {
           }
 
           // 创建锁，防止其他并发请求创建 session
+          console.log(
+            `[Session Debug] 创建 session 锁，clientId=${
+              clientId.substring(0, 50)
+            }..., pathname=${pathname}`,
+          );
           const sessionCreationLock = (async (): Promise<Session | null> => {
             try {
               const newSession = await sessionManager.create({});
+              console.log(
+                `[Session Debug] Session 创建完成，sessionId=${
+                  newSession.id.substring(0, 20)
+                }..., clientId=${clientId.substring(0, 50)}...`,
+              );
               return newSession;
             } finally {
               // 创建完成后，延迟删除锁（给其他并发请求一点时间）
               setTimeout(() => {
                 Application.sessionCreationLocks.delete(clientId);
-              }, 100); // 100ms 后删除锁
+                console.log(
+                  `[Session Debug] 删除 session 锁，clientId=${
+                    clientId.substring(0, 50)
+                  }..., 剩余锁数量=${Application.sessionCreationLocks.size}`,
+                );
+              }, 500); // 500ms 后删除锁（增加延迟时间，确保其他并发请求能检测到）
             }
           })();
 
           // 保存锁
           Application.sessionCreationLocks.set(clientId, sessionCreationLock);
+          console.log(
+            `[Session Debug] Session 锁已保存，clientId=${
+              clientId.substring(0, 50)
+            }..., 当前锁数量=${Application.sessionCreationLocks.size}`,
+          );
 
           // 等待 session 创建完成
           const newSession = await sessionCreationLock;
