@@ -1785,8 +1785,18 @@ export class Application extends EventEmitter {
 
           // 如果 Cookie 中有 sessionId，尝试获取
           if (currentSessionId) {
+            console.log(
+              `[Session Debug] 尝试获取 session: ${
+                currentSessionId.substring(0, 20)
+              }...`,
+            );
             const session = await sessionManager.get(currentSessionId);
             if (session) {
+              console.log(
+                `[Session Debug] Session 获取成功: ${
+                  currentSessionId.substring(0, 20)
+                }...`,
+              );
               (req as any).session = session;
               (req as any).__session = session; // 同时设置缓存
               return session;
