@@ -1722,18 +1722,8 @@ export class Application extends EventEmitter {
         // 如果 session 已过期或不存在，先删除旧的 cookie
         // 这样可以确保旧的 sessionId 不会一直留在 cookie 中
         // 注意：这里不创建新的 session，让后续逻辑处理
-        if (cookieManager) {
-          // 删除旧的签名 cookie
-          const deleteCookieValue = await cookieManager.setAsync(
-            cookieName,
-            "",
-            { ...cookieOptions, maxAge: 0 },
-          );
-          res.setHeader("Set-Cookie", deleteCookieValue);
-        } else {
-          // 删除旧的普通 cookie
-          res.setCookie(cookieName, "", { ...cookieOptions, maxAge: 0 });
-        }
+        // 注意：使用 res.setCookie() 方法删除 cookie，而不是 res.setHeader("Set-Cookie", ...)
+        res.setCookie(cookieName, "", { ...cookieOptions, maxAge: 0 });
         // 清除 currentSessionId，避免后续逻辑误判
         currentSessionId = null;
       }
