@@ -1740,7 +1740,7 @@ export class Application extends EventEmitter {
                 // 如果 Cookie 值以 . 开头，说明格式错误（只有签名部分）
                 if (rawValue && rawValue.startsWith(".")) {
                   console.log(
-                    `[Session Debug] Cookie 格式错误（只有签名部分），删除它`,
+                    `[Session Debug] Cookie 格式错误（只有签名部分），删除它，path=${cookieOptions.path}`,
                   );
                   // 删除格式错误的 Cookie
                   // 注意：删除 Cookie 时，必须使用与设置时完全相同的 path、domain 等选项
