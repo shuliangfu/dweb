@@ -646,15 +646,6 @@ export class Server implements Omit<IService, "start"> {
         // 注意：HTTP/1.1 规范允许在响应中有多个 Set-Cookie 头
         // Deno 的 Headers 对象支持 append 方法，可以添加多个同名头
         finalHeaders.append("Set-Cookie", cookieString);
-
-        // 调试：记录设置的 Cookie
-        if (cookie.name === "dweb.session") {
-          console.log(
-            `[Cookie Debug] 设置 Cookie 到响应头: ${
-              cookieString.substring(0, 100)
-            }...`,
-          );
-        }
       }
     }
 

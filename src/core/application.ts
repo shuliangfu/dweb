@@ -1737,24 +1737,7 @@ export class Application extends EventEmitter {
             const parsedCookies = await cookieManager.parseAsync(cookieHeader);
             currentSessionId = parsedCookies[cookieName] || null;
 
-            // 调试：记录 Cookie 解析结果（只在有 Cookie 或需要创建 session 时记录）
-            // 静态资源请求不需要记录这些日志
-            if (cookieHeader) {
-              console.log(
-                `[Session Debug] Cookie 头: ${
-                  cookieHeader.substring(0, 200)
-                }...`,
-              );
-              console.log(
-                `[Session Debug] 解析后的 sessionId: ${
-                  currentSessionId
-                    ? currentSessionId.substring(0, 20) + "..."
-                    : "null"
-                }`,
-              );
-            }
-
-            // 调试：检查 Cookie 解析情况
+            // 检查 Cookie 解析情况
             if (!currentSessionId && cookieHeader) {
               // 检查原始 Cookie 值
               const rawCookies = cookieHeader.split(";").map((c) => c.trim());
@@ -1763,16 +1746,8 @@ export class Application extends EventEmitter {
               );
               if (rawSessionCookie) {
                 const rawValue = rawSessionCookie.split("=")[1];
-                console.log(
-                  `[Session Debug] Cookie 存在但解析失败: ${cookieName}=${
-                    rawValue?.substring(0, 50)
-                  }...`,
-                );
                 // 如果 Cookie 值以 . 开头，说明格式错误（只有签名部分）
                 if (rawValue && rawValue.startsWith(".")) {
-                  console.log(
-                    `[Session Debug] Cookie 格式错误（只有签名部分），删除它，path=${cookieOptions.path}`,
-                  );
                   // 删除格式错误的 Cookie
                   // 注意：删除 Cookie 时，必须使用与设置时完全相同的 path、domain 等选项
                   // 否则浏览器可能无法正确删除
@@ -1791,18 +1766,8 @@ export class Application extends EventEmitter {
 
           // 如果 Cookie 中有 sessionId，尝试获取
           if (currentSessionId) {
-            console.log(
-              `[Session Debug] 尝试获取 session: ${
-                currentSessionId.substring(0, 20)
-              }...`,
-            );
             const session = await sessionManager.get(currentSessionId);
             if (session) {
-              console.log(
-                `[Session Debug] Session 获取成功: ${
-                  currentSessionId.substring(0, 20)
-                }...`,
-              );
               (req as any).session = session;
               (req as any).__session = session; // 同时设置缓存
               return session;
@@ -1812,11 +1777,6 @@ export class Application extends EventEmitter {
             // 注意：这里不创建新的 session，让后续逻辑处理
             // 注意：使用 res.setCookie() 方法删除 cookie，而不是 res.setHeader("Set-Cookie", ...)
             // 删除 Cookie 时，必须使用与设置时完全相同的 path、domain 等选项
-            console.log(
-              `[Session Debug] Session 已过期或不存在，删除旧的 Cookie: ${
-                currentSessionId.substring(0, 20)
-              }...`,
-            );
             res.setCookie(cookieName, "", {
               ...cookieOptions,
               maxAge: 0,
@@ -1829,11 +1789,6 @@ export class Application extends EventEmitter {
           // 如果不是路由请求（静态资源请求），不创建新的 session，直接返回 null
           if (!isRouteRequest) {
             return null;
-          }
-
-          // 如果是路由请求但没有 sessionId，记录日志（用于调试）
-          if (!currentSessionId) {
-            console.log(`[Session Debug] 没有 sessionId，pathname=${pathname}`);
           }
 
           // 检查是否是健康检查或监控工具的请求（curl、wget 等）
@@ -1858,20 +1813,9 @@ export class Application extends EventEmitter {
             "unknown";
           const clientId = `${clientIp}-${userAgent}`;
 
-          console.log(
-            `[Session Debug] 准备创建 session，clientId=${
-              clientId.substring(0, 50)
-            }..., pathname=${pathname}, 当前锁数量=${Application.sessionCreationLocks.size}`,
-          );
-
           // 检查是否有其他请求正在为这个客户端创建 session
           const existingLock = Application.sessionCreationLocks.get(clientId);
           if (existingLock) {
-            console.log(
-              `[Session Debug] 检测到并发请求，等待其他请求完成 session 创建，pathname=${pathname}, clientId=${
-                clientId.substring(0, 50)
-              }...`,
-            );
             // 等待其他请求完成，然后再次检查 Cookie（可能已经设置了）
             await existingLock;
             // 重新检查 Cookie（可能在等待期间已经设置了）
@@ -1898,40 +1842,20 @@ export class Application extends EventEmitter {
           }
 
           // 创建锁，防止其他并发请求创建 session
-          console.log(
-            `[Session Debug] 创建 session 锁，clientId=${
-              clientId.substring(0, 50)
-            }..., pathname=${pathname}`,
-          );
           const sessionCreationLock = (async (): Promise<Session | null> => {
             try {
               const newSession = await sessionManager.create({});
-              console.log(
-                `[Session Debug] Session 创建完成，sessionId=${
-                  newSession.id.substring(0, 20)
-                }..., clientId=${clientId.substring(0, 50)}...`,
-              );
               return newSession;
             } finally {
               // 创建完成后，延迟删除锁（给其他并发请求一点时间）
               setTimeout(() => {
                 Application.sessionCreationLocks.delete(clientId);
-                console.log(
-                  `[Session Debug] 删除 session 锁，clientId=${
-                    clientId.substring(0, 50)
-                  }..., 剩余锁数量=${Application.sessionCreationLocks.size}`,
-                );
               }, 500); // 500ms 后删除锁（增加延迟时间，确保其他并发请求能检测到）
             }
           })();
 
           // 保存锁
           Application.sessionCreationLocks.set(clientId, sessionCreationLock);
-          console.log(
-            `[Session Debug] Session 锁已保存，clientId=${
-              clientId.substring(0, 50)
-            }..., 当前锁数量=${Application.sessionCreationLocks.size}`,
-          );
 
           // 等待 session 创建完成
           const newSession = await sessionCreationLock;
@@ -1953,20 +1877,9 @@ export class Application extends EventEmitter {
             // 使用 res.setCookie 方法设置签名 cookie
             // 注意：这里直接传递签名后的值，options 中的其他配置仍然有效
             res.setCookie(cookieName, signedValue, cookieOptions);
-            console.log(
-              `[Session Debug] 创建新 session: ${
-                newSession.id.substring(0, 20)
-              }..., Cookie值: ${signedValue.substring(0, 50)}..., options=`,
-              cookieOptions,
-            );
           } else {
             // 如果没有 cookieManager，使用 res.setCookie 方法设置普通 cookie
             res.setCookie(cookieName, newSession.id, cookieOptions);
-            console.log(
-              `[Session Debug] 创建新 session: ${
-                newSession.id.substring(0, 20)
-              }...`,
-            );
           }
 
           return newSession;
