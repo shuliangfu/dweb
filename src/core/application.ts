@@ -1644,11 +1644,18 @@ export class Application extends EventEmitter {
     const sessionConfig = (sessionManager as any).config as SessionConfig;
     const cookieConfig = config.cookie as CookieConfig;
 
+    // 检测请求协议，如果是 HTTPS，自动设置 secure: true（除非配置中明确指定）
+    const url = new URL(req.url);
+    const isHttps = url.protocol === "https:";
+    const secureFromConfig = sessionConfig?.secure ?? cookieConfig?.secure;
+    // 如果配置中没有明确指定 secure，且请求是 HTTPS，则自动设置为 true
+    const secure = secureFromConfig !== undefined ? secureFromConfig : isHttps;
+
     // 从配置中读取 Cookie 选项，设置默认值
     // 优先级：session 配置 > cookie 配置 > 默认值
     const cookieOptions = {
       httpOnly: sessionConfig?.httpOnly ?? cookieConfig?.httpOnly ?? true,
-      secure: sessionConfig?.secure ?? cookieConfig?.secure ?? false,
+      secure,
       maxAge: sessionConfig?.maxAge ?? cookieConfig?.maxAge ?? 3600,
       path: sessionConfig?.path ?? cookieConfig?.path ?? "/", // 优先从 session 配置读取，其次从 cookie 配置读取，默认为根路径
       sameSite: (sessionConfig?.sameSite ?? cookieConfig?.sameSite ?? "lax") as
