@@ -17,7 +17,66 @@ export function logger(options: {
 } = {}): Middleware {
   const { format = "combined", skip } = options;
 
-  // 默认跳过 Chrome DevTools 的自动请求和 Docker 健康检查请求
+  /**
+   * 判断是否是静态资源请求
+   * 静态资源请求不应该记录日志
+   */
+  const isStaticResource = (pathname: string): boolean => {
+    // 静态资源路径前缀
+    const staticPrefixes = [
+      "/__modules/", // 模块请求
+      "/__scripts/", // 脚本请求
+      "/__i18n/", // 国际化资源
+      "/__prefetch/", // 预取请求
+      "/assets/", // 静态资源目录
+    ];
+
+    // 检查是否是静态资源路径
+    for (const prefix of staticPrefixes) {
+      if (pathname.startsWith(prefix)) {
+        return true;
+      }
+    }
+
+    // 检查是否是静态文件扩展名
+    const staticExtensions = [
+      ".js",
+      ".mjs",
+      ".css",
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".gif",
+      ".svg",
+      ".webp",
+      ".ico",
+      ".woff",
+      ".woff2",
+      ".ttf",
+      ".otf",
+      ".eot",
+      ".mp4",
+      ".webm",
+      ".mp3",
+      ".wav",
+      ".ogg",
+      ".pdf",
+      ".zip",
+    ];
+
+    // 检查路径是否以静态文件扩展名结尾（但排除 API 路由）
+    if (!pathname.startsWith("/api/")) {
+      for (const ext of staticExtensions) {
+        if (pathname.endsWith(ext)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
+  // 默认跳过 Chrome DevTools 的自动请求、Docker 健康检查请求和静态资源请求
   const defaultSkip = (req: { url: string; method: string }) => {
     const url = new URL(req.url);
     // 跳过 Chrome DevTools 请求
@@ -26,6 +85,10 @@ export function logger(options: {
       url.pathname.endsWith("/com.chrome.devtools.json") ||
       url.pathname === "/@vite/client"
     ) {
+      return true;
+    }
+    // 跳过静态资源请求
+    if (isStaticResource(url.pathname)) {
       return true;
     }
     // 跳过 Docker 健康检查请求（通常是 GET / 且 user-agent 是 curl）
