@@ -1033,6 +1033,12 @@ export class SessionManager {
     if (this.store && typeof (this.store as any).destroy === "function") {
       (this.store as any).destroy();
     }
+    // 如果 store 实现了 disconnect 方法（Redis），调用它来断开连接
+    if (this.store && typeof (this.store as any).disconnect === "function") {
+      (this.store as any).disconnect().catch((error: Error) => {
+        console.error("[Session] Store disconnect error:", error);
+      });
+    }
   }
 
   /**
