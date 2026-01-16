@@ -36,6 +36,7 @@ const navItems: NavItem[] = [
     children: [
       { title: "状态管理", path: "/examples/store" },
       { title: "图片上传", path: "/examples/image-upload" },
+      { title: "曲线图", path: "/examples/chart" },
     ],
   },
 ];

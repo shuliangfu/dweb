@@ -26,84 +26,6 @@ export const load = () => {
 };
 
 /**
- * 获取页面颜色主题
- * @param routePath 当前路由路径
- * @returns 颜色主题配置
- */
-function getPageTheme(routePath: string) {
-  const themes: Record<
-    string,
-    {
-      from: string;
-      to: string;
-      darkFrom: string;
-      darkTo: string;
-      text: string;
-      darkText: string;
-      accent: string;
-    }
-  > = {
-    "/examples": {
-      from: "from-green-600",
-      to: "to-emerald-600",
-      darkFrom: "dark:from-green-900",
-      darkTo: "dark:to-emerald-900",
-      text: "text-green-100",
-      darkText: "dark:text-green-200",
-      accent: "bg-teal-500/20",
-    },
-    "/examples/click-events": {
-      from: "from-blue-600",
-      to: "to-indigo-600",
-      darkFrom: "dark:from-blue-900",
-      darkTo: "dark:to-indigo-900",
-      text: "text-blue-100",
-      darkText: "dark:text-blue-200",
-      accent: "bg-purple-500/20",
-    },
-    "/examples/api-requests": {
-      from: "from-purple-600",
-      to: "to-pink-600",
-      darkFrom: "dark:from-purple-900",
-      darkTo: "dark:to-pink-900",
-      text: "text-purple-100",
-      darkText: "dark:text-purple-200",
-      accent: "bg-pink-500/20",
-    },
-    "/examples/form-submit": {
-      from: "from-orange-600",
-      to: "to-red-600",
-      darkFrom: "dark:from-orange-900",
-      darkTo: "dark:to-red-900",
-      text: "text-orange-100",
-      darkText: "dark:text-orange-200",
-      accent: "bg-red-500/20",
-    },
-    "/examples/store": {
-      from: "from-indigo-600",
-      to: "to-blue-600",
-      darkFrom: "dark:from-indigo-900",
-      darkTo: "dark:to-blue-900",
-      text: "text-indigo-100",
-      darkText: "dark:text-indigo-200",
-      accent: "bg-blue-500/20",
-    },
-    "/examples/image-upload": {
-      from: "from-teal-600",
-      to: "to-cyan-600",
-      darkFrom: "dark:from-teal-900",
-      darkTo: "dark:to-cyan-900",
-      text: "text-teal-100",
-      darkText: "dark:text-teal-200",
-      accent: "bg-cyan-500/20",
-    },
-  };
-
-  // 精确匹配或使用默认主题
-  return themes[routePath] || themes["/examples"];
-}
-
-/**
  * 获取页面标题和描述
  * @param routePath 当前路由路径
  * @returns 标题和描述
@@ -136,6 +58,11 @@ function getPageTitle(routePath: string) {
       description:
         "演示如何上传图片文件到服务器，支持多文件选择、图片预览等功能",
     },
+    "/examples/chart": {
+      title: "曲线图示例",
+      description:
+        "使用 Chart.js 绘制各种类型的图表，包括折线图、柱状图、饼图等",
+    },
   };
 
   return titles[routePath] || titles["/examples"];
@@ -147,7 +74,6 @@ function getPageTitle(routePath: string) {
  * @returns JSX 元素
  */
 export default function ExamplesLayout({ children, routePath }: LayoutProps) {
-  const theme = getPageTheme(routePath);
   const { title, description } = getPageTitle(routePath);
 
   return (
@@ -159,7 +85,7 @@ export default function ExamplesLayout({ children, routePath }: LayoutProps) {
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2">
           </div>
           <div
-            className={`absolute bottom-0 left-0 w-64 h-64 ${theme.accent} rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2`}
+            className={`absolute bottom-0 left-0 w-64 h-64 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2`}
           >
           </div>
         </div>
@@ -168,9 +94,7 @@ export default function ExamplesLayout({ children, routePath }: LayoutProps) {
           <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-6 tracking-tight">
             {title}
           </h1>
-          <p
-            className={`text-xl ${theme.text} ${theme.darkText} max-w-3xl mx-auto leading-relaxed`}
-          >
+          <p className="text-xl text-gray-100 dark:text-gray-200 max-w-3xl mx-auto leading-relaxed">
             {description}
           </p>
         </div>

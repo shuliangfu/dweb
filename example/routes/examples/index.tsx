@@ -60,6 +60,14 @@ export default function ExamplesIndexPage(
       icon: "🖼️",
       category: "高级示例",
     },
+    {
+      title: "曲线图",
+      description:
+        "使用 Chart.js 绘制各种类型的图表，包括折线图、柱状图、饼图等",
+      path: "/examples/chart",
+      icon: "📊",
+      category: "高级示例",
+    },
   ];
 
   const groupedExamples = examples.reduce((acc, example) => {

@@ -1553,9 +1553,11 @@ export class Application extends EventEmitter {
 
       const next = async (): Promise<void> => {
         try {
-          // 如果响应已经设置（通过 res.json()、res.redirect() 等），停止执行后续中间件和路由处理器
-          if (isResponseSet(res)) {
-            return;
+          // 如果响应已经设置（通过 res.json()、res.redirect() 等），停止执行后续中间件
+          // 但需要继续执行路由处理器（如果还没执行）和插件响应钩子
+          if (isResponseSet(res) && index < middlewares.length) {
+            // 如果响应已设置且还有中间件未执行，跳过所有剩余中间件
+            index = middlewares.length; // 跳过所有剩余中间件
           }
 
           if (index < middlewares.length) {
@@ -1563,9 +1565,10 @@ export class Application extends EventEmitter {
             await middleware(req, res, next, this.context);
 
             // 中间件执行后再次检查响应是否已设置
-            // 如果已设置，停止执行后续中间件和路由处理器
+            // 如果已设置，停止执行后续中间件
             if (isResponseSet(res)) {
-              return;
+              // 跳过所有剩余中间件
+              index = middlewares.length;
             }
           } else {
             // 所有中间件执行完毕，处理路由
@@ -1574,10 +1577,8 @@ export class Application extends EventEmitter {
               await this.routeHandler.handle(req, res);
             }
 
-            // 执行插件响应钩子（只有在响应未设置时才执行）
-            if (!isResponseSet(res)) {
-              await this.pluginManager.executeOnResponse(req, res);
-            }
+            // 执行插件响应钩子（无论响应是否已设置，都应该执行，用于修改响应）
+            await this.pluginManager.executeOnResponse(req, res);
 
             // 如果插件清空了响应体，恢复它
             if (!res.body && res.status === 200) {
