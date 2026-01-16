@@ -8,6 +8,7 @@
 import type {
   AppConfig,
   CookieConfig,
+  CookieOptions,
   Middleware,
   MiddlewareConfig,
   Plugin,
