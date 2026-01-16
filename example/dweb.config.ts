@@ -57,25 +57,25 @@ export default defineConfig({
   },
 
   // 数据库配置
-  // database: {
-  //   type: "mongodb",
-  //   connection: {
-  //     host: Deno.env.get("DB_HOST"),
-  //     port: Deno.env.get("DB_PORT") as unknown as number,
-  //     database: Deno.env.get("DB_NAME"),
-  //     username: Deno.env.get("DB_USER"),
-  //     password: Deno.env.get("DB_PASS"),
-  //   },
-  //   // MongoDB 连接池配置
-  //   mongoOptions: {
-  //     maxPoolSize: 10, // 最大连接池大小
-  //     minPoolSize: 1, // 最小连接池大小
-  //     timeoutMS: 5000, // 服务器选择超时时间（毫秒）
-  //     maxRetries: 3, // 最大重试次数
-  //     retryDelay: 1000, // 重试延迟（毫秒）
-  //     replicaSet: "rs0",
-  //   },
-  // },
+  database: {
+    type: "mongodb",
+    connection: {
+      host: Deno.env.get("DB_HOST"),
+      port: Deno.env.get("DB_PORT") as unknown as number,
+      database: Deno.env.get("DB_NAME"),
+      username: Deno.env.get("DB_USER"),
+      password: Deno.env.get("DB_PASS"),
+    },
+    // MongoDB 连接池配置
+    mongoOptions: {
+      maxPoolSize: 10, // 最大连接池大小
+      minPoolSize: 1, // 最小连接池大小
+      timeoutMS: 5000, // 服务器选择超时时间（毫秒）
+      maxRetries: 3, // 最大重试次数
+      retryDelay: 1000, // 重试延迟（毫秒）
+      replicaSet: "rs0",
+    },
+  },
 
   // 静态资源目录，默认为 'assets'
   static: {
