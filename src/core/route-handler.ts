@@ -798,6 +798,27 @@ export class RouteHandler {
   }
 
   /**
+   * 检查响应是否已经设置（通过 body 或重定向状态码）
+   * 如果响应已设置，说明中间件已经处理了请求，应该停止执行后续中间件和路由处理器
+   * @param res 响应对象
+   * @returns 如果响应已设置，返回 true；否则返回 false
+   */
+  private isResponseSet(res: Response): boolean {
+    // 检查是否有响应体
+    if (res.body !== undefined) {
+      return true;
+    }
+    // 检查是否是重定向（301 或 302 状态码，并且设置了 location header）
+    if (
+      (res.status === 301 || res.status === 302) &&
+      res.headers.get("location")
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * 执行路由中间件链
    * @param middlewares 中间件函数数组
    * @param req 请求对象
@@ -816,12 +837,26 @@ export class RouteHandler {
       ? (this.application.context as any)
       : ({} as any);
     const next = async (): Promise<void> => {
+      // 如果响应已经设置（通过 res.json()、res.redirect() 等），停止执行后续中间件和路由处理器
+      if (this.isResponseSet(res)) {
+        return;
+      }
+
       if (index < middlewares.length) {
         const middleware = middlewares[index++];
         await middleware(req, res, next, app);
+
+        // 中间件执行后再次检查响应是否已设置
+        // 如果已设置，停止执行后续中间件和路由处理器
+        if (this.isResponseSet(res)) {
+          return;
+        }
       } else {
         // 所有中间件执行完毕，执行路由处理
-        await handler();
+        // 只有在响应未设置时才执行路由处理器
+        if (!this.isResponseSet(res)) {
+          await handler();
+        }
       }
     };
     await next();

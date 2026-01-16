@@ -505,7 +505,31 @@ export class Server implements Omit<IService, "start"> {
     // 如果没有提供 app，创建一个空对象（满足类型要求）
     const appContext = app || ({} as any);
 
+    /**
+     * 检查响应是否已经设置（通过 body 或重定向状态码）
+     * 如果响应已设置，说明中间件已经处理了请求，应该停止执行后续中间件
+     */
+    const isResponseSet = (res: Response): boolean => {
+      // 检查是否有响应体
+      if (res.body !== undefined) {
+        return true;
+      }
+      // 检查是否是重定向（301 或 302 状态码，并且设置了 location header）
+      if (
+        (res.status === 301 || res.status === 302) &&
+        res.headers.get("location")
+      ) {
+        return true;
+      }
+      return false;
+    };
+
     const next = async (): Promise<void> => {
+      // 如果响应已经设置（通过 res.json()、res.redirect() 等），停止执行后续中间件
+      if (isResponseSet(res)) {
+        return;
+      }
+
       if (index >= middlewares.length) {
         return;
       }
@@ -529,6 +553,12 @@ export class Server implements Omit<IService, "start"> {
 
       try {
         await middleware(req, res, wrappedNext, appContext);
+
+        // 中间件执行后再次检查响应是否已设置
+        // 如果已设置，停止执行后续中间件
+        if (isResponseSet(res)) {
+          return;
+        }
       } catch (error) {
         throw error;
       }
