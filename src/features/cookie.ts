@@ -214,8 +214,24 @@ export class CookieManager {
             );
             continue;
           }
+          // 针对 dweb.session 添加详细调试日志
+          if (decodedName === "dweb.session") {
+            console.log(
+              `[Cookie Debug] 解析 dweb.session: actualValue=${
+                actualValue.substring(0, 20)
+              }..., signature=${signature?.substring(0, 20)}...`,
+            );
+          }
           if (signature && await this.verify(actualValue, signature)) {
             decodedValue = actualValue;
+            // 针对 dweb.session 添加成功日志
+            if (decodedName === "dweb.session") {
+              console.log(
+                `[Cookie Debug] dweb.session 签名验证成功: ${
+                  decodedValue.substring(0, 20)
+                }...`,
+              );
+            }
           } else {
             // 签名验证失败，忽略这个 Cookie
             console.log(
@@ -223,6 +239,14 @@ export class CookieManager {
                 decodedValue.substring(0, 50)
               }...`,
             );
+            // 针对 dweb.session 添加失败详情
+            if (decodedName === "dweb.session") {
+              console.log(
+                `[Cookie Debug] dweb.session 签名验证失败: actualValue=${
+                  actualValue.substring(0, 20)
+                }..., signature=${signature?.substring(0, 20)}...`,
+              );
+            }
             continue;
           }
         }
