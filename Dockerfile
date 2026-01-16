@@ -2,6 +2,9 @@
 # 使用固定版本号避免 Docker Hub 速率限制
 FROM denoland/deno:latest AS builder
 
+# 安装 curl（用于健康检测）和 coreutils（用于 tee 命令）
+RUN apt-get update && apt-get install -y curl coreutils && rm -rf /var/lib/apt/lists/*
+
 # 设置工作目录
 WORKDIR /app
 
@@ -14,9 +17,6 @@ WORKDIR /app/example
 # 缓存依赖（这会触发 npm 依赖的自动安装）
 # 注意：deno.json 中 nodeModulesDir 已经是 "auto"，无需修改
 RUN deno cache --lock=deno.lock deno.json
-
-# 预先缓存健康检查脚本（避免运行时下载依赖）
-RUN deno cache healthcheck.ts
 
 # 构建项目
 RUN deno task build
@@ -44,4 +44,3 @@ ENV DENO_ENV=production
 
 # 启动生产服务器
 CMD ["deno", "task", "start"]
-
