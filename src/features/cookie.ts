@@ -27,13 +27,18 @@ export class CookieManager {
     value: string,
     options: CookieOptions = {},
   ): Promise<string> {
-    let cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}`;
-
     // 如果配置了签名密钥，对 Cookie 进行签名
+    // 注意：签名应该添加到值上，然后一起进行 URL 编码
+    let cookieValue = value;
     if (this.secret) {
       const signature = await this.sign(value);
-      cookie = `${cookie}.${signature}`;
+      cookieValue = `${value}.${signature}`;
     }
+
+    // 对 name 和 value（包含签名）进行 URL 编码
+    const cookie = `${encodeURIComponent(name)}=${
+      encodeURIComponent(cookieValue)
+    }`;
 
     return this.buildCookieString(cookie, options);
   }
@@ -198,7 +203,12 @@ export class CookieManager {
         // 如果 Cookie 被签名，验证签名
         if (this.secret && decodedValue.includes(".")) {
           const [actualValue, signature] = decodedValue.split(".");
-          if (await this.verify(actualValue, signature)) {
+          // 如果 actualValue 为空字符串，说明 Cookie 格式错误（可能是旧代码遗留的问题）
+          if (actualValue === "") {
+            // Cookie 值以 . 开头，格式错误，忽略这个 Cookie
+            continue;
+          }
+          if (signature && await this.verify(actualValue, signature)) {
             decodedValue = actualValue;
           } else {
             // 签名验证失败，忽略这个 Cookie

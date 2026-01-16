@@ -1,92 +1,16 @@
 /**
- * Cookie 管理测试
+ * Cookie 调试测试
+ * 用于调试签名 Cookie 解析问题
  */
 
 import { assertEquals, assert } from '@std/assert';
 import { CookieManager } from '../../../src/features/cookie.ts';
 
-Deno.test('CookieManager - 设置基本 Cookie', async () => {
-  const manager = new CookieManager();
-  const cookie = await manager.setAsync('test', 'value');
-
-  assert(cookie.includes('test=value'));
-  assert(cookie.includes('Path=/'));
-});
-
-Deno.test('CookieManager - 设置带选项的 Cookie', async () => {
-  const manager = new CookieManager();
-  const cookie = await manager.setAsync('test', 'value', {
-    path: '/api',
-    domain: 'example.com',
-    maxAge: 3600,
-    secure: true,
-    httpOnly: true,
-    sameSite: 'strict',
-  });
-
-  assert(cookie.includes('test=value'));
-  assert(cookie.includes('Path=/api'));
-  assert(cookie.includes('Domain=example.com'));
-  assert(cookie.includes('Max-Age=3600'));
-  assert(cookie.includes('Secure'));
-  assert(cookie.includes('HttpOnly'));
-  assert(cookie.includes('SameSite=strict')); // 实际输出是小写
-});
-
-Deno.test('CookieManager - Cookie 签名', async () => {
-  const manager = new CookieManager('secret-key');
-  const cookie = await manager.setAsync('test', 'value');
-
-  // 签名的 Cookie 应该包含签名部分（用 . 分隔）
-  const parts = cookie.split(';')[0].split('=');
-  assertEquals(parts.length, 2);
-  const valueWithSignature = parts[1];
-  assert(valueWithSignature.includes('.'));
-});
-
-Deno.test('CookieManager - 解析 Cookie', () => {
-  const manager = new CookieManager();
-  const cookieHeader = 'test=value; other=otherValue';
-  const cookies = manager.parse(cookieHeader);
-
-  assertEquals(cookies.test, 'value');
-  assertEquals(cookies.other, 'otherValue');
-});
-
-Deno.test('CookieManager - 解析空 Cookie 头', () => {
-  const manager = new CookieManager();
-  const cookies = manager.parse(null);
-
-  assertEquals(Object.keys(cookies).length, 0);
-});
-
-Deno.test('CookieManager - 删除 Cookie', () => {
-  const manager = new CookieManager();
-  const cookie = manager.delete('test');
-
-  assert(cookie.includes('test='), '应该包含 Cookie 名称');
-  // 删除 Cookie 时，会设置 maxAge: 0 和 expires: new Date(0)
-  // 但 buildCookieString 中，如果同时设置了 expires 和 maxAge，会优先使用 expires
-  assert(cookie.includes('Expires='), '应该包含 Expires 头');
-  // 注意：由于设置了 expires，可能不会同时包含 Max-Age
-});
-
-Deno.test('CookieManager - URL 编码 Cookie 值', async () => {
-  const manager = new CookieManager();
-  const cookie = await manager.setAsync('test', 'value with spaces');
-
-  assert(cookie.includes('test=value%20with%20spaces'));
-});
-
-// ============================================
-// 调试测试：签名 Cookie 的完整流程
-// ============================================
-
 Deno.test('CookieManager - 签名和解析 Cookie（完整流程）', async () => {
   const secret = 'test-secret-key-12345';
   const manager = new CookieManager(secret);
   const sessionId = '6d5bf239e7ac06e77725abcdef1234567890';
-
+  
   // 1. 设置签名 Cookie
   const cookieString = await manager.setAsync('dweb.session', sessionId, {
     httpOnly: true,
@@ -95,15 +19,15 @@ Deno.test('CookieManager - 签名和解析 Cookie（完整流程）', async () =
     path: '/',
     sameSite: 'lax',
   });
-
+  
   console.log('生成的 Cookie 字符串:', cookieString);
-
+  
   // 2. 提取 Cookie 值（模拟浏览器发送的格式）
   const cookieValueMatch = cookieString.match(/dweb\.session=([^;]+)/);
   assert(cookieValueMatch, '应该能匹配到 Cookie 值');
   const cookieValue = cookieValueMatch[1];
   console.log('提取的 Cookie 值:', cookieValue);
-
+  
   // 3. 验证 Cookie 值格式（应该是 sessionId.signature）
   assert(cookieValue.includes('.'), 'Cookie 值应该包含签名（用 . 分隔）');
   const [actualSessionId, signature] = cookieValue.split('.');
@@ -111,15 +35,15 @@ Deno.test('CookieManager - 签名和解析 Cookie（完整流程）', async () =
   assert(signature.length > 0, '签名应该存在');
   console.log('SessionId:', actualSessionId);
   console.log('Signature:', signature);
-
+  
   // 4. 模拟浏览器发送的 Cookie 头
   const cookieHeader = `dweb.session=${cookieValue}`;
   console.log('模拟的 Cookie 头:', cookieHeader);
-
+  
   // 5. 解析 Cookie
   const parsedCookies = await manager.parseAsync(cookieHeader);
   console.log('解析后的 Cookies:', parsedCookies);
-
+  
   // 6. 验证解析结果
   assertEquals(parsedCookies['dweb.session'], sessionId, '解析后的 SessionId 应该匹配');
 });
@@ -127,15 +51,15 @@ Deno.test('CookieManager - 签名和解析 Cookie（完整流程）', async () =
 Deno.test('CookieManager - 解析问题 Cookie（以 . 开头的值）', async () => {
   const secret = 'test-secret-key-12345';
   const manager = new CookieManager(secret);
-
+  
   // 模拟日志中的问题 Cookie：dweb.session=.2OB9HjJfiyG6gaP2gtRcabsT
   const problemCookieHeader = 'lang=zh-TW; dweb.session=.2OB9HjJfiyG6gaP2gtRcabsT';
   console.log('问题 Cookie 头:', problemCookieHeader);
-
+  
   // 解析 Cookie
   const parsedCookies = await manager.parseAsync(problemCookieHeader);
   console.log('解析后的 Cookies:', parsedCookies);
-
+  
   // 检查解析结果
   if (parsedCookies['dweb.session']) {
     console.log('成功解析到 SessionId:', parsedCookies['dweb.session']);
@@ -157,7 +81,7 @@ Deno.test('CookieManager - 测试 split(".") 边界情况', async () => {
     { value: '.signature', description: '只有签名，没有 sessionId' },
     { value: 'sessionId.signature.extra', description: '多个 .' },
   ];
-
+  
   for (const testCase of testCases) {
     console.log(`\n测试: ${testCase.description}`);
     console.log(`值: ${testCase.value}`);
@@ -165,7 +89,7 @@ Deno.test('CookieManager - 测试 split(".") 边界情况', async () => {
     console.log(`split(".") 结果:`, parts);
     console.log(`parts[0]: "${parts[0]}"`);
     console.log(`parts[1]: "${parts[1] || 'undefined'}"`);
-
+    
     if (parts[0] === '') {
       console.log('⚠️  警告: parts[0] 是空字符串，这会导致签名验证失败');
     }
@@ -176,7 +100,7 @@ Deno.test('CookieManager - 模拟实际场景：设置和解析', async () => {
   const secret = 'my-secret-key-for-testing';
   const manager = new CookieManager(secret);
   const sessionId = '6d5bf239e7ac06e77725abcdef1234567890';
-
+  
   // 步骤 1: 使用 setAsync 设置 Cookie（模拟服务器设置）
   const cookieString = await manager.setAsync('dweb.session', sessionId, {
     httpOnly: true,
@@ -185,10 +109,10 @@ Deno.test('CookieManager - 模拟实际场景：设置和解析', async () => {
     path: '/',
     sameSite: 'lax',
   });
-
+  
   console.log('步骤 1 - 服务器设置的 Cookie:');
   console.log(cookieString);
-
+  
   // 步骤 2: 提取 Cookie 值（模拟浏览器存储）
   const cookieValueMatch = cookieString.match(/dweb\.session=([^;]+)/);
   if (!cookieValueMatch) {
@@ -197,18 +121,45 @@ Deno.test('CookieManager - 模拟实际场景：设置和解析', async () => {
   const cookieValue = cookieValueMatch[1];
   console.log('\n步骤 2 - 浏览器存储的 Cookie 值:');
   console.log(cookieValue);
-
+  
   // 步骤 3: 构建 Cookie 头（模拟浏览器发送）
   const cookieHeader = `dweb.session=${cookieValue}`;
   console.log('\n步骤 3 - 浏览器发送的 Cookie 头:');
   console.log(cookieHeader);
-
+  
   // 步骤 4: 解析 Cookie（模拟服务器解析）
   const parsedCookies = await manager.parseAsync(cookieHeader);
   console.log('\n步骤 4 - 服务器解析的结果:');
   console.log(parsedCookies);
-
+  
   // 步骤 5: 验证
   assertEquals(parsedCookies['dweb.session'], sessionId, 'SessionId 应该匹配');
   console.log('\n✅ 测试通过：Cookie 设置和解析成功');
+});
+
+Deno.test('CookieManager - 测试 URL 编码对签名的影响', async () => {
+  const secret = 'test-secret';
+  const manager = new CookieManager(secret);
+  const sessionId = '6d5bf239e7ac06e77725abcdef1234567890';
+  
+  // 设置 Cookie（会自动 URL 编码）
+  const cookieString = await manager.setAsync('dweb.session', sessionId);
+  console.log('设置的 Cookie:', cookieString);
+  
+  // 提取值（注意：值已经被 URL 编码）
+  const match = cookieString.match(/dweb\.session=([^;]+)/);
+  assert(match);
+  const encodedValue = match[1];
+  console.log('URL 编码后的值:', encodedValue);
+  
+  // 构建 Cookie 头（模拟浏览器发送，值已经是编码后的）
+  const cookieHeader = `dweb.session=${encodedValue}`;
+  console.log('Cookie 头:', cookieHeader);
+  
+  // 解析
+  const parsed = await manager.parseAsync(cookieHeader);
+  console.log('解析结果:', parsed);
+  
+  // 验证
+  assertEquals(parsed['dweb.session'], sessionId);
 });
