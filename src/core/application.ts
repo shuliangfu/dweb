@@ -1730,6 +1730,24 @@ export class Application extends EventEmitter {
             const parsedCookies = await cookieManager.parseAsync(cookieHeader);
             currentSessionId = parsedCookies[cookieName] || null;
 
+            // 调试：记录 Cookie 解析结果
+            if (cookieHeader) {
+              console.log(
+                `[Session Debug] Cookie 头: ${
+                  cookieHeader.substring(0, 200)
+                }...`,
+              );
+              console.log(
+                `[Session Debug] 解析后的 sessionId: ${
+                  currentSessionId
+                    ? currentSessionId.substring(0, 20) + "..."
+                    : "null"
+                }`,
+              );
+            } else {
+              console.log(`[Session Debug] 请求中没有 Cookie 头`);
+            }
+
             // 调试：检查 Cookie 解析情况
             if (!currentSessionId && cookieHeader) {
               // 检查原始 Cookie 值
@@ -1778,6 +1796,11 @@ export class Application extends EventEmitter {
             // 注意：这里不创建新的 session，让后续逻辑处理
             // 注意：使用 res.setCookie() 方法删除 cookie，而不是 res.setHeader("Set-Cookie", ...)
             // 删除 Cookie 时，必须使用与设置时完全相同的 path、domain 等选项
+            console.log(
+              `[Session Debug] Session 已过期或不存在，删除旧的 Cookie: ${
+                currentSessionId.substring(0, 20)
+              }...`,
+            );
             res.setCookie(cookieName, "", {
               ...cookieOptions,
               maxAge: 0,
