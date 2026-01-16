@@ -1681,11 +1681,21 @@ export class Application extends EventEmitter {
 
     // 添加 getSession 方法
     // 如果 session 不存在，自动创建一个新的 session
+    // 注意：只有路由请求（页面路由或 API 路由）才会创建新的 session
+    // 静态资源请求（JS、CSS、图片等）不会创建 session，只尝试获取已有的 session
     (req as any).getSession = async (): Promise<Session | null> => {
       // 如果已经有缓存的 session，直接返回
       if ((req as any).__session) {
         return (req as any).__session;
       }
+
+      // 判断是否是路由请求（页面路由或 API 路由）
+      // 静态资源请求不应该创建新的 session
+      const url = new URL(req.url);
+      const pathname = url.pathname;
+      const isRouteRequest = this.router
+        ? this.router.match(pathname) !== null
+        : true; // 如果 router 未初始化，默认允许创建 session（向后兼容）
 
       // 每次调用时重新从 Cookie 中读取 sessionId（不使用闭包中的值）
       // 如果 cookie 是签名的，需要使用 cookieManager.parseAsync 来解析
@@ -1708,7 +1718,7 @@ export class Application extends EventEmitter {
           (req as any).__session = session; // 同时设置缓存
           return session;
         }
-        // 如果 session 已过期或不存在，先删除旧的 cookie，然后创建新的
+        // 如果 session 已过期或不存在，先删除旧的 cookie
         // 这样可以确保旧的 sessionId 不会一直留在 cookie 中
         if (cookieManager) {
           // 删除旧的签名 cookie
@@ -1724,7 +1734,12 @@ export class Application extends EventEmitter {
         }
       }
 
-      // 如果没有 session，自动创建一个新的
+      // 如果不是路由请求（静态资源请求），不创建新的 session，直接返回 null
+      if (!isRouteRequest) {
+        return null;
+      }
+
+      // 如果是路由请求且没有 session，自动创建一个新的
       const newSession = await sessionManager.create({});
       (req as any).session = newSession;
       (req as any).__session = newSession; // 同时设置缓存
