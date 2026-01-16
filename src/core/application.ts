@@ -1737,7 +1737,8 @@ export class Application extends EventEmitter {
             const parsedCookies = await cookieManager.parseAsync(cookieHeader);
             currentSessionId = parsedCookies[cookieName] || null;
 
-            // 调试：记录 Cookie 解析结果
+            // 调试：记录 Cookie 解析结果（只在有 Cookie 或需要创建 session 时记录）
+            // 静态资源请求不需要记录这些日志
             if (cookieHeader) {
               console.log(
                 `[Session Debug] Cookie 头: ${
@@ -1751,8 +1752,6 @@ export class Application extends EventEmitter {
                     : "null"
                 }`,
               );
-            } else {
-              console.log(`[Session Debug] 请求中没有 Cookie 头`);
             }
 
             // 调试：检查 Cookie 解析情况
@@ -1825,14 +1824,16 @@ export class Application extends EventEmitter {
             });
             // 清除 currentSessionId，避免后续逻辑误判
             currentSessionId = null;
-          } else {
-            // 调试：记录没有 sessionId 的情况
-            console.log(`[Session Debug] 没有 sessionId，pathname=${pathname}`);
           }
 
           // 如果不是路由请求（静态资源请求），不创建新的 session，直接返回 null
           if (!isRouteRequest) {
             return null;
+          }
+
+          // 如果是路由请求但没有 sessionId，记录日志（用于调试）
+          if (!currentSessionId) {
+            console.log(`[Session Debug] 没有 sessionId，pathname=${pathname}`);
           }
 
           // 检查是否是健康检查或监控工具的请求（curl、wget 等）
