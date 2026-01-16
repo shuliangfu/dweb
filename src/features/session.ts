@@ -137,11 +137,19 @@ class KVSessionStore implements SessionStore {
   private kv: DenoKv | null = null;
   private keyPrefix = "session:";
   private initPromise: Promise<void> | null = null;
+  private cleanupInterval?: number;
 
   constructor() {
     // 异步初始化 KV 数据库
     // 注意：需要 --unstable-kv 标志或 Deno Deploy 环境
     this.initPromise = this.init();
+
+    // 定期清理过期 Session（作为兜底机制，虽然 KV 会自动删除过期的键）
+    this.cleanupInterval = setInterval(() => {
+      this.cleanup().catch((error) => {
+        console.error("[Session] KV cleanup error:", error);
+      });
+    }, 60 * 60 * 1000); // 每小时清理一次
   }
 
   private async init(): Promise<void> {
@@ -251,6 +259,55 @@ class KVSessionStore implements SessionStore {
       }
     } catch (err) {
       console.error("[Session] KV clear error:", err);
+    }
+  }
+
+  /**
+   * 清理过期的 Session
+   * 定期调用此方法可以删除所有已过期的 session 记录（作为兜底机制）
+   */
+  private async cleanup(): Promise<void> {
+    await this.ensureInitialized();
+
+    if (!this.kv) {
+      return;
+    }
+
+    try {
+      const prefix = [this.keyPrefix];
+      const entries = this.kv.list({ prefix });
+      const now = Date.now();
+      let deletedCount = 0;
+
+      for await (const entry of entries) {
+        if (entry.value) {
+          const sessionData = entry.value as SessionData;
+          // 检查是否过期
+          if (sessionData.expires < now) {
+            await this.kv.delete(entry.key);
+            deletedCount++;
+          }
+        }
+      }
+
+      if (deletedCount > 0) {
+        console.log(
+          `[Session] KV 清理了 ${deletedCount} 个过期 session`,
+        );
+      }
+    } catch (error) {
+      // 忽略清理错误，避免影响正常功能
+      console.error("[Session] KV cleanup error:", error);
+    }
+  }
+
+  /**
+   * 销毁清理定时器
+   */
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = undefined;
     }
   }
 }
@@ -446,11 +503,19 @@ class RedisSessionStore implements SessionStore {
     db?: number;
   };
   private keyPrefix = "session:";
+  private cleanupInterval?: number;
 
   constructor(
     config: { host: string; port: number; password?: string; db?: number },
   ) {
     this.config = config;
+
+    // 定期清理过期 Session（作为兜底机制，虽然 Redis 会自动删除过期的键）
+    this.cleanupInterval = setInterval(() => {
+      this.cleanup().catch((error) => {
+        console.error("[Session] Redis cleanup error:", error);
+      });
+    }, 60 * 60 * 1000); // 每小时清理一次
   }
 
   private getKey(sessionId: string): string {
@@ -573,6 +638,58 @@ class RedisSessionStore implements SessionStore {
     if (this.client) {
       await this.client.quit();
       this.client = null;
+    }
+  }
+
+  /**
+   * 清理过期的 Session
+   * 定期调用此方法可以删除所有已过期的 session 记录（作为兜底机制）
+   */
+  private async cleanup(): Promise<void> {
+    if (!this.client) {
+      return;
+    }
+
+    try {
+      const pattern = `${this.keyPrefix}*`;
+      const keys = await this.client.keys(pattern);
+      const now = Date.now();
+      let deletedCount = 0;
+
+      for (const key of keys) {
+        try {
+          const data = await this.client.get(key);
+          if (data) {
+            const sessionData: SessionData = JSON.parse(data);
+            // 检查是否过期
+            if (sessionData.expires < now) {
+              await this.client.del(key);
+              deletedCount++;
+            }
+          }
+        } catch {
+          // 忽略单个键的错误，继续处理下一个
+        }
+      }
+
+      if (deletedCount > 0) {
+        console.log(
+          `[Session] Redis 清理了 ${deletedCount} 个过期 session`,
+        );
+      }
+    } catch (error) {
+      // 忽略清理错误，避免影响正常功能
+      console.error("[Session] Redis cleanup error:", error);
+    }
+  }
+
+  /**
+   * 销毁清理定时器
+   */
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = undefined;
     }
   }
 }
