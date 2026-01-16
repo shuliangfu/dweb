@@ -1711,39 +1711,14 @@ export class Application extends EventEmitter {
         currentSessionId = req.getCookie(cookieName);
       }
 
-      // 调试日志：检查 cookie 读取情况
-      if (!currentSessionId) {
-        console.log(
-          `[Session] Cookie 中没有 sessionId: pathname=${pathname}, cookieHeader=${
-            req.headers.get("cookie")?.substring(0, 50) || "无"
-          }`,
-        );
-      } else {
-        console.log(
-          `[Session] 从 Cookie 读取到 sessionId: ${
-            currentSessionId.substring(0, 20)
-          }...`,
-        );
-      }
-
       // 如果 Cookie 中有 sessionId，尝试获取
       if (currentSessionId) {
         const session = await sessionManager.get(currentSessionId);
         if (session) {
-          console.log(
-            `[Session] 成功获取 session: ${
-              currentSessionId.substring(0, 20)
-            }...`,
-          );
           (req as any).session = session;
           (req as any).__session = session; // 同时设置缓存
           return session;
         }
-        console.log(
-          `[Session] Session 不存在或已过期: ${
-            currentSessionId.substring(0, 20)
-          }...`,
-        );
         // 如果 session 已过期或不存在，先删除旧的 cookie
         // 这样可以确保旧的 sessionId 不会一直留在 cookie 中
         // 注意：这里不创建新的 session，让后续逻辑处理
@@ -1768,8 +1743,6 @@ export class Application extends EventEmitter {
         return null;
       }
 
-      console.log(`[Session] 创建新的 session: pathname=${pathname}`);
-
       // 如果是路由请求且没有 session，自动创建一个新的
       const newSession = await sessionManager.create({});
       (req as any).session = newSession;
@@ -1786,21 +1759,9 @@ export class Application extends EventEmitter {
         // 使用 res.setCookie 方法设置签名 cookie
         // 注意：这里直接传递签名后的值，options 中的其他配置仍然有效
         res.setCookie(cookieName, signedValue, cookieOptions);
-        console.log(
-          `[Session] 设置签名 Cookie: ${cookieName}=${
-            newSession.id.substring(0, 20)
-          }..., options=`,
-          cookieOptions,
-        );
       } else {
         // 如果没有 cookieManager，使用 res.setCookie 方法设置普通 cookie
         res.setCookie(cookieName, newSession.id, cookieOptions);
-        console.log(
-          `[Session] 设置普通 Cookie: ${cookieName}=${
-            newSession.id.substring(0, 20)
-          }..., options=`,
-          cookieOptions,
-        );
       }
 
       return newSession;
