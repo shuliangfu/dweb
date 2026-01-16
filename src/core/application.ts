@@ -1837,16 +1837,25 @@ export class Application extends EventEmitter {
 
           // 如果是路由请求且没有 session，尝试创建一个新的
           // 使用全局锁机制，防止同一客户端的并发请求创建多个 session
-          const clientId = `${
-            req.headers.get("x-forwarded-for") ||
-            req.headers.get("x-real-ip") || "unknown"
-          }-${req.headers.get("user-agent") || "unknown"}`;
+          const clientIp = req.headers.get("x-forwarded-for") ||
+            req.headers.get("x-real-ip") ||
+            "unknown";
+          const userAgent = req.headers.get("user-agent") || "unknown";
+          const clientId = `${clientIp}-${userAgent}`;
+
+          console.log(
+            `[Session Debug] 准备创建 session，clientId=${
+              clientId.substring(0, 50)
+            }..., pathname=${pathname}, 当前锁数量=${Application.sessionCreationLocks.size}`,
+          );
 
           // 检查是否有其他请求正在为这个客户端创建 session
           const existingLock = Application.sessionCreationLocks.get(clientId);
           if (existingLock) {
             console.log(
-              `[Session Debug] 检测到并发请求，等待其他请求完成 session 创建，pathname=${pathname}`,
+              `[Session Debug] 检测到并发请求，等待其他请求完成 session 创建，pathname=${pathname}, clientId=${
+                clientId.substring(0, 50)
+              }...`,
             );
             // 等待其他请求完成，然后再次检查 Cookie（可能已经设置了）
             await existingLock;
