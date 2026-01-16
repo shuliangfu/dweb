@@ -1739,6 +1739,8 @@ export class Application extends EventEmitter {
         return null;
       }
 
+      console.log("创建新的 session", pathname);
+
       // 如果是路由请求且没有 session，自动创建一个新的
       const newSession = await sessionManager.create({});
       (req as any).session = newSession;
