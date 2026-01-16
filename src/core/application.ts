@@ -1828,6 +1828,25 @@ export class Application extends EventEmitter {
             return null;
           }
 
+          // 检查响应中是否已经设置了 dweb.session Cookie
+          // 如果已经设置了，说明这个请求的响应中已经有了 Cookie，不应该再创建新的 session
+          // 这可以避免并发请求时创建多个 session
+          const cookies = (res as any).__cookies as
+            | Array<{ name: string; value: string; options?: CookieOptions }>
+            | undefined;
+          const hasSessionCookie = cookies?.some(
+            (cookie) => cookie.name === cookieName && cookie.value !== "",
+          );
+          if (hasSessionCookie) {
+            console.log(
+              `[Session Debug] 响应中已存在 session Cookie，跳过创建新 session，pathname=${pathname}`,
+            );
+            // 如果响应中已经有 Cookie，但请求中没有 sessionId，说明是并发请求
+            // 这种情况下，我们不应该创建新 session，而是返回 null
+            // 让浏览器在下次请求时使用已设置的 Cookie
+            return null;
+          }
+
           // 如果是路由请求且没有 session，自动创建一个新的
           const newSession = await sessionManager.create({});
           (req as any).session = newSession;
