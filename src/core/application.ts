@@ -1835,12 +1835,26 @@ export class Application extends EventEmitter {
             return null;
           }
 
+          // 检查是否是健康检查或监控工具的请求（curl、wget 等）
+          // 这些工具不会保存 Cookie，创建 session 是浪费资源
+          const userAgent = req.headers.get("user-agent") || "unknown";
+          const isHealthCheck = userAgent.toLowerCase().includes("curl") ||
+            userAgent.toLowerCase().includes("wget") ||
+            userAgent.toLowerCase().includes("monitor") ||
+            userAgent.toLowerCase().includes("healthcheck") ||
+            pathname === "/health" ||
+            pathname === "/?health";
+
+          if (isHealthCheck) {
+            // 健康检查请求不创建 session，直接返回 null
+            return null;
+          }
+
           // 如果是路由请求且没有 session，尝试创建一个新的
           // 使用全局锁机制，防止同一客户端的并发请求创建多个 session
           const clientIp = req.headers.get("x-forwarded-for") ||
             req.headers.get("x-real-ip") ||
             "unknown";
-          const userAgent = req.headers.get("user-agent") || "unknown";
           const clientId = `${clientIp}-${userAgent}`;
 
           console.log(
