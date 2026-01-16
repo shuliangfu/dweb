@@ -1657,6 +1657,8 @@ export class Application extends EventEmitter {
         | "none", // 优先从 session 配置读取，其次从 cookie 配置读取，默认 "lax"
     };
 
+    console.log("cookieOptions.............................1", cookieOptions);
+
     // 添加 createSession 方法
     (req as any).createSession = async (data: Record<string, unknown> = {}) => {
       const session = await sessionManager.create(data);
@@ -1678,6 +1680,8 @@ export class Application extends EventEmitter {
 
       return session;
     };
+
+    console.log("cookieOptions.............................2", cookieOptions);
 
     // 添加 getSession 方法
     // 如果 session 不存在，自动创建一个新的 session
@@ -1762,6 +1766,8 @@ export class Application extends EventEmitter {
 
       return newSession;
     };
+
+    console.log("cookieOptions.............................3", cookieOptions);
 
     // 设置 session 属性（延迟加载）
     Object.defineProperty(req, "session", {
