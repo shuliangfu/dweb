@@ -1684,10 +1684,17 @@ export class Application extends EventEmitter {
     // 如果 session 不存在，自动创建一个新的 session
     // 注意：只有路由请求（页面路由或 API 路由）才会创建新的 session
     // 静态资源请求（JS、CSS、图片等）不会创建 session，只尝试获取已有的 session
+    // 使用 Promise 锁机制，确保同一请求中只创建一个 session（防止并发问题）
+    let getSessionPromise: Promise<Session | null> | null = null;
     (req as any).getSession = async (): Promise<Session | null> => {
       // 如果已经有缓存的 session，直接返回
       if ((req as any).__session) {
         return (req as any).__session;
+      }
+
+      // 如果正在创建 session，等待创建完成（防止并发创建多个 session）
+      if (getSessionPromise) {
+        return await getSessionPromise;
       }
 
       // 判断是否是路由请求（页面路由或 API 路由）
@@ -1762,38 +1769,48 @@ export class Application extends EventEmitter {
         return null;
       }
 
-      // 如果是路由请求且没有 session，自动创建一个新的
-      const newSession = await sessionManager.create({});
-      (req as any).session = newSession;
-      (req as any).__session = newSession; // 同时设置缓存
+      // 创建 session 的 Promise（使用锁机制）
+      getSessionPromise = (async (): Promise<Session | null> => {
+        try {
+          // 如果是路由请求且没有 session，自动创建一个新的
+          const newSession = await sessionManager.create({});
+          (req as any).session = newSession;
+          (req as any).__session = newSession; // 同时设置缓存
 
-      // 设置 Session Cookie（无论是否有 cookieManager 都要设置）
-      // 注意：使用 res.setCookie() 方法，而不是 res.setHeader("Set-Cookie", ...)
-      // 因为 setHeader 会覆盖之前的 Set-Cookie 头，而 setCookie 会追加到 cookies 数组
-      if (cookieManager) {
-        // 对于签名 cookie，需要先获取签名
-        // 签名 cookie 的 value 格式是 "value.signature"
-        const signature = await cookieManager.sign(newSession.id);
-        const signedValue = `${newSession.id}.${signature}`;
-        // 使用 res.setCookie 方法设置签名 cookie
-        // 注意：这里直接传递签名后的值，options 中的其他配置仍然有效
-        res.setCookie(cookieName, signedValue, cookieOptions);
-        console.log(
-          `[Session Debug] 创建新 session: ${
-            newSession.id.substring(0, 20)
-          }..., Cookie值: ${signedValue.substring(0, 50)}...`,
-        );
-      } else {
-        // 如果没有 cookieManager，使用 res.setCookie 方法设置普通 cookie
-        res.setCookie(cookieName, newSession.id, cookieOptions);
-        console.log(
-          `[Session Debug] 创建新 session: ${
-            newSession.id.substring(0, 20)
-          }...`,
-        );
-      }
+          // 设置 Session Cookie（无论是否有 cookieManager 都要设置）
+          // 注意：使用 res.setCookie() 方法，而不是 res.setHeader("Set-Cookie", ...)
+          // 因为 setHeader 会覆盖之前的 Set-Cookie 头，而 setCookie 会追加到 cookies 数组
+          if (cookieManager) {
+            // 对于签名 cookie，需要先获取签名
+            // 签名 cookie 的 value 格式是 "value.signature"
+            const signature = await cookieManager.sign(newSession.id);
+            const signedValue = `${newSession.id}.${signature}`;
+            // 使用 res.setCookie 方法设置签名 cookie
+            // 注意：这里直接传递签名后的值，options 中的其他配置仍然有效
+            res.setCookie(cookieName, signedValue, cookieOptions);
+            console.log(
+              `[Session Debug] 创建新 session: ${
+                newSession.id.substring(0, 20)
+              }..., Cookie值: ${signedValue.substring(0, 50)}...`,
+            );
+          } else {
+            // 如果没有 cookieManager，使用 res.setCookie 方法设置普通 cookie
+            res.setCookie(cookieName, newSession.id, cookieOptions);
+            console.log(
+              `[Session Debug] 创建新 session: ${
+                newSession.id.substring(0, 20)
+              }...`,
+            );
+          }
 
-      return newSession;
+          return newSession;
+        } finally {
+          // 清除 Promise 锁，允许下次调用时重新创建（如果需要）
+          getSessionPromise = null;
+        }
+      })();
+
+      return await getSessionPromise;
     };
 
     // 设置 session 属性（延迟加载）
