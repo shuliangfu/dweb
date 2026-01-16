@@ -1836,27 +1836,62 @@ export class Application extends EventEmitter {
             return null;
           }
 
-          // 检查响应中是否已经设置了 dweb.session Cookie
-          // 如果已经设置了，说明这个请求的响应中已经有了 Cookie，不应该再创建新的 session
-          // 这可以避免并发请求时创建多个 session
-          const cookies = (res as any).__cookies as
-            | Array<{ name: string; value: string; options?: CookieOptions }>
-            | undefined;
-          const hasSessionCookie = cookies?.some(
-            (cookie) => cookie.name === cookieName && cookie.value !== "",
-          );
-          if (hasSessionCookie) {
+          // 如果是路由请求且没有 session，尝试创建一个新的
+          // 使用全局锁机制，防止同一客户端的并发请求创建多个 session
+          const clientId = `${
+            req.headers.get("x-forwarded-for") ||
+            req.headers.get("x-real-ip") || "unknown"
+          }-${req.headers.get("user-agent") || "unknown"}`;
+
+          // 检查是否有其他请求正在为这个客户端创建 session
+          const existingLock = Application.sessionCreationLocks.get(clientId);
+          if (existingLock) {
             console.log(
-              `[Session Debug] 响应中已存在 session Cookie，跳过创建新 session，pathname=${pathname}`,
+              `[Session Debug] 检测到并发请求，等待其他请求完成 session 创建，pathname=${pathname}`,
             );
-            // 如果响应中已经有 Cookie，但请求中没有 sessionId，说明是并发请求
-            // 这种情况下，我们不应该创建新 session，而是返回 null
-            // 让浏览器在下次请求时使用已设置的 Cookie
+            // 等待其他请求完成，然后再次检查 Cookie（可能已经设置了）
+            await existingLock;
+            // 重新检查 Cookie（可能在等待期间已经设置了）
+            const cookieHeaderAfterWait = req.headers.get("cookie");
+            if (cookieManager && cookieHeaderAfterWait) {
+              const parsedCookiesAfterWait = await cookieManager.parseAsync(
+                cookieHeaderAfterWait,
+              );
+              const sessionIdAfterWait = parsedCookiesAfterWait[cookieName] ||
+                null;
+              if (sessionIdAfterWait) {
+                const sessionAfterWait = await sessionManager.get(
+                  sessionIdAfterWait,
+                );
+                if (sessionAfterWait) {
+                  (req as any).session = sessionAfterWait;
+                  (req as any).__session = sessionAfterWait;
+                  return sessionAfterWait;
+                }
+              }
+            }
+            // 如果等待后仍然没有 session，返回 null（让浏览器在下次请求时使用已设置的 Cookie）
             return null;
           }
 
-          // 如果是路由请求且没有 session，自动创建一个新的
-          const newSession = await sessionManager.create({});
+          // 创建锁，防止其他并发请求创建 session
+          const sessionCreationLock = (async (): Promise<Session | null> => {
+            try {
+              const newSession = await sessionManager.create({});
+              return newSession;
+            } finally {
+              // 创建完成后，延迟删除锁（给其他并发请求一点时间）
+              setTimeout(() => {
+                Application.sessionCreationLocks.delete(clientId);
+              }, 100); // 100ms 后删除锁
+            }
+          })();
+
+          // 保存锁
+          Application.sessionCreationLocks.set(clientId, sessionCreationLock);
+
+          // 等待 session 创建完成
+          const newSession = await sessionCreationLock;
           (req as any).session = newSession;
           (req as any).__session = newSession; // 同时设置缓存
 
