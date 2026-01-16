@@ -1735,7 +1735,13 @@ export class Application extends EventEmitter {
                 `[Session Debug] Cookie 格式错误（只有签名部分），删除它`,
               );
               // 删除格式错误的 Cookie
-              res.setCookie(cookieName, "", { ...cookieOptions, maxAge: 0 });
+              // 注意：删除 Cookie 时，必须使用与设置时完全相同的 path、domain 等选项
+              // 否则浏览器可能无法正确删除
+              res.setCookie(cookieName, "", {
+                ...cookieOptions,
+                maxAge: 0,
+                expires: new Date(0), // 设置为过去的时间，确保删除
+              });
             }
           }
         }
@@ -1756,7 +1762,12 @@ export class Application extends EventEmitter {
         // 这样可以确保旧的 sessionId 不会一直留在 cookie 中
         // 注意：这里不创建新的 session，让后续逻辑处理
         // 注意：使用 res.setCookie() 方法删除 cookie，而不是 res.setHeader("Set-Cookie", ...)
-        res.setCookie(cookieName, "", { ...cookieOptions, maxAge: 0 });
+        // 删除 Cookie 时，必须使用与设置时完全相同的 path、domain 等选项
+        res.setCookie(cookieName, "", {
+          ...cookieOptions,
+          maxAge: 0,
+          expires: new Date(0), // 设置为过去的时间，确保删除
+        });
         // 清除 currentSessionId，避免后续逻辑误判
         currentSessionId = null;
       } else {

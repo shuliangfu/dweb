@@ -611,10 +611,17 @@ export class Server implements Omit<IService, "start"> {
         }
 
         // 设置过期时间
+        // 注意：如果 maxAge 是 0（删除 Cookie），也要设置 Expires 为过去的时间
         if (opts.expires) {
           cookieString += `; Expires=${opts.expires.toUTCString()}`;
-        } else if (opts.maxAge) {
-          cookieString += `; Max-Age=${opts.maxAge}`;
+        } else if (opts.maxAge !== undefined) {
+          if (opts.maxAge === 0) {
+            // 删除 Cookie：同时设置 Max-Age=0 和 Expires 为过去的时间
+            cookieString += `; Max-Age=0`;
+            cookieString += `; Expires=${new Date(0).toUTCString()}`;
+          } else {
+            cookieString += `; Max-Age=${opts.maxAge}`;
+          }
         }
 
         // 设置 Secure
