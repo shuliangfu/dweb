@@ -1064,10 +1064,7 @@ export class Web3Client {
         errorMessage.includes("BAD_DATA")
       ) {
         throw new Error(
-          `合约调用返回空数据或执行 revert。可能原因：` +
-            `1. 合约在该地址不存在或未部署；` +
-            `2. 函数执行 revert（例如：该地址没有用户信息）；` +
-            `3. RPC 节点返回了空数据。` +
+          `合约调用返回空数据或执行 revert。` +
             `合约地址: ${contractAddress}，` +
             `函数: ${options.functionName}，` +
             `参数: ${JSON.stringify(options.args)}，` +
