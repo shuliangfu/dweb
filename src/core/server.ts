@@ -488,6 +488,9 @@ export class Server implements Omit<IService, "start"> {
       },
     };
 
+    // 将 cookies 数组附加到 response 对象上，供 createNativeResponse 使用
+    (response as any).__cookies = cookies;
+
     return response;
   }
 
