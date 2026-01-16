@@ -1807,7 +1807,8 @@ export class Application extends EventEmitter {
             console.log(
               `[Session Debug] 创建新 session: ${
                 newSession.id.substring(0, 20)
-              }..., Cookie值: ${signedValue.substring(0, 50)}...`,
+              }..., Cookie值: ${signedValue.substring(0, 50)}..., options=`,
+              cookieOptions,
             );
           } else {
             // 如果没有 cookieManager，使用 res.setCookie 方法设置普通 cookie
