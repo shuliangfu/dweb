@@ -20,7 +20,7 @@
  * MONGODB_PASSWORD=your_password
  */
 
-import { assertEquals, assertExists } from '@std/assert';
+import { assertEquals, assertExists, assert } from '@std/assert';
 import { MongoModel } from '../../../src/features/database/orm/mongo-model.ts';
 import { initDatabase, getDatabaseAsync } from '../../../src/features/database/access.ts';
 import type { DatabaseConfig } from '../../../src/features/database/types.ts';
@@ -840,6 +840,310 @@ Deno.test({
 
       const active = await TestMongoModel.findAll({ status: 'active' });
       assertEquals(active.length, 3); // 2 updated + 1 original
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - updateMany 使用普通对象（自动包装 $set）',
+  fn: async () => {
+    await setupTestDatabase();
+
+    try {
+      // 创建测试数据
+      const user1 = await TestMongoModel.create({
+        name: 'User 1',
+        email: 'user1@example.com',
+        index: 1,
+      });
+      const user2 = await TestMongoModel.create({
+        name: 'User 2',
+        email: 'user2@example.com',
+        index: 2,
+      });
+
+      // 使用普通对象更新（应该自动包装在 $set 中）
+      const updatedCount = await TestMongoModel.updateMany(
+        {},
+        { index: null },
+      );
+
+      assertEquals(updatedCount, 2);
+
+      // 验证更新结果
+      const updated1 = await TestMongoModel.find(idToString(user1._id));
+      const updated2 = await TestMongoModel.find(idToString(user2._id));
+
+      assertExists(updated1);
+      assertExists(updated2);
+      assertEquals(updated1.index, null);
+      assertEquals(updated2.index, null);
+      // 验证其他字段未改变
+      assertEquals(updated1.name, 'User 1');
+      assertEquals(updated2.name, 'User 2');
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - updateMany 使用 $set 操作符（保留结构）',
+  fn: async () => {
+    await setupTestDatabase();
+
+    try {
+      // 创建测试数据
+      const user1 = await TestMongoModel.create({
+        name: 'User 1',
+        email: 'user1@example.com',
+        index: 1,
+        score: 100,
+      });
+      const user2 = await TestMongoModel.create({
+        name: 'User 2',
+        email: 'user2@example.com',
+        index: 2,
+        score: 200,
+      });
+
+      // 使用 $set 操作符更新（应该保留操作符结构）
+      const updatedCount = await TestMongoModel.updateMany(
+        {},
+        { $set: { index: null, score: 0 } },
+      );
+
+      assertEquals(updatedCount, 2);
+
+      // 验证更新结果
+      const updated1 = await TestMongoModel.find(idToString(user1._id));
+      const updated2 = await TestMongoModel.find(idToString(user2._id));
+
+      assertExists(updated1);
+      assertExists(updated2);
+      assertEquals(updated1.index, null);
+      assertEquals(updated2.index, null);
+      assertEquals(updated1.score, 0);
+      assertEquals(updated2.score, 0);
+      // 验证其他字段未改变
+      assertEquals(updated1.name, 'User 1');
+      assertEquals(updated2.name, 'User 2');
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - updateMany 使用 $unset 操作符',
+  fn: async () => {
+    await setupTestDatabase();
+
+    try {
+      // 创建测试数据
+      const user1 = await TestMongoModel.create({
+        name: 'User 1',
+        email: 'user1@example.com',
+        index: 1,
+        extraField: 'test',
+      });
+      const user2 = await TestMongoModel.create({
+        name: 'User 2',
+        email: 'user2@example.com',
+        index: 2,
+        extraField: 'test',
+      });
+
+      // 使用 $unset 操作符删除字段
+      const updatedCount = await TestMongoModel.updateMany(
+        {},
+        { $unset: { extraField: '' } },
+      );
+
+      assertEquals(updatedCount, 2);
+
+      // 验证字段已被删除
+      const updated1 = await TestMongoModel.find(idToString(user1._id));
+      const updated2 = await TestMongoModel.find(idToString(user2._id));
+
+      assertExists(updated1);
+      assertExists(updated2);
+      assertEquals(updated1.extraField, undefined);
+      assertEquals(updated2.extraField, undefined);
+      // 验证其他字段未改变
+      assertEquals(updated1.name, 'User 1');
+      assertEquals(updated2.name, 'User 2');
+      assertEquals(updated1.index, 1);
+      assertEquals(updated2.index, 2);
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - updateMany 使用 $inc 操作符',
+  fn: async () => {
+    await setupTestDatabase();
+
+    try {
+      // 创建测试数据
+      const user1 = await TestMongoModel.create({
+        name: 'User 1',
+        email: 'user1@example.com',
+        score: 10,
+      });
+      const user2 = await TestMongoModel.create({
+        name: 'User 2',
+        email: 'user2@example.com',
+        score: 20,
+      });
+
+      // 使用 $inc 操作符递增
+      const updatedCount = await TestMongoModel.updateMany(
+        {},
+        { $inc: { score: 5 } },
+      );
+
+      assertEquals(updatedCount, 2);
+
+      // 验证递增结果
+      const updated1 = await TestMongoModel.find(idToString(user1._id));
+      const updated2 = await TestMongoModel.find(idToString(user2._id));
+
+      assertExists(updated1);
+      assertExists(updated2);
+      assertEquals(updated1.score, 15); // 10 + 5
+      assertEquals(updated2.score, 25); // 20 + 5
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - updateMany 混合使用多个操作符',
+  fn: async () => {
+    await setupTestDatabase();
+
+    try {
+      // 创建测试数据
+      const user1 = await TestMongoModel.create({
+        name: 'User 1',
+        email: 'user1@example.com',
+        index: 1,
+        score: 10,
+        extraField: 'test',
+      });
+      const user2 = await TestMongoModel.create({
+        name: 'User 2',
+        email: 'user2@example.com',
+        index: 2,
+        score: 20,
+        extraField: 'test',
+      });
+
+      // 混合使用 $set, $unset, $inc 操作符
+      const updatedCount = await TestMongoModel.updateMany(
+        {},
+        {
+          $set: { index: null },
+          $unset: { extraField: '' },
+          $inc: { score: 5 },
+        },
+      );
+
+      assertEquals(updatedCount, 2);
+
+      // 验证更新结果
+      const updated1 = await TestMongoModel.find(idToString(user1._id));
+      const updated2 = await TestMongoModel.find(idToString(user2._id));
+
+      assertExists(updated1);
+      assertExists(updated2);
+      assertEquals(updated1.index, null); // $set
+      assertEquals(updated2.index, null); // $set
+      assertEquals(updated1.extraField, undefined); // $unset
+      assertEquals(updated2.extraField, undefined); // $unset
+      assertEquals(updated1.score, 15); // $inc: 10 + 5
+      assertEquals(updated2.score, 25); // $inc: 20 + 5
+      // 验证其他字段未改变
+      assertEquals(updated1.name, 'User 1');
+      assertEquals(updated2.name, 'User 2');
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - updateMany 自动添加时间戳',
+  fn: async () => {
+    await setupTestDatabase();
+
+    try {
+      // 创建测试数据
+      const user1 = await TestMongoModel.create({
+        name: 'User 1',
+        email: 'user1@example.com',
+      });
+      const user2 = await TestMongoModel.create({
+        name: 'User 2',
+        email: 'user2@example.com',
+      });
+
+      // 获取原始更新时间
+      const original1 = await TestMongoModel.find(idToString(user1._id));
+      const original2 = await TestMongoModel.find(idToString(user2._id));
+      const originalUpdatedAt1 = original1?.updatedAt;
+      const originalUpdatedAt2 = original2?.updatedAt;
+
+      // 等待一小段时间确保时间戳不同
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // 使用普通对象更新（应该自动添加 updatedAt）
+      const updatedCount = await TestMongoModel.updateMany(
+        {},
+        { name: 'Updated Name' },
+      );
+
+      assertEquals(updatedCount, 2);
+
+      // 验证时间戳已更新
+      const updated1 = await TestMongoModel.find(idToString(user1._id));
+      const updated2 = await TestMongoModel.find(idToString(user2._id));
+
+      assertExists(updated1);
+      assertExists(updated2);
+      assertExists(updated1.updatedAt);
+      assertExists(updated2.updatedAt);
+      // 验证 updatedAt 已更新（应该比原始时间晚）
+      if (originalUpdatedAt1 && updated1.updatedAt) {
+        assert(
+          new Date(updated1.updatedAt).getTime() >
+            new Date(originalUpdatedAt1).getTime(),
+        );
+      }
+      if (originalUpdatedAt2 && updated2.updatedAt) {
+        assert(
+          new Date(updated2.updatedAt).getTime() >
+            new Date(originalUpdatedAt2).getTime(),
+        );
+      }
     } finally {
       await cleanupTestDatabase();
     }
