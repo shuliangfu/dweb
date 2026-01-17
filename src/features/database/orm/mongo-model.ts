@@ -2059,29 +2059,75 @@ export abstract class MongoModel {
   /**
    * 批量更新记录
    * @param condition 查询条件（可以是 ID、条件对象）
-   * @param data 要更新的数据对象
+   * @param data 要更新的数据对象（可以是普通对象或包含 MongoDB 原子操作符的对象）
    * @returns 更新的记录数
    *
    * @example
    * await User.updateMany({ status: 'active' }, { lastLogin: new Date() });
    * await User.updateMany({ age: { $lt: 18 } }, { isMinor: true });
+   * await User.updateMany({}, { $set: { index: null } });
    */
   static async updateMany(
     condition: MongoWhereCondition | string,
     data: Record<string, any>,
   ): Promise<number> {
-    // 处理字段并设置时间戳
-    const processedData = this.processFields(data);
+    // 自动初始化（通过 ensureAdapter）
+    await this.ensureAdapter();
+
+    // MongoDB 原子操作符列表
+    const atomicOperators = [
+      "$set",
+      "$unset",
+      "$inc",
+      "$mul",
+      "$min",
+      "$max",
+      "$currentDate",
+      "$rename",
+      "$push",
+      "$pull",
+      "$pullAll",
+      "$addToSet",
+      "$pop",
+      "$bit",
+    ];
+
+    // 检查 data 是否包含 MongoDB 原子操作符
+    const hasAtomicOperator = Object.keys(data).some((key) =>
+      atomicOperators.includes(key)
+    );
+
+    let updateDoc: Record<string, any>;
+
+    if (hasAtomicOperator) {
+      // 如果包含原子操作符，需要特殊处理
+      // 对于 $set 操作符，需要处理其内部的字段
+      updateDoc = { ...data };
+      if (updateDoc.$set) {
+        // 处理 $set 内的字段
+        const processedSetData = this.processFields(updateDoc.$set);
+        updateDoc.$set = processedSetData;
+      }
+      // 其他操作符（如 $unset, $inc 等）通常不需要字段处理，直接保留
+    } else {
+      // 如果没有原子操作符，自动包装在 $set 中
+      const processedData = this.processFields(data);
+      updateDoc = { $set: processedData };
+    }
+
+    // 设置时间戳（如果启用）
     if (this.timestamps) {
       const updatedAtField = typeof this.timestamps === "object"
         ? (this.timestamps.updatedAt || "updatedAt")
         : "updatedAt";
-      processedData[updatedAtField] = new Date();
+      // 确保 updatedAt 在 $set 中
+      if (!updateDoc.$set) {
+        updateDoc.$set = {};
+      }
+      updateDoc.$set[updatedAtField] = new Date();
     }
 
-    // 自动初始化（通过 ensureAdapter）
-    await this.ensureAdapter();
-    const adapter = this.adapter as any as MongoDBAdapter;
+    const adapter = this.adapter;
     let filter: any = {};
 
     // 如果是字符串，作为主键查询
@@ -2098,7 +2144,7 @@ export abstract class MongoModel {
 
     const result = await adapter.execute("updateMany", this.collectionName, {
       filter,
-      update: processedData,
+      update: updateDoc,
     });
 
     // MongoDB updateMany 返回结果包含 modifiedCount
