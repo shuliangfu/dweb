@@ -1368,6 +1368,164 @@ Deno.test({
 });
 
 Deno.test({
+  name: 'MongoDB ORM - updateMany 使用 $set 操作符时其他字段不会被设置为 null',
+  fn: async () => {
+    await setupTestDatabase();
+
+    try {
+      // 创建包含多个字段的测试数据
+      const user1 = await TestMongoModel.create({
+        name: 'User 1',
+        email: 'user1@example.com',
+        index: 1,
+        score: 100,
+        status: 'active',
+        age: 25,
+        description: 'Test user 1',
+      });
+      const user2 = await TestMongoModel.create({
+        name: 'User 2',
+        email: 'user2@example.com',
+        index: 2,
+        score: 200,
+        status: 'inactive',
+        age: 30,
+        description: 'Test user 2',
+      });
+
+      // 保存原始数据用于对比
+      const original1 = await TestMongoModel.find(idToString(user1._id));
+      const original2 = await TestMongoModel.find(idToString(user2._id));
+
+      // 使用 $set 操作符只更新 index 字段为 null
+      const updatedCount = await TestMongoModel.updateMany(
+        {},
+        { $set: { index: null } },
+      );
+
+      assertEquals(updatedCount, 2);
+
+      // 验证更新结果
+      const updated1 = await TestMongoModel.find(idToString(user1._id));
+      const updated2 = await TestMongoModel.find(idToString(user2._id));
+
+      assertExists(updated1);
+      assertExists(updated2);
+
+      // 验证 index 字段已更新为 null
+      assertEquals(updated1.index, null);
+      assertEquals(updated2.index, null);
+
+      // 验证其他所有字段都保持不变
+      assertEquals(updated1.name, original1?.name, 'name 字段应该保持不变');
+      assertEquals(updated1.email, original1?.email, 'email 字段应该保持不变');
+      assertEquals(updated1.score, original1?.score, 'score 字段应该保持不变');
+      assertEquals(updated1.status, original1?.status, 'status 字段应该保持不变');
+      assertEquals(updated1.age, original1?.age, 'age 字段应该保持不变');
+      assertEquals(
+        updated1.description,
+        original1?.description,
+        'description 字段应该保持不变',
+      );
+
+      assertEquals(updated2.name, original2?.name, 'name 字段应该保持不变');
+      assertEquals(updated2.email, original2?.email, 'email 字段应该保持不变');
+      assertEquals(updated2.score, original2?.score, 'score 字段应该保持不变');
+      assertEquals(updated2.status, original2?.status, 'status 字段应该保持不变');
+      assertEquals(updated2.age, original2?.age, 'age 字段应该保持不变');
+      assertEquals(
+        updated2.description,
+        original2?.description,
+        'description 字段应该保持不变',
+      );
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - updateMany 使用普通对象时其他字段不会被设置为 null',
+  fn: async () => {
+    await setupTestDatabase();
+
+    try {
+      // 创建包含多个字段的测试数据
+      const user1 = await TestMongoModel.create({
+        name: 'User 1',
+        email: 'user1@example.com',
+        index: 1,
+        score: 100,
+        status: 'active',
+        age: 25,
+        description: 'Test user 1',
+      });
+      const user2 = await TestMongoModel.create({
+        name: 'User 2',
+        email: 'user2@example.com',
+        index: 2,
+        score: 200,
+        status: 'inactive',
+        age: 30,
+        description: 'Test user 2',
+      });
+
+      // 保存原始数据用于对比
+      const original1 = await TestMongoModel.find(idToString(user1._id));
+      const original2 = await TestMongoModel.find(idToString(user2._id));
+
+      // 使用普通对象只更新 index 字段为 null（应该自动包装在 $set 中）
+      const updatedCount = await TestMongoModel.updateMany(
+        {},
+        { index: null },
+      );
+
+      assertEquals(updatedCount, 2);
+
+      // 验证更新结果
+      const updated1 = await TestMongoModel.find(idToString(user1._id));
+      const updated2 = await TestMongoModel.find(idToString(user2._id));
+
+      assertExists(updated1);
+      assertExists(updated2);
+
+      // 验证 index 字段已更新为 null
+      assertEquals(updated1.index, null);
+      assertEquals(updated2.index, null);
+
+      // 验证其他所有字段都保持不变
+      assertEquals(updated1.name, original1?.name, 'name 字段应该保持不变');
+      assertEquals(updated1.email, original1?.email, 'email 字段应该保持不变');
+      assertEquals(updated1.score, original1?.score, 'score 字段应该保持不变');
+      assertEquals(updated1.status, original1?.status, 'status 字段应该保持不变');
+      assertEquals(updated1.age, original1?.age, 'age 字段应该保持不变');
+      assertEquals(
+        updated1.description,
+        original1?.description,
+        'description 字段应该保持不变',
+      );
+
+      assertEquals(updated2.name, original2?.name, 'name 字段应该保持不变');
+      assertEquals(updated2.email, original2?.email, 'email 字段应该保持不变');
+      assertEquals(updated2.score, original2?.score, 'score 字段应该保持不变');
+      assertEquals(updated2.status, original2?.status, 'status 字段应该保持不变');
+      assertEquals(updated2.age, original2?.age, 'age 字段应该保持不变');
+      assertEquals(
+        updated2.description,
+        original2?.description,
+        'description 字段应该保持不变',
+      );
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
   name: 'MongoDB ORM - deleteMany 批量删除',
   fn: async () => {
     await setupTestDatabase();
