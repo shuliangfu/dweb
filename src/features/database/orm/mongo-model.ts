@@ -681,6 +681,75 @@ export abstract class MongoModel {
   }
 
   /**
+   * MongoDB 原子操作符列表
+   */
+  private static readonly ATOMIC_OPERATORS = [
+    "$set",
+    "$unset",
+    "$inc",
+    "$mul",
+    "$min",
+    "$max",
+    "$currentDate",
+    "$rename",
+    "$push",
+    "$pull",
+    "$pullAll",
+    "$addToSet",
+    "$pop",
+    "$bit",
+  ];
+
+  /**
+   * 构建 MongoDB 更新文档
+   * 检测是否包含原子操作符，如果没有则自动包装在 $set 中
+   * @param data 要更新的数据对象（可以是普通对象或包含 MongoDB 原子操作符的对象）
+   * @param addTimestamp 是否添加时间戳（默认 false，由调用者控制）
+   * @returns 构建好的更新文档
+   */
+  private static buildUpdateDocument(
+    data: Record<string, any>,
+    addTimestamp: boolean = false,
+  ): Record<string, any> {
+    // 检查 data 是否包含 MongoDB 原子操作符
+    const hasAtomicOperator = Object.keys(data).some((key) =>
+      this.ATOMIC_OPERATORS.includes(key)
+    );
+
+    let updateDoc: Record<string, any>;
+
+    if (hasAtomicOperator) {
+      // 如果包含原子操作符，需要特殊处理
+      // 对于 $set 操作符，需要处理其内部的字段
+      updateDoc = { ...data };
+      if (updateDoc.$set) {
+        // 处理 $set 内的字段
+        const processedSetData = this.processFields(updateDoc.$set);
+        updateDoc.$set = processedSetData;
+      }
+      // 其他操作符（如 $unset, $inc 等）通常不需要字段处理，直接保留
+    } else {
+      // 如果没有原子操作符，自动包装在 $set 中
+      const processedData = this.processFields(data);
+      updateDoc = { $set: processedData };
+    }
+
+    // 设置时间戳（如果启用）
+    if (addTimestamp && this.timestamps) {
+      const updatedAtField = typeof this.timestamps === "object"
+        ? (this.timestamps.updatedAt || "updatedAt")
+        : "updatedAt";
+      // 确保 updatedAt 在 $set 中
+      if (!updateDoc.$set) {
+        updateDoc.$set = {};
+      }
+      updateDoc.$set[updatedAtField] = new Date();
+    }
+
+    return updateDoc;
+  }
+
+  /**
    * 处理字段值（应用默认值、类型转换、getter/setter）
    * @param data 原始数据
    * @returns 处理后的数据
@@ -1625,43 +1694,89 @@ export abstract class MongoModel {
       return 0;
     }
 
-    // 处理字段（应用默认值、类型转换、验证）
-    let processedData = this.processFields(data);
+    // 检查 data 是否包含 MongoDB 原子操作符
+    const hasAtomicOperator = Object.keys(data).some((key) =>
+      this.ATOMIC_OPERATORS.includes(key)
+    );
 
-    // 自动时间戳
+    // 处理字段（应用默认值、类型转换、验证）
+    // 如果包含原子操作符，需要特殊处理；否则直接处理整个对象
+    let processedData: Record<string, any>;
+    if (hasAtomicOperator && data.$set) {
+      // 如果包含 $set 操作符，只处理 $set 内的字段
+      processedData = { ...data };
+      processedData.$set = this.processFields(data.$set);
+    } else if (hasAtomicOperator) {
+      // 如果包含其他操作符（如 $unset, $inc 等），直接保留
+      processedData = { ...data };
+    } else {
+      // 如果没有原子操作符，处理整个对象
+      processedData = this.processFields(data);
+    }
+
+    // 自动时间戳（如果启用且没有原子操作符，或包含 $set 操作符）
     if (this.timestamps) {
       const updatedAtField = typeof this.timestamps === "object"
         ? (this.timestamps.updatedAt || "updatedAt")
         : "updatedAt";
-      processedData[updatedAtField] = new Date();
+      if (hasAtomicOperator && processedData.$set) {
+        // 如果包含 $set 操作符，将时间戳添加到 $set 中
+        if (!processedData.$set) {
+          processedData.$set = {};
+        }
+        processedData.$set[updatedAtField] = new Date();
+      } else if (!hasAtomicOperator) {
+        // 如果没有原子操作符，直接添加到处理后的数据中
+        processedData[updatedAtField] = new Date();
+      }
     }
 
     // 创建临时实例用于钩子
+    // 对于包含原子操作符的情况，钩子只处理 $set 内的字段
+    const dataForHooks = hasAtomicOperator && processedData.$set
+      ? processedData.$set
+      : processedData;
     const tempInstance = new (this as any)();
-    Object.assign(tempInstance, { ...existingInstance, ...processedData });
+    Object.assign(tempInstance, { ...existingInstance, ...dataForHooks });
 
-    // beforeValidate 钩子
-    if (this.beforeValidate) {
+    // beforeValidate 钩子（仅对普通对象或 $set 内的字段生效）
+    if (this.beforeValidate && (!hasAtomicOperator || processedData.$set)) {
       await this.beforeValidate(tempInstance);
-      processedData = { ...processedData, ...tempInstance };
+      if (hasAtomicOperator && processedData.$set) {
+        processedData.$set = { ...processedData.$set, ...tempInstance };
+      } else {
+        processedData = { ...processedData, ...tempInstance };
+      }
     }
 
-    // afterValidate 钩子
-    if (this.afterValidate) {
+    // afterValidate 钩子（仅对普通对象或 $set 内的字段生效）
+    if (this.afterValidate && (!hasAtomicOperator || processedData.$set)) {
       await this.afterValidate(tempInstance);
-      processedData = { ...processedData, ...tempInstance };
+      if (hasAtomicOperator && processedData.$set) {
+        processedData.$set = { ...processedData.$set, ...tempInstance };
+      } else {
+        processedData = { ...processedData, ...tempInstance };
+      }
     }
 
-    // beforeUpdate 钩子
-    if (this.beforeUpdate) {
+    // beforeUpdate 钩子（仅对普通对象或 $set 内的字段生效）
+    if (this.beforeUpdate && (!hasAtomicOperator || processedData.$set)) {
       await this.beforeUpdate(tempInstance);
-      processedData = { ...processedData, ...tempInstance };
+      if (hasAtomicOperator && processedData.$set) {
+        processedData.$set = { ...processedData.$set, ...tempInstance };
+      } else {
+        processedData = { ...processedData, ...tempInstance };
+      }
     }
 
-    // beforeSave 钩子
-    if (this.beforeSave) {
+    // beforeSave 钩子（仅对普通对象或 $set 内的字段生效）
+    if (this.beforeSave && (!hasAtomicOperator || processedData.$set)) {
       await this.beforeSave(tempInstance);
-      processedData = { ...processedData, ...tempInstance };
+      if (hasAtomicOperator && processedData.$set) {
+        processedData.$set = { ...processedData.$set, ...tempInstance };
+      } else {
+        processedData = { ...processedData, ...tempInstance };
+      }
     }
 
     // 自动初始化（通过 ensureAdapter）
@@ -1700,9 +1815,14 @@ export abstract class MongoModel {
       if (Object.keys(projection).length > 0) {
         opts.projection = projection;
       }
+      // 构建更新文档（如果没有原子操作符，自动包装在 $set 中）
+      const updateDoc = hasAtomicOperator
+        ? processedData
+        : { $set: processedData };
+
       const result = await db.collection(this.collectionName).findOneAndUpdate(
         filter,
-        { $set: processedData },
+        updateDoc,
         opts,
       );
       if (!result) {
@@ -1728,9 +1848,14 @@ export abstract class MongoModel {
       }
       return updatedInstance as InstanceType<T>;
     } else {
+      // 构建更新文档（如果没有原子操作符，自动包装在 $set 中）
+      const updateDoc = hasAtomicOperator
+        ? processedData
+        : { $set: processedData };
+
       const result = await db.collection(this.collectionName).updateOne(
         filter,
-        { $set: processedData },
+        updateDoc,
       );
       const modifiedCount = result.modifiedCount || 0;
       if (modifiedCount > 0) {
@@ -2074,58 +2199,8 @@ export abstract class MongoModel {
     // 自动初始化（通过 ensureAdapter）
     await this.ensureAdapter();
 
-    // MongoDB 原子操作符列表
-    const atomicOperators = [
-      "$set",
-      "$unset",
-      "$inc",
-      "$mul",
-      "$min",
-      "$max",
-      "$currentDate",
-      "$rename",
-      "$push",
-      "$pull",
-      "$pullAll",
-      "$addToSet",
-      "$pop",
-      "$bit",
-    ];
-
-    // 检查 data 是否包含 MongoDB 原子操作符
-    const hasAtomicOperator = Object.keys(data).some((key) =>
-      atomicOperators.includes(key)
-    );
-
-    let updateDoc: Record<string, any>;
-
-    if (hasAtomicOperator) {
-      // 如果包含原子操作符，需要特殊处理
-      // 对于 $set 操作符，需要处理其内部的字段
-      updateDoc = { ...data };
-      if (updateDoc.$set) {
-        // 处理 $set 内的字段
-        const processedSetData = this.processFields(updateDoc.$set);
-        updateDoc.$set = processedSetData;
-      }
-      // 其他操作符（如 $unset, $inc 等）通常不需要字段处理，直接保留
-    } else {
-      // 如果没有原子操作符，自动包装在 $set 中
-      const processedData = this.processFields(data);
-      updateDoc = { $set: processedData };
-    }
-
-    // 设置时间戳（如果启用）
-    if (this.timestamps) {
-      const updatedAtField = typeof this.timestamps === "object"
-        ? (this.timestamps.updatedAt || "updatedAt")
-        : "updatedAt";
-      // 确保 updatedAt 在 $set 中
-      if (!updateDoc.$set) {
-        updateDoc.$set = {};
-      }
-      updateDoc.$set[updatedAtField] = new Date();
-    }
+    // 构建更新文档（自动检测原子操作符并处理）
+    const updateDoc = this.buildUpdateDocument(data, true);
 
     const adapter = this.adapter;
     let filter: any = {};
@@ -2758,12 +2833,9 @@ export abstract class MongoModel {
     }
 
     try {
-      if (this.timestamps) {
-        const updatedAtField = typeof this.timestamps === "object"
-          ? (this.timestamps.updatedAt || "updatedAt")
-          : "updatedAt";
-        data = { ...data, [updatedAtField]: new Date() };
-      }
+      // 构建更新文档（自动检测原子操作符并处理）
+      const updateDoc = this.buildUpdateDocument(data, true);
+
       const projection = this.buildProjection(fields);
       const opts: any = { returnDocument: options.returnDocument || "after" };
       if (Object.keys(projection).length > 0) {
@@ -2771,7 +2843,7 @@ export abstract class MongoModel {
       }
       const result = await db.collection(this.collectionName).findOneAndUpdate(
         filter,
-        { $set: data },
+        updateDoc,
         opts,
       );
 
