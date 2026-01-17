@@ -38,6 +38,7 @@ class TestMongoModel extends MongoModel {
   static override primaryKey = '_id';
   static override softDelete = true;
   static override deletedAtField = 'deletedAt';
+  static override timestamps = true; // 启用时间戳功能
 }
 
 // 测试自定义主键的模型类
