@@ -762,42 +762,54 @@ export abstract class MongoModel {
 
     const processed: Record<string, any> = {};
 
-    // 处理已定义的字段
-    for (const [fieldName, fieldDef] of Object.entries(schema)) {
-      let value = data[fieldName];
-
-      // 应用默认值
-      if (
-        (value === null || value === undefined) &&
-        fieldDef.default !== undefined
-      ) {
-        value = typeof fieldDef.default === "function"
-          ? fieldDef.default()
-          : fieldDef.default;
-      }
-
-      // 应用 setter
-      if (value !== undefined && fieldDef.set) {
-        value = fieldDef.set(value);
-      }
-
-      // 类型转换（枚举类型不需要转换）
-      if (value !== undefined && fieldDef.type && fieldDef.type !== "enum") {
-        value = this.convertType(value, fieldDef.type);
-      }
-
-      // 验证
-      if (value !== undefined) {
-        this.validateField(fieldName, value, fieldDef);
-      }
-
-      processed[fieldName] = value;
-    }
-
-    // 保留未定义的字段（如果存在）
+    // 只处理 data 中实际存在的字段（包括 null 值，但不包括 undefined）
+    // 这样可以避免将 schema 中定义但未提供的字段设置为 undefined
     for (const [key, value] of Object.entries(data)) {
-      if (!(key in processed)) {
-        processed[key] = value;
+      // 如果字段在 schema 中定义，进行特殊处理
+      if (key in schema) {
+        const fieldDef = schema[key];
+        let processedValue = value;
+
+        // 应用默认值（只有当值为 null 或 undefined 时）
+        if (
+          (processedValue === null || processedValue === undefined) &&
+          fieldDef.default !== undefined
+        ) {
+          processedValue = typeof fieldDef.default === "function"
+            ? fieldDef.default()
+            : fieldDef.default;
+        }
+
+        // 应用 setter
+        if (processedValue !== undefined && fieldDef.set) {
+          processedValue = fieldDef.set(processedValue);
+        }
+
+        // 类型转换（枚举类型不需要转换）
+        if (
+          processedValue !== undefined &&
+          fieldDef.type &&
+          fieldDef.type !== "enum"
+        ) {
+          processedValue = this.convertType(processedValue, fieldDef.type);
+        }
+
+        // 验证
+        if (processedValue !== undefined) {
+          this.validateField(key, processedValue, fieldDef);
+        }
+
+        // 只有当值不是 undefined 时才添加到结果中
+        // 注意：null 值应该保留，因为用户可能想要将字段设置为 null
+        if (processedValue !== undefined) {
+          processed[key] = processedValue;
+        }
+      } else {
+        // 如果字段不在 schema 中，直接保留原值
+        // 但也要排除 undefined 值
+        if (value !== undefined) {
+          processed[key] = value;
+        }
       }
     }
 
