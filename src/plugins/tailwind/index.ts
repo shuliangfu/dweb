@@ -163,11 +163,76 @@ async function saveCSSHashMap(
 }
 
 /**
+ * 在开发环境中注入 CSS style 标签到 HTML 响应
+ * @param res 响应对象
+ * @param cssContent CSS 内容
+ */
+function injectCSSStyle(res: Response, cssContent: string): void {
+  // 只处理 HTML 响应
+  if (!res.body || typeof res.body !== "string") {
+    return;
+  }
+
+  const contentType = res.headers.get("Content-Type") || "";
+  if (!contentType.includes("text/html")) {
+    return;
+  }
+
+  try {
+    const html = res.body as string;
+
+    // 将 CSS 内容直接注入到 style 标签中
+    // 注意：CSS 内容不需要转义，因为它在 style 标签内是安全的
+    const styleTag = `<style>${cssContent}</style>`;
+
+    // 检查 <head> 中是否有 <style> 标签
+    const styleRegex = /<style[^>]*>/i;
+    const styleMatch = html.match(styleRegex);
+
+    if (styleMatch && styleMatch.index !== undefined) {
+      // 如果找到 <style> 标签，在它之前插入新的 style 标签
+      const styleIndex = styleMatch.index;
+      res.body = html.slice(0, styleIndex) + `  ${styleTag}\n  ` +
+        html.slice(styleIndex);
+    } else if (html.includes("</head>")) {
+      // 如果没有 <style> 标签，但有 </head>，在 </head> 前面注入
+      // 注意：需要找到最后一个 </head>，因为插件可能已经在 </head> 之前注入了脚本
+      const lastHeadIndex = html.lastIndexOf("</head>");
+      if (lastHeadIndex !== -1) {
+        res.body = html.slice(0, lastHeadIndex) + `  ${styleTag}\n` +
+          html.slice(lastHeadIndex);
+      } else {
+        // 如果 lastIndexOf 失败（不应该发生），使用 replace 作为后备
+        res.body = html.replace("</head>", `  ${styleTag}\n</head>`);
+      }
+    } else if (html.includes("<head>")) {
+      // 如果没有 </head>，但有 <head>，则在 <head> 后面注入
+      res.body = html.replace("<head>", `<head>\n  ${styleTag}`);
+    } else {
+      // 如果没有 <head>，则在 <html> 后面添加 <head> 和 style
+      if (html.includes("<html>")) {
+        res.body = html.replace(
+          "<html>",
+          `<html>\n  <head>\n    ${styleTag}\n  </head>`,
+        );
+      } else {
+        // 如果连 <html> 都没有，在开头添加
+        res.body = `<head>\n  ${styleTag}\n</head>\n${html}`;
+      }
+    }
+  } catch (error) {
+    console.error("[Dev Server] 注入 CSS style 时出错:", error);
+    // 出错时不修改响应
+  }
+}
+
+/**
  * 在生产环境中注入 CSS link 标签到 HTML 响应
  * @param res 响应对象
  * @param cssPath CSS 文件路径（相对于静态资源目录）
  * @param staticPrefix 静态资源 URL 前缀（如果有）
- * @param staticDir 静态资源目录名（用于检测路径是否已包含目录前缀）
+ * @param isProduction 是否为生产环境
+ * @param cssHashMap CSS hash 映射
  */
 function injectCSSLink(
   res: Response,
@@ -251,7 +316,7 @@ function injectCSSLink(
  */
 // CSS hash 文件名映射（全局，用于运行时）
 // key: 原始文件名, value: hash 化的文件名
-let cssHashMap: Map<string, string> = new Map();
+const cssHashMap: Map<string, string> = new Map();
 
 export function tailwind(options: TailwindPluginOptions = {}): Plugin {
   const version = options.version || "v4";
@@ -397,10 +462,11 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
     },
 
     /**
-     * 响应处理钩子（在 HTML 中注入 CSS link 标签）
-     * 当 TS/TSX 路由返回 HTML 响应时，注入 <link rel="stylesheet" href="/assets/tailwind.css"> 标签
+     * 响应处理钩子（在 HTML 中注入 CSS）
+     * 开发环境：注入 style 标签（直接内联 CSS 内容）
+     * 生产环境：注入 link 标签（引用外部 CSS 文件）
      */
-    onResponse(_req: Request, res: Response) {
+    async onResponse(_req: Request, res: Response) {
       // 只处理 HTML 响应
       if (!res.body || typeof res.body !== "string") {
         return;
@@ -422,16 +488,75 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
           ? options.cssPath.slice(1)
           : options.cssPath;
 
-        // 注入 CSS link 标签到 HTML（使用 hash 化的文件名）
-        injectCSSLink(
-          res,
-          cssPath,
-          staticPrefix,
-          isProduction,
-          cssHashMap,
-        );
+        if (isProduction) {
+          // 生产环境：注入 link 标签
+          injectCSSLink(
+            res,
+            cssPath,
+            staticPrefix,
+            isProduction,
+            cssHashMap,
+          );
+        } else {
+          // 开发环境：读取 CSS 文件并注入 style 标签
+          try {
+            // 安全检查：确保文件路径在当前工作目录内（防止路径遍历攻击）
+            const cwd = Deno.cwd();
+            if (!isPathSafe(cssPath, cwd)) {
+              // 路径不安全，跳过注入
+              return;
+            }
+
+            // 读取 CSS 文件内容
+            const fileContent = await Deno.readTextFile(cssPath);
+            const fileStat = await Deno.stat(cssPath);
+
+            // 检查缓存（开发环境）
+            const cacheKey = cssPath;
+            const cached = cssCache.get(cacheKey);
+            const fileModified = fileStat.mtime?.getTime() || 0;
+
+            const cacheAge = cached ? Date.now() - cached.timestamp : Infinity;
+            const shouldUseCache = cached &&
+              cached.timestamp >= fileModified &&
+              cacheAge < 1000; // 缓存有效期 1 秒
+
+            let compiledCSS: string;
+            if (shouldUseCache) {
+              // 使用缓存
+              compiledCSS = cached.content;
+            } else {
+              // 处理 CSS
+              const processed = await processCSS(
+                fileContent,
+                cssPath,
+                version,
+                false,
+                options,
+              );
+
+              // 更新缓存
+              cssCache.set(cacheKey, {
+                content: processed.content,
+                map: processed.map,
+                timestamp: Date.now(),
+              });
+
+              compiledCSS = processed.content;
+            }
+
+            // 注入 style 标签
+            injectCSSStyle(res, compiledCSS);
+          } catch (error) {
+            console.error(
+              "[Tailwind Plugin] 开发环境读取 CSS 文件时出错:",
+              error,
+            );
+            // 出错时不修改响应，让原始响应返回
+          }
+        }
       } catch (error) {
-        console.error("[Tailwind Plugin] 注入 CSS link 时出错:", error);
+        console.error("[Tailwind Plugin] 注入 CSS 时出错:", error);
         // 出错时不修改响应，让原始响应返回
       }
     },
@@ -495,7 +620,6 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
               // 否则使用 path.relative 计算相对路径
               relativePath = path.relative(staticDir, cssFile);
             }
-            const outPath = path.join(outDir, staticDir, relativePath);
 
             // 计算 CSS 内容的 hash
             const hashCalculator = new HashCalculator();
