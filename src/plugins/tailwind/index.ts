@@ -206,17 +206,9 @@ function injectCSSStyle(
     // 注意：CSS 内容不需要转义，因为它在 style 标签内是安全的
     const styleTag = `<style>${cssContent}</style>`;
 
-    // 检查 <head> 中是否有 <style> 标签
-    const styleRegex = /<style[^>]*>/i;
-    const styleMatch = html.match(styleRegex);
-
-    if (styleMatch && styleMatch.index !== undefined) {
-      // 如果找到 <style> 标签，在它之前插入新的 style 标签
-      const styleIndex = styleMatch.index;
-      res.body = html.slice(0, styleIndex) + `  ${styleTag}\n  ` +
-        html.slice(styleIndex);
-    } else if (html.includes("</head>")) {
-      // 如果没有 <style> 标签，但有 </head>，在 </head> 前面注入
+    // 确保 style 标签注入到 <head> 内部
+    if (html.includes("</head>")) {
+      // 如果有 </head>，在 </head> 前面注入（确保在 head 内部）
       // 注意：需要找到最后一个 </head>，因为插件可能已经在 </head> 之前注入了脚本
       const lastHeadIndex = html.lastIndexOf("</head>");
       if (lastHeadIndex !== -1) {
