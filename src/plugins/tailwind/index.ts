@@ -166,8 +166,13 @@ async function saveCSSHashMap(
  * 在开发环境中注入 CSS style 标签到 HTML 响应
  * @param res 响应对象
  * @param cssContent CSS 内容
+ * @param cssFileName CSS 文件名（用于匹配和移除对应的 link 标签）
  */
-function injectCSSStyle(res: Response, cssContent: string): void {
+function injectCSSStyle(
+  res: Response,
+  cssContent: string,
+  cssFileName?: string,
+): void {
   // 只处理 HTML 响应
   if (!res.body || typeof res.body !== "string") {
     return;
@@ -179,7 +184,23 @@ function injectCSSStyle(res: Response, cssContent: string): void {
   }
 
   try {
-    const html = res.body as string;
+    let html = res.body as string;
+
+    // 在开发环境下，移除可能存在的 tailwind CSS link 标签
+    if (cssFileName) {
+      // 基于文件名精确匹配 link 标签（包括 hash 化的文件名）
+      // 匹配文件名（不包含路径），例如：tailwind.css 或 tailwind.abc123.css
+      // 转义文件名中的特殊字符用于正则表达式
+      const escapedFileName = cssFileName.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&",
+      );
+      const tailwindLinkRegex = new RegExp(
+        `<link[^>]*href\\s*=\\s*["'][^"']*${escapedFileName}[^"']*["'][^>]*>`,
+        "gi",
+      );
+      html = html.replace(tailwindLinkRegex, "");
+    }
 
     // 将 CSS 内容直接注入到 style 标签中
     // 注意：CSS 内容不需要转义，因为它在 style 标签内是安全的
@@ -545,8 +566,9 @@ export function tailwind(options: TailwindPluginOptions = {}): Plugin {
               compiledCSS = processed.content;
             }
 
-            // 注入 style 标签
-            injectCSSStyle(res, compiledCSS);
+            // 注入 style 标签（传递文件名以便移除对应的 link 标签）
+            const cssFileName = path.basename(cssPath);
+            injectCSSStyle(res, compiledCSS, cssFileName);
           } catch (error) {
             console.error(
               "[Tailwind Plugin] 开发环境读取 CSS 文件时出错:",
