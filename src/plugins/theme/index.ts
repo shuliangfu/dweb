@@ -236,65 +236,72 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
               const transitionCss =
                 `* { transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }`;
 
-              // 查找 head 中的 style 标签
-              const styleMatch = newHtml.match(
-                /<style[^>]*>([\s\S]*?)<\/style>/gi,
-              );
+              // 提取 head 部分（确保只在 head 中查找和注入）
+              const headStartIndex = newHtml.indexOf("<head>");
+              const headEndIndex = newHtml.lastIndexOf("</head>");
 
-              if (styleMatch && styleMatch.length > 0) {
-                // 如果存在 style 标签，将 CSS 插入到最后一个 style 标签的内容中
-                const lastStyleTag = styleMatch[styleMatch.length - 1];
-                const lastStyleIndex = newHtml.lastIndexOf(lastStyleTag);
-
-                // 提取 style 标签的内容（不包含标签本身）
-                const styleContentMatch = lastStyleTag.match(
-                  /<style[^>]*>([\s\S]*?)<\/style>/i,
+              if (headStartIndex !== -1 && headEndIndex !== -1) {
+                // 提取 head 内容
+                const headContent = newHtml.slice(
+                  headStartIndex + 6,
+                  headEndIndex,
                 );
-                if (styleContentMatch) {
-                  const existingContent = styleContentMatch[1];
-                  const styleTagStart = lastStyleTag.substring(
-                    0,
-                    lastStyleTag.indexOf(">") + 1,
-                  );
-                  const styleTagEnd = "</style>";
 
-                  // 检查是否已经包含过渡样式（避免重复）
-                  if (
-                    !existingContent.includes("transition: background-color")
-                  ) {
-                    const newStyleContent = styleTagStart + existingContent +
-                      "\n" + transitionCss + styleTagEnd;
-                    newHtml = newHtml.slice(0, lastStyleIndex) +
-                      newStyleContent +
-                      newHtml.slice(lastStyleIndex + lastStyleTag.length);
+                // 在 head 内容中查找 style 标签
+                const styleMatch = headContent.match(
+                  /<style[^>]*>([\s\S]*?)<\/style>/gi,
+                );
+
+                if (styleMatch && styleMatch.length > 0) {
+                  // 如果存在 style 标签，将 CSS 插入到最后一个 style 标签的内容中
+                  const lastStyleTag = styleMatch[styleMatch.length - 1];
+                  const lastStyleIndexInHead = headContent.lastIndexOf(
+                    lastStyleTag,
+                  );
+
+                  // 提取 style 标签的内容（不包含标签本身）
+                  const styleContentMatch = lastStyleTag.match(
+                    /<style[^>]*>([\s\S]*?)<\/style>/i,
+                  );
+                  if (styleContentMatch) {
+                    const existingContent = styleContentMatch[1];
+
+                    // 检查是否已经包含过渡样式（避免重复）
+                    if (
+                      !existingContent.includes("transition: background-color")
+                    ) {
+                      const styleTagStart = lastStyleTag.substring(
+                        0,
+                        lastStyleTag.indexOf(">") + 1,
+                      );
+                      const styleTagEnd = "</style>";
+                      const newStyleContent = styleTagStart + existingContent +
+                        "\n" + transitionCss + styleTagEnd;
+
+                      // 计算在整个 HTML 中的位置
+                      const lastStyleIndex = headStartIndex + 6 +
+                        lastStyleIndexInHead;
+
+                      newHtml = newHtml.slice(0, lastStyleIndex) +
+                        newStyleContent +
+                        newHtml.slice(lastStyleIndex + lastStyleTag.length);
+                    }
                   }
+                } else {
+                  // 如果 head 中不存在 style 标签，在 </head> 之前创建新的 style 标签
+                  const styleTag = `<style>${transitionCss}</style>`;
+                  newHtml = newHtml.slice(0, headEndIndex) +
+                    `  ${styleTag}\n` +
+                    newHtml.slice(headEndIndex);
                 }
-              } else {
-                // 如果不存在 style 标签，创建新的 style 标签
+              } else if (newHtml.includes("</head>")) {
+                // 如果没有找到 <head>，但有 </head>，在 </head> 之前插入
                 const styleTag = `<style>${transitionCss}</style>`;
-
-                // 查找 link[rel="stylesheet"]，在其后插入
-                const linkMatch = newHtml.match(
-                  /<link[^>]*rel=["']stylesheet["'][^>]*>/gi,
-                );
-
-                if (linkMatch && linkMatch.length > 0) {
-                  // 在最后一个 link[rel="stylesheet"] 后插入
-                  const lastLinkIndex = newHtml.lastIndexOf(
-                    linkMatch[linkMatch.length - 1],
-                  );
-                  const insertIndex = lastLinkIndex +
-                    linkMatch[linkMatch.length - 1].length;
-                  newHtml = newHtml.slice(0, insertIndex) +
-                    `\n${styleTag}` +
-                    newHtml.slice(insertIndex);
-                } else if (newHtml.includes("</head>")) {
-                  // 如果没有找到 link，在 </head> 之前插入
-                  newHtml = newHtml.replace("</head>", `${styleTag}\n</head>`);
-                } else if (newHtml.includes("<head>")) {
-                  // 如果没有 </head>，在 <head> 后插入
-                  newHtml = newHtml.replace("<head>", `<head>\n${styleTag}`);
-                }
+                newHtml = newHtml.replace("</head>", `  ${styleTag}\n</head>`);
+              } else if (newHtml.includes("<head>")) {
+                // 如果没有 </head>，但有 <head>，在 <head> 后插入
+                const styleTag = `<style>${transitionCss}</style>`;
+                newHtml = newHtml.replace("<head>", `<head>\n  ${styleTag}`);
               }
             }
 
