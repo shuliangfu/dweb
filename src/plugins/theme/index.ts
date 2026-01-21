@@ -236,18 +236,23 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
               const transitionCss =
                 `* { transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }`;
 
-              // 提取 head 部分（确保只在 head 中查找和注入）
+              // 严格提取 head 部分（确保只在 head 中查找和注入）
+              // 使用 indexOf 找到第一个 <head>，lastIndexOf 找到最后一个 </head>
               const headStartIndex = newHtml.indexOf("<head>");
               const headEndIndex = newHtml.lastIndexOf("</head>");
 
-              if (headStartIndex !== -1 && headEndIndex !== -1) {
-                // 提取 head 内容
+              // 确保 head 标签存在且有效（headEndIndex 必须在 headStartIndex 之后）
+              if (
+                headStartIndex !== -1 && headEndIndex !== -1 &&
+                headEndIndex > headStartIndex
+              ) {
+                // 提取 head 内容（不包含 <head> 和 </head> 标签本身）
                 const headContent = newHtml.slice(
-                  headStartIndex + 6,
+                  headStartIndex + 6, // <head> 长度为 6
                   headEndIndex,
                 );
 
-                // 在 head 内容中查找 style 标签
+                // 只在 head 内容中查找 style 标签（不会匹配到 body 中的 style）
                 const styleMatch = headContent.match(
                   /<style[^>]*>([\s\S]*?)<\/style>/gi,
                 );
@@ -259,32 +264,38 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
                     lastStyleTag,
                   );
 
-                  // 提取 style 标签的内容（不包含标签本身）
-                  const styleContentMatch = lastStyleTag.match(
-                    /<style[^>]*>([\s\S]*?)<\/style>/i,
-                  );
-                  if (styleContentMatch) {
-                    const existingContent = styleContentMatch[1];
+                  // 确保找到的 style 标签确实在 head 内容中
+                  if (lastStyleIndexInHead !== -1) {
+                    // 提取 style 标签的内容（不包含标签本身）
+                    const styleContentMatch = lastStyleTag.match(
+                      /<style[^>]*>([\s\S]*?)<\/style>/i,
+                    );
+                    if (styleContentMatch) {
+                      const existingContent = styleContentMatch[1];
 
-                    // 检查是否已经包含过渡样式（避免重复）
-                    if (
-                      !existingContent.includes("transition: background-color")
-                    ) {
-                      const styleTagStart = lastStyleTag.substring(
-                        0,
-                        lastStyleTag.indexOf(">") + 1,
-                      );
-                      const styleTagEnd = "</style>";
-                      const newStyleContent = styleTagStart + existingContent +
-                        "\n" + transitionCss + styleTagEnd;
+                      // 检查是否已经包含过渡样式（避免重复）
+                      if (
+                        !existingContent.includes(
+                          "transition: background-color",
+                        )
+                      ) {
+                        const styleTagStart = lastStyleTag.substring(
+                          0,
+                          lastStyleTag.indexOf(">") + 1,
+                        );
+                        const styleTagEnd = "</style>";
+                        const newStyleContent = styleTagStart +
+                          existingContent +
+                          "\n" + transitionCss + styleTagEnd;
 
-                      // 计算在整个 HTML 中的位置
-                      const lastStyleIndex = headStartIndex + 6 +
-                        lastStyleIndexInHead;
+                        // 计算在整个 HTML 中的位置（相对于原始 HTML）
+                        const lastStyleIndex = headStartIndex + 6 +
+                          lastStyleIndexInHead;
 
-                      newHtml = newHtml.slice(0, lastStyleIndex) +
-                        newStyleContent +
-                        newHtml.slice(lastStyleIndex + lastStyleTag.length);
+                        newHtml = newHtml.slice(0, lastStyleIndex) +
+                          newStyleContent +
+                          newHtml.slice(lastStyleIndex + lastStyleTag.length);
+                      }
                     }
                   }
                 } else {
@@ -295,7 +306,7 @@ export function theme(options: ThemePluginOptions = {}): Plugin {
                     newHtml.slice(headEndIndex);
                 }
               } else if (newHtml.includes("</head>")) {
-                // 如果没有找到 <head>，但有 </head>，在 </head> 之前插入
+                // 如果没有找到有效的 <head>，但有 </head>，在 </head> 之前插入
                 const styleTag = `<style>${transitionCss}</style>`;
                 newHtml = newHtml.replace("</head>", `  ${styleTag}\n</head>`);
               } else if (newHtml.includes("<head>")) {

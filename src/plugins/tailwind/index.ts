@@ -186,38 +186,66 @@ function injectCSSStyle(
   try {
     let html = res.body as string;
 
-    // 在开发环境下，移除可能存在的 tailwind CSS link 标签
+    // 在开发环境下，移除可能存在的 tailwind CSS link 标签（只在 head 中移除）
     if (cssFileName) {
-      // 基于文件名精确匹配 link 标签（包括 hash 化的文件名）
-      // 匹配文件名（不包含路径），例如：tailwind.css 或 tailwind.abc123.css
-      // 转义文件名中的特殊字符用于正则表达式
-      const escapedFileName = cssFileName.replace(
-        /[.*+?^${}()|[\]\\]/g,
-        "\\$&",
-      );
-      const tailwindLinkRegex = new RegExp(
-        `<link[^>]*href\\s*=\\s*["'][^"']*${escapedFileName}[^"']*["'][^>]*>`,
-        "gi",
-      );
-      html = html.replace(tailwindLinkRegex, "");
+      // 严格提取 head 部分
+      const headStartIndex = html.indexOf("<head>");
+      const headEndIndex = html.lastIndexOf("</head>");
+
+      // 如果 head 标签存在且有效，只在 head 中移除 link 标签
+      if (
+        headStartIndex !== -1 && headEndIndex !== -1 &&
+        headEndIndex > headStartIndex
+      ) {
+        // 提取 head 内容
+        const headContent = html.slice(
+          headStartIndex + 6,
+          headEndIndex,
+        );
+
+        // 基于文件名精确匹配 link 标签（包括 hash 化的文件名）
+        // 匹配文件名（不包含路径），例如：tailwind.css 或 tailwind.abc123.css
+        // 转义文件名中的特殊字符用于正则表达式
+        const escapedFileName = cssFileName.replace(
+          /[.*+?^${}()|[\]\\]/g,
+          "\\$&",
+        );
+        const tailwindLinkRegex = new RegExp(
+          `<link[^>]*href\\s*=\\s*["'][^"']*${escapedFileName}[^"']*["'][^>]*>`,
+          "gi",
+        );
+
+        // 只在 head 内容中查找和移除 link 标签
+        const newHeadContent = headContent.replace(tailwindLinkRegex, "");
+
+        // 如果 head 内容有变化，更新 HTML
+        if (newHeadContent !== headContent) {
+          html = html.slice(0, headStartIndex + 6) +
+            newHeadContent +
+            html.slice(headEndIndex);
+        }
+      }
     }
 
     // 将 CSS 内容直接注入到 style 标签中
     // 注意：CSS 内容不需要转义，因为它在 style 标签内是安全的
     const styleTag = `<style>${cssContent}</style>`;
 
-    // 确保 style 标签注入到 <head> 内部
-    if (html.includes("</head>")) {
-      // 如果有 </head>，在 </head> 前面注入（确保在 head 内部）
-      // 注意：需要找到最后一个 </head>，因为插件可能已经在 </head> 之前注入了脚本
-      const lastHeadIndex = html.lastIndexOf("</head>");
-      if (lastHeadIndex !== -1) {
-        res.body = html.slice(0, lastHeadIndex) + `  ${styleTag}\n` +
-          html.slice(lastHeadIndex);
-      } else {
-        // 如果 lastIndexOf 失败（不应该发生），使用 replace 作为后备
-        res.body = html.replace("</head>", `  ${styleTag}\n</head>`);
-      }
+    // 严格确保 style 标签注入到 <head> 内部
+    const headStartIndex = html.indexOf("<head>");
+    const headEndIndex = html.lastIndexOf("</head>");
+
+    // 确保 head 标签存在且有效
+    if (
+      headStartIndex !== -1 && headEndIndex !== -1 &&
+      headEndIndex > headStartIndex
+    ) {
+      // 在 </head> 前面注入（确保在 head 内部）
+      res.body = html.slice(0, headEndIndex) + `  ${styleTag}\n` +
+        html.slice(headEndIndex);
+    } else if (html.includes("</head>")) {
+      // 如果没有找到有效的 <head>，但有 </head>，在 </head> 之前插入
+      res.body = html.replace("</head>", `  ${styleTag}\n</head>`);
     } else if (html.includes("<head>")) {
       // 如果没有 </head>，但有 <head>，则在 <head> 后面注入
       res.body = html.replace("<head>", `<head>\n  ${styleTag}`);
