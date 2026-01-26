@@ -131,7 +131,7 @@ function loadMongoDBConfigFromEnv(): DatabaseConfig | null {
         timeoutMS,
         maxRetries: 3,
         retryDelay: 1000,
-        authSource,
+        authSource
       },
     };
   }
@@ -166,6 +166,7 @@ function loadMongoDBConfigFromEnv(): DatabaseConfig | null {
  */
 async function checkMongoDBConnection(): Promise<boolean> {
   const config = loadMongoDBConfigFromEnv();
+
   if (!config) {
     console.log('⚠️  未找到 MongoDB 配置，请检查 .env 文件');
     return false;
@@ -258,6 +259,8 @@ async function cleanupTestDatabase(): Promise<void> {
   try {
     const db = databaseAdapter.getDatabase();
     if (db) {
+      // 强制删除所有记录（包括软删除的），确保完全清理
+      // 直接使用 MongoDB 的 deleteMany 会物理删除所有记录
       await db.collection('test_users').deleteMany({});
     }
   } catch (error) {
@@ -1673,6 +1676,383 @@ Deno.test({
       const page2 = await TestMongoModel.paginate({}, 2, 5);
       assertEquals(page2.data.length, 5);
       assertEquals(page2.page, 2);
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - paginate 带搜索条件的分页查询',
+  fn: async () => {
+    await setupTestDatabase();
+    // 先清理可能存在的旧数据
+    await cleanupTestDatabase();
+
+    try {
+      // 创建测试数据：不同状态和年龄的用户
+      await TestMongoModel.create({ name: 'Active User 1', status: 'active', age: 25 });
+      await TestMongoModel.create({ name: 'Active User 2', status: 'active', age: 30 });
+      await TestMongoModel.create({ name: 'Active User 3', status: 'active', age: 35 });
+      await TestMongoModel.create({ name: 'Inactive User 1', status: 'inactive', age: 20 });
+      await TestMongoModel.create({ name: 'Inactive User 2', status: 'inactive', age: 40 });
+      await TestMongoModel.create({ name: 'Pending User', status: 'pending', age: 28 });
+
+      // 测试1: 基本搜索条件（按状态筛选）
+      const activePage = await TestMongoModel.paginate({ status: 'active' }, 1, 2);
+      assertEquals(activePage.total, 3); // 3个活跃用户
+      assertEquals(activePage.data.length, 2); // 每页2条
+      assertEquals(activePage.page, 1);
+      assertEquals(activePage.totalPages, 2);
+      // 验证所有返回的记录都是活跃状态
+      activePage.data.forEach((user) => {
+        assertEquals(user.status, 'active');
+      });
+
+      // 测试2: 使用操作符的搜索（年龄大于等于30）
+      const agePage = await TestMongoModel.paginate({ age: { $gte: 30 } }, 1, 10);
+      assertEquals(agePage.total, 3); // 3个用户年龄>=30
+      agePage.data.forEach((user) => {
+        assert(user.age >= 30, `用户年龄应该 >= 30，实际: ${user.age}`);
+      });
+
+      // 测试3: 使用 $in 操作符的搜索
+      const statusPage = await TestMongoModel.paginate(
+        { status: { $in: ['active', 'pending'] } },
+        1,
+        10,
+      );
+      assertEquals(statusPage.total, 4); // 3个active + 1个pending
+      statusPage.data.forEach((user) => {
+        assert(
+          user.status === 'active' || user.status === 'pending',
+          `状态应该是 active 或 pending，实际: ${user.status}`,
+        );
+      });
+
+      // 测试4: 组合多个条件的搜索（状态为active且年龄>=30）
+      const combinedPage = await TestMongoModel.paginate(
+        { status: 'active', age: { $gte: 30 } },
+        1,
+        10,
+      );
+      assertEquals(combinedPage.total, 2); // 2个用户满足条件
+      combinedPage.data.forEach((user) => {
+        assertEquals(user.status, 'active');
+        assert(user.age >= 30, `用户年龄应该 >= 30，实际: ${user.age}`);
+      });
+
+      // 测试5: 带搜索条件和排序的分页
+      const sortedPage = await TestMongoModel.paginate(
+        { status: 'active' },
+        1,
+        2,
+        { age: 'desc' }, // 按年龄倒序
+      );
+      assertEquals(sortedPage.total, 3);
+      assertEquals(sortedPage.data.length, 2);
+      // 验证排序：第一页应该是年龄最大的两个
+      if (sortedPage.data.length >= 2) {
+        assert(
+          sortedPage.data[0].age >= sortedPage.data[1].age,
+          '应该按年龄倒序排列',
+        );
+      }
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - paginate 使用 $regex 模糊查询的分页',
+  fn: async () => {
+    await setupTestDatabase();
+    // 先清理可能存在的旧数据
+    await cleanupTestDatabase();
+
+    try {
+      // 创建测试数据：不同名称的用户
+      await TestMongoModel.create({ name: 'John Doe', email: 'john@example.com' });
+      await TestMongoModel.create({ name: 'Jane Smith', email: 'jane@example.com' });
+      await TestMongoModel.create({ name: 'Johnny Walker', email: 'johnny@example.com' });
+      await TestMongoModel.create({ name: 'Bob Johnson', email: 'bob@example.com' });
+      await TestMongoModel.create({ name: 'Alice Johnson', email: 'alice@example.com' });
+      await TestMongoModel.create({ name: 'John Smith', email: 'johnsmith@example.com' });
+
+      // 测试1: 使用 $regex 进行模糊查询（名称以 "John" 开头）
+      // 注意：使用 ^ 来匹配以 "John" 开头的名字，避免匹配 "Johnson"
+      const johnPage = await TestMongoModel.paginate(
+        { name: { $regex: '^John', $options: 'i' } }, // 'i' 表示不区分大小写，^ 表示开头
+        1,
+        10,
+      );
+      assertEquals(johnPage.total, 3); // John Doe, Johnny Walker, John Smith (不包含 Johnson)
+      johnPage.data.forEach((user) => {
+        assert(
+          user.name.toLowerCase().includes('john'),
+          `用户名应该包含 "john"，实际: ${user.name}`,
+        );
+      });
+
+      // 测试2: 使用 $regex 进行模糊查询（邮箱包含 "example"）
+      const emailPage = await TestMongoModel.paginate(
+        { email: { $regex: 'example', $options: 'i' } },
+        1,
+        5,
+      );
+      assertEquals(emailPage.total, 6); // 所有用户邮箱都包含 "example"
+      assertEquals(emailPage.data.length, 5); // 每页5条
+
+      // 测试3: 使用 $regex 进行模糊查询（名称以 "John" 开头）
+      const startsWithPage = await TestMongoModel.paginate(
+        { name: { $regex: '^John', $options: 'i' } }, // ^ 表示开头
+        1,
+        10,
+      );
+      assertEquals(startsWithPage.total, 3); // John Doe, Johnny Walker, John Smith
+      startsWithPage.data.forEach((user) => {
+        assert(
+          user.name.toLowerCase().startsWith('john'),
+          `用户名应该以 "john" 开头，实际: ${user.name}`,
+        );
+      });
+
+      // 测试4: 使用 $regex 进行模糊查询（名称以 "son" 结尾）
+      const endsWithPage = await TestMongoModel.paginate(
+        { name: { $regex: 'son$', $options: 'i' } }, // $ 表示结尾
+        1,
+        10,
+      );
+      assertEquals(endsWithPage.total, 2); // Bob Johnson, Alice Johnson
+      endsWithPage.data.forEach((user) => {
+        assert(
+          user.name.toLowerCase().endsWith('son'),
+          `用户名应该以 "son" 结尾，实际: ${user.name}`,
+        );
+      });
+
+      // 测试5: 使用 $regex 进行模糊查询 + 分页
+      const regexPage1 = await TestMongoModel.paginate(
+        { name: { $regex: '^John', $options: 'i' } }, // 匹配以 "John" 开头的名字
+        1,
+        2, // 每页2条
+      );
+      assertEquals(regexPage1.total, 3);
+      assertEquals(regexPage1.data.length, 2);
+      assertEquals(regexPage1.page, 1);
+      assertEquals(regexPage1.totalPages, 2);
+
+      const regexPage2 = await TestMongoModel.paginate(
+        { name: { $regex: '^John', $options: 'i' } }, // 匹配以 "John" 开头的名字
+        2,
+        2, // 每页2条
+      );
+      assertEquals(regexPage2.total, 3);
+      assertEquals(regexPage2.data.length, 1); // 第二页只有1条
+      assertEquals(regexPage2.page, 2);
+
+      // 测试6: 使用 $regex 进行模糊查询 + 排序
+      const regexSortedPage = await TestMongoModel.paginate(
+        { name: { $regex: '^John', $options: 'i' } }, // 匹配以 "John" 开头的名字
+        1,
+        10,
+        { name: 'asc' }, // 按名称升序
+      );
+      assertEquals(regexSortedPage.total, 3);
+      // 验证排序（应该按字母顺序）
+      if (regexSortedPage.data.length >= 2) {
+        assert(
+          regexSortedPage.data[0].name <= regexSortedPage.data[1].name,
+          '应该按名称升序排列',
+        );
+      }
+    } finally {
+      await cleanupTestDatabase();
+    }
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: 'MongoDB ORM - paginate 使用 $or 和 $regex 实现 title like abc 或 content like abc',
+  fn: async () => {
+    await setupTestDatabase();
+    // 先清理可能存在的旧数据
+    await cleanupTestDatabase();
+
+    try {
+      // 创建测试数据：包含 title 和 content 字段
+      await TestMongoModel.create({
+        title: 'First Article',
+        content: 'This is about JavaScript',
+        status: 'published',
+      });
+      await TestMongoModel.create({
+        title: 'JavaScript Guide',
+        content: 'Learn JavaScript basics',
+        status: 'published',
+      });
+      await TestMongoModel.create({
+        title: 'Python Tutorial',
+        content: 'This is about Python programming',
+        status: 'published',
+      });
+      await TestMongoModel.create({
+        title: 'Web Development',
+        content: 'JavaScript and HTML',
+        status: 'draft',
+      });
+      await TestMongoModel.create({
+        title: 'Node.js Guide',
+        content: 'Server-side JavaScript',
+        status: 'published',
+      });
+
+      // 测试1: title like 'JavaScript' 或 content like 'JavaScript'
+      // 使用 $or 操作符实现 OR 条件
+      const result1 = await TestMongoModel.paginate(
+        {
+          $or: [
+            { title: { $regex: 'JavaScript', $options: 'i' } },
+            { content: { $regex: 'JavaScript', $options: 'i' } },
+          ],
+        },
+        1,
+        10,
+      );
+      assertEquals(result1.total, 4); // 4条记录：title或content包含JavaScript (排除 Python Tutorial)
+      result1.data.forEach((item) => {
+        const titleMatch = item.title?.toLowerCase().includes('javascript');
+        const contentMatch = item.content?.toLowerCase().includes('javascript');
+        assert(
+          titleMatch || contentMatch,
+          `title 或 content 应该包含 "javascript"，实际: title=${item.title}, content=${item.content}`,
+        );
+      });
+
+      // 测试2: title like 'Guide' 或 content like 'Guide'
+      const result2 = await TestMongoModel.paginate(
+        {
+          $or: [
+            { title: { $regex: 'Guide', $options: 'i' } },
+            { content: { $regex: 'Guide', $options: 'i' } },
+          ],
+        },
+        1,
+        10,
+      );
+      assertEquals(result2.total, 2); // JavaScript Guide, Node.js Guide
+      result2.data.forEach((item) => {
+        const titleMatch = item.title?.toLowerCase().includes('guide');
+        const contentMatch = item.content?.toLowerCase().includes('guide');
+        assert(
+          titleMatch || contentMatch,
+          `title 或 content 应该包含 "guide"`,
+        );
+      });
+
+      // 测试3: 组合条件：status='published' AND (title like 'JavaScript' 或 content like 'JavaScript')
+      const result3 = await TestMongoModel.paginate(
+        {
+          status: 'published',
+          $or: [
+            { title: { $regex: 'JavaScript', $options: 'i' } },
+            { content: { $regex: 'JavaScript', $options: 'i' } },
+          ],
+        },
+        1,
+        10,
+      );
+      assertEquals(result3.total, 3); // 3条已发布且包含JavaScript的记录
+      result3.data.forEach((item) => {
+        assertEquals(item.status, 'published');
+        const titleMatch = item.title?.toLowerCase().includes('javascript');
+        const contentMatch = item.content?.toLowerCase().includes('javascript');
+        assert(
+          titleMatch || contentMatch,
+          `title 或 content 应该包含 "javascript"`,
+        );
+      });
+
+      // 测试4: 使用 $or 进行模糊查询 + 分页
+      const result4 = await TestMongoModel.paginate(
+        {
+          $or: [
+            { title: { $regex: 'JavaScript', $options: 'i' } },
+            { content: { $regex: 'JavaScript', $options: 'i' } },
+          ],
+        },
+        1,
+        2, // 每页2条
+      );
+      assertEquals(result4.total, 4);
+      assertEquals(result4.data.length, 2);
+      assertEquals(result4.page, 1);
+      assertEquals(result4.totalPages, 2);
+
+      const result5 = await TestMongoModel.paginate(
+        {
+          $or: [
+            { title: { $regex: 'JavaScript', $options: 'i' } },
+            { content: { $regex: 'JavaScript', $options: 'i' } },
+          ],
+        },
+        2,
+        2, // 每页2条
+      );
+      assertEquals(result5.total, 4);
+      assertEquals(result5.data.length, 2);
+      assertEquals(result5.page, 2);
+
+      // 测试5: 使用 $or 进行模糊查询 + 排序
+      const result6 = await TestMongoModel.paginate(
+        {
+          $or: [
+            { title: { $regex: 'JavaScript', $options: 'i' } },
+            { content: { $regex: 'JavaScript', $options: 'i' } },
+          ],
+        },
+        1,
+        10,
+        { title: 'asc' }, // 按标题升序
+      );
+      assertEquals(result6.total, 4);
+      // 验证排序
+      if (result6.data.length >= 2) {
+        assert(
+          result6.data[0].title <= result6.data[1].title,
+          '应该按标题升序排列',
+        );
+      }
+
+      // 测试6: 多个字段的 OR 条件（title like 'abc' 或 content like 'abc' 或 status like 'abc'）
+      const result7 = await TestMongoModel.paginate(
+        {
+          $or: [
+            { title: { $regex: 'Guide', $options: 'i' } },
+            { content: { $regex: 'Guide', $options: 'i' } },
+            { status: { $regex: 'Guide', $options: 'i' } },
+          ],
+        },
+        1,
+        10,
+      );
+      assertEquals(result7.total, 2); // 只有 title 或 content 包含 Guide，status 不包含
+      result7.data.forEach((item) => {
+        const titleMatch = item.title?.toLowerCase().includes('guide');
+        const contentMatch = item.content?.toLowerCase().includes('guide');
+        const statusMatch = item.status?.toLowerCase().includes('guide');
+        assert(
+          titleMatch || contentMatch || statusMatch,
+          `title、content 或 status 应该包含 "guide"`,
+        );
+      });
     } finally {
       await cleanupTestDatabase();
     }

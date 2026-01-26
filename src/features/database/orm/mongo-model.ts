@@ -1072,6 +1072,25 @@ export abstract class MongoModel {
       };
     }
     // 排除已软删除的记录：deletedAt 不存在或为 null
+    // 如果原始条件已经包含 $or，需要将软删除条件合并到 $or 中
+    if (filter.$or && Array.isArray(filter.$or)) {
+      // 将软删除条件添加到 $or 数组的每个条件中（使用 $and）
+      // 或者创建一个新的 $and 条件，包含原始 $or 和软删除条件
+      const { $or, ...restFilter } = filter;
+      return {
+        ...restFilter,
+        $and: [
+          { $or },
+          {
+            $or: [
+              { [this.deletedAtField]: { $exists: false } },
+              { [this.deletedAtField]: null },
+            ],
+          },
+        ],
+      };
+    }
+    // 如果原始条件不包含 $or，直接添加软删除条件
     return {
       ...filter,
       $or: [
