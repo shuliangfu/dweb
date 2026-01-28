@@ -1078,14 +1078,25 @@ export class Command {
     config.isProduction = false;
 
     // 合并命令级日志配置（如 setLogging({ file: 'logs/cli.log' })），便于配置日志文件路径等
+    // 使用深层合并，避免命令只覆盖 file 时把项目的 rotation、level 等整块覆盖掉
     if (this.loggingConfig && Object.keys(this.loggingConfig).length > 0) {
-      config.logging = { ...(config.logging ?? {}), ...this.loggingConfig };
+      const base = config.logging ?? {};
+      const overrides = this.loggingConfig;
+      config.logging = {
+        ...base,
+        ...overrides,
+        // rotation 等嵌套对象做浅合并，保留项目里未在命令中指定的字段
+        rotation: base.rotation || overrides.rotation
+          ? { ...(base.rotation ?? {}), ...(overrides.rotation ?? {}) }
+          : undefined,
+        maskFields: overrides.maskFields ?? base.maskFields,
+      };
     }
 
     this.app = new Application();
 
     const configManager = this.app.getService<ConfigManager>("configManager");
-    configManager?.setConfig(config);
+    configManager.setConfig(config);
 
     await this.app.initializeConsole();
 

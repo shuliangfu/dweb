@@ -223,7 +223,7 @@ export class Application extends EventEmitter {
       this.context.setIsProduction(config.isProduction ?? false);
 
       // 2. 注册服务
-      await this.registerServicesConsole();
+      await this.registerServices();
 
       // 3. 启动已注册的服务（确保所有服务都已初始化）
       // 在 console 模式下，虽然 DatabaseManager 在 registerServices 中已初始化，
@@ -1065,49 +1065,6 @@ export class Application extends EventEmitter {
     const { setLogger } = await import("../features/logger.ts");
     setLogger(logger);
 
-    // 注册 Monitor 服务（核心服务，始终注册）
-    const { Monitor } = await import("../features/monitoring.ts");
-    const monitor = new Monitor();
-    this.serviceContainer.registerSingleton("monitor", () => monitor);
-
-    // 为了向后兼容，设置全局默认监控器
-    const { setMonitor } = await import("../features/monitoring.ts");
-    setMonitor(monitor);
-
-    if (config.database) {
-      // 传递数据库配置给 DatabaseManager 构造函数
-      // 这样 initDatabaseFromConfig 会使用传入的配置，确保使用正确的配置
-      const databaseManager = new DatabaseManager(config.database);
-      // 初始化数据库管理器（会自动连接数据库）
-      await databaseManager.initialize();
-      // 注册到服务容器
-      this.serviceContainer.registerSingleton(
-        "databaseManager",
-        () => databaseManager,
-      );
-    }
-
-    // 注册 Cookie 管理器（如果配置了）
-    if (config.cookie) {
-      const cookieManager = new CookieManager(config.cookie.secret);
-      this.serviceContainer.registerSingleton(
-        "cookieManager",
-        () => cookieManager,
-      );
-    }
-
-    // 注册 Session 管理器（如果配置了）
-    if (config.session) {
-      const sessionManager = new SessionManager(config.session);
-      this.serviceContainer.registerSingleton(
-        "sessionManager",
-        () => sessionManager,
-      );
-    }
-  }
-
-  private async registerServicesConsole(): Promise<void> {
-    const config = this.configManager.getConfig();
     // 注册 Monitor 服务（核心服务，始终注册）
     const { Monitor } = await import("../features/monitoring.ts");
     const monitor = new Monitor();
