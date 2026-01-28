@@ -3586,6 +3586,19 @@ export abstract class MongoModel {
     condition: MongoWhereCondition | string,
     options?: { returnIds?: boolean },
   ): Promise<number | { count: number; ids: any[] }> {
+    // 防止误删全表：禁止空对象条件（会物理删除集合内所有文档）
+    if (
+      condition !== undefined &&
+      condition !== null &&
+      typeof condition === "object" &&
+      !Array.isArray(condition) &&
+      Object.keys(condition).length === 0
+    ) {
+      throw new Error(
+        "[MongoModel] forceDelete({}) 会删除集合内全部文档，已禁止。若确需清空集合，请显式调用 truncate()。",
+      );
+    }
+
     // 自动初始化（懒加载）
     // 自动初始化（通过 ensureAdapter）
     await this.ensureAdapter();

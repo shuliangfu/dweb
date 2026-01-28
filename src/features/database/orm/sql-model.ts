@@ -2647,6 +2647,19 @@ export abstract class SQLModel {
     condition: WhereCondition | number | string,
     options?: { returnIds?: boolean },
   ): Promise<number | { count: number; ids: any[] }> {
+    // 防止误删全表：禁止空对象条件（会物理删除表内所有行）
+    if (
+      condition !== undefined &&
+      condition !== null &&
+      typeof condition === "object" &&
+      !Array.isArray(condition) &&
+      Object.keys(condition).length === 0
+    ) {
+      throw new Error(
+        "[SQLModel] forceDelete({}) 会删除表内全部行，已禁止。若确需清空表，请显式调用 truncate()。",
+      );
+    }
+
     // 自动初始化（通过 ensureAdapter）
     await this.ensureAdapter();
     const { where, params } = this.buildWhereClause(condition, true, false);

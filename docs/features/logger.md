@@ -263,6 +263,42 @@ const logger = new Logger({
 - `app.log.2` - 第二新的轮转文件
 - ...
 
+## 通过 AppConfig 配置日志
+
+在 `dweb.config.ts` 中可通过 `logging` 配置日志级别、输出目标和文件路径。框架会根据运行环境自动选择输出方式：
+
+- **控制台执行**（如直接 `deno task dev`）：日志输出到控制台。
+- **后台执行**（如 nohup、systemd、非 TTY）：若配置了 `logging.file`，则写入该文件；否则回退到控制台。
+
+```typescript
+// dweb.config.ts
+export default defineConfig({
+  logging: {
+    level: "INFO",
+    // 日志文件路径（相对项目根或绝对路径），后台执行时写入
+    file: "logs/app.log",
+    // 输出模式：auto=按环境自动选择，console=仅控制台，file=仅文件
+    output: "auto",
+    // 脱敏字段
+    maskFields: ["password", "token", "authorization"],
+    // 文件轮转（仅在使用 file 时有效）
+    rotation: {
+      maxSize: 10 * 1024 * 1024, // 10MB
+      maxFiles: 5,
+      interval: 24 * 60 * 60 * 1000, // 1 天
+    },
+  },
+});
+```
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `level` | `"DEBUG" \| "INFO" \| "WARN" \| "ERROR"` | `"INFO"` | 日志级别 |
+| `file` | `string` | - | 日志文件路径，后台执行时使用 |
+| `output` | `"auto" \| "console" \| "file"` | `"auto"` | 输出模式 |
+| `maskFields` | `string[]` | - | 需要脱敏的字段名 |
+| `rotation` | `object` | - | 文件轮转配置 |
+
 ## 在框架中使用
 
 ### 设置全局日志器

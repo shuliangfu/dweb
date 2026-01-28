@@ -165,10 +165,43 @@ interface AppConfigBase {
   security?: SecurityConfig;
 }
 
+// 日志输出模式
+// - "auto": 控制台执行时输出到控制台，后台执行时写入日志文件（需配置 file 路径）
+// - "console": 始终输出到控制台
+// - "file": 始终写入日志文件（需配置 file 路径）
+export type LoggingOutputMode = "auto" | "console" | "file";
+
+// 日志文件轮转配置（仅在使用 file 输出时有效）
+export interface LoggingRotationConfig {
+  /** 单个日志文件最大大小（字节），默认 10MB */
+  maxSize?: number;
+  /** 保留的轮转文件数量，默认 5 */
+  maxFiles?: number;
+  /** 轮转间隔（毫秒），默认 86400000（1 天） */
+  interval?: number;
+}
+
 // 日志配置
 export interface LoggingConfig {
+  /** 日志级别 */
   level?: "DEBUG" | "INFO" | "WARN" | "ERROR";
+  /** 需要脱敏的字段名 */
   maskFields?: string[];
+  /**
+   * 日志文件路径（后台执行时写入该文件）
+   * 当 output 为 "file" 或 output 为 "auto" 且检测到非 TTY 时使用
+   */
+  file?: string;
+  /**
+   * 输出模式
+   * - "auto": 控制台执行（TTY）时打控制台，后台执行时写 file
+   * - "console": 始终打控制台
+   * - "file": 始终写 file
+   * @default "auto"
+   */
+  output?: LoggingOutputMode;
+  /** 日志文件轮转配置（仅在使用 file 时有效） */
+  rotation?: LoggingRotationConfig;
 }
 
 // 缓存适配器类型

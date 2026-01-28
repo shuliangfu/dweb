@@ -16,7 +16,7 @@ import type {
   Session,
   SessionConfig,
 } from "../common/types/index.ts";
-import type { Logger } from "../features/logger.ts";
+import type { Logger, LogLevel as LogLevelType } from "../features/logger.ts";
 import { Server } from "./server.ts";
 import { Router } from "./router.ts";
 import { RouteHandler } from "./route-handler.ts";
@@ -985,15 +985,80 @@ export class Application extends EventEmitter {
   }
 
   /**
+   * 根据日志配置与运行环境创建 Logger
+   * 控制台执行（TTY）时输出到控制台，后台执行时写入配置的日志文件
+   */
+  private async createLoggerFromConfig(): Promise<Logger> {
+    const config = this.configManager.getConfig();
+    const logging = config.logging ?? {};
+    const outputMode = logging.output ?? "auto";
+
+    // 判断是否为控制台执行：output 为 console，或 auto 且 stdout 为 TTY
+    const isTTY = typeof Deno?.stdout?.isTerminal === "function"
+      ? Deno.stdout.isTerminal()
+      : false;
+    const useConsole = outputMode === "console" ||
+      (outputMode === "auto" && isTTY);
+    const useFile = !useConsole && !!logging.file &&
+      (outputMode === "file" || (outputMode === "auto" && !isTTY));
+
+    const { Logger, LogLevel } = await import("../features/logger.ts");
+    const targets = [];
+
+    if (useConsole) {
+      targets.push(Logger.createConsoleTarget());
+    }
+
+    if (useFile && logging.file) {
+      const filePath = path.isAbsolute(logging.file)
+        ? logging.file
+        : path.join(Deno.cwd(), logging.file);
+      try {
+        await Deno.mkdir(path.dirname(filePath), { recursive: true });
+      } catch (_e) {
+        // 目录已存在或创建失败时继续，FileTarget 写入时会再报错
+      }
+      const rotation = logging.rotation
+        ? {
+          maxSize: logging.rotation.maxSize,
+          maxFiles: logging.rotation.maxFiles,
+          interval: logging.rotation.interval,
+        }
+        : undefined;
+      targets.push(Logger.createFileTarget(filePath, rotation));
+    }
+
+    // 若配置为写文件但未配置路径或未添加任何目标，则回退到控制台
+    if (targets.length === 0) {
+      targets.push(Logger.createConsoleTarget());
+    }
+
+    const levelMap: Record<string, LogLevelType> = {
+      DEBUG: LogLevel.DEBUG,
+      INFO: LogLevel.INFO,
+      WARN: LogLevel.WARN,
+      ERROR: LogLevel.ERROR,
+    };
+    const level = logging.level
+      ? (levelMap[logging.level] ?? LogLevel.INFO)
+      : LogLevel.INFO;
+
+    return new Logger({
+      level,
+      targets,
+      maskFields: logging.maskFields,
+    });
+  }
+
+  /**
    * 注册服务
    * 根据配置注册所有需要的服务
    */
   private async registerServices(): Promise<void> {
     const config = this.configManager.getConfig();
 
-    // 注册 Logger 服务（核心服务，始终注册）
-    const { Logger } = await import("../features/logger.ts");
-    const logger = new Logger();
+    // 注册 Logger 服务：控制台执行时打控制台，后台执行时写日志文件（需配置 logging.file）
+    const logger = await this.createLoggerFromConfig();
     this.serviceContainer.registerSingleton("logger", () => logger);
 
     // 为了向后兼容，设置全局默认日志器
