@@ -15,10 +15,11 @@ import { colors } from "./ansi.ts";
 import { error as outputError, warning } from "./output.ts";
 import { getDatabaseAsync } from "../../features/database/access.ts";
 import type { DatabaseAdapter } from "../../features/database/types.ts";
-import { loadConfigForConsole } from "../../core/config.ts";
+import { loadConfigForConsole, mergeConfig } from "../../core/config.ts";
 import { Application } from "../../core/application.ts";
 import { ConfigManager } from "../../core/config-manager.ts";
 import type { Logger } from "../../features/logger.ts";
+import { AppConfig } from "@dreamer/dweb";
 
 /**
  * 选项值类型
@@ -172,7 +173,7 @@ export class Command {
   /** 是否在应用初始化后使用 Logger 记录命令执行（默认 true，需先 initApp 才有 logger） */
   private loggingEnabled = true;
   /** 日志配置（在 initApp 时合并到 config.logging，可指定文件路径、级别等） */
-  private loggingConfig: Partial<CommandLoggingConfig> | null = null;
+  private appConfig?: AppConfig;
 
   /**
    * 创建命令实例
@@ -230,32 +231,6 @@ export class Command {
 
   keepAlive(): this {
     this.isKeepAlive = true;
-    return this;
-  }
-
-  /**
-   * 是否在命令执行时使用应用 Logger 记录（命令名、参数、选项及错误）
-   * 仅当已通过 initApp() 初始化应用且应用已注册 logger 服务时生效
-   * @param enable 是否启用，默认 true
-   * @returns 当前命令实例（支持链式调用）
-   */
-  enableLogging(enable: boolean): this {
-    this.loggingEnabled = enable;
-    return this;
-  }
-
-  /**
-   * 设置命令/控制台日志配置（如日志文件路径、级别、输出方式等）
-   * 在 initApp() 时会合并到 config.logging，应用创建的 Logger 将使用该配置
-   * @param config 日志配置（未设置的项使用配置文件中的值）
-   * @returns 当前命令实例（支持链式调用）
-   *
-   * @example
-   * cmd.setLogging({ file: 'logs/cli.log', level: 'DEBUG' });
-   * cmd.setLogging({ file: '/var/log/myapp/console.log', output: 'file' });
-   */
-  setLogging(config: Partial<CommandLoggingConfig>): this {
-    this.loggingConfig = config;
     return this;
   }
 
@@ -1078,15 +1053,15 @@ export class Command {
     }
     this.appInitialized = true;
 
-    const config = await loadConfigForConsole();
-    config.isProduction = false;
+    let config = await loadConfigForConsole();
 
     // 合并命令级日志配置（如 setLogging({ file: 'logs/cli.log' })），便于配置日志文件路径等
     // 使用深层合并，避免命令只覆盖 file 时把项目的 rotation、level 等整块覆盖掉
-    if (this.loggingConfig) {
-      delete config.logging;
-      config.logging = this.loggingConfig;
+    if (this.appConfig) {
+      config = mergeConfig(config, this.appConfig);
     }
+
+    config.isProduction = false;
 
     this.app = new Application();
 
@@ -1143,7 +1118,10 @@ export class Command {
    *   });
    * ```
    */
-  public async initApp(): Promise<this> {
+  public async initApp(config?: AppConfig): Promise<this> {
+    if (config) {
+      this.appConfig = config;
+    }
     await this.initializedApp();
     return this;
   }

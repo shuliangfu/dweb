@@ -1007,8 +1007,6 @@ export class Application extends EventEmitter {
     const { Logger, LogLevel } = await import("../features/logger.ts");
     const targets = [];
 
-    console.log({ logging, useConsole, useFile });
-
     if (useConsole) {
       targets.push(Logger.createConsoleTarget());
     }
