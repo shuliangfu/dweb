@@ -255,7 +255,7 @@ export class Command {
    * cmd.setLogging({ file: '/var/log/myapp/console.log', output: 'file' });
    */
   setLogging(config: Partial<CommandLoggingConfig>): this {
-    this.loggingConfig = { ...(this.loggingConfig ?? {}), ...config };
+    this.loggingConfig = config;
     return this;
   }
 
@@ -1083,7 +1083,7 @@ export class Command {
 
     // 合并命令级日志配置（如 setLogging({ file: 'logs/cli.log' })），便于配置日志文件路径等
     // 使用深层合并，避免命令只覆盖 file 时把项目的 rotation、level 等整块覆盖掉
-    if (this.loggingConfig && Object.keys(this.loggingConfig).length > 0) {
+    if (this.loggingConfig) {
       delete config.logging;
       config.logging = this.loggingConfig;
     }
@@ -1095,7 +1095,7 @@ export class Command {
     const configManager = this.app.getService<ConfigManager>("configManager");
     configManager.setConfig(config);
 
-    await this.app.initializeConsole();
+    await this.app.initializeConsole(config);
 
     // 将当前 Command 注册为服务，便于在 action 中通过 app.getService('command') 获取
     this.app.registerService("command", () => this);

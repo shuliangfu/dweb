@@ -211,13 +211,11 @@ export class Application extends EventEmitter {
    *
    * @throws {Error} 如果初始化失败
    */
-  async initializeConsole(): Promise<void> {
+  async initializeConsole(config: AppConfig): Promise<void> {
     // 设置生命周期阶段
     this.lifecycleManager.setPhase(LifecyclePhase.Initializing);
 
     try {
-      const config = this.configManager.getConfig();
-
       // 更新应用上下文
       this.context.setConfig(config);
       this.context.setIsProduction(config.isProduction ?? false);
