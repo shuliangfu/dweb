@@ -1088,8 +1088,6 @@ export class Command {
       config.logging = this.loggingConfig;
     }
 
-    console.log(config.logging);
-
     this.app = new Application();
 
     const configManager = this.app.getService<ConfigManager>("configManager");

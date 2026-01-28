@@ -995,13 +995,19 @@ export class Application extends EventEmitter {
     const isTTY = typeof Deno?.stdout?.isTerminal === "function"
       ? Deno.stdout.isTerminal()
       : false;
-    const useConsole = outputMode === "console" ||
+
+    const useConsole = Deno.env.get("LOG_MODE") === "console" ||
+      outputMode === "console" ||
       (outputMode === "auto" && isTTY);
-    const useFile = !useConsole && !!logging.file &&
-      (outputMode === "file" || (outputMode === "auto" && !isTTY));
+
+    const useFile = Deno.env.get("LOG_MODE") === "file" ||
+      !useConsole && !!logging.file &&
+        (outputMode === "file" || (outputMode === "auto" && !isTTY));
 
     const { Logger, LogLevel } = await import("../features/logger.ts");
     const targets = [];
+
+    console.log({ logging, useConsole, useFile });
 
     if (useConsole) {
       targets.push(Logger.createConsoleTarget());
