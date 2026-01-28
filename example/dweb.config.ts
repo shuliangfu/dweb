@@ -57,25 +57,38 @@ export default defineConfig({
   },
 
   // 数据库配置
-  // database: {
-  //   type: "mongodb",
-  //   connection: {
-  //     host: Deno.env.get("DB_HOST"),
-  //     port: Deno.env.get("DB_PORT") as unknown as number,
-  //     database: Deno.env.get("DB_NAME"),
-  //     username: Deno.env.get("DB_USER"),
-  //     password: Deno.env.get("DB_PASS"),
-  //   },
-  //   // MongoDB 连接池配置
-  //   mongoOptions: {
-  //     maxPoolSize: 10, // 最大连接池大小
-  //     minPoolSize: 1, // 最小连接池大小
-  //     timeoutMS: 5000, // 服务器选择超时时间（毫秒）
-  //     maxRetries: 3, // 最大重试次数
-  //     retryDelay: 1000, // 重试延迟（毫秒）
-  //     replicaSet: "rs0",
-  //   },
-  // },
+  database: {
+    type: "mongodb",
+    connection: {
+      host: Deno.env.get("DB_HOST"),
+      port: Deno.env.get("DB_PORT") as unknown as number,
+      database: Deno.env.get("DB_NAME"),
+      username: Deno.env.get("DB_USER"),
+      password: Deno.env.get("DB_PASS"),
+    },
+    // MongoDB 连接池配置
+    mongoOptions: {
+      maxPoolSize: 10, // 最大连接池大小
+      minPoolSize: 1, // 最小连接池大小
+      timeoutMS: 5000, // 服务器选择超时时间（毫秒）
+      maxRetries: 3, // 最大重试次数
+      retryDelay: 1000, // 重试延迟（毫秒）
+      replicaSet: "rs0",
+    },
+  },
+
+  // 日志配置：控制台执行时打控制台，后台执行时写入 file 指定路径
+  logging: {
+    level: "INFO",
+    file: "logs/app.log", // 日志文件路径（后台执行时写入）
+    output: "auto", // "auto" | "console" | "file"，auto 表示按是否 TTY 自动选择
+    maskFields: ["password", "token", "authorization"], // 脱敏字段
+    rotation: {
+      maxSize: 1024 * 1024 * 5, // 5MB，超过则轮转
+      maxFiles: 5, // 保留 5 个轮转文件
+      interval: 24 * 60 * 60 * 1000, // 每 24 小时轮转一次
+    },
+  },
 
   // 静态资源目录，默认为 'assets'
   static: {
