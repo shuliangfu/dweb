@@ -16,7 +16,11 @@ import type {
   Session,
   SessionConfig,
 } from "../common/types/index.ts";
-import type { Logger, LogLevel as LogLevelType } from "../features/logger.ts";
+import {
+  getLogger,
+  type Logger,
+  type LogLevel as LogLevelType,
+} from "../features/logger.ts";
 import { Server } from "./server.ts";
 import { Router } from "./router.ts";
 import { RouteHandler } from "./route-handler.ts";
@@ -318,7 +322,7 @@ export class Application extends EventEmitter {
       } catch (error) {
         // 服务启动失败，记录错误但不中断流程
         const message = error instanceof Error ? error.message : String(error);
-        console.warn(`服务 ${String(token)} 启动失败: ${message}`);
+        getLogger().warn(`服务 ${String(token)} 启动失败: ${message}`);
       }
     }
   }
@@ -363,7 +367,7 @@ export class Application extends EventEmitter {
       const appPort = this.findAvailablePort(preferredAppPort, host);
       if (appPort !== preferredAppPort) {
         config.server.port = appPort;
-        console.log(
+        getLogger().info(
           `[Dev] 端口 ${preferredAppPort} 被占用，自动切换到 ${appPort}`,
         );
       }
@@ -738,7 +742,10 @@ export class Application extends EventEmitter {
       try {
         await this.lifecycleManager.stop();
       } catch (error) {
-        console.error("优雅关闭失败:", error);
+        getLogger().error(
+          "优雅关闭失败",
+          error instanceof Error ? error : undefined,
+        );
       } finally {
         // 确保进程退出
         Deno.exit(0);
@@ -766,7 +773,10 @@ export class Application extends EventEmitter {
         // 调用生命周期管理器的 stop 方法，这会触发所有服务的 stop 和 destroy 方法
         await this.lifecycleManager.stop();
       } catch (error) {
-        console.error("优雅关闭失败:", error);
+        getLogger().error(
+          "优雅关闭失败",
+          error instanceof Error ? error : undefined,
+        );
       } finally {
         // 确保进程退出
         Deno.exit(0);
@@ -985,8 +995,11 @@ export class Application extends EventEmitter {
   /**
    * 根据日志配置与运行环境创建 Logger
    * 控制台执行（TTY）时输出到控制台，后台执行时写入配置的日志文件
+   * @param originalConsole 重定向 globalThis.console 时传入的原始 console，供 ConsoleTarget 使用以避免递归
    */
-  private async createLoggerFromConfig(): Promise<Logger> {
+  private async createLoggerFromConfig(
+    originalConsole?: Pick<Console, "debug" | "info" | "warn" | "error">,
+  ): Promise<Logger> {
     const config = this.configManager.getConfig();
     const logging = config.logging ?? {};
     const outputMode = logging.output ?? "auto";
@@ -1008,7 +1021,7 @@ export class Application extends EventEmitter {
     const targets = [];
 
     if (useConsole) {
-      targets.push(Logger.createConsoleTarget());
+      targets.push(Logger.createConsoleTarget(originalConsole));
     }
 
     if (useFile && logging.file) {
@@ -1032,7 +1045,7 @@ export class Application extends EventEmitter {
 
     // 若配置为写文件但未配置路径或未添加任何目标，则回退到控制台
     if (targets.length === 0) {
-      targets.push(Logger.createConsoleTarget());
+      targets.push(Logger.createConsoleTarget(originalConsole));
     }
 
     const levelMap: Record<string, LogLevelType> = {
@@ -1045,9 +1058,19 @@ export class Application extends EventEmitter {
       ? (levelMap[logging.level] ?? LogLevel.INFO)
       : LogLevel.INFO;
 
+    // 优先使用 AppConfig.logging.formatter；未设置时：有控制台用 simple，仅写文件用 json
+    const formatter = logging.formatter === "simple"
+      ? Logger.createSimpleFormatter()
+      : logging.formatter === "json"
+      ? Logger.createJSONFormatter(logging.maskFields)
+      : useConsole
+      ? Logger.createSimpleFormatter()
+      : Logger.createJSONFormatter(logging.maskFields);
+
     return new Logger({
       level,
       targets,
+      formatter,
       maskFields: logging.maskFields,
       exclude: logging.exclude,
       excludePatterns: logging.excludePatterns,
@@ -1061,13 +1084,59 @@ export class Application extends EventEmitter {
   private async registerServices(): Promise<void> {
     const config = this.configManager.getConfig();
 
+    // 保存原始 console，供 ConsoleTarget 使用（重定向后 Logger 输出仍走原始 console，避免递归）
+    const originalConsole = {
+      ...globalThis.console,
+      debug: globalThis.console.debug.bind(globalThis.console),
+      info: globalThis.console.info.bind(globalThis.console),
+      warn: globalThis.console.warn.bind(globalThis.console),
+      error: globalThis.console.error.bind(globalThis.console),
+    };
+
     // 注册 Logger 服务：控制台执行时打控制台，后台执行时写日志文件（需配置 logging.file）
-    const logger = await this.createLoggerFromConfig();
+    const logger = await this.createLoggerFromConfig(originalConsole);
     this.serviceContainer.registerSingleton("logger", () => logger);
 
     // 为了向后兼容，设置全局默认日志器
     const { setLogger } = await import("../features/logger.ts");
     setLogger(logger);
+
+    // 将 globalThis.console 的 log/info/warn/error/debug 重定向到框架 Logger，便于统一落盘与过滤
+    const formatArgs = (
+      args: unknown[],
+    ): { message: string; data?: Record<string, unknown>; err?: Error } => {
+      if (args.length === 0) return { message: "" };
+      const first = args[0];
+      const err = first instanceof Error ? first : undefined;
+      const message = typeof first === "string"
+        ? first
+        : (err ? err.message : JSON.stringify(first));
+      const data = args.length > 1 ? { extra: args.slice(1) } : undefined;
+      return { message, data, err };
+    };
+    globalThis.console = {
+      ...originalConsole,
+      log: (...args: unknown[]) => {
+        const { message, data } = formatArgs(args);
+        getLogger().info(message, data);
+      },
+      info: (...args: unknown[]) => {
+        const { message, data } = formatArgs(args);
+        getLogger().info(message, data);
+      },
+      warn: (...args: unknown[]) => {
+        const { message, data } = formatArgs(args);
+        getLogger().warn(message, data);
+      },
+      error: (...args: unknown[]) => {
+        const { message, data, err } = formatArgs(args);
+        getLogger().error(message, err, data);
+      },
+      debug: (...args: unknown[]) => {
+        const { message, data } = formatArgs(args);
+        getLogger().debug(message, data);
+      },
+    };
 
     // 注册 Monitor 服务（核心服务，始终注册）
     const { Monitor } = await import("../features/monitoring.ts");
@@ -1300,7 +1369,7 @@ export class Application extends EventEmitter {
       } else {
         // 如果构建输出目录不存在，回退到扫描文件系统（用于开发或测试环境）
         // 这样可以避免在没有构建的情况下无法启动服务器
-        console.warn(
+        getLogger().warn(
           `⚠️  构建输出目录不存在 (${serverRouteMapPath})，回退到扫描文件系统模式`,
         );
         await this.router.scan();

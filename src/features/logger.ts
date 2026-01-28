@@ -174,9 +174,27 @@ class SimpleFormatter implements LogFormatter {
 
 /**
  * 控制台输出目标
+ * 可传入 consoleImpl，用于重定向 globalThis.console 时避免递归（Logger 输出时使用原始 console）
  */
 class ConsoleTarget implements LogTarget {
   private formatter: LogFormatter = new SimpleFormatter();
+  private consoleImpl: {
+    debug?(...args: unknown[]): void;
+    info?(...args: unknown[]): void;
+    warn?(...args: unknown[]): void;
+    error?(...args: unknown[]): void;
+  };
+
+  constructor(
+    consoleImpl?: {
+      debug?(...args: unknown[]): void;
+      info?(...args: unknown[]): void;
+      warn?(...args: unknown[]): void;
+      error?(...args: unknown[]): void;
+    },
+  ) {
+    this.consoleImpl = consoleImpl ?? globalThis.console;
+  }
 
   setFormatter(formatter: LogFormatter): void {
     this.formatter = formatter;
@@ -184,19 +202,20 @@ class ConsoleTarget implements LogTarget {
 
   write(entry: LogEntry): void {
     const output = this.formatter.format(entry);
+    const out = this.consoleImpl;
 
     switch (entry.level) {
       case LogLevel.DEBUG:
-        console.debug(output);
+        out.debug?.(output);
         break;
       case LogLevel.INFO:
-        console.info(output);
+        out.info?.(output);
         break;
       case LogLevel.WARN:
-        console.warn(output);
+        out.warn?.(output);
         break;
       case LogLevel.ERROR:
-        console.error(output);
+        out.error?.(output);
         break;
     }
   }
@@ -442,9 +461,17 @@ export class Logger {
 
   /**
    * 创建控制台日志目标
+   * @param consoleImpl 可选，指定实际输出的 console（重定向 globalThis.console 时传入原始 console 避免递归）
    */
-  static createConsoleTarget(): ConsoleTarget {
-    return new ConsoleTarget();
+  static createConsoleTarget(
+    consoleImpl?: {
+      debug?(...args: unknown[]): void;
+      info?(...args: unknown[]): void;
+      warn?(...args: unknown[]): void;
+      error?(...args: unknown[]): void;
+    },
+  ): ConsoleTarget {
+    return new ConsoleTarget(consoleImpl);
   }
 
   /**

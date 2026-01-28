@@ -212,6 +212,13 @@ export interface LoggingConfig {
    * @example ["^\\[Tailwind\\].*", "\\bprefetch\\b"]
    */
   excludePatterns?: string[];
+  /**
+   * 日志格式器
+   * - "simple": 可读文本（适合控制台）
+   * - "json": JSON 行（适合采集、仅写文件）
+   * 未设置时：有控制台输出用 simple，仅写文件用 json
+   */
+  formatter?: "simple" | "json";
 }
 
 // 缓存适配器类型

@@ -9,6 +9,7 @@
 import type { AppConfig } from "../common/types/index.ts";
 import { Application } from "../core/application.ts";
 import { ConfigManager } from "../core/config-manager.ts";
+import { getLogger } from "../features/logger.ts";
 
 /**
  * 启动开发服务器
@@ -84,6 +85,16 @@ export async function startDevServer(config: AppConfig): Promise<void> {
 
   // 初始化应用
   await app.initialize();
+
+  // 使用框架 logger 输出启动信息（便于写入日志文件）
+  const frameworkVersion = (finalConfig as Record<string, unknown>)
+    .__frameworkVersion as string | undefined;
+  if (frameworkVersion) {
+    getLogger().info(`框架版本: ${frameworkVersion}`);
+  }
+  if (finalConfig.name) {
+    getLogger().info(`应用: ${finalConfig.name}`);
+  }
 
   // 启动应用（会自动处理开发环境的 HMR、文件监听、自动打开浏览器等）
   await app.start();

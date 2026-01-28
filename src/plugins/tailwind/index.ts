@@ -18,6 +18,7 @@ import { processCSSV4 } from "./v4.ts";
 import * as path from "@std/path";
 import { isPathSafe } from "../../server/utils/security.ts";
 import { HashCalculator } from "../../server/build/hash-calculator.ts";
+import { getLogger } from "../../features/logger.ts";
 
 /**
  * 处理 CSS 文件
@@ -102,7 +103,7 @@ async function loadCSSHashMap(): Promise<void> {
           cssHashMap.set(original, hashed);
         }
 
-        console.log(
+        getLogger().info(
           `   ✅ [Tailwind] 已加载 CSS hash 映射: ${
             Object.keys(manifest).length
           } 个文件`,
@@ -117,7 +118,7 @@ async function loadCSSHashMap(): Promise<void> {
     // 如果所有路径都失败，使用空映射（开发环境或未构建）
     cssHashMap.clear();
   } catch (error) {
-    console.warn(`   ⚠️  [Tailwind] 加载 CSS hash 映射失败:`, error);
+    getLogger().warn(`   ⚠️  [Tailwind] 加载 CSS hash 映射失败:`, { error });
     cssHashMap.clear();
   }
 }

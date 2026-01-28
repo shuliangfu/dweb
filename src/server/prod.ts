@@ -8,6 +8,7 @@
 
 import type { AppConfig } from "../common/types/index.ts";
 import { Application } from "../core/application.ts";
+import { getLogger } from "../features/logger.ts";
 
 /**
  * 启动生产服务器
@@ -74,6 +75,16 @@ export async function startProdServer(config: AppConfig): Promise<void> {
 
   // 初始化应用
   await app.initialize();
+
+  // 使用框架 logger 输出启动信息（便于写入日志文件）
+  const frameworkVersion = (prodConfig as Record<string, unknown>)
+    .__frameworkVersion as string | undefined;
+  if (frameworkVersion) {
+    getLogger().info(`框架版本: ${frameworkVersion}`);
+  }
+  if (prodConfig.name) {
+    getLogger().info(`应用: ${prodConfig.name}`);
+  }
 
   // 启动应用（会自动处理生产环境的 TLS 验证、优雅关闭等）
   await app.start();

@@ -283,18 +283,6 @@ async function loadConfigWithServerOptions(
   return config;
 }
 
-/**
- * 显示应用名称和框架版本信息
- * @param appName 应用名称
- */
-function displayAppName(appName: string | undefined): void {
-  // 显示框架版本号，方便确认是否使用了旧版本的缓存
-  info(`框架版本: ${frameworkVersion}`);
-  if (appName) {
-    info(`应用: ${appName}`);
-  }
-}
-
 // 创建主命令
 const cli = new Command("dweb", "DWeb 框架 CLI 工具")
   .setVersion(frameworkVersion)
@@ -336,9 +324,9 @@ cli.command("dev", "启动开发服务器")
   })
   .action(async (args, options) => {
     const appName = await parseAppName(args, options);
-    displayAppName(appName);
     // 加载配置并更新服务器设置
     const config = await loadConfigWithServerOptions(appName, options);
+    (config as Record<string, unknown>).__frameworkVersion = frameworkVersion;
 
     // 如果指定了自动打开浏览器，更新配置
     if (options.open === true) {
@@ -347,7 +335,7 @@ cli.command("dev", "启动开发服务器")
       }
       config.dev.open = true;
     }
-    // 启动开发服务器
+    // 启动开发服务器（框架版本、应用名由 startDevServer 内通过 logger 输出）
     await startDevServer(config);
   });
 
@@ -411,12 +399,11 @@ cli.command("start", "启动生产服务器")
   })
   .action(async (args, options) => {
     const appName = await parseAppName(args, options);
-    displayAppName(appName);
-
     // 加载配置并更新服务器设置
     const config = await loadConfigWithServerOptions(appName, options);
+    (config as Record<string, unknown>).__frameworkVersion = frameworkVersion;
 
-    // 启动生产服务器
+    // 启动生产服务器（框架版本、应用名由 startProdServer 内通过 logger 输出）
     await startProdServer(config);
   });
 
