@@ -2,6 +2,13 @@
  * 命令行命令封装类
  * 用于创建和管理命令行命令，支持参数解析、选项处理和帮助信息
  * 所有命令自动支持数据库连接功能（如果配置了数据库）
+ *
+ * 日志：在 action 或 before 中调用 initApp() 后，可通过 getLogger() 使用应用 Logger；
+ * 默认会以 debug 记录命令名/参数/选项，错误时以 error 记录。可用 enableLogging(false) 关闭。
+ * 可通过 setLogging({ file: 'logs/cli.log', level: 'DEBUG' }) 配置日志文件路径、级别等，initApp 时会合并到 config.logging。
+ *
+ * 注册为服务：initApp() 完成后，当前 Command 会注册为 app 的服务 "command"，
+ * 可通过 app.getService('command') 获取当前命令实例。
  */
 
 import { colors } from "./ansi.ts";
@@ -11,6 +18,7 @@ import type { DatabaseAdapter } from "../../features/database/types.ts";
 import { loadConfigForConsole } from "../../core/config.ts";
 import { Application } from "../../core/application.ts";
 import { ConfigManager } from "../../core/config-manager.ts";
+import type { Logger } from "../../features/logger.ts";
 
 /**
  * 选项值类型
@@ -101,6 +109,27 @@ export type CommandHook = (
 ) => Promise<void> | void;
 
 /**
+ * 命令/控制台日志配置（与应用 config.logging 同构，用于 initApp 时合并）
+ * 可在 Command 上设置，初始化应用时会合并到 config.logging，从而影响 Logger 的文件路径、级别等
+ */
+export interface CommandLoggingConfig {
+  /** 日志文件路径（相对 cwd 或绝对路径），设置后非 TTY 时会写入该文件 */
+  file?: string;
+  /** 输出方式：'console' | 'file' | 'auto'（默认 auto：TTY 打控制台，否则打 file） */
+  output?: "console" | "file" | "auto";
+  /** 日志级别：'DEBUG' | 'INFO' | 'WARN' | 'ERROR' */
+  level?: "DEBUG" | "INFO" | "WARN" | "ERROR";
+  /** 文件轮转配置 */
+  rotation?: {
+    maxSize?: number;
+    maxFiles?: number;
+    interval?: number;
+  };
+  /** 需脱敏的字段名列表 */
+  maskFields?: string[];
+}
+
+/**
  * 命令行命令类
  */
 export class Command {
@@ -136,6 +165,10 @@ export class Command {
   private appInitialized = false;
   /** 应用实例 */
   private app: Application | null = null;
+  /** 是否在应用初始化后使用 Logger 记录命令执行（默认 true，需先 initApp 才有 logger） */
+  private loggingEnabled = true;
+  /** 日志配置（在 initApp 时合并到 config.logging，可指定文件路径、级别等） */
+  private loggingConfig: Partial<CommandLoggingConfig> | null = null;
 
   /**
    * 创建命令实例
@@ -193,6 +226,32 @@ export class Command {
 
   keepAlive(): this {
     this.isKeepAlive = true;
+    return this;
+  }
+
+  /**
+   * 是否在命令执行时使用应用 Logger 记录（命令名、参数、选项及错误）
+   * 仅当已通过 initApp() 初始化应用且应用已注册 logger 服务时生效
+   * @param enable 是否启用，默认 true
+   * @returns 当前命令实例（支持链式调用）
+   */
+  enableLogging(enable: boolean): this {
+    this.loggingEnabled = enable;
+    return this;
+  }
+
+  /**
+   * 设置命令/控制台日志配置（如日志文件路径、级别、输出方式等）
+   * 在 initApp() 时会合并到 config.logging，应用创建的 Logger 将使用该配置
+   * @param config 日志配置（未设置的项使用配置文件中的值）
+   * @returns 当前命令实例（支持链式调用）
+   *
+   * @example
+   * cmd.setLogging({ file: 'logs/cli.log', level: 'DEBUG' });
+   * cmd.setLogging({ file: '/var/log/myapp/console.log', output: 'file' });
+   */
+  setLogging(config: Partial<CommandLoggingConfig>): this {
+    this.loggingConfig = { ...(this.loggingConfig ?? {}), ...config };
     return this;
   }
 
@@ -1018,12 +1077,20 @@ export class Command {
     const config = await loadConfigForConsole();
     config.isProduction = false;
 
+    // 合并命令级日志配置（如 setLogging({ file: 'logs/cli.log' })），便于配置日志文件路径等
+    if (this.loggingConfig && Object.keys(this.loggingConfig).length > 0) {
+      config.logging = { ...(config.logging ?? {}), ...this.loggingConfig };
+    }
+
     this.app = new Application();
 
     const configManager = this.app.getService<ConfigManager>("configManager");
     configManager?.setConfig(config);
 
     await this.app.initializeConsole();
+
+    // 将当前 Command 注册为服务，便于在 action 中通过 app.getService('command') 获取
+    this.app.registerService("command", () => this);
   }
 
   /**
@@ -1125,6 +1192,19 @@ export class Command {
   }
 
   /**
+   * 获取应用内注册的 Logger（需先 initApp 且应用已注册 logger 服务）
+   * @returns Logger 实例或 null
+   */
+  public getLogger(): Logger | null {
+    if (!this.app) return null;
+    try {
+      return this.app.getService<Logger>("logger") ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * 执行命令
    * @param args 命令行参数（默认使用 Deno.args）
    */
@@ -1181,9 +1261,21 @@ export class Command {
     // 执行命令处理函数
     if (this.handler) {
       try {
-        // 执行前置钩子
+        // 执行前置钩子（可在此调用 command.initApp() 以初始化应用与 logger）
         if (this.beforeHook) {
           await this.beforeHook(parsedArgs, parsedOptions);
+        }
+
+        // 若已初始化应用且启用日志，记录命令执行（debug 级别）
+        if (this.loggingEnabled && this.app) {
+          const logger = this.getLogger();
+          if (logger) {
+            logger.debug("命令执行", {
+              command: this.name,
+              args: parsedArgs,
+              options: parsedOptions,
+            });
+          }
         }
 
         // 执行主处理函数，传递 Command 实例作为第三个参数
@@ -1194,10 +1286,21 @@ export class Command {
           await this.afterHook(parsedArgs, parsedOptions);
         }
       } catch (err) {
-        // 记录错误并退出
-        outputError(
-          `执行命令时出错: ${err instanceof Error ? err.message : String(err)}`,
-        );
+        const errMsg = err instanceof Error ? err.message : String(err);
+        if (this.loggingEnabled && this.app) {
+          const logger = this.getLogger();
+          if (logger) {
+            logger.error(
+              "命令执行失败",
+              err instanceof Error ? err : undefined,
+              {
+                command: this.name,
+                error: errMsg,
+              },
+            );
+          }
+        }
+        outputError(`执行命令时出错: ${errMsg}`);
         Deno.exit(1);
       }
     } else {
