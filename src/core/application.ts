@@ -1047,6 +1047,8 @@ export class Application extends EventEmitter {
       level,
       targets,
       maskFields: logging.maskFields,
+      exclude: logging.exclude,
+      excludePatterns: logging.excludePatterns,
     });
   }
 

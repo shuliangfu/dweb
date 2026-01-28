@@ -127,6 +127,10 @@ export interface CommandLoggingConfig {
   };
   /** 需脱敏的字段名列表 */
   maskFields?: string[];
+  /** 过滤：不输出消息包含任一关键词的日志（大小写不敏感） */
+  exclude?: string[];
+  /** 过滤：不输出消息匹配任一正则的日志（正则字符串数组） */
+  excludePatterns?: string[];
 }
 
 /**

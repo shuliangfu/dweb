@@ -202,6 +202,16 @@ export interface LoggingConfig {
   output?: LoggingOutputMode;
   /** 日志文件轮转配置（仅在使用 file 时有效） */
   rotation?: LoggingRotationConfig;
+  /**
+   * 过滤：不输出消息内容包含任一关键词的日志（大小写不敏感）
+   * @example ["[HMR]", "heartbeat"] 可过滤掉 HMR、心跳等刷屏日志
+   */
+  exclude?: string[];
+  /**
+   * 过滤：不输出消息匹配任一正则的日志（正则字符串，会 new RegExp 使用）
+   * @example ["^\\[Tailwind\\].*", "\\bprefetch\\b"]
+   */
+  excludePatterns?: string[];
 }
 
 // 缓存适配器类型

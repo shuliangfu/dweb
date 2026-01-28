@@ -88,6 +88,16 @@ export interface LoggerOptions {
    * 需要脱敏的字段（默认 ["password", "token", "secret", "authorization"]）
    */
   maskFields?: string[];
+
+  /**
+   * 过滤：不输出消息包含任一关键词的日志（大小写不敏感）
+   */
+  exclude?: string[];
+
+  /**
+   * 过滤：不输出消息匹配任一正则的日志（RegExp 或正则字符串）
+   */
+  excludePatterns?: (RegExp | string)[];
 }
 
 /**
@@ -299,11 +309,25 @@ export class Logger {
   private level: LogLevel;
   private formatter: LogFormatter;
   private targets: LogTarget[];
+  /** 过滤：消息包含任一关键词则不输出（小写匹配，大小写不敏感） */
+  private excludeKeywords: string[] = [];
+  /** 过滤：消息匹配任一正则则不输出 */
+  private excludePatterns: RegExp[] = [];
 
   constructor(options: LoggerOptions = {}) {
     this.level = options.level ?? LogLevel.INFO;
     this.formatter = options.formatter ?? new JSONFormatter(options.maskFields);
     this.targets = options.targets ?? [new ConsoleTarget()];
+
+    // 过滤配置：关键词转小写便于不区分大小写匹配
+    if (options.exclude?.length) {
+      this.excludeKeywords = options.exclude.map((s) => s.toLowerCase());
+    }
+    if (options.excludePatterns?.length) {
+      this.excludePatterns = options.excludePatterns.map((p) =>
+        typeof p === "string" ? new RegExp(p) : p
+      );
+    }
 
     // 将格式化器注入到所有目标中
     for (const target of this.targets) {
@@ -320,6 +344,20 @@ export class Logger {
   }
 
   /**
+   * 判断当前日志条目是否应被过滤掉（不输出）
+   */
+  private shouldFilterOut(message: string): boolean {
+    const msgLower = message.toLowerCase();
+    if (this.excludeKeywords.some((kw) => msgLower.includes(kw))) {
+      return true;
+    }
+    if (this.excludePatterns.some((re) => re.test(message))) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * 记录日志
    */
   private log(
@@ -329,6 +367,10 @@ export class Logger {
     error?: Error,
   ): void {
     if (level < this.level) {
+      return;
+    }
+
+    if (this.shouldFilterOut(message)) {
       return;
     }
 

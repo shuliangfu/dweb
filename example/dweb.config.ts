@@ -88,6 +88,10 @@ export default defineConfig({
       maxFiles: 5, // 保留 5 个轮转文件
       interval: 24 * 60 * 60 * 1000, // 每 24 小时轮转一次
     },
+    // 过滤：不输出包含以下关键词的日志（大小写不敏感），可减少刷屏
+    exclude: ["[HMR]", "heartbeat", "[Tailwind]"],
+    // 过滤：不输出匹配以下正则的日志（正则字符串）
+    excludePatterns: ["^\\[Tailwind\\].*", "\\bprefetch\\b"],
   },
 
   // 静态资源目录，默认为 'assets'
