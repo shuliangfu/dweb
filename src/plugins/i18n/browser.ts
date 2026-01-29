@@ -4,6 +4,17 @@
  * 在浏览器中运行的国际化代码
  */
 
+// 立即设置 fallback $t，避免主应用 hydrate 时 $t 未定义（initI18n 为异步，语言包 fetch 完成前主 bundle 可能已执行）
+// 生产环境 + 浏览器缓存时尤为明显：主 bundle 从缓存秒加载，i18n 需 fetch 语言包，易出现竞态
+if (typeof globalThis !== "undefined") {
+  (globalThis as any).$t = (globalThis as any).$t || function (
+    key: string,
+    _params?: Record<string, any>,
+  ): string {
+    return key;
+  };
+}
+
 interface I18nData {
   lang: string;
   translations: Record<string, unknown>;

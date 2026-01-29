@@ -2117,6 +2117,14 @@ class BrowserClient {
  * 暴露到全局，供内联脚本调用
  */
 function initClient(config: ClientConfig): void {
+  // 确保 $t 存在，避免 i18n 异步加载未完成时组件渲染报错（生产+缓存时主 bundle 可能先于 i18n 执行）
+  if (
+    typeof globalThis !== "undefined" &&
+    typeof (globalThis as Record<string, unknown>).$t !== "function"
+  ) {
+    (globalThis as Record<string, unknown>).$t = (key: string) => key;
+  }
+
   const client = new BrowserClient(config);
   client.init().catch((error) => {
     console.error("[initClient] 初始化失败:", error);
