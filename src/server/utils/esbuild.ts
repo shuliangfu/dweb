@@ -65,15 +65,49 @@ function convertJsrToHttpUrl(jsrUrl: string): string {
  * @returns esbuild 插件
  */
 /**
+ * 不应该加 ?bundle 的包前缀列表
+ * 这些库需要在多个模块间共享同一个实例，单独 bundle 会导致多实例问题
+ * 例如：preact 的 hooks 需要共享状态，多实例会导致 hooks 失效
+ */
+const NO_BUNDLE_PACKAGE_PREFIXES = [
+  "preact", // Preact 及其子模块（hooks、signals 等）
+  "@preact/", // @preact/signals 等
+  "react", // React 及其子模块
+  "react-dom", // React DOM
+  "vue", // Vue 及其子模块
+  "@vue/", // @vue/server-renderer 等
+];
+
+/**
  * 将 npm: 协议转换为浏览器可访问的 URL
  * @param npmUrl npm: 协议的 URL，例如：npm:chart.js@4.4.7
- * @returns 浏览器可访问的 URL，例如：https://esm.sh/chart.js@4.4.7
+ * @returns 浏览器可访问的 URL，例如：https://esm.sh/chart.js@4.4.7?bundle
+ *
+ * 默认对大多数 npm 包加 ?bundle 参数，让 esm.sh 将包及其依赖打包成单个文件
+ * 这样可以避免大型库（如 viem、ethers）产生数百个单独的模块请求
+ *
+ * 例外：preact/react/vue 等框架库不加 bundle，因为它们需要在多个模块间共享实例
  */
 function convertNpmToBrowserUrl(npmUrl: string): string {
   // 移除 npm: 前缀
   const packageSpec = npmUrl.replace(/^npm:/, "");
-  // 使用 esm.sh 作为 CDN（支持 ESM 格式）
-  return `https://esm.sh/${packageSpec}`;
+
+  // 提取包名（不含版本号）用于检查是否需要排除
+  // 格式：@scope/name@version/subpath 或 name@version/subpath
+  const atIndex = packageSpec.indexOf("@", packageSpec.startsWith("@") ? 1 : 0);
+  const packageName = atIndex > 0
+    ? packageSpec.substring(0, atIndex)
+    : packageSpec.split("/")[0];
+
+  // 检查是否是不应该 bundle 的包（框架库需要共享实例）
+  const shouldSkipBundle = NO_BUNDLE_PACKAGE_PREFIXES.some(
+    (prefix) => packageName === prefix || packageName.startsWith(prefix),
+  );
+
+  // 使用 esm.sh 作为 CDN
+  // 对于框架库不加 bundle（需要共享实例），其他包加 bundle（减少请求数）
+  const baseUrl = `https://esm.sh/${packageSpec}`;
+  return shouldSkipBundle ? baseUrl : `${baseUrl}?bundle`;
 }
 
 /**
