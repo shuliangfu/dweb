@@ -28,14 +28,17 @@
     "@dreamer/database": "jsr:@dreamer/database@^1.0.0-beta.7",
     "@dreamer/plugins": "jsr:@dreamer/plugins@^1.0.0-beta.13",
     "tailwindcss": "npm:tailwindcss@^4.0.0",
-    "react": "npm:react@^18.3.1",
-    "react-dom": "npm:react-dom@^18.3.1",
-    "scheduler": "npm:scheduler@^0.25.0",
-    "react-dom/client": "npm:react-dom@^18.3.1/client",
-    "react/jsx-runtime": "npm:react@^18.3.1/jsx-runtime"
+    "preact": "npm:preact@^10.25.0",
+    "preact/hooks": "npm:preact@^10.25.0/hooks",
+    "preact/jsx-runtime": "npm:preact@^10.25.0/jsx-runtime",
+    "preact-render-to-string": "npm:preact-render-to-string@^6.5.0",
+    "react": "npm:preact@^10.25.0/compat",
+    "react-dom": "npm:preact@^10.25.0/compat",
+    "react-dom/client": "npm:preact@^10.25.0/compat/client",
+    "react/jsx-runtime": "npm:preact@^10.25.0/jsx-runtime"
   },
   "compilerOptions": {
     "jsx": "react-jsx",
-    "jsxImportSource": "react"
+    "jsxImportSource": "preact"
   }
 }

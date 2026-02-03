@@ -1,0 +1,89 @@
+{
+  "name": "@dreamer/dweb",
+  "version": "3.0.0-beta.1",
+  "license": "MIT",
+  "workspace": [
+    "./examples/preact/basic",
+    "./examples/preact/advanced",
+    "./examples/react/basic",
+    "./examples/react/advanced"
+  ],
+  "exports": {
+    ".": "./src/mod.ts",
+    "./cli": "./src/cli.ts",
+    "./core/app": "./src/core/app.ts",
+    "./core/config": "./src/core/config.ts",
+    "./core/service": "./src/core/service.ts",
+    "./core/middleware": "./src/core/middleware.ts",
+    "./core/plugin": "./src/core/plugin.ts",
+    "./core/lifecycle": "./src/core/lifecycle.ts",
+    "./core/database": "./src/core/database.ts",
+    "./feature/server": "./src/feature/http.ts",
+    "./feature/router": "./src/feature/router.ts",
+    "./feature/render": "./src/feature/render.ts",
+    "./feature/build": "./src/feature/build.ts",
+    "./feature/console": "./src/feature/console.ts",
+    "./types": "./src/types/mod.ts"
+  },
+  "publish": {
+    "include": [
+      "src/**/*.ts",
+      "LICENSE.md",
+      "README.md"
+    ],
+    "exclude": [
+      "**/*.test.ts",
+      "**/*.spec.ts",
+      "**/test/**",
+      "**/tests/**",
+      "**/examples/**",
+      "**/docs/**"
+    ]
+  },
+  "imports": {
+    "@dreamer/config": "jsr:@dreamer/config@^1.0.0-beta.5",
+    "@dreamer/service": "jsr:@dreamer/service@^1.0.0-beta.4",
+    "@dreamer/middleware": "jsr:@dreamer/middleware@^1.0.0-beta.4",
+    "@dreamer/plugin": "jsr:@dreamer/plugin@^1.0.0-beta.5",
+    "@dreamer/lifecycle": "jsr:@dreamer/lifecycle@^1.0.0-beta.2",
+    "@dreamer/middlewares": "jsr:@dreamer/middlewares@1.0.0-beta.5",
+    "@dreamer/server": "jsr:@dreamer/server@^1.0.0-beta.18",
+    "@dreamer/router": "jsr:@dreamer/router@^1.0.0-beta.10",
+    "@dreamer/render": "jsr:@dreamer/render@^1.0.0-beta.16",
+    "@dreamer/esbuild": "jsr:@dreamer/esbuild@1.0.0-beta.52",
+    "esbuild": "npm:esbuild@^0.27.2",
+    "postcss": "npm:postcss@8.4.39",
+    "autoprefixer": "npm:autoprefixer@10.4.19",
+    "cssnano": "npm:cssnano@7.0.3",
+    "@dreamer/image": "jsr:@dreamer/image@^1.0.0-beta.3",
+    "@dreamer/logger": "jsr:@dreamer/logger@^1.0.0-beta.10",
+    "@dreamer/utils": "jsr:@dreamer/utils@^1.0.0-beta.8",
+    "@dreamer/console": "jsr:@dreamer/console@^1.0.3-beta.6",
+    "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.0.0-beta.22",
+    "@dreamer/database": "jsr:@dreamer/database@^1.0.0-beta.7",
+    "@dreamer/test": "jsr:@dreamer/test@^1.0.0-beta.39"
+  },
+  "nodeModulesDir": "auto",
+  "lint": {
+    "include": [
+      "src/"
+    ],
+    "rules": {
+      "tags": [
+        "recommended"
+      ],
+      "exclude": [
+        "no-explicit-any"
+      ]
+    }
+  },
+  "allowScripts": {
+    "allow": [],
+    "deny": [
+      "npm:better-sqlite3@11.10.0",
+      "npm:esbuild@0.24.2",
+      "npm:esbuild@0.27.2",
+      "npm:puppeteer@24.36.1"
+    ]
+  }
+}

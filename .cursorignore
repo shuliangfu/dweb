@@ -1,0 +1,92 @@
+# Deno 相关
+.deno/
+deno.lock
+*.so
+*.dylib
+*.dll
+
+# 依赖
+node_modules/
+.npm/
+.pnpm-store/
+
+# 构建输出
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+runtime/
+
+# 测试覆盖率
+coverage/
+.nyc_output/
+*.lcov
+
+# 日志文件
+*.log
+*.log.*
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+
+# IDE 和编辑器
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# 系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# 临时文件和缓存
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/
+.tmp/
+*.pid
+*.seed
+*.pid.lock
+
+# 测试相关
+.test/
+test-results/
+playwright-report/
+test-results/
+
+# 文档生成
+docs/_build/
+site/
+
+# 其他
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx

@@ -1,0 +1,38 @@
+# 禁止与 legacy 分支相关的合并：
+# 1. 禁止 legacy 合并到 main 和 dev
+# 2. 禁止其他分支合并到 legacy（legacy 仅接受本分支内的提交）
+name: Block legacy merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  block-legacy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检查是否禁止的合并方向
+        run: |
+          BASE_REF="${{ github.base_ref }}"
+          HEAD_REF="${{ github.head_ref }}"
+          # 禁止 legacy 合并进来的分支
+          LEGACY_FORBIDDEN_INTO="main dev"
+          LEGACY_BRANCH="legacy"
+
+          # 1. 禁止 legacy 合并到 main 和 dev
+          if echo "$LEGACY_FORBIDDEN_INTO" | grep -qw "$BASE_REF"; then
+            if [ "$HEAD_REF" = "$LEGACY_BRANCH" ]; then
+              echo "::error::禁止将分支 '$LEGACY_BRANCH' 合并到 '$BASE_REF'。legacy 仅用于旧版本维护，不应合并回主分支。"
+              exit 1
+            fi
+          fi
+
+          # 2. 禁止其他分支合并到 legacy
+          if [ "$BASE_REF" = "$LEGACY_BRANCH" ]; then
+            if [ "$HEAD_REF" != "$LEGACY_BRANCH" ]; then
+              echo "::error::禁止将分支 '$HEAD_REF' 合并到 '$LEGACY_BRANCH'。legacy 仅接受本分支内的提交，不接受其他分支合并进来。"
+              exit 1
+            fi
+          fi
+
+          echo "合并方向检查通过。"

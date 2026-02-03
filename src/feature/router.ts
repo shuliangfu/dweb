@@ -1,0 +1,92 @@
+/**
+ * @dreamer/router 集成
+ *
+ * 职责：
+ * - 初始化路由系统
+ * - 文件路由扫描
+ * - 路由注册和管理
+ *
+ * 功能：
+ * - 创建 Router 实例
+ * - 路由匹配和分发
+ * - 路由参数解析
+ * - 触发 onRoute 插件事件
+ */
+
+import {
+  createRouter,
+  type Route,
+  type Router,
+  type RouterOptions,
+} from "@dreamer/router";
+import type { ServiceContainer } from "@dreamer/service";
+import { emitOnRoute, type RouteDefinition } from "../core/plugin-events.ts";
+import type { AppConfig } from "../types/app.ts";
+
+/**
+ * 初始化路由系统
+ *
+ * @param container 服务容器
+ * @param config 应用配置
+ * @returns 路由实例
+ */
+export async function initializeRouter(
+  container: ServiceContainer,
+  config: AppConfig,
+): Promise<Router> {
+  // 从配置中获取路由选项
+  const routerConfig = (config.router || {}) as RouterOptions;
+
+  // 从 render 配置中读取 engine 和 mode
+  const renderConfig = (config.render || {}) as {
+    engine?: "react" | "preact";
+    mode?: "ssr" | "csr" | "ssg";
+  };
+
+  // 创建路由实例（engine 从 render.engine 读取）
+  const router = createRouter({
+    routesDir: routerConfig.routesDir || "./src/routes",
+    engine: renderConfig.engine,
+    ssr: renderConfig.mode === "ssr",
+    apiMode: routerConfig.apiMode || "restful",
+  });
+
+  // 扫描路由文件
+  await router.scan();
+
+  // 获取当前路由列表并触发 onRoute 事件
+  // 通知插件路由已扫描完成（文件路由系统不支持动态修改）
+  const routes = router.getRoutes();
+  if (routes && routes.length > 0) {
+    // 转换为 RouteDefinition 格式（只读，供插件查看）
+    const routeDefinitions: RouteDefinition[] = routes.map((route: Route) => ({
+      path: route.path,
+      meta: {
+        file: route.file,
+        fullPath: route.fullPath,
+        type: route.type,
+        isApi: route.isApi,
+        isSpecial: route.isSpecial,
+        specialType: route.specialType,
+      },
+    }));
+
+    // 触发 onRoute 事件（通知插件）
+    await emitOnRoute(container, routeDefinitions);
+  }
+
+  // 将路由注册到服务容器
+  container.registerSingleton("router", () => router);
+
+  return router;
+}
+
+/**
+ * 获取路由实例
+ *
+ * @param container 服务容器
+ * @returns 路由实例
+ */
+export function getRouter(container: ServiceContainer): Router {
+  return container.get<Router>("router");
+}

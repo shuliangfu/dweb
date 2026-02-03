@@ -1,0 +1,623 @@
+{
+    "root": {
+        "data": {
+            "id": "framework-root",
+            "created": 1768243773037,
+            "text": "@dreamer/dweb 全栈框架"
+        },
+        "children": [
+            {
+                "data": {
+                    "id": "core-layer",
+                    "text": "核心层 (src/core)",
+                    "note": "框架基础：App、配置、服务容器、中间件、插件、生命周期"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "app",
+                            "text": "app.ts\nApp 主类",
+                            "note": "框架入口，整合各库、生命周期、事件、start/build"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "config",
+                            "text": "config.ts\n配置管理",
+                            "note": "深度合并、验证、getConfig/initializeConfigManager，对接 @dreamer/config"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "service",
+                            "text": "service.ts\n服务容器",
+                            "note": "initializeServiceContainer，对接 @dreamer/service"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "middleware",
+                            "text": "middleware.ts\n中间件系统",
+                            "note": "框架级中间件注册、路由中间件，对接 @dreamer/middleware"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "plugin",
+                            "text": "plugin.ts\n插件管理",
+                            "note": "registerPlugin、插件配置，对接 @dreamer/plugin"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "plugin-events",
+                            "text": "plugin-events.ts\n插件事件",
+                            "note": "emitOnInit/OnStart/OnStop/OnBuild/OnShutdown"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "lifecycle",
+                            "text": "lifecycle.ts\n生命周期",
+                            "note": "initializeLifecycle、getLifecycleManager，对接 @dreamer/lifecycle"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "database",
+                            "text": "database.ts\n数据库集成",
+                            "note": "initializeDatabase、connect/disconnect，对接 @dreamer/database"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "runtime-adapter",
+                            "text": "runtime-adapter.ts\n运行时适配",
+                            "note": "Deno/Bun 统一 API：文件、路径、环境变量、进程等"
+                        },
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "feature-layer",
+                    "text": "功能层 (src/feature)",
+                    "note": "HTTP 服务、路由、渲染、构建"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "server",
+                            "text": "server.ts\nHTTP 服务",
+                            "note": "initializeServer、startServer，对接 @dreamer/server，HMR"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "router",
+                            "text": "router.ts\n文件路由",
+                            "note": "initializeRouter、getRouter，对接 @dreamer/router，基于 routes 目录"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "render",
+                            "text": "render.ts\n渲染入口",
+                            "note": "initializeRender，对接 @dreamer/render，SSR/SSG 能力"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "render-csr",
+                            "text": "render-csr.ts\nCSR 渲染器",
+                            "note": "createRendererCSR，客户端渲染模式"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "render-ssr",
+                            "text": "render-ssr.ts\nSSR 渲染器",
+                            "note": "createRendererSSR，服务端渲染模式"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "render-hybrid",
+                            "text": "render-hybrid.ts\nHybrid 渲染器",
+                            "note": "createRendererHybrid，SSR 首屏 + 客户端激活"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "csr-client-builder",
+                            "text": "csr-client-builder.ts\n客户端构建",
+                            "note": "buildClientScript、ensureClientEntryFile、HMR 客户端脚本"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "build",
+                            "text": "build.ts\n构建流程",
+                            "note": "initializeBuild，对接 @dreamer/esbuild，client/server 构建"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "command",
+                            "text": "command.ts\n命令",
+                            "note": "CLI 命令扩展"
+                        },
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "types-utils",
+                    "text": "类型与工具",
+                    "note": "src/types、src/utils"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "types-app",
+                            "text": "types/app.ts\n应用类型",
+                            "note": "AppConfig、IApp、AppPlugin、AppMiddleware、AppStage 等"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "utils-logger",
+                            "text": "utils/logger.ts\n日志",
+                            "note": "initializeLogger、getLogger，对接 @dreamer/logger"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "utils-version",
+                            "text": "utils/version.ts\n版本",
+                            "note": "DWEB_VERSION，从 deno.json 读取"
+                        },
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "entry",
+                    "text": "入口",
+                    "note": "对外导出与 CLI"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "mod",
+                            "text": "mod.ts\n主入口",
+                            "note": "导出 App、类型、getConfig、getLogger 等公共 API"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "cli",
+                            "text": "cli.ts\nCLI 入口",
+                            "note": "命令行入口，对接 @dreamer/console"
+                        },
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "deps",
+                    "text": "依赖库 (@dreamer/*)",
+                    "note": "deno.json imports"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "deps-core",
+                            "text": "核心依赖",
+                            "note": "service、middleware、plugin、lifecycle、config"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "dep-service",
+                                    "text": "@dreamer/service",
+                                    "note": "服务容器"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "dep-middleware",
+                                    "text": "@dreamer/middleware",
+                                    "note": "中间件抽象"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "dep-plugin",
+                                    "text": "@dreamer/plugin",
+                                    "note": "插件系统"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "dep-lifecycle",
+                                    "text": "@dreamer/lifecycle",
+                                    "note": "生命周期"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "dep-config",
+                                    "text": "@dreamer/config",
+                                    "note": "配置加载"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "deps-http",
+                            "text": "HTTP 与中间件",
+                            "note": "server、middlewares"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "dep-server",
+                                    "text": "@dreamer/server",
+                                    "note": "HTTP 服务器、HMR"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "dep-middlewares",
+                                    "text": "@dreamer/middlewares",
+                                    "note": "requestId、requestLogger 等"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "deps-render-build",
+                            "text": "渲染与构建",
+                            "note": "router、render、esbuild"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "dep-router",
+                                    "text": "@dreamer/router",
+                                    "note": "文件路由"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "dep-render",
+                                    "text": "@dreamer/render",
+                                    "note": "SSR/Preact/React"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "dep-esbuild",
+                                    "text": "@dreamer/esbuild",
+                                    "note": "构建与打包"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "deps-utils",
+                            "text": "工具与运行时",
+                            "note": "logger、utils、runtime-adapter、database、test 等"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "dep-logger",
+                                    "text": "@dreamer/logger",
+                                    "note": "日志"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "dep-utils",
+                                    "text": "@dreamer/utils",
+                                    "note": "工具函数"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "dep-runtime",
+                                    "text": "@dreamer/runtime-adapter",
+                                    "note": "Deno/Bun 适配"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "dep-database",
+                                    "text": "@dreamer/database",
+                                    "note": "数据库"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "dep-console",
+                                    "text": "@dreamer/console",
+                                    "note": "CLI 输出"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "dep-image",
+                                    "text": "@dreamer/image",
+                                    "note": "图片处理（可选）"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "dep-test",
+                                    "text": "@dreamer/test",
+                                    "note": "测试"
+                                },
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "architecture",
+                    "text": "架构设计",
+                    "note": "渲染模式、路由、应用模式"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "render-modes",
+                            "text": "渲染模式",
+                            "note": "config.render.mode"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "mode-ssr",
+                                    "text": "SSR\n服务端渲染",
+                                    "note": "首屏 HTML 服务端生成"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "mode-csr",
+                                    "text": "CSR\n客户端渲染",
+                                    "note": "壳 + 客户端脚本"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "mode-hybrid",
+                                    "text": "Hybrid\n混合",
+                                    "note": "SSR 首屏 + 客户端 hydrate"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "file-routing",
+                            "text": "文件路由",
+                            "note": "routes 目录约定"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "route-special",
+                                    "text": "特殊文件",
+                                    "note": "_app、_layout、_404、_error、_middleware"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "route-dynamic",
+                                    "text": "动态路由",
+                                    "note": "[id].tsx 等"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "ui-engine",
+                            "text": "UI 引擎",
+                            "note": "config.render.engine"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "engine-preact",
+                                    "text": "Preact",
+                                    "note": "默认推荐"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "engine-react",
+                                    "text": "React",
+                                    "note": "可选"
+                                },
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "workflow",
+                    "text": "工作流程",
+                    "note": "启动与构建"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "startup",
+                            "text": "启动流程",
+                            "note": "new App(config) → _initializeConfig → start()"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "init-config",
+                                    "text": "配置合并与校验",
+                                    "note": "initializeLogger、_logFrameworkBanner"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "init-services",
+                                    "text": "服务与插件",
+                                    "note": "lifecycle、middleware、plugin、database"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "init-server",
+                                    "text": "服务器与路由",
+                                    "note": "render、router、build、server、requestId/requestLogger"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "lifecycle-start",
+                                    "text": "生命周期 start",
+                                    "note": "initialize、start、startServer"
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "build-flow",
+                            "text": "构建流程",
+                            "note": "app.build() 或 deno task dev 带 --build"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "build-plugin",
+                                    "text": "插件 onBuild",
+                                    "note": "CSS 等资源"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "build-client",
+                                    "text": "客户端打包",
+                                    "note": "buildClientScript、代码分割"
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "build-server",
+                                    "text": "服务端编译",
+                                    "note": "输出 dist/server.js 等"
+                                },
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "dev-experience",
+                    "text": "开发体验",
+                    "note": "HMR、类型安全、示例"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "hmr",
+                            "text": "HMR",
+                            "note": "server dev.hmr，--watch-hmr"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "typescript",
+                            "text": "TypeScript",
+                            "note": "全类型导出"
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "examples",
+                            "text": "示例",
+                            "note": "examples/preact/basic、advanced"
+                        },
+                        "children": []
+                    }
+                ]
+            }
+        ]
+    },
+    "template": "default",
+    "theme": "fresh-blue",
+    "version": "1.4.43"
+}

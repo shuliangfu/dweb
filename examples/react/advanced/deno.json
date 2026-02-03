@@ -1,10 +1,16 @@
 {
   "tasks": {
-    "dev": "deno run -A src/main.ts",
-    "build": "deno run -A src/main.ts --build",
-    "start": "deno run -A dist/server.js"
+    "dev:backend": "deno run -A src/backend/main.ts",
+    "dev:frontend": "deno run -A src/frontend/main.ts",
+    "build:backend": "deno run -A src/backend/main.ts --build",
+    "build:frontend": "deno run -A src/frontend/main.ts --build",
+    "start:backend": "deno run -A dist/backend/server.js",
+    "start:frontend": "deno run -A dist/frontend/server.js"
   },
   "imports": {
+    "@common/": "./src/common/",
+    "@backend/": "./src/backend/",
+    "@frontend/": "./src/frontend/",
     "@dreamer/dweb": "../../../src/mod.ts",
     "@dreamer/config": "jsr:@dreamer/config@^1.0.0-beta.5",
     "@dreamer/service": "jsr:@dreamer/service@^1.0.0-beta.4",
@@ -20,7 +26,6 @@
     "postcss": "npm:postcss@8.4.39",
     "autoprefixer": "npm:autoprefixer@10.4.19",
     "cssnano": "npm:cssnano@7.0.3",
-    "@dreamer/image": "jsr:@dreamer/image@^1.0.0-beta.3",
     "@dreamer/logger": "jsr:@dreamer/logger@^1.0.0-beta.10",
     "@dreamer/utils": "jsr:@dreamer/utils@^1.0.0-beta.8",
     "@dreamer/console": "jsr:@dreamer/console@^1.0.3-beta.6",
