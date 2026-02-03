@@ -5,8 +5,9 @@ node_modules/
 .npm/
 vendor
 
-# 构建输出
+# 构建输出（根目录 dist 用于 JSR 发布 web3 bundle，需提交；子项目 dist 忽略）
 dist/
+!/dist/
 /build/
 *.tsbuildinfo
 
@@ -54,7 +55,7 @@ temp/
 .cache/
 .parcel-cache/
 
-# 示例项目的构建输出（如果存在）
+# 示例项目构建输出（不提交）
 example/dist/
 example/build/
 
