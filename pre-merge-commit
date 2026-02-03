@@ -1,0 +1,44 @@
+#!/bin/sh
+#
+# 禁止与 legacy 分支相关的合并（与 GitHub Actions 规则一致）：
+# 1. 禁止将 legacy 合并到 main 和 dev
+# 2. 禁止将 main/master/dev 等合并到 legacy
+#
+# 启用：复制到 .git/hooks/pre-merge-commit 并 chmod +x
+#   cp scripts/pre-merge-commit .git/hooks/pre-merge-commit && chmod +x .git/hooks/pre-merge-commit
+#
+
+CURRENT=$(git branch --show-current)
+MERGE_HEAD=$(git rev-parse MERGE_HEAD 2>/dev/null)
+LEGACY_REF="refs/heads/legacy"
+# 禁止 legacy 合并进来的分支（legacy 只能用于旧版本维护）
+LEGACY_FORBIDDEN_INTO="main dev"
+# 禁止合并到 legacy 的分支
+FORBIDDEN_INTO_LEGACY="main master dev"
+
+# 非合并时不检查
+[ -z "$MERGE_HEAD" ] && exit 0
+
+LEGACY_COMMIT=$(git rev-parse "$LEGACY_REF" 2>/dev/null)
+[ -z "$LEGACY_COMMIT" ] && exit 0
+
+# 1. 禁止 legacy 合并到 main 和 dev
+for branch in $LEGACY_FORBIDDEN_INTO; do
+  if [ "$CURRENT" = "$branch" ] && [ "$LEGACY_COMMIT" = "$MERGE_HEAD" ]; then
+    echo "禁止将分支 legacy 合并到 $CURRENT。legacy 仅用于旧版本维护，不应合并回主分支。" >&2
+    exit 1
+  fi
+done
+
+# 2. 禁止 main/master/dev 等合并到 legacy
+if [ "$CURRENT" = "legacy" ]; then
+  for branch in $FORBIDDEN_INTO_LEGACY; do
+    OTHER_COMMIT=$(git rev-parse "refs/heads/$branch" 2>/dev/null)
+    if [ -n "$OTHER_COMMIT" ] && [ "$OTHER_COMMIT" = "$MERGE_HEAD" ]; then
+      echo "禁止将分支 $branch 合并到 legacy。legacy 仅接受本分支内的提交。" >&2
+      exit 1
+    fi
+  done
+fi
+
+exit 0
