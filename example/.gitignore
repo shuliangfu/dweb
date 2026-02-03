@@ -1,7 +1,0 @@
-# ... existing code ...
-
-# PM2 日志
-logs/
-*.log
-.pup/
-.dist

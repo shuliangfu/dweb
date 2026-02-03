@@ -1,0 +1,27 @@
+/**
+ * 默认配置文件
+ */
+
+import type { AppConfig } from "@dreamer/dweb";
+
+const config: AppConfig = {
+  name: "react-basic-example",
+  version: "1.0.0",
+  server: {
+    port: 3000,
+    host: "0.0.0.0",
+  },
+  render: {
+    engine: "react",
+    mode: "hybrid",
+  },
+  router: {
+    routesDir: "./src/routes",
+  },
+  logger: {
+    level: "info",
+    format: "text",
+  },
+};
+
+export default config;
