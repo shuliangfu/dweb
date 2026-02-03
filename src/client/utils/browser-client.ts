@@ -2086,7 +2086,7 @@ class BrowserClient {
       // 当语言切换时，重新导航到当前页面，触发重新渲染以应用新的翻译
       globalThis.addEventListener(
         "i18n:language-changed",
-        async (event: Event) => {
+        async (_event: Event) => {
           try {
             // 重新导航到当前路径，触发重新渲染
             // 使用 replace=true 避免添加历史记录

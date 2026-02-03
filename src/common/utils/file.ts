@@ -343,7 +343,7 @@ export function isAudioFile(file: File | Blob | string): boolean {
  * });
  * ```
  */
-export async function compressImage(
+export function compressImage(
   file: File | Blob,
   options: {
     maxWidth?: number;

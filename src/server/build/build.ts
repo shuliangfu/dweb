@@ -372,7 +372,7 @@ class RouteMapGenerator {
           // 处理 index 文件：计算基础路径
           const basePath = pathWithoutExt.replace(/\/?index$/, "") || "/";
           // 确保路径以 / 开头（除非是根路径）
-          let finalRoutePath = basePath === "/"
+          const finalRoutePath = basePath === "/"
             ? "/"
             : (basePath.startsWith("/") ? basePath : "/" + basePath);
 

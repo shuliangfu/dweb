@@ -22,22 +22,23 @@ export class MemoryQueueAdapter implements QueueAdapter {
     return this.tasks.get(queueName)!;
   }
 
-  async addTask(task: SerializableTask): Promise<void> {
+  addTask(task: SerializableTask): Promise<void> {
     const queueTasks = this.getQueueTasks(task.queueName);
     queueTasks.set(task.id, { ...task });
+    return Promise.resolve();
   }
 
-  async getTask(taskId: string): Promise<SerializableTask | null> {
+  getTask(taskId: string): Promise<SerializableTask | null> {
     for (const queueTasks of this.tasks.values()) {
       const task = queueTasks.get(taskId);
       if (task) {
-        return { ...task };
+        return Promise.resolve({ ...task });
       }
     }
-    return null;
+    return Promise.resolve(null);
   }
 
-  async updateTask(
+  updateTask(
     taskId: string,
     updates: Partial<SerializableTask>,
   ): Promise<void> {
@@ -45,34 +46,36 @@ export class MemoryQueueAdapter implements QueueAdapter {
       const task = queueTasks.get(taskId);
       if (task) {
         queueTasks.set(taskId, { ...task, ...updates });
-        return;
+        return Promise.resolve();
       }
     }
+    return Promise.resolve();
   }
 
-  async deleteTask(taskId: string): Promise<void> {
+  deleteTask(taskId: string): Promise<void> {
     for (const queueTasks of this.tasks.values()) {
       queueTasks.delete(taskId);
     }
+    return Promise.resolve();
   }
 
-  async getPendingTasks(queueName: string): Promise<SerializableTask[]> {
+  getPendingTasks(queueName: string): Promise<SerializableTask[]> {
     const queueTasks = this.getQueueTasks(queueName);
     const tasks = Array.from(queueTasks.values()).filter(
       (task) => task.status === "pending",
     );
-    // 按优先级排序
-    return this.sortByPriority(tasks);
+    return Promise.resolve(this.sortByPriority(tasks));
   }
 
-  async getRunningTasks(queueName: string): Promise<SerializableTask[]> {
+  getRunningTasks(queueName: string): Promise<SerializableTask[]> {
     const queueTasks = this.getQueueTasks(queueName);
-    return Array.from(queueTasks.values()).filter(
+    const tasks = Array.from(queueTasks.values()).filter(
       (task) => task.status === "running",
     );
+    return Promise.resolve(tasks);
   }
 
-  async getCompletedTasks(
+  getCompletedTasks(
     queueName: string,
     limit: number = 100,
   ): Promise<SerializableTask[]> {
@@ -81,10 +84,10 @@ export class MemoryQueueAdapter implements QueueAdapter {
       .filter((task) => task.status === "completed")
       .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0))
       .slice(0, limit);
-    return tasks;
+    return Promise.resolve(tasks);
   }
 
-  async getFailedTasks(
+  getFailedTasks(
     queueName: string,
     limit: number = 100,
   ): Promise<SerializableTask[]> {
@@ -93,11 +96,12 @@ export class MemoryQueueAdapter implements QueueAdapter {
       .filter((task) => task.status === "failed")
       .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0))
       .slice(0, limit);
-    return tasks;
+    return Promise.resolve(tasks);
   }
 
-  async clearQueue(queueName: string): Promise<void> {
+  clearQueue(queueName: string): Promise<void> {
     this.tasks.delete(queueName);
+    return Promise.resolve();
   }
 
   /**

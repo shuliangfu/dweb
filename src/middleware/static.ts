@@ -11,7 +11,6 @@ import type {
 } from "../common/types/index.ts";
 import * as path from "@std/path";
 import { isPathSafe } from "../server/utils/security.ts";
-import type { AppLike } from "../common/types/index.ts";
 
 /**
  * 根据文件扩展名获取 MIME 类型
