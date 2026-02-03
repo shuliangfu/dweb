@@ -26,7 +26,7 @@ console.log("[build-browser] 开始构建客户端 Web3 bundle...");
 
 // 1. 构建完整版（带 sourcemap）
 await esbuild.build({
-  entryPoints: [resolve(ROOT, "src/client/web3.ts")],
+  entryPoints: [resolve(ROOT, "src/common/utils/web3.ts")],
   bundle: true,
   format: "esm",
   outfile: resolve(ROOT, "dist/web3-utils.esm.js"),

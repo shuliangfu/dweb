@@ -18434,8 +18434,12 @@ function privateKeyToAccount(privateKey, options = {}) {
   };
 }
 
-// src/client/web3.ts
-var IS_BROWSER = typeof globalThis !== "undefined" && "window" in globalThis;
+// src/common/constants.ts
+var IS_SERVER = typeof Deno !== "undefined";
+var IS_CLIENT = !IS_SERVER;
+var IS_DEV = IS_SERVER ? Deno.env.get("DENO_ENV") === "development" : false;
+
+// src/common/utils/web3.ts
 var Web3Client = class {
   /**
    * 创建 Web3 客户端实例
@@ -18499,14 +18503,14 @@ var Web3Client = class {
   /**
    * 获取或创建 PublicClient（懒加载）
    * 在客户端环境中，如果检测到 window.ethereum，优先使用它
-   * 在没有 window.ethereum 时，使用 rpcUrl 创建 HTTP transport
+   * 在服务端环境或没有 window.ethereum 时，使用 rpcUrl 创建 HTTP transport
    * @returns PublicClient 实例
    */
   getPublicClient() {
     if (this.publicClient) {
       return this.publicClient;
     }
-    if (IS_BROWSER) {
+    if (IS_CLIENT) {
       const win = globalThis.window;
       if (win.ethereum) {
         try {
@@ -18523,7 +18527,7 @@ var Web3Client = class {
     }
     if (!this.config.rpcUrl) {
       throw new Error(
-        "\u672A\u68C0\u6D4B\u5230\u94B1\u5305\u4E14 RPC URL \u672A\u914D\u7F6E\uFF0C\u8BF7\u8FDE\u63A5\u94B1\u5305\u6216\u8BBE\u7F6E rpcUrl"
+        IS_CLIENT ? "\u672A\u68C0\u6D4B\u5230\u94B1\u5305\u4E14 RPC URL \u672A\u914D\u7F6E\uFF0C\u8BF7\u8FDE\u63A5\u94B1\u5305\u6216\u8BBE\u7F6E rpcUrl" : "RPC URL \u672A\u914D\u7F6E\uFF0C\u8BF7\u8BBE\u7F6E rpcUrl"
       );
     }
     try {
@@ -18569,7 +18573,7 @@ var Web3Client = class {
     if (this.walletClient) {
       return this.walletClient;
     }
-    if (IS_BROWSER) {
+    if (IS_CLIENT) {
       const win = globalThis.window;
       if (win.ethereum) {
         try {
@@ -18599,17 +18603,49 @@ var Web3Client = class {
         }
       }
     }
-    throw new Error(
-      "\u672A\u68C0\u6D4B\u5230\u94B1\u5305\uFF0C\u8BF7\u5728\u6D4F\u89C8\u5668\u4E2D\u8FDE\u63A5 MetaMask \u6216\u5176\u4ED6 Web3 \u94B1\u5305"
-    );
+    if (!this.config.rpcUrl || !this.config.privateKey) {
+      throw new Error(
+        "\u672A\u68C0\u6D4B\u5230\u94B1\u5305\u4E14 RPC URL \u6216\u79C1\u94A5\u672A\u914D\u7F6E\uFF0C\u8BF7\u8FDE\u63A5\u94B1\u5305\u6216\u8BBE\u7F6E rpcUrl \u548C privateKey"
+      );
+    }
+    try {
+      const account = privateKeyToAccount(this.config.privateKey);
+      let chain = this.chain || void 0;
+      if (!chain) {
+        try {
+          const publicClient = this.getPublicClient();
+          chain = publicClient.chain;
+          if (chain) {
+            this.chain = chain;
+          }
+        } catch {
+        }
+      }
+      if (!this.config.rpcUrl) {
+        throw new Error("\u670D\u52A1\u7AEF\u521B\u5EFA WalletClient \u9700\u8981 rpcUrl \u914D\u7F6E");
+      }
+      this.walletClient = createWalletClient({
+        account,
+        chain,
+        transport: http(this.config.rpcUrl)
+      });
+      if (this.walletClient.chain && !this.chain) {
+        this.chain = this.walletClient.chain;
+      }
+      return this.walletClient;
+    } catch (error) {
+      throw new Error(
+        `\u670D\u52A1\u7AEF\u521B\u5EFA WalletClient \u5931\u8D25: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
   }
   /**
    * 连接钱包（浏览器环境）
    * @returns 钱包地址数组
    */
   async connectWallet() {
-    if (!IS_BROWSER) {
-      throw new Error("\u6B64\u65B9\u6CD5\u4EC5\u5728\u6D4F\u89C8\u5668\u73AF\u5883\u53EF\u7528");
+    if (!IS_CLIENT) {
+      return [];
     }
     const win = globalThis.window;
     if (!win.ethereum) {
@@ -18684,7 +18720,8 @@ var Web3Client = class {
     }
   }
   /**
-   * 发送交易（通过已连接钱包签名并发送）
+   * 发送交易
+   * 使用 eth_sendRawTransaction 方法发送交易，兼容不支持 eth_sendTransaction 的节点
    * @param options 交易选项
    * @returns 交易哈希
    */
@@ -18692,11 +18729,21 @@ var Web3Client = class {
     const walletClient = this.getWalletClient();
     const publicClient = this.getPublicClient();
     try {
-      const accounts = await walletClient.getAddresses();
-      if (accounts.length === 0) {
-        throw new Error("\u672A\u627E\u5230\u53EF\u7528\u8D26\u6237\uFF0C\u8BF7\u5148\u8FDE\u63A5\u94B1\u5305");
+      let account;
+      let walletAccount = null;
+      if (IS_CLIENT) {
+        const accounts = await walletClient.getAddresses();
+        if (accounts.length === 0) {
+          throw new Error("\u672A\u627E\u5230\u53EF\u7528\u8D26\u6237\uFF0C\u8BF7\u5148\u8FDE\u63A5\u94B1\u5305");
+        }
+        account = accounts[0];
+      } else {
+        walletAccount = walletClient.account;
+        if (!walletAccount || !walletAccount.address) {
+          throw new Error("\u670D\u52A1\u7AEF\u672A\u627E\u5230\u8D26\u6237\uFF0C\u8BF7\u68C0\u67E5 privateKey \u914D\u7F6E");
+        }
+        account = walletAccount.address;
       }
-      const account = accounts[0];
       const txParams = {
         to: options.to,
         value: options.value ? BigInt(options.value.toString()) : void 0,
@@ -18716,12 +18763,45 @@ var Web3Client = class {
       } else {
         txParams.nonce = options.nonce;
       }
-      const win = globalThis.window;
-      if (!(win == null ? void 0 : win.ethereum)) {
-        throw new Error("\u672A\u68C0\u6D4B\u5230\u94B1\u5305\uFF0C\u8BF7\u8FDE\u63A5 MetaMask \u6216\u5176\u4ED6 Web3 \u94B1\u5305");
+      if (IS_CLIENT) {
+        const win = globalThis.window;
+        if (win.ethereum) {
+          txParams.account = account;
+          const hash4 = await walletClient.sendTransaction(txParams);
+          return hash4;
+        }
       }
-      txParams.account = account;
-      const hash3 = await walletClient.sendTransaction(txParams);
+      if (!walletAccount) {
+        throw new Error("\u670D\u52A1\u7AEF\u672A\u627E\u5230\u8D26\u6237\u5BF9\u8C61\uFF0C\u8BF7\u68C0\u67E5 privateKey \u914D\u7F6E");
+      }
+      let chain = walletClient.chain || this.chain;
+      if (!chain) {
+        try {
+          const network = await this.getNetwork();
+          chain = {
+            id: Number(network.chainId.toString()),
+            name: network.name
+          };
+        } catch {
+          if (this.config.chainId) {
+            chain = {
+              id: this.config.chainId,
+              name: this.config.network || `chain-${this.config.chainId}`
+            };
+          }
+        }
+      }
+      if (!chain) {
+        throw new Error(
+          "\u65E0\u6CD5\u83B7\u53D6\u94FE\u4FE1\u606F\uFF0C\u8BF7\u5728\u914D\u7F6E\u4E2D\u8BBE\u7F6E chainId \u6216\u786E\u4FDD RPC \u8282\u70B9\u53EF\u7528"
+        );
+      }
+      txParams.account = walletAccount;
+      txParams.chain = chain;
+      const serializedTx = await walletClient.signTransaction(txParams);
+      const hash3 = await publicClient.sendRawTransaction({
+        serializedTransaction: serializedTx
+      });
       return hash3;
     } catch (error) {
       throw new Error(
@@ -18758,6 +18838,7 @@ var Web3Client = class {
   async callContract(options, waitForConfirmation = true) {
     var _a;
     const walletClient = this.getWalletClient();
+    const publicClient = this.getPublicClient();
     try {
       const contractAddress = options.address || this.config.address;
       if (!contractAddress) {
@@ -18794,25 +18875,91 @@ var Web3Client = class {
           "\u65E0\u6CD5\u83B7\u53D6\u94FE\u4FE1\u606F\uFF0C\u8BF7\u5728\u914D\u7F6E\u4E2D\u8BBE\u7F6E chainId \u6216\u786E\u4FDD\u94B1\u5305\u5DF2\u8FDE\u63A5"
         );
       }
-      const accounts = await walletClient.getAddresses();
-      if (accounts.length === 0) {
-        throw new Error("\u672A\u627E\u5230\u53EF\u7528\u8D26\u6237\uFF0C\u8BF7\u5148\u8FDE\u63A5\u94B1\u5305");
+      let account;
+      let walletAccount = null;
+      if (IS_CLIENT) {
+        const accounts = await walletClient.getAddresses();
+        if (accounts.length === 0) {
+          throw new Error("\u672A\u627E\u5230\u53EF\u7528\u8D26\u6237\uFF0C\u8BF7\u5148\u8FDE\u63A5\u94B1\u5305");
+        }
+        account = accounts[0];
+      } else {
+        walletAccount = walletClient.account;
+        if (!walletAccount || !walletAccount.address) {
+          throw new Error("\u670D\u52A1\u7AEF\u672A\u627E\u5230\u8D26\u6237\uFF0C\u8BF7\u68C0\u67E5 privateKey \u914D\u7F6E");
+        }
+        account = walletAccount.address;
       }
-      const account = accounts[0];
-      const win = globalThis.window;
-      if (!(win == null ? void 0 : win.ethereum)) {
-        throw new Error("\u672A\u68C0\u6D4B\u5230\u94B1\u5305\uFF0C\u8BF7\u8FDE\u63A5 MetaMask \u6216\u5176\u4ED6 Web3 \u94B1\u5305");
+      let hash3;
+      if (IS_CLIENT) {
+        const win = globalThis.window;
+        if (win.ethereum) {
+          hash3 = await walletClient.writeContract({
+            account,
+            address: contractAddress,
+            abi: parsedAbi,
+            functionName: options.functionName,
+            args: options.args,
+            value: options.value ? BigInt(options.value.toString()) : void 0,
+            gas: options.gasLimit ? BigInt(options.gasLimit.toString()) : void 0,
+            chain
+          });
+        } else {
+          throw new Error(
+            "\u672A\u68C0\u6D4B\u5230\u94B1\u5305\uFF0C\u8BF7\u8FDE\u63A5\u94B1\u5305\u6216\u4F7F\u7528\u670D\u52A1\u7AEF\u914D\u7F6E\uFF08privateKey\uFF09"
+          );
+        }
+      } else {
+        const data = encodeFunctionData({
+          abi: parsedAbi,
+          functionName: options.functionName,
+          args: options.args
+        });
+        const txParams = {
+          to: contractAddress,
+          data,
+          value: options.value ? BigInt(options.value.toString()) : void 0,
+          gas: options.gasLimit ? BigInt(options.gasLimit.toString()) : void 0
+        };
+        txParams.nonce = await publicClient.getTransactionCount({
+          address: account
+        });
+        if (!txParams.gas) {
+          try {
+            const gasEstimate = await publicClient.estimateGas({
+              account,
+              to: contractAddress,
+              data,
+              value: txParams.value
+            });
+            txParams.gas = gasEstimate;
+          } catch {
+            txParams.gas = 21000n;
+          }
+        }
+        try {
+          const feeData = await publicClient.estimateFeesPerGas();
+          if (feeData.maxFeePerGas) {
+            txParams.maxFeePerGas = feeData.maxFeePerGas;
+            txParams.maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || feeData.maxFeePerGas / 2n;
+          } else {
+            const gasPrice = await publicClient.getGasPrice();
+            txParams.gasPrice = gasPrice;
+          }
+        } catch {
+          const gasPrice = await publicClient.getGasPrice();
+          txParams.gasPrice = gasPrice;
+        }
+        if (!walletAccount) {
+          throw new Error("\u670D\u52A1\u7AEF\u672A\u627E\u5230\u8D26\u6237\u5BF9\u8C61\uFF0C\u8BF7\u68C0\u67E5 privateKey \u914D\u7F6E");
+        }
+        txParams.account = walletAccount;
+        txParams.chain = chain;
+        const serializedTx = await walletClient.signTransaction(txParams);
+        hash3 = await publicClient.sendRawTransaction({
+          serializedTransaction: serializedTx
+        });
       }
-      const hash3 = await walletClient.writeContract({
-        account,
-        address: contractAddress,
-        abi: parsedAbi,
-        functionName: options.functionName,
-        args: options.args,
-        value: options.value ? BigInt(options.value.toString()) : void 0,
-        gas: options.gasLimit ? BigInt(options.gasLimit.toString()) : void 0,
-        chain
-      });
       if (!waitForConfirmation) {
         return hash3;
       }
