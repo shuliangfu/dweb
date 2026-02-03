@@ -70,6 +70,7 @@ deno add jsr:@dreamer/runtime-adapter
 - ✅ **默认使用 Preact**：轻量级、高性能，也支持 React
 - ✅ **中间件系统**：通用中间件系统，可用于 HTTP、WebSocket、消息队列等多种场景
 - ✅ **插件系统**：插件生命周期管理、插件依赖、插件事件系统、热加载
+- ✅ **事件系统**：App 继承 EventEmitter，支持生命周期与自定义事件（on/emit/once/off）
 - ✅ **服务容器**：依赖注入和服务管理
 - ✅ **数据库支持**：多种数据库适配器（PostgreSQL、MySQL、SQLite、MongoDB）
 - ✅ **缓存支持**：Redis + 内存缓存 + 文件缓存
@@ -913,6 +914,65 @@ export default function User({ params }: { params: { id: string } }) {
 
 ## 🎨 使用示例
 
+### 事件系统
+
+App 继承 Node.js 的 **EventEmitter**，可在应用生命周期关键节点监听或触发事件，也可用于自定义业务事件。
+
+| 方法 | 说明 |
+|------|------|
+| `app.on(eventName, handler)` | 监听事件，可多次注册 |
+| `app.once(eventName, handler)` | 仅触发一次后自动移除 |
+| `app.emit(eventName, ...args)` | 触发事件，可传参 |
+| `app.off(eventName, handler)` | 移除指定监听器 |
+
+**内置事件**（由框架在对应时机自动触发）：
+
+| 事件名 | 触发时机 | 说明 |
+|--------|----------|------|
+| `init` | 应用初始化完成（配置、服务、路由等就绪） | 仅一次 |
+| `start` | 应用启动（`await app.start()` 内，生命周期 start 前） | 每次 start |
+| `stop` | 应用停止（`await app.stop()` 内） | 每次 stop |
+| `build` | 构建完成（`await app.build()` 成功结束后） | 仅构建模式 |
+| `error` | 未捕获错误时（EventEmitter 约定，可主动 `app.emit("error", err)`） | 可选 |
+
+**自定义事件**：除内置事件外，可任意命名并 `emit`，例如插件构建产物可触发 `plugin:build:compiled`，由 App 在构建流程中监听并收集。
+
+```typescript
+import { App } from "jsr:@dreamer/dweb";
+
+const app = new App({ name: "my-app", version: "1.0.0", /* ... */ });
+
+// 监听应用初始化完成
+app.on("init", () => {
+  console.log("应用已初始化，可安全访问 container、config 等");
+});
+
+// 监听应用启动
+app.on("start", () => {
+  console.log("应用已启动，服务器开始监听");
+});
+
+// 监听构建完成
+app.on("build", () => {
+  console.log("构建完成，可执行部署脚本等");
+});
+
+// 一次性监听
+app.once("init", () => {
+  console.log("仅首次 init 时执行");
+});
+
+// 自定义事件：业务侧触发与监听
+app.on("user:login", (userId: string) => {
+  console.log("用户登录:", userId);
+});
+// 某处触发：app.emit("user:login", "123");
+```
+
+**与插件钩子的区别**：插件的 `onInit`、`onStart`、`onStop` 等由 **插件事件系统**（`@dreamer/dweb/core/plugin-events`）在已激活插件上调用，用于插件自身逻辑；App 的 `init`、`start`、`stop` 等 **EventEmitter 事件**面向应用层，用于日志、监控或与业务代码解耦。
+
+---
+
 ### 中间件系统
 
 ```typescript
@@ -1220,6 +1280,52 @@ deno task lint           # 代码检查
 **选择建议**：
 - **单应用模式**：适合大多数场景，简单直接，推荐默认使用
 - **多应用模式**：适合大型项目、需要前后端分离、多端应用（Web、Mobile）的场景
+
+---
+
+## 📦 扩展库
+
+以下为 dreamer-jsr 生态中**按需选用**的扩展库，用于在 dweb 项目里增加认证、缓存、支付、实时通信等能力。dweb 已内置运行所需的核心依赖，无需单独安装；仅当需要下表能力时再安装对应库。
+
+| 库名 | 简介 | GitHub |
+|------|------|--------|
+| **@dreamer/auth** | 用户认证：JWT、OAuth2、Session、刷新 Token、权限校验 | [auth](https://github.com/shuliangfu/auth) |
+| **@dreamer/cache** | 缓存：内存 / 文件 / Redis / Memcached，统一接口 | [cache](https://github.com/shuliangfu/cache) |
+| **@dreamer/console** | 控制台与 CLI：命令封装、美化输出、表格、交互 | [console](https://github.com/shuliangfu/console) |
+| **@dreamer/crypto** | 加密与安全：哈希、加解密、签名、JWT 等 | [crypto](https://github.com/shuliangfu/crypto) |
+| **@dreamer/database** | 数据库：多库适配、ORM/ODM、查询构建、迁移 | [database](https://github.com/shuliangfu/database) |
+| **@dreamer/email** | 邮件发送：SMTP 客户端、HTML 邮件 | [email](https://github.com/shuliangfu/email) |
+| **@dreamer/foundry** | 智能合约：Foundry 部署与验证（EVM 链） | [foundry](https://github.com/shuliangfu/foundry) |
+| **@dreamer/humancheck** | 人机验证：图形/数学/滑块验证码、TOTP、第三方 | [humancheck](https://github.com/shuliangfu/humancheck) |
+| **@dreamer/i18n** | 国际化：翻译、格式化、多语言管理 | [i18n](https://github.com/shuliangfu/i18n) |
+| **@dreamer/image** | 图片处理：缩放、转换、压缩（服务端/客户端） | [image](https://github.com/shuliangfu/image) |
+| **@dreamer/logger** | 日志：多级别、格式化、轮转（服务端/客户端） | [logger](https://github.com/shuliangfu/logger) |
+| **@dreamer/markdown** | Markdown：解析、GFM、目录、多种扩展语法 | [markdown](https://github.com/shuliangfu/markdown) |
+| **@dreamer/middlewares** | HTTP 中间件集：Request ID、日志、CORS 等 | [middlewares](https://github.com/shuliangfu/middlewares) |
+| **@dreamer/notification** | 通知：Web Push、邮件、短信、Webhook、模板与队列 | [notification](https://github.com/shuliangfu/notification) |
+| **@dreamer/payment** | 统一支付：Stripe、PayPal、支付宝、微信、Web3 等 | [payment](https://github.com/shuliangfu/payment) |
+| **@dreamer/plugins** | 官方插件集：CSS 原子化、i18n、SEO、PWA、认证等 | [plugins](https://github.com/shuliangfu/plugins) |
+| **@dreamer/queue** | 任务队列：多适配器、调度、并发控制 | [queue](https://github.com/shuliangfu/queue) |
+| **@dreamer/runtime-adapter** | 运行时适配：Deno/Bun 统一的 fs、path、env 等 | [runtime-adapter](https://github.com/shuliangfu/runtime-adapter) |
+| **@dreamer/session** | 会话：持久化 Session，Redis/MongoDB/文件后端 | [session](https://github.com/shuliangfu/session) |
+| **@dreamer/service** | 服务容器：依赖注入、单例/多例/工厂 | [service](https://github.com/shuliangfu/service) |
+| **@dreamer/socket-io** | Socket.IO：实时双向通信，多运行时 | [socket-io](https://github.com/shuliangfu/socket-io) |
+| **@dreamer/storage** | 存储：文件存储抽象与多后端 | [storage](https://github.com/shuliangfu/storage) |
+| **@dreamer/store** | 客户端状态：Preact/React 响应式状态管理 | [store](https://github.com/shuliangfu/store) |
+| **@dreamer/stream** | 直播流：推流、拉流、转码与协议适配 | [stream](https://github.com/shuliangfu/stream) |
+| **@dreamer/test** | 测试：Mock、断言、浏览器测试等 | [test](https://github.com/shuliangfu/test) |
+| **@dreamer/theme** | 主题：明暗模式、持久化偏好 | [theme](https://github.com/shuliangfu/theme) |
+| **@dreamer/upload** | 文件上传：分片、断点续传、云存储适配 | [upload](https://github.com/shuliangfu/upload) |
+| **@dreamer/utils** | 工具函数：通用工具与校验等 | [utils](https://github.com/shuliangfu/utils) |
+| **@dreamer/video** | 视频处理：转码、压缩等（服务端/客户端） | [video](https://github.com/shuliangfu/video) |
+| **@dreamer/video-player** | 视频播放器：多格式、多协议、多引擎 | [video-player](https://github.com/shuliangfu/video-player) |
+| **@dreamer/web3** | Web3：RPC、合约交互（服务端/客户端） | [web3](https://github.com/shuliangfu/web3) |
+| **@dreamer/webrtc** | WebRTC：实时音视频与信令 | [webrtc](https://github.com/shuliangfu/webrtc) |
+| **@dreamer/websocket** | WebSocket：服务端与客户端实时通信 | [websocket](https://github.com/shuliangfu/websocket) |
+
+安装示例：`deno add jsr:@dreamer/库名` 或 `bunx jsr add @dreamer/库名`。各库详细用法见 JSR 对应包页面或仓库 README。
+
+---
 
 ## 📊 测试报告
 
