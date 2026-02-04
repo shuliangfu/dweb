@@ -53,10 +53,16 @@ export function createCLI(version: string): Command {
   // ================================================================================
   cli
     .command("init", "初始化新项目（交互式选择引擎、样式等）")
-    .action(async (args: string[]) => {
+    .option({
+      name: "beta",
+      description: "使用 beta 最新版",
+      type: "boolean",
+      defaultValue: false,
+    })
+    .action(async (args: string[], options: ParsedOptions) => {
       try {
         const { main: initMain } = await import("./cmd/init.ts");
-        await initMain(args);
+        await initMain(args, { beta: options?.beta === true });
       } catch (err) {
         error(
           `初始化项目失败: ${err instanceof Error ? err.message : String(err)}`,

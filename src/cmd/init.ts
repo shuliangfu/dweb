@@ -33,6 +33,7 @@ import {
     resolve,
     writeTextFile,
 } from "@dreamer/runtime-adapter";
+import { fetchDreamerVersions } from "../utils/jsr-versions.ts";
 import {
     type DwebDenoConfig,
     FALLBACK_DWEB_VERSION,
@@ -79,6 +80,8 @@ export interface InitOptions {
   useSrc: boolean;
   /** 示例代码粒度 */
   exampleLevel: ExampleLevel;
+  /** 是否使用 beta 最新版（从 JSR meta.json 获取） */
+  useBeta?: boolean;
 }
 
 /** 应用名称合法：小写、数字、连字符 */
@@ -94,10 +97,13 @@ function projectNameFromDir(targetDir: string): string {
 
 /**
  * 交互式收集 init 选项
+ *
  * @param overrideArgv 可选，由 CLI 传入的子命令参数（如 ["my-app"]），有则用作项目名称，无则用 process args 或交互输入
+ * @param useBeta 可选，是否使用 beta 最新版（来自 --beta 参数）
  */
 export async function collectOptions(
   overrideArgv?: string[],
+  useBeta?: boolean,
 ): Promise<InitOptions> {
   title("dweb init");
   info("创建新的 @dreamer/dweb 项目");
@@ -223,26 +229,35 @@ export async function collectOptions(
     style,
     useSrc,
     exampleLevel,
+    useBeta: useBeta ?? false,
   };
 }
 
 // ---------- 模板（版本与 deno.json 由 utils/version 提供） ----------
 
-function getDenoJson(
-  opts: InitOptions,
-  dwebConfig: DwebDenoConfig | null,
-): string {
+/** JSR 获取的版本（由 fetchDreamerVersions 返回） */
+interface JsrVersions {
+  dweb: string;
+  render: string;
+  router: string;
+  plugins: string;
+}
+
+function getDenoJson(opts: InitOptions, jsrVersions: JsrVersions): string {
   const prefix = opts.useSrc ? "src/" : "";
   const isPreact = opts.engine === "preact";
   const useUno = opts.style === "unocss";
   const useTailwind = opts.style === "tailwind";
   const hasStyleAssets = useUno || useTailwind;
-  const dwebVersion = dwebConfig?.version ?? FALLBACK_DWEB_VERSION;
-  const pluginsVersion = (dwebConfig?.pluginsVersion) ??
-    FALLBACK_PLUGINS_VERSION;
-  /** @dreamer/* 依赖，不含 runtime-adapter（用户按需自行安装） */
+  const dwebVersion = jsrVersions.dweb;
+  const pluginsVersion = jsrVersions.plugins;
+  const renderSpec = `jsr:@dreamer/render@${jsrVersions.render}`;
+  const routerSpec = `jsr:@dreamer/router@${jsrVersions.router}`;
+  /** @dreamer/* 依赖：dweb、render、router 必选；tailwind/unocss/static 按样式方案 */
   const dreamerImports = [
     `    "@dreamer/dweb": "jsr:@dreamer/dweb@${dwebVersion}"`,
+    `    "@dreamer/render": "${renderSpec}"`,
+    `    "@dreamer/router": "${routerSpec}"`,
     ...(useUno
       ? [
         `    "@dreamer/plugins/unocss": "jsr:@dreamer/plugins@^${pluginsVersion}/unocss"`,
@@ -258,6 +273,18 @@ function getDenoJson(
       ]
       : []),
   ].join(",\n");
+  /** Tailwind 相关 npm 依赖（postcss、tailwindcss、@tailwindcss/postcss） */
+  const tailwindNpmImports = useTailwind
+    ? `    "postcss": "npm:postcss@8.4.39",
+    "tailwindcss": "npm:tailwindcss@^4.0.0",
+    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@^4.0.0"`
+    : "";
+  /** UnoCSS 相关 npm 依赖 */
+  const unocssNpmImports = useUno
+    ? `    "@unocss/core": "npm:@unocss/core@^66.0.0",
+    "@unocss/preset-wind3": "npm:@unocss/preset-wind3@^66.0.0",
+    "@unocss/preset-icons": "npm:@unocss/preset-icons@^66.0.0"`
+    : "";
   /** 其他依赖（preact/react、npm） */
   const otherImports = isPreact
     ? `    "preact": "npm:preact@10.28.0",
@@ -313,7 +340,7 @@ ${tasksBlock}
   },
   "imports": {
 ${dirAliasesBlock}${dreamerImports},
-
+${tailwindNpmImports ? `\n${tailwindNpmImports},\n` : ""}${unocssNpmImports ? `${unocssNpmImports},\n` : ""}
 ${otherImports}
   },
   "nodeModulesDir": "auto",
@@ -1270,10 +1297,31 @@ export async function generate(opts: InitOptions): Promise<void> {
   }
 
   // 根 deno.json、.gitignore、.vscode/settings.json（单应用与多应用共用）
-  const dwebConfig = await loadDwebDenoJson();
+  // 从 JSR meta.json 获取最新版本（useBeta 时取 beta 版，否则取稳定版）
+  const useBeta = opts.useBeta ?? false;
+  let jsrVersions: JsrVersions;
+  try {
+    jsrVersions = await fetchDreamerVersions(useBeta);
+    if (useBeta) {
+      info(`使用 beta 最新版: dweb@${jsrVersions.dweb}`);
+    }
+  } catch {
+    const dwebConfig = await loadDwebDenoJson();
+    const extractVer = (spec: string | undefined): string =>
+      (spec?.replace(/^.*@/, "").replace(/^\^/, "") ?? "") || "";
+    jsrVersions = {
+      dweb: dwebConfig?.version ?? FALLBACK_DWEB_VERSION,
+      render: extractVer(dwebConfig?.imports?.["@dreamer/render"]) ||
+        "1.0.0-beta.17",
+      router: extractVer(dwebConfig?.imports?.["@dreamer/router"]) ||
+        "1.0.0-beta.10",
+      plugins: dwebConfig?.pluginsVersion ?? FALLBACK_PLUGINS_VERSION,
+    };
+    info("JSR 版本获取失败，使用本地/兜底版本");
+  }
   await writeTextFile(
     join(targetDir, "deno.json"),
-    getDenoJson(opts, dwebConfig),
+    getDenoJson(opts, jsrVersions),
   );
   await writeTextFile(join(targetDir, ".gitignore"), getGitignore());
 
@@ -1285,12 +1333,23 @@ export async function generate(opts: InitOptions): Promise<void> {
   );
 }
 
+/** init main 的选项（来自 CLI --beta 等） */
+export interface InitMainOptions {
+  /** 是否使用 beta 最新版 */
+  beta?: boolean;
+}
+
 /**
  * 主入口
+ *
  * @param argv 可选，由 CLI 传入的子命令参数（如 ["my-app"]），会传给 collectOptions 作为项目名称
+ * @param options 可选，CLI 选项（如 { beta: true } 来自 --beta）
  */
-export async function main(argv?: string[]): Promise<void> {
-  const opts = await collectOptions(argv);
+export async function main(
+  argv?: string[],
+  options?: InitMainOptions,
+): Promise<void> {
+  const opts = await collectOptions(argv, options?.beta);
 
   const targetExists = await exists(opts.targetDir);
   if (targetExists) {

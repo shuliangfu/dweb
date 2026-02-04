@@ -81,6 +81,14 @@ describe("init (cmd/init.ts)", () => {
     expect(denoJson).not.toContain('"name":');
     expect(denoJson).not.toContain("socket-io");
 
+    // 验证 deno.json 包含必要依赖：dweb、render、router、tailwind 相关
+    expect(denoJson).toContain("@dreamer/dweb");
+    expect(denoJson).toContain("@dreamer/render");
+    expect(denoJson).toContain("@dreamer/router");
+    expect(denoJson).toContain("postcss");
+    expect(denoJson).toContain("tailwindcss");
+    expect(denoJson).toContain("@tailwindcss/postcss");
+
     await remove(testDir, { recursive: true });
   });
 
@@ -122,6 +130,31 @@ describe("init (cmd/init.ts)", () => {
       );
       expect(appConfigTs).toContain(`name: "${app}"`);
     }
+
+    await remove(testDir, { recursive: true });
+  });
+
+  it("generate() 选择 unocss 时应包含 unocss 依赖", async () => {
+    testDir = await makeTempDir({ prefix: "dweb-init-unocss-" });
+
+    const opts: InitOptions = {
+      targetDir: testDir,
+      projectName: "unocss-app",
+      appMode: "single",
+      engine: "preact",
+      renderMode: "csr",
+      style: "unocss",
+      useSrc: true,
+      exampleLevel: "minimal",
+    };
+
+    await generate(opts);
+
+    const denoJson = await readTextFile(join(testDir, "deno.json"));
+    expect(denoJson).toContain("@dreamer/plugins/unocss");
+    expect(denoJson).toContain("@unocss/core");
+    expect(denoJson).toContain("@unocss/preset-wind3");
+    expect(denoJson).toContain("@unocss/preset-icons");
 
     await remove(testDir, { recursive: true });
   });
