@@ -63,7 +63,7 @@ export async function main(
   const runtime = getRuntime();
   const current = await getDwebVersion();
   info(`当前版本: ${current}`);
-  info(useBeta ? "正在检查 beta 最新版本..." : "正在检查稳定版最新版本...");
+  info("正在检查最新版本...");
 
   const latest = await fetchJsrLatestVersion("@dreamer/dweb", useBeta);
   if (!latest) {
