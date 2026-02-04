@@ -1,14 +1,20 @@
 /**
  * 框架版本号与 deno.json 配置读取
  * 从包根目录 deno.json 自动读取 version / imports，供 init 等使用
+ *
+ * 版本缓存：当从 JSR 远程运行时，版本号会缓存到 ~/.dreamer/dweb/version.json，
+ * 避免每次执行 dweb-cli 都请求网络。安装（setup）和升级（upgrade）时会写入缓存。
  */
 
 import {
   dirname,
+  ensureDir,
   exists,
+  getEnv,
   join,
   readFileSync,
   readTextFile,
+  writeTextFile,
 } from "@dreamer/runtime-adapter";
 
 /** 无法读取 deno.json 时的默认框架版本 */
@@ -99,6 +105,68 @@ function isRemoteRun(): boolean {
   }
 }
 
+/** 版本缓存文件名 */
+const VERSION_CACHE_FILENAME = "version.json";
+
+/**
+ * 获取 dweb 版本缓存目录路径
+ * Unix: ~/.dreamer/dweb，Windows: %USERPROFILE%\.dreamer\dweb
+ *
+ * @returns 缓存目录绝对路径，无法获取时返回空字符串
+ */
+function getVersionCacheDir(): string {
+  const home = getEnv("HOME") ?? getEnv("USERPROFILE") ?? getEnv("LOCALAPPDATA") ?? "";
+  if (!home) return "";
+  return join(home, ".dreamer", "dweb");
+}
+
+/**
+ * 获取版本缓存文件路径
+ *
+ * @returns 缓存文件路径
+ */
+function getVersionCachePath(): string {
+  return join(getVersionCacheDir(), VERSION_CACHE_FILENAME);
+}
+
+/**
+ * 从缓存文件读取框架版本号
+ *
+ * @returns 版本号字符串，缓存不存在或无效时返回 null
+ */
+export async function readVersionCache(): Promise<string | null> {
+  try {
+    const cacheDir = getVersionCacheDir();
+    if (!cacheDir) return null;
+    const path = getVersionCachePath();
+    if (!(await exists(path))) return null;
+    const content = await readTextFile(path);
+    const parsed = JSON.parse(content) as { version?: string };
+    const v = parsed?.version;
+    return typeof v === "string" && v.length > 0 ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 将框架版本号写入缓存文件
+ * 供 setup（安装）和 upgrade（升级）成功后调用
+ *
+ * @param version 版本号字符串
+ */
+export async function writeVersionCache(version: string): Promise<void> {
+  try {
+    const cacheDir = getVersionCacheDir();
+    if (!cacheDir) return;
+    await ensureDir(cacheDir);
+    const path = getVersionCachePath();
+    await writeTextFile(path, JSON.stringify({ version }, null, 2));
+  } catch {
+    // 忽略写入失败（如权限不足）
+  }
+}
+
 /**
  * 从 dweb 包根 deno.json 读取版本与 imports，若在 monorepo 则再读 ../plugins/deno.json
  * - 本地运行：从文件系统读取
@@ -153,13 +221,25 @@ export async function loadDwebDenoJson(): Promise<DwebDenoConfig | null> {
 /**
  * 获取 dweb 框架版本号
  *
- * 从 deno.json 读取，失败时返回 FALLBACK_DWEB_VERSION。
+ * - 本地运行：从 deno.json 读取
+ * - JSR 远程运行：1) 先读缓存；2) 缓存无则请求网络；3) 请求成功则写入缓存
  *
  * @returns 版本号字符串
  */
 export async function getDwebVersion(): Promise<string> {
+  // 1. JSR 远程运行时，先尝试从缓存读取（避免每次请求网络）
+  if (isRemoteRun()) {
+    const cached = await readVersionCache();
+    if (cached) return cached;
+  }
+  // 2. 缓存未命中：请求网络（本地则读文件）
   const config = await loadDwebDenoJson();
-  return config?.version ?? FALLBACK_DWEB_VERSION;
+  const version = config?.version ?? FALLBACK_DWEB_VERSION;
+  // 3. 远程且获取成功：写入缓存，供下次快速读取
+  if (isRemoteRun() && config?.version) {
+    await writeVersionCache(config.version);
+  }
+  return version;
 }
 
 /**

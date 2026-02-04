@@ -23,7 +23,7 @@ import {
 import { createCommand } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
 import { fetchJsrLatestVersion } from "../utils/jsr-versions.ts";
-import { getDwebVersion } from "../utils/version.ts";
+import { getDwebVersion, writeVersionCache } from "../utils/version.ts";
 import { getRuntime, getRunArgs } from "../utils/runtime.ts";
 
 /**
@@ -91,6 +91,7 @@ export async function main(
 
   if (status.success) {
     succeedSpinner(`dweb-cli 已升级至 ${latest}`);
+    await writeVersionCache(latest);
   } else {
     failSpinner("自动安装失败");
     error("请手动执行:");

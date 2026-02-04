@@ -14,12 +14,15 @@
 import {
   confirm,
   error as consoleError,
+  failSpinner,
   info,
   input,
   interactiveMenu,
   prompt,
   separator,
+  startSpinner,
   success,
+  succeedSpinner,
   title,
 } from "@dreamer/console";
 import {
@@ -1312,21 +1315,24 @@ export async function generate(opts: InitOptions): Promise<void> {
   // useBeta=false：仅 dweb 从 JSR 获取；render/router/plugins 用 dweb deno.json（未发正式版）
   // useBeta=true：全部从 JSR 获取 beta 最新版
   const useBeta = opts.useBeta ?? false;
-  const dwebConfig = await loadDwebDenoJson();
+  startSpinner("正在获取最新依赖版本...");
+  let dwebConfig: DwebDenoConfig | null = null;
   let jsrVersions: JsrVersions;
   try {
+    dwebConfig = await loadDwebDenoJson();
     jsrVersions = await fetchDreamerVersions(useBeta, dwebConfig);
+    succeedSpinner("已获取");
     if (useBeta) {
       info(`使用 beta 最新版: dweb@${jsrVersions.dweb}`);
     }
   } catch {
+    failSpinner("JSR 版本获取失败，使用本地/兜底版本");
     jsrVersions = {
       dweb: dwebConfig?.version ?? FALLBACK_DWEB_VERSION,
       render: "1.0.0",
       router: "1.0.0",
       plugins: "1.0.0",
     };
-    info("JSR 版本获取失败，使用本地/兜底版本");
   }
   await writeTextFile(
     join(targetDir, "deno.json"),
@@ -1377,9 +1383,8 @@ export async function main(
   info("正在生成项目...");
   await generate(opts);
 
-  // 先缓存依赖，再自动执行 deno approve-scripts，避免后续 deno task dev 出现 build scripts 警告
+  // 先缓存依赖，再自动执行 deno approve-scripts，避免后续 deno task dev 出现 build scripts 警告（静默执行，无输出）
   try {
-    info("正在缓存依赖并执行 deno approve-scripts...");
     const cacheCmd = createCommand("deno", {
       args: ["cache", "."],
       cwd: opts.targetDir,
@@ -1392,14 +1397,11 @@ export async function main(
     const approveCmd = createCommand("deno", {
       args: ["approve-scripts"],
       cwd: opts.targetDir,
-      stdout: "inherit",
-      stderr: "inherit",
+      stdout: "null",
+      stderr: "null",
     });
     const approveChild = approveCmd.spawn();
-    const status = await approveChild.status;
-    if (status.success) {
-      info("已自动执行 deno approve-scripts");
-    }
+    await approveChild.status;
   } catch {
     // 忽略（如 deno 未安装或非 Deno 环境），项目已创建成功
   }

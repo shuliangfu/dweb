@@ -28,7 +28,11 @@ import {
   remove,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
-import { getPackageRoot } from "./utils/version.ts";
+import {
+  getPackageRoot,
+  loadDwebDenoJson,
+  writeVersionCache,
+} from "./utils/version.ts";
 import { getRuntime } from "./utils/runtime.ts";
 
 /** CLI 全局命令名称 */
@@ -134,6 +138,7 @@ async function installGlobalCli(): Promise<void> {
       const status = await child.status;
       if (status.success) {
         succeedSpinner(`${CLI_NAME} 已安装成功`);
+        await writeVersionCacheOnInstall();
         printUsage();
       } else {
         failSpinner(`安装失败，退出码: ${status.code}`);
@@ -155,11 +160,26 @@ async function installGlobalCli(): Promise<void> {
     const status = await child.status;
     if (status.success) {
       succeedSpinner(`${CLI_NAME} 已安装成功`);
+      await writeVersionCacheOnInstall();
       printUsage();
     } else {
       failSpinner(`安装失败，退出码: ${status.code}`);
       exit(status.code ?? 1);
     }
+  }
+}
+
+/**
+ * 安装成功后写入版本缓存，供 dweb-cli -v 等快速读取
+ */
+async function writeVersionCacheOnInstall(): Promise<void> {
+  try {
+    const config = await loadDwebDenoJson();
+    if (config?.version) {
+      await writeVersionCache(config.version);
+    }
+  } catch {
+    // 忽略，不影响安装成功
   }
 }
 
