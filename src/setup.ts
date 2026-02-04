@@ -51,18 +51,27 @@ function getCliEntry(): string {
 async function installGlobalCli(): Promise<void> {
   const cliEntry = getCliEntry();
   console.log(`正在安装全局命令: ${CLI_NAME}`);
-  console.log(`CLI 入口: ${cliEntry}`);
   console.log("");
 
+  const args: string[] = [
+    "install",
+    "--global",
+    "-f",
+    "-q", // 静默模式，不输出 Deno 默认的 "Successfully installed" 等提示
+    "-n",
+    CLI_NAME,
+    "-A",
+  ];
+
+  // 本地安装时指定 config，避免 "discovered config file will be ignored" 警告
+  if (isLocalRun()) {
+    args.push("--config", join(getPackageRoot(), "deno.json"));
+  }
+
+  args.push(cliEntry);
+
   const cmd = createCommand("deno", {
-    args: [
-      "install",
-      "--global",
-      "-n",
-      CLI_NAME,
-      "-A",
-      cliEntry,
-    ],
+    args,
     stdout: "inherit",
     stderr: "inherit",
     stdin: "inherit",
