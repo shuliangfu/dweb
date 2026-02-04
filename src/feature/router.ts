@@ -1,16 +1,10 @@
 /**
  * @dreamer/router 集成
  *
- * 职责：
- * - 初始化路由系统
- * - 文件路由扫描
- * - 路由注册和管理
+ * 初始化文件路由系统，扫描路由、匹配分发、解析参数，触发 onRoute 插件事件。
+ * 导出 initializeRouter、getRouter。
  *
- * 功能：
- * - 创建 Router 实例
- * - 路由匹配和分发
- * - 路由参数解析
- * - 触发 onRoute 插件事件
+ * @module
  */
 
 import {

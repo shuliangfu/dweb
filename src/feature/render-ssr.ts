@@ -20,9 +20,11 @@ import { getRender } from "./render.ts";
 /**
  * 创建 SSR 渲染处理器
  *
+ * 动态加载页面与布局组件，调用 @dreamer/render 进行服务端渲染，返回 HTML 响应。
+ *
  * @param container 服务容器
  * @param router 路由实例
- * @returns SSR 渲染回调函数
+ * @returns SSR 渲染回调函数（接收 ctx、match，返回 Response 或 null）
  */
 export function createRendererSSR(
   container: ServiceContainer,

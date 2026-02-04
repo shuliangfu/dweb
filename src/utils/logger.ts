@@ -1,15 +1,9 @@
 /**
  * @dreamer/logger 集成
  *
- * 职责：
- * - 初始化日志服务
- * - 注册日志服务到容器
- * - 提供日志访问 API
+ * 初始化日志服务，创建 Logger 实例并注册到容器，提供 getLogger 访问。
  *
- * 功能：
- * - 创建 Logger 实例
- * - 配置日志级别和格式
- * - 注册到服务容器
+ * @module
  */
 
 import { createLogger, type Logger, type LoggerConfig } from "@dreamer/logger";

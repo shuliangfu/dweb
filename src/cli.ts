@@ -1,18 +1,12 @@
 #!/usr/bin/env -S deno run -A
 
 /**
- * CLI 命令行工具
+ * dweb-cli 命令行工具入口
  *
- * 职责：
- * - 提供命令行接口
- * - 处理命令行参数
- * - 执行命令行任务
+ * 提供项目初始化、代码生成、数据库迁移、开发/构建/启动等 CLI 命令。
+ * 通过 `deno run -A jsr:@dreamer/dweb/setup` 安装为全局命令 `dweb-cli` 后使用。
  *
- * 功能：
- * - 项目初始化
- * - 代码生成
- * - 数据库迁移
- * - 其他 CLI 命令
+ * @module
  */
 
 import {
@@ -37,10 +31,12 @@ ${colorize("用于初始化项目、生成代码、数据库迁移等", "gray")}
 }
 
 /**
- * 创建 CLI 应用
+ * 创建 dweb-cli 命令实例
  *
- * @param version 版本号（由 getDwebVersion() 获取，不传则使用占位，执行前需设置）
- * @returns CLI 命令实例
+ * 注册 init、dev、build、start、generate、db 等子命令，供 CLI 入口调用。
+ *
+ * @param version 框架版本号（由 getDwebVersion() 获取）
+ * @returns 配置完成的 Command 实例
  */
 export function createCLI(version: string): Command {
   const cli = new Command("dweb-cli", "DWEB CLI 工具")

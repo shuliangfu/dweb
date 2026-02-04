@@ -3,15 +3,15 @@
 /**
  * dweb-cli 全局命令安装脚本
  *
- * 职责：
- * - 执行 deno install 将 dweb CLI 安装为全局命令 dweb-cli
- * - 支持从本地开发或 JSR 包运行
+ * 执行 `deno install` 将 dweb CLI 安装为全局命令 `dweb-cli`，
+ * 支持从 JSR 或本地运行。安装后可在任意目录执行 `dweb-cli init`、`dweb-cli dev` 等。
  *
- * 使用方式：
- * - 从 JSR：deno run -A jsr:@dreamer/dweb/setup
- * - 本地开发：deno run -A src/setup.ts
+ * @example
+ * ```bash
+ * deno run -A jsr:@dreamer/dweb/setup
+ * ```
  *
- * 安装后可在任意目录执行：dweb-cli init、dweb-cli generate 等
+ * @module
  */
 
 import {

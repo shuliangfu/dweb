@@ -22,12 +22,19 @@ import { getRender } from "./render.ts";
 
 /**
  * CSR 渲染选项
+ *
+ * 配置客户端脚本路径、容器 ID、标题及额外 head/body 标签。
  */
 export interface RenderCSROptions {
+  /** 客户端脚本路径（默认："/_client.js"） */
   clientScript?: string;
+  /** 挂载容器元素 ID（默认："app"） */
   containerId?: string;
+  /** 页面标题 */
   title?: string;
+  /** 额外 head 标签 */
   headTags?: string;
+  /** 额外 body 标签 */
   bodyTags?: string;
 }
 
@@ -35,6 +42,11 @@ export interface RenderCSROptions {
  * 创建 CSR 渲染器
  *
  * 与 Hybrid 结构一致，仅将 PageComponent 替换为 loading 占位符，不进行页面内容的服务端渲染。
+ *
+ * @param container 服务容器
+ * @param router 路由实例
+ * @param config 应用配置
+ * @returns CSR 渲染回调函数
  */
 export function createRendererCSR(
   container: ServiceContainer,

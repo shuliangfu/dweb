@@ -1,15 +1,9 @@
 /**
  * @dreamer/service 集成
  *
- * 职责：
- * - 初始化服务容器
- * - 注册默认服务
- * - 提供依赖注入能力
+ * 初始化服务容器（ServiceContainer），注册默认服务，提供依赖注入能力。
  *
- * 功能：
- * - 创建 ServiceContainer 实例
- * - 注册服务工厂
- * - 管理服务生命周期
+ * @module
  */
 
 import { createServiceContainer, ServiceContainer } from "@dreamer/service";

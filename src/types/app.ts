@@ -1,10 +1,10 @@
 /**
  * App 类型定义
  *
- * 职责：
- * - 定义 App 类的类型
- * - 定义应用配置类型
- * - 定义应用生命周期类型
+ * 定义 AppConfig、IApp、AppPlugin、AppStage、DatabaseAppConfig、SocketIOAppConfig 等
+ * 应用配置与生命周期相关类型。
+ *
+ * @module
  */
 
 import type { DatabaseConfig, DatabaseManagerOptions } from "@dreamer/database";

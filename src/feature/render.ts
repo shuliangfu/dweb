@@ -1,17 +1,10 @@
 /**
  * @dreamer/render 集成
  *
- * 职责：
- * - 初始化渲染引擎
- * - 配置模板引擎（Preact、React）
- * - 处理 SSR/SSG 渲染（服务端）
+ * 初始化渲染引擎（Preact/React），处理 SSR/SSG 服务端渲染。
+ * CSR 在客户端进行。导出 initializeRender、getRender、createRenderer*。
  *
- * 注意：CSR 渲染在客户端进行，服务端只返回 HTML 外壳
- *
- * 功能：
- * - 创建 RenderEngine 实例
- * - 模板编译和渲染
- * - 渲染模式切换
+ * @module
  */
 
 import {
@@ -26,6 +19,8 @@ import type { AppConfig } from "../types/app.ts";
 
 /**
  * 初始化渲染引擎
+ *
+ * 创建 renderSSR、renderSSG 服务并注册到容器，供 SSR/SSG 模式使用。
  *
  * @param container 服务容器
  * @param config 应用配置

@@ -1,16 +1,10 @@
 /**
  * @dreamer/middleware 集成
  *
- * 职责：
- * - 初始化中间件系统
- * - 注册全局中间件
- * - 提供中间件注册接口
- * - 提供内置中间件（如插件事件中间件）
+ * 初始化中间件链、注册全局/路径中间件、提供 registerMiddleware 等 API。
+ * 内置插件事件中间件（emitOnRequest、emitOnResponse 等）。
  *
- * 功能：
- * - 创建 MiddlewareChain 实例
- * - 注册中间件
- * - 管理中间件执行
+ * @module
  */
 
 import {
@@ -24,7 +18,11 @@ import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
 import { emitOnError, emitOnRequest, emitOnResponse } from "./plugin-events.ts";
 
-/** 待注册到 HTTP 服务器的中间件项（用于在 init 时同步到 server） */
+/**
+ * 待注册到 HTTP 服务器的中间件项
+ *
+ * 用于在 init 时同步到 server，包含中间件函数、匹配条件与名称。
+ */
 export interface ServerMiddlewareRegistration {
   middleware: Middleware<MiddlewareContext>;
   condition?: unknown;

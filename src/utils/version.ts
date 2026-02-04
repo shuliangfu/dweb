@@ -11,14 +11,19 @@ import {
   readTextFile,
 } from "@dreamer/runtime-adapter";
 
-/** 无法读取 deno.json 时的默认版本与依赖说明 */
+/** 无法读取 deno.json 时的默认框架版本 */
 export const FALLBACK_DWEB_VERSION = "3.0.0-beta.1";
+/** 无法读取 deno.json 时的默认 runtime-adapter 依赖说明符 */
 export const FALLBACK_RUNTIME_ADAPTER_SPEC =
   "jsr:@dreamer/runtime-adapter@^1.0.0-beta.23";
+/** 无法读取 deno.json 时的默认 plugins 版本 */
 export const FALLBACK_PLUGINS_VERSION = "1.0.0-beta.14";
 
 /**
  * 将 file: URL 转为本地路径（兼容 Unix / Windows）
+ *
+ * @param url file: 协议 URL
+ * @returns 本地文件系统路径
  */
 export function fromFileUrl(url: string): string {
   const u = new URL(url);
@@ -33,7 +38,13 @@ function getCurrentDir(): string {
   return dirname(fromFileUrl(import.meta.url));
 }
 
-/** 包根目录路径（dweb 包根，version.ts 在 src/utils/ 故上两级） */
+/**
+ * 包根目录路径（dweb 包根）
+ *
+ * version.ts 在 src/utils/，故上两级为包根。
+ *
+ * @returns 包根绝对路径
+ */
 export function getPackageRoot(): string {
   return join(getCurrentDir(), "..", "..");
 }
@@ -59,11 +70,13 @@ function readVersionFromDenoJson(): string {
   }
 }
 
-/** 框架版本号（@dreamer/dweb 的 deno.json version） */
+/** 框架版本号（从 deno.json 读取，读取失败时使用 "0.0.0"） */
 export const DWEB_VERSION: string = readVersionFromDenoJson();
 
 /**
- * 从 dweb deno.json 读取的配置（version + imports），供 init 生成项目时使用
+ * 从 dweb deno.json 读取的配置
+ *
+ * 包含 version、imports，供 init 生成项目时使用。
  */
 export interface DwebDenoConfig {
   /** dweb 自身版本（deno.json version） */
@@ -103,11 +116,25 @@ export async function loadDwebDenoJson(): Promise<DwebDenoConfig | null> {
   }
 }
 
+/**
+ * 获取 dweb 框架版本号
+ *
+ * 从 deno.json 读取，失败时返回 FALLBACK_DWEB_VERSION。
+ *
+ * @returns 版本号字符串
+ */
 export async function getDwebVersion(): Promise<string> {
   const config = await loadDwebDenoJson();
   return config?.version ?? FALLBACK_DWEB_VERSION;
 }
 
+/**
+ * 获取 dweb deno.json 的 imports 配置
+ *
+ * 供 init 生成项目时写入新项目的 deno.json。
+ *
+ * @returns imports 键值对
+ */
 export async function getDwebImports(): Promise<Record<string, string>> {
   const config = await loadDwebDenoJson();
   return config?.imports ?? {};

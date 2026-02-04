@@ -1,15 +1,10 @@
 /**
  * @dreamer/server 集成（HTTP 服务器）
  *
- * 职责：
- * - 初始化 HTTP 服务器
- * - 配置服务器选项
- * - 集成中间件和路由
+ * 初始化 HTTP 服务器，集成中间件与路由，支持开发/生产模式。
+ * 导出 initializeServer、getServer、startServer、stopServer。
  *
- * 功能：
- * - 创建 Server 实例
- * - 启动和停止服务器
- * - 开发和生产模式支持
+ * @module
  */
 
 import { Server, type ServerOptions } from "@dreamer/server";

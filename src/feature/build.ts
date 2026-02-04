@@ -1,19 +1,10 @@
 /**
  * @dreamer/esbuild 集成
  *
- * 职责：
- * - 初始化构建工具
- * - 配置构建选项
- * - 处理客户端和服务端构建
+ * 初始化构建工具（Builder），配置客户端/服务端构建，执行构建任务。
+ * 使用 engine 字段、dev/prod 模式。导出 initializeBuild、getBuild。
  *
- * 功能：
- * - 创建 Builder 实例
- * - 构建配置管理
- * - 构建任务执行
- *
- * 注意：
- * - @dreamer/esbuild 使用 `engine` 字段（不是 `framework`），类型为 `Engine`（不是 `Framework`）
- * - 构建模式使用 `dev` 或 `prod`（不是 `development` 或 `production`）
+ * @module
  */
 
 import {
@@ -29,8 +20,11 @@ import { getLogger } from "../utils/logger.ts";
 /**
  * 初始化构建工具
  *
+ * 根据 build 与 render 配置创建 Builder 实例，注册到服务容器。
+ *
  * @param container 服务容器
  * @param config 应用配置
+ * @returns Builder 实例
  */
 export function initializeBuild(
   container: ServiceContainer,

@@ -1,9 +1,17 @@
 /**
- * 框架主入口文件
+ * @dreamer/dweb 框架主入口
  *
- * 职责：
- * - 导出所有公共 API
- * - 提供框架入口
+ * 导出 App 类、配置、服务、中间件、插件、路由、渲染等公共 API，
+ * 提供全栈 Web 应用开发入口。
+ *
+ * @example
+ * ```ts
+ * import { App } from "jsr:@dreamer/dweb";
+ * const app = new App({ name: "my-app", version: "1.0.0" });
+ * await app.start();
+ * ```
+ *
+ * @module
  */
 
 // 导出 App 类与框架版本
@@ -24,7 +32,12 @@ export type {
 
 // 路由中间件类型（供 routes/_middleware.ts 等使用）
 export type { HttpContext as Context } from "@dreamer/server";
-/** 中间件 next 函数类型：调用以执行后续中间件 */
+
+/**
+ * 中间件 next 函数类型
+ *
+ * 调用以执行后续中间件，在路由中间件中必须调用 next() 才能继续处理请求。
+ */
 export type Next = () => Promise<void>;
 
 // 导出核心模块（供高级用户使用）

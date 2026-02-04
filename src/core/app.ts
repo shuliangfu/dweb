@@ -1,12 +1,10 @@
 /**
- * App 主类（框架入口）
+ * App 主类（框架核心入口）
  *
- * 职责：
- * - 整合所有 @dreamer/* 库的入口
- * - 提供统一的 App API
- * - 管理应用生命周期
- * - 协调各个库的初始化和启动
- * - 提供事件机制（继承 EventEmitter）
+ * 整合 @dreamer/* 库，提供统一 API、生命周期管理、事件机制（EventEmitter）。
+ * 协调配置、服务、中间件、插件、路由、渲染等模块的初始化与启动。
+ *
+ * @module
  */
 
 import type { LifecycleHook, LifecycleStage } from "@dreamer/lifecycle";

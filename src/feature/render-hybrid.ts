@@ -23,25 +23,29 @@ import { getRender } from "./render.ts";
 
 /**
  * Hybrid 渲染选项
+ *
+ * 配置客户端脚本路径、容器 ID、head/body 额外标签等。
  */
 export interface RenderHybridOptions {
-  /** 客户端脚本路径 */
+  /** 客户端脚本路径（默认："/_client.js"） */
   clientScript?: string;
-  /** 容器元素 ID */
+  /** 挂载容器元素 ID（默认："app"） */
   containerId?: string;
-  /** 额外的 head 标签 */
+  /** 额外 head 标签 */
   headTags?: string;
-  /** 额外的 body 标签 */
+  /** 额外 body 标签 */
   bodyTags?: string;
 }
 
 /**
  * 创建 Hybrid 渲染器
  *
+ * 首屏 SSR 渲染完整 HTML，客户端 hydrate 后接管路由，后续导航使用 CSR。
+ *
  * @param container 服务容器
  * @param router 路由实例
  * @param config 应用配置
- * @returns Hybrid 渲染回调函数
+ * @returns Hybrid 渲染回调函数（接收 ctx、match，返回 Response 或 null）
  */
 export function createRendererHybrid(
   container: ServiceContainer,

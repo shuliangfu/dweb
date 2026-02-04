@@ -1,10 +1,10 @@
 /**
- * @module @dreamer/dweb/core/plugin-events
- *
  * 插件事件系统
  *
- * 提供应用级别的事件钩子，让插件可以响应应用生命周期事件
- * 包括事件触发函数和插件事件中间件
+ * 提供 emitOnInit、emitOnRequest、emitOnResponse、emitOnBuild 等事件触发函数，
+ * 让插件响应应用生命周期与请求处理事件。含 HealthStatus、RouteDefinition 类型。
+ *
+ * @module
  */
 
 import type { HttpContext } from "@dreamer/server";
@@ -224,6 +224,8 @@ export async function emitOnError(
 
 /**
  * 路由定义类型
+ *
+ * 供 onRoute 插件事件使用，描述路由路径、方法、处理器及元数据。
  */
 export interface RouteDefinition {
   /** 路由路径 */
@@ -288,6 +290,8 @@ export async function emitOnRoute(
 
 /**
  * 健康状态类型
+ *
+ * 供 onHealthCheck 插件事件使用，描述整体及各组件的健康状态。
  */
 export interface HealthStatus {
   /** 整体状态 */

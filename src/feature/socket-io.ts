@@ -1,13 +1,10 @@
 /**
  * @dreamer/socket-io 集成（挂载到同一 HTTP 服务器）
  *
- * 职责：
- * - 当 AppConfig.socketIo 存在时，创建 Socket.IO 服务并挂载到当前 HTTP 服务器
- * - 将路径前缀匹配的请求委托给 Socket.IO 的 handleIncomingRequest
+ * 当 AppConfig.socketIo 存在时，创建 Socket.IO 服务并挂载到当前 HTTP 服务器，
+ * 与主站共用端口。导出 initializeSocketIo、getSocketIoServer、getSocketIoPath。
  *
- * 功能：
- * - 与主站共用 server.port / server.host，无需单独端口
- * - 通过中间件优先匹配 /socket.io/ 路径，再走路由
+ * @module
  */
 
 import type { HttpContext } from "@dreamer/server";

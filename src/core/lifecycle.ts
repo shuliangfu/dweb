@@ -1,15 +1,10 @@
 /**
  * @dreamer/lifecycle 集成
  *
- * 职责：
- * - 初始化生命周期管理
- * - 注册生命周期钩子
- * - 协调应用启动和关闭
+ * 初始化生命周期管理（LifecycleManager），注册 init/start/stop 等钩子，
+ * 协调应用启动与关闭流程。
  *
- * 功能：
- * - 创建 LifecycleManager 实例
- * - 注册生命周期钩子
- * - 管理应用状态转换
+ * @module
  */
 
 import {

@@ -1,24 +1,15 @@
 /**
  * @dreamer/console 集成
  *
- * 职责：
- * - 扩展 Command 类，添加 App 实例支持
- * - 重新导出 @dreamer/console 的其他 API
- * - 提供 CLI 工具支持
+ * 扩展 Command 类（含 App 实例），重新导出 output、prompt、table 等 CLI 工具 API。
+ * 提供美化输出、表格、用户交互、ANSI 样式、参数解析。
  *
- * 功能：
- * - 扩展的 Command 类（包含 app 实例）
- * - 美化输出（成功、错误、警告、信息等）
- * - 表格显示（多种样式）
- * - 用户交互（文本输入、选择、确认等）
- * - ANSI 颜色和样式支持
- * - 参数解析和选项处理
- *
- * 使用方式：
- * ```typescript
- * // 按需导入，避免依赖过大
- * import { Command, output, prompt, table } from "@dweb/feature/command";
+ * @example
+ * ```ts
+ * import { Command, output, prompt, table } from "jsr:@dreamer/dweb/feature/command";
  * ```
+ *
+ * @module
  */
 
 import {
@@ -32,7 +23,12 @@ import { getConfig } from "../core/config.ts";
 import { initializeServiceContainer } from "../core/service.ts";
 /**
  * 扩展的命令执行函数类型
- * 第三个参数是 Command 实例（而不是 unknown）
+ *
+ * 第三个参数为 dweb 扩展的 Command 实例，可通过 command.app 访问 App。
+ *
+ * @param args 命令行参数数组
+ * @param options 解析后的选项
+ * @param command 当前 Command 实例（可访问 app、container）
  */
 export type CommandHandler = (
   args: string[],
@@ -100,6 +96,7 @@ export class Command extends BaseCommand {
     return this._app;
   }
 
+  /** 服务容器（用于获取 config、database 等） */
   get container(): ServiceContainer {
     return this._container;
   }

@@ -27,6 +27,8 @@ import { createRendererSSR } from "./render-ssr.ts";
 
 /**
  * SSG 渲染选项
+ *
+ * 配置预渲染输出目录、显式路由列表、动态路由参数展开等。
  */
 export interface RenderSSGOptions {
   /** 预渲染 HTML 输出目录（相对于项目根） */

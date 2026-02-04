@@ -1,16 +1,10 @@
 /**
  * @dreamer/database 集成
  *
- * 职责：
- * - 初始化数据库管理器
- * - 管理数据库连接
- * - 提供数据库访问接口
+ * 初始化数据库管理器（DatabaseManager），管理多数据库连接与生命周期，
+ * 提供 connectDatabases、getDatabaseManager 等 API。
  *
- * 功能：
- * - 创建 DatabaseManager 实例
- * - 注册数据库连接
- * - 管理连接生命周期
- * - 支持多数据库连接
+ * @module
  */
 
 import {
@@ -23,14 +17,14 @@ import type { AppConfig } from "../types/app.ts";
 import { getLogger } from "../utils/logger.ts";
 
 /**
- * 数据库配置接口
+ * 数据库应用配置接口
  *
- * 支持单个连接或多个命名连接
+ * 支持默认连接、多个命名连接及管理器选项。
  */
 export interface DatabaseAppConfig {
   /** 默认连接配置 */
   default?: DatabaseConfig;
-  /** 命名连接配置 */
+  /** 命名连接配置（如 { "readonly": {...}, "write": {...} }） */
   connections?: Record<string, DatabaseConfig>;
   /** 数据库管理器选项 */
   managerOptions?: DatabaseManagerOptions;

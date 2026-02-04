@@ -1,19 +1,10 @@
 /**
- * 应用配置管理（使用 @dreamer/config）
+ * 应用配置管理（@dreamer/config 集成）
  *
- * 职责：
- * - 加载和合并配置
- * - 配置验证
- * - 环境变量处理
- * - 多环境配置支持（dev、prod、test）
- * - 初始化配置系统
- * - 提供配置访问 API
+ * 加载 main.ts、main.{env}.ts、params.ts，合并配置、验证、环境变量支持。
+ * 提供 getConfig、getConfigValue、getParams 等配置访问 API。
  *
- * 功能：
- * - 加载框架配置（main.ts, main.{env}.ts）
- * - 加载业务配置（params.ts）
- * - 配置合并和验证
- * - 环境变量支持
+ * @module
  */
 
 import {
