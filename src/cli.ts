@@ -68,11 +68,12 @@ export function createCLI(version: string): Command {
 
   // 生成命令：委托给 cmd/generate.ts，别名为 g
   const generateCmd = cli.command("generate", "生成代码");
+  generateCmd.alias("g");
   generateCmd
     .option({
       name: "type",
       alias: "t",
-      description: "生成类型（controller, service, model 等）",
+      description: "生成类型 (controller, service, model 等)",
       type: "string",
       required: true,
       requiresValue: true,
@@ -92,6 +93,69 @@ export function createCLI(version: string): Command {
       } catch (err) {
         error(
           `生成失败: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    });
+
+  // 开发服务器：委托给 cmd/dev.ts
+  const devCmd = cli.command("dev", "启动开发服务器（单应用直接启动，多应用需指定应用名）");
+  devCmd
+    .option({
+      name: "app",
+      alias: "a",
+      description: "应用名（多应用时必填）",
+      type: "string",
+      requiresValue: true,
+    })
+    .action(async (args: string[], options: ParsedOptions) => {
+      try {
+        const { main: devMain } = await import("./cmd/dev.ts");
+        await devMain(args, options);
+      } catch (err) {
+        error(
+          `dev 失败: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    });
+
+  // 构建：委托给 cmd/build.ts
+  const buildCmd = cli.command("build", "构建生产版本（多应用可指定应用名或构建全部）");
+  buildCmd
+    .option({
+      name: "app",
+      alias: "a",
+      description: "应用名（多应用时可选，不填则构建全部）",
+      type: "string",
+      requiresValue: true,
+    })
+    .action(async (args: string[], options: ParsedOptions) => {
+      try {
+        const { main: buildMain } = await import("./cmd/build.ts");
+        await buildMain(args, options);
+      } catch (err) {
+        error(
+          `build 失败: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    });
+
+  // 生产启动：委托给 cmd/start.ts
+  const startCmd = cli.command("start", "启动生产服务器（多应用需指定应用名）");
+  startCmd
+    .option({
+      name: "app",
+      alias: "a",
+      description: "应用名（多应用时必填）",
+      type: "string",
+      requiresValue: true,
+    })
+    .action(async (args: string[], options: ParsedOptions) => {
+      try {
+        const { main: startMain } = await import("./cmd/start.ts");
+        await startMain(args, options);
+      } catch (err) {
+        error(
+          `start 失败: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     });
