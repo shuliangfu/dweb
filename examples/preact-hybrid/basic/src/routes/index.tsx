@@ -22,8 +22,9 @@ const classes = {
   inputWrap: "mb-4 flex gap-2",
   statusBadge: "inline-flex rounded-full px-3 py-1 text-sm font-medium",
   input:
-    "flex-1 rounded border border-gray-300 px-3 py-2 focus:border-[#667eea] focus:outline-none focus:ring-1 focus:ring-[#667eea]",
-  sendBtn: "rounded bg-[#667eea] px-4 py-2 text-white hover:bg-[#5a6fd6]",
+    "flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-none focus:border-[#667eea] focus:outline-none focus:ring-2 focus:ring-[#667eea]/30",
+  sendBtn:
+    "rounded-lg border-0 bg-[#667eea] px-4 py-2 text-white shadow-none transition-colors hover:bg-[#5a6fd6]",
   messageBox:
     "max-h-48 overflow-y-auto rounded border border-gray-100 bg-gray-50 p-3",
   messageEmpty: "text-center text-gray-400",

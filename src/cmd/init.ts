@@ -592,7 +592,7 @@ export default function App({
   return (
     <html lang="zh-CN">
       <head>
-        <meta charset="UTF-8" />
+        <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="description" content={description} />
         <title>{title}</title>
@@ -609,6 +609,21 @@ export default function App({
 function getLayoutTsx(opts: InitOptions): string {
   const isPreact = opts.engine === "preact";
   const engineName = opts.engine === "preact" ? "Preact" : "React";
+  // UnoCSS/无样式 无 primary 主题色，用 indigo；Tailwind v4 用 @theme 定义的 primary
+  const accentClass =
+    opts.style === "tailwind"
+      ? "text-primary-600 hover:text-primary-700"
+      : "text-indigo-600 hover:text-indigo-700";
+  const linkClass =
+    opts.style === "tailwind"
+      ? "text-gray-600 hover:text-primary-600 transition-colors"
+      : "text-gray-600 hover:text-indigo-600 transition-colors";
+  const styleComment =
+    opts.style === "unocss"
+      ? "UnoCSS"
+      : opts.style === "tailwind"
+      ? "Tailwind CSS v4"
+      : "通用样式";
   const importAndProps = isPreact
     ? `import type { ComponentChildren } from "preact";
 
@@ -622,28 +637,28 @@ interface LayoutProps {
 }`;
   return `/**
  * 布局组件
- * 页头、页脚和内容区域（使用 Tailwind CSS v4）
+ * 页头、页脚和内容区域（使用 ${styleComment}）
  */
 
 ${importAndProps}
 
 export default function Layout({ children }: LayoutProps) {
   return (
-    <div class="min-h-screen flex flex-col">
-      <header class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav class="flex items-center justify-between h-16">
+    <div className="min-h-screen flex flex-col">
+      <header className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex items-center justify-between h-16">
             <a
               href="/"
-              class="text-xl font-bold text-primary-600 hover:text-primary-700"
+              className="text-xl font-bold ${accentClass}"
             >
               ${engineName}
             </a>
-            <ul class="flex items-center gap-6 list-none m-0 p-0">
+            <ul className="flex items-center gap-6 list-none m-0 p-0">
               <li>
                 <a
                   href="/"
-                  class="text-gray-600 hover:text-primary-600 transition-colors"
+                  className="${linkClass}"
                 >
                   首页
                 </a>
@@ -651,7 +666,7 @@ export default function Layout({ children }: LayoutProps) {
               <li>
                 <a
                   href="/about"
-                  class="text-gray-600 hover:text-primary-600 transition-colors"
+                  className="${linkClass}"
                 >
                   关于
                 </a>
@@ -659,7 +674,7 @@ export default function Layout({ children }: LayoutProps) {
               <li>
                 <a
                   href="/user/1"
-                  class="text-gray-600 hover:text-primary-600 transition-colors"
+                  className="${linkClass}"
                 >
                   用户示例
                 </a>
@@ -669,15 +684,15 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </header>
 
-      <main class="flex-1">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {children}
         </div>
       </main>
 
-      <footer class="bg-gray-800 text-white py-8">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p class="text-gray-400">
+      <footer className="bg-gray-800 text-white py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-gray-400">
             © 2024 Built with @dreamer/dweb
           </p>
         </div>
@@ -690,6 +705,11 @@ export default function Layout({ children }: LayoutProps) {
 
 function getIndexTsx(opts: InitOptions): string {
   const engineName = opts.engine === "preact" ? "Preact" : "React";
+  // UnoCSS/无样式 使用 bg-gradient-to-br；Tailwind v4 使用 bg-linear-to-br
+  const heroGradient =
+    opts.style === "tailwind"
+      ? "bg-linear-to-br from-[#667eea] to-[#764ba2]"
+      : "bg-gradient-to-br from-[#667eea] to-[#764ba2]";
   return `/**
  * 首页
  * 路由: /
@@ -697,31 +717,31 @@ function getIndexTsx(opts: InitOptions): string {
 
 export default function Home() {
   return (
-    <div class="py-5">
-      <section class="mb-10 rounded-xl bg-linear-to-br from-[#667eea] to-[#764ba2] px-5 py-15 text-center text-white">
-        <h1 class="mb-4 text-4xl">欢迎使用 Dweb 框架</h1>
-        <p class="text-xl text-white/90">
+    <div className="py-5">
+      <section className="mb-10 rounded-xl ${heroGradient} px-5 py-15 text-center text-white">
+        <h1 className="mb-4 text-4xl">欢迎使用 Dweb 框架</h1>
+        <p className="text-xl text-white/90">
           这是一个使用 @dreamer/dweb 框架构建的 ${engineName} 示例项目
         </p>
       </section>
 
-      <section class="mb-10">
-        <h2 class="mb-8 text-center">特性</h2>
-        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div class="rounded-lg bg-white p-6 shadow-md">
-            <h3 class="mb-2.5 text-[#667eea]">文件路由</h3>
+      <section className="mb-10">
+        <h2 className="mb-8 text-center">特性</h2>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-lg bg-white p-6 shadow-md">
+            <h3 className="mb-2.5 text-[#667eea]">文件路由</h3>
             <p>基于文件系统的路由，无需手动配置</p>
           </div>
-          <div class="rounded-lg bg-white p-6 shadow-md">
-            <h3 class="mb-2.5 text-[#667eea]">SSR 渲染</h3>
+          <div className="rounded-lg bg-white p-6 shadow-md">
+            <h3 className="mb-2.5 text-[#667eea]">SSR 渲染</h3>
             <p>服务端渲染，提供最佳首屏性能</p>
           </div>
-          <div class="rounded-lg bg-white p-6 shadow-md">
-            <h3 class="mb-2.5 text-[#667eea]">TypeScript</h3>
+          <div className="rounded-lg bg-white p-6 shadow-md">
+            <h3 className="mb-2.5 text-[#667eea]">TypeScript</h3>
             <p>完整的 TypeScript 支持</p>
           </div>
-          <div class="rounded-lg bg-white p-6 shadow-md">
-            <h3 class="mb-2.5 text-[#667eea]">${engineName}</h3>
+          <div className="rounded-lg bg-white p-6 shadow-md">
+            <h3 className="mb-2.5 text-[#667eea]">${engineName}</h3>
             <p>轻量级 React 替代方案</p>
           </div>
         </div>
@@ -741,17 +761,17 @@ function getAboutTsx(opts: InitOptions): string {
 
 export default function About() {
   return (
-    <div class="py-5">
-      <h1 class="mb-8 text-3xl font-bold">关于我们</h1>
+    <div className="py-5">
+      <h1 className="mb-8 text-3xl font-bold">关于我们</h1>
 
-      <section class="rounded-lg bg-white p-8 shadow-md">
-        <p class="mb-6">
+      <section className="rounded-lg bg-white p-8 shadow-md">
+        <p className="mb-6">
           这是一个使用 <strong>@dreamer/dweb</strong> 框架和{" "}
           <strong>${engineName}</strong> 构建的示例项目。
         </p>
 
-        <h2 class="mb-4 mt-6 text-xl font-semibold text-indigo-600">技术栈</h2>
-        <ul class="ml-5 list-disc space-y-2">
+        <h2 className="mb-4 mt-6 text-xl font-semibold text-indigo-600">技术栈</h2>
+        <ul className="ml-5 list-disc space-y-2">
           <li>
             <strong>@dreamer/dweb</strong> - 全栈 Web 框架
           </li>
@@ -773,7 +793,12 @@ export default function About() {
 }
 
 /** 用户详情页 user/[id].tsx */
-function getUserByIdTsx(_opts: InitOptions): string {
+function getUserByIdTsx(opts: InitOptions): string {
+  // UnoCSS/无样式 使用 bg-gradient-to-br；Tailwind v4 使用 bg-linear-to-br
+  const avatarGradient =
+    opts.style === "tailwind"
+      ? "bg-linear-to-br from-indigo-500 to-purple-600"
+      : "bg-gradient-to-br from-indigo-500 to-purple-600";
   return `/**
  * 用户详情页面
  * 动态路由: /user/:id
@@ -802,12 +827,12 @@ export default function User({ params }: UserProps) {
 
   if (!user) {
     return (
-      <div class="py-16 px-5 text-center">
-        <h1 class="mb-4 text-2xl font-bold text-red-500">用户不存在</h1>
-        <p class="mb-4">用户 ID: {params.id} 不存在</p>
+      <div className="py-16 px-5 text-center">
+        <h1 className="mb-4 text-2xl font-bold text-red-500">用户不存在</h1>
+        <p className="mb-4">用户 ID: {params.id} 不存在</p>
         <a
           href="/"
-          class="mt-5 inline-block rounded-md bg-blue-600 px-5 py-2.5 text-white no-underline hover:bg-blue-700"
+          className="mt-5 inline-block rounded-md bg-blue-600 px-5 py-2.5 text-white no-underline hover:bg-blue-700"
         >
           返回首页
         </a>
@@ -816,38 +841,38 @@ export default function User({ params }: UserProps) {
   }
 
   return (
-    <div class="py-5">
-      <h1 class="mb-8 text-3xl font-bold">用户详情</h1>
+    <div className="py-5">
+      <h1 className="mb-8 text-3xl font-bold">用户详情</h1>
 
-      <div class="flex items-center gap-6 rounded-xl bg-white p-8 shadow-md">
-        <div class="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-purple-600 text-3xl font-bold text-white">
+      <div className="flex items-center gap-6 rounded-xl bg-white p-8 shadow-md">
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full ${avatarGradient} text-3xl font-bold text-white">
           {user.name.charAt(0)}
         </div>
         <div>
-          <h2 class="mb-2 text-2xl font-semibold">{user.name}</h2>
-          <p class="mb-2.5 text-gray-600">{user.email}</p>
-          <span class="inline-block rounded-full bg-indigo-500 px-3 py-1 text-sm text-white">
+          <h2 className="mb-2 text-2xl font-semibold">{user.name}</h2>
+          <p className="mb-2.5 text-gray-600">{user.email}</p>
+          <span className="inline-block rounded-full bg-indigo-500 px-3 py-1 text-sm text-white">
             {user.role}
           </span>
         </div>
       </div>
 
-      <div class="mt-8 flex flex-wrap gap-4">
+      <div className="mt-8 flex flex-wrap gap-4">
         <a
           href="/user/1"
-          class="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
+          className="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
         >
           用户 1
         </a>
         <a
           href="/user/2"
-          class="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
+          className="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
         >
           用户 2
         </a>
         <a
           href="/user/3"
-          class="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
+          className="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
         >
           用户 3
         </a>

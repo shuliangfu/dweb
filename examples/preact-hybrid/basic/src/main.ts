@@ -7,6 +7,7 @@
 import { App, getSocketIoServer } from "@dreamer/dweb";
 import { staticPlugin } from "@dreamer/plugins/static";
 import { tailwindPlugin } from "@dreamer/plugins/tailwindcss";
+// import { unocssPlugin } from "@dreamer/plugins/unocss";
 
 const app = new App();
 
@@ -15,6 +16,13 @@ app.registerPlugin(tailwindPlugin({
   cssEntry: "src/assets/tailwind.css",
   assetsPath: "/assets",
 }));
+
+// app.registerPlugin(unocssPlugin({
+//   output: "dist/client/assets",
+//   cssEntry: "src/assets/uno.css",
+//   content: ["./**/*.{ts,tsx}"],
+//   assetsPath: "/assets",
+// }));
 
 app.registerPlugin(staticPlugin({
   statics: [

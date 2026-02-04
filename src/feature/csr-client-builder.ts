@@ -462,6 +462,9 @@ export interface ClientRouterLike {
  * 执行 Hybrid hydration（若需要）、启动路由器、注册 HMR 无感刷新回调。
  * 供 client.tsx 的 initApp 调用，保持 client.tsx 简洁。
  */
+/** 共享的渲染状态：存储上次卸载函数，HMR/路由切换前需先调用以清理 Preact/React 内部状态，避免 __H 等 hooks 冲突 */
+export const RENDER_STATE: { lastUnmount: (() => void) | null } = { lastUnmount: null };
+
 export async function setupHydrationRouterAndHmr(opts: {
   g: DwebGlobal;
   router: ClientRouterLike;
@@ -472,6 +475,12 @@ export async function setupHydrationRouterAndHmr(opts: {
   isHybridMode: boolean;
 }): Promise<void> {
   const { g, router, containerId, engine, layouts, isHydratedRef, isHybridMode } = opts;
+  const unmountPrevious = (): void => {
+    if (RENDER_STATE.lastUnmount) {
+      RENDER_STATE.lastUnmount();
+      RENDER_STATE.lastUnmount = null;
+    }
+  };
   // 先启动路由器，确保链接点击拦截器尽早注册（避免 hydrate 失败时链接无法响应）
   router.start();
   if (isHybridMode && !isHydratedRef.current) {
@@ -483,7 +492,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         const PageComponent = module.default ?? module.Page;
         if (PageComponent) {
           const skipLayouts = module.inheritLayout === false;
-          hydrate({
+          const hydResult = hydrate({
             engine,
             component: PageComponent,
             container: \`#\${containerId}\`,
@@ -494,6 +503,7 @@ export async function setupHydrationRouterAndHmr(opts: {
             layouts: skipLayouts ? undefined : layouts,
             skipLayouts,
           });
+          RENDER_STATE.lastUnmount = hydResult?.unmount ?? null;
           isHydratedRef.current = true;
         }
       }
@@ -506,7 +516,7 @@ export async function setupHydrationRouterAndHmr(opts: {
     clearLayoutCache();
     const pathname = (typeof _win.location !== "undefined" && _win.location?.pathname) ? _win.location.pathname : "/";
     const match = router.match(pathname);
-    if (!match) { renderNotFound(containerId); return; }
+    if (!match) { unmountPrevious(); renderNotFound(containerId); return; }
     const chunkUrl = hmrOpts?.chunkUrl;
     const loadModule = (typeof chunkUrl === "string")
       ? () => import(/* @vite-ignore */ chunkUrl)
@@ -516,12 +526,13 @@ export async function setupHydrationRouterAndHmr(opts: {
     loadModule()
       .then((mod) => {
         const modObj = mod as Record<string, unknown>;
-        if (!modObj) { renderNotFound(containerId); return; }
+        if (!modObj) { unmountPrevious(); renderNotFound(containerId); return; }
         const PageComponent = modObj.default ?? modObj.Page;
-        if (!PageComponent) { renderNotFound(containerId); return; }
+        if (!PageComponent) { unmountPrevious(); renderNotFound(containerId); return; }
         const skipLayouts = modObj.inheritLayout === false;
         return loadLayouts().then((layoutList) => {
-          renderCSR({
+          unmountPrevious();
+          const csrResult = renderCSR({
             engine,
             component: PageComponent,
             container: "#" + containerId,
@@ -529,6 +540,7 @@ export async function setupHydrationRouterAndHmr(opts: {
             layouts: skipLayouts ? undefined : layoutList,
             skipLayouts,
           });
+          RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
           if (typeof _win.scrollTo === "function") {
             const sx = scrollX;
             const sy = scrollY;
@@ -564,7 +576,7 @@ export async function setupHydrationRouterAndHmr(opts: {
   // Hybrid 下 onRouteChange 注册时会同步用当前路由调用一次；此时已 hydrate 过该路由，不能再 renderCSR，否则会触发 React "early update before hydrate" 报错
   let skipNextRouteChange = isHybridMode;
   router.onRouteChange(async (match) => {
-    if (!match) { renderNotFound(containerId); return; }
+    if (!match) { unmountPrevious(); renderNotFound(containerId); return; }
     if (skipNextRouteChange) {
       skipNextRouteChange = false;
       return;
@@ -572,11 +584,12 @@ export async function setupHydrationRouterAndHmr(opts: {
     if (isHybridMode && !isHydratedRef.current) { isHydratedRef.current = true; return; }
     try {
       const module = await loadPageModule(match.route.component) as Record<string, unknown>;
-      if (!module) { renderNotFound(containerId); return; }
+      if (!module) { unmountPrevious(); renderNotFound(containerId); return; }
       const PageComponent = module.default ?? module.Page;
-      if (!PageComponent) { renderNotFound(containerId); return; }
+      if (!PageComponent) { unmountPrevious(); renderNotFound(containerId); return; }
       const skipLayouts = module.inheritLayout === false;
-      renderCSR({
+      unmountPrevious();
+      const csrResult = renderCSR({
         engine,
         component: PageComponent,
         container: "#" + containerId,
@@ -584,9 +597,11 @@ export async function setupHydrationRouterAndHmr(opts: {
         layouts: skipLayouts ? undefined : layouts,
         skipLayouts,
       });
+      RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
       (g as DwebGlobal).__DWEB_ON_READY__?.();
     } catch (error) {
       console.error("页面加载错误:", error);
+      unmountPrevious();
       renderError(containerId, error);
     }
   });
@@ -616,15 +631,28 @@ export async function initApp(): Promise<DwebApp> {
   async function renderCurrentRoute(): Promise<void> {
     const pathname = (typeof _win.location !== "undefined" && _win.location?.pathname) ? _win.location.pathname : "/";
     const match = router.match(pathname);
-    if (!match) { renderNotFound(containerId); return; }
+    if (!match) {
+      if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
+      renderNotFound(containerId);
+      return;
+    }
     try {
       const module = await loadPageModule(match.route.component) as Record<string, unknown>;
-      if (!module) { renderNotFound(containerId); return; }
+      if (!module) {
+        if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
+        renderNotFound(containerId);
+        return;
+      }
       const PageComponent = module.default ?? module.Page;
-      if (!PageComponent) { renderNotFound(containerId); return; }
+      if (!PageComponent) {
+        if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
+        renderNotFound(containerId);
+        return;
+      }
       const skipLayouts = module.inheritLayout === false;
       const layoutList = await loadLayouts();
-      renderCSR({
+      if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
+      const csrResult = renderCSR({
         engine,
         component: PageComponent,
         container: "#" + containerId,
@@ -632,8 +660,10 @@ export async function initApp(): Promise<DwebApp> {
         layouts: skipLayouts ? undefined : layoutList,
         skipLayouts,
       });
+      RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
     } catch (error) {
       console.error("页面加载错误:", error);
+      if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
       renderError(containerId, error);
     }
   }

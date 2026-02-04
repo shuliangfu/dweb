@@ -26,7 +26,7 @@
     "@dreamer/console": "jsr:@dreamer/console@^1.0.3-beta.10",
     "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.0.0-beta.22",
     "@dreamer/database": "jsr:@dreamer/database@^1.0.0-beta.7",
-    "@dreamer/plugins": "jsr:@dreamer/plugins@1.0.0-beta.15",
+    "@dreamer/plugins": "jsr:@dreamer/plugins@1.0.0-beta.16",
     "tailwindcss": "npm:tailwindcss@^4.0.0",
     "preact": "npm:preact@10.28.0",
     "preact/hooks": "npm:preact@10.28.0/hooks",

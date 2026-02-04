@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "3.0.16",
+  "version": "3.0.17",
   "license": "MIT",
   "exports": {
     ".": "./src/mod.ts",
@@ -69,10 +69,13 @@
     "./examples/preact-csr/advanced",
     "./examples/preact-hybrid/basic",
     "./examples/preact-hybrid/advanced",
+    "./examples/preact-hybrid-unocss/basic",
+    "./examples/preact-hybrid-unocss/advanced",
     "./examples/preact-ssg/basic",
     "./examples/preact-ssg/advanced",
     "./examples/preact-ssr/basic",
     "./examples/preact-ssr/advanced",
+
     "./examples/react-csr/basic",
     "./examples/react-csr/advanced",
     "./examples/react-hybrid/basic",
