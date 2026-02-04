@@ -61,7 +61,7 @@ import type {
 } from "../types/app.ts";
 import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
 import { getLogger, initializeLogger } from "../utils/logger.ts";
-import { DWEB_VERSION } from "../utils/version.ts";
+import { getDwebVersion } from "../utils/version.ts";
 import {
   deepMergeConfig,
   getConfig,
@@ -205,12 +205,15 @@ export class App extends EventEmitter implements IApp {
   /**
    * 打印框架版本与应用名称（启动时便于识别运行环境）
    *
+   * 框架版本：从 utils/version.ts 的 getDwebVersion() 读取 dweb deno.json
+   * 应用名称：从 AppConfig.name 读取（config/main.ts 等）
+   *
    * 依赖：需在 initializeLogger 之后调用，否则容器中尚无 logger 会抛错
    */
-  private _logFrameworkBanner(): void {
+  private async _logFrameworkBanner(config: AppConfig): Promise<void> {
     const logger = getLogger(this.container);
-    const config = getConfig(this.container);
-    logger.info(`[框架版本] @dreamer/dweb ${DWEB_VERSION}`);
+    const version = await getDwebVersion();
+    logger.info(`[框架版本] @dreamer/dweb ${version}`);
     logger.info(`[应用名称] ${config.name ?? "未配置"}`);
   }
 
@@ -257,7 +260,7 @@ export class App extends EventEmitter implements IApp {
     // 初始化日志服务（依赖配置）
     initializeLogger(this.container, mergedConfig);
 
-    this._logFrameworkBanner();
+    await this._logFrameworkBanner(mergedConfig);
 
     // 初始化生命周期管理器（所有模式都需要）
     initializeLifecycle(this.container, mergedConfig);
