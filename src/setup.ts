@@ -15,82 +15,23 @@
  */
 
 import {
+  failSpinner,
+  startSpinner,
+  succeedSpinner,
+} from "@dreamer/console";
+import {
   createCommand,
   exit,
   join,
   makeTempFile,
   readTextFile,
   remove,
-  writeStdoutSync,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { getPackageRoot } from "./utils/version.ts";
 
 /** CLI 全局命令名称 */
 const CLI_NAME = "dweb-cli";
-
-/** Spinner 旋转帧 */
-const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-const SPINNER_INTERVAL_MS = 80;
-
-let spinnerIntervalId: ReturnType<typeof setInterval> | null = null;
-let spinnerText = "";
-
-/**
- * 渲染 Spinner 当前帧到终端（同一行覆盖）
- */
-function renderSpinner(frame: string): void {
-  const line = `\r ${frame} ${spinnerText}`;
-  writeStdoutSync(new TextEncoder().encode(line));
-}
-
-/**
- * 启动 Spinner 加载指示器
- * @param text 提示文案
- */
-function startSpinner(text = ""): void {
-  stopSpinner();
-  spinnerText = text;
-  let i = 0;
-  renderSpinner(SPINNER_FRAMES[i]);
-  spinnerIntervalId = setInterval(() => {
-    i = (i + 1) % SPINNER_FRAMES.length;
-    renderSpinner(SPINNER_FRAMES[i]);
-  }, SPINNER_INTERVAL_MS);
-}
-
-/**
- * 停止 Spinner
- */
-function stopSpinner(): void {
-  if (spinnerIntervalId !== null) {
-    clearInterval(spinnerIntervalId);
-    spinnerIntervalId = null;
-  }
-  spinnerText = "";
-}
-
-/**
- * 停止 Spinner 并输出成功信息
- */
-function succeedSpinner(message?: string): void {
-  stopSpinner();
-  if (message !== undefined && message !== "") {
-    writeStdoutSync(new TextEncoder().encode("\r" + " ".repeat(80) + "\r"));
-    console.log(`\x1b[32m✓\x1b[0m \x1b[32m${message}\x1b[0m`);
-  }
-}
-
-/**
- * 停止 Spinner 并输出失败信息
- */
-function failSpinner(message?: string): void {
-  stopSpinner();
-  if (message !== undefined && message !== "") {
-    writeStdoutSync(new TextEncoder().encode("\r" + " ".repeat(80) + "\r"));
-    console.error(`\x1b[31m✗\x1b[0m \x1b[31m${message}\x1b[0m`);
-  }
-}
 
 /**
  * 判断当前是否从本地文件运行（非 JSR/远程）

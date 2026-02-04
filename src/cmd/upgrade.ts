@@ -10,7 +10,14 @@
  * - dweb upgrade
  */
 
-import { error, info, success } from "@dreamer/console";
+import {
+  error,
+  failSpinner,
+  info,
+  startSpinner,
+  succeedSpinner,
+  success,
+} from "@dreamer/console";
 import { createCommand } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
 import { getDwebVersion } from "../utils/version.ts";
@@ -80,22 +87,23 @@ export async function main(
   }
 
   success(`发现新版本: ${latest}`);
-  info("正在重新安装 dweb-cli 到最新版本...");
 
   const setupSpec = `jsr:@dreamer/dweb@${latest}/setup`;
   const cmd = createCommand("deno", {
     args: ["run", "-A", setupSpec],
-    stdout: "inherit",
-    stderr: "inherit",
+    stdout: "piped",
+    stderr: "piped",
     stdin: "inherit",
   });
+  startSpinner("正在安装 dweb-cli ...");
   const child = cmd.spawn();
   const status = await child.status;
 
   if (status.success) {
-    success(`dweb-cli 已升级至 ${latest}`);
+    succeedSpinner(`dweb-cli 已升级至 ${latest}`);
   } else {
-    error("自动安装失败，请手动执行:");
+    failSpinner("自动安装失败");
+    error("请手动执行:");
     info(`  deno run -A ${setupSpec}`);
     info("或手动修改项目 deno.json 中的 @dreamer/dweb 版本号");
   }
