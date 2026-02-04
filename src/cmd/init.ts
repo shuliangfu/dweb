@@ -21,6 +21,7 @@ import {
   prompt,
   separator,
   startSpinner,
+  stopSpinner,
   success,
   succeedSpinner,
   title,
@@ -1326,7 +1327,7 @@ export async function generate(opts: InitOptions): Promise<void> {
       info(`使用 beta 最新版: dweb@${jsrVersions.dweb}`);
     }
   } catch {
-    failSpinner("JSR 版本获取失败，使用本地/兜底版本");
+    failSpinner("版本获取失败，使用本地/兜底版本");
     jsrVersions = {
       dweb: dwebConfig?.version ?? FALLBACK_DWEB_VERSION,
       render: "1.0.0",
@@ -1383,8 +1384,10 @@ export async function main(
   info("正在生成项目...");
   await generate(opts);
 
-  // 先缓存依赖，再自动执行 deno approve-scripts，避免后续 deno task dev 出现 build scripts 警告（静默执行，无输出）
+  // 先缓存依赖，再自动执行 deno approve-scripts，避免后续 deno task dev 出现 build scripts 警告
+  // 首次创建项目时 deno cache 需下载依赖，可能较慢，故显示 loading 避免用户误以为卡住
   try {
+    startSpinner("正在缓存依赖 ...");
     const cacheCmd = createCommand("deno", {
       args: ["cache", "."],
       cwd: opts.targetDir,
@@ -1393,16 +1396,25 @@ export async function main(
     });
     const cacheChild = cacheCmd.spawn();
     await cacheChild.status;
+    succeedSpinner("依赖已缓存");
 
+    // approve-scripts 有交互选择，通过 stdin 自动输入回车确认（无需输入 y）
     const approveCmd = createCommand("deno", {
       args: ["approve-scripts"],
       cwd: opts.targetDir,
+      stdin: "piped",
       stdout: "null",
       stderr: "null",
     });
     const approveChild = approveCmd.spawn();
+    if (approveChild.stdin) {
+      const writer = approveChild.stdin.getWriter();
+      await writer.write(new TextEncoder().encode("\n"));
+      await writer.close();
+    }
     await approveChild.status;
   } catch {
+    stopSpinner();
     // 忽略（如 deno 未安装或非 Deno 环境），项目已创建成功
   }
 
