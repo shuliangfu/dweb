@@ -138,7 +138,6 @@ export function validateConfig(config: AppConfig): void {
   if (config.hotReload !== undefined && typeof config.hotReload !== "boolean") {
     throw new Error(`配置项 'hotReload' 必须是布尔类型`);
   }
-
   // 验证渲染配置
   if (config.render !== undefined) {
     if (typeof config.render !== "object" || config.render === null) {
@@ -447,15 +446,18 @@ async function loadParamsConfig(
  * 2. 应用/config/main.ts（应用框架配置）
  * 3. 入口文件 main.ts 传入的配置（最高优先级）
  *
+ * 本地配置文件（main.ts、params.ts）通过动态 import 加载，不会触发依赖下载。
+ *
  * @param container 服务容器
  * @param options 配置选项
  * @returns 配置管理器实例
  */
 export async function initializeConfigManager(
   container: ServiceContainer,
-  options: ConfigManagerOptions = {},
+  options: ConfigManagerOptions & { directories?: string[] } = {},
 ): Promise<ConfigManager> {
-  const directories = options.directories || ["./config"];
+  // 默认同时检查 ./config 与 ./src/config，兼容两种项目结构
+  const directories = options.directories || ["./config", "./src/config"];
   // 直接从环境变量读取（兼容 Deno、Bun 和 Node.js）
   const env = getEnv("DENO_ENV") ||
     getEnv("BUN_ENV") ||
@@ -465,21 +467,16 @@ export async function initializeConfigManager(
   let mainConfig: AppConfig = {};
 
   // 1. 先加载 common/config/main.ts（公共配置，优先级最低）
-  // 相对于项目根目录查找：
-  // - 有 src 目录则查找 ./src/common/config
-  // - 没有 src 目录则查找 ./common/config
-  // 找不到也不报错，静默忽略
   const commonConfigPaths = [
-    "./src/common/config", // 有 src 目录的情况
-    "./common/config", // 没有 src 目录的情况
+    "./src/common/config",
+    "./common/config",
   ];
 
-  // 尝试加载 common 配置（找不到也不报错）
   for (const commonPath of commonConfigPaths) {
     const commonConfig = await loadMainConfig(commonPath, env);
     if (Object.keys(commonConfig).length > 0) {
       mainConfig = deepMergeConfig(mainConfig, commonConfig);
-      break; // 找到第一个有效的 common 配置就停止
+      break;
     }
   }
 
@@ -492,16 +489,13 @@ export async function initializeConfigManager(
   // 加载业务配置（params.ts）
   let paramsConfig: Record<string, unknown> = {};
 
-  // 1. 先加载 common/config/params.ts（公共业务配置）
   for (const commonPath of commonConfigPaths) {
     const commonParams = await loadParamsConfig(commonPath);
     if (Object.keys(commonParams).length > 0) {
       paramsConfig = { ...paramsConfig, ...commonParams };
-      break; // 找到第一个有效的 common 配置就停止
+      break;
     }
   }
-
-  // 2. 加载应用自己的 config/params.ts（应用业务配置）
   for (const dir of directories) {
     const dirConfig = await loadParamsConfig(dir);
     paramsConfig = { ...paramsConfig, ...dirConfig };
@@ -516,7 +510,7 @@ export async function initializeConfigManager(
     onUpdate: options.onUpdate,
   });
 
-  // 加载配置（会加载 mod.ts 或 config.json，如果有的话）
+  // 加载配置（会加载 mod.ts 或 config.json）
   await configManager.load();
 
   // 将框架配置合并到配置管理器（框架配置优先级高于 mod.ts/config.json）

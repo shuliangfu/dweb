@@ -27,6 +27,7 @@ import {
   type SignalHandler,
 } from "./runtime-adapter.ts";
 
+import { BuilderServer } from "@dreamer/esbuild";
 import { requestId, requestLogger } from "@dreamer/middlewares";
 import { expandDynamicRoute } from "@dreamer/render";
 import { initializeBuild } from "../feature/build.ts";
@@ -216,10 +217,13 @@ export class App extends EventEmitter implements IApp {
   /**
    * 初始化配置
    *
-   * @param config 应用配置
+   * 从 configDirectory 动态加载 main.ts、params.ts（本地配置文件，不会触发依赖下载）。
+   * 入口文件传入的 config 会与加载的配置深度合并，优先级最高。
+   *
+   * @param config 应用配置（可仅含 configDirectory，或含覆盖项）
    */
   private async _initializeConfig(config: AppConfig): Promise<void> {
-    // 初始化配置管理器
+    // 初始化配置管理器（从 configDirectory 动态加载 main.ts、params.ts；未指定时默认检查 ./config、./src/config）
     await initializeConfigManager(this.container, {
       directories: config.configDirectory
         ? [config.configDirectory]
@@ -1010,9 +1014,6 @@ export class App extends EventEmitter implements IApp {
     const config = getConfig(this.container);
 
     try {
-      // 动态导入 BuilderServer（避免循环依赖）
-      const { BuilderServer } = await import("@dreamer/esbuild");
-
       // 获取构建配置
       const buildConfig = (config.build || {}) as {
         server?: {

@@ -330,7 +330,6 @@ ${otherImports}
  * 使用 src 目录时，config 放在 src/config；否则放在项目根 config
  */
 function getMainTsSingle(opts: InitOptions): string {
-  const configDir = opts.useSrc ? "./src/config" : "./config";
   const assetsRoot = opts.useSrc ? "src/assets" : "assets";
   const cssEntry = opts.style === "tailwind"
     ? (opts.useSrc ? "src/assets/tailwind.css" : "assets/tailwind.css")
@@ -379,16 +378,14 @@ app.registerPlugin(staticPlugin({
   return `/**
  * 服务端入口
  * ${opts.engine === "preact" ? "Preact" : "React"} + @dreamer/dweb
- * 配置由框架自动加载 ${configDir}/main.ts
+ * 配置由框架自动加载 config/main.ts 或 src/config/main.ts
  */
 
 import { App } from "@dreamer/dweb";
 ${stylePluginImport}
 ${staticImport}
 
-const app = new App({
-  configDirectory: "${configDir}",
-});
+const app = new App();
 ${stylePluginBlock}
 ${staticPluginBlock}
 

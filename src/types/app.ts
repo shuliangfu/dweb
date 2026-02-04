@@ -56,7 +56,7 @@ export interface AppConfig extends Record<string, unknown> {
   name?: string;
   /** 应用版本 */
   version?: string;
-  /** 配置目录（默认：'./config'） */
+  /** 配置目录（默认：'./config'），用于 ConfigManager 的 .env、config.json 等，框架会从此目录动态加载 main.ts、params.ts */
   configDirectory?: string;
   /** 环境变量前缀 */
   envPrefix?: string;
