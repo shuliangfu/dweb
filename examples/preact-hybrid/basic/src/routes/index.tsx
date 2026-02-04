@@ -15,8 +15,7 @@ const classes = {
   featureGrid: "grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4",
   featureCard: "rounded-lg bg-white p-6 shadow-md",
   featureCardTitle: "mb-2.5 text-[#667eea]",
-  socketSection:
-    "rounded-xl border border-gray-200 bg-white p-6 shadow-md",
+  socketSection: "rounded-xl border border-gray-200 bg-white p-6 shadow-md",
   socketTitle: "mb-4 text-center text-[#667eea]",
   socketDesc: "mb-4 text-center text-sm text-gray-500",
   statusBadgeWrap: "mb-4 flex items-center justify-center gap-2",

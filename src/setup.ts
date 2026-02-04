@@ -21,8 +21,8 @@ import {
   makeTempFile,
   readTextFile,
   remove,
-  writeTextFile,
   writeStdoutSync,
+  writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { getPackageRoot } from "./utils/version.ts";
 
@@ -142,7 +142,11 @@ async function createTempCliConfig(): Promise<string> {
       const raw = await res.text();
       config = JSON.parse(raw) as Record<string, unknown>;
     } catch (err) {
-      throw new Error(`无法读取 ${denoJsonUrl}: ${err instanceof Error ? err.message : String(err)}`);
+      throw new Error(
+        `无法读取 ${denoJsonUrl}: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
     }
   }
   // 移除 workspace、tasks、publish、lint 等仅开发时需要的字段，保留 exports（CLI 解析 ./cli 需要）
@@ -155,66 +159,86 @@ async function createTempCliConfig(): Promise<string> {
 
 /**
  * 执行 deno install 安装全局命令
+ *
+ * - JSR 运行：不使用 --config，直接安装 jsr:@dreamer/dweb/cli，由 JSR 包自身配置解析
+ * - 本地运行：使用临时 config（去除 workspace）避免解析 examples 等不存在的路径
  */
 async function installGlobalCli(): Promise<void> {
   const cliEntry = getCliEntry();
-  const tempConfigPath = await createTempCliConfig();
-  try {
-    const args: string[] = [
-      "install",
-      "--global",
-      "-f",
-      "-q", // 静默模式，不输出 Deno 默认的 "Successfully installed" 等提示
-      "-n",
-      CLI_NAME,
-      "-A",
-      "--config",
-      tempConfigPath,
-    ];
+  const args: string[] = [
+    "install",
+    "--global",
+    "-f",
+    "-q", // 静默模式，不输出 Deno 默认的 "Successfully installed" 等提示
+    "-n",
+    CLI_NAME,
+    "-A",
+  ];
 
+  if (isLocalRun()) {
+    const tempConfigPath = await createTempCliConfig();
+    args.push("--config", tempConfigPath);
+    try {
+      args.push(cliEntry);
+      const cmd = createCommand("deno", {
+        args,
+        stdout: "piped",
+        stderr: "piped",
+        stdin: "inherit",
+      });
+      startSpinner(`正在安装 ${CLI_NAME} ...`);
+      const child = cmd.spawn();
+      const status = await child.status;
+      if (status.success) {
+        succeedSpinner(`${CLI_NAME} 已安装成功`);
+        printUsage();
+      } else {
+        failSpinner(`安装失败，退出码: ${status.code}`);
+        exit(status.code ?? 1);
+      }
+    } finally {
+      await remove(tempConfigPath).catch(() => {});
+    }
+  } else {
     args.push(cliEntry);
-
     const cmd = createCommand("deno", {
       args,
       stdout: "piped",
       stderr: "piped",
       stdin: "inherit",
     });
-
     startSpinner(`正在安装 ${CLI_NAME} ...`);
-
     const child = cmd.spawn();
     const status = await child.status;
-
     if (status.success) {
       succeedSpinner(`${CLI_NAME} 已安装成功`);
-      console.log("使用方式:");
-      console.log(`  ${CLI_NAME} init [appName]   # 初始化新项目`);
-      console.log(`  ${CLI_NAME} dev              # 启动开发服务器`);
-      console.log(`  ${CLI_NAME} build            # 构建生产版本`);
-      console.log(`  ${CLI_NAME} start            # 启动生产服务器`);
-      console.log(`  ${CLI_NAME} generate (g)     # 生成代码`);
-      console.log(`  ${CLI_NAME} db migrate (m)   # 数据库迁移`);
-      console.log(`  ${CLI_NAME} db seed          # 执行数据库种子`);
-      console.log(`  ${CLI_NAME} db status        # 查看迁移状态`);
-      console.log(`  ${CLI_NAME} test             # 运行测试`);
-      console.log(`  ${CLI_NAME} lint             # 代码检查`);
-      console.log(`  ${CLI_NAME} fmt              # 代码格式化`);
-      console.log(`  ${CLI_NAME} clean            # 清理构建产物`);
-      console.log(`  ${CLI_NAME} preview          # 预览构建结果`);
-      console.log(`  ${CLI_NAME} upgrade          # 升级 dweb`);
-      console.log(`  ${CLI_NAME} --help           # 查看完整帮助`);
-
-      console.log("\n查看完整帮助:");
-      console.log(`  ${CLI_NAME} --help           # 查看完整帮助`);
-      console.log("");
+      printUsage();
     } else {
       failSpinner(`安装失败，退出码: ${status.code}`);
       exit(status.code ?? 1);
     }
-  } finally {
-    await remove(tempConfigPath).catch(() => {});
   }
+}
+
+/** 打印 dweb-cli 使用说明 */
+function printUsage(): void {
+  console.log("使用方式:");
+  console.log(`  ${CLI_NAME} init [appName]   # 初始化新项目`);
+  console.log(`  ${CLI_NAME} dev              # 启动开发服务器`);
+  console.log(`  ${CLI_NAME} build            # 构建生产版本`);
+  console.log(`  ${CLI_NAME} start            # 启动生产服务器`);
+  console.log(`  ${CLI_NAME} generate (g)     # 生成代码`);
+  console.log(`  ${CLI_NAME} db migrate (m)   # 数据库迁移`);
+  console.log(`  ${CLI_NAME} db seed          # 执行数据库种子`);
+  console.log(`  ${CLI_NAME} db status        # 查看迁移状态`);
+  console.log(`  ${CLI_NAME} test             # 运行测试`);
+  console.log(`  ${CLI_NAME} lint             # 代码检查`);
+  console.log(`  ${CLI_NAME} fmt              # 代码格式化`);
+  console.log(`  ${CLI_NAME} clean            # 清理构建产物`);
+  console.log(`  ${CLI_NAME} preview          # 预览构建结果`);
+  console.log(`  ${CLI_NAME} upgrade          # 升级 dweb`);
+  console.log(`  ${CLI_NAME} --help           # 查看完整帮助`);
+  console.log("");
 }
 
 // 主入口

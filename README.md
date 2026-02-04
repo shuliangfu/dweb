@@ -22,7 +22,8 @@ React。所有示例代码默认使用 Preact。
 
 ### 安装 dweb-cli 全局命令
 
-如需在任意目录使用 `dweb-cli` 命令（如 `dweb-cli init`、`dweb-cli dev` 等），可运行 setup 脚本安装全局命令：
+如需在任意目录使用 `dweb-cli` 命令（如 `dweb-cli init`、`dweb-cli dev`
+等），可运行 setup 脚本安装全局命令：
 
 ```bash
 deno run -A jsr:@dreamer/dweb/setup
@@ -246,7 +247,8 @@ backend、frontend、mobile），每个应用独立运行，可以共享公共�
 
 ### 1. 创建项目
 
-使用 dweb-cli 创建项目（需先安装 dweb-cli 全局命令，见上方「安装 dweb-cli 全局命令」）：
+使用 dweb-cli 创建项目（需先安装 dweb-cli 全局命令，见上方「安装 dweb-cli
+全局命令」）：
 
 ```bash
 dweb-cli init my-app
@@ -1277,7 +1279,8 @@ const app = new App({
 
 ### CLI 工具
 
-CLI 可通过项目内 `deno task` 使用，或安装为全局命令 `dweb-cli`（运行 `deno run -A jsr:@dreamer/dweb/setup`）。
+CLI 可通过项目内 `deno task` 使用，或安装为全局命令 `dweb-cli`（运行
+`deno run -A jsr:@dreamer/dweb/setup`）。
 
 **单应用模式**：
 
