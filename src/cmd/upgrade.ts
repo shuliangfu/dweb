@@ -4,12 +4,14 @@
  * 职责：
  * - 检查并升级 dweb 到最新版本
  * - 从 JSR 获取最新版本信息
+ * - 发现新版本时自动重新安装 dweb-cli
  *
  * 运行方式：
  * - dweb upgrade
  */
 
 import { error, info, success } from "@dreamer/console";
+import { createCommand } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
 import { getDwebVersion } from "../utils/version.ts";
 
@@ -78,8 +80,23 @@ export async function main(
   }
 
   success(`发现新版本: ${latest}`);
-  info("升级方式:");
-  info("  deno: deno add jsr:@dreamer/dweb@latest");
-  info("  bun:  bun add jsr:@dreamer/dweb@latest");
-  info("或手动修改 deno.json / package.json 中的 @dreamer/dweb 版本号");
+  info("正在重新安装 dweb-cli 到最新版本...");
+
+  const setupSpec = `jsr:@dreamer/dweb@${latest}/setup`;
+  const cmd = createCommand("deno", {
+    args: ["run", "-A", setupSpec],
+    stdout: "inherit",
+    stderr: "inherit",
+    stdin: "inherit",
+  });
+  const child = cmd.spawn();
+  const status = await child.status;
+
+  if (status.success) {
+    success(`dweb-cli 已升级至 ${latest}`);
+  } else {
+    error("自动安装失败，请手动执行:");
+    info(`  deno run -A ${setupSpec}`);
+    info("或手动修改项目 deno.json 中的 @dreamer/dweb 版本号");
+  }
 }
