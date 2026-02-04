@@ -29,6 +29,8 @@ React。所有示例代码默认使用 Preact。
 deno run -A jsr:@dreamer/dweb/setup
 ```
 
+安装成功后，建议先执行 `dweb-cli upgrade` 升级到最新版本。
+
 安装完成后，可在任意目录执行：
 
 ```bash
