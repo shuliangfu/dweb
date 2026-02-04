@@ -2,27 +2,11 @@
   "name": "@dreamer/dweb",
   "version": "3.0.0-beta.1",
   "license": "MIT",
-  "workspace": [
-    "./examples/preact-csr/basic",
-    "./examples/preact-csr/advanced",
-    "./examples/preact-hybrid/basic",
-    "./examples/preact-hybrid/advanced",
-    "./examples/preact-ssg/basic",
-    "./examples/preact-ssg/advanced",
-    "./examples/preact-ssr/basic",
-    "./examples/preact-ssr/advanced",
-    "./examples/react-csr/basic",
-    "./examples/react-csr/advanced",
-    "./examples/react-hybrid/basic",
-    "./examples/react-hybrid/advanced",
-    "./examples/react-ssg/basic",
-    "./examples/react-ssg/advanced",
-    "./examples/react-ssr/basic",
-    "./examples/react-ssr/advanced"
-  ],
   "exports": {
     ".": "./src/mod.ts",
     "./cli": "./src/cli.ts",
+    "./setup": "./src/setup.ts",
+    "./types": "./src/types/mod.ts",
     "./core/app": "./src/core/app.ts",
     "./core/config": "./src/core/config.ts",
     "./core/service": "./src/core/service.ts",
@@ -34,8 +18,7 @@
     "./feature/router": "./src/feature/router.ts",
     "./feature/render": "./src/feature/render.ts",
     "./feature/build": "./src/feature/build.ts",
-    "./feature/console": "./src/feature/console.ts",
-    "./types": "./src/types/mod.ts"
+    "./feature/console": "./src/feature/console.ts"
   },
   "publish": {
     "include": [
@@ -77,6 +60,27 @@
     "autoprefixer": "npm:autoprefixer@10.4.19",
     "cssnano": "npm:cssnano@7.0.3"
   },
+  "tasks": {
+    "setup": "deno run -A src/setup.ts"
+  },
+  "workspace": [
+    "./examples/preact-csr/basic",
+    "./examples/preact-csr/advanced",
+    "./examples/preact-hybrid/basic",
+    "./examples/preact-hybrid/advanced",
+    "./examples/preact-ssg/basic",
+    "./examples/preact-ssg/advanced",
+    "./examples/preact-ssr/basic",
+    "./examples/preact-ssr/advanced",
+    "./examples/react-csr/basic",
+    "./examples/react-csr/advanced",
+    "./examples/react-hybrid/basic",
+    "./examples/react-hybrid/advanced",
+    "./examples/react-ssg/basic",
+    "./examples/react-ssg/advanced",
+    "./examples/react-ssr/basic",
+    "./examples/react-ssr/advanced"
+  ],
   "nodeModulesDir": "auto",
   "lint": {
     "include": [

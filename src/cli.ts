@@ -17,7 +17,6 @@
 
 import {
   cwd,
-  dirname,
   join,
   mkdir,
   stat,
@@ -25,23 +24,37 @@ import {
 } from "./core/runtime-adapter.ts";
 
 import {
+  colorize,
   Command,
   error,
   info,
   type ParsedOptions,
   success,
 } from "./feature/command.ts";
+import { getDwebVersion } from "./utils/version.ts";
 
 // import { generateFromTemplate } from "./template/generator.ts";
 
 /**
+ * 构建 CLI 版本展示字符串
+ */
+function buildVersionStr(version: string): string {
+  return `\n${colorize("dweb-cli", "cyan", true)}
+${colorize("Version:", "cyan", true)} ${colorize(version, "yellow")}
+
+${colorize("@dreamer/dweb 全栈 Web 框架命令行工具", "gray")}
+${colorize("用于初始化项目、生成代码、数据库迁移等", "gray")} \n`;
+}
+
+/**
  * 创建 CLI 应用
  *
+ * @param version 版本号（由 getDwebVersion() 获取，不传则使用占位，执行前需设置）
  * @returns CLI 命令实例
  */
-export function createCLI(): Command {
+export function createCLI(version: string): Command {
   const cli = new Command("dweb", "Dreamer Web Framework CLI 工具")
-    .setVersion("1.0.0")
+    .setVersion(buildVersionStr(version))
     .option({
       name: "verbose",
       alias: "v",
@@ -63,7 +76,7 @@ export function createCLI(): Command {
       }
     });
 
-  // 生成命令
+  // 生成命令：委托给 cmd/generate.ts
   cli
     .command("generate", "生成代码")
     .option({
@@ -72,6 +85,7 @@ export function createCLI(): Command {
       description: "生成类型（controller, service, model 等）",
       type: "string",
       required: true,
+      requiresValue: true,
     })
     .option({
       name: "name",
@@ -79,130 +93,15 @@ export function createCLI(): Command {
       description: "名称",
       type: "string",
       required: true,
+      requiresValue: true,
     })
-    .action(async (_args: string[], options: ParsedOptions) => {
-      const type = options.type as string;
-      const name = options.name as string;
-
-      info(`正在生成 ${type}: ${name}`);
-
+    .action(async (args: string[], options: ParsedOptions) => {
       try {
-        const currentDir = cwd();
-        let targetPath: string;
-        let content: string;
-
-        // 根据类型生成不同的代码
-        switch (type.toLowerCase()) {
-          case "service":
-          case "s": {
-            targetPath = join(currentDir, "src", "services", `${name}.ts`);
-            content = `/**
- * ${name} 服务
- */
-
-export class ${name}Service {
-  /**
-   * 示例方法
-   */
-  async example(): Promise<string> {
-    return "Hello from ${name}Service";
-  }
-}
-`;
-            break;
-          }
-          case "controller":
-          case "c": {
-            targetPath = join(currentDir, "src", "routes", "api", `${name}.ts`);
-            content = `/**
- * ${name} 控制器
- */
-
-import type { Request, Response } from "@dreamer/server";
-
-/**
- * GET /api/${name}
- */
-export async function GET(req: Request, res: Response) {
-  return res.json({ message: "Hello from ${name} controller" });
-}
-
-/**
- * POST /api/${name}
- */
-export async function POST(req: Request, res: Response) {
-  const body = await req.json();
-  return res.json({ message: "Created", data: body });
-}
-`;
-            break;
-          }
-          case "model":
-          case "m": {
-            targetPath = join(currentDir, "src", "models", `${name}.ts`);
-            content = `/**
- * ${name} 数据模型
- */
-
-// TODO: 实现数据模型
-export interface ${name} {
-  id: string;
-  // 添加其他字段
-}
-
-export class ${name}Model {
-  // TODO: 实现模型方法
-}
-`;
-            break;
-          }
-          case "route":
-          case "r": {
-            targetPath = join(currentDir, "src", "routes", `${name}.tsx`);
-            content = `/**
- * ${name} 路由页面
- */
-
-export default function ${name}Page() {
-  return (
-    <div>
-      <h1>${name}</h1>
-      <p>这是 ${name} 页面</p>
-    </div>
-  );
-}
-`;
-            break;
-          }
-          default: {
-            error(`不支持的生成类型: ${type}`);
-            error(`支持的类型: service, controller, model, route`);
-            return;
-          }
-        }
-
-        // 确保目录存在
-        await mkdir(dirname(targetPath), { recursive: true });
-
-        // 检查文件是否已存在
-        try {
-          await stat(targetPath);
-          error(`文件已存在: ${targetPath}`);
-          return;
-        } catch {
-          // 文件不存在，可以创建
-        }
-
-        // 写入文件
-        await writeTextFile(targetPath, content);
-
-        success(`${type} ${name} 生成完成！`);
-        info(`文件路径: ${targetPath}`);
+        const { main: generateMain } = await import("./cmd/generate.ts");
+        await generateMain(args, options);
       } catch (err) {
         error(
-          `生成 ${type} 失败: ${
-            err instanceof Error ? err.message : String(err)
-          }`,
+          `生成失败: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     });
@@ -293,8 +192,8 @@ export async function down() {
         } else if (action === "up") {
           info("正在执行数据库迁移...");
 
-          const cwd = Deno.cwd();
-          const migrationsDir = join(cwd, "migrations");
+          const currentDir = cwd();
+          const migrationsDir = join(currentDir, "migrations");
 
           // 检查 migrations 目录是否存在
           try {
@@ -352,6 +251,7 @@ export async function down() {
  * 如果直接运行此文件，则执行 CLI（兼容 Deno 和 Bun）
  */
 if (import.meta.main) {
-  const cli = createCLI();
+  const version = await getDwebVersion();
+  const cli = createCLI(version);
   await cli.execute();
 }

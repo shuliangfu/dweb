@@ -102,3 +102,13 @@ export async function loadDwebDenoJson(): Promise<DwebDenoConfig | null> {
     return null;
   }
 }
+
+export async function getDwebVersion(): Promise<string> {
+  const config =  await loadDwebDenoJson();
+  return config?.version ?? FALLBACK_DWEB_VERSION;
+}
+
+export async function getDwebImports(): Promise<Record<string, string>> {
+  const config = await loadDwebDenoJson();
+  return config?.imports ?? {};
+}

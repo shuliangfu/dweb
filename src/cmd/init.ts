@@ -327,9 +327,10 @@ ${otherImports}
 
 /**
  * 单应用 main.ts 内容（对齐 examples 下 basic 示例，无 socket-io）
+ * 使用 src 目录时，config 放在 src/config；否则放在项目根 config
  */
 function getMainTsSingle(opts: InitOptions): string {
-  const configDir = "./config";
+  const configDir = opts.useSrc ? "./src/config" : "./config";
   const assetsRoot = opts.useSrc ? "src/assets" : "assets";
   const cssEntry = opts.style === "tailwind"
     ? (opts.useSrc ? "src/assets/tailwind.css" : "assets/tailwind.css")
@@ -1117,7 +1118,9 @@ export async function generate(opts: InitOptions): Promise<void> {
     }
   } else {
     // ---------- 单应用 ----------
-    await mkdir(join(targetDir, "config"), { recursive: true });
+    // 使用 src 时 config 放在 src/config，否则放在项目根 config
+    const configBase = useSrc ? join(targetDir, "src", "config") : join(targetDir, "config");
+    await mkdir(configBase, { recursive: true });
     await mkdir(join(targetDir, prefix, "routes"), { recursive: true });
     await mkdir(join(targetDir, prefix, "components"), { recursive: true });
     if (style !== "none") {
@@ -1129,11 +1132,11 @@ export async function generate(opts: InitOptions): Promise<void> {
       getMainTsSingle(opts),
     );
     await writeTextFile(
-      join(targetDir, "config", "main.ts"),
+      join(configBase, "main.ts"),
       getConfigMainTs(opts),
     );
     await writeTextFile(
-      join(targetDir, "config", "main.dev.ts"),
+      join(configBase, "main.dev.ts"),
       getConfigMainDevTs(),
     );
     await writeTextFile(

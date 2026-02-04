@@ -36,11 +36,13 @@ describe("init (cmd/init.ts)", () => {
 
     await generate(opts);
 
-    // 验证目录结构
+    // 验证目录结构（单应用 useSrc 时 config 在 src/config）
     expect(await exists(join(testDir, "deno.json"))).toBe(true);
     expect(await exists(join(testDir, ".gitignore"))).toBe(true);
-    expect(await exists(join(testDir, "config", "main.ts"))).toBe(true);
-    expect(await exists(join(testDir, "config", "main.dev.ts"))).toBe(true);
+    expect(await exists(join(testDir, "src", "config", "main.ts"))).toBe(true);
+    expect(await exists(join(testDir, "src", "config", "main.dev.ts"))).toBe(
+      true,
+    );
     expect(await exists(join(testDir, "src", "main.ts"))).toBe(true);
     expect(await exists(join(testDir, "src", "routes", "_app.tsx"))).toBe(true);
     expect(await exists(join(testDir, "src", "routes", "_layout.tsx"))).toBe(
@@ -64,7 +66,9 @@ describe("init (cmd/init.ts)", () => {
     expect(mainTs).toContain("tailwindPlugin");
 
     // 验证 config 不包含 socketIo
-    const configTs = await readTextFile(join(testDir, "config", "main.ts"));
+    const configTs = await readTextFile(
+      join(testDir, "src", "config", "main.ts"),
+    );
     expect(configTs).not.toContain("socketIo");
 
     // 验证 deno.json 不包含 socket-io 依赖

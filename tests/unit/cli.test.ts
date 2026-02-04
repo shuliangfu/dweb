@@ -12,7 +12,7 @@ import { createCLI } from "../../src/cli.ts";
 describe("CLI (cli.ts)", () => {
   describe("createCLI()", () => {
     it("应返回 Command 实例且包含 execute 方法", () => {
-      const cli = createCLI();
+      const cli = createCLI("1.0.0");
       expect(cli).toBeDefined();
       expect(typeof cli.execute).toBe("function");
     });
