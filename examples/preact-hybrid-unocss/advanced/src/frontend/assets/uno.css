@@ -1,0 +1,6 @@
+/**
+ * UnoCSS 入口 / 自定义样式
+ * 在组件里写 class 即可，unocssPlugin 会扫描并生成工具类，与此处内容合并输出。
+ */
+
+/* 可选：自定义层，例如 :root { --color-primary: #333; } */
