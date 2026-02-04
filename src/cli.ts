@@ -73,7 +73,7 @@ export function createCLI(version: string): Command {
     .option({
       name: "type",
       alias: "t",
-      description: "生成类型 (controller, service, model 等)",
+      description: "生成类型（route 页面、api 接口、model 模型、service 服务）",
       type: "string",
       required: true,
       requiresValue: true,

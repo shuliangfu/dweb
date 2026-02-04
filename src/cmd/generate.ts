@@ -2,12 +2,13 @@
  * dweb 代码生成命令
  *
  * 职责：
- * - 根据类型和名称生成 service、controller、model、route 等代码文件
+ * - 根据类型和名称生成 route 页面、api 接口、model 模型、service 服务
  * - 使用 runtime-adapter 保证 Deno/Bun 兼容
  *
  * 运行方式：
  * - dweb-cli generate -t service -n User
  * - dweb-cli g -t route -n about
+ * - dweb-cli g -t api -n users
  */
 
 import { error, info, success } from "@dreamer/console";
@@ -25,7 +26,7 @@ import type { ParsedOptions } from "../feature/command.ts";
  * 生成命令选项
  */
 export interface GenerateOptions {
-  /** 生成类型：service, controller, model, route（支持简写 s, c, m, r） */
+  /** 生成类型：route 页面、api 接口、model 模型、service 服务（支持简写 r, a, m, s） */
   type: string;
   /** 名称 */
   name: string;
@@ -64,11 +65,11 @@ export class ${name}Service {
 `;
       return { targetPath, content };
     }
-    case "controller":
-    case "c": {
+    case "api":
+    case "a": {
       const targetPath = join(currentDir, "src", "routes", "api", `${name}.ts`);
       const content = `/**
- * ${name} 控制器
+ * ${name} API 接口
  */
 
 import type { Request, Response } from "@dreamer/server";
@@ -77,7 +78,7 @@ import type { Request, Response } from "@dreamer/server";
  * GET /api/${name}
  */
 export async function GET(req: Request, res: Response) {
-  return res.json({ message: "Hello from ${name} controller" });
+  return res.json({ message: "Hello from ${name} API" });
 }
 
 /**
@@ -177,7 +178,7 @@ export async function main(
   } catch (err) {
     if (err instanceof Error && err.message.includes("不支持的生成类型")) {
       error(err.message);
-      error("支持的类型: service, controller, model, route（或简写 s, c, m, r）");
+      error("支持的类型: route, api, model, service（或简写 r, a, m, s）");
     } else {
       error(
         `生成 ${type} 失败: ${err instanceof Error ? err.message : String(err)}`,
