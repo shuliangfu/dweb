@@ -12,9 +12,9 @@ import type { BuilderConfig, ServerConfig } from "@dreamer/esbuild";
 import type { LifecycleStage } from "@dreamer/lifecycle";
 import type { LoggerConfig } from "@dreamer/logger";
 import type {
-    Middleware,
-    MiddlewareCondition,
-    MiddlewareContext,
+  Middleware,
+  MiddlewareCondition,
+  MiddlewareContext,
 } from "@dreamer/middleware";
 import type { Plugin, PluginManagerOptions } from "@dreamer/plugin";
 import type { Engine } from "@dreamer/render";

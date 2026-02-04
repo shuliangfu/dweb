@@ -12,7 +12,7 @@
  * - 管理服务生命周期
  */
 
-import { ServiceContainer, createServiceContainer } from "@dreamer/service";
+import { createServiceContainer, ServiceContainer } from "@dreamer/service";
 
 /**
  * 初始化服务容器

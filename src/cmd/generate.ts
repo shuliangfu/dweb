@@ -181,7 +181,9 @@ export async function main(
       error("支持的类型: route, api, model, service（或简写 r, a, m, s）");
     } else {
       error(
-        `生成 ${type} 失败: ${err instanceof Error ? err.message : String(err)}`,
+        `生成 ${type} 失败: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
       );
     }
   }

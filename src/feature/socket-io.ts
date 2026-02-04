@@ -74,7 +74,9 @@ export function getSocketIoServer(container: ServiceContainer): Server {
  * @param container 服务容器
  * @returns 路径前缀（如 "/socket.io/"），未配置时返回 undefined
  */
-export function getSocketIoPath(container: ServiceContainer): string | undefined {
+export function getSocketIoPath(
+  container: ServiceContainer,
+): string | undefined {
   if (!container.has(SOCKET_IO_PATH_KEY)) {
     return undefined;
   }

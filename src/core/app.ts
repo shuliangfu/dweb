@@ -9,10 +9,10 @@
  * - 提供事件机制（继承 EventEmitter）
  */
 
-import type { LifecycleHook, LifecycleStage } from "@dreamer/lifecycle"
-import type { Middleware, MiddlewareContext } from "@dreamer/middleware"
-import { ServiceContainer } from "@dreamer/service"
-import { EventEmitter } from "node:events"
+import type { LifecycleHook, LifecycleStage } from "@dreamer/lifecycle";
+import type { Middleware, MiddlewareContext } from "@dreamer/middleware";
+import { ServiceContainer } from "@dreamer/service";
+import { EventEmitter } from "node:events";
 import {
   addSignalListener,
   args,
@@ -27,31 +27,31 @@ import {
   resolve,
   setEnv,
   type SignalHandler,
-} from "./runtime-adapter.ts"
+} from "./runtime-adapter.ts";
 
-import { requestId, requestLogger } from "@dreamer/middlewares"
-import { expandDynamicRoute } from "@dreamer/render"
-import { initializeBuild } from "../feature/build.ts"
+import { requestId, requestLogger } from "@dreamer/middlewares";
+import { expandDynamicRoute } from "@dreamer/render";
+import { initializeBuild } from "../feature/build.ts";
 import {
   buildClientScript,
   clearClientScriptCache,
   CLIENT_OUTPUT_MAIN_FILENAME,
   createClientScriptMiddleware,
   ensureClientEntryFile,
-} from "../feature/csr-client-builder.ts"
-import { loadRouteModule } from "../feature/load-route-module.ts"
-import { createRendererCSR } from "../feature/render-csr.ts"
-import { createRendererHybrid } from "../feature/render-hybrid.ts"
-import { createRendererSSG } from "../feature/render-ssg.ts"
-import { createRendererSSR } from "../feature/render-ssr.ts"
-import { getRender, initializeRender } from "../feature/render.ts"
-import { getRouter, initializeRouter } from "../feature/router.ts"
-import { getServer, initializeServer, startServer } from "../feature/server.ts"
+} from "../feature/csr-client-builder.ts";
+import { loadRouteModule } from "../feature/load-route-module.ts";
+import { createRendererCSR } from "../feature/render-csr.ts";
+import { createRendererHybrid } from "../feature/render-hybrid.ts";
+import { createRendererSSG } from "../feature/render-ssg.ts";
+import { createRendererSSR } from "../feature/render-ssr.ts";
+import { getRender, initializeRender } from "../feature/render.ts";
+import { getRouter, initializeRouter } from "../feature/router.ts";
+import { getServer, initializeServer, startServer } from "../feature/server.ts";
 import {
   createSocketIoMiddleware,
   getSocketIoPath,
   initializeSocketIo,
-} from "../feature/socket-io.ts"
+} from "../feature/socket-io.ts";
 import type {
   AppConfig,
   AppLifecycleHook,
@@ -59,41 +59,41 @@ import type {
   AppPlugin,
   AppStage,
   IApp,
-} from "../types/app.ts"
-import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts"
-import { getLogger, initializeLogger } from "../utils/logger.ts"
-import { DWEB_VERSION } from "../utils/version.ts"
+} from "../types/app.ts";
+import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
+import { getLogger, initializeLogger } from "../utils/logger.ts";
+import { DWEB_VERSION } from "../utils/version.ts";
 import {
   deepMergeConfig,
   getConfig,
   initializeConfigManager,
   validateConfig,
-} from "./config.ts"
+} from "./config.ts";
 import {
   connectDatabases,
   disconnectDatabases,
   initializeDatabase,
-} from "./database.ts"
-import { getLifecycleManager, initializeLifecycle } from "./lifecycle.ts"
+} from "./database.ts";
+import { getLifecycleManager, initializeLifecycle } from "./lifecycle.ts";
 import {
   getServerMiddlewares,
   initializeMiddleware,
   pluginEventsMiddleware,
   registerMiddleware,
-} from "./middleware.ts"
+} from "./middleware.ts";
 import {
   emitOnBuild,
   emitOnInit,
   emitOnShutdown,
   emitOnStart,
   emitOnStop,
-} from "./plugin-events.ts"
+} from "./plugin-events.ts";
 import {
   getPluginManager,
   initializePlugin,
   registerPlugin,
-} from "./plugin.ts"
-import { initializeServiceContainer } from "./service.ts"
+} from "./plugin.ts";
+import { initializeServiceContainer } from "./service.ts";
 
 /**
  * App 类

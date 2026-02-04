@@ -48,7 +48,9 @@ describe("init (cmd/init.ts)", () => {
     expect(await exists(join(testDir, "src", "routes", "_layout.tsx"))).toBe(
       true,
     );
-    expect(await exists(join(testDir, "src", "routes", "index.tsx"))).toBe(true);
+    expect(await exists(join(testDir, "src", "routes", "index.tsx"))).toBe(
+      true,
+    );
     expect(await exists(join(testDir, "src", "routes", "about.tsx"))).toBe(
       true,
     );

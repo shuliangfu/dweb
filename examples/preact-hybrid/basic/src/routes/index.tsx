@@ -1,13 +1,15 @@
-import { Client } from "@dreamer/socket-io/client"
-import { useEffect, useRef, useState } from "preact/hooks"
+import { Client } from "@dreamer/socket-io/client";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 /** 是否输出调试日志（开发时设为 true） */
-const DEBUG = false
+const DEBUG = false;
 const debugLog = (...args: unknown[]) => {
-  if (DEBUG && typeof globalThis !== "undefined" && (globalThis as any).console) {
-    (globalThis as any).console.log("[Socket.IO 调试]", ...args)
+  if (
+    DEBUG && typeof globalThis !== "undefined" && (globalThis as any).console
+  ) {
+    (globalThis as any).console.log("[Socket.IO 调试]", ...args);
   }
-}
+};
 
 /** 单条消息：发送或接收 */
 interface ChatMessage {
@@ -20,7 +22,12 @@ interface ChatMessage {
 }
 
 /** 连接状态 */
-type ConnectionStatus = "idle" | "connecting" | "connected" | "disconnected" | "error";
+type ConnectionStatus =
+  | "idle"
+  | "connecting"
+  | "connected"
+  | "disconnected"
+  | "error";
 
 /**
  * 首页组件
@@ -39,7 +46,12 @@ export default function Home() {
       ? globalThis.location.origin
       : "http://localhost:3000";
 
-    debugLog("连接目标:", origin, "→ 握手 URL:", `${origin.replace(/\/$/, "")}/socket.io/`)
+    debugLog(
+      "连接目标:",
+      origin,
+      "→ 握手 URL:",
+      `${origin.replace(/\/$/, "")}/socket.io/`,
+    );
 
     const client = new Client({
       url: origin,
@@ -48,18 +60,18 @@ export default function Home() {
       autoReconnect: true,
     });
     clientRef.current = client;
-    debugLog("Client 已创建，开始连接…")
+    debugLog("Client 已创建，开始连接…");
 
     const onConnect = () => {
-      debugLog("✓ connect 事件触发，已连接")
+      debugLog("✓ connect 事件触发，已连接");
       setStatus("connected");
     };
     const onDisconnect = (reason?: unknown) => {
-      debugLog("✗ disconnect 事件触发，原因:", reason)
+      debugLog("✗ disconnect 事件触发，原因:", reason);
       setStatus("disconnected");
     };
     const onConnectError = (err: unknown) => {
-      debugLog("✗ connect_error 事件触发:", err)
+      debugLog("✗ connect_error 事件触发:", err);
       setStatus("error");
     };
     const onReconnecting = (attempt?: number) => {
@@ -67,14 +79,18 @@ export default function Home() {
       setStatus("connecting");
     };
     const onReconnectFailed = () => {
-      debugLog("✗ reconnect_failed 事件触发，重连已放弃")
+      debugLog("✗ reconnect_failed 事件触发，重连已放弃");
       setStatus("error");
     };
     // 监听服务端推送的 chat-response 事件（需服务端配合发送）
     const onChatResponse = (data: { text?: string; message?: string }) => {
-      const text = typeof data === "string" ? data : (data?.text ?? data?.message ?? JSON.stringify(data));
-      debugLog("← chat-response 收到:", text)
-      setMessages((prev) => [...prev, { type: "received", text, at: Date.now() }]);
+      const text = typeof data === "string"
+        ? data
+        : (data?.text ?? data?.message ?? JSON.stringify(data));
+      debugLog("← chat-response 收到:", text);
+      setMessages((
+        prev,
+      ) => [...prev, { type: "received", text, at: Date.now() }]);
     };
 
     client.on("connect", onConnect);
@@ -85,7 +101,7 @@ export default function Home() {
     client.on("chat-response", onChatResponse);
 
     setStatus("connecting");
-    debugLog("事件监听器已注册，status → connecting")
+    debugLog("事件监听器已注册，status → connecting");
 
     return () => {
       client.off("connect", onConnect);
@@ -105,13 +121,19 @@ export default function Home() {
     if (!text) return;
     const client = clientRef.current;
     if (client?.isConnected()) {
-      debugLog("→ chat-message 发送:", text)
+      debugLog("→ chat-message 发送:", text);
       client.emit("chat-message", { text });
       setMessages((prev) => [...prev, { type: "sent", text, at: Date.now() }]);
       setInput("");
     } else {
-      debugLog("→ 发送失败：未连接")
-      setMessages((prev) => [...prev, { type: "sent", text: `[未连接] ${text}`, at: Date.now() }]);
+      debugLog("→ 发送失败：未连接");
+      setMessages((
+        prev,
+      ) => [...prev, {
+        type: "sent",
+        text: `[未连接] ${text}`,
+        at: Date.now(),
+      }]);
       setInput("");
     }
   };
@@ -159,7 +181,8 @@ export default function Home() {
       <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-md">
         <h2 class="mb-4 text-center text-[#667eea]">Socket.IO 客户端示例</h2>
         <p class="mb-4 text-center text-sm text-gray-500">
-          使用 @dreamer/socket-io 的 Client：连接、自动重连、发送 chat-message、接收 chat-response
+          使用 @dreamer/socket-io 的 Client：连接、自动重连、发送
+          chat-message、接收 chat-response
         </p>
         <div class="mb-4 flex items-center justify-center gap-2">
           <span
@@ -194,21 +217,27 @@ export default function Home() {
           </button>
         </div>
         <div class="max-h-48 overflow-y-auto rounded border border-gray-100 bg-gray-50 p-3">
-          {messages.length === 0 ? (
-            <p class="text-center text-gray-400">暂无消息。发送后显示在这里。</p>
-          ) : (
-            <ul class="space-y-2">
-              {messages.map((msg, i) => (
-                <li
-                  key={`${msg.at}-${i}`}
-                  class={msg.type === "sent" ? "text-right text-blue-600" : "text-left text-gray-700"}
-                >
-                  {msg.type === "sent" ? "→ " : "← "}
-                  {msg.text}
-                </li>
-              ))}
-            </ul>
-          )}
+          {messages.length === 0
+            ? (
+              <p class="text-center text-gray-400">
+                暂无消息。发送后显示在这里。
+              </p>
+            )
+            : (
+              <ul class="space-y-2">
+                {messages.map((msg, i) => (
+                  <li
+                    key={`${msg.at}-${i}`}
+                    class={msg.type === "sent"
+                      ? "text-right text-blue-600"
+                      : "text-left text-gray-700"}
+                  >
+                    {msg.type === "sent" ? "→ " : "← "}
+                    {msg.text}
+                  </li>
+                ))}
+              </ul>
+            )}
         </div>
       </section>
     </div>

@@ -63,7 +63,9 @@ export async function getProjectInfo(
   }
 
   const tasks = data.tasks ?? {};
-  const devKeys = Object.keys(tasks).filter((k) => k === "dev" || k.startsWith("dev:"));
+  const devKeys = Object.keys(tasks).filter((k) =>
+    k === "dev" || k.startsWith("dev:")
+  );
   const buildKeys = Object.keys(tasks).filter((k) =>
     k === "build" || k.startsWith("build:")
   );
@@ -72,8 +74,7 @@ export async function getProjectInfo(
   );
 
   // 多应用：存在 dev:xxx、build:xxx、start:xxx 形式
-  const isMulti =
-    devKeys.some((k) => k.startsWith("dev:")) ||
+  const isMulti = devKeys.some((k) => k.startsWith("dev:")) ||
     buildKeys.some((k) => k.startsWith("build:")) ||
     startKeys.some((k) => k.startsWith("start:"));
 

@@ -43,7 +43,7 @@ ${colorize("用于初始化项目、生成代码、数据库迁移等", "gray")}
  * @returns CLI 命令实例
  */
 export function createCLI(version: string): Command {
-  const cli = new Command("dweb", "Dreamer Web Framework CLI 工具")
+  const cli = new Command("dweb-cli", "DWEB CLI 工具")
     .setVersion(buildVersionStr(version))
     .option({
       name: "verbose",
@@ -52,7 +52,9 @@ export function createCLI(version: string): Command {
       type: "boolean",
     });
 
-  // 初始化命令：委托给 cmd/init.ts 的 main，子命令参数（如项目名称）透传
+  // ================================================================================
+  // init 初始化项目
+  // ================================================================================
   cli
     .command("init", "初始化新项目（交互式选择引擎、样式等）")
     .action(async (args: string[]) => {
@@ -66,7 +68,108 @@ export function createCLI(version: string): Command {
       }
     });
 
-  // 生成命令：委托给 cmd/generate.ts，别名为 g
+  // ================================================================================
+  // dev 开发服务器
+  // ================================================================================
+  const devCmd = cli.command(
+    "dev",
+    "启动开发服务器（单应用直接启动，多应用需指定应用名）",
+  );
+  devCmd
+    .option({
+      name: "app",
+      alias: "a",
+      description: "应用名（多应用时必填）",
+      type: "string",
+      requiresValue: true,
+    })
+    .action(async (args: string[], options: ParsedOptions) => {
+      try {
+        const { main: devMain } = await import("./cmd/dev.ts");
+        await devMain(args, options);
+      } catch (err) {
+        error(
+          `dev 失败: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    });
+
+  // ================================================================================
+  // build 构建
+  // ================================================================================
+  const buildCmd = cli.command(
+    "build",
+    "构建生产版本（多应用可指定应用名或构建全部）",
+  );
+  buildCmd
+    .option({
+      name: "app",
+      alias: "a",
+      description: "应用名（多应用时可选，不填则构建全部）",
+      type: "string",
+      requiresValue: true,
+    })
+    .action(async (args: string[], options: ParsedOptions) => {
+      try {
+        const { main: buildMain } = await import("./cmd/build.ts");
+        await buildMain(args, options);
+      } catch (err) {
+        error(
+          `build 失败: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    });
+
+  // ================================================================================
+  // start 生产启动
+  // ================================================================================
+  const startCmd = cli.command("start", "启动生产服务器（多应用需指定应用名）");
+  startCmd
+    .option({
+      name: "app",
+      alias: "a",
+      description: "应用名（多应用时必填）",
+      type: "string",
+      requiresValue: true,
+    })
+    .action(async (args: string[], options: ParsedOptions) => {
+      try {
+        const { main: startMain } = await import("./cmd/start.ts");
+        await startMain(args, options);
+      } catch (err) {
+        error(
+          `start 失败: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    });
+
+  // ================================================================================
+  // preview 预览构建结果
+  // ================================================================================
+  const previewCmd = cli.command("preview", "本地预览构建结果（需先 build）");
+  previewCmd.keepAlive();
+  previewCmd
+    .option({
+      name: "port",
+      alias: "p",
+      description: "端口号（默认 4173）",
+      type: "number",
+      requiresValue: true,
+    })
+    .action(async (args: string[], options: ParsedOptions) => {
+      try {
+        const { main: previewMain } = await import("./cmd/preview.ts");
+        await previewMain(args, options);
+      } catch (err) {
+        error(
+          `preview 失败: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    });
+
+  // ================================================================================
+  // generate 代码生成（别名 g）
+  // ================================================================================
   const generateCmd = cli.command("generate", "生成代码");
   generateCmd.alias("g");
   generateCmd
@@ -97,71 +200,82 @@ export function createCLI(version: string): Command {
       }
     });
 
-  // 开发服务器：委托给 cmd/dev.ts
-  const devCmd = cli.command("dev", "启动开发服务器（单应用直接启动，多应用需指定应用名）");
-  devCmd
+  // ================================================================================
+  // test 运行测试
+  // ================================================================================
+  const testCmd = cli.command("test", "运行测试");
+  testCmd
     .option({
       name: "app",
       alias: "a",
-      description: "应用名（多应用时必填）",
+      description: "应用名（多应用时可选）",
       type: "string",
       requiresValue: true,
     })
     .action(async (args: string[], options: ParsedOptions) => {
       try {
-        const { main: devMain } = await import("./cmd/dev.ts");
-        await devMain(args, options);
+        const { main: testMain } = await import("./cmd/test.ts");
+        await testMain(args, options);
       } catch (err) {
         error(
-          `dev 失败: ${err instanceof Error ? err.message : String(err)}`,
+          `test 失败: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     });
 
-  // 构建：委托给 cmd/build.ts
-  const buildCmd = cli.command("build", "构建生产版本（多应用可指定应用名或构建全部）");
-  buildCmd
-    .option({
-      name: "app",
-      alias: "a",
-      description: "应用名（多应用时可选，不填则构建全部）",
-      type: "string",
-      requiresValue: true,
-    })
+  // ================================================================================
+  // lint 代码检查
+  // ================================================================================
+  cli
+    .command("lint", "运行代码检查")
     .action(async (args: string[], options: ParsedOptions) => {
       try {
-        const { main: buildMain } = await import("./cmd/build.ts");
-        await buildMain(args, options);
+        const { main: lintMain } = await import("./cmd/lint.ts");
+        await lintMain(args, options);
       } catch (err) {
         error(
-          `build 失败: ${err instanceof Error ? err.message : String(err)}`,
+          `lint 失败: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     });
 
-  // 生产启动：委托给 cmd/start.ts
-  const startCmd = cli.command("start", "启动生产服务器（多应用需指定应用名）");
-  startCmd
-    .option({
-      name: "app",
-      alias: "a",
-      description: "应用名（多应用时必填）",
-      type: "string",
-      requiresValue: true,
-    })
+  // ================================================================================
+  // fmt 代码格式化
+  // ================================================================================
+  cli
+    .command("fmt", "运行代码格式化")
     .action(async (args: string[], options: ParsedOptions) => {
       try {
-        const { main: startMain } = await import("./cmd/start.ts");
-        await startMain(args, options);
+        const { main: fmtMain } = await import("./cmd/fmt.ts");
+        await fmtMain(args, options);
       } catch (err) {
         error(
-          `start 失败: ${err instanceof Error ? err.message : String(err)}`,
+          `fmt 失败: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     });
 
-  // 数据库迁移命令：委托给 cmd/migrate.ts，别名为 m
-  const migrateCmd = cli.command("migrate", "数据库迁移");
+  // ================================================================================
+  // clean 清理构建产物
+  // ================================================================================
+  cli
+    .command("clean", "清理构建产物（dist、.cache 等）")
+    .action(async (args: string[], options: ParsedOptions) => {
+      try {
+        const { main: cleanMain } = await import("./cmd/clean.ts");
+        await cleanMain(args, options);
+      } catch (err) {
+        error(
+          `clean 失败: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    });
+
+  // ================================================================================
+  // db 数据库相关（含 migrate 子命令）
+  // ================================================================================
+  const dbCmd = cli.command("db", "数据库相关");
+  const migrateCmd = dbCmd.command("migrate", "数据库迁移");
   migrateCmd.alias("m");
   migrateCmd
     .option({
@@ -181,11 +295,53 @@ export function createCLI(version: string): Command {
     })
     .action(async (args: string[], options: ParsedOptions) => {
       try {
-        const { main: migrateMain } = await import("./cmd/migrate.ts");
-        await migrateMain(args, options);
+        const { migrate } = await import("./cmd/db.ts");
+        await migrate(args, options);
       } catch (err) {
         error(
           `迁移失败: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    });
+
+  dbCmd
+    .command("seed", "执行数据库种子（填充测试数据）")
+    .action(async (args: string[], options: ParsedOptions) => {
+      try {
+        const { seed } = await import("./cmd/db.ts");
+        await seed(args, options);
+      } catch (err) {
+        error(
+          `seed 失败: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    });
+
+  dbCmd
+    .command("status", "查看迁移状态")
+    .action(async (args: string[], options: ParsedOptions) => {
+      try {
+        const { status } = await import("./cmd/db.ts");
+        await status(args, options);
+      } catch (err) {
+        error(
+          `status 失败: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    });
+
+  // ================================================================================
+  // upgrade 升级 dweb
+  // ================================================================================
+  cli
+    .command("upgrade", "检查并升级 dweb 到最新版本")
+    .action(async (args: string[], options: ParsedOptions) => {
+      try {
+        const { main: upgradeMain } = await import("./cmd/upgrade.ts");
+        await upgradeMain(args, options);
+      } catch (err) {
+        error(
+          `upgrade 失败: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     });

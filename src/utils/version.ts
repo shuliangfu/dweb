@@ -4,11 +4,11 @@
  */
 
 import {
-    dirname,
-    exists,
-    join,
-    readFileSync,
-    readTextFile,
+  dirname,
+  exists,
+  join,
+  readFileSync,
+  readTextFile,
 } from "@dreamer/runtime-adapter";
 
 /** 无法读取 deno.json 时的默认版本与依赖说明 */
@@ -104,7 +104,7 @@ export async function loadDwebDenoJson(): Promise<DwebDenoConfig | null> {
 }
 
 export async function getDwebVersion(): Promise<string> {
-  const config =  await loadDwebDenoJson();
+  const config = await loadDwebDenoJson();
   return config?.version ?? FALLBACK_DWEB_VERSION;
 }
 

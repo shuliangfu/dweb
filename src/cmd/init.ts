@@ -12,33 +12,33 @@
  */
 
 import {
-    confirm,
-    error as consoleError,
-    info,
-    input,
-    interactiveMenu,
-    prompt,
-    separator,
-    success,
-    title,
+  confirm,
+  error as consoleError,
+  info,
+  input,
+  interactiveMenu,
+  prompt,
+  separator,
+  success,
+  title,
 } from "@dreamer/console";
 import {
-    args,
-    basename,
-    cwd,
-    exists,
-    exit,
-    join,
-    mkdir,
-    resolve,
-    writeTextFile,
+  args,
+  basename,
+  cwd,
+  exists,
+  exit,
+  join,
+  mkdir,
+  resolve,
+  writeTextFile,
 } from "@dreamer/runtime-adapter";
 import {
-    type DwebDenoConfig,
-    FALLBACK_DWEB_VERSION,
-    FALLBACK_PLUGINS_VERSION,
-    FALLBACK_RUNTIME_ADAPTER_SPEC,
-    loadDwebDenoJson,
+  type DwebDenoConfig,
+  FALLBACK_DWEB_VERSION,
+  FALLBACK_PLUGINS_VERSION,
+  FALLBACK_RUNTIME_ADAPTER_SPEC,
+  loadDwebDenoJson,
 } from "../utils/version.ts";
 
 /** 从 version 导出，供依赖 init 的调用方使用 */
@@ -180,7 +180,12 @@ export async function collectOptions(
 
   const renderModeIdx = await interactiveMenu(
     "渲染模式",
-    ["SSR（服务端渲染）", "CSR（客户端渲染）", "SSG（静态生成）", "Hybrid（混合）"],
+    [
+      "SSR（服务端渲染）",
+      "CSR（客户端渲染）",
+      "SSG（静态生成）",
+      "Hybrid（混合）",
+    ],
     3,
   );
   const renderMode: RenderMode = (["ssr", "csr", "ssg", "hybrid"] as const)[
@@ -1119,7 +1124,9 @@ export async function generate(opts: InitOptions): Promise<void> {
   } else {
     // ---------- 单应用 ----------
     // 使用 src 时 config 放在 src/config，否则放在项目根 config
-    const configBase = useSrc ? join(targetDir, "src", "config") : join(targetDir, "config");
+    const configBase = useSrc
+      ? join(targetDir, "src", "config")
+      : join(targetDir, "config");
     await mkdir(configBase, { recursive: true });
     await mkdir(join(targetDir, prefix, "routes"), { recursive: true });
     await mkdir(join(targetDir, prefix, "components"), { recursive: true });

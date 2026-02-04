@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, it } from "@dreamer/test";
-import { makeTempDir, writeTextFile, join } from "@dreamer/runtime-adapter";
+import { join, makeTempDir, writeTextFile } from "@dreamer/runtime-adapter";
 import { getProjectInfo } from "../../src/utils/project.ts";
 
 describe("项目检测 (project.ts)", () => {

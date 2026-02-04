@@ -3,7 +3,11 @@
  * 模拟用户数据存储和操作
  */
 
-import type { CreateUserRequest, UpdateUserRequest, User } from "../types/mod.ts";
+import type {
+  CreateUserRequest,
+  UpdateUserRequest,
+  User,
+} from "../types/mod.ts";
 
 /** 模拟用户数据库 */
 const users: Map<string, User> = new Map([
@@ -78,7 +82,10 @@ export function createUser(data: CreateUserRequest): User {
  * @param data - 更新数据
  * @returns 更新后的用户或 undefined
  */
-export function updateUser(id: string, data: UpdateUserRequest): User | undefined {
+export function updateUser(
+  id: string,
+  data: UpdateUserRequest,
+): User | undefined {
   const user = users.get(id);
   if (!user) return undefined;
 

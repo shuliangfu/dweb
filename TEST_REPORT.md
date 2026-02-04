@@ -2,12 +2,12 @@
 
 ## 📋 测试概览
 
-| 项目             | 值                                      |
-| ---------------- | --------------------------------------- |
-| 框架版本         | 3.0.0-beta.1                            |
-| 测试框架         | @dreamer/test@^1.0.0-beta.40            |
-| 测试时间         | 2026-02-03                              |
-| 测试环境         | Deno 2.x / Bun 1.x                      |
+| 项目     | 值                           |
+| -------- | ---------------------------- |
+| 框架版本 | 3.0.0-beta.1                 |
+| 测试框架 | @dreamer/test@^1.0.0-beta.40 |
+| 测试时间 | 2026-02-03                   |
+| 测试环境 | Deno 2.x / Bun 1.x           |
 
 ---
 
@@ -15,41 +15,41 @@
 
 ### 总体统计
 
-| 指标         | 数值  |
-| ------------ | ----- |
-| 测试文件数   | 23    |
-| 测试用例总数 | 287   |
-| 通过用例数   | 287   |
-| 失败用例数   | 0     |
-| 通过率       | 100%  |
-| 测试执行时间 | ~5秒  |
+| 指标         | 数值 |
+| ------------ | ---- |
+| 测试文件数   | 23   |
+| 测试用例总数 | 287  |
+| 通过用例数   | 287  |
+| 失败用例数   | 0    |
+| 通过率       | 100% |
+| 测试执行时间 | ~5秒 |
 
 ### 测试文件统计
 
-| 文件名                        | 测试用例数 | 状态        |
-| ----------------------------- | ---------- | ----------- |
-| `config.test.ts`              | 46         | ✅ 全部通过 |
-| `command.test.ts`             | 41         | ✅ 全部通过 |
-| `app.test.ts`                 | 20         | ✅ 全部通过 |
-| `build.test.ts`               | 20         | ✅ 全部通过 |
-| `logger.test.ts`              | 17         | ✅ 全部通过 |
-| `plugin.test.ts`              | 15         | ✅ 全部通过 |
-| `render.test.ts`              | 14         | ✅ 全部通过 |
-| `runtime-adapter.test.ts`     | 16         | ✅ 全部通过 |
-| `server.test.ts`              | 13         | ✅ 全部通过 |
-| `lifecycle.test.ts`           | 12         | ✅ 全部通过 |
-| `middleware.test.ts`          | 12         | ✅ 全部通过 |
-| `plugin-events.test.ts`       | 12         | ✅ 全部通过 |
-| `router.test.ts`              | 12         | ✅ 全部通过 |
-| `database.test.ts`            | 11         | ✅ 全部通过 |
-| `service.test.ts`             | 9          | ✅ 全部通过 |
-| `csr-client-builder.test.ts`  | 5          | ✅ 全部通过 |
-| `version.test.ts`             | 3          | ✅ 全部通过 |
-| `render-csr.test.ts`          | 2          | ✅ 全部通过 |
-| `render-hybrid.test.ts`       | 2          | ✅ 全部通过 |
+| 文件名                       | 测试用例数 | 状态        |
+| ---------------------------- | ---------- | ----------- |
+| `config.test.ts`             | 46         | ✅ 全部通过 |
+| `command.test.ts`            | 41         | ✅ 全部通过 |
+| `app.test.ts`                | 20         | ✅ 全部通过 |
+| `build.test.ts`              | 20         | ✅ 全部通过 |
+| `logger.test.ts`             | 17         | ✅ 全部通过 |
+| `plugin.test.ts`             | 15         | ✅ 全部通过 |
+| `render.test.ts`             | 14         | ✅ 全部通过 |
+| `runtime-adapter.test.ts`    | 16         | ✅ 全部通过 |
+| `server.test.ts`             | 13         | ✅ 全部通过 |
+| `lifecycle.test.ts`          | 12         | ✅ 全部通过 |
+| `middleware.test.ts`         | 12         | ✅ 全部通过 |
+| `plugin-events.test.ts`      | 12         | ✅ 全部通过 |
+| `router.test.ts`             | 12         | ✅ 全部通过 |
+| `database.test.ts`           | 11         | ✅ 全部通过 |
+| `service.test.ts`            | 9          | ✅ 全部通过 |
+| `csr-client-builder.test.ts` | 5          | ✅ 全部通过 |
+| `version.test.ts`            | 3          | ✅ 全部通过 |
+| `render-csr.test.ts`         | 2          | ✅ 全部通过 |
+| `render-hybrid.test.ts`      | 2          | ✅ 全部通过 |
 | `render-ssg.test.ts`         | 2          | ✅ 全部通过 |
-| `render-ssr.test.ts`          | 2          | ✅ 全部通过 |
-| `cli.test.ts`                 | 1          | ✅ 全部通过 |
+| `render-ssr.test.ts`         | 2          | ✅ 全部通过 |
+| `cli.test.ts`                | 1          | ✅ 全部通过 |
 
 ---
 
@@ -513,12 +513,15 @@
 
 ### 16. CSR 客户端构建与渲染器 (csr-client-builder.test.ts / render-csr.test.ts)
 
-- ✅ clearClientScriptCache、getCachedClientScript、createClientScriptMiddleware（5 个用例）
+- ✅
+  clearClientScriptCache、getCachedClientScript、createClientScriptMiddleware（5
+  个用例）
 - ✅ createRendererCSR 返回函数、接受 (ctx, match) 两参数（2 个用例）
 
 ### 17. SSR / Hybrid / SSG 渲染器 (render-ssr.test.ts / render-hybrid.test.ts / render-ssg.test.ts)
 
-- ✅ createRendererSSR、createRendererHybrid、createRendererSSG 均返回函数且签名为两参数（各 2 个用例）
+- ✅ createRendererSSR、createRendererHybrid、createRendererSSG
+  均返回函数且签名为两参数（各 2 个用例）
 
 ### 18. 版本 (version.test.ts) - 3 个测试
 
@@ -534,96 +537,97 @@
 
 ### 接口方法覆盖
 
-| 模块           | 方法                            | 覆盖状态 |
-| -------------- | ------------------------------- | -------- |
-| app            | App 构造函数                     | ✅       |
-| app            | App.use()                        | ✅       |
-| app            | App.registerPlugin()             | ✅       |
-| app            | App.on()                         | ✅       |
-| app            | App.stage                        | ✅       |
-| config         | validateConfig()                 | ✅       |
-| config         | deepMergeConfig()                | ✅       |
-| service        | initializeServiceContainer()     | ✅       |
-| service        | getServiceContainer()            | ✅       |
-| lifecycle      | initializeLifecycle()            | ✅       |
-| lifecycle      | getLifecycleManager()            | ✅       |
-| lifecycle      | registerLifecycleHook()          | ✅       |
-| middleware     | initializeMiddleware()           | ✅       |
-| middleware     | getMiddlewareChain()             | ✅       |
-| middleware     | registerMiddleware()             | ✅       |
-| plugin         | initializePlugin()               | ✅       |
-| plugin         | getPluginManager()               | ✅       |
-| plugin         | registerPlugin()                 | ✅       |
-| plugin-events  | emitPluginEvent()                | ✅       |
-| plugin-events  | emitOnInit()                     | ✅       |
-| plugin-events  | emitOnStart()                    | ✅       |
-| plugin-events  | emitOnStop()                     | ✅       |
-| plugin-events  | emitOnShutdown()                 | ✅       |
-| plugin-events  | emitOnBuild()                    | ✅       |
-| plugin-events  | emitOnBuildComplete()            | ✅       |
-| server         | initializeServer()               | ✅       |
-| server         | getServer()                      | ✅       |
-| database       | initializeDatabase()             | ✅       |
-| database       | getDatabaseManager()             | ✅       |
-| database       | getDatabaseStatus()              | ✅       |
-| database       | connectDatabases()               | ⬜       |
-| database       | disconnectDatabases()            | ⬜       |
-| build          | initializeBuild()                | ✅       |
-| build          | getBuild()                       | ✅       |
-| render         | initializeRender()               | ✅       |
-| render         | getRender()                      | ✅       |
-| render         | renderSSR()                      | ✅       |
-| render         | renderSSG()                      | ✅       |
-| router         | initializeRouter()               | ✅       |
-| router         | getRouter()                      | ✅       |
-| logger         | initializeLogger()               | ✅       |
-| logger         | getLogger()                      | ✅       |
-| command        | Command 构造函数                  | ✅       |
-| command        | Command.initApp()                | ⬜       |
-| command        | Command.app                      | ✅       |
-| command        | Command.container                | ✅       |
-| command        | Command.action()                 | ✅       |
-| command        | Command.command()                | ✅       |
-| command        | 重导出 API (colorize, colors 等)  | ✅       |
-| runtime-adapter | getEnv / cwd / join / readTextFile 等 | ✅       |
+| 模块               | 方法                                                  | 覆盖状态 |
+| ------------------ | ----------------------------------------------------- | -------- |
+| app                | App 构造函数                                          | ✅       |
+| app                | App.use()                                             | ✅       |
+| app                | App.registerPlugin()                                  | ✅       |
+| app                | App.on()                                              | ✅       |
+| app                | App.stage                                             | ✅       |
+| config             | validateConfig()                                      | ✅       |
+| config             | deepMergeConfig()                                     | ✅       |
+| service            | initializeServiceContainer()                          | ✅       |
+| service            | getServiceContainer()                                 | ✅       |
+| lifecycle          | initializeLifecycle()                                 | ✅       |
+| lifecycle          | getLifecycleManager()                                 | ✅       |
+| lifecycle          | registerLifecycleHook()                               | ✅       |
+| middleware         | initializeMiddleware()                                | ✅       |
+| middleware         | getMiddlewareChain()                                  | ✅       |
+| middleware         | registerMiddleware()                                  | ✅       |
+| plugin             | initializePlugin()                                    | ✅       |
+| plugin             | getPluginManager()                                    | ✅       |
+| plugin             | registerPlugin()                                      | ✅       |
+| plugin-events      | emitPluginEvent()                                     | ✅       |
+| plugin-events      | emitOnInit()                                          | ✅       |
+| plugin-events      | emitOnStart()                                         | ✅       |
+| plugin-events      | emitOnStop()                                          | ✅       |
+| plugin-events      | emitOnShutdown()                                      | ✅       |
+| plugin-events      | emitOnBuild()                                         | ✅       |
+| plugin-events      | emitOnBuildComplete()                                 | ✅       |
+| server             | initializeServer()                                    | ✅       |
+| server             | getServer()                                           | ✅       |
+| database           | initializeDatabase()                                  | ✅       |
+| database           | getDatabaseManager()                                  | ✅       |
+| database           | getDatabaseStatus()                                   | ✅       |
+| database           | connectDatabases()                                    | ⬜       |
+| database           | disconnectDatabases()                                 | ⬜       |
+| build              | initializeBuild()                                     | ✅       |
+| build              | getBuild()                                            | ✅       |
+| render             | initializeRender()                                    | ✅       |
+| render             | getRender()                                           | ✅       |
+| render             | renderSSR()                                           | ✅       |
+| render             | renderSSG()                                           | ✅       |
+| router             | initializeRouter()                                    | ✅       |
+| router             | getRouter()                                           | ✅       |
+| logger             | initializeLogger()                                    | ✅       |
+| logger             | getLogger()                                           | ✅       |
+| command            | Command 构造函数                                      | ✅       |
+| command            | Command.initApp()                                     | ⬜       |
+| command            | Command.app                                           | ✅       |
+| command            | Command.container                                     | ✅       |
+| command            | Command.action()                                      | ✅       |
+| command            | Command.command()                                     | ✅       |
+| command            | 重导出 API (colorize, colors 等)                      | ✅       |
+| runtime-adapter    | getEnv / cwd / join / readTextFile 等                 | ✅       |
 | csr-client-builder | clearClientScriptCache / createClientScriptMiddleware | ✅       |
-| render-csr     | createRendererCSR()               | ✅       |
-| render-ssr     | createRendererSSR()               | ✅       |
-| render-hybrid  | createRendererHybrid()           | ✅       |
-| render-ssg     | createRendererSSG()              | ✅       |
-| version        | DWEB_VERSION                     | ✅       |
-| cli            | createCLI() / execute             | ✅       |
+| render-csr         | createRendererCSR()                                   | ✅       |
+| render-ssr         | createRendererSSR()                                   | ✅       |
+| render-hybrid      | createRendererHybrid()                                | ✅       |
+| render-ssg         | createRendererSSG()                                   | ✅       |
+| version            | DWEB_VERSION                                          | ✅       |
+| cli                | createCLI() / execute                                 | ✅       |
 
 ### 边界情况覆盖
 
-| 边界情况               | 覆盖状态 |
-| ---------------------- | -------- |
-| 空配置对象             | ✅       |
-| 无效类型配置           | ✅       |
-| 服务重复注册           | ✅       |
-| 服务未注册时获取       | ✅       |
-| 多个插件/中间件        | ✅       |
-| 中间件错误传播         | ✅       |
-| 插件钩子错误隔离       | ✅       |
-| 配置深度合并           | ✅       |
-| 同名插件/中间件替换    | ✅       |
+| 边界情况            | 覆盖状态 |
+| ------------------- | -------- |
+| 空配置对象          | ✅       |
+| 无效类型配置        | ✅       |
+| 服务重复注册        | ✅       |
+| 服务未注册时获取    | ✅       |
+| 多个插件/中间件     | ✅       |
+| 中间件错误传播      | ✅       |
+| 插件钩子错误隔离    | ✅       |
+| 配置深度合并        | ✅       |
+| 同名插件/中间件替换 | ✅       |
 
 ### 错误处理覆盖
 
-| 错误场景               | 覆盖状态 |
-| ---------------------- | -------- |
-| 配置验证错误           | ✅       |
-| 服务重复注册错误       | ✅       |
-| 服务未找到错误         | ✅       |
-| 中间件执行错误         | ✅       |
-| 插件钩子执行错误       | ✅       |
-| 数据验证错误           | ✅       |
+| 错误场景         | 覆盖状态 |
+| ---------------- | -------- |
+| 配置验证错误     | ✅       |
+| 服务重复注册错误 | ✅       |
+| 服务未找到错误   | ✅       |
+| 中间件执行错误   | ✅       |
+| 插件钩子执行错误 | ✅       |
+| 数据验证错误     | ✅       |
 
 ---
 
 ## 📝 优点
 
-1. **完整的核心模块覆盖**：config、service、lifecycle、middleware、plugin、plugin-events 全部测试
+1. **完整的核心模块覆盖**：config、service、lifecycle、middleware、plugin、plugin-events
+   全部测试
 2. **配置验证测试充分**：validateConfig 和 deepMergeConfig 覆盖了各种场景
 3. **错误隔离测试**：验证了插件错误不会影响其他插件
 4. **服务容器测试**：验证了单例服务和依赖注入功能
@@ -633,7 +637,8 @@
 
 ## 🎯 结论
 
-@dreamer/dweb 框架的核心模块测试在文件级已全面覆盖，共 **287** 个测试用例全部通过。所有测试均为实质性测试，验证了具体的功能行为。测试覆盖了：
+@dreamer/dweb 框架的核心模块测试在文件级已全面覆盖，共 **287**
+个测试用例全部通过。所有测试均为实质性测试，验证了具体的功能行为。测试覆盖了：
 
 - ✅ App 类核心功能
 - ✅ 配置管理（验证和合并，含 render.mode hybrid）
@@ -654,4 +659,5 @@
 - ✅ createRendererSSR / createRendererHybrid / createRendererSSG
 - ✅ 版本（DWEB_VERSION）
 
-框架核心功能已完成全面测试验证；e2e / integration 目录暂无实际用例，可按需求补充。
+框架核心功能已完成全面测试验证；e2e / integration
+目录暂无实际用例，可按需求补充。

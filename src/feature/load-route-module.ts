@@ -5,11 +5,7 @@
  * 开发模式下通过 cache-busting 参数绕过模块缓存，确保文件变更后刷新能拿到最新内容。
  */
 
-import {
-  cwd,
-  getEnv,
-  join,
-} from "../core/runtime-adapter.ts";
+import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
 import { getModuleVersion } from "./module-cache.ts";
 
 /**

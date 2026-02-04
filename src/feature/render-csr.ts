@@ -97,7 +97,9 @@ export function createRendererCSR(
         LayoutComponent = layoutModule?.default ?? layoutModule?.Layout;
       }
 
-      const layouts: Array<{ component: unknown; props?: Record<string, unknown> }> = [
+      const layouts: Array<
+        { component: unknown; props?: Record<string, unknown> }
+      > = [
         { component: AppComponent },
       ];
       if (LayoutComponent) layouts.push({ component: LayoutComponent });
@@ -118,7 +120,8 @@ export function createRendererCSR(
 .dweb-spinner{width:40px;height:40px;border:3px solid #e5e7eb;border-top:3px solid #3b82f6;border-radius:50%;animation:dweb-spin .8s linear infinite}
 @keyframes dweb-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 </style>`;
-      const overlayHtml = `<div id="dweb-loading-overlay" aria-hidden="true"><div class="dweb-spinner"></div></div>`;
+      const overlayHtml =
+        `<div id="dweb-loading-overlay" aria-hidden="true"><div class="dweb-spinner"></div></div>`;
       const clientConfigScript = `
 ${overlayHtml}
 <script>
@@ -215,8 +218,10 @@ function generateFallbackCSRHtml(
 .dweb-spinner{width:40px;height:40px;border:3px solid #e5e7eb;border-top:3px solid #3b82f6;border-radius:50%;animation:dweb-spin .8s linear infinite}
 @keyframes dweb-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 </style>`;
-  const overlayHtml = `<div id="dweb-loading-overlay" aria-hidden="true"><div class="dweb-spinner"></div></div>`;
-  const onReadyScript = `globalThis.__DWEB_ON_READY__=function(){var el=document.getElementById("dweb-loading-overlay");if(el){el.classList.add("dweb-loading-done");el.addEventListener("transitionend",function(){el.remove();var s=document.getElementById("dweb-loading-styles");if(s)s.remove()},{once:true})}};`;
+  const overlayHtml =
+    `<div id="dweb-loading-overlay" aria-hidden="true"><div class="dweb-spinner"></div></div>`;
+  const onReadyScript =
+    `globalThis.__DWEB_ON_READY__=function(){var el=document.getElementById("dweb-loading-overlay");if(el){el.classList.add("dweb-loading-done");el.addEventListener("transitionend",function(){el.remove();var s=document.getElementById("dweb-loading-styles");if(s)s.remove()},{once:true})}};`;
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
