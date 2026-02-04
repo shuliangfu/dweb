@@ -1416,7 +1416,6 @@ export async function main(
   await generate(opts);
 
   success("项目已创建");
-  info(`项目目录: ${opts.targetDir}`);
   info("下一步:");
   const isMulti = opts.appMode === "multi" && (opts.appNames?.length ?? 0) > 0;
   if (opts.targetDir !== cwd()) {
@@ -1424,11 +1423,12 @@ export async function main(
   }
   if (isMulti && opts.appNames?.length) {
     for (const app of opts.appNames) {
-      info(`  dev-cli dev --app ${app}   # 启动 ${app} 应用`);
+      info(`  dweb-cli dev --app ${app}   # 启动 ${app} 应用`);
     }
   } else {
-    info("  dev-cli dev");
+    info("  dweb-cli dev");
   }
+  console.log("");
 }
 
 // 仅作为脚本直接运行时执行；被 CLI 等 import 时不自动执行，由调用方调用 main(argv)
