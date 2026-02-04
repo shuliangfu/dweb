@@ -1424,10 +1424,10 @@ export async function main(
   }
   if (isMulti && opts.appNames?.length) {
     for (const app of opts.appNames) {
-      info(`  deno task dev:${app}   # 启动 ${app} 应用`);
+      info(`  dev-cli dev --app ${app}   # 启动 ${app} 应用`);
     }
   } else {
-    info("  deno task dev");
+    info("  dev-cli dev");
   }
 }
 
