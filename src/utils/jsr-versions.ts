@@ -24,9 +24,19 @@ function isPrereleaseVersion(version: string): boolean {
 }
 
 /**
- * 简单 semver 比较：返回 a > b 则正数，a < b 则负数，相等则 0
+ * 解析 prerelease 标识中的数值（如 beta.17 -> 17），用于正确排序
  */
-function compareVersions(a: string, b: string): number {
+function parsePrereleaseNum(pre: string): number {
+  const m = pre.match(/(\d+)$/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+/**
+ * 简单 semver 比较：返回 a > b 则正数，a < b 则负数，相等则 0
+ * prerelease 部分按数值比较（beta.17 > beta.9）
+ * @internal 导出供单元测试使用
+ */
+export function compareVersions(a: string, b: string): number {
   const parse = (
     v: string,
   ): [number, number, number, string] => {
@@ -44,7 +54,21 @@ function compareVersions(a: string, b: string): number {
   if (ma !== mb) return ma - mb;
   if (na !== nb) return na - nb;
   if (pa !== pb) return pa - pb;
+  // prerelease 按标识符+数值比较：beta.9 < beta.10 < beta.17
+  const preNumA = parsePrereleaseNum(preA);
+  const preNumB = parsePrereleaseNum(preB);
+  if (preNumA !== preNumB) return preNumA - preNumB;
   return String(preA).localeCompare(String(preB));
+}
+
+/**
+ * 从两个版本中选取较新的一个（用于 --beta 时：若稳定版比 beta 新则用稳定版）
+ * @internal 导出供单元测试使用
+ */
+export function pickNewer(a: string | null, b: string | null): string | null {
+  if (a == null) return b;
+  if (b == null) return a;
+  return compareVersions(a, b) >= 0 ? a : b;
 }
 
 /**
@@ -75,6 +99,12 @@ export async function fetchJsrLatestVersion(
       return meta.latest ?? null;
     }
 
+    // useBeta=false：优先使用 JSR 的 meta.latest（registry 推荐版本，通常为稳定版）
+    // 仅当 meta.latest 不存在或为 yanked 时，才从版本列表筛选
+    if (!useBeta && meta.latest && candidates.includes(meta.latest)) {
+      return meta.latest;
+    }
+
     const filtered = useBeta
       ? candidates.filter(isPrereleaseVersion)
       : candidates.filter((v) => !isPrereleaseVersion(v));
@@ -88,29 +118,56 @@ export async function fetchJsrLatestVersion(
   }
 }
 
+/** 从 dweb deno.json 提取的版本（dweb 获取失败时兜底） */
+export interface DwebConfigVersions {
+  version?: string;
+}
+
 /**
  * 批量获取 @dreamer/* 包版本（用于 init 生成 deno.json）
  *
+ * - useBeta=false：仅 dweb 从 JSR 获取（有正式版）；render、router、plugins 用 dwebConfig（未发正式版）
+ * - useBeta=true：全部从 JSR 获取 beta 最新版
+ *
  * @param useBeta 是否使用 beta 最新版
- * @returns 各包的版本映射，key 为包名（如 dweb、render、router、plugins）
+ * @param dwebConfig 可选，dweb 项目 deno.json 配置（useBeta=false 时用于 render/router/plugins）
  */
-export async function fetchDreamerVersions(useBeta: boolean): Promise<{
+export async function fetchDreamerVersions(
+  useBeta: boolean,
+  dwebConfig?: DwebConfigVersions | null,
+): Promise<{
   dweb: string;
   render: string;
   router: string;
   plugins: string;
 }> {
-  const [dweb, render, router, plugins] = await Promise.all([
-    fetchJsrLatestVersion("@dreamer/dweb", useBeta),
-    fetchJsrLatestVersion("@dreamer/render", useBeta),
-    fetchJsrLatestVersion("@dreamer/router", useBeta),
-    fetchJsrLatestVersion("@dreamer/plugins", useBeta),
-  ]);
+  if (useBeta) {
+    const [dwebBeta, renderBeta, routerBeta, pluginsBeta, dwebStable, renderStable, routerStable, pluginsStable] =
+      await Promise.all([
+        fetchJsrLatestVersion("@dreamer/dweb", true),
+        fetchJsrLatestVersion("@dreamer/render", true),
+        fetchJsrLatestVersion("@dreamer/router", true),
+        fetchJsrLatestVersion("@dreamer/plugins", true),
+        fetchJsrLatestVersion("@dreamer/dweb", false),
+        fetchJsrLatestVersion("@dreamer/render", false),
+        fetchJsrLatestVersion("@dreamer/router", false),
+        fetchJsrLatestVersion("@dreamer/plugins", false),
+      ]);
+    // 取 beta 与 stable 中较新的版本（如 v1.0.1 > v1.0.0-beta.10 则用 v1.0.1）
+    return {
+      dweb: pickNewer(dwebBeta, dwebStable) ?? "3.0.0",
+      render: pickNewer(renderBeta, renderStable) ?? "1.0.0",
+      router: pickNewer(routerBeta, routerStable) ?? "1.0.0",
+      plugins: pickNewer(pluginsBeta, pluginsStable) ?? "1.0.0",
+    };
+  }
 
+  // useBeta=false：仅 dweb 从 JSR 获取；render/router/plugins 未发正式版，统一用 1.0.0
+  const dwebVersion = await fetchJsrLatestVersion("@dreamer/dweb", false);
   return {
-    dweb: dweb ?? "3.0.0",
-    render: render ?? "1.0.0-beta.17",
-    router: router ?? "1.0.0-beta.10",
-    plugins: plugins ?? "1.0.0-beta.14",
+    dweb: dwebVersion ?? dwebConfig?.version ?? "3.0.0",
+    render: "1.0.0",
+    router: "1.0.0",
+    plugins: "1.0.0",
   };
 }

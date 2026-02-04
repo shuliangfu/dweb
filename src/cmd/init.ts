@@ -37,7 +37,6 @@ import { fetchDreamerVersions } from "../utils/jsr-versions.ts";
 import {
     type DwebDenoConfig,
     FALLBACK_DWEB_VERSION,
-    FALLBACK_PLUGINS_VERSION,
     loadDwebDenoJson,
 } from "../utils/version.ts";
 
@@ -1297,25 +1296,22 @@ export async function generate(opts: InitOptions): Promise<void> {
   }
 
   // 根 deno.json、.gitignore、.vscode/settings.json（单应用与多应用共用）
-  // 从 JSR meta.json 获取最新版本（useBeta 时取 beta 版，否则取稳定版）
+  // useBeta=false：仅 dweb 从 JSR 获取；render/router/plugins 用 dweb deno.json（未发正式版）
+  // useBeta=true：全部从 JSR 获取 beta 最新版
   const useBeta = opts.useBeta ?? false;
+  const dwebConfig = await loadDwebDenoJson();
   let jsrVersions: JsrVersions;
   try {
-    jsrVersions = await fetchDreamerVersions(useBeta);
+    jsrVersions = await fetchDreamerVersions(useBeta, dwebConfig);
     if (useBeta) {
       info(`使用 beta 最新版: dweb@${jsrVersions.dweb}`);
     }
   } catch {
-    const dwebConfig = await loadDwebDenoJson();
-    const extractVer = (spec: string | undefined): string =>
-      (spec?.replace(/^.*@/, "").replace(/^\^/, "") ?? "") || "";
     jsrVersions = {
       dweb: dwebConfig?.version ?? FALLBACK_DWEB_VERSION,
-      render: extractVer(dwebConfig?.imports?.["@dreamer/render"]) ||
-        "1.0.0-beta.17",
-      router: extractVer(dwebConfig?.imports?.["@dreamer/router"]) ||
-        "1.0.0-beta.10",
-      plugins: dwebConfig?.pluginsVersion ?? FALLBACK_PLUGINS_VERSION,
+      render: "1.0.0",
+      router: "1.0.0",
+      plugins: "1.0.0",
     };
     info("JSR 版本获取失败，使用本地/兜底版本");
   }
