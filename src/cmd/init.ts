@@ -533,6 +533,8 @@ function getConfigMainTs(
     : opts.useSrc
     ? "./src/routes"
     : "./routes";
+  /** 无 src 时监听根目录 ./，有 src 时监听 ./src */
+  const watchPaths = opts.useSrc ? ["./src"] : ["./"];
   const configName = appName ?? opts.projectName;
   const serverPort = port ?? 3000;
   const renderMode = opts.renderMode ?? "hybrid";
@@ -552,7 +554,7 @@ const config: AppConfig = {
     dev: {
       hmr: { enabled: true, path: "/__hmr" },
       watch: {
-        paths: ["./src"],
+        paths: ${JSON.stringify(watchPaths)},
         ignore: ["node_modules", ".git", "dist"],
       },
     },

@@ -9,7 +9,7 @@
 
 import { Server, type ServerOptions } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
-import { getEnv } from "../core/runtime-adapter.ts";
+import { existsSync, getEnv } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { getLogger } from "../utils/logger.ts";
 import {
@@ -64,9 +64,18 @@ export function initializeServer(
     // watch 默认排除：框架生成的 client.dep.tsx / client.tsx，避免写入后触发第二次 rebuild 导致 HMR 重复刷新和内容闪回
     const watchIgnoreGenerated = ["_client.dep.tsx", "_client.tsx"];
     const userWatch = userDevConfig.watch ?? { paths: defaultWatchPaths };
-    const paths = Array.isArray(userWatch)
+    let paths = Array.isArray(userWatch)
       ? userWatch
       : (userWatch as { paths?: string[] }).paths ?? defaultWatchPaths;
+    // 无 src 目录时：若配置了 ./src 或 src 但该路径不存在，Deno.watchFs 会抛 "No path was found"
+    // 将不存在的路径替换为 ./，兼容旧模板生成的项目
+    paths = [...new Set(paths.map((p) => {
+      const normalized = p.replace(/\/$/, "") || p;
+      if ((normalized === "./src" || normalized === "src") && !existsSync("./src")) {
+        return "./";
+      }
+      return p;
+    }))];
     const userIgnore =
       Array.isArray(userWatch) || !userWatch || typeof userWatch !== "object"
         ? []
