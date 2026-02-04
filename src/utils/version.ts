@@ -88,28 +88,63 @@ export interface DwebDenoConfig {
 }
 
 /**
+ * 判断当前是否从 JSR/远程 URL 运行（非本地 file:）
+ */
+function isRemoteRun(): boolean {
+  try {
+    const url = import.meta.url;
+    return url.startsWith("http:") || url.startsWith("https:");
+  } catch {
+    return false;
+  }
+}
+
+/**
  * 从 dweb 包根 deno.json 读取版本与 imports，若在 monorepo 则再读 ../plugins/deno.json
+ * - 本地运行：从文件系统读取
+ * - JSR 运行：通过 fetch 从包根 URL 获取 deno.json（version.ts 在 src/utils/，故 ../../deno.json）
  * 读取失败时返回 null，调用方使用兜底常量
  */
 export async function loadDwebDenoJson(): Promise<DwebDenoConfig | null> {
   try {
-    const dwebRoot = getPackageRoot();
-    const denoJsonPath = join(dwebRoot, "deno.json");
-    if (!(await exists(denoJsonPath))) return null;
-    const content = await readTextFile(denoJsonPath);
-    const parsed = JSON.parse(content) as {
-      version?: string;
-      imports?: Record<string, string>;
-    };
+    let parsed: { version?: string; imports?: Record<string, string>; pluginsVersion?: string };
+
+    if (isRemoteRun()) {
+      // JSR 运行：fetch 包根 deno.json
+      const denoJsonUrl = new URL("../../deno.json", import.meta.url).href;
+      const res = await fetch(denoJsonUrl);
+      if (!res.ok) return null;
+      const content = await res.text();
+      parsed = JSON.parse(content) as {
+        version?: string;
+        imports?: Record<string, string>;
+      };
+    } else {
+      let content: string;
+      const dwebRoot = getPackageRoot();
+      const denoJsonPath = join(dwebRoot, "deno.json");
+      if (!(await exists(denoJsonPath))) return null;
+      content = await readTextFile(denoJsonPath);
+      parsed = JSON.parse(content) as {
+        version?: string;
+        imports?: Record<string, string>;
+      };
+    }
+
     const version = parsed.version ?? FALLBACK_DWEB_VERSION;
     const imports = parsed.imports ?? {};
     let pluginsVersion: string | undefined;
-    const pluginsDenoPath = join(dwebRoot, "..", "plugins", "deno.json");
-    if (await exists(pluginsDenoPath)) {
-      const pluginsContent = await readTextFile(pluginsDenoPath);
-      const pluginsParsed = JSON.parse(pluginsContent) as { version?: string };
-      pluginsVersion = pluginsParsed.version;
+
+    if (!isRemoteRun()) {
+      const dwebRoot = getPackageRoot();
+      const pluginsDenoPath = join(dwebRoot, "..", "plugins", "deno.json");
+      if (await exists(pluginsDenoPath)) {
+        const pluginsContent = await readTextFile(pluginsDenoPath);
+        const pluginsParsed = JSON.parse(pluginsContent) as { version?: string };
+        pluginsVersion = pluginsParsed.version;
+      }
     }
+
     return { version, imports, pluginsVersion };
   } catch {
     return null;
