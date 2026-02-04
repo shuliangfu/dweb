@@ -106,9 +106,6 @@ export function createCLI(version: string): Command {
       }
     });
 
-  // 为生成命令添加别名
-  cli.subcommandAlias("g", "generate");
-
   // 数据库迁移命令
   cli
     .command("migrate", "数据库迁移")
