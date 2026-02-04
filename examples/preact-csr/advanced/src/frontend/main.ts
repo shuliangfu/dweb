@@ -7,7 +7,6 @@ import { commonConfig } from "@common/config/main.ts";
 import { App } from "@dreamer/dweb";
 import { staticPlugin } from "@dreamer/plugins/static";
 import { tailwindPlugin } from "@dreamer/plugins/tailwindcss";
-import { getEnv } from "@dreamer/runtime-adapter";
 
 // 创建前端应用实例
 const app = new App({
@@ -37,20 +36,18 @@ const app = new App({
   },
 });
 
-const isDev = getEnv("DENO_ENV") === "dev";
-
 // 注册 TailwindCSS 插件
 app.registerPlugin(tailwindPlugin({
   output: "dist/frontend/client/assets",
   cssEntry: "src/frontend/assets/tailwind.css",
-  assetsPath: isDev ? "/assets" : "/client/assets",
+  assetsPath: "/assets",
 }));
 
 // 注册静态文件插件
 app.registerPlugin(staticPlugin({
   statics: [
     { root: "frontend/assets", prefix: "/assets" },
-    { root: "dist/frontend/client/assets", prefix: "/client/assets" },
+    { root: "dist/frontend/client/assets", prefix: "/assets" },
   ],
 }));
 

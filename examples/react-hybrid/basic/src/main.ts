@@ -6,7 +6,6 @@
 import { App } from "@dreamer/dweb";
 import { staticPlugin } from "@dreamer/plugins/static";
 import { tailwindPlugin } from "@dreamer/plugins/tailwindcss";
-import { getEnv } from "@dreamer/runtime-adapter";
 
 // 创建应用实例
 const app = new App({

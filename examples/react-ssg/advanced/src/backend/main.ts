@@ -6,24 +6,21 @@
 import { App } from "@dreamer/dweb";
 import { staticPlugin } from "@dreamer/plugins/static";
 import { tailwindPlugin } from "@dreamer/plugins/tailwindcss";
-import { getEnv } from "@dreamer/runtime-adapter";
 
 const app = new App({
   configDirectory: "./src/backend/config",
 });
 
-const isDev = getEnv("DENO_ENV") === "dev";
-
 app.registerPlugin(tailwindPlugin({
   output: "dist/backend/client/assets",
   cssEntry: "src/backend/assets/tailwind.css",
-  assetsPath: isDev ? "/assets" : "/client/assets",
+  assetsPath: "/assets",
 }));
 
 app.registerPlugin(staticPlugin({
   statics: [
     { root: "src/backend/assets", prefix: "/assets" },
-    { root: "dist/backend/client/assets", prefix: "/client/assets" },
+    { root: "dist/backend/client/assets", prefix: "/assets" },
   ],
 }));
 

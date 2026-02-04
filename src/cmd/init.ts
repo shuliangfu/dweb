@@ -37,7 +37,6 @@ import {
   type DwebDenoConfig,
   FALLBACK_DWEB_VERSION,
   FALLBACK_PLUGINS_VERSION,
-  FALLBACK_RUNTIME_ADAPTER_SPEC,
   loadDwebDenoJson,
 } from "../utils/version.ts";
 
@@ -181,14 +180,14 @@ export async function collectOptions(
   const renderModeIdx = await interactiveMenu(
     "渲染模式",
     [
+      "Hybrid（混合）",
       "SSR（服务端渲染）",
       "CSR（客户端渲染）",
       "SSG（静态生成）",
-      "Hybrid（混合）",
     ],
-    3,
+    0,
   );
-  const renderMode: RenderMode = (["ssr", "csr", "ssg", "hybrid"] as const)[
+  const renderMode: RenderMode = (["hybrid", "ssr", "csr", "ssg"] as const)[
     renderModeIdx
   ];
 
@@ -207,12 +206,12 @@ export async function collectOptions(
 
   const exampleIdx = await interactiveMenu(
     "示例代码",
-    ["最小（_app、_layout、index）", "带关于页（about）"],
+    ["带关于页（about）", "最小（_app、_layout、index）"],
     0,
   );
   const exampleLevel: ExampleLevel = exampleIdx === 0
-    ? "minimal"
-    : "with-about";
+    ? "with-about"
+    : "minimal";
 
   return {
     targetDir,
@@ -239,15 +238,11 @@ function getDenoJson(
   const useTailwind = opts.style === "tailwind";
   const hasStyleAssets = useUno || useTailwind;
   const dwebVersion = dwebConfig?.version ?? FALLBACK_DWEB_VERSION;
-  const runtimeAdapterSpec =
-    (dwebConfig?.imports && dwebConfig.imports["@dreamer/runtime-adapter"]) ??
-      FALLBACK_RUNTIME_ADAPTER_SPEC;
   const pluginsVersion = (dwebConfig?.pluginsVersion) ??
     FALLBACK_PLUGINS_VERSION;
-  /** @dreamer/* 依赖集中放在一起 */
+  /** @dreamer/* 依赖，不含 runtime-adapter（用户按需自行安装） */
   const dreamerImports = [
     `    "@dreamer/dweb": "jsr:@dreamer/dweb@${dwebVersion}"`,
-    `    "@dreamer/runtime-adapter": "${runtimeAdapterSpec}"`,
     ...(useUno
       ? [
         `    "@dreamer/plugins/unocss": "jsr:@dreamer/plugins@^${pluginsVersion}/unocss"`,
@@ -312,7 +307,6 @@ function getDenoJson(
     : "";
 
   return `{
-  "name": "${opts.projectName}",
   "version": "1.0.0",
   "tasks": {
 ${tasksBlock}
@@ -322,6 +316,7 @@ ${dirAliasesBlock}${dreamerImports},
 
 ${otherImports}
   },
+  "nodeModulesDir": "auto",
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "${jsxImportSource}"
@@ -355,9 +350,6 @@ function getMainTsSingle(opts: InitOptions): string {
   const staticImport = hasStyleAssets
     ? `import { staticPlugin } from "@dreamer/plugins/static";`
     : "";
-  const getEnvImport = useTailwind
-    ? `import { getEnv } from "@dreamer/runtime-adapter";`
-    : "";
 
   const stylePluginBlock = useUno
     ? `
@@ -368,11 +360,10 @@ app.registerPlugin(unocssPlugin({
 }));`
     : useTailwind
     ? `
-const isDev = getEnv("DENO_ENV") === "dev";
 app.registerPlugin(tailwindPlugin({
   output: "dist/client/assets",
   cssEntry: "${cssEntry}",
-  assetsPath: isDev ? "/assets" : "/assets",
+  assetsPath: "/assets",
 }));`
     : "";
   const staticPluginBlock = hasStyleAssets
@@ -394,7 +385,6 @@ app.registerPlugin(staticPlugin({
 import { App } from "@dreamer/dweb";
 ${stylePluginImport}
 ${staticImport}
-${getEnvImport}
 
 const app = new App({
   configDirectory: "${configDir}",
@@ -430,7 +420,6 @@ function getMainTsMulti(
     : "";
   const stylePluginBlock = useUno
     ? `
-const isDev = getEnv("DENO_ENV") === "dev";
 app.registerPlugin(unocssPlugin({
   output: "${distAssetsRoot}",
   cssEntry: "${cssEntry}",
@@ -438,11 +427,10 @@ app.registerPlugin(unocssPlugin({
 }));`
     : useTailwind
     ? `
-const isDev = getEnv("DENO_ENV") === "dev";
 app.registerPlugin(tailwindPlugin({
   output: "${distAssetsRoot}",
   cssEntry: "${cssEntry}",
-  assetsPath: isDev ? "/assets" : "/client/assets",
+  assetsPath: "/assets",
 }));`
     : "";
   const staticPluginBlock = hasStyleAssets
@@ -450,14 +438,13 @@ app.registerPlugin(tailwindPlugin({
 app.registerPlugin(staticPlugin({
   statics: [
     { root: "${assetsRoot}", prefix: "/assets" },
-    { root: "${distAssetsRoot}", prefix: "/client/assets" },
+    { root: "${distAssetsRoot}", prefix: "/assets" },
   ],
 }));`
     : "";
 
   const staticImportMulti = hasStyleAssets
-    ? `import { staticPlugin } from "@dreamer/plugins/static";
-import { getEnv } from "@dreamer/runtime-adapter";`
+    ? `import { staticPlugin } from "@dreamer/plugins/static";`
     : "";
 
   return `/**
@@ -921,6 +908,103 @@ build/
 `;
 }
 
+/**
+ * 生成 .vscode/settings.json 内容
+ * 用户需 Bun 相关配置时可自行添加
+ */
+function getVscodeSettingsJson(): string {
+  return `{
+  // ==================== Deno 配置 ====================
+  "deno.enable": true,
+  "deno.lint": true,
+  // ==================== 格式化配置 ====================
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    }
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "denoland.vscode-deno",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    }
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno",
+    "editor.formatOnSave": true
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "denoland.vscode-deno",
+    "editor.formatOnSave": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features",
+    "editor.formatOnSave": true
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features",
+    "editor.formatOnSave": true
+  },
+  // ==================== 编辑器基础配置 ====================
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "editor.trimAutoWhitespace": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "editor.rulers": [120],
+  "editor.wordWrap": "off",
+  "editor.formatOnPaste": true,
+  "editor.formatOnType": false,
+  "editor.suggestSelection": "first",
+  "editor.snippetSuggestions": "top",
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": false,
+  "editor.minimap.enabled": true,
+  // ==================== CSS / Tailwind 配置 ====================
+  "css.lint.unknownAtRules": "ignore",
+  // ==================== 文件关联 ====================
+  "files.associations": {
+    "*.tsx": "typescriptreact",
+    "*.ts": "typescript"
+  },
+  // ==================== 文件排除 ====================
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/.deno": true
+  },
+  // ==================== 搜索排除 ====================
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.deno": true,
+    "**/dist": true,
+    "**/.data": true
+  },
+  // ==================== i18n-ally 配置 ====================
+  "i18n-ally.localesPaths": ["locales"],
+  "i18n-ally.keystyle": "nested",
+  "i18n-ally.sortKeys": true,
+  "i18n-ally.namespace": true,
+  "i18n-ally.enabledParsers": ["json"],
+  "i18n-ally.sourceLanguage": "zh-CN",
+  "i18n-ally.displayLanguage": "zh-CN",
+  "i18n-ally.translate.engines": ["deepl", "google"],
+  "i18n-ally.extract.keygenStyle": "PascalCase",
+  "i18n-ally.enabledFrameworks": ["react", "i18next"],
+  "i18n-ally.regex.key": ".*?",
+  "i18n-ally.extract.autoDetect": true
+}
+`;
+}
+
 /** common 目录下 config/main.ts：框架会先加载此处再合并应用 config，default 导出需为 AppConfig 兼容形状 */
 function getCommonConfigMainTs(opts: InitOptions): string {
   const appNames = opts.appNames ?? [];
@@ -966,7 +1050,12 @@ function getCommonConfigDatabaseTs(): string {
  * 建议通过环境变量注入敏感信息（如密码），不要提交到版本库。
  */
 
-import { getEnv } from "@dreamer/runtime-adapter";
+/** 读取环境变量，兼容 Deno/Bun，不依赖 runtime-adapter */
+function getEnv(key: string): string | undefined {
+  return typeof (globalThis as any).Deno !== "undefined"
+    ? (globalThis as any).Deno.env.get(key)
+    : (globalThis as any).process?.env?.[key];
+}
 
 export interface DatabaseConfig {
   host: string;
@@ -1185,13 +1274,20 @@ export async function generate(opts: InitOptions): Promise<void> {
     }
   }
 
-  // 根 deno.json 与 .gitignore（单应用与多应用共用）
+  // 根 deno.json、.gitignore、.vscode/settings.json（单应用与多应用共用）
   const dwebConfig = await loadDwebDenoJson();
   await writeTextFile(
     join(targetDir, "deno.json"),
     getDenoJson(opts, dwebConfig),
   );
   await writeTextFile(join(targetDir, ".gitignore"), getGitignore());
+
+  // 创建 .vscode/settings.json，便于 IDE 开箱即用
+  await mkdir(join(targetDir, ".vscode"), { recursive: true });
+  await writeTextFile(
+    join(targetDir, ".vscode", "settings.json"),
+    getVscodeSettingsJson(),
+  );
 }
 
 /**
