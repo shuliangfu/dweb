@@ -1418,19 +1418,19 @@ export async function main(
   info("正在生成项目...");
   await generate(opts);
 
-  // 先缓存依赖，再将 allowScripts 直接写入 deno.json，避免后续 deno task dev 出现 build scripts 警告
-  // 首次创建项目时 deno cache 需下载依赖，可能较慢，故显示 loading 避免用户误以为卡住
+  // 先执行 deno install 生成 deno.lock，再将 allowScripts 直接写入 deno.json，避免后续 deno task dev 出现 build scripts 警告
+  // 首次创建项目时 deno install 需下载依赖，可能较慢，故显示 loading 避免用户误以为卡住
   try {
-    startSpinner("正在缓存依赖 ...");
-    const cacheCmd = createCommand("deno", {
-      args: ["cache", "."],
+    startSpinner("正在安装依赖 ...");
+    const installCmd = createCommand("deno", {
+      args: ["install"],
       cwd: opts.targetDir,
       stdout: "null",
       stderr: "null",
     });
-    const cacheChild = cacheCmd.spawn();
-    await cacheChild.status;
-    succeedSpinner("依赖已缓存");
+    const installChild = installCmd.spawn();
+    await installChild.status;
+    succeedSpinner("依赖已安装");
 
     // 从 deno.lock 解析 npm 包，直接写入 allowScripts 到 deno.json（格式：{ allow: [...], deny: [] }）
     const npmPackages = await getNpmPackagesFromLockfile(opts.targetDir);
