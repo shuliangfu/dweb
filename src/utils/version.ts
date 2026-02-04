@@ -120,11 +120,10 @@ export async function loadDwebDenoJson(): Promise<DwebDenoConfig | null> {
         imports?: Record<string, string>;
       };
     } else {
-      let content: string;
       const dwebRoot = getPackageRoot();
       const denoJsonPath = join(dwebRoot, "deno.json");
       if (!(await exists(denoJsonPath))) return null;
-      content = await readTextFile(denoJsonPath);
+      const content = await readTextFile(denoJsonPath);
       parsed = JSON.parse(content) as {
         version?: string;
         imports?: Record<string, string>;
