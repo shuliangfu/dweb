@@ -5,9 +5,11 @@
  * - 检查并升级 dweb 到最新版本
  * - 从 JSR 获取最新版本信息
  * - 发现新版本时自动重新安装 dweb-cli
+ * - 支持 --beta 选项：默认仅升级稳定版，--beta 时可升级到 beta 最新版
  *
  * 运行方式：
- * - dweb upgrade
+ * - dweb upgrade          # 仅升级到稳定版
+ * - dweb upgrade --beta   # 可升级到 beta 最新版
  */
 
 import {
@@ -20,24 +22,9 @@ import {
 } from "@dreamer/console";
 import { createCommand } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
+import { fetchJsrLatestVersion } from "../utils/jsr-versions.ts";
 import { getDwebVersion } from "../utils/version.ts";
 import { getRuntime, getRunArgs } from "../utils/runtime.ts";
-
-const JSR_PACKAGE_URL = "https://jsr.io/@dreamer/dweb/meta.json";
-
-/**
- * 从 JSR 获取包的最新版本
- */
-async function fetchLatestVersion(): Promise<string | null> {
-  try {
-    const res = await fetch(JSR_PACKAGE_URL);
-    if (!res.ok) return null;
-    const data = (await res.json()) as { latest?: string; versions?: string[] };
-    return data.latest ?? data.versions?.[data.versions.length - 1] ?? null;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * 解析版本号用于比较（简化：仅比较主.次.修订）
@@ -66,18 +53,19 @@ function isNewer(latest: string, current: string): boolean {
  * upgrade 命令主入口
  *
  * @param _args 命令行参数（未使用）
- * @param _options 解析后的选项（未使用）
+ * @param options 解析后的选项，options.beta 为 true 时升级到 beta 最新版
  */
 export async function main(
   _args: string[],
-  _options: ParsedOptions,
+  options: ParsedOptions,
 ): Promise<void> {
+  const useBeta = options?.beta === true;
   const runtime = getRuntime();
   const current = await getDwebVersion();
   info(`当前版本: ${current}`);
-  info("正在检查最新版本...");
+  info(useBeta ? "正在检查 beta 最新版本..." : "正在检查稳定版最新版本...");
 
-  const latest = await fetchLatestVersion();
+  const latest = await fetchJsrLatestVersion("@dreamer/dweb", useBeta);
   if (!latest) {
     error("无法获取最新版本信息，请检查网络连接");
     return;

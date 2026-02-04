@@ -364,6 +364,12 @@ export function createCLI(version: string): Command {
   // ================================================================================
   cli
     .command("upgrade", "检查并升级 dweb 到最新版本")
+    .option({
+      name: "beta",
+      description: "升级到 beta 最新版（默认仅升级稳定版）",
+      type: "boolean",
+      defaultValue: false,
+    })
     .action(async (args: string[], options: ParsedOptions) => {
       try {
         const { main: upgradeMain } = await import("./cmd/upgrade.ts");
