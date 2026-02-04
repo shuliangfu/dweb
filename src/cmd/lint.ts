@@ -25,6 +25,7 @@ export async function main(
   _args: string[],
   _options: ParsedOptions,
 ): Promise<void> {
+  const runtime = getRuntime();
   const projectRoot = cwd();
   const projectInfo = await getProjectInfo(projectRoot);
 
@@ -36,7 +37,7 @@ export async function main(
   const taskName = "lint";
   if (projectInfo.tasks[taskName]) {
     info("正在运行代码检查...");
-    const cmd = createCommand(getRuntime(), {
+    const cmd = createCommand(runtime, {
       args: getLintArgs(true),
       cwd: projectRoot,
       stdin: "inherit",
@@ -55,7 +56,7 @@ export async function main(
 
   // 无 lint task，直接运行 lint
   info("正在运行代码检查...");
-  const cmd = createCommand(getRuntime(), {
+  const cmd = createCommand(runtime, {
     args: getLintArgs(false),
     cwd: projectRoot,
     stdin: "inherit",

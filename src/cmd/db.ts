@@ -132,6 +132,7 @@ export async function migrate(
   _args: string[],
   options: ParsedOptions,
 ): Promise<void> {
+  const runtime = getRuntime();
   const rawAction = options.action;
   const action = rawAction === true
     ? "up"
@@ -213,7 +214,7 @@ export async function migrate(
 
       if (taskName) {
         info(`正在执行数据库迁移 (${taskName})...`);
-        const cmd = createCommand(getRuntime(), {
+        const cmd = createCommand(runtime, {
           args: getTaskArgs(taskName),
           cwd: projectRoot,
           stdin: "inherit",
@@ -277,7 +278,7 @@ export async function migrate(
 
       if (taskName) {
         info(`正在回滚迁移: ${name} (${taskName})...`);
-        const cmd = createCommand(getRuntime(), {
+        const cmd = createCommand(runtime, {
           args: [...getTaskArgs(taskName), name],
           cwd: projectRoot,
           stdin: "inherit",
@@ -314,6 +315,7 @@ export async function seed(
   _args: string[],
   _options: ParsedOptions,
 ): Promise<void> {
+  const runtime = getRuntime();
   const projectRoot = cwd();
   const projectInfo = await getProjectInfo(projectRoot);
 
@@ -325,7 +327,7 @@ export async function seed(
   const taskName = "db:seed";
   if (projectInfo.tasks[taskName]) {
     info("正在执行数据库种子...");
-    const cmd = createCommand(getRuntime(), {
+    const cmd = createCommand(runtime, {
       args: getTaskArgs(taskName),
       cwd: projectRoot,
       stdin: "inherit",
@@ -352,7 +354,7 @@ export async function seed(
   }
 
   info("正在执行 seeds/seed.ts...");
-  const cmd = createCommand(getRuntime(), {
+  const cmd = createCommand(runtime, {
     args: getRunArgs(seedFile),
     cwd: projectRoot,
     stdin: "inherit",

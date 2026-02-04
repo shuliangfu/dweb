@@ -30,6 +30,7 @@ export async function main(
   args: string[],
   options: ParsedOptions,
 ): Promise<void> {
+  const runtime = getRuntime();
   const projectRoot = cwd();
   const projectInfo = await getProjectInfo(projectRoot);
 
@@ -60,7 +61,7 @@ export async function main(
       // 配置加载失败时忽略
     }
     info("正在构建...");
-    const cmd = createCommand(getRuntime(), {
+    const cmd = createCommand(runtime, {
       args: getTaskArgs(taskName),
       cwd: projectRoot,
       stdin: "inherit",
@@ -99,7 +100,7 @@ export async function main(
       continue;
     }
     info(`正在构建 ${appName}...`);
-    const cmd = createCommand(getRuntime(), {
+    const cmd = createCommand(runtime, {
       args: getTaskArgs(taskName),
       cwd: projectRoot,
       stdin: "inherit",

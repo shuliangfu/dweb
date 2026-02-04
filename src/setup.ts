@@ -106,6 +106,7 @@ async function createTempCliConfig(): Promise<string> {
  * - 本地运行：使用临时 config（去除 workspace）避免解析 examples 等不存在的路径
  */
 async function installGlobalCli(): Promise<void> {
+  const runtime = getRuntime();
   const cliEntry = getCliEntry();
   const args: string[] = [
     "install",
@@ -122,7 +123,7 @@ async function installGlobalCli(): Promise<void> {
     args.push("--config", tempConfigPath);
     try {
       args.push(cliEntry);
-      const cmd = createCommand(getRuntime(), {
+      const cmd = createCommand(runtime, {
         args,
         stdout: "piped",
         stderr: "piped",
@@ -143,7 +144,7 @@ async function installGlobalCli(): Promise<void> {
     }
   } else {
     args.push(cliEntry);
-    const cmd = createCommand(getRuntime(), {
+    const cmd = createCommand(runtime, {
       args,
       stdout: "piped",
       stderr: "piped",

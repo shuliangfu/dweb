@@ -25,6 +25,7 @@ export async function main(
   _args: string[],
   _options: ParsedOptions,
 ): Promise<void> {
+  const runtime = getRuntime();
   const projectRoot = cwd();
   const projectInfo = await getProjectInfo(projectRoot);
 
@@ -36,7 +37,7 @@ export async function main(
   const taskName = "fmt";
   if (projectInfo.tasks[taskName]) {
     info("正在运行代码格式化...");
-    const cmd = createCommand(getRuntime(), {
+    const cmd = createCommand(runtime, {
       args: getFmtArgs(true),
       cwd: projectRoot,
       stdin: "inherit",
@@ -55,7 +56,7 @@ export async function main(
 
   // 无 fmt task，直接运行 fmt
   info("正在运行代码格式化...");
-  const cmd = createCommand(getRuntime(), {
+  const cmd = createCommand(runtime, {
     args: getFmtArgs(false),
     cwd: projectRoot,
     stdin: "inherit",

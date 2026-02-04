@@ -26,6 +26,7 @@ export async function main(
   args: string[],
   options: ParsedOptions,
 ): Promise<void> {
+  const runtime = getRuntime();
   const projectRoot = cwd();
   const projectInfo = await getProjectInfo(projectRoot);
 
@@ -40,7 +41,7 @@ export async function main(
     const taskName = "test";
     if (projectInfo.tasks[taskName]) {
       info("正在运行测试...");
-      const cmd = createCommand(getRuntime(), {
+      const cmd = createCommand(runtime, {
         args: getTaskArgs(taskName),
         cwd: projectRoot,
         stdin: "inherit",
@@ -58,7 +59,7 @@ export async function main(
     }
     // 无 test task，直接运行测试
     info("正在运行测试...");
-    const cmd = createCommand(getRuntime(), {
+    const cmd = createCommand(runtime, {
       args: getTestArgs("tests"),
       cwd: projectRoot,
       stdin: "inherit",
@@ -85,7 +86,7 @@ export async function main(
   const taskName = `test:${app}`;
   if (projectInfo.tasks[taskName]) {
     info(`正在运行 ${app} 测试...`);
-    const cmd = createCommand(getRuntime(), {
+    const cmd = createCommand(runtime, {
       args: getTaskArgs(taskName),
       cwd: projectRoot,
       stdin: "inherit",

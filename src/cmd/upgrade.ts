@@ -72,6 +72,7 @@ export async function main(
   _args: string[],
   _options: ParsedOptions,
 ): Promise<void> {
+  const runtime = getRuntime();
   const current = await getDwebVersion();
   info(`当前版本: ${current}`);
   info("正在检查最新版本...");
@@ -90,7 +91,7 @@ export async function main(
   success(`发现新版本: ${latest}`);
 
   const setupSpec = `jsr:@dreamer/dweb@${latest}/setup`;
-  const cmd = createCommand(getRuntime(), {
+  const cmd = createCommand(runtime, {
     args: getRunArgs(setupSpec),
     stdout: "piped",
     stderr: "piped",
