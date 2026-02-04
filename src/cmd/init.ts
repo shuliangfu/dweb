@@ -969,6 +969,9 @@ node_modules
 dist/
 build/
 
+# dweb 自动生成（每次构建/启动会重新生成）
+_client.dep.tsx
+
 # 环境
 .env
 .env.local
