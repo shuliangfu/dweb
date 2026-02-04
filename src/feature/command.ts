@@ -120,6 +120,7 @@ export class Command extends BaseCommand {
 
   /**
    * 创建子命令（重写以返回扩展的 Command 实例）
+   * 子命令调用 alias() 时，会同时注册到父级的 subcommandAliases，使别名生效
    *
    * @param name 子命令名称
    * @param description 子命令描述
@@ -133,7 +134,19 @@ export class Command extends BaseCommand {
       string,
       BaseCommand
     >;
+    const subcommandAliases = (baseThis as any).subcommandAliases as Map<
+      string,
+      string
+    >;
     subcommands.set(name, subcommand);
+
+    // 包装 alias：子命令的 alias() 同时注册到父级，使 "dweb g" 等能正确路由
+    const originalAlias = subcommand.alias.bind(subcommand);
+    subcommand.alias = (alias: string) => {
+      originalAlias(alias);
+      subcommandAliases.set(alias, name);
+      return subcommand;
+    };
     return subcommand;
   }
 }

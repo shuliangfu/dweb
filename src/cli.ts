@@ -16,20 +16,10 @@
  */
 
 import {
-  cwd,
-  join,
-  mkdir,
-  stat,
-  writeTextFile,
-} from "./core/runtime-adapter.ts";
-
-import {
   colorize,
   Command,
   error,
-  info,
   type ParsedOptions,
-  success,
 } from "./feature/command.ts";
 import { getDwebVersion } from "./utils/version.ts";
 
@@ -77,8 +67,8 @@ export function createCLI(version: string): Command {
     });
 
   // 生成命令：委托给 cmd/generate.ts，别名为 g
-  cli
-    .command("generate", "生成代码")
+  const generateCmd = cli.command("generate", "生成代码");
+  generateCmd
     .option({
       name: "type",
       alias: "t",
@@ -105,138 +95,33 @@ export function createCLI(version: string): Command {
         );
       }
     });
-  cli.subcommandAlias("g", "generate");
 
-  // 数据库迁移命令
-  cli
-    .command("migrate", "数据库迁移")
+  // 数据库迁移命令：委托给 cmd/migrate.ts，别名为 m
+  const migrateCmd = cli.command("migrate", "数据库迁移");
+  migrateCmd.alias("m");
+  migrateCmd
     .option({
       name: "action",
       alias: "a",
       description: "操作（up, down, create）",
       type: "string",
       defaultValue: "up",
+      requiresValue: true,
     })
     .option({
       name: "name",
       alias: "n",
       description: "迁移名称（用于 create）",
       type: "string",
+      requiresValue: true,
     })
-    .action(async (_args: string[], options: ParsedOptions) => {
-      const action = options.action as string;
-      const name = options.name as string;
-
+    .action(async (args: string[], options: ParsedOptions) => {
       try {
-        if (action === "create") {
-          if (!name) {
-            error("创建迁移需要指定名称（--name）");
-            return;
-          }
-
-          info(`正在创建迁移: ${name}`);
-
-          const currentDir = cwd();
-          const migrationsDir = join(currentDir, "migrations");
-
-          // 确保 migrations 目录存在
-          await mkdir(migrationsDir, { recursive: true });
-
-          // 生成迁移文件名（时间戳 + 名称）
-          const timestamp = Date.now();
-          const migrationName = `${timestamp}_${name}`;
-          const migrationFile = join(migrationsDir, `${migrationName}.ts`);
-
-          // 检查文件是否已存在
-          try {
-            await stat(migrationFile);
-            error(`迁移文件已存在: ${migrationFile}`);
-            return;
-          } catch {
-            // 文件不存在，可以创建
-          }
-
-          // 生成迁移文件内容
-          const content = `/**
- * 数据库迁移: ${name}
- * 创建时间: ${new Date().toISOString()}
- */
-
-/**
- * 执行迁移（up）
- */
-export async function up() {
-  // TODO: 实现迁移逻辑
-  // 示例：
-  // const db = getDatabaseAdapter();
-  // await db.query(\`CREATE TABLE IF NOT EXISTS ...\`);
-}
-
-/**
- * 回滚迁移（down）
- */
-export async function down() {
-  // TODO: 实现回滚逻辑
-  // 示例：
-  // const db = getDatabaseAdapter();
-  // await db.query(\`DROP TABLE IF EXISTS ...\`);
-}
-`;
-
-          await writeTextFile(migrationFile, content);
-
-          success(`迁移 ${name} 创建完成！`);
-          info(`迁移文件: ${migrationFile}`);
-        } else if (action === "up") {
-          info("正在执行数据库迁移...");
-
-          const currentDir = cwd();
-          const migrationsDir = join(currentDir, "migrations");
-
-          // 检查 migrations 目录是否存在
-          try {
-            await stat(migrationsDir);
-          } catch {
-            error(`迁移目录不存在: ${migrationsDir}`);
-            error(
-              "请先创建迁移文件（使用 migrate --action create --name <name>）",
-            );
-            return;
-          }
-
-          // TODO: 实现迁移执行逻辑
-          // 需要：
-          // 1. 读取 migrations 目录中的所有迁移文件
-          // 2. 检查哪些迁移已执行（需要迁移历史表）
-          // 3. 按顺序执行未执行的迁移
-          // 4. 记录迁移历史
-
-          info("提示: 迁移执行功能需要数据库连接，请确保已配置数据库");
-          info("提示: 迁移历史需要存储在数据库中（migrations 表）");
-          success("数据库迁移完成！（功能待完善）");
-        } else if (action === "down") {
-          info("正在回滚数据库迁移...");
-
-          if (!name) {
-            error("回滚迁移需要指定迁移名称（--name）");
-            return;
-          }
-
-          // TODO: 实现迁移回滚逻辑
-          // 需要：
-          // 1. 从迁移历史中找到指定的迁移
-          // 2. 执行该迁移的 down() 方法
-          // 3. 从迁移历史中移除记录
-
-          info("提示: 迁移回滚功能需要数据库连接，请确保已配置数据库");
-          success("数据库迁移回滚完成！（功能待完善）");
-        } else {
-          error(`不支持的操作: ${action}`);
-          error("支持的操作: create, up, down");
-        }
+        const { main: migrateMain } = await import("./cmd/migrate.ts");
+        await migrateMain(args, options);
       } catch (err) {
         error(
-          `迁移操作失败: ${err instanceof Error ? err.message : String(err)}`,
+          `迁移失败: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     });
