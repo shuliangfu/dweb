@@ -55,6 +55,9 @@ describe("运行时适配器 (runtime-adapter.ts)", () => {
     it("应导出 mkdir", () => {
       expect(typeof adapter.mkdir).toBe("function");
     });
+    it("应导出 ensureDir", () => {
+      expect(typeof adapter.ensureDir).toBe("function");
+    });
     it("应导出 exists", () => {
       expect(typeof adapter.exists).toBe("function");
     });

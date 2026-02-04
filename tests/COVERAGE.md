@@ -25,7 +25,7 @@
 
 | 源码                            | 测试文件                     | 说明                                                                        |
 | ------------------------------- | ---------------------------- | --------------------------------------------------------------------------- |
-| `core/runtime-adapter.ts`       | `runtime-adapter.test.ts`    | re-export 的 getEnv、cwd、join、文件系统等 API 存在性                       |
+| `core/runtime-adapter.ts`       | `runtime-adapter.test.ts`    | re-export 的 getEnv、cwd、join、mkdir、ensureDir、文件系统等 API 存在性     |
 | `feature/csr-client-builder.ts` | `csr-client-builder.test.ts` | clearClientScriptCache、getCachedClientScript、createClientScriptMiddleware |
 | `feature/render-csr.ts`         | `render-csr.test.ts`         | createRendererCSR 返回函数                                                  |
 | `feature/render-ssr.ts`         | `render-ssr.test.ts`         | createRendererSSR 返回函数                                                  |
@@ -33,13 +33,16 @@
 | `feature/render-ssg.ts`         | `render-ssg.test.ts`         | createRendererSSG 返回函数、路径映射                                        |
 | `utils/version.ts`              | `version.test.ts`            | DWEB_VERSION 格式与存在性                                                   |
 | `cli.ts`                        | `cli.test.ts`                | createCLI() 返回 Command、execute 方法                                      |
+| `cmd/db.ts`                     | `db.test.ts`                 | migrate create 创建迁移文件（ensureDir 覆盖）                               |
+| `cmd/generate.ts`               | `generate.test.ts`           | main() 生成 service/api/model/route（ensureDir 覆盖）                        |
 
 ### 3. 仍无单测或仅间接覆盖
 
-| 源码           | 说明                                      |
-| -------------- | ----------------------------------------- |
-| `mod.ts`       | 主入口（re-export，通过其它测试间接覆盖） |
-| `types/app.ts` | 类型定义（通过使用方测试间接覆盖）        |
+| 源码                          | 说明                                                                 |
+| ----------------------------- | -------------------------------------------------------------------- |
+| `mod.ts`                      | 主入口（re-export，通过其它测试间接覆盖）                           |
+| `types/app.ts`                | 类型定义（通过使用方测试间接覆盖）                                   |
+| `feature/csr-client-builder`  | ensureDir（生产构建输出目录）由 build 集成测试间接覆盖，无独立单测   |
 
 ---
 
