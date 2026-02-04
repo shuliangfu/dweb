@@ -76,7 +76,7 @@ export function createCLI(version: string): Command {
       }
     });
 
-  // 生成命令：委托给 cmd/generate.ts
+  // 生成命令：委托给 cmd/generate.ts，别名为 g
   cli
     .command("generate", "生成代码")
     .option({
@@ -105,6 +105,7 @@ export function createCLI(version: string): Command {
         );
       }
     });
+  cli.subcommandAlias("g", "generate");
 
   // 数据库迁移命令
   cli
