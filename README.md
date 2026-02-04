@@ -1,7 +1,6 @@
 # @dreamer/dweb
 
-> 一个兼容 Deno 和 Bun 的全栈 Web 框架，整合 @dreamer/*
-> 库，提供开箱即用的全栈开发体验
+> 一个兼容 Deno 和 Bun 的全栈 Web 框架，整合 @dreamer/* 库，提供开箱即用的全栈开发体验
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.md)
