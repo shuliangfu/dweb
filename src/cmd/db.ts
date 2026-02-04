@@ -24,8 +24,8 @@ import {
 import {
   createCommand,
   cwd,
+  ensureDir,
   join,
-  mkdir,
   readdir,
   stat,
   writeTextFile,
@@ -150,7 +150,7 @@ export async function migrate(
 
       const currentDir = cwd();
       const migrationsDir = join(currentDir, "migrations");
-      await mkdir(migrationsDir, { recursive: true });
+      await ensureDir(migrationsDir);
 
       const sanitizedName = name.replace(/[^a-zA-Z0-9_]/g, "_");
       const timestamp = Date.now();

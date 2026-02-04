@@ -11,9 +11,9 @@
 import {
   chdir,
   cwd,
+  ensureDir,
   join,
   makeTempDir,
-  mkdir,
   remove,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
@@ -34,7 +34,7 @@ describe("路由集成 (router.ts)", () => {
     routesDir = join(testDir, "routes");
 
     // 创建路由目录（使用 runtime-adapter 以兼容 Bun）
-    await mkdir(routesDir, { recursive: true });
+    await ensureDir(routesDir);
 
     // 创建必需的 _app.tsx 文件
     const appFile = join(routesDir, "_app.tsx");
@@ -45,7 +45,7 @@ describe("路由集成 (router.ts)", () => {
   });
 
   afterAll(async () => {
-    // 清理测试目录
+    // 清理测试目录（recursive 删除目录及其内容）
     await remove(testDir, { recursive: true });
   });
 
@@ -88,7 +88,7 @@ describe("路由集成 (router.ts)", () => {
       initializePlugin(container);
 
       const customRoutesDir = join(testDir, "custom-routes");
-      await mkdir(customRoutesDir, { recursive: true });
+      await ensureDir(customRoutesDir);
 
       // 创建必需的 _app.tsx 文件
       await writeTextFile(
@@ -132,7 +132,7 @@ describe("路由集成 (router.ts)", () => {
 
       // 创建默认路由目录
       const defaultRoutesDir = join(testDir, "src", "routes");
-      await mkdir(defaultRoutesDir, { recursive: true });
+      await ensureDir(defaultRoutesDir);
 
       // 创建必需的 _app.tsx 文件
       await writeTextFile(
@@ -185,7 +185,7 @@ describe("路由集成 (router.ts)", () => {
       initializePlugin(container);
 
       const scanRoutesDir = join(testDir, "scan-routes");
-      await mkdir(scanRoutesDir, { recursive: true });
+      await ensureDir(scanRoutesDir);
 
       // 创建必需的 _app.tsx 文件
       await writeTextFile(
@@ -212,7 +212,7 @@ describe("路由集成 (router.ts)", () => {
 
       // 创建路由文件
       const routesDirWithFiles = join(testDir, "routes-with-files");
-      await mkdir(routesDirWithFiles, { recursive: true });
+      await ensureDir(routesDirWithFiles);
 
       // 创建必需的 _app.tsx 文件
       await writeTextFile(
@@ -246,7 +246,7 @@ describe("路由集成 (router.ts)", () => {
       initializePlugin(container);
 
       const apiRoutesDir = join(testDir, "api-routes-restful");
-      await mkdir(apiRoutesDir, { recursive: true });
+      await ensureDir(apiRoutesDir);
       await writeTextFile(
         join(apiRoutesDir, "_app.tsx"),
         "export default function App({ children }: { children: unknown }) { return children; }",
@@ -269,7 +269,7 @@ describe("路由集成 (router.ts)", () => {
       initializePlugin(container);
 
       const apiRoutesDir = join(testDir, "api-routes-action");
-      await mkdir(apiRoutesDir, { recursive: true });
+      await ensureDir(apiRoutesDir);
       await writeTextFile(
         join(apiRoutesDir, "_app.tsx"),
         "export default function App({ children }: { children: unknown }) { return children; }",

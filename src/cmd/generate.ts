@@ -17,9 +17,9 @@ import { error, info, success } from "@dreamer/console";
 import {
   cwd,
   dirname,
+  ensureDir,
   exists,
   join,
-  mkdir,
   stat,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
@@ -217,7 +217,7 @@ export async function main(
     const { targetPath, content } = getGenerateContent(basePath, type, name);
 
     // 确保目录存在
-    await mkdir(dirname(targetPath), { recursive: true });
+    await ensureDir(dirname(targetPath));
 
     // 检查文件是否已存在
     try {

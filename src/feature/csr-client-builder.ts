@@ -22,10 +22,10 @@ import type { ServiceContainer } from "@dreamer/service";
 import {
   basename,
   cwd,
+  ensureDir,
   exists,
   getEnv,
   join,
-  mkdir,
   readdir,
   readTextFile,
   relative,
@@ -905,7 +905,7 @@ export async function buildClientScript(
       const shouldSplit = userBundleConfig.splitting ?? true;
 
       // 确保输出目录存在
-      await mkdir(finalOutputDir, { recursive: true });
+      await ensureDir(finalOutputDir);
 
       const externalList = Array.isArray(userBundleConfig.external)
         ? userBundleConfig.external

@@ -26,10 +26,10 @@ import {
   args,
   basename,
   cwd,
+  ensureDir,
   exists,
   exit,
   join,
-  mkdir,
   resolve,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
@@ -1114,16 +1114,16 @@ export async function generate(opts: InitOptions): Promise<void> {
   const isMulti = appMode === "multi" && appNames != null &&
     appNames.length > 0;
 
-  await mkdir(targetDir, { recursive: true });
+  await ensureDir(targetDir);
 
   if (isMulti && appNames) {
     // ---------- 多应用：common 目录（config, model, service, hook, utils）----------
     const commonBase = join(targetDir, prefix, "common");
-    await mkdir(join(commonBase, "config"), { recursive: true });
-    await mkdir(join(commonBase, "model"), { recursive: true });
-    await mkdir(join(commonBase, "service"), { recursive: true });
-    await mkdir(join(commonBase, "hook"), { recursive: true });
-    await mkdir(join(commonBase, "utils"), { recursive: true });
+    await ensureDir(join(commonBase, "config"));
+    await ensureDir(join(commonBase, "model"));
+    await ensureDir(join(commonBase, "service"));
+    await ensureDir(join(commonBase, "hook"));
+    await ensureDir(join(commonBase, "utils"));
     await writeTextFile(
       join(commonBase, "config", "main.ts"),
       getCommonConfigMainTs(opts),
@@ -1152,11 +1152,11 @@ export async function generate(opts: InitOptions): Promise<void> {
     // ---------- 多应用：各应用目录（main.ts、config、routes、components、assets）----------
     for (const appName of appNames) {
       const appBase = join(targetDir, prefix, appName);
-      await mkdir(join(appBase, "config"), { recursive: true });
-      await mkdir(join(appBase, "routes"), { recursive: true });
-      await mkdir(join(appBase, "components"), { recursive: true });
+      await ensureDir(join(appBase, "config"));
+      await ensureDir(join(appBase, "routes"));
+      await ensureDir(join(appBase, "components"));
       if (style !== "none") {
-        await mkdir(join(appBase, "assets"), { recursive: true });
+        await ensureDir(join(appBase, "assets"));
       }
 
       await writeTextFile(
@@ -1188,7 +1188,7 @@ export async function generate(opts: InitOptions): Promise<void> {
           join(appBase, "routes", "about.tsx"),
           getAboutTsx(opts),
         );
-        await mkdir(join(appBase, "routes", "user"), { recursive: true });
+        await ensureDir(join(appBase, "routes", "user"));
         await writeTextFile(
           join(appBase, "routes", "user", "[id].tsx"),
           getUserByIdTsx(opts),
@@ -1213,11 +1213,11 @@ export async function generate(opts: InitOptions): Promise<void> {
     const configBase = useSrc
       ? join(targetDir, "src", "config")
       : join(targetDir, "config");
-    await mkdir(configBase, { recursive: true });
-    await mkdir(join(targetDir, prefix, "routes"), { recursive: true });
-    await mkdir(join(targetDir, prefix, "components"), { recursive: true });
+    await ensureDir(configBase);
+    await ensureDir(join(targetDir, prefix, "routes"));
+    await ensureDir(join(targetDir, prefix, "components"));
     if (style !== "none") {
-      await mkdir(join(targetDir, prefix, "assets"), { recursive: true });
+      await ensureDir(join(targetDir, prefix, "assets"));
     }
 
     await writeTextFile(
@@ -1249,9 +1249,7 @@ export async function generate(opts: InitOptions): Promise<void> {
         join(targetDir, prefix, "routes", "about.tsx"),
         getAboutTsx(opts),
       );
-      await mkdir(join(targetDir, prefix, "routes", "user"), {
-        recursive: true,
-      });
+      await ensureDir(join(targetDir, prefix, "routes", "user"));
       await writeTextFile(
         join(targetDir, prefix, "routes", "user", "[id].tsx"),
         getUserByIdTsx(opts),
@@ -1280,7 +1278,7 @@ export async function generate(opts: InitOptions): Promise<void> {
   await writeTextFile(join(targetDir, ".gitignore"), getGitignore());
 
   // 创建 .vscode/settings.json，便于 IDE 开箱即用
-  await mkdir(join(targetDir, ".vscode"), { recursive: true });
+  await ensureDir(join(targetDir, ".vscode"));
   await writeTextFile(
     join(targetDir, ".vscode", "settings.json"),
     getVscodeSettingsJson(),

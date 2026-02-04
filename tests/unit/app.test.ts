@@ -10,7 +10,12 @@
  */
 
 import type { Plugin } from "@dreamer/plugin";
-import { join, makeTempDir, mkdir, remove } from "@dreamer/runtime-adapter";
+import {
+  ensureDir,
+  join,
+  makeTempDir,
+  remove,
+} from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import { App } from "../../src/core/app.ts";
 import type { AppConfig } from "../../src/types/app.ts";
@@ -26,7 +31,7 @@ describe("App 类 (app.ts)", () => {
     configDir = join(testDir, "config");
 
     // 创建配置目录（使用 runtime-adapter 以兼容 Bun）
-    await mkdir(configDir, { recursive: true });
+    await ensureDir(configDir);
   });
 
   afterAll(async () => {
