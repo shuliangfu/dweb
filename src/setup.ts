@@ -145,8 +145,8 @@ async function createTempCliConfig(): Promise<string> {
       throw new Error(`无法读取 ${denoJsonUrl}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
-  // 移除 workspace 等仅开发时需要的字段
-  const { workspace: _w, tasks: _t, publish: _p, exports: _e, lint: _l, ...cliConfig } =
+  // 移除 workspace、tasks、publish、lint 等仅开发时需要的字段，保留 exports（CLI 解析 ./cli 需要）
+  const { workspace: _w, tasks: _t, publish: _p, lint: _l, ...cliConfig } =
     config;
   const tempPath = await makeTempFile({ prefix: "dweb-cli-", suffix: ".json" });
   await writeTextFile(tempPath, JSON.stringify(cliConfig, null, 2));
