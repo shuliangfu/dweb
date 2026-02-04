@@ -29,6 +29,7 @@
     "esbuild": "npm:esbuild@^0.27.2",
     "postcss": "npm:postcss@8.4.39",
     "tailwindcss": "npm:tailwindcss@^4.0.0",
+    "tailwind-merge": "npm:tailwind-merge@^3.0.0",
     "preact": "npm:preact@10.28.0",
     "preact/hooks": "npm:preact@10.28.0/hooks",
     "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",

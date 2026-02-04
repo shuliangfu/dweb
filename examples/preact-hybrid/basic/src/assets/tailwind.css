@@ -2,11 +2,11 @@
  * TailwindCSS v4 入口文件
  */
 
+/* 导入 TailwindCSS（已包含 theme、preflight、utilities） */
+@import "tailwindcss";
+
 /* 指定内容扫描路径 */
 @source "../**/*.{ts,tsx}";
-
-/* 导入 TailwindCSS */
-@import "tailwindcss";
 
 /* 定义主题配置 */
 @theme {

@@ -1,6 +1,38 @@
 import { Client } from "@dreamer/socket-io/client";
 import { useEffect, useRef, useState } from "preact/hooks";
 
+/**
+ * 页面 Tailwind 类名（全部提取为静态对象，便于生产构建扫描）
+ */
+const classes = {
+  page: "py-5",
+  hero:
+    "mb-10 rounded-xl bg-linear-to-br from-[#667eea] to-[#764ba2] px-5 py-15 text-center text-white",
+  heroTitle: "mb-4 text-4xl",
+  heroDesc: "text-xl text-white/90",
+  section: "mb-10",
+  sectionTitle: "mb-8 text-center",
+  featureGrid: "grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4",
+  featureCard: "rounded-lg bg-white p-6 shadow-md",
+  featureCardTitle: "mb-2.5 text-[#667eea]",
+  socketSection:
+    "rounded-xl border border-gray-200 bg-white p-6 shadow-md",
+  socketTitle: "mb-4 text-center text-[#667eea]",
+  socketDesc: "mb-4 text-center text-sm text-gray-500",
+  statusBadgeWrap: "mb-4 flex items-center justify-center gap-2",
+  inputWrap: "mb-4 flex gap-2",
+  statusBadge: "inline-flex rounded-full px-3 py-1 text-sm font-medium",
+  input:
+    "flex-1 rounded border border-gray-300 px-3 py-2 focus:border-[#667eea] focus:outline-none focus:ring-1 focus:ring-[#667eea]",
+  sendBtn: "rounded bg-[#667eea] px-4 py-2 text-white hover:bg-[#5a6fd6]",
+  messageBox:
+    "max-h-48 overflow-y-auto rounded border border-gray-100 bg-gray-50 p-3",
+  messageEmpty: "text-center text-gray-400",
+  messageList: "space-y-2",
+  messageSent: "text-right text-blue-600",
+  messageReceived: "text-left text-gray-700",
+};
+
 /** 是否输出调试日志（开发时设为 true） */
 const DEBUG = false;
 const debugLog = (...args: unknown[]) => {
@@ -146,63 +178,83 @@ export default function Home() {
     error: "连接失败",
   };
 
+  /** 状态徽章颜色（使用 CSS 变量，避免 Tailwind 动态类名被 purge） */
+  const statusStyles: Record<
+    ConnectionStatus,
+    { backgroundColor: string; color: string }
+  > = {
+    idle: {
+      backgroundColor: "var(--color-gray-100)",
+      color: "var(--color-gray-800)",
+    },
+    connecting: {
+      backgroundColor: "var(--color-yellow-100)",
+      color: "var(--color-yellow-800)",
+    },
+    connected: {
+      backgroundColor: "var(--color-green-100)",
+      color: "var(--color-green-800)",
+    },
+    disconnected: {
+      backgroundColor: "var(--color-gray-100)",
+      color: "var(--color-gray-800)",
+    },
+    error: {
+      backgroundColor: "var(--color-red-100)",
+      color: "var(--color-red-800)",
+    },
+  };
+
   return (
-    <div class="py-5">
-      <section class="mb-10 rounded-xl bg-linear-to-br from-[#667eea] to-[#764ba2] px-5 py-15 text-center text-white">
-        <h1 class="mb-4 text-4xl">欢迎使用 Dweb 框架</h1>
-        <p class="text-xl text-white/90">
+    <div class={classes.page}>
+      <section class={classes.hero}>
+        <h1 class={classes.heroTitle}>欢迎使用 Dweb 框架</h1>
+        <p class={classes.heroDesc}>
           这是一个使用 @dreamer/dweb 框架构建的 Preact 示例项目
         </p>
       </section>
 
-      <section class="mb-10">
-        <h2 class="mb-8 text-center">特性</h2>
-        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div class="rounded-lg bg-white p-6 shadow-md">
-            <h3 class="mb-2.5 text-[#667eea]">文件路由</h3>
+      <section class={classes.section}>
+        <h2 class={classes.sectionTitle}>特性</h2>
+        <div class={classes.featureGrid}>
+          <div class={classes.featureCard}>
+            <h3 class={classes.featureCardTitle}>文件路由</h3>
             <p>基于文件系统的路由，无需手动配置</p>
           </div>
-          <div class="rounded-lg bg-white p-6 shadow-md">
-            <h3 class="mb-2.5 text-[#667eea]">SSR 渲染</h3>
+          <div class={classes.featureCard}>
+            <h3 class={classes.featureCardTitle}>SSR 渲染</h3>
             <p>服务端渲染，提供最佳首屏性能</p>
           </div>
-          <div class="rounded-lg bg-white p-6 shadow-md">
-            <h3 class="mb-2.5 text-[#667eea]">TypeScript</h3>
+          <div class={classes.featureCard}>
+            <h3 class={classes.featureCardTitle}>TypeScript</h3>
             <p>完整的 TypeScript 支持</p>
           </div>
-          <div class="rounded-lg bg-white p-6 shadow-md">
-            <h3 class="mb-2.5 text-[#667eea]">Preact</h3>
+          <div class={classes.featureCard}>
+            <h3 class={classes.featureCardTitle}>Preact</h3>
             <p>轻量级 React 替代方案</p>
           </div>
         </div>
       </section>
 
       {/* Socket.IO 客户端示例 */}
-      <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-md">
-        <h2 class="mb-4 text-center text-[#667eea]">Socket.IO 客户端示例</h2>
-        <p class="mb-4 text-center text-sm text-gray-500">
+      <section class={classes.socketSection}>
+        <h2 class={classes.socketTitle}>Socket.IO 客户端示例</h2>
+        <p class={classes.socketDesc}>
           使用 @dreamer/socket-io 的 Client：连接、自动重连、发送
           chat-message、接收 chat-response
         </p>
-        <div class="mb-4 flex items-center justify-center gap-2">
+        <div class={classes.statusBadgeWrap}>
           <span
-            class={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${
-              status === "connected"
-                ? "bg-green-100 text-green-800"
-                : status === "error"
-                ? "bg-red-100 text-red-800"
-                : status === "connecting"
-                ? "bg-yellow-100 text-yellow-800"
-                : "bg-gray-100 text-gray-800"
-            }`}
+            class={classes.statusBadge}
+            style={statusStyles[status]}
           >
             {statusLabel[status]}
           </span>
         </div>
-        <div class="mb-4 flex gap-2">
+        <div class={classes.inputWrap}>
           <input
             type="text"
-            class="flex-1 rounded border border-gray-300 px-3 py-2 focus:border-[#667eea] focus:outline-none focus:ring-1 focus:ring-[#667eea]"
+            class={classes.input}
             placeholder="输入消息并发送 (chat-message)"
             value={input}
             onInput={(e) => setInput((e.target as HTMLInputElement).value)}
@@ -210,27 +262,27 @@ export default function Home() {
           />
           <button
             type="button"
-            class="rounded bg-[#667eea] px-4 py-2 text-white hover:bg-[#5a6fd6]"
+            class={classes.sendBtn}
             onClick={handleSend}
           >
             发送
           </button>
         </div>
-        <div class="max-h-48 overflow-y-auto rounded border border-gray-100 bg-gray-50 p-3">
+        <div class={classes.messageBox}>
           {messages.length === 0
             ? (
-              <p class="text-center text-gray-400">
+              <p class={classes.messageEmpty}>
                 暂无消息。发送后显示在这里。
               </p>
             )
             : (
-              <ul class="space-y-2">
+              <ul class={classes.messageList}>
                 {messages.map((msg, i) => (
                   <li
                     key={`${msg.at}-${i}`}
                     class={msg.type === "sent"
-                      ? "text-right text-blue-600"
-                      : "text-left text-gray-700"}
+                      ? classes.messageSent
+                      : classes.messageReceived}
                   >
                     {msg.type === "sent" ? "→ " : "← "}
                     {msg.text}

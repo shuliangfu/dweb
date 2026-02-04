@@ -4,9 +4,9 @@
  * 配置由框架自动加载 config/main.ts
  */
 
-import { App, getSocketIoServer } from "@dreamer/dweb";
-import { staticPlugin } from "@dreamer/plugins/static";
-import { tailwindPlugin } from "@dreamer/plugins/tailwindcss";
+import { App, getSocketIoServer } from "@dreamer/dweb"
+import { staticPlugin } from "@dreamer/plugins/static"
+import { tailwindPlugin } from "@dreamer/plugins/tailwindcss"
 
 const app = new App();
 
