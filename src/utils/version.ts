@@ -60,7 +60,7 @@ function readVersionFromDenoJson(): string {
 }
 
 /** 框架版本号（@dreamer/dweb 的 deno.json version） */
-export const DWEB_VERSION = readVersionFromDenoJson();
+export const DWEB_VERSION: string = readVersionFromDenoJson();
 
 /**
  * 从 dweb deno.json 读取的配置（version + imports），供 init 生成项目时使用

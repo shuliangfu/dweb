@@ -14,11 +14,11 @@
     "./core/plugin": "./src/core/plugin.ts",
     "./core/lifecycle": "./src/core/lifecycle.ts",
     "./core/database": "./src/core/database.ts",
-    "./feature/server": "./src/feature/http.ts",
+    "./feature/server": "./src/feature/server.ts",
     "./feature/router": "./src/feature/router.ts",
     "./feature/render": "./src/feature/render.ts",
     "./feature/build": "./src/feature/build.ts",
-    "./feature/console": "./src/feature/console.ts"
+    "./feature/command": "./src/feature/command.ts"
   },
   "publish": {
     "include": [
