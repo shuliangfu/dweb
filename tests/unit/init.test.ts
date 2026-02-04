@@ -81,10 +81,11 @@ describe("init (cmd/init.ts)", () => {
     expect(denoJson).not.toContain('"name":');
     expect(denoJson).not.toContain("socket-io");
 
-    // 验证 deno.json 包含必要依赖：dweb、render、router、tailwind 相关
+    // 验证 deno.json 包含必要依赖：dweb、render、router、plugins（仅主包）、tailwind 相关
     expect(denoJson).toContain("@dreamer/dweb");
     expect(denoJson).toContain("@dreamer/render");
     expect(denoJson).toContain("@dreamer/router");
+    expect(denoJson).toContain("@dreamer/plugins");
     expect(denoJson).toContain("postcss");
     expect(denoJson).toContain("tailwindcss");
     expect(denoJson).toContain("@tailwindcss/postcss");
@@ -155,7 +156,7 @@ describe("init (cmd/init.ts)", () => {
     await generate(opts);
 
     const denoJson = await readTextFile(join(testDir, "deno.json"));
-    expect(denoJson).toContain("@dreamer/plugins/unocss");
+    expect(denoJson).toContain("@dreamer/plugins");
     expect(denoJson).toContain("@unocss/core");
     expect(denoJson).toContain("@unocss/preset-wind3");
     expect(denoJson).toContain("@unocss/preset-icons");

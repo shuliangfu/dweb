@@ -252,24 +252,13 @@ function getDenoJson(opts: InitOptions, jsrVersions: JsrVersions): string {
   const pluginsVersion = jsrVersions.plugins;
   const renderSpec = `jsr:@dreamer/render@${jsrVersions.render}`;
   const routerSpec = `jsr:@dreamer/router@${jsrVersions.router}`;
-  /** @dreamer/* 依赖：dweb、render、router 必选；tailwind/unocss/static 按样式方案 */
+  /** @dreamer/* 依赖：dweb、render、router 必选；plugins 按样式方案（仅主包，子路径由解析器自动处理） */
   const dreamerImports = [
     `    "@dreamer/dweb": "jsr:@dreamer/dweb@${dwebVersion}"`,
     `    "@dreamer/render": "${renderSpec}"`,
     `    "@dreamer/router": "${routerSpec}"`,
-    ...(useUno
-      ? [
-        `    "@dreamer/plugins/unocss": "jsr:@dreamer/plugins@^${pluginsVersion}/unocss"`,
-      ]
-      : useTailwind
-      ? [
-        `    "@dreamer/plugins/tailwindcss": "jsr:@dreamer/plugins@^${pluginsVersion}/tailwindcss"`,
-      ]
-      : []),
     ...(hasStyleAssets
-      ? [
-        `    "@dreamer/plugins/static": "jsr:@dreamer/plugins@^${pluginsVersion}/static"`,
-      ]
+      ? [`    "@dreamer/plugins": "jsr:@dreamer/plugins@^${pluginsVersion}"`]
       : []),
   ].join(",\n");
   /** Tailwind 相关 npm 依赖（postcss、tailwindcss、@tailwindcss/postcss） */
