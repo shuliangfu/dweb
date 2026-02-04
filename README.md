@@ -5,7 +5,7 @@
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.md)
-[![Tests](https://img.shields.io/badge/tests-287%20passed-brightgreen)](./TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-302%20passed-brightgreen)](./TEST_REPORT.md)
 
 ---
 
@@ -1337,7 +1337,7 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 | 特性       | @dreamer/dweb | Next.js | Remix   | SvelteKit |
 | ---------- | ------------- | ------- | ------- | --------- |
-| 运行时     | Deno          | Node.js | Node.js | Node.js   |
+| 运行时     | Deno / Bun    | Node.js | Node.js | Node.js   |
 | 文件路由   | ✅            | ✅      | ✅      | ✅        |
 | SSR        | ✅            | ✅      | ✅      | ✅        |
 | CSR        | ✅            | ✅      | ✅      | ✅        |
@@ -1347,8 +1347,6 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 | 插件系统   | ✅            | ❌      | ❌      | ❌        |
 | 服务容器   | ✅            | ❌      | ❌      | ❌        |
 | 数据库     | ✅            | ❌      | ❌      | ❌        |
-| 缓存       | ✅            | ❌      | ❌      | ❌        |
-| 任务队列   | ✅            | ❌      | ❌      | ❌        |
 | TypeScript | ✅            | ✅      | ✅      | ✅        |
 
 ## 应用模式对比
@@ -1443,6 +1441,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 ## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！
+
+**开发 dweb 库时**（在 dweb 目录下）：
+
+- 类型检查：`deno task check` 或 `deno check src/ tests/`（仅检查核心代码，不包含 examples）
+- 测试：`deno test -A tests/unit` 或 `bun test`
 
 ---
 

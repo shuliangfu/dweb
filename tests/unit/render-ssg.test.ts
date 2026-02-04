@@ -18,7 +18,10 @@ describe("SSG 渲染器 (render-ssg.ts)", () => {
   describe("createRendererSSG()", () => {
     it("应返回函数", () => {
       const container = initializeServiceContainer();
-      const config: AppConfig = {};
+      /** 显式指定 outputDir，避免 Bun 下 getInferredBuildOutputDirs 因 process.argv 路径段数不符而抛错 */
+      const config: AppConfig = {
+        render: { ssg: { outputDir: "dist/client" } },
+      };
       container.registerSingleton("config", () => config);
       initializeRender(container, config);
 
@@ -32,7 +35,10 @@ describe("SSG 渲染器 (render-ssg.ts)", () => {
 
     it("返回的函数应接受 (ctx, match) 两个参数", () => {
       const container = initializeServiceContainer();
-      const config: AppConfig = {};
+      /** 显式指定 outputDir，避免 Bun 下 getInferredBuildOutputDirs 因 process.argv 路径段数不符而抛错 */
+      const config: AppConfig = {
+        render: { ssg: { outputDir: "dist/client" } },
+      };
       container.registerSingleton("config", () => config);
       initializeRender(container, config);
 

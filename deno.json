@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "3.0.10",
+  "version": "3.0.11",
   "license": "MIT",
   "exports": {
     ".": "./src/mod.ts",
@@ -53,7 +53,7 @@
     "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.0.0-beta.23",
     "@dreamer/database": "jsr:@dreamer/database@^1.0.0-beta.7",
     "@dreamer/socket-io": "jsr:@dreamer/socket-io@1.0.0-beta.11",
-    "@dreamer/test": "jsr:@dreamer/test@^1.0.0-beta.39",
+    "@dreamer/test": "jsr:@dreamer/test@^1.0.0-beta.40",
     "preact": "npm:preact@10.28.0",
     "esbuild": "npm:esbuild@^0.27.2",
     "postcss": "npm:postcss@8.4.39",
@@ -61,7 +61,8 @@
     "cssnano": "npm:cssnano@7.0.3"
   },
   "tasks": {
-    "setup": "deno run -A src/setup.ts"
+    "setup": "deno run -A src/setup.ts",
+    "check": "deno check src/ tests/"
   },
   "workspace": [
     "./examples/preact-csr/basic",

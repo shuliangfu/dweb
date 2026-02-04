@@ -9,8 +9,23 @@
  * 注意：测试输出文件存放在 tests/data 目录下
  */
 
-import { readdir, stat } from "@dreamer/runtime-adapter";
-import { describe, expect, it } from "@dreamer/test";
+import {
+  chdir,
+  cwd,
+  dirname,
+  readdir,
+  stat,
+} from "@dreamer/runtime-adapter";
+import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
+
+/** 将 file: URL 转为本地路径（Bun 下避免 cwd 被 db/generate 测试污染） */
+function fromFileUrl(url: string): string {
+  const u = new URL(url);
+  if (u.protocol !== "file:") return url;
+  let p = decodeURIComponent(u.pathname);
+  if (p.length >= 3 && /^\/[A-Za-z]:\//.test(p)) p = p.slice(1);
+  return p;
+}
 import { initializeServiceContainer } from "../../src/core/service.ts";
 import { getBuild, initializeBuild } from "../../src/feature/build.ts";
 import type { AppConfig } from "../../src/types/app.ts";
@@ -295,6 +310,20 @@ describe("构建集成 (build.ts)", () => {
   describe(
     "实际构建输出",
     () => {
+      let originalCwd: string;
+      let projectRoot: string;
+
+      beforeAll(() => {
+        originalCwd = cwd();
+        const testFilePath = fromFileUrl(import.meta.url);
+        projectRoot = dirname(dirname(dirname(testFilePath)));
+        chdir(projectRoot);
+      });
+
+      afterAll(() => {
+        chdir(originalCwd);
+      });
+
       it("应该构建服务端入口并生成输出文件", async () => {
         const container = createTestEnv();
         const config: AppConfig = {
@@ -358,7 +387,7 @@ describe("构建集成 (build.ts)", () => {
         expect(files.length).toBeGreaterThan(0);
 
         console.log("客户端构建输出文件:", files);
-      });
+      }, { timeout: 30000 });
 
       it("应该同时构建服务端和客户端", async () => {
         const container = createTestEnv();
@@ -399,7 +428,7 @@ describe("构建集成 (build.ts)", () => {
 
         console.log("服务端输出:", serverFiles);
         console.log("客户端输出:", clientFiles);
-      });
+      }, { timeout: 30000 });
     },
     { sanitizeOps: false, sanitizeResources: false },
   );

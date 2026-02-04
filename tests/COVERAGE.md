@@ -60,7 +60,7 @@
 | **核心层 (core)**    | 9 个文件均有对应单元测试（含 runtime-adapter.test.ts）                         |
 | **功能层 (feature)** | 10 个文件均有对应单元测试（含 render-ssg.test.ts）                             |
 | **工具 (utils)**     | logger、version 有单测；**cli** 有 cli.test.ts                                 |
-| **可运行性**         | `deno test -A tests/unit` 可完整通过（需在 dweb 目录下执行，排除 examples 等） |
+| **可运行性**         | `deno test -A tests/unit` 或 `bun test` 可完整通过（需在 dweb 目录下执行）；类型检查使用 `deno task check`（仅 src/、tests/，不含 examples） |
 
 **结论**：dweb 的单元测试在**文件级**已基本全面覆盖；仅 `mod.ts`（主入口
 re-export）与
