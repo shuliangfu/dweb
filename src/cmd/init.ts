@@ -35,6 +35,7 @@ import {
   exists,
   exit,
   join,
+  readTextFile,
   resolve,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
@@ -97,6 +98,37 @@ function isValidAppName(name: string): boolean {
 function projectNameFromDir(targetDir: string): string {
   const name = basename(targetDir);
   return name === "." ? "my-dweb-app" : name;
+}
+
+/**
+ * 从 deno.lock 解析出所有 npm 包说明符（npm:package@version 格式）
+ * 用于 allowScripts.allow 写入 deno.json
+ *
+ * @param targetDir 项目目录
+ * @returns npm 包说明符数组，如 ["npm:better-sqlite3@11.10.0", "npm:esbuild@0.27.2"]
+ */
+export async function getNpmPackagesFromLockfile(targetDir: string): Promise<string[]> {
+  try {
+    const lockPath = join(targetDir, "deno.lock");
+    if (!(await exists(lockPath))) return [];
+    const content = await readTextFile(lockPath);
+    const lock = JSON.parse(content) as { specifiers?: Record<string, string> };
+    const specifiers = lock.specifiers ?? {};
+    const result: string[] = [];
+    for (const [key, resolved] of Object.entries(specifiers)) {
+      if (!key.startsWith("npm:") || !resolved) continue;
+      // npm:package@req -> resolved 可能带后缀如 "11.10.0" 或 "10.4.19_postcss@8.4.39"，取主版本
+      const mainVersion = resolved.split("_")[0].split("@")[0];
+      const match = key.match(/^npm:(.+?)(?:@|$)/);
+      if (match) {
+        const pkg = match[1]; // 含 @scope/name
+        result.push(`npm:${pkg}@${mainVersion}`);
+      }
+    }
+    return [...new Set(result)];
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -1384,7 +1416,7 @@ export async function main(
   info("正在生成项目...");
   await generate(opts);
 
-  // 先缓存依赖，再自动执行 deno approve-scripts，避免后续 deno task dev 出现 build scripts 警告
+  // 先缓存依赖，再将 allowScripts 直接写入 deno.json，避免后续 deno task dev 出现 build scripts 警告
   // 首次创建项目时 deno cache 需下载依赖，可能较慢，故显示 loading 避免用户误以为卡住
   try {
     startSpinner("正在缓存依赖 ...");
@@ -1398,21 +1430,15 @@ export async function main(
     await cacheChild.status;
     succeedSpinner("依赖已缓存");
 
-    // approve-scripts 有交互选择，通过 stdin 自动输入回车确认（无需输入 y）
-    const approveCmd = createCommand("deno", {
-      args: ["approve-scripts"],
-      cwd: opts.targetDir,
-      stdin: "piped",
-      stdout: "null",
-      stderr: "null",
-    });
-    const approveChild = approveCmd.spawn();
-    if (approveChild.stdin) {
-      const writer = approveChild.stdin.getWriter();
-      await writer.write(new TextEncoder().encode("\n"));
-      await writer.close();
+    // 从 deno.lock 解析 npm 包，直接写入 allowScripts 到 deno.json（格式：{ allow: [...], deny: [] }）
+    const npmPackages = await getNpmPackagesFromLockfile(opts.targetDir);
+    if (npmPackages.length > 0) {
+      const denoJsonPath = join(opts.targetDir, "deno.json");
+      const denoJsonContent = await readTextFile(denoJsonPath);
+      const denoJson = JSON.parse(denoJsonContent) as Record<string, unknown>;
+      denoJson.allowScripts = { deny: [],allow: npmPackages };
+      await writeTextFile(denoJsonPath, JSON.stringify(denoJson, null, 2));
     }
-    await approveChild.status;
   } catch {
     stopSpinner();
     // 忽略（如 deno 未安装或非 Deno 环境），项目已创建成功
