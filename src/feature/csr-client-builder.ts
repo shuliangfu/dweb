@@ -158,8 +158,8 @@ function isClientChunkFile(pathname: string): boolean {
     return false;
   }
 
-  // 匹配 esbuild chunk：/name-hash.js 或 /name-hash.js.map
-  const chunkPattern = /^\/[\w\[\]_-]+-[A-Z0-9]{8}\.(?:js|js\.map)$/;
+  // 匹配 esbuild chunk：/name-hash.js 或 /name-hash.js.map（hash 长度 6–10 位，兼容不同 esbuild 版本）
+  const chunkPattern = /^\/[\w\[\]_-]+-[A-Z0-9]{6,10}\.(?:js|js\.map)$/;
   return chunkPattern.test(pathname);
 }
 
