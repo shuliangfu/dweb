@@ -7,8 +7,10 @@
  *
  * 规则：入口路径按 "/" 分割后的段数（不支持多级目录，仅支持一层应用目录）
  * - 段数 1：main.ts（无 src 目录）→ 单应用 → dist、dist/client
- * - 段数 2：src/main.ts、dist/server.js → 单应用 → dist、dist/client
- * - 段数 3：src/backend/main.ts、dist/backend/server.js → 多应用，应用名=第 2 段 → dist/<appDir>/client
+ * - 段数 2：
+ *   - src/main.ts → 单应用 → dist、dist/client
+ *   - <app>/main.ts（无 src，如 backend/main.ts）→ 多应用 → dist/<app>、dist/<app>/client
+ * - 段数 3：src/<app>/main.ts → 多应用 → dist/<app>、dist/<app>/client
  * - 段数 ≥4：抛出错误（不支持多级目录）
  */
 
@@ -43,34 +45,49 @@ export function getMainModulePath(): string | null {
 }
 
 /**
- * 根据当前入口文件推断 server 与 client 的构建输出目录（多应用时按应用目录区分）
+ * 根据入口路径推断 server 与 client 的构建输出目录（多应用时按应用目录区分）
  *
- * 支持入口路径段数 1（main.ts 无 src）、2（src/main.ts 单应用）、3（src/<app>/main.ts 多应用）。
+ * @param overrideEntry 可选，用于测试或显式指定入口路径；未提供时从 getMainModulePath() 获取
+ *
+ * 支持入口路径段数 1（main.ts 无 src）、2（src/main.ts 单应用 或 <app>/main.ts 多应用）、3（src/<app>/main.ts 多应用）。
  */
-export function getInferredBuildOutputDirs(): {
+export function getInferredBuildOutputDirs(overrideEntry?: string): {
   server: string;
   client: string;
 } {
-  const mainPath = getMainModulePath();
-  let entry = "src/main.ts";
-  if (mainPath) {
-    const cwdPath = cwd();
-    entry = relative(cwdPath, mainPath);
-    if (entry.startsWith("..")) {
-      entry = "./" + entry;
-    } else if (!entry.startsWith(".")) {
-      entry = "./" + entry;
+  let entry: string;
+  if (overrideEntry != null) {
+    entry = overrideEntry.startsWith(".") ? overrideEntry : "./" + overrideEntry;
+  } else {
+    entry = "src/main.ts";
+    const mainPath = getMainModulePath();
+    if (mainPath) {
+      const cwdPath = cwd();
+      entry = relative(cwdPath, mainPath);
+      if (entry.startsWith("..")) {
+        entry = "./" + entry;
+      } else if (!entry.startsWith(".")) {
+        entry = "./" + entry;
+      }
     }
   }
   const parts = entry.replace(/^\.\/?/, "").split("/").filter(Boolean);
   if (parts.length < 1 || parts.length > 3) {
     throw new Error(
       `[dweb] 入口路径段数必须为 1–3，当前为 ${parts.length} 段: ${entry}。` +
-        " 支持 main.ts（无 src）、src/main.ts（单应用）或 src/<应用名>/main.ts（多应用）。",
+        " 支持 main.ts（无 src）、src/main.ts（单应用）、<app>/main.ts（多应用无 src）或 src/<应用名>/main.ts（多应用）。",
     );
   }
-  const isSingleApp = parts.length === 1 || parts.length === 2;
-  const appDirName = parts.length === 3 ? parts[1]! : "";
+  // 段数 1：main.ts → 单应用
+  // 段数 2：src/main.ts → 单应用；<app>/main.ts（如 backend/main.ts）→ 多应用
+  // 段数 3：src/<app>/main.ts → 多应用
+  const isSingleApp =
+    parts.length === 1 ||
+    (parts.length === 2 && parts[0] === "src");
+  const appDirName =
+    parts.length === 3 ? parts[1]! : (parts.length === 2 && parts[0] !== "src")
+      ? parts[0]!
+      : "";
   const server = isSingleApp ? "./dist" : `./dist/${appDirName}`;
   const client = isSingleApp ? "dist/client" : `dist/${appDirName}/client`;
   return { server, client };
