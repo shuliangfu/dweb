@@ -184,7 +184,7 @@ describe("中间件系统 (middleware.ts)", () => {
       const config: AppConfig = {};
       initializeMiddleware(container, config);
 
-      const errorMiddleware = async () => {
+      const errorMiddleware = () => {
         throw new Error("测试错误");
       };
 
@@ -210,7 +210,7 @@ describe("中间件系统 (middleware.ts)", () => {
 
       let secondCalled = false;
 
-      registerMiddleware(container, async () => {
+      registerMiddleware(container, () => {
         throw new Error("第一个中间件错误");
       });
 

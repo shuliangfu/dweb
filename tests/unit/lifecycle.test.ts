@@ -102,7 +102,7 @@ describe("生命周期管理 (lifecycle.ts)", () => {
       initializeLifecycle(container, config);
 
       let hookCalled = false;
-      const hook = async () => {
+      const hook = () => {
         hookCalled = true;
       };
 
@@ -125,10 +125,10 @@ describe("生命周期管理 (lifecycle.ts)", () => {
       const callOrder: number[] = [];
 
       // 使用 started 阶段来测试
-      registerLifecycleHook(container, "started", async () => {
+      registerLifecycleHook(container, "started", () => {
         callOrder.push(1);
       });
-      registerLifecycleHook(container, "started", async () => {
+      registerLifecycleHook(container, "started", () => {
         callOrder.push(2);
       });
 
@@ -146,10 +146,10 @@ describe("生命周期管理 (lifecycle.ts)", () => {
 
       const stages: string[] = [];
 
-      registerLifecycleHook(container, "starting", async () => {
+      registerLifecycleHook(container, "starting", () => {
         stages.push("starting");
       });
-      registerLifecycleHook(container, "started", async () => {
+      registerLifecycleHook(container, "started", () => {
         stages.push("started");
       });
 
@@ -169,16 +169,16 @@ describe("生命周期管理 (lifecycle.ts)", () => {
 
       const stages: string[] = [];
 
-      lifecycleManager.on("starting", async () => {
+      lifecycleManager.on("starting", () => {
         stages.push("starting");
       });
-      lifecycleManager.on("started", async () => {
+      lifecycleManager.on("started", () => {
         stages.push("started");
       });
-      lifecycleManager.on("stopping", async () => {
+      lifecycleManager.on("stopping", () => {
         stages.push("stopping");
       });
-      lifecycleManager.on("stopped", async () => {
+      lifecycleManager.on("stopped", () => {
         stages.push("stopped");
       });
 

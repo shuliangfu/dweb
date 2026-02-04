@@ -92,6 +92,11 @@ export function initializeServer(
       // 构建器：文件变更时重新构建并返回 chunkUrl，供 HMR 无感刷新
       builder: userDevConfig.builder ?? {
         async rebuild(options?: { changedPath?: string }) {
+          // 使模块缓存失效，确保刷新页面时加载最新内容（项目内所有模块更新都能热重载）
+          if (options?.changedPath) {
+            const { invalidateModule } = await import("./module-cache.ts");
+            invalidateModule(options.changedPath);
+          }
           clearClientScriptCache();
           const result = await buildClientScript(container, config, options);
           return { outputFiles: [], chunkUrl: result.chunkUrl };
@@ -107,6 +112,7 @@ export function initializeServer(
     logger,
     onListen: serverConfig.onListen,
     onError: serverConfig.onError,
+    debug: serverConfig.debug,
     dev: devConfig,
     shutdownTimeout: serverConfig.shutdownTimeout || 10000,
   });

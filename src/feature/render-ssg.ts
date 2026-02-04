@@ -3,12 +3,12 @@
  *
  * 职责：
  * - 开发环境：使用 SSR 按需渲染，与 SSR 模式一致
- * - 生产 start：从预渲染目录（dist/static）读取 HTML 并返回
+ * - 生产 start：从预渲染目录（默认与 client 输出目录一致，如 dist/client）读取 HTML 并返回
  * - 路径约定与 @dreamer/render 的 renderSSG 输出一致：/ -> index.html，/about -> about.html（扁平）
  *
  * SSG 工作流程：
  * 1. 开发（dev）：不读文件，直接走 SSR 渲染
- * 2. 构建（build）：由 app.build() 调用 renderSSG 生成 HTML 到 outputDir
+ * 2. 构建（build）：由 app.build() 调用 renderSSG 生成 HTML 到 client 目录（或 ssg.outputDir）
  * 3. 生产（start）：从 outputDir 读取预渲染 HTML 返回
  */
 
@@ -22,6 +22,7 @@ import {
   readTextFile,
 } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
+import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
 import { createRendererSSR } from "./render-ssr.ts";
 
 /**
@@ -61,7 +62,7 @@ function pathnameToFile(pathname: string): string {
  * 创建 SSG 渲染器
  *
  * - 开发环境：始终使用 SSR 渲染，不读 dist
- * - 生产 start：从 config.render.ssg.outputDir（默认 dist/static）读取预渲染 HTML 并返回
+ * - 生产 start：从 config.render.ssg.outputDir（默认与 client 目录一致，如 dist/client）读取预渲染 HTML 并返回
  *
  * @param container 服务容器（dev 时用于 SSR，生产时未用于读文件）
  * @param router 路由实例（dev 时用于 SSR）
@@ -82,7 +83,8 @@ export function createRendererSSG(
     ssg?: RenderSSGOptions;
   };
 
-  const outputDir = renderConfig.ssg?.outputDir ?? "dist/static";
+  const outputDir = renderConfig.ssg?.outputDir ??
+    getInferredBuildOutputDirs().client;
 
   /** 开发环境下使用 SSR 按需渲染 */
   const ssrRenderer = createRendererSSR(container, router);

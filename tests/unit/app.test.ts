@@ -10,7 +10,7 @@
  */
 
 import type { Plugin } from "@dreamer/plugin";
-import { join, makeTempDir, remove } from "@dreamer/runtime-adapter";
+import { join, makeTempDir, mkdir, remove } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import { App } from "../../src/core/app.ts";
 import type { AppConfig } from "../../src/types/app.ts";
@@ -25,8 +25,8 @@ describe("App 类 (app.ts)", () => {
     testDir = await makeTempDir({ prefix: "dweb-app-test-" });
     configDir = join(testDir, "config");
 
-    // 创建配置目录
-    await Deno.mkdir(configDir, { recursive: true });
+    // 创建配置目录（使用 runtime-adapter 以兼容 Bun）
+    await mkdir(configDir, { recursive: true });
   });
 
   afterAll(async () => {
@@ -91,12 +91,12 @@ describe("App 类 (app.ts)", () => {
       // 等待配置初始化完成
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      let middlewareCalled = false;
+      let _middlewareCalled = false;
       const middleware = async (
         _ctx: unknown,
         next: () => Promise<void>,
       ) => {
-        middlewareCalled = true;
+        _middlewareCalled = true;
         await next();
       };
 

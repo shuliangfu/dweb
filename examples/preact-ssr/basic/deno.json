@@ -1,0 +1,40 @@
+{
+  "tasks": {
+    "dev": "deno run -A src/main.ts",
+    "build": "deno run -A src/main.ts --build",
+    "start": "deno run -A dist/server.js"
+  },
+  "imports": {
+    "@dreamer/dweb": "../../../src/mod.ts",
+    "@dreamer/config": "jsr:@dreamer/config@^1.0.0-beta.5",
+    "@dreamer/service": "jsr:@dreamer/service@^1.0.0-beta.4",
+    "@dreamer/middleware": "jsr:@dreamer/middleware@^1.0.0-beta.4",
+    "@dreamer/plugin": "jsr:@dreamer/plugin@^1.0.0-beta.5",
+    "@dreamer/lifecycle": "jsr:@dreamer/lifecycle@^1.0.0-beta.2",
+    "@dreamer/middlewares": "jsr:@dreamer/middlewares@1.0.0-beta.5",
+    "@dreamer/server": "jsr:@dreamer/server@1.0.0-beta.23",
+    "@dreamer/router": "jsr:@dreamer/router@^1.0.0-beta.10",
+    "@dreamer/render": "jsr:@dreamer/render@1.0.0-beta.17",
+    "@dreamer/esbuild": "jsr:@dreamer/esbuild@1.0.0-beta.55",
+    "esbuild": "npm:esbuild@^0.27.2",
+    "postcss": "npm:postcss@8.4.39",
+    "autoprefixer": "npm:autoprefixer@10.4.19",
+    "cssnano": "npm:cssnano@7.0.3",
+    "@dreamer/image": "jsr:@dreamer/image@^1.0.0-beta.3",
+    "@dreamer/logger": "jsr:@dreamer/logger@^1.0.0-beta.10",
+    "@dreamer/utils": "jsr:@dreamer/utils@^1.0.0-beta.8",
+    "@dreamer/console": "jsr:@dreamer/console@^1.0.3-beta.8",
+    "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.0.0-beta.22",
+    "@dreamer/database": "jsr:@dreamer/database@^1.0.0-beta.7",
+    "@dreamer/plugins": "jsr:@dreamer/plugins@^1.0.0-beta.14",
+    "tailwindcss": "npm:tailwindcss@^4.0.0",
+    "preact": "npm:preact@10.28.0",
+    "preact/hooks": "npm:preact@10.28.0/hooks",
+    "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
+    "preact-render-to-string": "npm:preact-render-to-string@^6.5.0"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
+  }
+}

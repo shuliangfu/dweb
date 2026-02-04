@@ -2,116 +2,173 @@
  * CSR 渲染器
  *
  * 职责：
- * - 生成 CSR 模式的 HTML 外壳
- * - 注入客户端路由配置
- * - 提供客户端脚本引用
+ * - 与 Hybrid 相同流程：加载 _app、_layout，调用 renderSSR
+ * - 区别：不渲染页面内容，仅渲染 loading 占位符（无服务端渲染）
+ * - Tailwind 插件 onResponse 可正确注入 CSS
  *
  * CSR 工作流程：
- * 1. 服务端返回空的 HTML 外壳
+ * 1. 服务端用 _app.tsx 渲染 HTML 外壳（含 loading 占位）
  * 2. 客户端加载 _client.js
  * 3. 客户端脚本根据路由渲染页面
  */
 
+import { createElement } from "preact";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import { getEnv } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
+import { loadRouteModule } from "./load-route-module.ts";
+import { getRender } from "./render.ts";
 
 /**
  * CSR 渲染选项
  */
 export interface RenderCSROptions {
-  /** 客户端脚本路径 */
   clientScript?: string;
-  /** 容器元素 ID */
   containerId?: string;
-  /** 页面标题 */
   title?: string;
-  /** 额外的 head 标签 */
   headTags?: string;
-  /** 额外的 body 标签 */
   bodyTags?: string;
 }
 
 /**
  * 创建 CSR 渲染器
  *
- * @param _container 服务容器
- * @param router 路由实例
- * @param config 应用配置
- * @returns CSR 渲染回调函数
+ * 与 Hybrid 结构一致，仅将 PageComponent 替换为 loading 占位符，不进行页面内容的服务端渲染。
  */
 export function createRendererCSR(
-  _container: ServiceContainer,
+  container: ServiceContainer,
   router: Router,
   config: AppConfig,
-): (_ctx: unknown, match: RouteMatch) => Promise<Response | null> {
-  // 获取 CSR 配置
+): (ctx: unknown, match: RouteMatch) => Promise<Response | null> {
+  const renderService = getRender(container);
   const renderConfig = (config.render || {}) as {
     engine?: "react" | "preact";
     mode?: "ssr" | "csr" | "ssg";
     csr?: RenderCSROptions;
   };
-
   const csrOptions: RenderCSROptions = {
     clientScript: "/_client.js",
     containerId: "app",
     title: config.name || "App",
     ...renderConfig.csr,
   };
-
-  // 收集所有路由信息（用于注入到客户端）
+  const engine = renderConfig.engine || "preact";
   const clientRoutes = collectClientRoutes(router);
 
-  return (_ctx: unknown, match: RouteMatch): Promise<Response | null> => {
+  /** loading 占位组件（替代 Hybrid 的 PageComponent） */
+  function LoadingPlaceholder() {
+    return createElement(
+      "div",
+      { class: "dweb-loading" },
+      createElement("div", { class: "dweb-spinner" }),
+    );
+  }
+
+  return async (_ctx: unknown, match: RouteMatch): Promise<Response | null> => {
     try {
-      // 只处理非 API 路由
-      if (match.isApi) {
-        return Promise.resolve(null);
+      if (match.isApi) return null;
+
+      const appPath = router.getSpecialFile("_app");
+      const layoutPath = router.getSpecialFile("_layout");
+
+      let AppComponent: unknown = null;
+      if (appPath) {
+        const appModule = await loadRouteModule(appPath);
+        AppComponent = appModule?.default ?? appModule?.App;
       }
 
-      // 生成 HTML 外壳
-      const html = generateCSRHtml(
-        csrOptions,
-        clientRoutes,
-        renderConfig.engine || "preact",
-      );
+      if (!AppComponent) {
+        return new Response(
+          generateFallbackCSRHtml(csrOptions, clientRoutes, engine),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "text/html; charset=utf-8",
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+            },
+          },
+        );
+      }
 
-      // 返回 HTML 响应（开发模式禁用缓存，确保 HMR 刷新后拿到最新内容）
+      let LayoutComponent: unknown = null;
+      if (layoutPath) {
+        const layoutModule = await loadRouteModule(layoutPath);
+        LayoutComponent = layoutModule?.default ?? layoutModule?.Layout;
+      }
+
+      const layouts: Array<{ component: unknown; props?: Record<string, unknown> }> = [
+        { component: AppComponent },
+      ];
+      if (LayoutComponent) layouts.push({ component: LayoutComponent });
+
+      const result = await renderService.renderSSR({
+        engine,
+        component: LoadingPlaceholder,
+        props: {},
+        layouts,
+      });
+
+      let html = result.html;
+
+      // 关键 CSS 放 head 最前，避免闪白；body 背景兜底
+      const loadingStyles = `<style id="dweb-loading-styles">
+#dweb-loading-overlay{position:fixed;inset:0;z-index:99999;display:flex;justify-content:center;align-items:center;background:#f9fafb;font-family:system-ui,sans-serif;transition:opacity .15s ease-out}
+#dweb-loading-overlay.dweb-loading-done{opacity:0;pointer-events:none}
+.dweb-spinner{width:40px;height:40px;border:3px solid #e5e7eb;border-top:3px solid #3b82f6;border-radius:50%;animation:dweb-spin .8s linear infinite}
+@keyframes dweb-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+</style>`;
+      const overlayHtml = `<div id="dweb-loading-overlay" aria-hidden="true"><div class="dweb-spinner"></div></div>`;
+      const clientConfigScript = `
+${overlayHtml}
+<script>
+  globalThis.__DWEB_ROUTES__ = ${JSON.stringify(clientRoutes)};
+  globalThis.__DWEB_ENGINE__ = "${engine}";
+  globalThis.__DWEB_CONTAINER_ID__ = "${csrOptions.containerId}";
+  globalThis.__DWEB_ON_READY__ = function(){var el=document.getElementById("dweb-loading-overlay");if(el){el.classList.add("dweb-loading-done");el.addEventListener("transitionend",function(){el.remove();var s=document.getElementById("dweb-loading-styles");if(s)s.remove()},{once:true})}};
+</script>
+<script type="module" src="${csrOptions.clientScript}"></script>
+${csrOptions.bodyTags || ""}`;
+
+      if (html.includes("<head>")) {
+        html = html.replace("<head>", `<head>${loadingStyles}`);
+      } else if (html.includes("</head>")) {
+        html = html.replace("</head>", `${loadingStyles}</head>`);
+      }
+      if (html.includes("</body>")) {
+        html = html.replace("</body>", `${clientConfigScript}</body>`);
+      } else {
+        html += clientConfigScript;
+      }
+
       const isDev =
         (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
-      return Promise.resolve(
-        new Response(html, {
-          status: 200,
+      return new Response(html, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          ...(isDev
+            ? { "Cache-Control": "no-cache, no-store, must-revalidate" }
+            : {}),
+        },
+      });
+    } catch (error) {
+      console.error("CSR 渲染错误:", error);
+      const isDev =
+        (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
+      return new Response(
+        `<!DOCTYPE html><html><head><title>500 Error</title></head><body><h1>Internal Server Error</h1><p>${
+          error instanceof Error ? error.message : String(error)
+        }</p></body></html>`,
+        {
+          status: 500,
           headers: {
             "Content-Type": "text/html; charset=utf-8",
             ...(isDev
               ? { "Cache-Control": "no-cache, no-store, must-revalidate" }
               : {}),
           },
-        }),
-      );
-    } catch (error) {
-      console.error("CSR 渲染错误:", error);
-
-      // 返回错误响应（开发模式禁用缓存）
-      const isDev =
-        (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
-      return Promise.resolve(
-        new Response(
-          `<!DOCTYPE html><html><head><title>500 Error</title></head><body><h1>Internal Server Error</h1><p>${
-            error instanceof Error ? error.message : String(error)
-          }</p></body></html>`,
-          {
-            status: 500,
-            headers: {
-              "Content-Type": "text/html; charset=utf-8",
-              ...(isDev
-                ? { "Cache-Control": "no-cache, no-store, must-revalidate" }
-                : {}),
-            },
-          },
-        ),
+        },
       );
     }
   };
@@ -145,21 +202,21 @@ function collectClientRoutes(
   return routes;
 }
 
-/**
- * 生成 CSR HTML 外壳
- *
- * @param options CSR 选项
- * @param routes 客户端路由
- * @param engine 渲染引擎
- * @returns HTML 字符串
- */
-function generateCSRHtml(
+/** 无 _app.tsx 时的降级 HTML 外壳（静态模板），与主路径一致：全屏遮罩 + __DWEB_ON_READY__ */
+function generateFallbackCSRHtml(
   options: RenderCSROptions,
   routes: Array<{ path: string; component: string; type: string }>,
   engine: "react" | "preact",
 ): string {
   const { clientScript, containerId, title, headTags, bodyTags } = options;
-
+  const loadingStyles = `<style id="dweb-loading-styles">
+#dweb-loading-overlay{position:fixed;inset:0;z-index:99999;display:flex;justify-content:center;align-items:center;background:#f9fafb;font-family:system-ui,sans-serif;transition:opacity .15s ease-out}
+#dweb-loading-overlay.dweb-loading-done{opacity:0;pointer-events:none}
+.dweb-spinner{width:40px;height:40px;border:3px solid #e5e7eb;border-top:3px solid #3b82f6;border-radius:50%;animation:dweb-spin .8s linear infinite}
+@keyframes dweb-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+</style>`;
+  const overlayHtml = `<div id="dweb-loading-overlay" aria-hidden="true"><div class="dweb-spinner"></div></div>`;
+  const onReadyScript = `globalThis.__DWEB_ON_READY__=function(){var el=document.getElementById("dweb-loading-overlay");if(el){el.classList.add("dweb-loading-done");el.addEventListener("transitionend",function(){el.remove();var s=document.getElementById("dweb-loading-styles");if(s)s.remove()},{once:true})}};`;
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -167,40 +224,16 @@ function generateCSRHtml(
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
   ${headTags || ""}
-  <style>
-    /* 加载动画 */
-    .dweb-loading {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-family: system-ui, sans-serif;
-    }
-    .dweb-spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid #3b82f6;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
+  ${loadingStyles}
 </head>
 <body>
-  <div id="${containerId}">
-    <div class="dweb-loading">
-      <div class="dweb-spinner"></div>
-    </div>
-  </div>
+  <div id="${containerId}"></div>
+  ${overlayHtml}
   <script>
-    // 注入客户端配置
     globalThis.__DWEB_ROUTES__ = ${JSON.stringify(routes)};
     globalThis.__DWEB_ENGINE__ = "${engine}";
     globalThis.__DWEB_CONTAINER_ID__ = "${containerId}";
+    ${onReadyScript}
   </script>
   <script type="module" src="${clientScript}"></script>
   ${bodyTags || ""}

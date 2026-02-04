@@ -9,6 +9,7 @@
  * 注意：测试输出文件存放在 tests/data 目录下
  */
 
+import { readdir, stat } from "@dreamer/runtime-adapter";
 import { describe, expect, it } from "@dreamer/test";
 import { initializeServiceContainer } from "../../src/core/service.ts";
 import { getBuild, initializeBuild } from "../../src/feature/build.ts";
@@ -310,14 +311,15 @@ describe("构建集成 (build.ts)", () => {
         // 执行服务端构建
         await builder.buildServer();
 
-        // 验证输出目录存在
+        // 验证输出目录存在（使用 runtime-adapter 以兼容 Bun）
         const outputDir = "./tests/data/server-output";
-        const stat = await Deno.stat(outputDir);
-        expect(stat.isDirectory).toBe(true);
+        const dirInfo = await stat(outputDir);
+        expect(dirInfo.isDirectory).toBe(true);
 
         // 验证有输出文件
         const files: string[] = [];
-        for await (const entry of Deno.readDir(outputDir)) {
+        const entries = await readdir(outputDir);
+        for (const entry of entries) {
           files.push(entry.name);
         }
         expect(files.length).toBeGreaterThan(0);
@@ -342,14 +344,15 @@ describe("构建集成 (build.ts)", () => {
         // 执行客户端构建
         await builder.buildClient();
 
-        // 验证输出目录存在
+        // 验证输出目录存在（使用 runtime-adapter 以兼容 Bun）
         const outputDir = "./tests/data/client-output";
-        const stat = await Deno.stat(outputDir);
-        expect(stat.isDirectory).toBe(true);
+        const dirInfo = await stat(outputDir);
+        expect(dirInfo.isDirectory).toBe(true);
 
         // 验证有输出文件
         const files: string[] = [];
-        for await (const entry of Deno.readDir(outputDir)) {
+        const entries = await readdir(outputDir);
+        for (const entry of entries) {
           files.push(entry.name);
         }
         expect(files.length).toBeGreaterThan(0);
@@ -378,16 +381,18 @@ describe("构建集成 (build.ts)", () => {
         // 执行完整构建
         await builder.build();
 
-        // 验证服务端输出
+        // 验证服务端输出（使用 runtime-adapter 以兼容 Bun）
         const serverFiles: string[] = [];
-        for await (const entry of Deno.readDir("./tests/data/server-output")) {
+        const serverEntries = await readdir("./tests/data/server-output");
+        for (const entry of serverEntries) {
           serverFiles.push(entry.name);
         }
         expect(serverFiles.length).toBeGreaterThan(0);
 
         // 验证客户端输出
         const clientFiles: string[] = [];
-        for await (const entry of Deno.readDir("./tests/data/client-output")) {
+        const clientEntries = await readdir("./tests/data/client-output");
+        for (const entry of clientEntries) {
           clientFiles.push(entry.name);
         }
         expect(clientFiles.length).toBeGreaterThan(0);

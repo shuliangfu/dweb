@@ -10,6 +10,7 @@
  * 此处仅测试 dweb 框架的集成正确性。CSR 由 feature 层其它模块处理，不在此服务中暴露。
  */
 
+import { cwd, join } from "@dreamer/runtime-adapter";
 import { describe, expect, it } from "@dreamer/test";
 import { initializeServiceContainer } from "../../src/core/service.ts";
 import { getRender, initializeRender } from "../../src/feature/render.ts";
@@ -131,12 +132,15 @@ describe("渲染集成 (render.ts)", () => {
       initializeRender(container, config);
       const renderService = getRender(container);
 
+      // 使用有效输出目录（runtime-adapter 兼容 Bun），空字符串会导致 mkdir 报错
+      const outputDir = join(cwd(), "tests", "data", "render-ssg-out");
+
       const result = renderService.renderSSG(
         {
           engine: "preact",
           routes: [],
-          outputDir: "",
-          loadRouteComponent: async () => ({}),
+          outputDir,
+          loadRouteComponent: () => Promise.resolve({}),
         } as Parameters<typeof renderService.renderSSG>[0],
       );
       expect(result).toBeInstanceOf(Promise);

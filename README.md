@@ -208,6 +208,10 @@ deno add jsr:@dreamer/runtime-adapter
 
 支持多个应用（如 backend、frontend、mobile），每个应用独立运行，可以共享公共代码和配置。
 
+**多应用形态约定**：
+- **后台（backend/admin）**：默认为**后台管理**形态，带页面、有 `_app.tsx`、有路由视图（如用户管理、设置页）。
+- **API 应用**：若需**纯 API**（无视图、无 `_app.tsx`，仅 `routes/api`），应单独建应用（如应用名 `api`），与「后台」区分；模板与脚手架中可选「API 应用」形态生成仅 API 路由的目录。
+
 ---
 
 ## 🚀 快速开始
@@ -278,12 +282,13 @@ my-app/
 ```
 my-app/
 ├── src/
-│   ├── backend/         # 后端应用
-│   │   ├── main.ts     # 后端入口
-│   │   ├── routes/     # 后端路由（API 路由）
-│   │   │   └── api/   # API 路由目录
-│   │   │       └── user.ts
-│   │   └── config/     # 后端配置
+│   ├── backend/         # 后台管理应用（默认带页面、_app.tsx、路由视图）
+│   │   ├── main.ts     # 后台入口
+│   │   ├── routes/     # 后台路由（页面 + 可选 api）
+│   │   │   ├── _app.tsx
+│   │   │   ├── index.tsx
+│   │   │   └── api/    # 可选 API 路由
+│   │   └── config/     # 后台配置
 │   │       ├── main.ts
 │   │       └── main.dev.ts
 │   ├── frontend/       # 前端应用
@@ -311,13 +316,17 @@ my-app/
 
 ```
 my-app/
-├── backend/            # 后端应用
+├── backend/            # 后台管理（带页面、_app.tsx）
 │   ├── main.ts
 │   ├── routes/
 │   └── config/
 ├── frontend/           # 前端应用
 │   ├── main.ts
 │   ├── routes/
+│   └── config/
+├── api/                # 可选：纯 API 应用（无 _app.tsx，仅 routes/api）
+│   ├── main.ts
+│   ├── routes/api/
 │   └── config/
 ├── mobile/             # 移动端应用（可选）
 │   ├── main.ts
@@ -465,7 +474,7 @@ await app.start();
 #### 多应用模式
 
 ```typescript
-// src/backend/main.ts
+// src/backend/main.ts（后台管理：带 _app.tsx、页面路由）
 import { App } from "jsr:@dreamer/dweb";
 import { loadCommonConfig } from "../common/config/main.ts";
 
@@ -518,6 +527,7 @@ await mobileApp.start();
 - ✅ 每个应用有自己的 main.ts 和 config
 - ✅ 可以共享公共代码和配置（common 目录）
 - ✅ 适合大型项目，前后端分离
+- ✅ 后台（backend/admin）默认带页面、_app.tsx；纯 API 无视图时单独建应用（如 `api`，仅 routes/api）
 
 #### 公共配置和代码
 

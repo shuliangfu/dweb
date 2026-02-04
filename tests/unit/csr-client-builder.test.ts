@@ -40,7 +40,11 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
   describe("createClientScriptMiddleware()", () => {
     it("应返回函数", () => {
       const container = initializeServiceContainer();
-      const config: AppConfig = { name: "test" };
+      // 显式指定 build.client.output，避免 getInferredBuildOutputDirs() 在 Bun 下因入口路径段数报错
+      const config: AppConfig = {
+        name: "test",
+        build: { client: { output: "dist/client", engine: "preact" } },
+      };
       initializeLogger(container, config);
 
       const middleware = createClientScriptMiddleware(container, config);
@@ -49,7 +53,10 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
 
     it("返回的函数应接受两个参数（ctx, next）", () => {
       const container = initializeServiceContainer();
-      const config: AppConfig = { name: "test" };
+      const config: AppConfig = {
+        name: "test",
+        build: { client: { output: "dist/client", engine: "preact" } },
+      };
       initializeLogger(container, config);
 
       const middleware = createClientScriptMiddleware(container, config);

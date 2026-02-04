@@ -14,12 +14,12 @@
  * 4. 后续导航：客户端使用 renderCSR() 渲染（SPA 体验）
  */
 
-import type { RouteMatch, Router } from "@dreamer/router";
-import type { ServiceContainer } from "@dreamer/service";
-import { getEnv } from "../core/runtime-adapter.ts";
-import type { AppConfig } from "../types/app.ts";
-import { loadRouteModule } from "./load-route-module.ts";
-import { getRender } from "./render.ts";
+import type { RouteMatch, Router } from "@dreamer/router"
+import type { ServiceContainer } from "@dreamer/service"
+import { getEnv } from "../core/runtime-adapter.ts"
+import type { AppConfig } from "../types/app.ts"
+import { loadRouteModule } from "./load-route-module.ts"
+import { getRender } from "./render.ts"
 
 /**
  * Hybrid 渲染选项

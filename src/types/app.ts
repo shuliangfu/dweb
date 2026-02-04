@@ -12,9 +12,9 @@ import type { BuilderConfig, ServerConfig } from "@dreamer/esbuild";
 import type { LifecycleStage } from "@dreamer/lifecycle";
 import type { LoggerConfig } from "@dreamer/logger";
 import type {
-  Middleware,
-  MiddlewareCondition,
-  MiddlewareContext,
+    Middleware,
+    MiddlewareCondition,
+    MiddlewareContext,
 } from "@dreamer/middleware";
 import type { Plugin, PluginManagerOptions } from "@dreamer/plugin";
 import type { Engine } from "@dreamer/render";
@@ -99,6 +99,39 @@ export interface AppConfig extends Record<string, unknown> {
   logger?: LoggerConfig;
   /** 数据库配置 */
   database?: DatabaseAppConfig;
+  /**
+   * Socket.IO 配置（可选）
+   * 配置后框架将把 Socket.IO 挂载到当前 HTTP 服务器同一端口，路径由 path 指定。
+   * 不配置 port/host，与主站共用 server.port / server.host。
+   */
+  socketIo?: SocketIOAppConfig;
+}
+
+/**
+ * Socket.IO 应用配置（挂载模式）
+ * 与 @dreamer/socket-io ServerOptions 兼容，但不包含 port/host（共用 HTTP 服务器）
+ */
+export interface SocketIOAppConfig {
+  /** Logger 实例（可选，默认使用框架 logger；传入自定义 logger 可统一日志输出） */
+  logger?: import("@dreamer/logger").Logger;
+  /** Socket.IO 路径（默认："/socket.io/"） */
+  path?: string;
+  /** 是否允许跨域（默认：true） */
+  allowCORS?: boolean;
+  /** 心跳超时（毫秒，默认：20000） */
+  pingTimeout?: number;
+  /** 心跳间隔（毫秒，默认：25000） */
+  pingInterval?: number;
+  /** 允许的传输方式（默认：["websocket", "polling"]） */
+  transports?: Array<"websocket" | "polling">;
+  /** 是否允许 HTTP 长轮询（默认：true） */
+  allowPolling?: boolean;
+  /** 轮询超时（毫秒，默认：60000） */
+  pollingTimeout?: number;
+  /** 是否启用调试日志（默认：false），开启后会在控制台输出 Socket.IO 请求路径、握手等调试信息 */
+  debug?: boolean;
+  /** 其他 @dreamer/socket-io ServerOptions 选项 */
+  [key: string]: unknown;
 }
 
 /**

@@ -9,47 +9,49 @@
  * - 提供事件机制（继承 EventEmitter）
  */
 
-import type { LifecycleHook, LifecycleStage } from "@dreamer/lifecycle";
-import type { Middleware, MiddlewareContext } from "@dreamer/middleware";
-import { ServiceContainer } from "@dreamer/service";
-import { EventEmitter } from "node:events";
+import type { LifecycleHook, LifecycleStage } from "@dreamer/lifecycle"
+import type { Middleware, MiddlewareContext } from "@dreamer/middleware"
+import { ServiceContainer } from "@dreamer/service"
+import { EventEmitter } from "node:events"
 import {
   addSignalListener,
   args,
-  basename,
   cwd,
   exists,
   exit,
   getEnv,
   join,
-  mkdir,
   realPath,
   relative,
   removeSignalListener,
   resolve,
   setEnv,
   type SignalHandler,
-  writeTextFile,
-} from "./runtime-adapter.ts";
+} from "./runtime-adapter.ts"
 
-import { requestId, requestLogger } from "@dreamer/middlewares";
-import { expandDynamicRoute } from "@dreamer/render";
-import { initializeBuild } from "../feature/build.ts";
+import { requestId, requestLogger } from "@dreamer/middlewares"
+import { expandDynamicRoute } from "@dreamer/render"
+import { initializeBuild } from "../feature/build.ts"
 import {
   buildClientScript,
   clearClientScriptCache,
   CLIENT_OUTPUT_MAIN_FILENAME,
   createClientScriptMiddleware,
   ensureClientEntryFile,
-} from "../feature/csr-client-builder.ts";
-import { loadRouteModule } from "../feature/load-route-module.ts";
-import { createRendererCSR } from "../feature/render-csr.ts";
-import { createRendererHybrid } from "../feature/render-hybrid.ts";
-import { createRendererSSG } from "../feature/render-ssg.ts";
-import { createRendererSSR } from "../feature/render-ssr.ts";
-import { getRender, initializeRender } from "../feature/render.ts";
-import { getRouter, initializeRouter } from "../feature/router.ts";
-import { getServer, initializeServer, startServer } from "../feature/server.ts";
+} from "../feature/csr-client-builder.ts"
+import { loadRouteModule } from "../feature/load-route-module.ts"
+import { createRendererCSR } from "../feature/render-csr.ts"
+import { createRendererHybrid } from "../feature/render-hybrid.ts"
+import { createRendererSSG } from "../feature/render-ssg.ts"
+import { createRendererSSR } from "../feature/render-ssr.ts"
+import { getRender, initializeRender } from "../feature/render.ts"
+import { getRouter, initializeRouter } from "../feature/router.ts"
+import { getServer, initializeServer, startServer } from "../feature/server.ts"
+import {
+  createSocketIoMiddleware,
+  getSocketIoPath,
+  initializeSocketIo,
+} from "../feature/socket-io.ts"
 import type {
   AppConfig,
   AppLifecycleHook,
@@ -57,41 +59,41 @@ import type {
   AppPlugin,
   AppStage,
   IApp,
-} from "../types/app.ts";
-import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
-import { getLogger, initializeLogger } from "../utils/logger.ts";
-import { DWEB_VERSION } from "../utils/version.ts";
+} from "../types/app.ts"
+import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts"
+import { getLogger, initializeLogger } from "../utils/logger.ts"
+import { DWEB_VERSION } from "../utils/version.ts"
 import {
   deepMergeConfig,
   getConfig,
   initializeConfigManager,
   validateConfig,
-} from "./config.ts";
+} from "./config.ts"
 import {
   connectDatabases,
   disconnectDatabases,
   initializeDatabase,
-} from "./database.ts";
-import { getLifecycleManager, initializeLifecycle } from "./lifecycle.ts";
+} from "./database.ts"
+import { getLifecycleManager, initializeLifecycle } from "./lifecycle.ts"
 import {
   getServerMiddlewares,
   initializeMiddleware,
   pluginEventsMiddleware,
   registerMiddleware,
-} from "./middleware.ts";
+} from "./middleware.ts"
 import {
   emitOnBuild,
   emitOnInit,
   emitOnShutdown,
   emitOnStart,
   emitOnStop,
-} from "./plugin-events.ts";
+} from "./plugin-events.ts"
 import {
   getPluginManager,
   initializePlugin,
   registerPlugin,
-} from "./plugin.ts";
-import { initializeServiceContainer } from "./service.ts";
+} from "./plugin.ts"
+import { initializeServiceContainer } from "./service.ts"
 
 /**
  * App 类
@@ -317,6 +319,8 @@ export class App extends EventEmitter implements IApp {
 
       // 初始化服务器
       initializeServer(this.container, mergedConfig);
+      // 若配置了 socketIo，初始化 Socket.IO 并挂载到同一 HTTP 服务器
+      initializeSocketIo(this.container, mergedConfig);
 
       // 注册客户端资源目录（多应用时为 dist/<appDir>/client/assets），供 Tailwind 等插件在生产模式解析带 hash 的 CSS 路径
       const buildCfgForAssets = (mergedConfig.build || {}) as {
@@ -352,6 +356,19 @@ export class App extends EventEmitter implements IApp {
           detailed: isProd,
         }),
       );
+
+      // Socket.IO：路径前缀匹配时委托给 Socket.IO 处理（通过中间件）
+      const socketIoPath = getSocketIoPath(this.container);
+      if (socketIoPath) {
+        server.use(
+          createSocketIoMiddleware(this.container),
+          socketIoPath,
+          "socket-io",
+        );
+        getLogger(this.container).info(
+          `Socket.IO 已挂载，路径: ${socketIoPath}`,
+        );
+      }
 
       // 将配置中注册的中间件（含 routes/_middleware.ts）应用到 HTTP 服务器，先于路由执行
       for (const reg of getServerMiddlewares(this.container)) {
@@ -811,47 +828,29 @@ export class App extends EventEmitter implements IApp {
 
     logger.info("开始构建应用...");
 
-    // 获取构建配置，基础输出目录（多应用时按入口推断，如 dist/backend，使插件产物写入 dist/<appDir>/client/）
-    const buildConfig = (config.build || {}) as { output?: string };
-    const outputDir = buildConfig.output ??
-      getInferredBuildOutputDirs().server.replace(/^\.\//, "");
-
-    // 收集插件编译结果
-    // 用于存储所有插件的编译产物
-    const pluginBuildResults: Array<{
-      type: string;
-      name: string;
-      filename: string;
-      result: string;
-      outputDir: string;
-    }> = [];
-
-    /**
-     * 监听插件编译完成事件
-     * 插件（如 tailwindcss、unocss）会触发此事件，传递编译结果
-     */
-    const onPluginBuildCompiled = (data: {
-      type: string;
-      name: string;
-      filename: string;
-      result: string;
-      outputDir: string;
-    }) => {
-      pluginBuildResults.push(data);
-      logger.debug(`收集插件编译结果: ${data.name} -> ${data.filename}`);
+    // 获取构建配置，基础输出目录（多应用时按入口推断，如 dist/backend）
+    const buildConfig = (config.build || {}) as {
+      client?: { output?: string };
     };
+    const clientOutputDir = buildConfig.client?.output ??
+      getInferredBuildOutputDirs().client;
 
-    // 注册事件监听器
-    this.on("plugin:build:compiled", onPluginBuildCompiled);
+    // 供 CSS 插件在 onBuild 中推送编译结果，用于 SSG 模板内联样式（可选）
+    const pluginBuildCssParts: string[] = [];
+    if (!this.container.has("pluginBuildCssParts")) {
+      this.container.registerSingleton(
+        "pluginBuildCssParts",
+        () => pluginBuildCssParts,
+      );
+    }
 
     try {
-      // 触发插件的 onBuild 钩子（编译 CSS 等资源）
-      // 插件会在此时触发 plugin:build:compiled 事件
+      // 触发插件的 onBuild 钩子（Tailwind/UnoCSS 等会直接写入各自的 output 目录）
       await emitOnBuild(this.container, { mode: "prod", target: "client" });
       logger.info("✓ 插件构建完成");
 
       const renderMode = (config.render as { mode?: string })?.mode ?? "ssr";
-      // SSG 模式：只生成静态 HTML，不构建客户端 JS（start 时直接读 dist/static 的 HTML）
+      // SSG 模式：只生成静态 HTML，不构建客户端 JS（start 时从 client 目录读 HTML）
       if (renderMode !== "ssg") {
         // 构建客户端脚本（生产模式，支持代码分割）
         await buildClientScript(this.container, config);
@@ -861,16 +860,7 @@ export class App extends EventEmitter implements IApp {
       // 先构建服务端（避免服务端构建时清空 dist 导致后续 SSG 产物丢失）
       await this._buildServer();
 
-      // 写入插件编译结果到输出目录
-      if (pluginBuildResults.length > 0) {
-        await this._writePluginBuildResults(
-          pluginBuildResults,
-          outputDir,
-          logger,
-        );
-      }
-
-      // SSG 模式：预渲染静态 HTML 到 outputDir/static，start 时从 dist 下读取（在服务端构建之后执行，确保不被覆盖）
+      // SSG 模式：预渲染静态 HTML 到 client 目录（与其它前端产物一致），start 时从该目录读取（在服务端构建之后执行，确保不被覆盖）
       if (renderMode === "ssg") {
         const router = getRouter(this.container);
         const renderService = getRender(this.container);
@@ -911,8 +901,7 @@ export class App extends EventEmitter implements IApp {
         if (routePaths.length === 0) {
           logger.warn("SSG: 无预渲染路径，跳过");
         } else {
-          const ssgOutputDir = renderCfg.ssg?.outputDir ??
-            join(outputDir, "static");
+          const ssgOutputDir = renderCfg.ssg?.outputDir ?? clientOutputDir;
           const absOutputDir = join(cwd(), ssgOutputDir);
           /** 按路径加载模块（支持 .ts/.tsx，用于 loadRouteComponent、loadRouteLayouts） */
           const loadModuleByPath = async (fullPath: string) => {
@@ -958,10 +947,10 @@ export class App extends EventEmitter implements IApp {
             }
             return layouts;
           };
-          // 收集插件构建产生的 CSS（如 Tailwind），注入到 SSG 模板的 <head> 中
-          const cssParts = pluginBuildResults
-            .filter((r) => r.type === "css" && r.result)
-            .map((r) => r.result as string);
+          // 使用插件在 onBuild 中推送的 CSS 内容（Tailwind/UnoCSS 等），注入到 SSG 模板的 <head> 中
+          const cssParts = this.container.tryGet<string[]>(
+            "pluginBuildCssParts",
+          ) ?? [];
           const inlineCss = cssParts.length > 0
             ? "<style>" + cssParts.join("\n") + "</style>"
             : "";
@@ -1000,8 +989,7 @@ export class App extends EventEmitter implements IApp {
       // 触发 EventEmitter 事件
       this.emit("build");
     } finally {
-      // 移除事件监听器
-      this.off("plugin:build:compiled", onPluginBuildCompiled);
+      // 无事件监听器需要移除
     }
 
     // 清理客户端脚本缓存
@@ -1012,44 +1000,6 @@ export class App extends EventEmitter implements IApp {
 
     // 构建模式不需要调用 shutdown()，直接退出
     // shutdown() 需要在 stopped 阶段调用，但 build 模式没有经历完整生命周期
-  }
-
-  /**
-   * 写入插件构建结果到输出目录
-   *
-   * @param results 插件编译结果数组
-   * @param outputDir 输出目录（如 dist）
-   * @param logger 日志实例
-   */
-  private async _writePluginBuildResults(
-    results: Array<{
-      type: string;
-      name: string;
-      filename: string;
-      result: string;
-      outputDir: string;
-    }>,
-    outputDir: string,
-    logger: ReturnType<typeof this._getLogger>,
-  ): Promise<void> {
-    for (const item of results) {
-      try {
-        // 构建完整输出路径：outputDir + item.outputDir + filename
-        // 例如：dist + client/assets + tailwind.a51ff10f.css
-        const outputPath = join(outputDir, item.outputDir);
-
-        // 确保目录存在
-        await mkdir(outputPath, { recursive: true });
-
-        // 写入文件
-        const filePath = join(outputPath, item.filename);
-        await writeTextFile(filePath, item.result);
-
-        logger.info(`✓ 插件资源写入: ${basename(filePath)}`);
-      } catch (error) {
-        logger.error(`写入插件资源失败: ${item.name}`, error);
-      }
-    }
   }
 
   /**

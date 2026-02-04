@@ -1,20 +1,46 @@
 /**
- * 框架版本号（从 deno.json 自动读取，与包根目录 deno.json 的 version 字段同步）
+ * 框架版本号与 deno.json 配置读取
+ * 从包根目录 deno.json 自动读取 version / imports，供 init 等使用
  */
 
-import { dirname, join, readFileSync } from "@dreamer/runtime-adapter";
+import {
+    dirname,
+    exists,
+    join,
+    readFileSync,
+    readTextFile,
+} from "@dreamer/runtime-adapter";
 
-/** 当前模块所在目录对应的文件系统路径 */
-const getCurrentDir = (): string => {
-  const url = new URL(import.meta.url);
-  // pathname 在 Deno 下为 /path/to/file，在 Windows 下可能为 /C:/path/to/file
-  const pathname = url.pathname;
-  return dirname(pathname);
-};
+/** 无法读取 deno.json 时的默认版本与依赖说明 */
+export const FALLBACK_DWEB_VERSION = "3.0.0-beta.1";
+export const FALLBACK_RUNTIME_ADAPTER_SPEC =
+  "jsr:@dreamer/runtime-adapter@^1.0.0-beta.23";
+export const FALLBACK_PLUGINS_VERSION = "1.0.0-beta.14";
 
-/** 包根目录的 deno.json 路径（version.ts 在 src/utils/ 下，故上两级为包根） */
+/**
+ * 将 file: URL 转为本地路径（兼容 Unix / Windows）
+ */
+export function fromFileUrl(url: string): string {
+  const u = new URL(url);
+  if (u.protocol !== "file:") return url;
+  let p = decodeURIComponent(u.pathname);
+  if (p.length >= 3 && /^\/[A-Za-z]:\//.test(p)) p = p.slice(1);
+  return p;
+}
+
+/** 当前模块所在目录对应的文件系统路径（version.ts 在 src/utils/） */
+function getCurrentDir(): string {
+  return dirname(fromFileUrl(import.meta.url));
+}
+
+/** 包根目录路径（dweb 包根，version.ts 在 src/utils/ 故上两级） */
+export function getPackageRoot(): string {
+  return join(getCurrentDir(), "..", "..");
+}
+
+/** 包根目录的 deno.json 路径 */
 const getDenoJsonPath = (): string => {
-  return join(getCurrentDir(), "..", "..", "deno.json");
+  return join(getPackageRoot(), "deno.json");
 };
 
 /**
@@ -35,3 +61,44 @@ function readVersionFromDenoJson(): string {
 
 /** 框架版本号（@dreamer/dweb 的 deno.json version） */
 export const DWEB_VERSION = readVersionFromDenoJson();
+
+/**
+ * 从 dweb deno.json 读取的配置（version + imports），供 init 生成项目时使用
+ */
+export interface DwebDenoConfig {
+  /** dweb 自身版本（deno.json version） */
+  version: string;
+  /** deno.json imports 键值对 */
+  imports: Record<string, string>;
+  /** 若在 monorepo 中读到 plugins/deno.json，则带 plugins 版本（用于 UnoCSS） */
+  pluginsVersion?: string;
+}
+
+/**
+ * 从 dweb 包根 deno.json 读取版本与 imports，若在 monorepo 则再读 ../plugins/deno.json
+ * 读取失败时返回 null，调用方使用兜底常量
+ */
+export async function loadDwebDenoJson(): Promise<DwebDenoConfig | null> {
+  try {
+    const dwebRoot = getPackageRoot();
+    const denoJsonPath = join(dwebRoot, "deno.json");
+    if (!(await exists(denoJsonPath))) return null;
+    const content = await readTextFile(denoJsonPath);
+    const parsed = JSON.parse(content) as {
+      version?: string;
+      imports?: Record<string, string>;
+    };
+    const version = parsed.version ?? FALLBACK_DWEB_VERSION;
+    const imports = parsed.imports ?? {};
+    let pluginsVersion: string | undefined;
+    const pluginsDenoPath = join(dwebRoot, "..", "plugins", "deno.json");
+    if (await exists(pluginsDenoPath)) {
+      const pluginsContent = await readTextFile(pluginsDenoPath);
+      const pluginsParsed = JSON.parse(pluginsContent) as { version?: string };
+      pluginsVersion = pluginsParsed.version;
+    }
+    return { version, imports, pluginsVersion };
+  } catch {
+    return null;
+  }
+}

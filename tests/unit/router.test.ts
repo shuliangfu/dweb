@@ -9,8 +9,11 @@
  */
 
 import {
+  chdir,
+  cwd,
   join,
   makeTempDir,
+  mkdir,
   remove,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
@@ -30,8 +33,8 @@ describe("路由集成 (router.ts)", () => {
     testDir = await makeTempDir({ prefix: "dweb-router-test-" });
     routesDir = join(testDir, "routes");
 
-    // 创建路由目录
-    await Deno.mkdir(routesDir, { recursive: true });
+    // 创建路由目录（使用 runtime-adapter 以兼容 Bun）
+    await mkdir(routesDir, { recursive: true });
 
     // 创建必需的 _app.tsx 文件
     const appFile = join(routesDir, "_app.tsx");
@@ -85,7 +88,7 @@ describe("路由集成 (router.ts)", () => {
       initializePlugin(container);
 
       const customRoutesDir = join(testDir, "custom-routes");
-      await Deno.mkdir(customRoutesDir, { recursive: true });
+      await mkdir(customRoutesDir, { recursive: true });
 
       // 创建必需的 _app.tsx 文件
       await writeTextFile(
@@ -129,7 +132,7 @@ describe("路由集成 (router.ts)", () => {
 
       // 创建默认路由目录
       const defaultRoutesDir = join(testDir, "src", "routes");
-      await Deno.mkdir(defaultRoutesDir, { recursive: true });
+      await mkdir(defaultRoutesDir, { recursive: true });
 
       // 创建必需的 _app.tsx 文件
       await writeTextFile(
@@ -137,9 +140,9 @@ describe("路由集成 (router.ts)", () => {
         "export default function App({ children }: { children: unknown }) { return children; }",
       );
 
-      // 更改工作目录到测试目录
-      const originalCwd = Deno.cwd();
-      Deno.chdir(testDir);
+      // 更改工作目录到测试目录（使用 runtime-adapter 以兼容 Bun）
+      const originalCwd = cwd();
+      chdir(testDir);
 
       try {
         const config: AppConfig = {};
@@ -147,7 +150,7 @@ describe("路由集成 (router.ts)", () => {
 
         expect(router).toBeDefined();
       } finally {
-        Deno.chdir(originalCwd);
+        chdir(originalCwd);
       }
     });
   });
@@ -182,7 +185,7 @@ describe("路由集成 (router.ts)", () => {
       initializePlugin(container);
 
       const scanRoutesDir = join(testDir, "scan-routes");
-      await Deno.mkdir(scanRoutesDir, { recursive: true });
+      await mkdir(scanRoutesDir, { recursive: true });
 
       // 创建必需的 _app.tsx 文件
       await writeTextFile(
@@ -209,7 +212,7 @@ describe("路由集成 (router.ts)", () => {
 
       // 创建路由文件
       const routesDirWithFiles = join(testDir, "routes-with-files");
-      await Deno.mkdir(routesDirWithFiles, { recursive: true });
+      await mkdir(routesDirWithFiles, { recursive: true });
 
       // 创建必需的 _app.tsx 文件
       await writeTextFile(
@@ -243,7 +246,7 @@ describe("路由集成 (router.ts)", () => {
       initializePlugin(container);
 
       const apiRoutesDir = join(testDir, "api-routes-restful");
-      await Deno.mkdir(apiRoutesDir, { recursive: true });
+      await mkdir(apiRoutesDir, { recursive: true });
       await writeTextFile(
         join(apiRoutesDir, "_app.tsx"),
         "export default function App({ children }: { children: unknown }) { return children; }",
@@ -266,7 +269,7 @@ describe("路由集成 (router.ts)", () => {
       initializePlugin(container);
 
       const apiRoutesDir = join(testDir, "api-routes-action");
-      await Deno.mkdir(apiRoutesDir, { recursive: true });
+      await mkdir(apiRoutesDir, { recursive: true });
       await writeTextFile(
         join(apiRoutesDir, "_app.tsx"),
         "export default function App({ children }: { children: unknown }) { return children; }",

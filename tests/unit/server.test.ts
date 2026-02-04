@@ -152,13 +152,13 @@ describe("服务器集成 (server.ts)", () => {
 
     it("应该支持 onListen 回调配置", () => {
       const container = createTestEnv();
-      let listenCalled = false;
+      let _listenCalled = false;
 
       const config: AppConfig = {
         server: {
           port: 3000,
           onListen: () => {
-            listenCalled = true;
+            _listenCalled = true;
           },
         },
       };

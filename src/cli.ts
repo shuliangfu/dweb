@@ -1,3 +1,5 @@
+#!/usr/bin/env -S deno run -A
+
 /**
  * CLI 命令行工具
  *
@@ -47,85 +49,13 @@ export function createCLI(): Command {
       type: "boolean",
     });
 
-  // 初始化命令
+  // 初始化命令：委托给 cmd/init.ts 的 main，子命令参数（如项目名称）透传
   cli
-    .command("init", "初始化新项目")
-    .option({
-      name: "name",
-      alias: "n",
-      description: "项目名称",
-      type: "string",
-      required: true,
-    })
-    .option({
-      name: "template",
-      alias: "t",
-      description: "项目模板",
-      type: "string",
-      defaultValue: "basic",
-    })
-    .action(async (_args: string[], options: ParsedOptions) => {
-      const name = options.name as string;
-      const template = options.template as string;
-
-      info(`正在初始化项目: ${name}`);
-      info(`使用模板: ${template}`);
-
+    .command("init", "初始化新项目（交互式选择引擎、样式等）")
+    .action(async (args: string[]) => {
       try {
-        // 获取当前工作目录
-        const currentDir = cwd();
-        const targetDir = join(currentDir, name);
-
-        // 检查目标目录是否已存在
-        try {
-          const targetStat = await stat(targetDir);
-          if (targetStat.isDirectory) {
-            error(`目录已存在: ${targetDir}`);
-            return;
-          }
-        } catch {
-          // 目录不存在，可以继续
-        }
-
-        // 确定模板目录（相对于当前文件）
-        // 使用 import.meta.url 获取当前文件路径
-        const currentFileUrl = new URL(import.meta.url);
-        const currentFilePath = currentFileUrl.pathname ||
-          currentFileUrl.href.replace(/^file:\/\//, "");
-        const templateDir = join(
-          dirname(currentFilePath),
-          "..",
-          "template",
-          template,
-        );
-
-        // 检查模板目录是否存在
-        try {
-          const templateStat = await stat(templateDir);
-          if (!templateStat.isDirectory) {
-            error(`模板路径不是目录: ${templateDir}`);
-            return;
-          }
-        } catch {
-          error(`模板目录不存在: ${templateDir}`);
-          error(`可用模板: basic, advanced`);
-          return;
-        }
-
-        // 生成项目
-        // await generateFromTemplate({
-        //   templateDir,
-        //   targetDir,
-        //   variables: {
-        //     projectName: name,
-        //     projectVersion: "1.0.0",
-        //   },
-        //   overwrite: false,
-        // });
-
-        success(`项目 ${name} 初始化完成！`);
-        info(`项目目录: ${targetDir}`);
-        info(`下一步: cd ${name} && deno install`);
+        const { main: initMain } = await import("./cmd/init.ts");
+        await initMain(args);
       } catch (err) {
         error(
           `初始化项目失败: ${err instanceof Error ? err.message : String(err)}`,

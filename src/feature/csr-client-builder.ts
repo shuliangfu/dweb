@@ -28,6 +28,7 @@ import {
   mkdir,
   readdir,
   readTextFile,
+  relative,
   resolve,
   writeTextFile,
 } from "../core/runtime-adapter.ts";
@@ -61,6 +62,19 @@ export interface BuildClientScriptOptions {
 
 /** 缓存的客户端脚本 */
 let cachedClientScript: ClientBuildResult | null = null;
+
+/**
+ * 用于 DEBUG 日志的路径：从项目根（cwd）起算的相对路径，避免输出过长绝对路径
+ */
+function pathForLog(absOrRelPath: string): string {
+  const root = cwd();
+  const resolved = resolve(absOrRelPath).replace(/\\/g, "/");
+  const rootNorm = resolve(root).replace(/\\/g, "/");
+  if (resolved === rootNorm || resolved.startsWith(rootNorm + "/")) {
+    return relative(root, resolved) || ".";
+  }
+  return absOrRelPath;
+}
 
 /**
  * 规范化路径：统一斜杠并折叠 /./ 与 /../，便于字符串比较
@@ -133,19 +147,19 @@ function getChunkFileNameForComponent(
  * @returns 是否是 chunk 文件
  */
 function isClientChunkFile(pathname: string): boolean {
-  // 只处理根路径下的 .js 文件
-  if (!pathname.startsWith("/") || !pathname.endsWith(".js")) {
+  if (!pathname.startsWith("/")) return false;
+  // 支持 .js 与 .js.map（source map）
+  const isJs = pathname.endsWith(".js");
+  const isMap = pathname.endsWith(".js.map");
+  if (!isJs && !isMap) return false;
+
+  // 排除主入口
+  if (pathname === "/_client.js" || pathname === "/_client.js.map") {
     return false;
   }
 
-  // 排除主入口文件
-  if (pathname === "/_client.js") {
-    return false;
-  }
-
-  // 匹配 esbuild 生成的 chunk 文件格式：xxx-XXXXXXXX.js
-  // 格式：/name-hash.js 或 /[name]-hash.js
-  const chunkPattern = /^\/[\w\[\]_-]+-[A-Z0-9]{8}\.js$/;
+  // 匹配 esbuild chunk：/name-hash.js 或 /name-hash.js.map
+  const chunkPattern = /^\/[\w\[\]_-]+-[A-Z0-9]{8}\.(?:js|js\.map)$/;
   return chunkPattern.test(pathname);
 }
 
@@ -357,6 +371,8 @@ export interface DwebGlobal {
   };
   __DWEB_MODE__?: "csr" | "hybrid";
   __DWEB_HMR_REFRESH__?: (options?: { chunkUrl?: string }) => void;
+  /** CSR 模式下页面渲染完成时调用，用于淡出 loading 遮罩 */
+  __DWEB_ON_READY__?: () => void;
 }
 
 // 路由组件加载器映射（动态导入，按需加载）
@@ -568,6 +584,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         layouts: skipLayouts ? undefined : layouts,
         skipLayouts,
       });
+      (g as DwebGlobal).__DWEB_ON_READY__?.();
     } catch (error) {
       console.error("页面加载错误:", error);
       renderError(containerId, error);
@@ -716,7 +733,9 @@ export async function ensureClientEntryFile(
   const hasLayout = await exists(layoutPathTsx);
 
   if (await exists(tempClientEntryPath)) {
-    logger.debug(`客户端入口已存在，跳过创建: ${tempClientEntryPath}`);
+    logger.debug(
+      `客户端入口已存在，跳过创建: ${pathForLog(tempClientEntryPath)}`,
+    );
     return tempClientEntryPath;
   }
 
@@ -729,7 +748,7 @@ export async function ensureClientEntryFile(
     hmrCssEntries,
   );
   await writeTextFile(clientDepPath, clientDepCode);
-  logger.debug(`已生成客户端依赖: ${clientDepPath}`);
+  logger.debug(`已生成客户端依赖: ${pathForLog(clientDepPath)}`);
 
   const clientEntryCode = generateStaticClientEntry(
     engine,
@@ -738,7 +757,7 @@ export async function ensureClientEntryFile(
     hmrCssEntries,
   );
   await writeTextFile(tempClientEntryPath, clientEntryCode);
-  logger.debug(`已生成客户端入口: ${tempClientEntryPath}`);
+  logger.debug(`已生成客户端入口: ${pathForLog(tempClientEntryPath)}`);
   return tempClientEntryPath;
 }
 
@@ -774,7 +793,7 @@ export async function buildClientScript(
   // 生成临时入口文件路径
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
 
-  logger.debug(`构建客户端脚本: ${tempClientEntryPath}`);
+  logger.debug(`构建客户端脚本: ${pathForLog(tempClientEntryPath)}`);
 
   try {
     // 获取运行模式（提前计算，用于决定是否写入 client.dep.tsx 避免 HMR 循环）
@@ -819,7 +838,7 @@ export async function buildClientScript(
     );
     if (!skipWritingClientDep) {
       await writeTextFile(clientDepPath, clientDepCode);
-      logger.debug(`已刷新客户端依赖: ${clientDepPath}`);
+      logger.debug(`已刷新客户端依赖: ${pathForLog(clientDepPath)}`);
     } else {
       logger.debug(
         `[HMR] 由 client 入口变更触发，跳过写入 ${CLIENT_DEP_FILENAME} 避免循环`,
@@ -836,9 +855,11 @@ export async function buildClientScript(
         hmrCssEntries,
       );
       await writeTextFile(tempClientEntryPath, clientEntryCode);
-      logger.debug(`生成客户端入口: ${tempClientEntryPath}`);
+      logger.debug(`生成客户端入口: ${pathForLog(tempClientEntryPath)}`);
     } else if (!skipWritingClientDep) {
-      logger.debug(`客户端入口已存在，跳过生成: ${tempClientEntryPath}`);
+      logger.debug(
+        `客户端入口已存在，跳过生成: ${pathForLog(tempClientEntryPath)}`,
+      );
     }
 
     // 根据渲染引擎配置 JSX
@@ -868,6 +889,7 @@ export async function buildClientScript(
             minify?: boolean;
             sourcemap?: boolean;
             external?: string[];
+            alias?: Record<string, string>;
           };
         };
       };
@@ -899,6 +921,7 @@ export async function buildClientScript(
           splitting: shouldSplit,
           format: "esm",
           external: externalList.length > 0 ? externalList : undefined,
+          alias: userBundleConfig.alias,
         },
       });
 
@@ -1138,15 +1161,53 @@ export function createClientScriptMiddleware(
   return async (ctx: any, next: () => Promise<void>): Promise<void> => {
     const pathname = ctx.url?.pathname || ctx.path || "";
 
-    // 处理主入口文件请求 /_client.js
-    if (pathname === "/_client.js") {
+    // 处理主入口及 source map：/_client.js、/_client.js.map
+    if (pathname === "/_client.js" || pathname === "/_client.js.map") {
       try {
+        const isMap = pathname === "/_client.js.map";
         // 开发模式：不允许读 dist，只从内存构建结果提供
         if (!isProd) {
           let script = getCachedClientScript();
           if (!script) {
             logger.debug("首次构建客户端脚本...");
             script = await buildClientScript(container, config);
+          }
+          if (isMap) {
+            const mapContent = script?.outputFiles?.get("_client.js.map");
+            if (mapContent) {
+              ctx.response = new Response(mapContent, {
+                status: 200,
+                headers: {
+                  "Content-Type": "application/json; charset=utf-8",
+                  "Cache-Control": "no-cache",
+                },
+              });
+            } else {
+              ctx.response = new Response("{}", {
+                status: 200,
+                headers: {
+                  "Content-Type": "application/json; charset=utf-8",
+                  "Cache-Control": "no-cache",
+                },
+              });
+            }
+            return;
+          }
+          if (!script?.code) {
+            logger.error("客户端脚本缓存为空或 code 为空", {
+              hasScript: !!script,
+              hasCode: !!script?.code,
+            });
+            ctx.response = new Response(
+              `console.error("客户端脚本未就绪，请刷新重试");`,
+              {
+                status: 500,
+                headers: {
+                  "Content-Type": "application/javascript; charset=utf-8",
+                },
+              },
+            );
+            return;
           }
           ctx.response = new Response(script.code, {
             status: 200,
@@ -1159,22 +1220,33 @@ export function createClientScriptMiddleware(
         }
 
         // 生产模式：只从预构建目录提供
-        const clientJsPath = join(
-          clientOutputPath,
-          CLIENT_OUTPUT_MAIN_FILENAME,
-        );
+        const mainFile = isMap
+          ? `${CLIENT_OUTPUT_MAIN_FILENAME}.map`
+          : CLIENT_OUTPUT_MAIN_FILENAME;
+        const clientJsPath = join(clientOutputPath, mainFile);
         if (await exists(clientJsPath)) {
           const content = await readTextFile(clientJsPath);
           ctx.response = new Response(content, {
             status: 200,
             headers: {
-              "Content-Type": "application/javascript; charset=utf-8",
+              "Content-Type": isMap
+                ? "application/json; charset=utf-8"
+                : "application/javascript; charset=utf-8",
               "Cache-Control": "public, max-age=31536000",
             },
           });
           return;
         }
-
+        if (isMap) {
+          ctx.response = new Response("{}", {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              "Cache-Control": "no-cache",
+            },
+          });
+          return;
+        }
         logger.error("预构建的客户端脚本不存在:", clientJsPath);
         ctx.response = new Response(
           `console.error("预构建的客户端脚本不存在，请先运行 build 命令");`,
@@ -1187,9 +1259,12 @@ export function createClientScriptMiddleware(
         );
         return;
       } catch (error) {
-        logger.error("提供客户端脚本失败:", error);
+        const errMsg = error instanceof Error ? error.message : String(error);
+        const errStack = error instanceof Error ? error.stack : "";
+        logger.error("提供客户端脚本失败:", undefined, error);
+        console.error("[_client.js] 提供失败:", errMsg, errStack);
         ctx.response = new Response(
-          `console.error("加载客户端脚本失败");`,
+          `console.error("加载客户端脚本失败:", ${JSON.stringify(errMsg)});`,
           {
             status: 500,
             headers: {

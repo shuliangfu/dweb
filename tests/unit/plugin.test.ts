@@ -122,12 +122,12 @@ describe("插件系统 (plugin.ts)", () => {
       const container = initializeServiceContainer();
       initializePlugin(container);
 
-      let initCalled = false;
+      let _initCalled = false;
       const plugin: Plugin = {
         name: "lifecycle-plugin",
         version: "1.0.0",
-        async onInit() {
-          initCalled = true;
+        onInit() {
+          _initCalled = true;
         },
       };
 
@@ -238,7 +238,7 @@ describe("插件系统 (plugin.ts)", () => {
       const plugin: Plugin = {
         name: "init-hook-plugin",
         version: "1.0.0",
-        async onInit() {
+        onInit() {
           initCalled = true;
         },
       };
