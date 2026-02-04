@@ -119,16 +119,31 @@ function getCliEntry(): string {
 
 /**
  * 生成无 workspace 的临时 config，避免 JSR 发布包中 examples 缺失导致的解析错误
+ * - 本地运行：从包根 deno.json 读取
+ * - JSR 运行：通过 fetch 从包根 URL 获取 deno.json
  */
 async function createTempCliConfig(): Promise<string> {
-  const root = getPackageRoot();
-  const denoJsonPath = join(root, "deno.json");
   let config: Record<string, unknown>;
-  try {
-    const raw = await readTextFile(denoJsonPath);
-    config = JSON.parse(raw) as Record<string, unknown>;
-  } catch {
-    throw new Error(`无法读取 ${denoJsonPath}`);
+  if (isLocalRun()) {
+    const root = getPackageRoot();
+    const denoJsonPath = join(root, "deno.json");
+    try {
+      const raw = await readTextFile(denoJsonPath);
+      config = JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      throw new Error(`无法读取 ${denoJsonPath}`);
+    }
+  } else {
+    // JSR 运行：deno.json 在包根，setup.ts 在 src/，故 ../deno.json
+    const denoJsonUrl = new URL("../deno.json", import.meta.url).href;
+    try {
+      const res = await fetch(denoJsonUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const raw = await res.text();
+      config = JSON.parse(raw) as Record<string, unknown>;
+    } catch (err) {
+      throw new Error(`无法读取 ${denoJsonUrl}: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
   // 移除 workspace 等仅开发时需要的字段
   const { workspace: _w, tasks: _t, publish: _p, exports: _e, lint: _l, ...cliConfig } =

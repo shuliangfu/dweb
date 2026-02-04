@@ -20,13 +20,7 @@ React。所有示例代码默认使用 Preact。
 
 ## 📦 安装
 
-### 添加依赖
-
-```bash
-deno add jsr:@dreamer/dweb
-```
-
-### 安装 dweb-cli 全局命令（可选）
+### 安装 dweb-cli 全局命令
 
 如需在任意目录使用 `dweb-cli` 命令（如 `dweb-cli init`、`dweb-cli dev` 等），可运行 setup 脚本安装全局命令：
 
