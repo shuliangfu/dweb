@@ -204,6 +204,10 @@ async function installGlobalCli(): Promise<void> {
       console.log(`  ${CLI_NAME} preview          # 预览构建结果`);
       console.log(`  ${CLI_NAME} upgrade          # 升级 dweb`);
       console.log(`  ${CLI_NAME} --help           # 查看完整帮助`);
+
+      console.log("\n查看完整帮助:");
+      console.log(`  ${CLI_NAME} --help           # 查看完整帮助`);
+      console.log("");
     } else {
       failSpinner(`安装失败，退出码: ${status.code}`);
       exit(status.code ?? 1);
