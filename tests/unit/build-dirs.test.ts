@@ -57,6 +57,34 @@ describe("getInferredBuildOutputDirs", () => {
     expect(client).toBe("dist/backend/client");
   });
 
+  it("dist/server.js（运行构建产物单应用）→ dist、dist/client", () => {
+    const { server, client } = getInferredBuildOutputDirs("dist/server.js");
+    expect(server).toBe("./dist");
+    expect(client).toBe("dist/client");
+  });
+
+  it("dist/backend/server.js（运行构建产物多应用）→ dist/backend、dist/backend/client", () => {
+    const { server, client } = getInferredBuildOutputDirs(
+      "dist/backend/server.js",
+    );
+    expect(server).toBe("./dist/backend");
+    expect(client).toBe("dist/backend/client");
+  });
+
+  it("build/server.js（用户配置 output 为 build）→ build、build/client", () => {
+    const { server, client } = getInferredBuildOutputDirs("build/server.js");
+    expect(server).toBe("./build");
+    expect(client).toBe("build/client");
+  });
+
+  it("output/frontend/server.js（用户配置 output 为 output）→ output/frontend、output/frontend/client", () => {
+    const { server, client } = getInferredBuildOutputDirs(
+      "output/frontend/server.js",
+    );
+    expect(server).toBe("./output/frontend");
+    expect(client).toBe("output/frontend/client");
+  });
+
   it("段数 4 应抛出错误", () => {
     expect(() =>
       getInferredBuildOutputDirs("src/a/b/main.ts"),

@@ -78,6 +78,22 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
         " 支持 main.ts（无 src）、src/main.ts（单应用）、<app>/main.ts（多应用无 src）或 src/<应用名>/main.ts（多应用）。",
     );
   }
+  // 特殊：运行构建产物时（<outputDir>/server.js 或 <outputDir>/<app>/server.js）
+  // outputDir 为用户配置的 build.server.output 根目录（如 dist、build、output 等）
+  // 否则 Tailwind 等插件的 clientAssetsDir 会指向错误路径，导致 findCssFile 找不到文件
+  const lastPart = parts[parts.length - 1] ?? "";
+  const isBuiltServer = lastPart === "server.js" || lastPart === "server";
+  if (isBuiltServer) {
+    const outputDir = parts[0]!; // 用户配置的输出根目录
+    const isSingleAppBuilt = parts.length === 2; // <outputDir>/server.js
+    const appDirNameBuilt = parts.length === 3 ? parts[1]! : "";
+    return {
+      server: isSingleAppBuilt ? `./${outputDir}` : `./${outputDir}/${appDirNameBuilt}`,
+      client: isSingleAppBuilt
+        ? `${outputDir}/client`
+        : `${outputDir}/${appDirNameBuilt}/client`,
+    };
+  }
   // 段数 1：main.ts → 单应用
   // 段数 2：src/main.ts → 单应用；<app>/main.ts（如 backend/main.ts）→ 多应用
   // 段数 3：src/<app>/main.ts → 多应用

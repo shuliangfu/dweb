@@ -1095,11 +1095,37 @@ export async function buildClientScript(
 }
 
 /**
+ * 从 outputFiles 中查找 chunk 内容（兼容多种 key 格式）
+ *
+ * esbuild 的 file.path 可能是绝对路径、相对路径或纯文件名；
+ * loadOutputFiles 的 key 可能是 "chunk-xxx.js" 或 "subdir/chunk-xxx.js"。
+ * 请求路径为 /chunk-xxx.js 时 fileName 为 "chunk-xxx.js"。
+ *
+ * @param outputFiles 输出文件映射
+ * @param fileName 请求的文件名（如 chunk-UUJCPQSG.js）
+ * @returns 文件内容，未找到返回 undefined
+ */
+function findChunkContent(
+  outputFiles: Map<string, string> | undefined,
+  fileName: string,
+): string | undefined {
+  if (!outputFiles) return undefined;
+  // 1. 直接按 key 查找
+  const direct = outputFiles.get(fileName);
+  if (direct) return direct;
+  // 2. 遍历查找：key 的 basename 与 fileName 匹配（兼容 path/subdir/chunk-xxx.js 等格式）
+  for (const [key, content] of outputFiles) {
+    if (basename(key) === fileName) return content;
+  }
+  return undefined;
+}
+
+/**
  * 递归加载输出目录中的所有 JS 文件到内存
  *
  * @param baseDir 基础目录
  * @param currentDir 当前目录
- * @param files 文件映射
+ * @param files 文件映射（key 使用 basename 便于与请求路径匹配）
  */
 async function loadOutputFiles(
   baseDir: string,
@@ -1117,9 +1143,8 @@ async function loadOutputFiles(
       } else if (entry.name.endsWith(".js") || entry.name.endsWith(".js.map")) {
         // 读取 JS 文件和 source map
         const content = await readTextFile(entryPath);
-        // 计算相对路径作为 key
-        const relativePath = entryPath.replace(baseDir + "/", "");
-        files.set(relativePath, content);
+        // 使用 basename 作为 key，与请求路径 /chunk-xxx.js 的 fileName 一致
+        files.set(entry.name, content);
       }
     }
   } catch {
@@ -1317,7 +1342,7 @@ export function createClientScriptMiddleware(
       // 开发模式：不允许读 dist，只从内存构建结果提供
       if (!isProd) {
         const script = getCachedClientScript();
-        const content = script?.outputFiles?.get(fileName);
+        const content = findChunkContent(script?.outputFiles, fileName);
         if (content) {
           ctx.response = new Response(content, {
             status: 200,

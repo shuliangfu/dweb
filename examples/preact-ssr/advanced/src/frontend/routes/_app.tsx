@@ -30,7 +30,7 @@ export default function App({
         <title>{title}</title>
         {/* TailwindCSS 由插件自动注入到 </head> 前 */}
       </head>
-      <body class="bg-gray-50 text-gray-900 antialiased">
+      <body class="bg-gray-100 text-gray-900 antialiased">
         <div id="app">{children}</div>
       </body>
     </html>

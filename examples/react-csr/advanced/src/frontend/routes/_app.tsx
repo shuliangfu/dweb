@@ -16,7 +16,7 @@ export default function App({ children }: AppProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>React CSR Advanced</title>
       </head>
-      <body className="bg-gray-50">
+      <body className="bg-gray-100 text-gray-900 antialiased">
         <div id="app">{children}</div>
       </body>
     </html>

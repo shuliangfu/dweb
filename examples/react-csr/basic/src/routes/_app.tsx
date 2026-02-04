@@ -31,7 +31,7 @@ export default function App({
         <meta name="description" content={description} />
         <title>{title}</title>
       </head>
-      <body className="bg-gray-50 text-gray-900 antialiased">
+      <body className="bg-gray-100 text-gray-900 antialiased">
         <div id="app">{children}</div>
       </body>
     </html>
