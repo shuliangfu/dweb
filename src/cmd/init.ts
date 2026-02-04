@@ -307,7 +307,6 @@ function getDenoJson(
     : "";
 
   return `{
-  "name": "${opts.projectName}",
   "version": "1.0.0",
   "tasks": {
 ${tasksBlock}

@@ -20,17 +20,33 @@ import type {
 import type { Plugin } from "@dreamer/plugin";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
-import { getEnv, realPath, stat } from "./runtime-adapter.ts";
+import {
+  cwd,
+  getEnv,
+  realPath,
+  resolve,
+  stat,
+} from "./runtime-adapter.ts";
 
 /**
  * 加载 TypeScript 模块配置
+ *
+ * 从 config/main.ts 等文件加载配置，应用名称（name）由此读取。
+ * 使用绝对路径 + 规范化的 file:// URL，确保 Deno/Bun 能正确解析。
  */
 async function loadModuleConfig(
   filePath: string,
 ): Promise<Record<string, unknown> | null> {
   try {
-    const resolvedPath = await realPath(filePath);
-    const module = await import(`file://${resolvedPath}`);
+    // 相对路径先解析为基于 cwd 的绝对路径
+    const absPath = filePath.startsWith("/")
+      ? filePath
+      : resolve(cwd(), filePath);
+    const resolvedPath = await realPath(absPath);
+    // 规范化 file:// URL：Windows 反斜杠转正斜杠，确保格式正确
+    const normalized = resolvedPath.replace(/\\/g, "/");
+    const fileUrl = `file://${normalized.startsWith("/") ? "" : "/"}${normalized}`;
+    const module = await import(fileUrl);
     return module.default || module;
   } catch {
     return null;
