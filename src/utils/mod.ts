@@ -35,3 +35,5 @@
  * - 提供统一的日志访问 API
  */
 export * from "./logger.ts";
+export * from "./runtime.ts";
+export * from "./config-loader.ts";

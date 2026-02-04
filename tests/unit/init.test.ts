@@ -60,11 +60,10 @@ describe("init (cmd/init.ts)", () => {
       true,
     );
 
-    // 验证 main.ts 不包含 socket-io
+    // 验证 main.ts 不包含 socket-io，单应用使用 new App() 自动加载 config
     const mainTs = await readTextFile(join(testDir, "src", "main.ts"));
     expect(mainTs).not.toContain("socket");
     expect(mainTs).not.toContain("Socket");
-    expect(mainTs).toContain("configDirectory");
     expect(mainTs).toContain("tailwindPlugin");
 
     // 验证 config 不包含 socketIo

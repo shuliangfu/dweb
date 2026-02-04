@@ -5,6 +5,7 @@
  * - 启动生产服务器（需先执行 build）
  * - 单应用：执行 deno task start
  * - 多应用：需指定应用名，执行 deno task start:xxx
+ * - 使用 loadProjectConfig 获取 config.server 等配置（端口、主机等）
  *
  * 运行方式：
  * - dweb start              # 单应用
@@ -15,7 +16,9 @@
 import { error, info } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
+import { loadProjectConfig } from "../utils/config-loader.ts";
 import { getProjectInfo } from "../utils/project.ts";
+import { getRuntime, getTaskArgs } from "../utils/runtime.ts";
 
 /**
  * start 命令主入口
@@ -47,9 +50,18 @@ export async function main(
       error("请确保项目由 dweb init 初始化，或手动添加 start task");
       return;
     }
+    try {
+      const config = await loadProjectConfig(projectRoot);
+      const serverConfig = config.server as { port?: number; host?: string } | undefined;
+      if (serverConfig?.port) {
+        info(`生产服务器端口: ${serverConfig.port}（来自 config.server）`);
+      }
+    } catch {
+      // 配置加载失败时忽略
+    }
     info("正在启动生产服务器...");
-    const cmd = createCommand("deno", {
-      args: ["task", taskName],
+    const cmd = createCommand(getRuntime(), {
+      args: getTaskArgs(taskName),
       cwd: projectRoot,
       stdin: "inherit",
       stdout: "inherit",
@@ -83,9 +95,18 @@ export async function main(
     return;
   }
 
+  try {
+    const config = await loadProjectConfig(projectRoot);
+    const serverConfig = config.server as { port?: number; host?: string } | undefined;
+    if (serverConfig?.port) {
+      info(`生产服务器端口: ${serverConfig.port}（来自 config.server）`);
+    }
+  } catch {
+    // 配置加载失败时忽略
+  }
   info(`正在启动 ${app} 生产服务器...`);
-  const cmd = createCommand("deno", {
-    args: ["task", taskName],
+  const cmd = createCommand(getRuntime(), {
+    args: getTaskArgs(taskName),
     cwd: projectRoot,
     stdin: "inherit",
     stdout: "inherit",

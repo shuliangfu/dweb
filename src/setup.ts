@@ -29,6 +29,7 @@ import {
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { getPackageRoot } from "./utils/version.ts";
+import { getRuntime } from "./utils/runtime.ts";
 
 /** CLI 全局命令名称 */
 const CLI_NAME = "dweb-cli";
@@ -121,7 +122,7 @@ async function installGlobalCli(): Promise<void> {
     args.push("--config", tempConfigPath);
     try {
       args.push(cliEntry);
-      const cmd = createCommand("deno", {
+      const cmd = createCommand(getRuntime(), {
         args,
         stdout: "piped",
         stderr: "piped",
@@ -142,7 +143,7 @@ async function installGlobalCli(): Promise<void> {
     }
   } else {
     args.push(cliEntry);
-    const cmd = createCommand("deno", {
+    const cmd = createCommand(getRuntime(), {
       args,
       stdout: "piped",
       stderr: "piped",

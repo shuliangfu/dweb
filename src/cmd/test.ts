@@ -14,6 +14,7 @@ import { error, info, success } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
 import { getProjectInfo } from "../utils/project.ts";
+import { getRuntime, getTaskArgs, getTestArgs } from "../utils/runtime.ts";
 
 /**
  * test 命令主入口
@@ -39,8 +40,8 @@ export async function main(
     const taskName = "test";
     if (projectInfo.tasks[taskName]) {
       info("正在运行测试...");
-      const cmd = createCommand("deno", {
-        args: ["task", taskName],
+      const cmd = createCommand(getRuntime(), {
+        args: getTaskArgs(taskName),
         cwd: projectRoot,
         stdin: "inherit",
         stdout: "inherit",
@@ -55,10 +56,10 @@ export async function main(
       }
       return;
     }
-    // 无 test task，直接运行 deno test
-    info("正在运行 deno test...");
-    const cmd = createCommand("deno", {
-      args: ["test", "-A", "tests"],
+    // 无 test task，直接运行测试
+    info("正在运行测试...");
+    const cmd = createCommand(getRuntime(), {
+      args: getTestArgs("tests"),
       cwd: projectRoot,
       stdin: "inherit",
       stdout: "inherit",
@@ -84,8 +85,8 @@ export async function main(
   const taskName = `test:${app}`;
   if (projectInfo.tasks[taskName]) {
     info(`正在运行 ${app} 测试...`);
-    const cmd = createCommand("deno", {
-      args: ["task", taskName],
+    const cmd = createCommand(getRuntime(), {
+      args: getTaskArgs(taskName),
       cwd: projectRoot,
       stdin: "inherit",
       stdout: "inherit",

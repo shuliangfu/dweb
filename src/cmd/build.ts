@@ -5,6 +5,7 @@
  * - 构建生产版本
  * - 单应用：执行 deno task build
  * - 多应用：可指定应用名构建单个，或不指定则构建全部
+ * - 使用 loadProjectConfig 获取 config.build 等配置
  *
  * 运行方式：
  * - dweb build              # 单应用 或 多应用构建全部
@@ -15,7 +16,9 @@
 import { error, info, success } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
+import { loadProjectConfig } from "../utils/config-loader.ts";
 import { getProjectInfo } from "../utils/project.ts";
+import { getRuntime, getTaskArgs } from "../utils/runtime.ts";
 
 /**
  * build 命令主入口
@@ -47,9 +50,18 @@ export async function main(
       error("请确保项目由 dweb init 初始化，或手动添加 build task");
       return;
     }
+    try {
+      const config = await loadProjectConfig(projectRoot);
+      const buildConfig = config.build as { server?: { output?: string } } | undefined;
+      if (buildConfig?.server?.output) {
+        info(`构建输出目录: ${buildConfig.server.output}（来自 config.build）`);
+      }
+    } catch {
+      // 配置加载失败时忽略
+    }
     info("正在构建...");
-    const cmd = createCommand("deno", {
-      args: ["task", taskName],
+    const cmd = createCommand(getRuntime(), {
+      args: getTaskArgs(taskName),
       cwd: projectRoot,
       stdin: "inherit",
       stdout: "inherit",
@@ -87,8 +99,8 @@ export async function main(
       continue;
     }
     info(`正在构建 ${appName}...`);
-    const cmd = createCommand("deno", {
-      args: ["task", taskName],
+    const cmd = createCommand(getRuntime(), {
+      args: getTaskArgs(taskName),
       cwd: projectRoot,
       stdin: "inherit",
       stdout: "inherit",

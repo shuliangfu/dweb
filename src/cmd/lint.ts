@@ -13,6 +13,7 @@ import { error, info, success } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
 import { getProjectInfo } from "../utils/project.ts";
+import { getRuntime, getLintArgs } from "../utils/runtime.ts";
 
 /**
  * lint 命令主入口
@@ -35,8 +36,8 @@ export async function main(
   const taskName = "lint";
   if (projectInfo.tasks[taskName]) {
     info("正在运行代码检查...");
-    const cmd = createCommand("deno", {
-      args: ["task", taskName],
+    const cmd = createCommand(getRuntime(), {
+      args: getLintArgs(true),
       cwd: projectRoot,
       stdin: "inherit",
       stdout: "inherit",
@@ -52,10 +53,10 @@ export async function main(
     return;
   }
 
-  // 无 lint task，直接运行 deno lint
-  info("正在运行 deno lint...");
-  const cmd = createCommand("deno", {
-    args: ["lint"],
+  // 无 lint task，直接运行 lint
+  info("正在运行代码检查...");
+  const cmd = createCommand(getRuntime(), {
+    args: getLintArgs(false),
     cwd: projectRoot,
     stdin: "inherit",
     stdout: "inherit",

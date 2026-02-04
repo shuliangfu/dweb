@@ -4,23 +4,27 @@
  * 职责：
  * - 根据类型和名称生成 route 页面、api 接口、model 模型、service 服务
  * - 使用 runtime-adapter 保证 Deno/Bun 兼容
+ * - 支持 useSrc 检测及多应用 --app 选项
  *
  * 运行方式：
  * - dweb-cli generate -t service -n User
  * - dweb-cli g -t route -n about
  * - dweb-cli g -t api -n users
+ * - dweb-cli g -t route -n about -a frontend  # 多应用时指定应用
  */
 
 import { error, info, success } from "@dreamer/console";
 import {
   cwd,
   dirname,
+  exists,
   join,
   mkdir,
   stat,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
+import { getProjectInfo } from "../utils/project.ts";
 
 /**
  * 生成命令选项
@@ -30,26 +34,61 @@ export interface GenerateOptions {
   type: string;
   /** 名称 */
   name: string;
+  /** 应用名（多应用时指定，如 backend、frontend） */
+  app?: string;
+}
+
+/**
+ * 检测项目是否使用 src 目录
+ * 优先检查 src/routes 或 src/main.ts 是否存在
+ */
+async function detectUseSrc(projectRoot: string): Promise<boolean> {
+  const srcRoutes = join(projectRoot, "src", "routes");
+  const srcMain = join(projectRoot, "src", "main.ts");
+  const rootRoutes = join(projectRoot, "routes");
+  if (await exists(srcRoutes) || await exists(srcMain)) {
+    return true;
+  }
+  if (await exists(rootRoutes)) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * 获取生成目标的基础路径（含 src 或应用目录）
+ */
+async function getGenerateBasePath(
+  projectRoot: string,
+  app?: string,
+): Promise<string> {
+  const useSrc = await detectUseSrc(projectRoot);
+  const prefix = useSrc ? "src" : "";
+  if (app) {
+    return join(projectRoot, prefix, app);
+  }
+  return join(projectRoot, prefix);
 }
 
 /**
  * 根据类型和名称生成代码内容
  *
+ * @param basePath 基础路径（项目根下的 src 或 src/appName 或 appName）
  * @param type 生成类型
  * @param name 名称
  * @returns { targetPath, content } 目标路径和文件内容
  */
 function getGenerateContent(
+  basePath: string,
   type: string,
   name: string,
 ): { targetPath: string; content: string } {
-  const currentDir = cwd();
   const typeLower = type.toLowerCase();
 
   switch (typeLower) {
     case "service":
     case "s": {
-      const targetPath = join(currentDir, "src", "services", `${name}.ts`);
+      const targetPath = join(basePath, "services", `${name}.ts`);
       const content = `/**
  * ${name} 服务
  */
@@ -67,33 +106,34 @@ export class ${name}Service {
     }
     case "api":
     case "a": {
-      const targetPath = join(currentDir, "src", "routes", "api", `${name}.ts`);
+      const targetPath = join(basePath, "routes", "api", `${name}.ts`);
       const content = `/**
  * ${name} API 接口
+ * 使用 Web 标准 Request/Response，与 @dreamer/router 的 apiMode: "restful" 兼容
  */
 
-import type { Request, Response } from "@dreamer/server";
+import { json } from "@dreamer/router";
 
 /**
  * GET /api/${name}
  */
-export async function GET(req: Request, res: Response) {
-  return res.json({ message: "Hello from ${name} API" });
+export async function GET(_request: Request) {
+  return json({ message: "Hello from ${name} API" });
 }
 
 /**
  * POST /api/${name}
  */
-export async function POST(req: Request, res: Response) {
-  const body = await req.json();
-  return res.json({ message: "Created", data: body });
+export async function POST(request: Request) {
+  const body = await request.json();
+  return json({ message: "Created", data: body });
 }
 `;
       return { targetPath, content };
     }
     case "model":
     case "m": {
-      const targetPath = join(currentDir, "src", "models", `${name}.ts`);
+      const targetPath = join(basePath, "models", `${name}.ts`);
       const content = `/**
  * ${name} 数据模型
  */
@@ -112,7 +152,7 @@ export class ${name}Model {
     }
     case "route":
     case "r": {
-      const targetPath = join(currentDir, "src", "routes", `${name}.tsx`);
+      const targetPath = join(basePath, "routes", `${name}.tsx`);
       const content = `/**
  * ${name} 路由页面
  */
@@ -138,7 +178,7 @@ export default function ${name}Page() {
  * 生成命令主入口
  *
  * @param _args 命令行参数（未使用）
- * @param options 解析后的选项，需包含 type、name
+ * @param options 解析后的选项，需包含 type、name，可选 app
  */
 export async function main(
   _args: string[],
@@ -146,6 +186,7 @@ export async function main(
 ): Promise<void> {
   const type = options.type as string;
   const name = options.name as string;
+  const app = options.app as string | undefined;
 
   if (!type || !name) {
     error("请指定 --type 和 --name 参数");
@@ -153,10 +194,20 @@ export async function main(
     return;
   }
 
-  info(`正在生成 ${type}: ${name}`);
+  const projectRoot = cwd();
+  const projectInfo = await getProjectInfo(projectRoot);
+
+  if (app && projectInfo?.mode === "multi" && !projectInfo.appNames.includes(app)) {
+    error(`未找到应用 "${app}"`);
+    error(`可用应用: ${projectInfo.appNames.join(", ")}`);
+    return;
+  }
+
+  info(`正在生成 ${type}: ${name}${app ? ` (应用: ${app})` : ""}`);
 
   try {
-    const { targetPath, content } = getGenerateContent(type, name);
+    const basePath = await getGenerateBasePath(projectRoot, app);
+    const { targetPath, content } = getGenerateContent(basePath, type, name);
 
     // 确保目录存在
     await mkdir(dirname(targetPath), { recursive: true });

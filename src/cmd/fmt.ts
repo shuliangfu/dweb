@@ -13,6 +13,7 @@ import { error, info, success } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
 import { getProjectInfo } from "../utils/project.ts";
+import { getRuntime, getFmtArgs } from "../utils/runtime.ts";
 
 /**
  * fmt 命令主入口
@@ -35,8 +36,8 @@ export async function main(
   const taskName = "fmt";
   if (projectInfo.tasks[taskName]) {
     info("正在运行代码格式化...");
-    const cmd = createCommand("deno", {
-      args: ["task", taskName],
+    const cmd = createCommand(getRuntime(), {
+      args: getFmtArgs(true),
       cwd: projectRoot,
       stdin: "inherit",
       stdout: "inherit",
@@ -52,10 +53,10 @@ export async function main(
     return;
   }
 
-  // 无 fmt task，直接运行 deno fmt
-  info("正在运行 deno fmt...");
-  const cmd = createCommand("deno", {
-    args: ["fmt"],
+  // 无 fmt task，直接运行 fmt
+  info("正在运行代码格式化...");
+  const cmd = createCommand(getRuntime(), {
+    args: getFmtArgs(false),
     cwd: projectRoot,
     stdin: "inherit",
     stdout: "inherit",

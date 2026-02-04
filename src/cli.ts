@@ -152,6 +152,13 @@ export function createCLI(version: string): Command {
       type: "number",
       requiresValue: true,
     })
+    .option({
+      name: "app",
+      alias: "a",
+      description: "应用名（多应用时指定）",
+      type: "string",
+      requiresValue: true,
+    })
     .action(async (args: string[], options: ParsedOptions) => {
       try {
         const { main: previewMain } = await import("./cmd/preview.ts");
@@ -183,6 +190,13 @@ export function createCLI(version: string): Command {
       description: "名称",
       type: "string",
       required: true,
+      requiresValue: true,
+    })
+    .option({
+      name: "app",
+      alias: "a",
+      description: "应用名（多应用时指定，如 backend、frontend）",
+      type: "string",
       requiresValue: true,
     })
     .action(async (args: string[], options: ParsedOptions) => {
@@ -285,7 +299,20 @@ export function createCLI(version: string): Command {
     .option({
       name: "name",
       alias: "n",
-      description: "迁移名称（用于 create）",
+      description: "迁移名称（create 必填，down 必填）",
+      type: "string",
+      requiresValue: true,
+    })
+    .option({
+      name: "db-type",
+      description: "数据库类型（create 时可选：sql、mongodb，默认 sql）",
+      type: "string",
+      requiresValue: true,
+    })
+    .option({
+      name: "count",
+      alias: "c",
+      description: "回滚数量（down 时，配合 MigrationManager 使用，默认 1）",
       type: "string",
       requiresValue: true,
     })

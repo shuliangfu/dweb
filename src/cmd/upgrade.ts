@@ -21,6 +21,7 @@ import {
 import { createCommand } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
 import { getDwebVersion } from "../utils/version.ts";
+import { getRuntime, getRunArgs } from "../utils/runtime.ts";
 
 const JSR_PACKAGE_URL = "https://jsr.io/@dreamer/dweb/meta.json";
 
@@ -89,8 +90,8 @@ export async function main(
   success(`发现新版本: ${latest}`);
 
   const setupSpec = `jsr:@dreamer/dweb@${latest}/setup`;
-  const cmd = createCommand("deno", {
-    args: ["run", "-A", setupSpec],
+  const cmd = createCommand(getRuntime(), {
+    args: getRunArgs(setupSpec),
     stdout: "piped",
     stderr: "piped",
     stdin: "inherit",
