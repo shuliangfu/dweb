@@ -5,13 +5,13 @@
  * - 数据库相关子命令：migrate、seed、status
  * - 使用 runtime-adapter 保证 Deno/Bun 兼容
  * - migrate create 生成符合 @dreamer/database Migration 接口的迁移文件
- * - migrate up/down 优先执行 deno task，否则提示配置
+ * - migrate up/down 优先使用 @dreamer/database MigrationManager（需 config.database.default），否则执行 task
  *
  * 运行方式：
  * - dweb db migrate -a create -n add_users
  * - dweb db migrate -a create -n add_users --db-type mongodb
  * - dweb db migrate -a up
- * - dweb db migrate -a down -n add_users
+ * - dweb db migrate -a down -c 1（MigrationManager 回滚数量）或 -n add_users（task 方式）
  * - dweb db seed
  * - dweb db status
  */
@@ -204,7 +204,7 @@ export async function migrate(
           success("数据库迁移完成");
           return;
         }
-      } catch (_err) {
+      } catch {
         // 配置加载失败或数据库连接失败，回退到 task
       }
 
@@ -262,7 +262,7 @@ export async function migrate(
           success("迁移回滚完成");
           return;
         }
-      } catch (_err) {
+      } catch {
         // 配置加载失败或数据库连接失败，回退到 task
       }
 
@@ -422,7 +422,7 @@ export async function status(
       info("回滚迁移: dweb db migrate -a down -c <数量>（或 -n <名称> 配合 task）");
       return;
     }
-  } catch (_err) {
+  } catch {
     // 配置加载失败或数据库连接失败，回退到仅列出文件
   }
 
