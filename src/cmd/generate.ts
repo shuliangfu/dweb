@@ -6,10 +6,13 @@
  * - 使用 runtime-adapter 保证 Deno/Bun 兼容
  * - 支持 useSrc 检测及多应用 --app 选项
  *
+ * model 多应用规则：有 common 目录则放 common/models，无 common 则放应用 models（无则创建）
+ *
  * 运行方式：
  * - dweb-cli generate -t service -n User
  * - dweb-cli g -t route -n about
  * - dweb-cli g -t api -n users
+ * - dweb-cli g -t model -n User -a frontend  # 多应用：有 common 放 common/models
  * - dweb-cli g -t route -n about -a frontend  # 多应用时指定应用
  */
 
@@ -57,6 +60,23 @@ async function detectUseSrc(projectRoot: string): Promise<boolean> {
 }
 
 /**
+ * 检测 common 目录是否存在
+ *
+ * @param projectRoot 项目根目录
+ * @param useSrc 是否使用 src 目录
+ * @returns common 目录是否存在
+ */
+async function detectCommonExists(
+  projectRoot: string,
+  useSrc: boolean,
+): Promise<boolean> {
+  const commonPath = useSrc
+    ? join(projectRoot, "src", "common")
+    : join(projectRoot, "common");
+  return await exists(commonPath);
+}
+
+/**
  * 获取生成目标的基础路径（含 src 或应用目录）
  */
 async function getGenerateBasePath(
@@ -69,6 +89,39 @@ async function getGenerateBasePath(
     return join(projectRoot, prefix, app);
   }
   return join(projectRoot, prefix);
+}
+
+/**
+ * 获取 model 类型在多应用模式下的基础路径
+ *
+ * 规则：有 common 则放在 common/models；无 common 则放在应用下的 models（无则创建）
+ *
+ * @param projectRoot 项目根目录
+ * @param app 应用名（多应用时指定）
+ * @param projectInfo 项目信息
+ * @returns model 的基础路径
+ */
+async function getModelBasePathForMultiApp(
+  projectRoot: string,
+  app: string | undefined,
+  projectInfo: { mode: string; appNames: string[] } | null,
+): Promise<string> {
+  const useSrc = await detectUseSrc(projectRoot);
+  const prefix = useSrc ? "src" : "";
+
+  // 多应用模式下
+  if (projectInfo?.mode === "multi") {
+    const hasCommon = await detectCommonExists(projectRoot, useSrc);
+    if (hasCommon) {
+      return join(projectRoot, prefix, "common");
+    }
+    // 无 common：使用应用目录（指定了 app 用 app，否则用第一个应用）
+    const targetApp = app ?? projectInfo.appNames[0];
+    return join(projectRoot, prefix, targetApp);
+  }
+
+  // 单应用：使用默认逻辑
+  return getGenerateBasePath(projectRoot, app);
 }
 
 /**
@@ -213,10 +266,17 @@ export async function main(
   info(`正在生成 ${type}: ${name}${app ? ` (应用: ${app})` : ""}`);
 
   try {
-    const basePath = await getGenerateBasePath(projectRoot, app);
+    const typeLower = type.toLowerCase();
+    const isModel = typeLower === "model" || typeLower === "m";
+
+    // model 类型在多应用模式下：有 common 放 common/models，无 common 放应用 models（无则创建）
+    const basePath = isModel && projectInfo
+      ? await getModelBasePathForMultiApp(projectRoot, app, projectInfo)
+      : await getGenerateBasePath(projectRoot, app);
+
     const { targetPath, content } = getGenerateContent(basePath, type, name);
 
-    // 确保目录存在
+    // 确保目录存在（含 models，无则创建）
     await ensureDir(dirname(targetPath));
 
     // 检查文件是否已存在

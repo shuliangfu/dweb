@@ -65,6 +65,7 @@ import { getDwebVersion } from "../utils/version.ts";
 import {
   deepMergeConfig,
   getConfig,
+  getConfigManager,
   initializeConfigManager,
   validateConfig,
 } from "./config.ts";
@@ -1003,6 +1004,9 @@ export class App extends EventEmitter implements IApp {
     // 清理生命周期监听器（防止内存泄漏）
     this._removeLifecycleListeners();
 
+    // 停止 ConfigManager 文件监听（build 模式不经历 shutdown，需单独清理）
+    this._stopConfigWatching();
+
     // 构建模式不需要调用 shutdown()，直接退出
     // shutdown() 需要在 stopped 阶段调用，但 build 模式没有经历完整生命周期
   }
@@ -1198,6 +1202,20 @@ export class App extends EventEmitter implements IApp {
   }
 
   /**
+   * 停止 ConfigManager 的文件监听（hotReload 时创建，防止内存泄漏）
+   */
+  private _stopConfigWatching(): void {
+    try {
+      if (this.container.has("configManager")) {
+        const configManager = getConfigManager(this.container);
+        configManager.stopWatching();
+      }
+    } catch {
+      // 配置管理器可能未初始化，忽略错误
+    }
+  }
+
+  /**
    * 移除生命周期监听器（防止内存泄漏）
    */
   private _removeLifecycleListeners(): void {
@@ -1241,6 +1259,9 @@ export class App extends EventEmitter implements IApp {
 
     // 移除生命周期监听器（防止内存泄漏）
     this._removeLifecycleListeners();
+
+    // 停止 ConfigManager 的文件监听（hotReload 时创建，防止内存泄漏）
+    this._stopConfigWatching();
 
     // 清理客户端脚本缓存（防止内存泄漏）
     clearClientScriptCache();

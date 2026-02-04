@@ -25,6 +25,7 @@ import {
 import {
   args,
   basename,
+  createCommand,
   cwd,
   ensureDir,
   exists,
@@ -1375,6 +1376,34 @@ export async function main(
   separator();
   info("正在生成项目...");
   await generate(opts);
+
+  // 先缓存依赖，再自动执行 deno approve-scripts，避免后续 deno task dev 出现 build scripts 警告
+  try {
+    info("正在缓存依赖并执行 deno approve-scripts...");
+    const cacheCmd = createCommand("deno", {
+      args: ["cache", "."],
+      cwd: opts.targetDir,
+      stdout: "null",
+      stderr: "null",
+    });
+    const cacheChild = cacheCmd.spawn();
+    await cacheChild.status;
+
+    const approveCmd = createCommand("deno", {
+      args: ["approve-scripts"],
+      cwd: opts.targetDir,
+      stdout: "inherit",
+      stderr: "inherit",
+    });
+    const approveChild = approveCmd.spawn();
+    const status = await approveChild.status;
+    if (status.success) {
+      info("已自动执行 deno approve-scripts");
+    }
+  } catch {
+    // 忽略（如 deno 未安装或非 Deno 环境），项目已创建成功
+  }
+
   separator();
   success("项目已创建");
   info(`项目目录: ${opts.targetDir}`);
