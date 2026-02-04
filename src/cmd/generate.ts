@@ -23,6 +23,7 @@ import {
   stat,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
+import { kebabCase, pascalCase } from "@dreamer/utils/string";
 import type { ParsedOptions } from "../feature/command.ts";
 import { getProjectInfo } from "../utils/project.ts";
 
@@ -73,9 +74,13 @@ async function getGenerateBasePath(
 /**
  * 根据类型和名称生成代码内容
  *
+ * 使用 @dreamer/utils 的 pascalCase、kebabCase 规范化 name：
+ * - pascalCase：类名、接口名、组件名（如 UserOrdersService）
+ * - kebabCase：文件路径、URL 路径（如 user-orders.ts、/api/user-orders）
+ *
  * @param basePath 基础路径（项目根下的 src 或 src/appName 或 appName）
  * @param type 生成类型
- * @param name 名称
+ * @param name 名称（支持 user_orders、user-orders、UserOrders 等格式）
  * @returns { targetPath, content } 目标路径和文件内容
  */
 function getGenerateContent(
@@ -84,21 +89,23 @@ function getGenerateContent(
   name: string,
 ): { targetPath: string; content: string } {
   const typeLower = type.toLowerCase();
+  const namePascal = pascalCase(name);
+  const nameKebab = kebabCase(name);
 
   switch (typeLower) {
     case "service":
     case "s": {
-      const targetPath = join(basePath, "services", `${name}.ts`);
+      const targetPath = join(basePath, "services", `${nameKebab}.ts`);
       const content = `/**
- * ${name} 服务
+ * ${namePascal} 服务
  */
 
-export class ${name}Service {
+export class ${namePascal}Service {
   /**
    * 示例方法
    */
   async example(): Promise<string> {
-    return "Hello from ${name}Service";
+    return "Hello from ${namePascal}Service";
   }
 }
 `;
@@ -106,23 +113,23 @@ export class ${name}Service {
     }
     case "api":
     case "a": {
-      const targetPath = join(basePath, "routes", "api", `${name}.ts`);
+      const targetPath = join(basePath, "routes", "api", `${nameKebab}.ts`);
       const content = `/**
- * ${name} API 接口
+ * ${namePascal} API 接口
  * 使用 Web 标准 Request/Response，与 @dreamer/router 的 apiMode: "restful" 兼容
  */
 
 import { json } from "@dreamer/router";
 
 /**
- * GET /api/${name}
+ * GET /api/${nameKebab}
  */
 export async function GET(_request: Request) {
-  return json({ message: "Hello from ${name} API" });
+  return json({ message: "Hello from ${namePascal} API" });
 }
 
 /**
- * POST /api/${name}
+ * POST /api/${nameKebab}
  */
 export async function POST(request: Request) {
   const body = await request.json();
@@ -133,18 +140,18 @@ export async function POST(request: Request) {
     }
     case "model":
     case "m": {
-      const targetPath = join(basePath, "models", `${name}.ts`);
+      const targetPath = join(basePath, "models", `${nameKebab}.ts`);
       const content = `/**
- * ${name} 数据模型
+ * ${namePascal} 数据模型
  */
 
 // TODO: 实现数据模型
-export interface ${name} {
+export interface ${namePascal} {
   id: string;
   // 添加其他字段
 }
 
-export class ${name}Model {
+export class ${namePascal}Model {
   // TODO: 实现模型方法
 }
 `;
@@ -152,16 +159,16 @@ export class ${name}Model {
     }
     case "route":
     case "r": {
-      const targetPath = join(basePath, "routes", `${name}.tsx`);
+      const targetPath = join(basePath, "routes", `${nameKebab}.tsx`);
       const content = `/**
- * ${name} 路由页面
+ * ${namePascal} 路由页面
  */
 
-export default function ${name}Page() {
+export default function ${namePascal}Page() {
   return (
     <div>
-      <h1>${name}</h1>
-      <p>这是 ${name} 页面</p>
+      <h1>${namePascal}</h1>
+      <p>这是 ${namePascal} 页面</p>
     </div>
   );
 }
