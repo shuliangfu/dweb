@@ -12,32 +12,32 @@
  */
 
 import {
-    confirm,
-    error as consoleError,
-    info,
-    input,
-    interactiveMenu,
-    prompt,
-    separator,
-    success,
-    title,
+  confirm,
+  error as consoleError,
+  info,
+  input,
+  interactiveMenu,
+  prompt,
+  separator,
+  success,
+  title,
 } from "@dreamer/console";
 import {
-    args,
-    basename,
-    cwd,
-    ensureDir,
-    exists,
-    exit,
-    join,
-    resolve,
-    writeTextFile,
+  args,
+  basename,
+  cwd,
+  ensureDir,
+  exists,
+  exit,
+  join,
+  resolve,
+  writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { fetchDreamerVersions } from "../utils/jsr-versions.ts";
 import {
-    type DwebDenoConfig,
-    FALLBACK_DWEB_VERSION,
-    loadDwebDenoJson,
+  type DwebDenoConfig,
+  FALLBACK_DWEB_VERSION,
+  loadDwebDenoJson,
 } from "../utils/version.ts";
 
 /** 从 version 导出，供依赖 init 的调用方使用 */
@@ -328,7 +328,9 @@ ${tasksBlock}
   },
   "imports": {
 ${dirAliasesBlock}${dreamerImports},
-${tailwindNpmImports ? `\n${tailwindNpmImports},\n` : ""}${unocssNpmImports ? `${unocssNpmImports},\n` : ""}
+${tailwindNpmImports ? `\n${tailwindNpmImports},\n` : ""}${
+    unocssNpmImports ? `${unocssNpmImports},\n` : ""
+  }
 ${otherImports}
   },
   "nodeModulesDir": "auto",
@@ -412,7 +414,6 @@ app.start();
 function getMainTsMulti(
   opts: InitOptions,
   appName: string,
-  port: number,
 ): string {
   const prefix = opts.useSrc ? "src/" : "";
   const configDir = `./${prefix}${appName}/config`;
@@ -474,7 +475,6 @@ const app = new App({
 ${stylePluginBlock}
 ${staticPluginBlock}
 
-console.log(\`🚀 ${appName} 启动: http://localhost:${port}\`);
 app.start();
 `;
 }
@@ -606,24 +606,21 @@ export default function App({
 `;
 }
 
-function getLayoutTsx(opts: InitOptions): string {
+function getLayoutTsx(opts: InitOptions, appName?: string): string {
   const isPreact = opts.engine === "preact";
-  const engineName = opts.engine === "preact" ? "Preact" : "React";
+  const appDisplayName = appName ?? opts.projectName;
   // UnoCSS/无样式 无 primary 主题色，用 indigo；Tailwind v4 用 @theme 定义的 primary
-  const accentClass =
-    opts.style === "tailwind"
-      ? "text-primary-600 hover:text-primary-700"
-      : "text-indigo-600 hover:text-indigo-700";
-  const linkClass =
-    opts.style === "tailwind"
-      ? "text-gray-600 hover:text-primary-600 transition-colors"
-      : "text-gray-600 hover:text-indigo-600 transition-colors";
-  const styleComment =
-    opts.style === "unocss"
-      ? "UnoCSS"
-      : opts.style === "tailwind"
-      ? "Tailwind CSS v4"
-      : "通用样式";
+  const accentClass = opts.style === "tailwind"
+    ? "text-primary-600 hover:text-primary-700"
+    : "text-indigo-600 hover:text-indigo-700";
+  const linkClass = opts.style === "tailwind"
+    ? "text-gray-600 hover:text-primary-600 transition-colors"
+    : "text-gray-600 hover:text-indigo-600 transition-colors";
+  const styleComment = opts.style === "unocss"
+    ? "UnoCSS"
+    : opts.style === "tailwind"
+    ? "Tailwind CSS v4"
+    : "通用样式";
   const importAndProps = isPreact
     ? `import type { ComponentChildren } from "preact";
 
@@ -652,7 +649,7 @@ export default function Layout({ children }: LayoutProps) {
               href="/"
               className="text-xl font-bold ${accentClass}"
             >
-              ${engineName}
+              ${appDisplayName}
             </a>
             <ul className="flex items-center gap-6 list-none m-0 p-0">
               <li>
@@ -706,10 +703,9 @@ export default function Layout({ children }: LayoutProps) {
 function getIndexTsx(opts: InitOptions): string {
   const engineName = opts.engine === "preact" ? "Preact" : "React";
   // UnoCSS/无样式 使用 bg-gradient-to-br；Tailwind v4 使用 bg-linear-to-br
-  const heroGradient =
-    opts.style === "tailwind"
-      ? "bg-linear-to-br from-[#667eea] to-[#764ba2]"
-      : "bg-gradient-to-br from-[#667eea] to-[#764ba2]";
+  const heroGradient = opts.style === "tailwind"
+    ? "bg-linear-to-br from-[#667eea] to-[#764ba2]"
+    : "bg-gradient-to-br from-[#667eea] to-[#764ba2]";
   return `/**
  * 首页
  * 路由: /
@@ -795,10 +791,9 @@ export default function About() {
 /** 用户详情页 user/[id].tsx */
 function getUserByIdTsx(opts: InitOptions): string {
   // UnoCSS/无样式 使用 bg-gradient-to-br；Tailwind v4 使用 bg-linear-to-br
-  const avatarGradient =
-    opts.style === "tailwind"
-      ? "bg-linear-to-br from-indigo-500 to-purple-600"
-      : "bg-gradient-to-br from-indigo-500 to-purple-600";
+  const avatarGradient = opts.style === "tailwind"
+    ? "bg-linear-to-br from-indigo-500 to-purple-600"
+    : "bg-gradient-to-br from-indigo-500 to-purple-600";
   return `/**
  * 用户详情页面
  * 动态路由: /user/:id
@@ -1204,7 +1199,7 @@ export async function generate(opts: InitOptions): Promise<void> {
 
       await writeTextFile(
         join(appBase, "main.ts"),
-        getMainTsMulti(opts, appName, 3000 + appNames.indexOf(appName)),
+        getMainTsMulti(opts, appName),
       );
       await writeTextFile(
         join(appBase, "config", "main.ts"),
@@ -1220,7 +1215,7 @@ export async function generate(opts: InitOptions): Promise<void> {
       );
       await writeTextFile(
         join(appBase, "routes", "_layout.tsx"),
-        getLayoutTsx(opts),
+        getLayoutTsx(opts, appName),
       );
       await writeTextFile(
         join(appBase, "routes", "index.tsx"),

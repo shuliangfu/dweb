@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "3.0.18",
+  "version": "3.0.19",
   "license": "MIT",
   "exports": {
     ".": "./src/mod.ts",
@@ -75,7 +75,6 @@
     "./examples/preact-ssg/advanced",
     "./examples/preact-ssr/basic",
     "./examples/preact-ssr/advanced",
-
     "./examples/react-csr/basic",
     "./examples/react-csr/advanced",
     "./examples/react-hybrid/basic",
@@ -98,14 +97,5 @@
         "no-explicit-any"
       ]
     }
-  },
-  "allowScripts": {
-    "allow": [],
-    "deny": [
-      "npm:better-sqlite3@11.10.0",
-      "npm:esbuild@0.24.2",
-      "npm:esbuild@0.27.2",
-      "npm:puppeteer@24.36.1"
-    ]
   }
 }
