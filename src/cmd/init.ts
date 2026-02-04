@@ -12,32 +12,32 @@
  */
 
 import {
-  confirm,
-  error as consoleError,
-  info,
-  input,
-  interactiveMenu,
-  prompt,
-  separator,
-  success,
-  title,
+    confirm,
+    error as consoleError,
+    info,
+    input,
+    interactiveMenu,
+    prompt,
+    separator,
+    success,
+    title,
 } from "@dreamer/console";
 import {
-  args,
-  basename,
-  cwd,
-  ensureDir,
-  exists,
-  exit,
-  join,
-  resolve,
-  writeTextFile,
+    args,
+    basename,
+    cwd,
+    ensureDir,
+    exists,
+    exit,
+    join,
+    resolve,
+    writeTextFile,
 } from "@dreamer/runtime-adapter";
 import {
-  type DwebDenoConfig,
-  FALLBACK_DWEB_VERSION,
-  FALLBACK_PLUGINS_VERSION,
-  loadDwebDenoJson,
+    type DwebDenoConfig,
+    FALLBACK_DWEB_VERSION,
+    FALLBACK_PLUGINS_VERSION,
+    loadDwebDenoJson,
 } from "../utils/version.ts";
 
 /** 从 version 导出，供依赖 init 的调用方使用 */
@@ -307,6 +307,7 @@ function getDenoJson(
     : "";
 
   return `{
+  "name": "${opts.projectName}",
   "version": "1.0.0",
   "tasks": {
 ${tasksBlock}
