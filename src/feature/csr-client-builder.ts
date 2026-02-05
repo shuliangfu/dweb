@@ -1028,23 +1028,18 @@ export async function buildClientScript(
       // 确保输出目录存在
       await ensureDir(finalOutputDir);
 
-      // Preact 标为 external，避免 chunk 各自打包 Preact 导致多实例 _H 冲突；需配合 import map 注入
-      // 注意：esbuild external 匹配解析后的路径，denoResolverPlugin 将 preact 解析为 npm:preact@10.28.0，故需同时匹配
-      const preactExternal =
-        engine === "preact"
-          ? [
-            "preact",
-            "preact/hooks",
-            "preact/jsx-runtime",
-            "npm:preact@10.28.0",
-            "npm:preact@10.28.0/hooks",
-            "npm:preact@10.28.0/jsx-runtime",
-          ]
-          : [];
+      // 根本原因：SSR 使用 Deno 缓存的 npm:preact，客户端若从 import map/esm.sh 加载 Preact，
+      // 二者为不同构建，水合时 __H 未定义。解决：将 Preact 打包进客户端 bundle，确保同一实例。
+      // 过滤掉用户 external 中的 preact/react，防止误配置导致多实例水合错误
       const userExternal = Array.isArray(userBundleConfig.external)
         ? userBundleConfig.external
         : [];
-      const externalList = [...preactExternal, ...userExternal];
+      const runtimeExternalBlocklist = engine === "preact"
+        ? ["preact", "preact/hooks", "preact/jsx-runtime"]
+        : ["react", "react-dom", "react/jsx-runtime", "react-dom/client"];
+      const externalList = userExternal.filter(
+        (ext) => !runtimeExternalBlocklist.some((b) => ext === b || ext.startsWith(`${b}/`)),
+      );
       // 使用 BuilderClient 进行构建（支持代码分割）
       const builder = new BuilderClient({
         entry: tempClientEntryPath,
@@ -1103,19 +1098,7 @@ export async function buildClientScript(
       const memOutputDir = join(cwd(), ".dweb-client-out");
       // 必须显式指定 chunkNames: "[name]-[hash]"：多个共享 chunk 的 [name] 均为 "chunk"，
       // 仅 [name] 会冲突（"Two output files share the same path"），含 hash 可保证唯一
-      // Preact 标为 external，避免 chunk 各自打包 Preact 导致多实例 _H 冲突；需配合 import map 注入
-      // 注意：esbuild external 匹配解析后的路径，denoResolverPlugin 将 preact 解析为 npm:preact@10.28.0，故需同时匹配
-      const preactExternalDev =
-        engine === "preact"
-          ? [
-            "preact",
-            "preact/hooks",
-            "preact/jsx-runtime",
-            "npm:preact@10.28.0",
-            "npm:preact@10.28.0/hooks",
-            "npm:preact@10.28.0/jsx-runtime",
-          ]
-          : [];
+      // 不再将 Preact 标为 external，改回打包进 bundle，避免 esm.sh 与 SSR Preact 构建不一致导致水合 _H 报错
       const builderDev = new BuilderClient({
         entry: tempClientEntryPath,
         output: memOutputDir,
@@ -1126,8 +1109,6 @@ export async function buildClientScript(
           splitting: true,
           format: "esm",
           chunkNames: "[name]-[hash]",
-          external:
-            preactExternalDev.length > 0 ? preactExternalDev : undefined,
         },
       });
 

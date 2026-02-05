@@ -17,7 +17,6 @@ import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import { getEnv } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
-import { getClientImportMapScript } from "./import-map.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
 
@@ -155,11 +154,8 @@ export function createRendererCSR(
         `<div id="dweb-loading-overlay" aria-hidden="true"><div class="dweb-spinner"></div></div>`;
       const isDevCsr =
         (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
-      // Preact 标为 external 时需注入 import map，必须在 module 脚本之前
-      const importMapScript = getClientImportMapScript(engine);
       const clientConfigScript = `
 ${overlayHtml}
-${importMapScript}
 <script>
   ${isDevCsr ? "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true;" : ""}
   globalThis.__DWEB_ROUTES__ = ${JSON.stringify(clientRoutes)};
@@ -247,7 +243,6 @@ function generateFallbackCSRHtml(
   engine: "react" | "preact",
 ): string {
   const { clientScript, containerId, title, headTags, bodyTags } = options;
-  const importMapScript = getClientImportMapScript(engine);
   const loadingStyles = `<style id="dweb-loading-styles">
 #dweb-loading-overlay{position:fixed;inset:0;z-index:99999;display:flex;justify-content:center;align-items:center;background:#f9fafb;font-family:system-ui,sans-serif;transition:opacity .15s ease-out}
 #dweb-loading-overlay.dweb-loading-done{opacity:0;pointer-events:none}
@@ -270,7 +265,6 @@ function generateFallbackCSRHtml(
 <body>
   <div id="${containerId}"></div>
   ${overlayHtml}
-  ${importMapScript}
   <script>
     globalThis.__DWEB_ROUTES__ = ${JSON.stringify(routes)};
     globalThis.__DWEB_ENGINE__ = "${engine}";
