@@ -48,8 +48,8 @@ export function setDwebLocale(locale: string | undefined | null): void {
 /** 支持的 locale 列表 */
 const SUPPORTED_LOCALES = ["zh-CN", "en-US"] as const;
 
-/** 默认 locale */
-const DEFAULT_LOCALE = "zh-CN";
+/** 默认 locale（回退语言，缺失翻译时使用） */
+const DEFAULT_LOCALE = "en-US";
 
 /**
  * 从环境变量检测系统语言
@@ -128,7 +128,7 @@ async function resolveLocale(): Promise<string> {
  * 1. setDwebLocale() 显式设置（App 合并配置后调用）
  * 2. 项目 config/main.ts 的 language
  * 3. 环境变量 LANGUAGE/LC_ALL/LANG
- * 4. 默认 zh-CN
+ * 4. 默认 en-US
  *
  * 完成：加载翻译、挂载 globalThis.$t、桥接 setDwebErrorTranslator
  */
@@ -147,6 +147,7 @@ export async function initDwebI18n(): Promise<void> {
 
   const i18n = createI18n({
     defaultLocale: DEFAULT_LOCALE,
+    fallbackBehavior: "default",
     locales: [...SUPPORTED_LOCALES],
     translations: {
       "zh-CN": zhData,
