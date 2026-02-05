@@ -81,7 +81,6 @@ const config: AppConfig = {
   router: {
     /** 路由文件目录 */
     routesDir: "./src/routes",
-    /** engine、ssr 由 render 配置提供，此处仅配置路由相关 */
     /** API 路由形式：restful | action */
     apiMode: "restful",
     /** 重定向配置 */
@@ -211,6 +210,26 @@ const config: AppConfig = {
           password: "password",
         },
       },
+      // MongoDB 副本集示例（可选）
+      mongodb: {
+        type: "mongodb",
+        connection: {
+          host: "localhost",
+          port: 27017,
+          database: "mydb",
+          username: "user",
+          password: "password",
+          authSource: "admin",
+        },
+        mongoOptions: {
+          replicaSet: "rs0",
+          directConnection: true,
+          serverSelectionTimeoutMS: 30000,
+          connectTimeoutMS: 5000,
+          maxPoolSize: 10,
+          minPoolSize: 2,
+        },
+      },
     },
     managerOptions: {},
   },
@@ -274,17 +293,13 @@ export default config;
 
 ---
 
-### router.engine 与 render.engine 说明
+### MongoDB 副本集配置说明
 
-**`engine` 的用途**：指定页面/组件的渲染引擎（Preact 或 React），影响：
+当使用 MongoDB 副本集时，需在 `mongoOptions` 中配置：
 
-- **SSR 渲染**：服务端用对应引擎渲染组件为 HTML
-- **客户端水合**：`hydrate({ engine, component })` 使用对应引擎
-- **CSR 渲染**：`renderCSR({ engine, component })` 使用对应引擎
-- **客户端路由**：`createRouter({ routes, engine })` 决定组件加载时的 JSX 运行时
-- **构建**：JSX 编译时 `jsxImportSource` 为 `preact` 或 `react`
-
-**重要**：dweb 框架**统一从 `render.engine` 读取**，不会使用 `router.engine`。`router.engine` 属于 `@dreamer/router` 的 RouterOptions，但 dweb 在初始化路由时传入的是 `render.engine`。因此 **engine 应配置在 `render` 中**，`router` 中可省略。
+- **`replicaSet`**：副本集名称，如 `"rs0"`。若 MongoDB 开启副本集则必须设置。
+- **`directConnection`**：`true` 表示仅连接指定 host:port（适用于单节点或 Docker 环境）；`false` 表示自动发现副本集所有节点（适用于分布式生产环境）。
+- **`authSource`**：认证源数据库，通常为 `"admin"`。
 
 ---
 
@@ -387,7 +402,6 @@ const config: AppConfig = {
 
   router: {
     routesDir: "./src/frontend/routes",
-    /** engine 在 render 中配置，dweb 从 render.engine 读取 */
   },
 
   render: {
