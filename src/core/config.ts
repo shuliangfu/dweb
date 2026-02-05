@@ -73,9 +73,9 @@ export function inferConfigDirectoryFromEntry(): string {
 
     const normalized = path.replace(root, "");
 
-    const isSource = normalized.match(/main\.(ts|tsx|js|jsx)$/);
+    const isDevSource = normalized.match(/main\.(ts|tsx|js|jsx)$/);
 
-    if (isSource !== null) {
+    if (isDevSource) {
       // 单应用开发：src/main.(ts|tsx|js|jsx) → ./src/config
       const singleSrcMatch = normalized.match(/^\/src\/main\.(ts|tsx|js|jsx)$/);
       if (singleSrcMatch) {
