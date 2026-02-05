@@ -21,7 +21,7 @@
     "@dreamer/server": "jsr:@dreamer/server@1.0.0-beta.25",
     "@dreamer/router": "jsr:@dreamer/router@^1.0.0-beta.11",
     "@dreamer/render": "jsr:@dreamer/render@1.0.0-beta.18",
-    "@dreamer/esbuild": "jsr:@dreamer/esbuild@1.0.0-beta.60",
+    "@dreamer/esbuild": "jsr:@dreamer/esbuild@1.0.0-beta.62",
     "@unocss/core": "npm:@unocss/core@^66.0.0",
     "@unocss/preset-wind3": "npm:@unocss/preset-wind3@^66.0.0",
     "@unocss/preset-icons": "npm:@unocss/preset-icons@^66.0.0",

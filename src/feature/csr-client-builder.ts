@@ -983,19 +983,6 @@ export async function buildClientScript(
       }));
     }
 
-    // 根据渲染引擎配置 JSX
-    const jsxConfig: {
-      jsx?: "automatic" | "transform";
-      jsxImportSource?: string;
-    } = {};
-    if (engine === "preact") {
-      jsxConfig.jsx = "automatic";
-      jsxConfig.jsxImportSource = "preact";
-    } else if (engine === "react") {
-      jsxConfig.jsx = "automatic";
-      jsxConfig.jsxImportSource = "react";
-    }
-
     let result: ClientBuildResult;
 
     if (isProd) {
@@ -1028,8 +1015,6 @@ export async function buildClientScript(
       // 确保输出目录存在
       await ensureDir(finalOutputDir);
 
-      // 根本原因：SSR 使用 Deno 缓存的 npm:preact，客户端若从 import map/esm.sh 加载 Preact，
-      // 二者为不同构建，水合时 __H 未定义。解决：将 Preact 打包进客户端 bundle，确保同一实例。
       // 过滤掉用户 external 中的 preact/react，防止误配置导致多实例水合错误
       const userExternal = Array.isArray(userBundleConfig.external)
         ? userBundleConfig.external
@@ -1040,7 +1025,7 @@ export async function buildClientScript(
       const externalList = userExternal.filter(
         (ext) => !runtimeExternalBlocklist.some((b) => ext === b || ext.startsWith(`${b}/`)),
       );
-      // 使用 BuilderClient 进行构建（支持代码分割）
+
       const builder = new BuilderClient({
         entry: tempClientEntryPath,
         output: finalOutputDir,
@@ -1057,7 +1042,6 @@ export async function buildClientScript(
 
       await builder.build(mode);
 
-      // 读取所有输出文件到内存缓存
       const outputFiles = new Map<string, string>();
       await loadOutputFiles(finalOutputDir, finalOutputDir, outputFiles);
 
@@ -1093,12 +1077,8 @@ export async function buildClientScript(
     } else {
       // ========================================
       // 开发模式：纯内存构建，不写 dist/
-      // BuilderClient write: false 时产出在 outputContents，代码分割的 chunk 也在内存中
       // ========================================
       const memOutputDir = join(cwd(), ".dweb-client-out");
-      // 必须显式指定 chunkNames: "[name]-[hash]"：多个共享 chunk 的 [name] 均为 "chunk"，
-      // 仅 [name] 会冲突（"Two output files share the same path"），含 hash 可保证唯一
-      // 不再将 Preact 标为 external，改回打包进 bundle，避免 esm.sh 与 SSR Preact 构建不一致导致水合 _H 报错
       const builderDev = new BuilderClient({
         entry: tempClientEntryPath,
         output: memOutputDir,
@@ -1150,7 +1130,9 @@ export async function buildClientScript(
             outputNames,
           );
           if (chunkFileName) {
-            chunkUrlDev = `/_client/${chunkFileName}`;
+            // 必须与 ROUTE_LOADERS 的解析路径一致：_client.js 在 /_client.js，import("./routes-xxx.js") 解析为 /routes-xxx.js
+            // 若用 /_client/routes-xxx.js，则 chunk 内 import("./chunk-xxx.js") 会解析为 /_client/chunk-xxx.js，与正常的 /chunk-xxx.js 不同，导致双实例
+            chunkUrlDev = `/${chunkFileName}`;
           } else {
             logger.warn(
               $t("log.hmrChunkNotFound", {

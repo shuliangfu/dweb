@@ -15,7 +15,7 @@
     "@dreamer/server": "jsr:@dreamer/server@1.0.0-beta.25",
     "@dreamer/router": "jsr:@dreamer/router@^1.0.0-beta.11",
     "@dreamer/render": "jsr:@dreamer/render@1.0.0-beta.18",
-    "@dreamer/esbuild": "jsr:@dreamer/esbuild@1.0.0-beta.60",
+    "@dreamer/esbuild": "jsr:@dreamer/esbuild@1.0.0-beta.62",
     "@dreamer/socket-io": "jsr:@dreamer/socket-io@1.0.0-beta.12",
     "esbuild": "npm:esbuild@^0.27.2",
     "postcss": "npm:postcss@8.4.39",

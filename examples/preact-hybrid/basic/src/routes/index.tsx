@@ -1,5 +1,5 @@
-import { Client } from "@dreamer/websocket/client";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { Client } from "@dreamer/websocket/client"
+import { useEffect, useRef, useState } from "preact/hooks"
 
 /**
  * 页面 Tailwind 类名（全部提取为静态对象，便于生产构建扫描）
@@ -210,7 +210,7 @@ export default function Home() {
   return (
     <div class={classes.page}>
       <section class={classes.hero}>
-        <h1 class={classes.heroTitle}>欢迎使用 Dweb 框架 1111</h1>
+        <h1 class={classes.heroTitle}>欢迎使用 Dweb 框架 </h1>
         <p class={classes.heroDesc}>
           这是一个使用 @dreamer/dweb 框架构建的 Preact 示例项目
         </p>
