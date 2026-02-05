@@ -1,17 +1,14 @@
 /**
  * 前端默认配置
+ * version、port 等可由 common/config 提供，框架自动合并
  */
-
-import { commonConfig } from "@common/config/main.ts";
 import type { AppConfig } from "@dreamer/dweb";
 
-/** 前端配置 */
-const config: AppConfig = {
+export default {
   name: "preact-hybrid-advanced-example-frontend",
-  version: commonConfig.version,
 
   server: {
-    port: commonConfig.frontendPort,
+    port: 3000,
     host: "0.0.0.0",
   },
 
@@ -28,6 +25,4 @@ const config: AppConfig = {
     level: "info",
     format: "text",
   },
-};
-
-export default config;
+} satisfies AppConfig;

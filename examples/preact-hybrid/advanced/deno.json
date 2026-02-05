@@ -4,7 +4,7 @@
     "dev:frontend": "deno run -A src/frontend/main.ts",
     "build:backend": "deno run -A src/backend/main.ts --build",
     "build:frontend": "deno run -A src/frontend/main.ts --build",
-    "start:backend": "deno run -A dist/backend/server.js",
+    "start:backend": "DWEB_LOG_FORMAT=text deno run -A dist/backend/server.js",
     "start:frontend": "deno run -A dist/frontend/server.js"
   },
   "imports": {

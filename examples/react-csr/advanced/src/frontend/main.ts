@@ -7,9 +7,7 @@ import { App } from "@dreamer/dweb";
 import { staticPlugin } from "@dreamer/plugins/static";
 import { tailwindPlugin } from "@dreamer/plugins/tailwindcss";
 
-const app = new App({
-  configDirectory: "./src/frontend/config",
-});
+const app = new App();
 
 app.registerPlugin(tailwindPlugin({
   output: "dist/frontend/client/assets",

@@ -6,6 +6,9 @@
  * 提供框架自身文案的国际化，包括错误消息、CLI 输出、日志等。
  * 使用 @dreamer/i18n 作为底层，挂载全局 $t()，并桥接 setDwebErrorTranslator。
  *
+ * 服务端：使用 import 在构建时内联 JSON，避免运行时 fetch（打包后 import.meta.url 指向 dist，fetch 会失败）
+ * 客户端：可使用 fetch 按需加载语言包
+ *
  * 使用方式：
  * - 入口处调用 initDwebI18n()（无需传参，自动读取 config/main.ts 的 language）
  * - 框架内通过 $t("cli.usage")、$t("errors.DWEB_E01", { path }) 等获取翻译
@@ -13,9 +16,13 @@
 
 import { createI18n } from "@dreamer/i18n";
 import type { TranslationData } from "@dreamer/i18n";
-import { cwd, getEnv } from "@dreamer/runtime-adapter";
+import { cwd, getEnv, resolve } from "@dreamer/runtime-adapter";
 import { loadProjectConfig } from "./config-loader.ts";
 import { setDwebErrorTranslator } from "./errors.ts";
+
+// 服务端：静态 import 在构建时内联，无需运行时 fetch
+import zhCN from "../locales/zh-CN/dweb.json" with { type: "json" };
+import enUS from "../locales/en-US/dweb.json" with { type: "json" };
 
 /** 是否已初始化（幂等） */
 let initialized = false;
@@ -83,27 +90,11 @@ export function detectLocale(): string | null {
   return null;
 }
 
-/**
- * 加载 dweb 框架翻译文件
- *
- * @param locale - 语言代码，如 zh-CN、en-US
- * @returns 翻译数据
- */
-async function loadDwebTranslations(
-  locale: string,
-): Promise<TranslationData> {
-  const url = new URL(
-    `../locales/${locale}/dweb.json`,
-    import.meta.url,
-  );
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(
-      `[dweb] Failed to load locale ${locale}: ${res.statusText}`,
-    );
-  }
-  return (await res.json()) as TranslationData;
-}
+/** 预加载的翻译数据（构建时内联，服务端无需 fetch） */
+const LOCALE_DATA: Record<string, TranslationData> = {
+  "zh-CN": zhCN as TranslationData,
+  "en-US": enUS as TranslationData,
+};
 
 /**
  * 解析 locale，优先级：setDwebLocale > 项目 config > 环境变量 > 默认
@@ -115,9 +106,10 @@ async function resolveLocale(): Promise<string> {
     pendingLocale = null;
     return v;
   }
-  // 2. 从项目 config/main.ts 读取 language
+  // 2. 从项目 config/main.ts 读取 language（使用 resolve 确保 projectRoot 为绝对路径）
   try {
-    const config = await loadProjectConfig(cwd());
+    const projectRoot = resolve(cwd());
+    const config = await loadProjectConfig(projectRoot);
     if (config.language) return config.language;
   } catch {
     // 非 dweb 项目或加载失败，忽略
@@ -150,10 +142,8 @@ export async function initDwebI18n(): Promise<void> {
     ? locale
     : DEFAULT_LOCALE;
 
-  const [zhData, enData] = await Promise.all([
-    loadDwebTranslations("zh-CN"),
-    loadDwebTranslations("en-US"),
-  ]);
+  const zhData = LOCALE_DATA["zh-CN"];
+  const enData = LOCALE_DATA["en-US"];
 
   const i18n = createI18n({
     defaultLocale: DEFAULT_LOCALE,

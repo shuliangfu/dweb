@@ -105,7 +105,7 @@ export async function main(
   }
 
   try {
-    const config = await loadProjectConfig(projectRoot);
+    const config = await loadProjectConfig(projectRoot, app);
     const serverConfig = config.server as
       | { port?: number; host?: string }
       | undefined;

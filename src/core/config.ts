@@ -1,7 +1,7 @@
 /**
  * 应用配置管理（@dreamer/config 集成）
  *
- * 加载 main.ts、main.{env}.ts、params.ts，合并配置、验证、环境变量支持。
+ * 加载 main.ts、main.{env}.ts、params.ts、params.{env}.ts，深度合并、验证、环境变量支持。
  * 提供 getConfig、getConfigValue、getParams 等配置访问 API。
  *
  * @module
@@ -21,7 +21,126 @@ import type { Plugin } from "@dreamer/plugin";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
-import { cwd, getEnv, realPath, resolve, stat } from "./runtime-adapter.ts";
+import {
+  cwd,
+  existsSync,
+  getEnv,
+  join,
+  realPath,
+  resolve,
+  stat,
+} from "./runtime-adapter.ts";
+
+/**
+ * 从入口模块路径推断 config 目录
+ *
+ * 单应用：
+ * - 开发：src/main.ts → src/config；main.ts → config
+ * - 生产：<outputDir>/server.js → src/config（有 src 时）或 config（无 src 时）
+ *
+ * 多应用：
+ * - 开发：src/<app>/main.ts → src/<app>/config；<app>/main.ts → <app>/config
+ * - 生产：<outputDir>/<app>/server.js → src/<app>/config（有 src 时）或 <app>/config（无 src 时）
+ *
+ * @returns 推断出的 config 目录（相对 cwd）
+ * @throws 无法推断时抛出 ENTRY_PATH_INVALID 异常，需显式指定 configDirectory
+ */
+export function inferConfigDirectoryFromEntry(): string {
+  try {
+    const deno = (globalThis as { Deno?: { mainModule?: string } }).Deno;
+    const getPath = (): string | null => {
+      if (deno?.mainModule) {
+        const url = deno.mainModule;
+        return url.startsWith("file://")
+          ? decodeURIComponent(url.slice(7))
+          : url;
+      }
+      const proc = (globalThis as { process?: { argv?: string[] } }).process;
+      const argv1 = proc?.argv?.[1];
+      return argv1 ? resolve(cwd(), argv1) : null;
+    };
+
+    const path = getPath();
+    if (!path) {
+      throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, {
+        reason: $t("errors.entryPathInvalidReasonNoPath"),
+        hint: $t("errors.entryPathInvalidHint"),
+        path: "unknown",
+      });
+    }
+
+    const root = cwd();
+
+    const normalized = path.replace(root, "");
+
+    const isSource = normalized.match(/main\.(ts|tsx|js|jsx)$/);
+
+    if (isSource !== null) {
+      // 单应用开发：src/main.(ts|tsx|js|jsx) → ./src/config
+      const singleSrcMatch = normalized.match(/^\/src\/main\.(ts|tsx|js|jsx)$/);
+      if (singleSrcMatch) {
+        return join("src", "config");
+      }
+      // 单应用开发，获取没有 src 的目录（\/? 兼容 normalized 有无前导斜杠）
+      const singleSrcMatchNoSrc = normalized.match(
+        /^\/?main\.(ts|tsx|js|jsx)$/,
+      );
+      if (singleSrcMatchNoSrc) {
+        return join("config");
+      }
+
+      // 多应用开发：src/<app>/main.(ts|tsx|js|jsx) → src/<app>/config
+      const multiSrcMatch = normalized.match(
+        /^\/src\/([^/]+)\/main\.(ts|tsx|js|jsx)$/,
+      );
+      if (multiSrcMatch) {
+        const appDir = multiSrcMatch[1];
+        return join("src", appDir, "config");
+      }
+
+      // 多应用开发，获取没有 src 的目录（\/? 兼容 normalized 有无前导斜杠）
+      const multiSrcMatchNoSrc = normalized.match(
+        /^\/?([^/]+)\/main\.(ts|tsx|js|jsx)$/,
+      );
+      if (multiSrcMatchNoSrc) {
+        const appDir = multiSrcMatchNoSrc[1];
+        return join(appDir, "config");
+      }
+    } else {
+      // 生产环境：若项目无 src 目录，则 config 在根级 config 或 <app>/config
+      const hasSrcDir = existsSync(resolve(root, "src"));
+
+      // 单应用生产：/dist/server.js → src/config 或 config
+      const singleBuiltMatch = normalized.match(/^\/([^/]+)\/server\.js$/);
+      if (singleBuiltMatch) {
+        return hasSrcDir ? join("src", "config") : join("config");
+      }
+
+      // 多应用生产：/dist/backend/server.js → src/backend/config 或 backend/config
+      const multiBuiltMatch = normalized.match(
+        /^\/([^/]+)\/([^/]+)\/server\.js$/,
+      );
+      if (multiBuiltMatch) {
+        const appDir = multiBuiltMatch[2];
+        return hasSrcDir
+          ? join("src", appDir, "config")
+          : join(appDir, "config");
+      }
+    }
+  } catch (err) {
+    throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, {
+      reason: $t("errors.entryPathInvalidReasonNoMatch"),
+      hint: $t("errors.entryPathInvalidHint"),
+      path: String(err instanceof Error ? err.message : "unknown"),
+    });
+  }
+
+  throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, {
+    reason: $t("errors.entryPathInvalidReasonNoMatch"),
+    hint: $t("errors.entryPathInvalidHint"),
+    path: "unknown",
+  });
+}
 
 /**
  * 加载 TypeScript 模块配置
@@ -410,6 +529,7 @@ export function deepMergeConfig(
 /**
  * 加载框架配置（main.ts 系列）
  * 支持：main.ts, main.{env}.ts
+ * 使用深度合并，用户只需在 main.dev.ts 中写增量覆盖，无需手动导入合并
  *
  * @param directory 配置目录
  * @param env 环境名称
@@ -426,16 +546,16 @@ async function loadMainConfig(
   if (await fileExists(mainPath)) {
     const mainConfig = await loadModuleConfig(mainPath);
     if (mainConfig) {
-      config = { ...config, ...mainConfig } as AppConfig;
+      config = deepMergeConfig(config, mainConfig as AppConfig);
     }
   }
 
-  // 2. 加载 main.{env}.ts（环境特定框架配置，覆盖 main.ts）
+  // 2. 加载 main.{env}.ts（环境特定配置，深度合并覆盖 main.ts）
   const envMainPath = `${directory}/main.${env}.ts`;
   if (await fileExists(envMainPath)) {
     const envConfig = await loadModuleConfig(envMainPath);
     if (envConfig) {
-      config = { ...config, ...envConfig } as AppConfig;
+      config = deepMergeConfig(config, envConfig as AppConfig);
     }
   }
 
@@ -443,22 +563,66 @@ async function loadMainConfig(
 }
 
 /**
- * 加载业务配置（params.ts）
+ * 深度合并普通对象（用于 params，无 plugins/middlewares 特殊逻辑）
+ */
+function deepMergeParams(
+  target: Record<string, unknown>,
+  source: Record<string, unknown>,
+): Record<string, unknown> {
+  const result = { ...target };
+  for (const key in source) {
+    if (!Object.prototype.hasOwnProperty.call(source, key)) continue;
+    const sourceValue = source[key];
+    const targetValue = result[key];
+    if (
+      sourceValue &&
+      typeof sourceValue === "object" &&
+      !Array.isArray(sourceValue) &&
+      sourceValue !== null &&
+      targetValue &&
+      typeof targetValue === "object" &&
+      !Array.isArray(targetValue) &&
+      targetValue !== null
+    ) {
+      result[key] = deepMergeParams(
+        targetValue as Record<string, unknown>,
+        sourceValue as Record<string, unknown>,
+      );
+    } else {
+      result[key] = sourceValue;
+    }
+  }
+  return result;
+}
+
+/**
+ * 加载业务配置（params.ts、params.{env}.ts）
+ * 支持 params.ts、params.dev.ts、params.prod.ts，深度合并，用户只需在 params.dev.ts 中写增量
  *
  * @param directory 配置目录
- * @returns 业务配置对象
+ * @param env 环境名称（dev、prod 等）
+ * @returns 合并后的业务配置对象
  */
 async function loadParamsConfig(
   directory: string,
+  env: string,
 ): Promise<Record<string, unknown>> {
+  let params: Record<string, unknown> = {};
   const paramsPath = `${directory}/params.ts`;
   if (await fileExists(paramsPath)) {
-    const paramsConfig = await loadModuleConfig(paramsPath);
-    if (paramsConfig) {
-      return paramsConfig;
+    const baseParams = await loadModuleConfig(paramsPath);
+    if (baseParams && typeof baseParams === "object") {
+      params = deepMergeParams(params, baseParams as Record<string, unknown>);
     }
   }
-  return {};
+  const envParamsPath = `${directory}/params.${env}.ts`;
+  if (await fileExists(envParamsPath)) {
+    const envParams = await loadModuleConfig(envParamsPath);
+    if (envParams && typeof envParams === "object") {
+      params = deepMergeParams(params, envParams as Record<string, unknown>);
+    }
+  }
+  return params;
 }
 
 /**
@@ -517,19 +681,19 @@ export async function initializeConfigManager(
     mainConfig = deepMergeConfig(mainConfig, dirConfig);
   }
 
-  // 加载业务配置（params.ts）
+  // 加载业务配置（params.ts、params.{env}.ts）
   let paramsConfig: Record<string, unknown> = {};
 
   for (const commonPath of commonConfigPaths) {
-    const commonParams = await loadParamsConfig(commonPath);
+    const commonParams = await loadParamsConfig(commonPath, env);
     if (Object.keys(commonParams).length > 0) {
-      paramsConfig = { ...paramsConfig, ...commonParams };
+      paramsConfig = deepMergeParams(paramsConfig, commonParams);
       break;
     }
   }
   for (const dir of directories) {
-    const dirConfig = await loadParamsConfig(dir);
-    paramsConfig = { ...paramsConfig, ...dirConfig };
+    const dirConfig = await loadParamsConfig(dir, env);
+    paramsConfig = deepMergeParams(paramsConfig, dirConfig);
   }
 
   // 创建配置管理器实例（用于环境变量和配置管理）

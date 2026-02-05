@@ -103,6 +103,17 @@ export async function main(
       error($t("common.taskNotDefined", { task: taskName }));
       continue;
     }
+    try {
+      const config = await loadProjectConfig(projectRoot, appName);
+      const buildConfig = config.build as
+        | { server?: { output?: string } }
+        | undefined;
+      if (buildConfig?.server?.output) {
+        info($t("build.outputDir", { path: buildConfig.server.output }));
+      }
+    } catch {
+      // 配置加载失败时忽略
+    }
     info($t("build.building"));
     const cmd = createCommand(runtime, {
       args: getTaskArgs(taskName),

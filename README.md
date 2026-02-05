@@ -1674,7 +1674,8 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
   @dreamer/server、@dreamer/router、@dreamer/render、@dreamer/esbuild 等
 - **入口类**：使用 `App`
   类创建应用（`import { App } from "jsr:@dreamer/dweb"`），配置为
-  `AppConfig`（name、version、language、server、render、router、build、logger 等）
+  `AppConfig`（name、version、language、server、render、router、build、logger
+  等）
 - **按需使用**：可仅使用 dweb，或按需安装其他 @dreamer/*
   库（database、cache、storage 等）
 - **类型安全**：完整 TypeScript 类型支持

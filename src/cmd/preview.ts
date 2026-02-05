@@ -110,7 +110,7 @@ export async function main(
   let port = Number(options.port);
   if (!port || isNaN(port)) {
     try {
-      const config = await loadProjectConfig(projectRoot);
+      const config = await loadProjectConfig(projectRoot, app);
       const buildConfig = config.build as { previewPort?: number } | undefined;
       port = buildConfig?.previewPort ?? 4173;
     } catch {

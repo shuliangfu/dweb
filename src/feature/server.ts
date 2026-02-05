@@ -124,8 +124,9 @@ export function initializeServer(
 
   // 默认 onListen：使用 $t 输出国际化日志；用户配置的 onListen 优先
   const defaultOnListen = ({ host, port }: { host: string; port: number }) => {
-    const key =
-      mode === "dev" ? "log.devServerRunning" : "log.prodServerRunning";
+    const key = mode === "dev"
+      ? "log.devServerRunning"
+      : "log.prodServerRunning";
     logger.info($t(key, { host, port: String(port) }));
   };
   const onListen = serverConfig.onListen ?? defaultOnListen;

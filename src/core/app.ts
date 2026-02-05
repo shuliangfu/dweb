@@ -28,8 +28,6 @@ import {
 } from "./runtime-adapter.ts";
 
 import { BuilderServer } from "@dreamer/esbuild";
-import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
-import { initDwebI18n } from "../utils/i18n.ts";
 import { requestId, requestLogger } from "@dreamer/middlewares";
 import { expandDynamicRoute } from "@dreamer/render";
 import { initializeBuild } from "../feature/build.ts";
@@ -67,12 +65,15 @@ import type {
   IApp,
 } from "../types/app.ts";
 import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
+import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
+import { initDwebI18n } from "../utils/i18n.ts";
 import { getLogger, initializeLogger } from "../utils/logger.ts";
 import { getDwebVersion } from "../utils/version.ts";
 import {
   deepMergeConfig,
   getConfig,
   getConfigManager,
+  inferConfigDirectoryFromEntry,
   initializeConfigManager,
   validateConfig,
 } from "./config.ts";
@@ -249,11 +250,11 @@ export class App extends EventEmitter implements IApp {
    * @param config 应用配置（可仅含 configDirectory，或含覆盖项）
    */
   private async _initializeConfig(config: AppConfig): Promise<void> {
-    // 初始化配置管理器（从 configDirectory 动态加载 main.ts、params.ts；未指定时默认检查 ./config、./src/config）
+    // 初始化配置管理器（从 configDirectory 动态加载 main.ts、params.ts）
+    // configDirectory 未指定时：尝试从入口路径推断（src/backend/main.ts → src/backend/config）；无法推断时使用默认 ./config、./src/config
+    const configDir = config.configDirectory ?? inferConfigDirectoryFromEntry();
     await initializeConfigManager(this.container, {
-      directories: config.configDirectory
-        ? [config.configDirectory]
-        : undefined,
+      directories: configDir ? [configDir] : undefined,
       envPrefix: config.envPrefix,
       hotReload: config.hotReload,
     });

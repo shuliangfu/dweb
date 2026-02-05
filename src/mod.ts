@@ -41,8 +41,8 @@ export { DWEB_VERSION } from "./utils/version.ts";
  */
 export type {
   AppConfig,
-  AppLifecycleHook,
   AppLanguage,
+  AppLifecycleHook,
   AppMiddleware,
   AppPlugin,
   AppStage,
