@@ -1,5 +1,8 @@
 # i18n-ally 自定义框架：识别 dweb 的 $t() 函数
 # 文档: https://github.com/lokalise/i18n-ally/wiki/Custom-Framework
+# monopoly: true 表示仅启用此自定义框架，禁用 react/i18next/general 等内置框架，
+# 否则内置框架的 t()/i18n.t() 等模式会优先匹配，导致 $t() 无法被识别和高亮
+monopoly: true
 
 languageIds:
   - javascript

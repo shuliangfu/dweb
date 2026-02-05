@@ -142,7 +142,7 @@
     "hmrChunkNotFound": "[HMR] Chunk not found for componentPath=\"{path}\", output files: {files}",
     "hmrComponentPathNotFound": "[HMR] Cannot derive componentPath from changedPath={changedPath}, routesDirPath={routesDirPath}",
     "clientBuildFirst": "First client script build...",
-    "clientBuildCompleteMemory": "Client build complete (memory): code-split, main entry {mainSize} KB, {count} files",
+    "clientBuildCompleteMemory": "Client build complete: code-split, main entry {mainSize} KB, {count} files",
     "clientEntryExists": "Client entry exists, skipping create: {path}",
     "clientDepGenerated": "Client dep generated: {path}",
     "clientEntryGenerated": "Client entry generated: {path}",

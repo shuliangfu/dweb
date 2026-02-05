@@ -145,26 +145,43 @@
     "**/.data": true
   },
   // ==================== i18n-ally 配置 ====================
+  // 启用内联注释：在 $t("key") 处显示翻译文案（深色/灰色）
+  "i18n-ally.annotations": true,
+  // 内联注释颜色：使用较深的灰色，使翻译文案在代码中更易区分
+  "i18n-ally.theme.annotation": "rgba(120, 120, 120, 0.9)",
+  "i18n-ally.theme.annotationBorder": "rgba(120, 120, 120, 0.5)",
   "i18n-ally.localesPaths": [
     "src/locales"
   ],
+  // 路径匹配模式：{locale} 语言代码, {namespace} 命名空间, {ext} 扩展名
   "i18n-ally.pathMatcher": "{locale}/{namespace}.{ext}",
+  // 键的嵌套风格：nested 表示使用点号分隔的嵌套结构（如 log.clientBuildComplete）
   "i18n-ally.keystyle": "nested",
+  // 是否自动对翻译键排序
   "i18n-ally.sortKeys": true,
+  // 是否启用命名空间（false 表示单文件模式，键直接为 common.appNotFound 无需 dweb: 前缀）
   "i18n-ally.namespace": false,
+  // 启用的解析器：仅解析 JSON 格式的翻译文件
   "i18n-ally.enabledParsers": [
     "json"
   ],
+  // 源语言：作为翻译的基准语言
   "i18n-ally.sourceLanguage": "zh-CN",
+  // 界面显示语言：在编辑器中展示翻译时使用的语言
   "i18n-ally.displayLanguage": "zh-CN",
+  // 翻译引擎优先级：优先使用 DeepL，其次 Google
   "i18n-ally.translate.engines": [
     "deepl",
     "google"
   ],
+  // 提取文案时生成键的风格：PascalCase 大驼峰
   "i18n-ally.extract.keygenStyle": "PascalCase",
+  // 启用的框架模式：general 通用模式（配合 .vscode/i18n-ally-custom-framework.yml 识别 $t()）
   "i18n-ally.enabledFrameworks": [
     "general"
   ],
+  // 键的正则匹配模式：.*? 匹配任意字符（非贪婪）
   "i18n-ally.regex.key": ".*?",
+  // 是否自动检测代码中的硬编码文案并提取
   "i18n-ally.extract.autoDetect": true
 }

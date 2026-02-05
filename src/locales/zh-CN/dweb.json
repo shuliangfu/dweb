@@ -142,7 +142,7 @@
     "hmrChunkNotFound": "[HMR] 未找到 componentPath=\"{path}\" 对应的 chunk，输出文件: {files}",
     "hmrComponentPathNotFound": "[HMR] 无法从变更路径推导 componentPath，changedPath={changedPath}，routesDirPath={routesDirPath}",
     "clientBuildFirst": "首次构建客户端脚本...",
-    "clientBuildCompleteMemory": "客户端构建完成（内存）: 代码分割, 主入口 {mainSize} KB, {count} 个文件",
+    "clientBuildCompleteMemory": "客户端构建完成: 代码分割, 主入口 {mainSize} KB, {count} 个文件",
     "clientEntryExists": "客户端入口已存在，跳过创建: {path}",
     "clientDepGenerated": "已生成客户端依赖: {path}",
     "clientEntryGenerated": "已生成客户端入口: {path}",
