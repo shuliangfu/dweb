@@ -18,6 +18,7 @@
  */
 
 import { BuilderClient } from "@dreamer/esbuild";
+import { $t } from "@dreamer/i18n";
 import type { ServiceContainer } from "@dreamer/service";
 import {
   basename,
@@ -324,9 +325,9 @@ export async function loadLayouts(): Promise<LayoutComponent[]> {
       cachedLayouts = [{ component: LayoutModule.default, props: {} }];
       return cachedLayouts;
     }
-    console.warn("布局组件必须使用 default 导出，例如: export default function Layout() {}");
+    console.warn(${JSON.stringify($t("client.layoutDefaultExport"))});
   } catch (error) {
-    console.warn("布局加载失败:", error);
+    console.warn(${JSON.stringify($t("client.layoutLoadFailed"))}, error);
   }
   cachedLayouts = [];
   return cachedLayouts;
@@ -512,7 +513,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         }
       }
     } catch (error) {
-      console.error("[dweb] Hydration 失败，回退到 CSR:", error);
+      console.error(${JSON.stringify($t("client.hydrationFailed"))} + ":", error);
     }
   }
   g.__DWEB_HMR_REFRESH__ = (hmrOpts) => {
@@ -570,7 +571,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         });
       })
       .catch((err) => {
-        console.warn("[dweb] HMR 无感刷新失败，回退整页重载:", err?.message || err);
+        console.warn(${JSON.stringify($t("client.hmrFallback"))} + ":", err?.message || err);
         if (typeof _win.location !== "undefined") {
           _win.location.reload();
         }
@@ -604,7 +605,7 @@ export async function setupHydrationRouterAndHmr(opts: {
       RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
       (g as DwebGlobal).__DWEB_ON_READY__?.();
     } catch (error) {
-      console.error("页面加载错误:", error);
+      console.error(${JSON.stringify($t("client.pageLoadError"))} + ":", error);
       unmountPrevious();
       renderError(containerId, error);
     }
@@ -666,7 +667,7 @@ export async function initApp(): Promise<DwebApp> {
       });
       RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
     } catch (error) {
-      console.error("页面加载错误:", error);
+      console.error(${JSON.stringify($t("client.pageLoadError"))} + ":", error);
       if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
       renderError(containerId, error);
     }
@@ -1075,12 +1076,12 @@ export async function buildClientScript(
     logger.debug("客户端脚本构建完成");
     return result;
   } catch (error) {
-    logger.error("客户端脚本构建失败:", error);
+    logger.error($t("log.clientBuildFailed") + ":", error);
 
     // 返回一个错误提示脚本
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorScript = `
-      console.error("客户端脚本构建失败:", ${JSON.stringify(errorMessage)});
+      console.error(${JSON.stringify($t("log.clientBuildFailed"))} + ":", ${JSON.stringify(errorMessage)});
       document.getElementById("app").innerHTML = \`
         <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:system-ui,sans-serif;">
           <h1 style="font-size:48px;margin:0;color:#ef4444;">构建错误</h1>
@@ -1258,7 +1259,7 @@ export function createClientScriptMiddleware(
               hasCode: !!script?.code,
             });
             ctx.response = new Response(
-              `console.error("客户端脚本未就绪，请刷新重试");`,
+              `console.error(${JSON.stringify($t("client.clientScriptNotReady"))});`,
               {
                 status: 500,
                 headers: {
@@ -1306,9 +1307,9 @@ export function createClientScriptMiddleware(
           });
           return;
         }
-        logger.error("预构建的客户端脚本不存在:", clientJsPath);
+        logger.error($t("log.clientScriptNotFound") + ":", clientJsPath);
         ctx.response = new Response(
-          `console.error("预构建的客户端脚本不存在，请先运行 build 命令");`,
+          `console.error(${JSON.stringify($t("client.clientScriptNotFound"))});`,
           {
             status: 500,
             headers: {
@@ -1320,10 +1321,10 @@ export function createClientScriptMiddleware(
       } catch (error) {
         const errMsg = error instanceof Error ? error.message : String(error);
         const errStack = error instanceof Error ? error.stack : "";
-        logger.error("提供客户端脚本失败:", undefined, error);
-        console.error("[_client.js] 提供失败:", errMsg, errStack);
+        logger.error($t("log.provideClientFailed") + ":", undefined, error);
+        console.error("[_client.js] " + $t("log.provideClientFailed") + ":", errMsg, errStack);
         ctx.response = new Response(
-          `console.error("加载客户端脚本失败:", ${JSON.stringify(errMsg)});`,
+          `console.error(${JSON.stringify($t("client.clientScriptLoadFailed"))}, ${JSON.stringify(errMsg)});`,
           {
             status: 500,
             headers: {

@@ -16,6 +16,7 @@
  * - dweb-cli g -t route -n about -a frontend  # 多应用时指定应用
  */
 
+import { $t } from "@dreamer/i18n";
 import { error, info, success } from "@dreamer/console";
 import {
   cwd,
@@ -28,7 +29,11 @@ import {
 } from "@dreamer/runtime-adapter";
 import { kebabCase, pascalCase } from "@dreamer/utils/string";
 import type { ParsedOptions } from "../feature/command.ts";
-import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
+import {
+  DwebErrorCode,
+  isDwebError,
+  throwDwebError,
+} from "../utils/errors.ts";
 import { getProjectInfo } from "../utils/project.ts";
 
 /**
@@ -250,8 +255,8 @@ export async function main(
   const app = options.app as string | undefined;
 
   if (!type || !name) {
-    error("请指定 --type 和 --name 参数");
-    error("示例: dweb-cli generate -t service -n User");
+    error($t("generate.needTypeAndName"));
+    error($t("generate.exampleGenerate"));
     return;
   }
 
@@ -261,12 +266,16 @@ export async function main(
   if (
     app && projectInfo?.mode === "multi" && !projectInfo.appNames.includes(app)
   ) {
-    error(`未找到应用 "${app}"`);
-    error(`可用应用: ${projectInfo.appNames.join(", ")}`);
+    error($t("common.appNotFound", { app }));
+    error($t("common.availableApps", { apps: projectInfo.appNames.join(", ") }));
     return;
   }
 
-  info(`正在生成 ${type}: ${name}${app ? ` (应用: ${app})` : ""}`);
+  info(
+    app
+      ? $t("generate.generatingWithApp", { type, name, app })
+      : $t("generate.generating", { type, name }),
+  );
 
   try {
     const typeLower = type.toLowerCase();
@@ -285,7 +294,7 @@ export async function main(
     // 检查文件是否已存在
     try {
       await stat(targetPath);
-      error(`文件已存在: ${targetPath}`);
+      error($t("generate.fileExists", { path: targetPath }));
       return;
     } catch {
       // 文件不存在，可以创建
@@ -294,17 +303,18 @@ export async function main(
     // 写入文件
     await writeTextFile(targetPath, content);
 
-    success(`${type} ${name} 生成完成！`);
-    info(`文件路径: ${targetPath}`);
+    success($t("generate.generateComplete", { type, name }));
+    info($t("generate.filePath", { path: targetPath }));
   } catch (err) {
-    if (err instanceof Error && err.message.includes("不支持的生成类型")) {
+    if (isDwebError(err) && err.code === DwebErrorCode.GENERATE_TYPE_UNSUPPORTED) {
       error(err.message);
-      error("支持的类型: route, api, model, service（或简写 r, a, m, s）");
+      error($t("generate.supportedTypes"));
     } else {
       error(
-        `生成 ${type} 失败: ${
-          err instanceof Error ? err.message : String(err)
-        }`,
+        $t("generate.generateFailed", {
+          type,
+          message: err instanceof Error ? err.message : String(err),
+        }),
       );
     }
   }

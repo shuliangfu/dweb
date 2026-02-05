@@ -9,12 +9,14 @@
  * @module
  */
 
+import { $t } from "@dreamer/i18n";
 import {
   colorize,
   Command,
   error,
   type ParsedOptions,
 } from "./feature/command.ts";
+import { initDwebI18n } from "./utils/i18n.ts";
 import { getDwebVersion } from "./utils/version.ts";
 
 // import { generateFromTemplate } from "./template/generator.ts";
@@ -65,7 +67,9 @@ export function createCLI(version: string): Command {
         await initMain(args, { beta: options?.beta === true });
       } catch (err) {
         error(
-          `初始化项目失败: ${err instanceof Error ? err.message : String(err)}`,
+          $t("cli.initFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
         );
       }
     });
@@ -91,7 +95,9 @@ export function createCLI(version: string): Command {
         await devMain(args, options);
       } catch (err) {
         error(
-          `dev 失败: ${err instanceof Error ? err.message : String(err)}`,
+          $t("cli.devFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
         );
       }
     });
@@ -117,7 +123,9 @@ export function createCLI(version: string): Command {
         await buildMain(args, options);
       } catch (err) {
         error(
-          `build 失败: ${err instanceof Error ? err.message : String(err)}`,
+          $t("cli.buildFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
         );
       }
     });
@@ -140,7 +148,9 @@ export function createCLI(version: string): Command {
         await startMain(args, options);
       } catch (err) {
         error(
-          `start 失败: ${err instanceof Error ? err.message : String(err)}`,
+          $t("cli.startFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
         );
       }
     });
@@ -171,7 +181,9 @@ export function createCLI(version: string): Command {
         await previewMain(args, options);
       } catch (err) {
         error(
-          `preview 失败: ${err instanceof Error ? err.message : String(err)}`,
+          $t("cli.previewFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
         );
       }
     });
@@ -211,7 +223,9 @@ export function createCLI(version: string): Command {
         await generateMain(args, options);
       } catch (err) {
         error(
-          `生成失败: ${err instanceof Error ? err.message : String(err)}`,
+          $t("cli.generateFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
         );
       }
     });
@@ -234,7 +248,9 @@ export function createCLI(version: string): Command {
         await testMain(args, options);
       } catch (err) {
         error(
-          `test 失败: ${err instanceof Error ? err.message : String(err)}`,
+          $t("cli.testFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
         );
       }
     });
@@ -250,7 +266,9 @@ export function createCLI(version: string): Command {
         await lintMain(args, options);
       } catch (err) {
         error(
-          `lint 失败: ${err instanceof Error ? err.message : String(err)}`,
+          $t("cli.lintFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
         );
       }
     });
@@ -266,7 +284,9 @@ export function createCLI(version: string): Command {
         await fmtMain(args, options);
       } catch (err) {
         error(
-          `fmt 失败: ${err instanceof Error ? err.message : String(err)}`,
+          $t("cli.fmtFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
         );
       }
     });
@@ -282,7 +302,9 @@ export function createCLI(version: string): Command {
         await cleanMain(args, options);
       } catch (err) {
         error(
-          `clean 失败: ${err instanceof Error ? err.message : String(err)}`,
+          $t("cli.cleanFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
         );
       }
     });
@@ -328,7 +350,9 @@ export function createCLI(version: string): Command {
         await migrate(args, options);
       } catch (err) {
         error(
-          `迁移失败: ${err instanceof Error ? err.message : String(err)}`,
+          $t("cli.dbMigrateFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
         );
       }
     });
@@ -341,7 +365,9 @@ export function createCLI(version: string): Command {
         await seed(args, options);
       } catch (err) {
         error(
-          `seed 失败: ${err instanceof Error ? err.message : String(err)}`,
+          $t("cli.dbSeedFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
         );
       }
     });
@@ -354,7 +380,9 @@ export function createCLI(version: string): Command {
         await status(args, options);
       } catch (err) {
         error(
-          `status 失败: ${err instanceof Error ? err.message : String(err)}`,
+          $t("cli.dbStatusFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
         );
       }
     });
@@ -376,7 +404,9 @@ export function createCLI(version: string): Command {
         await upgradeMain(args, options);
       } catch (err) {
         error(
-          `upgrade 失败: ${err instanceof Error ? err.message : String(err)}`,
+          $t("cli.upgradeFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
         );
       }
     });
@@ -389,6 +419,7 @@ export function createCLI(version: string): Command {
  * 如果直接运行此文件，则执行 CLI（兼容 Deno 和 Bun）
  */
 if (import.meta.main) {
+  await initDwebI18n();
   const version = await getDwebVersion();
   const cli = createCLI(version);
   await cli.execute();

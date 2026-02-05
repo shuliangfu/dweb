@@ -13,6 +13,7 @@
  * - dweb build -a frontend   # 多应用，仅构建 frontend
  */
 
+import { $t } from "@dreamer/i18n";
 import { error, info, success } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
@@ -35,7 +36,7 @@ export async function main(
   const projectInfo = await getProjectInfo(projectRoot);
 
   if (!projectInfo) {
-    error("未找到 deno.json 或 tasks 配置，请在 dweb 项目根目录执行");
+    error($t("common.noDenoJsonOrTasks"));
     return;
   }
 
@@ -43,12 +44,12 @@ export async function main(
 
   if (projectInfo.mode === "single") {
     if (app) {
-      info("单应用模式，忽略应用名参数");
+      info($t("build.singleIgnore"));
     }
     const taskName = "build";
     if (!projectInfo.tasks[taskName]) {
-      error(`deno.json 中未定义 "build" task`);
-      error("请确保项目由 dweb init 初始化，或手动添加 build task");
+      error($t("common.taskNotDefined", { task: taskName }));
+      error($t("common.ensureInit", { task: taskName }));
       return;
     }
     try {
@@ -57,12 +58,12 @@ export async function main(
         | { server?: { output?: string } }
         | undefined;
       if (buildConfig?.server?.output) {
-        info(`构建输出目录: ${buildConfig.server.output}（来自 config.build）`);
+        info($t("build.outputDir", { path: buildConfig.server.output }));
       }
     } catch {
       // 配置加载失败时忽略
     }
-    info("正在构建...");
+    info($t("build.building"));
     const cmd = createCommand(runtime, {
       args: getTaskArgs(taskName),
       cwd: projectRoot,
@@ -73,9 +74,9 @@ export async function main(
     const child = cmd.spawn();
     const status = await child.status;
     if (status.success) {
-      success("构建完成");
+      success($t("build.complete"));
     } else {
-      error(`build 命令退出码: ${status.code ?? "未知"}`);
+      error($t("build.exitCode", { code: String(status.code ?? "?") }));
     }
     return;
   }
@@ -87,10 +88,10 @@ export async function main(
 
   if (appsToBuild.length === 0) {
     if (app) {
-      error(`未找到应用 "${app}"`);
-      error(`可用应用: ${projectInfo.appNames.join(", ")}`);
+      error($t("common.appNotFound", { app }));
+      error($t("common.availableApps", { apps: projectInfo.appNames.join(", ") }));
     } else {
-      error("未找到可构建的应用");
+      error($t("build.noAppsToBuild"));
     }
     return;
   }
@@ -98,10 +99,10 @@ export async function main(
   for (const appName of appsToBuild) {
     const taskName = `build:${appName}`;
     if (!projectInfo.tasks[taskName]) {
-      error(`deno.json 中未定义 "${taskName}" task`);
+      error($t("common.taskNotDefined", { task: taskName }));
       continue;
     }
-    info(`正在构建 ${appName}...`);
+    info($t("build.building"));
     const cmd = createCommand(runtime, {
       args: getTaskArgs(taskName),
       cwd: projectRoot,
@@ -112,11 +113,14 @@ export async function main(
     const child = cmd.spawn();
     const status = await child.status;
     if (status.success) {
-      success(`${appName} 构建完成`);
+      success($t("build.appComplete", { app: appName }));
     } else {
-      error(`${appName} 构建失败，退出码: ${status.code ?? "未知"}`);
+      error($t("build.appBuildFailed", {
+        app: appName,
+        code: String(status.code ?? "?"),
+      }));
       return;
     }
   }
-  success("全部构建完成");
+  success($t("build.allComplete"));
 }

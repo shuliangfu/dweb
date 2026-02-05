@@ -25,6 +25,7 @@
   "publish": {
     "include": [
       "src/**/*.ts",
+      "src/locales/**/*.json",
       "LICENSE.md",
       "README.md"
     ],
@@ -56,6 +57,7 @@
     "@dreamer/database": "jsr:@dreamer/database@^1.0.0-beta.8",
     "@dreamer/socket-io": "jsr:@dreamer/socket-io@1.0.0-beta.12",
     "@dreamer/websocket": "jsr:@dreamer/websocket@^1.0.0-beta.6",
+    "@dreamer/i18n": "jsr:@dreamer/i18n@^1.0.0-beta.4",
     "@dreamer/test": "jsr:@dreamer/test@^1.0.0-beta.40",
     "preact": "npm:preact@10.28.0",
     "esbuild": "npm:esbuild@^0.27.2",

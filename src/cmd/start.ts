@@ -13,6 +13,7 @@
  * - dweb start -a frontend   # 多应用，启动 frontend
  */
 
+import { $t } from "@dreamer/i18n";
 import { error, info } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
@@ -35,7 +36,7 @@ export async function main(
   const projectInfo = await getProjectInfo(projectRoot);
 
   if (!projectInfo) {
-    error("未找到 deno.json 或 tasks 配置，请在 dweb 项目根目录执行");
+    error($t("common.noDenoJsonOrTasks"));
     return;
   }
 
@@ -43,12 +44,12 @@ export async function main(
 
   if (projectInfo.mode === "single") {
     if (app) {
-      info("单应用模式，忽略应用名参数");
+      info($t("common.singleAppIgnore"));
     }
     const taskName = "start";
     if (!projectInfo.tasks[taskName]) {
-      error(`deno.json 中未定义 "start" task`);
-      error("请确保项目由 dweb init 初始化，或手动添加 start task");
+      error($t("common.taskNotDefined", { task: taskName }));
+      error($t("common.ensureInit", { task: taskName }));
       return;
     }
     try {
@@ -57,12 +58,12 @@ export async function main(
         | { port?: number; host?: string }
         | undefined;
       if (serverConfig?.port) {
-        info(`生产服务器端口: ${serverConfig.port}（来自 config.server）`);
+        info($t("common.portFromConfigProd", { port: String(serverConfig.port) }));
       }
     } catch {
       // 配置加载失败时忽略
     }
-    info("正在启动生产服务器...");
+    info($t("start.startingSingle"));
     const cmd = createCommand(runtime, {
       args: getTaskArgs(taskName),
       cwd: projectRoot,
@@ -73,28 +74,28 @@ export async function main(
     const child = cmd.spawn();
     const status = await child.status;
     if (!status.success) {
-      error(`start 命令退出码: ${status.code ?? "未知"}`);
+      error($t("start.exitCode", { code: String(status.code ?? "?") }));
     }
     return;
   }
 
   // 多应用
   if (!app) {
-    error("多应用模式需指定应用名");
-    error(`可用应用: ${projectInfo.appNames.join(", ")}`);
-    error("示例: dweb start backend  或  dweb start -a frontend");
+    error($t("common.multiAppNeedApp"));
+    error($t("common.availableApps", { apps: projectInfo.appNames.join(", ") }));
+    error($t("common.exampleApp", { cmd: "start", app: "backend" }));
     return;
   }
 
   if (!projectInfo.appNames.includes(app)) {
-    error(`未找到应用 "${app}"`);
-    error(`可用应用: ${projectInfo.appNames.join(", ")}`);
+    error($t("common.appNotFound", { app }));
+    error($t("common.availableApps", { apps: projectInfo.appNames.join(", ") }));
     return;
   }
 
   const taskName = `start:${app}`;
   if (!projectInfo.tasks[taskName]) {
-    error(`deno.json 中未定义 "${taskName}" task`);
+    error($t("common.taskNotDefined", { task: taskName }));
     return;
   }
 
@@ -104,12 +105,12 @@ export async function main(
       | { port?: number; host?: string }
       | undefined;
     if (serverConfig?.port) {
-      info(`生产服务器端口: ${serverConfig.port}（来自 config.server）`);
+      info($t("common.portFromConfigProd", { port: String(serverConfig.port) }));
     }
   } catch {
     // 配置加载失败时忽略
   }
-  info(`正在启动 ${app} 生产服务器...`);
+  info($t("start.starting", { app }));
   const cmd = createCommand(runtime, {
     args: getTaskArgs(taskName),
     cwd: projectRoot,
@@ -120,6 +121,6 @@ export async function main(
   const child = cmd.spawn();
   const status = await child.status;
   if (!status.success) {
-    error(`start:${app} 命令退出码: ${status.code ?? "未知"}`);
+    error($t("start.exitCodeApp", { app, code: String(status.code ?? "?") }));
   }
 }

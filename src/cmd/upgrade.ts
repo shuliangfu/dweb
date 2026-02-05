@@ -12,6 +12,7 @@
  * - dweb upgrade --beta   # 可升级到 beta 最新版
  */
 
+import { $t } from "@dreamer/i18n";
 import {
   error,
   failSpinner,
@@ -62,21 +63,21 @@ export async function main(
   const useBeta = options?.beta === true;
   const runtime = getRuntime();
   const current = await getDwebVersion();
-  info(`当前版本: ${current}`);
-  info("正在检查最新版本...");
+  info($t("upgrade.currentVersion", { version: current }));
+  info($t("upgrade.checkingLatest"));
 
   const latest = await fetchJsrLatestVersion("@dreamer/dweb", useBeta);
   if (!latest) {
-    error("无法获取最新版本信息，请检查网络连接");
+    error($t("upgrade.cannotGetLatest"));
     return;
   }
 
   if (current === latest || !isNewer(latest, current)) {
-    success(`已是最新版本: ${current}`);
+    success($t("upgrade.alreadyLatest", { version: current }));
     return;
   }
 
-  success(`发现新版本: ${latest}`);
+  success($t("upgrade.newVersionFound", { version: latest }));
 
   const setupSpec = `jsr:@dreamer/dweb@${latest}/setup`;
   const cmd = createCommand(runtime, {
@@ -85,17 +86,17 @@ export async function main(
     stderr: "piped",
     stdin: "inherit",
   });
-  startSpinner("正在安装 dweb-cli ...");
+  startSpinner($t("upgrade.installing"));
   const child = cmd.spawn();
   const status = await child.status;
 
   if (status.success) {
-    succeedSpinner(`dweb-cli 已升级至 ${latest}`);
+    succeedSpinner($t("upgrade.upgradedTo", { version: latest }));
     await writeVersionCache(latest);
   } else {
-    failSpinner("自动安装失败");
-    error("请手动执行:");
-    info(`  deno run -A ${setupSpec}`);
-    info("或手动修改项目 deno.json 中的 @dreamer/dweb 版本号");
+    failSpinner($t("upgrade.autoInstallFailed"));
+    error($t("upgrade.manualInstall"));
+    info($t("upgrade.manualExample", { spec: setupSpec }));
+    info($t("upgrade.orManualVersion"));
   }
 }

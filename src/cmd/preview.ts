@@ -12,6 +12,7 @@
  * - dweb preview -a frontend  # 多应用时指定应用
  */
 
+import { $t } from "@dreamer/i18n";
 import { error, info, success } from "@dreamer/console";
 import {
   cwd,
@@ -124,7 +125,7 @@ export async function main(
   try {
     await stat(distDir);
   } catch {
-    error("dist 目录不存在，请先执行 dweb build");
+    error($t("preview.distNotExists"));
     return;
   }
 
@@ -132,22 +133,24 @@ export async function main(
   if (
     app && projectInfo?.mode === "multi" && !projectInfo.appNames.includes(app)
   ) {
-    error(`未找到应用 "${app}"`);
-    error(`可用应用: ${projectInfo.appNames.join(", ")}`);
+    error($t("common.appNotFound", { app }));
+    error($t("common.availableApps", {
+      apps: projectInfo?.appNames.join(", ") ?? "",
+    }));
     return;
   }
 
   const staticRoot = await resolveStaticRoot(distDir, app);
-  info(`静态资源目录: ${staticRoot}`);
-  info(`正在启动预览服务器 http://localhost:${port}`);
-  success("按 Ctrl+C 停止");
+  info($t("preview.staticDir", { path: staticRoot }));
+  info($t("preview.starting", { port: String(port) }));
+  success($t("preview.pressCtrlC"));
 
   serve(
     {
       port,
       host: "127.0.0.1",
       onListen: () => {
-        info(`预览服务器已启动: http://localhost:${port}`);
+        info($t("preview.started", { port: String(port) }));
       },
     },
     async (req: Request) => {

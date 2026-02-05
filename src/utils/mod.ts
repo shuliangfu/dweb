@@ -38,3 +38,4 @@ export * from "./logger.ts";
 export * from "./runtime.ts";
 export * from "./config-loader.ts";
 export * from "./errors.ts";
+export * from "./i18n.ts";

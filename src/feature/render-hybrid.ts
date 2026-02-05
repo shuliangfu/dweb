@@ -14,6 +14,7 @@
  * 4. 后续导航：客户端使用 renderCSR() 渲染（SPA 体验）
  */
 
+import { $t } from "@dreamer/i18n";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import { getEnv } from "../core/runtime-adapter.ts";
@@ -224,7 +225,7 @@ ${hybridOptions.bodyTags || ""}`;
         },
       });
     } catch (error) {
-      console.error("Hybrid 渲染错误:", error);
+      console.error($t("log.hybridError"), error);
 
       // 尝试加载 _error.tsx 进行错误处理
       const errorPath = router.getSpecialFile("_error");

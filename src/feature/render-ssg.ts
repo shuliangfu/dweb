@@ -12,6 +12,7 @@
  * 3. 生产（start）：从 outputDir 读取预渲染 HTML 返回
  */
 
+import { $t } from "@dreamer/i18n";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import {
@@ -146,7 +147,7 @@ export function createRendererSSG(
         },
       });
     } catch (error) {
-      console.error("SSG 渲染错误:", error);
+      console.error($t("log.ssgError"), error);
       const isDev =
         (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
       const errHeaders: Record<string, string> = {

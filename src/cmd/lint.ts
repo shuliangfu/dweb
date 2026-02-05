@@ -9,6 +9,7 @@
  * - dweb lint
  */
 
+import { $t } from "@dreamer/i18n";
 import { error, info, success } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
@@ -30,13 +31,13 @@ export async function main(
   const projectInfo = await getProjectInfo(projectRoot);
 
   if (!projectInfo) {
-    error("未找到 deno.json，请在 dweb 项目根目录执行");
+    error($t("common.noDenoJson"));
     return;
   }
 
   const taskName = "lint";
   if (projectInfo.tasks[taskName]) {
-    info("正在运行代码检查...");
+    info($t("lint.running"));
     const cmd = createCommand(runtime, {
       args: getLintArgs(true),
       cwd: projectRoot,
@@ -47,15 +48,15 @@ export async function main(
     const child = cmd.spawn();
     const status = await child.status;
     if (status.success) {
-      success("代码检查完成");
+      success($t("lint.complete"));
     } else {
-      error(`lint 命令退出码: ${status.code ?? "未知"}`);
+      error($t("lint.exitCode", { code: String(status.code ?? "?") }));
     }
     return;
   }
 
   // 无 lint task，直接运行 lint
-  info("正在运行代码检查...");
+  info($t("lint.running"));
   const cmd = createCommand(runtime, {
     args: getLintArgs(false),
     cwd: projectRoot,
@@ -66,8 +67,8 @@ export async function main(
   const child = cmd.spawn();
   const status = await child.status;
   if (status.success) {
-    success("代码检查完成");
+    success($t("lint.complete"));
   } else {
-    error(`lint 命令退出码: ${status.code ?? "未知"}`);
+    error($t("lint.exitCode", { code: String(status.code ?? "?") }));
   }
 }

@@ -5,6 +5,7 @@
  * 开发模式下通过 cache-busting 参数绕过模块缓存，确保文件变更后刷新能拿到最新内容。
  */
 
+import { $t } from "@dreamer/i18n";
 import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
 import { getModuleVersion } from "./module-cache.ts";
 
@@ -42,7 +43,7 @@ export async function loadRouteModule(
     const mod = await import(moduleUrl);
     return mod as Record<string, unknown>;
   } catch (error) {
-    console.error(`加载模块失败: ${filePath}`, error);
+    console.error(`${$t("log.loadModuleFailed")}: ${filePath}`, error);
     return null;
   }
 }

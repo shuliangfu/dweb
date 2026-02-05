@@ -24,10 +24,12 @@ import {
   remove,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
+import { $t } from "@dreamer/i18n";
 import {
   DwebErrorCode,
   throwDwebError,
 } from "./utils/errors.ts";
+import { initDwebI18n } from "./utils/i18n.ts";
 import {
   getPackageRoot,
   loadDwebDenoJson,
@@ -111,6 +113,7 @@ async function createTempCliConfig(): Promise<string> {
  * - 本地调试安装：使用 --config 临时 config（去除 workspace），避免解析 examples 等不存在的路径
  */
 async function installGlobalCli(): Promise<void> {
+  await initDwebI18n();
   const runtime = getRuntime();
   const cliEntry = getCliEntry();
   const args: string[] = [
@@ -135,15 +138,15 @@ async function installGlobalCli(): Promise<void> {
         stderr: "piped",
         stdin: "inherit",
       });
-      startSpinner(`正在安装 ${CLI_NAME} ...`);
+      startSpinner($t("cli.installing", { name: CLI_NAME }));
       const child = cmd.spawn();
       const status = await child.status;
       if (status.success) {
-        succeedSpinner(`${CLI_NAME} 已安装成功`);
+        succeedSpinner($t("cli.installSuccess", { name: CLI_NAME }));
         await writeVersionCacheOnInstall();
         printUsage();
       } else {
-        failSpinner(`安装失败，退出码: ${status.code}`);
+        failSpinner($t("cli.installFailedExit", { code: String(status.code ?? "") }));
         exit(status.code ?? 1);
       }
     } finally {
@@ -157,15 +160,15 @@ async function installGlobalCli(): Promise<void> {
       stderr: "piped",
       stdin: "inherit",
     });
-    startSpinner(`正在安装 ${CLI_NAME} ...`);
+    startSpinner($t("cli.installing", { name: CLI_NAME }));
     const child = cmd.spawn();
     const status = await child.status;
     if (status.success) {
-      succeedSpinner(`${CLI_NAME} 已安装成功`);
+      succeedSpinner($t("cli.installSuccess", { name: CLI_NAME }));
       await writeVersionCacheOnInstall();
       printUsage();
     } else {
-      failSpinner(`安装失败，退出码: ${status.code}`);
+      failSpinner($t("cli.installFailedExit", { code: String(status.code ?? "") }));
       exit(status.code ?? 1);
     }
   }
@@ -187,29 +190,32 @@ async function writeVersionCacheOnInstall(): Promise<void> {
 
 /** 打印 dweb-cli 使用说明 */
 function printUsage(): void {
-  console.log("使用方式:");
-  console.log(`  ${CLI_NAME} init [appName]   # 初始化新项目`);
-  console.log(`  ${CLI_NAME} dev              # 启动开发服务器`);
-  console.log(`  ${CLI_NAME} build            # 构建生产版本`);
-  console.log(`  ${CLI_NAME} start            # 启动生产服务器`);
-  console.log(`  ${CLI_NAME} generate (g)     # 生成代码`);
-  console.log(`  ${CLI_NAME} db migrate (m)   # 数据库迁移`);
-  console.log(`  ${CLI_NAME} db seed          # 执行数据库种子`);
-  console.log(`  ${CLI_NAME} db status        # 查看迁移状态`);
-  console.log(`  ${CLI_NAME} test             # 运行测试`);
-  console.log(`  ${CLI_NAME} lint             # 代码检查`);
-  console.log(`  ${CLI_NAME} fmt              # 代码格式化`);
-  console.log(`  ${CLI_NAME} clean            # 清理构建产物`);
-  console.log(`  ${CLI_NAME} preview          # 预览构建结果`);
-  console.log(`  ${CLI_NAME} upgrade          # 升级 dweb`);
-  console.log(`  ${CLI_NAME} --help           # 查看完整帮助`);
+  console.log($t("cli.usage"));
+  console.log(`  ${CLI_NAME} init [appName]   # ${$t("cli.commands.init")}`);
+  console.log(`  ${CLI_NAME} dev              # ${$t("cli.commands.dev")}`);
+  console.log(`  ${CLI_NAME} build            # ${$t("cli.commands.build")}`);
+  console.log(`  ${CLI_NAME} start            # ${$t("cli.commands.start")}`);
+  console.log(`  ${CLI_NAME} generate (g)     # ${$t("cli.commands.generate")}`);
+  console.log(`  ${CLI_NAME} db migrate (m)   # ${$t("cli.commands.dbMigrate")}`);
+  console.log(`  ${CLI_NAME} db seed          # ${$t("cli.commands.dbSeed")}`);
+  console.log(`  ${CLI_NAME} db status        # ${$t("cli.commands.dbStatus")}`);
+  console.log(`  ${CLI_NAME} test             # ${$t("cli.commands.test")}`);
+  console.log(`  ${CLI_NAME} lint             # ${$t("cli.commands.lint")}`);
+  console.log(`  ${CLI_NAME} fmt              # ${$t("cli.commands.fmt")}`);
+  console.log(`  ${CLI_NAME} clean            # ${$t("cli.commands.clean")}`);
+  console.log(`  ${CLI_NAME} preview          # ${$t("cli.commands.preview")}`);
+  console.log(`  ${CLI_NAME} upgrade          # ${$t("cli.commands.upgrade")}`);
+  console.log(`  ${CLI_NAME} --help           # ${$t("cli.commands.help")}`);
   console.log("");
 }
 
 // 主入口
 if (import.meta.main) {
   installGlobalCli().catch((err) => {
-    console.error("安装失败:", err);
+    const msg = (globalThis as { $t?: (k: string) => string }).$t
+      ? $t("cli.installFailed")
+      : "安装失败";
+    console.error(msg, err);
     exit(1);
   });
 }

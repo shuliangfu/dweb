@@ -7,6 +7,7 @@
  * @module
  */
 
+import { $t } from "@dreamer/i18n";
 import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import { getLogger } from "../utils/logger.ts";
@@ -41,18 +42,16 @@ export async function emitPluginEvent(
         await hook(...args, container);
       } catch (error) {
         // 使用 logger 记录错误（如果 logger 已注册，使用 logger；否则使用 console 作为后备）
+        const msg = $t("log.pluginHookFailed", {
+          pluginName,
+          eventName,
+        });
         if (container.has("logger")) {
           const logger = getLogger(container);
-          logger.error(
-            `插件 ${pluginName} 的 ${eventName} 钩子执行失败:`,
-            error,
-          );
+          logger.error(`${msg}:`, error);
         } else {
           // logger 未初始化时，使用 console 作为后备
-          console.error(
-            `插件 ${pluginName} 的 ${eventName} 钩子执行失败:`,
-            error,
-          );
+          console.error(`${msg}:`, error);
         }
       }
     }
@@ -101,17 +100,15 @@ export async function emitOnRequest(
         return result;
       }
     } catch (error) {
+      const msg = $t("log.pluginHookFailed", {
+        pluginName,
+        eventName: "onRequest",
+      });
       if (container.has("logger")) {
         const logger = getLogger(container);
-        logger.error(
-          `插件 ${pluginName} 的 onRequest 钩子执行失败:`,
-          error,
-        );
+        logger.error(`${msg}:`, error);
       } else {
-        console.error(
-          `插件 ${pluginName} 的 onRequest 钩子执行失败:`,
-          error,
-        );
+        console.error(`${msg}:`, error);
       }
     }
   }
@@ -231,17 +228,15 @@ export async function emitOnError(
           return response;
         }
       } catch (hookError) {
+        const msg = $t("log.pluginHookFailed", {
+          pluginName,
+          eventName: "onError",
+        });
         if (container.has("logger")) {
           const logger = getLogger(container);
-          logger.error(
-            `插件 ${pluginName} 的 onError 钩子执行失败:`,
-            hookError,
-          );
+          logger.error(`${msg}:`, hookError);
         } else {
-          console.error(
-            `插件 ${pluginName} 的 onError 钩子执行失败:`,
-            hookError,
-          );
+          console.error(`${msg}:`, hookError);
         }
       }
     }
@@ -305,17 +300,15 @@ export async function emitOnRoute(
           currentRoutes = modifiedRoutes;
         }
       } catch (error) {
+        const msg = $t("log.pluginHookFailed", {
+          pluginName,
+          eventName: "onRoute",
+        });
         if (container.has("logger")) {
           const logger = getLogger(container);
-          logger.error(
-            `插件 ${pluginName} 的 onRoute 钩子执行失败:`,
-            error,
-          );
+          logger.error(`${msg}:`, error);
         } else {
-          console.error(
-            `插件 ${pluginName} 的 onRoute 钩子执行失败:`,
-            error,
-          );
+          console.error(`${msg}:`, error);
         }
       }
     }

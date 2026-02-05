@@ -9,6 +9,7 @@
  * - 返回 HTML 响应
  */
 
+import { $t } from "@dreamer/i18n";
 import type { SSROptions } from "@dreamer/render";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
@@ -133,7 +134,7 @@ export function createRendererSSR(
         },
       });
     } catch (error) {
-      console.error("SSR 渲染错误:", error);
+      console.error($t("log.ssrError"), error);
 
       // 尝试加载 _error 进行错误处理（支持 .tsx）
       const errorPath = router.getSpecialFile("_error");

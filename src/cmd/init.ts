@@ -11,6 +11,7 @@
  * - Bun:  bun run src/cmd/init.ts [目录名]
  */
 
+import { $t } from "@dreamer/i18n";
 import {
   confirm,
   error as consoleError,
@@ -142,22 +143,22 @@ export async function collectOptions(
   useBeta?: boolean,
 ): Promise<InitOptions> {
   title("dweb init");
-  info("创建新的 @dreamer/dweb 项目");
+  info($t("init.creatingProject"));
   separator();
 
   const argv = overrideArgv ?? args();
   let targetDirRaw: string;
   if (argv.length > 0) {
     targetDirRaw = argv[0].trim();
-    info(`项目名称（来自参数）: ${targetDirRaw}`);
+    info($t("init.projectNameFromArg", { name: targetDirRaw }));
   } else {
     const inputDir = await input(
-      "项目名称: ",
+      $t("init.projectNamePrompt"),
       (v) => {
         const t = v.trim();
-        if (!t) return "请输入项目名称或 .";
+        if (!t) return $t("init.projectNameRequired");
         if (t !== "." && !isValidAppName(t)) {
-          return "项目名称仅支持小写字母、数字、连字符，且不能以连字符开头或结尾";
+          return $t("init.projectNameInvalid");
         }
         return null;
       },
@@ -173,8 +174,8 @@ export async function collectOptions(
     : targetDirRaw;
 
   const appModeIdx = await interactiveMenu(
-    "应用模式",
-    ["单应用", "多应用"],
+    $t("init.appMode"),
+    [$t("init.appModeSingle"), $t("init.appModeMulti")],
     0,
   );
   const appMode: AppMode = appModeIdx === 0 ? "single" : "multi";
@@ -182,30 +183,26 @@ export async function collectOptions(
   /** 多应用时循环输入应用名称，每行一个，空回车结束，至少保留一个 */
   const appNames: string[] = [];
   if (appMode === "multi") {
-    info(
-      "每行输入一个应用名称（如 backend、frontend），空回车结束（至少输入一个）",
-    );
+    info($t("init.appNamesHint"));
     while (true) {
       const hint = appNames.length > 0
-        ? `应用名称（已添加: ${appNames.join(", ")}；空回车结束）: `
-        : "应用名称（空回车结束，至少输入一个）: ";
+        ? $t("init.appNamePromptWithAdded", { apps: appNames.join(", ") })
+        : $t("init.appNamePromptEmpty");
       const line = await prompt(hint);
       const name = line?.trim() ?? "";
       if (name === "") {
         if (appNames.length === 0) {
-          consoleError("至少需要输入一个应用名称");
+          consoleError($t("init.appNameMinOne"));
           continue;
         }
         break;
       }
       if (!isValidAppName(name)) {
-        consoleError(
-          `"${name}" 不合法，仅支持小写字母、数字、连字符，且不能以连字符开头或结尾`,
-        );
+        consoleError($t("init.appNameInvalid", { name }));
         continue;
       }
       if (appNames.includes(name)) {
-        consoleError(`应用名称不能重复: ${name}`);
+        consoleError($t("init.appNameDuplicate", { name }));
         continue;
       }
       appNames.push(name);
@@ -213,19 +210,19 @@ export async function collectOptions(
   }
 
   const engineIdx = await interactiveMenu(
-    "UI 引擎",
-    ["Preact", "React"],
+    $t("init.uiEngine"),
+    [$t("init.uiEnginePreact"), $t("init.uiEngineReact")],
     0,
   );
   const engine: Engine = engineIdx === 0 ? "preact" : "react";
 
   const renderModeIdx = await interactiveMenu(
-    "渲染模式",
+    $t("init.renderMode"),
     [
-      "Hybrid（混合）",
-      "SSR（服务端渲染）",
-      "CSR（客户端渲染）",
-      "SSG（静态生成）",
+      $t("init.renderModeHybrid"),
+      $t("init.renderModeSsr"),
+      $t("init.renderModeCsr"),
+      $t("init.renderModeSsg"),
     ],
     0,
   );
@@ -234,8 +231,8 @@ export async function collectOptions(
   ];
 
   const styleIdx = await interactiveMenu(
-    "样式方案",
-    ["Tailwind CSS", "UnoCSS", "无（稍后配置）"],
+    $t("init.style"),
+    [$t("init.styleTailwind"), $t("init.styleUno"), $t("init.styleNone")],
     0,
   );
   const style: Style = styleIdx === 0
@@ -244,11 +241,11 @@ export async function collectOptions(
     ? "unocss"
     : "none";
 
-  const useSrc = await confirm("是否使用 src 目录？", true);
+  const useSrc = await confirm($t("init.useSrc"), true);
 
   const exampleIdx = await interactiveMenu(
-    "示例代码",
-    ["带关于页（about）", "最小（_app、_layout、index）"],
+    $t("init.exampleLevel"),
+    [$t("init.exampleWithAbout"), $t("init.exampleMinimal")],
     0,
   );
   const exampleLevel: ExampleLevel = exampleIdx === 0
@@ -1353,15 +1350,15 @@ export async function generate(opts: InitOptions): Promise<void> {
   // useBeta=false：仅 dweb 从 JSR 获取；render/router/plugins 用 dweb deno.json（未发正式版）
   // useBeta=true：全部从 JSR 获取 beta 最新版
   const useBeta = opts.useBeta ?? false;
-  startSpinner("正在获取最新依赖版本...");
+  startSpinner($t("init.fetchingVersions"));
   let dwebConfig: DwebDenoConfig | null = null;
   let jsrVersions: JsrVersions;
   try {
     dwebConfig = await loadDwebDenoJson();
     jsrVersions = await fetchDreamerVersions(useBeta, dwebConfig);
-    succeedSpinner("已获取");
+    succeedSpinner($t("init.fetched"));
   } catch {
-    failSpinner("版本获取失败，使用本地/兜底版本");
+    failSpinner($t("init.fetchFailed"));
     jsrVersions = {
       dweb: dwebConfig?.version ?? FALLBACK_DWEB_VERSION,
       render: "1.0.0",
@@ -1405,30 +1402,30 @@ export async function main(
   if (targetExists) {
     // 简单检查：项目目录已存在时确认是否继续写入
     const go = await confirm(
-      `项目目录 ${opts.targetDir} 已存在，是否继续写入？（可能覆盖已有文件）`,
+      $t("init.dirExistsConfirm", { path: opts.targetDir }),
       false,
     );
     if (!go) {
-      info("已取消");
+      info($t("init.cancelled"));
       return;
     }
   }
 
-  info("正在生成项目...");
+  info($t("init.generatingProject"));
   await generate(opts);
 
-  success("项目已创建");
-  info("下一步:");
+  success($t("init.projectCreated"));
+  info($t("init.nextSteps"));
   const isMulti = opts.appMode === "multi" && (opts.appNames?.length ?? 0) > 0;
   if (opts.targetDir !== cwd()) {
-    info(`  cd ${basename(opts.targetDir)}`);
+    info($t("init.cdDir", { dir: basename(opts.targetDir) }));
   }
   if (isMulti && opts.appNames?.length) {
     for (const app of opts.appNames) {
-      info(`  dweb-cli dev --app ${app}   # 启动 ${app} 应用`);
+      info($t("init.runDevApp", { app }));
     }
   } else {
-    info("  dweb-cli dev");
+    info($t("init.runDev"));
   }
   console.log("");
 }

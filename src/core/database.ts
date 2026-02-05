@@ -12,6 +12,7 @@ import {
   DatabaseManager,
   type DatabaseManagerOptions,
 } from "@dreamer/database";
+import { $t } from "@dreamer/i18n";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
 import { getLogger } from "../utils/logger.ts";
@@ -115,9 +116,9 @@ export async function connectDatabases(
   if (dbConfig.default) {
     try {
       await manager.connect("default", dbConfig.default);
-      logger.info("数据库连接成功: default");
+      logger.info($t("log.dbConnected", { name: "default" }));
     } catch (error) {
-      logger.error("数据库连接失败: default", error);
+      logger.error($t("log.dbConnectFailed", { name: "default" }), error);
       throw error;
     }
   }
@@ -127,9 +128,9 @@ export async function connectDatabases(
     for (const [name, connConfig] of Object.entries(dbConfig.connections)) {
       try {
         await manager.connect(name, connConfig);
-        logger.info(`数据库连接成功: ${name}`);
+        logger.info($t("log.dbConnected", { name }));
       } catch (error) {
-        logger.error(`数据库连接失败: ${name}`, error);
+        logger.error($t("log.dbConnectFailed", { name }), error);
         throw error;
       }
     }

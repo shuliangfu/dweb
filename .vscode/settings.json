@@ -1,0 +1,170 @@
+{
+  // The path to the `bun` executable.
+  "bun.runtime": "/Users/shuliangfu/.bun/bin/bun",
+  // If support for Bun should be added to the default "JavaScript Debug Terminal".
+  "bun.debugTerminal.enabled": true,
+  // If the debugger should stop on the first line of the program.
+  "bun.debugTerminal.stopOnEntry": false,
+  // Glob pattern to find test files. Defaults to the value shown below.
+  "bun.test.filePattern": "**/*{.test.,.spec.,_test_,_spec_}{js,ts,tsx,jsx,mts,cts,cjs,mjs}",
+  // The custom script to call for testing instead of `bun test`
+  "bun.test.customScript": "bun test",
+  // ==================== Deno 配置 ====================
+  // 启用 Deno 扩展支持，提供 Deno 运行时和 API 的智能提示
+  "deno.enable": true,
+  // 启用 Deno 的代码检查功能，自动检测代码问题
+  "deno.lint": true,
+  // ==================== 格式化配置 ====================
+  // TypeScript 文件的格式化配置
+  "[typescript]": {
+    // 使用 Deno 扩展作为 TypeScript 文件的默认格式化器
+    "editor.defaultFormatter": "denoland.vscode-deno",
+    // 保存文件时自动格式化代码
+    "editor.formatOnSave": true,
+    // 保存时执行的代码操作
+    "editor.codeActionsOnSave": {
+      // 自动修复所有可修复的问题
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    }
+  },
+  // TSX (TypeScript React) 文件的格式化配置
+  "[typescriptreact]": {
+    // 使用 Deno 扩展作为 TSX 文件的默认格式化器
+    "editor.defaultFormatter": "denoland.vscode-deno",
+    // 保存文件时自动格式化代码
+    "editor.formatOnSave": true,
+    // 保存时执行的代码操作
+    "editor.codeActionsOnSave": {
+      // 自动修复所有可修复的问题
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    }
+  },
+  // JavaScript 文件的格式化配置
+  "[javascript]": {
+    // 使用 Deno 扩展作为 JavaScript 文件的默认格式化器
+    "editor.defaultFormatter": "denoland.vscode-deno",
+    // 保存文件时自动格式化代码
+    "editor.formatOnSave": true
+  },
+  // JSX (JavaScript React) 文件的格式化配置
+  "[javascriptreact]": {
+    // 使用 Deno 扩展作为 JSX 文件的默认格式化器
+    "editor.defaultFormatter": "denoland.vscode-deno",
+    // 保存文件时自动格式化代码
+    "editor.formatOnSave": true
+  },
+  // JSON 文件的格式化配置
+  "[json]": {
+    // 使用 VS Code 内置的 JSON 格式化器
+    "editor.defaultFormatter": "vscode.json-language-features",
+    // 保存文件时自动格式化代码
+    "editor.formatOnSave": true
+  },
+  // JSONC (带注释的 JSON) 文件的格式化配置
+  "[jsonc]": {
+    // 使用 VS Code 内置的 JSON 格式化器
+    "editor.defaultFormatter": "vscode.json-language-features",
+    // 保存文件时自动格式化代码
+    "editor.formatOnSave": true
+  },
+  // ==================== 编辑器基础配置 ====================
+  // 设置制表符宽度为 2 个空格
+  "editor.tabSize": 2,
+  // 使用空格而不是制表符进行缩进
+  "editor.insertSpaces": true,
+  // 禁用自动检测文件缩进，使用上面设置的固定值
+  "editor.detectIndentation": false,
+  // 自动删除行尾的多余空白字符
+  "editor.trimAutoWhitespace": true,
+  // 保存时自动删除文件末尾的空白行
+  "files.trimTrailingWhitespace": true,
+  // 保存时在文件末尾插入一个换行符（如果不存在）
+  "files.insertFinalNewline": true,
+  // 保存时删除文件末尾的多个连续换行符，只保留一个
+  "files.trimFinalNewlines": true,
+  // ==================== 行长度配置 ====================
+  // 在第 100 列显示标尺线，提示代码行长度
+  "editor.rulers": [
+    120
+  ],
+  // 关闭自动换行，保持代码在一行显示
+  "editor.wordWrap": "off",
+  // ==================== 代码格式化选项 ====================
+  // 粘贴代码时自动格式化
+  "editor.formatOnPaste": true,
+  // 输入代码时不自动格式化（避免输入时频繁格式化影响体验）
+  "editor.formatOnType": false,
+  // ==================== Deno 格式化选项说明 ====================
+  // 注意：Deno 格式化器的具体规则（如分号、行长度等）通过 deno.json 的 fmt 选项配置
+  // 由于 Deno 格式化器限制，格式化规则需要在 deno.json 中设置
+  // ==================== 其他有用的配置 ====================
+  // 代码建议选择策略：优先选择第一个建议项
+  "editor.suggestSelection": "first",
+  // 代码片段建议位置：显示在建议列表顶部
+  "editor.snippetSuggestions": "top",
+  // 启用括号配对着色，匹配的括号会显示相同颜色
+  "editor.bracketPairColorization.enabled": true,
+  // 关闭括号配对的引导线（线框框），不显示垂直引导线
+  "editor.guides.bracketPairs": false,
+  // 启用代码缩略图（小地图），方便快速浏览和定位代码
+  "editor.minimap.enabled": true,
+  // ==================== CSS / Tailwind 配置 ====================
+  // 忽略未知 at-rule 警告（Tailwind v4 的 @source、@theme、@layer 等非标准指令）
+  "css.lint.unknownAtRules": "ignore",
+  // ==================== 文件关联 ====================
+  // 将 .tsx 文件识别为 TypeScript React 类型
+  "files.associations": {
+    "*.tsx": "typescriptreact",
+    // 将 .ts 文件识别为 TypeScript 类型
+    "*.ts": "typescript"
+  },
+  // ==================== 文件排除 ====================
+  // 在文件浏览器中隐藏以下文件和文件夹
+  "files.exclude": {
+    // 隐藏 .git 目录
+    "**/.git": true,
+    // 隐藏 macOS 系统文件
+    "**/.DS_Store": true,
+    // 隐藏 node_modules 目录
+    "**/node_modules": true,
+    // 隐藏 Deno 缓存目录
+    "**/.deno": true
+  },
+  // ==================== 搜索排除 ====================
+  // 在全局搜索中排除以下目录，提高搜索效率
+  "search.exclude": {
+    // 排除 node_modules 目录
+    "**/node_modules": true,
+    // 排除 Deno 缓存目录
+    "**/.deno": true,
+    // 排除构建输出目录
+    "**/dist": true,
+    // 排除数据目录
+    "**/.data": true
+  },
+  // ==================== i18n-ally 配置 ====================
+  "i18n-ally.localesPaths": [
+    "src/locales"
+  ],
+  "i18n-ally.keystyle": "nested",
+  "i18n-ally.sortKeys": true,
+  "i18n-ally.namespace": true,
+  "i18n-ally.enabledParsers": [
+    "json"
+  ],
+  "i18n-ally.sourceLanguage": "zh-CN",
+  "i18n-ally.displayLanguage": "zh-CN",
+  "i18n-ally.translate.engines": [
+    "deepl",
+    "google"
+  ],
+  "i18n-ally.extract.keygenStyle": "PascalCase",
+  "i18n-ally.enabledFrameworks": [
+    "react",
+    "i18next"
+  ],
+  "i18n-ally.regex.key": ".*?",
+  "i18n-ally.extract.autoDetect": true
+}

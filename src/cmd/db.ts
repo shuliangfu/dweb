@@ -16,6 +16,7 @@
  * - dweb db status
  */
 
+import { $t } from "@dreamer/i18n";
 import { error, info, success } from "@dreamer/console";
 import { DatabaseManager, MigrationManager } from "@dreamer/database";
 import {
@@ -140,10 +141,10 @@ export async function migrate(
   try {
     if (action === "create") {
       if (!name) {
-        error("创建迁移需要指定名称（--name）");
+        error($t("db.createNeedName"));
         return;
       }
-      info(`正在创建迁移: ${name} (类型: ${dbType})`);
+      info($t("db.creatingMigration", { name, dbType }));
 
       const currentDir = cwd();
       const migrationsDir = join(currentDir, "migrations");
@@ -157,7 +158,7 @@ export async function migrate(
 
       try {
         await stat(migrationFile);
-        error(`迁移文件已存在: ${migrationFile}`);
+        error($t("db.migrationFileExists", { path: migrationFile }));
         return;
       } catch {
         // 文件不存在，可以创建
@@ -168,9 +169,9 @@ export async function migrate(
         : getSqlMigrationTemplate(name, className);
 
       await writeTextFile(migrationFile, content);
-      success(`迁移 ${name} 创建完成！`);
-      info(`迁移文件: ${migrationFile}`);
-      info("提示: 执行迁移需配置数据库，可添加 deno task db:migrate:up");
+      success($t("db.migrationCreated", { name }));
+      info($t("db.migrationFile", { path: migrationFile }));
+      info($t("db.migrateTip"));
     } else if (action === "up") {
       const projectRoot = cwd();
       const projectInfo = await getProjectInfo(projectRoot);
@@ -179,8 +180,8 @@ export async function migrate(
       try {
         await stat(migrationsDir);
       } catch {
-        error(`迁移目录不存在: ${migrationsDir}`);
-        error("请先创建迁移文件（使用 dweb db migrate -a create -n <name>）");
+        error($t("db.migrationsDirNotExists", { path: migrationsDir }));
+        error($t("db.createFirst"));
         return;
       }
 
@@ -201,10 +202,10 @@ export async function migrate(
             migrationsDir,
             adapter,
           });
-          info("正在执行数据库迁移（使用 @dreamer/database）...");
+          info($t("db.runningMigrate"));
           await migrationManager.up();
           await manager.close();
-          success("数据库迁移完成");
+          success($t("db.migrateComplete"));
           return;
         }
       } catch {
@@ -215,7 +216,7 @@ export async function migrate(
       const taskName = taskNames.find((t) => projectInfo?.tasks[t]);
 
       if (taskName) {
-        info(`正在执行数据库迁移 (${taskName})...`);
+        info($t("db.runningMigrateTask", { task: taskName }));
         const cmd = createCommand(runtime, {
           args: getTaskArgs(taskName),
           cwd: projectRoot,
@@ -226,15 +227,15 @@ export async function migrate(
         const child = cmd.spawn();
         const status = await child.status;
         if (status.success) {
-          success("数据库迁移完成");
+          success($t("db.migrateComplete"));
         } else {
-          error(`迁移执行失败，退出码: ${status.code ?? "未知"}`);
+          error($t("db.migrateFailed", { code: String(status.code ?? "?") }));
         }
       } else {
-        info("未找到 db:migrate:up 或 db:migrate task");
-        info("请配置 config.database.default，或在 deno.json 中添加:");
-        info('  "db:migrate:up": "deno run -A scripts/migrate-up.ts"');
-        info("参考: https://jsr.io/@dreamer/database");
+        info($t("db.noMigrateTask"));
+        info($t("db.addMigrateTask"));
+        info($t("db.migrateTaskExample"));
+        info($t("db.migrateRef"));
       }
     } else if (action === "down") {
       const projectRoot = cwd();
@@ -250,7 +251,7 @@ export async function migrate(
         try {
           await stat(migrationsDir);
         } catch {
-          error(`迁移目录不存在: ${migrationsDir}`);
+          error($t("db.migrationsDirNotExists", { path: migrationsDir }));
           return;
         }
         if (dbConfig?.default) {
@@ -264,10 +265,10 @@ export async function migrate(
             migrationsDir,
             adapter,
           });
-          info(`正在回滚最近 ${count} 个迁移（使用 @dreamer/database）...`);
+          info($t("db.rollingBack", { count: String(count) }));
           await migrationManager.down(count);
           await manager.close();
-          success("迁移回滚完成");
+          success($t("db.rollbackComplete"));
           return;
         }
       } catch {
@@ -276,9 +277,7 @@ export async function migrate(
 
       // 回退到 task 方式（需 --name 指定迁移名）
       if (!name) {
-        error(
-          "回滚迁移需要指定迁移名称（--name），或配置 config.database.default 以使用 MigrationManager",
-        );
+        error($t("db.downNeedName"));
         return;
       }
       const projectInfo = await getProjectInfo(projectRoot);
@@ -286,7 +285,7 @@ export async function migrate(
       const taskName = taskNames.find((t) => projectInfo?.tasks[t]);
 
       if (taskName) {
-        info(`正在回滚迁移: ${name} (${taskName})...`);
+        info($t("db.rollingBackTask", { name, task: taskName }));
         const cmd = createCommand(runtime, {
           args: [...getTaskArgs(taskName), name],
           cwd: projectRoot,
@@ -297,22 +296,24 @@ export async function migrate(
         const child = cmd.spawn();
         const status = await child.status;
         if (status.success) {
-          success("迁移回滚完成");
+          success($t("db.rollbackComplete"));
         } else {
-          error(`回滚失败，退出码: ${status.code ?? "未知"}`);
+          error($t("db.rollbackFailed", { code: String(status.code ?? "?") }));
         }
       } else {
-        info("未找到 db:migrate:down 或 db:migrate task");
-        info("请配置 config.database.default，或在 deno.json 中添加迁移脚本");
-        info("参考: https://jsr.io/@dreamer/database");
+        info($t("db.noDownTask"));
+        info($t("db.addDownTask"));
+        info($t("db.migrateRef"));
       }
     } else {
-      error(`不支持的操作: ${action}`);
-      error("支持的操作: create, up, down");
+      error($t("db.unsupportedAction", { action }));
+      error($t("db.supportedActions"));
     }
   } catch (err) {
     error(
-      `迁移操作失败: ${err instanceof Error ? err.message : String(err)}`,
+      $t("db.migrateOpFailed", {
+        message: err instanceof Error ? err.message : String(err),
+      }),
     );
   }
 }
@@ -329,13 +330,13 @@ export async function seed(
   const projectInfo = await getProjectInfo(projectRoot);
 
   if (!projectInfo) {
-    error("未找到 deno.json，请在 dweb 项目根目录执行");
+    error($t("common.noDenoJson"));
     return;
   }
 
   const taskName = "db:seed";
   if (projectInfo.tasks[taskName]) {
-    info("正在执行数据库种子...");
+    info($t("db.runningSeed"));
     const cmd = createCommand(runtime, {
       args: getTaskArgs(taskName),
       cwd: projectRoot,
@@ -346,9 +347,9 @@ export async function seed(
     const child = cmd.spawn();
     const status = await child.status;
     if (status.success) {
-      success("数据库种子执行完成");
+      success($t("db.seedComplete"));
     } else {
-      error(`seed 命令退出码: ${status.code ?? "未知"}`);
+      error($t("db.seedFailed", { code: String(status.code ?? "?") }));
     }
     return;
   }
@@ -357,12 +358,12 @@ export async function seed(
   try {
     await stat(seedFile);
   } catch {
-    error("未找到 seed 配置");
-    error("请在 deno.json 中添加 db:seed task，或创建 seeds/seed.ts 文件");
+    error($t("db.noSeedConfig"));
+    error($t("db.addSeedTask"));
     return;
   }
 
-  info("正在执行 seeds/seed.ts...");
+  info($t("db.runningSeedFile"));
   const cmd = createCommand(runtime, {
     args: getRunArgs(seedFile),
     cwd: projectRoot,
@@ -373,9 +374,9 @@ export async function seed(
   const child = cmd.spawn();
   const status = await child.status;
   if (status.success) {
-    success("数据库种子执行完成");
+    success($t("db.seedComplete"));
   } else {
-    error(`seed 命令退出码: ${status.code ?? "未知"}`);
+    error($t("db.seedFailed", { code: String(status.code ?? "?") }));
   }
 }
 
@@ -395,8 +396,8 @@ export async function status(
   try {
     await stat(migrationsDir);
   } catch {
-    error("migrations 目录不存在");
-    info("请先创建迁移：dweb db migrate -a create -n <name>");
+    error($t("db.migrationsDirNotExistsShort"));
+    info($t("db.createMigration"));
     return;
   }
 
@@ -421,25 +422,23 @@ export async function status(
       await manager.close();
 
       if (statuses.length === 0) {
-        info("暂无迁移文件");
-        info("创建迁移：dweb db migrate -a create -n <name>");
+        info($t("db.noMigrations"));
+        info($t("db.createMigration"));
         return;
       }
 
-      success(`迁移状态（共 ${statuses.length} 个）:`);
+      success($t("db.migrationStatus", { count: String(statuses.length) }));
       for (const s of statuses) {
         const execInfo = s.executed && s.executedAt
-          ? `✓ 已执行 ${
-            s.executedAt.toISOString().slice(0, 19).replace("T", " ")
-          }`
-          : "○ 待执行";
+          ? $t("db.executed", {
+            date: s.executedAt.toISOString().slice(0, 19).replace("T", " "),
+          })
+          : $t("db.pending");
         console.log(`  • ${s.name}  ${execInfo}  [${s.file}]`);
       }
       info("");
-      info("执行迁移: dweb db migrate -a up");
-      info(
-        "回滚迁移: dweb db migrate -a down -c <数量>（或 -n <名称> 配合 task）",
-      );
+      info($t("db.runUp"));
+      info($t("db.runDown"));
       return;
     }
   } catch {
@@ -453,12 +452,12 @@ export async function status(
     .sort();
 
   if (files.length === 0) {
-    info("暂无迁移文件");
-    info("创建迁移：dweb db migrate -a create -n <name>");
+    info($t("db.noMigrations"));
+    info($t("db.createMigration"));
     return;
   }
 
-  success(`迁移文件（共 ${files.length} 个）:`);
+  success($t("db.migrationFiles", { count: String(files.length) }));
   for (const f of files) {
     const match = f.match(/^(\d+)_(.+)\.ts$/);
     const ts = match ? match[1] : "";
@@ -470,9 +469,7 @@ export async function status(
   }
 
   info("");
-  info("执行迁移: dweb db migrate -a up");
-  info(
-    "回滚迁移: dweb db migrate -a down -c <数量>（配置 database 后）或 -n <名称>（配合 task）",
-  );
-  info("已执行状态: 配置 config.database.default 后可显示");
+  info($t("db.runUp"));
+  info($t("db.runDownNoDb"));
+  info($t("db.statusHint"));
 }

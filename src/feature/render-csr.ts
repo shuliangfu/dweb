@@ -12,6 +12,7 @@
  * 3. 客户端脚本根据路由渲染页面
  */
 
+import { $t } from "@dreamer/i18n";
 import { createElement } from "preact";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
@@ -186,7 +187,7 @@ ${csrOptions.bodyTags || ""}`;
         },
       });
     } catch (error) {
-      console.error("CSR 渲染错误:", error);
+      console.error($t("log.csrError"), error);
       const isDev =
         (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
       return new Response(
