@@ -30,10 +30,12 @@ deno run -A jsr:@dreamer/dweb/setup
 
 安装成功后，建议先执行 `dweb-cli upgrade` 升级到最新版本。
 
+**⚠️ Beta 版本提示**：当前所有 @dreamer/* 依赖库均为 beta 版本。初始化应用时**必须**加上 `--beta` 参数，否则生成的项目依赖版本不正确，无法启动。例如：`dweb-cli init my-app --beta`。
+
 安装完成后，可在任意目录执行：
 
 ```bash
-dweb-cli init [appName]   # 初始化新项目
+dweb-cli init [appName] --beta   # 初始化新项目（必须加 --beta）
 dweb-cli dev              # 启动开发服务器
 dweb-cli build            # 构建生产版本
 dweb-cli start            # 启动生产服务器
@@ -59,6 +61,7 @@ deno add jsr:@dreamer/server
 deno add jsr:@dreamer/router
 deno add jsr:@dreamer/render
 deno add jsr:@dreamer/esbuild
+deno add jsr:@dreamer/socket-io
 
 # 数据层（可选）
 deno add jsr:@dreamer/database
@@ -90,6 +93,7 @@ deno add jsr:@dreamer/runtime-adapter
 - ✅
   **多种渲染模式**：SSR（服务端渲染）、CSR（客户端渲染）、SSG（静态站点生成）、Hybrid（混合模式）
 - ✅ **默认使用 Preact**：轻量级、高性能，也支持 React
+- ✅ **Socket.IO 内置**：实时双向通信，挂载到同一 HTTP 服务器，配置 `socketIo` 即可启用
 - ✅ **中间件系统**：通用中间件系统，可用于 HTTP、WebSocket、消息队列等多种场景
 - ✅ **插件系统**：插件生命周期管理、插件依赖、插件事件系统、热加载
 - ✅ **事件系统**：App 继承
@@ -135,25 +139,29 @@ deno add jsr:@dreamer/runtime-adapter
    - 作用：服务端与客户端代码编译
    - 重要性：⭐⭐⭐⭐⭐
 
+8. **@dreamer/socket-io** - 实时通信
+   - 作用：WebSocket 实时双向通信（Socket.IO 协议）
+   - 重要性：⭐⭐⭐⭐
+
 ### 工具层
 
-8. **@dreamer/logger** - 日志
+9. **@dreamer/logger** - 日志
    - 作用：应用日志记录
    - 重要性：⭐⭐⭐⭐⭐
 
-9. **@dreamer/config** - 配置管理
+10. **@dreamer/config** - 配置管理
    - 作用：应用配置加载与合并
    - 重要性：⭐⭐⭐⭐
 
-10. **@dreamer/utils** - 工具函数
+11. **@dreamer/utils** - 工具函数
     - 作用：通用工具
     - 重要性：⭐⭐⭐⭐
 
-11. **@dreamer/console** - 控制台 / CLI
+12. **@dreamer/console** - 控制台 / CLI
     - 作用：CLI 输出与交互（command 模块）
     - 重要性：⭐⭐⭐
 
-12. **@dreamer/runtime-adapter** - 运行时适配
+13. **@dreamer/runtime-adapter** - 运行时适配
     - 作用：统一 Deno/Bun 的 fs、path、env、cwd 等 API
     - 重要性：⭐⭐⭐⭐⭐
 
@@ -162,7 +170,7 @@ deno add jsr:@dreamer/runtime-adapter
 | 目录/文件  | 说明                                                                                                                |
 | ---------- | ------------------------------------------------------------------------------------------------------------------- |
 | `core/`    | 核心：app、config、service、middleware、plugin、lifecycle、database、plugin-events、runtime-adapter                 |
-| `feature/` | 功能：server、router、render、render-ssr、render-csr、render-ssg、render-hybrid、build、csr-client-builder、command |
+| `feature/` | 功能：server、router、render、render-ssr、render-csr、render-ssg、render-hybrid、build、csr-client-builder、socket-io、command |
 | `types/`   | 类型：AppConfig、IApp 等                                                                                            |
 | `utils/`   | 工具：logger、version                                                                                               |
 | `cli.ts`   | CLI 入口（createCLI）                                                                                               |
@@ -177,42 +185,44 @@ deno add jsr:@dreamer/runtime-adapter
 - **@dreamer/storage** - 文件存储
 - **@dreamer/session** - 会话
 - **@dreamer/queue** - 任务队列
-- **@dreamer/websocket** - WebSocket / Socket.IO
+- **@dreamer/websocket** - 原生 WebSocket（Socket.IO 已内置于 dweb）
 - **@dreamer/store** - 客户端状态
 - **@dreamer/web3** - 区块链
 
 ## 架构图
 
-```
-        ┌─────────────┐  ┌─────────────┐
-        │   服务端     │  │   客户端     │
-        └──────┬──────┘  └──────┬──────┘
-               └────────┬───────┘
-                        │
-        ┌───────────────▼───────────────┐
-        │       @dreamer/dweb           │
-        │       （核心框架层）            │
-        ├───────────────────────────────┤
-        │  service     · 服务容器         │
-        │  middleware  · 通用中间件       │
-        │  plugin      · 插件系统         │
-        │  server      · HTTP 服务       │
-        │  router      · 路由系统         │
-        │  render      · 渲染(SSR/SSG)   │
-        │  esbuild     · 构建工具         │
-        └───────────────┬───────────────┘
-                        │
-        ┌───────────────┴───────────────┐
-        ▼                               ▼
-┌───────────────┐               ┌───────────────┐
-│    数据层      │               │    工具层      │
-├───────────────┤               ├───────────────┤
-│  database     │               │  logger       │
-│  cache        │               │  config       │
-│  storage      │               │  utils        │
-└───────────────┘               │  runtime-     │
-                                │    adapter    │
-                                └───────────────┘
+下图展示 dweb 各层与核心模块的关系。
+
+```mermaid
+flowchart TB
+    A[服务端]
+    B[客户端]
+
+    TITLE["@dreamer/dweb<br/>核心框架层"]
+
+    subgraph core
+        direction LR
+        C1["service<br/>服务容器"] --- C2["middleware<br/>通用中间件"] --- C3["plugin<br/>插件系统"] --- C4["server<br/>HTTP 服务"] --- C5["router<br/>路由系统"] --- C6["render<br/>渲染(SSR/SSG)"] --- C7["esbuild<br/>构建工具"] --- C8["socket-io<br/>实时通信"]
+    end
+
+    subgraph data["数据层"]
+        D1[database]
+        D2[cache]
+        D3[storage]
+    end
+
+    subgraph tool["工具层"]
+        T1[logger]
+        T2[config]
+        T3[utils]
+        T4["runtime-adapter"]
+    end
+
+    A --> TITLE
+    B --> TITLE
+    TITLE --> core
+    core --> data
+    core --> tool
 ```
 
 ## 🎯 使用场景
@@ -252,7 +262,7 @@ backend、frontend、mobile），每个应用独立运行，可以共享公共�
 全局命令」）：
 
 ```bash
-dweb-cli init my-app
+dweb-cli init my-app --beta   # 必须加 --beta，否则依赖版本不正确无法启动 (因为当前所有依赖库都还没有发布正式版)
 cd my-app
 ```
 
@@ -1404,7 +1414,7 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 | **@dreamer/runtime-adapter** | 运行时适配：Deno/Bun 统一的 fs、path、env 等         | [runtime-adapter](https://github.com/shuliangfu/runtime-adapter) |
 | **@dreamer/session**         | 会话：持久化 Session，Redis/MongoDB/文件后端         | [session](https://github.com/shuliangfu/session)                 |
 | **@dreamer/service**         | 服务容器：依赖注入、单例/多例/工厂                   | [service](https://github.com/shuliangfu/service)                 |
-| **@dreamer/socket-io**       | Socket.IO：实时双向通信，多运行时                    | [socket-io](https://github.com/shuliangfu/socket-io)             |
+| **@dreamer/socket-io**       | Socket.IO：实时双向通信，多运行时（dweb 已内置）   | [socket-io](https://github.com/shuliangfu/socket-io)             |
 | **@dreamer/storage**         | 存储：文件存储抽象与多后端                           | [storage](https://github.com/shuliangfu/storage)                 |
 | **@dreamer/store**           | 客户端状态：Preact/React 响应式状态管理              | [store](https://github.com/shuliangfu/store)                     |
 | **@dreamer/stream**          | 直播流：推流、拉流、转码与协议适配                   | [stream](https://github.com/shuliangfu/stream)                   |
@@ -1416,7 +1426,7 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 | **@dreamer/video-player**    | 视频播放器：多格式、多协议、多引擎                   | [video-player](https://github.com/shuliangfu/video-player)       |
 | **@dreamer/web3**            | Web3：RPC、合约交互（服务端/客户端）                 | [web3](https://github.com/shuliangfu/web3)                       |
 | **@dreamer/webrtc**          | WebRTC：实时音视频与信令                             | [webrtc](https://github.com/shuliangfu/webrtc)                   |
-| **@dreamer/websocket**       | WebSocket：服务端与客户端实时通信                    | [websocket](https://github.com/shuliangfu/websocket)             |
+| **@dreamer/websocket**       | 原生 WebSocket：服务端与客户端实时通信（Socket.IO 已内置） | [websocket](https://github.com/shuliangfu/websocket)             |
 
 安装示例：`deno add jsr:@dreamer/库名` 或
 `bunx jsr add @dreamer/库名`。各库详细用法见 JSR 对应包页面或仓库 README。
