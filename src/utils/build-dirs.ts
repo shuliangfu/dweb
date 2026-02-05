@@ -27,7 +27,9 @@ import { isWindows } from "./runtime.ts";
 function pathnameToFsPath(pathname: string): string {
   let p = decodeURIComponent(pathname);
   // Windows: pathname 常为 /C:/Users/...，需去掉首斜杠以便与 cwd 格式一致
-  if (isWindows() && p.length >= 3 && p.startsWith("/") && /^\/[A-Za-z]:/.test(p)) {
+  if (
+    isWindows() && p.length >= 3 && p.startsWith("/") && /^\/[A-Za-z]:/.test(p)
+  ) {
     p = p.slice(1);
   }
   return p.replace(/\\/g, "/");

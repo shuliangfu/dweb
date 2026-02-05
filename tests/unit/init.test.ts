@@ -8,6 +8,7 @@
  * - 应用名称从 config/main.ts 读取，deno.json 不包含 name 字段（避免 Deno 警告）
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import {
   exists,

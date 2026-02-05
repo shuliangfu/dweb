@@ -7,17 +7,36 @@
  * 使用 @dreamer/i18n 作为底层，挂载全局 $t()，并桥接 setDwebErrorTranslator。
  *
  * 使用方式：
- * - 入口处调用 initDwebI18n()
+ * - 入口处调用 initDwebI18n()（无需传参，自动读取 config/main.ts 的 language）
  * - 框架内通过 $t("cli.usage")、$t("errors.DWEB_E01", { path }) 等获取翻译
  */
 
 import { createI18n } from "@dreamer/i18n";
 import type { TranslationData } from "@dreamer/i18n";
-import { getEnv } from "@dreamer/runtime-adapter";
+import { cwd, getEnv } from "@dreamer/runtime-adapter";
+import { loadProjectConfig } from "./config-loader.ts";
 import { setDwebErrorTranslator } from "./errors.ts";
 
 /** 是否已初始化（幂等） */
 let initialized = false;
+
+/**
+ * 待使用的 locale（由 setDwebLocale 设置，App 合并配置后调用）
+ * 优先级最高，用于支持构造函数传入的 language 覆盖配置文件
+ */
+let pendingLocale: string | null = null;
+
+/**
+ * 设置待使用的 locale（在 initDwebI18n 之前调用）
+ *
+ * App 在合并配置后调用此方法，以便构造函数传入的 language 能覆盖配置文件。
+ * 调用 initDwebI18n() 后会消费并清空。
+ *
+ * @param locale - 语言代码，如 zh-CN、en-US；传 undefined 可清除
+ */
+export function setDwebLocale(locale: string | undefined | null): void {
+  pendingLocale = locale ?? null;
+}
 
 /** 支持的 locale 列表 */
 const SUPPORTED_LOCALES = ["zh-CN", "en-US"] as const;
@@ -34,8 +53,7 @@ const DEFAULT_LOCALE = "zh-CN";
  * @returns 检测到的 locale，无法检测时返回 null
  */
 export function detectLocale(): string | null {
-  const langEnv =
-    getEnv("LANGUAGE") || getEnv("LC_ALL") || getEnv("LANG");
+  const langEnv = getEnv("LANGUAGE") || getEnv("LC_ALL") || getEnv("LANG");
   if (!langEnv) return null;
 
   // 取第一个（LANGUAGE 可能为 "zh_CN:en_US:en"）
@@ -46,7 +64,11 @@ export function detectLocale(): string | null {
   const match = first.match(/^([a-z]{2})[-_]([A-Z]{2})/i);
   if (match) {
     const normalized = `${match[1].toLowerCase()}-${match[2].toUpperCase()}`;
-    if (SUPPORTED_LOCALES.includes(normalized as (typeof SUPPORTED_LOCALES)[number])) {
+    if (
+      SUPPORTED_LOCALES.includes(
+        normalized as (typeof SUPPORTED_LOCALES)[number],
+      )
+    ) {
       return normalized;
     }
   }
@@ -76,33 +98,55 @@ async function loadDwebTranslations(
   );
   const res = await fetch(url);
   if (!res.ok) {
-    throw new Error(`[dweb] Failed to load locale ${locale}: ${res.statusText}`);
+    throw new Error(
+      `[dweb] Failed to load locale ${locale}: ${res.statusText}`,
+    );
   }
   return (await res.json()) as TranslationData;
 }
 
 /**
+ * 解析 locale，优先级：setDwebLocale > 项目 config > 环境变量 > 默认
+ */
+async function resolveLocale(): Promise<string> {
+  // 1. 显式设置（App 合并配置后调用 setDwebLocale）
+  if (pendingLocale) {
+    const v = pendingLocale;
+    pendingLocale = null;
+    return v;
+  }
+  // 2. 从项目 config/main.ts 读取 language
+  try {
+    const config = await loadProjectConfig(cwd());
+    if (config.language) return config.language;
+  } catch {
+    // 非 dweb 项目或加载失败，忽略
+  }
+  // 3. 环境变量
+  const detected = detectLocale();
+  if (detected) return detected;
+  // 4. 默认
+  return DEFAULT_LOCALE;
+}
+
+/**
  * 初始化 dweb 框架 i18n
  *
- * 幂等：已初始化则直接返回。完成以下工作：
- * 1. 检测 locale（环境变量）
- * 2. 加载 zh-CN、en-US 翻译
- * 3. 创建 I18n 实例并挂载 globalThis.$t
- * 4. 桥接 setDwebErrorTranslator
+ * 幂等：已初始化则直接返回。无需传参，自动读取 language 配置：
+ * 1. setDwebLocale() 显式设置（App 合并配置后调用）
+ * 2. 项目 config/main.ts 的 language
+ * 3. 环境变量 LANGUAGE/LC_ALL/LANG
+ * 4. 默认 zh-CN
  *
- * @param options - 可选配置
- * @param options.locale - 显式指定 locale，覆盖自动检测
+ * 完成：加载翻译、挂载 globalThis.$t、桥接 setDwebErrorTranslator
  */
-export async function initDwebI18n(options?: {
-  locale?: string;
-}): Promise<void> {
+export async function initDwebI18n(): Promise<void> {
   if (initialized) return;
 
-  const locale =
-    options?.locale ?? detectLocale() ?? DEFAULT_LOCALE;
+  const locale = await resolveLocale();
   const effectiveLocale = SUPPORTED_LOCALES.includes(
-    locale as (typeof SUPPORTED_LOCALES)[number],
-  )
+      locale as (typeof SUPPORTED_LOCALES)[number],
+    )
     ? locale
     : DEFAULT_LOCALE;
 
@@ -124,7 +168,9 @@ export async function initDwebI18n(options?: {
   i18n.install();
 
   setDwebErrorTranslator((key, params) => {
-    const g = globalThis as { $t?: (k: string, p?: Record<string, string | number | boolean>) => string };
+    const g = globalThis as {
+      $t?: (k: string, p?: Record<string, string | number | boolean>) => string;
+    };
     if (g.$t) return g.$t(key, params);
     return key;
   });

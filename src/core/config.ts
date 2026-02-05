@@ -219,9 +219,12 @@ export function validateConfig(config: AppConfig): void {
           typeof middlewareConfig.name !== "string" ||
           middlewareConfig.name.trim() === ""
         ) {
-          throwDwebError(DwebErrorCode.CONFIG_MIDDLEWARE_OBJECT_MUST_HAVE_NAME, {
-            index: String(i),
-          });
+          throwDwebError(
+            DwebErrorCode.CONFIG_MIDDLEWARE_OBJECT_MUST_HAVE_NAME,
+            {
+              index: String(i),
+            },
+          );
         }
       } else {
         throwDwebError(DwebErrorCode.CONFIG_MIDDLEWARE_TYPE_INVALID, {

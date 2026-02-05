@@ -7,22 +7,23 @@
 
 `AppConfig` 是 dweb 框架的应用配置接口，包含以下主要模块：
 
-| 配置项            | 类型              | 说明                        |
-| ----------------- | ----------------- | --------------------------- |
-| `name`            | string            | 应用名称                    |
-| `version`         | string            | 应用版本                    |
-| `configDirectory` | string            | 配置目录（默认 `./config`） |
-| `envPrefix`       | string            | 环境变量前缀                |
-| `hotReload`       | boolean           | 是否启用热重载              |
-| `server`          | ServerOptions     | 服务器配置                  |
-| `router`          | RouterOptions     | 路由配置                    |
-| `render`          | object            | 渲染配置                    |
-| `build`           | BuildAppConfig    | 构建配置                    |
-| `logger`          | LoggerConfig      | 日志配置                    |
-| `database`        | DatabaseAppConfig | 数据库配置                  |
+| 配置项            | 类型              | 说明                                        |
+| ----------------- | ----------------- | ------------------------------------------- |
+| `name`            | string            | 应用名称                                    |
+| `version`         | string            | 应用版本                                    |
+| `language`        | AppLanguage        | 框架语言（zh-CN 或 en-US；影响 CLI、日志、错误消息等；<br/>默认自动检测环境变量 LANGUAGE/LC_ALL/LANG，否则 zh-CN） |
+| `configDirectory` | string            | 配置目录（默认 `./config`）                 |
+| `envPrefix`       | string            | 环境变量前缀                                |
+| `hotReload`       | boolean           | 是否启用热重载                              |
+| `server`          | ServerOptions     | 服务器配置                                  |
+| `router`          | RouterOptions     | 路由配置                                    |
+| `render`          | object            | 渲染配置                                    |
+| `build`           | BuildAppConfig    | 构建配置                                    |
+| `logger`          | LoggerConfig      | 日志配置                                    |
+| `database`        | DatabaseAppConfig | 数据库配置                                  |
 | `socket`          | SocketConfig      | 实时通信配置（type: socketio 或 websocket） |
-| `plugins`         | Array             | 插件列表                    |
-| `middlewares`     | Array             | 中间件列表                  |
+| `plugins`         | Array             | 插件列表                                    |
+| `middlewares`     | Array             | 中间件列表                                  |
 
 ---
 
@@ -41,6 +42,8 @@ const config: AppConfig = {
   // ========== 基础信息 ==========
   name: "my-app",
   version: "1.0.0",
+  /** 框架语言（zh-CN | en-US），影响 CLI、日志、错误消息等；不设置则自动检测环境变量 */
+  language: "zh-CN",
 
   // ========== 配置目录 ==========
   /** 配置目录，用于加载 main.ts、main.dev.ts、params.ts 等 */
@@ -514,16 +517,19 @@ export default config;
 
 合并策略为深度合并（deep merge），后加载的配置会覆盖先加载的同名字段。
 
+**框架语言（language）**：影响 CLI、日志、错误消息等框架文案。在 `config/main.ts` 中设置即可生效。解析优先级：`config/main.ts` 的 `language` > 环境变量 `LANGUAGE`/`LC_ALL`/`LANG` > 默认 `zh-CN`。
+
 ---
 
 ## 七、配置与参数获取
 
 ### 7.1 框架配置（config/main.ts 系列）
 
-在应用启动后，通过 `getConfig`、`getConfigValue`、`getConfigManager` 获取框架配置：
+在应用启动后，通过 `getConfig`、`getConfigValue`、`getConfigManager`
+获取框架配置：
 
 ```typescript
-import { getConfig, getConfigValue, getConfigManager } from "jsr:@dreamer/dweb";
+import { getConfig, getConfigManager, getConfigValue } from "jsr:@dreamer/dweb";
 
 // 需要 app.container（在 main.ts、插件、中间件、API 路由等场景）
 const container = app.container;
@@ -561,7 +567,8 @@ const timeout = getParamValue<number>(container, "api.timeout", 30000);
 
 **方式一：通过 Config 获取（推荐）**
 
-配置 `envPrefix: "APP_"` 后，环境变量会自动合并到配置，可通过 `getConfigValue` 或 `getConfigManager().get()` 获取，**无需** `runtime-adapter`：
+配置 `envPrefix: "APP_"` 后，环境变量会自动合并到配置，可通过 `getConfigValue`
+或 `getConfigManager().get()` 获取，**无需** `runtime-adapter`：
 
 ```typescript
 // envPrefix: "APP_" 时，APP_SERVER_PORT -> server.port

@@ -28,11 +28,7 @@ import {
 } from "@dreamer/runtime-adapter";
 import { kebabCase, pascalCase } from "@dreamer/utils/string";
 import type { ParsedOptions } from "../feature/command.ts";
-import {
-  DwebErrorCode,
-  isDwebError,
-  throwDwebError,
-} from "../utils/errors.ts";
+import { DwebErrorCode, isDwebError, throwDwebError } from "../utils/errors.ts";
 import { getProjectInfo } from "../utils/project.ts";
 
 /**
@@ -266,7 +262,9 @@ export async function main(
     app && projectInfo?.mode === "multi" && !projectInfo.appNames.includes(app)
   ) {
     error($t("common.appNotFound", { app }));
-    error($t("common.availableApps", { apps: projectInfo.appNames.join(", ") }));
+    error(
+      $t("common.availableApps", { apps: projectInfo.appNames.join(", ") }),
+    );
     return;
   }
 
@@ -305,7 +303,9 @@ export async function main(
     success($t("generate.generateComplete", { type, name }));
     info($t("generate.filePath", { path: targetPath }));
   } catch (err) {
-    if (isDwebError(err) && err.code === DwebErrorCode.GENERATE_TYPE_UNSUPPORTED) {
+    if (
+      isDwebError(err) && err.code === DwebErrorCode.GENERATE_TYPE_UNSUPPORTED
+    ) {
       error(err.message);
       error($t("generate.supportedTypes"));
     } else {

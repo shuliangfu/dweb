@@ -15,13 +15,13 @@
 
 ### 总体统计
 
-| 指标         | 数值 |
-| ------------ | ---- |
-| 测试文件数   | 30   |
-| 测试用例总数 | 343  |
-| 通过用例数   | 343  |
-| 失败用例数   | 0    |
-| 通过率       | 100% |
+| 指标         | 数值  |
+| ------------ | ----- |
+| 测试文件数   | 30    |
+| 测试用例总数 | 343   |
+| 通过用例数   | 343   |
+| 失败用例数   | 0     |
+| 通过率       | 100%  |
 | 测试执行时间 | ~19秒 |
 
 ### 测试文件统计
@@ -37,8 +37,8 @@
 | `plugin.test.ts`             | 15         | ✅ 全部通过 |
 | `render.test.ts`             | 14         | ✅ 全部通过 |
 | `runtime-adapter.test.ts`    | 17         | ✅ 全部通过 |
-| `build-dirs.test.ts`        | 13         | ✅ 全部通过 |
-| `jsr-versions.test.ts`      | 11         | ✅ 全部通过 |
+| `build-dirs.test.ts`         | 13         | ✅ 全部通过 |
+| `jsr-versions.test.ts`       | 11         | ✅ 全部通过 |
 | `server.test.ts`             | 13         | ✅ 全部通过 |
 | `lifecycle.test.ts`          | 12         | ✅ 全部通过 |
 | `middleware.test.ts`         | 12         | ✅ 全部通过 |
@@ -553,66 +553,66 @@
 
 ### 接口方法覆盖
 
-| 模块               | 方法                                                  | 覆盖状态 |
-| ------------------ | ----------------------------------------------------- | -------- |
-| app                | App 构造函数                                          | ✅       |
-| app                | App.use()                                             | ✅       |
-| app                | App.registerPlugin()                                  | ✅       |
-| app                | App.on()                                              | ✅       |
-| app                | App.stage                                             | ✅       |
-| config             | validateConfig()                                      | ✅       |
-| config             | deepMergeConfig()                                     | ✅       |
-| service            | initializeServiceContainer()                          | ✅       |
-| service            | getServiceContainer()                                 | ✅       |
-| lifecycle          | initializeLifecycle()                                 | ✅       |
-| lifecycle          | getLifecycleManager()                                 | ✅       |
-| lifecycle          | registerLifecycleHook()                               | ✅       |
-| middleware         | initializeMiddleware()                                | ✅       |
-| middleware         | getMiddlewareChain()                                  | ✅       |
-| middleware         | registerMiddleware()                                  | ✅       |
-| plugin             | initializePlugin()                                    | ✅       |
-| plugin             | getPluginManager()                                    | ✅       |
-| plugin             | registerPlugin()                                      | ✅       |
-| plugin-events      | emitPluginEvent()                                     | ✅       |
-| plugin-events      | emitOnInit()                                          | ✅       |
-| plugin-events      | emitOnStart()                                         | ✅       |
-| plugin-events      | emitOnStop()                                          | ✅       |
-| plugin-events      | emitOnShutdown()                                      | ✅       |
-| plugin-events      | emitOnBuild()                                         | ✅       |
-| plugin-events      | emitOnBuildComplete()                                 | ✅       |
-| server             | initializeServer()                                    | ✅       |
-| server             | getServer()                                           | ✅       |
-| database           | initializeDatabase()                                  | ✅       |
-| database           | getDatabaseManager()                                  | ✅       |
-| database           | getDatabaseStatus()                                   | ✅       |
-| database           | connectDatabases()                                    | ⬜       |
-| database           | disconnectDatabases()                                 | ⬜       |
-| build              | initializeBuild()                                     | ✅       |
-| build              | getBuild()                                            | ✅       |
-| render             | initializeRender()                                    | ✅       |
-| render             | getRender()                                           | ✅       |
-| render             | renderSSR()                                           | ✅       |
-| render             | renderSSG()                                           | ✅       |
-| router             | initializeRouter()                                    | ✅       |
-| router             | getRouter()                                           | ✅       |
-| logger             | initializeLogger()                                    | ✅       |
-| logger             | getLogger()                                           | ✅       |
-| command            | Command 构造函数                                      | ✅       |
-| command            | Command.initApp()                                     | ⬜       |
-| command            | Command.app                                           | ✅       |
-| command            | Command.container                                     | ✅       |
-| command            | Command.action()                                      | ✅       |
-| command            | Command.command()                                     | ✅       |
-| command            | 重导出 API (colorize, colors 等)                      | ✅       |
-| runtime-adapter    | getEnv / cwd / join / readTextFile 等                 | ✅       |
+| 模块               | 方法                                                                    | 覆盖状态 |
+| ------------------ | ----------------------------------------------------------------------- | -------- |
+| app                | App 构造函数                                                            | ✅       |
+| app                | App.use()                                                               | ✅       |
+| app                | App.registerPlugin()                                                    | ✅       |
+| app                | App.on()                                                                | ✅       |
+| app                | App.stage                                                               | ✅       |
+| config             | validateConfig()                                                        | ✅       |
+| config             | deepMergeConfig()                                                       | ✅       |
+| service            | initializeServiceContainer()                                            | ✅       |
+| service            | getServiceContainer()                                                   | ✅       |
+| lifecycle          | initializeLifecycle()                                                   | ✅       |
+| lifecycle          | getLifecycleManager()                                                   | ✅       |
+| lifecycle          | registerLifecycleHook()                                                 | ✅       |
+| middleware         | initializeMiddleware()                                                  | ✅       |
+| middleware         | getMiddlewareChain()                                                    | ✅       |
+| middleware         | registerMiddleware()                                                    | ✅       |
+| plugin             | initializePlugin()                                                      | ✅       |
+| plugin             | getPluginManager()                                                      | ✅       |
+| plugin             | registerPlugin()                                                        | ✅       |
+| plugin-events      | emitPluginEvent()                                                       | ✅       |
+| plugin-events      | emitOnInit()                                                            | ✅       |
+| plugin-events      | emitOnStart()                                                           | ✅       |
+| plugin-events      | emitOnStop()                                                            | ✅       |
+| plugin-events      | emitOnShutdown()                                                        | ✅       |
+| plugin-events      | emitOnBuild()                                                           | ✅       |
+| plugin-events      | emitOnBuildComplete()                                                   | ✅       |
+| server             | initializeServer()                                                      | ✅       |
+| server             | getServer()                                                             | ✅       |
+| database           | initializeDatabase()                                                    | ✅       |
+| database           | getDatabaseManager()                                                    | ✅       |
+| database           | getDatabaseStatus()                                                     | ✅       |
+| database           | connectDatabases()                                                      | ⬜       |
+| database           | disconnectDatabases()                                                   | ⬜       |
+| build              | initializeBuild()                                                       | ✅       |
+| build              | getBuild()                                                              | ✅       |
+| render             | initializeRender()                                                      | ✅       |
+| render             | getRender()                                                             | ✅       |
+| render             | renderSSR()                                                             | ✅       |
+| render             | renderSSG()                                                             | ✅       |
+| router             | initializeRouter()                                                      | ✅       |
+| router             | getRouter()                                                             | ✅       |
+| logger             | initializeLogger()                                                      | ✅       |
+| logger             | getLogger()                                                             | ✅       |
+| command            | Command 构造函数                                                        | ✅       |
+| command            | Command.initApp()                                                       | ⬜       |
+| command            | Command.app                                                             | ✅       |
+| command            | Command.container                                                       | ✅       |
+| command            | Command.action()                                                        | ✅       |
+| command            | Command.command()                                                       | ✅       |
+| command            | 重导出 API (colorize, colors 等)                                        | ✅       |
+| runtime-adapter    | getEnv / cwd / join / readTextFile 等                                   | ✅       |
 | errors             | createDwebError / throwDwebError / isDwebError / setDwebErrorTranslator | ✅       |
-| csr-client-builder | clearClientScriptCache / createClientScriptMiddleware | ✅       |
-| render-csr         | createRendererCSR()                                   | ✅       |
-| render-ssr         | createRendererSSR()                                   | ✅       |
-| render-hybrid      | createRendererHybrid()                                | ✅       |
-| render-ssg         | createRendererSSG()                                   | ✅       |
-| version            | DWEB_VERSION                                          | ✅       |
-| cli                | createCLI() / execute                                 | ✅       |
+| csr-client-builder | clearClientScriptCache / createClientScriptMiddleware                   | ✅       |
+| render-csr         | createRendererCSR()                                                     | ✅       |
+| render-ssr         | createRendererSSR()                                                     | ✅       |
+| render-hybrid      | createRendererHybrid()                                                  | ✅       |
+| render-ssg         | createRendererSSG()                                                     | ✅       |
+| version            | DWEB_VERSION                                                            | ✅       |
+| cli                | createCLI() / execute                                                   | ✅       |
 
 ### 边界情况覆盖
 

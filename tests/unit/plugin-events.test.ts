@@ -7,6 +7,7 @@
  * - emitOnError 错误事件处理
  */
 
+import "../setup.ts";
 import type { Plugin } from "@dreamer/plugin";
 import { describe, expect, it } from "@dreamer/test";
 import {

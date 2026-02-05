@@ -21,7 +21,11 @@ import { ServiceContainer } from "@dreamer/service";
 import type { App } from "../core/app.ts";
 import { getConfig } from "../core/config.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
+import { initDwebI18n } from "../utils/i18n.ts";
 import { initializeServiceContainer } from "../core/service.ts";
+
+await initDwebI18n();
+
 /**
  * 扩展的命令执行函数类型
  *
@@ -169,7 +173,14 @@ export class Command extends BaseCommand {
   }
 }
 
-// 重新导出 @dreamer/console 的其他 API（除了 Command）
+/**
+ * ANSI 与终端控制（来自 @dreamer/console）：
+ * - clearLine, clearScreen: 清行/清屏
+ * - colorize, colors: 颜色与样式
+ * - hideCursor, showCursor: 光标显隐
+ * - moveCursor: 移动光标
+ * - shouldUseColor, stripAnsiCodes: 颜色检测与去除
+ */
 export {
   clearLine,
   clearScreen,
@@ -182,19 +193,37 @@ export {
   stripAnsiCodes,
 } from "@dreamer/console";
 
+/**
+ * 输出与反馈（来自 @dreamer/console）：
+ * - error, info, success, warning: 消息输出
+ * - startSpinner, stopSpinner, succeedSpinner, failSpinner: 加载动画
+ * - keyValue, keyValuePairs, list, numberedList: 结构化输出
+ * - separator, title: 分隔与标题
+ */
 export {
   error,
+  failSpinner,
   info,
   keyValue,
   keyValuePairs,
   list,
   numberedList,
   separator,
+  startSpinner,
+  stopSpinner,
+  succeedSpinner,
   success,
   title,
   warning,
 } from "@dreamer/console";
 
+/**
+ * 用户交互（来自 @dreamer/console）：
+ * - confirm: 确认
+ * - input, inputEmail, inputNumber, inputPassword, inputUsername: 输入
+ * - interactiveMenu, interactiveMenuSearch, multiSelect, select: 菜单选择
+ * - pause, prompt: 暂停与提示
+ */
 export {
   confirm,
   input,
@@ -203,27 +232,45 @@ export {
   inputPassword,
   inputUsername,
   interactiveMenu,
+  interactiveMenuSearch,
   multiSelect,
   pause,
   prompt,
   select,
 } from "@dreamer/console";
 
+/**
+ * 表格与进度条（来自 @dreamer/console）：
+ * - keyValueTable, table: 表格
+ * - progressBar, progressBarLive, progressBarLiveFinish: 进度条
+ * - TableColumn, TableOptions: 表格类型
+ */
 export {
   keyValueTable,
   progressBar,
+  progressBarLive,
+  progressBarLiveFinish,
   table,
   type TableColumn,
   type TableOptions,
 } from "@dreamer/console";
 
-// 重新导出类型（除了 CommandHandler，我们需要扩展它）
+/**
+ * CLI 类型（来自 @dreamer/console）：
+ * - ArgumentValidator, CommandArgument, CommandOption: 参数与选项
+ * - CommandHook, OptionValidator, OptionValueType: 钩子与校验
+ * - InputOptions, InteractiveMultiMenuOptions, PromptOptions: 交互选项
+ * - ParsedOptions: 解析后的选项
+ */
 export type {
   ArgumentValidator,
   CommandArgument,
   CommandHook,
   CommandOption,
+  InputOptions,
+  InteractiveMultiMenuOptions,
   OptionValidator,
   OptionValueType,
   ParsedOptions,
+  PromptOptions,
 } from "@dreamer/console";

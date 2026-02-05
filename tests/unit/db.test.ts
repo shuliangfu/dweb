@@ -6,6 +6,7 @@
  * - 迁移文件符合 @dreamer/database Migration 接口
  */
 
+import "../setup.ts";
 import {
   chdir,
   cwd,

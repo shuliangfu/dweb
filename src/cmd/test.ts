@@ -79,7 +79,9 @@ export async function main(
   // 多应用，指定了 app
   if (!projectInfo.appNames.includes(app)) {
     error($t("common.appNotFound", { app }));
-    error($t("common.availableApps", { apps: projectInfo.appNames.join(", ") }));
+    error(
+      $t("common.availableApps", { apps: projectInfo.appNames.join(", ") }),
+    );
     return;
   }
 

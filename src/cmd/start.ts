@@ -57,7 +57,9 @@ export async function main(
         | { port?: number; host?: string }
         | undefined;
       if (serverConfig?.port) {
-        info($t("common.portFromConfigProd", { port: String(serverConfig.port) }));
+        info(
+          $t("common.portFromConfigProd", { port: String(serverConfig.port) }),
+        );
       }
     } catch {
       // 配置加载失败时忽略
@@ -81,14 +83,18 @@ export async function main(
   // 多应用
   if (!app) {
     error($t("common.multiAppNeedApp"));
-    error($t("common.availableApps", { apps: projectInfo.appNames.join(", ") }));
+    error(
+      $t("common.availableApps", { apps: projectInfo.appNames.join(", ") }),
+    );
     error($t("common.exampleApp", { cmd: "start", app: "backend" }));
     return;
   }
 
   if (!projectInfo.appNames.includes(app)) {
     error($t("common.appNotFound", { app }));
-    error($t("common.availableApps", { apps: projectInfo.appNames.join(", ") }));
+    error(
+      $t("common.availableApps", { apps: projectInfo.appNames.join(", ") }),
+    );
     return;
   }
 
@@ -104,7 +110,9 @@ export async function main(
       | { port?: number; host?: string }
       | undefined;
     if (serverConfig?.port) {
-      info($t("common.portFromConfigProd", { port: String(serverConfig.port) }));
+      info(
+        $t("common.portFromConfigProd", { port: String(serverConfig.port) }),
+      );
     }
   } catch {
     // 配置加载失败时忽略

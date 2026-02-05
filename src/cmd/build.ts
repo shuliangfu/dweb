@@ -88,7 +88,9 @@ export async function main(
   if (appsToBuild.length === 0) {
     if (app) {
       error($t("common.appNotFound", { app }));
-      error($t("common.availableApps", { apps: projectInfo.appNames.join(", ") }));
+      error(
+        $t("common.availableApps", { apps: projectInfo.appNames.join(", ") }),
+      );
     } else {
       error($t("build.noAppsToBuild"));
     }

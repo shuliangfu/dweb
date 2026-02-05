@@ -15,20 +15,17 @@ import {
   error,
   type ParsedOptions,
 } from "./feature/command.ts";
-import { initDwebI18n } from "./utils/i18n.ts";
 import { getDwebVersion } from "./utils/version.ts";
-
-// import { generateFromTemplate } from "./template/generator.ts";
 
 /**
  * 构建 CLI 版本展示字符串
  */
 function buildVersionStr(version: string): string {
   return `\n${colorize("dweb-cli", "cyan", true)}
-${colorize("Version:", "cyan", true)} ${colorize(version, "yellow")}
+${colorize($t("cli.versionLabel"), "cyan", true)} ${colorize(version, "yellow")}
 
-${colorize("@dreamer/dweb 全栈 Web 框架命令行工具", "gray")}
-${colorize("用于初始化项目、生成代码、数据库迁移等", "gray")} \n`;
+${colorize($t("cli.versionTitle"), "gray")}
+${colorize($t("cli.versionDesc"), "gray")} \n`;
 }
 
 /**
@@ -40,12 +37,12 @@ ${colorize("用于初始化项目、生成代码、数据库迁移等", "gray")}
  * @returns 配置完成的 Command 实例
  */
 export function createCLI(version: string): Command {
-  const cli = new Command("dweb-cli", "DWEB CLI 工具")
+  const cli = new Command("dweb-cli", $t("cliDesc.toolName"))
     .setVersion(buildVersionStr(version))
     .option({
       name: "verbose",
       alias: "v",
-      description: "显示详细信息",
+      description: $t("cliDesc.verbose"),
       type: "boolean",
     });
 
@@ -53,10 +50,10 @@ export function createCLI(version: string): Command {
   // init 初始化项目
   // ================================================================================
   cli
-    .command("init", "初始化新项目（交互式选择引擎、样式等）")
+    .command("init", $t("cliDesc.init"))
     .option({
       name: "beta",
-      description: "使用 beta 最新版",
+      description: $t("cliDesc.betaOption"),
       type: "boolean",
       defaultValue: false,
     })
@@ -76,15 +73,12 @@ export function createCLI(version: string): Command {
   // ================================================================================
   // dev 开发服务器
   // ================================================================================
-  const devCmd = cli.command(
-    "dev",
-    "启动开发服务器（单应用直接启动，多应用需指定应用名）",
-  );
+  const devCmd = cli.command("dev", $t("cliDesc.dev"));
   devCmd
     .option({
       name: "app",
       alias: "a",
-      description: "应用名（多应用时必填）",
+      description: $t("cliDesc.appRequired"),
       type: "string",
       requiresValue: true,
     })
@@ -104,15 +98,12 @@ export function createCLI(version: string): Command {
   // ================================================================================
   // build 构建
   // ================================================================================
-  const buildCmd = cli.command(
-    "build",
-    "构建生产版本（多应用可指定应用名或构建全部）",
-  );
+  const buildCmd = cli.command("build", $t("cliDesc.build"));
   buildCmd
     .option({
       name: "app",
       alias: "a",
-      description: "应用名（多应用时可选，不填则构建全部）",
+      description: $t("cliDesc.appOptionalBuild"),
       type: "string",
       requiresValue: true,
     })
@@ -132,12 +123,12 @@ export function createCLI(version: string): Command {
   // ================================================================================
   // start 生产启动
   // ================================================================================
-  const startCmd = cli.command("start", "启动生产服务器（多应用需指定应用名）");
+  const startCmd = cli.command("start", $t("cliDesc.start"));
   startCmd
     .option({
       name: "app",
       alias: "a",
-      description: "应用名（多应用时必填）",
+      description: $t("cliDesc.appRequired"),
       type: "string",
       requiresValue: true,
     })
@@ -157,20 +148,20 @@ export function createCLI(version: string): Command {
   // ================================================================================
   // preview 预览构建结果
   // ================================================================================
-  const previewCmd = cli.command("preview", "本地预览构建结果（需先 build）");
+  const previewCmd = cli.command("preview", $t("cliDesc.preview"));
   previewCmd.keepAlive();
   previewCmd
     .option({
       name: "port",
       alias: "p",
-      description: "端口号（默认 4173）",
+      description: $t("cliDesc.portOption"),
       type: "number",
       requiresValue: true,
     })
     .option({
       name: "app",
       alias: "a",
-      description: "应用名（多应用时指定）",
+      description: $t("cliDesc.appOptional"),
       type: "string",
       requiresValue: true,
     })
@@ -190,13 +181,13 @@ export function createCLI(version: string): Command {
   // ================================================================================
   // generate 代码生成（别名 g）
   // ================================================================================
-  const generateCmd = cli.command("generate", "生成代码");
+  const generateCmd = cli.command("generate", $t("cliDesc.generate"));
   generateCmd.alias("g");
   generateCmd
     .option({
       name: "type",
       alias: "t",
-      description: "生成类型（route 页面、api 接口、model 模型、service 服务）",
+      description: $t("cliDesc.generateTypeOption"),
       type: "string",
       required: true,
       requiresValue: true,
@@ -204,7 +195,7 @@ export function createCLI(version: string): Command {
     .option({
       name: "name",
       alias: "n",
-      description: "名称",
+      description: $t("cliDesc.nameOption"),
       type: "string",
       required: true,
       requiresValue: true,
@@ -212,7 +203,7 @@ export function createCLI(version: string): Command {
     .option({
       name: "app",
       alias: "a",
-      description: "应用名（多应用时指定，如 backend、frontend）",
+      description: $t("cliDesc.appOptionalGenerate"),
       type: "string",
       requiresValue: true,
     })
@@ -232,12 +223,12 @@ export function createCLI(version: string): Command {
   // ================================================================================
   // test 运行测试
   // ================================================================================
-  const testCmd = cli.command("test", "运行测试");
+  const testCmd = cli.command("test", $t("cliDesc.test"));
   testCmd
     .option({
       name: "app",
       alias: "a",
-      description: "应用名（多应用时可选）",
+      description: $t("cliDesc.appOptionalTest"),
       type: "string",
       requiresValue: true,
     })
@@ -258,7 +249,7 @@ export function createCLI(version: string): Command {
   // lint 代码检查
   // ================================================================================
   cli
-    .command("lint", "运行代码检查")
+    .command("lint", $t("cliDesc.lint"))
     .action(async (args: string[], options: ParsedOptions) => {
       try {
         const { main: lintMain } = await import("./cmd/lint.ts");
@@ -276,7 +267,7 @@ export function createCLI(version: string): Command {
   // fmt 代码格式化
   // ================================================================================
   cli
-    .command("fmt", "运行代码格式化")
+    .command("fmt", $t("cliDesc.fmt"))
     .action(async (args: string[], options: ParsedOptions) => {
       try {
         const { main: fmtMain } = await import("./cmd/fmt.ts");
@@ -294,7 +285,7 @@ export function createCLI(version: string): Command {
   // clean 清理构建产物
   // ================================================================================
   cli
-    .command("clean", "清理构建产物（dist、.cache 等）")
+    .command("clean", $t("cliDesc.clean"))
     .action(async (args: string[], options: ParsedOptions) => {
       try {
         const { main: cleanMain } = await import("./cmd/clean.ts");
@@ -311,14 +302,14 @@ export function createCLI(version: string): Command {
   // ================================================================================
   // db 数据库相关（含 migrate 子命令）
   // ================================================================================
-  const dbCmd = cli.command("db", "数据库相关");
-  const migrateCmd = dbCmd.command("migrate", "数据库迁移");
+  const dbCmd = cli.command("db", $t("cliDesc.db"));
+  const migrateCmd = dbCmd.command("migrate", $t("cliDesc.dbMigrate"));
   migrateCmd.alias("m");
   migrateCmd
     .option({
       name: "action",
       alias: "a",
-      description: "操作（up, down, create）",
+      description: $t("cliDesc.migrateActionOption"),
       type: "string",
       defaultValue: "up",
       requiresValue: true,
@@ -326,20 +317,20 @@ export function createCLI(version: string): Command {
     .option({
       name: "name",
       alias: "n",
-      description: "迁移名称（create 必填，down 必填）",
+      description: $t("cliDesc.migrateNameOption"),
       type: "string",
       requiresValue: true,
     })
     .option({
       name: "db-type",
-      description: "数据库类型（create 时可选：sql、mongodb，默认 sql）",
+      description: $t("cliDesc.dbTypeOption"),
       type: "string",
       requiresValue: true,
     })
     .option({
       name: "count",
       alias: "c",
-      description: "回滚数量（down 时，配合 MigrationManager 使用，默认 1）",
+      description: $t("cliDesc.dbCountOption"),
       type: "string",
       requiresValue: true,
     })
@@ -357,7 +348,7 @@ export function createCLI(version: string): Command {
     });
 
   dbCmd
-    .command("seed", "执行数据库种子（填充测试数据）")
+    .command("seed", $t("cliDesc.dbSeed"))
     .action(async (args: string[], options: ParsedOptions) => {
       try {
         const { seed } = await import("./cmd/db.ts");
@@ -372,7 +363,7 @@ export function createCLI(version: string): Command {
     });
 
   dbCmd
-    .command("status", "查看迁移状态")
+    .command("status", $t("cliDesc.dbStatus"))
     .action(async (args: string[], options: ParsedOptions) => {
       try {
         const { status } = await import("./cmd/db.ts");
@@ -390,10 +381,10 @@ export function createCLI(version: string): Command {
   // upgrade 升级 dweb
   // ================================================================================
   cli
-    .command("upgrade", "检查并升级 dweb 到最新版本")
+    .command("upgrade", $t("cliDesc.upgrade"))
     .option({
       name: "beta",
-      description: "升级到 beta 最新版（默认仅升级稳定版）",
+      description: $t("cliDesc.upgradeBetaOption"),
       type: "boolean",
       defaultValue: false,
     })
@@ -418,7 +409,6 @@ export function createCLI(version: string): Command {
  * 如果直接运行此文件，则执行 CLI（兼容 Deno 和 Bun）
  */
 if (import.meta.main) {
-  await initDwebI18n();
   const version = await getDwebVersion();
   const cli = createCLI(version);
   await cli.execute();

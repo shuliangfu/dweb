@@ -81,11 +81,24 @@ export interface DatabaseAppConfig {
  * };
  * ```
  */
+/**
+ * 框架支持的语言
+ *
+ * 用于 CLI 输出、日志、错误消息等框架内置文案。
+ * 在 config/main.ts 中设置 language 或在环境变量 LANGUAGE/LC_ALL/LANG 中指定。
+ */
+export type AppLanguage = "zh-CN" | "en-US";
+
 export interface AppConfig extends Record<string, unknown> {
   /** 应用名称 */
   name?: string;
   /** 应用版本 */
   version?: string;
+  /**
+   * 框架语言（默认：自动检测环境变量 LANGUAGE/LC_ALL/LANG，检测不到则 zh-CN）
+   * 影响 CLI 输出、日志、错误消息等框架内置文案
+   */
+  language?: AppLanguage;
   /** 配置目录（默认：'./config'），用于 ConfigManager 的 .env、config.json 等，框架会从此目录动态加载 main.ts、params.ts */
   configDirectory?: string;
   /** 环境变量前缀 */

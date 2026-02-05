@@ -106,7 +106,12 @@ export const DwebErrorCode = {
   UNKNOWN_ERROR: "DWEB_E33",
 } as const;
 
-/** 错误码类型 */
+/**
+ * 错误码字符串字面量类型
+ *
+ * 从 DwebErrorCode 枚举推导，如 "DWEB_E01" | "DWEB_E02" | ...
+ * 用于 createDwebError、throwDwebError 的 code 参数类型。
+ */
 export type DwebErrorCodeType =
   (typeof DwebErrorCode)[keyof typeof DwebErrorCode];
 
@@ -148,7 +153,9 @@ export function setDwebErrorTranslator(
 }
 
 /**
- * 获取当前翻译器
+ * 获取当前错误消息翻译器
+ *
+ * @returns 已注册的翻译器，未设置时返回 null
  */
 export function getDwebErrorTranslator(): DwebErrorTranslator | null {
   return globalTranslator;
@@ -210,7 +217,8 @@ export const DEFAULT_ERROR_MESSAGES: Record<
   [DwebErrorCode.BUILD_FAILED]: "{message}",
   [DwebErrorCode.MIDDLEWARE_FILE_NO_EXPORT]:
     `中间件文件 "{path}" 未导出中间件函数（需要 export default 或 export const middleware）`,
-  [DwebErrorCode.MIDDLEWARE_LOAD_FAILED]: "加载中间件文件失败: {path} - {message}",
+  [DwebErrorCode.MIDDLEWARE_LOAD_FAILED]:
+    "加载中间件文件失败: {path} - {message}",
 
   [DwebErrorCode.FILE_READ_FAILED]: "无法读取 {path}",
   [DwebErrorCode.HTTP_REQUEST_FAILED]: "HTTP {status}",
@@ -305,7 +313,17 @@ export class DwebError extends Error {
 }
 
 /**
- * 判断是否为 DwebError 实例
+ * 类型守卫：判断值是否为 DwebError 实例
+ *
+ * @param err - 待检测的值
+ * @returns 若为 DwebError 实例返回 true，否则 false
+ *
+ * @example
+ * ```ts
+ * try { ... } catch (e) {
+ *   if (isDwebError(e)) console.log(e.code, e.params);
+ * }
+ * ```
  */
 export function isDwebError(err: unknown): err is DwebError {
   return err instanceof DwebError;

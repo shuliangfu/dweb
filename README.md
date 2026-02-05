@@ -37,10 +37,15 @@ deno run -A jsr:@dreamer/dweb/setup
 
 **🪟 Windows 安装注意事项**：
 
-- **PATH 配置**：安装后 `dweb-cli` 位于 `%USERPROFILE%\.deno\bin`（Deno）或 `%USERPROFILE%\.bun\bin`（Bun），需确保该目录已加入系统 PATH，否则命令行无法识别 `dweb-cli`。Deno/Bun 官方安装程序通常会自动配置。
-- **PowerShell 执行策略**：若提示无法运行脚本，可执行 `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` 放宽策略。
+- **PATH 配置**：安装后 `dweb-cli` 位于 `%USERPROFILE%\.deno\bin`（Deno）或
+  `%USERPROFILE%\.bun\bin`（Bun），需确保该目录已加入系统
+  PATH，否则命令行无法识别 `dweb-cli`。Deno/Bun 官方安装程序通常会自动配置。
+- **PowerShell 执行策略**：若提示无法运行脚本，可执行
+  `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+  放宽策略。
 - **路径与编码**：项目路径建议避免中文或特殊字符，以减少路径解析问题。
-- **交互式输入**：若遇 "The operation is not supported"，已通过 runtime-adapter 兼容处理；建议在纯英文路径下执行（如 `C:\dev\myapp`）。
+- **交互式输入**：若遇 "The operation is not supported"，已通过 runtime-adapter
+  兼容处理；建议在纯英文路径下执行（如 `C:\dev\myapp`）。
 
 安装完成后，可在任意目录执行：
 
@@ -103,17 +108,22 @@ deno add jsr:@dreamer/runtime-adapter
 - ✅
   **多种渲染模式**：SSR（服务端渲染）、CSR（客户端渲染）、SSG（静态站点生成）、Hybrid（混合模式）
 - ✅ **默认使用 Preact**：轻量级、高性能，也支持 React
-- ✅ **Socket.IO 内置**：实时双向通信，挂载到同一 HTTP 服务器，配置 `socket: { type: "socketio", ... }`
-  即可启用
+- ✅ **Socket.IO 内置**：实时双向通信，挂载到同一 HTTP 服务器，配置
+  `socket: { type: "socketio", ... }` 即可启用
 - ✅ **中间件系统**：通用中间件系统，可用于 HTTP、WebSocket、消息队列等多种场景
 - ✅ **插件系统**：插件生命周期管理、插件依赖、插件事件系统、热加载
 - ✅ **事件系统**：App 继承
   EventEmitter，支持生命周期与自定义事件（on/emit/once/off）
 - ✅ **服务容器**：依赖注入和服务管理
-- ✅ **数据库支持**：多种数据库适配器（PostgreSQL、MySQL、SQLite、MongoDB），配置 `database` 即可使用
-- ✅ **缓存**：可安装 @dreamer/cache 实现 Redis、内存、文件缓存（dweb 不内置，需自行初始化）
+- ✅
+  **数据库支持**：多种数据库适配器（PostgreSQL、MySQL、SQLite、MongoDB），配置
+  `database` 即可使用
+- ✅ **缓存**：可安装 @dreamer/cache 实现 Redis、内存、文件缓存（dweb
+  不内置，需自行初始化）
 - ✅ **任务队列**：可安装 @dreamer/queue 实现异步任务、定时任务、持久化队列
-- ✅ **统一错误处理**：DwebError 错误类，支持错误码（DWEB_E01～E33）、i18n 国际化、`throwDwebError` / `createDwebError` / `isDwebError` / `setDwebErrorTranslator`
+- ✅ **统一错误处理**：DwebError 错误类，支持错误码（DWEB_E01～E33）、i18n
+  国际化、`throwDwebError` / `createDwebError` / `isDwebError` /
+  `setDwebErrorTranslator`
 - ✅ **类型安全**：完整的 TypeScript 支持
 - ✅ **开发体验**：HMR（热模块替换）、CLI 工具、代码提示
 
@@ -185,7 +195,7 @@ deno add jsr:@dreamer/runtime-adapter
 | `core/`    | 核心：app、config、service、middleware、plugin、lifecycle、database、plugin-events、runtime-adapter                            |
 | `feature/` | 功能：server、router、render、render-ssr、render-csr、render-ssg、render-hybrid、build、csr-client-builder、socket-io、command |
 | `types/`   | 类型：AppConfig、IApp 等                                                                                                       |
-| `utils/`   | 工具：logger、version、errors（统一错误处理，支持 i18n）                                                                        |
+| `utils/`   | 工具：logger、version、errors（统一错误处理，支持 i18n）                                                                       |
 | `cli.ts`   | CLI 入口（createCLI）                                                                                                          |
 | `mod.ts`   | 主入口，统一导出                                                                                                               |
 
@@ -238,7 +248,9 @@ flowchart TB
     core --> tool
 ```
 
-**注**：数据层中 database 为 dweb 内置（配置 `database` 即可）；cache、storage 需单独安装 `@dreamer/cache`、`@dreamer/storage` 并自行初始化，AppConfig 无 cache 配置项。
+**注**：数据层中 database 为 dweb 内置（配置 `database` 即可）；cache、storage
+需单独安装 `@dreamer/cache`、`@dreamer/storage` 并自行初始化，AppConfig 无 cache
+配置项。
 
 ## 🎯 使用场景
 
@@ -1183,14 +1195,18 @@ await db.transaction(async (trx) => {
 
 ### 配置管理
 
-框架提供两类配置的获取方式：**框架配置**（`config/main.ts` 系列）和 **业务配置**（`config/params.ts`）。在需要访问配置的地方（如 `main.ts`、插件、中间件、API 路由等），通过 `app.container` 获取服务容器后，使用下列 API。
+框架提供两类配置的获取方式：**框架配置**（`config/main.ts` 系列）和
+**业务配置**（`config/params.ts`）。在需要访问配置的地方（如
+`main.ts`、插件、中间件、API 路由等），通过 `app.container`
+获取服务容器后，使用下列 API。
 
 #### 1. 获取框架配置（config/main.ts）
 
-框架配置来自 `config/main.ts`、`config/main.{env}.ts`（如 `main.dev.ts`），合并后的对象为 `AppConfig` 类型。
+框架配置来自 `config/main.ts`、`config/main.{env}.ts`（如
+`main.dev.ts`），合并后的对象为 `AppConfig` 类型。
 
 ```typescript
-import { getConfig, getConfigValue, getConfigManager } from "jsr:@dreamer/dweb";
+import { getConfig, getConfigManager, getConfigValue } from "jsr:@dreamer/dweb";
 
 // 在 main.ts、插件、中间件等有 app 或 container 的地方
 const container = app.container;
@@ -1201,7 +1217,11 @@ console.log(config.name, config.server?.port, config.database);
 
 // 按点号路径获取单个配置值（支持 "server.port"、"database.default.host" 等）
 const port = getConfigValue<number>(container, "server.port", 3000);
-const dbHost = getConfigValue<string>(container, "database.default.connection.host", "localhost");
+const dbHost = getConfigValue<string>(
+  container,
+  "database.default.connection.host",
+  "localhost",
+);
 
 // 获取 ConfigManager 实例（@dreamer/config，支持 envPrefix、热重载等）
 const configManager = getConfigManager(container);
@@ -1210,7 +1230,8 @@ const value = configManager.get("custom.key", "default");
 
 #### 2. 获取业务配置（config/params.ts）
 
-业务配置来自 `config/params.ts`，用于存储与业务相关的参数（如功能开关、第三方 API 地址、分页大小、超时时间等），与框架配置分离，便于维护。
+业务配置来自 `config/params.ts`，用于存储与业务相关的参数（如功能开关、第三方
+API 地址、分页大小、超时时间等），与框架配置分离，便于维护。
 
 **params.ts 示例**：
 
@@ -1243,16 +1264,26 @@ const container = app.container;
 const params = getParams(container);
 
 // 按点号路径获取单个值（支持 "features.enablePay"、"api.timeout"、"pagination.defaultPageSize" 等）
-const enablePay = getParamValue<boolean>(container, "features.enablePay", false);
+const enablePay = getParamValue<boolean>(
+  container,
+  "features.enablePay",
+  false,
+);
 const timeout = getParamValue<number>(container, "api.timeout", 30000);
-const pageSize = getParamValue<number>(container, "pagination.defaultPageSize", 20);
+const pageSize = getParamValue<number>(
+  container,
+  "pagination.defaultPageSize",
+  20,
+);
 ```
 
 #### 3. 获取环境变量（两种方式）
 
 **方式一：通过 Config 获取（推荐，无需 runtime-adapter）**
 
-配置 `envPrefix` 后，ConfigManager 会自动将带前缀的环境变量合并到配置中，可通过 `getConfigValue` 或 `getConfigManager().get()` 访问，**无需** 单独引入 `@dreamer/runtime-adapter`。
+配置 `envPrefix` 后，ConfigManager 会自动将带前缀的环境变量合并到配置中，可通过
+`getConfigValue` 或 `getConfigManager().get()` 访问，**无需** 单独引入
+`@dreamer/runtime-adapter`。
 
 ```typescript
 // AppConfig 中设置 envPrefix: "APP_"
@@ -1274,16 +1305,17 @@ const port2 = configManager.get("server.port", "3000");
 
 **环境变量命名示例**（`envPrefix: "APP_"` 时）：
 
-| 环境变量 | 配置键 | 说明 |
-|----------|--------|------|
-| `APP_PORT` | `port` | 顶层配置 |
-| `APP_SERVER_PORT` | `server.port` | 嵌套配置 |
-| `APP_DATABASE_HOST` | `database.host` | 下划线转点号 |
-| `APP_DATABASE_CONNECTION_URL` | `database.connection.url` | 多级嵌套 |
+| 环境变量                      | 配置键                    | 说明         |
+| ----------------------------- | ------------------------- | ------------ |
+| `APP_PORT`                    | `port`                    | 顶层配置     |
+| `APP_SERVER_PORT`             | `server.port`             | 嵌套配置     |
+| `APP_DATABASE_HOST`           | `database.host`           | 下划线转点号 |
+| `APP_DATABASE_CONNECTION_URL` | `database.connection.url` | 多级嵌套     |
 
 **方式二：直接读取环境变量（需 runtime-adapter）**
 
-在 `config/main.ts` 中**定义**配置时，或需要读取**未带前缀**的环境变量时，使用 `getEnv`：
+在 `config/main.ts` 中**定义**配置时，或需要读取**未带前缀**的环境变量时，使用
+`getEnv`：
 
 ```typescript
 import { getEnv } from "jsr:@dreamer/runtime-adapter";
@@ -1303,7 +1335,7 @@ import { getEnv } from "jsr:@dreamer/runtime-adapter";
 export default {
   name: "my-app",
   version: "1.0.0",
-  envPrefix: "APP_",  // 可选：启用后 APP_* 环境变量会覆盖下方默认值
+  envPrefix: "APP_", // 可选：启用后 APP_* 环境变量会覆盖下方默认值
   server: {
     port: parseInt(getEnv("PORT") ?? "3000"),
     host: getEnv("HOST") ?? "127.0.0.1",
@@ -1323,23 +1355,26 @@ export default {
 } satisfies AppConfig;
 ```
 
-**总结**：应用运行时优先使用 `getConfigValue` / `getConfigManager().get()` 访问配置（含环境变量）；仅在 `config/main.ts` 内定义或需要未带前缀的环境变量时，使用 `getEnv`。
+**总结**：应用运行时优先使用 `getConfigValue` / `getConfigManager().get()`
+访问配置（含环境变量）；仅在 `config/main.ts`
+内定义或需要未带前缀的环境变量时，使用 `getEnv`。
 
 #### 4. 配置加载顺序
 
-| 优先级 | 文件 | 说明 |
-|--------|------|------|
-| 低 | `common/config/main.ts` | 公共配置（多应用时） |
-| 中 | `config/main.ts` 或 `src/config/main.ts` | 应用基础配置 |
-| 中 | `config/main.{env}.ts` | 按环境覆盖（如 `main.dev.ts`、`main.prod.ts`） |
-| 高 | 入口传入的配置 | `new App({ ... })` 中传入的对象 |
+| 优先级 | 文件                                     | 说明                                           |
+| ------ | ---------------------------------------- | ---------------------------------------------- |
+| 低     | `common/config/main.ts`                  | 公共配置（多应用时）                           |
+| 中     | `config/main.ts` 或 `src/config/main.ts` | 应用基础配置                                   |
+| 中     | `config/main.{env}.ts`                   | 按环境覆盖（如 `main.dev.ts`、`main.prod.ts`） |
+| 高     | 入口传入的配置                           | `new App({ ... })` 中传入的对象                |
 
-`params.ts` 独立加载，存储在容器的 `params` 键下，通过 `getParams` / `getParamValue` 访问。
+`params.ts` 独立加载，存储在容器的 `params` 键下，通过 `getParams` /
+`getParamValue` 访问。
 
 ### 数据验证
 
 ```typescript
-import { validate, object, string, number } from "jsr:@dreamer/utils/validator";
+import { number, object, string, validate } from "jsr:@dreamer/utils/validator";
 
 // 验证请求数据（使用 @dreamer/utils 的 validator 模块）
 const schema = object({
@@ -1371,19 +1406,25 @@ logger.error("错误信息");
 
 ```typescript
 import {
-  throwDwebError,
   createDwebError,
-  isDwebError,
   DwebErrorCode,
+  isDwebError,
   setDwebErrorTranslator,
+  throwDwebError,
 } from "jsr:@dreamer/dweb";
 
 // 抛出错误
 throwDwebError(DwebErrorCode.CONFIG_NAME_INVALID);
-throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, { reason: "段数过多", hint: "...", path: "/foo" });
+throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, {
+  reason: "段数过多",
+  hint: "...",
+  path: "/foo",
+});
 
 // 创建错误实例（不抛出）
-const err = createDwebError(DwebErrorCode.FILE_READ_FAILED, { path: "config.json" });
+const err = createDwebError(DwebErrorCode.FILE_READ_FAILED, {
+  path: "config.json",
+});
 
 // 类型守卫
 if (isDwebError(error)) {
@@ -1391,13 +1432,16 @@ if (isDwebError(error)) {
 }
 
 // 接入 i18n：注册翻译器后，错误消息将使用翻译结果
+// 框架内置 i18n：在 config/main.ts 中设置 language: "zh-CN" | "en-US" 可切换 CLI、日志、错误消息等框架文案
 setDwebErrorTranslator((key, params) => {
   if (key === "errors.DWEB_E01") return "Config 'name' must be string";
   return key; // 未翻译时返回 key
 });
 ```
 
-错误码分段：E01～E19 配置、E20～E21 入口路径、E22 运行时、E23～E29 功能模块、E30～E32 文件/HTTP、E33 未知错误。详见 [utils/errors.ts](./src/utils/errors.ts)。
+错误码分段：E01～E19 配置、E20～E21 入口路径、E22 运行时、E23～E29
+功能模块、E30～E32 文件/HTTP、E33 未知错误。详见
+[utils/errors.ts](./src/utils/errors.ts)。
 
 ## 渲染模式
 
@@ -1559,8 +1603,8 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📚 配置文档
 
-- **[AppConfig 完整配置示例](./APP_CONFIG_EXAMPLE.md)**：涵盖
-  server、router、render、build、logger、database、socket、plugins、middlewares
+- **[AppConfig 完整配置示例](./APP_CONFIG.md)**：涵盖
+  language、server、router、render、build、logger、database、socket、plugins、middlewares
   等全部配置项及单应用/多应用示例。
 - **配置与参数获取**：见上方「[配置管理](#配置管理)」章节，包含：
   - 框架配置（`getConfig`、`getConfigValue`）的获取方式
@@ -1630,7 +1674,7 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
   @dreamer/server、@dreamer/router、@dreamer/render、@dreamer/esbuild 等
 - **入口类**：使用 `App`
   类创建应用（`import { App } from "jsr:@dreamer/dweb"`），配置为
-  `AppConfig`（name、server、render、router、build、logger 等）
+  `AppConfig`（name、version、language、server、render、router、build、logger 等）
 - **按需使用**：可仅使用 dweb，或按需安装其他 @dreamer/*
   库（database、cache、storage 等）
 - **类型安全**：完整 TypeScript 类型支持

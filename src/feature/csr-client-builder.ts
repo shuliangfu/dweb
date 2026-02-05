@@ -421,7 +421,9 @@ export function renderNotFound(containerId: string): void {
       <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:system-ui,sans-serif;">
         <h1 style="font-size:72px;margin:0;color:#e5e5e5;">404</h1>
         <p style="color:#666;margin-top:16px;">${$t("client.pageNotFound")}</p>
-        <a href="/" style="color:#3b82f6;text-decoration:none;margin-top:24px;">${$t("client.backToHome")}</a>
+        <a href="/" style="color:#3b82f6;text-decoration:none;margin-top:24px;">${
+    $t("client.backToHome")
+  }</a>
       </div>
     \`;
   }
@@ -434,7 +436,9 @@ export function renderError(containerId: string, error: unknown): void {
     const message = error instanceof Error ? error.message : String(error);
     container.innerHTML = \`
       <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:system-ui,sans-serif;">
-        <h1 style="font-size:48px;margin:0;color:#ef4444;">${$t("client.errorOccurred")}</h1>
+        <h1 style="font-size:48px;margin:0;color:#ef4444;">${
+    $t("client.errorOccurred")
+  }</h1>
         <p style="color:#666;margin-top:16px;">\${message}</p>
         <button type="button" onclick="location.reload()" style="margin-top:24px;padding:8px 24px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;">
           ${$t("client.reload")}
@@ -512,7 +516,9 @@ export async function setupHydrationRouterAndHmr(opts: {
         }
       }
     } catch (error) {
-      console.error(${JSON.stringify($t("client.hydrationFailed"))} + ":", error);
+      console.error(${
+    JSON.stringify($t("client.hydrationFailed"))
+  } + ":", error);
     }
   }
   g.__DWEB_HMR_REFRESH__ = (hmrOpts) => {
@@ -570,7 +576,9 @@ export async function setupHydrationRouterAndHmr(opts: {
         });
       })
       .catch((err) => {
-        console.warn(${JSON.stringify($t("client.hmrFallback"))} + ":", err?.message || err);
+        console.warn(${
+    JSON.stringify($t("client.hmrFallback"))
+  } + ":", err?.message || err);
         if (typeof _win.location !== "undefined") {
           _win.location.reload();
         }
@@ -727,7 +735,9 @@ initApp()
     // 路由后置守卫：导航完成后执行（可做埋点、日志等）
     app.router.afterRoute((to, _from) => {
       if (to) {
-        console.log(${JSON.stringify($t("client.routeSwitched"))}, to.route.component, to.params, to.query);
+        console.log(${
+    JSON.stringify($t("client.routeSwitched"))
+  }, to.route.component, to.params, to.query);
       }
     });
   })
@@ -992,7 +1002,9 @@ export async function buildClientScript(
       }
 
       // 输出构建信息
-      logger.info($t("log.clientBuildOutput", { count: String(outputFiles.size) }));
+      logger.info(
+        $t("log.clientBuildOutput", { count: String(outputFiles.size) }),
+      );
       for (const file of fileList) {
         logger.info(file);
       }
@@ -1101,10 +1113,14 @@ export async function buildClientScript(
     // 返回一个错误提示脚本
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorScript = `
-      console.error(${JSON.stringify($t("log.clientBuildFailed"))} + ":", ${JSON.stringify(errorMessage)});
+      console.error(${JSON.stringify($t("log.clientBuildFailed"))} + ":", ${
+      JSON.stringify(errorMessage)
+    });
       document.getElementById("app").innerHTML = \`
         <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:system-ui,sans-serif;">
-          <h1 style="font-size:48px;margin:0;color:#ef4444;">${$t("client.buildError")}</h1>
+          <h1 style="font-size:48px;margin:0;color:#ef4444;">${
+      $t("client.buildError")
+    }</h1>
           <pre style="color:#666;margin-top:16px;max-width:80%;overflow:auto;background:#f5f5f5;padding:16px;border-radius:8px;">\${${
       JSON.stringify(errorMessage)
     }}</pre>
@@ -1279,7 +1295,9 @@ export function createClientScriptMiddleware(
               hasCode: !!script?.code,
             });
             ctx.response = new Response(
-              `console.error(${JSON.stringify($t("client.clientScriptNotReady"))});`,
+              `console.error(${
+                JSON.stringify($t("client.clientScriptNotReady"))
+              });`,
               {
                 status: 500,
                 headers: {
@@ -1329,7 +1347,9 @@ export function createClientScriptMiddleware(
         }
         logger.error($t("log.clientScriptNotFound") + ":", clientJsPath);
         ctx.response = new Response(
-          `console.error(${JSON.stringify($t("client.clientScriptNotFound"))});`,
+          `console.error(${
+            JSON.stringify($t("client.clientScriptNotFound"))
+          });`,
           {
             status: 500,
             headers: {
@@ -1342,9 +1362,15 @@ export function createClientScriptMiddleware(
         const errMsg = error instanceof Error ? error.message : String(error);
         const errStack = error instanceof Error ? error.stack : "";
         logger.error($t("log.provideClientFailed") + ":", undefined, error);
-        console.error("[_client.js] " + $t("log.provideClientFailed") + ":", errMsg, errStack);
+        console.error(
+          "[_client.js] " + $t("log.provideClientFailed") + ":",
+          errMsg,
+          errStack,
+        );
         ctx.response = new Response(
-          `console.error(${JSON.stringify($t("client.clientScriptLoadFailed"))}, ${JSON.stringify(errMsg)});`,
+          `console.error(${
+            JSON.stringify($t("client.clientScriptLoadFailed"))
+          }, ${JSON.stringify(errMsg)});`,
           {
             status: 500,
             headers: {

@@ -14,7 +14,11 @@
  * @module
  */
 
-import { failSpinner, startSpinner, succeedSpinner } from "@dreamer/console";
+import {
+  failSpinner,
+  startSpinner,
+  succeedSpinner,
+} from "./feature/command.ts";
 import {
   createCommand,
   exit,
@@ -24,11 +28,7 @@ import {
   remove,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
-import {
-  DwebErrorCode,
-  throwDwebError,
-} from "./utils/errors.ts";
-import { initDwebI18n } from "./utils/i18n.ts";
+import { DwebErrorCode, throwDwebError } from "./utils/errors.ts";
 import {
   getPackageRoot,
   loadDwebDenoJson,
@@ -85,9 +85,11 @@ async function createTempCliConfig(): Promise<string> {
     const denoJsonUrl = new URL("../deno.json", import.meta.url).href;
     try {
       const res = await fetch(denoJsonUrl);
-      if (!res.ok) throwDwebError(DwebErrorCode.HTTP_REQUEST_FAILED, {
-        status: String(res.status),
-      });
+      if (!res.ok) {
+        throwDwebError(DwebErrorCode.HTTP_REQUEST_FAILED, {
+          status: String(res.status),
+        });
+      }
       const raw = await res.text();
       config = JSON.parse(raw) as Record<string, unknown>;
     } catch (err) {
@@ -112,7 +114,6 @@ async function createTempCliConfig(): Promise<string> {
  * - 本地调试安装：使用 --config 临时 config（去除 workspace），避免解析 examples 等不存在的路径
  */
 async function installGlobalCli(): Promise<void> {
-  await initDwebI18n();
   const runtime = getRuntime();
   const cliEntry = getCliEntry();
   const args: string[] = [
@@ -145,7 +146,9 @@ async function installGlobalCli(): Promise<void> {
         await writeVersionCacheOnInstall();
         printUsage();
       } else {
-        failSpinner($t("cli.installFailedExit", { code: String(status.code ?? "") }));
+        failSpinner(
+          $t("cli.installFailedExit", { code: String(status.code ?? "") }),
+        );
         exit(status.code ?? 1);
       }
     } finally {
@@ -167,7 +170,9 @@ async function installGlobalCli(): Promise<void> {
       await writeVersionCacheOnInstall();
       printUsage();
     } else {
-      failSpinner($t("cli.installFailedExit", { code: String(status.code ?? "") }));
+      failSpinner(
+        $t("cli.installFailedExit", { code: String(status.code ?? "") }),
+      );
       exit(status.code ?? 1);
     }
   }
@@ -194,10 +199,16 @@ function printUsage(): void {
   console.log(`  ${CLI_NAME} dev              # ${$t("cli.commands.dev")}`);
   console.log(`  ${CLI_NAME} build            # ${$t("cli.commands.build")}`);
   console.log(`  ${CLI_NAME} start            # ${$t("cli.commands.start")}`);
-  console.log(`  ${CLI_NAME} generate (g)     # ${$t("cli.commands.generate")}`);
-  console.log(`  ${CLI_NAME} db migrate (m)   # ${$t("cli.commands.dbMigrate")}`);
+  console.log(
+    `  ${CLI_NAME} generate (g)     # ${$t("cli.commands.generate")}`,
+  );
+  console.log(
+    `  ${CLI_NAME} db migrate (m)   # ${$t("cli.commands.dbMigrate")}`,
+  );
   console.log(`  ${CLI_NAME} db seed          # ${$t("cli.commands.dbSeed")}`);
-  console.log(`  ${CLI_NAME} db status        # ${$t("cli.commands.dbStatus")}`);
+  console.log(
+    `  ${CLI_NAME} db status        # ${$t("cli.commands.dbStatus")}`,
+  );
   console.log(`  ${CLI_NAME} test             # ${$t("cli.commands.test")}`);
   console.log(`  ${CLI_NAME} lint             # ${$t("cli.commands.lint")}`);
   console.log(`  ${CLI_NAME} fmt              # ${$t("cli.commands.fmt")}`);

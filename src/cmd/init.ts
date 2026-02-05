@@ -37,6 +37,8 @@ import {
   resolve,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
+import type { AppLanguage } from "../types/app.ts";
+import { detectLocale } from "../utils/i18n.ts";
 import { fetchDreamerVersions } from "../utils/jsr-versions.ts";
 import {
   type DwebDenoConfig,
@@ -96,6 +98,16 @@ function isValidAppName(name: string): boolean {
 function projectNameFromDir(targetDir: string): string {
   const name = basename(targetDir);
   return name === "." ? "my-dweb-app" : name;
+}
+
+/**
+ * 根据用户语言环境（LANGUAGE/LC_ALL/LANG）返回框架 language 配置
+ * 用于 init 生成的 config/main.ts 模板
+ */
+function getDefaultLanguage(): AppLanguage {
+  const detected = detectLocale();
+  if (detected === "zh-CN" || detected === "en-US") return detected;
+  return "zh-CN";
 }
 
 /**
@@ -544,6 +556,8 @@ import type { AppConfig } from "@dreamer/dweb";
 const config: AppConfig = {
   name: "${configName}",
   version: "1.0.0",
+  /** 框架语言（根据用户环境自动检测，可改为 "en-US"） */
+  language: "${getDefaultLanguage()}",
   server: {
     port: ${serverPort},
     host: "0.0.0.0",
@@ -1095,6 +1109,8 @@ export const commonConfig = {
 export default {
   name: commonConfig.appName,
   version: commonConfig.version,
+  /** 框架语言（根据用户环境自动检测） */
+  language: "${getDefaultLanguage()}",
 };
 `;
   }
@@ -1111,6 +1127,8 @@ export const commonConfig = {
 export default {
   name: commonConfig.appName,
   version: commonConfig.version,
+  /** 框架语言（根据用户环境自动检测） */
+  language: "${getDefaultLanguage()}",
 };
 `;
 }

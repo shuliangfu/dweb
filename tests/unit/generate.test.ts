@@ -6,6 +6,7 @@
  * - name 规范化：pascalCase 类名、kebabCase 文件路径
  */
 
+import "../setup.ts";
 import {
   chdir,
   cwd,

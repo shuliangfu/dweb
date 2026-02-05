@@ -102,6 +102,8 @@ import {
 } from "./plugin.ts";
 import { initializeServiceContainer } from "./service.ts";
 
+await initDwebI18n();
+
 /**
  * App 类
  *
@@ -247,7 +249,6 @@ export class App extends EventEmitter implements IApp {
    * @param config 应用配置（可仅含 configDirectory，或含覆盖项）
    */
   private async _initializeConfig(config: AppConfig): Promise<void> {
-    await initDwebI18n();
     // 初始化配置管理器（从 configDirectory 动态加载 main.ts、params.ts；未指定时默认检查 ./config、./src/config）
     await initializeConfigManager(this.container, {
       directories: config.configDirectory
