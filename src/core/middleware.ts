@@ -16,6 +16,7 @@ import {
 import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
+import { createDwebError, DwebErrorCode } from "../utils/errors.ts";
 import { emitOnError, emitOnRequest, emitOnResponse } from "./plugin-events.ts";
 
 /**
@@ -183,7 +184,11 @@ export function pluginEventsMiddleware(
       // 触发 onError 事件（请求处理出错时）
       const errorResponse = await emitOnError(
         container,
-        error instanceof Error ? error : new Error(String(error)),
+        error instanceof Error
+          ? error
+          : createDwebError(DwebErrorCode.UNKNOWN_ERROR, {
+            message: String(error),
+          }),
         ctx,
       );
 

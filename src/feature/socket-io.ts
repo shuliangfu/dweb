@@ -11,6 +11,7 @@ import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import { Server, type ServerOptions } from "@dreamer/socket-io";
 import type { AppConfig, SocketConfig } from "../types/app.ts";
+import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { getLogger } from "../utils/logger.ts";
 
 /** 容器中 Socket.IO 服务实例的 key */
@@ -75,7 +76,7 @@ export function initializeSocketIo(
  */
 export function getSocketIoServer(container: ServiceContainer): Server {
   if (!container.has(SOCKET_IO_SERVER_KEY)) {
-    throw new Error("Socket.IO 未配置，请在 AppConfig 中设置 socket: { type: 'socketio', ... }");
+    throwDwebError(DwebErrorCode.SOCKET_IO_NOT_CONFIGURED);
   }
   return container.get<Server>(SOCKET_IO_SERVER_KEY);
 }

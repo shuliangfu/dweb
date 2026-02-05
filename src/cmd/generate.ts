@@ -28,6 +28,7 @@ import {
 } from "@dreamer/runtime-adapter";
 import { kebabCase, pascalCase } from "@dreamer/utils/string";
 import type { ParsedOptions } from "../feature/command.ts";
+import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { getProjectInfo } from "../utils/project.ts";
 
 /**
@@ -229,7 +230,7 @@ export default function ${namePascal}Page() {
       return { targetPath, content };
     }
     default: {
-      throw new Error(`不支持的生成类型: ${type}`);
+      throwDwebError(DwebErrorCode.GENERATE_TYPE_UNSUPPORTED, { type });
     }
   }
 }

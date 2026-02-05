@@ -559,7 +559,7 @@ export async function setupHydrationRouterAndHmr(opts: {
           if (typeof _win.document !== "undefined") {
             HMR_CSS_ENTRIES.forEach(function(entry) {
               fetch(entry.url + "?t=" + Date.now())
-                .then(function(r) { return r.ok ? r.text() : Promise.reject(new Error(r.statusText)); })
+                .then(function(r) { return r.ok ? r.text() : Promise.reject(new Error("[dweb] HMR CSS fetch failed: " + r.statusText)); })
                 .then(function(css) {
                   const el = _win.document.getElementById(entry.styleId);
                   if (el) el.textContent = css;

@@ -4,7 +4,7 @@
 
 | 项目     | 值                           |
 | -------- | ---------------------------- |
-| 框架版本 | 3.0.36                       |
+| 框架版本 | 3.0.42                       |
 | 测试框架 | @dreamer/test@^1.0.0-beta.40 |
 | 测试时间 | 2026-02-05                   |
 | 测试环境 | Deno 2.x / Bun 1.x           |
@@ -17,12 +17,12 @@
 
 | 指标         | 数值 |
 | ------------ | ---- |
-| 测试文件数   | 29   |
-| 测试用例总数 | 327  |
-| 通过用例数   | 327  |
+| 测试文件数   | 30   |
+| 测试用例总数 | 343  |
+| 通过用例数   | 343  |
 | 失败用例数   | 0    |
 | 通过率       | 100% |
-| 测试执行时间 | ~12秒 |
+| 测试执行时间 | ~19秒 |
 
 ### 测试文件统计
 
@@ -30,6 +30,7 @@
 | ---------------------------- | ---------- | ----------- |
 | `config.test.ts`             | 46         | ✅ 全部通过 |
 | `command.test.ts`            | 41         | ✅ 全部通过 |
+| `errors.test.ts`             | 12         | ✅ 全部通过 |
 | `build.test.ts`              | 21         | ✅ 全部通过 |
 | `app.test.ts`                | 20         | ✅ 全部通过 |
 | `logger.test.ts`             | 17         | ✅ 全部通过 |
@@ -54,7 +55,7 @@
 | `cli.test.ts`                | 1          | ✅ 全部通过 |
 | `db.test.ts`                 | 3          | ✅ 全部通过 |
 | `generate.test.ts`           | 5          | ✅ 全部通过 |
-| `init.test.ts`               | 2          | ✅ 全部通过 |
+| `init.test.ts`               | 3          | ✅ 全部通过 |
 | `project.test.ts`            | 3          | ✅ 全部通过 |
 
 ---
@@ -510,30 +511,39 @@
 - ✅ 支持多个服务的注册和获取
 - ✅ 支持服务之间的依赖注入
 
-### 15. 运行时适配器 (runtime-adapter.test.ts) - 16 个测试
+### 15. 统一错误处理 (errors.test.ts) - 12 个测试
+
+- ✅ createDwebError 创建错误实例、带参数创建
+- ✅ throwDwebError 抛出错误、带 cause 抛出
+- ✅ assertRejects 异步错误断言
+- ✅ isDwebError 类型守卫
+- ✅ DwebError 实例方法 toString、toJSON
+- ✅ setDwebErrorTranslator i18n 翻译器、传入 null 清除
+
+### 16. 运行时适配器 (runtime-adapter.test.ts) - 17 个测试
 
 - ✅ 进程与环境：getEnv、setEnv、cwd、args、exit
 - ✅ 路径：join、resolve、dirname、basename
 - ✅ 文件系统：readFileSync、readTextFile、writeTextFile、mkdir、exists
 - ✅ cwd() 返回非空字符串、join() 拼接路径
 
-### 16. CSR 客户端构建与渲染器 (csr-client-builder.test.ts / render-csr.test.ts)
+### 17. CSR 客户端构建与渲染器 (csr-client-builder.test.ts / render-csr.test.ts)
 
 - ✅
   clearClientScriptCache、getCachedClientScript、createClientScriptMiddleware（5
   个用例）
 - ✅ createRendererCSR 返回函数、接受 (ctx, match) 两参数（2 个用例）
 
-### 17. SSR / Hybrid / SSG 渲染器 (render-ssr.test.ts / render-hybrid.test.ts / render-ssg.test.ts)
+### 18. SSR / Hybrid / SSG 渲染器 (render-ssr.test.ts / render-hybrid.test.ts / render-ssg.test.ts)
 
 - ✅ createRendererSSR、createRendererHybrid、createRendererSSG
   均返回函数且签名为两参数（各 2 个用例）
 
-### 18. 版本 (version.test.ts) - 3 个测试
+### 19. 版本 (version.test.ts) - 3 个测试
 
 - ✅ DWEB_VERSION 导出字符串、语义化版本格式、非空
 
-### 19. CLI (cli.test.ts) - 1 个测试
+### 20. CLI (cli.test.ts) - 1 个测试
 
 - ✅ createCLI() 返回 Command、具备 execute 方法
 
@@ -595,6 +605,7 @@
 | command            | Command.command()                                     | ✅       |
 | command            | 重导出 API (colorize, colors 等)                      | ✅       |
 | runtime-adapter    | getEnv / cwd / join / readTextFile 等                 | ✅       |
+| errors             | createDwebError / throwDwebError / isDwebError / setDwebErrorTranslator | ✅       |
 | csr-client-builder | clearClientScriptCache / createClientScriptMiddleware | ✅       |
 | render-csr         | createRendererCSR()                                   | ✅       |
 | render-ssr         | createRendererSSR()                                   | ✅       |
@@ -643,7 +654,7 @@
 
 ## 🎯 结论
 
-@dreamer/dweb 框架的核心模块测试在文件级已全面覆盖，共 **327**
+@dreamer/dweb 框架的核心模块测试在文件级已全面覆盖，共 **343**
 个测试用例全部通过。所有测试均为实质性测试，验证了具体的功能行为。测试覆盖了：
 
 - ✅ App 类核心功能
@@ -661,6 +672,7 @@
 - ✅ 日志系统集成
 - ✅ CLI 命令模块（createCLI）
 - ✅ 运行时适配器（runtime-adapter re-export）
+- ✅ 统一错误处理（DwebError、throwDwebError、i18n 翻译器）
 - ✅ CSR 客户端构建与 createRendererCSR
 - ✅ createRendererSSR / createRendererHybrid / createRendererSSG
 - ✅ 版本（DWEB_VERSION）

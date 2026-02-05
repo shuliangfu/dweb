@@ -20,6 +20,7 @@ import {
 import { ServiceContainer } from "@dreamer/service";
 import type { App } from "../core/app.ts";
 import { getConfig } from "../core/config.ts";
+import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { initializeServiceContainer } from "../core/service.ts";
 /**
  * 扩展的命令执行函数类型
@@ -111,7 +112,7 @@ export class Command extends BaseCommand {
    */
   get app(): App {
     if (!this._app) {
-      throw new Error("App 实例未初始化");
+      throwDwebError(DwebErrorCode.APP_NOT_INITIALIZED);
     }
     return this._app;
   }

@@ -11,6 +11,7 @@ import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import { Server } from "@dreamer/websocket";
 import type { AppConfig, SocketConfig } from "../types/app.ts";
+import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { getLogger } from "../utils/logger.ts";
 
 /** 容器中 WebSocket 服务实例的 key */
@@ -76,9 +77,7 @@ export function initializeWebSocket(
  */
 export function getWebSocketServer(container: ServiceContainer): Server {
   if (!container.has(WEBSOCKET_SERVER_KEY)) {
-    throw new Error(
-      "WebSocket 未配置，请在 AppConfig 中设置 socket: { type: 'websocket', ... }",
-    );
+    throwDwebError(DwebErrorCode.WEBSOCKET_NOT_CONFIGURED);
   }
   return container.get<Server>(WEBSOCKET_SERVER_KEY);
 }

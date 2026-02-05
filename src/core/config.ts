@@ -20,6 +20,7 @@ import type {
 import type { Plugin } from "@dreamer/plugin";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
+import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { cwd, getEnv, realPath, resolve, stat } from "./runtime-adapter.ts";
 
 /**
@@ -139,50 +140,46 @@ function getMiddlewareName(
 export function validateConfig(config: AppConfig): void {
   // 验证基础配置项
   if (config.name !== undefined && typeof config.name !== "string") {
-    throw new Error(`配置项 'name' 必须是字符串类型`);
+    throwDwebError(DwebErrorCode.CONFIG_NAME_INVALID);
   }
   if (config.version !== undefined && typeof config.version !== "string") {
-    throw new Error(`配置项 'version' 必须是字符串类型`);
+    throwDwebError(DwebErrorCode.CONFIG_VERSION_INVALID);
   }
   if (
     config.configDirectory !== undefined &&
     typeof config.configDirectory !== "string"
   ) {
-    throw new Error(`配置项 'configDirectory' 必须是字符串类型`);
+    throwDwebError(DwebErrorCode.CONFIG_DIR_INVALID);
   }
   if (config.envPrefix !== undefined && typeof config.envPrefix !== "string") {
-    throw new Error(`配置项 'envPrefix' 必须是字符串类型`);
+    throwDwebError(DwebErrorCode.CONFIG_ENV_PREFIX_INVALID);
   }
   if (config.hotReload !== undefined && typeof config.hotReload !== "boolean") {
-    throw new Error(`配置项 'hotReload' 必须是布尔类型`);
+    throwDwebError(DwebErrorCode.CONFIG_HOT_RELOAD_INVALID);
   }
   // 验证渲染配置
   if (config.render !== undefined) {
     if (typeof config.render !== "object" || config.render === null) {
-      throw new Error(`配置项 'render' 必须是对象类型`);
+      throwDwebError(DwebErrorCode.CONFIG_RENDER_INVALID);
     }
     if (
       config.render.engine !== undefined &&
       !["react", "preact"].includes(config.render.engine)
     ) {
-      throw new Error(
-        `配置项 'render.engine' 必须是 "react" 或 "preact" 之一`,
-      );
+      throwDwebError(DwebErrorCode.CONFIG_RENDER_ENGINE_INVALID);
     }
     if (
       config.render.mode !== undefined &&
       !["ssr", "csr", "ssg", "hybrid"].includes(config.render.mode)
     ) {
-      throw new Error(
-        `配置项 'render.mode' 必须是 "ssr"、"csr"、"ssg" 或 "hybrid" 之一`,
-      );
+      throwDwebError(DwebErrorCode.CONFIG_RENDER_MODE_INVALID);
     }
   }
 
   // 验证中间件配置（配置中的中间件必须提供名称）
   if (config.middlewares !== undefined) {
     if (!Array.isArray(config.middlewares)) {
-      throw new Error(`配置项 'middlewares' 必须是数组类型`);
+      throwDwebError(DwebErrorCode.CONFIG_MIDDLEWARES_INVALID);
     }
     for (let i = 0; i < config.middlewares.length; i++) {
       const middlewareConfig = config.middlewares[i];
@@ -196,10 +193,10 @@ export function validateConfig(config: AppConfig): void {
 
         // 检查是否有名称
         if (!middlewareName || middlewareName.trim() === "") {
-          throw new Error(
-            `配置中的中间件（索引 ${i}）路径 "${middlewareConfig}" 无法提取名称，请使用对象形式提供明确的 name 属性：` +
-              `{ middleware: "${middlewareConfig}", name: "middleware-name" }`,
-          );
+          throwDwebError(DwebErrorCode.CONFIG_MIDDLEWARE_PATH_NO_NAME, {
+            index: String(i),
+            path: middlewareConfig,
+          });
         }
       } else if (typeof middlewareConfig === "function") {
         // 如果是中间件函数，尝试从函数名获取名称
@@ -207,10 +204,9 @@ export function validateConfig(config: AppConfig): void {
 
         // 检查是否有名称（函数名也算）
         if (!middlewareName || middlewareName.trim() === "") {
-          throw new Error(
-            `配置中的中间件（索引 ${i}）必须提供名称（name 属性或函数名），用于配置合并时识别重复。` +
-              `请使用对象形式：{ middleware: yourMiddleware, name: "middleware-name" } 或确保中间件函数有名称`,
-          );
+          throwDwebError(DwebErrorCode.CONFIG_MIDDLEWARE_MUST_HAVE_NAME, {
+            index: String(i),
+          });
         }
       } else if (
         typeof middlewareConfig === "object" &&
@@ -223,15 +219,14 @@ export function validateConfig(config: AppConfig): void {
           typeof middlewareConfig.name !== "string" ||
           middlewareConfig.name.trim() === ""
         ) {
-          throw new Error(
-            `配置中的中间件（索引 ${i}）对象必须提供 name 属性，用于配置合并时识别重复。` +
-              `请使用：{ middleware: yourMiddleware, condition: {...}, name: "middleware-name" }`,
-          );
+          throwDwebError(DwebErrorCode.CONFIG_MIDDLEWARE_OBJECT_MUST_HAVE_NAME, {
+            index: String(i),
+          });
         }
       } else {
-        throw new Error(
-          `配置中的中间件（索引 ${i}）类型无效，必须是字符串、函数或对象类型`,
-        );
+        throwDwebError(DwebErrorCode.CONFIG_MIDDLEWARE_TYPE_INVALID, {
+          index: String(i),
+        });
       }
     }
   }
@@ -239,16 +234,15 @@ export function validateConfig(config: AppConfig): void {
   // 验证插件配置（配置中的插件必须提供名称）
   if (config.plugins !== undefined) {
     if (!Array.isArray(config.plugins)) {
-      throw new Error(`配置项 'plugins' 必须是数组类型`);
+      throwDwebError(DwebErrorCode.CONFIG_PLUGINS_INVALID);
     }
     for (let i = 0; i < config.plugins.length; i++) {
       const plugin = config.plugins[i];
       const pluginName = getPluginName(plugin);
       if (!pluginName || pluginName.trim() === "") {
-        throw new Error(
-          `配置中的插件（索引 ${i}）必须提供名称，用于配置合并时识别重复。` +
-            `请使用对象形式：{ name: "plugin-name", ... } 或字符串路径（可从路径提取名称）`,
-        );
+        throwDwebError(DwebErrorCode.CONFIG_PLUGIN_MUST_HAVE_NAME, {
+          index: String(i),
+        });
       }
     }
   }
@@ -256,28 +250,28 @@ export function validateConfig(config: AppConfig): void {
   // 验证服务器配置
   if (config.server !== undefined) {
     if (typeof config.server !== "object" || config.server === null) {
-      throw new Error(`配置项 'server' 必须是对象类型`);
+      throwDwebError(DwebErrorCode.CONFIG_SERVER_INVALID);
     }
   }
 
   // 验证路由配置
   if (config.router !== undefined) {
     if (typeof config.router !== "object" || config.router === null) {
-      throw new Error(`配置项 'router' 必须是对象类型`);
+      throwDwebError(DwebErrorCode.CONFIG_ROUTER_INVALID);
     }
   }
 
   // 验证构建配置
   if (config.build !== undefined) {
     if (typeof config.build !== "object" || config.build === null) {
-      throw new Error(`配置项 'build' 必须是对象类型`);
+      throwDwebError(DwebErrorCode.CONFIG_BUILD_INVALID);
     }
   }
 
   // 验证日志配置
   if (config.logger !== undefined) {
     if (typeof config.logger !== "object" || config.logger === null) {
-      throw new Error(`配置项 'logger' 必须是对象类型`);
+      throwDwebError(DwebErrorCode.CONFIG_LOGGER_INVALID);
     }
   }
 }

@@ -5,7 +5,7 @@
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.md)
-[![Tests](https://img.shields.io/badge/tests-327%20passed-brightgreen)](./TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-343%20passed-brightgreen)](./TEST_REPORT.md)
 
 ---
 
@@ -113,6 +113,7 @@ deno add jsr:@dreamer/runtime-adapter
 - ✅ **数据库支持**：多种数据库适配器（PostgreSQL、MySQL、SQLite、MongoDB），配置 `database` 即可使用
 - ✅ **缓存**：可安装 @dreamer/cache 实现 Redis、内存、文件缓存（dweb 不内置，需自行初始化）
 - ✅ **任务队列**：可安装 @dreamer/queue 实现异步任务、定时任务、持久化队列
+- ✅ **统一错误处理**：DwebError 错误类，支持错误码（DWEB_E01～E33）、i18n 国际化、`throwDwebError` / `createDwebError` / `isDwebError` / `setDwebErrorTranslator`
 - ✅ **类型安全**：完整的 TypeScript 支持
 - ✅ **开发体验**：HMR（热模块替换）、CLI 工具、代码提示
 
@@ -184,7 +185,7 @@ deno add jsr:@dreamer/runtime-adapter
 | `core/`    | 核心：app、config、service、middleware、plugin、lifecycle、database、plugin-events、runtime-adapter                            |
 | `feature/` | 功能：server、router、render、render-ssr、render-csr、render-ssg、render-hybrid、build、csr-client-builder、socket-io、command |
 | `types/`   | 类型：AppConfig、IApp 等                                                                                                       |
-| `utils/`   | 工具：logger、version                                                                                                          |
+| `utils/`   | 工具：logger、version、errors（统一错误处理，支持 i18n）                                                                        |
 | `cli.ts`   | CLI 入口（createCLI）                                                                                                          |
 | `mod.ts`   | 主入口，统一导出                                                                                                               |
 
@@ -1364,6 +1365,40 @@ logger.warn("警告信息");
 logger.error("错误信息");
 ```
 
+### 统一错误处理
+
+框架提供 `DwebError` 统一错误类，支持错误码、i18n 国际化：
+
+```typescript
+import {
+  throwDwebError,
+  createDwebError,
+  isDwebError,
+  DwebErrorCode,
+  setDwebErrorTranslator,
+} from "jsr:@dreamer/dweb";
+
+// 抛出错误
+throwDwebError(DwebErrorCode.CONFIG_NAME_INVALID);
+throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, { reason: "段数过多", hint: "...", path: "/foo" });
+
+// 创建错误实例（不抛出）
+const err = createDwebError(DwebErrorCode.FILE_READ_FAILED, { path: "config.json" });
+
+// 类型守卫
+if (isDwebError(error)) {
+  console.log(error.code, error.messageKey, error.params);
+}
+
+// 接入 i18n：注册翻译器后，错误消息将使用翻译结果
+setDwebErrorTranslator((key, params) => {
+  if (key === "errors.DWEB_E01") return "Config 'name' must be string";
+  return key; // 未翻译时返回 key
+});
+```
+
+错误码分段：E01～E19 配置、E20～E21 入口路径、E22 运行时、E23～E29 功能模块、E30～E32 文件/HTTP、E33 未知错误。详见 [utils/errors.ts](./src/utils/errors.ts)。
+
 ## 渲染模式
 
 通过 `render.mode` 配置，支持四种模式：`ssr`、`csr`、`ssg`、`hybrid`。
@@ -1584,8 +1619,8 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📊 测试报告
 
-单元测试结果与覆盖说明见 [TEST_REPORT.md](./TEST_REPORT.md)。当前 29
-个测试文件、327 个用例全部通过。
+单元测试结果与覆盖说明见 [TEST_REPORT.md](./TEST_REPORT.md)。当前 30
+个测试文件、343 个用例全部通过。
 
 ---
 

@@ -7,7 +7,26 @@
  * @module
  */
 
-import { IS_BUN, IS_DENO } from "@dreamer/runtime-adapter";
+import { IS_BUN, IS_DENO, platform } from "@dreamer/runtime-adapter";
+import { DwebErrorCode, throwDwebError } from "./errors.ts";
+
+/**
+ * 判断当前是否为 Windows 平台
+ *
+ * 用于路径处理、终端交互等需要区分平台的逻辑。
+ *
+ * @returns 是否为 Windows
+ *
+ * @example
+ * ```ts
+ * if (isWindows()) {
+ *   // Windows 特定逻辑
+ * }
+ * ```
+ */
+export function isWindows(): boolean {
+  return platform() === "windows";
+}
 
 /**
  * 获取当前运行时对应的命令名称
@@ -37,7 +56,7 @@ export function getRuntime(): "deno" | "bun" {
   if (IS_BUN) {
     return "bun";
   }
-  throw new Error("仅支持 Deno 或 Bun 运行时环境");
+  throwDwebError(DwebErrorCode.RUNTIME_UNSUPPORTED);
 }
 
 /**
@@ -61,7 +80,7 @@ export function getTaskArgs(taskName: string): string[] {
   if (IS_BUN) {
     return ["run", taskName];
   }
-  throw new Error("仅支持 Deno 或 Bun 运行时环境");
+  throwDwebError(DwebErrorCode.RUNTIME_UNSUPPORTED);
 }
 
 /**
@@ -85,7 +104,7 @@ export function getTestArgs(path: string = "tests"): string[] {
   if (IS_BUN) {
     return ["test", path];
   }
-  throw new Error("仅支持 Deno 或 Bun 运行时环境");
+  throwDwebError(DwebErrorCode.RUNTIME_UNSUPPORTED);
 }
 
 /**
@@ -109,7 +128,7 @@ export function getLintArgs(useTask: boolean = false): string[] {
   if (IS_BUN) {
     return ["run", "lint"];
   }
-  throw new Error("仅支持 Deno 或 Bun 运行时环境");
+  throwDwebError(DwebErrorCode.RUNTIME_UNSUPPORTED);
 }
 
 /**
@@ -133,7 +152,7 @@ export function getFmtArgs(useTask: boolean = false): string[] {
   if (IS_BUN) {
     return ["run", "fmt"];
   }
-  throw new Error("仅支持 Deno 或 Bun 运行时环境");
+  throwDwebError(DwebErrorCode.RUNTIME_UNSUPPORTED);
 }
 
 /**
@@ -157,5 +176,5 @@ export function getRunArgs(filePath: string): string[] {
   if (IS_BUN) {
     return ["run", filePath];
   }
-  throw new Error("仅支持 Deno 或 Bun 运行时环境");
+  throwDwebError(DwebErrorCode.RUNTIME_UNSUPPORTED);
 }

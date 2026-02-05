@@ -109,6 +109,23 @@ export {
 // 导出工具模块
 export { getLogger, initializeLogger } from "./utils/logger.ts";
 
+// 导出统一错误处理（支持 i18n）
+export {
+  createDwebError,
+  DEFAULT_ERROR_MESSAGES,
+  DwebError,
+  DwebErrorCode,
+  getDwebErrorTranslator,
+  isDwebError,
+  setDwebErrorTranslator,
+  throwDwebError,
+} from "./utils/errors.ts";
+export type {
+  DwebErrorCodeType,
+  DwebErrorParams,
+  DwebErrorTranslator,
+} from "./utils/errors.ts";
+
 // 导出插件事件（供高级用户使用）
 export {
   emitOnBuild,

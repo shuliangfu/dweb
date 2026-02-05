@@ -15,6 +15,79 @@
  */
 
 import { cwd, relative, resolve } from "../core/runtime-adapter.ts";
+import { DwebErrorCode, throwDwebError } from "./errors.ts";
+import { isWindows } from "./runtime.ts";
+
+/**
+ * 将 file:// URL 的 pathname 转为可用的文件系统路径（Windows 兼容）
+ *
+ * Windows 下 pathname 可能为 /C:/Users/... 或含 URL 编码字符，
+ * 需去除首斜杠、解码，以便与 cwd() 正确计算 relative。
+ */
+function pathnameToFsPath(pathname: string): string {
+  let p = decodeURIComponent(pathname);
+  // Windows: pathname 常为 /C:/Users/...，需去掉首斜杠以便与 cwd 格式一致
+  if (isWindows() && p.length >= 3 && p.startsWith("/") && /^\/[A-Za-z]:/.test(p)) {
+    p = p.slice(1);
+  }
+  return p.replace(/\\/g, "/");
+}
+
+/** 入口路径格式错误时抛出的统一错误信息 */
+const ENTRY_PATH_HINT =
+  "支持 main.ts（无 src）、src/main.ts（单应用）、<app>/main.ts（多应用无 src）或 src/<应用名>/main.ts（多应用）。";
+
+/**
+ * 抛出入口路径格式错误
+ *
+ * @param path 当前路径
+ * @param reason 错误原因简述
+ */
+function throwEntryPathError(path: string, reason: string): never {
+  throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, {
+    reason,
+    hint: ENTRY_PATH_HINT,
+    path,
+  });
+}
+
+/**
+ * 从超长路径中提取符合规则的入口相对路径（1–3 段）
+ *
+ * 当 relative() 在 Windows 等环境下产生过多 ../ 段时，
+ * 从路径末尾匹配 src/main.ts、src/<app>/main.ts、<app>/main.ts 或 main.ts。
+ * 优先识别 src/main.ts（单应用），避免将项目名误判为应用名。
+ */
+function extractEntryFromLongPath(fullPath: string): string | null {
+  const normalized = fullPath.replace(/\\/g, "/").replace(/^\.\/?/, "");
+  const parts = normalized.split("/").filter(Boolean);
+  const mainIdx = parts.lastIndexOf("main.ts");
+  if (mainIdx < 0) {
+    throwEntryPathError(fullPath, "路径中未找到 main.ts");
+  }
+  // src/x/y/main.ts 等 4 段以上结构不支持，不提取
+  if (mainIdx >= 3 && parts[mainIdx - 3] === "src") {
+    throwEntryPathError(fullPath, "src 下多级目录（如 src/a/b/main.ts）不支持");
+  }
+  let start: number;
+  if (mainIdx >= 2 && parts[mainIdx - 2] === "src") {
+    // src/<app>/main.ts（多应用有 src）
+    start = mainIdx - 2;
+  } else if (mainIdx >= 1 && parts[mainIdx - 1] === "src") {
+    // src/main.ts（单应用有 src），或 <项目名>/src/main.ts
+    start = mainIdx - 1;
+  } else if (mainIdx >= 1) {
+    // <app>/main.ts（多应用无 src）
+    start = mainIdx - 1;
+  } else {
+    start = mainIdx; // main.ts（单应用无 src）
+  }
+  const slice = parts.slice(start, mainIdx + 1);
+  if (slice.length >= 1 && slice.length <= 3) {
+    return slice.join("/");
+  }
+  throwEntryPathError(fullPath, `提取后段数为 ${slice.length}，需 1–3 段`);
+}
 
 /**
  * 获取当前执行的入口文件绝对路径（用于多应用构建时推断输出目录）
@@ -36,7 +109,9 @@ export function getMainModulePath(): string | null {
     try {
       const url = new URL(deno.mainModule);
       if (url.protocol === "file:") {
-        return url.pathname || null;
+        const pathname = url.pathname || "";
+        if (!pathname) return null;
+        return pathnameToFsPath(pathname);
       }
     } catch {
       return null;
@@ -87,13 +162,19 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
     }
   }
   // Windows 兼容：先将反斜杠转为正斜杠，避免 split("/") 在 Windows 路径下分段错误
-  const parts = entry.replace(/\\/g, "/").replace(/^\.\/?/, "").split("/")
+  let parts = entry.replace(/\\/g, "/").replace(/^\.\/?/, "").split("/")
     .filter(Boolean);
+
+  // Windows 等环境下 relative() 可能产生过多 ../ 段，尝试从路径中提取有效入口
+  if (parts.length > 3) {
+    const extracted = extractEntryFromLongPath(entry);
+    if (extracted) {
+      parts = extracted.split("/").filter(Boolean);
+    }
+  }
+
   if (parts.length < 1 || parts.length > 3) {
-    throw new Error(
-      `[dweb] 入口路径段数必须为 1–3，当前为 ${parts.length} 段: ${entry}。` +
-        " 支持 main.ts（无 src）、src/main.ts（单应用）、<app>/main.ts（多应用无 src）或 src/<应用名>/main.ts（多应用）。",
-    );
+    throwEntryPathError(entry, `段数为 ${parts.length}，需 1–3 段`);
   }
   // 特殊：运行构建产物时（<outputDir>/server.js 或 <outputDir>/<app>/server.js）
   // outputDir 为用户配置的 build.server.output 根目录（如 dist、build、output 等）

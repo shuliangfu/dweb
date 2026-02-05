@@ -25,6 +25,10 @@ import {
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import {
+  DwebErrorCode,
+  throwDwebError,
+} from "./utils/errors.ts";
+import {
   getPackageRoot,
   loadDwebDenoJson,
   writeVersionCache,
@@ -73,22 +77,23 @@ async function createTempCliConfig(): Promise<string> {
       const raw = await readTextFile(denoJsonPath);
       config = JSON.parse(raw) as Record<string, unknown>;
     } catch {
-      throw new Error(`无法读取 ${denoJsonPath}`);
+      throwDwebError(DwebErrorCode.FILE_READ_FAILED, { path: denoJsonPath });
     }
   } else {
     // JSR 运行：deno.json 在包根，setup.ts 在 src/，故 ../deno.json
     const denoJsonUrl = new URL("../deno.json", import.meta.url).href;
     try {
       const res = await fetch(denoJsonUrl);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throwDwebError(DwebErrorCode.HTTP_REQUEST_FAILED, {
+        status: String(res.status),
+      });
       const raw = await res.text();
       config = JSON.parse(raw) as Record<string, unknown>;
     } catch (err) {
-      throw new Error(
-        `无法读取 ${denoJsonUrl}: ${
-          err instanceof Error ? err.message : String(err)
-        }`,
-      );
+      throwDwebError(DwebErrorCode.FILE_READ_PARSE_FAILED, {
+        path: denoJsonUrl,
+        message: err instanceof Error ? err.message : String(err),
+      });
     }
   }
   // 移除 workspace、tasks、publish、lint 等仅开发时需要的字段，保留 exports（CLI 解析 ./cli 需要）

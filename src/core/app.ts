@@ -28,6 +28,7 @@ import {
 } from "./runtime-adapter.ts";
 
 import { BuilderServer } from "@dreamer/esbuild";
+import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { requestId, requestLogger } from "@dreamer/middlewares";
 import { expandDynamicRoute } from "@dreamer/render";
 import { initializeBuild } from "../feature/build.ts";
@@ -696,18 +697,15 @@ export class App extends EventEmitter implements IApp {
       }
 
       if (!middleware) {
-        throw new Error(
-          `中间件文件 "${path}" 未导出中间件函数（需要 export default 或 export const middleware）`,
-        );
+        throwDwebError(DwebErrorCode.MIDDLEWARE_FILE_NO_EXPORT, { path });
       }
 
       return middleware;
     } catch (error) {
-      throw new Error(
-        `加载中间件文件失败: ${path} - ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
+      throwDwebError(DwebErrorCode.MIDDLEWARE_LOAD_FAILED, {
+        path,
+        message: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 

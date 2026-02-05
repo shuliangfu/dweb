@@ -87,13 +87,43 @@ describe("getInferredBuildOutputDirs", () => {
 
   it("段数 4 应抛出错误", () => {
     expect(() => getInferredBuildOutputDirs("src/a/b/main.ts")).toThrow(
-      /入口路径段数必须为 1–3/,
+      /入口路径格式不支持|需 1–3 段/,
     );
   });
 
   it("段数 0（空路径）应抛出错误", () => {
     expect(() => getInferredBuildOutputDirs("")).toThrow(
-      /入口路径段数必须为 1–3/,
+      /入口路径格式不支持|需 1–3 段/,
     );
+  });
+
+  it("Windows 超长路径（含 ../ 与 URL 编码）应提取 src/main.ts → dist、dist/client", () => {
+    const { server, client } = getInferredBuildOutputDirs(
+      "./../../../%E8%88%92%E5%9B%BD%E6%97%AD/Desktop/app-test/src/main.ts",
+    );
+    expect(server).toBe("./dist");
+    expect(client).toBe("dist/client");
+  });
+
+  it("Windows 超长路径应提取 src/backend/main.ts → dist/backend、dist/backend/client", () => {
+    const { server, client } = getInferredBuildOutputDirs(
+      "./../../../Users/foo/Desktop/myapp/src/backend/main.ts",
+    );
+    expect(server).toBe("./dist/backend");
+    expect(client).toBe("dist/backend/client");
+  });
+
+  it("Windows 反斜杠路径应正确解析（src\\main.ts → dist、dist/client）", () => {
+    const { server, client } = getInferredBuildOutputDirs("src\\main.ts");
+    expect(server).toBe("./dist");
+    expect(client).toBe("dist/client");
+  });
+
+  it("Windows 反斜杠超长路径应提取 src/main.ts → dist、dist/client", () => {
+    const { server, client } = getInferredBuildOutputDirs(
+      "..\\..\\..\\Users\\foo\\Desktop\\app-test\\src\\main.ts",
+    );
+    expect(server).toBe("./dist");
+    expect(client).toBe("dist/client");
   });
 });
