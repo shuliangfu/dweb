@@ -30,6 +30,7 @@
   "publish": {
     "include": [
       "src/**/*.ts",
+      "src/types/i18n.d.ts",
       "src/locales/**/*.json",
       "LICENSE.md",
       "README.md"
