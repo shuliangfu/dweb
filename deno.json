@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "3.0.37",
+  "version": "3.0.38",
   "license": "MIT",
   "exports": {
     ".": "./src/mod.ts",
@@ -19,6 +19,7 @@
     "./feature/render": "./src/feature/render.ts",
     "./feature/build": "./src/feature/build.ts",
     "./feature/command": "./src/feature/command.ts",
+    "./feature/socket-io": "./src/feature/socket-io.ts",
     "./feature/websocket": "./src/feature/websocket.ts"
   },
   "publish": {
