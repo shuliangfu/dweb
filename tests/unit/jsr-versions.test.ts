@@ -51,58 +51,58 @@ describe("jsr-versions", () => {
   });
 
   describe("fetchJsrLatestVersion / fetchDreamerVersions", () => {
-  it("fetchJsrLatestVersion 应能获取 @dreamer/dweb 稳定版", async () => {
-    const version = await fetchJsrLatestVersion("@dreamer/dweb", false);
-    console.log("[稳定版] @dreamer/dweb:", version);
-    expect(version).toBeTruthy();
-    expect(typeof version).toBe("string");
-    // 稳定版不应含 -beta、-alpha 等
-    expect(version).not.toMatch(/-\w+\.?\d*$/);
-  });
+    it("fetchJsrLatestVersion 应能获取 @dreamer/dweb 稳定版", async () => {
+      const version = await fetchJsrLatestVersion("@dreamer/dweb", false);
+      console.log("[稳定版] @dreamer/dweb:", version);
+      expect(version).toBeTruthy();
+      expect(typeof version).toBe("string");
+      // 稳定版不应含 -beta、-alpha 等
+      expect(version).not.toMatch(/-\w+\.?\d*$/);
+    });
 
-  it("fetchJsrLatestVersion 应能获取 @dreamer/dweb beta 版（若有）", async () => {
-    const version = await fetchJsrLatestVersion("@dreamer/dweb", true);
-    console.log("[beta 版] @dreamer/dweb:", version);
-    expect(version).toBeTruthy();
-    expect(typeof version).toBe("string");
-  });
+    it("fetchJsrLatestVersion 应能获取 @dreamer/dweb beta 版（若有）", async () => {
+      const version = await fetchJsrLatestVersion("@dreamer/dweb", true);
+      console.log("[beta 版] @dreamer/dweb:", version);
+      expect(version).toBeTruthy();
+      expect(typeof version).toBe("string");
+    });
 
-  it("fetchDreamerVersions(useBeta=false) 仅 dweb 从 JSR，其余统一 1.0.0", async () => {
-    const versions = await fetchDreamerVersions(false, null);
-    console.log("[未使用 --beta] fetchDreamerVersions:");
-    console.log("  dweb:", versions.dweb, "<-- 从 JSR meta.json");
-    console.log("  render:", versions.render, "<-- 未发正式版，统一 1.0.0");
-    console.log("  router:", versions.router, "<-- 未发正式版，统一 1.0.0");
-    console.log("  plugins:", versions.plugins, "<-- 未发正式版，统一 1.0.0");
-    expect(versions.dweb).toBeTruthy();
-    expect(versions.render).toBe("1.0.0");
-    expect(versions.router).toBe("1.0.0");
-    expect(versions.plugins).toBe("1.0.0");
-  });
+    it("fetchDreamerVersions(useBeta=false) 仅 dweb 从 JSR，其余统一 1.0.0", async () => {
+      const versions = await fetchDreamerVersions(false, null);
+      console.log("[未使用 --beta] fetchDreamerVersions:");
+      console.log("  dweb:", versions.dweb, "<-- 从 JSR meta.json");
+      console.log("  render:", versions.render, "<-- 未发正式版，统一 1.0.0");
+      console.log("  router:", versions.router, "<-- 未发正式版，统一 1.0.0");
+      console.log("  plugins:", versions.plugins, "<-- 未发正式版，统一 1.0.0");
+      expect(versions.dweb).toBeTruthy();
+      expect(versions.render).toBe("1.0.0");
+      expect(versions.router).toBe("1.0.0");
+      expect(versions.plugins).toBe("1.0.0");
+    });
 
-  it("fetchDreamerVersions(useBeta=true) 全部从 JSR 获取", async () => {
-    const versions = await fetchDreamerVersions(true);
-    console.log("[使用 --beta] fetchDreamerVersions (全部从 JSR):");
-    console.log("  dweb:", versions.dweb);
-    console.log("  render:", versions.render);
-    console.log("  router:", versions.router);
-    console.log("  plugins:", versions.plugins);
-    expect(versions.dweb).toBeTruthy();
-    expect(versions.render).toBeTruthy();
-    expect(versions.router).toBeTruthy();
-    expect(versions.plugins).toBeTruthy();
-  });
+    it("fetchDreamerVersions(useBeta=true) 全部从 JSR 获取", async () => {
+      const versions = await fetchDreamerVersions(true);
+      console.log("[使用 --beta] fetchDreamerVersions (全部从 JSR):");
+      console.log("  dweb:", versions.dweb);
+      console.log("  render:", versions.render);
+      console.log("  router:", versions.router);
+      console.log("  plugins:", versions.plugins);
+      expect(versions.dweb).toBeTruthy();
+      expect(versions.render).toBeTruthy();
+      expect(versions.router).toBeTruthy();
+      expect(versions.plugins).toBeTruthy();
+    });
 
-  it("fetchDreamerVersions(useBeta=true) 当稳定版比 beta 新时应返回稳定版", async () => {
-    const [dwebBeta, dwebStable] = await Promise.all([
-      fetchJsrLatestVersion("@dreamer/dweb", true),
-      fetchJsrLatestVersion("@dreamer/dweb", false),
-    ]);
-    const versions = await fetchDreamerVersions(true);
-    // 关键断言：若 3.0.14 > 3.0.0-beta.1，则 dweb 应返回 3.0.14 而非 beta
-    const expectedDweb = pickNewer(dwebBeta, dwebStable);
-    expect(versions.dweb).toBe(expectedDweb);
-    expect(compareVersions(versions.dweb, "3.0.0")).toBeGreaterThanOrEqual(0);
-  });
+    it("fetchDreamerVersions(useBeta=true) 当稳定版比 beta 新时应返回稳定版", async () => {
+      const [dwebBeta, dwebStable] = await Promise.all([
+        fetchJsrLatestVersion("@dreamer/dweb", true),
+        fetchJsrLatestVersion("@dreamer/dweb", false),
+      ]);
+      const versions = await fetchDreamerVersions(true);
+      // 关键断言：若 3.0.14 > 3.0.0-beta.1，则 dweb 应返回 3.0.14 而非 beta
+      const expectedDweb = pickNewer(dwebBeta, dwebStable);
+      expect(versions.dweb).toBe(expectedDweb);
+      expect(compareVersions(versions.dweb, "3.0.0")).toBeGreaterThanOrEqual(0);
+    });
   });
 });

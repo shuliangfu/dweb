@@ -27,7 +27,10 @@ export type {
   AppStage,
   DatabaseAppConfig,
   IApp,
-  SocketIOAppConfig,
+  SocketConfig,
+  SocketIOConfig,
+  SocketType,
+  WebSocketConfig,
 } from "./types/app.ts";
 
 // 路由中间件类型（供 routes/_middleware.ts 等使用）
@@ -121,6 +124,12 @@ export {
   getSocketIoServer,
   initializeSocketIo,
 } from "./feature/socket-io.ts";
+export {
+  createWebSocketMiddleware,
+  getWebSocketPath,
+  getWebSocketServer,
+  initializeWebSocket,
+} from "./feature/websocket.ts";
 
 // 导出控制台工具（按需导入）
 export * from "./feature/command.ts";

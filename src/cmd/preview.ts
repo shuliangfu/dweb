@@ -129,7 +129,9 @@ export async function main(
   }
 
   const projectInfo = await getProjectInfo(projectRoot);
-  if (app && projectInfo?.mode === "multi" && !projectInfo.appNames.includes(app)) {
+  if (
+    app && projectInfo?.mode === "multi" && !projectInfo.appNames.includes(app)
+  ) {
     error(`未找到应用 "${app}"`);
     error(`可用应用: ${projectInfo.appNames.join(", ")}`);
     return;

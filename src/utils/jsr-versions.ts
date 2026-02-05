@@ -142,17 +142,25 @@ export async function fetchDreamerVersions(
   plugins: string;
 }> {
   if (useBeta) {
-    const [dwebBeta, renderBeta, routerBeta, pluginsBeta, dwebStable, renderStable, routerStable, pluginsStable] =
-      await Promise.all([
-        fetchJsrLatestVersion("@dreamer/dweb", true),
-        fetchJsrLatestVersion("@dreamer/render", true),
-        fetchJsrLatestVersion("@dreamer/router", true),
-        fetchJsrLatestVersion("@dreamer/plugins", true),
-        fetchJsrLatestVersion("@dreamer/dweb", false),
-        fetchJsrLatestVersion("@dreamer/render", false),
-        fetchJsrLatestVersion("@dreamer/router", false),
-        fetchJsrLatestVersion("@dreamer/plugins", false),
-      ]);
+    const [
+      dwebBeta,
+      renderBeta,
+      routerBeta,
+      pluginsBeta,
+      dwebStable,
+      renderStable,
+      routerStable,
+      pluginsStable,
+    ] = await Promise.all([
+      fetchJsrLatestVersion("@dreamer/dweb", true),
+      fetchJsrLatestVersion("@dreamer/render", true),
+      fetchJsrLatestVersion("@dreamer/router", true),
+      fetchJsrLatestVersion("@dreamer/plugins", true),
+      fetchJsrLatestVersion("@dreamer/dweb", false),
+      fetchJsrLatestVersion("@dreamer/render", false),
+      fetchJsrLatestVersion("@dreamer/router", false),
+      fetchJsrLatestVersion("@dreamer/plugins", false),
+    ]);
     // 取 beta 与 stable 中较新的版本（如 v1.0.1 > v1.0.0-beta.10 则用 v1.0.1）
     return {
       dweb: pickNewer(dwebBeta, dwebStable) ?? "3.0.0",

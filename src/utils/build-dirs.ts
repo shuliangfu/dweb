@@ -57,7 +57,9 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
 } {
   let entry: string;
   if (overrideEntry != null) {
-    entry = overrideEntry.startsWith(".") ? overrideEntry : "./" + overrideEntry;
+    entry = overrideEntry.startsWith(".")
+      ? overrideEntry
+      : "./" + overrideEntry;
   } else {
     entry = "src/main.ts";
     const mainPath = getMainModulePath();
@@ -88,7 +90,9 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
     const isSingleAppBuilt = parts.length === 2; // <outputDir>/server.js
     const appDirNameBuilt = parts.length === 3 ? parts[1]! : "";
     return {
-      server: isSingleAppBuilt ? `./${outputDir}` : `./${outputDir}/${appDirNameBuilt}`,
+      server: isSingleAppBuilt
+        ? `./${outputDir}`
+        : `./${outputDir}/${appDirNameBuilt}`,
       client: isSingleAppBuilt
         ? `${outputDir}/client`
         : `${outputDir}/${appDirNameBuilt}/client`,
@@ -97,13 +101,13 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
   // 段数 1：main.ts → 单应用
   // 段数 2：src/main.ts → 单应用；<app>/main.ts（如 backend/main.ts）→ 多应用
   // 段数 3：src/<app>/main.ts → 多应用
-  const isSingleApp =
-    parts.length === 1 ||
+  const isSingleApp = parts.length === 1 ||
     (parts.length === 2 && parts[0] === "src");
-  const appDirName =
-    parts.length === 3 ? parts[1]! : (parts.length === 2 && parts[0] !== "src")
-      ? parts[0]!
-      : "";
+  const appDirName = parts.length === 3
+    ? parts[1]!
+    : (parts.length === 2 && parts[0] !== "src")
+    ? parts[0]!
+    : "";
   const server = isSingleApp ? "./dist" : `./dist/${appDirName}`;
   const client = isSingleApp ? "dist/client" : `dist/${appDirName}/client`;
   return { server, client };

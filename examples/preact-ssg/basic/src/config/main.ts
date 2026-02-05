@@ -1,6 +1,6 @@
 /**
  * 默认配置文件
- * 框架会自动加载 ./config/main.ts（及 main.dev.ts 等环境配置）
+ * 框架会自动加载 ./src/config/main.ts（及 main.dev.ts 等环境配置）
  */
 
 import type { AppConfig } from "@dreamer/dweb";

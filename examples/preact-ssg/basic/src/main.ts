@@ -1,7 +1,7 @@
 /**
  * 服务端入口
  * Preact Basic 示例项目
- * 配置由框架自动加载 config/main.ts
+ * 配置由框架自动加载 src/config/main.ts
  */
 
 import { App } from "@dreamer/dweb";

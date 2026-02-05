@@ -34,15 +34,15 @@
 | `utils/version.ts`              | `version.test.ts`            | DWEB_VERSION 格式与存在性                                                   |
 | `cli.ts`                        | `cli.test.ts`                | createCLI() 返回 Command、execute 方法                                      |
 | `cmd/db.ts`                     | `db.test.ts`                 | migrate create 创建迁移文件（ensureDir 覆盖）                               |
-| `cmd/generate.ts`               | `generate.test.ts`           | main() 生成 service/api/model/route（ensureDir 覆盖）                        |
+| `cmd/generate.ts`               | `generate.test.ts`           | main() 生成 service/api/model/route（ensureDir 覆盖）                       |
 
 ### 3. 仍无单测或仅间接覆盖
 
-| 源码                          | 说明                                                                 |
-| ----------------------------- | -------------------------------------------------------------------- |
-| `mod.ts`                      | 主入口（re-export，通过其它测试间接覆盖）                           |
-| `types/app.ts`                | 类型定义（通过使用方测试间接覆盖）                                   |
-| `feature/csr-client-builder`  | ensureDir（生产构建输出目录）由 build 集成测试间接覆盖，无独立单测   |
+| 源码                         | 说明                                                               |
+| ---------------------------- | ------------------------------------------------------------------ |
+| `mod.ts`                     | 主入口（re-export，通过其它测试间接覆盖）                          |
+| `types/app.ts`               | 类型定义（通过使用方测试间接覆盖）                                 |
+| `feature/csr-client-builder` | ensureDir（生产构建输出目录）由 build 集成测试间接覆盖，无独立单测 |
 
 ---
 
@@ -55,11 +55,11 @@
 
 ## 三、覆盖结论
 
-| 维度                 | 情况                                                                           |
-| -------------------- | ------------------------------------------------------------------------------ |
-| **核心层 (core)**    | 9 个文件均有对应单元测试（含 runtime-adapter.test.ts）                         |
-| **功能层 (feature)** | 10 个文件均有对应单元测试（含 render-ssg.test.ts）                             |
-| **工具 (utils)**     | logger、version 有单测；**cli** 有 cli.test.ts                                 |
+| 维度                 | 情况                                                                                                                                         |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **核心层 (core)**    | 9 个文件均有对应单元测试（含 runtime-adapter.test.ts）                                                                                       |
+| **功能层 (feature)** | 10 个文件均有对应单元测试（含 render-ssg.test.ts）                                                                                           |
+| **工具 (utils)**     | logger、version 有单测；**cli** 有 cli.test.ts                                                                                               |
 | **可运行性**         | `deno test -A tests/unit` 或 `bun test` 可完整通过（需在 dweb 目录下执行）；类型检查使用 `deno task check`（仅 src/、tests/，不含 examples） |
 
 **结论**：dweb 的单元测试在**文件级**已基本全面覆盖；仅 `mod.ts`（主入口

@@ -9,13 +9,7 @@
  * 注意：测试输出文件存放在 tests/data 目录下
  */
 
-import {
-  chdir,
-  cwd,
-  dirname,
-  readdir,
-  stat,
-} from "@dreamer/runtime-adapter";
+import { chdir, cwd, dirname, readdir, stat } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 
 /** 将 file: URL 转为本地路径（Bun 下避免 cwd 被 db/generate 测试污染） */

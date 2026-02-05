@@ -76,9 +76,7 @@ describe("db (cmd/db.ts)", () => {
         .filter((e) => e.isFile && e.name.endsWith(".ts"))
         .map((e) => e.name);
 
-      const mongoFile = files.find((f) =>
-        f.includes("create_collections")
-      );
+      const mongoFile = files.find((f) => f.includes("create_collections"));
       expect(mongoFile).toBeDefined();
 
       const content = await readTextFile(

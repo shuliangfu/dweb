@@ -51,6 +51,11 @@ import {
   getSocketIoPath,
   initializeSocketIo,
 } from "../feature/socket-io.ts";
+import {
+  createWebSocketMiddleware,
+  getWebSocketPath,
+  initializeWebSocket,
+} from "../feature/websocket.ts";
 import type {
   AppConfig,
   AppLifecycleHook,
@@ -325,8 +330,15 @@ export class App extends EventEmitter implements IApp {
 
       // 初始化服务器
       initializeServer(this.container, mergedConfig);
-      // 若配置了 socketIo，初始化 Socket.IO 并挂载到同一 HTTP 服务器
-      initializeSocketIo(this.container, mergedConfig);
+      // 根据 config.socket.type 初始化实时通信（socketio | websocket）
+      const socketConfig = mergedConfig.socket as
+        | { type?: string }
+        | undefined;
+      if (socketConfig?.type === "socketio") {
+        initializeSocketIo(this.container, mergedConfig);
+      } else if (socketConfig?.type === "websocket") {
+        initializeWebSocket(this.container, mergedConfig);
+      }
 
       // 注册客户端资源目录（多应用时为 dist/<appDir>/client/assets），供 Tailwind 等插件在生产模式解析带 hash 的 CSS 路径
       const buildCfgForAssets = (mergedConfig.build || {}) as {
@@ -363,7 +375,7 @@ export class App extends EventEmitter implements IApp {
         }),
       );
 
-      // Socket.IO：路径前缀匹配时委托给 Socket.IO 处理（通过中间件）
+      // socket.type 为 socketio 时：路径前缀匹配委托给 Socket.IO 处理
       const socketIoPath = getSocketIoPath(this.container);
       if (socketIoPath) {
         server.use(
@@ -373,6 +385,19 @@ export class App extends EventEmitter implements IApp {
         );
         getLogger(this.container).info(
           `Socket.IO 已挂载，路径: ${socketIoPath}`,
+        );
+      }
+
+      // socket.type 为 websocket 时：路径前缀匹配委托给 WebSocket 处理
+      const websocketPath = getWebSocketPath(this.container);
+      if (websocketPath) {
+        server.use(
+          createWebSocketMiddleware(this.container),
+          websocketPath,
+          "websocket",
+        );
+        getLogger(this.container).info(
+          `WebSocket 已挂载，路径: ${websocketPath}`,
         );
       }
 

@@ -1,4 +1,4 @@
-import { Client } from "@dreamer/socket-io/client";
+import { Client } from "@dreamer/websocket/client";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 /**
@@ -39,7 +39,7 @@ const debugLog = (...args: unknown[]) => {
   if (
     DEBUG && typeof globalThis !== "undefined" && (globalThis as any).console
   ) {
-    (globalThis as any).console.log("[Socket.IO 调试]", ...args);
+    (globalThis as any).console.log("[WebSocket 调试]", ...args);
   }
 };
 
@@ -62,9 +62,17 @@ type ConnectionStatus =
   | "error";
 
 /**
+ * 将 HTTP(S) URL 转为 WebSocket URL
+ */
+function toWsUrl(origin: string, path: string): string {
+  const u = origin.replace(/^http/, "ws");
+  return `${u.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+/**
  * 首页组件
  * 路由: /
- * 包含 Socket.IO 客户端示例：连接状态、发送消息、接收消息
+ * 包含 WebSocket 客户端示例：连接状态、发送消息、接收消息
  */
 export default function Home() {
   const clientRef = useRef<Client | null>(null);
@@ -77,37 +85,31 @@ export default function Home() {
     const origin = typeof globalThis !== "undefined" && globalThis.location
       ? globalThis.location.origin
       : "http://localhost:3000";
+    const wsUrl = toWsUrl(origin, "/ws");
 
-    debugLog(
-      "连接目标:",
-      origin,
-      "→ 握手 URL:",
-      `${origin.replace(/\/$/, "")}/socket.io/`,
-    );
+    debugLog("连接目标:", wsUrl);
 
     const client = new Client({
-      url: origin,
-      namespace: "/",
-      autoConnect: true,
+      url: wsUrl,
       autoReconnect: true,
     });
     clientRef.current = client;
     debugLog("Client 已创建，开始连接…");
 
-    const onConnect = () => {
-      debugLog("✓ connect 事件触发，已连接");
+    const onOpen = () => {
+      debugLog("✓ open 事件触发，已连接");
       setStatus("connected");
     };
-    const onDisconnect = (reason?: unknown) => {
-      debugLog("✗ disconnect 事件触发，原因:", reason);
+    const onClose = (_data?: { code?: number; reason?: string }) => {
+      debugLog("✗ close 事件触发");
       setStatus("disconnected");
     };
-    const onConnectError = (err: unknown) => {
-      debugLog("✗ connect_error 事件触发:", err);
+    const onError = (_err: unknown) => {
+      debugLog("✗ error 事件触发");
       setStatus("error");
     };
-    const onReconnecting = (attempt?: number) => {
-      debugLog("↻ reconnecting 事件触发，自动重连中…", "第", attempt, "次");
+    const onReconnectAttempt = (_attempt?: number) => {
+      debugLog("↻ reconnect_attempt 事件触发，自动重连中…");
       setStatus("connecting");
     };
     const onReconnectFailed = () => {
@@ -125,10 +127,10 @@ export default function Home() {
       ) => [...prev, { type: "received", text, at: Date.now() }]);
     };
 
-    client.on("connect", onConnect);
-    client.on("disconnect", onDisconnect);
-    client.on("connect_error", onConnectError);
-    client.on("reconnecting", onReconnecting);
+    client.on("open", onOpen);
+    client.on("close", onClose);
+    client.on("error", onError);
+    client.on("reconnect_attempt", onReconnectAttempt);
     client.on("reconnect_failed", onReconnectFailed);
     client.on("chat-response", onChatResponse);
 
@@ -136,10 +138,10 @@ export default function Home() {
     debugLog("事件监听器已注册，status → connecting");
 
     return () => {
-      client.off("connect", onConnect);
-      client.off("disconnect", onDisconnect);
-      client.off("connect_error", onConnectError);
-      client.off("reconnecting", onReconnecting);
+      client.off("open", onOpen);
+      client.off("close", onClose);
+      client.off("error", onError);
+      client.off("reconnect_attempt", onReconnectAttempt);
       client.off("reconnect_failed", onReconnectFailed);
       client.off("chat-response", onChatResponse);
       client.disconnect();
@@ -152,7 +154,7 @@ export default function Home() {
     const text = input.trim();
     if (!text) return;
     const client = clientRef.current;
-    if (client?.isConnected()) {
+    if (client?.connected) {
       debugLog("→ chat-message 发送:", text);
       client.emit("chat-message", { text });
       setMessages((prev) => [...prev, { type: "sent", text, at: Date.now() }]);
@@ -236,11 +238,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Socket.IO 客户端示例 */}
+      {/* WebSocket 客户端示例 */}
       <section class={classes.socketSection}>
-        <h2 class={classes.socketTitle}>Socket.IO 客户端示例</h2>
+        <h2 class={classes.socketTitle}>WebSocket 客户端示例</h2>
         <p class={classes.socketDesc}>
-          使用 @dreamer/socket-io 的 Client：连接、自动重连、发送
+          使用 @dreamer/websocket/client 的 Client：连接、自动重连、发送
           chat-message、接收 chat-response
         </p>
         <div class={classes.statusBadgeWrap}>

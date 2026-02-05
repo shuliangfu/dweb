@@ -18,7 +18,9 @@ export default function About() {
           <strong>Preact</strong> + <strong>UnoCSS</strong> 构建的示例项目。
         </p>
 
-        <h2 className="mb-4 mt-6 text-xl font-semibold text-indigo-600">技术栈</h2>
+        <h2 className="mb-4 mt-6 text-xl font-semibold text-indigo-600">
+          技术栈
+        </h2>
         <ul className="ml-5 list-disc space-y-2">
           <li>
             <strong>@dreamer/dweb</strong> - 全栈 Web 框架

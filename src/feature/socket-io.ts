@@ -1,7 +1,7 @@
 /**
  * @dreamer/socket-io 集成（挂载到同一 HTTP 服务器）
  *
- * 当 AppConfig.socketIo 存在时，创建 Socket.IO 服务并挂载到当前 HTTP 服务器，
+ * 当 AppConfig.socket 存在且 type 为 socketio 时，创建 Socket.IO 服务并挂载到当前 HTTP 服务器，
  * 与主站共用端口。导出 initializeSocketIo、getSocketIoServer、getSocketIoPath。
  *
  * @module
@@ -10,7 +10,7 @@
 import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import { Server, type ServerOptions } from "@dreamer/socket-io";
-import type { AppConfig, SocketIOAppConfig } from "../types/app.ts";
+import type { AppConfig, SocketConfig } from "../types/app.ts";
 import { getLogger } from "../utils/logger.ts";
 
 /** 容器中 Socket.IO 服务实例的 key */
@@ -21,7 +21,7 @@ const SOCKET_IO_PATH_KEY = "socketIoPath";
 /**
  * 初始化 Socket.IO 服务（挂载模式，不占用独立端口）
  *
- * 仅当 config.socketIo 存在时执行：创建 Server、写入容器，供中间件委托请求。
+ * 仅当 config.socket 存在且 type 为 socketio 时执行：创建 Server、写入容器，供中间件委托请求。
  * 不调用 server.listen()，由框架在同一 HTTP 服务器上通过中间件转发请求。
  *
  * @param container 服务容器
@@ -32,15 +32,15 @@ export function initializeSocketIo(
   container: ServiceContainer,
   config: AppConfig,
 ): string | undefined {
-  const socketIoConfig = config.socketIo as SocketIOAppConfig | undefined;
-  if (!socketIoConfig) {
+  const socketConfig = config.socket as SocketConfig | undefined;
+  if (!socketConfig || socketConfig.type !== "socketio") {
     return undefined;
   }
 
-  const path = (socketIoConfig.path ?? "/socket.io/").replace(/\/?$/, "/");
-  const logger = socketIoConfig.logger ?? getLogger(container);
+  const path = (socketConfig.path ?? "/socket.io/").replace(/\/?$/, "/");
+  const logger = socketConfig.logger ?? getLogger(container);
   const serverOptions = {
-    ...socketIoConfig,
+    ...socketConfig,
     path,
     logger,
     // 不传 port/host，挂载到主站
@@ -60,7 +60,7 @@ export function initializeSocketIo(
  */
 export function getSocketIoServer(container: ServiceContainer): Server {
   if (!container.has(SOCKET_IO_SERVER_KEY)) {
-    throw new Error("Socket.IO 未配置，请在 AppConfig 中设置 socketIo");
+    throw new Error("Socket.IO 未配置，请在 AppConfig 中设置 socket: { type: 'socketio', ... }");
   }
   return container.get<Server>(SOCKET_IO_SERVER_KEY);
 }

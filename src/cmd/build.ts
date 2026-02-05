@@ -53,7 +53,9 @@ export async function main(
     }
     try {
       const config = await loadProjectConfig(projectRoot);
-      const buildConfig = config.build as { server?: { output?: string } } | undefined;
+      const buildConfig = config.build as
+        | { server?: { output?: string } }
+        | undefined;
       if (buildConfig?.server?.output) {
         info(`构建输出目录: ${buildConfig.server.output}（来自 config.build）`);
       }

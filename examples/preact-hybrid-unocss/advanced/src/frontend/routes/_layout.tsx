@@ -24,7 +24,9 @@ export default function Layout({ children }: LayoutProps) {
               <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">PA</span>
               </div>
-              <span className="font-semibold text-gray-900">Preact Advanced UnoCSS</span>
+              <span className="font-semibold text-gray-900">
+                Preact Advanced UnoCSS
+              </span>
             </a>
 
             {/* 导航链接 */}
@@ -70,7 +72,8 @@ export default function Layout({ children }: LayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm">
-              &copy; 2024 Preact Advanced Example. Built with @dreamer/dweb + UnoCSS
+              &copy; 2024 Preact Advanced Example. Built with @dreamer/dweb +
+              UnoCSS
             </p>
             <div className="flex items-center gap-4">
               <a

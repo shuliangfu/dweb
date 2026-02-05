@@ -14,11 +14,7 @@
  * @module
  */
 
-import {
-  failSpinner,
-  startSpinner,
-  succeedSpinner,
-} from "@dreamer/console";
+import { failSpinner, startSpinner, succeedSpinner } from "@dreamer/console";
 import {
   createCommand,
   exit,

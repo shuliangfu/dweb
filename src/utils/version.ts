@@ -115,7 +115,8 @@ const VERSION_CACHE_FILENAME = "version.json";
  * @returns 缓存目录绝对路径，无法获取时返回空字符串
  */
 function getVersionCacheDir(): string {
-  const home = getEnv("HOME") ?? getEnv("USERPROFILE") ?? getEnv("LOCALAPPDATA") ?? "";
+  const home = getEnv("HOME") ?? getEnv("USERPROFILE") ??
+    getEnv("LOCALAPPDATA") ?? "";
   if (!home) return "";
   return join(home, ".dreamer", "dweb");
 }
@@ -175,7 +176,11 @@ export async function writeVersionCache(version: string): Promise<void> {
  */
 export async function loadDwebDenoJson(): Promise<DwebDenoConfig | null> {
   try {
-    let parsed: { version?: string; imports?: Record<string, string>; pluginsVersion?: string };
+    let parsed: {
+      version?: string;
+      imports?: Record<string, string>;
+      pluginsVersion?: string;
+    };
 
     if (isRemoteRun()) {
       // JSR 运行：fetch 包根 deno.json
@@ -207,7 +212,9 @@ export async function loadDwebDenoJson(): Promise<DwebDenoConfig | null> {
       const pluginsDenoPath = join(dwebRoot, "..", "plugins", "deno.json");
       if (await exists(pluginsDenoPath)) {
         const pluginsContent = await readTextFile(pluginsDenoPath);
-        const pluginsParsed = JSON.parse(pluginsContent) as { version?: string };
+        const pluginsParsed = JSON.parse(pluginsContent) as {
+          version?: string;
+        };
         pluginsVersion = pluginsParsed.version;
       }
     }

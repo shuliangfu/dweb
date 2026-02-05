@@ -41,7 +41,9 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-sm text-gray-500">总用户数</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.totalUsers}
+              </p>
             </div>
           </div>
         </div>

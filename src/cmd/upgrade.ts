@@ -24,7 +24,7 @@ import { createCommand } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
 import { fetchJsrLatestVersion } from "../utils/jsr-versions.ts";
 import { getDwebVersion, writeVersionCache } from "../utils/version.ts";
-import { getRuntime, getRunArgs } from "../utils/runtime.ts";
+import { getRunArgs, getRuntime } from "../utils/runtime.ts";
 
 /**
  * 解析版本号用于比较（简化：仅比较主.次.修订）

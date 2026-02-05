@@ -38,7 +38,9 @@ export default function Permissions() {
                   <p className="font-medium text-gray-900">{role.name}</p>
                   <p className="text-sm text-gray-500">{role.desc}</p>
                 </div>
-                <span className="text-sm text-gray-500">{role.userCount} 人</span>
+                <span className="text-sm text-gray-500">
+                  {role.userCount} 人
+                </span>
               </div>
             ))}
           </div>

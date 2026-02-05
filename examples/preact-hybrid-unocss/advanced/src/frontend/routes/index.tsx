@@ -105,7 +105,9 @@ export default function Home() {
           ].map((feature) => (
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <div className="text-4xl mb-4">{feature.icon}</div>
-              <h3 className="font-semibold text-gray-900 mb-2">{feature.title}</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">
+                {feature.title}
+              </h3>
               <p className="text-gray-600 text-sm">{feature.desc}</p>
             </div>
           ))}

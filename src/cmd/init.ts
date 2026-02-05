@@ -21,8 +21,8 @@ import {
   prompt,
   separator,
   startSpinner,
-  success,
   succeedSpinner,
+  success,
   title,
 } from "@dreamer/console";
 import {
@@ -105,7 +105,9 @@ function projectNameFromDir(targetDir: string): string {
  * @param targetDir 项目目录
  * @returns npm 包说明符数组，如 ["npm:better-sqlite3@11.10.0", "npm:esbuild@0.27.2"]
  */
-export async function getNpmPackagesFromLockfile(targetDir: string): Promise<string[]> {
+export async function getNpmPackagesFromLockfile(
+  targetDir: string,
+): Promise<string[]> {
   try {
     const lockPath = join(targetDir, "deno.lock");
     if (!(await exists(lockPath))) return [];

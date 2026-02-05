@@ -4,7 +4,13 @@
  */
 
 /* 基础 reset：移除浏览器默认 margin，消除底部白边 */
-*, *::before, *::after { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; min-height: 100%; }
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
 
 /* 可选：自定义层，例如 :root { --color-primary: #333; } */

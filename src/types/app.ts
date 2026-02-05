@@ -1,7 +1,7 @@
 /**
  * App 类型定义
  *
- * 定义 AppConfig、IApp、AppPlugin、AppStage、DatabaseAppConfig、SocketIOAppConfig 等
+ * 定义 AppConfig、IApp、AppPlugin、AppStage、DatabaseAppConfig、SocketConfig 等
  * 应用配置与生命周期相关类型。
  *
  * @module
@@ -100,18 +100,29 @@ export interface AppConfig extends Record<string, unknown> {
   /** 数据库配置 */
   database?: DatabaseAppConfig;
   /**
-   * Socket.IO 配置（可选）
-   * 配置后框架将把 Socket.IO 挂载到当前 HTTP 服务器同一端口，路径由 path 指定。
-   * 不配置 port/host，与主站共用 server.port / server.host。
+   * 实时通信配置（可选）
+   * type 为 socketio 时使用 Socket.IO；type 为 websocket 时使用原生 WebSocket（待实现）。
+   * 配置后挂载到当前 HTTP 服务器同一端口，与主站共用 server.port / server.host。
    */
-  socketIo?: SocketIOAppConfig;
+  socket?: SocketConfig;
 }
 
+/** 实时通信类型：socketio | websocket */
+export type SocketType = "socketio" | "websocket";
+
 /**
- * Socket.IO 应用配置（挂载模式）
+ * 实时通信应用配置（ discriminated union）
+ * 根据 type 选择对应实现，挂载到主站 HTTP 服务器
+ */
+export type SocketConfig =
+  | (SocketIOConfig & { type: "socketio" })
+  | (WebSocketConfig & { type: "websocket" });
+
+/**
+ * Socket.IO 配置（挂载模式）
  * 与 @dreamer/socket-io ServerOptions 兼容，但不包含 port/host（共用 HTTP 服务器）
  */
-export interface SocketIOAppConfig {
+export interface SocketIOConfig {
   /** Logger 实例（可选，默认使用框架 logger；传入自定义 logger 可统一日志输出） */
   logger?: import("@dreamer/logger").Logger;
   /** Socket.IO 路径（默认："/socket.io/"） */
@@ -131,6 +142,25 @@ export interface SocketIOAppConfig {
   /** 是否启用调试日志（默认：false），开启后会在控制台输出 Socket.IO 请求路径、握手等调试信息 */
   debug?: boolean;
   /** 其他 @dreamer/socket-io ServerOptions 选项 */
+  [key: string]: unknown;
+}
+
+/**
+ * WebSocket 配置（挂载模式）
+ * 与 @dreamer/websocket ServerOptions 兼容
+ */
+export interface WebSocketConfig {
+  /** Logger 实例（可选，默认使用框架 logger；传入自定义 logger 可统一日志输出） */
+  logger?: import("@dreamer/logger").Logger;
+  /** WebSocket 路径（默认："/ws"） */
+  path?: string;
+  /** 心跳超时（毫秒，默认：60000） */
+  pingTimeout?: number;
+  /** 心跳间隔（毫秒，默认：30000） */
+  pingInterval?: number;
+  /** 是否启用调试日志（默认：false），开启后通过 logger.debug 输出 WebSocket 请求路径、握手等调试信息 */
+  debug?: boolean;
+  /** 其他 @dreamer/websocket ServerOptions 选项 */
   [key: string]: unknown;
 }
 

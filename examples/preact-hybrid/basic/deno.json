@@ -22,7 +22,7 @@
     "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.0.0-beta.23",
     "@dreamer/server": "jsr:@dreamer/server@1.0.0-beta.24",
     "@dreamer/service": "jsr:@dreamer/service@^1.0.0-beta.4",
-    "@dreamer/socket-io": "jsr:@dreamer/socket-io@1.0.0-beta.12",
+    "@dreamer/websocket": "jsr:@dreamer/websocket@^1.0.0-beta.6",
     "@dreamer/utils": "jsr:@dreamer/utils@^1.0.0-beta.8",
     "autoprefixer": "npm:autoprefixer@10.4.19",
     "cssnano": "npm:cssnano@7.0.3",

@@ -86,12 +86,14 @@ describe("getInferredBuildOutputDirs", () => {
   });
 
   it("段数 4 应抛出错误", () => {
-    expect(() =>
-      getInferredBuildOutputDirs("src/a/b/main.ts"),
-    ).toThrow(/入口路径段数必须为 1–3/);
+    expect(() => getInferredBuildOutputDirs("src/a/b/main.ts")).toThrow(
+      /入口路径段数必须为 1–3/,
+    );
   });
 
   it("段数 0（空路径）应抛出错误", () => {
-    expect(() => getInferredBuildOutputDirs("")).toThrow(/入口路径段数必须为 1–3/);
+    expect(() => getInferredBuildOutputDirs("")).toThrow(
+      /入口路径段数必须为 1–3/,
+    );
   });
 });

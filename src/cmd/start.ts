@@ -53,7 +53,9 @@ export async function main(
     }
     try {
       const config = await loadProjectConfig(projectRoot);
-      const serverConfig = config.server as { port?: number; host?: string } | undefined;
+      const serverConfig = config.server as
+        | { port?: number; host?: string }
+        | undefined;
       if (serverConfig?.port) {
         info(`生产服务器端口: ${serverConfig.port}（来自 config.server）`);
       }
@@ -98,7 +100,9 @@ export async function main(
 
   try {
     const config = await loadProjectConfig(projectRoot);
-    const serverConfig = config.server as { port?: number; host?: string } | undefined;
+    const serverConfig = config.server as
+      | { port?: number; host?: string }
+      | undefined;
     if (serverConfig?.port) {
       info(`生产服务器端口: ${serverConfig.port}（来自 config.server）`);
     }

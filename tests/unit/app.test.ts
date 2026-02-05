@@ -10,12 +10,7 @@
  */
 
 import type { Plugin } from "@dreamer/plugin";
-import {
-  ensureDir,
-  join,
-  makeTempDir,
-  remove,
-} from "@dreamer/runtime-adapter";
+import { ensureDir, join, makeTempDir, remove } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import { App } from "../../src/core/app.ts";
 import type { AppConfig } from "../../src/types/app.ts";

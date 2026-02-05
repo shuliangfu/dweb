@@ -21,7 +21,10 @@ export default function UserDetail({ params }: UserDetailProps) {
       <div className="text-center py-12">
         <h1 className="text-2xl font-bold text-gray-900 mb-4">用户不存在</h1>
         <p className="text-gray-500 mb-6">用户 ID: {params.id} 不存在</p>
-        <a href="/admin/users" className="text-indigo-600 hover:text-indigo-700">
+        <a
+          href="/admin/users"
+          className="text-indigo-600 hover:text-indigo-700"
+        >
           ← 返回用户列表
         </a>
       </div>

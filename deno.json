@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "3.0.36",
+  "version": "3.0.37",
   "license": "MIT",
   "exports": {
     ".": "./src/mod.ts",
@@ -18,7 +18,8 @@
     "./feature/router": "./src/feature/router.ts",
     "./feature/render": "./src/feature/render.ts",
     "./feature/build": "./src/feature/build.ts",
-    "./feature/command": "./src/feature/command.ts"
+    "./feature/command": "./src/feature/command.ts",
+    "./feature/websocket": "./src/feature/websocket.ts"
   },
   "publish": {
     "include": [
@@ -53,6 +54,7 @@
     "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.0.0-beta.23",
     "@dreamer/database": "jsr:@dreamer/database@^1.0.0-beta.8",
     "@dreamer/socket-io": "jsr:@dreamer/socket-io@1.0.0-beta.12",
+    "@dreamer/websocket": "jsr:@dreamer/websocket@^1.0.0-beta.6",
     "@dreamer/test": "jsr:@dreamer/test@^1.0.0-beta.40",
     "preact": "npm:preact@10.28.0",
     "esbuild": "npm:esbuild@^0.27.2",
@@ -97,5 +99,9 @@
         "no-explicit-any"
       ]
     }
+  },
+  "allowScripts": {
+    "allow": [],
+    "deny": ["npm:better-sqlite3@11.10.0", "npm:esbuild@0.27.2", "npm:puppeteer@24.36.1"]
   }
 }

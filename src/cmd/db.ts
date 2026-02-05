@@ -17,10 +17,7 @@
  */
 
 import { error, info, success } from "@dreamer/console";
-import {
-  DatabaseManager,
-  MigrationManager,
-} from "@dreamer/database";
+import { DatabaseManager, MigrationManager } from "@dreamer/database";
 import {
   createCommand,
   cwd,
@@ -33,7 +30,7 @@ import {
 import type { ParsedOptions } from "../feature/command.ts";
 import { loadProjectConfig } from "../utils/config-loader.ts";
 import { getProjectInfo } from "../utils/project.ts";
-import { getRuntime, getRunArgs, getTaskArgs } from "../utils/runtime.ts";
+import { getRunArgs, getRuntime, getTaskArgs } from "../utils/runtime.ts";
 
 /** SQL 迁移模板（符合 @dreamer/database Migration 接口） */
 function getSqlMigrationTemplate(name: string, className: string): string {
@@ -190,10 +187,15 @@ export async function migrate(
       // 优先尝试使用 @dreamer/database MigrationManager（需项目配置了 database）
       try {
         const config = await loadProjectConfig(projectRoot);
-        const dbConfig = config.database as { default?: { type: string } } | undefined;
+        const dbConfig = config.database as
+          | { default?: { type: string } }
+          | undefined;
         if (dbConfig?.default) {
           const manager = new DatabaseManager();
-          await manager.connect("default", dbConfig.default as Parameters<DatabaseManager["connect"]>[1]);
+          await manager.connect(
+            "default",
+            dbConfig.default as Parameters<DatabaseManager["connect"]>[1],
+          );
           const adapter = manager.getConnection("default");
           const migrationManager = new MigrationManager({
             migrationsDir,
@@ -241,7 +243,9 @@ export async function migrate(
       // 优先尝试使用 @dreamer/database MigrationManager（需项目配置了 database）
       try {
         const config = await loadProjectConfig(projectRoot);
-        const dbConfig = config.database as { default?: { type: string } } | undefined;
+        const dbConfig = config.database as
+          | { default?: { type: string } }
+          | undefined;
         const migrationsDir = join(projectRoot, "migrations");
         try {
           await stat(migrationsDir);
@@ -251,7 +255,10 @@ export async function migrate(
         }
         if (dbConfig?.default) {
           const manager = new DatabaseManager();
-          await manager.connect("default", dbConfig.default as Parameters<DatabaseManager["connect"]>[1]);
+          await manager.connect(
+            "default",
+            dbConfig.default as Parameters<DatabaseManager["connect"]>[1],
+          );
           const adapter = manager.getConnection("default");
           const migrationManager = new MigrationManager({
             migrationsDir,
@@ -269,7 +276,9 @@ export async function migrate(
 
       // 回退到 task 方式（需 --name 指定迁移名）
       if (!name) {
-        error("回滚迁移需要指定迁移名称（--name），或配置 config.database.default 以使用 MigrationManager");
+        error(
+          "回滚迁移需要指定迁移名称（--name），或配置 config.database.default 以使用 MigrationManager",
+        );
         return;
       }
       const projectInfo = await getProjectInfo(projectRoot);
@@ -394,10 +403,15 @@ export async function status(
   // 尝试使用 MigrationManager 获取已执行状态
   try {
     const config = await loadProjectConfig(projectRoot);
-    const dbConfig = config.database as { default?: { type: string } } | undefined;
+    const dbConfig = config.database as
+      | { default?: { type: string } }
+      | undefined;
     if (dbConfig?.default) {
       const manager = new DatabaseManager();
-      await manager.connect("default", dbConfig.default as Parameters<DatabaseManager["connect"]>[1]);
+      await manager.connect(
+        "default",
+        dbConfig.default as Parameters<DatabaseManager["connect"]>[1],
+      );
       const adapter = manager.getConnection("default");
       const migrationManager = new MigrationManager({
         migrationsDir,
@@ -415,13 +429,17 @@ export async function status(
       success(`迁移状态（共 ${statuses.length} 个）:`);
       for (const s of statuses) {
         const execInfo = s.executed && s.executedAt
-          ? `✓ 已执行 ${s.executedAt.toISOString().slice(0, 19).replace("T", " ")}`
+          ? `✓ 已执行 ${
+            s.executedAt.toISOString().slice(0, 19).replace("T", " ")
+          }`
           : "○ 待执行";
         console.log(`  • ${s.name}  ${execInfo}  [${s.file}]`);
       }
       info("");
       info("执行迁移: dweb db migrate -a up");
-      info("回滚迁移: dweb db migrate -a down -c <数量>（或 -n <名称> 配合 task）");
+      info(
+        "回滚迁移: dweb db migrate -a down -c <数量>（或 -n <名称> 配合 task）",
+      );
       return;
     }
   } catch {
@@ -453,6 +471,8 @@ export async function status(
 
   info("");
   info("执行迁移: dweb db migrate -a up");
-  info("回滚迁移: dweb db migrate -a down -c <数量>（配置 database 后）或 -n <名称>（配合 task）");
+  info(
+    "回滚迁移: dweb db migrate -a down -c <数量>（配置 database 后）或 -n <名称>（配合 task）",
+  );
   info("已执行状态: 配置 config.database.default 后可显示");
 }

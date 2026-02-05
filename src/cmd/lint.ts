@@ -13,7 +13,7 @@ import { error, info, success } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
 import { getProjectInfo } from "../utils/project.ts";
-import { getRuntime, getLintArgs } from "../utils/runtime.ts";
+import { getLintArgs, getRuntime } from "../utils/runtime.ts";
 
 /**
  * lint 命令主入口

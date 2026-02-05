@@ -59,7 +59,9 @@ export default function UsersManagement() {
                       alt={user.name}
                       className="w-10 h-10 rounded-full"
                     />
-                    <span className="font-medium text-gray-900">{user.name}</span>
+                    <span className="font-medium text-gray-900">
+                      {user.name}
+                    </span>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-gray-500">{user.email}</td>

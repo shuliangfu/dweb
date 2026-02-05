@@ -1,27 +1,28 @@
 # AppConfig 完整配置示例
 
-本文档基于 `@dreamer/dweb` 的 `AppConfig` 类型定义与 README 文档，提供一份完整的配置示例，涵盖所有常用配置项。
+本文档基于 `@dreamer/dweb` 的 `AppConfig` 类型定义与 README
+文档，提供一份完整的配置示例，涵盖所有常用配置项。
 
 ## 一、AppConfig 结构概览
 
 `AppConfig` 是 dweb 框架的应用配置接口，包含以下主要模块：
 
-| 配置项 | 类型 | 说明 |
-|--------|------|------|
-| `name` | string | 应用名称 |
-| `version` | string | 应用版本 |
-| `configDirectory` | string | 配置目录（默认 `./config`） |
-| `envPrefix` | string | 环境变量前缀 |
-| `hotReload` | boolean | 是否启用热重载 |
-| `server` | ServerOptions | 服务器配置 |
-| `router` | RouterOptions | 路由配置 |
-| `render` | object | 渲染配置 |
-| `build` | BuildAppConfig | 构建配置 |
-| `logger` | LoggerConfig | 日志配置 |
-| `database` | DatabaseAppConfig | 数据库配置 |
-| `socketIo` | SocketIOAppConfig | Socket.IO 配置 |
-| `plugins` | Array | 插件列表 |
-| `middlewares` | Array | 中间件列表 |
+| 配置项            | 类型              | 说明                        |
+| ----------------- | ----------------- | --------------------------- |
+| `name`            | string            | 应用名称                    |
+| `version`         | string            | 应用版本                    |
+| `configDirectory` | string            | 配置目录（默认 `./config`） |
+| `envPrefix`       | string            | 环境变量前缀                |
+| `hotReload`       | boolean           | 是否启用热重载              |
+| `server`          | ServerOptions     | 服务器配置                  |
+| `router`          | RouterOptions     | 路由配置                    |
+| `render`          | object            | 渲染配置                    |
+| `build`           | BuildAppConfig    | 构建配置                    |
+| `logger`          | LoggerConfig      | 日志配置                    |
+| `database`        | DatabaseAppConfig | 数据库配置                  |
+| `socket`          | SocketConfig      | 实时通信配置（type: socketio 或 websocket） |
+| `plugins`         | Array             | 插件列表                    |
+| `middlewares`     | Array             | 中间件列表                  |
 
 ---
 
@@ -86,7 +87,11 @@ const config: AppConfig = {
     /** 重定向配置 */
     redirects: [
       { source: "/old", destination: "/new", permanent: true },
-      { source: "/user/:id/old", destination: "/user/:id/new", statusCode: 302 },
+      {
+        source: "/user/:id/old",
+        destination: "/user/:id/new",
+        statusCode: 302,
+      },
     ],
     /** 是否跳过 _app 验证 */
     skipAppValidation: false,
@@ -187,7 +192,7 @@ const config: AppConfig = {
     maxMessageLength: 32 * 1024,
   },
 
-  // ========== 数据库配置（需安装 @dreamer/database） ==========
+  // ========== 数据库配置（dweb 已内置 @dreamer/database，配置后即可使用） ==========
   database: {
     default: {
       type: "postgresql",
@@ -234,8 +239,9 @@ const config: AppConfig = {
     managerOptions: {},
   },
 
-  // ========== Socket.IO 配置（需安装 @dreamer/socket-io） ==========
-  socketIo: {
+  // ========== 实时通信配置（dweb 已内置，type 为 socketio 时启用） ==========
+  socket: {
+    type: "socketio",
     path: "/socket.io/",
     allowCORS: true,
     pingTimeout: 20000,
@@ -298,7 +304,8 @@ export default config;
 当使用 MongoDB 副本集时，需在 `mongoOptions` 中配置：
 
 - **`replicaSet`**：副本集名称，如 `"rs0"`。若 MongoDB 开启副本集则必须设置。
-- **`directConnection`**：`true` 表示仅连接指定 host:port（适用于单节点或 Docker 环境）；`false` 表示自动发现副本集所有节点（适用于分布式生产环境）。
+- **`directConnection`**：`true` 表示仅连接指定 host:port（适用于单节点或 Docker
+  环境）；`false` 表示自动发现副本集所有节点（适用于分布式生产环境）。
 - **`authSource`**：认证源数据库，通常为 `"admin"`。
 
 ---
@@ -311,7 +318,8 @@ export default config;
 - **可选**：`dependencies`、`config`、`validateConfig`、`onConfigUpdate`
 - **事件钩子**（可选）：`onInit`、`onStart`、`onStop`、`onShutdown`、`onRequest`、`onResponse`、`onError`、`onRoute`、`onBuild`、`onBuildComplete`、`onSocket`、`onSocketClose`、`onHealthCheck`、`onHotReload`
 
-**注意**：`install`、`activate`、`deactivate`、`uninstall` 是 **PluginManager** 的方法，不是插件需要实现的钩子。框架会自动完成注册→安装→激活流程，插件只需实现需要响应的事件钩子即可。
+**注意**：`install`、`activate`、`deactivate`、`uninstall` 是 **PluginManager**
+的方法，不是插件需要实现的钩子。框架会自动完成注册→安装→激活流程，插件只需实现需要响应的事件钩子即可。
 
 ---
 
@@ -321,6 +329,7 @@ export default config;
 
 ```typescript
 import type { AppConfig } from "jsr:@dreamer/dweb";
+import { getEnv } from "jsr:@dreamer/runtime-adapter";
 
 /** 公共配置，供 backend、frontend 等应用复用 */
 export const commonConfig = {
@@ -331,7 +340,7 @@ export const commonConfig = {
   frontendPort: 3000,
 };
 
-/** 公共 AppConfig 片段 */
+/** 公共 AppConfig 片段（使用 getEnv 兼容 Deno/Bun） */
 export const commonAppConfig: Partial<AppConfig> = {
   version: commonConfig.version,
   configDirectory: "./config",
@@ -339,11 +348,11 @@ export const commonAppConfig: Partial<AppConfig> = {
     default: {
       type: "postgresql",
       connection: {
-        host: Deno.env.get("DB_HOST") || "localhost",
-        port: parseInt(Deno.env.get("DB_PORT") || "5432"),
-        database: Deno.env.get("DB_NAME") || "mydb",
-        username: Deno.env.get("DB_USER") || "user",
-        password: Deno.env.get("DB_PASSWORD") || "password",
+        host: getEnv("DB_HOST") || "localhost",
+        port: parseInt(getEnv("DB_PORT") || "5432"),
+        database: getEnv("DB_NAME") || "mydb",
+        username: getEnv("DB_USER") || "user",
+        password: getEnv("DB_PASSWORD") || "password",
       },
     },
   },
@@ -358,7 +367,7 @@ export const commonAppConfig: Partial<AppConfig> = {
 
 ```typescript
 import type { AppConfig } from "jsr:@dreamer/dweb";
-import { commonConfig, commonAppConfig } from "../../common/config/main.ts";
+import { commonAppConfig, commonConfig } from "../../common/config/main.ts";
 
 const config: AppConfig = {
   ...commonAppConfig,
@@ -388,7 +397,7 @@ export default config;
 
 ```typescript
 import type { AppConfig } from "jsr:@dreamer/dweb";
-import { commonConfig, commonAppConfig } from "../../common/config/main.ts";
+import { commonAppConfig, commonConfig } from "../../common/config/main.ts";
 
 const config: AppConfig = {
   ...commonAppConfig,
@@ -451,13 +460,14 @@ export default config;
 
 ```typescript
 // config/main.prod.ts
+import { getEnv } from "jsr:@dreamer/runtime-adapter";
 import mainConfig from "./main.ts";
 
 const config: AppConfig = {
   ...mainConfig,
   server: {
     ...mainConfig.server,
-    port: parseInt(Deno.env.get("PORT") || "3000"),
+    port: parseInt(getEnv("PORT") || "3000"),
   },
   logger: {
     ...mainConfig.logger,

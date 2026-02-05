@@ -74,7 +74,9 @@ export default function About() {
         <h2 className="text-xl font-semibold text-gray-900 mb-6">页面路由</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h3 className="font-medium text-gray-900 mb-3">前台网站 (端口 3000)</h3>
+            <h3 className="font-medium text-gray-900 mb-3">
+              前台网站 (端口 3000)
+            </h3>
             <ul className="space-y-2 text-gray-600">
               <li className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
@@ -95,7 +97,9 @@ export default function About() {
             </ul>
           </div>
           <div>
-            <h3 className="font-medium text-gray-900 mb-3">后台管理 (端口 3001)</h3>
+            <h3 className="font-medium text-gray-900 mb-3">
+              后台管理 (端口 3001)
+            </h3>
             <ul className="space-y-2 text-gray-600">
               <li className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
