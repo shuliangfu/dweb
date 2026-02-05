@@ -19,6 +19,11 @@ import type { ServiceContainer } from "@dreamer/service";
  * @param container 服务容器
  * @param options 插件管理器配置选项
  * @returns 插件管理器实例
+ *
+ * @example
+ * ```ts
+ * const pluginManager = initializePlugin(container, { autoActivate: true });
+ * ```
  */
 export function initializePlugin(
   container: ServiceContainer,
@@ -44,6 +49,12 @@ export function initializePlugin(
  *
  * @param container 服务容器
  * @returns 插件管理器实例
+ *
+ * @example
+ * ```ts
+ * const pm = getPluginManager(container);
+ * await pm.install("my-plugin");
+ * ```
  */
 export function getPluginManager(container: ServiceContainer): PluginManager {
   return container.get<PluginManager>("pluginManager");
@@ -54,6 +65,12 @@ export function getPluginManager(container: ServiceContainer): PluginManager {
  *
  * @param container 服务容器
  * @param plugin 插件对象
+ * @returns Promise<void>
+ *
+ * @example
+ * ```ts
+ * await registerPlugin(container, { name: "my-plugin", onInit: () => {} });
+ * ```
  */
 export async function registerPlugin(
   container: ServiceContainer,

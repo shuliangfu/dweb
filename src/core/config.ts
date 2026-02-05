@@ -128,7 +128,13 @@ function getMiddlewareName(
  * 通过 app.use() 直接注册的中间件可以不提供 name（允许自动生成）
  *
  * @param config 应用配置
+ * @returns void
  * @throws {Error} 如果配置项有错误，抛出详细的错误信息
+ *
+ * @example
+ * ```ts
+ * validateConfig({ name: "my-app", version: "1.0.0" });
+ * ```
  */
 export function validateConfig(config: AppConfig): void {
   // 验证基础配置项
@@ -286,6 +292,14 @@ export function validateConfig(config: AppConfig): void {
  * @param target 目标配置对象
  * @param source 源配置对象
  * @returns 合并后的配置对象
+ *
+ * @example
+ * ```ts
+ * const merged = deepMergeConfig(
+ *   { name: "app", plugins: [] },
+ *   { version: "1.0.0", plugins: ["@dreamer/dweb-plugin-static"] }
+ * );
+ * ```
  */
 export function deepMergeConfig(
   target: AppConfig,
@@ -463,6 +477,14 @@ async function loadParamsConfig(
  * @param container 服务容器
  * @param options 配置选项
  * @returns 配置管理器实例
+ *
+ * @example
+ * ```ts
+ * const container = initializeServiceContainer();
+ * const configManager = await initializeConfigManager(container, {
+ *   directories: ["./config"],
+ * });
+ * ```
  */
 export async function initializeConfigManager(
   container: ServiceContainer,
@@ -558,6 +580,12 @@ export async function initializeConfigManager(
  *
  * @param container 服务容器
  * @returns 配置管理器实例
+ *
+ * @example
+ * ```ts
+ * const configManager = getConfigManager(container);
+ * const value = configManager.get("app.name");
+ * ```
  */
 export function getConfigManager(container: ServiceContainer): ConfigManager {
   return container.get<ConfigManager>("configManager");
@@ -567,7 +595,13 @@ export function getConfigManager(container: ServiceContainer): ConfigManager {
  * 获取配置对象
  *
  * @param container 服务容器
- * @returns 配置对象
+ * @returns 应用配置对象（AppConfig）
+ *
+ * @example
+ * ```ts
+ * const config = getConfig(container);
+ * console.log(config.name, config.version);
+ * ```
  */
 export function getConfig(container: ServiceContainer): AppConfig {
   return container.get<AppConfig>("config");
@@ -580,6 +614,11 @@ export function getConfig(container: ServiceContainer): AppConfig {
  * @param key 配置键（支持点号分隔的路径，如 "app.name"）
  * @param defaultValue 默认值（可选）
  * @returns 配置值
+ *
+ * @example
+ * ```ts
+ * const name = getConfigValue<string>(container, "app.name", "default");
+ * ```
  */
 export function getConfigValue<T = unknown>(
   container: ServiceContainer,
@@ -592,10 +631,17 @@ export function getConfigValue<T = unknown>(
 
 /**
  * 获取业务配置对象
- * 业务配置来自 config/params.ts
+ *
+ * 业务配置来自 config/params.ts。
  *
  * @param container 服务容器
  * @returns 业务配置对象
+ *
+ * @example
+ * ```ts
+ * const params = getParams(container);
+ * const level = params.member?.levels?.bronze;
+ * ```
  */
 export function getParams(
   container: ServiceContainer,
@@ -610,6 +656,11 @@ export function getParams(
  * @param key 配置键（支持点号分隔的路径，如 "member.levels.bronze.name"）
  * @param defaultValue 默认值（可选）
  * @returns 配置值
+ *
+ * @example
+ * ```ts
+ * const name = getParamValue<string>(container, "member.levels.bronze.name");
+ * ```
  */
 export function getParamValue<T = unknown>(
   container: ServiceContainer,
@@ -637,6 +688,11 @@ export function getParamValue<T = unknown>(
  * @deprecated 使用 getParams 代替
  * @param container 服务容器
  * @returns 业务配置对象
+ *
+ * @example
+ * ```ts
+ * const params = getBusinessConfig(container);
+ * ```
  */
 export function getBusinessConfig(
   container: ServiceContainer,
@@ -652,6 +708,11 @@ export function getBusinessConfig(
  * @param key 配置键（支持点号分隔的路径）
  * @param defaultValue 默认值（可选）
  * @returns 配置值
+ *
+ * @example
+ * ```ts
+ * const value = getBusinessConfigValue(container, "key");
+ * ```
  */
 export function getBusinessConfigValue<T = unknown>(
   container: ServiceContainer,

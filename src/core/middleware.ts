@@ -22,6 +22,14 @@ import { emitOnError, emitOnRequest, emitOnResponse } from "./plugin-events.ts";
  * 待注册到 HTTP 服务器的中间件项
  *
  * 用于在 init 时同步到 server，包含中间件函数、匹配条件与名称。
+ *
+ * @example
+ * ```ts
+ * const reg: ServerMiddlewareRegistration = {
+ *   middleware: (ctx, next) => next(),
+ *   name: "my-middleware",
+ * };
+ * ```
  */
 export interface ServerMiddlewareRegistration {
   middleware: Middleware<MiddlewareContext>;
@@ -35,6 +43,12 @@ export interface ServerMiddlewareRegistration {
  * @param container 服务容器
  * @param config 应用配置
  * @returns 中间件链实例
+ *
+ * @example
+ * ```ts
+ * const chain = initializeMiddleware(container, config);
+ * chain.use(requestLogger);
+ * ```
  */
 export function initializeMiddleware(
   container: ServiceContainer,
@@ -60,6 +74,12 @@ export function initializeMiddleware(
  *
  * @param container 服务容器
  * @returns 中间件链实例
+ *
+ * @example
+ * ```ts
+ * const chain = getMiddlewareChain(container);
+ * chain.use(myMiddleware);
+ * ```
  */
 export function getMiddlewareChain(
   container: ServiceContainer,
@@ -72,6 +92,12 @@ export function getMiddlewareChain(
  *
  * @param container 服务容器
  * @returns 中间件注册项数组
+ *
+ * @example
+ * ```ts
+ * const list = getServerMiddlewares(container);
+ * for (const { middleware } of list) { ... }
+ * ```
  */
 export function getServerMiddlewares(
   container: ServiceContainer,
@@ -86,6 +112,12 @@ export function getServerMiddlewares(
  * @param middleware 中间件函数
  * @param condition 匹配条件（可选）
  * @param name 中间件名称（可选）
+ * @returns void
+ *
+ * @example
+ * ```ts
+ * registerMiddleware(container, (ctx, next) => next(), undefined, "logger");
+ * ```
  */
 export function registerMiddleware(
   container: ServiceContainer,

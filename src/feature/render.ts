@@ -24,6 +24,14 @@ import type { AppConfig } from "../types/app.ts";
  *
  * @param container 服务容器
  * @param config 应用配置
+ * @returns void
+ *
+ * @example
+ * ```ts
+ * initializeRender(container, config);
+ * const render = getRender(container);
+ * const html = await render.renderSSR({ path: "/", url: "/" });
+ * ```
  */
 export function initializeRender(
   container: ServiceContainer,
@@ -66,7 +74,14 @@ export function initializeRender(
  * 获取渲染服务
  *
  * @param container 服务容器
- * @returns 渲染服务
+ * @returns 渲染服务（含 renderSSR、renderSSG 方法）
+ *
+ * @example
+ * ```ts
+ * const render = getRender(container);
+ * const result = await render.renderSSR({ path: "/", url: "/" });
+ * const files = await render.renderSSG({ routes: ["/"] });
+ * ```
  */
 export function getRender(container: ServiceContainer): {
   renderSSR: (options: SSROptions) => Promise<RenderResult>;

@@ -29,6 +29,16 @@ import { initializeServiceContainer } from "../core/service.ts";
  * @param args 命令行参数数组
  * @param options 解析后的选项
  * @param command 当前 Command 实例（可访问 app、container）
+ * @returns void 或 Promise<void>
+ *
+ * @example
+ * ```ts
+ * const handler: CommandHandler = async (args, options, command) => {
+ *   await command?.initApp();
+ *   const app = command?.app;
+ *   if (app) await app.start();
+ * };
+ * ```
  */
 export type CommandHandler = (
   args: string[],
@@ -41,6 +51,16 @@ export type CommandHandler = (
  *
  * 在 CLI 命令中可以通过 this.app 访问 App 实例
  * 如果创建时没有传入 app，会尝试从配置文件加载（console 模式）
+ *
+ * @example
+ * ```ts
+ * const cmd = new Command("dev", "启动开发服务器");
+ * cmd.action(async () => {
+ *   await cmd.initApp();
+ *   const app = cmd.app;
+ *   // ...
+ * });
+ * ```
  */
 export class Command extends BaseCommand {
   /** App 实例（可选） */

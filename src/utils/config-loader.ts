@@ -71,6 +71,12 @@ async function loadMainConfig(
  *
  * @param projectRoot 项目根目录（绝对路径）
  * @returns 合并后的 AppConfig，加载失败时返回空对象
+ *
+ * @example
+ * ```ts
+ * const config = await loadProjectConfig("/path/to/project");
+ * console.log(config.name, config.server?.port);
+ * ```
  */
 export async function loadProjectConfig(
   projectRoot: string,

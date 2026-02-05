@@ -26,7 +26,15 @@ const SOCKET_IO_PATH_KEY = "socketIoPath";
  *
  * @param container 服务容器
  * @param config 应用配置
- * @returns 若已启用则返回 Socket.IO 路径，否则返回 undefined
+ * @returns 若已启用则返回 Socket.IO 路径（如 "/socket.io/"），否则返回 undefined
+ *
+ * @example
+ * ```ts
+ * const path = initializeSocketIo(container, {
+ *   socket: { type: "socketio", path: "/socket.io/" },
+ * });
+ * if (path) app.use(createSocketIoMiddleware(container));
+ * ```
  */
 export function initializeSocketIo(
   container: ServiceContainer,
@@ -56,7 +64,14 @@ export function initializeSocketIo(
  * 获取已初始化的 Socket.IO 服务实例
  *
  * @param container 服务容器
- * @returns Socket.IO Server，未配置时抛错
+ * @returns Socket.IO Server
+ * @throws {Error} 未配置 Socket.IO 时抛出错误
+ *
+ * @example
+ * ```ts
+ * const io = getSocketIoServer(container);
+ * io.on("connection", (socket) => { ... });
+ * ```
  */
 export function getSocketIoServer(container: ServiceContainer): Server {
   if (!container.has(SOCKET_IO_SERVER_KEY)) {
@@ -70,6 +85,12 @@ export function getSocketIoServer(container: ServiceContainer): Server {
  *
  * @param container 服务容器
  * @returns 路径前缀（如 "/socket.io/"），未配置时返回 undefined
+ *
+ * @example
+ * ```ts
+ * const path = getSocketIoPath(container);
+ * if (path) console.log("Socket.IO at", path);
+ * ```
  */
 export function getSocketIoPath(
   container: ServiceContainer,
@@ -87,6 +108,11 @@ export function getSocketIoPath(
  *
  * @param container 服务容器
  * @returns 中间件函数
+ *
+ * @example
+ * ```ts
+ * app.use(createSocketIoMiddleware(container));
+ * ```
  */
 export function createSocketIoMiddleware(
   container: ServiceContainer,

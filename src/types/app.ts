@@ -24,7 +24,16 @@ import type { ServiceContainer } from "@dreamer/service";
 
 /**
  * 框架层构建配置
- * 在 BuilderConfig 基础上将 server.entry、server.output 设为可选，未设置时由框架根据执行入口自动推断
+ *
+ * 在 BuilderConfig 基础上将 server.entry、server.output 设为可选，
+ * 未设置时由框架根据执行入口自动推断。
+ *
+ * @example
+ * ```ts
+ * const build: BuildAppConfig = {
+ *   server: { entry: "src/main.ts", output: "dist" },
+ * };
+ * ```
  */
 export type BuildAppConfig = Omit<BuilderConfig, "server"> & {
   server?: Omit<ServerConfig, "entry" | "output"> & {
@@ -37,6 +46,16 @@ export type BuildAppConfig = Omit<BuilderConfig, "server"> & {
 
 /**
  * 数据库应用配置
+ *
+ * 支持默认连接和命名连接，可配置 DatabaseManager 选项。
+ *
+ * @example
+ * ```ts
+ * database: {
+ *   default: { driver: "sqlite", database: "./data.db" },
+ *   connections: { read: { driver: "postgres", host: "localhost" } },
+ * }
+ * ```
  */
 export interface DatabaseAppConfig {
   /** 默认连接配置 */
@@ -49,7 +68,18 @@ export interface DatabaseAppConfig {
 
 /**
  * 应用配置接口
- * 包含所有集成库的配置选项
+ *
+ * 包含所有集成库的配置选项：服务器、路由、渲染、插件、中间件、日志、数据库、Socket 等。
+ *
+ * @example
+ * ```ts
+ * const config: AppConfig = {
+ *   name: "my-app",
+ *   version: "1.0.0",
+ *   server: { port: 3000 },
+ *   plugins: ["@dreamer/dweb-plugin-static"],
+ * };
+ * ```
  */
 export interface AppConfig extends Record<string, unknown> {
   /** 应用名称 */
@@ -107,12 +137,27 @@ export interface AppConfig extends Record<string, unknown> {
   socket?: SocketConfig;
 }
 
-/** 实时通信类型：socketio | websocket */
+/**
+ * 实时通信类型
+ *
+ * - socketio: 使用 Socket.IO
+ * - websocket: 使用原生 WebSocket
+ */
 export type SocketType = "socketio" | "websocket";
 
 /**
- * 实时通信应用配置（ discriminated union）
- * 根据 type 选择对应实现，挂载到主站 HTTP 服务器
+ * 实时通信应用配置（discriminated union）
+ *
+ * 根据 type 选择对应实现，挂载到主站 HTTP 服务器，与主站共用端口。
+ *
+ * @example
+ * ```ts
+ * // Socket.IO
+ * socket: { type: "socketio", path: "/socket.io/" }
+ *
+ * // WebSocket
+ * socket: { type: "websocket", path: "/ws" }
+ * ```
  */
 export type SocketConfig =
   | (SocketIOConfig & { type: "socketio" })
@@ -166,26 +211,69 @@ export interface WebSocketConfig {
 
 /**
  * App 生命周期阶段
+ *
+ * 包括：uninitialized、init、start、stop、error、build 等。
+ *
+ * @example
+ * ```ts
+ * app.on("init" as AppStage, () => console.log("init"));
+ * app.on("start" as AppStage, () => console.log("start"));
+ * ```
  */
 export type AppStage = LifecycleStage;
 
 /**
  * App 生命周期钩子函数
+ *
+ * @returns void 或 Promise<void>
+ *
+ * @example
+ * ```ts
+ * app.on("init", async () => {
+ *   console.log("应用初始化完成");
+ * });
+ * ```
  */
 export type AppLifecycleHook = () => void | Promise<void>;
 
 /**
  * App 中间件类型
+ *
+ * 与 @dreamer/middleware 的 Middleware 类型一致，用于请求处理管道。
+ *
+ * @example
+ * ```ts
+ * const mw: AppMiddleware = (ctx, next) => next();
+ * app.use(mw);
+ * ```
  */
 export type AppMiddleware = Middleware;
 
 /**
  * App 插件类型
+ *
+ * 与 @dreamer/plugin 的 Plugin 类型一致，需提供 name 及可选钩子（onInit、onRequest 等）。
+ *
+ * @example
+ * ```ts
+ * const plugin: AppPlugin = { name: "my-plugin", onInit: () => {} };
+ * app.registerPlugin(plugin);
+ * ```
  */
 export type AppPlugin = Plugin;
 
 /**
  * App 类接口
+ *
+ * 定义应用实例的公共 API，包括 use、registerPlugin、on、start、stop、shutdown 等。
+ *
+ * @example
+ * ```ts
+ * const app: IApp = new App({ name: "my-app", version: "1.0.0" });
+ * app.use(myMiddleware);
+ * app.registerPlugin(myPlugin);
+ * await app.start();
+ * ```
  */
 export interface IApp {
   /** 应用名称 */

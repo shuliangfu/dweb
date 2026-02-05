@@ -26,7 +26,15 @@ const WEBSOCKET_PATH_KEY = "websocketPath";
  *
  * @param container 服务容器
  * @param config 应用配置
- * @returns 若已启用则返回 WebSocket 路径，否则返回 undefined
+ * @returns 若已启用则返回 WebSocket 路径（如 "/ws"），否则返回 undefined
+ *
+ * @example
+ * ```ts
+ * const path = initializeWebSocket(container, {
+ *   socket: { type: "websocket", path: "/ws" },
+ * });
+ * if (path) app.use(createWebSocketMiddleware(container));
+ * ```
  */
 export function initializeWebSocket(
   container: ServiceContainer,
@@ -57,7 +65,14 @@ export function initializeWebSocket(
  * 获取已初始化的 WebSocket 服务实例
  *
  * @param container 服务容器
- * @returns WebSocket Server，未配置时抛错
+ * @returns WebSocket Server
+ * @throws {Error} 未配置 WebSocket 时抛出错误
+ *
+ * @example
+ * ```ts
+ * const ws = getWebSocketServer(container);
+ * ws.on("connection", (conn) => { ... });
+ * ```
  */
 export function getWebSocketServer(container: ServiceContainer): Server {
   if (!container.has(WEBSOCKET_SERVER_KEY)) {
@@ -73,6 +88,12 @@ export function getWebSocketServer(container: ServiceContainer): Server {
  *
  * @param container 服务容器
  * @returns 路径前缀（如 "/ws"），未配置时返回 undefined
+ *
+ * @example
+ * ```ts
+ * const path = getWebSocketPath(container);
+ * if (path) console.log("WebSocket at", path);
+ * ```
  */
 export function getWebSocketPath(
   container: ServiceContainer,
@@ -90,6 +111,11 @@ export function getWebSocketPath(
  *
  * @param container 服务容器
  * @returns 中间件函数
+ *
+ * @example
+ * ```ts
+ * app.use(createWebSocketMiddleware(container));
+ * ```
  */
 export function createWebSocketMiddleware(
   container: ServiceContainer,

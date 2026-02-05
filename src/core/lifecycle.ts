@@ -21,6 +21,12 @@ import type { AppConfig } from "../types/app.ts";
  * @param container 服务容器
  * @param config 应用配置
  * @returns 生命周期管理器实例
+ *
+ * @example
+ * ```ts
+ * const lm = initializeLifecycle(container, config);
+ * lm.on("start", () => console.log("started"));
+ * ```
  */
 export function initializeLifecycle(
   container: ServiceContainer,
@@ -49,6 +55,12 @@ export function initializeLifecycle(
  *
  * @param container 服务容器
  * @returns 生命周期管理器实例
+ *
+ * @example
+ * ```ts
+ * const lm = getLifecycleManager(container);
+ * const stage = lm.getStage();
+ * ```
  */
 export function getLifecycleManager(
   container: ServiceContainer,
@@ -62,6 +74,14 @@ export function getLifecycleManager(
  * @param container 服务容器
  * @param stage 生命周期阶段
  * @param hook 钩子函数
+ * @returns void
+ *
+ * @example
+ * ```ts
+ * registerLifecycleHook(container, "start", async () => {
+ *   console.log("应用已启动");
+ * });
+ * ```
  */
 export function registerLifecycleHook(
   container: ServiceContainer,

@@ -16,6 +16,12 @@ import type { AppConfig } from "../types/app.ts";
  * @param container 服务容器
  * @param config 应用配置
  * @returns 日志实例
+ *
+ * @example
+ * ```ts
+ * const logger = initializeLogger(container, config);
+ * logger.info("应用启动");
+ * ```
  */
 export function initializeLogger(
   container: ServiceContainer,
@@ -44,6 +50,12 @@ export function initializeLogger(
  *
  * @param container 服务容器
  * @returns 日志实例
+ *
+ * @example
+ * ```ts
+ * const logger = getLogger(container);
+ * logger.info("请求处理完成");
+ * ```
  */
 export function getLogger(container: ServiceContainer): Logger {
   return container.get<Logger>("logger");

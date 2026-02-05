@@ -11,7 +11,15 @@ import { createServiceContainer, ServiceContainer } from "@dreamer/service";
 /**
  * 初始化服务容器
  *
+ * 创建 ServiceContainer 实例并注册默认服务（如容器自身）。
+ *
  * @returns 服务容器实例
+ *
+ * @example
+ * ```ts
+ * const container = initializeServiceContainer();
+ * container.registerSingleton("myService", () => new MyService());
+ * ```
  */
 export function initializeServiceContainer(): ServiceContainer {
   // 创建服务容器实例
@@ -28,6 +36,12 @@ export function initializeServiceContainer(): ServiceContainer {
  *
  * @param container 服务容器
  * @returns 服务容器实例
+ *
+ * @example
+ * ```ts
+ * const svc = getServiceContainer(container);
+ * const logger = svc.get("logger");
+ * ```
  */
 export function getServiceContainer(
   container: ServiceContainer,

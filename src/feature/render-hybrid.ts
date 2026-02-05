@@ -25,6 +25,17 @@ import { getRender } from "./render.ts";
  * Hybrid 渲染选项
  *
  * 配置客户端脚本路径、容器 ID、head/body 额外标签等。
+ *
+ * @example
+ * ```ts
+ * render: {
+ *   mode: "hybrid",
+ *   hybrid: {
+ *     clientScript: "/_client.js",
+ *     containerId: "app",
+ *   },
+ * }
+ * ```
  */
 export interface RenderHybridOptions {
   /** 客户端脚本路径（默认："/_client.js"） */
@@ -46,6 +57,12 @@ export interface RenderHybridOptions {
  * @param router 路由实例
  * @param config 应用配置
  * @returns Hybrid 渲染回调函数（接收 ctx、match，返回 Response 或 null）
+ *
+ * @example
+ * ```ts
+ * const renderer = createRendererHybrid(container, router, config);
+ * const response = await renderer(ctx, match);
+ * ```
  */
 export function createRendererHybrid(
   container: ServiceContainer,

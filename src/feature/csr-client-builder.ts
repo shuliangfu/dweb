@@ -54,7 +54,10 @@ export interface ClientBuildResult {
   chunkUrl?: string;
 }
 
-/** 构建客户端脚本时的可选参数（如 HMR 传入的变更路径） */
+/**
+ * 构建客户端脚本时的可选参数
+ * 用于 HMR 无感刷新等场景
+ */
 export interface BuildClientScriptOptions {
   /** 变更的文件路径（用于计算 chunkUrl 以支持无感刷新） */
   changedPath?: string;
@@ -275,6 +278,7 @@ const CLIENT_DEP_FILENAME = "_client.dep.tsx";
 const CLIENT_ENTRY_FILENAME = "_client.tsx";
 
 /** 构建产物的主入口文件名（与入口 _client.tsx 对应，esbuild 输出 _client.js） */
+/** 客户端主入口输出文件名（单文件模式） */
 export const CLIENT_OUTPUT_MAIN_FILENAME = "_client.js";
 
 /** 渲染引擎对应的 @dreamer/render 客户端适配路径（与 generateStaticClientEntry 一致） */

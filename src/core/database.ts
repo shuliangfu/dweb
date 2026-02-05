@@ -20,6 +20,14 @@ import { getLogger } from "../utils/logger.ts";
  * 数据库应用配置接口
  *
  * 支持默认连接、多个命名连接及管理器选项。
+ *
+ * @example
+ * ```ts
+ * const dbConfig: DatabaseAppConfig = {
+ *   default: { driver: "sqlite", database: "./data.db" },
+ *   connections: { read: { driver: "postgres", host: "localhost" } },
+ * };
+ * ```
  */
 export interface DatabaseAppConfig {
   /** 默认连接配置 */
@@ -36,6 +44,11 @@ export interface DatabaseAppConfig {
  * @param container 服务容器
  * @param config 应用配置
  * @returns 数据库管理器实例
+ *
+ * @example
+ * ```ts
+ * const manager = initializeDatabase(container, { database: { default: {...} } });
+ * ```
  */
 export function initializeDatabase(
   container: ServiceContainer,
@@ -59,6 +72,12 @@ export function initializeDatabase(
  * @param container 服务容器
  * @param name 管理器名称（可选，默认为 "default"）
  * @returns 数据库管理器实例
+ *
+ * @example
+ * ```ts
+ * const db = getDatabaseManager(container);
+ * const conn = db.getConnection("default");
+ * ```
  */
 export function getDatabaseManager(
   container: ServiceContainer,
@@ -73,10 +92,16 @@ export function getDatabaseManager(
 /**
  * 连接数据库
  *
- * 根据配置连接所有配置的数据库
+ * 根据配置连接所有配置的数据库。
  *
  * @param container 服务容器
  * @param config 应用配置
+ * @returns Promise<void>
+ *
+ * @example
+ * ```ts
+ * await connectDatabases(container, config);
+ * ```
  */
 export async function connectDatabases(
   container: ServiceContainer,
@@ -115,6 +140,12 @@ export async function connectDatabases(
  * 断开所有数据库连接
  *
  * @param container 服务容器
+ * @returns Promise<void>
+ *
+ * @example
+ * ```ts
+ * await disconnectDatabases(container);
+ * ```
  */
 export async function disconnectDatabases(
   container: ServiceContainer,
@@ -132,6 +163,12 @@ export async function disconnectDatabases(
  *
  * @param container 服务容器
  * @returns 连接名称列表
+ *
+ * @example
+ * ```ts
+ * const names = getDatabaseStatus(container);
+ * console.log("已连接:", names);
+ * ```
  */
 export function getDatabaseStatus(
   container: ServiceContainer,

@@ -25,6 +25,12 @@ import { getLogger } from "../utils/logger.ts";
  * @param container 服务容器
  * @param config 应用配置
  * @returns Builder 实例
+ *
+ * @example
+ * ```ts
+ * const builder = initializeBuild(container, config);
+ * await builder.build();
+ * ```
  */
 export function initializeBuild(
   container: ServiceContainer,
@@ -108,6 +114,12 @@ export function initializeBuild(
  *
  * @param container 服务容器
  * @returns 构建器实例
+ *
+ * @example
+ * ```ts
+ * const builder = getBuild(container);
+ * await builder.build();
+ * ```
  */
 export function getBuild(container: ServiceContainer): Builder {
   return container.get<Builder>("build");

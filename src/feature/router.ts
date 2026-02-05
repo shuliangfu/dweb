@@ -20,9 +20,17 @@ import type { AppConfig } from "../types/app.ts";
 /**
  * 初始化路由系统
  *
+ * 扫描 routesDir 下的路由文件，创建 Router 实例并注册到容器。
+ *
  * @param container 服务容器
  * @param config 应用配置
  * @returns 路由实例
+ *
+ * @example
+ * ```ts
+ * const router = await initializeRouter(container, config);
+ * const match = router.match("/users/1");
+ * ```
  */
 export async function initializeRouter(
   container: ServiceContainer,
@@ -71,6 +79,12 @@ export async function initializeRouter(
  *
  * @param container 服务容器
  * @returns 路由实例
+ *
+ * @example
+ * ```ts
+ * const router = getRouter(container);
+ * const match = router.match("/users/1");
+ * ```
  */
 export function getRouter(container: ServiceContainer): Router {
   return container.get<Router>("router");

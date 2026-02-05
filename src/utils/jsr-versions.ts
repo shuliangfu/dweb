@@ -118,8 +118,12 @@ export async function fetchJsrLatestVersion(
   }
 }
 
-/** 从 dweb deno.json 提取的版本（dweb 获取失败时兜底） */
+/**
+ * 从 dweb deno.json 提取的版本
+ * dweb 获取失败时用于兜底（useBeta=false 时 render、router、plugins 版本）
+ */
 export interface DwebConfigVersions {
+  /** dweb 版本号 */
   version?: string;
 }
 

@@ -22,6 +22,12 @@ import { cwd, relative, resolve } from "../core/runtime-adapter.ts";
  * Deno: mainModule；Bun/Node: process.argv[1]
  *
  * @returns 入口文件绝对路径，无法获取时返回 null
+ *
+ * @example
+ * ```ts
+ * const path = getMainModulePath();
+ * if (path) console.log("入口:", path);
+ * ```
  */
 export function getMainModulePath(): string | null {
   const g = globalThis as Record<string, unknown>;
@@ -48,8 +54,15 @@ export function getMainModulePath(): string | null {
  * 根据入口路径推断 server 与 client 的构建输出目录（多应用时按应用目录区分）
  *
  * @param overrideEntry 可选，用于测试或显式指定入口路径；未提供时从 getMainModulePath() 获取
+ * @returns 包含 server、client 输出目录的对象
+ * @throws {Error} 入口路径段数不在 1–3 范围内时抛出
  *
- * 支持入口路径段数 1（main.ts 无 src）、2（src/main.ts 单应用 或 <app>/main.ts 多应用）、3（src/<app>/main.ts 多应用）。
+ * @example
+ * ```ts
+ * const { server, client } = getInferredBuildOutputDirs();
+ * // 单应用: server="./dist", client="dist/client"
+ * // 多应用 src/backend/main.ts: server="./dist/backend", client="dist/backend/client"
+ * ```
  */
 export function getInferredBuildOutputDirs(overrideEntry?: string): {
   server: string;

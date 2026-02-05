@@ -20,9 +20,17 @@ import {
 /**
  * 初始化 HTTP 服务器
  *
+ * 创建 Server 实例，配置中间件、路由、HMR 等，注册到容器。
+ *
  * @param container 服务容器
  * @param config 应用配置
  * @returns 服务器实例
+ *
+ * @example
+ * ```ts
+ * const server = initializeServer(container, config);
+ * await startServer(container);
+ * ```
  */
 export function initializeServer(
   container: ServiceContainer,
@@ -137,6 +145,12 @@ export function initializeServer(
  *
  * @param container 服务容器
  * @returns 服务器实例
+ *
+ * @example
+ * ```ts
+ * const server = getServer(container);
+ * await server.start();
+ * ```
  */
 export function getServer(container: ServiceContainer): Server {
   return container.get<Server>("server");
@@ -146,6 +160,12 @@ export function getServer(container: ServiceContainer): Server {
  * 启动服务器
  *
  * @param container 服务容器
+ * @returns Promise<void>
+ *
+ * @example
+ * ```ts
+ * await startServer(container);
+ * ```
  */
 export async function startServer(container: ServiceContainer): Promise<void> {
   const server = getServer(container);
@@ -156,7 +176,13 @@ export async function startServer(container: ServiceContainer): Promise<void> {
  * 停止服务器
  *
  * @param container 服务容器
- * @param timeout 超时时间（可选）
+ * @param timeout 超时时间（可选，毫秒）
+ * @returns Promise<void>
+ *
+ * @example
+ * ```ts
+ * await stopServer(container, 5000);
+ * ```
  */
 export async function stopServer(
   container: ServiceContainer,

@@ -48,6 +48,11 @@ export function getRuntime(): "deno" | "bun" {
  *
  * @param taskName 任务名称（如 dev、build、start）
  * @returns 传给 createCommand 的 args 数组
+ *
+ * @example
+ * ```ts
+ * const args = getTaskArgs("dev"); // Deno: ["task", "dev"], Bun: ["run", "dev"]
+ * ```
  */
 export function getTaskArgs(taskName: string): string[] {
   if (IS_DENO) {
@@ -67,6 +72,11 @@ export function getTaskArgs(taskName: string): string[] {
  *
  * @param path 测试路径（如 tests）
  * @returns args 数组
+ *
+ * @example
+ * ```ts
+ * const args = getTestArgs("tests"); // Deno: ["test", "-A", "tests"]
+ * ```
  */
 export function getTestArgs(path: string = "tests"): string[] {
   if (IS_DENO) {
@@ -86,6 +96,11 @@ export function getTestArgs(path: string = "tests"): string[] {
  *
  * @param useTask 是否使用 task
  * @returns args 数组
+ *
+ * @example
+ * ```ts
+ * const args = getLintArgs(true); // Deno: ["task", "lint"]
+ * ```
  */
 export function getLintArgs(useTask: boolean = false): string[] {
   if (IS_DENO) {
@@ -105,6 +120,11 @@ export function getLintArgs(useTask: boolean = false): string[] {
  *
  * @param useTask 是否使用 task
  * @returns args 数组
+ *
+ * @example
+ * ```ts
+ * const args = getFmtArgs(); // Deno: ["fmt"]
+ * ```
  */
 export function getFmtArgs(useTask: boolean = false): string[] {
   if (IS_DENO) {
@@ -124,6 +144,11 @@ export function getFmtArgs(useTask: boolean = false): string[] {
  *
  * @param filePath 要运行的脚本路径
  * @returns args 数组
+ *
+ * @example
+ * ```ts
+ * const args = getRunArgs("src/main.ts"); // Deno: ["run", "-A", "src/main.ts"]
+ * ```
  */
 export function getRunArgs(filePath: string): string[] {
   if (IS_DENO) {

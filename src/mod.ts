@@ -33,13 +33,37 @@ export type {
   WebSocketConfig,
 } from "./types/app.ts";
 
-// 路由中间件类型（供 routes/_middleware.ts 等使用）
+/**
+ * 路由中间件上下文类型（HttpContext 的别名）
+ *
+ * 供 routes/_middleware.ts 等使用，包含 request、response、path 等请求信息。
+ *
+ * @example
+ * ```ts
+ * export default async function middleware(ctx: Context, next: Next) {
+ *   console.log(ctx.path);
+ *   await next();
+ * }
+ * ```
+ */
 export type { HttpContext as Context } from "@dreamer/server";
 
 /**
  * 中间件 next 函数类型
  *
  * 调用以执行后续中间件，在路由中间件中必须调用 next() 才能继续处理请求。
+ *
+ * @returns 无返回值（Promise 用于异步流程控制）
+ *
+ * @example
+ * ```ts
+ * // 在 routes/_middleware.ts 中使用
+ * export default async function middleware(ctx: Context, next: Next) {
+ *   // 前置逻辑
+ *   await next(); // 必须调用以继续处理
+ *   // 后置逻辑
+ * }
+ * ```
  */
 export type Next = () => Promise<void>;
 

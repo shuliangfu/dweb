@@ -17,12 +17,41 @@ import {
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 
-/** 无法读取 deno.json 时的默认框架版本 */
+/**
+ * 无法读取 deno.json 时的默认框架版本
+ *
+ * 用于 init、upgrade 等命令的兜底值。
+ *
+ * @example
+ * ```ts
+ * const version = config?.version ?? FALLBACK_DWEB_VERSION;
+ * ```
+ */
 export const FALLBACK_DWEB_VERSION = "3.0.0-beta.1";
-/** 无法读取 deno.json 时的默认 runtime-adapter 依赖说明符 */
+
+/**
+ * 无法读取 deno.json 时的默认 runtime-adapter 依赖说明符
+ *
+ * 用于 init 生成 deno.json 的 imports。
+ *
+ * @example
+ * ```ts
+ * imports["@dreamer/runtime-adapter"] = FALLBACK_RUNTIME_ADAPTER_SPEC;
+ * ```
+ */
 export const FALLBACK_RUNTIME_ADAPTER_SPEC =
   "jsr:@dreamer/runtime-adapter@^1.0.0-beta.24";
-/** 无法读取 deno.json 时的默认 plugins 版本 */
+
+/**
+ * 无法读取 deno.json 时的默认 plugins 版本
+ *
+ * 用于 init 生成 deno.json 的 imports（UnoCSS 等）。
+ *
+ * @example
+ * ```ts
+ * imports["@dreamer/plugins"] = `jsr:@dreamer/plugins@^${FALLBACK_PLUGINS_VERSION}`;
+ * ```
+ */
 export const FALLBACK_PLUGINS_VERSION = "1.0.0-beta.14";
 
 /**
@@ -76,13 +105,32 @@ function readVersionFromDenoJson(): string {
   }
 }
 
-/** 框架版本号（从 deno.json 读取，读取失败时使用 "0.0.0"） */
+/**
+ * 框架版本号
+ *
+ * 从 deno.json 读取，读取失败时使用 "0.0.0"。
+ *
+ * @example
+ * ```ts
+ * import { DWEB_VERSION } from "jsr:@dreamer/dweb";
+ * console.log(`dweb ${DWEB_VERSION}`);
+ * ```
+ */
 export const DWEB_VERSION: string = readVersionFromDenoJson();
 
 /**
  * 从 dweb deno.json 读取的配置
  *
  * 包含 version、imports，供 init 生成项目时使用。
+ *
+ * @example
+ * ```ts
+ * const config = await loadDwebDenoJson();
+ * if (config) {
+ *   console.log(config.version);
+ *   console.log(config.imports["@dreamer/dweb"]);
+ * }
+ * ```
  */
 export interface DwebDenoConfig {
   /** dweb 自身版本（deno.json version） */

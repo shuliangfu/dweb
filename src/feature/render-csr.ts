@@ -24,6 +24,18 @@ import { getRender } from "./render.ts";
  * CSR 渲染选项
  *
  * 配置客户端脚本路径、容器 ID、标题及额外 head/body 标签。
+ *
+ * @example
+ * ```ts
+ * render: {
+ *   mode: "csr",
+ *   csr: {
+ *     clientScript: "/_client.js",
+ *     containerId: "app",
+ *     title: "My App",
+ *   },
+ * }
+ * ```
  */
 export interface RenderCSROptions {
   /** 客户端脚本路径（默认："/_client.js"） */
@@ -46,7 +58,13 @@ export interface RenderCSROptions {
  * @param container 服务容器
  * @param router 路由实例
  * @param config 应用配置
- * @returns CSR 渲染回调函数
+ * @returns CSR 渲染回调函数（接收 ctx、match，返回 Response 或 null）
+ *
+ * @example
+ * ```ts
+ * const renderer = createRendererCSR(container, router, config);
+ * const response = await renderer(ctx, match);
+ * ```
  */
 export function createRendererCSR(
   container: ServiceContainer,

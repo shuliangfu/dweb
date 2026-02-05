@@ -102,7 +102,8 @@ import { initializeServiceContainer } from "./service.ts";
 
 /**
  * App 类
- * 框架的主入口，整合所有 @dreamer/* 库
+ *
+ * 框架的主入口，整合所有 @dreamer/* 库。
  *
  * 继承 EventEmitter，支持事件机制：
  * - app.on("event", handler) - 监听事件
@@ -116,6 +117,15 @@ import { initializeServiceContainer } from "./service.ts";
  * - "stop" - 应用停止
  * - "error" - 发生错误
  * - "build" - 构建完成
+ *
+ * @example
+ * ```ts
+ * const app = new App({ name: "my-app", version: "1.0.0" });
+ * app.use(myMiddleware);
+ * app.registerPlugin(myPlugin);
+ * app.on("start", () => console.log("started"));
+ * await app.start();
+ * ```
  */
 export class App extends EventEmitter implements IApp {
   /** 应用名称 */
@@ -162,7 +172,7 @@ export class App extends EventEmitter implements IApp {
   /**
    * 创建 App 实例
    *
-   * @param config 应用配置
+   * @param config 应用配置（可选）
    */
   constructor(config: AppConfig = {}) {
     // 调用 EventEmitter 构造函数

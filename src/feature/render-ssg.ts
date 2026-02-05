@@ -29,6 +29,18 @@ import { createRendererSSR } from "./render-ssr.ts";
  * SSG 渲染选项
  *
  * 配置预渲染输出目录、显式路由列表、动态路由参数展开等。
+ *
+ * @example
+ * ```ts
+ * render: {
+ *   mode: "ssg",
+ *   ssg: {
+ *     outputDir: "dist/client",
+ *     routes: ["/", "/about"],
+ *     dynamicRoutes: { "/user/[id]": ["1", "2", "3"] },
+ *   },
+ * }
+ * ```
  */
 export interface RenderSSGOptions {
   /** 预渲染 HTML 输出目录（相对于项目根） */
@@ -69,7 +81,13 @@ function pathnameToFile(pathname: string): string {
  * @param container 服务容器（dev 时用于 SSR，生产时未用于读文件）
  * @param router 路由实例（dev 时用于 SSR）
  * @param config 应用配置
- * @returns SSG 渲染回调函数
+ * @returns SSG 渲染回调函数（接收 ctx、match，返回 Response 或 null）
+ *
+ * @example
+ * ```ts
+ * const renderer = createRendererSSG(container, router, config);
+ * const response = await renderer(ctx, match);
+ * ```
  */
 export function createRendererSSG(
   container: ServiceContainer,

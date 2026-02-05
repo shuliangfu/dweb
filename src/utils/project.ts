@@ -9,20 +9,33 @@
 
 import { cwd, join, readTextFile, stat } from "@dreamer/runtime-adapter";
 
-/** deno.json 的 tasks 结构 */
+/**
+ * deno.json 的 tasks 结构
+ * 键为任务名（如 dev、build、dev:backend），值为执行的命令
+ */
 export interface DenoJsonTasks {
   [key: string]: string;
 }
 
-/** deno.json 根结构 */
+/**
+ * deno.json 根结构
+ * 包含 tasks 等字段，供项目结构检测使用
+ */
 export interface DenoJson {
   tasks?: DenoJsonTasks;
 }
 
-/** 项目类型 */
+/**
+ * 项目类型
+ * - single: 单应用
+ * - multi: 多应用（存在 dev:xxx、build:xxx 等任务）
+ */
 export type ProjectMode = "single" | "multi";
 
-/** 项目信息 */
+/**
+ * 项目信息
+ * 由 getProjectInfo 解析 deno.json 得到
+ */
 export interface ProjectInfo {
   /** 单应用或多应用 */
   mode: ProjectMode;

@@ -61,6 +61,9 @@ export async function emitPluginEvent(
 
 /**
  * 触发 onInit 事件（应用初始化完成）
+ *
+ * @param container 服务容器
+ * @returns Promise<void>
  */
 export async function emitOnInit(container: ServiceContainer): Promise<void> {
   await emitPluginEvent(container, "onInit");
@@ -68,8 +71,11 @@ export async function emitOnInit(container: ServiceContainer): Promise<void> {
 
 /**
  * 触发 onRequest 事件（请求处理前）
+ *
  * 若某插件返回 Response，则直接返回该 Response（用于短路后续中间件，如 Tailwind 开发态 /assets/tailwind.css）
  *
+ * @param container 服务容器
+ * @param ctx HTTP 上下文
  * @returns 第一个返回 Response 的插件的响应，否则 undefined
  */
 export async function emitOnRequest(
@@ -114,6 +120,10 @@ export async function emitOnRequest(
 
 /**
  * 触发 onResponse 事件（请求处理完成后）
+ *
+ * @param container 服务容器
+ * @param ctx HTTP 上下文
+ * @returns Promise<void>
  */
 export async function emitOnResponse(
   container: ServiceContainer,
@@ -124,6 +134,10 @@ export async function emitOnResponse(
 
 /**
  * 触发 onBuild 事件（构建开始前）
+ *
+ * @param container 服务容器
+ * @param options 构建选项（mode、target）
+ * @returns Promise<void>
  */
 export async function emitOnBuild(
   container: ServiceContainer,
@@ -137,6 +151,10 @@ export async function emitOnBuild(
 
 /**
  * 触发 onBuildComplete 事件（构建完成后）
+ *
+ * @param container 服务容器
+ * @param result 构建结果（outputFiles、errors、warnings）
+ * @returns Promise<void>
  */
 export async function emitOnBuildComplete(
   container: ServiceContainer,
@@ -151,6 +169,9 @@ export async function emitOnBuildComplete(
 
 /**
  * 触发 onStart 事件（应用启动时）
+ *
+ * @param container 服务容器
+ * @returns Promise<void>
  */
 export async function emitOnStart(container: ServiceContainer): Promise<void> {
   await emitPluginEvent(container, "onStart");
@@ -158,6 +179,9 @@ export async function emitOnStart(container: ServiceContainer): Promise<void> {
 
 /**
  * 触发 onStop 事件（应用停止时）
+ *
+ * @param container 服务容器
+ * @returns Promise<void>
  */
 export async function emitOnStop(container: ServiceContainer): Promise<void> {
   await emitPluginEvent(container, "onStop");
@@ -165,6 +189,9 @@ export async function emitOnStop(container: ServiceContainer): Promise<void> {
 
 /**
  * 触发 onShutdown 事件（应用关闭时）
+ *
+ * @param container 服务容器
+ * @returns Promise<void>
  */
 export async function emitOnShutdown(
   container: ServiceContainer,
@@ -226,6 +253,14 @@ export async function emitOnError(
  * 路由定义类型
  *
  * 供 onRoute 插件事件使用，描述路由路径、方法、处理器及元数据。
+ *
+ * @example
+ * ```ts
+ * const routes: RouteDefinition[] = [
+ *   { path: "/", method: "GET", meta: { file: "index.tsx" } },
+ *   { path: "/about", meta: { file: "about.tsx" } },
+ * ];
+ * ```
  */
 export interface RouteDefinition {
   /** 路由路径 */
@@ -292,6 +327,15 @@ export async function emitOnRoute(
  * 健康状态类型
  *
  * 供 onHealthCheck 插件事件使用，描述整体及各组件的健康状态。
+ *
+ * @example
+ * ```ts
+ * const status: HealthStatus = {
+ *   status: "healthy",
+ *   components: { db: { status: "healthy" } },
+ *   timestamp: Date.now(),
+ * };
+ * ```
  */
 export interface HealthStatus {
   /** 整体状态 */
