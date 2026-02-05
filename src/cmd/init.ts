@@ -440,7 +440,7 @@ app.registerPlugin(staticPlugin({
   return `/**
  * 服务端入口
  * ${opts.engine === "preact" ? "Preact" : "React"} + @dreamer/dweb
- * 配置由框架自动加载 config/main.ts 或 src/config/main.ts
+ * 配置由框架自动加载，无需手动导入合并
  */
 
 import { App } from "@dreamer/dweb";
@@ -455,13 +455,12 @@ app.start();
 `;
 }
 
-/** 多应用下单个应用的 main.ts：仅指定 configDirectory，由框架自动加载 common/config + 应用 config 并合并 */
+/** 多应用下单个应用的 main.ts：框架自动从入口路径推断 config 目录，加载 common/config + 应用 config 并合并 */
 function getMainTsMulti(
   opts: InitOptions,
   appName: string,
 ): string {
   const prefix = opts.useSrc ? "src/" : "";
-  const configDir = `./${prefix}${appName}/config`;
   const assetsRoot = `${prefix}${appName}/assets`;
   const distAssetsRoot = `dist/${appName}/client/assets`;
   const cssEntry = opts.style === "tailwind"
@@ -505,18 +504,19 @@ app.registerPlugin(staticPlugin({
     ? `import { staticPlugin } from "@dreamer/plugins/static";`
     : "";
 
+  const configPathHint = opts.useSrc
+    ? `common/config + src/${appName}/config`
+    : `common/config + ${appName}/config`;
   return `/**
  * ${appName} 应用入口
- * 配置来自 common/config 与当前应用 config，由框架自动加载并合并
+ * 配置由框架自动加载 ${configPathHint} 并合并
  */
 
 import { App } from "@dreamer/dweb";
 ${stylePluginImport}
 ${staticImportMulti}
 
-const app = new App({
-  configDirectory: "${configDir}",
-});
+const app = new App();
 ${stylePluginBlock}
 ${staticPluginBlock}
 
@@ -525,7 +525,7 @@ app.start();
 }
 
 /**
- * 应用配置 main.ts（框架自动加载并与 common/config 合并，本应用配置优先级更高）
+ * 应用配置 main.ts（框架自动加载并合并，多应用时 common/config 先加载，本应用配置可覆盖）
  * @param opts 选项
  * @param appName 多应用时传入应用名
  * @param port 多应用时传入该应用端口（单应用不传则 3000）
@@ -546,11 +546,46 @@ function getConfigMainTs(
   const configName = appName ?? opts.projectName;
   const serverPort = port ?? 3000;
   const renderMode = opts.renderMode ?? "hybrid";
+
+  // 多应用：仅写应用级覆盖，version 等由 common/config 自动合并
+  if (appName) {
+    return `/**
+ * ${appName} 应用配置
+ * version 等公共字段由 common/config 自动合并，无需手动导入
+ */
+import type { AppConfig } from "@dreamer/dweb";
+
+export default {
+  name: "${configName}",
+  server: {
+    port: ${serverPort},
+    host: "0.0.0.0",
+  },
+  router: {
+    routesDir: "${routesDir}",
+  },
+  render: {
+    engine: "${opts.engine}",
+    mode: "${renderMode}",
+  },
+  logger: {
+    level: "info",
+    format: "text",
+  },
+  build: {
+    server: {
+      useNativeCompile: false,
+    },
+  },
+} satisfies AppConfig;
+`;
+  }
+
+  // 单应用：完整配置
   return `/**
  * 应用配置
- * 框架会先加载 common/config/main.ts 再加载本文件并合并，此处可覆盖公共配置
+ * 框架会自动加载本文件
  */
-
 import type { AppConfig } from "@dreamer/dweb";
 
 const config: AppConfig = {
@@ -585,26 +620,27 @@ const config: AppConfig = {
       useNativeCompile: false,
     },
   },
+  // 数据库配置（按需取消注释）
+  // database: {
+  //   default: {
+  //     type: "sqlite",
+  //     connection: { filename: "./data.db" },
+  //   },
+  // },
 };
 
 export default config;
 `;
 }
 
-/** 开发环境配置 main.dev.ts（无 socket-io） */
+/** 开发环境配置 main.dev.ts（只需写增量，框架会自动与 main.ts 深度合并） */
 function getConfigMainDevTs(): string {
   return `/**
  * 开发环境配置
- * 覆盖默认配置中的开发环境特定设置
+ * 只需写增量覆盖，框架会自动与 main.ts 深度合并
  */
-
-import type { AppConfig } from "@dreamer/dweb";
-import defaultConfig from "./main.ts";
-
-const config: AppConfig = {
-  ...defaultConfig,
+export default {
   server: {
-    ...defaultConfig.server,
     host: "localhost",
   },
   logger: {
@@ -613,8 +649,6 @@ const config: AppConfig = {
   },
   hotReload: true,
 };
-
-export default config;
 `;
 }
 
@@ -1116,64 +1150,46 @@ export default {
   }
   return `/**
  * 公共配置
- * 框架自动加载：先合并此处，再合并各应用 config/main.ts（应用配置可覆盖）
+ * 前后端共享的配置，框架会自动与各应用配置深度合并
  */
 
+/** 公共配置（供其他模块直接引用，如需要 version 时） */
 export const commonConfig = {
   appName: "${opts.projectName}",
   version: "1.0.0",
 };
 
+/** 默认导出，框架会自动深度合并到各应用配置 */
 export default {
-  name: commonConfig.appName,
-  version: commonConfig.version,
-  /** 框架语言（根据用户环境自动检测） */
-  language: "${getDefaultLanguage()}",
+  ...commonConfig,
+  // 数据库配置（按需取消注释）
+  // database: {
+  //   default: {
+  //     type: "sqlite",
+  //     connection: { filename: "./data.db" },
+  //   },
+  // },
 };
 `;
 }
 
-/** common 目录下 config/database.ts：数据库连接配置，各应用可从此处引用 */
-function getCommonConfigDatabaseTs(): string {
+/** common 目录下 config/main.dev.ts：公共开发环境配置，空配置占位 */
+function getCommonConfigMainDevTs(): string {
   return `/**
- * 数据库连接配置
- * 各应用可从此处引用，例如：import { databaseConfig } from "@common/config/database.ts";
- * 建议通过环境变量注入敏感信息（如密码），不要提交到版本库。
+ * 公共开发环境配置
+ * 只需写增量，框架会自动与 main.ts 深度合并
  */
-
-/** 读取环境变量，兼容 Deno/Bun，不依赖 runtime-adapter */
-function getEnv(key: string): string | undefined {
-  return typeof (globalThis as any).Deno !== "undefined"
-    ? (globalThis as any).Deno.env.get(key)
-    : (globalThis as any).process?.env?.[key];
+export default {};
+`;
 }
 
-export interface DatabaseConfig {
-  host: string;
-  port: number;
-  user: string;
-  password: string;
-  database: string;
-  /** 可选：直接使用连接 URL（部分驱动支持） */
-  url?: string;
-}
-
-/** 从环境变量读取，开发时可在 .env 中配置 */
-export const databaseConfig: DatabaseConfig = {
-  host: getEnv("DB_HOST") ?? "localhost",
-  port: Number(getEnv("DB_PORT") ?? "5432") || 5432,
-  user: getEnv("DB_USER") ?? "postgres",
-  password: getEnv("DB_PASSWORD") ?? "",
-  database: getEnv("DB_NAME") ?? "app",
-};
-
-/** 生成连接 URL（示例：PostgreSQL） */
-export function getDatabaseUrl(): string {
-  const { host, port, user, password, database } = databaseConfig;
-  return \`postgresql://\${user}:\${encodeURIComponent(password)}@\${host}:\${port}/\${database}\`;
-}
-
-export default databaseConfig;
+/** config/main.prod.ts：生产环境配置，空配置占位（common 与各应用共用此模板） */
+function getConfigMainProdTs(): string {
+  return `/**
+ * 生产环境配置
+ * 只需写增量，框架会自动与 main.ts 深度合并
+ */
+export default {};
 `;
 }
 
@@ -1223,8 +1239,12 @@ export async function generate(opts: InitOptions): Promise<void> {
       getCommonConfigMainTs(opts),
     );
     await writeTextFile(
-      join(commonBase, "config", "database.ts"),
-      getCommonConfigDatabaseTs(),
+      join(commonBase, "config", "main.dev.ts"),
+      getCommonConfigMainDevTs(),
+    );
+    await writeTextFile(
+      join(commonBase, "config", "main.prod.ts"),
+      getConfigMainProdTs(),
     );
     await writeTextFile(
       join(commonBase, "model", "mod.ts"),
@@ -1264,6 +1284,10 @@ export async function generate(opts: InitOptions): Promise<void> {
       await writeTextFile(
         join(appBase, "config", "main.dev.ts"),
         getConfigMainDevTs(),
+      );
+      await writeTextFile(
+        join(appBase, "config", "main.prod.ts"),
+        getConfigMainProdTs(),
       );
       await writeTextFile(
         join(appBase, "routes", "_app.tsx"),
@@ -1325,6 +1349,10 @@ export async function generate(opts: InitOptions): Promise<void> {
     await writeTextFile(
       join(configBase, "main.dev.ts"),
       getConfigMainDevTs(),
+    );
+    await writeTextFile(
+      join(configBase, "main.prod.ts"),
+      getConfigMainProdTs(),
     );
     await writeTextFile(
       join(targetDir, prefix, "routes", "_app.tsx"),
