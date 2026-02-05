@@ -13,7 +13,6 @@
  * - dweb start -a frontend   # 多应用，启动 frontend
  */
 
-import { $t } from "@dreamer/i18n";
 import { error, info } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";

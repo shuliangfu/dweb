@@ -9,7 +9,6 @@
  * @module
  */
 
-import { $t } from "@dreamer/i18n";
 import {
   colorize,
   Command,

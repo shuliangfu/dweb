@@ -2,6 +2,11 @@
   "name": "@dreamer/dweb",
   "version": "3.0.42",
   "license": "MIT",
+  "compilerOptions": {
+    "types": [
+      "./src/types/i18n.d.ts"
+    ]
+  },
   "exports": {
     ".": "./src/mod.ts",
     "./cli": "./src/cli.ts",
@@ -67,7 +72,8 @@
   },
   "tasks": {
     "setup": "deno run -A src/setup.ts",
-    "check": "deno check src/ tests/"
+    "check": "deno check src/ tests/",
+    "test": "deno test -A --preload=./tests/setup.ts tests/"
   },
   "workspace": [
     "./examples/preact-csr/basic",
@@ -105,6 +111,10 @@
   },
   "allowScripts": {
     "allow": [],
-    "deny": ["npm:better-sqlite3@11.10.0", "npm:esbuild@0.27.2", "npm:puppeteer@24.36.1"]
+    "deny": [
+      "npm:better-sqlite3@11.10.0",
+      "npm:esbuild@0.27.2",
+      "npm:puppeteer@24.36.1"
+    ]
   }
 }

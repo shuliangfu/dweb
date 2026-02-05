@@ -9,7 +9,6 @@
  * - dweb lint
  */
 
-import { $t } from "@dreamer/i18n";
 import { error, info, success } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";

@@ -7,7 +7,6 @@
  * @module
  */
 
-import { $t } from "@dreamer/i18n";
 import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import { getLogger } from "../utils/logger.ts";

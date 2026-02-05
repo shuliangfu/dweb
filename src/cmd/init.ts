@@ -11,7 +11,6 @@
  * - Bun:  bun run src/cmd/init.ts [目录名]
  */
 
-import { $t } from "@dreamer/i18n";
 import {
   confirm,
   error as consoleError,

@@ -16,7 +16,6 @@
  * - dweb db status
  */
 
-import { $t } from "@dreamer/i18n";
 import { error, info, success } from "@dreamer/console";
 import { DatabaseManager, MigrationManager } from "@dreamer/database";
 import {

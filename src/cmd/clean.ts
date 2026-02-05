@@ -9,7 +9,6 @@
  * - dweb clean
  */
 
-import { $t } from "@dreamer/i18n";
 import { info, success } from "@dreamer/console";
 import { cwd, join, remove, stat } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";

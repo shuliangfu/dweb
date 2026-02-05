@@ -12,7 +12,6 @@
  * - dweb upgrade --beta   # 可升级到 beta 最新版
  */
 
-import { $t } from "@dreamer/i18n";
 import {
   error,
   failSpinner,

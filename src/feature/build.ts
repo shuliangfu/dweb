@@ -12,7 +12,6 @@ import {
   type BuilderConfig,
   type ClientConfig,
 } from "@dreamer/esbuild";
-import { $t } from "@dreamer/i18n";
 import type { ServiceContainer } from "@dreamer/service";
 import { getEnv } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";

@@ -12,7 +12,6 @@
  * 3. 生产（start）：从 outputDir 读取预渲染 HTML 返回
  */
 
-import { $t } from "@dreamer/i18n";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import {

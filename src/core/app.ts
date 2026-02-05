@@ -28,7 +28,6 @@ import {
 } from "./runtime-adapter.ts";
 
 import { BuilderServer } from "@dreamer/esbuild";
-import { $t } from "@dreamer/i18n";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { initDwebI18n } from "../utils/i18n.ts";
 import { requestId, requestLogger } from "@dreamer/middlewares";

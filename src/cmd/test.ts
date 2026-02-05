@@ -10,7 +10,6 @@
  * - dweb test -a backend   # 多应用，运行 backend 测试
  */
 
-import { $t } from "@dreamer/i18n";
 import { error, info, success } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";

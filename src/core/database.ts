@@ -12,7 +12,6 @@ import {
   DatabaseManager,
   type DatabaseManagerOptions,
 } from "@dreamer/database";
-import { $t } from "@dreamer/i18n";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
 import { getLogger } from "../utils/logger.ts";

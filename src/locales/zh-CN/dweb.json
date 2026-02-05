@@ -164,7 +164,12 @@
     "clientScriptNotFound": "预构建的客户端脚本不存在，请先运行 build 命令",
     "clientScriptLoadFailed": "加载客户端脚本失败: ",
     "routeCurrent": "当前路由:",
-    "routeSwitched": "路由已切换"
+    "routeSwitched": "路由已切换",
+    "pageNotFound": "页面未找到",
+    "backToHome": "返回首页",
+    "errorOccurred": "出错了",
+    "reload": "重新加载",
+    "buildError": "构建错误"
   },
   "db": {
     "noMigrations": "暂无迁移文件",

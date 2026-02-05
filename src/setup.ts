@@ -24,7 +24,6 @@ import {
   remove,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
-import { $t } from "@dreamer/i18n";
 import {
   DwebErrorCode,
   throwDwebError,

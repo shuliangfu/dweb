@@ -12,7 +12,6 @@
  * - dweb preview -a frontend  # 多应用时指定应用
  */
 
-import { $t } from "@dreamer/i18n";
 import { error, info, success } from "@dreamer/console";
 import {
   cwd,

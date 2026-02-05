@@ -9,7 +9,6 @@
  * - 返回 HTML 响应
  */
 
-import { $t } from "@dreamer/i18n";
 import type { SSROptions } from "@dreamer/render";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";

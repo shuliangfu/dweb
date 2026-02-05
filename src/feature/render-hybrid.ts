@@ -14,7 +14,6 @@
  * 4. 后续导航：客户端使用 renderCSR() 渲染（SPA 体验）
  */
 
-import { $t } from "@dreamer/i18n";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import { getEnv } from "../core/runtime-adapter.ts";

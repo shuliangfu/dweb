@@ -12,7 +12,6 @@
  * 3. 客户端脚本根据路由渲染页面
  */
 
-import { $t } from "@dreamer/i18n";
 import { createElement } from "preact";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";

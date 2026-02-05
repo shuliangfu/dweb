@@ -164,7 +164,12 @@
     "clientScriptNotFound": "Pre-built client script not found, run build first",
     "clientScriptLoadFailed": "Failed to load client script: ",
     "routeCurrent": "Current route:",
-    "routeSwitched": "Route switched"
+    "routeSwitched": "Route switched",
+    "pageNotFound": "Page not found",
+    "backToHome": "Back to home",
+    "errorOccurred": "Something went wrong",
+    "reload": "Reload",
+    "buildError": "Build error"
   },
   "db": {
     "noMigrations": "No migration files",

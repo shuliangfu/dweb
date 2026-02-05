@@ -18,7 +18,6 @@
  */
 
 import { BuilderClient } from "@dreamer/esbuild";
-import { $t } from "@dreamer/i18n";
 import type { ServiceContainer } from "@dreamer/service";
 import {
   basename,
@@ -421,8 +420,8 @@ export function renderNotFound(containerId: string): void {
     container.innerHTML = \`
       <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:system-ui,sans-serif;">
         <h1 style="font-size:72px;margin:0;color:#e5e5e5;">404</h1>
-        <p style="color:#666;margin-top:16px;">页面未找到</p>
-        <a href="/" style="color:#3b82f6;text-decoration:none;margin-top:24px;">返回首页</a>
+        <p style="color:#666;margin-top:16px;">${$t("client.pageNotFound")}</p>
+        <a href="/" style="color:#3b82f6;text-decoration:none;margin-top:24px;">${$t("client.backToHome")}</a>
       </div>
     \`;
   }
@@ -435,10 +434,10 @@ export function renderError(containerId: string, error: unknown): void {
     const message = error instanceof Error ? error.message : String(error);
     container.innerHTML = \`
       <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:system-ui,sans-serif;">
-        <h1 style="font-size:48px;margin:0;color:#ef4444;">出错了</h1>
+        <h1 style="font-size:48px;margin:0;color:#ef4444;">${$t("client.errorOccurred")}</h1>
         <p style="color:#666;margin-top:16px;">\${message}</p>
         <button type="button" onclick="location.reload()" style="margin-top:24px;padding:8px 24px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;">
-          重新加载
+          ${$t("client.reload")}
         </button>
       </div>
     \`;
@@ -1105,7 +1104,7 @@ export async function buildClientScript(
       console.error(${JSON.stringify($t("log.clientBuildFailed"))} + ":", ${JSON.stringify(errorMessage)});
       document.getElementById("app").innerHTML = \`
         <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:system-ui,sans-serif;">
-          <h1 style="font-size:48px;margin:0;color:#ef4444;">构建错误</h1>
+          <h1 style="font-size:48px;margin:0;color:#ef4444;">${$t("client.buildError")}</h1>
           <pre style="color:#666;margin-top:16px;max-width:80%;overflow:auto;background:#f5f5f5;padding:16px;border-radius:8px;">\${${
       JSON.stringify(errorMessage)
     }}</pre>
