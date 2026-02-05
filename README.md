@@ -96,8 +96,7 @@ deno add jsr:@dreamer/runtime-adapter
 - ✅ **Socket.IO 内置**：实时双向通信，挂载到同一 HTTP 服务器，配置 `socketIo` 即可启用
 - ✅ **中间件系统**：通用中间件系统，可用于 HTTP、WebSocket、消息队列等多种场景
 - ✅ **插件系统**：插件生命周期管理、插件依赖、插件事件系统、热加载
-- ✅ **事件系统**：App 继承
-  EventEmitter，支持生命周期与自定义事件（on/emit/once/off）
+- ✅ **事件系统**：App 继承 EventEmitter，支持生命周期与自定义事件（on/emit/once/off）
 - ✅ **服务容器**：依赖注入和服务管理
 - ✅ **数据库支持**：多种数据库适配器（PostgreSQL、MySQL、SQLite、MongoDB）
 - ✅ **缓存支持**：Redis + 内存缓存 + 文件缓存
@@ -1003,8 +1002,7 @@ export default function User({ params }: { params: { id: string } }) {
 
 ### 事件系统
 
-App 继承 Node.js 的
-**EventEmitter**，可在应用生命周期关键节点监听或触发事件，也可用于自定义业务事件。
+App 继承 **EventEmitter**，可在应用生命周期关键节点监听或触发事件，也可用于自定义业务事件。
 
 | 方法                           | 说明                 |
 | ------------------------------ | -------------------- |
