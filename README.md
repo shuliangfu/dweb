@@ -1021,8 +1021,7 @@ App 继承 **EventEmitter**，可在应用生命周期关键节点监听或触�
 | `build` | 构建完成（`await app.build()` 成功结束后）                         | 仅构建模式 |
 | `error` | 未捕获错误时（EventEmitter 约定，可主动 `app.emit("error", err)`） | 可选       |
 
-**自定义事件**：除内置事件外，可任意命名并 `emit`，例如插件构建产物可触发
-`plugin:build:compiled`，由 App 在构建流程中监听并收集。
+**自定义事件**：除内置事件外，可任意命名并 `emit`。
 
 ```typescript
 import { App } from "jsr:@dreamer/dweb";
