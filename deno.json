@@ -2,11 +2,6 @@
   "name": "@dreamer/dweb",
   "version": "3.0.51",
   "license": "MIT",
-  "compilerOptions": {
-    "types": [
-      "./src/types/i18n.d.ts"
-    ]
-  },
   "exports": {
     ".": "./src/mod.ts",
     "./cli": "./src/cli.ts",
@@ -29,8 +24,8 @@
   },
   "publish": {
     "include": [
+      "./i18n.d.ts",
       "src/**/*.ts",
-      "src/types/i18n.d.ts",
       "src/locales/**/*.json",
       "LICENSE.md",
       "README.md"
