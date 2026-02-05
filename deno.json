@@ -24,7 +24,6 @@
   },
   "publish": {
     "include": [
-      "./i18n.d.ts",
       "src/**/*.ts",
       "src/locales/**/*.json",
       "LICENSE.md",
