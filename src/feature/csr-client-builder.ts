@@ -769,7 +769,9 @@ export async function ensureClientEntryFile(
 
   if (await exists(tempClientEntryPath)) {
     logger.debug(
-      `客户端入口已存在，跳过创建: ${pathForLog(tempClientEntryPath)}`,
+      $t("log.clientEntryExists", {
+        path: pathForLog(tempClientEntryPath),
+      }),
     );
     return tempClientEntryPath;
   }
@@ -783,7 +785,9 @@ export async function ensureClientEntryFile(
     hmrCssEntries,
   );
   await writeTextFile(clientDepPath, clientDepCode);
-  logger.debug(`已生成客户端依赖: ${pathForLog(clientDepPath)}`);
+  logger.debug($t("log.clientDepGenerated", {
+    path: pathForLog(clientDepPath),
+  }));
 
   const clientEntryCode = generateStaticClientEntry(
     engine,
@@ -792,7 +796,9 @@ export async function ensureClientEntryFile(
     hmrCssEntries,
   );
   await writeTextFile(tempClientEntryPath, clientEntryCode);
-  logger.debug(`已生成客户端入口: ${pathForLog(tempClientEntryPath)}`);
+  logger.debug($t("log.clientEntryGenerated", {
+    path: pathForLog(tempClientEntryPath),
+  }));
   return tempClientEntryPath;
 }
 
@@ -828,7 +834,9 @@ export async function buildClientScript(
   // 生成临时入口文件路径
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
 
-  logger.debug(`构建客户端脚本: ${pathForLog(tempClientEntryPath)}`);
+  logger.debug($t("log.clientScriptBuilding", {
+    path: pathForLog(tempClientEntryPath),
+  }));
 
   try {
     // 获取运行模式（提前计算，用于决定是否写入 client.dep.tsx 避免 HMR 循环）
@@ -854,7 +862,9 @@ export async function buildClientScript(
 
     // 扫描路由目录，获取所有路由组件（.tsx/.jsx）
     const components = await scanRouteComponents(routesDirPath, "", engine);
-    logger.debug(`扫描到 ${components.length} 个路由组件`);
+    logger.debug($t("log.routesScanned", {
+      count: String(components.length),
+    }));
 
     // 检查是否存在布局文件
     const layoutPathTsx = join(routesDirPath, "_layout.tsx");
@@ -873,10 +883,12 @@ export async function buildClientScript(
     );
     if (!skipWritingClientDep) {
       await writeTextFile(clientDepPath, clientDepCode);
-      logger.debug(`已刷新客户端依赖: ${pathForLog(clientDepPath)}`);
+      logger.debug($t("log.clientDepRefreshed", {
+        path: pathForLog(clientDepPath),
+      }));
     } else {
       logger.debug(
-        `[HMR] 由 client 入口变更触发，跳过写入 ${CLIENT_DEP_FILENAME} 避免循环`,
+        $t("log.hmrSkipClientDep", { filename: CLIENT_DEP_FILENAME }),
       );
     }
 
@@ -890,11 +902,13 @@ export async function buildClientScript(
         hmrCssEntries,
       );
       await writeTextFile(tempClientEntryPath, clientEntryCode);
-      logger.debug(`生成客户端入口: ${pathForLog(tempClientEntryPath)}`);
+      logger.debug($t("log.clientEntryGenerating", {
+        path: pathForLog(tempClientEntryPath),
+      }));
     } else if (!skipWritingClientDep) {
-      logger.debug(
-        `客户端入口已存在，跳过生成: ${pathForLog(tempClientEntryPath)}`,
-      );
+      logger.debug($t("log.clientEntryExistsSkip", {
+        path: pathForLog(tempClientEntryPath),
+      }));
     }
 
     // 根据渲染引擎配置 JSX
@@ -1080,7 +1094,7 @@ export async function buildClientScript(
     // 缓存结果
     cachedClientScript = result;
 
-    logger.debug("客户端脚本构建完成");
+    logger.debug($t("log.clientScriptBuildComplete"));
     return result;
   } catch (error) {
     logger.error($t("log.clientBuildFailed") + ":", error);

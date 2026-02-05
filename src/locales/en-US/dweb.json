@@ -142,7 +142,17 @@
     "hmrChunkNotFound": "[HMR] Chunk not found for componentPath=\"{path}\", output files: {files}",
     "hmrComponentPathNotFound": "[HMR] Cannot derive componentPath from changedPath={changedPath}, routesDirPath={routesDirPath}",
     "clientBuildFirst": "First client script build...",
-    "clientBuildCompleteMemory": "Client build complete (memory): code-split, main entry {mainSize} KB, {count} files"
+    "clientBuildCompleteMemory": "Client build complete (memory): code-split, main entry {mainSize} KB, {count} files",
+    "clientEntryExists": "Client entry exists, skipping create: {path}",
+    "clientDepGenerated": "Client dep generated: {path}",
+    "clientEntryGenerated": "Client entry generated: {path}",
+    "clientScriptBuilding": "Building client script: {path}",
+    "routesScanned": "Scanned {count} route components",
+    "clientDepRefreshed": "Client dep refreshed: {path}",
+    "hmrSkipClientDep": "[HMR] Client entry changed, skipping write {filename} to avoid loop",
+    "clientEntryGenerating": "Generating client entry: {path}",
+    "clientEntryExistsSkip": "Client entry exists, skipping generate: {path}",
+    "clientScriptBuildComplete": "Client script build complete"
   },
   "client": {
     "layoutDefaultExport": "Layout component must use default export, e.g.: export default function Layout() {}",

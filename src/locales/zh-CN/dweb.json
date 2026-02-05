@@ -142,7 +142,17 @@
     "hmrChunkNotFound": "[HMR] 未找到 componentPath=\"{path}\" 对应的 chunk，输出文件: {files}",
     "hmrComponentPathNotFound": "[HMR] 无法从变更路径推导 componentPath，changedPath={changedPath}，routesDirPath={routesDirPath}",
     "clientBuildFirst": "首次构建客户端脚本...",
-    "clientBuildCompleteMemory": "客户端构建完成（内存）: 代码分割, 主入口 {mainSize} KB, {count} 个文件"
+    "clientBuildCompleteMemory": "客户端构建完成（内存）: 代码分割, 主入口 {mainSize} KB, {count} 个文件",
+    "clientEntryExists": "客户端入口已存在，跳过创建: {path}",
+    "clientDepGenerated": "已生成客户端依赖: {path}",
+    "clientEntryGenerated": "已生成客户端入口: {path}",
+    "clientScriptBuilding": "构建客户端脚本: {path}",
+    "routesScanned": "扫描到 {count} 个路由组件",
+    "clientDepRefreshed": "已刷新客户端依赖: {path}",
+    "hmrSkipClientDep": "[HMR] 由 client 入口变更触发，跳过写入 {filename} 避免循环",
+    "clientEntryGenerating": "生成客户端入口: {path}",
+    "clientEntryExistsSkip": "客户端入口已存在，跳过生成: {path}",
+    "clientScriptBuildComplete": "客户端脚本构建完成"
   },
   "client": {
     "layoutDefaultExport": "布局组件必须使用 default 导出，例如: export default function Layout() {}",
