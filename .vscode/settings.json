@@ -148,9 +148,10 @@
   "i18n-ally.localesPaths": [
     "src/locales"
   ],
+  "i18n-ally.pathMatcher": "{locale}/{namespace}.{ext}",
   "i18n-ally.keystyle": "nested",
   "i18n-ally.sortKeys": true,
-  "i18n-ally.namespace": true,
+  "i18n-ally.namespace": false,
   "i18n-ally.enabledParsers": [
     "json"
   ],
@@ -162,8 +163,7 @@
   ],
   "i18n-ally.extract.keygenStyle": "PascalCase",
   "i18n-ally.enabledFrameworks": [
-    "react",
-    "i18next"
+    "general"
   ],
   "i18n-ally.regex.key": ".*?",
   "i18n-ally.extract.autoDetect": true

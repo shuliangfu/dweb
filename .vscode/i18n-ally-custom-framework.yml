@@ -1,0 +1,19 @@
+# i18n-ally 自定义框架：识别 dweb 的 $t() 函数
+# 文档: https://github.com/lokalise/i18n-ally/wiki/Custom-Framework
+
+languageIds:
+  - javascript
+  - typescript
+  - javascriptreact
+  - typescriptreact
+
+usageMatchRegex:
+  # 匹配 $t("key") 或 $t('key') 或 $t(`key`)
+  - "[^\\w\\d]\\$t\\(['\"`]({key})['\"`]"
+  # 匹配 $t("key", { params })
+  - "[^\\w\\d]\\$t\\(['\"`]({key})['\"`]\\s*,"
+  # 匹配 $t('key', { params })
+  - "[^\\w\\d]\\$t\\(['\"`]({key})['\"`]\\s*,"
+
+refactorTemplates:
+  - '$t("$1")'
