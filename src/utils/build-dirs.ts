@@ -73,7 +73,9 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
       }
     }
   }
-  const parts = entry.replace(/^\.\/?/, "").split("/").filter(Boolean);
+  // Windows 兼容：先将反斜杠转为正斜杠，避免 split("/") 在 Windows 路径下分段错误
+  const parts = entry.replace(/\\/g, "/").replace(/^\.\/?/, "").split("/")
+    .filter(Boolean);
   if (parts.length < 1 || parts.length > 3) {
     throw new Error(
       `[dweb] 入口路径段数必须为 1–3，当前为 ${parts.length} 段: ${entry}。` +
