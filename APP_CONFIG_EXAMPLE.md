@@ -513,3 +513,57 @@ export default config;
 3. `new App(config)` 传入的配置：最高优先级
 
 合并策略为深度合并（deep merge），后加载的配置会覆盖先加载的同名字段。
+
+---
+
+## 七、配置与参数获取
+
+### 7.1 框架配置（config/main.ts 系列）
+
+在应用启动后，通过 `getConfig`、`getConfigValue`、`getConfigManager` 获取框架配置：
+
+```typescript
+import { getConfig, getConfigValue, getConfigManager } from "jsr:@dreamer/dweb";
+
+// 需要 app.container（在 main.ts、插件、中间件、API 路由等场景）
+const container = app.container;
+
+// 完整 AppConfig
+const config = getConfig(container);
+
+// 按点号路径取值
+const port = getConfigValue<number>(container, "server.port", 3000);
+
+// ConfigManager（支持 envPrefix、热重载）
+const cm = getConfigManager(container);
+const v = cm.get("key", "default");
+```
+
+### 7.2 业务配置（config/params.ts）
+
+业务配置单独存放在 `config/params.ts`，通过 `getParams`、`getParamValue` 获取：
+
+```typescript
+// config/params.ts 示例
+export default {
+  member: { levels: { bronze: { name: "铜牌" } } },
+  features: { enablePay: true },
+};
+
+// 获取方式
+import { getParams, getParamValue } from "jsr:@dreamer/dweb";
+const params = getParams(container);
+const name = getParamValue<string>(container, "member.levels.bronze.name");
+```
+
+### 7.3 环境变量
+
+使用 `@dreamer/runtime-adapter` 的 `getEnv`，兼容 Deno 和 Bun：
+
+```typescript
+import { getEnv } from "jsr:@dreamer/runtime-adapter";
+const host = getEnv("DB_HOST") ?? "localhost";
+const port = parseInt(getEnv("PORT") ?? "3000");
+```
+
+在 `config/main.ts` 中常用 `getEnv` 填充数据库连接、端口等配置。

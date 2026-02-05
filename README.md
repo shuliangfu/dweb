@@ -1175,14 +1175,127 @@ await db.transaction(async (trx) => {
 
 ### 配置管理
 
-```typescript
-// 从服务容器获取配置服务
-const config = app.container.get("config");
+框架提供两类配置的获取方式：**框架配置**（`config/main.ts` 系列）和 **业务配置**（`config/params.ts`）。在需要访问配置的地方（如 `main.ts`、插件、中间件、API 路由等），通过 `app.container` 获取服务容器后，使用下列 API。
 
-// 获取配置
-const dbHost = config.get("database.host");
-const apiKey = config.get("api.key");
+#### 1. 获取框架配置（config/main.ts）
+
+框架配置来自 `config/main.ts`、`config/main.{env}.ts`（如 `main.dev.ts`），合并后的对象为 `AppConfig` 类型。
+
+```typescript
+import { getConfig, getConfigValue, getConfigManager } from "jsr:@dreamer/dweb";
+
+// 在 main.ts、插件、中间件等有 app 或 container 的地方
+const container = app.container;
+
+// 获取完整框架配置对象（AppConfig）
+const config = getConfig(container);
+console.log(config.name, config.server?.port, config.database);
+
+// 按点号路径获取单个配置值（支持 "server.port"、"database.default.host" 等）
+const port = getConfigValue<number>(container, "server.port", 3000);
+const dbHost = getConfigValue<string>(container, "database.default.connection.host", "localhost");
+
+// 获取 ConfigManager 实例（@dreamer/config，支持 envPrefix、热重载等）
+const configManager = getConfigManager(container);
+const value = configManager.get("custom.key", "default");
 ```
+
+#### 2. 获取业务配置（config/params.ts）
+
+业务配置来自 `config/params.ts`，用于存储与业务相关的参数（如会员等级、功能开关、第三方 API 地址等），与框架配置分离，便于维护。
+
+**params.ts 示例**：
+
+```typescript
+// config/params.ts
+export default {
+  member: {
+    levels: {
+      bronze: { name: "铜牌", minPoints: 0 },
+      silver: { name: "银牌", minPoints: 100 },
+      gold: { name: "金牌", minPoints: 500 },
+    },
+  },
+  features: {
+    enablePay: true,
+    maxUploadSize: 10 * 1024 * 1024,
+  },
+  api: {
+    externalUrl: "https://api.example.com",
+  },
+};
+```
+
+**获取方式**：
+
+```typescript
+import { getParams, getParamValue } from "jsr:@dreamer/dweb";
+
+const container = app.container;
+
+// 获取完整业务配置对象
+const params = getParams(container);
+
+// 按点号路径获取单个值（支持 "member.levels.bronze.name"、"features.enablePay" 等）
+const levelName = getParamValue<string>(container, "member.levels.bronze.name");
+const enablePay = getParamValue<boolean>(container, "features.enablePay", false);
+const maxSize = getParamValue<number>(container, "features.maxUploadSize");
+```
+
+#### 3. 获取环境变量
+
+环境变量通过 `@dreamer/runtime-adapter` 的 `getEnv` 获取，兼容 Deno 和 Bun。在 `config/main.ts` 中常用其填充配置（如数据库连接、端口等）。
+
+```typescript
+import { getEnv } from "jsr:@dreamer/runtime-adapter";
+
+// 获取环境变量（不存在时返回 undefined）
+const dbHost = getEnv("DB_HOST") ?? "localhost";
+const port = parseInt(getEnv("PORT") ?? "3000");
+const nodeEnv = getEnv("DENO_ENV") ?? getEnv("BUN_ENV") ?? getEnv("NODE_ENV") ?? "dev";
+```
+
+**在 config/main.ts 中使用**：
+
+```typescript
+// config/main.ts
+import type { AppConfig } from "jsr:@dreamer/dweb";
+import { getEnv } from "jsr:@dreamer/runtime-adapter";
+
+export default {
+  name: "my-app",
+  version: "1.0.0",
+  server: {
+    port: parseInt(getEnv("PORT") ?? "3000"),
+    host: getEnv("HOST") ?? "127.0.0.1",
+  },
+  database: {
+    default: {
+      type: "postgresql",
+      connection: {
+        host: getEnv("DB_HOST") ?? "localhost",
+        port: parseInt(getEnv("DB_PORT") ?? "5432"),
+        database: getEnv("DB_NAME") ?? "mydb",
+        username: getEnv("DB_USER") ?? "user",
+        password: getEnv("DB_PASSWORD") ?? "",
+      },
+    },
+  },
+} satisfies AppConfig;
+```
+
+**AppConfig.envPrefix**：若配置了 `envPrefix: "APP_"`，`@dreamer/config` 的 ConfigManager 会优先读取带前缀的环境变量（如 `APP_PORT`），用于覆盖配置。具体行为见 [@dreamer/config](https://jsr.io/@dreamer/config) 文档。
+
+#### 4. 配置加载顺序
+
+| 优先级 | 文件 | 说明 |
+|--------|------|------|
+| 低 | `common/config/main.ts` | 公共配置（多应用时） |
+| 中 | `config/main.ts` 或 `src/config/main.ts` | 应用基础配置 |
+| 中 | `config/main.{env}.ts` | 按环境覆盖（如 `main.dev.ts`、`main.prod.ts`） |
+| 高 | 入口传入的配置 | `new App({ ... })` 中传入的对象 |
+
+`params.ts` 独立加载，存储在容器的 `params` 键下，通过 `getParams` / `getParamValue` 访问。
 
 ### 数据验证
 
@@ -1376,6 +1489,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 - **[AppConfig 完整配置示例](./APP_CONFIG_EXAMPLE.md)**：涵盖
   server、router、render、build、logger、database、socket、plugins、middlewares
   等全部配置项及单应用/多应用示例。
+- **配置与参数获取**：见上方「[配置管理](#配置管理)」章节，包含：
+  - 框架配置（`getConfig`、`getConfigValue`）的获取方式
+  - 业务配置（`config/params.ts`）的获取方式（`getParams`、`getParamValue`）
+  - 环境变量的获取方式（`getEnv`）
+  - 配置加载顺序说明
 
 ---
 
