@@ -188,7 +188,9 @@
     "hmrSkipClientDep": "[HMR] 由 client 入口变更触发，跳过写入 {filename} 避免循环",
     "clientEntryGenerating": "生成客户端入口: {path}",
     "clientEntryExistsSkip": "客户端入口已存在，跳过生成: {path}",
-    "clientScriptBuildComplete": "客户端脚本构建完成"
+    "clientScriptBuildComplete": "客户端脚本构建完成",
+    "devServerRunning": "开发服务器运行在 http://{host}:{port}",
+    "prodServerRunning": "生产服务器运行在 http://{host}:{port}"
   },
   "client": {
     "layoutDefaultExport": "布局组件必须使用 default 导出，例如: export default function Layout() {}",

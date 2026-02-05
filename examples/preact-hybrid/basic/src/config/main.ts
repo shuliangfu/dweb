@@ -9,6 +9,8 @@ const config: AppConfig = {
   name: "preact-hybrid-basic-example",
   version: "1.0.0",
 
+  language: "en-US",
+
   // 服务器配置
   server: {
     port: 3000,

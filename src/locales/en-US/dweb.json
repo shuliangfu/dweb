@@ -188,7 +188,9 @@
     "hmrSkipClientDep": "[HMR] Client entry changed, skipping write {filename} to avoid loop",
     "clientEntryGenerating": "Generating client entry: {path}",
     "clientEntryExistsSkip": "Client entry exists, skipping generate: {path}",
-    "clientScriptBuildComplete": "Client script build complete"
+    "clientScriptBuildComplete": "Client script build complete",
+    "devServerRunning": "Dev server running at http://{host}:{port}",
+    "prodServerRunning": "Production server running at http://{host}:{port}"
   },
   "client": {
     "layoutDefaultExport": "Layout component must use default export, e.g.: export default function Layout() {}",
