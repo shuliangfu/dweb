@@ -558,12 +558,22 @@ const name = getParamValue<string>(container, "member.levels.bronze.name");
 
 ### 7.3 环境变量
 
-使用 `@dreamer/runtime-adapter` 的 `getEnv`，兼容 Deno 和 Bun：
+**方式一：通过 Config 获取（推荐）**
+
+配置 `envPrefix: "APP_"` 后，环境变量会自动合并到配置，可通过 `getConfigValue` 或 `getConfigManager().get()` 获取，**无需** `runtime-adapter`：
+
+```typescript
+// envPrefix: "APP_" 时，APP_SERVER_PORT -> server.port
+const port = getConfigValue(container, "server.port", "3000");
+const dbHost = getConfigValue(container, "database.host", "localhost");
+```
+
+**方式二：直接读取（需 runtime-adapter）**
+
+在 `config/main.ts` 中定义配置时，或读取未带前缀的变量时使用：
 
 ```typescript
 import { getEnv } from "jsr:@dreamer/runtime-adapter";
 const host = getEnv("DB_HOST") ?? "localhost";
 const port = parseInt(getEnv("PORT") ?? "3000");
 ```
-
-在 `config/main.ts` 中常用 `getEnv` 填充数据库连接、端口等配置。

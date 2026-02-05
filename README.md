@@ -1242,9 +1242,42 @@ const enablePay = getParamValue<boolean>(container, "features.enablePay", false)
 const maxSize = getParamValue<number>(container, "features.maxUploadSize");
 ```
 
-#### 3. 获取环境变量
+#### 3. 获取环境变量（两种方式）
 
-环境变量通过 `@dreamer/runtime-adapter` 的 `getEnv` 获取，兼容 Deno 和 Bun。在 `config/main.ts` 中常用其填充配置（如数据库连接、端口等）。
+**方式一：通过 Config 获取（推荐，无需 runtime-adapter）**
+
+配置 `envPrefix` 后，ConfigManager 会自动将带前缀的环境变量合并到配置中，可通过 `getConfigValue` 或 `getConfigManager().get()` 访问，**无需** 单独引入 `@dreamer/runtime-adapter`。
+
+```typescript
+// AppConfig 中设置 envPrefix: "APP_"
+const app = new App({
+  envPrefix: "APP_",
+  // ...
+});
+
+// 环境变量 APP_PORT、APP_SERVER_HOST、APP_DATABASE_HOST 等会自动合并到配置
+// 命名规则：APP_SERVER_PORT -> server.port，APP_DATABASE_HOST -> database.host（下划线转嵌套）
+const port = getConfigValue<string>(container, "server.port", "3000");
+const host = getConfigValue<string>(container, "server.host", "127.0.0.1");
+const dbHost = getConfigValue<string>(container, "database.host", "localhost");
+
+// 或使用 ConfigManager
+const configManager = getConfigManager(container);
+const port2 = configManager.get("server.port", "3000");
+```
+
+**环境变量命名示例**（`envPrefix: "APP_"` 时）：
+
+| 环境变量 | 配置键 | 说明 |
+|----------|--------|------|
+| `APP_PORT` | `port` | 顶层配置 |
+| `APP_SERVER_PORT` | `server.port` | 嵌套配置 |
+| `APP_DATABASE_HOST` | `database.host` | 下划线转点号 |
+| `APP_DATABASE_CONNECTION_URL` | `database.connection.url` | 多级嵌套 |
+
+**方式二：直接读取环境变量（需 runtime-adapter）**
+
+在 `config/main.ts` 中**定义**配置时，或需要读取**未带前缀**的环境变量时，使用 `getEnv`：
 
 ```typescript
 import { getEnv } from "jsr:@dreamer/runtime-adapter";
@@ -1252,10 +1285,9 @@ import { getEnv } from "jsr:@dreamer/runtime-adapter";
 // 获取环境变量（不存在时返回 undefined）
 const dbHost = getEnv("DB_HOST") ?? "localhost";
 const port = parseInt(getEnv("PORT") ?? "3000");
-const nodeEnv = getEnv("DENO_ENV") ?? getEnv("BUN_ENV") ?? getEnv("NODE_ENV") ?? "dev";
 ```
 
-**在 config/main.ts 中使用**：
+**在 config/main.ts 中定义配置**（此时 Config 尚未加载，需用 getEnv）：
 
 ```typescript
 // config/main.ts
@@ -1265,6 +1297,7 @@ import { getEnv } from "jsr:@dreamer/runtime-adapter";
 export default {
   name: "my-app",
   version: "1.0.0",
+  envPrefix: "APP_",  // 可选：启用后 APP_* 环境变量会覆盖下方默认值
   server: {
     port: parseInt(getEnv("PORT") ?? "3000"),
     host: getEnv("HOST") ?? "127.0.0.1",
@@ -1284,7 +1317,7 @@ export default {
 } satisfies AppConfig;
 ```
 
-**AppConfig.envPrefix**：若配置了 `envPrefix: "APP_"`，`@dreamer/config` 的 ConfigManager 会优先读取带前缀的环境变量（如 `APP_PORT`），用于覆盖配置。具体行为见 [@dreamer/config](https://jsr.io/@dreamer/config) 文档。
+**总结**：应用运行时优先使用 `getConfigValue` / `getConfigManager().get()` 访问配置（含环境变量）；仅在 `config/main.ts` 内定义或需要未带前缀的环境变量时，使用 `getEnv`。
 
 #### 4. 配置加载顺序
 
