@@ -35,6 +35,12 @@ deno run -A jsr:@dreamer/dweb/setup
 版本。初始化应用时**必须**加上 `--beta`
 参数，否则生成的项目依赖版本不正确，无法启动。例如：`dweb-cli init my-app --beta`。
 
+**🪟 Windows 安装注意事项**：
+
+- **PATH 配置**：安装后 `dweb-cli` 位于 `%USERPROFILE%\.deno\bin`（Deno）或 `%USERPROFILE%\.bun\bin`（Bun），需确保该目录已加入系统 PATH，否则命令行无法识别 `dweb-cli`。Deno/Bun 官方安装程序通常会自动配置。
+- **PowerShell 执行策略**：若提示无法运行脚本，可执行 `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` 放宽策略。
+- **路径与编码**：项目路径建议避免中文或特殊字符，以减少路径解析问题。
+
 安装完成后，可在任意目录执行：
 
 ```bash
@@ -1202,26 +1208,24 @@ const value = configManager.get("custom.key", "default");
 
 #### 2. 获取业务配置（config/params.ts）
 
-业务配置来自 `config/params.ts`，用于存储与业务相关的参数（如会员等级、功能开关、第三方 API 地址等），与框架配置分离，便于维护。
+业务配置来自 `config/params.ts`，用于存储与业务相关的参数（如功能开关、第三方 API 地址、分页大小、超时时间等），与框架配置分离，便于维护。
 
 **params.ts 示例**：
 
 ```typescript
 // config/params.ts
 export default {
-  member: {
-    levels: {
-      bronze: { name: "铜牌", minPoints: 0 },
-      silver: { name: "银牌", minPoints: 100 },
-      gold: { name: "金牌", minPoints: 500 },
-    },
-  },
   features: {
     enablePay: true,
     maxUploadSize: 10 * 1024 * 1024,
   },
   api: {
     externalUrl: "https://api.example.com",
+    timeout: 30000,
+  },
+  pagination: {
+    defaultPageSize: 20,
+    maxPageSize: 100,
   },
 };
 ```
@@ -1236,10 +1240,10 @@ const container = app.container;
 // 获取完整业务配置对象
 const params = getParams(container);
 
-// 按点号路径获取单个值（支持 "member.levels.bronze.name"、"features.enablePay" 等）
-const levelName = getParamValue<string>(container, "member.levels.bronze.name");
+// 按点号路径获取单个值（支持 "features.enablePay"、"api.timeout"、"pagination.defaultPageSize" 等）
 const enablePay = getParamValue<boolean>(container, "features.enablePay", false);
-const maxSize = getParamValue<number>(container, "features.maxUploadSize");
+const timeout = getParamValue<number>(container, "api.timeout", 30000);
+const pageSize = getParamValue<number>(container, "pagination.defaultPageSize", 20);
 ```
 
 #### 3. 获取环境变量（两种方式）

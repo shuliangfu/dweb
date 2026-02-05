@@ -102,8 +102,8 @@ async function createTempCliConfig(): Promise<string> {
 /**
  * 执行 deno install 安装全局命令
  *
- * - JSR 运行：不使用 --config，直接安装 jsr:@dreamer/dweb/cli，由 JSR 包自身配置解析
- * - 本地运行：使用临时 config（去除 workspace）避免解析 examples 等不存在的路径
+ * - JSR 远程安装：不使用 --config，直接安装 jsr:@dreamer/dweb/cli，由 JSR 包自身配置解析
+ * - 本地调试安装：使用 --config 临时 config（去除 workspace），避免解析 examples 等不存在的路径
  */
 async function installGlobalCli(): Promise<void> {
   const runtime = getRuntime();
@@ -119,6 +119,7 @@ async function installGlobalCli(): Promise<void> {
   ];
 
   if (isLocalRun()) {
+    // 仅本地调试时使用 --config，远程安装无需
     const tempConfigPath = await createTempCliConfig();
     args.push("--config", tempConfigPath);
     try {

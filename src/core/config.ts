@@ -640,7 +640,7 @@ export function getConfigValue<T = unknown>(
  * @example
  * ```ts
  * const params = getParams(container);
- * const level = params.member?.levels?.bronze;
+ * const timeout = params.api?.timeout;
  * ```
  */
 export function getParams(
@@ -653,13 +653,13 @@ export function getParams(
  * 获取业务配置值
  *
  * @param container 服务容器
- * @param key 配置键（支持点号分隔的路径，如 "member.levels.bronze.name"）
+ * @param key 配置键（支持点号分隔的路径，如 "api.timeout"、"pagination.defaultPageSize"）
  * @param defaultValue 默认值（可选）
  * @returns 配置值
  *
  * @example
  * ```ts
- * const name = getParamValue<string>(container, "member.levels.bronze.name");
+ * const timeout = getParamValue<number>(container, "api.timeout", 30000);
  * ```
  */
 export function getParamValue<T = unknown>(

@@ -546,14 +546,15 @@ const v = cm.get("key", "default");
 ```typescript
 // config/params.ts 示例
 export default {
-  member: { levels: { bronze: { name: "铜牌" } } },
   features: { enablePay: true },
+  api: { externalUrl: "https://api.example.com", timeout: 30000 },
+  pagination: { defaultPageSize: 20 },
 };
 
 // 获取方式
 import { getParams, getParamValue } from "jsr:@dreamer/dweb";
 const params = getParams(container);
-const name = getParamValue<string>(container, "member.levels.bronze.name");
+const timeout = getParamValue<number>(container, "api.timeout", 30000);
 ```
 
 ### 7.3 环境变量
