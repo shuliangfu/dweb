@@ -161,9 +161,12 @@ function isClientChunkFile(pathname: string): boolean {
     return false;
   }
 
-  // 匹配 esbuild chunk：/name-hash.js 或 /name-hash.js.map（hash 长度 6–10 位，兼容不同 esbuild 版本）
-  const chunkPattern = /^\/[\w\[\]_-]+-[A-Z0-9]{6,10}\.(?:js|js\.map)$/;
-  return chunkPattern.test(pathname);
+  // 匹配 esbuild chunk：
+  // - 带 hash：/name-hash.js（hash 长度 6–10 位，生产/旧开发模式）
+  // - 无 hash：/name.js（开发模式 chunkNames: "[name]" 时，用于 HMR 无感更新）
+  const chunkWithHash = /^\/[\w\[\]_-]+-[A-Z0-9]{6,10}\.(?:js|js\.map)$/;
+  const chunkNoHash = /^\/[\w\[\]_-]+\.(?:js|js\.map)$/;
+  return chunkWithHash.test(pathname) || chunkNoHash.test(pathname);
 }
 
 /**
@@ -522,26 +525,80 @@ export async function setupHydrationRouterAndHmr(opts: {
     }
   }
   g.__DWEB_HMR_REFRESH__ = (hmrOpts) => {
+    const chunkUrl = hmrOpts?.chunkUrl;
+    console.log("[HMR] __DWEB_HMR_REFRESH__ 调用", {
+      chunkUrl,
+      pathname: _win.location?.pathname,
+    });
+    if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
+      console.log("[HMR] 调试模式已开启，输出详细日志");
+    }
     for (const key of Object.keys(MODULE_CACHE)) delete MODULE_CACHE[key];
     clearLayoutCache();
     const pathname = (typeof _win.location !== "undefined" && _win.location?.pathname) ? _win.location.pathname : "/";
     const match = router.match(pathname);
-    if (!match) { unmountPrevious(); renderNotFound(containerId); return; }
-    const chunkUrl = hmrOpts?.chunkUrl;
-    const loadModule = (typeof chunkUrl === "string")
-      ? () => import(/* @vite-ignore */ chunkUrl)
-      : () => loadPageModule(match.route.component);
+    if (!match) {
+      if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
+        console.log("[HMR] 无匹配路由，renderNotFound");
+      }
+      unmountPrevious(); renderNotFound(containerId); return;
+    }
+    // 有 chunkUrl 且匹配当前路由时，用 import(chunkUrl + "?t=" + ts) 强制拉取新 chunk（绕过浏览器模块缓存）
+    // 否则 loadPageModule 会返回缓存，不会发起网络请求，拿不到新代码
+    const comp = match.route.component;
+    const compLastSegment = comp.split("/").pop() || comp;
+    // 从 /_client/index-XYZ789.js 提取 "index"（文件名中 -hash 前的部分）
+    const chunkBaseFromUrl = typeof chunkUrl === "string"
+      ? (chunkUrl.match(/([^/-]+)-[A-Za-z0-9]{6,10}\\.js(?:\\.map)?$/)?.[1] ??
+        ((chunkUrl.split("/").pop() || "").replace(/-[A-Za-z0-9]{6,10}\\.js.*$/, "") || null))
+      : null;
+    const compBase = compLastSegment.replace(/\\.(tsx?|jsx?)$/, "");
+    // index 路由的 chunk 可能为 routes-XXX.js，需特殊匹配
+    const useChunkUrl = chunkUrl && chunkBaseFromUrl &&
+      (compBase === chunkBaseFromUrl || compLastSegment === chunkBaseFromUrl ||
+        comp === chunkBaseFromUrl ||
+        (compBase === "index" && chunkBaseFromUrl === "routes"));
+    if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
+      console.log("[HMR] chunkUrl 匹配", {
+        chunkUrl,
+        chunkBaseFromUrl,
+        comp,
+        compBase,
+        compLastSegment,
+        useChunkUrl,
+      });
+    }
+    const loadModule = () => {
+      if (useChunkUrl) {
+        const path = chunkUrl!.startsWith("/") ? chunkUrl! : "/" + chunkUrl!;
+        const busted = path + (path.includes("?") ? "&" : "?") + "t=" + Date.now();
+        if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
+          console.log("[HMR] 使用 chunkUrl 强制拉取", busted);
+        }
+        return import(/* @vite-ignore */ busted);
+      }
+      return loadPageModule(match.route.component);
+    };
     const scrollX = typeof _win.scrollX === "number" ? _win.scrollX : 0;
     const scrollY = typeof _win.scrollY === "number" ? _win.scrollY : 0;
     loadModule()
       .then((mod) => {
+        if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
+          console.log("[HMR] loadModule 完成", { hasDefault: !!(mod as Record<string, unknown>)?.default, componentPath: match.route.component });
+        }
         const modObj = mod as Record<string, unknown>;
         if (!modObj) { unmountPrevious(); renderNotFound(containerId); return; }
         const PageComponent = modObj.default ?? modObj.Page;
         if (!PageComponent) { unmountPrevious(); renderNotFound(containerId); return; }
         const skipLayouts = modObj.inheritLayout === false;
         return loadLayouts().then((layoutList) => {
+          if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
+            console.log("[HMR] unmountPrevious 前");
+          }
           unmountPrevious();
+          if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
+            console.log("[HMR] renderCSR 前", { componentPath: match.route.component });
+          }
           const csrResult = renderCSR({
             engine,
             component: PageComponent,
@@ -551,6 +608,9 @@ export async function setupHydrationRouterAndHmr(opts: {
             skipLayouts,
           });
           RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
+          if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
+            console.log("[HMR] renderCSR 完成");
+          }
           if (typeof _win.scrollTo === "function") {
             const sx = scrollX;
             const sy = scrollY;
@@ -576,6 +636,9 @@ export async function setupHydrationRouterAndHmr(opts: {
         });
       })
       .catch((err) => {
+        if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
+          console.error("[HMR] loadModule/render 失败", err);
+        }
         console.warn(${
     JSON.stringify($t("client.hmrFallback"))
   } + ":", err?.message || err);
@@ -965,9 +1028,23 @@ export async function buildClientScript(
       // 确保输出目录存在
       await ensureDir(finalOutputDir);
 
-      const externalList = Array.isArray(userBundleConfig.external)
+      // Preact 标为 external，避免 chunk 各自打包 Preact 导致多实例 _H 冲突；需配合 import map 注入
+      // 注意：esbuild external 匹配解析后的路径，denoResolverPlugin 将 preact 解析为 npm:preact@10.28.0，故需同时匹配
+      const preactExternal =
+        engine === "preact"
+          ? [
+            "preact",
+            "preact/hooks",
+            "preact/jsx-runtime",
+            "npm:preact@10.28.0",
+            "npm:preact@10.28.0/hooks",
+            "npm:preact@10.28.0/jsx-runtime",
+          ]
+          : [];
+      const userExternal = Array.isArray(userBundleConfig.external)
         ? userBundleConfig.external
         : [];
+      const externalList = [...preactExternal, ...userExternal];
       // 使用 BuilderClient 进行构建（支持代码分割）
       const builder = new BuilderClient({
         entry: tempClientEntryPath,
@@ -1024,6 +1101,21 @@ export async function buildClientScript(
       // BuilderClient write: false 时产出在 outputContents，代码分割的 chunk 也在内存中
       // ========================================
       const memOutputDir = join(cwd(), ".dweb-client-out");
+      // 必须显式指定 chunkNames: "[name]-[hash]"：多个共享 chunk 的 [name] 均为 "chunk"，
+      // 仅 [name] 会冲突（"Two output files share the same path"），含 hash 可保证唯一
+      // Preact 标为 external，避免 chunk 各自打包 Preact 导致多实例 _H 冲突；需配合 import map 注入
+      // 注意：esbuild external 匹配解析后的路径，denoResolverPlugin 将 preact 解析为 npm:preact@10.28.0，故需同时匹配
+      const preactExternalDev =
+        engine === "preact"
+          ? [
+            "preact",
+            "preact/hooks",
+            "preact/jsx-runtime",
+            "npm:preact@10.28.0",
+            "npm:preact@10.28.0/hooks",
+            "npm:preact@10.28.0/jsx-runtime",
+          ]
+          : [];
       const builderDev = new BuilderClient({
         entry: tempClientEntryPath,
         output: memOutputDir,
@@ -1033,6 +1125,9 @@ export async function buildClientScript(
           sourcemap: true,
           splitting: true,
           format: "esm",
+          chunkNames: "[name]-[hash]",
+          external:
+            preactExternalDev.length > 0 ? preactExternalDev : undefined,
         },
       });
 
@@ -1136,11 +1231,21 @@ export async function buildClientScript(
 }
 
 /**
+ * 从 fileName 提取 chunk 基础名（用于 HMR 回退匹配）
+ * 例如：index-ABC123.js -> index，chunk-XYZ789.js -> chunk
+ */
+function getChunkBaseName(fileName: string): string | null {
+  const m = fileName.match(/^(.+)-[A-Za-z0-9]{6,10}\.(?:js|js\.map)$/);
+  if (m) return m[1];
+  const noExt = fileName.replace(/\.(js|js\.map)$/, "");
+  return noExt || null;
+}
+
+/**
  * 从 outputFiles 中查找 chunk 内容（兼容多种 key 格式）
  *
- * esbuild 的 file.path 可能是绝对路径、相对路径或纯文件名；
- * loadOutputFiles 的 key 可能是 "chunk-xxx.js" 或 "subdir/chunk-xxx.js"。
- * 请求路径为 /chunk-xxx.js 时 fileName 为 "chunk-xxx.js"。
+ * 开发模式 HMR：旧主包请求 index-ABC123.js，重建后只有 index-XYZ789.js。
+ * 按基础名回退：未精确匹配时，用同基础名的最新 chunk 内容，实现无感刷新。
  *
  * @param outputFiles 输出文件映射
  * @param fileName 请求的文件名（如 chunk-UUJCPQSG.js）
@@ -1157,6 +1262,20 @@ function findChunkContent(
   // 2. 遍历查找：key 的 basename 与 fileName 匹配（兼容 path/subdir/chunk-xxx.js 等格式）
   for (const [key, content] of outputFiles) {
     if (basename(key) === fileName) return content;
+  }
+  // 3. HMR 回退：请求旧 hash 的 chunk 时，用同基础名的最新 chunk（重建后 hash 变化）
+  const base = getChunkBaseName(fileName);
+  if (base) {
+    const prefix = base + "-";
+    for (const [key, content] of outputFiles) {
+      const name = basename(key);
+      if (
+        name.startsWith(prefix) &&
+        (name.endsWith(".js") || name.endsWith(".js.map"))
+      ) {
+        return content;
+      }
+    }
   }
   return undefined;
 }

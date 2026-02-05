@@ -123,7 +123,8 @@ export function initializeServer(
   }
 
   // 默认 onListen：使用 $t 输出国际化日志；用户配置的 onListen 优先
-  const defaultOnListen = ({ host, port }: { host: string; port: number }) => {
+  // 将 ::1、0.0.0.0 等统一显示为 127.0.0.1，便于用户复制访问（不同系统/运行时可能返回不同格式）
+  const defaultOnListen = ({ port }: { port: number }) => {
     const key = mode === "dev"
       ? "log.devServerRunning"
       : "log.prodServerRunning";

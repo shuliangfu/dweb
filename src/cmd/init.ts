@@ -559,7 +559,7 @@ export default {
   name: "${configName}",
   server: {
     port: ${serverPort},
-    host: "0.0.0.0",
+    host: "127.0.0.1",
   },
   router: {
     routesDir: "${routesDir}",
@@ -595,7 +595,7 @@ const config: AppConfig = {
   language: "${getDefaultLanguage()}",
   server: {
     port: ${serverPort},
-    host: "0.0.0.0",
+    host: "127.0.0.1",
     dev: {
       hmr: { enabled: true, path: "/__hmr" },
       watch: {

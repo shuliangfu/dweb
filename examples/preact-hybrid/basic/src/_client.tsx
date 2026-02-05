@@ -33,7 +33,7 @@ initApp()
     // 路由后置守卫：导航完成后执行（可做埋点、日志等）
     app.router.afterRoute((to, _from) => {
       if (to) {
-        console.log("路由已切换:", to.route.component, to.params, to.query);
+        console.log("路由已切换", to.route.component, to.params, to.query);
       }
     });
   })

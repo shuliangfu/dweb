@@ -18,6 +18,7 @@ import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import { getEnv } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
+import { getClientImportMapScript } from "./import-map.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
 
@@ -184,9 +185,15 @@ export function createRendererHybrid(
         component: match.route.file || match.route.path,
       };
 
-      // 构建客户端配置脚本
+      // 构建客户端配置脚本（开发模式启用 HMR 调试：在控制台设置 globalThis.__DWEB_HMR_DEBUG__ = true 可查看详细日志）
+      const isDev =
+        (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
+      // Preact 标为 external 时需注入 import map，必须在 module 脚本之前
+      const importMapScript = getClientImportMapScript(engine);
       const clientConfigScript = `
+${importMapScript}
 <script>
+  ${isDev ? "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true;" : ""}
   // Hydration 数据
   globalThis.__DATA__ = ${JSON.stringify(hydrationData)};
   // 客户端路由配置
@@ -212,8 +219,6 @@ ${hybridOptions.bodyTags || ""}`;
       }
 
       // 返回 HTML 响应（开发模式禁用缓存，确保 HMR 刷新后拿到最新内容）
-      const isDev =
-        (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
       return new Response(html, {
         status: 200,
         headers: {
