@@ -12,6 +12,7 @@ import {
   type BuilderConfig,
   type ClientConfig,
 } from "@dreamer/esbuild";
+import { $t } from "@dreamer/i18n";
 import type { ServiceContainer } from "@dreamer/service";
 import { getEnv } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
@@ -104,7 +105,7 @@ export function initializeBuild(
   // 将构建器注册到服务容器
   container.registerSingleton("build", () => builder);
 
-  logger.info("构建工具初始化完成");
+  logger.info($t("log.buildToolReady"));
 
   return builder;
 }

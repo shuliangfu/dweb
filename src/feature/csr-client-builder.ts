@@ -710,7 +710,7 @@ initApp()
       app.router.match(pathname);
     if (currentRoute) {
       console.log(
-        "当前路由:",
+        ${JSON.stringify($t("client.routeCurrent"))},
         currentRoute.route.component,
         currentRoute.params,
       );
@@ -728,7 +728,7 @@ initApp()
     // 路由后置守卫：导航完成后执行（可做埋点、日志等）
     app.router.afterRoute((to, _from) => {
       if (to) {
-        console.log("路由已切换:", to.route.component, to.params, to.query);
+        console.log(${JSON.stringify($t("client.routeSwitched"))}, to.route.component, to.params, to.query);
       }
     });
   })
@@ -979,11 +979,13 @@ export async function buildClientScript(
       }
 
       // 输出构建信息
-      logger.info(`客户端构建输出 (${outputFiles.size} 个文件):`);
+      logger.info($t("log.clientBuildOutput", { count: String(outputFiles.size) }));
       for (const file of fileList) {
         logger.info(file);
       }
-      logger.info(`总大小: ${(totalSize / 1024).toFixed(1)} KB`);
+      logger.info($t("log.clientBuildTotalSize", {
+        size: (totalSize / 1024).toFixed(1),
+      }));
 
       result = {
         code: mainCode,
@@ -1024,9 +1026,10 @@ export async function buildClientScript(
 
       const mainCodeDev = outputFilesDev.get(CLIENT_OUTPUT_MAIN_FILENAME) || "";
       logger.debug(
-        `客户端构建完成（内存）: 代码分割, 主入口 ${
-          (mainCodeDev.length / 1024).toFixed(1)
-        } KB, ${outputFilesDev.size} 个文件`,
+        $t("log.clientBuildCompleteMemory", {
+          mainSize: (mainCodeDev.length / 1024).toFixed(1),
+          count: String(outputFilesDev.size),
+        }),
       );
 
       let chunkUrlDev: string | undefined;
@@ -1049,14 +1052,18 @@ export async function buildClientScript(
             chunkUrlDev = `/_client/${chunkFileName}`;
           } else {
             logger.warn(
-              `[HMR] 未找到 componentPath="${componentPath}" 对应的 chunk，输出文件: ${
-                outputNames.join(", ")
-              }`,
+              $t("log.hmrChunkNotFound", {
+                path: componentPath,
+                files: outputNames.join(", "),
+              }),
             );
           }
         } else if (!isClientEntry) {
           logger.warn(
-            `[HMR] 无法从变更路径推导 componentPath，changedPath=${options.changedPath}，routesDirPath=${routesDirPath}`,
+            $t("log.hmrComponentPathNotFound", {
+              changedPath: options.changedPath ?? "",
+              routesDirPath,
+            }),
           );
         }
       }
@@ -1229,7 +1236,7 @@ export function createClientScriptMiddleware(
         if (!isProd) {
           let script = getCachedClientScript();
           if (!script) {
-            logger.debug("首次构建客户端脚本...");
+            logger.debug($t("log.clientBuildFirst"));
             script = await buildClientScript(container, config);
           }
           if (isMap) {
@@ -1254,7 +1261,7 @@ export function createClientScriptMiddleware(
             return;
           }
           if (!script?.code) {
-            logger.error("客户端脚本缓存为空或 code 为空", {
+            logger.error($t("log.clientScriptEmpty"), {
               hasScript: !!script,
               hasCode: !!script?.code,
             });

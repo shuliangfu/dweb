@@ -9,6 +9,7 @@
  * - dweb clean
  */
 
+import { $t } from "@dreamer/i18n";
 import { info, success } from "@dreamer/console";
 import { cwd, join, remove, stat } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
@@ -29,14 +30,14 @@ export async function main(
   const projectRoot = cwd();
   let removedCount = 0;
 
-  info("正在清理构建产物...");
+  info($t("clean.running"));
 
   for (const dir of CLEAN_DIRS) {
     const fullPath = join(projectRoot, dir);
     try {
       await stat(fullPath);
       await remove(fullPath, { recursive: true });
-      info(`已删除: ${dir}`);
+      info($t("clean.removed", { dir }));
       removedCount++;
     } catch {
       // 目录不存在，忽略
@@ -44,8 +45,8 @@ export async function main(
   }
 
   if (removedCount > 0) {
-    success(`清理完成，已删除 ${removedCount} 个目录`);
+    success($t("clean.complete", { count: String(removedCount) }));
   } else {
-    info("无需清理，构建产物目录不存在");
+    info($t("clean.nothingToClean"));
   }
 }

@@ -128,7 +128,21 @@
     "ssgFileGenerated": "✓ SSG pre-rendered: {path}",
     "dbConnected": "Database connected: {name}",
     "dbConnectFailed": "Database connection failed: {name}",
-    "buildToolReady": "Build tool initialized"
+    "buildToolReady": "Build tool initialized",
+    "frameworkVersion": "[Framework] @dreamer/dweb {version}",
+    "appName": "[App name] {name}",
+    "appNameNotConfigured": "Not configured",
+    "socketIoMounted": "Socket.IO mounted at {path}",
+    "websocketMounted": "WebSocket mounted at {path}",
+    "routesMiddlewareSkipped": "Skipping routes/_middleware.ts: {message}",
+    "serverBuildOutput": "✓ Building server: {path}",
+    "serverBuildComplete": "✓ Server build complete ({duration}ms)",
+    "clientBuildOutput": "Client build output ({count} files):",
+    "clientBuildTotalSize": "Total size: {size} KB",
+    "hmrChunkNotFound": "[HMR] Chunk not found for componentPath=\"{path}\", output files: {files}",
+    "hmrComponentPathNotFound": "[HMR] Cannot derive componentPath from changedPath={changedPath}, routesDirPath={routesDirPath}",
+    "clientBuildFirst": "First client script build...",
+    "clientBuildCompleteMemory": "Client build complete (memory): code-split, main entry {mainSize} KB, {count} files"
   },
   "client": {
     "layoutDefaultExport": "Layout component must use default export, e.g.: export default function Layout() {}",
@@ -139,6 +153,7 @@
     "clientScriptNotReady": "Client script not ready, please refresh",
     "clientScriptNotFound": "Pre-built client script not found, run build first",
     "clientScriptLoadFailed": "Failed to load client script: ",
+    "routeCurrent": "Current route:",
     "routeSwitched": "Route switched"
   },
   "db": {
@@ -236,6 +251,21 @@
     "running": "Running format...",
     "complete": "Format complete",
     "exitCode": "Fmt exit code: {code}"
+  },
+  "test": {
+    "running": "Running tests...",
+    "complete": "Tests complete",
+    "exitCode": "Test exit code: {code}",
+    "runningWithApp": "Running {app} tests...",
+    "appComplete": "{app} tests complete",
+    "appFailed": "{app} tests failed, exit code: {code}",
+    "addTaskHint": "Add test or test:appName task to deno.json"
+  },
+  "clean": {
+    "running": "Cleaning build output...",
+    "removed": "Removed: {dir}",
+    "complete": "Clean complete, removed {count} directories",
+    "nothingToClean": "Nothing to clean, build output dirs do not exist"
   },
   "upgrade": {
     "currentVersion": "Current version: {version}",

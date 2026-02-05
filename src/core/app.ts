@@ -233,8 +233,10 @@ export class App extends EventEmitter implements IApp {
   private async _logFrameworkBanner(config: AppConfig): Promise<void> {
     const logger = getLogger(this.container);
     const version = await getDwebVersion();
-    logger.info(`[框架版本] @dreamer/dweb ${version}`);
-    logger.info(`[应用名称] ${config.name ?? "未配置"}`);
+    logger.info($t("log.frameworkVersion", { version }));
+    logger.info($t("log.appName", {
+      name: config.name ?? $t("log.appNameNotConfigured"),
+    }));
   }
 
   /**
@@ -399,7 +401,7 @@ export class App extends EventEmitter implements IApp {
           "socket-io",
         );
         getLogger(this.container).info(
-          `Socket.IO 已挂载，路径: ${socketIoPath}`,
+          $t("log.socketIoMounted", { path: socketIoPath }),
         );
       }
 
@@ -412,7 +414,7 @@ export class App extends EventEmitter implements IApp {
           "websocket",
         );
         getLogger(this.container).info(
-          `WebSocket 已挂载，路径: ${websocketPath}`,
+          $t("log.websocketMounted", { path: websocketPath }),
         );
       }
 
@@ -586,9 +588,9 @@ export class App extends EventEmitter implements IApp {
     } catch (error) {
       const logger = getLogger(this.container);
       logger.warn(
-        `跳过 routes/_middleware.ts: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        $t("log.routesMiddlewareSkipped", {
+          message: error instanceof Error ? error.message : String(error),
+        }),
       );
     }
   }
@@ -1098,7 +1100,9 @@ export class App extends EventEmitter implements IApp {
       const output = useNativeCompile ? `${outputDir}/server` : outputDir;
 
       logger.info(
-        `✓ 构建服务端: ${output}${useNativeCompile ? "" : "/server.js"}`,
+        $t("log.serverBuildOutput", {
+          path: `${output}${useNativeCompile ? "" : "/server.js"}`,
+        }),
       );
 
       // 创建服务端构建器
@@ -1119,7 +1123,7 @@ export class App extends EventEmitter implements IApp {
       const result = await builder.build("prod");
 
       logger.info(
-        `✓ 服务端构建完成 (${result.duration}ms)`,
+        $t("log.serverBuildComplete", { duration: String(result.duration) }),
       );
     } catch (error) {
       logger.error($t("log.serverBuildFailed") + ":", error);

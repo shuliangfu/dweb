@@ -128,7 +128,21 @@
     "ssgFileGenerated": "✓ SSG 预渲染: {path}",
     "dbConnected": "数据库连接成功: {name}",
     "dbConnectFailed": "数据库连接失败: {name}",
-    "buildToolReady": "构建工具初始化完成"
+    "buildToolReady": "构建工具初始化完成",
+    "frameworkVersion": "[框架版本] @dreamer/dweb {version}",
+    "appName": "[应用名称] {name}",
+    "appNameNotConfigured": "未配置",
+    "socketIoMounted": "Socket.IO 已挂载，路径: {path}",
+    "websocketMounted": "WebSocket 已挂载，路径: {path}",
+    "routesMiddlewareSkipped": "跳过 routes/_middleware.ts: {message}",
+    "serverBuildOutput": "✓ 构建服务端: {path}",
+    "serverBuildComplete": "✓ 服务端构建完成 ({duration}ms)",
+    "clientBuildOutput": "客户端构建输出 ({count} 个文件):",
+    "clientBuildTotalSize": "总大小: {size} KB",
+    "hmrChunkNotFound": "[HMR] 未找到 componentPath=\"{path}\" 对应的 chunk，输出文件: {files}",
+    "hmrComponentPathNotFound": "[HMR] 无法从变更路径推导 componentPath，changedPath={changedPath}，routesDirPath={routesDirPath}",
+    "clientBuildFirst": "首次构建客户端脚本...",
+    "clientBuildCompleteMemory": "客户端构建完成（内存）: 代码分割, 主入口 {mainSize} KB, {count} 个文件"
   },
   "client": {
     "layoutDefaultExport": "布局组件必须使用 default 导出，例如: export default function Layout() {}",
@@ -139,6 +153,7 @@
     "clientScriptNotReady": "客户端脚本未就绪，请刷新重试",
     "clientScriptNotFound": "预构建的客户端脚本不存在，请先运行 build 命令",
     "clientScriptLoadFailed": "加载客户端脚本失败: ",
+    "routeCurrent": "当前路由:",
     "routeSwitched": "路由已切换"
   },
   "db": {
@@ -236,6 +251,21 @@
     "running": "正在运行代码格式化...",
     "complete": "代码格式化完成",
     "exitCode": "fmt 命令退出码: {code}"
+  },
+  "test": {
+    "running": "正在运行测试...",
+    "complete": "测试完成",
+    "exitCode": "test 命令退出码: {code}",
+    "runningWithApp": "正在运行 {app} 测试...",
+    "appComplete": "{app} 测试完成",
+    "appFailed": "{app} 测试失败，退出码: {code}",
+    "addTaskHint": "请添加 test 或 test:应用名 task"
+  },
+  "clean": {
+    "running": "正在清理构建产物...",
+    "removed": "已删除: {dir}",
+    "complete": "清理完成，已删除 {count} 个目录",
+    "nothingToClean": "无需清理，构建产物目录不存在"
   },
   "upgrade": {
     "currentVersion": "当前版本: {version}",
