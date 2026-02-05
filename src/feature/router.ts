@@ -28,20 +28,11 @@ export async function initializeRouter(
   container: ServiceContainer,
   config: AppConfig,
 ): Promise<Router> {
-  // 从配置中获取路由选项
+  // 从配置中获取路由选项（engine、ssr 由 render 提供，服务端路由不接收）
   const routerConfig = (config.router || {}) as RouterOptions;
 
-  // 从 render 配置中读取 engine 和 mode
-  const renderConfig = (config.render || {}) as {
-    engine?: "react" | "preact";
-    mode?: "ssr" | "csr" | "ssg";
-  };
-
-  // 创建路由实例（engine 从 render.engine 读取）
   const router = createRouter({
     routesDir: routerConfig.routesDir || "./src/routes",
-    engine: renderConfig.engine,
-    ssr: renderConfig.mode === "ssr",
     apiMode: routerConfig.apiMode || "restful",
   });
 

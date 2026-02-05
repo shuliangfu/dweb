@@ -1370,6 +1370,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ---
 
+## 📚 配置文档
+
+- **[AppConfig 完整配置示例](./APP_CONFIG_EXAMPLE.md)**：涵盖 server、router、render、build、logger、database、socketIo、plugins、middlewares 等全部配置项及单应用/多应用示例。
+
+---
+
 ## 📦 扩展库
 
 以下为 dreamer-jsr 生态中**按需选用**的扩展库，用于在 dweb
