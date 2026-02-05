@@ -66,7 +66,7 @@ import type {
 } from "../types/app.ts";
 import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
-import { initDwebI18n } from "../utils/i18n.ts";
+import { initDwebI18n, $t } from "../utils/i18n.ts";
 import { getLogger, initializeLogger } from "../utils/logger.ts";
 import { getDwebVersion } from "../utils/version.ts";
 import {

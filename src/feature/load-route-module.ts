@@ -6,6 +6,7 @@
  */
 
 import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
+import { $t } from "../utils/i18n.ts";
 import { getModuleVersion } from "./module-cache.ts";
 
 /**

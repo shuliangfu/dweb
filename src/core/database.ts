@@ -14,6 +14,7 @@ import {
 } from "@dreamer/database";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
+import { $t } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 
 /**

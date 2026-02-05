@@ -38,7 +38,7 @@ import {
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import type { AppLanguage } from "../types/app.ts";
-import { detectLocale } from "../utils/i18n.ts";
+import { detectLocale, $t } from "../utils/i18n.ts";
 import { fetchDreamerVersions } from "../utils/jsr-versions.ts";
 import {
   type DwebDenoConfig,

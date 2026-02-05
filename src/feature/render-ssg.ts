@@ -23,6 +23,7 @@ import {
 } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
+import { $t } from "../utils/i18n.ts";
 import { createRendererSSR } from "./render-ssr.ts";
 
 /**

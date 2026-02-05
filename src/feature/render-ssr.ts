@@ -14,6 +14,7 @@ import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import { getConfig } from "../core/config.ts";
 import { getEnv } from "../core/runtime-adapter.ts";
+import { $t } from "../utils/i18n.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
 

@@ -11,6 +11,7 @@
 
 import { info, success } from "@dreamer/console";
 import { cwd, join, remove, stat } from "@dreamer/runtime-adapter";
+import { $t } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 
 /** 要清理的目录列表（相对于项目根） */

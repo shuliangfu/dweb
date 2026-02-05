@@ -21,6 +21,7 @@ import type { Plugin } from "@dreamer/plugin";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
+import { $t } from "../utils/i18n.ts";
 import {
   cwd,
   existsSync,

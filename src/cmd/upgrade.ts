@@ -21,6 +21,7 @@ import {
   success,
 } from "@dreamer/console";
 import { createCommand } from "@dreamer/runtime-adapter";
+import { $t } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 import { fetchJsrLatestVersion } from "../utils/jsr-versions.ts";
 import { getDwebVersion, writeVersionCache } from "../utils/version.ts";

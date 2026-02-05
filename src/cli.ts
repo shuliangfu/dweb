@@ -15,6 +15,7 @@ import {
   error,
   type ParsedOptions,
 } from "./feature/command.ts";
+import { $t } from "./utils/i18n.ts";
 import { getDwebVersion } from "./utils/version.ts";
 
 /**

@@ -18,6 +18,7 @@
 
 import { error, info, success } from "@dreamer/console";
 import { DatabaseManager, MigrationManager } from "@dreamer/database";
+import { $t } from "../utils/i18n.ts";
 import {
   createCommand,
   cwd,

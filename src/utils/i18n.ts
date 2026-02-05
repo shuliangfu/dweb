@@ -24,6 +24,20 @@ import { setDwebErrorTranslator } from "./errors.ts";
 import zhCN from "../locales/zh-CN/dweb.json" with { type: "json" };
 import enUS from "../locales/en-US/dweb.json" with { type: "json" };
 
+/**
+ * 全局翻译函数（委托给 globalThis.$t，init 前返回 key）
+ * 供框架内各模块 import 使用，解决 deno publish 时 compilerOptions.types 不生效的问题
+ */
+export function $t(
+  key: string,
+  params?: Record<string, string | number | boolean>,
+): string {
+  const g = globalThis as {
+    $t?: (k: string, p?: Record<string, string | number | boolean>) => string;
+  };
+  return g.$t ? g.$t(key, params) : key;
+}
+
 /** 是否已初始化（幂等） */
 let initialized = false;
 

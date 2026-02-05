@@ -9,6 +9,7 @@
 
 import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
+import { $t } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { getPluginManager } from "./plugin.ts";
 

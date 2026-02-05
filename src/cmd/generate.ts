@@ -17,6 +17,7 @@
  */
 
 import { error, info, success } from "@dreamer/console";
+import { $t } from "../utils/i18n.ts";
 import {
   cwd,
   dirname,

@@ -19,6 +19,7 @@ import {
   startSpinner,
   succeedSpinner,
 } from "./feature/command.ts";
+import { $t } from "./utils/i18n.ts";
 import {
   createCommand,
   exit,
