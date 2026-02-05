@@ -11,10 +11,10 @@ const config: AppConfig = {
   hotReload: true,
   server: {
     ...defaultConfig.server,
-    host: "localhost",
+    host: "127.0.0.1",
   },
   logger: {
-    level: "debug",
+    level: "info",
     format: "text",
   },
   // 实时通信：type 为 websocket 时挂载到当前 HTTP 服务器同一端口（开发环境测试）

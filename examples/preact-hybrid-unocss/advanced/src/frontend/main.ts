@@ -16,7 +16,7 @@ const app = new App({
   // 服务器配置
   server: {
     port: commonConfig.frontendPort,
-    host: "localhost",
+    host: "127.0.0.1",
   },
 
   // 渲染配置

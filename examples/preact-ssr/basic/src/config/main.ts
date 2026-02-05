@@ -12,7 +12,7 @@ const config: AppConfig = {
   // 服务器配置
   server: {
     port: 3000,
-    host: "localhost",
+    host: "127.0.0.1",
     dev: {
       hmr: { enabled: true, path: "/__hmr" },
       watch: {

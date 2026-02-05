@@ -9,7 +9,7 @@ const config: AppConfig = {
   ...defaultConfig,
   server: {
     ...defaultConfig.server,
-    host: "localhost",
+    host: "127.0.0.1",
   },
   logger: {
     level: "debug",

@@ -11,7 +11,7 @@ const config: AppConfig = {
   hotReload: true,
   server: {
     ...defaultConfig.server,
-    host: "localhost",
+    host: "127.0.0.1",
   },
   logger: {
     level: "debug",

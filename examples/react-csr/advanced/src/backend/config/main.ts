@@ -13,7 +13,7 @@ const config: AppConfig = {
 
   server: {
     port: 3001,
-    host: "localhost",
+    host: "127.0.0.1",
     dev: {
       hmr: { enabled: true, path: "/__hmr" },
       watch: {
