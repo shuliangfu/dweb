@@ -27,7 +27,7 @@ import {
  * const version = config?.version ?? FALLBACK_DWEB_VERSION;
  * ```
  */
-export const FALLBACK_DWEB_VERSION = "3.0.0-beta.1";
+export const FALLBACK_DWEB_VERSION = "3.0.0";
 
 /**
  * 无法读取 deno.json 时的默认 runtime-adapter 依赖说明符
@@ -40,7 +40,7 @@ export const FALLBACK_DWEB_VERSION = "3.0.0-beta.1";
  * ```
  */
 export const FALLBACK_RUNTIME_ADAPTER_SPEC =
-  "jsr:@dreamer/runtime-adapter@^1.0.0-beta.25";
+  "jsr:@dreamer/runtime-adapter@^1.0.0-beta.26";
 
 /**
  * 无法读取 deno.json 时的默认 plugins 版本
