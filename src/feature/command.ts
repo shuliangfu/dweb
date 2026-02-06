@@ -18,7 +18,7 @@ import {
   type ParsedOptions,
 } from "@dreamer/console";
 import { ServiceContainer } from "@dreamer/service";
-import type { App } from "../core/app.ts";
+import { App } from "../core/app.ts";
 import { getConfig } from "../core/config.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { initDwebI18n } from "../utils/i18n.ts";
@@ -90,9 +90,6 @@ export class Command extends BaseCommand {
    * @param configDirectory 配置目录（默认："./config"）
    */
   async initApp(): Promise<void> {
-    // 动态导入 App 类，避免在类型检查时下载所有依赖
-    const { App } = await import("../core/app.ts");
-
     // 获取已加载的配置
     // 配置加载优先级（从低到高）：
     // 1. common/config/main.ts（公共框架配置）

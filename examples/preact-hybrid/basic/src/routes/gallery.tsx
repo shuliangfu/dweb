@@ -22,7 +22,7 @@ const GALLERY_IMAGES = [
   { src: "/assets/images/3.jpeg", alt: "图片 3", title: "风景 3" },
   { src: "/assets/images/4.jpg", alt: "图片 4", title: "风景 4" },
   { src: "/assets/images/5.jpeg", alt: "图片 5", title: "风景 5" },
-  { src: "/assets/images/6.jpeg", alt: "图片 6", title: "风景 6" },
+  { src: "/assets/images/6.jpeg", alt: "图片 6", title: "美女 6" },
 ];
 
 /**

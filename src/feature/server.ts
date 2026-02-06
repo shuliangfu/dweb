@@ -17,6 +17,8 @@ import {
   buildClientScript,
   clearClientScriptCache,
 } from "./csr-client-builder.ts";
+import { invalidateModule } from "./module-cache.ts";
+import { pluginEvents } from "../core/plugin-events.ts";
 
 /**
  * 初始化 HTTP 服务器
@@ -112,13 +114,11 @@ export function initializeServer(
         async rebuild(options?: { changedPath?: string }) {
           // 使模块缓存失效，确保刷新页面时加载最新内容（项目内所有模块更新都能热重载）
           if (options?.changedPath) {
-            const { invalidateModule } = await import("./module-cache.ts");
             invalidateModule(options.changedPath);
           }
           clearClientScriptCache();
           const result = await buildClientScript(container, config, options);
           // 触发 onHotReload 插件事件（HMR 热重载完成后）
-          const { pluginEvents } = await import("../core/plugin-events.ts");
           await pluginEvents.emitOnHotReload(
             container,
             options?.changedPath ? [options.changedPath] : [],
