@@ -14,11 +14,34 @@ import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import type { HttpContext } from "@dreamer/server";
 import { getConfig } from "../core/config.ts";
+import { getLogger } from "../utils/logger.ts";
 import { getEnv } from "../core/runtime-adapter.ts";
 import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
+import { sanitizeRequestParams } from "../utils/sanitize.ts";
 import { $t } from "../utils/i18n.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
+
+/** load 结果短期缓存 TTL（毫秒），减轻重 I/O 的重复请求 */
+const LOAD_CACHE_TTL_MS = 1000;
+
+/** load 缓存条目 */
+interface LoadCacheEntry {
+  value: Record<string, unknown>;
+  expiresAt: number;
+}
+
+/** 生成 load 缓存 key（URL + params 序列化） */
+function getLoadCacheKey(
+  url: string,
+  params: Record<string, string> | undefined,
+): string {
+  try {
+    return `${url}|${JSON.stringify(params ?? {})}`;
+  } catch {
+    return "";
+  }
+}
 
 /**
  * 转义 style 内容中的 </ 避免提前闭合 style 标签
@@ -43,6 +66,8 @@ export function createRendererSSR(
   // 获取渲染服务与配置
   const renderService = getRender(container);
   const config = getConfig(container);
+  /** load 结果短期缓存（URL + params → 1 秒内复用，减轻重 I/O） */
+  const loadCache = new Map<string, LoadCacheEntry>();
   const renderConfig = (config.render || {}) as {
     engine?: "react" | "preact";
   };
@@ -65,10 +90,18 @@ export function createRendererSSR(
       // 并行加载页面、App、Layout 组件（支持 .ts/.tsx）
       const appPath = router.getSpecialFile("_app");
       const layoutPath = router.getSpecialFile("_layout");
+      const loadOpts = {
+        cssCollector,
+        logger: container.has("logger") ? getLogger(container) : undefined,
+      };
       const [pageModule, appModule, layoutModule] = await Promise.all([
-        loadRouteModule(match.route.fullPath, { cssCollector }),
-        appPath ? loadRouteModule(appPath, { cssCollector }) : Promise.resolve(null),
-        layoutPath ? loadRouteModule(layoutPath, { cssCollector }) : Promise.resolve(null),
+        loadRouteModule(match.route.fullPath, loadOpts),
+        appPath
+          ? loadRouteModule(appPath, loadOpts)
+          : Promise.resolve(null),
+        layoutPath
+          ? loadRouteModule(layoutPath, loadOpts)
+          : Promise.resolve(null),
       ]);
 
       if (!pageModule) {
@@ -85,25 +118,56 @@ export function createRendererSSR(
       const LayoutComponent = layoutModule?.default ?? layoutModule?.Layout ??
         null;
 
-      // 准备页面属性
-      const pageProps: Record<string, any> = {
-        params: match.params,
-        query: match.query,
+      // 准备页面属性（params/query 做安全过滤，防止原型污染等）
+      const pageProps: Record<string, unknown> = {
+        params: sanitizeRequestParams(match.params),
+        query: sanitizeRequestParams(match.query),
       };
 
-      // 调用 load 函数获取服务端数据（如果存在）
+      // 调用 load 函数获取服务端数据（若存在），带短期缓存减轻重 I/O
       if (typeof pageModule.load === "function") {
-        const serverData = await pageModule.load({
-          url: ctx.url?.href || ctx.path,
-          params: match.params,
-          request: ctx.request,
-        });
-        Object.assign(pageProps, serverData);
+        const url = ctx.url?.href || ctx.path;
+        const cacheKey = getLoadCacheKey(url, match.params);
+        const now = Date.now();
+        let serverData: Record<string, unknown> | null = null;
+
+        if (cacheKey) {
+          const entry = loadCache.get(cacheKey);
+          if (entry && entry.expiresAt > now) {
+            serverData = entry.value;
+          } else if (entry) {
+            loadCache.delete(cacheKey);
+          }
+        }
+
+        if (serverData === null) {
+          serverData = (await pageModule.load({
+            url,
+            params: match.params,
+            request: ctx.request,
+          })) as Record<string, unknown> | null;
+          if (serverData && cacheKey) {
+            loadCache.set(cacheKey, {
+              value: serverData,
+              expiresAt: now + LOAD_CACHE_TTL_MS,
+            });
+            // 懒清理：超过 200 条时移除过期项，避免内存无限增长
+            if (loadCache.size > 200) {
+              for (const [k, v] of loadCache) {
+                if (v.expiresAt <= now) loadCache.delete(k);
+              }
+            }
+          }
+        }
+
+        if (serverData) {
+          Object.assign(pageProps, serverData);
+        }
       }
 
       // 构建布局数组（从外到内：App -> Layout -> Page）
       const layouts: Array<
-        { component: any; props?: Record<string, unknown> }
+        { component: unknown; props?: Record<string, unknown> }
       > = [];
 
       // App 组件作为最外层布局
@@ -134,7 +198,9 @@ export function createRendererSSR(
       let html = result.html;
       if (routeCss.length > 0 && html.includes("</head>")) {
         const styleTags = routeCss
-          .map((c) => `<style data-dweb-route-css>${escapeHtmlInStyle(c)}</style>`)
+          .map((c) =>
+            `<style data-dweb-route-css>${escapeHtmlInStyle(c)}</style>`
+          )
           .join("");
         html = html.replace("</head>", `${styleTags}</head>`);
       }
@@ -163,7 +229,9 @@ export function createRendererSSR(
       const errorPath = router.getSpecialFile("_error");
       if (errorPath) {
         try {
-          const errorModule = await loadRouteModule(errorPath);
+          const errorModule = await loadRouteModule(errorPath, {
+            logger: container.has("logger") ? getLogger(container) : undefined,
+          });
           const ErrorComponent = errorModule?.default ?? errorModule?.Error;
           if (ErrorComponent) {
             const errSsrOptions: SSROptions = {

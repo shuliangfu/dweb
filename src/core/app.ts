@@ -988,7 +988,11 @@ export class App extends EventEmitter implements IApp {
           const absOutputDir = join(cwd(), ssgOutputDir);
           /** 按路径加载模块（支持 .ts/.tsx，用于 loadRouteComponent、loadRouteLayouts） */
           const loadModuleByPath = async (fullPath: string) => {
-            const mod = await loadRouteModule(fullPath);
+            const mod = await loadRouteModule(fullPath, {
+              logger: this.container.has("logger")
+                ? getLogger(this.container)
+                : undefined,
+            });
             return mod?.default ?? mod?.Page ?? mod?.App ?? mod?.Layout ?? null;
           };
 

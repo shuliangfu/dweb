@@ -11,6 +11,7 @@
  * 相同内容复用已加载模块，避免重复的读文件、写临时、import、删临时等磁盘 I/O。
  */
 
+import type { Logger } from "@dreamer/logger";
 import { pathToFileURL } from "node:url";
 import {
   cwd,
@@ -162,11 +163,15 @@ async function computeContentHash(
  *
  * @param filePath 文件路径（可为 file://、绝对或相对）
  * @param options.cssCollector 可选，收到每段 CSS 内容时调用，用于 SSR 注入到页面 head
+ * @param options.logger 可选，失败时用 logger.error 输出，便于日志聚合；未传则用 console.error
  * @returns 模块对象，失败返回 null
  */
 export async function loadRouteModule(
   filePath: string,
-  options?: { cssCollector?: (css: string) => void },
+  options?: {
+    cssCollector?: (css: string) => void;
+    logger?: Logger;
+  },
 ): Promise<Record<string, unknown> | null> {
   const cwdPath = cwd();
 
@@ -273,7 +278,12 @@ export async function loadRouteModule(
     const mod = await import(moduleUrl);
     return mod as Record<string, unknown>;
   } catch (error) {
-    console.error(`${$t("log.loadModuleFailed")}: ${filePath}`, error);
+    const msg = `${$t("log.loadModuleFailed")}: ${filePath}`;
+    if (options?.logger) {
+      options.logger.error(msg, error);
+    } else {
+      console.error(msg, error);
+    }
     return null;
   }
 }

@@ -35,10 +35,7 @@ import type { AppConfig } from "../types/app.ts";
 import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
 import { $t } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
-import {
-  normalizePathForCompare,
-  pathForLog,
-} from "../utils/path.ts";
+import { normalizePathForCompare, pathForLog } from "../utils/path.ts";
 
 /**
  * 客户端脚本构建结果
@@ -590,11 +587,11 @@ export async function setupHydrationRouterAndHmr(opts: {
     };
     const scrollX = typeof _win.scrollX === "number" ? _win.scrollX : 0;
     const scrollY = typeof _win.scrollY === "number" ? _win.scrollY : 0;
-    // 先卸载并移除旧的路由 CSS，再加载新 chunk。否则新 chunk 加载时会注入样式，随后被误删
-    unmountPrevious();
-    if (typeof _win.document !== "undefined") {
-      _win.document.querySelectorAll("[data-dweb-route-css],[data-dweb-css-id]").forEach(function(el) { el.remove(); });
-    }
+    // 先记录待移除的旧 CSS 元素（加载前快照，避免误删新 chunk 注入的样式）
+    const oldCssEls = typeof _win.document !== "undefined"
+      ? Array.from(_win.document.querySelectorAll("[data-dweb-route-css],[data-dweb-css-id]"))
+      : [];
+    // 先加载新模块（旧内容保持可见），加载完成后再 unmount + 移除旧 CSS + render，避免长时间空白导致闪动
     loadModule()
       .then((mod) => {
         if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
@@ -609,6 +606,9 @@ export async function setupHydrationRouterAndHmr(opts: {
           if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
             console.log("[HMR] renderCSR 前", { componentPath: match.route.component });
           }
+          // 新模块已就绪，在 render 前一刻执行 unmount + 移除旧 CSS，最小化空白时间，消除闪动
+          unmountPrevious();
+          oldCssEls.forEach(function(el) { el.remove(); });
           const csrResult = renderCSR({
             engine,
             component: PageComponent,
@@ -936,7 +936,9 @@ export async function prepareClientBuildEntry(
     hmrCssEntries,
   );
   await writeTextFile(clientDepPath, clientDepCode);
-  logger.debug($t("log.clientDepRefreshed", { path: pathForLog(clientDepPath) }));
+  logger.debug(
+    $t("log.clientDepRefreshed", { path: pathForLog(clientDepPath) }),
+  );
 
   // _client.tsx 不存在时生成
   if (!(await exists(tempClientEntryPath))) {
@@ -1201,7 +1203,10 @@ export async function buildClientScript(
           external: externalList.length > 0 ? externalList : undefined,
           alias: userBundleConfig.alias,
         },
-        t: (key: string, params?: Record<string, string | number | boolean>) => {
+        t: (
+          key: string,
+          params?: Record<string, string | number | boolean>,
+        ) => {
           const r = $t(key, params);
           return (r != null && r !== key) ? r : undefined;
         },
@@ -1235,7 +1240,9 @@ export async function buildClientScript(
         size: (totalSize / 1024).toFixed(1),
       }));
 
-      const { chunkContentIndex, chunkBaseIndex } = buildChunkIndices(outputFiles);
+      const { chunkContentIndex, chunkBaseIndex } = buildChunkIndices(
+        outputFiles,
+      );
       result = {
         code: mainCode,
         buildTime: Date.now(),
@@ -1260,10 +1267,18 @@ export async function buildClientScript(
           logger.warn($t("log.hmrIncrementalRebuildFailed") + ":", err);
           await cachedDevBuilder.dispose();
           cachedDevBuilder = null;
-          buildResultDev = await doDevBuild(tempClientEntryPath, memOutputDir, engine);
+          buildResultDev = await doDevBuild(
+            tempClientEntryPath,
+            memOutputDir,
+            engine,
+          );
         }
       } else {
-        buildResultDev = await doDevBuild(tempClientEntryPath, memOutputDir, engine);
+        buildResultDev = await doDevBuild(
+          tempClientEntryPath,
+          memOutputDir,
+          engine,
+        );
       }
 
       const outputFilesDev = new Map<string, string>();
@@ -1320,7 +1335,9 @@ export async function buildClientScript(
         }
       }
 
-      const { chunkContentIndex, chunkBaseIndex } = buildChunkIndices(outputFilesDev);
+      const { chunkContentIndex, chunkBaseIndex } = buildChunkIndices(
+        outputFilesDev,
+      );
       result = {
         code: mainCodeDev,
         buildTime: Date.now(),

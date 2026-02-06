@@ -34,6 +34,53 @@ import {
 } from "./runtime-adapter.ts";
 import { isPathWithinProject } from "../utils/path.ts";
 
+/** 入口 main 文件扩展名（预编译，避免重复创建） */
+const RE_MAIN_EXT = /main\.(ts|tsx|js|jsx)$/;
+/** 单应用开发 + src：/src/main.(ts|tsx|js|jsx) */
+const RE_DEV_SINGLE_SRC = /^\/src\/main\.(ts|tsx|js|jsx)$/;
+/** 单应用开发 无 src：main.(ts|tsx|js|jsx) */
+const RE_DEV_SINGLE_NO_SRC = /^\/?main\.(ts|tsx|js|jsx)$/;
+/** 多应用开发 + src：/src/<app>/main.(ts|tsx|js|jsx) */
+const RE_DEV_MULTI_SRC = /^\/src\/([^/]+)\/main\.(ts|tsx|js|jsx)$/;
+/** 多应用开发 无 src：<app>/main.(ts|tsx|js|jsx) */
+const RE_DEV_MULTI_NO_SRC = /^\/?([^/]+)\/main\.(ts|tsx|js|jsx)$/;
+/** 单应用生产：/<outputDir>/server.js */
+const RE_PROD_SINGLE = /^\/([^/]+)\/server\.js$/;
+/** 多应用生产：/<outputDir>/<app>/server.js */
+const RE_PROD_MULTI = /^\/([^/]+)\/([^/]+)\/server\.js$/;
+
+/**
+ * 从归一化入口路径推断 config 目录（内部使用预编译正则）
+ *
+ * @param normalized 已去掉 cwd 的路径（相对根）
+ * @param hasSrcDir 项目根目录是否存在 src/
+ * @returns 推断出的 config 相对路径，或 null
+ */
+function matchConfigDirFromNormalizedPath(
+  normalized: string,
+  hasSrcDir: boolean,
+): string | null {
+  if (RE_MAIN_EXT.test(normalized)) {
+    // 开发环境
+    if (RE_DEV_SINGLE_SRC.test(normalized)) return join("src", "config");
+    if (RE_DEV_SINGLE_NO_SRC.test(normalized)) return join("config");
+    const m2 = RE_DEV_MULTI_SRC.exec(normalized);
+    if (m2) return join("src", m2[1], "config");
+    const m3 = RE_DEV_MULTI_NO_SRC.exec(normalized);
+    if (m3) return join(m3[1], "config");
+  } else {
+    // 生产环境
+    const m4 = RE_PROD_SINGLE.exec(normalized);
+    if (m4) return hasSrcDir ? join("src", "config") : join("config");
+    const m5 = RE_PROD_MULTI.exec(normalized);
+    if (m5) {
+      const appDir = m5[2];
+      return hasSrcDir ? join("src", appDir, "config") : join(appDir, "config");
+    }
+  }
+  return null;
+}
+
 /**
  * 从入口模块路径推断 config 目录
  *
@@ -73,62 +120,12 @@ export function inferConfigDirectoryFromEntry(): string {
     }
 
     const root = cwd();
-
     const normalized = path.replace(root, "");
+    const hasSrcDir = existsSync(resolve(root, "src"));
 
-    const isDevSource = normalized.match(/main\.(ts|tsx|js|jsx)$/);
-
-    if (isDevSource) {
-      // 单应用开发：src/main.(ts|tsx|js|jsx) → ./src/config
-      const singleSrcMatch = normalized.match(/^\/src\/main\.(ts|tsx|js|jsx)$/);
-      if (singleSrcMatch) {
-        return join("src", "config");
-      }
-      // 单应用开发，获取没有 src 的目录（\/? 兼容 normalized 有无前导斜杠）
-      const singleSrcMatchNoSrc = normalized.match(
-        /^\/?main\.(ts|tsx|js|jsx)$/,
-      );
-      if (singleSrcMatchNoSrc) {
-        return join("config");
-      }
-
-      // 多应用开发：src/<app>/main.(ts|tsx|js|jsx) → src/<app>/config
-      const multiSrcMatch = normalized.match(
-        /^\/src\/([^/]+)\/main\.(ts|tsx|js|jsx)$/,
-      );
-      if (multiSrcMatch) {
-        const appDir = multiSrcMatch[1];
-        return join("src", appDir, "config");
-      }
-
-      // 多应用开发，获取没有 src 的目录（\/? 兼容 normalized 有无前导斜杠）
-      const multiSrcMatchNoSrc = normalized.match(
-        /^\/?([^/]+)\/main\.(ts|tsx|js|jsx)$/,
-      );
-      if (multiSrcMatchNoSrc) {
-        const appDir = multiSrcMatchNoSrc[1];
-        return join(appDir, "config");
-      }
-    } else {
-      // 生产环境：若项目无 src 目录，则 config 在根级 config 或 <app>/config
-      const hasSrcDir = existsSync(resolve(root, "src"));
-
-      // 单应用生产：/dist/server.js → src/config 或 config
-      const singleBuiltMatch = normalized.match(/^\/([^/]+)\/server\.js$/);
-      if (singleBuiltMatch) {
-        return hasSrcDir ? join("src", "config") : join("config");
-      }
-
-      // 多应用生产：/dist/backend/server.js → src/backend/config 或 backend/config
-      const multiBuiltMatch = normalized.match(
-        /^\/([^/]+)\/([^/]+)\/server\.js$/,
-      );
-      if (multiBuiltMatch) {
-        const appDir = multiBuiltMatch[2];
-        return hasSrcDir
-          ? join("src", appDir, "config")
-          : join(appDir, "config");
-      }
+    const configDir = matchConfigDirFromNormalizedPath(normalized, hasSrcDir);
+    if (configDir) {
+      return configDir;
     }
   } catch (err) {
     throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, {

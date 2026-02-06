@@ -5,12 +5,7 @@
  * 供 SSR/Hybrid/SSG 在输出或读取 HTML 时替换资源路径（源码中的原始路径 → 带 hash 的路径）。
  */
 
-import {
-  cwd,
-  exists,
-  join,
-  readTextFile,
-} from "../core/runtime-adapter.ts";
+import { cwd, exists, join, readTextFile } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { getInferredBuildOutputDirs } from "./build-dirs.ts";
 

@@ -261,11 +261,11 @@ function getDenoJson(opts: InitOptions, jsrVersions: JsrVersions): string {
   const hasStyleAssets = useUno || useTailwind;
   const dwebVersion = jsrVersions.dweb;
   const pluginsVersion = jsrVersions.plugins;
-  const renderSpec = `jsr:@dreamer/render@${jsrVersions.render}`;
-  const routerSpec = `jsr:@dreamer/router@${jsrVersions.router}`;
+  const renderSpec = `jsr:@dreamer/render@^${jsrVersions.render}`;
+  const routerSpec = `jsr:@dreamer/router@^${jsrVersions.router}`;
   /** @dreamer/* 依赖：dweb、render、router 必选；plugins 按样式方案（仅主包，子路径由解析器自动处理） */
   const dreamerImports = [
-    `    "@dreamer/dweb": "jsr:@dreamer/dweb@${dwebVersion}"`,
+    `    "@dreamer/dweb": "jsr:@dreamer/dweb@^${dwebVersion}"`,
     `    "@dreamer/render": "${renderSpec}"`,
     `    "@dreamer/router": "${routerSpec}"`,
     ...(hasStyleAssets
@@ -275,24 +275,24 @@ function getDenoJson(opts: InitOptions, jsrVersions: JsrVersions): string {
   /** Tailwind 相关 npm 依赖（postcss、tailwindcss、@tailwindcss/postcss） */
   const tailwindNpmImports = useTailwind
     ? `    "postcss": "npm:postcss@8.4.39",
-    "tailwindcss": "npm:tailwindcss@^4.0.0",
-    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@^4.0.0"`
+    "tailwindcss": "npm:tailwindcss@4.0.0",
+    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@4.0.0"`
     : "";
   /** UnoCSS 相关 npm 依赖 */
   const unocssNpmImports = useUno
-    ? `    "@unocss/core": "npm:@unocss/core@^66.0.0",
-    "@unocss/preset-wind3": "npm:@unocss/preset-wind3@^66.0.0",
-    "@unocss/preset-icons": "npm:@unocss/preset-icons@^66.0.0"`
+    ? `    "@unocss/core": "npm:@unocss/core@66.0.0",
+    "@unocss/preset-wind3": "npm:@unocss/preset-wind3@66.0.0",
+    "@unocss/preset-icons": "npm:@unocss/preset-icons@66.0.0"`
     : "";
   /** 其他依赖（preact/react、npm） */
   const otherImports = isPreact
     ? `    "preact": "npm:preact@10.28.0",
     "preact/hooks": "npm:preact@10.28.0/hooks",
     "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
-    "preact-render-to-string": "npm:preact-render-to-string@^6.5.0"`
+    "preact-render-to-string": "npm:preact-render-to-string@6.5.0"`
     : `    "react": "npm:react@18.3.1",
     "react-dom": "npm:react-dom@18.3.1",
-    "scheduler": "npm:scheduler@^0.25.0",
+    "scheduler": "npm:scheduler@0.25.0",
     "react-dom/client": "npm:react-dom@18.3.1/client",
     "react/jsx-runtime": "npm:react@18.3.1/jsx-runtime"`;
   const jsxImportSource = isPreact ? "preact" : "react";

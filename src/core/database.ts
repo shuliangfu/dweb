@@ -11,6 +11,10 @@ import {
   type DatabaseConfig,
   DatabaseManager,
   type DatabaseManagerOptions,
+  MongoModel,
+  QueryLogger,
+  type QueryLoggerConfig,
+  SQLModel,
 } from "@dreamer/database";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
@@ -37,6 +41,11 @@ export interface DatabaseAppConfig {
   connections?: Record<string, DatabaseConfig>;
   /** 数据库管理器选项 */
   managerOptions?: DatabaseManagerOptions;
+  /**
+   * 查询日志配置（可选）
+   * 为 true 时使用默认配置并传入 t 翻译；为对象时合并 t 翻译
+   */
+  queryLogger?: QueryLoggerConfig | boolean;
 }
 
 /**
@@ -112,10 +121,45 @@ export async function connectDatabases(
   const manager = getDatabaseManager(container);
   const logger = getLogger(container);
 
-  // 连接默认数据库
+  // 设置 Model 的翻译函数，使验证错误等文案支持 i18n
+  const translate = (
+    key: string,
+    params?: Record<string, string | number | boolean>,
+  ) => {
+    const r = $t(key, params);
+    return (r != null && r !== key) ? r : undefined;
+  };
+  SQLModel.translate = translate;
+  MongoModel.translate = translate;
+
+  // 创建带 t 翻译的 QueryLogger（当启用 queryLogger 时）
+  // 传入 logger 时使用该 logger，不传则使用 QueryLogger 自带的 createLogger
+  const createQueryLoggerWithT = (): QueryLogger | undefined => {
+    if (!dbConfig.queryLogger) return undefined;
+    const baseConfig: QueryLoggerConfig =
+      typeof dbConfig.queryLogger === "boolean" ? {} : dbConfig.queryLogger;
+    return new QueryLogger({
+      ...baseConfig,
+      logger: baseConfig.logger ?? logger,
+      t: (key: string, params?: Record<string, string | number | boolean>) => {
+        const r = $t(key, params);
+        return (r != null && r !== key) ? r : undefined;
+      },
+    });
+  };
+
+  // 连接默认数据库（传入 t 供 MongoDB 适配器等使用）
   if (dbConfig.default) {
     try {
-      await manager.connect("default", dbConfig.default);
+      const connConfig = {
+        ...dbConfig.default,
+        t: dbConfig.default.t ?? translate,
+      } as DatabaseConfig;
+      await manager.connect("default", connConfig);
+      const ql = createQueryLoggerWithT();
+      if (ql) {
+        manager.getConnection("default").setQueryLogger(ql);
+      }
       logger.info($t("log.dbConnected", { name: "default" }));
     } catch (error) {
       logger.error($t("log.dbConnectFailed", { name: "default" }), error);
@@ -123,11 +167,19 @@ export async function connectDatabases(
     }
   }
 
-  // 连接命名数据库
+  // 连接命名数据库（传入 t 供 MongoDB 适配器等使用）
   if (dbConfig.connections) {
     for (const [name, connConfig] of Object.entries(dbConfig.connections)) {
       try {
-        await manager.connect(name, connConfig);
+        const configWithT = {
+          ...connConfig,
+          t: connConfig.t ?? translate,
+        } as DatabaseConfig;
+        await manager.connect(name, configWithT);
+        const ql = createQueryLoggerWithT();
+        if (ql) {
+          manager.getConnection(name).setQueryLogger(ql);
+        }
         logger.info($t("log.dbConnected", { name }));
       } catch (error) {
         logger.error($t("log.dbConnectFailed", { name }), error);

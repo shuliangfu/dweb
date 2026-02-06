@@ -12,6 +12,7 @@ import type { ServiceContainer } from "@dreamer/service";
 import { Server, type ServerOptions } from "@dreamer/socket-io";
 import type { AppConfig, SocketConfig } from "../types/app.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
+import { $t } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 
 /** 容器中 Socket.IO 服务实例的 key */
@@ -48,13 +49,17 @@ export function initializeSocketIo(
 
   const path = (socketConfig.path ?? "/socket.io/").replace(/\/?$/, "/");
   const logger = socketConfig.logger ?? getLogger(container);
-  const serverOptions = {
+  const serverOptions: ServerOptions = {
     ...socketConfig,
     path,
     logger,
+    t: (key: string, params?: Record<string, string | number | boolean>) => {
+      const r = $t(key, params);
+      return (r != null && r !== key) ? r : undefined;
+    },
     // 不传 port/host，挂载到主站
   };
-  const io = new Server(serverOptions as ServerOptions);
+  const io = new Server(serverOptions);
 
   container.registerSingleton(SOCKET_IO_SERVER_KEY, () => io);
   container.registerSingleton(SOCKET_IO_PATH_KEY, () => path);

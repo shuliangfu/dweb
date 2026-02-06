@@ -200,14 +200,15 @@ export async function POST(request: Request) {
  * ${namePascal} 数据模型
  */
 
-// TODO: 实现数据模型
+// 预留接口：根据业务补充字段，可集成 @dreamer/database Model
 export interface ${namePascal} {
   id: string;
   // 添加其他字段
 }
 
+// 预留接口：实现 CRUD 等模型方法
 export class ${namePascal}Model {
-  // TODO: 实现模型方法
+  // 实现 create、findById、update、delete 等方法
 }
 `;
       return { targetPath, content };

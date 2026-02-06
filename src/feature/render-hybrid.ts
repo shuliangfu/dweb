@@ -18,8 +18,10 @@ import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import type { HttpContext } from "@dreamer/server";
 import { getEnv } from "../core/runtime-adapter.ts";
+import { getLogger } from "../utils/logger.ts";
 import type { AppConfig } from "../types/app.ts";
 import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
+import { sanitizeRequestParams } from "../utils/sanitize.ts";
 import { $t } from "../utils/i18n.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
@@ -115,9 +117,11 @@ export function createRendererHybrid(
       const cssCollector = (css: string) => routeCss.push(css);
 
       // 加载页面组件（支持 .ts/.tsx）
-      const pageModule = await loadRouteModule(match.route.fullPath, {
+      const loadOpts = {
         cssCollector,
-      });
+        logger: container.has("logger") ? getLogger(container) : undefined,
+      };
+      const pageModule = await loadRouteModule(match.route.fullPath, loadOpts);
       if (!pageModule) {
         return null;
       }
@@ -133,23 +137,23 @@ export function createRendererHybrid(
       const layoutPath = router.getSpecialFile("_layout");
 
       // 加载 App 组件
-      let AppComponent: any = null;
+      let AppComponent: unknown = null;
       if (appPath) {
-        const appModule = await loadRouteModule(appPath, { cssCollector });
+        const appModule = await loadRouteModule(appPath, loadOpts);
         AppComponent = appModule?.default ?? appModule?.App;
       }
 
       // 加载 Layout 组件
-      let LayoutComponent: any = null;
+      let LayoutComponent: unknown = null;
       if (layoutPath) {
-        const layoutModule = await loadRouteModule(layoutPath, { cssCollector });
+        const layoutModule = await loadRouteModule(layoutPath, loadOpts);
         LayoutComponent = layoutModule?.default ?? layoutModule?.Layout;
       }
 
-      // 准备页面属性
-      const pageProps: Record<string, any> = {
-        params: match.params,
-        query: match.query,
+      // 准备页面属性（params/query 做安全过滤，防止原型污染等）
+      const pageProps: Record<string, unknown> = {
+        params: sanitizeRequestParams(match.params),
+        query: sanitizeRequestParams(match.query),
       };
 
       // 调用 load 函数获取服务端数据（如果存在）
@@ -164,7 +168,7 @@ export function createRendererHybrid(
 
       // 构建布局数组（从外到内：App -> Layout -> Page）
       const layouts: Array<
-        { component: any; props?: Record<string, unknown> }
+        { component: unknown; props?: Record<string, unknown> }
       > = [];
 
       // App 组件作为最外层布局
@@ -242,7 +246,9 @@ ${hybridOptions.bodyTags || ""}`;
       const headInject: string[] = [];
       if (routeCss.length > 0) {
         headInject.push(
-          ...routeCss.map((c) => `<style data-dweb-route-css>${escapeHtmlInStyle(c)}</style>`),
+          ...routeCss.map((c) =>
+            `<style data-dweb-route-css>${escapeHtmlInStyle(c)}</style>`
+          ),
         );
       }
       if (hybridOptions.headTags) {
@@ -269,7 +275,9 @@ ${hybridOptions.bodyTags || ""}`;
       const errorPath = router.getSpecialFile("_error");
       if (errorPath) {
         try {
-          const errorModule = await loadRouteModule(errorPath);
+          const errorModule = await loadRouteModule(errorPath, {
+            logger: container.has("logger") ? getLogger(container) : undefined,
+          });
           const ErrorComponent = errorModule?.default ?? errorModule?.Error;
           if (ErrorComponent) {
             const result = await renderService.renderSSR({

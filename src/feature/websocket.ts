@@ -12,6 +12,7 @@ import type { ServiceContainer } from "@dreamer/service";
 import { Server } from "@dreamer/websocket";
 import type { AppConfig, SocketConfig } from "../types/app.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
+import { $t } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 
 /** 容器中 WebSocket 服务实例的 key */
@@ -54,6 +55,10 @@ export function initializeWebSocket(
     debug: socketConfig.debug ?? false,
     pingTimeout: socketConfig.pingTimeout ?? 60000,
     pingInterval: socketConfig.pingInterval ?? 30000,
+    t: (key: string, params?: Record<string, string | number | boolean>) => {
+      const r = $t(key, params);
+      return (r != null && r !== key) ? r : undefined;
+    },
     ...socketConfig,
   });
 

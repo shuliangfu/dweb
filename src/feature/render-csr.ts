@@ -16,6 +16,7 @@ import { createElement } from "preact";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import { getEnv } from "../core/runtime-adapter.ts";
+import { getLogger } from "../utils/logger.ts";
 import type { AppConfig } from "../types/app.ts";
 import { $t } from "../utils/i18n.ts";
 import { loadRouteModule } from "./load-route-module.ts";
@@ -102,10 +103,13 @@ export function createRendererCSR(
 
       const appPath = router.getSpecialFile("_app");
       const layoutPath = router.getSpecialFile("_layout");
+      const loadOpts = {
+        logger: container.has("logger") ? getLogger(container) : undefined,
+      };
 
       let AppComponent: unknown = null;
       if (appPath) {
-        const appModule = await loadRouteModule(appPath);
+        const appModule = await loadRouteModule(appPath, loadOpts);
         AppComponent = appModule?.default ?? appModule?.App;
       }
 
@@ -124,7 +128,7 @@ export function createRendererCSR(
 
       let LayoutComponent: unknown = null;
       if (layoutPath) {
-        const layoutModule = await loadRouteModule(layoutPath);
+        const layoutModule = await loadRouteModule(layoutPath, loadOpts);
         LayoutComponent = layoutModule?.default ?? layoutModule?.Layout;
       }
 

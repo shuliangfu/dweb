@@ -202,7 +202,8 @@ export async function runBuildWithBuilder(
   if (!(await exists(absEntry))) {
     throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, {
       reason: "未找到服务端入口文件",
-      hint: "请确保存在 src/main.ts 或 main.ts，或在 build.server.entry 中显式指定",
+      hint:
+        "请确保存在 src/main.ts 或 main.ts，或在 build.server.entry 中显式指定",
       path: absEntry,
     });
   }
