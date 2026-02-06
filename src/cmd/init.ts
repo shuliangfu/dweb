@@ -1076,14 +1076,14 @@ networks:
 `;
   }
 
-  // 单应用：一个服务
+  // 单应用：一个服务，服务名使用项目名称
   return `# docker-compose.yml
 # 单应用模式
 # 使用前请先执行 deno task build 构建
 # 首次启动可挂载 Deno 缓存加速：deno cache 后挂载 runtime/deno-cache
 
 services:
-  app:
+  ${projectName}:
     build:
       context: .
       dockerfile: Dockerfile
