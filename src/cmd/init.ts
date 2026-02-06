@@ -1042,7 +1042,7 @@ function getDockerComposeYml(opts: InitOptions): string {
       - DENO_ENV=production
     volumes:
       - .:/app
-      - \${DENO_CACHE_DIR:-runtime/deno-cache}:/deno-dir
+      - \${DENO_CACHE_DIR:-./runtime/deno-cache}:/deno-dir
     healthcheck:
       test:
         [
@@ -1099,7 +1099,7 @@ services:
       - DENO_ENV=production
     volumes:
       - .:/app
-      - \${DENO_CACHE_DIR:-runtime/deno-cache}:/deno-dir
+      - \${DENO_CACHE_DIR:-./runtime/deno-cache}:/deno-dir
     healthcheck:
       test:
         [
