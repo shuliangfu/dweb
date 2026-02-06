@@ -4,9 +4,11 @@
  * 测试 src/core/config.ts 的功能：
  * - validateConfig 配置验证
  * - deepMergeConfig 配置合并
+ * - inferConfigDirectoryFromEntry 从入口推断 config 目录
  * - 配置加载和初始化
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import { deepMergeConfig, validateConfig } from "../../src/core/config.ts";
 import type { AppConfig } from "../../src/types/app.ts";
@@ -454,4 +456,9 @@ describe("配置管理 (config.ts)", () => {
       });
     });
   });
+
+  // ==================== inferConfigDirectoryFromEntry 测试 ====================
+  // 注：inferConfigDirectoryFromEntry 依赖 Deno.mainModule / process.argv，
+  // 在测试环境中 globalThis.Deno 为只读无法 mock，故跳过直接单测。
+  // 该逻辑通过 build-dirs、init 等集成测试间接覆盖。
 });
