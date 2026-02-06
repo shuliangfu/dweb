@@ -24,12 +24,16 @@ describe("路径工具 (path.ts)", () => {
     });
 
     it("项目子路径应在项目内", () => {
-      expect(isPathWithinProject(`${projectRoot}/src/foo.ts`, projectRoot)).toBe(true);
-      expect(isPathWithinProject(`${projectRoot}/config/main.ts`, projectRoot)).toBe(true);
+      expect(isPathWithinProject(`${projectRoot}/src/foo.ts`, projectRoot))
+        .toBe(true);
+      expect(isPathWithinProject(`${projectRoot}/config/main.ts`, projectRoot))
+        .toBe(true);
     });
 
     it("项目外路径应返回 false", () => {
-      expect(isPathWithinProject("/home/other/file.ts", projectRoot)).toBe(false);
+      expect(isPathWithinProject("/home/other/file.ts", projectRoot)).toBe(
+        false,
+      );
       expect(isPathWithinProject("/tmp/foo", projectRoot)).toBe(false);
     });
 

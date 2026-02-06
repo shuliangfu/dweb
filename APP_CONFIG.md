@@ -7,23 +7,23 @@
 
 `AppConfig` 是 dweb 框架的应用配置接口，包含以下主要模块：
 
-| 配置项            | 类型              | 说明                                                                                                               |
-| ----------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `name`            | string            | 应用名称                                                                                                           |
-| `version`         | string            | 应用版本                                                                                                           |
-| `language`        | AppLanguage       | 框架语言（zh-CN 或 en-US；影响 CLI、日志、错误消息等；<br/>默认自动检测环境变量 LANGUAGE/LC_ALL/LANG，否则 zh-CN） |
-| `configDirectory` | string            | 配置目录（默认 `./config`）                                                                                        |
-| `envPrefix`       | string            | 环境变量前缀                                                                                                       |
-| `hotReload`       | boolean           | 是否启用热重载                                                                                                     |
-| `server`          | ServerOptions     | 服务器配置                                                                                                         |
-| `router`          | RouterOptions     | 路由配置                                                                                                           |
-| `render`          | object            | 渲染配置                                                                                                           |
-| `build`           | BuildAppConfig    | 构建配置                                                                                                           |
-| `logger`          | LoggerConfig      | 日志配置                                                                                                           |
-| `database`        | DatabaseAppConfig | 数据库配置                                                                                                         |
-| `socket`          | SocketConfig      | 实时通信配置（type: socketio 或 websocket）                                                                        |
-| `plugins`         | Array             | 插件列表                                                                                                           |
-| `middlewares`     | Array             | 中间件列表                                                                                                         |
+| 配置项                 | 类型                 | 说明                                                                                                               |
+| ---------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `name`                 | string               | 应用名称                                                                                                           |
+| `version`              | string               | 应用版本                                                                                                           |
+| `language`             | AppLanguage          | 框架语言（zh-CN 或 en-US；影响 CLI、日志、错误消息等；<br/>默认自动检测环境变量 LANGUAGE/LC_ALL/LANG，否则 zh-CN） |
+| `envPrefix`            | string               | 环境变量前缀                                                                                                       |
+| `hotReload`            | boolean              | 是否启用热重载                                                                                                     |
+| `pluginManagerOptions` | PluginManagerOptions | 插件管理器选项（autoActivate、continueOnError、enableHotReload 等）                                                |
+| `server`               | ServerOptions        | 服务器配置                                                                                                         |
+| `router`               | RouterOptions        | 路由配置                                                                                                           |
+| `render`               | object               | 渲染配置                                                                                                           |
+| `build`                | BuildAppConfig       | 构建配置                                                                                                           |
+| `logger`               | LoggerConfig         | 日志配置                                                                                                           |
+| `database`             | DatabaseAppConfig    | 数据库配置                                                                                                         |
+| `socket`               | SocketConfig         | 实时通信配置（type: socketio 或 websocket）                                                                        |
+| `plugins`              | Array                | 插件列表                                                                                                           |
+| `middlewares`          | Array                | 中间件列表                                                                                                         |
 
 ---
 
@@ -46,12 +46,18 @@ const config: AppConfig = {
   language: "zh-CN",
 
   // ========== 配置目录 ==========
-  /** 配置目录，用于加载 main.ts、main.dev.ts、params.ts 等 */
-  configDirectory: "./config",
   /** 环境变量前缀，如 APP_ 则读取 APP_PORT、APP_HOST 等 */
   envPrefix: "APP_",
   /** 是否启用热重载（开发环境默认 true） */
   hotReload: true,
+
+  /** 插件管理器选项（可选） */
+  pluginManagerOptions: {
+    autoActivate: false,
+    continueOnError: true,
+    enableHotReload: false,
+    hotReloadInterval: 1000,
+  },
 
   // ========== 服务器配置 ==========
   server: {
@@ -76,7 +82,7 @@ const config: AppConfig = {
     shutdownTimeout: 10000,
     /** 开发工具配置（仅 dev 模式） */
     dev: {
-      hmr: { enabled: true, path: "/_hmr" },
+      hmr: { enabled: true, path: "/__hmr" },
       watch: { paths: ["./src"], ignore: ["node_modules"] },
     },
   },
@@ -198,7 +204,7 @@ const config: AppConfig = {
   // ========== 数据库配置（dweb 已内置 @dreamer/database，配置后即可使用） ==========
   database: {
     default: {
-      type: "postgresql",
+      adapter: "postgresql",
       connection: {
         host: "localhost",
         port: 5432,
@@ -209,7 +215,7 @@ const config: AppConfig = {
     },
     connections: {
       read: {
-        type: "postgresql",
+        adapter: "postgresql",
         connection: {
           host: "read-db.example.com",
           port: 5432,
@@ -220,7 +226,7 @@ const config: AppConfig = {
       },
       // MongoDB 副本集示例（可选）
       mongodb: {
-        type: "mongodb",
+        adapter: "mongodb",
         connection: {
           host: "localhost",
           port: 27017,
@@ -242,18 +248,31 @@ const config: AppConfig = {
     managerOptions: {},
   },
 
-  // ========== 实时通信配置（dweb 已内置，type 为 socketio 时启用） ==========
+  // ========== 实时通信配置（dweb 已内置，adapter 为 socketio 或 websocket 时启用） ==========
+  // Socket.IO 示例
   socket: {
-    type: "socketio",
-    path: "/socket.io/",
-    allowCORS: true,
-    pingTimeout: 20000,
-    pingInterval: 25000,
-    transports: ["websocket", "polling"],
-    allowPolling: true,
-    pollingTimeout: 60000,
-    debug: false,
+    adapter: "socketio",
+    config: {
+      path: "/socket.io/",
+      allowCORS: true,
+      pingTimeout: 20000,
+      pingInterval: 25000,
+      transports: ["websocket", "polling"],
+      allowPolling: true,
+      pollingTimeout: 60000,
+      debug: false,
+    },
   },
+  // WebSocket 示例（二选一）
+  // socket: {
+  //   adapter: "websocket",
+  //   config: {
+  //     path: "/ws",
+  //     pingTimeout: 60000,
+  //     pingInterval: 30000,
+  //     debug: false,
+  //   },
+  // },
 
   // ========== 插件列表 ==========
   // 插件只需实现 name、version，可选实现事件钩子（onInit、onRequest、onResponse 等）
@@ -302,6 +321,23 @@ export default config;
 
 ---
 
+### Socket.IO 与 WebSocket 配置说明
+
+实时通信支持两种类型，通过 `socket.adapter` 区分：
+
+- **`adapter: "socketio"`**（别名：`"socket-io"`、`"socket.io"`）：使用
+  Socket.IO，支持降级轮询，适合需要兼容性的场景。路径默认 `/socket.io/`。
+- **`adapter: "websocket"`**：使用原生 WebSocket，更轻量。路径默认 `/ws`。
+
+支持 `config` 嵌套（推荐）或扁平结构，两者均挂载到主站 HTTP 服务器，与主站共用
+`server.port` 和 `server.host`。
+
+**插件事件**：配置 Socket 后，框架会在连接建立/关闭时触发插件的
+`onSocket`、`onSocketClose`
+钩子，可用于认证、连接记录等。插件只需实现对应钩子即可，无需额外配置。
+
+---
+
 ### MongoDB 副本集配置说明
 
 当使用 MongoDB 副本集时，需在 `mongoOptions` 中配置：
@@ -346,10 +382,9 @@ export const commonConfig = {
 /** 公共 AppConfig 片段（使用 getEnv 兼容 Deno/Bun） */
 export const commonAppConfig: Partial<AppConfig> = {
   version: commonConfig.version,
-  configDirectory: "./config",
   database: {
     default: {
-      type: "postgresql",
+      adapter: "postgresql",
       connection: {
         host: getEnv("DB_HOST") || "localhost",
         port: parseInt(getEnv("DB_PORT") || "5432"),
@@ -520,6 +555,36 @@ export default config;
 **框架语言（language）**：影响 CLI、日志、错误消息等框架文案。在
 `config/main.ts` 中设置即可生效。解析优先级：`config/main.ts` 的 `language` >
 环境变量 `LANGUAGE`/`LC_ALL`/`LANG` > 默认 `zh-CN`。
+
+### 6.1 配置目录推断
+
+框架根据入口路径自动推断配置目录（无法从 main.ts 得知，因配置尚未加载）：
+
+| 场景        | 入口路径示例             | 推断的 config 目录                       |
+| ----------- | ------------------------ | ---------------------------------------- |
+| 单应用+src  | `src/main.ts`            | `src/config`                             |
+| 单应用无src | `main.ts`                | `config`                                 |
+| 多应用+src  | `src/backend/main.ts`    | `src/backend/config`                     |
+| 多应用无src | `backend/main.ts`        | `backend/config`                         |
+| 生产单应用  | `dist/server.js`         | `src/config` 或 `config`                 |
+| 生产多应用  | `dist/backend/server.js` | `src/backend/config` 或 `backend/config` |
+
+无法推断时使用默认 `./config`、`./src/config`。
+
+### 6.2 配置验证
+
+框架在合并配置后会调用 `validateConfig()` 进行校验，主要检查：
+
+- **基础项**：`name`、`version`、`envPrefix`、`hotReload` 的类型
+- **render**：`engine` 为 `"react"` 或 `"preact"`，`mode` 为
+  `"ssr"`、`"csr"`、`"ssg"` 或 `"hybrid"`
+- **middlewares**：配置中的中间件必须提供
+  `name`（路径形式可从路径提取，对象形式必须显式 `name`）
+- **plugins**：配置中的插件必须提供 `name`
+- **server / router / build / logger**：若存在则必须为对象类型
+
+校验失败会抛出对应的 `DwebErrorCode`（如
+`CONFIG_NAME_INVALID`、`CONFIG_MIDDLEWARE_MUST_HAVE_NAME` 等）。
 
 ---
 

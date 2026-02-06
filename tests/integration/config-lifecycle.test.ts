@@ -62,7 +62,6 @@ describe("integration: 配置与生命周期", () => {
   it("App 应能加载 config 并注册生命周期钩子", async () => {
     const stages: string[] = [];
     const app = new App({
-      configDirectory: join(testDir, "config"),
       name: "integration-test",
       version: "1.0.0",
     });

@@ -65,10 +65,16 @@ describe("loadRouteModule (load-route-module.ts)", () => {
     });
 
     it("项目外路径应返回 null（可传 logger）", async () => {
-      const container = (await import("../../src/core/service.ts")).initializeServiceContainer();
+      const container = (await import("../../src/core/service.ts"))
+        .initializeServiceContainer();
       const config = {};
-      (await import("../../src/utils/logger.ts")).initializeLogger(container, config);
-      const logger = (await import("../../src/utils/logger.ts")).getLogger(container);
+      (await import("../../src/utils/logger.ts")).initializeLogger(
+        container,
+        config,
+      );
+      const logger = (await import("../../src/utils/logger.ts")).getLogger(
+        container,
+      );
       const mod = await loadRouteModule("/outside/path.ts", { logger });
       expect(mod).toBeNull();
     });

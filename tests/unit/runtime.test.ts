@@ -17,8 +17,8 @@ import { describe, expect, it } from "@dreamer/test";
 import {
   getFmtArgs,
   getLintArgs,
-  getRuntime,
   getRunArgs,
+  getRuntime,
   getTaskArgs,
   getTestArgs,
   isWindows,

@@ -189,13 +189,15 @@ export async function migrate(
       try {
         const config = await loadProjectConfig(projectRoot);
         const dbConfig = config.database as
-          | { default?: { type: string } }
+          | { default?: Record<string, unknown> }
           | undefined;
         if (dbConfig?.default) {
           const manager = new DatabaseManager();
           await manager.connect(
             "default",
-            dbConfig.default as Parameters<DatabaseManager["connect"]>[1],
+            dbConfig.default as unknown as Parameters<
+              DatabaseManager["connect"]
+            >[1],
           );
           const adapter = manager.getConnection("default");
           const migrationManager = new MigrationManager({
@@ -245,7 +247,7 @@ export async function migrate(
       try {
         const config = await loadProjectConfig(projectRoot);
         const dbConfig = config.database as
-          | { default?: { type: string } }
+          | { default?: Record<string, unknown> }
           | undefined;
         const migrationsDir = join(projectRoot, "migrations");
         try {
@@ -258,7 +260,9 @@ export async function migrate(
           const manager = new DatabaseManager();
           await manager.connect(
             "default",
-            dbConfig.default as Parameters<DatabaseManager["connect"]>[1],
+            dbConfig.default as unknown as Parameters<
+              DatabaseManager["connect"]
+            >[1],
           );
           const adapter = manager.getConnection("default");
           const migrationManager = new MigrationManager({
@@ -405,13 +409,15 @@ export async function status(
   try {
     const config = await loadProjectConfig(projectRoot);
     const dbConfig = config.database as
-      | { default?: { type: string } }
+      | { default?: Record<string, unknown> }
       | undefined;
     if (dbConfig?.default) {
       const manager = new DatabaseManager();
       await manager.connect(
         "default",
-        dbConfig.default as Parameters<DatabaseManager["connect"]>[1],
+        dbConfig.default as unknown as Parameters<
+          DatabaseManager["connect"]
+        >[1],
       );
       const adapter = manager.getConnection("default");
       const migrationManager = new MigrationManager({

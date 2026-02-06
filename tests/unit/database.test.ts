@@ -125,7 +125,7 @@ describe("数据库集成 (database.ts)", () => {
       const config: AppConfig = {
         database: {
           default: {
-            type: "sqlite",
+            adapter: "sqlite",
             connection: {
               filename: ":memory:",
             },
@@ -144,13 +144,13 @@ describe("数据库集成 (database.ts)", () => {
         database: {
           connections: {
             primary: {
-              type: "sqlite",
+              adapter: "sqlite",
               connection: {
                 filename: ":memory:",
               },
             },
             secondary: {
-              type: "sqlite",
+              adapter: "sqlite",
               connection: {
                 filename: ":memory:",
               },

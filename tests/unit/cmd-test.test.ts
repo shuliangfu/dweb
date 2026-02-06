@@ -6,12 +6,7 @@
  */
 
 import "../setup.ts";
-import {
-  chdir,
-  cwd,
-  makeTempDir,
-  remove,
-} from "@dreamer/runtime-adapter";
+import { chdir, cwd, makeTempDir, remove } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, it } from "@dreamer/test";
 import { main } from "../../src/cmd/test.ts";
 

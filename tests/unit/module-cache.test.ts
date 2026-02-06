@@ -24,7 +24,9 @@ describe("模块缓存 (module-cache.ts)", () => {
     it("file:// URL 应能正确解析", () => {
       invalidateModule(`file://${testPath}`);
       expect(getModuleVersion(`file://${testPath}`)).toBeGreaterThanOrEqual(1);
-      expect(getModuleVersion(testPath)).toBe(getModuleVersion(`file://${testPath}`));
+      expect(getModuleVersion(testPath)).toBe(
+        getModuleVersion(`file://${testPath}`),
+      );
     });
   });
 

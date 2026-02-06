@@ -2,7 +2,6 @@
   "errors": {
     "DWEB_E01": "Config 'name' must be a string",
     "DWEB_E02": "Config 'version' must be a string",
-    "DWEB_E03": "Config 'configDirectory' must be a string",
     "DWEB_E04": "Config 'envPrefix' must be a string",
     "DWEB_E05": "Config 'hotReload' must be a boolean",
     "DWEB_E06": "Config 'render' must be an object",
@@ -35,7 +34,7 @@
     "DWEB_E33": "[dweb] Unknown error: {message}",
     "entryPathInvalidReasonNoPath": "Cannot get entry path",
     "entryPathInvalidReasonNoMatch": "Cannot infer config directory",
-    "entryPathInvalidHint": "Please specify configDirectory explicitly"
+    "entryPathInvalidHint": "Ensure entry path follows convention (e.g. src/main.ts, src/backend/main.ts)"
   },
   "cli": {
     "versionLabel": "Version:",

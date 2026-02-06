@@ -29,10 +29,50 @@ describe("Socket.IO 集成 (socket-io.ts)", () => {
     expect(path).toBeUndefined();
   });
 
-  it("配置 socket.type 为 socketio 时应返回路径", () => {
+  it("配置 socket.adapter 为 socketio 时应返回路径", () => {
     const container = initializeServiceContainer();
     const config: AppConfig = {
-      socket: { type: "socketio", path: "/socket.io/" },
+      socket: { adapter: "socketio", path: "/socket.io/" },
+    };
+    initializeLogger(container, config);
+
+    const path = initializeSocketIo(container, config);
+    expect(path).toBe("/socket.io/");
+  });
+
+  it("配置 socket.adapter 为 socket-io 别名时应返回路径", () => {
+    const container = initializeServiceContainer();
+    const config: AppConfig = {
+      socket: { adapter: "socket-io", path: "/socket.io/" },
+    };
+    initializeLogger(container, config);
+
+    const path = initializeSocketIo(container, config);
+    expect(path).toBe("/socket.io/");
+  });
+
+  it("配置 socket.adapter 为 socket.io 别名时应返回路径", () => {
+    const container = initializeServiceContainer();
+    const config: AppConfig = {
+      socket: { adapter: "socket.io", path: "/socket.io/" },
+    };
+    initializeLogger(container, config);
+
+    const path = initializeSocketIo(container, config);
+    expect(path).toBe("/socket.io/");
+  });
+
+  it("配置 socket.config 嵌套结构时应返回路径", () => {
+    const container = initializeServiceContainer();
+    const config: AppConfig = {
+      socket: {
+        adapter: "socketio",
+        config: {
+          path: "/socket.io/",
+          allowCORS: true,
+          pingTimeout: 20000,
+        },
+      },
     };
     initializeLogger(container, config);
 
@@ -43,7 +83,7 @@ describe("Socket.IO 集成 (socket-io.ts)", () => {
   it("getSocketIoPath 应返回已注册的路径", () => {
     const container = initializeServiceContainer();
     const config: AppConfig = {
-      socket: { type: "socketio", path: "/custom/" },
+      socket: { adapter: "socketio", path: "/custom/" },
     };
     initializeLogger(container, config);
     initializeSocketIo(container, config);
@@ -55,7 +95,7 @@ describe("Socket.IO 集成 (socket-io.ts)", () => {
   it("getSocketIoServer 应返回 Server 实例", () => {
     const container = initializeServiceContainer();
     const config: AppConfig = {
-      socket: { type: "socketio" },
+      socket: { adapter: "socketio" },
     };
     initializeLogger(container, config);
     initializeSocketIo(container, config);
@@ -68,12 +108,59 @@ describe("Socket.IO 集成 (socket-io.ts)", () => {
   it("createSocketIoMiddleware 应返回中间件函数", () => {
     const container = initializeServiceContainer();
     const config: AppConfig = {
-      socket: { type: "socketio" },
+      socket: { adapter: "socketio" },
     };
     initializeLogger(container, config);
     initializeSocketIo(container, config);
 
     const middleware = createSocketIoMiddleware(container);
     expect(typeof middleware).toBe("function");
+  });
+
+  it("传入 handlers 时 connection 应触发 onConnection 回调", () => {
+    const container = initializeServiceContainer();
+    const config: AppConfig = { socket: { adapter: "socketio" } };
+    initializeLogger(container, config);
+
+    let onConnectionCalled = false;
+    const handlers = {
+      onConnection() {
+        onConnectionCalled = true;
+      },
+      onDisconnect() {
+        // 由 socket.on("disconnect") 触发
+      },
+    };
+
+    initializeSocketIo(container, config, handlers);
+    const io = getSocketIoServer(container);
+
+    // 通过默认命名空间 listeners 数组触发（与 initializeSocketIo 注册方式一致）
+    const defaultNs = io.of("/") as unknown as {
+      listeners: ((s: unknown) => void)[];
+    };
+    const connListeners = defaultNs.listeners;
+    expect(connListeners.length).toBeGreaterThan(0);
+
+    const mockSocket = {
+      id: "test-socket-id",
+      nsp: "/",
+      rooms: new Set<string>(),
+      handshake: { url: "http://localhost/", headers: {}, query: {} },
+      on: () => mockSocket,
+      emit: () => true,
+      join: () => {},
+      leave: () => {},
+      to: () => ({ emit: () => true }),
+      broadcast: { emit: () => true },
+      disconnect: () => mockSocket,
+      connected: true,
+    };
+
+    for (const fn of connListeners) {
+      fn(mockSocket);
+    }
+
+    expect(onConnectionCalled).toBe(true);
   });
 });

@@ -48,7 +48,7 @@ const config: AppConfig = {
 
   // 实时通信：type 为 socketio 时挂载到当前 HTTP 服务器同一端口
   socket: {
-    type: "socketio",
+    adapter: "socketio",
     path: "/socket.io/",
     debug: false, // 开启后通过 logger.debug 输出 Socket.IO 请求路径、握手等调试信息
   },

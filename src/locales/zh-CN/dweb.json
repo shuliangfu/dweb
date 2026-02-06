@@ -2,7 +2,6 @@
   "errors": {
     "DWEB_E01": "配置项 'name' 必须是字符串类型",
     "DWEB_E02": "配置项 'version' 必须是字符串类型",
-    "DWEB_E03": "配置项 'configDirectory' 必须是字符串类型",
     "DWEB_E04": "配置项 'envPrefix' 必须是字符串类型",
     "DWEB_E05": "配置项 'hotReload' 必须是布尔类型",
     "DWEB_E06": "配置项 'render' 必须是对象类型",
@@ -35,7 +34,7 @@
     "DWEB_E33": "[dweb] 未知错误: {message}",
     "entryPathInvalidReasonNoPath": "无法获取入口路径",
     "entryPathInvalidReasonNoMatch": "无法推断配置目录",
-    "entryPathInvalidHint": "请显式指定 configDirectory"
+    "entryPathInvalidHint": "请确保入口路径符合规范（如 src/main.ts、src/backend/main.ts）"
   },
   "cli": {
     "versionLabel": "Version:",

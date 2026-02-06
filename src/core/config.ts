@@ -93,7 +93,7 @@ function matchConfigDirFromNormalizedPath(
  * - 生产：<outputDir>/<app>/server.js → src/<app>/config（有 src 时）或 <app>/config（无 src 时）
  *
  * @returns 推断出的 config 目录（相对 cwd）
- * @throws 无法推断时抛出 ENTRY_PATH_INVALID 异常，需显式指定 configDirectory
+ * @throws 无法推断时抛出 ENTRY_PATH_INVALID 异常
  */
 export function inferConfigDirectoryFromEntry(): string {
   try {
@@ -262,12 +262,6 @@ export function validateConfig(config: AppConfig): void {
   }
   if (config.version !== undefined && typeof config.version !== "string") {
     throwDwebError(DwebErrorCode.CONFIG_VERSION_INVALID);
-  }
-  if (
-    config.configDirectory !== undefined &&
-    typeof config.configDirectory !== "string"
-  ) {
-    throwDwebError(DwebErrorCode.CONFIG_DIR_INVALID);
   }
   if (config.envPrefix !== undefined && typeof config.envPrefix !== "string") {
     throwDwebError(DwebErrorCode.CONFIG_ENV_PREFIX_INVALID);

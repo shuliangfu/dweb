@@ -18,78 +18,78 @@
 | 指标         | 数值  |
 | ------------ | ----- |
 | 测试文件数   | 52    |
-| 测试用例总数 | 438   |
-| 通过用例数   | 438   |
+| 测试用例总数 | 446   |
+| 通过用例数   | 446   |
 | 失败用例数   | 0     |
 | 通过率       | 100%  |
-| 测试执行时间 | ~38秒 |
+| 测试执行时间 | ~30秒 |
 
 ### 测试文件统计
 
 #### 单元测试 (tests/unit/)
 
-| 文件名                       | 测试用例数 | 状态        |
-| ---------------------------- | ---------- | ----------- |
-| `config.test.ts`             | 46         | ✅ 全部通过 |
-| `command.test.ts`            | 41         | ✅ 全部通过 |
-| `build.test.ts`              | 21         | ✅ 全部通过 |
-| `app.test.ts`                | 20         | ✅ 全部通过 |
-| `logger.test.ts`             | 17         | ✅ 全部通过 |
-| `runtime-adapter.test.ts`    | 17         | ✅ 全部通过 |
-| `build-dirs.test.ts`         | 17         | ✅ 全部通过 |
-| `render.test.ts`             | 14         | ✅ 全部通过 |
-| `server.test.ts`             | 13         | ✅ 全部通过 |
-| `plugin.test.ts`             | 15         | ✅ 全部通过 |
-| `sanitize.test.ts`           | 15         | ✅ 全部通过 |
-| `lifecycle.test.ts`          | 12         | ✅ 全部通过 |
-| `middleware.test.ts`         | 12         | ✅ 全部通过 |
-| `plugin-events.test.ts`      | 12         | ✅ 全部通过 |
-| `router.test.ts`             | 12         | ✅ 全部通过 |
-| `errors.test.ts`             | 12         | ✅ 全部通过 |
-| `path.test.ts`               | 12         | ✅ 全部通过 |
-| `database.test.ts`           | 11         | ✅ 全部通过 |
-| `jsr-versions.test.ts`       | 11         | ✅ 全部通过 |
-| `load-route-module.test.ts`  | 7          | ✅ 全部通过 |
-| `service.test.ts`            | 9          | ✅ 全部通过 |
-| `runtime.test.ts`            | 9          | ✅ 全部通过 |
-| `csr-client-builder.test.ts` | 5          | ✅ 全部通过 |
-| `socket-io.test.ts`          | 5          | ✅ 全部通过 |
-| `websocket.test.ts`          | 5          | ✅ 全部通过 |
-| `generate.test.ts`           | 5          | ✅ 全部通过 |
-| `asset-manifest.test.ts`     | 4          | ✅ 全部通过 |
-| `config-loader.test.ts`     | 4          | ✅ 全部通过 |
-| `csr-client-middleware.test.ts` | 4       | ✅ 全部通过 |
-| `module-cache.test.ts`       | 4          | ✅ 全部通过 |
-| `cmd-build.test.ts`          | 3          | ✅ 全部通过 |
-| `cmd-clean.test.ts`          | 3          | ✅ 全部通过 |
-| `render-hybrid.test.ts`     | 3          | ✅ 全部通过 |
-| `render-ssr.test.ts`        | 3          | ✅ 全部通过 |
-| `db.test.ts`                 | 3          | ✅ 全部通过 |
-| `init.test.ts`               | 3          | ✅ 全部通过 |
-| `project.test.ts`            | 3          | ✅ 全部通过 |
-| `version.test.ts`            | 3          | ✅ 全部通过 |
-| `render-csr.test.ts`         | 2          | ✅ 全部通过 |
-| `render-ssg.test.ts`        | 2          | ✅ 全部通过 |
-| `cmd-dev.test.ts`            | 2          | ✅ 全部通过 |
-| `cmd-fmt.test.ts`            | 2          | ✅ 全部通过 |
-| `cmd-lint.test.ts`           | 2          | ✅ 全部通过 |
-| `cmd-preview.test.ts`       | 2          | ✅ 全部通过 |
-| `cmd-start.test.ts`         | 2          | ✅ 全部通过 |
-| `cmd-test.test.ts`          | 2          | ✅ 全部通过 |
-| `cmd-upgrade.test.ts`       | 2          | ✅ 全部通过 |
-| `cli.test.ts`                | 1          | ✅ 全部通过 |
+| 文件名                          | 测试用例数 | 状态        |
+| ------------------------------- | ---------- | ----------- |
+| `config.test.ts`                | 46         | ✅ 全部通过 |
+| `command.test.ts`               | 41         | ✅ 全部通过 |
+| `build.test.ts`                 | 21         | ✅ 全部通过 |
+| `app.test.ts`                   | 20         | ✅ 全部通过 |
+| `logger.test.ts`                | 17         | ✅ 全部通过 |
+| `runtime-adapter.test.ts`       | 17         | ✅ 全部通过 |
+| `build-dirs.test.ts`            | 17         | ✅ 全部通过 |
+| `render.test.ts`                | 14         | ✅ 全部通过 |
+| `server.test.ts`                | 13         | ✅ 全部通过 |
+| `plugin.test.ts`                | 15         | ✅ 全部通过 |
+| `sanitize.test.ts`              | 15         | ✅ 全部通过 |
+| `lifecycle.test.ts`             | 12         | ✅ 全部通过 |
+| `middleware.test.ts`            | 12         | ✅ 全部通过 |
+| `plugin-events.test.ts`         | 16         | ✅ 全部通过 |
+| `router.test.ts`                | 12         | ✅ 全部通过 |
+| `errors.test.ts`                | 12         | ✅ 全部通过 |
+| `path.test.ts`                  | 12         | ✅ 全部通过 |
+| `database.test.ts`              | 11         | ✅ 全部通过 |
+| `jsr-versions.test.ts`          | 11         | ✅ 全部通过 |
+| `load-route-module.test.ts`     | 7          | ✅ 全部通过 |
+| `service.test.ts`               | 9          | ✅ 全部通过 |
+| `runtime.test.ts`               | 9          | ✅ 全部通过 |
+| `csr-client-builder.test.ts`    | 5          | ✅ 全部通过 |
+| `socket-io.test.ts`             | 9          | ✅ 全部通过 |
+| `websocket.test.ts`             | 7          | ✅ 全部通过 |
+| `generate.test.ts`              | 5          | ✅ 全部通过 |
+| `asset-manifest.test.ts`        | 4          | ✅ 全部通过 |
+| `config-loader.test.ts`         | 4          | ✅ 全部通过 |
+| `csr-client-middleware.test.ts` | 4          | ✅ 全部通过 |
+| `module-cache.test.ts`          | 4          | ✅ 全部通过 |
+| `cmd-build.test.ts`             | 3          | ✅ 全部通过 |
+| `cmd-clean.test.ts`             | 3          | ✅ 全部通过 |
+| `render-hybrid.test.ts`         | 3          | ✅ 全部通过 |
+| `render-ssr.test.ts`            | 3          | ✅ 全部通过 |
+| `db.test.ts`                    | 3          | ✅ 全部通过 |
+| `init.test.ts`                  | 3          | ✅ 全部通过 |
+| `project.test.ts`               | 3          | ✅ 全部通过 |
+| `version.test.ts`               | 3          | ✅ 全部通过 |
+| `render-csr.test.ts`            | 2          | ✅ 全部通过 |
+| `render-ssg.test.ts`            | 2          | ✅ 全部通过 |
+| `cmd-dev.test.ts`               | 2          | ✅ 全部通过 |
+| `cmd-fmt.test.ts`               | 2          | ✅ 全部通过 |
+| `cmd-lint.test.ts`              | 2          | ✅ 全部通过 |
+| `cmd-preview.test.ts`           | 2          | ✅ 全部通过 |
+| `cmd-start.test.ts`             | 2          | ✅ 全部通过 |
+| `cmd-test.test.ts`              | 2          | ✅ 全部通过 |
+| `cmd-upgrade.test.ts`           | 2          | ✅ 全部通过 |
+| `cli.test.ts`                   | 1          | ✅ 全部通过 |
 
 #### e2e 测试 (tests/e2e/)
 
-| 文件名                       | 测试用例数 | 状态        |
-| ---------------------------- | ---------- | ----------- |
-| `server-request.test.ts`     | 2          | ✅ 全部通过 |
+| 文件名                   | 测试用例数 | 状态        |
+| ------------------------ | ---------- | ----------- |
+| `server-request.test.ts` | 2          | ✅ 全部通过 |
 
 #### 集成测试 (tests/integration/)
 
-| 文件名                       | 测试用例数 | 状态        |
-| ---------------------------- | ---------- | ----------- |
-| `config-lifecycle.test.ts`   | 2          | ✅ 全部通过 |
+| 文件名                     | 测试用例数 | 状态        |
+| -------------------------- | ---------- | ----------- |
+| `config-lifecycle.test.ts` | 2          | ✅ 全部通过 |
 
 ---
 
@@ -103,7 +103,6 @@
 - ✅ 接受空配置对象
 - ✅ 拒绝非字符串类型的 name
 - ✅ 拒绝非字符串类型的 version
-- ✅ 拒绝非字符串类型的 configDirectory
 - ✅ 拒绝非字符串类型的 envPrefix
 - ✅ 拒绝非布尔类型的 hotReload
 - ✅ 接受有效的渲染配置
@@ -276,7 +275,14 @@
 - ✅ emitOnBuild 触发 onBuild 钩子并传递选项
 - ✅ emitOnBuildComplete 触发 onBuildComplete 钩子并传递结果
 
-#### 6.4 事件执行顺序
+#### 6.4 Socket 事件触发函数
+
+- ✅ emitOnSocket 触发 onSocket 钩子
+- ✅ emitOnSocketClose 触发 onSocketClose 钩子
+- ✅ 无 pluginManager 时 emitOnSocket 静默返回
+- ✅ 无 pluginManager 时 emitOnSocketClose 静默返回
+
+#### 6.5 事件执行顺序
 
 - ✅ 按插件注册顺序触发事件
 
@@ -582,19 +588,29 @@
 
 ### 21. 新增单测（sanitize、path、runtime、module-cache、load-route-module 等）
 
-- ✅ **sanitize.test.ts** (15)：sanitizeRequestParams 危险键过滤、NUL 过滤、空值处理
-- ✅ **path.test.ts** (12)：isPathWithinProject、pathForLog、normalizePathForCompare
-- ✅ **runtime.test.ts** (9)：getRuntime、getTaskArgs、getTestArgs、getLintArgs 等
+- ✅ **sanitize.test.ts** (15)：sanitizeRequestParams 危险键过滤、NUL
+  过滤、空值处理
+- ✅ **path.test.ts**
+  (12)：isPathWithinProject、pathForLog、normalizePathForCompare
+- ✅ **runtime.test.ts** (9)：getRuntime、getTaskArgs、getTestArgs、getLintArgs
+  等
 - ✅ **module-cache.test.ts** (4)：invalidateModule、getModuleVersion
-- ✅ **load-route-module.test.ts** (7)：loadRouteModule、clearCssRouteCacheForPath、含 CSS 导入
+- ✅ **load-route-module.test.ts**
+  (7)：loadRouteModule、clearCssRouteCacheForPath、含 CSS 导入
 - ✅ **asset-manifest.test.ts** (4)：replaceAssetPathsInHtml
 - ✅ **config-loader.test.ts** (4)：loadProjectConfig
-- ✅ **csr-client-middleware.test.ts** (4)：createClientScriptMiddleware、next 调用、生产模式
-- ✅ **socket-io.test.ts** (5)：initializeSocketIo、getSocketIoServer、getSocketIoPath、createSocketIoMiddleware
-- ✅ **websocket.test.ts** (5)：initializeWebSocket、getWebSocketServer、getWebSocketPath、createWebSocketMiddleware
+- ✅ **csr-client-middleware.test.ts** (4)：createClientScriptMiddleware、next
+  调用、生产模式
+- ✅ **socket-io.test.ts**
+  (9)：initializeSocketIo、getSocketIoServer、getSocketIoPath、createSocketIoMiddleware、传入
+  handlers 时 connection 触发 onConnection
+- ✅ **websocket.test.ts**
+  (7)：initializeWebSocket、getWebSocketServer、getWebSocketPath、createWebSocketMiddleware、传入
+  handlers 时 connection 触发 onConnection
 - ✅ **cmd-clean.test.ts** (3)：main 清理 dist 等目录
 - ✅ **cmd-build.test.ts** (3)：main 无 deno.json / 无 build task 时行为
-- ✅ **cmd-dev/start/preview/fmt/lint/test.test.ts** (各 2)：main 无 deno.json 时提前返回
+- ✅ **cmd-dev/start/preview/fmt/lint/test.test.ts** (各 2)：main 无 deno.json
+  时提前返回
 - ✅ **cmd-upgrade.test.ts** (2)：main 正常执行、--beta 选项
 
 ### 22. e2e 测试 (server-request.test.ts) - 2 个测试
@@ -613,76 +629,78 @@
 
 ### 接口方法覆盖
 
-| 模块               | 方法                                                                    | 覆盖状态 |
-| ------------------ | ----------------------------------------------------------------------- | -------- |
-| app                | App 构造函数                                                            | ✅       |
-| app                | App.use()                                                               | ✅       |
-| app                | App.registerPlugin()                                                    | ✅       |
-| app                | App.on()                                                                | ✅       |
-| app                | App.stage                                                               | ✅       |
-| config             | validateConfig()                                                        | ✅       |
-| config             | deepMergeConfig()                                                       | ✅       |
-| service            | initializeServiceContainer()                                            | ✅       |
-| service            | getServiceContainer()                                                   | ✅       |
-| lifecycle          | initializeLifecycle()                                                   | ✅       |
-| lifecycle          | getLifecycleManager()                                                   | ✅       |
-| lifecycle          | registerLifecycleHook()                                                 | ✅       |
-| middleware         | initializeMiddleware()                                                  | ✅       |
-| middleware         | getMiddlewareChain()                                                    | ✅       |
-| middleware         | registerMiddleware()                                                    | ✅       |
-| plugin             | initializePlugin()                                                      | ✅       |
-| plugin             | getPluginManager()                                                      | ✅       |
-| plugin             | registerPlugin()                                                        | ✅       |
-| plugin-events      | emitPluginEvent()                                                       | ✅       |
-| plugin-events      | emitOnInit()                                                            | ✅       |
-| plugin-events      | emitOnStart()                                                           | ✅       |
-| plugin-events      | emitOnStop()                                                            | ✅       |
-| plugin-events      | emitOnShutdown()                                                        | ✅       |
-| plugin-events      | emitOnBuild()                                                           | ✅       |
-| plugin-events      | emitOnBuildComplete()                                                   | ✅       |
-| server             | initializeServer()                                                      | ✅       |
-| server             | getServer()                                                             | ✅       |
-| database           | initializeDatabase()                                                    | ✅       |
-| database           | getDatabaseManager()                                                    | ✅       |
-| database           | getDatabaseStatus()                                                     | ✅       |
-| database           | connectDatabases()                                                      | ⬜       |
-| database           | disconnectDatabases()                                                   | ⬜       |
-| build              | initializeBuild()                                                       | ✅       |
-| build              | getBuild()                                                              | ✅       |
-| render             | initializeRender()                                                      | ✅       |
-| render             | getRender()                                                             | ✅       |
-| render             | renderSSR()                                                             | ✅       |
-| render             | renderSSG()                                                             | ✅       |
-| router             | initializeRouter()                                                      | ✅       |
-| router             | getRouter()                                                             | ✅       |
-| logger             | initializeLogger()                                                      | ✅       |
-| logger             | getLogger()                                                             | ✅       |
-| command            | Command 构造函数                                                        | ✅       |
-| command            | Command.initApp()                                                       | ⬜       |
-| command            | Command.app                                                             | ✅       |
-| command            | Command.container                                                       | ✅       |
-| command            | Command.action()                                                        | ✅       |
-| command            | Command.command()                                                       | ✅       |
-| command            | 重导出 API (colorize, colors 等)                                        | ✅       |
-| runtime-adapter    | getEnv / cwd / join / readTextFile 等                                   | ✅       |
-| errors             | createDwebError / throwDwebError / isDwebError / setDwebErrorTranslator | ✅       |
-| csr-client-builder | clearClientScriptCache / createClientScriptMiddleware                   | ✅       |
-| render-csr         | createRendererCSR()                                                     | ✅       |
-| render-ssr         | createRendererSSR()                                                     | ✅       |
-| render-hybrid      | createRendererHybrid()                                                  | ✅       |
-| render-ssg         | createRendererSSG()                                                     | ✅       |
-| version            | DWEB_VERSION                                                            | ✅       |
-| cli                | createCLI() / execute                                                   | ✅       |
-| sanitize           | sanitizeRequestParams()                                                 | ✅       |
-| path               | isPathWithinProject / pathForLog / normalizePathForCompare              | ✅       |
-| runtime            | getRuntime / getTaskArgs / getTestArgs / getLintArgs                    | ✅       |
-| module-cache       | invalidateModule / getModuleVersion                                     | ✅       |
-| load-route-module  | loadRouteModule / clearCssRouteCacheForPath                             | ✅       |
-| asset-manifest     | replaceAssetPathsInHtml                                                | ✅       |
-| config-loader      | loadProjectConfig                                                       | ✅       |
-| csr-client-middleware | createClientScriptMiddleware                                         | ✅       |
-| socket-io          | initializeSocketIo / getSocketIoServer / getSocketIoPath / createSocketIoMiddleware | ✅ |
-| websocket          | initializeWebSocket / getWebSocketServer / getWebSocketPath / createWebSocketMiddleware | ✅ |
+| 模块                  | 方法                                                                                    | 覆盖状态 |
+| --------------------- | --------------------------------------------------------------------------------------- | -------- |
+| app                   | App 构造函数                                                                            | ✅       |
+| app                   | App.use()                                                                               | ✅       |
+| app                   | App.registerPlugin()                                                                    | ✅       |
+| app                   | App.on()                                                                                | ✅       |
+| app                   | App.stage                                                                               | ✅       |
+| config                | validateConfig()                                                                        | ✅       |
+| config                | deepMergeConfig()                                                                       | ✅       |
+| service               | initializeServiceContainer()                                                            | ✅       |
+| service               | getServiceContainer()                                                                   | ✅       |
+| lifecycle             | initializeLifecycle()                                                                   | ✅       |
+| lifecycle             | getLifecycleManager()                                                                   | ✅       |
+| lifecycle             | registerLifecycleHook()                                                                 | ✅       |
+| middleware            | initializeMiddleware()                                                                  | ✅       |
+| middleware            | getMiddlewareChain()                                                                    | ✅       |
+| middleware            | registerMiddleware()                                                                    | ✅       |
+| plugin                | initializePlugin()                                                                      | ✅       |
+| plugin                | getPluginManager()                                                                      | ✅       |
+| plugin                | registerPlugin()                                                                        | ✅       |
+| plugin-events         | emitPluginEvent()                                                                       | ✅       |
+| plugin-events         | emitOnInit()                                                                            | ✅       |
+| plugin-events         | emitOnStart()                                                                           | ✅       |
+| plugin-events         | emitOnStop()                                                                            | ✅       |
+| plugin-events         | emitOnShutdown()                                                                        | ✅       |
+| plugin-events         | emitOnBuild()                                                                           | ✅       |
+| plugin-events         | emitOnBuildComplete()                                                                   | ✅       |
+| plugin-events         | emitOnSocket()                                                                          | ✅       |
+| plugin-events         | emitOnSocketClose()                                                                     | ✅       |
+| server                | initializeServer()                                                                      | ✅       |
+| server                | getServer()                                                                             | ✅       |
+| database              | initializeDatabase()                                                                    | ✅       |
+| database              | getDatabaseManager()                                                                    | ✅       |
+| database              | getDatabaseStatus()                                                                     | ✅       |
+| database              | connectDatabases()                                                                      | ⬜       |
+| database              | disconnectDatabases()                                                                   | ⬜       |
+| build                 | initializeBuild()                                                                       | ✅       |
+| build                 | getBuild()                                                                              | ✅       |
+| render                | initializeRender()                                                                      | ✅       |
+| render                | getRender()                                                                             | ✅       |
+| render                | renderSSR()                                                                             | ✅       |
+| render                | renderSSG()                                                                             | ✅       |
+| router                | initializeRouter()                                                                      | ✅       |
+| router                | getRouter()                                                                             | ✅       |
+| logger                | initializeLogger()                                                                      | ✅       |
+| logger                | getLogger()                                                                             | ✅       |
+| command               | Command 构造函数                                                                        | ✅       |
+| command               | Command.initApp()                                                                       | ⬜       |
+| command               | Command.app                                                                             | ✅       |
+| command               | Command.container                                                                       | ✅       |
+| command               | Command.action()                                                                        | ✅       |
+| command               | Command.command()                                                                       | ✅       |
+| command               | 重导出 API (colorize, colors 等)                                                        | ✅       |
+| runtime-adapter       | getEnv / cwd / join / readTextFile 等                                                   | ✅       |
+| errors                | createDwebError / throwDwebError / isDwebError / setDwebErrorTranslator                 | ✅       |
+| csr-client-builder    | clearClientScriptCache / createClientScriptMiddleware                                   | ✅       |
+| render-csr            | createRendererCSR()                                                                     | ✅       |
+| render-ssr            | createRendererSSR()                                                                     | ✅       |
+| render-hybrid         | createRendererHybrid()                                                                  | ✅       |
+| render-ssg            | createRendererSSG()                                                                     | ✅       |
+| version               | DWEB_VERSION                                                                            | ✅       |
+| cli                   | createCLI() / execute                                                                   | ✅       |
+| sanitize              | sanitizeRequestParams()                                                                 | ✅       |
+| path                  | isPathWithinProject / pathForLog / normalizePathForCompare                              | ✅       |
+| runtime               | getRuntime / getTaskArgs / getTestArgs / getLintArgs                                    | ✅       |
+| module-cache          | invalidateModule / getModuleVersion                                                     | ✅       |
+| load-route-module     | loadRouteModule / clearCssRouteCacheForPath                                             | ✅       |
+| asset-manifest        | replaceAssetPathsInHtml                                                                 | ✅       |
+| config-loader         | loadProjectConfig                                                                       | ✅       |
+| csr-client-middleware | createClientScriptMiddleware                                                            | ✅       |
+| socket-io             | initializeSocketIo / getSocketIoServer / getSocketIoPath / createSocketIoMiddleware     | ✅       |
+| websocket             | initializeWebSocket / getWebSocketServer / getWebSocketPath / createWebSocketMiddleware | ✅       |
 
 ### 边界情况覆盖
 
@@ -724,7 +742,7 @@
 
 ## 🎯 结论
 
-@dreamer/dweb 框架的核心模块测试在文件级已全面覆盖，共 **438**
+@dreamer/dweb 框架的核心模块测试在文件级已全面覆盖，共 **446**
 个测试用例全部通过。所有测试均为实质性测试，验证了具体的功能行为。测试覆盖了：
 
 - ✅ App 类核心功能
@@ -733,7 +751,7 @@
 - ✅ 生命周期管理
 - ✅ 中间件系统
 - ✅ 插件系统
-- ✅ 插件事件系统
+- ✅ 插件事件系统（含 onSocket、onSocketClose）
 - ✅ 服务器集成
 - ✅ 数据库集成
 - ✅ 构建工具集成
@@ -747,7 +765,8 @@
 - ✅ createRendererSSR / createRendererHybrid / createRendererSSG
 - ✅ 版本（DWEB_VERSION）
 - ✅ 工具模块（sanitize、path、runtime、asset-manifest、config-loader）
-- ✅ 功能模块（module-cache、load-route-module、csr-client-middleware、socket-io、websocket）
+- ✅
+  功能模块（module-cache、load-route-module、csr-client-middleware、socket-io、websocket）
 - ✅ CLI 子命令（clean、build、dev、start、preview、fmt、lint、test、upgrade）
 - ✅ e2e 测试（服务器请求验证）
 - ✅ 集成测试（配置与生命周期）

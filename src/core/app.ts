@@ -8,6 +8,7 @@
  */
 
 import type { LifecycleHook, LifecycleStage } from "@dreamer/lifecycle";
+import type { SocketContext } from "@dreamer/plugin";
 import type { Middleware, MiddlewareContext } from "@dreamer/middleware";
 import { ServiceContainer } from "@dreamer/service";
 import { EventEmitter } from "node:events";
@@ -57,13 +58,14 @@ import {
   getWebSocketPath,
   initializeWebSocket,
 } from "../feature/websocket.ts";
-import type {
-  AppConfig,
-  AppLifecycleHook,
-  AppMiddleware,
-  AppPlugin,
-  AppStage,
-  IApp,
+import {
+  type AppConfig,
+  type AppLifecycleHook,
+  type AppMiddleware,
+  type AppPlugin,
+  type AppStage,
+  type IApp,
+  isSocketIOAdapter,
 } from "../types/app.ts";
 import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
@@ -174,7 +176,7 @@ export class App extends EventEmitter implements IApp {
   /**
    * 创建 App 实例
    *
-   * @param config 应用配置（可选）
+   * @param config 应用配置（可选，从 config/main.ts 加载后合并）
    */
   constructor(config: AppConfig = {}) {
     // 调用 EventEmitter 构造函数
@@ -241,15 +243,19 @@ export class App extends EventEmitter implements IApp {
   /**
    * 初始化配置
    *
-   * 从 configDirectory 动态加载 main.ts、params.ts（本地配置文件，不会触发依赖下载）。
+   * 从配置目录动态加载 main.ts、params.ts（本地配置文件，不会触发依赖下载）。
    * 入口文件传入的 config 会与加载的配置深度合并，优先级最高。
    *
-   * @param config 应用配置（可仅含 configDirectory，或含覆盖项）
+   * @param config 应用配置（或覆盖项）
    */
   private async _initializeConfig(config: AppConfig): Promise<void> {
-    // 初始化配置管理器（从 configDirectory 动态加载 main.ts、params.ts）
-    // configDirectory 未指定时：尝试从入口路径推断（src/backend/main.ts → src/backend/config）；无法推断时使用默认 ./config、./src/config
-    const configDir = config.configDirectory ?? inferConfigDirectoryFromEntry();
+    // 配置目录：从入口路径推断（src/main.ts → src/config 等），推断失败时用默认
+    let configDir: string | undefined;
+    try {
+      configDir = inferConfigDirectoryFromEntry();
+    } catch {
+      configDir = undefined; // 测试等场景下使用 initializeConfigManager 默认值
+    }
     await initializeConfigManager(this.container, {
       directories: configDir ? [configDir] : undefined,
       envPrefix: config.envPrefix,
@@ -345,14 +351,20 @@ export class App extends EventEmitter implements IApp {
 
       // 初始化服务器
       initializeServer(this.container, mergedConfig);
-      // 根据 config.socket.type 初始化实时通信（socketio | websocket）
+      // 根据 config.socket.adapter 初始化实时通信（socketio | websocket）
       const socketConfig = mergedConfig.socket as
-        | { type?: string }
+        | { adapter?: string }
         | undefined;
-      if (socketConfig?.type === "socketio") {
-        initializeSocketIo(this.container, mergedConfig);
-      } else if (socketConfig?.type === "websocket") {
-        initializeWebSocket(this.container, mergedConfig);
+      const socketPluginHandlers = {
+        onConnection: (ctx: SocketContext) =>
+          pluginEvents.emitOnSocket(this.container, ctx),
+        onDisconnect: (ctx: SocketContext) =>
+          pluginEvents.emitOnSocketClose(this.container, ctx),
+      };
+      if (isSocketIOAdapter(socketConfig?.adapter)) {
+        initializeSocketIo(this.container, mergedConfig, socketPluginHandlers);
+      } else if (socketConfig?.adapter === "websocket") {
+        initializeWebSocket(this.container, mergedConfig, socketPluginHandlers);
       }
 
       // 注册客户端资源目录（多应用时为 dist/<appDir>/client/assets），供 Tailwind 等插件在生产模式解析带 hash 的 CSS 路径
@@ -397,7 +409,7 @@ export class App extends EventEmitter implements IApp {
         "health-check",
       );
 
-      // socket.type 为 socketio 时：路径前缀匹配委托给 Socket.IO 处理
+      // socket.adapter 为 socketio 时：路径前缀匹配委托给 Socket.IO 处理
       const socketIoPath = getSocketIoPath(this.container);
       if (socketIoPath) {
         server.use(
@@ -412,7 +424,7 @@ export class App extends EventEmitter implements IApp {
         }
       }
 
-      // socket.type 为 websocket 时：路径前缀匹配委托给 WebSocket 处理
+      // socket.adapter 为 websocket 时：路径前缀匹配委托给 WebSocket 处理
       const websocketPath = getWebSocketPath(this.container);
       if (websocketPath) {
         server.use(

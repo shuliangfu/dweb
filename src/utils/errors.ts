@@ -37,8 +37,6 @@ export const DwebErrorCode = {
   CONFIG_NAME_INVALID: "DWEB_E01",
   /** 配置项 'version' 必须是字符串类型 */
   CONFIG_VERSION_INVALID: "DWEB_E02",
-  /** 配置项 'configDirectory' 必须是字符串类型 */
-  CONFIG_DIR_INVALID: "DWEB_E03",
   /** 配置项 'envPrefix' 必须是字符串类型 */
   CONFIG_ENV_PREFIX_INVALID: "DWEB_E04",
   /** 配置项 'hotReload' 必须是布尔类型 */
@@ -172,8 +170,6 @@ export const DEFAULT_ERROR_MESSAGES: Record<
 > = {
   [DwebErrorCode.CONFIG_NAME_INVALID]: "配置项 'name' 必须是字符串类型",
   [DwebErrorCode.CONFIG_VERSION_INVALID]: "配置项 'version' 必须是字符串类型",
-  [DwebErrorCode.CONFIG_DIR_INVALID]:
-    "配置项 'configDirectory' 必须是字符串类型",
   [DwebErrorCode.CONFIG_ENV_PREFIX_INVALID]:
     "配置项 'envPrefix' 必须是字符串类型",
   [DwebErrorCode.CONFIG_HOT_RELOAD_INVALID]:

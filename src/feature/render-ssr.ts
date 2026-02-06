@@ -96,9 +96,7 @@ export function createRendererSSR(
       };
       const [pageModule, appModule, layoutModule] = await Promise.all([
         loadRouteModule(match.route.fullPath, loadOpts),
-        appPath
-          ? loadRouteModule(appPath, loadOpts)
-          : Promise.resolve(null),
+        appPath ? loadRouteModule(appPath, loadOpts) : Promise.resolve(null),
         layoutPath
           ? loadRouteModule(layoutPath, loadOpts)
           : Promise.resolve(null),

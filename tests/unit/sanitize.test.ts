@@ -21,12 +21,17 @@ describe("sanitizeRequestParams (sanitize.ts)", () => {
     });
 
     it("数组应返回空对象", () => {
-      expect(sanitizeRequestParams(["a", "b"] as unknown as Record<string, unknown>)).toEqual({});
+      expect(
+        sanitizeRequestParams(["a", "b"] as unknown as Record<string, unknown>),
+      ).toEqual({});
     });
 
     it("非对象类型应返回空对象", () => {
-      expect(sanitizeRequestParams("string" as unknown as Record<string, unknown>)).toEqual({});
-      expect(sanitizeRequestParams(123 as unknown as Record<string, unknown>)).toEqual({});
+      expect(
+        sanitizeRequestParams("string" as unknown as Record<string, unknown>),
+      ).toEqual({});
+      expect(sanitizeRequestParams(123 as unknown as Record<string, unknown>))
+        .toEqual({});
     });
   });
 

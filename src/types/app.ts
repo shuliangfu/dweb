@@ -10,7 +10,7 @@
 import type { DatabaseConfig, DatabaseManagerOptions } from "@dreamer/database";
 import type { BuilderConfig, ServerConfig } from "@dreamer/esbuild";
 import type { LifecycleStage } from "@dreamer/lifecycle";
-import type { LoggerConfig } from "@dreamer/logger";
+import type { Logger, LoggerConfig } from "@dreamer/logger";
 import type {
   Middleware,
   MiddlewareCondition,
@@ -99,8 +99,6 @@ export interface AppConfig extends Record<string, unknown> {
    * 影响 CLI 输出、日志、错误消息等框架内置文案
    */
   language?: AppLanguage;
-  /** 配置目录（默认：'./config'），用于 ConfigManager 的 .env、config.json 等，框架会从此目录动态加载 main.ts、params.ts */
-  configDirectory?: string;
   /** 环境变量前缀 */
   envPrefix?: string;
   /** 是否启用热重载（默认：开发环境启用） */
@@ -161,28 +159,48 @@ export type SocketType = "socketio" | "websocket";
 /**
  * 实时通信应用配置（discriminated union）
  *
- * 根据 type 选择对应实现，挂载到主站 HTTP 服务器，与主站共用端口。
+ * 根据 adapter 选择对应实现，挂载到主站 HTTP 服务器，与主站共用端口。
  *
  * @example
  * ```ts
- * // Socket.IO
- * socket: { type: "socketio", path: "/socket.io/" }
+ * // Socket.IO（推荐 config 嵌套）
+ * socket: { adapter: "socketio", config: { path: "/socket.io/", allowCORS: true } }
+ * // 或扁平结构
+ * socket: { adapter: "socketio", path: "/socket.io/" }
  *
- * // WebSocket
- * socket: { type: "websocket", path: "/ws" }
+ * // WebSocket（推荐 config 嵌套，也支持扁平：path 直接写顶层）
+ * socket: { adapter: "websocket", config: { path: "/ws" } }
+ * socket: { adapter: "websocket", path: "/ws" }
  * ```
  */
+/**
+ * Socket.IO 适配器别名（socketio、socket-io、socket.io 均可）
+ */
+export const SOCKETIO_ADAPTERS = [
+  "socketio",
+  "socket-io",
+  "socket.io",
+] as const;
+
+/** 判断是否为 Socket.IO 适配器（含别名） */
+export function isSocketIOAdapter(
+  adapter: string | undefined,
+): adapter is (typeof SOCKETIO_ADAPTERS)[number] {
+  return adapter != null &&
+    (SOCKETIO_ADAPTERS as readonly string[]).includes(adapter);
+}
+
 export type SocketConfig =
-  | (SocketIOConfig & { type: "socketio" })
-  | (WebSocketConfig & { type: "websocket" });
+  | (SocketIOConfig & { adapter: "socketio" | "socket-io" | "socket.io" })
+  | (WebSocketConfig & { adapter: "websocket" });
 
 /**
- * Socket.IO 配置（挂载模式）
+ * Socket.IO 实现配置（path、allowCORS 等）
  * 与 @dreamer/socket-io ServerOptions 兼容，但不包含 port/host（共用 HTTP 服务器）
  */
-export interface SocketIOConfig {
-  /** Logger 实例（可选，默认使用框架 logger；传入自定义 logger 可统一日志输出） */
-  logger?: import("@dreamer/logger").Logger;
+export interface SocketIOImplConfig {
+  /** Logger 实例（可选，默认使用框架 logger） */
+  logger?: Logger;
   /** Socket.IO 路径（默认："/socket.io/"） */
   path?: string;
   /** 是否允许跨域（默认：true） */
@@ -197,29 +215,46 @@ export interface SocketIOConfig {
   allowPolling?: boolean;
   /** 轮询超时（毫秒，默认：60000） */
   pollingTimeout?: number;
-  /** 是否启用调试日志（默认：false），开启后会在控制台输出 Socket.IO 请求路径、握手等调试信息 */
+  /** 是否启用调试日志（默认：false） */
   debug?: boolean;
   /** 其他 @dreamer/socket-io ServerOptions 选项 */
   [key: string]: unknown;
 }
 
 /**
- * WebSocket 配置（挂载模式）
- * 与 @dreamer/websocket ServerOptions 兼容
+ * Socket.IO 配置（挂载模式）
+ * 支持 config 嵌套，也兼容扁平结构（config 未提供时使用顶层字段）
  */
-export interface WebSocketConfig {
-  /** Logger 实例（可选，默认使用框架 logger；传入自定义 logger 可统一日志输出） */
-  logger?: import("@dreamer/logger").Logger;
+export interface SocketIOConfig extends SocketIOImplConfig {
+  /** 实现配置（可选，未提供时使用顶层 path、allowCORS 等） */
+  config?: SocketIOImplConfig;
+}
+
+/**
+ * WebSocket 实现配置（path、pingTimeout 等）
+ */
+export interface WebSocketImplConfig {
+  /** Logger 实例（可选，默认使用框架 logger） */
+  logger?: Logger;
   /** WebSocket 路径（默认："/ws"） */
   path?: string;
   /** 心跳超时（毫秒，默认：60000） */
   pingTimeout?: number;
   /** 心跳间隔（毫秒，默认：30000） */
   pingInterval?: number;
-  /** 是否启用调试日志（默认：false），开启后通过 logger.debug 输出 WebSocket 请求路径、握手等调试信息 */
+  /** 是否启用调试日志（默认：false） */
   debug?: boolean;
   /** 其他 @dreamer/websocket ServerOptions 选项 */
   [key: string]: unknown;
+}
+
+/**
+ * WebSocket 配置（挂载模式）
+ * 支持 config 嵌套，也兼容扁平结构（config 未提供时使用顶层字段）
+ */
+export interface WebSocketConfig extends WebSocketImplConfig {
+  /** 实现配置（可选，未提供时使用顶层 path、pingTimeout 等） */
+  config?: WebSocketImplConfig;
 }
 
 /**

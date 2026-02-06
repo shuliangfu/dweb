@@ -1,12 +1,13 @@
 /**
  * @dreamer/websocket 集成（挂载到同一 HTTP 服务器）
  *
- * 当 AppConfig.socket 存在且 type 为 websocket 时，创建 WebSocket 服务并挂载到当前 HTTP 服务器，
+ * 当 AppConfig.socket 存在且 adapter 为 websocket 时，创建 WebSocket 服务并挂载到当前 HTTP 服务器，
  * 与主站共用端口。导出 initializeWebSocket、getWebSocketServer、getWebSocketPath。
  *
  * @module
  */
 
+import { createWebSocketContext, type SocketContext } from "@dreamer/plugin";
 import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import { Server } from "@dreamer/websocket";
@@ -14,6 +15,14 @@ import type { AppConfig, SocketConfig } from "../types/app.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $t } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
+
+/** Socket 连接/断开时的插件回调（由框架传入） */
+export interface SocketPluginHandlers {
+  /** 连接建立时调用 */
+  onConnection?: (ctx: SocketContext) => Promise<void> | void;
+  /** 连接关闭时调用 */
+  onDisconnect?: (ctx: SocketContext) => Promise<void> | void;
+}
 
 /** 容器中 WebSocket 服务实例的 key */
 const WEBSOCKET_SERVER_KEY = "websocketServer";
@@ -23,17 +32,19 @@ const WEBSOCKET_PATH_KEY = "websocketPath";
 /**
  * 初始化 WebSocket 服务（挂载模式，不占用独立端口）
  *
- * 仅当 config.socket 存在且 type 为 websocket 时执行：创建 Server、写入容器，供中间件委托请求。
+ * 仅当 config.socket 存在且 adapter 为 websocket 时执行：创建 Server、写入容器，供中间件委托请求。
  * 不调用 server.listen()，由框架在同一 HTTP 服务器上通过中间件转发请求。
  *
  * @param container 服务容器
  * @param config 应用配置
+ * @param handlers 可选，连接/断开时的回调（框架传入以触发插件 onSocket、onSocketClose）
  * @returns 若已启用则返回 WebSocket 路径（如 "/ws"），否则返回 undefined
  *
  * @example
  * ```ts
- * const path = initializeWebSocket(container, {
- *   socket: { type: "websocket", path: "/ws" },
+ * const path = initializeWebSocket(container, config, {
+ *   onConnection: (ctx) => pluginEvents.emitOnSocket(container, ctx),
+ *   onDisconnect: (ctx) => pluginEvents.emitOnSocketClose(container, ctx),
  * });
  * if (path) app.use(createWebSocketMiddleware(container));
  * ```
@@ -41,26 +52,50 @@ const WEBSOCKET_PATH_KEY = "websocketPath";
 export function initializeWebSocket(
   container: ServiceContainer,
   config: AppConfig,
+  handlers?: SocketPluginHandlers,
 ): string | undefined {
   const socketConfig = config.socket as SocketConfig | undefined;
-  if (!socketConfig || socketConfig.type !== "websocket") {
+  if (!socketConfig || socketConfig.adapter !== "websocket") {
     return undefined;
   }
 
-  const path = (socketConfig.path ?? "/ws").replace(/\/?$/, "") || "/ws";
-  const logger = socketConfig.logger ?? getLogger(container);
+  // 支持 config 嵌套，也兼容扁平结构（config 未提供时使用顶层字段）
+  const impl = socketConfig.config ?? socketConfig;
+  const path = (impl.path ?? "/ws").replace(/\/?$/, "") || "/ws";
+  const logger = impl.logger ?? socketConfig.logger ?? getLogger(container);
+  // 排除 adapter、config，避免与 @dreamer/websocket ServerOptions 冲突
+  const { adapter: _adapter, config: _config, ...socketRest } = socketConfig;
   const ws = new Server({
+    ...socketRest,
+    ...(socketConfig.config ?? {}),
     path,
     logger,
-    debug: socketConfig.debug ?? false,
-    pingTimeout: socketConfig.pingTimeout ?? 60000,
-    pingInterval: socketConfig.pingInterval ?? 30000,
+    debug: impl.debug ?? false,
+    pingTimeout: impl.pingTimeout ?? 60000,
+    pingInterval: impl.pingInterval ?? 30000,
     t: (key: string, params?: Record<string, string | number | boolean>) => {
       const r = $t(key, params);
       return (r != null && r !== key) ? r : undefined;
     },
-    ...socketConfig,
   });
+
+  // 若传入插件回调，在 connection/disconnect 时触发
+  if (handlers?.onConnection || handlers?.onDisconnect) {
+    ws.on("connection", (socket) => {
+      const request = new Request(socket.handshake.url, {
+        headers: socket.handshake.headers,
+      });
+      const ctx = createWebSocketContext(
+        socket.getRawSocket(),
+        request,
+        socket.id,
+      );
+      handlers.onConnection?.(ctx);
+      socket.on("disconnect", () => {
+        handlers.onDisconnect?.(ctx);
+      });
+    });
+  }
 
   container.registerSingleton(WEBSOCKET_SERVER_KEY, () => ws);
   container.registerSingleton(WEBSOCKET_PATH_KEY, () => path);

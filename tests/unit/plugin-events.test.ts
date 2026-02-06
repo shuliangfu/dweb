@@ -8,13 +8,15 @@
  */
 
 import "../setup.ts";
-import type { Plugin } from "@dreamer/plugin";
+import type { Plugin, SocketContext, SocketIOSocket } from "@dreamer/plugin";
 import { describe, expect, it } from "@dreamer/test";
 import {
   emitOnBuild,
   emitOnBuildComplete,
   emitOnInit,
   emitOnShutdown,
+  emitOnSocket,
+  emitOnSocketClose,
   emitOnStart,
   emitOnStop,
   emitPluginEvent,
@@ -248,6 +250,87 @@ describe("插件事件系统 (plugin-events.ts)", () => {
 
       await emitOnBuildComplete(container, { outputFiles: ["main.js"] });
       expect(receivedResult).toEqual({ outputFiles: ["main.js"] });
+    });
+  });
+
+  describe("Socket 事件触发函数", () => {
+    it("emitOnSocket 应该触发 onSocket 钩子", async () => {
+      const container = createTestEnv();
+      let onSocketCalled = false;
+      let receivedCtx: unknown = null;
+
+      await registerAndActivate(container, {
+        name: "socket-plugin",
+        version: "1.0.0",
+        onSocket(ctx: unknown) {
+          onSocketCalled = true;
+          receivedCtx = ctx;
+        },
+      });
+
+      const mockCtx = {
+        type: "socketio" as const,
+        connectionId: "test-123",
+        socket: {} as SocketIOSocket,
+        namespace: "/",
+        rooms: new Set<string>(),
+      };
+
+      await emitOnSocket(container, mockCtx as SocketContext);
+
+      expect(onSocketCalled).toBe(true);
+      expect(receivedCtx).toEqual(mockCtx);
+    });
+
+    it("emitOnSocketClose 应该触发 onSocketClose 钩子", async () => {
+      const container = createTestEnv();
+      let onSocketCloseCalled = false;
+      let receivedCtx: unknown = null;
+
+      await registerAndActivate(container, {
+        name: "socket-close-plugin",
+        version: "1.0.0",
+        onSocketClose(ctx: unknown) {
+          onSocketCloseCalled = true;
+          receivedCtx = ctx;
+        },
+      });
+
+      const mockCtx = {
+        type: "websocket" as const,
+        connectionId: "test-456",
+        socket: {} as WebSocket,
+        request: new Request("http://localhost/ws"),
+      };
+
+      await emitOnSocketClose(container, mockCtx as SocketContext);
+
+      expect(onSocketCloseCalled).toBe(true);
+      expect(receivedCtx).toEqual(mockCtx);
+    });
+
+    it("无 pluginManager 时 emitOnSocket 应静默返回", async () => {
+      const container = initializeServiceContainer();
+      // 不初始化 plugin
+      const result = await emitOnSocket(container, {
+        type: "socketio",
+        connectionId: "x",
+        socket: {} as SocketIOSocket,
+        namespace: "/",
+        rooms: new Set(),
+      } as SocketContext);
+      expect(result).toBeUndefined();
+    });
+
+    it("无 pluginManager 时 emitOnSocketClose 应静默返回", async () => {
+      const container = initializeServiceContainer();
+      const result = await emitOnSocketClose(container, {
+        type: "websocket",
+        connectionId: "x",
+        socket: {} as WebSocket,
+        request: new Request("http://x"),
+      } as SocketContext);
+      expect(result).toBeUndefined();
     });
   });
 

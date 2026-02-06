@@ -22,7 +22,6 @@ describe("配置管理 (config.ts)", () => {
         const config: AppConfig = {
           name: "test-app",
           version: "1.0.0",
-          configDirectory: "./config",
           envPrefix: "APP_",
           hotReload: true,
         };
@@ -46,13 +45,6 @@ describe("配置管理 (config.ts)", () => {
         const config = { version: 1.0 } as unknown as AppConfig;
         expect(() => validateConfig(config)).toThrow(
           "配置项 'version' 必须是字符串类型",
-        );
-      });
-
-      it("应该拒绝非字符串类型的 configDirectory", () => {
-        const config = { configDirectory: true } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow(
-          "配置项 'configDirectory' 必须是字符串类型",
         );
       });
 

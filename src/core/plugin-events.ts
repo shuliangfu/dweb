@@ -10,6 +10,7 @@
  * @module
  */
 
+import type { SocketContext } from "@dreamer/plugin";
 import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import { $t } from "../utils/i18n.ts";
@@ -424,6 +425,38 @@ export async function emitOnHotReload(
   await emitPluginEvent(container, "onHotReload", changedFiles);
 }
 
+/**
+ * 触发 onSocket 事件（Socket 连接建立时）
+ *
+ * 在 Socket.IO 或 WebSocket 连接建立时调用，通知插件进行认证、记录等。
+ *
+ * @param container 服务容器
+ * @param ctx Socket 上下文（WebSocketContext 或 SocketIOContext）
+ */
+export async function emitOnSocket(
+  container: ServiceContainer,
+  ctx: SocketContext,
+): Promise<void> {
+  if (!container.has("pluginManager")) return;
+  const pluginManager = getPluginManager(container);
+  await pluginManager.triggerSocket(ctx);
+}
+
+/**
+ * 触发 onSocketClose 事件（Socket 连接关闭时）
+ *
+ * @param container 服务容器
+ * @param ctx Socket 上下文
+ */
+export async function emitOnSocketClose(
+  container: ServiceContainer,
+  ctx: SocketContext,
+): Promise<void> {
+  if (!container.has("pluginManager")) return;
+  const pluginManager = getPluginManager(container);
+  await pluginManager.triggerSocketClose(ctx);
+}
+
 // ============================================================================
 // 统一命名空间：框架应通过 pluginEvents 调用，避免分散导入
 // ============================================================================
@@ -453,4 +486,6 @@ export const pluginEvents = {
   emitOnRoute,
   emitOnHealthCheck,
   emitOnHotReload,
+  emitOnSocket,
+  emitOnSocketClose,
 } as const;

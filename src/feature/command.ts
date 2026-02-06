@@ -86,8 +86,6 @@ export class Command extends BaseCommand {
   /**
    * 初始化 App 实例
    * 从配置文件加载并初始化 App（console 模式）
-   *
-   * @param configDirectory 配置目录（默认："./config"）
    */
   async initApp(): Promise<void> {
     // 获取已加载的配置
