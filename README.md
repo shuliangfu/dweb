@@ -5,7 +5,7 @@
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.md)
-[![Tests](https://img.shields.io/badge/tests-343%20passed-brightgreen)](./TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-438%20passed-brightgreen)](./TEST_REPORT.md)
 
 ---
 
@@ -251,6 +251,72 @@ flowchart TB
 **注**：数据层中 database 为 dweb 内置（配置 `database` 即可）；cache、storage
 需单独安装 `@dreamer/cache`、`@dreamer/storage` 并自行初始化，AppConfig 无 cache
 配置项。
+
+---
+
+## 请求生命周期与数据流
+
+一次 HTTP 请求在 dweb 中的完整处理流程如下：
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Server
+    participant Middleware
+    participant Socket
+    participant Router
+    participant Render
+    participant Plugin
+
+    Client->>Server: HTTP Request
+    Server->>Middleware: 全局中间件链
+    Middleware->>Socket: 路径匹配 /socket.io 或 /ws？
+    alt 匹配 Socket 路径
+        Socket->>Client: Socket.IO / WebSocket 处理
+    else 不匹配
+        Middleware->>Router: 路由匹配
+        Router->>Plugin: emitOnRequest
+        alt 路由匹配
+            Router->>Render: SSR/CSR/SSG/Hybrid 渲染
+            Render->>Plugin: emitOnResponse
+            Render->>Client: HTML / JSON 响应
+        else 404
+            Router->>Client: _404.tsx 或 404 响应
+        end
+    end
+```
+
+### 中间件执行顺序
+
+1. **全局中间件**：`app.use()` 注册的中间件，按注册顺序执行
+2. **Socket 委托**：若配置 `socket.type`，路径前缀匹配时委托给 Socket.IO 或 WebSocket
+3. **配置中间件**：`config.middlewares` 中配置的中间件
+4. **路由中间件**：`routes/_middleware.ts` 导出的路由级中间件
+5. **路由匹配**：`@dreamer/router` 根据 `routesDir` 扫描结果匹配
+6. **插件事件**：`pluginEventsMiddleware` 触发 `onRequest`、`onResponse`
+7. **渲染**：根据 `render.mode` 选择 SSR/CSR/SSG/Hybrid 渲染器
+
+### App 初始化流程
+
+```
+new App(config)
+  → 设置 DENO_ENV（dev/prod）
+  → 初始化 ServiceContainer
+  → 异步 _initializeConfig：
+      → 加载 config/main.ts、main.{env}.ts
+      → 深度合并配置、验证
+      → 初始化 Logger、Lifecycle、Middleware、Plugin
+      → 注册插件、中间件、路由中间件
+      → 初始化 Render、Router、Build、Server
+      → 若配置 socket：初始化 Socket.IO 或 WebSocket
+      → emit("init")
+  → start() 等待 _initPromise
+  → 生命周期 starting → started
+  → 启动 HTTP 服务器
+  → emit("start")
+```
+
+---
 
 ## 🎯 使用场景
 
@@ -996,6 +1062,18 @@ export default function User({ params }: { params: { id: string } }) {
 - `_app.tsx` 是必须的，用于定义应用的 HTML 结构
 - 其他特殊文件都是可选的，根据需要添加
 
+**文件路由命名约定**：
+
+| 模式 | 示例 | 对应路径 |
+|------|------|----------|
+| `index.tsx` | `routes/index.tsx` | `/` |
+| `about.tsx` | `routes/about.tsx` | `/about` |
+| `[id].tsx` | `routes/user/[id].tsx` | `/user/:id` |
+| `[...slug].tsx` | `routes/docs/[...slug].tsx` | `/docs/*` |
+| `api/*.ts` | `routes/api/users.ts` | `/api/users`（API 路由） |
+
+支持 `.ts`、`.tsx`、`.js`、`.jsx`。路由组件可 `import "*.css"`，框架会剥离并注入页面。
+
 **处理机制**：
 
 所有特殊文件都在 **`@dreamer/router`** 中处理：
@@ -1127,6 +1205,23 @@ app.useError(async (req, res, error, next) => {
 插件只需实现 `name`、`version` 及事件钩子（如 `onInit`），无需实现
 `install`/`activate`。推荐在 `config.plugins`
 中配置，框架会自动完成注册→安装→激活。
+
+**插件生命周期钩子**：
+
+| 钩子 | 触发时机 |
+|------|----------|
+| `onInit` | App 初始化完成，配置、服务容器就绪 |
+| `onStart` | 应用启动，服务器即将监听 |
+| `onStop` | 应用停止 |
+| `onShutdown` | 应用关闭前 |
+| `onRequest` | 每次 HTTP 请求进入时 |
+| `onResponse` | 每次 HTTP 响应发出前 |
+| `onRoute` | 路由扫描完成，可查看路由列表 |
+| `onBuild` | 构建开始 |
+| `onBuildComplete` | 构建完成 |
+| `onError` | 发生错误时 |
+| `onHealthCheck` | 健康检查时 |
+| `onHotReload` | HMR 热重载时 |
 
 ```typescript
 // 方式 1：通过 config.plugins 配置（推荐）
@@ -1371,6 +1466,16 @@ export default {
 `params.ts` 独立加载，存储在容器的 `params` 键下，通过 `getParams` /
 `getParamValue` 访问。
 
+#### 5. 配置目录与文件约定
+
+| 文件 | 说明 | 加载时机 |
+|------|------|----------|
+| `config/main.ts` | 基础配置，所有环境共享 | App 初始化时 |
+| `config/main.{env}.ts` | 环境覆盖（如 main.dev.ts、main.prod.ts） | 按 DENO_ENV/BUN_ENV 选择 |
+| `config/params.ts` | 业务参数（功能开关、API 地址等） | 与 main 系列一起加载 |
+
+**configDirectory 推断规则**：未显式传入时，从入口路径推断（如 `src/backend/main.ts` → `src/backend/config`），否则默认 `./config` 或 `./src/config`。
+
 ### 数据验证
 
 ```typescript
@@ -1601,6 +1706,114 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ---
 
+## 📚 API 参考
+
+### 核心 API
+
+| API | 说明 |
+|-----|------|
+| `App` | 框架主类，整合服务、中间件、插件、路由、渲染 |
+| `app.use(middleware)` | 注册全局中间件 |
+| `app.use(path, middleware)` | 注册路径匹配中间件 |
+| `app.registerPlugin(plugin)` | 注册插件 |
+| `app.on(stage, hook)` | 注册生命周期钩子（init、start、stop、build、error） |
+| `app.start()` | 启动应用（开发/生产服务器） |
+| `app.stop()` | 停止应用 |
+| `app.build()` | 构建生产版本 |
+| `app.shutdown()` | 优雅关闭（含 SIGTERM/SIGINT 处理） |
+| `app.container` | 服务容器，用于获取 getConfig、getLogger 等 |
+| `app.stage` | 当前生命周期阶段 |
+
+### 配置与参数
+
+| API | 说明 |
+|-----|------|
+| `getConfig(container)` | 获取完整 AppConfig |
+| `getConfigValue(container, path, default)` | 按点号路径获取配置值 |
+| `getConfigManager(container)` | 获取 ConfigManager（支持热重载） |
+| `getParams(container)` | 获取业务配置（config/params.ts） |
+| `getParamValue(container, path, default)` | 按点号路径获取业务参数 |
+
+### 服务与模块
+
+| API | 说明 |
+|-----|------|
+| `getLogger(container)` | 获取 Logger |
+| `getRouter(container)` | 获取路由实例 |
+| `getRender(container)` | 获取渲染服务 |
+| `getBuild(container)` | 获取构建器 |
+| `getServer(container)` | 获取 HTTP 服务器 |
+| `getPluginManager(container)` | 获取插件管理器 |
+| `getLifecycleManager(container)` | 获取生命周期管理器 |
+| `getDatabaseManager(container)` | 获取数据库管理器（需配置 database） |
+| `getSocketIoServer(container)` | 获取 Socket.IO 实例（需配置 socket.type: "socketio"） |
+| `getWebSocketServer(container)` | 获取 WebSocket 实例（需配置 socket.type: "websocket"） |
+
+### 错误处理
+
+| API | 说明 |
+|-----|------|
+| `throwDwebError(code, params?)` | 抛出 DwebError |
+| `createDwebError(code, params?)` | 创建 DwebError 实例（不抛出） |
+| `isDwebError(error)` | 类型守卫 |
+| `setDwebErrorTranslator(fn)` | 注册错误消息翻译器（i18n） |
+| `DwebErrorCode` | 错误码枚举（DWEB_E01～E33） |
+
+### 类型导出
+
+| 类型 | 说明 |
+|-----|------|
+| `AppConfig` | 应用配置接口 |
+| `IApp` | App 类接口 |
+| `AppPlugin` | 插件类型 |
+| `AppMiddleware` | 中间件类型 |
+| `AppStage` | 生命周期阶段 |
+| `Context` | 路由中间件上下文（HttpContext 别名） |
+| `Next` | 中间件 next 函数类型 |
+| `SocketConfig` | 实时通信配置（socketio \| websocket） |
+
+---
+
+## 📚 CLI 命令参考
+
+通过 `dweb-cli` 或 `deno task` 使用：
+
+| 命令 | 说明 | 常用选项 |
+|------|------|----------|
+| `init [appName]` | 初始化新项目 | `--beta` 使用 beta 依赖 |
+| `dev` | 启动开发服务器 | `-a, --app` 指定应用（多应用时） |
+| `build` | 构建生产版本 | `-a, --app` 指定应用 |
+| `start` | 启动生产服务器 | `-a, --app` 指定应用 |
+| `preview` | 预览构建结果 | `-p, --port` 端口；`-a, --app` 应用 |
+| `generate (g)` | 代码生成 | `-t, --type` 类型；`-n, --name` 名称 |
+| `test` | 运行测试 | `-a, --app` 指定应用 |
+| `lint` | 代码检查 | - |
+| `fmt` | 代码格式化 | - |
+| `clean` | 清理构建产物 | - |
+| `db migrate (m)` | 数据库迁移 | `-a, --action` up/down；`-n, --name` 迁移名 |
+| `db seed` | 数据库种子 | - |
+| `db status` | 数据库状态 | - |
+| `upgrade` | 升级 dweb 依赖 | `--beta` 使用 beta 版本 |
+
+**generate 支持的类型**：`service`、`api`、`model`、`route`。
+
+---
+
+## 📚 错误码参考
+
+| 段 | 错误码 | 说明 |
+|----|--------|------|
+| 配置 | E01～E19 | name、version、render、middlewares、plugins 等配置校验 |
+| 入口 | E20～E21 | 入口路径格式、段数 |
+| 运行时 | E22 | 仅支持 Deno/Bun |
+| 功能 | E23～E29 | App 未初始化、Socket 未配置、生成类型、构建失败、中间件加载 |
+| 文件/HTTP | E30～E32 | 文件读取、HTTP 请求失败 |
+| 未知 | E33 | 未知错误包装 |
+
+完整定义见 [src/utils/errors.ts](./src/utils/errors.ts)。可通过 `setDwebErrorTranslator` 接入 i18n 翻译。
+
+---
+
 ## 📚 配置文档
 
 - **[AppConfig 完整配置示例](./APP_CONFIG.md)**：涵盖
@@ -1663,8 +1876,8 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📊 测试报告
 
-单元测试结果与覆盖说明见 [TEST_REPORT.md](./TEST_REPORT.md)。当前 30
-个测试文件、343 个用例全部通过。
+单元测试、e2e 与集成测试结果见 [TEST_REPORT.md](./TEST_REPORT.md)。当前 52
+个测试文件、438 个用例全部通过。
 
 ---
 
