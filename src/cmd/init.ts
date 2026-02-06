@@ -537,6 +537,17 @@ export default {
   logger: {
     level: "info",
     format: "text",
+    output: {
+      auto: true,
+      console: true,
+      file: {
+        path: "runtime/logs/${appName}.log",
+        rotate: true,
+        strategy: "size",
+        maxSize: 10 * 1024 * 1024,
+        maxFiles: 5,
+      },
+    },
   },
   build: {
     server: {
@@ -580,6 +591,17 @@ const config: AppConfig = {
   logger: {
     level: "info",
     format: "text",
+    output: {
+      auto: true,
+      console: true,
+      file: {
+        path: "runtime/logs/app.log",
+        rotate: true,
+        strategy: "size",
+        maxSize: 10 * 1024 * 1024,
+        maxFiles: 5,
+      },
+    },
   },
   build: {
     server: {
@@ -967,6 +989,140 @@ html, body { margin: 0; padding: 0; min-height: 100%; }
 `;
 }
 
+/**
+ * Dockerfile 模板
+ * 基于 Deno 官方镜像，安装 curl 等基础工具用于健康检测
+ */
+function getDockerfile(): string {
+  return `# ============================================
+# 基础阶段：安装通用工具（所有服务都需要）
+# ============================================
+FROM denoland/deno:latest AS base
+
+# 安装通用工具：curl 用于健康检测，coreutils 用于 tee
+RUN apt-get update && \\
+    apt-get install -y curl coreutils ca-certificates && \\
+    rm -rf /var/lib/apt/lists/*
+
+# 设置工作目录（compose 通过 volumes 挂载项目目录）
+# Deno 缓存：首次启动前可在宿主机执行 deno cache 预填，或挂载 runtime/deno-cache
+WORKDIR /app
+`;
+}
+
+/**
+ * docker-compose.yml 模板
+ * 单应用：一个服务，端口 3000
+ * 多应用：按 appNames 生成多个服务，端口 3000、3001、3002...
+ */
+function getDockerComposeYml(opts: InitOptions): string {
+  const isMulti = opts.appMode === "multi" && (opts.appNames?.length ?? 0) > 0;
+  const projectName = opts.projectName;
+
+  if (isMulti && opts.appNames && opts.appNames.length > 0) {
+    // 多应用：每个应用一个服务
+    const services = opts.appNames
+      .map((app, i) => {
+        const port = 3000 + i;
+        const containerName = `${projectName}-${app}`;
+        return `  # ${app} 应用（端口 ${port}）
+  ${app}:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: base
+    container_name: ${containerName}
+    restart: unless-stopped
+    stop_grace_period: 5s
+    user: '0:0'
+    ports:
+      - '${port}:${port}'
+    command: ['deno', 'run', '-A', 'dist/${app}/server.js']
+    environment:
+      - DENO_ENV=production
+    volumes:
+      - .:/app
+      - \${DENO_CACHE_DIR:-runtime/deno-cache}:/deno-dir
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          "curl -f -s -o /dev/null -w '%{http_code}' http://localhost:${port}/ | grep -q '^2' || exit 1"
+        ]
+      interval: 10s
+      timeout: 1s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: 'local'
+      options:
+        max-size: '10m'
+        max-file: '3'
+        compress: 'true'`;
+      })
+      .join("\n\n");
+
+    return `# docker-compose.yml
+# 多应用模式：每个应用独立服务
+# 使用前请先执行 deno task build:<app> 构建各应用
+# 首次启动可挂载 Deno 缓存加速：deno cache 后挂载 runtime/deno-cache
+
+services:
+${services}
+
+networks:
+  default:
+    driver: bridge
+`;
+  }
+
+  // 单应用：一个服务
+  return `# docker-compose.yml
+# 单应用模式
+# 使用前请先执行 deno task build 构建
+# 首次启动可挂载 Deno 缓存加速：deno cache 后挂载 runtime/deno-cache
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: base
+    container_name: ${projectName}-app
+    restart: unless-stopped
+    stop_grace_period: 5s
+    user: '0:0'
+    ports:
+      - '3000:3000'
+    command: ['deno', 'run', '-A', 'dist/server.js']
+    environment:
+      - DENO_ENV=production
+    volumes:
+      - .:/app
+      - \${DENO_CACHE_DIR:-runtime/deno-cache}:/deno-dir
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          "curl -f -s -o /dev/null -w '%{http_code}' http://localhost:3000/ | grep -q '^2' || exit 1"
+        ]
+      interval: 10s
+      timeout: 1s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: 'local'
+      options:
+        max-size: '10m'
+        max-file: '3'
+        compress: 'true'
+
+networks:
+  default:
+    driver: bridge
+`;
+}
+
 function getGitignore(): string {
   return `# Deno
 .deno/
@@ -981,6 +1137,9 @@ build/
 
 # dweb 自动生成（每次构建/启动会重新生成）
 _client.dep.tsx
+
+# Docker 缓存（deno cache 预填目录）
+runtime/
 
 # 环境
 .env
@@ -1073,7 +1232,7 @@ function getVscodeSettingsJson(): string {
     "**/node_modules": true,
     "**/.deno": true,
     "**/dist": true,
-    "**/.data": true
+    "**/runtime": true
   },
   // ==================== i18n-ally 配置 ====================
   "i18n-ally.localesPaths": ["locales"],
@@ -1382,6 +1541,17 @@ export async function generate(opts: InitOptions): Promise<void> {
     getDenoJson(opts, jsrVersions),
   );
   await writeTextFile(join(targetDir, ".gitignore"), getGitignore());
+
+  // 创建 Dockerfile 和 docker-compose.yml（单应用/多应用根据 opts 生成）
+  await writeTextFile(join(targetDir, "Dockerfile"), getDockerfile());
+  await writeTextFile(
+    join(targetDir, "docker-compose.yml"),
+    getDockerComposeYml(opts),
+  );
+
+  // 创建 runtime 目录：deno-cache 用于 Docker 挂载，logs 用于 logger 文件输出
+  await ensureDir(join(targetDir, "runtime", "deno-cache"));
+  await ensureDir(join(targetDir, "runtime", "logs"));
 
   // 创建 .vscode/settings.json，便于 IDE 开箱即用
   await ensureDir(join(targetDir, ".vscode"));
