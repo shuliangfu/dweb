@@ -54,6 +54,10 @@ export interface ClientBuildResult {
   outputDir?: string;
   /** 所有输出文件（代码分割模式） */
   outputFiles?: Map<string, string>;
+  /** basename -> content 索引，用于 findChunkContent O(1) 查找（避免线性遍历） */
+  chunkContentIndex?: Map<string, string>;
+  /** base（如 routes、index）-> content 索引，用于 HMR 回退 O(1) 查找 */
+  chunkBaseIndex?: Map<string, string>;
   /** 本次变更对应路由的 chunk 的 URL（HMR 无感刷新用，如 /_client/index-XXX.js） */
   chunkUrl?: string;
 }
@@ -69,6 +73,9 @@ export interface BuildClientScriptOptions {
 
 /** 缓存的客户端脚本 */
 let cachedClientScript: ClientBuildResult | null = null;
+
+/** 开发模式增量构建：缓存的 BuilderClient 实例，用于 context + rebuild 加速 HMR */
+let cachedDevBuilder: BuilderClient | null = null;
 
 /**
  * 从变更文件路径推导路由 componentPath（如 .../routes/index.tsx -> index）
@@ -532,10 +539,6 @@ export async function setupHydrationRouterAndHmr(opts: {
   }
   g.__DWEB_HMR_REFRESH__ = (hmrOpts) => {
     const chunkUrl = hmrOpts?.chunkUrl;
-    console.log("[HMR] __DWEB_HMR_REFRESH__ 调用", {
-      chunkUrl,
-      pathname: _win.location?.pathname,
-    });
     if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
       console.log("[HMR] 调试模式已开启，输出详细日志");
     }
@@ -587,21 +590,22 @@ export async function setupHydrationRouterAndHmr(opts: {
     };
     const scrollX = typeof _win.scrollX === "number" ? _win.scrollX : 0;
     const scrollY = typeof _win.scrollY === "number" ? _win.scrollY : 0;
+    // 先卸载并移除旧的路由 CSS，再加载新 chunk。否则新 chunk 加载时会注入样式，随后被误删
+    unmountPrevious();
+    if (typeof _win.document !== "undefined") {
+      _win.document.querySelectorAll("[data-dweb-route-css],[data-dweb-css-id]").forEach(function(el) { el.remove(); });
+    }
     loadModule()
       .then((mod) => {
         if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
           console.log("[HMR] loadModule 完成", { hasDefault: !!(mod as Record<string, unknown>)?.default, componentPath: match.route.component });
         }
         const modObj = mod as Record<string, unknown>;
-        if (!modObj) { unmountPrevious(); renderNotFound(containerId); return; }
+        if (!modObj) { renderNotFound(containerId); return; }
         const PageComponent = modObj.default ?? modObj.Page;
-        if (!PageComponent) { unmountPrevious(); renderNotFound(containerId); return; }
+        if (!PageComponent) { renderNotFound(containerId); return; }
         const skipLayouts = modObj.inheritLayout === false;
         return loadLayouts().then((layoutList) => {
-          if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-            console.log("[HMR] unmountPrevious 前");
-          }
-          unmountPrevious();
           if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
             console.log("[HMR] renderCSR 前", { componentPath: match.route.component });
           }
@@ -995,6 +999,42 @@ export async function prepareClientBuildEntry(
 }
 
 /**
+ * 开发模式构建：创建 context + rebuild，缓存 builder 供后续增量 rebuild
+ *
+ * @param entryPath 入口文件路径（_client.tsx）
+ * @param outputDir 输出目录（用于 esbuild 路径解析，write: false 时不写盘）
+ * @param engine 渲染引擎
+ * @returns 构建结果（含 outputContents）
+ */
+async function doDevBuild(
+  entryPath: string,
+  outputDir: string,
+  engine: "react" | "preact",
+): Promise<{
+  outputContents?: Array<{ path: string; text: string; contents?: Uint8Array }>;
+}> {
+  const builder = new BuilderClient({
+    entry: entryPath,
+    output: outputDir,
+    engine,
+    bundle: {
+      minify: false,
+      sourcemap: true,
+      splitting: true,
+      format: "esm",
+      chunkNames: "[name]-[hash]",
+    },
+    t: (key: string, params?: Record<string, string | number | boolean>) => {
+      const r = $t(key, params);
+      return (r != null && r !== key) ? r : undefined;
+    },
+  });
+  await builder.createContext("dev", { write: false });
+  cachedDevBuilder = builder;
+  return builder.rebuild();
+}
+
+/**
  * 构建客户端入口脚本（支持代码分割）
  *
  * 使用 BuilderClient 进行构建，启用代码分割：
@@ -1161,6 +1201,10 @@ export async function buildClientScript(
           external: externalList.length > 0 ? externalList : undefined,
           alias: userBundleConfig.alias,
         },
+        t: (key: string, params?: Record<string, string | number | boolean>) => {
+          const r = $t(key, params);
+          return (r != null && r !== key) ? r : undefined;
+        },
       });
 
       await builder.build(mode);
@@ -1191,34 +1235,36 @@ export async function buildClientScript(
         size: (totalSize / 1024).toFixed(1),
       }));
 
+      const { chunkContentIndex, chunkBaseIndex } = buildChunkIndices(outputFiles);
       result = {
         code: mainCode,
         buildTime: Date.now(),
         outputDir: finalOutputDir,
         outputFiles,
+        chunkContentIndex,
+        chunkBaseIndex,
       };
     } else {
       // ========================================
-      // 开发模式：纯内存构建，不写 dist/
+      // 开发模式：纯内存构建，不写 dist/，使用 esbuild context + rebuild 实现增量编译
       // ========================================
       const memOutputDir = join(cwd(), ".dweb-client-out");
-      const builderDev = new BuilderClient({
-        entry: tempClientEntryPath,
-        output: memOutputDir,
-        engine: engine as "react" | "preact",
-        bundle: {
-          minify: false,
-          sourcemap: true,
-          splitting: true,
-          format: "esm",
-          chunkNames: "[name]-[hash]",
-        },
-      });
+      await ensureDir(memOutputDir);
 
-      const buildResultDev = await builderDev.build({
-        mode: "dev",
-        write: false,
-      });
+      let buildResultDev;
+      if (cachedDevBuilder) {
+        // 复用已有 context，增量 rebuild（复用文件缓存、AST，加快 HMR）
+        try {
+          buildResultDev = await cachedDevBuilder.rebuild();
+        } catch (err) {
+          logger.warn($t("log.hmrIncrementalRebuildFailed") + ":", err);
+          await cachedDevBuilder.dispose();
+          cachedDevBuilder = null;
+          buildResultDev = await doDevBuild(tempClientEntryPath, memOutputDir, engine);
+        }
+      } else {
+        buildResultDev = await doDevBuild(tempClientEntryPath, memOutputDir, engine);
+      }
 
       const outputFilesDev = new Map<string, string>();
       if (buildResultDev.outputContents) {
@@ -1274,11 +1320,14 @@ export async function buildClientScript(
         }
       }
 
+      const { chunkContentIndex, chunkBaseIndex } = buildChunkIndices(outputFilesDev);
       result = {
         code: mainCodeDev,
         buildTime: Date.now(),
         outputDir: undefined,
         outputFiles: outputFilesDev,
+        chunkContentIndex,
+        chunkBaseIndex,
         chunkUrl: chunkUrlDev,
       };
     }
@@ -1330,30 +1379,66 @@ function getChunkBaseName(fileName: string): string | null {
 }
 
 /**
+ * 从 outputFiles 建立 basename 和 base 索引，供 findChunkContent O(1) 查找
+ *
+ * @param outputFiles 输出文件映射
+ * @returns chunkContentIndex（basename->content）、chunkBaseIndex（base->content）
+ */
+function buildChunkIndices(
+  outputFiles: Map<string, string>,
+): {
+  chunkContentIndex: Map<string, string>;
+  chunkBaseIndex: Map<string, string>;
+} {
+  const chunkContentIndex = new Map<string, string>();
+  const chunkBaseIndex = new Map<string, string>();
+  for (const [key, content] of outputFiles) {
+    const name = basename(key);
+    chunkContentIndex.set(name, content);
+    const base = getChunkBaseName(name);
+    if (base) chunkBaseIndex.set(base, content);
+  }
+  return { chunkContentIndex, chunkBaseIndex };
+}
+
+/**
  * 从 outputFiles 中查找 chunk 内容（兼容多种 key 格式）
  *
- * 开发模式 HMR：旧主包请求 index-ABC123.js，重建后只有 index-XYZ789.js。
- * 按基础名回退：未精确匹配时，用同基础名的最新 chunk 内容，实现无感刷新。
+ * 优先使用 chunkContentIndex/chunkBaseIndex 实现 O(1) 查找，未命中再回退到线性遍历。
+ * 开发模式 HMR：旧主包请求 index-ABC123.js，重建后只有 index-XYZ789.js，
+ * 按基础名回退：用同基础名的最新 chunk 内容，实现无感刷新。
  *
  * @param outputFiles 输出文件映射
  * @param fileName 请求的文件名（如 chunk-UUJCPQSG.js）
+ * @param chunkContentIndex basename -> content 索引（可选，构建时建立）
+ * @param chunkBaseIndex base -> content 索引（可选，用于 HMR 回退）
  * @returns 文件内容，未找到返回 undefined
  */
 /** 从 outputFiles 查找 chunk 内容（供 csr-client-middleware 使用） */
 export function findChunkContent(
   outputFiles: Map<string, string> | undefined,
   fileName: string,
+  chunkContentIndex?: Map<string, string>,
+  chunkBaseIndex?: Map<string, string>,
 ): string | undefined {
   if (!outputFiles) return undefined;
-  // 1. 直接按 key 查找
+  // 1. 优先查 basename 索引（O(1)）
+  const fromContentIndex = chunkContentIndex?.get(fileName);
+  if (fromContentIndex !== undefined) return fromContentIndex;
+  // 2. 直接按 key 查找
   const direct = outputFiles.get(fileName);
   if (direct) return direct;
-  // 2. 遍历查找：key 的 basename 与 fileName 匹配（兼容 path/subdir/chunk-xxx.js 等格式）
+  // 3. 优先查 base 索引（HMR 回退，O(1)）
+  const base = getChunkBaseName(fileName);
+  if (base) {
+    const fromBaseIndex = chunkBaseIndex?.get(base);
+    if (fromBaseIndex !== undefined) return fromBaseIndex;
+  }
+  // 4. 回退：遍历查找（兼容 path/subdir/chunk-xxx.js 等格式）
   for (const [key, content] of outputFiles) {
     if (basename(key) === fileName) return content;
   }
-  // 3. HMR 回退：请求旧 hash 的 chunk 时，用同基础名的最新 chunk（重建后 hash 变化）
-  const base = getChunkBaseName(fileName);
+  // 5. 回退：HMR 遍历（请求旧 hash 时用同 base 的最新 chunk）
   if (base) {
     const prefix = base + "-";
     for (const [key, content] of outputFiles) {
@@ -1413,10 +1498,16 @@ export function getCachedClientScript(): ClientBuildResult | null {
 /**
  * 清除客户端脚本缓存
  *
- * 在应用关闭时调用以防止内存泄漏
+ * @param options 可选，disposeBuilder: true 时同时释放增量构建的 context（应用关闭时调用以防内存泄漏）
  */
-export function clearClientScriptCache(): void {
+export async function clearClientScriptCache(options?: {
+  disposeBuilder?: boolean;
+}): Promise<void> {
   cachedClientScript = null;
+  if (options?.disposeBuilder && cachedDevBuilder) {
+    await cachedDevBuilder.dispose();
+    cachedDevBuilder = null;
+  }
 }
 
 /** 客户端脚本中间件已拆至 csr-client-middleware.ts，此处保留导出以保持向后兼容 */

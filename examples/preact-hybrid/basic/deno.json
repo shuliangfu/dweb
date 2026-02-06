@@ -9,7 +9,7 @@
     "@dreamer/config": "jsr:@dreamer/config@^1.0.0-beta.6",
     "@dreamer/console": "jsr:@dreamer/console@^1.0.3-beta.10",
     "@dreamer/database": "jsr:@dreamer/database@^1.0.0-beta.8",
-    "@dreamer/esbuild": "jsr:@dreamer/esbuild@1.0.0-beta.63",
+    "@dreamer/esbuild": "jsr:@dreamer/esbuild@1.0.0-beta.64",
     "@dreamer/image": "jsr:@dreamer/image@^1.0.0-beta.3",
     "@dreamer/lifecycle": "jsr:@dreamer/lifecycle@^1.0.0-beta.3",
     "@dreamer/logger": "jsr:@dreamer/logger@^1.0.0-beta.10",

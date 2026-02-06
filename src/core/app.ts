@@ -1090,8 +1090,8 @@ export class App extends EventEmitter implements IApp {
       // 无事件监听器需要移除
     }
 
-    // 清理客户端脚本缓存
-    clearClientScriptCache();
+    // 清理客户端脚本缓存（build 模式未使用增量 context，无需 disposeBuilder）
+    await clearClientScriptCache();
 
     // 清理生命周期监听器（防止内存泄漏）
     this._removeLifecycleListeners();
@@ -1253,8 +1253,8 @@ export class App extends EventEmitter implements IApp {
     // 停止 ConfigManager 的文件监听（hotReload 时创建，防止内存泄漏）
     this._stopConfigWatching();
 
-    // 清理客户端脚本缓存（防止内存泄漏）
-    clearClientScriptCache();
+    // 清理客户端脚本缓存并释放增量构建 context（防止内存泄漏）
+    await clearClientScriptCache({ disposeBuilder: true });
 
     const lifecycleManager = getLifecycleManager(this.container);
     await lifecycleManager.shutdown();

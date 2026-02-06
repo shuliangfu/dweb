@@ -113,6 +113,10 @@ export function initializeBuild(
       reportHTML: buildConfig.reportHTML as boolean | string | undefined,
     } as BuilderConfig["build"],
     validateConfig: buildConfig.validateConfig as boolean | undefined,
+    t: (key: string, params?: Record<string, string | number | boolean>) => {
+      const r = $t(key, params);
+      return (r != null && r !== key) ? r : undefined;
+    },
   };
 
   // 创建 Builder 实例
@@ -238,6 +242,10 @@ export async function runBuildWithBuilder(
       mode: "prod",
       clean: (config.build as { clean?: boolean })?.clean,
       cache: (config.build as { cache?: boolean | string })?.cache,
+    },
+    t: (key: string, params?: Record<string, string | number | boolean>) => {
+      const r = $t(key, params);
+      return (r != null && r !== key) ? r : undefined;
     },
   };
 

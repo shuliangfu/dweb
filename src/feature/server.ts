@@ -17,6 +17,7 @@ import {
   buildClientScript,
   clearClientScriptCache,
 } from "./csr-client-builder.ts";
+import { clearCssRouteCacheForPath } from "./load-route-module.ts";
 import { invalidateModule } from "./module-cache.ts";
 import { pluginEvents } from "../core/plugin-events.ts";
 
@@ -115,8 +116,11 @@ export function initializeServer(
           // 使模块缓存失效，确保刷新页面时加载最新内容（项目内所有模块更新都能热重载）
           if (options?.changedPath) {
             invalidateModule(options.changedPath);
+            // 清除 CSS 路由缓存，避免注释/取消注释 CSS 导入后仍返回旧缓存
+            clearCssRouteCacheForPath(options.changedPath);
           }
-          clearClientScriptCache();
+          // 仅清除脚本缓存，不释放增量 context，以便 HMR 使用 rebuild 加速
+          await clearClientScriptCache();
           const result = await buildClientScript(container, config, options);
           // 触发 onHotReload 插件事件（HMR 热重载完成后）
           await pluginEvents.emitOnHotReload(

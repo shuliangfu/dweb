@@ -195,7 +195,12 @@ export function createClientScriptMiddleware(
 
       if (!isProd) {
         const script = getCachedClientScript();
-        const content = findChunkContent(script?.outputFiles, fileName);
+        const content = findChunkContent(
+          script?.outputFiles,
+          fileName,
+          script?.chunkContentIndex,
+          script?.chunkBaseIndex,
+        );
         if (content) {
           ctx.response = new Response(content, {
             status: 200,
