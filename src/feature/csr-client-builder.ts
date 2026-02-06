@@ -433,7 +433,17 @@ export function renderNotFound(containerId: string): void {
   }
 }
 
-/** 渲染错误页面 */
+/** 将字符串转义为安全 HTML 文本，防止 XSS */
+function escapeHtml(s: string): string {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** 渲染错误页面（error.message 经 escapeHtml 转义，防止 XSS） */
 export function renderError(containerId: string, error: unknown): void {
   const container = _win.document?.getElementById(containerId);
   if (container) {
@@ -443,7 +453,7 @@ export function renderError(containerId: string, error: unknown): void {
         <h1 style="font-size:48px;margin:0;color:#ef4444;">${
     $t("client.errorOccurred")
   }</h1>
-        <p style="color:#666;margin-top:16px;">\${message}</p>
+        <p style="color:#666;margin-top:16px;">\${escapeHtml(message)}</p>
         <button type="button" onclick="location.reload()" style="margin-top:24px;padding:8px 24px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;">
           ${$t("client.reload")}
         </button>
@@ -1024,7 +1034,10 @@ export async function buildClientScript(
         ? ["preact", "preact/hooks", "preact/jsx-runtime"]
         : ["react", "react-dom", "react/jsx-runtime", "react-dom/client"];
       const externalList = userExternal.filter(
-        (ext) => !runtimeExternalBlocklist.some((b) => ext === b || ext.startsWith(`${b}/`)),
+        (ext) =>
+          !runtimeExternalBlocklist.some((b) =>
+            ext === b || ext.startsWith(`${b}/`)
+          ),
       );
 
       const builder = new BuilderClient({
@@ -1169,22 +1182,24 @@ export async function buildClientScript(
   } catch (error) {
     logger.error($t("log.clientBuildFailed") + ":", error);
 
-    // 返回一个错误提示脚本
+    // 返回一个错误提示脚本（运行时通过 escapeHtml 转义 errorMessage，防止 XSS）
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorScript = `
-      console.error(${JSON.stringify($t("log.clientBuildFailed"))} + ":", ${
-      JSON.stringify(errorMessage)
-    });
-      document.getElementById("app").innerHTML = \`
-        <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:system-ui,sans-serif;">
-          <h1 style="font-size:48px;margin:0;color:#ef4444;">${
+      (function() {
+        function escapeHtml(s) {
+          return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+        }
+        var errorMessage = ${JSON.stringify(errorMessage)};
+        console.error(${
+      JSON.stringify($t("log.clientBuildFailed"))
+    } + ":", errorMessage);
+        var container = document.getElementById("app");
+        if (container) {
+          container.innerHTML = '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:system-ui,sans-serif;"><h1 style="font-size:48px;margin:0;color:#ef4444;">${
       $t("client.buildError")
-    }</h1>
-          <pre style="color:#666;margin-top:16px;max-width:80%;overflow:auto;background:#f5f5f5;padding:16px;border-radius:8px;">\${${
-      JSON.stringify(errorMessage)
-    }}</pre>
-        </div>
-      \`;
+    }</h1><pre style="color:#666;margin-top:16px;max-width:80%;overflow:auto;background:#f5f5f5;padding:16px;border-radius:8px;">' + escapeHtml(errorMessage) + '</pre></div>';
+        }
+      })();
     `;
 
     return {
@@ -1317,7 +1332,10 @@ export function clearClientScriptCache(): void {
 export function createClientScriptMiddleware(
   container: ServiceContainer,
   config: AppConfig,
-): (ctx: any, next: () => Promise<void>) => Promise<void> {
+): (
+  ctx: { url?: { pathname?: string }; path?: string; response?: Response },
+  next: () => Promise<void>,
+) => Promise<void> {
   const logger = getLogger(container);
 
   // 获取运行模式
@@ -1337,7 +1355,10 @@ export function createClientScriptMiddleware(
     getInferredBuildOutputDirs().client;
   const clientOutputPath = join(cwd(), clientOutputDir);
 
-  return async (ctx: any, next: () => Promise<void>): Promise<void> => {
+  return async (
+    ctx: { url?: { pathname?: string }; path?: string; response?: Response },
+    next: () => Promise<void>,
+  ): Promise<void> => {
     const pathname = ctx.url?.pathname || ctx.path || "";
 
     // 处理主入口及 source map：/_client.js、/_client.js.map

@@ -12,6 +12,9 @@ import { cwd, resolve } from "../core/runtime-adapter.ts";
 /** 文件路径 -> 版本号（变更时递增），用于 import URL 的 cache-busting */
 const versionMap = new Map<string, number>();
 
+/** 最大缓存条目数，超出时淘汰最早条目，防止长期开发时 versionMap 无界增长 */
+const MAX_VERSION_MAP_SIZE = 2000;
+
 /**
  * 将路径规范化为绝对路径，用于版本 map 的 key
  */
@@ -37,6 +40,14 @@ export function invalidateModule(changedPath: string): void {
   const key = normalizePath(changedPath);
   const prev = versionMap.get(key) ?? 0;
   versionMap.set(key, prev + 1);
+
+  // 超出容量时淘汰最早条目，防止长期开发时 versionMap 无界增长
+  if (versionMap.size > MAX_VERSION_MAP_SIZE) {
+    for (const k of versionMap.keys()) {
+      versionMap.delete(k);
+      if (versionMap.size <= MAX_VERSION_MAP_SIZE) break;
+    }
+  }
 }
 
 /**

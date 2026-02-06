@@ -30,7 +30,14 @@ import { getRender } from "./render.ts";
 export function createRendererSSR(
   container: ServiceContainer,
   router: Router,
-): (ctx: any, match: RouteMatch) => Promise<Response | null> {
+): (
+  ctx: {
+    url?: URL | { pathname?: string; href?: string };
+    path?: string;
+    request?: Request;
+  },
+  match: RouteMatch,
+) => Promise<Response | null> {
   // 获取渲染服务与配置
   const renderService = getRender(container);
   const config = getConfig(container);
@@ -39,15 +46,29 @@ export function createRendererSSR(
   };
   const engine = renderConfig.engine ?? "preact";
 
-  return async (ctx: any, match: RouteMatch): Promise<Response | null> => {
+  return async (
+    ctx: {
+      url?: URL | { pathname?: string; href?: string };
+      path?: string;
+      request?: Request;
+    },
+    match: RouteMatch,
+  ): Promise<Response | null> => {
     try {
       // 只处理非 API 路由
       if (match.isApi) {
         return null;
       }
 
-      // 加载页面组件（支持 .ts/.tsx）
-      const pageModule = await loadRouteModule(match.route.fullPath);
+      // 并行加载页面、App、Layout 组件（支持 .ts/.tsx）
+      const appPath = router.getSpecialFile("_app");
+      const layoutPath = router.getSpecialFile("_layout");
+      const [pageModule, appModule, layoutModule] = await Promise.all([
+        loadRouteModule(match.route.fullPath),
+        appPath ? loadRouteModule(appPath) : Promise.resolve(null),
+        layoutPath ? loadRouteModule(layoutPath) : Promise.resolve(null),
+      ]);
+
       if (!pageModule) {
         return null;
       }
@@ -58,23 +79,9 @@ export function createRendererSSR(
         return null;
       }
 
-      // 加载特殊文件
-      const appPath = router.getSpecialFile("_app");
-      const layoutPath = router.getSpecialFile("_layout");
-
-      // 加载 App 组件
-      let AppComponent: any = null;
-      if (appPath) {
-        const appModule = await loadRouteModule(appPath);
-        AppComponent = appModule?.default ?? appModule?.App;
-      }
-
-      // 加载 Layout 组件
-      let LayoutComponent: any = null;
-      if (layoutPath) {
-        const layoutModule = await loadRouteModule(layoutPath);
-        LayoutComponent = layoutModule?.default ?? layoutModule?.Layout;
-      }
+      const AppComponent = appModule?.default ?? appModule?.App ?? null;
+      const LayoutComponent = layoutModule?.default ?? layoutModule?.Layout ??
+        null;
 
       // 准备页面属性
       const pageProps: Record<string, any> = {
@@ -114,7 +121,7 @@ export function createRendererSSR(
         props: pageProps,
         layouts,
         loadContext: {
-          url: ctx.url?.href || ctx.path,
+          url: ctx.url?.href || ctx.path || "",
           params: match.params,
           request: ctx.request,
         },

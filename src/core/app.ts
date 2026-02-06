@@ -66,7 +66,7 @@ import type {
 } from "../types/app.ts";
 import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
-import { initDwebI18n, $t } from "../utils/i18n.ts";
+import { $t, initDwebI18n } from "../utils/i18n.ts";
 import { getLogger, initializeLogger } from "../utils/logger.ts";
 import { getDwebVersion } from "../utils/version.ts";
 import {
@@ -613,7 +613,21 @@ export class App extends EventEmitter implements IApp {
 
     for (const plugin of plugins) {
       if (typeof plugin === "string") {
-        // 如果是字符串，则作为文件路径加载
+        // 如果是字符串，则作为文件路径加载（校验路径必须在项目目录内）
+        try {
+          const resolvedPath = plugin.startsWith("file://")
+            ? plugin.slice(7)
+            : await realPath(resolve(plugin));
+          if (!this._isPathWithinProject(resolvedPath)) {
+            throwDwebError(DwebErrorCode.MIDDLEWARE_LOAD_FAILED, {
+              path: plugin,
+              message: $t("log.pathMustBeInProject"),
+            });
+          }
+        } catch (e) {
+          if (e && typeof e === "object" && "code" in e) throw e;
+          // realPath 失败（文件不存在等）交给 loadFromFile 处理
+        }
         await pluginManager.loadFromFile(plugin);
       } else {
         // 如果是插件对象，注册并激活
@@ -671,6 +685,23 @@ export class App extends EventEmitter implements IApp {
   }
 
   /**
+   * 校验路径是否在项目目录内，防止加载项目外任意文件
+   *
+   * @param resolvedPath 已解析的绝对路径
+   * @param projectRoot 项目根目录（默认 cwd）
+   * @returns 是否在项目内
+   */
+  private _isPathWithinProject(
+    resolvedPath: string,
+    projectRoot: string = cwd(),
+  ): boolean {
+    const norm = (p: string) => resolve(p).replace(/\\/g, "/");
+    const a = norm(resolvedPath);
+    const b = norm(projectRoot);
+    return a === b || a.startsWith(b + "/");
+  }
+
+  /**
    * 从文件加载中间件
    *
    * @param path 中间件文件路径（相对 cwd 或绝对路径）
@@ -684,6 +715,12 @@ export class App extends EventEmitter implements IApp {
       const resolvedPath = path.startsWith("file://")
         ? path.slice(7)
         : await realPath(resolve(path));
+      if (!this._isPathWithinProject(resolvedPath)) {
+        throwDwebError(DwebErrorCode.MIDDLEWARE_LOAD_FAILED, {
+          path,
+          message: $t("log.pathMustBeInProject"),
+        });
+      }
       const module = await import(`file://${resolvedPath}`);
 
       // 尝试获取中间件函数
