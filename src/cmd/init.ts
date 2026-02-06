@@ -999,9 +999,12 @@ function getDockerfile(): string {
 # ============================================
 FROM denoland/deno:latest AS base
 
+# 切换到 root 以执行 apt-get（Deno 镜像默认非 root 用户）
+USER root
+
 # 安装通用工具：curl 用于健康检测，coreutils 用于 tee
 RUN apt-get update && \\
-    apt-get install -y curl coreutils ca-certificates && \\
+    apt-get install -y --no-install-recommends curl coreutils ca-certificates && \\
     rm -rf /var/lib/apt/lists/*
 
 # 设置工作目录（compose 通过 volumes 挂载项目目录）
