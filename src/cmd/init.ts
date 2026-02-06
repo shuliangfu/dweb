@@ -275,8 +275,8 @@ function getDenoJson(opts: InitOptions, jsrVersions: JsrVersions): string {
   /** Tailwind 相关 npm 依赖（postcss、tailwindcss、@tailwindcss/postcss） */
   const tailwindNpmImports = useTailwind
     ? `    "postcss": "npm:postcss@8.4.39",
-    "tailwindcss": "npm:tailwindcss@4.0.0",
-    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@4.0.0"`
+    "tailwindcss": "npm:tailwindcss@4.1.18",
+    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@4.1.18"`
     : "";
   /** UnoCSS 相关 npm 依赖 */
   const unocssNpmImports = useUno

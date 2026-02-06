@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.61] - 2026-02-06
+
+### Fixed
+
+- Upgrade Tailwind dependencies to 4.1.18, fix PostCSS compilation failure caused by missing `negated` field in `ScannerOptions.sources`
+
+---
+
+## [3.0.60] - 2026-02-06
+
+### Fixed
+
+- Fix Dockerfile apt-get permission issue: add `USER root` (Deno image defaults to non-root user)
+- Use `./runtime/deno-cache` for docker-compose volume to avoid being interpreted as named volume
+
+---
+
+## [3.0.59] - 2026-02-06
+
+### Changed
+
+- Release
+
+---
+
+## [3.0.58] - 2026-02-06
+
+### Added
+
+- Create `runtime/deno-cache` and `runtime/logs` directories during init
+
+### Changed
+
+- docker-compose single-app service name now uses project name (was fixed as `app`)
+
+---
+
 ## [3.0.57] - 2026-02-06
 
 ### Changed
@@ -249,6 +286,10 @@ Legacy version for v2.x compatibility.
 
 ---
 
+[3.0.61]: https://github.com/shuliangfu/dweb/releases/tag/v3.0.61
+[3.0.60]: https://github.com/shuliangfu/dweb/releases/tag/v3.0.60
+[3.0.59]: https://github.com/shuliangfu/dweb/releases/tag/v3.0.59
+[3.0.58]: https://github.com/shuliangfu/dweb/releases/tag/v3.0.58
 [3.0.57]: https://github.com/shuliangfu/dweb/releases/tag/v3.0.57
 [3.0.56]: https://github.com/shuliangfu/dweb/releases/tag/v3.0.56
 [3.0.55]: https://github.com/shuliangfu/dweb/releases/tag/v3.0.55

@@ -33,7 +33,7 @@
     "autoprefixer": "npm:autoprefixer@10.4.19",
     "cssnano": "npm:cssnano@7.0.3",
     "postcss": "npm:postcss@8.4.39",
-    "tailwindcss": "npm:tailwindcss@4.0.0",
+    "tailwindcss": "npm:tailwindcss@4.1.18",
     "tailwind-merge": "npm:tailwind-merge@3.0.0",
 
     "esbuild": "npm:esbuild@0.27.2"
