@@ -84,18 +84,13 @@ import {
 } from "./database.ts";
 import { getLifecycleManager, initializeLifecycle } from "./lifecycle.ts";
 import {
+  createHealthCheckMiddleware,
   getServerMiddlewares,
   initializeMiddleware,
   pluginEventsMiddleware,
   registerMiddleware,
 } from "./middleware.ts";
-import {
-  emitOnBuild,
-  emitOnInit,
-  emitOnShutdown,
-  emitOnStart,
-  emitOnStop,
-} from "./plugin-events.ts";
+import { pluginEvents } from "./plugin-events.ts";
 import {
   getPluginManager,
   initializePlugin,
@@ -336,7 +331,7 @@ export class App extends EventEmitter implements IApp {
       this.onLifecycle(pending.stage, pending.hook);
     }
     this._pendingHooks = [];
-    await emitOnInit(this.container);
+    await pluginEvents.emitOnInit(this.container);
     this.emit("init");
 
     // 初始化服务器（依赖配置和日志）
@@ -391,6 +386,13 @@ export class App extends EventEmitter implements IApp {
           skip: (ctx) => ctx.path.startsWith("/.well-known/"),
           detailed: isProd,
         }),
+      );
+
+      // 内置健康检查：GET /health 触发 onHealthCheck 插件事件并返回聚合状态
+      server.use(
+        createHealthCheckMiddleware(this.container),
+        "/health",
+        "health-check",
       );
 
       // socket.type 为 socketio 时：路径前缀匹配委托给 Socket.IO 处理
@@ -846,7 +848,7 @@ export class App extends EventEmitter implements IApp {
     this._setupSignalHandlers();
 
     // 触发 onStart 事件（应用启动时）
-    await emitOnStart(this.container);
+    await pluginEvents.emitOnStart(this.container);
 
     // 触发 EventEmitter 事件
     this.emit("start");
@@ -892,7 +894,10 @@ export class App extends EventEmitter implements IApp {
 
     try {
       // 触发插件的 onBuild 钩子（Tailwind/UnoCSS 等会直接写入各自的 output 目录）
-      await emitOnBuild(this.container, { mode: "prod", target: "client" });
+      await pluginEvents.emitOnBuild(this.container, {
+        mode: "prod",
+        target: "client",
+      });
       logger.info($t("log.pluginBuildComplete"));
 
       const renderMode = (config.render as { mode?: string })?.mode ?? "ssr";
@@ -1033,6 +1038,9 @@ export class App extends EventEmitter implements IApp {
       }
 
       logger.info($t("log.buildComplete"));
+
+      // 触发 onBuildComplete 插件事件（构建全部完成后）
+      await pluginEvents.emitOnBuildComplete(this.container, {});
 
       // 触发 EventEmitter 事件
       this.emit("build");
@@ -1279,7 +1287,7 @@ export class App extends EventEmitter implements IApp {
    */
   async stop(): Promise<void> {
     // 触发 onStop 事件（应用停止时）
-    await emitOnStop(this.container);
+    await pluginEvents.emitOnStop(this.container);
 
     // 触发 EventEmitter 事件
     this.emit("stop");
@@ -1296,7 +1304,7 @@ export class App extends EventEmitter implements IApp {
    */
   async shutdown(): Promise<void> {
     // 触发 onShutdown 事件（应用关闭时）
-    await emitOnShutdown(this.container);
+    await pluginEvents.emitOnShutdown(this.container);
 
     // 移除信号监听器
     this._removeSignalHandlers();

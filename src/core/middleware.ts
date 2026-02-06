@@ -2,7 +2,8 @@
  * @dreamer/middleware 集成
  *
  * 初始化中间件链、注册全局/路径中间件、提供 registerMiddleware 等 API。
- * 内置插件事件中间件（emitOnRequest、emitOnResponse 等）。
+ * 插件事件中间件由 plugin-events.ts 提供，此处重导出。
+ * 健康检查中间件在此实现（调用 plugin-events 的 emitOnHealthCheck）。
  *
  * @module
  */
@@ -17,7 +18,12 @@ import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
 import { createDwebError, DwebErrorCode } from "../utils/errors.ts";
-import { emitOnError, emitOnRequest, emitOnResponse } from "./plugin-events.ts";
+import {
+  emitOnHealthCheck,
+  emitOnRequest,
+  emitOnResponse,
+  emitOnError,
+} from "./plugin-events.ts";
 
 /**
  * 待注册到 HTTP 服务器的中间件项
@@ -137,34 +143,13 @@ export function registerMiddleware(
 // ============================================================================
 
 /**
- * 创建插件事件中间件
+ * 插件事件中间件
  *
- * 在 HTTP 请求处理过程中触发插件的 onRequest、onResponse 和 onError 事件
- * 让插件可以感知每个 HTTP 请求的生命周期
+ * 在 HTTP 请求处理过程中触发插件的 onRequest、onResponse、onError 事件。
+ * 框架应通过此中间件让插件感知每个 HTTP 请求的生命周期。
  *
  * @param container 服务容器
  * @returns 中间件函数
- *
- * @example
- * ```typescript
- * // 框架内部自动注册
- * const middleware = pluginEventsMiddleware(container);
- * server.use(middleware);
- *
- * // 插件可以响应请求事件
- * const loggerPlugin: Plugin = {
- *   name: "logger",
- *   onRequest(ctx) {
- *     console.log(`请求: ${ctx.request.method} ${ctx.request.url}`);
- *   },
- *   onResponse(ctx) {
- *     console.log(`响应: ${ctx.response?.status}`);
- *   },
- *   onError(error, ctx) {
- *     console.error(`错误: ${error.message}`);
- *   },
- * };
- * ```
  */
 export function pluginEventsMiddleware(
   container: ServiceContainer,
@@ -203,5 +188,32 @@ export function pluginEventsMiddleware(
 
     // 触发 onResponse 事件（请求处理完成后）
     await emitOnResponse(container, ctx);
+  };
+}
+
+/**
+ * 创建健康检查中间件
+ *
+ * 处理 GET /health 请求，调用 emitOnHealthCheck 聚合插件健康状态并返回 JSON。
+ *
+ * @param container 服务容器
+ * @returns 中间件函数
+ */
+export function createHealthCheckMiddleware(
+  container: ServiceContainer,
+): Middleware<HttpContext> {
+  return async (ctx: HttpContext, next: () => Promise<void>): Promise<void> => {
+    if (ctx.path === "/health" && ctx.request.method === "GET") {
+      const status = await emitOnHealthCheck(container);
+      const httpStatus = status.status === "healthy" ? 200 : 503;
+      ctx.response = new Response(JSON.stringify(status), {
+        status: httpStatus,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return;
+    }
+    await next();
   };
 }

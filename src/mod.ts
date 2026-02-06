@@ -90,8 +90,6 @@ export type Next = () => Promise<void>;
 
 /**
  * 配置模块：
- * - getBusinessConfig: 获取业务配置对象（已废弃，请用 getParams）
- * - getBusinessConfigValue: 获取业务配置值（已废弃，请用 getParamValue）
  * - getConfig: 获取完整框架配置对象（AppConfig）
  * - getConfigManager: 获取配置管理器实例（支持 envPrefix、热重载）
  * - getConfigValue: 按点号路径获取配置值（如 "server.port"）
@@ -100,8 +98,6 @@ export type Next = () => Promise<void>;
  * - initializeConfigManager: 初始化配置管理器，加载 main.ts、params.ts 并合并
  */
 export {
-  getBusinessConfig,
-  getBusinessConfigValue,
   getConfig,
   getConfigManager,
   getConfigValue,
@@ -146,6 +142,7 @@ export {
  * - registerMiddleware: 注册中间件
  */
 export {
+  createHealthCheckMiddleware,
   getMiddlewareChain,
   initializeMiddleware,
   pluginEventsMiddleware,
@@ -229,6 +226,7 @@ export type {
  * - emitOnShutdown: 触发 onShutdown 插件事件
  * - emitOnStart: 触发 onStart 插件事件
  * - emitOnStop: 触发 onStop 插件事件
+ * - pluginEvents: 统一命名空间，推荐通过此对象调用以保持单一入口
  */
 export {
   emitOnBuild,
@@ -243,6 +241,7 @@ export {
   emitOnShutdown,
   emitOnStart,
   emitOnStop,
+  pluginEvents,
 } from "./core/plugin-events.ts";
 
 /**

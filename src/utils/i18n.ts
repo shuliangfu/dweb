@@ -182,13 +182,3 @@ export async function initDwebI18n(): Promise<void> {
 
   initialized = true;
 }
-
-/**
- * 同步初始化（用于已预加载翻译的场景，或 CLI 入口需同步时）
- *
- * 若翻译文件可同步获取，则使用此函数；否则使用 initDwebI18n。
- * 当前实现为异步加载，入口需 await initDwebI18n()。
- */
-export function isDwebI18nInitialized(): boolean {
-  return initialized;
-}

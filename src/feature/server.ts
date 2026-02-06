@@ -117,6 +117,12 @@ export function initializeServer(
           }
           clearClientScriptCache();
           const result = await buildClientScript(container, config, options);
+          // 触发 onHotReload 插件事件（HMR 热重载完成后）
+          const { pluginEvents } = await import("../core/plugin-events.ts");
+          await pluginEvents.emitOnHotReload(
+            container,
+            options?.changedPath ? [options.changedPath] : [],
+          );
           return { outputFiles: [], chunkUrl: result.chunkUrl };
         },
       },

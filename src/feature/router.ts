@@ -14,7 +14,10 @@ import {
   type RouterOptions,
 } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
-import { emitOnRoute, type RouteDefinition } from "../core/plugin-events.ts";
+import {
+  pluginEvents,
+  type RouteDefinition,
+} from "../core/plugin-events.ts";
 import type { AppConfig } from "../types/app.ts";
 
 /**
@@ -65,7 +68,7 @@ export async function initializeRouter(
     }));
 
     // 触发 onRoute 事件（通知插件）
-    await emitOnRoute(container, routeDefinitions);
+    await pluginEvents.emitOnRoute(container, routeDefinitions);
   }
 
   // 将路由注册到服务容器

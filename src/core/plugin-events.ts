@@ -1,8 +1,11 @@
 /**
  * 插件事件系统
  *
- * 提供 emitOnInit、emitOnRequest、emitOnResponse、emitOnBuild 等事件触发函数，
- * 让插件响应应用生命周期与请求处理事件。含 HealthStatus、RouteDefinition 类型。
+ * 框架中所有插件事件的唯一入口。提供：
+ * - emitOnXxx：各生命周期/请求阶段的事件触发函数
+ * - pluginEvents：统一命名空间，框架应通过此对象调用事件
+ *
+ * 中间件（pluginEventsMiddleware、createHealthCheckMiddleware）在 middleware.ts 中实现。
  *
  * @module
  */
@@ -417,3 +420,34 @@ export async function emitOnHotReload(
 ): Promise<void> {
   await emitPluginEvent(container, "onHotReload", changedFiles);
 }
+
+// ============================================================================
+// 统一命名空间：框架应通过 pluginEvents 调用，避免分散导入
+// ============================================================================
+
+/**
+ * 插件事件统一入口
+ *
+ * 框架中需要触发插件事件时，应从此对象调用，保持单一入口。
+ *
+ * @example
+ * ```ts
+ * import { pluginEvents } from "./plugin-events.ts";
+ * await pluginEvents.emitOnInit(container);
+ * await pluginEvents.emitOnStart(container);
+ * ```
+ */
+export const pluginEvents = {
+  emitOnInit,
+  emitOnRequest,
+  emitOnResponse,
+  emitOnBuild,
+  emitOnBuildComplete,
+  emitOnStart,
+  emitOnStop,
+  emitOnShutdown,
+  emitOnError,
+  emitOnRoute,
+  emitOnHealthCheck,
+  emitOnHotReload,
+} as const;
