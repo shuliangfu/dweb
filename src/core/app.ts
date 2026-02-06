@@ -11,6 +11,7 @@ import type { LifecycleHook, LifecycleStage } from "@dreamer/lifecycle";
 import type { Middleware, MiddlewareContext } from "@dreamer/middleware";
 import { ServiceContainer } from "@dreamer/service";
 import { EventEmitter } from "node:events";
+import { pathToFileURL } from "node:url";
 import {
   addSignalListener,
   args,
@@ -68,6 +69,7 @@ import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $t, initDwebI18n } from "../utils/i18n.ts";
 import { getLogger, initializeLogger } from "../utils/logger.ts";
+import { isPathWithinProject } from "../utils/path.ts";
 import { getDwebVersion } from "../utils/version.ts";
 import {
   deepMergeConfig,
@@ -618,7 +620,7 @@ export class App extends EventEmitter implements IApp {
           const resolvedPath = plugin.startsWith("file://")
             ? plugin.slice(7)
             : await realPath(resolve(plugin));
-          if (!this._isPathWithinProject(resolvedPath)) {
+          if (!isPathWithinProject(resolvedPath)) {
             throwDwebError(DwebErrorCode.MIDDLEWARE_LOAD_FAILED, {
               path: plugin,
               message: $t("log.pathMustBeInProject"),
@@ -685,23 +687,6 @@ export class App extends EventEmitter implements IApp {
   }
 
   /**
-   * 校验路径是否在项目目录内，防止加载项目外任意文件
-   *
-   * @param resolvedPath 已解析的绝对路径
-   * @param projectRoot 项目根目录（默认 cwd）
-   * @returns 是否在项目内
-   */
-  private _isPathWithinProject(
-    resolvedPath: string,
-    projectRoot: string = cwd(),
-  ): boolean {
-    const norm = (p: string) => resolve(p).replace(/\\/g, "/");
-    const a = norm(resolvedPath);
-    const b = norm(projectRoot);
-    return a === b || a.startsWith(b + "/");
-  }
-
-  /**
    * 从文件加载中间件
    *
    * @param path 中间件文件路径（相对 cwd 或绝对路径）
@@ -715,13 +700,15 @@ export class App extends EventEmitter implements IApp {
       const resolvedPath = path.startsWith("file://")
         ? path.slice(7)
         : await realPath(resolve(path));
-      if (!this._isPathWithinProject(resolvedPath)) {
+      if (!isPathWithinProject(resolvedPath)) {
         throwDwebError(DwebErrorCode.MIDDLEWARE_LOAD_FAILED, {
           path,
           message: $t("log.pathMustBeInProject"),
         });
       }
-      const module = await import(`file://${resolvedPath}`);
+      // 使用 pathToFileURL 正确编码路径中的特殊字符（空格、#、? 等），避免 import 异常
+      const moduleUrl = pathToFileURL(resolvedPath).href;
+      const module = await import(moduleUrl);
 
       // 尝试获取中间件函数
       // 支持 export default 或命名导出 export const middleware

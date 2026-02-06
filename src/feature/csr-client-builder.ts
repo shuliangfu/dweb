@@ -28,7 +28,6 @@ import {
   join,
   readdir,
   readTextFile,
-  relative,
   resolve,
   writeTextFile,
 } from "../core/runtime-adapter.ts";
@@ -36,6 +35,10 @@ import type { AppConfig } from "../types/app.ts";
 import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
 import { $t } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
+import {
+  normalizePathForCompare,
+  pathForLog,
+} from "../utils/path.ts";
 
 /**
  * 客户端脚本构建结果
@@ -66,27 +69,6 @@ export interface BuildClientScriptOptions {
 
 /** 缓存的客户端脚本 */
 let cachedClientScript: ClientBuildResult | null = null;
-
-/**
- * 用于 DEBUG 日志的路径：从项目根（cwd）起算的相对路径，避免输出过长绝对路径
- */
-function pathForLog(absOrRelPath: string): string {
-  const root = cwd();
-  const resolved = resolve(absOrRelPath).replace(/\\/g, "/");
-  const rootNorm = resolve(root).replace(/\\/g, "/");
-  if (resolved === rootNorm || resolved.startsWith(rootNorm + "/")) {
-    return relative(root, resolved) || ".";
-  }
-  return absOrRelPath;
-}
-
-/**
- * 规范化路径：统一斜杠并折叠 /./ 与 /../，便于字符串比较
- */
-function normalizePathForCompare(p: string): string {
-  const s = resolve(p).replace(/\\/g, "/");
-  return s.replace(/\/\.\//g, "/").replace(/\/+$/g, "");
-}
 
 /**
  * 从变更文件路径推导路由 componentPath（如 .../routes/index.tsx -> index）
@@ -150,7 +132,8 @@ function getChunkFileNameForComponent(
  * @param pathname URL 路径
  * @returns 是否是 chunk 文件
  */
-function isClientChunkFile(pathname: string): boolean {
+/** 判断 pathname 是否为客户端 chunk 文件（供 csr-client-middleware 使用） */
+export function isClientChunkFile(pathname: string): boolean {
   if (!pathname.startsWith("/")) return false;
   // 支持 .js 与 .js.map（source map）
   const isJs = pathname.endsWith(".js");
@@ -182,58 +165,70 @@ interface RouteComponentInfo {
   importName: string;
 }
 
+/** 路由扫描最大深度，防止过深目录导致栈溢出 */
+const MAX_ROUTE_SCAN_DEPTH = 10;
+
 /**
  * 扫描路由目录，获取所有路由组件
  *
+ * 使用迭代（队列）替代递归，避免路由多时递归过深；并限制最大扫描深度。
+ *
  * @param routesDir 路由目录绝对路径
- * @param basePath 相对路径前缀（用于递归）
+ * @param basePath 相对路径前缀（用于层级路径）
  * @param engine 渲染引擎（用于类型，当前仅支持 .tsx/.jsx）
  * @returns 路由组件列表
  */
 async function scanRouteComponents(
   routesDir: string,
   basePath = "",
-  engine: "react" | "preact" = "preact",
+  _engine: "react" | "preact" = "preact",
 ): Promise<RouteComponentInfo[]> {
   const components: RouteComponentInfo[] = [];
   const extRe = /\.(tsx?|jsx?)$/;
 
-  try {
-    const entries = await readdir(routesDir);
+  /** 待处理队列：(目录路径, 相对路径前缀, 当前深度) */
+  const queue: Array<{ dir: string; base: string; depth: number }> = [
+    { dir: routesDir, base: basePath, depth: 0 },
+  ];
 
-    for (const entry of entries) {
-      const entryPath = join(routesDir, entry.name);
+  while (queue.length > 0) {
+    const { dir, base, depth } = queue.shift()!;
+    if (depth >= MAX_ROUTE_SCAN_DEPTH) continue;
 
-      if (entry.isDirectory) {
-        const subComponents = await scanRouteComponents(
-          entryPath,
-          basePath ? `${basePath}/${entry.name}` : entry.name,
-          engine,
-        );
-        components.push(...subComponents);
-      } else if (entry.isFile && extRe.test(entry.name)) {
-        const fileName = entry.name.replace(extRe, "");
-        if (fileName.startsWith("_")) {
-          continue;
+    try {
+      const entries = await readdir(dir);
+
+      for (const entry of entries) {
+        const entryPath = join(dir, entry.name);
+
+        if (entry.isDirectory) {
+          queue.push({
+            dir: entryPath,
+            base: base ? `${base}/${entry.name}` : entry.name,
+            depth: depth + 1,
+          });
+        } else if (entry.isFile && extRe.test(entry.name)) {
+          const fileName = entry.name.replace(extRe, "");
+          if (fileName.startsWith("_")) continue;
+
+          const componentPath = base ? `${base}/${fileName}` : fileName;
+          const importName = "Route_" +
+            componentPath
+              .replace(/\//g, "_")
+              .replace(/-/g, "_")
+              .replace(/\[/g, "$")
+              .replace(/\]/g, "$");
+
+          components.push({
+            componentPath,
+            fullPath: entryPath,
+            importName,
+          });
         }
-
-        const componentPath = basePath ? `${basePath}/${fileName}` : fileName;
-        const importName = "Route_" +
-          componentPath
-            .replace(/\//g, "_")
-            .replace(/-/g, "_")
-            .replace(/\[/g, "$")
-            .replace(/\]/g, "$");
-
-        components.push({
-          componentPath,
-          fullPath: entryPath,
-          importName,
-        });
       }
+    } catch {
+      // 目录不存在或读取失败，跳过
     }
-  } catch {
-    // 目录不存在或读取失败，返回空数组
   }
 
   return components;
@@ -1230,7 +1225,8 @@ function getChunkBaseName(fileName: string): string | null {
  * @param fileName 请求的文件名（如 chunk-UUJCPQSG.js）
  * @returns 文件内容，未找到返回 undefined
  */
-function findChunkContent(
+/** 从 outputFiles 查找 chunk 内容（供 csr-client-middleware 使用） */
+export function findChunkContent(
   outputFiles: Map<string, string> | undefined,
   fileName: string,
 ): string | undefined {
@@ -1309,237 +1305,5 @@ export function clearClientScriptCache(): void {
   cachedClientScript = null;
 }
 
-/**
- * 创建客户端脚本服务中间件
- *
- * 支持代码分割：
- * - /_client.js → 主入口文件
- * - /_client/chunk-xxx.js → 分割的 chunk 文件
- * - /_client/*.js.map → source map 文件
- *
- * 生产模式：
- * - 直接从预构建目录（dist/client/）提供静态文件
- * - 不进行动态构建
- *
- * 开发模式：
- * - 动态构建客户端脚本
- * - 支持热更新
- *
- * @param container 服务容器
- * @param config 应用配置
- * @returns 中间件函数
- */
-export function createClientScriptMiddleware(
-  container: ServiceContainer,
-  config: AppConfig,
-): (
-  ctx: { url?: { pathname?: string }; path?: string; response?: Response },
-  next: () => Promise<void>,
-) => Promise<void> {
-  const logger = getLogger(container);
-
-  // 获取运行模式
-  const serverConfig = (config.server || {}) as { mode?: "dev" | "prod" };
-  const envMode = getEnv("DENO_ENV") || getEnv("BUN_ENV") ||
-    getEnv("NODE_ENV") || "dev";
-  const mode = serverConfig.mode || envMode as "dev" | "prod";
-  const isProd = mode === "prod";
-
-  // 获取预构建目录（生产模式使用）；未配置时按当前入口推断应用目录（如 dist/backend/client）
-  const buildConfig = (config.build || {}) as {
-    client?: {
-      output?: string;
-    };
-  };
-  const clientOutputDir = buildConfig.client?.output ??
-    getInferredBuildOutputDirs().client;
-  const clientOutputPath = join(cwd(), clientOutputDir);
-
-  return async (
-    ctx: { url?: { pathname?: string }; path?: string; response?: Response },
-    next: () => Promise<void>,
-  ): Promise<void> => {
-    const pathname = ctx.url?.pathname || ctx.path || "";
-
-    // 处理主入口及 source map：/_client.js、/_client.js.map
-    if (pathname === "/_client.js" || pathname === "/_client.js.map") {
-      try {
-        const isMap = pathname === "/_client.js.map";
-        // 开发模式：不允许读 dist，只从内存构建结果提供
-        if (!isProd) {
-          let script = getCachedClientScript();
-          if (!script) {
-            logger.debug($t("log.clientBuildFirst"));
-            script = await buildClientScript(container, config);
-          }
-          if (isMap) {
-            const mapContent = script?.outputFiles?.get("_client.js.map");
-            if (mapContent) {
-              ctx.response = new Response(mapContent, {
-                status: 200,
-                headers: {
-                  "Content-Type": "application/json; charset=utf-8",
-                  "Cache-Control": "no-cache",
-                },
-              });
-            } else {
-              ctx.response = new Response("{}", {
-                status: 200,
-                headers: {
-                  "Content-Type": "application/json; charset=utf-8",
-                  "Cache-Control": "no-cache",
-                },
-              });
-            }
-            return;
-          }
-          if (!script?.code) {
-            logger.error($t("log.clientScriptEmpty"), {
-              hasScript: !!script,
-              hasCode: !!script?.code,
-            });
-            ctx.response = new Response(
-              `console.error(${
-                JSON.stringify($t("client.clientScriptNotReady"))
-              });`,
-              {
-                status: 500,
-                headers: {
-                  "Content-Type": "application/javascript; charset=utf-8",
-                },
-              },
-            );
-            return;
-          }
-          ctx.response = new Response(script.code, {
-            status: 200,
-            headers: {
-              "Content-Type": "application/javascript; charset=utf-8",
-              "Cache-Control": "no-cache",
-            },
-          });
-          return;
-        }
-
-        // 生产模式：只从预构建目录提供
-        const mainFile = isMap
-          ? `${CLIENT_OUTPUT_MAIN_FILENAME}.map`
-          : CLIENT_OUTPUT_MAIN_FILENAME;
-        const clientJsPath = join(clientOutputPath, mainFile);
-        if (await exists(clientJsPath)) {
-          const content = await readTextFile(clientJsPath);
-          ctx.response = new Response(content, {
-            status: 200,
-            headers: {
-              "Content-Type": isMap
-                ? "application/json; charset=utf-8"
-                : "application/javascript; charset=utf-8",
-              "Cache-Control": "public, max-age=31536000",
-            },
-          });
-          return;
-        }
-        if (isMap) {
-          ctx.response = new Response("{}", {
-            status: 200,
-            headers: {
-              "Content-Type": "application/json; charset=utf-8",
-              "Cache-Control": "no-cache",
-            },
-          });
-          return;
-        }
-        logger.error($t("log.clientScriptNotFound") + ":", clientJsPath);
-        ctx.response = new Response(
-          `console.error(${
-            JSON.stringify($t("client.clientScriptNotFound"))
-          });`,
-          {
-            status: 500,
-            headers: {
-              "Content-Type": "application/javascript; charset=utf-8",
-            },
-          },
-        );
-        return;
-      } catch (error) {
-        const errMsg = error instanceof Error ? error.message : String(error);
-        const errStack = error instanceof Error ? error.stack : "";
-        logger.error($t("log.provideClientFailed") + ":", undefined, error);
-        console.error(
-          "[_client.js] " + $t("log.provideClientFailed") + ":",
-          errMsg,
-          errStack,
-        );
-        ctx.response = new Response(
-          `console.error(${
-            JSON.stringify($t("client.clientScriptLoadFailed"))
-          }, ${JSON.stringify(errMsg)});`,
-          {
-            status: 500,
-            headers: {
-              "Content-Type": "application/javascript; charset=utf-8",
-            },
-          },
-        );
-        return;
-      }
-    }
-
-    // 处理分割的 chunk 文件请求
-    // 支持两种路径格式：/_client/*.js 或 /*.js（esbuild 默认）
-    if (pathname.startsWith("/_client/") || isClientChunkFile(pathname)) {
-      const fileName = pathname.startsWith("/_client/")
-        ? pathname.replace("/_client/", "")
-        : pathname.replace("/", "");
-      const isSourceMap = fileName.endsWith(".map");
-
-      // 开发模式：不允许读 dist，只从内存构建结果提供
-      if (!isProd) {
-        const script = getCachedClientScript();
-        const content = findChunkContent(script?.outputFiles, fileName);
-        if (content) {
-          ctx.response = new Response(content, {
-            status: 200,
-            headers: {
-              "Content-Type": isSourceMap
-                ? "application/json; charset=utf-8"
-                : "application/javascript; charset=utf-8",
-              "Cache-Control": "no-cache",
-            },
-          });
-          return;
-        }
-        if (pathname.startsWith("/_client/")) {
-          ctx.response = new Response("Not Found", { status: 404 });
-          return;
-        }
-        await next();
-        return;
-      }
-
-      // 生产模式：只从预构建目录提供
-      const filePath = join(clientOutputPath, fileName);
-      if (await exists(filePath)) {
-        const content = await readTextFile(filePath);
-        ctx.response = new Response(content, {
-          status: 200,
-          headers: {
-            "Content-Type": isSourceMap
-              ? "application/json; charset=utf-8"
-              : "application/javascript; charset=utf-8",
-            "Cache-Control": "public, max-age=31536000",
-          },
-        });
-        return;
-      }
-
-      if (pathname.startsWith("/_client/")) {
-        ctx.response = new Response("Not Found", { status: 404 });
-        return;
-      }
-    }
-
-    await next();
-  };
-}
+/** 客户端脚本中间件已拆至 csr-client-middleware.ts，此处保留导出以保持向后兼容 */
+export { createClientScriptMiddleware } from "./csr-client-middleware.ts";

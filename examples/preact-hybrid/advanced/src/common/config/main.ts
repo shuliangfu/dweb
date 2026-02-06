@@ -9,10 +9,12 @@ export const commonConfig = {
   appName: "preact-hybrid-advanced-example",
   /** 应用版本 */
   version: "1.0.0",
-  /** 前端端口（供 frontend 使用） */
-  frontendPort: 3000,
-  /** 后端端口（供 backend 使用） */
-  backendPort: 3001,
+
+  // 渲染配置
+  render: {
+    engine: "preact",
+    mode: "hybrid",
+  },
 };
 
 /** 默认导出，框架会自动深度合并到各应用配置 */

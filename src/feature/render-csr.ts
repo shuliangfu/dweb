@@ -158,7 +158,11 @@ export function createRendererCSR(
       const clientConfigScript = `
 ${overlayHtml}
 <script>
-  ${isDevCsr ? "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true;" : ""}
+  ${
+        isDevCsr
+          ? "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true;"
+          : ""
+      }
   globalThis.__DWEB_ROUTES__ = ${JSON.stringify(clientRoutes)};
   globalThis.__DWEB_ENGINE__ = "${engine}";
   globalThis.__DWEB_CONTAINER_ID__ = "${csrOptions.containerId}";

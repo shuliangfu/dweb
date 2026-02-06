@@ -19,6 +19,9 @@ import { getPluginManager } from "./plugin.ts";
 /**
  * 触发插件事件
  *
+ * 按插件注册顺序依次执行（不并行），因插件间可能存在隐式依赖（如 A 初始化后 B 依赖其状态），
+ * 且 onRequest 等事件需支持短路返回，并行会破坏语义。参见 OPTIMIZATION_ANALYSIS.md。
+ *
  * @param container 服务容器
  * @param eventName 事件名称
  * @param args 事件参数

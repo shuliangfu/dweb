@@ -12,6 +12,7 @@
 import type { SSROptions } from "@dreamer/render";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
+import type { HttpContext } from "@dreamer/server";
 import { getConfig } from "../core/config.ts";
 import { getEnv } from "../core/runtime-adapter.ts";
 import { $t } from "../utils/i18n.ts";
@@ -30,14 +31,7 @@ import { getRender } from "./render.ts";
 export function createRendererSSR(
   container: ServiceContainer,
   router: Router,
-): (
-  ctx: {
-    url?: URL | { pathname?: string; href?: string };
-    path?: string;
-    request?: Request;
-  },
-  match: RouteMatch,
-) => Promise<Response | null> {
+): (ctx: HttpContext, match: RouteMatch) => Promise<Response | null> {
   // 获取渲染服务与配置
   const renderService = getRender(container);
   const config = getConfig(container);
@@ -47,11 +41,7 @@ export function createRendererSSR(
   const engine = renderConfig.engine ?? "preact";
 
   return async (
-    ctx: {
-      url?: URL | { pathname?: string; href?: string };
-      path?: string;
-      request?: Request;
-    },
+    ctx: HttpContext,
     match: RouteMatch,
   ): Promise<Response | null> => {
     try {
@@ -121,7 +111,7 @@ export function createRendererSSR(
         props: pageProps,
         layouts,
         loadContext: {
-          url: ctx.url?.href || ctx.path || "",
+          url: ctx.url.href || ctx.path,
           params: match.params,
           request: ctx.request,
         },

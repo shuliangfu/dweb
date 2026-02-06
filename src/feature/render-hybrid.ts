@@ -16,6 +16,7 @@
 
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
+import type { HttpContext } from "@dreamer/server";
 import { getEnv } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { $t } from "../utils/i18n.ts";
@@ -69,7 +70,7 @@ export function createRendererHybrid(
   container: ServiceContainer,
   router: Router,
   config: AppConfig,
-): (ctx: any, match: RouteMatch) => Promise<Response | null> {
+): (ctx: HttpContext, match: RouteMatch) => Promise<Response | null> {
   // 获取渲染服务
   const renderService = getRender(container);
 
@@ -91,7 +92,10 @@ export function createRendererHybrid(
   // 收集所有路由信息（用于注入到客户端）
   const clientRoutes = collectClientRoutes(router);
 
-  return async (ctx: any, match: RouteMatch): Promise<Response | null> => {
+  return async (
+    ctx: HttpContext,
+    match: RouteMatch,
+  ): Promise<Response | null> => {
     try {
       // 只处理非 API 路由
       if (match.isApi) {
@@ -137,7 +141,7 @@ export function createRendererHybrid(
       // 调用 load 函数获取服务端数据（如果存在）
       if (typeof pageModule.load === "function") {
         const serverData = await pageModule.load({
-          url: ctx.url?.href || ctx.path,
+          url: ctx.url.href,
           params: match.params,
           request: ctx.request,
         });
@@ -167,7 +171,7 @@ export function createRendererHybrid(
         props: pageProps,
         layouts,
         loadContext: {
-          url: ctx.url?.href || ctx.path,
+          url: ctx.url.href,
           params: match.params,
           request: ctx.request,
         },
@@ -190,7 +194,11 @@ export function createRendererHybrid(
         (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
       const clientConfigScript = `
 <script>
-  ${isDev ? "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true;" : ""}
+  ${
+        isDev
+          ? "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true;"
+          : ""
+      }
   // Hydration 数据
   globalThis.__DATA__ = ${JSON.stringify(hydrationData)};
   // 客户端路由配置

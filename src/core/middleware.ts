@@ -8,6 +8,12 @@
  * @module
  */
 
+/** 服务容器中中间件链的注册键 */
+export const SERVICE_KEY_MIDDLEWARE_CHAIN = "middlewareChain";
+
+/** 服务容器中待同步到 HTTP 服务器的中间件列表的注册键 */
+export const SERVICE_KEY_SERVER_MIDDLEWARES = "serverMiddlewares";
+
 import {
   createMiddlewareChain,
   type Middleware,
@@ -19,10 +25,10 @@ import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
 import { createDwebError, DwebErrorCode } from "../utils/errors.ts";
 import {
+  emitOnError,
   emitOnHealthCheck,
   emitOnRequest,
   emitOnResponse,
-  emitOnError,
 } from "./plugin-events.ts";
 
 /**
@@ -65,11 +71,14 @@ export function initializeMiddleware(
   const middlewareChain = createMiddlewareChain<MiddlewareContext>();
 
   // 将中间件链注册到服务容器
-  container.registerSingleton("middlewareChain", () => middlewareChain);
+  container.registerSingleton(
+    SERVICE_KEY_MIDDLEWARE_CHAIN,
+    () => middlewareChain,
+  );
 
   // 待同步到 HTTP 服务器的中间件列表（registerMiddleware 时追加，init 时应用到 server）
   container.registerSingleton(
-    "serverMiddlewares",
+    SERVICE_KEY_SERVER_MIDDLEWARES,
     (): ServerMiddlewareRegistration[] => [],
   );
 
@@ -91,7 +100,9 @@ export function initializeMiddleware(
 export function getMiddlewareChain(
   container: ServiceContainer,
 ): MiddlewareChain<MiddlewareContext> {
-  return container.get<MiddlewareChain<MiddlewareContext>>("middlewareChain");
+  return container.get<MiddlewareChain<MiddlewareContext>>(
+    SERVICE_KEY_MIDDLEWARE_CHAIN,
+  );
 }
 
 /**
@@ -109,7 +120,9 @@ export function getMiddlewareChain(
 export function getServerMiddlewares(
   container: ServiceContainer,
 ): ServerMiddlewareRegistration[] {
-  return container.get<ServerMiddlewareRegistration[]>("serverMiddlewares");
+  return container.get<ServerMiddlewareRegistration[]>(
+    SERVICE_KEY_SERVER_MIDDLEWARES,
+  );
 }
 
 /**

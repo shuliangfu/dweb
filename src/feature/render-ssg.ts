@@ -14,6 +14,7 @@
 
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
+import type { HttpContext } from "@dreamer/server";
 import {
   cwd,
   exists,
@@ -94,10 +95,7 @@ export function createRendererSSG(
   container: ServiceContainer,
   router: Router,
   config: AppConfig,
-): (
-  ctx: { url?: { pathname?: string }; path?: string },
-  match: RouteMatch,
-) => Promise<Response | null> {
+): (ctx: HttpContext, match: RouteMatch) => Promise<Response | null> {
   const renderConfig = (config.render || {}) as {
     engine?: "react" | "preact";
     mode?: "ssr" | "csr" | "ssg" | "hybrid";
@@ -111,7 +109,7 @@ export function createRendererSSG(
   const ssrRenderer = createRendererSSR(container, router);
 
   return async (
-    ctx: { url?: { pathname?: string }; path?: string },
+    ctx: HttpContext,
     match: RouteMatch,
   ): Promise<Response | null> => {
     try {
@@ -128,8 +126,7 @@ export function createRendererSSG(
       }
 
       // 生产 start：从 dist 下读取预渲染的 HTML
-      const pathname = ctx.url?.pathname ?? ctx.path ?? match.route?.path ??
-        "/";
+      const pathname = ctx.url.pathname ?? ctx.path ?? match.route?.path ?? "/";
       const relativePath = pathnameToFile(pathname);
       const baseDir = join(cwd(), outputDir);
       const filePath = join(baseDir, relativePath);

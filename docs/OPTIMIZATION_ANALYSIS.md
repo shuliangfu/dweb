@@ -21,12 +21,12 @@
 
 ### 1.2 可优化点
 
-| 优先级 | 问题                         | 位置                    | 建议                                                                         |
-| ------ | ---------------------------- | ----------------------- | ---------------------------------------------------------------------------- |
-| 中     | ~~**versionMap 无界增长**~~  | `module-cache.ts`       | **✅ 已优化**：超出 `MAX_VERSION_MAP_SIZE`（2000）时淘汰最早条目             |
-| 中     | ~~**loadRouteModule 串行**~~ | `render-ssr.ts`         | **✅ 已优化**：页面、App、Layout 已改为 `Promise.all` 并行加载               |
-| 低     | **scanRouteComponents 递归** | `csr-client-builder.ts` | 路由多时递归较深；可改为迭代或限制深度                                       |
-| 低     | **插件事件顺序执行**         | `plugin-events.ts`      | `emitPluginEvent` 按插件顺序 `await`；若插件无依赖可考虑并行（需评估兼容性） |
+| 优先级 | 问题                             | 位置                    | 建议                                                                     |
+| ------ | -------------------------------- | ----------------------- | ------------------------------------------------------------------------ |
+| 中     | ~~**versionMap 无界增长**~~      | `module-cache.ts`       | **✅ 已优化**：超出 `MAX_VERSION_MAP_SIZE`（2000）时淘汰最早条目         |
+| 中     | ~~**loadRouteModule 串行**~~     | `render-ssr.ts`         | **✅ 已优化**：页面、App、Layout 已改为 `Promise.all` 并行加载           |
+| 低     | ~~**scanRouteComponents 递归**~~ | `csr-client-builder.ts` | **✅ 已优化**：改为迭代（队列）+ 最大深度限制（MAX_ROUTE_SCAN_DEPTH=10） |
+| 低     | ~~**插件事件顺序执行**~~         | `plugin-events.ts`      | **✅ 已评估**：保持顺序执行，因插件有隐式依赖且 onRequest 需短路返回     |
 
 ### 1.3 性能优化建议代码示例
 
@@ -64,12 +64,12 @@ const [pageModule, appModule, layoutModule] = await Promise.all([
 
 ### 2.2 可改进点
 
-| 优先级 | 问题                 | 位置                                     | 建议                                                                                                                       |
-| ------ | -------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| 中     | ~~**any 类型**~~     | `render-ssr.ts`、`csr-client-builder.ts` | **✅ 已优化**：`ctx` 已替换为具体类型 `{ url?, path?, request? }`、`{ url?, path?, response? }`，`match` 已是 `RouteMatch` |
-| 中     | **动态 import 路径** | `app.ts` `_loadMiddlewareFromFile`       | `import(\`file://${resolvedPath}\`)` 若路径含特殊字符可能异常；可增加路径校验                                              |
-| 低     | **大文件拆分**       | `csr-client-builder.ts`（约 1500 行）    | 可拆出 `generateClientDepContent`、`createClientScriptMiddleware` 到独立模块                                               |
-| 低     | **魔法字符串**       | 多处                                     | 如 `"middlewareChain"`、`"serverMiddlewares"` 可提取为常量                                                                 |
+| 优先级 | 问题                     | 位置                                                                          | 建议                                                                                                |
+| ------ | ------------------------ | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| 中     | ~~**any 类型**~~         | `render-ssr.ts`、`render-ssg.ts`、`render-hybrid.ts`、`csr-client-builder.ts` | **✅ 已优化**：`ctx` 统一使用 `HttpContext`（来自 `@dreamer/server`），类型安全且与服务器上下文一致 |
+| 中     | ~~**动态 import 路径**~~ | `app.ts` `_loadMiddlewareFromFile`                                            | **✅ 已优化**：使用 `pathToFileURL` 正确编码特殊字符（空格、#、? 等）                               |
+| 低     | ~~**大文件拆分**~~       | `csr-client-builder.ts`                                                       | **✅ 已优化**：`createClientScriptMiddleware` 拆至 `csr-client-middleware.ts`                       |
+| 低     | ~~**魔法字符串**~~       | `middleware.ts`                                                               | **✅ 已优化**：`SERVICE_KEY_MIDDLEWARE_CHAIN`、`SERVICE_KEY_SERVER_MIDDLEWARES`                     |
 
 ### 2.3 代码规范建议
 
@@ -92,12 +92,12 @@ const [pageModule, appModule, layoutModule] = await Promise.all([
 
 ### 3.2 潜在风险与建议
 
-| 优先级 | 风险                    | 位置                    | 说明与建议                                                                                                                                                                                          |
-| ------ | ----------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **高** | **XSS（innerHTML）**    | `csr-client-builder.ts` | ~~`renderError`、构建失败回退脚本~~ → **✅ 已修复**：`renderError` 增加 `escapeHtml` 转义；构建失败脚本内联 `escapeHtml` 并在运行时转义 `errorMessage`。`renderNotFound` 仅用 i18n 静态文案，无风险 |
-| 中     | **动态 import 路径**    | `load-route-module.ts`  | `filePath` 来自路由扫描，理论上可控；若未来支持用户配置路由路径，需校验禁止 `../` 等路径穿越                                                                                                        |
-| 中     | ~~**插件/中间件路径**~~ | `app.ts`                | **✅ 已修复**：`_loadMiddlewareFromFile`、`pluginManager.loadFromFile` 前增加 `_isPathWithinProject` 校验，路径必须在 `cwd()` 下                                                                    |
-| 低     | **配置热重载**          | `config.ts`             | `hotReload` 时重新加载 `main.ts` 等；需确保仅加载受信任的配置目录                                                                                                                                   |
+| 优先级 | 风险                     | 位置                    | 说明与建议                                                                                                                                                                                          |
+| ------ | ------------------------ | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **高** | **XSS（innerHTML）**     | `csr-client-builder.ts` | ~~`renderError`、构建失败回退脚本~~ → **✅ 已修复**：`renderError` 增加 `escapeHtml` 转义；构建失败脚本内联 `escapeHtml` 并在运行时转义 `errorMessage`。`renderNotFound` 仅用 i18n 静态文案，无风险 |
+| 中     | ~~**动态 import 路径**~~ | `load-route-module.ts`  | **✅ 已优化**：`isPathWithinProject` 校验 + `pathToFileURL`，禁止路径穿越                                                                                                                           |
+| 中     | ~~**插件/中间件路径**~~  | `app.ts`                | **✅ 已修复**：`_loadMiddlewareFromFile`、`pluginManager.loadFromFile` 前增加 `_isPathWithinProject` 校验，路径必须在 `cwd()` 下                                                                    |
+| 低     | ~~**配置热重载**~~       | `config.ts`             | **✅ 已优化**：`loadModuleConfig` 中增加 `isPathWithinProject` 校验，仅加载项目目录内配置                                                                                                           |
 
 ### 3.3 XSS 修复建议
 
@@ -147,10 +147,12 @@ container.appendChild(p);
 **已完成的优化（2025-02-05）**：
 
 1. **安全**：`renderError`、构建失败脚本增加 `escapeHtml` 防
-   XSS；插件/中间件路径限制在项目目录内
+   XSS；插件/中间件路径限制在项目目录内；配置热重载仅加载项目内配置
 2. **性能**：SSR 中 `loadRouteModule` 改为 `Promise.all` 并行；`versionMap` 超出
-   2000 时淘汰最早条目
-3. **代码**：`ctx` 替换为具体类型；`_isPathWithinProject` 路径校验
+   2000 时淘汰最早条目；`scanRouteComponents` 改为迭代+深度限制
+3. **代码**：`ctx` 统一为 `HttpContext`；`_isPathWithinProject` 路径校验；动态
+   import 使用 `pathToFileURL`；`createClientScriptMiddleware`
+   拆至独立模块；魔法字符串提取为常量
 
 ---
 

@@ -4,17 +4,21 @@
  */
 
 import type { AppConfig } from "@dreamer/dweb";
-import defaultConfig from "./main.ts";
 
 const config: AppConfig = {
-  ...defaultConfig,
   hotReload: true,
   server: {
-    ...defaultConfig.server,
-    host: "127.0.0.1",
+    // debug: true, // 开启后控制台输出请求路径、路径前置处理器、中间件链、响应状态等详细调试信息
+    dev: {
+      hmr: { enabled: true, path: "/__hmr/websocket" },
+      watch: {
+        paths: ["./src"],
+        ignore: ["node_modules", ".git", "dist"],
+      },
+    },
   },
   logger: {
-    level: "info",
+    level: "debug",
     format: "text",
   },
   // 实时通信：type 为 websocket 时挂载到当前 HTTP 服务器同一端口（开发环境测试）

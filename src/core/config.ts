@@ -22,6 +22,7 @@ import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $t } from "../utils/i18n.ts";
+import { pathToFileURL } from "node:url";
 import {
   cwd,
   existsSync,
@@ -31,6 +32,7 @@ import {
   resolve,
   stat,
 } from "./runtime-adapter.ts";
+import { isPathWithinProject } from "../utils/path.ts";
 
 /**
  * 从入口模块路径推断 config 目录
@@ -153,16 +155,15 @@ async function loadModuleConfig(
   filePath: string,
 ): Promise<Record<string, unknown> | null> {
   try {
-    // 相对路径先解析为基于 cwd 的绝对路径
     const absPath = filePath.startsWith("/")
       ? filePath
       : resolve(cwd(), filePath);
     const resolvedPath = await realPath(absPath);
-    // 规范化 file:// URL：Windows 反斜杠转正斜杠，确保格式正确
-    const normalized = resolvedPath.replace(/\\/g, "/");
-    const fileUrl = `file://${
-      normalized.startsWith("/") ? "" : "/"
-    }${normalized}`;
+    // 热重载时仅加载项目目录内的配置，防止加载任意路径
+    if (!isPathWithinProject(resolvedPath)) {
+      return null;
+    }
+    const fileUrl = pathToFileURL(resolvedPath).href;
     const module = await import(fileUrl);
     return module.default || module;
   } catch {

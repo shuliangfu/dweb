@@ -15,14 +15,6 @@ const config: AppConfig = {
   server: {
     port: 3000,
     host: "127.0.0.1",
-    // debug: true, // 开启后控制台输出请求路径、路径前置处理器、中间件链、响应状态等详细调试信息
-    dev: {
-      hmr: { enabled: true, path: "/__hmr" },
-      watch: {
-        paths: ["./src"],
-        ignore: ["node_modules", ".git", "dist"],
-      },
-    },
   },
 
   // 渲染配置

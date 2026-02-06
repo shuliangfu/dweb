@@ -14,10 +14,7 @@ import {
   type RouterOptions,
 } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
-import {
-  pluginEvents,
-  type RouteDefinition,
-} from "../core/plugin-events.ts";
+import { pluginEvents, type RouteDefinition } from "../core/plugin-events.ts";
 import type { AppConfig } from "../types/app.ts";
 
 /**
