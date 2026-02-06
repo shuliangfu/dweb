@@ -271,13 +271,14 @@ sequenceDiagram
 
     Client->>Server: HTTP Request
     Server->>Middleware: 全局中间件链
-    Middleware->>Socket: 路径匹配 /socket.io 或 /ws？
-    alt 匹配 Socket 路径
-        Socket->>Client: Socket.IO / WebSocket 处理
-    else 不匹配
+
+    alt 路径匹配 /socket.io 或 /ws
+        Middleware->>Socket: 委托处理
+        Socket->>Client: Socket.IO / WebSocket 响应
+    else 普通 HTTP
         Middleware->>Router: 路由匹配
         Router->>Plugin: emitOnRequest
-        alt 路由匹配
+        alt 路由命中
             Router->>Render: SSR/CSR/SSG/Hybrid 渲染
             Render->>Plugin: emitOnResponse
             Render->>Client: HTML / JSON 响应
