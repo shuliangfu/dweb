@@ -1,7 +1,8 @@
 # @dreamer/dweb
 
-> 一个兼容 Deno 和 Bun 的全栈 Web 框架，整合 @dreamer/*
-> 库，提供开箱即用的全栈开发体验
+> 📖 English | [中文文档](./README-zh.md)
+
+> A full-stack Web framework compatible with Deno and Bun, integrating @dreamer/* libraries for an out-of-the-box development experience.
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.md)
@@ -9,66 +10,57 @@
 
 ---
 
-## 🎯 功能
+## 🎯 Overview
 
-全栈 Web 框架，类似 Next.js、Remix、SvelteKit，提供完整的服务端和客户端支持。
+A full-stack Web framework similar to Next.js, Remix, and SvelteKit, providing complete server and client support.
 
-**默认使用 Preact**：框架默认使用 Preact（轻量级、高性能），也支持
-React。所有示例代码默认使用 Preact。
+**Preact by default**: The framework uses Preact (lightweight, high-performance) by default, and also supports React. All example code uses Preact by default.
 
 ---
 
-## 📦 安装
+## 📦 Installation
 
-### 安装 dweb-cli 全局命令
+### Install dweb-cli globally
 
-如需在任意目录使用 `dweb-cli` 命令（如 `dweb-cli init`、`dweb-cli dev`
-等），可运行 setup 脚本安装全局命令：
+To use `dweb-cli` commands (e.g. `dweb-cli init`, `dweb-cli dev`) from any directory, run the setup script:
 
 ```bash
 deno run -A jsr:@dreamer/dweb/setup
 ```
 
-安装成功后，建议先执行 `dweb-cli upgrade` 升级到最新版本。
+After installation, run `dweb-cli upgrade` to get the latest version.
 
-**⚠️ Beta 版本提示**：当前所有 @dreamer/* 依赖库均为 beta
-版本。初始化应用时**必须**加上 `--beta`
-参数，否则生成的项目依赖版本不正确，无法启动。例如：`dweb-cli init my-app --beta`。
+**⚠️ Beta notice**: All @dreamer/* dependencies are currently in beta. You **must** add `--beta` when initializing apps, otherwise dependency versions will be incorrect. Example: `dweb-cli init my-app --beta`.
 
-**🪟 Windows 安装注意事项**：
+**🪟 Windows installation notes**:
 
-- **PATH 配置**：安装后 `dweb-cli` 位于 `%USERPROFILE%\.deno\bin`（Deno）或
-  `%USERPROFILE%\.bun\bin`（Bun），需确保该目录已加入系统
-  PATH，否则命令行无法识别 `dweb-cli`。Deno/Bun 官方安装程序通常会自动配置。
-- **PowerShell 执行策略**：若提示无法运行脚本，可执行
-  `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
-  放宽策略。
-- **路径与编码**：项目路径建议避免中文或特殊字符，以减少路径解析问题。
-- **交互式输入**：若遇 "The operation is not supported"，已通过 runtime-adapter
-  兼容处理；建议在纯英文路径下执行（如 `C:\dev\myapp`）。
+- **PATH**: After installation, `dweb-cli` is in `%USERPROFILE%\.deno\bin` (Deno) or `%USERPROFILE%\.bun\bin` (Bun). Ensure this directory is in your PATH.
+- **PowerShell execution policy**: If scripts cannot run, execute `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`.
+- **Paths and encoding**: Avoid Chinese or special characters in project paths.
+- **Interactive input**: If you see "The operation is not supported", use an ASCII path (e.g. `C:\dev\myapp`).
 
-安装完成后，可在任意目录执行：
+After installation, you can run:
 
 ```bash
-dweb-cli init [appName] --beta   # 初始化新项目（必须加 --beta）
-dweb-cli dev              # 启动开发服务器
-dweb-cli build            # 构建生产版本
-dweb-cli start            # 启动生产服务器
-dweb-cli generate (g)     # 生成代码
-dweb-cli db migrate (m)   # 数据库迁移
-dweb-cli --help           # 查看完整帮助
+dweb-cli init [appName] --beta   # Initialize new project (--beta required)
+dweb-cli dev              # Start dev server
+dweb-cli build            # Build for production
+dweb-cli start            # Start production server
+dweb-cli generate (g)     # Generate code
+dweb-cli db migrate (m)   # Database migration
+dweb-cli --help           # Full help
 ```
 
-**框架选择**：
+**Framework options**:
 
-- **默认使用 Preact**：框架默认使用 Preact（轻量级、高性能）
-- **也支持 React**：在配置中通过 `render.engine` 指定
-- **渲染模式**：`render.mode` 支持 `ssr`、`csr`、`ssg`、`hybrid`
+- **Preact (default)**: Lightweight and fast
+- **React**: Set `render.engine` in config
+- **Render modes**: `render.mode` supports `ssr`, `csr`, `ssg`, `hybrid`
 
-按需安装独立库（dweb 已内置下列依赖，仅在使用其他 @dreamer/* 时需单独安装）：
+Install standalone libraries as needed (dweb already includes these):
 
 ```bash
-# 核心库（dweb 已依赖）
+# Core (dweb depends on these)
 deno add jsr:@dreamer/service
 deno add jsr:@dreamer/middleware
 deno add jsr:@dreamer/plugin
@@ -78,12 +70,12 @@ deno add jsr:@dreamer/render
 deno add jsr:@dreamer/esbuild
 deno add jsr:@dreamer/socket-io
 
-# 数据层（可选）
+# Data layer (optional)
 deno add jsr:@dreamer/database
 deno add jsr:@dreamer/cache
 deno add jsr:@dreamer/storage
 
-# 工具层（dweb 已依赖部分）
+# Tooling (dweb depends on some)
 deno add jsr:@dreamer/logger
 deno add jsr:@dreamer/config
 deno add jsr:@dreamer/utils
@@ -92,150 +84,140 @@ deno add jsr:@dreamer/runtime-adapter
 
 ---
 
-## 🌍 环境兼容性
+## 🌍 Compatibility
 
-- **运行时要求**：Deno 2.6+ 或 Bun 1.3.5
-- **服务端**：✅ 支持（兼容 Deno 和 Bun 运行时，完整的服务端功能）
-- **客户端**：✅ 支持（浏览器环境，SSR、CSR、SSG、Hybrid 支持）
-- **依赖**：整合所有 @dreamer/* 库
+- **Runtimes**: Deno 2.6+ or Bun 1.3.5
+- **Server**: ✅ Full support (Deno and Bun)
+- **Client**: ✅ Browser (SSR, CSR, SSG, Hybrid)
+- **Dependencies**: Integrates all @dreamer/* libraries
 
 ---
 
-## ✨ 特性
+## ✨ Features
 
-- ✅ **完整的全栈支持**：服务端 + 客户端一体化开发
-- ✅ **文件路由系统**：基于文件系统的路由，类似 Next.js
-- ✅
-  **多种渲染模式**：SSR（服务端渲染）、CSR（客户端渲染）、SSG（静态站点生成）、Hybrid（混合模式）
-- ✅ **默认使用 Preact**：轻量级、高性能，也支持 React
-- ✅ **Socket.IO 内置**：实时双向通信，挂载到同一 HTTP 服务器，配置
-  `socket: { adapter: "socketio", ... }` 即可启用；支持插件
-  `onSocket`、`onSocketClose` 钩子
-- ✅ **中间件系统**：通用中间件系统，可用于 HTTP、WebSocket、消息队列等多种场景
-- ✅ **插件系统**：插件生命周期管理、插件依赖、插件事件系统、热加载
-- ✅ **事件系统**：App 继承
-  EventEmitter，支持生命周期与自定义事件（on/emit/once/off）
-- ✅ **服务容器**：依赖注入和服务管理
-- ✅
-  **数据库支持**：多种数据库适配器（PostgreSQL、MySQL、SQLite、MongoDB），配置
-  `database` 即可使用
-- ✅ **缓存**：可安装 @dreamer/cache 实现 Redis、内存、文件缓存（dweb
-  不内置，需自行初始化）
-- ✅ **任务队列**：可安装 @dreamer/queue 实现异步任务、定时任务、持久化队列
-- ✅ **统一错误处理**：DwebError 错误类，支持错误码（DWEB_E01～E33）、i18n
-  国际化、`throwDwebError` / `createDwebError` / `isDwebError` /
-  `setDwebErrorTranslator`
-- ✅ **类型安全**：完整的 TypeScript 支持
-- ✅ **开发体验**：HMR（热模块替换）、CLI 工具、代码提示
+- ✅ **Full-stack support**: Server + client integrated development
+- ✅ **File-based routing**: File-system based routing, similar to Next.js
+- ✅ **Multiple render modes**: SSR (server-side rendering), CSR (client-side rendering), SSG (static site generation), Hybrid (mixed mode)
+- ✅ **Preact by default**: Lightweight, high-performance; React also supported
+- ✅ **Socket.IO built-in**: Real-time bidirectional communication, mounted on the same HTTP server; configure `socket: { adapter: "socketio", ... }` to enable; supports plugin `onSocket`, `onSocketClose` hooks
+- ✅ **Middleware system**: General-purpose middleware for HTTP, WebSocket, message queues, and more
+- ✅ **Plugin system**: Plugin lifecycle, dependencies, event system, hot reload
+- ✅ **Event system**: App extends EventEmitter, supports lifecycle and custom events (on/emit/once/off)
+- ✅ **Service container**: Dependency injection and service management
+- ✅ **Database support**: Multiple adapters (PostgreSQL, MySQL, SQLite, MongoDB); configure `database` to use
+- ✅ **Cache**: Install @dreamer/cache for Redis, memory, file cache (dweb does not bundle; initialize separately)
+- ✅ **Task queue**: Install @dreamer/queue for async tasks, scheduled tasks, persistent queues
+- ✅ **Unified error handling**: DwebError class with error codes (DWEB_E01–E33), i18n, `throwDwebError` / `createDwebError` / `isDwebError` / `setDwebErrorTranslator`
+- ✅ **Type safety**: Full TypeScript support
+- ✅ **Developer experience**: HMR (hot module replacement), CLI tools, code hints
 
-## 架构
+## Architecture
 
-### 核心框架层（dweb 直接依赖）
+### Core framework layer (dweb direct dependencies)
 
-1. **@dreamer/service** - 服务容器（依赖注入）
-   - 作用：框架核心，管理所有服务和依赖
-   - 重要性：⭐⭐⭐⭐⭐
+1. **@dreamer/service** - Service container (dependency injection)
+   - Role: Framework core, manages all services and dependencies
+   - Importance: ⭐⭐⭐⭐⭐
 
-2. **@dreamer/middleware** - 通用中间件系统
-   - 作用：中间件链式调用、错误处理、异步支持
-   - 重要性：⭐⭐⭐⭐⭐
+2. **@dreamer/middleware** - General-purpose middleware system
+   - Role: Middleware chain invocation, error handling, async support
+   - Importance: ⭐⭐⭐⭐⭐
 
-3. **@dreamer/plugin** - 插件管理系统
-   - 作用：插件生命周期、插件依赖、插件事件
-   - 依赖：@dreamer/service
-   - 重要性：⭐⭐⭐⭐⭐
+3. **@dreamer/plugin** - Plugin management system
+   - Role: Plugin lifecycle, plugin dependencies, plugin events
+   - Depends on: @dreamer/service
+   - Importance: ⭐⭐⭐⭐⭐
 
-4. **@dreamer/server** - HTTP 服务器
-   - 作用：处理 HTTP 请求与响应、集成路由与渲染
-   - 依赖：@dreamer/middleware
-   - 重要性：⭐⭐⭐⭐⭐
+4. **@dreamer/server** - HTTP server
+   - Role: Handles HTTP requests and responses, integrates routing and rendering
+   - Depends on: @dreamer/middleware
+   - Importance: ⭐⭐⭐⭐⭐
 
-5. **@dreamer/router** - 文件路由系统
-   - 作用：基于文件系统的路由扫描与匹配
-   - 重要性：⭐⭐⭐⭐⭐
+5. **@dreamer/router** - File-based routing system
+   - Role: File-system based route scanning and matching
+   - Importance: ⭐⭐⭐⭐⭐
 
-6. **@dreamer/render** - 渲染引擎
-   - 作用：SSR / SSG 渲染（Preact、React）
-   - 重要性：⭐⭐⭐⭐⭐
+6. **@dreamer/render** - Rendering engine
+   - Role: SSR / SSG rendering (Preact, React)
+   - Importance: ⭐⭐⭐⭐⭐
 
-7. **@dreamer/esbuild** - 构建工具
-   - 作用：服务端与客户端代码编译
-   - 重要性：⭐⭐⭐⭐⭐
+7. **@dreamer/esbuild** - Build tool
+   - Role: Server and client code compilation
+   - Importance: ⭐⭐⭐⭐⭐
 
-8. **@dreamer/socket-io** - 实时通信
-   - 作用：WebSocket 实时双向通信（Socket.IO 协议）
-   - 重要性：⭐⭐⭐⭐
+8. **@dreamer/socket-io** - Real-time communication
+   - Role: WebSocket real-time bidirectional communication (Socket.IO protocol)
+   - Importance: ⭐⭐⭐⭐
 
-### 工具层
+### Tooling layer
 
-9. **@dreamer/logger** - 日志
-   - 作用：应用日志记录
-   - 重要性：⭐⭐⭐⭐⭐
+9. **@dreamer/logger** - Logging
+   - Role: Application log recording
+   - Importance: ⭐⭐⭐⭐⭐
 
-10. **@dreamer/config** - 配置管理
+10. **@dreamer/config** - Config management
+    - Role: Application config loading and merging
+    - Importance: ⭐⭐⭐⭐
 
-- 作用：应用配置加载与合并
-- 重要性：⭐⭐⭐⭐
+11. **@dreamer/utils** - Utility functions
+    - Role: General utilities
+    - Importance: ⭐⭐⭐⭐
 
-11. **@dreamer/utils** - 工具函数
-    - 作用：通用工具
-    - 重要性：⭐⭐⭐⭐
+12. **@dreamer/console** - Console / CLI
+    - Role: CLI output and interaction (command module)
+    - Importance: ⭐⭐⭐
 
-12. **@dreamer/console** - 控制台 / CLI
-    - 作用：CLI 输出与交互（command 模块）
-    - 重要性：⭐⭐⭐
+13. **@dreamer/runtime-adapter** - Runtime adapter
+    - Role: Unified fs, path, env, cwd APIs for Deno/Bun
+    - Importance: ⭐⭐⭐⭐⭐
 
-13. **@dreamer/runtime-adapter** - 运行时适配
-    - 作用：统一 Deno/Bun 的 fs、path、env、cwd 等 API
-    - 重要性：⭐⭐⭐⭐⭐
+### dweb internal structure (source directory)
 
-### dweb 内部结构（源码目录）
+| Dir/File   | Description                                                                                                                                 |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `core/`    | Core: app, config, service, middleware, plugin, lifecycle, database, plugin-events, runtime-adapter                                            |
+| `feature/` | Features: server, router, render, render-ssr, render-csr, render-ssg, render-hybrid, build, csr-client-builder, socket-io, command            |
+| `types/`   | Types: AppConfig, IApp, etc.                                                                                                                 |
+| `utils/`   | Utilities: logger, version, errors (unified error handling with i18n)                                                                         |
+| `cli.ts`   | CLI entry (createCLI)                                                                                                                        |
+| `mod.ts`   | Main entry, unified exports                                                                                                                  |
 
-| 目录/文件  | 说明                                                                                                                           |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `core/`    | 核心：app、config、service、middleware、plugin、lifecycle、database、plugin-events、runtime-adapter                            |
-| `feature/` | 功能：server、router、render、render-ssr、render-csr、render-ssg、render-hybrid、build、csr-client-builder、socket-io、command |
-| `types/`   | 类型：AppConfig、IApp 等                                                                                                       |
-| `utils/`   | 工具：logger、version、errors（统一错误处理，支持 i18n）                                                                       |
-| `cli.ts`   | CLI 入口（createCLI）                                                                                                          |
-| `mod.ts`   | 主入口，统一导出                                                                                                               |
+### Optional extensions (install as needed)
 
-### 可选扩展（按需安装）
+The following libraries are not bundled in dweb; install separately as needed:
 
-以下库不内置于 dweb，按需单独安装：
+- **@dreamer/database** - Database (PostgreSQL, MySQL, SQLite, MongoDB)
+- **@dreamer/cache** - Cache (Redis, memory, file)
+- **@dreamer/storage** - File storage
+- **@dreamer/session** - Session
+- **@dreamer/queue** - Task queue (requires separate install)
+- **@dreamer/websocket** - Native WebSocket (Socket.IO is built into dweb)
+- **@dreamer/store** - Client state
+- **@dreamer/web3** - Blockchain
 
-- **@dreamer/database** - 数据库（PostgreSQL、MySQL、SQLite、MongoDB）
-- **@dreamer/cache** - 缓存（Redis、内存、文件）
-- **@dreamer/storage** - 文件存储
-- **@dreamer/session** - 会话
-- **@dreamer/queue** - 任务队列（需自行安装）
-- **@dreamer/websocket** - 原生 WebSocket（Socket.IO 已内置于 dweb）
-- **@dreamer/store** - 客户端状态
-- **@dreamer/web3** - 区块链
+## Architecture diagram
 
-## 架构图
-
-下图展示 dweb 各层与核心模块的关系。
+The diagram below shows the relationship between dweb layers and core modules.
 
 ```mermaid
 flowchart TB
-    A[服务端]
-    B[客户端]
+    A[Server]
+    B[Client]
 
-    TITLE["@dreamer/dweb<br/>核心框架层"]
+    TITLE["@dreamer/dweb<br/>Core framework layer"]
 
     subgraph core
         direction LR
-        C1["service<br/>服务容器"] --- C2["middleware<br/>通用中间件"] --- C3["plugin<br/>插件系统"] --- C4["server<br/>HTTP 服务"] --- C5["router<br/>路由系统"] --- C6["render<br/>渲染(SSR/SSG)"] --- C7["esbuild<br/>构建工具"] --- C8["socket-io<br/>实时通信"]
+        C1["service<br/>Service container"] --- C2["middleware<br/>General middleware"] --- C3["plugin<br/>Plugin system"] --- C4["server<br/>HTTP server"] --- C5["router<br/>Routing"] --- C6["render<br/>Rendering (SSR/SSG)"] --- C7["esbuild<br/>Build tool"] --- C8["socket-io<br/>Real-time"]
     end
 
-    subgraph data["数据层"]
+    subgraph data["Data layer"]
         D1[database]
         D2[cache]
         D3[storage]
     end
 
-    subgraph tool["工具层"]
+    subgraph tool["Tooling layer"]
         T1[logger]
         T2[config]
         T3[utils]
@@ -249,15 +231,13 @@ flowchart TB
     core --> tool
 ```
 
-**注**：数据层中 database 为 dweb 内置（配置 `database` 即可）；cache、storage
-需单独安装 `@dreamer/cache`、`@dreamer/storage` 并自行初始化，AppConfig 无 cache
-配置项。
+**Note**: In the data layer, database is built into dweb (configure `database` to use); cache and storage require separate install of `@dreamer/cache` and `@dreamer/storage` and manual initialization. AppConfig has no cache config option.
 
 ---
 
-## 请求生命周期与数据流
+## Request lifecycle and data flow
 
-一次 HTTP 请求在 dweb 中的完整处理流程如下：
+The complete flow of an HTTP request in dweb is as follows:
 
 ```mermaid
 sequenceDiagram
@@ -270,210 +250,200 @@ sequenceDiagram
     participant Plugin
 
     Client->>Server: HTTP Request
-    Server->>Middleware: 全局中间件链
+    Server->>Middleware: Global middleware chain
 
-    alt 路径匹配 /socket.io 或 /ws
-        Middleware->>Socket: 委托处理
-        Socket->>Client: Socket.IO / WebSocket 响应
-    else 普通 HTTP
-        Middleware->>Router: 路由匹配
+    alt Path matches /socket.io or /ws
+        Middleware->>Socket: Delegate to Socket
+        Socket->>Client: Socket.IO / WebSocket response
+    else Regular HTTP
+        Middleware->>Router: Route match
         Router->>Plugin: emitOnRequest
-        alt 路由命中
-            Router->>Render: SSR/CSR/SSG/Hybrid 渲染
+        alt Route matched
+            Router->>Render: SSR/CSR/SSG/Hybrid render
             Render->>Plugin: emitOnResponse
-            Render->>Client: HTML / JSON 响应
+            Render->>Client: HTML / JSON response
         else 404
-            Router->>Client: _404.tsx 或 404 响应
+            Router->>Client: _404.tsx or 404 response
         end
     end
 ```
 
-### 中间件执行顺序
+### Middleware execution order
 
-1. **全局中间件**：`app.use()` 注册的中间件，按注册顺序执行
-2. **Socket 委托**：若配置 `socket.adapter`，路径前缀匹配时委托给 Socket.IO 或
-   WebSocket
-3. **配置中间件**：`config.middlewares` 中配置的中间件
-4. **路由中间件**：`routes/_middleware.ts` 导出的路由级中间件
-5. **路由匹配**：`@dreamer/router` 根据 `routesDir` 扫描结果匹配
-6. **插件事件**：`pluginEventsMiddleware` 触发 `onRequest`、`onResponse`
-7. **渲染**：根据 `render.mode` 选择 SSR/CSR/SSG/Hybrid 渲染器
+1. **Global middleware**: Middlewares registered via `app.use()`, executed in registration order
+2. **Socket delegation**: If `socket.adapter` is configured, path prefix match delegates to Socket.IO or WebSocket
+3. **Config middleware**: Middlewares in `config.middlewares`
+4. **Route middleware**: Route-level middleware exported from `routes/_middleware.ts`
+5. **Route matching**: `@dreamer/router` matches based on `routesDir` scan results
+6. **Plugin events**: `pluginEventsMiddleware` triggers `onRequest`, `onResponse`
+7. **Rendering**: Selects SSR/CSR/SSG/Hybrid renderer based on `render.mode`
 
-### App 初始化流程
+### App initialization flow
 
 ```
 new App(config)
-  → 设置 DENO_ENV（dev/prod）
-  → 初始化 ServiceContainer
-  → 异步 _initializeConfig：
-      → 加载 config/main.ts、main.{env}.ts
-      → 深度合并配置、验证
-      → 初始化 Logger、Lifecycle、Middleware、Plugin
-      → 注册插件、中间件、路由中间件
-      → 初始化 Render、Router、Build、Server
-      → 若配置 socket：初始化 Socket.IO 或 WebSocket
+  → Set DENO_ENV (dev/prod)
+  → Initialize ServiceContainer
+  → Async _initializeConfig:
+      → Load config/main.ts, main.{env}.ts
+      → Deep merge config, validate
+      → Initialize Logger, Lifecycle, Middleware, Plugin
+      → Register plugins, middlewares, route middlewares
+      → Initialize Render, Router, Build, Server
+      → If socket configured: initialize Socket.IO or WebSocket
       → emit("init")
-  → start() 等待 _initPromise
-  → 生命周期 starting → started
-  → 启动 HTTP 服务器
+  → start() waits for _initPromise
+  → Lifecycle starting → started
+  → Start HTTP server
   → emit("start")
 ```
 
 ---
 
-## 🎯 使用场景
+## 🎯 Use cases
 
-（单应用、多应用、全栈、SSR/CSR/SSG/Hybrid
-等，见下方「应用模式」与「快速开始」。）
+(Single-app, multi-app, full-stack, SSR/CSR/SSG/Hybrid, etc. See "Application modes" and "Quick start" below.)
 
-## 应用模式
+## Application modes
 
-@dreamer/dweb 支持两种应用模式：
+@dreamer/dweb supports two application modes:
 
-### 单应用模式（默认）
+### Single-app mode (default)
 
-单一 App 实例，适合大多数场景。
+Single App instance, suitable for most scenarios.
 
-### 多应用模式
+### Multi-app mode
 
-支持多个应用（如
-backend、frontend、mobile），每个应用独立运行，可以共享公共代码和配置。
+Supports multiple apps (e.g. backend, frontend, mobile). Each app runs independently and can share common code and config.
 
-**多应用形态约定**：
+**Multi-app conventions**:
 
-- **后台（backend/admin）**：默认为**后台管理**形态，带页面、有
-  `_app.tsx`、有路由视图（如用户管理、设置页）。
-- **API 应用**：若需**纯 API**（无视图、无 `_app.tsx`，仅
-  `routes/api`），应单独建应用（如应用名
-  `api`），与「后台」区分；模板与脚手架中可选「API 应用」形态生成仅 API
-  路由的目录。
+- **Backend (backend/admin)**: Default **admin panel** form, with pages, `_app.tsx`, and route views (e.g. user management, settings).
+- **API app**: For **pure API** (no views, no `_app.tsx`, only `routes/api`), create a separate app (e.g. app name `api`) distinct from "backend". Templates and scaffolding can optionally generate API-only route directories.
 
 ---
 
-## 🚀 快速开始
+## 🚀 Quick start
 
-### 1. 创建项目
+### 1. Create project
 
-使用 dweb-cli 创建项目（需先安装 dweb-cli 全局命令，见上方「安装 dweb-cli
-全局命令」）：
+Use dweb-cli to create a project (install dweb-cli globally first; see "Install dweb-cli globally" above):
 
 ```bash
-dweb-cli init my-app --beta   # 必须加 --beta，否则依赖版本不正确无法启动 (因为当前所有依赖库都还没有发布正式版)
+dweb-cli init my-app --beta   # --beta required; otherwise dependency versions are incorrect and app won't start (all @dreamer/* libs are still beta)
 cd my-app
 ```
 
-### 2. 项目结构
+### 2. Project structure
 
-**目录结构说明**：
+**Directory structure notes**:
 
-- **默认使用 `src/` 目录**（推荐）：框架默认使用 `src/` 目录来组织代码
-- **也可以不使用 `src/` 目录**：如果不喜欢使用 `src/`
-  目录，可以直接在项目根目录下创建文件
-- 所有路径配置都可以自定义，根据项目结构在配置中指定正确的路径即可
+- **Default use of `src/` directory** (recommended): The framework uses `src/` by default to organize code
+- **Optional: no `src/` directory**: If you prefer not to use `src/`, you can create files directly in the project root
+- All path configs are customizable; specify the correct paths in config according to your project structure
 
-#### 单应用模式（默认 basic）
+#### Single-app mode (default basic)
 
-**默认结构（使用 src 目录）**：
+**Default structure (with src/)**:
 
 ```
 my-app/
 ├── src/
-│   ├── routes/          # 文件路由
-│   │   ├── _app.tsx    # 应用根组件（必须，HTML 结构写在这里）
-│   │   ├── _layout.tsx # 布局组件
-│   │   ├── _404.tsx    # 404 错误页面
-│   │   ├── _error.tsx  # 错误页面
-│   │   ├── _middleware.ts # 路由中间件
-│   │   ├── index.tsx   # / 路由
-│   │   ├── about.tsx   # /about 路由
+│   ├── routes/          # File-based routes
+│   │   ├── _app.tsx    # App root component (required; HTML structure goes here)
+│   │   ├── _layout.tsx # Layout component
+│   │   ├── _404.tsx    # 404 error page
+│   │   ├── _error.tsx  # Error page
+│   │   ├── _middleware.ts # Route middleware
+│   │   ├── index.tsx   # / route
+│   │   ├── about.tsx   # /about route
 │   │   └── user/
-│   │       └── [id].tsx # /user/:id 路由
-│   ├── main.ts         # 服务端入口
-│   └── config/         # 配置文件
-│       ├── main.ts     # 默认配置
-│       └── main.dev.ts # 开发环境配置
+│   │       └── [id].tsx # /user/:id route
+│   ├── main.ts         # Server entry
+│   └── config/         # Config files
+│       ├── main.ts     # Default config
+│       └── main.dev.ts # Dev config
 └── deno.json
 ```
 
-**可选结构（不使用 src 目录）**：
+**Optional structure (without src/)**:
 
-如果不想使用 `src/` 目录，也可以直接在项目根目录下创建文件：
+If you don't want to use `src/`, you can create files directly in the project root:
 
 ```
 my-app/
-├── routes/             # 文件路由
-│   ├── _app.tsx        # 应用根组件（必须）
-│   ├── _layout.tsx     # 布局组件
-│   ├── index.tsx       # / 路由
-│   └── about.tsx       # /about 路由
-├── main.ts             # 服务端入口
-├── config/             # 配置文件
-│   ├── main.ts         # 默认配置
-│   └── main.dev.ts     # 开发环境配置
+├── routes/             # File-based routes
+│   ├── _app.tsx        # App root component (required)
+│   ├── _layout.tsx     # Layout component
+│   ├── index.tsx       # / route
+│   └── about.tsx       # /about route
+├── main.ts             # Server entry
+├── config/             # Config files
+│   ├── main.ts         # Default config
+│   └── main.dev.ts     # Dev config
 └── deno.json
 ```
 
-**注意**：如果不使用 `src/` 目录，需要在配置中将路径改为
-`"./routes"`、`"./main.ts"` 等。
+**Note**: If you don't use `src/`, update paths in config to `"./routes"`, `"./main.ts"`, etc.
 
-#### 多应用模式 advanced
+#### Multi-app mode advanced
 
-**默认结构（使用 src 目录）**：
+**Default structure (with src/)**:
 
 ```
 my-app/
 ├── src/
-│   ├── backend/         # 后台管理应用（默认带页面、_app.tsx、路由视图）
-│   │   ├── main.ts     # 后台入口
-│   │   ├── routes/     # 后台路由（页面 + 可选 api）
+│   ├── backend/         # Admin app (default with pages, _app.tsx, route views)
+│   │   ├── main.ts     # Backend entry
+│   │   ├── routes/     # Backend routes (pages + optional api)
 │   │   │   ├── _app.tsx
 │   │   │   ├── index.tsx
-│   │   │   └── api/    # 可选 API 路由
-│   │   └── config/     # 后台配置
+│   │   │   └── api/    # Optional API routes
+│   │   └── config/     # Backend config
 │   │       ├── main.ts
 │   │       └── main.dev.ts
-│   ├── frontend/       # 前端应用
-│   │   ├── main.ts     # 前端入口
-│   │   ├── routes/     # 前端路由（页面路由）
+│   ├── frontend/       # Frontend app
+│   │   ├── main.ts     # Frontend entry
+│   │   ├── routes/     # Frontend routes (page routes)
 │   │   │   ├── _app.tsx
 │   │   │   ├── index.tsx
 │   │   │   └── about.tsx
-│   │   └── config/     # 前端配置
+│   │   └── config/     # Frontend config
 │   │       ├── main.ts
 │   │       └── main.dev.ts
-│   └── common/          # 公共代码和配置
-│       ├── config/     # 公共配置
-│       │   ├── main.ts     # 公共默认配置
-│       │   └── main.dev.ts # 公共开发环境配置
-│       ├── services/   # 公共服务
-│       ├── utils/      # 公共工具函数
-│       └── types/      # 公共类型定义
+│   └── common/          # Shared code and config
+│       ├── config/     # Shared config
+│       │   ├── main.ts     # Shared default config
+│       │   └── main.dev.ts # Shared dev config
+│       ├── services/   # Shared services
+│       ├── utils/      # Shared utilities
+│       └── types/      # Shared types
 └── deno.json
 ```
 
-**可选结构（不使用 src 目录）**：
+**Optional structure (without src/)**:
 
-如果不想使用 `src/` 目录，也可以直接在项目根目录下创建文件：
+If you don't want to use `src/`, you can create files directly in the project root:
 
 ```
 my-app/
-├── backend/            # 后台管理（带页面、_app.tsx）
+├── backend/            # Admin (with pages, _app.tsx)
 │   ├── main.ts
 │   ├── routes/
 │   └── config/
-├── frontend/           # 前端应用
+├── frontend/           # Frontend app
 │   ├── main.ts
 │   ├── routes/
 │   └── config/
-├── api/                # 可选：纯 API 应用（无 _app.tsx，仅 routes/api）
+├── api/                # Optional: pure API app (no _app.tsx, only routes/api)
 │   ├── main.ts
 │   ├── routes/api/
 │   └── config/
-├── mobile/             # 移动端应用（可选）
+├── mobile/             # Mobile app (optional)
 │   ├── main.ts
 │   ├── routes/
 │   └── config/
-├── common/             # 公共代码和配置
+├── common/             # Shared code and config
 │   ├── config/
 │   ├── services/
 │   ├── utils/
@@ -481,86 +451,78 @@ my-app/
 └── deno.json
 ```
 
-**注意**：如果不使用 `src/` 目录，需要在配置中将路径改为
-`"./backend/routes"`、`"./frontend/routes"` 等。
+**Note**: If you don't use `src/`, update paths in config to `"./backend/routes"`, `"./frontend/routes"`, etc.
 
-**关于 `client/index.tsx` 的说明**：
+**About `client/index.tsx`**:
 
-- ✅ **可以不要**：如果使用文件路由系统，`@dreamer/router`
-  会自动处理客户端代码的初始化和水合，不需要单独的 `client/index.tsx`
-- ✅ **自动生成**：`@dreamer/router` 会根据 `routes/` 目录自动生成客户端入口代码
-- ✅ **不影响编译和渲染**：
-  - **编译**：`@dreamer/esbuild` 会从 `routes/`
-    目录自动分析入口点，不需要手动指定 `client/index.tsx`
-  - **客户端渲染（CSR）**：`@dreamer/router` 会自动生成客户端路由代码，包括
-    React/Preact 应用的初始化和路由导航
-  - **服务端渲染（SSR）**：`@dreamer/router` 会自动处理 SSR 渲染和客户端水合
-  - **静态站点生成（SSG）**：`@dreamer/router` 会在构建时预渲染所有路由为静态
-    HTML
-  - **混合模式（Hybrid）**：`@dreamer/router` 支持 SSR 首屏渲染，后续路由使用
-    CSR
-- ✅ **可以在 `_app.tsx` 中处理**：所有自定义客户端初始化逻辑都可以在 `_app.tsx`
-  中处理，不需要单独的 `client/index.tsx`
+- ✅ **Not required**: With file-based routing, `@dreamer/router` handles client init and hydration automatically; no separate `client/index.tsx` needed
+- ✅ **Auto-generated**: `@dreamer/router` auto-generates client entry code from the `routes/` directory
+- ✅ **Does not affect build and render**:
+  - **Build**: `@dreamer/esbuild` analyzes entry points from `routes/` automatically; no need to specify `client/index.tsx`
+  - **CSR**: `@dreamer/router` auto-generates client routing code, including React/Preact init and navigation
+  - **SSR**: `@dreamer/router` handles SSR and client hydration
+  - **SSG**: `@dreamer/router` pre-renders all routes to static HTML at build time
+  - **Hybrid**: `@dreamer/router` supports SSR for first screen, CSR for subsequent routes
+- ✅ **Handle in `_app.tsx`**: All custom client init logic can go in `_app.tsx`; no separate `client/index.tsx` needed
 
-**特殊文件的处理**：
+**Special file handling**:
 
-所有特殊文件（`_app.tsx`、`_layout.tsx`、`_404.tsx`、`_error.tsx`、`_middleware.ts`）都在
-**`@dreamer/router`** 中处理：
+All special files (`_app.tsx`, `_layout.tsx`, `_404.tsx`, `_error.tsx`, `_middleware.ts`) are handled by **`@dreamer/router`**:
 
-- **`@dreamer/router` 负责**：
-  - 扫描和识别特殊文件（以 `_` 开头的文件）
-  - 处理 `_app.tsx`：作为应用根组件，生成 HTML 结构
-  - 处理 `_layout.tsx`：作为布局组件，包裹所有路由页面
-  - 处理 `_404.tsx`：路由不匹配时使用
-  - 处理 `_error.tsx`：发生错误时使用
-  - 处理 `_middleware.ts`：路由级别的中间件，在路由匹配前执行
-  - 自动生成客户端入口代码（基于 `_app.tsx` 和路由文件）
-  - 处理 SSR 渲染和客户端水合
+- **`@dreamer/router` is responsible for**:
+  - Scanning and identifying special files (files starting with `_`)
+  - Handling `_app.tsx`: as app root component, generates HTML structure
+  - Handling `_layout.tsx`: as layout component, wraps all route pages
+  - Handling `_404.tsx`: used when no route matches
+  - Handling `_error.tsx`: used when an error occurs
+  - Handling `_middleware.ts`: route-level middleware, runs before route matching
+  - Auto-generating client entry code (based on `_app.tsx` and route files)
+  - Handling SSR rendering and client hydration
 
-- **工作流程**：
-  1. `@dreamer/router` 扫描 `routes/` 目录
-  2. 识别特殊文件和普通路由文件
-  3. 根据 `_app.tsx` 生成 HTML 结构
-  4. 根据路由文件生成路由配置
-  5. 自动生成客户端入口代码（包含 React/Preact 初始化、路由导航、水合逻辑）
-  6. `@dreamer/esbuild` 使用自动生成的入口代码进行编译
+- **Workflow**:
+  1. `@dreamer/router` scans `routes/` directory
+  2. Identifies special files and normal route files
+  3. Generates HTML structure from `_app.tsx`
+  4. Generates route config from route files
+  5. Auto-generates client entry code (React/Preact init, routing, hydration)
+  6. `@dreamer/esbuild` compiles using the auto-generated entry
 
-### 3. 创建应用
+### 3. Create app
 
-#### 单应用模式
+#### Single-app mode
 
 ```typescript
 // src/main.ts
 import { App } from "jsr:@dreamer/dweb";
 
-// 创建单一 App 实例（默认模式）
+// Create single App instance (default mode)
 const app = new App({
   name: "my-app",
   version: "1.0.0",
 
-  // 服务器配置
+  // Server config
   server: {
     port: 3000,
     host: "localhost",
   },
 
-  // 渲染配置（engine: preact | react；mode: ssr | csr | ssg | hybrid）
+  // Render config (engine: preact | react; mode: ssr | csr | ssg | hybrid)
   render: {
     engine: "preact",
     mode: "ssr",
   },
 
-  // 路由配置（基于文件系统）
+  // Router config (file-system based)
   router: {
     routesDir: "./src/routes",
   },
 
-  // 日志配置
+  // Logger config
   logger: {
     level: "info",
   },
 
-  // 构建配置
+  // Build config
   build: {
     server: {
       entry: "src/main.ts",
@@ -569,40 +531,40 @@ const app = new App({
   },
 });
 
-// 全局中间件
+// Global middleware
 app.use(async (_req, _res, next) => {
   console.log(`${_req.method} ${_req.url}`);
   await next();
 });
 
-// 启动应用
+// Start app
 await app.start();
 ```
 
-**单应用模式特点**：
+**Single-app mode characteristics**:
 
-- ✅ 单一 App 实例
-- ✅ 所有功能在一个应用中
-- ✅ 适合大多数场景
-- ✅ 简单直接
+- ✅ Single App instance
+- ✅ All features in one app
+- ✅ Suitable for most scenarios
+- ✅ Simple and straightforward
 
-**单应用模式配置**：
+**Single-app mode config**:
 
 ```typescript
 // deno.json
 {
   "tasks": {
-    // 开发环境启动（默认使用 src 目录）
+    // Dev (default uses src/)
     "dev": "deno run --allow-all src/main.ts",
-    // 如果不使用 src 目录，改为： "deno run --allow-all main.ts"
+    // Without src/: "deno run --allow-all main.ts"
 
-    // 构建
+    // Build
     "build": "deno task build",
 
-    // 生产环境启动（启动构建后的版本）
+    // Production (run built version)
     "start": "deno run --allow-all dist/main.js",
 
-    // 其他工具
+    // Other
     "test": "deno test",
     "fmt": "deno fmt",
     "lint": "deno lint"
@@ -610,24 +572,23 @@ await app.start();
 }
 ```
 
-**路径配置说明**：
+**Path config notes**:
 
-- **默认使用 `src/` 目录**：框架默认路径为 `./src/main.ts`、`./src/routes` 等
-- **也可以不使用 `src/` 目录**：如果不使用 `src/` 目录，需要将路径改为
-  `./main.ts`、`./routes` 等
-- 根据项目结构在配置中指定正确的路径即可
+- **Default with `src/`**: Framework defaults to `./src/main.ts`, `./src/routes`, etc.
+- **Without `src/`**: Use `./main.ts`, `./routes`, etc.
+- Specify correct paths in config according to your project structure
 
-**启动方式**：
+**How to run**:
 
-- **开发环境**：`deno task dev` - 启动开发服务器
-- **生产环境**：
-  1. 先构建：`deno task build` - 构建生产版本
-  2. 启动：`deno task start` - 启动构建后的版本
+- **Dev**: `deno task dev` - start dev server
+- **Production**:
+  1. Build: `deno task build` - build for production
+  2. Start: `deno task start` - run built version
 
-#### 多应用模式
+#### Multi-app mode
 
 ```typescript
-// src/backend/main.ts（后台管理：带 _app.tsx、页面路由）
+// src/backend/main.ts (admin: with _app.tsx, page routes)
 import { App } from "jsr:@dreamer/dweb";
 import { loadCommonConfig } from "../common/config/main.ts";
 
@@ -675,21 +636,20 @@ const mobileApp = new App({
 await mobileApp.start();
 ```
 
-**多应用模式特点**：
+**Multi-app mode characteristics**:
 
-- ✅ 多个独立 App 实例
-- ✅ 每个应用有自己的 main.ts 和 config
-- ✅ 可以共享公共代码和配置（common 目录）
-- ✅ 适合大型项目，前后端分离
-- ✅ 后台（backend/admin）默认带页面、_app.tsx；纯 API 无视图时单独建应用（如
-  `api`，仅 routes/api）
+- ✅ Multiple independent App instances
+- ✅ Each app has its own main.ts and config
+- ✅ Can share common code and config (common directory)
+- ✅ Suitable for large projects, frontend/backend separation
+- ✅ Backend (backend/admin) default has pages, _app.tsx; for pure API (no views) create a separate app (e.g. `api`, only routes/api)
 
-#### 公共配置和代码
+#### Common config and code
 
 ```typescript
-// src/common/config/main.ts（默认使用 src 目录）
-// 公共配置，所有应用共享
-// 使用 @dreamer/runtime-adapter 的 getEnv 以兼容 Deno 和 Bun
+// src/common/config/main.ts (default uses src/)
+// Shared config for all apps
+// Use @dreamer/runtime-adapter getEnv for Deno/Bun compatibility
 import { getEnv } from "jsr:@dreamer/runtime-adapter";
 
 export function loadCommonConfig() {
@@ -706,33 +666,33 @@ export function loadCommonConfig() {
         },
       },
     },
-    // 其他公共配置（如需要 @dreamer/cache，需单独安装并自行初始化）
+    // Other shared config (for @dreamer/cache, install separately and init manually)
   };
 }
 ```
 
 ```typescript
-// src/common/config/main.dev.ts（默认使用 src 目录）
-// 公共开发环境配置
+// src/common/config/main.dev.ts (default uses src/)
+// Shared dev config
 import { loadCommonConfig } from "./main.ts";
 
 export function loadCommonDevConfig() {
   return {
     ...loadCommonConfig(),
-    // 开发环境特定配置
+    // Dev-specific
     debug: true,
     logLevel: "debug",
   };
 }
 ```
 
-#### 共享 App 实例
+#### Shared App instance
 
-在某些场景下，可能需要多个应用或工具（如 console CLI）共享同一个 App 实例：
+In some cases you may need multiple apps or tools (e.g. console CLI) to share one App instance:
 
 ```typescript
 // src/common/app.ts
-// 创建共享的 App 实例
+// Create shared App instance
 import type { AppConfig } from "jsr:@dreamer/dweb";
 import { App } from "jsr:@dreamer/dweb";
 import { loadCommonConfig } from "./config/main.ts";
@@ -751,13 +711,13 @@ export function createApp(config?: Partial<AppConfig>): App {
 }
 ```
 
-**使用共享实例**：
+**Using shared instance**:
 
 ```typescript
-// src/backend/main.ts（默认使用 src 目录）
+// src/backend/main.ts (default uses src/)
 import { createApp } from "../common/app.ts";
 
-// 通过 createApp 传入后端特定配置（server、router 等）
+// Pass backend-specific config (server, router, etc.) via createApp
 const app = createApp({
   name: "backend",
   server: { port: 3000, host: "localhost" },
@@ -768,37 +728,37 @@ await app.start();
 ```
 
 ```typescript
-// console CLI 工具中使用
+// In console CLI
 import { getDatabaseManager } from "jsr:@dreamer/dweb";
 import { getSharedApp } from "../common/app.ts";
 
-const app = getSharedApp(); // 共享实例（loadCommonConfig 需包含 database 配置）
+const app = getSharedApp(); // Shared instance (loadCommonConfig must include database)
 const manager = getDatabaseManager(app.container);
 const db = manager.getConnection("default");
-// 使用数据库服务执行 CLI 命令（需配置 config.database）
+// Use db for CLI commands (requires config.database)
 ```
 
-**多应用模式配置和启动**：
+**Multi-app mode config and startup**:
 
 ```typescript
 // deno.json
 {
   "tasks": {
-    // 开发环境启动（默认使用 src 目录）
+    // Dev (default uses src/)
     "dev:backend": "deno run --allow-all src/backend/main.ts",
     "dev:frontend": "deno run --allow-all src/frontend/main.ts",
     "dev:mobile": "deno run --allow-all src/mobile/main.ts",
-    // 如果不使用 src 目录，改为：
+    // Without src/:
     // "dev:backend": "deno run --allow-all backend/main.ts",
     // "dev:frontend": "deno run --allow-all frontend/main.ts",
     // "dev:mobile": "deno run --allow-all mobile/main.ts",
 
-    // 构建
+    // Build
     "build:backend": "deno task build --app=backend",
     "build:frontend": "deno task build --app=frontend",
     "build:mobile": "deno task build --app=mobile",
 
-    // 生产环境启动（启动构建后的版本）
+    // Production (run built version)
     "start:backend": "deno run --allow-all dist/backend/main.js",
     "start:frontend": "deno run --allow-all dist/frontend/main.js",
     "start:mobile": "deno run --allow-all dist/mobile/main.js"
@@ -806,48 +766,43 @@ const db = manager.getConnection("default");
 }
 ```
 
-**路径配置说明**：
+**Path config notes**:
 
-- **默认使用 `src/` 目录**：框架默认路径为
-  `src/backend/main.ts`、`src/frontend/main.ts` 等
-- **也可以不使用 `src/` 目录**：如果不使用 `src/` 目录，需要将路径改为
-  `backend/main.ts`、`frontend/main.ts` 等
-- 根据项目结构在配置中指定正确的路径即可
+- **Default with `src/`**: Framework defaults to `src/backend/main.ts`, `src/frontend/main.ts`, etc.
+- **Without `src/`**: Use `backend/main.ts`, `frontend/main.ts`, etc.
+- Specify correct paths in config according to your project structure
 
-**启动方式**：
+**How to run**:
 
-**开发环境**：
+**Dev**:
 
-- 手动分开启动：使用
-  `deno task dev:backend`、`deno task dev:frontend`、`deno task dev:mobile`
-  分别启动各个应用
-- 每个应用独立运行在不同的端口
-- 可以根据需要选择性启动部分应用
+- Start separately: `deno task dev:backend`, `deno task dev:frontend`, `deno task dev:mobile`
+- Each app runs on its own port
+- Can start only the apps you need
 
-**生产环境**：
+**Production**:
 
-1. 先构建：`deno task build:backend`、`deno task build:frontend`、`deno task build:mobile`
-2. 启动构建后的版本：`deno task start:backend`、`deno task start:frontend`、`deno task start:mobile`
-3. 每个应用独立运行在不同的端口
-4. 可以根据需要选择性启动部分应用
+1. Build: `deno task build:backend`, `deno task build:frontend`, `deno task build:mobile`
+2. Start built version: `deno task start:backend`, `deno task start:frontend`, `deno task start:mobile`
+3. Each app runs on its own port
+4. Can start only the apps you need
 
-### 4. 创建路由和特殊文件
+### 4. Create routes and special files
 
-#### 应用根组件（必须）
+#### App root component (required)
 
 ```typescript
-// src/routes/_app.tsx（默认使用 src 目录）
-// 这是应用的根组件，HTML 结构写在这里
-// 所有客户端初始化逻辑都可以在这里处理
+// src/routes/_app.tsx (default uses src/)
+// App root component; HTML structure goes here
+// All client init logic can be handled here
 
 import { useEffect } from "preact/hooks";
-// 使用 @dreamer/store 进行状态管理（推荐）
+// Use @dreamer/store for state (recommended)
 import { createStore } from "jsr:@dreamer/store";
-// 或使用 Signals 方式
-// import { signal } from "jsr:@dreamer/store";
-import { Analytics } from "./analytics"; // 第三方库
+// Or Signals: import { signal } from "jsr:@dreamer/store";
+import { Analytics } from "./analytics"; // Third-party lib
 
-// 使用 @dreamer/store 创建全局状态（推荐）
+// Create global state with @dreamer/store (recommended)
 interface UserStore {
   user: { name: string; isAuthenticated: boolean } | null;
   setUser: (user: UserStore["user"]) => void;
@@ -861,99 +816,67 @@ const useUserStore = createStore<UserStore>((set) => ({
 export default function App(
   { children }: { children: preact.ComponentChildren },
 ) {
-  // 客户端初始化逻辑（只在客户端执行）
+  // Client init (runs only on client)
   useEffect(() => {
-    // 1. 全局状态管理初始化
-    // @dreamer/store 不需要 Provider，可以直接使用
-
-    // 2. 第三方库初始化
-    Analytics.init({
-      apiKey: "your-api-key",
-    });
-
-    // 3. 全局事件监听
-    window.addEventListener("resize", handleResize);
-
-    // 4. 性能监控
-    if (typeof window !== "undefined") {
-      // 客户端特定的初始化逻辑
-      console.log("客户端应用已初始化");
+    // 1. Global state init - @dreamer/store needs no Provider
+    // 2. Third-party init
+    Analytics.init({ apiKey: "your-api-key" });
+    // 3. Global event listeners
+    const handleResize = () => {};
+    globalThis.addEventListener("resize", handleResize);
+    // 4. Performance monitoring
+    if (typeof globalThis !== "undefined") {
+      console.log("Client app initialized");
     }
-
-    // 清理函数
     return () => {
-      window.removeEventListener("resize", handleResize);
+      globalThis.removeEventListener("resize", handleResize);
     };
   }, []);
 
   return (
-    <html lang="zh-CN">
+    <html lang="en">
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>My App</title>
       </head>
       <body>
-        {/* 全局状态管理（使用 Preact 兼容的状态管理库） */}
-        <div id="root">
-          {children}
-        </div>
+        <div id="root">{children}</div>
       </body>
     </html>
   );
 }
 ```
 
-**自定义客户端初始化逻辑说明**：
+**Custom client init notes**:
 
-以下场景都可以在 `_app.tsx` 中处理，**不需要** `client/index.tsx`：
+All of the following can be handled in `_app.tsx`; **no** `client/index.tsx` needed:
 
-1. **全局状态管理**：
-   - 推荐使用 `@dreamer/store`（框架官方状态管理库）
-   - 支持 Store 方式（类似 Zustand）和 Signals 方式（类似 Preact Signals）
-   - 在 `_app.tsx` 中初始化状态管理
-   - 也可以使用其他 Preact 兼容的状态管理库（如 `@preact/signals`、`zustand`
-     等）
+1. **Global state**: Use `@dreamer/store` (Store or Signals); or other Preact-compatible libs
+2. **Third-party init**: Analytics, monitoring, UI libs in `useEffect`
+3. **Global config**: Theme, i18n, global styles
+4. **Client-only logic**: localStorage, event listeners, performance monitoring in `useEffect`
 
-2. **第三方库初始化**：
-   - Analytics（Google Analytics、Mixpanel 等）
-   - 监控工具（Sentry、LogRocket 等）
-   - UI 库（Material-UI、Ant Design 等）
-   - 在 `_app.tsx` 的 `useEffect` 中初始化
+**Why `client/index.tsx` is not needed**:
 
-3. **全局配置**：
-   - 主题配置
-   - 国际化配置
-   - 全局样式
-   - 在 `_app.tsx` 中配置
+- ✅ `_app.tsx` is enough; all client init can go there
+- ✅ `@dreamer/router` handles client init and hydration automatically
+- ✅ `useEffect` runs only on client, SSR-safe
+- ✅ Familiar pattern (like Next.js `_app.tsx`)
 
-4. **客户端特定逻辑**：
-   - 浏览器 API 使用（localStorage、sessionStorage）
-   - 事件监听（resize、scroll 等）
-   - 性能监控
-   - 在 `_app.tsx` 的 `useEffect` 中处理
+**Only use `client/index.tsx` when**:
 
-**为什么不需要 `client/index.tsx`**：
+- You need fully custom client entry generation
+- You need to bypass framework auto-generation
+- You need special build config
 
-- ✅ **`_app.tsx` 足够**：`_app.tsx`
-  是应用的根组件，所有客户端初始化逻辑都可以在这里处理
-- ✅ **自动执行**：`@dreamer/router` 会自动处理 `_app.tsx` 的客户端初始化和水合
-- ✅ **SSR 兼容**：`useEffect` 只在客户端执行，不会影响 SSR
-- ✅ **更符合约定**：类似 Next.js 的 `_app.tsx`，开发者更熟悉
+For 99% of cases, `_app.tsx` is sufficient.
 
-**只有在以下极端情况下才需要 `client/index.tsx`**：
-
-- 需要完全自定义客户端入口代码的生成逻辑
-- 需要绕过框架的自动代码生成
-- 需要特殊的构建配置
-
-对于 99% 的使用场景，在 `_app.tsx` 中处理就足够了。
-
-#### 布局组件
+#### Layout component
 
 ```typescript
-// src/routes/_layout.tsx（默认使用 src 目录）
-// 全局布局组件，所有路由都会使用这个布局
+// src/routes/_layout.tsx (default uses src/)
+// Global layout; all routes use this layout
 export default function Layout(
   { children }: { children: preact.ComponentChildren },
 ) {
@@ -961,8 +884,8 @@ export default function Layout(
     <div>
       <header>
         <nav>
-          <a href="/">首页</a>
-          <a href="/about">关于</a>
+          <a href="/">Home</a>
+          <a href="/about">About</a>
         </nav>
       </header>
       <main>{children}</main>
@@ -972,265 +895,232 @@ export default function Layout(
 }
 ```
 
-#### 404 错误页面
+#### 404 page
 
 ```typescript
-// src/routes/_404.tsx（默认使用 src 目录）
-// 当路由不匹配时显示此页面
+// src/routes/_404.tsx (default uses src/)
+// Shown when no route matches
 export default function NotFound() {
   return (
     <div>
-      <h1>404 - 页面未找到</h1>
-      <p>抱歉，您访问的页面不存在。</p>
-      <a href="/">返回首页</a>
+      <h1>404 - Page Not Found</h1>
+      <p>Sorry, the page you requested does not exist.</p>
+      <a href="/">Back to Home</a>
     </div>
   );
 }
 ```
 
-#### 错误页面
+#### Error page
 
 ```typescript
-// src/routes/_error.tsx（默认使用 src 目录）
-// 当发生错误时显示此页面
+// src/routes/_error.tsx (default uses src/)
+// Shown when an error occurs
 export default function Error({ error }: { error?: Error }) {
   return (
     <div>
-      <h1>出错了</h1>
-      <p>{error?.message || "发生了未知错误"}</p>
-      <a href="/">返回首页</a>
+      <h1>Error</h1>
+      <p>{error?.message || "An unknown error occurred"}</p>
+      <a href="/">Back to Home</a>
     </div>
   );
 }
 ```
 
-#### 路由中间件
+#### Route middleware
 
 ```typescript
-// src/routes/_middleware.ts（默认使用 src 目录）
-// 路由级别的中间件，在路由匹配前执行
+// src/routes/_middleware.ts (default uses src/)
+// Route-level middleware; runs before route matching
 export default function middleware(req: Request) {
-  // 可以在这里进行认证、重定向等操作
   const token = req.headers.get("authorization");
-
   if (!token && req.url.includes("/admin")) {
     return new Response(null, {
       status: 302,
       headers: { Location: "/login" },
     });
   }
-
-  // 返回 null 表示继续处理
-  return null;
+  return null; // Continue
 }
 ```
 
-#### 普通路由
+#### Normal routes
 
 ```typescript
-// src/routes/index.tsx（默认使用 src 目录）
+// src/routes/index.tsx (default uses src/)
 export default function Home() {
   return (
     <div>
-      <h1>欢迎使用 Dreamer Framework</h1>
+      <h1>Welcome to Dreamer Framework</h1>
     </div>
   );
 }
 ```
 
 ```typescript
-// src/routes/user/[id].tsx（默认使用 src 目录）
+// src/routes/user/[id].tsx (default uses src/)
 export default function User({ params }: { params: { id: string } }) {
   return (
     <div>
-      <h1>用户 ID: {params.id}</h1>
+      <h1>User ID: {params.id}</h1>
     </div>
   );
 }
 ```
 
-### 特殊文件说明
+### Special files reference
 
-| 文件名           | 说明       | 是否必须    | 作用                                         |
-| ---------------- | ---------- | ----------- | -------------------------------------------- |
-| `_app.tsx`       | 应用根组件 | ✅ **必须** | 定义 HTML 结构，所有页面都会包裹在这个组件中 |
-| `_layout.tsx`    | 布局组件   | ❌ 可选     | 全局布局，所有路由都会使用这个布局           |
-| `_404.tsx`       | 404 页面   | ❌ 可选     | 路由不匹配时显示的页面                       |
-| `_error.tsx`     | 错误页面   | ❌ 可选     | 发生错误时显示的页面                         |
-| `_middleware.ts` | 路由中间件 | ❌ 可选     | 路由级别的中间件，在路由匹配前执行           |
+| File           | Description   | Required | Role                                                       |
+| -------------- | ------------- | -------- | ---------------------------------------------------------- |
+| `_app.tsx`     | App root      | ✅       | Defines HTML structure; all pages are wrapped in this      |
+| `_layout.tsx`  | Layout        | ❌       | Global layout for all routes                               |
+| `_404.tsx`     | 404 page      | ❌       | Shown when no route matches                                |
+| `_error.tsx`   | Error page    | ❌       | Shown when an error occurs                                 |
+| `_middleware.ts` | Route middleware | ❌    | Route-level middleware; runs before route matching         |
 
-**文件处理规则**：
+**File rules**:
 
-- 以 `_` 开头的文件是特殊文件，不会生成路由
-- `_app.tsx` 是必须的，用于定义应用的 HTML 结构
-- 其他特殊文件都是可选的，根据需要添加
+- Files starting with `_` are special and do not generate routes
+- `_app.tsx` is required for HTML structure
+- Other special files are optional
 
-**文件路由命名约定**：
+**Route naming**:
 
-| 模式            | 示例                        | 对应路径                 |
-| --------------- | --------------------------- | ------------------------ |
-| `index.tsx`     | `routes/index.tsx`          | `/`                      |
-| `about.tsx`     | `routes/about.tsx`          | `/about`                 |
-| `[id].tsx`      | `routes/user/[id].tsx`      | `/user/:id`              |
-| `[...slug].tsx` | `routes/docs/[...slug].tsx` | `/docs/*`                |
-| `api/*.ts`      | `routes/api/users.ts`       | `/api/users`（API 路由） |
+| Pattern        | Example                    | Path                    |
+| -------------- | -------------------------- | ----------------------- |
+| `index.tsx`    | `routes/index.tsx`         | `/`                     |
+| `about.tsx`    | `routes/about.tsx`         | `/about`                 |
+| `[id].tsx`     | `routes/user/[id].tsx`     | `/user/:id`              |
+| `[...slug].tsx`| `routes/docs/[...slug].tsx`| `/docs/*`               |
+| `api/*.ts`     | `routes/api/users.ts`      | `/api/users` (API route) |
 
-支持 `.ts`、`.tsx`、`.js`、`.jsx`。路由组件可
-`import "*.css"`，框架会剥离并注入页面。
+Supports `.ts`, `.tsx`, `.js`, `.jsx`. Route components can `import "*.css"`; the framework strips and injects styles.
 
-**处理机制**：
+**Handling**:
 
-所有特殊文件都在 **`@dreamer/router`** 中处理：
+All special files are handled by **`@dreamer/router`**:
 
-1. **扫描阶段**：`@dreamer/router` 扫描 `routes/` 目录时，会识别以 `_`
-   开头的特殊文件
-2. **特殊文件处理**：
-   - `_app.tsx`：作为应用根组件，用于生成 HTML 结构和客户端入口代码
-   - `_layout.tsx`：作为布局组件，自动包裹所有路由页面
-   - `_404.tsx`：路由不匹配时自动使用
-   - `_error.tsx`：发生错误时自动使用
-   - `_middleware.ts`：在路由匹配前执行
-3. **客户端代码生成**：
-   - `@dreamer/router` 根据 `_app.tsx` 和路由文件自动生成客户端入口代码
-   - 生成的代码包含：React/Preact 初始化、路由导航、SSR 水合逻辑
-   - 不需要手动创建 `client/index.tsx`
-4. **编译处理**：
-   - `@dreamer/esbuild` 使用 `@dreamer/router` 自动生成的客户端入口代码进行编译
-   - 不影响编译和客户端渲染功能
+1. **Scan**: Identifies files starting with `_`
+2. **Special handling**: `_app.tsx` (root), `_layout.tsx` (layout), `_404.tsx`, `_error.tsx`, `_middleware.ts`
+3. **Client code**: `@dreamer/router` auto-generates client entry from `_app.tsx` and routes
+4. **Build**: `@dreamer/esbuild` uses the auto-generated entry
 
-**去掉 `client/index.tsx` 的影响分析**：
+**Impact of removing `client/index.tsx`**:
 
-- ✅ **不影响编译**：`@dreamer/router`
-  会自动生成客户端入口代码，`@dreamer/esbuild` 会使用这个自动生成的入口进行编译
-- ✅ **不影响客户端渲染（CSR）**：自动生成的客户端代码包含完整的 React/Preact
-  应用初始化、路由导航、状态管理等功能
-- ✅ **不影响服务端渲染（SSR）**：自动生成的代码包含 SSR 渲染和客户端水合逻辑
-- ✅ **支持静态站点生成（SSG）**：构建时预渲染所有路由为静态 HTML
-- ✅ **支持混合模式（Hybrid）**：SSR 首屏渲染，后续路由使用 CSR
-- ✅ **更简洁**：开发者只需要关注 `routes/`
-  目录中的路由文件，不需要手动管理客户端入口代码
+- ✅ Build: Auto-generated entry is used
+- ✅ CSR: Full React/Preact init, routing, state
+- ✅ SSR: SSR and hydration supported
+- ✅ SSG: Pre-render all routes to static HTML
+- ✅ Hybrid: SSR first screen, CSR for subsequent routes
+- ✅ Simpler: Focus on `routes/` only
 
 ---
 
-## 🎨 使用示例
+## 🎨 Examples
 
-### 事件系统
+### Event system
 
-App 继承
-**EventEmitter**，可在应用生命周期关键节点监听或触发事件，也可用于自定义业务事件。
+App extends **EventEmitter**. You can listen or emit at lifecycle points or for custom business events.
 
-| 方法                           | 说明                 |
-| ------------------------------ | -------------------- |
-| `app.on(eventName, handler)`   | 监听事件，可多次注册 |
-| `app.once(eventName, handler)` | 仅触发一次后自动移除 |
-| `app.emit(eventName, ...args)` | 触发事件，可传参     |
-| `app.off(eventName, handler)`  | 移除指定监听器       |
+| Method                         | Description                    |
+| ------------------------------ | ------------------------------ |
+| `app.on(eventName, handler)`   | Listen; can register multiple  |
+| `app.once(eventName, handler)` | Fire once then remove         |
+| `app.emit(eventName, ...args)` | Emit; can pass args            |
+| `app.off(eventName, handler)`  | Remove listener                |
 
-**内置事件**（由框架在对应时机自动触发）：
+**Built-in events** (emitted by the framework):
 
-| 事件名  | 触发时机                                                           | 说明       |
-| ------- | ------------------------------------------------------------------ | ---------- |
-| `init`  | 应用初始化完成（配置、服务、路由等就绪）                           | 仅一次     |
-| `start` | 应用启动（`await app.start()` 内，生命周期 start 前）              | 每次 start |
-| `stop`  | 应用停止（`await app.stop()` 内）                                  | 每次 stop  |
-| `build` | 构建完成（`await app.build()` 成功结束后）                         | 仅构建模式 |
-| `error` | 未捕获错误时（EventEmitter 约定，可主动 `app.emit("error", err)`） | 可选       |
+| Event   | When                                                       |
+| ------- | ---------------------------------------------------------- |
+| `init`  | App init done (config, services, routes ready)              |
+| `start` | App started (inside `await app.start()`, before lifecycle) |
+| `stop`  | App stopped (inside `await app.stop()`)                    |
+| `build` | Build done (after `await app.build()`)                     |
+| `error` | Uncaught error (can also `app.emit("error", err)`)          |
 
-**自定义事件**：除内置事件外，可任意命名并 `emit`。
+**Custom events**: Any name; use `emit` freely.
 
 ```typescript
 import { App } from "jsr:@dreamer/dweb";
 
 const app = new App({ name: "my-app", version: "1.0.0" /* ... */ });
 
-// 监听应用初始化完成
 app.on("init", () => {
-  console.log("应用已初始化，可安全访问 container、config 等");
+  console.log("App initialized; container, config, etc. are ready");
 });
 
-// 监听应用启动
 app.on("start", () => {
-  console.log("应用已启动，服务器开始监听");
+  console.log("App started; server listening");
 });
 
-// 监听构建完成
 app.on("build", () => {
-  console.log("构建完成，可执行部署脚本等");
+  console.log("Build done; can run deploy scripts");
 });
 
-// 一次性监听
 app.once("init", () => {
-  console.log("仅首次 init 时执行");
+  console.log("Runs only on first init");
 });
 
-// 自定义事件：业务侧触发与监听
 app.on("user:login", (userId: string) => {
-  console.log("用户登录:", userId);
+  console.log("User logged in:", userId);
 });
-// 某处触发：app.emit("user:login", "123");
+// Somewhere: app.emit("user:login", "123");
 ```
 
-**与插件钩子的区别**：插件的 `onInit`、`onStart`、`onStop` 等由
-**插件事件系统**（`@dreamer/dweb/core/plugin-events`）在已激活插件上调用，用于插件自身逻辑；App
-的 `init`、`start`、`stop` 等 **EventEmitter
-事件**面向应用层，用于日志、监控或与业务代码解耦。
+**Difference from plugin hooks**: Plugin `onInit`, `onStart`, `onStop` are from the **plugin event system** (`@dreamer/dweb/core/plugin-events`) for plugin logic. App `init`, `start`, `stop` are **EventEmitter events** for app-level logging, monitoring, or decoupling.
 
----
-
-### 中间件系统
+### Middleware system
 
 ```typescript
 import { App } from "jsr:@dreamer/dweb";
 
 const app = new App({ ... });
 
-// 全局中间件
+// Global middleware
 app.use(async (req, res, next) => {
-  // 请求日志
   console.log(`${req.method} ${req.url}`);
   await next();
 });
 
-// 路径匹配中间件
+// Path-prefix middleware
 app.use("/api", async (req, res, next) => {
-  // 只对 /api 路径生效
+  // Only for /api paths
   await next();
 });
 
-// 错误处理中间件
+// Error-handling middleware
 app.useError(async (req, res, error, next) => {
   console.error("Error:", error);
   res.status(500).json({ error: "Internal Server Error" });
 });
 ```
 
-### 插件系统
+### Plugin system
 
-插件只需实现 `name`、`version` 及事件钩子（如 `onInit`），无需实现
-`install`/`activate`。推荐在 `config.plugins`
-中配置，框架会自动完成注册→安装→激活。
+Plugins only need `name`, `version`, and event hooks (e.g. `onInit`); no `install`/`activate`. Configure in `config.plugins`; the framework handles register→install→activate.
 
-**插件生命周期钩子**：
+**Plugin lifecycle hooks**:
 
-| 钩子              | 触发时机                                   |
-| ----------------- | ------------------------------------------ |
-| `onInit`          | App 初始化完成，配置、服务容器就绪         |
-| `onStart`         | 应用启动，服务器即将监听                   |
-| `onStop`          | 应用停止                                   |
-| `onShutdown`      | 应用关闭前                                 |
-| `onRequest`       | 每次 HTTP 请求进入时                       |
-| `onResponse`      | 每次 HTTP 响应发出前                       |
-| `onSocket`        | Socket 连接建立时（Socket.IO / WebSocket） |
-| `onSocketClose`   | Socket 连接关闭时                          |
-| `onRoute`         | 路由扫描完成，可查看路由列表               |
-| `onBuild`         | 构建开始                                   |
-| `onBuildComplete` | 构建完成                                   |
-| `onError`         | 发生错误时                                 |
-| `onHealthCheck`   | 健康检查时                                 |
-| `onHotReload`     | HMR 热重载时                               |
+| Hook            | When                                                       |
+| --------------- | ---------------------------------------------------------- |
+| `onInit`        | App init done; config and container ready                  |
+| `onStart`       | App starting; server about to listen                        |
+| `onStop`        | App stopped                                                |
+| `onShutdown`    | Before app shutdown                                        |
+| `onRequest`     | On each HTTP request                                       |
+| `onResponse`    | Before each HTTP response                                  |
+| `onSocket`      | Socket connected (Socket.IO / WebSocket)                   |
+| `onSocketClose` | Socket disconnected                                        |
+| `onRoute`       | Route scan done; can inspect route list                    |
+| `onBuild`       | Build started                                              |
+| `onBuildComplete` | Build done                                               |
+| `onError`       | On error                                                   |
+| `onHealthCheck` | On health check                                            |
+| `onHotReload`   | On HMR hot reload                                          |
 
 ```typescript
-// 方式 1：通过 config.plugins 配置（推荐）
+// Method 1: via config.plugins (recommended)
 const config = {
   plugins: [
     {
@@ -1246,7 +1136,7 @@ const config = {
   ],
 };
 
-// 方式 2：手动注册（需自行 install、activate）
+// Method 2: manual register (must install/activate yourself)
 import { getPluginManager } from "jsr:@dreamer/dweb";
 
 const pluginManager = getPluginManager(app.container);
@@ -1264,33 +1154,31 @@ await pluginManager.install("auth-plugin");
 await pluginManager.activate("auth-plugin");
 ```
 
-**Socket 插件事件**：当配置 `socket.adapter`（`socketio` 或
-`websocket`）时，框架会在 Socket 连接建立/关闭时触发插件的
-`onSocket`、`onSocketClose` 钩子，可用于认证、连接记录等：
+**Socket plugin events**: When `socket.adapter` (`socketio` or `websocket`) is configured, the framework calls `onSocket` and `onSocketClose` on connect/disconnect for auth, logging, etc.:
 
 ```typescript
 {
   name: "socket-auth-plugin",
   version: "1.0.0",
   async onSocket(ctx, container) {
-    // ctx 为 Socket.IO 或 WebSocket 的 socket 上下文
-    // 连接建立时调用，可做认证、记录等
+    // ctx = Socket.IO or WebSocket socket context
+    // Called on connect; can do auth, logging, etc.
   },
   async onSocketClose(ctx, container) {
-    // 连接关闭时调用
+    // Called on disconnect
   },
 }
 ```
 
-### 数据库操作
+### Database operations
 
-框架已内置 `@dreamer/database`，配置 `config.database` 后从服务容器获取：
+The framework bundles `@dreamer/database`. Configure `config.database` and get it from the container:
 
 ```typescript
-// 从服务容器获取数据库服务
+// Get database from container
 const db = app.container.get("database");
 
-// 查询数据
+// Query
 const users = await db.table("users")
   .select("id", "name", "email")
   .where("age", ">", 18)
@@ -1298,43 +1186,38 @@ const users = await db.table("users")
   .limit(10)
   .execute();
 
-// 插入数据
+// Insert
 await db.table("users").insert({
   name: "Alice",
   email: "alice@example.com",
   age: 30,
 });
 
-// 事务
+// Transaction
 await db.transaction(async (trx) => {
   await trx.table("users").insert({ name: "Bob" });
   await trx.table("orders").insert({ user_id: 1, amount: 100 });
 });
 ```
 
-### 配置管理
+### Config management
 
-框架提供两类配置的获取方式：**框架配置**（`config/main.ts` 系列）和
-**业务配置**（`config/params.ts`）。在需要访问配置的地方（如
-`main.ts`、插件、中间件、API 路由等），通过 `app.container`
-获取服务容器后，使用下列 API。
+Two kinds of config: **framework config** (`config/main.ts`) and **business config** (`config/params.ts`). Use `app.container` to access them in main.ts, plugins, middleware, API routes, etc.
 
-#### 1. 获取框架配置（config/main.ts）
+#### 1. Framework config (config/main.ts)
 
-框架配置来自 `config/main.ts`、`config/main.{env}.ts`（如
-`main.dev.ts`），合并后的对象为 `AppConfig` 类型。
+From `config/main.ts`, `config/main.{env}.ts` (e.g. `main.dev.ts`); merged into `AppConfig`.
 
 ```typescript
 import { getConfig, getConfigManager, getConfigValue } from "jsr:@dreamer/dweb";
 
-// 在 main.ts、插件、中间件等有 app 或 container 的地方
 const container = app.container;
 
-// 获取完整框架配置对象（AppConfig）
+// Full AppConfig
 const config = getConfig(container);
 console.log(config.name, config.server?.port, config.database);
 
-// 按点号路径获取单个配置值（支持 "server.port"、"database.default.host" 等）
+// Single value by dot path ("server.port", "database.default.host", etc.)
 const port = getConfigValue<number>(container, "server.port", 3000);
 const dbHost = getConfigValue<string>(
   container,
@@ -1342,17 +1225,16 @@ const dbHost = getConfigValue<string>(
   "localhost",
 );
 
-// 获取 ConfigManager 实例（@dreamer/config，支持 envPrefix、热重载等）
+// ConfigManager (envPrefix, hot reload, etc.)
 const configManager = getConfigManager(container);
 const value = configManager.get("custom.key", "default");
 ```
 
-#### 2. 获取业务配置（config/params.ts）
+#### 2. Business config (config/params.ts)
 
-业务配置来自 `config/params.ts`，用于存储与业务相关的参数（如功能开关、第三方
-API 地址、分页大小、超时时间等），与框架配置分离，便于维护。
+From `config/params.ts`; for feature flags, API URLs, pagination, timeouts, etc. Separate from framework config.
 
-**params.ts 示例**：
+**params.ts example**:
 
 ```typescript
 // config/params.ts
@@ -1372,17 +1254,15 @@ export default {
 };
 ```
 
-**获取方式**：
+**Access**:
 
 ```typescript
 import { getParams, getParamValue } from "jsr:@dreamer/dweb";
 
 const container = app.container;
 
-// 获取完整业务配置对象
 const params = getParams(container);
 
-// 按点号路径获取单个值（支持 "features.enablePay"、"api.timeout"、"pagination.defaultPageSize" 等）
 const enablePay = getParamValue<boolean>(
   container,
   "features.enablePay",
@@ -1396,55 +1276,47 @@ const pageSize = getParamValue<number>(
 );
 ```
 
-#### 3. 获取环境变量（两种方式）
+#### 3. Environment variables (two ways)
 
-**方式一：通过 Config 获取（推荐，无需 runtime-adapter）**
+**Via Config (recommended, no runtime-adapter)**:
 
-配置 `envPrefix` 后，ConfigManager 会自动将带前缀的环境变量合并到配置中，可通过
-`getConfigValue` 或 `getConfigManager().get()` 访问，**无需** 单独引入
-`@dreamer/runtime-adapter`。
+With `envPrefix`, ConfigManager merges prefixed env vars into config. Use `getConfigValue` or `getConfigManager().get()`; no need for `@dreamer/runtime-adapter`.
 
 ```typescript
-// AppConfig 中设置 envPrefix: "APP_"
+// AppConfig: envPrefix: "APP_"
 const app = new App({
   envPrefix: "APP_",
   // ...
 });
 
-// 环境变量 APP_PORT、APP_SERVER_HOST、APP_DATABASE_HOST 等会自动合并到配置
-// 命名规则：APP_SERVER_PORT -> server.port，APP_DATABASE_HOST -> database.host（下划线转嵌套）
+// APP_PORT, APP_SERVER_HOST, APP_DATABASE_HOST, etc. merged into config
+// APP_SERVER_PORT -> server.port, APP_DATABASE_HOST -> database.host (underscore to nested)
 const port = getConfigValue<string>(container, "server.port", "3000");
 const host = getConfigValue<string>(container, "server.host", "127.0.0.1");
 const dbHost = getConfigValue<string>(container, "database.host", "localhost");
-
-// 或使用 ConfigManager
-const configManager = getConfigManager(container);
-const port2 = configManager.get("server.port", "3000");
 ```
 
-**环境变量命名示例**（`envPrefix: "APP_"` 时）：
+**Env var naming** (with `envPrefix: "APP_"`):
 
-| 环境变量                      | 配置键                    | 说明         |
-| ----------------------------- | ------------------------- | ------------ |
-| `APP_PORT`                    | `port`                    | 顶层配置     |
-| `APP_SERVER_PORT`             | `server.port`             | 嵌套配置     |
-| `APP_DATABASE_HOST`           | `database.host`           | 下划线转点号 |
-| `APP_DATABASE_CONNECTION_URL` | `database.connection.url` | 多级嵌套     |
+| Env var                      | Config key                  |
+| ---------------------------- | --------------------------- |
+| `APP_PORT`                    | `port`                      |
+| `APP_SERVER_PORT`             | `server.port`               |
+| `APP_DATABASE_HOST`           | `database.host`             |
+| `APP_DATABASE_CONNECTION_URL` | `database.connection.url`    |
 
-**方式二：直接读取环境变量（需 runtime-adapter）**
+**Direct env read (with runtime-adapter)**:
 
-在 `config/main.ts` 中**定义**配置时，或需要读取**未带前缀**的环境变量时，使用
-`getEnv`：
+When **defining** config in `config/main.ts`, or for **unprefixed** env vars, use `getEnv`:
 
 ```typescript
 import { getEnv } from "jsr:@dreamer/runtime-adapter";
 
-// 获取环境变量（不存在时返回 undefined）
 const dbHost = getEnv("DB_HOST") ?? "localhost";
 const port = parseInt(getEnv("PORT") ?? "3000");
 ```
 
-**在 config/main.ts 中定义配置**（此时 Config 尚未加载，需用 getEnv）：
+**In config/main.ts** (Config not loaded yet; use getEnv):
 
 ```typescript
 // config/main.ts
@@ -1454,7 +1326,7 @@ import { getEnv } from "jsr:@dreamer/runtime-adapter";
 export default {
   name: "my-app",
   version: "1.0.0",
-  envPrefix: "APP_", // 可选：启用后 APP_* 环境变量会覆盖下方默认值
+  envPrefix: "APP_",
   server: {
     port: parseInt(getEnv("PORT") ?? "3000"),
     host: getEnv("HOST") ?? "127.0.0.1",
@@ -1474,39 +1346,34 @@ export default {
 } satisfies AppConfig;
 ```
 
-**总结**：应用运行时优先使用 `getConfigValue` / `getConfigManager().get()`
-访问配置（含环境变量）；仅在 `config/main.ts`
-内定义或需要未带前缀的环境变量时，使用 `getEnv`。
+**Summary**: Prefer `getConfigValue` / `getConfigManager().get()` at runtime (includes env vars). Use `getEnv` only when defining config or for unprefixed env vars.
 
-#### 4. 配置加载顺序
+#### 4. Config load order
 
-| 优先级 | 文件                                     | 说明                                           |
-| ------ | ---------------------------------------- | ---------------------------------------------- |
-| 低     | `common/config/main.ts`                  | 公共配置（多应用时）                           |
-| 中     | `config/main.ts` 或 `src/config/main.ts` | 应用基础配置                                   |
-| 中     | `config/main.{env}.ts`                   | 按环境覆盖（如 `main.dev.ts`、`main.prod.ts`） |
-| 高     | 入口传入的配置                           | `new App({ ... })` 中传入的对象                |
+| Priority | File                          | Description                          |
+| -------- | ----------------------------- | ------------------------------------ |
+| Low      | `common/config/main.ts`       | Shared (multi-app)                   |
+| Mid      | `config/main.ts`               | Base config                          |
+| Mid      | `config/main.{env}.ts`         | Env override (main.dev.ts, etc.)    |
+| High     | Config passed to `new App()`   | Overrides                            |
 
-`params.ts` 独立加载，存储在容器的 `params` 键下，通过 `getParams` /
-`getParamValue` 访问。
+`params.ts` loads separately; stored under `params`; use `getParams` / `getParamValue`.
 
-#### 5. 配置目录与文件约定
+#### 5. Config directory and files
 
-| 文件                   | 说明                                     | 加载时机                 |
-| ---------------------- | ---------------------------------------- | ------------------------ |
-| `config/main.ts`       | 基础配置，所有环境共享                   | App 初始化时             |
-| `config/main.{env}.ts` | 环境覆盖（如 main.dev.ts、main.prod.ts） | 按 DENO_ENV/BUN_ENV 选择 |
-| `config/params.ts`     | 业务参数（功能开关、API 地址等）         | 与 main 系列一起加载     |
+| File                 | Description                          | Loaded when          |
+| -------------------- | ------------------------------------ | -------------------- |
+| `config/main.ts`     | Base config, shared across envs     | App init             |
+| `config/main.{env}.ts` | Env override (main.dev.ts, etc.)   | By DENO_ENV/BUN_ENV  |
+| `config/params.ts`   | Business params (flags, API URLs)    | With main series     |
 
-**配置目录推断**：从入口路径推断（如 `src/backend/main.ts` →
-`src/backend/config`），无法推断时使用默认 `./config`、`./src/config`。
+**Config dir**: Inferred from entry path (e.g. `src/backend/main.ts` → `src/backend/config`); fallback `./config`, `./src/config`.
 
-### 数据验证
+### Data validation
 
 ```typescript
 import { number, object, string, validate } from "jsr:@dreamer/utils/validator";
 
-// 验证请求数据（使用 @dreamer/utils 的 validator 模块）
 const schema = object({
   name: string().min(2).required(),
   email: string().email().required(),
@@ -1519,20 +1386,19 @@ if (!result.success) {
 }
 ```
 
-### 日志记录
+### Logging
 
 ```typescript
-// 从服务容器获取日志服务
 const logger = app.container.get("logger");
 
-logger.info("应用启动");
-logger.warn("警告信息");
-logger.error("错误信息");
+logger.info("App started");
+logger.warn("Warning");
+logger.error("Error");
 ```
 
-### 统一错误处理
+### Unified error handling
 
-框架提供 `DwebError` 统一错误类，支持错误码、i18n 国际化：
+`DwebError` with error codes and i18n:
 
 ```typescript
 import {
@@ -1543,41 +1409,38 @@ import {
   throwDwebError,
 } from "jsr:@dreamer/dweb";
 
-// 抛出错误
 throwDwebError(DwebErrorCode.CONFIG_NAME_INVALID);
 throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, {
-  reason: "段数过多",
+  reason: "Too many segments",
   hint: "...",
   path: "/foo",
 });
 
-// 创建错误实例（不抛出）
 const err = createDwebError(DwebErrorCode.FILE_READ_FAILED, {
   path: "config.json",
 });
 
-// 类型守卫
 if (isDwebError(error)) {
   console.log(error.code, error.messageKey, error.params);
 }
 
-// 接入 i18n：注册翻译器后，错误消息将使用翻译结果
-// 框架内置 i18n：在 config/main.ts 中设置 language: "zh-CN" | "en-US" 可切换 CLI、日志、错误消息等框架文案
 setDwebErrorTranslator((key, params) => {
   if (key === "errors.DWEB_E01") return "Config 'name' must be string";
-  return key; // 未翻译时返回 key
+  return key;
 });
 ```
 
-错误码分段：E01～E19 配置、E20～E21 入口路径、E22 运行时、E23～E29
-功能模块、E30～E32 文件/HTTP、E33 未知错误。详见
-[utils/errors.ts](./src/utils/errors.ts)。
+**Built-in i18n**: Set `language: "zh-CN" | "en-US"` in `config/main.ts` to switch CLI, logs, error messages, and other framework copy.
 
-## 渲染模式
+Error code ranges: E01–E19 config, E20–E21 entry path, E22 runtime, E23–E29 features, E30–E32 file/HTTP, E33 unknown. See [utils/errors.ts](./src/utils/errors.ts).
 
-通过 `render.mode` 配置，支持四种模式：`ssr`、`csr`、`ssg`、`hybrid`。
+---
 
-### 服务端渲染（SSR）
+## Render modes
+
+Configure via `render.mode`: `ssr`, `csr`, `ssg`, `hybrid`.
+
+### Server-side rendering (SSR)
 
 ```typescript
 const app = new App({
@@ -1587,7 +1450,7 @@ const app = new App({
 });
 ```
 
-### 客户端渲染（CSR）
+### Client-side rendering (CSR)
 
 ```typescript
 const app = new App({
@@ -1597,10 +1460,10 @@ const app = new App({
 });
 ```
 
-### 混合模式（Hybrid）
+### Hybrid mode
 
 ```typescript
-// 首屏 SSR，后续路由 CSR + 客户端水合
+// SSR first screen, CSR for subsequent routes + client hydration
 const app = new App({
   render: { engine: "preact", mode: "hybrid" },
   router: { routesDir: "./src/routes" },
@@ -1608,10 +1471,10 @@ const app = new App({
 });
 ```
 
-### 静态站点生成（SSG）
+### Static site generation (SSG)
 
 ```typescript
-// 从预渲染输出目录提供静态 HTML；构建阶段需单独调用 @dreamer/render 的 renderSSG 生成到 config.render.ssg.outputDir（默认 dist/static）
+// Serve pre-rendered static HTML; build step must call @dreamer/render renderSSG to output to config.render.ssg.outputDir (default dist/static)
 const app = new App({
   render: {
     engine: "preact",
@@ -1623,321 +1486,273 @@ const app = new App({
 });
 ```
 
-**SSG 使用场景**：
+**SSG use cases**:
 
-- 博客、文档站点
-- 营销页面
-- 产品展示页面
-- 任何不需要动态数据的页面
+- Blogs, docs sites
+- Marketing pages
+- Product pages
+- Any page without dynamic data
 
-**SSG 优势**：
+**SSG benefits**:
 
-- ✅ 极快的加载速度（CDN 缓存）
-- ✅ 更好的 SEO（完全静态 HTML）
-- ✅ 更低的服务器成本（无需运行时）
-- ✅ 更高的安全性（无服务器端代码执行）
+- ✅ Fast load (CDN cache)
+- ✅ Better SEO (static HTML)
+- ✅ Lower server cost (no runtime)
+- ✅ Higher security (no server execution)
 
-## 开发工具
+## Dev tools
 
-### CLI 工具
+### CLI
 
-CLI 可通过项目内 `deno task` 使用，或安装为全局命令 `dweb-cli`（运行
-`deno run -A jsr:@dreamer/dweb/setup`）。
+Use via `deno task` in the project, or install globally as `dweb-cli` (`deno run -A jsr:@dreamer/dweb/setup`).
 
-**单应用模式**：
-
-```bash
-# 启动开发服务器
-deno task dev
-
-# 构建生产版本
-deno task build
-
-# 启动生产服务器（构建后的版本）
-deno task start
-
-# 运行测试
-deno task test
-
-# 代码格式化
-deno task fmt
-
-# 代码检查
-deno task lint
-```
-
-**多应用模式**：
+**Single-app**:
 
 ```bash
-# 开发环境启动
-deno task dev:backend    # 启动后端开发服务器
-deno task dev:frontend   # 启动前端开发服务器
-deno task dev:mobile     # 启动移动端开发服务器
-
-# 构建
-deno task build:backend  # 构建后端
-deno task build:frontend # 构建前端
-deno task build:mobile   # 构建移动端
-
-# 生产环境启动（构建后的版本）
-deno task start:backend  # 启动后端生产服务器
-deno task start:frontend # 启动前端生产服务器
-deno task start:mobile   # 启动移动端生产服务器
-
-# 其他工具
-deno task test           # 运行测试
-deno task fmt            # 代码格式化
-deno task lint           # 代码检查
+deno task dev      # Start dev server
+deno task build    # Build for production
+deno task start    # Start production (built version)
+deno task test     # Run tests
+deno task fmt      # Format
+deno task lint     # Lint
 ```
 
-### HMR（热模块替换）
+**Multi-app**:
 
-开发模式下自动支持 HMR（Hot Module
-Replacement），修改代码后自动刷新，无需手动刷新浏览器。
+```bash
+deno task dev:backend    # Backend dev server
+deno task dev:frontend   # Frontend dev server
+deno task dev:mobile     # Mobile dev server
 
-## 与其他框架对比
+deno task build:backend  # Build backend
+deno task build:frontend # Build frontend
+deno task build:mobile   # Build mobile
 
-| 特性       | @dreamer/dweb | Next.js | Remix   | SvelteKit |
-| ---------- | ------------- | ------- | ------- | --------- |
-| 运行时     | Deno / Bun    | Node.js | Node.js | Node.js   |
-| 文件路由   | ✅            | ✅      | ✅      | ✅        |
-| SSR        | ✅            | ✅      | ✅      | ✅        |
-| CSR        | ✅            | ✅      | ✅      | ✅        |
-| SSG        | ✅            | ✅      | ✅      | ✅        |
-| Hybrid     | ✅            | ✅      | ✅      | ✅        |
-| 中间件     | ✅            | ✅      | ✅      | ✅        |
-| 插件系统   | ✅            | ❌      | ❌      | ❌        |
-| 服务容器   | ✅            | ❌      | ❌      | ❌        |
-| 数据库     | ✅            | ❌      | ❌      | ❌        |
-| TypeScript | ✅            | ✅      | ✅      | ✅        |
+deno task start:backend  # Start backend production
+deno task start:frontend # Start frontend production
+deno task start:mobile   # Start mobile production
 
-## 应用模式对比
+deno task test   # Run tests
+deno task fmt    # Format
+deno task lint   # Lint
+```
 
-| 特性         | 单应用模式                                         | 多应用模式                                                                 |
-| ------------ | -------------------------------------------------- | -------------------------------------------------------------------------- |
-| **App 实例** | 单一实例                                           | 多个独立实例                                                               |
-| **项目结构** | 简单（routes、main.ts 或 src/routes、src/main.ts） | 复杂（backend、frontend、mobile 或 src/backend、src/frontend、src/mobile） |
-| **配置管理** | 单一配置目录                                       | 每个应用独立配置 + 公共配置（common/config）                               |
-| **适用场景** | 中小型项目、全栈应用                               | 大型项目、前后端分离、多端应用                                             |
-| **代码共享** | 直接共享                                           | 通过 common 目录共享                                                       |
-| **启动方式** | 单一入口                                           | 多个入口（可并行启动）                                                     |
-| **复杂度**   | 低                                                 | 中高                                                                       |
-| **共享实例** | 直接使用                                           | 通过 getSharedApp() 获取共享实例                                           |
+### HMR (Hot Module Replacement)
 
-**选择建议**：
+HMR is enabled in dev mode; code changes trigger automatic refresh without manual reload.
 
-- **单应用模式**：适合大多数场景，简单直接，推荐默认使用
-- **多应用模式**：适合大型项目、需要前后端分离、多端应用（Web、Mobile）的场景
+## Framework comparison
 
----
+| Feature       | @dreamer/dweb | Next.js | Remix   | SvelteKit |
+| ------------- | ------------- | ------- | ------- | --------- |
+| Runtime       | Deno / Bun    | Node.js | Node.js | Node.js   |
+| File routing  | ✅            | ✅      | ✅      | ✅        |
+| SSR           | ✅            | ✅      | ✅      | ✅        |
+| CSR           | ✅            | ✅      | ✅      | ✅        |
+| SSG           | ✅            | ✅      | ✅      | ✅        |
+| Hybrid        | ✅            | ✅      | ✅      | ✅        |
+| Middleware    | ✅            | ✅      | ✅      | ✅        |
+| Plugin system | ✅            | ❌      | ❌      | ❌        |
+| Service container | ✅     | ❌      | ❌      | ❌        |
+| Database      | ✅            | ❌      | ❌      | ❌        |
+| TypeScript    | ✅            | ✅      | ✅      | ✅        |
 
-## 📚 API 参考
+## Application mode comparison
 
-### 核心 API
+| Aspect        | Single-app                                      | Multi-app                                                                 |
+| ------------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
+| **App instances** | One                                         | Multiple                                                                  |
+| **Structure** | Simple (routes, main.ts or src/routes, src/main.ts) | Complex (backend, frontend, mobile or src/backend, src/frontend, src/mobile) |
+| **Config**    | Single config dir                               | Per-app config + shared (common/config)                                   |
+| **Use case**  | Small/medium, full-stack                        | Large, frontend/backend split, multi-platform                             |
+| **Sharing**   | Direct                                          | Via common/                                                               |
+| **Startup**   | Single entry                                    | Multiple entries (can run in parallel)                                    |
+| **Complexity**| Low                                             | Medium–high                                                               |
+| **Shared instance** | Direct use                                | Via getSharedApp()                                                         |
 
-| API                          | 说明                                                |
-| ---------------------------- | --------------------------------------------------- |
-| `App`                        | 框架主类，整合服务、中间件、插件、路由、渲染        |
-| `app.use(middleware)`        | 注册全局中间件                                      |
-| `app.use(path, middleware)`  | 注册路径匹配中间件                                  |
-| `app.registerPlugin(plugin)` | 注册插件                                            |
-| `app.on(stage, hook)`        | 注册生命周期钩子（init、start、stop、build、error） |
-| `app.start()`                | 启动应用（开发/生产服务器）                         |
-| `app.stop()`                 | 停止应用                                            |
-| `app.build()`                | 构建生产版本                                        |
-| `app.shutdown()`             | 优雅关闭（含 SIGTERM/SIGINT 处理）                  |
-| `app.container`              | 服务容器，用于获取 getConfig、getLogger 等          |
-| `app.stage`                  | 当前生命周期阶段                                    |
+**Recommendation**:
 
-### 配置与参数
-
-| API                                        | 说明                             |
-| ------------------------------------------ | -------------------------------- |
-| `getConfig(container)`                     | 获取完整 AppConfig               |
-| `getConfigValue(container, path, default)` | 按点号路径获取配置值             |
-| `getConfigManager(container)`              | 获取 ConfigManager（支持热重载） |
-| `getParams(container)`                     | 获取业务配置（config/params.ts） |
-| `getParamValue(container, path, default)`  | 按点号路径获取业务参数           |
-
-### 服务与模块
-
-| API                              | 说明                                                      |
-| -------------------------------- | --------------------------------------------------------- |
-| `getLogger(container)`           | 获取 Logger                                               |
-| `getRouter(container)`           | 获取路由实例                                              |
-| `getRender(container)`           | 获取渲染服务                                              |
-| `getBuild(container)`            | 获取构建器                                                |
-| `getServer(container)`           | 获取 HTTP 服务器                                          |
-| `getPluginManager(container)`    | 获取插件管理器                                            |
-| `getLifecycleManager(container)` | 获取生命周期管理器                                        |
-| `getDatabaseManager(container)`  | 获取数据库管理器（需配置 database）                       |
-| `getSocketIoServer(container)`   | 获取 Socket.IO 实例（需配置 socket.adapter: "socketio"）  |
-| `getWebSocketServer(container)`  | 获取 WebSocket 实例（需配置 socket.adapter: "websocket"） |
-
-### 错误处理
-
-| API                              | 说明                          |
-| -------------------------------- | ----------------------------- |
-| `throwDwebError(code, params?)`  | 抛出 DwebError                |
-| `createDwebError(code, params?)` | 创建 DwebError 实例（不抛出） |
-| `isDwebError(error)`             | 类型守卫                      |
-| `setDwebErrorTranslator(fn)`     | 注册错误消息翻译器（i18n）    |
-| `DwebErrorCode`                  | 错误码枚举（DWEB_E01～E33）   |
-
-### 类型导出
-
-| 类型            | 说明                                  |
-| --------------- | ------------------------------------- |
-| `AppConfig`     | 应用配置接口                          |
-| `IApp`          | App 类接口                            |
-| `AppPlugin`     | 插件类型                              |
-| `AppMiddleware` | 中间件类型                            |
-| `AppStage`      | 生命周期阶段                          |
-| `Context`       | 路由中间件上下文（HttpContext 别名）  |
-| `Next`          | 中间件 next 函数类型                  |
-| `SocketConfig`  | 实时通信配置（socketio \| websocket） |
+- **Single-app**: Default for most projects; simple and direct
+- **Multi-app**: For large projects, frontend/backend separation, multi-platform (Web, Mobile)
 
 ---
 
-## 📚 CLI 命令参考
+## 📚 API reference
 
-通过 `dweb-cli` 或 `deno task` 使用：
+### Core API
 
-| 命令             | 说明           | 常用选项                                    |
-| ---------------- | -------------- | ------------------------------------------- |
-| `init [appName]` | 初始化新项目   | `--beta` 使用 beta 依赖                     |
-| `dev`            | 启动开发服务器 | `-a, --app` 指定应用（多应用时）            |
-| `build`          | 构建生产版本   | `-a, --app` 指定应用                        |
-| `start`          | 启动生产服务器 | `-a, --app` 指定应用                        |
-| `preview`        | 预览构建结果   | `-p, --port` 端口；`-a, --app` 应用         |
-| `generate (g)`   | 代码生成       | `-t, --type` 类型；`-n, --name` 名称        |
-| `test`           | 运行测试       | `-a, --app` 指定应用                        |
-| `lint`           | 代码检查       | -                                           |
-| `fmt`            | 代码格式化     | -                                           |
-| `clean`          | 清理构建产物   | -                                           |
-| `db migrate (m)` | 数据库迁移     | `-a, --action` up/down；`-n, --name` 迁移名 |
-| `db seed`        | 数据库种子     | -                                           |
-| `db status`      | 数据库状态     | -                                           |
-| `upgrade`        | 升级 dweb 依赖 | `--beta` 使用 beta 版本                     |
+| API                          | Description                                                       |
+| ---------------------------- | ----------------------------------------------------------------- |
+| `App`                        | Main class; integrates services, middleware, plugins, router, render |
+| `app.use(middleware)`        | Register global middleware                                        |
+| `app.use(path, middleware)`  | Register path-prefix middleware                                   |
+| `app.registerPlugin(plugin)`| Register plugin                                                   |
+| `app.on(stage, hook)`        | Lifecycle hooks (init, start, stop, build, error)                  |
+| `app.start()`                | Start app (dev/production server)                                 |
+| `app.stop()`                 | Stop app                                                          |
+| `app.build()`                | Build for production                                              |
+| `app.shutdown()`             | Graceful shutdown (SIGTERM/SIGINT)                                |
+| `app.container`              | Service container (getConfig, getLogger, etc.)                    |
+| `app.stage`                  | Current lifecycle stage                                           |
 
-**generate 支持的类型**：`service`、`api`、`model`、`route`。
+### Config and params
 
----
+| API                                        | Description                          |
+| ------------------------------------------ | ------------------------------------ |
+| `getConfig(container)`                     | Full AppConfig                       |
+| `getConfigValue(container, path, default)`  | Config value by dot path             |
+| `getConfigManager(container)`               | ConfigManager (hot reload)            |
+| `getParams(container)`                     | Business config (config/params.ts)   |
+| `getParamValue(container, path, default)`   | Business param by dot path            |
 
-## 📚 错误码参考
+### Services and modules
 
-| 段        | 错误码   | 说明                                                        |
-| --------- | -------- | ----------------------------------------------------------- |
-| 配置      | E01～E19 | name、version、render、middlewares、plugins 等配置校验      |
-| 入口      | E20～E21 | 入口路径格式、段数                                          |
-| 运行时    | E22      | 仅支持 Deno/Bun                                             |
-| 功能      | E23～E29 | App 未初始化、Socket 未配置、生成类型、构建失败、中间件加载 |
-| 文件/HTTP | E30～E32 | 文件读取、HTTP 请求失败                                     |
-| 未知      | E33      | 未知错误包装                                                |
+| API                              | Description                                                |
+| -------------------------------- | ---------------------------------------------------------- |
+| `getLogger(container)`           | Logger                                                     |
+| `getRouter(container)`           | Router                                                     |
+| `getRender(container)`           | Render service                                             |
+| `getBuild(container)`            | Build service                                              |
+| `getServer(container)`          | HTTP server                                                |
+| `getPluginManager(container)`    | Plugin manager                                             |
+| `getLifecycleManager(container)` | Lifecycle manager                                          |
+| `getDatabaseManager(container)`  | Database manager (requires database config)                |
+| `getSocketIoServer(container)`   | Socket.IO (requires socket.adapter: "socketio")            |
+| `getWebSocketServer(container)`  | WebSocket (requires socket.adapter: "websocket")           |
 
-完整定义见 [src/utils/errors.ts](./src/utils/errors.ts)。可通过
-`setDwebErrorTranslator` 接入 i18n 翻译。
+### Error handling
 
----
+| API                              | Description                    |
+| -------------------------------- | ------------------------------ |
+| `throwDwebError(code, params?)`  | Throw DwebError                |
+| `createDwebError(code, params?)` | Create DwebError (no throw)     |
+| `isDwebError(error)`             | Type guard                     |
+| `setDwebErrorTranslator(fn)`     | Register i18n translator      |
+| `DwebErrorCode`                  | Error code enum (DWEB_E01–E33)  |
 
-## 📚 配置文档
+### Type exports
 
-- **[AppConfig 完整配置示例](./APP_CONFIG.md)**：涵盖
-  language、server、router、render、build、logger、database、socket、plugins、middlewares
-  等全部配置项及单应用/多应用示例。
-- **配置与参数获取**：见上方「[配置管理](#配置管理)」章节，包含：
-  - 框架配置（`getConfig`、`getConfigValue`）的获取方式
-  - 业务配置（`config/params.ts`）的获取方式（`getParams`、`getParamValue`）
-  - 环境变量的获取方式（`getEnv`）
-  - 配置加载顺序说明
-
----
-
-## 📦 扩展库
-
-以下为 dreamer-jsr 生态中**按需选用**的扩展库，用于在 dweb
-项目里增加认证、缓存、支付、实时通信等能力。dweb
-已内置运行所需的核心依赖，无需单独安装；仅当需要下表能力时再安装对应库。
-
-| 库名                         | 简介                                                       | GitHub                                                           |
-| ---------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------- |
-| **@dreamer/auth**            | 用户认证：JWT、OAuth2、Session、刷新 Token、权限校验       | [auth](https://github.com/shuliangfu/auth)                       |
-| **@dreamer/cache**           | 缓存：内存 / 文件 / Redis / Memcached，统一接口            | [cache](https://github.com/shuliangfu/cache)                     |
-| **@dreamer/console**         | 控制台与 CLI：命令封装、美化输出、表格、交互               | [console](https://github.com/shuliangfu/console)                 |
-| **@dreamer/crypto**          | 加密与安全：哈希、加解密、签名、JWT 等                     | [crypto](https://github.com/shuliangfu/crypto)                   |
-| **@dreamer/database**        | 数据库：多库适配、ORM/ODM、查询构建、迁移                  | [database](https://github.com/shuliangfu/database)               |
-| **@dreamer/email**           | 邮件发送：SMTP 客户端、HTML 邮件                           | [email](https://github.com/shuliangfu/email)                     |
-| **@dreamer/foundry**         | 智能合约：Foundry 部署与验证（EVM 链）                     | [foundry](https://github.com/shuliangfu/foundry)                 |
-| **@dreamer/humancheck**      | 人机验证：图形/数学/滑块验证码、TOTP、第三方               | [humancheck](https://github.com/shuliangfu/humancheck)           |
-| **@dreamer/i18n**            | 国际化：翻译、格式化、多语言管理                           | [i18n](https://github.com/shuliangfu/i18n)                       |
-| **@dreamer/image**           | 图片处理：缩放、转换、压缩（服务端/客户端）                | [image](https://github.com/shuliangfu/image)                     |
-| **@dreamer/logger**          | 日志：多级别、格式化、轮转（服务端/客户端）                | [logger](https://github.com/shuliangfu/logger)                   |
-| **@dreamer/markdown**        | Markdown：解析、GFM、目录、多种扩展语法                    | [markdown](https://github.com/shuliangfu/markdown)               |
-| **@dreamer/middlewares**     | HTTP 中间件集：Request ID、日志、CORS 等                   | [middlewares](https://github.com/shuliangfu/middlewares)         |
-| **@dreamer/notification**    | 通知：Web Push、邮件、短信、Webhook、模板与队列            | [notification](https://github.com/shuliangfu/notification)       |
-| **@dreamer/payment**         | 统一支付：Stripe、PayPal、支付宝、微信、Web3 等            | [payment](https://github.com/shuliangfu/payment)                 |
-| **@dreamer/plugins**         | 官方插件集：CSS 原子化、i18n、SEO、PWA、认证等             | [plugins](https://github.com/shuliangfu/plugins)                 |
-| **@dreamer/queue**           | 任务队列：多适配器、调度、并发控制                         | [queue](https://github.com/shuliangfu/queue)                     |
-| **@dreamer/runtime-adapter** | 运行时适配：Deno/Bun 统一的 fs、path、env 等               | [runtime-adapter](https://github.com/shuliangfu/runtime-adapter) |
-| **@dreamer/session**         | 会话：持久化 Session，Redis/MongoDB/文件后端               | [session](https://github.com/shuliangfu/session)                 |
-| **@dreamer/service**         | 服务容器：依赖注入、单例/多例/工厂                         | [service](https://github.com/shuliangfu/service)                 |
-| **@dreamer/socket-io**       | Socket.IO：实时双向通信，多运行时（dweb 已内置）           | [socket-io](https://github.com/shuliangfu/socket-io)             |
-| **@dreamer/storage**         | 存储：文件存储抽象与多后端                                 | [storage](https://github.com/shuliangfu/storage)                 |
-| **@dreamer/store**           | 客户端状态：Preact/React 响应式状态管理                    | [store](https://github.com/shuliangfu/store)                     |
-| **@dreamer/stream**          | 直播流：推流、拉流、转码与协议适配                         | [stream](https://github.com/shuliangfu/stream)                   |
-| **@dreamer/test**            | 测试：Mock、断言、浏览器测试等                             | [test](https://github.com/shuliangfu/test)                       |
-| **@dreamer/theme**           | 主题：明暗模式、持久化偏好                                 | [theme](https://github.com/shuliangfu/theme)                     |
-| **@dreamer/upload**          | 文件上传：分片、断点续传、云存储适配                       | [upload](https://github.com/shuliangfu/upload)                   |
-| **@dreamer/utils**           | 工具函数：通用工具与校验等                                 | [utils](https://github.com/shuliangfu/utils)                     |
-| **@dreamer/video**           | 视频处理：转码、压缩等（服务端/客户端）                    | [video](https://github.com/shuliangfu/video)                     |
-| **@dreamer/video-player**    | 视频播放器：多格式、多协议、多引擎                         | [video-player](https://github.com/shuliangfu/video-player)       |
-| **@dreamer/web3**            | Web3：RPC、合约交互（服务端/客户端）                       | [web3](https://github.com/shuliangfu/web3)                       |
-| **@dreamer/webrtc**          | WebRTC：实时音视频与信令                                   | [webrtc](https://github.com/shuliangfu/webrtc)                   |
-| **@dreamer/websocket**       | 原生 WebSocket：服务端与客户端实时通信（Socket.IO 已内置） | [websocket](https://github.com/shuliangfu/websocket)             |
-
-安装示例：`deno add jsr:@dreamer/库名` 或
-`bunx jsr add @dreamer/库名`。各库详细用法见 JSR 对应包页面或仓库 README。
+| Type            | Description                              |
+| --------------- | ---------------------------------------- |
+| `AppConfig`     | App config interface                     |
+| `IApp`          | App interface                            |
+| `AppPlugin`     | Plugin type                              |
+| `AppMiddleware` | Middleware type                          |
+| `AppStage`      | Lifecycle stage                          |
+| `Context`       | Route middleware context (HttpContext)   |
+| `Next`          | Middleware next type                     |
+| `SocketConfig`  | Real-time config (socketio \| websocket) |
 
 ---
 
-## 📊 测试报告
+## 📚 CLI commands
 
-单元测试、e2e 与集成测试结果见 [TEST_REPORT.md](./TEST_REPORT.md)。当前 52
-个测试文件、438 个用例全部通过。
+Use via `dweb-cli` or `deno task`:
 
----
+| Command             | Description           | Common options                          |
+| ------------------- | --------------------- | --------------------------------------- |
+| `init [appName]`    | Create project        | `--beta` use beta deps                  |
+| `dev`               | Start dev server      | `-a, --app` app name (multi-app)        |
+| `build`             | Build for production  | `-a, --app` app name                    |
+| `start`             | Start production      | `-a, --app` app name                    |
+| `preview`           | Preview build         | `-p, --port` port; `-a, --app` app      |
+| `generate (g)`      | Code generation       | `-t, --type` type; `-n, --name` name   |
+| `test`              | Run tests             | `-a, --app` app name                    |
+| `lint`              | Lint                  | -                                       |
+| `fmt`               | Format                | -                                       |
+| `clean`             | Clean build output    | -                                       |
+| `db migrate (m)`    | Database migration    | `-a, --action` up/down; `-n, --name`   |
+| `db seed`           | Database seed         | -                                       |
+| `db status`        | Database status       | -                                       |
+| `upgrade`           | Upgrade dweb deps     | `--beta` use beta                       |
 
-## 📝 注意事项
-
-- **包名**：@dreamer/dweb 为框架主包，整合
-  @dreamer/server、@dreamer/router、@dreamer/render、@dreamer/esbuild 等
-- **入口类**：使用 `App`
-  类创建应用（`import { App } from "jsr:@dreamer/dweb"`），配置为
-  `AppConfig`（name、version、language、server、render、router、build、logger
-  等）
-- **按需使用**：可仅使用 dweb，或按需安装其他 @dreamer/*
-  库（database、cache、storage 等）
-- **类型安全**：完整 TypeScript 类型支持
-- **应用模式**：支持单应用与多应用模式；可共享 App 实例（如
-  getSharedApp）供多入口或 CLI 使用
-
----
-
-## 🤝 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
-**开发 dweb 库时**（在 dweb 目录下）：
-
-- 类型检查：`deno task check` 或
-  `deno check src/ tests/`（仅检查核心代码，不包含 examples）
-- 测试：`deno test -A tests/unit` 或 `bun test`
+**generate types**: `service`, `api`, `model`, `route`.
 
 ---
 
-## 📄 许可证
+## 📚 Error codes
 
-MIT License - 详见 [LICENSE.md](./LICENSE.md)
+| Range      | Codes   | Description                                                       |
+| ---------- | ------- | ----------------------------------------------------------------- |
+| Config     | E01–E19 | name, version, render, middlewares, plugins validation           |
+| Entry      | E20–E21 | Entry path format, segments                                       |
+| Runtime    | E22     | Deno/Bun only                                                     |
+| Features   | E23–E29 | App not initialized, Socket not configured, generate, build, middleware |
+| File/HTTP  | E30–E32 | File read, HTTP request failure                                  |
+| Unknown    | E33     | Unknown error wrapper                                             |
+
+Full definitions in [src/utils/errors.ts](./src/utils/errors.ts). Use `setDwebErrorTranslator` for i18n.
+
+---
+
+## 📚 Config docs
+
+- **[AppConfig full example](./APP_CONFIG.md)**: All options (language, server, router, render, build, logger, database, socket, plugins, middlewares).
+- **Config and params**: See "[Config management](#config-management)" above for:
+  - Framework config (`getConfig`, `getConfigValue`)
+  - Business config (`config/params.ts`) via `getParams`, `getParamValue`
+  - Environment variables (`getEnv`)
+  - Config load order
+
+---
+
+## 📦 Extension libraries
+
+Extension libraries in the dreamer-jsr ecosystem for auth, cache, payment, real-time, etc. dweb already includes core deps; install these only when needed.
+
+| Library              | Description                                                       |
+| -------------------- | ----------------------------------------------------------------- |
+| **@dreamer/auth**    | Auth: JWT, OAuth2, Session, refresh token, permissions             |
+| **@dreamer/cache**  | Cache: memory, file, Redis, Memcached, unified API                |
+| **@dreamer/console**| Console & CLI: commands, output, tables, prompts                  |
+| **@dreamer/crypto** | Crypto: hash, encrypt, sign, JWT                                   |
+| **@dreamer/database**| Database: multi-adapter, ORM/ODM, query builder, migrations       |
+| **@dreamer/email**  | Email: SMTP client, HTML email                                    |
+| **@dreamer/foundry**| Smart contracts: Foundry deploy & verify (EVM)                    |
+| **@dreamer/humancheck**| Human verification: captcha, TOTP, third-party                  |
+| **@dreamer/i18n**   | i18n: translation, formatting, multi-language                    |
+| **@dreamer/logger** | Logging                                                            |
+| **@dreamer/queue**  | Task queue: async, scheduled, persistent                           |
+| **@dreamer/session**| Session management                                                |
+| **@dreamer/storage**| File storage                                                      |
+| **@dreamer/store**  | Client state                                                      |
+| **@dreamer/websocket**| Native WebSocket (Socket.IO is built into dweb)                  |
+| **@dreamer/web3**   | Blockchain                                                        |
+
+Install with `deno add jsr:@dreamer/<package-name>`. See [README-zh.md](./README-zh.md) for full table with GitHub links.
+
+---
+
+## 📊 Test report
+
+See [TEST_REPORT.md](./TEST_REPORT.md). 52 test files, 446 tests, all passing.
+
+---
+
+## 📝 Notes
+
+- **Package**: @dreamer/dweb is the main framework package; integrates @dreamer/server, @dreamer/router, @dreamer/render, @dreamer/esbuild, etc.
+- **Entry**: Use `App` class (`import { App } from "jsr:@dreamer/dweb"`) with `AppConfig` (name, version, language, server, render, router, build, logger, etc.)
+- **Optional**: Use dweb alone or install other @dreamer/* libs (database, cache, storage, etc.) as needed
+- **Type safety**: Full TypeScript support
+- **Modes**: Single-app and multi-app; can share App instance (e.g. getSharedApp) for multiple entry points or CLI
+
+---
+
+## 🤝 Contributing
+
+Issues and Pull Requests welcome!
+
+**When developing the dweb library** (in the dweb directory):
+
+- Type check: `deno task check` or `deno check src/ tests/` (core only; excludes examples)
+- Test: `deno test -A tests/unit` or `bun test`
+
+---
+
+## 📄 License
+
+MIT License - see [LICENSE.md](./LICENSE.md)
 
 ---
 

@@ -1,57 +1,58 @@
-# AppConfig 完整配置示例
+# AppConfig Full Configuration Example
 
-本文档基于 `@dreamer/dweb` 的 `AppConfig` 类型定义与 README
-文档，提供一份完整的配置示例，涵盖所有常用配置项。
+> 📖 English | [中文文档](./APP_CONFIG-zh.md)
 
-## 一、AppConfig 结构概览
+This document provides a complete configuration example based on the `AppConfig` type definition and README of `@dreamer/dweb`, covering all commonly used options.
 
-`AppConfig` 是 dweb 框架的应用配置接口，包含以下主要模块：
+## 1. AppConfig Structure Overview
 
-| 配置项                 | 类型                 | 说明                                                                                                               |
-| ---------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `name`                 | string               | 应用名称                                                                                                           |
-| `version`              | string               | 应用版本                                                                                                           |
-| `language`             | AppLanguage          | 框架语言（zh-CN 或 en-US；影响 CLI、日志、错误消息等；<br/>默认自动检测环境变量 LANGUAGE/LC_ALL/LANG，否则 zh-CN） |
-| `envPrefix`            | string               | 环境变量前缀                                                                                                       |
-| `hotReload`            | boolean              | 是否启用热重载                                                                                                     |
-| `pluginManagerOptions` | PluginManagerOptions | 插件管理器选项（autoActivate、continueOnError、enableHotReload 等）                                                |
-| `server`               | ServerOptions        | 服务器配置                                                                                                         |
-| `router`               | RouterOptions        | 路由配置                                                                                                           |
-| `render`               | object               | 渲染配置                                                                                                           |
-| `build`                | BuildAppConfig       | 构建配置                                                                                                           |
-| `logger`               | LoggerConfig         | 日志配置                                                                                                           |
-| `database`             | DatabaseAppConfig    | 数据库配置                                                                                                         |
-| `socket`               | SocketConfig         | 实时通信配置（type: socketio 或 websocket）                                                                        |
-| `plugins`              | Array                | 插件列表                                                                                                           |
-| `middlewares`          | Array                | 中间件列表                                                                                                         |
+`AppConfig` is the application configuration interface for the dweb framework, with the following main sections:
+
+| Option                 | Type                 | Description                                                                                                        |
+| ---------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `name`                 | string               | Application name                                                                                                   |
+| `version`              | string               | Application version                                                                                                |
+| `language`             | AppLanguage          | Framework language (zh-CN or en-US; affects CLI, logs, error messages; <br/>default: auto-detect LANGUAGE/LC_ALL/LANG, else zh-CN) |
+| `envPrefix`            | string               | Environment variable prefix                                                                                         |
+| `hotReload`            | boolean              | Enable hot reload                                                                                                   |
+| `pluginManagerOptions` | PluginManagerOptions | Plugin manager options (autoActivate, continueOnError, enableHotReload, etc.)                                      |
+| `server`               | ServerOptions        | Server configuration                                                                                               |
+| `router`               | RouterOptions        | Router configuration                                                                                               |
+| `render`               | object               | Render configuration                                                                                               |
+| `build`                | BuildAppConfig       | Build configuration                                                                                                 |
+| `logger`               | LoggerConfig         | Logger configuration                                                                                               |
+| `database`             | DatabaseAppConfig    | Database configuration                                                                                             |
+| `socket`               | SocketConfig         | Real-time config (type: socketio or websocket)                                                                      |
+| `plugins`              | Array                | Plugin list                                                                                                         |
+| `middlewares`          | Array                | Middleware list                                                                                                     |
 
 ---
 
-## 二、完整配置示例
+## 2. Full Configuration Example
 
-### 单应用模式（config/main.ts）
+### Single-app mode (config/main.ts)
 
 ```typescript
 import type { AppConfig } from "jsr:@dreamer/dweb";
 
 /**
- * 单应用完整配置示例
- * 适用于 src/main.ts 单入口场景
+ * Single-app full config example
+ * For src/main.ts single-entry scenario
  */
 const config: AppConfig = {
-  // ========== 基础信息 ==========
+  // ========== Basic info ==========
   name: "my-app",
   version: "1.0.0",
-  /** 框架语言（zh-CN | en-US），影响 CLI、日志、错误消息等；不设置则自动检测环境变量 */
+  /** Framework language (zh-CN | en-US); affects CLI, logs, errors; auto-detect if unset */
   language: "zh-CN",
 
-  // ========== 配置目录 ==========
-  /** 环境变量前缀，如 APP_ 则读取 APP_PORT、APP_HOST 等 */
+  // ========== Config directory ==========
+  /** Env var prefix; e.g. APP_ reads APP_PORT, APP_HOST, etc. */
   envPrefix: "APP_",
-  /** 是否启用热重载（开发环境默认 true） */
+  /** Enable hot reload (default true in dev) */
   hotReload: true,
 
-  /** 插件管理器选项（可选） */
+  /** Plugin manager options (optional) */
   pluginManagerOptions: {
     autoActivate: false,
     continueOnError: true,
@@ -59,41 +60,41 @@ const config: AppConfig = {
     hotReloadInterval: 1000,
   },
 
-  // ========== 服务器配置 ==========
+  // ========== Server config ==========
   server: {
-    /** 端口号 */
+    /** Port */
     port: 3000,
-    /** 主机名，0.0.0.0 表示监听所有网卡 */
+    /** Host; 0.0.0.0 listens on all interfaces */
     host: "0.0.0.0",
-    /** 服务器模式：dev | prod */
+    /** Server mode: dev | prod */
     mode: "dev",
-    /** 监听成功回调 */
+    /** Listen success callback */
     onListen: ({ host, port }) => {
       console.log(`Server listening on http://${host}:${port}`);
     },
-    /** 错误处理函数 */
+    /** Error handler */
     onError: (error) => {
       console.error(error);
       return new Response("Internal Server Error", { status: 500 });
     },
-    /** 是否启用调试日志 */
+    /** Enable debug logs */
     debug: false,
-    /** 优雅关闭超时（毫秒） */
+    /** Graceful shutdown timeout (ms) */
     shutdownTimeout: 10000,
-    /** 开发工具配置（仅 dev 模式） */
+    /** Dev tools (dev mode only) */
     dev: {
       hmr: { enabled: true, path: "/__hmr" },
       watch: { paths: ["./src"], ignore: ["node_modules"] },
     },
   },
 
-  // ========== 路由配置 ==========
+  // ========== Router config ==========
   router: {
-    /** 路由文件目录 */
+    /** Routes directory */
     routesDir: "./src/routes",
-    /** API 路由形式：restful | action */
+    /** API mode: restful | action */
     apiMode: "restful",
-    /** 重定向配置 */
+    /** Redirects */
     redirects: [
       { source: "/old", destination: "/new", permanent: true },
       {
@@ -102,17 +103,17 @@ const config: AppConfig = {
         statusCode: 302,
       },
     ],
-    /** 是否跳过 _app 验证 */
+    /** Skip _app validation */
     skipAppValidation: false,
   },
 
-  // ========== 渲染配置 ==========
+  // ========== Render config ==========
   render: {
-    /** 模板引擎：preact | react */
+    /** Template engine: preact | react */
     engine: "preact",
-    /** 渲染模式：ssr | csr | ssg | hybrid */
+    /** Render mode: ssr | csr | ssg | hybrid */
     mode: "hybrid",
-    /** SSG 配置（mode 为 ssg 时生效） */
+    /** SSG config (when mode is ssg) */
     ssg: {
       outputDir: "dist/static",
       routes: ["/", "/about"],
@@ -120,9 +121,9 @@ const config: AppConfig = {
     },
   },
 
-  // ========== 构建配置 ==========
+  // ========== Build config ==========
   build: {
-    /** 服务端构建（entry/output 可选，框架可自动推断） */
+    /** Server build (entry/output optional; framework can infer) */
     server: {
       entry: "src/main.ts",
       output: "dist",
@@ -139,7 +140,7 @@ const config: AppConfig = {
       excludePaths: ["node_modules", ".bun/install"],
       debug: false,
     },
-    /** 客户端构建 */
+    /** Client build */
     client: {
       entry: "src/routes/_client.dep.tsx",
       output: "dist/client",
@@ -157,14 +158,14 @@ const config: AppConfig = {
       sourcemap: true,
       debug: false,
     },
-    /** 资源处理 */
+    /** Asset handling */
     assets: {
       css: { extract: true, minify: true, autoprefix: true },
       images: { compress: true, format: "webp" },
       publicDir: "public",
       assetsDir: "assets",
     },
-    /** 构建选项 */
+    /** Build options */
     build: {
       mode: "prod",
       clean: true,
@@ -175,7 +176,7 @@ const config: AppConfig = {
     },
   },
 
-  // ========== 日志配置 ==========
+  // ========== Logger config ==========
   logger: {
     level: "info",
     format: "text",
@@ -201,7 +202,7 @@ const config: AppConfig = {
     maxMessageLength: 32 * 1024,
   },
 
-  // ========== 数据库配置（dweb 已内置 @dreamer/database，配置后即可使用） ==========
+  // ========== Database config (dweb bundles @dreamer/database; configure to use) ==========
   database: {
     default: {
       adapter: "postgresql",
@@ -224,7 +225,7 @@ const config: AppConfig = {
           password: "password",
         },
       },
-      // MongoDB 副本集示例（可选）
+      // MongoDB replica set example (optional)
       mongodb: {
         adapter: "mongodb",
         connection: {
@@ -248,8 +249,8 @@ const config: AppConfig = {
     managerOptions: {},
   },
 
-  // ========== 实时通信配置（dweb 已内置，adapter 为 socketio 或 websocket 时启用） ==========
-  // Socket.IO 示例
+  // ========== Real-time config (dweb built-in; enabled when adapter is socketio or websocket) ==========
+  // Socket.IO example
   socket: {
     adapter: "socketio",
     config: {
@@ -263,7 +264,7 @@ const config: AppConfig = {
       debug: false,
     },
   },
-  // WebSocket 示例（二选一）
+  // WebSocket example (either/or)
   // socket: {
   //   adapter: "websocket",
   //   config: {
@@ -274,30 +275,30 @@ const config: AppConfig = {
   //   },
   // },
 
-  // ========== 插件列表 ==========
-  // 插件只需实现 name、version，可选实现事件钩子（onInit、onRequest、onResponse 等）
-  // 框架通过 PluginManager 管理 install/activate 生命周期，插件无需实现这些方法
+  // ========== Plugins ==========
+  // Plugins need name, version; optionally implement hooks (onInit, onRequest, onResponse, etc.)
+  // Framework manages install/activate via PluginManager; plugins don't implement those
   plugins: [
-    // 字符串路径形式（从文件加载，需 export default 或 export const plugin）
+    // Path string (load from file; export default or export const plugin)
     "./plugins/auth-plugin.ts",
-    // 插件对象形式（实现 Plugin 接口）
+    // Plugin object (implements Plugin interface)
     {
       name: "custom-plugin",
       version: "1.0.0",
       dependencies: [],
       config: { enabled: true },
       async onInit(container) {
-        // 应用初始化完成时调用
+        // Called when app init completes
       },
       async onRequest(ctx, container) {
-        // 请求处理前调用，可返回 Response 短路后续处理
+        // Called before request; can return Response to short-circuit
       },
     },
   ],
 
-  // ========== 中间件列表 ==========
+  // ========== Middlewares ==========
   middlewares: [
-    // 函数形式（需提供 name 以便合并时识别）
+    // Function form (must provide name for merge)
     {
       middleware: async (_req, _res, next) => {
         console.log("Request received");
@@ -305,9 +306,9 @@ const config: AppConfig = {
       },
       name: "request-logger",
     },
-    // 路径形式
+    // Path form
     "./middlewares/cors.ts",
-    // 带条件
+    // With condition
     {
       middleware: "./middlewares/auth.ts",
       condition: (req) => req.url.startsWith("/admin"),
@@ -321,56 +322,50 @@ export default config;
 
 ---
 
-### Socket.IO 与 WebSocket 配置说明
+### Socket.IO and WebSocket Config
 
-实时通信支持两种类型，通过 `socket.adapter` 区分：
+Real-time supports two types via `socket.adapter`:
 
-- **`adapter: "socketio"`**（别名：`"socket-io"`、`"socket.io"`）：使用
-  Socket.IO，支持降级轮询，适合需要兼容性的场景。路径默认 `/socket.io/`。
-- **`adapter: "websocket"`**：使用原生 WebSocket，更轻量。路径默认 `/ws`。
+- **`adapter: "socketio"`** (aliases: `"socket-io"`, `"socket.io"`): Uses Socket.IO with fallback polling; good for compatibility. Default path `/socket.io/`.
+- **`adapter: "websocket"`**: Uses native WebSocket; lighter. Default path `/ws`.
 
-支持 `config` 嵌套（推荐）或扁平结构，两者均挂载到主站 HTTP 服务器，与主站共用
-`server.port` 和 `server.host`。
+Supports nested `config` (recommended) or flat structure. Both mount on the main HTTP server and share `server.port` and `server.host`.
 
-**插件事件**：配置 Socket 后，框架会在连接建立/关闭时触发插件的
-`onSocket`、`onSocketClose`
-钩子，可用于认证、连接记录等。插件只需实现对应钩子即可，无需额外配置。
+**Plugin events**: With Socket configured, the framework calls `onSocket` and `onSocketClose` on connect/disconnect for auth, logging, etc. Plugins only need to implement these hooks.
 
 ---
 
-### MongoDB 副本集配置说明
+### MongoDB Replica Set Config
 
-当使用 MongoDB 副本集时，需在 `mongoOptions` 中配置：
+For MongoDB replica sets, configure in `mongoOptions`:
 
-- **`replicaSet`**：副本集名称，如 `"rs0"`。若 MongoDB 开启副本集则必须设置。
-- **`directConnection`**：`true` 表示仅连接指定 host:port（适用于单节点或 Docker
-  环境）；`false` 表示自动发现副本集所有节点（适用于分布式生产环境）。
-- **`authSource`**：认证源数据库，通常为 `"admin"`。
-
----
-
-### 插件（Plugin）说明
-
-`@dreamer/plugin` 的 `Plugin` 接口设计如下：
-
-- **必填**：`name`、`version`
-- **可选**：`dependencies`、`config`、`validateConfig`、`onConfigUpdate`
-- **事件钩子**（可选）：`onInit`、`onStart`、`onStop`、`onShutdown`、`onRequest`、`onResponse`、`onError`、`onRoute`、`onBuild`、`onBuildComplete`、`onSocket`、`onSocketClose`、`onHealthCheck`、`onHotReload`
-
-**注意**：`install`、`activate`、`deactivate`、`uninstall` 是 **PluginManager**
-的方法，不是插件需要实现的钩子。框架会自动完成注册→安装→激活流程，插件只需实现需要响应的事件钩子即可。
+- **`replicaSet`**: Replica set name, e.g. `"rs0"`. Required when MongoDB uses replica set.
+- **`directConnection`**: `true` = connect only to specified host:port (single node or Docker); `false` = auto-discover all nodes (distributed production).
+- **`authSource`**: Auth source database, usually `"admin"`.
 
 ---
 
-## 三、多应用模式示例
+### Plugin Notes
 
-### 公共配置（common/config/main.ts）
+`@dreamer/plugin` `Plugin` interface:
+
+- **Required**: `name`, `version`
+- **Optional**: `dependencies`, `config`, `validateConfig`, `onConfigUpdate`
+- **Hooks** (optional): `onInit`, `onStart`, `onStop`, `onShutdown`, `onRequest`, `onResponse`, `onError`, `onRoute`, `onBuild`, `onBuildComplete`, `onSocket`, `onSocketClose`, `onHealthCheck`, `onHotReload`
+
+**Note**: `install`, `activate`, `deactivate`, `uninstall` are **PluginManager** methods, not plugin hooks. The framework handles register→install→activate; plugins only implement the hooks they need.
+
+---
+
+## 3. Multi-app Mode Example
+
+### Shared config (common/config/main.ts)
 
 ```typescript
 import type { AppConfig } from "jsr:@dreamer/dweb";
 import { getEnv } from "jsr:@dreamer/runtime-adapter";
 
-/** 公共配置，供 backend、frontend 等应用复用 */
+/** Shared config for backend, frontend, etc. */
 export const commonConfig = {
   appName: "my-project",
   version: "1.0.0",
@@ -379,7 +374,7 @@ export const commonConfig = {
   frontendPort: 3000,
 };
 
-/** 公共 AppConfig 片段（使用 getEnv 兼容 Deno/Bun） */
+/** Shared AppConfig fragment (getEnv for Deno/Bun compatibility) */
 export const commonAppConfig: Partial<AppConfig> = {
   version: commonConfig.version,
   database: {
@@ -401,7 +396,7 @@ export const commonAppConfig: Partial<AppConfig> = {
 };
 ```
 
-### 后端配置（backend/config/main.ts）
+### Backend config (backend/config/main.ts)
 
 ```typescript
 import type { AppConfig } from "jsr:@dreamer/dweb";
@@ -431,7 +426,7 @@ const config: AppConfig = {
 export default config;
 ```
 
-### 前端配置（frontend/config/main.ts）
+### Frontend config (frontend/config/main.ts)
 
 ```typescript
 import type { AppConfig } from "jsr:@dreamer/dweb";
@@ -467,13 +462,13 @@ export default config;
 
 ---
 
-## 四、环境区分配置
+## 4. Environment-specific Config
 
-框架会按环境加载 `main.{env}.ts`，例如：
+The framework loads `main.{env}.ts` by environment:
 
-- `main.ts`：默认配置
-- `main.dev.ts`：开发环境（`DENO_ENV=dev` 或 `NODE_ENV=development`）
-- `main.prod.ts`：生产环境
+- `main.ts`: Default config
+- `main.dev.ts`: Dev (`DENO_ENV=dev` or `NODE_ENV=development`)
+- `main.prod.ts`: Production
 
 ```typescript
 // config/main.dev.ts
@@ -524,9 +519,9 @@ export default config;
 
 ---
 
-## 五、最简配置示例
+## 5. Minimal Config Example
 
-仅保留必填与常用项：
+Required and common options only:
 
 ```typescript
 import type { AppConfig } from "jsr:@dreamer/dweb";
@@ -544,108 +539,101 @@ export default config;
 
 ---
 
-## 六、配置加载顺序
+## 6. Config Load Order
 
-1. `config/main.ts`：基础配置
-2. `config/main.{env}.ts`：按环境覆盖（如 `main.dev.ts`）
-3. `new App(config)` 传入的配置：最高优先级
+1. `config/main.ts`: Base config
+2. `config/main.{env}.ts`: Env override (e.g. `main.dev.ts`)
+3. Config passed to `new App(config)`: Highest priority
 
-合并策略为深度合并（deep merge），后加载的配置会覆盖先加载的同名字段。
+Merge is deep merge; later config overrides earlier for the same keys.
 
-**框架语言（language）**：影响 CLI、日志、错误消息等框架文案。在
-`config/main.ts` 中设置即可生效。解析优先级：`config/main.ts` 的 `language` >
-环境变量 `LANGUAGE`/`LC_ALL`/`LANG` > 默认 `zh-CN`。
+**Framework language (language)**: Affects CLI, logs, error messages. Set in `config/main.ts`. Priority: `config/main.ts` `language` > env vars `LANGUAGE`/`LC_ALL`/`LANG` > default `zh-CN`.
 
-### 6.1 配置目录推断
+### 6.1 Config Directory Inference
 
-框架根据入口路径自动推断配置目录（无法从 main.ts 得知，因配置尚未加载）：
+The framework infers the config directory from the entry path (config not yet loaded when main.ts runs):
 
-| 场景        | 入口路径示例             | 推断的 config 目录                       |
-| ----------- | ------------------------ | ---------------------------------------- |
-| 单应用+src  | `src/main.ts`            | `src/config`                             |
-| 单应用无src | `main.ts`                | `config`                                 |
-| 多应用+src  | `src/backend/main.ts`    | `src/backend/config`                     |
-| 多应用无src | `backend/main.ts`        | `backend/config`                         |
-| 生产单应用  | `dist/server.js`         | `src/config` 或 `config`                 |
-| 生产多应用  | `dist/backend/server.js` | `src/backend/config` 或 `backend/config` |
+| Scenario       | Entry path example        | Inferred config dir                    |
+| -------------- | ------------------------- | -------------------------------------- |
+| Single+src     | `src/main.ts`             | `src/config`                           |
+| Single no src  | `main.ts`                 | `config`                               |
+| Multi+src      | `src/backend/main.ts`     | `src/backend/config`                   |
+| Multi no src   | `backend/main.ts`         | `backend/config`                       |
+| Prod single    | `dist/server.js`          | `src/config` or `config`               |
+| Prod multi     | `dist/backend/server.js`  | `src/backend/config` or `backend/config` |
 
-无法推断时使用默认 `./config`、`./src/config`。
+Fallback: `./config`, `./src/config`.
 
-### 6.2 配置验证
+### 6.2 Config Validation
 
-框架在合并配置后会调用 `validateConfig()` 进行校验，主要检查：
+After merge, the framework calls `validateConfig()` to check:
 
-- **基础项**：`name`、`version`、`envPrefix`、`hotReload` 的类型
-- **render**：`engine` 为 `"react"` 或 `"preact"`，`mode` 为
-  `"ssr"`、`"csr"`、`"ssg"` 或 `"hybrid"`
-- **middlewares**：配置中的中间件必须提供
-  `name`（路径形式可从路径提取，对象形式必须显式 `name`）
-- **plugins**：配置中的插件必须提供 `name`
-- **server / router / build / logger**：若存在则必须为对象类型
+- **Basic**: Types of `name`, `version`, `envPrefix`, `hotReload`
+- **render**: `engine` is `"react"` or `"preact"`; `mode` is `"ssr"`, `"csr"`, `"ssg"`, or `"hybrid"`
+- **middlewares**: Must have `name` (path form can infer; object form must have explicit `name`)
+- **plugins**: Must have `name`
+- **server / router / build / logger**: If present, must be objects
 
-校验失败会抛出对应的 `DwebErrorCode`（如
-`CONFIG_NAME_INVALID`、`CONFIG_MIDDLEWARE_MUST_HAVE_NAME` 等）。
+Validation failure throws `DwebErrorCode` (e.g. `CONFIG_NAME_INVALID`, `CONFIG_MIDDLEWARE_MUST_HAVE_NAME`).
 
 ---
 
-## 七、配置与参数获取
+## 7. Config and Params Access
 
-### 7.1 框架配置（config/main.ts 系列）
+### 7.1 Framework config (config/main.ts series)
 
-在应用启动后，通过 `getConfig`、`getConfigValue`、`getConfigManager`
-获取框架配置：
+After app start, use `getConfig`, `getConfigValue`, `getConfigManager`:
 
 ```typescript
 import { getConfig, getConfigManager, getConfigValue } from "jsr:@dreamer/dweb";
 
-// 需要 app.container（在 main.ts、插件、中间件、API 路由等场景）
+// Need app.container (in main.ts, plugins, middleware, API routes, etc.)
 const container = app.container;
 
-// 完整 AppConfig
+// Full AppConfig
 const config = getConfig(container);
 
-// 按点号路径取值
+// Get by dot path
 const port = getConfigValue<number>(container, "server.port", 3000);
 
-// ConfigManager（支持 envPrefix、热重载）
+// ConfigManager (envPrefix, hot reload)
 const cm = getConfigManager(container);
 const v = cm.get("key", "default");
 ```
 
-### 7.2 业务配置（config/params.ts）
+### 7.2 Business config (config/params.ts)
 
-业务配置单独存放在 `config/params.ts`，通过 `getParams`、`getParamValue` 获取：
+Business config lives in `config/params.ts`; use `getParams`, `getParamValue`:
 
 ```typescript
-// config/params.ts 示例
+// config/params.ts example
 export default {
   features: { enablePay: true },
   api: { externalUrl: "https://api.example.com", timeout: 30000 },
   pagination: { defaultPageSize: 20 },
 };
 
-// 获取方式
+// Access
 import { getParams, getParamValue } from "jsr:@dreamer/dweb";
 const params = getParams(container);
 const timeout = getParamValue<number>(container, "api.timeout", 30000);
 ```
 
-### 7.3 环境变量
+### 7.3 Environment variables
 
-**方式一：通过 Config 获取（推荐）**
+**Method 1: Via Config (recommended)**
 
-配置 `envPrefix: "APP_"` 后，环境变量会自动合并到配置，可通过 `getConfigValue`
-或 `getConfigManager().get()` 获取，**无需** `runtime-adapter`：
+With `envPrefix: "APP_"`, env vars merge into config. Use `getConfigValue` or `getConfigManager().get()`; **no** `runtime-adapter` needed:
 
 ```typescript
-// envPrefix: "APP_" 时，APP_SERVER_PORT -> server.port
+// With envPrefix: "APP_", APP_SERVER_PORT -> server.port
 const port = getConfigValue(container, "server.port", "3000");
 const dbHost = getConfigValue(container, "database.host", "localhost");
 ```
 
-**方式二：直接读取（需 runtime-adapter）**
+**Method 2: Direct read (requires runtime-adapter)**
 
-在 `config/main.ts` 中定义配置时，或读取未带前缀的变量时使用：
+When defining config in `config/main.ts`, or for unprefixed vars:
 
 ```typescript
 import { getEnv } from "jsr:@dreamer/runtime-adapter";
