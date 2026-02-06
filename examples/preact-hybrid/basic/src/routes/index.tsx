@@ -1,5 +1,6 @@
 import { Client } from "@dreamer/websocket/client";
 import { useEffect, useRef, useState } from "preact/hooks";
+// import '../assets/index.css';
 
 /**
  * 页面 Tailwind 类名（全部提取为静态对象，便于生产构建扫描）

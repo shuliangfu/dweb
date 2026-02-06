@@ -24,6 +24,7 @@ import {
 } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
+import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
 import { $t } from "../utils/i18n.ts";
 import { createRendererSSR } from "./render-ssr.ts";
 
@@ -136,7 +137,8 @@ export function createRendererSSG(
         return null;
       }
 
-      const html = await readTextFile(filePath);
+      let html = await readTextFile(filePath);
+      html = await replaceAssetPathsInHtml(html, config, outputDir);
       return new Response(html, {
         status: 200,
         headers: {

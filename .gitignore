@@ -39,3 +39,7 @@ tests/**/data/
 
 # 测试覆盖率
 coverage/
+
+
+# 项目分析文档，不提交
+docs/

@@ -28,10 +28,10 @@ import {
   type SignalHandler,
 } from "./runtime-adapter.ts";
 
-import { BuilderServer } from "@dreamer/esbuild";
+import { AssetsProcessor } from "@dreamer/esbuild";
 import { requestId, requestLogger } from "@dreamer/middlewares";
 import { expandDynamicRoute } from "@dreamer/render";
-import { initializeBuild } from "../feature/build.ts";
+import { initializeBuild, runBuildWithBuilder } from "../feature/build.ts";
 import {
   buildClientScript,
   clearClientScriptCache,
@@ -405,9 +405,11 @@ export class App extends EventEmitter implements IApp {
           socketIoPath,
           "socket-io",
         );
-        getLogger(this.container).info(
-          $t("log.socketIoMounted", { path: socketIoPath }),
-        );
+        if (!this._isBuildMode()) {
+          getLogger(this.container).info(
+            $t("log.socketIoMounted", { path: socketIoPath }),
+          );
+        }
       }
 
       // socket.type 为 websocket 时：路径前缀匹配委托给 WebSocket 处理
@@ -418,9 +420,11 @@ export class App extends EventEmitter implements IApp {
           websocketPath,
           "websocket",
         );
-        getLogger(this.container).info(
-          $t("log.websocketMounted", { path: websocketPath }),
-        );
+        if (!this._isBuildMode()) {
+          getLogger(this.container).info(
+            $t("log.websocketMounted", { path: websocketPath }),
+          );
+        }
       }
 
       // 将配置中注册的中间件（含 routes/_middleware.ts）应用到 HTTP 服务器，先于路由执行
@@ -487,7 +491,9 @@ export class App extends EventEmitter implements IApp {
           await buildClientScript(this.container, mergedConfig);
         }
 
-        renderLogger.info($t("log.renderModeCsr"));
+        if (!this._isBuildMode()) {
+          renderLogger.info($t("log.renderModeCsr"));
+        }
       } else if (renderMode === "hybrid") {
         // Hybrid 模式：服务端渲染完整 HTML + 客户端 hydrate
         const hybridRenderer = createRendererHybrid(
@@ -534,7 +540,9 @@ export class App extends EventEmitter implements IApp {
           await buildClientScript(this.container, mergedConfig);
         }
 
-        renderLogger.info($t("log.renderModeHybrid"));
+        if (!this._isBuildMode()) {
+          renderLogger.info($t("log.renderModeHybrid"));
+        }
       } else if (renderMode === "ssg") {
         // SSG 模式：从预渲染输出目录提供静态 HTML
         const ssgRenderer = createRendererSSG(
@@ -544,13 +552,17 @@ export class App extends EventEmitter implements IApp {
         );
         server.setSSRRender(ssgRenderer);
 
-        renderLogger.info($t("log.renderModeSsg"));
+        if (!this._isBuildMode()) {
+          renderLogger.info($t("log.renderModeSsg"));
+        }
       } else {
         // SSR 模式：服务端渲染完整 HTML
         const ssrRenderer = createRendererSSR(this.container, router);
         server.setSSRRender(ssrRenderer);
 
-        renderLogger.info($t("log.renderModeSsr"));
+        if (!this._isBuildMode()) {
+          renderLogger.info($t("log.renderModeSsr"));
+        }
       }
 
       // 注册插件事件中间件（触发 onRequest/onResponse 事件）
@@ -925,15 +937,11 @@ export class App extends EventEmitter implements IApp {
       logger.info($t("log.pluginBuildComplete"));
 
       const renderMode = (config.render as { mode?: string })?.mode ?? "ssr";
-      // SSG 模式：只生成静态 HTML，不构建客户端 JS（start 时从 client 目录读 HTML）
-      if (renderMode !== "ssg") {
-        // 构建客户端脚本（生产模式，支持代码分割）
-        await buildClientScript(this.container, config);
-        logger.debug($t("log.clientBuildComplete"));
-      }
-
-      // 先构建服务端（避免服务端构建时清空 dist 导致后续 SSG 产物丢失）
-      await this._buildServer();
+      // 使用 @dreamer/esbuild 的 Builder 统一构建（服务端 + 客户端 + 资源）
+      // SSG 模式跳过客户端构建，仅构建服务端
+      await runBuildWithBuilder(this.container, config, {
+        skipClient: renderMode === "ssg",
+      });
 
       // SSG 模式：预渲染静态 HTML 到 client 目录（与其它前端产物一致），start 时从该目录读取（在服务端构建之后执行，确保不被覆盖）
       if (renderMode === "ssg") {
@@ -1058,6 +1066,16 @@ export class App extends EventEmitter implements IApp {
             onFileGenerated,
           };
           await renderService.renderSSG(ssgOptions);
+
+          // SSG 模式：对输出目录运行资源处理（复制、压缩、hash、更新 HTML 中的路径）
+          const assetsConfig = (config.build as { assets?: unknown })?.assets;
+          if (assetsConfig && typeof assetsConfig === "object") {
+            const processor = new AssetsProcessor(
+              assetsConfig as ConstructorParameters<typeof AssetsProcessor>[0],
+              absOutputDir,
+            );
+            await processor.processAssets();
+          }
         }
       }
 
@@ -1083,110 +1101,6 @@ export class App extends EventEmitter implements IApp {
 
     // 构建模式不需要调用 shutdown()，直接退出
     // shutdown() 需要在 stopped 阶段调用，但 build 模式没有经历完整生命周期
-  }
-
-  /**
-   * 构建服务端代码
-   *
-   * 使用 @dreamer/esbuild 的 BuilderServer 将 TypeScript 编译为 JavaScript
-   */
-  private async _buildServer(): Promise<void> {
-    const logger = this._getLogger();
-    const config = getConfig(this.container);
-
-    try {
-      // 获取构建配置
-      const buildConfig = (config.build || {}) as {
-        server?: {
-          entry?: string;
-          output?: string;
-          /** 是否使用原生编译器生成可执行文件（默认 true） */
-          useNativeCompile?: boolean;
-        };
-      };
-      const serverConfig = buildConfig.server || {};
-
-      // 入口：优先用配置；未配置时用「当前执行的入口文件」（多应用时 deno run src/backend/main.ts --build 即以此为入口）
-      let entry = serverConfig.entry;
-      if (!entry) {
-        const mainModulePath = this._getMainModulePath();
-        if (mainModulePath) {
-          const cwdPath = cwd();
-          entry = relative(cwdPath, mainModulePath);
-          if (entry.startsWith("..")) {
-            entry = "./" + entry;
-          } else if (!entry.startsWith(".")) {
-            entry = "./" + entry;
-          }
-        } else {
-          entry = "./src/main.ts";
-        }
-      }
-      // useNativeCompile：默认 false（生成 server.js），设为 true 时用 deno compile 生成可执行文件
-      const useNativeCompile = serverConfig.useNativeCompile === true;
-      // 输出目录：未配置时与 client 一致，按当前入口推断应用目录（src/backend/main.ts → dist/backend）
-      const outputDir = serverConfig.output ??
-        getInferredBuildOutputDirs().server;
-      // 根据编译模式调整输出路径
-      // useNativeCompile: true -> 可执行文件路径 (dist/server)
-      // useNativeCompile: false -> 目录路径 (dist)，esbuild 会生成 server.js
-      const output = useNativeCompile ? `${outputDir}/server` : outputDir;
-
-      logger.info(
-        $t("log.serverBuildOutput", {
-          path: `${output}${useNativeCompile ? "" : "/server.js"}`,
-        }),
-      );
-
-      // 创建服务端构建器
-      // useNativeCompile: true - 使用 deno compile / bun build --compile 生成可执行文件
-      // useNativeCompile: false - 使用 esbuild 生成 JS 文件（文件更小，但需要运行时）
-      const builder = new BuilderServer({
-        entry,
-        output,
-        useNativeCompile,
-        // 用户自定义的外部依赖（可选）
-        external: (serverConfig as { external?: string[] }).external,
-        // 服务端编译成 JS 时，自动将 npm 包标记为 external
-        // Deno 运行时可以直接解析 npm 包，无需打包
-        externalNpm: !useNativeCompile,
-      });
-
-      // 执行构建
-      const result = await builder.build("prod");
-
-      logger.info(
-        $t("log.serverBuildComplete", { duration: String(result.duration) }),
-      );
-    } catch (error) {
-      logger.error($t("log.serverBuildFailed") + ":", error);
-      throw error;
-    }
-  }
-
-  /**
-   * 获取当前执行的入口文件绝对路径（用于多应用构建时推断 build entry）
-   * Deno: mainModule；Bun/Node: process.argv[1]
-   */
-  private _getMainModulePath(): string | null {
-    const g = globalThis as Record<string, unknown>;
-    const deno = g.Deno as { mainModule?: string } | undefined;
-    if (deno?.mainModule) {
-      try {
-        const url = new URL(deno.mainModule);
-        if (url.protocol === "file:") {
-          return url.pathname || null;
-        }
-      } catch {
-        return null;
-      }
-    }
-    const proc = g.process as { argv?: string[] } | undefined;
-    const scriptPath = proc?.argv?.[1];
-    if (scriptPath) {
-      return resolve(cwd(), scriptPath);
-    }
-    return null;
   }
 
   /**

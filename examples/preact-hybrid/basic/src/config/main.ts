@@ -38,6 +38,19 @@ const config: AppConfig = {
     server: {
       useNativeCompile: false,
     },
+    /** 资源处理：复制 src/assets、压缩并 hash 化图片后输出到 client/assets/images */
+    assets: {
+      publicDir: "src/assets",
+      assetsDir: "assets",
+      /** 排除会被其他插件编译的 CSS 源文件，只保留编译产物（如 tailwind.xxx.css） */
+      exclude: ["tailwind.css", "uno.css", "index.css"],
+      images: {
+        compress: true,
+        quality: 80, // 压缩质量 0-100，80 平衡质量与体积
+        format: "webp", // 需 ImageMagick；若转换失败可改为 "original" 仅做 hash
+        hash: true,
+      },
+    },
   },
 
   // 实时通信：type 为 websocket 时挂载到当前 HTTP 服务器同一端口（开发环境测试）

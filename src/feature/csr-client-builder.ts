@@ -881,6 +881,120 @@ export async function ensureClientEntryFile(
 }
 
 /**
+ * 准备客户端构建入口（生成 _client.dep.tsx、_client.tsx）
+ *
+ * 供 runBuildWithBuilder 在调用 Builder.build() 前执行，
+ * 仅负责入口文件生成，不执行编译。
+ *
+ * @param container 服务容器
+ * @param config 应用配置
+ * @returns 客户端构建配置（entry、output、engine、bundle），供 Builder 使用
+ */
+export async function prepareClientBuildEntry(
+  container: ServiceContainer,
+  config: AppConfig,
+): Promise<{
+  entry: string;
+  output: string;
+  engine: "react" | "preact";
+  bundle: {
+    minify?: boolean;
+    sourcemap?: boolean;
+    splitting?: boolean;
+    format?: "esm";
+    external?: string[];
+    alias?: Record<string, string>;
+  };
+}> {
+  const logger = getLogger(container);
+  const routerConfig = (config.router || {}) as { routesDir?: string };
+  const routesDir = routerConfig.routesDir || "./src/routes";
+  const routesDirPath = join(cwd(), routesDir);
+  const srcDir = routesDirPath.replace(/\/routes\/?$/, "");
+  const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
+
+  const renderConfig = (config.render || {}) as { engine?: "react" | "preact" };
+  const engine = (renderConfig.engine || "preact") as "react" | "preact";
+
+  const components = await scanRouteComponents(routesDirPath, "", engine);
+  logger.debug($t("log.routesScanned", { count: String(components.length) }));
+
+  const layoutPathTsx = join(routesDirPath, "_layout.tsx");
+  const hasLayout = await exists(layoutPathTsx);
+  const hmrCssEntries = getHmrCssEntries(container);
+  const clientDepPath = join(srcDir, CLIENT_DEP_FILENAME);
+
+  // 每次构建都刷新 _client.dep.tsx
+  const clientDepCode = generateClientDepContent(
+    engine,
+    components,
+    hasLayout,
+    hmrCssEntries,
+  );
+  await writeTextFile(clientDepPath, clientDepCode);
+  logger.debug($t("log.clientDepRefreshed", { path: pathForLog(clientDepPath) }));
+
+  // _client.tsx 不存在时生成
+  if (!(await exists(tempClientEntryPath))) {
+    const clientEntryCode = generateStaticClientEntry(
+      engine,
+      components,
+      hasLayout,
+      hmrCssEntries,
+    );
+    await writeTextFile(tempClientEntryPath, clientEntryCode);
+    logger.debug($t("log.clientEntryGenerating", {
+      path: pathForLog(tempClientEntryPath),
+    }));
+  }
+
+  const buildConfig = (config.build || {}) as {
+    client?: {
+      output?: string;
+      bundle?: {
+        splitting?: boolean;
+        minify?: boolean;
+        sourcemap?: boolean;
+        external?: string[];
+        alias?: Record<string, string>;
+      };
+    };
+  };
+  const userClientConfig = buildConfig.client || {};
+  const userBundleConfig = userClientConfig.bundle || {};
+  const clientOutputDirRaw = userClientConfig.output ??
+    getInferredBuildOutputDirs().client;
+  const finalOutputDir = join(cwd(), clientOutputDirRaw);
+
+  const runtimeExternalBlocklist = engine === "preact"
+    ? ["preact", "preact/hooks", "preact/jsx-runtime"]
+    : ["react", "react-dom", "react/jsx-runtime", "react-dom/client"];
+  const userExternal = Array.isArray(userBundleConfig.external)
+    ? userBundleConfig.external
+    : [];
+  const externalList = userExternal.filter(
+    (ext) =>
+      !runtimeExternalBlocklist.some((b) =>
+        ext === b || ext.startsWith(`${b}/`)
+      ),
+  );
+
+  return {
+    entry: tempClientEntryPath,
+    output: finalOutputDir,
+    engine,
+    bundle: {
+      minify: userBundleConfig.minify ?? true,
+      sourcemap: userBundleConfig.sourcemap ?? false,
+      splitting: userBundleConfig.splitting ?? true,
+      format: "esm",
+      external: externalList.length > 0 ? externalList : undefined,
+      alias: userBundleConfig.alias,
+    },
+  };
+}
+
+/**
  * 构建客户端入口脚本（支持代码分割）
  *
  * 使用 BuilderClient 进行构建，启用代码分割：

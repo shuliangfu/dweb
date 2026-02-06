@@ -48,7 +48,7 @@
     "@dreamer/server": "jsr:@dreamer/server@1.0.0-beta.25",
     "@dreamer/router": "jsr:@dreamer/router@^1.0.0-beta.11",
     "@dreamer/render": "jsr:@dreamer/render@1.0.0-beta.18",
-    "@dreamer/esbuild": "jsr:@dreamer/esbuild@1.0.0-beta.62",
+    "@dreamer/esbuild": "../esbuild/src/mod.ts",
     "@dreamer/image": "jsr:@dreamer/image@^1.0.0-beta.3",
     "@dreamer/logger": "jsr:@dreamer/logger@^1.0.0-beta.10",
     "@dreamer/utils": "jsr:@dreamer/utils@^1.0.0-beta.8",

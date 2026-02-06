@@ -2,7 +2,9 @@
  * @dreamer/esbuild 集成
  *
  * 初始化构建工具（Builder），配置客户端/服务端构建，执行构建任务。
- * 使用 engine 字段、dev/prod 模式。导出 initializeBuild、getBuild。
+ * 使用 engine 字段、dev/prod 模式。导出 initializeBuild、getBuild、runBuildWithBuilder。
+ *
+ * 构建流程统一走 @dreamer/esbuild 的 Builder.build()，不直接调用 BuilderServer/BuilderClient。
  *
  * @module
  */
@@ -11,12 +13,26 @@ import {
   Builder,
   type BuilderConfig,
   type ClientConfig,
+  type ServerConfig,
 } from "@dreamer/esbuild";
 import type { ServiceContainer } from "@dreamer/service";
-import { getEnv } from "../core/runtime-adapter.ts";
+import {
+  args,
+  cwd,
+  exists,
+  getEnv,
+  relative,
+  resolve,
+} from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
+import {
+  getInferredBuildOutputDirs,
+  getMainModulePath,
+} from "../utils/build-dirs.ts";
+import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $t } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
+import { prepareClientBuildEntry } from "./csr-client-builder.ts";
 
 /**
  * 初始化构建工具
@@ -105,7 +121,9 @@ export function initializeBuild(
   // 将构建器注册到服务容器
   container.registerSingleton("build", () => builder);
 
-  logger.info($t("log.buildToolReady"));
+  if (!args().includes("--build")) {
+    logger.info($t("log.buildToolReady"));
+  }
 
   return builder;
 }
@@ -124,4 +142,105 @@ export function initializeBuild(
  */
 export function getBuild(container: ServiceContainer): Builder {
   return container.get<Builder>("build");
+}
+
+/**
+ * 使用 @dreamer/esbuild 的 Builder 执行完整构建（服务端 + 客户端 + 资源）
+ *
+ * 不直接调用 BuilderServer/BuilderClient，统一走 Builder.build()。
+ * 构建前会调用 prepareClientBuildEntry 生成 _client.tsx 入口。
+ *
+ * @param container 服务容器
+ * @param config 应用配置
+ * @param options.skipClient 是否跳过客户端构建（如 SSG 模式）
+ */
+export async function runBuildWithBuilder(
+  container: ServiceContainer,
+  config: AppConfig,
+  options?: { skipClient?: boolean },
+): Promise<void> {
+  const buildConfig = (config.build || {}) as {
+    server?: {
+      entry?: string;
+      output?: string;
+      useNativeCompile?: boolean;
+      external?: string[];
+    };
+    assets?: BuilderConfig["assets"];
+  };
+  const serverConfig = buildConfig.server || {};
+  const cwdPath = cwd();
+
+  // 服务端配置：未指定 entry 时，优先从 mainModule 推断，否则默认 src/main.ts
+  let serverEntry = serverConfig.entry;
+  if (!serverEntry) {
+    const mainModulePath = getMainModulePath();
+    if (mainModulePath) {
+      serverEntry = relative(cwdPath, mainModulePath);
+      if (serverEntry.startsWith("..")) serverEntry = "./" + serverEntry;
+      else if (!serverEntry.startsWith(".")) serverEntry = "./" + serverEntry;
+    } else {
+      serverEntry = "./src/main.ts";
+    }
+  }
+
+  // 统一检查入口是否存在，不存在则抛出（默认 src/main.ts 时尝试 main.ts）
+  let absEntry = resolve(cwdPath, serverEntry);
+  if (!(await exists(absEntry)) && serverEntry === "./src/main.ts") {
+    const rootMain = resolve(cwdPath, "main.ts");
+    if (await exists(rootMain)) {
+      serverEntry = "./main.ts";
+      absEntry = rootMain;
+    }
+  }
+
+  // 如果入口不存在，则抛出错误
+  if (!(await exists(absEntry))) {
+    throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, {
+      reason: "未找到服务端入口文件",
+      hint: "请确保存在 src/main.ts 或 main.ts，或在 build.server.entry 中显式指定",
+      path: absEntry,
+    });
+  }
+
+  const useNativeCompile = serverConfig.useNativeCompile === true;
+  const serverOutputDir = serverConfig.output ??
+    getInferredBuildOutputDirs().server;
+  const serverOutput = useNativeCompile
+    ? `${serverOutputDir}/server`
+    : serverOutputDir;
+
+  const esbuildServerConfig: ServerConfig = {
+    entry: serverEntry,
+    output: serverOutput,
+    useNativeCompile,
+    external: (serverConfig as { external?: string[] }).external,
+    externalNpm: !useNativeCompile,
+  };
+
+  // 客户端配置（非 SSG 时准备入口并构建）
+  let clientConfig: ClientConfig | undefined;
+  if (!options?.skipClient) {
+    const prepared = await prepareClientBuildEntry(container, config);
+    clientConfig = {
+      entry: prepared.entry,
+      output: prepared.output,
+      engine: prepared.engine,
+      bundle: prepared.bundle,
+    };
+  }
+
+  const builderConfig: BuilderConfig = {
+    server: esbuildServerConfig,
+    client: clientConfig,
+    assets: buildConfig.assets,
+    build: {
+      mode: "prod",
+      clean: (config.build as { clean?: boolean })?.clean,
+      cache: (config.build as { cache?: boolean | string })?.cache,
+    },
+  };
+
+  const builder = new Builder(builderConfig);
+  await builder.build();
 }

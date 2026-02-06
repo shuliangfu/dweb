@@ -19,9 +19,17 @@ import type { ServiceContainer } from "@dreamer/service";
 import type { HttpContext } from "@dreamer/server";
 import { getEnv } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
+import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
 import { $t } from "../utils/i18n.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
+
+/**
+ * 转义 style 内容中的 </ 避免提前闭合 style 标签
+ */
+function escapeHtmlInStyle(css: string): string {
+  return css.replace(/<\//g, "\\3C /");
+}
 
 /**
  * Hybrid 渲染选项
@@ -102,8 +110,14 @@ export function createRendererHybrid(
         return null;
       }
 
+      // 收集路由 CSS（page + app + layout 中的 import "*.css"），用于 SSR 注入 head
+      const routeCss: string[] = [];
+      const cssCollector = (css: string) => routeCss.push(css);
+
       // 加载页面组件（支持 .ts/.tsx）
-      const pageModule = await loadRouteModule(match.route.fullPath);
+      const pageModule = await loadRouteModule(match.route.fullPath, {
+        cssCollector,
+      });
       if (!pageModule) {
         return null;
       }
@@ -121,14 +135,14 @@ export function createRendererHybrid(
       // 加载 App 组件
       let AppComponent: any = null;
       if (appPath) {
-        const appModule = await loadRouteModule(appPath);
+        const appModule = await loadRouteModule(appPath, { cssCollector });
         AppComponent = appModule?.default ?? appModule?.App;
       }
 
       // 加载 Layout 组件
       let LayoutComponent: any = null;
       if (layoutPath) {
-        const layoutModule = await loadRouteModule(layoutPath);
+        const layoutModule = await loadRouteModule(layoutPath, { cssCollector });
         LayoutComponent = layoutModule?.default ?? layoutModule?.Layout;
       }
 
@@ -180,6 +194,14 @@ export function createRendererHybrid(
       // 获取渲染的 HTML 内容
       let html = result.html;
 
+      // 生产模式下用 asset-manifest.json 替换 SSR HTML 中的资源路径
+      // （服务端从源码加载路由，源码路径未经过构建替换，需运行时替换）
+      const isDev =
+        (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
+      if (!isDev) {
+        html = await replaceAssetPathsInHtml(html, config);
+      }
+
       // 构建 hydration 数据
       const hydrationData = {
         page: pageProps,
@@ -190,8 +212,6 @@ export function createRendererHybrid(
       };
 
       // 构建客户端配置脚本（开发模式启用 HMR 调试：在控制台设置 globalThis.__DWEB_HMR_DEBUG__ = true 可查看详细日志）
-      const isDev =
-        (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
       const clientConfigScript = `
 <script>
   ${
@@ -218,9 +238,18 @@ ${hybridOptions.bodyTags || ""}`;
         html += clientConfigScript;
       }
 
-      // 在 </head> 前注入额外的 head 标签
-      if (hybridOptions.headTags && html.includes("</head>")) {
-        html = html.replace("</head>", `${hybridOptions.headTags}</head>`);
+      // 在 </head> 前注入路由 CSS（import "*.css" 提取的内容）及额外 head 标签
+      const headInject: string[] = [];
+      if (routeCss.length > 0) {
+        headInject.push(
+          ...routeCss.map((c) => `<style data-dweb-route-css>${escapeHtmlInStyle(c)}</style>`),
+        );
+      }
+      if (hybridOptions.headTags) {
+        headInject.push(hybridOptions.headTags);
+      }
+      if (headInject.length > 0 && html.includes("</head>")) {
+        html = html.replace("</head>", `${headInject.join("")}</head>`);
       }
 
       // 返回 HTML 响应（开发模式禁用缓存，确保 HMR 刷新后拿到最新内容）

@@ -15,9 +15,17 @@ import type { ServiceContainer } from "@dreamer/service";
 import type { HttpContext } from "@dreamer/server";
 import { getConfig } from "../core/config.ts";
 import { getEnv } from "../core/runtime-adapter.ts";
+import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
 import { $t } from "../utils/i18n.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
+
+/**
+ * 转义 style 内容中的 </ 避免提前闭合 style 标签
+ */
+function escapeHtmlInStyle(css: string): string {
+  return css.replace(/<\//g, "\\3C /");
+}
 
 /**
  * 创建 SSR 渲染处理器
@@ -50,13 +58,17 @@ export function createRendererSSR(
         return null;
       }
 
+      // 收集路由 CSS（page + app + layout 中的 import "*.css"），用于 SSR 注入 head
+      const routeCss: string[] = [];
+      const cssCollector = (css: string) => routeCss.push(css);
+
       // 并行加载页面、App、Layout 组件（支持 .ts/.tsx）
       const appPath = router.getSpecialFile("_app");
       const layoutPath = router.getSpecialFile("_layout");
       const [pageModule, appModule, layoutModule] = await Promise.all([
-        loadRouteModule(match.route.fullPath),
-        appPath ? loadRouteModule(appPath) : Promise.resolve(null),
-        layoutPath ? loadRouteModule(layoutPath) : Promise.resolve(null),
+        loadRouteModule(match.route.fullPath, { cssCollector }),
+        appPath ? loadRouteModule(appPath, { cssCollector }) : Promise.resolve(null),
+        layoutPath ? loadRouteModule(layoutPath, { cssCollector }) : Promise.resolve(null),
       ]);
 
       if (!pageModule) {
@@ -118,10 +130,24 @@ export function createRendererSSR(
       };
       const result = await renderService.renderSSR(ssrOptions);
 
-      // 返回 HTML 响应（开发模式禁用缓存，确保 HMR 刷新后拿到最新内容）
+      // 注入路由 CSS 到 </head> 前
+      let html = result.html;
+      if (routeCss.length > 0 && html.includes("</head>")) {
+        const styleTags = routeCss
+          .map((c) => `<style data-dweb-route-css>${escapeHtmlInStyle(c)}</style>`)
+          .join("");
+        html = html.replace("</head>", `${styleTags}</head>`);
+      }
+
+      // 生产模式下用 asset-manifest.json 替换 SSR HTML 中的资源路径
       const isDev =
         (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
-      return new Response(result.html, {
+      if (!isDev) {
+        html = await replaceAssetPathsInHtml(html, config);
+      }
+
+      // 返回 HTML 响应（开发模式禁用缓存，确保 HMR 刷新后拿到最新内容）
+      return new Response(html, {
         status: 200,
         headers: {
           "Content-Type": "text/html; charset=utf-8",
