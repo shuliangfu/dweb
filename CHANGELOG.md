@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Upgrade Tailwind dependencies to 4.1.18, fix PostCSS compilation failure caused by missing `negated` field in `ScannerOptions.sources`
+- Upgrade Tailwind CSS and @tailwindcss/postcss from 4.0.0 to 4.1.18 in init template and all examples (Preact/React), fixing PostCSS compilation failure caused by missing `negated` field in `ScannerOptions.sources`
 
 ---
 
