@@ -7,6 +7,14 @@
 
 ---
 
+## [3.0.66] - 2026-02-07
+
+### 修复
+
+- 修复 React CSR 渲染错误「Objects are not valid as a React child」：render-csr 中的 `LoadingPlaceholder` 原先固定使用 Preact 的 `createElement`，与 engine 无关。现已根据 `engine` 配置选择 React/Preact 的 `createElement`，以及 `className`/`class` 属性名。为支持 React 引擎，在 dweb 的 imports 中新增 `react`。
+
+---
+
 ## [3.0.65] - 2026-02-07
 
 ### 新增

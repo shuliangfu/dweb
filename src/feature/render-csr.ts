@@ -12,7 +12,8 @@
  * 3. 客户端脚本根据路由渲染页面
  */
 
-import { createElement } from "preact";
+import { createElement as createElementPreact } from "preact";
+import { createElement as createElementReact } from "react";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import { getEnv } from "../core/runtime-adapter.ts";
@@ -88,12 +89,20 @@ export function createRendererCSR(
   const engine = renderConfig.engine || "preact";
   const clientRoutes = collectClientRoutes(router);
 
-  /** loading 占位组件（替代 Hybrid 的 PageComponent） */
+  /** 根据 engine 选择 createElement，避免 React 下误用 Preact 元素导致 "Objects are not valid as a React child" */
+  const createElement =
+    engine === "react"
+      ? createElementReact
+      : createElementPreact;
+  /** className (React) vs class (Preact) */
+  const classProp = engine === "react" ? "className" : "class";
+
+  /** loading 占位组件（替代 Hybrid 的 PageComponent），必须与 engine 一致 */
   function LoadingPlaceholder() {
     return createElement(
       "div",
-      { class: "dweb-loading" },
-      createElement("div", { class: "dweb-spinner" }),
+      { [classProp]: "dweb-loading" },
+      createElement("div", { [classProp]: "dweb-spinner" }),
     );
   }
 

@@ -1907,6 +1907,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
+### [3.0.66] - 2026-02-07
+
+**修复**
+
+- 修复 React CSR「Objects are not valid as a React child」：LoadingPlaceholder 现根据 engine 使用对应 createElement 及 className/class
+
 ### [3.0.65] - 2026-02-07
 
 **新增**

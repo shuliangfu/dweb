@@ -1729,6 +1729,12 @@ See [TEST_REPORT.md](./TEST_REPORT.md). 52 test files, 446 tests, all passing.
 
 ## 📋 Changelog
 
+### [3.0.66] - 2026-02-07
+
+**Fixed**
+
+- Fix React CSR "Objects are not valid as a React child": LoadingPlaceholder now uses engine-matched createElement (React/Preact) and className/class
+
 ### [3.0.65] - 2026-02-07
 
 **Added**

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.66] - 2026-02-07
+
+### Fixed
+
+- Fix React CSR rendering error "Objects are not valid as a React child": `LoadingPlaceholder` in render-csr was built with Preact's `createElement` regardless of engine. Now select `createElement` (React vs Preact) and prop name (`className` vs `class`) based on `engine` config. Add `react` to dweb imports for React engine support.
+
+---
+
 ## [3.0.65] - 2026-02-07
 
 ### Added

@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "3.0.65",
+  "version": "3.0.66",
   "license": "MIT",
   "exports": {
     ".": "./src/mod.ts",
@@ -59,7 +59,8 @@
     "@dreamer/utils": "jsr:@dreamer/utils@^1.0.0",
     "@dreamer/websocket": "jsr:@dreamer/websocket@^1.0.0",
 
-    "preact": "npm:preact@10.28.0"
+    "preact": "npm:preact@10.28.0",
+    "react": "npm:react@18.3.1"
   },
   "tasks": {
     "setup": "deno run -A src/setup.ts",
