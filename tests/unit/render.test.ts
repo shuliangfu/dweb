@@ -10,6 +10,7 @@
  * 此处仅测试 dweb 框架的集成正确性。CSR 由 feature 层其它模块处理，不在此服务中暴露。
  */
 
+import "../setup.ts";
 import { cwd, join } from "@dreamer/runtime-adapter";
 import { describe, expect, it } from "@dreamer/test";
 import { initializeServiceContainer } from "../../src/core/service.ts";

@@ -9,6 +9,7 @@
  * 注意：测试输出文件存放在 tests/data 目录下
  */
 
+import "../setup.ts";
 import type { Plugin } from "@dreamer/plugin";
 import { describe, expect, it } from "@dreamer/test";
 import { App } from "../../src/core/app.ts";

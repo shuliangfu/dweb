@@ -7,6 +7,7 @@
  * - registerPlugin 注册插件
  */
 
+import "../setup.ts";
 import type { Plugin } from "@dreamer/plugin";
 import { describe, expect, it } from "@dreamer/test";
 import {

@@ -7,6 +7,7 @@
  * - startServer, stopServer 启动和停止服务器
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import { initializeServiceContainer } from "../../src/core/service.ts";
 import { getServer, initializeServer } from "../../src/feature/server.ts";

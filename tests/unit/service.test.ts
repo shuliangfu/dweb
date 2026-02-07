@@ -6,6 +6,7 @@
  * - getServiceContainer 获取服务容器
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import {
   getServiceContainer,

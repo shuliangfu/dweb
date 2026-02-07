@@ -7,6 +7,7 @@
  * - 空值、非对象、数组的处理
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import { sanitizeRequestParams } from "../../src/utils/sanitize.ts";
 

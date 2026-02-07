@@ -7,6 +7,7 @@
  * - fetchDreamerVersions 能批量获取 @dreamer/* 版本
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import {
   compareVersions,

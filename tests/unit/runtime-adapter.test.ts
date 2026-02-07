@@ -5,6 +5,7 @@
  * - 常用 API 应从 @dreamer/runtime-adapter 正确导出
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import * as adapter from "../../src/core/runtime-adapter.ts";
 

@@ -7,6 +7,7 @@
  * - getDatabaseStatus 获取连接状态
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import {
   getDatabaseManager,

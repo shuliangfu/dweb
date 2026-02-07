@@ -8,6 +8,7 @@
  * - pluginEventsMiddleware 插件事件中间件
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import {
   getMiddlewareChain,

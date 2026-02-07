@@ -7,6 +7,7 @@
  * - 日志方法的调用
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import { initializeServiceContainer } from "../../src/core/service.ts";
 import type { AppConfig } from "../../src/types/app.ts";

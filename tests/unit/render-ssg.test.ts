@@ -7,6 +7,7 @@
  * - dev 依赖 SSR，需先注册 render 服务
  */
 
+import "../setup.ts";
 import type { Router } from "@dreamer/router";
 import { describe, expect, it } from "@dreamer/test";
 import { initializeServiceContainer } from "../../src/core/service.ts";

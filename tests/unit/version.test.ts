@@ -6,6 +6,7 @@
  * - 版本号格式（语义化版本）
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import { DWEB_VERSION } from "../../src/utils/version.ts";
 

@@ -6,6 +6,7 @@
  * - getProjectInfo 能正确解析多应用 deno.json
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import { join, makeTempDir, writeTextFile } from "@dreamer/runtime-adapter";
 import { getProjectInfo } from "../../src/utils/project.ts";

@@ -7,6 +7,7 @@
  * - LRU 淘汰逻辑（通过多次 invalidate 触发）
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import {
   getModuleVersion,

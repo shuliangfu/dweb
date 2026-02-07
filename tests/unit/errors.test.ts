@@ -5,6 +5,7 @@
  * 使用 @dreamer/test 与 runtime-adapter 保证 Deno/Bun 兼容
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import { assertRejects } from "@dreamer/test";
 import {

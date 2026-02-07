@@ -13,6 +13,7 @@
  * 注：不测试 @dreamer/runtime-adapter 的 IS_DENO/IS_BUN，仅测试本框架对返回值的处理逻辑。
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import {
   getFmtArgs,

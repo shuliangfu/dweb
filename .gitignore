@@ -7,7 +7,6 @@ deno.lock
 
 # 依赖
 node_modules
-package.json
 bun.lock
 
 # 构建输出

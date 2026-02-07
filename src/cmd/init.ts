@@ -272,12 +272,17 @@ function getDenoJson(opts: InitOptions, jsrVersions: JsrVersions): string {
       ? [`    "@dreamer/plugins": "jsr:@dreamer/plugins@^${pluginsVersion}"`]
       : []),
   ].join(",\n");
-  /** Tailwind / UnoCSS / Preact / React 依赖（合并输出，无空行分隔） */
+  /** Tailwind / UnoCSS / Preact / React 依赖（合并输出，无空行分隔）
+   * Tailwind v4 需 postcss、@tailwindcss/postcss；UnoCSS 需 preset-wind3、preset-icons */
   const tailwindNpmImports = useTailwind
-    ? `    "tailwindcss": "npm:tailwindcss@4.1.18"`
+    ? `    "postcss": "npm:postcss@8.4.39",
+    "tailwindcss": "npm:tailwindcss@4.1.18",
+    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@4.1.18"`
     : "";
   const unocssNpmImports = useUno
-    ? `    "@unocss/core": "npm:@unocss/core@66.0.0"`
+    ? `    "@unocss/core": "npm:@unocss/core@66.0.0",
+    "@unocss/preset-wind3": "npm:@unocss/preset-wind3@66.0.0",
+    "@unocss/preset-icons": "npm:@unocss/preset-icons@66.0.0"`
     : "";
   const engineImports = isPreact
     ? `    "preact": "npm:preact@10.28.0"`

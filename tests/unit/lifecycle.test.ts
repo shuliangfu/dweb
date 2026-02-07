@@ -7,6 +7,7 @@
  * - registerLifecycleHook 注册生命周期钩子
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import {
   getLifecycleManager,

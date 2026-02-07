@@ -6,6 +6,7 @@
  * - API 路由返回 null
  */
 
+import "../setup.ts";
 import type { RouteMatch, Router } from "@dreamer/router";
 import { describe, expect, it } from "@dreamer/test";
 import { initializeServiceContainer } from "../../src/core/service.ts";

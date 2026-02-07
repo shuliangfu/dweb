@@ -65,7 +65,7 @@
   "tasks": {
     "setup": "deno run -A src/setup.ts",
     "check": "deno check src/ tests/",
-    "test": "deno test -A --preload=./tests/setup.ts tests/"
+    "test": "deno test -A tests/"
   },
   "workspace": [
     "./examples/preact-csr/basic",

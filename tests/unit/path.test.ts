@@ -7,6 +7,7 @@
  * - normalizePathForCompare 路径规范化
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import {
   isPathWithinProject,

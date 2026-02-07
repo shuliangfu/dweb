@@ -7,6 +7,7 @@
  * - 多应用（无 src）：backend/main.ts
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import { getInferredBuildOutputDirs } from "../../src/utils/build-dirs.ts";
 

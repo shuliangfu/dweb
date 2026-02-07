@@ -6,6 +6,7 @@
  * - createClientScriptMiddleware 返回函数
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import { initializeServiceContainer } from "../../src/core/service.ts";
 import {

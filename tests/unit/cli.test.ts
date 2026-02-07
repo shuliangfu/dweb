@@ -6,6 +6,7 @@
  * - 包含预期子命令
  */
 
+import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import { createCLI } from "../../src/cli.ts";
 
