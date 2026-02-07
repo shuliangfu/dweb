@@ -7,6 +7,7 @@
  * - 日志友好路径格式化
  */
 
+import { platform } from "@dreamer/runtime-adapter";
 import { cwd, relative, resolve } from "../core/runtime-adapter.ts";
 
 /**
@@ -25,6 +26,7 @@ function normalizePathForCompare(p: string): string {
  * 校验路径是否在项目目录内，防止加载项目外任意文件
  *
  * 用于：中间件/插件加载、路由模块加载、配置热重载等场景。
+ * Windows 下使用大小写不敏感比较，避免驱动号等差异导致误判。
  *
  * @param resolvedPath 已解析的绝对路径
  * @param projectRoot 项目根目录（默认 cwd）
@@ -36,7 +38,12 @@ export function isPathWithinProject(
 ): boolean {
   const a = normalizePathForCompare(resolvedPath);
   const b = normalizePathForCompare(projectRoot);
-  return a === b || a.startsWith(b + "/");
+  const isWin = platform() === "windows";
+  const cmp = (x: string, y: string) =>
+    isWin ? x.toLowerCase() === y.toLowerCase() : x === y;
+  const startsWith = (x: string, y: string) =>
+    isWin ? x.toLowerCase().startsWith(y.toLowerCase()) : x.startsWith(y);
+  return cmp(a, b) || startsWith(a, b + "/");
 }
 
 /**

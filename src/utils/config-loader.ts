@@ -11,6 +11,7 @@
  * @module
  */
 
+import { pathToFileURL } from "node:url";
 import {
   getEnv,
   join,
@@ -51,11 +52,8 @@ async function loadModuleConfig(
       ? filePath
       : resolve(projectRoot, filePath);
     const resolvedPath = await realPath(absPath);
-    // 规范化 file:// URL：Windows 反斜杠转正斜杠，确保格式正确
-    const normalized = resolvedPath.replace(/\\/g, "/");
-    const fileUrl = `file://${
-      normalized.startsWith("/") ? "" : "/"
-    }${normalized}`;
+    // 使用 pathToFileURL 确保 Windows 等平台 file:// URL 格式正确
+    const fileUrl = pathToFileURL(resolvedPath).href;
     const module = await import(fileUrl);
     return module.default || module;
   } catch {
