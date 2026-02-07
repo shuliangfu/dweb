@@ -1907,6 +1907,23 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
+### [3.0.65] - 2026-02-07
+
+**新增**
+
+- **`getDreamerClientCacheDir()`**：获取客户端构建缓存目录 `~/.dreamer/{projectHash}/{appDir}/client-out`
+- **`__DWEB_DEV__` 全局变量**：注入到 CSR/混合模式用于区分 dev/prod
+- **错误码 `DWEB_E34`**（`DREAMER_CACHE_HOME_UNAVAILABLE`）：当 HOME/USERPROFILE 未设置时抛出，含 i18n
+
+**变更**
+
+- 客户端构建缓存从 `.dweb-client-out` 迁移至 `~/.dreamer`
+- HMR CSS 刷新支持 `<link>`（更新 href）与 `<style>`（fetch + textContent）
+- 依赖升级：@dreamer/router ^1.0.1、@dreamer/socket-io ^1.0.1、@dreamer/database ^1.0.2
+- Init 模板：简化 npm imports；UnoCSS 基础 reset 增加 `a { color: inherit; text-decoration: none; }`
+
+完整变更日志：[CHANGELOG-zh.md](./CHANGELOG-zh.md)
+
 ### [3.0.64] - 2026-02-07
 
 **新增**

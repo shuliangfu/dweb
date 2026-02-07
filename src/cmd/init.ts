@@ -272,29 +272,19 @@ function getDenoJson(opts: InitOptions, jsrVersions: JsrVersions): string {
       ? [`    "@dreamer/plugins": "jsr:@dreamer/plugins@^${pluginsVersion}"`]
       : []),
   ].join(",\n");
-  /** Tailwind 相关 npm 依赖（postcss、tailwindcss、@tailwindcss/postcss） */
+  /** Tailwind / UnoCSS / Preact / React 依赖（合并输出，无空行分隔） */
   const tailwindNpmImports = useTailwind
-    ? `    "postcss": "npm:postcss@8.4.39",
-    "tailwindcss": "npm:tailwindcss@4.1.18",
-    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@4.1.18"`
+    ? `    "tailwindcss": "npm:tailwindcss@4.1.18"`
     : "";
-  /** UnoCSS 相关 npm 依赖 */
   const unocssNpmImports = useUno
-    ? `    "@unocss/core": "npm:@unocss/core@66.0.0",
-    "@unocss/preset-wind3": "npm:@unocss/preset-wind3@66.0.0",
-    "@unocss/preset-icons": "npm:@unocss/preset-icons@66.0.0"`
+    ? `    "@unocss/core": "npm:@unocss/core@66.0.0"`
     : "";
-  /** 其他依赖（preact/react、npm） */
-  const otherImports = isPreact
-    ? `    "preact": "npm:preact@10.28.0",
-    "preact/hooks": "npm:preact@10.28.0/hooks",
-    "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
-    "preact-render-to-string": "npm:preact-render-to-string@6.5.0"`
-    : `    "react": "npm:react@18.3.1",
-    "react-dom": "npm:react-dom@18.3.1",
-    "scheduler": "npm:scheduler@0.25.0",
-    "react-dom/client": "npm:react-dom@18.3.1/client",
-    "react/jsx-runtime": "npm:react@18.3.1/jsx-runtime"`;
+  const engineImports = isPreact
+    ? `    "preact": "npm:preact@10.28.0"`
+    : `    "react": "npm:react@18.3.1"`;
+  const npmImports = [tailwindNpmImports, unocssNpmImports, engineImports]
+    .filter(Boolean)
+    .join(",\n");
   const jsxImportSource = isPreact ? "preact" : "react";
 
   /** 多应用：按应用名生成 dev/build/start tasks，以及目录别名（放在 imports 最上面） */
@@ -339,10 +329,8 @@ ${tasksBlock}
   },
   "imports": {
 ${dirAliasesBlock}${dreamerImports},
-${tailwindNpmImports ? `\n${tailwindNpmImports},\n` : ""}${
-    unocssNpmImports ? `${unocssNpmImports},\n` : ""
-  }
-${otherImports}
+
+${npmImports}
   },
   "nodeModulesDir": "auto",
   "compilerOptions": {
@@ -987,9 +975,10 @@ function getUnoCss(): string {
  * 在组件里写 class 即可，unocssPlugin 会扫描并生成工具类，与此处内容合并输出。
  */
 
-/* 基础 reset：移除浏览器默认 margin，消除底部白边 */
+/* 基础 reset */
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; min-height: 100%; }
+a { color: inherit; text-decoration: none; }
 
 /* 可选：自定义层，例如 :root { --color-primary: #333; } */
 `;

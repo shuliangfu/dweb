@@ -226,6 +226,7 @@ export function createRendererHybrid(
   // Hydration 数据
   globalThis.__DATA__ = ${JSON.stringify(hydrationData)};
   // 客户端路由配置
+  globalThis.__DWEB_DEV__ = ${isDev};
   globalThis.__DWEB_ROUTES__ = ${JSON.stringify(clientRoutes)};
   globalThis.__DWEB_ENGINE__ = "${engine}";
   globalThis.__DWEB_CONTAINER_ID__ = "${hybridOptions.containerId}";

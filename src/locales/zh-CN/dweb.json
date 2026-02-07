@@ -32,6 +32,7 @@
     "DWEB_E31": "HTTP {status}",
     "DWEB_E32": "无法读取 {path}: {message}",
     "DWEB_E33": "[dweb] 未知错误: {message}",
+    "DWEB_E34": "无法获取用户主目录（HOME 或 USERPROFILE 未设置），无法使用 ~/.dreamer 缓存",
     "entryPathInvalidReasonNoPath": "无法获取入口路径",
     "entryPathInvalidReasonNoMatch": "无法推断配置目录",
     "entryPathInvalidHint": "请确保入口路径符合规范（如 src/main.ts、src/backend/main.ts）"

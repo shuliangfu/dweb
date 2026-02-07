@@ -32,7 +32,10 @@ import {
   writeTextFile,
 } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
-import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
+import {
+  getDreamerClientCacheDir,
+  getInferredBuildOutputDirs,
+} from "../utils/build-dirs.ts";
 import { $t } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { normalizePathForCompare, pathForLog } from "../utils/path.ts";
@@ -374,6 +377,8 @@ export interface DwebGlobal {
     component?: string;
   };
   __DWEB_MODE__?: "csr" | "hybrid";
+  /** 是否为开发模式（服务端注入，用于区分 dev/prod 行为，如 CSS 强制刷新仅 dev 执行） */
+  __DWEB_DEV__?: boolean;
   __DWEB_HMR_REFRESH__?: (options?: { chunkUrl?: string }) => void;
   /** CSR 模式下页面渲染完成时调用，用于淡出 loading 遮罩 */
   __DWEB_ON_READY__?: () => void;
@@ -636,13 +641,17 @@ export async function setupHydrationRouterAndHmr(opts: {
           }
           if (typeof _win.document !== "undefined") {
             HMR_CSS_ENTRIES.forEach(function(entry) {
-              fetch(entry.url + "?t=" + Date.now())
-                .then(function(r) { return r.ok ? r.text() : Promise.reject(new Error("[dweb] HMR CSS fetch failed: " + r.statusText)); })
-                .then(function(css) {
-                  const el = _win.document.getElementById(entry.styleId);
-                  if (el) el.textContent = css;
-                })
-                .catch(function() {});
+              const el = _win.document.getElementById(entry.styleId);
+              if (!el) return;
+              // link 元素：通过更新 href 加时间戳刷新缓存；style 元素：fetch 后写入 textContent
+              if (el.tagName === "LINK") {
+                el.href = entry.url + "?t=" + Date.now();
+              } else {
+                fetch(entry.url + "?t=" + Date.now())
+                  .then(function(r) { return r.ok ? r.text() : Promise.reject(new Error("[dweb] HMR CSS fetch failed: " + r.statusText)); })
+                  .then(function(css) { el.textContent = css; })
+                  .catch(function() {});
+              }
             });
           }
         });
@@ -1255,9 +1264,9 @@ export async function buildClientScript(
       };
     } else {
       // ========================================
-      // 开发模式：纯内存构建，不写 dist/，使用 esbuild context + rebuild 实现增量编译
+      // 开发模式：纯内存构建，使用 ~/.dreamer/{projectHash}/{appDir}/client-out 缓存，避免在项目内创建临时目录
       // ========================================
-      const memOutputDir = join(cwd(), ".dweb-client-out");
+      const memOutputDir = await getDreamerClientCacheDir();
       await ensureDir(memOutputDir);
 
       let buildResultDev;

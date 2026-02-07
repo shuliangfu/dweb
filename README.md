@@ -1729,6 +1729,21 @@ See [TEST_REPORT.md](./TEST_REPORT.md). 52 test files, 446 tests, all passing.
 
 ## 📋 Changelog
 
+### [3.0.65] - 2026-02-07
+
+**Added**
+
+- **`getDreamerClientCacheDir()`**: Resolve client build cache at `~/.dreamer/{projectHash}/{appDir}/client-out`
+- **`__DWEB_DEV__` global**: Injected for dev/prod detection in CSR and hybrid modes
+- **Error code `DWEB_E34`** (`DREAMER_CACHE_HOME_UNAVAILABLE`): i18n error when HOME/USERPROFILE is unset
+
+**Changed**
+
+- Client build cache moved from `.dweb-client-out` to `~/.dreamer`
+- HMR CSS refresh supports both `<link>` (href update) and `<style>` (fetch + textContent)
+- Dependencies: @dreamer/router ^1.0.1, @dreamer/socket-io ^1.0.1, @dreamer/database ^1.0.2
+- Init template: simplified npm imports; UnoCSS base reset adds `a { color: inherit; text-decoration: none; }`
+
 ### [3.0.64] - 2026-02-07
 
 **Added**

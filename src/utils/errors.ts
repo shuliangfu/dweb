@@ -102,6 +102,9 @@ export const DwebErrorCode = {
 
   /** 未知错误（用于包装非 Error 类型的 throw） */
   UNKNOWN_ERROR: "DWEB_E33",
+
+  /** 无法获取用户主目录，无法使用 ~/.dreamer 缓存 */
+  DREAMER_CACHE_HOME_UNAVAILABLE: "DWEB_E34",
 } as const;
 
 /**
@@ -220,6 +223,8 @@ export const DEFAULT_ERROR_MESSAGES: Record<
   [DwebErrorCode.HTTP_REQUEST_FAILED]: "HTTP {status}",
   [DwebErrorCode.FILE_READ_PARSE_FAILED]: "无法读取 {path}: {message}",
   [DwebErrorCode.UNKNOWN_ERROR]: "[dweb] 未知错误: {message}",
+  [DwebErrorCode.DREAMER_CACHE_HOME_UNAVAILABLE]:
+    "无法获取用户主目录（HOME 或 USERPROFILE 未设置），无法使用 ~/.dreamer 缓存",
 };
 
 /**

@@ -7,15 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [3.0.64] - 2026-02-07
+## [3.0.65] - 2026-02-07
 
 ### Added
 
-- **`dweb update` command**: Run `deno update` or `bun update` to update project dependencies and lockfile. Supports `--latest` and `--interactive` flags. Compatible with Deno and Bun runtimes.
+- **`getDreamerClientCacheDir()`**: New utility to resolve the client build cache directory at `~/.dreamer/{projectHash}/{appDir}/client-out`. Project hash is derived from the project path SHA-256 (first 16 chars); app dir is `default` for single-app or the app name for multi-app.
+- **`__DWEB_DEV__` global**: Injected by the server into CSR/hybrid HTML to indicate dev mode. Used to distinguish dev-only behavior (e.g. HMR CSS refresh only in dev).
+- **Error code `DWEB_E34`** (`DREAMER_CACHE_HOME_UNAVAILABLE`): Thrown when `HOME` or `USERPROFILE` is not set and the framework cannot use `~/.dreamer` cache. Includes i18n messages in zh-CN and en-US.
 
 ### Changed
 
-- Upgrade @dreamer/server dependency to ^1.0.1
+- **Client build cache location**: Dev mode CSR build cache moved from project-local `.dweb-client-out` to `~/.dreamer/{projectHash}/{appDir}/client-out`. Avoids temporary directories inside the project.
+- **HMR CSS refresh**: Support both `<link>` and `<style>` elements. For `<link>`, refresh by updating `href` with a timestamp; for `<style>`, fetch and set `textContent` as before.
+- **Dependencies**: Upgrade @dreamer/router to ^1.0.1 (scroll position restore on page change), @dreamer/socket-io to ^1.0.1 (fix reconnect on manual disconnect), @dreamer/database to ^1.0.2. Remove direct npm deps `autoprefixer`, `cssnano`, `postcss`, `esbuild` from deno.json (resolved transitively).
+- **Init template**: Simplify `deno.json` imports. Tailwind: only `tailwindcss`; UnoCSS: only `@unocss/core`; Preact/React: only engine entry (e.g. `preact`). Add `a { color: inherit; text-decoration: none; }` to base UnoCSS reset.
+- **Examples**: Bump preact-hybrid and preact-hybrid-unocss to stable JSR versions; reduce npm imports to essential entries only.
 
 ---
 

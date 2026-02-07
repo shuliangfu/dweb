@@ -32,6 +32,7 @@
     "DWEB_E31": "HTTP {status}",
     "DWEB_E32": "Cannot read {path}: {message}",
     "DWEB_E33": "[dweb] Unknown error: {message}",
+    "DWEB_E34": "Cannot get user home directory (HOME or USERPROFILE not set), cannot use ~/.dreamer cache",
     "entryPathInvalidReasonNoPath": "Cannot get entry path",
     "entryPathInvalidReasonNoMatch": "Cannot infer config directory",
     "entryPathInvalidHint": "Ensure entry path follows convention (e.g. src/main.ts, src/backend/main.ts)"

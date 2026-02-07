@@ -7,15 +7,21 @@
 
 ---
 
-## [3.0.64] - 2026-02-07
+## [3.0.65] - 2026-02-07
 
 ### 新增
 
-- **`dweb update` 命令**：执行 `deno update` 或 `bun update` 更新项目依赖与 lockfile。支持 `--latest`、`--interactive` 参数。兼容 Deno 与 Bun 运行时。
+- **`getDreamerClientCacheDir()`**：新增工具函数，用于获取客户端构建缓存目录 `~/.dreamer/{projectHash}/{appDir}/client-out`。projectHash 由项目路径 SHA-256 前 16 位生成；appDir 单应用为 `default`，多应用为应用名。
+- **`__DWEB_DEV__` 全局变量**：服务端在 CSR/混合模式下注入到 HTML，用于标识开发模式，便于区分 dev/prod 行为（如 HMR CSS 仅在 dev 下强制刷新）。
+- **错误码 `DWEB_E34`**（`DREAMER_CACHE_HOME_UNAVAILABLE`）：当 `HOME` 或 `USERPROFILE` 未设置且无法使用 `~/.dreamer` 缓存时抛出。包含 zh-CN 与 en-US 的 i18n 译文。
 
 ### 变更
 
-- 升级 @dreamer/server 依赖至 ^1.0.1
+- **客户端构建缓存位置**：开发模式 CSR 构建缓存从项目内 `.dweb-client-out` 迁移至 `~/.dreamer/{projectHash}/{appDir}/client-out`，避免在项目内创建临时目录。
+- **HMR CSS 刷新**：支持 `<link>` 与 `<style>` 元素。`<link>` 通过更新 `href` 加时间戳刷新；`<style>` 仍通过 fetch 后设置 `textContent`。
+- **依赖**：升级 @dreamer/router 至 ^1.0.1（页面切换时恢复滚动位置）、@dreamer/socket-io 至 ^1.0.1（修复手动 disconnect 后仍自动重连）、@dreamer/database 至 ^1.0.2。移除 deno.json 中直接的 npm 依赖 `autoprefixer`、`cssnano`、`postcss`、`esbuild`（由传递依赖解析）。
+- **Init 模板**：简化 `deno.json` 的 imports。Tailwind 仅保留 `tailwindcss`；UnoCSS 仅保留 `@unocss/core`；Preact/React 仅保留引擎入口（如 `preact`）。在 UnoCSS 基础 reset 中增加 `a { color: inherit; text-decoration: none; }`。
+- **示例**：preact-hybrid 与 preact-hybrid-unocss 示例升级至稳定 JSR 版本；精简 npm imports 仅保留必要项。
 
 ---
 
