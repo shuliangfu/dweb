@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.62] - 2026-02-07
+
+### Changed
+
+- Remove Beta version notice from README (English and Chinese)
+- Simplify init command examples: `--beta` is no longer required
+
+---
+
 ## [3.0.61] - 2026-02-06
 
 ### Fixed
