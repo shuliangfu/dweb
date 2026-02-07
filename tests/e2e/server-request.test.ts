@@ -19,7 +19,7 @@ import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 const E2E_PORT = 3000;
 
 describe("e2e: 服务器请求", () => {
-  let originalCwd: string;
+  let originalCwd: string | undefined;
   let child: SpawnedProcess | null = null;
   let exampleDir: string;
 
@@ -38,7 +38,10 @@ describe("e2e: 服务器请求", () => {
         // ignore
       }
     }
-    chdir(originalCwd);
+    // Windows 上测试被 skip 时 beforeAll 可能未运行，originalCwd 为空
+    if (originalCwd && originalCwd.length > 0) {
+      chdir(originalCwd);
+    }
   });
 
   it.skipIf(

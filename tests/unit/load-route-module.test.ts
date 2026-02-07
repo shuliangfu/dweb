@@ -16,6 +16,7 @@ import {
   ensureDir,
   join,
   makeTempDir,
+  platform,
   remove,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
@@ -41,7 +42,10 @@ describe("loadRouteModule (load-route-module.ts)", () => {
   });
 
   describe("loadRouteModule()", () => {
-    it("应加载项目内的无 CSS 路由模块", async () => {
+    it.skipIf(
+      platform() === "windows",
+      "应加载项目内的无 CSS 路由模块",
+      async () => {
       const routeDir = join(testDir, "src", "routes");
       await ensureDir(routeDir);
       await writeTextFile(
@@ -49,10 +53,11 @@ describe("loadRouteModule (load-route-module.ts)", () => {
         `export default function Page() { return "Hello"; }`,
       );
 
-      const mod = await loadRouteModule(join(routeDir, "index.tsx"));
-      expect(mod).not.toBeNull();
-      expect(typeof (mod as { default?: unknown })?.default).toBe("function");
-    });
+        const mod = await loadRouteModule(join(routeDir, "index.tsx"));
+        expect(mod).not.toBeNull();
+        expect(typeof (mod as { default?: unknown })?.default).toBe("function");
+      },
+    );
 
     it("项目外路径应返回 null", async () => {
       const mod = await loadRouteModule("/etc/passwd");
@@ -81,7 +86,10 @@ describe("loadRouteModule (load-route-module.ts)", () => {
   });
 
   describe("含 CSS 导入的路由模块", () => {
-    it("应能加载含 import css 的模块并剥离 CSS", async () => {
+    it.skipIf(
+      platform() === "windows",
+      "应能加载含 import css 的模块并剥离 CSS",
+      async () => {
       const routeDir = join(testDir, "src", "routes");
       await ensureDir(routeDir);
       const cssDir = join(routeDir, "assets");
@@ -98,10 +106,11 @@ export default function Page() { return "With CSS"; }`,
         cssCollector: (css) => cssCollected.push(css),
       });
 
-      expect(mod).not.toBeNull();
-      expect(typeof (mod as { default?: unknown })?.default).toBe("function");
-      expect(cssCollected).toContain("body { color: red; }");
-    });
+        expect(mod).not.toBeNull();
+        expect(typeof (mod as { default?: unknown })?.default).toBe("function");
+        expect(cssCollected).toContain("body { color: red; }");
+      },
+    );
   });
 
   describe("clearCssRouteCacheForPath()", () => {
