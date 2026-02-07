@@ -1727,6 +1727,22 @@ See [TEST_REPORT.md](./TEST_REPORT.md). 52 test files, 446 tests, all passing.
 
 ---
 
+## 📋 Changelog
+
+### [3.0.64] - 2026-02-07
+
+**Added**
+
+- **`dweb update` command**: Run `deno update` or `bun update` to update project dependencies and lockfile. Supports `--latest` and `--interactive` flags. Compatible with Deno and Bun runtimes.
+
+**Changed**
+
+- Upgrade @dreamer/server dependency to ^1.0.1
+
+Full changelog: [CHANGELOG.md](./CHANGELOG.md)
+
+---
+
 ## 📝 Notes
 
 - **Package**: @dreamer/dweb is the main framework package; integrates @dreamer/server, @dreamer/router, @dreamer/render, @dreamer/esbuild, etc.

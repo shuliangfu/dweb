@@ -1905,6 +1905,22 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ---
 
+## 📋 变更日志
+
+### [3.0.64] - 2026-02-07
+
+**新增**
+
+- **`dweb update` 命令**：执行 `deno update` 或 `bun update` 更新项目依赖与 lockfile。支持 `--latest`、`--interactive` 参数。兼容 Deno 与 Bun 运行时。
+
+**变更**
+
+- 升级 @dreamer/server 依赖至 ^1.0.1
+
+完整变更日志：[CHANGELOG-zh.md](./CHANGELOG-zh.md)
+
+---
+
 ## 📝 注意事项
 
 - **包名**：@dreamer/dweb 为框架主包，整合
