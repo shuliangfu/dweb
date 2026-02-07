@@ -598,7 +598,7 @@ await app.start();
     "build": "deno task build",
 
     // 生产环境启动（启动构建后的版本）
-    "start": "deno run --allow-all dist/main.js",
+    "start": "deno run --allow-all dist/server.js",
 
     // 其他工具
     "test": "deno test",
@@ -797,9 +797,9 @@ const db = manager.getConnection("default");
     "build:mobile": "deno task build --app=mobile",
 
     // 生产环境启动（启动构建后的版本）
-    "start:backend": "deno run --allow-all dist/backend/main.js",
-    "start:frontend": "deno run --allow-all dist/frontend/main.js",
-    "start:mobile": "deno run --allow-all dist/mobile/main.js"
+    "start:backend": "deno run --allow-all dist/backend/server.js",
+    "start:frontend": "deno run --allow-all dist/frontend/server.js",
+    "start:mobile": "deno run --allow-all dist/mobile/server.js"
   }
 }
 ```

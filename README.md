@@ -560,7 +560,7 @@ await app.start();
     "build": "deno task build",
 
     // Production (run built version)
-    "start": "deno run --allow-all dist/main.js",
+    "start": "deno run --allow-all dist/server.js",
 
     // Other
     "test": "deno test",
@@ -757,9 +757,9 @@ const db = manager.getConnection("default");
     "build:mobile": "deno task build --app=mobile",
 
     // Production (run built version)
-    "start:backend": "deno run --allow-all dist/backend/main.js",
-    "start:frontend": "deno run --allow-all dist/frontend/main.js",
-    "start:mobile": "deno run --allow-all dist/mobile/main.js"
+    "start:backend": "deno run --allow-all dist/backend/server.js",
+    "start:frontend": "deno run --allow-all dist/frontend/server.js",
+    "start:mobile": "deno run --allow-all dist/mobile/server.js"
   }
 }
 ```
