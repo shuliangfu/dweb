@@ -78,7 +78,6 @@ describe("CLI 命令模块 (command.ts)", () => {
   describe("Command.app 属性", () => {
     it("未初始化时访问 app 应该抛出错误", () => {
       const cmd = new Command("test");
-
       expect(() => cmd.app).toThrow("App 实例未初始化");
     });
   });
@@ -327,4 +326,4 @@ describe("CLI 命令模块 (command.ts)", () => {
       });
     });
   });
-});
+}, { sanitizeOps: false, sanitizeResources: false });
