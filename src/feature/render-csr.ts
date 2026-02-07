@@ -90,10 +90,9 @@ export function createRendererCSR(
   const clientRoutes = collectClientRoutes(router);
 
   /** 根据 engine 选择 createElement，避免 React 下误用 Preact 元素导致 "Objects are not valid as a React child" */
-  const createElement =
-    engine === "react"
-      ? createElementReact
-      : createElementPreact;
+  const createElement = engine === "react"
+    ? createElementReact
+    : createElementPreact;
   /** className (React) vs class (Preact) */
   const classProp = engine === "react" ? "className" : "class";
 

@@ -2,29 +2,32 @@
 
 > 📖 English | [中文文档](./APP_CONFIG-zh.md)
 
-This document provides a complete configuration example based on the `AppConfig` type definition and README of `@dreamer/dweb`, covering all commonly used options.
+This document provides a complete configuration example based on the `AppConfig`
+type definition and README of `@dreamer/dweb`, covering all commonly used
+options.
 
 ## 1. AppConfig Structure Overview
 
-`AppConfig` is the application configuration interface for the dweb framework, with the following main sections:
+`AppConfig` is the application configuration interface for the dweb framework,
+with the following main sections:
 
-| Option                 | Type                 | Description                                                                                                        |
-| ---------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `name`                 | string               | Application name                                                                                                   |
-| `version`              | string               | Application version                                                                                                |
+| Option                 | Type                 | Description                                                                                                                        |
+| ---------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                 | string               | Application name                                                                                                                   |
+| `version`              | string               | Application version                                                                                                                |
 | `language`             | AppLanguage          | Framework language (zh-CN or en-US; affects CLI, logs, error messages; <br/>default: auto-detect LANGUAGE/LC_ALL/LANG, else zh-CN) |
-| `envPrefix`            | string               | Environment variable prefix                                                                                         |
-| `hotReload`            | boolean              | Enable hot reload                                                                                                   |
-| `pluginManagerOptions` | PluginManagerOptions | Plugin manager options (autoActivate, continueOnError, enableHotReload, etc.)                                      |
-| `server`               | ServerOptions        | Server configuration                                                                                               |
-| `router`               | RouterOptions        | Router configuration                                                                                               |
-| `render`               | object               | Render configuration                                                                                               |
-| `build`                | BuildAppConfig       | Build configuration                                                                                                 |
-| `logger`               | LoggerConfig         | Logger configuration                                                                                               |
-| `database`             | DatabaseAppConfig    | Database configuration                                                                                             |
-| `socket`               | SocketConfig         | Real-time config (type: socketio or websocket)                                                                      |
-| `plugins`              | Array                | Plugin list                                                                                                         |
-| `middlewares`          | Array                | Middleware list                                                                                                     |
+| `envPrefix`            | string               | Environment variable prefix                                                                                                        |
+| `hotReload`            | boolean              | Enable hot reload                                                                                                                  |
+| `pluginManagerOptions` | PluginManagerOptions | Plugin manager options (autoActivate, continueOnError, enableHotReload, etc.)                                                      |
+| `server`               | ServerOptions        | Server configuration                                                                                                               |
+| `router`               | RouterOptions        | Router configuration                                                                                                               |
+| `render`               | object               | Render configuration                                                                                                               |
+| `build`                | BuildAppConfig       | Build configuration                                                                                                                |
+| `logger`               | LoggerConfig         | Logger configuration                                                                                                               |
+| `database`             | DatabaseAppConfig    | Database configuration                                                                                                             |
+| `socket`               | SocketConfig         | Real-time config (type: socketio or websocket)                                                                                     |
+| `plugins`              | Array                | Plugin list                                                                                                                        |
+| `middlewares`          | Array                | Middleware list                                                                                                                    |
 
 ---
 
@@ -326,12 +329,18 @@ export default config;
 
 Real-time supports two types via `socket.adapter`:
 
-- **`adapter: "socketio"`** (aliases: `"socket-io"`, `"socket.io"`): Uses Socket.IO with fallback polling; good for compatibility. Default path `/socket.io/`.
-- **`adapter: "websocket"`**: Uses native WebSocket; lighter. Default path `/ws`.
+- **`adapter: "socketio"`** (aliases: `"socket-io"`, `"socket.io"`): Uses
+  Socket.IO with fallback polling; good for compatibility. Default path
+  `/socket.io/`.
+- **`adapter: "websocket"`**: Uses native WebSocket; lighter. Default path
+  `/ws`.
 
-Supports nested `config` (recommended) or flat structure. Both mount on the main HTTP server and share `server.port` and `server.host`.
+Supports nested `config` (recommended) or flat structure. Both mount on the main
+HTTP server and share `server.port` and `server.host`.
 
-**Plugin events**: With Socket configured, the framework calls `onSocket` and `onSocketClose` on connect/disconnect for auth, logging, etc. Plugins only need to implement these hooks.
+**Plugin events**: With Socket configured, the framework calls `onSocket` and
+`onSocketClose` on connect/disconnect for auth, logging, etc. Plugins only need
+to implement these hooks.
 
 ---
 
@@ -339,8 +348,10 @@ Supports nested `config` (recommended) or flat structure. Both mount on the main
 
 For MongoDB replica sets, configure in `mongoOptions`:
 
-- **`replicaSet`**: Replica set name, e.g. `"rs0"`. Required when MongoDB uses replica set.
-- **`directConnection`**: `true` = connect only to specified host:port (single node or Docker); `false` = auto-discover all nodes (distributed production).
+- **`replicaSet`**: Replica set name, e.g. `"rs0"`. Required when MongoDB uses
+  replica set.
+- **`directConnection`**: `true` = connect only to specified host:port (single
+  node or Docker); `false` = auto-discover all nodes (distributed production).
 - **`authSource`**: Auth source database, usually `"admin"`.
 
 ---
@@ -351,9 +362,13 @@ For MongoDB replica sets, configure in `mongoOptions`:
 
 - **Required**: `name`, `version`
 - **Optional**: `dependencies`, `config`, `validateConfig`, `onConfigUpdate`
-- **Hooks** (optional): `onInit`, `onStart`, `onStop`, `onShutdown`, `onRequest`, `onResponse`, `onError`, `onRoute`, `onBuild`, `onBuildComplete`, `onSocket`, `onSocketClose`, `onHealthCheck`, `onHotReload`
+- **Hooks** (optional): `onInit`, `onStart`, `onStop`, `onShutdown`,
+  `onRequest`, `onResponse`, `onError`, `onRoute`, `onBuild`, `onBuildComplete`,
+  `onSocket`, `onSocketClose`, `onHealthCheck`, `onHotReload`
 
-**Note**: `install`, `activate`, `deactivate`, `uninstall` are **PluginManager** methods, not plugin hooks. The framework handles register→install→activate; plugins only implement the hooks they need.
+**Note**: `install`, `activate`, `deactivate`, `uninstall` are **PluginManager**
+methods, not plugin hooks. The framework handles register→install→activate;
+plugins only implement the hooks they need.
 
 ---
 
@@ -547,20 +562,23 @@ export default config;
 
 Merge is deep merge; later config overrides earlier for the same keys.
 
-**Framework language (language)**: Affects CLI, logs, error messages. Set in `config/main.ts`. Priority: `config/main.ts` `language` > env vars `LANGUAGE`/`LC_ALL`/`LANG` > default `zh-CN`.
+**Framework language (language)**: Affects CLI, logs, error messages. Set in
+`config/main.ts`. Priority: `config/main.ts` `language` > env vars
+`LANGUAGE`/`LC_ALL`/`LANG` > default `zh-CN`.
 
 ### 6.1 Config Directory Inference
 
-The framework infers the config directory from the entry path (config not yet loaded when main.ts runs):
+The framework infers the config directory from the entry path (config not yet
+loaded when main.ts runs):
 
-| Scenario       | Entry path example        | Inferred config dir                    |
-| -------------- | ------------------------- | -------------------------------------- |
-| Single+src     | `src/main.ts`             | `src/config`                           |
-| Single no src  | `main.ts`                 | `config`                               |
-| Multi+src      | `src/backend/main.ts`     | `src/backend/config`                   |
-| Multi no src   | `backend/main.ts`         | `backend/config`                       |
-| Prod single    | `dist/server.js`          | `src/config` or `config`               |
-| Prod multi     | `dist/backend/server.js`  | `src/backend/config` or `backend/config` |
+| Scenario      | Entry path example       | Inferred config dir                      |
+| ------------- | ------------------------ | ---------------------------------------- |
+| Single+src    | `src/main.ts`            | `src/config`                             |
+| Single no src | `main.ts`                | `config`                                 |
+| Multi+src     | `src/backend/main.ts`    | `src/backend/config`                     |
+| Multi no src  | `backend/main.ts`        | `backend/config`                         |
+| Prod single   | `dist/server.js`         | `src/config` or `config`                 |
+| Prod multi    | `dist/backend/server.js` | `src/backend/config` or `backend/config` |
 
 Fallback: `./config`, `./src/config`.
 
@@ -569,12 +587,15 @@ Fallback: `./config`, `./src/config`.
 After merge, the framework calls `validateConfig()` to check:
 
 - **Basic**: Types of `name`, `version`, `envPrefix`, `hotReload`
-- **render**: `engine` is `"react"` or `"preact"`; `mode` is `"ssr"`, `"csr"`, `"ssg"`, or `"hybrid"`
-- **middlewares**: Must have `name` (path form can infer; object form must have explicit `name`)
+- **render**: `engine` is `"react"` or `"preact"`; `mode` is `"ssr"`, `"csr"`,
+  `"ssg"`, or `"hybrid"`
+- **middlewares**: Must have `name` (path form can infer; object form must have
+  explicit `name`)
 - **plugins**: Must have `name`
 - **server / router / build / logger**: If present, must be objects
 
-Validation failure throws `DwebErrorCode` (e.g. `CONFIG_NAME_INVALID`, `CONFIG_MIDDLEWARE_MUST_HAVE_NAME`).
+Validation failure throws `DwebErrorCode` (e.g. `CONFIG_NAME_INVALID`,
+`CONFIG_MIDDLEWARE_MUST_HAVE_NAME`).
 
 ---
 
@@ -623,7 +644,8 @@ const timeout = getParamValue<number>(container, "api.timeout", 30000);
 
 **Method 1: Via Config (recommended)**
 
-With `envPrefix: "APP_"`, env vars merge into config. Use `getConfigValue` or `getConfigManager().get()`; **no** `runtime-adapter` needed:
+With `envPrefix: "APP_"`, env vars merge into config. Use `getConfigValue` or
+`getConfigManager().get()`; **no** `runtime-adapter` needed:
 
 ```typescript
 // With envPrefix: "APP_", APP_SERVER_PORT -> server.port

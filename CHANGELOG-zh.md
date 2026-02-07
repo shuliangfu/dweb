@@ -11,13 +11,19 @@
 
 ### 修复
 
-- **Windows 配置推断**：`inferConfigDirectoryFromEntry` 现对 path 与 root 先使用 `normalizePathForCompare` 再 replace，修复 path 使用 `/` 而 root 使用 `\`（或反之）时的路径不匹配问题。
-- **客户端依赖生成**：修复生成 `_client.dep.tsx` 时 esbuild 报错「Unterminated string literal」，通过模板字面量正确转义：使用 `.replace(/\\\\/g, "/")` 使输出包含 `.replace(/\\/g, "/")`，用于 Windows 路径规范化。
+- **Windows 配置推断**：`inferConfigDirectoryFromEntry` 现对 path 与 root 先使用
+  `normalizePathForCompare` 再 replace，修复 path 使用 `/` 而 root 使用
+  `\`（或反之）时的路径不匹配问题。
+- **客户端依赖生成**：修复生成 `_client.dep.tsx` 时 esbuild 报错「Unterminated
+  string literal」，通过模板字面量正确转义：使用 `.replace(/\\\\/g, "/")`
+  使输出包含 `.replace(/\\/g, "/")`，用于 Windows 路径规范化。
 
 ### 新增
 
-- **CI 工作流**（`.github/workflows/ci.yml`）：在 push/PR 到 `main` 或 `dev` 时，在 `ubuntu-latest`、`windows-latest`、`macos-latest` 上运行测试。
-- **Windows 兼容性文档**：`WINDOWS_COMPATIBILITY_ANALYSIS.md`（英文）与 `WINDOWS_COMPATIBILITY_ANALYSIS-zh.md`（中文）。
+- **CI 工作流**（`.github/workflows/ci.yml`）：在 push/PR 到 `main` 或 `dev`
+  时，在 `ubuntu-latest`、`windows-latest`、`macos-latest` 上运行测试。
+- **Windows 兼容性文档**：`WINDOWS_COMPATIBILITY_ANALYSIS.md`（英文）与
+  `WINDOWS_COMPATIBILITY_ANALYSIS-zh.md`（中文）。
 
 ---
 
@@ -25,11 +31,14 @@
 
 ### 新增
 
-- **CLI 文档补充 `update`**：在 README 的 CLI 命令表中补充 `update` 命令（中英文）。执行 `deno update` 或 `bun update`；支持 `--latest`、`--interactive`。
+- **CLI 文档补充 `update`**：在 README 的 CLI 命令表中补充 `update`
+  命令（中英文）。执行 `deno update` 或 `bun update`；支持
+  `--latest`、`--interactive`。
 
 ### 变更
 
-- **Init React 模板**：在 React 引擎的 imports 中补充 `scheduler` 依赖（`npm:scheduler@0.25.0`）。
+- **Init React 模板**：在 React 引擎的 imports 中补充 `scheduler`
+  依赖（`npm:scheduler@0.25.0`）。
 
 ---
 
@@ -37,7 +46,11 @@
 
 ### 修复
 
-- 修复 React CSR 渲染错误「Objects are not valid as a React child」：render-csr 中的 `LoadingPlaceholder` 原先固定使用 Preact 的 `createElement`，与 engine 无关。现已根据 `engine` 配置选择 React/Preact 的 `createElement`，以及 `className`/`class` 属性名。为支持 React 引擎，在 dweb 的 imports 中新增 `react`。
+- 修复 React CSR 渲染错误「Objects are not valid as a React child」：render-csr
+  中的 `LoadingPlaceholder` 原先固定使用 Preact 的 `createElement`，与 engine
+  无关。现已根据 `engine` 配置选择 React/Preact 的 `createElement`，以及
+  `className`/`class` 属性名。为支持 React 引擎，在 dweb 的 imports 中新增
+  `react`。
 
 ---
 
@@ -45,17 +58,34 @@
 
 ### 新增
 
-- **`getDreamerClientCacheDir()`**：新增工具函数，用于获取客户端构建缓存目录 `~/.dreamer/{projectHash}/{appDir}/client-out`。projectHash 由项目路径 SHA-256 前 16 位生成；appDir 单应用为 `default`，多应用为应用名。
-- **`__DWEB_DEV__` 全局变量**：服务端在 CSR/混合模式下注入到 HTML，用于标识开发模式，便于区分 dev/prod 行为（如 HMR CSS 仅在 dev 下强制刷新）。
-- **错误码 `DWEB_E34`**（`DREAMER_CACHE_HOME_UNAVAILABLE`）：当 `HOME` 或 `USERPROFILE` 未设置且无法使用 `~/.dreamer` 缓存时抛出。包含 zh-CN 与 en-US 的 i18n 译文。
+- **`getDreamerClientCacheDir()`**：新增工具函数，用于获取客户端构建缓存目录
+  `~/.dreamer/{projectHash}/{appDir}/client-out`。projectHash 由项目路径 SHA-256
+  前 16 位生成；appDir 单应用为 `default`，多应用为应用名。
+- **`__DWEB_DEV__` 全局变量**：服务端在 CSR/混合模式下注入到
+  HTML，用于标识开发模式，便于区分 dev/prod 行为（如 HMR CSS 仅在 dev
+  下强制刷新）。
+- **错误码 `DWEB_E34`**（`DREAMER_CACHE_HOME_UNAVAILABLE`）：当 `HOME` 或
+  `USERPROFILE` 未设置且无法使用 `~/.dreamer` 缓存时抛出。包含 zh-CN 与 en-US 的
+  i18n 译文。
 
 ### 变更
 
-- **客户端构建缓存位置**：开发模式 CSR 构建缓存从项目内 `.dweb-client-out` 迁移至 `~/.dreamer/{projectHash}/{appDir}/client-out`，避免在项目内创建临时目录。
-- **HMR CSS 刷新**：支持 `<link>` 与 `<style>` 元素。`<link>` 通过更新 `href` 加时间戳刷新；`<style>` 仍通过 fetch 后设置 `textContent`。
-- **依赖**：升级 @dreamer/router 至 ^1.0.1（页面切换时恢复滚动位置）、@dreamer/socket-io 至 ^1.0.1（修复手动 disconnect 后仍自动重连）、@dreamer/database 至 ^1.0.2。移除 deno.json 中直接的 npm 依赖 `autoprefixer`、`cssnano`、`postcss`、`esbuild`（由传递依赖解析）。
-- **Init 模板**：简化 `deno.json` 的 imports。Tailwind 仅保留 `tailwindcss`；UnoCSS 仅保留 `@unocss/core`；Preact/React 仅保留引擎入口（如 `preact`）。在 UnoCSS 基础 reset 中增加 `a { color: inherit; text-decoration: none; }`。
-- **示例**：preact-hybrid 与 preact-hybrid-unocss 示例升级至稳定 JSR 版本；精简 npm imports 仅保留必要项。
+- **客户端构建缓存位置**：开发模式 CSR 构建缓存从项目内 `.dweb-client-out`
+  迁移至
+  `~/.dreamer/{projectHash}/{appDir}/client-out`，避免在项目内创建临时目录。
+- **HMR CSS 刷新**：支持 `<link>` 与 `<style>` 元素。`<link>` 通过更新 `href`
+  加时间戳刷新；`<style>` 仍通过 fetch 后设置 `textContent`。
+- **依赖**：升级 @dreamer/router 至
+  ^1.0.1（页面切换时恢复滚动位置）、@dreamer/socket-io 至 ^1.0.1（修复手动
+  disconnect 后仍自动重连）、@dreamer/database 至 ^1.0.2。移除 deno.json
+  中直接的 npm 依赖
+  `autoprefixer`、`cssnano`、`postcss`、`esbuild`（由传递依赖解析）。
+- **Init 模板**：简化 `deno.json` 的 imports。Tailwind 仅保留
+  `tailwindcss`；UnoCSS 仅保留 `@unocss/core`；Preact/React 仅保留引擎入口（如
+  `preact`）。在 UnoCSS 基础 reset 中增加
+  `a { color: inherit; text-decoration: none; }`。
+- **示例**：preact-hybrid 与 preact-hybrid-unocss 示例升级至稳定 JSR 版本；精简
+  npm imports 仅保留必要项。
 
 ---
 
@@ -63,7 +93,9 @@
 
 ### 修复
 
-- 修复生成 `_client.dep.tsx` 中的 TypeScript 错误：`Property '__DWEB_HMR_DEBUG__' does not exist on type 'Window & typeof globalThis'`，通过在 `DwebGlobal` 接口中添加 `__DWEB_HMR_DEBUG__` 并扩展 `_win` 类型
+- 修复生成 `_client.dep.tsx` 中的 TypeScript
+  错误：`Property '__DWEB_HMR_DEBUG__' does not exist on type 'Window & typeof globalThis'`，通过在
+  `DwebGlobal` 接口中添加 `__DWEB_HMR_DEBUG__` 并扩展 `_win` 类型
 
 ---
 
@@ -80,7 +112,9 @@
 
 ### 修复
 
-- 在 init 模板及所有示例（Preact/React）中将 Tailwind CSS 和 @tailwindcss/postcss 从 4.0.0 升级至 4.1.18，修复因 `ScannerOptions.sources` 缺少 `negated` 字段导致的 PostCSS 编译失败
+- 在 init 模板及所有示例（Preact/React）中将 Tailwind CSS 和
+  @tailwindcss/postcss 从 4.0.0 升级至 4.1.18，修复因 `ScannerOptions.sources`
+  缺少 `negated` 字段导致的 PostCSS 编译失败
 
 ---
 
@@ -88,7 +122,8 @@
 
 ### 修复
 
-- 修复 Dockerfile 中 apt-get 权限问题：添加 `USER root`（Deno 镜像默认非 root 用户）
+- 修复 Dockerfile 中 apt-get 权限问题：添加 `USER root`（Deno 镜像默认非 root
+  用户）
 - 使用 `./runtime/deno-cache` 作为 docker-compose volume，避免被解析为命名卷
 
 ---
@@ -171,11 +206,13 @@
 
 ### 修复
 
-- 将 Preact 打包进客户端 bundle，从 external 中过滤 preact/react，修复 hydration `__H` 错误
+- 将 Preact 打包进客户端 bundle，从 external 中过滤 preact/react，修复 hydration
+  `__H` 错误
 
 ### 新增
 
-- 升级 @dreamer/esbuild 至 1.0.0-beta.59，支持 Preact external 与 import map，修复 HMR `_H` 问题
+- 升级 @dreamer/esbuild 至 1.0.0-beta.59，支持 Preact external 与 import
+  map，修复 HMR `_H` 问题
 
 ---
 

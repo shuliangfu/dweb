@@ -24,21 +24,14 @@
     "@dreamer/service": "jsr:@dreamer/service@^1.0.0-beta.4",
     "@dreamer/socket-io": "jsr:@dreamer/socket-io@^1.0.0-beta.13",
     "@dreamer/utils": "jsr:@dreamer/utils@^1.0.0-beta.8",
-
     "preact": "npm:preact@10.28.0",
     "preact/hooks": "npm:preact@10.28.0/hooks",
     "preact/jsx-runtime": "npm:preact@10.28.0/jsx-runtime",
     "preact-render-to-string": "npm:preact-render-to-string@6.5.0",
-
     "postcss": "npm:postcss@8.4.39",
     "autoprefixer": "npm:autoprefixer@10.4.19",
     "cssnano": "npm:cssnano@7.0.3",
     "tailwindcss": "npm:tailwindcss@4.1.18",
-
     "esbuild": "npm:esbuild@0.27.2"
-  },
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "preact"
   }
 }

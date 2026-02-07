@@ -2,7 +2,8 @@
 
 > 📖 English | [中文文档](./README-zh.md)
 
-> A full-stack Web framework compatible with Deno and Bun, integrating @dreamer/* libraries for an out-of-the-box development experience.
+> A full-stack Web framework compatible with Deno and Bun, integrating
+> @dreamer/* libraries for an out-of-the-box development experience.
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.md)
@@ -12,9 +13,11 @@
 
 ## 🎯 Overview
 
-A full-stack Web framework similar to Next.js, Remix, and SvelteKit, providing complete server and client support.
+A full-stack Web framework similar to Next.js, Remix, and SvelteKit, providing
+complete server and client support.
 
-**Preact by default**: The framework uses Preact (lightweight, high-performance) by default, and also supports React. All example code uses Preact by default.
+**Preact by default**: The framework uses Preact (lightweight, high-performance)
+by default, and also supports React. All example code uses Preact by default.
 
 ---
 
@@ -22,7 +25,8 @@ A full-stack Web framework similar to Next.js, Remix, and SvelteKit, providing c
 
 ### Install dweb-cli globally
 
-To use `dweb-cli` commands (e.g. `dweb-cli init`, `dweb-cli dev`) from any directory, run the setup script:
+To use `dweb-cli` commands (e.g. `dweb-cli init`, `dweb-cli dev`) from any
+directory, run the setup script:
 
 ```bash
 deno run -A jsr:@dreamer/dweb/setup
@@ -32,10 +36,14 @@ After installation, run `dweb-cli upgrade` to get the latest version.
 
 **🪟 Windows installation notes**:
 
-- **PATH**: After installation, `dweb-cli` is in `%USERPROFILE%\.deno\bin` (Deno) or `%USERPROFILE%\.bun\bin` (Bun). Ensure this directory is in your PATH.
-- **PowerShell execution policy**: If scripts cannot run, execute `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`.
+- **PATH**: After installation, `dweb-cli` is in `%USERPROFILE%\.deno\bin`
+  (Deno) or `%USERPROFILE%\.bun\bin` (Bun). Ensure this directory is in your
+  PATH.
+- **PowerShell execution policy**: If scripts cannot run, execute
+  `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`.
 - **Paths and encoding**: Avoid Chinese or special characters in project paths.
-- **Interactive input**: If you see "The operation is not supported", use an ASCII path (e.g. `C:\dev\myapp`).
+- **Interactive input**: If you see "The operation is not supported", use an
+  ASCII path (e.g. `C:\dev\myapp`).
 
 After installation, you can run:
 
@@ -95,19 +103,30 @@ deno add jsr:@dreamer/runtime-adapter
 
 - ✅ **Full-stack support**: Server + client integrated development
 - ✅ **File-based routing**: File-system based routing, similar to Next.js
-- ✅ **Multiple render modes**: SSR (server-side rendering), CSR (client-side rendering), SSG (static site generation), Hybrid (mixed mode)
+- ✅ **Multiple render modes**: SSR (server-side rendering), CSR (client-side
+  rendering), SSG (static site generation), Hybrid (mixed mode)
 - ✅ **Preact by default**: Lightweight, high-performance; React also supported
-- ✅ **Socket.IO built-in**: Real-time bidirectional communication, mounted on the same HTTP server; configure `socket: { adapter: "socketio", ... }` to enable; supports plugin `onSocket`, `onSocketClose` hooks
-- ✅ **Middleware system**: General-purpose middleware for HTTP, WebSocket, message queues, and more
+- ✅ **Socket.IO built-in**: Real-time bidirectional communication, mounted on
+  the same HTTP server; configure `socket: { adapter: "socketio", ... }` to
+  enable; supports plugin `onSocket`, `onSocketClose` hooks
+- ✅ **Middleware system**: General-purpose middleware for HTTP, WebSocket,
+  message queues, and more
 - ✅ **Plugin system**: Plugin lifecycle, dependencies, event system, hot reload
-- ✅ **Event system**: App extends EventEmitter, supports lifecycle and custom events (on/emit/once/off)
+- ✅ **Event system**: App extends EventEmitter, supports lifecycle and custom
+  events (on/emit/once/off)
 - ✅ **Service container**: Dependency injection and service management
-- ✅ **Database support**: Multiple adapters (PostgreSQL, MySQL, SQLite, MongoDB); configure `database` to use
-- ✅ **Cache**: Install @dreamer/cache for Redis, memory, file cache (dweb does not bundle; initialize separately)
-- ✅ **Task queue**: Install @dreamer/queue for async tasks, scheduled tasks, persistent queues
-- ✅ **Unified error handling**: DwebError class with error codes (DWEB_E01–E34), i18n, `throwDwebError` / `createDwebError` / `isDwebError` / `setDwebErrorTranslator`
+- ✅ **Database support**: Multiple adapters (PostgreSQL, MySQL, SQLite,
+  MongoDB); configure `database` to use
+- ✅ **Cache**: Install @dreamer/cache for Redis, memory, file cache (dweb does
+  not bundle; initialize separately)
+- ✅ **Task queue**: Install @dreamer/queue for async tasks, scheduled tasks,
+  persistent queues
+- ✅ **Unified error handling**: DwebError class with error codes
+  (DWEB_E01–E34), i18n, `throwDwebError` / `createDwebError` / `isDwebError` /
+  `setDwebErrorTranslator`
 - ✅ **Type safety**: Full TypeScript support
-- ✅ **Developer experience**: HMR (hot module replacement), CLI tools, code hints
+- ✅ **Developer experience**: HMR (hot module replacement), CLI tools, code
+  hints
 
 ## Architecture
 
@@ -171,14 +190,14 @@ deno add jsr:@dreamer/runtime-adapter
 
 ### dweb internal structure (source directory)
 
-| Dir/File   | Description                                                                                                                                 |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `core/`    | Core: app, config, service, middleware, plugin, lifecycle, database, plugin-events, runtime-adapter                                            |
-| `feature/` | Features: server, router, render, render-ssr, render-csr, render-ssg, render-hybrid, build, csr-client-builder, socket-io, command            |
-| `types/`   | Types: AppConfig, IApp, etc.                                                                                                                 |
-| `utils/`   | Utilities: logger, version, errors (unified error handling with i18n)                                                                         |
-| `cli.ts`   | CLI entry (createCLI)                                                                                                                        |
-| `mod.ts`   | Main entry, unified exports                                                                                                                  |
+| Dir/File   | Description                                                                                                                        |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `core/`    | Core: app, config, service, middleware, plugin, lifecycle, database, plugin-events, runtime-adapter                                |
+| `feature/` | Features: server, router, render, render-ssr, render-csr, render-ssg, render-hybrid, build, csr-client-builder, socket-io, command |
+| `types/`   | Types: AppConfig, IApp, etc.                                                                                                       |
+| `utils/`   | Utilities: logger, version, errors (unified error handling with i18n)                                                              |
+| `cli.ts`   | CLI entry (createCLI)                                                                                                              |
+| `mod.ts`   | Main entry, unified exports                                                                                                        |
 
 ### Optional extensions (install as needed)
 
@@ -229,7 +248,10 @@ flowchart TB
     core --> tool
 ```
 
-**Note**: In the data layer, database is built into dweb (configure `database` to use); cache and storage require separate install of `@dreamer/cache` and `@dreamer/storage` and manual initialization. AppConfig has no cache config option.
+**Note**: In the data layer, database is built into dweb (configure `database`
+to use); cache and storage require separate install of `@dreamer/cache` and
+`@dreamer/storage` and manual initialization. AppConfig has no cache config
+option.
 
 ---
 
@@ -268,12 +290,17 @@ sequenceDiagram
 
 ### Middleware execution order
 
-1. **Global middleware**: Middlewares registered via `app.use()`, executed in registration order
-2. **Socket delegation**: If `socket.adapter` is configured, path prefix match delegates to Socket.IO or WebSocket
+1. **Global middleware**: Middlewares registered via `app.use()`, executed in
+   registration order
+2. **Socket delegation**: If `socket.adapter` is configured, path prefix match
+   delegates to Socket.IO or WebSocket
 3. **Config middleware**: Middlewares in `config.middlewares`
-4. **Route middleware**: Route-level middleware exported from `routes/_middleware.ts`
-5. **Route matching**: `@dreamer/router` matches based on `routesDir` scan results
-6. **Plugin events**: `pluginEventsMiddleware` triggers `onRequest`, `onResponse`
+4. **Route middleware**: Route-level middleware exported from
+   `routes/_middleware.ts`
+5. **Route matching**: `@dreamer/router` matches based on `routesDir` scan
+   results
+6. **Plugin events**: `pluginEventsMiddleware` triggers `onRequest`,
+   `onResponse`
 7. **Rendering**: Selects SSR/CSR/SSG/Hybrid renderer based on `render.mode`
 
 ### App initialization flow
@@ -300,7 +327,8 @@ new App(config)
 
 ## 🎯 Use cases
 
-(Single-app, multi-app, full-stack, SSR/CSR/SSG/Hybrid, etc. See "Application modes" and "Quick start" below.)
+(Single-app, multi-app, full-stack, SSR/CSR/SSG/Hybrid, etc. See "Application
+modes" and "Quick start" below.)
 
 ## Application modes
 
@@ -312,12 +340,16 @@ Single App instance, suitable for most scenarios.
 
 ### Multi-app mode
 
-Supports multiple apps (e.g. backend, frontend, mobile). Each app runs independently and can share common code and config.
+Supports multiple apps (e.g. backend, frontend, mobile). Each app runs
+independently and can share common code and config.
 
 **Multi-app conventions**:
 
-- **Backend (backend/admin)**: Default **admin panel** form, with pages, `_app.tsx`, and route views (e.g. user management, settings).
-- **API app**: For **pure API** (no views, no `_app.tsx`, only `routes/api`), create a separate app (e.g. app name `api`) distinct from "backend". Templates and scaffolding can optionally generate API-only route directories.
+- **Backend (backend/admin)**: Default **admin panel** form, with pages,
+  `_app.tsx`, and route views (e.g. user management, settings).
+- **API app**: For **pure API** (no views, no `_app.tsx`, only `routes/api`),
+  create a separate app (e.g. app name `api`) distinct from "backend". Templates
+  and scaffolding can optionally generate API-only route directories.
 
 ---
 
@@ -325,7 +357,8 @@ Supports multiple apps (e.g. backend, frontend, mobile). Each app runs independe
 
 ### 1. Create project
 
-Use dweb-cli to create a project (install dweb-cli globally first; see "Install dweb-cli globally" above):
+Use dweb-cli to create a project (install dweb-cli globally first; see "Install
+dweb-cli globally" above):
 
 ```bash
 dweb-cli init my-app
@@ -336,9 +369,12 @@ cd my-app
 
 **Directory structure notes**:
 
-- **Default use of `src/` directory** (recommended): The framework uses `src/` by default to organize code
-- **Optional: no `src/` directory**: If you prefer not to use `src/`, you can create files directly in the project root
-- All path configs are customizable; specify the correct paths in config according to your project structure
+- **Default use of `src/` directory** (recommended): The framework uses `src/`
+  by default to organize code
+- **Optional: no `src/` directory**: If you prefer not to use `src/`, you can
+  create files directly in the project root
+- All path configs are customizable; specify the correct paths in config
+  according to your project structure
 
 #### Single-app mode (default basic)
 
@@ -366,7 +402,8 @@ my-app/
 
 **Optional structure (without src/)**:
 
-If you don't want to use `src/`, you can create files directly in the project root:
+If you don't want to use `src/`, you can create files directly in the project
+root:
 
 ```
 my-app/
@@ -382,7 +419,8 @@ my-app/
 └── deno.json
 ```
 
-**Note**: If you don't use `src/`, update paths in config to `"./routes"`, `"./main.ts"`, etc.
+**Note**: If you don't use `src/`, update paths in config to `"./routes"`,
+`"./main.ts"`, etc.
 
 #### Multi-app mode advanced
 
@@ -421,7 +459,8 @@ my-app/
 
 **Optional structure (without src/)**:
 
-If you don't want to use `src/`, you can create files directly in the project root:
+If you don't want to use `src/`, you can create files directly in the project
+root:
 
 ```
 my-app/
@@ -449,23 +488,32 @@ my-app/
 └── deno.json
 ```
 
-**Note**: If you don't use `src/`, update paths in config to `"./backend/routes"`, `"./frontend/routes"`, etc.
+**Note**: If you don't use `src/`, update paths in config to
+`"./backend/routes"`, `"./frontend/routes"`, etc.
 
 **About `client/index.tsx`**:
 
-- ✅ **Not required**: With file-based routing, `@dreamer/router` handles client init and hydration automatically; no separate `client/index.tsx` needed
-- ✅ **Auto-generated**: `@dreamer/router` auto-generates client entry code from the `routes/` directory
+- ✅ **Not required**: With file-based routing, `@dreamer/router` handles client
+  init and hydration automatically; no separate `client/index.tsx` needed
+- ✅ **Auto-generated**: `@dreamer/router` auto-generates client entry code from
+  the `routes/` directory
 - ✅ **Does not affect build and render**:
-  - **Build**: `@dreamer/esbuild` analyzes entry points from `routes/` automatically; no need to specify `client/index.tsx`
-  - **CSR**: `@dreamer/router` auto-generates client routing code, including React/Preact init and navigation
+  - **Build**: `@dreamer/esbuild` analyzes entry points from `routes/`
+    automatically; no need to specify `client/index.tsx`
+  - **CSR**: `@dreamer/router` auto-generates client routing code, including
+    React/Preact init and navigation
   - **SSR**: `@dreamer/router` handles SSR and client hydration
-  - **SSG**: `@dreamer/router` pre-renders all routes to static HTML at build time
-  - **Hybrid**: `@dreamer/router` supports SSR for first screen, CSR for subsequent routes
-- ✅ **Handle in `_app.tsx`**: All custom client init logic can go in `_app.tsx`; no separate `client/index.tsx` needed
+  - **SSG**: `@dreamer/router` pre-renders all routes to static HTML at build
+    time
+  - **Hybrid**: `@dreamer/router` supports SSR for first screen, CSR for
+    subsequent routes
+- ✅ **Handle in `_app.tsx`**: All custom client init logic can go in
+  `_app.tsx`; no separate `client/index.tsx` needed
 
 **Special file handling**:
 
-All special files (`_app.tsx`, `_layout.tsx`, `_404.tsx`, `_error.tsx`, `_middleware.ts`) are handled by **`@dreamer/router`**:
+All special files (`_app.tsx`, `_layout.tsx`, `_404.tsx`, `_error.tsx`,
+`_middleware.ts`) are handled by **`@dreamer/router`**:
 
 - **`@dreamer/router` is responsible for**:
   - Scanning and identifying special files (files starting with `_`)
@@ -473,7 +521,8 @@ All special files (`_app.tsx`, `_layout.tsx`, `_404.tsx`, `_error.tsx`, `_middle
   - Handling `_layout.tsx`: as layout component, wraps all route pages
   - Handling `_404.tsx`: used when no route matches
   - Handling `_error.tsx`: used when an error occurs
-  - Handling `_middleware.ts`: route-level middleware, runs before route matching
+  - Handling `_middleware.ts`: route-level middleware, runs before route
+    matching
   - Auto-generating client entry code (based on `_app.tsx` and route files)
   - Handling SSR rendering and client hydration
 
@@ -572,7 +621,8 @@ await app.start();
 
 **Path config notes**:
 
-- **Default with `src/`**: Framework defaults to `./src/main.ts`, `./src/routes`, etc.
+- **Default with `src/`**: Framework defaults to `./src/main.ts`,
+  `./src/routes`, etc.
 - **Without `src/`**: Use `./main.ts`, `./routes`, etc.
 - Specify correct paths in config according to your project structure
 
@@ -640,7 +690,8 @@ await mobileApp.start();
 - ✅ Each app has its own main.ts and config
 - ✅ Can share common code and config (common directory)
 - ✅ Suitable for large projects, frontend/backend separation
-- ✅ Backend (backend/admin) default has pages, _app.tsx; for pure API (no views) create a separate app (e.g. `api`, only routes/api)
+- ✅ Backend (backend/admin) default has pages, _app.tsx; for pure API (no
+  views) create a separate app (e.g. `api`, only routes/api)
 
 #### Common config and code
 
@@ -686,7 +737,8 @@ export function loadCommonDevConfig() {
 
 #### Shared App instance
 
-In some cases you may need multiple apps or tools (e.g. console CLI) to share one App instance:
+In some cases you may need multiple apps or tools (e.g. console CLI) to share
+one App instance:
 
 ```typescript
 // src/common/app.ts
@@ -766,7 +818,8 @@ const db = manager.getConnection("default");
 
 **Path config notes**:
 
-- **Default with `src/`**: Framework defaults to `src/backend/main.ts`, `src/frontend/main.ts`, etc.
+- **Default with `src/`**: Framework defaults to `src/backend/main.ts`,
+  `src/frontend/main.ts`, etc.
 - **Without `src/`**: Use `backend/main.ts`, `frontend/main.ts`, etc.
 - Specify correct paths in config according to your project structure
 
@@ -774,14 +827,17 @@ const db = manager.getConnection("default");
 
 **Dev**:
 
-- Start separately: `deno task dev:backend`, `deno task dev:frontend`, `deno task dev:mobile`
+- Start separately: `deno task dev:backend`, `deno task dev:frontend`,
+  `deno task dev:mobile`
 - Each app runs on its own port
 - Can start only the apps you need
 
 **Production**:
 
-1. Build: `deno task build:backend`, `deno task build:frontend`, `deno task build:mobile`
-2. Start built version: `deno task start:backend`, `deno task start:frontend`, `deno task start:mobile`
+1. Build: `deno task build:backend`, `deno task build:frontend`,
+   `deno task build:mobile`
+2. Start built version: `deno task start:backend`, `deno task start:frontend`,
+   `deno task start:mobile`
 3. Each app runs on its own port
 4. Can start only the apps you need
 
@@ -848,12 +904,15 @@ export default function App(
 
 **Custom client init notes**:
 
-All of the following can be handled in `_app.tsx`; **no** `client/index.tsx` needed:
+All of the following can be handled in `_app.tsx`; **no** `client/index.tsx`
+needed:
 
-1. **Global state**: Use `@dreamer/store` (Store or Signals); or other Preact-compatible libs
+1. **Global state**: Use `@dreamer/store` (Store or Signals); or other
+   Preact-compatible libs
 2. **Third-party init**: Analytics, monitoring, UI libs in `useEffect`
 3. **Global config**: Theme, i18n, global styles
-4. **Client-only logic**: localStorage, event listeners, performance monitoring in `useEffect`
+4. **Client-only logic**: localStorage, event listeners, performance monitoring
+   in `useEffect`
 
 **Why `client/index.tsx` is not needed**:
 
@@ -968,13 +1027,13 @@ export default function User({ params }: { params: { id: string } }) {
 
 ### Special files reference
 
-| File           | Description   | Required | Role                                                       |
-| -------------- | ------------- | -------- | ---------------------------------------------------------- |
-| `_app.tsx`     | App root      | ✅       | Defines HTML structure; all pages are wrapped in this      |
-| `_layout.tsx`  | Layout        | ❌       | Global layout for all routes                               |
-| `_404.tsx`     | 404 page      | ❌       | Shown when no route matches                                |
-| `_error.tsx`   | Error page    | ❌       | Shown when an error occurs                                 |
-| `_middleware.ts` | Route middleware | ❌    | Route-level middleware; runs before route matching         |
+| File             | Description      | Required | Role                                                  |
+| ---------------- | ---------------- | -------- | ----------------------------------------------------- |
+| `_app.tsx`       | App root         | ✅       | Defines HTML structure; all pages are wrapped in this |
+| `_layout.tsx`    | Layout           | ❌       | Global layout for all routes                          |
+| `_404.tsx`       | 404 page         | ❌       | Shown when no route matches                           |
+| `_error.tsx`     | Error page       | ❌       | Shown when an error occurs                            |
+| `_middleware.ts` | Route middleware | ❌       | Route-level middleware; runs before route matching    |
 
 **File rules**:
 
@@ -984,23 +1043,26 @@ export default function User({ params }: { params: { id: string } }) {
 
 **Route naming**:
 
-| Pattern        | Example                    | Path                    |
-| -------------- | -------------------------- | ----------------------- |
-| `index.tsx`    | `routes/index.tsx`         | `/`                     |
-| `about.tsx`    | `routes/about.tsx`         | `/about`                 |
-| `[id].tsx`     | `routes/user/[id].tsx`     | `/user/:id`              |
-| `[...slug].tsx`| `routes/docs/[...slug].tsx`| `/docs/*`               |
-| `api/*.ts`     | `routes/api/users.ts`      | `/api/users` (API route) |
+| Pattern         | Example                     | Path                     |
+| --------------- | --------------------------- | ------------------------ |
+| `index.tsx`     | `routes/index.tsx`          | `/`                      |
+| `about.tsx`     | `routes/about.tsx`          | `/about`                 |
+| `[id].tsx`      | `routes/user/[id].tsx`      | `/user/:id`              |
+| `[...slug].tsx` | `routes/docs/[...slug].tsx` | `/docs/*`                |
+| `api/*.ts`      | `routes/api/users.ts`       | `/api/users` (API route) |
 
-Supports `.ts`, `.tsx`, `.js`, `.jsx`. Route components can `import "*.css"`; the framework strips and injects styles.
+Supports `.ts`, `.tsx`, `.js`, `.jsx`. Route components can `import "*.css"`;
+the framework strips and injects styles.
 
 **Handling**:
 
 All special files are handled by **`@dreamer/router`**:
 
 1. **Scan**: Identifies files starting with `_`
-2. **Special handling**: `_app.tsx` (root), `_layout.tsx` (layout), `_404.tsx`, `_error.tsx`, `_middleware.ts`
-3. **Client code**: `@dreamer/router` auto-generates client entry from `_app.tsx` and routes
+2. **Special handling**: `_app.tsx` (root), `_layout.tsx` (layout), `_404.tsx`,
+   `_error.tsx`, `_middleware.ts`
+3. **Client code**: `@dreamer/router` auto-generates client entry from
+   `_app.tsx` and routes
 4. **Build**: `@dreamer/esbuild` uses the auto-generated entry
 
 **Impact of removing `client/index.tsx`**:
@@ -1018,24 +1080,25 @@ All special files are handled by **`@dreamer/router`**:
 
 ### Event system
 
-App extends **EventEmitter**. You can listen or emit at lifecycle points or for custom business events.
+App extends **EventEmitter**. You can listen or emit at lifecycle points or for
+custom business events.
 
-| Method                         | Description                    |
-| ------------------------------ | ------------------------------ |
-| `app.on(eventName, handler)`   | Listen; can register multiple  |
+| Method                         | Description                   |
+| ------------------------------ | ----------------------------- |
+| `app.on(eventName, handler)`   | Listen; can register multiple |
 | `app.once(eventName, handler)` | Fire once then remove         |
-| `app.emit(eventName, ...args)` | Emit; can pass args            |
-| `app.off(eventName, handler)`  | Remove listener                |
+| `app.emit(eventName, ...args)` | Emit; can pass args           |
+| `app.off(eventName, handler)`  | Remove listener               |
 
 **Built-in events** (emitted by the framework):
 
 | Event   | When                                                       |
 | ------- | ---------------------------------------------------------- |
-| `init`  | App init done (config, services, routes ready)              |
+| `init`  | App init done (config, services, routes ready)             |
 | `start` | App started (inside `await app.start()`, before lifecycle) |
 | `stop`  | App stopped (inside `await app.stop()`)                    |
 | `build` | Build done (after `await app.build()`)                     |
-| `error` | Uncaught error (can also `app.emit("error", err)`)          |
+| `error` | Uncaught error (can also `app.emit("error", err)`)         |
 
 **Custom events**: Any name; use `emit` freely.
 
@@ -1066,7 +1129,10 @@ app.on("user:login", (userId: string) => {
 // Somewhere: app.emit("user:login", "123");
 ```
 
-**Difference from plugin hooks**: Plugin `onInit`, `onStart`, `onStop` are from the **plugin event system** (`@dreamer/dweb/core/plugin-events`) for plugin logic. App `init`, `start`, `stop` are **EventEmitter events** for app-level logging, monitoring, or decoupling.
+**Difference from plugin hooks**: Plugin `onInit`, `onStart`, `onStop` are from
+the **plugin event system** (`@dreamer/dweb/core/plugin-events`) for plugin
+logic. App `init`, `start`, `stop` are **EventEmitter events** for app-level
+logging, monitoring, or decoupling.
 
 ### Middleware system
 
@@ -1096,26 +1162,28 @@ app.useError(async (req, res, error, next) => {
 
 ### Plugin system
 
-Plugins only need `name`, `version`, and event hooks (e.g. `onInit`); no `install`/`activate`. Configure in `config.plugins`; the framework handles register→install→activate.
+Plugins only need `name`, `version`, and event hooks (e.g. `onInit`); no
+`install`/`activate`. Configure in `config.plugins`; the framework handles
+register→install→activate.
 
 **Plugin lifecycle hooks**:
 
-| Hook            | When                                                       |
-| --------------- | ---------------------------------------------------------- |
-| `onInit`        | App init done; config and container ready                  |
-| `onStart`       | App starting; server about to listen                        |
-| `onStop`        | App stopped                                                |
-| `onShutdown`    | Before app shutdown                                        |
-| `onRequest`     | On each HTTP request                                       |
-| `onResponse`    | Before each HTTP response                                  |
-| `onSocket`      | Socket connected (Socket.IO / WebSocket)                   |
-| `onSocketClose` | Socket disconnected                                        |
-| `onRoute`       | Route scan done; can inspect route list                    |
-| `onBuild`       | Build started                                              |
-| `onBuildComplete` | Build done                                               |
-| `onError`       | On error                                                   |
-| `onHealthCheck` | On health check                                            |
-| `onHotReload`   | On HMR hot reload                                          |
+| Hook              | When                                      |
+| ----------------- | ----------------------------------------- |
+| `onInit`          | App init done; config and container ready |
+| `onStart`         | App starting; server about to listen      |
+| `onStop`          | App stopped                               |
+| `onShutdown`      | Before app shutdown                       |
+| `onRequest`       | On each HTTP request                      |
+| `onResponse`      | Before each HTTP response                 |
+| `onSocket`        | Socket connected (Socket.IO / WebSocket)  |
+| `onSocketClose`   | Socket disconnected                       |
+| `onRoute`         | Route scan done; can inspect route list   |
+| `onBuild`         | Build started                             |
+| `onBuildComplete` | Build done                                |
+| `onError`         | On error                                  |
+| `onHealthCheck`   | On health check                           |
+| `onHotReload`     | On HMR hot reload                         |
 
 ```typescript
 // Method 1: via config.plugins (recommended)
@@ -1152,7 +1220,9 @@ await pluginManager.install("auth-plugin");
 await pluginManager.activate("auth-plugin");
 ```
 
-**Socket plugin events**: When `socket.adapter` (`socketio` or `websocket`) is configured, the framework calls `onSocket` and `onSocketClose` on connect/disconnect for auth, logging, etc.:
+**Socket plugin events**: When `socket.adapter` (`socketio` or `websocket`) is
+configured, the framework calls `onSocket` and `onSocketClose` on
+connect/disconnect for auth, logging, etc.:
 
 ```typescript
 {
@@ -1170,7 +1240,8 @@ await pluginManager.activate("auth-plugin");
 
 ### Database operations
 
-The framework bundles `@dreamer/database`. Configure `config.database` and get it from the container:
+The framework bundles `@dreamer/database`. Configure `config.database` and get
+it from the container:
 
 ```typescript
 // Get database from container
@@ -1200,11 +1271,14 @@ await db.transaction(async (trx) => {
 
 ### Config management
 
-Two kinds of config: **framework config** (`config/main.ts`) and **business config** (`config/params.ts`). Use `app.container` to access them in main.ts, plugins, middleware, API routes, etc.
+Two kinds of config: **framework config** (`config/main.ts`) and **business
+config** (`config/params.ts`). Use `app.container` to access them in main.ts,
+plugins, middleware, API routes, etc.
 
 #### 1. Framework config (config/main.ts)
 
-From `config/main.ts`, `config/main.{env}.ts` (e.g. `main.dev.ts`); merged into `AppConfig`.
+From `config/main.ts`, `config/main.{env}.ts` (e.g. `main.dev.ts`); merged into
+`AppConfig`.
 
 ```typescript
 import { getConfig, getConfigManager, getConfigValue } from "jsr:@dreamer/dweb";
@@ -1230,7 +1304,8 @@ const value = configManager.get("custom.key", "default");
 
 #### 2. Business config (config/params.ts)
 
-From `config/params.ts`; for feature flags, API URLs, pagination, timeouts, etc. Separate from framework config.
+From `config/params.ts`; for feature flags, API URLs, pagination, timeouts, etc.
+Separate from framework config.
 
 **params.ts example**:
 
@@ -1278,7 +1353,9 @@ const pageSize = getParamValue<number>(
 
 **Via Config (recommended, no runtime-adapter)**:
 
-With `envPrefix`, ConfigManager merges prefixed env vars into config. Use `getConfigValue` or `getConfigManager().get()`; no need for `@dreamer/runtime-adapter`.
+With `envPrefix`, ConfigManager merges prefixed env vars into config. Use
+`getConfigValue` or `getConfigManager().get()`; no need for
+`@dreamer/runtime-adapter`.
 
 ```typescript
 // AppConfig: envPrefix: "APP_"
@@ -1296,16 +1373,17 @@ const dbHost = getConfigValue<string>(container, "database.host", "localhost");
 
 **Env var naming** (with `envPrefix: "APP_"`):
 
-| Env var                      | Config key                  |
-| ---------------------------- | --------------------------- |
-| `APP_PORT`                    | `port`                      |
-| `APP_SERVER_PORT`             | `server.port`               |
-| `APP_DATABASE_HOST`           | `database.host`             |
-| `APP_DATABASE_CONNECTION_URL` | `database.connection.url`    |
+| Env var                       | Config key                |
+| ----------------------------- | ------------------------- |
+| `APP_PORT`                    | `port`                    |
+| `APP_SERVER_PORT`             | `server.port`             |
+| `APP_DATABASE_HOST`           | `database.host`           |
+| `APP_DATABASE_CONNECTION_URL` | `database.connection.url` |
 
 **Direct env read (with runtime-adapter)**:
 
-When **defining** config in `config/main.ts`, or for **unprefixed** env vars, use `getEnv`:
+When **defining** config in `config/main.ts`, or for **unprefixed** env vars,
+use `getEnv`:
 
 ```typescript
 import { getEnv } from "jsr:@dreamer/runtime-adapter";
@@ -1344,28 +1422,32 @@ export default {
 } satisfies AppConfig;
 ```
 
-**Summary**: Prefer `getConfigValue` / `getConfigManager().get()` at runtime (includes env vars). Use `getEnv` only when defining config or for unprefixed env vars.
+**Summary**: Prefer `getConfigValue` / `getConfigManager().get()` at runtime
+(includes env vars). Use `getEnv` only when defining config or for unprefixed
+env vars.
 
 #### 4. Config load order
 
-| Priority | File                          | Description                          |
-| -------- | ----------------------------- | ------------------------------------ |
-| Low      | `common/config/main.ts`       | Shared (multi-app)                   |
-| Mid      | `config/main.ts`               | Base config                          |
-| Mid      | `config/main.{env}.ts`         | Env override (main.dev.ts, etc.)    |
-| High     | Config passed to `new App()`   | Overrides                            |
+| Priority | File                         | Description                      |
+| -------- | ---------------------------- | -------------------------------- |
+| Low      | `common/config/main.ts`      | Shared (multi-app)               |
+| Mid      | `config/main.ts`             | Base config                      |
+| Mid      | `config/main.{env}.ts`       | Env override (main.dev.ts, etc.) |
+| High     | Config passed to `new App()` | Overrides                        |
 
-`params.ts` loads separately; stored under `params`; use `getParams` / `getParamValue`.
+`params.ts` loads separately; stored under `params`; use `getParams` /
+`getParamValue`.
 
 #### 5. Config directory and files
 
-| File                 | Description                          | Loaded when          |
-| -------------------- | ------------------------------------ | -------------------- |
-| `config/main.ts`     | Base config, shared across envs     | App init             |
-| `config/main.{env}.ts` | Env override (main.dev.ts, etc.)   | By DENO_ENV/BUN_ENV  |
-| `config/params.ts`   | Business params (flags, API URLs)    | With main series     |
+| File                   | Description                       | Loaded when         |
+| ---------------------- | --------------------------------- | ------------------- |
+| `config/main.ts`       | Base config, shared across envs   | App init            |
+| `config/main.{env}.ts` | Env override (main.dev.ts, etc.)  | By DENO_ENV/BUN_ENV |
+| `config/params.ts`     | Business params (flags, API URLs) | With main series    |
 
-**Config dir**: Inferred from entry path (e.g. `src/backend/main.ts` → `src/backend/config`); fallback `./config`, `./src/config`.
+**Config dir**: Inferred from entry path (e.g. `src/backend/main.ts` →
+`src/backend/config`); fallback `./config`, `./src/config`.
 
 ### Data validation
 
@@ -1428,9 +1510,12 @@ setDwebErrorTranslator((key, params) => {
 });
 ```
 
-**Built-in i18n**: Set `language: "zh-CN" | "en-US"` in `config/main.ts` to switch CLI, logs, error messages, and other framework copy.
+**Built-in i18n**: Set `language: "zh-CN" | "en-US"` in `config/main.ts` to
+switch CLI, logs, error messages, and other framework copy.
 
-Error code ranges: E01–E19 config, E20–E21 entry path, E22 runtime, E23–E29 features, E30–E32 file/HTTP, E33 unknown, E34 cache home. See [utils/errors.ts](./src/utils/errors.ts).
+Error code ranges: E01–E19 config, E20–E21 entry path, E22 runtime, E23–E29
+features, E30–E32 file/HTTP, E33 unknown, E34 cache home. See
+[utils/errors.ts](./src/utils/errors.ts).
 
 ---
 
@@ -1502,7 +1587,8 @@ const app = new App({
 
 ### CLI
 
-Use via `deno task` in the project, or install globally as `dweb-cli` (`deno run -A jsr:@dreamer/dweb/setup`).
+Use via `deno task` in the project, or install globally as `dweb-cli`
+(`deno run -A jsr:@dreamer/dweb/setup`).
 
 **Single-app**:
 
@@ -1537,41 +1623,43 @@ deno task lint   # Lint
 
 ### HMR (Hot Module Replacement)
 
-HMR is enabled in dev mode; code changes trigger automatic refresh without manual reload.
+HMR is enabled in dev mode; code changes trigger automatic refresh without
+manual reload.
 
 ## Framework comparison
 
-| Feature       | @dreamer/dweb | Next.js | Remix   | SvelteKit |
-| ------------- | ------------- | ------- | ------- | --------- |
-| Runtime       | Deno / Bun    | Node.js | Node.js | Node.js   |
-| File routing  | ✅            | ✅      | ✅      | ✅        |
-| SSR           | ✅            | ✅      | ✅      | ✅        |
-| CSR           | ✅            | ✅      | ✅      | ✅        |
-| SSG           | ✅            | ✅      | ✅      | ✅        |
-| Hybrid        | ✅            | ✅      | ✅      | ✅        |
-| Middleware    | ✅            | ✅      | ✅      | ✅        |
-| Plugin system | ✅            | ❌      | ❌      | ❌        |
-| Service container | ✅     | ❌      | ❌      | ❌        |
-| Database      | ✅            | ❌      | ❌      | ❌        |
-| TypeScript    | ✅            | ✅      | ✅      | ✅        |
+| Feature           | @dreamer/dweb | Next.js | Remix   | SvelteKit |
+| ----------------- | ------------- | ------- | ------- | --------- |
+| Runtime           | Deno / Bun    | Node.js | Node.js | Node.js   |
+| File routing      | ✅            | ✅      | ✅      | ✅        |
+| SSR               | ✅            | ✅      | ✅      | ✅        |
+| CSR               | ✅            | ✅      | ✅      | ✅        |
+| SSG               | ✅            | ✅      | ✅      | ✅        |
+| Hybrid            | ✅            | ✅      | ✅      | ✅        |
+| Middleware        | ✅            | ✅      | ✅      | ✅        |
+| Plugin system     | ✅            | ❌      | ❌      | ❌        |
+| Service container | ✅            | ❌      | ❌      | ❌        |
+| Database          | ✅            | ❌      | ❌      | ❌        |
+| TypeScript        | ✅            | ✅      | ✅      | ✅        |
 
 ## Application mode comparison
 
-| Aspect        | Single-app                                      | Multi-app                                                                 |
-| ------------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
-| **App instances** | One                                         | Multiple                                                                  |
-| **Structure** | Simple (routes, main.ts or src/routes, src/main.ts) | Complex (backend, frontend, mobile or src/backend, src/frontend, src/mobile) |
-| **Config**    | Single config dir                               | Per-app config + shared (common/config)                                   |
-| **Use case**  | Small/medium, full-stack                        | Large, frontend/backend split, multi-platform                             |
-| **Sharing**   | Direct                                          | Via common/                                                               |
-| **Startup**   | Single entry                                    | Multiple entries (can run in parallel)                                    |
-| **Complexity**| Low                                             | Medium–high                                                               |
-| **Shared instance** | Direct use                                | Via getSharedApp()                                                         |
+| Aspect              | Single-app                                          | Multi-app                                                                    |
+| ------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **App instances**   | One                                                 | Multiple                                                                     |
+| **Structure**       | Simple (routes, main.ts or src/routes, src/main.ts) | Complex (backend, frontend, mobile or src/backend, src/frontend, src/mobile) |
+| **Config**          | Single config dir                                   | Per-app config + shared (common/config)                                      |
+| **Use case**        | Small/medium, full-stack                            | Large, frontend/backend split, multi-platform                                |
+| **Sharing**         | Direct                                              | Via common/                                                                  |
+| **Startup**         | Single entry                                        | Multiple entries (can run in parallel)                                       |
+| **Complexity**      | Low                                                 | Medium–high                                                                  |
+| **Shared instance** | Direct use                                          | Via getSharedApp()                                                           |
 
 **Recommendation**:
 
 - **Single-app**: Default for most projects; simple and direct
-- **Multi-app**: For large projects, frontend/backend separation, multi-platform (Web, Mobile)
+- **Multi-app**: For large projects, frontend/backend separation, multi-platform
+  (Web, Mobile)
 
 ---
 
@@ -1579,54 +1667,54 @@ HMR is enabled in dev mode; code changes trigger automatic refresh without manua
 
 ### Core API
 
-| API                          | Description                                                       |
-| ---------------------------- | ----------------------------------------------------------------- |
+| API                          | Description                                                          |
+| ---------------------------- | -------------------------------------------------------------------- |
 | `App`                        | Main class; integrates services, middleware, plugins, router, render |
-| `app.use(middleware)`        | Register global middleware                                        |
-| `app.use(path, middleware)`  | Register path-prefix middleware                                   |
-| `app.registerPlugin(plugin)`| Register plugin                                                   |
-| `app.on(stage, hook)`        | Lifecycle hooks (init, start, stop, build, error)                  |
-| `app.start()`                | Start app (dev/production server)                                 |
-| `app.stop()`                 | Stop app                                                          |
-| `app.build()`                | Build for production                                              |
-| `app.shutdown()`             | Graceful shutdown (SIGTERM/SIGINT)                                |
-| `app.container`              | Service container (getConfig, getLogger, etc.)                    |
-| `app.stage`                  | Current lifecycle stage                                           |
+| `app.use(middleware)`        | Register global middleware                                           |
+| `app.use(path, middleware)`  | Register path-prefix middleware                                      |
+| `app.registerPlugin(plugin)` | Register plugin                                                      |
+| `app.on(stage, hook)`        | Lifecycle hooks (init, start, stop, build, error)                    |
+| `app.start()`                | Start app (dev/production server)                                    |
+| `app.stop()`                 | Stop app                                                             |
+| `app.build()`                | Build for production                                                 |
+| `app.shutdown()`             | Graceful shutdown (SIGTERM/SIGINT)                                   |
+| `app.container`              | Service container (getConfig, getLogger, etc.)                       |
+| `app.stage`                  | Current lifecycle stage                                              |
 
 ### Config and params
 
-| API                                        | Description                          |
-| ------------------------------------------ | ------------------------------------ |
-| `getConfig(container)`                     | Full AppConfig                       |
-| `getConfigValue(container, path, default)`  | Config value by dot path             |
-| `getConfigManager(container)`               | ConfigManager (hot reload)            |
-| `getParams(container)`                     | Business config (config/params.ts)   |
-| `getParamValue(container, path, default)`   | Business param by dot path            |
+| API                                        | Description                        |
+| ------------------------------------------ | ---------------------------------- |
+| `getConfig(container)`                     | Full AppConfig                     |
+| `getConfigValue(container, path, default)` | Config value by dot path           |
+| `getConfigManager(container)`              | ConfigManager (hot reload)         |
+| `getParams(container)`                     | Business config (config/params.ts) |
+| `getParamValue(container, path, default)`  | Business param by dot path         |
 
 ### Services and modules
 
-| API                              | Description                                                |
-| -------------------------------- | ---------------------------------------------------------- |
-| `getLogger(container)`           | Logger                                                     |
-| `getRouter(container)`           | Router                                                     |
-| `getRender(container)`           | Render service                                             |
-| `getBuild(container)`            | Build service                                              |
-| `getServer(container)`          | HTTP server                                                |
-| `getPluginManager(container)`    | Plugin manager                                             |
-| `getLifecycleManager(container)` | Lifecycle manager                                          |
-| `getDatabaseManager(container)`  | Database manager (requires database config)                |
-| `getSocketIoServer(container)`   | Socket.IO (requires socket.adapter: "socketio")            |
-| `getWebSocketServer(container)`  | WebSocket (requires socket.adapter: "websocket")           |
+| API                              | Description                                      |
+| -------------------------------- | ------------------------------------------------ |
+| `getLogger(container)`           | Logger                                           |
+| `getRouter(container)`           | Router                                           |
+| `getRender(container)`           | Render service                                   |
+| `getBuild(container)`            | Build service                                    |
+| `getServer(container)`           | HTTP server                                      |
+| `getPluginManager(container)`    | Plugin manager                                   |
+| `getLifecycleManager(container)` | Lifecycle manager                                |
+| `getDatabaseManager(container)`  | Database manager (requires database config)      |
+| `getSocketIoServer(container)`   | Socket.IO (requires socket.adapter: "socketio")  |
+| `getWebSocketServer(container)`  | WebSocket (requires socket.adapter: "websocket") |
 
 ### Error handling
 
 | API                              | Description                    |
 | -------------------------------- | ------------------------------ |
 | `throwDwebError(code, params?)`  | Throw DwebError                |
-| `createDwebError(code, params?)` | Create DwebError (no throw)     |
+| `createDwebError(code, params?)` | Create DwebError (no throw)    |
 | `isDwebError(error)`             | Type guard                     |
-| `setDwebErrorTranslator(fn)`     | Register i18n translator      |
-| `DwebErrorCode`                  | Error code enum (DWEB_E01–E34)  |
+| `setDwebErrorTranslator(fn)`     | Register i18n translator       |
+| `DwebErrorCode`                  | Error code enum (DWEB_E01–E34) |
 
 ### Type exports
 
@@ -1647,23 +1735,23 @@ HMR is enabled in dev mode; code changes trigger automatic refresh without manua
 
 Use via `dweb-cli` or `deno task`:
 
-| Command             | Description           | Common options                          |
-| ------------------- | --------------------- | --------------------------------------- |
-| `init [appName]`    | Create project        | `--beta` use beta deps                  |
-| `dev`               | Start dev server      | `-a, --app` app name (multi-app)        |
-| `build`             | Build for production  | `-a, --app` app name                    |
-| `start`             | Start production      | `-a, --app` app name                    |
-| `preview`           | Preview build         | `-p, --port` port; `-a, --app` app      |
-| `generate (g)`      | Code generation       | `-t, --type` type; `-n, --name` name   |
-| `test`              | Run tests             | `-a, --app` app name                    |
-| `lint`              | Lint                  | -                                       |
-| `fmt`               | Format                | -                                       |
-| `clean`             | Clean build output    | -                                       |
-| `update`             | Update deps & lockfile| `--latest`, `--interactive`             |
-| `db migrate (m)`    | Database migration    | `-a, --action` up/down; `-n, --name`   |
-| `db seed`           | Database seed         | -                                       |
-| `db status`        | Database status       | -                                       |
-| `upgrade`           | Upgrade dweb deps     | `--beta` use beta                       |
+| Command          | Description            | Common options                       |
+| ---------------- | ---------------------- | ------------------------------------ |
+| `init [appName]` | Create project         | `--beta` use beta deps               |
+| `dev`            | Start dev server       | `-a, --app` app name (multi-app)     |
+| `build`          | Build for production   | `-a, --app` app name                 |
+| `start`          | Start production       | `-a, --app` app name                 |
+| `preview`        | Preview build          | `-p, --port` port; `-a, --app` app   |
+| `generate (g)`   | Code generation        | `-t, --type` type; `-n, --name` name |
+| `test`           | Run tests              | `-a, --app` app name                 |
+| `lint`           | Lint                   | -                                    |
+| `fmt`            | Format                 | -                                    |
+| `clean`          | Clean build output     | -                                    |
+| `update`         | Update deps & lockfile | `--latest`, `--interactive`          |
+| `db migrate (m)` | Database migration     | `-a, --action` up/down; `-n, --name` |
+| `db seed`        | Database seed          | -                                    |
+| `db status`      | Database status        | -                                    |
+| `upgrade`        | Upgrade dweb deps      | `--beta` use beta                    |
 
 **generate types**: `service`, `api`, `model`, `route`.
 
@@ -1671,24 +1759,27 @@ Use via `dweb-cli` or `deno task`:
 
 ## 📚 Error codes
 
-| Range      | Codes   | Description                                                       |
-| ---------- | ------- | ----------------------------------------------------------------- |
-| Config     | E01–E19 | name, version, render, middlewares, plugins validation           |
-| Entry      | E20–E21 | Entry path format, segments                                       |
-| Runtime    | E22     | Deno/Bun only                                                     |
-| Features   | E23–E29 | App not initialized, Socket not configured, generate, build, middleware |
-| File/HTTP  | E30–E32 | File read, HTTP request failure                                  |
-| Unknown    | E33     | Unknown error wrapper                                             |
-| Cache      | E34     | Cannot get HOME/USERPROFILE for ~/.dreamer cache                  |
+| Range     | Codes   | Description                                                             |
+| --------- | ------- | ----------------------------------------------------------------------- |
+| Config    | E01–E19 | name, version, render, middlewares, plugins validation                  |
+| Entry     | E20–E21 | Entry path format, segments                                             |
+| Runtime   | E22     | Deno/Bun only                                                           |
+| Features  | E23–E29 | App not initialized, Socket not configured, generate, build, middleware |
+| File/HTTP | E30–E32 | File read, HTTP request failure                                         |
+| Unknown   | E33     | Unknown error wrapper                                                   |
+| Cache     | E34     | Cannot get HOME/USERPROFILE for ~/.dreamer cache                        |
 
-Full definitions in [src/utils/errors.ts](./src/utils/errors.ts). Use `setDwebErrorTranslator` for i18n.
+Full definitions in [src/utils/errors.ts](./src/utils/errors.ts). Use
+`setDwebErrorTranslator` for i18n.
 
 ---
 
 ## 📚 Config docs
 
-- **[AppConfig full example](./APP_CONFIG.md)**: All options (language, server, router, render, build, logger, database, socket, plugins, middlewares).
-- **Config and params**: See "[Config management](#config-management)" above for:
+- **[AppConfig full example](./APP_CONFIG.md)**: All options (language, server,
+  router, render, build, logger, database, socket, plugins, middlewares).
+- **Config and params**: See "[Config management](#config-management)" above
+  for:
   - Framework config (`getConfig`, `getConfigValue`)
   - Business config (`config/params.ts`) via `getParams`, `getParamValue`
   - Environment variables (`getEnv`)
@@ -1698,28 +1789,30 @@ Full definitions in [src/utils/errors.ts](./src/utils/errors.ts). Use `setDwebEr
 
 ## 📦 Extension libraries
 
-Extension libraries in the dreamer-jsr ecosystem for auth, cache, payment, real-time, etc. dweb already includes core deps; install these only when needed.
+Extension libraries in the dreamer-jsr ecosystem for auth, cache, payment,
+real-time, etc. dweb already includes core deps; install these only when needed.
 
-| Library              | Description                                                       |
-| -------------------- | ----------------------------------------------------------------- |
-| **@dreamer/auth**    | Auth: JWT, OAuth2, Session, refresh token, permissions             |
-| **@dreamer/cache**  | Cache: memory, file, Redis, Memcached, unified API                |
-| **@dreamer/console**| Console & CLI: commands, output, tables, prompts                  |
-| **@dreamer/crypto** | Crypto: hash, encrypt, sign, JWT                                   |
-| **@dreamer/database**| Database: multi-adapter, ORM/ODM, query builder, migrations       |
-| **@dreamer/email**  | Email: SMTP client, HTML email                                    |
-| **@dreamer/foundry**| Smart contracts: Foundry deploy & verify (EVM)                    |
-| **@dreamer/humancheck**| Human verification: captcha, TOTP, third-party                  |
-| **@dreamer/i18n**   | i18n: translation, formatting, multi-language                    |
-| **@dreamer/logger** | Logging                                                            |
-| **@dreamer/queue**  | Task queue: async, scheduled, persistent                           |
-| **@dreamer/session**| Session management                                                |
-| **@dreamer/storage**| File storage                                                      |
-| **@dreamer/store**  | Client state                                                      |
-| **@dreamer/websocket**| Native WebSocket (Socket.IO is built into dweb)                  |
-| **@dreamer/web3**   | Blockchain                                                        |
+| Library                 | Description                                                 |
+| ----------------------- | ----------------------------------------------------------- |
+| **@dreamer/auth**       | Auth: JWT, OAuth2, Session, refresh token, permissions      |
+| **@dreamer/cache**      | Cache: memory, file, Redis, Memcached, unified API          |
+| **@dreamer/console**    | Console & CLI: commands, output, tables, prompts            |
+| **@dreamer/crypto**     | Crypto: hash, encrypt, sign, JWT                            |
+| **@dreamer/database**   | Database: multi-adapter, ORM/ODM, query builder, migrations |
+| **@dreamer/email**      | Email: SMTP client, HTML email                              |
+| **@dreamer/foundry**    | Smart contracts: Foundry deploy & verify (EVM)              |
+| **@dreamer/humancheck** | Human verification: captcha, TOTP, third-party              |
+| **@dreamer/i18n**       | i18n: translation, formatting, multi-language               |
+| **@dreamer/logger**     | Logging                                                     |
+| **@dreamer/queue**      | Task queue: async, scheduled, persistent                    |
+| **@dreamer/session**    | Session management                                          |
+| **@dreamer/storage**    | File storage                                                |
+| **@dreamer/store**      | Client state                                                |
+| **@dreamer/websocket**  | Native WebSocket (Socket.IO is built into dweb)             |
+| **@dreamer/web3**       | Blockchain                                                  |
 
-Install with `deno add jsr:@dreamer/<package-name>`. See [README-zh.md](./README-zh.md) for full table with GitHub links.
+Install with `deno add jsr:@dreamer/<package-name>`. See
+[README-zh.md](./README-zh.md) for full table with GitHub links.
 
 ---
 
@@ -1733,7 +1826,8 @@ See [TEST_REPORT.md](./TEST_REPORT.md). 52 test files, 446 tests, all passing.
 
 ### [3.0.68] - 2025-02-07
 
-**Fixed**: Windows config inference (normalizePathForCompare); client dep generation template escape (esbuild "Unterminated string literal").
+**Fixed**: Windows config inference (normalizePathForCompare); client dep
+generation template escape (esbuild "Unterminated string literal").
 
 **Added**: CI workflow (Linux/Windows/macOS); Windows compatibility docs.
 
@@ -1743,11 +1837,16 @@ Full changelog: [CHANGELOG.md](./CHANGELOG.md)
 
 ## 📝 Notes
 
-- **Package**: @dreamer/dweb is the main framework package; integrates @dreamer/server, @dreamer/router, @dreamer/render, @dreamer/esbuild, etc.
-- **Entry**: Use `App` class (`import { App } from "jsr:@dreamer/dweb"`) with `AppConfig` (name, version, language, server, render, router, build, logger, etc.)
-- **Optional**: Use dweb alone or install other @dreamer/* libs (database, cache, storage, etc.) as needed
+- **Package**: @dreamer/dweb is the main framework package; integrates
+  @dreamer/server, @dreamer/router, @dreamer/render, @dreamer/esbuild, etc.
+- **Entry**: Use `App` class (`import { App } from "jsr:@dreamer/dweb"`) with
+  `AppConfig` (name, version, language, server, render, router, build, logger,
+  etc.)
+- **Optional**: Use dweb alone or install other @dreamer/* libs (database,
+  cache, storage, etc.) as needed
 - **Type safety**: Full TypeScript support
-- **Modes**: Single-app and multi-app; can share App instance (e.g. getSharedApp) for multiple entry points or CLI
+- **Modes**: Single-app and multi-app; can share App instance (e.g.
+  getSharedApp) for multiple entry points or CLI
 
 ---
 
@@ -1757,7 +1856,8 @@ Issues and Pull Requests welcome!
 
 **When developing the dweb library** (in the dweb directory):
 
-- Type check: `deno task check` or `deno check src/ tests/` (core only; excludes examples)
+- Type check: `deno task check` or `deno check src/ tests/` (core only; excludes
+  examples)
 - Test: `deno test -A tests/unit` or `bun test`
 
 ---

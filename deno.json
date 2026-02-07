@@ -89,6 +89,10 @@
   ],
   "nodeModulesDir": "auto",
   "exclude": ["examples/"],
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
+  },
   "lint": {
     "include": ["src/"],
     "rules": { "tags": ["recommended"], "exclude": ["no-explicit-any"] }

@@ -23,11 +23,6 @@
     "@dreamer/service": "jsr:@dreamer/service@^1.0.0",
     "@dreamer/utils": "jsr:@dreamer/utils@^1.0.0",
     "@dreamer/websocket": "jsr:@dreamer/websocket@^1.0.0",
-
     "preact": "npm:preact@10.28.0"
-  },
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "preact"
   }
 }

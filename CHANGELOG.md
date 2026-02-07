@@ -3,7 +3,8 @@
 All notable changes to @dreamer/dweb are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
@@ -11,13 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Windows config inference**: `inferConfigDirectoryFromEntry` now uses `normalizePathForCompare` for path and root before replace, fixing path mismatch when path uses `/` and root uses `\` (or vice versa).
-- **Client dep generation**: Fix esbuild "Unterminated string literal" in generated `_client.dep.tsx` by correcting template literal escape: use `.replace(/\\\\/g, "/")` so output contains `.replace(/\\/g, "/")` for Windows path normalization.
+- **Windows config inference**: `inferConfigDirectoryFromEntry` now uses
+  `normalizePathForCompare` for path and root before replace, fixing path
+  mismatch when path uses `/` and root uses `\` (or vice versa).
+- **Client dep generation**: Fix esbuild "Unterminated string literal" in
+  generated `_client.dep.tsx` by correcting template literal escape: use
+  `.replace(/\\\\/g, "/")` so output contains `.replace(/\\/g, "/")` for Windows
+  path normalization.
 
 ### Added
 
-- **CI workflow** (`.github/workflows/ci.yml`): Run tests on `ubuntu-latest`, `windows-latest`, and `macos-latest` on push/PR to `main` or `dev`.
-- **Windows compatibility docs**: `WINDOWS_COMPATIBILITY_ANALYSIS.md` (English) and `WINDOWS_COMPATIBILITY_ANALYSIS-zh.md` (Chinese).
+- **CI workflow** (`.github/workflows/ci.yml`): Run tests on `ubuntu-latest`,
+  `windows-latest`, and `macos-latest` on push/PR to `main` or `dev`.
+- **Windows compatibility docs**: `WINDOWS_COMPATIBILITY_ANALYSIS.md` (English)
+  and `WINDOWS_COMPATIBILITY_ANALYSIS-zh.md` (Chinese).
 
 ---
 
@@ -25,11 +33,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **CLI `update` in docs**: Add `update` command to CLI commands table in README (English and Chinese). Runs `deno update` or `bun update`; supports `--latest` and `--interactive`.
+- **CLI `update` in docs**: Add `update` command to CLI commands table in README
+  (English and Chinese). Runs `deno update` or `bun update`; supports `--latest`
+  and `--interactive`.
 
 ### Changed
 
-- **Init React template**: Add `scheduler` dependency (`npm:scheduler@0.25.0`) to React engine imports in generated `deno.json`.
+- **Init React template**: Add `scheduler` dependency (`npm:scheduler@0.25.0`)
+  to React engine imports in generated `deno.json`.
 
 ---
 
@@ -37,7 +48,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix React CSR rendering error "Objects are not valid as a React child": `LoadingPlaceholder` in render-csr was built with Preact's `createElement` regardless of engine. Now select `createElement` (React vs Preact) and prop name (`className` vs `class`) based on `engine` config. Add `react` to dweb imports for React engine support.
+- Fix React CSR rendering error "Objects are not valid as a React child":
+  `LoadingPlaceholder` in render-csr was built with Preact's `createElement`
+  regardless of engine. Now select `createElement` (React vs Preact) and prop
+  name (`className` vs `class`) based on `engine` config. Add `react` to dweb
+  imports for React engine support.
 
 ---
 
@@ -45,17 +60,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **`getDreamerClientCacheDir()`**: New utility to resolve the client build cache directory at `~/.dreamer/{projectHash}/{appDir}/client-out`. Project hash is derived from the project path SHA-256 (first 16 chars); app dir is `default` for single-app or the app name for multi-app.
-- **`__DWEB_DEV__` global**: Injected by the server into CSR/hybrid HTML to indicate dev mode. Used to distinguish dev-only behavior (e.g. HMR CSS refresh only in dev).
-- **Error code `DWEB_E34`** (`DREAMER_CACHE_HOME_UNAVAILABLE`): Thrown when `HOME` or `USERPROFILE` is not set and the framework cannot use `~/.dreamer` cache. Includes i18n messages in zh-CN and en-US.
+- **`getDreamerClientCacheDir()`**: New utility to resolve the client build
+  cache directory at `~/.dreamer/{projectHash}/{appDir}/client-out`. Project
+  hash is derived from the project path SHA-256 (first 16 chars); app dir is
+  `default` for single-app or the app name for multi-app.
+- **`__DWEB_DEV__` global**: Injected by the server into CSR/hybrid HTML to
+  indicate dev mode. Used to distinguish dev-only behavior (e.g. HMR CSS refresh
+  only in dev).
+- **Error code `DWEB_E34`** (`DREAMER_CACHE_HOME_UNAVAILABLE`): Thrown when
+  `HOME` or `USERPROFILE` is not set and the framework cannot use `~/.dreamer`
+  cache. Includes i18n messages in zh-CN and en-US.
 
 ### Changed
 
-- **Client build cache location**: Dev mode CSR build cache moved from project-local `.dweb-client-out` to `~/.dreamer/{projectHash}/{appDir}/client-out`. Avoids temporary directories inside the project.
-- **HMR CSS refresh**: Support both `<link>` and `<style>` elements. For `<link>`, refresh by updating `href` with a timestamp; for `<style>`, fetch and set `textContent` as before.
-- **Dependencies**: Upgrade @dreamer/router to ^1.0.1 (scroll position restore on page change), @dreamer/socket-io to ^1.0.1 (fix reconnect on manual disconnect), @dreamer/database to ^1.0.2. Remove direct npm deps `autoprefixer`, `cssnano`, `postcss`, `esbuild` from deno.json (resolved transitively).
-- **Init template**: Simplify `deno.json` imports. Tailwind: only `tailwindcss`; UnoCSS: only `@unocss/core`; Preact/React: only engine entry (e.g. `preact`). Add `a { color: inherit; text-decoration: none; }` to base UnoCSS reset.
-- **Examples**: Bump preact-hybrid and preact-hybrid-unocss to stable JSR versions; reduce npm imports to essential entries only.
+- **Client build cache location**: Dev mode CSR build cache moved from
+  project-local `.dweb-client-out` to
+  `~/.dreamer/{projectHash}/{appDir}/client-out`. Avoids temporary directories
+  inside the project.
+- **HMR CSS refresh**: Support both `<link>` and `<style>` elements. For
+  `<link>`, refresh by updating `href` with a timestamp; for `<style>`, fetch
+  and set `textContent` as before.
+- **Dependencies**: Upgrade @dreamer/router to ^1.0.1 (scroll position restore
+  on page change), @dreamer/socket-io to ^1.0.1 (fix reconnect on manual
+  disconnect), @dreamer/database to ^1.0.2. Remove direct npm deps
+  `autoprefixer`, `cssnano`, `postcss`, `esbuild` from deno.json (resolved
+  transitively).
+- **Init template**: Simplify `deno.json` imports. Tailwind: only `tailwindcss`;
+  UnoCSS: only `@unocss/core`; Preact/React: only engine entry (e.g. `preact`).
+  Add `a { color: inherit; text-decoration: none; }` to base UnoCSS reset.
+- **Examples**: Bump preact-hybrid and preact-hybrid-unocss to stable JSR
+  versions; reduce npm imports to essential entries only.
 
 ---
 
@@ -63,7 +97,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix TypeScript error `Property '__DWEB_HMR_DEBUG__' does not exist on type 'Window & typeof globalThis'` in generated `_client.dep.tsx` by adding `__DWEB_HMR_DEBUG__` to `DwebGlobal` interface and extending `_win` type
+- Fix TypeScript error
+  `Property '__DWEB_HMR_DEBUG__' does not exist on type 'Window & typeof globalThis'`
+  in generated `_client.dep.tsx` by adding `__DWEB_HMR_DEBUG__` to `DwebGlobal`
+  interface and extending `_win` type
 
 ---
 
@@ -80,7 +117,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Upgrade Tailwind CSS and @tailwindcss/postcss from 4.0.0 to 4.1.18 in init template and all examples (Preact/React), fixing PostCSS compilation failure caused by missing `negated` field in `ScannerOptions.sources`
+- Upgrade Tailwind CSS and @tailwindcss/postcss from 4.0.0 to 4.1.18 in init
+  template and all examples (Preact/React), fixing PostCSS compilation failure
+  caused by missing `negated` field in `ScannerOptions.sources`
 
 ---
 
@@ -88,8 +127,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix Dockerfile apt-get permission issue: add `USER root` (Deno image defaults to non-root user)
-- Use `./runtime/deno-cache` for docker-compose volume to avoid being interpreted as named volume
+- Fix Dockerfile apt-get permission issue: add `USER root` (Deno image defaults
+  to non-root user)
+- Use `./runtime/deno-cache` for docker-compose volume to avoid being
+  interpreted as named volume
 
 ---
 
@@ -109,7 +150,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- docker-compose single-app service name now uses project name (was fixed as `app`)
+- docker-compose single-app service name now uses project name (was fixed as
+  `app`)
 
 ---
 
@@ -139,7 +181,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Upgrade @dreamer/esbuild to 1.0.0-beta.64 with i18n and HMR incremental compilation support
+- Upgrade @dreamer/esbuild to 1.0.0-beta.64 with i18n and HMR incremental
+  compilation support
 
 ---
 
@@ -171,11 +214,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Bundle Preact into client bundle, filter preact/react from external to fix hydration `__H` error
+- Bundle Preact into client bundle, filter preact/react from external to fix
+  hydration `__H` error
 
 ### Added
 
-- Upgrade @dreamer/esbuild to 1.0.0-beta.59 with Preact external and import map for HMR `_H` fix
+- Upgrade @dreamer/esbuild to 1.0.0-beta.59 with Preact external and import map
+  for HMR `_H` fix
 
 ---
 
@@ -329,7 +374,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- generate command uses @dreamer/utils pascalCase/kebabCase for name normalization
+- generate command uses @dreamer/utils pascalCase/kebabCase for name
+  normalization
 - db migrate integrates MigrationManager
 - dev/build/start use config
 - getRuntime and config-loader

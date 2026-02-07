@@ -1801,23 +1801,23 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 通过 `dweb-cli` 或 `deno task` 使用：
 
-| 命令             | 说明           | 常用选项                                    |
-| ---------------- | -------------- | ------------------------------------------- |
-| `init [appName]` | 初始化新项目   | `--beta` 使用 beta 依赖                     |
-| `dev`            | 启动开发服务器 | `-a, --app` 指定应用（多应用时）            |
-| `build`          | 构建生产版本   | `-a, --app` 指定应用                        |
-| `start`          | 启动生产服务器 | `-a, --app` 指定应用                        |
-| `preview`        | 预览构建结果   | `-p, --port` 端口；`-a, --app` 应用         |
-| `generate (g)`   | 代码生成       | `-t, --type` 类型；`-n, --name` 名称        |
-| `test`           | 运行测试       | `-a, --app` 指定应用                        |
-| `lint`           | 代码检查       | -                                           |
-| `fmt`            | 代码格式化     | -                                           |
-| `clean`          | 清理构建产物   | -                                           |
-| `update`         | 更新依赖与 lockfile | `--latest`、`--interactive`              |
-| `db migrate (m)` | 数据库迁移     | `-a, --action` up/down；`-n, --name` 迁移名 |
-| `db seed`        | 数据库种子     | -                                           |
-| `db status`      | 数据库状态     | -                                           |
-| `upgrade`        | 升级 dweb 依赖 | `--beta` 使用 beta 版本                     |
+| 命令             | 说明                | 常用选项                                    |
+| ---------------- | ------------------- | ------------------------------------------- |
+| `init [appName]` | 初始化新项目        | `--beta` 使用 beta 依赖                     |
+| `dev`            | 启动开发服务器      | `-a, --app` 指定应用（多应用时）            |
+| `build`          | 构建生产版本        | `-a, --app` 指定应用                        |
+| `start`          | 启动生产服务器      | `-a, --app` 指定应用                        |
+| `preview`        | 预览构建结果        | `-p, --port` 端口；`-a, --app` 应用         |
+| `generate (g)`   | 代码生成            | `-t, --type` 类型；`-n, --name` 名称        |
+| `test`           | 运行测试            | `-a, --app` 指定应用                        |
+| `lint`           | 代码检查            | -                                           |
+| `fmt`            | 代码格式化          | -                                           |
+| `clean`          | 清理构建产物        | -                                           |
+| `update`         | 更新依赖与 lockfile | `--latest`、`--interactive`                 |
+| `db migrate (m)` | 数据库迁移          | `-a, --action` up/down；`-n, --name` 迁移名 |
+| `db seed`        | 数据库种子          | -                                           |
+| `db status`      | 数据库状态          | -                                           |
+| `upgrade`        | 升级 dweb 依赖      | `--beta` 使用 beta 版本                     |
 
 **generate 支持的类型**：`service`、`api`、`model`、`route`。
 
@@ -1833,7 +1833,7 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 | 功能      | E23～E29 | App 未初始化、Socket 未配置、生成类型、构建失败、中间件加载 |
 | 文件/HTTP | E30～E32 | 文件读取、HTTP 请求失败                                     |
 | 未知      | E33      | 未知错误包装                                                |
-| 缓存      | E34      | 无法获取 HOME/USERPROFILE 导致 ~/.dreamer 缓存不可用         |
+| 缓存      | E34      | 无法获取 HOME/USERPROFILE 导致 ~/.dreamer 缓存不可用        |
 
 完整定义见 [src/utils/errors.ts](./src/utils/errors.ts)。可通过
 `setDwebErrorTranslator` 接入 i18n 翻译。
@@ -1911,7 +1911,9 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ### [3.0.68] - 2025-02-07
 
-**修复**：Windows 配置推断（normalizePathForCompare）；客户端依赖生成模板转义（esbuild「Unterminated string literal」）。
+**修复**：Windows
+配置推断（normalizePathForCompare）；客户端依赖生成模板转义（esbuild「Unterminated
+string literal」）。
 
 **新增**：CI 工作流（Linux/Windows/macOS）；Windows 兼容性文档。
 
