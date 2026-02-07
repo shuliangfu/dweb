@@ -33,10 +33,6 @@ deno run -A jsr:@dreamer/dweb/setup
 
 安装成功后，建议先执行 `dweb-cli upgrade` 升级到最新版本。
 
-**⚠️ Beta 版本提示**：当前所有 @dreamer/* 依赖库均为 beta
-版本。初始化应用时**必须**加上 `--beta`
-参数，否则生成的项目依赖版本不正确，无法启动。例如：`dweb-cli init my-app --beta`。
-
 **🪟 Windows 安装注意事项**：
 
 - **PATH 配置**：安装后 `dweb-cli` 位于 `%USERPROFILE%\.deno\bin`（Deno）或
@@ -52,7 +48,7 @@ deno run -A jsr:@dreamer/dweb/setup
 安装完成后，可在任意目录执行：
 
 ```bash
-dweb-cli init [appName] --beta   # 初始化新项目（必须加 --beta）
+dweb-cli init [appName]   # 初始化新项目
 dweb-cli dev              # 启动开发服务器
 dweb-cli build            # 构建生产版本
 dweb-cli start            # 启动生产服务器
@@ -360,7 +356,7 @@ backend、frontend、mobile），每个应用独立运行，可以共享公共�
 全局命令」）：
 
 ```bash
-dweb-cli init my-app --beta   # 必须加 --beta，否则依赖版本不正确无法启动 (因为当前所有依赖库都还没有发布正式版)
+dweb-cli init my-app
 cd my-app
 ```
 

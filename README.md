@@ -30,8 +30,6 @@ deno run -A jsr:@dreamer/dweb/setup
 
 After installation, run `dweb-cli upgrade` to get the latest version.
 
-**⚠️ Beta notice**: All @dreamer/* dependencies are currently in beta. You **must** add `--beta` when initializing apps, otherwise dependency versions will be incorrect. Example: `dweb-cli init my-app --beta`.
-
 **🪟 Windows installation notes**:
 
 - **PATH**: After installation, `dweb-cli` is in `%USERPROFILE%\.deno\bin` (Deno) or `%USERPROFILE%\.bun\bin` (Bun). Ensure this directory is in your PATH.
@@ -42,7 +40,7 @@ After installation, run `dweb-cli upgrade` to get the latest version.
 After installation, you can run:
 
 ```bash
-dweb-cli init [appName] --beta   # Initialize new project (--beta required)
+dweb-cli init [appName]   # Initialize new project
 dweb-cli dev              # Start dev server
 dweb-cli build            # Build for production
 dweb-cli start            # Start production server
@@ -330,7 +328,7 @@ Supports multiple apps (e.g. backend, frontend, mobile). Each app runs independe
 Use dweb-cli to create a project (install dweb-cli globally first; see "Install dweb-cli globally" above):
 
 ```bash
-dweb-cli init my-app --beta   # --beta required; otherwise dependency versions are incorrect and app won't start (all @dreamer/* libs are still beta)
+dweb-cli init my-app
 cd my-app
 ```
 
