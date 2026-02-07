@@ -105,7 +105,7 @@ deno add jsr:@dreamer/runtime-adapter
 - ✅ **Database support**: Multiple adapters (PostgreSQL, MySQL, SQLite, MongoDB); configure `database` to use
 - ✅ **Cache**: Install @dreamer/cache for Redis, memory, file cache (dweb does not bundle; initialize separately)
 - ✅ **Task queue**: Install @dreamer/queue for async tasks, scheduled tasks, persistent queues
-- ✅ **Unified error handling**: DwebError class with error codes (DWEB_E01–E33), i18n, `throwDwebError` / `createDwebError` / `isDwebError` / `setDwebErrorTranslator`
+- ✅ **Unified error handling**: DwebError class with error codes (DWEB_E01–E34), i18n, `throwDwebError` / `createDwebError` / `isDwebError` / `setDwebErrorTranslator`
 - ✅ **Type safety**: Full TypeScript support
 - ✅ **Developer experience**: HMR (hot module replacement), CLI tools, code hints
 
@@ -557,7 +557,7 @@ await app.start();
     // Without src/: "deno run --allow-all main.ts"
 
     // Build
-    "build": "deno task build",
+    "build": "deno run -A src/main.ts --build",
 
     // Production (run built version)
     "start": "deno run --allow-all dist/server.js",
@@ -752,9 +752,9 @@ const db = manager.getConnection("default");
     // "dev:mobile": "deno run --allow-all mobile/main.ts",
 
     // Build
-    "build:backend": "deno task build --app=backend",
-    "build:frontend": "deno task build --app=frontend",
-    "build:mobile": "deno task build --app=mobile",
+    "build:backend": "deno run -A src/backend/main.ts --build",
+    "build:frontend": "deno run -A src/frontend/main.ts --build",
+    "build:mobile": "deno run -A src/mobile/main.ts --build",
 
     // Production (run built version)
     "start:backend": "deno run --allow-all dist/backend/server.js",
@@ -1430,7 +1430,7 @@ setDwebErrorTranslator((key, params) => {
 
 **Built-in i18n**: Set `language: "zh-CN" | "en-US"` in `config/main.ts` to switch CLI, logs, error messages, and other framework copy.
 
-Error code ranges: E01–E19 config, E20–E21 entry path, E22 runtime, E23–E29 features, E30–E32 file/HTTP, E33 unknown. See [utils/errors.ts](./src/utils/errors.ts).
+Error code ranges: E01–E19 config, E20–E21 entry path, E22 runtime, E23–E29 features, E30–E32 file/HTTP, E33 unknown, E34 cache home. See [utils/errors.ts](./src/utils/errors.ts).
 
 ---
 
@@ -1626,7 +1626,7 @@ HMR is enabled in dev mode; code changes trigger automatic refresh without manua
 | `createDwebError(code, params?)` | Create DwebError (no throw)     |
 | `isDwebError(error)`             | Type guard                     |
 | `setDwebErrorTranslator(fn)`     | Register i18n translator      |
-| `DwebErrorCode`                  | Error code enum (DWEB_E01–E33)  |
+| `DwebErrorCode`                  | Error code enum (DWEB_E01–E34)  |
 
 ### Type exports
 
@@ -1679,6 +1679,7 @@ Use via `dweb-cli` or `deno task`:
 | Features   | E23–E29 | App not initialized, Socket not configured, generate, build, middleware |
 | File/HTTP  | E30–E32 | File read, HTTP request failure                                  |
 | Unknown    | E33     | Unknown error wrapper                                             |
+| Cache      | E34     | Cannot get HOME/USERPROFILE for ~/.dreamer cache                  |
 
 Full definitions in [src/utils/errors.ts](./src/utils/errors.ts). Use `setDwebErrorTranslator` for i18n.
 
@@ -1730,46 +1731,11 @@ See [TEST_REPORT.md](./TEST_REPORT.md). 52 test files, 446 tests, all passing.
 
 ## 📋 Changelog
 
-### [3.0.67] - 2026-02-07
+### [3.0.68] - 2025-02-07
 
-**Added**
+**Fixed**: Windows config inference (normalizePathForCompare); client dep generation template escape (esbuild "Unterminated string literal").
 
-- CLI docs: add `update` command to commands table
-
-**Changed**
-
-- Init React template: add `scheduler` dependency
-
-### [3.0.66] - 2026-02-07
-
-**Fixed**
-
-- Fix React CSR "Objects are not valid as a React child": LoadingPlaceholder now uses engine-matched createElement (React/Preact) and className/class
-
-### [3.0.65] - 2026-02-07
-
-**Added**
-
-- **`getDreamerClientCacheDir()`**: Resolve client build cache at `~/.dreamer/{projectHash}/{appDir}/client-out`
-- **`__DWEB_DEV__` global**: Injected for dev/prod detection in CSR and hybrid modes
-- **Error code `DWEB_E34`** (`DREAMER_CACHE_HOME_UNAVAILABLE`): i18n error when HOME/USERPROFILE is unset
-
-**Changed**
-
-- Client build cache moved from `.dweb-client-out` to `~/.dreamer`
-- HMR CSS refresh supports both `<link>` (href update) and `<style>` (fetch + textContent)
-- Dependencies: @dreamer/router ^1.0.1, @dreamer/socket-io ^1.0.1, @dreamer/database ^1.0.2
-- Init template: simplified npm imports; UnoCSS base reset adds `a { color: inherit; text-decoration: none; }`
-
-### [3.0.64] - 2026-02-07
-
-**Added**
-
-- **`dweb update` command**: Run `deno update` or `bun update` to update project dependencies and lockfile. Supports `--latest` and `--interactive` flags. Compatible with Deno and Bun runtimes.
-
-**Changed**
-
-- Upgrade @dreamer/server dependency to ^1.0.1
+**Added**: CI workflow (Linux/Windows/macOS); Windows compatibility docs.
 
 Full changelog: [CHANGELOG.md](./CHANGELOG.md)
 

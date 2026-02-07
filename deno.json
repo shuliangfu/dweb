@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "3.0.67",
+  "version": "3.0.68",
   "license": "MIT",
   "exports": {
     ".": "./src/mod.ts",
@@ -40,7 +40,7 @@
   },
   "imports": {
     "@dreamer/config": "jsr:@dreamer/config@^1.0.0",
-    "@dreamer/console": "jsr:@dreamer/console@^1.0.3",
+    "@dreamer/console": "jsr:@dreamer/console@^1.0.4",
     "@dreamer/database": "jsr:@dreamer/database@^1.0.2",
     "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.0.0",
     "@dreamer/i18n": "jsr:@dreamer/i18n@^1.0.0",
@@ -51,7 +51,7 @@
     "@dreamer/plugin": "jsr:@dreamer/plugin@^1.0.0",
     "@dreamer/render": "jsr:@dreamer/render@^1.0.0",
     "@dreamer/router": "jsr:@dreamer/router@^1.0.1",
-    "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.0.0",
+    "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.0.2",
     "@dreamer/server": "jsr:@dreamer/server@^1.0.1",
     "@dreamer/service": "jsr:@dreamer/service@^1.0.0",
     "@dreamer/socket-io": "jsr:@dreamer/socket-io@^1.0.1",

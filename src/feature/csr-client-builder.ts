@@ -410,13 +410,31 @@ export interface LayoutComponent {
 ${layoutCode}
 
 /**
+ * 规范化组件路径用于 ROUTE_LOADERS 查找（Windows 兼容）
+ * 统一反斜杠为正斜杠、去除扩展名，确保与 scanRouteComponents 生成的 key 一致
+ */
+function normalizeComponentPathForLookup(componentPath: string): string {
+  return componentPath
+    .replace(/\\\\/g, "/")
+    .replace(/\.(tsx?|jsx?)$/, "")
+    .trim();
+}
+
+/**
  * 动态加载页面模块
  * @param componentPath 组件路径标识（如 "about" 或 "user/[id]"）
  */
 export async function loadPageModule(componentPath: string): Promise<unknown> {
-  const cleanPath = componentPath.replace(/\\.(tsx?|jsx?)$/, "");
+  const cleanPath = normalizeComponentPathForLookup(componentPath);
   if (MODULE_CACHE[cleanPath]) return MODULE_CACHE[cleanPath];
-  const loader = ROUTE_LOADERS[cleanPath];
+  let loader = ROUTE_LOADERS[cleanPath];
+  // Windows 下路径大小写可能不一致，尝试不区分大小写匹配
+  if (!loader && cleanPath.indexOf("/") < 0) {
+    const key = Object.keys(ROUTE_LOADERS).find(
+      (k) => k.toLowerCase() === cleanPath.toLowerCase(),
+    );
+    if (key) loader = ROUTE_LOADERS[key];
+  }
   if (!loader) return null;
   const module = await loader();
   MODULE_CACHE[cleanPath] = module;

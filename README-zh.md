@@ -120,7 +120,7 @@ deno add jsr:@dreamer/runtime-adapter
 - ✅ **缓存**：可安装 @dreamer/cache 实现 Redis、内存、文件缓存（dweb
   不内置，需自行初始化）
 - ✅ **任务队列**：可安装 @dreamer/queue 实现异步任务、定时任务、持久化队列
-- ✅ **统一错误处理**：DwebError 错误类，支持错误码（DWEB_E01～E33）、i18n
+- ✅ **统一错误处理**：DwebError 错误类，支持错误码（DWEB_E01～E34）、i18n
   国际化、`throwDwebError` / `createDwebError` / `isDwebError` /
   `setDwebErrorTranslator`
 - ✅ **类型安全**：完整的 TypeScript 支持
@@ -595,7 +595,7 @@ await app.start();
     // 如果不使用 src 目录，改为： "deno run --allow-all main.ts"
 
     // 构建
-    "build": "deno task build",
+    "build": "deno run -A src/main.ts --build",
 
     // 生产环境启动（启动构建后的版本）
     "start": "deno run --allow-all dist/server.js",
@@ -792,9 +792,9 @@ const db = manager.getConnection("default");
     // "dev:mobile": "deno run --allow-all mobile/main.ts",
 
     // 构建
-    "build:backend": "deno task build --app=backend",
-    "build:frontend": "deno task build --app=frontend",
-    "build:mobile": "deno task build --app=mobile",
+    "build:backend": "deno run -A src/backend/main.ts --build",
+    "build:frontend": "deno run -A src/frontend/main.ts --build",
+    "build:mobile": "deno run -A src/mobile/main.ts --build",
 
     // 生产环境启动（启动构建后的版本）
     "start:backend": "deno run --allow-all dist/backend/server.js",
@@ -1568,7 +1568,7 @@ setDwebErrorTranslator((key, params) => {
 ```
 
 错误码分段：E01～E19 配置、E20～E21 入口路径、E22 运行时、E23～E29
-功能模块、E30～E32 文件/HTTP、E33 未知错误。详见
+功能模块、E30～E32 文件/HTTP、E33 未知错误、E34 缓存主目录。详见
 [utils/errors.ts](./src/utils/errors.ts)。
 
 ## 渲染模式
@@ -1780,7 +1780,7 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 | `createDwebError(code, params?)` | 创建 DwebError 实例（不抛出） |
 | `isDwebError(error)`             | 类型守卫                      |
 | `setDwebErrorTranslator(fn)`     | 注册错误消息翻译器（i18n）    |
-| `DwebErrorCode`                  | 错误码枚举（DWEB_E01～E33）   |
+| `DwebErrorCode`                  | 错误码枚举（DWEB_E01～E34）   |
 
 ### 类型导出
 
@@ -1833,6 +1833,7 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 | 功能      | E23～E29 | App 未初始化、Socket 未配置、生成类型、构建失败、中间件加载 |
 | 文件/HTTP | E30～E32 | 文件读取、HTTP 请求失败                                     |
 | 未知      | E33      | 未知错误包装                                                |
+| 缓存      | E34      | 无法获取 HOME/USERPROFILE 导致 ~/.dreamer 缓存不可用         |
 
 完整定义见 [src/utils/errors.ts](./src/utils/errors.ts)。可通过
 `setDwebErrorTranslator` 接入 i18n 翻译。
@@ -1908,48 +1909,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.0.67] - 2026-02-07
+### [3.0.68] - 2025-02-07
 
-**新增**
+**修复**：Windows 配置推断（normalizePathForCompare）；客户端依赖生成模板转义（esbuild「Unterminated string literal」）。
 
-- CLI 文档：补充 `update` 命令至命令表
-
-**变更**
-
-- Init React 模板：补充 `scheduler` 依赖
-
-### [3.0.66] - 2026-02-07
-
-**修复**
-
-- 修复 React CSR「Objects are not valid as a React child」：LoadingPlaceholder 现根据 engine 使用对应 createElement 及 className/class
-
-### [3.0.65] - 2026-02-07
-
-**新增**
-
-- **`getDreamerClientCacheDir()`**：获取客户端构建缓存目录 `~/.dreamer/{projectHash}/{appDir}/client-out`
-- **`__DWEB_DEV__` 全局变量**：注入到 CSR/混合模式用于区分 dev/prod
-- **错误码 `DWEB_E34`**（`DREAMER_CACHE_HOME_UNAVAILABLE`）：当 HOME/USERPROFILE 未设置时抛出，含 i18n
-
-**变更**
-
-- 客户端构建缓存从 `.dweb-client-out` 迁移至 `~/.dreamer`
-- HMR CSS 刷新支持 `<link>`（更新 href）与 `<style>`（fetch + textContent）
-- 依赖升级：@dreamer/router ^1.0.1、@dreamer/socket-io ^1.0.1、@dreamer/database ^1.0.2
-- Init 模板：简化 npm imports；UnoCSS 基础 reset 增加 `a { color: inherit; text-decoration: none; }`
-
-完整变更日志：[CHANGELOG-zh.md](./CHANGELOG-zh.md)
-
-### [3.0.64] - 2026-02-07
-
-**新增**
-
-- **`dweb update` 命令**：执行 `deno update` 或 `bun update` 更新项目依赖与 lockfile。支持 `--latest`、`--interactive` 参数。兼容 Deno 与 Bun 运行时。
-
-**变更**
-
-- 升级 @dreamer/server 依赖至 ^1.0.1
+**新增**：CI 工作流（Linux/Windows/macOS）；Windows 兼容性文档。
 
 完整变更日志：[CHANGELOG-zh.md](./CHANGELOG-zh.md)
 

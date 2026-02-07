@@ -32,7 +32,7 @@ import {
   resolve,
   stat,
 } from "./runtime-adapter.ts";
-import { isPathWithinProject } from "../utils/path.ts";
+import { isPathWithinProject, normalizePathForCompare } from "../utils/path.ts";
 
 /** 入口 main 文件扩展名（预编译，避免重复创建） */
 const RE_MAIN_EXT = /main\.(ts|tsx|js|jsx)$/;
@@ -120,7 +120,10 @@ export function inferConfigDirectoryFromEntry(): string {
     }
 
     const root = cwd();
-    const normalized = path.replace(root, "");
+    // Windows 兼容：path 与 root 可能使用不同斜杠格式（\ vs /），先规范化再 strip root
+    const pathNorm = normalizePathForCompare(path);
+    const rootNorm = normalizePathForCompare(root);
+    const normalized = pathNorm.replace(rootNorm, "") || "/";
     const hasSrcDir = existsSync(resolve(root, "src"));
 
     const configDir = matchConfigDirFromNormalizedPath(normalized, hasSrcDir);

@@ -1,0 +1,72 @@
+# CI: 在 macOS、Ubuntu、Windows 上运行测试，验证跨平台兼容性
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  test-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.0.0
+
+      - name: Cache dependencies
+        run: deno cache src/cli.ts src/setup.ts 2>/dev/null || true
+
+      - name: Check
+        run: deno check src/ tests/
+
+      - name: Lint
+        run: deno lint
+
+      - name: Test (Deno)
+        run: deno test -A --preload=./tests/setup.ts tests/
+
+  test-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.0.0
+
+      - name: Cache dependencies
+        run: deno cache src/cli.ts src/setup.ts
+
+      - name: Check
+        run: deno check src/ tests/
+
+      - name: Lint
+        run: deno lint
+
+      - name: Test (Deno, Windows)
+        run: deno test -A --preload=./tests/setup.ts tests/
+
+  test-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.0.0
+
+      - name: Cache dependencies
+        run: deno cache src/cli.ts src/setup.ts 2>/dev/null || true
+
+      - name: Check
+        run: deno check src/ tests/
+
+      - name: Lint
+        run: deno lint
+
+      - name: Test (Deno, macOS)
+        run: deno test -A --preload=./tests/setup.ts tests/

@@ -206,13 +206,17 @@ export function createRendererHybrid(
         html = await replaceAssetPathsInHtml(html, config);
       }
 
-      // 构建 hydration 数据
+      // 构建 hydration 数据（component 路径统一为正斜杠，确保 Windows 下客户端 loadPageModule 能正确匹配 ROUTE_LOADERS）
+      const rawComponent = match.route.file || match.route.path;
+      const normalizedComponent = typeof rawComponent === "string"
+        ? rawComponent.replace(/\\/g, "/").trim()
+        : rawComponent;
       const hydrationData = {
         page: pageProps,
         route: match.route.path,
         params: match.params,
         query: match.query,
-        component: match.route.file || match.route.path,
+        component: normalizedComponent,
       };
 
       // 构建客户端配置脚本（开发模式启用 HMR 调试：在控制台设置 globalThis.__DWEB_HMR_DEBUG__ = true 可查看详细日志）
@@ -318,6 +322,13 @@ ${hybridOptions.bodyTags || ""}`;
 }
 
 /**
+ * 规范化路由 component 路径（Windows 兼容：统一正斜杠）
+ */
+function normalizeRouteComponent(component: string): string {
+  return component.replace(/\\/g, "/").trim();
+}
+
+/**
  * 收集客户端路由信息
  *
  * @param router 路由实例
@@ -335,9 +346,10 @@ function collectClientRoutes(
     // 跳过 API 路由
     if (route.isApi) continue;
 
+    const raw = (route.file || route.path).replace(/\.(tsx?|jsx?)$/, "");
     routes.push({
       path: route.path,
-      component: route.file || route.path,
+      component: normalizeRouteComponent(raw),
       type: route.type || "static",
     });
   }

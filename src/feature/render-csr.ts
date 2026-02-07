@@ -228,6 +228,16 @@ ${csrOptions.bodyTags || ""}`;
 }
 
 /**
+ * 规范化路由 component 路径（Windows 兼容：统一正斜杠、去除扩展名）
+ */
+function normalizeRouteComponent(component: string): string {
+  return component
+    .replace(/\\/g, "/")
+    .replace(/\.(tsx?|jsx?)$/, "")
+    .trim();
+}
+
+/**
  * 收集客户端路由信息
  *
  * @param router 路由实例
@@ -245,9 +255,10 @@ function collectClientRoutes(
     // 跳过 API 路由
     if (route.isApi) continue;
 
+    const raw = route.file || route.path;
     routes.push({
       path: route.path,
-      component: route.file || route.path,
+      component: normalizeRouteComponent(raw),
       type: route.type || "static",
     });
   }

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.68] - 2025-02-07
+
+### Fixed
+
+- **Windows config inference**: `inferConfigDirectoryFromEntry` now uses `normalizePathForCompare` for path and root before replace, fixing path mismatch when path uses `/` and root uses `\` (or vice versa).
+- **Client dep generation**: Fix esbuild "Unterminated string literal" in generated `_client.dep.tsx` by correcting template literal escape: use `.replace(/\\\\/g, "/")` so output contains `.replace(/\\/g, "/")` for Windows path normalization.
+
+### Added
+
+- **CI workflow** (`.github/workflows/ci.yml`): Run tests on `ubuntu-latest`, `windows-latest`, and `macos-latest` on push/PR to `main` or `dev`.
+- **Windows compatibility docs**: `WINDOWS_COMPATIBILITY_ANALYSIS.md` (English) and `WINDOWS_COMPATIBILITY_ANALYSIS-zh.md` (Chinese).
+
+---
+
 ## [3.0.67] - 2026-02-07
 
 ### Added

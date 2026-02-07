@@ -7,6 +7,20 @@
 
 ---
 
+## [3.0.68] - 2025-02-07
+
+### 修复
+
+- **Windows 配置推断**：`inferConfigDirectoryFromEntry` 现对 path 与 root 先使用 `normalizePathForCompare` 再 replace，修复 path 使用 `/` 而 root 使用 `\`（或反之）时的路径不匹配问题。
+- **客户端依赖生成**：修复生成 `_client.dep.tsx` 时 esbuild 报错「Unterminated string literal」，通过模板字面量正确转义：使用 `.replace(/\\\\/g, "/")` 使输出包含 `.replace(/\\/g, "/")`，用于 Windows 路径规范化。
+
+### 新增
+
+- **CI 工作流**（`.github/workflows/ci.yml`）：在 push/PR 到 `main` 或 `dev` 时，在 `ubuntu-latest`、`windows-latest`、`macos-latest` 上运行测试。
+- **Windows 兼容性文档**：`WINDOWS_COMPATIBILITY_ANALYSIS.md`（英文）与 `WINDOWS_COMPATIBILITY_ANALYSIS-zh.md`（中文）。
+
+---
+
 ## [3.0.67] - 2026-02-07
 
 ### 新增
