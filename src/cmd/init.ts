@@ -629,7 +629,13 @@ function getConfigMainDevTs(): string {
  */
 export default {
   server: {
-    host: "127.0.0.1",
+    dev: {
+      hmr: { enabled: true, path: "/__hmr" },
+      watch: {
+        paths: ["./src"],
+        ignore: ["node_modules", ".git", "dist"],
+      },
+    },
   },
   logger: {
     level: "debug",

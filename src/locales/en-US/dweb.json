@@ -54,6 +54,7 @@
       "lint": "Lint",
       "fmt": "Format",
       "clean": "Clean dist",
+      "update": "Update deps",
       "preview": "Preview",
       "upgrade": "Upgrade",
       "help": "View full help"
@@ -78,6 +79,8 @@
     "dbStatusFailedWithMessage": "Status failed: {message}",
     "cleanFailed": "Clean failed",
     "cleanFailedWithMessage": "Clean failed: {message}",
+    "updateFailed": "Update failed",
+    "updateFailedWithMessage": "Update failed: {message}",
     "previewFailed": "Preview failed",
     "previewFailedWithMessage": "Preview failed: {message}",
     "testFailed": "Test failed",
@@ -111,6 +114,7 @@
     "lint": "Run code lint",
     "fmt": "Run code format",
     "clean": "Clean dist, .cache",
+    "update": "Update dependencies and lockfile (deno update / bun update)",
     "db": "DB ops",
     "dbMigrate": "Migration",
     "migrateActionOption": "Action: up, down, create",
@@ -608,6 +612,11 @@
     "appComplete": "{app} tests complete",
     "appFailed": "{app} tests failed, exit code: {code}",
     "addTaskHint": "Add test or test:appName task to deno.json"
+  },
+  "update": {
+    "running": "Updating dependencies and lockfile...",
+    "complete": "Dependencies updated",
+    "exitCode": "Update exit code: {code}"
   },
   "clean": {
     "running": "Cleaning build output...",

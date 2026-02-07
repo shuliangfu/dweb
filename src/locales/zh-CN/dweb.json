@@ -54,6 +54,7 @@
       "lint": "代码检查",
       "fmt": "代码格式化",
       "clean": "清理构建产物",
+      "update": "更新依赖",
       "preview": "预览构建结果",
       "upgrade": "升级 dweb",
       "help": "查看完整帮助"
@@ -78,6 +79,8 @@
     "dbStatusFailedWithMessage": "status 失败: {message}",
     "cleanFailed": "clean 失败",
     "cleanFailedWithMessage": "clean 失败: {message}",
+    "updateFailed": "update 失败",
+    "updateFailedWithMessage": "update 失败: {message}",
     "previewFailed": "preview 失败",
     "previewFailedWithMessage": "preview 失败: {message}",
     "testFailed": "test 失败",
@@ -111,6 +114,7 @@
     "lint": "运行代码检查",
     "fmt": "运行代码格式化",
     "clean": "清理构建产物（dist、.cache 等）",
+    "update": "更新依赖与 lockfile（deno update / bun update）",
     "db": "数据库相关",
     "dbMigrate": "数据库迁移",
     "migrateActionOption": "操作（up, down, create）",
@@ -608,6 +612,11 @@
     "appComplete": "{app} 测试完成",
     "appFailed": "{app} 测试失败，退出码: {code}",
     "addTaskHint": "请添加 test 或 test:应用名 task"
+  },
+  "update": {
+    "running": "正在更新依赖与 lockfile...",
+    "complete": "依赖更新完成",
+    "exitCode": "update 命令退出码: {code}"
   },
   "clean": {
     "running": "正在清理构建产物...",

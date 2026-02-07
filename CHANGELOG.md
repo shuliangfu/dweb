@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.64] - 2026-02-07
+
+### Added
+
+- **`dweb update` command**: Run `deno update` or `bun update` to update project dependencies and lockfile. Supports `--latest` and `--interactive` flags. Compatible with Deno and Bun runtimes.
+
+### Changed
+
+- Upgrade @dreamer/server dependency to ^1.0.1
+
+---
+
 ## [3.0.63] - 2026-02-07
 
 ### Fixed

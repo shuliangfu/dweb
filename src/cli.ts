@@ -301,6 +301,24 @@ export function createCLI(version: string): Command {
     });
 
   // ================================================================================
+  // update 更新依赖与 lockfile
+  // ================================================================================
+  cli
+    .command("update", $t("cliDesc.update"))
+    .action(async (args: string[], options: ParsedOptions) => {
+      try {
+        const { main: updateMain } = await import("./cmd/update.ts");
+        await updateMain(args, options);
+      } catch (err) {
+        error(
+          $t("cli.updateFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
+        );
+      }
+    });
+
+  // ================================================================================
   // db 数据库相关（含 migrate 子命令）
   // ================================================================================
   const dbCmd = cli.command("db", $t("cliDesc.db"));
