@@ -281,7 +281,8 @@ function getDenoJson(opts: InitOptions, jsrVersions: JsrVersions): string {
     : "";
   const engineImports = isPreact
     ? `    "preact": "npm:preact@10.28.0"`
-    : `    "react": "npm:react@18.3.1"`;
+    : `    "react": "npm:react@18.3.1",
+    "scheduler": "npm:scheduler@0.25.0"`;
   const npmImports = [tailwindNpmImports, unocssNpmImports, engineImports]
     .filter(Boolean)
     .join(",\n");

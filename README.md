@@ -1659,6 +1659,7 @@ Use via `dweb-cli` or `deno task`:
 | `lint`              | Lint                  | -                                       |
 | `fmt`               | Format                | -                                       |
 | `clean`             | Clean build output    | -                                       |
+| `update`             | Update deps & lockfile| `--latest`, `--interactive`             |
 | `db migrate (m)`    | Database migration    | `-a, --action` up/down; `-n, --name`   |
 | `db seed`           | Database seed         | -                                       |
 | `db status`        | Database status       | -                                       |
@@ -1728,6 +1729,16 @@ See [TEST_REPORT.md](./TEST_REPORT.md). 52 test files, 446 tests, all passing.
 ---
 
 ## 📋 Changelog
+
+### [3.0.67] - 2026-02-07
+
+**Added**
+
+- CLI docs: add `update` command to commands table
+
+**Changed**
+
+- Init React template: add `scheduler` dependency
 
 ### [3.0.66] - 2026-02-07
 

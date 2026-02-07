@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.67] - 2026-02-07
+
+### Added
+
+- **CLI `update` in docs**: Add `update` command to CLI commands table in README (English and Chinese). Runs `deno update` or `bun update`; supports `--latest` and `--interactive`.
+
+### Changed
+
+- **Init React template**: Add `scheduler` dependency (`npm:scheduler@0.25.0`) to React engine imports in generated `deno.json`.
+
+---
+
 ## [3.0.66] - 2026-02-07
 
 ### Fixed

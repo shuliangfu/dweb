@@ -7,6 +7,18 @@
 
 ---
 
+## [3.0.67] - 2026-02-07
+
+### 新增
+
+- **CLI 文档补充 `update`**：在 README 的 CLI 命令表中补充 `update` 命令（中英文）。执行 `deno update` 或 `bun update`；支持 `--latest`、`--interactive`。
+
+### 变更
+
+- **Init React 模板**：在 React 引擎的 imports 中补充 `scheduler` 依赖（`npm:scheduler@0.25.0`）。
+
+---
+
 ## [3.0.66] - 2026-02-07
 
 ### 修复

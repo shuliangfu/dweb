@@ -1813,6 +1813,7 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 | `lint`           | 代码检查       | -                                           |
 | `fmt`            | 代码格式化     | -                                           |
 | `clean`          | 清理构建产物   | -                                           |
+| `update`         | 更新依赖与 lockfile | `--latest`、`--interactive`              |
 | `db migrate (m)` | 数据库迁移     | `-a, --action` up/down；`-n, --name` 迁移名 |
 | `db seed`        | 数据库种子     | -                                           |
 | `db status`      | 数据库状态     | -                                           |
@@ -1906,6 +1907,16 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 ---
 
 ## 📋 变更日志
+
+### [3.0.67] - 2026-02-07
+
+**新增**
+
+- CLI 文档：补充 `update` 命令至命令表
+
+**变更**
+
+- Init React 模板：补充 `scheduler` 依赖
 
 ### [3.0.66] - 2026-02-07
 
