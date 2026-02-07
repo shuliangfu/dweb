@@ -359,9 +359,6 @@ export function clearLayoutCache(): void {
 import { createRouter } from "@dreamer/router/client";
 import { hydrate, renderCSR } from "${adapterImport}";
 
-/** 浏览器全局对象（兼容 Deno 无 DOM 类型，使用 globalThis 替代 window） */
-const _win = globalThis as unknown as Window & typeof globalThis;
-
 /** 客户端路由类型（与 @dreamer/router ClientRoute 一致） */
 export type RouteType = "static" | "dynamic" | "wildcard" | "optional";
 
@@ -380,7 +377,12 @@ export interface DwebGlobal {
   __DWEB_HMR_REFRESH__?: (options?: { chunkUrl?: string }) => void;
   /** CSR 模式下页面渲染完成时调用，用于淡出 loading 遮罩 */
   __DWEB_ON_READY__?: () => void;
+  /** 开发模式 HMR 调试日志开关（控制台设置 globalThis.__DWEB_HMR_DEBUG__ = true 可查看详细日志） */
+  __DWEB_HMR_DEBUG__?: boolean;
 }
+
+/** 浏览器全局对象（兼容 Deno 无 DOM 类型，使用 globalThis 替代 window） */
+const _win = globalThis as unknown as Window & typeof globalThis & DwebGlobal;
 
 // 路由组件加载器映射（动态导入，按需加载）
 export const ROUTE_LOADERS: Record<string, () => Promise<unknown>> = {

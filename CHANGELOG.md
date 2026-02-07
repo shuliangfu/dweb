@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.63] - 2026-02-07
+
+### Fixed
+
+- Fix TypeScript error `Property '__DWEB_HMR_DEBUG__' does not exist on type 'Window & typeof globalThis'` in generated `_client.dep.tsx` by adding `__DWEB_HMR_DEBUG__` to `DwebGlobal` interface and extending `_win` type
+
+---
+
 ## [3.0.62] - 2026-02-07
 
 ### Changed
