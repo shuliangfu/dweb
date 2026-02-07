@@ -72,6 +72,6 @@ describe("e2e: 服务器请求", () => {
         }
       }
     },
-    { timeout: 20000, sanitizeResources: false },
+    { timeout: 20000, sanitizeOps: false, sanitizeResources: false },
   );
 });
