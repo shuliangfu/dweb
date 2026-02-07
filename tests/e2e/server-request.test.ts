@@ -31,8 +31,8 @@ describe("e2e: 服务器请求", () => {
   afterAll(async () => {
     if (child) {
       try {
-        child.kill(15); // SIGTERM
-        await child.status; // 等待子进程退出
+        child.kill(15); // SIGTERM，数值在部分环境可能无效，故捕获
+        await child.status;
       } catch {
         // ignore
       }
@@ -59,8 +59,12 @@ describe("e2e: 服务器请求", () => {
       expect(html).toMatch(/<html|<!DOCTYPE/i);
     } finally {
       if (child) {
-        child.kill(15); // SIGTERM
-        await child.status; // 等待子进程退出，避免 Deno 检测到泄漏
+        try {
+          child.kill(15);
+          await child.status;
+        } catch {
+          // 忽略 kill 时的 Invalid signal 等错误，避免掩盖真实断言失败
+        }
       }
     }
   }, { timeout: 20000, sanitizeResources: false });
