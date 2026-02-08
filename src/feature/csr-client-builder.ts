@@ -297,9 +297,12 @@ const ENGINE_RENDER_ADAPTER: Record<string, string> = {
  * 生成 client.dep.tsx 内容（路由加载器、缓存、HMR CSS、loadLayouts、loadPageModule、renderNotFound、renderError、setupHydrationRouterAndHmr 等）
  * 此文件每次构建/启动都会重新生成；client.tsx 仅不存在时生成，便于用户修改入口逻辑。
  *
+ * 注意：客户端 loadLayouts 仅加载 _layout，不加载 _app。_app 是服务端文档根（输出 html/body），容器 #app 在其内部，
+ * 故 hydrate/CSR 只需 Layout(Page)，否则会将 App 渲染进容器导致嵌套 html/body 或 hydrate 不匹配。
+ *
  * @param engine 渲染引擎（用于 hydrate/renderCSR 导入及 setupHydrationRouterAndHmr）
  * @param components 路由组件列表
- * @param hasLayout 是否存在布局文件
+ * @param hasLayout 是否存在 _layout 文件
  * @param hmrCssEntries 开发态 HMR CSS 配置
  * @returns client.dep.tsx 的完整源码
  */
@@ -1138,7 +1141,7 @@ export async function buildClientScript(
       count: String(components.length),
     }));
 
-    // 检查是否存在布局文件
+    // 检查是否存在 _layout 文件（客户端仅加载 _layout，不加载 _app，见 generateClientDepContent 注释）
     const layoutPathTsx = join(routesDirPath, "_layout.tsx");
     const hasLayout = await exists(layoutPathTsx);
 
