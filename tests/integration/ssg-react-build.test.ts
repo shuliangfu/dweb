@@ -17,6 +17,7 @@ import {
   IS_DENO,
   join,
   readTextFile,
+  remove,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 
@@ -35,6 +36,12 @@ describe("integration: SSG + React 构建", () => {
   });
 
   it("build 任务应成功执行并生成 HTML（含 headInject）", async () => {
+    // 构建前清空 dist，确保从干净环境开始
+    const distDir = join(exampleDir, "dist");
+    if (await exists(distDir)) {
+      await remove(distDir, { recursive: true });
+    }
+
     // -A 为 Deno 权限参数，Bun 不支持，需根据运行时判断
     const args = IS_DENO
       ? ["run", "-A", "src/main.ts", "--build"]

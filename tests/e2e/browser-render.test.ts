@@ -11,9 +11,12 @@ import {
   chdir,
   createCommand,
   cwd,
+  exists,
   execPath,
   IS_DENO,
+  join,
   platform,
+  remove,
   resolve,
   type SpawnedProcess,
 } from "@dreamer/runtime-adapter";
@@ -67,10 +70,15 @@ async function waitForServerReady(
 }
 
 /**
- * 构建示例项目
+ * 构建示例项目（构建前先清空 dist，确保从干净环境开始）
  * @param exampleDir 示例目录
  */
 async function buildExample(exampleDir: string): Promise<void> {
+  const distDir = join(exampleDir, "dist");
+  if (await exists(distDir)) {
+    await remove(distDir, { recursive: true });
+  }
+
   const args = IS_DENO
     ? ["run", "-A", "src/main.ts", "--build"]
     : ["run", "src/main.ts", "--build"];
