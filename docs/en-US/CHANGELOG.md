@@ -40,8 +40,8 @@ and this project adheres to
 
 - **CI workflow** (`.github/workflows/ci.yml`): Run tests on `ubuntu-latest`,
   `windows-latest`, and `macos-latest` on push/PR to `main` or `dev`.
-- **Windows compatibility docs**: `WINDOWS_COMPATIBILITY_ANALYSIS.md` (English)
-  and `WINDOWS_COMPATIBILITY_ANALYSIS-zh.md` (Chinese).
+- **Windows compatibility docs**: `docs/en-US/WIN_COMPAT.md` (English) and
+  `docs/zh-CN/WIN_COMPAT.md` (Chinese).
 
 ---
 

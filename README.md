@@ -1,13 +1,13 @@
 # @dreamer/dweb
 
-> 📖 English | [中文文档](./README-zh.md)
+> 📖 English | [中文文档](./docs/zh-CN/README.md)
 
 > A full-stack Web framework compatible with Deno and Bun, integrating
 > @dreamer/* libraries for an out-of-the-box development experience.
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.md)
-[![Tests](https://img.shields.io/badge/tests-480%20passed-brightgreen)](./TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-480%20passed-brightgreen)](./docs/en-US/TEST_REPORT.md)
 
 ---
 
@@ -1776,7 +1776,7 @@ Full definitions in [src/utils/errors.ts](./src/utils/errors.ts). Use
 
 ## 📚 Config docs
 
-- **[AppConfig full example](./APP_CONFIG.md)**: All options (language, server,
+- **[AppConfig full example](./docs/en-US/APP_CONFIG.md)**: All options (language, server,
   router, render, build, logger, database, socket, plugins, middlewares).
 - **Config and params**: See "[Config management](#config-management)" above
   for:
@@ -1812,13 +1812,13 @@ real-time, etc. dweb already includes core deps; install these only when needed.
 | **@dreamer/web3**       | Blockchain                                                  |
 
 Install with `deno add jsr:@dreamer/<package-name>`. See
-[README-zh.md](./README-zh.md) for full table with GitHub links.
+[README (中文)](./docs/zh-CN/README.md) for full table with GitHub links.
 
 ---
 
 ## 📊 Test report
 
-See [TEST_REPORT.md](./TEST_REPORT.md).
+See [TEST_REPORT.md](./docs/en-US/TEST_REPORT.md).
 
 **Summary**: 56 test files, 480 tests, all passing. Covers unit tests (config, app, router, plugin, build, render, etc.), e2e tests (server request validation), and integration tests (config lifecycle, CSR/SSR/SSG/Hybrid build). Path and config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
@@ -1831,7 +1831,7 @@ See [TEST_REPORT.md](./TEST_REPORT.md).
 **Fixed**: CI @dreamer/esbuild JSR resolution; compilerOptions & React SSG build;
 Windows config-loader and module-cache path handling.
 
-Full changelog: [CHANGELOG.md](./CHANGELOG.md)
+Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 

@@ -1,6 +1,6 @@
 # AppConfig 完整配置示例
 
-> 📖 [English](./APP_CONFIG.md) | 中文
+> 📖 [English](../en-US/APP_CONFIG.md) | 中文
 
 本文档基于 `@dreamer/dweb` 的 `AppConfig` 类型定义与 README
 文档，提供一份完整的配置示例，涵盖所有常用配置项。

@@ -1,5 +1,7 @@
 # @dreamer/dweb 测试报告
 
+> 📖 [English](../en-US/TEST_REPORT.md) | 中文
+
 ## 📋 测试概览
 
 | 项目     | 值                           |
@@ -69,7 +71,7 @@
 | `project.test.ts`               | 3          | ✅ 全部通过 |
 | `version.test.ts`               | 3          | ✅ 全部通过 |
 | `render-csr.test.ts`            | 2          | ✅ 全部通过 |
-| `render-ssg.test.ts`            | 2          | ✅ 全部通过 |
+| `render-ssg.test.ts`           | 2          | ✅ 全部通过 |
 | `cmd-dev.test.ts`               | 2          | ✅ 全部通过 |
 | `cmd-fmt.test.ts`               | 2          | ✅ 全部通过 |
 | `cmd-lint.test.ts`              | 2          | ✅ 全部通过 |

@@ -1,12 +1,12 @@
 # @dreamer/dweb
 
-> 📖 [English](./README.md) | 中文
+> 📖 [English](../../README.md) | 中文
 
 > 一个兼容 Deno 和 Bun 的全栈 Web 框架，整合 @dreamer/*
 > 库，提供开箱即用的全栈开发体验
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../LICENSE.md)
 [![Tests](https://img.shields.io/badge/tests-480%20passed-brightgreen)](./TEST_REPORT.md)
 
 ---
@@ -1569,7 +1569,7 @@ setDwebErrorTranslator((key, params) => {
 
 错误码分段：E01～E19 配置、E20～E21 入口路径、E22 运行时、E23～E29
 功能模块、E30～E32 文件/HTTP、E33 未知错误、E34 缓存主目录。详见
-[utils/errors.ts](./src/utils/errors.ts)。
+[utils/errors.ts](../../src/utils/errors.ts)。
 
 ## 渲染模式
 
@@ -1835,14 +1835,14 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 | 未知      | E33      | 未知错误包装                                                |
 | 缓存      | E34      | 无法获取 HOME/USERPROFILE 导致 ~/.dreamer 缓存不可用        |
 
-完整定义见 [src/utils/errors.ts](./src/utils/errors.ts)。可通过
+完整定义见 [src/utils/errors.ts](../../src/utils/errors.ts)。可通过
 `setDwebErrorTranslator` 接入 i18n 翻译。
 
 ---
 
 ## 📚 配置文档
 
-- **[AppConfig 完整配置示例](./APP_CONFIG-zh.md)**：涵盖
+- **[AppConfig 完整配置示例](./APP_CONFIG.md)**：涵盖
   language、server、router、render、build、logger、database、socket、plugins、middlewares
   等全部配置项及单应用/多应用示例。
 - **配置与参数获取**：见上方「[配置管理](#配置管理)」章节，包含：
@@ -1915,7 +1915,7 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 **修复**：CI @dreamer/esbuild JSR 解析；compilerOptions 与 React SSG 构建；
 Windows config-loader 与 module-cache 路径处理。
 
-完整变更日志：[CHANGELOG-zh.md](./CHANGELOG-zh.md)
+完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 
@@ -1949,7 +1949,7 @@ Windows config-loader 与 module-cache 路径处理。
 
 ## 📄 许可证
 
-MIT License - 详见 [LICENSE.md](./LICENSE.md)
+MIT License - 详见 [LICENSE.md](../../LICENSE.md)
 
 ---
 

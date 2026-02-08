@@ -1,6 +1,6 @@
 # AppConfig Full Configuration Example
 
-> 📖 English | [中文文档](./APP_CONFIG-zh.md)
+> 📖 English | [中文文档](../zh-CN/APP_CONFIG.md)
 
 This document provides a complete configuration example based on the `AppConfig`
 type definition and README of `@dreamer/dweb`, covering all commonly used

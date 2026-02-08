@@ -38,8 +38,8 @@
 
 - **CI 工作流**（`.github/workflows/ci.yml`）：在 push/PR 到 `main` 或 `dev`
   时，在 `ubuntu-latest`、`windows-latest`、`macos-latest` 上运行测试。
-- **Windows 兼容性文档**：`WINDOWS_COMPATIBILITY_ANALYSIS.md`（英文）与
-  `WINDOWS_COMPATIBILITY_ANALYSIS-zh.md`（中文）。
+- **Windows 兼容性文档**：`docs/en-US/WIN_COMPAT.md`（英文）与
+  `docs/zh-CN/WIN_COMPAT.md`（中文）。
 
 ---
 
