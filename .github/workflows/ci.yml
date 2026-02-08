@@ -38,6 +38,9 @@ jobs:
         with:
           deno-version: v2.0.0
 
+      - name: Setup Chrome (for browser E2E tests)
+        uses: browser-actions/setup-chrome@v2
+
       - name: Cache dependencies
         run: deno cache src/cli.ts src/setup.ts
 

@@ -3,9 +3,7 @@
  *
  * 使用 @dreamer/test 的浏览器测试能力，对 Preact/React 的 CSR 和 Hybrid 示例
  * 进行构建、启动服务器、Puppeteer 访问页面，验证无 hydration 错误且页面正常渲染。
- *
- * 注：Windows CI 下 Preact/React 客户端 bundle 加载异常（与 @dreamer/render 浏览器测试相同），
- * 导致页面内容无法渲染，故暂时跳过。Linux/Mac 上可验证 hydration 修复。
+ * 覆盖 Windows 在内的多平台，CI 中 Windows 需通过 setup-chrome action 配置 Chrome。
  */
 
 import "../setup.ts";
@@ -30,9 +28,6 @@ import {
 
 /** 示例服务器端口 */
 const E2E_PORT = 3000;
-
-/** Windows CI 下 Preact/React bundle 加载异常，暂时跳过浏览器测试 */
-const skipOnWindows = platform() === "windows";
 
 /**
  * 轮询等待服务器就绪（返回 200）
@@ -111,19 +106,45 @@ async function assertBrowserRender(
     pageErrors.push(e.message ?? "");
   });
 
-  await t.browser.goto(`http://127.0.0.1:${E2E_PORT}/`);
+  const url = `http://127.0.0.1:${E2E_PORT}/`;
+  await t.browser.goto(url);
 
   // 等待页面内容出现（Windows CI 较慢，延长超时）
-  const contentTimeout = platform() === "windows" ? 45000 : 15000;
-  await t.browser.waitFor(
-    () => {
+  const contentTimeout = platform() === "windows" ? 60000 : 15000;
+  try {
+    await t.browser.waitFor(
+      () => {
+        const doc = (globalThis as Record<string, unknown>).document as
+          | { body?: { innerHTML?: string } }
+          | undefined;
+        return (doc?.body?.innerHTML?.includes("欢迎使用 Dweb 框架") ?? false) === true;
+      },
+      { timeout: contentTimeout },
+    );
+  } catch (err) {
+    // 诊断：获取页面内容与控制台错误，便于排查 Windows 等问题
+    const diag = await t.browser.evaluate(() => {
       const doc = (globalThis as Record<string, unknown>).document as
-        | { body?: { innerHTML?: string } }
+        | { body?: { innerHTML?: string }; documentElement?: { innerHTML?: string } }
         | undefined;
-      return (doc?.body?.innerHTML?.includes("欢迎使用 Dweb 框架") ?? false) === true;
-    },
-    { timeout: contentTimeout },
-  );
+      const bodyHtml = doc?.body?.innerHTML?.slice(0, 500) ?? "";
+      const fullHtml = doc?.documentElement?.innerHTML?.slice(0, 800) ?? "";
+      return {
+        url: String((globalThis as unknown as { location?: { href?: string } }).location?.href ?? ""),
+        bodyLength: doc?.body?.innerHTML?.length ?? 0,
+        bodySnippet: bodyHtml,
+        fullSnippet: fullHtml,
+      };
+    }).catch(() => null);
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `页面内容等待超时 (${contentTimeout}ms): ${msg}. ` +
+        `URL: ${url}. ` +
+        `Console errors: ${consoleErrors.length > 0 ? consoleErrors.join("; ") : "none"}. ` +
+        `Page errors: ${pageErrors.length > 0 ? pageErrors.join("; ") : "none"}. ` +
+        (diag ? `Diagnostic: ${JSON.stringify(diag)}` : ""),
+    );
+  }
 
   const hasTitle = await t.browser.evaluate(() => {
     const doc = (globalThis as Record<string, unknown>).document as
@@ -192,9 +213,7 @@ function createExampleBrowserSuite(exampleName: string): void {
       }
     });
 
-    it.skipIf(
-      skipOnWindows,
-      "应能渲染且无 hydration 错误",
+    it("应能渲染且无 hydration 错误",
       async (t) => {
         if (!t) throw new Error("test context 不可用");
         await assertBrowserRender(t);
