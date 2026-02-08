@@ -16,7 +16,8 @@ import {
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 
-const E2E_PORT = 3000;
+/** preact-ssr 示例端口（与 browser-render 中 preact-ssr 端口一致） */
+const E2E_PORT = 3005;
 
 describe("e2e: 服务器请求", () => {
   let originalCwd: string | undefined;

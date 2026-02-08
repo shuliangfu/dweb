@@ -1,7 +1,7 @@
 /**
  * e2e: 浏览器渲染测试
  *
- * 使用 @dreamer/test 的浏览器测试能力，对 Preact/React 的 CSR 和 Hybrid 示例
+ * 使用 @dreamer/test 的浏览器测试能力，对 Preact/React 的 CSR、Hybrid、SSR、SSG 示例
  * 进行构建、启动服务器、Puppeteer 访问页面，验证无 hydration 错误且页面正常渲染。
  * 覆盖 Windows 在内的多平台，CI 中 Windows 需通过 setup-chrome action 配置 Chrome。
  */
@@ -29,12 +29,17 @@ import {
 /**
  * 各示例使用的端口（避免并行测试时端口冲突）
  * preact-csr=3001, preact-hybrid=3002, react-csr=3003, react-hybrid=3004
+ * preact-ssr=3005, preact-ssg=3006, react-ssr=3007, react-ssg=3008
  */
 const E2E_PORTS: Record<string, number> = {
   "preact-csr": 3001,
   "preact-hybrid": 3002,
   "react-csr": 3003,
   "react-hybrid": 3004,
+  "preact-ssr": 3005,
+  "preact-ssg": 3006,
+  "react-ssr": 3007,
+  "react-ssg": 3008,
 };
 
 /**
@@ -292,5 +297,9 @@ function createExampleBrowserSuite(exampleName: string): void {
 
 createExampleBrowserSuite("preact-csr");
 createExampleBrowserSuite("preact-hybrid");
+createExampleBrowserSuite("preact-ssr");
+createExampleBrowserSuite("preact-ssg");
 createExampleBrowserSuite("react-csr");
 createExampleBrowserSuite("react-hybrid");
+createExampleBrowserSuite("react-ssr");
+createExampleBrowserSuite("react-ssg");
