@@ -152,16 +152,25 @@ async function assertBrowserRender(
       { timeout: contentTimeout },
     );
   } catch (err) {
-    // 诊断：获取页面内容与控制台错误，便于排查 Windows 等问题
+    // 诊断：获取页面内容、错误 UI 中的错误信息、控制台错误，便于排查 Windows CI 等
     const diag = await t.browser.evaluate(() => {
       const doc = (globalThis as Record<string, unknown>).document as
         | {
-          body?: { innerHTML?: string };
+          body?: {
+            innerHTML?: string;
+            querySelector?: (s: string) => { innerText?: string; textContent?: string } | null;
+          };
           documentElement?: { innerHTML?: string };
         }
         | undefined;
       const bodyHtml = doc?.body?.innerHTML?.slice(0, 500) ?? "";
       const fullHtml = doc?.documentElement?.innerHTML?.slice(0, 800) ?? "";
+      // 从 Render/Hydrate error 红色 UI（background #fef2f2）的 <p> 中提取实际错误信息
+      const errDiv = doc?.body?.querySelector?.(
+        'div[style*="fef2f2"]',
+      ) as { querySelector?: (s: string) => { innerText?: string; textContent?: string } | null } | null;
+      const errP = errDiv?.querySelector?.("p");
+      const renderErrorMsg = errP?.innerText ?? errP?.textContent ?? null;
       return {
         url: String(
           (globalThis as unknown as { location?: { href?: string } }).location
@@ -170,12 +179,17 @@ async function assertBrowserRender(
         bodyLength: doc?.body?.innerHTML?.length ?? 0,
         bodySnippet: bodyHtml,
         fullSnippet: fullHtml,
+        renderErrorMsg,
       };
     }).catch(() => null);
     const msg = err instanceof Error ? err.message : String(err);
+    const diagObj = diag as { renderErrorMsg?: string } | null;
     throw new Error(
       `页面内容等待超时 (${contentTimeout}ms): ${msg}. ` +
         `URL: ${url}. ` +
+        (diagObj?.renderErrorMsg
+          ? `Render error: ${diagObj.renderErrorMsg}. `
+          : "") +
         `Console errors: ${
           consoleErrors.length > 0 ? consoleErrors.join("; ") : "none"
         }. ` +
@@ -185,7 +199,7 @@ async function assertBrowserRender(
         (failedUrls.length > 0
           ? `Failed/404 URLs: ${failedUrls.join(", ")}. `
           : "") +
-        (diag ? `Diagnostic: ${JSON.stringify(diag)}` : ""),
+        (diag ? ` Diagnostic: ${JSON.stringify(diag)}` : ""),
     );
   }
 

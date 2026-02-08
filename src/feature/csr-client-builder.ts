@@ -419,7 +419,7 @@ ${layoutCode}
  */
 function normalizeComponentPathForLookup(componentPath: string): string {
   return componentPath
-    .replace(/\\\\/g, "/")
+    .replace(/\\\\/g, "/") // Windows 反斜杠 -> 正斜杠（模板中 \\\\ 输出 \\，regex 匹配单个 \\）
     .replace(/\.(tsx?|jsx?)$/, "")
     .trim();
 }
