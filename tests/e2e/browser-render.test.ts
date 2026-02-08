@@ -13,6 +13,7 @@ import {
   cwd,
   execPath,
   IS_DENO,
+  platform,
   resolve,
   type SpawnedProcess,
 } from "@dreamer/runtime-adapter";
@@ -57,7 +58,14 @@ async function buildExample(exampleDir: string): Promise<void> {
  * @param t 测试上下文（含 browser）
  */
 async function assertBrowserRender(
-  t: { browser?: { page: any; goto: (url: string) => Promise<void>; evaluate: (fn: () => unknown) => Promise<unknown> } },
+  t: {
+    browser?: {
+      page: unknown;
+      goto: (url: string) => Promise<void>;
+      evaluate: (fn: () => unknown) => Promise<unknown>;
+      waitFor: (fn: () => boolean, options?: { timeout?: number }) => Promise<void>;
+    };
+  },
 ): Promise<void> {
   if (!t?.browser) {
     throw new Error("browser 上下文不可用");
@@ -66,19 +74,31 @@ async function assertBrowserRender(
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];
 
-  t.browser.page.on("console", (msg: { type: () => string; text: () => string }) => {
-    if (msg.type() === "error") {
-      consoleErrors.push(msg.text());
+  const page = t.browser.page as { on: (event: string, fn: (arg: unknown) => void) => void };
+  page.on("console", (msg: unknown) => {
+    const m = msg as { type: () => string; text: () => string };
+    if (m.type?.() === "error") {
+      consoleErrors.push(m.text?.() ?? "");
     }
   });
-  t.browser.page.on("pageerror", (err: { message: string }) => {
-    pageErrors.push(err.message);
+  page.on("pageerror", (err: unknown) => {
+    const e = err as { message: string };
+    pageErrors.push(e.message ?? "");
   });
 
   await t.browser.goto(`http://127.0.0.1:${E2E_PORT}/`);
 
-  // 等待 hydration 完成
-  await new Promise((r) => setTimeout(r, 3000));
+  // 等待页面内容出现（Windows CI 较慢，延长超时）
+  const contentTimeout = platform() === "windows" ? 25000 : 15000;
+  await t.browser.waitFor(
+    () => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string } }
+        | undefined;
+      return (doc?.body?.innerHTML?.includes("欢迎使用 Dweb 框架") ?? false) === true;
+    },
+    { timeout: contentTimeout },
+  );
 
   const hasTitle = await t.browser.evaluate(() => {
     const doc = (globalThis as Record<string, unknown>).document as
@@ -127,7 +147,9 @@ function createExampleBrowserSuite(exampleName: string): void {
       });
       child = startCmd.spawn();
 
-      await new Promise((r) => setTimeout(r, 6000));
+      // Windows CI 启动较慢，延长等待时间
+      const serverStartWait = platform() === "windows" ? 10000 : 6000;
+      await new Promise((r) => setTimeout(r, serverStartWait));
     });
 
     afterAll(async () => {
@@ -151,7 +173,7 @@ function createExampleBrowserSuite(exampleName: string): void {
         await assertBrowserRender(t);
       },
       {
-        timeout: 60000,
+        timeout: platform() === "windows" ? 90000 : 60000,
         sanitizeOps: false,
         sanitizeResources: false,
         browser: {
