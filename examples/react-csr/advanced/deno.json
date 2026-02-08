@@ -38,9 +38,5 @@
     "cssnano": "npm:cssnano@7.0.3",
     "tailwindcss": "npm:tailwindcss@4.1.18",
     "esbuild": "npm:esbuild@0.27.2"
-  },
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "react"
   }
 }
