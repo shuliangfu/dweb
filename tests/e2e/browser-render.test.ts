@@ -93,8 +93,20 @@ async function assertBrowserRender(
 
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];
+  /** 记录 404 的 URL，便于排查 Windows CI 等环境问题 */
+  const failedUrls: string[] = [];
 
-  const page = t.browser.page as { on: (event: string, fn: (arg: unknown) => void) => void };
+  const page = t.browser.page as {
+    on: (event: string, fn: (arg: unknown) => void) => void;
+  };
+  page.on("requestfailed", (req: unknown) => {
+    const r = req as { url: () => string };
+    if (r?.url) failedUrls.push(`failed:${r.url()}`);
+  });
+  page.on("response", (res: unknown) => {
+    const r = res as { url: () => string; status: () => number };
+    if (r?.status?.() === 404) failedUrls.push(`404:${r.url()}`);
+  });
   page.on("console", (msg: unknown) => {
     const m = msg as { type: () => string; text: () => string };
     if (m.type?.() === "error") {
@@ -142,6 +154,7 @@ async function assertBrowserRender(
         `URL: ${url}. ` +
         `Console errors: ${consoleErrors.length > 0 ? consoleErrors.join("; ") : "none"}. ` +
         `Page errors: ${pageErrors.length > 0 ? pageErrors.join("; ") : "none"}. ` +
+        (failedUrls.length > 0 ? `Failed/404 URLs: ${failedUrls.join(", ")}. ` : "") +
         (diag ? `Diagnostic: ${JSON.stringify(diag)}` : ""),
     );
   }
