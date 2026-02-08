@@ -8,7 +8,6 @@ import type { AppConfig } from "@dreamer/dweb";
 const config: AppConfig = {
   hotReload: true,
   server: {
-    // debug: true, // 开启后控制台输出请求路径、路径前置处理器、中间件链、响应状态等详细调试信息
     dev: {
       hmr: { enabled: true, path: "/__hmr/websocket" },
       watch: {
@@ -20,6 +19,10 @@ const config: AppConfig = {
   logger: {
     level: "debug",
     format: "text",
+  },
+  build: {
+    client: { debug: true },
+    server: { debug: true },
   },
   // 实时通信：type 为 websocket 时挂载到当前 HTTP 服务器同一端口（开发环境测试）
   socket: {

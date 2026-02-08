@@ -80,9 +80,25 @@ export function initializeBuild(
     };
   }
 
+  // 构建调试：config.build.client.debug / config.build.server.debug 传递至 esbuild
+  if (clientConfig) {
+    const clientDebug = (buildConfig.client as { debug?: boolean } | undefined)?.debug;
+    if (clientDebug !== undefined) {
+      clientConfig = { ...clientConfig, debug: clientDebug };
+    }
+  }
+  const serverConfigForBuild = buildConfig.server as ServerConfig | undefined;
+  const serverWithDebug = serverConfigForBuild
+    ? {
+        ...serverConfigForBuild,
+        debug: (serverConfigForBuild as { debug?: boolean }).debug ??
+          (buildConfig.server as { debug?: boolean })?.debug,
+      }
+    : undefined;
+
   const builderConfig: BuilderConfig = {
     // 服务端配置（如果有）
-    server: buildConfig.server as BuilderConfig["server"],
+    server: serverWithDebug as BuilderConfig["server"],
     // 客户端配置
     client: clientConfig,
     // 资源处理配置
@@ -221,17 +237,20 @@ export async function runBuildWithBuilder(
     useNativeCompile,
     external: (serverConfig as { external?: string[] }).external,
     externalNpm: !useNativeCompile,
+    debug: (serverConfig as { debug?: boolean }).debug,
   };
 
   // 客户端配置（非 SSG 时准备入口并构建）
   let clientConfig: ClientConfig | undefined;
   if (!options?.skipClient) {
     const prepared = await prepareClientBuildEntry(container, config);
+    const buildClient = (config.build as { client?: { debug?: boolean } })?.client;
     clientConfig = {
       entry: prepared.entry,
       output: prepared.output,
       engine: prepared.engine,
       bundle: prepared.bundle,
+      debug: buildClient?.debug,
     };
   }
 

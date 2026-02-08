@@ -1063,6 +1063,7 @@ async function doDevBuild(
   entryPath: string,
   outputDir: string,
   engine: "react" | "preact",
+  debug?: boolean,
 ): Promise<{
   outputContents?: Array<{ path: string; text: string; contents?: Uint8Array }>;
 }> {
@@ -1070,6 +1071,7 @@ async function doDevBuild(
     entry: entryPath,
     output: outputDir,
     engine,
+    debug,
     bundle: {
       minify: false,
       sourcemap: true,
@@ -1144,6 +1146,18 @@ export async function buildClientScript(
       engine?: "react" | "preact";
     };
     const engine = renderConfig.engine || "preact";
+
+    // 构建调试：仅使用 config.build.client.debug / config.build.server.debug 传递至 esbuild
+    const buildConfig = config.build as {
+      client?: { debug?: boolean };
+      server?: { debug?: boolean };
+      debug?: boolean;
+    } | undefined;
+    const buildDebug =
+      buildConfig?.client?.debug ??
+      buildConfig?.server?.debug ??
+      buildConfig?.debug ??
+      false;
 
     // 扫描路由目录，获取所有路由组件（.tsx/.jsx）
     const components = await scanRouteComponents(routesDirPath, "", engine);
@@ -1246,6 +1260,7 @@ export async function buildClientScript(
         entry: tempClientEntryPath,
         output: finalOutputDir,
         engine: engine as "react" | "preact",
+        debug: buildDebug,
         bundle: {
           minify: shouldMinify,
           sourcemap: shouldSourcemap,
@@ -1322,6 +1337,7 @@ export async function buildClientScript(
             tempClientEntryPath,
             memOutputDir,
             engine,
+            buildDebug,
           );
         }
       } else {
@@ -1329,6 +1345,7 @@ export async function buildClientScript(
           tempClientEntryPath,
           memOutputDir,
           engine,
+          buildDebug,
         );
       }
 

@@ -1,17 +1,18 @@
 /**
  * 开发环境配置
- * 覆盖默认配置中的开发环境特定设置
+ * 框架会自动与 main.ts 深度合并，只需写增量覆盖
  */
 
 import type { AppConfig } from "@dreamer/dweb";
-import defaultConfig from "./main.ts";
 
 const config: AppConfig = {
-  ...defaultConfig,
   hotReload: true,
   server: {
-    ...defaultConfig.server,
     host: "127.0.0.1",
+  },
+  build: {
+    client: { debug: true },
+    server: { debug: true },
   },
   logger: {
     level: "debug",

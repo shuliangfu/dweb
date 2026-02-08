@@ -1,16 +1,17 @@
 /**
  * 开发环境配置
- * 覆盖默认配置中的开发环境特定设置
+ * 框架会自动与 main.ts 深度合并，只需写增量覆盖
  */
 
 import type { AppConfig } from "@dreamer/dweb";
-import defaultConfig from "./main.ts";
 
 const config: AppConfig = {
-  ...defaultConfig,
   server: {
-    ...defaultConfig.server,
     host: "127.0.0.1",
+  },
+  build: {
+    client: { debug: true }, // 开启后输出 esbuild resolver 调试信息（如 React/Preact 解析）
+    server: { debug: true },
   },
   logger: {
     level: "debug",

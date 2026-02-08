@@ -1,0 +1,25 @@
+/**
+ * 前端入口
+ * 配置由框架自动加载 common/config + frontend/config（无 src 目录，扁平结构）
+ */
+
+import { App } from "@dreamer/dweb";
+import { staticPlugin } from "@dreamer/plugins/static";
+import { tailwindPlugin } from "@dreamer/plugins/tailwindcss";
+
+const app = new App();
+
+app.registerPlugin(tailwindPlugin({
+  output: "dist/frontend/client/assets",
+  cssEntry: "frontend/assets/tailwind.css",
+  assetsPath: "/assets",
+}));
+
+app.registerPlugin(staticPlugin({
+  statics: [
+    { root: "frontend/assets", prefix: "/assets" },
+    { root: "dist/frontend/client/assets", prefix: "/assets" },
+  ],
+}));
+
+app.start();
