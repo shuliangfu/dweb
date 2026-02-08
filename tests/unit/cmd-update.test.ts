@@ -38,9 +38,10 @@ describe("update (cmd/update.ts)", () => {
   });
 
   it("有 deno.json 时应正常执行 update", async () => {
+    // 不含 name，避免 Deno 要求 "exports" 的警告
     await writeTextFile(
       join(testDir, "deno.json"),
-      JSON.stringify({ name: "test-update", imports: {} }),
+      JSON.stringify({ imports: {} }),
     );
     await main([], {});
   });

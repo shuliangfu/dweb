@@ -158,7 +158,8 @@ export function getFmtArgs(useTask: boolean = false): string[] {
 /**
  * 获取执行 update 的参数（更新依赖与 lockfile）
  *
- * - Deno: ["update", ...userArgs]（如 deno update、deno update --latest）
+ * - Deno: ["outdated", "--update", ...userArgs]（deno update 在 Deno 2.0.0 中可能不存在，
+ *   使用 deno outdated --update 作为等价实现，兼容 CI 等旧版 Deno）
  * - Bun: ["update", ...userArgs]（如 bun update、bun update --latest）
  *
  * @param userArgs 用户传入的额外参数（如 --latest、--interactive）
@@ -166,13 +167,13 @@ export function getFmtArgs(useTask: boolean = false): string[] {
  *
  * @example
  * ```ts
- * const args = getUpdateArgs(); // Deno: ["update"], Bun: ["update"]
- * const argsLatest = getUpdateArgs(["--latest"]); // ["update", "--latest"]
+ * const args = getUpdateArgs(); // Deno: ["outdated", "--update"], Bun: ["update"]
+ * const argsLatest = getUpdateArgs(["--latest"]); // Deno: ["outdated", "--update", "--latest"]
  * ```
  */
 export function getUpdateArgs(userArgs: string[] = []): string[] {
   if (IS_DENO) {
-    return ["update", ...userArgs];
+    return ["outdated", "--update", ...userArgs];
   }
   if (IS_BUN) {
     return ["update", ...userArgs];
