@@ -8,6 +8,22 @@ and this project adheres to
 
 ---
 
+## [3.0.69] - 2026-02-08
+
+### Fixed
+
+- **CI @dreamer/esbuild**: Switch from local path `../esbuild/src/mod.ts` to
+  `jsr:@dreamer/esbuild@^1.0.2` so CI (standalone dweb repo) can resolve.
+- **CI compilerOptions & React SSG**: Root `jsxImportSource` set to `react`;
+  remove `compilerOptions` from workspace-member examples (Deno allows only root);
+  Preact examples add `react`/`react/jsx-runtime` aliases to Preact for compat.
+- **Windows config-loader**: Treat Windows absolute paths (`C:\path`) as absolute;
+  fallback to `absPath` when `realPath` fails (e.g. symlinks in CI).
+- **Windows module-cache**: Normalize `file:///D:/path` to `D:/path` so it
+  matches direct path keys.
+
+---
+
 ## [3.0.68] - 2025-02-07
 
 ### Fixed

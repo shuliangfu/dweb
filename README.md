@@ -1826,12 +1826,10 @@ See [TEST_REPORT.md](./TEST_REPORT.md).
 
 ## 📋 Changelog
 
-### [3.0.68] - 2025-02-07
+### [3.0.69] - 2026-02-08
 
-**Fixed**: Windows config inference (normalizePathForCompare); client dep
-generation template escape (esbuild "Unterminated string literal").
-
-**Added**: CI workflow (Linux/Windows/macOS); Windows compatibility docs.
+**Fixed**: CI @dreamer/esbuild JSR resolution; compilerOptions & React SSG build;
+Windows config-loader and module-cache path handling.
 
 Full changelog: [CHANGELOG.md](./CHANGELOG.md)
 

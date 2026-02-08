@@ -1910,13 +1910,10 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.0.68] - 2025-02-07
+### [3.0.69] - 2026-02-08
 
-**修复**：Windows
-配置推断（normalizePathForCompare）；客户端依赖生成模板转义（esbuild「Unterminated
-string literal」）。
-
-**新增**：CI 工作流（Linux/Windows/macOS）；Windows 兼容性文档。
+**修复**：CI @dreamer/esbuild JSR 解析；compilerOptions 与 React SSG 构建；
+Windows config-loader 与 module-cache 路径处理。
 
 完整变更日志：[CHANGELOG-zh.md](./CHANGELOG-zh.md)
 
