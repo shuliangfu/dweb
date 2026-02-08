@@ -7,7 +7,7 @@
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.md)
-[![Tests](https://img.shields.io/badge/tests-446%20passed-brightgreen)](./TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-480%20passed-brightgreen)](./TEST_REPORT.md)
 
 ---
 
@@ -1902,8 +1902,9 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📊 测试报告
 
-单元测试、e2e 与集成测试结果见 [TEST_REPORT.md](./TEST_REPORT.md)。当前 52
-个测试文件、438 个用例全部通过。
+单元测试、e2e 与集成测试结果见 [TEST_REPORT.md](./TEST_REPORT.md)。
+
+**测试总结**：共 56 个测试文件、480 个用例全部通过。覆盖单元测试（config、app、router、plugin、build、render 等核心模块）、e2e 测试（服务器请求验证）、集成测试（配置生命周期、CSR/SSR/SSG/Hybrid 各模式构建）。路径与配置加载相关测试已支持 Windows 跨平台（pathToFileUrl、makeTempDir）。
 
 ---
 

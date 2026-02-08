@@ -16,7 +16,6 @@ import {
   ensureDir,
   join,
   makeTempDir,
-  platform,
   remove,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
@@ -43,10 +42,7 @@ describe("loadProjectConfig (config-loader.ts)", () => {
     expect(config).toEqual({});
   });
 
-  it.skipIf(
-    platform() === "windows", // Windows 下 pathToFileURL 动态 import 仍失败
-    "有 config/main.ts 时应加载配置",
-    async () => {
+  it("有 config/main.ts 时应加载配置", async () => {
     const configDir = join(testDir, "config");
     await ensureDir(configDir);
     await writeTextFile(
@@ -57,13 +53,9 @@ describe("loadProjectConfig (config-loader.ts)", () => {
       const config = await loadProjectConfig(testDir);
       expect(config.name).toBe("test-app");
       expect(config.version).toBe("1.0.0");
-    },
-  );
+    });
 
-  it.skipIf(
-    platform() === "windows",
-    "指定 app 时加载 src/{app}/config",
-    async () => {
+  it("指定 app 时加载 src/{app}/config", async () => {
     const appConfigDir = join(testDir, "src", "backend", "config");
     await ensureDir(appConfigDir);
     await writeTextFile(
@@ -74,6 +66,5 @@ describe("loadProjectConfig (config-loader.ts)", () => {
       const config = await loadProjectConfig(testDir, "backend");
       expect(config.name).toBe("backend");
       expect((config.server as { port?: number })?.port).toBe(4000);
-    },
-  );
+    });
 });

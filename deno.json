@@ -42,25 +42,30 @@
     "@dreamer/config": "jsr:@dreamer/config@^1.0.0",
     "@dreamer/console": "jsr:@dreamer/console@^1.0.4",
     "@dreamer/database": "jsr:@dreamer/database@^1.0.2",
-    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.0.0",
+    "@dreamer/esbuild": "../esbuild/src/mod.ts",
     "@dreamer/i18n": "jsr:@dreamer/i18n@^1.0.0",
+    "@dreamer/image": "jsr:@dreamer/image@^1.0.0-beta.3",
     "@dreamer/lifecycle": "jsr:@dreamer/lifecycle@^1.0.0",
     "@dreamer/logger": "jsr:@dreamer/logger@^1.0.0",
     "@dreamer/middleware": "jsr:@dreamer/middleware@^1.0.0",
     "@dreamer/middlewares": "jsr:@dreamer/middlewares@^1.0.0",
     "@dreamer/plugin": "jsr:@dreamer/plugin@^1.0.0",
-    "@dreamer/render": "jsr:@dreamer/render@^1.0.0",
+    "@dreamer/plugins": "jsr:@dreamer/plugins@^1.0.3",
+    "@dreamer/render": "jsr:@dreamer/render@^1.0.1",
     "@dreamer/router": "jsr:@dreamer/router@^1.0.1",
-    "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.0.2",
+    "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.0.4",
     "@dreamer/server": "jsr:@dreamer/server@^1.0.1",
     "@dreamer/service": "jsr:@dreamer/service@^1.0.0",
-    "@dreamer/socket-io": "jsr:@dreamer/socket-io@^1.0.1",
-    "@dreamer/test": "jsr:@dreamer/test@^1.0.0",
+    "@dreamer/socket-io": "jsr:@dreamer/socket-io@^1.0.3",
+    "@dreamer/test": "jsr:@dreamer/test@^1.0.1",
     "@dreamer/utils": "jsr:@dreamer/utils@^1.0.0",
-    "@dreamer/websocket": "jsr:@dreamer/websocket@^1.0.0",
-
+    "@dreamer/websocket": "jsr:@dreamer/websocket@^1.0.1",
     "preact": "npm:preact@10.28.0",
-    "react": "npm:react@18.3.1"
+    "react": "npm:react@18.3.1",
+    "esbuild": "npm:esbuild@0.27.2",
+    "postcss": "npm:postcss@8.4.39",
+    "autoprefixer": "npm:autoprefixer@10.4.19",
+    "cssnano": "npm:cssnano@7.0.3"
   },
   "tasks": {
     "setup": "deno run -A src/setup.ts",
@@ -88,14 +93,25 @@
     "./examples/react-ssr/advanced"
   ],
   "nodeModulesDir": "auto",
-  "exclude": ["examples/"],
+  "exclude": [
+    "examples/"
+  ],
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "preact"
   },
   "lint": {
-    "include": ["src/"],
-    "rules": { "tags": ["recommended"], "exclude": ["no-explicit-any"] }
+    "include": [
+      "src/"
+    ],
+    "rules": {
+      "tags": [
+        "recommended"
+      ],
+      "exclude": [
+        "no-explicit-any"
+      ]
+    }
   },
   "allowScripts": {
     "allow": [],

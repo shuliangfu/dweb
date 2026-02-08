@@ -101,7 +101,10 @@ function extractEntryFromLongPath(fullPath: string): string | null {
 /**
  * 获取当前执行的入口文件绝对路径（用于多应用构建时推断输出目录）
  *
- * Deno: mainModule；Bun/Node: process.argv[1]
+ * Deno: mainModule；Bun: Bun.main（绝对路径）；Node: process.argv[1]
+ *
+ * 注：Bun 下 process.argv[1] 在 `bun run` 时可能为 "run" 而非脚本路径，
+ * 需优先使用 Bun.main 获取入口绝对路径。
  *
  * @returns 入口文件绝对路径，无法获取时返回 null
  *
@@ -126,9 +129,15 @@ export function getMainModulePath(): string | null {
       return null;
     }
   }
+  const bun = g.Bun as { main?: string } | undefined;
+  if (bun?.main) {
+    return pathnameToFsPath(bun.main.startsWith("file://")
+      ? new URL(bun.main).pathname
+      : bun.main);
+  }
   const proc = g.process as { argv?: string[] } | undefined;
   const scriptPath = proc?.argv?.[1];
-  if (scriptPath) {
+  if (scriptPath && !scriptPath.startsWith("-") && scriptPath !== "run") {
     return resolve(cwd(), scriptPath);
   }
   return null;

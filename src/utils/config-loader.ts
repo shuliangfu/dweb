@@ -11,10 +11,10 @@
  * @module
  */
 
-import { pathToFileURL } from "node:url";
 import {
   getEnv,
   join,
+  pathToFileUrl,
   readdir,
   realPath,
   resolve,
@@ -52,8 +52,8 @@ async function loadModuleConfig(
       ? filePath
       : resolve(projectRoot, filePath);
     const resolvedPath = await realPath(absPath);
-    // 使用 pathToFileURL 确保 Windows 等平台 file:// URL 格式正确
-    const fileUrl = pathToFileURL(resolvedPath).href;
+    // 使用 pathToFileUrl 确保 Windows 等平台 file:// URL 格式正确
+    const fileUrl = pathToFileUrl(resolvedPath);
     const module = await import(fileUrl);
     return module.default || module;
   } catch {

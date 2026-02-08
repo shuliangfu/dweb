@@ -29,6 +29,11 @@ const config: AppConfig = {
     level: "info",
     format: "text",
   },
+  build: {
+    server: {
+      external: ["tailwindcss", "lightningcss"],
+    },
+  },
 };
 
 export default config;

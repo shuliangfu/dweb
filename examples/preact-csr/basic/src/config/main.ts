@@ -42,6 +42,7 @@ const config: AppConfig = {
   build: {
     server: {
       useNativeCompile: false,
+      external: ["tailwindcss", "lightningcss"],
     },
   },
 };

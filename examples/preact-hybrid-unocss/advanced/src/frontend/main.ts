@@ -36,12 +36,13 @@ const app = new App({
   },
 });
 
-// 注册 UnoCSS 插件
+// 注册 UnoCSS 插件（显式使用 preset-wind3 兼容 Tailwind 类名）
 app.registerPlugin(unocssPlugin({
   output: "dist/frontend/client/assets",
   cssEntry: "src/frontend/assets/uno.css",
   content: ["./src/frontend/**/*.{ts,tsx}"],
   assetsPath: "/assets",
+  // presets: ["@unocss/preset-wind3"],
 }));
 
 // 注册静态文件插件

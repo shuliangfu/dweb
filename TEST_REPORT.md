@@ -4,9 +4,9 @@
 
 | 项目     | 值                           |
 | -------- | ---------------------------- |
-| 框架版本 | 3.0.55                       |
-| 测试框架 | @dreamer/test@^1.0.0-beta.40 |
-| 测试时间 | 2026-02-06                   |
+| 框架版本 | 3.0.68                       |
+| 测试框架 | @dreamer/test@^1.0.1          |
+| 测试时间 | 2026-02-08                   |
 | 测试环境 | Deno 2.x / Bun 1.x           |
 
 ---
@@ -15,14 +15,14 @@
 
 ### 总体统计
 
-| 指标         | 数值  |
-| ------------ | ----- |
-| 测试文件数   | 52    |
-| 测试用例总数 | 446   |
-| 通过用例数   | 446   |
-| 失败用例数   | 0     |
-| 通过率       | 100%  |
-| 测试执行时间 | ~30秒 |
+| 指标         | 数值   |
+| ------------ | ------ |
+| 测试文件数   | 56     |
+| 测试用例总数 | 480    |
+| 通过用例数   | 480    |
+| 失败用例数   | 0      |
+| 通过率       | 100%   |
+| 测试执行时间 | ~1m20s |
 
 ### 测试文件统计
 
@@ -30,10 +30,10 @@
 
 | 文件名                          | 测试用例数 | 状态        |
 | ------------------------------- | ---------- | ----------- |
-| `config.test.ts`                | 46         | ✅ 全部通过 |
+| `config.test.ts`                | 45         | ✅ 全部通过 |
 | `command.test.ts`               | 41         | ✅ 全部通过 |
 | `build.test.ts`                 | 21         | ✅ 全部通过 |
-| `app.test.ts`                   | 20         | ✅ 全部通过 |
+| `app.test.ts`                   | 19         | ✅ 全部通过 |
 | `logger.test.ts`                | 17         | ✅ 全部通过 |
 | `runtime-adapter.test.ts`       | 17         | ✅ 全部通过 |
 | `build-dirs.test.ts`            | 17         | ✅ 全部通过 |
@@ -46,7 +46,7 @@
 | `plugin-events.test.ts`         | 16         | ✅ 全部通过 |
 | `router.test.ts`                | 12         | ✅ 全部通过 |
 | `errors.test.ts`                | 12         | ✅ 全部通过 |
-| `path.test.ts`                  | 12         | ✅ 全部通过 |
+| `path.test.ts`                  | 13         | ✅ 全部通过 |
 | `database.test.ts`              | 11         | ✅ 全部通过 |
 | `jsr-versions.test.ts`          | 11         | ✅ 全部通过 |
 | `load-route-module.test.ts`     | 7          | ✅ 全部通过 |
@@ -59,7 +59,7 @@
 | `asset-manifest.test.ts`        | 4          | ✅ 全部通过 |
 | `config-loader.test.ts`         | 4          | ✅ 全部通过 |
 | `csr-client-middleware.test.ts` | 4          | ✅ 全部通过 |
-| `module-cache.test.ts`          | 4          | ✅ 全部通过 |
+| `module-cache.test.ts`          | 5          | ✅ 全部通过 |
 | `cmd-build.test.ts`             | 3          | ✅ 全部通过 |
 | `cmd-clean.test.ts`             | 3          | ✅ 全部通过 |
 | `render-hybrid.test.ts`         | 3          | ✅ 全部通过 |
@@ -77,6 +77,7 @@
 | `cmd-start.test.ts`             | 2          | ✅ 全部通过 |
 | `cmd-test.test.ts`              | 2          | ✅ 全部通过 |
 | `cmd-upgrade.test.ts`           | 2          | ✅ 全部通过 |
+| `cmd-update.test.ts`           | 3          | ✅ 全部通过 |
 | `cli.test.ts`                   | 1          | ✅ 全部通过 |
 
 #### e2e 测试 (tests/e2e/)
@@ -90,12 +91,20 @@
 | 文件名                     | 测试用例数 | 状态        |
 | -------------------------- | ---------- | ----------- |
 | `config-lifecycle.test.ts` | 2          | ✅ 全部通过 |
+| `csr-preact-build.test.ts` | 2          | ✅ 全部通过 |
+| `csr-react-build.test.ts`  | 2          | ✅ 全部通过 |
+| `hybrid-preact-build.test.ts` | 2       | ✅ 全部通过 |
+| `hybrid-react-build.test.ts`  | 2       | ✅ 全部通过 |
+| `ssg-preact-build.test.ts` | 2          | ✅ 全部通过 |
+| `ssg-react-build.test.ts`  | 2          | ✅ 全部通过 |
+| `ssr-preact-build.test.ts` | 2          | ✅ 全部通过 |
+| `ssr-react-build.test.ts`  | 2          | ✅ 全部通过 |
 
 ---
 
 ## 🔍 功能测试详情
 
-### 1. 配置管理 (config.test.ts) - 46 个测试
+### 1. 配置管理 (config.test.ts) - 45 个测试
 
 #### 1.1 validateConfig() 验证
 
@@ -591,14 +600,14 @@
 - ✅ **sanitize.test.ts** (15)：sanitizeRequestParams 危险键过滤、NUL
   过滤、空值处理
 - ✅ **path.test.ts**
-  (12)：isPathWithinProject、pathForLog、normalizePathForCompare
+  (13)：isPathWithinProject、pathForLog、normalizePathForCompare（使用 makeTempDir 支持 Windows 跨平台）
 - ✅ **runtime.test.ts** (9)：getRuntime、getTaskArgs、getTestArgs、getLintArgs
   等
-- ✅ **module-cache.test.ts** (4)：invalidateModule、getModuleVersion
+- ✅ **module-cache.test.ts** (5)：invalidateModule、getModuleVersion（使用 pathToFileUrl 支持 Windows 跨平台）
 - ✅ **load-route-module.test.ts**
   (7)：loadRouteModule、clearCssRouteCacheForPath、含 CSS 导入
 - ✅ **asset-manifest.test.ts** (4)：replaceAssetPathsInHtml
-- ✅ **config-loader.test.ts** (4)：loadProjectConfig
+- ✅ **config-loader.test.ts** (4)：loadProjectConfig（使用 pathToFileUrl，已移除 Windows skip）
 - ✅ **csr-client-middleware.test.ts** (4)：createClientScriptMiddleware、next
   调用、生产模式
 - ✅ **socket-io.test.ts**
@@ -742,7 +751,7 @@
 
 ## 🎯 结论
 
-@dreamer/dweb 框架的核心模块测试在文件级已全面覆盖，共 **446**
+@dreamer/dweb 框架的核心模块测试在文件级已全面覆盖，共 **480**
 个测试用例全部通过。所有测试均为实质性测试，验证了具体的功能行为。测试覆盖了：
 
 - ✅ App 类核心功能

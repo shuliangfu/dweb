@@ -931,12 +931,12 @@ export class App extends EventEmitter implements IApp {
     const clientOutputDir = buildConfig.client?.output ??
       getInferredBuildOutputDirs().client;
 
-    // 供 CSS 插件在 onBuild 中推送编译结果，用于 SSG 模板内联样式（可选）
-    const pluginBuildCssParts: string[] = [];
-    if (!this.container.has("pluginBuildCssParts")) {
+    // 供 CSS 插件在 onBuild 中推送 link 标签，用于 SSG 模板注入
+    const pluginBuildCssLinks: string[] = [];
+    if (!this.container.has("pluginBuildCssLinks")) {
       this.container.registerSingleton(
-        "pluginBuildCssParts",
-        () => pluginBuildCssParts,
+        "pluginBuildCssLinks",
+        () => pluginBuildCssLinks,
       );
     }
 
@@ -1046,17 +1046,11 @@ export class App extends EventEmitter implements IApp {
             }
             return layouts;
           };
-          // 使用插件在 onBuild 中推送的 CSS 内容（Tailwind/UnoCSS 等），注入到 SSG 模板的 <head> 中
-          const cssParts = this.container.tryGet<string[]>(
-            "pluginBuildCssParts",
+          // 使用插件在 onBuild 中推送的 link 标签，在 _app 输出的 </head> 前注入
+          const cssLinks = this.container.tryGet<string[]>(
+            "pluginBuildCssLinks",
           ) ?? [];
-          const inlineCss = cssParts.length > 0
-            ? "<style>" + cssParts.join("\n") + "</style>"
-            : "";
-          const defaultTemplate =
-            '<!DOCTYPE html><html><head><meta charset="utf-8">' +
-            inlineCss +
-            "</head><body><!--ssr-outlet--></body></html>";
+          const headInject = cssLinks.length > 0 ? cssLinks.join("\n") : "";
 
           const engine = renderCfg.engine ?? "preact";
           const cwdPath = cwd();
@@ -1078,7 +1072,8 @@ export class App extends EventEmitter implements IApp {
             loadRouteComponent,
             loadRouteLayouts,
             loadRouteData,
-            template: defaultTemplate,
+            template: undefined, // 直接使用 _app 输出，不包 defaultTemplate
+            headInject, // 在 _app 的 </head> 前注入 link 标签
             onFileGenerated,
           };
           await renderService.renderSSG(ssgOptions);

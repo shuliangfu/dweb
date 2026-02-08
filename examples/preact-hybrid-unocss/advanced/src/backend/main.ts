@@ -36,12 +36,24 @@ const app = new App({
   },
 });
 
-// 注册 UnoCSS 插件
+// 注册 UnoCSS 插件（显式使用 preset-wind3 兼容 Tailwind 类名）
 app.registerPlugin(unocssPlugin({
   output: "dist/backend/client/assets",
   cssEntry: "src/backend/assets/uno.css",
   content: ["./src/backend/**/*.{ts,tsx}"],
   assetsPath: "/assets",
+  // presets: ["@unocss/preset-wind3"],
+  // 动态 class（如 badge 颜色）需 safelist 确保被生成
+  safelist: [
+    "bg-purple-100",
+    "text-purple-700",
+    "bg-blue-100",
+    "text-blue-700",
+    "bg-gray-100",
+    "text-gray-700",
+    "text-indigo-600",
+    "hover:text-indigo-700",
+  ],
 }));
 
 // 注册静态文件插件

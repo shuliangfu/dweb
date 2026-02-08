@@ -7,7 +7,7 @@
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.md)
-[![Tests](https://img.shields.io/badge/tests-446%20passed-brightgreen)](./TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-480%20passed-brightgreen)](./TEST_REPORT.md)
 
 ---
 
@@ -1818,7 +1818,9 @@ Install with `deno add jsr:@dreamer/<package-name>`. See
 
 ## 📊 Test report
 
-See [TEST_REPORT.md](./TEST_REPORT.md). 52 test files, 446 tests, all passing.
+See [TEST_REPORT.md](./TEST_REPORT.md).
+
+**Summary**: 56 test files, 480 tests, all passing. Covers unit tests (config, app, router, plugin, build, render, etc.), e2e tests (server request validation), and integration tests (config lifecycle, CSR/SSR/SSG/Hybrid build). Path and config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ---
 

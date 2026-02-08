@@ -5,10 +5,13 @@
  * - isPathWithinProject 路径安全校验
  * - pathForLog 日志友好路径
  * - normalizePathForCompare 路径规范化
+ *
+ * 使用 makeTempDir 创建真实路径，支持 Windows 等跨平台测试。
  */
 
 import "../setup.ts";
-import { describe, expect, it } from "@dreamer/test";
+import { join, makeTempDir, remove, resolve } from "@dreamer/runtime-adapter";
+import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import {
   isPathWithinProject,
   normalizePathForCompare,
@@ -16,8 +19,20 @@ import {
 } from "../../src/utils/path.ts";
 
 describe("路径工具 (path.ts)", () => {
-  /** 模拟项目根（跨平台使用 / 统一） */
-  const projectRoot = "/home/project";
+  /** 使用真实临时目录作为项目根，支持 Windows 跨平台 */
+  let projectRoot: string;
+  /** 项目外的另一目录，用于测试路径穿越 */
+  let otherDir: string;
+
+  beforeAll(async () => {
+    projectRoot = await makeTempDir({ prefix: "dweb-path-project-" });
+    otherDir = await makeTempDir({ prefix: "dweb-path-other-" });
+  });
+
+  afterAll(async () => {
+    await remove(projectRoot, { recursive: true });
+    await remove(otherDir, { recursive: true });
+  });
 
   describe("isPathWithinProject()", () => {
     it("项目根路径应在项目内", () => {
@@ -25,40 +40,38 @@ describe("路径工具 (path.ts)", () => {
     });
 
     it("项目子路径应在项目内", () => {
-      expect(isPathWithinProject(`${projectRoot}/src/foo.ts`, projectRoot))
-        .toBe(true);
-      expect(isPathWithinProject(`${projectRoot}/config/main.ts`, projectRoot))
-        .toBe(true);
+      expect(
+        isPathWithinProject(join(projectRoot, "src/foo.ts"), projectRoot),
+      ).toBe(true);
+      expect(
+        isPathWithinProject(join(projectRoot, "config/main.ts"), projectRoot),
+      ).toBe(true);
     });
 
     it("项目外路径应返回 false", () => {
-      expect(isPathWithinProject("/home/other/file.ts", projectRoot)).toBe(
-        false,
-      );
-      expect(isPathWithinProject("/tmp/foo", projectRoot)).toBe(false);
+      expect(
+        isPathWithinProject(join(otherDir, "file.ts"), projectRoot),
+      ).toBe(false);
     });
 
     it("路径穿越（../）应返回 false", () => {
-      const escaped = `${projectRoot}/src/../etc/passwd`;
-      const resolved = "/home/project/etc/passwd";
-      expect(isPathWithinProject(resolved, projectRoot)).toBe(true);
-      // 注意：normalizePathForCompare 会 resolve，所以 ../ 会被折叠
-      // 若传入的是已解析路径，则 /home/project/etc 在项目内
-      const outside = "/home/project/../other/secret";
-      const outsideResolved = "/home/other/secret";
-      expect(isPathWithinProject(outsideResolved, projectRoot)).toBe(false);
+      const escaped = join(projectRoot, "src/../etc/passwd");
+      const resolvedPath = resolve(escaped);
+      expect(isPathWithinProject(resolvedPath, projectRoot)).toBe(true);
+      const outsidePath = join(otherDir, "secret");
+      expect(isPathWithinProject(outsidePath, projectRoot)).toBe(false);
     });
 
     it("相对路径会 resolve 后比较", () => {
-      // normalizePathForCompare 内部会 resolve，传入相对路径会基于 cwd
-      // 此处传入绝对路径测试
-      expect(isPathWithinProject(`${projectRoot}/a/b`, projectRoot)).toBe(true);
+      expect(
+        isPathWithinProject(join(projectRoot, "a/b"), projectRoot),
+      ).toBe(true);
     });
   });
 
   describe("pathForLog()", () => {
     it("项目内路径应返回相对路径", () => {
-      const rel = pathForLog(`${projectRoot}/src/foo.ts`, projectRoot);
+      const rel = pathForLog(join(projectRoot, "src/foo.ts"), projectRoot);
       expect(rel).toBe("src/foo.ts");
     });
 
@@ -68,12 +81,12 @@ describe("路径工具 (path.ts)", () => {
     });
 
     it("项目外路径应返回原路径", () => {
-      const outside = "/home/other/secret.ts";
+      const outside = join(otherDir, "secret.ts");
       expect(pathForLog(outside, projectRoot)).toBe(outside);
     });
 
     it("子目录路径应正确相对化", () => {
-      const full = `${projectRoot}/config/main.ts`;
+      const full = join(projectRoot, "config/main.ts");
       expect(pathForLog(full, projectRoot)).toBe("config/main.ts");
     });
   });
@@ -93,7 +106,7 @@ describe("路径工具 (path.ts)", () => {
     });
 
     it("应折叠 /./ 段", () => {
-      const withDot = `${projectRoot}/./src/./foo`;
+      const withDot = join(projectRoot, "./src/./foo");
       const normalized = normalizePathForCompare(withDot);
       expect(normalized).not.toContain("/./");
     });
