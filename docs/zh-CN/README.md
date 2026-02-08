@@ -1573,17 +1573,17 @@ setDwebErrorTranslator((key, params) => {
 
 **支持的语言**（9 种）：
 
-| Locale | 语言 |
-| ------ | ----- |
-| `zh-CN` | 简体中文 |
-| `en-US` | English (US) |
-| `ja-JP` | 日本語 |
-| `ko-KR` | 한국어 |
-| `es-ES` | Español |
+| Locale  | 语言               |
+| ------- | ------------------ |
+| `zh-CN` | 简体中文           |
+| `en-US` | English (US)       |
+| `ja-JP` | 日本語             |
+| `ko-KR` | 한국어             |
+| `es-ES` | Español            |
 | `pt-BR` | Português (Brasil) |
-| `id-ID` | Bahasa Indonesia |
-| `de-DE` | Deutsch |
-| `fr-FR` | Français |
+| `id-ID` | Bahasa Indonesia   |
+| `de-DE` | Deutsch            |
+| `fr-FR` | Français           |
 
 **配置方式**：
 
@@ -1939,7 +1939,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 单元测试、e2e 与集成测试结果见 [TEST_REPORT.md](./TEST_REPORT.md)。
 
-**测试总结**：共 56 个测试文件、480 个用例全部通过。覆盖单元测试（config、app、router、plugin、build、render 等核心模块）、e2e 测试（服务器请求验证）、集成测试（配置生命周期、CSR/SSR/SSG/Hybrid 各模式构建）。路径与配置加载相关测试已支持 Windows 跨平台（pathToFileUrl、makeTempDir）。
+**测试总结**：共 56 个测试文件、480
+个用例全部通过。覆盖单元测试（config、app、router、plugin、build、render
+等核心模块）、e2e
+测试（服务器请求验证）、集成测试（配置生命周期、CSR/SSR/SSG/Hybrid
+各模式构建）。路径与配置加载相关测试已支持 Windows
+跨平台（pathToFileUrl、makeTempDir）。
 
 ---
 

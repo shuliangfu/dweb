@@ -14,10 +14,10 @@ and this project adheres to
 
 - **Windows compatibility testing**: Fix config.test.ts and build-dirs.test.ts
   assertions so tests pass on Windows and when running in parallel. Error
-  messages support bilingual matching (i18n and default English fallback);
-  entry path format error regex adds "Entry path format not supported".
-- **All 480 tests passing**: Unit, integration, and e2e tests pass on Deno,
-  Bun, and CI (ubuntu/windows/macos).
+  messages support bilingual matching (i18n and default English fallback); entry
+  path format error regex adds "Entry path format not supported".
+- **All 480 tests passing**: Unit, integration, and e2e tests pass on Deno, Bun,
+  and CI (ubuntu/windows/macos).
 
 ---
 
@@ -40,10 +40,11 @@ and this project adheres to
 - **CI @dreamer/esbuild**: Switch from local path `../esbuild/src/mod.ts` to
   `jsr:@dreamer/esbuild@^1.0.2` so CI (standalone dweb repo) can resolve.
 - **CI compilerOptions & React SSG**: Root `jsxImportSource` set to `react`;
-  remove `compilerOptions` from workspace-member examples (Deno allows only root);
-  Preact examples add `react`/`react/jsx-runtime` aliases to Preact for compat.
-- **Windows config-loader**: Treat Windows absolute paths (`C:\path`) as absolute;
-  fallback to `absPath` when `realPath` fails (e.g. symlinks in CI).
+  remove `compilerOptions` from workspace-member examples (Deno allows only
+  root); Preact examples add `react`/`react/jsx-runtime` aliases to Preact for
+  compat.
+- **Windows config-loader**: Treat Windows absolute paths (`C:\path`) as
+  absolute; fallback to `absPath` when `realPath` fails (e.g. symlinks in CI).
 - **Windows module-cache**: Normalize `file:///D:/path` to `D:/path` so it
   matches direct path keys.
 

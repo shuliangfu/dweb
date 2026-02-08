@@ -79,7 +79,9 @@ describe("CLI 命令模块 (command.ts)", () => {
     it("未初始化时访问 app 应该抛出错误", () => {
       const cmd = new Command("test");
       // 兼容 zh-CN / en-US，command 模块可能在其他测试中先加载导致 locale 未设为 zh-CN
-      expect(() => cmd.app).toThrow(/App 实例未初始化|App instance not initialized/);
+      expect(() => cmd.app).toThrow(
+        /App 实例未初始化|App instance not initialized/,
+      );
     });
   });
 

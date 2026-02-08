@@ -41,8 +41,8 @@
   `react`/`react/jsx-runtime` 别名指向 Preact 以兼容。
 - **Windows config-loader**：将 Windows 绝对路径（`C:\path`）视为绝对路径；当
   `realPath` 失败时回退到 `absPath`。
-- **Windows module-cache**：将 `file:///D:/path` 归一为 `D:/path`，与直接
-  路径 key 一致。
+- **Windows module-cache**：将 `file:///D:/path` 归一为 `D:/path`，与直接 路径
+  key 一致。
 
 ---
 

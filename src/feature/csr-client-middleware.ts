@@ -65,12 +65,6 @@ export function createClientScriptMiddleware(
   return async (ctx: HttpContext, next: () => Promise<void>): Promise<void> => {
     const pathname = ctx.url.pathname || ctx.path || "";
 
-    // 浏览器默认请求 favicon.ico，无文件时返回 204 避免 404 影响 E2E 测试（尤其 Windows Puppeteer）
-    if (pathname === "/favicon.ico") {
-      ctx.response = new Response(null, { status: 204 });
-      return;
-    }
-
     if (pathname === "/_client.js" || pathname === "/_client.js.map") {
       try {
         const isMap = pathname === "/_client.js.map";

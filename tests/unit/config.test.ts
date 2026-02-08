@@ -18,13 +18,18 @@ import type { AppConfig } from "../../src/types/app.ts";
 /** 中英文错误消息皆可匹配（并行测试时 translator 可能被 errors.test 清除） */
 const RE = {
   name: /配置项 'name' 必须是字符串类型|Config 'name' must be a string/,
-  version: /配置项 'version' 必须是字符串类型|Config 'version' must be a string/,
-  envPrefix: /配置项 'envPrefix' 必须是字符串类型|Config 'envPrefix' must be a string/,
-  hotReload: /配置项 'hotReload' 必须是布尔类型|Config 'hotReload' must be a boolean/,
+  version:
+    /配置项 'version' 必须是字符串类型|Config 'version' must be a string/,
+  envPrefix:
+    /配置项 'envPrefix' 必须是字符串类型|Config 'envPrefix' must be a string/,
+  hotReload:
+    /配置项 'hotReload' 必须是布尔类型|Config 'hotReload' must be a boolean/,
   render: /配置项 'render' 必须是对象类型|Config 'render' must be an object/,
-  renderEngine: /配置项 'render\.engine' 必须是|Config 'render\.engine' must be/,
+  renderEngine:
+    /配置项 'render\.engine' 必须是|Config 'render\.engine' must be/,
   renderMode: /配置项 'render\.mode' 必须是|Config 'render\.mode' must be/,
-  middlewares: /配置项 'middlewares' 必须是数组类型|Config 'middlewares' must be an array/,
+  middlewares:
+    /配置项 'middlewares' 必须是数组类型|Config 'middlewares' must be an array/,
   cannotExtractName: /无法提取名称|cannot extract name/,
   mustHaveName: /必须提供名称|must have a name/,
   mustHaveNameProp: /必须提供 name 属性|must have name property/,

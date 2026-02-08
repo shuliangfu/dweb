@@ -10,7 +10,15 @@
  */
 
 import "../setup.ts";
-import { chdir, cwd, dirname, readdir, stat } from "@dreamer/runtime-adapter";
+import {
+  chdir,
+  cwd,
+  dirname,
+  join,
+  readdir,
+  remove,
+  stat,
+} from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 
 /** 将 file: URL 转为本地路径（Bun 下避免 cwd 被 db/generate 测试污染） */
@@ -26,7 +34,25 @@ import { getBuild, initializeBuild } from "../../src/feature/build.ts";
 import type { AppConfig } from "../../src/types/app.ts";
 import { initializeLogger } from "../../src/utils/logger.ts";
 
+/** 构建测试产生的输出目录（需在测试后清理） */
+const OUTPUT_DIRS = [
+  "tests/data/build-output",
+  "tests/data/server-output",
+  "tests/data/client-output",
+];
+
 describe("构建集成 (build.ts)", () => {
+  afterAll(async () => {
+    const root = dirname(dirname(dirname(fromFileUrl(import.meta.url))));
+    for (const dir of OUTPUT_DIRS) {
+      try {
+        await remove(join(root, dir), { recursive: true });
+      } catch {
+        // 目录不存在或已删除，忽略
+      }
+    }
+  });
+
   // 辅助函数：创建带 logger 的测试环境
   function createTestEnv(config: AppConfig = {}) {
     const container = initializeServiceContainer();

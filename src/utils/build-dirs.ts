@@ -73,7 +73,10 @@ function extractEntryFromLongPath(fullPath: string): string | null {
   }
   // src/x/y/main.ts 等 4 段以上结构不支持，不提取
   if (mainIdx >= 3 && parts[mainIdx - 3] === "src") {
-    throwEntryPathError(fullPath, $t("errors.entryPathInvalidReasonMultiLevelSrc"));
+    throwEntryPathError(
+      fullPath,
+      $t("errors.entryPathInvalidReasonMultiLevelSrc"),
+    );
   }
   let start: number;
   if (mainIdx >= 2 && parts[mainIdx - 2] === "src") {
@@ -92,7 +95,12 @@ function extractEntryFromLongPath(fullPath: string): string | null {
   if (slice.length >= 1 && slice.length <= 3) {
     return slice.join("/");
   }
-  throwEntryPathError(fullPath, $t("errors.entryPathInvalidReasonSegmentCount", { count: String(slice.length) }));
+  throwEntryPathError(
+    fullPath,
+    $t("errors.entryPathInvalidReasonSegmentCount", {
+      count: String(slice.length),
+    }),
+  );
 }
 
 /**
@@ -128,9 +136,9 @@ export function getMainModulePath(): string | null {
   }
   const bun = g.Bun as { main?: string } | undefined;
   if (bun?.main) {
-    return pathnameToFsPath(bun.main.startsWith("file://")
-      ? new URL(bun.main).pathname
-      : bun.main);
+    return pathnameToFsPath(
+      bun.main.startsWith("file://") ? new URL(bun.main).pathname : bun.main,
+    );
   }
   const proc = g.process as { argv?: string[] } | undefined;
   const scriptPath = proc?.argv?.[1];
@@ -189,7 +197,12 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
   }
 
   if (parts.length < 1 || parts.length > 3) {
-    throwEntryPathError(entry, $t("errors.entryPathInvalidReasonSegmentCount", { count: String(parts.length) }));
+    throwEntryPathError(
+      entry,
+      $t("errors.entryPathInvalidReasonSegmentCount", {
+        count: String(parts.length),
+      }),
+    );
   }
   // 特殊：运行构建产物时（<outputDir>/server.js 或 <outputDir>/<app>/server.js）
   // outputDir 为用户配置的 build.server.output 根目录（如 dist、build、output 等）

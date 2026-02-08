@@ -11,23 +11,23 @@ options.
 `AppConfig` is the application configuration interface for the dweb framework,
 with the following main sections:
 
-| Option                 | Type                 | Description                                                                                                                        |
-| ---------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `name`                 | string               | Application name                                                                                                                   |
-| `version`              | string               | Application version                                                                                                                |
+| Option                 | Type                 | Description                                                                                                                                                                       |
+| ---------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                 | string               | Application name                                                                                                                                                                  |
+| `version`              | string               | Application version                                                                                                                                                               |
 | `language`             | AppLanguage          | Framework language (zh-CN, en-US, ja-JP, ko-KR, es-ES, pt-BR, id-ID, de-DE, fr-FR; affects CLI, logs, error messages; <br/>default: auto-detect LANGUAGE/LC_ALL/LANG, else en-US) |
-| `envPrefix`            | string               | Environment variable prefix                                                                                                        |
-| `hotReload`            | boolean              | Enable hot reload                                                                                                                  |
-| `pluginManagerOptions` | PluginManagerOptions | Plugin manager options (autoActivate, continueOnError, enableHotReload, etc.)                                                      |
-| `server`               | ServerOptions        | Server configuration                                                                                                               |
-| `router`               | RouterOptions        | Router configuration                                                                                                               |
-| `render`               | object               | Render configuration                                                                                                               |
-| `build`                | BuildAppConfig       | Build configuration                                                                                                                |
-| `logger`               | LoggerConfig         | Logger configuration                                                                                                               |
-| `database`             | DatabaseAppConfig    | Database configuration                                                                                                             |
-| `socket`               | SocketConfig         | Real-time config (type: socketio or websocket)                                                                                     |
-| `plugins`              | Array                | Plugin list                                                                                                                        |
-| `middlewares`          | Array                | Middleware list                                                                                                                    |
+| `envPrefix`            | string               | Environment variable prefix                                                                                                                                                       |
+| `hotReload`            | boolean              | Enable hot reload                                                                                                                                                                 |
+| `pluginManagerOptions` | PluginManagerOptions | Plugin manager options (autoActivate, continueOnError, enableHotReload, etc.)                                                                                                     |
+| `server`               | ServerOptions        | Server configuration                                                                                                                                                              |
+| `router`               | RouterOptions        | Router configuration                                                                                                                                                              |
+| `render`               | object               | Render configuration                                                                                                                                                              |
+| `build`                | BuildAppConfig       | Build configuration                                                                                                                                                               |
+| `logger`               | LoggerConfig         | Logger configuration                                                                                                                                                              |
+| `database`             | DatabaseAppConfig    | Database configuration                                                                                                                                                            |
+| `socket`               | SocketConfig         | Real-time config (type: socketio or websocket)                                                                                                                                    |
+| `plugins`              | Array                | Plugin list                                                                                                                                                                       |
+| `middlewares`          | Array                | Middleware list                                                                                                                                                                   |
 
 ---
 

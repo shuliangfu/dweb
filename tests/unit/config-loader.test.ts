@@ -50,10 +50,10 @@ describe("loadProjectConfig (config-loader.ts)", () => {
       `export default { name: "test-app", version: "1.0.0" };`,
     );
 
-      const config = await loadProjectConfig(testDir);
-      expect(config.name).toBe("test-app");
-      expect(config.version).toBe("1.0.0");
-    });
+    const config = await loadProjectConfig(testDir);
+    expect(config.name).toBe("test-app");
+    expect(config.version).toBe("1.0.0");
+  });
 
   it("指定 app 时加载 src/{app}/config", async () => {
     const appConfigDir = join(testDir, "src", "backend", "config");
@@ -63,8 +63,8 @@ describe("loadProjectConfig (config-loader.ts)", () => {
       `export default { name: "backend", server: { port: 4000 } };`,
     );
 
-      const config = await loadProjectConfig(testDir, "backend");
-      expect(config.name).toBe("backend");
-      expect((config.server as { port?: number })?.port).toBe(4000);
-    });
+    const config = await loadProjectConfig(testDir, "backend");
+    expect(config.name).toBe("backend");
+    expect((config.server as { port?: number })?.port).toBe(4000);
+  });
 });

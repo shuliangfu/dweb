@@ -12,8 +12,8 @@ import {
   chdir,
   createCommand,
   cwd,
-  exists,
   execPath,
+  exists,
   IS_DENO,
   join,
   readdir,
@@ -35,40 +35,38 @@ describe("integration: Hybrid + React 构建", () => {
   });
 
   it("build 任务应成功执行并生成 server.js、client 资源及 assets", async () => {
-      // -A 为 Deno 权限参数，Bun 不支持，需根据运行时判断
-      const args = IS_DENO ? ["run", "-A", "src/main.ts", "--build"] : ["run", "src/main.ts", "--build"];
-      const cmd = createCommand(execPath(), {
-        args,
-        cwd: exampleDir,
-        stdout: "piped",
-        stderr: "piped",
-      });
-      const proc = cmd.spawn();
+    // -A 为 Deno 权限参数，Bun 不支持，需根据运行时判断
+    const args = IS_DENO
+      ? ["run", "-A", "src/main.ts", "--build"]
+      : ["run", "src/main.ts", "--build"];
+    const cmd = createCommand(execPath(), {
+      args,
+      cwd: exampleDir,
+      stdout: "piped",
+      stderr: "piped",
+    });
+    const proc = cmd.spawn();
 
-      const [status, stderrText] = await Promise.all([
-        proc.status,
-        proc.stderr
-          ? new Response(proc.stderr).text()
-          : Promise.resolve(""),
-      ]);
-      if (!status.success) {
-        throw new Error(`build 失败: ${stderrText}`);
-      }
+    const [status, stderrText] = await Promise.all([
+      proc.status,
+      proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
+    ]);
+    if (!status.success) {
+      throw new Error(`build 失败: ${stderrText}`);
+    }
 
-      const serverJs = join(exampleDir, "dist", "server.js");
-      expect(await exists(serverJs)).toBe(true);
+    const serverJs = join(exampleDir, "dist", "server.js");
+    expect(await exists(serverJs)).toBe(true);
 
-      const clientDir = join(exampleDir, "dist", "client");
-      expect(await exists(clientDir)).toBe(true);
+    const clientDir = join(exampleDir, "dist", "client");
+    expect(await exists(clientDir)).toBe(true);
 
-      const clientFiles = await readdir(clientDir);
-      const clientJs = clientFiles.find((f) => f.name.startsWith("_client"));
-      expect(clientJs).toBeDefined();
+    const clientFiles = await readdir(clientDir);
+    const clientJs = clientFiles.find((f) => f.name.startsWith("_client"));
+    expect(clientJs).toBeDefined();
 
-      const assetsDir = join(clientDir, "assets");
-      const hasAssets = await exists(assetsDir);
-      expect(hasAssets).toBe(true);
-    },
-    { sanitizeOps: false, sanitizeResources: false, timeout: 90000 },
-  );
+    const assetsDir = join(clientDir, "assets");
+    const hasAssets = await exists(assetsDir);
+    expect(hasAssets).toBe(true);
+  }, { sanitizeOps: false, sanitizeResources: false, timeout: 90000 });
 });

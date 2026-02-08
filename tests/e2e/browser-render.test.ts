@@ -83,7 +83,10 @@ async function assertBrowserRender(
       page: unknown;
       goto: (url: string) => Promise<void>;
       evaluate: (fn: () => unknown) => Promise<unknown>;
-      waitFor: (fn: () => boolean, options?: { timeout?: number }) => Promise<void>;
+      waitFor: (
+        fn: () => boolean,
+        options?: { timeout?: number },
+      ) => Promise<void>;
     };
   },
 ): Promise<void> {
@@ -129,7 +132,8 @@ async function assertBrowserRender(
         const doc = (globalThis as Record<string, unknown>).document as
           | { body?: { innerHTML?: string } }
           | undefined;
-        return (doc?.body?.innerHTML?.includes("欢迎使用 Dweb 框架") ?? false) === true;
+        return (doc?.body?.innerHTML?.includes("欢迎使用 Dweb 框架") ??
+          false) === true;
       },
       { timeout: contentTimeout },
     );
@@ -137,12 +141,18 @@ async function assertBrowserRender(
     // 诊断：获取页面内容与控制台错误，便于排查 Windows 等问题
     const diag = await t.browser.evaluate(() => {
       const doc = (globalThis as Record<string, unknown>).document as
-        | { body?: { innerHTML?: string }; documentElement?: { innerHTML?: string } }
+        | {
+          body?: { innerHTML?: string };
+          documentElement?: { innerHTML?: string };
+        }
         | undefined;
       const bodyHtml = doc?.body?.innerHTML?.slice(0, 500) ?? "";
       const fullHtml = doc?.documentElement?.innerHTML?.slice(0, 800) ?? "";
       return {
-        url: String((globalThis as unknown as { location?: { href?: string } }).location?.href ?? ""),
+        url: String(
+          (globalThis as unknown as { location?: { href?: string } }).location
+            ?.href ?? "",
+        ),
         bodyLength: doc?.body?.innerHTML?.length ?? 0,
         bodySnippet: bodyHtml,
         fullSnippet: fullHtml,
@@ -152,9 +162,15 @@ async function assertBrowserRender(
     throw new Error(
       `页面内容等待超时 (${contentTimeout}ms): ${msg}. ` +
         `URL: ${url}. ` +
-        `Console errors: ${consoleErrors.length > 0 ? consoleErrors.join("; ") : "none"}. ` +
-        `Page errors: ${pageErrors.length > 0 ? pageErrors.join("; ") : "none"}. ` +
-        (failedUrls.length > 0 ? `Failed/404 URLs: ${failedUrls.join(", ")}. ` : "") +
+        `Console errors: ${
+          consoleErrors.length > 0 ? consoleErrors.join("; ") : "none"
+        }. ` +
+        `Page errors: ${
+          pageErrors.length > 0 ? pageErrors.join("; ") : "none"
+        }. ` +
+        (failedUrls.length > 0
+          ? `Failed/404 URLs: ${failedUrls.join(", ")}. `
+          : "") +
         (diag ? `Diagnostic: ${JSON.stringify(diag)}` : ""),
     );
   }
@@ -199,7 +215,9 @@ function createExampleBrowserSuite(exampleName: string): void {
       await buildExample(exampleDir);
 
       const startCmd = createCommand(execPath(), {
-        args: IS_DENO ? ["run", "-A", "dist/server.js"] : ["run", "dist/server.js"],
+        args: IS_DENO
+          ? ["run", "-A", "dist/server.js"]
+          : ["run", "dist/server.js"],
         cwd: exampleDir,
         stdout: "inherit",
         stderr: "inherit",
@@ -226,22 +244,19 @@ function createExampleBrowserSuite(exampleName: string): void {
       }
     });
 
-    it("应能渲染且无 hydration 错误",
-      async (t) => {
-        if (!t) throw new Error("test context 不可用");
-        await assertBrowserRender(t);
+    it("应能渲染且无 hydration 错误", async (t) => {
+      if (!t) throw new Error("test context 不可用");
+      await assertBrowserRender(t);
+    }, {
+      timeout: platform() === "windows" ? 90000 : 60000,
+      sanitizeOps: false,
+      sanitizeResources: false,
+      browser: {
+        enabled: true,
+        headless: true,
+        reuseBrowser: false,
       },
-      {
-        timeout: platform() === "windows" ? 90000 : 60000,
-        sanitizeOps: false,
-        sanitizeResources: false,
-        browser: {
-          enabled: true,
-          headless: true,
-          reuseBrowser: false,
-        },
-      },
-    );
+    });
   });
 }
 

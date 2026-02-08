@@ -545,7 +545,9 @@ export async function setupHydrationRouterAndHmr(opts: {
       const module = await loadPageModule(componentPath) as Record<string, unknown>;
       const PageComponent = module?.default ?? module?.Page;
       if (!PageComponent) {
-        const msg = ${JSON.stringify($t("client.hydrationFailed"))} + (componentPath ? \`: component "\${componentPath}" not found\` : "");
+        const msg = ${
+    JSON.stringify($t("client.hydrationFailed"))
+  } + (componentPath ? \`: component "\${componentPath}" not found\` : "");
         console.error(msg);
         renderError(containerId, new Error(msg));
         return;
@@ -616,7 +618,9 @@ export async function setupHydrationRouterAndHmr(opts: {
         const path = chunkUrl!.startsWith("/") ? chunkUrl! : "/" + chunkUrl!;
         const busted = path + (path.includes("?") ? "&" : "?") + "t=" + Date.now();
         if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-          console.log(${JSON.stringify($t("client.hmrForceFetchWithChunkUrl"))}, busted);
+          console.log(${
+    JSON.stringify($t("client.hmrForceFetchWithChunkUrl"))
+  }, busted);
         }
         return import(/* @vite-ignore */ busted);
       }
@@ -632,7 +636,9 @@ export async function setupHydrationRouterAndHmr(opts: {
     loadModule()
       .then((mod) => {
         if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-          console.log(${JSON.stringify($t("client.hmrLoadModuleComplete"))}, { hasDefault: !!(mod as Record<string, unknown>)?.default, componentPath: match.route.component });
+          console.log(${
+    JSON.stringify($t("client.hmrLoadModuleComplete"))
+  }, { hasDefault: !!(mod as Record<string, unknown>)?.default, componentPath: match.route.component });
         }
         const modObj = mod as Record<string, unknown>;
         if (!modObj) { renderNotFound(containerId); return; }
@@ -641,7 +647,9 @@ export async function setupHydrationRouterAndHmr(opts: {
         const skipLayouts = modObj.inheritLayout === false;
         return loadLayouts().then((layoutList) => {
           if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-            console.log(${JSON.stringify($t("client.hmrRenderCsrBefore"))}, { componentPath: match.route.component });
+            console.log(${
+    JSON.stringify($t("client.hmrRenderCsrBefore"))
+  }, { componentPath: match.route.component });
           }
           // 新模块已就绪，在 render 前一刻执行 unmount + 移除旧 CSS，最小化空白时间，消除闪动
           unmountPrevious();
@@ -688,7 +696,9 @@ export async function setupHydrationRouterAndHmr(opts: {
       })
       .catch((err) => {
         if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-          console.error(${JSON.stringify($t("client.hmrLoadModuleRenderFailed"))}, err);
+          console.error(${
+    JSON.stringify($t("client.hmrLoadModuleRenderFailed"))
+  }, err);
         }
         console.warn(${
     JSON.stringify($t("client.hmrFallback"))

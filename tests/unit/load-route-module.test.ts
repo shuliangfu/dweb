@@ -46,12 +46,12 @@ describe("loadRouteModule (load-route-module.ts)", () => {
       platform() === "windows",
       "应加载项目内的无 CSS 路由模块",
       async () => {
-      const routeDir = join(testDir, "src", "routes");
-      await ensureDir(routeDir);
-      await writeTextFile(
-        join(routeDir, "index.tsx"),
-        `export default function Page() { return "Hello"; }`,
-      );
+        const routeDir = join(testDir, "src", "routes");
+        await ensureDir(routeDir);
+        await writeTextFile(
+          join(routeDir, "index.tsx"),
+          `export default function Page() { return "Hello"; }`,
+        );
 
         const mod = await loadRouteModule(join(routeDir, "index.tsx"));
         expect(mod).not.toBeNull();
@@ -90,21 +90,21 @@ describe("loadRouteModule (load-route-module.ts)", () => {
       platform() === "windows",
       "应能加载含 import css 的模块并剥离 CSS",
       async () => {
-      const routeDir = join(testDir, "src", "routes");
-      await ensureDir(routeDir);
-      const cssDir = join(routeDir, "assets");
-      await ensureDir(cssDir);
-      await writeTextFile(join(cssDir, "style.css"), "body { color: red; }");
-      await writeTextFile(
-        join(routeDir, "with-css.tsx"),
-        `import "./assets/style.css";
+        const routeDir = join(testDir, "src", "routes");
+        await ensureDir(routeDir);
+        const cssDir = join(routeDir, "assets");
+        await ensureDir(cssDir);
+        await writeTextFile(join(cssDir, "style.css"), "body { color: red; }");
+        await writeTextFile(
+          join(routeDir, "with-css.tsx"),
+          `import "./assets/style.css";
 export default function Page() { return "With CSS"; }`,
-      );
+        );
 
-      const cssCollected: string[] = [];
-      const mod = await loadRouteModule(join(routeDir, "with-css.tsx"), {
-        cssCollector: (css) => cssCollected.push(css),
-      });
+        const cssCollected: string[] = [];
+        const mod = await loadRouteModule(join(routeDir, "with-css.tsx"), {
+          cssCollector: (css) => cssCollected.push(css),
+        });
 
         expect(mod).not.toBeNull();
         expect(typeof (mod as { default?: unknown })?.default).toBe("function");

@@ -12,8 +12,8 @@ import {
   chdir,
   createCommand,
   cwd,
-  exists,
   execPath,
+  exists,
   IS_DENO,
   join,
   readTextFile,
@@ -35,36 +35,34 @@ describe("integration: SSG 构建", () => {
   });
 
   it("build 任务应成功执行并生成 HTML（含 headInject）", async () => {
-      // -A 为 Deno 权限参数，Bun 不支持，需根据运行时判断
-      const args = IS_DENO ? ["run", "-A", "src/main.ts", "--build"] : ["run", "src/main.ts", "--build"];
-      const cmd = createCommand(execPath(), {
-        args,
-        cwd: exampleDir,
-        stdout: "piped",
-        stderr: "piped",
-      });
-      const proc = cmd.spawn();
+    // -A 为 Deno 权限参数，Bun 不支持，需根据运行时判断
+    const args = IS_DENO
+      ? ["run", "-A", "src/main.ts", "--build"]
+      : ["run", "src/main.ts", "--build"];
+    const cmd = createCommand(execPath(), {
+      args,
+      cwd: exampleDir,
+      stdout: "piped",
+      stderr: "piped",
+    });
+    const proc = cmd.spawn();
 
-      const [status, stderrText] = await Promise.all([
-        proc.status,
-        proc.stderr
-          ? new Response(proc.stderr).text()
-          : Promise.resolve(""),
-      ]);
-      if (!status.success) {
-        throw new Error(`build 失败: ${stderrText}`);
-      }
+    const [status, stderrText] = await Promise.all([
+      proc.status,
+      proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
+    ]);
+    if (!status.success) {
+      throw new Error(`build 失败: ${stderrText}`);
+    }
 
-      const indexPath = join(exampleDir, "dist", "client", "index.html");
-      const existsIndex = await exists(indexPath);
-      expect(existsIndex).toBe(true);
+    const indexPath = join(exampleDir, "dist", "client", "index.html");
+    const existsIndex = await exists(indexPath);
+    expect(existsIndex).toBe(true);
 
-      const html = await readTextFile(indexPath);
-      expect(html).toContain("<head>");
-      expect(html).toContain("</head>");
-      // headInject：Tailwind 插件在 onBuild 中推送 link，应注入到 </head> 前
-      expect(html).toMatch(/<link[^>]*href="[^"]*\/assets\/[^"]*\.css"[^>]*>/);
-    },
-    { sanitizeOps: false, sanitizeResources: false, timeout: 90000 },
-  );
+    const html = await readTextFile(indexPath);
+    expect(html).toContain("<head>");
+    expect(html).toContain("</head>");
+    // headInject：Tailwind 插件在 onBuild 中推送 link，应注入到 </head> 前
+    expect(html).toMatch(/<link[^>]*href="[^"]*\/assets\/[^"]*\.css"[^>]*>/);
+  }, { sanitizeOps: false, sanitizeResources: false, timeout: 90000 });
 });

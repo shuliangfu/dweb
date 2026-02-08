@@ -206,15 +206,15 @@ export const DEFAULT_ERROR_MESSAGES: Record<
   [DwebErrorCode.ENTRY_PATH_TOO_DEEP]:
     "[dweb] Entry path segments too many. {hint} Path: {path}",
 
-  [DwebErrorCode.RUNTIME_UNSUPPORTED]:
-    "Only Deno or Bun runtime is supported",
+  [DwebErrorCode.RUNTIME_UNSUPPORTED]: "Only Deno or Bun runtime is supported",
 
   [DwebErrorCode.APP_NOT_INITIALIZED]: "App instance not initialized",
   [DwebErrorCode.SOCKET_IO_NOT_CONFIGURED]:
     "Socket.IO not configured. Set socket: { type: 'socketio', ... } in AppConfig",
   [DwebErrorCode.WEBSOCKET_NOT_CONFIGURED]:
     "WebSocket not configured. Set socket: { type: 'websocket', ... } in AppConfig",
-  [DwebErrorCode.GENERATE_TYPE_UNSUPPORTED]: "Unsupported generate type: {type}",
+  [DwebErrorCode.GENERATE_TYPE_UNSUPPORTED]:
+    "Unsupported generate type: {type}",
   [DwebErrorCode.BUILD_FAILED]: "{message}",
   [DwebErrorCode.MIDDLEWARE_FILE_NO_EXPORT]:
     `Middleware file "{path}" has no export (need export default or export const middleware)`,

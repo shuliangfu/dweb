@@ -49,8 +49,8 @@ async function loadModuleConfig(
 ): Promise<Record<string, unknown> | null> {
   try {
     // Windows 兼容：以盘符开头的路径已是绝对路径
-    const isAbsolute =
-      filePath.startsWith("/") || /^[A-Za-z]:[\\/]/.test(filePath);
+    const isAbsolute = filePath.startsWith("/") ||
+      /^[A-Za-z]:[\\/]/.test(filePath);
     const absPath = isAbsolute ? filePath : resolve(projectRoot, filePath);
     // realPath 在 Windows CI 可能失败（如符号链接），失败时回退到 absPath
     let resolvedPath: string;

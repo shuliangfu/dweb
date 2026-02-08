@@ -9,23 +9,23 @@
 
 `AppConfig` 是 dweb 框架的应用配置接口，包含以下主要模块：
 
-| 配置项                 | 类型                 | 说明                                                                                                               |
-| ---------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `name`                 | string               | 应用名称                                                                                                           |
-| `version`              | string               | 应用版本                                                                                                           |
+| 配置项                 | 类型                 | 说明                                                                                                                                                              |
+| ---------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                 | string               | 应用名称                                                                                                                                                          |
+| `version`              | string               | 应用版本                                                                                                                                                          |
 | `language`             | AppLanguage          | 框架语言（zh-CN、en-US、ja-JP、ko-KR、es-ES、pt-BR、id-ID、de-DE、fr-FR；影响 CLI、日志、错误消息等；<br/>默认自动检测环境变量 LANGUAGE/LC_ALL/LANG，否则 en-US） |
-| `envPrefix`            | string               | 环境变量前缀                                                                                                       |
-| `hotReload`            | boolean              | 是否启用热重载                                                                                                     |
-| `pluginManagerOptions` | PluginManagerOptions | 插件管理器选项（autoActivate、continueOnError、enableHotReload 等）                                                |
-| `server`               | ServerOptions        | 服务器配置                                                                                                         |
-| `router`               | RouterOptions        | 路由配置                                                                                                           |
-| `render`               | object               | 渲染配置                                                                                                           |
-| `build`                | BuildAppConfig       | 构建配置                                                                                                           |
-| `logger`               | LoggerConfig         | 日志配置                                                                                                           |
-| `database`             | DatabaseAppConfig    | 数据库配置                                                                                                         |
-| `socket`               | SocketConfig         | 实时通信配置（type: socketio 或 websocket）                                                                        |
-| `plugins`              | Array                | 插件列表                                                                                                           |
-| `middlewares`          | Array                | 中间件列表                                                                                                         |
+| `envPrefix`            | string               | 环境变量前缀                                                                                                                                                      |
+| `hotReload`            | boolean              | 是否启用热重载                                                                                                                                                    |
+| `pluginManagerOptions` | PluginManagerOptions | 插件管理器选项（autoActivate、continueOnError、enableHotReload 等）                                                                                               |
+| `server`               | ServerOptions        | 服务器配置                                                                                                                                                        |
+| `router`               | RouterOptions        | 路由配置                                                                                                                                                          |
+| `render`               | object               | 渲染配置                                                                                                                                                          |
+| `build`                | BuildAppConfig       | 构建配置                                                                                                                                                          |
+| `logger`               | LoggerConfig         | 日志配置                                                                                                                                                          |
+| `database`             | DatabaseAppConfig    | 数据库配置                                                                                                                                                        |
+| `socket`               | SocketConfig         | 实时通信配置（type: socketio 或 websocket）                                                                                                                       |
+| `plugins`              | Array                | 插件列表                                                                                                                                                          |
+| `middlewares`          | Array                | 中间件列表                                                                                                                                                        |
 
 ---
 

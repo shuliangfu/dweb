@@ -28,6 +28,7 @@ export default function App({
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="description" content={description} />
         <title>{title}</title>
+        <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
         {/* UnoCSS 由 unocssPlugin 自动注入到 </head> 前 */}
       </head>
       <body className="bg-gray-100 text-gray-900 antialiased">

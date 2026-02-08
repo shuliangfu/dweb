@@ -4,12 +4,12 @@
 
 ## 📋 测试概览
 
-| 项目     | 值                           |
-| -------- | ---------------------------- |
-| 框架版本 | 3.0.68                       |
-| 测试框架 | @dreamer/test@^1.0.1          |
-| 测试时间 | 2026-02-08                   |
-| 测试环境 | Deno 2.x / Bun 1.x           |
+| 项目     | 值                   |
+| -------- | -------------------- |
+| 框架版本 | 3.0.68               |
+| 测试框架 | @dreamer/test@^1.0.1 |
+| 测试时间 | 2026-02-08           |
+| 测试环境 | Deno 2.x / Bun 1.x   |
 
 ---
 
@@ -71,7 +71,7 @@
 | `project.test.ts`               | 3          | ✅ 全部通过 |
 | `version.test.ts`               | 3          | ✅ 全部通过 |
 | `render-csr.test.ts`            | 2          | ✅ 全部通过 |
-| `render-ssg.test.ts`           | 2          | ✅ 全部通过 |
+| `render-ssg.test.ts`            | 2          | ✅ 全部通过 |
 | `cmd-dev.test.ts`               | 2          | ✅ 全部通过 |
 | `cmd-fmt.test.ts`               | 2          | ✅ 全部通过 |
 | `cmd-lint.test.ts`              | 2          | ✅ 全部通过 |
@@ -79,7 +79,7 @@
 | `cmd-start.test.ts`             | 2          | ✅ 全部通过 |
 | `cmd-test.test.ts`              | 2          | ✅ 全部通过 |
 | `cmd-upgrade.test.ts`           | 2          | ✅ 全部通过 |
-| `cmd-update.test.ts`           | 3          | ✅ 全部通过 |
+| `cmd-update.test.ts`            | 3          | ✅ 全部通过 |
 | `cli.test.ts`                   | 1          | ✅ 全部通过 |
 
 #### e2e 测试 (tests/e2e/)
@@ -90,17 +90,17 @@
 
 #### 集成测试 (tests/integration/)
 
-| 文件名                     | 测试用例数 | 状态        |
-| -------------------------- | ---------- | ----------- |
-| `config-lifecycle.test.ts` | 2          | ✅ 全部通过 |
-| `csr-preact-build.test.ts` | 2          | ✅ 全部通过 |
-| `csr-react-build.test.ts`  | 2          | ✅ 全部通过 |
-| `hybrid-preact-build.test.ts` | 2       | ✅ 全部通过 |
-| `hybrid-react-build.test.ts`  | 2       | ✅ 全部通过 |
-| `ssg-preact-build.test.ts` | 2          | ✅ 全部通过 |
-| `ssg-react-build.test.ts`  | 2          | ✅ 全部通过 |
-| `ssr-preact-build.test.ts` | 2          | ✅ 全部通过 |
-| `ssr-react-build.test.ts`  | 2          | ✅ 全部通过 |
+| 文件名                        | 测试用例数 | 状态        |
+| ----------------------------- | ---------- | ----------- |
+| `config-lifecycle.test.ts`    | 2          | ✅ 全部通过 |
+| `csr-preact-build.test.ts`    | 2          | ✅ 全部通过 |
+| `csr-react-build.test.ts`     | 2          | ✅ 全部通过 |
+| `hybrid-preact-build.test.ts` | 2          | ✅ 全部通过 |
+| `hybrid-react-build.test.ts`  | 2          | ✅ 全部通过 |
+| `ssg-preact-build.test.ts`    | 2          | ✅ 全部通过 |
+| `ssg-react-build.test.ts`     | 2          | ✅ 全部通过 |
+| `ssr-preact-build.test.ts`    | 2          | ✅ 全部通过 |
+| `ssr-react-build.test.ts`     | 2          | ✅ 全部通过 |
 
 ---
 
@@ -602,14 +602,17 @@
 - ✅ **sanitize.test.ts** (15)：sanitizeRequestParams 危险键过滤、NUL
   过滤、空值处理
 - ✅ **path.test.ts**
-  (13)：isPathWithinProject、pathForLog、normalizePathForCompare（使用 makeTempDir 支持 Windows 跨平台）
+  (13)：isPathWithinProject、pathForLog、normalizePathForCompare（使用
+  makeTempDir 支持 Windows 跨平台）
 - ✅ **runtime.test.ts** (9)：getRuntime、getTaskArgs、getTestArgs、getLintArgs
   等
-- ✅ **module-cache.test.ts** (5)：invalidateModule、getModuleVersion（使用 pathToFileUrl 支持 Windows 跨平台）
+- ✅ **module-cache.test.ts** (5)：invalidateModule、getModuleVersion（使用
+  pathToFileUrl 支持 Windows 跨平台）
 - ✅ **load-route-module.test.ts**
   (7)：loadRouteModule、clearCssRouteCacheForPath、含 CSS 导入
 - ✅ **asset-manifest.test.ts** (4)：replaceAssetPathsInHtml
-- ✅ **config-loader.test.ts** (4)：loadProjectConfig（使用 pathToFileUrl，已移除 Windows skip）
+- ✅ **config-loader.test.ts** (4)：loadProjectConfig（使用
+  pathToFileUrl，已移除 Windows skip）
 - ✅ **csr-client-middleware.test.ts** (4)：createClientScriptMiddleware、next
   调用、生产模式
 - ✅ **socket-io.test.ts**

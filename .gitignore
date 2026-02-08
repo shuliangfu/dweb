@@ -32,8 +32,10 @@ _client.dep.tsx
 Thumbs.db
 
 # 测试数据（仅忽略输出目录，保留 tests/data/server-entry.ts、client-entry.tsx 供构建测试）
+tests/data/build-output/
 tests/data/server-output/
 tests/data/client-output/
+tests/data/render-ssg-out/
 tests/data/**/*.js
 tests/data/**/*.map
 tests/data/**/*.html

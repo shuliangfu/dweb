@@ -1512,25 +1512,25 @@ setDwebErrorTranslator((key, params) => {
 });
 ```
 
-**Built-in i18n**: The framework provides built-in internationalization for
-CLI, logs, error messages, and other framework copy. See below for supported
+**Built-in i18n**: The framework provides built-in internationalization for CLI,
+logs, error messages, and other framework copy. See below for supported
 languages and configuration.
 
 #### Internationalization (i18n)
 
 **Supported languages** (9 locales):
 
-| Locale | Language |
-| ------ | -------- |
-| `zh-CN` | 简体中文 |
-| `en-US` | English (US) |
-| `ja-JP` | 日本語 |
-| `ko-KR` | 한국어 |
-| `es-ES` | Español |
+| Locale  | Language           |
+| ------- | ------------------ |
+| `zh-CN` | 简体中文           |
+| `en-US` | English (US)       |
+| `ja-JP` | 日本語             |
+| `ko-KR` | 한국어             |
+| `es-ES` | Español            |
 | `pt-BR` | Português (Brasil) |
-| `id-ID` | Bahasa Indonesia |
-| `de-DE` | Deutsch |
-| `fr-FR` | Français |
+| `id-ID` | Bahasa Indonesia   |
+| `de-DE` | Deutsch            |
+| `fr-FR` | Français           |
 
 **Configuration**:
 
@@ -1813,8 +1813,9 @@ Full definitions in [src/utils/errors.ts](./src/utils/errors.ts). Use
 
 ## 📚 Config docs
 
-- **[AppConfig full example](./docs/en-US/APP_CONFIG.md)**: All options (language, server,
-  router, render, build, logger, database, socket, plugins, middlewares).
+- **[AppConfig full example](./docs/en-US/APP_CONFIG.md)**: All options
+  (language, server, router, render, build, logger, database, socket, plugins,
+  middlewares).
 - **Config and params**: See "[Config management](#config-management)" above
   for:
   - Framework config (`getConfig`, `getConfigValue`)
@@ -1857,7 +1858,11 @@ Install with `deno add jsr:@dreamer/<package-name>`. See
 
 See [TEST_REPORT.md](./docs/en-US/TEST_REPORT.md).
 
-**Summary**: 56 test files, 480 tests, all passing. Covers unit tests (config, app, router, plugin, build, render, etc.), e2e tests (server request validation), and integration tests (config lifecycle, CSR/SSR/SSG/Hybrid build). Path and config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
+**Summary**: 56 test files, 480 tests, all passing. Covers unit tests (config,
+app, router, plugin, build, render, etc.), e2e tests (server request
+validation), and integration tests (config lifecycle, CSR/SSR/SSG/Hybrid build).
+Path and config-loader tests support Windows cross-platform (pathToFileUrl,
+makeTempDir).
 
 ---
 

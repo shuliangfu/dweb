@@ -11,13 +11,23 @@
  */
 
 import "../setup.ts";
-import { cwd, join } from "@dreamer/runtime-adapter";
-import { describe, expect, it } from "@dreamer/test";
+import { cwd, dirname, join, remove } from "@dreamer/runtime-adapter";
+import { afterAll, describe, expect, it } from "@dreamer/test";
 import { initializeServiceContainer } from "../../src/core/service.ts";
 import { getRender, initializeRender } from "../../src/feature/render.ts";
 import type { AppConfig } from "../../src/types/app.ts";
 
 describe("渲染集成 (render.ts)", () => {
+  afterAll(async () => {
+    const root = dirname(dirname(import.meta.dirname ?? "."));
+    const outputDir = join(root, "tests", "data", "render-ssg-out");
+    try {
+      await remove(outputDir, { recursive: true });
+    } catch {
+      // 目录不存在或已删除，忽略
+    }
+  });
+
   describe("initializeRender()", () => {
     it("应该初始化渲染服务并包含 renderSSR 与 renderSSG", () => {
       const container = initializeServiceContainer();

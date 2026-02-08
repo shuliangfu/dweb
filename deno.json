@@ -94,7 +94,8 @@
   ],
   "nodeModulesDir": "auto",
   "exclude": [
-    "examples/"
+    "examples/",
+    "tests/data/"
   ],
   "compilerOptions": {
     "jsx": "react-jsx",

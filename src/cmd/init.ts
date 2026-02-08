@@ -1043,7 +1043,9 @@ function getDockerComposeYml(opts: InitOptions): string {
       .map((app, i) => {
         const port = 3000 + i;
         const containerName = `${projectName}-${app}`;
-        return `  # ${$t("init.comments.dockerAppPort", { app, port: String(port) })}
+        return `  # ${
+          $t("init.comments.dockerAppPort", { app, port: String(port) })
+        }
   ${app}:
     build:
       context: .
@@ -1181,7 +1183,9 @@ function getVscodeSettingsJson(): string {
   // ==================== ${$t("init.comments.vscodeDeno")} ====================
   "deno.enable": true,
   "deno.lint": true,
-  // ==================== ${$t("init.comments.vscodeFormat")} ====================
+  // ==================== ${
+    $t("init.comments.vscodeFormat")
+  } ====================
   "[typescript]": {
     "editor.defaultFormatter": "denoland.vscode-deno",
     "editor.formatOnSave": true,
@@ -1214,7 +1218,9 @@ function getVscodeSettingsJson(): string {
     "editor.defaultFormatter": "vscode.json-language-features",
     "editor.formatOnSave": true
   },
-  // ==================== ${$t("init.comments.vscodeEditor")} ====================
+  // ==================== ${
+    $t("init.comments.vscodeEditor")
+  } ====================
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "editor.detectIndentation": false,
@@ -1233,19 +1239,25 @@ function getVscodeSettingsJson(): string {
   "editor.minimap.enabled": true,
   // ==================== ${$t("init.comments.vscodeCss")} ====================
   "css.lint.unknownAtRules": "ignore",
-  // ==================== ${$t("init.comments.vscodeAssoc")} ====================
+  // ==================== ${
+    $t("init.comments.vscodeAssoc")
+  } ====================
   "files.associations": {
     "*.tsx": "typescriptreact",
     "*.ts": "typescript"
   },
-  // ==================== ${$t("init.comments.vscodeExclude")} ====================
+  // ==================== ${
+    $t("init.comments.vscodeExclude")
+  } ====================
   "files.exclude": {
     "**/.git": true,
     "**/.DS_Store": true,
     "**/node_modules": true,
     "**/.deno": true
   },
-  // ==================== ${$t("init.comments.vscodeSearchExclude")} ====================
+  // ==================== ${
+    $t("init.comments.vscodeSearchExclude")
+  } ====================
   "search.exclude": {
     "**/node_modules": true,
     "**/.deno": true,
