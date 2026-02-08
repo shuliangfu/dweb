@@ -48,10 +48,17 @@ async function loadModuleConfig(
   projectRoot: string,
 ): Promise<Record<string, unknown> | null> {
   try {
-    const absPath = filePath.startsWith("/")
-      ? filePath
-      : resolve(projectRoot, filePath);
-    const resolvedPath = await realPath(absPath);
+    // Windows 兼容：以盘符开头的路径已是绝对路径
+    const isAbsolute =
+      filePath.startsWith("/") || /^[A-Za-z]:[\\/]/.test(filePath);
+    const absPath = isAbsolute ? filePath : resolve(projectRoot, filePath);
+    // realPath 在 Windows CI 可能失败（如符号链接），失败时回退到 absPath
+    let resolvedPath: string;
+    try {
+      resolvedPath = await realPath(absPath);
+    } catch {
+      resolvedPath = absPath;
+    }
     // 使用 pathToFileUrl 确保 Windows 等平台 file:// URL 格式正确
     const fileUrl = pathToFileUrl(resolvedPath);
     const module = await import(fileUrl);

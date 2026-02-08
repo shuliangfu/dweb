@@ -28,11 +28,16 @@ let writeCountSinceEviction = 0;
 
 /**
  * 将路径规范化为绝对路径，用于版本 map 的 key
+ * Windows 兼容：file:///D:/path 与 D:\path 应归一为同一 key
  */
 function normalizePath(pathOrUrl: string): string {
   let path = pathOrUrl;
   if (path.startsWith("file://")) {
     path = path.slice(7);
+    // Windows: file:///D:/path -> /D:/path，归一为 D:/path 以匹配直接路径
+    if (path.length >= 3 && path[0] === "/" && path[2] === ":") {
+      path = path.slice(1);
+    }
   }
   if (!path.startsWith("/") && !path.match(/^[A-Za-z]:/)) {
     path = resolve(cwd(), path);
