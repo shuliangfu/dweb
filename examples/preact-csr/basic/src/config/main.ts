@@ -9,9 +9,9 @@ const config: AppConfig = {
   name: "preact-csr-basic-example",
   version: "1.0.0",
 
-  // 服务器配置
+  // 服务器配置（e2e 并行测试时与 preact-hybrid/react-csr/react-hybrid 端口区分）
   server: {
-    port: 3000,
+    port: 3001,
     host: "127.0.0.1",
     dev: {
       hmr: { enabled: true, path: "/__hmr" },

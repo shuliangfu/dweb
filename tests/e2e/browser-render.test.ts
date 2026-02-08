@@ -26,17 +26,29 @@ import {
   it,
 } from "@dreamer/test";
 
-/** 示例服务器端口 */
-const E2E_PORT = 3000;
+/**
+ * 各示例使用的端口（避免并行测试时端口冲突）
+ * preact-csr=3001, preact-hybrid=3002, react-csr=3003, react-hybrid=3004
+ */
+const E2E_PORTS: Record<string, number> = {
+  "preact-csr": 3001,
+  "preact-hybrid": 3002,
+  "react-csr": 3003,
+  "react-hybrid": 3004,
+};
 
 /**
  * 轮询等待服务器就绪（返回 200）
+ * @param port 端口号
  * @param maxWaitMs 最大等待毫秒数
  */
-async function waitForServerReady(maxWaitMs: number): Promise<void> {
+async function waitForServerReady(
+  port: number,
+  maxWaitMs: number,
+): Promise<void> {
   const start = Date.now();
   const pollInterval = 500;
-  const url = `http://127.0.0.1:${E2E_PORT}/`;
+  const url = `http://127.0.0.1:${port}/`;
   while (Date.now() - start < maxWaitMs) {
     try {
       const res = await fetch(url);
@@ -76,6 +88,7 @@ async function buildExample(exampleDir: string): Promise<void> {
 /**
  * 浏览器渲染断言：无 hydration 错误、页面包含预期内容
  * @param t 测试上下文（含 browser）
+ * @param port 服务器端口
  */
 async function assertBrowserRender(
   t: {
@@ -89,6 +102,7 @@ async function assertBrowserRender(
       ) => Promise<void>;
     };
   },
+  port: number,
 ): Promise<void> {
   if (!t?.browser) {
     throw new Error("browser 上下文不可用");
@@ -121,7 +135,7 @@ async function assertBrowserRender(
     pageErrors.push(e.message ?? "");
   });
 
-  const url = `http://127.0.0.1:${E2E_PORT}/`;
+  const url = `http://127.0.0.1:${port}/`;
   await t.browser.goto(url);
 
   // 等待页面内容出现（Windows CI 较慢，延长超时）
@@ -203,6 +217,8 @@ async function assertBrowserRender(
  * @param exampleName 示例名称（如 preact-csr、preact-hybrid）
  */
 function createExampleBrowserSuite(exampleName: string): void {
+  const port = E2E_PORTS[exampleName] ?? 3000;
+
   describe(`e2e: 浏览器渲染 - ${exampleName}`, () => {
     let originalCwd: string | undefined;
     let child: SpawnedProcess | null = null;
@@ -226,7 +242,7 @@ function createExampleBrowserSuite(exampleName: string): void {
 
       // 轮询等待服务器就绪（Windows CI 较慢）
       const maxWait = platform() === "windows" ? 60000 : 15000;
-      await waitForServerReady(maxWait);
+      await waitForServerReady(port, maxWait);
     });
 
     afterAll(async () => {
@@ -246,7 +262,7 @@ function createExampleBrowserSuite(exampleName: string): void {
 
     it("应能渲染且无 hydration 错误", async (t) => {
       if (!t) throw new Error("test context 不可用");
-      await assertBrowserRender(t);
+      await assertBrowserRender(t, port);
     }, {
       timeout: platform() === "windows" ? 90000 : 60000,
       sanitizeOps: false,

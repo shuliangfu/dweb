@@ -9,6 +9,7 @@
 
 import { Server, type ServerOptions } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
+import { pluginEvents } from "../core/plugin-events.ts";
 import { existsSync, getEnv } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { $t } from "../utils/i18n.ts";
@@ -19,7 +20,6 @@ import {
 } from "./csr-client-builder.ts";
 import { clearCssRouteCacheForPath } from "./load-route-module.ts";
 import { invalidateModule } from "./module-cache.ts";
-import { pluginEvents } from "../core/plugin-events.ts";
 
 /**
  * 初始化 HTTP 服务器

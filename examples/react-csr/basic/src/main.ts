@@ -12,9 +12,9 @@ const app = new App({
   name: "react-basic-example",
   version: "1.0.0",
 
-  // 服务器配置
+  // 服务器配置（e2e 并行测试时与 preact-csr/preact-hybrid/react-hybrid 端口区分）
   server: {
-    port: 3000,
+    port: 3003,
     host: "127.0.0.1",
     dev: {
       hmr: { enabled: true, path: "/__hmr" },

@@ -85,7 +85,7 @@ export default function Home() {
     // 仅在浏览器环境创建客户端（避免 SSR 时访问 location）
     const origin = typeof globalThis !== "undefined" && globalThis.location
       ? globalThis.location.origin
-      : "http://localhost:3000";
+      : "http://localhost:3002";
     const wsUrl = toWsUrl(origin, "/ws");
 
     debugLog("连接目标:", wsUrl);

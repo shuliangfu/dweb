@@ -11,9 +11,9 @@ const config: AppConfig = {
 
   language: "zh-CN",
 
-  // 服务器配置
+  // 服务器配置（e2e 并行测试时与 preact-csr/react-csr/react-hybrid 端口区分）
   server: {
-    port: 3000,
+    port: 3002,
     host: "127.0.0.1",
   },
 

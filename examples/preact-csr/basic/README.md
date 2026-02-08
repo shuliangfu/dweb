@@ -33,7 +33,7 @@ preact-basic/
 deno task dev
 ```
 
-访问 http://localhost:3000
+访问 http://localhost:3001
 
 ### 构建生产版本
 
