@@ -7,6 +7,18 @@
 
 ---
 
+## [3.0.71] - 2026-02-08
+
+### 修复（Windows 兼容与测试）
+
+- **Windows 兼容性测试**：修复 config.test.ts、build-dirs.test.ts 的断言，使测试
+  在 Windows 及并行执行时均能通过。错误消息支持中英文双匹配（i18n 与默认英文
+  回退皆可），入口路径格式错误正则增加 "Entry path format not supported"。
+- **全量测试通过**：480 个测试（含 config、build-dirs、path、e2e 等）在 Deno、
+  Bun 及 CI（ubuntu/windows/macos）下全部通过。
+
+---
+
 ## [3.0.70] - 2026-02-08
 
 ### 新增

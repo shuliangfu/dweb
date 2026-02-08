@@ -520,6 +520,17 @@
     "hmrRenderCsrComplete": "[HMR] renderCSR selesai",
     "hmrLoadModuleRenderFailed": "[HMR] loadModule/render gagal"
   },
+  "render": {
+    "componentInvalid": "Komponen tidak valid: diharapkan fungsi atau objek, diperoleh: {actual}",
+    "componentTreeInvalid": "createComponentTree: komponen tidak valid (diharapkan fungsi atau objek, diperoleh: {actual})",
+    "containerNotFound": "Elemen kontainer tidak ditemukan: {container}",
+    "phaseRender": "Render",
+    "phaseHydrate": "Hidrasi",
+    "errorTitle": "Kesalahan {phase}",
+    "reloadButton": "Muat ulang",
+    "renderErrorLog": "[Render Error] {phase} render gagal ({engine}):",
+    "errorHandlerFailed": "[Render Error] Penanganan error gagal:"
+  },
   "db": {
     "noMigrations": "Tidak ada migrasi",
     "createMigration": "Buat: dweb db migrate -a create -n <name>",

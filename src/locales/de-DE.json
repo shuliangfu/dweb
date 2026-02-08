@@ -520,6 +520,17 @@
     "hmrRenderCsrComplete": "[HMR] renderCSR abgeschlossen",
     "hmrLoadModuleRenderFailed": "[HMR] loadModule/render fehlgeschlagen"
   },
+  "render": {
+    "componentInvalid": "Ungültige Komponente: Funktion oder Objekt erwartet, erhalten: {actual}",
+    "componentTreeInvalid": "createComponentTree: ungültige Komponente (Funktion oder Objekt erwartet, erhalten: {actual})",
+    "containerNotFound": "Container-Element nicht gefunden: {container}",
+    "phaseRender": "Rendering",
+    "phaseHydrate": "Hydration",
+    "errorTitle": "{phase}-Fehler",
+    "reloadButton": "Neu laden",
+    "renderErrorLog": "[Render Error] {phase}-Rendering fehlgeschlagen ({engine}):",
+    "errorHandlerFailed": "[Render Error] Fehlerbehandlung fehlgeschlagen:"
+  },
   "db": {
     "noMigrations": "Keine Migrationen",
     "createMigration": "Erstellen: dweb db migrate -a create -n <name>",

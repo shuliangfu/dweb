@@ -520,6 +520,17 @@
     "hmrRenderCsrComplete": "[HMR] renderCSR complete",
     "hmrLoadModuleRenderFailed": "[HMR] loadModule/render failed"
   },
+  "render": {
+    "componentInvalid": "Invalid component: expected function or object, got {actual}",
+    "componentTreeInvalid": "createComponentTree: invalid component (expected function or object, actual: {actual})",
+    "containerNotFound": "Container element not found: {container}",
+    "phaseRender": "Render",
+    "phaseHydrate": "Hydrate",
+    "errorTitle": "{phase} error",
+    "reloadButton": "Reload",
+    "renderErrorLog": "[Render Error] {phase} render failed ({engine}):",
+    "errorHandlerFailed": "[Render Error] Error handler failed:"
+  },
   "db": {
     "noMigrations": "No migrations",
     "createMigration": "Create: dweb db migrate -a create -n <name>",

@@ -520,6 +520,17 @@
     "hmrRenderCsrComplete": "[HMR] renderCSR 완료",
     "hmrLoadModuleRenderFailed": "[HMR] loadModule/render 실패"
   },
+  "render": {
+    "componentInvalid": "잘못된 컴포넌트: 함수 또는 객체 필요, 실제: {actual}",
+    "componentTreeInvalid": "createComponentTree: 잘못된 컴포넌트 (함수 또는 객체 필요, 실제: {actual})",
+    "containerNotFound": "컨테이너 요소를 찾을 수 없음: {container}",
+    "phaseRender": "렌더링",
+    "phaseHydrate": "하이드레이션",
+    "errorTitle": "{phase} 오류",
+    "reloadButton": "다시 로드",
+    "renderErrorLog": "[Render Error] {phase} 렌더링 실패 ({engine}):",
+    "errorHandlerFailed": "[Render Error] 오류 핸들러 실행 실패:"
+  },
   "db": {
     "noMigrations": "마이그레이션이 없습니다",
     "createMigration": "생성: dweb db migrate -a create -n <name>",

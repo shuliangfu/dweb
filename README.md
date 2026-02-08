@@ -1863,10 +1863,10 @@ See [TEST_REPORT.md](./docs/en-US/TEST_REPORT.md).
 
 ## 📋 Changelog
 
-### [3.0.70] - 2026-02-08
+### [3.0.71] - 2026-02-08
 
-**Added**: i18n documentation (9 locales, config, env vars, priority, fallback).
-Update APP_CONFIG language option.
+**Fixed**: Windows compatibility testing (config.test, build-dirs.test). All 480
+tests pass on Deno, Bun, and CI (ubuntu/windows/macos).
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

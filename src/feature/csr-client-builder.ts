@@ -326,8 +326,9 @@ export async function loadLayouts(): Promise<LayoutComponent[]> {
   if (cachedLayouts) return cachedLayouts;
   try {
     const LayoutModule = await import("./routes/_layout${layoutExt}");
-    if (LayoutModule.default) {
-      cachedLayouts = [{ component: LayoutModule.default, props: {} }];
+    const LayoutComponent = LayoutModule?.default ?? LayoutModule?.Layout;
+    if (LayoutComponent && (typeof LayoutComponent === "function" || typeof LayoutComponent === "object")) {
+      cachedLayouts = [{ component: LayoutComponent, props: {} }];
       return cachedLayouts;
     }
     console.warn(${JSON.stringify($t("client.layoutDefaultExport"))});
@@ -428,8 +429,8 @@ export async function loadPageModule(componentPath: string): Promise<unknown> {
   const cleanPath = normalizeComponentPathForLookup(componentPath);
   if (MODULE_CACHE[cleanPath]) return MODULE_CACHE[cleanPath];
   let loader = ROUTE_LOADERS[cleanPath];
-  // Windows 下路径大小写可能不一致，尝试不区分大小写匹配
-  if (!loader && cleanPath.indexOf("/") < 0) {
+  // Windows 下路径大小写可能不一致，尝试不区分大小写匹配（支持多段路径如 about/index）
+  if (!loader) {
     const key = Object.keys(ROUTE_LOADERS).find(
       (k) => k.toLowerCase() === cleanPath.toLowerCase(),
     );

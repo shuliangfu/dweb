@@ -520,6 +520,17 @@
     "hmrRenderCsrComplete": "[HMR] renderCSR 完成",
     "hmrLoadModuleRenderFailed": "[HMR] loadModule/render 失败"
   },
+  "render": {
+    "componentInvalid": "组件无效: 期望函数或对象，实际为 {actual}",
+    "componentTreeInvalid": "createComponentTree: component 无效 (期望 function 或 object，实际: {actual})",
+    "containerNotFound": "容器元素未找到: {container}",
+    "phaseRender": "渲染",
+    "phaseHydrate": "水合",
+    "errorTitle": "{phase}出错",
+    "reloadButton": "重新加载",
+    "renderErrorLog": "[Render Error] {phase} 渲染失败 ({engine}):",
+    "errorHandlerFailed": "[Render Error] 错误处理函数执行失败:"
+  },
   "db": {
     "noMigrations": "暂无迁移文件",
     "createMigration": "创建迁移：dweb db migrate -a create -n <name>",

@@ -1945,10 +1945,10 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.0.70] - 2026-02-08
+### [3.0.71] - 2026-02-08
 
-**新增**：i18n 文档（9 种语言、配置、环境变量、优先级、回退）。更新
-APP_CONFIG 中 language 配置项说明。
+**修复**：Windows 兼容性测试（config.test、build-dirs.test）。480 个测试在
+Deno、Bun 及 CI（ubuntu/windows/macos）下全部通过。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

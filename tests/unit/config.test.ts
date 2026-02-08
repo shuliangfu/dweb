@@ -6,12 +6,35 @@
  * - deepMergeConfig 配置合并
  * - inferConfigDirectoryFromEntry 从入口推断 config 目录
  * - 配置加载和初始化
+ *
+ * 错误消息断言使用中英文双匹配，因 errors.test 会 setDwebErrorTranslator(null) 导致并行时回退英文。
  */
 
 import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import { deepMergeConfig, validateConfig } from "../../src/core/config.ts";
 import type { AppConfig } from "../../src/types/app.ts";
+
+/** 中英文错误消息皆可匹配（并行测试时 translator 可能被 errors.test 清除） */
+const RE = {
+  name: /配置项 'name' 必须是字符串类型|Config 'name' must be a string/,
+  version: /配置项 'version' 必须是字符串类型|Config 'version' must be a string/,
+  envPrefix: /配置项 'envPrefix' 必须是字符串类型|Config 'envPrefix' must be a string/,
+  hotReload: /配置项 'hotReload' 必须是布尔类型|Config 'hotReload' must be a boolean/,
+  render: /配置项 'render' 必须是对象类型|Config 'render' must be an object/,
+  renderEngine: /配置项 'render\.engine' 必须是|Config 'render\.engine' must be/,
+  renderMode: /配置项 'render\.mode' 必须是|Config 'render\.mode' must be/,
+  middlewares: /配置项 'middlewares' 必须是数组类型|Config 'middlewares' must be an array/,
+  cannotExtractName: /无法提取名称|cannot extract name/,
+  mustHaveName: /必须提供名称|must have a name/,
+  mustHaveNameProp: /必须提供 name 属性|must have name property/,
+  middlewareTypeInvalid: /类型无效|must be string, function or object/,
+  plugins: /配置项 'plugins' 必须是数组类型|Config 'plugins' must be an array/,
+  server: /配置项 'server' 必须是对象类型|Config 'server' must be an object/,
+  router: /配置项 'router' 必须是对象类型|Config 'router' must be an object/,
+  build: /配置项 'build' 必须是对象类型|Config 'build' must be an object/,
+  logger: /配置项 'logger' 必须是对象类型|Config 'logger' must be an object/,
+};
 
 describe("配置管理 (config.ts)", () => {
   // ==================== validateConfig 测试 ====================
@@ -36,30 +59,22 @@ describe("配置管理 (config.ts)", () => {
 
       it("应该拒绝非字符串类型的 name", () => {
         const config = { name: 123 } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow(
-          "配置项 'name' 必须是字符串类型",
-        );
+        expect(() => validateConfig(config)).toThrow(RE.name);
       });
 
       it("应该拒绝非字符串类型的 version", () => {
         const config = { version: 1.0 } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow(
-          "配置项 'version' 必须是字符串类型",
-        );
+        expect(() => validateConfig(config)).toThrow(RE.version);
       });
 
       it("应该拒绝非字符串类型的 envPrefix", () => {
         const config = { envPrefix: [] } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow(
-          "配置项 'envPrefix' 必须是字符串类型",
-        );
+        expect(() => validateConfig(config)).toThrow(RE.envPrefix);
       });
 
       it("应该拒绝非布尔类型的 hotReload", () => {
         const config = { hotReload: "true" } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow(
-          "配置项 'hotReload' 必须是布尔类型",
-        );
+        expect(() => validateConfig(config)).toThrow(RE.hotReload);
       });
     });
 
@@ -96,32 +111,24 @@ describe("配置管理 (config.ts)", () => {
 
       it("应该拒绝非对象类型的 render", () => {
         const config = { render: "invalid" } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow(
-          "配置项 'render' 必须是对象类型",
-        );
+        expect(() => validateConfig(config)).toThrow(RE.render);
       });
 
       it("应该拒绝 null 类型的 render", () => {
         const config = { render: null } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow(
-          "配置项 'render' 必须是对象类型",
-        );
+        expect(() => validateConfig(config)).toThrow(RE.render);
       });
 
       it("应该拒绝无效的 engine 值", () => {
         const config = {
           render: { engine: "angular" },
         } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow(
-          "配置项 'render.engine' 必须是",
-        );
+        expect(() => validateConfig(config)).toThrow(RE.renderEngine);
       });
 
       it("应该拒绝无效的 mode 值", () => {
         const config = { render: { mode: "invalid" } } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow(
-          '配置项 \'render.mode\' 必须是 "ssr"、"csr"、"ssg" 或 "hybrid" 之一',
-        );
+        expect(() => validateConfig(config)).toThrow(RE.renderMode);
       });
     });
 
@@ -154,23 +161,21 @@ describe("配置管理 (config.ts)", () => {
 
       it("应该拒绝非数组类型的 middlewares", () => {
         const config = { middlewares: "invalid" } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow(
-          "配置项 'middlewares' 必须是数组类型",
-        );
+        expect(() => validateConfig(config)).toThrow(RE.middlewares);
       });
 
       it("应该拒绝空路径的中间件", () => {
         const config: AppConfig = {
           middlewares: [""],
         };
-        expect(() => validateConfig(config)).toThrow("无法提取名称");
+        expect(() => validateConfig(config)).toThrow(RE.cannotExtractName);
       });
 
       it("应该拒绝匿名函数中间件", () => {
         const config: AppConfig = {
           middlewares: [() => {}],
         };
-        expect(() => validateConfig(config)).toThrow("必须提供名称");
+        expect(() => validateConfig(config)).toThrow(RE.mustHaveName);
       });
 
       it("应该拒绝没有 name 的对象中间件", () => {
@@ -181,14 +186,14 @@ describe("配置管理 (config.ts)", () => {
             },
           ],
         };
-        expect(() => validateConfig(config)).toThrow("必须提供 name 属性");
+        expect(() => validateConfig(config)).toThrow(RE.mustHaveNameProp);
       });
 
       it("应该拒绝无效类型的中间件", () => {
         const config = {
           middlewares: [123],
         } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow("类型无效");
+        expect(() => validateConfig(config)).toThrow(RE.middlewareTypeInvalid);
       });
     });
 
@@ -211,16 +216,14 @@ describe("配置管理 (config.ts)", () => {
 
       it("应该拒绝非数组类型的 plugins", () => {
         const config = { plugins: {} } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow(
-          "配置项 'plugins' 必须是数组类型",
-        );
+        expect(() => validateConfig(config)).toThrow(RE.plugins);
       });
 
       it("应该拒绝没有 name 的插件", () => {
         const config = {
           plugins: [{ version: "1.0.0" }],
         } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow("必须提供名称");
+        expect(() => validateConfig(config)).toThrow(RE.mustHaveName);
       });
     });
 
@@ -234,9 +237,7 @@ describe("配置管理 (config.ts)", () => {
 
       it("应该拒绝非对象类型的 server", () => {
         const config = { server: 3000 } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow(
-          "配置项 'server' 必须是对象类型",
-        );
+        expect(() => validateConfig(config)).toThrow(RE.server);
       });
 
       it("应该接受有效的 router 配置", () => {
@@ -248,9 +249,7 @@ describe("配置管理 (config.ts)", () => {
 
       it("应该拒绝非对象类型的 router", () => {
         const config = { router: "./routes" } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow(
-          "配置项 'router' 必须是对象类型",
-        );
+        expect(() => validateConfig(config)).toThrow(RE.router);
       });
 
       it("应该接受有效的 build 配置", () => {
@@ -262,9 +261,7 @@ describe("配置管理 (config.ts)", () => {
 
       it("应该拒绝非对象类型的 build", () => {
         const config = { build: true } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow(
-          "配置项 'build' 必须是对象类型",
-        );
+        expect(() => validateConfig(config)).toThrow(RE.build);
       });
 
       it("应该接受有效的 logger 配置", () => {
@@ -276,9 +273,7 @@ describe("配置管理 (config.ts)", () => {
 
       it("应该拒绝非对象类型的 logger", () => {
         const config = { logger: "debug" } as unknown as AppConfig;
-        expect(() => validateConfig(config)).toThrow(
-          "配置项 'logger' 必须是对象类型",
-        );
+        expect(() => validateConfig(config)).toThrow(RE.logger);
       });
     });
   });

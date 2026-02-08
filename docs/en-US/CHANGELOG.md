@@ -8,6 +8,19 @@ and this project adheres to
 
 ---
 
+## [3.0.71] - 2026-02-08
+
+### Fixed (Windows compatibility & tests)
+
+- **Windows compatibility testing**: Fix config.test.ts and build-dirs.test.ts
+  assertions so tests pass on Windows and when running in parallel. Error
+  messages support bilingual matching (i18n and default English fallback);
+  entry path format error regex adds "Entry path format not supported".
+- **All 480 tests passing**: Unit, integration, and e2e tests pass on Deno,
+  Bun, and CI (ubuntu/windows/macos).
+
+---
+
 ## [3.0.70] - 2026-02-08
 
 ### Added

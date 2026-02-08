@@ -520,6 +520,17 @@
     "hmrRenderCsrComplete": "[HMR] renderCSR 完了",
     "hmrLoadModuleRenderFailed": "[HMR] loadModule/render 失敗"
   },
+  "render": {
+    "componentInvalid": "コンポーネントが無効です: 関数またはオブジェクトが必要です、実際: {actual}",
+    "componentTreeInvalid": "createComponentTree: コンポーネントが無効です (関数またはオブジェクトが必要、実際: {actual})",
+    "containerNotFound": "コンテナ要素が見つかりません: {container}",
+    "phaseRender": "レンダリング",
+    "phaseHydrate": "ハイドレーション",
+    "errorTitle": "{phase}エラー",
+    "reloadButton": "再読み込み",
+    "renderErrorLog": "[Render Error] {phase} レンダリング失敗 ({engine}):",
+    "errorHandlerFailed": "[Render Error] エラーハンドラ実行失敗:"
+  },
   "db": {
     "noMigrations": "マイグレーションがありません",
     "createMigration": "作成: dweb db migrate -a create -n <name>",

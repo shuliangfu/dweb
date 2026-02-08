@@ -88,13 +88,13 @@ describe("getInferredBuildOutputDirs", () => {
 
   it("段数 4 应抛出错误", () => {
     expect(() => getInferredBuildOutputDirs("src/a/b/main.ts")).toThrow(
-      /入口路径格式不支持|需 1–3 段/,
+      /Entry path format not supported|入口路径格式不支持|需 1–3 段/,
     );
   });
 
   it("段数 0（空路径）应抛出错误", () => {
     expect(() => getInferredBuildOutputDirs("")).toThrow(
-      /入口路径格式不支持|需 1–3 段/,
+      /Entry path format not supported|入口路径格式不支持|需 1–3 段/,
     );
   });
 
