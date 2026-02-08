@@ -435,6 +435,11 @@ export async function loadPageModule(componentPath: string): Promise<unknown> {
     );
     if (key) loader = ROUTE_LOADERS[key];
   }
+  // 兼容带 routes/ 前缀的路径（服务端与客户端路径格式差异）
+  if (!loader && cleanPath.startsWith("routes/")) {
+    const withoutPrefix = cleanPath.slice(7);
+    loader = ROUTE_LOADERS[withoutPrefix];
+  }
   if (!loader) return null;
   const module = await loader();
   MODULE_CACHE[cleanPath] = module;
@@ -534,35 +539,38 @@ export async function setupHydrationRouterAndHmr(opts: {
       const hydrationData = g.__DATA__!;
       const componentPath = hydrationData.component || "";
       const module = await loadPageModule(componentPath) as Record<string, unknown>;
-      if (module) {
-        const PageComponent = module.default ?? module.Page;
-        if (PageComponent) {
-          const skipLayouts = module.inheritLayout === false;
-          const hydResult = hydrate({
-            engine,
-            component: PageComponent,
-            container: \`#\${containerId}\`,
-            props: hydrationData.page || {
-              params: hydrationData.params || {},
-              query: hydrationData.query || {},
-            },
-            layouts: skipLayouts ? undefined : layouts,
-            skipLayouts,
-          });
-          RENDER_STATE.lastUnmount = hydResult?.unmount ?? null;
-          isHydratedRef.current = true;
-        }
+      const PageComponent = module?.default ?? module?.Page;
+      if (!PageComponent) {
+        const msg = ${JSON.stringify($t("client.hydrationFailed"))} + (componentPath ? \`: component "\${componentPath}" not found\` : "");
+        console.error(msg);
+        renderError(containerId, new Error(msg));
+        return;
       }
+      const skipLayouts = module?.inheritLayout === false;
+      const hydResult = hydrate({
+        engine,
+        component: PageComponent,
+        container: \`#\${containerId}\`,
+        props: hydrationData.page || {
+          params: hydrationData.params || {},
+          query: hydrationData.query || {},
+        },
+        layouts: skipLayouts ? undefined : layouts,
+        skipLayouts,
+      });
+      RENDER_STATE.lastUnmount = hydResult?.unmount ?? null;
+      isHydratedRef.current = true;
     } catch (error) {
       console.error(${
     JSON.stringify($t("client.hydrationFailed"))
   } + ":", error);
+      renderError(containerId, error);
     }
   }
   g.__DWEB_HMR_REFRESH__ = (hmrOpts) => {
     const chunkUrl = hmrOpts?.chunkUrl;
     if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-      console.log("[HMR] 调试模式已开启，输出详细日志");
+      console.log(${JSON.stringify($t("client.hmrDebugEnabled"))});
     }
     for (const key of Object.keys(MODULE_CACHE)) delete MODULE_CACHE[key];
     clearLayoutCache();
@@ -570,7 +578,7 @@ export async function setupHydrationRouterAndHmr(opts: {
     const match = router.match(pathname);
     if (!match) {
       if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-        console.log("[HMR] 无匹配路由，renderNotFound");
+        console.log(${JSON.stringify($t("client.hmrNoMatchRenderNotFound"))});
       }
       unmountPrevious(); renderNotFound(containerId); return;
     }
@@ -590,7 +598,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         comp === chunkBaseFromUrl ||
         (compBase === "index" && chunkBaseFromUrl === "routes"));
     if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-      console.log("[HMR] chunkUrl 匹配", {
+      console.log(${JSON.stringify($t("client.hmrChunkUrlMatch"))}, {
         chunkUrl,
         chunkBaseFromUrl,
         comp,
@@ -604,7 +612,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         const path = chunkUrl!.startsWith("/") ? chunkUrl! : "/" + chunkUrl!;
         const busted = path + (path.includes("?") ? "&" : "?") + "t=" + Date.now();
         if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-          console.log("[HMR] 使用 chunkUrl 强制拉取", busted);
+          console.log(${JSON.stringify($t("client.hmrForceFetchWithChunkUrl"))}, busted);
         }
         return import(/* @vite-ignore */ busted);
       }
@@ -620,7 +628,7 @@ export async function setupHydrationRouterAndHmr(opts: {
     loadModule()
       .then((mod) => {
         if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-          console.log("[HMR] loadModule 完成", { hasDefault: !!(mod as Record<string, unknown>)?.default, componentPath: match.route.component });
+          console.log(${JSON.stringify($t("client.hmrLoadModuleComplete"))}, { hasDefault: !!(mod as Record<string, unknown>)?.default, componentPath: match.route.component });
         }
         const modObj = mod as Record<string, unknown>;
         if (!modObj) { renderNotFound(containerId); return; }
@@ -629,7 +637,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         const skipLayouts = modObj.inheritLayout === false;
         return loadLayouts().then((layoutList) => {
           if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-            console.log("[HMR] renderCSR 前", { componentPath: match.route.component });
+            console.log(${JSON.stringify($t("client.hmrRenderCsrBefore"))}, { componentPath: match.route.component });
           }
           // 新模块已就绪，在 render 前一刻执行 unmount + 移除旧 CSS，最小化空白时间，消除闪动
           unmountPrevious();
@@ -644,7 +652,7 @@ export async function setupHydrationRouterAndHmr(opts: {
           });
           RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
           if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-            console.log("[HMR] renderCSR 完成");
+            console.log(${JSON.stringify($t("client.hmrRenderCsrComplete"))});
           }
           if (typeof _win.scrollTo === "function") {
             const sx = scrollX;
@@ -676,7 +684,7 @@ export async function setupHydrationRouterAndHmr(opts: {
       })
       .catch((err) => {
         if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-          console.error("[HMR] loadModule/render 失败", err);
+          console.error(${JSON.stringify($t("client.hmrLoadModuleRenderFailed"))}, err);
         }
         console.warn(${
     JSON.stringify($t("client.hmrFallback"))
@@ -831,7 +839,7 @@ initApp()
       // if (to?.route.meta?.requiresAuth && !isLoggedIn()) return "/login";
       // 示例：阻止访问某路径
       // if (to?.route.component === "admin") return false;
-      return true; // 放行
+      return true; // allow
     });
 
     // 路由后置守卫：导航完成后执行（可做埋点、日志等）

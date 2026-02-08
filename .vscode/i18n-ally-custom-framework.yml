@@ -20,3 +20,4 @@ usageMatchRegex:
 
 refactorTemplates:
   - '$t("$1")'
+  - "$t('$1')"

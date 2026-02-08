@@ -15,7 +15,7 @@ with the following main sections:
 | ---------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `name`                 | string               | Application name                                                                                                                   |
 | `version`              | string               | Application version                                                                                                                |
-| `language`             | AppLanguage          | Framework language (zh-CN or en-US; affects CLI, logs, error messages; <br/>default: auto-detect LANGUAGE/LC_ALL/LANG, else zh-CN) |
+| `language`             | AppLanguage          | Framework language (zh-CN, en-US, ja-JP, ko-KR, es-ES, pt-BR, id-ID, de-DE, fr-FR; affects CLI, logs, error messages; <br/>default: auto-detect LANGUAGE/LC_ALL/LANG, else en-US) |
 | `envPrefix`            | string               | Environment variable prefix                                                                                                        |
 | `hotReload`            | boolean              | Enable hot reload                                                                                                                  |
 | `pluginManagerOptions` | PluginManagerOptions | Plugin manager options (autoActivate, continueOnError, enableHotReload, etc.)                                                      |
@@ -46,7 +46,7 @@ const config: AppConfig = {
   // ========== Basic info ==========
   name: "my-app",
   version: "1.0.0",
-  /** Framework language (zh-CN | en-US); affects CLI, logs, errors; auto-detect if unset */
+  /** Framework language (zh-CN, en-US, ja-JP, etc.); affects CLI, logs, errors; auto-detect if unset */
   language: "zh-CN",
 
   // ========== Config directory ==========
@@ -564,7 +564,9 @@ Merge is deep merge; later config overrides earlier for the same keys.
 
 **Framework language (language)**: Affects CLI, logs, error messages. Set in
 `config/main.ts`. Priority: `config/main.ts` `language` > env vars
-`LANGUAGE`/`LC_ALL`/`LANG` > default `zh-CN`.
+`LANGUAGE`/`LC_ALL`/`LANG` > default `en-US`. Supports 9 locales (zh-CN, en-US,
+ja-JP, ko-KR, es-ES, pt-BR, id-ID, de-DE, fr-FR); falls back to `en-US` if
+unsupported.
 
 ### 6.1 Config Directory Inference
 

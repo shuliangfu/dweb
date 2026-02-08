@@ -167,64 +167,66 @@ export function getDwebErrorTranslator(): DwebErrorTranslator | null {
  *
  * 键为错误码，值为默认消息模板，支持 {param} 插值
  */
+/** 默认错误消息（i18n 未接入时的英文回退，支持 {param} 插值） */
 export const DEFAULT_ERROR_MESSAGES: Record<
   DwebErrorCodeType,
   string
 > = {
-  [DwebErrorCode.CONFIG_NAME_INVALID]: "配置项 'name' 必须是字符串类型",
-  [DwebErrorCode.CONFIG_VERSION_INVALID]: "配置项 'version' 必须是字符串类型",
+  [DwebErrorCode.CONFIG_NAME_INVALID]: "Config 'name' must be a string",
+  [DwebErrorCode.CONFIG_VERSION_INVALID]: "Config 'version' must be a string",
   [DwebErrorCode.CONFIG_ENV_PREFIX_INVALID]:
-    "配置项 'envPrefix' 必须是字符串类型",
+    "Config 'envPrefix' must be a string",
   [DwebErrorCode.CONFIG_HOT_RELOAD_INVALID]:
-    "配置项 'hotReload' 必须是布尔类型",
-  [DwebErrorCode.CONFIG_RENDER_INVALID]: "配置项 'render' 必须是对象类型",
+    "Config 'hotReload' must be a boolean",
+  [DwebErrorCode.CONFIG_RENDER_INVALID]: "Config 'render' must be an object",
   [DwebErrorCode.CONFIG_MIDDLEWARES_INVALID]:
-    "配置项 'middlewares' 必须是数组类型",
-  [DwebErrorCode.CONFIG_PLUGINS_INVALID]: "配置项 'plugins' 必须是数组类型",
-  [DwebErrorCode.CONFIG_SERVER_INVALID]: "配置项 'server' 必须是对象类型",
-  [DwebErrorCode.CONFIG_ROUTER_INVALID]: "配置项 'router' 必须是对象类型",
-  [DwebErrorCode.CONFIG_BUILD_INVALID]: "配置项 'build' 必须是对象类型",
-  [DwebErrorCode.CONFIG_LOGGER_INVALID]: "配置项 'logger' 必须是对象类型",
+    "Config 'middlewares' must be an array",
+  [DwebErrorCode.CONFIG_PLUGINS_INVALID]: "Config 'plugins' must be an array",
+  [DwebErrorCode.CONFIG_SERVER_INVALID]: "Config 'server' must be an object",
+  [DwebErrorCode.CONFIG_ROUTER_INVALID]: "Config 'router' must be an object",
+  [DwebErrorCode.CONFIG_BUILD_INVALID]: "Config 'build' must be an object",
+  [DwebErrorCode.CONFIG_LOGGER_INVALID]: "Config 'logger' must be an object",
   [DwebErrorCode.CONFIG_RENDER_ENGINE_INVALID]:
-    `配置项 'render.engine' 必须是 "react" 或 "preact" 之一`,
+    `Config 'render.engine' must be "react" or "preact"`,
   [DwebErrorCode.CONFIG_RENDER_MODE_INVALID]:
-    `配置项 'render.mode' 必须是 "ssr"、"csr"、"ssg" 或 "hybrid" 之一`,
+    `Config 'render.mode' must be "ssr", "csr", "ssg" or "hybrid"`,
   [DwebErrorCode.CONFIG_MIDDLEWARE_PATH_NO_NAME]:
-    `配置中的中间件（索引 {index}）路径 "{path}" 无法提取名称，请使用对象形式提供明确的 name 属性：{ middleware: "{path}", name: "middleware-name" }`,
+    `Middleware at index {index} path "{path}" cannot extract name. Use object form: { middleware: "{path}", name: "middleware-name" }`,
   [DwebErrorCode.CONFIG_MIDDLEWARE_MUST_HAVE_NAME]:
-    `配置中的中间件（索引 {index}）必须提供名称（name 属性或函数名），用于配置合并时识别重复。请使用对象形式：{ middleware: yourMiddleware, name: "middleware-name" } 或确保中间件函数有名称`,
+    `Middleware at index {index} must have a name (name property or function name). Use: { middleware: yourMiddleware, name: "middleware-name" }`,
   [DwebErrorCode.CONFIG_MIDDLEWARE_OBJECT_MUST_HAVE_NAME]:
-    `配置中的中间件（索引 {index}）对象必须提供 name 属性，用于配置合并时识别重复。请使用：{ middleware: yourMiddleware, condition: {...}, name: "middleware-name" }`,
+    `Middleware object at index {index} must have name property. Use: { middleware: yourMiddleware, condition: {...}, name: "middleware-name" }`,
   [DwebErrorCode.CONFIG_MIDDLEWARE_TYPE_INVALID]:
-    `配置中的中间件（索引 {index}）类型无效，必须是字符串、函数或对象类型`,
+    `Middleware at index {index} must be string, function or object`,
   [DwebErrorCode.CONFIG_PLUGIN_MUST_HAVE_NAME]:
-    `配置中的插件（索引 {index}）必须提供名称，用于配置合并时识别重复。请使用对象形式：{ name: "plugin-name", ... } 或字符串路径（可从路径提取名称）`,
+    `Plugin at index {index} must have a name. Use: { name: "plugin-name", ... } or string path`,
 
   [DwebErrorCode.ENTRY_PATH_INVALID]:
-    "[dweb] 入口路径格式不支持: {reason}。{hint} 当前路径: {path}",
+    "[dweb] Entry path format not supported: {reason}. {hint} Path: {path}",
   [DwebErrorCode.ENTRY_PATH_TOO_DEEP]:
-    "[dweb] 入口路径段数过多，不支持多级目录。{hint} 当前路径: {path}",
+    "[dweb] Entry path segments too many. {hint} Path: {path}",
 
-  [DwebErrorCode.RUNTIME_UNSUPPORTED]: "仅支持 Deno 或 Bun 运行时环境",
+  [DwebErrorCode.RUNTIME_UNSUPPORTED]:
+    "Only Deno or Bun runtime is supported",
 
-  [DwebErrorCode.APP_NOT_INITIALIZED]: "App 实例未初始化",
+  [DwebErrorCode.APP_NOT_INITIALIZED]: "App instance not initialized",
   [DwebErrorCode.SOCKET_IO_NOT_CONFIGURED]:
-    "Socket.IO 未配置，请在 AppConfig 中设置 socket: { type: 'socketio', ... }",
+    "Socket.IO not configured. Set socket: { type: 'socketio', ... } in AppConfig",
   [DwebErrorCode.WEBSOCKET_NOT_CONFIGURED]:
-    "WebSocket 未配置，请在 AppConfig 中设置 socket: { type: 'websocket', ... }",
-  [DwebErrorCode.GENERATE_TYPE_UNSUPPORTED]: "不支持的生成类型: {type}",
+    "WebSocket not configured. Set socket: { type: 'websocket', ... } in AppConfig",
+  [DwebErrorCode.GENERATE_TYPE_UNSUPPORTED]: "Unsupported generate type: {type}",
   [DwebErrorCode.BUILD_FAILED]: "{message}",
   [DwebErrorCode.MIDDLEWARE_FILE_NO_EXPORT]:
-    `中间件文件 "{path}" 未导出中间件函数（需要 export default 或 export const middleware）`,
+    `Middleware file "{path}" has no export (need export default or export const middleware)`,
   [DwebErrorCode.MIDDLEWARE_LOAD_FAILED]:
-    "加载中间件文件失败: {path} - {message}",
+    "Failed to load middleware: {path} - {message}",
 
-  [DwebErrorCode.FILE_READ_FAILED]: "无法读取 {path}",
+  [DwebErrorCode.FILE_READ_FAILED]: "Cannot read {path}",
   [DwebErrorCode.HTTP_REQUEST_FAILED]: "HTTP {status}",
-  [DwebErrorCode.FILE_READ_PARSE_FAILED]: "无法读取 {path}: {message}",
-  [DwebErrorCode.UNKNOWN_ERROR]: "[dweb] 未知错误: {message}",
+  [DwebErrorCode.FILE_READ_PARSE_FAILED]: "Cannot read {path}: {message}",
+  [DwebErrorCode.UNKNOWN_ERROR]: "[dweb] Unknown error: {message}",
   [DwebErrorCode.DREAMER_CACHE_HOME_UNAVAILABLE]:
-    "无法获取用户主目录（HOME 或 USERPROFILE 未设置），无法使用 ~/.dreamer 缓存",
+    "Cannot get user home (HOME or USERPROFILE not set), cannot use ~/.dreamer cache",
 };
 
 /**

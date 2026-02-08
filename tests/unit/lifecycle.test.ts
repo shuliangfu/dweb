@@ -72,9 +72,7 @@ describe("生命周期管理 (lifecycle.ts)", () => {
       initializeLifecycle(container, config);
 
       // 第二次调用应该抛出错误
-      expect(() => initializeLifecycle(container, config)).toThrow(
-        "已注册",
-      );
+      expect(() => initializeLifecycle(container, config)).toThrow("已注册");
     });
   });
 

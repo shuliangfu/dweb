@@ -21,8 +21,25 @@ import { loadProjectConfig } from "./config-loader.ts";
 import { setDwebErrorTranslator } from "./errors.ts";
 
 // 服务端：静态 import 在构建时内联，无需运行时 fetch
-import zhCN from "../locales/zh-CN/dweb.json" with { type: "json" };
-import enUS from "../locales/en-US/dweb.json" with { type: "json" };
+
+// 中文
+import zhCN from "../locales/zh-CN.json" with { type: "json" };
+// 英文
+import enUS from "../locales/en-US.json" with { type: "json" };
+// 日文
+import jaJP from "../locales/ja-JP.json" with { type: "json" };
+// 韩文
+import koKR from "../locales/ko-KR.json" with { type: "json" };
+// 西班牙文
+import esES from "../locales/es-ES.json" with { type: "json" };
+// 巴西葡萄牙文
+import ptBR from "../locales/pt-BR.json" with { type: "json" };
+// 印尼文
+import idID from "../locales/id-ID.json" with { type: "json" };
+// 德文
+import deDE from "../locales/de-DE.json" with { type: "json" };
+// 法文
+import frFR from "../locales/fr-FR.json" with { type: "json" };
 
 /**
  * 全局翻译函数（委托给 globalThis.$t，init 前返回 key）
@@ -60,7 +77,17 @@ export function setDwebLocale(locale: string | undefined | null): void {
 }
 
 /** 支持的 locale 列表 */
-const SUPPORTED_LOCALES = ["zh-CN", "en-US"] as const;
+const SUPPORTED_LOCALES = [
+  "zh-CN",
+  "en-US",
+  "ja-JP",
+  "ko-KR",
+  "es-ES",
+  "pt-BR",
+  "id-ID",
+  "de-DE",
+  "fr-FR",
+] as const;
 
 /** 默认 locale（回退语言，缺失翻译时使用） */
 const DEFAULT_LOCALE = "en-US";
@@ -108,6 +135,13 @@ export function detectLocale(): string | null {
 const LOCALE_DATA: Record<string, TranslationData> = {
   "zh-CN": zhCN as TranslationData,
   "en-US": enUS as TranslationData,
+  "ja-JP": jaJP as TranslationData,
+  "ko-KR": koKR as TranslationData,
+  "es-ES": esES as TranslationData,
+  "pt-BR": ptBR as TranslationData,
+  "id-ID": idID as TranslationData,
+  "de-DE": deDE as TranslationData,
+  "fr-FR": frFR as TranslationData,
 };
 
 /**
@@ -156,17 +190,11 @@ export async function initDwebI18n(): Promise<void> {
     ? locale
     : DEFAULT_LOCALE;
 
-  const zhData = LOCALE_DATA["zh-CN"];
-  const enData = LOCALE_DATA["en-US"];
-
   const i18n = createI18n({
     defaultLocale: DEFAULT_LOCALE,
     fallbackBehavior: "default",
     locales: [...SUPPORTED_LOCALES],
-    translations: {
-      "zh-CN": zhData,
-      "en-US": enData,
-    },
+    translations: LOCALE_DATA as Record<string, TranslationData>,
   });
 
   i18n.setLocale(effectiveLocale);

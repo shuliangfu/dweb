@@ -7,6 +7,17 @@
 
 ---
 
+## [3.0.70] - 2026-02-08
+
+### 新增
+
+- **i18n 文档**：在 README 和文档中新增国际化（i18n）章节。说明 9 种支持语言
+  （zh-CN、en-US、ja-JP、ko-KR、es-ES、pt-BR、id-ID、de-DE、fr-FR）、通过
+  `config.language` 与环境变量（LANGUAGE、LC_ALL、LANG）的配置方式、优先级
+  及回退到 en-US 的逻辑。更新 APP_CONFIG 中 language 配置项说明。
+
+---
+
 ## [3.0.69] - 2026-02-08
 
 ### 修复

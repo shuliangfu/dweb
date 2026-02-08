@@ -13,7 +13,7 @@
 | ---------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `name`                 | string               | 应用名称                                                                                                           |
 | `version`              | string               | 应用版本                                                                                                           |
-| `language`             | AppLanguage          | 框架语言（zh-CN 或 en-US；影响 CLI、日志、错误消息等；<br/>默认自动检测环境变量 LANGUAGE/LC_ALL/LANG，否则 zh-CN） |
+| `language`             | AppLanguage          | 框架语言（zh-CN、en-US、ja-JP、ko-KR、es-ES、pt-BR、id-ID、de-DE、fr-FR；影响 CLI、日志、错误消息等；<br/>默认自动检测环境变量 LANGUAGE/LC_ALL/LANG，否则 en-US） |
 | `envPrefix`            | string               | 环境变量前缀                                                                                                       |
 | `hotReload`            | boolean              | 是否启用热重载                                                                                                     |
 | `pluginManagerOptions` | PluginManagerOptions | 插件管理器选项（autoActivate、continueOnError、enableHotReload 等）                                                |
@@ -44,7 +44,7 @@ const config: AppConfig = {
   // ========== 基础信息 ==========
   name: "my-app",
   version: "1.0.0",
-  /** 框架语言（zh-CN | en-US），影响 CLI、日志、错误消息等；不设置则自动检测环境变量 */
+  /** 框架语言（zh-CN、en-US、ja-JP 等），影响 CLI、日志、错误消息等；不设置则自动检测环境变量 */
   language: "zh-CN",
 
   // ========== 配置目录 ==========
@@ -556,7 +556,9 @@ export default config;
 
 **框架语言（language）**：影响 CLI、日志、错误消息等框架文案。在
 `config/main.ts` 中设置即可生效。解析优先级：`config/main.ts` 的 `language` >
-环境变量 `LANGUAGE`/`LC_ALL`/`LANG` > 默认 `zh-CN`。
+环境变量 `LANGUAGE`/`LC_ALL`/`LANG` > 默认 `en-US`。支持 9 种语言（zh-CN、
+en-US、ja-JP、ko-KR、es-ES、pt-BR、id-ID、de-DE、fr-FR），不支持时回退至
+`en-US`。
 
 ### 6.1 配置目录推断
 

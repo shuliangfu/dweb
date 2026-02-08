@@ -8,6 +8,18 @@ and this project adheres to
 
 ---
 
+## [3.0.70] - 2026-02-08
+
+### Added
+
+- **i18n documentation**: Add Internationalization (i18n) section to README and
+  docs. Document 9 supported locales (zh-CN, en-US, ja-JP, ko-KR, es-ES, pt-BR,
+  id-ID, de-DE, fr-FR), configuration via `config.language` and env vars
+  (LANGUAGE, LC_ALL, LANG), priority, and fallback to en-US. Update APP_CONFIG
+  language option description.
+
+---
+
 ## [3.0.69] - 2026-02-08
 
 ### Fixed

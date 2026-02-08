@@ -206,10 +206,10 @@ export function createRendererHybrid(
         html = await replaceAssetPathsInHtml(html, config);
       }
 
-      // 构建 hydration 数据（component 路径统一为正斜杠，确保 Windows 下客户端 loadPageModule 能正确匹配 ROUTE_LOADERS）
+      // 构建 hydration 数据（component 路径统一为正斜杠、去除扩展名，与 collectClientRoutes 一致，确保 Windows 下 loadPageModule 能正确匹配 ROUTE_LOADERS）
       const rawComponent = match.route.file || match.route.path;
       const normalizedComponent = typeof rawComponent === "string"
-        ? rawComponent.replace(/\\/g, "/").trim()
+        ? rawComponent.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "").trim()
         : rawComponent;
       const hydrationData = {
         page: pageProps,

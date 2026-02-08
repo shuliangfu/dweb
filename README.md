@@ -124,6 +124,8 @@ deno add jsr:@dreamer/runtime-adapter
 - ✅ **Unified error handling**: DwebError class with error codes
   (DWEB_E01–E34), i18n, `throwDwebError` / `createDwebError` / `isDwebError` /
   `setDwebErrorTranslator`
+- ✅ **Internationalization (i18n)**: Built-in 9 locales (zh-CN, en-US, ja-JP,
+  ko-KR, es-ES, pt-BR, id-ID, de-DE, fr-FR); config via `language` or env vars
 - ✅ **Type safety**: Full TypeScript support
 - ✅ **Developer experience**: HMR (hot module replacement), CLI tools, code
   hints
@@ -1510,8 +1512,43 @@ setDwebErrorTranslator((key, params) => {
 });
 ```
 
-**Built-in i18n**: Set `language: "zh-CN" | "en-US"` in `config/main.ts` to
-switch CLI, logs, error messages, and other framework copy.
+**Built-in i18n**: The framework provides built-in internationalization for
+CLI, logs, error messages, and other framework copy. See below for supported
+languages and configuration.
+
+#### Internationalization (i18n)
+
+**Supported languages** (9 locales):
+
+| Locale | Language |
+| ------ | -------- |
+| `zh-CN` | 简体中文 |
+| `en-US` | English (US) |
+| `ja-JP` | 日本語 |
+| `ko-KR` | 한국어 |
+| `es-ES` | Español |
+| `pt-BR` | Português (Brasil) |
+| `id-ID` | Bahasa Indonesia |
+| `de-DE` | Deutsch |
+| `fr-FR` | Français |
+
+**Configuration**:
+
+1. **Config** (recommended): Set `language` in `config/main.ts`:
+   ```typescript
+   const config: AppConfig = {
+     language: "zh-CN",
+     // ...
+   };
+   ```
+
+2. **Environment variables** (auto-detect): `LANGUAGE`, `LC_ALL`, or `LANG`
+   (e.g. `LANGUAGE=zh_CN` or `LANG=ja_JP.UTF-8`).
+
+**Priority** (highest first): `config.language` > env vars > default `en-US`.
+
+**Fallback**: If an unsupported locale is configured, the framework falls back
+to `en-US`.
 
 Error code ranges: E01–E19 config, E20–E21 entry path, E22 runtime, E23–E29
 features, E30–E32 file/HTTP, E33 unknown, E34 cache home. See
@@ -1826,10 +1863,10 @@ See [TEST_REPORT.md](./docs/en-US/TEST_REPORT.md).
 
 ## 📋 Changelog
 
-### [3.0.69] - 2026-02-08
+### [3.0.70] - 2026-02-08
 
-**Fixed**: CI @dreamer/esbuild JSR resolution; compilerOptions & React SSG build;
-Windows config-loader and module-cache path handling.
+**Added**: i18n documentation (9 locales, config, env vars, priority, fallback).
+Update APP_CONFIG language option.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

@@ -91,9 +91,9 @@ describe("init (cmd/init.ts)", () => {
     expect(denoJson).toContain("tailwindcss");
     expect(denoJson).toContain("@tailwindcss/postcss");
 
-    // 未使用 --beta 时，render/router/plugins 未发正式版，统一用 1.0.0；@dreamer/* 使用 ^ 符号
-    expect(denoJson).toContain("@dreamer/render@^1.0.0");
-    expect(denoJson).toContain("@dreamer/router@^1.0.0");
+    // 未使用 --beta 时，render/router/plugins 从 JSR 获取最新稳定版；@dreamer/* 使用 ^ 符号
+    expect(denoJson).toMatch(/@dreamer\/render@\^1\.\d+\.\d+/);
+    expect(denoJson).toMatch(/@dreamer\/router@\^1\.\d+\.\d+/);
 
     await remove(testDir, { recursive: true });
   });

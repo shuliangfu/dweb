@@ -153,8 +153,8 @@
   "i18n-ally.localesPaths": [
     "src/locales"
   ],
-  // 路径匹配模式：{locale} 语言代码, {namespace} 命名空间, {ext} 扩展名
-  "i18n-ally.pathMatcher": "{locale}/{namespace}.{ext}",
+  // 路径匹配模式：{locale} 语言代码, {ext} 扩展名（扁平结构：locales/zh-CN.json）
+  "i18n-ally.pathMatcher": "{locale}.{ext}",
   // 键的嵌套风格：nested 表示使用点号分隔的嵌套结构（如 log.clientBuildComplete）
   "i18n-ally.keystyle": "nested",
   // 是否自动对翻译键排序

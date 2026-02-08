@@ -23,6 +23,7 @@ import {
   resolve,
 } from "../core/runtime-adapter.ts";
 import { DwebErrorCode, throwDwebError } from "./errors.ts";
+import { $t } from "./i18n.ts";
 import { isWindows } from "./runtime.ts";
 
 /**
@@ -42,20 +43,16 @@ function pathnameToFsPath(pathname: string): string {
   return p.replace(/\\/g, "/");
 }
 
-/** 入口路径格式错误时抛出的统一错误信息 */
-const ENTRY_PATH_HINT =
-  "支持 main.ts（无 src）、src/main.ts（单应用）、<app>/main.ts（多应用无 src）或 src/<应用名>/main.ts（多应用）。";
-
 /**
  * 抛出入口路径格式错误
  *
  * @param path 当前路径
- * @param reason 错误原因简述
+ * @param reason 错误原因（i18n 键或已翻译字符串）
  */
 function throwEntryPathError(path: string, reason: string): never {
   throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, {
     reason,
-    hint: ENTRY_PATH_HINT,
+    hint: $t("errors.entryPathInvalidHint"),
     path,
   });
 }
@@ -72,11 +69,11 @@ function extractEntryFromLongPath(fullPath: string): string | null {
   const parts = normalized.split("/").filter(Boolean);
   const mainIdx = parts.lastIndexOf("main.ts");
   if (mainIdx < 0) {
-    throwEntryPathError(fullPath, "路径中未找到 main.ts");
+    throwEntryPathError(fullPath, $t("errors.entryPathInvalidReasonNoMainTs"));
   }
   // src/x/y/main.ts 等 4 段以上结构不支持，不提取
   if (mainIdx >= 3 && parts[mainIdx - 3] === "src") {
-    throwEntryPathError(fullPath, "src 下多级目录（如 src/a/b/main.ts）不支持");
+    throwEntryPathError(fullPath, $t("errors.entryPathInvalidReasonMultiLevelSrc"));
   }
   let start: number;
   if (mainIdx >= 2 && parts[mainIdx - 2] === "src") {
@@ -95,7 +92,7 @@ function extractEntryFromLongPath(fullPath: string): string | null {
   if (slice.length >= 1 && slice.length <= 3) {
     return slice.join("/");
   }
-  throwEntryPathError(fullPath, `提取后段数为 ${slice.length}，需 1–3 段`);
+  throwEntryPathError(fullPath, $t("errors.entryPathInvalidReasonSegmentCount", { count: String(slice.length) }));
 }
 
 /**
@@ -192,7 +189,7 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
   }
 
   if (parts.length < 1 || parts.length > 3) {
-    throwEntryPathError(entry, `段数为 ${parts.length}，需 1–3 段`);
+    throwEntryPathError(entry, $t("errors.entryPathInvalidReasonSegmentCount", { count: String(parts.length) }));
   }
   // 特殊：运行构建产物时（<outputDir>/server.js 或 <outputDir>/<app>/server.js）
   // outputDir 为用户配置的 build.server.output 根目录（如 dist、build、output 等）

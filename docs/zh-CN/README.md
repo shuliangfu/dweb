@@ -123,6 +123,8 @@ deno add jsr:@dreamer/runtime-adapter
 - ✅ **统一错误处理**：DwebError 错误类，支持错误码（DWEB_E01～E34）、i18n
   国际化、`throwDwebError` / `createDwebError` / `isDwebError` /
   `setDwebErrorTranslator`
+- ✅ **国际化（i18n）**：内置 9 种语言（zh-CN、en-US、ja-JP、ko-KR、es-ES、
+  pt-BR、id-ID、de-DE、fr-FR）；通过 `language` 或环境变量配置
 - ✅ **类型安全**：完整的 TypeScript 支持
 - ✅ **开发体验**：HMR（热模块替换）、CLI 工具、代码提示
 
@@ -1560,12 +1562,45 @@ if (isDwebError(error)) {
 }
 
 // 接入 i18n：注册翻译器后，错误消息将使用翻译结果
-// 框架内置 i18n：在 config/main.ts 中设置 language: "zh-CN" | "en-US" 可切换 CLI、日志、错误消息等框架文案
+// 框架内置 i18n：在 config/main.ts 中设置 language 可切换 CLI、日志、错误消息等框架文案（支持 9 种语言，详见表单）
 setDwebErrorTranslator((key, params) => {
   if (key === "errors.DWEB_E01") return "Config 'name' must be string";
   return key; // 未翻译时返回 key
 });
 ```
+
+#### 国际化（i18n）
+
+**支持的语言**（9 种）：
+
+| Locale | 语言 |
+| ------ | ----- |
+| `zh-CN` | 简体中文 |
+| `en-US` | English (US) |
+| `ja-JP` | 日本語 |
+| `ko-KR` | 한국어 |
+| `es-ES` | Español |
+| `pt-BR` | Português (Brasil) |
+| `id-ID` | Bahasa Indonesia |
+| `de-DE` | Deutsch |
+| `fr-FR` | Français |
+
+**配置方式**：
+
+1. **配置文件**（推荐）：在 `config/main.ts` 中设置 `language`：
+   ```typescript
+   const config: AppConfig = {
+     language: "zh-CN",
+     // ...
+   };
+   ```
+
+2. **环境变量**（自动检测）：`LANGUAGE`、`LC_ALL` 或 `LANG`（例如
+   `LANGUAGE=zh_CN`、`LANG=ja_JP.UTF-8`）。
+
+**优先级**（从高到低）：`config.language` > 环境变量 > 默认 `en-US`。
+
+**回退**：若配置了不支持的语言，框架将回退到 `en-US`。
 
 错误码分段：E01～E19 配置、E20～E21 入口路径、E22 运行时、E23～E29
 功能模块、E30～E32 文件/HTTP、E33 未知错误、E34 缓存主目录。详见
@@ -1910,10 +1945,10 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.0.69] - 2026-02-08
+### [3.0.70] - 2026-02-08
 
-**修复**：CI @dreamer/esbuild JSR 解析；compilerOptions 与 React SSG 构建；
-Windows config-loader 与 module-cache 路径处理。
+**新增**：i18n 文档（9 种语言、配置、环境变量、优先级、回退）。更新
+APP_CONFIG 中 language 配置项说明。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

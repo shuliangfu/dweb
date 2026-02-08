@@ -145,7 +145,7 @@ describe("统一错误处理 (errors.ts)", () => {
       setDwebErrorTranslator(null);
       expect(getDwebErrorTranslator()).toBeNull();
       const errAfter = createDwebError(DwebErrorCode.CONFIG_NAME_INVALID);
-      expect(errAfter.message).toBe("配置项 'name' 必须是字符串类型");
+      expect(errAfter.message).toBe("Config 'name' must be a string");
     });
   });
 });

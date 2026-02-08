@@ -106,7 +106,7 @@ function projectNameFromDir(targetDir: string): string {
 function getDefaultLanguage(): AppLanguage {
   const detected = detectLocale();
   if (detected === "zh-CN" || detected === "en-US") return detected;
-  return "zh-CN";
+  return "en-US";
 }
 
 /**
@@ -398,9 +398,9 @@ app.registerPlugin(staticPlugin({
     : "";
 
   return `/**
- * 服务端入口
+ * ${$t("init.comments.serverEntry")}
  * ${opts.engine === "preact" ? "Preact" : "React"} + @dreamer/dweb
- * 配置由框架自动加载，无需手动导入合并
+ * ${$t("init.comments.configAutoLoaded")}
  */
 
 import { App } from "@dreamer/dweb";
@@ -468,8 +468,8 @@ app.registerPlugin(staticPlugin({
     ? `common/config + src/${appName}/config`
     : `common/config + ${appName}/config`;
   return `/**
- * ${appName} 应用入口
- * 配置由框架自动加载 ${configPathHint} 并合并
+ * ${$t("init.comments.appEntry", { appName })}
+ * ${$t("init.comments.configAutoLoadedFrom", { configPathHint })}
  */
 
 import { App } from "@dreamer/dweb";
@@ -510,8 +510,8 @@ function getConfigMainTs(
   // 多应用：仅写应用级覆盖，version 等由 common/config 自动合并
   if (appName) {
     return `/**
- * ${appName} 应用配置
- * version 等公共字段由 common/config 自动合并，无需手动导入
+ * ${$t("init.comments.appConfig", { appName })}
+ * ${$t("init.comments.commonFieldsMerged")}
  */
 import type { AppConfig } from "@dreamer/dweb";
 
@@ -554,15 +554,15 @@ export default {
 
   // 单应用：完整配置
   return `/**
- * 应用配置
- * 框架会自动加载本文件
+ * ${$t("init.comments.appConfigShort")}
+ * ${$t("init.comments.frameworkAutoLoads")}
  */
 import type { AppConfig } from "@dreamer/dweb";
 
 const config: AppConfig = {
   name: "${configName}",
   version: "1.0.0",
-  /** 框架语言（根据用户环境自动检测，可改为 "en-US"） */
+  /** ${$t("init.comments.frameworkLanguage")} */
   language: "${getDefaultLanguage()}",
   server: {
     port: ${serverPort},
@@ -602,7 +602,7 @@ const config: AppConfig = {
       useNativeCompile: false,
     },
   },
-  // 数据库配置（按需取消注释）
+  // ${$t("init.comments.databaseConfig")}
   // database: {
   //   default: {
   //     type: "sqlite",
@@ -618,8 +618,8 @@ export default config;
 /** 开发环境配置 main.dev.ts（只需写增量，框架会自动与 main.ts 深度合并） */
 function getConfigMainDevTs(): string {
   return `/**
- * 开发环境配置
- * 只需写增量覆盖，框架会自动与 main.ts 深度合并
+ * ${$t("init.comments.devConfig")}
+ * ${$t("init.comments.devConfigOverride")}
  */
 export default {
   server: {
@@ -647,7 +647,7 @@ function getAppTsx(opts: InitOptions): string {
     ? 'import type { ComponentChildren } from "preact";\n\ninterface AppProps {\n  children: ComponentChildren;'
     : 'import type { ReactNode } from "react";\n\ninterface AppProps {\n  children: ReactNode;';
   return `/**
- * 应用根组件
+ * ${$t("init.comments.appRootComponent")}
  */
 
 ${childrenType}
@@ -688,10 +688,10 @@ function getLayoutTsx(opts: InitOptions, appName?: string): string {
     ? "text-gray-600 hover:text-primary-600 transition-colors"
     : "text-gray-600 hover:text-indigo-600 transition-colors";
   const styleComment = opts.style === "unocss"
-    ? "UnoCSS"
+    ? $t("init.template.styleUno")
     : opts.style === "tailwind"
-    ? "Tailwind CSS v4"
-    : "通用样式";
+    ? $t("init.template.styleTailwind")
+    : $t("init.template.styleGeneric");
   const importAndProps = isPreact
     ? `import type { ComponentChildren } from "preact";
 
@@ -704,8 +704,7 @@ interface LayoutProps {
   children: ReactNode;
 }`;
   return `/**
- * 布局组件
- * 页头、页脚和内容区域（使用 ${styleComment}）
+ * ${$t("init.template.layoutComment", { style: styleComment })}
  */
 
 ${importAndProps}
@@ -728,7 +727,7 @@ export default function Layout({ children }: LayoutProps) {
                   href="/"
                   className="${linkClass}"
                 >
-                  首页
+                  ${$t("init.template.navHome")}
                 </a>
               </li>
               <li>
@@ -736,7 +735,7 @@ export default function Layout({ children }: LayoutProps) {
                   href="/about"
                   className="${linkClass}"
                 >
-                  关于
+                  ${$t("init.template.navAbout")}
                 </a>
               </li>
               <li>
@@ -744,7 +743,7 @@ export default function Layout({ children }: LayoutProps) {
                   href="/user/1"
                   className="${linkClass}"
                 >
-                  用户示例
+                  ${$t("init.template.navUserExample")}
                 </a>
               </li>
             </ul>
@@ -778,38 +777,46 @@ function getIndexTsx(opts: InitOptions): string {
     ? "bg-linear-to-br from-[#667eea] to-[#764ba2]"
     : "bg-gradient-to-br from-[#667eea] to-[#764ba2]";
   return `/**
- * 首页
- * 路由: /
+ * ${$t("init.comments.homePage")}
+ * ${$t("init.comments.homeRoute")}
  */
 
 export default function Home() {
   return (
     <div className="py-5">
       <section className="mb-10 rounded-xl ${heroGradient} px-5 py-15 text-center text-white">
-        <h1 className="mb-4 text-4xl">欢迎使用 Dweb 框架</h1>
+        <h1 className="mb-4 text-4xl">${$t("init.template.indexWelcome")}</h1>
         <p className="text-xl text-white/90">
-          这是一个使用 @dreamer/dweb 框架构建的 ${engineName} 示例项目
+          ${$t("init.template.indexDesc", { engine: engineName })}
         </p>
       </section>
 
       <section className="mb-10">
-        <h2 className="mb-8 text-center">特性</h2>
+        <h2 className="mb-8 text-center">${
+    $t("init.template.indexFeatures")
+  }</h2>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg bg-white p-6 shadow-md">
-            <h3 className="mb-2.5 text-[#667eea]">文件路由</h3>
-            <p>基于文件系统的路由，无需手动配置</p>
+            <h3 className="mb-2.5 text-[#667eea]">${
+    $t("init.template.featureFileRouting")
+  }</h3>
+            <p>${$t("init.template.featureFileRoutingDesc")}</p>
           </div>
           <div className="rounded-lg bg-white p-6 shadow-md">
-            <h3 className="mb-2.5 text-[#667eea]">SSR 渲染</h3>
-            <p>服务端渲染，提供最佳首屏性能</p>
+            <h3 className="mb-2.5 text-[#667eea]">${
+    $t("init.template.featureSsr")
+  }</h3>
+            <p>${$t("init.template.featureSsrDesc")}</p>
           </div>
           <div className="rounded-lg bg-white p-6 shadow-md">
-            <h3 className="mb-2.5 text-[#667eea]">TypeScript</h3>
-            <p>完整的 TypeScript 支持</p>
+            <h3 className="mb-2.5 text-[#667eea]">${
+    $t("init.template.featureTypescript")
+  }</h3>
+            <p>${$t("init.template.featureTypescriptDesc")}</p>
           </div>
           <div className="rounded-lg bg-white p-6 shadow-md">
             <h3 className="mb-2.5 text-[#667eea]">${engineName}</h3>
-            <p>轻量级 React 替代方案</p>
+            <p>${$t("init.template.featureEngine")}</p>
           </div>
         </div>
       </section>
@@ -822,34 +829,35 @@ export default function Home() {
 function getAboutTsx(opts: InitOptions): string {
   const engineName = opts.engine === "preact" ? "Preact" : "React";
   return `/**
- * 关于页面
- * 路由: /about
+ * ${$t("init.comments.aboutPage")}
+ * ${$t("init.comments.aboutRoute")}
  */
 
 export default function About() {
   return (
     <div className="py-5">
-      <h1 className="mb-8 text-3xl font-bold">关于我们</h1>
+      <h1 className="mb-8 text-3xl font-bold">${
+    $t("init.template.aboutTitle")
+  }</h1>
 
       <section className="rounded-lg bg-white p-8 shadow-md">
-        <p className="mb-6">
-          这是一个使用 <strong>@dreamer/dweb</strong> 框架和{" "}
-          <strong>${engineName}</strong> 构建的示例项目。
-        </p>
+        <p className="mb-6" dangerouslySetInnerHTML={{ __html: $t("init.template.aboutDesc", { engine: engineName }) }} />
 
-        <h2 className="mb-4 mt-6 text-xl font-semibold text-indigo-600">技术栈</h2>
+        <h2 className="mb-4 mt-6 text-xl font-semibold text-indigo-600">${
+    $t("init.template.aboutTechStack")
+  }</h2>
         <ul className="ml-5 list-disc space-y-2">
           <li>
-            <strong>@dreamer/dweb</strong> - 全栈 Web 框架
+            <strong>@dreamer/dweb</strong> - ${$t("init.template.techDweb")}
           </li>
           <li>
-            <strong>${engineName}</strong> - 轻量级 React 替代方案
+            <strong>${engineName}</strong> - ${$t("init.template.techEngine")}
           </li>
           <li>
-            <strong>Deno</strong> - 现代 JavaScript/TypeScript 运行时
+            <strong>Deno</strong> - ${$t("init.template.techDeno")}
           </li>
           <li>
-            <strong>TypeScript</strong> - 类型安全的 JavaScript
+            <strong>TypeScript</strong> - ${$t("init.template.techTypescript")}
           </li>
         </ul>
       </section>
@@ -866,27 +874,27 @@ function getUserByIdTsx(opts: InitOptions): string {
     ? "bg-linear-to-br from-indigo-500 to-purple-600"
     : "bg-gradient-to-br from-indigo-500 to-purple-600";
   return `/**
- * 用户详情页面
- * 动态路由: /user/:id
+ * ${$t("init.comments.userDetailPage")}
+ * ${$t("init.comments.dynamicRoute")}
  */
 
-/** 用户页面属性 */
+/** ${$t("init.comments.userPageProps")} */
 interface UserProps {
-  /** 路由参数 */
+  /** ${$t("init.comments.routeParams")} */
   params: {
     id: string;
   };
 }
 
-/** 模拟用户数据 */
+/** Mock user data */
 const users: Record<string, { name: string; email: string; role: string }> = {
-  "1": { name: "张三", email: "zhangsan@example.com", role: "管理员" },
-  "2": { name: "李四", email: "lisi@example.com", role: "用户" },
-  "3": { name: "王五", email: "wangwu@example.com", role: "访客" },
+  "1": { name: $t("init.template.user1Name"), email: "user1@example.com", role: $t("init.template.user1Role") },
+  "2": { name: $t("init.template.user2Name"), email: "user2@example.com", role: $t("init.template.user2Role") },
+  "3": { name: $t("init.template.user3Name"), email: "user3@example.com", role: $t("init.template.user3Role") },
 };
 
 /**
- * 用户详情页面
+ * ${$t("init.comments.userDetailPage")}
  */
 export default function User({ params }: UserProps) {
   const user = users[params.id];
@@ -894,13 +902,17 @@ export default function User({ params }: UserProps) {
   if (!user) {
     return (
       <div className="py-16 px-5 text-center">
-        <h1 className="mb-4 text-2xl font-bold text-red-500">用户不存在</h1>
-        <p className="mb-4">用户 ID: {params.id} 不存在</p>
+        <h1 className="mb-4 text-2xl font-bold text-red-500">${
+    $t("init.template.userNotFound")
+  }</h1>
+        <p className="mb-4">${
+    $t("init.template.userNotFoundDescPrefix")
+  }{params.id}${$t("init.template.userNotFoundDescSuffix")}</p>
         <a
           href="/"
           className="mt-5 inline-block rounded-md bg-blue-600 px-5 py-2.5 text-white no-underline hover:bg-blue-700"
         >
-          返回首页
+          ${$t("init.template.backToHome")}
         </a>
       </div>
     );
@@ -908,7 +920,9 @@ export default function User({ params }: UserProps) {
 
   return (
     <div className="py-5">
-      <h1 className="mb-8 text-3xl font-bold">用户详情</h1>
+      <h1 className="mb-8 text-3xl font-bold">${
+    $t("init.template.userDetail")
+  }</h1>
 
       <div className="flex items-center gap-6 rounded-xl bg-white p-8 shadow-md">
         <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full ${avatarGradient} text-3xl font-bold text-white">
@@ -928,19 +942,19 @@ export default function User({ params }: UserProps) {
           href="/user/1"
           className="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
         >
-          用户 1
+          ${$t("init.template.user1")}
         </a>
         <a
           href="/user/2"
           className="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
         >
-          用户 2
+          ${$t("init.template.user2")}
         </a>
         <a
           href="/user/3"
           className="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
         >
-          用户 3
+          ${$t("init.template.user3")}
         </a>
       </div>
     </div>
@@ -955,8 +969,8 @@ export default function User({ params }: UserProps) {
  */
 function getTailwindCss(): string {
   return `/**
- * TailwindCSS v4 入口
- * 指定内容扫描路径（生成 class 时使用）
+ * ${$t("init.comments.tailwindEntry")}
+ * ${$t("init.comments.tailwindScanPaths")}
  */
 @source "../**/*.{ts,tsx}";
 
@@ -977,16 +991,16 @@ function getTailwindCss(): string {
  */
 function getUnoCss(): string {
   return `/**
- * UnoCSS 入口 / 自定义样式
- * 在组件里写 class 即可，unocssPlugin 会扫描并生成工具类，与此处内容合并输出。
+ * ${$t("init.comments.unocssEntry")}
+ * ${$t("init.comments.unocssDesc")}
  */
 
-/* 基础 reset */
+/* ${$t("init.comments.baseReset")} */
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; min-height: 100%; }
 a { color: inherit; text-decoration: none; }
 
-/* 可选：自定义层，例如 :root { --color-primary: #333; } */
+/* ${$t("init.comments.optionalCustomLayer")} */
 `;
 }
 
@@ -996,20 +1010,20 @@ a { color: inherit; text-decoration: none; }
  */
 function getDockerfile(): string {
   return `# ============================================
-# 基础阶段：安装通用工具（所有服务都需要）
+# ${$t("init.comments.dockerBaseStage")}
 # ============================================
 FROM denoland/deno:latest AS base
 
-# 切换到 root 以执行 apt-get（Deno 镜像默认非 root 用户）
+# ${$t("init.comments.dockerSwitchRoot")}
 USER root
 
-# 安装通用工具：curl 用于健康检测，coreutils 用于 tee
+# ${$t("init.comments.dockerInstallTools")}
 RUN apt-get update && \\
     apt-get install -y --no-install-recommends curl coreutils ca-certificates && \\
     rm -rf /var/lib/apt/lists/*
 
-# 设置工作目录（compose 通过 volumes 挂载项目目录）
-# Deno 缓存：首次启动前可在宿主机执行 deno cache 预填，或挂载 runtime/deno-cache
+# ${$t("init.comments.dockerWorkDir")}
+# ${$t("init.comments.dockerDenoCache")}
 WORKDIR /app
 `;
 }
@@ -1029,7 +1043,7 @@ function getDockerComposeYml(opts: InitOptions): string {
       .map((app, i) => {
         const port = 3000 + i;
         const containerName = `${projectName}-${app}`;
-        return `  # ${app} 应用（端口 ${port}）
+        return `  # ${$t("init.comments.dockerAppPort", { app, port: String(port) })}
   ${app}:
     build:
       context: .
@@ -1067,9 +1081,9 @@ function getDockerComposeYml(opts: InitOptions): string {
       .join("\n\n");
 
     return `# docker-compose.yml
-# 多应用模式：每个应用独立服务
-# 使用前请先执行 deno task build:<app> 构建各应用
-# 首次启动可挂载 Deno 缓存加速：deno cache 后挂载 runtime/deno-cache
+# ${$t("init.comments.dockerMultiApp")}
+# ${$t("init.comments.dockerRunBuild")}
+# ${$t("init.comments.dockerCacheMount")}
 
 services:
 ${services}
@@ -1082,9 +1096,9 @@ networks:
 
   // 单应用：一个服务，服务名使用项目名称
   return `# docker-compose.yml
-# 单应用模式
-# 使用前请先执行 deno task build 构建
-# 首次启动可挂载 Deno 缓存加速：deno cache 后挂载 runtime/deno-cache
+# ${$t("init.comments.dockerSingleApp")}
+# ${$t("init.comments.dockerRunBuildSingle")}
+# ${$t("init.comments.dockerCacheMount")}
 
 services:
   ${projectName}:
@@ -1132,20 +1146,20 @@ function getGitignore(): string {
 .deno/
 deno.lock
 
-# 依赖
+# ${$t("init.comments.gitignoreDeps")}
 node_modules
 
-# 构建
+# ${$t("init.comments.gitignoreBuild")}
 dist/
 build/
 
-# dweb 自动生成（每次构建/启动会重新生成）
+# ${$t("init.comments.gitignoreDwebGen")}
 _client.dep.tsx
 
-# Docker 缓存（deno cache 预填目录）
+# ${$t("init.comments.gitignoreDockerCache")}
 runtime/
 
-# 环境
+# ${$t("init.comments.gitignoreEnv")}
 .env
 .env.local
 
@@ -1153,7 +1167,7 @@ runtime/
 .idea
 .cursor
 
-# 系统
+# ${$t("init.comments.gitignoreSystem")}
 .DS_Store
 `;
 }
@@ -1164,10 +1178,10 @@ runtime/
  */
 function getVscodeSettingsJson(): string {
   return `{
-  // ==================== Deno 配置 ====================
+  // ==================== ${$t("init.comments.vscodeDeno")} ====================
   "deno.enable": true,
   "deno.lint": true,
-  // ==================== 格式化配置 ====================
+  // ==================== ${$t("init.comments.vscodeFormat")} ====================
   "[typescript]": {
     "editor.defaultFormatter": "denoland.vscode-deno",
     "editor.formatOnSave": true,
@@ -1200,7 +1214,7 @@ function getVscodeSettingsJson(): string {
     "editor.defaultFormatter": "vscode.json-language-features",
     "editor.formatOnSave": true
   },
-  // ==================== 编辑器基础配置 ====================
+  // ==================== ${$t("init.comments.vscodeEditor")} ====================
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "editor.detectIndentation": false,
@@ -1217,32 +1231,33 @@ function getVscodeSettingsJson(): string {
   "editor.bracketPairColorization.enabled": true,
   "editor.guides.bracketPairs": false,
   "editor.minimap.enabled": true,
-  // ==================== CSS / Tailwind 配置 ====================
+  // ==================== ${$t("init.comments.vscodeCss")} ====================
   "css.lint.unknownAtRules": "ignore",
-  // ==================== 文件关联 ====================
+  // ==================== ${$t("init.comments.vscodeAssoc")} ====================
   "files.associations": {
     "*.tsx": "typescriptreact",
     "*.ts": "typescript"
   },
-  // ==================== 文件排除 ====================
+  // ==================== ${$t("init.comments.vscodeExclude")} ====================
   "files.exclude": {
     "**/.git": true,
     "**/.DS_Store": true,
     "**/node_modules": true,
     "**/.deno": true
   },
-  // ==================== 搜索排除 ====================
+  // ==================== ${$t("init.comments.vscodeSearchExclude")} ====================
   "search.exclude": {
     "**/node_modules": true,
     "**/.deno": true,
     "**/dist": true,
     "**/runtime": true
   },
-  // ==================== i18n-ally 配置 ====================
+  // ==================== ${$t("init.comments.vscodeI18n")} ====================
   "i18n-ally.localesPaths": ["locales"],
+  "i18n-ally.pathMatcher": "{locale}.{ext}",
   "i18n-ally.keystyle": "nested",
   "i18n-ally.sortKeys": true,
-  "i18n-ally.namespace": true,
+  "i18n-ally.namespace": false,
   "i18n-ally.enabledParsers": ["json"],
   "i18n-ally.sourceLanguage": "zh-CN",
   "i18n-ally.displayLanguage": "zh-CN",
@@ -1260,8 +1275,8 @@ function getCommonConfigMainTs(opts: InitOptions): string {
   const appNames = opts.appNames ?? [];
   if (appNames.length === 0) {
     return `/**
- * 公共配置入口（单应用时也可用）
- * 框架自动加载并与应用 config 合并，此处为低优先级
+ * ${$t("init.comments.commonConfigEntry")}
+ * ${$t("init.comments.commonConfigEntryDesc")}
  */
 
 export const commonConfig = {
@@ -1272,26 +1287,26 @@ export const commonConfig = {
 export default {
   name: commonConfig.appName,
   version: commonConfig.version,
-  /** 框架语言（根据用户环境自动检测） */
+  /** ${$t("init.comments.frameworkLanguageShort")} */
   language: "${getDefaultLanguage()}",
 };
 `;
   }
   return `/**
- * 公共配置
- * 前后端共享的配置，框架会自动与各应用配置深度合并
+ * ${$t("init.comments.commonConfig")}
+ * ${$t("init.comments.commonConfigDesc")}
  */
 
-/** 公共配置（供其他模块直接引用，如需要 version 时） */
+/** ${$t("init.comments.commonConfigImport")} */
 export const commonConfig = {
   appName: "${opts.projectName}",
   version: "1.0.0",
 };
 
-/** 默认导出，框架会自动深度合并到各应用配置 */
+/** ${$t("init.comments.defaultExport")} */
 export default {
   ...commonConfig,
-  // 数据库配置（按需取消注释）
+  // ${$t("init.comments.databaseConfig")}
   // database: {
   //   default: {
   //     type: "sqlite",
@@ -1305,8 +1320,8 @@ export default {
 /** common 目录下 config/main.dev.ts：公共开发环境配置，空配置占位 */
 function getCommonConfigMainDevTs(): string {
   return `/**
- * 公共开发环境配置
- * 只需写增量，框架会自动与 main.ts 深度合并
+ * ${$t("init.comments.devConfig")}
+ * ${$t("init.comments.devConfigOverride")}
  */
 export default {};
 `;
@@ -1315,8 +1330,8 @@ export default {};
 /** config/main.prod.ts：生产环境配置，空配置占位（common 与各应用共用此模板） */
 function getConfigMainProdTs(): string {
   return `/**
- * 生产环境配置
- * 只需写增量，框架会自动与 main.ts 深度合并
+ * ${$t("init.comments.prodConfig")}
+ * ${$t("init.comments.devConfigOverride")}
  */
 export default {};
 `;
@@ -1325,8 +1340,8 @@ export default {};
 /** common 目录下 utils/mod.ts：公共工具占位 */
 function getCommonUtilsModTs(): string {
   return `/**
- * 公共工具
- * 各应用可从此处引用，例如：import { noop } from "@common/utils/mod.ts";
+ * ${$t("init.comments.commonUtils")}
+ * ${$t("init.comments.commonUtilsImport")}
  */
 
 export function noop(): void {}
@@ -1337,7 +1352,7 @@ export function noop(): void {}
 function getCommonSubdirModTs(moduleName: string): string {
   return `/**
  * common/${moduleName}
- * 各应用共享的 ${moduleName} 层，按需在此添加并导出。
+ * ${$t("init.comments.commonModuleDesc", { moduleName })}
  */
 
 export {};

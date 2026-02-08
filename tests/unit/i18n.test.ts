@@ -118,7 +118,7 @@ describe("i18n (i18n.ts)", () => {
     });
 
     it("不支持的语言代码应返回 null", () => {
-      withLocaleEnv({ [LANGUAGE]: "fr_FR" }, () => {
+      withLocaleEnv({ [LANGUAGE]: "it_IT" }, () => {
         const result = detectLocale();
         expect(result).toBeNull();
       });
