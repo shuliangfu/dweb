@@ -9,11 +9,11 @@ const config: AppConfig = {
   server: {
     host: "127.0.0.1",
   },
-  render: { debug: true },
-  router: { debug: true },
+  render: { debug: false },
+  router: { debug: false },
   build: {
-    client: { debug: true }, // 开启后输出 esbuild resolver 调试信息（如 React/Preact 解析）
-    server: { debug: true },
+    client: { debug: false }, // 开启后输出 esbuild resolver 调试信息（如 React/Preact 解析）
+    server: { debug: false },
   },
   logger: {
     level: "debug",

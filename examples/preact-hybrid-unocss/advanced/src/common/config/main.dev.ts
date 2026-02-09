@@ -8,9 +8,9 @@ export const commonDevConfig = {
   /** 开发模式 */
   isDev: true,
   /** 调试模式 */
-  debug: true,
-  render: { debug: true },
-  router: { debug: true },
+  debug: false,
+  render: { debug: false },
+  router: { debug: false },
 };
 
 export default commonDevConfig;

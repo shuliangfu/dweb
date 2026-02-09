@@ -9,11 +9,11 @@ const config: AppConfig = {
   server: {
     host: "127.0.0.1",
   },
-  render: { debug: true },
-  router: { debug: true },
+  render: { debug: false },
+  router: { debug: false },
   build: {
-    client: { debug: true },
-    server: { debug: true },
+    client: { debug: false },
+    server: { debug: false },
   },
   logger: {
     level: "debug",

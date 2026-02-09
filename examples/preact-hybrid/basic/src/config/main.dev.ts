@@ -24,14 +24,14 @@ const config: AppConfig = {
   router: { debug: false },
 
   build: {
-    client: { debug: true },
+    client: { debug: false },
     server: { debug: false },
   },
   // 实时通信：type 为 websocket 时挂载到当前 HTTP 服务器同一端口（开发环境测试）
   socket: {
     adapter: "websocket",
     path: "/ws",
-    debug: true, // 开启后通过 logger.debug 输出 WebSocket 请求路径、握手等调试信息
+    debug: false, // 开启后通过 logger.debug 输出 WebSocket 请求路径、握手等调试信息
   },
 };
 

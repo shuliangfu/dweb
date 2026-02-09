@@ -11,8 +11,8 @@ const config: AppConfig = {
     host: "127.0.0.1",
   },
   build: {
-    client: { debug: true },
-    server: { debug: true },
+    client: { debug: false },
+    server: { debug: false },
   },
   logger: {
     level: "debug",
