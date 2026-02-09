@@ -67,6 +67,18 @@ const normalized = pathNorm.replace(rootNorm, "") || "/";
 **Fix**: Use `.replace(/\\\\/g, "/")` in the template so the generated file
 contains `.replace(/\\/g, "/")`.
 
+#### csr-client-builder.ts — Multi-segment chunk paths (`isClientChunkFile` / `findChunkContent`)
+
+**Issue**: esbuild may emit `routes/index-XXX.js` for `import("./routes/index.tsx")`. The
+original regex only matched single-segment paths (e.g. `/index-XXX.js`), so
+`/routes/index-XXX.js` was not recognized as a chunk. The middleware fell through
+to `next()`, the chunk returned 404, and hydration failed (`(void 0) is not a function`).
+
+**Fix**: `isClientChunkFile` regex adds `/` support (`[\w\[\]_\-\/]+`) and uses
+`[a-zA-Z0-9]` for the hash (esbuild emits lowercase hex). `findChunkContent` treats
+multi-segment `fileName` by first looking up `basename(fileName)` in chunkContentIndex,
+and uses `basename(key) === basename(fileName)` when iterating.
+
 ---
 
 ## 2. Build Output Inference (build-dirs.ts)

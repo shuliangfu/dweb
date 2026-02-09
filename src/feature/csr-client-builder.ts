@@ -134,7 +134,7 @@ function getChunkFileNameForComponent(
  * - chunk-XXXXXXXX.js（共享代码块）
  * - about-XXXXXXXX.js（按路由分割的页面）
  * - _layout-XXXXXXXX.js（布局组件）
- * - routes-XXXXXXXX.js（路由组件）
+ * - routes/index-XXXXXXXX.js（多段路径，Windows/Unix 兼容）
  *
  * @param pathname URL 路径
  * @returns 是否是 chunk 文件
@@ -153,10 +153,11 @@ export function isClientChunkFile(pathname: string): boolean {
   }
 
   // 匹配 esbuild chunk：
-  // - 带 hash：/name-hash.js（hash 长度 6–10 位，生产/旧开发模式）
-  // - 无 hash：/name.js（开发模式 chunkNames: "[name]" 时，用于 HMR 无感更新）
-  const chunkWithHash = /^\/[\w\[\]_-]+-[A-Z0-9]{6,10}\.(?:js|js\.map)$/;
-  const chunkNoHash = /^\/[\w\[\]_-]+\.(?:js|js\.map)$/;
+  // - 带 hash：/name-hash.js 或 /path/name-hash.js（hash 6–10 位，含小写，与 getChunkBaseName 一致）
+  // - 无 hash：/name.js 或 /path/name.js（开发模式 chunkNames: "[name]" 时）
+  // 多段路径兼容：esbuild 对 import("./routes/index.tsx") 可能生成 routes/index-XXX.js
+  const chunkWithHash = /^\/[\w\[\]_\-\/]+-[a-zA-Z0-9]{6,10}\.(?:js|js\.map)$/;
+  const chunkNoHash = /^\/[\w\[\]_\-\/]+\.(?:js|js\.map)$/;
   return chunkWithHash.test(pathname) || chunkNoHash.test(pathname);
 }
 
@@ -1569,6 +1570,12 @@ export function findChunkContent(
   // 1. 优先查 basename 索引（O(1)）
   const fromContentIndex = chunkContentIndex?.get(fileName);
   if (fromContentIndex !== undefined) return fromContentIndex;
+  // 1b. 多段路径兼容（如 routes/index-XXX.js）：chunkContentIndex 以 basename 为 key
+  const fileNameBase = basename(fileName);
+  if (fileNameBase !== fileName) {
+    const fromBasenameIndex = chunkContentIndex?.get(fileNameBase);
+    if (fromBasenameIndex !== undefined) return fromBasenameIndex;
+  }
   // 2. 直接按 key 查找
   const direct = outputFiles.get(fileName);
   if (direct) return direct;
@@ -1578,9 +1585,10 @@ export function findChunkContent(
     const fromBaseIndex = chunkBaseIndex?.get(base);
     if (fromBaseIndex !== undefined) return fromBaseIndex;
   }
-  // 4. 回退：遍历查找（兼容 path/subdir/chunk-xxx.js 等格式）
+  // 4. 回退：遍历查找（兼容 path/subdir/chunk-xxx.js 等格式，含多段路径）
+  const matchName = fileName.includes("/") ? fileNameBase : fileName;
   for (const [key, content] of outputFiles) {
-    if (basename(key) === fileName) return content;
+    if (basename(key) === matchName) return content;
   }
   // 5. 回退：HMR 遍历（请求旧 hash 时用同 base 的最新 chunk）
   if (base) {

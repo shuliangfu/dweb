@@ -66,6 +66,15 @@ const normalized = pathNorm.replace(rootNorm, "") || "/";
 **修复**：模板中改为 `.replace(/\\\\/g, "/")`，使生成文件包含正确的
 `.replace(/\\/g, "/")`。
 
+#### csr-client-builder.ts — 多段 chunk 路径（isClientChunkFile / findChunkContent）
+
+**问题**：esbuild 对 `import("./routes/index.tsx")` 可能生成 `routes/index-XXX.js`。
+原有正则仅匹配单段路径（如 `/index-XXX.js`），导致 `/routes/index-XXX.js` 未被识别为 chunk，
+中间件回退到 next()，chunk 404，hydration 失败（`(void 0) is not a function`）。
+
+**修复**：`isClientChunkFile` 正则增加 `/` 支持（`[\w\[\]_\-\/]+`），hash 使用 `[a-zA-Z0-9]`（esbuild 输出小写十六进制）；`findChunkContent` 对多段 `fileName`
+先用 `basename(fileName)` 查 chunkContentIndex，遍历时用 `basename(key) === basename(fileName)` 匹配。
+
 ---
 
 ## 2. 构建输出推断 (build-dirs.ts)
