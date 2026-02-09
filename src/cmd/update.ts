@@ -16,7 +16,7 @@ import { createCommand, cwd } from "@dreamer/runtime-adapter";
 import { $t } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 import { getProjectInfo } from "../utils/project.ts";
-import { getRuntime, getUpdateArgs } from "../utils/runtime.ts";
+import { getRuntime } from "../utils/runtime.ts";
 
 /**
  * update 命令主入口
@@ -40,7 +40,7 @@ export async function main(
   info($t("update.running"));
 
   const cmd = createCommand(runtime, {
-    args: getUpdateArgs(args),
+    args: ["update", ...args],
     cwd: projectRoot,
     stdin: "inherit",
     stdout: "inherit",

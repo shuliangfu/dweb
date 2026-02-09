@@ -200,6 +200,25 @@ describe("配置管理 (config.ts)", () => {
         } as unknown as AppConfig;
         expect(() => validateConfig(config)).toThrow(RE.middlewareTypeInvalid);
       });
+
+      it("应该拒绝只有 name 无 middleware 的对象（非有效中间件对象）", () => {
+        const config = {
+          middlewares: [{ name: "x" }],
+        } as unknown as AppConfig;
+        expect(() => validateConfig(config)).toThrow(RE.middlewareTypeInvalid);
+      });
+
+      it("应该拒绝 name 为空字符串的中间件对象", () => {
+        const config: AppConfig = {
+          middlewares: [
+            {
+              middleware: () => {},
+              name: "",
+            },
+          ],
+        };
+        expect(() => validateConfig(config)).toThrow(RE.mustHaveNameProp);
+      });
     });
 
     describe("插件配置验证", () => {
@@ -230,6 +249,34 @@ describe("配置管理 (config.ts)", () => {
         } as unknown as AppConfig;
         expect(() => validateConfig(config)).toThrow(RE.mustHaveName);
       });
+
+      it("应该拒绝空字符串路径的插件", () => {
+        const config: AppConfig = {
+          plugins: [""],
+        };
+        expect(() => validateConfig(config)).toThrow(RE.mustHaveName);
+      });
+
+      it("应该拒绝 name 为空字符串的插件对象", () => {
+        const config: AppConfig = {
+          plugins: [{ name: "", version: "1.0.0" }],
+        };
+        expect(() => validateConfig(config)).toThrow(RE.mustHaveName);
+      });
+
+      it("应该拒绝无法提取名称的字符串路径插件", () => {
+        const config: AppConfig = {
+          plugins: ["./.ts"],
+        };
+        expect(() => validateConfig(config)).toThrow(RE.mustHaveName);
+      });
+
+      it("应该拒绝非字符串非对象的插件项", () => {
+        const config = {
+          plugins: [123],
+        } as unknown as AppConfig;
+        expect(() => validateConfig(config)).toThrow(RE.mustHaveName);
+      });
     });
 
     describe("其他配置项验证", () => {
@@ -245,6 +292,11 @@ describe("配置管理 (config.ts)", () => {
         expect(() => validateConfig(config)).toThrow(RE.server);
       });
 
+      it("应该拒绝 null 类型的 server", () => {
+        const config = { server: null } as unknown as AppConfig;
+        expect(() => validateConfig(config)).toThrow(RE.server);
+      });
+
       it("应该接受有效的 router 配置", () => {
         const config: AppConfig = {
           router: { routesDir: "./routes" },
@@ -254,6 +306,11 @@ describe("配置管理 (config.ts)", () => {
 
       it("应该拒绝非对象类型的 router", () => {
         const config = { router: "./routes" } as unknown as AppConfig;
+        expect(() => validateConfig(config)).toThrow(RE.router);
+      });
+
+      it("应该拒绝 null 类型的 router", () => {
+        const config = { router: null } as unknown as AppConfig;
         expect(() => validateConfig(config)).toThrow(RE.router);
       });
 
@@ -269,6 +326,11 @@ describe("配置管理 (config.ts)", () => {
         expect(() => validateConfig(config)).toThrow(RE.build);
       });
 
+      it("应该拒绝 null 类型的 build", () => {
+        const config = { build: null } as unknown as AppConfig;
+        expect(() => validateConfig(config)).toThrow(RE.build);
+      });
+
       it("应该接受有效的 logger 配置", () => {
         const config: AppConfig = {
           logger: { level: "debug" },
@@ -278,6 +340,11 @@ describe("配置管理 (config.ts)", () => {
 
       it("应该拒绝非对象类型的 logger", () => {
         const config = { logger: "debug" } as unknown as AppConfig;
+        expect(() => validateConfig(config)).toThrow(RE.logger);
+      });
+
+      it("应该拒绝 null 类型的 logger", () => {
+        const config = { logger: null } as unknown as AppConfig;
         expect(() => validateConfig(config)).toThrow(RE.logger);
       });
     });
