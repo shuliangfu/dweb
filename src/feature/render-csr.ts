@@ -77,6 +77,7 @@ export function createRendererCSR(
 ): (ctx: unknown, match: RouteMatch) => Promise<Response | null> {
   const renderService = getRender(container);
   const renderConfig = (config.render || {}) as {
+    debug?: boolean;
     engine?: "react" | "preact";
     mode?: "ssr" | "csr" | "ssg";
     csr?: RenderCSROptions;
@@ -171,11 +172,12 @@ export function createRendererCSR(
         `<div id="dweb-loading-overlay" aria-hidden="true"><div class="dweb-spinner"></div></div>`;
       const isDevCsr =
         (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
+      const debugRender = renderConfig.debug === true;
       const clientConfigScript = `
 ${overlayHtml}
 <script>
   ${
-        isDevCsr
+        debugRender
           ? "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true; globalThis.__DWEB_DEBUG__ = globalThis.__DWEB_DEBUG__ ?? true;"
           : ""
       }

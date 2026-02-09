@@ -20,10 +20,13 @@ const config: AppConfig = {
     level: "debug",
     format: "text",
   },
-  build: {
-    client: { debug: true },
-    server: { debug: true },
-  },
+  render: { debug: true },
+  router: { debug: true },
+
+  // build: {
+  //   client: { debug: true },
+  //   server: { debug: true },
+  // },
   // 实时通信：type 为 websocket 时挂载到当前 HTTP 服务器同一端口（开发环境测试）
   socket: {
     adapter: "websocket",

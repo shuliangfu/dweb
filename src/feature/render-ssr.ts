@@ -69,6 +69,7 @@ export function createRendererSSR(
   /** load 结果短期缓存（URL + params → 1 秒内复用，减轻重 I/O） */
   const loadCache = new Map<string, LoadCacheEntry>();
   const renderConfig = (config.render || {}) as {
+    debug?: boolean;
     engine?: "react" | "preact";
   };
   const engine = renderConfig.engine ?? "preact";
@@ -178,7 +179,7 @@ export function createRendererSSR(
         layouts.push({ component: LayoutComponent });
       }
 
-      // 调用 SSR 渲染（engine 从 config 读取，开发模式启用 debug）
+      // 调用 SSR 渲染（engine 从 config 读取，debug 支持 config.render.debug 或开发模式）
       const isDev =
         (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
       const ssrOptions: SSROptions = {
@@ -191,7 +192,7 @@ export function createRendererSSR(
           params: match.params,
           request: ctx.request,
         },
-        debug: isDev,
+        debug: renderConfig.debug === true,
       };
       const result = await renderService.renderSSR(ssrOptions);
 
@@ -233,8 +234,6 @@ export function createRendererSSR(
           });
           const ErrorComponent = errorModule?.default ?? errorModule?.Error;
           if (ErrorComponent) {
-            const isDevErr =
-              (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
             const errSsrOptions: SSROptions = {
               engine,
               component: ErrorComponent,
@@ -242,7 +241,7 @@ export function createRendererSSR(
                 error: error instanceof Error ? error.message : String(error),
                 stack: error instanceof Error ? error.stack : undefined,
               },
-              debug: isDevErr,
+              debug: renderConfig.debug === true,
             };
             const result = await renderService.renderSSR(errSsrOptions);
             const isDev =

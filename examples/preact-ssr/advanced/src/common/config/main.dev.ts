@@ -9,4 +9,6 @@ export const commonDevConfig = {
   isDev: true,
   /** 调试模式 */
   debug: true,
+  render: { debug: true },
+  router: { debug: true },
 };

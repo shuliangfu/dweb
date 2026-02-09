@@ -87,6 +87,7 @@ export function createRendererHybrid(
 
   // 获取 Hybrid 配置
   const renderConfig = (config.render || {}) as {
+    debug?: boolean;
     engine?: "react" | "preact";
     mode?: "ssr" | "csr" | "ssg" | "hybrid";
     hybrid?: RenderHybridOptions;
@@ -186,8 +187,11 @@ export function createRendererHybrid(
         layouts.push({ component: LayoutComponent });
       }
 
-      // 调用 SSR 渲染
+      // 调用 SSR 渲染（debug 支持 config.render.debug 或开发模式）
       const engine = renderConfig.engine || "preact";
+      const isDev =
+        (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
+      const debugRender = renderConfig.debug === true;
       const result = await renderService.renderSSR({
         engine,
         component: PageComponent,
@@ -198,6 +202,7 @@ export function createRendererHybrid(
           params: match.params,
           request: ctx.request,
         },
+        debug: debugRender,
       });
 
       // 获取渲染的 HTML 内容
@@ -205,8 +210,6 @@ export function createRendererHybrid(
 
       // 生产模式下用 asset-manifest.json 替换 SSR HTML 中的资源路径
       // （服务端从源码加载路由，源码路径未经过构建替换，需运行时替换）
-      const isDev =
-        (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
       if (!isDev) {
         html = await replaceAssetPathsInHtml(html, config);
       }
@@ -229,7 +232,7 @@ export function createRendererHybrid(
       const clientConfigScript = `
 <script>
   ${
-        isDev
+        debugRender
           ? "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true; globalThis.__DWEB_DEBUG__ = globalThis.__DWEB_DEBUG__ ?? true;"
           : ""
       }
@@ -298,6 +301,7 @@ ${hybridOptions.bodyTags || ""}`;
                 error: error instanceof Error ? error.message : String(error),
                 stack: error instanceof Error ? error.stack : undefined,
               },
+              debug: renderConfig.debug === true,
             });
             return new Response(result.html, {
               status: 500,

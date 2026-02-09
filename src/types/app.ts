@@ -111,6 +111,8 @@ export interface AppConfig extends Record<string, unknown> {
   router?: RouterOptions;
   /** 渲染配置 */
   render?: {
+    /** 是否启用调试日志（默认：开发模式为 true） */
+    debug?: boolean;
     /** 模板引擎（react、preact） */
     engine?: Engine;
     /** 渲染模式（ssr、csr、ssg、hybrid） */

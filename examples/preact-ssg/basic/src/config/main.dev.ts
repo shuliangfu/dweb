@@ -9,6 +9,8 @@ const config: AppConfig = {
   server: {
     host: "127.0.0.1",
   },
+  render: { debug: true },
+  router: { debug: true },
   build: {
     client: { debug: true },
     server: { debug: true },

@@ -189,7 +189,6 @@ export class App extends EventEmitter implements IApp {
     // 3. 其他情况：设置 DENO_ENV=dev（开发模式）
     // 直接调用 args() 而不是 this._isBuildMode()，因为此时实例还未完全初始化
     if (args().includes("--build")) {
-      // 构建模式
       setEnv("DENO_ENV", "prod");
     } else if ("__DWEB_PROD__" in globalThis) {
       // 编译后的生产代码（由 builder-server 注入标志）
@@ -960,6 +959,7 @@ export class App extends EventEmitter implements IApp {
         const router = getRouter(this.container);
         const renderService = getRender(this.container);
         const renderCfg = config.render as {
+          debug?: boolean;
           engine?: "react" | "preact";
           ssg?: {
             outputDir?: string;
@@ -1075,6 +1075,7 @@ export class App extends EventEmitter implements IApp {
             template: undefined, // 直接使用 _app 输出，不包 defaultTemplate
             headInject, // 在 _app 的 </head> 前注入 link 标签
             onFileGenerated,
+            debug: renderCfg.debug === true,
           };
           await renderService.renderSSG(ssgOptions);
 

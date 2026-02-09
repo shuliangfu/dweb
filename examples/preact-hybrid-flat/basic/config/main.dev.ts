@@ -20,6 +20,8 @@ const config: AppConfig = {
     level: "debug",
     format: "text",
   },
+  render: { debug: true },
+  router: { debug: true },
   build: {
     client: { debug: true },
     server: { debug: true },

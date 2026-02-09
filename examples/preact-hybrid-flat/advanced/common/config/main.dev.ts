@@ -7,4 +7,6 @@ export default {
   isDev: true,
   /** 调试模式 */
   debug: true,
+  render: { debug: true },
+  router: { debug: true },
 };
