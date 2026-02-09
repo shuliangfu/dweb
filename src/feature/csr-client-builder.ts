@@ -28,6 +28,7 @@ import {
   join,
   readdir,
   readTextFile,
+  relative,
   resolve,
   writeTextFile,
 } from "../core/runtime-adapter.ts";
@@ -1411,9 +1412,18 @@ export async function buildClientScript(
 
       const outputFilesDev = new Map<string, string>();
       if (buildResultDev.outputContents) {
+        const memOutNorm = memOutputDir.replace(/\\/g, "/");
         for (const file of buildResultDev.outputContents) {
           const name = basename(file.path);
           outputFilesDev.set(name, file.text);
+          // 多段路径兼容（dev）：浏览器请求 routes/index-XXX.js，esbuild path 含 outdir 前缀
+          const pathNorm = file.path.replace(/\\/g, "/");
+          const relPath = pathNorm.startsWith(memOutNorm)
+            ? pathNorm.slice(memOutNorm.length).replace(/^\/+/, "")
+            : relative(memOutputDir, file.path).replace(/\\/g, "/");
+          if (relPath && relPath !== name && !relPath.startsWith("..")) {
+            outputFilesDev.set(relPath, file.text);
+          }
         }
       }
 
@@ -1424,6 +1434,17 @@ export async function buildClientScript(
           count: String(outputFilesDev.size),
         }),
       );
+      // 调试：输出 chunk 列表，便于在 Windows 上对比依赖请求是否缺失
+      if (buildDebug) {
+        const chunkNames = [
+          ...new Set(
+            Array.from(outputFilesDev.keys()).filter(
+              (k) => k.endsWith(".js") && k !== CLIENT_OUTPUT_MAIN_FILENAME,
+            ),
+          ),
+        ].sort();
+        logger.debug("[dweb] dev chunks:", chunkNames.join(", "));
+      }
 
       let chunkUrlDev: string | undefined;
       if (options?.changedPath) {
@@ -1526,8 +1547,11 @@ function getChunkBaseName(fileName: string): string | null {
 /**
  * 从 outputFiles 建立 basename 和 base 索引，供 findChunkContent O(1) 查找
  *
+ * 注意：chunkBaseIndex 仅当某 base 只有一个 chunk 时有效（如 routes-XXX、_layout-XXX）。
+ * 多个 chunk-*.js 共享 base "chunk"，不能相互替代，故不写入 chunkBaseIndex。
+ *
  * @param outputFiles 输出文件映射
- * @returns chunkContentIndex（basename->content）、chunkBaseIndex（base->content）
+ * @returns chunkContentIndex（basename->content）、chunkBaseIndex（base->content，仅单 chunk 的 base）
  */
 function buildChunkIndices(
   outputFiles: Map<string, string>,
@@ -1537,11 +1561,22 @@ function buildChunkIndices(
 } {
   const chunkContentIndex = new Map<string, string>();
   const chunkBaseIndex = new Map<string, string>();
+  const baseCounts = new Map<string, number>();
   for (const [key, content] of outputFiles) {
     const name = basename(key);
     chunkContentIndex.set(name, content);
     const base = getChunkBaseName(name);
-    if (base) chunkBaseIndex.set(base, content);
+    if (base) {
+      baseCounts.set(base, (baseCounts.get(base) ?? 0) + 1);
+    }
+  }
+  // 仅当 base 对应唯一 chunk 时写入 chunkBaseIndex（HMR 回退用）
+  for (const [key, content] of outputFiles) {
+    const name = basename(key);
+    const base = getChunkBaseName(name);
+    if (base && baseCounts.get(base) === 1) {
+      chunkBaseIndex.set(base, content);
+    }
   }
   return { chunkContentIndex, chunkBaseIndex };
 }
@@ -1590,19 +1625,11 @@ export function findChunkContent(
   for (const [key, content] of outputFiles) {
     if (basename(key) === matchName) return content;
   }
-  // 5. 回退：HMR 遍历（请求旧 hash 时用同 base 的最新 chunk）
-  if (base) {
-    const prefix = base + "-";
-    for (const [key, content] of outputFiles) {
-      const name = basename(key);
-      if (
-        name.startsWith(prefix) &&
-        (name.endsWith(".js") || name.endsWith(".js.map"))
-      ) {
-        return content;
-      }
-    }
+  // 5. Windows 兼容：按 basename 大小写不敏感匹配（esbuild 路径可能不同）
+  for (const [key, content] of outputFiles) {
+    if (basename(key).toLowerCase() === matchName.toLowerCase()) return content;
   }
+  // 注意：base 为 "chunk" 时存在多个 chunk-*.js，不可用 base 回退，否则会返回错误 chunk
   return undefined;
 }
 
