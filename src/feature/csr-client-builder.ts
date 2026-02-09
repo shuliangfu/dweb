@@ -1265,10 +1265,6 @@ export async function buildClientScript(
       logger.debug($t("log.clientEntryGenerating", {
         path: pathForLog(tempClientEntryPath),
       }));
-    } else if (!skipWritingClientDep) {
-      logger.debug($t("log.clientEntryExistsSkip", {
-        path: pathForLog(tempClientEntryPath),
-      }));
     }
 
     let result: ClientBuildResult;
@@ -1415,14 +1411,35 @@ export async function buildClientScript(
         const memOutNorm = memOutputDir.replace(/\\/g, "/");
         for (const file of buildResultDev.outputContents) {
           const name = basename(file.path);
-          outputFilesDev.set(name, file.text);
+          const existing = outputFilesDev.get(name);
+          // 冲突检测：若 basename 已存在且内容不同，优先保留内容更大的 chunk（preact 等实现通常远大于 __publicField）
+          if (existing !== undefined && existing !== file.text) {
+            if (buildDebug) {
+              logger.debug(
+                `[dweb] chunk basename collision: ${name}, existing ${existing.length}B vs new ${file.text.length}B, keeping larger`,
+              );
+            }
+            if (file.text.length > existing.length) {
+              outputFilesDev.set(name, file.text);
+            }
+            // 否则保留 existing，不覆盖
+          } else {
+            outputFilesDev.set(name, file.text);
+          }
           // 多段路径兼容（dev）：浏览器请求 routes/index-XXX.js，esbuild path 含 outdir 前缀
           const pathNorm = file.path.replace(/\\/g, "/");
           const relPath = pathNorm.startsWith(memOutNorm)
             ? pathNorm.slice(memOutNorm.length).replace(/^\/+/, "")
             : relative(memOutputDir, file.path).replace(/\\/g, "/");
           if (relPath && relPath !== name && !relPath.startsWith("..")) {
-            outputFilesDev.set(relPath, file.text);
+            const existingRel = outputFilesDev.get(relPath);
+            if (
+              existingRel === undefined ||
+              existingRel === file.text ||
+              file.text.length > (existingRel?.length ?? 0)
+            ) {
+              outputFilesDev.set(relPath, file.text);
+            }
           }
         }
       }
@@ -1564,7 +1581,14 @@ function buildChunkIndices(
   const baseCounts = new Map<string, number>();
   for (const [key, content] of outputFiles) {
     const name = basename(key);
-    chunkContentIndex.set(name, content);
+    const existing = chunkContentIndex.get(name);
+    // 冲突时优先保留内容更大的 chunk（与 outputFilesDev 构建逻辑一致）
+    if (
+      existing === undefined ||
+      content.length > existing.length
+    ) {
+      chunkContentIndex.set(name, content);
+    }
     const base = getChunkBaseName(name);
     if (base) {
       baseCounts.set(base, (baseCounts.get(base) ?? 0) + 1);
