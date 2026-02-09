@@ -9,7 +9,7 @@
     "@dreamer/console": "jsr:@dreamer/console@^1.0.6",
     "@dreamer/database": "jsr:@dreamer/database@^1.0.2",
     "@dreamer/dweb": "../../../src/mod.ts",
-    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.0.3",
+    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.0.4",
     "@dreamer/lifecycle": "jsr:@dreamer/lifecycle@^1.0.0",
     "@dreamer/logger": "jsr:@dreamer/logger@^1.0.0",
     "@dreamer/middleware": "jsr:@dreamer/middleware@^1.0.0",
