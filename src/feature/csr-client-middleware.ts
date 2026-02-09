@@ -10,6 +10,7 @@
 import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import {
+  basename,
   cwd,
   exists,
   getEnv,
@@ -234,6 +235,23 @@ export function createClientScriptMiddleware(
           },
         });
         return;
+      }
+      // Windows 兼容：esbuild 可能将 chunk 输出到 outdir 根目录，而非多段路径
+      if (fileName.includes("/")) {
+        const fallbackPath = join(clientOutputPath, basename(fileName));
+        if (await exists(fallbackPath)) {
+          const content = await readTextFile(fallbackPath);
+          ctx.response = new Response(content, {
+            status: 200,
+            headers: {
+              "Content-Type": isSourceMap
+                ? "application/json; charset=utf-8"
+                : "application/javascript; charset=utf-8",
+              "Cache-Control": "public, max-age=31536000",
+            },
+          });
+          return;
+        }
       }
 
       if (pathname.startsWith("/_client/")) {

@@ -73,7 +73,7 @@ const normalized = pathNorm.replace(rootNorm, "") || "/";
 中间件回退到 next()，chunk 404，hydration 失败（`(void 0) is not a function`）。
 
 **修复**：`isClientChunkFile` 正则增加 `/` 支持（`[\w\[\]_\-\/]+`），hash 使用 `[a-zA-Z0-9]`（esbuild 输出小写十六进制）；`findChunkContent` 对多段 `fileName`
-先用 `basename(fileName)` 查 chunkContentIndex，遍历时用 `basename(key) === basename(fileName)` 匹配。
+先用 `basename(fileName)` 查 chunkContentIndex，遍历时用 `basename(key) === basename(fileName)` 匹配；生产模式 `csr-client-middleware` 在完整路径未命中时，回退用 `basename(fileName)` 查找（兼容 esbuild 在 Windows 上将 chunk 输出到 outdir 根目录）。
 
 ---
 

@@ -77,7 +77,9 @@ to `next()`, the chunk returned 404, and hydration failed (`(void 0) is not a fu
 **Fix**: `isClientChunkFile` regex adds `/` support (`[\w\[\]_\-\/]+`) and uses
 `[a-zA-Z0-9]` for the hash (esbuild emits lowercase hex). `findChunkContent` treats
 multi-segment `fileName` by first looking up `basename(fileName)` in chunkContentIndex,
-and uses `basename(key) === basename(fileName)` when iterating.
+and uses `basename(key) === basename(fileName)` when iterating. In production,
+`csr-client-middleware` falls back to `basename(fileName)` when the full path
+is not found (compatible with esbuild outputting chunks to the outdir root on Windows).
 
 ---
 
