@@ -1116,6 +1116,8 @@ export async function prepareClientBuildEntry(
  * @param entryPath 入口文件路径（_client.tsx）
  * @param outputDir 输出目录（用于 esbuild 路径解析，write: false 时不写盘）
  * @param engine 渲染引擎
+ * @param debug 是否启用 esbuild 调试日志
+ * @param logger 日志实例，传入后 esbuild 的 debug/info 等均通过此 logger 输出；需 logger.level 为 debug 才能看到 resolver 等调试日志
  * @returns 构建结果（含 outputContents）
  */
 async function doDevBuild(
@@ -1123,6 +1125,7 @@ async function doDevBuild(
   outputDir: string,
   engine: "react" | "preact",
   debug?: boolean,
+  logger?: { debug: (msg: string, data?: unknown) => void; info: (msg: string, data?: unknown) => void },
 ): Promise<{
   outputContents?: Array<{ path: string; text: string; contents?: Uint8Array }>;
 }> {
@@ -1131,6 +1134,7 @@ async function doDevBuild(
     output: outputDir,
     engine,
     debug,
+    logger,
     bundle: {
       minify: false,
       sourcemap: true,
@@ -1318,6 +1322,7 @@ export async function buildClientScript(
         output: finalOutputDir,
         engine: engine as "react" | "preact",
         debug: buildDebug,
+        logger,
         bundle: {
           minify: shouldMinify,
           sourcemap: shouldSourcemap,
@@ -1395,6 +1400,7 @@ export async function buildClientScript(
             memOutputDir,
             engine,
             buildDebug,
+            logger,
           );
         }
       } else {
@@ -1403,6 +1409,7 @@ export async function buildClientScript(
           memOutputDir,
           engine,
           buildDebug,
+          logger,
         );
       }
 
@@ -1424,14 +1431,8 @@ export async function buildClientScript(
           // 冲突检测：若 basename 已存在且内容不同，优先保留内容更大的 chunk（preact 等实现通常远大于 __publicField）
           if (existing !== undefined && existing !== file.text) {
             if (buildDebug) {
-              console.log(
-                "[DEBUG] [dweb] chunk basename collision:",
-                name,
-                "existing",
-                existing.length,
-                "B vs new",
-                file.text.length,
-                "B, keeping larger",
+              logger.debug(
+                `[dweb] chunk basename collision: ${name}, existing ${existing.length}B vs new ${file.text.length}B, keeping larger`,
               );
             }
             if (file.text.length > existing.length) {
@@ -1468,7 +1469,6 @@ export async function buildClientScript(
       );
       // 调试：输出 chunk 列表及每个 chunk 的 content 大小，便于在 Windows 上对比依赖请求是否缺失
       // preact 等运行时通常 >10KB，__publicField 等辅助代码通常 <1KB，若 chunk-XXX 显示过小则可能内容错误
-      // 使用 console.log 直接输出，不受 logger.level 限制，仅由 build.client.debug 控制
       if (buildDebug) {
         const chunkNames = [
           ...new Set(
@@ -1477,7 +1477,7 @@ export async function buildClientScript(
             ),
           ),
         ].sort();
-        console.log("[DEBUG] [dweb] dev chunks:", chunkNames.join(", "));
+        logger.debug("[dweb] dev chunks:", chunkNames.join(", "));
         const chunkSizes = chunkNames
           .map((k) => {
             const len = outputFilesDev.get(k)?.length ?? 0;
@@ -1487,7 +1487,7 @@ export async function buildClientScript(
             return `${k}:${(len / 1024).toFixed(1)}KB${preactHint}`;
           })
           .join(", ");
-        console.log("[DEBUG] [dweb] dev chunk sizes:", chunkSizes);
+        logger.debug("[dweb] dev chunk sizes:", chunkSizes);
       }
 
       let chunkUrlDev: string | undefined;

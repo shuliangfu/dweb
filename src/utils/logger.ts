@@ -60,7 +60,7 @@ export function initializeLogger(
     baseConfig.format = "text";
     baseConfig.showTime = false;
   }
-  
+
   const logger = createLogger(baseConfig);
 
   // 将日志实例注册到服务容器

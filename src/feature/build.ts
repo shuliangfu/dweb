@@ -94,8 +94,14 @@ export function initializeBuild(
       ...serverConfigForBuild,
       debug: (serverConfigForBuild as { debug?: boolean }).debug ??
         (buildConfig.server as { debug?: boolean })?.debug,
+      logger,
     }
     : undefined;
+
+  // 客户端配置传入 logger，便于 esbuild resolver 等调试日志输出
+  if (clientConfig) {
+    clientConfig = { ...clientConfig, logger };
+  }
 
   const builderConfig: BuilderConfig = {
     // 服务端配置（如果有）
@@ -180,6 +186,7 @@ export async function runBuildWithBuilder(
   config: AppConfig,
   options?: { skipClient?: boolean },
 ): Promise<void> {
+  const logger = getLogger(container);
   const buildConfig = (config.build || {}) as {
     server?: {
       entry?: string;
@@ -239,6 +246,7 @@ export async function runBuildWithBuilder(
     external: (serverConfig as { external?: string[] }).external,
     externalNpm: !useNativeCompile,
     debug: (serverConfig as { debug?: boolean }).debug,
+    logger,
   };
 
   // 客户端配置（非 SSG 时准备入口并构建）
@@ -253,6 +261,7 @@ export async function runBuildWithBuilder(
       engine: prepared.engine,
       bundle: prepared.bundle,
       debug: buildClient?.debug,
+      logger,
     };
   }
 
