@@ -82,7 +82,8 @@ export function initializeBuild(
 
   // 构建调试：config.build.client.debug / config.build.server.debug 传递至 esbuild
   if (clientConfig) {
-    const clientDebug = (buildConfig.client as { debug?: boolean } | undefined)?.debug;
+    const clientDebug = (buildConfig.client as { debug?: boolean } | undefined)
+      ?.debug;
     if (clientDebug !== undefined) {
       clientConfig = { ...clientConfig, debug: clientDebug };
     }
@@ -90,10 +91,10 @@ export function initializeBuild(
   const serverConfigForBuild = buildConfig.server as ServerConfig | undefined;
   const serverWithDebug = serverConfigForBuild
     ? {
-        ...serverConfigForBuild,
-        debug: (serverConfigForBuild as { debug?: boolean }).debug ??
-          (buildConfig.server as { debug?: boolean })?.debug,
-      }
+      ...serverConfigForBuild,
+      debug: (serverConfigForBuild as { debug?: boolean }).debug ??
+        (buildConfig.server as { debug?: boolean })?.debug,
+    }
     : undefined;
 
   const builderConfig: BuilderConfig = {
@@ -244,7 +245,8 @@ export async function runBuildWithBuilder(
   let clientConfig: ClientConfig | undefined;
   if (!options?.skipClient) {
     const prepared = await prepareClientBuildEntry(container, config);
-    const buildClient = (config.build as { client?: { debug?: boolean } })?.client;
+    const buildClient = (config.build as { client?: { debug?: boolean } })
+      ?.client;
     clientConfig = {
       entry: prepared.entry,
       output: prepared.output,

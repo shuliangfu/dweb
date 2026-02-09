@@ -13,6 +13,7 @@ import "../setup.ts";
 import { join, makeTempDir, remove, resolve } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import {
+  extractComponentPathFromRouteFile,
   isPathWithinProject,
   normalizePathForCompare,
   pathForLog,
@@ -109,6 +110,61 @@ describe("路径工具 (path.ts)", () => {
       const withDot = join(projectRoot, "./src/./foo");
       const normalized = normalizePathForCompare(withDot);
       expect(normalized).not.toContain("/./");
+    });
+  });
+
+  describe("extractComponentPathFromRouteFile()", () => {
+    it("相对路径（route.file）应直接返回 component key", () => {
+      const routesDirPath = join(projectRoot, "src/routes");
+      expect(
+        extractComponentPathFromRouteFile(routesDirPath, "user/[id].tsx"),
+      ).toBe("user/[id]");
+      expect(
+        extractComponentPathFromRouteFile(routesDirPath, "index.tsx"),
+      ).toBe("index");
+      expect(
+        extractComponentPathFromRouteFile(routesDirPath, "gallery.tsx"),
+      ).toBe("gallery");
+    });
+
+    it("绝对路径应提取 routes 之后的部分", () => {
+      const routesDirPath = join(projectRoot, "src/routes");
+      const abs = join(routesDirPath, "user/[id].tsx");
+      expect(
+        extractComponentPathFromRouteFile(routesDirPath, abs),
+      ).toBe("user/[id]");
+      const absIndex = join(routesDirPath, "index.tsx");
+      expect(
+        extractComponentPathFromRouteFile(routesDirPath, absIndex),
+      ).toBe("index");
+    });
+
+    it("带 ./ 前缀的相对路径应去除前缀", () => {
+      const routesDirPath = join(projectRoot, "src/routes");
+      expect(
+        extractComponentPathFromRouteFile(routesDirPath, "./user/[id].tsx"),
+      ).toBe("user/[id]");
+    });
+
+    it("空串应返回空串", () => {
+      const routesDirPath = join(projectRoot, "src/routes");
+      expect(extractComponentPathFromRouteFile(routesDirPath, "")).toBe("");
+    });
+
+    it("非字符串类型应返回空串", () => {
+      const routesDirPath = join(projectRoot, "src/routes");
+      expect(
+        extractComponentPathFromRouteFile(
+          routesDirPath,
+          null as unknown as string,
+        ),
+      ).toBe("");
+      expect(
+        extractComponentPathFromRouteFile(
+          routesDirPath,
+          undefined as unknown as string,
+        ),
+      ).toBe("");
     });
   });
 });

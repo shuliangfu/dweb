@@ -11,8 +11,8 @@ import {
   chdir,
   createCommand,
   cwd,
-  exists,
   execPath,
+  exists,
   IS_DENO,
   join,
   platform,
@@ -136,6 +136,10 @@ async function assertBrowserRender(
 
   const page = t.browser.page as {
     on: (event: string, fn: (arg: unknown) => void) => void;
+    goto?: (
+      url: string,
+      options?: { waitUntil?: string; timeout?: number },
+    ) => Promise<unknown>;
   };
   page.on("requestfailed", (req: unknown) => {
     const r = req as { url: () => string };
@@ -160,10 +164,15 @@ async function assertBrowserRender(
   });
 
   const url = `http://127.0.0.1:${port}/`;
-  await t.browser.goto(url);
+  // 使用 page.goto + waitUntil: "load" 替代默认的 networkidle0，避免 WebSocket 等长连接导致永不到达
+  if (typeof page.goto === "function") {
+    await page.goto(url, { waitUntil: "load", timeout: 60000 });
+  } else {
+    await t.browser.goto(url);
+  }
 
-  // 等待页面内容出现（Windows CI 较慢，延长超时）
-  const contentTimeout = platform() === "windows" ? 60000 : 15000;
+  // 等待页面内容出现（CSR/Hybrid 需等待 JS 执行和 hydration，Windows CI 较慢）
+  const contentTimeout = platform() === "windows" ? 60000 : 30000;
   try {
     await t.browser.waitFor(
       () => {
@@ -182,7 +191,9 @@ async function assertBrowserRender(
         | {
           body?: {
             innerHTML?: string;
-            querySelector?: (s: string) => { innerText?: string; textContent?: string } | null;
+            querySelector?: (
+              s: string,
+            ) => { innerText?: string; textContent?: string } | null;
           };
           documentElement?: { innerHTML?: string };
           readyState?: string;
@@ -194,7 +205,11 @@ async function assertBrowserRender(
       // 从 Render/Hydrate error 红色 UI（background #fef2f2）的 <p> 中提取实际错误信息
       const errDiv = doc?.body?.querySelector?.(
         'div[style*="fef2f2"]',
-      ) as { querySelector?: (s: string) => { innerText?: string; textContent?: string } | null } | null;
+      ) as {
+        querySelector?: (
+          s: string,
+        ) => { innerText?: string; textContent?: string } | null;
+      } | null;
       const errP = errDiv?.querySelector?.("p");
       const renderErrorMsg = errP?.innerText ?? errP?.textContent ?? null;
       // #app 容器内容（CSR/Hybrid 渲染目标）
@@ -232,7 +247,9 @@ async function assertBrowserRender(
       hasExpectText?: boolean;
     } | null;
     const diagSummary = diagObj
-      ? `readyState=${diagObj.readyState ?? "?"} appLen=${diagObj.appInnerLength ?? "?"} hasText=${diagObj.hasExpectText ?? "?"}`
+      ? `readyState=${diagObj.readyState ?? "?"} appLen=${
+        diagObj.appInnerLength ?? "?"
+      } hasText=${diagObj.hasExpectText ?? "?"}`
       : "";
     throw new Error(
       `页面内容等待超时 (${contentTimeout}ms): ${msg}. ` +
@@ -282,6 +299,7 @@ async function assertBrowserRender(
 
 /**
  * 创建单个示例的浏览器测试套件
+ * 使用 @dreamer/test 的默认行为：不传 executablePath，由 Puppeteer 使用自带的 Chrome for Testing
  * @param exampleName 示例名称（如 preact-csr、preact-hybrid）
  * @param entry 入口文件：有 src 用 "src/main.ts"，无 src 用 "main.ts"
  */
@@ -348,13 +366,13 @@ function createExampleBrowserSuite(
   });
 }
 
-createExampleBrowserSuite("preact-csr");
-createExampleBrowserSuite("preact-hybrid");
-createExampleBrowserSuite("preact-ssr");
-createExampleBrowserSuite("preact-ssg");
-createExampleBrowserSuite("react-csr");
-createExampleBrowserSuite("react-hybrid");
-createExampleBrowserSuite("react-ssr");
-createExampleBrowserSuite("react-ssg");
+createExampleBrowserSuite("preact-csr", "src/main.ts");
+createExampleBrowserSuite("preact-hybrid", "src/main.ts");
+createExampleBrowserSuite("preact-ssr", "src/main.ts");
+createExampleBrowserSuite("preact-ssg", "src/main.ts");
+createExampleBrowserSuite("react-csr", "src/main.ts");
+createExampleBrowserSuite("react-hybrid", "src/main.ts");
+createExampleBrowserSuite("react-ssr", "src/main.ts");
+createExampleBrowserSuite("react-ssg", "src/main.ts");
 createExampleBrowserSuite("preact-hybrid-flat", "main.ts");
 createExampleBrowserSuite("react-hybrid-flat", "main.ts");

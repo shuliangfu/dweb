@@ -77,4 +77,20 @@ describe("replaceAssetPathsInHtml (asset-manifest.ts)", () => {
     const result = await replaceAssetPathsInHtml(html, config, "custom-output");
     expect(result).toContain("new.hash.css");
   });
+
+  it("manifest 存在但 JSON 解析失败时应返回原 HTML", async () => {
+    const outputDir = join(testDir, "dist", "client");
+    await ensureDir(outputDir);
+    await writeTextFile(
+      join(outputDir, "asset-manifest.json"),
+      "invalid json {",
+    );
+
+    const html = '<script src="/_client/main.js"></script>';
+    const config: AppConfig = {
+      build: { client: { output: "dist/client", engine: "preact" } },
+    };
+    const result = await replaceAssetPathsInHtml(html, config);
+    expect(result).toBe(html);
+  });
 });

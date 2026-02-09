@@ -21,3 +21,12 @@
   - 渲染和构建流程
 -
   - WebSocket 通信流程 */
+
+## 浏览器 e2e 前置
+
+`browser-render.test.ts` 需要 Chrome/Chromium。若出现
+`Timed out waiting for WS endpoint`：
+
+1. 安装 Chrome 或 Chromium
+2. 设置 `CHROME_PATH` 环境变量指向可执行文件
+3. Windows CI 需 setup-chrome action

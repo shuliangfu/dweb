@@ -3,10 +3,11 @@
  *
  * 测试 src/feature/render-csr.ts：
  * - createRendererCSR 返回渲染函数
+ * - API 路由返回 null
  */
 
 import "../setup.ts";
-import type { Router } from "@dreamer/router";
+import type { RouteMatch, Router } from "@dreamer/router";
 import { describe, expect, it } from "@dreamer/test";
 import { initializeServiceContainer } from "../../src/core/service.ts";
 import { createRendererCSR } from "../../src/feature/render-csr.ts";
@@ -39,6 +40,30 @@ describe("CSR 渲染器 (render-csr.ts)", () => {
 
       const renderer = createRendererCSR(container, router, config);
       expect(renderer.length).toBe(2);
+    });
+
+    it("match.isApi 为 true 时应返回 null", async () => {
+      const container = initializeServiceContainer();
+      const config: AppConfig = { name: "test" };
+      initializeRender(container, config);
+
+      const router = {
+        getSpecialFile: (_name: string) => null,
+      } as unknown as Router;
+
+      const renderer = createRendererCSR(container, router, config);
+      const ctx = { url: new URL("http://localhost/api/users") } as never;
+      const match = {
+        isApi: true,
+        route: { fullPath: "/api/users" },
+        params: {},
+        query: {},
+        fullPath: "/api/users",
+        meta: {},
+      } as unknown as RouteMatch;
+
+      const result = await renderer(ctx, match);
+      expect(result).toBeNull();
     });
   });
 });

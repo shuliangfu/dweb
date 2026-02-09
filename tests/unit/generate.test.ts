@@ -99,5 +99,12 @@ describe("generate (cmd/generate.ts)", () => {
       expect(content).toContain("AboutPage");
       expect(content).toContain("About");
     });
+
+    it("不支持的 type 应完成且不创建文件（捕获 DwebError 并输出错误）", async () => {
+      await generateMain([], { type: "unknown", name: "test" });
+
+      const wouldBePath = join(testDir, "src", "services", "test.ts");
+      expect(await exists(wouldBePath)).toBe(false);
+    });
   });
 });

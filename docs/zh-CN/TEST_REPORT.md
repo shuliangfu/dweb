@@ -6,9 +6,9 @@
 
 | 项目     | 值                   |
 | -------- | -------------------- |
-| 框架版本 | 3.0.68               |
-| 测试框架 | @dreamer/test@^1.0.1 |
-| 测试时间 | 2026-02-08           |
+| 框架版本 | 3.0.71               |
+| 测试框架 | @dreamer/test@^1.0.2 |
+| 测试时间 | 2026-02-09           |
 | 测试环境 | Deno 2.x / Bun 1.x   |
 
 ---
@@ -17,96 +17,79 @@
 
 ### 总体统计
 
-| 指标         | 数值   |
-| ------------ | ------ |
-| 测试文件数   | 56     |
-| 测试用例总数 | 480    |
-| 通过用例数   | 480    |
-| 失败用例数   | 0      |
-| 通过率       | 100%   |
-| 测试执行时间 | ~1m20s |
+| 指标         | 数值  |
+| ------------ | ----- |
+| 测试文件数   | 48    |
+| 测试用例总数 | 620   |
+| 通过用例数   | 618   |
+| 忽略用例数   | 2     |
+| 失败用例数   | 0     |
+| 通过率       | 100%  |
+| 测试执行时间 | ~3m7s |
 
 ### 测试文件统计
 
 #### 单元测试 (tests/unit/)
 
-| 文件名                          | 测试用例数 | 状态        |
-| ------------------------------- | ---------- | ----------- |
-| `config.test.ts`                | 45         | ✅ 全部通过 |
-| `command.test.ts`               | 41         | ✅ 全部通过 |
-| `build.test.ts`                 | 21         | ✅ 全部通过 |
-| `app.test.ts`                   | 19         | ✅ 全部通过 |
-| `logger.test.ts`                | 17         | ✅ 全部通过 |
-| `runtime-adapter.test.ts`       | 17         | ✅ 全部通过 |
-| `build-dirs.test.ts`            | 17         | ✅ 全部通过 |
-| `render.test.ts`                | 14         | ✅ 全部通过 |
-| `server.test.ts`                | 13         | ✅ 全部通过 |
-| `plugin.test.ts`                | 15         | ✅ 全部通过 |
-| `sanitize.test.ts`              | 15         | ✅ 全部通过 |
-| `lifecycle.test.ts`             | 12         | ✅ 全部通过 |
-| `middleware.test.ts`            | 12         | ✅ 全部通过 |
-| `plugin-events.test.ts`         | 16         | ✅ 全部通过 |
-| `router.test.ts`                | 12         | ✅ 全部通过 |
-| `errors.test.ts`                | 12         | ✅ 全部通过 |
-| `path.test.ts`                  | 13         | ✅ 全部通过 |
-| `database.test.ts`              | 11         | ✅ 全部通过 |
-| `jsr-versions.test.ts`          | 11         | ✅ 全部通过 |
-| `load-route-module.test.ts`     | 7          | ✅ 全部通过 |
-| `service.test.ts`               | 9          | ✅ 全部通过 |
-| `runtime.test.ts`               | 9          | ✅ 全部通过 |
-| `csr-client-builder.test.ts`    | 5          | ✅ 全部通过 |
-| `socket-io.test.ts`             | 9          | ✅ 全部通过 |
-| `websocket.test.ts`             | 7          | ✅ 全部通过 |
-| `generate.test.ts`              | 5          | ✅ 全部通过 |
-| `asset-manifest.test.ts`        | 4          | ✅ 全部通过 |
-| `config-loader.test.ts`         | 4          | ✅ 全部通过 |
-| `csr-client-middleware.test.ts` | 4          | ✅ 全部通过 |
-| `module-cache.test.ts`          | 5          | ✅ 全部通过 |
-| `cmd-build.test.ts`             | 3          | ✅ 全部通过 |
-| `cmd-clean.test.ts`             | 3          | ✅ 全部通过 |
-| `render-hybrid.test.ts`         | 3          | ✅ 全部通过 |
-| `render-ssr.test.ts`            | 3          | ✅ 全部通过 |
-| `db.test.ts`                    | 3          | ✅ 全部通过 |
-| `init.test.ts`                  | 3          | ✅ 全部通过 |
-| `project.test.ts`               | 3          | ✅ 全部通过 |
-| `version.test.ts`               | 3          | ✅ 全部通过 |
-| `render-csr.test.ts`            | 2          | ✅ 全部通过 |
-| `render-ssg.test.ts`            | 2          | ✅ 全部通过 |
-| `cmd-dev.test.ts`               | 2          | ✅ 全部通过 |
-| `cmd-fmt.test.ts`               | 2          | ✅ 全部通过 |
-| `cmd-lint.test.ts`              | 2          | ✅ 全部通过 |
-| `cmd-preview.test.ts`           | 2          | ✅ 全部通过 |
-| `cmd-start.test.ts`             | 2          | ✅ 全部通过 |
-| `cmd-test.test.ts`              | 2          | ✅ 全部通过 |
-| `cmd-upgrade.test.ts`           | 2          | ✅ 全部通过 |
-| `cmd-update.test.ts`            | 3          | ✅ 全部通过 |
-| `cli.test.ts`                   | 1          | ✅ 全部通过 |
+| 文件名                          | 测试用例数   | 状态        |
+| ------------------------------- | ------------ | ----------- |
+| `config.test.ts`                | 63           | ✅ 全部通过 |
+| `render.test.ts`                | 45           | ✅ 全部通过 |
+| `command.test.ts`               | 41           | ✅ 全部通过 |
+| `build.test.ts`                 | 24           | ✅ 全部通过 |
+| `windows.test.ts`               | 47（2 忽略） | ✅ 全部通过 |
+| `path.test.ts`                  | 18           | ✅ 全部通过 |
+| `plugin-events.test.ts`         | 16           | ✅ 全部通过 |
+| `logger.test.ts`                | 17           | ✅ 全部通过 |
+| `runtime-adapter.test.ts`       | 17           | ✅ 全部通过 |
+| `server.test.ts`                | 13           | ✅ 全部通过 |
+| `plugin.test.ts`                | 15           | ✅ 全部通过 |
+| `sanitize.test.ts`              | 15           | ✅ 全部通过 |
+| `lifecycle.test.ts`             | 12           | ✅ 全部通过 |
+| `middleware.test.ts`            | 12           | ✅ 全部通过 |
+| `router.test.ts`                | 12           | ✅ 全部通过 |
+| `errors.test.ts`                | 12           | ✅ 全部通过 |
+| `database.test.ts`              | 11           | ✅ 全部通过 |
+| `jsr-versions.test.ts`          | 11           | ✅ 全部通过 |
+| `i18n.test.ts`                  | 13           | ✅ 全部通过 |
+| `load-route-module.test.ts`     | 7            | ✅ 全部通过 |
+| `service.test.ts`               | 9            | ✅ 全部通过 |
+| `runtime.test.ts`               | 9            | ✅ 全部通过 |
+| `csr-client-builder.test.ts`    | 5            | ✅ 全部通过 |
+| `socket-io.test.ts`             | 9            | ✅ 全部通过 |
+| `websocket.test.ts`             | 7            | ✅ 全部通过 |
+| `generate.test.ts`              | 6            | ✅ 全部通过 |
+| `csr-client-middleware.test.ts` | 6            | ✅ 全部通过 |
+| `config-loader.test.ts`         | 4            | ✅ 全部通过 |
+| `module-cache.test.ts`          | 5            | ✅ 全部通过 |
+| `cmd-build.test.ts`             | 3            | ✅ 全部通过 |
+| `cmd-clean.test.ts`             | 3            | ✅ 全部通过 |
+| `render-hybrid.test.ts`         | 6            | ✅ 全部通过 |
+| `render-ssr.test.ts`            | 6            | ✅ 全部通过 |
+| `render-ssg.test.ts`            | 5            | ✅ 全部通过 |
+| `db.test.ts`                    | 3            | ✅ 全部通过 |
+| `init.test.ts`                  | 3            | ✅ 全部通过 |
+| `project.test.ts`               | 3            | ✅ 全部通过 |
+| `version.test.ts`               | 3            | ✅ 全部通过 |
+| `render-csr.test.ts`            | 3            | ✅ 全部通过 |
+| `cmd-dev.test.ts`               | 2            | ✅ 全部通过 |
+| `cmd-fmt.test.ts`               | 2            | ✅ 全部通过 |
+| `cmd-lint.test.ts`              | 2            | ✅ 全部通过 |
+| `cmd-preview.test.ts`           | 2            | ✅ 全部通过 |
+| `cmd-start.test.ts`             | 2            | ✅ 全部通过 |
+| `cmd-test.test.ts`              | 2            | ✅ 全部通过 |
+| `cmd-upgrade.test.ts`           | 2            | ✅ 全部通过 |
+| `cmd-update.test.ts`            | 3            | ✅ 全部通过 |
+| `cli.test.ts`                   | 1            | ✅ 全部通过 |
 
-#### e2e 测试 (tests/e2e/)
-
-| 文件名                   | 测试用例数 | 状态        |
-| ------------------------ | ---------- | ----------- |
-| `server-request.test.ts` | 2          | ✅ 全部通过 |
-
-#### 集成测试 (tests/integration/)
-
-| 文件名                        | 测试用例数 | 状态        |
-| ----------------------------- | ---------- | ----------- |
-| `config-lifecycle.test.ts`    | 2          | ✅ 全部通过 |
-| `csr-preact-build.test.ts`    | 2          | ✅ 全部通过 |
-| `csr-react-build.test.ts`     | 2          | ✅ 全部通过 |
-| `hybrid-preact-build.test.ts` | 2          | ✅ 全部通过 |
-| `hybrid-react-build.test.ts`  | 2          | ✅ 全部通过 |
-| `ssg-preact-build.test.ts`    | 2          | ✅ 全部通过 |
-| `ssg-react-build.test.ts`     | 2          | ✅ 全部通过 |
-| `ssr-preact-build.test.ts`    | 2          | ✅ 全部通过 |
-| `ssr-react-build.test.ts`     | 2          | ✅ 全部通过 |
+> **说明**：`windows.test.ts` 中 2 个用例为 Windows 平台专属（`skipIf` 非
+> Windows 时忽略）
 
 ---
 
 ## 🔍 功能测试详情
 
-### 1. 配置管理 (config.test.ts) - 45 个测试
+### 1. 配置管理 (config.test.ts) - 63 个测试
 
 #### 1.1 validateConfig() 验证
 
@@ -264,7 +247,7 @@
 - ✅ 中间件抛出的错误传播
 - ✅ 后续中间件不在前一个错误后执行
 
-### 6. 插件事件系统 (plugin-events.test.ts) - 12 个测试
+### 6. 插件事件系统 (plugin-events.test.ts) - 16 个测试
 
 #### 6.1 emitPluginEvent()
 
@@ -322,49 +305,7 @@
 - ✅ 支持默认连接配置
 - ✅ 支持多个命名连接配置
 
-### 8. App 类 (app.test.ts) - 20 个测试
-
-#### 8.1 App 构造函数
-
-- ✅ 创建 App 实例
-- ✅ 使用配置中的应用名称
-- ✅ 使用配置中的应用版本
-- ✅ 创建服务容器
-- ✅ 使用配置目录
-
-#### 8.2 App.use() 中间件注册
-
-- ✅ 注册中间件
-- ✅ 支持带名称的中间件注册
-- ✅ 支持带路径的中间件注册
-
-#### 8.3 App.registerPlugin() 插件注册
-
-- ✅ 注册插件
-- ✅ 注册带钩子的插件
-
-#### 8.4 App.on() 生命周期钩子
-
-- ✅ 注册生命周期钩子
-- ✅ 支持多个生命周期阶段
-
-#### 8.5 App.stage 属性
-
-- ✅ 返回当前生命周期阶段
-
-#### 8.6 App 配置集成
-
-- ✅ 支持日志配置
-- ✅ 支持环境变量前缀配置
-- ✅ 支持热重载配置
-- ✅ 支持插件管理器选项配置
-
-#### 8.7 App 服务容器集成
-
-- ✅ 能从容器获取服务
-- ✅ 能注册自定义服务
-
-### 9. 构建集成 (build.test.ts) - 21 个测试
+### 8. 构建集成 (build.test.ts) - 24 个测试
 
 #### 9.1 initializeBuild()
 
@@ -391,37 +332,41 @@
 - ✅ 支持静默模式配置
 - ✅ 支持日志级别配置
 
-### 10. 渲染集成 (render.test.ts) - 14 个测试
+### 9. 渲染集成 (render.test.ts) - 45 个测试
 
-#### 10.1 initializeRender()
+#### 9.1 initializeRender()
 
 - ✅ 初始化渲染服务并包含 renderSSR 与 renderSSG
 - ✅ 将渲染服务注册为单例
 - ✅ 多次调用应抛出错误（服务已注册）
 
-#### 10.2 getRender()
+#### 9.2 getRender()
 
 - ✅ 从容器中获取渲染服务并包含 renderSSR、renderSSG
 - ✅ 未初始化时调用应抛出错误
 
-#### 10.3 renderSSR 方法
+#### 9.3 renderSSR 方法
 
-- ✅ 应为函数且调用后返回 Promise
+- ✅ Preact/React 应为函数且调用后返回 Promise
 - ✅ 应使用配置中的 engine 作为默认值
+- ✅ 正确渲染、带 props、带 layout、skipLayouts
+- ✅ component 为 null/undefined 时应抛出异常
 
-#### 10.4 renderSSG 方法
+#### 9.4 renderSSG 方法
 
 - ✅ 应为函数
 - ✅ 调用后应返回 Promise<string[]>
+- ✅ routes 非空时正确调用 loadRouteComponent
+- ✅ loadRouteComponent 返回 null 时应抛出
 
-#### 10.5 渲染引擎与模式配置
+#### 9.5 渲染引擎与模式配置
 
 - ✅ 配置 react / preact 引擎时服务应正常初始化
 - ✅ 配置 ssr / csr / ssg 模式时服务应正常初始化
 
-### 11. 路由集成 (router.test.ts) - 12 个测试
+### 10. 路由集成 (router.test.ts) - 12 个测试
 
-#### 11.1 initializeRouter()
+#### 10.1 initializeRouter()
 
 - ✅ 创建路由实例
 - ✅ 将路由注册到服务容器
@@ -429,65 +374,65 @@
 - ✅ 使用渲染配置确定框架和 SSR 模式
 - ✅ 使用默认路由目录
 
-#### 11.2 getRouter()
+#### 10.2 getRouter()
 
 - ✅ 从容器中获取路由实例
 - ✅ 未初始化时抛出错误
 
-#### 11.3 路由扫描
+#### 10.3 路由扫描
 
 - ✅ 扫描路由目录
 - ✅ 扫描包含路由文件的目录
 
-#### 11.4 API 模式配置
+#### 10.4 API 模式配置
 
 - ✅ 支持 restful API 模式
 - ✅ 支持 action API 模式
 
-### 12. CLI 命令模块 (command.test.ts) - 41 个测试
+### 11. CLI 命令模块 (command.test.ts) - 41 个测试
 
-#### 12.1 Command 类构造函数
+#### 11.1 Command 类构造函数
 
 - ✅ 创建 Command 实例
 - ✅ 使用名称和描述创建 Command 实例
 - ✅ 创建服务容器
 - ✅ 每个 Command 实例有独立的服务容器
 
-#### 12.2 Command.app 属性
+#### 11.2 Command.app 属性
 
 - ✅ 未初始化时访问 app 抛出错误
 
-#### 12.3 Command.container 属性
+#### 11.3 Command.container 属性
 
 - ✅ 返回服务容器
 - ✅ 可以注册和获取服务
 
-#### 12.4 Command.action()
+#### 11.4 Command.action()
 
 - ✅ 设置命令处理函数
 - ✅ 支持链式调用
 - ✅ 设置命令处理函数并返回自身
 
-#### 12.5 Command.command() 子命令
+#### 11.5 Command.command() 子命令
 
 - ✅ 创建子命令
 - ✅ 子命令是扩展的 Command 类型
 - ✅ 支持多级子命令
 
-#### 12.6 Command 选项和参数
+#### 11.6 Command 选项和参数
 
 - ✅ 支持选项定义
 - ✅ 支持参数定义
 - ✅ 支持选项链式定义
 
-#### 12.7 重导出的 API - ANSI 颜色和样式
+#### 11.7 重导出的 API - ANSI 颜色和样式
 
 - ✅ 导出 colorize 函数
 - ✅ 导出 colors 对象
 - ✅ 导出 stripAnsiCodes 函数
 - ✅ 导出 shouldUseColor 函数
 
-#### 12.8 重导出的 API - 光标控制
+#### 11.8 重导出的 API - 光标控制
 
 - ✅ 导出 clearLine 函数
 - ✅ 导出 clearScreen 函数
@@ -495,7 +440,7 @@
 - ✅ 导出 hideCursor 函数
 - ✅ 导出 showCursor 函数
 
-#### 12.9 重导出的 API - 输出格式化
+#### 11.9 重导出的 API - 输出格式化
 
 - ✅ 导出 success 函数
 - ✅ 导出 error 函数
@@ -508,21 +453,21 @@
 - ✅ 导出 keyValue 函数
 - ✅ 导出 keyValuePairs 函数
 
-#### 12.10 重导出的 API - 表格显示
+#### 11.10 重导出的 API - 表格显示
 
 - ✅ 导出 table 函数
 - ✅ 导出 keyValueTable 函数
 - ✅ 导出 progressBar 函数
 
-#### 12.11 重导出的 API - 用户交互
+#### 11.11 重导出的 API - 用户交互
 
 - ✅ 导出 input 函数
 - ✅ 导出 select 函数
 - ✅ 导出 confirm 函数
 
-### 13. 日志集成 (logger.test.ts) - 17 个测试
+### 12. 日志集成 (logger.test.ts) - 17 个测试
 
-#### 13.1 initializeLogger()
+#### 12.1 initializeLogger()
 
 - ✅ 创建日志实例
 - ✅ 将日志实例注册到服务容器
@@ -531,19 +476,19 @@
 - ✅ 使用默认配置
 - ✅ 多次调用抛出错误
 
-#### 13.2 getLogger()
+#### 12.2 getLogger()
 
 - ✅ 从容器中获取日志实例
 - ✅ 未初始化时抛出错误
 
-#### 13.3 日志功能
+#### 12.3 日志功能
 
 - ✅ 支持所有日志级别
 - ✅ 支持带参数的日志
 
-### 14. 服务容器集成 (service.test.ts) - 9 个测试
+### 13. 服务容器集成 (service.test.ts) - 9 个测试
 
-#### 14.1 initializeServiceContainer()
+#### 13.1 initializeServiceContainer()
 
 - ✅ 创建服务容器实例
 - ✅ 将容器自身注册为单例服务
@@ -551,17 +496,17 @@
 - ✅ 支持注册和获取服务
 - ✅ 单例服务返回相同实例
 
-#### 14.2 getServiceContainer()
+#### 13.2 getServiceContainer()
 
 - ✅ 从容器中获取已注册的服务容器
 - ✅ 与 initializeServiceContainer 注册的容器一致
 
-#### 14.3 服务容器功能
+#### 13.3 服务容器功能
 
 - ✅ 支持多个服务的注册和获取
 - ✅ 支持服务之间的依赖注入
 
-### 15. 统一错误处理 (errors.test.ts) - 12 个测试
+### 14. 统一错误处理 (errors.test.ts) - 12 个测试
 
 - ✅ createDwebError 创建错误实例、带参数创建
 - ✅ throwDwebError 抛出错误、带 cause 抛出
@@ -570,39 +515,40 @@
 - ✅ DwebError 实例方法 toString、toJSON
 - ✅ setDwebErrorTranslator i18n 翻译器、传入 null 清除
 
-### 16. 运行时适配器 (runtime-adapter.test.ts) - 17 个测试
+### 15. 运行时适配器 (runtime-adapter.test.ts) - 17 个测试
 
 - ✅ 进程与环境：getEnv、setEnv、cwd、args、exit
 - ✅ 路径：join、resolve、dirname、basename
 - ✅ 文件系统：readFileSync、readTextFile、writeTextFile、mkdir、exists
 - ✅ cwd() 返回非空字符串、join() 拼接路径
 
-### 17. CSR 客户端构建与渲染器 (csr-client-builder.test.ts / render-csr.test.ts)
+### 16. CSR 客户端构建与渲染器 (csr-client-builder.test.ts / render-csr.test.ts)
 
 - ✅
   clearClientScriptCache、getCachedClientScript、createClientScriptMiddleware（5
   个用例）
-- ✅ createRendererCSR 返回函数、接受 (ctx, match) 两参数（2 个用例）
+- ✅ createRendererCSR 返回函数、接受 (ctx, match) 两参数（3 个用例）
 
-### 18. SSR / Hybrid / SSG 渲染器 (render-ssr.test.ts / render-hybrid.test.ts / render-ssg.test.ts)
+### 17. SSR / Hybrid / SSG 渲染器 (render-ssr.test.ts / render-hybrid.test.ts / render-ssg.test.ts)
 
-- ✅ createRendererSSR、createRendererHybrid、createRendererSSG
-  均返回函数且签名为两参数；match.isApi 为 true 时返回 null（各 2–3 个用例）
+- ✅ createRendererSSR（6 个用例）、createRendererHybrid（6
+  个用例）、createRendererSSG（5 个用例） 均返回函数且签名为两参数；match.isApi
+  为 true 时返回 null
 
-### 19. 版本 (version.test.ts) - 3 个测试
+### 18. 版本 (version.test.ts) - 3 个测试
 
 - ✅ DWEB_VERSION 导出字符串、语义化版本格式、非空
 
-### 20. CLI (cli.test.ts) - 1 个测试
+### 19. CLI (cli.test.ts) - 1 个测试
 
 - ✅ createCLI() 返回 Command、具备 execute 方法
 
-### 21. 新增单测（sanitize、path、runtime、module-cache、load-route-module 等）
+### 20. 新增单测（sanitize、path、runtime、module-cache、load-route-module、i18n、generate、windows 等）
 
 - ✅ **sanitize.test.ts** (15)：sanitizeRequestParams 危险键过滤、NUL
   过滤、空值处理
 - ✅ **path.test.ts**
-  (13)：isPathWithinProject、pathForLog、normalizePathForCompare（使用
+  (18)：isPathWithinProject、pathForLog、normalizePathForCompare、extractComponentPathFromRouteFile（使用
   makeTempDir 支持 Windows 跨平台）
 - ✅ **runtime.test.ts** (9)：getRuntime、getTaskArgs、getTestArgs、getLintArgs
   等
@@ -610,11 +556,13 @@
   pathToFileUrl 支持 Windows 跨平台）
 - ✅ **load-route-module.test.ts**
   (7)：loadRouteModule、clearCssRouteCacheForPath、含 CSS 导入
-- ✅ **asset-manifest.test.ts** (4)：replaceAssetPathsInHtml
 - ✅ **config-loader.test.ts** (4)：loadProjectConfig（使用
   pathToFileUrl，已移除 Windows skip）
-- ✅ **csr-client-middleware.test.ts** (4)：createClientScriptMiddleware、next
-  调用、生产模式
+- ✅ **csr-client-middleware.test.ts** (6)：createClientScriptMiddleware、next
+  调用、生产模式、chunk 文件
+- ✅ **i18n.test.ts** (13)：$t、setDwebLocale、detectLocale
+- ✅ **generate.test.ts** (6)：生成 service、api、model、route，不支持 type
+  时输出错误
 - ✅ **socket-io.test.ts**
   (9)：initializeSocketIo、getSocketIoServer、getSocketIoPath、createSocketIoMiddleware、传入
   handlers 时 connection 触发 onConnection
@@ -626,16 +574,11 @@
 - ✅ **cmd-dev/start/preview/fmt/lint/test.test.ts** (各 2)：main 无 deno.json
   时提前返回
 - ✅ **cmd-upgrade.test.ts** (2)：main 正常执行、--beta 选项
-
-### 22. e2e 测试 (server-request.test.ts) - 2 个测试
-
-- ✅ 使用 preact-ssr basic 示例启动服务器
-- ✅ 发起 HTTP 请求，验证返回 HTML 包含 `<!DOCTYPE` 或 `<html`
-
-### 23. 集成测试 (config-lifecycle.test.ts) - 2 个测试
-
-- ✅ 临时目录创建 config、routes
-- ✅ App 加载 config、app.name/app.version 正确、init 生命周期事件触发
+- ✅ **cmd-update.test.ts** (3)：main 无 deno.json 时返回、有 deno.json 时执行
+  update
+- ✅ **windows.test.ts** (47，2
+  忽略)：路径规范化、构建输出推断、模块缓存、组件路径提取、路径安全校验、日志友好路径（Windows
+  平台专属用例在非 Windows 时跳过）
 
 ---
 
@@ -756,10 +699,10 @@
 
 ## 🎯 结论
 
-@dreamer/dweb 框架的核心模块测试在文件级已全面覆盖，共 **480**
-个测试用例全部通过。所有测试均为实质性测试，验证了具体的功能行为。测试覆盖了：
+@dreamer/dweb 框架的核心模块测试在文件级已全面覆盖，共 **618**
+个测试用例全部通过（2 个 Windows 专属用例在非 Windows
+时忽略）。所有测试均为实质性测试，验证了具体的功能行为。测试覆盖了：
 
-- ✅ App 类核心功能
 - ✅ 配置管理（验证和合并，含 render.mode hybrid）
 - ✅ 服务容器集成
 - ✅ 生命周期管理
@@ -781,8 +724,9 @@
 - ✅ 工具模块（sanitize、path、runtime、asset-manifest、config-loader）
 - ✅
   功能模块（module-cache、load-route-module、csr-client-middleware、socket-io、websocket）
-- ✅ CLI 子命令（clean、build、dev、start、preview、fmt、lint、test、upgrade）
-- ✅ e2e 测试（服务器请求验证）
-- ✅ 集成测试（配置与生命周期）
+- ✅ CLI
+  子命令（clean、build、dev、start、preview、fmt、lint、test、upgrade、update）
+- ✅ Windows
+  兼容性（路径规范化、构建输出推断、模块缓存、组件路径提取、路径安全校验、日志友好路径）
 
-框架核心功能已完成全面测试验证；e2e、integration 已补充实际用例。
+框架核心功能已完成全面测试验证。

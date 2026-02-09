@@ -13,7 +13,7 @@
 import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import { deepMergeConfig, validateConfig } from "../../src/core/config.ts";
-import type { AppConfig } from "../../src/types/app.ts";
+import type { AppConfig, BuildAppConfig } from "../../src/types/app.ts";
 
 /** 中英文错误消息皆可匹配（并行测试时 translator 可能被 errors.test 清除） */
 const RE = {
@@ -512,6 +512,112 @@ describe("配置管理 (config.ts)", () => {
         const result = deepMergeConfig(target, source);
 
         expect(result.name).toBe("app");
+      });
+    });
+
+    describe("build/router 等嵌套对象深度合并", () => {
+      it("应该深度合并 build.client 嵌套", () => {
+        const target: AppConfig = {
+          build: { client: { output: "dist/client" } } as BuildAppConfig,
+        };
+        const source: AppConfig = {
+          build: { client: { engine: "preact" } } as BuildAppConfig,
+        };
+        const result = deepMergeConfig(target, source);
+
+        const client = result.build?.client as
+          | { output?: string; engine?: string }
+          | undefined;
+        expect(client).toBeDefined();
+        expect(client?.output).toBe("dist/client");
+        expect(client?.engine).toBe("preact");
+      });
+
+      it("应该深度合并 router 嵌套", () => {
+        const target: AppConfig = {
+          router: { routesDir: "./src/routes" },
+        };
+        const source = {
+          router: { apiMode: "restful" },
+        } as AppConfig;
+        const result = deepMergeConfig(target, source);
+
+        expect(result.router?.routesDir).toBe("./src/routes");
+        expect(result.router?.apiMode).toBe("restful");
+      });
+
+      it("应该深度合并 render.ssg 三层嵌套", () => {
+        const target: AppConfig = {
+          render: { engine: "preact", ssg: { outputDir: "dist/client" } },
+        };
+        const source: AppConfig = {
+          render: { ssg: { routes: ["/", "/about"] } },
+        };
+        const result = deepMergeConfig(target, source);
+
+        expect(result.render?.engine).toBe("preact");
+        expect(result.render?.ssg?.outputDir).toBe("dist/client");
+        expect(result.render?.ssg?.routes).toEqual(["/", "/about"]);
+      });
+    });
+
+    describe("源为 null 或覆盖行为", () => {
+      it("源为 null 时应覆盖目标", () => {
+        const target: AppConfig = {
+          server: { port: 3000 },
+        };
+        const source = { server: null } as unknown as AppConfig;
+        const result = deepMergeConfig(target, source);
+
+        expect(result.server).toBeNull();
+      });
+
+      it("目标无该 key、源有对象时应使用源", () => {
+        const target: AppConfig = { name: "app" };
+        const source: AppConfig = {
+          build: { client: { output: "dist/client" } } as BuildAppConfig,
+        };
+        const result = deepMergeConfig(target, source);
+
+        expect(result.build?.client?.output).toBe("dist/client");
+      });
+
+      it("目标有对象、源为空对象时应保留目标字段", () => {
+        const target: AppConfig = {
+          router: { routesDir: "./routes", apiMode: "restful" },
+        };
+        const source = { router: {} } as AppConfig;
+        const result = deepMergeConfig(target, source);
+
+        expect(result.router?.routesDir).toBe("./routes");
+        expect(result.router?.apiMode).toBe("restful");
+      });
+    });
+
+    describe("plugins/middlewares 源为空数组", () => {
+      it("plugins 源为空数组时应保留目标", () => {
+        const target: AppConfig = {
+          plugins: [{ name: "plugin-a", version: "1.0.0" }],
+        };
+        const source: AppConfig = { plugins: [] };
+        const result = deepMergeConfig(target, source);
+
+        expect(result.plugins).toHaveLength(1);
+        expect(
+          typeof result.plugins?.[0] === "object" && "name" in result.plugins[0]
+            ? (result.plugins[0] as { name: string }).name
+            : null,
+        ).toBe("plugin-a");
+      });
+
+      it("middlewares 源为空数组时应保留目标", () => {
+        const target: AppConfig = {
+          middlewares: [{ middleware: () => {}, name: "auth" }],
+        };
+        const source: AppConfig = { middlewares: [] };
+        const result = deepMergeConfig(target, source);
+
+        expect(result.middlewares).toHaveLength(1);
       });
     });
   });

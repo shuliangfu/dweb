@@ -76,3 +76,50 @@ export function pathForLog(
  * @returns 规范化后的路径字符串
  */
 export { normalizePathForCompare };
+
+/**
+ * 从任意路径提取与 ROUTE_LOADERS key 一致的 component 路径（Windows 兼容）
+ *
+ * CSR/Hybrid 模式下，客户端 loadPageModule 需匹配 ROUTE_LOADERS 的 key（如 "index"、"user/[id]"）。
+ * 服务端 hydrationData.component 与 clientRoutes[].component 可能来自 router，格式可能为：
+ * - 相对路径：route.file 如 "user/[id].tsx"（相对于 routesDir）
+ * - 绝对路径：如 C:/project/src/routes/index、/project/src/routes/user/[id].tsx
+ * 本函数统一提取 routes 相对路径，确保与 scanRouteComponents 生成的 key 一致。
+ *
+ * @param routesDirPath routes 目录的绝对路径（如 C:/project/src/routes 或 /project/src/routes）
+ * @param rawPath 原始路径（如 match.route.file、C:/project/src/routes/index、src\routes\user\[id].tsx）
+ * @returns 提取的 component 路径（如 "index"、"user/[id]"），无法提取时返回规范化后的 rawPath
+ */
+export function extractComponentPathFromRouteFile(
+  routesDirPath: string,
+  rawPath: string,
+): string {
+  if (!rawPath || typeof rawPath !== "string") return "";
+  const trimmed = rawPath.trim();
+  if (!trimmed) return "";
+  const noExt = trimmed.replace(/\.(tsx?|jsx?)$/, "").trim();
+  const normalizedNoExt = noExt.replace(/\\/g, "/").replace(/^\.\//, "");
+
+  // 若 rawPath 已是 routes 相对路径（如 "user/[id].tsx"、"index"），直接返回
+  // 注意：resolve("user/[id]") 会基于 cwd 解析为 .../basic/user/[id]，导致错误
+  const isAbsolute = /^\/|^[A-Za-z]:[\\/]/i.test(trimmed);
+  if (!isAbsolute && normalizedNoExt) {
+    return normalizedNoExt;
+  }
+
+  // 绝对路径：从 routesDirPath 后截取
+  const normalizedRoutes = normalizePathForCompare(routesDirPath);
+  const normalizedRaw = normalizePathForCompare(rawPath)
+    .replace(/\.(tsx?|jsx?)$/, "")
+    .trim();
+  if (normalizedRaw.includes(normalizedRoutes)) {
+    const relative = normalizedRaw
+      .slice(
+        normalizedRaw.indexOf(normalizedRoutes) + normalizedRoutes.length,
+      )
+      .replace(/^\//, "");
+    if (relative) return relative;
+  }
+
+  return normalizedRaw.replace(/\\/g, "/").trim();
+}

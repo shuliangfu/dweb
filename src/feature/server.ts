@@ -66,9 +66,10 @@ export function initializeServer(
     let defaultWatchPaths = ["./src"];
     if (config.router?.routesDir) {
       // 从 routesDir 推断 src 目录（取 routesDir 的父目录）
-      // 例如：./src/routes -> ./src
+      // 例如：./src/routes -> ./src（Windows 兼容：先统一反斜杠再匹配）
       const routesDir = config.router.routesDir as string;
-      const srcDir = routesDir.replace(/\/routes\/?$/, "") || "./src";
+      const srcDir =
+        routesDir.replace(/\\/g, "/").replace(/\/routes\/?$/, "") || "./src";
       defaultWatchPaths = [srcDir];
     }
 

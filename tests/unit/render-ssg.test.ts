@@ -3,13 +3,16 @@
  *
  * 测试 src/feature/render-ssg.ts：
  * - createRendererSSG 返回渲染函数
+ * - API 路由返回 null
+ * - 生产模式：预渲染文件不存在时应返回 null
  * - pathnameToFile 路径映射（通过行为间接验证）
  * - dev 依赖 SSR，需先注册 render 服务
  */
 
 import "../setup.ts";
-import type { Router } from "@dreamer/router";
-import { describe, expect, it } from "@dreamer/test";
+import { getEnv, makeTempDir, remove } from "@dreamer/runtime-adapter";
+import type { RouteMatch, Router } from "@dreamer/router";
+import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import { initializeServiceContainer } from "../../src/core/service.ts";
 import { createRendererSSG } from "../../src/feature/render-ssg.ts";
 import { initializeRender } from "../../src/feature/render.ts";
@@ -49,6 +52,79 @@ describe("SSG 渲染器 (render-ssg.ts)", () => {
 
       const renderer = createRendererSSG(container, router, config);
       expect(renderer.length).toBe(2);
+    });
+
+    it("match.isApi 为 true 时应返回 null", async () => {
+      const container = initializeServiceContainer();
+      const config: AppConfig = {
+        render: { ssg: { outputDir: "dist/client" } },
+      };
+      container.registerSingleton("config", () => config);
+      initializeRender(container, config);
+
+      const router = {
+        getSpecialFile: (_name: string) => null,
+      } as unknown as Router;
+
+      const renderer = createRendererSSG(container, router, config);
+      const ctx = { url: new URL("http://localhost/api/users") } as never;
+      const match = {
+        isApi: true,
+        route: { fullPath: "/api/users" },
+        params: {},
+        query: {},
+        fullPath: "/api/users",
+        meta: {},
+      } as unknown as RouteMatch;
+
+      const result = await renderer(ctx, match);
+      expect(result).toBeNull();
+    });
+
+    describe("生产模式读预渲染文件", () => {
+      let outputDir: string;
+
+      beforeAll(async () => {
+        outputDir = await makeTempDir({ prefix: "dweb-ssg-output-" });
+      });
+
+      afterAll(async () => {
+        await remove(outputDir, { recursive: true });
+      });
+
+      it("预渲染文件不存在时应返回 null（prod 模式）", async () => {
+        const isDev =
+          (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
+        if (isDev) return; // 开发环境走 SSR，跳过
+
+        const container = initializeServiceContainer();
+        const config: AppConfig = {
+          render: { ssg: { outputDir } },
+        };
+        container.registerSingleton("config", () => config);
+        initializeRender(container, config);
+
+        const router = {
+          getSpecialFile: (_name: string) => null,
+        } as unknown as Router;
+
+        const renderer = createRendererSSG(container, router, config);
+        const ctx = {
+          url: new URL("http://localhost/nonexistent-page"),
+          path: "/nonexistent-page",
+        } as never;
+        const match = {
+          isApi: false,
+          route: { fullPath: "/nonexistent-page", path: "/nonexistent-page" },
+          params: {},
+          query: {},
+          fullPath: "/nonexistent-page",
+          meta: {},
+        } as unknown as RouteMatch;
+
+        const result = await renderer(ctx, match);
+        expect(result).toBeNull();
+      });
     });
   });
 });

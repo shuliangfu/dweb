@@ -415,12 +415,13 @@ ${layoutCode}
 
 /**
  * 规范化组件路径用于 ROUTE_LOADERS 查找（Windows 兼容）
- * 统一反斜杠为正斜杠、去除扩展名，确保与 scanRouteComponents 生成的 key 一致
+ * 统一反斜杠为正斜杠、去除 ./ 前缀、去除扩展名，与 scanRouteComponents 生成的 key 一致
  */
 function normalizeComponentPathForLookup(componentPath: string): string {
   return componentPath
-    .replace(/\\\\/g, "/") // Windows 反斜杠 -> 正斜杠（模板中 \\\\ 输出 \\，regex 匹配单个 \\）
-    .replace(/\.(tsx?|jsx?)$/, "")
+    .replace(/\\\\+/g, "/") // Windows 反斜杠（含连续多个）-> 正斜杠
+    .replace(/^\\.\\//, "") // 去除 ./ 前缀（如 ./src/routes/index）
+    .replace(/\\.(tsx?|jsx?)$/, "")
     .trim();
 }
 
@@ -473,12 +474,19 @@ function findLoaderForPath(cleanPath: string): (() => Promise<unknown>) | undefi
  * @param componentPath 组件路径标识（如 "about" 或 "user/[id]"）
  */
 export async function loadPageModule(componentPath: string): Promise<unknown> {
+  if (componentPath == null || String(componentPath).trim() === "") {
+    return null;
+  }
   const cleanPath = normalizeComponentPathForLookup(componentPath);
   if (MODULE_CACHE[cleanPath]) return MODULE_CACHE[cleanPath];
   const loader = findLoaderForPath(cleanPath);
   if (!loader) {
     if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-      console.warn(${JSON.stringify("[dweb] loadPageModule: no loader for path (Windows path mismatch?)")}, { componentPath, cleanPath, availableKeys: Object.keys(ROUTE_LOADERS) });
+      console.warn(${
+    JSON.stringify(
+      "[dweb] loadPageModule: no loader for path (Windows path mismatch?)",
+    )
+  }, { componentPath, cleanPath, availableKeys: Object.keys(ROUTE_LOADERS) });
     }
     return null;
   }
@@ -925,7 +933,10 @@ export async function ensureClientEntryFile(
   const routerConfig = (config.router || {}) as { routesDir?: string };
   const routesDir = routerConfig.routesDir || "./src/routes";
   const routesDirPath = join(cwd(), routesDir);
-  const srcDir = routesDirPath.replace(/\/routes\/?$/, "");
+  // Windows 兼容：先统一反斜杠为正斜杠，再提取 src 目录
+  const srcDir =
+    routesDirPath.replace(/\\/g, "/").replace(/\/routes\/?$/, "") ||
+    routesDirPath;
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
 
   const renderConfig = (config.render || {}) as {
@@ -1002,7 +1013,10 @@ export async function prepareClientBuildEntry(
   const routerConfig = (config.router || {}) as { routesDir?: string };
   const routesDir = routerConfig.routesDir || "./src/routes";
   const routesDirPath = join(cwd(), routesDir);
-  const srcDir = routesDirPath.replace(/\/routes\/?$/, "");
+  // Windows 兼容：先统一反斜杠为正斜杠，再提取 src 目录
+  const srcDir =
+    routesDirPath.replace(/\\/g, "/").replace(/\/routes\/?$/, "") ||
+    routesDirPath;
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
 
   const renderConfig = (config.render || {}) as { engine?: "react" | "preact" };
@@ -1153,7 +1167,10 @@ export async function buildClientScript(
 
   const routesDir = routerConfig.routesDir || "./src/routes";
   const routesDirPath = join(cwd(), routesDir);
-  const srcDir = routesDirPath.replace(/\/routes\/?$/, "");
+  // Windows 兼容：先统一反斜杠为正斜杠，再提取 src 目录
+  const srcDir =
+    routesDirPath.replace(/\\/g, "/").replace(/\/routes\/?$/, "") ||
+    routesDirPath;
 
   // 生成临时入口文件路径
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
@@ -1190,8 +1207,7 @@ export async function buildClientScript(
       server?: { debug?: boolean };
       debug?: boolean;
     } | undefined;
-    const buildDebug =
-      buildConfig?.client?.debug ??
+    const buildDebug = buildConfig?.client?.debug ??
       buildConfig?.server?.debug ??
       buildConfig?.debug ??
       false;

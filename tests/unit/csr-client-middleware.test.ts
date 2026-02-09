@@ -109,4 +109,55 @@ describe("CSR 客户端脚本中间件 (csr-client-middleware.ts)", () => {
     const body = await ctx.response?.text();
     expect(body).toContain("client");
   });
+
+  it("生产模式且 _client.js 不存在时应返回 500", async () => {
+    const emptyClientDir = join(testDir, "dist-empty", "client");
+    await ensureDir(emptyClientDir);
+    // 不创建 _client.js，使用独立 output 避免与其它用例冲突
+
+    const container = initializeServiceContainer();
+    const config: AppConfig = {
+      name: "test",
+      build: { client: { output: "dist-empty/client", engine: "preact" } },
+      server: { mode: "prod" },
+    };
+    initializeLogger(container, config);
+
+    const middleware = createClientScriptMiddleware(container, config);
+    const ctx = mockContext("/_client.js");
+
+    await middleware(ctx as never, ctx.next);
+
+    expect(ctx.response).toBeDefined();
+    expect(ctx.response?.status).toBe(500);
+    const body = await ctx.response?.text();
+    expect(body).toMatch(/预构建的客户端脚本不存在|clientScriptNotFound/);
+  });
+
+  it("生产模式且存在 chunk 文件时应返回 chunk 内容", async () => {
+    const clientDir = join(testDir, "dist", "client");
+    await ensureDir(clientDir);
+    await writeTextFile(
+      join(clientDir, "chunk-abc123.js"),
+      "// chunk content",
+    );
+
+    const container = initializeServiceContainer();
+    const config: AppConfig = {
+      name: "test",
+      build: { client: { output: "dist/client", engine: "preact" } },
+      server: { mode: "prod" },
+    };
+    initializeLogger(container, config);
+
+    const middleware = createClientScriptMiddleware(container, config);
+    const ctx = mockContext("/_client/chunk-abc123.js");
+
+    await middleware(ctx as never, ctx.next);
+
+    expect(ctx.response).toBeDefined();
+    expect(ctx.response?.status).toBe(200);
+    const body = await ctx.response?.text();
+    expect(body).toContain("// chunk content");
+  });
 });

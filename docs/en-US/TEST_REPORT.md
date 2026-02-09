@@ -4,785 +4,727 @@
 
 ## 📋 Test Overview
 
-| 项目     | 值                   |
-| -------- | -------------------- |
-| 框架版本 | 3.0.68               |
-| 测试框架 | @dreamer/test@^1.0.1 |
-| 测试时间 | 2026-02-08           |
-| 测试环境 | Deno 2.x / Bun 1.x   |
+| Item             | Value                |
+| ---------------- | -------------------- |
+| Framework        | 3.0.71               |
+| Test framework   | @dreamer/test@^1.0.2 |
+| Test date        | 2026-02-09           |
+| Test environment | Deno 2.x / Bun 1.x   |
 
 ---
 
-## 📊 测试结果
+## 📊 Test Results
 
-### 总体统计
+### Overall Statistics
 
-| 指标         | 数值   |
-| ------------ | ------ |
-| 测试文件数   | 56     |
-| 测试用例总数 | 480    |
-| 通过用例数   | 480    |
-| 失败用例数   | 0      |
-| 通过率       | 100%   |
-| 测试执行时间 | ~1m20s |
+| Metric           | Count |
+| ---------------- | ----- |
+| Test files       | 48    |
+| Total test cases | 620   |
+| Passed           | 618   |
+| Ignored          | 2     |
+| Failed           | 0     |
+| Pass rate        | 100%  |
+| Execution time   | ~3m7s |
 
-### 测试文件统计
+### Test File Statistics
 
-#### 单元测试 (tests/unit/)
+#### Unit Tests (tests/unit/)
 
-| 文件名                          | 测试用例数 | 状态        |
-| ------------------------------- | ---------- | ----------- |
-| `config.test.ts`                | 45         | ✅ 全部通过 |
-| `command.test.ts`               | 41         | ✅ 全部通过 |
-| `build.test.ts`                 | 21         | ✅ 全部通过 |
-| `app.test.ts`                   | 19         | ✅ 全部通过 |
-| `logger.test.ts`                | 17         | ✅ 全部通过 |
-| `runtime-adapter.test.ts`       | 17         | ✅ 全部通过 |
-| `build-dirs.test.ts`            | 17         | ✅ 全部通过 |
-| `render.test.ts`                | 14         | ✅ 全部通过 |
-| `server.test.ts`                | 13         | ✅ 全部通过 |
-| `plugin.test.ts`                | 15         | ✅ 全部通过 |
-| `sanitize.test.ts`              | 15         | ✅ 全部通过 |
-| `lifecycle.test.ts`             | 12         | ✅ 全部通过 |
-| `middleware.test.ts`            | 12         | ✅ 全部通过 |
-| `plugin-events.test.ts`         | 16         | ✅ 全部通过 |
-| `router.test.ts`                | 12         | ✅ 全部通过 |
-| `errors.test.ts`                | 12         | ✅ 全部通过 |
-| `path.test.ts`                  | 13         | ✅ 全部通过 |
-| `database.test.ts`              | 11         | ✅ 全部通过 |
-| `jsr-versions.test.ts`          | 11         | ✅ 全部通过 |
-| `load-route-module.test.ts`     | 7          | ✅ 全部通过 |
-| `service.test.ts`               | 9          | ✅ 全部通过 |
-| `runtime.test.ts`               | 9          | ✅ 全部通过 |
-| `csr-client-builder.test.ts`    | 5          | ✅ 全部通过 |
-| `socket-io.test.ts`             | 9          | ✅ 全部通过 |
-| `websocket.test.ts`             | 7          | ✅ 全部通过 |
-| `generate.test.ts`              | 5          | ✅ 全部通过 |
-| `asset-manifest.test.ts`        | 4          | ✅ 全部通过 |
-| `config-loader.test.ts`         | 4          | ✅ 全部通过 |
-| `csr-client-middleware.test.ts` | 4          | ✅ 全部通过 |
-| `module-cache.test.ts`          | 5          | ✅ 全部通过 |
-| `cmd-build.test.ts`             | 3          | ✅ 全部通过 |
-| `cmd-clean.test.ts`             | 3          | ✅ 全部通过 |
-| `render-hybrid.test.ts`         | 3          | ✅ 全部通过 |
-| `render-ssr.test.ts`            | 3          | ✅ 全部通过 |
-| `db.test.ts`                    | 3          | ✅ 全部通过 |
-| `init.test.ts`                  | 3          | ✅ 全部通过 |
-| `project.test.ts`               | 3          | ✅ 全部通过 |
-| `version.test.ts`               | 3          | ✅ 全部通过 |
-| `render-csr.test.ts`            | 2          | ✅ 全部通过 |
-| `render-ssg.test.ts`            | 2          | ✅ 全部通过 |
-| `cmd-dev.test.ts`               | 2          | ✅ 全部通过 |
-| `cmd-fmt.test.ts`               | 2          | ✅ 全部通过 |
-| `cmd-lint.test.ts`              | 2          | ✅ 全部通过 |
-| `cmd-preview.test.ts`           | 2          | ✅ 全部通过 |
-| `cmd-start.test.ts`             | 2          | ✅ 全部通过 |
-| `cmd-test.test.ts`              | 2          | ✅ 全部通过 |
-| `cmd-upgrade.test.ts`           | 2          | ✅ 全部通过 |
-| `cmd-update.test.ts`            | 3          | ✅ 全部通过 |
-| `cli.test.ts`                   | 1          | ✅ 全部通过 |
+| File name                       | Test count     | Status        |
+| ------------------------------- | -------------- | ------------- |
+| `config.test.ts`                | 63             | ✅ All passed |
+| `render.test.ts`                | 45             | ✅ All passed |
+| `command.test.ts`               | 41             | ✅ All passed |
+| `build.test.ts`                 | 24             | ✅ All passed |
+| `windows.test.ts`               | 47 (2 ignored) | ✅ All passed |
+| `path.test.ts`                  | 18             | ✅ All passed |
+| `plugin-events.test.ts`         | 16             | ✅ All passed |
+| `logger.test.ts`                | 17             | ✅ All passed |
+| `runtime-adapter.test.ts`       | 17             | ✅ All passed |
+| `server.test.ts`                | 13             | ✅ All passed |
+| `plugin.test.ts`                | 15             | ✅ All passed |
+| `sanitize.test.ts`              | 15             | ✅ All passed |
+| `lifecycle.test.ts`             | 12             | ✅ All passed |
+| `middleware.test.ts`            | 12             | ✅ All passed |
+| `router.test.ts`                | 12             | ✅ All passed |
+| `errors.test.ts`                | 12             | ✅ All passed |
+| `database.test.ts`              | 11             | ✅ All passed |
+| `jsr-versions.test.ts`          | 11             | ✅ All passed |
+| `i18n.test.ts`                  | 13             | ✅ All passed |
+| `load-route-module.test.ts`     | 7              | ✅ All passed |
+| `service.test.ts`               | 9              | ✅ All passed |
+| `runtime.test.ts`               | 9              | ✅ All passed |
+| `csr-client-builder.test.ts`    | 5              | ✅ All passed |
+| `socket-io.test.ts`             | 9              | ✅ All passed |
+| `websocket.test.ts`             | 7              | ✅ All passed |
+| `generate.test.ts`              | 6              | ✅ All passed |
+| `csr-client-middleware.test.ts` | 6              | ✅ All passed |
+| `config-loader.test.ts`         | 4              | ✅ All passed |
+| `module-cache.test.ts`          | 5              | ✅ All passed |
+| `cmd-build.test.ts`             | 3              | ✅ All passed |
+| `cmd-clean.test.ts`             | 3              | ✅ All passed |
+| `render-hybrid.test.ts`         | 6              | ✅ All passed |
+| `render-ssr.test.ts`            | 6              | ✅ All passed |
+| `render-ssg.test.ts`            | 5              | ✅ All passed |
+| `db.test.ts`                    | 3              | ✅ All passed |
+| `init.test.ts`                  | 3              | ✅ All passed |
+| `project.test.ts`               | 3              | ✅ All passed |
+| `version.test.ts`               | 3              | ✅ All passed |
+| `render-csr.test.ts`            | 3              | ✅ All passed |
+| `cmd-dev.test.ts`               | 2              | ✅ All passed |
+| `cmd-fmt.test.ts`               | 2              | ✅ All passed |
+| `cmd-lint.test.ts`              | 2              | ✅ All passed |
+| `cmd-preview.test.ts`           | 2              | ✅ All passed |
+| `cmd-start.test.ts`             | 2              | ✅ All passed |
+| `cmd-test.test.ts`              | 2              | ✅ All passed |
+| `cmd-upgrade.test.ts`           | 2              | ✅ All passed |
+| `cmd-update.test.ts`            | 3              | ✅ All passed |
+| `cli.test.ts`                   | 1              | ✅ All passed |
 
-#### e2e 测试 (tests/e2e/)
-
-| 文件名                   | 测试用例数 | 状态        |
-| ------------------------ | ---------- | ----------- |
-| `server-request.test.ts` | 2          | ✅ 全部通过 |
-
-#### 集成测试 (tests/integration/)
-
-| 文件名                        | 测试用例数 | 状态        |
-| ----------------------------- | ---------- | ----------- |
-| `config-lifecycle.test.ts`    | 2          | ✅ 全部通过 |
-| `csr-preact-build.test.ts`    | 2          | ✅ 全部通过 |
-| `csr-react-build.test.ts`     | 2          | ✅ 全部通过 |
-| `hybrid-preact-build.test.ts` | 2          | ✅ 全部通过 |
-| `hybrid-react-build.test.ts`  | 2          | ✅ 全部通过 |
-| `ssg-preact-build.test.ts`    | 2          | ✅ 全部通过 |
-| `ssg-react-build.test.ts`     | 2          | ✅ 全部通过 |
-| `ssr-preact-build.test.ts`    | 2          | ✅ 全部通过 |
-| `ssr-react-build.test.ts`     | 2          | ✅ 全部通过 |
+> **Note**: 2 cases in `windows.test.ts` are Windows-only (skipped via `skipIf`
+> on non-Windows)
 
 ---
 
-## 🔍 功能测试详情
+## 🔍 Feature Test Details
 
-### 1. 配置管理 (config.test.ts) - 45 个测试
+### 1. Config Management (config.test.ts) - 63 tests
 
-#### 1.1 validateConfig() 验证
+#### 1.1 validateConfig() validation
 
-- ✅ 接受有效的基础配置
-- ✅ 接受空配置对象
-- ✅ 拒绝非字符串类型的 name
-- ✅ 拒绝非字符串类型的 version
-- ✅ 拒绝非字符串类型的 envPrefix
-- ✅ 拒绝非布尔类型的 hotReload
-- ✅ 接受有效的渲染配置
-- ✅ 接受所有有效的 engine 值 (react, preact)
-- ✅ 接受所有有效的 mode 值 (ssr, csr, ssg, hybrid)
-- ✅ 拒绝非对象类型的 render
-- ✅ 拒绝 null 类型的 render
-- ✅ 拒绝无效的 engine 值
-- ✅ 拒绝无效的 mode 值
-- ✅ 接受字符串路径的中间件
-- ✅ 接受有名称的函数中间件
-- ✅ 接受带 name 属性的对象中间件
-- ✅ 拒绝非数组类型的 middlewares
-- ✅ 拒绝空路径的中间件
-- ✅ 拒绝匿名函数中间件
-- ✅ 拒绝没有 name 的对象中间件
-- ✅ 拒绝无效类型的中间件
-- ✅ 接受带 name 属性的插件对象
-- ✅ 接受字符串路径的插件
-- ✅ 拒绝非数组类型的 plugins
-- ✅ 拒绝没有 name 的插件
-- ✅ 接受有效的 server 配置
-- ✅ 拒绝非对象类型的 server
-- ✅ 接受有效的 router 配置
-- ✅ 拒绝非对象类型的 router
-- ✅ 接受有效的 build 配置
-- ✅ 拒绝非对象类型的 build
-- ✅ 接受有效的 logger 配置
-- ✅ 拒绝非对象类型的 logger
+- ✅ Accept valid base config
+- ✅ Accept empty config object
+- ✅ Reject non-string name
+- ✅ Reject non-string version
+- ✅ Reject non-string envPrefix
+- ✅ Reject non-boolean hotReload
+- ✅ Accept valid render config
+- ✅ Accept all valid engine values (react, preact)
+- ✅ Accept all valid mode values (ssr, csr, ssg, hybrid)
+- ✅ Reject non-object render
+- ✅ Reject null render
+- ✅ Reject invalid engine value
+- ✅ Reject invalid mode value
+- ✅ Accept string-path middlewares
+- ✅ Accept named function middlewares
+- ✅ Accept object middlewares with name property
+- ✅ Reject non-array middlewares
+- ✅ Reject empty-path middlewares
+- ✅ Reject anonymous function middlewares
+- ✅ Reject object middlewares without name
+- ✅ Reject invalid middleware types
+- ✅ Accept plugin objects with name property
+- ✅ Accept string-path plugins
+- ✅ Reject non-array plugins
+- ✅ Reject plugins without name
+- ✅ Accept valid server config
+- ✅ Reject non-object server
+- ✅ Accept valid router config
+- ✅ Reject non-object router
+- ✅ Accept valid build config
+- ✅ Reject non-object build
+- ✅ Accept valid logger config
+- ✅ Reject non-object logger
 
-#### 1.2 deepMergeConfig() 合并
+#### 1.2 deepMergeConfig() merge
 
-- ✅ 合并两个简单配置对象
-- ✅ 源配置覆盖目标配置的同名属性
-- ✅ 深度合并嵌套对象
-- ✅ 保持原对象不变（不可变性）
-- ✅ 合并不同名称的插件
-- ✅ 用同名插件替换已有插件
-- ✅ 目标为空数组时使用源数组
-- ✅ 合并不同名称的中间件
-- ✅ 用同名中间件替换已有中间件
-- ✅ 支持字符串路径的中间件合并
-- ✅ 正确处理多层嵌套配置
-- ✅ 处理空配置对象
+- ✅ Merge two simple config objects
+- ✅ Source config overrides target's same-named properties
+- ✅ Deep merge nested objects
+- ✅ Keep original objects immutable
+- ✅ Merge plugins with different names
+- ✅ Replace existing plugins with same name
+- ✅ Use source array when target is empty array
+- ✅ Merge middlewares with different names
+- ✅ Replace existing middlewares with same name
+- ✅ Support string-path middleware merge
+- ✅ Handle multi-level nested config correctly
+- ✅ Handle empty config object
 
-### 2. 插件系统 (plugin.test.ts) - 15 个测试
+### 2. Plugin System (plugin.test.ts) - 15 tests
 
 #### 2.1 initializePlugin()
 
-- ✅ 创建插件管理器实例
-- ✅ 将插件管理器注册到服务容器
-- ✅ 接受配置选项
-- ✅ 使用默认配置选项
-- ✅ 多次调用抛出错误（服务已注册）
+- ✅ Create plugin manager instance
+- ✅ Register plugin manager to service container
+- ✅ Accept config options
+- ✅ Use default config options
+- ✅ Throw error on duplicate call (service already registered)
 
 #### 2.2 getPluginManager()
 
-- ✅ 从容器中获取插件管理器
-- ✅ 未初始化时抛出错误
+- ✅ Get plugin manager from container
+- ✅ Throw error when not initialized
 
 #### 2.3 registerPlugin()
 
-- ✅ 注册插件到管理器
-- ✅ 支持多个插件注册
-- ✅ 支持带生命周期钩子的插件
-- ✅ 支持带配置的插件
-- ✅ 支持带依赖的插件
+- ✅ Register plugin to manager
+- ✅ Support multiple plugin registration
+- ✅ Support plugins with lifecycle hooks
+- ✅ Support plugins with config
+- ✅ Support plugins with dependencies
 
-#### 2.4 插件安装和激活
+#### 2.4 Plugin install and activate
 
-- ✅ 能安装已注册的插件
-- ✅ 能激活已安装的插件
-- ✅ 通过 triggerInit 调用 onInit 钩子
+- ✅ Install registered plugins
+- ✅ Activate installed plugins
+- ✅ Call onInit hook via triggerInit
 
-### 3. 服务器集成 (server.test.ts) - 13 个测试
+### 3. Server Integration (server.test.ts) - 13 tests
 
 #### 3.1 initializeServer()
 
-- ✅ 创建服务器实例
-- ✅ 将服务器注册到服务容器
-- ✅ 使用配置中的端口号
-- ✅ 使用配置中的主机名
-- ✅ 使用默认配置
-- ✅ 多次调用抛出错误
+- ✅ Create server instance
+- ✅ Register server to service container
+- ✅ Use port from config
+- ✅ Use hostname from config
+- ✅ Use default config
+- ✅ Throw error on duplicate call
 
 #### 3.2 getServer()
 
-- ✅ 从容器中获取服务器实例
-- ✅ 未初始化时抛出错误
+- ✅ Get server instance from container
+- ✅ Throw error when not initialized
 
-#### 3.3 服务器配置
+#### 3.3 Server config
 
-- ✅ 支持 dev 模式配置
-- ✅ 支持 prod 模式配置
-- ✅ 支持 shutdownTimeout 配置
-- ✅ 支持 onListen 回调配置
-- ✅ 支持 onError 回调配置
+- ✅ Support dev mode config
+- ✅ Support prod mode config
+- ✅ Support shutdownTimeout config
+- ✅ Support onListen callback config
+- ✅ Support onError callback config
 
-### 4. 生命周期管理 (lifecycle.test.ts) - 12 个测试
+### 4. Lifecycle Management (lifecycle.test.ts) - 12 tests
 
 #### 4.1 initializeLifecycle()
 
-- ✅ 创建生命周期管理器实例
-- ✅ 将生命周期管理器注册到服务容器
-- ✅ 使用配置中的 lifecycle 选项
-- ✅ 使用默认配置
-- ✅ 多次调用抛出错误
+- ✅ Create lifecycle manager instance
+- ✅ Register lifecycle manager to service container
+- ✅ Use lifecycle option from config
+- ✅ Use default config
+- ✅ Throw error on duplicate call
 
 #### 4.2 getLifecycleManager()
 
-- ✅ 从容器中获取生命周期管理器
-- ✅ 未初始化时抛出错误
+- ✅ Get lifecycle manager from container
+- ✅ Throw error when not initialized
 
 #### 4.3 registerLifecycleHook()
 
-- ✅ 注册生命周期钩子
-- ✅ 支持多个钩子注册到同一阶段
-- ✅ 支持不同阶段的钩子
+- ✅ Register lifecycle hooks
+- ✅ Support multiple hooks for same stage
+- ✅ Support hooks for different stages
 
-#### 4.4 生命周期阶段转换
+#### 4.4 Lifecycle stage transition
 
-- ✅ 支持完整的生命周期流程
-- ✅ 能获取当前阶段
+- ✅ Support full lifecycle flow
+- ✅ Get current stage
 
-### 5. 中间件系统 (middleware.test.ts) - 12 个测试
+### 5. Middleware System (middleware.test.ts) - 12 tests
 
 #### 5.1 initializeMiddleware()
 
-- ✅ 创建中间件链实例
-- ✅ 将中间件链注册到服务容器
-- ✅ 多次调用抛出错误
+- ✅ Create middleware chain instance
+- ✅ Register middleware chain to service container
+- ✅ Throw error on duplicate call
 
 #### 5.2 getMiddlewareChain()
 
-- ✅ 从容器中获取中间件链
-- ✅ 未初始化时抛出错误
+- ✅ Get middleware chain from container
+- ✅ Throw error when not initialized
 
 #### 5.3 registerMiddleware()
 
-- ✅ 注册中间件到链中
-- ✅ 支持多个中间件按顺序执行
-- ✅ 支持带名称的中间件注册
-- ✅ 中间件能访问上下文对象
-- ✅ 中间件能修改上下文对象
+- ✅ Register middleware to chain
+- ✅ Support multiple middlewares in sequence
+- ✅ Support named middleware registration
+- ✅ Middleware can access context object
+- ✅ Middleware can modify context object
 
-#### 5.4 中间件错误处理
+#### 5.4 Middleware error handling
 
-- ✅ 中间件抛出的错误传播
-- ✅ 后续中间件不在前一个错误后执行
+- ✅ Errors thrown by middleware propagate
+- ✅ Subsequent middlewares do not run after error
 
-### 6. 插件事件系统 (plugin-events.test.ts) - 12 个测试
+### 6. Plugin Events System (plugin-events.test.ts) - 16 tests
 
 #### 6.1 emitPluginEvent()
 
-- ✅ 触发已激活插件的事件钩子
-- ✅ 不触发未激活插件的事件钩子
-- ✅ 传递参数给事件钩子
-- ✅ 触发多个插件的事件钩子
-- ✅ 钩子出错时继续执行其他插件
+- ✅ Trigger event hooks of activated plugins
+- ✅ Do not trigger event hooks of inactive plugins
+- ✅ Pass arguments to event hooks
+- ✅ Trigger event hooks of multiple plugins
+- ✅ Continue with other plugins when hook throws
 
-#### 6.2 生命周期事件触发函数
+#### 6.2 Lifecycle event triggers
 
-- ✅ emitOnInit 触发 onInit 钩子
-- ✅ emitOnStart 触发 onStart 钩子
-- ✅ emitOnStop 触发 onStop 钩子
-- ✅ emitOnShutdown 触发 onShutdown 钩子
+- ✅ emitOnInit triggers onInit hook
+- ✅ emitOnStart triggers onStart hook
+- ✅ emitOnStop triggers onStop hook
+- ✅ emitOnShutdown triggers onShutdown hook
 
-#### 6.3 构建事件触发函数
+#### 6.3 Build event triggers
 
-- ✅ emitOnBuild 触发 onBuild 钩子并传递选项
-- ✅ emitOnBuildComplete 触发 onBuildComplete 钩子并传递结果
+- ✅ emitOnBuild triggers onBuild hook and passes options
+- ✅ emitOnBuildComplete triggers onBuildComplete hook and passes result
 
-#### 6.4 Socket 事件触发函数
+#### 6.4 Socket event triggers
 
-- ✅ emitOnSocket 触发 onSocket 钩子
-- ✅ emitOnSocketClose 触发 onSocketClose 钩子
-- ✅ 无 pluginManager 时 emitOnSocket 静默返回
-- ✅ 无 pluginManager 时 emitOnSocketClose 静默返回
+- ✅ emitOnSocket triggers onSocket hook
+- ✅ emitOnSocketClose triggers onSocketClose hook
+- ✅ emitOnSocket silently returns when no pluginManager
+- ✅ emitOnSocketClose silently returns when no pluginManager
 
-#### 6.5 事件执行顺序
+#### 6.5 Event execution order
 
-- ✅ 按插件注册顺序触发事件
+- ✅ Trigger events in plugin registration order
 
-### 7. 数据库集成 (database.test.ts) - 11 个测试
+### 7. Database Integration (database.test.ts) - 11 tests
 
 #### 7.1 initializeDatabase()
 
-- ✅ 创建数据库管理器实例
-- ✅ 将数据库管理器注册到服务容器
-- ✅ 接受数据库配置
-- ✅ 多次调用抛出错误
+- ✅ Create database manager instance
+- ✅ Register database manager to service container
+- ✅ Accept database config
+- ✅ Throw error on duplicate call
 
 #### 7.2 getDatabaseManager()
 
-- ✅ 从容器中获取数据库管理器
-- ✅ 未初始化时抛出错误
-- ✅ 支持命名管理器
+- ✅ Get database manager from container
+- ✅ Throw error when not initialized
+- ✅ Support named managers
 
 #### 7.3 getDatabaseStatus()
 
-- ✅ 无连接时返回空数组
-- ✅ 管理器未初始化时返回空数组
+- ✅ Return empty array when no connection
+- ✅ Return empty array when manager not initialized
 
-#### 7.4 数据库配置
+#### 7.4 Database config
 
-- ✅ 支持默认连接配置
-- ✅ 支持多个命名连接配置
+- ✅ Support default connection config
+- ✅ Support multiple named connection configs
 
-### 8. App 类 (app.test.ts) - 20 个测试
+### 8. Build Integration (build.test.ts) - 24 tests
 
-#### 8.1 App 构造函数
+#### 8.1 initializeBuild()
 
-- ✅ 创建 App 实例
-- ✅ 使用配置中的应用名称
-- ✅ 使用配置中的应用版本
-- ✅ 创建服务容器
-- ✅ 使用配置目录
+- ✅ Create builder instance
+- ✅ Register builder to service container
+- ✅ Use build mode from config
+- ✅ Use render config to determine client engine
+- ✅ Use default config
+- ✅ Throw error on duplicate call
 
-#### 8.2 App.use() 中间件注册
+#### 8.2 getBuild()
 
-- ✅ 注册中间件
-- ✅ 支持带名称的中间件注册
-- ✅ 支持带路径的中间件注册
+- ✅ Get builder instance from container
+- ✅ Throw error when not initialized
 
-#### 8.3 App.registerPlugin() 插件注册
+#### 8.3 Build config
 
-- ✅ 注册插件
-- ✅ 注册带钩子的插件
+- ✅ Support server config
+- ✅ Support client config
+- ✅ Support asset handling config
+- ✅ Support cache config
+- ✅ Support clean config
+- ✅ Support incremental build config
+- ✅ Support silent mode config
+- ✅ Support log level config
 
-#### 8.4 App.on() 生命周期钩子
+### 9. Render Integration (render.test.ts) - 45 tests
 
-- ✅ 注册生命周期钩子
-- ✅ 支持多个生命周期阶段
+#### 9.1 initializeRender()
 
-#### 8.5 App.stage 属性
+- ✅ Initialize render service with renderSSR and renderSSG
+- ✅ Register render service as singleton
+- ✅ Throw error on duplicate call (service already registered)
 
-- ✅ 返回当前生命周期阶段
+#### 9.2 getRender()
 
-#### 8.6 App 配置集成
+- ✅ Get render service from container with renderSSR, renderSSG
+- ✅ Throw error when not initialized
 
-- ✅ 支持日志配置
-- ✅ 支持环境变量前缀配置
-- ✅ 支持热重载配置
-- ✅ 支持插件管理器选项配置
+#### 9.3 renderSSR method
 
-#### 8.7 App 服务容器集成
+- ✅ Preact/React: function, returns Promise when called
+- ✅ Use engine from config as default
+- ✅ Render correctly, with props, with layout, skipLayouts
+- ✅ Throw when component is null/undefined
 
-- ✅ 能从容器获取服务
-- ✅ 能注册自定义服务
+#### 9.4 renderSSG method
 
-### 9. 构建集成 (build.test.ts) - 21 个测试
+- ✅ Should be function
+- ✅ Returns Promise<string[]> when called
+- ✅ Correctly call loadRouteComponent when routes non-empty
+- ✅ Throw when loadRouteComponent returns null
 
-#### 9.1 initializeBuild()
+#### 9.5 Render engine and mode config
 
-- ✅ 创建构建器实例
-- ✅ 将构建器注册到服务容器
-- ✅ 使用配置中的构建模式
-- ✅ 使用渲染配置确定客户端引擎
-- ✅ 使用默认配置
-- ✅ 多次调用抛出错误
+- ✅ Service initializes with react / preact engine config
+- ✅ Service initializes with ssr / csr / ssg mode config
 
-#### 9.2 getBuild()
+### 10. Router Integration (router.test.ts) - 12 tests
 
-- ✅ 从容器中获取构建器实例
-- ✅ 未初始化时抛出错误
+#### 10.1 initializeRouter()
 
-#### 9.3 构建配置
+- ✅ Create router instance
+- ✅ Register router to service container
+- ✅ Use router directory from config
+- ✅ Use render config to determine framework and SSR mode
+- ✅ Use default router directory
 
-- ✅ 支持服务端配置
-- ✅ 支持客户端配置
-- ✅ 支持资源处理配置
-- ✅ 支持缓存配置
-- ✅ 支持清理配置
-- ✅ 支持增量构建配置
-- ✅ 支持静默模式配置
-- ✅ 支持日志级别配置
+#### 10.2 getRouter()
 
-### 10. 渲染集成 (render.test.ts) - 14 个测试
+- ✅ Get router instance from container
+- ✅ Throw error when not initialized
 
-#### 10.1 initializeRender()
+#### 10.3 Route scanning
 
-- ✅ 初始化渲染服务并包含 renderSSR 与 renderSSG
-- ✅ 将渲染服务注册为单例
-- ✅ 多次调用应抛出错误（服务已注册）
+- ✅ Scan router directory
+- ✅ Scan directories containing route files
 
-#### 10.2 getRender()
+#### 10.4 API mode config
 
-- ✅ 从容器中获取渲染服务并包含 renderSSR、renderSSG
-- ✅ 未初始化时调用应抛出错误
+- ✅ Support restful API mode
+- ✅ Support action API mode
 
-#### 10.3 renderSSR 方法
+### 11. CLI Command Module (command.test.ts) - 41 tests
 
-- ✅ 应为函数且调用后返回 Promise
-- ✅ 应使用配置中的 engine 作为默认值
+#### 11.1 Command class constructor
 
-#### 10.4 renderSSG 方法
+- ✅ Create Command instance
+- ✅ Create Command with name and description
+- ✅ Create service container
+- ✅ Each Command has independent service container
 
-- ✅ 应为函数
-- ✅ 调用后应返回 Promise<string[]>
+#### 11.2 Command.app property
 
-#### 10.5 渲染引擎与模式配置
+- ✅ Throw error when accessing app before init
 
-- ✅ 配置 react / preact 引擎时服务应正常初始化
-- ✅ 配置 ssr / csr / ssg 模式时服务应正常初始化
+#### 11.3 Command.container property
 
-### 11. 路由集成 (router.test.ts) - 12 个测试
+- ✅ Return service container
+- ✅ Can register and get services
 
-#### 11.1 initializeRouter()
+#### 11.4 Command.action()
 
-- ✅ 创建路由实例
-- ✅ 将路由注册到服务容器
-- ✅ 使用配置中的路由目录
-- ✅ 使用渲染配置确定框架和 SSR 模式
-- ✅ 使用默认路由目录
+- ✅ Set command handler
+- ✅ Support chaining
+- ✅ Set handler and return self
 
-#### 11.2 getRouter()
+#### 11.5 Command.command() subcommands
 
-- ✅ 从容器中获取路由实例
-- ✅ 未初始化时抛出错误
+- ✅ Create subcommand
+- ✅ Subcommand extends Command type
+- ✅ Support nested subcommands
 
-#### 11.3 路由扫描
+#### 11.6 Command options and arguments
 
-- ✅ 扫描路由目录
-- ✅ 扫描包含路由文件的目录
+- ✅ Support option definition
+- ✅ Support argument definition
+- ✅ Support chained option definition
 
-#### 11.4 API 模式配置
+#### 11.7 Re-exported API - ANSI colors and styles
 
-- ✅ 支持 restful API 模式
-- ✅ 支持 action API 模式
+- ✅ Export colorize function
+- ✅ Export colors object
+- ✅ Export stripAnsiCodes function
+- ✅ Export shouldUseColor function
 
-### 12. CLI 命令模块 (command.test.ts) - 41 个测试
+#### 11.8 Re-exported API - Cursor control
 
-#### 12.1 Command 类构造函数
+- ✅ Export clearLine function
+- ✅ Export clearScreen function
+- ✅ Export moveCursor function
+- ✅ Export hideCursor function
+- ✅ Export showCursor function
 
-- ✅ 创建 Command 实例
-- ✅ 使用名称和描述创建 Command 实例
-- ✅ 创建服务容器
-- ✅ 每个 Command 实例有独立的服务容器
+#### 11.9 Re-exported API - Output formatting
 
-#### 12.2 Command.app 属性
+- ✅ Export success function
+- ✅ Export error function
+- ✅ Export warning function
+- ✅ Export info function
+- ✅ Export title function
+- ✅ Export separator function
+- ✅ Export list function
+- ✅ Export numberedList function
+- ✅ Export keyValue function
+- ✅ Export keyValuePairs function
 
-- ✅ 未初始化时访问 app 抛出错误
+#### 11.10 Re-exported API - Table display
 
-#### 12.3 Command.container 属性
+- ✅ Export table function
+- ✅ Export keyValueTable function
+- ✅ Export progressBar function
 
-- ✅ 返回服务容器
-- ✅ 可以注册和获取服务
+#### 11.11 Re-exported API - User interaction
 
-#### 12.4 Command.action()
+- ✅ Export input function
+- ✅ Export select function
+- ✅ Export confirm function
 
-- ✅ 设置命令处理函数
-- ✅ 支持链式调用
-- ✅ 设置命令处理函数并返回自身
+### 12. Logger Integration (logger.test.ts) - 17 tests
 
-#### 12.5 Command.command() 子命令
+#### 12.1 initializeLogger()
 
-- ✅ 创建子命令
-- ✅ 子命令是扩展的 Command 类型
-- ✅ 支持多级子命令
+- ✅ Create logger instance
+- ✅ Register logger to service container
+- ✅ Use log level from config
+- ✅ Use log format from config
+- ✅ Use default config
+- ✅ Throw error on duplicate call
 
-#### 12.6 Command 选项和参数
+#### 12.2 getLogger()
 
-- ✅ 支持选项定义
-- ✅ 支持参数定义
-- ✅ 支持选项链式定义
+- ✅ Get logger from container
+- ✅ Throw error when not initialized
 
-#### 12.7 重导出的 API - ANSI 颜色和样式
+#### 12.3 Logger features
 
-- ✅ 导出 colorize 函数
-- ✅ 导出 colors 对象
-- ✅ 导出 stripAnsiCodes 函数
-- ✅ 导出 shouldUseColor 函数
+- ✅ Support all log levels
+- ✅ Support logs with extra params
 
-#### 12.8 重导出的 API - 光标控制
+### 13. Service Container Integration (service.test.ts) - 9 tests
 
-- ✅ 导出 clearLine 函数
-- ✅ 导出 clearScreen 函数
-- ✅ 导出 moveCursor 函数
-- ✅ 导出 hideCursor 函数
-- ✅ 导出 showCursor 函数
+#### 13.1 initializeServiceContainer()
 
-#### 12.9 重导出的 API - 输出格式化
+- ✅ Create service container instance
+- ✅ Register container itself as singleton
+- ✅ Each call creates new container
+- ✅ Support register and get services
+- ✅ Singleton returns same instance
 
-- ✅ 导出 success 函数
-- ✅ 导出 error 函数
-- ✅ 导出 warning 函数
-- ✅ 导出 info 函数
-- ✅ 导出 title 函数
-- ✅ 导出 separator 函数
-- ✅ 导出 list 函数
-- ✅ 导出 numberedList 函数
-- ✅ 导出 keyValue 函数
-- ✅ 导出 keyValuePairs 函数
+#### 13.2 getServiceContainer()
 
-#### 12.10 重导出的 API - 表格显示
+- ✅ Get registered service container
+- ✅ Same as container from initializeServiceContainer
 
-- ✅ 导出 table 函数
-- ✅ 导出 keyValueTable 函数
-- ✅ 导出 progressBar 函数
+#### 13.3 Service container features
 
-#### 12.11 重导出的 API - 用户交互
+- ✅ Support multiple service registration and retrieval
+- ✅ Support dependency injection between services
 
-- ✅ 导出 input 函数
-- ✅ 导出 select 函数
-- ✅ 导出 confirm 函数
+### 14. Unified Error Handling (errors.test.ts) - 12 tests
 
-### 13. 日志集成 (logger.test.ts) - 17 个测试
+- ✅ createDwebError creates error instance, with params
+- ✅ throwDwebError throws error, with cause
+- ✅ assertRejects async error assertion
+- ✅ isDwebError type guard
+- ✅ DwebError instance methods toString, toJSON
+- ✅ setDwebErrorTranslator i18n translator, pass null to clear
 
-#### 13.1 initializeLogger()
+### 15. Runtime Adapter (runtime-adapter.test.ts) - 17 tests
 
-- ✅ 创建日志实例
-- ✅ 将日志实例注册到服务容器
-- ✅ 使用配置中的日志级别
-- ✅ 使用配置中的日志格式
-- ✅ 使用默认配置
-- ✅ 多次调用抛出错误
+- ✅ Process and env: getEnv, setEnv, cwd, args, exit
+- ✅ Path: join, resolve, dirname, basename
+- ✅ File system: readFileSync, readTextFile, writeTextFile, mkdir, exists
+- ✅ cwd() returns non-empty string, join() concatenates paths
 
-#### 13.2 getLogger()
+### 16. CSR Client Builder and Renderer (csr-client-builder.test.ts / render-csr.test.ts)
 
-- ✅ 从容器中获取日志实例
-- ✅ 未初始化时抛出错误
+- ✅ clearClientScriptCache, getCachedClientScript, createClientScriptMiddleware
+  (5 cases)
+- ✅ createRendererCSR returns function, accepts (ctx, match) (3 cases)
 
-#### 13.3 日志功能
+### 17. SSR / Hybrid / SSG Renderers (render-ssr.test.ts / render-hybrid.test.ts / render-ssg.test.ts)
 
-- ✅ 支持所有日志级别
-- ✅ 支持带参数的日志
+- ✅ createRendererSSR (6), createRendererHybrid (6), createRendererSSG (5) all
+  return function with two params; return null when match.isApi is true
 
-### 14. 服务容器集成 (service.test.ts) - 9 个测试
+### 18. Version (version.test.ts) - 3 tests
 
-#### 14.1 initializeServiceContainer()
+- ✅ DWEB_VERSION exports string, semver format, non-empty
 
-- ✅ 创建服务容器实例
-- ✅ 将容器自身注册为单例服务
-- ✅ 每次调用创建新的容器实例
-- ✅ 支持注册和获取服务
-- ✅ 单例服务返回相同实例
+### 19. CLI (cli.test.ts) - 1 test
 
-#### 14.2 getServiceContainer()
+- ✅ createCLI() returns Command with execute method
 
-- ✅ 从容器中获取已注册的服务容器
-- ✅ 与 initializeServiceContainer 注册的容器一致
+### 20. Additional Unit Tests (sanitize, path, runtime, module-cache, load-route-module, i18n, generate, windows, etc.)
 
-#### 14.3 服务容器功能
-
-- ✅ 支持多个服务的注册和获取
-- ✅ 支持服务之间的依赖注入
-
-### 15. 统一错误处理 (errors.test.ts) - 12 个测试
-
-- ✅ createDwebError 创建错误实例、带参数创建
-- ✅ throwDwebError 抛出错误、带 cause 抛出
-- ✅ assertRejects 异步错误断言
-- ✅ isDwebError 类型守卫
-- ✅ DwebError 实例方法 toString、toJSON
-- ✅ setDwebErrorTranslator i18n 翻译器、传入 null 清除
-
-### 16. 运行时适配器 (runtime-adapter.test.ts) - 17 个测试
-
-- ✅ 进程与环境：getEnv、setEnv、cwd、args、exit
-- ✅ 路径：join、resolve、dirname、basename
-- ✅ 文件系统：readFileSync、readTextFile、writeTextFile、mkdir、exists
-- ✅ cwd() 返回非空字符串、join() 拼接路径
-
-### 17. CSR 客户端构建与渲染器 (csr-client-builder.test.ts / render-csr.test.ts)
-
-- ✅
-  clearClientScriptCache、getCachedClientScript、createClientScriptMiddleware（5
-  个用例）
-- ✅ createRendererCSR 返回函数、接受 (ctx, match) 两参数（2 个用例）
-
-### 18. SSR / Hybrid / SSG 渲染器 (render-ssr.test.ts / render-hybrid.test.ts / render-ssg.test.ts)
-
-- ✅ createRendererSSR、createRendererHybrid、createRendererSSG
-  均返回函数且签名为两参数；match.isApi 为 true 时返回 null（各 2–3 个用例）
-
-### 19. 版本 (version.test.ts) - 3 个测试
-
-- ✅ DWEB_VERSION 导出字符串、语义化版本格式、非空
-
-### 20. CLI (cli.test.ts) - 1 个测试
-
-- ✅ createCLI() 返回 Command、具备 execute 方法
-
-### 21. 新增单测（sanitize、path、runtime、module-cache、load-route-module 等）
-
-- ✅ **sanitize.test.ts** (15)：sanitizeRequestParams 危险键过滤、NUL
-  过滤、空值处理
-- ✅ **path.test.ts**
-  (13)：isPathWithinProject、pathForLog、normalizePathForCompare（使用
-  makeTempDir 支持 Windows 跨平台）
-- ✅ **runtime.test.ts** (9)：getRuntime、getTaskArgs、getTestArgs、getLintArgs
-  等
-- ✅ **module-cache.test.ts** (5)：invalidateModule、getModuleVersion（使用
-  pathToFileUrl 支持 Windows 跨平台）
-- ✅ **load-route-module.test.ts**
-  (7)：loadRouteModule、clearCssRouteCacheForPath、含 CSS 导入
-- ✅ **asset-manifest.test.ts** (4)：replaceAssetPathsInHtml
-- ✅ **config-loader.test.ts** (4)：loadProjectConfig（使用
-  pathToFileUrl，已移除 Windows skip）
-- ✅ **csr-client-middleware.test.ts** (4)：createClientScriptMiddleware、next
-  调用、生产模式
-- ✅ **socket-io.test.ts**
-  (9)：initializeSocketIo、getSocketIoServer、getSocketIoPath、createSocketIoMiddleware、传入
-  handlers 时 connection 触发 onConnection
-- ✅ **websocket.test.ts**
-  (7)：initializeWebSocket、getWebSocketServer、getWebSocketPath、createWebSocketMiddleware、传入
-  handlers 时 connection 触发 onConnection
-- ✅ **cmd-clean.test.ts** (3)：main 清理 dist 等目录
-- ✅ **cmd-build.test.ts** (3)：main 无 deno.json / 无 build task 时行为
-- ✅ **cmd-dev/start/preview/fmt/lint/test.test.ts** (各 2)：main 无 deno.json
-  时提前返回
-- ✅ **cmd-upgrade.test.ts** (2)：main 正常执行、--beta 选项
-
-### 22. e2e 测试 (server-request.test.ts) - 2 个测试
-
-- ✅ 使用 preact-ssr basic 示例启动服务器
-- ✅ 发起 HTTP 请求，验证返回 HTML 包含 `<!DOCTYPE` 或 `<html`
-
-### 23. 集成测试 (config-lifecycle.test.ts) - 2 个测试
-
-- ✅ 临时目录创建 config、routes
-- ✅ App 加载 config、app.name/app.version 正确、init 生命周期事件触发
+- ✅ **sanitize.test.ts** (15): sanitizeRequestParams dangerous key filter, NUL
+  filter, empty value handling
+- ✅ **path.test.ts** (18): isPathWithinProject, pathForLog,
+  normalizePathForCompare, extractComponentPathFromRouteFile (makeTempDir for
+  Windows)
+- ✅ **runtime.test.ts** (9): getRuntime, getTaskArgs, getTestArgs, getLintArgs,
+  etc.
+- ✅ **module-cache.test.ts** (5): invalidateModule, getModuleVersion
+  (pathToFileUrl for Windows)
+- ✅ **load-route-module.test.ts** (7): loadRouteModule,
+  clearCssRouteCacheForPath, CSS import
+- ✅ **config-loader.test.ts** (4): loadProjectConfig (pathToFileUrl, Windows
+  skip removed)
+- ✅ **csr-client-middleware.test.ts** (6): createClientScriptMiddleware, next
+  call, prod mode, chunk files
+- ✅ **i18n.test.ts** (13): $t, setDwebLocale, detectLocale
+- ✅ **generate.test.ts** (6): generate service, api, model, route; output error
+  for unsupported type
+- ✅ **socket-io.test.ts** (9): initializeSocketIo, getSocketIoServer,
+  getSocketIoPath, createSocketIoMiddleware; onConnection when handlers passed
+- ✅ **websocket.test.ts** (7): initializeWebSocket, getWebSocketServer,
+  getWebSocketPath, createWebSocketMiddleware; onConnection when handlers passed
+- ✅ **cmd-clean.test.ts** (3): main cleans dist etc.
+- ✅ **cmd-build.test.ts** (3): main when no deno.json / no build task
+- ✅ **cmd-dev/start/preview/fmt/lint/test.test.ts** (2 each): main returns
+  early when no deno.json
+- ✅ **cmd-upgrade.test.ts** (2): main runs, --beta option
+- ✅ **cmd-update.test.ts** (3): main when no deno.json, runs update when
+  deno.json exists
+- ✅ **windows.test.ts** (47, 2 ignored): path normalization, build output
+  inference, module cache, component path extraction, path safety check,
+  log-friendly path (Windows-only cases skipped on non-Windows)
 
 ---
 
-## 📈 测试覆盖分析
+## 📈 Test Coverage Analysis
 
-### 接口方法覆盖
+### API Method Coverage
 
-| 模块                  | 方法                                                                                    | 覆盖状态 |
-| --------------------- | --------------------------------------------------------------------------------------- | -------- |
-| app                   | App 构造函数                                                                            | ✅       |
-| app                   | App.use()                                                                               | ✅       |
-| app                   | App.registerPlugin()                                                                    | ✅       |
-| app                   | App.on()                                                                                | ✅       |
-| app                   | App.stage                                                                               | ✅       |
-| config                | validateConfig()                                                                        | ✅       |
-| config                | deepMergeConfig()                                                                       | ✅       |
-| service               | initializeServiceContainer()                                                            | ✅       |
-| service               | getServiceContainer()                                                                   | ✅       |
-| lifecycle             | initializeLifecycle()                                                                   | ✅       |
-| lifecycle             | getLifecycleManager()                                                                   | ✅       |
-| lifecycle             | registerLifecycleHook()                                                                 | ✅       |
-| middleware            | initializeMiddleware()                                                                  | ✅       |
-| middleware            | getMiddlewareChain()                                                                    | ✅       |
-| middleware            | registerMiddleware()                                                                    | ✅       |
-| plugin                | initializePlugin()                                                                      | ✅       |
-| plugin                | getPluginManager()                                                                      | ✅       |
-| plugin                | registerPlugin()                                                                        | ✅       |
-| plugin-events         | emitPluginEvent()                                                                       | ✅       |
-| plugin-events         | emitOnInit()                                                                            | ✅       |
-| plugin-events         | emitOnStart()                                                                           | ✅       |
-| plugin-events         | emitOnStop()                                                                            | ✅       |
-| plugin-events         | emitOnShutdown()                                                                        | ✅       |
-| plugin-events         | emitOnBuild()                                                                           | ✅       |
-| plugin-events         | emitOnBuildComplete()                                                                   | ✅       |
-| plugin-events         | emitOnSocket()                                                                          | ✅       |
-| plugin-events         | emitOnSocketClose()                                                                     | ✅       |
-| server                | initializeServer()                                                                      | ✅       |
-| server                | getServer()                                                                             | ✅       |
-| database              | initializeDatabase()                                                                    | ✅       |
-| database              | getDatabaseManager()                                                                    | ✅       |
-| database              | getDatabaseStatus()                                                                     | ✅       |
-| database              | connectDatabases()                                                                      | ⬜       |
-| database              | disconnectDatabases()                                                                   | ⬜       |
-| build                 | initializeBuild()                                                                       | ✅       |
-| build                 | getBuild()                                                                              | ✅       |
-| render                | initializeRender()                                                                      | ✅       |
-| render                | getRender()                                                                             | ✅       |
-| render                | renderSSR()                                                                             | ✅       |
-| render                | renderSSG()                                                                             | ✅       |
-| router                | initializeRouter()                                                                      | ✅       |
-| router                | getRouter()                                                                             | ✅       |
-| logger                | initializeLogger()                                                                      | ✅       |
-| logger                | getLogger()                                                                             | ✅       |
-| command               | Command 构造函数                                                                        | ✅       |
-| command               | Command.initApp()                                                                       | ⬜       |
-| command               | Command.app                                                                             | ✅       |
-| command               | Command.container                                                                       | ✅       |
-| command               | Command.action()                                                                        | ✅       |
-| command               | Command.command()                                                                       | ✅       |
-| command               | 重导出 API (colorize, colors 等)                                                        | ✅       |
-| runtime-adapter       | getEnv / cwd / join / readTextFile 等                                                   | ✅       |
-| errors                | createDwebError / throwDwebError / isDwebError / setDwebErrorTranslator                 | ✅       |
-| csr-client-builder    | clearClientScriptCache / createClientScriptMiddleware                                   | ✅       |
-| render-csr            | createRendererCSR()                                                                     | ✅       |
-| render-ssr            | createRendererSSR()                                                                     | ✅       |
-| render-hybrid         | createRendererHybrid()                                                                  | ✅       |
-| render-ssg            | createRendererSSG()                                                                     | ✅       |
-| version               | DWEB_VERSION                                                                            | ✅       |
-| cli                   | createCLI() / execute                                                                   | ✅       |
-| sanitize              | sanitizeRequestParams()                                                                 | ✅       |
-| path                  | isPathWithinProject / pathForLog / normalizePathForCompare                              | ✅       |
-| runtime               | getRuntime / getTaskArgs / getTestArgs / getLintArgs                                    | ✅       |
-| module-cache          | invalidateModule / getModuleVersion                                                     | ✅       |
-| load-route-module     | loadRouteModule / clearCssRouteCacheForPath                                             | ✅       |
-| asset-manifest        | replaceAssetPathsInHtml                                                                 | ✅       |
-| config-loader         | loadProjectConfig                                                                       | ✅       |
-| csr-client-middleware | createClientScriptMiddleware                                                            | ✅       |
-| socket-io             | initializeSocketIo / getSocketIoServer / getSocketIoPath / createSocketIoMiddleware     | ✅       |
-| websocket             | initializeWebSocket / getWebSocketServer / getWebSocketPath / createWebSocketMiddleware | ✅       |
+| Module                | Method                                                                                  | Status |
+| --------------------- | --------------------------------------------------------------------------------------- | ------ |
+| app                   | App constructor                                                                         | ✅     |
+| app                   | App.use()                                                                               | ✅     |
+| app                   | App.registerPlugin()                                                                    | ✅     |
+| app                   | App.on()                                                                                | ✅     |
+| app                   | App.stage                                                                               | ✅     |
+| config                | validateConfig()                                                                        | ✅     |
+| config                | deepMergeConfig()                                                                       | ✅     |
+| service               | initializeServiceContainer()                                                            | ✅     |
+| service               | getServiceContainer()                                                                   | ✅     |
+| lifecycle             | initializeLifecycle()                                                                   | ✅     |
+| lifecycle             | getLifecycleManager()                                                                   | ✅     |
+| lifecycle             | registerLifecycleHook()                                                                 | ✅     |
+| middleware            | initializeMiddleware()                                                                  | ✅     |
+| middleware            | getMiddlewareChain()                                                                    | ✅     |
+| middleware            | registerMiddleware()                                                                    | ✅     |
+| plugin                | initializePlugin()                                                                      | ✅     |
+| plugin                | getPluginManager()                                                                      | ✅     |
+| plugin                | registerPlugin()                                                                        | ✅     |
+| plugin-events         | emitPluginEvent()                                                                       | ✅     |
+| plugin-events         | emitOnInit()                                                                            | ✅     |
+| plugin-events         | emitOnStart()                                                                           | ✅     |
+| plugin-events         | emitOnStop()                                                                            | ✅     |
+| plugin-events         | emitOnShutdown()                                                                        | ✅     |
+| plugin-events         | emitOnBuild()                                                                           | ✅     |
+| plugin-events         | emitOnBuildComplete()                                                                   | ✅     |
+| plugin-events         | emitOnSocket()                                                                          | ✅     |
+| plugin-events         | emitOnSocketClose()                                                                     | ✅     |
+| server                | initializeServer()                                                                      | ✅     |
+| server                | getServer()                                                                             | ✅     |
+| database              | initializeDatabase()                                                                    | ✅     |
+| database              | getDatabaseManager()                                                                    | ✅     |
+| database              | getDatabaseStatus()                                                                     | ✅     |
+| database              | connectDatabases()                                                                      | ⬜     |
+| database              | disconnectDatabases()                                                                   | ⬜     |
+| build                 | initializeBuild()                                                                       | ✅     |
+| build                 | getBuild()                                                                              | ✅     |
+| render                | initializeRender()                                                                      | ✅     |
+| render                | getRender()                                                                             | ✅     |
+| render                | renderSSR()                                                                             | ✅     |
+| render                | renderSSG()                                                                             | ✅     |
+| router                | initializeRouter()                                                                      | ✅     |
+| router                | getRouter()                                                                             | ✅     |
+| logger                | initializeLogger()                                                                      | ✅     |
+| logger                | getLogger()                                                                             | ✅     |
+| command               | Command constructor                                                                     | ✅     |
+| command               | Command.initApp()                                                                       | ⬜     |
+| command               | Command.app                                                                             | ✅     |
+| command               | Command.container                                                                       | ✅     |
+| command               | Command.action()                                                                        | ✅     |
+| command               | Command.command()                                                                       | ✅     |
+| command               | Re-exported API (colorize, colors, etc.)                                                | ✅     |
+| runtime-adapter       | getEnv / cwd / join / readTextFile, etc.                                                | ✅     |
+| errors                | createDwebError / throwDwebError / isDwebError / setDwebErrorTranslator                 | ✅     |
+| csr-client-builder    | clearClientScriptCache / createClientScriptMiddleware                                   | ✅     |
+| render-csr            | createRendererCSR()                                                                     | ✅     |
+| render-ssr            | createRendererSSR()                                                                     | ✅     |
+| render-hybrid         | createRendererHybrid()                                                                  | ✅     |
+| render-ssg            | createRendererSSG()                                                                     | ✅     |
+| version               | DWEB_VERSION                                                                            | ✅     |
+| cli                   | createCLI() / execute                                                                   | ✅     |
+| sanitize              | sanitizeRequestParams()                                                                 | ✅     |
+| path                  | isPathWithinProject / pathForLog / normalizePathForCompare                              | ✅     |
+| runtime               | getRuntime / getTaskArgs / getTestArgs / getLintArgs                                    | ✅     |
+| module-cache          | invalidateModule / getModuleVersion                                                     | ✅     |
+| load-route-module     | loadRouteModule / clearCssRouteCacheForPath                                             | ✅     |
+| asset-manifest        | replaceAssetPathsInHtml                                                                 | ✅     |
+| config-loader         | loadProjectConfig                                                                       | ✅     |
+| csr-client-middleware | createClientScriptMiddleware                                                            | ✅     |
+| socket-io             | initializeSocketIo / getSocketIoServer / getSocketIoPath / createSocketIoMiddleware     | ✅     |
+| websocket             | initializeWebSocket / getWebSocketServer / getWebSocketPath / createWebSocketMiddleware | ✅     |
 
-### 边界情况覆盖
+### Edge Case Coverage
 
-| 边界情况            | 覆盖状态 |
-| ------------------- | -------- |
-| 空配置对象          | ✅       |
-| 无效类型配置        | ✅       |
-| 服务重复注册        | ✅       |
-| 服务未注册时获取    | ✅       |
-| 多个插件/中间件     | ✅       |
-| 中间件错误传播      | ✅       |
-| 插件钩子错误隔离    | ✅       |
-| 配置深度合并        | ✅       |
-| 同名插件/中间件替换 | ✅       |
+| Edge case                           | Status |
+| ----------------------------------- | ------ |
+| Empty config object                 | ✅     |
+| Invalid type config                 | ✅     |
+| Duplicate service registration      | ✅     |
+| Get when service not registered     | ✅     |
+| Multiple plugins/middlewares        | ✅     |
+| Middleware error propagation        | ✅     |
+| Plugin hook error isolation         | ✅     |
+| Config deep merge                   | ✅     |
+| Same-name plugin/middleware replace | ✅     |
 
-### 错误处理覆盖
+### Error Handling Coverage
 
-| 错误场景         | 覆盖状态 |
-| ---------------- | -------- |
-| 配置验证错误     | ✅       |
-| 服务重复注册错误 | ✅       |
-| 服务未找到错误   | ✅       |
-| 中间件执行错误   | ✅       |
-| 插件钩子执行错误 | ✅       |
-| 数据验证错误     | ✅       |
-
----
-
-## 📝 优点
-
-1. **完整的核心模块覆盖**：config、service、lifecycle、middleware、plugin、plugin-events
-   全部测试
-2. **配置验证测试充分**：validateConfig 和 deepMergeConfig 覆盖了各种场景
-3. **错误隔离测试**：验证了插件错误不会影响其他插件
-4. **服务容器测试**：验证了单例服务和依赖注入功能
-5. **中间件洋葱模型**：验证了中间件按顺序执行
+| Error scenario               | Status |
+| ---------------------------- | ------ |
+| Config validation error      | ✅     |
+| Duplicate registration error | ✅     |
+| Service not found error      | ✅     |
+| Middleware execution error   | ✅     |
+| Plugin hook execution error  | ✅     |
+| Data validation error        | ✅     |
 
 ---
 
-## 🎯 结论
+## 📝 Strengths
 
-@dreamer/dweb 框架的核心模块测试在文件级已全面覆盖，共 **480**
-个测试用例全部通过。所有测试均为实质性测试，验证了具体的功能行为。测试覆盖了：
+1. **Complete core module coverage**: config, service, lifecycle, middleware,
+   plugin, plugin-events all tested
+2. **Thorough config validation tests**: validateConfig and deepMergeConfig
+   cover various scenarios
+3. **Error isolation tests**: verify plugin errors do not affect other plugins
+4. **Service container tests**: verify singleton and dependency injection
+5. **Middleware onion model**: verify middleware executes in order
 
-- ✅ App 类核心功能
-- ✅ 配置管理（验证和合并，含 render.mode hybrid）
-- ✅ 服务容器集成
-- ✅ 生命周期管理
-- ✅ 中间件系统
-- ✅ 插件系统
-- ✅ 插件事件系统（含 onSocket、onSocketClose）
-- ✅ 服务器集成
-- ✅ 数据库集成
-- ✅ 构建工具集成
-- ✅ 渲染引擎集成（renderSSR、renderSSG）
-- ✅ 路由系统集成
-- ✅ 日志系统集成
-- ✅ CLI 命令模块（createCLI）
-- ✅ 运行时适配器（runtime-adapter re-export）
-- ✅ 统一错误处理（DwebError、throwDwebError、i18n 翻译器）
-- ✅ CSR 客户端构建与 createRendererCSR
+---
+
+## 🎯 Conclusion
+
+@dreamer/dweb core module tests are fully covered at file level. **618** test
+cases pass (2 Windows-only cases skipped on non-Windows). All tests are
+substantive and verify actual behavior. Coverage includes:
+
+- ✅ Config management (validation and merge, including render.mode hybrid)
+- ✅ Service container integration
+- ✅ Lifecycle management
+- ✅ Middleware system
+- ✅ Plugin system
+- ✅ Plugin events system (onSocket, onSocketClose)
+- ✅ Server integration
+- ✅ Database integration
+- ✅ Build tool integration
+- ✅ Render engine integration (renderSSR, renderSSG)
+- ✅ Router system integration
+- ✅ Logger system integration
+- ✅ CLI command module (createCLI)
+- ✅ Runtime adapter (runtime-adapter re-export)
+- ✅ Unified error handling (DwebError, throwDwebError, i18n translator)
+- ✅ CSR client build and createRendererCSR
 - ✅ createRendererSSR / createRendererHybrid / createRendererSSG
-- ✅ 版本（DWEB_VERSION）
-- ✅ 工具模块（sanitize、path、runtime、asset-manifest、config-loader）
-- ✅
-  功能模块（module-cache、load-route-module、csr-client-middleware、socket-io、websocket）
-- ✅ CLI 子命令（clean、build、dev、start、preview、fmt、lint、test、upgrade）
-- ✅ e2e 测试（服务器请求验证）
-- ✅ 集成测试（配置与生命周期）
+- ✅ Version (DWEB_VERSION)
+- ✅ Utility modules (sanitize, path, runtime, config-loader)
+- ✅ Feature modules (module-cache, load-route-module, csr-client-middleware,
+  socket-io, websocket)
+- ✅ CLI subcommands (clean, build, dev, start, preview, fmt, lint, test,
+  upgrade, update)
+- ✅ Windows compatibility (path normalization, build output inference, module
+  cache, component path extraction, path safety check, log-friendly path)
 
-框架核心功能已完成全面测试验证；e2e、integration 已补充实际用例。
+Core framework functionality is fully tested. **618** cases pass; **2**
+Windows-only cases are skipped on non-Windows.

@@ -15,14 +15,15 @@
  */
 
 import type { RouteMatch, Router } from "@dreamer/router";
-import type { ServiceContainer } from "@dreamer/service";
 import type { HttpContext } from "@dreamer/server";
-import { getEnv } from "../core/runtime-adapter.ts";
-import { getLogger } from "../utils/logger.ts";
+import type { ServiceContainer } from "@dreamer/service";
+import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
-import { sanitizeRequestParams } from "../utils/sanitize.ts";
 import { $t } from "../utils/i18n.ts";
+import { getLogger } from "../utils/logger.ts";
+import { sanitizeRequestParams } from "../utils/sanitize.ts";
+import { extractComponentPathFromRouteFile } from "../utils/path.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
 
@@ -99,8 +100,12 @@ export function createRendererHybrid(
     ...renderConfig.csr, // 兼容 CSR 配置
   };
 
-  // 收集所有路由信息（用于注入到客户端）
-  const clientRoutes = collectClientRoutes(router);
+  const routerConfig = (config.router || {}) as { routesDir?: string };
+  const routesDir = routerConfig.routesDir ?? "./src/routes";
+  const routesDirPath = join(cwd(), routesDir);
+
+  // 收集所有路由信息（用于注入到客户端，component 与 ROUTE_LOADERS key 统一格式）
+  const clientRoutes = collectClientRoutes(router, routesDirPath);
 
   return async (
     ctx: HttpContext,
@@ -206,10 +211,11 @@ export function createRendererHybrid(
         html = await replaceAssetPathsInHtml(html, config);
       }
 
-      // 构建 hydration 数据（component 路径统一为正斜杠、去除扩展名，与 collectClientRoutes 一致，确保 Windows 下 loadPageModule 能正确匹配 ROUTE_LOADERS）
-      const rawComponent = match.route.file || match.route.path;
+      // 构建 hydration 数据（component 与 ROUTE_LOADERS key 统一格式，确保 CSR/Hybrid 在 Windows 下 loadPageModule 能正确匹配）
+      const rawComponent = match.route.file || match.route.path || "";
       const normalizedComponent = typeof rawComponent === "string"
-        ? rawComponent.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "").trim()
+        ? extractComponentPathFromRouteFile(routesDirPath, rawComponent) ||
+          rawComponent.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "").trim()
         : rawComponent;
       const hydrationData = {
         page: pageProps,
@@ -322,34 +328,29 @@ ${hybridOptions.bodyTags || ""}`;
 }
 
 /**
- * 规范化路由 component 路径（Windows 兼容：统一正斜杠）
- */
-function normalizeRouteComponent(component: string): string {
-  return component.replace(/\\/g, "/").trim();
-}
-
-/**
  * 收集客户端路由信息
  *
  * @param router 路由实例
+ * @param routesDirPath routes 目录绝对路径（用于 extractComponentPathFromRouteFile，确保 component 与 ROUTE_LOADERS key 一致）
  * @returns 客户端路由数组
  */
 function collectClientRoutes(
   router: Router,
+  routesDirPath: string,
 ): Array<{ path: string; component: string; type: string }> {
   const routes: Array<{ path: string; component: string; type: string }> = [];
 
-  // 获取所有注册的路由
   const allRoutes = router.getRoutes?.() || [];
 
   for (const route of allRoutes) {
-    // 跳过 API 路由
     if (route.isApi) continue;
 
-    const raw = (route.file || route.path).replace(/\.(tsx?|jsx?)$/, "");
+    const raw = route.file || route.path || "";
+    const component = extractComponentPathFromRouteFile(routesDirPath, raw) ||
+      raw.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "").trim();
     routes.push({
       path: route.path,
-      component: normalizeRouteComponent(raw),
+      component,
       type: route.type || "static",
     });
   }

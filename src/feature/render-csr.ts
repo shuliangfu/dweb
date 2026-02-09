@@ -16,8 +16,9 @@ import { createElement as createElementPreact } from "preact";
 import { createElement as createElementReact } from "react";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
-import { getEnv } from "../core/runtime-adapter.ts";
+import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
 import { getLogger } from "../utils/logger.ts";
+import { extractComponentPathFromRouteFile } from "../utils/path.ts";
 import type { AppConfig } from "../types/app.ts";
 import { $t } from "../utils/i18n.ts";
 import { loadRouteModule } from "./load-route-module.ts";
@@ -87,7 +88,10 @@ export function createRendererCSR(
     ...renderConfig.csr,
   };
   const engine = renderConfig.engine || "preact";
-  const clientRoutes = collectClientRoutes(router);
+  const routerConfig = (config.router || {}) as { routesDir?: string };
+  const routesDir = routerConfig.routesDir ?? "./src/routes";
+  const routesDirPath = join(cwd(), routesDir);
+  const clientRoutes = collectClientRoutes(router, routesDirPath);
 
   /** 根据 engine 选择 createElement，避免 React 下误用 Preact 元素导致 "Objects are not valid as a React child" */
   const createElement = engine === "react"
@@ -227,37 +231,29 @@ ${csrOptions.bodyTags || ""}`;
 }
 
 /**
- * 规范化路由 component 路径（Windows 兼容：统一正斜杠、去除扩展名）
- */
-function normalizeRouteComponent(component: string): string {
-  return component
-    .replace(/\\/g, "/")
-    .replace(/\.(tsx?|jsx?)$/, "")
-    .trim();
-}
-
-/**
  * 收集客户端路由信息
  *
  * @param router 路由实例
+ * @param routesDirPath routes 目录绝对路径（用于 extractComponentPathFromRouteFile，确保 component 与 ROUTE_LOADERS key 一致）
  * @returns 客户端路由数组
  */
 function collectClientRoutes(
   router: Router,
+  routesDirPath: string,
 ): Array<{ path: string; component: string; type: string }> {
   const routes: Array<{ path: string; component: string; type: string }> = [];
 
-  // 获取所有注册的路由
   const allRoutes = router.getRoutes?.() || [];
 
   for (const route of allRoutes) {
-    // 跳过 API 路由
     if (route.isApi) continue;
 
-    const raw = route.file || route.path;
+    const raw = route.file || route.path || "";
+    const component = extractComponentPathFromRouteFile(routesDirPath, raw) ||
+      raw.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "").trim();
     routes.push({
       path: route.path,
-      component: normalizeRouteComponent(raw),
+      component,
       type: route.type || "static",
     });
   }
