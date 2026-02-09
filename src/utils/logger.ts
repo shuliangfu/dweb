@@ -46,13 +46,11 @@ export function initializeLogger(
   const tty = isTerminal();
   const useTextFormat = tty || forceTextByEnv;
 
-  // 3. 未指定 output 时强制输出到控制台，避免 output.auto 在非 TTY 下写入文件导致终端无日志
-  //    （用户设置 logger.level: "debug" 时期望在终端看到日志）
   const baseConfig: LoggerConfig = {
     level: loggerConfig.level || "info",
+    output: loggerConfig.output,
     filter: loggerConfig.filter,
     ...loggerConfig,
-    output: loggerConfig.output ?? { console: true },
   };
   if (forceJsonByEnv) {
     baseConfig.format = "json";
@@ -62,7 +60,7 @@ export function initializeLogger(
     baseConfig.format = "text";
     baseConfig.showTime = false;
   }
-
+  
   const logger = createLogger(baseConfig);
 
   // 将日志实例注册到服务容器
