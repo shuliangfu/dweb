@@ -26,7 +26,6 @@ import {
   exists,
   getEnv,
   join,
-  platform,
   readdir,
   readTextFile,
   relative,
@@ -1127,10 +1126,6 @@ async function doDevBuild(
 ): Promise<{
   outputContents?: Array<{ path: string; text: string; contents?: Uint8Array }>;
 }> {
-  // Windows 兼容：esbuild 在 Windows 上 chunk 分配可能非确定性，导致 chunk-XXX.js 含 __publicField 而非 preact
-  // 临时方案：Windows dev 模式下禁用代码分割，将所有依赖打进单文件，避免 hydration 报错
-  const isWindows = platform() === "windows";
-  const splittingEnabled = !isWindows;
   const builder = new BuilderClient({
     entry: entryPath,
     output: outputDir,
@@ -1139,9 +1134,9 @@ async function doDevBuild(
     bundle: {
       minify: false,
       sourcemap: true,
-      splitting: splittingEnabled,
+      splitting: true,
       format: "esm",
-      chunkNames: splittingEnabled ? "[name]-[hash]" : undefined,
+      chunkNames: "[name]-[hash]",
     },
     t: (key: string, params?: Record<string, string | number | boolean>) => {
       const r = $t(key, params);
@@ -1408,12 +1403,6 @@ export async function buildClientScript(
           memOutputDir,
           engine,
           buildDebug,
-        );
-      }
-
-      if (platform() === "windows" && buildDebug) {
-        logger.debug(
-          "[dweb] Windows dev: splitting disabled, all deps in single bundle",
         );
       }
 
