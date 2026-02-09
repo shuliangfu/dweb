@@ -16,7 +16,6 @@ import {
   ensureDir,
   join,
   makeTempDir,
-  platform,
   remove,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
@@ -42,22 +41,18 @@ describe("loadRouteModule (load-route-module.ts)", () => {
   });
 
   describe("loadRouteModule()", () => {
-    it.skipIf(
-      platform() === "windows",
-      "应加载项目内的无 CSS 路由模块",
-      async () => {
-        const routeDir = join(testDir, "src", "routes");
-        await ensureDir(routeDir);
-        await writeTextFile(
-          join(routeDir, "index.tsx"),
-          `export default function Page() { return "Hello"; }`,
-        );
+    it("应加载项目内的无 CSS 路由模块", async () => {
+      const routeDir = join(testDir, "src", "routes");
+      await ensureDir(routeDir);
+      await writeTextFile(
+        join(routeDir, "index.tsx"),
+        `export default function Page() { return "Hello"; }`,
+      );
 
-        const mod = await loadRouteModule(join(routeDir, "index.tsx"));
-        expect(mod).not.toBeNull();
-        expect(typeof (mod as { default?: unknown })?.default).toBe("function");
-      },
-    );
+      const mod = await loadRouteModule(join(routeDir, "index.tsx"));
+      expect(mod).not.toBeNull();
+      expect(typeof (mod as { default?: unknown })?.default).toBe("function");
+    });
 
     it("项目外路径应返回 null", async () => {
       const mod = await loadRouteModule("/etc/passwd");
@@ -86,31 +81,27 @@ describe("loadRouteModule (load-route-module.ts)", () => {
   });
 
   describe("含 CSS 导入的路由模块", () => {
-    it.skipIf(
-      platform() === "windows",
-      "应能加载含 import css 的模块并剥离 CSS",
-      async () => {
-        const routeDir = join(testDir, "src", "routes");
-        await ensureDir(routeDir);
-        const cssDir = join(routeDir, "assets");
-        await ensureDir(cssDir);
-        await writeTextFile(join(cssDir, "style.css"), "body { color: red; }");
-        await writeTextFile(
-          join(routeDir, "with-css.tsx"),
-          `import "./assets/style.css";
+    it("应能加载含 import css 的模块并剥离 CSS", async () => {
+      const routeDir = join(testDir, "src", "routes");
+      await ensureDir(routeDir);
+      const cssDir = join(routeDir, "assets");
+      await ensureDir(cssDir);
+      await writeTextFile(join(cssDir, "style.css"), "body { color: red; }");
+      await writeTextFile(
+        join(routeDir, "with-css.tsx"),
+        `import "./assets/style.css";
 export default function Page() { return "With CSS"; }`,
-        );
+      );
 
-        const cssCollected: string[] = [];
-        const mod = await loadRouteModule(join(routeDir, "with-css.tsx"), {
-          cssCollector: (css) => cssCollected.push(css),
-        });
+      const cssCollected: string[] = [];
+      const mod = await loadRouteModule(join(routeDir, "with-css.tsx"), {
+        cssCollector: (css) => cssCollected.push(css),
+      });
 
-        expect(mod).not.toBeNull();
-        expect(typeof (mod as { default?: unknown })?.default).toBe("function");
-        expect(cssCollected).toContain("body { color: red; }");
-      },
-    );
+      expect(mod).not.toBeNull();
+      expect(typeof (mod as { default?: unknown })?.default).toBe("function");
+      expect(cssCollected).toContain("body { color: red; }");
+    });
   });
 
   describe("clearCssRouteCacheForPath()", () => {

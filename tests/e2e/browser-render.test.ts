@@ -348,21 +348,13 @@ function createExampleBrowserSuite(
   });
 }
 
-/**
- * Windows CI 暂跳过浏览器渲染测试：
- * - preact-csr/preact-hybrid: 60s 超时
- * - react-csr/react-hybrid: _.default.createElement is not a function（疑似 Deno 缓存路径/React 解析在 Windows 下异常）
- * TODO: 在 Windows 环境复现并排查根因后移除本条件
- */
-if (platform() !== "windows") {
-  createExampleBrowserSuite("preact-csr");
-  createExampleBrowserSuite("preact-hybrid");
-  createExampleBrowserSuite("preact-ssr");
-  createExampleBrowserSuite("preact-ssg");
-  createExampleBrowserSuite("react-csr");
-  createExampleBrowserSuite("react-hybrid");
-  createExampleBrowserSuite("react-ssr");
-  createExampleBrowserSuite("react-ssg");
-  createExampleBrowserSuite("preact-hybrid-flat", "main.ts");
-  createExampleBrowserSuite("react-hybrid-flat", "main.ts");
-}
+createExampleBrowserSuite("preact-csr");
+createExampleBrowserSuite("preact-hybrid");
+createExampleBrowserSuite("preact-ssr");
+createExampleBrowserSuite("preact-ssg");
+createExampleBrowserSuite("react-csr");
+createExampleBrowserSuite("react-hybrid");
+createExampleBrowserSuite("react-ssr");
+createExampleBrowserSuite("react-ssg");
+createExampleBrowserSuite("preact-hybrid-flat", "main.ts");
+createExampleBrowserSuite("react-hybrid-flat", "main.ts");

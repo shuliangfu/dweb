@@ -425,26 +425,63 @@ function normalizeComponentPathForLookup(componentPath: string): string {
 }
 
 /**
+ * 尝试从多种路径格式中匹配 ROUTE_LOADERS 的 key（Windows 路径兼容）
+ * 服务端 hydrationData.component 可能与客户端 ROUTE_LOADERS 的 key 格式不一致
+ */
+function findLoaderForPath(cleanPath: string): (() => Promise<unknown>) | undefined {
+  let loader = ROUTE_LOADERS[cleanPath];
+  if (loader) return loader;
+  // Windows 下路径大小写可能不一致，尝试不区分大小写匹配
+  const key = Object.keys(ROUTE_LOADERS).find(
+    (k) => k.toLowerCase() === cleanPath.toLowerCase(),
+  );
+  if (key) return ROUTE_LOADERS[key];
+  // 兼容带 routes/ 前缀的路径（服务端与客户端路径格式差异）
+  if (cleanPath.startsWith("routes/")) {
+    loader = ROUTE_LOADERS[cleanPath.slice(7)];
+    if (loader) return loader;
+  }
+  // 兼容带 src/routes/ 前缀的路径（Windows 下路径格式可能不同）
+  if (cleanPath.startsWith("src/routes/")) {
+    loader = ROUTE_LOADERS[cleanPath.slice(11)];
+    if (loader) return loader;
+  }
+  // 兼容完整 Windows 路径（如 D:/project/src/routes/index 或 C:\\...\\src\\routes\\index）
+  // 查找 "routes/" 或 "/routes/" 后的相对路径（cleanPath 已归一化，无需再 replace 反斜杠）
+  const routesIdx = cleanPath.toLowerCase().indexOf("/routes/");
+  if (routesIdx >= 0) {
+    const afterRoutes = cleanPath.slice(routesIdx + 8);
+    loader = ROUTE_LOADERS[afterRoutes];
+    if (loader) return loader;
+    const keyAfter = Object.keys(ROUTE_LOADERS).find(
+      (k) => k.toLowerCase() === afterRoutes.toLowerCase(),
+    );
+    if (keyAfter) return ROUTE_LOADERS[keyAfter];
+  }
+  // 提取最后一段作为 fallback（如 "src/routes/index" -> "index"，仅当单段路由时）
+  const lastSegment = cleanPath.split("/").pop() || cleanPath;
+  loader = ROUTE_LOADERS[lastSegment];
+  if (loader) return loader;
+  const keyByLast = Object.keys(ROUTE_LOADERS).find(
+    (k) => k.toLowerCase() === lastSegment.toLowerCase(),
+  );
+  return keyByLast ? ROUTE_LOADERS[keyByLast] : undefined;
+}
+
+/**
  * 动态加载页面模块
  * @param componentPath 组件路径标识（如 "about" 或 "user/[id]"）
  */
 export async function loadPageModule(componentPath: string): Promise<unknown> {
   const cleanPath = normalizeComponentPathForLookup(componentPath);
   if (MODULE_CACHE[cleanPath]) return MODULE_CACHE[cleanPath];
-  let loader = ROUTE_LOADERS[cleanPath];
-  // Windows 下路径大小写可能不一致，尝试不区分大小写匹配（支持多段路径如 about/index）
+  const loader = findLoaderForPath(cleanPath);
   if (!loader) {
-    const key = Object.keys(ROUTE_LOADERS).find(
-      (k) => k.toLowerCase() === cleanPath.toLowerCase(),
-    );
-    if (key) loader = ROUTE_LOADERS[key];
+    if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
+      console.warn(${JSON.stringify("[dweb] loadPageModule: no loader for path (Windows path mismatch?)")}, { componentPath, cleanPath, availableKeys: Object.keys(ROUTE_LOADERS) });
+    }
+    return null;
   }
-  // 兼容带 routes/ 前缀的路径（服务端与客户端路径格式差异）
-  if (!loader && cleanPath.startsWith("routes/")) {
-    const withoutPrefix = cleanPath.slice(7);
-    loader = ROUTE_LOADERS[withoutPrefix];
-  }
-  if (!loader) return null;
   const module = await loader();
   MODULE_CACHE[cleanPath] = module;
   return module;
