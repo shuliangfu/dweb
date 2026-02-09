@@ -1409,6 +1409,14 @@ export async function buildClientScript(
       const outputFilesDev = new Map<string, string>();
       if (buildResultDev.outputContents) {
         const memOutNorm = memOutputDir.replace(/\\/g, "/");
+        // 调试：输出 esbuild 原始 outputContents（path + 大小），便于对比 Windows/Mac 差异
+        if (buildDebug) {
+          const rawList = buildResultDev.outputContents
+            .filter((f) => f.path.endsWith(".js") && !f.path.includes(".map"))
+            .map((f) => `${basename(f.path)}:${(f.text.length / 1024).toFixed(1)}KB`)
+            .join(", ");
+          logger.debug("[dweb] esbuild outputContents (path basename: size):", rawList);
+        }
         for (const file of buildResultDev.outputContents) {
           const name = basename(file.path);
           const existing = outputFilesDev.get(name);
@@ -1451,7 +1459,8 @@ export async function buildClientScript(
           count: String(outputFilesDev.size),
         }),
       );
-      // 调试：输出 chunk 列表，便于在 Windows 上对比依赖请求是否缺失
+      // 调试：输出 chunk 列表及每个 chunk 的 content 大小，便于在 Windows 上对比依赖请求是否缺失
+      // preact 等运行时通常 >10KB，__publicField 等辅助代码通常 <1KB，若 chunk-XXX 显示过小则可能内容错误
       if (buildDebug) {
         const chunkNames = [
           ...new Set(
@@ -1461,6 +1470,16 @@ export async function buildClientScript(
           ),
         ].sort();
         logger.debug("[dweb] dev chunks:", chunkNames.join(", "));
+        const chunkSizes = chunkNames
+          .map((k) => {
+            const len = outputFilesDev.get(k)?.length ?? 0;
+            const preactHint = k.startsWith("chunk-") && len < 2000
+              ? " (⚠️可能为__publicField而非preact)"
+              : "";
+            return `${k}:${(len / 1024).toFixed(1)}KB${preactHint}`;
+          })
+          .join(", ");
+        logger.debug("[dweb] dev chunk sizes:", chunkSizes);
       }
 
       let chunkUrlDev: string | undefined;
