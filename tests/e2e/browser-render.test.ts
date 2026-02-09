@@ -152,10 +152,18 @@ async function assertBrowserRender(
   page.on("console", (msg: unknown) => {
     const m = msg as { type: () => string; text: () => string };
     const text = m.text?.() ?? "";
-    if (m.type?.() === "error") {
+    const type = m.type?.() ?? "log";
+    if (type === "error") {
       consoleErrors.push(text);
-    } else if (m.type?.() === "warning") {
+    } else if (type === "warning") {
       consoleWarnings.push(text);
+    }
+    // 转发浏览器控制台到 CI/stdout，便于查看 router/render 等 debug 日志
+    const prefix = `[browser ${type}]`;
+    if (type === "error") {
+      console.error(prefix, text);
+    } else {
+      console.log(prefix, text);
     }
   });
   page.on("pageerror", (err: unknown) => {
