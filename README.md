@@ -1868,10 +1868,11 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.71] - 2026-02-08
+### [3.0.72] - 2026-02-09
 
-**Fixed**: Windows compatibility testing (config.test, build-dirs.test). All 480
-tests pass on Deno, Bun, and CI (ubuntu/windows/macos).
+**Fixed**: Windows Preact/npm resolution (esbuild ^1.0.6), logger passthrough for
+esbuild debug output. **Changed**: Disable debug options in example configs by
+default.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

@@ -1949,10 +1949,10 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.71] - 2026-02-08
+### [3.0.72] - 2026-02-09
 
-**修复**：Windows 兼容性测试（config.test、build-dirs.test）。618 个测试在
-Deno、Bun 及 CI（ubuntu/windows/macos）下全部通过。
+**修复**：Windows Preact/npm 解析（esbuild ^1.0.6）、esbuild 调试日志透传。
+**变更**：示例配置中默认关闭 debug 选项。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

@@ -7,6 +7,25 @@
 
 ---
 
+## [3.0.72] - 2026-02-09
+
+### 修复（Windows 兼容）
+
+- **Windows Preact/npm 解析**：在 dweb 及全部 22 个示例中将 @dreamer/esbuild
+  升级至 ^1.0.6。esbuild 1.0.6 修复了 Windows 下 `file://` 路径处理（如
+  `file:///C:/Users/...` → `C:/Users/...`），并针对 Windows 上
+  `import.meta.resolve` 返回无效路径时增加 npm 包解析的子进程回退逻辑。
+- **Logger 透传**：将 logger 传入 esbuild 的 BuilderClient 和 BuilderServer，
+  当配置 `logger.level: "debug"` 且 `build.client.debug: true` 时，可输出
+  resolver、buildModuleCache 等调试信息。
+
+### 变更
+
+- **示例配置**：所有示例项目的 main.dev.ts 中默认关闭 debug 选项（render、
+  router、build、socket）。
+
+---
+
 ## [3.0.71] - 2026-02-08
 
 ### 修复（Windows 兼容与测试）

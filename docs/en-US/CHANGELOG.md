@@ -8,6 +8,26 @@ and this project adheres to
 
 ---
 
+## [3.0.72] - 2026-02-09
+
+### Fixed (Windows compatibility)
+
+- **Windows Preact/npm resolution**: Update @dreamer/esbuild to ^1.0.6 in dweb
+  and all 22 example projects. esbuild 1.0.6 fixes Windows `file://` path handling
+  (e.g. `file:///C:/Users/...` → `C:/Users/...`) and adds subprocess fallback
+  for npm package resolution when `import.meta.resolve` returns invalid paths on
+  Windows.
+- **Logger passthrough**: Pass logger to esbuild BuilderClient and BuilderServer
+  so debug output (resolver, buildModuleCache, etc.) appears when
+  `logger.level: "debug"` and `build.client.debug: true` are set.
+
+### Changed
+
+- **Example configs**: Disable all debug options (render, router, build, socket)
+  in example project main.dev.ts by default.
+
+---
+
 ## [3.0.71] - 2026-02-08
 
 ### Fixed (Windows compatibility & tests)
