@@ -14,6 +14,7 @@ import {
   type RouterOptions,
 } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
+import { getEnv } from "../core/runtime-adapter.ts";
 import { pluginEvents, type RouteDefinition } from "../core/plugin-events.ts";
 import type { AppConfig } from "../types/app.ts";
 
@@ -38,10 +39,13 @@ export async function initializeRouter(
 ): Promise<Router> {
   // 从配置中获取路由选项（engine、ssr 由 render 提供，服务端路由不接收）
   const routerConfig = (config.router || {}) as RouterOptions;
+  const isDev =
+    (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
 
   const router = createRouter({
     routesDir: routerConfig.routesDir || "./src/routes",
     apiMode: routerConfig.apiMode || "restful",
+    debug: routerConfig.debug ?? isDev,
   });
 
   // 扫描路由文件

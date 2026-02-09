@@ -388,6 +388,8 @@ export interface DwebGlobal {
   __DWEB_ON_READY__?: () => void;
   /** 开发模式 HMR 调试日志开关（控制台设置 globalThis.__DWEB_HMR_DEBUG__ = true 可查看详细日志） */
   __DWEB_HMR_DEBUG__?: boolean;
+  /** 详细调试日志开关（传 true 时 render 与 router 输出详细调试信息，开发模式默认 true） */
+  __DWEB_DEBUG__?: boolean;
 }
 
 /** 浏览器全局对象（兼容 Deno 无 DOM 类型，使用 globalThis 替代 window） */
@@ -608,6 +610,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         },
         layouts: skipLayouts ? undefined : layouts,
         skipLayouts,
+        debug: !!(_win.__DWEB_DEBUG__),
       });
       RENDER_STATE.lastUnmount = hydResult?.unmount ?? null;
       isHydratedRef.current = true;
@@ -706,6 +709,7 @@ export async function setupHydrationRouterAndHmr(opts: {
             props: { params: match.params, query: match.query },
             layouts: skipLayouts ? undefined : layoutList,
             skipLayouts,
+            debug: !!(_win.__DWEB_DEBUG__),
           });
           RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
           if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
@@ -777,6 +781,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         props: { params: match.params, query: match.query },
         layouts: skipLayouts ? undefined : layouts,
         skipLayouts,
+        debug: !!(_win.__DWEB_DEBUG__),
       });
       RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
       (g as DwebGlobal).__DWEB_ON_READY__?.();
@@ -805,7 +810,7 @@ export async function initApp(): Promise<DwebApp> {
   const containerId = g.__DWEB_CONTAINER_ID__ || "app";
   const isHybridMode = g.__DWEB_MODE__ === "hybrid" && !!g.__DATA__;
   const layouts = await loadLayouts();
-  const router = createRouter({ routes, engine });
+  const router = createRouter({ routes, engine, debug: !!(_win.__DWEB_DEBUG__) });
   const isHydratedRef = { current: false };
   await setupHydrationRouterAndHmr({ g, router, containerId, engine, layouts, isHydratedRef, isHybridMode });
 
@@ -840,6 +845,7 @@ export async function initApp(): Promise<DwebApp> {
         props: { params: match.params, query: match.query },
         layouts: skipLayouts ? undefined : layoutList,
         skipLayouts,
+        debug: !!(_win.__DWEB_DEBUG__),
       });
       RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
     } catch (error) {

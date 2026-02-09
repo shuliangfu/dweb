@@ -176,7 +176,7 @@ ${overlayHtml}
 <script>
   ${
         isDevCsr
-          ? "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true;"
+          ? "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true; globalThis.__DWEB_DEBUG__ = globalThis.__DWEB_DEBUG__ ?? true;"
           : ""
       }
   globalThis.__DWEB_DEV__ = ${isDevCsr};
