@@ -33,18 +33,6 @@ deno run -A jsr:@dreamer/dweb/setup
 
 安装成功后，建议先执行 `dweb-cli upgrade` 升级到最新版本。
 
-**🪟 Windows 安装注意事项**：
-
-- **PATH 配置**：安装后 `dweb-cli` 位于 `%USERPROFILE%\.deno\bin`（Deno）或
-  `%USERPROFILE%\.bun\bin`（Bun），需确保该目录已加入系统
-  PATH，否则命令行无法识别 `dweb-cli`。Deno/Bun 官方安装程序通常会自动配置。
-- **PowerShell 执行策略**：若提示无法运行脚本，可执行
-  `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
-  放宽策略。
-- **路径与编码**：项目路径建议避免中文或特殊字符，以减少路径解析问题。
-- **交互式输入**：若遇 "The operation is not supported"，已通过 runtime-adapter
-  兼容处理；建议在纯英文路径下执行（如 `C:\dev\myapp`）。
-
 安装完成后，可在任意目录执行：
 
 ```bash
@@ -95,6 +83,7 @@ deno add jsr:@dreamer/runtime-adapter
 - **运行时要求**：Deno 2.6+ 或 Bun 1.3.5
 - **服务端**：✅ 支持（兼容 Deno 和 Bun 运行时，完整的服务端功能）
 - **客户端**：✅ 支持（浏览器环境，SSR、CSR、SSG、Hybrid 支持）
+- **跨平台**：✅ 全面兼容 macOS、Linux、Windows，开箱即用，无需额外配置
 - **依赖**：整合所有 @dreamer/* 库
 
 ---
