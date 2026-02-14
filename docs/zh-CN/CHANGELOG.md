@@ -7,6 +7,20 @@
 
 ---
 
+## [3.0.73] - 2026-02-15
+
+### 新增
+
+- **View 模板引擎**：Dweb 现已支持以 @dreamer/view 作为视图层（render 适配器）。
+  view-hybrid、view-csr 示例项目展示 SSR、hydration 及基于 signal、指令的
+  客户端渲染。
+
+### 变更
+
+- **授权许可**：项目采用 Apache 2.0 许可，署名已更新（LICENSE、NOTICE）。
+
+---
+
 ## [3.0.72] - 2026-02-09
 
 ### 修复（Windows 兼容）

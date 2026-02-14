@@ -12,6 +12,7 @@
  * 3. 客户端脚本根据路由渲染页面
  */
 
+import { jsx as viewJsx } from "@dreamer/view/jsx-runtime";
 import { createElement as createElementPreact } from "preact";
 import { createElement as createElementReact } from "react";
 import type { RouteMatch, Router } from "@dreamer/router";
@@ -23,6 +24,7 @@ import type { AppConfig } from "../types/app.ts";
 import { $t } from "../utils/i18n.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
+import { hasContainerElementInHtml } from "./render-utils.ts";
 
 /**
  * CSR 渲染选项
@@ -78,7 +80,7 @@ export function createRendererCSR(
   const renderService = getRender(container);
   const renderConfig = (config.render || {}) as {
     debug?: boolean;
-    engine?: "react" | "preact";
+    engine?: "react" | "preact" | "view";
     mode?: "ssr" | "csr" | "ssg";
     csr?: RenderCSROptions;
   };
@@ -94,20 +96,28 @@ export function createRendererCSR(
   const routesDirPath = join(cwd(), routesDir);
   const clientRoutes = collectClientRoutes(router, routesDirPath);
 
-  /** 根据 engine 选择 createElement，避免 React 下误用 Preact 元素导致 "Objects are not valid as a React child" */
+  /** 根据 engine 选择 createElement（仅 React/Preact 使用） */
   const createElement = engine === "react"
     ? createElementReact
     : createElementPreact;
-  /** className (React) vs class (Preact) */
+  /** className (React) vs class (Preact/View) */
   const classProp = engine === "react" ? "className" : "class";
 
-  /** loading 占位组件（替代 Hybrid 的 PageComponent），必须与 engine 一致 */
-  function LoadingPlaceholder() {
+  /** loading 占位组件（React/Preact） */
+  function LoadingPlaceholderReactPreact() {
     return createElement(
       "div",
       { [classProp]: "dweb-loading" },
       createElement("div", { [classProp]: "dweb-spinner" }),
     );
+  }
+
+  /** loading 占位组件（View 引擎，供 SSR 传入 renderSSR；children 放在 props 中） */
+  function LoadingPlaceholderView() {
+    return viewJsx("div", {
+      class: "dweb-loading",
+      children: viewJsx("div", { class: "dweb-spinner" }),
+    });
   }
 
   return async (_ctx: unknown, match: RouteMatch): Promise<Response | null> => {
@@ -145,6 +155,10 @@ export function createRendererCSR(
         LayoutComponent = layoutModule?.default ?? layoutModule?.Layout;
       }
 
+      const LoadingPlaceholder = engine === "view"
+        ? LoadingPlaceholderView
+        : LoadingPlaceholderReactPreact;
+
       const layouts: Array<
         { component: unknown; props?: Record<string, unknown> }
       > = [
@@ -160,6 +174,14 @@ export function createRendererCSR(
       });
 
       let html = result.html;
+
+      // 强制要求 _app 必须渲染挂载容器，未找到则抛错（不自动注入）
+      const containerId = csrOptions.containerId ?? "app";
+      if (!hasContainerElementInHtml(html, containerId)) {
+        throw new Error(
+          `[dweb] _app 必须渲染挂载容器：请在 _app.tsx 的 body 内提供 <div id="${containerId}">{children}</div>，当前 SSR 输出中未找到该元素。`,
+        );
+      }
 
       // 关键 CSS 放 head 最前，避免闪白；body 背景兜底
       const loadingStyles = `<style id="dweb-loading-styles">
@@ -267,7 +289,7 @@ function collectClientRoutes(
 function generateFallbackCSRHtml(
   options: RenderCSROptions,
   routes: Array<{ path: string; component: string; type: string }>,
-  engine: "react" | "preact",
+  engine: "react" | "preact" | "view",
 ): string {
   const { clientScript, containerId, title, headTags, bodyTags } = options;
   const loadingStyles = `<style id="dweb-loading-styles">

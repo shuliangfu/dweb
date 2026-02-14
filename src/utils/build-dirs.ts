@@ -264,3 +264,18 @@ export async function getDreamerClientCacheDir(): Promise<string> {
   const appDir = parts.length === 2 ? "default" : (parts[1] ?? "default");
   return join(home, ".dreamer", projectHash, appDir, "client-out");
 }
+
+/**
+ * 获取 dweb 框架缓存目录（~/.dreamer/dweb）
+ *
+ * 用于存放框架级缓存。
+ * 无法获取 HOME/USERPROFILE 时返回空字符串，调用方需做判空。
+ *
+ * @returns 绝对路径或 ""
+ */
+export function getDreamerDwebCacheDir(): string {
+  const home = getEnv("HOME") ?? getEnv("USERPROFILE") ??
+    getEnv("LOCALAPPDATA");
+  if (!home) return "";
+  return join(home, ".dreamer", "dweb");
+}

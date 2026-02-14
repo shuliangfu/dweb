@@ -171,11 +171,19 @@ export async function loadRouteModule(
   options?: {
     cssCollector?: (css: string) => void;
     logger?: Logger;
+    /** 渲染引擎（react / preact / view） */
+    engine?: "react" | "preact" | "view";
   },
 ): Promise<Record<string, unknown> | null> {
   const cwdPath = cwd();
+  /** 调试日志：需在配置中设置 logger.level 为 "debug" 才会输出 */
+  const debugLog = (message: string, data?: unknown) => {
+    options?.logger?.debug(message, data);
+  };
 
   try {
+    debugLog("[loadRouteModule] 开始加载", { filePath, cwdPath });
+
     // 解析为绝对路径并校验在项目内，防止路径穿越
     let absPath: string;
     if (filePath.startsWith("file://")) {
@@ -186,6 +194,8 @@ export async function loadRouteModule(
     } else {
       absPath = await realPath(join(cwdPath, filePath));
     }
+
+    debugLog("[loadRouteModule] 解析后绝对路径", { absPath });
 
     if (!isPathWithinProject(absPath, cwdPath)) {
       console.warn(`${$t("log.pathMustBeInProject")}: ${filePath}`);
@@ -265,19 +275,29 @@ export async function loadRouteModule(
       }
     }
 
-    // 无 CSS 导入：直接使用源文件
+    // 无 CSS 导入：直接用源文件 URL 加载
     moduleUrl = pathToFileURL(absPath).href;
 
-    // 开发模式：通过 ?t=version 绕过 import 缓存，确保文件变更后刷新能拿到最新内容
+    // 开发模式：通过 ?t=version 绕过 import 缓存（仅 Bun；Deno 下 file: URL 带 query 会触发 ERR_MODULE_NOT_FOUND）
     const env = getEnv("DENO_ENV") || getEnv("BUN_ENV") || getEnv("NODE_ENV");
     if (env === "dev") {
       const version = getModuleVersion(moduleUrl);
       moduleUrl = `${moduleUrl}?t=${version}`;
     }
 
+    debugLog("[loadRouteModule] 即将 dynamic import", { moduleUrl, env });
+
     const mod = await import(moduleUrl);
     return mod as Record<string, unknown>;
   } catch (error) {
+    const err = error as { code?: string; message?: string; stack?: string };
+    debugLog("[loadRouteModule] 加载失败", {
+      filePath,
+      cwdPath,
+      code: err?.code,
+      message: err?.message,
+      stack: err?.stack,
+    });
     const msg = `${$t("log.loadModuleFailed")}: ${filePath}`;
     if (options?.logger) {
       options.logger.error(msg, error);

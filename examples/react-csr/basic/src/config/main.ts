@@ -8,7 +8,7 @@ const config: AppConfig = {
   name: "react-csr-basic-example",
   version: "1.0.0",
   server: {
-    port: 3003, // e2e 并行测试时与 preact-csr/preact-hybrid/react-hybrid 端口区分
+    port: 3003,
     host: "0.0.0.0",
   },
   render: {

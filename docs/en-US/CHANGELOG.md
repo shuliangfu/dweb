@@ -8,15 +8,30 @@ and this project adheres to
 
 ---
 
+## [3.0.73] - 2026-02-15
+
+### Added
+
+- **View template engine**: Dweb now supports @dreamer/view as the view layer
+  (render adapter). View-hybrid and view-csr example projects demonstrate SSR,
+  hydration, and client-side rendering with signals and directives.
+
+### Changed
+
+- **License**: Project is licensed under Apache 2.0; attribution updated
+  (LICENSE, NOTICE).
+
+---
+
 ## [3.0.72] - 2026-02-09
 
 ### Fixed (Windows compatibility)
 
 - **Windows Preact/npm resolution**: Update @dreamer/esbuild to ^1.0.6 in dweb
-  and all 22 example projects. esbuild 1.0.6 fixes Windows `file://` path handling
-  (e.g. `file:///C:/Users/...` → `C:/Users/...`) and adds subprocess fallback
-  for npm package resolution when `import.meta.resolve` returns invalid paths on
-  Windows.
+  and all 22 example projects. esbuild 1.0.6 fixes Windows `file://` path
+  handling (e.g. `file:///C:/Users/...` → `C:/Users/...`) and adds subprocess
+  fallback for npm package resolution when `import.meta.resolve` returns invalid
+  paths on Windows.
 - **Logger passthrough**: Pass logger to esbuild BuilderClient and BuilderServer
   so debug output (resolver, buildModuleCache, etc.) appears when
   `logger.level: "debug"` and `build.client.debug: true` are set.

@@ -12,7 +12,7 @@ export const commonConfig = {
   /** API 基础路径 */
   apiBasePath: "/api",
   /** 后端端口 */
-  backendPort: 3001,
+  backendPort: 3000,
   /** 前端端口 */
-  frontendPort: 3000,
+  frontendPort: 3001,
 };

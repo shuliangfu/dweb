@@ -279,7 +279,7 @@ export function validateConfig(config: AppConfig): void {
     }
     if (
       config.render.engine !== undefined &&
-      !["react", "preact"].includes(config.render.engine)
+      !["react", "preact", "view"].includes(config.render.engine)
     ) {
       throwDwebError(DwebErrorCode.CONFIG_RENDER_ENGINE_INVALID);
     }

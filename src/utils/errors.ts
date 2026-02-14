@@ -55,7 +55,7 @@ export const DwebErrorCode = {
   CONFIG_BUILD_INVALID: "DWEB_E11",
   /** 配置项 'logger' 必须是对象类型 */
   CONFIG_LOGGER_INVALID: "DWEB_E12",
-  /** 配置项 'render.engine' 必须是 "react" 或 "preact" 之一 */
+  /** 配置项 'render.engine' 必须是 "react"、"preact" 或 "view" 之一 */
   CONFIG_RENDER_ENGINE_INVALID: "DWEB_E13",
   /** 配置项 'render.mode' 必须是 "ssr"、"csr"、"ssg" 或 "hybrid" 之一 */
   CONFIG_RENDER_MODE_INVALID: "DWEB_E14",
@@ -187,7 +187,7 @@ export const DEFAULT_ERROR_MESSAGES: Record<
   [DwebErrorCode.CONFIG_BUILD_INVALID]: "Config 'build' must be an object",
   [DwebErrorCode.CONFIG_LOGGER_INVALID]: "Config 'logger' must be an object",
   [DwebErrorCode.CONFIG_RENDER_ENGINE_INVALID]:
-    `Config 'render.engine' must be "react" or "preact"`,
+    `Config 'render.engine' must be "react", "preact" or "view"`,
   [DwebErrorCode.CONFIG_RENDER_MODE_INVALID]:
     `Config 'render.mode' must be "ssr", "csr", "ssg" or "hybrid"`,
   [DwebErrorCode.CONFIG_MIDDLEWARE_PATH_NO_NAME]:

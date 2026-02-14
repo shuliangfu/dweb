@@ -6,8 +6,8 @@
 > @dreamer/* libraries for an out-of-the-box development experience.
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.md)
-[![Tests](https://img.shields.io/badge/tests-618%20passed-brightgreen)](./docs/en-US/TEST_REPORT.md)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
+[![Tests](https://img.shields.io/badge/tests-689%20passed-brightgreen)](./docs/en-US/TEST_REPORT.md)
 
 ---
 
@@ -1859,11 +1859,11 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.72] - 2026-02-09
+### [3.0.73] - 2026-02-15
 
-**Fixed**: Windows Preact/npm resolution (esbuild ^1.0.6), logger passthrough for
-esbuild debug output. **Changed**: Disable debug options in example configs by
-default.
+**Added**: View template engine support (@dreamer/view as render
+adapter;view-hybrid / view-csr examples). **Changed**: License is Apache 2.0;
+attribution updated (LICENSE, NOTICE).
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
@@ -1898,7 +1898,7 @@ Issues and Pull Requests welcome!
 
 ## 📄 License
 
-MIT License - see [LICENSE.md](./LICENSE.md)
+Apache License 2.0 - see [LICENSE](./LICENSE)
 
 ---
 

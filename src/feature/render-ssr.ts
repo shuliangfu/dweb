@@ -70,7 +70,7 @@ export function createRendererSSR(
   const loadCache = new Map<string, LoadCacheEntry>();
   const renderConfig = (config.render || {}) as {
     debug?: boolean;
-    engine?: "react" | "preact";
+    engine?: "react" | "preact" | "view";
   };
   const engine = renderConfig.engine ?? "preact";
 
@@ -94,6 +94,7 @@ export function createRendererSSR(
       const loadOpts = {
         cssCollector,
         logger: container.has("logger") ? getLogger(container) : undefined,
+        engine: renderConfig.engine ?? undefined,
       };
       const [pageModule, appModule, layoutModule] = await Promise.all([
         loadRouteModule(match.route.fullPath, loadOpts),

@@ -8,7 +8,7 @@ const config: AppConfig = {
   name: "react-ssg-basic-example",
   version: "1.0.0",
   server: {
-    port: 3000,
+    port: 3008,
     host: "0.0.0.0",
   },
   render: {

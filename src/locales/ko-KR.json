@@ -678,6 +678,7 @@
     "uiEngine": "UI engine",
     "uiEnginePreact": "Preact",
     "uiEngineReact": "React",
+    "uiEngineView": "View",
     "renderMode": "Render mode",
     "renderModeHybrid": "Hybrid",
     "renderModeSsr": "SSR",

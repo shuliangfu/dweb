@@ -39,7 +39,7 @@ export function initializeRender(
 ): void {
   // 从配置中获取渲染选项
   const renderConfig = (config.render || {}) as {
-    engine?: "react" | "preact";
+    engine?: "react" | "preact" | "view";
     mode?: "ssr" | "csr" | "ssg";
   };
 

@@ -1,0 +1,25 @@
+/**
+ * 开发环境配置
+ * 框架会自动与 main.ts 深度合并，只需写增量覆盖
+ */
+
+import type { AppConfig } from "@dreamer/dweb";
+
+const config: AppConfig = {
+  server: {
+    host: "127.0.0.1",
+  },
+  render: { debug: false },
+  router: { debug: false },
+  build: {
+    client: { debug: false }, // 开启后输出 esbuild resolver 调试信息（如 React/Preact/View 解析）
+    server: { debug: false },
+  },
+  logger: {
+    level: "debug",
+    format: "text",
+  },
+  hotReload: true,
+};
+
+export default config;

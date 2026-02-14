@@ -98,7 +98,7 @@ export function createRendererSSG(
   config: AppConfig,
 ): (ctx: HttpContext, match: RouteMatch) => Promise<Response | null> {
   const renderConfig = (config.render || {}) as {
-    engine?: "react" | "preact";
+    engine?: "react" | "preact" | "view";
     mode?: "ssr" | "csr" | "ssg" | "hybrid";
     ssg?: RenderSSGOptions;
   };

@@ -6,9 +6,9 @@
 
 | Item             | Value                |
 | ---------------- | -------------------- |
-| Framework        | 3.0.71               |
+| Framework        | 3.0.73               |
 | Test framework   | @dreamer/test@^1.0.2 |
-| Test date        | 2026-02-09           |
+| Test date        | 2026-02-14           |
 | Test environment | Deno 2.x / Bun 1.x   |
 
 ---
@@ -20,12 +20,12 @@
 | Metric           | Count |
 | ---------------- | ----- |
 | Test files       | 48    |
-| Total test cases | 620   |
-| Passed           | 618   |
-| Ignored          | 2     |
+| Total test cases | 692   |
+| Passed           | 689   |
+| Ignored          | 3     |
 | Failed           | 0     |
 | Pass rate        | 100%  |
-| Execution time   | ~3m7s |
+| Execution time   | ~1m33s |
 
 ### Test File Statistics
 
@@ -37,7 +37,7 @@
 | `render.test.ts`                | 45             | ✅ All passed |
 | `command.test.ts`               | 41             | ✅ All passed |
 | `build.test.ts`                 | 24             | ✅ All passed |
-| `windows.test.ts`               | 47 (2 ignored) | ✅ All passed |
+| `windows.test.ts`               | 48 (3 ignored) | ✅ All passed |
 | `path.test.ts`                  | 18             | ✅ All passed |
 | `plugin-events.test.ts`         | 16             | ✅ All passed |
 | `logger.test.ts`                | 17             | ✅ All passed |
@@ -82,7 +82,7 @@
 | `cmd-update.test.ts`            | 3              | ✅ All passed |
 | `cli.test.ts`                   | 1              | ✅ All passed |
 
-> **Note**: 2 cases in `windows.test.ts` are Windows-only (skipped via `skipIf`
+> **Note**: 3 cases in `windows.test.ts` are Windows-only (skipped via `skipIf`
 > on non-Windows)
 
 ---
@@ -696,8 +696,8 @@
 
 ## 🎯 Conclusion
 
-@dreamer/dweb core module tests are fully covered at file level. **618** test
-cases pass (2 Windows-only cases skipped on non-Windows). All tests are
+@dreamer/dweb core module tests are fully covered at file level. **689** test
+cases pass (3 Windows-only cases skipped on non-Windows). All tests are
 substantive and verify actual behavior. Coverage includes:
 
 - ✅ Config management (validation and merge, including render.mode hybrid)
@@ -726,5 +726,5 @@ substantive and verify actual behavior. Coverage includes:
 - ✅ Windows compatibility (path normalization, build output inference, module
   cache, component path extraction, path safety check, log-friendly path)
 
-Core framework functionality is fully tested. **618** cases pass; **2**
+Core framework functionality is fully tested. **689** cases pass; **3**
 Windows-only cases are skipped on non-Windows.

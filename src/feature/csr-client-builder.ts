@@ -32,6 +32,7 @@ import {
   resolve,
   writeTextFile,
 } from "../core/runtime-adapter.ts";
+
 import type { AppConfig } from "../types/app.ts";
 import {
   getDreamerClientCacheDir,
@@ -190,7 +191,7 @@ const MAX_ROUTE_SCAN_DEPTH = 10;
 async function scanRouteComponents(
   routesDir: string,
   basePath = "",
-  _engine: "react" | "preact" = "preact",
+  _engine: "react" | "preact" | "view" = "preact",
 ): Promise<RouteComponentInfo[]> {
   const components: RouteComponentInfo[] = [];
   const extRe = /\.(tsx?|jsx?)$/;
@@ -293,6 +294,7 @@ export const CLIENT_OUTPUT_MAIN_FILENAME = "_client.js";
 const ENGINE_RENDER_ADAPTER: Record<string, string> = {
   preact: "@dreamer/render/client/preact",
   react: "@dreamer/render/client/react",
+  view: "@dreamer/render/client/view",
 };
 
 /**
@@ -309,13 +311,19 @@ const ENGINE_RENDER_ADAPTER: Record<string, string> = {
  * @returns client.dep.tsx 的完整源码
  */
 function generateClientDepContent(
-  engine: "react" | "preact",
+  engine: "react" | "preact" | "view",
   components: RouteComponentInfo[],
   hasLayout: boolean,
   hmrCssEntries: Array<{ url: string; styleId: string }>,
 ): string {
   const adapterImport = ENGINE_RENDER_ADAPTER[engine] ??
     "@dreamer/render/client/preact";
+  const isViewEngine = engine === "view";
+  /** view 引擎：createReactiveRoot + createSignal 实现细粒度 patch；getState 为 signal 时 setState 会触发 effect 重跑并 patch，不整树卸载 */
+  const renderAdapterImport = isViewEngine
+    ? `import { createSignal } from "@dreamer/view";
+import { hydrate, renderCSR, createReactiveRoot, buildViewTree } from "${adapterImport}";`
+    : `import { hydrate, renderCSR } from "${adapterImport}";`;
   const routeExt = ".tsx";
   const routeLoaders = components.map(
     (c) =>
@@ -359,6 +367,73 @@ export function clearLayoutCache(): void {
   cachedLayouts = null;
 }`;
 
+  /** View：setViewState + ensureReactiveRoot（模板已在 snippet 前调过 unmountPrevious）；非 view：清空容器 + renderCSR */
+  const hmrRenderSnippet = isViewEngine
+    ? `setViewState({ page: PageComponent, props: { params: match.params, query: match.query }, layouts: layoutList, skipLayouts });
+    _viewEnsureReactiveRoot(containerId);`
+    : `const _container = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
+    if (_container && typeof _container.replaceChildren === "function") _container.replaceChildren();
+    const csrResult = await renderCSR({
+      engine,
+      component: PageComponent,
+      container: "#" + containerId,
+      props: { params: match.params, query: match.query },
+      layouts: skipLayouts ? undefined : layoutList,
+      skipLayouts,
+      debug: !!(_win.__DWEB_DEBUG__),
+    });
+    RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;`;
+
+  /** View Hybrid：hydrate 成功后立即用当前页状态创建 reactive root，后续点击链接只更新 signal 做 patch，避免首次点击空白 */
+  const afterHydrateViewTakeoverSnippet = isViewEngine
+    ? `
+      unmountPrevious();
+      setViewState({ page: PageComponent, props: hydrationData.page || { params: hydrationData.params || {}, query: hydrationData.query || {} }, layouts: skipLayouts ? [] : layouts, skipLayouts });
+      _viewEnsureReactiveRoot(containerId);`
+    : "";
+
+  /** View：先 setViewState，无 reactive root 时才 unmountPrevious，再 ensureReactiveRoot，实现细粒度 patch */
+  const onRouteChangeRenderSnippet = isViewEngine
+    ? `if (_win.__DWEB_DEBUG__) console.log("[dweb:view] onRouteChange", { component: match.route.component, hasPage: !!PageComponent });
+      setViewState({ page: PageComponent, props: { params: match.params, query: match.query }, layouts, skipLayouts });
+      if (!_viewReactiveRoot) unmountPrevious();
+      _viewEnsureReactiveRoot(containerId);
+      (g as DwebGlobal).__DWEB_ON_READY__?.();`
+    : `unmountPrevious();
+      const _container = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
+      if (_container && typeof _container.replaceChildren === "function") _container.replaceChildren();
+      const csrResult = await renderCSR({
+        engine,
+        component: PageComponent,
+        container: "#" + containerId,
+        props: { params: match.params, query: match.query },
+        layouts: skipLayouts ? undefined : layouts,
+        skipLayouts,
+        debug: !!(_win.__DWEB_DEBUG__),
+      });
+      RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
+      (g as DwebGlobal).__DWEB_ON_READY__?.();`;
+
+  const renderCurrentRouteSnippet = isViewEngine
+    ? `if (_win.__DWEB_DEBUG__) console.log("[dweb:view] renderCurrentRoute", { component: match.route.component, hasPage: !!PageComponent, layoutsCount: layoutList?.length ?? 0 });
+      setViewState({ page: PageComponent, props: { params: match.params, query: match.query }, layouts: layoutList, skipLayouts });
+      if (!_viewReactiveRoot && RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
+      _viewEnsureReactiveRoot(containerId);
+      if (_win.__DWEB_DEBUG__) console.log("[dweb:view] renderCurrentRoute done");`
+    : `if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
+      const _container = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
+      if (_container && typeof _container.replaceChildren === "function") _container.replaceChildren();
+      const csrResult = await renderCSR({
+        engine,
+        component: PageComponent,
+        container: "#" + containerId,
+        props: { params: match.params, query: match.query },
+        layouts: skipLayouts ? undefined : layoutList,
+        skipLayouts,
+        debug: !!(_win.__DWEB_DEBUG__),
+      });
+      RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;`;
+
   return `/// <reference lib="dom" />
 /**
  * 客户端依赖（由 @dreamer/dweb 自动生成，每次构建/启动会重新生成）
@@ -366,7 +441,7 @@ export function clearLayoutCache(): void {
  */
 
 import { createRouter } from "@dreamer/router/client";
-import { hydrate, renderCSR } from "${adapterImport}";
+${renderAdapterImport}
 
 /** 客户端路由类型（与 @dreamer/router ClientRoute 一致） */
 export type RouteType = "static" | "dynamic" | "wildcard" | "optional";
@@ -374,7 +449,7 @@ export type RouteType = "static" | "dynamic" | "wildcard" | "optional";
 /** 服务端注入的全局变量类型 */
 export interface DwebGlobal {
   __DWEB_ROUTES__?: Array<{ path: string; component: string; type?: RouteType }>;
-  __DWEB_ENGINE__?: "react" | "preact";
+  __DWEB_ENGINE__?: "react" | "preact" | "view";
   __DWEB_CONTAINER_ID__?: string;
   __DATA__?: {
     page?: Record<string, unknown>;
@@ -385,7 +460,7 @@ export interface DwebGlobal {
   __DWEB_MODE__?: "csr" | "hybrid";
   /** 是否为开发模式（服务端注入，用于区分 dev/prod 行为，如 CSS 强制刷新仅 dev 执行） */
   __DWEB_DEV__?: boolean;
-  __DWEB_HMR_REFRESH__?: (options?: { chunkUrl?: string }) => void;
+  __HMR_REFRESH__?: (options?: { chunkUrl?: string }) => void;
   /** CSR 模式下页面渲染完成时调用，用于淡出 loading 遮罩 */
   __DWEB_ON_READY__?: () => void;
   /** 开发模式 HMR 调试日志开关（控制台设置 globalThis.__DWEB_HMR_DEBUG__ = true 可查看详细日志） */
@@ -566,19 +641,69 @@ export interface ClientRouterLike {
  * 执行 Hybrid hydration（若需要）、启动路由器、注册 HMR 无感刷新回调。
  * 供 client.tsx 的 initApp 调用，保持 client.tsx 简洁。
  */
-/** 共享的渲染状态：存储上次卸载函数，HMR/路由切换前需先调用以清理 Preact/React 内部状态，避免 __H 等 hooks 冲突 */
+/** 共享的渲染状态：存储上次卸载函数，HMR/路由切换前需先调用以清理 Preact/React/Solid 内部状态，避免 __H 等 hooks 冲突 */
 export const RENDER_STATE: { lastUnmount: (() => void) | null } = { lastUnmount: null };
+${
+    isViewEngine
+      ? `
+/** View 引擎：用 createSignal 存当前页/布局/props，createReactiveRoot(container, getState, buildTree) 的 effect 会订阅 getState，setViewState 后自动 patch，不整树卸载 */
+const [getViewState, setViewState] = createSignal({ page: null as unknown, props: {} as Record<string, unknown>, layouts: [] as LayoutComponent[], skipLayouts: false });
+let _viewReactiveRoot: { unmount: () => void } | null = null;
+
+/** View 引擎：无 reactive root 时创建（getState 为 signal getter，后续 setViewState 会触发 effect 重跑并细粒度 patch）。CSR 时 #app 内已有服务端渲染的 Layout(LoadingPlaceholder)，首次挂载前清空容器避免重复布局、主体被挡在后面。__DWEB_DEBUG__ 为 true 时输出详细渲染日志。 */
+function _viewEnsureReactiveRoot(containerId: string): void {
+  const el = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
+  if (!el) {
+    if (_win.__DWEB_DEBUG__) console.warn("[dweb:view] _viewEnsureReactiveRoot: container not found", containerId);
+    return;
+  }
+  if (!_viewReactiveRoot) {
+    if (_win.__DWEB_DEBUG__) console.log("[dweb:view] _viewEnsureReactiveRoot: clearing #" + containerId + ", currentChildCount=" + (el as HTMLElement).childNodes.length);
+    if (typeof (el as HTMLElement).replaceChildren === "function") (el as HTMLElement).replaceChildren(); else (el as HTMLElement).innerHTML = "";
+    const buildTree = (state: { page: unknown; props: Record<string, unknown>; layouts: LayoutComponent[]; skipLayouts: boolean }) => {
+      if (_win.__DWEB_DEBUG__) console.log("[dweb:view] buildTree", { hasPage: !!state.page, layoutsLen: state.layouts?.length ?? 0, skipLayouts: state.skipLayouts });
+      if (state.page == null && _win.__DWEB_DEBUG__) console.warn("[dweb:view] buildTree: state.page is null");
+      return buildViewTree(state.page, state.props, state.layouts, state.skipLayouts);
+    };
+    _viewReactiveRoot = createReactiveRoot(el as HTMLElement, getViewState, buildTree);
+    if (_win.__DWEB_DEBUG__) console.log("[dweb:view] _viewEnsureReactiveRoot: done, container childCount=" + (el as HTMLElement).childNodes.length);
+    RENDER_STATE.lastUnmount = () => {
+      _viewReactiveRoot?.unmount();
+      _viewReactiveRoot = null;
+    };
+  }
+}
+`
+      : ""
+  }
 
 export async function setupHydrationRouterAndHmr(opts: {
   g: DwebGlobal;
   router: ClientRouterLike;
   containerId: string;
-  engine: "react" | "preact";
+  engine: "react" | "preact" | "view";
   layouts: LayoutComponent[];
   isHydratedRef: { current: boolean };
   isHybridMode: boolean;
 }): Promise<void> {
   const { g, router, containerId, engine, layouts, isHydratedRef, isHybridMode } = opts;
+  // 等待 #containerId 已挂载到 DOM（Preact/React/View 等脚本可能早于 body 解析执行，导致 hydrate 时找不到 #app）
+  await new Promise<void>((resolve) => {
+    const sel = "#" + containerId;
+    if (typeof document !== "undefined" && document.querySelector(sel)) {
+      resolve();
+      return;
+    }
+    if (typeof document !== "undefined" && document.readyState === "complete") {
+      resolve();
+      return;
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener("DOMContentLoaded", () => resolve(), { once: true });
+    } else {
+      resolve();
+    }
+  });
   const unmountPrevious = (): void => {
     if (RENDER_STATE.lastUnmount) {
       RENDER_STATE.lastUnmount();
@@ -602,7 +727,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         return;
       }
       const skipLayouts = module?.inheritLayout === false;
-      const hydResult = hydrate({
+      const hydResult = await hydrate({
         engine,
         component: PageComponent,
         container: \`#\${containerId}\`,
@@ -615,7 +740,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         debug: !!(_win.__DWEB_DEBUG__),
       });
       RENDER_STATE.lastUnmount = hydResult?.unmount ?? null;
-      isHydratedRef.current = true;
+      isHydratedRef.current = true;${afterHydrateViewTakeoverSnippet}
     } catch (error) {
       console.error(${
     JSON.stringify($t("client.hydrationFailed"))
@@ -623,7 +748,7 @@ export async function setupHydrationRouterAndHmr(opts: {
       renderError(containerId, error);
     }
   }
-  g.__DWEB_HMR_REFRESH__ = (hmrOpts) => {
+  g.__HMR_REFRESH__ = (hmrOpts) => {
     const chunkUrl = hmrOpts?.chunkUrl;
     if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
       console.log(${JSON.stringify($t("client.hmrDebugEnabled"))});
@@ -695,7 +820,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         const PageComponent = modObj.default ?? modObj.Page;
         if (!PageComponent) { renderNotFound(containerId); return; }
         const skipLayouts = modObj.inheritLayout === false;
-        return loadLayouts().then((layoutList) => {
+        return loadLayouts().then(async (layoutList) => {
           if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
             console.log(${
     JSON.stringify($t("client.hmrRenderCsrBefore"))
@@ -704,16 +829,7 @@ export async function setupHydrationRouterAndHmr(opts: {
           // 新模块已就绪，在 render 前一刻执行 unmount + 移除旧 CSS，最小化空白时间，消除闪动
           unmountPrevious();
           oldCssEls.forEach(function(el) { el.remove(); });
-          const csrResult = renderCSR({
-            engine,
-            component: PageComponent,
-            container: "#" + containerId,
-            props: { params: match.params, query: match.query },
-            layouts: skipLayouts ? undefined : layoutList,
-            skipLayouts,
-            debug: !!(_win.__DWEB_DEBUG__),
-          });
-          RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
+          ${hmrRenderSnippet}
           if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
             console.log(${JSON.stringify($t("client.hmrRenderCsrComplete"))});
           }
@@ -775,18 +891,7 @@ export async function setupHydrationRouterAndHmr(opts: {
       const PageComponent = module.default ?? module.Page;
       if (!PageComponent) { unmountPrevious(); renderNotFound(containerId); return; }
       const skipLayouts = module.inheritLayout === false;
-      unmountPrevious();
-      const csrResult = renderCSR({
-        engine,
-        component: PageComponent,
-        container: "#" + containerId,
-        props: { params: match.params, query: match.query },
-        layouts: skipLayouts ? undefined : layouts,
-        skipLayouts,
-        debug: !!(_win.__DWEB_DEBUG__),
-      });
-      RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
-      (g as DwebGlobal).__DWEB_ON_READY__?.();
+      ${onRouteChangeRenderSnippet}
     } catch (error) {
       console.error(${JSON.stringify($t("client.pageLoadError"))} + ":", error);
       unmountPrevious();
@@ -811,8 +916,10 @@ export async function initApp(): Promise<DwebApp> {
   const engine = g.__DWEB_ENGINE__ || "${engine}";
   const containerId = g.__DWEB_CONTAINER_ID__ || "app";
   const isHybridMode = g.__DWEB_MODE__ === "hybrid" && !!g.__DATA__;
-  const layouts = await loadLayouts();
   const router = createRouter({ routes, engine, debug: !!(_win.__DWEB_DEBUG__) });
+  // 在首次 await 前就注册链接点击拦截器，避免用户提前点击导致整页刷新（Solid/React/Preact 均适用）
+  router.start();
+  const layouts = await loadLayouts();
   const isHydratedRef = { current: false };
   await setupHydrationRouterAndHmr({ g, router, containerId, engine, layouts, isHydratedRef, isHybridMode });
 
@@ -839,17 +946,7 @@ export async function initApp(): Promise<DwebApp> {
       }
       const skipLayouts = module.inheritLayout === false;
       const layoutList = await loadLayouts();
-      if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
-      const csrResult = renderCSR({
-        engine,
-        component: PageComponent,
-        container: "#" + containerId,
-        props: { params: match.params, query: match.query },
-        layouts: skipLayouts ? undefined : layoutList,
-        skipLayouts,
-        debug: !!(_win.__DWEB_DEBUG__),
-      });
-      RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
+      ${renderCurrentRouteSnippet}
     } catch (error) {
       console.error(${JSON.stringify($t("client.pageLoadError"))} + ":", error);
       if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
@@ -857,6 +954,8 @@ export async function initApp(): Promise<DwebApp> {
     }
   }
 
+  // CSR 模式：router.start() 不会用当前 URL 触发 onRouteChange，首屏需主动渲染当前路由
+  if (!isHybridMode) await renderCurrentRoute();
   return { renderCurrentRoute, router };
 }
 `;
@@ -872,7 +971,7 @@ export async function initApp(): Promise<DwebApp> {
  * @param _hmrCssEntries 未使用（已在 client.dep 中）
  */
 function generateStaticClientEntry(
-  _engine: "react" | "preact",
+  _engine: "react" | "preact" | "view",
   _components: RouteComponentInfo[],
   _hasLayout: boolean,
   _hmrCssEntries: Array<{ url: string; styleId: string }>,
@@ -948,7 +1047,7 @@ export async function ensureClientEntryFile(
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
 
   const renderConfig = (config.render || {}) as {
-    engine?: "react" | "preact";
+    engine?: "react" | "preact" | "view";
   };
   const engine = renderConfig.engine || "preact";
 
@@ -1007,7 +1106,7 @@ export async function prepareClientBuildEntry(
 ): Promise<{
   entry: string;
   output: string;
-  engine: "react" | "preact";
+  engine: "react" | "preact" | "view";
   bundle: {
     minify?: boolean;
     sourcemap?: boolean;
@@ -1027,8 +1126,13 @@ export async function prepareClientBuildEntry(
     routesDirPath;
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
 
-  const renderConfig = (config.render || {}) as { engine?: "react" | "preact" };
-  const engine = (renderConfig.engine || "preact") as "react" | "preact";
+  const renderConfig = (config.render || {}) as {
+    engine?: "react" | "preact" | "view";
+  };
+  const engine = (renderConfig.engine || "preact") as
+    | "react"
+    | "preact"
+    | "view";
 
   const components = await scanRouteComponents(routesDirPath, "", engine);
   logger.debug($t("log.routesScanned", { count: String(components.length) }));
@@ -1084,6 +1188,8 @@ export async function prepareClientBuildEntry(
 
   const runtimeExternalBlocklist = engine === "preact"
     ? ["preact", "preact/hooks", "preact/jsx-runtime"]
+    : engine === "view"
+    ? ["@dreamer/view", "@dreamer/view/jsx-runtime"]
     : ["react", "react-dom", "react/jsx-runtime", "react-dom/client"];
   const userExternal = Array.isArray(userBundleConfig.external)
     ? userBundleConfig.external
@@ -1095,6 +1201,8 @@ export async function prepareClientBuildEntry(
       ),
   );
 
+  const bundleAlias = userBundleConfig.alias;
+
   return {
     entry: tempClientEntryPath,
     output: finalOutputDir,
@@ -1105,7 +1213,7 @@ export async function prepareClientBuildEntry(
       splitting: userBundleConfig.splitting ?? true,
       format: "esm",
       external: externalList.length > 0 ? externalList : undefined,
-      alias: userBundleConfig.alias,
+      alias: bundleAlias,
     },
   };
 }
@@ -1123,9 +1231,12 @@ export async function prepareClientBuildEntry(
 async function doDevBuild(
   entryPath: string,
   outputDir: string,
-  engine: "react" | "preact",
+  engine: "react" | "preact" | "view",
   debug?: boolean,
-  logger?: { debug: (msg: string, data?: unknown) => void; info: (msg: string, data?: unknown) => void },
+  logger?: {
+    debug: (msg: string, data?: unknown) => void;
+    info: (msg: string, data?: unknown) => void;
+  },
 ): Promise<{
   outputContents?: Array<{ path: string; text: string; contents?: Uint8Array }>;
 }> {
@@ -1209,7 +1320,7 @@ export async function buildClientScript(
 
     // 获取渲染引擎配置
     const renderConfig = (config.render || {}) as {
-      engine?: "react" | "preact";
+      engine?: "react" | "preact" | "view";
     };
     const engine = renderConfig.engine || "preact";
 
@@ -1309,6 +1420,8 @@ export async function buildClientScript(
         : [];
       const runtimeExternalBlocklist = engine === "preact"
         ? ["preact", "preact/hooks", "preact/jsx-runtime"]
+        : engine === "view"
+        ? ["@dreamer/view", "@dreamer/view/jsx-runtime"]
         : ["react", "react-dom", "react/jsx-runtime", "react-dom/client"];
       const externalList = userExternal.filter(
         (ext) =>
@@ -1317,10 +1430,12 @@ export async function buildClientScript(
           ),
       );
 
+      const prodBundleAlias = userBundleConfig.alias;
+
       const builder = new BuilderClient({
         entry: tempClientEntryPath,
         output: finalOutputDir,
-        engine: engine as "react" | "preact",
+        engine,
         debug: buildDebug,
         logger,
         bundle: {
@@ -1329,7 +1444,7 @@ export async function buildClientScript(
           splitting: shouldSplit,
           format: "esm",
           external: externalList.length > 0 ? externalList : undefined,
-          alias: userBundleConfig.alias,
+          alias: prodBundleAlias,
         },
         t: (
           key: string,
@@ -1421,9 +1536,14 @@ export async function buildClientScript(
         if (buildDebug) {
           const rawList = buildResultDev.outputContents
             .filter((f) => f.path.endsWith(".js") && !f.path.includes(".map"))
-            .map((f) => `${basename(f.path)}:${(f.text.length / 1024).toFixed(1)}KB`)
+            .map((f) =>
+              `${basename(f.path)}:${(f.text.length / 1024).toFixed(1)}KB`
+            )
             .join(", ");
-          console.log("[DEBUG] [dweb] esbuild outputContents (path basename: size):", rawList);
+          console.log(
+            "[DEBUG] [dweb] esbuild outputContents (path basename: size):",
+            rawList,
+          );
         }
         for (const file of buildResultDev.outputContents) {
           const name = basename(file.path);
@@ -1468,7 +1588,7 @@ export async function buildClientScript(
         }),
       );
       // 调试：输出 chunk 列表及每个 chunk 的 content 大小，便于在 Windows 上对比依赖请求是否缺失
-      // preact 等运行时通常 >10KB，__publicField 等辅助代码通常 <1KB，若 chunk-XXX 显示过小则可能内容错误
+      // preact/react 等运行时通常 >10KB，__publicField 等辅助代码通常 <1KB，若 chunk-XXX 显示过小则可能内容错误
       if (buildDebug) {
         const chunkNames = [
           ...new Set(
@@ -1481,10 +1601,10 @@ export async function buildClientScript(
         const chunkSizes = chunkNames
           .map((k) => {
             const len = outputFilesDev.get(k)?.length ?? 0;
-            const preactHint = k.startsWith("chunk-") && len < 2000
-              ? " (⚠️可能为__publicField而非preact)"
+            const runtimeHint = k.startsWith("chunk-") && len < 2000
+              ? " (⚠️可能为__publicField而非运行时)"
               : "";
-            return `${k}:${(len / 1024).toFixed(1)}KB${preactHint}`;
+            return `${k}:${(len / 1024).toFixed(1)}KB${runtimeHint}`;
           })
           .join(", ");
         logger.debug("[dweb] dev chunk sizes:", chunkSizes);

@@ -8,7 +8,7 @@ const config: AppConfig = {
   name: "react-hybrid-flat-basic-example",
   version: "1.0.0",
   server: {
-    port: 3010, // e2e 并行测试时端口 3010，与 react-hybrid=3004 等区分
+    port: 3010,
     host: "0.0.0.0",
   },
   render: {

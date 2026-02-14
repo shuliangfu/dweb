@@ -26,6 +26,7 @@ import { sanitizeRequestParams } from "../utils/sanitize.ts";
 import { extractComponentPathFromRouteFile } from "../utils/path.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
+import { hasContainerElementInHtml } from "./render-utils.ts";
 
 /**
  * 转义 style 内容中的 </ 避免提前闭合 style 标签
@@ -88,7 +89,7 @@ export function createRendererHybrid(
   // 获取 Hybrid 配置
   const renderConfig = (config.render || {}) as {
     debug?: boolean;
-    engine?: "react" | "preact";
+    engine?: "react" | "preact" | "view";
     mode?: "ssr" | "csr" | "ssg" | "hybrid";
     hybrid?: RenderHybridOptions;
     csr?: RenderHybridOptions;
@@ -126,6 +127,7 @@ export function createRendererHybrid(
       const loadOpts = {
         cssCollector,
         logger: container.has("logger") ? getLogger(container) : undefined,
+        engine: renderConfig.engine,
       };
       const pageModule = await loadRouteModule(match.route.fullPath, loadOpts);
       if (!pageModule) {
@@ -177,9 +179,14 @@ export function createRendererHybrid(
         { component: unknown; props?: Record<string, unknown> }
       > = [];
 
-      // App 组件作为最外层布局
+      // App 组件作为最外层布局（Hybrid 必须，负责渲染 <html><body><div id="app">）
       if (AppComponent) {
         layouts.push({ component: AppComponent });
+      } else {
+        const msg = appPath
+          ? `加载 _app 失败，路径: ${appPath}`
+          : "未找到 _app.tsx，请在 routesDir 下创建 _app.tsx 作为应用根组件";
+        throw new Error(`[dweb] Hybrid 渲染需要 _app 组件: ${msg}`);
       }
 
       // Layout 组件作为中间层布局
@@ -212,6 +219,29 @@ export function createRendererHybrid(
       // （服务端从源码加载路由，源码路径未经过构建替换，需运行时替换）
       if (!isDev) {
         html = await replaceAssetPathsInHtml(html, config);
+      }
+
+      // 强制要求 _app 必须渲染挂载容器，未找到则抛错（不自动注入）
+      const containerId = hybridOptions.containerId ?? "app";
+      if (!hasContainerElementInHtml(html, containerId)) {
+        const logger = container.has("logger")
+          ? getLogger(container)
+          : undefined;
+        const debugInfo = [
+          `appPath=${appPath ?? "undefined"}`,
+          `AppComponent=${AppComponent ? "loaded" : "null"}`,
+          `layouts.length=${layouts.length}`,
+          `html.length=${html?.length ?? 0}`,
+          `html.prefix=${JSON.stringify(html?.substring(0, 500) ?? "")}`,
+        ].join(", ");
+        if (logger) {
+          logger.error("[dweb] 挂载容器检测失败", debugInfo);
+        } else {
+          console.error("[dweb] 挂载容器检测失败", debugInfo);
+        }
+        throw new Error(
+          `[dweb] _app 必须渲染挂载容器：请在 _app.tsx 的 body 内提供 <div id="${containerId}">{children}</div>，当前 SSR 输出中未找到该元素。`,
+        );
       }
 
       // 构建 hydration 数据（component 与 ROUTE_LOADERS key 统一格式，确保 CSR/Hybrid 在 Windows 下 loadPageModule 能正确匹配）

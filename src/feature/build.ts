@@ -56,7 +56,7 @@ export function initializeBuild(
   // 从配置中获取构建选项
   const buildConfig = (config.build || {}) as Record<string, unknown>;
   const renderConfig = (config.render || {}) as {
-    engine?: "react" | "preact";
+    engine?: "react" | "preact" | "view";
     mode?: "ssr" | "csr" | "ssg";
   };
 

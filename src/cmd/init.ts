@@ -53,7 +53,7 @@ export type { DwebDenoConfig };
 type AppMode = "single" | "multi";
 
 /** UI 引擎 */
-type Engine = "preact" | "react";
+type Engine = "preact" | "react" | "view";
 
 /** 样式方案 */
 type Style = "tailwind" | "unocss" | "none";
@@ -188,10 +188,18 @@ export async function collectOptions(
 
   const engineIdx = await interactiveMenu(
     $t("init.uiEngine"),
-    [$t("init.uiEnginePreact"), $t("init.uiEngineReact")],
+    [
+      $t("init.uiEnginePreact"),
+      $t("init.uiEngineReact"),
+      $t("init.uiEngineView"),
+    ],
     0,
   );
-  const engine: Engine = engineIdx === 0 ? "preact" : "react";
+  const engine: Engine = engineIdx === 0
+    ? "preact"
+    : engineIdx === 1
+    ? "react"
+    : "view";
 
   const renderModeIdx = await interactiveMenu(
     $t("init.renderMode"),
@@ -256,6 +264,7 @@ interface JsrVersions {
 function getDenoJson(opts: InitOptions, jsrVersions: JsrVersions): string {
   const prefix = opts.useSrc ? "src/" : "";
   const isPreact = opts.engine === "preact";
+  const isView = opts.engine === "view";
   const useUno = opts.style === "unocss";
   const useTailwind = opts.style === "tailwind";
   const hasStyleAssets = useUno || useTailwind;
@@ -263,7 +272,7 @@ function getDenoJson(opts: InitOptions, jsrVersions: JsrVersions): string {
   const pluginsVersion = jsrVersions.plugins;
   const renderSpec = `jsr:@dreamer/render@^${jsrVersions.render}`;
   const routerSpec = `jsr:@dreamer/router@^${jsrVersions.router}`;
-  /** @dreamer/* 依赖：dweb、render、router 必选；plugins 按样式方案（仅主包，子路径由解析器自动处理） */
+  /** @dreamer/* 依赖：dweb、render、router 必选；plugins 按样式方案；view 引擎时由 engineImports 提供 @dreamer/view */
   const dreamerImports = [
     `    "@dreamer/dweb": "jsr:@dreamer/dweb@^${dwebVersion}"`,
     `    "@dreamer/render": "${renderSpec}"`,
@@ -272,7 +281,7 @@ function getDenoJson(opts: InitOptions, jsrVersions: JsrVersions): string {
       ? [`    "@dreamer/plugins": "jsr:@dreamer/plugins@^${pluginsVersion}"`]
       : []),
   ].join(",\n");
-  /** Tailwind / UnoCSS / Preact / React 依赖（合并输出，无空行分隔）
+  /** Tailwind / UnoCSS / Preact / React / View 依赖（合并输出，无空行分隔）
    * Tailwind v4 需 postcss、@tailwindcss/postcss；UnoCSS 需 preset-wind3、preset-icons */
   const tailwindNpmImports = useTailwind
     ? `    "postcss": "npm:postcss@8.4.39",
@@ -285,13 +294,21 @@ function getDenoJson(opts: InitOptions, jsrVersions: JsrVersions): string {
     "@unocss/preset-icons": "npm:@unocss/preset-icons@66.0.0"`
     : "";
   const engineImports = isPreact
-    ? `    "preact": "npm:preact@10.28.0"`
-    : `    "react": "npm:react@18.3.1",
+    ? `    "preact": "npm:preact@10.28.3"`
+    : isView
+    ? `    "@dreamer/view": "jsr:@dreamer/view@^1.0.1"`
+    : `    "react": "npm:react@19.2.4",
+    "react-dom": "npm:react-dom@19.2.4",
     "scheduler": "npm:scheduler@0.27.0"`;
   const npmImports = [tailwindNpmImports, unocssNpmImports, engineImports]
     .filter(Boolean)
     .join(",\n");
-  const jsxImportSource = isPreact ? "preact" : "react";
+  /** View 引擎必须使用 jsxImportSource: "@dreamer/view"，与 Preact/React 的 preact、react 不同 */
+  const jsxImportSource = isPreact
+    ? "preact"
+    : isView
+    ? "@dreamer/view"
+    : "react";
 
   /** 多应用：按应用名生成 dev/build/start tasks，以及目录别名（放在 imports 最上面） */
   const isMulti = opts.appMode === "multi" && (opts.appNames?.length ?? 0) > 0;
@@ -399,7 +416,13 @@ app.registerPlugin(staticPlugin({
 
   return `/**
  * ${$t("init.comments.serverEntry")}
- * ${opts.engine === "preact" ? "Preact" : "React"} + @dreamer/dweb
+ * ${
+    opts.engine === "preact"
+      ? "Preact"
+      : opts.engine === "view"
+      ? "View"
+      : "React"
+  } + @dreamer/dweb
  * ${$t("init.comments.configAutoLoaded")}
  */
 
@@ -643,8 +666,11 @@ export default {
 function getAppTsx(opts: InitOptions): string {
   const titleName = opts.projectName;
   const isPreact = opts.engine === "preact";
+  const isView = opts.engine === "view";
   const childrenType = isPreact
     ? 'import type { ComponentChildren } from "preact";\n\ninterface AppProps {\n  children: ComponentChildren;'
+    : isView
+    ? 'import type { VNode } from "@dreamer/view";\n\ninterface AppProps {\n  children?: VNode | VNode[];'
     : 'import type { ReactNode } from "react";\n\ninterface AppProps {\n  children: ReactNode;';
   return `/**
  * ${$t("init.comments.appRootComponent")}
@@ -679,6 +705,7 @@ export default function App({
 
 function getLayoutTsx(opts: InitOptions, appName?: string): string {
   const isPreact = opts.engine === "preact";
+  const isView = opts.engine === "view";
   const appDisplayName = appName ?? opts.projectName;
   // UnoCSS/无样式 无 primary 主题色，用 indigo；Tailwind v4 用 @theme 定义的 primary
   const accentClass = opts.style === "tailwind"
@@ -697,6 +724,12 @@ function getLayoutTsx(opts: InitOptions, appName?: string): string {
 
 interface LayoutProps {
   children: ComponentChildren;
+}`
+    : isView
+    ? `import type { VNode } from "@dreamer/view";
+
+interface LayoutProps {
+  children?: VNode | VNode[];
 }`
     : `import type { ReactNode } from "react";
 
@@ -771,7 +804,11 @@ export default function Layout({ children }: LayoutProps) {
 }
 
 function getIndexTsx(opts: InitOptions): string {
-  const engineName = opts.engine === "preact" ? "Preact" : "React";
+  const engineName = opts.engine === "preact"
+    ? "Preact"
+    : opts.engine === "view"
+    ? "View"
+    : "React";
   // UnoCSS/无样式 使用 bg-gradient-to-br；Tailwind v4 使用 bg-linear-to-br
   const heroGradient = opts.style === "tailwind"
     ? "bg-linear-to-br from-[#667eea] to-[#764ba2]"
@@ -827,7 +864,11 @@ export default function Home() {
 }
 
 function getAboutTsx(opts: InitOptions): string {
-  const engineName = opts.engine === "preact" ? "Preact" : "React";
+  const engineName = opts.engine === "preact"
+    ? "Preact"
+    : opts.engine === "view"
+    ? "View"
+    : "React";
   return `/**
  * ${$t("init.comments.aboutPage")}
  * ${$t("init.comments.aboutRoute")}

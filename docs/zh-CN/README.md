@@ -3,11 +3,11 @@
 > 📖 [English](../../README.md) | 中文
 
 > 一个兼容 Deno 和 Bun 的全栈 Web 框架，整合 @dreamer/*
-> 库，提供开箱即用的全栈开发体验
+> 包，提供开箱即用的全栈开发体验
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../LICENSE.md)
-[![Tests](https://img.shields.io/badge/tests-618%20passed-brightgreen)](./TEST_REPORT.md)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](../../LICENSE)
+[![Tests](https://img.shields.io/badge/tests-689%20passed-brightgreen)](./TEST_REPORT.md)
 
 ---
 
@@ -51,10 +51,10 @@ dweb-cli --help           # 查看完整帮助
 - **也支持 React**：在配置中通过 `render.engine` 指定
 - **渲染模式**：`render.mode` 支持 `ssr`、`csr`、`ssg`、`hybrid`
 
-按需安装独立库（dweb 已内置下列依赖，仅在使用其他 @dreamer/* 时需单独安装）：
+按需安装独立包（dweb 已内置下列依赖，仅在使用其他 @dreamer/* 时需单独安装）：
 
 ```bash
-# 核心库（dweb 已依赖）
+# 核心包（dweb 已依赖）
 deno add jsr:@dreamer/service
 deno add jsr:@dreamer/middleware
 deno add jsr:@dreamer/plugin
@@ -84,7 +84,7 @@ deno add jsr:@dreamer/runtime-adapter
 - **服务端**：✅ 支持（兼容 Deno 和 Bun 运行时，完整的服务端功能）
 - **客户端**：✅ 支持（浏览器环境，SSR、CSR、SSG、Hybrid 支持）
 - **跨平台**：✅ 全面兼容 macOS、Linux、Windows，开箱即用，无需额外配置
-- **依赖**：整合所有 @dreamer/* 库
+- **依赖**：整合所有 @dreamer/* 包
 
 ---
 
@@ -191,7 +191,7 @@ deno add jsr:@dreamer/runtime-adapter
 
 ### 可选扩展（按需安装）
 
-以下库不内置于 dweb，按需单独安装：
+以下包不内置于 dweb，按需单独安装：
 
 - **@dreamer/database** - 数据库（PostgreSQL、MySQL、SQLite、MongoDB）
 - **@dreamer/cache** - 缓存（Redis、内存、文件）
@@ -834,7 +834,7 @@ import { useEffect } from "preact/hooks";
 import { createStore } from "jsr:@dreamer/store";
 // 或使用 Signals 方式
 // import { signal } from "jsr:@dreamer/store";
-import { Analytics } from "./analytics"; // 第三方库
+import { Analytics } from "./analytics"; // 第三方包
 
 // 使用 @dreamer/store 创建全局状态（推荐）
 interface UserStore {
@@ -855,7 +855,7 @@ export default function App(
     // 1. 全局状态管理初始化
     // @dreamer/store 不需要 Provider，可以直接使用
 
-    // 2. 第三方库初始化
+    // 2. 第三方包初始化
     Analytics.init({
       apiKey: "your-api-key",
     });
@@ -883,7 +883,7 @@ export default function App(
         <title>My App</title>
       </head>
       <body>
-        {/* 全局状态管理（使用 Preact 兼容的状态管理库） */}
+        {/* 全局状态管理（使用 Preact 兼容的状态管理包） */}
         <div id="root">
           {children}
         </div>
@@ -898,16 +898,16 @@ export default function App(
 以下场景都可以在 `_app.tsx` 中处理，**不需要** `client/index.tsx`：
 
 1. **全局状态管理**：
-   - 推荐使用 `@dreamer/store`（框架官方状态管理库）
+   - 推荐使用 `@dreamer/store`（框架官方状态管理包）
    - 支持 Store 方式（类似 Zustand）和 Signals 方式（类似 Preact Signals）
    - 在 `_app.tsx` 中初始化状态管理
-   - 也可以使用其他 Preact 兼容的状态管理库（如 `@preact/signals`、`zustand`
+   - 也可以使用其他 Preact 兼容的状态管理包（如 `@preact/signals`、`zustand`
      等）
 
-2. **第三方库初始化**：
+2. **第三方包初始化**：
    - Analytics（Google Analytics、Mixpanel 等）
    - 监控工具（Sentry、LogRocket 等）
-   - UI 库（Material-UI、Ant Design 等）
+   - UI 包（Material-UI、Ant Design 等）
    - 在 `_app.tsx` 的 `useEffect` 中初始化
 
 3. **全局配置**：
@@ -1877,13 +1877,13 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ---
 
-## 📦 扩展库
+## 📦 扩展包
 
-以下为 dreamer-jsr 生态中**按需选用**的扩展库，用于在 dweb
+以下为 dreamer-jsr 生态中**按需选用**的扩展包，用于在 dweb
 项目里增加认证、缓存、支付、实时通信等能力。dweb
-已内置运行所需的核心依赖，无需单独安装；仅当需要下表能力时再安装对应库。
+已内置运行所需的核心依赖，无需单独安装；仅当需要下表能力时再安装对应包。
 
-| 库名                         | 简介                                                       | GitHub                                                           |
+| 包名                         | 简介                                                       | GitHub                                                           |
 | ---------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------- |
 | **@dreamer/auth**            | 用户认证：JWT、OAuth2、Session、刷新 Token、权限校验       | [auth](https://github.com/shuliangfu/auth)                       |
 | **@dreamer/cache**           | 缓存：内存 / 文件 / Redis / Memcached，统一接口            | [cache](https://github.com/shuliangfu/cache)                     |
@@ -1919,8 +1919,8 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 | **@dreamer/webrtc**          | WebRTC：实时音视频与信令                                   | [webrtc](https://github.com/shuliangfu/webrtc)                   |
 | **@dreamer/websocket**       | 原生 WebSocket：服务端与客户端实时通信（Socket.IO 已内置） | [websocket](https://github.com/shuliangfu/websocket)             |
 
-安装示例：`deno add jsr:@dreamer/库名` 或
-`bunx jsr add @dreamer/库名`。各库详细用法见 JSR 对应包页面或仓库 README。
+安装示例：`deno add jsr:@dreamer/包名` 或
+`bunx jsr add @dreamer/包名`。各包详细用法见 JSR 对应包页面或仓库 README。
 
 ---
 
@@ -1928,7 +1928,7 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 单元测试结果见 [TEST_REPORT.md](./TEST_REPORT.md)。
 
-**测试总结**：共 48 个单元测试文件、618 个用例全部通过（2 个 Windows
+**测试总结**：共 48 个单元测试文件、689 个用例全部通过（3 个 Windows
 专属用例在非 Windows 时忽略）。覆盖
 config、router、plugin、build、render、windows
 等核心模块。路径与配置加载相关测试已支持 Windows
@@ -1938,10 +1938,11 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.72] - 2026-02-09
+### [3.0.73] - 2026-02-15
 
-**修复**：Windows Preact/npm 解析（esbuild ^1.0.6）、esbuild 调试日志透传。
-**变更**：示例配置中默认关闭 debug 选项。
+**新增**：View 模板引擎支持（@dreamer/view 作为 render 适配器；view-hybrid /
+view-csr 示例）。 **变更**：授权许可为 Apache
+2.0，署名已更新（LICENSE、NOTICE）。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
@@ -1956,7 +1957,7 @@ config、router、plugin、build、render、windows
   `AppConfig`（name、version、language、server、render、router、build、logger
   等）
 - **按需使用**：可仅使用 dweb，或按需安装其他 @dreamer/*
-  库（database、cache、storage 等）
+  包（database、cache、storage 等）
 - **类型安全**：完整 TypeScript 类型支持
 - **应用模式**：支持单应用与多应用模式；可共享 App 实例（如
   getSharedApp）供多入口或 CLI 使用
@@ -1967,7 +1968,7 @@ config、router、plugin、build、render、windows
 
 欢迎提交 Issue 和 Pull Request！
 
-**开发 dweb 库时**（在 dweb 目录下）：
+**开发 dweb 时**（在 dweb 目录下）：
 
 - 类型检查：`deno task check` 或
   `deno check src/ tests/`（仅检查核心代码，不包含 examples）
@@ -1977,7 +1978,7 @@ config、router、plugin、build、render、windows
 
 ## 📄 许可证
 
-MIT License - 详见 [LICENSE.md](../../LICENSE.md)
+Apache License 2.0 - 详见 [LICENSE](../../LICENSE)
 
 ---
 

@@ -47,8 +47,8 @@ const config: AppConfig = {
       exclude: ["tailwind.css", "uno.css", "index.css"],
       images: {
         compress: true,
-        quality: 80, // 压缩质量 0-100，80 平衡质量与体积
-        format: "webp", // 需 ImageMagick；若转换失败可改为 "original" 仅做 hash
+        quality: 50, // 压缩质量 0-100，80 平衡质量与体积
+        format: "avif", // 需 ImageMagick；若转换失败可改为 "original" 仅做 hash
         hash: true,
       },
     },

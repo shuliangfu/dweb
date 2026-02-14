@@ -8,8 +8,8 @@
  */
 
 import type { LifecycleHook, LifecycleStage } from "@dreamer/lifecycle";
-import type { SocketContext } from "@dreamer/plugin";
 import type { Middleware, MiddlewareContext } from "@dreamer/middleware";
+import type { SocketContext } from "@dreamer/plugin";
 import { ServiceContainer } from "@dreamer/service";
 import { EventEmitter } from "node:events";
 import { pathToFileURL } from "node:url";
@@ -880,7 +880,8 @@ export class App extends EventEmitter implements IApp {
     // 检测是否为 build 模式
     if (this._isBuildMode()) {
       await this.build();
-      return;
+      // 构建完成后显式退出，避免插件/监听器等未释放句柄导致进程卡住
+      exit(0);
     }
 
     // 等待初始化完成（框架版本与应用名称已在 _initializeConfig 中首先打印）
@@ -960,7 +961,7 @@ export class App extends EventEmitter implements IApp {
         const renderService = getRender(this.container);
         const renderCfg = config.render as {
           debug?: boolean;
-          engine?: "react" | "preact";
+          engine?: "react" | "preact" | "view";
           ssg?: {
             outputDir?: string;
             routes?: string[];

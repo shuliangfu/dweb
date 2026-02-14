@@ -1,0 +1,24 @@
+/**
+ * 后端默认配置
+ * version 等公共字段由 common/config 自动合并，无需手动导入
+ */
+import type { AppConfig } from "@dreamer/dweb";
+
+export default {
+  name: "view-hybrid-advanced-example-backend",
+
+  server: {
+    port: 3000,
+    host: "0.0.0.0",
+  },
+
+  router: {
+    routesDir: "./src/backend/routes",
+    apiMode: "restful",
+  },
+
+  logger: {
+    level: "info",
+    format: "json",
+  },
+} satisfies AppConfig;

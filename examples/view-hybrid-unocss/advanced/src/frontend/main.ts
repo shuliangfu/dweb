@@ -1,0 +1,58 @@
+/**
+ * 前端入口
+ * SSR 渲染服务器
+ */
+
+import { commonConfig } from "@common/config/main.ts";
+import { App } from "@dreamer/dweb";
+import { staticPlugin } from "@dreamer/plugins/static";
+import { unocssPlugin } from "@dreamer/plugins/unocss";
+
+// 创建前端应用实例
+const app = new App({
+  name: "view-hybrid-advanced-example-frontend",
+  version: commonConfig.version,
+
+  // 服务器配置
+  server: {
+    port: commonConfig.frontendPort,
+    host: "127.0.0.1",
+  },
+
+  // 渲染配置
+  render: {
+    engine: "view",
+    mode: "hybrid",
+  },
+
+  // 路由配置
+  router: {
+    routesDir: "./src/frontend/routes",
+  },
+
+  // 日志配置
+  logger: {
+    level: "info",
+  },
+});
+
+// 注册 UnoCSS 插件（显式使用 preset-wind3 兼容 Tailwind 类名）
+app.registerPlugin(unocssPlugin({
+  output: "dist/frontend/client/assets",
+  cssEntry: "src/frontend/assets/uno.css",
+  content: ["./src/frontend/**/*.{ts,tsx}"],
+  assetsPath: "/assets",
+  // presets: ["@unocss/preset-wind3"],
+}));
+
+// 注册静态文件插件
+app.registerPlugin(staticPlugin({
+  statics: [
+    { root: "frontend/assets", prefix: "/assets" },
+    { root: "dist/frontend/client/assets", prefix: "/assets" },
+  ],
+}));
+
+// 启动应用
+console.log(`🚀 前端服务器启动: http://localhost:${commonConfig.frontendPort}`);
+app.start();
