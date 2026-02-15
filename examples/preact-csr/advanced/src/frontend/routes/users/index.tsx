@@ -3,8 +3,8 @@
  * 使用 Tailwind CSS v4 样式
  */
 
-import { commonConfig } from "@common/config/main.ts";
 import type { User } from "@common/types/mod.ts";
+import { getAllUsers } from "@common/services/mod.ts";
 import { formatRelativeTime } from "@common/utils/mod.ts";
 
 /** 页面属性 */
@@ -14,21 +14,15 @@ interface UsersPageProps {
 }
 
 /**
- * 服务端数据加载
+ * 服务端数据加载：直接使用 common 下的 user-service，不请求 API
+ * 客户端需要刷新/测试接口时再通过 fetch 请求 /api/users
  */
-export async function load(): Promise<UsersPageProps> {
+export function load(): Promise<UsersPageProps> {
   try {
-    const response = await fetch(
-      `http://localhost:${commonConfig.backendPort}/api/users`,
-    );
-    const data = await response.json();
-
-    if (data.success) {
-      return { users: data.data };
-    }
-    return { error: data.error || "获取用户列表失败" };
+    const users = getAllUsers();
+    return Promise.resolve({ users });
   } catch (_error) {
-    return { error: "无法连接到后端服务" };
+    return Promise.resolve({ error: "获取用户列表失败" });
   }
 }
 
@@ -40,9 +34,6 @@ export default function UsersPage({ users = [], error }: UsersPageProps) {
     return (
       <div class="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
         <p class="text-red-600">{error}</p>
-        <p class="text-sm text-red-500 mt-2">
-          请确保后端服务已启动 (端口 {commonConfig.backendPort})
-        </p>
       </div>
     );
   }

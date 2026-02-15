@@ -40,6 +40,10 @@ import {
   createClientScriptMiddleware,
   ensureClientEntryFile,
 } from "../feature/csr-client-builder.ts";
+import {
+  createLoadDataMiddleware,
+  DWEB_DATA_PATH,
+} from "../feature/load-data-middleware.ts";
 import { loadRouteModule } from "../feature/load-route-module.ts";
 import { createRendererCSR } from "../feature/render-csr.ts";
 import { createRendererHybrid } from "../feature/render-hybrid.ts";
@@ -58,6 +62,7 @@ import {
   getWebSocketPath,
   initializeWebSocket,
 } from "../feature/websocket.ts";
+import { session } from "@dreamer/session";
 import {
   type AppConfig,
   type AppLifecycleHook,
@@ -401,6 +406,11 @@ export class App extends EventEmitter implements IApp {
         }),
       );
 
+      // Session 中间件（config.session 为 SessionOptions，store 由用户选用 @dreamer/session 的适配器）
+      if (mergedConfig.session) {
+        server.use(session(mergedConfig.session), undefined, "session");
+      }
+
       // 内置健康检查：GET /health 触发 onHealthCheck 插件事件并返回聚合状态
       server.use(
         createHealthCheckMiddleware(this.container),
@@ -464,6 +474,13 @@ export class App extends EventEmitter implements IApp {
         );
         server.setSSRRender(csrRenderer);
 
+        // 客户端页面切换时请求此接口获取该路由 load() 数据
+        server.use(
+          createLoadDataMiddleware(this.container, router, mergedConfig),
+          DWEB_DATA_PATH,
+          "load-data",
+        );
+
         // 注册客户端脚本服务中间件（处理 /_client.js 请求）
         const clientScriptMiddleware = createClientScriptMiddleware(
           this.container,
@@ -513,6 +530,13 @@ export class App extends EventEmitter implements IApp {
           mergedConfig,
         );
         server.setSSRRender(hybridRenderer);
+
+        // 客户端页面切换时请求此接口获取该路由 load() 数据
+        server.use(
+          createLoadDataMiddleware(this.container, router, mergedConfig),
+          DWEB_DATA_PATH,
+          "load-data",
+        );
 
         // 注册客户端脚本服务中间件（处理 /_client.js 请求）
         const clientScriptMiddleware = createClientScriptMiddleware(

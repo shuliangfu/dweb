@@ -14,9 +14,12 @@
  * 4. 后续导航：客户端使用 renderCSR() 渲染（SPA 体验）
  */
 
+import { resolveMetadata, type SSROptions } from "@dreamer/render";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { HttpContext } from "@dreamer/server";
+import type { SessionData } from "@dreamer/session";
 import type { ServiceContainer } from "@dreamer/service";
+import { createLoadContext, createServerResponse } from "../types/context.ts";
 import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
@@ -164,14 +167,23 @@ export function createRendererHybrid(
         query: sanitizeRequestParams(match.query),
       };
 
-      // 调用 load 函数获取服务端数据（如果存在）
+      const loadContext = createLoadContext({
+        request: ctx.request,
+        url: ctx.url.href,
+        params: match.params ?? {},
+        query: match.query ?? {},
+        session: (ctx as { session?: SessionData }).session,
+        response: createServerResponse(),
+      });
+
+      // 调用 load 函数获取服务端数据（如果存在）；若返回 Response 则直接作为响应（服务端跳转等）
       if (typeof pageModule.load === "function") {
-        const serverData = await pageModule.load({
-          url: ctx.url.href,
-          params: match.params,
-          request: ctx.request,
-        });
-        Object.assign(pageProps, serverData);
+        const raw = await pageModule.load(loadContext);
+        if (raw instanceof Response) {
+          return raw;
+        }
+        const serverData = raw as Record<string, unknown> | null;
+        if (serverData) Object.assign(pageProps, serverData);
       }
 
       // 构建布局数组（从外到内：App -> Layout -> Page）
@@ -194,6 +206,19 @@ export function createRendererHybrid(
         layouts.push({ component: LayoutComponent });
       }
 
+      // 从已 import 的路由模块读取 metadata（支持常量对象或方法），解析后交给 render 生成 meta 标签（复用 loadContext）
+      let contextData: SSROptions["contextData"];
+      const metadataExport = (pageModule as Record<string, unknown>).metadata;
+      if (metadataExport !== undefined && metadataExport !== null) {
+        const resolved = await resolveMetadata(
+          metadataExport as Parameters<typeof resolveMetadata>[0],
+          loadContext,
+        );
+        if (resolved) {
+          contextData = { metadata: resolved };
+        }
+      }
+
       // 调用 SSR 渲染（debug 支持 config.render.debug 或开发模式）
       const engine = renderConfig.engine || "preact";
       const isDev =
@@ -204,11 +229,8 @@ export function createRendererHybrid(
         component: PageComponent,
         props: pageProps,
         layouts,
-        loadContext: {
-          url: ctx.url.href,
-          params: match.params,
-          request: ctx.request,
-        },
+        loadContext,
+        contextData,
         debug: debugRender,
       });
 

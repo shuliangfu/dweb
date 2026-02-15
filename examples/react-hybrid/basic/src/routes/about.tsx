@@ -3,6 +3,14 @@
  * 路由: /about
  */
 
+/** 关于页元数据（方法），用于按上下文生成 <title> / <meta> */
+export const metadata = (
+  _context: { url: string; params: Record<string, string> },
+) => ({
+  title: "关于 - Dweb Basic",
+  description: "关于本示例项目",
+});
+
 export default function About() {
   return (
     <div className="py-5">

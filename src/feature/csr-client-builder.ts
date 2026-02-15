@@ -40,6 +40,7 @@ import {
 } from "../utils/build-dirs.ts";
 import { $t } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
+import { DWEB_DATA_PATH } from "./load-data-middleware.ts";
 import { normalizePathForCompare, pathForLog } from "../utils/path.ts";
 
 /**
@@ -324,8 +325,12 @@ function generateClientDepContent(
     ? `import { createSignal } from "@dreamer/view";
 import { hydrate, renderCSR, createReactiveRoot, buildViewTree } from "${adapterImport}";`
     : `import { hydrate, renderCSR } from "${adapterImport}";`;
+  /** API 路由（api/ 下）仅服务端使用，不加入 ROUTE_LOADERS，避免客户端 bundle 解析 .ts 或错误引用 */
+  const pageComponents = components.filter(
+    (c) => !c.componentPath.replace(/\\/g, "/").startsWith("api/"),
+  );
   const routeExt = ".tsx";
-  const routeLoaders = components.map(
+  const routeLoaders = pageComponents.map(
     (c) =>
       `  "${c.componentPath}": () => import("./routes/${c.componentPath}${routeExt}"),`,
   ).join("\n");
@@ -392,21 +397,30 @@ export function clearLayoutCache(): void {
       _viewEnsureReactiveRoot(containerId);`
     : "";
 
+  // 客户端页面切换时请求 DWEB_DATA_PATH 获取该路由 load() 数据，失败则仅用 params/query
+  const fetchRouteDataSnippet =
+    `var _pathname = (typeof _win.location !== "undefined" && _win.location.pathname) ? _win.location.pathname : "/";
+      var _search = (typeof _win.location !== "undefined" && _win.location.search) ? _win.location.search : "";
+      var _dataUrl = "${DWEB_DATA_PATH}?path=" + encodeURIComponent(_pathname) + (_search ? "&" + _search.slice(1) : "");
+      var _dataRes = await fetch(_dataUrl);
+      var _navProps = (_dataRes && _dataRes.ok) ? await _dataRes.json() : { params: match.params || {}, query: match.query || {} };`;
   /** View：先 setViewState，无 reactive root 时才 unmountPrevious，再 ensureReactiveRoot，实现细粒度 patch */
   const onRouteChangeRenderSnippet = isViewEngine
     ? `if (_win.__DWEB_DEBUG__) console.log("[dweb:view] onRouteChange", { component: match.route.component, hasPage: !!PageComponent });
-      setViewState({ page: PageComponent, props: { params: match.params, query: match.query }, layouts, skipLayouts });
+      ${fetchRouteDataSnippet}
+      setViewState({ page: PageComponent, props: _navProps, layouts, skipLayouts });
       if (!_viewReactiveRoot) unmountPrevious();
       _viewEnsureReactiveRoot(containerId);
       (g as DwebGlobal).__DWEB_ON_READY__?.();`
     : `unmountPrevious();
       const _container = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
       if (_container && typeof _container.replaceChildren === "function") _container.replaceChildren();
+      ${fetchRouteDataSnippet}
       const csrResult = await renderCSR({
         engine,
         component: PageComponent,
         container: "#" + containerId,
-        props: { params: match.params, query: match.query },
+        props: _navProps,
         layouts: skipLayouts ? undefined : layouts,
         skipLayouts,
         debug: !!(_win.__DWEB_DEBUG__),
@@ -414,20 +428,26 @@ export function clearLayoutCache(): void {
       RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
       (g as DwebGlobal).__DWEB_ON_READY__?.();`;
 
+  // CSR 首屏：若服务端注入了 __DATA__（当前路由的 load 结果），则使用其 page 作为 props，用后清空避免客户端导航误用
+  const csrInitialPropsSnippet = `var __d = (g as DwebGlobal).__DATA__;
+      var __use = __d && match.route.path === __d.route;
+      var _props = __use ? (function(){ (g as DwebGlobal).__DATA__ = undefined; return __d.page || { params: match.params, query: match.query }; })() : { params: match.params, query: match.query };`;
   const renderCurrentRouteSnippet = isViewEngine
     ? `if (_win.__DWEB_DEBUG__) console.log("[dweb:view] renderCurrentRoute", { component: match.route.component, hasPage: !!PageComponent, layoutsCount: layoutList?.length ?? 0 });
-      setViewState({ page: PageComponent, props: { params: match.params, query: match.query }, layouts: layoutList, skipLayouts });
+      ${csrInitialPropsSnippet}
+      setViewState({ page: PageComponent, props: _props, layouts: layoutList, skipLayouts });
       if (!_viewReactiveRoot && RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
       _viewEnsureReactiveRoot(containerId);
       if (_win.__DWEB_DEBUG__) console.log("[dweb:view] renderCurrentRoute done");`
     : `if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
       const _container = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
       if (_container && typeof _container.replaceChildren === "function") _container.replaceChildren();
+      ${csrInitialPropsSnippet}
       const csrResult = await renderCSR({
         engine,
         component: PageComponent,
         container: "#" + containerId,
-        props: { params: match.params, query: match.query },
+        props: _props,
         layouts: skipLayouts ? undefined : layoutList,
         skipLayouts,
         debug: !!(_win.__DWEB_DEBUG__),

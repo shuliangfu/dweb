@@ -15,8 +15,18 @@
 
 全栈 Web 框架，类似 Next.js、Remix、SvelteKit，提供完整的服务端和客户端支持。
 
-**默认使用 Preact**：框架默认使用 Preact（轻量级、高性能），也支持
-React。所有示例代码默认使用 Preact。
+**三种模板引擎**：
+
+- **View**（推荐）：Dweb 自有视图层（`@dreamer/view`），轻量、无虚拟 DOM、基于
+  signal 的细粒度更新，完整支持 SSR/SSG/CSR/hybrid。内置声明式指令：
+  - **vIf** / **vElseIf** / **vElse**：条件分支渲染（为真时渲染对应分支）；
+  - **vFor**：列表循环渲染；
+  - **vShow**：控制显示/隐藏（通过 `display`）；
+  - **vOnce**：仅渲染一次，后续不随数据更新；
+  - **vCloak**：避免未水合前模板闪现（SSR 时常用，输出 `data-view-cloak`）。
+    支持通过 `registerDirective` 注册自定义指令（如 `v-focus`）。
+- **Preact**：轻量且兼容 React，示例中常用。
+- **React**：通过 `render.engine: "react"` 完整支持。
 
 ---
 
@@ -47,8 +57,12 @@ dweb-cli --help           # 查看完整帮助
 
 **框架选择**：
 
-- **默认使用 Preact**：框架默认使用 Preact（轻量级、高性能）
-- **也支持 React**：在配置中通过 `render.engine` 指定
+- **View（推荐）**：框架自有视图引擎，轻量、无虚拟 DOM、signal +
+  声明式指令；配置 `render.engine: "view"`
+- **Preact**：轻量、兼容 React；多数示例中的默认
+- **React**：在配置中通过 `render.engine: "react"` 指定
+- **会话**：可选 `config.session`（`@dreamer/session`），配置后在
+  `load()`、API、中间件中可用 `ctx.session`
 - **渲染模式**：`render.mode` 支持 `ssr`、`csr`、`ssg`、`hybrid`
 
 按需安装独立包（dweb 已内置下列依赖，仅在使用其他 @dreamer/* 时需单独安装）：
@@ -92,12 +106,16 @@ deno add jsr:@dreamer/runtime-adapter
 
 - ✅ **完整的全栈支持**：服务端 + 客户端一体化开发
 - ✅ **文件路由系统**：基于文件系统的路由，类似 Next.js
-- ✅
-  **多种渲染模式**：SSR（服务端渲染）、CSR（客户端渲染）、SSG（静态站点生成）、Hybrid（混合模式）
-- ✅ **默认使用 Preact**：轻量级、高性能，也支持 React
+- ✅ **多种渲染模式**：SSR、CSR、SSG、Hybrid；**CSR/Hybrid 下用路由 `load`
+  提供数据即可，无需手写 API 请求**，框架自动在服务端执行 `load` 并通过
+  `/__data` 把数据传给页面
+- ✅ **View（推荐）**：自有视图引擎，轻量、无虚拟 DOM、signal +
+  声明式指令；也支持 Preact、React
 - ✅ **Socket.IO 内置**：实时双向通信，挂载到同一 HTTP 服务器，配置
   `socket: { adapter: "socketio", ... }` 即可启用；支持插件
   `onSocket`、`onSocketClose` 钩子
+- ✅ **会话（Session）**：可选 `config.session`（`@dreamer/session`）；在
+  `load()`、API 处理器和中间件中可用 `ctx.session`，便于有状态应用
 - ✅ **中间件系统**：通用中间件系统，可用于 HTTP、WebSocket、消息队列等多种场景
 - ✅ **插件系统**：插件生命周期管理、插件依赖、插件事件系统、热加载
 - ✅ **事件系统**：App 继承
@@ -144,7 +162,7 @@ deno add jsr:@dreamer/runtime-adapter
    - 重要性：⭐⭐⭐⭐⭐
 
 6. **@dreamer/render** - 渲染引擎
-   - 作用：SSR / SSG 渲染（Preact、React）
+   - 作用：SSR / SSG / CSR / hybrid 渲染（View、Preact、React；推荐 View）
    - 重要性：⭐⭐⭐⭐⭐
 
 7. **@dreamer/esbuild** - 构建工具
@@ -155,39 +173,50 @@ deno add jsr:@dreamer/runtime-adapter
    - 作用：WebSocket 实时双向通信（Socket.IO 协议）
    - 重要性：⭐⭐⭐⭐
 
+9. **@dreamer/session** - 会话管理
+   - 作用：服务端会话存储与 Cookie 管理；配置 `config.session` 后，在
+     `load()`、API 处理器和中间件中可用 `ctx.session`
+   - 重要性：⭐⭐⭐⭐
+
 ### 工具层
 
-9. **@dreamer/logger** - 日志
-   - 作用：应用日志记录
-   - 重要性：⭐⭐⭐⭐⭐
+10. **@dreamer/logger** - 日志
 
-10. **@dreamer/config** - 配置管理
+- 作用：应用日志记录
+- 重要性：⭐⭐⭐⭐⭐
+
+11. **@dreamer/config** - 配置管理
 
 - 作用：应用配置加载与合并
 - 重要性：⭐⭐⭐⭐
 
-11. **@dreamer/utils** - 工具函数
-    - 作用：通用工具
-    - 重要性：⭐⭐⭐⭐
+12. **@dreamer/utils** - 工具函数
 
-12. **@dreamer/console** - 控制台 / CLI
-    - 作用：CLI 输出与交互（command 模块）
-    - 重要性：⭐⭐⭐
+- 作用：通用工具
+- 重要性：⭐⭐⭐⭐
 
-13. **@dreamer/runtime-adapter** - 运行时适配
-    - 作用：统一 Deno/Bun 的 fs、path、env、cwd 等 API
-    - 重要性：⭐⭐⭐⭐⭐
+13. **@dreamer/console** - 控制台 / CLI
+
+- 作用：CLI 输出与交互（command 模块）
+- 重要性：⭐⭐⭐
+
+14. **@dreamer/runtime-adapter** - 运行时适配
+
+- 作用：统一 Deno/Bun 的 fs、path、env、cwd 等 API
+- 重要性：⭐⭐⭐⭐⭐
 
 ### dweb 内部结构（源码目录）
 
-| 目录/文件  | 说明                                                                                                                           |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `core/`    | 核心：app、config、service、middleware、plugin、lifecycle、database、plugin-events、runtime-adapter                            |
-| `feature/` | 功能：server、router、render、render-ssr、render-csr、render-ssg、render-hybrid、build、csr-client-builder、socket-io、command |
-| `types/`   | 类型：AppConfig、IApp 等                                                                                                       |
-| `utils/`   | 工具：logger、version、errors（统一错误处理，支持 i18n）                                                                       |
-| `cli.ts`   | CLI 入口（createCLI）                                                                                                          |
-| `mod.ts`   | 主入口，统一导出                                                                                                               |
+| 目录/文件  | 说明                                                                                                                                                                                                                                                              |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `core/`    | 核心：app、config、service、middleware、plugin、lifecycle、database、plugin-events、runtime-adapter                                                                                                                                                               |
+| `feature/` | 功能：server、router、render、render-ssr、render-csr、render-ssg、render-hybrid、build、csr-client-builder、csr-client-middleware、load-data-middleware（load 数据与 session 注入）、load-route-module、render-utils、module-cache、socket-io、websocket、command |
+| `types/`   | 类型：AppConfig、IApp、context（LoadContext、ServerResponse、createMetaContext、createLoadContext、parseCookies 等）                                                                                                                                              |
+| `utils/`   | 工具：logger、version、errors（统一错误处理，支持 i18n）、cache-dirs、config-loader、i18n、asset-manifest、path、runtime 等                                                                                                                                       |
+| `cmd/`     | 子命令实现：init、dev、build、start、preview、generate、db、upgrade、test、fmt、lint、clean、update                                                                                                                                                               |
+| `locales/` | 多语言文案（zh-CN、en-US、ja-JP 等）                                                                                                                                                                                                                              |
+| `cli.ts`   | CLI 入口（createCLI）                                                                                                                                                                                                                                             |
+| `mod.ts`   | 主入口，统一导出                                                                                                                                                                                                                                                  |
 
 ### 可选扩展（按需安装）
 
@@ -196,7 +225,6 @@ deno add jsr:@dreamer/runtime-adapter
 - **@dreamer/database** - 数据库（PostgreSQL、MySQL、SQLite、MongoDB）
 - **@dreamer/cache** - 缓存（Redis、内存、文件）
 - **@dreamer/storage** - 文件存储
-- **@dreamer/session** - 会话
 - **@dreamer/queue** - 任务队列（需自行安装）
 - **@dreamer/websocket** - 原生 WebSocket（Socket.IO 已内置于 dweb）
 - **@dreamer/store** - 客户端状态
@@ -473,24 +501,6 @@ my-app/
 **注意**：如果不使用 `src/` 目录，需要在配置中将路径改为
 `"./backend/routes"`、`"./frontend/routes"` 等。
 
-**关于 `client/index.tsx` 的说明**：
-
-- ✅ **可以不要**：如果使用文件路由系统，`@dreamer/router`
-  会自动处理客户端代码的初始化和水合，不需要单独的 `client/index.tsx`
-- ✅ **自动生成**：`@dreamer/router` 会根据 `routes/` 目录自动生成客户端入口代码
-- ✅ **不影响编译和渲染**：
-  - **编译**：`@dreamer/esbuild` 会从 `routes/`
-    目录自动分析入口点，不需要手动指定 `client/index.tsx`
-  - **客户端渲染（CSR）**：`@dreamer/router` 会自动生成客户端路由代码，包括
-    React/Preact 应用的初始化和路由导航
-  - **服务端渲染（SSR）**：`@dreamer/router` 会自动处理 SSR 渲染和客户端水合
-  - **静态站点生成（SSG）**：`@dreamer/router` 会在构建时预渲染所有路由为静态
-    HTML
-  - **混合模式（Hybrid）**：`@dreamer/router` 支持 SSR 首屏渲染，后续路由使用
-    CSR
-- ✅ **可以在 `_app.tsx` 中处理**：所有自定义客户端初始化逻辑都可以在 `_app.tsx`
-  中处理，不需要单独的 `client/index.tsx`
-
 **特殊文件的处理**：
 
 所有特殊文件（`_app.tsx`、`_layout.tsx`、`_404.tsx`、`_error.tsx`、`_middleware.ts`）都在
@@ -511,8 +521,14 @@ my-app/
   2. 识别特殊文件和普通路由文件
   3. 根据 `_app.tsx` 生成 HTML 结构
   4. 根据路由文件生成路由配置
-  5. 自动生成客户端入口代码（包含 React/Preact 初始化、路由导航、水合逻辑）
+  5. 自动生成客户端入口代码（包含 React/Preact/View 初始化、路由导航、水合逻辑）
   6. `@dreamer/esbuild` 使用自动生成的入口代码进行编译
+
+**客户端入口文件 `_client.tsx` 与 `_client.dep.tsx`**（均为框架自动生成）：
+
+- **`_client.tsx`**：仅在不存在时由框架生成；**一旦存在则不会被覆盖**，便于在需要时自定义入口逻辑。
+- **`_client.dep.tsx`**：**每次执行 `dweb dev`
+  启动开发时都会重新生成**，保证与当前路由、布局一致；构建时同样会按需生成。
 
 ### 3. 创建应用
 
@@ -895,7 +911,8 @@ export default function App(
 
 **自定义客户端初始化逻辑说明**：
 
-以下场景都可以在 `_app.tsx` 中处理，**不需要** `client/index.tsx`：
+以下场景都可以在 `_app.tsx` 中处理（框架使用自动生成的 `_client.dep.tsx`
+作为客户端入口，无需单独维护客户端入口文件）：
 
 1. **全局状态管理**：
    - 推荐使用 `@dreamer/store`（框架官方状态管理包）
@@ -922,21 +939,9 @@ export default function App(
    - 性能监控
    - 在 `_app.tsx` 的 `useEffect` 中处理
 
-**为什么不需要 `client/index.tsx`**：
-
-- ✅ **`_app.tsx` 足够**：`_app.tsx`
-  是应用的根组件，所有客户端初始化逻辑都可以在这里处理
-- ✅ **自动执行**：`@dreamer/router` 会自动处理 `_app.tsx` 的客户端初始化和水合
-- ✅ **SSR 兼容**：`useEffect` 只在客户端执行，不会影响 SSR
-- ✅ **更符合约定**：类似 Next.js 的 `_app.tsx`，开发者更熟悉
-
-**只有在以下极端情况下才需要 `client/index.tsx`**：
-
-- 需要完全自定义客户端入口代码的生成逻辑
-- 需要绕过框架的自动代码生成
-- 需要特殊的构建配置
-
-对于 99% 的使用场景，在 `_app.tsx` 中处理就足够了。
+**说明**：框架根据路由自动生成 `_client.dep.tsx` 等客户端入口，`_app.tsx`
+作为根组件参与水合与 CSR；自定义客户端逻辑放在 `_app.tsx` 即可，`useEffect`
+仅在客户端执行且不影响 SSR。
 
 #### 布局组件
 
@@ -1038,6 +1043,43 @@ export default function User({ params }: { params: { id: string } }) {
 }
 ```
 
+#### CSR / Hybrid：用 `load` 提供数据，无需手写 API 请求
+
+在 **CSR** 和 **Hybrid** 模式下，**不需要在页面里手写 API 请求**（如
+`fetch("/api/xxx")`）。只要在路由文件中导出 **`load`**
+方法并返回需要的数据，框架会自动在服务端执行 `load()`，并把返回值作为 **props**
+传给页面组件。
+
+- **首屏**：服务端执行当前路由的 `load()`，将结果注入页面（或 CSR 下注入
+  `globalThis.__DATA__` 供客户端首屏渲染）。
+- **客户端导航**：切换路由时，框架内部自动请求
+  `GET /__data?path=...`，服务端执行对应路由的 `load()` 并返回
+  JSON，页面收到的就是 `load` 的返回值，无需自己发请求。
+
+只需**写好 `load` 方法、把数据 return 出去**，页面组件通过 props 直接使用即可。
+
+```typescript
+// src/routes/users/index.tsx
+import type { LoadContext } from "jsr:@dreamer/dweb/types";
+
+/** 框架会在服务端执行 load，CSR/Hybrid 下客户端自动通过 /__data 获取该返回值，无需手写 fetch */
+export async function load(ctx: LoadContext) {
+  const list = await getUsersFromDb(ctx); // 或任意异步数据源
+  return { list };
+}
+
+export default function Users(
+  { list }: { list: { id: string; name: string }[] },
+) {
+  return (
+    <div>
+      <h1>用户列表</h1>
+      <ul>{list.map((u) => <li key={u.id}>{u.name}</li>)}</ul>
+    </div>
+  );
+}
+```
+
 ### 特殊文件说明
 
 | 文件名           | 说明       | 是否必须    | 作用                                         |
@@ -1081,23 +1123,13 @@ export default function User({ params }: { params: { id: string } }) {
    - `_middleware.ts`：在路由匹配前执行
 3. **客户端代码生成**：
    - `@dreamer/router` 根据 `_app.tsx` 和路由文件自动生成客户端入口代码
-   - 生成的代码包含：React/Preact 初始化、路由导航、SSR 水合逻辑
-   - 不需要手动创建 `client/index.tsx`
+   - 生成的代码包含：React/Preact/View 初始化、路由导航、SSR 水合逻辑
+   - **`_client.tsx`** 与 **`_client.dep.tsx`** 均为自动生成：`_client.tsx`
+     仅在不存在时生成且存在后不覆盖；`_client.dep.tsx` 每次 `dweb dev`
+     启动时都会重新生成
 4. **编译处理**：
    - `@dreamer/esbuild` 使用 `@dreamer/router` 自动生成的客户端入口代码进行编译
    - 不影响编译和客户端渲染功能
-
-**去掉 `client/index.tsx` 的影响分析**：
-
-- ✅ **不影响编译**：`@dreamer/router`
-  会自动生成客户端入口代码，`@dreamer/esbuild` 会使用这个自动生成的入口进行编译
-- ✅ **不影响客户端渲染（CSR）**：自动生成的客户端代码包含完整的 React/Preact
-  应用初始化、路由导航、状态管理等功能
-- ✅ **不影响服务端渲染（SSR）**：自动生成的代码包含 SSR 渲染和客户端水合逻辑
-- ✅ **支持静态站点生成（SSG）**：构建时预渲染所有路由为静态 HTML
-- ✅ **支持混合模式（Hybrid）**：SSR 首屏渲染，后续路由使用 CSR
-- ✅ **更简洁**：开发者只需要关注 `routes/`
-  目录中的路由文件，不需要手动管理客户端入口代码
 
 ---
 
@@ -1938,10 +1970,16 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.74] - 2026-02-15
+### [3.0.75] - 2026-02-16
 
-**变更**：将 `@dreamer/view` 升级为 `^1.0.9`（vIf/vShow 导致的 input value
-修复）。 将 `@dreamer/render` 升级为 `^1.0.21`（与 view 引擎对齐）。
+**新增**：Load 数据接口中间件（`GET /__data?path=...`）为路由 `load()` 提供自动
+API，服务端执行并返回 JSON，CSR/Hybrid
+客户端在导航时请求该接口、首屏使用服务端注入的 `__DATA__`。E2E
+浏览器测试覆盖全部示例（view-hybrid-flat；全部 preact/react advanced，端口
+3030–3049）；交互测试：basic 点击「关于」，advanced 点击「用户管理」。扁平结构
+advanced 支持可选 `entries` 构建入口。
+
+**移除**：preact-hybrid-unocss 示例及 workspace 条目。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

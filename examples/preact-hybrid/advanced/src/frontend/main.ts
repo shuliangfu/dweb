@@ -17,7 +17,7 @@ app.registerPlugin(tailwindPlugin({
 
 app.registerPlugin(staticPlugin({
   statics: [
-    { root: "frontend/assets", prefix: "/assets" },
+    { root: "src/frontend/assets", prefix: "/assets" },
     { root: "dist/frontend/client/assets", prefix: "/assets" },
   ],
 }));

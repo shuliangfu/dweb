@@ -9,23 +9,24 @@
 
 `AppConfig` 是 dweb 框架的应用配置接口，包含以下主要模块：
 
-| 配置项                 | 类型                 | 说明                                                                                                                                                              |
-| ---------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`                 | string               | 应用名称                                                                                                                                                          |
-| `version`              | string               | 应用版本                                                                                                                                                          |
-| `language`             | AppLanguage          | 框架语言（zh-CN、en-US、ja-JP、ko-KR、es-ES、pt-BR、id-ID、de-DE、fr-FR；影响 CLI、日志、错误消息等；<br/>默认自动检测环境变量 LANGUAGE/LC_ALL/LANG，否则 en-US） |
-| `envPrefix`            | string               | 环境变量前缀                                                                                                                                                      |
-| `hotReload`            | boolean              | 是否启用热重载                                                                                                                                                    |
-| `pluginManagerOptions` | PluginManagerOptions | 插件管理器选项（autoActivate、continueOnError、enableHotReload 等）                                                                                               |
-| `server`               | ServerOptions        | 服务器配置                                                                                                                                                        |
-| `router`               | RouterOptions        | 路由配置                                                                                                                                                          |
-| `render`               | object               | 渲染配置                                                                                                                                                          |
-| `build`                | BuildAppConfig       | 构建配置                                                                                                                                                          |
-| `logger`               | LoggerConfig         | 日志配置                                                                                                                                                          |
-| `database`             | DatabaseAppConfig    | 数据库配置                                                                                                                                                        |
-| `socket`               | SocketConfig         | 实时通信配置（type: socketio 或 websocket）                                                                                                                       |
-| `plugins`              | Array                | 插件列表                                                                                                                                                          |
-| `middlewares`          | Array                | 中间件列表                                                                                                                                                        |
+| 配置项                 | 类型                 | 说明                                                                                                                                                                                |
+| ---------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                 | string               | 应用名称                                                                                                                                                                            |
+| `version`              | string               | 应用版本                                                                                                                                                                            |
+| `language`             | AppLanguage          | 框架语言（zh-CN、en-US、ja-JP、ko-KR、es-ES、pt-BR、id-ID、de-DE、fr-FR；影响 CLI、日志、错误消息等；<br/>默认自动检测环境变量 LANGUAGE/LC_ALL/LANG，否则 en-US）                   |
+| `envPrefix`            | string               | 环境变量前缀                                                                                                                                                                        |
+| `hotReload`            | boolean              | 是否启用热重载                                                                                                                                                                      |
+| `pluginManagerOptions` | PluginManagerOptions | 插件管理器选项（autoActivate、continueOnError、enableHotReload 等）                                                                                                                 |
+| `server`               | ServerOptions        | 服务器配置                                                                                                                                                                          |
+| `router`               | RouterOptions        | 路由配置                                                                                                                                                                            |
+| `render`               | object               | 渲染配置（`engine`：`"view"` \| `"preact"` \| `"react"`；**View** 为框架自有视图引擎，推荐使用；详见 [View 视图模板引擎](#view-视图模板引擎)）                                      |
+| `build`                | BuildAppConfig       | 构建配置                                                                                                                                                                            |
+| `logger`               | LoggerConfig         | 日志配置                                                                                                                                                                            |
+| `database`             | DatabaseAppConfig    | 数据库配置                                                                                                                                                                          |
+| `socket`               | SocketConfig         | 实时通信配置（type: socketio 或 websocket）                                                                                                                                         |
+| `session`              | SessionOptions       | 会话配置（@dreamer/session）：store 必填；可选 name、maxAge、cookie、autoSave、genId；cookie 选项在设置 session Cookie 时由中间件应用；启用后 load()、API、中间件中可用 ctx.session |
+| `plugins`              | Array                | 插件列表                                                                                                                                                                            |
+| `middlewares`          | Array                | 中间件列表                                                                                                                                                                          |
 
 ---
 
@@ -110,7 +111,9 @@ const config: AppConfig = {
 
   // ========== 渲染配置 ==========
   render: {
-    /** 模板引擎：preact | react */
+    /** 是否启用渲染调试日志（开发模式默认 true） */
+    debug: false,
+    /** 模板引擎：preact | react | view */
     engine: "preact",
     /** 渲染模式：ssr | csr | ssg | hybrid */
     mode: "hybrid",
@@ -276,6 +279,15 @@ const config: AppConfig = {
   //   },
   // },
 
+  // ========== 会话配置（可选；@dreamer/session；配置后 load()、API、中间件中可用 ctx.session） ==========
+  // session: {
+  //   store: createFileStore(await getDreamerDwebCacheDir(), "sessions"), // store 必填
+  //   name: "sid",
+  //   maxAge: 86400,
+  //   cookie: { path: "/", httpOnly: true, secure: false, sameSite: "lax" },
+  //   autoSave: true,
+  // },
+
   // ========== 插件列表 ==========
   // 插件只需实现 name、version，可选实现事件钩子（onInit、onRequest、onResponse 等）
   // 框架通过 PluginManager 管理 install/activate 生命周期，插件无需实现这些方法
@@ -323,6 +335,51 @@ export default config;
 
 ---
 
+### 渲染引擎选项
+
+`config.render.engine` 支持三种取值：
+
+- **`"view"`**（推荐）：Dweb 自有的 **View
+  视图模板引擎**（`@dreamer/view`）。轻量、无虚拟 DOM、基于 signal
+  的细粒度更新；声明式模板与内置指令（vIf/vElseIf/vElse、vFor、vShow、vOnce、vCloak）；完整支持
+  SSR、SSG、CSR、hybrid。详见下文 [View 视图模板引擎](#view-视图模板引擎)。
+- **`"preact"`**：轻量级 React 兼容库；示例中常用默认。
+- **`"react"`**：完整 React；设置 `engine: "react"` 并确保依赖中已加入 React。
+
+三种引擎均支持 `mode: "ssr" | "csr" | "ssg" | "hybrid"`。
+
+---
+
+### View 视图模板引擎
+
+**View** 是框架自有的视图层，基于 `@dreamer/view` 并与 `@dreamer/render`
+集成，是新项目**推荐**使用的模板引擎。
+
+**选择 View 的理由**
+
+- **轻量、高性能**：无虚拟 DOM，更新为细粒度（基于 signal 的响应式与定向 DOM
+  修补）。运行时更小、客户端开销低于虚拟 DOM 方案。
+- **易上手**：声明式模板语法与内置指令，适合模板优先或组件优先开发。内置指令：**vIf**
+  / **vElseIf** /
+  **vElse**（条件分支）、**vFor**（列表循环）、**vShow**（显示/隐藏）、**vOnce**（仅渲染一次）、**vCloak**（防未水合闪现）；支持
+  `registerDirective` 注册自定义指令。
+- **与生态一体**：为 Deno/JSR 生态设计，与 Dweb 同源维护；SSR、SSG、CSR、hybrid
+  开箱即用，无需额外胶水代码。
+- **与 Dweb 统一**：与 Preact/React
+  共用同一套路由、`load()`、布局与构建流水线。配置 `render.engine: "view"`
+  即可，可参考 `examples/view-*`（如 view-hybrid-flat、view-csr、view-ssg）。
+
+**配置方式**：在 `AppConfig` 中设置 `render.engine: "view"`。客户端构建将使用
+`@dreamer/render/client/view` 进行水合与 CSR，无需单独「View
+初始化」步骤，框架会自动接入适配器。
+
+**会话**：需要状态化应用时，可将 View 与
+`config.session`（`@dreamer/session`）搭配使用。配置 `session` 后，在
+`load()`、API 处理器和中间件中均可使用 `ctx.session`。详见
+[会话（Session）配置说明](#会话session配置说明)。
+
+---
+
 ### Socket.IO 与 WebSocket 配置说明
 
 实时通信支持两种类型，通过 `socket.adapter` 区分：
@@ -337,6 +394,25 @@ export default config;
 **插件事件**：配置 Socket 后，框架会在连接建立/关闭时触发插件的
 `onSocket`、`onSocketClose`
 钩子，可用于认证、连接记录等。插件只需实现对应钩子即可，无需额外配置。
+
+---
+
+### 会话（Session）配置说明
+
+当设置 `config.session`（使用 `@dreamer/session` 的
+`SessionOptions`）时，框架会挂载会话中间件，并在 `load()`、API
+处理器和中间件中提供 `ctx.session`。
+
+- **`store`**（必填）：会话存储实例（如使用 `@dreamer/session` 的
+  `createFileStore()`）。文件存储默认目录可为 `~/.dreamer/dweb/sessions`（通过
+  `getDreamerDwebCacheDir()` 获取）。
+- **`name`**：会话 Cookie 名称（默认由库提供）。
+- **`maxAge`**：会话最大存活时间（秒）。
+- **`cookie`**：设置会话 Cookie
+  时的选项：`path`、`domain`、`secure`、`httpOnly`、`sameSite`、`maxAge`、`expires`。
+- **`autoSave`**、**`genId`**：可选，由 `@dreamer/session` 提供。
+
+没有单独的顶层 `cookie` 配置；所有 Cookie 选项均在 `config.session.cookie` 下。
 
 ---
 

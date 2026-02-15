@@ -4,14 +4,29 @@
  */
 
 import { getAllUsers } from "@common/services/mod.ts";
+import type { User } from "@common/types/mod.ts";
 import { formatRelativeTime } from "@common/utils/mod.ts";
 
-/**
- * 用户管理页面
- */
-export default function UsersManagement() {
-  const users = getAllUsers();
+/** 页面属性（由 load 注入；SSG 预渲染时可能无数据） */
+interface UsersManagementProps {
+  users?: User[];
+}
 
+/**
+ * 服务端数据加载：在服务端获取用户列表，注入到组件
+ */
+export function load(): Promise<UsersManagementProps> {
+  const users = getAllUsers();
+  return Promise.resolve({ users });
+}
+
+/**
+ * 用户管理页面（纯展示，数据由 load 注入）
+ * SSG 预渲染时 load 可能未执行或无数据，需默认空数组避免 .map 报错
+ */
+export default function UsersManagement({
+  users = [],
+}: UsersManagementProps) {
   return (
     <div class="space-y-6">
       <div class="flex items-center justify-between">

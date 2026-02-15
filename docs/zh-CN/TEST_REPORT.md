@@ -6,9 +6,9 @@
 
 | 项目     | 值                   |
 | -------- | -------------------- |
-| 框架版本 | 3.0.73               |
-| 测试框架 | @dreamer/test@^1.0.2 |
-| 测试时间 | 2026-02-14           |
+| 框架版本 | 3.0.75               |
+| 测试框架 | @dreamer/test@^1.0.5 |
+| 测试时间 | 2026-02-15           |
 | 测试环境 | Deno 2.x / Bun 1.x   |
 
 ---
@@ -17,15 +17,15 @@
 
 ### 总体统计
 
-| 指标         | 数值   |
-| ------------ | ------ |
-| 测试文件数   | 48     |
-| 测试用例总数 | 692    |
-| 通过用例数   | 689    |
-| 忽略用例数   | 3      |
-| 失败用例数   | 0      |
-| 通过率       | 100%   |
-| 测试执行时间 | ~1m33s |
+| 指标         | 数值  |
+| ------------ | ----- |
+| 测试文件数   | 49+   |
+| 测试用例总数 | 788   |
+| 通过用例数   | 788   |
+| 忽略用例数   | 2     |
+| 失败用例数   | 0     |
+| 通过率       | 100%  |
+| 测试执行时间 | ~3m8s |
 
 ### 测试文件统计
 
@@ -33,11 +33,12 @@
 
 | 文件名                          | 测试用例数   | 状态        |
 | ------------------------------- | ------------ | ----------- |
-| `config.test.ts`                | 63           | ✅ 全部通过 |
-| `render.test.ts`                | 45           | ✅ 全部通过 |
+| `config.test.ts`                | 64           | ✅ 全部通过 |
+| `context.test.ts`               | 21           | ✅ 全部通过 |
+| `render.test.ts`                | 46           | ✅ 全部通过 |
 | `command.test.ts`               | 41           | ✅ 全部通过 |
 | `build.test.ts`                 | 24           | ✅ 全部通过 |
-| `windows.test.ts`               | 48（3 忽略） | ✅ 全部通过 |
+| `windows.test.ts`               | 48（2 忽略） | ✅ 全部通过 |
 | `path.test.ts`                  | 18           | ✅ 全部通过 |
 | `plugin-events.test.ts`         | 16           | ✅ 全部通过 |
 | `logger.test.ts`                | 17           | ✅ 全部通过 |
@@ -82,7 +83,7 @@
 | `cmd-update.test.ts`            | 3            | ✅ 全部通过 |
 | `cli.test.ts`                   | 1            | ✅ 全部通过 |
 
-> **说明**：`windows.test.ts` 中 3 个用例为 Windows 平台专属（`skipIf` 非
+> **说明**：`windows.test.ts` 中 2 个用例为 Windows 平台专属（`skipIf` 非
 > Windows 时忽略）
 
 ---
@@ -543,7 +544,18 @@
 
 - ✅ createCLI() 返回 Command、具备 execute 方法
 
-### 20. 新增单测（sanitize、path、runtime、module-cache、load-route-module、i18n、generate、windows 等）
+### 20. 路由上下文 (context.test.ts) - 21 个测试
+
+- ✅ **parseCookies()**：无/空 Cookie 头、单/多
+  cookie、重复键、去空格、跳过非法段
+- ✅ **createMetaContext()**：返回 url、params、query
+- ✅ **createLoadContext()**：从 Request 填充 method、headers、cookies；可选
+  session、response
+- ✅
+  **createServerResponse()**：redirect（302/301）、json、html、text、binary（Uint8Array/ArrayBuffer）、body、status（含
+  statusText）
+
+### 21. 其他单元测试（sanitize、path、runtime、module-cache、load-route-module、i18n、generate、windows 等）
 
 - ✅ **sanitize.test.ts** (15)：sanitizeRequestParams 危险键过滤、NUL
   过滤、空值处理
@@ -576,7 +588,7 @@
 - ✅ **cmd-upgrade.test.ts** (2)：main 正常执行、--beta 选项
 - ✅ **cmd-update.test.ts** (3)：main 无 deno.json 时返回、有 deno.json 时执行
   update
-- ✅ **windows.test.ts** (47，2
+- ✅ **windows.test.ts** (48，2
   忽略)：路径规范化、构建输出推断、模块缓存、组件路径提取、路径安全校验、日志友好路径（Windows
   平台专属用例在非 Windows 时跳过）
 
@@ -648,6 +660,7 @@
 | render-ssg            | createRendererSSG()                                                                     | ✅       |
 | version               | DWEB_VERSION                                                                            | ✅       |
 | cli                   | createCLI() / execute                                                                   | ✅       |
+| context               | parseCookies() / createLoadContext() / createMetaContext() / createServerResponse()     | ✅       |
 | sanitize              | sanitizeRequestParams()                                                                 | ✅       |
 | path                  | isPathWithinProject / pathForLog / normalizePathForCompare                              | ✅       |
 | runtime               | getRuntime / getTaskArgs / getTestArgs / getLintArgs                                    | ✅       |
@@ -699,9 +712,11 @@
 
 ## 🎯 结论
 
-@dreamer/dweb 框架的核心模块测试在文件级已全面覆盖，共 **689**
-个测试用例全部通过（3 个 Windows 专属用例在非 Windows
-时忽略）。所有测试均为实质性测试，验证了具体的功能行为。测试覆盖了：
+@dreamer/dweb 框架的核心模块测试在文件级已全面覆盖，共 **788**
+个测试用例全部通过（2 个 Windows 专属用例在非 Windows
+时忽略）。所有测试均为实质性测试，验证了具体的功能行为。单元测试包含
+**context.test.ts**（parseCookies、createLoadContext、createMetaContext、
+createServerResponse）。测试覆盖了：
 
 - ✅ 配置管理（验证和合并，含 render.mode hybrid）
 - ✅ 服务容器集成
@@ -716,6 +731,8 @@
 - ✅ 路由系统集成
 - ✅ 日志系统集成
 - ✅ CLI 命令模块（createCLI）
+- ✅
+  路由上下文（parseCookies、createLoadContext、createMetaContext、createServerResponse）
 - ✅ 运行时适配器（runtime-adapter re-export）
 - ✅ 统一错误处理（DwebError、throwDwebError、i18n 翻译器）
 - ✅ CSR 客户端构建与 createRendererCSR

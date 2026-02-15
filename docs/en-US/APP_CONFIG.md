@@ -11,23 +11,24 @@ options.
 `AppConfig` is the application configuration interface for the dweb framework,
 with the following main sections:
 
-| Option                 | Type                 | Description                                                                                                                                                                       |
-| ---------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`                 | string               | Application name                                                                                                                                                                  |
-| `version`              | string               | Application version                                                                                                                                                               |
-| `language`             | AppLanguage          | Framework language (zh-CN, en-US, ja-JP, ko-KR, es-ES, pt-BR, id-ID, de-DE, fr-FR; affects CLI, logs, error messages; <br/>default: auto-detect LANGUAGE/LC_ALL/LANG, else en-US) |
-| `envPrefix`            | string               | Environment variable prefix                                                                                                                                                       |
-| `hotReload`            | boolean              | Enable hot reload                                                                                                                                                                 |
-| `pluginManagerOptions` | PluginManagerOptions | Plugin manager options (autoActivate, continueOnError, enableHotReload, etc.)                                                                                                     |
-| `server`               | ServerOptions        | Server configuration                                                                                                                                                              |
-| `router`               | RouterOptions        | Router configuration                                                                                                                                                              |
-| `render`               | object               | Render configuration                                                                                                                                                              |
-| `build`                | BuildAppConfig       | Build configuration                                                                                                                                                               |
-| `logger`               | LoggerConfig         | Logger configuration                                                                                                                                                              |
-| `database`             | DatabaseAppConfig    | Database configuration                                                                                                                                                            |
-| `socket`               | SocketConfig         | Real-time config (type: socketio or websocket)                                                                                                                                    |
-| `plugins`              | Array                | Plugin list                                                                                                                                                                       |
-| `middlewares`          | Array                | Middleware list                                                                                                                                                                   |
+| Option                 | Type                 | Description                                                                                                                                                                                                          |
+| ---------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                 | string               | Application name                                                                                                                                                                                                     |
+| `version`              | string               | Application version                                                                                                                                                                                                  |
+| `language`             | AppLanguage          | Framework language (zh-CN, en-US, ja-JP, ko-KR, es-ES, pt-BR, id-ID, de-DE, fr-FR; affects CLI, logs, error messages; <br/>default: auto-detect LANGUAGE/LC_ALL/LANG, else en-US)                                    |
+| `envPrefix`            | string               | Environment variable prefix                                                                                                                                                                                          |
+| `hotReload`            | boolean              | Enable hot reload                                                                                                                                                                                                    |
+| `pluginManagerOptions` | PluginManagerOptions | Plugin manager options (autoActivate, continueOnError, enableHotReload, etc.)                                                                                                                                        |
+| `server`               | ServerOptions        | Server configuration                                                                                                                                                                                                 |
+| `router`               | RouterOptions        | Router configuration                                                                                                                                                                                                 |
+| `render`               | object               | Render configuration (`engine`: `"view"` \| `"preact"` \| `"react"`; **View** is the framework’s native engine, recommended; see [View View Template Engine](#view-view-template-engine))                            |
+| `build`                | BuildAppConfig       | Build configuration                                                                                                                                                                                                  |
+| `logger`               | LoggerConfig         | Logger configuration                                                                                                                                                                                                 |
+| `database`             | DatabaseAppConfig    | Database configuration                                                                                                                                                                                               |
+| `socket`               | SocketConfig         | Real-time config (type: socketio or websocket)                                                                                                                                                                       |
+| `session`              | SessionOptions       | Session config (@dreamer/session): store required; optional name, maxAge, cookie, autoSave, genId; cookie options applied when setting session cookie; ctx.session available in load(), API, middleware when enabled |
+| `plugins`              | Array                | Plugin list                                                                                                                                                                                                          |
+| `middlewares`          | Array                | Middleware list                                                                                                                                                                                                      |
 
 ---
 
@@ -112,7 +113,9 @@ const config: AppConfig = {
 
   // ========== Render config ==========
   render: {
-    /** Template engine: preact | react */
+    /** Enable render debug logs (default: true in dev) */
+    debug: false,
+    /** Template engine: preact | react | view */
     engine: "preact",
     /** Render mode: ssr | csr | ssg | hybrid */
     mode: "hybrid",
@@ -278,6 +281,15 @@ const config: AppConfig = {
   //   },
   // },
 
+  // ========== Session config (optional; @dreamer/session; when set, ctx.session available in load(), API, middleware) ==========
+  // session: {
+  //   store: createFileStore(await getDreamerDwebCacheDir(), "sessions"), // store required
+  //   name: "sid",
+  //   maxAge: 86400,
+  //   cookie: { path: "/", httpOnly: true, secure: false, sameSite: "lax" },
+  //   autoSave: true,
+  // },
+
   // ========== Plugins ==========
   // Plugins need name, version; optionally implement hooks (onInit, onRequest, onResponse, etc.)
   // Framework manages install/activate via PluginManager; plugins don't implement those
@@ -325,6 +337,56 @@ export default config;
 
 ---
 
+### Render engine options
+
+`config.render.engine` supports three values:
+
+- **`"view"`** (recommended): Dweb’s native view template engine
+  (`@dreamer/view`). Lightweight, no virtual DOM, fine-grained updates with
+  signals; declarative template and built-in directives (vIf/vElseIf/vElse,
+  vFor, vShow, vOnce, vCloak); first-class support for SSR, SSG, CSR, and
+  hybrid. See [View View Template Engine](#view-view-template-engine) below.
+- **`"preact"`**: Lightweight React-compatible library; default in examples.
+- **`"react"`**: Full React; set `engine: "react"` and ensure React is in
+  dependencies.
+
+All three support `mode: "ssr" | "csr" | "ssg" | "hybrid"`.
+
+---
+
+### View View Template Engine
+
+**View** is the framework’s own view layer, built on `@dreamer/view` and
+integrated with `@dreamer/render`. It is the **recommended** template engine for
+new Dweb projects.
+
+**Why choose View?**
+
+- **Lightweight and fast**: No virtual DOM; updates are fine-grained
+  (signal-based reactivity and targeted DOM patches). Smaller runtime and less
+  client-side work than virtual-DOM engines.
+- **Familiar DX**: Declarative template syntax and built-in directives.
+  Built-in: **vIf** / **vElseIf** / **vElse** (conditional branches), **vFor**
+  (list iteration), **vShow** (show/hide), **vOnce** (render once), **vCloak**
+  (avoid FOUC before hydration); supports custom directives via
+  `registerDirective`.
+- **Native to the stack**: Designed for the Deno/JSR ecosystem. Same maintainer
+  as Dweb; SSR, SSG, CSR, and hybrid modes are supported out of the box with no
+  extra glue.
+- **Unified with Dweb**: Same routing, `load()`, layouts, and build pipeline as
+  Preact/React. Use `render.engine: "view"` and optional examples under
+  `examples/view-*` (e.g. view-hybrid-flat, view-csr, view-ssg).
+
+**Configuration**: Set `render.engine: "view"` in `AppConfig`. Client build will
+use `@dreamer/render/client/view` for hydration and CSR. No separate “View init”
+step; the framework wires the adapter automatically.
+
+**Session**: For stateful apps, combine View with `config.session`
+(`@dreamer/session`). Once `session` is set, `ctx.session` is available in
+`load()`, API handlers, and middleware. See [Session Config](#session-config).
+
+---
+
 ### Socket.IO and WebSocket Config
 
 Real-time supports two types via `socket.adapter`:
@@ -341,6 +403,26 @@ HTTP server and share `server.port` and `server.host`.
 **Plugin events**: With Socket configured, the framework calls `onSocket` and
 `onSocketClose` on connect/disconnect for auth, logging, etc. Plugins only need
 to implement these hooks.
+
+---
+
+### Session Config
+
+When `config.session` is set (using `@dreamer/session`’s `SessionOptions`), the
+framework mounts the session middleware and exposes `ctx.session` in `load()`,
+API handlers, and middleware.
+
+- **`store`** (required): Session store instance (e.g. from `createFileStore()`
+  in `@dreamer/session`). Default directory for file store can be
+  `~/.dreamer/dweb/sessions` (via `getDreamerDwebCacheDir()`).
+- **`name`**: Cookie name (default from library).
+- **`maxAge`**: Session max age in seconds.
+- **`cookie`**: Cookie options applied when setting the session cookie: `path`,
+  `domain`, `secure`, `httpOnly`, `sameSite`, `maxAge`, `expires`.
+- **`autoSave`**, **`genId`**: Optional behavior from `@dreamer/session`.
+
+There is no separate top-level `cookie` config; all cookie options are under
+`config.session.cookie`.
 
 ---
 

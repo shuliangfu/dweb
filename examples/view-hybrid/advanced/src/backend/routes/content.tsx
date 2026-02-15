@@ -3,11 +3,25 @@
  * 路由: /content
  */
 
+/** 内容项 */
+interface ContentItem {
+  id: number;
+  title: string;
+  type: string;
+  status: string;
+  updatedAt: string;
+}
+
+/** 页面属性（由 load 注入） */
+interface ContentProps {
+  contents: ContentItem[];
+}
+
 /**
- * 内容管理页面
+ * 服务端数据加载：在服务端准备内容列表，注入到组件
  */
-export default function Content() {
-  const mockContents = [
+export function load(): Promise<ContentProps> {
+  const contents: ContentItem[] = [
     {
       id: 1,
       title: "首页 Banner",
@@ -30,7 +44,13 @@ export default function Content() {
       updatedAt: "3 天前",
     },
   ];
+  return Promise.resolve({ contents });
+}
 
+/**
+ * 内容管理页面（纯展示，数据由 load 注入）
+ */
+export default function Content({ contents }: ContentProps) {
   return (
     <div class="space-y-6">
       <div class="flex items-center justify-between">
@@ -68,7 +88,7 @@ export default function Content() {
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-            {mockContents.map((item) => (
+            {contents.map((item) => (
               <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4 font-medium text-gray-900">
                   {item.title}

@@ -12,7 +12,7 @@ const config: AppConfig = {
   version: commonConfig.version,
 
   server: {
-    port: 3001,
+    port: 3043,
     host: "127.0.0.1",
     dev: {
       hmr: { enabled: true, path: "/__hmr" },

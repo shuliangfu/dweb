@@ -6,9 +6,9 @@
 
 | Item             | Value                |
 | ---------------- | -------------------- |
-| Framework        | 3.0.73               |
-| Test framework   | @dreamer/test@^1.0.2 |
-| Test date        | 2026-02-14           |
+| Framework        | 3.0.75               |
+| Test framework   | @dreamer/test@^1.0.5 |
+| Test date        | 2026-02-15           |
 | Test environment | Deno 2.x / Bun 1.x   |
 
 ---
@@ -17,15 +17,15 @@
 
 ### Overall Statistics
 
-| Metric           | Count  |
-| ---------------- | ------ |
-| Test files       | 48     |
-| Total test cases | 692    |
-| Passed           | 689    |
-| Ignored          | 3      |
-| Failed           | 0      |
-| Pass rate        | 100%   |
-| Execution time   | ~1m33s |
+| Metric           | Count |
+| ---------------- | ----- |
+| Test files       | 49+   |
+| Total test cases | 788   |
+| Passed           | 788   |
+| Ignored          | 2     |
+| Failed           | 0     |
+| Pass rate        | 100%  |
+| Execution time   | ~3m8s |
 
 ### Test File Statistics
 
@@ -33,11 +33,12 @@
 
 | File name                       | Test count     | Status        |
 | ------------------------------- | -------------- | ------------- |
-| `config.test.ts`                | 63             | ✅ All passed |
-| `render.test.ts`                | 45             | ✅ All passed |
+| `config.test.ts`                | 64             | ✅ All passed |
+| `context.test.ts`               | 21             | ✅ All passed |
+| `render.test.ts`                | 46             | ✅ All passed |
 | `command.test.ts`               | 41             | ✅ All passed |
 | `build.test.ts`                 | 24             | ✅ All passed |
-| `windows.test.ts`               | 48 (3 ignored) | ✅ All passed |
+| `windows.test.ts`               | 48 (2 ignored) | ✅ All passed |
 | `path.test.ts`                  | 18             | ✅ All passed |
 | `plugin-events.test.ts`         | 16             | ✅ All passed |
 | `logger.test.ts`                | 17             | ✅ All passed |
@@ -82,7 +83,7 @@
 | `cmd-update.test.ts`            | 3              | ✅ All passed |
 | `cli.test.ts`                   | 1              | ✅ All passed |
 
-> **Note**: 3 cases in `windows.test.ts` are Windows-only (skipped via `skipIf`
+> **Note**: 2 cases in `windows.test.ts` are Windows-only (skipped via `skipIf`
 > on non-Windows)
 
 ---
@@ -541,7 +542,17 @@
 
 - ✅ createCLI() returns Command with execute method
 
-### 20. Additional Unit Tests (sanitize, path, runtime, module-cache, load-route-module, i18n, generate, windows, etc.)
+### 20. Context / LoadContext (context.test.ts) - 21 tests
+
+- ✅ **parseCookies()**: empty/missing Cookie header, single/multiple cookies,
+  duplicate keys, trim, skip invalid segments
+- ✅ **createMetaContext()**: returns url, params, query
+- ✅ **createLoadContext()**: fills method, headers, cookies from Request;
+  optional session and response
+- ✅ **createServerResponse()**: redirect (302/301), json, html, text, binary
+  (Uint8Array/ArrayBuffer), body, status (with statusText)
+
+### 21. Additional Unit Tests (sanitize, path, runtime, module-cache, load-route-module, i18n, generate, windows, etc.)
 
 - ✅ **sanitize.test.ts** (15): sanitizeRequestParams dangerous key filter, NUL
   filter, empty value handling
@@ -572,7 +583,7 @@
 - ✅ **cmd-upgrade.test.ts** (2): main runs, --beta option
 - ✅ **cmd-update.test.ts** (3): main when no deno.json, runs update when
   deno.json exists
-- ✅ **windows.test.ts** (47, 2 ignored): path normalization, build output
+- ✅ **windows.test.ts** (48, 2 ignored): path normalization, build output
   inference, module cache, component path extraction, path safety check,
   log-friendly path (Windows-only cases skipped on non-Windows)
 
@@ -644,6 +655,7 @@
 | render-ssg            | createRendererSSG()                                                                     | ✅     |
 | version               | DWEB_VERSION                                                                            | ✅     |
 | cli                   | createCLI() / execute                                                                   | ✅     |
+| context               | parseCookies() / createLoadContext() / createMetaContext() / createServerResponse()     | ✅     |
 | sanitize              | sanitizeRequestParams()                                                                 | ✅     |
 | path                  | isPathWithinProject / pathForLog / normalizePathForCompare                              | ✅     |
 | runtime               | getRuntime / getTaskArgs / getTestArgs / getLintArgs                                    | ✅     |
@@ -696,8 +708,8 @@
 
 ## 🎯 Conclusion
 
-@dreamer/dweb core module tests are fully covered at file level. **689** test
-cases pass (3 Windows-only cases skipped on non-Windows). All tests are
+@dreamer/dweb core module tests are fully covered at file level. **788** test
+cases pass (2 Windows-only cases skipped on non-Windows). All tests are
 substantive and verify actual behavior. Coverage includes:
 
 - ✅ Config management (validation and merge, including render.mode hybrid)
@@ -713,6 +725,8 @@ substantive and verify actual behavior. Coverage includes:
 - ✅ Router system integration
 - ✅ Logger system integration
 - ✅ CLI command module (createCLI)
+- ✅ Context / LoadContext (parseCookies, createLoadContext, createMetaContext,
+  createServerResponse)
 - ✅ Runtime adapter (runtime-adapter re-export)
 - ✅ Unified error handling (DwebError, throwDwebError, i18n translator)
 - ✅ CSR client build and createRendererCSR
@@ -726,5 +740,7 @@ substantive and verify actual behavior. Coverage includes:
 - ✅ Windows compatibility (path normalization, build output inference, module
   cache, component path extraction, path safety check, log-friendly path)
 
-Core framework functionality is fully tested. **689** cases pass; **3**
-Windows-only cases are skipped on non-Windows.
+Core framework functionality is fully tested. **788** cases pass; **2**
+Windows-only cases are skipped on non-Windows. Unit tests include
+**context.test.ts** (parseCookies, createLoadContext, createMetaContext,
+createServerResponse).

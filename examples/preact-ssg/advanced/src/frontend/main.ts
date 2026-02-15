@@ -46,7 +46,7 @@ app.registerPlugin(tailwindPlugin({
 // 注册静态文件插件
 app.registerPlugin(staticPlugin({
   statics: [
-    { root: "frontend/assets", prefix: "/assets" },
+    { root: "src/frontend/assets", prefix: "/assets" },
     { root: "dist/frontend/client/assets", prefix: "/assets" },
   ],
 }));

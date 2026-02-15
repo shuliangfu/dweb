@@ -8,6 +8,92 @@ and this project adheres to
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **Session integration (default)**:
+  - Integrated `@dreamer/session`; `AppConfig.session` accepts `SessionOptions`
+    (store required; optional `name`, `maxAge`, `cookie`, `autoSave`, `genId`).
+  - Session middleware is mounted in app init via
+    `server.use(session(mergedConfig.session), ...)` when `config.session` is
+    set. Default session store directory: `~/.dreamer/dweb/sessions` (from
+    `getDreamerDwebCacheDir()`).
+  - `LoadContext.session` is typed as `SessionData` from `@dreamer/session`.
+- **Cookie configuration**: Documented in `AppConfig` JSDoc that session cookie
+  options (path, domain, secure, httpOnly, sameSite, maxAge, expires) are
+  configured via `config.session.cookie` (`SessionOptions` from
+  `@dreamer/session`); the session middleware applies them when setting the
+  session cookie. No separate top-level cookie config in dweb.
+- **ServerResponse and load return Response**:
+  - `ServerResponse` with `binary(data, init?)` for binary body; helper
+    `createServerResponse()`; `LoadContext.response` typed for use in load.
+  - When a route’s `load()` returns a `Response`, the server handles it as
+    redirect or direct response (e.g. redirects without going through the
+    document render path).
+
+### Changed
+
+- **Cache dirs**: `getDreamerDwebCacheDir()` moved from `utils/build-dirs.ts` to
+  `utils/cache-dirs.ts` and used for default session store directory.
+
+### Removed
+
+- **Session middleware module**: Session is applied directly in `app.ts` with
+  `session(mergedConfig.session)`; removed standalone session-middleware helper
+  and `getDefaultSessionOptions` (replaced by merged config and default cache
+  dir).
+
+---
+
+## [3.0.75] - 2026-02-16
+
+### Added
+
+- **Load-data middleware (automatic API for route `load()`)**:
+  - New middleware handles `GET /__data?path=/pathname` to run the matched
+    route’s `load()` on the server and return JSON (`params`, `query`, and
+    whatever `load()` returns). Registered in both CSR and Hybrid modes.
+  - CSR/Hybrid client: on client-side navigation, the client fetches
+    `/__data?path=...` and uses the result as page props (so `load()` data is
+    available without full SSR). On first paint, CSR runs `load()` on the
+    server, injects the result as `globalThis.__DATA__`, and the client uses it
+    for initial render then clears it to avoid reuse on later navigations.
+  - API routes (`api/` under routes) are excluded from client `ROUTE_LOADERS` so
+    the client bundle does not pull in server-only API modules.
+
+- **E2E browser tests – all example variants**: Basic and advanced browser
+  suites now cover every workspace example. View-hybrid-flat added (basic port
+  3015, advanced 3028/3029). All preact and react advanced suites added:
+  preact-csr (3030/3031), preact-hybrid (3032/3033), preact-ssr (3034/3035),
+  preact-ssg (3036/3037), preact-hybrid-flat (3038/3039), react-csr (3040/3041),
+  react-hybrid (3042/3043), react-ssr (3044/3045), react-ssg (3046/3047),
+  react-hybrid-flat (3048/3049). Advanced example port configs updated to use
+  these e2e ports.
+- **E2E interaction tests**: Each suite has two browser tests: (1) render and no
+  hydration errors, (2) navigation by click. Basic suites: click “About” link
+  and assert “关于我们” on the about page. Advanced suites: click “用户管理”
+  link and assert “用户管理” or “用户列表” on the users page (backend has no
+  about route; users page calls backend API).
+- **Advanced build entries option**: `buildExampleAdvanced` and
+  `createAdvancedExampleBrowserSuite` accept optional `entries` (e.g.
+  `["backend/main.ts", "frontend/main.ts"]`) for flat-structure advanced
+  examples (preact-hybrid-flat, react-hybrid-flat, view-hybrid-flat).
+
+### Removed
+
+- **preact-hybrid-unocss example**: Example and workspace entries removed;
+  coverage is provided by view-hybrid-flat and other view/preact/react examples.
+
+### Changed
+
+- **E2E test naming**: Advanced second test renamed from
+  “应能通过点击关于链接进入关于页” to “应能通过点击用户管理链接进入用户页” and
+  uses `assertBrowserClickUsers` (click `a[href="/users"]`, wait for users page
+  content).
+
+---
+
 ## [3.0.74] - 2026-02-15
 
 ### Changed

@@ -3,11 +3,31 @@
  * 路由: /logs
  */
 
+/** 单条日志 */
+interface LogItem {
+  id: number;
+  level: string;
+  message: string;
+  time: string;
+  source: string;
+}
+
+/** 页面属性（由 load 注入） */
+interface LogsProps {
+  logs: LogItem[];
+}
+
+const LEVEL_COLORS: Record<string, string> = {
+  info: "bg-blue-100 text-blue-700",
+  warn: "bg-yellow-100 text-yellow-700",
+  error: "bg-red-100 text-red-700",
+};
+
 /**
- * 日志管理页面
+ * 服务端数据加载：在服务端准备日志数据，注入到组件
  */
-export default function Logs() {
-  const mockLogs = [
+export function load(): Promise<LogsProps> {
+  const logs: LogItem[] = [
     {
       id: 1,
       level: "info",
@@ -37,12 +57,14 @@ export default function Logs() {
       source: "cache",
     },
   ];
+  return Promise.resolve({ logs });
+}
 
-  const levelColors: Record<string, string> = {
-    info: "bg-blue-100 text-blue-700",
-    warn: "bg-yellow-100 text-yellow-700",
-    error: "bg-red-100 text-red-700",
-  };
+/**
+ * 日志管理页面（纯展示，数据由 load 注入）
+ */
+export default function Logs({ logs }: LogsProps) {
+  const levelColors = LEVEL_COLORS;
 
   return (
     <div class="space-y-6">
@@ -73,7 +95,7 @@ export default function Logs() {
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-            {mockLogs.map((log) => (
+            {logs.map((log) => (
               <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4">
                   <span

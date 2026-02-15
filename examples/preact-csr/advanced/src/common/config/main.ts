@@ -11,8 +11,8 @@ export const commonConfig = {
   version: "1.0.0",
   /** API 基础路径 */
   apiBasePath: "/api",
-  /** 后端端口 */
-  backendPort: 3000,
+  /** 后端端口（e2e 与 basic 端口错开） */
+  backendPort: 3030,
   /** 前端端口 */
-  frontendPort: 3001,
+  frontendPort: 3031,
 };

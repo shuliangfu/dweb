@@ -8,7 +8,7 @@ export default {
   name: "preact-hybrid-advanced-example-backend",
 
   server: {
-    port: 3000,
+    port: 3032,
     host: "0.0.0.0",
   },
 

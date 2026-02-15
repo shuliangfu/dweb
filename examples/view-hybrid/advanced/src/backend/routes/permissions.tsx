@@ -3,24 +3,50 @@
  * 路由: /permissions
  */
 
+/** 角色项 */
+interface RoleItem {
+  id: string;
+  name: string;
+  desc: string;
+  userCount: number;
+}
+
+/** 权限项 */
+interface PermItem {
+  id: string;
+  name: string;
+  module: string;
+}
+
+/** 页面属性（由 load 注入） */
+interface PermissionsProps {
+  roles: RoleItem[];
+  permissions: PermItem[];
+}
+
 /**
- * 权限管理页面
+ * 服务端数据加载：在服务端准备角色与权限数据，注入到组件
  */
-export default function Permissions() {
-  const roles = [
+export function load(): Promise<PermissionsProps> {
+  const roles: RoleItem[] = [
     { id: "admin", name: "管理员", desc: "拥有所有权限", userCount: 2 },
     { id: "user", name: "普通用户", desc: "基础读写权限", userCount: 8 },
     { id: "guest", name: "访客", desc: "仅读权限", userCount: 5 },
   ];
-
-  const permissions = [
+  const permissions: PermItem[] = [
     { id: "user:read", name: "用户查看", module: "用户" },
     { id: "user:write", name: "用户编辑", module: "用户" },
     { id: "content:read", name: "内容查看", module: "内容" },
     { id: "content:write", name: "内容编辑", module: "内容" },
     { id: "settings:manage", name: "系统设置", module: "系统" },
   ];
+  return Promise.resolve({ roles, permissions });
+}
 
+/**
+ * 权限管理页面（纯展示，数据由 load 注入）
+ */
+export default function Permissions({ roles, permissions }: PermissionsProps) {
   return (
     <div class="space-y-6">
       <h1 class="text-2xl font-bold text-gray-900">权限管理</h1>

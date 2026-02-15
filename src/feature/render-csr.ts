@@ -22,9 +22,21 @@ import { getLogger } from "../utils/logger.ts";
 import { extractComponentPathFromRouteFile } from "../utils/path.ts";
 import type { AppConfig } from "../types/app.ts";
 import { $t } from "../utils/i18n.ts";
+import { resolveMetadata } from "@dreamer/render";
+import type { SessionData } from "@dreamer/session";
+import { createLoadContext, createServerResponse } from "../types/context.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
 import { hasContainerElementInHtml } from "./render-utils.ts";
+
+/** 转义 meta 内容中的 HTML 与引号，避免注入与断签 */
+function escapeHtmlForMeta(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
 /**
  * CSR 渲染选项
@@ -124,6 +136,7 @@ export function createRendererCSR(
     try {
       if (match.isApi) return null;
 
+      const ctx = _ctx as { url?: { href?: string }; request?: Request };
       const appPath = router.getSpecialFile("_app");
       const layoutPath = router.getSpecialFile("_layout");
       const loadOpts = {
@@ -153,6 +166,85 @@ export function createRendererCSR(
       if (layoutPath) {
         const layoutModule = await loadRouteModule(layoutPath, loadOpts);
         LayoutComponent = layoutModule?.default ?? layoutModule?.Layout;
+      }
+
+      // CSR 首屏：执行当前路由的 load()，将结果注入 __DATA__；并解析 metadata 注入 head（title/description）
+      let hydrationData: {
+        page: Record<string, unknown>;
+        route: string;
+        params: Record<string, string>;
+        query: Record<string, string>;
+        component: string;
+      } | null = null;
+      let csrMetaTags = "";
+      const fullPath = (match.route as { fullPath?: string }).fullPath;
+      if (fullPath) {
+        const pageModule = await loadRouteModule(fullPath, loadOpts);
+        if (pageModule) {
+          const req = ctx?.request;
+          const loadContext = req
+            ? createLoadContext({
+              request: req,
+              url: ctx?.url?.href ?? "",
+              params: match.params ?? {},
+              query: match.query ?? {},
+              session: (ctx as { session?: SessionData }).session,
+              response: createServerResponse(),
+            })
+            : null;
+          if (typeof pageModule.load === "function" && loadContext) {
+            const pageProps: Record<string, unknown> = {
+              params: match.params,
+              query: match.query,
+            };
+            const raw = await pageModule.load(loadContext);
+            if (raw instanceof Response) {
+              return raw;
+            }
+            const serverData = raw as Record<string, unknown> | null;
+            if (serverData) Object.assign(pageProps, serverData);
+            const rawComponent =
+              (match.route as { file?: string; path?: string }).file ||
+              (match.route as { path?: string }).path || "";
+            const normalizedComponent = typeof rawComponent === "string"
+              ? extractComponentPathFromRouteFile(
+                routesDirPath,
+                rawComponent,
+              ) ||
+                rawComponent.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "")
+                  .trim()
+              : rawComponent;
+            hydrationData = {
+              page: pageProps,
+              route: (match.route as { path?: string }).path ?? "",
+              params: match.params,
+              query: match.query,
+              component: normalizedComponent,
+            };
+          }
+          // 从已 import 的路由模块读取 metadata（常量或方法），注入首屏 head
+          const metadataExport =
+            (pageModule as Record<string, unknown>).metadata;
+          if (
+            metadataExport !== undefined && metadataExport !== null &&
+            loadContext
+          ) {
+            const resolved = await resolveMetadata(
+              metadataExport as Parameters<typeof resolveMetadata>[0],
+              loadContext,
+            );
+            if (resolved?.title) {
+              csrMetaTags += `<title>${
+                escapeHtmlForMeta(resolved.title)
+              }</title>`;
+            }
+            if (resolved?.description) {
+              csrMetaTags += `<meta name="description" content="${
+                escapeHtmlForMeta(resolved.description)
+              }" />`;
+            }
+          }
+        }
       }
 
       const LoadingPlaceholder = engine === "view"
@@ -195,6 +287,9 @@ export function createRendererCSR(
       const isDevCsr =
         (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
       const debugRender = renderConfig.debug === true;
+      const dataScript = hydrationData
+        ? `  globalThis.__DATA__ = ${JSON.stringify(hydrationData)};\n`
+        : "";
       const clientConfigScript = `
 ${overlayHtml}
 <script>
@@ -203,7 +298,7 @@ ${overlayHtml}
           ? "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true; globalThis.__DWEB_DEBUG__ = globalThis.__DWEB_DEBUG__ ?? true;"
           : ""
       }
-  globalThis.__DWEB_DEV__ = ${isDevCsr};
+${dataScript}  globalThis.__DWEB_DEV__ = ${isDevCsr};
   globalThis.__DWEB_ROUTES__ = ${JSON.stringify(clientRoutes)};
   globalThis.__DWEB_ENGINE__ = "${engine}";
   globalThis.__DWEB_CONTAINER_ID__ = "${csrOptions.containerId}";
@@ -213,9 +308,9 @@ ${overlayHtml}
 ${csrOptions.bodyTags || ""}`;
 
       if (html.includes("<head>")) {
-        html = html.replace("<head>", `<head>${loadingStyles}`);
+        html = html.replace("<head>", `<head>${loadingStyles}${csrMetaTags}`);
       } else if (html.includes("</head>")) {
-        html = html.replace("</head>", `${loadingStyles}</head>`);
+        html = html.replace("</head>", `${loadingStyles}${csrMetaTags}</head>`);
       }
       if (html.includes("</body>")) {
         html = html.replace("</body>", `${clientConfigScript}</body>`);

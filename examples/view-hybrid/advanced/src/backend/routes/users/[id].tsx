@@ -4,19 +4,32 @@
  */
 
 import { getUserById } from "@common/services/mod.ts";
+import type { User } from "@common/types/mod.ts";
 import { formatDate } from "@common/utils/mod.ts";
 
+/** 页面属性（由 load 注入） */
 interface UserDetailProps {
   params: { id: string };
+  user?: User | null;
+  error?: string;
 }
 
 /**
- * 用户详情页面
+ * 服务端数据加载：在服务端根据 id 获取用户，注入到组件
  */
-export default function UserDetail({ params }: UserDetailProps) {
+export function load(
+  { params }: { params: { id: string } },
+): Promise<Partial<UserDetailProps>> {
   const user = getUserById(params.id);
+  if (user) return Promise.resolve({ user });
+  return Promise.resolve({ error: "用户不存在" });
+}
 
-  if (!user) {
+/**
+ * 用户详情页面（纯展示，数据由 load 注入）
+ */
+export default function UserDetail({ params, user, error }: UserDetailProps) {
+  if (error || !user) {
     return (
       <div class="text-center py-12">
         <h1 class="text-2xl font-bold text-gray-900 mb-4">用户不存在</h1>

@@ -16,8 +16,12 @@
 A full-stack Web framework similar to Next.js, Remix, and SvelteKit, providing
 complete server and client support.
 
-**Preact by default**: The framework uses Preact (lightweight, high-performance)
-by default, and also supports React. All example code uses Preact by default.
+**Three template engines**: The framework supports **View** (recommended),
+Preact, and React. **View** is Dweb’s native view layer (`@dreamer/view`):
+lightweight, no virtual DOM, fine-grained updates with signals, declarative
+directives (`vIf`, `vShow`, `vFor`), and first-class SSR/SSG/CSR/hybrid. Preact
+is lightweight and React-compatible; React is fully supported via
+`render.engine`.
 
 ---
 
@@ -48,8 +52,12 @@ dweb-cli --help           # Full help
 
 **Framework options**:
 
-- **Preact (default)**: Lightweight and fast
-- **React**: Set `render.engine` in config
+- **View (recommended)**: Dweb’s native view engine—lightweight, no virtual DOM,
+  signals + declarative directives; set `render.engine: "view"`
+- **Preact**: Lightweight, React-compatible; default in many examples
+- **React**: Set `render.engine: "react"` in config
+- **Session**: Optional `config.session` (`@dreamer/session`); then
+  `ctx.session` in `load()`, API, middleware
 - **Render modes**: `render.mode` supports `ssr`, `csr`, `ssg`, `hybrid`
 
 Install standalone libraries as needed (dweb already includes these):
@@ -94,12 +102,16 @@ deno add jsr:@dreamer/runtime-adapter
 
 - ✅ **Full-stack support**: Server + client integrated development
 - ✅ **File-based routing**: File-system based routing, similar to Next.js
-- ✅ **Multiple render modes**: SSR (server-side rendering), CSR (client-side
-  rendering), SSG (static site generation), Hybrid (mixed mode)
-- ✅ **Preact by default**: Lightweight, high-performance; React also supported
+- ✅ **Multiple render modes**: SSR, CSR, SSG, Hybrid; **in CSR/Hybrid, use
+  route `load` to supply data—no manual API requests**; the framework runs
+  `load` on the server and passes data to the page via `/__data`
+- ✅ **View (recommended)**: Native view engine—lightweight, no virtual DOM,
+  signals + declarative directives; Preact and React also supported
 - ✅ **Socket.IO built-in**: Real-time bidirectional communication, mounted on
   the same HTTP server; configure `socket: { adapter: "socketio", ... }` to
   enable; supports plugin `onSocket`, `onSocketClose` hooks
+- ✅ **Session**: Optional `config.session` (`@dreamer/session`); `ctx.session`
+  available in `load()`, API handlers, and middleware for stateful apps
 - ✅ **Middleware system**: General-purpose middleware for HTTP, WebSocket,
   message queues, and more
 - ✅ **Plugin system**: Plugin lifecycle, dependencies, event system, hot reload
@@ -148,7 +160,7 @@ deno add jsr:@dreamer/runtime-adapter
    - Importance: ⭐⭐⭐⭐⭐
 
 6. **@dreamer/render** - Rendering engine
-   - Role: SSR / SSG rendering (Preact, React)
+   - Role: SSR / SSG / CSR / hybrid (View, Preact, React; View recommended)
    - Importance: ⭐⭐⭐⭐⭐
 
 7. **@dreamer/esbuild** - Build tool
@@ -159,38 +171,50 @@ deno add jsr:@dreamer/runtime-adapter
    - Role: WebSocket real-time bidirectional communication (Socket.IO protocol)
    - Importance: ⭐⭐⭐⭐
 
+9. **@dreamer/session** - Session management
+   - Role: Server-side session store and cookie handling; with `config.session`
+     set, `ctx.session` is available in `load()`, API handlers, and middleware
+   - Importance: ⭐⭐⭐⭐
+
 ### Tooling layer
 
-9. **@dreamer/logger** - Logging
-   - Role: Application log recording
-   - Importance: ⭐⭐⭐⭐⭐
+10. **@dreamer/logger** - Logging
 
-10. **@dreamer/config** - Config management
-    - Role: Application config loading and merging
-    - Importance: ⭐⭐⭐⭐
+- Role: Application log recording
+- Importance: ⭐⭐⭐⭐⭐
 
-11. **@dreamer/utils** - Utility functions
-    - Role: General utilities
-    - Importance: ⭐⭐⭐⭐
+11. **@dreamer/config** - Config management
 
-12. **@dreamer/console** - Console / CLI
-    - Role: CLI output and interaction (command module)
-    - Importance: ⭐⭐⭐
+- Role: Application config loading and merging
+- Importance: ⭐⭐⭐⭐
 
-13. **@dreamer/runtime-adapter** - Runtime adapter
-    - Role: Unified fs, path, env, cwd APIs for Deno/Bun
-    - Importance: ⭐⭐⭐⭐⭐
+12. **@dreamer/utils** - Utility functions
+
+- Role: General utilities
+- Importance: ⭐⭐⭐⭐
+
+13. **@dreamer/console** - Console / CLI
+
+- Role: CLI output and interaction (command module)
+- Importance: ⭐⭐⭐
+
+14. **@dreamer/runtime-adapter** - Runtime adapter
+
+- Role: Unified fs, path, env, cwd APIs for Deno/Bun
+- Importance: ⭐⭐⭐⭐⭐
 
 ### dweb internal structure (source directory)
 
-| Dir/File   | Description                                                                                                                        |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `core/`    | Core: app, config, service, middleware, plugin, lifecycle, database, plugin-events, runtime-adapter                                |
-| `feature/` | Features: server, router, render, render-ssr, render-csr, render-ssg, render-hybrid, build, csr-client-builder, socket-io, command |
-| `types/`   | Types: AppConfig, IApp, etc.                                                                                                       |
-| `utils/`   | Utilities: logger, version, errors (unified error handling with i18n)                                                              |
-| `cli.ts`   | CLI entry (createCLI)                                                                                                              |
-| `mod.ts`   | Main entry, unified exports                                                                                                        |
+| Dir/File   | Description                                                                                                                                                                                                                                                                 |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `core/`    | Core: app, config, service, middleware, plugin, lifecycle, database, plugin-events, runtime-adapter                                                                                                                                                                         |
+| `feature/` | Features: server, router, render, render-ssr, render-csr, render-ssg, render-hybrid, build, csr-client-builder, csr-client-middleware, load-data-middleware (load data and session injection), load-route-module, render-utils, module-cache, socket-io, websocket, command |
+| `types/`   | Types: AppConfig, IApp, context (LoadContext, ServerResponse, createMetaContext, createLoadContext, parseCookies, etc.)                                                                                                                                                     |
+| `utils/`   | Utilities: logger, version, errors (unified error handling with i18n), cache-dirs, config-loader, i18n, asset-manifest, path, runtime, etc.                                                                                                                                 |
+| `cmd/`     | Subcommand implementations: init, dev, build, start, preview, generate, db, upgrade, test, fmt, lint, clean, update                                                                                                                                                         |
+| `locales/` | Locale messages (zh-CN, en-US, ja-JP, etc.)                                                                                                                                                                                                                                 |
+| `cli.ts`   | CLI entry (createCLI)                                                                                                                                                                                                                                                       |
+| `mod.ts`   | Main entry, unified exports                                                                                                                                                                                                                                                 |
 
 ### Optional extensions (install as needed)
 
@@ -199,7 +223,6 @@ The following libraries are not bundled in dweb; install separately as needed:
 - **@dreamer/database** - Database (PostgreSQL, MySQL, SQLite, MongoDB)
 - **@dreamer/cache** - Cache (Redis, memory, file)
 - **@dreamer/storage** - File storage
-- **@dreamer/session** - Session
 - **@dreamer/queue** - Task queue (requires separate install)
 - **@dreamer/websocket** - Native WebSocket (Socket.IO is built into dweb)
 - **@dreamer/store** - Client state
@@ -484,25 +507,6 @@ my-app/
 **Note**: If you don't use `src/`, update paths in config to
 `"./backend/routes"`, `"./frontend/routes"`, etc.
 
-**About `client/index.tsx`**:
-
-- ✅ **Not required**: With file-based routing, `@dreamer/router` handles client
-  init and hydration automatically; no separate `client/index.tsx` needed
-- ✅ **Auto-generated**: `@dreamer/router` auto-generates client entry code from
-  the `routes/` directory
-- ✅ **Does not affect build and render**:
-  - **Build**: `@dreamer/esbuild` analyzes entry points from `routes/`
-    automatically; no need to specify `client/index.tsx`
-  - **CSR**: `@dreamer/router` auto-generates client routing code, including
-    React/Preact init and navigation
-  - **SSR**: `@dreamer/router` handles SSR and client hydration
-  - **SSG**: `@dreamer/router` pre-renders all routes to static HTML at build
-    time
-  - **Hybrid**: `@dreamer/router` supports SSR for first screen, CSR for
-    subsequent routes
-- ✅ **Handle in `_app.tsx`**: All custom client init logic can go in
-  `_app.tsx`; no separate `client/index.tsx` needed
-
 **Special file handling**:
 
 All special files (`_app.tsx`, `_layout.tsx`, `_404.tsx`, `_error.tsx`,
@@ -524,8 +528,18 @@ All special files (`_app.tsx`, `_layout.tsx`, `_404.tsx`, `_error.tsx`,
   2. Identifies special files and normal route files
   3. Generates HTML structure from `_app.tsx`
   4. Generates route config from route files
-  5. Auto-generates client entry code (React/Preact init, routing, hydration)
+  5. Auto-generates client entry code (React/Preact/View init, routing,
+     hydration)
   6. `@dreamer/esbuild` compiles using the auto-generated entry
+
+**Client entry files `_client.tsx` and `_client.dep.tsx`** (both
+auto-generated):
+
+- **`_client.tsx`**: Generated only when it does not exist; **once present it is
+  never overwritten**, so you can customize the entry if needed.
+- **`_client.dep.tsx`**: **Regenerated every time you run `dweb dev`**, so it
+  stays in sync with current routes and layouts; it is also generated on build
+  when needed.
 
 ### 3. Create app
 
@@ -897,8 +911,9 @@ export default function App(
 
 **Custom client init notes**:
 
-All of the following can be handled in `_app.tsx`; **no** `client/index.tsx`
-needed:
+All of the following can be handled in `_app.tsx` (the framework uses
+auto-generated `_client.dep.tsx` as the client entry; no separate client entry
+file to maintain):
 
 1. **Global state**: Use `@dreamer/store` (Store or Signals); or other
    Preact-compatible libs
@@ -907,20 +922,10 @@ needed:
 4. **Client-only logic**: localStorage, event listeners, performance monitoring
    in `useEffect`
 
-**Why `client/index.tsx` is not needed**:
-
-- ✅ `_app.tsx` is enough; all client init can go there
-- ✅ `@dreamer/router` handles client init and hydration automatically
-- ✅ `useEffect` runs only on client, SSR-safe
-- ✅ Familiar pattern (like Next.js `_app.tsx`)
-
-**Only use `client/index.tsx` when**:
-
-- You need fully custom client entry generation
-- You need to bypass framework auto-generation
-- You need special build config
-
-For 99% of cases, `_app.tsx` is sufficient.
+**Note**: The framework auto-generates `_client.dep.tsx` (and related client
+entry); `_app.tsx` is the root component for hydration and CSR. Put custom
+client logic in `_app.tsx`; `useEffect` runs only on the client and does not
+affect SSR.
 
 #### Layout component
 
@@ -1018,6 +1023,44 @@ export default function User({ params }: { params: { id: string } }) {
 }
 ```
 
+#### CSR / Hybrid: use `load` for data—no manual API requests
+
+In **CSR** and **Hybrid** modes, you **do not need to write API requests** in
+your pages (e.g. `fetch("/api/xxx")`). Export a **`load`** function in the route
+file that returns the data; the framework runs it on the server and passes the
+return value to the page component as **props**.
+
+- **First paint**: The server runs the current route’s `load()` and injects the
+  result into the page (or, in CSR, into `globalThis.__DATA__` for the client).
+- **Client-side navigation**: When changing routes, the framework automatically
+  requests `GET /__data?path=...`; the server runs that route’s `load()` and
+  returns JSON, which becomes the page props—no manual `fetch` in your code.
+
+You only need to **implement `load` and return the data**; the page receives it
+via props.
+
+```typescript
+// src/routes/users/index.tsx
+import type { LoadContext } from "jsr:@dreamer/dweb/types";
+
+/** Framework runs load on the server; in CSR/Hybrid the client gets this via /__data—no manual fetch */
+export async function load(ctx: LoadContext) {
+  const list = await getUsersFromDb(ctx);
+  return { list };
+}
+
+export default function Users(
+  { list }: { list: { id: string; name: string }[] },
+) {
+  return (
+    <div>
+      <h1>User list</h1>
+      <ul>{list.map((u) => <li key={u.id}>{u.name}</li>)}</ul>
+    </div>
+  );
+}
+```
+
 ### Special files reference
 
 | File             | Description      | Required | Role                                                  |
@@ -1055,17 +1098,10 @@ All special files are handled by **`@dreamer/router`**:
 2. **Special handling**: `_app.tsx` (root), `_layout.tsx` (layout), `_404.tsx`,
    `_error.tsx`, `_middleware.ts`
 3. **Client code**: `@dreamer/router` auto-generates client entry from
-   `_app.tsx` and routes
+   `_app.tsx` and routes. **`_client.tsx`** and **`_client.dep.tsx`** are both
+   auto-generated: `_client.tsx` is created only when missing and never
+   overwritten; `_client.dep.tsx` is regenerated on every `dweb dev` start
 4. **Build**: `@dreamer/esbuild` uses the auto-generated entry
-
-**Impact of removing `client/index.tsx`**:
-
-- ✅ Build: Auto-generated entry is used
-- ✅ CSR: Full React/Preact init, routing, state
-- ✅ SSR: SSR and hydration supported
-- ✅ SSG: Pre-render all routes to static HTML
-- ✅ Hybrid: SSR first screen, CSR for subsequent routes
-- ✅ Simpler: Focus on `routes/` only
 
 ---
 
@@ -1859,10 +1895,16 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.74] - 2026-02-15
+### [3.0.75] - 2026-02-16
 
-**Changed**: Bump `@dreamer/view` to `^1.0.9` (input value fix with vIf/vShow).
-Bump `@dreamer/render` to `^1.0.21` (view engine alignment).
+**Added**: Load-data middleware (`GET /__data?path=...`) for route `load()`:
+server runs `load()` and returns JSON; CSR/Hybrid client fetches it on
+navigation and uses server-injected `__DATA__` on first paint. E2E browser tests
+for all example variants (view-hybrid-flat; all preact/react advanced with ports
+3030–3049). Interaction tests: basic click “About”, advanced click “Users”.
+Optional `entries` for flat-structure advanced build.
+
+**Removed**: preact-hybrid-unocss example and workspace entries.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

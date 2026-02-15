@@ -4,18 +4,47 @@
  */
 
 import { getAllUsers } from "@common/services/mod.ts";
+import type { User } from "@common/types/mod.ts";
+
+/** 仪表盘统计 */
+interface DashboardStats {
+  totalUsers: number;
+  admins: number;
+  activeToday: number;
+}
+
+/** 仪表盘页面属性（由 load 注入） */
+interface DashboardProps {
+  users: User[];
+  stats: DashboardStats;
+}
 
 /**
- * 仪表盘页面
+ * 服务端数据加载：在服务端获取用户列表并计算统计，注入到组件
  */
-export default function Dashboard() {
+export function load(): Promise<DashboardProps> {
   const users = getAllUsers();
-  const stats = {
+  const stats: DashboardStats = {
     totalUsers: users.length,
     admins: users.filter((u) => u.role === "admin").length,
     activeToday: Math.floor(Math.random() * users.length) + 1,
   };
+  return Promise.resolve({ users, stats });
+}
 
+/**
+ * 仪表盘页面（纯展示，数据由 load 注入）
+ * SSG 构建时可能未执行 load()，需提供默认值避免 undefined 报错
+ */
+const defaultStats: DashboardStats = {
+  totalUsers: 0,
+  admins: 0,
+  activeToday: 0,
+};
+
+export default function Dashboard({ users, stats }: DashboardProps) {
+  const safeStats = stats ?? defaultStats;
+  const safeUsers = users ?? [];
   return (
     <div class="space-y-6">
       <h1 class="text-2xl font-bold text-gray-900">仪表盘 333</h1>
@@ -41,7 +70,9 @@ export default function Dashboard() {
             </div>
             <div>
               <p class="text-sm text-gray-500">总用户数</p>
-              <p class="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+              <p class="text-2xl font-bold text-gray-900">
+                {safeStats.totalUsers}
+              </p>
             </div>
           </div>
         </div>
@@ -65,7 +96,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p class="text-sm text-gray-500">管理员数</p>
-              <p class="text-2xl font-bold text-gray-900">{stats.admins}</p>
+              <p class="text-2xl font-bold text-gray-900">{safeStats.admins}</p>
             </div>
           </div>
         </div>
@@ -90,7 +121,7 @@ export default function Dashboard() {
             <div>
               <p class="text-sm text-gray-500">今日活跃</p>
               <p class="text-2xl font-bold text-gray-900">
-                {stats.activeToday}
+                {safeStats.activeToday}
               </p>
             </div>
           </div>
@@ -113,7 +144,7 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
-              {users.map((user) => (
+              {safeUsers.map((user) => (
                 <tr>
                   <td class="py-4">
                     <div class="flex items-center gap-3">

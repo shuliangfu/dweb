@@ -20,6 +20,7 @@ import type { Plugin, PluginManagerOptions } from "@dreamer/plugin";
 import type { Engine } from "@dreamer/render";
 import type { RouterOptions } from "@dreamer/router";
 import type { ServerOptions } from "@dreamer/server";
+import type { SessionOptions } from "@dreamer/session";
 import type { ServiceContainer } from "@dreamer/service";
 
 /**
@@ -148,6 +149,13 @@ export interface AppConfig extends Record<string, unknown> {
    * 配置后挂载到当前 HTTP 服务器同一端口，与主站共用 server.port / server.host。
    */
   socket?: SocketConfig;
+  /**
+   * 会话配置（可选）
+   * 使用 @dreamer/session 的 SessionOptions：store 必填；可选 name、maxAge、cookie、autoSave、genId。
+   * 其中 cookie 为 Cookie 选项（path、domain、secure、httpOnly、sameSite、maxAge、expires 等），由 session 中间件在设置 session Cookie 时应用。
+   * 启用后 ctx.session 在 load()、API、中间件中可用。
+   */
+  session?: SessionOptions;
 }
 
 /**

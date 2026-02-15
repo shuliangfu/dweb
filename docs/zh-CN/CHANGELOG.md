@@ -7,6 +7,85 @@
 
 ---
 
+## [Unreleased]
+
+### 新增
+
+- **Session 默认集成**：
+  - 集成 `@dreamer/session`；`AppConfig.session` 接受 `SessionOptions`（store
+    必填；可选 `name`、`maxAge`、`cookie`、`autoSave`、`genId`）。
+  - 当配置了 `config.session` 时，在应用初始化中通过
+    `server.use(session(mergedConfig.session), ...)` 挂载 session 中间件。 默认
+    session 存储目录：`~/.dreamer/dweb/sessions`（来自
+    `getDreamerDwebCacheDir()`）。
+  - `LoadContext.session` 类型为 `@dreamer/session` 的 `SessionData`。
+- **Cookie 配置**：在 `AppConfig` 的 JSDoc 中说明，session 的 cookie
+  选项（path、domain、secure、httpOnly、sameSite、maxAge、expires）通过
+  `config.session.cookie`（`@dreamer/session` 的 `SessionOptions`）配置；由
+  session 中间件在设置 session Cookie 时应用。dweb 中不再单独提供顶层 cookie
+  配置。
+- **ServerResponse 与 load 返回 Response**：
+  - `ServerResponse` 支持 `binary(data, init?)` 返回二进制 body；提供
+    `createServerResponse()`；`LoadContext.response` 在 load 中可用并带类型。
+  - 当路由的 `load()` 返回 `Response` 时，服务端按重定向或直接响应处理（如
+    重定向不再走文档渲染路径）。
+
+### 变更
+
+- **缓存目录**：`getDreamerDwebCacheDir()` 从 `utils/build-dirs.ts` 移至
+  `utils/cache-dirs.ts`，并用于默认 session 存储目录。
+
+### 移除
+
+- **Session 中间件独立模块**：在 `app.ts` 中直接使用
+  `session(mergedConfig.session)` 挂载 session；移除独立的 session-middleware
+  辅助与 `getDefaultSessionOptions`（由合并配置与默认缓存目录替代）。
+
+---
+
+## [3.0.75] - 2026-02-16
+
+### 新增
+
+- **Load 数据接口中间件（路由 `load()` 的自动 API）**：
+  - 新增中间件处理 `GET /__data?path=/pathname`：在服务端匹配路由并执行该路由的
+    `load()`，返回 JSON（`params`、`query` 及 `load()` 的返回值）。在 CSR 与
+    Hybrid 模式下均会注册。
+  - CSR/Hybrid 客户端：在客户端页面切换时请求
+    `/__data?path=...`，将返回结果作为页面 props（无需整页 SSR 即可获得 `load()`
+    数据）。首屏时 CSR 在服务端执行当前路由的 `load()`，将结果注入
+    `globalThis.__DATA__`，客户端首屏用其渲染后清空，避免后续导航误用。
+  - 路由中的 API 路由（`api/` 下）不再加入客户端 `ROUTE_LOADERS`，避免客户端
+    bundle 引入仅服务端使用的模块。
+
+- **E2E 浏览器测试覆盖全部示例**：basic 与 advanced 浏览器套件现已覆盖 workspace
+  内全部示例。新增 view-hybrid-flat（basic 端口 3015，advanced
+  3028/3029）。新增全部 preact、react advanced
+  套件：preact-csr（3030/3031）、preact-hybrid（3032/3033）、preact-ssr（3034/3035）、preact-ssg（3036/3037）、preact-hybrid-flat（3038/3039）、react-csr（3040/3041）、react-hybrid（3042/3043）、react-ssr（3044/3045）、react-ssg（3046/3047）、react-hybrid-flat（3048/3049）；并已更新上述
+  advanced 示例的端口配置以匹配 e2e 端口。
+- **E2E 交互测试**：每个套件包含两项浏览器测试：(1) 渲染且无 hydration 错误；(2)
+  通过点击导航。Basic
+  套件：点击「关于」链接并断言关于页出现「关于我们」。Advanced
+  套件：点击「用户管理」链接并断言用户页出现「用户管理」或「用户列表」（backend
+  无 about 路由，用户页会请求 backend API）。
+- **Advanced 构建入口可选**：`buildExampleAdvanced` 与
+  `createAdvancedExampleBrowserSuite` 支持可选参数 `entries`（如
+  `["backend/main.ts", "frontend/main.ts"]`），用于扁平结构的 advanced
+  示例（preact-hybrid-flat、react-hybrid-flat、view-hybrid-flat）。
+
+### 移除
+
+- **preact-hybrid-unocss 示例**：该示例及 workspace 条目已移除；由
+  view-hybrid-flat 及其他 view/preact/react 示例提供覆盖。
+
+### 变更
+
+- **E2E 测试命名**：Advanced
+  的第二项测试由「应能通过点击关于链接进入关于页」改为「应能通过点击用户管理链接进入用户页」，并改用
+  `assertBrowserClickUsers`（点击 `a[href="/users"]`，等待用户页内容）。
+
+---
+
 ## [3.0.74] - 2026-02-15
 
 ### 变更

@@ -1,8 +1,9 @@
 /**
  * e2e: 浏览器渲染测试
  *
- * 使用 @dreamer/test 的浏览器测试能力，对 Preact/React 的 CSR、Hybrid、SSR、SSG 示例
+ * 使用 @dreamer/test 的浏览器测试能力，对 Preact/React/View 的 CSR、Hybrid、SSR、SSG 示例
  * 进行构建、启动服务器、Puppeteer 访问页面，验证无 hydration 错误且页面正常渲染。
+ * view-* 含 basic 与 advanced（advanced 为双进程 backend+frontend，端口由 env 指定）。
  * 覆盖 Windows 在内的多平台，CI 中 Windows 需通过 setup-chrome action 配置 Chrome。
  */
 
@@ -14,6 +15,7 @@ import {
   dirname,
   execPath,
   exists,
+  getEnvAll,
   IS_DENO,
   join,
   platform,
@@ -48,7 +50,7 @@ const DWEB_ROOT = (() => {
  * preact-csr=3001, preact-hybrid=3002, react-csr=3003, react-hybrid=3004
  * preact-ssr=3005, preact-ssg=3006, react-ssr=3007, react-ssg=3008
  * preact-hybrid-flat=3009, react-hybrid-flat=3010
- * view-csr=3011, view-hybrid=3012, view-ssr=3013, view-ssg=3014
+ * view-csr=3011, view-hybrid=3012, view-ssr=3013, view-ssg=3014, view-hybrid-flat=3015
  */
 const E2E_PORTS: Record<string, number> = {
   "preact-csr": 3001,
@@ -65,6 +67,7 @@ const E2E_PORTS: Record<string, number> = {
   "view-hybrid": 3012,
   "view-ssr": 3013,
   "view-ssg": 3014,
+  "view-hybrid-flat": 3015,
 };
 
 /**
@@ -204,6 +207,7 @@ async function assertBrowserRender(
       }
 
       // 等待页面内容出现（CSR/Hybrid 需等待 JS 执行和 hydration，Windows CI 较慢）
+      // basic 与多数 view 首页含「欢迎使用 Dweb 框架」，react advanced 首页含「React Advanced」或「React CSR Advanced Example」
       const contentTimeout = platform() === "windows" ? 60000 : 30000;
       try {
         await browser.waitFor(
@@ -211,8 +215,12 @@ async function assertBrowserRender(
             const doc = (globalThis as Record<string, unknown>).document as
               | { body?: { innerHTML?: string } }
               | undefined;
-            return (doc?.body?.innerHTML?.includes("欢迎使用 Dweb 框架") ??
-              false) === true;
+            const html = doc?.body?.innerHTML ?? "";
+            return (
+              html.includes("欢迎使用 Dweb 框架") ||
+              html.includes("React CSR Advanced Example") ||
+              html.includes("React Advanced")
+            );
           },
           { timeout: contentTimeout },
         );
@@ -255,10 +263,11 @@ async function assertBrowserRender(
               | undefined;
             const appInnerLength = appEl?.innerHTML?.length ?? 0;
             const appSnippet = appEl?.innerHTML?.slice(0, 500) ?? "";
-            // 检查期望文案是否存在于 body
-            const expectText = "欢迎使用 Dweb 框架";
-            const hasExpectText = bodyHtml.includes(expectText);
-            const expectTextIndex = bodyHtml.indexOf(expectText);
+            // 检查期望文案是否存在于 body（任一首屏标识即可）
+            const hasExpectText = bodyHtml.includes("欢迎使用 Dweb 框架") ||
+              bodyHtml.includes("React CSR Advanced Example") ||
+              bodyHtml.includes("React Advanced");
+            const expectTextIndex = bodyHtml.length > 0 ? 0 : -1;
             return {
               url: String(
                 (globalThis as unknown as { location?: { href?: string } })
@@ -321,11 +330,19 @@ async function assertBrowserRender(
         );
       }
 
+      // CSR 场景下 waitFor 通过后 DOM 可能仍在更新，短暂延迟再取 body 避免 race（如 react-csr-advanced）
+      await new Promise((r) => setTimeout(r, 400));
+
       const hasTitle = await browser.evaluate(() => {
         const doc = (globalThis as Record<string, unknown>).document as
           | { body?: { innerHTML?: string } }
           | undefined;
-        return doc?.body?.innerHTML?.includes("欢迎使用 Dweb 框架") ?? false;
+        const html = doc?.body?.innerHTML ?? "";
+        return (
+          html.includes("欢迎使用 Dweb 框架") ||
+          html.includes("React CSR Advanced Example") ||
+          html.includes("React Advanced")
+        );
       });
 
       expect(hasTitle).toBe(true);
@@ -358,13 +375,424 @@ async function assertBrowserRender(
 }
 
 /**
+ * 浏览器交互断言：首页加载后点击「关于」链接，进入关于页并校验文案
+ * 各示例 layout 统一包含 a[href="/about"]，关于页统一包含「关于我们」
+ * @param t 测试上下文（含 browser）
+ * @param port 服务器端口
+ */
+async function assertBrowserClickAbout(
+  t: {
+    browser?: {
+      page: unknown;
+      goto: (url: string) => Promise<void>;
+      evaluate: (fn: () => unknown) => Promise<unknown>;
+      waitFor: (
+        fn: () => boolean,
+        options?: { timeout?: number },
+      ) => Promise<void>;
+    };
+  },
+  port: number,
+): Promise<void> {
+  if (!t?.browser) {
+    throw new Error("browser 上下文不可用");
+  }
+  const browser = t.browser;
+  const page = browser.page as {
+    goto: (
+      url: string,
+      options?: { waitUntil?: string; timeout?: number },
+    ) => Promise<unknown>;
+    click: (selector: string, options?: { timeout?: number }) => Promise<void>;
+  };
+
+  const url = `http://127.0.0.1:${port}/`;
+  if (typeof page.goto === "function") {
+    await page.goto(url, { waitUntil: "load", timeout: 60000 });
+  } else {
+    await browser.goto(url);
+  }
+
+  const contentTimeout = platform() === "windows" ? 45000 : 20000;
+  await browser.waitFor(
+    () => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string } }
+        | undefined;
+      return (doc?.body?.innerHTML?.includes("欢迎使用 Dweb 框架") ?? false) ===
+        true;
+    },
+    { timeout: contentTimeout },
+  );
+
+  if (typeof page.click !== "function") {
+    throw new Error("page.click 不可用，无法执行点击");
+  }
+  await page.click('a[href="/about"]', { timeout: 10000 });
+
+  await browser.waitFor(
+    () => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string } }
+        | undefined;
+      return (doc?.body?.innerHTML?.includes("关于我们") ?? false) === true;
+    },
+    { timeout: contentTimeout },
+  );
+
+  const hasAboutTitle = await browser.evaluate(() => {
+    const doc = (globalThis as Record<string, unknown>).document as
+      | { body?: { innerHTML?: string } }
+      | undefined;
+    return doc?.body?.innerHTML?.includes("关于我们") ?? false;
+  });
+  expect(hasAboutTitle).toBe(true);
+}
+
+/**
+ * 浏览器断言：校验 basic 示例首页与关于页的 metadata（title / meta description）已渲染且非空
+ * 各示例的 title/description 文案可能不同（来自 index 或服务端注入），仅断言存在即可
+ * @param t 测试上下文（含 browser）
+ * @param port 服务器端口
+ */
+async function assertBrowserMetadata(
+  t: {
+    browser?: {
+      page: unknown;
+      goto: (url: string) => Promise<void>;
+      evaluate: (fn: () => unknown) => Promise<unknown>;
+      waitFor: (
+        fn: () => boolean,
+        options?: { timeout?: number },
+      ) => Promise<void>;
+    };
+  },
+  port: number,
+): Promise<void> {
+  if (!t?.browser) {
+    throw new Error("browser 上下文不可用");
+  }
+  const browser = t.browser;
+  const page = browser.page as {
+    goto: (
+      url: string,
+      options?: { waitUntil?: string; timeout?: number },
+    ) => Promise<unknown>;
+  };
+
+  const baseUrl = `http://127.0.0.1:${port}/`;
+  if (typeof page.goto === "function") {
+    await page.goto(baseUrl, { waitUntil: "load", timeout: 30000 });
+  } else {
+    await browser.goto(baseUrl);
+  }
+
+  const contentTimeout = platform() === "windows" ? 45000 : 20000;
+  await browser.waitFor(
+    () => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string } }
+        | undefined;
+      const html = doc?.body?.innerHTML ?? "";
+      return (
+        html.includes("欢迎使用 Dweb 框架") ||
+        html.includes("React CSR Advanced Example") ||
+        html.includes("React Advanced")
+      );
+    },
+    { timeout: contentTimeout },
+  );
+
+  const homeMeta = await browser.evaluate(() => {
+    const doc = (globalThis as Record<string, unknown>).document as
+      | {
+        title?: string;
+        querySelector?: (
+          s: string,
+        ) => { getAttribute?: (n: string) => string } | null;
+      }
+      | undefined;
+    const metaDesc = doc?.querySelector?.('meta[name="description"]');
+    return {
+      title: doc?.title ?? "",
+      description: metaDesc?.getAttribute?.("content") ?? "",
+    };
+  }) as { title: string; description: string };
+  expect(homeMeta.title.length).toBeGreaterThan(0);
+  expect(homeMeta.description.length).toBeGreaterThan(0);
+
+  const aboutUrl = `http://127.0.0.1:${port}/about`;
+  if (typeof page.goto === "function") {
+    await page.goto(aboutUrl, { waitUntil: "load", timeout: 30000 });
+  } else {
+    await browser.goto(aboutUrl);
+  }
+  await browser.waitFor(
+    () => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string } }
+        | undefined;
+      return (doc?.body?.innerHTML?.includes("关于我们") ?? false) === true;
+    },
+    { timeout: contentTimeout },
+  );
+
+  const aboutMeta = await browser.evaluate(() => {
+    const doc = (globalThis as Record<string, unknown>).document as
+      | {
+        title?: string;
+        querySelector?: (
+          s: string,
+        ) => { getAttribute?: (n: string) => string } | null;
+      }
+      | undefined;
+    const metaDesc = doc?.querySelector?.('meta[name="description"]');
+    return {
+      title: doc?.title ?? "",
+      description: metaDesc?.getAttribute?.("content") ?? "",
+    };
+  }) as { title: string; description: string };
+  expect(aboutMeta.title.length).toBeGreaterThan(0);
+  expect(aboutMeta.description.length).toBeGreaterThan(0);
+}
+
+/**
+ * 浏览器交互断言：首页加载后点击「用户管理」链接，进入 /users 页并校验文案
+ * 仅用于 advanced 示例（frontend 有 /users，会请求 backend API）；backend 无 about 路由，故 advanced 不测 about
+ * preact/view 用户页标题为「用户管理」，react 为「用户列表」，二者满足其一即通过
+ * @param t 测试上下文（含 browser）
+ * @param port 前端服务端口（浏览器访问此端口）
+ */
+async function assertBrowserClickUsers(
+  t: {
+    browser?: {
+      page: unknown;
+      goto: (url: string) => Promise<void>;
+      evaluate: (fn: () => unknown) => Promise<unknown>;
+      waitFor: (
+        fn: () => boolean,
+        options?: { timeout?: number },
+      ) => Promise<void>;
+    };
+  },
+  port: number,
+): Promise<void> {
+  if (!t?.browser) {
+    throw new Error("browser 上下文不可用");
+  }
+  const browser = t.browser;
+  const page = browser.page as {
+    goto: (
+      url: string,
+      options?: { waitUntil?: string; timeout?: number },
+    ) => Promise<unknown>;
+    click: (selector: string, options?: { timeout?: number }) => Promise<void>;
+  };
+
+  const url = `http://127.0.0.1:${port}/`;
+  if (typeof page.goto === "function") {
+    await page.goto(url, { waitUntil: "load", timeout: 60000 });
+  } else {
+    await browser.goto(url);
+  }
+
+  const contentTimeout = platform() === "windows" ? 45000 : 30000;
+  await browser.waitFor(
+    () => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string } }
+        | undefined;
+      const html = doc?.body?.innerHTML ?? "";
+      return (
+        html.includes("欢迎使用 Dweb 框架") ||
+        html.includes("React CSR Advanced Example") ||
+        html.includes("React Advanced")
+      );
+    },
+    { timeout: contentTimeout },
+  );
+
+  if (typeof page.click !== "function") {
+    throw new Error("page.click 不可用，无法执行点击");
+  }
+  await page.click('a[href="/users"]', { timeout: 10000 });
+
+  await browser.waitFor(
+    () => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string } }
+        | undefined;
+      const html = doc?.body?.innerHTML ?? "";
+      return html.includes("用户管理") || html.includes("用户列表");
+    },
+    { timeout: contentTimeout },
+  );
+
+  const hasUsersPage = await browser.evaluate(() => {
+    const doc = (globalThis as Record<string, unknown>).document as
+      | { body?: { innerHTML?: string } }
+      | undefined;
+    const html = doc?.body?.innerHTML ?? "";
+    return html.includes("用户管理") || html.includes("用户列表");
+  });
+  expect(hasUsersPage).toBe(true);
+}
+
+/**
+ * 构建 advanced 示例（先构建 backend，再构建 frontend）
+ * @param exampleDir 示例 advanced 目录
+ * @param entries 入口对 [backend入口, frontend入口]，默认 src 目录结构
+ */
+async function buildExampleAdvanced(
+  exampleDir: string,
+  entries: [string, string] = ["src/backend/main.ts", "src/frontend/main.ts"],
+): Promise<void> {
+  const distDir = join(exampleDir, "dist");
+  if (await exists(distDir)) {
+    await remove(distDir, { recursive: true });
+  }
+  for (const entry of entries) {
+    const args = IS_DENO
+      ? ["run", "-A", entry, "--build"]
+      : ["run", entry, "--build"];
+    const cmd = createCommand(execPath(), {
+      args,
+      cwd: exampleDir,
+      stdout: "piped",
+      stderr: "piped",
+    });
+    const proc = cmd.spawn();
+    const [status, stderrText] = await Promise.all([
+      proc.status,
+      proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
+    ]);
+    if (!status.success) {
+      throw new Error(`build ${entry} 失败: ${stderrText}`);
+    }
+  }
+}
+
+/**
+ * 创建 view-* advanced 示例的浏览器测试套件（双进程：backend + frontend，访问 frontend 端口）
+ * @param exampleName 示例名称（如 view-csr、view-hybrid）
+ * @param backendPort e2e 时后端端口
+ * @param frontendPort e2e 时前端端口（浏览器访问此端口）
+ * @param options.skip 为 true 时跳过该套件
+ * @param options.entries 构建入口 [backend, frontend]，默认 ["src/backend/main.ts", "src/frontend/main.ts"]；flat 结构传 ["backend/main.ts", "frontend/main.ts"]
+ */
+function createAdvancedExampleBrowserSuite(
+  exampleName: string,
+  backendPort: number,
+  frontendPort: number,
+  options?: { skip?: boolean; entries?: [string, string] },
+): void {
+  const skip = options?.skip === true;
+  const entries = options?.entries ??
+    ["src/backend/main.ts", "src/frontend/main.ts"];
+  const suiteName = `${exampleName}-advanced`;
+  describe(`e2e: 浏览器渲染 - ${suiteName}`, () => {
+    let originalCwd: string | undefined;
+    let childBackend: SpawnedProcess | null = null;
+    let childFrontend: SpawnedProcess | null = null;
+    let exampleDir: string;
+    /** 端口已写死在各应用配置中，此处仅用于等待服务就绪与访问 URL */
+    const env = getEnvAll();
+
+    beforeAll(async () => {
+      if (skip) return;
+      originalCwd = cwd();
+      exampleDir = resolve(DWEB_ROOT, "examples", exampleName, "advanced");
+      chdir(exampleDir);
+      await buildExampleAdvanced(exampleDir, entries);
+
+      const startBackend = createCommand(execPath(), {
+        args: IS_DENO
+          ? ["run", "-A", "dist/backend/server.js"]
+          : ["run", "dist/backend/server.js"],
+        cwd: exampleDir,
+        env,
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+      childBackend = startBackend.spawn();
+      const maxWait = platform() === "windows" ? 60000 : 15000;
+      await waitForServerReady(backendPort, maxWait);
+
+      const startFrontend = createCommand(execPath(), {
+        args: IS_DENO
+          ? ["run", "-A", "dist/frontend/server.js"]
+          : ["run", "dist/frontend/server.js"],
+        cwd: exampleDir,
+        env,
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+      childFrontend = startFrontend.spawn();
+      await waitForServerReady(frontendPort, maxWait);
+      // 就绪后再等一小段，避免偶发 ERR_CONNECTION_REFUSED
+      await new Promise((r) => setTimeout(r, 1500));
+    });
+
+    afterAll(async () => {
+      if (skip) return;
+      for (const child of [childFrontend, childBackend]) {
+        if (child) {
+          try {
+            child.kill(15);
+            await child.status;
+          } catch {
+            // ignore
+          }
+        }
+      }
+      await cleanupAllBrowsers();
+      if (originalCwd && originalCwd.length > 0) {
+        chdir(originalCwd);
+      }
+    });
+
+    it.skipIf(skip, "应能渲染且无 hydration 错误", async (t) => {
+      if (!t) throw new Error("test context 不可用");
+      await assertBrowserRender(t, frontendPort);
+    }, {
+      timeout: platform() === "windows" ? 90000 : 60000,
+      sanitizeOps: false,
+      sanitizeResources: false,
+      browser: {
+        enabled: true,
+        headless: true,
+        reuseBrowser: true,
+        browserSource: "test",
+        protocolTimeout: 90000,
+      },
+    });
+
+    it.skipIf(skip, "应能通过点击用户管理链接进入用户页", async (t) => {
+      if (!t) throw new Error("test context 不可用");
+      await assertBrowserClickUsers(t, frontendPort);
+    }, {
+      timeout: platform() === "windows" ? 90000 : 60000,
+      sanitizeOps: false,
+      sanitizeResources: false,
+      browser: {
+        enabled: true,
+        headless: true,
+        reuseBrowser: true,
+        browserSource: "test",
+        protocolTimeout: 90000,
+      },
+    });
+  });
+}
+
+/**
  * 创建单个示例的浏览器测试套件
  * 使用 @dreamer/test 的默认行为：不传 executablePath，由 Puppeteer 使用自带的 Chrome for Testing
  * @param exampleName 示例名称（如 preact-csr、preact-hybrid）
  * @param entry 入口文件：有 src 用 "src/main.ts"，无 src 用 "main.ts"
  * @param options.skip 为 true 时跳过该套件的用例（用于已知会挂起的用例，如 react-ssg）
  */
-function createExampleBrowserSuite(
+function createBasicExampleBrowserSuite(
   exampleName: string,
   entry: string = "src/main.ts",
   options?: { skip?: boolean },
@@ -396,6 +824,8 @@ function createExampleBrowserSuite(
       // 轮询等待服务器就绪（Windows CI 较慢）
       const maxWait = platform() === "windows" ? 60000 : 15000;
       await waitForServerReady(port, maxWait);
+      // 就绪后再等一小段，避免偶发 ERR_CONNECTION_REFUSED（如 view-hybrid-flat 等启动略慢）
+      await new Promise((r) => setTimeout(r, 1500));
     });
 
     afterAll(async () => {
@@ -429,21 +859,90 @@ function createExampleBrowserSuite(
         protocolTimeout: 90000,
       },
     });
+
+    it.skipIf(skip, "应能通过点击关于链接进入关于页", async (t) => {
+      if (!t) throw new Error("test context 不可用");
+      await assertBrowserClickAbout(t, port);
+    }, {
+      timeout: platform() === "windows" ? 90000 : 60000,
+      sanitizeOps: false,
+      sanitizeResources: false,
+      browser: {
+        enabled: true,
+        headless: true,
+        reuseBrowser: true,
+        browserSource: "test",
+        protocolTimeout: 90000,
+      },
+    });
+
+    it.skipIf(
+      skip,
+      "应渲染首页与关于页的 metadata（title/description）",
+      async (t) => {
+        if (!t) throw new Error("test context 不可用");
+        await assertBrowserMetadata(t, port);
+      },
+      {
+        timeout: platform() === "windows" ? 90000 : 60000,
+        sanitizeOps: false,
+        sanitizeResources: false,
+        browser: {
+          enabled: true,
+          headless: true,
+          reuseBrowser: true,
+          browserSource: "test",
+          protocolTimeout: 90000,
+        },
+      },
+    );
   });
 }
 
-createExampleBrowserSuite("preact-csr", "src/main.ts");
-createExampleBrowserSuite("preact-hybrid", "src/main.ts");
-createExampleBrowserSuite("preact-ssr", "src/main.ts");
-createExampleBrowserSuite("preact-ssg", "src/main.ts");
-createExampleBrowserSuite("react-csr", "src/main.ts");
-createExampleBrowserSuite("react-hybrid", "src/main.ts");
-createExampleBrowserSuite("react-ssr", "src/main.ts");
-// react-ssg 在部分环境下会卡住（waitFor 或 goto 不返回），暂时跳过，待排查 SSG 静态页 load 行为后再启用
-createExampleBrowserSuite("react-ssg", "src/main.ts", { skip: true });
-createExampleBrowserSuite("preact-hybrid-flat", "main.ts");
-createExampleBrowserSuite("react-hybrid-flat", "main.ts");
-createExampleBrowserSuite("view-csr", "src/main.ts");
-createExampleBrowserSuite("view-hybrid", "src/main.ts");
-createExampleBrowserSuite("view-ssr", "src/main.ts");
-createExampleBrowserSuite("view-ssg", "src/main.ts");
+createBasicExampleBrowserSuite("preact-csr", "src/main.ts");
+createBasicExampleBrowserSuite("preact-hybrid", "src/main.ts");
+createBasicExampleBrowserSuite("preact-ssr", "src/main.ts");
+createBasicExampleBrowserSuite("preact-ssg", "src/main.ts");
+createBasicExampleBrowserSuite("preact-hybrid-flat", "main.ts");
+
+createBasicExampleBrowserSuite("react-csr", "src/main.ts");
+createBasicExampleBrowserSuite("react-hybrid", "src/main.ts");
+createBasicExampleBrowserSuite("react-ssr", "src/main.ts");
+createBasicExampleBrowserSuite("react-ssg", "src/main.ts");
+createBasicExampleBrowserSuite("react-hybrid-flat", "main.ts");
+
+createBasicExampleBrowserSuite("view-csr", "src/main.ts");
+createBasicExampleBrowserSuite("view-hybrid", "src/main.ts");
+createBasicExampleBrowserSuite("view-ssr", "src/main.ts");
+createBasicExampleBrowserSuite("view-ssg", "src/main.ts");
+createBasicExampleBrowserSuite("view-hybrid-flat", "main.ts");
+
+// preact-* advanced 示例（双进程 backend + frontend）
+// preact-csr=3030,3031 preact-hybrid=3032,3033 preact-ssr=3034,3035 preact-ssg=3036,3037 preact-hybrid-flat=3038,3039
+createAdvancedExampleBrowserSuite("preact-csr", 3030, 3031);
+createAdvancedExampleBrowserSuite("preact-hybrid", 3032, 3033);
+createAdvancedExampleBrowserSuite("preact-ssr", 3034, 3035);
+createAdvancedExampleBrowserSuite("preact-ssg", 3036, 3037);
+createAdvancedExampleBrowserSuite("preact-hybrid-flat", 3038, 3039, {
+  entries: ["backend/main.ts", "frontend/main.ts"],
+});
+
+// react-* advanced 示例（双进程 backend + frontend）
+// react-csr=3040,3041 react-hybrid=3042,3043 react-ssr=3044,3045 react-ssg=3046,3047 react-hybrid-flat=3048,3049
+createAdvancedExampleBrowserSuite("react-csr", 3040, 3041);
+createAdvancedExampleBrowserSuite("react-hybrid", 3042, 3043);
+createAdvancedExampleBrowserSuite("react-ssr", 3044, 3045);
+createAdvancedExampleBrowserSuite("react-ssg", 3046, 3047);
+createAdvancedExampleBrowserSuite("react-hybrid-flat", 3048, 3049, {
+  entries: ["backend/main.ts", "frontend/main.ts"],
+});
+
+// view-* advanced 示例（双进程 backend + frontend）
+// view-csr=3020,3021 view-hybrid=3022,3023 view-ssr=3024,3025 view-ssg=3026,3027 view-hybrid-flat=3028,3029
+createAdvancedExampleBrowserSuite("view-csr", 3020, 3021);
+createAdvancedExampleBrowserSuite("view-hybrid", 3022, 3023);
+createAdvancedExampleBrowserSuite("view-ssr", 3024, 3025);
+createAdvancedExampleBrowserSuite("view-ssg", 3026, 3027);
+createAdvancedExampleBrowserSuite("view-hybrid-flat", 3028, 3029, {
+  entries: ["backend/main.ts", "frontend/main.ts"],
+});

@@ -3,6 +3,7 @@
  * 完整的管理后台应用
  */
 
+import { BACKEND_PORT } from "@backend/config/main.ts";
 import { commonConfig } from "@common/config/main.ts";
 import { App } from "@dreamer/dweb";
 import { staticPlugin } from "@dreamer/plugins/static";
@@ -13,9 +14,9 @@ const app = new App({
   name: "view-ssr-advanced-example-backend",
   version: commonConfig.version,
 
-  // 服务器配置
+  // 服务器配置（端口写死在后端应用配置中）
   server: {
-    port: commonConfig.backendPort,
+    port: BACKEND_PORT,
     host: "127.0.0.1",
   },
 
@@ -46,11 +47,11 @@ app.registerPlugin(tailwindPlugin({
 // 注册静态文件插件
 app.registerPlugin(staticPlugin({
   statics: [
-    { root: "backend/assets", prefix: "/assets" },
+    { root: "src/backend/assets", prefix: "/assets" },
     { root: "dist/backend/client/assets", prefix: "/assets" },
   ],
 }));
 
 // 启动应用
-console.log(`🚀 后台管理启动: http://localhost:${commonConfig.backendPort}`);
+console.log(`🚀 后台管理启动: http://localhost:${BACKEND_PORT}`);
 app.start();

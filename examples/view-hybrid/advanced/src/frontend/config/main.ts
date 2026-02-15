@@ -1,14 +1,19 @@
 /**
  * 前端默认配置
- * version、port 等可由 common/config 提供，框架自动合并
+ * 端口号写死在本应用配置中；后端端口供前端路由请求 API 使用
  */
 import type { AppConfig } from "@dreamer/dweb";
+
+/** 前端服务端口（写死在本应用配置） */
+const FRONTEND_PORT = 3023;
+/** 后端 API 端口（供前端路由请求接口使用） */
+export const backendPort = 3022;
 
 export default {
   name: "view-hybrid-advanced-example-frontend",
 
   server: {
-    port: 3001,
+    port: FRONTEND_PORT,
     host: "0.0.0.0",
   },
 

@@ -34,6 +34,7 @@
  * - 注册到服务容器
  * - 提供统一的日志访问 API
  */
+export * from "./cache-dirs.ts";
 export * from "./config-loader.ts";
 export * from "./errors.ts";
 export * from "./i18n.ts";

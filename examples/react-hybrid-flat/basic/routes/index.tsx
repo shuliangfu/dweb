@@ -3,6 +3,12 @@
  * 路由: /
  */
 
+/** 首页元数据（常量），用于生成 <title> / <meta> */
+export const metadata = {
+  title: "首页 - Dweb Basic",
+  description: "Dweb 示例项目首页",
+};
+
 /**
  * 首页
  */

@@ -9,13 +9,15 @@
  * - 返回 HTML 响应
  */
 
-import type { SSROptions } from "@dreamer/render";
+import { resolveMetadata, type SSROptions } from "@dreamer/render";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import type { HttpContext } from "@dreamer/server";
+import type { SessionData } from "@dreamer/session";
 import { getConfig } from "../core/config.ts";
 import { getLogger } from "../utils/logger.ts";
 import { getEnv } from "../core/runtime-adapter.ts";
+import { createLoadContext, createServerResponse } from "../types/context.ts";
 import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
 import { sanitizeRequestParams } from "../utils/sanitize.ts";
 import { $t } from "../utils/i18n.ts";
@@ -26,6 +28,7 @@ import { getRender } from "./render.ts";
 const LOAD_CACHE_TTL_MS = 1000;
 
 /** load 缓存条目 */
+/** load 缓存值：仅缓存纯数据对象，不缓存 Response */
 interface LoadCacheEntry {
   value: Record<string, unknown>;
   expiresAt: number;
@@ -124,12 +127,21 @@ export function createRendererSSR(
         query: sanitizeRequestParams(match.query),
       };
 
-      // 调用 load 函数获取服务端数据（若存在），带短期缓存减轻重 I/O
+      const url = ctx.url?.href || ctx.path;
+      const loadContext = createLoadContext({
+        request: ctx.request,
+        url,
+        params: match.params ?? {},
+        query: match.query ?? {},
+        session: (ctx as { session?: SessionData }).session,
+        response: createServerResponse(),
+      });
+
+      // 调用 load 函数获取服务端数据（若存在），带短期缓存减轻重 I/O；若返回 Response 则直接作为响应（服务端跳转等）
       if (typeof pageModule.load === "function") {
-        const url = ctx.url?.href || ctx.path;
         const cacheKey = getLoadCacheKey(url, match.params);
         const now = Date.now();
-        let serverData: Record<string, unknown> | null = null;
+        let serverData: Record<string, unknown> | Response | null = null;
 
         if (cacheKey) {
           const entry = loadCache.get(cacheKey);
@@ -141,12 +153,12 @@ export function createRendererSSR(
         }
 
         if (serverData === null) {
-          serverData = (await pageModule.load({
-            url,
-            params: match.params,
-            request: ctx.request,
-          })) as Record<string, unknown> | null;
-          if (serverData && cacheKey) {
+          const raw = await pageModule.load(loadContext);
+          if (raw instanceof Response) {
+            return raw;
+          }
+          serverData = raw as Record<string, unknown> | null;
+          if (serverData && cacheKey && !(serverData instanceof Response)) {
             loadCache.set(cacheKey, {
               value: serverData,
               expiresAt: now + LOAD_CACHE_TTL_MS,
@@ -160,7 +172,7 @@ export function createRendererSSR(
           }
         }
 
-        if (serverData) {
+        if (serverData && !(serverData instanceof Response)) {
           Object.assign(pageProps, serverData);
         }
       }
@@ -180,6 +192,19 @@ export function createRendererSSR(
         layouts.push({ component: LayoutComponent });
       }
 
+      // 从已 import 的路由模块读取 metadata（支持常量对象或方法），解析后交给 render 生成 meta 标签（复用 loadContext）
+      let contextData: SSROptions["contextData"];
+      const metadataExport = (pageModule as Record<string, unknown>).metadata;
+      if (metadataExport !== undefined && metadataExport !== null) {
+        const resolved = await resolveMetadata(
+          metadataExport as Parameters<typeof resolveMetadata>[0],
+          loadContext,
+        );
+        if (resolved) {
+          contextData = { metadata: resolved };
+        }
+      }
+
       // 调用 SSR 渲染（engine 从 config 读取，debug 支持 config.render.debug 或开发模式）
       const isDev =
         (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
@@ -188,11 +213,8 @@ export function createRendererSSR(
         component: PageComponent,
         props: pageProps,
         layouts,
-        loadContext: {
-          url: ctx.url.href || ctx.path,
-          params: match.params,
-          request: ctx.request,
-        },
+        loadContext,
+        contextData,
         debug: renderConfig.debug === true,
       };
       const result = await renderService.renderSSR(ssrOptions);

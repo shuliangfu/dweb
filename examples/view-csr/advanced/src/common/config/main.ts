@@ -1,6 +1,6 @@
 /**
  * 公共配置
- * 前后端共享的配置
+ * 前后端共享的配置；端口号写在各应用自己的配置中，不在此处配置
  */
 
 /** 公共配置 */
@@ -11,8 +11,4 @@ export const commonConfig = {
   version: "1.0.0",
   /** API 基础路径 */
   apiBasePath: "/api",
-  /** 后端端口 */
-  backendPort: 3000,
-  /** 前端端口 */
-  frontendPort: 3001,
 };
