@@ -20,8 +20,8 @@ import type { Plugin, PluginManagerOptions } from "@dreamer/plugin";
 import type { Engine } from "@dreamer/render";
 import type { RouterOptions } from "@dreamer/router";
 import type { ServerOptions } from "@dreamer/server";
-import type { SessionOptions } from "@dreamer/session";
 import type { ServiceContainer } from "@dreamer/service";
+import type { SessionOptions } from "@dreamer/session";
 
 /**
  * 框架层构建配置

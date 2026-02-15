@@ -806,6 +806,7 @@ function createAdvancedExampleBrowserSuite(
       browser: {
         enabled: true,
         headless: true,
+        dumpio: true,
         reuseBrowser: true,
         browserSource: "test",
         protocolTimeout: 90000,
@@ -822,6 +823,7 @@ function createAdvancedExampleBrowserSuite(
       browser: {
         enabled: true,
         headless: true,
+        dumpio: true,
         reuseBrowser: true,
         browserSource: "test",
         protocolTimeout: 90000,
@@ -898,6 +900,7 @@ function createBasicExampleBrowserSuite(
       browser: {
         enabled: true,
         headless: true,
+        dumpio: true,
         reuseBrowser: true,
         // 使用 Playwright 自带 Chromium，并延长启动超时（非 CI 默认 45s 易超时）
         browserSource: "test",
@@ -915,6 +918,7 @@ function createBasicExampleBrowserSuite(
       browser: {
         enabled: true,
         headless: true,
+        dumpio: true,
         reuseBrowser: true,
         browserSource: "test",
         protocolTimeout: 90000,
@@ -935,6 +939,7 @@ function createBasicExampleBrowserSuite(
         browser: {
           enabled: true,
           headless: true,
+          dumpio: true,
           reuseBrowser: true,
           browserSource: "test",
           protocolTimeout: 90000,

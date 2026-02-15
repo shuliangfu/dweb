@@ -32,6 +32,7 @@ import {
 import { AssetsProcessor } from "@dreamer/esbuild";
 import { requestId, requestLogger } from "@dreamer/middlewares";
 import { expandDynamicRoute } from "@dreamer/render";
+import { session } from "@dreamer/session";
 import { initializeBuild, runBuildWithBuilder } from "../feature/build.ts";
 import {
   buildClientScript,
@@ -62,7 +63,6 @@ import {
   getWebSocketPath,
   initializeWebSocket,
 } from "../feature/websocket.ts";
-import { session } from "@dreamer/session";
 import {
   type AppConfig,
   type AppLifecycleHook,
