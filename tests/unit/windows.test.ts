@@ -119,7 +119,7 @@ describe("Windows 兼容性 (windows.test.ts)", () => {
   describe("构建输出推断 (getInferredBuildOutputDirs)", () => {
     it("Windows 反斜杠路径 src\\main.ts → dist、dist/client", () => {
       const { server, client } = getInferredBuildOutputDirs("src\\main.ts");
-      expect(server).toBe("./dist");
+      expect(server).toBe("dist");
       expect(client).toBe("dist/client");
     });
 
@@ -127,7 +127,7 @@ describe("Windows 兼容性 (windows.test.ts)", () => {
       const { server, client } = getInferredBuildOutputDirs(
         "src\\backend\\main.ts",
       );
-      expect(server).toBe("./dist/backend");
+      expect(server).toBe("dist/backend");
       expect(client).toBe("dist/backend/client");
     });
 
@@ -135,7 +135,7 @@ describe("Windows 兼容性 (windows.test.ts)", () => {
       const { server, client } = getInferredBuildOutputDirs(
         "..\\..\\..\\Users\\foo\\Desktop\\app-test\\src\\main.ts",
       );
-      expect(server).toBe("./dist");
+      expect(server).toBe("dist");
       expect(client).toBe("dist/client");
     });
 
@@ -143,7 +143,7 @@ describe("Windows 兼容性 (windows.test.ts)", () => {
       const { server, client } = getInferredBuildOutputDirs(
         "./../../../%E8%88%92%E5%9B%BD%E6%97%AD/Desktop/app-test/src/main.ts",
       );
-      expect(server).toBe("./dist");
+      expect(server).toBe("dist");
       expect(client).toBe("dist/client");
     });
 
@@ -151,13 +151,13 @@ describe("Windows 兼容性 (windows.test.ts)", () => {
       const { server, client } = getInferredBuildOutputDirs(
         "./../../../Users/foo/Desktop/myapp/src/backend/main.ts",
       );
-      expect(server).toBe("./dist/backend");
+      expect(server).toBe("dist/backend");
       expect(client).toBe("dist/backend/client");
     });
 
     it("Windows 反斜杠 dist\\server.js 应正确解析为单应用构建产物", () => {
       const { server, client } = getInferredBuildOutputDirs("dist\\server.js");
-      expect(server).toBe("./dist");
+      expect(server).toBe("dist");
       expect(client).toBe("dist/client");
     });
 
@@ -178,7 +178,7 @@ describe("Windows 兼容性 (windows.test.ts)", () => {
 
     it("边界：./ 前缀应正确解析", () => {
       const { server, client } = getInferredBuildOutputDirs("./src/main.ts");
-      expect(server).toBe("./dist");
+      expect(server).toBe("dist");
       expect(client).toBe("dist/client");
     });
 
@@ -186,7 +186,7 @@ describe("Windows 兼容性 (windows.test.ts)", () => {
       const { server, client } = getInferredBuildOutputDirs(
         ".\\src\\backend\\main.ts",
       );
-      expect(server).toBe("./dist/backend");
+      expect(server).toBe("dist/backend");
       expect(client).toBe("dist/backend/client");
     });
   });

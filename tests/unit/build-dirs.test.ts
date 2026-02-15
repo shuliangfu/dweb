@@ -14,25 +14,25 @@ import { getInferredBuildOutputDirs } from "../../src/utils/build-dirs.ts";
 describe("getInferredBuildOutputDirs", () => {
   it("main.ts（无 src 单应用）→ dist、dist/client", () => {
     const { server, client } = getInferredBuildOutputDirs("main.ts");
-    expect(server).toBe("./dist");
+    expect(server).toBe("dist");
     expect(client).toBe("dist/client");
   });
 
   it("src/main.ts（单应用）→ dist、dist/client", () => {
     const { server, client } = getInferredBuildOutputDirs("src/main.ts");
-    expect(server).toBe("./dist");
+    expect(server).toBe("dist");
     expect(client).toBe("dist/client");
   });
 
   it("backend/main.ts（无 src 多应用）→ dist/backend、dist/backend/client", () => {
     const { server, client } = getInferredBuildOutputDirs("backend/main.ts");
-    expect(server).toBe("./dist/backend");
+    expect(server).toBe("dist/backend");
     expect(client).toBe("dist/backend/client");
   });
 
   it("frontend/main.ts（无 src 多应用）→ dist/frontend、dist/frontend/client", () => {
     const { server, client } = getInferredBuildOutputDirs("frontend/main.ts");
-    expect(server).toBe("./dist/frontend");
+    expect(server).toBe("dist/frontend");
     expect(client).toBe("dist/frontend/client");
   });
 
@@ -40,7 +40,7 @@ describe("getInferredBuildOutputDirs", () => {
     const { server, client } = getInferredBuildOutputDirs(
       "src/backend/main.ts",
     );
-    expect(server).toBe("./dist/backend");
+    expect(server).toBe("dist/backend");
     expect(client).toBe("dist/backend/client");
   });
 
@@ -48,19 +48,19 @@ describe("getInferredBuildOutputDirs", () => {
     const { server, client } = getInferredBuildOutputDirs(
       "src/frontend/main.ts",
     );
-    expect(server).toBe("./dist/frontend");
+    expect(server).toBe("dist/frontend");
     expect(client).toBe("dist/frontend/client");
   });
 
   it("带 ./ 前缀的入口路径应正确解析", () => {
     const { server, client } = getInferredBuildOutputDirs("./backend/main.ts");
-    expect(server).toBe("./dist/backend");
+    expect(server).toBe("dist/backend");
     expect(client).toBe("dist/backend/client");
   });
 
   it("dist/server.js（运行构建产物单应用）→ dist、dist/client", () => {
     const { server, client } = getInferredBuildOutputDirs("dist/server.js");
-    expect(server).toBe("./dist");
+    expect(server).toBe("dist");
     expect(client).toBe("dist/client");
   });
 
@@ -68,13 +68,13 @@ describe("getInferredBuildOutputDirs", () => {
     const { server, client } = getInferredBuildOutputDirs(
       "dist/backend/server.js",
     );
-    expect(server).toBe("./dist/backend");
+    expect(server).toBe("dist/backend");
     expect(client).toBe("dist/backend/client");
   });
 
   it("build/server.js（用户配置 output 为 build）→ build、build/client", () => {
     const { server, client } = getInferredBuildOutputDirs("build/server.js");
-    expect(server).toBe("./build");
+    expect(server).toBe("build");
     expect(client).toBe("build/client");
   });
 
@@ -82,7 +82,7 @@ describe("getInferredBuildOutputDirs", () => {
     const { server, client } = getInferredBuildOutputDirs(
       "output/frontend/server.js",
     );
-    expect(server).toBe("./output/frontend");
+    expect(server).toBe("output/frontend");
     expect(client).toBe("output/frontend/client");
   });
 
@@ -102,7 +102,7 @@ describe("getInferredBuildOutputDirs", () => {
     const { server, client } = getInferredBuildOutputDirs(
       "./../../../%E8%88%92%E5%9B%BD%E6%97%AD/Desktop/app-test/src/main.ts",
     );
-    expect(server).toBe("./dist");
+    expect(server).toBe("dist");
     expect(client).toBe("dist/client");
   });
 
@@ -110,13 +110,13 @@ describe("getInferredBuildOutputDirs", () => {
     const { server, client } = getInferredBuildOutputDirs(
       "./../../../Users/foo/Desktop/myapp/src/backend/main.ts",
     );
-    expect(server).toBe("./dist/backend");
+    expect(server).toBe("dist/backend");
     expect(client).toBe("dist/backend/client");
   });
 
   it("Windows 反斜杠路径应正确解析（src\\main.ts → dist、dist/client）", () => {
     const { server, client } = getInferredBuildOutputDirs("src\\main.ts");
-    expect(server).toBe("./dist");
+    expect(server).toBe("dist");
     expect(client).toBe("dist/client");
   });
 
@@ -124,7 +124,7 @@ describe("getInferredBuildOutputDirs", () => {
     const { server, client } = getInferredBuildOutputDirs(
       "..\\..\\..\\Users\\foo\\Desktop\\app-test\\src\\main.ts",
     );
-    expect(server).toBe("./dist");
+    expect(server).toBe("dist");
     expect(client).toBe("dist/client");
   });
 });

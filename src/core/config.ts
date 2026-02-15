@@ -34,20 +34,20 @@ import {
   stat,
 } from "./runtime-adapter.ts";
 
-/** 入口 main 文件扩展名（预编译，避免重复创建） */
-const RE_MAIN_EXT = /main\.(ts|tsx|js|jsx)$/;
+/** 入口 main 文件扩展名（预编译，避免重复创建）；i 标志兼容 Windows 路径大小写 */
+const RE_MAIN_EXT = /main\.(ts|tsx|js|jsx)$/i;
 /** 单应用开发 + src：/src/main.(ts|tsx|js|jsx) */
-const RE_DEV_SINGLE_SRC = /^\/src\/main\.(ts|tsx|js|jsx)$/;
+const RE_DEV_SINGLE_SRC = /^\/src\/main\.(ts|tsx|js|jsx)$/i;
 /** 单应用开发 无 src：main.(ts|tsx|js|jsx) */
-const RE_DEV_SINGLE_NO_SRC = /^\/?main\.(ts|tsx|js|jsx)$/;
+const RE_DEV_SINGLE_NO_SRC = /^\/?main\.(ts|tsx|js|jsx)$/i;
 /** 多应用开发 + src：/src/<app>/main.(ts|tsx|js|jsx) */
-const RE_DEV_MULTI_SRC = /^\/src\/([^/]+)\/main\.(ts|tsx|js|jsx)$/;
+const RE_DEV_MULTI_SRC = /^\/src\/([^/]+)\/main\.(ts|tsx|js|jsx)$/i;
 /** 多应用开发 无 src：<app>/main.(ts|tsx|js|jsx) */
-const RE_DEV_MULTI_NO_SRC = /^\/?([^/]+)\/main\.(ts|tsx|js|jsx)$/;
+const RE_DEV_MULTI_NO_SRC = /^\/?([^/]+)\/main\.(ts|tsx|js|jsx)$/i;
 /** 单应用生产：/<outputDir>/server.js */
-const RE_PROD_SINGLE = /^\/([^/]+)\/server\.js$/;
+const RE_PROD_SINGLE = /^\/([^/]+)\/server\.js$/i;
 /** 多应用生产：/<outputDir>/<app>/server.js */
-const RE_PROD_MULTI = /^\/([^/]+)\/([^/]+)\/server\.js$/;
+const RE_PROD_MULTI = /^\/([^/]+)\/([^/]+)\/server\.js$/i;
 
 /**
  * 从归一化入口路径推断 config 目录（内部使用预编译正则）
@@ -120,10 +120,16 @@ export function inferConfigDirectoryFromEntry(): string {
     }
 
     const root = cwd();
-    // Windows 兼容：path 与 root 可能使用不同斜杠格式（\ vs /），先规范化再 strip root
-    const pathNorm = normalizePathForCompare(path);
-    const rootNorm = normalizePathForCompare(root);
-    const normalized = pathNorm.replace(rootNorm, "") || "/";
+    // 规范化后直接转小写再比较与截取，跨平台一致（Windows 盘符/路径大小写、Mac/Linux 均适用）
+    const pathNorm = normalizePathForCompare(path).toLowerCase();
+    const rootNorm = normalizePathForCompare(root).toLowerCase();
+    let normalized: string;
+    if (pathNorm.startsWith(rootNorm)) {
+      normalized = pathNorm.slice(rootNorm.length).replace(/^\/?/, "/") || "/";
+    } else {
+      normalized = pathNorm.replace(rootNorm, "") || "/";
+    }
+    if (!normalized.startsWith("/")) normalized = "/" + normalized;
     const hasSrcDir = existsSync(resolve(root, "src"));
 
     const configDir = matchConfigDirFromNormalizedPath(normalized, hasSrcDir);

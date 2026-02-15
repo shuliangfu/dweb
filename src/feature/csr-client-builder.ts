@@ -1139,7 +1139,7 @@ export async function prepareClientBuildEntry(
   const routesDirRaw = routerConfig.routesDir || "./src/routes";
   const routesDir = routesDirRaw.replace(/^\.\/?/, "") || routesDirRaw;
   const routesDirPath = join(cwd(), routesDir);
-  const srcDir = join(routesDirPath, "..");
+  const srcDir = join(routesDirPath, "../");
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
 
   const renderConfig = (config.render || {}) as {
@@ -1156,7 +1156,12 @@ export async function prepareClientBuildEntry(
   const layoutPathTsx = join(routesDirPath, "_layout.tsx");
   const hasLayout = await exists(layoutPathTsx);
   const hmrCssEntries = getHmrCssEntries(container);
-  const clientDepPath = join(srcDir, CLIENT_DEP_FILENAME);
+  const clientDepPath = join(resolve(srcDir), CLIENT_DEP_FILENAME);
+
+  // relative
+  // resolve
+
+  console.log({ routesDirPath, srcDir, layoutPathTsx, hasLayout, hmrCssEntries, clientDepPath });
 
   // 每次构建都刷新 _client.dep.tsx
   const clientDepCode = generateClientDepContent(

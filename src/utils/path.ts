@@ -17,7 +17,7 @@ import { cwd, relative, resolve } from "../core/runtime-adapter.ts";
  * @param p 路径
  * @returns 规范化后的路径字符串
  */
-function normalizePathForCompare(p: string): string {
+export function normalizePathForCompare(p: string): string {
   const s = resolve(p).replace(/\\/g, "/");
   return s.replace(/\/\.\//g, "/").replace(/\/+$/g, "");
 }
@@ -67,15 +67,6 @@ export function pathForLog(
   return absOrRelPath;
 }
 
-/**
- * 规范化路径用于字符串比较（导出供需要额外逻辑的模块使用）
- *
- * 统一斜杠并折叠 /./ 与 /../，便于路径比较。
- *
- * @param p 路径
- * @returns 规范化后的路径字符串
- */
-export { normalizePathForCompare };
 
 /**
  * 从任意路径提取与 ROUTE_LOADERS key 一致的 component 路径（Windows 兼容）
