@@ -176,17 +176,19 @@ export async function loadRouteModule(
   },
 ): Promise<Record<string, unknown> | null> {
   const cwdPath = cwd();
+  // 统一为正向斜杠，避免 Windows 下 realPath/pathToFileURL 因反斜杠导致解析差异
+  const pathInput = filePath.replace(/\\/g, "/");
 
   try {
     // 解析为绝对路径并校验在项目内，防止路径穿越
     let absPath: string;
-    if (filePath.startsWith("file://")) {
-      absPath = decodeURIComponent(new URL(filePath).pathname);
+    if (pathInput.startsWith("file://")) {
+      absPath = decodeURIComponent(new URL(pathInput).pathname);
       if (absPath.match(/^\/[A-Za-z]:/)) absPath = absPath.slice(1);
-    } else if (filePath.startsWith("/") || filePath.match(/^[A-Za-z]:/)) {
-      absPath = await realPath(filePath);
+    } else if (pathInput.startsWith("/") || pathInput.match(/^[A-Za-z]:/)) {
+      absPath = await realPath(pathInput);
     } else {
-      absPath = await realPath(join(cwdPath, filePath));
+      absPath = await realPath(join(cwdPath, pathInput));
     }
 
     if (!isPathWithinProject(absPath, cwdPath)) {
@@ -239,7 +241,8 @@ export async function loadRouteModule(
       );
       try {
         await writeTextFile(tempPath, stripped);
-        moduleUrl = pathToFileURL(tempPath).href;
+        // Windows：用正向斜杠生成 file URL，避免动态 import 解析差异
+        moduleUrl = pathToFileURL(tempPath.replace(/\\/g, "/")).href;
         const mod = (await import(moduleUrl)) as Record<string, unknown>;
 
         // 收集 CSS 内容（与 cssEntries 顺序一致）
@@ -267,8 +270,8 @@ export async function loadRouteModule(
       }
     }
 
-    // 无 CSS 导入：直接用源文件 URL 加载
-    moduleUrl = pathToFileURL(absPath).href;
+    // 无 CSS 导入：直接用源文件 URL 加载（Windows 下用 normalizedPath 保证 file URL 一致）
+    moduleUrl = pathToFileURL(normalizedPath).href;
 
     // 开发模式：通过 ?t=version 绕过 import 缓存（仅 Bun；Deno 下 file: URL 带 query 会触发 ERR_MODULE_NOT_FOUND）
     const env = getEnv("DENO_ENV") || getEnv("BUN_ENV") || getEnv("NODE_ENV");
