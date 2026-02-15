@@ -1060,10 +1060,11 @@ export async function ensureClientEntryFile(
   const routerConfig = (config.router || {}) as { routesDir?: string };
   const routesDir = routerConfig.routesDir || "./src/routes";
   const routesDirPath = join(cwd(), routesDir);
-  // Windows 兼容：先统一反斜杠为正斜杠，再提取 src 目录
-  const srcDir =
+  // Windows 兼容：先统一反斜杠为正斜杠，再提取 src 目录；用 resolve 规范化路径，去除 ./
+  const srcDirRaw =
     routesDirPath.replace(/\\/g, "/").replace(/\/routes\/?$/, "") ||
     routesDirPath;
+  const srcDir = resolve(srcDirRaw);
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
 
   const renderConfig = (config.render || {}) as {
@@ -1140,10 +1141,11 @@ export async function prepareClientBuildEntry(
   const routerConfig = (config.router || {}) as { routesDir?: string };
   const routesDir = routerConfig.routesDir || "./src/routes";
   const routesDirPath = join(cwd(), routesDir);
-  // Windows 兼容：先统一反斜杠为正斜杠，再提取 src 目录
-  const srcDir =
+  // Windows 兼容：先统一反斜杠为正斜杠，再提取 src 目录；用 resolve 规范化路径，去除 ./
+  const srcDirRaw =
     routesDirPath.replace(/\\/g, "/").replace(/\/routes\/?$/, "") ||
     routesDirPath;
+  const srcDir = resolve(srcDirRaw);
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
 
   const renderConfig = (config.render || {}) as {
@@ -1337,10 +1339,11 @@ export async function buildClientScript(
 
   const routesDir = routerConfig.routesDir || "./src/routes";
   const routesDirPath = join(cwd(), routesDir);
-  // Windows 兼容：先统一反斜杠为正斜杠，再提取 src 目录
-  const srcDir =
+  // Windows 兼容：先统一反斜杠为正斜杠，再提取 src 目录；用 resolve 规范化路径，去除 ./
+  const srcDirRaw =
     routesDirPath.replace(/\\/g, "/").replace(/\/routes\/?$/, "") ||
     routesDirPath;
+  const srcDir = resolve(srcDirRaw);
 
   // 生成临时入口文件路径
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);

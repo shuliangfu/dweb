@@ -170,7 +170,7 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
   if (overrideEntry != null) {
     entry = overrideEntry.startsWith(".")
       ? overrideEntry
-      : "./" + overrideEntry;
+      : join(".", overrideEntry);
   } else {
     entry = "src/main.ts";
     const mainPath = getMainModulePath();
@@ -178,9 +178,9 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
       const cwdPath = cwd();
       entry = relative(cwdPath, mainPath);
       if (entry.startsWith("..")) {
-        entry = "./" + entry;
+        entry = join(".", entry);
       } else if (!entry.startsWith(".")) {
-        entry = "./" + entry;
+        entry = join(".", entry);
       }
     }
   }
@@ -215,11 +215,11 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
     const appDirNameBuilt = parts.length === 3 ? parts[1]! : "";
     return {
       server: isSingleAppBuilt
-        ? `./${outputDir}`
-        : `./${outputDir}/${appDirNameBuilt}`,
+        ? join(".", outputDir)
+        : join(".", outputDir, appDirNameBuilt),
       client: isSingleAppBuilt
-        ? `${outputDir}/client`
-        : `${outputDir}/${appDirNameBuilt}/client`,
+        ? join(outputDir, "client")
+        : join(outputDir, appDirNameBuilt, "client"),
     };
   }
   // 段数 1：main.ts → 单应用
@@ -232,8 +232,12 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
     : (parts.length === 2 && parts[0] !== "src")
     ? parts[0]!
     : "";
-  const server = isSingleApp ? "./dist" : `./dist/${appDirName}`;
-  const client = isSingleApp ? "dist/client" : `dist/${appDirName}/client`;
+  const server = isSingleApp
+    ? join(".", "dist")
+    : join(".", "dist", appDirName);
+  const client = isSingleApp
+    ? join("dist", "client")
+    : join("dist", appDirName, "client");
   return { server, client };
 }
 

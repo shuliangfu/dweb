@@ -10,7 +10,13 @@
 import { Server, type ServerOptions } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import { pluginEvents } from "../core/plugin-events.ts";
-import { existsSync, getEnv } from "../core/runtime-adapter.ts";
+import {
+  cwd,
+  existsSync,
+  getEnv,
+  relative,
+  resolve,
+} from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { $t } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
@@ -66,11 +72,13 @@ export function initializeServer(
     let defaultWatchPaths = ["./src"];
     if (config.router?.routesDir) {
       // 从 routesDir 推断 src 目录（取 routesDir 的父目录）
-      // 例如：./src/routes -> ./src（Windows 兼容：先统一反斜杠再匹配）
+      // 例如：./src/routes -> ./src（Windows 兼容：先统一反斜杠再匹配）；用 resolve/relative 规范化，避免 dir/./dir
       const routesDir = config.router.routesDir as string;
-      const srcDir =
+      const srcDirRaw =
         routesDir.replace(/\\/g, "/").replace(/\/routes\/?$/, "") || "./src";
-      defaultWatchPaths = [srcDir];
+      const srcDirResolved = resolve(cwd(), srcDirRaw);
+      const srcDirRel = relative(cwd(), srcDirResolved) || ".";
+      defaultWatchPaths = [srcDirRel];
     }
 
     const userDevConfig = serverConfig.dev || {};

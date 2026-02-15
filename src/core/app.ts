@@ -624,13 +624,12 @@ export class App extends EventEmitter implements IApp {
   private async _registerRoutesMiddleware(config: AppConfig): Promise<void> {
     const routerConfig = (config.router || {}) as { routesDir?: string };
     const routesDir = routerConfig.routesDir || "./src/routes";
-    const middlewarePath = join(routesDir, "_middleware.ts");
-    const absPath = join(cwd(), routesDir, "_middleware.ts");
+    const absPath = resolve(cwd(), routesDir, "_middleware.ts");
     if (!(await exists(absPath))) {
       return;
     }
     try {
-      const middleware = await this._loadMiddlewareFromFile(middlewarePath);
+      const middleware = await this._loadMiddlewareFromFile(absPath);
       registerMiddleware(
         this.container,
         middleware,

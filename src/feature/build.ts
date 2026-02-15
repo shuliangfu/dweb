@@ -21,6 +21,7 @@ import {
   cwd,
   exists,
   getEnv,
+  join,
   relative,
   resolve,
 } from "../core/runtime-adapter.ts";
@@ -205,19 +206,25 @@ export async function runBuildWithBuilder(
     const mainModulePath = getMainModulePath();
     if (mainModulePath) {
       serverEntry = relative(cwdPath, mainModulePath);
-      if (serverEntry.startsWith("..")) serverEntry = "./" + serverEntry;
-      else if (!serverEntry.startsWith(".")) serverEntry = "./" + serverEntry;
+      if (serverEntry.startsWith("..")) serverEntry = join(".", serverEntry);
+      else if (!serverEntry.startsWith(".")) {
+        serverEntry = join(".", serverEntry);
+      }
     } else {
-      serverEntry = "./src/main.ts";
+      serverEntry = join(".", "src", "main.ts");
     }
   }
 
   // 统一检查入口是否存在，不存在则抛出（默认 src/main.ts 时尝试 main.ts）
   let absEntry = resolve(cwdPath, serverEntry);
-  if (!(await exists(absEntry)) && serverEntry === "./src/main.ts") {
+  const defaultSrcMain = join(".", "src", "main.ts");
+  if (
+    !(await exists(absEntry)) &&
+    (serverEntry === "./src/main.ts" || serverEntry === defaultSrcMain)
+  ) {
     const rootMain = resolve(cwdPath, "main.ts");
     if (await exists(rootMain)) {
-      serverEntry = "./main.ts";
+      serverEntry = join(".", "main.ts");
       absEntry = rootMain;
     }
   }
@@ -236,7 +243,7 @@ export async function runBuildWithBuilder(
   const serverOutputDir = serverConfig.output ??
     getInferredBuildOutputDirs().server;
   const serverOutput = useNativeCompile
-    ? `${serverOutputDir}/server`
+    ? join(serverOutputDir, "server")
     : serverOutputDir;
 
   const esbuildServerConfig: ServerConfig = {
