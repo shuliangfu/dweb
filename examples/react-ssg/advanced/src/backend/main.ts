@@ -3,6 +3,7 @@
  * 配置由框架自动加载 common/config + src/backend/config 并合并
  */
 
+import { BACKEND_PORT } from "./config/main.ts";
 import { App } from "@dreamer/dweb";
 import { staticPlugin } from "@dreamer/plugins/static";
 import { tailwindPlugin } from "@dreamer/plugins/tailwindcss";
@@ -22,5 +23,5 @@ app.registerPlugin(staticPlugin({
   ],
 }));
 
-console.log("🚀 后台管理启动: http://localhost:3001");
+console.log(`🚀 后台管理启动: http://localhost:${BACKEND_PORT}`);
 app.start();

@@ -6,13 +6,16 @@
 import { commonConfig } from "@common/config/main.ts";
 import type { AppConfig } from "@dreamer/dweb";
 
+/** 后端端口（与 e2e createAdvancedExampleBrowserSuite 一致，避免冲突） */
+export const BACKEND_PORT = 3040;
+
 /** 后端配置 */
 const config: AppConfig = {
   name: "react-csr-advanced-example-backend",
   version: commonConfig.version,
 
   server: {
-    port: 3040,
+    port: BACKEND_PORT,
     host: "127.0.0.1",
     dev: {
       hmr: { enabled: true, path: "/__hmr" },

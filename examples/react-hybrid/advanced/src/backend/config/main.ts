@@ -6,13 +6,16 @@
 import { commonConfig } from "@common/config/main.ts";
 import type { AppConfig } from "@dreamer/dweb";
 
+/** 后端端口（与 e2e 一致，避免冲突） */
+export const BACKEND_PORT = 3042;
+
 /** 后端配置 */
 const config: AppConfig = {
   name: "react-hybrid-advanced-example-backend",
   version: commonConfig.version,
 
   server: {
-    port: 3042,
+    port: BACKEND_PORT,
     host: "127.0.0.1",
     dev: {
       hmr: { enabled: true, path: "/__hmr" },

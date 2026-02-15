@@ -46,11 +46,13 @@ const DWEB_ROOT = (() => {
 })();
 
 /**
- * 各示例使用的端口（避免并行测试时端口冲突）
- * preact-csr=3001, preact-hybrid=3002, react-csr=3003, react-hybrid=3004
- * preact-ssr=3005, preact-ssg=3006, react-ssr=3007, react-ssg=3008
- * preact-hybrid-flat=3009, react-hybrid-flat=3010
- * view-csr=3011, view-hybrid=3012, view-ssr=3013, view-ssg=3014, view-hybrid-flat=3015
+ * 各示例使用的端口（避免并行测试时端口冲突，CI/Windows 下可并行或同机多任务）
+ * Basic 单端口: preact-csr=3001, preact-hybrid=3002, react-csr=3003, react-hybrid=3004,
+ *   preact-ssr=3005, preact-ssg=3006, react-ssr=3007, react-ssg=3008,
+ *   preact-hybrid-flat=3009, react-hybrid-flat=3010,
+ *   view-csr=3011, view-hybrid=3012, view-ssr=3013, view-ssg=3014, view-hybrid-flat=3015
+ * Advanced 双端口见下方 createAdvancedExampleBrowserSuite（3020-3049）
+ * server-request.test 使用 PORT=39995，与上述端口错开
  */
 const E2E_PORTS: Record<string, number> = {
   "preact-csr": 3001,

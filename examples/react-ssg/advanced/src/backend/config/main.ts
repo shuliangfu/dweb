@@ -6,13 +6,16 @@
 import { commonConfig } from "@common/config/main.ts";
 import type { AppConfig } from "@dreamer/dweb";
 
+/** 后端端口（与 e2e 一致，避免冲突） */
+export const BACKEND_PORT = 3046;
+
 /** 后端配置 */
 const config: AppConfig = {
   name: "react-ssg-advanced-example-backend",
   version: commonConfig.version,
 
   server: {
-    port: 3046,
+    port: BACKEND_PORT,
     host: "127.0.0.1",
     dev: {
       hmr: { enabled: true, path: "/__hmr" },

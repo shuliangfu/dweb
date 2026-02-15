@@ -13,12 +13,16 @@ import {
   IS_DENO,
   join,
   resolve,
+  setEnv,
   type SpawnedProcess,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 
-/** preact-ssr 示例端口（与 browser-render 中 preact-ssr 端口一致） */
-const E2E_PORT = 3005;
+/**
+ * server-request 专用端口，与 browser-render 中 preact-ssr basic（3005）错开，
+ * 避免 CI（尤其 Windows）并行或同机多任务时端口冲突
+ */
+const E2E_PORT = 39995;
 
 describe("e2e: 服务器请求", () => {
   let originalCwd: string | undefined;
@@ -46,6 +50,7 @@ describe("e2e: 服务器请求", () => {
   });
 
   it("应能启动服务器并返回 HTML", async () => {
+    setEnv("PORT", String(E2E_PORT));
     const entry = join(exampleDir, "src", "main.ts");
     const args = IS_DENO ? ["run", "-A", entry] : ["run", entry];
     const cmd = createCommand(execPath(), {
