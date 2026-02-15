@@ -20,6 +20,10 @@ import {
   remove,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
+import { getRepoRoot } from "../setup.ts";
+
+/** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
+const REPO_ROOT = getRepoRoot();
 
 describe("integration: SSG 构建", () => {
   let originalCwd: string;
@@ -27,7 +31,7 @@ describe("integration: SSG 构建", () => {
 
   beforeAll(() => {
     originalCwd = cwd();
-    exampleDir = join(originalCwd, "examples", "preact-ssg", "basic");
+    exampleDir = join(REPO_ROOT, "examples", "preact-ssg", "basic");
     chdir(exampleDir);
   });
 

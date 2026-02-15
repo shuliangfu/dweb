@@ -96,6 +96,45 @@ async function waitForServerReady(
   throw new Error(`服务器 ${maxWaitMs}ms 内未就绪: ${url}`);
 }
 
+/** 带 goto 的 page 形参，用于 gotoWithRetry */
+type PageWithGoto = {
+  goto: (
+    url: string,
+    opts?: { waitUntil?: string; timeout?: number },
+  ) => Promise<unknown>;
+};
+
+/**
+ * 带一次重试的 page.goto，用于缓解 CI 上偶发 ERR_CONNECTION_REFUSED（服务器刚就绪但尚未完全可连）
+ */
+async function gotoWithRetry(
+  page: PageWithGoto,
+  url: string,
+  options: { waitUntil?: string; timeout?: number } = {},
+): Promise<unknown> {
+  try {
+    return await page.goto(url, {
+      waitUntil: "load",
+      timeout: 60000,
+      ...options,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (
+      msg.includes("ERR_CONNECTION_REFUSED") ||
+      msg.includes("Connection refused")
+    ) {
+      await new Promise((r) => setTimeout(r, 2000));
+      return await page.goto(url, {
+        waitUntil: "load",
+        timeout: 60000,
+        ...options,
+      });
+    }
+    throw err;
+  }
+}
+
 /**
  * 构建示例项目（构建前先清空 dist，确保从干净环境开始）
  * @param exampleDir 示例目录
@@ -203,7 +242,7 @@ async function assertBrowserRender(
       const url = `http://127.0.0.1:${port}/`;
       // 使用 page.goto + waitUntil: "load" 替代默认的 networkidle0，避免 WebSocket 等长连接导致永不到达
       if (typeof page.goto === "function") {
-        await page.goto(url, { waitUntil: "load", timeout: 60000 });
+        await gotoWithRetry(page as PageWithGoto, url);
       } else {
         await browser.goto(url);
       }
@@ -410,7 +449,7 @@ async function assertBrowserClickAbout(
 
   const url = `http://127.0.0.1:${port}/`;
   if (typeof page.goto === "function") {
-    await page.goto(url, { waitUntil: "load", timeout: 60000 });
+    await gotoWithRetry(page, url);
   } else {
     await browser.goto(url);
   }
@@ -484,7 +523,7 @@ async function assertBrowserMetadata(
 
   const baseUrl = `http://127.0.0.1:${port}/`;
   if (typeof page.goto === "function") {
-    await page.goto(baseUrl, { waitUntil: "load", timeout: 30000 });
+    await gotoWithRetry(page, baseUrl, { timeout: 30000 });
   } else {
     await browser.goto(baseUrl);
   }
@@ -525,7 +564,7 @@ async function assertBrowserMetadata(
 
   const aboutUrl = `http://127.0.0.1:${port}/about`;
   if (typeof page.goto === "function") {
-    await page.goto(aboutUrl, { waitUntil: "load", timeout: 30000 });
+    await gotoWithRetry(page, aboutUrl, { timeout: 30000 });
   } else {
     await browser.goto(aboutUrl);
   }
@@ -827,10 +866,10 @@ function createBasicExampleBrowserSuite(
       child = startCmd.spawn();
 
       // 轮询等待服务器就绪（Windows CI 较慢）
-      const maxWait = platform() === "windows" ? 60000 : 15000;
+      const maxWait = platform() === "windows" ? 60000 : 25000;
       await waitForServerReady(port, maxWait);
-      // 就绪后再等一小段，避免偶发 ERR_CONNECTION_REFUSED（如 view-hybrid-flat 等启动略慢）
-      await new Promise((r) => setTimeout(r, 1500));
+      // 就绪后再等一段，避免偶发 ERR_CONNECTION_REFUSED（如 view-hybrid-flat 等启动略慢）
+      await new Promise((r) => setTimeout(r, 3000));
     });
 
     afterAll(async () => {

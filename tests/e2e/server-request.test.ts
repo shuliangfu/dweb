@@ -12,17 +12,20 @@ import {
   execPath,
   IS_DENO,
   join,
-  resolve,
   setEnv,
   type SpawnedProcess,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
+import { getRepoRoot } from "../setup.ts";
 
 /**
  * server-request 专用端口，与 browser-render 中 preact-ssr basic（3005）错开，
  * 避免 CI（尤其 Windows）并行或同机多任务时端口冲突
  */
 const E2E_PORT = 39995;
+
+/** 仓库根目录，由 setup 的 getRepoRoot 得到，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
+const REPO_ROOT = getRepoRoot();
 
 describe("e2e: 服务器请求", () => {
   let originalCwd: string | undefined;
@@ -31,7 +34,7 @@ describe("e2e: 服务器请求", () => {
 
   beforeAll(async () => {
     originalCwd = cwd();
-    exampleDir = resolve(originalCwd, "examples", "preact-ssr", "basic");
+    exampleDir = join(REPO_ROOT, "examples", "preact-ssr", "basic");
     chdir(exampleDir);
   });
 

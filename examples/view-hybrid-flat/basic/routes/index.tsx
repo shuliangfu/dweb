@@ -54,9 +54,14 @@ const statusBadgeClasses: Record<ConnectionStatus, string> = {
 const DEBUG = false;
 const debugLog = (...args: unknown[]) => {
   if (
-    DEBUG && typeof globalThis !== "undefined" && (globalThis as any).console
+    DEBUG &&
+    typeof globalThis !== "undefined" &&
+    (globalThis as { console?: Console }).console
   ) {
-    (globalThis as any).console.log("[Socket.IO 调试]", ...args);
+    (globalThis as { console: Console }).console.log(
+      "[Socket.IO 调试]",
+      ...args,
+    );
   }
 };
 
@@ -87,10 +92,13 @@ export default function Home() {
   const [input, setInput] = createSignal("");
 
   createEffect(() => {
-    // 仅在浏览器环境创建客户端（避免 SSR 时访问 location）
-    const origin = typeof globalThis !== "undefined" && globalThis.location
-      ? globalThis.location.origin
-      : "http://localhost:3000";
+    // 仅在浏览器环境创建并连接客户端，SSR 时直接 return，避免服务端向 fallback localhost 发起连接导致 Connection refused
+    if (typeof document === "undefined") return;
+
+    const origin = typeof globalThis !== "undefined" &&
+        (globalThis as { location?: Location }).location
+      ? (globalThis as { location: Location }).location.origin
+      : "http://localhost:3015";
 
     debugLog(
       "连接目标:",
@@ -159,7 +167,7 @@ export default function Home() {
       client.disconnect();
       clientRef.current = null;
     });
-  });
+  }, []);
 
   /** 发送一条消息到服务端（事件名 chat-message，需服务端监听并可选回发 chat-response） */
   const handleSend = () => {
@@ -223,62 +231,64 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Socket.IO 客户端示例 */}
+      {/* Socket.IO 客户端示例：整块包成动态子节点，仅此槽位随 status/input/messages 更新，避免整页重跑（含其他 section） */}
       <section class={classes.socketSection}>
         <h2 class={classes.socketTitle}>Socket.IO 客户端示例</h2>
         <p class={classes.socketDesc}>
           使用 @dreamer/socket-io 的 Client：连接、自动重连、发送
           chat-message、接收 chat-response
         </p>
-        <div class={classes.statusBadgeWrap}>
-          <span
-            class={`${classes.statusBadge} ${statusBadgeClasses[status()]}`}
-          >
-            {statusLabel[status()]}
-          </span>
-        </div>
-        <div class={classes.inputWrap}>
-          <input
-            type="text"
-            class={classes.input}
-            placeholder="输入消息并发送 (chat-message)"
-            value={input()}
-            onInput={(e) => setInput((e.target as HTMLInputElement).value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          />
-          <button
-            type="button"
-            class={classes.sendBtn}
-            onClick={handleSend}
-          >
-            发送
-          </button>
-        </div>
-        <div class={classes.messageBox}>
-          {/* 用箭头函数包成动态子节点，仅此槽位随 messages 更新，避免整组件重跑 */}
-          {() =>
-            messages().length === 0
-              ? (
-                <p class={classes.messageEmpty}>
-                  暂无消息。发送后显示在这里。
-                </p>
-              )
-              : (
-                <ul class={classes.messageList}>
-                  {messages().map((msg, i) => (
-                    <li
-                      key={`${msg.at}-${i}`}
-                      class={msg.type === "sent"
-                        ? classes.messageSent
-                        : classes.messageReceived}
-                    >
-                      {msg.type === "sent" ? "→ " : "← "}
-                      {msg.text}
-                    </li>
-                  ))}
-                </ul>
-              )}
-        </div>
+        {() => (
+          <>
+            <div class={classes.statusBadgeWrap}>
+              <span
+                class={`${classes.statusBadge} ${statusBadgeClasses[status()]}`}
+              >
+                {statusLabel[status()]}
+              </span>
+            </div>
+            <div class={classes.inputWrap}>
+              <input
+                type="text"
+                class={classes.input}
+                placeholder="输入消息并发送 (chat-message)"
+                value={input()}
+                onInput={(e) => setInput((e.target as HTMLInputElement).value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              />
+              <button
+                type="button"
+                class={classes.sendBtn}
+                onClick={handleSend}
+              >
+                发送
+              </button>
+            </div>
+            <div class={classes.messageBox}>
+              {messages().length === 0
+                ? (
+                  <p class={classes.messageEmpty}>
+                    暂无消息。发送后显示在这里。
+                  </p>
+                )
+                : (
+                  <ul class={classes.messageList}>
+                    {messages().map((msg, i) => (
+                      <li
+                        key={`${msg.at}-${i}`}
+                        class={msg.type === "sent"
+                          ? classes.messageSent
+                          : classes.messageReceived}
+                      >
+                        {msg.type === "sent" ? "→ " : "← "}
+                        {msg.text}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+            </div>
+          </>
+        )}
       </section>
     </div>
   );

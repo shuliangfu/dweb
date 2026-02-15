@@ -1058,9 +1058,9 @@ export async function ensureClientEntryFile(
   const logger = getLogger(container);
 
   const routerConfig = (config.router || {}) as { routesDir?: string };
-  const routesDir = routerConfig.routesDir || "./src/routes";
+  const routesDirRaw = routerConfig.routesDir || "./src/routes";
+  const routesDir = routesDirRaw.replace(/^\.\/?/, "") || routesDirRaw;
   const routesDirPath = join(cwd(), routesDir);
-  // 用 join(routesDirPath, "..") 得到 routes 的父目录，避免 resolve、不产生 dir/./dir
   const srcDir = join(routesDirPath, "..");
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
 
@@ -1136,9 +1136,9 @@ export async function prepareClientBuildEntry(
 }> {
   const logger = getLogger(container);
   const routerConfig = (config.router || {}) as { routesDir?: string };
-  const routesDir = routerConfig.routesDir || "./src/routes";
+  const routesDirRaw = routerConfig.routesDir || "./src/routes";
+  const routesDir = routesDirRaw.replace(/^\.\/?/, "") || routesDirRaw;
   const routesDirPath = join(cwd(), routesDir);
-  // 用 join(routesDirPath, "..") 得到 routes 的父目录，避免 resolve、不产生 dir/./dir
   const srcDir = join(routesDirPath, "..");
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
 
@@ -1331,12 +1331,11 @@ export async function buildClientScript(
   // 获取客户端入口文件路径
   const routerConfig = (config.router || {}) as { routesDir?: string };
 
-  const routesDir = routerConfig.routesDir || "./src/routes";
+  const routesDirRaw = routerConfig.routesDir || "./src/routes";
+  const routesDir = routesDirRaw.replace(/^\.\/?/, "") || routesDirRaw;
   const routesDirPath = join(cwd(), routesDir);
-  // 用 join(routesDirPath, "..") 得到 routes 的父目录，避免 resolve、不产生 dir/./dir
   const srcDir = join(routesDirPath, "..");
 
-  // 生成临时入口文件路径
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
 
   logger.debug($t("log.clientScriptBuilding", {
