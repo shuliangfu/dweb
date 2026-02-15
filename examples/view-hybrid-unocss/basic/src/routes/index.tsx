@@ -250,27 +250,29 @@ export default function Home() {
           </button>
         </div>
         <div class={classes.messageBox}>
-          {messages().length === 0
-            ? (
-              <p class={classes.messageEmpty}>
-                暂无消息。发送后显示在这里。
-              </p>
-            )
-            : (
-              <ul class={classes.messageList}>
-                {messages().map((msg, i) => (
-                  <li
-                    key={`${msg.at}-${i}`}
-                    class={msg.type === "sent"
-                      ? classes.messageSent
-                      : classes.messageReceived}
-                  >
-                    {msg.type === "sent" ? "→ " : "← "}
-                    {msg.text}
-                  </li>
-                ))}
-              </ul>
-            )}
+          {/* 用箭头函数包成动态子节点，仅此槽位随 messages 更新，避免整组件重跑 */}
+          {() =>
+            messages().length === 0
+              ? (
+                <p class={classes.messageEmpty}>
+                  暂无消息。发送后显示在这里。
+                </p>
+              )
+              : (
+                <ul class={classes.messageList}>
+                  {messages().map((msg, i) => (
+                    <li
+                      key={`${msg.at}-${i}`}
+                      class={msg.type === "sent"
+                        ? classes.messageSent
+                        : classes.messageReceived}
+                    >
+                      {msg.type === "sent" ? "→ " : "← "}
+                      {msg.text}
+                    </li>
+                  ))}
+                </ul>
+              )}
         </div>
       </section>
     </div>

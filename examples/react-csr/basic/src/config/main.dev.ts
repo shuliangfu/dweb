@@ -12,7 +12,7 @@ const config: AppConfig = {
   render: { debug: false },
   router: { debug: false },
   build: {
-    client: { debug: false },
+    client: { debug: true },
     server: { debug: false },
   },
   logger: {

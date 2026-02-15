@@ -75,12 +75,14 @@ describe("jsr-versions", () => {
       console.log("  render:", versions.render);
       console.log("  router:", versions.router);
       console.log("  plugins:", versions.plugins);
+      console.log("  view:", versions.view);
       expect(versions.dweb).toBeTruthy();
       expect(versions.render).toBeTruthy();
       expect(versions.router).toBeTruthy();
       expect(versions.plugins).toBeTruthy();
+      expect(versions.view).toBeTruthy();
       // 稳定版不应含 -beta、-alpha 等
-      for (const [k, v] of Object.entries(versions)) {
+      for (const [, v] of Object.entries(versions)) {
         expect(v).not.toMatch(/-\w+\.?\d*$/);
       }
     });
@@ -92,10 +94,12 @@ describe("jsr-versions", () => {
       console.log("  render:", versions.render);
       console.log("  router:", versions.router);
       console.log("  plugins:", versions.plugins);
+      console.log("  view:", versions.view);
       expect(versions.dweb).toBeTruthy();
       expect(versions.render).toBeTruthy();
       expect(versions.router).toBeTruthy();
       expect(versions.plugins).toBeTruthy();
+      expect(versions.view).toBeTruthy();
     });
 
     it("fetchDreamerVersions(useBeta=true) 当稳定版比 beta 新时应返回稳定版", async () => {

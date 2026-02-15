@@ -1219,13 +1219,38 @@ export async function prepareClientBuildEntry(
 }
 
 /**
+ * 当 build.client.debug 为 true 时，包装 logger 使 esbuild 的 debug 日志同时打到 console，
+ * 不依赖应用 logger 的 level 配置，便于排查 resolver/构建问题。
+ *
+ * @param debug 是否启用构建调试
+ * @param logger 应用 logger
+ * @returns 原 logger 或带 console 输出的包装 logger
+ */
+function wrapLoggerForBuildDebug(
+  debug: boolean,
+  logger?: {
+    debug: (msg: string, data?: unknown) => void;
+    info: (msg: string, data?: unknown) => void;
+  },
+): typeof logger {
+  if (!debug || !logger) return logger;
+  return {
+    ...logger,
+    debug: (msg: string, data?: unknown) => {
+      console.log("[esbuild]", msg, data !== undefined ? data : "");
+      logger.debug(msg, data);
+    },
+  };
+}
+
+/**
  * 开发模式构建：创建 context + rebuild，缓存 builder 供后续增量 rebuild
  *
  * @param entryPath 入口文件路径（_client.tsx）
  * @param outputDir 输出目录（用于 esbuild 路径解析，write: false 时不写盘）
  * @param engine 渲染引擎
  * @param debug 是否启用 esbuild 调试日志
- * @param logger 日志实例，传入后 esbuild 的 debug/info 等均通过此 logger 输出；需 logger.level 为 debug 才能看到 resolver 等调试日志
+ * @param logger 日志实例，传入后 esbuild 的 debug/info 等均通过此 logger 输出；build.client.debug 为 true 时会同时打到 console
  * @returns 构建结果（含 outputContents）
  */
 async function doDevBuild(
@@ -1240,12 +1265,14 @@ async function doDevBuild(
 ): Promise<{
   outputContents?: Array<{ path: string; text: string; contents?: Uint8Array }>;
 }> {
+  const buildLogger = wrapLoggerForBuildDebug(debug ?? false, logger);
+
   const builder = new BuilderClient({
     entry: entryPath,
     output: outputDir,
     engine,
     debug,
-    logger,
+    logger: buildLogger,
     bundle: {
       minify: false,
       sourcemap: true,
@@ -1432,12 +1459,14 @@ export async function buildClientScript(
 
       const prodBundleAlias = userBundleConfig.alias;
 
+      const buildLogger = wrapLoggerForBuildDebug(buildDebug, logger);
+
       const builder = new BuilderClient({
         entry: tempClientEntryPath,
         output: finalOutputDir,
         engine,
         debug: buildDebug,
-        logger,
+        logger: buildLogger,
         bundle: {
           minify: shouldMinify,
           sourcemap: shouldSourcemap,

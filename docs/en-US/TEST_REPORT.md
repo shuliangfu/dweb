@@ -17,14 +17,14 @@
 
 ### Overall Statistics
 
-| Metric           | Count |
-| ---------------- | ----- |
-| Test files       | 48    |
-| Total test cases | 692   |
-| Passed           | 689   |
-| Ignored          | 3     |
-| Failed           | 0     |
-| Pass rate        | 100%  |
+| Metric           | Count  |
+| ---------------- | ------ |
+| Test files       | 48     |
+| Total test cases | 692    |
+| Passed           | 689    |
+| Ignored          | 3      |
+| Failed           | 0      |
+| Pass rate        | 100%   |
 | Execution time   | ~1m33s |
 
 ### Test File Statistics

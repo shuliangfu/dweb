@@ -8,6 +8,16 @@ and this project adheres to
 
 ---
 
+## [3.0.74] - 2026-02-15
+
+### Changed
+
+- **Dependencies**: Bump `@dreamer/view` to `^1.0.9` (input value fix with
+  vIf/vShow directives). Bump `@dreamer/render` to `^1.0.21` (view engine
+  alignment).
+
+---
+
 ## [3.0.73] - 2026-02-15
 
 ### Added

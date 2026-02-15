@@ -1938,11 +1938,10 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.73] - 2026-02-15
+### [3.0.74] - 2026-02-15
 
-**新增**：View 模板引擎支持（@dreamer/view 作为 render 适配器；view-hybrid /
-view-csr 示例）。 **变更**：授权许可为 Apache
-2.0，署名已更新（LICENSE、NOTICE）。
+**变更**：将 `@dreamer/view` 升级为 `^1.0.9`（vIf/vShow 导致的 input value
+修复）。 将 `@dreamer/render` 升级为 `^1.0.21`（与 view 引擎对齐）。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

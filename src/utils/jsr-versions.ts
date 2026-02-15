@@ -130,11 +130,13 @@ export interface DwebConfigVersions {
 /**
  * 批量获取 @dreamer/* 包版本（用于 init 生成 deno.json）
  *
- * - useBeta=false：全部从 JSR 获取最新稳定版
- * - useBeta=true：全部从 JSR 获取 beta 与 stable 中较新版本
+ * - useBeta=false：全部从 JSR 获取最新稳定版（不含 beta/alpha/rc）
+ * - useBeta=true：从 JSR 获取 beta 与 stable 中较新版本
  *
- * @param useBeta 是否使用 beta 最新版
- * @param dwebConfig 可选，dweb 项目 deno.json 配置（useBeta=false 时用于 render/router/plugins）
+ * view 模板引擎：与 dweb/render/router/plugins 一致，无 --beta 时仅取稳定版，有 --beta 时可取 beta 版。
+ *
+ * @param useBeta 是否使用 beta 最新版（--beta 参数）
+ * @param dwebConfig 可选，dweb 项目 deno.json 配置（useBeta=false 时用于 dweb 兜底）
  */
 export async function fetchDreamerVersions(
   useBeta: boolean,
@@ -144,6 +146,7 @@ export async function fetchDreamerVersions(
   render: string;
   router: string;
   plugins: string;
+  view: string;
 }> {
   if (useBeta) {
     const [
@@ -151,19 +154,23 @@ export async function fetchDreamerVersions(
       renderBeta,
       routerBeta,
       pluginsBeta,
+      viewBeta,
       dwebStable,
       renderStable,
       routerStable,
       pluginsStable,
+      viewStable,
     ] = await Promise.all([
       fetchJsrLatestVersion("@dreamer/dweb", true),
       fetchJsrLatestVersion("@dreamer/render", true),
       fetchJsrLatestVersion("@dreamer/router", true),
       fetchJsrLatestVersion("@dreamer/plugins", true),
+      fetchJsrLatestVersion("@dreamer/view", true),
       fetchJsrLatestVersion("@dreamer/dweb", false),
       fetchJsrLatestVersion("@dreamer/render", false),
       fetchJsrLatestVersion("@dreamer/router", false),
       fetchJsrLatestVersion("@dreamer/plugins", false),
+      fetchJsrLatestVersion("@dreamer/view", false),
     ]);
     // 取 beta 与 stable 中较新的版本（如 v1.0.1 > v1.0.0-beta.10 则用 v1.0.1）
     return {
@@ -171,21 +178,29 @@ export async function fetchDreamerVersions(
       render: pickNewer(renderBeta, renderStable) ?? "1.0.0",
       router: pickNewer(routerBeta, routerStable) ?? "1.0.0",
       plugins: pickNewer(pluginsBeta, pluginsStable) ?? "1.0.0",
+      view: pickNewer(viewBeta, viewStable) ?? "1.0.6",
     };
   }
 
-  // useBeta=false：全部从 JSR 获取最新稳定版（render、router、plugins 已发正式版）
-  const [dwebVersion, renderVersion, routerVersion, pluginsVersion] =
-    await Promise.all([
-      fetchJsrLatestVersion("@dreamer/dweb", false),
-      fetchJsrLatestVersion("@dreamer/render", false),
-      fetchJsrLatestVersion("@dreamer/router", false),
-      fetchJsrLatestVersion("@dreamer/plugins", false),
-    ]);
+  // useBeta=false：全部从 JSR 获取最新稳定版（不含预发布版）
+  const [
+    dwebVersion,
+    renderVersion,
+    routerVersion,
+    pluginsVersion,
+    viewVersion,
+  ] = await Promise.all([
+    fetchJsrLatestVersion("@dreamer/dweb", false),
+    fetchJsrLatestVersion("@dreamer/render", false),
+    fetchJsrLatestVersion("@dreamer/router", false),
+    fetchJsrLatestVersion("@dreamer/plugins", false),
+    fetchJsrLatestVersion("@dreamer/view", false),
+  ]);
   return {
     dweb: dwebVersion ?? dwebConfig?.version ?? "3.0.0",
     render: renderVersion ?? "1.0.0",
     router: routerVersion ?? "1.0.0",
     plugins: pluginsVersion ?? "1.0.0",
+    view: viewVersion ?? "1.0.6",
   };
 }

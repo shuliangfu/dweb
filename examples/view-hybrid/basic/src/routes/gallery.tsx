@@ -76,43 +76,44 @@ export default function Gallery() {
         ))}
       </div>
 
-      {/* 大图预览弹层 */}
-      {selectedIndex() !== null && (
-        <div
-          class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-label="图片预览"
-          onClick={() => setSelectedIndex(null)}
-        >
-          <button
-            type="button"
-            class="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
-            aria-label="关闭"
+      {/* 大图预览弹层：用箭头函数包成「动态子节点」，仅此槽位随 selectedIndex 更新，避免整组件重跑导致下方所有图片重新加载 */}
+      {() =>
+        selectedIndex() !== null && (
+          <div
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-label="图片预览"
             onClick={() => setSelectedIndex(null)}
           >
-            <svg
-              class="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+            <button
+              type="button"
+              class="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
+              aria-label="关闭"
+              onClick={() => setSelectedIndex(null)}
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-          <img
-            src={GALLERY_IMAGES[selectedIndex()!].src}
-            alt={GALLERY_IMAGES[selectedIndex()!].alt}
-            class="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
+              <svg
+                class="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <img
+              src={GALLERY_IMAGES[selectedIndex()!].src}
+              alt={GALLERY_IMAGES[selectedIndex()!].alt}
+              class="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        )}
     </div>
   );
 }

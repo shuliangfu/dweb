@@ -259,6 +259,8 @@ interface JsrVersions {
   render: string;
   router: string;
   plugins: string;
+  /** view 模板引擎版本（选择 view 引擎时用于 deno.json imports） */
+  view: string;
 }
 
 function getDenoJson(opts: InitOptions, jsrVersions: JsrVersions): string {
@@ -293,10 +295,11 @@ function getDenoJson(opts: InitOptions, jsrVersions: JsrVersions): string {
     "@unocss/preset-wind3": "npm:@unocss/preset-wind3@66.0.0",
     "@unocss/preset-icons": "npm:@unocss/preset-icons@66.0.0"`
     : "";
+  const viewVersion = jsrVersions.view;
   const engineImports = isPreact
     ? `    "preact": "npm:preact@10.28.3"`
     : isView
-    ? `    "@dreamer/view": "jsr:@dreamer/view@^1.0.1"`
+    ? `    "@dreamer/view": "jsr:@dreamer/view@^${viewVersion}"`
     : `    "react": "npm:react@19.2.4",
     "react-dom": "npm:react-dom@19.2.4",
     "scheduler": "npm:scheduler@0.27.0"`;
@@ -1606,6 +1609,7 @@ export async function generate(opts: InitOptions): Promise<void> {
       render: "1.0.0",
       router: "1.0.0",
       plugins: "1.0.0",
+      view: "1.0.6",
     };
   }
   await writeTextFile(
