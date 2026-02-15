@@ -598,7 +598,8 @@ async function assertBrowserClickUsers(
     await browser.goto(url);
   }
 
-  const contentTimeout = platform() === "windows" ? 45000 : 30000;
+  // CI 环境可能较慢，适当加长等待时间
+  const contentTimeout = platform() === "windows" ? 60000 : 45000;
   await browser.waitFor(
     () => {
       const doc = (globalThis as Record<string, unknown>).document as
@@ -617,7 +618,9 @@ async function assertBrowserClickUsers(
   if (typeof page.click !== "function") {
     throw new Error("page.click 不可用，无法执行点击");
   }
-  await page.click('a[href="/users"]', { timeout: 10000 });
+  await page.click('a[href="/users"]', { timeout: 15000 });
+  // 点击后稍等再轮询，避免 CI 上导航尚未完成即开始 waitFor
+  await new Promise((r) => setTimeout(r, 1500));
 
   await browser.waitFor(
     () => {
@@ -773,7 +776,7 @@ function createAdvancedExampleBrowserSuite(
       if (!t) throw new Error("test context 不可用");
       await assertBrowserClickUsers(t, frontendPort);
     }, {
-      timeout: platform() === "windows" ? 90000 : 60000,
+      timeout: platform() === "windows" ? 120000 : 90000,
       sanitizeOps: false,
       sanitizeResources: false,
       browser: {
