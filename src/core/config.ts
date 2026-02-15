@@ -19,10 +19,11 @@ import type {
 } from "@dreamer/middleware";
 import type { Plugin } from "@dreamer/plugin";
 import type { ServiceContainer } from "@dreamer/service";
+import { pathToFileURL } from "node:url";
 import type { AppConfig } from "../types/app.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $t } from "../utils/i18n.ts";
-import { pathToFileURL } from "node:url";
+import { isPathWithinProject, normalizePathForCompare } from "../utils/path.ts";
 import {
   cwd,
   existsSync,
@@ -32,7 +33,6 @@ import {
   resolve,
   stat,
 } from "./runtime-adapter.ts";
-import { isPathWithinProject, normalizePathForCompare } from "../utils/path.ts";
 
 /** 入口 main 文件扩展名（预编译，避免重复创建） */
 const RE_MAIN_EXT = /main\.(ts|tsx|js|jsx)$/;

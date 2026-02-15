@@ -23,7 +23,6 @@ import {
   getEnv,
   join,
   relative,
-  resolve,
 } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import {
@@ -216,13 +215,13 @@ export async function runBuildWithBuilder(
   }
 
   // 统一检查入口是否存在，不存在则抛出（默认 src/main.ts 时尝试 main.ts）
-  let absEntry = resolve(cwdPath, serverEntry);
+  let absEntry = join(cwdPath, serverEntry);
   const defaultSrcMain = join(".", "src", "main.ts");
   if (
     !(await exists(absEntry)) &&
     (serverEntry === "./src/main.ts" || serverEntry === defaultSrcMain)
   ) {
-    const rootMain = resolve(cwdPath, "main.ts");
+    const rootMain = join(cwdPath, "main.ts");
     if (await exists(rootMain)) {
       serverEntry = join(".", "main.ts");
       absEntry = rootMain;

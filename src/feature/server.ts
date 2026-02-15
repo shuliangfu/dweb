@@ -14,8 +14,8 @@ import {
   cwd,
   existsSync,
   getEnv,
+  join,
   relative,
-  resolve,
 } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { $t } from "../utils/i18n.ts";
@@ -76,7 +76,7 @@ export function initializeServer(
       const routesDir = config.router.routesDir as string;
       const srcDirRaw =
         routesDir.replace(/\\/g, "/").replace(/\/routes\/?$/, "") || "./src";
-      const srcDirResolved = resolve(cwd(), srcDirRaw);
+      const srcDirResolved = join(cwd(), srcDirRaw);
       const srcDirRel = relative(cwd(), srcDirResolved) || ".";
       defaultWatchPaths = [srcDirRel];
     }
