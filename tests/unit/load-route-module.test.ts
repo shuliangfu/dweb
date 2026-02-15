@@ -13,10 +13,11 @@ import "../setup.ts";
 import {
   chdir,
   cwd,
+  dirname,
   ensureDir,
   join,
-  makeTempDir,
   remove,
+  resolve,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
@@ -25,12 +26,23 @@ import {
   loadRouteModule,
 } from "../../src/feature/load-route-module.ts";
 
+/** 从本测试文件路径解析项目根目录，再在 tests/data 下建唯一子目录，避免 Windows 上 makeTempDir 路径导致动态 import 失败 */
+function getLoadRouteTestDir(): string {
+  const u = new URL(import.meta.url);
+  let p = typeof u.pathname === "string" ? u.pathname : "";
+  if (p.length > 1 && /^\/[A-Za-z]:[/\\]/.test(p)) p = p.slice(1);
+  const testFileDir = dirname(decodeURIComponent(p));
+  const projectRoot = resolve(testFileDir, "..", "..");
+  return join(projectRoot, "tests", "data", "load-route-module-" + Date.now());
+}
+
 describe("loadRouteModule (load-route-module.ts)", () => {
   let testDir: string;
   let originalCwd: string;
 
   beforeAll(async () => {
-    testDir = await makeTempDir({ prefix: "dweb-load-route-" });
+    testDir = getLoadRouteTestDir();
+    await ensureDir(testDir);
     originalCwd = cwd();
     chdir(testDir);
   });

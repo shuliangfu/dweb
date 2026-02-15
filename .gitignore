@@ -39,6 +39,7 @@ tests/data/render-ssg-out/
 tests/data/**/*.js
 tests/data/**/*.map
 tests/data/**/*.html
+tests/data/load-route-module-*/
 tests/output/
 tests/unit/**/data/
 tests/integration/**/data/

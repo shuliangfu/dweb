@@ -759,8 +759,8 @@ function createAdvancedExampleBrowserSuite(
         stderr: "inherit",
       });
       childBackend = startBackend.spawn();
-      // Windows CI 上构建+启动较慢，给足等待时间避免“服务器未就绪”
-      const maxWait = platform() === "windows" ? 90000 : 15000;
+      // Windows CI 上构建+启动较慢，给足等待时间（2 分钟）确保服务器就绪
+      const maxWait = platform() === "windows" ? 120000 : 15000;
       await waitForServerReady(backendPort, maxWait);
 
       const startFrontend = createCommand(execPath(), {

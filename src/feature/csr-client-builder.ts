@@ -22,6 +22,7 @@ import type { ServiceContainer } from "@dreamer/service";
 import {
   basename,
   cwd,
+  dirname,
   ensureDir,
   exists,
   getEnv,
@@ -1158,10 +1159,8 @@ export async function prepareClientBuildEntry(
   const hmrCssEntries = getHmrCssEntries(container);
   const clientDepPath = join(resolve(srcDir), CLIENT_DEP_FILENAME);
 
-  // relative
-  // resolve
-
-  console.log({ routesDirPath, srcDir, layoutPathTsx, hasLayout, hmrCssEntries, clientDepPath });
+  // Windows：写入前确保父目录存在，避免 NotFound (os error 3)
+  await ensureDir(dirname(clientDepPath));
 
   // 每次构建都刷新 _client.dep.tsx
   const clientDepCode = generateClientDepContent(
@@ -1175,8 +1174,9 @@ export async function prepareClientBuildEntry(
     $t("log.clientDepRefreshed", { path: pathForLog(clientDepPath) }),
   );
 
-  // _client.tsx 不存在时生成
+  // _client.tsx 不存在时生成（确保父目录存在）
   if (!(await exists(tempClientEntryPath))) {
+    await ensureDir(dirname(tempClientEntryPath));
     const clientEntryCode = generateStaticClientEntry(
       engine,
       components,
