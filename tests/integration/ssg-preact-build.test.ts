@@ -75,5 +75,13 @@ describe("integration: SSG 构建", () => {
     expect(html).toContain("</head>");
     // headInject：Tailwind 插件在 onBuild 中推送 link，应注入到 </head> 前
     expect(html).toMatch(/<link[^>]*href="[^"]*\/assets\/[^"]*\.css"[^>]*>/);
+
+    // 客户端激活：构建后注入的 hydration 数据与客户端脚本
+    expect(html).toContain("globalThis.__DATA__");
+    expect(html).toContain("__DWEB_MODE__");
+    expect(html).toContain('src="/_client.js"');
+    // 首页计数器区域（SSG 客户端激活后可点击）
+    expect(html).toContain("计数器示例");
+    expect(html).toContain("data-counter-value");
   }, { sanitizeOps: false, sanitizeResources: false, timeout: 90000 });
 });

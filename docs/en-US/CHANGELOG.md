@@ -8,6 +8,36 @@ and this project adheres to
 
 ---
 
+## [3.0.77] - 2026-02-16
+
+### Added
+
+- **SSR/SSG client hydration**: SSR and SSG now support optional client-side
+  hydration so the current page can become interactive (e.g. counters, click
+  handlers) without enabling client-side routing. Config: `render.ssr.hydrate`
+  and `render.ssg.hydrate` (default `true`). When enabled, the server injects
+  `globalThis.__DATA__` and the client script (`_client.js`); the client
+  hydrates the current page only. Link clicks perform full page navigation
+  (no SPA routing) by passing `interceptLinks: false` to the client router when
+  `__DWEB_MODE__` is `ssr` or `ssg`. Requires `@dreamer/router@^1.0.10`.
+- **Counter on all basic SSR/SSG examples**: Preact, React, and View basic
+  SSR/SSG examples now include a counter on the index page (hydrate-after-click
+  behavior) and `data-counter-*` attributes for tests. View SSR/SSG use
+  `createSignal` from `@dreamer/view`.
+- **E2E counter test for SSR/SSG**: The browser test “应能通过计数器加一、减一、重置更新数字”
+  is no longer skipped for SSR/SSG basic suites; all basic examples (including
+  preact-ssr, preact-ssg, react-ssr, react-ssg, view-ssr, view-ssg) run the
+  counter interaction test when the page has a counter block.
+
+### Changed
+
+- **Init improvements**: Init flow and templates adjusted for consistency and
+  to support the above hydration and counter behavior across engines and modes.
+- **Dependency**: `@dreamer/router` raised to `^1.0.10` for the client
+  `interceptLinks` option used in SSR/SSG generated client code.
+
+---
+
 ## [3.0.76] - 2026-02-16
 
 ### Fixed

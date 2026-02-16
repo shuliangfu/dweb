@@ -18,13 +18,8 @@
 **三种模板引擎**：
 
 - **View**（推荐）：Dweb 自有视图层（`@dreamer/view`），轻量、无虚拟 DOM、基于
-  signal 的细粒度更新，完整支持 SSR/SSG/CSR/hybrid。内置声明式指令：
-  - **vIf** / **vElseIf** / **vElse**：条件分支渲染（为真时渲染对应分支）；
-  - **vFor**：列表循环渲染；
-  - **vShow**：控制显示/隐藏（通过 `display`）；
-  - **vOnce**：仅渲染一次，后续不随数据更新；
-  - **vCloak**：避免未水合前模板闪现（SSR 时常用，输出 `data-view-cloak`）。
-    支持通过 `registerDirective` 注册自定义指令（如 `v-focus`）。
+  signal 的细粒度更新，完整支持 SSR/SSG/CSR/hybrid。 详情查看
+  https://github.com/shuliangfu/view
 - **Preact**：轻量且兼容 React，示例中常用。
 - **React**：通过 `render.engine: "react"` 完整支持。
 
@@ -1970,16 +1965,12 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.76] - 2026-02-16
+### [3.0.77] - 2026-02-16
 
-**修复**：Windows 多应用配置文件路径：使用 `fileURLToPath` 处理
-`Deno.mainModule`，使配置目录推断正确；`src/backend/main.ts` 等入口的配置 （含
-`config.name`）可正常加载，修复「App name Not configured」及 Windows CI。
-
-**新增**：Session 默认集成、通过 `config.session.cookie` 的 Cookie 配置、
-ServerResponse `binary()` 与 load 返回
-`Response`。**变更**：`getDreamerDwebCacheDir()` 移至 `utils/cache-dirs.ts`
-作为默认 session 存储目录。**移除**：独立 session-middleware 辅助。
+**新增**：SSR/SSG 客户端激活（`render.ssr.hydrate` / `render.ssg.hydrate`）、
+全部 basic SSR/SSG 示例首页计数器（Preact/React/View）、SSR/SSG 套件启用 E2E
+计数器测试。**变更**：Init 优化；`@dreamer/router` 依赖升级为 `^1.0.10`（SSR/SSG
+下不启用客户端路由，链接整页跳转）。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

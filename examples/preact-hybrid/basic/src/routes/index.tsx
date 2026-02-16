@@ -82,6 +82,7 @@ export const metadata = {
 };
 export default function Home() {
   const clientRef = useRef<Client | null>(null);
+  const [count, setCount] = useState(0);
   const [status, setStatus] = useState<ConnectionStatus>("idle");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -223,7 +224,9 @@ export default function Home() {
       </section>
 
       <section class={classes.section}>
-        <h2 class={classes.sectionTitle}>特性</h2>
+        <h2 class="mb-8 text-center text-2xl font-bold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-[#667eea] to-[#764ba2]">
+          特性
+        </h2>
         <div class={classes.featureGrid}>
           <div class={classes.featureCard}>
             <h3 class={classes.featureCardTitle}>文件路由</h3>
@@ -240,6 +243,37 @@ export default function Home() {
           <div class={classes.featureCard}>
             <h3 class={classes.featureCardTitle}>Preact</h3>
             <p>轻量级 React 替代方案</p>
+          </div>
+        </div>
+      </section>
+
+      <section class={classes.socketSection}>
+        <h2 class={classes.socketTitle}>计数器示例</h2>
+        <p class={classes.socketDesc}>加一、减一、重置</p>
+        <div class="flex flex-col items-center justify-center gap-4">
+          <span class="text-2xl font-semibold">count: {count}</span>
+          <div class="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              class="rounded-lg border-0 bg-[#667eea] px-4 py-2 text-white hover:opacity-90"
+              onClick={() => setCount((c) => c + 1)}
+            >
+              加一
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50"
+              onClick={() => setCount((c) => c - 1)}
+            >
+              减一
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2 text-gray-600 hover:bg-gray-200"
+              onClick={() => setCount(0)}
+            >
+              重置
+            </button>
           </div>
         </div>
       </section>

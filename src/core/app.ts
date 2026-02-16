@@ -21,12 +21,15 @@ import {
   exit,
   getEnv,
   join,
+  readdir,
+  readTextFile,
   realPath,
   relative,
   removeSignalListener,
   resolve,
   setEnv,
   type SignalHandler,
+  writeTextFile,
 } from "./runtime-adapter.ts";
 
 import { AssetsProcessor } from "@dreamer/esbuild";
@@ -48,8 +51,12 @@ import {
 import { loadRouteModule } from "../feature/load-route-module.ts";
 import { createRendererCSR } from "../feature/render-csr.ts";
 import { createRendererHybrid } from "../feature/render-hybrid.ts";
-import { createRendererSSG } from "../feature/render-ssg.ts";
+import { createRendererSSG, fileToPathname } from "../feature/render-ssg.ts";
 import { createRendererSSR } from "../feature/render-ssr.ts";
+import {
+  collectClientRoutes,
+  hasContainerElementInHtml,
+} from "../feature/render-utils.ts";
 import { getRender, initializeRender } from "../feature/render.ts";
 import { getRouter, initializeRouter } from "../feature/router.ts";
 import { getServer, initializeServer, startServer } from "../feature/server.ts";
@@ -76,7 +83,10 @@ import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $t, initDwebI18n } from "../utils/i18n.ts";
 import { getLogger, initializeLogger } from "../utils/logger.ts";
-import { isPathWithinProject } from "../utils/path.ts";
+import {
+  extractComponentPathFromRouteFile,
+  isPathWithinProject,
+} from "../utils/path.ts";
 import { getDwebVersion } from "../utils/version.ts";
 import {
   deepMergeConfig,
@@ -579,7 +589,7 @@ export class App extends EventEmitter implements IApp {
           renderLogger.info($t("log.renderModeHybrid"));
         }
       } else if (renderMode === "ssg") {
-        // SSG 模式：从预渲染输出目录提供静态 HTML
+        // SSG 模式：从预渲染输出目录提供静态 HTML，并注册客户端脚本以便激活
         const ssgRenderer = createRendererSSG(
           this.container,
           router,
@@ -587,13 +597,54 @@ export class App extends EventEmitter implements IApp {
         );
         server.setSSRRender(ssgRenderer);
 
+        const clientScriptMiddleware = createClientScriptMiddleware(
+          this.container,
+          mergedConfig,
+        );
+        server.use(clientScriptMiddleware);
+
         if (!this._isBuildMode()) {
           renderLogger.info($t("log.renderModeSsg"));
         }
       } else {
-        // SSR 模式：服务端渲染完整 HTML
-        const ssrRenderer = createRendererSSR(this.container, router);
+        // SSR 模式：服务端渲染完整 HTML + 客户端激活（事件响应）
+        const ssrRenderer = createRendererSSR(
+          this.container,
+          router,
+          mergedConfig,
+        );
         server.setSSRRender(ssrRenderer);
+
+        const clientScriptMiddleware = createClientScriptMiddleware(
+          this.container,
+          mergedConfig,
+        );
+        server.use(clientScriptMiddleware);
+
+        const serverCfg = (mergedConfig.server || {}) as { mode?: string };
+        const envMode = getEnv("DENO_ENV") || getEnv("BUN_ENV") ||
+          getEnv("NODE_ENV") || "dev";
+        const runMode = serverCfg.mode || envMode;
+        const isProd = runMode === "prod";
+        const buildCfg = (mergedConfig.build || {}) as {
+          client?: { output?: string };
+        };
+        const clientOutputDir = buildCfg.client?.output ??
+          getInferredBuildOutputDirs().client;
+        const prebuiltClientPath = join(
+          cwd(),
+          clientOutputDir,
+          CLIENT_OUTPUT_MAIN_FILENAME,
+        );
+        const hasPrebuiltClient = await exists(prebuiltClientPath);
+        if (!isProd) {
+          await ensureClientEntryFile(this.container, mergedConfig);
+          if (!this._isBuildMode()) {
+            await buildClientScript(this.container, mergedConfig);
+          }
+        } else if (!hasPrebuiltClient && !this._isBuildMode()) {
+          await buildClientScript(this.container, mergedConfig);
+        }
 
         if (!this._isBuildMode()) {
           renderLogger.info($t("log.renderModeSsr"));
@@ -973,9 +1024,9 @@ export class App extends EventEmitter implements IApp {
 
       const renderMode = (config.render as { mode?: string })?.mode ?? "ssr";
       // 使用 @dreamer/esbuild 的 Builder 统一构建（服务端 + 客户端 + 资源）
-      // SSG 模式跳过客户端构建，仅构建服务端
+      // SSR/SSG 也构建客户端，以便静态 HTML 可做客户端激活（事件响应）
       await runBuildWithBuilder(this.container, config, {
-        skipClient: renderMode === "ssg",
+        skipClient: false,
       });
 
       // SSG 模式：预渲染静态 HTML 到 client 目录（与其它前端产物一致），start 时从该目录读取（在服务端构建之后执行，确保不被覆盖）
@@ -989,6 +1040,7 @@ export class App extends EventEmitter implements IApp {
             outputDir?: string;
             routes?: string[];
             dynamicRoutes?: Record<string, string[]>;
+            hydrate?: boolean;
           };
         };
 
@@ -1102,6 +1154,85 @@ export class App extends EventEmitter implements IApp {
             debug: renderCfg.debug === true,
           };
           await renderService.renderSSG(ssgOptions);
+
+          // SSG 构建后：仅当 render.ssg.hydrate 不为 false 时，为每个预渲染 HTML 注入 hydration 与客户端脚本
+          if (renderCfg.ssg?.hydrate !== false) {
+            const routerConfig = (config.router || {}) as {
+              routesDir?: string;
+            };
+            const routesDir = routerConfig.routesDir ?? "./src/routes";
+            const routesDirPath = join(
+              cwd(),
+              routesDir.replace(/^\.\/?/, "") || routesDir,
+            );
+            const clientRoutes = collectClientRoutes(router, routesDirPath);
+            const containerId = "app";
+            const clientScript = "/_client.js";
+            /** 递归收集目录下所有 .html 文件路径 */
+            const collectHtmlFiles = async (dir: string): Promise<string[]> => {
+              const entries = await readdir(dir);
+              const results: string[] = [];
+              for (const e of entries) {
+                const full = join(dir, e.name);
+                if (e.isDirectory) {
+                  results.push(...(await collectHtmlFiles(full)));
+                } else if (e.name.toLowerCase().endsWith(".html")) {
+                  results.push(full);
+                }
+              }
+              return results;
+            };
+            const htmlFiles = await collectHtmlFiles(absOutputDir);
+            for (const filePath of htmlFiles) {
+              const relPath = relative(absOutputDir, filePath).replace(
+                /\\/g,
+                "/",
+              );
+              const pathname = fileToPathname(relPath);
+              const match = await router.match(pathname);
+              if (!match || match.isApi) continue;
+              const pageProps = await loadRouteData(pathname);
+              const rawComponent = match.route.file || match.route.path || "";
+              const normalizedComponent = typeof rawComponent === "string"
+                ? extractComponentPathFromRouteFile(
+                  routesDirPath,
+                  rawComponent,
+                ) ||
+                  rawComponent.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "")
+                    .trim()
+                : rawComponent;
+              const hydrationData = {
+                page: pageProps,
+                route: match.route.path,
+                params: match.params,
+                query: match.query,
+                component: normalizedComponent,
+              };
+              const clientConfigScript = `
+<script>
+  globalThis.__DATA__ = ${JSON.stringify(hydrationData)};
+  globalThis.__DWEB_DEV__ = false;
+  globalThis.__DWEB_ROUTES__ = ${JSON.stringify(clientRoutes)};
+  globalThis.__DWEB_ENGINE__ = "${engine}";
+  globalThis.__DWEB_CONTAINER_ID__ = "${containerId}";
+  globalThis.__DWEB_MODE__ = "ssg";
+</script>
+<script type="module" src="${clientScript}"></script>`;
+              let html = await readTextFile(filePath);
+              if (!hasContainerElementInHtml(html, containerId)) {
+                logger.warn(
+                  `[dweb] SSG 文件 ${relPath} 未找到挂载容器，跳过 hydration 注入`,
+                );
+                continue;
+              }
+              if (html.includes("</body>")) {
+                html = html.replace("</body>", `${clientConfigScript}</body>`);
+              } else {
+                html += clientConfigScript;
+              }
+              await writeTextFile(filePath, html);
+            }
+          }
 
           // SSG 模式：对输出目录运行资源处理（复制、压缩、hash、更新 HTML 中的路径）
           const assetsConfig = (config.build as { assets?: unknown })?.assets;

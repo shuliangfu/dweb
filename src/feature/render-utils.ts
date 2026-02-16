@@ -1,6 +1,41 @@
 /**
- * 渲染相关工具函数（CSR/Hybrid 等共用）
+ * 渲染相关工具函数（CSR/Hybrid/SSR/SSG 共用）
  */
+
+import type { Router } from "@dreamer/router";
+import { extractComponentPathFromRouteFile } from "../utils/path.ts";
+
+/**
+ * 收集供客户端使用的路由列表（component 与 ROUTE_LOADERS key 统一格式）
+ *
+ * @param router 路由实例
+ * @param routesDirPath routes 目录绝对路径（用于 extractComponentPathFromRouteFile）
+ * @returns 客户端路由数组
+ */
+export function collectClientRoutes(
+  router: Router,
+  routesDirPath: string,
+): Array<{ path: string; component: string; type: string }> {
+  const routes: Array<{ path: string; component: string; type: string }> = [];
+  const allRoutes = (router.getRoutes?.() || []) as Array<{
+    path: string;
+    file?: string;
+    isApi?: boolean;
+    type?: string;
+  }>;
+  for (const route of allRoutes) {
+    if (route.isApi) continue;
+    const raw = route.file || route.path || "";
+    const component = extractComponentPathFromRouteFile(routesDirPath, raw) ||
+      raw.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "").trim();
+    routes.push({
+      path: route.path,
+      component,
+      type: route.type || "static",
+    });
+  }
+  return routes;
+}
 
 /**
  * 检测 HTML 字符串中是否包含挂载容器元素（某标签的 id 等于 containerId）

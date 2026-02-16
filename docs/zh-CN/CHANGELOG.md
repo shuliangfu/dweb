@@ -7,6 +7,33 @@
 
 ---
 
+## [3.0.77] - 2026-02-16
+
+### 新增
+
+- **SSR/SSG 客户端激活**：SSR 与 SSG 现支持可选的客户端激活，当前页在保持「仅
+  整页跳转、不做客户端路由」的前提下可变为可交互（如计数器、点击事件）。配置项：
+  `render.ssr.hydrate` 与 `render.ssg.hydrate`（默认 `true`）。开启后服务端注入
+  `globalThis.__DATA__` 与客户端脚本 `_client.js`，客户端仅对当前页做 hydrate；
+  链接点击走浏览器整页跳转（通过 `interceptLinks: false` 传给客户端路由）。需
+  `@dreamer/router@^1.0.10`。
+- **全部 basic SSR/SSG 示例的计数器**：Preact、React、View 的 basic SSR/SSG 首页
+  均增加计数器（hydrate 后点击可更新）及 `data-counter-*` 属性便于测试；View
+  SSR/SSG 使用 `@dreamer/view` 的 `createSignal`。
+- **SSR/SSG 的 E2E 计数器测试**：浏览器用例「应能通过计数器加一、减一、重置更新数字」
+  不再对 SSR/SSG basic 套件跳过，所有 basic 示例（含 preact-ssr、preact-ssg、
+  react-ssr、react-ssg、view-ssr、view-ssg）在页面有计数器区块时均执行该交互
+  测试。
+
+### 变更
+
+- **Init 优化**：init 流程与模板调整，以统一支持上述各引擎与模式下的 hydrate 与
+  计数器行为。
+- **依赖**：`@dreamer/router` 升级为 `^1.0.10`，以使用客户端 `interceptLinks`
+  选项（SSR/SSG 生成代码中传入）。
+
+---
+
 ## [3.0.76] - 2026-02-16
 
 ### 修复

@@ -18,8 +18,8 @@ complete server and client support.
 
 **Three template engines**: The framework supports **View** (recommended),
 Preact, and React. **View** is Dweb’s native view layer (`@dreamer/view`):
-lightweight, no virtual DOM, fine-grained updates with signals, declarative
-directives (`vIf`, `vShow`, `vFor`), and first-class SSR/SSG/CSR/hybrid. Preact
+lightweight, no virtual DOM, fine-grained updates with signals, and first-class
+SSR/SSG/CSR/hybrid. See https://github.com/shuliangfu/view for details. Preact
 is lightweight and React-compatible; React is fully supported via
 `render.engine`.
 
@@ -1895,17 +1895,13 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.76] - 2026-02-16
+### [3.0.77] - 2026-02-16
 
-**Fixed**: Windows multi-app config path: use `fileURLToPath` for
-`Deno.mainModule` so config directory is inferred correctly; config and
-`config.name` now load for entries like `src/backend/main.ts`, fixing "App name
-Not configured" and Windows CI.
-
-**Added**: Session integration (default), Cookie configuration via
-`config.session.cookie`, ServerResponse `binary()` and load return `Response`.
-**Changed**: `getDreamerDwebCacheDir()` moved to `utils/cache-dirs.ts` for
-default session store. **Removed**: Standalone session-middleware helper.
+**Added**: SSR/SSG client hydration (`render.ssr.hydrate` / `render.ssg.hydrate`),
+counter on all basic SSR/SSG examples (Preact, React, View), E2E counter test
+enabled for SSR/SSG suites. **Changed**: Init improvements; `@dreamer/router`
+dependency raised to `^1.0.10` for `interceptLinks` (no client-side routing on
+SSR/SSG).
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

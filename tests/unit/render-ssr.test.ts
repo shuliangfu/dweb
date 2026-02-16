@@ -37,7 +37,7 @@ describe("SSR 渲染器 (render-ssr.ts)", () => {
         getSpecialFile: (_name: string) => null,
       } as unknown as Router;
 
-      const renderer = createRendererSSR(container, router);
+      const renderer = createRendererSSR(container, router, config);
       expect(typeof renderer).toBe("function");
     });
 
@@ -51,7 +51,7 @@ describe("SSR 渲染器 (render-ssr.ts)", () => {
         getSpecialFile: (_name: string) => null,
       } as unknown as Router;
 
-      const renderer = createRendererSSR(container, router);
+      const renderer = createRendererSSR(container, router, config);
       expect(renderer.length).toBe(2);
     });
 
@@ -65,7 +65,7 @@ describe("SSR 渲染器 (render-ssr.ts)", () => {
         getSpecialFile: (_name: string) => null,
       } as unknown as Router;
 
-      const renderer = createRendererSSR(container, router);
+      const renderer = createRendererSSR(container, router, config);
       const ctx = { url: new URL("http://localhost/api/users") } as never;
       const match = {
         isApi: true,
@@ -90,7 +90,7 @@ describe("SSR 渲染器 (render-ssr.ts)", () => {
         getSpecialFile: (_name: string) => null,
       } as unknown as Router;
 
-      const renderer = createRendererSSR(container, router);
+      const renderer = createRendererSSR(container, router, config);
       const ctx = { url: new URL("http://localhost/page") } as never;
       const match = {
         isApi: false,
@@ -138,7 +138,7 @@ describe("SSR 渲染器 (render-ssr.ts)", () => {
           getSpecialFile: (_name: string) => null,
         } as unknown as Router;
 
-        const renderer = createRendererSSR(container, router);
+        const renderer = createRendererSSR(container, router, config);
         const ctx = { url: new URL("http://localhost/page") } as never;
         const match = {
           isApi: false,

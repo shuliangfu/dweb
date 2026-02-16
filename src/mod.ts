@@ -37,7 +37,7 @@ export { DWEB_VERSION } from "./utils/version.ts";
  * - SocketIOConfig: Socket.IO 配置（path、allowCORS、pingTimeout 等）
  * - SocketType: 实时通信类型（socketio | websocket）
  * - WebSocketConfig: WebSocket 配置（path、pingTimeout、pingInterval 等）
- * - AppLanguage: 框架支持的语言（zh-CN | en-US）
+ * - AppLanguage: 框架支持的语言（zh-CN、en-US、ja-JP、ko-KR、es-ES、pt-BR、id-ID、de-DE、fr-FR）
  */
 export type {
   AppConfig,
@@ -177,6 +177,13 @@ export {
  * - initializeLogger: 初始化 Logger
  */
 export { getLogger, initializeLogger } from "./utils/logger.ts";
+
+/**
+ * 国际化 / 语言：
+ * - getDefaultAppLanguage: 按环境变量检测默认语言，回退 en-US（供 config/main.ts 的 language 使用）
+ * - detectLocale: 从环境变量检测 locale（LANGUAGE / LC_ALL / LANG）
+ */
+export { detectLocale, getDefaultAppLanguage } from "./utils/i18n.ts";
 
 /**
  * 统一错误处理（支持 i18n）：

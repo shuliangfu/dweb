@@ -95,6 +95,7 @@ export const metadata = {
 };
 export default function Home() {
   const clientRef: { current: Client | null } = { current: null };
+  const [count, setCount] = createSignal(0);
   const [status, setStatus] = createSignal<ConnectionStatus>("idle");
   const [messages, setMessages] = createSignal<ChatMessage[]>([]);
   const [input, setInput] = createSignal("");
@@ -207,7 +208,9 @@ export default function Home() {
       </section>
 
       <section class={classes.section}>
-        <h2 class={classes.sectionTitle}>特性</h2>
+        <h2 class="mb-8 text-center text-2xl font-bold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-[#667eea] to-[#764ba2]">
+          特性
+        </h2>
         <div class={classes.featureGrid}>
           <div class={classes.featureCard}>
             <h3 class={classes.featureCardTitle}>文件路由</h3>
@@ -226,6 +229,39 @@ export default function Home() {
             <p>轻量级响应式视图引擎</p>
           </div>
         </div>
+      </section>
+
+      <section class={classes.socketSection}>
+        <h2 class={classes.socketTitle}>计数器示例</h2>
+        <p class={classes.socketDesc}>View 细粒度渲染：仅此块随 count 更新</p>
+        {() => (
+          <div class="flex flex-col items-center justify-center gap-4">
+            <span class="text-2xl font-semibold">count: {count()}</span>
+            <div class="flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                class="rounded-lg border-0 bg-[#667eea] px-4 py-2 text-white hover:opacity-90"
+                onClick={() => setCount(count() + 1)}
+              >
+                加一
+              </button>
+              <button
+                type="button"
+                class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50"
+                onClick={() => setCount(count() - 1)}
+              >
+                减一
+              </button>
+              <button
+                type="button"
+                class="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2 text-gray-600 hover:bg-gray-200"
+                onClick={() => setCount(0)}
+              >
+                重置
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* WebSocket 客户端示例：整块包成动态子节点，仅此槽位随 status/input/messages 更新，避免整页重跑（含其他 section） */}

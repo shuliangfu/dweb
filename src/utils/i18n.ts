@@ -17,6 +17,7 @@
 import { createI18n } from "@dreamer/i18n";
 import type { TranslationData } from "@dreamer/i18n";
 import { cwd, getEnv, resolve } from "@dreamer/runtime-adapter";
+import { type AppLanguage, SUPPORTED_APP_LANGUAGES } from "../types/app.ts";
 import { loadProjectConfig } from "./config-loader.ts";
 import { setDwebErrorTranslator } from "./errors.ts";
 
@@ -129,6 +130,21 @@ export function detectLocale(): string | null {
     }
   }
   return null;
+}
+
+/**
+ * 获取默认框架语言：优先从环境变量检测，否则回退为 en-US
+ *
+ * 供 config/main.ts 的 language 使用，实现「自动检测用户环境语言，回退 en-US」。
+ *
+ * @returns AppLanguage（框架支持的任一种语言）
+ */
+export function getDefaultAppLanguage(): AppLanguage {
+  const d = detectLocale();
+  if (d && (SUPPORTED_APP_LANGUAGES as readonly string[]).includes(d)) {
+    return d as AppLanguage;
+  }
+  return "en-US";
 }
 
 /** 预加载的翻译数据（构建时内联，服务端无需 fetch） */

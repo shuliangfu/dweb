@@ -76,6 +76,21 @@ function pathnameToFile(pathname: string): string {
 }
 
 /**
+ * 将预渲染文件名转换为请求路径（pathnameToFile 的反向）
+ * 用于 SSG 构建后根据 HTML 文件名注入对应 pathname 的 hydration 数据
+ *
+ * @param filename 相对文件名（如 "index.html"、"about.html"）
+ * @returns 请求路径（如 "/"、"/about"）
+ */
+export function fileToPathname(filename: string): string {
+  const base = filename.replace(/\.html$/i, "").trim();
+  if (!base || base === "index") {
+    return "/";
+  }
+  return "/" + base;
+}
+
+/**
  * 创建 SSG 渲染器
  *
  * - 开发环境：始终使用 SSR 渲染，不读 dist
@@ -107,7 +122,7 @@ export function createRendererSSG(
     getInferredBuildOutputDirs().client;
 
   /** 开发环境下使用 SSR 按需渲染 */
-  const ssrRenderer = createRendererSSR(container, router);
+  const ssrRenderer = createRendererSSR(container, router, config);
 
   return async (
     ctx: HttpContext,

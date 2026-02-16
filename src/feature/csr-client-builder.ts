@@ -478,7 +478,7 @@ export interface DwebGlobal {
     query?: Record<string, string>;
     component?: string;
   };
-  __DWEB_MODE__?: "csr" | "hybrid";
+  __DWEB_MODE__?: "csr" | "hybrid" | "ssr" | "ssg";
   /** 是否为开发模式（服务端注入，用于区分 dev/prod 行为，如 CSS 强制刷新仅 dev 执行） */
   __DWEB_DEV__?: boolean;
   __HMR_REFRESH__?: (options?: { chunkUrl?: string }) => void;
@@ -936,9 +936,15 @@ export async function initApp(): Promise<DwebApp> {
   const routes = g.__DWEB_ROUTES__ || [];
   const engine = g.__DWEB_ENGINE__ || "${engine}";
   const containerId = g.__DWEB_CONTAINER_ID__ || "app";
-  const isHybridMode = g.__DWEB_MODE__ === "hybrid" && !!g.__DATA__;
-  const router = createRouter({ routes, engine, debug: !!(_win.__DWEB_DEBUG__) });
-  // 在首次 await 前就注册链接点击拦截器，避免用户提前点击导致整页刷新（Solid/React/Preact 均适用）
+  const isHybridMode = (g.__DWEB_MODE__ === "hybrid" || g.__DWEB_MODE__ === "ssr" || g.__DWEB_MODE__ === "ssg") && !!g.__DATA__;
+  const router = createRouter({
+    routes,
+    engine,
+    debug: !!(_win.__DWEB_DEBUG__),
+    // SSR/SSG 仅做当前页 hydrate、不做客户端路由，链接点击走浏览器默认整页跳转
+    interceptLinks: _win.__DWEB_MODE__ !== "ssr" && _win.__DWEB_MODE__ !== "ssg",
+  });
+  // 在首次 await 前注册链接点击拦截器（CSR/Hybrid）；SSR/SSG 时 interceptLinks 为 false，不拦截
   router.start();
   const layouts = await loadLayouts();
   const isHydratedRef = { current: false };

@@ -5,6 +5,7 @@
  * - 动态加载页面组件
  * - 加载布局组件
  * - 调用 @dreamer/render 进行 SSR 渲染
+ * - 注入 hydration 数据与客户端脚本，支持客户端激活（事件响应）
  * - 插件事件由 pluginEventsMiddleware 自动触发
  * - 返回 HTML 响应
  */
@@ -16,13 +17,19 @@ import type { HttpContext } from "@dreamer/server";
 import type { SessionData } from "@dreamer/session";
 import { getConfig } from "../core/config.ts";
 import { getLogger } from "../utils/logger.ts";
-import { getEnv } from "../core/runtime-adapter.ts";
+import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
 import { createLoadContext, createServerResponse } from "../types/context.ts";
 import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
 import { sanitizeRequestParams } from "../utils/sanitize.ts";
 import { $t } from "../utils/i18n.ts";
+import { extractComponentPathFromRouteFile } from "../utils/path.ts";
+import {
+  collectClientRoutes,
+  hasContainerElementInHtml,
+} from "./render-utils.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
+import type { AppConfig } from "../types/app.ts";
 
 /** load 结果短期缓存 TTL（毫秒），减轻重 I/O 的重复请求 */
 const LOAD_CACHE_TTL_MS = 1000;
@@ -53,29 +60,47 @@ function escapeHtmlInStyle(css: string): string {
   return css.replace(/<\//g, "\\3C /");
 }
 
+/** 客户端脚本路径（与 CSR/Hybrid 一致，由中间件提供） */
+const SSR_CLIENT_SCRIPT = "/_client.js";
+/** 挂载容器 ID（与 _app 内一致） */
+const SSR_CONTAINER_ID = "app";
+
 /**
  * 创建 SSR 渲染处理器
  *
- * 动态加载页面与布局组件，调用 @dreamer/render 进行服务端渲染，返回 HTML 响应。
+ * 动态加载页面与布局组件，调用 @dreamer/render 进行服务端渲染；
+ * 注入 __DATA__ 与客户端脚本，支持客户端激活（纯事件响应，不走路由）。
  *
  * @param container 服务容器
  * @param router 路由实例
+ * @param config 应用配置（用于注入客户端路由、engine、containerId）
  * @returns SSR 渲染回调函数（接收 ctx、match，返回 Response 或 null）
  */
 export function createRendererSSR(
   container: ServiceContainer,
   router: Router,
+  config: AppConfig,
 ): (ctx: HttpContext, match: RouteMatch) => Promise<Response | null> {
   // 获取渲染服务与配置
   const renderService = getRender(container);
-  const config = getConfig(container);
+  const resolvedConfig = getConfig(container);
   /** load 结果短期缓存（URL + params → 1 秒内复用，减轻重 I/O） */
   const loadCache = new Map<string, LoadCacheEntry>();
-  const renderConfig = (config.render || {}) as {
+  const renderConfig = (resolvedConfig.render || {}) as {
     debug?: boolean;
     engine?: "react" | "preact" | "view";
+    ssr?: { hydrate?: boolean };
   };
   const engine = renderConfig.engine ?? "preact";
+  const routerConfig = (config.router || {}) as { routesDir?: string };
+  const routesDir = routerConfig.routesDir ?? "./src/routes";
+  const routesDirPath = join(
+    cwd(),
+    routesDir.replace(/^\.\/?/, "") || routesDir,
+  );
+  const clientRoutes = collectClientRoutes(router, routesDirPath);
+  const containerId = SSR_CONTAINER_ID;
+  const clientScript = SSR_CLIENT_SCRIPT;
 
   return async (
     ctx: HttpContext,
@@ -232,7 +257,56 @@ export function createRendererSSR(
 
       // 生产模式下用 asset-manifest.json 替换 SSR HTML 中的资源路径
       if (!isDev) {
-        html = await replaceAssetPathsInHtml(html, config);
+        html = await replaceAssetPathsInHtml(html, resolvedConfig);
+      }
+
+      // 客户端激活（仅当 render.ssr.hydrate 不为 false 时注入 __DATA__ 与 _client.js）
+      const ssrHydrate = renderConfig.ssr?.hydrate !== false;
+      if (ssrHydrate) {
+        if (!hasContainerElementInHtml(html, containerId)) {
+          const logger = container.has("logger")
+            ? getLogger(container)
+            : undefined;
+          if (logger) {
+            logger.error(
+              "[dweb] SSR 挂载容器检测失败，无法注入 hydration 脚本",
+              `containerId=${containerId}, html.length=${html?.length ?? 0}`,
+            );
+          }
+          throw new Error(
+            `[dweb] _app 必须渲染挂载容器：请在 _app.tsx 的 body 内提供 <div id="${containerId}">{children}</div>，当前 SSR 输出中未找到该元素。`,
+          );
+        }
+        const rawComponent = match.route.file || match.route.path || "";
+        const normalizedComponent = typeof rawComponent === "string"
+          ? extractComponentPathFromRouteFile(routesDirPath, rawComponent) ||
+            rawComponent.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "")
+              .trim()
+          : rawComponent;
+        const hydrationData = {
+          page: pageProps,
+          route: match.route.path,
+          params: match.params,
+          query: match.query,
+          component: normalizedComponent,
+        };
+        const debugRender = renderConfig.debug === true;
+        const clientConfigScript = `
+<script>
+  ${debugRender ? "globalThis.__DWEB_DEBUG__ = true;" : ""}
+  globalThis.__DATA__ = ${JSON.stringify(hydrationData)};
+  globalThis.__DWEB_DEV__ = ${isDev};
+  globalThis.__DWEB_ROUTES__ = ${JSON.stringify(clientRoutes)};
+  globalThis.__DWEB_ENGINE__ = "${engine}";
+  globalThis.__DWEB_CONTAINER_ID__ = "${containerId}";
+  globalThis.__DWEB_MODE__ = "ssr";
+</script>
+<script type="module" src="${clientScript}"></script>`;
+        if (html.includes("</body>")) {
+          html = html.replace("</body>", `${clientConfigScript}</body>`);
+        } else {
+          html += clientConfigScript;
+        }
       }
 
       // 返回 HTML 响应（开发模式禁用缓存，确保 HMR 刷新后拿到最新内容）

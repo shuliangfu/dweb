@@ -1,11 +1,16 @@
 /**
  * 服务端入口
  * React Basic 示例项目
+ * 支持环境变量 PORT 覆盖端口，便于 CI/集成测试
  */
 
 import { App } from "@dreamer/dweb";
 import { staticPlugin } from "@dreamer/plugins/static";
 import { tailwindPlugin } from "@dreamer/plugins/tailwindcss";
+import { getEnv } from "@dreamer/runtime-adapter";
+
+const portFromEnv = getEnv("PORT");
+const serverPort = portFromEnv ? Number(portFromEnv) : 3007;
 
 // 创建应用实例
 const app = new App({
@@ -14,7 +19,7 @@ const app = new App({
 
   // 服务器配置（e2e 并行测试时端口区分）
   server: {
-    port: 3007,
+    port: serverPort,
     host: "127.0.0.1",
     dev: {
       hmr: { enabled: true, path: "/__hmr" },

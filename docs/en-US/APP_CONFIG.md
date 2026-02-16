@@ -343,9 +343,9 @@ export default config;
 
 - **`"view"`** (recommended): Dweb’s native view template engine
   (`@dreamer/view`). Lightweight, no virtual DOM, fine-grained updates with
-  signals; declarative template and built-in directives (vIf/vElseIf/vElse,
-  vFor, vShow, vOnce, vCloak); first-class support for SSR, SSG, CSR, and
-  hybrid. See [View View Template Engine](#view-view-template-engine) below.
+  signals; first-class support for SSR, SSG, CSR, and hybrid. See
+  https://github.com/shuliangfu/view for details. See
+  [View View Template Engine](#view-view-template-engine) below.
 - **`"preact"`**: Lightweight React-compatible library; default in examples.
 - **`"react"`**: Full React; set `engine: "react"` and ensure React is in
   dependencies.
@@ -365,11 +365,8 @@ new Dweb projects.
 - **Lightweight and fast**: No virtual DOM; updates are fine-grained
   (signal-based reactivity and targeted DOM patches). Smaller runtime and less
   client-side work than virtual-DOM engines.
-- **Familiar DX**: Declarative template syntax and built-in directives.
-  Built-in: **vIf** / **vElseIf** / **vElse** (conditional branches), **vFor**
-  (list iteration), **vShow** (show/hide), **vOnce** (render once), **vCloak**
-  (avoid FOUC before hydration); supports custom directives via
-  `registerDirective`.
+- **Familiar DX**: Declarative template syntax and built-in directives. See
+  https://github.com/shuliangfu/view for details.
 - **Native to the stack**: Designed for the Deno/JSR ecosystem. Same maintainer
   as Dweb; SSR, SSG, CSR, and hybrid modes are supported out of the box with no
   extra glue.

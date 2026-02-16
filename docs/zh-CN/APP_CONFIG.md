@@ -341,8 +341,9 @@ export default config;
 
 - **`"view"`**（推荐）：Dweb 自有的 **View
   视图模板引擎**（`@dreamer/view`）。轻量、无虚拟 DOM、基于 signal
-  的细粒度更新；声明式模板与内置指令（vIf/vElseIf/vElse、vFor、vShow、vOnce、vCloak）；完整支持
-  SSR、SSG、CSR、hybrid。详见下文 [View 视图模板引擎](#view-视图模板引擎)。
+  的细粒度更新，完整支持 SSR、SSG、CSR、hybrid。详情查看
+  https://github.com/shuliangfu/view 。详见下文
+  [View 视图模板引擎](#view-视图模板引擎)。
 - **`"preact"`**：轻量级 React 兼容库；示例中常用默认。
 - **`"react"`**：完整 React；设置 `engine: "react"` 并确保依赖中已加入 React。
 
@@ -359,10 +360,8 @@ export default config;
 
 - **轻量、高性能**：无虚拟 DOM，更新为细粒度（基于 signal 的响应式与定向 DOM
   修补）。运行时更小、客户端开销低于虚拟 DOM 方案。
-- **易上手**：声明式模板语法与内置指令，适合模板优先或组件优先开发。内置指令：**vIf**
-  / **vElseIf** /
-  **vElse**（条件分支）、**vFor**（列表循环）、**vShow**（显示/隐藏）、**vOnce**（仅渲染一次）、**vCloak**（防未水合闪现）；支持
-  `registerDirective` 注册自定义指令。
+- **易上手**：声明式模板语法与内置指令，适合模板优先或组件优先开发。详情查看
+  https://github.com/shuliangfu/view
 - **与生态一体**：为 Deno/JSR 生态设计，与 Dweb 同源维护；SSR、SSG、CSR、hybrid
   开箱即用，无需额外胶水代码。
 - **与 Dweb 统一**：与 Preact/React

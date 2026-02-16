@@ -83,12 +83,25 @@ export interface DatabaseAppConfig {
  * ```
  */
 /**
- * 框架支持的语言
+ * 框架支持的语言列表（与 utils/i18n 的 SUPPORTED_LOCALES 一致）
  *
  * 用于 CLI 输出、日志、错误消息等框架内置文案。
  * 在 config/main.ts 中设置 language 或在环境变量 LANGUAGE/LC_ALL/LANG 中指定。
  */
-export type AppLanguage = "zh-CN" | "en-US";
+export const SUPPORTED_APP_LANGUAGES = [
+  "zh-CN",
+  "en-US",
+  "ja-JP",
+  "ko-KR",
+  "es-ES",
+  "pt-BR",
+  "id-ID",
+  "de-DE",
+  "fr-FR",
+] as const;
+
+/** 框架支持的语言类型 */
+export type AppLanguage = (typeof SUPPORTED_APP_LANGUAGES)[number];
 
 export interface AppConfig extends Record<string, unknown> {
   /** 应用名称 */
@@ -96,7 +109,7 @@ export interface AppConfig extends Record<string, unknown> {
   /** 应用版本 */
   version?: string;
   /**
-   * 框架语言（默认：自动检测环境变量 LANGUAGE/LC_ALL/LANG，检测不到则 zh-CN）
+   * 框架语言（默认：自动检测环境变量 LANGUAGE/LC_ALL/LANG，检测不到则 en-US）
    * 影响 CLI 输出、日志、错误消息等框架内置文案
    */
   language?: AppLanguage;
@@ -118,10 +131,18 @@ export interface AppConfig extends Record<string, unknown> {
     engine?: Engine;
     /** 渲染模式（ssr、csr、ssg、hybrid） */
     mode?: "ssr" | "csr" | "ssg" | "hybrid";
+    /** SSR 配置（mode 为 ssr 时生效） */
+    ssr?: {
+      /** 是否启用客户端激活（hydrate），默认 true；关闭后仅输出服务端 HTML，不注入 _client.js */
+      hydrate?: boolean;
+    };
     /** SSG 配置（mode 为 ssg 时生效） */
     ssg?: {
       outputDir?: string;
       routes?: string[];
+      /** 是否启用客户端激活（hydrate），默认 true；关闭后预渲染 HTML 不注入 _client.js */
+      hydrate?: boolean;
+      // 动态路由按参数展开：键为路由模式（如 /user/[id]），值为参数列表
       dynamicRoutes?: Record<string, string[]>;
     };
   };

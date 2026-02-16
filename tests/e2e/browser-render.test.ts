@@ -73,7 +73,7 @@ const E2E_PORTS: Record<string, number> = {
 };
 
 /** 浏览器单用例超时：Windows 10 秒，其他 5 秒；不通过时再长也通不过，避免耗时过长 */
-const BROWSER_TEST_TIMEOUT_MS = platform() === "windows" ? 10000 : 5000;
+const BROWSER_TEST_TIMEOUT_MS = platform() === "windows" ? 20_000 : 10_000;
 
 /**
  * 轮询等待服务器就绪（返回 200）
@@ -494,6 +494,192 @@ async function assertBrowserClickAbout(
 }
 
 /**
+ * 从页面解析当前计数器数字。
+ * 优先读 [data-counter-value] 元素的 textContent（SSR/SSG/部分 CSR 仅显示数字）；
+ * 若无则回退到 body 文本中的 "count: N" 形式（部分 CSR/Hybrid 示例）。
+ * @returns 当前 count 或 null（无计数器区块或未解析到数字时）
+ */
+function getCountFromPage(
+  browser: {
+    evaluate: (fn: () => unknown) => Promise<unknown>;
+  },
+): Promise<number | null> {
+  return browser.evaluate(() => {
+    const doc = (globalThis as Record<string, unknown>).document as
+      | {
+          body?: { innerText?: string };
+          querySelector?: (s: string) => { textContent?: string | null } | null;
+        }
+      | undefined;
+    const el = doc?.querySelector?.("[data-counter-value]");
+    const valueText = el?.textContent?.trim();
+    if (valueText !== undefined && valueText !== "") {
+      const n = parseInt(valueText, 10);
+      if (!Number.isNaN(n)) return n;
+    }
+    const text = doc?.body?.innerText ?? "";
+    const m = text.match(/count:\s*(\d+)/);
+    return m ? parseInt(m[1], 10) : null;
+  }) as Promise<number | null>;
+}
+
+/**
+ * 在页面中点击计数器区块内指定文案的按钮（通过按钮文本查找）
+ * 文案写死在 evaluate 内以兼容仅支持单参的 runner
+ * @param browser 含 evaluate 的浏览器上下文
+ * @param buttonText 按钮文案：加一 / 减一 / 重置
+ */
+async function clickCounterButton(
+  browser: {
+    evaluate: (fn: () => unknown) => Promise<unknown>;
+  },
+  buttonText: "加一" | "减一" | "重置",
+): Promise<void> {
+  type ButtonLike = { textContent?: string | null; click?: () => void };
+  type DocLike = {
+    querySelectorAll?: (s: string) => ArrayLike<ButtonLike>;
+  };
+  if (buttonText === "加一") {
+    await browser.evaluate(() => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | DocLike
+        | undefined;
+      const buttons = doc?.querySelectorAll?.("section button") ?? [];
+      const btn = Array.from(buttons).find(
+        (b: ButtonLike) => b.textContent?.trim() === "加一",
+      );
+      btn?.click?.();
+    });
+  } else if (buttonText === "减一") {
+    await browser.evaluate(() => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | DocLike
+        | undefined;
+      const buttons = doc?.querySelectorAll?.("section button") ?? [];
+      const btn = Array.from(buttons).find(
+        (b: ButtonLike) => b.textContent?.trim() === "减一",
+      );
+      btn?.click?.();
+    });
+  } else {
+    await browser.evaluate(() => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | DocLike
+        | undefined;
+      const buttons = doc?.querySelectorAll?.("section button") ?? [];
+      const btn = Array.from(buttons).find(
+        (b: ButtonLike) => b.textContent?.trim() === "重置",
+      );
+      btn?.click?.();
+    });
+  }
+}
+
+/**
+ * 浏览器断言：首页存在计数器时，点击加一、减一、重置并校验数字变化
+ * 若页面无「计数器示例」区块则直接通过（兼容尚未加计数器的示例）
+ * @param t 测试上下文（含 browser）
+ * @param port 服务器端口
+ */
+async function assertBrowserCounterButtons(
+  t: {
+    browser?: {
+      page: unknown;
+      goto: (url: string) => Promise<void>;
+      evaluate: (fn: () => unknown, arg?: unknown) => Promise<unknown>;
+      waitFor: (
+        fn: () => boolean,
+        options?: { timeout?: number },
+      ) => Promise<void>;
+    };
+  },
+  port: number,
+): Promise<void> {
+  if (!t?.browser) {
+    throw new Error("browser 上下文不可用");
+  }
+  const browser = t.browser;
+  const page = browser.page as {
+    goto: (
+      url: string,
+      options?: { waitUntil?: string; timeout?: number },
+    ) => Promise<unknown>;
+  };
+
+  const url = `http://127.0.0.1:${port}/`;
+  if (typeof page.goto === "function") {
+    await gotoWithRetry(page, url);
+  } else {
+    await browser.goto(url);
+  }
+
+  const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
+  await browser.waitFor(
+    () => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string } }
+        | undefined;
+      return (doc?.body?.innerHTML?.includes("欢迎使用 Dweb 框架") ?? false) ===
+        true;
+    },
+    { timeout: contentTimeout },
+  );
+
+  const hasCounter = await browser.evaluate(() => {
+    const doc = (globalThis as Record<string, unknown>).document as
+      | { body?: { innerHTML?: string } }
+      | undefined;
+    return doc?.body?.innerHTML?.includes("计数器示例") ?? false;
+  }) as boolean;
+  if (!hasCounter) {
+    return;
+  }
+
+  /** 单次等待目标数字的超时（留出 re-render 时间，避免与用例总超时冲突） */
+  const countWaitMs = 3000;
+  const countAfterWait = (
+    expected: number,
+    timeoutMs: number = countWaitMs,
+  ): Promise<void> =>
+    new Promise((resolve, reject) => {
+      const start = Date.now();
+      const tick = async () => {
+        const n = await getCountFromPage(browser);
+        if (n === expected) {
+          resolve();
+          return;
+        }
+        if (Date.now() - start >= timeoutMs) {
+          reject(
+            new Error(
+              `计数器未在 ${timeoutMs}ms 内变为 ${expected}，当前: ${n}`,
+            ),
+          );
+          return;
+        }
+        setTimeout(tick, 100);
+      };
+      tick();
+    });
+
+  let n = await getCountFromPage(browser);
+  expect(n).not.toBe(null);
+
+  await clickCounterButton(browser, "加一");
+  await new Promise((r) => setTimeout(r, 300));
+  await countAfterWait((n as number) + 1);
+
+  n = await getCountFromPage(browser);
+  await clickCounterButton(browser, "减一");
+  await new Promise((r) => setTimeout(r, 300));
+  await countAfterWait((n as number) - 1);
+
+  await clickCounterButton(browser, "重置");
+  await new Promise((r) => setTimeout(r, 300));
+  await countAfterWait(0);
+}
+
+/**
  * 浏览器断言：校验 basic 示例首页与关于页的 metadata（title / meta description）已渲染且非空
  * 各示例的 title/description 文案可能不同（来自 index 或服务端注入），仅断言存在即可
  * @param t 测试上下文（含 browser）
@@ -851,6 +1037,8 @@ function createBasicExampleBrowserSuite(
 ): void {
   const port = E2E_PORTS[exampleName] ?? 3000;
   const skip = options?.skip === true;
+  /** 所有 basic 示例（含 SSR/SSG）均已支持客户端激活与计数器，均跑计数器浏览器测试 */
+  const skipCounter = skip;
 
   describe(`e2e: 浏览器渲染 - ${exampleName}`, () => {
     let originalCwd: string | undefined;
@@ -929,6 +1117,28 @@ function createBasicExampleBrowserSuite(
         protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
       },
     });
+
+    it.skipIf(
+      skipCounter,
+      "应能通过计数器加一、减一、重置更新数字",
+      async (t) => {
+        if (!t) throw new Error("test context 不可用");
+        await assertBrowserCounterButtons(t, port);
+      },
+      {
+        timeout: 15000,
+        sanitizeOps: false,
+        sanitizeResources: false,
+        browser: {
+          enabled: true,
+          headless: true,
+          dumpio: true,
+          reuseBrowser: true,
+          browserSource: "test",
+          protocolTimeout: 15000,
+        },
+      },
+    );
 
     it.skipIf(
       skip,

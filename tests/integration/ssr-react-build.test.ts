@@ -14,13 +14,19 @@ import {
   cwd,
   execPath,
   exists,
+  getEnvAll,
   IS_DENO,
   join,
   readdir,
   remove,
+  setEnv,
+  type SpawnedProcess,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import { getRepoRoot } from "../setup.ts";
+
+/** 构建后启动 SSR 服务时使用的端口，与其它 e2e 错开 */
+const SSR_BUILD_SERVER_PORT = 39997;
 
 /** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
 const REPO_ROOT = getRepoRoot();
@@ -80,4 +86,74 @@ describe("integration: SSR + React 构建", () => {
     const hasAssets = await exists(assetsDir);
     expect(hasAssets).toBe(true);
   }, { sanitizeOps: false, sanitizeResources: false, timeout: 90000 });
+
+  it(
+    "构建后启动服务器，首页 HTML 应包含客户端激活脚本与 __DATA__",
+    async () => {
+      const distDir = join(exampleDir, "dist");
+      const serverJs = join(distDir, "server.js");
+      if (!(await exists(serverJs))) {
+        throw new Error("请先运行上一用例完成构建，或 dist 已被清理");
+      }
+
+      setEnv("PORT", String(SSR_BUILD_SERVER_PORT));
+      const args = IS_DENO
+        ? ["run", "-A", join(exampleDir, "dist", "server.js")]
+        : ["run", join(exampleDir, "dist", "server.js")];
+      const cmd = createCommand(execPath(), {
+        args,
+        cwd: exampleDir,
+        stdout: "piped",
+        stderr: "piped",
+        env: { ...getEnvAll(), PORT: String(SSR_BUILD_SERVER_PORT) },
+      });
+      const child: SpawnedProcess = cmd.spawn();
+
+      const baseUrl = `http://127.0.0.1:${SSR_BUILD_SERVER_PORT}`;
+      const maxAttempts = 50;
+      let lastErr: unknown = null;
+      try {
+        for (let i = 0; i < maxAttempts; i++) {
+          await new Promise((r) => setTimeout(r, 500));
+          try {
+            const res = await fetch(baseUrl + "/");
+            if (res.ok) {
+              const html = await res.text();
+              expect(html).toContain("globalThis.__DATA__");
+              expect(html).toContain("__DWEB_MODE__");
+              expect(html).toContain('src="/_client.js"');
+              expect(html).toContain("计数器示例");
+              expect(html).toContain("data-counter-value");
+              return;
+            }
+          } catch (e) {
+            lastErr = e;
+          }
+        }
+        const stderrText = child.stderr
+          ? await new Response(child.stderr).text()
+          : "";
+        throw new Error(
+          `SSR 服务器在 ${maxAttempts} 次内未就绪: ${lastErr}${
+            stderrText ? `\nstderr: ${stderrText.slice(0, 500)}` : ""
+          }`,
+        );
+      } finally {
+        try {
+          child.kill(9);
+          await Promise.race([
+            child.status,
+            new Promise<void>((r) => setTimeout(r, 2000)),
+          ]);
+        } catch {
+          // ignore
+        }
+      }
+    },
+    {
+      sanitizeOps: false,
+      sanitizeResources: false,
+      timeout: 90000,
+    },
+  );
 });
