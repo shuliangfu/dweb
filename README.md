@@ -7,7 +7,7 @@
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-689%20passed-brightgreen)](./docs/en-US/TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-818%20passed-brightgreen)](./docs/en-US/TEST_REPORT.md)
 
 ---
 
@@ -1912,7 +1912,10 @@ makeTempDir).
 `render.ssg.hydrate`), counter on all basic SSR/SSG examples (Preact, React,
 View), E2E counter test enabled for SSR/SSG suites. **Changed**: Init
 improvements; `@dreamer/router` dependency raised to `^1.0.10` for
-`interceptLinks` (no client-side routing on SSR/SSG).
+`interceptLinks` (no client-side routing on SSR/SSG); examples migrated to
+Tailwind v4 gradient utilities; E2E counter test waits for page load and
+hydration, increased timeouts; test report updated to 818 cases (e2e 124, unit
+646, integration 48).
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

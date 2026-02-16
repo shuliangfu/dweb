@@ -17,14 +17,14 @@
 
 ### 总体统计
 
-| 指标         | 数值    |
-| ------------ | ------- |
-| 测试文件数   | 50+     |
-| 测试用例总数 | 818     |
-| 通过用例数   | 818     |
-| 忽略用例数   | 2       |
-| 失败用例数   | 0       |
-| 通过率       | 100%    |
+| 指标         | 数值                                                         |
+| ------------ | ------------------------------------------------------------ |
+| 测试文件数   | 50+                                                          |
+| 测试用例总数 | 818                                                          |
+| 通过用例数   | 818                                                          |
+| 忽略用例数   | 2                                                            |
+| 失败用例数   | 0                                                            |
+| 通过率       | 100%                                                         |
 | 测试执行时间 | 分三段合计约 4m38s（e2e ~3m52s、单元与构建 ~28s、集成 ~18s） |
 
 ### 测试文件统计
@@ -88,32 +88,32 @@
 
 #### 端到端测试 (tests/e2e/)
 
-| 文件名                     | 测试用例数 | 状态        | 说明                         |
-| -------------------------- | ---------- | ----------- | ---------------------------- |
-| `browser-render.test.ts`   | 123        | ✅ 全部通过 | 各示例首页/关于/计数器/metadata，含 preact/view/react 的 csr/ssr/ssg/hybrid/hybrid-flat basic 与 advanced |
-| `server-request.test.ts`   | 1          | ✅ 全部通过 | 启动服务器并返回 HTML        |
-| **小计**                   | **124**    | ✅ 全部通过 | 执行时间约 3m52s             |
+| 文件名                   | 测试用例数 | 状态        | 说明                                                                                                      |
+| ------------------------ | ---------- | ----------- | --------------------------------------------------------------------------------------------------------- |
+| `browser-render.test.ts` | 123        | ✅ 全部通过 | 各示例首页/关于/计数器/metadata，含 preact/view/react 的 csr/ssr/ssg/hybrid/hybrid-flat basic 与 advanced |
+| `server-request.test.ts` | 1          | ✅ 全部通过 | 启动服务器并返回 HTML                                                                                     |
+| **小计**                 | **124**    | ✅ 全部通过 | 执行时间约 3m52s                                                                                          |
 
 #### 集成测试 (tests/integration/)
 
-| 文件名                           | 测试用例数 | 状态        | 说明                           |
-| -------------------------------- | ---------- | ----------- | ------------------------------ |
-| `config-lifecycle.test.ts`       | 3          | ✅ 全部通过 | 配置加载与生命周期钩子         |
-| `csr-preact-build.test.ts`       | 3          | ✅ 全部通过 | CSR + Preact 构建              |
-| `csr-react-build.test.ts`        | 3          | ✅ 全部通过 | CSR + React 构建               |
-| `csr-view-build.test.ts`        | 3          | ✅ 全部通过 | CSR + View 构建                |
-| `hybrid-preact-build.test.ts`    | 3          | ✅ 全部通过 | Hybrid + Preact 构建           |
-| `hybrid-preact-flat-build.test.ts` | 3        | ✅ 全部通过 | Hybrid + Preact 构建（无 src） |
-| `hybrid-react-build.test.ts`     | 3          | ✅ 全部通过 | Hybrid + React 构建            |
-| `hybrid-react-flat-build.test.ts`| 3          | ✅ 全部通过 | Hybrid + React 构建（无 src）  |
-| `hybrid-view-build.test.ts`      | 3          | ✅ 全部通过 | Hybrid + View 构建             |
-| `ssg-preact-build.test.ts`      | 3          | ✅ 全部通过 | SSG + Preact 构建              |
-| `ssg-react-build.test.ts`       | 3          | ✅ 全部通过 | SSG + React 构建               |
-| `ssg-view-build.test.ts`       | 3          | ✅ 全部通过 | SSG + View 构建                |
-| `ssr-preact-build.test.ts`      | 4          | ✅ 全部通过 | SSR + Preact 构建及启动验证   |
-| `ssr-react-build.test.ts`      | 4          | ✅ 全部通过 | SSR + React 构建及启动验证    |
-| `ssr-view-build.test.ts`       | 4          | ✅ 全部通过 | SSR + View 构建及启动验证     |
-| **小计**                         | **48**     | ✅ 全部通过 | 执行时间约 18s                |
+| 文件名                             | 测试用例数 | 状态        | 说明                           |
+| ---------------------------------- | ---------- | ----------- | ------------------------------ |
+| `config-lifecycle.test.ts`         | 3          | ✅ 全部通过 | 配置加载与生命周期钩子         |
+| `csr-preact-build.test.ts`         | 3          | ✅ 全部通过 | CSR + Preact 构建              |
+| `csr-react-build.test.ts`          | 3          | ✅ 全部通过 | CSR + React 构建               |
+| `csr-view-build.test.ts`           | 3          | ✅ 全部通过 | CSR + View 构建                |
+| `hybrid-preact-build.test.ts`      | 3          | ✅ 全部通过 | Hybrid + Preact 构建           |
+| `hybrid-preact-flat-build.test.ts` | 3          | ✅ 全部通过 | Hybrid + Preact 构建（无 src） |
+| `hybrid-react-build.test.ts`       | 3          | ✅ 全部通过 | Hybrid + React 构建            |
+| `hybrid-react-flat-build.test.ts`  | 3          | ✅ 全部通过 | Hybrid + React 构建（无 src）  |
+| `hybrid-view-build.test.ts`        | 3          | ✅ 全部通过 | Hybrid + View 构建             |
+| `ssg-preact-build.test.ts`         | 3          | ✅ 全部通过 | SSG + Preact 构建              |
+| `ssg-react-build.test.ts`          | 3          | ✅ 全部通过 | SSG + React 构建               |
+| `ssg-view-build.test.ts`           | 3          | ✅ 全部通过 | SSG + View 构建                |
+| `ssr-preact-build.test.ts`         | 4          | ✅ 全部通过 | SSR + Preact 构建及启动验证    |
+| `ssr-react-build.test.ts`          | 4          | ✅ 全部通过 | SSR + React 构建及启动验证     |
+| `ssr-view-build.test.ts`           | 4          | ✅ 全部通过 | SSR + View 构建及启动验证      |
+| **小计**                           | **48**     | ✅ 全部通过 | 执行时间约 18s                 |
 
 ---
 
@@ -741,9 +741,10 @@
 
 ## 🎯 结论
 
-@dreamer/dweb 框架的测试在文件级已全面覆盖，共 **818**
-个测试用例全部通过（2 个 Windows 专属用例在非 Windows
-时忽略）。测试分三段执行：端到端 124 例（约 3m52s）、单元与构建 646 例（约 28s）、集成 48 例（约 18s）。所有测试均为实质性测试，验证了具体的功能行为。单元测试包含
+@dreamer/dweb 框架的测试在文件级已全面覆盖，共 **818** 个测试用例全部通过（2 个
+Windows 专属用例在非 Windows 时忽略）。测试分三段执行：端到端 124 例（约
+3m52s）、单元与构建 646 例（约 28s）、集成 48 例（约
+18s）。所有测试均为实质性测试，验证了具体的功能行为。单元测试包含
 **context.test.ts**（parseCookies、createLoadContext、createMetaContext、
 createServerResponse）。测试覆盖了：
 
@@ -774,7 +775,9 @@ createServerResponse）。测试覆盖了：
   子命令（clean、build、dev、start、preview、fmt、lint、test、upgrade、update）
 - ✅ Windows
   兼容性（路径规范化、构建输出推断、模块缓存、组件路径提取、路径安全校验、日志友好路径）
-- ✅ **端到端测试**：浏览器渲染（各示例首页、关于、计数器、metadata）、服务器请求
-- ✅ **集成测试**：配置与生命周期、CSR/SSR/SSG/Hybrid 多种引擎与构建形态的构建与启动验证
+- ✅
+  **端到端测试**：浏览器渲染（各示例首页、关于、计数器、metadata）、服务器请求
+- ✅ **集成测试**：配置与生命周期、CSR/SSR/SSG/Hybrid
+  多种引擎与构建形态的构建与启动验证
 
 框架核心功能与端到端、集成场景已完成全面测试验证。

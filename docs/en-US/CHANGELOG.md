@@ -36,6 +36,15 @@ and this project adheres to
   support the above hydration and counter behavior across engines and modes.
 - **Dependency**: `@dreamer/router` raised to `^1.0.10` for the client
   `interceptLinks` option used in SSR/SSG generated client code.
+- **Examples**: All examples migrated to Tailwind v4 gradient utilities
+  (`bg-gradient-to-*` → `bg-linear-to-*`).
+- **E2E counter test**: Wait for page load
+  (`document.readyState === "complete"`) and 500ms hydration delay before
+  interaction; single-value wait 6s, post-click delay 500ms, test timeout 40s;
+  add “counter readable” poll (up to 5s) for stability on hybrid and similar
+  setups.
+- **Test report**: Updated to 818 cases (e2e 124, unit 646, integration 48) with
+  e2e and integration sections; framework 3.0.76, test date 2026-02-16.
 
 ---
 

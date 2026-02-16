@@ -7,7 +7,7 @@
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](../../LICENSE)
-[![Tests](https://img.shields.io/badge/tests-689%20passed-brightgreen)](./TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-818%20passed-brightgreen)](./TEST_REPORT.md)
 
 ---
 
@@ -1979,7 +1979,9 @@ config、router、plugin、build、render、windows
 **新增**：SSR/SSG 客户端激活（`render.ssr.hydrate` / `render.ssg.hydrate`）、
 全部 basic SSR/SSG 示例首页计数器（Preact/React/View）、SSR/SSG 套件启用 E2E
 计数器测试。**变更**：Init 优化；`@dreamer/router` 依赖升级为 `^1.0.10`（SSR/SSG
-下不启用客户端路由，链接整页跳转）。
+下不启用客户端路由，链接整页跳转）；示例迁移至 Tailwind v4 渐变类；E2E 计数器
+用例在加载与 hydration 后再操作并延长超时；测试报告更新为 818 例（e2e 124、单元
+646、集成 48）。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

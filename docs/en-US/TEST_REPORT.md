@@ -17,14 +17,14 @@
 
 ### Overall Statistics
 
-| Metric           | Count  |
-| ---------------- | ------ |
-| Test files       | 50+    |
-| Total test cases | 818    |
-| Passed           | 818    |
-| Ignored          | 2      |
-| Failed           | 0      |
-| Pass rate        | 100%   |
+| Metric           | Count                                                        |
+| ---------------- | ------------------------------------------------------------ |
+| Test files       | 50+                                                          |
+| Total test cases | 818                                                          |
+| Passed           | 818                                                          |
+| Ignored          | 2                                                            |
+| Failed           | 0                                                            |
+| Pass rate        | 100%                                                         |
 | Execution time   | ~4m38s total (e2e ~3m52s, unit/build ~28s, integration ~18s) |
 
 ### Test File Statistics
@@ -88,32 +88,32 @@
 
 #### E2E Tests (tests/e2e/)
 
-| File name                   | Test count | Status        | Description |
-| --------------------------- | ---------- | ------------- | ----------- |
-| `browser-render.test.ts`    | 123        | ✅ All passed | Basic/advanced examples (preact/view/react csr/ssr/ssg/hybrid/hybrid-flat): home, about, counter, metadata |
-| `server-request.test.ts`     | 1          | ✅ All passed | Server starts and returns HTML |
-| **Subtotal**                | **124**    | ✅ All passed | ~3m52s      |
+| File name                | Test count | Status        | Description                                                                                                |
+| ------------------------ | ---------- | ------------- | ---------------------------------------------------------------------------------------------------------- |
+| `browser-render.test.ts` | 123        | ✅ All passed | Basic/advanced examples (preact/view/react csr/ssr/ssg/hybrid/hybrid-flat): home, about, counter, metadata |
+| `server-request.test.ts` | 1          | ✅ All passed | Server starts and returns HTML                                                                             |
+| **Subtotal**             | **124**    | ✅ All passed | ~3m52s                                                                                                     |
 
 #### Integration Tests (tests/integration/)
 
-| File name                        | Test count | Status        | Description |
-| -------------------------------- | ---------- | ------------- | ----------- |
-| `config-lifecycle.test.ts`       | 3          | ✅ All passed | Config load and lifecycle hooks |
-| `csr-preact-build.test.ts`      | 3          | ✅ All passed | CSR + Preact build |
-| `csr-react-build.test.ts`       | 3          | ✅ All passed | CSR + React build |
-| `csr-view-build.test.ts`        | 3          | ✅ All passed | CSR + View build |
-| `hybrid-preact-build.test.ts`   | 3          | ✅ All passed | Hybrid + Preact build |
-| `hybrid-preact-flat-build.test.ts` | 3        | ✅ All passed | Hybrid + Preact build (no src) |
-| `hybrid-react-build.test.ts`     | 3          | ✅ All passed | Hybrid + React build |
-| `hybrid-react-flat-build.test.ts`| 3          | ✅ All passed | Hybrid + React build (no src) |
-| `hybrid-view-build.test.ts`     | 3          | ✅ All passed | Hybrid + View build |
-| `ssg-preact-build.test.ts`      | 3          | ✅ All passed | SSG + Preact build |
-| `ssg-react-build.test.ts`       | 3          | ✅ All passed | SSG + React build |
-| `ssg-view-build.test.ts`       | 3          | ✅ All passed | SSG + View build |
-| `ssr-preact-build.test.ts`      | 4          | ✅ All passed | SSR + Preact build and server check |
-| `ssr-react-build.test.ts`      | 4          | ✅ All passed | SSR + React build and server check |
-| `ssr-view-build.test.ts`       | 4          | ✅ All passed | SSR + View build and server check |
-| **Subtotal**                    | **48**     | ✅ All passed | ~18s        |
+| File name                          | Test count | Status        | Description                         |
+| ---------------------------------- | ---------- | ------------- | ----------------------------------- |
+| `config-lifecycle.test.ts`         | 3          | ✅ All passed | Config load and lifecycle hooks     |
+| `csr-preact-build.test.ts`         | 3          | ✅ All passed | CSR + Preact build                  |
+| `csr-react-build.test.ts`          | 3          | ✅ All passed | CSR + React build                   |
+| `csr-view-build.test.ts`           | 3          | ✅ All passed | CSR + View build                    |
+| `hybrid-preact-build.test.ts`      | 3          | ✅ All passed | Hybrid + Preact build               |
+| `hybrid-preact-flat-build.test.ts` | 3          | ✅ All passed | Hybrid + Preact build (no src)      |
+| `hybrid-react-build.test.ts`       | 3          | ✅ All passed | Hybrid + React build                |
+| `hybrid-react-flat-build.test.ts`  | 3          | ✅ All passed | Hybrid + React build (no src)       |
+| `hybrid-view-build.test.ts`        | 3          | ✅ All passed | Hybrid + View build                 |
+| `ssg-preact-build.test.ts`         | 3          | ✅ All passed | SSG + Preact build                  |
+| `ssg-react-build.test.ts`          | 3          | ✅ All passed | SSG + React build                   |
+| `ssg-view-build.test.ts`           | 3          | ✅ All passed | SSG + View build                    |
+| `ssr-preact-build.test.ts`         | 4          | ✅ All passed | SSR + Preact build and server check |
+| `ssr-react-build.test.ts`          | 4          | ✅ All passed | SSR + React build and server check  |
+| `ssr-view-build.test.ts`           | 4          | ✅ All passed | SSR + View build and server check   |
+| **Subtotal**                       | **48**     | ✅ All passed | ~18s                                |
 
 ---
 
@@ -737,10 +737,10 @@
 
 ## 🎯 Conclusion
 
-@dreamer/dweb tests are fully covered at file level. **818** test
-cases pass (2 Windows-only cases skipped on non-Windows). Tests were run in
-three segments: e2e 124 (~3m52s), unit/build 646 (~28s), integration 48 (~18s).
-All tests are substantive and verify actual behavior. Coverage includes:
+@dreamer/dweb tests are fully covered at file level. **818** test cases pass (2
+Windows-only cases skipped on non-Windows). Tests were run in three segments:
+e2e 124 (~3m52s), unit/build 646 (~28s), integration 48 (~18s). All tests are
+substantive and verify actual behavior. Coverage includes:
 
 - ✅ Config management (validation and merge, including render.mode hybrid)
 - ✅ Service container integration
