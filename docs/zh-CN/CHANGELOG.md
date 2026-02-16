@@ -24,6 +24,23 @@
 
 ---
 
+## [3.0.78] - 2026-02-16
+
+### 变更
+
+- **Init 模板（示例项目）**：生成的前端不再依赖运行时 i18n，所有面向用户的文案在
+  init 时通过 `$t()` 解析并写入为字符串字面量。修复
+  `dangerouslySetInnerHTML={{ __html: $t(...) }}`，使模板正确插值 `$t()` 结果，
+  生成代码中 `__html: "..."` 合法。用户 mock 数据与计数器区块文案在生成时调用
+  `$t()`。
+- **Init 模板文案**：组件模板中的中文（如计数器标题、按钮）全部改为翻译 key；在
+  全部 9 个语言包中新增：`counterExample`、`counterViewDesc`、`counterSummary`、
+  `counterIncrement`、`counterDecrement`、`counterReset`（init.template）与
+  `userDetailPageFile`（init.comments）。语言：en-US、zh-CN、ja-JP、ko-KR、
+  es-ES、pt-BR、id-ID、fr-FR、de-DE。
+
+---
+
 ## [3.0.77] - 2026-02-16
 
 ### 新增
