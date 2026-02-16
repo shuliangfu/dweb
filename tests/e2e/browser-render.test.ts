@@ -72,6 +72,9 @@ const E2E_PORTS: Record<string, number> = {
   "view-hybrid-flat": 3015,
 };
 
+/** 浏览器单用例超时：Windows 10 秒，其他 5 秒；不通过时再长也通不过，避免耗时过长 */
+const BROWSER_TEST_TIMEOUT_MS = platform() === "windows" ? 10000 : 5000;
+
 /**
  * 轮询等待服务器就绪（返回 200）
  * @param port 端口号
@@ -115,7 +118,7 @@ async function gotoWithRetry(
   try {
     return await page.goto(url, {
       waitUntil: "load",
-      timeout: 60000,
+      timeout: BROWSER_TEST_TIMEOUT_MS,
       ...options,
     });
   } catch (err) {
@@ -127,7 +130,7 @@ async function gotoWithRetry(
       await new Promise((r) => setTimeout(r, 2000));
       return await page.goto(url, {
         waitUntil: "load",
-        timeout: 60000,
+        timeout: BROWSER_TEST_TIMEOUT_MS,
         ...options,
       });
     }
@@ -193,7 +196,7 @@ async function assertBrowserRender(
   const browser = t.browser;
 
   /** 整段断言硬超时，避免 SSG 等场景下 goto/waitFor 卡死导致测试一直挂起 */
-  const hardTimeoutMs = 55000;
+  const hardTimeoutMs = BROWSER_TEST_TIMEOUT_MS;
   await Promise.race([
     (async () => {
       const consoleErrors: string[] = [];
@@ -249,7 +252,7 @@ async function assertBrowserRender(
 
       // 等待页面内容出现（CSR/Hybrid 需等待 JS 执行和 hydration，Windows CI 较慢）
       // basic 与多数 view 首页含「欢迎使用 Dweb 框架」，react advanced 首页含「React Advanced」或「React CSR Advanced Example」
-      const contentTimeout = platform() === "windows" ? 60000 : 30000;
+      const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
       try {
         await browser.waitFor(
           () => {
@@ -454,7 +457,7 @@ async function assertBrowserClickAbout(
     await browser.goto(url);
   }
 
-  const contentTimeout = platform() === "windows" ? 45000 : 20000;
+  const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
   await browser.waitFor(
     () => {
       const doc = (globalThis as Record<string, unknown>).document as
@@ -469,7 +472,7 @@ async function assertBrowserClickAbout(
   if (typeof page.click !== "function") {
     throw new Error("page.click 不可用，无法执行点击");
   }
-  await page.click('a[href="/about"]', { timeout: 10000 });
+  await page.click('a[href="/about"]', { timeout: BROWSER_TEST_TIMEOUT_MS });
 
   await browser.waitFor(
     () => {
@@ -523,12 +526,12 @@ async function assertBrowserMetadata(
 
   const baseUrl = `http://127.0.0.1:${port}/`;
   if (typeof page.goto === "function") {
-    await gotoWithRetry(page, baseUrl, { timeout: 30000 });
+    await gotoWithRetry(page, baseUrl, { timeout: BROWSER_TEST_TIMEOUT_MS });
   } else {
     await browser.goto(baseUrl);
   }
 
-  const contentTimeout = platform() === "windows" ? 45000 : 20000;
+  const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
   await browser.waitFor(
     () => {
       const doc = (globalThis as Record<string, unknown>).document as
@@ -564,7 +567,7 @@ async function assertBrowserMetadata(
 
   const aboutUrl = `http://127.0.0.1:${port}/about`;
   if (typeof page.goto === "function") {
-    await gotoWithRetry(page, aboutUrl, { timeout: 30000 });
+    await gotoWithRetry(page, aboutUrl, { timeout: BROWSER_TEST_TIMEOUT_MS });
   } else {
     await browser.goto(aboutUrl);
   }
@@ -632,13 +635,12 @@ async function assertBrowserClickUsers(
 
   const url = `http://127.0.0.1:${port}/`;
   if (typeof page.goto === "function") {
-    await page.goto(url, { waitUntil: "load", timeout: 60000 });
+    await page.goto(url, { waitUntil: "load", timeout: BROWSER_TEST_TIMEOUT_MS });
   } else {
     await browser.goto(url);
   }
 
-  // CI 环境可能较慢，适当加长等待时间
-  const contentTimeout = platform() === "windows" ? 60000 : 45000;
+  const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
   await browser.waitFor(
     () => {
       const doc = (globalThis as Record<string, unknown>).document as
@@ -657,7 +659,7 @@ async function assertBrowserClickUsers(
   if (typeof page.click !== "function") {
     throw new Error("page.click 不可用，无法执行点击");
   }
-  await page.click('a[href="/users"]', { timeout: 15000 });
+  await page.click('a[href="/users"]', { timeout: BROWSER_TEST_TIMEOUT_MS });
   // 点击后稍等再轮询，避免 CI 上导航尚未完成即开始 waitFor
   await new Promise((r) => setTimeout(r, 1500));
 
@@ -800,7 +802,7 @@ function createAdvancedExampleBrowserSuite(
       if (!t) throw new Error("test context 不可用");
       await assertBrowserRender(t, frontendPort);
     }, {
-      timeout: platform() === "windows" ? 90000 : 60000,
+      timeout: BROWSER_TEST_TIMEOUT_MS,
       sanitizeOps: false,
       sanitizeResources: false,
       browser: {
@@ -809,7 +811,7 @@ function createAdvancedExampleBrowserSuite(
         dumpio: true,
         reuseBrowser: true,
         browserSource: "test",
-        protocolTimeout: 90000,
+        protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
       },
     });
 
@@ -817,7 +819,7 @@ function createAdvancedExampleBrowserSuite(
       if (!t) throw new Error("test context 不可用");
       await assertBrowserClickUsers(t, frontendPort);
     }, {
-      timeout: platform() === "windows" ? 120000 : 90000,
+      timeout: BROWSER_TEST_TIMEOUT_MS,
       sanitizeOps: false,
       sanitizeResources: false,
       browser: {
@@ -826,7 +828,7 @@ function createAdvancedExampleBrowserSuite(
         dumpio: true,
         reuseBrowser: true,
         browserSource: "test",
-        protocolTimeout: 90000,
+        protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
       },
     });
   });
@@ -894,7 +896,7 @@ function createBasicExampleBrowserSuite(
       if (!t) throw new Error("test context 不可用");
       await assertBrowserRender(t, port);
     }, {
-      timeout: platform() === "windows" ? 90000 : 60000,
+      timeout: BROWSER_TEST_TIMEOUT_MS,
       sanitizeOps: false,
       sanitizeResources: false,
       browser: {
@@ -902,9 +904,9 @@ function createBasicExampleBrowserSuite(
         headless: true,
         dumpio: true,
         reuseBrowser: true,
-        // 使用 Playwright 自带 Chromium，并延长启动超时（非 CI 默认 45s 易超时）
+        // 使用 Playwright 自带 Chromium
         browserSource: "test",
-        protocolTimeout: 90000,
+        protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
       },
     });
 
@@ -912,7 +914,7 @@ function createBasicExampleBrowserSuite(
       if (!t) throw new Error("test context 不可用");
       await assertBrowserClickAbout(t, port);
     }, {
-      timeout: platform() === "windows" ? 90000 : 60000,
+      timeout: BROWSER_TEST_TIMEOUT_MS,
       sanitizeOps: false,
       sanitizeResources: false,
       browser: {
@@ -921,7 +923,7 @@ function createBasicExampleBrowserSuite(
         dumpio: true,
         reuseBrowser: true,
         browserSource: "test",
-        protocolTimeout: 90000,
+        protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
       },
     });
 
@@ -933,7 +935,7 @@ function createBasicExampleBrowserSuite(
         await assertBrowserMetadata(t, port);
       },
       {
-        timeout: platform() === "windows" ? 90000 : 60000,
+        timeout: BROWSER_TEST_TIMEOUT_MS,
         sanitizeOps: false,
         sanitizeResources: false,
         browser: {
@@ -942,7 +944,7 @@ function createBasicExampleBrowserSuite(
           dumpio: true,
           reuseBrowser: true,
           browserSource: "test",
-          protocolTimeout: 90000,
+          protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
         },
       },
     );
