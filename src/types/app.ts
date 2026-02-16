@@ -36,6 +36,16 @@ import type { SessionOptions } from "@dreamer/session";
  * };
  * ```
  */
+/** 开发态缓存调优（默认见 @dreamer/dweb 的 DEFAULT_CACHE_OPTIONS） */
+export interface DevCacheOptions {
+  /** CSS 路由模块缓存最大条目数（默认 500） */
+  maxCssRouteCacheSize?: number;
+  /** 模块版本 map 最大条目数（默认 2000） */
+  maxVersionMapSize?: number;
+  /** 模块版本 map 淘汰触发间隔（默认 50） */
+  evictionBatchInterval?: number;
+}
+
 export type BuildAppConfig = Omit<BuilderConfig, "server"> & {
   server?: Omit<ServerConfig, "entry" | "output"> & {
     /** 入口文件，不设置时使用当前执行入口（如 src/backend/main.ts） */
@@ -43,6 +53,8 @@ export type BuildAppConfig = Omit<BuilderConfig, "server"> & {
     /** 输出目录，不设置时按入口目录推断（如 dist/backend）或 dist */
     output?: string;
   };
+  /** 开发态缓存选项（路由/CSS 缓存、模块版本 map 容量与淘汰间隔），不设置则用框架默认值 */
+  devCache?: DevCacheOptions;
 };
 
 /**
@@ -142,6 +154,8 @@ export interface AppConfig extends Record<string, unknown> {
       routes?: string[];
       /** 是否启用客户端激活（hydrate），默认 true；关闭后预渲染 HTML 不注入 _client.js */
       hydrate?: boolean;
+      /** 小站可启用启动时预读 HTML 到内存。true 用默认阈值；或 { maxPages?, maxSizeMb? }（默认约 200 页、10 MB） */
+      preloadHtml?: boolean | { maxPages?: number; maxSizeMb?: number };
       // 动态路由按参数展开：键为路由模式（如 /user/[id]），值为参数列表
       dynamicRoutes?: Record<string, string[]>;
     };

@@ -19,12 +19,14 @@ import {
   exists,
   join,
   readFile,
+  resolve,
   serve,
   stat,
 } from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
 import { getProjectInfo } from "../utils/project.ts";
 import { loadProjectConfig } from "../utils/config-loader.ts";
+import { isPathWithinProject } from "../utils/path.ts";
 
 /** MIME 类型映射 */
 const MIME_TYPES: Record<string, string> = {
@@ -156,9 +158,14 @@ export async function main(
     async (req: Request) => {
       const url = new URL(req.url);
       const filePath = getFilePath(staticRoot, url.pathname);
+      const resolvedFilePath = resolve(filePath);
+      const resolvedStaticRoot = resolve(staticRoot);
+      if (!isPathWithinProject(resolvedFilePath, resolvedStaticRoot)) {
+        return new Response("Not Found", { status: 404 });
+      }
 
       try {
-        const content = await readFile(filePath);
+        const content = await readFile(resolvedFilePath);
         const ext = filePath.split(".").pop() ?? "";
         const contentType = MIME_TYPES[ext] ?? "application/octet-stream";
         return new Response(content as BodyInit, {

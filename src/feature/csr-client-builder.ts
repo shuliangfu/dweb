@@ -39,9 +39,13 @@ import {
   getDreamerClientCacheDir,
   getInferredBuildOutputDirs,
 } from "../utils/build-dirs.ts";
+import {
+  CLIENT_ENTRY_FILENAME,
+  CLIENT_OUTPUT_MAIN_FILENAME,
+  DWEB_DATA_PATH,
+} from "../utils/constants.ts";
 import { $t } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
-import { DWEB_DATA_PATH } from "./load-data-middleware.ts";
 import { normalizePathForCompare, pathForLog } from "../utils/path.ts";
 
 /**
@@ -285,12 +289,8 @@ function getHmrCssEntries(container: ServiceContainer): Array<{
 /** _client.dep.tsx 文件名（与 _client.tsx 同目录，每次启动重新生成，供 _client.tsx 导入） */
 const CLIENT_DEP_FILENAME = "_client.dep.tsx";
 
-/** _client.tsx 文件名（客户端入口，仅当不存在时生成，可手动编辑） */
-const CLIENT_ENTRY_FILENAME = "_client.tsx";
-
-/** 构建产物的主入口文件名（与入口 _client.tsx 对应，esbuild 输出 _client.js） */
-/** 客户端主入口输出文件名（单文件模式） */
-export const CLIENT_OUTPUT_MAIN_FILENAME = "_client.js";
+/** 客户端主入口输出文件名（单文件模式），统一从 constants 导出便于引用 */
+export { CLIENT_OUTPUT_MAIN_FILENAME } from "../utils/constants.ts";
 
 /** 渲染引擎对应的 @dreamer/render 客户端适配路径（与 generateStaticClientEntry 一致） */
 const ENGINE_RENDER_ADAPTER: Record<string, string> = {

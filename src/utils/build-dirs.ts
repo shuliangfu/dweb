@@ -149,6 +149,24 @@ export function getMainModulePath(): string | null {
 }
 
 /**
+ * 从应用配置或推断结果得到客户端构建输出目录（单应用 dist/client，多应用 dist/<app>/client）
+ *
+ * 用于 app、csr-client-builder 等统一获取 client 输出目录，减少重复分支。
+ *
+ * @param config 应用配置（至少含 build.client.output 可选），未提供或未配置时用推断值
+ * @returns 客户端输出目录相对路径（如 "dist/client"）
+ */
+export function getClientOutputDir(config?: {
+  build?: { client?: { output?: string } };
+}): string {
+  const output = config?.build?.client?.output;
+  if (typeof output === "string" && output.trim() !== "") {
+    return output.trim();
+  }
+  return getInferredBuildOutputDirs().client;
+}
+
+/**
  * 根据入口路径推断 server 与 client 的构建输出目录（多应用时按应用目录区分）
  *
  * @param overrideEntry 可选，用于测试或显式指定入口路径；未提供时从 getMainModulePath() 获取

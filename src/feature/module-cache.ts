@@ -9,19 +9,14 @@
  * 淘汰策略：LRU（Least Recently Used）
  * - 写入时 delete+set 将 key 移到 Map 末尾（Map 保持插入顺序）
  * - 超出容量时淘汰最前面的条目（最久未修改）
- * - 每 EVICTION_BATCH_INTERVAL 次写入且超容时触发一次淘汰，减少淘汰频率
+ * - 容量与淘汰间隔由 getCacheOptions() 决定（可由 config.build.devCache 覆盖）
  */
 
 import { cwd, resolve } from "../core/runtime-adapter.ts";
+import { getCacheOptions } from "../utils/constants.ts";
 
 /** 文件路径 -> 版本号（变更时递增），用于 import URL 的 cache-busting */
 const versionMap = new Map<string, number>();
-
-/** 最大缓存条目数，超出时淘汰最早条目，防止长期开发时 versionMap 无界增长 */
-const MAX_VERSION_MAP_SIZE = 2000;
-
-/** 淘汰触发间隔：每 N 次写入且超容时触发一次淘汰，减少 Map 迭代频率 */
-const EVICTION_BATCH_INTERVAL = 50;
 
 /** 写入计数器，用于定期触发淘汰 */
 let writeCountSinceEviction = 0;
@@ -61,13 +56,13 @@ export function invalidateModule(changedPath: string): void {
   versionMap.set(key, prev + 1);
 
   writeCountSinceEviction++;
-  // 每 EVICTION_BATCH_INTERVAL 次写入且超容时触发淘汰，减少 Map 迭代频率
+  const opts = getCacheOptions();
   if (
-    versionMap.size > MAX_VERSION_MAP_SIZE &&
-    writeCountSinceEviction >= EVICTION_BATCH_INTERVAL
+    versionMap.size > opts.maxVersionMapSize &&
+    writeCountSinceEviction >= opts.evictionBatchInterval
   ) {
     writeCountSinceEviction = 0;
-    const toDelete = versionMap.size - MAX_VERSION_MAP_SIZE;
+    const toDelete = versionMap.size - opts.maxVersionMapSize;
     let deleted = 0;
     for (const k of versionMap.keys()) {
       versionMap.delete(k);

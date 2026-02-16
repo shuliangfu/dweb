@@ -15,11 +15,13 @@ import {
   getEnv,
   join,
   readTextFile,
+  resolve,
 } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
 import { $t } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
+import { isPathWithinProject } from "../utils/path.ts";
 import {
   buildClientScript,
   CLIENT_OUTPUT_MAIN_FILENAME,
@@ -222,8 +224,13 @@ export function createClientScriptMiddleware(
       }
 
       const filePath = join(clientOutputPath, fileName);
-      if (await exists(filePath)) {
-        const content = await readTextFile(filePath);
+      const resolvedChunkPath = resolve(filePath);
+      if (!isPathWithinProject(resolvedChunkPath, clientOutputPath)) {
+        ctx.response = new Response("Not Found", { status: 404 });
+        return;
+      }
+      if (await exists(resolvedChunkPath)) {
+        const content = await readTextFile(resolvedChunkPath);
         ctx.response = new Response(content, {
           status: 200,
           headers: {

@@ -13,10 +13,11 @@ import type { AppConfig } from "../types/app.ts";
 import { createLoadContext, createServerResponse } from "../types/context.ts";
 import { getLogger } from "../utils/logger.ts";
 import { sanitizeRequestParams } from "../utils/sanitize.ts";
+import { DWEB_DATA_PATH } from "../utils/constants.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 
-/** 数据接口路径（与客户端 fetch 一致） */
-export const DWEB_DATA_PATH = "/__data";
+/** 数据接口路径（与客户端 fetch 一致），统一从 constants 导出便于引用 */
+export { DWEB_DATA_PATH };
 
 /**
  * 创建 Load 数据接口中间件
@@ -25,6 +26,10 @@ export const DWEB_DATA_PATH = "/__data";
  * - 从 query 读取 path（要加载的路由 pathname，如 /users/123）
  * - 匹配路由，加载页面模块，执行 load()
  * - 返回 { params, query, ...loadResult } 的 JSON
+ *
+ * 错误与状态码约定：
+ * - 路由未匹配或路由无 fullPath：返回 404 JSON（{ error: "not_found" } 或 "no_route_path"）
+ * - load() 抛错或其它异常：返回 500 JSON（{ error: "load_failed", message }），不静默吞错
  *
  * @param container 服务容器
  * @param router 路由实例

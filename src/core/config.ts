@@ -49,6 +49,9 @@ const RE_PROD_SINGLE = /^\/([^/]+)\/server\.js$/i;
 /** 多应用生产：/<outputDir>/<app>/server.js */
 const RE_PROD_MULTI = /^\/([^/]+)\/([^/]+)\/server\.js$/i;
 
+/** 推断结果缓存，避免热路径重复解析（key = root+path 规范化，Windows 兼容） */
+let configDirCache: { key: string; value: string } | null = null;
+
 /**
  * 从归一化入口路径推断 config 目录（内部使用预编译正则）
  *
@@ -127,6 +130,12 @@ export function inferConfigDirectoryFromEntry(): string {
     }
 
     const root = cwd();
+    const cacheKey = normalizePathForCompare(root).toLowerCase() + "\0" +
+      normalizePathForCompare(path).toLowerCase();
+    if (configDirCache && configDirCache.key === cacheKey) {
+      return configDirCache.value;
+    }
+
     // 规范化后直接转小写再比较与截取，跨平台一致（Windows 盘符/路径大小写、Mac/Linux 均适用）
     const pathNorm = normalizePathForCompare(path).toLowerCase();
     const rootNorm = normalizePathForCompare(root).toLowerCase();
@@ -141,6 +150,7 @@ export function inferConfigDirectoryFromEntry(): string {
 
     const configDir = matchConfigDirFromNormalizedPath(normalized, hasSrcDir);
     if (configDir) {
+      configDirCache = { key: cacheKey, value: configDir };
       return configDir;
     }
   } catch (err) {
@@ -392,9 +402,22 @@ export function validateConfig(config: AppConfig): void {
     }
   }
 
-  // 验证构建配置
+  // 验证构建配置（含 build.client / build.server 形状，减少后续 as 断言依赖）
   if (config.build !== undefined) {
     if (typeof config.build !== "object" || config.build === null) {
+      throwDwebError(DwebErrorCode.CONFIG_BUILD_INVALID);
+    }
+    const b = config.build as Record<string, unknown>;
+    if (
+      b.client !== undefined &&
+      (typeof b.client !== "object" || b.client === null)
+    ) {
+      throwDwebError(DwebErrorCode.CONFIG_BUILD_INVALID);
+    }
+    if (
+      b.server !== undefined &&
+      (typeof b.server !== "object" || b.server === null)
+    ) {
       throwDwebError(DwebErrorCode.CONFIG_BUILD_INVALID);
     }
   }

@@ -7,6 +7,59 @@
 
 ---
 
+## [3.0.80] - 2026-02-16
+
+### 安全
+
+- **路径穿越防护**：在读取文件前对所有路径做规范化与校验，避免请求逃出允许的目录。
+  - **SSG 生产 HTML**：`render-ssg.ts` 中用 `resolve(baseDir, relativePath)`
+    规范化路径，并用 `isPathWithinProject(resolvedPath, baseDir)` 校验；超出
+    baseDir 则返回 null（上层 404），仅使用 `resolvedPath` 读文件。
+  - **preview 静态文件**：`cmd/preview.ts` 中对请求路径做 resolve，并用
+    `isPathWithinProject` 校验是否在 staticRoot 内；超出则返回
+    404，读文件使用规范化路径。
+  - **CSR 客户端 chunk**：`csr-client-middleware.ts` 中生产模式对 chunk 路径做
+    resolve 并校验在 `clientOutputPath` 内；超出则返回 404，exists/read
+    均使用规范化路径。
+
+### 新增
+
+- **配置校验**：`validateConfig()` 现对 `config.build.client` 与
+  `config.build.server` 做校验：若存在则必须为非 null 的 object，否则抛出
+  `DwebErrorCode.CONFIG_BUILD_INVALID`，减少对类型断言的依赖，避免错误配置导致运行时异常。
+
+### 变更
+
+- **客户端输出与运行模式**：抽取公共逻辑，减少 CSR/Hybrid/SSR 与 build
+  中的重复。
+  - `utils/build-dirs.ts` 中新增
+    `getClientOutputDir(config)`：从配置或推断目录返回客户端构建输出目录，用于资源目录、预构建路径及
+    build 输出。
+  - `app.ts` 中新增 `_getRunModeFromConfig(config)` 与
+    `_ensureClientBuildForRender(...)`：统一获取运行模式（dev/prod）及「按需生成入口并构建客户端」的逻辑，CSR、Hybrid、SSR
+    分支不再重复相同代码。
+- **错误边界约定（文档）**：
+  - `loadRouteModule`：JSDoc 明确失败时返回 `null`
+    并打日志、不抛错，由调用方决定 404 或降级。
+  - `createLoadDataMiddleware`：JSDoc 明确路由未匹配或无 fullPath → 404
+    JSON，`load()` 或其它异常 → 500 JSON，不静默吞错。
+- **优化分析报告**：`OPTIMIZATION_ANALYSIS.md`
+  更新，将高/中/低优先级项（路径穿越、配置校验、重复逻辑、错误契约、配置推断缓存、SSG
+  预读、缓存配置项）标为已实施。
+
+---
+
+## [3.0.79] - 2026-02-16
+
+### 修复
+
+- **dweb-cli upgrade 与 setup**：upgrade 命令与 setup 脚本此前以
+  `stdout`/`stderr` 为 `"piped"` 启动子进程但未读取管道，子进程会阻塞，CLI 表现
+  为卡住。已改为 `stdout`/`stderr` `"null"`，输出被丢弃，安装完成后进程正常退出
+  且不阻塞。
+
+---
+
 ## [3.0.78] - 2026-02-16
 
 ### 变更
@@ -21,17 +74,6 @@
   `counterIncrement`、`counterDecrement`、`counterReset`（init.template）及
   `userDetailPageFile`（init.comments）。语言：en-US、zh-CN、ja-JP、ko-KR、
   es-ES、pt-BR、id-ID、fr-FR、de-DE。
-
----
-
-## [3.0.79] - 2026-02-16
-
-### 修复
-
-- **dweb-cli upgrade 与 setup**：upgrade 命令与 setup 脚本此前以
-  `stdout`/`stderr` 为 `"piped"` 启动子进程但未读取管道，子进程会阻塞，CLI 表现
-  为卡住。已改为 `stdout`/`stderr` `"null"`，输出被丢弃，安装完成后进程正常退出
-  且不阻塞。
 
 ---
 

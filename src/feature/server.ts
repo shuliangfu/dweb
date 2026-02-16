@@ -123,6 +123,7 @@ export function initializeServer(
       builder: userDevConfig.builder ?? {
         async rebuild(options?: { changedPath?: string }) {
           // 使模块缓存失效，确保刷新页面时加载最新内容（项目内所有模块更新都能热重载）
+          // 必须传入 options.changedPath 以命中 chunk 级 HMR（buildClientScript 据此计算 chunkUrl）
           if (options?.changedPath) {
             invalidateModule(options.changedPath);
             // 清除 CSS 路由缓存，避免注释/取消注释 CSS 导入后仍返回旧缓存

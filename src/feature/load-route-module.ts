@@ -26,6 +26,7 @@ import {
 } from "../core/runtime-adapter.ts";
 import { $t } from "../utils/i18n.ts";
 import { isPathWithinProject } from "../utils/path.ts";
+import { getCacheOptions } from "../utils/constants.ts";
 import { getModuleVersion } from "./module-cache.ts";
 import { resolve } from "../core/runtime-adapter.ts";
 
@@ -43,14 +44,13 @@ interface CssRouteCacheEntry {
 
 const cssRouteCache = new Map<string, CssRouteCacheEntry>();
 
-/** 缓存最大条目数，超出时淘汰最早条目 */
-const MAX_CSS_ROUTE_CACHE_SIZE = 500;
-
 /**
- * 淘汰最早缓存条目，防止长期运行无界增长
+ * 淘汰最早缓存条目，防止长期运行无界增长。
+ * 容量由 getCacheOptions().maxCssRouteCacheSize 决定（默认 500，可由 config.build.devCache 覆盖）。
  */
 function evictOldestCacheEntry(): void {
-  if (cssRouteCache.size <= MAX_CSS_ROUTE_CACHE_SIZE) return;
+  const maxSize = getCacheOptions().maxCssRouteCacheSize;
+  if (cssRouteCache.size <= maxSize) return;
   const firstKey = cssRouteCache.keys().next().value;
   if (firstKey !== undefined) {
     cssRouteCache.delete(firstKey);
@@ -165,6 +165,9 @@ async function computeContentHash(
  * @param options.cssCollector 可选，收到每段 CSS 内容时调用，用于 SSR 注入到页面 head
  * @param options.logger 可选，失败时用 logger.error 输出，便于日志聚合；未传则用 console.error
  * @returns 模块对象，失败返回 null
+ *
+ * 错误边界约定：失败时不抛错，仅返回 null 并记录日志（logger 或 console）。
+ * 由调用方决定返回 404、降级渲染或其它处理，避免静默吞错导致排查困难。
  */
 export async function loadRouteModule(
   filePath: string,

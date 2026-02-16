@@ -20,18 +20,25 @@ import {
   exists,
   getEnv,
   join,
+  readdir,
   readTextFile,
+  resolve,
 } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
 import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
 import { $t } from "../utils/i18n.ts";
+import {
+  DEFAULT_PRELOAD_MAX_PAGES,
+  DEFAULT_PRELOAD_MAX_SIZE_MB,
+} from "../utils/constants.ts";
+import { isPathWithinProject } from "../utils/path.ts";
 import { createRendererSSR } from "./render-ssr.ts";
 
 /**
  * SSG 渲染选项
  *
- * 配置预渲染输出目录、显式路由列表、动态路由参数展开等。
+ * 配置预渲染输出目录、显式路由列表、动态路由参数展开、可选内存预读等。
  *
  * @example
  * ```ts
@@ -40,6 +47,7 @@ import { createRendererSSR } from "./render-ssr.ts";
  *   ssg: {
  *     outputDir: "dist/client",
  *     routes: ["/", "/about"],
+ *     preloadHtml: true,
  *     dynamicRoutes: { "/user/[id]": ["1", "2", "3"] },
  *   },
  * }
@@ -53,6 +61,11 @@ export interface RenderSSGOptions {
    * 若提供则优先使用，不再仅从静态路由推断；可从数据库读取 ID 后拼接
    */
   routes?: string[];
+  /**
+   * 小站预读 HTML 到内存（生产 start 时首次请求触发，后续命中缓存）。
+   * true 用默认阈值（约 200 页或 10 MB）；或 { maxPages?, maxSizeMb? }。超出则按请求读盘。
+   */
+  preloadHtml?: boolean | { maxPages?: number; maxSizeMb?: number };
   /**
    * 动态路由按参数展开：键为路由模式（如 /user/[id]），值为参数列表
    * 例：{ "/user/[id]": ["1", "2", "3"] } 会生成 /user/1、/user/2、/user/3
@@ -121,6 +134,22 @@ export function createRendererSSG(
   const outputDir = renderConfig.ssg?.outputDir ??
     getInferredBuildOutputDirs().client;
 
+  const baseDir = join(cwd(), outputDir);
+  const preloadOpt = renderConfig.ssg?.preloadHtml;
+  const maxPages =
+    typeof preloadOpt === "object" && preloadOpt?.maxPages != null
+      ? preloadOpt.maxPages
+      : DEFAULT_PRELOAD_MAX_PAGES;
+  const maxSizeMb =
+    typeof preloadOpt === "object" && preloadOpt?.maxSizeMb != null
+      ? preloadOpt.maxSizeMb
+      : DEFAULT_PRELOAD_MAX_SIZE_MB;
+  const maxSizeBytes = maxSizeMb * 1024 * 1024;
+
+  /** 小站预读 HTML 缓存（生产且 preloadHtml 时首次请求填充），Windows 路径用 pathname 作 key 一致 */
+  let htmlCache: Map<string, string> | null = null;
+  let htmlCachePending: Promise<void> | null = null;
+
   /** 开发环境下使用 SSR 按需渲染 */
   const ssrRenderer = createRendererSSR(container, router, config);
 
@@ -141,18 +170,75 @@ export function createRendererSSG(
         return ssrRenderer(ctx, match);
       }
 
-      // 生产 start：从 dist 下读取预渲染的 HTML
       const pathname = ctx.url.pathname ?? ctx.path ?? match.route?.path ?? "/";
       const relativePath = pathnameToFile(pathname);
-      const baseDir = join(cwd(), outputDir);
-      const filePath = join(baseDir, relativePath);
+      // 规范化：resolve 消除 pathname 中的 ../ 等，避免 pathname 被篡改时读项目外文件
+      const resolvedPath = resolve(baseDir, relativePath);
 
-      const fileExists = await exists(filePath);
+      // 路径穿越防护：仅允许读取 baseDir 内的文件（Windows 兼容：isPathWithinProject 内部做规范化与大小写处理）
+      if (!isPathWithinProject(resolvedPath, baseDir)) {
+        return null;
+      }
+
+      // 小站预读：首次请求时按配置填充 htmlCache，后续命中则直接返回
+      if (
+        preloadOpt != null && htmlCache === null && htmlCachePending === null
+      ) {
+        htmlCachePending = (async () => {
+          const cache = new Map<string, string>();
+          try {
+            const entries = await readdir(baseDir);
+            const htmlNames = entries
+              .map((
+                e,
+              ) => (typeof e === "string" ? e : (e as { name: string }).name))
+              .filter((name) => name.endsWith(".html"));
+            let totalBytes = 0;
+            let count = 0;
+            for (const name of htmlNames) {
+              if (count >= maxPages || totalBytes >= maxSizeBytes) break;
+              const p = join(baseDir, name);
+              const abs = resolve(p);
+              if (!isPathWithinProject(abs, baseDir)) continue;
+              try {
+                const raw = await readTextFile(p);
+                totalBytes += new TextEncoder().encode(raw).length;
+                if (totalBytes > maxSizeBytes) break;
+                const pathnameKey = fileToPathname(name);
+                const html = await replaceAssetPathsInHtml(
+                  raw,
+                  config,
+                  outputDir,
+                );
+                cache.set(pathnameKey, html);
+                count++;
+              } catch {
+                // 单文件失败跳过
+              }
+            }
+            htmlCache = cache;
+          } finally {
+            htmlCachePending = null;
+          }
+        })();
+      }
+      if (htmlCachePending) await htmlCachePending;
+      if (htmlCache != null) {
+        const cached = htmlCache.get(pathname);
+        if (cached != null) {
+          return new Response(cached, {
+            status: 200,
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          });
+        }
+      }
+
+      const fileExists = await exists(resolvedPath);
       if (!fileExists) {
         return null;
       }
 
-      let html = await readTextFile(filePath);
+      let html = await readTextFile(resolvedPath);
       html = await replaceAssetPathsInHtml(html, config, outputDir);
       return new Response(html, {
         status: 200,

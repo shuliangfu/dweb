@@ -8,6 +8,53 @@ and this project adheres to
 
 ---
 
+## [3.0.80] - 2026-02-16
+
+### Security
+
+- **Path traversal hardening**: Resolve and validate all file paths before
+  reading so requests cannot escape allowed directories.
+  - **SSG production HTML**: In `render-ssg.ts`, the path is normalized with
+    `resolve(baseDir, relativePath)` and checked with
+    `isPathWithinProject(resolvedPath, baseDir)`; if outside, the handler
+    returns null (upstream 404). File reads use `resolvedPath` only.
+  - **Preview static files**: In `cmd/preview.ts`, the request path is resolved
+    and checked against `staticRoot` via `isPathWithinProject`; requests outside
+    the static root return 404. Reads use the resolved path.
+  - **CSR client chunks**: In `csr-client-middleware.ts`, production chunk paths
+    are resolved and checked against `clientOutputPath`; paths outside
+    return 404. Existence and read use the resolved path.
+
+### Added
+
+- **Config validation**: `validateConfig()` now validates `config.build.client`
+  and `config.build.server`: when present, each must be a non-null object;
+  otherwise the framework throws `DwebErrorCode.CONFIG_BUILD_INVALID`. Reduces
+  reliance on type assertions and avoids runtime errors from malformed config.
+
+### Changed
+
+- **Client output and run mode**: Extracted shared helpers to remove duplication
+  in CSR/Hybrid/SSR and build.
+  - `getClientOutputDir(config)` in `utils/build-dirs.ts`: returns client build
+    output dir from config or inferred dirs; used for assets dir, prebuilt
+    client path, and build output.
+  - `_getRunModeFromConfig(config)` and `_ensureClientBuildForRender(...)` in
+    `app.ts`: centralize run mode (dev/prod) and “ensure client entry + build
+    when needed” so CSR, Hybrid, and SSR branches no longer repeat the same
+    logic.
+- **Error boundary contract (documentation)**:
+  - `loadRouteModule`: JSDoc states that on failure it returns `null` and logs;
+    it does not throw. Callers decide 404 or fallback.
+  - `createLoadDataMiddleware`: JSDoc states route not matched or no `fullPath`
+    → 404 JSON; `load()` or other errors → 500 JSON; errors are not swallowed.
+- **Optimization analysis**: `OPTIMIZATION_ANALYSIS.md` updated to mark
+  high/medium/low priority items as implemented (path traversal, config
+  validation, duplication, error contract, config inference cache, SSG preload,
+  cache options).
+
+---
+
 ## [3.0.79] - 2026-02-16
 
 ### Fixed

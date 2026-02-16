@@ -38,16 +38,17 @@ import { expandDynamicRoute } from "@dreamer/render";
 import { session } from "@dreamer/session";
 import { initializeBuild, runBuildWithBuilder } from "../feature/build.ts";
 import {
+  CLIENT_OUTPUT_MAIN_FILENAME,
+  DWEB_DATA_PATH,
+  setCacheOptions,
+} from "../utils/constants.ts";
+import {
   buildClientScript,
   clearClientScriptCache,
-  CLIENT_OUTPUT_MAIN_FILENAME,
   createClientScriptMiddleware,
   ensureClientEntryFile,
 } from "../feature/csr-client-builder.ts";
-import {
-  createLoadDataMiddleware,
-  DWEB_DATA_PATH,
-} from "../feature/load-data-middleware.ts";
+import { createLoadDataMiddleware } from "../feature/load-data-middleware.ts";
 import { loadRouteModule } from "../feature/load-route-module.ts";
 import { createRendererCSR } from "../feature/render-csr.ts";
 import { createRendererHybrid } from "../feature/render-hybrid.ts";
@@ -79,7 +80,7 @@ import {
   type IApp,
   isSocketIOAdapter,
 } from "../types/app.ts";
-import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
+import { getClientOutputDir } from "../utils/build-dirs.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $t, initDwebI18n } from "../utils/i18n.ts";
 import { getLogger, initializeLogger } from "../utils/logger.ts";
@@ -291,6 +292,16 @@ export class App extends EventEmitter implements IApp {
     // 验证合并后的配置（自动验证，确保配置正确性）
     validateConfig(mergedConfig);
 
+    // 开发态缓存选项：由 config.build.devCache 覆盖默认值（路由/CSS 缓存、模块版本 map）
+    const devCache = (mergedConfig.build as {
+      devCache?: {
+        maxCssRouteCacheSize?: number;
+        maxVersionMapSize?: number;
+        evictionBatchInterval?: number;
+      };
+    } | undefined)?.devCache;
+    if (devCache) setCacheOptions(devCache);
+
     // 重新注册配置到服务容器（先移除旧的，再注册新的）
     try {
       this.container.remove("config");
@@ -383,11 +394,7 @@ export class App extends EventEmitter implements IApp {
       }
 
       // 注册客户端资源目录（多应用时为 dist/<appDir>/client/assets），供 Tailwind 等插件在生产模式解析带 hash 的 CSS 路径
-      const buildCfgForAssets = (mergedConfig.build || {}) as {
-        client?: { output?: string };
-      };
-      const clientOutputDirForAssets = buildCfgForAssets.client?.output ??
-        getInferredBuildOutputDirs().client;
+      const clientOutputDirForAssets = getClientOutputDir(mergedConfig);
       const clientAssetsDirPath = join(
         cwd(),
         clientOutputDirForAssets,
@@ -507,36 +514,19 @@ export class App extends EventEmitter implements IApp {
         );
         server.use(clientScriptMiddleware);
 
-        // 获取运行模式
-        const serverCfg = (mergedConfig.server || {}) as { mode?: string };
-        const envMode = getEnv("DENO_ENV") || getEnv("BUN_ENV") ||
-          getEnv("NODE_ENV") || "dev";
-        const runMode = serverCfg.mode || envMode;
-        const isProd = runMode === "prod";
-
-        // 检查预构建文件是否存在；未配置时按当前入口推断应用目录（如 dist/backend/client）
-        const buildCfg = (mergedConfig.build || {}) as {
-          client?: { output?: string };
-        };
-        const clientOutputDir = buildCfg.client?.output ??
-          getInferredBuildOutputDirs().client;
+        const { isProd } = this._getRunModeFromConfig(mergedConfig);
+        const clientOutputDir = getClientOutputDir(mergedConfig);
         const prebuiltClientPath = join(
           cwd(),
           clientOutputDir,
           CLIENT_OUTPUT_MAIN_FILENAME,
         );
         const hasPrebuiltClient = await exists(prebuiltClientPath);
-
-        // 开发模式：始终生成 _client.tsx 并执行客户端构建（内存构建），保证 HMR 无感刷新可用
-        // build 模式（--build）下不在此处构建，由 build() 统一构建，避免重复
-        if (!isProd) {
-          await ensureClientEntryFile(this.container, mergedConfig);
-          if (!this._isBuildMode()) {
-            await buildClientScript(this.container, mergedConfig);
-          }
-        } else if (!hasPrebuiltClient && !this._isBuildMode()) {
-          await buildClientScript(this.container, mergedConfig);
-        }
+        await this._ensureClientBuildForRender(
+          mergedConfig,
+          isProd,
+          hasPrebuiltClient,
+        );
 
         if (!this._isBuildMode()) {
           renderLogger.info($t("log.renderModeCsr"));
@@ -564,35 +554,19 @@ export class App extends EventEmitter implements IApp {
         );
         server.use(clientScriptMiddleware);
 
-        // 获取运行模式
-        const serverCfg = (mergedConfig.server || {}) as { mode?: string };
-        const envMode = getEnv("DENO_ENV") || getEnv("BUN_ENV") ||
-          getEnv("NODE_ENV") || "dev";
-        const runMode = serverCfg.mode || envMode;
-        const isProd = runMode === "prod";
-
-        // 开发模式：始终生成 _client.tsx 并执行客户端构建（内存），保证 HMR 无感刷新可用
-        // 生产模式：仅当无预构建产物时才构建；build 模式（--build）下不在此处构建，由 build() 统一构建，避免重复
-        const buildCfg = (mergedConfig.build || {}) as {
-          client?: { output?: string };
-        };
-        const clientOutputDir = buildCfg.client?.output ??
-          getInferredBuildOutputDirs().client;
+        const { isProd } = this._getRunModeFromConfig(mergedConfig);
+        const clientOutputDir = getClientOutputDir(mergedConfig);
         const prebuiltClientPath = join(
           cwd(),
           clientOutputDir,
           CLIENT_OUTPUT_MAIN_FILENAME,
         );
         const hasPrebuiltClient = await exists(prebuiltClientPath);
-
-        if (!isProd) {
-          await ensureClientEntryFile(this.container, mergedConfig);
-          if (!this._isBuildMode()) {
-            await buildClientScript(this.container, mergedConfig);
-          }
-        } else if (!hasPrebuiltClient && !this._isBuildMode()) {
-          await buildClientScript(this.container, mergedConfig);
-        }
+        await this._ensureClientBuildForRender(
+          mergedConfig,
+          isProd,
+          hasPrebuiltClient,
+        );
 
         if (!this._isBuildMode()) {
           renderLogger.info($t("log.renderModeHybrid"));
@@ -630,30 +604,19 @@ export class App extends EventEmitter implements IApp {
         );
         server.use(clientScriptMiddleware);
 
-        const serverCfg = (mergedConfig.server || {}) as { mode?: string };
-        const envMode = getEnv("DENO_ENV") || getEnv("BUN_ENV") ||
-          getEnv("NODE_ENV") || "dev";
-        const runMode = serverCfg.mode || envMode;
-        const isProd = runMode === "prod";
-        const buildCfg = (mergedConfig.build || {}) as {
-          client?: { output?: string };
-        };
-        const clientOutputDir = buildCfg.client?.output ??
-          getInferredBuildOutputDirs().client;
+        const { isProd } = this._getRunModeFromConfig(mergedConfig);
+        const clientOutputDir = getClientOutputDir(mergedConfig);
         const prebuiltClientPath = join(
           cwd(),
           clientOutputDir,
           CLIENT_OUTPUT_MAIN_FILENAME,
         );
         const hasPrebuiltClient = await exists(prebuiltClientPath);
-        if (!isProd) {
-          await ensureClientEntryFile(this.container, mergedConfig);
-          if (!this._isBuildMode()) {
-            await buildClientScript(this.container, mergedConfig);
-          }
-        } else if (!hasPrebuiltClient && !this._isBuildMode()) {
-          await buildClientScript(this.container, mergedConfig);
-        }
+        await this._ensureClientBuildForRender(
+          mergedConfig,
+          isProd,
+          hasPrebuiltClient,
+        );
 
         if (!this._isBuildMode()) {
           renderLogger.info($t("log.renderModeSsr"));
@@ -953,6 +916,40 @@ export class App extends EventEmitter implements IApp {
   }
 
   /**
+   * 从配置与环境变量得到运行模式（dev/prod）及是否为生产
+   * 用于 CSR/Hybrid/SSR 等渲染分支中统一获取 isProd，减少重复。
+   */
+  private _getRunModeFromConfig(config: AppConfig): {
+    runMode: string;
+    isProd: boolean;
+  } {
+    const serverCfg = config.server as { mode?: string } | undefined;
+    const envMode = getEnv("DENO_ENV") || getEnv("BUN_ENV") ||
+      getEnv("NODE_ENV") || "dev";
+    const runMode = serverCfg?.mode || envMode;
+    return { runMode, isProd: runMode === "prod" };
+  }
+
+  /**
+   * 在需要客户端脚本的渲染模式下，按需生成 _client.tsx 并执行客户端构建（内存或磁盘）。
+   * 开发模式始终构建以保证 HMR；生产模式仅当无预构建产物且非 --build 时构建。
+   */
+  private async _ensureClientBuildForRender(
+    config: AppConfig,
+    isProd: boolean,
+    hasPrebuiltClient: boolean,
+  ): Promise<void> {
+    if (!isProd) {
+      await ensureClientEntryFile(this.container, config);
+      if (!this._isBuildMode()) {
+        await buildClientScript(this.container, config);
+      }
+    } else if (!hasPrebuiltClient && !this._isBuildMode()) {
+      await buildClientScript(this.container, config);
+    }
+  }
+
+  /**
    * 启动应用
    *
    * 自动检测 --build 参数：
@@ -1008,11 +1005,7 @@ export class App extends EventEmitter implements IApp {
     logger.info($t("log.buildStart"));
 
     // 获取构建配置，基础输出目录（多应用时按入口推断，如 dist/backend）
-    const buildConfig = (config.build || {}) as {
-      client?: { output?: string };
-    };
-    const clientOutputDir = buildConfig.client?.output ??
-      getInferredBuildOutputDirs().client;
+    const clientOutputDir = getClientOutputDir(config);
 
     // 供 CSS 插件在 onBuild 中推送 link 标签，用于 SSG 模板注入
     const pluginBuildCssLinks: string[] = [];
