@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <div className="space-y-12">
       {/* Hero 区域 */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 text-white p-12">
+      <section className="relative overflow-hidden rounded-2xl bg-linear-to-br from-indigo-600 to-indigo-800 text-white p-12">
         <div className="relative z-10">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             欢迎使用 Dweb 框架

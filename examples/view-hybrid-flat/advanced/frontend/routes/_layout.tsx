@@ -21,7 +21,7 @@ export default function Layout({ children }: LayoutProps) {
           <nav className="flex items-center justify-between h-16">
             {/* Logo */}
             <a href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-linear-to-br from-indigo-500 to-indigo-700 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">PA</span>
               </div>
               <span className="font-semibold text-gray-900">

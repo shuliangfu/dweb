@@ -20,8 +20,9 @@
 - **全部 basic SSR/SSG 示例的计数器**：Preact、React、View 的 basic SSR/SSG 首页
   均增加计数器（hydrate 后点击可更新）及 `data-counter-*` 属性便于测试；View
   SSR/SSG 使用 `@dreamer/view` 的 `createSignal`。
-- **SSR/SSG 的 E2E 计数器测试**：浏览器用例「应能通过计数器加一、减一、重置更新数字」
-  不再对 SSR/SSG basic 套件跳过，所有 basic 示例（含 preact-ssr、preact-ssg、
+- **SSR/SSG 的 E2E
+  计数器测试**：浏览器用例「应能通过计数器加一、减一、重置更新数字」 不再对
+  SSR/SSG basic 套件跳过，所有 basic 示例（含 preact-ssr、preact-ssg、
   react-ssr、react-ssg、view-ssr、view-ssg）在页面有计数器区块时均执行该交互
   测试。
 

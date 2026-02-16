@@ -1597,9 +1597,10 @@ const app = new App({
 });
 ```
 
-**SSR client hydration** (optional): Set `render.ssr.hydrate` (default `true`) to
-enable client-side activation of the current page (e.g. counters, click handlers)
-without enabling client-side routing; link clicks perform full page navigation. See
+**SSR client hydration** (optional): Set `render.ssr.hydrate` (default `true`)
+to enable client-side activation of the current page (e.g. counters, click
+handlers) without enabling client-side routing; link clicks perform full page
+navigation. See
 [APP_CONFIG](./docs/en-US/APP_CONFIG.md#ssrssg-client-hydration).
 
 ### Client-side rendering (CSR)
@@ -1652,9 +1653,9 @@ const app = new App({
 - ✅ Lower server cost (no runtime)
 - ✅ Higher security (no server execution)
 
-**SSG client hydration** (optional): Set `render.ssg.hydrate` (default `true`) to
-inject hydration data and the client script into pre-rendered HTML so the page
-can become interactive in the browser (e.g. counters) without client-side
+**SSG client hydration** (optional): Set `render.ssg.hydrate` (default `true`)
+to inject hydration data and the client script into pre-rendered HTML so the
+page can become interactive in the browser (e.g. counters) without client-side
 routing. See [APP_CONFIG](./docs/en-US/APP_CONFIG.md#ssrssg-client-hydration).
 
 ## Dev tools
@@ -1907,11 +1908,11 @@ makeTempDir).
 
 ### [3.0.77] - 2026-02-16
 
-**Added**: SSR/SSG client hydration (`render.ssr.hydrate` / `render.ssg.hydrate`),
-counter on all basic SSR/SSG examples (Preact, React, View), E2E counter test
-enabled for SSR/SSG suites. **Changed**: Init improvements; `@dreamer/router`
-dependency raised to `^1.0.10` for `interceptLinks` (no client-side routing on
-SSR/SSG).
+**Added**: SSR/SSG client hydration (`render.ssr.hydrate` /
+`render.ssg.hydrate`), counter on all basic SSR/SSG examples (Preact, React,
+View), E2E counter test enabled for SSR/SSG suites. **Changed**: Init
+improvements; `@dreamer/router` dependency raised to `^1.0.10` for
+`interceptLinks` (no client-side routing on SSR/SSG).
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

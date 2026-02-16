@@ -46,7 +46,7 @@ export default function User({ params }: UserProps) {
       <h1 className="mb-8 text-3xl font-bold">用户详情</h1>
 
       <div className="flex items-center gap-6 rounded-xl bg-white p-8 shadow-md">
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-3xl font-bold text-white">
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-purple-600 text-3xl font-bold text-white">
           {user.name.charAt(0)}
         </div>
         <div>

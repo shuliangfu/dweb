@@ -507,9 +507,9 @@ function getCountFromPage(
   return browser.evaluate(() => {
     const doc = (globalThis as Record<string, unknown>).document as
       | {
-          body?: { innerText?: string };
-          querySelector?: (s: string) => { textContent?: string | null } | null;
-        }
+        body?: { innerText?: string };
+        querySelector?: (s: string) => { textContent?: string | null } | null;
+      }
       | undefined;
     const el = doc?.querySelector?.("[data-counter-value]");
     const valueText = el?.textContent?.trim();
@@ -625,6 +625,19 @@ async function assertBrowserCounterButtons(
     { timeout: contentTimeout },
   );
 
+  /** 等待页面加载完成（load 完成、readyState === complete）再操作，避免在 hydration 前点击 */
+  await browser.waitFor(
+    () => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { readyState?: string }
+        | undefined;
+      return doc?.readyState === "complete";
+    },
+    { timeout: contentTimeout },
+  );
+  /** 再留一点时间给客户端 hydration 绑定事件 */
+  await new Promise((r) => setTimeout(r, 500));
+
   const hasCounter = await browser.evaluate(() => {
     const doc = (globalThis as Record<string, unknown>).document as
       | { body?: { innerHTML?: string } }
@@ -635,8 +648,8 @@ async function assertBrowserCounterButtons(
     return;
   }
 
-  /** 单次等待目标数字的超时（留出 re-render 时间，避免与用例总超时冲突） */
-  const countWaitMs = 3000;
+  /** 单次等待目标数字的超时（留出 hydration/re-render，CI 或 hybrid 较慢） */
+  const countWaitMs = 6000;
   const countAfterWait = (
     expected: number,
     timeoutMs: number = countWaitMs,
@@ -662,20 +675,31 @@ async function assertBrowserCounterButtons(
       tick();
     });
 
-  let n = await getCountFromPage(browser);
+  /** 等待计数器可读（hydration 完成），最多 5s */
+  const hydrateWaitMs = 5000;
+  const hydrateStart = Date.now();
+  let n: number | null = null;
+  while (Date.now() - hydrateStart < hydrateWaitMs) {
+    n = await getCountFromPage(browser);
+    if (n !== null) break;
+    await new Promise((r) => setTimeout(r, 150));
+  }
   expect(n).not.toBe(null);
 
+  /** 点击后多留一点时间给 re-render（hybrid 等较慢） */
+  const clickDelayMs = 500;
+
   await clickCounterButton(browser, "加一");
-  await new Promise((r) => setTimeout(r, 300));
+  await new Promise((r) => setTimeout(r, clickDelayMs));
   await countAfterWait((n as number) + 1);
 
   n = await getCountFromPage(browser);
   await clickCounterButton(browser, "减一");
-  await new Promise((r) => setTimeout(r, 300));
+  await new Promise((r) => setTimeout(r, clickDelayMs));
   await countAfterWait((n as number) - 1);
 
   await clickCounterButton(browser, "重置");
-  await new Promise((r) => setTimeout(r, 300));
+  await new Promise((r) => setTimeout(r, clickDelayMs));
   await countAfterWait(0);
 }
 
@@ -1126,7 +1150,7 @@ function createBasicExampleBrowserSuite(
         await assertBrowserCounterButtons(t, port);
       },
       {
-        timeout: 15000,
+        timeout: 40000,
         sanitizeOps: false,
         sanitizeResources: false,
         browser: {
@@ -1135,7 +1159,7 @@ function createBasicExampleBrowserSuite(
           dumpio: true,
           reuseBrowser: true,
           browserSource: "test",
-          protocolTimeout: 15000,
+          protocolTimeout: 40000,
         },
       },
     );

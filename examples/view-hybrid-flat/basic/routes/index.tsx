@@ -7,7 +7,7 @@ import { Client } from "@dreamer/socket-io/client";
 const classes = {
   page: "py-5",
   hero:
-    "mb-10 rounded-xl bg-gradient-to-br from-[#667eea] to-[#764ba2] px-5 py-15 text-center text-white",
+    "mb-10 rounded-xl bg-linear-to-br from-[#667eea] to-[#764ba2] px-5 py-15 text-center text-white",
   heroTitle: "mb-4 text-4xl",
   heroDesc: "text-xl text-white/90",
   section: "mb-10",
@@ -213,7 +213,7 @@ export default function Home() {
       </section>
 
       <section class={classes.section}>
-        <h2 class="mb-8 text-center text-2xl font-bold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-[#667eea] to-[#764ba2]">
+        <h2 class="mb-8 text-center text-2xl font-bold tracking-wide bg-clip-text text-transparent bg-linear-to-r from-[#667eea] to-[#764ba2]">
           特性
         </h2>
         <div class={classes.featureGrid}>

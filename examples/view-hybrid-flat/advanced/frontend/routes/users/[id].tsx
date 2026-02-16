@@ -88,7 +88,7 @@ export default function UserDetail({ params, user, error }: UserDetailProps) {
       {/* 用户卡片 */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {/* 头部背景 */}
-        <div className="h-32 bg-gradient-to-br from-indigo-500 to-indigo-700">
+        <div className="h-32 bg-linear-to-br from-indigo-500 to-indigo-700">
         </div>
 
         {/* 用户信息 */}

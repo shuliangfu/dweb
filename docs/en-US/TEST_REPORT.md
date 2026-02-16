@@ -6,9 +6,9 @@
 
 | Item             | Value                |
 | ---------------- | -------------------- |
-| Framework        | 3.0.75               |
+| Framework        | 3.0.76               |
 | Test framework   | @dreamer/test@^1.0.5 |
-| Test date        | 2026-02-15           |
+| Test date        | 2026-02-16           |
 | Test environment | Deno 2.x / Bun 1.x   |
 
 ---
@@ -17,15 +17,15 @@
 
 ### Overall Statistics
 
-| Metric           | Count |
-| ---------------- | ----- |
-| Test files       | 49+   |
-| Total test cases | 788   |
-| Passed           | 788   |
-| Ignored          | 2     |
-| Failed           | 0     |
-| Pass rate        | 100%  |
-| Execution time   | ~3m8s |
+| Metric           | Count  |
+| ---------------- | ------ |
+| Test files       | 50+    |
+| Total test cases | 818    |
+| Passed           | 818    |
+| Ignored          | 2      |
+| Failed           | 0      |
+| Pass rate        | 100%   |
+| Execution time   | ~4m38s total (e2e ~3m52s, unit/build ~28s, integration ~18s) |
 
 ### Test File Statistics
 
@@ -36,7 +36,7 @@
 | `config.test.ts`                | 64             | ✅ All passed |
 | `context.test.ts`               | 21             | ✅ All passed |
 | `render.test.ts`                | 46             | ✅ All passed |
-| `command.test.ts`               | 41             | ✅ All passed |
+| `command.test.ts`               | 42             | ✅ All passed |
 | `build.test.ts`                 | 24             | ✅ All passed |
 | `windows.test.ts`               | 48 (2 ignored) | ✅ All passed |
 | `path.test.ts`                  | 18             | ✅ All passed |
@@ -85,6 +85,35 @@
 
 > **Note**: 2 cases in `windows.test.ts` are Windows-only (skipped via `skipIf`
 > on non-Windows)
+
+#### E2E Tests (tests/e2e/)
+
+| File name                   | Test count | Status        | Description |
+| --------------------------- | ---------- | ------------- | ----------- |
+| `browser-render.test.ts`    | 123        | ✅ All passed | Basic/advanced examples (preact/view/react csr/ssr/ssg/hybrid/hybrid-flat): home, about, counter, metadata |
+| `server-request.test.ts`     | 1          | ✅ All passed | Server starts and returns HTML |
+| **Subtotal**                | **124**    | ✅ All passed | ~3m52s      |
+
+#### Integration Tests (tests/integration/)
+
+| File name                        | Test count | Status        | Description |
+| -------------------------------- | ---------- | ------------- | ----------- |
+| `config-lifecycle.test.ts`       | 3          | ✅ All passed | Config load and lifecycle hooks |
+| `csr-preact-build.test.ts`      | 3          | ✅ All passed | CSR + Preact build |
+| `csr-react-build.test.ts`       | 3          | ✅ All passed | CSR + React build |
+| `csr-view-build.test.ts`        | 3          | ✅ All passed | CSR + View build |
+| `hybrid-preact-build.test.ts`   | 3          | ✅ All passed | Hybrid + Preact build |
+| `hybrid-preact-flat-build.test.ts` | 3        | ✅ All passed | Hybrid + Preact build (no src) |
+| `hybrid-react-build.test.ts`     | 3          | ✅ All passed | Hybrid + React build |
+| `hybrid-react-flat-build.test.ts`| 3          | ✅ All passed | Hybrid + React build (no src) |
+| `hybrid-view-build.test.ts`     | 3          | ✅ All passed | Hybrid + View build |
+| `ssg-preact-build.test.ts`      | 3          | ✅ All passed | SSG + Preact build |
+| `ssg-react-build.test.ts`       | 3          | ✅ All passed | SSG + React build |
+| `ssg-view-build.test.ts`       | 3          | ✅ All passed | SSG + View build |
+| `ssr-preact-build.test.ts`      | 4          | ✅ All passed | SSR + Preact build and server check |
+| `ssr-react-build.test.ts`      | 4          | ✅ All passed | SSR + React build and server check |
+| `ssr-view-build.test.ts`       | 4          | ✅ All passed | SSR + View build and server check |
+| **Subtotal**                    | **48**     | ✅ All passed | ~18s        |
 
 ---
 
@@ -708,9 +737,10 @@
 
 ## 🎯 Conclusion
 
-@dreamer/dweb core module tests are fully covered at file level. **788** test
-cases pass (2 Windows-only cases skipped on non-Windows). All tests are
-substantive and verify actual behavior. Coverage includes:
+@dreamer/dweb tests are fully covered at file level. **818** test
+cases pass (2 Windows-only cases skipped on non-Windows). Tests were run in
+three segments: e2e 124 (~3m52s), unit/build 646 (~28s), integration 48 (~18s).
+All tests are substantive and verify actual behavior. Coverage includes:
 
 - ✅ Config management (validation and merge, including render.mode hybrid)
 - ✅ Service container integration
@@ -739,8 +769,10 @@ substantive and verify actual behavior. Coverage includes:
   upgrade, update)
 - ✅ Windows compatibility (path normalization, build output inference, module
   cache, component path extraction, path safety check, log-friendly path)
+- ✅ **E2E tests**: browser render (home, about, counter, metadata across
+  examples), server request
+- ✅ **Integration tests**: config and lifecycle, CSR/SSR/SSG/Hybrid build and
+  server checks for multiple engines
 
-Core framework functionality is fully tested. **788** cases pass; **2**
-Windows-only cases are skipped on non-Windows. Unit tests include
-**context.test.ts** (parseCookies, createLoadContext, createMetaContext,
-createServerResponse).
+Core framework, e2e, and integration scenarios are fully tested. **818** cases
+pass; **2** Windows-only cases are skipped on non-Windows.

@@ -212,7 +212,7 @@ export default function Home() {
       </section>
 
       <section class={classes.section}>
-        <h2 class="mb-8 text-center text-2xl font-bold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-[#667eea] to-[#764ba2]">
+        <h2 class="mb-8 text-center text-2xl font-bold tracking-wide bg-clip-text text-transparent bg-linear-to-r from-[#667eea] to-[#764ba2]">
           特性
         </h2>
         <div class={classes.featureGrid}>

@@ -26,7 +26,7 @@ export default function Home() {
       </section>
 
       <section className="mb-10">
-        <h2 className="mb-8 text-center text-2xl font-bold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-[#667eea] to-[#764ba2]">
+        <h2 className="mb-8 text-center text-2xl font-bold tracking-wide bg-clip-text text-transparent bg-linear-to-r from-[#667eea] to-[#764ba2]">
           特性
         </h2>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
