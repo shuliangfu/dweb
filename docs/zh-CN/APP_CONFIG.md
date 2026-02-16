@@ -117,11 +117,17 @@ const config: AppConfig = {
     engine: "preact",
     /** 渲染模式：ssr | csr | ssg | hybrid */
     mode: "hybrid",
+    /** SSR 配置（mode 为 ssr 时生效）。hydrate：是否启用客户端激活，默认 true。 */
+    ssr: {
+      hydrate: true,
+    },
     /** SSG 配置（mode 为 ssg 时生效） */
     ssg: {
       outputDir: "dist/static",
       routes: ["/", "/about"],
       dynamicRoutes: { "/user/[id]": ["1", "2", "3"] },
+      /** 预渲染 HTML 是否启用客户端激活，默认 true。 */
+      hydrate: true,
     },
   },
 
@@ -348,6 +354,25 @@ export default config;
 - **`"react"`**：完整 React；设置 `engine: "react"` 并确保依赖中已加入 React。
 
 三种引擎均支持 `mode: "ssr" | "csr" | "ssg" | "hybrid"`。
+
+---
+
+### SSR/SSG 客户端激活
+
+当 `render.mode` 为 `ssr` 或 `ssg`
+时，可通过以下配置控制是否启用**客户端激活**（向页面注入 `globalThis.__DATA__`
+与客户端脚本，使当前页在加载后变为可交互，如计数器、点击事件，且不启用客户端路由）。
+
+- **`render.ssr.hydrate`**（默认 `true`）：当 `mode` 为 `ssr` 时，为 `true`
+  则服务端在 HTML 中注入 hydration 数据与 `_client.js`，客户端仅对当前页做
+  hydrate，链接点击走整页跳转（不做 SPA 路由）。设为 `false` 则仅输出服务端
+  HTML，不注入客户端脚本。
+- **`render.ssg.hydrate`**（默认 `true`）：当 `mode` 为 `ssg` 时，为 `true`
+  则构建后为每份预渲染 HTML 注入 hydration 数据与 `_client.js`，页面在浏览器中可
+  hydrate。设为 `false` 则仅输出静态 HTML。
+
+两选项均依赖客户端使用 `@dreamer/router@^1.0.10`（由生成代码引入），以便在启用
+hydrate 时链接使用整页跳转而非客户端路由。
 
 ---
 

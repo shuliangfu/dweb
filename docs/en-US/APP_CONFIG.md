@@ -119,11 +119,17 @@ const config: AppConfig = {
     engine: "preact",
     /** Render mode: ssr | csr | ssg | hybrid */
     mode: "hybrid",
+    /** SSR config (when mode is ssr). hydrate: enable client hydration (default true). */
+    ssr: {
+      hydrate: true,
+    },
     /** SSG config (when mode is ssg) */
     ssg: {
       outputDir: "dist/static",
       routes: ["/", "/about"],
       dynamicRoutes: { "/user/[id]": ["1", "2", "3"] },
+      /** Enable client hydration for pre-rendered HTML (default true). */
+      hydrate: true,
     },
   },
 
@@ -351,6 +357,29 @@ export default config;
   dependencies.
 
 All three support `mode: "ssr" | "csr" | "ssg" | "hybrid"`.
+
+---
+
+### SSR/SSG client hydration
+
+When `render.mode` is `ssr` or `ssg`, you can control whether the framework
+enables **client hydration** (injecting `globalThis.__DATA__` and the client
+script so the current page becomes interactive after load, e.g. counters and
+click handlers, without enabling client-side routing).
+
+- **`render.ssr.hydrate`** (default `true`): When `mode` is `ssr`, if `true` the
+  server injects hydration data and `_client.js` into the HTML; the client
+  hydrates the current page only. Link clicks perform full page navigation (no
+  SPA routing). Set to `false` to serve plain server-rendered HTML with no
+  client script.
+- **`render.ssg.hydrate`** (default `true`): When `mode` is `ssg`, if `true`
+  each pre-rendered HTML file is injected with hydration data and `_client.js`
+  after build so the page can hydrate in the browser. Set to `false` to output
+  static HTML only.
+
+Both options require `@dreamer/router@^1.0.10` on the client (used by the
+generated client bundle) so that when `hydrate` is enabled, link clicks use full
+page navigation instead of client-side routing.
 
 ---
 

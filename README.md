@@ -1597,6 +1597,11 @@ const app = new App({
 });
 ```
 
+**SSR client hydration** (optional): Set `render.ssr.hydrate` (default `true`) to
+enable client-side activation of the current page (e.g. counters, click handlers)
+without enabling client-side routing; link clicks perform full page navigation. See
+[APP_CONFIG](./docs/en-US/APP_CONFIG.md#ssrssg-client-hydration).
+
 ### Client-side rendering (CSR)
 
 ```typescript
@@ -1646,6 +1651,11 @@ const app = new App({
 - ✅ Better SEO (static HTML)
 - ✅ Lower server cost (no runtime)
 - ✅ Higher security (no server execution)
+
+**SSG client hydration** (optional): Set `render.ssg.hydrate` (default `true`) to
+inject hydration data and the client script into pre-rendered HTML so the page
+can become interactive in the browser (e.g. counters) without client-side
+routing. See [APP_CONFIG](./docs/en-US/APP_CONFIG.md#ssrssg-client-hydration).
 
 ## Dev tools
 

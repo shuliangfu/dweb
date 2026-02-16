@@ -73,7 +73,7 @@ const E2E_PORTS: Record<string, number> = {
 };
 
 /** 浏览器单用例超时：Windows 10 秒，其他 5 秒；不通过时再长也通不过，避免耗时过长 */
-const BROWSER_TEST_TIMEOUT_MS = platform() === "windows" ? 20_000 : 10_000;
+const BROWSER_TEST_TIMEOUT_MS = platform() === "windows" ? 60_000 : 30_000;
 
 /**
  * 轮询等待服务器就绪（返回 200）

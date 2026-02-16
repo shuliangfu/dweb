@@ -1636,6 +1636,10 @@ const app = new App({
 });
 ```
 
+**SSR 客户端激活**（可选）：通过 `render.ssr.hydrate`（默认 `true`）开启当前页的
+客户端激活（如计数器、点击事件），但不启用客户端路由；链接点击仍为整页跳转。详见
+[APP_CONFIG](./APP_CONFIG.md#ssrssg-客户端激活)。
+
 ### 客户端渲染（CSR）
 
 ```typescript
@@ -1685,6 +1689,10 @@ const app = new App({
 - ✅ 更好的 SEO（完全静态 HTML）
 - ✅ 更低的服务器成本（无需运行时）
 - ✅ 更高的安全性（无服务器端代码执行）
+
+**SSG 客户端激活**（可选）：通过 `render.ssg.hydrate`（默认 `true`）在预渲染 HTML 中
+注入激活数据与客户端脚本，使页面在浏览器中可交互（如计数器），但不启用客户端路由。
+详见 [APP_CONFIG](./APP_CONFIG.md#ssrssg-客户端激活)。
 
 ## 开发工具
 

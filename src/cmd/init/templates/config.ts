@@ -47,9 +47,12 @@ export default {
   router: {
     routesDir: "${routesDir}",
   },
+  // See docs/APP_CONFIG.md for render options and SSR/SSG hydration (ssr.hydrate, ssg.hydrate).
   render: {
     engine: "${opts.engine}",
     mode: "${renderMode}",
+    // ssr: { hydrate: true },
+    // ssg: { hydrate: true },
   },
   logger: {
     level: "info",

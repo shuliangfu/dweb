@@ -72,11 +72,13 @@ const config: AppConfig = {
   },
 
   // ========== Render ==========
+  // See docs/APP_CONFIG.md for full render options and SSR/SSG client hydration (ssr.hydrate, ssg.hydrate).
   render: {
     engine: "${opts.engine}",
     mode: "${renderMode}",
     // debug: false,
-    // ssg: { outputDir: "dist/static", routes: ["/", "/about"], dynamicRoutes: {} },
+    // ssr: { hydrate: true },
+    // ssg: { outputDir: "dist/static", routes: ["/", "/about"], dynamicRoutes: {}, hydrate: true },
   },
 
   // ========== Build ==========
@@ -208,7 +210,9 @@ export default {
   render: {
     engine: "${opts.engine}",
     mode: "${opts.renderMode ?? "hybrid"}",
-    // debug: false, ssg: {}
+    // debug: false,
+    // ssr: { hydrate: true },
+    // ssg: { hydrate: true }
   },
 
   build: {
