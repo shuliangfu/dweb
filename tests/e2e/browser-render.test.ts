@@ -7,7 +7,6 @@
  * 覆盖 Windows 在内的多平台，CI 中 Windows 需通过 setup-chrome action 配置 Chrome。
  */
 
-import "../setup.ts";
 import {
   chdir,
   createCommand,
@@ -31,6 +30,7 @@ import {
   expect,
   it,
 } from "@dreamer/test";
+import "../setup.ts";
 
 /**
  * 从本测试文件路径解析出的 dweb 项目根目录（不依赖 cwd，避免多套件顺序执行时 cwd 被上一套件改变导致路径错误）
@@ -635,7 +635,10 @@ async function assertBrowserClickUsers(
 
   const url = `http://127.0.0.1:${port}/`;
   if (typeof page.goto === "function") {
-    await page.goto(url, { waitUntil: "load", timeout: BROWSER_TEST_TIMEOUT_MS });
+    await page.goto(url, {
+      waitUntil: "load",
+      timeout: BROWSER_TEST_TIMEOUT_MS,
+    });
   } else {
     await browser.goto(url);
   }

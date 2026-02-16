@@ -59,7 +59,7 @@
     "@dreamer/session": "jsr:@dreamer/session@^1.0.0",
     "@dreamer/service": "jsr:@dreamer/service@^1.0.0",
     "@dreamer/socket-io": "jsr:@dreamer/socket-io@^1.0.3",
-    "@dreamer/test": "jsr:@dreamer/test@^1.0.5",
+    "@dreamer/test": "jsr:@dreamer/test@^1.0.6",
     "@dreamer/utils": "jsr:@dreamer/utils@^1.0.0",
     "@dreamer/view": "jsr:@dreamer/view@^1.0.11",
     "@dreamer/websocket": "jsr:@dreamer/websocket@^1.0.1",
