@@ -7,7 +7,18 @@
 
 ---
 
-## [Unreleased]
+## [3.0.76] - 2026-02-16
+
+### 修复
+
+- **Windows 多应用配置文件路径**：从入口路径推断配置目录时，`Deno.mainModule` 为
+  file URL（如 `file:///C:/Users/.../src/backend/main.ts`）。此前用
+  `decodeURIComponent(url.slice(7))` 在 Windows 上得到 `/C:/path`，与 `cwd()` 做
+  路径比较时不一致，导致推断失败并回退到
+  `["./config", "./src/config"]`，多应用配置 （如
+  `src/backend/config/main.ts`）未被加载，`config.name` 等缺失，应用无法正常
+  启动。现改为使用 `fileURLToPath(url)` 将 file URL 转为平台原生路径，配置推断与
+  加载在 Windows 上正确生效，CI 通过。
 
 ### 新增
 

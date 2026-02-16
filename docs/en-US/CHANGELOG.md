@@ -8,7 +8,21 @@ and this project adheres to
 
 ---
 
-## [Unreleased]
+## [3.0.76] - 2026-02-16
+
+### Fixed
+
+- **Windows multi-app config path**: When inferring the config directory from
+  the entry path, `Deno.mainModule` is a file URL (e.g.
+  `file:///C:/Users/.../src/backend/main.ts`). Using
+  `decodeURIComponent(url.slice(7))` on Windows yields `/C:/path`, which does
+  not match `cwd()` in path comparison and causes config directory inference to
+  fail. The framework then fell back to `["./config", "./src/config"]`, so
+  multi-app configs (e.g. `src/backend/config/main.ts`) were never loaded,
+  `config.name` and other options were missing, and the app failed to start. Now
+  the entry path is converted with `fileURLToPath(url)` so the path is a proper
+  filesystem path on Windows; config inference and loading work correctly and
+  Windows CI passes.
 
 ### Added
 
@@ -28,7 +42,7 @@ and this project adheres to
 - **ServerResponse and load return Response**:
   - `ServerResponse` with `binary(data, init?)` for binary body; helper
     `createServerResponse()`; `LoadContext.response` typed for use in load.
-  - When a route’s `load()` returns a `Response`, the server handles it as
+  - When a route's `load()` returns a `Response`, the server handles it as
     redirect or direct response (e.g. redirects without going through the
     document render path).
 

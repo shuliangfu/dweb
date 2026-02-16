@@ -1895,16 +1895,17 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.75] - 2026-02-16
+### [3.0.76] - 2026-02-16
 
-**Added**: Load-data middleware (`GET /__data?path=...`) for route `load()`:
-server runs `load()` and returns JSON; CSR/Hybrid client fetches it on
-navigation and uses server-injected `__DATA__` on first paint. E2E browser tests
-for all example variants (view-hybrid-flat; all preact/react advanced with ports
-3030–3049). Interaction tests: basic click “About”, advanced click “Users”.
-Optional `entries` for flat-structure advanced build.
+**Fixed**: Windows multi-app config path: use `fileURLToPath` for
+`Deno.mainModule` so config directory is inferred correctly; config and
+`config.name` now load for entries like `src/backend/main.ts`, fixing "App name
+Not configured" and Windows CI.
 
-**Removed**: preact-hybrid-unocss example and workspace entries.
+**Added**: Session integration (default), Cookie configuration via
+`config.session.cookie`, ServerResponse `binary()` and load return `Response`.
+**Changed**: `getDreamerDwebCacheDir()` moved to `utils/cache-dirs.ts` for
+default session store. **Removed**: Standalone session-middleware helper.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

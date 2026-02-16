@@ -1970,16 +1970,16 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.75] - 2026-02-16
+### [3.0.76] - 2026-02-16
 
-**新增**：Load 数据接口中间件（`GET /__data?path=...`）为路由 `load()` 提供自动
-API，服务端执行并返回 JSON，CSR/Hybrid
-客户端在导航时请求该接口、首屏使用服务端注入的 `__DATA__`。E2E
-浏览器测试覆盖全部示例（view-hybrid-flat；全部 preact/react advanced，端口
-3030–3049）；交互测试：basic 点击「关于」，advanced 点击「用户管理」。扁平结构
-advanced 支持可选 `entries` 构建入口。
+**修复**：Windows 多应用配置文件路径：使用 `fileURLToPath` 处理
+`Deno.mainModule`，使配置目录推断正确；`src/backend/main.ts` 等入口的配置 （含
+`config.name`）可正常加载，修复「App name Not configured」及 Windows CI。
 
-**移除**：preact-hybrid-unocss 示例及 workspace 条目。
+**新增**：Session 默认集成、通过 `config.session.cookie` 的 Cookie 配置、
+ServerResponse `binary()` 与 load 返回
+`Response`。**变更**：`getDreamerDwebCacheDir()` 移至 `utils/cache-dirs.ts`
+作为默认 session 存储目录。**移除**：独立 session-middleware 辅助。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
