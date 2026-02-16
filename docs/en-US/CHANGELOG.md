@@ -8,6 +8,18 @@ and this project adheres to
 
 ---
 
+## [3.0.79] - 2026-02-16
+
+### Fixed
+
+- **dweb-cli upgrade and setup**: The upgrade command and setup script ran
+  subprocesses with `stdout`/`stderr` set to `"piped"` but did not read the
+  pipes, so the child could block and the CLI appeared stuck. Switched to
+  `stdout`/`stderr` `"null"` so output is discarded and the process exits after
+  installation without blocking.
+
+---
+
 ## [3.0.78] - 2026-02-16
 
 ### Changed

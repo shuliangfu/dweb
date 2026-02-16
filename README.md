@@ -1906,12 +1906,10 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.78] - 2026-02-16
+### [3.0.79] - 2026-02-16
 
-**Changed**: Init templates resolve all user-facing text at init time via `$t()`
-(no runtime i18n in generated frontend); fixed `dangerouslySetInnerHTML` to
-output valid string; counter and user mock labels use translations at generation
-time; added counter and `userDetailPageFile` keys to all 9 locale files.
+**Fixed**: dweb-cli upgrade and setup no longer hang; subprocess stdout/stderr
+set to `"null"` so the process exits after installation without blocking.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

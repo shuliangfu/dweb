@@ -24,20 +24,14 @@
 
 ---
 
-## [3.0.78] - 2026-02-16
+## [3.0.79] - 2026-02-16
 
-### 变更
+### 修复
 
-- **Init 模板（示例项目）**：生成的前端不再依赖运行时 i18n，所有面向用户的文案在
-  init 时通过 `$t()` 解析并写入为字符串字面量。修复
-  `dangerouslySetInnerHTML={{ __html: $t(...) }}`，使模板正确插值 `$t()` 结果，
-  生成代码中 `__html: "..."` 合法。用户 mock 数据与计数器区块文案在生成时调用
-  `$t()`。
-- **Init 模板文案**：组件模板中的中文（如计数器标题、按钮）全部改为翻译 key；在
-  全部 9 个语言包中新增：`counterExample`、`counterViewDesc`、`counterSummary`、
-  `counterIncrement`、`counterDecrement`、`counterReset`（init.template）与
-  `userDetailPageFile`（init.comments）。语言：en-US、zh-CN、ja-JP、ko-KR、
-  es-ES、pt-BR、id-ID、fr-FR、de-DE。
+- **dweb-cli upgrade 与 setup**：upgrade 命令与 setup 脚本此前以
+  `stdout`/`stderr` 为 `"piped"` 启动子进程但未读取管道，子进程会阻塞，CLI 表现
+  为卡住。已改为 `stdout`/`stderr` `"null"`，输出被丢弃，安装完成后进程正常退出
+  且不阻塞。
 
 ---
 

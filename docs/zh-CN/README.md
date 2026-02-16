@@ -1974,11 +1974,10 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.78] - 2026-02-16
+### [3.0.79] - 2026-02-16
 
-**变更**：Init 模板在生成时通过 `$t()` 解析全部面向用户文案（生成的前端无运行时
-i18n）；修复 `dangerouslySetInnerHTML` 输出合法字符串；计数器与用户 mock 文案在
-生成时使用翻译；在全部 9 个语言包中新增计数器及 `userDetailPageFile` 键。
+**修复**：dweb-cli upgrade 与 setup 不再卡住；子进程 stdout/stderr 设为
+`"null"`，安装完成后进程正常退出且不阻塞。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

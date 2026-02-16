@@ -135,8 +135,8 @@ async function installGlobalCli(): Promise<void> {
       args.push(cliEntry);
       const cmd = createCommand(runtime, {
         args,
-        stdout: "piped",
-        stderr: "piped",
+        stdout: "null",
+        stderr: "null",
         stdin: "inherit",
       });
       startSpinner($t("cli.installing", { name: CLI_NAME }));
@@ -159,8 +159,8 @@ async function installGlobalCli(): Promise<void> {
     args.push(cliEntry);
     const cmd = createCommand(runtime, {
       args,
-      stdout: "piped",
-      stderr: "piped",
+      stdout: "null",
+      stderr: "null",
       stdin: "inherit",
     });
     startSpinner($t("cli.installing", { name: CLI_NAME }));
