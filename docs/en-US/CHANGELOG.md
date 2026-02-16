@@ -8,6 +8,21 @@ and this project adheres to
 
 ---
 
+## [3.0.81] - 2026-02-17
+
+### Changed
+
+- **@dreamer/console**: Bumped dependency to `^1.0.7` (includes CLI exit fix and
+  license/docs updates).
+
+### Fixed
+
+- **CLI process not exiting**: After `-v`/`--version` or `--help`, the CLI now
+  exits with code 0 instead of hanging; relies on @dreamer/console@1.0.7
+  behavior.
+
+---
+
 ## [3.0.80] - 2026-02-17
 
 ### Security

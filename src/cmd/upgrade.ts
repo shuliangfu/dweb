@@ -93,6 +93,7 @@ export async function main(
   if (status.success) {
     succeedSpinner($t("upgrade.upgradedTo", { version: latest }));
     await writeVersionCache(latest);
+    return;
   } else {
     failSpinner($t("upgrade.autoInstallFailed"));
     error($t("upgrade.manualInstall"));

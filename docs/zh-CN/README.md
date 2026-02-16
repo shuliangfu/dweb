@@ -1974,13 +1974,10 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.80] - 2026-02-17
+### [3.0.81] - 2026-02-17
 
-**安全**：SSG HTML、preview 静态文件、CSR 客户端 chunk
-路径穿越防护；读取前统一解析并校验路径。**新增**：对 `config.build.client` 与
-`config.build.server`
-的配置校验。**变更**：客户端输出与运行模式抽取公共逻辑；错误边界约定文档化；OPTIMIZATION_ANALYSIS.md
-更新。
+**变更**：@dreamer/console 升级为 ^1.0.7。**修复**：CLI 在 `-v`/`--version` 与
+`--help` 后正常退出，不再挂起。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

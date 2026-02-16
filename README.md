@@ -1906,13 +1906,10 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.80] - 2026-02-17
+### [3.0.81] - 2026-02-17
 
-**Security**: Path traversal hardening for SSG HTML, preview static files, and
-CSR client chunks; all paths resolved and validated before read. **Added**:
-Config validation for `config.build.client` and `config.build.server`.
-**Changed**: Shared helpers for client output and run mode; error boundary
-contract documented; OPTIMIZATION_ANALYSIS.md updated.
+**Changed**: Bumped @dreamer/console to ^1.0.7. **Fixed**: CLI process now exits
+after `-v`/`--version` and `--help` (no longer hangs).
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
