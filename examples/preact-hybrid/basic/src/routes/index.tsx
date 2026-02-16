@@ -17,6 +17,8 @@ const classes = {
   featureCard: "rounded-lg bg-white p-6 shadow-md",
   featureCardTitle: "mb-2.5 text-[#667eea]",
   socketSection: "rounded-xl border border-gray-200 bg-white p-6 shadow-md",
+  /** socket 模块（WebSocket 示例）的外边距：与上方计数器模块的间距 */
+  socketSectionOuter: "mt-8",
   socketTitle: "mb-4 text-center text-[#667eea]",
   socketDesc: "mb-4 text-center text-sm text-gray-500",
   statusBadgeWrap: "mb-4 flex items-center justify-center gap-2",
@@ -278,8 +280,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* WebSocket 客户端示例 */}
-      <section class={classes.socketSection}>
+      {/* WebSocket 客户端示例；mt-8 与上方计数器模块留出间距 */}
+      <section class={`${classes.socketSection} ${classes.socketSectionOuter}`}>
         <h2 class={classes.socketTitle}>WebSocket 客户端示例</h2>
         <p class={classes.socketDesc}>
           使用 @dreamer/websocket/client 的 Client：连接、自动重连、发送

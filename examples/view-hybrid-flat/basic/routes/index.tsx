@@ -16,6 +16,8 @@ const classes = {
   featureCard: "rounded-lg bg-white p-6 shadow-md",
   featureCardTitle: "mb-2.5 text-[#667eea]",
   socketSection: "rounded-xl border border-gray-200 bg-white p-6 shadow-md",
+  /** socket 模块（Socket.IO 示例）的外边距：与上方计数器模块的间距 */
+  socketSectionOuter: "mt-8",
   socketTitle: "mb-4 text-center text-[#667eea]",
   socketDesc: "mb-4 text-center text-sm text-gray-500",
   statusBadgeWrap: "mb-4 flex items-center justify-center gap-2",
@@ -267,8 +269,8 @@ export default function Home() {
         )}
       </section>
 
-      {/* Socket.IO 客户端示例：整块包成动态子节点，仅此槽位随 status/input/messages 更新，避免整页重跑（含其他 section） */}
-      <section class={classes.socketSection}>
+      {/* Socket.IO 客户端示例：整块包成动态子节点，仅此槽位随 status/input/messages 更新，避免整页重跑（含其他 section）；mt-8 与上方计数器模块留出间距 */}
+      <section class={`${classes.socketSection} ${classes.socketSectionOuter}`}>
         <h2 class={classes.socketTitle}>Socket.IO 客户端示例</h2>
         <p class={classes.socketDesc}>
           使用 @dreamer/socket-io 的 Client：连接、自动重连、发送

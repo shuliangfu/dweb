@@ -230,3 +230,37 @@ export function createHealthCheckMiddleware(
     await next();
   };
 }
+
+/**
+ * 开发模式禁用 HTTP 缓存中间件
+ *
+ * 仅在 isDev 为 true 时生效：在整条中间件链执行完毕后，为当前响应统一加上
+ * Cache-Control: no-cache, no-store, must-revalidate 与 Pragma: no-cache，
+ * 避免开发时浏览器或代理缓存 HTML、/__data、/_client.js、静态资源等导致改代码不生效。
+ * 生产环境不注册此中间件。
+ *
+ * @param isDev 是否为开发模式（非 prod 即视为 dev）
+ * @returns 中间件函数（dev 时在 next() 后为 ctx.response 追加禁用缓存头；prod 时仅 next()）
+ */
+export function createDevNoCacheMiddleware(
+  isDev: boolean,
+): (ctx: HttpContext, next: () => Promise<void>) => Promise<void> {
+  if (!isDev) {
+    return async (_ctx: HttpContext, next: () => Promise<void>) => {
+      await next();
+    };
+  }
+  return async (ctx: HttpContext, next: () => Promise<void>): Promise<void> => {
+    await next();
+    if (ctx.response) {
+      const h = new Headers(ctx.response.headers);
+      h.set("Cache-Control", "no-cache, no-store, must-revalidate");
+      h.set("Pragma", "no-cache");
+      ctx.response = new Response(ctx.response.body, {
+        status: ctx.response.status,
+        statusText: ctx.response.statusText,
+        headers: h,
+      });
+    }
+  };
+}

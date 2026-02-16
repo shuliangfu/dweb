@@ -103,6 +103,7 @@ import {
 } from "./database.ts";
 import { getLifecycleManager, initializeLifecycle } from "./lifecycle.ts";
 import {
+  createDevNoCacheMiddleware,
   createHealthCheckMiddleware,
   getServerMiddlewares,
   initializeMiddleware,
@@ -402,12 +403,16 @@ export class App extends EventEmitter implements IApp {
       const server = getServer(this.container);
       const router = getRouter(this.container);
 
-      // 框架级中间件：Request ID、请求日志（先于用户中间件执行）
-      server.use(requestId());
       const serverCfgForLog = (mergedConfig.server || {}) as { mode?: string };
       const envModeForLog = getEnv("DENO_ENV") || getEnv("BUN_ENV") ||
         getEnv("NODE_ENV") || "dev";
       const isProd = (serverCfgForLog.mode || envModeForLog) === "prod";
+
+      // 开发模式：最先注册，在 next() 后统一为所有响应加上禁用缓存头，避免浏览器/代理缓存导致改代码不生效
+      server.use(createDevNoCacheMiddleware(!isProd), undefined, "dev-no-cache");
+
+      // 框架级中间件：Request ID、请求日志（先于用户中间件执行）
+      server.use(requestId());
       server.use(
         requestLogger({
           logger: getLogger(this.container),
