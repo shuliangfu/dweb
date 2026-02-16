@@ -1974,10 +1974,13 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.79] - 2026-02-16
+### [3.0.80] - 2026-02-17
 
-**修复**：dweb-cli upgrade 与 setup 不再卡住；子进程 stdout/stderr 设为
-`"null"`，安装完成后进程正常退出且不阻塞。
+**安全**：SSG HTML、preview 静态文件、CSR 客户端 chunk
+路径穿越防护；读取前统一解析并校验路径。**新增**：对 `config.build.client` 与
+`config.build.server`
+的配置校验。**变更**：客户端输出与运行模式抽取公共逻辑；错误边界约定文档化；OPTIMIZATION_ANALYSIS.md
+更新。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

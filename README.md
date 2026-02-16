@@ -1906,10 +1906,13 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.79] - 2026-02-16
+### [3.0.80] - 2026-02-17
 
-**Fixed**: dweb-cli upgrade and setup no longer hang; subprocess stdout/stderr
-set to `"null"` so the process exits after installation without blocking.
+**Security**: Path traversal hardening for SSG HTML, preview static files, and
+CSR client chunks; all paths resolved and validated before read. **Added**:
+Config validation for `config.build.client` and `config.build.server`.
+**Changed**: Shared helpers for client output and run mode; error boundary
+contract documented; OPTIMIZATION_ANALYSIS.md updated.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

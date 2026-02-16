@@ -8,7 +8,7 @@ and this project adheres to
 
 ---
 
-## [3.0.80] - 2026-02-16
+## [3.0.80] - 2026-02-17
 
 ### Security
 
