@@ -70,12 +70,13 @@ describe("integration: 配置与生命周期", () => {
     );
 
     // 入口文件：创建 App、注册 init/start、等待 _initPromise 后输出结果行并强制退出，避免事件循环被占用导致子进程不退出
+    // 显式传入 name/version，与 config 合并后优先级最高，Windows 上 config 文件若未加载也能得到预期 banner
     await writeTextFile(
       join(testDir, "src", "main.ts"),
       `import { App } from "@dreamer/dweb";
 
 const stages: string[] = [];
-const app = new App();
+const app = new App({ name: "integration-test", version: "1.0.0" });
 
 app.on("init", () => stages.push("init"));
 app.on("start", () => stages.push("start"));
