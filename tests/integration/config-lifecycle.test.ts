@@ -33,10 +33,14 @@ describe("integration: 配置与生命周期", () => {
     chdir(testDir);
 
     // testDir/deno.json：复用仓库 import map，并将 @dreamer/dweb 指向本地，子进程用本地代码且不卡在 JSR 解析
+    // Windows 下裸路径 d:/a/dweb/... 会被解析为 scheme "d:"，故使用 file:// URL
     const repoDenoJson = JSON.parse(
       await readTextFile(join(REPO_ROOT, "deno.json")),
     ) as { imports?: Record<string, string> };
-    const dwebLocal = join(REPO_ROOT, "src", "mod.ts").replace(/\\/g, "/");
+    const dwebModPath = join(REPO_ROOT, "src", "mod.ts").replace(/\\/g, "/");
+    const dwebLocal = dwebModPath.startsWith("/")
+      ? `file://${dwebModPath}`
+      : `file:///${dwebModPath}`;
     await writeTextFile(
       join(testDir, "deno.json"),
       JSON.stringify(
