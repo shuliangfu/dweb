@@ -8,6 +8,25 @@ and this project adheres to
 
 ---
 
+## [3.0.78] - 2026-02-16
+
+### Changed
+
+- **Init templates (example project)**: Generated frontend no longer relies on
+  runtime i18n; all user-facing text is resolved at init time via `$t()` and
+  written as string literals. Fixed
+  `dangerouslySetInnerHTML={{ __html: $t(...) }}` so the template interpolates
+  the `$t()` result (generated output now has valid `__html: "..."`). User mock
+  data and counter section labels use `$t()` at generation time.
+- **Init template copy**: All Chinese copy in component templates (e.g. counter
+  title, buttons) replaced with translation keys. Added keys to all 9 locale
+  files: `counterExample`, `counterViewDesc`, `counterSummary`,
+  `counterIncrement`, `counterDecrement`, `counterReset` (init.template), and
+  `userDetailPageFile` (init.comments). Locales: en-US, zh-CN, ja-JP, ko-KR,
+  es-ES, pt-BR, id-ID, fr-FR, de-DE.
+
+---
+
 ## [3.0.77] - 2026-02-16
 
 ### Added

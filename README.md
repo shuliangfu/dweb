@@ -1906,16 +1906,12 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.77] - 2026-02-16
+### [3.0.78] - 2026-02-16
 
-**Added**: SSR/SSG client hydration (`render.ssr.hydrate` /
-`render.ssg.hydrate`), counter on all basic SSR/SSG examples (Preact, React,
-View), E2E counter test enabled for SSR/SSG suites. **Changed**: Init
-improvements; `@dreamer/router` dependency raised to `^1.0.10` for
-`interceptLinks` (no client-side routing on SSR/SSG); examples migrated to
-Tailwind v4 gradient utilities; E2E counter test waits for page load and
-hydration, increased timeouts; test report updated to 818 cases (e2e 124, unit
-646, integration 48).
+**Changed**: Init templates resolve all user-facing text at init time via `$t()`
+(no runtime i18n in generated frontend); fixed `dangerouslySetInnerHTML` to
+output valid string; counter and user mock labels use translations at generation
+time; added counter and `userDetailPageFile` keys to all 9 locale files.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

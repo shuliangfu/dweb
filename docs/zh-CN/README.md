@@ -1974,14 +1974,11 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.77] - 2026-02-16
+### [3.0.78] - 2026-02-16
 
-**新增**：SSR/SSG 客户端激活（`render.ssr.hydrate` / `render.ssg.hydrate`）、
-全部 basic SSR/SSG 示例首页计数器（Preact/React/View）、SSR/SSG 套件启用 E2E
-计数器测试。**变更**：Init 优化；`@dreamer/router` 依赖升级为 `^1.0.10`（SSR/SSG
-下不启用客户端路由，链接整页跳转）；示例迁移至 Tailwind v4 渐变类；E2E 计数器
-用例在加载与 hydration 后再操作并延长超时；测试报告更新为 818 例（e2e 124、单元
-646、集成 48）。
+**变更**：Init 模板在生成时通过 `$t()` 解析全部面向用户文案（生成的前端无运行时
+i18n）；修复 `dangerouslySetInnerHTML` 输出合法字符串；计数器与用户 mock 文案在
+生成时使用翻译；在全部 9 个语言包中新增计数器及 `userDetailPageFile` 键。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

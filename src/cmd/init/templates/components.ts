@@ -1,20 +1,21 @@
 /**
  * init 生成的路由组件模板：_app、_layout、index、about、user/[id]
+ * 示例项目前端不使用 i18n，全部使用英文文案字面量。
  */
 
 import {
-  $t,
   getAppPropsTypeSnippet,
   getEngineDisplayName,
   getLayoutPropsTypeSnippet,
 } from "../helpers.ts";
 import type { InitOptions } from "../types.ts";
+import { $t } from "../../../utils/i18n.ts";
 
 export function getAppTsx(opts: InitOptions): string {
   const titleName = opts.projectName;
   const propsSnippet = getAppPropsTypeSnippet(opts.engine);
   return `/**
- * ${$t("init.comments.appRootComponent")}
+ * App root component
  */
 
 ${propsSnippet}
@@ -28,7 +29,7 @@ export default function App({
   description = "Built with @dreamer/dweb",
 }: AppProps) {
   return (
-    <html lang="zh-CN">
+    <html lang="en">
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -54,14 +55,14 @@ export function getLayoutTsx(opts: InitOptions, appName?: string): string {
     ? "text-gray-600 hover:text-primary-600 transition-colors"
     : "text-gray-600 hover:text-indigo-600 transition-colors";
   const styleComment = opts.style === "unocss"
-    ? $t("init.template.styleUno")
+    ? "UnoCSS"
     : opts.style === "tailwind"
-    ? $t("init.template.styleTailwind")
-    : $t("init.template.styleGeneric");
+    ? "Tailwind CSS v4"
+    : "Generic styles";
   const importAndProps = getLayoutPropsTypeSnippet(opts.engine);
 
   return `/**
- * ${$t("init.template.layoutComment", { style: styleComment })}
+ * Layout component - header, footer, content (using ${styleComment})
  */
 
 ${importAndProps}
@@ -84,7 +85,7 @@ export default function Layout({ children }: LayoutProps) {
                   href="/"
                   className="${linkClass}"
                 >
-                  ${$t("init.template.navHome")}
+                  Home
                 </a>
               </li>
               <li>
@@ -92,7 +93,7 @@ export default function Layout({ children }: LayoutProps) {
                   href="/about"
                   className="${linkClass}"
                 >
-                  ${$t("init.template.navAbout")}
+                  About
                 </a>
               </li>
             </ul>
@@ -136,8 +137,12 @@ export function getIndexTsx(opts: InitOptions): string {
     : "  const [count, setCount] = useState(0);\n";
   const counterSection = isView
     ? `      <section ${attr}="mb-10 rounded-xl border border-gray-200 bg-white p-6 shadow-md">
-        <h2 ${attr}="mb-4 text-center text-[#667eea]">计数器示例</h2>
-        <p ${attr}="mb-4 text-center text-sm text-gray-500">View 细粒度渲染：仅此块随 count 更新</p>
+        <h2 ${attr}="mb-4 text-center text-[#667eea]">${
+      $t("init.template.counterExample")
+    }</h2>
+        <p ${attr}="mb-4 text-center text-sm text-gray-500">${
+      $t("init.template.counterViewDesc")
+    }</p>
         {() => (
           <div ${attr}="flex flex-col items-center justify-center gap-4">
             <span ${attr}="text-2xl font-semibold">count: ${"{"}count()${"}"}</span>
@@ -147,29 +152,33 @@ export function getIndexTsx(opts: InitOptions): string {
                 ${attr}="rounded-lg border-0 bg-[#667eea] px-4 py-2 text-white hover:opacity-90"
                 onClick={() => setCount(count() + 1)}
               >
-                加一
+                ${$t("init.template.counterIncrement")}
               </button>
               <button
                 type="button"
                 ${attr}="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50"
                 onClick={() => setCount(count() - 1)}
               >
-                减一
+                ${$t("init.template.counterDecrement")}
               </button>
               <button
                 type="button"
                 ${attr}="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2 text-gray-600 hover:bg-gray-200"
                 onClick={() => setCount(0)}
               >
-                重置
+                ${$t("init.template.counterReset")}
               </button>
             </div>
           </div>
         )}
       </section>`
     : `      <section ${attr}="mb-10 rounded-xl border border-gray-200 bg-white p-6 shadow-md">
-        <h2 ${attr}="mb-4 text-center text-[#667eea]">计数器示例</h2>
-        <p ${attr}="mb-4 text-center text-sm text-gray-500">加一、减一、重置</p>
+        <h2 ${attr}="mb-4 text-center text-[#667eea]">${
+      $t("init.template.counterExample")
+    }</h2>
+        <p ${attr}="mb-4 text-center text-sm text-gray-500">${
+      $t("init.template.counterSummary")
+    }</p>
         <div ${attr}="flex flex-col items-center justify-center gap-4">
           <span ${attr}="text-2xl font-semibold">count: ${"{"}count${"}"}</span>
           <div ${attr}="flex flex-wrap items-center justify-center gap-2">
@@ -178,21 +187,21 @@ export function getIndexTsx(opts: InitOptions): string {
               ${attr}="rounded-lg border-0 bg-[#667eea] px-4 py-2 text-white hover:opacity-90"
               onClick={() => setCount((c) => c + 1)}
             >
-              加一
+              ${$t("init.template.counterIncrement")}
             </button>
             <button
               type="button"
               ${attr}="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50"
               onClick={() => setCount((c) => c - 1)}
             >
-              减一
+              ${$t("init.template.counterDecrement")}
             </button>
             <button
               type="button"
               ${attr}="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2 text-gray-600 hover:bg-gray-200"
               onClick={() => setCount(0)}
             >
-              重置
+              ${$t("init.template.counterReset")}
             </button>
           </div>
         </div>
@@ -265,7 +274,9 @@ export default function About() {
   }</h1>
 
       <section className="rounded-lg bg-white p-8 shadow-md">
-        <p className="mb-6" dangerouslySetInnerHTML={{ __html: $t("init.template.aboutDesc", { engine: engineName }) }} />
+        <p className="mb-6" dangerouslySetInnerHTML={{ __html: "${
+    $t("init.template.aboutDesc", { engine: engineName })
+  }" }} />
 
         <h2 className="mb-4 mt-6 text-xl font-semibold text-indigo-600">${
     $t("init.template.aboutTechStack")
@@ -291,7 +302,6 @@ export default function About() {
 `;
 }
 
-/** 用户详情页 user/[id].tsx */
 export function getUserByIdTsx(opts: InitOptions): string {
   const avatarGradient = opts.style === "tailwind"
     ? "bg-linear-to-br from-indigo-500 to-purple-600"
@@ -311,9 +321,15 @@ interface UserProps {
 
 /** Mock user data */
 const users: Record<string, { name: string; email: string; role: string }> = {
-  "1": { name: $t("init.template.user1Name"), email: "user1@example.com", role: $t("init.template.user1Role") },
-  "2": { name: $t("init.template.user2Name"), email: "user2@example.com", role: $t("init.template.user2Role") },
-  "3": { name: $t("init.template.user3Name"), email: "user3@example.com", role: $t("init.template.user3Role") },
+  "1": { name: "${
+    $t("init.template.user1Name")
+  }", email: "user1@example.com", role: "${$t("init.template.user1Role")}" },
+  "2": { name: "${
+    $t("init.template.user2Name")
+  }", email: "user2@example.com", role: "${$t("init.template.user2Role")}" },
+  "3": { name: "${
+    $t("init.template.user3Name")
+  }", email: "user3@example.com", role: "${$t("init.template.user3Role")}" },
 };
 
 /**
