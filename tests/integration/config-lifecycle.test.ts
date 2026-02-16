@@ -131,8 +131,8 @@ if (g.process?.exit) g.process.exit(0);
       throw new Error(`子进程执行失败: ${stderrText}`);
     }
 
-    // 配置已加载：banner 中会打印 [应用名称] integration-test（来自 config/main.ts）
-    expect(stdoutText).toContain("[应用名称] integration-test");
+    // 配置已加载：banner 会打印应用名（[应用名称] 或 [App name]，依 locale）；断言配置中的名称与 init 阶段
+    expect(stdoutText).toContain("integration-test");
     expect(stdoutText).toContain("STAGES:init");
   }, { sanitizeOps: false, sanitizeResources: false });
 });
