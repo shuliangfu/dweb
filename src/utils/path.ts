@@ -67,7 +67,6 @@ export function pathForLog(
   return absOrRelPath;
 }
 
-
 /**
  * 从任意路径提取与 ROUTE_LOADERS key 一致的 component 路径（Windows 兼容）
  *

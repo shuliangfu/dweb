@@ -19,7 +19,7 @@ import type {
 } from "@dreamer/middleware";
 import type { Plugin } from "@dreamer/plugin";
 import type { ServiceContainer } from "@dreamer/service";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import type { AppConfig } from "../types/app.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $t } from "../utils/i18n.ts";
@@ -101,9 +101,16 @@ export function inferConfigDirectoryFromEntry(): string {
     const getPath = (): string | null => {
       if (deno?.mainModule) {
         const url = deno.mainModule;
-        return url.startsWith("file://")
-          ? decodeURIComponent(url.slice(7))
-          : url;
+        // Windows: decodeURIComponent(url.slice(7)) 得到 "/C:/path"，resolve 与 root 比较会出错，
+        // 必须用 fileURLToPath 转为平台原生路径（如 C:\path）再参与推断
+        if (url.startsWith("file://")) {
+          try {
+            return fileURLToPath(url);
+          } catch {
+            return decodeURIComponent(url.slice(7));
+          }
+        }
+        return url;
       }
       const proc = (globalThis as { process?: { argv?: string[] } }).process;
       const argv1 = proc?.argv?.[1];
