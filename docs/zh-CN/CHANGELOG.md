@@ -7,6 +7,16 @@
 
 ---
 
+## [3.0.84] - 2026-02-17
+
+### 变更
+
+- **@dreamer/runtime-adapter**：升级为 `^1.0.8`（SpawnedProcess.unref()）。
+  upgrade 命令现直接调用 `child.unref()`，spawn 后进程可正常退出（Deno
+  不再挂起）。
+
+---
+
 ## [3.0.83] - 2026-02-17
 
 ### 变更

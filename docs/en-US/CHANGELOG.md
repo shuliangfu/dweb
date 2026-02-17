@@ -8,6 +8,16 @@ and this project adheres to
 
 ---
 
+## [3.0.84] - 2026-02-17
+
+### Changed
+
+- **@dreamer/runtime-adapter**: Bumped to `^1.0.8` (SpawnedProcess.unref()).
+  Upgrade command now calls `child.unref()` directly so the process exits after
+  spawn (Deno no longer hangs).
+
+---
+
 ## [3.0.83] - 2026-02-17
 
 ### Changed

@@ -20,7 +20,7 @@ import {
   succeedSpinner,
   success,
 } from "@dreamer/console";
-import { createCommand } from "@dreamer/runtime-adapter";
+import { createCommand, exit } from "@dreamer/runtime-adapter";
 import { $t } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 import { fetchJsrLatestVersion } from "../utils/jsr-versions.ts";
@@ -89,6 +89,8 @@ export async function main(
   startSpinner($t("upgrade.installing"));
   const child = cmd.spawn();
   const status = await child.status;
+  // Deno: child process refs the event loop by default; unref() so parent can exit after handler returns
+  child.unref();
 
   if (status.success) {
     succeedSpinner($t("upgrade.upgradedTo", { version: latest }));
@@ -99,5 +101,6 @@ export async function main(
     error($t("upgrade.manualInstall"));
     info($t("upgrade.manualExample", { spec: setupSpec }));
     info($t("upgrade.orManualVersion"));
+    exit(1);
   }
 }
