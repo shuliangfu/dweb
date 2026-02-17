@@ -1974,10 +1974,10 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.81] - 2026-02-17
+### [3.0.82] - 2026-02-17
 
-**变更**：@dreamer/console 升级为 ^1.0.7。**修复**：CLI 在 `-v`/`--version` 与
-`--help` 后正常退出，不再挂起。
+**变更**：更新相关依赖版本（如 @dreamer/render ^1.0.26、@dreamer/view
+^1.0.15）。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

@@ -8,6 +8,15 @@ and this project adheres to
 
 ---
 
+## [3.0.82] - 2026-02-17
+
+### Changed
+
+- **Dependencies:** Updated related dependency versions (e.g. @dreamer/render
+  ^1.0.26, @dreamer/view ^1.0.15).
+
+---
+
 ## [3.0.81] - 2026-02-17
 
 ### Changed

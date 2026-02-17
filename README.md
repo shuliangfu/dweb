@@ -1906,10 +1906,10 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.81] - 2026-02-17
+### [3.0.82] - 2026-02-17
 
-**Changed**: Bumped @dreamer/console to ^1.0.7. **Fixed**: CLI process now exits
-after `-v`/`--version` and `--help` (no longer hangs).
+**Changed**: Updated related dependency versions (e.g. @dreamer/render ^1.0.26,
+@dreamer/view ^1.0.15).
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
