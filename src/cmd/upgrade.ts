@@ -69,12 +69,12 @@ export async function main(
   const latest = await fetchJsrLatestVersion("@dreamer/dweb", useBeta);
   if (!latest) {
     error($t("upgrade.cannotGetLatest"));
-    return;
+    exit(1);
   }
 
   if (current === latest || !isNewer(latest, current)) {
     success($t("upgrade.alreadyLatest", { version: current }));
-    return;
+    exit(0);
   }
 
   success($t("upgrade.newVersionFound", { version: latest }));
@@ -84,18 +84,17 @@ export async function main(
     args: getRunArgs(setupSpec),
     stdout: "null",
     stderr: "null",
-    stdin: "inherit",
+    stdin: "null",
   });
   startSpinner($t("upgrade.installing"));
   const child = cmd.spawn();
-  const status = await child.status;
-  // Deno: child process refs the event loop by default; unref() so parent can exit after handler returns
   child.unref();
+  const status = await child.status;
 
   if (status.success) {
     succeedSpinner($t("upgrade.upgradedTo", { version: latest }));
     await writeVersionCache(latest);
-    return;
+    exit(0);
   } else {
     failSpinner($t("upgrade.autoInstallFailed"));
     error($t("upgrade.manualInstall"));

@@ -137,10 +137,11 @@ async function installGlobalCli(): Promise<void> {
         args,
         stdout: "null",
         stderr: "null",
-        stdin: "inherit",
+        stdin: "null", // 避免 deno install 继承终端 stdin 导致卡住
       });
       startSpinner($t("cli.installing", { name: CLI_NAME }));
       const child = cmd.spawn();
+      child.unref(); // 立即 unref，避免子进程句柄阻止当前进程自动退出
       const status = await child.status;
       if (status.success) {
         succeedSpinner($t("cli.installSuccess", { name: CLI_NAME }));
@@ -161,10 +162,11 @@ async function installGlobalCli(): Promise<void> {
       args,
       stdout: "null",
       stderr: "null",
-      stdin: "inherit",
+      stdin: "null", // 避免 deno install 继承终端 stdin 导致卡住
     });
     startSpinner($t("cli.installing", { name: CLI_NAME }));
     const child = cmd.spawn();
+    child.unref(); // 立即 unref，避免子进程句柄阻止当前进程自动退出
     const status = await child.status;
     if (status.success) {
       succeedSpinner($t("cli.installSuccess", { name: CLI_NAME }));
@@ -220,13 +222,15 @@ function printUsage(): void {
   console.log("");
 }
 
-// 主入口
+// 主入口：主流程结束后显式退出，否则 Deno 会因子进程等 ref 一直不退出
 if (import.meta.main) {
-  installGlobalCli().catch((err) => {
-    const msg = (globalThis as { $t?: (k: string) => string }).$t
-      ? $t("cli.installFailed")
-      : "安装失败";
-    console.error(msg, err);
-    exit(1);
-  });
+  installGlobalCli()
+    .then(() => exit(0))
+    .catch((err) => {
+      const msg = (globalThis as { $t?: (k: string) => string }).$t
+        ? $t("cli.installFailed")
+        : "安装失败";
+      console.error(msg, err);
+      exit(1);
+    });
 }

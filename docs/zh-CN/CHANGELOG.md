@@ -7,6 +7,19 @@
 
 ---
 
+## [3.0.86] - 2026-02-17
+
+### 修复
+
+- **setup**：deno install 的 spawn 使用 `stdin: "null"`，避免子进程等待终端
+  输入；spawn 后立即调用 `child.unref()` 便于 setup 进程退出；入口在
+  `installGlobalCli()` resolve 后调用 `exit(0)`，确保进程退出（否则 Deno 会因
+  ref 不退出）。
+- **upgrade**：以 `stdin: "null"` spawn setup，spawn 后调用 `child.unref()`，
+  成功时 `exit(0)`、失败时 `exit(1)`，使 CLI 在命令结束时退出。
+
+---
+
 ## [3.0.85] - 2026-02-17
 
 ### 修复

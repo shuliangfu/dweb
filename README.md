@@ -1906,10 +1906,11 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.85] - 2026-02-17
+### [3.0.86] - 2026-02-17
 
-**Fixed**: Client /__data on same-page anchor—pathname+search unchanged
-(hash-only) no longer triggers /__data; skip when equal to last recorded path.
+**Fixed**: Setup uses stdin "null" and child.unref() so process exits; entry
+calls exit(0) when done. Upgrade spawns with stdin "null", unref(), and
+exit(0)/exit(1) so CLI exits.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

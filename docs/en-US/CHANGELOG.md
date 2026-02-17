@@ -8,6 +8,20 @@ and this project adheres to
 
 ---
 
+## [3.0.86] - 2026-02-17
+
+### Fixed
+
+- **Setup:** Use `stdin: "null"` for deno install spawn so the child does not
+  wait for terminal input; call `child.unref()` right after spawn so the setup
+  process can exit. Entry point calls `exit(0)` when `installGlobalCli()`
+  resolves so the process exits (Deno keeps refs otherwise).
+- **Upgrade:** Spawn setup with `stdin: "null"`, call `child.unref()` after
+  spawn, and call `exit(0)` on success / `exit(1)` on failure so the CLI process
+  exits when the command finishes.
+
+---
+
 ## [3.0.85] - 2026-02-17
 
 ### Fixed

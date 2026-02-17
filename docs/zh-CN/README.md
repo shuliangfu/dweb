@@ -1974,10 +1974,11 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.85] - 2026-02-17
+### [3.0.86] - 2026-02-17
 
-**修复**：同页锚点（仅 hash 变化）不再请求 /__data；与上次 pathname+search
-相同时跳过请求。
+**修复**：setup 使用 stdin "null" 与 child.unref() 使进程退出；入口在完成后 调用
+exit(0)。upgrade 以 stdin "null" spawn、unref()，成功/失败分别
+exit(0)/exit(1)，使 CLI 在命令结束时退出。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
