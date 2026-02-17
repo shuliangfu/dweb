@@ -1906,10 +1906,10 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.82] - 2026-02-17
+### [3.0.83] - 2026-02-17
 
-**Changed**: Updated related dependency versions (e.g. @dreamer/render ^1.0.26,
-@dreamer/view ^1.0.15).
+**Changed**: Do not request `/__data` for pathnames that align with router’s
+non-intercepted links (reserved path, invalid path).
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

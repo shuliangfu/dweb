@@ -8,6 +8,17 @@ and this project adheres to
 
 ---
 
+## [3.0.83] - 2026-02-17
+
+### Changed
+
+- **Client /__data:** Do not request `/__data` for pathnames that align with
+  router’s non-intercepted links: reserved path (/_*), data path itself, empty
+  path, or invalid path (contains "//"). Reduces failed requests for anchor
+  links and reserved URLs.
+
+---
+
 ## [3.0.82] - 2026-02-17
 
 ### Changed

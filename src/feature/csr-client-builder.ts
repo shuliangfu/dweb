@@ -398,13 +398,23 @@ export function clearLayoutCache(): void {
       _viewEnsureReactiveRoot(containerId);`
     : "";
 
-  // 客户端页面切换时请求 DWEB_DATA_PATH 获取该路由 load() 数据，失败则仅用 params/query
+  // Do not request /__data for pathnames that align with router's non-intercepted links (@dreamer/router client).
+  // Router does NOT intercept: modifier key, non-left-click, non-<a>, empty href, pure anchor (href="#..."),
+  // target!==_self, download, data-native, non-http(s), cross-origin, same-page hash. So those never trigger
+  // client nav and never reach here. Here we only enforce pathname-based rules: reserved path (/_*), data path
+  // itself, empty path, and invalid path (contains "//") — do not fetch /__data for those.
   const fetchRouteDataSnippet =
     `var _pathname = (typeof _win.location !== "undefined" && _win.location.pathname) ? _win.location.pathname : "/";
       var _search = (typeof _win.location !== "undefined" && _win.location.search) ? _win.location.search : "";
-      var _dataUrl = "${DWEB_DATA_PATH}?path=" + encodeURIComponent(_pathname) + (_search ? "&" + _search.slice(1) : "");
-      var _dataRes = await fetch(_dataUrl);
-      var _navProps = (_dataRes && _dataRes.ok) ? await _dataRes.json() : { params: match.params || {}, query: match.query || {} };`;
+      var _reservedOrInvalid = !_pathname || _pathname === "${DWEB_DATA_PATH}" || _pathname.indexOf("/_") === 0 || _pathname.indexOf("//") !== -1;
+      var _navProps;
+      if (!_reservedOrInvalid) {
+        var _dataUrl = "${DWEB_DATA_PATH}?path=" + encodeURIComponent(_pathname) + (_search ? "&" + _search.slice(1) : "");
+        var _dataRes = await fetch(_dataUrl);
+        _navProps = (_dataRes && _dataRes.ok) ? await _dataRes.json() : { params: match.params || {}, query: match.query || {} };
+      } else {
+        _navProps = { params: match.params || {}, query: match.query || {} };
+      }`;
   /** View：先 setViewState，无 reactive root 时才 unmountPrevious，再 ensureReactiveRoot，实现细粒度 patch */
   const onRouteChangeRenderSnippet = isViewEngine
     ? `if (_win.__DWEB_DEBUG__) console.log("[dweb:view] onRouteChange", { component: match.route.component, hasPage: !!PageComponent });

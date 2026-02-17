@@ -1974,10 +1974,10 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.82] - 2026-02-17
+### [3.0.83] - 2026-02-17
 
-**变更**：更新相关依赖版本（如 @dreamer/render ^1.0.26、@dreamer/view
-^1.0.15）。
+**变更**：与 router 不拦截的链接保持一致，对保留/非法 pathname 不再请求
+`/__data`。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
