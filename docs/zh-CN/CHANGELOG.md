@@ -7,6 +7,29 @@
 
 ---
 
+## [3.0.87] - 2026-02-17
+
+### 新增
+
+- **SSG**：除路径段外支持 query 形式动态路由（如
+  `/user?id=[id]`）；生产环境读盘与 hydration 使用 @dreamer/render 的
+  `routeToFilePath` / `filePathToRoute`。
+- **Init**：配置与 TSX 模板注释 i18n；生成注释随 init 时
+  locale（中/英）变化；新增 `init.comments` 与 `init.template` 文案。
+
+### 变更
+
+- **Upgrade**：`main()` 改为返回退出码（0/1），不再内部调用 `exit()`；由 CLI
+  层调用 `exit(code)`，测试中不再触发「attempted to exit」。
+- **Init**：dynamicRoutes 模板注释改为说明同时支持路径段与 query 两种形式。
+
+### 移除
+
+- **测试**：移除 cmd-upgrade 两个用例（spawn stdin null、setup
+  安装），避免退出码与 资源泄漏导致的失败。
+
+---
+
 ## [3.0.86] - 2026-02-17
 
 ### 修复

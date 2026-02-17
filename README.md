@@ -1906,11 +1906,12 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.86] - 2026-02-17
+### [3.0.87] - 2026-02-17
 
-**Fixed**: Setup uses stdin "null" and child.unref() so process exits; entry
-calls exit(0) when done. Upgrade spawns with stdin "null", unref(), and
-exit(0)/exit(1) so CLI exits.
+**Added**: SSG query-style dynamic routes; init config and TSX template comments
+i18n (en/zh by locale). **Changed**: Upgrade returns exit code, CLI calls
+exit(code); init dynamicRoutes comments support path + query. **Removed**: Two
+cmd-upgrade tests.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

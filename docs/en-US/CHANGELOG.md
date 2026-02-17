@@ -8,6 +8,30 @@ and this project adheres to
 
 ---
 
+## [3.0.87] - 2026-02-17
+
+### Added
+
+- **SSG:** Support query-style dynamic routes (e.g. `/user?id=[id]`) in addition
+  to path segments; production serving and hydration use `routeToFilePath` /
+  `filePathToRoute` from @dreamer/render.
+- **Init:** Config and TSX template comments are i18n; generated comments follow
+  init locale (en/zh). New keys in `init.comments` and `init.template`.
+
+### Changed
+
+- **Upgrade:** `main()` returns exit code (0/1) instead of calling `exit()`; CLI
+  layer calls `exit(code)` so tests do not hit "attempted to exit".
+- **Init:** dynamicRoutes template comments now state both path-segment and
+  query form are supported.
+
+### Removed
+
+- **Test:** Removed two cmd-upgrade tests (spawn stdin null, setup install) to
+  avoid exit-code and resource-leak failures.
+
+---
+
 ## [3.0.86] - 2026-02-17
 
 ### Fixed
