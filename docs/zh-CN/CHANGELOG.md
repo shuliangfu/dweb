@@ -7,6 +7,17 @@
 
 ---
 
+## [3.0.85] - 2026-02-17
+
+### 修复
+
+- **同页锚点不再请求 /__data**：仅 hash 变化（pathname+search
+  未变）的同页锚点点击不再请求 /__data。路由虽不拦截此类链接，但浏览器可能触发
+  popstate 仍会进入 onRouteChange；现通过记录
+  pathname+search（`__DWEB_LAST_PATHNAME__`），与当前相同时跳过 __data 请求。
+
+---
+
 ## [3.0.84] - 2026-02-17
 
 ### 变更

@@ -1906,10 +1906,10 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.84] - 2026-02-17
+### [3.0.85] - 2026-02-17
 
-**Changed**: @dreamer/runtime-adapter ^1.0.8; upgrade command calls
-child.unref() so process exits after spawn.
+**Fixed**: Client /__data on same-page anchor—pathname+search unchanged
+(hash-only) no longer triggers /__data; skip when equal to last recorded path.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

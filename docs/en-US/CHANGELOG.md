@@ -8,6 +8,18 @@ and this project adheres to
 
 ---
 
+## [3.0.85] - 2026-02-17
+
+### Fixed
+
+- **Client /__data on same-page anchor**: Same-page anchor links
+  (pathname+search unchanged, only hash changed) no longer trigger /__data
+  requests. The router does not intercept such links, but the browser may fire
+  popstate and still invoke onRouteChange; we now skip the __data request when
+  pathname+search equals the last recorded path (`__DWEB_LAST_PATHNAME__`).
+
+---
+
 ## [3.0.84] - 2026-02-17
 
 ### Changed

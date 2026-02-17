@@ -52,6 +52,14 @@ export default function Layout({ children }: LayoutProps) {
               </li>
               <li>
                 <a
+                  href="/charts"
+                  class="text-gray-600 hover:text-primary-600 transition-colors"
+                >
+                  图表
+                </a>
+              </li>
+              <li>
+                <a
                   href="/user/1"
                   class="text-gray-600 hover:text-primary-600 transition-colors"
                 >

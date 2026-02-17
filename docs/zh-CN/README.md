@@ -1974,9 +1974,10 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.84] - 2026-02-17
+### [3.0.85] - 2026-02-17
 
-**变更**：@dreamer/runtime-adapter ^1.0.8；upgrade 命令调用 child.unref()，spawn 后进程可正常退出。
+**修复**：同页锚点（仅 hash 变化）不再请求 /__data；与上次 pathname+search
+相同时跳过请求。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

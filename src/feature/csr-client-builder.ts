@@ -398,15 +398,14 @@ export function clearLayoutCache(): void {
       _viewEnsureReactiveRoot(containerId);`
     : "";
 
-  // Do not request /__data for pathnames that align with router's non-intercepted links (@dreamer/router client).
-  // Router does NOT intercept: modifier key, non-left-click, non-<a>, empty href, pure anchor (href="#..."),
-  // target!==_self, download, data-native, non-http(s), cross-origin, same-page hash. So those never trigger
-  // client nav and never reach here. Here we only enforce pathname-based rules: reserved path (/_*), data path
-  // itself, empty path, and invalid path (contains "//") — do not fetch /__data for those.
+  // __data 仅在 onRouteChange 内请求。同页锚点虽不触发 router 的 navigate，但浏览器改 hash 可能触发 popstate，仍会进 onRouteChange，
+  // 故用 pathname+search 判断：与上次相同则视为「同页仅 hash」，不请求 __data。保留 pathname 保留字(/_*、/__data 等)也不请求。
   const fetchRouteDataSnippet =
     `var _pathname = (typeof _win.location !== "undefined" && _win.location.pathname) ? _win.location.pathname : "/";
       var _search = (typeof _win.location !== "undefined" && _win.location.search) ? _win.location.search : "";
-      var _reservedOrInvalid = !_pathname || _pathname === "${DWEB_DATA_PATH}" || _pathname.indexOf("/_") === 0 || _pathname.indexOf("//") !== -1;
+      var _pathAndSearch = _pathname + _search;
+      var _samePageHashOnly = (typeof (g as DwebGlobal).__DWEB_LAST_PATHNAME__ === "string" && (g as DwebGlobal).__DWEB_LAST_PATHNAME__ === _pathAndSearch);
+      var _reservedOrInvalid = !_pathname || _pathname === "${DWEB_DATA_PATH}" || _pathname.indexOf("/_") === 0 || _pathname.indexOf("//") !== -1 || _samePageHashOnly;
       var _navProps;
       if (!_reservedOrInvalid) {
         var _dataUrl = "${DWEB_DATA_PATH}?path=" + encodeURIComponent(_pathname) + (_search ? "&" + _search.slice(1) : "");
@@ -414,7 +413,8 @@ export function clearLayoutCache(): void {
         _navProps = (_dataRes && _dataRes.ok) ? await _dataRes.json() : { params: match.params || {}, query: match.query || {} };
       } else {
         _navProps = { params: match.params || {}, query: match.query || {} };
-      }`;
+      }
+      (g as DwebGlobal).__DWEB_LAST_PATHNAME__ = _pathAndSearch;`;
   /** View：先 setViewState，无 reactive root 时才 unmountPrevious，再 ensureReactiveRoot，实现细粒度 patch */
   const onRouteChangeRenderSnippet = isViewEngine
     ? `if (_win.__DWEB_DEBUG__) console.log("[dweb:view] onRouteChange", { component: match.route.component, hasPage: !!PageComponent });
@@ -443,8 +443,11 @@ export function clearLayoutCache(): void {
   const csrInitialPropsSnippet = `var __d = (g as DwebGlobal).__DATA__;
       var __use = __d && match.route.path === __d.route;
       var _props = __use ? (function(){ (g as DwebGlobal).__DATA__ = undefined; return __d.page || { params: match.params, query: match.query }; })() : { params: match.params, query: match.query };`;
+  const setLastPathSnippet =
+    `(g as DwebGlobal).__DWEB_LAST_PATHNAME__ = (typeof _win.location !== "undefined" && _win.location.pathname ? _win.location.pathname : "/") + (typeof _win.location !== "undefined" && _win.location.search ? _win.location.search : "");`;
   const renderCurrentRouteSnippet = isViewEngine
     ? `if (_win.__DWEB_DEBUG__) console.log("[dweb:view] renderCurrentRoute", { component: match.route.component, hasPage: !!PageComponent, layoutsCount: layoutList?.length ?? 0 });
+      ${setLastPathSnippet}
       ${csrInitialPropsSnippet}
       setViewState({ page: PageComponent, props: _props, layouts: layoutList, skipLayouts });
       if (!_viewReactiveRoot && RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
@@ -453,6 +456,7 @@ export function clearLayoutCache(): void {
     : `if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
       const _container = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
       if (_container && typeof _container.replaceChildren === "function") _container.replaceChildren();
+      ${setLastPathSnippet}
       ${csrInitialPropsSnippet}
       const csrResult = await renderCSR({
         engine,
@@ -498,6 +502,8 @@ export interface DwebGlobal {
   __DWEB_HMR_DEBUG__?: boolean;
   /** 详细调试日志开关（传 true 时 render 与 router 输出详细调试信息，开发模式默认 true） */
   __DWEB_DEBUG__?: boolean;
+  /** 上次的 pathname+search（不含 hash），同页仅 hash 变化时不请求 __data */
+  __DWEB_LAST_PATHNAME__?: string;
 }
 
 /** 浏览器全局对象（兼容 Deno 无 DOM 类型，使用 globalThis 替代 window） */
