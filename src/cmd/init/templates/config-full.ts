@@ -3,8 +3,8 @@
  * 参考 docs/en-US/APP_CONFIG.md 与 AppConfig 类型
  */
 
-import { $t, getDefaultLanguage } from "../helpers.ts";
 import { DEFAULT_PORT_BASE } from "../constants.ts";
+import { $t, getDefaultLanguage } from "../helpers.ts";
 import type { InitOptions } from "../types.ts";
 
 /**
@@ -21,7 +21,7 @@ export function getFullSingleAppConfigMainTs(opts: InitOptions): string {
   return `/**
  * ${$t("init.comments.appConfigShort")}
  * ${$t("init.comments.frameworkAutoLoads")}
- * 完整配置项说明见文档: docs/en-US/APP_CONFIG.md
+ * ${$t("init.comments.configFullDocRef")}
  */
 import type { AppConfig } from "@dreamer/dweb";
 
@@ -29,9 +29,9 @@ const config: AppConfig = {
   // ========== Basic ==========
   name: "${configName}",
   version: "1.0.0",
-  /** ${
-    $t("init.comments.frameworkLanguage")
-  }（init 时按环境检测，可改为 zh-CN / en-US） */
+  /** ${$t("init.comments.frameworkLanguage")} ${
+    $t("init.comments.frameworkLanguageSuffix")
+  } */
   language: "${language}",
 
   // envPrefix: "APP_",
@@ -46,9 +46,8 @@ const config: AppConfig = {
   // },
 
   // ========== Server ==========
+  // host / port 在 main.dev.ts（127.0.0.1:${serverPort}）与 main.prod.ts（0.0.0.0:${serverPort}）中配置
   server: {
-    port: ${serverPort},
-    host: "127.0.0.1",
     dev: {
       hmr: { enabled: true, path: "/__hmr" },
       watch: {
@@ -72,13 +71,23 @@ const config: AppConfig = {
   },
 
   // ========== Render ==========
-  // See docs/APP_CONFIG.md for full render options and SSR/SSG client hydration (ssr.hydrate, ssg.hydrate).
+  // ${$t("init.comments.renderFullDocFull")}
   render: {
     engine: "${opts.engine}",
     mode: "${renderMode}",
     // debug: false,
-    // ssr: { hydrate: true },
-    // ssg: { outputDir: "dist/static", routes: ["/", "/about"], dynamicRoutes: {}, hydrate: true },
+    // ssr: {
+    //   hydrate: true,
+    // },
+    // ssg: {
+    //   outputDir: "dist/static",
+    //   routes: ["/", "/about"],
+    //   /** ${$t("init.comments.dynamicRoutesSupport")} */
+    //   dynamicRoutes: { "/user/[id]": ["1", "2", "3"] }, // ${
+    $t("init.comments.dynamicRoutesExample")
+  }
+    //   hydrate: true,
+    // },
   },
 
   // ========== Build ==========
@@ -211,8 +220,18 @@ export default {
     engine: "${opts.engine}",
     mode: "${opts.renderMode ?? "hybrid"}",
     // debug: false,
-    // ssr: { hydrate: true },
-    // ssg: { hydrate: true }
+    // ssr: {
+    //   hydrate: true,
+    // },
+    // ssg: {
+    //   outputDir: "dist/static",
+    //   routes: ["/", "/about"],
+    //   /** ${$t("init.comments.dynamicRoutesSupport")} */
+    //   dynamicRoutes: { "/user/[id]": ["1", "2", "3"] }, // ${
+    $t("init.comments.dynamicRoutesExample")
+  }
+    //   hydrate: true,
+    // },
   },
 
   build: {

@@ -15,14 +15,14 @@
     "@dreamer/console": "jsr:@dreamer/console@^1.0.8",
     "@dreamer/database": "jsr:@dreamer/database@^1.0.2",
     "@dreamer/dweb": "jsr:@dreamer/dweb@^3.0.73",
-    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.0.25",
+    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.0.27",
     "@dreamer/lifecycle": "jsr:@dreamer/lifecycle@^1.0.0",
     "@dreamer/logger": "jsr:@dreamer/logger@^1.0.0",
     "@dreamer/middleware": "jsr:@dreamer/middleware@^1.0.0",
     "@dreamer/middlewares": "jsr:@dreamer/middlewares@^1.0.1",
     "@dreamer/plugin": "jsr:@dreamer/plugin@^1.0.0",
     "@dreamer/plugins": "jsr:@dreamer/plugins@^1.0.4",
-    "@dreamer/render": "jsr:@dreamer/render@^1.0.26",
+    "@dreamer/render": "jsr:@dreamer/render@^1.0.27",
     "@dreamer/router": "jsr:@dreamer/router@^1.0.9",
     "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.0.8",
     "@dreamer/server": "jsr:@dreamer/server@^1.0.5",
@@ -32,7 +32,7 @@
     "@unocss/preset-wind3": "npm:@unocss/preset-wind3@66.0.0",
     "@unocss/preset-icons": "npm:@unocss/preset-icons@66.0.0",
     "esbuild": "npm:esbuild@0.27.2",
-    "@dreamer/view": "jsr:@dreamer/view@^1.0.15"
+    "@dreamer/view": "jsr:@dreamer/view@^1.0.17"
   },
   "compilerOptions": {
     "jsx": "react-jsx",

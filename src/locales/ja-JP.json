@@ -707,6 +707,9 @@
       "styleGeneric": "汎用スタイル",
       "styleTailwind": "Tailwind CSS v4",
       "styleUno": "UnoCSS",
+      "buttonComment": "Example Button component for counter etc.",
+      "appDescription": "Built with @dreamer/dweb",
+      "footerBuilt": "© 2024 Built with @dreamer/dweb",
       "layoutComment": "Layout コンポーネント - ヘッダー、フッター、コンテンツ（{style} 使用）",
       "navHome": "ホーム",
       "navAbout": "About",
@@ -813,7 +816,13 @@
       "vscodeI18n": "i18n-ally 設定",
       "commonUtils": "共通ユーティリティ",
       "commonUtilsImport": "アプリからインポート: import { noop } from \"@common/utils/mod.ts\";",
-      "commonModuleDesc": "全アプリで共有する {moduleName} レイヤー；必要に応じて追加・エクスポート"
+      "commonModuleDesc": "全アプリで共有する {moduleName} レイヤー；必要に応じて追加・エクスポート",
+      "renderFullDoc": "See docs/APP_CONFIG.md for full options (SSR/SSG hydration, etc.); uncomment below as needed",
+      "dynamicRoutesSupport": "Supports path segments (/user/[id]→/user/1) and query (/user?id=[id]→/user?id=1)",
+      "dynamicRoutesExample": "or \"/user?id=[id]\": [\"1\", \"2\", \"3\"]",
+      "renderFullDocFull": "See docs/zh-CN/APP_CONFIG.md or docs/en-US/APP_CONFIG.md for full options (SSR/SSG hydration)",
+      "configFullDocRef": "Full config reference: docs/en-US/APP_CONFIG.md",
+      "frameworkLanguageSuffix": "(auto-detected at init; override to zh-CN / en-US if needed)"
     }
   }
 }

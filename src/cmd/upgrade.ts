@@ -20,7 +20,7 @@ import {
   succeedSpinner,
   success,
 } from "@dreamer/console";
-import { createCommand, exit } from "@dreamer/runtime-adapter";
+import { createCommand } from "@dreamer/runtime-adapter";
 import { $t } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 import { fetchJsrLatestVersion } from "../utils/jsr-versions.ts";
@@ -59,7 +59,7 @@ function isNewer(latest: string, current: string): boolean {
 export async function main(
   _args: string[],
   options: ParsedOptions,
-): Promise<void> {
+): Promise<boolean> {
   const useBeta = options?.beta === true;
   const runtime = getRuntime();
   const current = await getDwebVersion();
@@ -69,12 +69,12 @@ export async function main(
   const latest = await fetchJsrLatestVersion("@dreamer/dweb", useBeta);
   if (!latest) {
     error($t("upgrade.cannotGetLatest"));
-    exit(1);
+    return Promise.resolve(false);
   }
 
   if (current === latest || !isNewer(latest, current)) {
     success($t("upgrade.alreadyLatest", { version: current }));
-    exit(0);
+    return Promise.resolve(true);
   }
 
   success($t("upgrade.newVersionFound", { version: latest }));
@@ -94,12 +94,12 @@ export async function main(
   if (status.success) {
     succeedSpinner($t("upgrade.upgradedTo", { version: latest }));
     await writeVersionCache(latest);
-    exit(0);
+    return Promise.resolve(true);
   } else {
     failSpinner($t("upgrade.autoInstallFailed"));
     error($t("upgrade.manualInstall"));
     info($t("upgrade.manualExample", { spec: setupSpec }));
     info($t("upgrade.orManualVersion"));
-    exit(1);
+    return Promise.resolve(false);
   }
 }

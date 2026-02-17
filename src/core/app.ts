@@ -34,7 +34,8 @@ import {
 
 import { AssetsProcessor } from "@dreamer/esbuild";
 import { requestId, requestLogger } from "@dreamer/middlewares";
-import { expandDynamicRoute } from "@dreamer/render";
+import { expandDynamicRoute, filePathToRoute } from "@dreamer/render";
+import { parseRoutePath } from "../utils/route.ts";
 import { session } from "@dreamer/session";
 import { initializeBuild, runBuildWithBuilder } from "../feature/build.ts";
 import {
@@ -47,7 +48,7 @@ import { createLoadDataMiddleware } from "../feature/load-data-middleware.ts";
 import { loadRouteModule } from "../feature/load-route-module.ts";
 import { createRendererCSR } from "../feature/render-csr.ts";
 import { createRendererHybrid } from "../feature/render-hybrid.ts";
-import { createRendererSSG, fileToPathname } from "../feature/render-ssg.ts";
+import { createRendererSSG } from "../feature/render-ssg.ts";
 import { createRendererSSR } from "../feature/render-ssr.ts";
 import {
   collectClientRoutes,
@@ -1086,20 +1087,28 @@ export class App extends EventEmitter implements IApp {
             return mod?.default ?? mod?.Page ?? mod?.App ?? mod?.Layout ?? null;
           };
 
-          /** 按路径加载页面组件（支持动态路由，通过 router.match 匹配） */
+          /** 按路径加载页面组件（支持动态路由与 query 如 /user?id=1，通过 pathname 做 router.match） */
           const loadRouteComponent = async (routePath: string) => {
-            const match = await router.match(routePath);
+            const { pathname } = parseRoutePath(routePath);
+            const match = await router.match(pathname);
             if (!match || match.isApi || !match.route?.fullPath) return null;
             return await loadModuleByPath(match.route.fullPath);
           };
 
-          /** 加载路由数据（含 params，供动态路由页面使用） */
+          /** 加载路由数据（含 params；若 route 带 query 则附带 query 对象供页面使用） */
           const loadRouteData = async (
             routePath: string,
           ): Promise<Record<string, unknown>> => {
-            const match = await router.match(routePath);
+            const { pathname, search } = parseRoutePath(routePath);
+            const match = await router.match(pathname);
             if (!match || match.isApi) return {};
-            return { params: match.params };
+            const data: Record<string, unknown> = { params: match.params };
+            if (search) {
+              data.query = Object.fromEntries(
+                new URLSearchParams(search.slice(1)),
+              );
+            }
+            return data;
           };
 
           /** 加载布局组件（_app -> _layout，从外到内，用于 SSG 预渲染） */
@@ -1190,10 +1199,11 @@ export class App extends EventEmitter implements IApp {
                 /\\/g,
                 "/",
               );
-              const pathname = fileToPathname(relPath);
+              const route = filePathToRoute(relPath);
+              const { pathname } = parseRoutePath(route);
               const match = await router.match(pathname);
               if (!match || match.isApi) continue;
-              const pageProps = await loadRouteData(pathname);
+              const pageProps = await loadRouteData(route);
               const rawComponent = match.route.file || match.route.path || "";
               const normalizedComponent = typeof rawComponent === "string"
                 ? extractComponentPathFromRouteFile(
@@ -1207,7 +1217,10 @@ export class App extends EventEmitter implements IApp {
                 page: pageProps,
                 route: match.route.path,
                 params: match.params,
-                query: match.query,
+                query:
+                  (pageProps?.query as Record<string, string> | undefined) ??
+                    match.query ??
+                    {},
                 component: normalizedComponent,
               };
               const clientConfigScript = `

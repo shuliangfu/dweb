@@ -299,6 +299,9 @@ const ENGINE_RENDER_ADAPTER: Record<string, string> = {
   view: "@dreamer/render/client/view",
 };
 
+/** 渲染模式：csr 仅客户端渲染；hybrid/ssr/ssg 均需客户端 hydrate，故 view 用 hybrid 入口 */
+type ClientDepRenderMode = "csr" | "hybrid" | "ssr" | "ssg";
+
 /**
  * 生成 client.dep.tsx 内容（路由加载器、缓存、HMR CSS、loadLayouts、loadPageModule、renderNotFound、renderError、setupHydrationRouterAndHmr 等）
  * 此文件每次构建/启动都会重新生成；client.tsx 仅不存在时生成，便于用户修改入口逻辑。
@@ -306,10 +309,14 @@ const ENGINE_RENDER_ADAPTER: Record<string, string> = {
  * 注意：客户端 loadLayouts 仅加载 _layout，不加载 _app。_app 是服务端文档根（输出 html/body），容器 #app 在其内部，
  * 故 hydrate/CSR 只需 Layout(Page)，否则会将 App 渲染进容器导致嵌套 html/body 或 hydrate 不匹配。
  *
+ * View 引擎按 renderMode 区分：csr 用 @dreamer/view/csr（无 hydrate，bundle 更小）；hybrid/ssr/ssg 用 @dreamer/view/hybrid（含 hydrate）。
+ * SSR/SSG 的客户端激活与 hybrid 一致，均为 hydrate，不是 csr。
+ *
  * @param engine 渲染引擎（用于 hydrate/renderCSR 导入及 setupHydrationRouterAndHmr）
  * @param components 路由组件列表
  * @param hasLayout 是否存在 _layout 文件
  * @param hmrCssEntries 开发态 HMR CSS 配置
+ * @param renderMode 渲染模式（view 时用于选择 view/csr 或 view/hybrid）
  * @returns client.dep.tsx 的完整源码
  */
 function generateClientDepContent(
@@ -317,13 +324,17 @@ function generateClientDepContent(
   components: RouteComponentInfo[],
   hasLayout: boolean,
   hmrCssEntries: Array<{ url: string; styleId: string }>,
+  renderMode: ClientDepRenderMode = "hybrid",
 ): string {
   const adapterImport = ENGINE_RENDER_ADAPTER[engine] ??
     "@dreamer/render/client/preact";
   const isViewEngine = engine === "view";
-  /** view 引擎：createReactiveRoot + createSignal 实现细粒度 patch；getState 为 signal 时 setState 会触发 effect 重跑并 patch，不整树卸载 */
+  /** view + csr：仅 CSR，用 view/csr；view + hybrid|ssr|ssg：需 hydrate，用 view/hybrid */
+  const viewImport = renderMode === "csr"
+    ? 'import { createSignal } from "@dreamer/view/csr";'
+    : 'import { createSignal } from "@dreamer/view/hybrid";';
   const renderAdapterImport = isViewEngine
-    ? `import { createSignal } from "@dreamer/view";
+    ? `${viewImport}
 import { hydrate, renderCSR, createReactiveRoot, buildViewTree } from "${adapterImport}";`
     : `import { hydrate, renderCSR } from "${adapterImport}";`;
   /** API 路由（api/ 下）仅服务端使用，不加入 ROUTE_LOADERS，避免客户端 bundle 解析 .ts 或错误引用 */
@@ -1089,8 +1100,10 @@ export async function ensureClientEntryFile(
 
   const renderConfig = (config.render || {}) as {
     engine?: "react" | "preact" | "view";
+    mode?: "csr" | "hybrid" | "ssr" | "ssg";
   };
   const engine = renderConfig.engine || "preact";
+  const renderMode = (renderConfig.mode ?? "hybrid") as ClientDepRenderMode;
 
   const components = await scanRouteComponents(routesDirPath, "", engine);
   const layoutPathTsx = join(routesDirPath, "_layout.tsx");
@@ -1112,6 +1125,7 @@ export async function ensureClientEntryFile(
     components,
     hasLayout,
     hmrCssEntries,
+    renderMode,
   );
   await writeTextFile(clientDepPath, clientDepCode);
   logger.debug($t("log.clientDepGenerated", {
@@ -1167,11 +1181,13 @@ export async function prepareClientBuildEntry(
 
   const renderConfig = (config.render || {}) as {
     engine?: "react" | "preact" | "view";
+    mode?: "csr" | "hybrid" | "ssr" | "ssg";
   };
   const engine = (renderConfig.engine || "preact") as
     | "react"
     | "preact"
     | "view";
+  const renderMode = (renderConfig.mode ?? "hybrid") as ClientDepRenderMode;
 
   const components = await scanRouteComponents(routesDirPath, "", engine);
   logger.debug($t("log.routesScanned", { count: String(components.length) }));
@@ -1190,6 +1206,7 @@ export async function prepareClientBuildEntry(
     components,
     hasLayout,
     hmrCssEntries,
+    renderMode,
   );
   await writeTextFile(clientDepPath, clientDepCode);
   logger.debug(
@@ -1385,11 +1402,13 @@ export async function buildClientScript(
       (changedBasenameForWrite === CLIENT_DEP_FILENAME ||
         changedBasenameForWrite === CLIENT_ENTRY_FILENAME);
 
-    // 获取渲染引擎配置
+    // 获取渲染引擎与模式（view 时按 mode 选 view/csr 或 view/hybrid）
     const renderConfig = (config.render || {}) as {
       engine?: "react" | "preact" | "view";
+      mode?: "csr" | "hybrid" | "ssr" | "ssg";
     };
     const engine = renderConfig.engine || "preact";
+    const renderMode = (renderConfig.mode ?? "hybrid") as ClientDepRenderMode;
 
     // 构建调试：仅使用 config.build.client.debug / config.build.server.debug 传递至 esbuild
     const buildConfig = config.build as {
@@ -1422,6 +1441,7 @@ export async function buildClientScript(
       components,
       hasLayout,
       hmrCssEntries,
+      renderMode,
     );
     if (!skipWritingClientDep) {
       await writeTextFile(clientDepPath, clientDepCode);

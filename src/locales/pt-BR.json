@@ -707,6 +707,9 @@
       "styleGeneric": "Estilos genéricos",
       "styleTailwind": "Tailwind CSS v4",
       "styleUno": "UnoCSS",
+      "buttonComment": "Example Button component for counter etc.",
+      "appDescription": "Built with @dreamer/dweb",
+      "footerBuilt": "© 2024 Built with @dreamer/dweb",
       "layoutComment": "Componente Layout - header, footer, content (usando {style})",
       "navHome": "Início",
       "navAbout": "Sobre",
@@ -813,7 +816,13 @@
       "vscodeI18n": "Config i18n-ally",
       "commonUtils": "Utilitários comuns",
       "commonUtilsImport": "Importar dos apps: import { noop } from \"@common/utils/mod.ts\";",
-      "commonModuleDesc": "Camada {moduleName} compartilhada para todos os apps; adicione e exporte conforme necessário."
+      "commonModuleDesc": "Camada {moduleName} compartilhada para todos os apps; adicione e exporte conforme necessário.",
+      "renderFullDoc": "See docs/APP_CONFIG.md for full options (SSR/SSG hydration, etc.); uncomment below as needed",
+      "dynamicRoutesSupport": "Supports path segments (/user/[id]→/user/1) and query (/user?id=[id]→/user?id=1)",
+      "dynamicRoutesExample": "or \"/user?id=[id]\": [\"1\", \"2\", \"3\"]",
+      "renderFullDocFull": "See docs/zh-CN/APP_CONFIG.md or docs/en-US/APP_CONFIG.md for full options (SSR/SSG hydration)",
+      "configFullDocRef": "Full config reference: docs/en-US/APP_CONFIG.md",
+      "frameworkLanguageSuffix": "(auto-detected at init; override to zh-CN / en-US if needed)"
     }
   }
 }

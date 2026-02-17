@@ -8,7 +8,6 @@
  * 运行方式：Deno: deno run -A src/cmd/init.ts [目录名]；Bun: bun run src/cmd/init.ts [目录名]
  */
 
-import { exit } from "@dreamer/runtime-adapter";
 import {
   type DwebDenoConfig,
   generate,
@@ -20,10 +19,3 @@ import {
 
 export { generate, loadDwebDenoJson, main };
 export type { DwebDenoConfig, InitMainOptions, InitOptions };
-
-if (import.meta.main) {
-  main().catch((err: unknown) => {
-    console.error(err);
-    exit(1);
-  });
-}

@@ -3,7 +3,13 @@
  */
 
 import { failSpinner, startSpinner, succeedSpinner } from "@dreamer/console";
-import { ensureDir, join, writeTextFile } from "@dreamer/runtime-adapter";
+import {
+  chmod,
+  ensureDir,
+  join,
+  platform,
+  writeTextFile,
+} from "@dreamer/runtime-adapter";
 import { $t } from "../../utils/i18n.ts";
 import { fetchDreamerVersions } from "../../utils/jsr-versions.ts";
 import {
@@ -27,14 +33,17 @@ import {
 import {
   getAboutTsx,
   getAppTsx,
+  getButtonTsx,
   getIndexTsx,
   getLayoutTsx,
   getUserByIdTsx,
 } from "./templates/components.ts";
 import { getDockerComposeYml, getDockerfile } from "./templates/docker.ts";
 import {
+  getDeploySh,
   getFaviconSvg,
   getGitignore,
+  getJsxDts,
   getTailwindCss,
   getUnoCss,
   getVscodeSettingsJson,
@@ -54,6 +63,7 @@ export async function generate(opts: InitOptions): Promise<void> {
   if (isMulti && appNames) {
     const commonBase = join(targetDir, prefix, "common");
     await ensureDir(join(commonBase, "config"));
+    await ensureDir(join(commonBase, "components"));
     await ensureDir(join(commonBase, "model"));
     await ensureDir(join(commonBase, "service"));
     await ensureDir(join(commonBase, "hook"));
@@ -86,6 +96,10 @@ export async function generate(opts: InitOptions): Promise<void> {
       join(commonBase, "utils", "mod.ts"),
       getCommonUtilsModTs(),
     );
+    await writeTextFile(
+      join(commonBase, "components", "Button.tsx"),
+      getButtonTsx(opts),
+    );
 
     for (const appName of appNames) {
       const appBase = join(targetDir, prefix, appName);
@@ -108,11 +122,11 @@ export async function generate(opts: InitOptions): Promise<void> {
       );
       await writeTextFile(
         join(appBase, "config", "main.dev.ts"),
-        getConfigMainDevTs(),
+        getConfigMainDevTs(DEFAULT_PORT_BASE + appNames.indexOf(appName)),
       );
       await writeTextFile(
         join(appBase, "config", "main.prod.ts"),
-        getConfigMainProdTs(),
+        getConfigMainProdTs(DEFAULT_PORT_BASE + appNames.indexOf(appName)),
       );
       await writeTextFile(
         join(appBase, "routes", "_app.tsx"),
@@ -163,6 +177,10 @@ export async function generate(opts: InitOptions): Promise<void> {
     await ensureDir(join(targetDir, prefix, "components"));
     await ensureDir(join(targetDir, prefix, "assets"));
 
+    await writeTextFile(
+      join(targetDir, prefix, "components", "Button.tsx"),
+      getButtonTsx(opts),
+    );
     await writeTextFile(
       join(targetDir, prefix, "main.ts"),
       getMainTsSingle(opts),
@@ -242,6 +260,9 @@ export async function generate(opts: InitOptions): Promise<void> {
     join(targetDir, "deno.json"),
     getDenoJson(opts, jsrVersions),
   );
+  if (opts.engine === "view") {
+    await writeTextFile(join(targetDir, "jsx.d.ts"), getJsxDts());
+  }
   await writeTextFile(join(targetDir, ".gitignore"), getGitignore());
 
   await writeTextFile(join(targetDir, "Dockerfile"), getDockerfile());
@@ -249,6 +270,11 @@ export async function generate(opts: InitOptions): Promise<void> {
     join(targetDir, "docker-compose.yml"),
     getDockerComposeYml(opts),
   );
+  if (platform() !== "windows") {
+    const deployShPath = join(targetDir, "deploy.sh");
+    await writeTextFile(deployShPath, getDeploySh());
+    await chmod(deployShPath, 0o755);
+  }
 
   await ensureDir(join(targetDir, "runtime", "deno-cache"));
   await ensureDir(join(targetDir, "runtime", "logs"));

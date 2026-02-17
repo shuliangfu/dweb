@@ -1,8 +1,38 @@
 /**
- * init 生成的静态文件：.gitignore、.vscode/settings.json、Tailwind/Uno CSS 入口、favicon.svg
+ * init 生成的静态文件：.gitignore、.vscode/settings.json、Tailwind/Uno CSS 入口、favicon.svg、jsx.d.ts、deploy.sh
  */
 
 import { $t } from "../helpers.ts";
+
+/** 部署脚本：构建后使用 docker compose 启动 */
+export function getDeploySh(): string {
+  return `#!/bin/sh
+set -e
+dweb-cli build
+docker compose up -d
+`;
+}
+
+/**
+ * JSX 固有元素类型文件内容：供选用 view 引擎的项目做 TSX 类型检查。
+ * 与 @dreamer/view 的 examples/jsx.d.ts 一致，JSR 不允许在包内 declare global，故由 init 写入项目根目录。
+ */
+export function getJsxDts(): string {
+  return `/**
+ * JSX 固有元素类型：供项目内 TSX 类型检查使用。
+ * 与 @dreamer/view 的 jsx.d.ts 一致，配合 deno.json compilerOptions.types 使用。
+ */
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      [tag: string]: Record<string, unknown>;
+    }
+  }
+}
+
+export {};
+`;
+}
 
 /** init 创建项目时写入的默认 favicon（与 examples/view-csr/basic/assets/favicon.svg 一致） */
 export function getFaviconSvg(): string {

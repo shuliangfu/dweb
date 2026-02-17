@@ -707,6 +707,9 @@
       "styleGeneric": "通用样式",
       "styleTailwind": "Tailwind CSS v4",
       "styleUno": "UnoCSS",
+      "buttonComment": "示例 Button 组件：用于首页计数器等",
+      "appDescription": "使用 @dreamer/dweb 构建",
+      "footerBuilt": "© 2024 使用 @dreamer/dweb 构建",
       "layoutComment": "布局组件 - 页头、页脚和内容区域（使用 {style}）",
       "navHome": "首页",
       "navAbout": "关于",
@@ -813,7 +816,13 @@
       "vscodeI18n": "i18n-ally 配置",
       "commonUtils": "公共工具",
       "commonUtilsImport": "各应用可从此处引用，例如：import { noop } from \"@common/utils/mod.ts\";",
-      "commonModuleDesc": "各应用共享的 {moduleName} 层，按需在此添加并导出。"
+      "commonModuleDesc": "各应用共享的 {moduleName} 层，按需在此添加并导出。",
+      "renderFullDoc": "完整说明见 docs/APP_CONFIG.md（含 SSR/SSG 客户端激活；需要时取消下方注释）",
+      "dynamicRoutesSupport": "支持路径段（/user/[id]→/user/1）与 query（/user?id=[id]→/user?id=1）两种形式",
+      "dynamicRoutesExample": "或 \"/user?id=[id]\": [\"1\", \"2\", \"3\"]",
+      "renderFullDocFull": "完整说明见 docs/zh-CN/APP_CONFIG.md 或 docs/en-US/APP_CONFIG.md（含 SSR/SSG 客户端激活）",
+      "configFullDocRef": "完整配置项说明见文档: docs/zh-CN/APP_CONFIG.md",
+      "frameworkLanguageSuffix": "（init 时按环境检测，可改为 zh-CN / en-US）"
     }
   }
 }

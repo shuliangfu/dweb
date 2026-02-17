@@ -40,5 +40,6 @@ export * from "./errors.ts";
 export * from "./i18n.ts";
 export * from "./logger.ts";
 export * from "./path.ts";
+export * from "./route.ts";
 export * from "./runtime.ts";
 export * from "./sanitize.ts";

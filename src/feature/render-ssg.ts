@@ -15,6 +15,7 @@
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import type { HttpContext } from "@dreamer/server";
+import { routeToFilePath } from "@dreamer/render";
 import {
   cwd,
   exists,
@@ -74,18 +75,14 @@ export interface RenderSSGOptions {
 }
 
 /**
- * 将请求路径转换为预渲染文件在 outputDir 下的相对路径
- * 与 @dreamer/render 的 renderSSG 输出一致（扁平）：/ -> index.html，/about -> about.html
+ * 将请求的完整路由（pathname + search）转换为预渲染文件在 outputDir 下的相对路径
+ * 与 @dreamer/render 的 renderSSG 一致：/ -> index.html，/about -> about.html，/user?id=1 -> user/__q_id_1.html
  *
- * @param pathname 请求路径（如 "/"、"/about"）
- * @returns 相对文件路径（如 "index.html"、"about.html"）
+ * @param route 完整路由（如 "/"、"/about"、"/user?id=1"）
+ * @returns 相对文件路径（如 "index.html"、"about.html"、"user/__q_id_1.html"）
  */
-function pathnameToFile(pathname: string): string {
-  if (!pathname || pathname === "/") {
-    return "index.html";
-  }
-  const clean = pathname.replace(/^\//, "").replace(/\/$/, "") || "index";
-  return `${clean}.html`;
+function routeToFile(route: string): string {
+  return routeToFilePath(route);
 }
 
 /**
@@ -171,8 +168,10 @@ export function createRendererSSG(
       }
 
       const pathname = ctx.url.pathname ?? ctx.path ?? match.route?.path ?? "/";
-      const relativePath = pathnameToFile(pathname);
-      // 规范化：resolve 消除 pathname 中的 ../ 等，避免 pathname 被篡改时读项目外文件
+      const search = ctx.url.search ?? "";
+      const route = pathname + search;
+      const relativePath = routeToFile(route);
+      // 规范化：resolve 消除 path 中的 ../ 等，避免 pathname 被篡改时读项目外文件
       const resolvedPath = resolve(baseDir, relativePath);
 
       // 路径穿越防护：仅允许读取 baseDir 内的文件（Windows 兼容：isPathWithinProject 内部做规范化与大小写处理）
@@ -224,7 +223,7 @@ export function createRendererSSG(
       }
       if (htmlCachePending) await htmlCachePending;
       if (htmlCache != null) {
-        const cached = htmlCache.get(pathname);
+        const cached = htmlCache.get(route);
         if (cached != null) {
           return new Response(cached, {
             status: 200,

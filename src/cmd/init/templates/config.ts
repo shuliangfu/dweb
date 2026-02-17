@@ -3,8 +3,8 @@
  * 单应用使用完整配置模板（所有项列出，未用项注释）；多应用 common 使用完整模板，各应用仅覆盖
  */
 
-import { $t, getDefaultLanguage } from "../helpers.ts";
 import { DEFAULT_PORT_BASE } from "../constants.ts";
+import { $t, getDefaultLanguage } from "../helpers.ts";
 import type { InitOptions } from "../types.ts";
 import {
   getFullCommonConfigMainTs,
@@ -18,7 +18,7 @@ import {
 export function getConfigMainTs(
   opts: InitOptions,
   appName?: string,
-  port?: number,
+  _port?: number,
 ): string {
   const prefix = opts.useSrc ? "src/" : "";
   const routesDir = appName
@@ -27,7 +27,6 @@ export function getConfigMainTs(
     ? "./src/routes"
     : "./routes";
   const configName = appName ?? opts.projectName;
-  const serverPort = port ?? DEFAULT_PORT_BASE;
   const renderMode = opts.renderMode ?? "hybrid";
 
   if (appName) {
@@ -40,19 +39,26 @@ import type { AppConfig } from "@dreamer/dweb";
 export default {
   name: "${configName}",
   version: "1.0.0",
-  server: {
-    port: ${serverPort},
-    host: "127.0.0.1",
-  },
   router: {
     routesDir: "${routesDir}",
   },
-  // See docs/APP_CONFIG.md for render options and SSR/SSG hydration (ssr.hydrate, ssg.hydrate).
+  // ${$t("init.comments.renderFullDoc")}
   render: {
     engine: "${opts.engine}",
     mode: "${renderMode}",
-    // ssr: { hydrate: true },
-    // ssg: { hydrate: true },
+    // debug: false,
+    // ssr: {
+    //   hydrate: true,
+    // },
+    // ssg: {
+    //   outputDir: "dist/static",
+    //   routes: ["/", "/about"],
+    //   /** ${$t("init.comments.dynamicRoutesSupport")} */
+    //   dynamicRoutes: { "/user/[id]": ["1", "2", "3"] }, // ${
+      $t("init.comments.dynamicRoutesExample")
+    }
+    //   hydrate: true,
+    // },
   },
   logger: {
     level: "info",
@@ -81,14 +87,16 @@ export default {
   return getFullSingleAppConfigMainTs(opts);
 }
 
-/** 开发环境配置 main.dev.ts */
-export function getConfigMainDevTs(): string {
+/** 开发环境配置 main.dev.ts：host 与 port 单独在此，开发时仅监听本机 */
+export function getConfigMainDevTs(port: number = DEFAULT_PORT_BASE): string {
   return `/**
  * ${$t("init.comments.devConfig")}
  * ${$t("init.comments.devConfigOverride")}
  */
 export default {
   server: {
+    host: "127.0.0.1",
+    port: ${port},
     dev: {
       hmr: { enabled: true, path: "/__hmr" },
       watch: {
@@ -106,13 +114,18 @@ export default {
 `;
 }
 
-/** 生产环境配置 main.prod.ts 占位 */
-export function getConfigMainProdTs(): string {
+/** 生产环境配置 main.prod.ts：host 与 port 单独在此，生产监听所有网卡 */
+export function getConfigMainProdTs(port: number = DEFAULT_PORT_BASE): string {
   return `/**
  * ${$t("init.comments.prodConfig")}
  * ${$t("init.comments.devConfigOverride")}
  */
-export default {};
+export default {
+  server: {
+    host: "0.0.0.0",
+    port: ${port},
+  },
+};
 `;
 }
 

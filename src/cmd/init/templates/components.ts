@@ -11,6 +11,55 @@ import {
 import type { InitOptions } from "../types.ts";
 import { $t } from "../../../utils/i18n.ts";
 
+/**
+ * 简单示例 Button 组件：单应用放在 components/，多应用放在 common/components/ 共用。
+ * 支持 variant：primary / secondary / ghost，与计数器示例样式一致。
+ */
+export function getButtonTsx(opts: InitOptions): string {
+  const isView = opts.engine === "view";
+  const attr = isView ? "class" : "className";
+  const variantStyles = isView
+    ? `const base = "rounded-lg px-4 py-2";
+  const styles = {
+    primary: "border-0 bg-[#667eea] text-white hover:opacity-90",
+    secondary: "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
+    ghost: "border border-gray-300 bg-gray-100 text-gray-600 hover:bg-gray-200",
+  };`
+    : `const base = "rounded-lg px-4 py-2";
+  const styles = {
+    primary: "border-0 bg-[#667eea] text-white hover:opacity-90",
+    secondary: "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
+    ghost: "border border-gray-300 bg-gray-100 text-gray-600 hover:bg-gray-200",
+  };`;
+  return `/**
+ * ${$t("init.template.buttonComment")}
+ */
+
+interface ButtonProps {
+  variant?: "primary" | "secondary" | "ghost";
+  onClick?: () => void;
+  children?: unknown;
+}
+
+export function Button({
+  variant = "primary",
+  onClick,
+  children,
+}: ButtonProps) {
+  ${variantStyles}
+  return (
+    <button
+      type="button"
+      ${attr}={\`\${base} \${styles[variant]}\`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+`;
+}
+
 export function getAppTsx(opts: InitOptions): string {
   const titleName = opts.projectName;
   const propsSnippet = getAppPropsTypeSnippet(opts.engine);
@@ -26,7 +75,7 @@ ${propsSnippet}
 export default function App({
   children,
   title = "${titleName}",
-  description = "Built with @dreamer/dweb",
+  description = "${$t("init.template.appDescription")}",
 }: AppProps) {
   return (
     <html lang="en">
@@ -55,14 +104,14 @@ export function getLayoutTsx(opts: InitOptions, appName?: string): string {
     ? "text-gray-600 hover:text-primary-600 transition-colors"
     : "text-gray-600 hover:text-indigo-600 transition-colors";
   const styleComment = opts.style === "unocss"
-    ? "UnoCSS"
+    ? $t("init.template.styleUno")
     : opts.style === "tailwind"
-    ? "Tailwind CSS v4"
-    : "Generic styles";
+    ? $t("init.template.styleTailwind")
+    : $t("init.template.styleGeneric");
   const importAndProps = getLayoutPropsTypeSnippet(opts.engine);
 
   return `/**
- * Layout component - header, footer, content (using ${styleComment})
+ * ${$t("init.template.layoutComment", { style: styleComment })}
  */
 
 ${importAndProps}
@@ -85,7 +134,7 @@ export default function Layout({ children }: LayoutProps) {
                   href="/"
                   className="${linkClass}"
                 >
-                  Home
+                  ${$t("init.template.navHome")}
                 </a>
               </li>
               <li>
@@ -93,7 +142,7 @@ export default function Layout({ children }: LayoutProps) {
                   href="/about"
                   className="${linkClass}"
                 >
-                  About
+                  ${$t("init.template.navAbout")}
                 </a>
               </li>
             </ul>
@@ -110,7 +159,7 @@ export default function Layout({ children }: LayoutProps) {
       <footer className="bg-gray-800 text-white py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-gray-400">
-            © 2024 Built with @dreamer/dweb
+            ${$t("init.template.footerBuilt")}
           </p>
         </div>
       </footer>
@@ -124,9 +173,15 @@ export function getIndexTsx(opts: InitOptions): string {
   const engineName = getEngineDisplayName(opts.engine);
   const heroGradient = opts.style === "tailwind"
     ? "bg-linear-to-br from-[#667eea] to-[#764ba2]"
-    : "bg-gradient-to-br from-[#667eea] to-[#764ba2]";
+    : "bg-linear-to-br from-[#667eea] to-[#764ba2]";
+  /** 特性标题渐变：Tailwind v4 使用 bg-linear-to-r */
+  const featuresHeadingGradient = "bg-linear-to-r from-[#667eea] to-[#764ba2]";
   const isView = opts.engine === "view";
   const attr = isView ? "class" : "className";
+  const isMulti = opts.appMode === "multi" && (opts.appNames?.length ?? 0) > 0;
+  const buttonImport = isMulti
+    ? 'import { Button } from "@common/components/Button.tsx";\n\n'
+    : 'import { Button } from "../components/Button.tsx";\n\n';
   const counterImport = isView
     ? 'import { createSignal } from "@dreamer/view";\n\n'
     : opts.engine === "preact"
@@ -147,27 +202,15 @@ export function getIndexTsx(opts: InitOptions): string {
           <div ${attr}="flex flex-col items-center justify-center gap-4">
             <span ${attr}="text-2xl font-semibold">count: ${"{"}count()${"}"}</span>
             <div ${attr}="flex flex-wrap items-center justify-center gap-2">
-              <button
-                type="button"
-                ${attr}="rounded-lg border-0 bg-[#667eea] px-4 py-2 text-white hover:opacity-90"
-                onClick={() => setCount(count() + 1)}
-              >
+              <Button variant="primary" onClick={() => setCount(count() + 1)}>
                 ${$t("init.template.counterIncrement")}
-              </button>
-              <button
-                type="button"
-                ${attr}="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50"
-                onClick={() => setCount(count() - 1)}
-              >
+              </Button>
+              <Button variant="secondary" onClick={() => setCount(count() - 1)}>
                 ${$t("init.template.counterDecrement")}
-              </button>
-              <button
-                type="button"
-                ${attr}="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2 text-gray-600 hover:bg-gray-200"
-                onClick={() => setCount(0)}
-              >
+              </Button>
+              <Button variant="ghost" onClick={() => setCount(0)}>
                 ${$t("init.template.counterReset")}
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -182,27 +225,15 @@ export function getIndexTsx(opts: InitOptions): string {
         <div ${attr}="flex flex-col items-center justify-center gap-4">
           <span ${attr}="text-2xl font-semibold">count: ${"{"}count${"}"}</span>
           <div ${attr}="flex flex-wrap items-center justify-center gap-2">
-            <button
-              type="button"
-              ${attr}="rounded-lg border-0 bg-[#667eea] px-4 py-2 text-white hover:opacity-90"
-              onClick={() => setCount((c) => c + 1)}
-            >
+            <Button variant="primary" onClick={() => setCount((c) => c + 1)}>
               ${$t("init.template.counterIncrement")}
-            </button>
-            <button
-              type="button"
-              ${attr}="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50"
-              onClick={() => setCount((c) => c - 1)}
-            >
+            </Button>
+            <Button variant="secondary" onClick={() => setCount((c) => c - 1)}>
               ${$t("init.template.counterDecrement")}
-            </button>
-            <button
-              type="button"
-              ${attr}="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2 text-gray-600 hover:bg-gray-200"
-              onClick={() => setCount(0)}
-            >
+            </Button>
+            <Button variant="ghost" onClick={() => setCount(0)}>
               ${$t("init.template.counterReset")}
-            </button>
+            </Button>
           </div>
         </div>
       </section>`;
@@ -212,7 +243,7 @@ export function getIndexTsx(opts: InitOptions): string {
  * ${$t("init.comments.homeRoute")}
  */
 
-${counterImport}export default function Home() {
+${buttonImport}${counterImport}export default function Home() {
 ${counterState}  return (
     <div ${attr}="py-5">
       <section ${attr}="mb-10 rounded-xl ${heroGradient} px-5 py-15 text-center text-white">
@@ -223,7 +254,7 @@ ${counterState}  return (
       </section>
 
       <section ${attr}="mb-10">
-        <h2 ${attr}="mb-8 text-center text-2xl font-bold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-[#667eea] to-[#764ba2]">${
+        <h2 ${attr}="mb-8 text-center text-2xl font-bold tracking-wide bg-clip-text text-transparent ${featuresHeadingGradient}">${
     $t("init.template.indexFeatures")
   }</h2>
         <div ${attr}="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -302,10 +333,8 @@ export default function About() {
 `;
 }
 
-export function getUserByIdTsx(opts: InitOptions): string {
-  const avatarGradient = opts.style === "tailwind"
-    ? "bg-linear-to-br from-indigo-500 to-purple-600"
-    : "bg-gradient-to-br from-indigo-500 to-purple-600";
+export function getUserByIdTsx(_opts: InitOptions): string {
+  const avatarGradient = "bg-linear-to-br from-indigo-500 to-purple-600";
   return `/**
  * ${$t("init.comments.userDetailPage")}
  * ${$t("init.comments.dynamicRoute")}
