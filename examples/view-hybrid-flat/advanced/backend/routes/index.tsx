@@ -34,8 +34,15 @@ export function load(): Promise<DashboardProps> {
 
 /**
  * 仪表盘页面（纯展示，数据由 load 注入）
+ * 对 users/stats 做防御性默认，避免 hydration 时 __DATA__ 未注入导致读取 undefined.totalUsers 报错
  */
-export default function Dashboard({ users, stats }: DashboardProps) {
+export default function Dashboard(props: Partial<DashboardProps>) {
+  const users = props.users ?? [];
+  const stats = props.stats ?? {
+    totalUsers: 0,
+    admins: 0,
+    activeToday: 0,
+  };
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">仪表盘 333</h1>

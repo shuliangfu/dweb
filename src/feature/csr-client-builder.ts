@@ -1322,6 +1322,7 @@ async function doDevBuild(
     debug: (msg: string, data?: unknown) => void;
     info: (msg: string, data?: unknown) => void;
   },
+  lang?: "en-US" | "zh-CN",
 ): Promise<{
   outputContents?: Array<{ path: string; text: string; contents?: Uint8Array }>;
 }> {
@@ -1340,10 +1341,7 @@ async function doDevBuild(
       format: "esm",
       chunkNames: "[name]-[hash]",
     },
-    t: (key: string, params?: Record<string, string | number | boolean>) => {
-      const r = $t(key, params);
-      return (r != null && r !== key) ? r : undefined;
-    },
+    lang,
   });
   await builder.createContext("dev", { write: false });
   cachedDevBuilder = builder;
@@ -1535,13 +1533,9 @@ export async function buildClientScript(
           external: externalList.length > 0 ? externalList : undefined,
           alias: prodBundleAlias,
         },
-        t: (
-          key: string,
-          params?: Record<string, string | number | boolean>,
-        ) => {
-          const r = $t(key, params);
-          return (r != null && r !== key) ? r : undefined;
-        },
+        lang: config.language === "zh-CN" || config.language === "en-US"
+          ? config.language
+          : undefined,
       });
 
       await builder.build(mode);
@@ -1605,6 +1599,9 @@ export async function buildClientScript(
             engine,
             buildDebug,
             logger,
+            config.language === "zh-CN" || config.language === "en-US"
+              ? config.language
+              : undefined,
           );
         }
       } else {
@@ -1614,6 +1611,9 @@ export async function buildClientScript(
           engine,
           buildDebug,
           logger,
+          config.language === "zh-CN" || config.language === "en-US"
+            ? config.language
+            : undefined,
         );
       }
 

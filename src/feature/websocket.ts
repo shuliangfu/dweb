@@ -13,7 +13,6 @@ import type { ServiceContainer } from "@dreamer/service";
 import { Server } from "@dreamer/websocket";
 import type { AppConfig, SocketConfig } from "../types/app.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
-import { $t } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 
 /** Socket 连接/断开时的插件回调（由框架传入） */
@@ -65,6 +64,11 @@ export function initializeWebSocket(
   const logger = impl.logger ?? socketConfig.logger ?? getLogger(container);
   // 排除 adapter、config，避免与 @dreamer/websocket ServerOptions 冲突
   const { adapter: _adapter, config: _config, ...socketRest } = socketConfig;
+  const lang: "en-US" | "zh-CN" | undefined =
+    (impl as { lang?: "en-US" | "zh-CN" }).lang ??
+      (config.language === "zh-CN" || config.language === "en-US"
+        ? config.language
+        : undefined);
   const ws = new Server({
     ...socketRest,
     ...(socketConfig.config ?? {}),
@@ -73,10 +77,7 @@ export function initializeWebSocket(
     debug: impl.debug ?? false,
     pingTimeout: impl.pingTimeout ?? 60000,
     pingInterval: impl.pingInterval ?? 30000,
-    t: (key: string, params?: Record<string, string | number | boolean>) => {
-      const r = $t(key, params);
-      return (r != null && r !== key) ? r : undefined;
-    },
+    lang,
   });
 
   // 若传入插件回调，在 connection/disconnect 时触发

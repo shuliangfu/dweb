@@ -21,7 +21,6 @@ import {
   type SocketConfig,
 } from "../types/app.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
-import { $t } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 
 /** Socket 连接/断开时的插件回调（由框架传入） */
@@ -73,15 +72,17 @@ export function initializeSocketIo(
   const logger = impl.logger ?? socketConfig.logger ?? getLogger(container);
   // 排除 adapter、config，避免与 @dreamer/socket-io ServerOptions 冲突
   const { adapter: _adapter, config: _config, ...socketRest } = socketConfig;
+  const lang: "en-US" | "zh-CN" | undefined =
+    (impl as { lang?: "en-US" | "zh-CN" }).lang ??
+      (config.language === "zh-CN" || config.language === "en-US"
+        ? config.language
+        : undefined);
   const serverOptions: ServerOptions = {
     ...socketRest,
     ...(socketConfig.config ?? {}),
     path,
     logger,
-    t: (key: string, params?: Record<string, string | number | boolean>) => {
-      const r = $t(key, params);
-      return (r != null && r !== key) ? r : undefined;
-    },
+    lang,
     // 不传 port/host，挂载到主站
   };
   const io = new Server(serverOptions);

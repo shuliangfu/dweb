@@ -194,11 +194,21 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
     const mainPath = getMainModulePath();
     if (mainPath) {
       const cwdPath = cwd();
-      entry = relative(cwdPath, mainPath);
-      if (entry.startsWith("..")) {
-        entry = join(".", entry);
-      } else if (!entry.startsWith(".")) {
-        entry = join(".", entry);
+      const relativeEntry = relative(cwdPath, mainPath);
+      const normalized = relativeEntry.startsWith("..")
+        ? join(".", relativeEntry)
+        : relativeEntry.startsWith(".")
+        ? relativeEntry
+        : join(".", relativeEntry);
+      // 入口为 main.ts 时用于推断（开发/构建）；入口为构建产物 server.js 时也用于推断（生产 start）
+      // 避免用 dist/backend/server.js 启动时仍按 src/main.ts 推断成 dist/client，导致 SSG 读错目录返回 500
+      const pathParts = normalized.replace(/\\/g, "/").replace(/^\.\/?/, "")
+        .split("/").filter(Boolean);
+      const last = pathParts[pathParts.length - 1] ?? "";
+      const isBuiltServerEntry = (last === "server.js" || last === "server") &&
+        (pathParts.length === 2 || pathParts.length === 3);
+      if (normalized.includes("main.ts") || isBuiltServerEntry) {
+        entry = normalized;
       }
     }
   }

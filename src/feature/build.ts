@@ -136,10 +136,10 @@ export function initializeBuild(
       reportHTML: buildConfig.reportHTML as boolean | string | undefined,
     } as BuilderConfig["build"],
     validateConfig: buildConfig.validateConfig as boolean | undefined,
-    t: (key: string, params?: Record<string, string | number | boolean>) => {
-      const r = $t(key, params);
-      return (r != null && r !== key) ? r : undefined;
-    },
+    // 与 esbuild 支持的语种对齐：仅 en-US / zh-CN 透传，其余由 esbuild 自动检测
+    lang: config.language === "en-US" || config.language === "zh-CN"
+      ? config.language
+      : undefined,
   };
 
   // 创建 Builder 实例
@@ -280,10 +280,9 @@ export async function runBuildWithBuilder(
       clean: (config.build as { clean?: boolean })?.clean,
       cache: (config.build as { cache?: boolean | string })?.cache,
     },
-    t: (key: string, params?: Record<string, string | number | boolean>) => {
-      const r = $t(key, params);
-      return (r != null && r !== key) ? r : undefined;
-    },
+    lang: config.language === "en-US" || config.language === "zh-CN"
+      ? config.language
+      : undefined,
   };
 
   const builder = new Builder(builderConfig);

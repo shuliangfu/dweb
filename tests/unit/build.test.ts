@@ -346,12 +346,13 @@ describe("构建集成 (build.ts)", () => {
       });
 
       it("应该构建服务端入口并生成输出文件", async () => {
+        chdir(projectRoot);
         const container = createTestEnv();
         const config: AppConfig = {
           build: {
             server: {
-              entry: "./tests/data/server-entry.ts",
-              output: "./tests/data/server-output",
+              entry: join(projectRoot, "tests/data/server-entry.ts"),
+              output: join(projectRoot, "tests/data/server-output"),
             },
           },
         };
@@ -362,7 +363,7 @@ describe("构建集成 (build.ts)", () => {
         await builder.buildServer();
 
         // 验证输出目录存在（使用 runtime-adapter 以兼容 Bun）
-        const outputDir = "./tests/data/server-output";
+        const outputDir = join(projectRoot, "tests/data/server-output");
         const dirInfo = await stat(outputDir);
         expect(dirInfo.isDirectory).toBe(true);
 
@@ -378,13 +379,14 @@ describe("构建集成 (build.ts)", () => {
       });
 
       it("应该构建客户端入口并生成输出文件", async () => {
+        chdir(projectRoot);
         const container = createTestEnv();
         const config: AppConfig = {
           build: {
             client: {
               engine: "preact",
-              entry: "./tests/data/client-entry.tsx",
-              output: "./tests/data/client-output",
+              entry: join(projectRoot, "tests/data/client-entry.tsx"),
+              output: join(projectRoot, "tests/data/client-output"),
             },
           },
         };
@@ -395,7 +397,7 @@ describe("构建集成 (build.ts)", () => {
         await builder.buildClient();
 
         // 验证输出目录存在（使用 runtime-adapter 以兼容 Bun）
-        const outputDir = "./tests/data/client-output";
+        const outputDir = join(projectRoot, "tests/data/client-output");
         const dirInfo = await stat(outputDir);
         expect(dirInfo.isDirectory).toBe(true);
 
@@ -411,17 +413,18 @@ describe("构建集成 (build.ts)", () => {
       }, { timeout: 30000 });
 
       it("应该同时构建服务端和客户端", async () => {
+        chdir(projectRoot);
         const container = createTestEnv();
         const config: AppConfig = {
           build: {
             server: {
-              entry: "./tests/data/server-entry.ts",
-              output: "./tests/data/server-output",
+              entry: join(projectRoot, "tests/data/server-entry.ts"),
+              output: join(projectRoot, "tests/data/server-output"),
             },
             client: {
               engine: "preact",
-              entry: "./tests/data/client-entry.tsx",
-              output: "./tests/data/client-output",
+              entry: join(projectRoot, "tests/data/client-entry.tsx"),
+              output: join(projectRoot, "tests/data/client-output"),
             },
           },
         };

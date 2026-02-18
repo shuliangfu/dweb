@@ -43,7 +43,7 @@ export interface DatabaseAppConfig {
   managerOptions?: DatabaseManagerOptions;
   /**
    * 查询日志配置（可选）
-   * 为 true 时使用默认配置并传入 t 翻译；为对象时合并 t 翻译
+   * 为 true 时使用默认配置并传入 lang；为对象时合并 lang
    */
   queryLogger?: QueryLoggerConfig | boolean;
 }
@@ -121,42 +121,36 @@ export async function connectDatabases(
   const manager = getDatabaseManager(container);
   const logger = getLogger(container);
 
-  // 设置 Model 的翻译函数，使验证错误等文案支持 i18n
-  const translate = (
-    key: string,
-    params?: Record<string, string | number | boolean>,
-  ) => {
-    const r = $t(key, params);
-    return (r != null && r !== key) ? r : undefined;
-  };
-  SQLModel.translate = translate;
-  MongoModel.translate = translate;
+  // 框架支持多种语言（zh-CN、en-US、ja-JP 等），但 @dreamer/database 仅提供 zh-CN / en-US 文案，其余传 en-US 给数据库层
+  const appLang = config.language === "zh-CN" || config.language === "en-US"
+    ? config.language
+    : "en-US";
 
-  // 创建带 t 翻译的 QueryLogger（当启用 queryLogger 时）
-  // 传入 logger 时使用该 logger，不传则使用 QueryLogger 自带的 createLogger
-  const createQueryLoggerWithT = (): QueryLogger | undefined => {
+  // 设置 Model 的 lang，使验证错误等文案使用 i18n
+  (SQLModel as { lang?: "en-US" | "zh-CN" }).lang = appLang;
+  (MongoModel as { lang?: "en-US" | "zh-CN" }).lang = appLang;
+
+  // 创建 QueryLogger（当启用 queryLogger 时），传入 lang 用于 i18n
+  const createQueryLogger = (): QueryLogger | undefined => {
     if (!dbConfig.queryLogger) return undefined;
     const baseConfig: QueryLoggerConfig =
       typeof dbConfig.queryLogger === "boolean" ? {} : dbConfig.queryLogger;
     return new QueryLogger({
       ...baseConfig,
       logger: baseConfig.logger ?? logger,
-      t: (key: string, params?: Record<string, string | number | boolean>) => {
-        const r = $t(key, params);
-        return (r != null && r !== key) ? r : undefined;
-      },
+      lang: baseConfig.lang ?? appLang,
     });
   };
 
-  // 连接默认数据库（传入 t 供 MongoDB 适配器等使用）
+  // 连接默认数据库（传入 lang）
   if (dbConfig.default) {
     try {
       const connConfig = {
         ...dbConfig.default,
-        t: dbConfig.default.t ?? translate,
-      } as DatabaseConfig;
+        lang: dbConfig.default.lang ?? appLang,
+      };
       await manager.connect("default", connConfig);
-      const ql = createQueryLoggerWithT();
+      const ql = createQueryLogger();
       if (ql) {
         manager.getConnection("default").setQueryLogger(ql);
       }
@@ -167,16 +161,16 @@ export async function connectDatabases(
     }
   }
 
-  // 连接命名数据库（传入 t 供 MongoDB 适配器等使用）
+  // 连接命名数据库（传入 lang）
   if (dbConfig.connections) {
     for (const [name, connConfig] of Object.entries(dbConfig.connections)) {
       try {
-        const configWithT = {
+        const configWithLang = {
           ...connConfig,
-          t: connConfig.t ?? translate,
-        } as DatabaseConfig;
-        await manager.connect(name, configWithT);
-        const ql = createQueryLoggerWithT();
+          lang: connConfig.lang ?? appLang,
+        };
+        await manager.connect(name, configWithLang);
+        const ql = createQueryLogger();
         if (ql) {
           manager.getConnection(name).setQueryLogger(ql);
         }
