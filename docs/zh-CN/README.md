@@ -1974,11 +1974,11 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.87] - 2026-02-17
+### [3.0.88] - 2026-02-18
 
-**新增**：SSG 支持 query 形式动态路由；init 配置与 TSX 模板注释 i18n（按 locale
-中/英）。**变更**：upgrade 返回退出码，CLI 调用 exit(code)；init dynamicRoutes
-注释支持路径段与 query。**移除**：两个 cmd-upgrade 测试。
+**变更**：更新示例 deno.json 配置与依赖；调整
+build、features（database、socket-io、websocket、csr-client-builder、build-dirs、version）及测试（e2e、unit）以适配
+CI。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

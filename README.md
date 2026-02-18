@@ -1906,12 +1906,11 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.87] - 2026-02-17
+### [3.0.88] - 2026-02-18
 
-**Added**: SSG query-style dynamic routes; init config and TSX template comments
-i18n (en/zh by locale). **Changed**: Upgrade returns exit code, CLI calls
-exit(code); init dynamicRoutes comments support path + query. **Removed**: Two
-cmd-upgrade tests.
+**Changed**: Updated example deno.json configs and dependencies; adjusted build,
+features (database, socket-io, websocket, csr-client-builder, build-dirs,
+version), and tests (e2e, unit) for CI.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

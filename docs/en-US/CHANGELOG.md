@@ -8,6 +8,16 @@ and this project adheres to
 
 ---
 
+## [3.0.88] - 2026-02-18
+
+### Changed
+
+- **Dependencies and examples:** Updated example `deno.json` configs and
+  dependencies; adjusted build, features (database, socket-io, websocket,
+  csr-client-builder, build-dirs, version), and tests (e2e, unit) for CI.
+
+---
+
 ## [3.0.87] - 2026-02-17
 
 ### Added

@@ -7,6 +7,16 @@
 
 ---
 
+## [3.0.88] - 2026-02-18
+
+### 变更
+
+- **依赖与示例**：更新示例 `deno.json` 配置与依赖；调整
+  build、features（database、socket-io、websocket、csr-client-builder、build-dirs、version）及测试（e2e、unit）以适配
+  CI。
+
+---
+
 ## [3.0.87] - 2026-02-17
 
 ### 新增
