@@ -13,7 +13,7 @@
 import type { SocketContext } from "@dreamer/plugin";
 import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { getPluginManager } from "./plugin.ts";
 
@@ -49,7 +49,7 @@ export async function emitPluginEvent(
         await hook(...args, container);
       } catch (error) {
         // 使用 logger 记录错误（如果 logger 已注册，使用 logger；否则使用 console 作为后备）
-        const msg = $t("log.pluginHookFailed", {
+        const msg = $tr("log.pluginHookFailed", {
           pluginName,
           eventName,
         });
@@ -107,7 +107,7 @@ export async function emitOnRequest(
         return result;
       }
     } catch (error) {
-      const msg = $t("log.pluginHookFailed", {
+      const msg = $tr("log.pluginHookFailed", {
         pluginName,
         eventName: "onRequest",
       });
@@ -235,7 +235,7 @@ export async function emitOnError(
           return response;
         }
       } catch (hookError) {
-        const msg = $t("log.pluginHookFailed", {
+        const msg = $tr("log.pluginHookFailed", {
           pluginName,
           eventName: "onError",
         });
@@ -307,7 +307,7 @@ export async function emitOnRoute(
           currentRoutes = modifiedRoutes;
         }
       } catch (error) {
-        const msg = $t("log.pluginHookFailed", {
+        const msg = $tr("log.pluginHookFailed", {
           pluginName,
           eventName: "onRoute",
         });

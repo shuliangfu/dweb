@@ -280,37 +280,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section class={classes.socketSection}>
-        <h2 class={classes.socketTitle}>计数器示例</h2>
-        <p class={classes.socketDesc}>加一、减一、重置</p>
-        <div class="flex flex-col items-center justify-center gap-4">
-          <span class="text-2xl font-semibold">count: {count}</span>
-          <div class="flex flex-wrap items-center justify-center gap-2">
-            <button
-              type="button"
-              class="rounded-lg border-0 bg-[#667eea] px-4 py-2 text-white hover:opacity-90"
-              onClick={() => setCount((c) => c + 1)}
-            >
-              加一
-            </button>
-            <button
-              type="button"
-              class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50"
-              onClick={() => setCount((c) => c - 1)}
-            >
-              减一
-            </button>
-            <button
-              type="button"
-              class="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2 text-gray-600 hover:bg-gray-200"
-              onClick={() => setCount(0)}
-            >
-              重置
-            </button>
-          </div>
-        </div>
-      </section>
-
       {/* WebSocket 客户端示例；mt-8 与上方计数器模块留出间距 */}
       <section class={`${classes.socketSection} ${classes.socketSectionOuter}`}>
         <h2 class={classes.socketTitle}>WebSocket 客户端示例</h2>

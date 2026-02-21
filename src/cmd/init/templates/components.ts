@@ -9,7 +9,7 @@ import {
   getLayoutPropsTypeSnippet,
 } from "../helpers.ts";
 import type { InitOptions } from "../types.ts";
-import { $t } from "../../../utils/i18n.ts";
+import { $tr } from "../../../utils/i18n.ts";
 
 /**
  * 简单示例 Button 组件：单应用放在 components/，多应用放在 common/components/ 共用。
@@ -32,7 +32,7 @@ export function getButtonTsx(opts: InitOptions): string {
     ghost: "border border-gray-300 bg-gray-100 text-gray-600 hover:bg-gray-200",
   };`;
   return `/**
- * ${$t("init.template.buttonComment")}
+ * ${$tr("init.template.buttonComment")}
  */
 
 interface ButtonProps {
@@ -75,7 +75,7 @@ ${propsSnippet}
 export default function App({
   children,
   title = "${titleName}",
-  description = "${$t("init.template.appDescription")}",
+  description = "${$tr("init.template.appDescription")}",
 }: AppProps) {
   return (
     <html lang="en">
@@ -104,14 +104,14 @@ export function getLayoutTsx(opts: InitOptions, appName?: string): string {
     ? "text-gray-600 hover:text-primary-600 transition-colors"
     : "text-gray-600 hover:text-indigo-600 transition-colors";
   const styleComment = opts.style === "unocss"
-    ? $t("init.template.styleUno")
+    ? $tr("init.template.styleUno")
     : opts.style === "tailwind"
-    ? $t("init.template.styleTailwind")
-    : $t("init.template.styleGeneric");
+    ? $tr("init.template.styleTailwind")
+    : $tr("init.template.styleGeneric");
   const importAndProps = getLayoutPropsTypeSnippet(opts.engine);
 
   return `/**
- * ${$t("init.template.layoutComment", { style: styleComment })}
+ * ${$tr("init.template.layoutComment", { style: styleComment })}
  */
 
 ${importAndProps}
@@ -134,7 +134,7 @@ export default function Layout({ children }: LayoutProps) {
                   href="/"
                   className="${linkClass}"
                 >
-                  ${$t("init.template.navHome")}
+                  ${$tr("init.template.navHome")}
                 </a>
               </li>
               <li>
@@ -142,7 +142,7 @@ export default function Layout({ children }: LayoutProps) {
                   href="/about"
                   className="${linkClass}"
                 >
-                  ${$t("init.template.navAbout")}
+                  ${$tr("init.template.navAbout")}
                 </a>
               </li>
             </ul>
@@ -159,7 +159,7 @@ export default function Layout({ children }: LayoutProps) {
       <footer className="bg-gray-800 text-white py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-gray-400">
-            ${$t("init.template.footerBuilt")}
+            ${$tr("init.template.footerBuilt")}
           </p>
         </div>
       </footer>
@@ -193,23 +193,23 @@ export function getIndexTsx(opts: InitOptions): string {
   const counterSection = isView
     ? `      <section ${attr}="mb-10 rounded-xl border border-gray-200 bg-white p-6 shadow-md">
         <h2 ${attr}="mb-4 text-center text-[#667eea]">${
-      $t("init.template.counterExample")
+      $tr("init.template.counterExample")
     }</h2>
         <p ${attr}="mb-4 text-center text-sm text-gray-500">${
-      $t("init.template.counterViewDesc")
+      $tr("init.template.counterViewDesc")
     }</p>
         {() => (
           <div ${attr}="flex flex-col items-center justify-center gap-4">
             <span ${attr}="text-2xl font-semibold">count: ${"{"}count()${"}"}</span>
             <div ${attr}="flex flex-wrap items-center justify-center gap-2">
               <Button variant="primary" onClick={() => setCount(count() + 1)}>
-                ${$t("init.template.counterIncrement")}
+                ${$tr("init.template.counterIncrement")}
               </Button>
               <Button variant="secondary" onClick={() => setCount(count() - 1)}>
-                ${$t("init.template.counterDecrement")}
+                ${$tr("init.template.counterDecrement")}
               </Button>
               <Button variant="ghost" onClick={() => setCount(0)}>
-                ${$t("init.template.counterReset")}
+                ${$tr("init.template.counterReset")}
               </Button>
             </div>
           </div>
@@ -217,68 +217,68 @@ export function getIndexTsx(opts: InitOptions): string {
       </section>`
     : `      <section ${attr}="mb-10 rounded-xl border border-gray-200 bg-white p-6 shadow-md">
         <h2 ${attr}="mb-4 text-center text-[#667eea]">${
-      $t("init.template.counterExample")
+      $tr("init.template.counterExample")
     }</h2>
         <p ${attr}="mb-4 text-center text-sm text-gray-500">${
-      $t("init.template.counterSummary")
+      $tr("init.template.counterSummary")
     }</p>
         <div ${attr}="flex flex-col items-center justify-center gap-4">
           <span ${attr}="text-2xl font-semibold">count: ${"{"}count${"}"}</span>
           <div ${attr}="flex flex-wrap items-center justify-center gap-2">
             <Button variant="primary" onClick={() => setCount((c) => c + 1)}>
-              ${$t("init.template.counterIncrement")}
+              ${$tr("init.template.counterIncrement")}
             </Button>
             <Button variant="secondary" onClick={() => setCount((c) => c - 1)}>
-              ${$t("init.template.counterDecrement")}
+              ${$tr("init.template.counterDecrement")}
             </Button>
             <Button variant="ghost" onClick={() => setCount(0)}>
-              ${$t("init.template.counterReset")}
+              ${$tr("init.template.counterReset")}
             </Button>
           </div>
         </div>
       </section>`;
 
   return `/**
- * ${$t("init.comments.homePage")}
- * ${$t("init.comments.homeRoute")}
+ * ${$tr("init.comments.homePage")}
+ * ${$tr("init.comments.homeRoute")}
  */
 
 ${buttonImport}${counterImport}export default function Home() {
 ${counterState}  return (
     <div ${attr}="py-5">
       <section ${attr}="mb-10 rounded-xl ${heroGradient} px-5 py-15 text-center text-white">
-        <h1 ${attr}="mb-4 text-4xl">${$t("init.template.indexWelcome")}</h1>
+        <h1 ${attr}="mb-4 text-4xl">${$tr("init.template.indexWelcome")}</h1>
         <p ${attr}="text-xl text-white/90">
-          ${$t("init.template.indexDesc", { engine: engineName })}
+          ${$tr("init.template.indexDesc", { engine: engineName })}
         </p>
       </section>
 
       <section ${attr}="mb-10">
         <h2 ${attr}="mb-8 text-center text-2xl font-bold tracking-wide bg-clip-text text-transparent ${featuresHeadingGradient}">${
-    $t("init.template.indexFeatures")
+    $tr("init.template.indexFeatures")
   }</h2>
         <div ${attr}="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <div ${attr}="rounded-lg bg-white p-6 shadow-md">
             <h3 ${attr}="mb-2.5 text-[#667eea]">${
-    $t("init.template.featureFileRouting")
+    $tr("init.template.featureFileRouting")
   }</h3>
-            <p>${$t("init.template.featureFileRoutingDesc")}</p>
+            <p>${$tr("init.template.featureFileRoutingDesc")}</p>
           </div>
           <div ${attr}="rounded-lg bg-white p-6 shadow-md">
             <h3 ${attr}="mb-2.5 text-[#667eea]">${
-    $t("init.template.featureSsr")
+    $tr("init.template.featureSsr")
   }</h3>
-            <p>${$t("init.template.featureSsrDesc")}</p>
+            <p>${$tr("init.template.featureSsrDesc")}</p>
           </div>
           <div ${attr}="rounded-lg bg-white p-6 shadow-md">
             <h3 ${attr}="mb-2.5 text-[#667eea]">${
-    $t("init.template.featureTypescript")
+    $tr("init.template.featureTypescript")
   }</h3>
-            <p>${$t("init.template.featureTypescriptDesc")}</p>
+            <p>${$tr("init.template.featureTypescriptDesc")}</p>
           </div>
           <div ${attr}="rounded-lg bg-white p-6 shadow-md">
             <h3 ${attr}="mb-2.5 text-[#667eea]">${engineName}</h3>
-            <p>${$t("init.template.featureEngine")}</p>
+            <p>${$tr("init.template.featureEngine")}</p>
           </div>
         </div>
       </section>
@@ -293,37 +293,37 @@ ${counterSection}
 export function getAboutTsx(opts: InitOptions): string {
   const engineName = getEngineDisplayName(opts.engine);
   return `/**
- * ${$t("init.comments.aboutPage")}
- * ${$t("init.comments.aboutRoute")}
+ * ${$tr("init.comments.aboutPage")}
+ * ${$tr("init.comments.aboutRoute")}
  */
 
 export default function About() {
   return (
     <div className="py-5">
       <h1 className="mb-8 text-3xl font-bold">${
-    $t("init.template.aboutTitle")
+    $tr("init.template.aboutTitle")
   }</h1>
 
       <section className="rounded-lg bg-white p-8 shadow-md">
         <p className="mb-6" dangerouslySetInnerHTML={{ __html: "${
-    $t("init.template.aboutDesc", { engine: engineName })
+    $tr("init.template.aboutDesc", { engine: engineName })
   }" }} />
 
         <h2 className="mb-4 mt-6 text-xl font-semibold text-indigo-600">${
-    $t("init.template.aboutTechStack")
+    $tr("init.template.aboutTechStack")
   }</h2>
         <ul className="ml-5 list-disc space-y-2">
           <li>
-            <strong>@dreamer/dweb</strong> - ${$t("init.template.techDweb")}
+            <strong>@dreamer/dweb</strong> - ${$tr("init.template.techDweb")}
           </li>
           <li>
-            <strong>${engineName}</strong> - ${$t("init.template.techEngine")}
+            <strong>${engineName}</strong> - ${$tr("init.template.techEngine")}
           </li>
           <li>
-            <strong>Deno</strong> - ${$t("init.template.techDeno")}
+            <strong>Deno</strong> - ${$tr("init.template.techDeno")}
           </li>
           <li>
-            <strong>TypeScript</strong> - ${$t("init.template.techTypescript")}
+            <strong>TypeScript</strong> - ${$tr("init.template.techTypescript")}
           </li>
         </ul>
       </section>
@@ -336,13 +336,13 @@ export default function About() {
 export function getUserByIdTsx(_opts: InitOptions): string {
   const avatarGradient = "bg-linear-to-br from-indigo-500 to-purple-600";
   return `/**
- * ${$t("init.comments.userDetailPage")}
- * ${$t("init.comments.dynamicRoute")}
+ * ${$tr("init.comments.userDetailPage")}
+ * ${$tr("init.comments.dynamicRoute")}
  */
 
-/** ${$t("init.comments.userPageProps")} */
+/** ${$tr("init.comments.userPageProps")} */
 interface UserProps {
-  /** ${$t("init.comments.routeParams")} */
+  /** ${$tr("init.comments.routeParams")} */
   params: {
     id: string;
   };
@@ -351,18 +351,18 @@ interface UserProps {
 /** Mock user data */
 const users: Record<string, { name: string; email: string; role: string }> = {
   "1": { name: "${
-    $t("init.template.user1Name")
-  }", email: "user1@example.com", role: "${$t("init.template.user1Role")}" },
+    $tr("init.template.user1Name")
+  }", email: "user1@example.com", role: "${$tr("init.template.user1Role")}" },
   "2": { name: "${
-    $t("init.template.user2Name")
-  }", email: "user2@example.com", role: "${$t("init.template.user2Role")}" },
+    $tr("init.template.user2Name")
+  }", email: "user2@example.com", role: "${$tr("init.template.user2Role")}" },
   "3": { name: "${
-    $t("init.template.user3Name")
-  }", email: "user3@example.com", role: "${$t("init.template.user3Role")}" },
+    $tr("init.template.user3Name")
+  }", email: "user3@example.com", role: "${$tr("init.template.user3Role")}" },
 };
 
 /**
- * ${$t("init.comments.userDetailPage")}
+ * ${$tr("init.comments.userDetailPage")}
  */
 export default function User({ params }: UserProps) {
   const user = users[params.id];
@@ -371,16 +371,16 @@ export default function User({ params }: UserProps) {
     return (
       <div className="py-16 px-5 text-center">
         <h1 className="mb-4 text-2xl font-bold text-red-500">${
-    $t("init.template.userNotFound")
+    $tr("init.template.userNotFound")
   }</h1>
         <p className="mb-4">${
-    $t("init.template.userNotFoundDescPrefix")
-  }{params.id}${$t("init.template.userNotFoundDescSuffix")}</p>
+    $tr("init.template.userNotFoundDescPrefix")
+  }{params.id}${$tr("init.template.userNotFoundDescSuffix")}</p>
         <a
           href="/"
           className="mt-5 inline-block rounded-md bg-blue-600 px-5 py-2.5 text-white no-underline hover:bg-blue-700"
         >
-          ${$t("init.template.backToHome")}
+          ${$tr("init.template.backToHome")}
         </a>
       </div>
     );
@@ -389,7 +389,7 @@ export default function User({ params }: UserProps) {
   return (
     <div className="py-5">
       <h1 className="mb-8 text-3xl font-bold">${
-    $t("init.template.userDetail")
+    $tr("init.template.userDetail")
   }</h1>
 
       <div className="flex items-center gap-6 rounded-xl bg-white p-8 shadow-md">
@@ -410,19 +410,19 @@ export default function User({ params }: UserProps) {
           href="/user/1"
           className="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
         >
-          ${$t("init.template.user1")}
+          ${$tr("init.template.user1")}
         </a>
         <a
           href="/user/2"
           className="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
         >
-          ${$t("init.template.user2")}
+          ${$tr("init.template.user2")}
         </a>
         <a
           href="/user/3"
           className="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
         >
-          ${$t("init.template.user3")}
+          ${$tr("init.template.user3")}
         </a>
       </div>
     </div>

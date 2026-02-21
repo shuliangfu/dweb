@@ -1,9 +1,14 @@
 /**
  * 默认配置文件
  * 框架会自动加载 ./config/main.ts（无 src 目录，扁平结构）
+ * 支持环境变量 PORT 覆盖端口，供 e2e 等指定端口避免冲突
  */
 
 import type { AppConfig } from "@dreamer/dweb";
+import { getEnv } from "@dreamer/runtime-adapter";
+
+const portFromEnv = getEnv("PORT");
+const serverPort = portFromEnv ? Number(portFromEnv) : 3009;
 
 const config: AppConfig = {
   name: "preact-hybrid-flat-basic-example",
@@ -11,9 +16,9 @@ const config: AppConfig = {
 
   language: "zh-CN",
 
-  // 服务器配置（e2e 并行测试时端口 3009，与 preact-hybrid=3002 等区分）
+  // 服务器配置（e2e 并行测试时端口 3009，与 preact-hybrid=3002 等区分；PORT 环境变量可覆盖）
   server: {
-    port: 3009,
+    port: serverPort,
     host: "127.0.0.1",
   },
 
@@ -21,6 +26,7 @@ const config: AppConfig = {
   render: {
     engine: "preact",
     mode: "hybrid",
+    // stream: true,
   },
 
   // 路由配置

@@ -18,7 +18,7 @@ import {
   relative,
 } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import {
   buildClientScript,
@@ -149,7 +149,7 @@ export function initializeServer(
     const key = mode === "dev"
       ? "log.devServerRunning"
       : "log.prodServerRunning";
-    logger.info($t(key, { host, port: String(port) }));
+    logger.info($tr(key, { host, port: String(port) }));
   };
   const onListen = serverConfig.onListen ?? defaultOnListen;
 

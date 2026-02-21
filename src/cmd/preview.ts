@@ -13,7 +13,7 @@
  */
 
 import { error, info, success } from "@dreamer/console";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import {
   cwd,
   exists,
@@ -127,7 +127,7 @@ export async function main(
   try {
     await stat(distDir);
   } catch {
-    error($t("preview.distNotExists"));
+    error($tr("preview.distNotExists"));
     return;
   }
 
@@ -135,24 +135,24 @@ export async function main(
   if (
     app && projectInfo?.mode === "multi" && !projectInfo.appNames.includes(app)
   ) {
-    error($t("common.appNotFound", { app }));
-    error($t("common.availableApps", {
+    error($tr("common.appNotFound", { app }));
+    error($tr("common.availableApps", {
       apps: projectInfo?.appNames.join(", ") ?? "",
     }));
     return;
   }
 
   const staticRoot = await resolveStaticRoot(distDir, app);
-  info($t("preview.staticDir", { path: staticRoot }));
-  info($t("preview.starting", { port: String(port) }));
-  success($t("preview.pressCtrlC"));
+  info($tr("preview.staticDir", { path: staticRoot }));
+  info($tr("preview.starting", { port: String(port) }));
+  success($tr("preview.pressCtrlC"));
 
   serve(
     {
       port,
       host: "127.0.0.1",
       onListen: () => {
-        info($t("preview.started", { port: String(port) }));
+        info($tr("preview.started", { port: String(port) }));
       },
     },
     async (req: Request) => {

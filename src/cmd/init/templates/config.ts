@@ -4,7 +4,7 @@
  */
 
 import { DEFAULT_PORT_BASE } from "../constants.ts";
-import { $t, getDefaultLanguage } from "../helpers.ts";
+import { $tr, getDefaultLanguage } from "../helpers.ts";
 import type { InitOptions } from "../types.ts";
 import {
   getFullCommonConfigMainTs,
@@ -31,8 +31,8 @@ export function getConfigMainTs(
 
   if (appName) {
     return `/**
- * ${$t("init.comments.appConfig", { appName })}
- * ${$t("init.comments.commonFieldsMerged")}
+ * ${$tr("init.comments.appConfig", { appName })}
+ * ${$tr("init.comments.commonFieldsMerged")}
  */
 import type { AppConfig } from "@dreamer/dweb";
 
@@ -42,7 +42,7 @@ export default {
   router: {
     routesDir: "${routesDir}",
   },
-  // ${$t("init.comments.renderFullDoc")}
+  // ${$tr("init.comments.renderFullDoc")}
   render: {
     engine: "${opts.engine}",
     mode: "${renderMode}",
@@ -53,9 +53,9 @@ export default {
     // ssg: {
     //   outputDir: "dist/static",
     //   routes: ["/", "/about"],
-    //   /** ${$t("init.comments.dynamicRoutesSupport")} */
+    //   /** ${$tr("init.comments.dynamicRoutesSupport")} */
     //   dynamicRoutes: { "/user/[id]": ["1", "2", "3"] }, // ${
-      $t("init.comments.dynamicRoutesExample")
+      $tr("init.comments.dynamicRoutesExample")
     }
     //   hydrate: true,
     // },
@@ -90,8 +90,8 @@ export default {
 /** 开发环境配置 main.dev.ts：host 与 port 单独在此，开发时仅监听本机 */
 export function getConfigMainDevTs(port: number = DEFAULT_PORT_BASE): string {
   return `/**
- * ${$t("init.comments.devConfig")}
- * ${$t("init.comments.devConfigOverride")}
+ * ${$tr("init.comments.devConfig")}
+ * ${$tr("init.comments.devConfigOverride")}
  */
 export default {
   server: {
@@ -117,8 +117,8 @@ export default {
 /** 生产环境配置 main.prod.ts：host 与 port 单独在此，生产监听所有网卡 */
 export function getConfigMainProdTs(port: number = DEFAULT_PORT_BASE): string {
   return `/**
- * ${$t("init.comments.prodConfig")}
- * ${$t("init.comments.devConfigOverride")}
+ * ${$tr("init.comments.prodConfig")}
+ * ${$tr("init.comments.devConfigOverride")}
  */
 export default {
   server: {
@@ -135,8 +135,8 @@ export function getCommonConfigMainTs(opts: InitOptions): string {
   if (appNames.length === 0) {
     const language = getDefaultLanguage();
     return `/**
- * ${$t("init.comments.commonConfigEntry")}
- * ${$t("init.comments.commonConfigEntryDesc")}
+ * ${$tr("init.comments.commonConfigEntry")}
+ * ${$tr("init.comments.commonConfigEntryDesc")}
  */
 
 export const commonConfig = {
@@ -148,7 +148,7 @@ export default {
   name: commonConfig.appName,
   version: commonConfig.version,
   /** ${
-      $t("init.comments.frameworkLanguageShort")
+      $tr("init.comments.frameworkLanguageShort")
     }（init 时按环境检测，可改为 zh-CN / en-US 等） */
   language: "${language}",
 };
@@ -160,8 +160,8 @@ export default {
 /** common 目录下 config/main.dev.ts 占位 */
 export function getCommonConfigMainDevTs(): string {
   return `/**
- * ${$t("init.comments.devConfig")}
- * ${$t("init.comments.devConfigOverride")}
+ * ${$tr("init.comments.devConfig")}
+ * ${$tr("init.comments.devConfigOverride")}
  */
 export default {};
 `;
@@ -170,8 +170,8 @@ export default {};
 /** common 目录下 utils/mod.ts 占位 */
 export function getCommonUtilsModTs(): string {
   return `/**
- * ${$t("init.comments.commonUtils")}
- * ${$t("init.comments.commonUtilsImport")}
+ * ${$tr("init.comments.commonUtils")}
+ * ${$tr("init.comments.commonUtilsImport")}
  */
 
 export function noop(): void {}
@@ -182,7 +182,7 @@ export function noop(): void {}
 export function getCommonSubdirModTs(moduleName: string): string {
   return `/**
  * common/${moduleName}
- * ${$t("init.comments.commonModuleDesc", { moduleName })}
+ * ${$tr("init.comments.commonModuleDesc", { moduleName })}
  */
 
 export {};

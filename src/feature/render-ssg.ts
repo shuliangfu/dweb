@@ -28,7 +28,7 @@ import {
 import type { AppConfig } from "../types/app.ts";
 import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
 import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import {
   DEFAULT_PRELOAD_MAX_PAGES,
   DEFAULT_PRELOAD_MAX_SIZE_MB,
@@ -246,7 +246,7 @@ export function createRendererSSG(
         },
       });
     } catch (error) {
-      console.error($t("log.ssgError"), error);
+      console.error($tr("log.ssgError"), error);
       const isDev =
         (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
       const errHeaders: Record<string, string> = {

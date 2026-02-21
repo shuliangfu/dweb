@@ -23,7 +23,7 @@ import { createLoadContext, createServerResponse } from "../types/context.ts";
 import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { sanitizeRequestParams } from "../utils/sanitize.ts";
 import { extractComponentPathFromRouteFile } from "../utils/path.ts";
@@ -335,7 +335,7 @@ ${hybridOptions.bodyTags || ""}`;
         },
       });
     } catch (error) {
-      console.error($t("log.hybridError"), error);
+      console.error($tr("log.hybridError"), error);
 
       // 尝试加载 _error.tsx 进行错误处理
       const errorPath = router.getSpecialFile("_error");

@@ -1,13 +1,16 @@
 /**
  * 后端默认配置
- * 框架会先加载 common/config 再加载本文件并合并
+ * 支持环境变量 PORT 覆盖端口，供 e2e 指定端口避免冲突
  */
 
 import { commonConfig } from "@common/config/main.ts";
 import type { AppConfig } from "@dreamer/dweb";
+import { getEnv } from "@dreamer/runtime-adapter";
 
-/** 后端端口（与 e2e 一致，避免冲突） */
+/** 后端端口（默认值；PORT 环境变量可覆盖） */
 export const BACKEND_PORT = 3044;
+const portFromEnv = getEnv("PORT");
+const serverPort = portFromEnv ? Number(portFromEnv) : BACKEND_PORT;
 
 /** 后端配置 */
 const config: AppConfig = {
@@ -15,7 +18,7 @@ const config: AppConfig = {
   version: commonConfig.version,
 
   server: {
-    port: BACKEND_PORT,
+    port: serverPort,
     host: "127.0.0.1",
     dev: {
       hmr: { enabled: true, path: "/__hmr" },

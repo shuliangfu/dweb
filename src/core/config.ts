@@ -22,7 +22,7 @@ import type { ServiceContainer } from "@dreamer/service";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type { AppConfig } from "../types/app.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import { isPathWithinProject, normalizePathForCompare } from "../utils/path.ts";
 import {
   cwd,
@@ -123,8 +123,8 @@ export function inferConfigDirectoryFromEntry(): string {
     const path = getPath();
     if (!path) {
       throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, {
-        reason: $t("errors.entryPathInvalidReasonNoPath"),
-        hint: $t("errors.entryPathInvalidHint"),
+        reason: $tr("errors.entryPathInvalidReasonNoPath"),
+        hint: $tr("errors.entryPathInvalidHint"),
         path: "unknown",
       });
     }
@@ -155,15 +155,15 @@ export function inferConfigDirectoryFromEntry(): string {
     }
   } catch (err) {
     throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, {
-      reason: $t("errors.entryPathInvalidReasonNoMatch"),
-      hint: $t("errors.entryPathInvalidHint"),
+      reason: $tr("errors.entryPathInvalidReasonNoMatch"),
+      hint: $tr("errors.entryPathInvalidHint"),
       path: String(err instanceof Error ? err.message : "unknown"),
     });
   }
 
   throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, {
-    reason: $t("errors.entryPathInvalidReasonNoMatch"),
-    hint: $t("errors.entryPathInvalidHint"),
+    reason: $tr("errors.entryPathInvalidReasonNoMatch"),
+    hint: $tr("errors.entryPathInvalidHint"),
     path: "unknown",
   });
 }

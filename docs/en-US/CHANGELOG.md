@@ -8,6 +8,27 @@ and this project adheres to
 
 ---
 
+## [3.0.89] - 2026-02-21
+
+### Added
+
+- **Errors / Hybrid:** New i18n keys for hybrid render: `errors.hybridNeedAppComponent`, `errors.hybridAppLoadFailed`, `errors.hybridAppNotFound`, `errors.hybridMountContainerRequired`; and for entry: `errors.entryPathInvalidReasonServerEntryNotFound`, `errors.entryPathInvalidHintServerEntry`.
+
+### Changed
+
+- **i18n:** Framework i18n no longer uses global `$t`. All internal usage now imports and uses `$tr` from `utils/i18n.ts`. Init runs via top-level await on first module load; locale order: `setDwebLocale()` &gt; project `language` &gt; env &gt; default. `setDwebLocale` can be called before init or after (updates instance).
+- **View / CSR client:** View engine adapter is chosen by render mode: CSR uses `@dreamer/render/client/view-csr`, hybrid/SSR/SSG use `@dreamer/render/client/view-hybrid` (with hydrate). Client dep generation and hybrid init block updated accordingly.
+- **Dependencies:** Bumped @dreamer/* deps (e.g. render ^1.0.38, view ^1.0.30, runtime-adapter ^1.0.15, server ^1.0.9, and others). Workspace glob set to `./examples/*/*`.
+- **Init:** Config and template tweaks (config-full, config, components, docker, main, static).
+
+### Removed
+
+- **i18n:** Removed global `$t` export and `src/types/i18n.d.ts`. Use `$tr` from `utils/i18n.ts` (or re-export from `mod.ts`).
+- **Locales:** Dropped unused keys (e.g. `log.database.*`, `log.validation.*`) from locale JSON files.
+- **Tests:** Removed monolithic `tests/e2e/browser-render.test.ts` (replaced by per-render e2e tests where applicable).
+
+---
+
 ## [3.0.88] - 2026-02-18
 
 ### Changed

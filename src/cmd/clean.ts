@@ -11,7 +11,7 @@
 
 import { info, success } from "@dreamer/console";
 import { cwd, join, remove, stat } from "@dreamer/runtime-adapter";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 
 /** 要清理的目录列表（相对于项目根） */
@@ -30,14 +30,14 @@ export async function main(
   const projectRoot = cwd();
   let removedCount = 0;
 
-  info($t("clean.running"));
+  info($tr("clean.running"));
 
   for (const dir of CLEAN_DIRS) {
     const fullPath = join(projectRoot, dir);
     try {
       await stat(fullPath);
       await remove(fullPath, { recursive: true });
-      info($t("clean.removed", { dir }));
+      info($tr("clean.removed", { dir }));
       removedCount++;
     } catch {
       // 目录不存在，忽略
@@ -45,8 +45,8 @@ export async function main(
   }
 
   if (removedCount > 0) {
-    success($t("clean.complete", { count: String(removedCount) }));
+    success($tr("clean.complete", { count: String(removedCount) }));
   } else {
-    info($t("clean.nothingToClean"));
+    info($tr("clean.nothingToClean"));
   }
 }

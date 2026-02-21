@@ -3,7 +3,7 @@
  * 路由: /
  */
 
-import { createSignal } from "@dreamer/view";
+import { createEffect, createSignal } from "@dreamer/view";
 
 /** 首页元数据（常量），用于生成 <title> / <meta> */
 export const metadata = {
@@ -17,6 +17,10 @@ export const metadata = {
  */
 export default function Home() {
   const [count, setCount] = createSignal(0);
+  createEffect(() => {
+    console.log("[createEffect]", new Date().toISOString());
+  });
+
   return (
     <div class="py-5">
       <section class="mb-10 rounded-xl bg-linear-to-br from-[#667eea] to-[#764ba2] px-5 py-15 text-center text-white">

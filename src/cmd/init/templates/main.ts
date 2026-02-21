@@ -2,7 +2,7 @@
  * init 生成的 main.ts 模板（单应用与多应用共用 body，通过 getStyleContext 统一样式逻辑）
  */
 
-import { $t, getEngineDisplayName, getStyleContext } from "../helpers.ts";
+import { $tr, getEngineDisplayName, getStyleContext } from "../helpers.ts";
 import type { InitOptions } from "../types.ts";
 
 /**
@@ -11,16 +11,16 @@ import type { InitOptions } from "../types.ts";
 function buildMainTsBody(opts: InitOptions, appName?: string): string {
   const style = getStyleContext(opts, appName);
   const commentLine = appName != null
-    ? ` * ${$t("init.comments.appEntry", { appName })}\n * ${
-      $t("init.comments.configAutoLoadedFrom", {
+    ? ` * ${$tr("init.comments.appEntry", { appName })}\n * ${
+      $tr("init.comments.configAutoLoadedFrom", {
         configPathHint: opts.useSrc
           ? `common/config + src/${appName}/config`
           : `common/config + ${appName}/config`,
       })
     }`
-    : ` * ${$t("init.comments.serverEntry")}\n * ${
+    : ` * ${$tr("init.comments.serverEntry")}\n * ${
       getEngineDisplayName(opts.engine)
-    } + @dreamer/dweb\n * ${$t("init.comments.configAutoLoaded")}`;
+    } + @dreamer/dweb\n * ${$tr("init.comments.configAutoLoaded")}`;
 
   return `/**
 ${commentLine}

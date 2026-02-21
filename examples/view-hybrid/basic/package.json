@@ -1,0 +1,16 @@
+{
+  "name": "dweb-example-view-hybrid-basic",
+  "description": "Dweb example. Bun: bun run dev | bun run build | bun run start",
+  "private": true,
+  "scripts": {
+    "dev": "bun run src/main.ts",
+    "build": "bun run src/main.ts --build",
+    "prestart": "bun install",
+    "start": "DENO_ENV=prod bun run dist/server.js"
+  },
+  "dependencies": {
+    "@dreamer/web3": "npm:@jsr/dreamer__web3@1.0.9",
+    "lightningcss": "^1.31.1",
+    "tailwindcss": "^4.2.0"
+  }
+}

@@ -1,17 +1,22 @@
 /**
  * 默认配置文件
  * 框架会自动加载 ./config/main.ts（及 main.dev.ts 等环境配置）
+ * 支持环境变量 PORT 覆盖端口，供 e2e 等指定端口避免冲突
  */
 
 import type { AppConfig } from "@dreamer/dweb";
+import { getEnv } from "@dreamer/runtime-adapter";
+
+const portFromEnv = getEnv("PORT");
+const serverPort = portFromEnv ? Number(portFromEnv) : 3015;
 
 const config: AppConfig = {
   name: "view-hybrid-unocss-example",
   version: "1.0.0",
 
-  // 服务器配置（e2e 并行测试时端口 3015，与其它 view-* 区分）
+  // 服务器配置（e2e 并行测试时端口 3015，与其它 view-* 区分；PORT 环境变量可覆盖）
   server: {
-    port: 3015,
+    port: serverPort,
     host: "127.0.0.1",
     // debug: true, // 开启后控制台输出请求路径、路径前置处理器、中间件链、响应状态等详细调试信息
     dev: {

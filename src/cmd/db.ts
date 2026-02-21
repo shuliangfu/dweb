@@ -18,7 +18,7 @@
 
 import { error, info, success } from "@dreamer/console";
 import { DatabaseManager, MigrationManager } from "@dreamer/database";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import {
   createCommand,
   cwd,
@@ -141,10 +141,10 @@ export async function migrate(
   try {
     if (action === "create") {
       if (!name) {
-        error($t("db.createNeedName"));
+        error($tr("db.createNeedName"));
         return;
       }
-      info($t("db.creatingMigration", { name, dbType }));
+      info($tr("db.creatingMigration", { name, dbType }));
 
       const currentDir = cwd();
       const migrationsDir = join(currentDir, "migrations");
@@ -158,7 +158,7 @@ export async function migrate(
 
       try {
         await stat(migrationFile);
-        error($t("db.migrationFileExists", { path: migrationFile }));
+        error($tr("db.migrationFileExists", { path: migrationFile }));
         return;
       } catch {
         // 文件不存在，可以创建
@@ -169,9 +169,9 @@ export async function migrate(
         : getSqlMigrationTemplate(name, className);
 
       await writeTextFile(migrationFile, content);
-      success($t("db.migrationCreated", { name }));
-      info($t("db.migrationFile", { path: migrationFile }));
-      info($t("db.migrateTip"));
+      success($tr("db.migrationCreated", { name }));
+      info($tr("db.migrationFile", { path: migrationFile }));
+      info($tr("db.migrateTip"));
     } else if (action === "up") {
       const projectRoot = cwd();
       const projectInfo = await getProjectInfo(projectRoot);
@@ -180,8 +180,8 @@ export async function migrate(
       try {
         await stat(migrationsDir);
       } catch {
-        error($t("db.migrationsDirNotExists", { path: migrationsDir }));
-        error($t("db.createFirst"));
+        error($tr("db.migrationsDirNotExists", { path: migrationsDir }));
+        error($tr("db.createFirst"));
         return;
       }
 
@@ -204,10 +204,10 @@ export async function migrate(
             migrationsDir,
             adapter,
           });
-          info($t("db.runningMigrate"));
+          info($tr("db.runningMigrate"));
           await migrationManager.up();
           await manager.close();
-          success($t("db.migrateComplete"));
+          success($tr("db.migrateComplete"));
           return;
         }
       } catch {
@@ -218,7 +218,7 @@ export async function migrate(
       const taskName = taskNames.find((t) => projectInfo?.tasks[t]);
 
       if (taskName) {
-        info($t("db.runningMigrateTask", { task: taskName }));
+        info($tr("db.runningMigrateTask", { task: taskName }));
         const cmd = createCommand(runtime, {
           args: getTaskArgs(taskName),
           cwd: projectRoot,
@@ -229,15 +229,15 @@ export async function migrate(
         const child = cmd.spawn();
         const status = await child.status;
         if (status.success) {
-          success($t("db.migrateComplete"));
+          success($tr("db.migrateComplete"));
         } else {
-          error($t("db.migrateFailed", { code: String(status.code ?? "?") }));
+          error($tr("db.migrateFailed", { code: String(status.code ?? "?") }));
         }
       } else {
-        info($t("db.noMigrateTask"));
-        info($t("db.addMigrateTask"));
-        info($t("db.migrateTaskExample"));
-        info($t("db.migrateRef"));
+        info($tr("db.noMigrateTask"));
+        info($tr("db.addMigrateTask"));
+        info($tr("db.migrateTaskExample"));
+        info($tr("db.migrateRef"));
       }
     } else if (action === "down") {
       const projectRoot = cwd();
@@ -253,7 +253,7 @@ export async function migrate(
         try {
           await stat(migrationsDir);
         } catch {
-          error($t("db.migrationsDirNotExists", { path: migrationsDir }));
+          error($tr("db.migrationsDirNotExists", { path: migrationsDir }));
           return;
         }
         if (dbConfig?.default) {
@@ -269,10 +269,10 @@ export async function migrate(
             migrationsDir,
             adapter,
           });
-          info($t("db.rollingBack", { count: String(count) }));
+          info($tr("db.rollingBack", { count: String(count) }));
           await migrationManager.down(count);
           await manager.close();
-          success($t("db.rollbackComplete"));
+          success($tr("db.rollbackComplete"));
           return;
         }
       } catch {
@@ -281,7 +281,7 @@ export async function migrate(
 
       // 回退到 task 方式（需 --name 指定迁移名）
       if (!name) {
-        error($t("db.downNeedName"));
+        error($tr("db.downNeedName"));
         return;
       }
       const projectInfo = await getProjectInfo(projectRoot);
@@ -289,7 +289,7 @@ export async function migrate(
       const taskName = taskNames.find((t) => projectInfo?.tasks[t]);
 
       if (taskName) {
-        info($t("db.rollingBackTask", { name, task: taskName }));
+        info($tr("db.rollingBackTask", { name, task: taskName }));
         const cmd = createCommand(runtime, {
           args: [...getTaskArgs(taskName), name],
           cwd: projectRoot,
@@ -300,22 +300,22 @@ export async function migrate(
         const child = cmd.spawn();
         const status = await child.status;
         if (status.success) {
-          success($t("db.rollbackComplete"));
+          success($tr("db.rollbackComplete"));
         } else {
-          error($t("db.rollbackFailed", { code: String(status.code ?? "?") }));
+          error($tr("db.rollbackFailed", { code: String(status.code ?? "?") }));
         }
       } else {
-        info($t("db.noDownTask"));
-        info($t("db.addDownTask"));
-        info($t("db.migrateRef"));
+        info($tr("db.noDownTask"));
+        info($tr("db.addDownTask"));
+        info($tr("db.migrateRef"));
       }
     } else {
-      error($t("db.unsupportedAction", { action }));
-      error($t("db.supportedActions"));
+      error($tr("db.unsupportedAction", { action }));
+      error($tr("db.supportedActions"));
     }
   } catch (err) {
     error(
-      $t("db.migrateOpFailed", {
+      $tr("db.migrateOpFailed", {
         message: err instanceof Error ? err.message : String(err),
       }),
     );
@@ -334,13 +334,13 @@ export async function seed(
   const projectInfo = await getProjectInfo(projectRoot);
 
   if (!projectInfo) {
-    error($t("common.noDenoJson"));
+    error($tr("common.noDenoJson"));
     return;
   }
 
   const taskName = "db:seed";
   if (projectInfo.tasks[taskName]) {
-    info($t("db.runningSeed"));
+    info($tr("db.runningSeed"));
     const cmd = createCommand(runtime, {
       args: getTaskArgs(taskName),
       cwd: projectRoot,
@@ -351,9 +351,9 @@ export async function seed(
     const child = cmd.spawn();
     const status = await child.status;
     if (status.success) {
-      success($t("db.seedComplete"));
+      success($tr("db.seedComplete"));
     } else {
-      error($t("db.seedFailed", { code: String(status.code ?? "?") }));
+      error($tr("db.seedFailed", { code: String(status.code ?? "?") }));
     }
     return;
   }
@@ -362,12 +362,12 @@ export async function seed(
   try {
     await stat(seedFile);
   } catch {
-    error($t("db.noSeedConfig"));
-    error($t("db.addSeedTask"));
+    error($tr("db.noSeedConfig"));
+    error($tr("db.addSeedTask"));
     return;
   }
 
-  info($t("db.runningSeedFile"));
+  info($tr("db.runningSeedFile"));
   const cmd = createCommand(runtime, {
     args: getRunArgs(seedFile),
     cwd: projectRoot,
@@ -378,9 +378,9 @@ export async function seed(
   const child = cmd.spawn();
   const status = await child.status;
   if (status.success) {
-    success($t("db.seedComplete"));
+    success($tr("db.seedComplete"));
   } else {
-    error($t("db.seedFailed", { code: String(status.code ?? "?") }));
+    error($tr("db.seedFailed", { code: String(status.code ?? "?") }));
   }
 }
 
@@ -400,8 +400,8 @@ export async function status(
   try {
     await stat(migrationsDir);
   } catch {
-    error($t("db.migrationsDirNotExistsShort"));
-    info($t("db.createMigration"));
+    error($tr("db.migrationsDirNotExistsShort"));
+    info($tr("db.createMigration"));
     return;
   }
 
@@ -428,23 +428,23 @@ export async function status(
       await manager.close();
 
       if (statuses.length === 0) {
-        info($t("db.noMigrations"));
-        info($t("db.createMigration"));
+        info($tr("db.noMigrations"));
+        info($tr("db.createMigration"));
         return;
       }
 
-      success($t("db.migrationStatus", { count: String(statuses.length) }));
+      success($tr("db.migrationStatus", { count: String(statuses.length) }));
       for (const s of statuses) {
         const execInfo = s.executed && s.executedAt
-          ? $t("db.executed", {
+          ? $tr("db.executed", {
             date: s.executedAt.toISOString().slice(0, 19).replace("T", " "),
           })
-          : $t("db.pending");
+          : $tr("db.pending");
         console.log(`  • ${s.name}  ${execInfo}  [${s.file}]`);
       }
       info("");
-      info($t("db.runUp"));
-      info($t("db.runDown"));
+      info($tr("db.runUp"));
+      info($tr("db.runDown"));
       return;
     }
   } catch {
@@ -458,12 +458,12 @@ export async function status(
     .sort();
 
   if (files.length === 0) {
-    info($t("db.noMigrations"));
-    info($t("db.createMigration"));
+    info($tr("db.noMigrations"));
+    info($tr("db.createMigration"));
     return;
   }
 
-  success($t("db.migrationFiles", { count: String(files.length) }));
+  success($tr("db.migrationFiles", { count: String(files.length) }));
   for (const f of files) {
     const match = f.match(/^(\d+)_(.+)\.ts$/);
     const ts = match ? match[1] : "";
@@ -475,7 +475,7 @@ export async function status(
   }
 
   info("");
-  info($t("db.runUp"));
-  info($t("db.runDownNoDb"));
-  info($t("db.statusHint"));
+  info($tr("db.runUp"));
+  info($tr("db.runDownNoDb"));
+  info($tr("db.statusHint"));
 }

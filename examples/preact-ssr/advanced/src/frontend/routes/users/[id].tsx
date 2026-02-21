@@ -3,8 +3,8 @@
  * 使用 Tailwind CSS v4 样式
  */
 
-import type { User } from "@common/types/mod.ts";
 import { getUserById } from "@common/services/mod.ts";
+import type { User } from "@common/types/mod.ts";
 import { formatDate } from "@common/utils/mod.ts";
 
 /** 页面属性 */

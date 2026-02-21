@@ -1,17 +1,22 @@
 /**
  * 默认配置文件
  * 框架会自动加载 ./src/config/main.ts（及 main.dev.ts 等环境配置）
+ * 支持环境变量 PORT 覆盖端口，供 e2e 等指定端口避免冲突
  */
 
 import type { AppConfig } from "@dreamer/dweb";
+import { getEnv } from "@dreamer/runtime-adapter";
+
+const portFromEnv = getEnv("PORT");
+const serverPort = portFromEnv ? Number(portFromEnv) : 3011;
 
 const config: AppConfig = {
   name: "view-csr-basic-example",
   version: "1.0.0",
 
-  // 服务器配置（e2e 并行测试时与 view-hybrid/react-csr/react-hybrid 端口区分）
+  // 服务器配置（e2e 并行测试时与 view-hybrid/react-csr/react-hybrid 端口区分；PORT 环境变量可覆盖）
   server: {
-    port: 3011,
+    port: serverPort,
     host: "127.0.0.1",
     dev: {
       hmr: { enabled: true, path: "/__hmr" },

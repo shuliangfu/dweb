@@ -2,7 +2,7 @@
  * init 生成的 Dockerfile 与 docker-compose.yml
  */
 
-import { $t } from "../helpers.ts";
+import { $tr } from "../helpers.ts";
 import { DEFAULT_PORT_BASE } from "../constants.ts";
 import type { InitOptions } from "../types.ts";
 
@@ -55,20 +55,20 @@ function buildDockerService(options: {
 
 export function getDockerfile(): string {
   return `# ============================================
-# ${$t("init.comments.dockerBaseStage")}
+# ${$tr("init.comments.dockerBaseStage")}
 # ============================================
 FROM denoland/deno:latest AS base
 
-# ${$t("init.comments.dockerSwitchRoot")}
+# ${$tr("init.comments.dockerSwitchRoot")}
 USER root
 
-# ${$t("init.comments.dockerInstallTools")}
+# ${$tr("init.comments.dockerInstallTools")}
 RUN apt-get update && \\
     apt-get install -y --no-install-recommends curl coreutils ca-certificates && \\
     rm -rf /var/lib/apt/lists/*
 
-# ${$t("init.comments.dockerWorkDir")}
-# ${$t("init.comments.dockerDenoCache")}
+# ${$tr("init.comments.dockerWorkDir")}
+# ${$tr("init.comments.dockerDenoCache")}
 WORKDIR /app
 `;
 }
@@ -86,7 +86,7 @@ export function getDockerComposeYml(opts: InitOptions): string {
           port,
           command: ["deno", "run", "-A", `dist/${app}/server.js`],
           containerName: `${projectName}-${app}`,
-          comment: $t("init.comments.dockerAppPort", {
+          comment: $tr("init.comments.dockerAppPort", {
             app,
             port: String(port),
           }),
@@ -95,9 +95,9 @@ export function getDockerComposeYml(opts: InitOptions): string {
       .join("\n\n");
 
     return `# docker-compose.yml
-# ${$t("init.comments.dockerMultiApp")}
-# ${$t("init.comments.dockerRunBuild")}
-# ${$t("init.comments.dockerCacheMount")}
+# ${$tr("init.comments.dockerMultiApp")}
+# ${$tr("init.comments.dockerRunBuild")}
+# ${$tr("init.comments.dockerCacheMount")}
 
 services:
 ${services}
@@ -116,9 +116,9 @@ networks:
   });
 
   return `# docker-compose.yml
-# ${$t("init.comments.dockerSingleApp")}
-# ${$t("init.comments.dockerRunBuildSingle")}
-# ${$t("init.comments.dockerCacheMount")}
+# ${$tr("init.comments.dockerSingleApp")}
+# ${$tr("init.comments.dockerRunBuildSingle")}
+# ${$tr("init.comments.dockerCacheMount")}
 
 services:
 ${serviceBlock}

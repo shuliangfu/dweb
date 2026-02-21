@@ -4,7 +4,7 @@
  */
 
 import { DEFAULT_PORT_BASE } from "../constants.ts";
-import { $t, getDefaultLanguage } from "../helpers.ts";
+import { $tr, getDefaultLanguage } from "../helpers.ts";
 import type { InitOptions } from "../types.ts";
 
 /**
@@ -19,9 +19,9 @@ export function getFullSingleAppConfigMainTs(opts: InitOptions): string {
   const language = getDefaultLanguage();
 
   return `/**
- * ${$t("init.comments.appConfigShort")}
- * ${$t("init.comments.frameworkAutoLoads")}
- * ${$t("init.comments.configFullDocRef")}
+ * ${$tr("init.comments.appConfigShort")}
+ * ${$tr("init.comments.frameworkAutoLoads")}
+ * ${$tr("init.comments.configFullDocRef")}
  */
 import type { AppConfig } from "@dreamer/dweb";
 
@@ -29,8 +29,8 @@ const config: AppConfig = {
   // ========== Basic ==========
   name: "${configName}",
   version: "1.0.0",
-  /** ${$t("init.comments.frameworkLanguage")} ${
-    $t("init.comments.frameworkLanguageSuffix")
+  /** ${$tr("init.comments.frameworkLanguage")} ${
+    $tr("init.comments.frameworkLanguageSuffix")
   } */
   language: "${language}",
 
@@ -71,7 +71,7 @@ const config: AppConfig = {
   },
 
   // ========== Render ==========
-  // ${$t("init.comments.renderFullDocFull")}
+  // ${$tr("init.comments.renderFullDocFull")}
   render: {
     engine: "${opts.engine}",
     mode: "${renderMode}",
@@ -82,9 +82,9 @@ const config: AppConfig = {
     // ssg: {
     //   outputDir: "dist/static",
     //   routes: ["/", "/about"],
-    //   /** ${$t("init.comments.dynamicRoutesSupport")} */
+    //   /** ${$tr("init.comments.dynamicRoutesSupport")} */
     //   dynamicRoutes: { "/user/[id]": ["1", "2", "3"] }, // ${
-    $t("init.comments.dynamicRoutesExample")
+    $tr("init.comments.dynamicRoutesExample")
   }
     //   hydrate: true,
     // },
@@ -183,18 +183,18 @@ export default config;
 export function getFullCommonConfigMainTs(opts: InitOptions): string {
   const language = getDefaultLanguage();
   return `/**
- * ${$t("init.comments.commonConfig")}
- * ${$t("init.comments.commonConfigDesc")}
+ * ${$tr("init.comments.commonConfig")}
+ * ${$tr("init.comments.commonConfigDesc")}
  * 完整配置项说明见文档: docs/en-US/APP_CONFIG.md
  * name、version 在各应用 src/<app>/config/main.ts 中配置；此处仅共享 language、server、router、render、build、logger 等。
  */
 
 /** ${
-    $t("init.comments.defaultExport")
+    $tr("init.comments.defaultExport")
   } - 共享片段，各应用 default 导出时 spread 并覆盖；各应用 config 中需写 name、version */
 export default {
   /** ${
-    $t("init.comments.frameworkLanguageShort")
+    $tr("init.comments.frameworkLanguageShort")
   }（init 时按环境检测，可改为 zh-CN / en-US） */
   language: "${language}",
 
@@ -226,9 +226,9 @@ export default {
     // ssg: {
     //   outputDir: "dist/static",
     //   routes: ["/", "/about"],
-    //   /** ${$t("init.comments.dynamicRoutesSupport")} */
+    //   /** ${$tr("init.comments.dynamicRoutesSupport")} */
     //   dynamicRoutes: { "/user/[id]": ["1", "2", "3"] }, // ${
-    $t("init.comments.dynamicRoutesExample")
+    $tr("init.comments.dynamicRoutesExample")
   }
     //   hydrate: true,
     // },

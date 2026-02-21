@@ -23,7 +23,7 @@ import {
   resolve,
 } from "../core/runtime-adapter.ts";
 import { DwebErrorCode, throwDwebError } from "./errors.ts";
-import { $t } from "./i18n.ts";
+import { $tr } from "./i18n.ts";
 import { isWindows } from "./runtime.ts";
 
 /**
@@ -52,7 +52,7 @@ function pathnameToFsPath(pathname: string): string {
 function throwEntryPathError(path: string, reason: string): never {
   throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, {
     reason,
-    hint: $t("errors.entryPathInvalidHint"),
+    hint: $tr("errors.entryPathInvalidHint"),
     path,
   });
 }
@@ -69,13 +69,13 @@ function extractEntryFromLongPath(fullPath: string): string | null {
   const parts = normalized.split("/").filter(Boolean);
   const mainIdx = parts.lastIndexOf("main.ts");
   if (mainIdx < 0) {
-    throwEntryPathError(fullPath, $t("errors.entryPathInvalidReasonNoMainTs"));
+    throwEntryPathError(fullPath, $tr("errors.entryPathInvalidReasonNoMainTs"));
   }
   // src/x/y/main.ts 等 4 段以上结构不支持，不提取
   if (mainIdx >= 3 && parts[mainIdx - 3] === "src") {
     throwEntryPathError(
       fullPath,
-      $t("errors.entryPathInvalidReasonMultiLevelSrc"),
+      $tr("errors.entryPathInvalidReasonMultiLevelSrc"),
     );
   }
   let start: number;
@@ -97,7 +97,7 @@ function extractEntryFromLongPath(fullPath: string): string | null {
   }
   throwEntryPathError(
     fullPath,
-    $t("errors.entryPathInvalidReasonSegmentCount", {
+    $tr("errors.entryPathInvalidReasonSegmentCount", {
       count: String(slice.length),
     }),
   );
@@ -227,7 +227,7 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
   if (parts.length < 1 || parts.length > 3) {
     throwEntryPathError(
       entry,
-      $t("errors.entryPathInvalidReasonSegmentCount", {
+      $tr("errors.entryPathInvalidReasonSegmentCount", {
         count: String(parts.length),
       }),
     );

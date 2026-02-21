@@ -21,7 +21,7 @@ import {
   success,
 } from "@dreamer/console";
 import { createCommand } from "@dreamer/runtime-adapter";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 import { fetchJsrLatestVersion } from "../utils/jsr-versions.ts";
 import { getDwebVersion, writeVersionCache } from "../utils/version.ts";
@@ -63,21 +63,21 @@ export async function main(
   const useBeta = options?.beta === true;
   const runtime = getRuntime();
   const current = await getDwebVersion();
-  info($t("upgrade.currentVersion", { version: current }));
-  info($t("upgrade.checkingLatest"));
+  info($tr("upgrade.currentVersion", { version: current }));
+  info($tr("upgrade.checkingLatest"));
 
   const latest = await fetchJsrLatestVersion("@dreamer/dweb", useBeta);
   if (!latest) {
-    error($t("upgrade.cannotGetLatest"));
+    error($tr("upgrade.cannotGetLatest"));
     return Promise.resolve(false);
   }
 
   if (current === latest || !isNewer(latest, current)) {
-    success($t("upgrade.alreadyLatest", { version: current }));
+    success($tr("upgrade.alreadyLatest", { version: current }));
     return Promise.resolve(true);
   }
 
-  success($t("upgrade.newVersionFound", { version: latest }));
+  success($tr("upgrade.newVersionFound", { version: latest }));
 
   const setupSpec = `jsr:@dreamer/dweb@${latest}/setup`;
   const cmd = createCommand(runtime, {
@@ -86,20 +86,20 @@ export async function main(
     stderr: "null",
     stdin: "null",
   });
-  startSpinner($t("upgrade.installing"));
+  startSpinner($tr("upgrade.installing"));
   const child = cmd.spawn();
   child.unref();
   const status = await child.status;
 
   if (status.success) {
-    succeedSpinner($t("upgrade.upgradedTo", { version: latest }));
+    succeedSpinner($tr("upgrade.upgradedTo", { version: latest }));
     await writeVersionCache(latest);
     return Promise.resolve(true);
   } else {
-    failSpinner($t("upgrade.autoInstallFailed"));
-    error($t("upgrade.manualInstall"));
-    info($t("upgrade.manualExample", { spec: setupSpec }));
-    info($t("upgrade.orManualVersion"));
+    failSpinner($tr("upgrade.autoInstallFailed"));
+    error($tr("upgrade.manualInstall"));
+    info($tr("upgrade.manualExample", { spec: setupSpec }));
+    info($tr("upgrade.orManualVersion"));
     return Promise.resolve(false);
   }
 }

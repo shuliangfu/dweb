@@ -581,7 +581,7 @@ describe("渲染集成 (render.ts)", () => {
           engine: "preact",
           routes: ["/", "/about"],
           outputDir,
-          loadRouteComponent: (route) => {
+          loadRouteComponent: (route: string) => {
             loadedRoutes.push(route);
             return Promise.resolve(MinimalPreactComponent);
           },
@@ -607,7 +607,7 @@ describe("渲染集成 (render.ts)", () => {
           engine: "react",
           routes: ["/"],
           outputDir,
-          loadRouteComponent: (route) => {
+          loadRouteComponent: (route: string) => {
             loadedRoutes.push(route);
             return Promise.resolve(MinimalReactComponent);
           },

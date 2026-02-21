@@ -19,7 +19,7 @@ import {
   startSpinner,
   succeedSpinner,
 } from "./feature/command.ts";
-import { $t } from "./utils/i18n.ts";
+import { $tr } from "./utils/i18n.ts";
 import {
   createCommand,
   exit,
@@ -139,17 +139,20 @@ async function installGlobalCli(): Promise<void> {
         stderr: "null",
         stdin: "null", // 避免 deno install 继承终端 stdin 导致卡住
       });
-      startSpinner($t("cli.installing", { name: CLI_NAME }));
+
+      console.log("");
+
+      startSpinner($tr("cli.installing", { name: CLI_NAME }));
       const child = cmd.spawn();
       child.unref(); // 立即 unref，避免子进程句柄阻止当前进程自动退出
       const status = await child.status;
       if (status.success) {
-        succeedSpinner($t("cli.installSuccess", { name: CLI_NAME }));
+        succeedSpinner($tr("cli.installSuccess", { name: CLI_NAME }));
         await writeVersionCacheOnInstall();
         printUsage();
       } else {
         failSpinner(
-          $t("cli.installFailedExit", { code: String(status.code ?? "") }),
+          $tr("cli.installFailedExit", { code: String(status.code ?? "") }),
         );
         exit(status.code ?? 1);
       }
@@ -164,17 +167,18 @@ async function installGlobalCli(): Promise<void> {
       stderr: "null",
       stdin: "null", // 避免 deno install 继承终端 stdin 导致卡住
     });
-    startSpinner($t("cli.installing", { name: CLI_NAME }));
+    console.log("");
+    startSpinner($tr("cli.installing", { name: CLI_NAME }));
     const child = cmd.spawn();
     child.unref(); // 立即 unref，避免子进程句柄阻止当前进程自动退出
     const status = await child.status;
     if (status.success) {
-      succeedSpinner($t("cli.installSuccess", { name: CLI_NAME }));
+      succeedSpinner($tr("cli.installSuccess", { name: CLI_NAME }));
       await writeVersionCacheOnInstall();
       printUsage();
     } else {
       failSpinner(
-        $t("cli.installFailedExit", { code: String(status.code ?? "") }),
+        $tr("cli.installFailedExit", { code: String(status.code ?? "") }),
       );
       exit(status.code ?? 1);
     }
@@ -197,40 +201,42 @@ async function writeVersionCacheOnInstall(): Promise<void> {
 
 /** 打印 dweb-cli 使用说明 */
 function printUsage(): void {
-  console.log($t("cli.usage"));
-  console.log(`  ${CLI_NAME} init [appName]   # ${$t("cli.commands.init")}`);
-  console.log(`  ${CLI_NAME} dev              # ${$t("cli.commands.dev")}`);
-  console.log(`  ${CLI_NAME} build            # ${$t("cli.commands.build")}`);
-  console.log(`  ${CLI_NAME} start            # ${$t("cli.commands.start")}`);
+  console.log("");
+  console.log($tr("cli.usage"));
+  console.log(`  ${CLI_NAME} init [appName]   # ${$tr("cli.commands.init")}`);
+  console.log(`  ${CLI_NAME} dev              # ${$tr("cli.commands.dev")}`);
+  console.log(`  ${CLI_NAME} build            # ${$tr("cli.commands.build")}`);
+  console.log(`  ${CLI_NAME} start            # ${$tr("cli.commands.start")}`);
   console.log(
-    `  ${CLI_NAME} generate (g)     # ${$t("cli.commands.generate")}`,
+    `  ${CLI_NAME} generate (g)     # ${$tr("cli.commands.generate")}`,
   );
   console.log(
-    `  ${CLI_NAME} db migrate (m)   # ${$t("cli.commands.dbMigrate")}`,
+    `  ${CLI_NAME} db migrate (m)   # ${$tr("cli.commands.dbMigrate")}`,
   );
-  console.log(`  ${CLI_NAME} db seed          # ${$t("cli.commands.dbSeed")}`);
+  console.log(`  ${CLI_NAME} db seed          # ${$tr("cli.commands.dbSeed")}`);
   console.log(
-    `  ${CLI_NAME} db status        # ${$t("cli.commands.dbStatus")}`,
+    `  ${CLI_NAME} db status        # ${$tr("cli.commands.dbStatus")}`,
   );
-  console.log(`  ${CLI_NAME} test             # ${$t("cli.commands.test")}`);
-  console.log(`  ${CLI_NAME} lint             # ${$t("cli.commands.lint")}`);
-  console.log(`  ${CLI_NAME} fmt              # ${$t("cli.commands.fmt")}`);
-  console.log(`  ${CLI_NAME} clean            # ${$t("cli.commands.clean")}`);
-  console.log(`  ${CLI_NAME} preview          # ${$t("cli.commands.preview")}`);
-  console.log(`  ${CLI_NAME} upgrade          # ${$t("cli.commands.upgrade")}`);
-  console.log(`  ${CLI_NAME} --help           # ${$t("cli.commands.help")}`);
+  console.log(`  ${CLI_NAME} test             # ${$tr("cli.commands.test")}`);
+  console.log(`  ${CLI_NAME} lint             # ${$tr("cli.commands.lint")}`);
+  console.log(`  ${CLI_NAME} fmt              # ${$tr("cli.commands.fmt")}`);
+  console.log(`  ${CLI_NAME} clean            # ${$tr("cli.commands.clean")}`);
+  console.log(
+    `  ${CLI_NAME} preview          # ${$tr("cli.commands.preview")}`,
+  );
+  console.log(
+    `  ${CLI_NAME} upgrade          # ${$tr("cli.commands.upgrade")}`,
+  );
+  console.log(`  ${CLI_NAME} --help           # ${$tr("cli.commands.help")}`);
   console.log("");
 }
 
-// 主入口：主流程结束后显式退出，否则 Deno 会因子进程等 ref 一直不退出
+// 主入口：此处直接执行安装
 if (import.meta.main) {
   installGlobalCli()
     .then(() => exit(0))
-    .catch((err) => {
-      const msg = (globalThis as { $t?: (k: string) => string }).$t
-        ? $t("cli.installFailed")
-        : "安装失败";
-      console.error(msg, err);
+    .catch((err: unknown) => {
+      console.error($tr("cli.installFailed"), err);
       exit(1);
     });
 }

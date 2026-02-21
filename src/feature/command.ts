@@ -18,13 +18,10 @@ import {
   type ParsedOptions,
 } from "@dreamer/console";
 import { ServiceContainer } from "@dreamer/service";
-import { App } from "../core/app.ts";
 import { getConfig } from "../core/config.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
-import { initDwebI18n } from "../utils/i18n.ts";
 import { initializeServiceContainer } from "../core/service.ts";
-
-await initDwebI18n();
+import { App } from "../core/app.ts";
 
 /**
  * 扩展的命令执行函数类型

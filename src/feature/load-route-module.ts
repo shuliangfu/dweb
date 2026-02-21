@@ -24,7 +24,7 @@ import {
   remove,
   writeTextFile,
 } from "../core/runtime-adapter.ts";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import { isPathWithinProject } from "../utils/path.ts";
 import { getCacheOptions } from "../utils/constants.ts";
 import { getModuleVersion } from "./module-cache.ts";
@@ -195,7 +195,7 @@ export async function loadRouteModule(
     }
 
     if (!isPathWithinProject(absPath, cwdPath)) {
-      console.warn(`${$t("log.pathMustBeInProject")}: ${filePath}`);
+      console.warn(`${$tr("log.pathMustBeInProject")}: ${filePath}`);
       return null;
     }
 
@@ -273,20 +273,18 @@ export async function loadRouteModule(
       }
     }
 
-    // 无 CSS 导入：直接用源文件 URL 加载（Windows 下用 normalizedPath 保证 file URL 一致）
     moduleUrl = pathToFileURL(normalizedPath).href;
 
-    // 开发模式：通过 ?t=version 绕过 import 缓存（仅 Bun；Deno 下 file: URL 带 query 会触发 ERR_MODULE_NOT_FOUND）
+    // 开发模式：通过 ?v=version 绕过 import 缓存，确保文件变更后能拿到最新模块
     const env = getEnv("DENO_ENV") || getEnv("BUN_ENV") || getEnv("NODE_ENV");
     if (env === "dev") {
       const version = getModuleVersion(moduleUrl);
-      moduleUrl = `${moduleUrl}?t=${version}`;
+      moduleUrl = `${moduleUrl}?v=${version}`;
     }
-
     const mod = await import(moduleUrl);
     return mod as Record<string, unknown>;
   } catch (error) {
-    const msg = `${$t("log.loadModuleFailed")}: ${filePath}`;
+    const msg = `${$tr("log.loadModuleFailed")}: ${filePath}`;
     if (options?.logger) {
       options.logger.error(msg, error);
     } else {

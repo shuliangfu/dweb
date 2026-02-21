@@ -9,6 +9,7 @@
 
 import {
   chdir,
+  connect,
   createCommand,
   cwd,
   dirname,
@@ -30,10 +31,9 @@ import {
   expect,
   it,
 } from "@dreamer/test";
-import "../setup.ts";
 
 /**
- * 从本测试文件路径解析出的 dweb 项目根目录（不依赖 cwd，避免多套件顺序执行时 cwd 被上一套件改变导致路径错误）
+ * 从本模块路径解析出的 dweb 项目根目录（不依赖 cwd，避免多套件顺序执行时 cwd 被上一套件改变导致路径错误）
  */
 const DWEB_ROOT = (() => {
   const u = new URL(import.meta.url);
@@ -75,24 +75,45 @@ const E2E_PORTS: Record<string, number> = {
 /** 浏览器单用例超时：Windows 60s，其他 30s；不通过时再长也通不过，避免耗时过长 */
 const BROWSER_TEST_TIMEOUT_MS = platform() === "windows" ? 60_000 : 30_000;
 
-/**
- * 首页/advanced 任一首屏标识即视为页面已加载（waitFor/hasTitle 用）
- * 含：欢迎文案中英文、React/View/Preact Advanced、导航「用户管理」
- */
-function bodyHasIndexOrLayoutMarkers(html: string): boolean {
-  return (
-    html.includes("欢迎使用 Dweb 框架") ||
-    html.includes("Welcome to Dweb") ||
-    html.includes("React CSR Advanced Example") ||
-    html.includes("React Advanced") ||
-    html.includes("View Advanced") ||
-    html.includes("Preact Advanced") ||
-    html.includes("用户管理")
-  );
-}
-
 /** 就绪探测选项：advanced 的 backend 必须用 path: "/api/users"，否则 SSG backend 的 GET / 会返回 500 */
 type WaitForServerReadyOptions = { path?: string };
+
+/**
+ * 检测 host:port 是否已被占用（能连上表示有进程在监听）
+ * 用于 e2e 启动前先占位或选可用端口，避免与 @dreamer/server 的 findAvailablePort 行为错位
+ */
+async function isPortInUse(host: string, port: number): Promise<boolean> {
+  try {
+    const conn = await connect({ host, port });
+    conn.close();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 从 startPort 起顺次 +1 查找第一个未被占用的端口
+ * 保证 e2e 传给子进程的 PORT 一定可用，子进程不会因端口占用而自动换端口导致测试轮询错端口
+ * @param host 主机（如 "127.0.0.1"）
+ * @param startPort 起始端口
+ * @param maxAttempts 最大尝试次数，默认 50
+ * @returns 第一个可用端口号
+ */
+async function findAvailablePort(
+  host: string,
+  startPort: number,
+  maxAttempts: number = 50,
+): Promise<number> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const port = startPort + i;
+    const inUse = await isPortInUse(host, port);
+    if (!inUse) return port;
+  }
+  throw new Error(
+    `e2e: 从端口 ${startPort} 起尝试 ${maxAttempts} 次均被占用，无法启动服务`,
+  );
+}
 
 /**
  * 轮询等待服务器就绪（返回 200）
@@ -131,7 +152,7 @@ async function waitForServerReady(
  * @param maxWaitMs 最大等待毫秒数
  * @returns 就绪的端口号
  */
-async function waitForServerReadyOneOf(
+async function _waitForServerReadyOneOf(
   ports: number[],
   path: string,
   maxWaitMs: number,
@@ -195,6 +216,27 @@ async function gotoWithRetry(
 }
 
 /**
+ * Bun 下在示例目录执行 bun install，保证 external 依赖（如 tailwindcss、lightningcss）在 node_modules 可用，避免生产启动 ENOENT
+ */
+async function ensureBunDeps(exampleDir: string): Promise<void> {
+  if (IS_DENO) return;
+  const cmd = createCommand(execPath(), {
+    args: ["install"],
+    cwd: exampleDir,
+    stdout: "piped",
+    stderr: "piped",
+  });
+  const proc = cmd.spawn();
+  const [status, stderrText] = await Promise.all([
+    proc.status,
+    proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
+  ]);
+  if (!status.success) {
+    throw new Error(`bun install 失败: ${stderrText}`);
+  }
+}
+
+/**
  * 构建示例项目（构建前先清空 dist，确保从干净环境开始）
  * @param exampleDir 示例目录
  * @param entry 入口文件：有 src 目录用 "src/main.ts"，无 src 用 "main.ts"
@@ -203,6 +245,7 @@ async function buildExample(
   exampleDir: string,
   entry: string = "src/main.ts",
 ): Promise<void> {
+  await ensureBunDeps(exampleDir);
   const distDir = join(exampleDir, "dist");
   if (await exists(distDir)) {
     await remove(distDir, { recursive: true });
@@ -1004,6 +1047,7 @@ async function buildExampleAdvanced(
   exampleDir: string,
   entries: [string, string] = ["src/backend/main.ts", "src/frontend/main.ts"],
 ): Promise<void> {
+  await ensureBunDeps(exampleDir);
   const distDir = join(exampleDir, "dist");
   if (await exists(distDir)) {
     await remove(distDir, { recursive: true });
@@ -1037,7 +1081,7 @@ async function buildExampleAdvanced(
  * @param options.skip 为 true 时跳过该套件
  * @param options.entries 构建入口 [backend, frontend]，默认 ["src/backend/main.ts", "src/frontend/main.ts"]；flat 结构传 ["backend/main.ts", "frontend/main.ts"]
  */
-function createAdvancedExampleBrowserSuite(
+export function createAdvancedExampleBrowserSuite(
   exampleName: string,
   backendPort: number,
   frontendPort: number,
@@ -1052,10 +1096,10 @@ function createAdvancedExampleBrowserSuite(
     let childBackend: SpawnedProcess | null = null;
     let childFrontend: SpawnedProcess | null = null;
     let exampleDir: string;
-    /** 实际提供前端页面的端口（可能与 frontendPort 不同，因 backend 占 frontendPort 时 frontend 会占 backendPort） */
+    /** 实际后端端口（启动前探测可用，与子进程 PORT 一致） */
+    let actualBackendPort: number = backendPort;
+    /** 实际前端端口（backend 启动后再探测，避免与 backend 占用的端口冲突） */
     let actualFrontendPort: number = frontendPort;
-    /** 端口已写死在各应用配置中，此处仅用于等待服务就绪与访问 URL */
-    const env = getEnvAll();
 
     beforeAll(async () => {
       if (skip) return;
@@ -1064,41 +1108,37 @@ function createAdvancedExampleBrowserSuite(
       chdir(exampleDir);
       await buildExampleAdvanced(exampleDir, entries);
 
+      // 启动前探测可用端口，再传给子进程，避免 server 自动换端口导致测试轮询错端口
+      actualBackendPort = await findAvailablePort("127.0.0.1", backendPort);
+      const envBackend = { ...getEnvAll(), PORT: String(actualBackendPort) };
       const startBackend = createCommand(execPath(), {
         args: IS_DENO
           ? ["run", "-A", "dist/backend/server.js"]
           : ["run", "dist/backend/server.js"],
         cwd: exampleDir,
-        env,
+        env: envBackend,
         stdout: "inherit",
         stderr: "inherit",
       });
       childBackend = startBackend.spawn();
       // Windows CI 上构建+启动较慢给 2 分钟；非 Windows 给 45s（SSG 等冷启动较慢）
       const maxWait = platform() === "windows" ? 120000 : 45000;
-      // backend 可能因 portInUse 占 frontendPort，故两端口都试 /api/users，任一 200 即通过
-      await waitForServerReadyOneOf(
-        [backendPort, frontendPort],
-        "/api/users",
-        maxWait,
-      );
+      await waitForServerReady(actualBackendPort, maxWait, "/api/users");
 
+      // frontend 端口在 backend 已启动后再探测，避免与 backend 占用端口冲突
+      actualFrontendPort = await findAvailablePort("127.0.0.1", frontendPort);
+      const envFrontend = { ...getEnvAll(), PORT: String(actualFrontendPort) };
       const startFrontend = createCommand(execPath(), {
         args: IS_DENO
           ? ["run", "-A", "dist/frontend/server.js"]
           : ["run", "dist/frontend/server.js"],
         cwd: exampleDir,
-        env,
+        env: envFrontend,
         stdout: "inherit",
         stderr: "inherit",
       });
       childFrontend = startFrontend.spawn();
-      // frontend 可能占 backendPort（当 backend 已占 frontendPort 时），用 GET / 探测，返回 200 的即前端
-      actualFrontendPort = await waitForServerReadyOneOf(
-        [frontendPort, backendPort],
-        "/",
-        maxWait,
-      );
+      await waitForServerReady(actualFrontendPort, maxWait, "/");
       // 就绪后再等一小段，避免偶发 ERR_CONNECTION_REFUSED
       await new Promise((r) => setTimeout(r, 1500));
     });
@@ -1164,12 +1204,12 @@ function createAdvancedExampleBrowserSuite(
  * @param entry 入口文件：有 src 用 "src/main.ts"，无 src 用 "main.ts"
  * @param options.skip 为 true 时跳过该套件的用例（用于已知会挂起的用例，如 react-ssg）
  */
-function createBasicExampleBrowserSuite(
+export function createBasicExampleBrowserSuite(
   exampleName: string,
   entry: string = "src/main.ts",
   options?: { skip?: boolean },
 ): void {
-  const port = E2E_PORTS[exampleName] ?? 3000;
+  const preferredPort = E2E_PORTS[exampleName] ?? 3000;
   const skip = options?.skip === true;
   /** 所有 basic 示例（含 SSR/SSG）均已支持客户端激活与计数器，均跑计数器浏览器测试 */
   const skipCounter = skip;
@@ -1178,6 +1218,8 @@ function createBasicExampleBrowserSuite(
     let originalCwd: string | undefined;
     let child: SpawnedProcess | null = null;
     let exampleDir: string;
+    /** 实际使用的端口（启动前探测可用，与子进程 PORT 一致，避免 server 自动换端口导致轮询错端口） */
+    let actualPort: number = preferredPort;
 
     beforeAll(async () => {
       originalCwd = cwd();
@@ -1185,11 +1227,15 @@ function createBasicExampleBrowserSuite(
       chdir(exampleDir);
       await buildExample(exampleDir, entry);
 
+      // 启动前先探测从 preferredPort 起的可用端口，再传给子进程，避免「端口被占用 → server 自动换端口 → 测试仍轮询原端口」导致失败
+      actualPort = await findAvailablePort("127.0.0.1", preferredPort);
+      const env = { ...getEnvAll(), PORT: String(actualPort) };
       const startCmd = createCommand(execPath(), {
         args: IS_DENO
           ? ["run", "-A", "dist/server.js"]
           : ["run", "dist/server.js"],
         cwd: exampleDir,
+        env,
         stdout: "inherit",
         stderr: "inherit",
       });
@@ -1197,7 +1243,7 @@ function createBasicExampleBrowserSuite(
 
       // 轮询等待服务器就绪（Windows CI 较慢）
       const maxWait = platform() === "windows" ? 60000 : 25000;
-      await waitForServerReady(port, maxWait);
+      await waitForServerReady(actualPort, maxWait);
       // 就绪后再等一段，避免偶发 ERR_CONNECTION_REFUSED（如 view-hybrid-flat 等启动略慢）
       await new Promise((r) => setTimeout(r, 3000));
     });
@@ -1219,7 +1265,7 @@ function createBasicExampleBrowserSuite(
 
     it.skipIf(skip, "应能渲染且无 hydration 错误", async (t) => {
       if (!t) throw new Error("test context 不可用");
-      await assertBrowserRender(t, port);
+      await assertBrowserRender(t, actualPort);
     }, {
       timeout: BROWSER_TEST_TIMEOUT_MS,
       sanitizeOps: false,
@@ -1237,7 +1283,7 @@ function createBasicExampleBrowserSuite(
 
     it.skipIf(skip, "应能通过点击关于链接进入关于页", async (t) => {
       if (!t) throw new Error("test context 不可用");
-      await assertBrowserClickAbout(t, port);
+      await assertBrowserClickAbout(t, actualPort);
     }, {
       timeout: BROWSER_TEST_TIMEOUT_MS,
       sanitizeOps: false,
@@ -1257,7 +1303,7 @@ function createBasicExampleBrowserSuite(
       "应能通过计数器加一、减一、重置更新数字",
       async (t) => {
         if (!t) throw new Error("test context 不可用");
-        await assertBrowserCounterButtons(t, port);
+        await assertBrowserCounterButtons(t, actualPort);
       },
       {
         timeout: 40000,
@@ -1279,7 +1325,7 @@ function createBasicExampleBrowserSuite(
       "应渲染首页与关于页的 metadata（title/description）",
       async (t) => {
         if (!t) throw new Error("test context 不可用");
-        await assertBrowserMetadata(t, port);
+        await assertBrowserMetadata(t, actualPort);
       },
       {
         timeout: BROWSER_TEST_TIMEOUT_MS,
@@ -1297,51 +1343,3 @@ function createBasicExampleBrowserSuite(
     );
   });
 }
-
-createBasicExampleBrowserSuite("preact-csr", "src/main.ts");
-createBasicExampleBrowserSuite("preact-hybrid", "src/main.ts");
-createBasicExampleBrowserSuite("preact-ssr", "src/main.ts");
-createBasicExampleBrowserSuite("preact-ssg", "src/main.ts");
-createBasicExampleBrowserSuite("preact-hybrid-flat", "main.ts");
-
-createBasicExampleBrowserSuite("react-csr", "src/main.ts");
-createBasicExampleBrowserSuite("react-hybrid", "src/main.ts");
-createBasicExampleBrowserSuite("react-ssr", "src/main.ts");
-createBasicExampleBrowserSuite("react-ssg", "src/main.ts");
-createBasicExampleBrowserSuite("react-hybrid-flat", "main.ts");
-
-createBasicExampleBrowserSuite("view-csr", "src/main.ts");
-createBasicExampleBrowserSuite("view-hybrid", "src/main.ts");
-createBasicExampleBrowserSuite("view-ssr", "src/main.ts");
-createBasicExampleBrowserSuite("view-ssg", "src/main.ts");
-createBasicExampleBrowserSuite("view-hybrid-flat", "main.ts");
-
-// preact-* advanced 示例（双进程 backend + frontend）
-// preact-csr=3030,3031 preact-hybrid=3032,3033 preact-ssr=3034,3035 preact-ssg=3036,3037 preact-hybrid-flat=3038,3039
-createAdvancedExampleBrowserSuite("preact-csr", 3030, 3031);
-createAdvancedExampleBrowserSuite("preact-hybrid", 3032, 3033);
-createAdvancedExampleBrowserSuite("preact-ssr", 3034, 3035);
-createAdvancedExampleBrowserSuite("preact-ssg", 3036, 3037);
-createAdvancedExampleBrowserSuite("preact-hybrid-flat", 3038, 3039, {
-  entries: ["backend/main.ts", "frontend/main.ts"],
-});
-
-// react-* advanced 示例（双进程 backend + frontend）
-// react-csr=3040,3041 react-hybrid=3042,3043 react-ssr=3044,3045 react-ssg=3046,3047 react-hybrid-flat=3048,3049
-createAdvancedExampleBrowserSuite("react-csr", 3040, 3041);
-createAdvancedExampleBrowserSuite("react-hybrid", 3042, 3043);
-createAdvancedExampleBrowserSuite("react-ssr", 3044, 3045);
-createAdvancedExampleBrowserSuite("react-ssg", 3046, 3047);
-createAdvancedExampleBrowserSuite("react-hybrid-flat", 3048, 3049, {
-  entries: ["backend/main.ts", "frontend/main.ts"],
-});
-
-// view-* advanced 示例（双进程 backend + frontend）
-// view-csr=3020,3021 view-hybrid=3022,3023 view-ssr=3024,3025 view-ssg=3026,3027 view-hybrid-flat=3028,3029
-createAdvancedExampleBrowserSuite("view-csr", 3020, 3021);
-createAdvancedExampleBrowserSuite("view-hybrid", 3022, 3023);
-createAdvancedExampleBrowserSuite("view-ssr", 3024, 3025);
-createAdvancedExampleBrowserSuite("view-ssg", 3026, 3027);
-createAdvancedExampleBrowserSuite("view-hybrid-flat", 3028, 3029, {
-  entries: ["backend/main.ts", "frontend/main.ts"],
-});

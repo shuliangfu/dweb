@@ -1,9 +1,14 @@
 /**
  * 默认配置文件
  * 框架会自动加载 ./src/config/main.ts（及 main.dev.ts 等环境配置）
+ * 支持环境变量 PORT 覆盖端口，供 e2e 等指定端口避免冲突
  */
 
 import type { AppConfig } from "@dreamer/dweb";
+import { getEnv } from "@dreamer/runtime-adapter";
+
+const portFromEnv = getEnv("PORT");
+const serverPort = portFromEnv ? Number(portFromEnv) : 3002;
 
 const config: AppConfig = {
   name: "preact-hybrid-basic-example",
@@ -11,9 +16,9 @@ const config: AppConfig = {
 
   language: "zh-CN",
 
-  // 服务器配置（e2e 并行测试时与 preact-csr/react-csr/react-hybrid 端口区分）
+  // 服务器配置（e2e 并行测试时与 preact-csr/react-csr/react-hybrid 端口区分；PORT 环境变量可覆盖）
   server: {
-    port: 3002,
+    port: serverPort,
     host: "127.0.0.1",
   },
 
@@ -33,11 +38,18 @@ const config: AppConfig = {
     level: "info",
   },
 
-  // 构建配置
+  // 构建配置（服务端 external 含 preact 等，避免与动态加载的 _app 双实例导致 SSR 输出为空）
   build: {
     server: {
       useNativeCompile: false,
-      external: ["tailwindcss", "lightningcss"],
+      external: [
+        "tailwindcss",
+        "lightningcss",
+        "preact",
+        "preact-render-to-string",
+        "preact/hooks",
+        "preact/jsx-runtime",
+      ],
     },
     /** 资源处理：复制 src/assets、压缩并 hash 化图片后输出到 client/assets/images */
     assets: {

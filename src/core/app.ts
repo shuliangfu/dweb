@@ -83,7 +83,7 @@ import {
   setCacheOptions,
 } from "../utils/constants.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
-import { $t, initDwebI18n } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import { getLogger, initializeLogger } from "../utils/logger.ts";
 import {
   extractComponentPathFromRouteFile,
@@ -119,8 +119,6 @@ import {
   registerPlugin,
 } from "./plugin.ts";
 import { initializeServiceContainer } from "./service.ts";
-
-await initDwebI18n();
 
 /**
  * App 类
@@ -202,11 +200,15 @@ export class App extends EventEmitter implements IApp {
 
     // 自动设置环境变量，无需用户手动配置
     // 判断逻辑：
+    // 0. 若已设置 DENO_ENV（如 start 脚本里 DENO_ENV=prod），则不覆盖
     // 1. --build 参数：设置 DENO_ENV=prod（构建模式）
-    // 2. __DWEB_PROD__ 全局标志：说明是编译后的生产代码，保持 prod
+    // 2. __DWEB_PROD__ 全局标志：说明是编译后的生产代码（由 builder-server / Bun 构建注入），保持 prod
     // 3. 其他情况：设置 DENO_ENV=dev（开发模式）
     // 直接调用 args() 而不是 this._isBuildMode()，因为此时实例还未完全初始化
-    if (args().includes("--build")) {
+    const existingDenoEnv = getEnv("DENO_ENV");
+    if (existingDenoEnv) {
+      // 已由 start 脚本或环境设置，不覆盖
+    } else if (args().includes("--build")) {
       setEnv("DENO_ENV", "prod");
     } else if ("__DWEB_PROD__" in globalThis) {
       // 编译后的生产代码（由 builder-server 注入标志）
@@ -229,7 +231,7 @@ export class App extends EventEmitter implements IApp {
     // 异步初始化配置和服务，保存 Promise 以便 start() 等待
     this._initPromise = this._initializeConfig(config).catch((error) => {
       // 如果 logger 还未初始化，使用 console 作为后备
-      const msg = $t("log.configInitFailed");
+      const msg = $tr("log.configInitFailed");
       try {
         const logger = getLogger(this.container);
         logger.error(`${msg}:`, error);
@@ -251,9 +253,9 @@ export class App extends EventEmitter implements IApp {
   private async _logFrameworkBanner(config: AppConfig): Promise<void> {
     const logger = getLogger(this.container);
     const version = await getDwebVersion();
-    logger.info($t("log.frameworkVersion", { version }));
-    logger.info($t("log.appName", {
-      name: config.name ?? $t("log.appNameNotConfigured"),
+    logger.info($tr("log.frameworkVersion", { version }));
+    logger.info($tr("log.appName", {
+      name: config.name ?? $tr("log.appNameNotConfigured"),
     }));
   }
 
@@ -455,7 +457,7 @@ export class App extends EventEmitter implements IApp {
         );
         if (!this._isBuildMode()) {
           getLogger(this.container).info(
-            $t("log.socketIoMounted", { path: socketIoPath }),
+            $tr("log.socketIoMounted", { path: socketIoPath }),
           );
         }
       }
@@ -470,7 +472,7 @@ export class App extends EventEmitter implements IApp {
         );
         if (!this._isBuildMode()) {
           getLogger(this.container).info(
-            $t("log.websocketMounted", { path: websocketPath }),
+            $tr("log.websocketMounted", { path: websocketPath }),
           );
         }
       }
@@ -530,7 +532,7 @@ export class App extends EventEmitter implements IApp {
         );
 
         if (!this._isBuildMode()) {
-          renderLogger.info($t("log.renderModeCsr"));
+          renderLogger.info($tr("log.renderModeCsr"));
         }
       } else if (renderMode === "hybrid") {
         // Hybrid 模式：服务端渲染完整 HTML + 客户端 hydrate
@@ -570,7 +572,7 @@ export class App extends EventEmitter implements IApp {
         );
 
         if (!this._isBuildMode()) {
-          renderLogger.info($t("log.renderModeHybrid"));
+          renderLogger.info($tr("log.renderModeHybrid"));
         }
       } else if (renderMode === "ssg") {
         // SSG 模式：从预渲染输出目录提供静态 HTML，并注册客户端脚本以便激活
@@ -588,7 +590,7 @@ export class App extends EventEmitter implements IApp {
         server.use(clientScriptMiddleware);
 
         if (!this._isBuildMode()) {
-          renderLogger.info($t("log.renderModeSsg"));
+          renderLogger.info($tr("log.renderModeSsg"));
         }
       } else {
         // SSR 模式：服务端渲染完整 HTML + 客户端激活（事件响应）
@@ -620,7 +622,7 @@ export class App extends EventEmitter implements IApp {
         );
 
         if (!this._isBuildMode()) {
-          renderLogger.info($t("log.renderModeSsr"));
+          renderLogger.info($tr("log.renderModeSsr"));
         }
       }
 
@@ -663,7 +665,7 @@ export class App extends EventEmitter implements IApp {
     } catch (error) {
       const logger = getLogger(this.container);
       logger.warn(
-        $t("log.routesMiddlewareSkipped", {
+        $tr("log.routesMiddlewareSkipped", {
           message: error instanceof Error ? error.message : String(error),
         }),
       );
@@ -693,7 +695,7 @@ export class App extends EventEmitter implements IApp {
           if (!isPathWithinProject(resolvedPath)) {
             throwDwebError(DwebErrorCode.MIDDLEWARE_LOAD_FAILED, {
               path: plugin,
-              message: $t("log.pathMustBeInProject"),
+              message: $tr("log.pathMustBeInProject"),
             });
           }
         } catch (e) {
@@ -773,7 +775,7 @@ export class App extends EventEmitter implements IApp {
       if (!isPathWithinProject(resolvedPath)) {
         throwDwebError(DwebErrorCode.MIDDLEWARE_LOAD_FAILED, {
           path,
-          message: $t("log.pathMustBeInProject"),
+          message: $tr("log.pathMustBeInProject"),
         });
       }
       // 使用 pathToFileURL 正确编码路径中的特殊字符（空格、#、? 等），避免 import 异常
@@ -1003,7 +1005,7 @@ export class App extends EventEmitter implements IApp {
     const logger = this._getLogger();
     const config = getConfig(this.container);
 
-    logger.info($t("log.buildStart"));
+    logger.info($tr("log.buildStart"));
 
     // 获取构建配置，基础输出目录（多应用时按入口推断，如 dist/backend）
     const clientOutputDir = getClientOutputDir(config);
@@ -1023,7 +1025,7 @@ export class App extends EventEmitter implements IApp {
         mode: "prod",
         target: "client",
       });
-      logger.info($t("log.pluginBuildComplete"));
+      logger.info($tr("log.pluginBuildComplete"));
 
       const renderMode = (config.render as { mode?: string })?.mode ?? "ssr";
       // 使用 @dreamer/esbuild 的 Builder 统一构建（服务端 + 客户端 + 资源）
@@ -1073,7 +1075,7 @@ export class App extends EventEmitter implements IApp {
         }
 
         if (routePaths.length === 0) {
-          logger.warn($t("log.ssgNoPaths"));
+          logger.warn($tr("log.ssgNoPaths"));
         } else {
           const ssgOutputDir = renderCfg.ssg?.outputDir ?? clientOutputDir;
           const absOutputDir = join(cwd(), ssgOutputDir);
@@ -1146,7 +1148,7 @@ export class App extends EventEmitter implements IApp {
           const onFileGenerated = (filePath: string) => {
             const rel = relative(cwdPath, filePath);
             logger.info(
-              $t("log.ssgFileGenerated", {
+              $tr("log.ssgFileGenerated", {
                 path: rel.startsWith("..") ? filePath : rel,
               }),
             );
@@ -1261,7 +1263,7 @@ export class App extends EventEmitter implements IApp {
         }
       }
 
-      logger.info($t("log.buildComplete"));
+      logger.info($tr("log.buildComplete"));
 
       // 触发 onBuildComplete 插件事件（构建全部完成后）
       await pluginEvents.emitOnBuildComplete(this.container, {});
@@ -1315,7 +1317,7 @@ export class App extends EventEmitter implements IApp {
         return;
       }
       this.isShuttingDown = true;
-      logger.info("\n" + $t("log.sigintShutdown"));
+      logger.info("\n" + $tr("log.sigintShutdown"));
       // 异步执行 stop 和 shutdown，不阻塞信号处理
       this.stop()
         .then(() => this.shutdown())
@@ -1327,7 +1329,7 @@ export class App extends EventEmitter implements IApp {
           const errorMessage = error instanceof Error
             ? error.message
             : String(error);
-          logger.error($t("log.shutdownError") + ":", errorMessage);
+          logger.error($tr("log.shutdownError") + ":", errorMessage);
           // 异常退出
           exit(1);
         });
@@ -1342,7 +1344,7 @@ export class App extends EventEmitter implements IApp {
         return;
       }
       this.isShuttingDown = true;
-      logger.info("\n" + $t("log.sigtermShutdown"));
+      logger.info("\n" + $tr("log.sigtermShutdown"));
       // 异步执行 stop 和 shutdown，不阻塞信号处理
       this.stop()
         .then(() => this.shutdown())
@@ -1354,7 +1356,7 @@ export class App extends EventEmitter implements IApp {
           const errorMessage = error instanceof Error
             ? error.message
             : String(error);
-          logger.error($t("log.shutdownError") + ":", errorMessage);
+          logger.error($tr("log.shutdownError") + ":", errorMessage);
           // 异常退出
           exit(1);
         });

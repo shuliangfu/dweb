@@ -12,7 +12,7 @@
 
 import { error, info, success } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 import { getProjectInfo } from "../utils/project.ts";
 import { getRuntime, getTaskArgs, getTestArgs } from "../utils/runtime.ts";
@@ -32,7 +32,7 @@ export async function main(
   const projectInfo = await getProjectInfo(projectRoot);
 
   if (!projectInfo) {
-    error($t("common.noDenoJson"));
+    error($tr("common.noDenoJson"));
     return;
   }
 
@@ -41,7 +41,7 @@ export async function main(
   if (projectInfo.mode === "single" || !app) {
     const taskName = "test";
     if (projectInfo.tasks[taskName]) {
-      info($t("test.running"));
+      info($tr("test.running"));
       const cmd = createCommand(runtime, {
         args: getTaskArgs(taskName),
         cwd: projectRoot,
@@ -52,14 +52,14 @@ export async function main(
       const child = cmd.spawn();
       const status = await child.status;
       if (status.success) {
-        success($t("test.complete"));
+        success($tr("test.complete"));
       } else {
-        error($t("test.exitCode", { code: String(status.code ?? "?") }));
+        error($tr("test.exitCode", { code: String(status.code ?? "?") }));
       }
       return;
     }
     // 无 test task，直接运行测试
-    info($t("test.running"));
+    info($tr("test.running"));
     const cmd = createCommand(runtime, {
       args: getTestArgs("tests"),
       cwd: projectRoot,
@@ -70,25 +70,25 @@ export async function main(
     const child = cmd.spawn();
     const status = await child.status;
     if (status.success) {
-      success($t("test.complete"));
+      success($tr("test.complete"));
     } else {
-      error($t("test.exitCode", { code: String(status.code ?? "?") }));
+      error($tr("test.exitCode", { code: String(status.code ?? "?") }));
     }
     return;
   }
 
   // 多应用，指定了 app
   if (!projectInfo.appNames.includes(app)) {
-    error($t("common.appNotFound", { app }));
+    error($tr("common.appNotFound", { app }));
     error(
-      $t("common.availableApps", { apps: projectInfo.appNames.join(", ") }),
+      $tr("common.availableApps", { apps: projectInfo.appNames.join(", ") }),
     );
     return;
   }
 
   const taskName = `test:${app}`;
   if (projectInfo.tasks[taskName]) {
-    info($t("test.runningWithApp", { app }));
+    info($tr("test.runningWithApp", { app }));
     const cmd = createCommand(runtime, {
       args: getTaskArgs(taskName),
       cwd: projectRoot,
@@ -99,15 +99,15 @@ export async function main(
     const child = cmd.spawn();
     const status = await child.status;
     if (status.success) {
-      success($t("test.appComplete", { app }));
+      success($tr("test.appComplete", { app }));
     } else {
-      error($t("test.appFailed", {
+      error($tr("test.appFailed", {
         app,
         code: String(status.code ?? "?"),
       }));
     }
   } else {
-    error($t("common.taskNotDefined", { task: taskName }));
-    error($t("test.addTaskHint"));
+    error($tr("common.taskNotDefined", { task: taskName }));
+    error($tr("test.addTaskHint"));
   }
 }

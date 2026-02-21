@@ -2,7 +2,7 @@
  * init 生成的静态文件：.gitignore、.vscode/settings.json、Tailwind/Uno CSS 入口、favicon.svg、jsx.d.ts、deploy.sh
  */
 
-import { $t } from "../helpers.ts";
+import { $tr } from "../helpers.ts";
 
 /** 部署脚本：构建后使用 docker compose 启动 */
 export function getDeploySh(): string {
@@ -61,20 +61,20 @@ export function getGitignore(): string {
 .deno/
 deno.lock
 
-# ${$t("init.comments.gitignoreDeps")}
+# ${$tr("init.comments.gitignoreDeps")}
 node_modules
 
-# ${$t("init.comments.gitignoreBuild")}
+# ${$tr("init.comments.gitignoreBuild")}
 dist/
 build/
 
-# ${$t("init.comments.gitignoreDwebGen")}
+# ${$tr("init.comments.gitignoreDwebGen")}
 _client.dep.tsx
 
-# ${$t("init.comments.gitignoreDockerCache")}
+# ${$tr("init.comments.gitignoreDockerCache")}
 runtime/
 
-# ${$t("init.comments.gitignoreEnv")}
+# ${$tr("init.comments.gitignoreEnv")}
 .env
 .env.local
 
@@ -82,18 +82,20 @@ runtime/
 .idea
 .cursor
 
-# ${$t("init.comments.gitignoreSystem")}
+# ${$tr("init.comments.gitignoreSystem")}
 .DS_Store
 `;
 }
 
 export function getVscodeSettingsJson(): string {
   return `{
-  // ==================== ${$t("init.comments.vscodeDeno")} ====================
+  // ==================== ${
+    $tr("init.comments.vscodeDeno")
+  } ====================
   "deno.enable": true,
   "deno.lint": true,
   // ==================== ${
-    $t("init.comments.vscodeFormat")
+    $tr("init.comments.vscodeFormat")
   } ====================
   "[typescript]": {
     "editor.defaultFormatter": "denoland.vscode-deno",
@@ -128,7 +130,7 @@ export function getVscodeSettingsJson(): string {
     "editor.formatOnSave": true
   },
   // ==================== ${
-    $t("init.comments.vscodeEditor")
+    $tr("init.comments.vscodeEditor")
   } ====================
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
@@ -146,17 +148,17 @@ export function getVscodeSettingsJson(): string {
   "editor.bracketPairColorization.enabled": true,
   "editor.guides.bracketPairs": false,
   "editor.minimap.enabled": true,
-  // ==================== ${$t("init.comments.vscodeCss")} ====================
+  // ==================== ${$tr("init.comments.vscodeCss")} ====================
   "css.lint.unknownAtRules": "ignore",
   // ==================== ${
-    $t("init.comments.vscodeAssoc")
+    $tr("init.comments.vscodeAssoc")
   } ====================
   "files.associations": {
     "*.tsx": "typescriptreact",
     "*.ts": "typescript"
   },
   // ==================== ${
-    $t("init.comments.vscodeExclude")
+    $tr("init.comments.vscodeExclude")
   } ====================
   "files.exclude": {
     "**/.git": true,
@@ -165,7 +167,7 @@ export function getVscodeSettingsJson(): string {
     "**/.deno": true
   },
   // ==================== ${
-    $t("init.comments.vscodeSearchExclude")
+    $tr("init.comments.vscodeSearchExclude")
   } ====================
   "search.exclude": {
     "**/node_modules": true,
@@ -173,7 +175,9 @@ export function getVscodeSettingsJson(): string {
     "**/dist": true,
     "**/runtime": true
   },
-  // ==================== ${$t("init.comments.vscodeI18n")} ====================
+  // ==================== ${
+    $tr("init.comments.vscodeI18n")
+  } ====================
   "i18n-ally.localesPaths": ["locales"],
   "i18n-ally.pathMatcher": "{locale}.{ext}",
   "i18n-ally.keystyle": "nested",
@@ -193,8 +197,8 @@ export function getVscodeSettingsJson(): string {
 
 export function getTailwindCss(): string {
   return `/**
- * ${$t("init.comments.tailwindEntry")}
- * ${$t("init.comments.tailwindScanPaths")}
+ * ${$tr("init.comments.tailwindEntry")}
+ * ${$tr("init.comments.tailwindScanPaths")}
  */
 @source "../**/*.{ts,tsx}";
 
@@ -209,15 +213,15 @@ export function getTailwindCss(): string {
 
 export function getUnoCss(): string {
   return `/**
- * ${$t("init.comments.unocssEntry")}
- * ${$t("init.comments.unocssDesc")}
+ * ${$tr("init.comments.unocssEntry")}
+ * ${$tr("init.comments.unocssDesc")}
  */
 
-/* ${$t("init.comments.baseReset")} */
+/* ${$tr("init.comments.baseReset")} */
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; min-height: 100%; }
 a { color: inherit; text-decoration: none; }
 
-/* ${$t("init.comments.optionalCustomLayer")} */
+/* ${$tr("init.comments.optionalCustomLayer")} */
 `;
 }

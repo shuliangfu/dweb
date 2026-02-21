@@ -30,7 +30,7 @@ import {
   getMainModulePath,
 } from "../utils/build-dirs.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { prepareClientBuildEntry } from "./csr-client-builder.ts";
 
@@ -149,7 +149,7 @@ export function initializeBuild(
   container.registerSingleton("build", () => builder);
 
   if (!args().includes("--build")) {
-    logger.info($t("log.buildToolReady"));
+    logger.info($tr("log.buildToolReady"));
   }
 
   return builder;
@@ -231,9 +231,8 @@ export async function runBuildWithBuilder(
   // 如果入口不存在，则抛出错误
   if (!(await exists(absEntry))) {
     throwDwebError(DwebErrorCode.ENTRY_PATH_INVALID, {
-      reason: "未找到服务端入口文件",
-      hint:
-        "请确保存在 src/main.ts 或 main.ts，或在 build.server.entry 中显式指定",
+      reason: $tr("errors.entryPathInvalidReasonServerEntryNotFound"),
+      hint: $tr("errors.entryPathInvalidHintServerEntry"),
       path: absEntry,
     });
   }
@@ -245,11 +244,41 @@ export async function runBuildWithBuilder(
     ? join(serverOutputDir, "server")
     : serverOutputDir;
 
+  // 按渲染引擎注入服务端 external，避免 Preact/React 被打包导致与动态加载的 _app 双实例，SSR 输出为空。
+  const renderConfig = (config.render || {}) as {
+    engine?: "react" | "preact" | "view";
+  };
+  const engine = renderConfig.engine || "preact";
+  const userServerExternal =
+    (serverConfig as { external?: string[] }).external ?? [];
+  // 按渲染引擎注入服务端 external，避免 Preact/React 被打包导致与动态加载的 _app 双实例，SSR 输出为空。
+  const runtimeServerExternal = engine === "preact"
+    ? [
+      "preact",
+      "preact-render-to-string",
+      "preact/hooks",
+      "preact/jsx-runtime",
+    ]
+    : engine === "react"
+    ? ["react", "react-dom", "react/jsx-runtime", "react-dom/client"]
+    : ["@dreamer/view", "@dreamer/view/jsx-runtime"];
+  // Bun 下若打包进服务端会因 require("../pkg") 等原生模块解析失败，故统一 external；Deno 用 esbuild 时 npm 已被 resolver 标 external，多写无害
+  const nativeServerExternal = ["tailwindcss", "lightningcss"];
+  const mergedServerExternal = [
+    ...new Set([
+      ...runtimeServerExternal,
+      ...nativeServerExternal,
+      ...userServerExternal,
+    ]),
+  ];
+
   const esbuildServerConfig: ServerConfig = {
     entry: serverEntry,
     output: serverOutput,
     useNativeCompile,
-    external: (serverConfig as { external?: string[] }).external,
+    external: mergedServerExternal.length > 0
+      ? mergedServerExternal
+      : undefined,
     externalNpm: !useNativeCompile,
     debug: (serverConfig as { debug?: boolean }).debug,
     logger,
@@ -287,4 +316,21 @@ export async function runBuildWithBuilder(
 
   const builder = new Builder(builderConfig);
   await builder.build();
+
+  // 向服务端产物注入 __DWEB_VERSION__，使生产运行时 getDwebVersion() 能拿到正确版本（否则 import.meta.url 指向 dist 会读到示例目录 deno.json 而回退到 3.0.0）
+  if (!useNativeCompile) {
+    const { getDwebVersion } = await import("../utils/version.ts");
+    const version = await getDwebVersion();
+    const serverJsPath = join(cwdPath, serverOutputDir, "server.js");
+    const { readTextFile, writeTextFile } = await import(
+      "../core/runtime-adapter.ts"
+    );
+    if (await exists(serverJsPath)) {
+      const content = await readTextFile(serverJsPath);
+      const versionBanner = `globalThis.__DWEB_VERSION__ = ${
+        JSON.stringify(version)
+      };\n`;
+      await writeTextFile(serverJsPath, versionBanner + content);
+    }
+  }
 }

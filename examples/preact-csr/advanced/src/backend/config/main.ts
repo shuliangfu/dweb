@@ -1,9 +1,14 @@
 /**
  * 后端默认配置
+ * 支持环境变量 PORT 覆盖端口，供 e2e 指定端口避免冲突
  */
 
 import { commonConfig } from "@common/config/main.ts";
 import type { AppConfig } from "@dreamer/dweb";
+import { getEnv } from "@dreamer/runtime-adapter";
+
+const portFromEnv = getEnv("PORT");
+const serverPort = portFromEnv ? Number(portFromEnv) : commonConfig.backendPort;
 
 /** 后端配置 */
 const config: AppConfig = {
@@ -11,7 +16,7 @@ const config: AppConfig = {
   version: commonConfig.version,
 
   server: {
-    port: commonConfig.backendPort,
+    port: serverPort,
     host: "0.0.0.0",
   },
 

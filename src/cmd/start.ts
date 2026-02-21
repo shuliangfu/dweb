@@ -15,7 +15,7 @@
 
 import { error, info } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 import { loadProjectConfig } from "../utils/config-loader.ts";
 import { getProjectInfo } from "../utils/project.ts";
@@ -36,7 +36,7 @@ export async function main(
   const projectInfo = await getProjectInfo(projectRoot);
 
   if (!projectInfo) {
-    error($t("common.noDenoJsonOrTasks"));
+    error($tr("common.noDenoJsonOrTasks"));
     return;
   }
 
@@ -44,12 +44,12 @@ export async function main(
 
   if (projectInfo.mode === "single") {
     if (app) {
-      info($t("common.singleAppIgnore"));
+      info($tr("common.singleAppIgnore"));
     }
     const taskName = "start";
     if (!projectInfo.tasks[taskName]) {
-      error($t("common.taskNotDefined", { task: taskName }));
-      error($t("common.ensureInit", { task: taskName }));
+      error($tr("common.taskNotDefined", { task: taskName }));
+      error($tr("common.ensureInit", { task: taskName }));
       return;
     }
     try {
@@ -59,13 +59,13 @@ export async function main(
         | undefined;
       if (serverConfig?.port) {
         info(
-          $t("common.portFromConfigProd", { port: String(serverConfig.port) }),
+          $tr("common.portFromConfigProd", { port: String(serverConfig.port) }),
         );
       }
     } catch {
       // 配置加载失败时忽略
     }
-    info($t("start.startingSingle"));
+    info($tr("start.startingSingle"));
     const cmd = createCommand(runtime, {
       args: getTaskArgs(taskName),
       cwd: projectRoot,
@@ -76,32 +76,32 @@ export async function main(
     const child = cmd.spawn();
     const status = await child.status;
     if (!status.success) {
-      error($t("start.exitCode", { code: String(status.code ?? "?") }));
+      error($tr("start.exitCode", { code: String(status.code ?? "?") }));
     }
     return;
   }
 
   // 多应用
   if (!app) {
-    error($t("common.multiAppNeedApp"));
+    error($tr("common.multiAppNeedApp"));
     error(
-      $t("common.availableApps", { apps: projectInfo.appNames.join(", ") }),
+      $tr("common.availableApps", { apps: projectInfo.appNames.join(", ") }),
     );
-    error($t("common.exampleApp", { cmd: "start", app: "backend" }));
+    error($tr("common.exampleApp", { cmd: "start", app: "backend" }));
     return;
   }
 
   if (!projectInfo.appNames.includes(app)) {
-    error($t("common.appNotFound", { app }));
+    error($tr("common.appNotFound", { app }));
     error(
-      $t("common.availableApps", { apps: projectInfo.appNames.join(", ") }),
+      $tr("common.availableApps", { apps: projectInfo.appNames.join(", ") }),
     );
     return;
   }
 
   const taskName = `start:${app}`;
   if (!projectInfo.tasks[taskName]) {
-    error($t("common.taskNotDefined", { task: taskName }));
+    error($tr("common.taskNotDefined", { task: taskName }));
     return;
   }
 
@@ -112,13 +112,13 @@ export async function main(
       | undefined;
     if (serverConfig?.port) {
       info(
-        $t("common.portFromConfigProd", { port: String(serverConfig.port) }),
+        $tr("common.portFromConfigProd", { port: String(serverConfig.port) }),
       );
     }
   } catch {
     // 配置加载失败时忽略
   }
-  info($t("start.starting", { app }));
+  info($tr("start.starting", { app }));
   const cmd = createCommand(runtime, {
     args: getTaskArgs(taskName),
     cwd: projectRoot,
@@ -129,6 +129,6 @@ export async function main(
   const child = cmd.spawn();
   const status = await child.status;
   if (!status.success) {
-    error($t("start.exitCodeApp", { app, code: String(status.code ?? "?") }));
+    error($tr("start.exitCodeApp", { app, code: String(status.code ?? "?") }));
   }
 }

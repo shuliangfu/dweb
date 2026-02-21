@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@dreamer/dweb": [
+        "src/mod.ts"
+      ],
+      "@dreamer/dweb/*": [
+        "src/*"
+      ],
+      "@dreamer/render": ["../render/src/mod.ts"],
+      "@dreamer/render/*": ["../render/src/*"]
+    }
+  }
+}

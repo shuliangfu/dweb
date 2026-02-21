@@ -180,10 +180,11 @@ export { getLogger, initializeLogger } from "./utils/logger.ts";
 
 /**
  * 国际化 / 语言：
+ * - $tr: 框架专用翻译函数（与用户 $t 隔离），各模块通过 import $tr 使用
  * - getDefaultAppLanguage: 按环境变量检测默认语言，回退 en-US（供 config/main.ts 的 language 使用）
  * - detectLocale: 从环境变量检测 locale（LANGUAGE / LC_ALL / LANG）
  */
-export { detectLocale, getDefaultAppLanguage } from "./utils/i18n.ts";
+export { $tr, detectLocale, getDefaultAppLanguage } from "./utils/i18n.ts";
 
 /**
  * 统一错误处理（支持 i18n）：

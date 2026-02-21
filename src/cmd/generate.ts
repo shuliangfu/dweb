@@ -17,7 +17,7 @@
  */
 
 import { error, info, success } from "@dreamer/console";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import {
   cwd,
   dirname,
@@ -169,9 +169,17 @@ export class ${namePascal}Service {
     case "api":
     case "a": {
       const targetPath = join(basePath, "routes", "api", `${nameKebab}.ts`);
+      const helloMsg = $tr("generate.templateApiHelloMessage", {
+        name: namePascal,
+      });
+      const createdMsg = $tr("generate.templateApiCreatedMessage");
+      const apiComment1 = $tr("generate.templateApiCommentLine1", {
+        name: namePascal,
+      });
+      const apiComment2 = $tr("generate.templateApiCommentLine2");
       const content = `/**
- * ${namePascal} API 接口
- * 使用 Web 标准 Request/Response，与 @dreamer/router 的 apiMode: "restful" 兼容
+ * ${apiComment1}
+ * ${apiComment2}
  */
 
 import { json } from "@dreamer/router";
@@ -180,7 +188,7 @@ import { json } from "@dreamer/router";
  * GET /api/${nameKebab}
  */
 export async function GET(_request: Request) {
-  return json({ message: "Hello from ${namePascal} API" });
+  return json({ message: ${JSON.stringify(helloMsg)} });
 }
 
 /**
@@ -188,7 +196,7 @@ export async function GET(_request: Request) {
  */
 export async function POST(request: Request) {
   const body = await request.json();
-  return json({ message: "Created", data: body });
+  return json({ message: ${JSON.stringify(createdMsg)}, data: body });
 }
 `;
       return { targetPath, content };
@@ -252,8 +260,8 @@ export async function main(
   const app = options.app as string | undefined;
 
   if (!type || !name) {
-    error($t("generate.needTypeAndName"));
-    error($t("generate.exampleGenerate"));
+    error($tr("generate.needTypeAndName"));
+    error($tr("generate.exampleGenerate"));
     return;
   }
 
@@ -263,17 +271,17 @@ export async function main(
   if (
     app && projectInfo?.mode === "multi" && !projectInfo.appNames.includes(app)
   ) {
-    error($t("common.appNotFound", { app }));
+    error($tr("common.appNotFound", { app }));
     error(
-      $t("common.availableApps", { apps: projectInfo.appNames.join(", ") }),
+      $tr("common.availableApps", { apps: projectInfo.appNames.join(", ") }),
     );
     return;
   }
 
   info(
     app
-      ? $t("generate.generatingWithApp", { type, name, app })
-      : $t("generate.generating", { type, name }),
+      ? $tr("generate.generatingWithApp", { type, name, app })
+      : $tr("generate.generating", { type, name }),
   );
 
   try {
@@ -293,7 +301,7 @@ export async function main(
     // 检查文件是否已存在
     try {
       await stat(targetPath);
-      error($t("generate.fileExists", { path: targetPath }));
+      error($tr("generate.fileExists", { path: targetPath }));
       return;
     } catch {
       // 文件不存在，可以创建
@@ -302,17 +310,17 @@ export async function main(
     // 写入文件
     await writeTextFile(targetPath, content);
 
-    success($t("generate.generateComplete", { type, name }));
-    info($t("generate.filePath", { path: targetPath }));
+    success($tr("generate.generateComplete", { type, name }));
+    info($tr("generate.filePath", { path: targetPath }));
   } catch (err) {
     if (
       isDwebError(err) && err.code === DwebErrorCode.GENERATE_TYPE_UNSUPPORTED
     ) {
       error(err.message);
-      error($t("generate.supportedTypes"));
+      error($tr("generate.supportedTypes"));
     } else {
       error(
-        $t("generate.generateFailed", {
+        $tr("generate.generateFailed", {
           type,
           message: err instanceof Error ? err.message : String(err),
         }),

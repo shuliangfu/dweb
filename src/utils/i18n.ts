@@ -4,18 +4,15 @@
  * @fileoverview dweb 框架内置 i18n 模块
  *
  * 提供框架自身文案的国际化，包括错误消息、CLI 输出、日志等。
- * 使用 @dreamer/i18n 作为底层，挂载全局 $t()，并桥接 setDwebErrorTranslator。
- *
- * 服务端：使用 import 在构建时内联 JSON，避免运行时 fetch（打包后 import.meta.url 指向 dist，fetch 会失败）
- * 客户端：可使用 fetch 按需加载语言包
+ * 使用 @dreamer/i18n 作为底层，不挂全局，各模块通过 import $tr 使用；并桥接 setDwebErrorTranslator。
  *
  * 使用方式：
- * - 入口处调用 initDwebI18n()（无需传参，自动读取 config/main.ts 的 language）
- * - 框架内通过 $t("cli.usage")、$t("errors.DWEB_E01", { path }) 等获取翻译
+ * - 本模块加载时自动执行顶层 await initDwebI18n()，首次 import 本模块的调用方会在 init 完成后再得到导出，无需在业务入口再 await init。
+ * - locale 优先级：setDwebLocale() > 项目 AppConfig.language > 环境变量 > 默认 en-US
+ * - 若未配置 language，则使用自动检测（getDefaultAppLanguage）
  */
 
-import { createI18n } from "@dreamer/i18n";
-import type { TranslationData } from "@dreamer/i18n";
+import { createI18n, I18n, TranslationData } from "@dreamer/i18n";
 import { cwd, getEnv, resolve } from "@dreamer/runtime-adapter";
 import { type AppLanguage, SUPPORTED_APP_LANGUAGES } from "../types/app.ts";
 import { loadProjectConfig } from "./config-loader.ts";
@@ -42,40 +39,13 @@ import deDE from "../locales/de-DE.json" with { type: "json" };
 // 法文
 import frFR from "../locales/fr-FR.json" with { type: "json" };
 
-/**
- * 全局翻译函数（委托给 globalThis.$t，init 前返回 key）
- * 供框架内各模块 import 使用，解决 deno publish 时 compilerOptions.types 不生效的问题
- */
-export function $t(
-  key: string,
-  params?: Record<string, string | number | boolean>,
-): string {
-  const g = globalThis as {
-    $t?: (k: string, p?: Record<string, string | number | boolean>) => string;
-  };
-  return g.$t ? g.$t(key, params) : key;
-}
-
-/** 是否已初始化（幂等） */
-let initialized = false;
+/** init 时创建的 dweb 实例，不挂全局，$tr 与错误翻译均用此实例 */
+let dwebI18n: I18n | null = null;
 
 /**
- * 待使用的 locale（由 setDwebLocale 设置，App 合并配置后调用）
- * 优先级最高，用于支持构造函数传入的 language 覆盖配置文件
+ * 待使用的 locale（由 setDwebLocale 在首次 init 前设置；init 后 setDwebLocale 直接改实例）
  */
 let pendingLocale: string | null = null;
-
-/**
- * 设置待使用的 locale（在 initDwebI18n 之前调用）
- *
- * App 在合并配置后调用此方法，以便构造函数传入的 language 能覆盖配置文件。
- * 调用 initDwebI18n() 后会消费并清空。
- *
- * @param locale - 语言代码，如 zh-CN、en-US；传 undefined 可清除
- */
-export function setDwebLocale(locale: string | undefined | null): void {
-  pendingLocale = locale ?? null;
-}
 
 /** 支持的 locale 列表 */
 const SUPPORTED_LOCALES = [
@@ -161,50 +131,46 @@ const LOCALE_DATA: Record<string, TranslationData> = {
 };
 
 /**
- * 解析 locale，优先级：setDwebLocale > 项目 config > 环境变量 > 默认
+ * 异步解析 locale，优先级：setDwebLocale > 项目 config/main.ts 的 language > 环境变量 > 默认
  */
 async function resolveLocale(): Promise<string> {
-  // 1. 显式设置（App 合并配置后调用 setDwebLocale）
   if (pendingLocale) {
     const v = pendingLocale;
     pendingLocale = null;
-    return v;
+    return SUPPORTED_LOCALES.includes(
+        v as (typeof SUPPORTED_LOCALES)[number],
+      )
+      ? v
+      : DEFAULT_LOCALE;
   }
-  // 2. 从项目 config/main.ts 读取 language（使用 resolve 确保 projectRoot 为绝对路径）
   try {
     const projectRoot = resolve(cwd());
     const config = await loadProjectConfig(projectRoot);
-    if (config.language) return config.language;
+    if (config.language) {
+      return SUPPORTED_LOCALES.includes(
+          config.language as (typeof SUPPORTED_LOCALES)[number],
+        )
+        ? config.language
+        : DEFAULT_LOCALE;
+    }
   } catch {
-    // 非 dweb 项目或加载失败，忽略
+    // 非 dweb 项目或加载失败，继续用环境变量/默认
   }
-  // 3. 环境变量
   const detected = detectLocale();
   if (detected) return detected;
-  // 4. 默认
   return DEFAULT_LOCALE;
 }
 
 /**
- * 初始化 dweb 框架 i18n
+ * 初始化 dweb 框架 i18n（异步，幂等）
  *
- * 幂等：已初始化则直接返回。无需传参，自动读取 language 配置：
- * 1. setDwebLocale() 显式设置（App 合并配置后调用）
- * 2. 项目 config/main.ts 的 language
- * 3. 环境变量 LANGUAGE/LC_ALL/LANG
- * 4. 默认 en-US
- *
- * 完成：加载翻译、挂载 globalThis.$t、桥接 setDwebErrorTranslator
+ * 会从项目 config/main.ts 读取 language；未配置则使用环境变量检测或默认 en-US。
+ * 本模块在加载时通过顶层 await 自动调用，调用方直接 import 使用 $tr 即可，无需再手动 await。
  */
-export async function initDwebI18n(): Promise<void> {
-  if (initialized) return;
+async function initDwebI18n(): Promise<void> {
+  if (dwebI18n) return;
 
-  const locale = await resolveLocale();
-  const effectiveLocale = SUPPORTED_LOCALES.includes(
-      locale as (typeof SUPPORTED_LOCALES)[number],
-    )
-    ? locale
-    : DEFAULT_LOCALE;
+  const effectiveLocale = await resolveLocale();
 
   const i18n = createI18n({
     defaultLocale: DEFAULT_LOCALE,
@@ -214,15 +180,59 @@ export async function initDwebI18n(): Promise<void> {
   });
 
   i18n.setLocale(effectiveLocale);
-  i18n.install();
+  dwebI18n = i18n;
 
   setDwebErrorTranslator((key, params) => {
-    const g = globalThis as {
-      $t?: (k: string, p?: Record<string, string | number | boolean>) => string;
-    };
-    if (g.$t) return g.$t(key, params);
-    return key;
+    return $tr(key, params, effectiveLocale);
   });
+}
 
-  initialized = true;
+// 顶层 await：首次 import 本模块时，会先完成 init 再对外提供 $tr 等导出（ES 模块规范，Deno/Bun/Node ESM 均支持）
+await initDwebI18n();
+
+/**
+ * 设置框架使用的 locale。
+ *
+ * 在模块已加载（i18n 已初始化）后调用会直接更新当前 locale，供 App 合并配置后传入项目 language。
+ * 在首次加载 i18n 前调用则写入 pendingLocale，会在同步 init 时使用。
+ *
+ * @param locale - 语言代码，如 zh-CN、en-US；传 undefined/null 可清除 pending，不改变已初始化的实例
+ */
+export function setDwebLocale(locale: string | undefined | null): void {
+  const v = locale ?? null;
+  if (dwebI18n) {
+    if (
+      v && SUPPORTED_LOCALES.includes(v as (typeof SUPPORTED_LOCALES)[number])
+    ) {
+      dwebI18n.setLocale(v);
+    }
+    return;
+  }
+  pendingLocale = v;
+}
+
+/**
+ * 框架专用翻译函数：仅用本模块 init 时创建的 dweb 实例，不依赖全局。
+ * 供框架内各模块 import $tr 使用，与用户项目的 $t 隔离；init 前或实例不存在时返回 key。
+ *
+ * @param key - 文案 key
+ * @param params - 占位替换
+ * @param lang - 可选，指定语言；不传则用当前实例 locale
+ */
+export function $tr(
+  key: string,
+  params?: Record<string, string | number | boolean>,
+  lang?: string,
+): string {
+  if (!dwebI18n) return key;
+  if (lang !== undefined) {
+    const prev = dwebI18n.getLocale();
+    dwebI18n.setLocale(lang);
+    try {
+      return dwebI18n.t(key, params);
+    } finally {
+      dwebI18n.setLocale(prev);
+    }
+  }
+  return dwebI18n.t(key, params);
 }

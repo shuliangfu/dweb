@@ -18,7 +18,7 @@ import {
 } from "@dreamer/database";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 
 /**
@@ -154,9 +154,9 @@ export async function connectDatabases(
       if (ql) {
         manager.getConnection("default").setQueryLogger(ql);
       }
-      logger.info($t("log.dbConnected", { name: "default" }));
+      logger.info($tr("log.dbConnected", { name: "default" }));
     } catch (error) {
-      logger.error($t("log.dbConnectFailed", { name: "default" }), error);
+      logger.error($tr("log.dbConnectFailed", { name: "default" }), error);
       throw error;
     }
   }
@@ -174,9 +174,9 @@ export async function connectDatabases(
         if (ql) {
           manager.getConnection(name).setQueryLogger(ql);
         }
-        logger.info($t("log.dbConnected", { name }));
+        logger.info($tr("log.dbConnected", { name }));
       } catch (error) {
-        logger.error($t("log.dbConnectFailed", { name }), error);
+        logger.error($tr("log.dbConnectFailed", { name }), error);
         throw error;
       }
     }

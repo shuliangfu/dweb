@@ -11,7 +11,7 @@
 
 import { error, info, success } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 import { getProjectInfo } from "../utils/project.ts";
 import { getFmtArgs, getRuntime } from "../utils/runtime.ts";
@@ -31,13 +31,13 @@ export async function main(
   const projectInfo = await getProjectInfo(projectRoot);
 
   if (!projectInfo) {
-    error($t("common.noDenoJson"));
+    error($tr("common.noDenoJson"));
     return;
   }
 
   const taskName = "fmt";
   if (projectInfo.tasks[taskName]) {
-    info($t("fmt.running"));
+    info($tr("fmt.running"));
     const cmd = createCommand(runtime, {
       args: getFmtArgs(true),
       cwd: projectRoot,
@@ -48,15 +48,15 @@ export async function main(
     const child = cmd.spawn();
     const status = await child.status;
     if (status.success) {
-      success($t("fmt.complete"));
+      success($tr("fmt.complete"));
     } else {
-      error($t("fmt.exitCode", { code: String(status.code ?? "?") }));
+      error($tr("fmt.exitCode", { code: String(status.code ?? "?") }));
     }
     return;
   }
 
   // 无 fmt task，直接运行 fmt
-  info($t("fmt.running"));
+  info($tr("fmt.running"));
   const cmd = createCommand(runtime, {
     args: getFmtArgs(false),
     cwd: projectRoot,
@@ -67,8 +67,8 @@ export async function main(
   const child = cmd.spawn();
   const status = await child.status;
   if (status.success) {
-    success($t("fmt.complete"));
+    success($tr("fmt.complete"));
   } else {
-    error($t("fmt.exitCode", { code: String(status.code ?? "?") }));
+    error($tr("fmt.exitCode", { code: String(status.code ?? "?") }));
   }
 }

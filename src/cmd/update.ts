@@ -13,7 +13,7 @@
 
 import { error, info, success } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 import { getProjectInfo } from "../utils/project.ts";
 import { getRuntime } from "../utils/runtime.ts";
@@ -33,11 +33,11 @@ export async function main(
   const projectInfo = await getProjectInfo(projectRoot);
 
   if (!projectInfo) {
-    error($t("common.noDenoJson"));
+    error($tr("common.noDenoJson"));
     return;
   }
 
-  info($t("update.running"));
+  info($tr("update.running"));
 
   const cmd = createCommand(runtime, {
     args: ["update", ...args],
@@ -50,8 +50,8 @@ export async function main(
   const status = await child.status;
 
   if (status.success) {
-    success($t("update.complete"));
+    success($tr("update.complete"));
   } else {
-    error($t("update.exitCode", { code: String(status.code ?? "?") }));
+    error($tr("update.exitCode", { code: String(status.code ?? "?") }));
   }
 }

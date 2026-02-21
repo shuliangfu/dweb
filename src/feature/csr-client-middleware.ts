@@ -19,7 +19,7 @@ import {
 } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { isPathWithinProject } from "../utils/path.ts";
 import {
@@ -73,7 +73,7 @@ export function createClientScriptMiddleware(
         if (!isProd) {
           let script = getCachedClientScript();
           if (!script) {
-            logger.debug($t("log.clientBuildFirst"));
+            logger.debug($tr("log.clientBuildFirst"));
             script = await buildClientScript(container, config);
           }
           if (isMap) {
@@ -98,13 +98,13 @@ export function createClientScriptMiddleware(
             return;
           }
           if (!script?.code) {
-            logger.error($t("log.clientScriptEmpty"), {
+            logger.error($tr("log.clientScriptEmpty"), {
               hasScript: !!script,
               hasCode: !!script?.code,
             });
             ctx.response = new Response(
               `console.error(${
-                JSON.stringify($t("client.clientScriptNotReady"))
+                JSON.stringify($tr("client.clientScriptNotReady"))
               });`,
               {
                 status: 500,
@@ -152,10 +152,10 @@ export function createClientScriptMiddleware(
           });
           return;
         }
-        logger.error($t("log.clientScriptNotFound") + ":", clientJsPath);
+        logger.error($tr("log.clientScriptNotFound") + ":", clientJsPath);
         ctx.response = new Response(
           `console.error(${
-            JSON.stringify($t("client.clientScriptNotFound"))
+            JSON.stringify($tr("client.clientScriptNotFound"))
           });`,
           {
             status: 500,
@@ -168,15 +168,15 @@ export function createClientScriptMiddleware(
       } catch (error) {
         const errMsg = error instanceof Error ? error.message : String(error);
         const errStack = error instanceof Error ? error.stack : "";
-        logger.error($t("log.provideClientFailed") + ":", undefined, error);
+        logger.error($tr("log.provideClientFailed") + ":", undefined, error);
         console.error(
-          "[_client.js] " + $t("log.provideClientFailed") + ":",
+          "[_client.js] " + $tr("log.provideClientFailed") + ":",
           errMsg,
           errStack,
         );
         ctx.response = new Response(
           `console.error(${
-            JSON.stringify($t("client.clientScriptLoadFailed"))
+            JSON.stringify($tr("client.clientScriptLoadFailed"))
           }, ${JSON.stringify(errMsg)});`,
           {
             status: 500,
@@ -215,11 +215,9 @@ export function createClientScriptMiddleware(
           });
           return;
         }
-        if (pathname.startsWith("/_client/")) {
-          ctx.response = new Response("Not Found", { status: 404 });
-          return;
-        }
-        await next();
+        // 开发模式：chunk 在内存中不存在时（如 Bun/Deno 下 hash 不一致或重建导致变化）返回 404，
+        // 避免 fallthrough 到路由层返回 500；用户刷新页面即可拿到最新构建
+        ctx.response = new Response("Not Found", { status: 404 });
         return;
       }
 

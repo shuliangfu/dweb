@@ -43,11 +43,18 @@ const config: AppConfig = {
     level: "info",
   },
 
-  // 构建配置
+  // 构建配置（服务端 external 含 preact 等，避免与动态加载的 _app 双实例导致 SSR 输出为空）
   build: {
     server: {
       useNativeCompile: false,
-      external: ["tailwindcss", "lightningcss"],
+      external: [
+        "tailwindcss",
+        "lightningcss",
+        "preact",
+        "preact-render-to-string",
+        "preact/hooks",
+        "preact/jsx-runtime",
+      ],
     },
   },
 };

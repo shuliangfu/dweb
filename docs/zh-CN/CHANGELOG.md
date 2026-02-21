@@ -7,6 +7,27 @@
 
 ---
 
+## [3.0.89] - 2026-02-21
+
+### 新增
+
+- **错误 / Hybrid**：新增 Hybrid 渲染相关 i18n 键：`errors.hybridNeedAppComponent`、`errors.hybridAppLoadFailed`、`errors.hybridAppNotFound`、`errors.hybridMountContainerRequired`；以及入口相关：`errors.entryPathInvalidReasonServerEntryNotFound`、`errors.entryPathInvalidHintServerEntry`。
+
+### 变更
+
+- **i18n**：框架 i18n 不再使用全局 `$t`，内部统一通过 `utils/i18n.ts` 的 `$tr` 使用。初始化在首次加载模块时通过顶层 await 执行；locale 优先级：`setDwebLocale()` &gt; 项目 `language` &gt; 环境变量 &gt; 默认。`setDwebLocale` 可在 init 前或 init 后调用（init 后直接更新实例）。
+- **View / CSR 客户端**：View 引擎按渲染模式选择适配器：CSR 使用 `@dreamer/render/client/view-csr`，hybrid/SSR/SSG 使用 `@dreamer/render/client/view-hybrid`（含 hydrate）。客户端依赖生成与 hybrid 初始化逻辑已同步调整。
+- **依赖**：升级各 @dreamer/* 依赖（如 render ^1.0.38、view ^1.0.30、runtime-adapter ^1.0.15、server ^1.0.9 等）；workspace 改为 `./examples/*/*`。
+- **Init**：配置与模板小幅调整（config-full、config、components、docker、main、static）。
+
+### 移除
+
+- **i18n**：移除全局 `$t` 导出及 `src/types/i18n.d.ts`，请改用 `utils/i18n.ts` 的 `$tr`（或从 `mod.ts` 再导出）。
+- **Locales**：从各语言 JSON 中删除未使用键（如 `log.database.*`、`log.validation.*`）。
+- **测试**：移除单体 `tests/e2e/browser-render.test.ts`（由按渲染类型的 e2e 测试替代）。
+
+---
+
 ## [3.0.88] - 2026-02-18
 
 ### 变更

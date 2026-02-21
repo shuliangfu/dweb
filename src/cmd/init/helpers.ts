@@ -4,7 +4,7 @@
 
 import { basename } from "@dreamer/runtime-adapter";
 import { type AppLanguage, SUPPORTED_APP_LANGUAGES } from "../../types/app.ts";
-import { $t, detectLocale } from "../../utils/i18n.ts";
+import { $tr, detectLocale } from "../../utils/i18n.ts";
 import type { Engine, InitOptions, StyleContext } from "./types.ts";
 
 /** 应用名称合法：小写、数字、连字符 */
@@ -177,5 +177,5 @@ app.registerPlugin(staticPlugin({
   };
 }
 
-/** 供模板使用的 $t（i18n），避免各 template 文件重复从 utils 引用 */
-export { $t };
+/** 供模板使用的 $tr（框架 i18n），避免各 template 文件重复从 utils 引用 */
+export { $tr };

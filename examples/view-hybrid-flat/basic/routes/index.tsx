@@ -1,5 +1,5 @@
-import { createEffect, createSignal, onCleanup } from "@dreamer/view";
 import { Client } from "@dreamer/socket-io/client";
+import { createEffect, createSignal, onCleanup } from "@dreamer/view";
 
 /**
  * 页面 UnoCSS 类名（全部提取为静态对象，便于 unocssPlugin 扫描）
@@ -78,8 +78,10 @@ interface ChatMessage {
 }
 
 /**
- * 首页组件
+ * 首页组件（View 细粒度渲染）
  * 路由: /
+ * - 仅依赖 count 的 UI 包在 {() => (...)} 中，count 变化时只重跑该块
+ * - 仅依赖 status/input/messages 的 Socket.IO 区块同理，避免整页重跑
  * 包含 Socket.IO 客户端示例：连接状态、发送消息、接收消息
  */
 /** 首页元数据（常量），用于生成 <title> / <meta> */
@@ -95,8 +97,7 @@ export default function Home() {
   const [input, setInput] = createSignal("");
 
   createEffect(() => {
-    // 仅在浏览器环境创建并连接客户端，SSR 时直接 return，避免服务端向 fallback localhost 发起连接导致 Connection refused
-    if (typeof document === "undefined") return;
+    console.log("clientRef.current", new Date().toISOString());
 
     const origin = typeof globalThis !== "undefined" &&
         (globalThis as { location?: Location }).location
@@ -115,6 +116,8 @@ export default function Home() {
       namespace: "/",
       autoConnect: true,
       autoReconnect: true,
+      // 仅用 WebSocket，避免回退到 long-polling 导致请求过多、多 session
+      transports: ["websocket"],
     });
     clientRef.current = client;
     debugLog("Client 已创建，开始连接…");
@@ -145,9 +148,10 @@ export default function Home() {
         ? data
         : (data?.text ?? data?.message ?? JSON.stringify(data));
       debugLog("← chat-response 收到:", text);
-      setMessages((
-        prev,
-      ) => [...prev, { type: "received", text, at: Date.now() }]);
+      setMessages((prev) => [
+        ...prev,
+        { type: "received", text, at: Date.now() },
+      ]);
     };
 
     client.on("connect", onConnect);
@@ -170,7 +174,7 @@ export default function Home() {
       client.disconnect();
       clientRef.current = null;
     });
-  }, []);
+  });
 
   /** 发送一条消息到服务端（事件名 chat-message，需服务端监听并可选回发 chat-response） */
   const handleSend = () => {
@@ -184,13 +188,10 @@ export default function Home() {
       setInput("");
     } else {
       debugLog("→ 发送失败：未连接");
-      setMessages((
-        prev,
-      ) => [...prev, {
-        type: "sent",
-        text: `[未连接] ${text}`,
-        at: Date.now(),
-      }]);
+      setMessages((prev) => [
+        ...prev,
+        { type: "sent", text: `[未连接] ${text}`, at: Date.now() },
+      ]);
       setInput("");
     }
   };
@@ -236,6 +237,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* View 细粒度：仅此块依赖 count()，仅 count 变化时重跑该槽位 */}
       <section class={classes.socketSection}>
         <h2 class={classes.socketTitle}>计数器示例</h2>
         <p class={classes.socketDesc}>View 细粒度渲染：仅此块随 count 更新</p>
@@ -269,7 +271,7 @@ export default function Home() {
         )}
       </section>
 
-      {/* Socket.IO 客户端示例：整块包成动态子节点，仅此槽位随 status/input/messages 更新，避免整页重跑（含其他 section）；mt-8 与上方计数器模块留出间距 */}
+      {/* View 细粒度 + Socket.IO：整块包成 {() => (...)}，仅此槽位随 status/input/messages 更新，避免整页重跑；与 view-hybrid/basic 的 WebSocket 区块写法一致 */}
       <section class={`${classes.socketSection} ${classes.socketSectionOuter}`}>
         <h2 class={classes.socketTitle}>Socket.IO 客户端示例</h2>
         <p class={classes.socketDesc}>

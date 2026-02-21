@@ -13,7 +13,7 @@ import {
   title,
 } from "@dreamer/console";
 import { args, cwd, resolve } from "@dreamer/runtime-adapter";
-import { $t } from "../../utils/i18n.ts";
+import { $tr } from "../../utils/i18n.ts";
 import { ENGINES, EXAMPLE_LEVELS, RENDER_MODES, STYLES } from "./constants.ts";
 import { isValidAppName, projectNameFromDir } from "./helpers.ts";
 import type {
@@ -35,22 +35,22 @@ export async function collectOptions(
   useBeta?: boolean,
 ): Promise<InitOptions> {
   title("dweb init");
-  info($t("init.creatingProject"));
+  info($tr("init.creatingProject"));
   separator();
 
   const argv = overrideArgv ?? args();
   let targetDirRaw: string;
   if (argv.length > 0) {
     targetDirRaw = argv[0].trim();
-    info($t("init.projectNameFromArg", { name: targetDirRaw }));
+    info($tr("init.projectNameFromArg", { name: targetDirRaw }));
   } else {
     const inputDir = await input(
-      $t("init.projectNamePrompt"),
+      $tr("init.projectNamePrompt"),
       (v) => {
         const t = v.trim();
-        if (!t) return $t("init.projectNameRequired");
+        if (!t) return $tr("init.projectNameRequired");
         if (t !== "." && !isValidAppName(t)) {
-          return $t("init.projectNameInvalid");
+          return $tr("init.projectNameInvalid");
         }
         return null;
       },
@@ -66,34 +66,34 @@ export async function collectOptions(
     : targetDirRaw;
 
   const appModeIdx = await interactiveMenu(
-    $t("init.appMode"),
-    [$t("init.appModeSingle"), $t("init.appModeMulti")],
+    $tr("init.appMode"),
+    [$tr("init.appModeSingle"), $tr("init.appModeMulti")],
     0,
   );
   const appMode: AppMode = appModeIdx === 0 ? "single" : "multi";
 
   const appNames: string[] = [];
   if (appMode === "multi") {
-    info($t("init.appNamesHint"));
+    info($tr("init.appNamesHint"));
     while (true) {
       const hint = appNames.length > 0
-        ? $t("init.appNamePromptWithAdded", { apps: appNames.join(", ") })
-        : $t("init.appNamePromptEmpty");
+        ? $tr("init.appNamePromptWithAdded", { apps: appNames.join(", ") })
+        : $tr("init.appNamePromptEmpty");
       const line = await prompt(hint);
       const name = line?.trim() ?? "";
       if (name === "") {
         if (appNames.length === 0) {
-          consoleError($t("init.appNameMinOne"));
+          consoleError($tr("init.appNameMinOne"));
           continue;
         }
         break;
       }
       if (!isValidAppName(name)) {
-        consoleError($t("init.appNameInvalid", { name }));
+        consoleError($tr("init.appNameInvalid", { name }));
         continue;
       }
       if (appNames.includes(name)) {
-        consoleError($t("init.appNameDuplicate", { name }));
+        consoleError($tr("init.appNameDuplicate", { name }));
         continue;
       }
       appNames.push(name);
@@ -101,40 +101,40 @@ export async function collectOptions(
   }
 
   const engineIdx = await interactiveMenu(
-    $t("init.uiEngine"),
+    $tr("init.uiEngine"),
     [
-      $t("init.uiEngineView"),
-      $t("init.uiEnginePreact"),
-      $t("init.uiEngineReact"),
+      $tr("init.uiEngineView"),
+      $tr("init.uiEnginePreact"),
+      $tr("init.uiEngineReact"),
     ],
     0,
   );
   const engine = ENGINES[engineIdx] ?? ENGINES[0];
 
   const renderModeIdx = await interactiveMenu(
-    $t("init.renderMode"),
+    $tr("init.renderMode"),
     [
-      $t("init.renderModeHybrid"),
-      $t("init.renderModeSsr"),
-      $t("init.renderModeCsr"),
-      $t("init.renderModeSsg"),
+      $tr("init.renderModeHybrid"),
+      $tr("init.renderModeSsr"),
+      $tr("init.renderModeCsr"),
+      $tr("init.renderModeSsg"),
     ],
     0,
   );
   const renderMode: RenderMode = RENDER_MODES[renderModeIdx] ?? "hybrid";
 
   const styleIdx = await interactiveMenu(
-    $t("init.style"),
-    [$t("init.styleTailwind"), $t("init.styleUno"), $t("init.styleNone")],
+    $tr("init.style"),
+    [$tr("init.styleTailwind"), $tr("init.styleUno"), $tr("init.styleNone")],
     0,
   );
   const style: Style = STYLES[styleIdx] ?? "tailwind";
 
-  const useSrc = await confirm($t("init.useSrc"), true);
+  const useSrc = await confirm($tr("init.useSrc"), true);
 
   const exampleIdx = await interactiveMenu(
-    $t("init.exampleLevel"),
-    [$t("init.exampleWithAbout"), $t("init.exampleMinimal")],
+    $tr("init.exampleLevel"),
+    [$tr("init.exampleWithAbout"), $tr("init.exampleMinimal")],
     0,
   );
   const exampleLevel: ExampleLevel = EXAMPLE_LEVELS[exampleIdx] ?? "with-about";

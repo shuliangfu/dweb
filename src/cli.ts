@@ -15,7 +15,7 @@ import {
   error,
   type ParsedOptions,
 } from "./feature/command.ts";
-import { $t } from "./utils/i18n.ts";
+import { $tr } from "./utils/i18n.ts";
 import { getDwebVersion } from "./utils/version.ts";
 
 /**
@@ -23,10 +23,12 @@ import { getDwebVersion } from "./utils/version.ts";
  */
 function buildVersionStr(version: string): string {
   return `\n${colorize("dweb-cli", "cyan", true)}
-${colorize($t("cli.versionLabel"), "cyan", true)} ${colorize(version, "yellow")}
+${colorize($tr("cli.versionLabel"), "cyan", true)} ${
+    colorize(version, "yellow")
+  }
 
-${colorize($t("cli.versionTitle"), "gray")}
-${colorize($t("cli.versionDesc"), "gray")} \n`;
+${colorize($tr("cli.versionTitle"), "gray")}
+${colorize($tr("cli.versionDesc"), "gray")} \n`;
 }
 
 /**
@@ -38,12 +40,12 @@ ${colorize($t("cli.versionDesc"), "gray")} \n`;
  * @returns 配置完成的 Command 实例
  */
 export function createCLI(version: string): Command {
-  const cli = new Command("dweb-cli", $t("cliDesc.toolName"))
+  const cli = new Command("dweb-cli", $tr("cliDesc.toolName"))
     .setVersion(buildVersionStr(version))
     .option({
       name: "verbose",
       alias: "v",
-      description: $t("cliDesc.verbose"),
+      description: $tr("cliDesc.verbose"),
       type: "boolean",
     });
 
@@ -51,10 +53,10 @@ export function createCLI(version: string): Command {
   // init 初始化项目
   // ================================================================================
   cli
-    .command("init", $t("cliDesc.init"))
+    .command("init", $tr("cliDesc.init"))
     .option({
       name: "beta",
-      description: $t("cliDesc.betaOption"),
+      description: $tr("cliDesc.betaOption"),
       type: "boolean",
       defaultValue: false,
     })
@@ -64,7 +66,7 @@ export function createCLI(version: string): Command {
         await initMain(args, { beta: options?.beta === true });
       } catch (err) {
         error(
-          $t("cli.initFailedWithMessage", {
+          $tr("cli.initFailedWithMessage", {
             message: err instanceof Error ? err.message : String(err),
           }),
         );
@@ -74,12 +76,12 @@ export function createCLI(version: string): Command {
   // ================================================================================
   // dev 开发服务器
   // ================================================================================
-  const devCmd = cli.command("dev", $t("cliDesc.dev"));
+  const devCmd = cli.command("dev", $tr("cliDesc.dev"));
   devCmd
     .option({
       name: "app",
       alias: "a",
-      description: $t("cliDesc.appRequired"),
+      description: $tr("cliDesc.appRequired"),
       type: "string",
       requiresValue: true,
     })
@@ -89,7 +91,7 @@ export function createCLI(version: string): Command {
         await devMain(args, options);
       } catch (err) {
         error(
-          $t("cli.devFailedWithMessage", {
+          $tr("cli.devFailedWithMessage", {
             message: err instanceof Error ? err.message : String(err),
           }),
         );
@@ -99,12 +101,12 @@ export function createCLI(version: string): Command {
   // ================================================================================
   // build 构建
   // ================================================================================
-  const buildCmd = cli.command("build", $t("cliDesc.build"));
+  const buildCmd = cli.command("build", $tr("cliDesc.build"));
   buildCmd
     .option({
       name: "app",
       alias: "a",
-      description: $t("cliDesc.appOptionalBuild"),
+      description: $tr("cliDesc.appOptionalBuild"),
       type: "string",
       requiresValue: true,
     })
@@ -114,7 +116,7 @@ export function createCLI(version: string): Command {
         await buildMain(args, options);
       } catch (err) {
         error(
-          $t("cli.buildFailedWithMessage", {
+          $tr("cli.buildFailedWithMessage", {
             message: err instanceof Error ? err.message : String(err),
           }),
         );
@@ -124,12 +126,12 @@ export function createCLI(version: string): Command {
   // ================================================================================
   // start 生产启动
   // ================================================================================
-  const startCmd = cli.command("start", $t("cliDesc.start"));
+  const startCmd = cli.command("start", $tr("cliDesc.start"));
   startCmd
     .option({
       name: "app",
       alias: "a",
-      description: $t("cliDesc.appRequired"),
+      description: $tr("cliDesc.appRequired"),
       type: "string",
       requiresValue: true,
     })
@@ -139,7 +141,7 @@ export function createCLI(version: string): Command {
         await startMain(args, options);
       } catch (err) {
         error(
-          $t("cli.startFailedWithMessage", {
+          $tr("cli.startFailedWithMessage", {
             message: err instanceof Error ? err.message : String(err),
           }),
         );
@@ -149,20 +151,20 @@ export function createCLI(version: string): Command {
   // ================================================================================
   // preview 预览构建结果
   // ================================================================================
-  const previewCmd = cli.command("preview", $t("cliDesc.preview"));
+  const previewCmd = cli.command("preview", $tr("cliDesc.preview"));
   previewCmd.keepAlive();
   previewCmd
     .option({
       name: "port",
       alias: "p",
-      description: $t("cliDesc.portOption"),
+      description: $tr("cliDesc.portOption"),
       type: "number",
       requiresValue: true,
     })
     .option({
       name: "app",
       alias: "a",
-      description: $t("cliDesc.appOptional"),
+      description: $tr("cliDesc.appOptional"),
       type: "string",
       requiresValue: true,
     })
@@ -172,7 +174,7 @@ export function createCLI(version: string): Command {
         await previewMain(args, options);
       } catch (err) {
         error(
-          $t("cli.previewFailedWithMessage", {
+          $tr("cli.previewFailedWithMessage", {
             message: err instanceof Error ? err.message : String(err),
           }),
         );
@@ -182,13 +184,13 @@ export function createCLI(version: string): Command {
   // ================================================================================
   // generate 代码生成（别名 g）
   // ================================================================================
-  const generateCmd = cli.command("generate", $t("cliDesc.generate"));
+  const generateCmd = cli.command("generate", $tr("cliDesc.generate"));
   generateCmd.alias("g");
   generateCmd
     .option({
       name: "type",
       alias: "t",
-      description: $t("cliDesc.generateTypeOption"),
+      description: $tr("cliDesc.generateTypeOption"),
       type: "string",
       required: true,
       requiresValue: true,
@@ -196,7 +198,7 @@ export function createCLI(version: string): Command {
     .option({
       name: "name",
       alias: "n",
-      description: $t("cliDesc.nameOption"),
+      description: $tr("cliDesc.nameOption"),
       type: "string",
       required: true,
       requiresValue: true,
@@ -204,7 +206,7 @@ export function createCLI(version: string): Command {
     .option({
       name: "app",
       alias: "a",
-      description: $t("cliDesc.appOptionalGenerate"),
+      description: $tr("cliDesc.appOptionalGenerate"),
       type: "string",
       requiresValue: true,
     })
@@ -214,7 +216,7 @@ export function createCLI(version: string): Command {
         await generateMain(args, options);
       } catch (err) {
         error(
-          $t("cli.generateFailedWithMessage", {
+          $tr("cli.generateFailedWithMessage", {
             message: err instanceof Error ? err.message : String(err),
           }),
         );
@@ -224,12 +226,12 @@ export function createCLI(version: string): Command {
   // ================================================================================
   // test 运行测试
   // ================================================================================
-  const testCmd = cli.command("test", $t("cliDesc.test"));
+  const testCmd = cli.command("test", $tr("cliDesc.test"));
   testCmd
     .option({
       name: "app",
       alias: "a",
-      description: $t("cliDesc.appOptionalTest"),
+      description: $tr("cliDesc.appOptionalTest"),
       type: "string",
       requiresValue: true,
     })
@@ -239,7 +241,7 @@ export function createCLI(version: string): Command {
         await testMain(args, options);
       } catch (err) {
         error(
-          $t("cli.testFailedWithMessage", {
+          $tr("cli.testFailedWithMessage", {
             message: err instanceof Error ? err.message : String(err),
           }),
         );
@@ -250,14 +252,14 @@ export function createCLI(version: string): Command {
   // lint 代码检查
   // ================================================================================
   cli
-    .command("lint", $t("cliDesc.lint"))
+    .command("lint", $tr("cliDesc.lint"))
     .action(async (args: string[], options: ParsedOptions) => {
       try {
         const { main: lintMain } = await import("./cmd/lint.ts");
         await lintMain(args, options);
       } catch (err) {
         error(
-          $t("cli.lintFailedWithMessage", {
+          $tr("cli.lintFailedWithMessage", {
             message: err instanceof Error ? err.message : String(err),
           }),
         );
@@ -268,14 +270,14 @@ export function createCLI(version: string): Command {
   // fmt 代码格式化
   // ================================================================================
   cli
-    .command("fmt", $t("cliDesc.fmt"))
+    .command("fmt", $tr("cliDesc.fmt"))
     .action(async (args: string[], options: ParsedOptions) => {
       try {
         const { main: fmtMain } = await import("./cmd/fmt.ts");
         await fmtMain(args, options);
       } catch (err) {
         error(
-          $t("cli.fmtFailedWithMessage", {
+          $tr("cli.fmtFailedWithMessage", {
             message: err instanceof Error ? err.message : String(err),
           }),
         );
@@ -286,14 +288,14 @@ export function createCLI(version: string): Command {
   // clean 清理构建产物
   // ================================================================================
   cli
-    .command("clean", $t("cliDesc.clean"))
+    .command("clean", $tr("cliDesc.clean"))
     .action(async (args: string[], options: ParsedOptions) => {
       try {
         const { main: cleanMain } = await import("./cmd/clean.ts");
         await cleanMain(args, options);
       } catch (err) {
         error(
-          $t("cli.cleanFailedWithMessage", {
+          $tr("cli.cleanFailedWithMessage", {
             message: err instanceof Error ? err.message : String(err),
           }),
         );
@@ -304,14 +306,14 @@ export function createCLI(version: string): Command {
   // update 更新依赖与 lockfile
   // ================================================================================
   cli
-    .command("update", $t("cliDesc.update"))
+    .command("update", $tr("cliDesc.update"))
     .action(async (args: string[], options: ParsedOptions) => {
       try {
         const { main: updateMain } = await import("./cmd/update.ts");
         await updateMain(args, options);
       } catch (err) {
         error(
-          $t("cli.updateFailedWithMessage", {
+          $tr("cli.updateFailedWithMessage", {
             message: err instanceof Error ? err.message : String(err),
           }),
         );
@@ -321,14 +323,14 @@ export function createCLI(version: string): Command {
   // ================================================================================
   // db 数据库相关（含 migrate 子命令）
   // ================================================================================
-  const dbCmd = cli.command("db", $t("cliDesc.db"));
-  const migrateCmd = dbCmd.command("migrate", $t("cliDesc.dbMigrate"));
+  const dbCmd = cli.command("db", $tr("cliDesc.db"));
+  const migrateCmd = dbCmd.command("migrate", $tr("cliDesc.dbMigrate"));
   migrateCmd.alias("m");
   migrateCmd
     .option({
       name: "action",
       alias: "a",
-      description: $t("cliDesc.migrateActionOption"),
+      description: $tr("cliDesc.migrateActionOption"),
       type: "string",
       defaultValue: "up",
       requiresValue: true,
@@ -336,20 +338,20 @@ export function createCLI(version: string): Command {
     .option({
       name: "name",
       alias: "n",
-      description: $t("cliDesc.migrateNameOption"),
+      description: $tr("cliDesc.migrateNameOption"),
       type: "string",
       requiresValue: true,
     })
     .option({
       name: "db-type",
-      description: $t("cliDesc.dbTypeOption"),
+      description: $tr("cliDesc.dbTypeOption"),
       type: "string",
       requiresValue: true,
     })
     .option({
       name: "count",
       alias: "c",
-      description: $t("cliDesc.dbCountOption"),
+      description: $tr("cliDesc.dbCountOption"),
       type: "string",
       requiresValue: true,
     })
@@ -359,7 +361,7 @@ export function createCLI(version: string): Command {
         await migrate(args, options);
       } catch (err) {
         error(
-          $t("cli.dbMigrateFailedWithMessage", {
+          $tr("cli.dbMigrateFailedWithMessage", {
             message: err instanceof Error ? err.message : String(err),
           }),
         );
@@ -367,14 +369,14 @@ export function createCLI(version: string): Command {
     });
 
   dbCmd
-    .command("seed", $t("cliDesc.dbSeed"))
+    .command("seed", $tr("cliDesc.dbSeed"))
     .action(async (args: string[], options: ParsedOptions) => {
       try {
         const { seed } = await import("./cmd/db.ts");
         await seed(args, options);
       } catch (err) {
         error(
-          $t("cli.dbSeedFailedWithMessage", {
+          $tr("cli.dbSeedFailedWithMessage", {
             message: err instanceof Error ? err.message : String(err),
           }),
         );
@@ -382,14 +384,14 @@ export function createCLI(version: string): Command {
     });
 
   dbCmd
-    .command("status", $t("cliDesc.dbStatus"))
+    .command("status", $tr("cliDesc.dbStatus"))
     .action(async (args: string[], options: ParsedOptions) => {
       try {
         const { status } = await import("./cmd/db.ts");
         await status(args, options);
       } catch (err) {
         error(
-          $t("cli.dbStatusFailedWithMessage", {
+          $tr("cli.dbStatusFailedWithMessage", {
             message: err instanceof Error ? err.message : String(err),
           }),
         );
@@ -400,10 +402,10 @@ export function createCLI(version: string): Command {
   // upgrade 升级 dweb
   // ================================================================================
   cli
-    .command("upgrade", $t("cliDesc.upgrade"))
+    .command("upgrade", $tr("cliDesc.upgrade"))
     .option({
       name: "beta",
-      description: $t("cliDesc.upgradeBetaOption"),
+      description: $tr("cliDesc.upgradeBetaOption"),
       type: "boolean",
       defaultValue: false,
     })
@@ -413,7 +415,7 @@ export function createCLI(version: string): Command {
         await upgradeMain(args, options);
       } catch (err) {
         error(
-          $t("cli.upgradeFailedWithMessage", {
+          $tr("cli.upgradeFailedWithMessage", {
             message: err instanceof Error ? err.message : String(err),
           }),
         );

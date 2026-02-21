@@ -21,7 +21,7 @@ import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
 import { getLogger } from "../utils/logger.ts";
 import { extractComponentPathFromRouteFile } from "../utils/path.ts";
 import type { AppConfig } from "../types/app.ts";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import { resolveMetadata } from "@dreamer/render";
 import type { SessionData } from "@dreamer/session";
 import { createLoadContext, createServerResponse } from "../types/context.ts";
@@ -271,7 +271,7 @@ export function createRendererCSR(
       const containerId = csrOptions.containerId ?? "app";
       if (!hasContainerElementInHtml(html, containerId)) {
         throw new Error(
-          `[dweb] _app 必须渲染挂载容器：请在 _app.tsx 的 body 内提供 <div id="${containerId}">{children}</div>，当前 SSR 输出中未找到该元素。`,
+          $tr("errors.hybridMountContainerRequired", { containerId }),
         );
       }
 
@@ -299,6 +299,7 @@ ${overlayHtml}
           : ""
       }
 ${dataScript}  globalThis.__DWEB_DEV__ = ${isDevCsr};
+  globalThis.__DWEB_MODE__ = "csr";
   globalThis.__DWEB_ROUTES__ = ${JSON.stringify(clientRoutes)};
   globalThis.__DWEB_ENGINE__ = "${engine}";
   globalThis.__DWEB_CONTAINER_ID__ = "${csrOptions.containerId}";
@@ -328,7 +329,7 @@ ${csrOptions.bodyTags || ""}`;
         },
       });
     } catch (error) {
-      console.error($t("log.csrError"), error);
+      console.error($tr("log.csrError"), error);
       const isDevCsr =
         (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
       return new Response(
@@ -410,6 +411,7 @@ function generateFallbackCSRHtml(
   <div id="${containerId}"></div>
   ${overlayHtml}
   <script>
+    globalThis.__DWEB_MODE__ = "csr";
     globalThis.__DWEB_ROUTES__ = ${JSON.stringify(routes)};
     globalThis.__DWEB_ENGINE__ = "${engine}";
     globalThis.__DWEB_CONTAINER_ID__ = "${containerId}";

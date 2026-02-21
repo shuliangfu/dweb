@@ -40,7 +40,7 @@ export const FALLBACK_DWEB_VERSION = "3.0.0";
  * ```
  */
 export const FALLBACK_RUNTIME_ADAPTER_SPEC =
-  "jsr:@dreamer/runtime-adapter@^1.0.13-beta.26";
+  "jsr:@dreamer/runtime-adapter@^1.0.15-beta.26";
 
 /**
  * 无法读取 deno.json 时的默认 plugins 版本
@@ -276,12 +276,19 @@ export async function loadDwebDenoJson(): Promise<DwebDenoConfig | null> {
 /**
  * 获取 dweb 框架版本号
  *
+ * - 生产 bundle 运行：优先返回构建时注入的 globalThis.__DWEB_VERSION__（避免 import.meta.url 指向 dist 导致读错 deno.json）
  * - 本地运行：从 deno.json 读取
  * - JSR 远程运行：1) 先读缓存；2) 缓存无则请求网络；3) 请求成功则写入缓存
  *
  * @returns 版本号字符串
  */
 export async function getDwebVersion(): Promise<string> {
+  // 0. 生产构建产物运行时有注入的版本号，直接使用
+  const injected =
+    (globalThis as { __DWEB_VERSION__?: string }).__DWEB_VERSION__;
+  if (typeof globalThis !== "undefined" && injected) {
+    return injected;
+  }
   // 1. JSR 远程运行时，先尝试从缓存读取（避免每次请求网络）
   if (isRemoteRun()) {
     const cached = await readVersionCache();

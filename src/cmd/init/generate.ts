@@ -10,7 +10,7 @@ import {
   platform,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
-import { $t } from "../../utils/i18n.ts";
+import { $tr } from "../../utils/i18n.ts";
 import { fetchDreamerVersions } from "../../utils/jsr-versions.ts";
 import {
   type DwebDenoConfig,
@@ -239,15 +239,15 @@ export async function generate(opts: InitOptions): Promise<void> {
   }
 
   const useBeta = opts.useBeta ?? false;
-  startSpinner($t("init.fetchingVersions"));
+  startSpinner($tr("init.fetchingVersions"));
   let dwebConfig: DwebDenoConfig | null = null;
   let jsrVersions: JsrVersions;
   try {
     dwebConfig = await loadDwebDenoJson();
     jsrVersions = await fetchDreamerVersions(useBeta, dwebConfig);
-    succeedSpinner($t("init.fetched"));
+    succeedSpinner($tr("init.fetched"));
   } catch {
-    failSpinner($t("init.fetchFailed"));
+    failSpinner($tr("init.fetchFailed"));
     jsrVersions = {
       dweb: dwebConfig?.version ?? FALLBACK_DWEB_VERSION,
       render: "1.0.0",

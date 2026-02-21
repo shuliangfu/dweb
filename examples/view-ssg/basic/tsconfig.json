@@ -1,3 +1,11 @@
 {
-  "compilerOptions": { "jsx": "react-jsx", "jsxImportSource": "@dreamer/view" }
+  "compilerOptions": {
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "jsxImportSource": "@dreamer/view",
+    "paths": {
+      "@dreamer/dweb": ["../../../src/mod.ts"],
+      "@dreamer/dweb/*": ["../../../src/*"]
+    }
+  }
 }

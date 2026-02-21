@@ -44,7 +44,7 @@ import {
   CLIENT_OUTPUT_MAIN_FILENAME,
   DWEB_DATA_PATH,
 } from "../utils/constants.ts";
-import { $t } from "../utils/i18n.ts";
+import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { normalizePathForCompare, pathForLog } from "../utils/path.ts";
 
@@ -299,6 +299,14 @@ const ENGINE_RENDER_ADAPTER: Record<string, string> = {
   view: "@dreamer/render/client/view",
 };
 
+/** View 引擎按 renderMode 的适配路径：csr 用 view-csr（仅 CSR），hybrid/ssr/ssg 用 view-hybrid（含 hydrate） */
+const VIEW_ADAPTER_BY_MODE: Record<ClientDepRenderMode, string> = {
+  csr: "@dreamer/render/client/view-csr",
+  hybrid: "@dreamer/render/client/view-hybrid",
+  ssr: "@dreamer/render/client/view-hybrid",
+  ssg: "@dreamer/render/client/view-hybrid",
+};
+
 /** 渲染模式：csr 仅客户端渲染；hybrid/ssr/ssg 均需客户端 hydrate，故 view 用 hybrid 入口 */
 type ClientDepRenderMode = "csr" | "hybrid" | "ssr" | "ssg";
 
@@ -309,7 +317,8 @@ type ClientDepRenderMode = "csr" | "hybrid" | "ssr" | "ssg";
  * 注意：客户端 loadLayouts 仅加载 _layout，不加载 _app。_app 是服务端文档根（输出 html/body），容器 #app 在其内部，
  * 故 hydrate/CSR 只需 Layout(Page)，否则会将 App 渲染进容器导致嵌套 html/body 或 hydrate 不匹配。
  *
- * View 引擎按 renderMode 区分：csr 用 @dreamer/view/csr（无 hydrate，bundle 更小）；hybrid/ssr/ssg 用 @dreamer/view/hybrid（含 hydrate）。
+ * View 引擎按 renderMode 区分：csr 用 @dreamer/render/client/view-csr（仅 createReactiveRoot/buildViewTree/renderCSR，bundle 更小）；
+ * hybrid/ssr/ssg 用 @dreamer/render/client/view（主包完整适配器，含 hydrate、createReactiveRootHydrate）。
  * SSR/SSG 的客户端激活与 hybrid 一致，均为 hydrate，不是 csr。
  *
  * @param engine 渲染引擎（用于 hydrate/renderCSR 导入及 setupHydrationRouterAndHmr）
@@ -329,13 +338,26 @@ function generateClientDepContent(
   const adapterImport = ENGINE_RENDER_ADAPTER[engine] ??
     "@dreamer/render/client/preact";
   const isViewEngine = engine === "view";
-  /** view + csr：仅 CSR，用 view/csr；view + hybrid|ssr|ssg：需 hydrate，用 view/hybrid */
-  const viewImport = renderMode === "csr"
-    ? 'import { createSignal } from "@dreamer/view/csr";'
-    : 'import { createSignal } from "@dreamer/view/hybrid";';
+  /** view + csr：用 view-csr 适配器（仅 createReactiveRoot/buildViewTree/renderCSR）；view + hybrid|ssr|ssg：用 view-hybrid（含 hydrate/createReactiveRootHydrate） */
+  const viewAdapterPath = isViewEngine
+    ? VIEW_ADAPTER_BY_MODE[renderMode]
+    : adapterImport;
+  const viewImport = isViewEngine && renderMode === "csr"
+    ? 'import { createSignal, mount } from "@dreamer/view/csr";'
+    : isViewEngine
+    ? 'import { createSignal, mount } from "@dreamer/view/hybrid";'
+    : "";
   const renderAdapterImport = isViewEngine
-    ? `${viewImport}
-import { hydrate, renderCSR, createReactiveRoot, buildViewTree } from "${adapterImport}";`
+    ? (renderMode === "csr"
+      ? `import { createSignal, mount } from "@dreamer/view/csr";
+import { renderCSR, buildViewTree } from "${viewAdapterPath}";`
+      : `${viewImport}
+import {
+  buildViewTree,
+  createReactiveRoot,
+  createReactiveRootHydrate,
+  hydrate,
+} from "${viewAdapterPath}";`)
     : `import { hydrate, renderCSR } from "${adapterImport}";`;
   /** API 路由（api/ 下）仅服务端使用，不加入 ROUTE_LOADERS，避免客户端 bundle 解析 .ts 或错误引用 */
   const pageComponents = components.filter(
@@ -361,9 +383,9 @@ export async function loadLayouts(): Promise<LayoutComponent[]> {
       cachedLayouts = [{ component: LayoutComponent, props: {} }];
       return cachedLayouts;
     }
-    console.warn(${JSON.stringify($t("client.layoutDefaultExport"))});
+    console.warn(${JSON.stringify($tr("client.layoutDefaultExport"))});
   } catch (error) {
-    console.warn(${JSON.stringify($t("client.layoutLoadFailed"))}, error);
+    console.warn(${JSON.stringify($tr("client.layoutLoadFailed"))}, error);
   }
   cachedLayouts = [];
   return cachedLayouts;
@@ -401,13 +423,25 @@ export function clearLayoutCache(): void {
     });
     RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;`;
 
-  /** View Hybrid：hydrate 成功后立即用当前页状态创建 reactive root，后续点击链接只更新 signal 做 patch，避免首次点击空白 */
-  const afterHydrateViewTakeoverSnippet = isViewEngine
-    ? `
-      unmountPrevious();
-      setViewState({ page: PageComponent, props: hydrationData.page || { params: hydrationData.params || {}, query: hydrationData.query || {} }, layouts: skipLayouts ? [] : layouts, skipLayouts });
-      _viewEnsureReactiveRoot(containerId);`
-    : "";
+  /** View Hybrid：首屏只 setViewState + createReactiveRootHydrate，一次水合同一根后续 patch；非 View 走 render 的 hydrate。 */
+  const hybridInitBlock = isViewEngine
+    ? `setViewState({ page: PageComponent, props: hydrationData.page || { params: hydrationData.params || {}, query: hydrationData.query || {} }, layouts: skipLayouts ? [] : layouts, skipLayouts });
+      _viewEnsureReactiveRoot(containerId);
+      isHydratedRef.current = true;`
+    : `const hydResult = await hydrate({
+        engine,
+        component: PageComponent,
+        container: \`#\${containerId}\`,
+        props: hydrationData.page || {
+          params: hydrationData.params || {},
+          query: hydrationData.query || {},
+        },
+        layouts: skipLayouts ? undefined : layouts,
+        skipLayouts,
+        debug: !!(_win.__DWEB_DEBUG__),
+      });
+      RENDER_STATE.lastUnmount = hydResult?.unmount ?? null;
+      isHydratedRef.current = true;`;
 
   // __data 仅在 onRouteChange 内请求。同页锚点虽不触发 router 的 navigate，但浏览器改 hash 可能触发 popstate，仍会进 onRouteChange，
   // 故用 pathname+search 判断：与上次相同则视为「同页仅 hash」，不请求 __data。保留 pathname 保留字(/_*、/__data 等)也不请求。
@@ -462,7 +496,18 @@ export function clearLayoutCache(): void {
       ${csrInitialPropsSnippet}
       setViewState({ page: PageComponent, props: _props, layouts: layoutList, skipLayouts });
       if (!_viewReactiveRoot && RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
-      _viewEnsureReactiveRoot(containerId);
+      // 首屏与 view 的 mount() 一致：同步执行 _viewEnsureReactiveRoot，避免 queueMicrotask 延后导致首屏事件未绑定；非首屏（已有 root）仍用 queueMicrotask 避免阻塞
+      if (!_viewReactiveRoot) {
+        _viewEnsureReactiveRoot(containerId);
+        _win.__DWEB_ON_READY__?.();
+      } else {
+        if (typeof queueMicrotask === "function") {
+          queueMicrotask(() => { _viewEnsureReactiveRoot(containerId); _win.__DWEB_ON_READY__?.(); });
+        } else {
+          _viewEnsureReactiveRoot(containerId);
+          _win.__DWEB_ON_READY__?.();
+        }
+      }
       if (_win.__DWEB_DEBUG__) console.log("[dweb:view] renderCurrentRoute done");`
     : `if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
       const _container = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
@@ -629,9 +674,9 @@ export function renderNotFound(containerId: string): void {
     container.innerHTML = \`
       <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:system-ui,sans-serif;">
         <h1 style="font-size:72px;margin:0;color:#e5e5e5;">404</h1>
-        <p style="color:#666;margin-top:16px;">${$t("client.pageNotFound")}</p>
+        <p style="color:#666;margin-top:16px;">${$tr("client.pageNotFound")}</p>
         <a href="/" style="color:#3b82f6;text-decoration:none;margin-top:24px;">${
-    $t("client.backToHome")
+    $tr("client.backToHome")
   }</a>
       </div>
     \`;
@@ -656,11 +701,11 @@ export function renderError(containerId: string, error: unknown): void {
     container.innerHTML = \`
       <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:system-ui,sans-serif;">
         <h1 style="font-size:48px;margin:0;color:#ef4444;">${
-    $t("client.errorOccurred")
+    $tr("client.errorOccurred")
   }</h1>
         <p style="color:#666;margin-top:16px;">\${escapeHtml(message)}</p>
         <button type="button" onclick="location.reload()" style="margin-top:24px;padding:8px 24px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;">
-          ${$t("client.reload")}
+          ${$tr("client.reload")}
         </button>
       </div>
     \`;
@@ -694,11 +739,11 @@ export const RENDER_STATE: { lastUnmount: (() => void) | null } = { lastUnmount:
 ${
     isViewEngine
       ? `
-/** View 引擎：用 createSignal 存当前页/布局/props，createReactiveRoot(container, getState, buildTree) 的 effect 会订阅 getState，setViewState 后自动 patch，不整树卸载 */
+/** View 引擎：用 createSignal 存当前页/布局/props；CSR 用 mount(selector, fn) 与 view 示例一致，fn 内读 getViewState() 实现响应式 patch；Hybrid/SSR/SSG 用 createReactiveRootHydrate。 */
 const [getViewState, setViewState] = createSignal({ page: null as unknown, props: {} as Record<string, unknown>, layouts: [] as LayoutComponent[], skipLayouts: false });
 let _viewReactiveRoot: { unmount: () => void } | null = null;
 
-/** View 引擎：无 reactive root 时创建（getState 为 signal getter，后续 setViewState 会触发 effect 重跑并细粒度 patch）。CSR 时 #app 内已有服务端渲染的 Layout(LoadingPlaceholder)，首次挂载前清空容器避免重复布局、主体被挡在后面。__DWEB_DEBUG__ 为 true 时输出详细渲染日志。 */
+/** View 引擎：无 reactive root 时创建。CSR 用 mount(selector, () => buildViewTree(getViewState()...)) 与 view 示例一致；Hybrid/SSR/SSG 且容器有服务端 HTML 时用 createReactiveRootHydrate。 */
 function _viewEnsureReactiveRoot(containerId: string): void {
   const el = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
   if (!el) {
@@ -706,14 +751,17 @@ function _viewEnsureReactiveRoot(containerId: string): void {
     return;
   }
   if (!_viewReactiveRoot) {
-    if (_win.__DWEB_DEBUG__) console.log("[dweb:view] _viewEnsureReactiveRoot: clearing #" + containerId + ", currentChildCount=" + (el as HTMLElement).childNodes.length);
+    const mode = _win.__DWEB_MODE__;
+    const isHydrateMode = mode === "hybrid" || mode === "ssr" || mode === "ssg";
+    // CSR 时服务端已在 #app 内渲染 Layout(Loading)；mount() 会 appendChild，先清空避免两屏。Hybrid/SSR/SSG 同需清空再挂载。
+    if (_win.__DWEB_DEBUG__) console.log("[dweb:view] _viewEnsureReactiveRoot: clearing #" + containerId + (isHydrateMode ? " (mount mode)" : " (csr, replace loading shell)"));
     if (typeof (el as HTMLElement).replaceChildren === "function") (el as HTMLElement).replaceChildren(); else (el as HTMLElement).innerHTML = "";
-    const buildTree = (state: { page: unknown; props: Record<string, unknown>; layouts: LayoutComponent[]; skipLayouts: boolean }) => {
-      if (_win.__DWEB_DEBUG__) console.log("[dweb:view] buildTree", { hasPage: !!state.page, layoutsLen: state.layouts?.length ?? 0, skipLayouts: state.skipLayouts });
-      if (state.page == null && _win.__DWEB_DEBUG__) console.warn("[dweb:view] buildTree: state.page is null");
-      return buildViewTree(state.page, state.props, state.layouts, state.skipLayouts);
-    };
-    _viewReactiveRoot = createReactiveRoot(el as HTMLElement, getViewState, buildTree);
+    _viewReactiveRoot = mount("#" + containerId, () => {
+      const s = getViewState();
+      if (_win.__DWEB_DEBUG__) console.log("[dweb:view] mount fn", { hasPage: !!s.page, layoutsLen: s.layouts?.length ?? 0, skipLayouts: s.skipLayouts });
+      if (s.page == null && _win.__DWEB_DEBUG__) console.warn("[dweb:view] mount: s.page is null");
+      return buildViewTree(s.page, s.props, s.layouts, s.skipLayouts);
+    }, { noopIfNotFound: true });
     if (_win.__DWEB_DEBUG__) console.log("[dweb:view] _viewEnsureReactiveRoot: done, container childCount=" + (el as HTMLElement).childNodes.length);
     RENDER_STATE.lastUnmount = () => {
       _viewReactiveRoot?.unmount();
@@ -768,30 +816,17 @@ export async function setupHydrationRouterAndHmr(opts: {
       const PageComponent = module?.default ?? module?.Page;
       if (!PageComponent) {
         const msg = ${
-    JSON.stringify($t("client.hydrationFailed"))
+    JSON.stringify($tr("client.hydrationFailed"))
   } + (componentPath ? \`: component "\${componentPath}" not found\` : "");
         console.error(msg);
         renderError(containerId, new Error(msg));
         return;
       }
       const skipLayouts = module?.inheritLayout === false;
-      const hydResult = await hydrate({
-        engine,
-        component: PageComponent,
-        container: \`#\${containerId}\`,
-        props: hydrationData.page || {
-          params: hydrationData.params || {},
-          query: hydrationData.query || {},
-        },
-        layouts: skipLayouts ? undefined : layouts,
-        skipLayouts,
-        debug: !!(_win.__DWEB_DEBUG__),
-      });
-      RENDER_STATE.lastUnmount = hydResult?.unmount ?? null;
-      isHydratedRef.current = true;${afterHydrateViewTakeoverSnippet}
+      ${hybridInitBlock}
     } catch (error) {
       console.error(${
-    JSON.stringify($t("client.hydrationFailed"))
+    JSON.stringify($tr("client.hydrationFailed"))
   } + ":", error);
       renderError(containerId, error);
     }
@@ -799,7 +834,7 @@ export async function setupHydrationRouterAndHmr(opts: {
   g.__HMR_REFRESH__ = (hmrOpts) => {
     const chunkUrl = hmrOpts?.chunkUrl;
     if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-      console.log(${JSON.stringify($t("client.hmrDebugEnabled"))});
+      console.log(${JSON.stringify($tr("client.hmrDebugEnabled"))});
     }
     for (const key of Object.keys(MODULE_CACHE)) delete MODULE_CACHE[key];
     clearLayoutCache();
@@ -807,7 +842,7 @@ export async function setupHydrationRouterAndHmr(opts: {
     const match = router.match(pathname);
     if (!match) {
       if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-        console.log(${JSON.stringify($t("client.hmrNoMatchRenderNotFound"))});
+        console.log(${JSON.stringify($tr("client.hmrNoMatchRenderNotFound"))});
       }
       unmountPrevious(); renderNotFound(containerId); return;
     }
@@ -827,7 +862,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         comp === chunkBaseFromUrl ||
         (compBase === "index" && chunkBaseFromUrl === "routes"));
     if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-      console.log(${JSON.stringify($t("client.hmrChunkUrlMatch"))}, {
+      console.log(${JSON.stringify($tr("client.hmrChunkUrlMatch"))}, {
         chunkUrl,
         chunkBaseFromUrl,
         comp,
@@ -842,7 +877,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         const busted = path + (path.includes("?") ? "&" : "?") + "t=" + Date.now();
         if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
           console.log(${
-    JSON.stringify($t("client.hmrForceFetchWithChunkUrl"))
+    JSON.stringify($tr("client.hmrForceFetchWithChunkUrl"))
   }, busted);
         }
         return import(/* @vite-ignore */ busted);
@@ -860,7 +895,7 @@ export async function setupHydrationRouterAndHmr(opts: {
       .then((mod) => {
         if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
           console.log(${
-    JSON.stringify($t("client.hmrLoadModuleComplete"))
+    JSON.stringify($tr("client.hmrLoadModuleComplete"))
   }, { hasDefault: !!(mod as Record<string, unknown>)?.default, componentPath: match.route.component });
         }
         const modObj = mod as Record<string, unknown>;
@@ -871,7 +906,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         return loadLayouts().then(async (layoutList) => {
           if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
             console.log(${
-    JSON.stringify($t("client.hmrRenderCsrBefore"))
+    JSON.stringify($tr("client.hmrRenderCsrBefore"))
   }, { componentPath: match.route.component });
           }
           // 新模块已就绪，在 render 前一刻执行 unmount + 移除旧 CSS，最小化空白时间，消除闪动
@@ -879,7 +914,7 @@ export async function setupHydrationRouterAndHmr(opts: {
           oldCssEls.forEach(function(el) { el.remove(); });
           ${hmrRenderSnippet}
           if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
-            console.log(${JSON.stringify($t("client.hmrRenderCsrComplete"))});
+            console.log(${JSON.stringify($tr("client.hmrRenderCsrComplete"))});
           }
           if (typeof _win.scrollTo === "function") {
             const sx = scrollX;
@@ -912,11 +947,11 @@ export async function setupHydrationRouterAndHmr(opts: {
       .catch((err) => {
         if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
           console.error(${
-    JSON.stringify($t("client.hmrLoadModuleRenderFailed"))
+    JSON.stringify($tr("client.hmrLoadModuleRenderFailed"))
   }, err);
         }
         console.warn(${
-    JSON.stringify($t("client.hmrFallback"))
+    JSON.stringify($tr("client.hmrFallback"))
   } + ":", err?.message || err);
         if (typeof _win.location !== "undefined") {
           _win.location.reload();
@@ -941,7 +976,9 @@ export async function setupHydrationRouterAndHmr(opts: {
       const skipLayouts = module.inheritLayout === false;
       ${onRouteChangeRenderSnippet}
     } catch (error) {
-      console.error(${JSON.stringify($t("client.pageLoadError"))} + ":", error);
+      console.error(${
+    JSON.stringify($tr("client.pageLoadError"))
+  } + ":", error);
       unmountPrevious();
       renderError(containerId, error);
     }
@@ -1002,7 +1039,9 @@ export async function initApp(): Promise<DwebApp> {
       const layoutList = await loadLayouts();
       ${renderCurrentRouteSnippet}
     } catch (error) {
-      console.error(${JSON.stringify($t("client.pageLoadError"))} + ":", error);
+      console.error(${
+    JSON.stringify($tr("client.pageLoadError"))
+  } + ":", error);
       if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
       renderError(containerId, error);
     }
@@ -1010,6 +1049,8 @@ export async function initApp(): Promise<DwebApp> {
 
   // CSR 模式：router.start() 不会用当前 URL 触发 onRouteChange，首屏需主动渲染当前路由
   if (!isHybridMode) await renderCurrentRoute();
+  // View + Hybrid：若 hydrate 后仍未创建 reactive root（例如服务端未注入 __DATA__ 导致未走 hydrate 分支），则首屏也执行一次 renderCurrentRoute，确保首次刷新即调用 createReactiveRoot
+  else if (engine === "view" && !_viewReactiveRoot) await renderCurrentRoute();
   return { renderCurrentRoute, router };
 }
 `;
@@ -1047,7 +1088,7 @@ initApp()
       app.router.match(pathname);
     if (currentRoute) {
       console.log(
-        ${JSON.stringify($t("client.routeCurrent"))},
+        ${JSON.stringify($tr("client.routeCurrent"))},
         currentRoute.route.component,
         currentRoute.params,
       );
@@ -1066,7 +1107,7 @@ initApp()
     app.router.afterRoute((to, _from) => {
       if (to) {
         console.log(${
-    JSON.stringify($t("client.routeSwitched"))
+    JSON.stringify($tr("client.routeSwitched"))
   }, to.route.component, to.params, to.query);
       }
     });
@@ -1111,7 +1152,7 @@ export async function ensureClientEntryFile(
 
   if (await exists(tempClientEntryPath)) {
     logger.debug(
-      $t("log.clientEntryExists", {
+      $tr("log.clientEntryExists", {
         path: pathForLog(tempClientEntryPath),
       }),
     );
@@ -1128,7 +1169,7 @@ export async function ensureClientEntryFile(
     renderMode,
   );
   await writeTextFile(clientDepPath, clientDepCode);
-  logger.debug($t("log.clientDepGenerated", {
+  logger.debug($tr("log.clientDepGenerated", {
     path: pathForLog(clientDepPath),
   }));
 
@@ -1139,7 +1180,7 @@ export async function ensureClientEntryFile(
     hmrCssEntries,
   );
   await writeTextFile(tempClientEntryPath, clientEntryCode);
-  logger.debug($t("log.clientEntryGenerated", {
+  logger.debug($tr("log.clientEntryGenerated", {
     path: pathForLog(tempClientEntryPath),
   }));
   return tempClientEntryPath;
@@ -1190,7 +1231,7 @@ export async function prepareClientBuildEntry(
   const renderMode = (renderConfig.mode ?? "hybrid") as ClientDepRenderMode;
 
   const components = await scanRouteComponents(routesDirPath, "", engine);
-  logger.debug($t("log.routesScanned", { count: String(components.length) }));
+  logger.debug($tr("log.routesScanned", { count: String(components.length) }));
 
   const layoutPathTsx = join(routesDirPath, "_layout.tsx");
   const hasLayout = await exists(layoutPathTsx);
@@ -1210,7 +1251,7 @@ export async function prepareClientBuildEntry(
   );
   await writeTextFile(clientDepPath, clientDepCode);
   logger.debug(
-    $t("log.clientDepRefreshed", { path: pathForLog(clientDepPath) }),
+    $tr("log.clientDepRefreshed", { path: pathForLog(clientDepPath) }),
   );
 
   // _client.tsx 不存在时生成（确保父目录存在）
@@ -1223,7 +1264,7 @@ export async function prepareClientBuildEntry(
       hmrCssEntries,
     );
     await writeTextFile(tempClientEntryPath, clientEntryCode);
-    logger.debug($t("log.clientEntryGenerating", {
+    logger.debug($tr("log.clientEntryGenerating", {
       path: pathForLog(tempClientEntryPath),
     }));
   }
@@ -1297,7 +1338,7 @@ function wrapLoggerForBuildDebug(
   return {
     ...logger,
     debug: (msg: string, data?: unknown) => {
-      console.log("[esbuild]", msg, data !== undefined ? data : "");
+      // 只打一次：用 logger.debug，避免与 logger 自带的 [DEBUG] 重复（不再额外 console.log）
       logger.debug(msg, data);
     },
   };
@@ -1380,7 +1421,7 @@ export async function buildClientScript(
 
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
 
-  logger.debug($t("log.clientScriptBuilding", {
+  logger.debug($tr("log.clientScriptBuilding", {
     path: pathForLog(tempClientEntryPath),
   }));
 
@@ -1421,7 +1462,7 @@ export async function buildClientScript(
 
     // 扫描路由目录，获取所有路由组件（.tsx/.jsx）
     const components = await scanRouteComponents(routesDirPath, "", engine);
-    logger.debug($t("log.routesScanned", {
+    logger.debug($tr("log.routesScanned", {
       count: String(components.length),
     }));
 
@@ -1443,12 +1484,12 @@ export async function buildClientScript(
     );
     if (!skipWritingClientDep) {
       await writeTextFile(clientDepPath, clientDepCode);
-      logger.debug($t("log.clientDepRefreshed", {
+      logger.debug($tr("log.clientDepRefreshed", {
         path: pathForLog(clientDepPath),
       }));
     } else {
       logger.debug(
-        $t("log.hmrSkipClientDep", { filename: CLIENT_DEP_FILENAME }),
+        $tr("log.hmrSkipClientDep", { filename: CLIENT_DEP_FILENAME }),
       );
     }
 
@@ -1462,7 +1503,7 @@ export async function buildClientScript(
         hmrCssEntries,
       );
       await writeTextFile(tempClientEntryPath, clientEntryCode);
-      logger.debug($t("log.clientEntryGenerating", {
+      logger.debug($tr("log.clientEntryGenerating", {
         path: pathForLog(tempClientEntryPath),
       }));
     }
@@ -1557,12 +1598,12 @@ export async function buildClientScript(
 
       // 输出构建信息
       logger.info(
-        $t("log.clientBuildOutput", { count: String(outputFiles.size) }),
+        $tr("log.clientBuildOutput", { count: String(outputFiles.size) }),
       );
       for (const file of fileList) {
         logger.info(file);
       }
-      logger.info($t("log.clientBuildTotalSize", {
+      logger.info($tr("log.clientBuildTotalSize", {
         size: (totalSize / 1024).toFixed(1),
       }));
 
@@ -1590,7 +1631,7 @@ export async function buildClientScript(
         try {
           buildResultDev = await cachedDevBuilder.rebuild();
         } catch (err) {
-          logger.warn($t("log.hmrIncrementalRebuildFailed") + ":", err);
+          logger.warn($tr("log.hmrIncrementalRebuildFailed") + ":", err);
           await cachedDevBuilder.dispose();
           cachedDevBuilder = null;
           buildResultDev = await doDevBuild(
@@ -1671,7 +1712,7 @@ export async function buildClientScript(
 
       const mainCodeDev = outputFilesDev.get(CLIENT_OUTPUT_MAIN_FILENAME) || "";
       logger.debug(
-        $t("log.clientBuildCompleteMemory", {
+        $tr("log.clientBuildCompleteMemory", {
           mainSize: (mainCodeDev.length / 1024).toFixed(1),
           count: String(outputFilesDev.size),
         }),
@@ -1721,7 +1762,7 @@ export async function buildClientScript(
             chunkUrlDev = `/${chunkFileName}`;
           } else {
             logger.warn(
-              $t("log.hmrChunkNotFound", {
+              $tr("log.hmrChunkNotFound", {
                 path: componentPath,
                 files: outputNames.join(", "),
               }),
@@ -1729,7 +1770,7 @@ export async function buildClientScript(
           }
         } else if (!isClientEntry) {
           logger.warn(
-            $t("log.hmrComponentPathNotFound", {
+            $tr("log.hmrComponentPathNotFound", {
               changedPath: options.changedPath ?? "",
               routesDirPath,
             }),
@@ -1754,10 +1795,10 @@ export async function buildClientScript(
     // 缓存结果
     cachedClientScript = result;
 
-    logger.debug($t("log.clientScriptBuildComplete"));
+    logger.debug($tr("log.clientScriptBuildComplete"));
     return result;
   } catch (error) {
-    logger.error($t("log.clientBuildFailed") + ":", error);
+    logger.error($tr("log.clientBuildFailed") + ":", error);
 
     // 返回一个错误提示脚本（运行时通过 escapeHtml 转义 errorMessage，防止 XSS）
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -1768,12 +1809,12 @@ export async function buildClientScript(
         }
         var errorMessage = ${JSON.stringify(errorMessage)};
         console.error(${
-      JSON.stringify($t("log.clientBuildFailed"))
+      JSON.stringify($tr("log.clientBuildFailed"))
     } + ":", errorMessage);
         var container = document.getElementById("app");
         if (container) {
           container.innerHTML = '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:system-ui,sans-serif;"><h1 style="font-size:48px;margin:0;color:#ef4444;">${
-      $t("client.buildError")
+      $tr("client.buildError")
     }</h1><pre style="color:#666;margin-top:16px;max-width:80%;overflow:auto;background:#f5f5f5;padding:16px;border-radius:8px;">' + escapeHtml(errorMessage) + '</pre></div>';
         }
       })();
