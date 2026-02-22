@@ -10,6 +10,11 @@
 import { IS_BUN, IS_DENO, platform } from "@dreamer/runtime-adapter";
 import { DwebErrorCode, throwDwebError } from "./errors.ts";
 
+export {
+  IS_BUN,
+  IS_DENO,
+};
+
 /**
  * 判断当前是否为 Windows 平台
  *

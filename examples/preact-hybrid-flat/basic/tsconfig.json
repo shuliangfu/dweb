@@ -1,12 +1,15 @@
 {
+  "extends": "../../../tsconfig.json",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
       "@dreamer/dweb": ["../../../src/mod.ts"],
       "@dreamer/dweb/*": ["../../../src/*"],
-      
-      "@dreamer/render": ["../../../../render/src/mod.ts"],
-      "@dreamer/render/*": ["../../../../render/src/*"]
+      "preact": ["../../../node_modules/preact"],
+      "preact/*": ["../../../node_modules/preact/*"],
+      "preact-render-to-string": [
+        "../../../node_modules/preact-render-to-string"
+      ]
     }
   }
 }

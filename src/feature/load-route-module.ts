@@ -22,13 +22,13 @@ import {
   readTextFile,
   realPath,
   remove,
+  resolve,
   writeTextFile,
 } from "../core/runtime-adapter.ts";
+import { getCacheOptions } from "../utils/constants.ts";
 import { $tr } from "../utils/i18n.ts";
 import { isPathWithinProject } from "../utils/path.ts";
-import { getCacheOptions } from "../utils/constants.ts";
 import { getModuleVersion } from "./module-cache.ts";
-import { resolve } from "../core/runtime-adapter.ts";
 
 /** 仅匹配 import "xxx.css" 或 import 'xxx.css' 形式的副作用导入（支持单双引号） */
 const CSS_IMPORT_RE = /^\s*import\s+["'][^"']*\.css["']\s*;?\s*$/gm;
@@ -238,10 +238,12 @@ export async function loadRouteModule(
 
       // 缓存未命中：写入临时文件、import、缓存结果
       const dir = dirname(absPath);
-      tempPath = join(
-        dir,
-        `.dweb-ssr-${Date.now()}-${Math.random().toString(36).slice(2)}.tsx`,
-      );
+      const tempFile = `.dweb-ssr-${Date.now()}-${
+        Math.random().toString(36).slice(2)
+      }.tsx`;
+
+      tempPath = join(dir, tempFile);
+
       try {
         await writeTextFile(tempPath, stripped);
         // Windows：用正向斜杠生成 file URL，避免动态 import 解析差异
