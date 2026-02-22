@@ -244,41 +244,11 @@ export async function runBuildWithBuilder(
     ? join(serverOutputDir, "server")
     : serverOutputDir;
 
-  // 按渲染引擎注入服务端 external，避免 Preact/React 被打包导致与动态加载的 _app 双实例，SSR 输出为空。
-  const renderConfig = (config.render || {}) as {
-    engine?: "react" | "preact" | "view";
-  };
-  const engine = renderConfig.engine || "preact";
-  const userServerExternal =
-    (serverConfig as { external?: string[] }).external ?? [];
-  // 按渲染引擎注入服务端 external，避免 Preact/React 被打包导致与动态加载的 _app 双实例，SSR 输出为空。
-  const runtimeServerExternal = engine === "preact"
-    ? [
-      "preact",
-      "preact-render-to-string",
-      "preact/hooks",
-      "preact/jsx-runtime",
-    ]
-    : engine === "react"
-    ? ["react", "react-dom", "react/jsx-runtime", "react-dom/client"]
-    : ["@dreamer/view", "@dreamer/view/jsx-runtime"];
-  // Bun 下若打包进服务端会因 require("../pkg") 等原生模块解析失败，故统一 external；Deno 用 esbuild 时 npm 已被 resolver 标 external，多写无害
-  const nativeServerExternal = ["tailwindcss", "lightningcss"];
-  const mergedServerExternal = [
-    ...new Set([
-      ...runtimeServerExternal,
-      ...nativeServerExternal,
-      ...userServerExternal,
-    ]),
-  ];
-
   const esbuildServerConfig: ServerConfig = {
     entry: serverEntry,
     output: serverOutput,
     useNativeCompile,
-    external: mergedServerExternal.length > 0
-      ? mergedServerExternal
-      : undefined,
+    external: (serverConfig as { external?: string[] }).external,
     externalNpm: !useNativeCompile,
     debug: (serverConfig as { debug?: boolean }).debug,
     logger,

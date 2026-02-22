@@ -45,6 +45,7 @@ const app = new App({
   build: {
     server: {
       useNativeCompile: false,
+      external: ["tailwindcss", "lightningcss"],
     },
   },
 });

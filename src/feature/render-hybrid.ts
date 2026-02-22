@@ -224,7 +224,7 @@ export function createRendererHybrid(
       const isDev =
         (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
       const debugRender = renderConfig.debug === true;
-      
+
       const result = await renderService.renderSSR({
         engine,
         component: PageComponent,
@@ -232,7 +232,7 @@ export function createRendererHybrid(
         layouts,
         loadContext,
         contextData,
-        debug: debugRender
+        debug: debugRender,
       });
 
       // 获取渲染的 HTML 内容

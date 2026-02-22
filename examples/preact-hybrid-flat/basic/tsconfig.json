@@ -1,15 +1,10 @@
 {
-  "extends": "../../../tsconfig.json",
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@dreamer/dweb": ["../../../src/mod.ts"],
-      "@dreamer/dweb/*": ["../../../src/*"],
-      "preact": ["../../../node_modules/preact"],
-      "preact/*": ["../../../node_modules/preact/*"],
-      "preact-render-to-string": [
-        "../../../node_modules/preact-render-to-string"
-      ]
-    }
-  }
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
 }

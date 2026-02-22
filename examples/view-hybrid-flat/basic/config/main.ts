@@ -44,7 +44,7 @@ const config: AppConfig = {
     level: "info",
   },
 
-  // 构建配置
+  // 构建配置（服务端 external 含 tailwindcss/lightningcss，避免 Bun 打包原生模块报错）
   build: {
     server: {
       useNativeCompile: false,

@@ -460,18 +460,22 @@ export function clearLayoutCache(): void {
         _navProps = { params: match.params || {}, query: match.query || {} };
       }
       (g as DwebGlobal).__DWEB_LAST_PATHNAME__ = _pathAndSearch;`;
-  /** View：先 setViewState，无 reactive root 时才 unmountPrevious，再 ensureReactiveRoot，实现细粒度 patch */
+  /**
+   * View / React/Preact 统一：先拉取 __data（旧内容仍可见），
+   * 再 unmount/清空（View 仅在无 reactive root 时 unmount，
+   * 有 root 时仅 setViewState 做就地 patch），最后应用新视图
+   */
   const onRouteChangeRenderSnippet = isViewEngine
     ? `if (_win.__DWEB_DEBUG__) console.log("[dweb:view] onRouteChange", { component: match.route.component, hasPage: !!PageComponent });
       ${fetchRouteDataSnippet}
-      setViewState({ page: PageComponent, props: _navProps, layouts, skipLayouts });
       if (!_viewReactiveRoot) unmountPrevious();
+      setViewState({ page: PageComponent, props: _navProps, layouts, skipLayouts });
       _viewEnsureReactiveRoot(containerId);
       (g as DwebGlobal).__DWEB_ON_READY__?.();`
-    : `unmountPrevious();
+    : `${fetchRouteDataSnippet}
+      unmountPrevious();
       const _container = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
       if (_container && typeof _container.replaceChildren === "function") _container.replaceChildren();
-      ${fetchRouteDataSnippet}
       const csrResult = await renderCSR({
         engine,
         component: PageComponent,

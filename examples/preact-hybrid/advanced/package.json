@@ -1,18 +1,17 @@
 {
   "name": "dweb-example-preact-hybrid-advanced",
+  "description": "Dweb example (multi-app). Bun: bun run dev:backend | dev:frontend | build:backend | build:frontend | start:backend | start:frontend",
   "private": true,
   "scripts": {
     "dev:backend": "bun run src/backend/main.ts",
     "dev:frontend": "bun run src/frontend/main.ts",
     "build:backend": "bun run src/backend/main.ts --build",
     "build:frontend": "bun run src/frontend/main.ts --build",
-    "start:backend": "DENO_ENV=prod bun run dist/backend/server.js",
-    "start:frontend": "DENO_ENV=prod bun run dist/frontend/server.js"
+    "start:backend": "bun run dist/backend/server.js",
+    "start:frontend": "bun run dist/frontend/server.js"
   },
   "dependencies": {
-    "@dreamer/web3": "npm:@jsr/dreamer__web3@1.0.9",
-    "lightningcss": "1.31.1",
+    "@dreamer/dweb": "file:../../../",
     "tailwindcss": "4.2.0"
-  },
-  "description": "Dweb example (multi-app). Bun: bun run dev:backend | dev:frontend | build:backend | build:frontend | start:backend | start:frontend"
+  }
 }

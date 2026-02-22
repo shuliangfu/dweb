@@ -21,7 +21,7 @@ const config: AppConfig = {
     format: "text",
   },
   render: {
-    debug: true,
+    debug: false,
   },
   router: { debug: false },
   build: {

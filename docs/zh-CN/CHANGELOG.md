@@ -16,6 +16,12 @@
 
 ### 变更
 
+- **Bun 兼容**：本版本围绕 Bun
+  运行时/构建兼容性做了系列修改。所有示例项目统一补全
+  `build.server.external: ["tailwindcss", "lightningcss"]`（单应用在
+  `config/main.ts` 或入口 `main.ts`，多应用在 `common/config/main.ts`），避免
+  Bun 使用 `buildWithBun` 打包时因打包 lightningcss（含原生
+  `require('../pkg')`）报错。
 - **i18n**：框架 i18n 不再使用全局 `$t`，内部统一通过 `utils/i18n.ts` 的 `$tr`
   使用。初始化在首次加载模块时通过顶层 await 执行；locale
   优先级：`setDwebLocale()` &gt; 项目 `language` &gt; 环境变量 &gt;
@@ -24,9 +30,9 @@
   `@dreamer/render/client/view-csr`，hybrid/SSR/SSG 使用
   `@dreamer/render/client/view-hybrid`（含 hydrate）。客户端依赖生成与 hybrid
   初始化逻辑已同步调整。
-- **依赖**：升级各 @dreamer/* 依赖（如 render ^1.0.38、view
-  ^1.0.30、runtime-adapter ^1.0.15、server ^1.0.9 等）；workspace 改为
-  `./examples/*/*`。
+- **依赖**：升级各 @dreamer/* 依赖（如 render ^1.0.39、view
+  ^1.0.31、runtime-adapter ^1.0.17、esbuild ^1.0.36、server ^1.0.9
+  等）；workspace 改为 `./examples/*/*`。
 - **Init**：配置与模板小幅调整（config-full、config、components、docker、main、static）。
 
 ### 移除

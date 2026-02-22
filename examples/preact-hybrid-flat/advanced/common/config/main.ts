@@ -15,6 +15,11 @@ export const commonConfig = {
     engine: "preact",
     mode: "hybrid",
   },
+  build: {
+    server: {
+      external: ["tailwindcss", "lightningcss"],
+    },
+  },
 };
 
 /** 默认导出，框架会自动深度合并到各应用配置 */

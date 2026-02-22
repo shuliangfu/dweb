@@ -9,4 +9,9 @@ export const commonConfig = {
   version: "1.0.0",
   /** API 基础路径 */
   apiBasePath: "/api",
+  build: {
+    server: {
+      external: ["tailwindcss", "lightningcss"],
+    },
+  },
 };

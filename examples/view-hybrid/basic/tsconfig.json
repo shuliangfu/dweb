@@ -1,11 +1,10 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@dreamer/dweb": ["../../../src/mod.ts"],
-      "@dreamer/dweb/*": ["../../../src/*"],
-      "@dreamer/esbuild": ["../../../../esbuild/src/mod.ts"],
-      "@dreamer/esbuild/*": ["../../../../esbuild/*"]
-    }
-  }
+    "jsx": "react-jsx",
+    "jsxImportSource": "@dreamer/view"
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
 }

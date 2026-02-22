@@ -5,12 +5,11 @@
   "scripts": {
     "dev": "bun run main.ts",
     "build": "bun run main.ts --build",
-    "start": "DENO_ENV=prod bun run dist/server.js"
+    "start": "bun run dist/server.js"
   },
   "dependencies": {
+    "@dreamer/dweb": "file:../../../",
     "lightningcss": "1.31.1",
-    "preact": "10.28.3",
-    "preact-render-to-string": "6.2.0",
     "tailwindcss": "4.2.0"
   }
 }

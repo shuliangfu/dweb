@@ -1,6 +1,0 @@
-# Bun 安装与运行时配置（dweb 根目录）
-# 用于 Preact SSR 单实例：使用 hoisted 安装，避免 @dreamer/render 嵌套 preact 导致双实例
-# 详见 ssr-preact-single-instance.md
-
-[install]
-linker = "hoisted"

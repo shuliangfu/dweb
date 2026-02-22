@@ -2,21 +2,12 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@dreamer/dweb": [
-        "../../../src/mod.ts"
-      ],
-      "@dreamer/dweb/*": [
-        "../../../src/*"
-      ],
-      "@backend/*": [
-        "./src/backend/*"
-      ],
-      "@frontend/*": [
-        "./src/frontend/*"
-      ],
-      "@common/*": [
-        "./src/common/*"
-      ]
-    }
-  }
+      "@common/*": ["./src/common/*"],
+      "@backend/*": ["./src/backend/*"],
+      "@frontend/*": ["./src/frontend/*"]
+    },
+    "jsx": "react-jsx",
+    "jsxImportSource": "@dreamer/view"
+  },
+  "include": ["**/*.ts", "**/*.tsx"]
 }

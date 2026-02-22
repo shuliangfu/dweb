@@ -9,21 +9,11 @@
         "src/*"
       ],
 
-      "@dreamer/render": [
-        "../render/src/mod.ts"
+      "@dreamer/esbuild": [
+        "../esbuild/src/mod.ts"
       ],
-      "@dreamer/render/*": [
-        "../render/src/*"
-      ],
-
-      "preact": [
-        "./node_modules/preact"
-      ],
-      "preact/*": [
-        "./node_modules/preact/*"
-      ],
-      "preact-render-to-string": [
-        "./node_modules/preact-render-to-string"
+      "@dreamer/esbuild/*": [
+        "../esbuild/src/*"
       ]
     }
   }

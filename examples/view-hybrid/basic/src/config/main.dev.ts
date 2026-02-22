@@ -9,7 +9,7 @@ const config: AppConfig = {
   hotReload: true,
   server: {
     dev: {
-      hmr: { enabled: true, path: "/__hmr/websocket" },
+      hmr: { enabled: true, path: "/__hmr" },
       watch: {
         paths: ["./src"],
         ignore: ["node_modules", ".git", "dist"],
@@ -20,8 +20,8 @@ const config: AppConfig = {
     level: "debug",
     format: "text",
   },
-  render: { debug: false },
-  router: { debug: false },
+  render: { debug: true },
+  router: { debug: true },
 
   build: {
     client: { debug: false },

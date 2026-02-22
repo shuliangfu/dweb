@@ -6,4 +6,10 @@ export const commonConfig = {
   appName: "react-csr-advanced-example",
   version: "1.0.0",
   apiBasePath: "/api",
+
+  build: {
+    server: {
+      external: ["tailwindcss", "lightningcss"],
+    },
+  },
 };

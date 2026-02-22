@@ -286,6 +286,7 @@ export async function loadRouteModule(
     const mod = await import(moduleUrl);
     return mod as Record<string, unknown>;
   } catch (error) {
+    console.error(error);
     const msg = `${$tr("log.loadModuleFailed")}: ${filePath}`;
     if (options?.logger) {
       options.logger.error(msg, error);

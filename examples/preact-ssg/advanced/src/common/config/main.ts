@@ -15,4 +15,10 @@ export const commonConfig = {
   backendPort: 3036,
   /** 前端端口 */
   frontendPort: 3037,
+
+  build: {
+    server: {
+      external: ["tailwindcss", "lightningcss"],
+    },
+  },
 };

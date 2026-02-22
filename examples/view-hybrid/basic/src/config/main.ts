@@ -38,10 +38,11 @@ const config: AppConfig = {
     level: "info",
   },
 
-  // 构建配置（tailwindcss/lightningcss 已由框架自动加入 server external，Bun 下无需再写）
+  // 构建配置（服务端 external 含 tailwindcss/lightningcss，避免 Bun 打包原生模块报错）
   build: {
     server: {
       useNativeCompile: false,
+      external: ["tailwindcss", "lightningcss"],
     },
     /** 资源处理：复制 src/assets、压缩并 hash 化图片后输出到 client/assets/images */
     assets: {

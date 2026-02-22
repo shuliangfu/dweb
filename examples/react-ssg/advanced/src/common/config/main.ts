@@ -5,4 +5,9 @@
 export const commonConfig = {
   version: "1.0.0",
   apiBasePath: "/api",
+  build: {
+    server: {
+      external: ["tailwindcss", "lightningcss"],
+    },
+  },
 };

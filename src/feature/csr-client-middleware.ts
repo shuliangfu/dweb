@@ -64,6 +64,9 @@ export function createClientScriptMiddleware(
     getInferredBuildOutputDirs().client;
   const clientOutputPath = join(cwd(), clientOutputDir);
 
+  /** 开发模式：禁止存储，避免浏览器保留旧 _client.js 导致请求已失效的 chunk URL（no-cache 仍允许存储后 revalidate，重启后可能用旧副本） */
+  const devCacheControl = "no-store";
+
   return async (ctx: HttpContext, next: () => Promise<void>): Promise<void> => {
     const pathname = ctx.url.pathname || ctx.path || "";
 
@@ -83,7 +86,7 @@ export function createClientScriptMiddleware(
                 status: 200,
                 headers: {
                   "Content-Type": "application/json; charset=utf-8",
-                  "Cache-Control": "no-cache",
+                  "Cache-Control": devCacheControl,
                 },
               });
             } else {
@@ -91,7 +94,7 @@ export function createClientScriptMiddleware(
                 status: 200,
                 headers: {
                   "Content-Type": "application/json; charset=utf-8",
-                  "Cache-Control": "no-cache",
+                  "Cache-Control": devCacheControl,
                 },
               });
             }
@@ -119,7 +122,7 @@ export function createClientScriptMiddleware(
             status: 200,
             headers: {
               "Content-Type": "application/javascript; charset=utf-8",
-              "Cache-Control": "no-cache",
+              "Cache-Control": devCacheControl,
             },
           });
           return;
@@ -147,7 +150,7 @@ export function createClientScriptMiddleware(
             status: 200,
             headers: {
               "Content-Type": "application/json; charset=utf-8",
-              "Cache-Control": "no-cache",
+              "Cache-Control": devCacheControl,
             },
           });
           return;
@@ -210,13 +213,13 @@ export function createClientScriptMiddleware(
               "Content-Type": isSourceMap
                 ? "application/json; charset=utf-8"
                 : "application/javascript; charset=utf-8",
-              "Cache-Control": "no-cache",
+              "Cache-Control": devCacheControl,
             },
           });
           return;
         }
-        // 开发模式：chunk 在内存中不存在时（如 Bun/Deno 下 hash 不一致或重建导致变化）返回 404，
-        // 避免 fallthrough 到路由层返回 500；用户刷新页面即可拿到最新构建
+        // 开发模式：chunk 在内存中不存在时（如 hash 变更、重建后旧引用，或浏览器缓存了旧 _client.js）返回 404，
+        // 避免 fallthrough 到路由层返回 500；用户硬刷新或清缓存即可拿到最新构建
         ctx.response = new Response("Not Found", { status: 404 });
         return;
       }
