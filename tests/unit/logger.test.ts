@@ -46,7 +46,9 @@ describe("日志集成 (logger.ts)", () => {
 
       initializeLogger(container, config);
 
-      expect(() => initializeLogger(container, config)).toThrow("已注册");
+      expect(() => initializeLogger(container, config)).toThrow(
+        /已注册|already registered/i,
+      );
     });
   });
 

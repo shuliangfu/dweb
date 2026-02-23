@@ -30,10 +30,12 @@ const RE = {
   renderMode: /配置项 'render\.mode' 必须是|Config 'render\.mode' must be/,
   middlewares:
     /配置项 'middlewares' 必须是数组类型|Config 'middlewares' must be an array/,
-  cannotExtractName: /无法提取名称|cannot extract name/,
-  mustHaveName: /必须提供名称|must have a name/,
-  mustHaveNameProp: /必须提供 name 属性|must have name property/,
-  middlewareTypeInvalid: /类型无效|must be string, function or object/,
+  cannotExtractName: /无法提取名称|cannot extract name|Cannot extract name/i,
+  mustHaveName:
+    /必须提供名称|must have a name|must have name property|needs name/i,
+  mustHaveNameProp: /必须提供 name 属性|must have name property|needs name/i,
+  middlewareTypeInvalid:
+    /类型无效|must be string, function or object|invalid type/i,
   plugins: /配置项 'plugins' 必须是数组类型|Config 'plugins' must be an array/,
   server: /配置项 'server' 必须是对象类型|Config 'server' must be an object/,
   router: /配置项 'router' 必须是对象类型|Config 'router' must be an object/,

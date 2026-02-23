@@ -91,7 +91,9 @@ describe("构建集成 (build.ts)", () => {
 
       initializeBuild(container, config);
 
-      expect(() => initializeBuild(container, config)).toThrow("已注册");
+      expect(() => initializeBuild(container, config)).toThrow(
+        /已注册|already registered/i,
+      );
     });
   });
 
@@ -156,7 +158,9 @@ describe("构建集成 (build.ts)", () => {
       }
 
       expect(errorThrown).toBe(true);
-      expect(errorMessage).toContain("未配置服务端构建");
+      expect(errorMessage).toMatch(
+        /未配置服务端构建|Server build not configured/i,
+      );
     });
 
     it("buildClient 未配置时应抛出错误", async () => {
@@ -176,7 +180,9 @@ describe("构建集成 (build.ts)", () => {
       }
 
       expect(errorThrown).toBe(true);
-      expect(errorMessage).toContain("未配置客户端构建");
+      expect(errorMessage).toMatch(
+        /未配置客户端构建|Client build not configured/i,
+      );
     });
   });
 

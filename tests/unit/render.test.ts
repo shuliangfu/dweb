@@ -84,7 +84,9 @@ describe("渲染集成 (render.ts)", () => {
 
       initializeRender(container, config);
 
-      expect(() => initializeRender(container, config)).toThrow("已注册");
+      expect(() => initializeRender(container, config)).toThrow(
+        /已注册|already registered/i,
+      );
     });
   });
 

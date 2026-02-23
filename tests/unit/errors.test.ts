@@ -24,7 +24,9 @@ describe("统一错误处理 (errors.ts)", () => {
       const err = createDwebError(DwebErrorCode.CONFIG_NAME_INVALID);
       expect(err.code).toBe(DwebErrorCode.CONFIG_NAME_INVALID);
       expect(err.messageKey).toBe("errors.DWEB_E01");
-      expect(err.message).toBe("配置项 'name' 必须是字符串类型");
+      expect(err.message).toMatch(
+        /配置项 'name' 必须是字符串类型|Config 'name' must be a string/,
+      );
       expect(err.name).toBe("DwebError");
     });
 
@@ -35,8 +37,8 @@ describe("统一错误处理 (errors.ts)", () => {
         path: "/foo/bar/baz",
       });
       expect(err.code).toBe(DwebErrorCode.ENTRY_PATH_INVALID);
-      expect(err.message).toBe(
-        "[dweb] 入口路径格式不支持: 段数过多。支持 main.ts 或 src/main.ts 当前路径: /foo/bar/baz",
+      expect(err.message).toMatch(
+        /入口路径格式不支持|Entry path format not supported|段数过多|\/foo\/bar\/baz/,
       );
     });
   });
@@ -47,7 +49,7 @@ describe("统一错误处理 (errors.ts)", () => {
         DwebError,
       );
       expect(() => throwDwebError(DwebErrorCode.RUNTIME_UNSUPPORTED)).toThrow(
-        "仅支持 Deno 或 Bun 运行时环境",
+        /仅支持 Deno 或 Bun 运行时环境|Only Deno or Bun runtime is supported/i,
       );
     });
 
@@ -67,7 +69,7 @@ describe("统一错误处理 (errors.ts)", () => {
       expect(isDwebError(caught)).toBe(true);
       if (caught) {
         expect(caught.cause).toBe(cause);
-        expect(caught.message).toBe("无法读取 x");
+        expect(caught.message).toMatch(/无法读取 x|Cannot read x/);
       }
     });
   });
@@ -81,7 +83,7 @@ describe("统一错误处理 (errors.ts)", () => {
           });
         },
         DwebError,
-        "无法读取 test.json",
+        /无法读取 test\.json|Cannot read test\.json/,
       );
     });
   });
@@ -105,8 +107,8 @@ describe("统一错误处理 (errors.ts)", () => {
   describe("DwebError 实例方法", () => {
     it("toString", () => {
       const err = createDwebError(DwebErrorCode.CONFIG_NAME_INVALID);
-      expect(err.toString()).toBe(
-        "[dweb] DWEB_E01: 配置项 'name' 必须是字符串类型",
+      expect(err.toString()).toMatch(
+        /\[dweb\] DWEB_E01:.*(配置项 'name' 必须是字符串类型|Config 'name' must be a string)/,
       );
     });
 

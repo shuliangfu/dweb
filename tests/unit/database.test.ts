@@ -62,7 +62,9 @@ describe("数据库集成 (database.ts)", () => {
 
       initializeDatabase(container, config);
 
-      expect(() => initializeDatabase(container, config)).toThrow("已注册");
+      expect(() => initializeDatabase(container, config)).toThrow(
+        /已注册|already registered/i,
+      );
     });
   });
 

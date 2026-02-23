@@ -47,7 +47,9 @@ describe("中间件系统 (middleware.ts)", () => {
 
       initializeMiddleware(container, config);
 
-      expect(() => initializeMiddleware(container, config)).toThrow("已注册");
+      expect(() => initializeMiddleware(container, config)).toThrow(
+        /已注册|already registered/i,
+      );
     });
   });
 

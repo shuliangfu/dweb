@@ -17,6 +17,7 @@ import {
   IS_DENO,
   join,
   makeTempDir,
+  platform,
   readTextFile,
   remove,
   symlink,
@@ -27,67 +28,75 @@ import { getRepoRoot } from "../setup.ts";
 
 const REPO_ROOT = getRepoRoot();
 
-describe("integration: 配置与生命周期", () => {
-  let testDir: string;
-  let originalCwd: string;
+/** Windows 上 Bun 创建目录符号链接常需管理员或开发者模式，CI 易失败，整套件跳过 */
+const isBunWindows = !IS_DENO && platform() === "windows";
 
-  beforeAll(async () => {
-    testDir = await makeTempDir({ prefix: "dweb-integration-" });
-    originalCwd = cwd();
-    chdir(testDir);
+const runConfigLifecycleSuite = () => {
+  describe("integration: 配置与生命周期", () => {
+    let testDir: string;
+    let originalCwd: string;
 
-    // testDir/deno.json：复用仓库 import map，并将 @dreamer/dweb 指向本地，子进程用本地代码且不卡在 JSR 解析
-    // Windows 下裸路径 d:/a/dweb/... 会被解析为 scheme "d:"，故使用 file:// URL
-    const repoDenoJson = JSON.parse(
-      await readTextFile(join(REPO_ROOT, "deno.json")),
-    ) as { imports?: Record<string, string> };
-    const dwebModPath = join(REPO_ROOT, "src", "mod.ts").replace(/\\/g, "/");
-    const dwebLocal = dwebModPath.startsWith("/")
-      ? `file://${dwebModPath}`
-      : `file:///${dwebModPath}`;
-    await writeTextFile(
-      join(testDir, "deno.json"),
-      JSON.stringify(
-        {
-          imports: {
-            ...repoDenoJson.imports,
-            "@dreamer/dweb": dwebLocal,
-          },
-        },
-        null,
-        2,
-      ),
-    );
+    beforeAll(async () => {
+      testDir = await makeTempDir({ prefix: "dweb-integration-" });
+      originalCwd = cwd();
+      chdir(testDir);
 
-    // Bun 不读 deno.json，通过 node_modules 符号链接指向本地 dweb，Bun 会使用仓库内 node_modules 解析 dweb 的依赖
-    if (!IS_DENO) {
-      await ensureDir(join(testDir, "node_modules", "@dreamer"));
-      await symlink(
-        REPO_ROOT,
-        join(testDir, "node_modules", "@dreamer", "dweb"),
-        "dir",
-      );
-    }
+      try {
+        // testDir/deno.json：复用仓库 import map，并将 @dreamer/dweb 指向本地，子进程用本地代码且不卡在 JSR 解析
+        // Windows 下裸路径 d:/a/dweb/... 会被解析为 scheme "d:"，故使用 file:// URL
+        const repoDenoJson = JSON.parse(
+          await readTextFile(join(REPO_ROOT, "deno.json")),
+        ) as { imports?: Record<string, string> };
+        const dwebModPath = join(REPO_ROOT, "src", "mod.ts").replace(
+          /\\/g,
+          "/",
+        );
+        const dwebLocal = dwebModPath.startsWith("/")
+          ? `file://${dwebModPath}`
+          : `file:///${dwebModPath}`;
+        await writeTextFile(
+          join(testDir, "deno.json"),
+          JSON.stringify(
+            {
+              imports: {
+                ...repoDenoJson.imports,
+                "@dreamer/dweb": dwebLocal,
+              },
+            },
+            null,
+            2,
+          ),
+        );
 
-    // 入口为 src/main.ts 时，框架推断 config 目录为 src/config
-    await ensureDir(join(testDir, "src", "config"));
-    // 不配置 server，仅测 config 加载与 init 生命周期，避免初始化服务器/渲染/路由导致子进程卡住
-    await writeTextFile(
-      join(testDir, "src", "config", "main.ts"),
-      `export default {
+        // Bun 不读 deno.json，通过 node_modules 符号链接指向本地 dweb，Bun 会使用仓库内 node_modules 解析 dweb 的依赖
+        if (!IS_DENO) {
+          await ensureDir(join(testDir, "node_modules", "@dreamer"));
+          await symlink(
+            REPO_ROOT,
+            join(testDir, "node_modules", "@dreamer", "dweb"),
+            "dir",
+          );
+        }
+
+        // 入口为 src/main.ts 时，框架推断 config 目录为 src/config
+        await ensureDir(join(testDir, "src", "config"));
+        // 不配置 server，仅测 config 加载与 init 生命周期，避免初始化服务器/渲染/路由导致子进程卡住
+        await writeTextFile(
+          join(testDir, "src", "config", "main.ts"),
+          `export default {
   name: "integration-test",
   version: "1.0.0",
   render: { engine: "preact", mode: "ssr" },
   router: { routesDir: "./src/routes" },
   build: { client: { output: "dist/client", engine: "preact" } },
 };`,
-    );
+        );
 
-    // 入口文件：创建 App、注册 init/start、等待 _initPromise 后输出结果行并强制退出，避免事件循环被占用导致子进程不退出
-    // 传入完整 config（含 host/port），与 config 文件合并后优先级最高，Windows 上主配置未加载时仍能得到预期行为
-    await writeTextFile(
-      join(testDir, "src", "main.ts"),
-      `import { App } from "@dreamer/dweb";
+        // 入口文件：创建 App、注册 init/start、等待 _initPromise 后输出结果行并强制退出，避免事件循环被占用导致子进程不退出
+        // 传入完整 config（含 host/port），与 config 文件合并后优先级最高，Windows 上主配置未加载时仍能得到预期行为
+        await writeTextFile(
+          join(testDir, "src", "main.ts"),
+          `import { App } from "@dreamer/dweb";
 
 const stages: string[] = [];
 const app = new App({
@@ -112,57 +121,66 @@ const g = globalThis as { Deno?: { exit: (code: number) => never }; process?: { 
 if (g.Deno?.exit) g.Deno.exit(0);
 if (g.process?.exit) g.process.exit(0);
 `,
-    );
+        );
 
-    await ensureDir(join(testDir, "src", "routes"));
-    await writeTextFile(
-      join(testDir, "src", "routes", "index.tsx"),
-      `export default function Page() { return "Integration"; }`,
-    );
-    await writeTextFile(
-      join(testDir, "src", "routes", "_app.tsx"),
-      `export default function App({ children }: { children: unknown }) { return <>{children}</>; }`,
-    );
-    await writeTextFile(
-      join(testDir, "src", "routes", "_layout.tsx"),
-      `export default function Layout({ children }: { children: unknown }) { return <>{children}</>; }`,
-    );
-  });
-
-  afterAll(async () => {
-    chdir(originalCwd);
-    await remove(testDir, { recursive: true });
-  });
-
-  it("App 应能加载 config 并注册生命周期钩子", async () => {
-    // cwd=testDir 时子进程使用 testDir/deno.json（@dreamer/dweb 指向本地），入口为 src/main.ts
-    const args = IS_DENO
-      ? ["run", "-A", "src/main.ts"]
-      : ["run", "src/main.ts"];
-    const cmd = createCommand(execPath(), {
-      args,
-      cwd: testDir,
-      stdout: "piped",
-      stderr: "piped",
+        await ensureDir(join(testDir, "src", "routes"));
+        await writeTextFile(
+          join(testDir, "src", "routes", "index.tsx"),
+          `export default function Page() { return "Integration"; }`,
+        );
+        await writeTextFile(
+          join(testDir, "src", "routes", "_app.tsx"),
+          `export default function App({ children }: { children: unknown }) { return <>{children}</>; }`,
+        );
+        await writeTextFile(
+          join(testDir, "src", "routes", "_layout.tsx"),
+          `export default function Layout({ children }: { children: unknown }) { return <>{children}</>; }`,
+        );
+      } catch (e) {
+        chdir(originalCwd);
+        throw e;
+      }
     });
-    const proc = cmd.spawn();
 
-    const [status, stdoutText, stderrText] = await Promise.all([
-      proc.status,
-      proc.stdout ? new Response(proc.stdout).text() : Promise.resolve(""),
-      proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
-    ]);
+    afterAll(async () => {
+      chdir(originalCwd);
+      await remove(testDir, { recursive: true });
+    });
 
-    if (!status.success) {
-      throw new Error(`子进程执行失败: ${stderrText}`);
-    }
+    it("App 应能加载 config 并注册生命周期钩子", async () => {
+      // cwd=testDir 时子进程使用 testDir/deno.json（@dreamer/dweb 指向本地），入口为 src/main.ts
+      const args = IS_DENO
+        ? ["run", "-A", "src/main.ts"]
+        : ["run", "src/main.ts"];
+      const cmd = createCommand(execPath(), {
+        args,
+        cwd: testDir,
+        stdout: "piped",
+        stderr: "piped",
+      });
+      const proc = cmd.spawn();
 
-    // 配置已加载：banner 会打印应用名（[应用名称] 或 [App name]，依 locale）；断言配置中的名称与 init 阶段
-    expect(stdoutText).toContain("integration-test");
-    expect(stdoutText).toContain("STAGES:init");
-  }, {
-    timeout: 60_000,
-    sanitizeOps: false,
-    sanitizeResources: false,
+      const [status, stdoutText, stderrText] = await Promise.all([
+        proc.status,
+        proc.stdout ? new Response(proc.stdout).text() : Promise.resolve(""),
+        proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
+      ]);
+
+      if (!status.success) {
+        throw new Error(`子进程执行失败: ${stderrText}`);
+      }
+
+      // 配置已加载：banner 会打印应用名（[应用名称] 或 [App name]，依 locale）；断言配置中的名称与 init 阶段
+      expect(stdoutText).toContain("integration-test");
+      expect(stdoutText).toContain("STAGES:init");
+    }, {
+      timeout: 60_000,
+      sanitizeOps: false,
+      sanitizeResources: false,
+    });
   });
-});
+};
+
+if (!isBunWindows) {
+  runConfigLifecycleSuite();
+}

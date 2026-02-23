@@ -86,7 +86,9 @@ describe("服务器集成 (server.ts)", () => {
 
       initializeServer(container, config);
 
-      expect(() => initializeServer(container, config)).toThrow("已注册");
+      expect(() => initializeServer(container, config)).toThrow(
+        /已注册|already registered/i,
+      );
     });
   });
 

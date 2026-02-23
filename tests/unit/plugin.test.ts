@@ -64,7 +64,9 @@ describe("插件系统 (plugin.ts)", () => {
 
       initializePlugin(container);
 
-      expect(() => initializePlugin(container)).toThrow("已注册");
+      expect(() => initializePlugin(container)).toThrow(
+        /已注册|already registered/i,
+      );
     });
   });
 
