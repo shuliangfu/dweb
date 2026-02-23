@@ -100,7 +100,8 @@ jobs:
         run: npx -y playwright@latest install chromium
 
       - name: Test (Bun)
-        run: bun test tests/
+        run: bun test tests/ --max-concurrency=1
+        timeout-minutes: 15
 
   test-macos-bun:
     runs-on: macos-latest
@@ -118,7 +119,8 @@ jobs:
         run: npx -y playwright@latest install chromium
 
       - name: Test (Bun, macOS)
-        run: bun test tests/
+        run: bun test tests/ --max-concurrency=1
+        timeout-minutes: 15
 
   test-windows-bun:
     runs-on: windows-latest
@@ -135,5 +137,5 @@ jobs:
       # Windows 上浏览器 e2e 由上方 test-windows (Deno) 覆盖；Bun 在 Windows 不跑浏览器测试，仅跑 unit + integration
       - name: Test (Bun, Windows)
         shell: pwsh
-        run: bun test tests/unit tests/integration
+        run: bun test tests/unit tests/integration --max-concurrency=1
         timeout-minutes: 10
