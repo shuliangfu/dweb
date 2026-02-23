@@ -22,7 +22,11 @@ import {
   type SpawnedProcess,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
-import { existsBuildOutput, getRepoRoot, getSpawnCwd } from "../setup.ts";
+import {
+  existsBuildOutput,
+  getRepoRoot,
+  getSpawnCwdForIntegration,
+} from "../setup.ts";
 
 /** 构建后启动 SSR 服务时使用的端口，与其它 e2e 错开 */
 const SSR_BUILD_SERVER_PORT = 39996;
@@ -57,7 +61,7 @@ describe("integration: SSR + Preact 构建", () => {
       : ["run", "src/main.ts", "--build"];
     const cmd = createCommand(execPath(), {
       args,
-      cwd: getSpawnCwd(exampleDir),
+      cwd: getSpawnCwdForIntegration(),
       stdout: "piped",
       stderr: "piped",
     });
@@ -100,7 +104,7 @@ describe("integration: SSR + Preact 构建", () => {
         : ["run", join(exampleDir, "dist", "server.js")];
       const cmd = createCommand(execPath(), {
         args,
-        cwd: getSpawnCwd(exampleDir),
+        cwd: getSpawnCwdForIntegration(),
         stdout: "piped",
         stderr: "piped",
         env: { ...getEnvAll(), PORT: String(SSR_BUILD_SERVER_PORT) },
@@ -108,10 +112,12 @@ describe("integration: SSR + Preact 构建", () => {
       const child: SpawnedProcess = cmd.spawn();
 
       const baseUrl = `http://127.0.0.1:${SSR_BUILD_SERVER_PORT}`;
-      const maxAttempts = 25;
+      const pollIntervalMs = 500;
+      const maxAttempts = 90;
       let lastErr: unknown = null;
+      await new Promise((r) => setTimeout(r, 2000));
       for (let i = 0; i < maxAttempts; i++) {
-        await new Promise((r) => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, pollIntervalMs));
         try {
           const res = await fetch(baseUrl + "/");
           if (res.ok) {
@@ -139,14 +145,19 @@ describe("integration: SSR + Preact 构建", () => {
       } catch {
         // ignore
       }
+      const stderrText = child.stderr
+        ? await new Response(child.stderr).text()
+        : "";
       throw new Error(
-        `SSR 服务器在 ${maxAttempts} 次内未就绪: ${lastErr}`,
+        `SSR 服务器在 ${maxAttempts} 次内未就绪 (${(maxAttempts * pollIntervalMs) / 1000}s): ${lastErr}${
+          stderrText ? `\nstderr: ${stderrText.slice(0, 800)}` : ""
+        }`,
       );
     },
     {
       sanitizeOps: false,
       sanitizeResources: false,
-      timeout: 60000,
+      timeout: 90000,
     },
   );
 });

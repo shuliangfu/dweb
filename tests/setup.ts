@@ -8,7 +8,13 @@
  *
  * 需在测试脚本中通过 `import "../setup.ts"` 或 `import "./setup.ts"` 导入。
  */
-import { dirname, exists, platform, resolve } from "@dreamer/runtime-adapter";
+import {
+  cwd,
+  dirname,
+  exists,
+  platform,
+  resolve,
+} from "@dreamer/runtime-adapter";
 import { setDwebLocale } from "../src/utils/i18n.ts";
 
 /**
@@ -26,7 +32,7 @@ export function getRepoRoot(): string {
 }
 
 /**
- * 子进程 spawn 时使用的 cwd。
+ * 子进程 spawn 时使用的 cwd（对传入路径做 Windows 反斜杠规范化）。
  * Windows 上 Bun 需要反斜杠路径才能正确设置工作目录，否则构建可能写到错误目录。
  */
 export function getSpawnCwd(dir: string): string {
@@ -34,6 +40,15 @@ export function getSpawnCwd(dir: string): string {
     return dir.replace(/\//g, "\\");
   }
   return dir;
+}
+
+/**
+ * 集成测试中 spawn 子进程时应使用的 cwd。
+ * 使用当前进程 cwd()（beforeAll 已 chdir 到 exampleDir），
+ * 避免 Windows Bun 下传入由 getRepoRoot() 推导的路径时 spawn 未正确应用 cwd，导致构建写到错误目录。
+ */
+export function getSpawnCwdForIntegration(): string {
+  return getSpawnCwd(cwd());
 }
 
 /**
