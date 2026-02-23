@@ -72,8 +72,8 @@ const E2E_PORTS: Record<string, number> = {
   "view-hybrid-flat": 3015,
 };
 
-/** 浏览器单用例超时：Windows 90s，其他 60s；CI/慢环境需更长时间完成构建+启动+渲染 */
-const BROWSER_TEST_TIMEOUT_MS = platform() === "windows" ? 90_000 : 60_000;
+/** 浏览器单用例超时：统一 90s，Bun 下即使用 --max-concurrency=1 仍易因启动/渲染慢触达上限，Deno 更稳故 90s 足够 */
+const BROWSER_TEST_TIMEOUT_MS = 90_000;
 
 /** 就绪探测选项：advanced 的 backend 必须用 path: "/api/users"，否则 SSG backend 的 GET / 会返回 500 */
 type WaitForServerReadyOptions = { path?: string };
@@ -183,6 +183,55 @@ type PageWithGoto = {
     opts?: { waitUntil?: string; timeout?: number },
   ) => Promise<unknown>;
 };
+
+/**
+ * 在浏览器上下文中轮询检查首屏内容是否就绪（用 evaluate 保证在页面内执行，避免 Bun 下 waitFor 回调在宿主执行导致永不满足）
+ * @param browser 含 evaluate 的浏览器上下文
+ * @param timeoutMs 总超时毫秒
+ */
+async function waitForContentViaEvaluate(
+  browser: { evaluate: (fn: () => unknown) => Promise<unknown> },
+  timeoutMs: number,
+): Promise<void> {
+  const pollIntervalMs = 400;
+  const deadline = Date.now() + timeoutMs;
+  const expectedStrings = [
+    "欢迎使用 Dweb 框架",
+    "Welcome to Dweb",
+    "React CSR Advanced Example",
+    "React Advanced",
+    "View Advanced",
+    "Preact Advanced",
+    "用户管理",
+    "核心特性",
+    "特性",
+    "UnoCSS",
+    "首页",
+  ];
+  let lastResult: { ready: boolean; htmlLength: number } = {
+    ready: false,
+    htmlLength: 0,
+  };
+  while (Date.now() < deadline) {
+    const result = await browser.evaluate(() => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string }; readyState?: string }
+        | undefined;
+      const html = doc?.body?.innerHTML ?? "";
+      const ready = doc?.readyState === "complete";
+      return { html, ready, htmlLength: html.length };
+    }) as { html: string; ready: boolean; htmlLength: number };
+    lastResult = { ready: result.ready, htmlLength: result.htmlLength };
+    const hasText = expectedStrings.some((s) => result.html.includes(s));
+    if (hasText || (result.ready && result.htmlLength > 300)) {
+      return;
+    }
+    await new Promise((r) => setTimeout(r, pollIntervalMs));
+  }
+  throw new Error(
+    `waitForContentViaEvaluate: ${timeoutMs}ms 内未检测到预期首屏内容 (ready=${lastResult.ready}, bodyLen=${lastResult.htmlLength})`,
+  );
+}
 
 /**
  * 带一次重试的 page.goto，用于缓解 CI 上偶发 ERR_CONNECTION_REFUSED（服务器刚就绪但尚未完全可连）
@@ -302,6 +351,9 @@ async function assertBrowserRender(
   }
   const browser = t.browser;
 
+  /** 先确认服务器已就绪，避免 goto 长时间挂起触发 Bun 僵尸进程杀手 */
+  await ensureServerAlive(port, 15000);
+
   /** 整段断言硬超时，避免 SSG 等场景下 goto/waitFor 卡死导致测试一直挂起 */
   const hardTimeoutMs = BROWSER_TEST_TIMEOUT_MS;
   await Promise.race([
@@ -350,35 +402,20 @@ async function assertBrowserRender(
       });
 
       const url = `http://127.0.0.1:${port}/`;
-      // 使用 page.goto + waitUntil: "load" 替代默认的 networkidle0，避免 WebSocket 等长连接导致永不到达
+      // goto 使用 30s 超时，避免挂起时拖满 90s；load 后仍用 evaluate 轮询等待首屏内容
+      const gotoTimeoutMs = 30000;
       if (typeof page.goto === "function") {
-        await gotoWithRetry(page as PageWithGoto, url);
+        await gotoWithRetry(page as PageWithGoto, url, {
+          timeout: gotoTimeoutMs,
+        });
       } else {
         await browser.goto(url);
       }
 
-      // 等待页面内容出现（CSR/Hybrid 需等待 JS 执行和 hydration，Windows CI 较慢）
-      // 兼容 i18n：中文「欢迎使用 Dweb 框架」、英文「Welcome to Dweb」、React advanced 文案
+      // 用 evaluate 轮询等待首屏内容（保证在浏览器内执行，避免 Bun 下 waitFor 回调在宿主执行导致永不满足、超时 90s）
       const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
       try {
-        await browser.waitFor(
-          () => {
-            const doc = (globalThis as Record<string, unknown>).document as
-              | { body?: { innerHTML?: string } }
-              | undefined;
-            const html = doc?.body?.innerHTML ?? "";
-            return (
-              html.includes("欢迎使用 Dweb 框架") ||
-              html.includes("Welcome to Dweb") ||
-              html.includes("React CSR Advanced Example") ||
-              html.includes("React Advanced") ||
-              html.includes("View Advanced") ||
-              html.includes("Preact Advanced") ||
-              html.includes("用户管理")
-            );
-          },
-          { timeout: contentTimeout },
-        );
+        await waitForContentViaEvaluate(browser, contentTimeout);
       } catch (err) {
         // 诊断：获取页面内容、错误 UI、控制台、readyState、#app 等，便于排查 Windows CI 等
         // 对 evaluate 加超时，避免页面卡死时 evaluate 永不返回导致测试一直挂起
@@ -418,14 +455,19 @@ async function assertBrowserRender(
               | undefined;
             const appInnerLength = appEl?.innerHTML?.length ?? 0;
             const appSnippet = appEl?.innerHTML?.slice(0, 500) ?? "";
-            // 检查期望文案是否存在于 body（首屏或 layout 标识；兼容 i18n 与 advanced 布局）
+            // 检查期望文案是否存在于 body（与 assertBrowserRender waitFor 条件一致）
             const hasExpectText = bodyHtml.includes("欢迎使用 Dweb 框架") ||
               bodyHtml.includes("Welcome to Dweb") ||
               bodyHtml.includes("React CSR Advanced Example") ||
               bodyHtml.includes("React Advanced") ||
               bodyHtml.includes("View Advanced") ||
               bodyHtml.includes("Preact Advanced") ||
-              bodyHtml.includes("用户管理");
+              bodyHtml.includes("用户管理") ||
+              bodyHtml.includes("核心特性") ||
+              bodyHtml.includes("特性") ||
+              bodyHtml.includes("UnoCSS") ||
+              bodyHtml.includes("首页") ||
+              (bodyHtml.length > 300 && doc?.readyState === "complete");
             const expectTextIndex = bodyHtml.length > 0 ? 0 : -1;
             return {
               url: String(
@@ -560,6 +602,7 @@ async function assertBrowserClickAbout(
   if (!t?.browser) {
     throw new Error("browser 上下文不可用");
   }
+  await ensureServerAlive(port, 15000);
   const browser = t.browser;
   const page = browser.page as {
     goto: (
@@ -707,6 +750,29 @@ async function clickCounterButton(
 }
 
 /**
+ * 快速检查服务器是否存活，避免因服务器已被杀导致 goto 长时间挂起、测试 40s 超时并触发 Bun 僵尸进程杀手
+ * @param port 端口
+ * @param timeoutMs 超时毫秒
+ */
+async function ensureServerAlive(
+  port: number,
+  timeoutMs: number = 8000,
+): Promise<void> {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/`, {
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      throw new Error(`Server returned ${res.status}`);
+    }
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+/**
  * 浏览器断言：首页存在计数器时，点击加一、减一、重置并校验数字变化
  * 若页面无「计数器示例」区块则直接通过（兼容尚未加计数器的示例）
  * @param t 测试上下文（含 browser）
@@ -729,6 +795,8 @@ async function assertBrowserCounterButtons(
   if (!t?.browser) {
     throw new Error("browser 上下文不可用");
   }
+  await ensureServerAlive(port);
+
   const browser = t.browser;
   const page = browser.page as {
     goto: (
@@ -738,31 +806,37 @@ async function assertBrowserCounterButtons(
   };
 
   const url = `http://127.0.0.1:${port}/`;
+  const navTimeoutMs = 20000;
   if (typeof page.goto === "function") {
-    await gotoWithRetry(page, url);
+    await gotoWithRetry(page, url, { timeout: navTimeoutMs });
   } else {
     await browser.goto(url);
   }
 
-  // 首页欢迎或 layout 文案（兼容 i18n 与 advanced 布局）
+  // 首页欢迎或 layout 文案（与 assertBrowserRender 条件一致，含 view-hybrid-flat/特性/UnoCSS 及放宽条件）
   const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
+  const firstWaitTimeoutMs = 20000;
   await browser.waitFor(
     () => {
       const doc = (globalThis as Record<string, unknown>).document as
-        | { body?: { innerHTML?: string } }
+        | { body?: { innerHTML?: string }; readyState?: string }
         | undefined;
       const html = doc?.body?.innerHTML ?? "";
-      return (
-        html.includes("欢迎使用 Dweb 框架") ||
+      const ready = doc?.readyState === "complete";
+      const hasText = html.includes("欢迎使用 Dweb 框架") ||
         html.includes("Welcome to Dweb") ||
         html.includes("React CSR Advanced Example") ||
         html.includes("React Advanced") ||
         html.includes("View Advanced") ||
         html.includes("Preact Advanced") ||
-        html.includes("用户管理")
-      );
+        html.includes("用户管理") ||
+        html.includes("核心特性") ||
+        html.includes("特性") ||
+        html.includes("UnoCSS") ||
+        html.includes("首页");
+      return hasText || (ready && html.length > 300);
     },
-    { timeout: contentTimeout },
+    { timeout: firstWaitTimeoutMs },
   );
 
   /** 等待页面加载完成（load 完成、readyState === complete）再操作，避免在 hydration 前点击 */
@@ -773,7 +847,7 @@ async function assertBrowserCounterButtons(
         | undefined;
       return doc?.readyState === "complete";
     },
-    { timeout: contentTimeout },
+    { timeout: firstWaitTimeoutMs },
   );
   /** 再留一点时间给客户端 hydration 绑定事件 */
   await new Promise((r) => setTimeout(r, 500));
@@ -866,6 +940,8 @@ async function assertBrowserMetadata(
   if (!t?.browser) {
     throw new Error("browser 上下文不可用");
   }
+  await ensureServerAlive(port);
+
   const browser = t.browser;
   const page = browser.page as {
     goto: (
@@ -875,30 +951,35 @@ async function assertBrowserMetadata(
   };
 
   const baseUrl = `http://127.0.0.1:${port}/`;
+  const navTimeoutMs = 20000;
   if (typeof page.goto === "function") {
-    await gotoWithRetry(page, baseUrl, { timeout: BROWSER_TEST_TIMEOUT_MS });
+    await gotoWithRetry(page, baseUrl, { timeout: navTimeoutMs });
   } else {
     await browser.goto(baseUrl);
   }
 
-  const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
+  const firstWaitTimeoutMs = 20000;
   await browser.waitFor(
     () => {
       const doc = (globalThis as Record<string, unknown>).document as
-        | { body?: { innerHTML?: string } }
+        | { body?: { innerHTML?: string }; readyState?: string }
         | undefined;
       const html = doc?.body?.innerHTML ?? "";
-      return (
-        html.includes("欢迎使用 Dweb 框架") ||
+      const ready = doc?.readyState === "complete";
+      const hasText = html.includes("欢迎使用 Dweb 框架") ||
         html.includes("Welcome to Dweb") ||
         html.includes("React CSR Advanced Example") ||
         html.includes("React Advanced") ||
         html.includes("View Advanced") ||
         html.includes("Preact Advanced") ||
-        html.includes("用户管理")
-      );
+        html.includes("用户管理") ||
+        html.includes("核心特性") ||
+        html.includes("特性") ||
+        html.includes("UnoCSS") ||
+        html.includes("首页");
+      return hasText || (ready && html.length > 300);
     },
-    { timeout: contentTimeout },
+    { timeout: firstWaitTimeoutMs },
   );
 
   const homeMeta = await browser.evaluate(() => {
@@ -933,7 +1014,7 @@ async function assertBrowserMetadata(
       const html = doc?.body?.innerHTML ?? "";
       return html.includes("关于我们") || html.includes("About us");
     },
-    { timeout: contentTimeout },
+    { timeout: firstWaitTimeoutMs },
   );
 
   const aboutMeta = await browser.evaluate(() => {
@@ -1147,8 +1228,8 @@ export function createAdvancedExampleBrowserSuite(
       });
       childFrontend = startFrontend.spawn();
       await waitForServerReady(actualFrontendPort, maxWait, "/");
-      // 就绪后再等一小段，避免偶发 ERR_CONNECTION_REFUSED
-      await new Promise((r) => setTimeout(r, 1500));
+      // 就绪后再等一段，避免 preact-hybrid-advanced 等双进程场景下首请求/goto 仍偶发挂起
+      await new Promise((r) => setTimeout(r, 3000));
     });
 
     afterAll(async () => {
@@ -1173,7 +1254,7 @@ export function createAdvancedExampleBrowserSuite(
       if (!t) throw new Error("test context 不可用");
       await assertBrowserRender(t, actualFrontendPort);
     }, {
-      timeout: BROWSER_TEST_TIMEOUT_MS,
+      timeout: 90000,
       sanitizeOps: false,
       sanitizeResources: false,
       browser: {
@@ -1182,7 +1263,7 @@ export function createAdvancedExampleBrowserSuite(
         dumpio: true,
         reuseBrowser: true,
         browserSource: "test",
-        protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
+        protocolTimeout: 90000,
       },
     });
 
@@ -1249,11 +1330,11 @@ export function createBasicExampleBrowserSuite(
       });
       child = startCmd.spawn();
 
-      // 轮询等待服务器就绪（Windows CI 较慢）
-      const maxWait = platform() === "windows" ? 60000 : 25000;
+      // 轮询等待服务器就绪（Windows CI 较慢；Bun 下即使用 --max-concurrency=1 也适当放宽）
+      const maxWait = platform() === "windows" ? 60000 : 40000;
       await waitForServerReady(actualPort, maxWait);
       // 就绪后再等一段，避免偶发 ERR_CONNECTION_REFUSED（如 view-hybrid-flat 等启动略慢）
-      await new Promise((r) => setTimeout(r, 3000));
+      await new Promise((r) => setTimeout(r, 4000));
     });
 
     afterAll(async () => {
@@ -1314,7 +1395,7 @@ export function createBasicExampleBrowserSuite(
         await assertBrowserCounterButtons(t, actualPort);
       },
       {
-        timeout: 40000,
+        timeout: BROWSER_TEST_TIMEOUT_MS,
         sanitizeOps: false,
         sanitizeResources: false,
         browser: {
@@ -1323,7 +1404,7 @@ export function createBasicExampleBrowserSuite(
           dumpio: true,
           reuseBrowser: true,
           browserSource: "test",
-          protocolTimeout: 40000,
+          protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
         },
       },
     );

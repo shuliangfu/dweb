@@ -10,9 +10,9 @@ import {
   createCommand,
   cwd,
   execPath,
+  getEnvAll,
   IS_DENO,
   join,
-  setEnv,
   type SpawnedProcess,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
@@ -53,34 +53,59 @@ describe("e2e: 服务器请求", () => {
   });
 
   it("应能启动服务器并返回 HTML", async () => {
-    setEnv("PORT", String(E2E_PORT));
     const entry = join(exampleDir, "src", "main.ts");
     const args = IS_DENO ? ["run", "-A", entry] : ["run", entry];
+    const env = { ...getEnvAll(), PORT: String(E2E_PORT) };
     const cmd = createCommand(execPath(), {
       args,
       cwd: exampleDir,
+      env,
       stdout: "inherit",
       stderr: "inherit",
     });
     child = cmd.spawn();
 
-    await new Promise((r) => setTimeout(r, 8000));
-
-    try {
-      const res = await fetch(`http://127.0.0.1:${E2E_PORT}/`);
-      expect(res.ok).toBe(true);
-      const html = await res.text();
-      expect(html.length).toBeGreaterThan(100);
-      expect(html).toMatch(/<html|<!DOCTYPE/i);
-    } finally {
-      if (child) {
-        try {
-          child.kill(15);
-          await child.status;
-        } catch {
-          // 忽略 kill 时的 Invalid signal 等错误，避免掩盖真实断言失败
+    /** 轮询等待服务器就绪，最多 25s，避免固定 8s 在 CI/高负载下不足 */
+    const pollIntervalMs = 500;
+    const maxWaitMs = 25000;
+    const deadline = Date.now() + maxWaitMs;
+    let lastErr: unknown;
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, pollIntervalMs));
+      try {
+        const res = await fetch(`http://127.0.0.1:${E2E_PORT}/`);
+        if (res.ok) {
+          const html = await res.text();
+          if (html.length > 100 && /<html|<!DOCTYPE/i.test(html)) {
+            expect(res.ok).toBe(true);
+            expect(html.length).toBeGreaterThan(100);
+            expect(html).toMatch(/<html|<!DOCTYPE/i);
+            if (child) {
+              try {
+                child.kill(15);
+                await child.status;
+              } catch {
+                // 忽略 kill 时的 Invalid signal 等错误
+              }
+            }
+            return;
+          }
         }
+      } catch (e) {
+        lastErr = e;
       }
     }
-  }, { timeout: 20000, sanitizeOps: false, sanitizeResources: false });
+    if (child) {
+      try {
+        child.kill(15);
+        await child.status;
+      } catch {
+        // ignore
+      }
+    }
+    throw new Error(
+      `服务器 ${maxWaitMs}ms 内未就绪: http://127.0.0.1:${E2E_PORT}/. ` +
+        (lastErr instanceof Error ? lastErr.message : String(lastErr)),
+    );
+  }, { timeout: 35000, sanitizeOps: false, sanitizeResources: false });
 });

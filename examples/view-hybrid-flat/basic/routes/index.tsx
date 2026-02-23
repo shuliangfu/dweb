@@ -97,6 +97,11 @@ export default function Home() {
   const [input, setInput] = createSignal("");
 
   createEffect(() => {
+    // 仅浏览器端创建并连接 Socket.IO 客户端；SSR 时跳过，避免服务进程内自连导致 /socket.io/ 500 与握手 404
+    if (typeof (globalThis as { window?: unknown }).window === "undefined") {
+      return;
+    }
+
     console.log("clientRef.current", new Date().toISOString());
 
     const origin = typeof globalThis !== "undefined" &&

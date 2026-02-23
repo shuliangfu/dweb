@@ -105,7 +105,11 @@ export default function Home() {
   const [input, setInput] = createSignal("");
 
   createEffect(() => {
-    // 仅在浏览器环境创建客户端（避免 SSR 时访问 location）
+    // 仅浏览器端创建并连接 WebSocket 客户端；SSR 时跳过，避免服务进程内自连 /ws
+    if (typeof (globalThis as { window?: unknown }).window === "undefined") {
+      return;
+    }
+
     const origin = typeof globalThis !== "undefined" &&
         (globalThis as { location?: Location }).location
       ? (globalThis as { location: Location }).location.origin

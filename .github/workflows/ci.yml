@@ -84,6 +84,8 @@ jobs:
       - name: Test (Deno, Windows)
         run: deno test -A --no-check tests/
 
+  # Bun 仅跑 unit + integration，避免 Playwright 在 Bun 下不稳定（Linux/Mac 也偶发超时、Failed to connect）
+  # 浏览器 e2e 由上方 Deno job 在 Linux/Mac/Windows 上统一覆盖
   test-linux-bun:
     runs-on: ubuntu-latest
     steps:
@@ -96,12 +98,10 @@ jobs:
       - name: Install dependencies (Bun)
         run: bun install
 
-      - name: Install Playwright Chromium
-        run: npx -y playwright@latest install chromium
-
-      - name: Test (Bun)
-        run: bun test tests/ --max-concurrency=1
-        timeout-minutes: 15
+      # 不安装 Playwright，Bun job 不跑浏览器 e2e
+      - name: Test (Bun, unit + integration only)
+        run: bun test tests/unit tests/integration --max-concurrency=1
+        timeout-minutes: 10
 
   test-macos-bun:
     runs-on: macos-latest
@@ -115,12 +115,10 @@ jobs:
       - name: Install dependencies (Bun)
         run: bun install
 
-      - name: Install Playwright Chromium
-        run: npx -y playwright@latest install chromium
-
-      - name: Test (Bun, macOS)
-        run: bun test tests/ --max-concurrency=1
-        timeout-minutes: 15
+      # 不安装 Playwright，Bun job 不跑浏览器 e2e
+      - name: Test (Bun, macOS, unit + integration only)
+        run: bun test tests/unit tests/integration --max-concurrency=1
+        timeout-minutes: 10
 
   test-windows-bun:
     runs-on: windows-latest

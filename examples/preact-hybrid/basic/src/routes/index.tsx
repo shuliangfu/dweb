@@ -90,7 +90,9 @@ export default function Home() {
   const [input, setInput] = useState("");
 
   useEffect(() => {
-    // 仅在浏览器环境创建客户端（避免 SSR 时访问 location）
+    // 仅浏览器端创建并连接 WebSocket 客户端；SSR 时跳过，避免服务进程内自连 /ws
+    if (typeof window === "undefined") return;
+
     const origin = typeof globalThis !== "undefined" && globalThis.location
       ? globalThis.location.origin
       : "http://localhost:3002";
