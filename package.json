@@ -50,7 +50,7 @@
     "@dreamer/lifecycle": "npm:@jsr/dreamer__lifecycle@^1.0.2",
     "@dreamer/logger": "npm:@jsr/dreamer__logger@^1.0.2",
     "@dreamer/middleware": "npm:@jsr/dreamer__middleware@^1.0.2",
-    "@dreamer/middlewares": "npm:@jsr/dreamer__middlewares@^1.0.2",
+    "@dreamer/middlewares": "npm:@jsr/dreamer__middlewares@^1.0.3",
     "@dreamer/plugin": "npm:@jsr/dreamer__plugin@^1.0.2",
     "@dreamer/plugins": "npm:@jsr/dreamer__plugins@^1.0.6",
     "@dreamer/render": "npm:@jsr/dreamer__render@^1.0.39",

@@ -20,7 +20,7 @@ import {
   remove,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
-import { getRepoRoot } from "../setup.ts";
+import { existsBuildOutput, getRepoRoot, getSpawnCwd } from "../setup.ts";
 
 /** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
 const REPO_ROOT = getRepoRoot();
@@ -52,7 +52,7 @@ describe("integration: SSG + React 构建", () => {
       : ["run", "src/main.ts", "--build"];
     const cmd = createCommand(execPath(), {
       args,
-      cwd: exampleDir,
+      cwd: getSpawnCwd(exampleDir),
       stdout: "piped",
       stderr: "piped",
     });
@@ -67,7 +67,7 @@ describe("integration: SSG + React 构建", () => {
     }
 
     const indexPath = join(exampleDir, "dist", "client", "index.html");
-    const existsIndex = await exists(indexPath);
+    const existsIndex = await existsBuildOutput(indexPath);
     expect(existsIndex).toBe(true);
 
     const html = await readTextFile(indexPath);

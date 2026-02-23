@@ -23,7 +23,7 @@ import {
   type SpawnedProcess,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
-import { getRepoRoot } from "../setup.ts";
+import { existsBuildOutput, getRepoRoot, getSpawnCwd } from "../setup.ts";
 
 /** 构建后启动 SSR 服务时使用的端口，与其它 e2e 错开 */
 const SSR_BUILD_SERVER_PORT = 39998;
@@ -56,7 +56,7 @@ describe("integration: SSR + View 构建", () => {
       : ["run", "src/main.ts", "--build"];
     const cmd = createCommand(execPath(), {
       args,
-      cwd: exampleDir,
+      cwd: getSpawnCwd(exampleDir),
       stdout: "piped",
       stderr: "piped",
     });
@@ -71,17 +71,17 @@ describe("integration: SSR + View 构建", () => {
     }
 
     const serverJs = join(exampleDir, "dist", "server.js");
-    expect(await exists(serverJs)).toBe(true);
+    expect(await existsBuildOutput(serverJs)).toBe(true);
 
     const clientDir = join(exampleDir, "dist", "client");
-    expect(await exists(clientDir)).toBe(true);
+    expect(await existsBuildOutput(clientDir)).toBe(true);
 
     const clientFiles = await readdir(clientDir);
     const clientJs = clientFiles.find((f) => f.name.startsWith("_client"));
     expect(clientJs).toBeDefined();
 
     const assetsDir = join(clientDir, "assets");
-    expect(await exists(assetsDir)).toBe(true);
+    expect(await existsBuildOutput(assetsDir)).toBe(true);
   }, { sanitizeOps: false, sanitizeResources: false, timeout: 90000 });
 
   it(
@@ -89,7 +89,7 @@ describe("integration: SSR + View 构建", () => {
     async () => {
       const distDir = join(exampleDir, "dist");
       const serverJs = join(distDir, "server.js");
-      if (!(await exists(serverJs))) {
+      if (!(await existsBuildOutput(serverJs))) {
         throw new Error("请先运行上一用例完成构建，或 dist 已被清理");
       }
 
@@ -98,7 +98,7 @@ describe("integration: SSR + View 构建", () => {
         : ["run", join(exampleDir, "dist", "server.js")];
       const cmd = createCommand(execPath(), {
         args,
-        cwd: exampleDir,
+        cwd: getSpawnCwd(exampleDir),
         stdout: "piped",
         stderr: "piped",
         env: { ...getEnvAll(), PORT: String(SSR_BUILD_SERVER_PORT) },

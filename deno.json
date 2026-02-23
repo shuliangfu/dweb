@@ -50,7 +50,7 @@
     "@dreamer/lifecycle": "jsr:@dreamer/lifecycle@^1.0.2",
     "@dreamer/logger": "jsr:@dreamer/logger@^1.0.2",
     "@dreamer/middleware": "jsr:@dreamer/middleware@^1.0.2",
-    "@dreamer/middlewares": "jsr:@dreamer/middlewares@^1.0.2",
+    "@dreamer/middlewares": "jsr:@dreamer/middlewares@^1.0.3",
     "@dreamer/plugin": "jsr:@dreamer/plugin@^1.0.2",
     "@dreamer/plugins": "jsr:@dreamer/plugins@^1.0.6",
 

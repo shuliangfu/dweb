@@ -20,7 +20,7 @@ import {
   remove,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
-import { getRepoRoot } from "../setup.ts";
+import { existsBuildOutput, getRepoRoot, getSpawnCwd } from "../setup.ts";
 
 /** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
 const REPO_ROOT = getRepoRoot();
@@ -52,7 +52,7 @@ describe("integration: Hybrid + React 构建（无 src 目录）", () => {
       : ["run", "main.ts", "--build"];
     const cmd = createCommand(execPath(), {
       args,
-      cwd: exampleDir,
+      cwd: getSpawnCwd(exampleDir),
       stdout: "piped",
       stderr: "piped",
     });
@@ -67,17 +67,17 @@ describe("integration: Hybrid + React 构建（无 src 目录）", () => {
     }
 
     const serverJs = join(exampleDir, "dist", "server.js");
-    expect(await exists(serverJs)).toBe(true);
+    expect(await existsBuildOutput(serverJs)).toBe(true);
 
     const clientDir = join(exampleDir, "dist", "client");
-    expect(await exists(clientDir)).toBe(true);
+    expect(await existsBuildOutput(clientDir)).toBe(true);
 
     const clientFiles = await readdir(clientDir);
     const clientJs = clientFiles.find((f) => f.name.startsWith("_client"));
     expect(clientJs).toBeDefined();
 
     const assetsDir = join(clientDir, "assets");
-    const hasAssets = await exists(assetsDir);
+    const hasAssets = await existsBuildOutput(assetsDir);
     expect(hasAssets).toBe(true);
   }, { sanitizeOps: false, sanitizeResources: false, timeout: 90000 });
 });
