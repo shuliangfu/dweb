@@ -23,7 +23,7 @@ import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import {
   existsBuildOutput,
   getRepoRoot,
-  getSpawnCwdForIntegration,
+  getSpawnCwd,
 } from "../setup.ts";
 
 /** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
@@ -56,7 +56,7 @@ describe("integration: SSG + React 构建", () => {
       : ["run", "src/main.ts", "--build"];
     const cmd = createCommand(execPath(), {
       args,
-      cwd: getSpawnCwdForIntegration(),
+      cwd: getSpawnCwd(exampleDir),
       stdout: "piped",
       stderr: "piped",
     });

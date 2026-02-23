@@ -14,6 +14,7 @@ import {
   cwd,
   execPath,
   exists,
+  getEnv,
   getEnvAll,
   IS_DENO,
   join,
@@ -25,11 +26,14 @@ import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import {
   existsBuildOutput,
   getRepoRoot,
-  getSpawnCwdForIntegration,
+  getSpawnCwd,
 } from "../setup.ts";
 
 /** 构建后启动 SSR 服务时使用的端口，与其它 e2e 错开 */
 const SSR_BUILD_SERVER_PORT = 39996;
+
+/** 是否在 CI 环境（GitHub Actions 等），用于放宽等待时间与超时 */
+const IS_CI = getEnv("CI") === "true" || getEnv("GITHUB_ACTIONS") === "true";
 
 /** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
 const REPO_ROOT = getRepoRoot();
@@ -61,7 +65,7 @@ describe("integration: SSR + Preact 构建", () => {
       : ["run", "src/main.ts", "--build"];
     const cmd = createCommand(execPath(), {
       args,
-      cwd: getSpawnCwdForIntegration(),
+      cwd: getSpawnCwd(exampleDir),
       stdout: "piped",
       stderr: "piped",
     });
@@ -104,7 +108,7 @@ describe("integration: SSR + Preact 构建", () => {
         : ["run", join(exampleDir, "dist", "server.js")];
       const cmd = createCommand(execPath(), {
         args,
-        cwd: getSpawnCwdForIntegration(),
+        cwd: getSpawnCwd(exampleDir),
         stdout: "piped",
         stderr: "piped",
         env: { ...getEnvAll(), PORT: String(SSR_BUILD_SERVER_PORT) },
@@ -113,51 +117,65 @@ describe("integration: SSR + Preact 构建", () => {
 
       const baseUrl = `http://127.0.0.1:${SSR_BUILD_SERVER_PORT}`;
       const pollIntervalMs = 500;
-      const maxAttempts = 90;
+      // CI 环境启动较慢，延长初始等待与总轮询次数
+      const initialDelayMs = IS_CI ? 5000 : 2000;
+      const maxAttempts = IS_CI ? 150 : 90;
       let lastErr: unknown = null;
-      await new Promise((r) => setTimeout(r, 2000));
-      for (let i = 0; i < maxAttempts; i++) {
-        await new Promise((r) => setTimeout(r, pollIntervalMs));
-        try {
-          const res = await fetch(baseUrl + "/");
-          if (res.ok) {
-            const html = await res.text();
-            expect(html).toContain("globalThis.__DATA__");
-            expect(html).toContain("__DWEB_MODE__");
-            expect(html).toContain('src="/_client.js"');
-            expect(html).toContain("计数器示例");
-            expect(html).toContain("data-counter-value");
-            try {
-              child.kill(15);
-              await child.status;
-            } catch {
-              // ignore
+      await new Promise((r) => setTimeout(r, initialDelayMs));
+      try {
+        for (let i = 0; i < maxAttempts; i++) {
+          await new Promise((r) => setTimeout(r, pollIntervalMs));
+          try {
+            const res = await fetch(baseUrl + "/");
+            if (res.ok) {
+              const html = await res.text();
+              expect(html).toContain("globalThis.__DATA__");
+              expect(html).toContain("__DWEB_MODE__");
+              expect(html).toContain('src="/_client.js"');
+              expect(html).toContain("计数器示例");
+              expect(html).toContain("data-counter-value");
+              return;
             }
-            return;
+          } catch (e) {
+            lastErr = e;
           }
-        } catch (e) {
-          lastErr = e;
+        }
+        // 收集进程退出码与 stdout/stderr 便于排查 CI 下服务器未就绪原因
+        const exitStatus = await Promise.race([
+          child.status,
+          new Promise<undefined>((r) => setTimeout(() => r(undefined), 500)),
+        ]);
+        const stdoutText = child.stdout
+          ? await new Response(child.stdout).text()
+          : "";
+        const stderrText = child.stderr
+          ? await new Response(child.stderr).text()
+          : "";
+        const exitInfo =
+          exitStatus !== undefined
+            ? ` (进程已退出 code=${exitStatus.code})`
+            : "";
+        throw new Error(
+          `SSR 服务器在 ${maxAttempts} 次内未就绪 (${(maxAttempts * pollIntervalMs) / 1000}s)${exitInfo}: ${lastErr}${
+            stdoutText ? `\nstdout: ${stdoutText.slice(0, 600)}` : ""
+          }${stderrText ? `\nstderr: ${stderrText.slice(0, 600)}` : ""}`,
+        );
+      } finally {
+        try {
+          child.kill(9);
+          await Promise.race([
+            child.status,
+            new Promise<void>((r) => setTimeout(r, 2000)),
+          ]);
+        } catch {
+          // ignore
         }
       }
-      try {
-        child.kill(15);
-        await child.status;
-      } catch {
-        // ignore
-      }
-      const stderrText = child.stderr
-        ? await new Response(child.stderr).text()
-        : "";
-      throw new Error(
-        `SSR 服务器在 ${maxAttempts} 次内未就绪 (${(maxAttempts * pollIntervalMs) / 1000}s): ${lastErr}${
-          stderrText ? `\nstderr: ${stderrText.slice(0, 800)}` : ""
-        }`,
-      );
     },
     {
       sanitizeOps: false,
       sanitizeResources: false,
-      timeout: 90000,
+      timeout: IS_CI ? 120000 : 90000,
     },
   );
 });
