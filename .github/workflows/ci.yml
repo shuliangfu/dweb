@@ -1,4 +1,5 @@
 # CI: 在 macOS、Ubuntu、Windows 上运行测试，验证跨平台兼容性
+# 结构参考 view 包：Deno 与 Bun 拆成独立 job；Windows 上 Bun 不跑浏览器 e2e
 name: CI
 
 on:
@@ -82,3 +83,57 @@ jobs:
 
       - name: Test (Deno, Windows)
         run: deno test -A --no-check tests/
+
+  test-linux-bun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies (Bun)
+        run: bun install
+
+      - name: Install Playwright Chromium
+        run: npx -y playwright@latest install chromium
+
+      - name: Test (Bun)
+        run: bun test tests/
+
+  test-macos-bun:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies (Bun)
+        run: bun install
+
+      - name: Install Playwright Chromium
+        run: npx -y playwright@latest install chromium
+
+      - name: Test (Bun, macOS)
+        run: bun test tests/
+
+  test-windows-bun:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies (Bun)
+        run: bun install
+
+      # Windows 上浏览器 e2e 由上方 test-windows (Deno) 覆盖；Bun 在 Windows 不跑浏览器测试，仅跑 unit + integration
+      - name: Test (Bun, Windows)
+        shell: pwsh
+        run: bun test tests/unit tests/integration
+        timeout-minutes: 10

@@ -3,6 +3,9 @@
  *
  * 测试 config 加载 + lifecycle 钩子 + middleware 的协作。
  * 通过子进程执行临时目录中的 src/main.ts，使框架以该入口推断 config/build 路径，避免 DWEB_E20。
+ *
+ * Deno：使用 deno.json 的 imports 将 @dreamer/dweb 指向本地 file://。
+ * Bun：Bun 不读 deno.json，需在临时目录写 package.json 并用 file: 引用本地 dweb，再 bun install 后运行。
  */
 
 import {
@@ -16,6 +19,7 @@ import {
   makeTempDir,
   readTextFile,
   remove,
+  symlink,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
@@ -54,6 +58,16 @@ describe("integration: 配置与生命周期", () => {
         2,
       ),
     );
+
+    // Bun 不读 deno.json，通过 node_modules 符号链接指向本地 dweb，Bun 会使用仓库内 node_modules 解析 dweb 的依赖
+    if (!IS_DENO) {
+      await ensureDir(join(testDir, "node_modules", "@dreamer"));
+      await symlink(
+        REPO_ROOT,
+        join(testDir, "node_modules", "@dreamer", "dweb"),
+        "dir",
+      );
+    }
 
     // 入口为 src/main.ts 时，框架推断 config 目录为 src/config
     await ensureDir(join(testDir, "src", "config"));
@@ -146,5 +160,9 @@ if (g.process?.exit) g.process.exit(0);
     // 配置已加载：banner 会打印应用名（[应用名称] 或 [App name]，依 locale）；断言配置中的名称与 init 阶段
     expect(stdoutText).toContain("integration-test");
     expect(stdoutText).toContain("STAGES:init");
-  }, { sanitizeOps: false, sanitizeResources: false });
+  }, {
+    timeout: 60_000,
+    sanitizeOps: false,
+    sanitizeResources: false,
+  });
 });
