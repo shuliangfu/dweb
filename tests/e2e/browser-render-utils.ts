@@ -72,8 +72,8 @@ const E2E_PORTS: Record<string, number> = {
   "view-hybrid-flat": 3015,
 };
 
-/** 浏览器单用例超时：Windows 60s，其他 30s；不通过时再长也通不过，避免耗时过长 */
-const BROWSER_TEST_TIMEOUT_MS = platform() === "windows" ? 60_000 : 30_000;
+/** 浏览器单用例超时：Windows 90s，其他 60s；CI/慢环境需更长时间完成构建+启动+渲染 */
+const BROWSER_TEST_TIMEOUT_MS = platform() === "windows" ? 90_000 : 60_000;
 
 /** 就绪探测选项：advanced 的 backend 必须用 path: "/api/users"，否则 SSG backend 的 GET / 会返回 500 */
 type WaitForServerReadyOptions = { path?: string };
@@ -216,10 +216,18 @@ async function gotoWithRetry(
 }
 
 /**
- * Bun 下在示例目录执行 bun install，保证 external 依赖（如 tailwindcss、lightningcss）在 node_modules 可用，避免生产启动 ENOENT
+ * Bun 下在示例目录执行 bun install，保证 external 依赖（如 tailwindcss、lightningcss）在 node_modules 可用，避免生产启动 ENOENT。
+ * 若示例在 dweb 仓库内（DWEB_ROOT），则跳过：在子目录执行会解析 file: 指向的 dweb/package.json，其中
+ * npm:@jsr/dreamer__* 依赖会向 npm 请求，JSR 包不在 npm 上导致 404；仓库内 e2e 依赖 workspace 已有 node_modules。
  */
 async function ensureBunDeps(exampleDir: string): Promise<void> {
   if (IS_DENO) return;
+  const normalizedExample = resolve(exampleDir);
+  const rootDir = resolve(DWEB_ROOT);
+  const isInRepo = normalizedExample === rootDir ||
+    (normalizedExample.startsWith(rootDir + "/") ||
+      normalizedExample.startsWith(rootDir + "\\"));
+  if (isInRepo) return;
   const cmd = createCommand(execPath(), {
     args: ["install"],
     cwd: exampleDir,

@@ -5,7 +5,7 @@
 
 import type { AppConfig } from "@dreamer/dweb";
 
-const config: AppConfig = {
+export const config: AppConfig = {
   server: {
     host: "127.0.0.1",
   },

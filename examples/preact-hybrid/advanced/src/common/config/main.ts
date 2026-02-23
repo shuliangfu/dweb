@@ -18,7 +18,14 @@ export const commonConfig = {
 
   build: {
     server: {
-      external: ["tailwindcss", "lightningcss"],
+      external: [
+        "tailwindcss",
+        "lightningcss",
+        "preact",
+        "preact-render-to-string",
+        "preact/hooks",
+        "preact/jsx-runtime",
+      ],
     },
   },
 };

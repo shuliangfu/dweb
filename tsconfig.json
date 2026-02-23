@@ -7,14 +7,13 @@
       ],
       "@dreamer/dweb/*": [
         "src/*"
-      ],
-
-      "@dreamer/esbuild": [
-        "../esbuild/src/mod.ts"
-      ],
-      "@dreamer/esbuild/*": [
-        "../esbuild/src/*"
       ]
+      // "@dreamer/esbuild": [
+      //   "../esbuild/src/mod.ts"
+      // ],
+      // "@dreamer/esbuild/*": [
+      //   "../esbuild/src/*"
+      // ]
     }
   }
 }

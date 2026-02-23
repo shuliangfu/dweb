@@ -9,7 +9,7 @@ import { getEnv } from "@dreamer/runtime-adapter";
 const portFromEnv = getEnv("PORT");
 const serverPort = portFromEnv ? Number(portFromEnv) : 3004;
 
-const config: AppConfig = {
+export const config: AppConfig = {
   name: "react-hybrid-basic-example",
   version: "1.0.0",
   server: {
@@ -27,9 +27,17 @@ const config: AppConfig = {
     level: "info",
     format: "text",
   },
+  // 构建配置（服务端 external 含 react 等，避免与动态加载的组件双实例导致 SSR 报错）
   build: {
     server: {
-      external: ["tailwindcss", "lightningcss"],
+      external: [
+        "tailwindcss",
+        "lightningcss",
+        "react",
+        "react-dom",
+        "react-dom/server",
+        "react/jsx-runtime",
+      ],
     },
   },
 };

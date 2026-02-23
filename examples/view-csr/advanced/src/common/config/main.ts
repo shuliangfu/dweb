@@ -17,3 +17,6 @@ export const commonConfig = {
     },
   },
 };
+
+/** 默认导出供框架 loadModuleConfig 深度合并（module.default || module） */
+export default commonConfig;

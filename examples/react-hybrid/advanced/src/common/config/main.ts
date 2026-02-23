@@ -8,7 +8,17 @@ export const commonConfig = {
   apiBasePath: "/api",
   build: {
     server: {
-      external: ["tailwindcss", "lightningcss"],
+      external: [
+        "tailwindcss",
+        "lightningcss",
+        "react",
+        "react-dom",
+        "react-dom/server",
+        "react/jsx-runtime",
+      ],
     },
   },
 };
+
+/** 默认导出供框架 loadModuleConfig 深度合并（module.default || module） */
+export default commonConfig;

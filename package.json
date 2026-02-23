@@ -44,7 +44,7 @@
     "@dreamer/console": "npm:@jsr/dreamer__console@^1.0.12",
     "@dreamer/database": "npm:@jsr/dreamer__database@^1.0.8",
     "@dreamer/dweb": "file:../dweb",
-    "@dreamer/esbuild": "file:../esbuild",
+    "@dreamer/esbuild": "npm:@jsr/dreamer__esbuild@^1.0.37",
     "@dreamer/i18n": "npm:@jsr/dreamer__i18n@1.0.1",
     "@dreamer/image": "npm:@jsr/dreamer__image@^1.0.2",
     "@dreamer/lifecycle": "npm:@jsr/dreamer__lifecycle@^1.0.2",

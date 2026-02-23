@@ -27,9 +27,17 @@ const config: AppConfig = {
     level: "info",
     format: "text",
   },
+  // 构建配置（服务端 external 含 react 等，避免与动态加载的组件双实例导致 SSR 报错）
   build: {
     server: {
-      external: ["tailwindcss", "lightningcss"],
+      external: [
+        "tailwindcss",
+        "lightningcss",
+        "react",
+        "react-dom",
+        "react-dom/server",
+        "react/jsx-runtime",
+      ],
     },
   },
 };

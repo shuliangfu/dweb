@@ -39,11 +39,18 @@ const config: AppConfig = {
     level: "info",
   },
 
-  // 构建配置
+  // 构建配置（服务端 external 含 preact 等，避免与动态加载的组件双实例导致 SSR 报错 r.__H）
   build: {
     server: {
       useNativeCompile: false,
-      external: ["tailwindcss", "lightningcss"],
+      external: [
+        "tailwindcss",
+        "lightningcss",
+        "preact",
+        "preact-render-to-string",
+        "preact/hooks",
+        "preact/jsx-runtime",
+      ],
     },
     /** 资源处理：复制 assets、压缩并 hash 化图片后输出到 client/assets/images */
     assets: {
