@@ -73,7 +73,7 @@ export async function collectOptions(
     : targetDirRaw;
 
   const runtimeIdx = await interactiveMenu(
-    "\n" + $tr("init.runtime"),
+    $tr("init.runtime"),
     [$tr("init.runtimeDeno"), $tr("init.runtimeBun")],
     0,
   );

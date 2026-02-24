@@ -1974,11 +1974,10 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.90] - 2026-02-24
+### [3.0.91] - 2026-02-24
 
-**新增**：CLI 安装成功时显示已安装版本（installSuccessWithVersion i18n）。
-
-**变更**：JSR 发布流程不再使用 --no-check，发布时执行完整类型检查。
+**变更**：Init 移除运行时选择菜单前的空行；模板与示例中 @dreamer/esbuild 升级至
+^1.0.38（Bun 服务端构建修复）。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

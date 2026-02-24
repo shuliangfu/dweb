@@ -1906,13 +1906,10 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.90] - 2026-02-24
+### [3.0.91] - 2026-02-24
 
-**Added**: CLI install success shows installed version
-(installSuccessWithVersion i18n).
-
-**Changed**: JSR publish workflow no longer uses --no-check; full type check on
-publish.
+**Changed**: Init — remove leading newline before runtime selection menu; bump
+@dreamer/esbuild to ^1.0.38 in template and examples (Bun server build fix).
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

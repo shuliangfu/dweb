@@ -8,6 +8,17 @@ and this project adheres to
 
 ---
 
+## [3.0.91] - 2026-02-24
+
+### Changed
+
+- **Init:** Removed leading newline before the runtime selection menu prompt
+  (Deno/Bun) for a cleaner CLI output.
+- **Dependencies:** Bumped `@dreamer/esbuild` to ^1.0.38 in CLI template and all
+  examples (includes Bun server build fix for `@dreamer/plugins/*` resolution).
+
+---
+
 ## [3.0.90] - 2026-02-24
 
 ### Added
