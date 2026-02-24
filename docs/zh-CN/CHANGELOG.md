@@ -7,6 +7,15 @@
 
 ---
 
+## [3.0.92] - 2026-02-24
+
+### 变更
+
+- **Init（Bun）**：`tsconfig.json` 模板现包含 `allowImportingTsExtensions: true`
+  与 `include: ["src/**/*", "jsx.d.ts"]`（view 引擎 JSX 类型）。
+
+---
+
 ## [3.0.91] - 2026-02-24
 
 ### 变更

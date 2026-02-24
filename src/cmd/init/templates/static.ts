@@ -121,7 +121,7 @@ refactorTemplates:
 
 /**
  * Bun 项目用 tsconfig.json：根据模板引擎设置 jsx / jsxImportSource，供 tsc 与 IDE 类型检查
- * moduleResolution: "nodenext" 与 NodeNext 模块规范一致，便于解析 node_modules
+ * moduleResolution: "nodenext" 与 NodeNext 模块规范一致；include 含 jsx.d.ts 供 view 引擎类型
  * 仅当 runtime === "bun" 时由 generate 写入
  */
 export function getTsconfigJson(opts: InitOptions): string {
@@ -140,8 +140,9 @@ export function getTsconfigJson(opts: InitOptions): string {
         "strict": true,
         "resolveJsonModule": true,
         "isolatedModules": true,
+        "allowImportingTsExtensions": true,
       },
-      "include": ["src/**/*"],
+      "include": ["src/**/*", "jsx.d.ts"],
       "exclude": ["node_modules", "dist"],
     },
     null,

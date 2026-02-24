@@ -1906,10 +1906,10 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.91] - 2026-02-24
+### [3.0.92] - 2026-02-24
 
-**Changed**: Init — remove leading newline before runtime selection menu; bump
-@dreamer/esbuild to ^1.0.38 in template and examples (Bun server build fix).
+**Changed**: Init (Bun) tsconfig.json template — allowImportingTsExtensions and
+include jsx.d.ts.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

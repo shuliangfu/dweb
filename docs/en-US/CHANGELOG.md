@@ -8,6 +8,16 @@ and this project adheres to
 
 ---
 
+## [3.0.92] - 2026-02-24
+
+### Changed
+
+- **Init (Bun):** `tsconfig.json` template now includes
+  `allowImportingTsExtensions: true` and `include: ["src/**/*", "jsx.d.ts"]` for
+  view engine JSX types.
+
+---
+
 ## [3.0.91] - 2026-02-24
 
 ### Changed

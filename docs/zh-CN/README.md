@@ -1974,10 +1974,10 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.91] - 2026-02-24
+### [3.0.92] - 2026-02-24
 
-**变更**：Init 移除运行时选择菜单前的空行；模板与示例中 @dreamer/esbuild 升级至
-^1.0.38（Bun 服务端构建修复）。
+**变更**：Init（Bun）tsconfig.json 模板增加 allowImportingTsExtensions 与
+include jsx.d.ts。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
