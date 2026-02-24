@@ -4,12 +4,12 @@
 
 ## 📋 Test Overview
 
-| Item             | Value                |
-| ---------------- | -------------------- |
-| Framework        | 3.0.88               |
+| Item             | Value                 |
+| ---------------- | --------------------- |
+| Framework        | 3.0.88                |
 | Test framework   | @dreamer/test@^1.0.15 |
-| Test date        | 2026-02-24           |
-| Test environment | Deno 2.x / Bun 1.x   |
+| Test date        | 2026-02-24            |
+| Test environment | Deno 2.x / Bun 1.x    |
 
 ---
 
@@ -17,15 +17,15 @@
 
 ### Overall Statistics
 
-| Metric           | Count                                                        |
-| ---------------- | ------------------------------------------------------------ |
-| Test files       | 83+                                                          |
-| Total test cases | 833                                                          |
-| Passed           | 833                                                          |
-| Ignored          | 2                                                            |
-| Failed           | 0                                                            |
-| Pass rate        | 100%                                                         |
-| Execution time   | ~6m18s (`deno test -A tests` single run)                     |
+| Metric           | Count                                    |
+| ---------------- | ---------------------------------------- |
+| Test files       | 83+                                      |
+| Total test cases | 833                                      |
+| Passed           | 833                                      |
+| Ignored          | 2                                        |
+| Failed           | 0                                        |
+| Pass rate        | 100%                                     |
+| Execution time   | ~6m18s (`deno test -A tests` single run) |
 
 ### Test File Statistics
 
@@ -91,25 +91,25 @@
 
 #### E2E Tests (tests/e2e/)
 
-| File name                             | Test count | Status        | Description                                                                 |
-| ------------------------------------- | ---------- | ------------- | --------------------------------------------------------------------------- |
-| `browser-render-preact-csr.test.ts`   | 9          | ✅ All passed | Preact CSR basic/advanced: home, about, counter, metadata                   |
-| `browser-render-preact-ssr.test.ts`   | 9          | ✅ All passed | Preact SSR                                                                  |
-| `browser-render-preact-ssg.test.ts`   | 9          | ✅ All passed | Preact SSG                                                                  |
-| `browser-render-preact-hybrid.test.ts` | 9        | ✅ All passed | Preact Hybrid                                                               |
-| `browser-render-preact-hybrid-flat.test.ts` | 9   | ✅ All passed | Preact Hybrid (no src)                                                      |
-| `browser-render-react-csr.test.ts`    | 9          | ✅ All passed | React CSR basic/advanced                                                    |
-| `browser-render-react-ssr.test.ts`    | 9          | ✅ All passed | React SSR                                                                   |
-| `browser-render-react-ssg.test.ts`   | 9          | ✅ All passed | React SSG                                                                   |
-| `browser-render-react-hybrid.test.ts` | 9        | ✅ All passed | React Hybrid                                                                |
-| `browser-render-react-hybrid-flat.test.ts` | 9   | ✅ All passed | React Hybrid (no src)                                                       |
-| `browser-render-view-csr.test.ts`     | 9          | ✅ All passed | View CSR                                                                    |
-| `browser-render-view-ssr.test.ts`     | 9          | ✅ All passed | View SSR                                                                    |
-| `browser-render-view-ssg.test.ts`     | 9          | ✅ All passed | View SSG                                                                    |
-| `browser-render-view-hybrid.test.ts`  | 9          | ✅ All passed | View Hybrid                                                                 |
-| `browser-render-view-hybrid-flat.test.ts` | 9   | ✅ All passed | View Hybrid (no src)                                                        |
-| `server-request.test.ts`               | 3          | ✅ All passed | Server starts and returns HTML                                              |
-| **Subtotal**                           | **138**    | ✅ All passed | Included in total ~6m18s                                                    |
+| File name                                   | Test count | Status        | Description                                               |
+| ------------------------------------------- | ---------- | ------------- | --------------------------------------------------------- |
+| `browser-render-preact-csr.test.ts`         | 9          | ✅ All passed | Preact CSR basic/advanced: home, about, counter, metadata |
+| `browser-render-preact-ssr.test.ts`         | 9          | ✅ All passed | Preact SSR                                                |
+| `browser-render-preact-ssg.test.ts`         | 9          | ✅ All passed | Preact SSG                                                |
+| `browser-render-preact-hybrid.test.ts`      | 9          | ✅ All passed | Preact Hybrid                                             |
+| `browser-render-preact-hybrid-flat.test.ts` | 9          | ✅ All passed | Preact Hybrid (no src)                                    |
+| `browser-render-react-csr.test.ts`          | 9          | ✅ All passed | React CSR basic/advanced                                  |
+| `browser-render-react-ssr.test.ts`          | 9          | ✅ All passed | React SSR                                                 |
+| `browser-render-react-ssg.test.ts`          | 9          | ✅ All passed | React SSG                                                 |
+| `browser-render-react-hybrid.test.ts`       | 9          | ✅ All passed | React Hybrid                                              |
+| `browser-render-react-hybrid-flat.test.ts`  | 9          | ✅ All passed | React Hybrid (no src)                                     |
+| `browser-render-view-csr.test.ts`           | 9          | ✅ All passed | View CSR                                                  |
+| `browser-render-view-ssr.test.ts`           | 9          | ✅ All passed | View SSR                                                  |
+| `browser-render-view-ssg.test.ts`           | 9          | ✅ All passed | View SSG                                                  |
+| `browser-render-view-hybrid.test.ts`        | 9          | ✅ All passed | View Hybrid                                               |
+| `browser-render-view-hybrid-flat.test.ts`   | 9          | ✅ All passed | View Hybrid (no src)                                      |
+| `server-request.test.ts`                    | 3          | ✅ All passed | Server starts and returns HTML                            |
+| **Subtotal**                                | **138**    | ✅ All passed | Included in total ~6m18s                                  |
 
 #### Integration Tests (tests/integration/)
 
@@ -600,7 +600,8 @@
 
 ### 21. Additional Unit Tests (app, asset-manifest, build-dirs, sanitize, path, runtime, etc.)
 
-- ✅ **app.test.ts** (20): App constructor, use(), registerPlugin(), on(), stage, init flow
+- ✅ **app.test.ts** (20): App constructor, use(), registerPlugin(), on(),
+  stage, init flow
 - ✅ **asset-manifest.test.ts** (6): replaceAssetPathsInHtml and asset manifest
 - ✅ **build-dirs.test.ts** (18): Build directory inference and clean
 - ✅ **sanitize.test.ts** (15): sanitizeRequestParams dangerous key filter, NUL
@@ -758,9 +759,10 @@
 ## 🎯 Conclusion
 
 @dreamer/dweb tests are fully covered at file level. **833** test cases pass (2
-Windows-only cases skipped on non-Windows). Tests were run with `deno test -A
-tests` in a single run (~**6m18s**). All tests are substantive and verify
-actual behavior. Coverage includes:
+Windows-only cases skipped on non-Windows). Tests were run with
+`deno test -A
+tests` in a single run (~**6m18s**). All tests are substantive and
+verify actual behavior. Coverage includes:
 
 - ✅ Config management (validation and merge, including render.mode hybrid)
 - ✅ Service container integration

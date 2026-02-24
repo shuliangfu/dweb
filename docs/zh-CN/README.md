@@ -1974,11 +1974,15 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.88] - 2026-02-18
+### [3.0.89] - 2026-02-24
 
-**变更**：更新示例 deno.json 配置与依赖；调整
-build、features（database、socket-io、websocket、csr-client-builder、build-dirs、version）及测试（e2e、unit）以适配
-CI。
+**新增**：Init 运行时选择（Deno/Bun）、Bun tsconfig 与
+build.server.external；.vscode 与 i18n-ally；Hybrid 相关 i18n 键。
+
+**变更**：Init 菜单与 docker-compose 环境变量清理；Bun 兼容（external）、i18n
+$tr、View/CSR 客户端适配器、依赖、init 模板。
+
+**移除**：全局 $t 与 i18n.d.ts；未使用 locale 键；单体 browser-render e2e 测试。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

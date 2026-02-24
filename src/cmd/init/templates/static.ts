@@ -2,7 +2,7 @@
  * init 生成的静态文件：.gitignore、.vscode/settings.json、.vscode/i18n-ally-custom-framework.yml、Tailwind/Uno CSS 入口、favicon.svg、jsx.d.ts、deploy.sh、tsconfig.json（Bun）
  */
 
-import { getJsxImportSource, $tr } from "../helpers.ts";
+import { $tr, getJsxImportSource } from "../helpers.ts";
 import type { InitOptions } from "../types.ts";
 
 /** 部署脚本：构建后使用 docker compose 启动 */
@@ -187,7 +187,9 @@ export function getVscodeSettingsJson(opts: InitOptions): string {
     "editor.defaultFormatter": "vscode.json-language-features",
     "editor.formatOnSave": true
   },
-  // ==================== ${$tr("init.comments.vscodeEditor")} ====================
+  // ==================== ${
+      $tr("init.comments.vscodeEditor")
+    } ====================
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "editor.detectIndentation": false,
@@ -206,26 +208,34 @@ export function getVscodeSettingsJson(opts: InitOptions): string {
   "editor.minimap.enabled": true,
   // ==================== ${$tr("init.comments.vscodeCss")} ====================
   "css.lint.unknownAtRules": "ignore",
-  // ==================== ${$tr("init.comments.vscodeAssoc")} ====================
+  // ==================== ${
+      $tr("init.comments.vscodeAssoc")
+    } ====================
   "files.associations": {
     "*.tsx": "typescriptreact",
     "*.ts": "typescript"
   },
-  // ==================== ${$tr("init.comments.vscodeExclude")} ====================
+  // ==================== ${
+      $tr("init.comments.vscodeExclude")
+    } ====================
   "files.exclude": {
     "**/.git": true,
     "**/.DS_Store": true,
     "**/node_modules": true,
     "**/.bun": true
   },
-  // ==================== ${$tr("init.comments.vscodeSearchExclude")} ====================
+  // ==================== ${
+      $tr("init.comments.vscodeSearchExclude")
+    } ====================
   "search.exclude": {
     "**/node_modules": true,
     "**/.bun": true,
     "**/dist": true,
     "**/runtime": true
   },
-  // ==================== ${$tr("init.comments.vscodeI18n")} ====================
+  // ==================== ${
+      $tr("init.comments.vscodeI18n")
+    } ====================
   "i18n-ally.localesPaths": ["locales"],
   "i18n-ally.pathMatcher": "{locale}.{ext}",
   "i18n-ally.keystyle": "nested",
@@ -244,10 +254,14 @@ export function getVscodeSettingsJson(opts: InitOptions): string {
   }
   // Deno 运行时
   return `{
-  // ==================== ${$tr("init.comments.vscodeDeno")} ====================
+  // ==================== ${
+    $tr("init.comments.vscodeDeno")
+  } ====================
   "deno.enable": true,
   "deno.lint": true,
-  // ==================== ${$tr("init.comments.vscodeFormat")} ====================
+  // ==================== ${
+    $tr("init.comments.vscodeFormat")
+  } ====================
   "[typescript]": {
     "editor.defaultFormatter": "denoland.vscode-deno",
     "editor.formatOnSave": true,
@@ -280,7 +294,9 @@ export function getVscodeSettingsJson(opts: InitOptions): string {
     "editor.defaultFormatter": "vscode.json-language-features",
     "editor.formatOnSave": true
   },
-  // ==================== ${$tr("init.comments.vscodeEditor")} ====================
+  // ==================== ${
+    $tr("init.comments.vscodeEditor")
+  } ====================
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "editor.detectIndentation": false,
@@ -299,26 +315,34 @@ export function getVscodeSettingsJson(opts: InitOptions): string {
   "editor.minimap.enabled": true,
   // ==================== ${$tr("init.comments.vscodeCss")} ====================
   "css.lint.unknownAtRules": "ignore",
-  // ==================== ${$tr("init.comments.vscodeAssoc")} ====================
+  // ==================== ${
+    $tr("init.comments.vscodeAssoc")
+  } ====================
   "files.associations": {
     "*.tsx": "typescriptreact",
     "*.ts": "typescript"
   },
-  // ==================== ${$tr("init.comments.vscodeExclude")} ====================
+  // ==================== ${
+    $tr("init.comments.vscodeExclude")
+  } ====================
   "files.exclude": {
     "**/.git": true,
     "**/.DS_Store": true,
     "**/node_modules": true,
     "**/.deno": true
   },
-  // ==================== ${$tr("init.comments.vscodeSearchExclude")} ====================
+  // ==================== ${
+    $tr("init.comments.vscodeSearchExclude")
+  } ====================
   "search.exclude": {
     "**/node_modules": true,
     "**/.deno": true,
     "**/dist": true,
     "**/runtime": true
   },
-  // ==================== ${$tr("init.comments.vscodeI18n")} ====================
+  // ==================== ${
+    $tr("init.comments.vscodeI18n")
+  } ====================
   "i18n-ally.localesPaths": ["locales"],
   "i18n-ally.pathMatcher": "{locale}.{ext}",
   "i18n-ally.keystyle": "nested",

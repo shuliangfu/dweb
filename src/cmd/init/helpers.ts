@@ -185,7 +185,9 @@ export { $tr };
  * 仅当 runtime === "bun" 时返回非空；按引擎 + 样式：tailwind 时加 tailwindcss/lightningcss，unocss 不加
  * 单应用写在 config/main.ts，多应用写在 common/config/main.ts
  */
-export function getBuildServerExternal(opts: InitOptions): string[] | undefined {
+export function getBuildServerExternal(
+  opts: InitOptions,
+): string[] | undefined {
   if (opts.runtime !== "bun") return undefined;
   const list: string[] = [];
   if (opts.style === "tailwind") {

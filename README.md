@@ -1906,11 +1906,16 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.88] - 2026-02-18
+### [3.0.89] - 2026-02-24
 
-**Changed**: Updated example deno.json configs and dependencies; adjusted build,
-features (database, socket-io, websocket, csr-client-builder, build-dirs,
-version), and tests (e2e, unit) for CI.
+**Added**: Init runtime choice (Deno/Bun), Bun tsconfig and
+build.server.external; .vscode settings and i18n-ally; Hybrid i18n keys.
+
+**Changed**: Init menu and docker-compose env cleanup; Bun compatibility
+(external), i18n $tr, View/CSR client adapter, dependencies, init templates.
+
+**Removed**: Global $t and i18n.d.ts; unused locale keys; monolithic
+browser-render e2e test.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
