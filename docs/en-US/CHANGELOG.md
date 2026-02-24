@@ -8,6 +8,21 @@ and this project adheres to
 
 ---
 
+## [3.0.90] - 2026-02-24
+
+### Added
+
+- **CLI setup:** Install success message now shows the installed version (e.g.
+  "dweb-cli v3.0.90 installed"); new i18n key `installSuccessWithVersion` in all
+  locales.
+
+### Changed
+
+- **CI:** JSR publish workflow no longer uses `--no-check`; publish step runs
+  full type check.
+
+---
+
 ## [3.0.89] - 2026-02-24
 
 ### Added

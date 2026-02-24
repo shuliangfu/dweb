@@ -1974,15 +1974,11 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.89] - 2026-02-24
+### [3.0.90] - 2026-02-24
 
-**新增**：Init 运行时选择（Deno/Bun）、Bun tsconfig 与
-build.server.external；.vscode 与 i18n-ally；Hybrid 相关 i18n 键。
+**新增**：CLI 安装成功时显示已安装版本（installSuccessWithVersion i18n）。
 
-**变更**：Init 菜单与 docker-compose 环境变量清理；Bun 兼容（external）、i18n
-$tr、View/CSR 客户端适配器、依赖、init 模板。
-
-**移除**：全局 $t 与 i18n.d.ts；未使用 locale 键；单体 browser-render e2e 测试。
+**变更**：JSR 发布流程不再使用 --no-check，发布时执行完整类型检查。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

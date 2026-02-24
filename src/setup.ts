@@ -147,8 +147,15 @@ async function installGlobalCli(): Promise<void> {
       child.unref(); // 立即 unref，避免子进程句柄阻止当前进程自动退出
       const status = await child.status;
       if (status.success) {
-        succeedSpinner($tr("cli.installSuccess", { name: CLI_NAME }));
-        await writeVersionCacheOnInstall();
+        const version = await writeVersionCacheOnInstall();
+        succeedSpinner(
+          version
+            ? $tr("cli.installSuccessWithVersion", {
+              name: CLI_NAME,
+              version,
+            })
+            : $tr("cli.installSuccess", { name: CLI_NAME }),
+        );
         printUsage();
       } else {
         failSpinner(
@@ -173,8 +180,15 @@ async function installGlobalCli(): Promise<void> {
     child.unref(); // 立即 unref，避免子进程句柄阻止当前进程自动退出
     const status = await child.status;
     if (status.success) {
-      succeedSpinner($tr("cli.installSuccess", { name: CLI_NAME }));
-      await writeVersionCacheOnInstall();
+      const version = await writeVersionCacheOnInstall();
+      succeedSpinner(
+        version
+          ? $tr("cli.installSuccessWithVersion", {
+            name: CLI_NAME,
+            version,
+          })
+          : $tr("cli.installSuccess", { name: CLI_NAME }),
+      );
       printUsage();
     } else {
       failSpinner(
@@ -187,16 +201,19 @@ async function installGlobalCli(): Promise<void> {
 
 /**
  * 安装成功后写入版本缓存，供 dweb-cli -v 等快速读取
+ * @returns 已安装的版本号（若可获取），否则 undefined
  */
-async function writeVersionCacheOnInstall(): Promise<void> {
+async function writeVersionCacheOnInstall(): Promise<string | undefined> {
   try {
     const config = await loadDwebDenoJson();
     if (config?.version) {
       await writeVersionCache(config.version);
+      return config.version;
     }
   } catch {
     // 忽略，不影响安装成功
   }
+  return undefined;
 }
 
 /** 打印 dweb-cli 使用说明 */

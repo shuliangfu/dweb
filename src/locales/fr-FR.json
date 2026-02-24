@@ -73,6 +73,7 @@
     "installFailedExit": "Installation échouée, exit : {code}",
     "installing": "Installation de {name}...",
     "installSuccess": "{name} installé",
+    "installSuccessWithVersion": "{name} v{version} installé",
     "initFailed": "Init échoué",
     "initFailedWithMessage": "Init échoué : {message}",
     "devFailed": "Dev échoué",

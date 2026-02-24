@@ -73,6 +73,7 @@
     "installFailedExit": "インストール失敗、終了コード: {code}",
     "installing": "{name} をインストール中...",
     "installSuccess": "{name} をインストールしました",
+    "installSuccessWithVersion": "{name} v{version} をインストールしました",
     "initFailed": "初期化失敗",
     "initFailedWithMessage": "初期化失敗: {message}",
     "devFailed": "dev 失敗",

@@ -73,6 +73,7 @@
     "installFailedExit": "安装失败，退出码: {code}",
     "installing": "正在安装 {name} ...",
     "installSuccess": "{name} 已安装成功",
+    "installSuccessWithVersion": "{name} v{version} 已安装成功",
     "initFailed": "初始化项目失败",
     "initFailedWithMessage": "初始化项目失败: {message}",
     "devFailed": "dev 失败",

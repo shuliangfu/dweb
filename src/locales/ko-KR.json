@@ -73,6 +73,7 @@
     "installFailedExit": "설치 실패, 종료: {code}",
     "installing": "{name} 설치 중...",
     "installSuccess": "{name} 설치됨",
+    "installSuccessWithVersion": "{name} v{version} 설치됨",
     "initFailed": "초기화 실패",
     "initFailedWithMessage": "초기화 실패: {message}",
     "devFailed": "dev 실패",

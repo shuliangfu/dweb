@@ -1906,16 +1906,13 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.89] - 2026-02-24
+### [3.0.90] - 2026-02-24
 
-**Added**: Init runtime choice (Deno/Bun), Bun tsconfig and
-build.server.external; .vscode settings and i18n-ally; Hybrid i18n keys.
+**Added**: CLI install success shows installed version
+(installSuccessWithVersion i18n).
 
-**Changed**: Init menu and docker-compose env cleanup; Bun compatibility
-(external), i18n $tr, View/CSR client adapter, dependencies, init templates.
-
-**Removed**: Global $t and i18n.d.ts; unused locale keys; monolithic
-browser-render e2e test.
+**Changed**: JSR publish workflow no longer uses --no-check; full type check on
+publish.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

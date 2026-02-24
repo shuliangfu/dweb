@@ -73,6 +73,7 @@
     "installFailedExit": "Instalasi gagal, keluar: {code}",
     "installing": "Menginstal {name}...",
     "installSuccess": "{name} terpasang",
+    "installSuccessWithVersion": "{name} v{version} terpasang",
     "initFailed": "Init gagal",
     "initFailedWithMessage": "Init gagal: {message}",
     "devFailed": "Dev gagal",
