@@ -189,6 +189,7 @@
     "routesMiddlewareSkipped": "Lewati _middleware: {message}",
     "pathMustBeInProject": "Path harus di dalam proyek",
     "mountContainerCheckFailed": "Pemeriksaan kontainer mount gagal",
+    "ssrMountContainerCheckFailed": "Pemeriksaan kontainer mount SSR gagal, tidak dapat menyuntikkan skrip hydration",
     "clientBuildOutput": "Output klien ({count} file):",
     "clientBuildTotalSize": "Ukuran total: {size} KB",
     "hmrChunkNotFound": "[HMR] Chunk tidak ditemukan: {path}",
@@ -232,7 +233,8 @@
     "hmrLoadModuleComplete": "[HMR] loadModule selesai",
     "hmrRenderCsrBefore": "[HMR] renderCSR sebelum",
     "hmrRenderCsrComplete": "[HMR] renderCSR selesai",
-    "hmrLoadModuleRenderFailed": "[HMR] loadModule/render gagal"
+    "hmrLoadModuleRenderFailed": "[HMR] loadModule/render gagal",
+    "hmrCssFetchFailedPrefix": "[dweb] Gagal mengambil HMR CSS: "
   },
   "db": {
     "noMigrations": "Tidak ada migrasi",
@@ -477,6 +479,12 @@
       "commonConfigEntryDesc": "Framework memuat otomatis dan digabung dengan config app; prioritas rendah",
       "commonConfig": "Config umum",
       "commonConfigDesc": "Dibagikan frontend/backend; framework deep-merge dengan config app",
+      "commonConfigDocRef": "Referensi config: docs/en-US/APP_CONFIG.md",
+      "commonConfigNameVersionHint": "name, version di setiap app src/<app>/config/main.ts; di sini hanya language, server, router, render, build, logger yang dibagikan.",
+      "configHostPortInDevProd": "host / port di main.dev.ts (127.0.0.1:{serverPort}) dan main.prod.ts (0.0.0.0:{serverPort})",
+      "commonConfigPortOverride": "port diganti oleh setiap config app",
+      "commonConfigRoutesDirOverride": "routesDir diganti oleh setiap app",
+      "defaultExportSuffix": " - fragmen bersama; setiap app spread dan override; set name, version di setiap app config.",
       "commonConfigImport": "Config umum (diimpor modul lain saat version dll diperlukan)",
       "frameworkLanguageShort": "Bahasa framework (terdeteksi otomatis dari env)",
       "defaultExport": "Default export; framework deep-merge ke setiap config app",
@@ -507,13 +515,22 @@
       "dockerSingleApp": "Mode single-app",
       "dockerRunBuildSingle": "Jalankan deno task build sebelum docker-compose up",
       "dockerAppPort": "App {app} (port {port})",
+      "dockerBaseStageMinimal": "Tahap dasar: hanya runtime Deno, tanpa paket apt (agar ukuran image kecil)",
+      "dockerBaseStageBun": "Runtime Bun, tanpa paket tambahan",
+      "dockerWorkDirMount": "Set direktori kerja; compose mount .:/app, jalankan pakai proyek host (jalankan deno task build di host dulu)",
+      "dockerWorkDirMountBun": "Set direktori kerja; compose mount .:/app, jalankan pakai proyek host (jalankan bun run build di host dulu)",
+      "buildServerExternalBun": "Runtime Bun: server external mencakup mesin dan paket tailwind untuk menghindari error SSR instance ganda",
+      "dockerHealthcheckProcTcp": "Cek port via /proc/net/tcp ({port} → {portHex})",
       "gitignoreDeps": "Dependensi",
       "gitignoreBuild": "Build",
       "gitignoreDwebGen": "dweb auto-generated (regenerasi di setiap build/start)",
       "gitignoreDockerCache": "Cache Docker (direktori prefill deno cache)",
       "gitignoreEnv": "Lingkungan",
       "gitignoreSystem": "Sistem",
+      "gitignoreDeno": "Deno",
+      "gitignoreIde": "IDE",
       "vscodeDeno": "Config Deno",
+      "vscodeBun": "Config Bun / TypeScript",
       "vscodeFormat": "Config format",
       "vscodeEditor": "Config dasar editor",
       "vscodeCss": "Config CSS / Tailwind",
@@ -529,7 +546,9 @@
       "dynamicRoutesExample": "or \"/user?id=[id]\": [\"1\", \"2\", \"3\"]",
       "renderFullDocFull": "See docs/zh-CN/APP_CONFIG.md or docs/en-US/APP_CONFIG.md for full options (SSR/SSG hydration)",
       "configFullDocRef": "Full config reference: docs/en-US/APP_CONFIG.md",
-      "frameworkLanguageSuffix": "(auto-detected at init; override to zh-CN / en-US if needed)"
+      "frameworkLanguageSuffix": "(auto-detected at init; override to zh-CN / en-US if needed)",
+      "jsxDtsLine1": "Tipe elemen intrinsik JSX untuk pengecekan tipe TSX di proyek.",
+      "jsxDtsLine2": "Sama dengan @dreamer/view jsx.d.ts; gunakan dengan deno.json compilerOptions.types."
     }
   }
 }

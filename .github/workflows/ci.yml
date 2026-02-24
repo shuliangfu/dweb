@@ -83,5 +83,3 @@ jobs:
 
       - name: Test (Deno, Windows)
         run: deno test -A --no-check tests/
-
- 

@@ -131,7 +131,11 @@ describe("CSR 客户端脚本中间件 (csr-client-middleware.ts)", () => {
     expect(ctx.response).toBeDefined();
     expect(ctx.response?.status).toBe(500);
     const body = await ctx.response?.text();
-    expect(body).toMatch(/预构建的客户端脚本不存在|clientScriptNotFound/);
+    // 响应体为 JS：console.error(${JSON.stringify($tr("client.clientScriptNotFound"))});
+    // 支持 zh-CN / en-US / 或 key 回退
+    expect(body).toMatch(
+      /预构建的客户端脚本不存在|clientScriptNotFound|Client script not found/,
+    );
   });
 
   it("生产模式且存在 chunk 文件时应返回 chunk 内容", async () => {

@@ -189,6 +189,7 @@
     "routesMiddlewareSkipped": "_middleware 건너뜀: {message}",
     "pathMustBeInProject": "경로는 프로젝트 내에 있어야 합니다",
     "mountContainerCheckFailed": "마운트 컨테이너 검사 실패",
+    "ssrMountContainerCheckFailed": "SSR 마운트 컨테이너 검사 실패, hydration 스크립트 주입 불가",
     "clientBuildOutput": "클라이언트 출력 ({count} 파일):",
     "clientBuildTotalSize": "총 크기: {size} KB",
     "hmrChunkNotFound": "[HMR] 청크를 찾을 수 없음: {path}",
@@ -232,7 +233,8 @@
     "hmrLoadModuleComplete": "[HMR] loadModule 완료",
     "hmrRenderCsrBefore": "[HMR] renderCSR 전",
     "hmrRenderCsrComplete": "[HMR] renderCSR 완료",
-    "hmrLoadModuleRenderFailed": "[HMR] loadModule/render 실패"
+    "hmrLoadModuleRenderFailed": "[HMR] loadModule/render 실패",
+    "hmrCssFetchFailedPrefix": "[dweb] HMR CSS 가져오기 실패: "
   },
   "db": {
     "noMigrations": "마이그레이션이 없습니다",
@@ -477,6 +479,12 @@
       "commonConfigEntryDesc": "프레임워크가 자동 로드 후 앱 설정과 병합; 낮은 우선순위",
       "commonConfig": "공통 설정",
       "commonConfigDesc": "프론트/백엔드 공유; 프레임워크가 앱 설정과 딥 머지",
+      "commonConfigDocRef": "전체 설정 참고: docs/en-US/APP_CONFIG.md",
+      "commonConfigNameVersionHint": "name, version은 각 앱 src/<app>/config/main.ts에서 설정; 여기서는 language, server, router, render, build, logger만 공유",
+      "configHostPortInDevProd": "host / port는 main.dev.ts(127.0.0.1:{serverPort}), main.prod.ts(0.0.0.0:{serverPort})에서 설정",
+      "commonConfigPortOverride": "port는 각 앱 config에서 덮어씀",
+      "commonConfigRoutesDirOverride": "routesDir는 각 앱에서 덮어씀",
+      "defaultExportSuffix": " - 공유 조각; 각 앱에서 spread 후 덮어씀; 각 앱 config에 name, version 작성",
       "commonConfigImport": "공통 설정 (version 등 필요 시 다른 모듈에서 import)",
       "frameworkLanguageShort": "프레임워크 언어 (환경에서 자동 감지)",
       "defaultExport": "기본 export; 프레임워크가 각 앱 설정에 딥 머지",
@@ -507,13 +515,22 @@
       "dockerSingleApp": "단일 앱 모드",
       "dockerRunBuildSingle": "docker-compose up 전에 deno task build 실행",
       "dockerAppPort": "{app} 앱 (포트 {port})",
+      "dockerBaseStageMinimal": "기본 단계: Deno 런타임만, apt 패키지 없음 (이미지 크기 절약)",
+      "dockerBaseStageBun": "Bun 런타임, 추가 패키지 없음",
+      "dockerWorkDirMount": "작업 디렉터리 설정; compose가 .:/app 마운트, 실행 시 호스트 프로젝트 사용 (호스트에서 deno task build 먼저 실행)",
+      "dockerWorkDirMountBun": "작업 디렉터리 설정; compose가 .:/app 마운트, 실행 시 호스트 프로젝트 사용 (호스트에서 bun run build 먼저 실행)",
+      "buildServerExternalBun": "Bun 런타임: 서버 external에 엔진 및 tailwind 관련 패키지 포함, 이중 인스턴스 SSR 오류 방지",
+      "dockerHealthcheckProcTcp": "/proc/net/tcp로 포트 확인 ({port} → {portHex})",
       "gitignoreDeps": "의존성",
       "gitignoreBuild": "빌드",
       "gitignoreDwebGen": "dweb 자동 생성 (각 build/start 시 재생성)",
       "gitignoreDockerCache": "Docker 캐시 (deno cache 사전 채우기 디렉터리)",
       "gitignoreEnv": "환경",
       "gitignoreSystem": "시스템",
+      "gitignoreDeno": "Deno",
+      "gitignoreIde": "IDE",
       "vscodeDeno": "Deno 설정",
+      "vscodeBun": "Bun / TypeScript 설정",
       "vscodeFormat": "포맷 설정",
       "vscodeEditor": "에디터 기본 설정",
       "vscodeCss": "CSS / Tailwind 설정",
@@ -529,7 +546,9 @@
       "dynamicRoutesExample": "or \"/user?id=[id]\": [\"1\", \"2\", \"3\"]",
       "renderFullDocFull": "See docs/zh-CN/APP_CONFIG.md or docs/en-US/APP_CONFIG.md for full options (SSR/SSG hydration)",
       "configFullDocRef": "Full config reference: docs/en-US/APP_CONFIG.md",
-      "frameworkLanguageSuffix": "(auto-detected at init; override to zh-CN / en-US if needed)"
+      "frameworkLanguageSuffix": "(auto-detected at init; override to zh-CN / en-US if needed)",
+      "jsxDtsLine1": "JSX 내장 요소 타입: 프로젝트 TSX 타입 검사용.",
+      "jsxDtsLine2": "@dreamer/view jsx.d.ts와 동일; deno.json compilerOptions.types와 함께 사용."
     }
   }
 }

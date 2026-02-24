@@ -14,13 +14,20 @@ import {
 } from "@dreamer/console";
 import { args, cwd, resolve } from "@dreamer/runtime-adapter";
 import { $tr } from "../../utils/i18n.ts";
-import { ENGINES, EXAMPLE_LEVELS, RENDER_MODES, STYLES } from "./constants.ts";
+import {
+  ENGINES,
+  EXAMPLE_LEVELS,
+  RENDER_MODES,
+  RUNTIMES,
+  STYLES,
+} from "./constants.ts";
 import { isValidAppName, projectNameFromDir } from "./helpers.ts";
 import type {
   AppMode,
   ExampleLevel,
   InitOptions,
   RenderMode,
+  Runtime,
   Style,
 } from "./types.ts";
 
@@ -64,6 +71,13 @@ export async function collectOptions(
   const projectName = targetDirRaw === "."
     ? projectNameFromDir(root)
     : targetDirRaw;
+
+  const runtimeIdx = await interactiveMenu(
+    "\n" + $tr("init.runtime"),
+    [$tr("init.runtimeDeno"), $tr("init.runtimeBun")],
+    0,
+  );
+  const runtime: Runtime = RUNTIMES[runtimeIdx] ?? "deno";
 
   const appModeIdx = await interactiveMenu(
     $tr("init.appMode"),
@@ -144,6 +158,7 @@ export async function collectOptions(
     projectName,
     appMode,
     appNames: appMode === "multi" ? appNames : undefined,
+    runtime,
     engine,
     renderMode,
     style,

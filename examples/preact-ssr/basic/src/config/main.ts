@@ -4,15 +4,17 @@
  * 支持环境变量 PORT 覆盖端口，避免 CI 下与 browser-render 等测试并行时端口冲突
  */
 
-import type { AppConfig } from "@dreamer/dweb";
+import type { AppConfig, AppLanguage } from "@dreamer/dweb";
 import { getEnv } from "@dreamer/runtime-adapter";
 
 const portFromEnv = getEnv("PORT");
 const serverPort = portFromEnv ? Number(portFromEnv) : 3005;
+const language = getEnv("LANGUAGE") || "zh-CN";
 
 const config: AppConfig = {
   name: "preact-ssr-basic-example",
   version: "1.0.0",
+  language: language as AppLanguage,
 
   // 服务器配置（e2e 并行测试时端口区分；PORT 环境变量可覆盖，供 server-request.test 等使用）
   server: {

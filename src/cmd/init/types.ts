@@ -19,6 +19,9 @@ export type RenderMode = "ssr" | "csr" | "ssg" | "hybrid";
 /** 示例粒度 */
 export type ExampleLevel = "minimal" | "with-about";
 
+/** 运行时（Deno 写 deno.json + Docker 用 deno；Bun 写 package.json + .npmrc + Docker 用 bun） */
+export type Runtime = "deno" | "bun";
+
 /** init 收集的选项 */
 export interface InitOptions {
   /** 目标目录（绝对路径） */
@@ -29,6 +32,8 @@ export interface InitOptions {
   appMode: AppMode;
   /** 多应用时的应用名称列表（如 ["backend", "frontend"]），仅 appMode === "multi" 时有值 */
   appNames?: string[];
+  /** 运行时：deno 生成 deno.json 与 Deno Docker；bun 生成 package.json + .npmrc 与 Bun Docker */
+  runtime: Runtime;
   /** UI 引擎 */
   engine: Engine;
   /** 渲染模式 */

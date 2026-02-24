@@ -31,6 +31,7 @@ describe("init (cmd/init.ts)", () => {
         targetDir: testDir,
         projectName: "test-app",
         appMode: "single",
+        runtime: "deno",
         engine: "preact",
         renderMode: "hybrid",
         style: "tailwind",
@@ -40,8 +41,10 @@ describe("init (cmd/init.ts)", () => {
 
       await generate(opts);
 
-      // 验证目录结构（单应用 useSrc 时 config 在 src/config）
+      // 验证目录结构（单应用 useSrc 时 config 在 src/config）；Deno 运行时仅生成 deno.json
       expect(await exists(join(testDir, "deno.json"))).toBe(true);
+      expect(await exists(join(testDir, "package.json"))).toBe(false);
+      expect(await exists(join(testDir, ".npmrc"))).toBe(false);
       expect(await exists(join(testDir, ".gitignore"))).toBe(true);
       expect(await exists(join(testDir, "src", "config", "main.ts"))).toBe(
         true,
@@ -112,6 +115,7 @@ describe("init (cmd/init.ts)", () => {
       projectName: "test-multi",
       appMode: "multi",
       appNames: ["backend", "frontend"],
+      runtime: "deno",
       engine: "preact",
       renderMode: "ssr",
       style: "tailwind",
@@ -124,6 +128,10 @@ describe("init (cmd/init.ts)", () => {
     // 验证 common 目录
     expect(await exists(join(testDir, "src", "common", "config", "main.ts")))
       .toBe(true);
+
+    // Deno 运行时：有 deno.json，无 package.json
+    expect(await exists(join(testDir, "deno.json"))).toBe(true);
+    expect(await exists(join(testDir, "package.json"))).toBe(false);
 
     // 验证 deno.json 不包含 name 字段
     const denoJson = await readTextFile(join(testDir, "deno.json"));
@@ -153,6 +161,7 @@ describe("init (cmd/init.ts)", () => {
       targetDir: testDir,
       projectName: "unocss-app",
       appMode: "single",
+      runtime: "deno",
       engine: "preact",
       renderMode: "csr",
       style: "unocss",
@@ -167,6 +176,52 @@ describe("init (cmd/init.ts)", () => {
     expect(denoJson).toContain("@unocss/core");
     expect(denoJson).toContain("@unocss/preset-wind3");
     expect(denoJson).toContain("@unocss/preset-icons");
+
+    await remove(testDir, { recursive: true });
+  });
+
+  it("generate() 选择 Bun 运行时应生成 package.json 与 .npmrc，且不生成 deno.json", async () => {
+    testDir = await makeTempDir({ prefix: "dweb-init-bun-" });
+
+    const opts: InitOptions = {
+      targetDir: testDir,
+      projectName: "bun-app",
+      appMode: "single",
+      runtime: "bun",
+      engine: "preact",
+      renderMode: "hybrid",
+      style: "tailwind",
+      useSrc: true,
+      exampleLevel: "minimal",
+    };
+
+    await generate(opts);
+
+    expect(await exists(join(testDir, "package.json"))).toBe(true);
+    expect(await exists(join(testDir, ".npmrc"))).toBe(true);
+    expect(await exists(join(testDir, "deno.json"))).toBe(false);
+
+    const packageJson = await readTextFile(join(testDir, "package.json"));
+    expect(packageJson).toContain('"version": "1.0.0"');
+    expect(packageJson).toContain('"dev":');
+    expect(packageJson).toContain('"build":');
+    expect(packageJson).toContain('"start":');
+    expect(packageJson).toContain("bun run");
+    expect(packageJson).toContain("@dreamer/dweb");
+
+    const npmrc = await readTextFile(join(testDir, ".npmrc"));
+    expect(npmrc).toContain("@jsr:registry=");
+
+    const dockerfile = await readTextFile(join(testDir, "Dockerfile"));
+    expect(dockerfile).toContain("oven/bun");
+
+    expect(await exists(join(testDir, "tsconfig.json"))).toBe(true);
+    const tsconfig = await readTextFile(join(testDir, "tsconfig.json"));
+    expect(tsconfig).toContain("react-jsx");
+    expect(tsconfig).toContain('"jsxImportSource": "preact"');
+    expect(tsconfig).toContain("src/**/*");
+    expect(tsconfig).toContain("node_modules");
+    expect(tsconfig).toContain("nodenext");
 
     await remove(testDir, { recursive: true });
   });

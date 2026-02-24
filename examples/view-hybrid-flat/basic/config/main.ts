@@ -4,15 +4,17 @@
  * 支持环境变量 PORT 覆盖端口，供 e2e 等指定端口避免冲突
  */
 
-import type { AppConfig } from "@dreamer/dweb";
+import type { AppConfig, AppLanguage } from "@dreamer/dweb";
 import { getEnv } from "@dreamer/runtime-adapter";
 
 const portFromEnv = getEnv("PORT");
 const serverPort = portFromEnv ? Number(portFromEnv) : 3015;
+const language = getEnv("LANGUAGE") || "zh-CN";
 
 const config: AppConfig = {
   name: "view-hybrid-unocss-example",
   version: "1.0.0",
+  language: language as AppLanguage,
 
   // 服务器配置（e2e 并行测试时端口 3015，与其它 view-* 区分；PORT 环境变量可覆盖）
   server: {

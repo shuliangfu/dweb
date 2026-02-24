@@ -189,6 +189,7 @@
     "routesMiddlewareSkipped": "Omitir _middleware: {message}",
     "pathMustBeInProject": "El path debe estar en el proyecto",
     "mountContainerCheckFailed": "Fallo al comprobar contenedor de montaje",
+    "ssrMountContainerCheckFailed": "Fallo al comprobar contenedor de montaje SSR, no se puede inyectar el script de hydration",
     "clientBuildOutput": "Salida de cliente ({count} archivos):",
     "clientBuildTotalSize": "Tamaño total: {size} KB",
     "hmrChunkNotFound": "[HMR] Chunk no encontrado: {path}",
@@ -232,7 +233,8 @@
     "hmrLoadModuleComplete": "[HMR] loadModule completo",
     "hmrRenderCsrBefore": "[HMR] renderCSR antes",
     "hmrRenderCsrComplete": "[HMR] renderCSR completo",
-    "hmrLoadModuleRenderFailed": "[HMR] loadModule/render fallido"
+    "hmrLoadModuleRenderFailed": "[HMR] loadModule/render fallido",
+    "hmrCssFetchFailedPrefix": "[dweb] Error al obtener HMR CSS: "
   },
   "db": {
     "noMigrations": "Sin migraciones",
@@ -477,6 +479,12 @@
       "commonConfigEntryDesc": "Framework auto-carga y fusiona con app config; baja prioridad",
       "commonConfig": "Config común",
       "commonConfigDesc": "Compartida por frontend/backend; framework fusiona con configs de app",
+      "commonConfigDocRef": "Referencia de config: docs/en-US/APP_CONFIG.md",
+      "commonConfigNameVersionHint": "name, version se configuran en cada app src/<app>/config/main.ts; aquí solo se comparten language, server, router, render, build, logger.",
+      "configHostPortInDevProd": "host / port en main.dev.ts (127.0.0.1:{serverPort}) y main.prod.ts (0.0.0.0:{serverPort})",
+      "commonConfigPortOverride": "port sobrescrito por cada config de app",
+      "commonConfigRoutesDirOverride": "routesDir sobrescrito por cada app",
+      "defaultExportSuffix": " - fragmento compartido; cada app hace spread y sobrescribe; definir name, version en cada app config.",
       "commonConfigImport": "Config común (importada cuando se necesita version etc)",
       "frameworkLanguageShort": "Idioma del framework (auto-detectado por env)",
       "defaultExport": "Export por defecto; framework fusiona en cada app config",
@@ -507,13 +515,22 @@
       "dockerSingleApp": "Modo single-app",
       "dockerRunBuildSingle": "Ejecutar deno task build antes de docker-compose up",
       "dockerAppPort": "App {app} (puerto {port})",
+      "dockerBaseStageMinimal": "Etapa base: solo runtime Deno, sin paquetes apt (para mantener imagen pequeña)",
+      "dockerBaseStageBun": "Runtime Bun, sin paquetes adicionales",
+      "dockerWorkDirMount": "Establecer directorio de trabajo; compose monta .:/app, la ejecución usa el proyecto del host (ejecutar deno task build en host primero)",
+      "dockerWorkDirMountBun": "Establecer directorio de trabajo; compose monta .:/app, la ejecución usa el proyecto del host (ejecutar bun run build en host primero)",
+      "buildServerExternalBun": "Runtime Bun: external del servidor incluye motor y paquetes tailwind para evitar errores SSR por doble instancia",
+      "dockerHealthcheckProcTcp": "Comprobar puerto vía /proc/net/tcp ({port} → {portHex})",
       "gitignoreDeps": "Dependencias",
       "gitignoreBuild": "Build",
       "gitignoreDwebGen": "dweb auto-generado (regenerado en cada build/start)",
       "gitignoreDockerCache": "Caché Docker (directorio prefill deno cache)",
       "gitignoreEnv": "Entorno",
       "gitignoreSystem": "Sistema",
+      "gitignoreDeno": "Deno",
+      "gitignoreIde": "IDE",
       "vscodeDeno": "Config Deno",
+      "vscodeBun": "Config Bun / TypeScript",
       "vscodeFormat": "Config de formato",
       "vscodeEditor": "Config base del editor",
       "vscodeCss": "Config CSS / Tailwind",
@@ -529,7 +546,9 @@
       "dynamicRoutesExample": "or \"/user?id=[id]\": [\"1\", \"2\", \"3\"]",
       "renderFullDocFull": "See docs/zh-CN/APP_CONFIG.md or docs/en-US/APP_CONFIG.md for full options (SSR/SSG hydration)",
       "configFullDocRef": "Full config reference: docs/en-US/APP_CONFIG.md",
-      "frameworkLanguageSuffix": "(auto-detected at init; override to zh-CN / en-US if needed)"
+      "frameworkLanguageSuffix": "(auto-detected at init; override to zh-CN / en-US if needed)",
+      "jsxDtsLine1": "Tipos intrínsecos JSX para comprobación de tipos TSX en el proyecto.",
+      "jsxDtsLine2": "Igual que @dreamer/view jsx.d.ts; usar con deno.json compilerOptions.types."
     }
   }
 }

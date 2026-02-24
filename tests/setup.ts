@@ -4,7 +4,7 @@
  * 在运行测试前初始化 dweb i18n（不挂全局），
  * 各模块通过 import { $tr } 使用框架翻译。
  *
- * 测试环境固定使用 zh-CN，确保错误消息断言与 locale 一致。
+ * 测试环境固定使用 en-US，并设置 LANGUAGE 环境变量，确保错误消息断言与 locale 一致。
  *
  * 需在测试脚本中通过 `import "../setup.ts"` 或 `import "./setup.ts"` 导入。
  */
@@ -14,8 +14,12 @@ import {
   exists,
   platform,
   resolve,
+  setEnv,
 } from "@dreamer/runtime-adapter";
 import { setDwebLocale } from "../src/utils/i18n.ts";
+
+setEnv("LANGUAGE", "en-US");
+setDwebLocale("en-US");
 
 /**
  * 从当前文件（setup.ts 在 tests/）解析 dweb 仓库根目录，
@@ -62,5 +66,3 @@ export async function existsBuildOutput(path: string): Promise<boolean> {
   }
   return false;
 }
-
-setDwebLocale("zh-CN");

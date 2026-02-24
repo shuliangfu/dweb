@@ -23,11 +23,7 @@ import {
   type SpawnedProcess,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
-import {
-  existsBuildOutput,
-  getRepoRoot,
-  getSpawnCwd,
-} from "../setup.ts";
+import { existsBuildOutput, getRepoRoot, getSpawnCwd } from "../setup.ts";
 
 /** 构建后启动 SSR 服务时使用的端口，与其它 e2e 错开 */
 const SSR_BUILD_SERVER_PORT = 39996;
@@ -151,12 +147,13 @@ describe("integration: SSR + Preact 构建", () => {
         const stderrText = child.stderr
           ? await new Response(child.stderr).text()
           : "";
-        const exitInfo =
-          exitStatus !== undefined
-            ? ` (进程已退出 code=${exitStatus.code})`
-            : "";
+        const exitInfo = exitStatus !== undefined
+          ? ` (进程已退出 code=${exitStatus.code})`
+          : "";
         throw new Error(
-          `SSR 服务器在 ${maxAttempts} 次内未就绪 (${(maxAttempts * pollIntervalMs) / 1000}s)${exitInfo}: ${lastErr}${
+          `SSR 服务器在 ${maxAttempts} 次内未就绪 (${
+            (maxAttempts * pollIntervalMs) / 1000
+          }s)${exitInfo}: ${lastErr}${
             stdoutText ? `\nstdout: ${stdoutText.slice(0, 600)}` : ""
           }${stderrText ? `\nstderr: ${stderrText.slice(0, 600)}` : ""}`,
         );

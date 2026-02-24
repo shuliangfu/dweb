@@ -3,15 +3,17 @@
  * 支持环境变量 PORT 覆盖端口，便于 CI/集成测试与其它示例错开
  */
 
-import type { AppConfig } from "@dreamer/dweb";
+import type { AppConfig, AppLanguage } from "@dreamer/dweb";
 import { getEnv } from "@dreamer/runtime-adapter";
 
 const portFromEnv = getEnv("PORT");
 const serverPort = portFromEnv ? Number(portFromEnv) : 3007;
+const language = getEnv("LANGUAGE") || "zh-CN";
 
 const config: AppConfig = {
   name: "react-ssr-basic-example",
   version: "1.0.0",
+  language: language as AppLanguage,
   server: {
     port: serverPort,
     host: "127.0.0.1",

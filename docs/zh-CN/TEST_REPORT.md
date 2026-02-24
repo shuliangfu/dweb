@@ -4,12 +4,12 @@
 
 ## 📋 测试概览
 
-| 项目     | 值                   |
-| -------- | -------------------- |
-| 框架版本 | 3.0.76               |
-| 测试框架 | @dreamer/test@^1.0.5 |
-| 测试时间 | 2026-02-16           |
-| 测试环境 | Deno 2.x / Bun 1.x   |
+| 项目     | 值                    |
+| -------- | --------------------- |
+| 框架版本 | 3.0.88                |
+| 测试框架 | @dreamer/test@^1.0.15 |
+| 测试时间 | 2026-02-24            |
+| 测试环境 | Deno 2.x / Bun 1.x    |
 
 ---
 
@@ -19,13 +19,13 @@
 
 | 指标         | 数值                                                         |
 | ------------ | ------------------------------------------------------------ |
-| 测试文件数   | 50+                                                          |
-| 测试用例总数 | 818                                                          |
-| 通过用例数   | 818                                                          |
+| 测试文件数   | 83+                                                          |
+| 测试用例总数 | 833                                                          |
+| 通过用例数   | 833                                                          |
 | 忽略用例数   | 2                                                            |
 | 失败用例数   | 0                                                            |
 | 通过率       | 100%                                                         |
-| 测试执行时间 | 分三段合计约 4m38s（e2e ~3m52s、单元与构建 ~28s、集成 ~18s） |
+| 测试执行时间 | 约 6m18s（`deno test -A tests` 一次执行）                    |
 
 ### 测试文件统计
 
@@ -33,66 +33,83 @@
 
 | 文件名                          | 测试用例数   | 状态        |
 | ------------------------------- | ------------ | ----------- |
+| `app.test.ts`                   | 20           | ✅ 全部通过 |
+| `asset-manifest.test.ts`        | 6            | ✅ 全部通过 |
+| `build-dirs.test.ts`            | 18           | ✅ 全部通过 |
 | `config.test.ts`                | 64           | ✅ 全部通过 |
 | `context.test.ts`               | 21           | ✅ 全部通过 |
 | `render.test.ts`                | 46           | ✅ 全部通过 |
 | `command.test.ts`               | 42           | ✅ 全部通过 |
-| `build.test.ts`                 | 24           | ✅ 全部通过 |
+| `build.test.ts`                 | 23           | ✅ 全部通过 |
 | `windows.test.ts`               | 48（2 忽略） | ✅ 全部通过 |
-| `path.test.ts`                  | 18           | ✅ 全部通过 |
-| `plugin-events.test.ts`         | 16           | ✅ 全部通过 |
-| `logger.test.ts`                | 17           | ✅ 全部通过 |
-| `runtime-adapter.test.ts`       | 17           | ✅ 全部通过 |
-| `server.test.ts`                | 13           | ✅ 全部通过 |
-| `plugin.test.ts`                | 15           | ✅ 全部通过 |
-| `sanitize.test.ts`              | 15           | ✅ 全部通过 |
-| `lifecycle.test.ts`             | 12           | ✅ 全部通过 |
-| `middleware.test.ts`            | 12           | ✅ 全部通过 |
-| `router.test.ts`                | 12           | ✅ 全部通过 |
-| `errors.test.ts`                | 12           | ✅ 全部通过 |
-| `database.test.ts`              | 11           | ✅ 全部通过 |
-| `jsr-versions.test.ts`          | 11           | ✅ 全部通过 |
-| `i18n.test.ts`                  | 13           | ✅ 全部通过 |
-| `load-route-module.test.ts`     | 7            | ✅ 全部通过 |
-| `service.test.ts`               | 9            | ✅ 全部通过 |
-| `runtime.test.ts`               | 9            | ✅ 全部通过 |
-| `csr-client-builder.test.ts`    | 5            | ✅ 全部通过 |
-| `socket-io.test.ts`             | 9            | ✅ 全部通过 |
-| `websocket.test.ts`             | 7            | ✅ 全部通过 |
-| `generate.test.ts`              | 6            | ✅ 全部通过 |
-| `csr-client-middleware.test.ts` | 6            | ✅ 全部通过 |
-| `config-loader.test.ts`         | 4            | ✅ 全部通过 |
-| `module-cache.test.ts`          | 5            | ✅ 全部通过 |
-| `cmd-build.test.ts`             | 3            | ✅ 全部通过 |
-| `cmd-clean.test.ts`             | 3            | ✅ 全部通过 |
-| `render-hybrid.test.ts`         | 6            | ✅ 全部通过 |
-| `render-ssr.test.ts`            | 6            | ✅ 全部通过 |
-| `render-ssg.test.ts`            | 5            | ✅ 全部通过 |
-| `db.test.ts`                    | 3            | ✅ 全部通过 |
-| `init.test.ts`                  | 3            | ✅ 全部通过 |
-| `project.test.ts`               | 3            | ✅ 全部通过 |
-| `version.test.ts`               | 3            | ✅ 全部通过 |
-| `render-csr.test.ts`            | 3            | ✅ 全部通过 |
-| `cmd-dev.test.ts`               | 2            | ✅ 全部通过 |
-| `cmd-fmt.test.ts`               | 2            | ✅ 全部通过 |
-| `cmd-lint.test.ts`              | 2            | ✅ 全部通过 |
-| `cmd-preview.test.ts`           | 2            | ✅ 全部通过 |
-| `cmd-start.test.ts`             | 2            | ✅ 全部通过 |
-| `cmd-test.test.ts`              | 2            | ✅ 全部通过 |
-| `cmd-upgrade.test.ts`           | 2            | ✅ 全部通过 |
-| `cmd-update.test.ts`            | 3            | ✅ 全部通过 |
-| `cli.test.ts`                   | 1            | ✅ 全部通过 |
+| `path.test.ts`                  | 19           | ✅ 全部通过 |
+| `plugin-events.test.ts`         | 17           | ✅ 全部通过 |
+| `logger.test.ts`                | 18           | ✅ 全部通过 |
+| `runtime-adapter.test.ts`       | 18           | ✅ 全部通过 |
+| `server.test.ts`                | 14           | ✅ 全部通过 |
+| `plugin.test.ts`                | 16           | ✅ 全部通过 |
+| `sanitize.test.ts`              | 16           | ✅ 全部通过 |
+| `lifecycle.test.ts`             | 13           | ✅ 全部通过 |
+| `middleware.test.ts`            | 13           | ✅ 全部通过 |
+| `router.test.ts`                | 13           | ✅ 全部通过 |
+| `errors.test.ts`                | 13           | ✅ 全部通过 |
+| `database.test.ts`              | 12           | ✅ 全部通过 |
+| `jsr-versions.test.ts`          | 12           | ✅ 全部通过 |
+| `i18n.test.ts`                  | 14           | ✅ 全部通过 |
+| `load-route-module.test.ts`     | 8            | ✅ 全部通过 |
+| `service.test.ts`               | 10           | ✅ 全部通过 |
+| `runtime.test.ts`               | 10           | ✅ 全部通过 |
+| `csr-client-builder.test.ts`    | 6            | ✅ 全部通过 |
+| `socket-io.test.ts`             | 10           | ✅ 全部通过 |
+| `websocket.test.ts`             | 8            | ✅ 全部通过 |
+| `generate.test.ts`              | 7            | ✅ 全部通过 |
+| `csr-client-middleware.test.ts` | 7            | ✅ 全部通过 |
+| `config-loader.test.ts`         | 5            | ✅ 全部通过 |
+| `module-cache.test.ts`          | 6            | ✅ 全部通过 |
+| `cmd-build.test.ts`             | 4            | ✅ 全部通过 |
+| `cmd-clean.test.ts`             | 4            | ✅ 全部通过 |
+| `render-hybrid.test.ts`         | 7            | ✅ 全部通过 |
+| `render-ssr.test.ts`           | 7            | ✅ 全部通过 |
+| `render-ssg.test.ts`           | 6            | ✅ 全部通过 |
+| `db.test.ts`                    | 4            | ✅ 全部通过 |
+| `init.test.ts`                  | 5            | ✅ 全部通过 |
+| `project.test.ts`               | 4            | ✅ 全部通过 |
+| `version.test.ts`               | 4            | ✅ 全部通过 |
+| `render-csr.test.ts`           | 4            | ✅ 全部通过 |
+| `cmd-dev.test.ts`               | 3            | ✅ 全部通过 |
+| `cmd-fmt.test.ts`               | 3            | ✅ 全部通过 |
+| `cmd-lint.test.ts`              | 3            | ✅ 全部通过 |
+| `cmd-preview.test.ts`           | 3            | ✅ 全部通过 |
+| `cmd-start.test.ts`             | 3            | ✅ 全部通过 |
+| `cmd-test.test.ts`              | 3            | ✅ 全部通过 |
+| `cmd-upgrade.test.ts`           | 3            | ✅ 全部通过 |
+| `cmd-update.test.ts`            | 4            | ✅ 全部通过 |
+| `cli.test.ts`                   | 2            | ✅ 全部通过 |
 
 > **说明**：`windows.test.ts` 中 2 个用例为 Windows 平台专属（`skipIf` 非
 > Windows 时忽略）
 
 #### 端到端测试 (tests/e2e/)
 
-| 文件名                   | 测试用例数 | 状态        | 说明                                                                                                      |
-| ------------------------ | ---------- | ----------- | --------------------------------------------------------------------------------------------------------- |
-| `browser-render.test.ts` | 123        | ✅ 全部通过 | 各示例首页/关于/计数器/metadata，含 preact/view/react 的 csr/ssr/ssg/hybrid/hybrid-flat basic 与 advanced |
-| `server-request.test.ts` | 1          | ✅ 全部通过 | 启动服务器并返回 HTML                                                                                     |
-| **小计**                 | **124**    | ✅ 全部通过 | 执行时间约 3m52s                                                                                          |
+| 文件名                             | 测试用例数 | 状态        | 说明                                                                                                      |
+| ---------------------------------- | ---------- | ----------- | --------------------------------------------------------------------------------------------------------- |
+| `browser-render-preact-csr.test.ts` | 9          | ✅ 全部通过 | Preact CSR basic/advanced：首页、关于、计数器、metadata                                                   |
+| `browser-render-preact-ssr.test.ts` | 9          | ✅ 全部通过 | Preact SSR                                                                                                |
+| `browser-render-preact-ssg.test.ts` | 9          | ✅ 全部通过 | Preact SSG                                                                                                |
+| `browser-render-preact-hybrid.test.ts` | 9       | ✅ 全部通过 | Preact Hybrid                                                                                             |
+| `browser-render-preact-hybrid-flat.test.ts` | 9   | ✅ 全部通过 | Preact Hybrid（无 src）                                                                                   |
+| `browser-render-react-csr.test.ts` | 9          | ✅ 全部通过 | React CSR basic/advanced                                                                                  |
+| `browser-render-react-ssr.test.ts` | 9          | ✅ 全部通过 | React SSR                                                                                                 |
+| `browser-render-react-ssg.test.ts` | 9          | ✅ 全部通过 | React SSG                                                                                                 |
+| `browser-render-react-hybrid.test.ts` | 9       | ✅ 全部通过 | React Hybrid                                                                                              |
+| `browser-render-react-hybrid-flat.test.ts` | 9   | ✅ 全部通过 | React Hybrid（无 src）                                                                                    |
+| `browser-render-view-csr.test.ts`  | 9          | ✅ 全部通过 | View CSR                                                                                                  |
+| `browser-render-view-ssr.test.ts`  | 9          | ✅ 全部通过 | View SSR                                                                                                  |
+| `browser-render-view-ssg.test.ts`  | 9          | ✅ 全部通过 | View SSG                                                                                                  |
+| `browser-render-view-hybrid.test.ts` | 9        | ✅ 全部通过 | View Hybrid                                                                                               |
+| `browser-render-view-hybrid-flat.test.ts` | 9   | ✅ 全部通过 | View Hybrid（无 src）                                                                                     |
+| `server-request.test.ts`           | 3          | ✅ 全部通过 | 启动服务器并返回 HTML                                                                                     |
+| **小计**                           | **138**    | ✅ 全部通过 | 执行时间含在总时长约 6m18s 内                                                                             |
 
 #### 集成测试 (tests/integration/)
 
@@ -394,7 +411,7 @@
 - ✅ 配置 react / preact 引擎时服务应正常初始化
 - ✅ 配置 ssr / csr / ssg 模式时服务应正常初始化
 
-### 10. 路由集成 (router.test.ts) - 12 个测试
+### 10. 路由集成 (router.test.ts) - 13 个测试
 
 #### 10.1 initializeRouter()
 
@@ -584,8 +601,11 @@
   **createServerResponse()**：redirect（302/301）、json、html、text、binary（Uint8Array/ArrayBuffer）、body、status（含
   statusText）
 
-### 21. 其他单元测试（sanitize、path、runtime、module-cache、load-route-module、i18n、generate、windows 等）
+### 21. 其他单元测试（app、asset-manifest、build-dirs、sanitize、path、runtime 等）
 
+- ✅ **app.test.ts** (20)：App 构造函数、use()、registerPlugin()、on()、stage、init 流程
+- ✅ **asset-manifest.test.ts** (6)：replaceAssetPathsInHtml 等资源清单
+- ✅ **build-dirs.test.ts** (18)：构建目录推断与清理
 - ✅ **sanitize.test.ts** (15)：sanitizeRequestParams 危险键过滤、NUL
   过滤、空值处理
 - ✅ **path.test.ts**
@@ -741,10 +761,9 @@
 
 ## 🎯 结论
 
-@dreamer/dweb 框架的测试在文件级已全面覆盖，共 **818** 个测试用例全部通过（2 个
-Windows 专属用例在非 Windows 时忽略）。测试分三段执行：端到端 124 例（约
-3m52s）、单元与构建 646 例（约 28s）、集成 48 例（约
-18s）。所有测试均为实质性测试，验证了具体的功能行为。单元测试包含
+@dreamer/dweb 框架的测试在文件级已全面覆盖，共 **833** 个测试用例全部通过（2 个
+Windows 专属用例在非 Windows 时忽略）。测试通过 `deno test -A tests` 一次执行，总时长约
+**6m18s**。所有测试均为实质性测试，验证了具体的功能行为。单元测试包含
 **context.test.ts**（parseCookies、createLoadContext、createMetaContext、
 createServerResponse）。测试覆盖了：
 

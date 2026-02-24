@@ -4,7 +4,7 @@
  */
 
 import { DEFAULT_PORT_BASE } from "../constants.ts";
-import { $tr, getDefaultLanguage } from "../helpers.ts";
+import { $tr, getBuildServerExternal, getDefaultLanguage } from "../helpers.ts";
 import type { InitOptions } from "../types.ts";
 
 /**
@@ -46,7 +46,11 @@ const config: AppConfig = {
   // },
 
   // ========== Server ==========
-  // host / port 在 main.dev.ts（127.0.0.1:${serverPort}）与 main.prod.ts（0.0.0.0:${serverPort}）中配置
+  // ${
+    $tr("init.comments.configHostPortInDevProd", {
+      serverPort: String(serverPort),
+    })
+  }
   server: {
     dev: {
       hmr: { enabled: true, path: "/__hmr" },
@@ -93,7 +97,18 @@ const config: AppConfig = {
   // ========== Build ==========
   build: {
     server: {
-      useNativeCompile: false,
+      useNativeCompile: false,${
+    (() => {
+      const ext = getBuildServerExternal(opts);
+      if (!ext?.length) return "";
+      const lines = ext.map((e) => `        "${e}"`).join(",\n");
+      return `
+      // ${$tr("init.comments.buildServerExternalBun")}
+      external: [
+${lines}
+      ],`;
+    })()
+  }
       // entry: "src/main.ts",
       // output: "dist",
       // target: "deno",
@@ -185,17 +200,17 @@ export function getFullCommonConfigMainTs(opts: InitOptions): string {
   return `/**
  * ${$tr("init.comments.commonConfig")}
  * ${$tr("init.comments.commonConfigDesc")}
- * 完整配置项说明见文档: docs/en-US/APP_CONFIG.md
- * name、version 在各应用 src/<app>/config/main.ts 中配置；此处仅共享 language、server、router、render、build、logger 等。
+ * ${$tr("init.comments.commonConfigDocRef")}
+ * ${$tr("init.comments.commonConfigNameVersionHint")}
  */
 
-/** ${
-    $tr("init.comments.defaultExport")
-  } - 共享片段，各应用 default 导出时 spread 并覆盖；各应用 config 中需写 name、version */
+/** ${$tr("init.comments.defaultExport")}${
+    $tr("init.comments.defaultExportSuffix")
+  } */
 export default {
-  /** ${
-    $tr("init.comments.frameworkLanguageShort")
-  }（init 时按环境检测，可改为 zh-CN / en-US） */
+  /** ${$tr("init.comments.frameworkLanguageShort")} ${
+    $tr("init.comments.frameworkLanguageSuffix")
+  } */
   language: "${language}",
 
   // envPrefix: "APP_",
@@ -205,13 +220,13 @@ export default {
 
   server: {
     host: "127.0.0.1",
-    // port 由各应用 config 覆盖
+    // ${$tr("init.comments.commonConfigPortOverride")}
     // dev: { hmr: { enabled: true, path: "/__hmr" }, watch: { paths: ["./src"], ignore: ["node_modules", ".git", "dist"] } },
     // mode: "dev", onListen, onError, debug, shutdownTimeout
   },
 
   router: {
-    // routesDir 由各应用覆盖
+    // ${$tr("init.comments.commonConfigRoutesDirOverride")}
     // apiMode: "restful",
     // redirects: [], skipAppValidation: false,
   },
@@ -235,7 +250,18 @@ export default {
   },
 
   build: {
-    server: { useNativeCompile: false },
+    server: { useNativeCompile: false${
+    (() => {
+      const ext = getBuildServerExternal(opts);
+      if (!ext?.length) return "";
+      const lines = ext.map((e) => `      "${e}"`).join(",\n");
+      return `,
+    // ${$tr("init.comments.buildServerExternalBun")}
+    external: [
+${lines}
+    ]`;
+    })()
+  } },
     // client: {}, assets: {}, build: {}
   },
 

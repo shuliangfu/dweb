@@ -940,7 +940,9 @@ export async function setupHydrationRouterAndHmr(opts: {
                 el.href = entry.url + "?t=" + Date.now();
               } else {
                 fetch(entry.url + "?t=" + Date.now())
-                  .then(function(r) { return r.ok ? r.text() : Promise.reject(new Error("[dweb] HMR CSS fetch failed: " + r.statusText)); })
+                  .then(function(r) { return r.ok ? r.text() : Promise.reject(new Error(${
+    JSON.stringify($tr("client.hmrCssFetchFailedPrefix"))
+  } + r.statusText)); })
                   .then(function(css) { el.textContent = css; })
                   .catch(function() {});
               }

@@ -189,6 +189,7 @@
     "routesMiddlewareSkipped": "_middleware をスキップ: {message}",
     "pathMustBeInProject": "パスはプロジェクト内である必要があります",
     "mountContainerCheckFailed": "マウントコンテナ検出失敗",
+    "ssrMountContainerCheckFailed": "SSR マウントコンテナ検出失敗、hydration スクリプトを注入できません",
     "clientBuildOutput": "クライアント出力 ({count} ファイル):",
     "clientBuildTotalSize": "合計サイズ: {size} KB",
     "hmrChunkNotFound": "[HMR] チャンクが見つかりません: {path}",
@@ -232,7 +233,8 @@
     "hmrLoadModuleComplete": "[HMR] loadModule 完了",
     "hmrRenderCsrBefore": "[HMR] renderCSR 前",
     "hmrRenderCsrComplete": "[HMR] renderCSR 完了",
-    "hmrLoadModuleRenderFailed": "[HMR] loadModule/render 失敗"
+    "hmrLoadModuleRenderFailed": "[HMR] loadModule/render 失敗",
+    "hmrCssFetchFailedPrefix": "[dweb] HMR CSS 取得失敗: "
   },
   "db": {
     "noMigrations": "マイグレーションがありません",
@@ -477,6 +479,12 @@
       "commonConfigEntryDesc": "フレームワークが自動読み込みしてアプリ設定とマージ；低優先度",
       "commonConfig": "共通設定",
       "commonConfigDesc": "フロント/バックで共有；フレームワークがアプリ設定とディープマージ",
+      "commonConfigDocRef": "全設定は docs/en-US/APP_CONFIG.md を参照",
+      "commonConfigNameVersionHint": "name, version は各アプリの src/<app>/config/main.ts で設定；ここでは language, server, router, render, build, logger のみ共有",
+      "configHostPortInDevProd": "host / port は main.dev.ts（127.0.0.1:{serverPort}）と main.prod.ts（0.0.0.0:{serverPort}）で設定",
+      "commonConfigPortOverride": "port は各アプリの config で上書き",
+      "commonConfigRoutesDirOverride": "routesDir は各アプリで上書き",
+      "defaultExportSuffix": " - 共有フラグメント；各アプリで spread して上書き；各アプリ config に name, version を記述",
       "commonConfigImport": "共通設定（version 等が必要な場合に他モジュールからインポート）",
       "frameworkLanguageShort": "フレームワーク言語（環境から自動検出）",
       "defaultExport": "デフォルトエクスポート；フレームワークが各アプリ設定にディープマージ",
@@ -507,13 +515,22 @@
       "dockerSingleApp": "単一アプリモード",
       "dockerRunBuildSingle": "docker-compose up 前に deno task build を実行",
       "dockerAppPort": "{app} アプリ（ポート {port}）",
+      "dockerBaseStageMinimal": "ベースステージ: Deno ランタイムのみ、apt パッケージなし（イメージを軽量化）",
+      "dockerBaseStageBun": "Bun ランタイム、追加パッケージなし",
+      "dockerWorkDirMount": "作業ディレクトリ設定；compose が .:/app をマウント、実行はホストのプロジェクトを使用（ホストで deno task build を先に実行）",
+      "dockerWorkDirMountBun": "作業ディレクトリ設定；compose が .:/app をマウント、実行はホストのプロジェクトを使用（ホストで bun run build を先に実行）",
+      "buildServerExternalBun": "Bun ランタイム：サーバー external にエンジンと tailwind 関連パッケージを含め、二重インスタンスの SSR エラーを防止",
+      "dockerHealthcheckProcTcp": "/proc/net/tcp でポート確認（{port} → {portHex}）",
       "gitignoreDeps": "依存関係",
       "gitignoreBuild": "ビルド",
       "gitignoreDwebGen": "dweb 自動生成（各 build/start で再生成）",
       "gitignoreDockerCache": "Docker キャッシュ（deno cache 事前投入ディレクトリ）",
       "gitignoreEnv": "環境",
       "gitignoreSystem": "システム",
+      "gitignoreDeno": "Deno",
+      "gitignoreIde": "IDE",
       "vscodeDeno": "Deno 設定",
+      "vscodeBun": "Bun / TypeScript 設定",
       "vscodeFormat": "フォーマット設定",
       "vscodeEditor": "エディタの基本設定",
       "vscodeCss": "CSS / Tailwind 設定",
@@ -529,7 +546,9 @@
       "dynamicRoutesExample": "or \"/user?id=[id]\": [\"1\", \"2\", \"3\"]",
       "renderFullDocFull": "See docs/zh-CN/APP_CONFIG.md or docs/en-US/APP_CONFIG.md for full options (SSR/SSG hydration)",
       "configFullDocRef": "Full config reference: docs/en-US/APP_CONFIG.md",
-      "frameworkLanguageSuffix": "(auto-detected at init; override to zh-CN / en-US if needed)"
+      "frameworkLanguageSuffix": "(auto-detected at init; override to zh-CN / en-US if needed)",
+      "jsxDtsLine1": "JSX 組み込み要素型：プロジェクト内 TSX 型チェック用。",
+      "jsxDtsLine2": "@dreamer/view の jsx.d.ts と同一。deno.json compilerOptions.types と併用。"
     }
   }
 }

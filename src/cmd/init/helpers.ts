@@ -179,3 +179,33 @@ app.registerPlugin(staticPlugin({
 
 /** 供模板使用的 $tr（框架 i18n），避免各 template 文件重复从 utils 引用 */
 export { $tr };
+
+/**
+ * Bun 运行时下服务端构建的 external 列表（避免与动态加载的 _app 双实例导致 SSR 报错）
+ * 仅当 runtime === "bun" 时返回非空；按引擎 + 样式：tailwind 时加 tailwindcss/lightningcss，unocss 不加
+ * 单应用写在 config/main.ts，多应用写在 common/config/main.ts
+ */
+export function getBuildServerExternal(opts: InitOptions): string[] | undefined {
+  if (opts.runtime !== "bun") return undefined;
+  const list: string[] = [];
+  if (opts.style === "tailwind") {
+    list.push("tailwindcss", "lightningcss");
+  }
+  if (opts.engine === "preact") {
+    list.push(
+      "preact",
+      "preact-render-to-string",
+      "preact/hooks",
+      "preact/jsx-runtime",
+    );
+  } else if (opts.engine === "react") {
+    list.push(
+      "react",
+      "react-dom",
+      "react-dom/server",
+      "react/jsx-runtime",
+    );
+  }
+  // view 引擎暂无约定 external，不追加
+  return list.length > 0 ? list : undefined;
+}

@@ -7,42 +7,32 @@
 
 ---
 
-## [3.0.89] - 2026-02-21
+## [Unreleased]
 
 ### 新增
 
-- **错误 / Hybrid**：新增 Hybrid 渲染相关 i18n
-  键：`errors.hybridNeedAppComponent`、`errors.hybridAppLoadFailed`、`errors.hybridAppNotFound`、`errors.hybridMountContainerRequired`；以及入口相关：`errors.entryPathInvalidReasonServerEntryNotFound`、`errors.entryPathInvalidHintServerEntry`。
+- **Init**：第一步选择运行时（Deno 或 Bun），再选择单应用/多应用。选 Deno 只生成 `deno.json`；选 Bun 生成 `package.json`、`.npmrc` 与 `tsconfig.json`。Dockerfile 与 docker-compose 按运行时生成（Deno：denoland/deno，Bun：oven/bun；compose 中不再包含环境变量）。
+- **Init（Bun）**：生成 `tsconfig.json`，含 `module: "NodeNext"`、`moduleResolution: "nodenext"`、`lib: ["ESNext","DOM","DOM.Iterable"]`、`resolveJsonModule`、`isolatedModules`、`include: ["src/**/*"]`、`exclude: ["node_modules","dist"]`；`jsxImportSource` 随所选引擎（preact/react/view）。
+- **Init（Bun）**：Bun 运行时在 config 中生成 `build.server.external`（按引擎与样式：tailwind 增加 tailwindcss/lightningcss；preact/react 增加对应引擎包）。单应用写在 `config/main.ts`，多应用写在 `common/config/main.ts`。
+- **Init**：`.vscode/settings.json` 按运行时生成：Deno 保留 `deno.enable`/`deno.lint` 与 Deno 格式化；Bun 使用内置 TypeScript 格式化并排除 `.bun`（无 Deno 配置）。
+- **Init**：生成 `.vscode/i18n-ally-custom-framework.yml`（无注释），用于识别 `$t`/`$tr`；`i18n-ally.enabledFrameworks` 设为 `["react","i18next","general","custom"]`。
+- **错误 / Hybrid**：新增 Hybrid 渲染相关 i18n 键：`errors.hybridNeedAppComponent`、`errors.hybridAppLoadFailed`、`errors.hybridAppNotFound`、`errors.hybridMountContainerRequired`；以及入口相关：`errors.entryPathInvalidReasonServerEntryNotFound`、`errors.entryPathInvalidHintServerEntry`。
 
 ### 变更
 
-- **Bun 兼容**：本版本围绕 Bun
-  运行时/构建兼容性做了系列修改。所有示例项目统一补全
-  `build.server.external: ["tailwindcss", "lightningcss"]`（单应用在
-  `config/main.ts` 或入口 `main.ts`，多应用在 `common/config/main.ts`），避免
-  Bun 使用 `buildWithBun` 打包时因打包 lightningcss（含原生
-  `require('../pkg')`）报错。
-- **i18n**：框架 i18n 不再使用全局 `$t`，内部统一通过 `utils/i18n.ts` 的 `$tr`
-  使用。初始化在首次加载模块时通过顶层 await 执行；locale
-  优先级：`setDwebLocale()` &gt; 项目 `language` &gt; 环境变量 &gt;
-  默认。`setDwebLocale` 可在 init 前或 init 后调用（init 后直接更新实例）。
-- **View / CSR 客户端**：View 引擎按渲染模式选择适配器：CSR 使用
-  `@dreamer/render/client/view-csr`，hybrid/SSR/SSG 使用
-  `@dreamer/render/client/view-hybrid`（含 hydrate）。客户端依赖生成与 hybrid
-  初始化逻辑已同步调整。
-- **依赖**：升级各 @dreamer/* 依赖（如 render ^1.0.39、view
-  ^1.0.31、runtime-adapter ^1.0.17、esbuild ^1.0.36、server ^1.0.9
-  等）；workspace 改为 `./examples/*/*`。
+- **Init**：运行时菜单标题上方增加空行。docker-compose 的 service 中移除 `DENO_ENV`/`BUN_ENV`。
+- **Init（Bun）**：`package.json` 的 scripts 使用 `bun run`（如 `bun run src/main.ts`、`bun run dist/server.js`）。Dockerfile 注释使用 i18n 键 `dockerBaseStageBun`；WORKDIR 注释使用 `dockerWorkDirMountBun`（宿主机执行 bun run build）。
+- **Bun 兼容**：本版本围绕 Bun 运行时/构建兼容性做了系列修改。所有示例项目统一补全 `build.server.external: ["tailwindcss", "lightningcss"]`（单应用在 `config/main.ts` 或入口 `main.ts`，多应用在 `common/config/main.ts`），避免 Bun 使用 `buildWithBun` 打包时因打包 lightningcss（含原生 `require('../pkg')`）报错。
+- **i18n**：框架 i18n 不再使用全局 `$t`，内部统一通过 `utils/i18n.ts` 的 `$tr` 使用。初始化在首次加载模块时通过顶层 await 执行；locale 优先级：`setDwebLocale()` &gt; 项目 `language` &gt; 环境变量 &gt; 默认。`setDwebLocale` 可在 init 前或 init 后调用（init 后直接更新实例）。
+- **View / CSR 客户端**：View 引擎按渲染模式选择适配器：CSR 使用 `@dreamer/render/client/view-csr`，hybrid/SSR/SSG 使用 `@dreamer/render/client/view-hybrid`（含 hydrate）。客户端依赖生成与 hybrid 初始化逻辑已同步调整。
+- **依赖**：升级各 @dreamer/* 依赖（如 render ^1.0.39、view ^1.0.31、runtime-adapter ^1.0.17、esbuild ^1.0.36、server ^1.0.9 等）；workspace 改为 `./examples/*/*`。
 - **Init**：配置与模板小幅调整（config-full、config、components、docker、main、static）。
 
 ### 移除
 
-- **i18n**：移除全局 `$t` 导出及 `src/types/i18n.d.ts`，请改用 `utils/i18n.ts`
-  的 `$tr`（或从 `mod.ts` 再导出）。
-- **Locales**：从各语言 JSON 中删除未使用键（如
-  `log.database.*`、`log.validation.*`）。
-- **测试**：移除单体 `tests/e2e/browser-render.test.ts`（由按渲染类型的 e2e
-  测试替代）。
+- **i18n**：移除全局 `$t` 导出及 `src/types/i18n.d.ts`，请改用 `utils/i18n.ts` 的 `$tr`（或从 `mod.ts` 再导出）。
+- **Locales**：从各语言 JSON 中删除未使用键（如 `log.database.*`、`log.validation.*`）。
+- **测试**：移除单体 `tests/e2e/browser-render.test.ts`（由按渲染类型的 e2e 测试替代）。
 
 ---
 

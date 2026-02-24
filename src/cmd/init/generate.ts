@@ -20,6 +20,7 @@ import {
 import { DEFAULT_PORT_BASE, FALLBACK_VIEW_VERSION } from "./constants.ts";
 import type { InitOptions, JsrVersions } from "./types.ts";
 import { getDenoJson } from "./templates/deno-json.ts";
+import { getPackageJson } from "./templates/package-json.ts";
 import { getMainTsMulti, getMainTsSingle } from "./templates/main.ts";
 import {
   getCommonConfigMainDevTs,
@@ -43,8 +44,11 @@ import {
   getDeploySh,
   getFaviconSvg,
   getGitignore,
+  getI18nAllyCustomFrameworkYml,
   getJsxDts,
+  getNpmrc,
   getTailwindCss,
+  getTsconfigJson,
   getUnoCss,
   getVscodeSettingsJson,
 } from "./templates/static.ts";
@@ -256,16 +260,29 @@ export async function generate(opts: InitOptions): Promise<void> {
       view: FALLBACK_VIEW_VERSION,
     };
   }
-  await writeTextFile(
-    join(targetDir, "deno.json"),
-    getDenoJson(opts, jsrVersions),
-  );
+  if (opts.runtime === "deno") {
+    await writeTextFile(
+      join(targetDir, "deno.json"),
+      getDenoJson(opts, jsrVersions),
+    );
+  }
+  if (opts.runtime === "bun") {
+    await writeTextFile(
+      join(targetDir, "package.json"),
+      getPackageJson(opts, jsrVersions),
+    );
+    await writeTextFile(join(targetDir, ".npmrc"), getNpmrc());
+    await writeTextFile(
+      join(targetDir, "tsconfig.json"),
+      getTsconfigJson(opts),
+    );
+  }
   if (opts.engine === "view") {
     await writeTextFile(join(targetDir, "jsx.d.ts"), getJsxDts());
   }
   await writeTextFile(join(targetDir, ".gitignore"), getGitignore());
 
-  await writeTextFile(join(targetDir, "Dockerfile"), getDockerfile());
+  await writeTextFile(join(targetDir, "Dockerfile"), getDockerfile(opts));
   await writeTextFile(
     join(targetDir, "docker-compose.yml"),
     getDockerComposeYml(opts),
@@ -276,12 +293,18 @@ export async function generate(opts: InitOptions): Promise<void> {
     await chmod(deployShPath, 0o755);
   }
 
-  await ensureDir(join(targetDir, "runtime", "deno-cache"));
   await ensureDir(join(targetDir, "runtime", "logs"));
+  if (opts.runtime === "deno") {
+    await ensureDir(join(targetDir, "runtime", "deno-cache"));
+  }
 
   await ensureDir(join(targetDir, ".vscode"));
   await writeTextFile(
     join(targetDir, ".vscode", "settings.json"),
-    getVscodeSettingsJson(),
+    getVscodeSettingsJson(opts),
+  );
+  await writeTextFile(
+    join(targetDir, ".vscode", "i18n-ally-custom-framework.yml"),
+    getI18nAllyCustomFrameworkYml(),
   );
 }

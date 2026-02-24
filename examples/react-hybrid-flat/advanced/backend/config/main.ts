@@ -4,16 +4,18 @@
  */
 
 import { commonConfig } from "@common/config/main.ts";
-import type { AppConfig } from "@dreamer/dweb";
+import type { AppConfig, AppLanguage } from "@dreamer/dweb";
 import { getEnv } from "@dreamer/runtime-adapter";
 
 const portFromEnv = getEnv("PORT");
 const serverPort = portFromEnv ? Number(portFromEnv) : 3048;
+const language = getEnv("LANGUAGE") || "zh-CN";
 
 /** 后端配置 */
 const config: AppConfig = {
   name: "react-hybrid-flat-advanced-example-backend",
   version: commonConfig.version,
+  language: language as AppLanguage,
 
   server: {
     port: serverPort,

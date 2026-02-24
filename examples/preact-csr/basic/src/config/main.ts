@@ -6,13 +6,16 @@
 
 import type { AppConfig } from "@dreamer/dweb";
 import { getEnv } from "@dreamer/runtime-adapter";
+import type { AppLanguage } from "@dreamer/dweb";
 
 const portFromEnv = getEnv("PORT");
 const serverPort = portFromEnv ? Number(portFromEnv) : 3001;
+const language = getEnv("LANGUAGE") || "zh-CN";
 
 const config: AppConfig = {
   name: "preact-csr-basic-example",
   version: "1.0.0",
+  language: language as AppLanguage,
 
   // 服务器配置（e2e 并行测试时与 preact-hybrid/react-csr/react-hybrid 端口区分；PORT 环境变量可覆盖）
   server: {

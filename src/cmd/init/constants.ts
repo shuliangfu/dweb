@@ -4,6 +4,9 @@
 
 import type { Engine, ExampleLevel, RenderMode, Style } from "./types.ts";
 
+/** 运行时菜单顺序（下标 0 为默认） */
+export const RUNTIMES = ["deno", "bun"] as const;
+
 /** 模板引擎菜单顺序（与 interactiveMenu 选项一致），下标 0 为默认 */
 export const ENGINES: Engine[] = ["view", "preact", "react"];
 

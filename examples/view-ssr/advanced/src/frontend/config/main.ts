@@ -4,7 +4,7 @@
  */
 
 import { commonConfig } from "@common/config/main.ts";
-import type { AppConfig } from "@dreamer/dweb";
+import type { AppConfig, AppLanguage } from "@dreamer/dweb";
 import { getEnv } from "@dreamer/runtime-adapter";
 
 /** 前端服务端口（默认值；PORT 环境变量可覆盖） */
@@ -13,11 +13,13 @@ const FRONTEND_PORT = 3025;
 export const backendPort = 3024;
 const portFromEnv = getEnv("PORT");
 const serverPort = portFromEnv ? Number(portFromEnv) : FRONTEND_PORT;
+const language = getEnv("LANGUAGE") || "zh-CN";
 
 /** 前端配置 */
 const config: AppConfig = {
   name: "view-ssr-advanced-example-frontend",
   version: commonConfig.version,
+  language: language as AppLanguage,
 
   server: {
     port: serverPort,

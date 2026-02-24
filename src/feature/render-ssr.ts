@@ -269,12 +269,12 @@ export function createRendererSSR(
             : undefined;
           if (logger) {
             logger.error(
-              "[dweb] SSR 挂载容器检测失败，无法注入 hydration 脚本",
+              $tr("log.ssrMountContainerCheckFailed"),
               `containerId=${containerId}, html.length=${html?.length ?? 0}`,
             );
           }
           throw new Error(
-            `[dweb] _app 必须渲染挂载容器：请在 _app.tsx 的 body 内提供 <div id="${containerId}">{children}</div>，当前 SSR 输出中未找到该元素。`,
+            $tr("errors.hybridMountContainerRequired", { containerId }),
           );
         }
         const rawComponent = match.route.file || match.route.path || "";

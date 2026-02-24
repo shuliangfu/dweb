@@ -196,9 +196,9 @@ export function createRendererHybrid(
         layouts.push({ component: AppComponent });
       } else {
         const msg = appPath
-          ? `加载 _app 失败，路径: ${appPath}`
-          : "未找到 _app.tsx，请在 routesDir 下创建 _app.tsx 作为应用根组件";
-        throw new Error(`[dweb] Hybrid 渲染需要 _app 组件: ${msg}`);
+          ? $tr("errors.hybridAppLoadFailed", { path: appPath })
+          : $tr("errors.hybridAppNotFound");
+        throw new Error($tr("errors.hybridNeedAppComponent", { message: msg }));
       }
 
       // Layout 组件作为中间层布局
@@ -258,12 +258,12 @@ export function createRendererHybrid(
           `html.prefix=${JSON.stringify(html?.substring(0, 500) ?? "")}`,
         ].join(", ");
         if (logger) {
-          logger.error("[dweb] 挂载容器检测失败", debugInfo);
+          logger.error($tr("log.mountContainerCheckFailed"), debugInfo);
         } else {
-          console.error("[dweb] 挂载容器检测失败", debugInfo);
+          console.error($tr("log.mountContainerCheckFailed"), debugInfo);
         }
         throw new Error(
-          `[dweb] _app 必须渲染挂载容器：请在 _app.tsx 的 body 内提供 <div id="${containerId}">{children}</div>，当前 SSR 输出中未找到该元素。`,
+          $tr("errors.hybridMountContainerRequired", { containerId }),
         );
       }
 

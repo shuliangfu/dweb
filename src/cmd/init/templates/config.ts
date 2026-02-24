@@ -147,9 +147,9 @@ export const commonConfig = {
 export default {
   name: commonConfig.appName,
   version: commonConfig.version,
-  /** ${
-      $tr("init.comments.frameworkLanguageShort")
-    }（init 时按环境检测，可改为 zh-CN / en-US 等） */
+  /** ${$tr("init.comments.frameworkLanguageShort")} ${
+      $tr("init.comments.frameworkLanguageSuffix")
+    } */
   language: "${language}",
 };
 `;

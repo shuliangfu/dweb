@@ -4,18 +4,20 @@
  */
 
 import { commonConfig } from "@common/config/main.ts";
-import type { AppConfig } from "@dreamer/dweb";
+import type { AppConfig, AppLanguage } from "@dreamer/dweb";
 import { getEnv } from "@dreamer/runtime-adapter";
 
 /** 后端端口（默认值；PORT 环境变量可覆盖） */
 export const BACKEND_PORT = 3044;
 const portFromEnv = getEnv("PORT");
 const serverPort = portFromEnv ? Number(portFromEnv) : BACKEND_PORT;
+const language = getEnv("LANGUAGE") || "zh-CN";
 
 /** 后端配置 */
 const config: AppConfig = {
   name: "react-ssr-advanced-example-backend",
   version: commonConfig.version,
+  language: language as AppLanguage,
 
   server: {
     port: serverPort,

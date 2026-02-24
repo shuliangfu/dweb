@@ -4,18 +4,20 @@
  */
 
 import { commonConfig } from "@common/config/main.ts";
-import type { AppConfig } from "@dreamer/dweb";
+import type { AppConfig, AppLanguage } from "@dreamer/dweb";
 import { getEnv } from "@dreamer/runtime-adapter";
 
 const portFromEnv = getEnv("PORT");
 const serverPort = portFromEnv
   ? Number(portFromEnv)
   : commonConfig.frontendPort;
+const language = getEnv("LANGUAGE") || "zh-CN";
 
 /** 前端配置 */
 const config: AppConfig = {
   name: "preact-ssr-advanced-example-frontend",
   version: commonConfig.version,
+  language: language as AppLanguage,
 
   server: {
     port: serverPort,
