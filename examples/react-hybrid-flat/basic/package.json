@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "bun run main.ts",
-    "build": "bun run main.ts --build",
+    "build": "bun run main.ts -- --build",
     "start": "bun run dist/server.js"
   },
   "dependencies": {
