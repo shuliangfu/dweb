@@ -122,7 +122,7 @@ jobs:
         run: npx -y playwright@latest install chromium
 
       - name: Test (Bun)
-        run: bun test tests/
+        run: bun test --max-concurrency=1 tests/
 
   test-macos-bun:
     runs-on: macos-latest
@@ -152,7 +152,7 @@ jobs:
         run: npx -y playwright@latest install chromium
 
       - name: Test (Bun, macOS)
-        run: bun test tests/
+        run: bun test --max-concurrency=1 tests/
 
   # Windows 上不跑 Bun 测试：Bun 在 Windows 下 package.json 脚本子进程拿不到 --build，
   # 导致示例 build 会启动服务器而非构建；且存在 chromium.launch() 卡住等已知问题。
