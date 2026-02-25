@@ -205,15 +205,7 @@ export class App extends EventEmitter implements IApp {
     // 2. __DWEB_PROD__ 全局标志：说明是编译后的生产代码（由 builder-server / Bun 构建注入），保持 prod
     // 3. 其他情况：设置 DENO_ENV=dev（开发模式）
     // 直接调用 args() 而不是 this._isBuildMode()，因为此时实例还未完全初始化
-    // Windows Bun 下 package.json 脚本嵌套 bun run 时 argv 可能不传入子进程，故用环境变量兜底
-    const buildFlag =
-      getEnv("DWEB_BUILD") === "1" ||
-      args().includes("--build") ||
-      (globalThis as { Bun?: { argv?: string[] }; process?: { argv?: string[] } })
-        .Bun?.argv?.includes("--build") ||
-      (globalThis as { process?: { argv?: string[] } }).process?.argv?.includes(
-        "--build",
-      );
+    const buildFlag = args().includes("--build");
     const existingDenoEnv = getEnv("DENO_ENV");
     if (existingDenoEnv) {
       // 已由 start 脚本或环境设置，不覆盖
@@ -918,21 +910,10 @@ export class App extends EventEmitter implements IApp {
   }
 
   /**
-   * 检测是否为 build 模式（--build 或环境变量 DWEB_BUILD=1）
-   *
-   * 优先环境变量 DWEB_BUILD=1（Windows Bun 下 package.json 脚本子进程 argv 可能未传入）；
-   * 再查 args()、Bun.argv、process.argv。
+   * 检测是否为 build 模式（命令行参数 --build）
    */
   private _isBuildMode(): boolean {
-    if (getEnv("DWEB_BUILD") === "1") return true;
-    if (args().includes("--build")) return true;
-    const g = globalThis as {
-      Bun?: { argv?: string[] };
-      process?: { argv?: string[] };
-    };
-    if (g.Bun?.argv?.includes("--build")) return true;
-    if (g.process?.argv?.includes("--build")) return true;
-    return false;
+    return args().includes("--build");
   }
 
   /**

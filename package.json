@@ -76,8 +76,7 @@
     "tailwindcss": "4.2.0"
   },
   "devDependencies": {
-    "@dreamer/test": "npm:@jsr/dreamer__test@^1.0.15",
-    "cross-env": "^7.0.3"
+    "@dreamer/test": "npm:@jsr/dreamer__test@^1.0.15"
   },
   "engines": {
     "bun": ">=1.3"

@@ -5,8 +5,8 @@
   "scripts": {
     "dev:backend": "bun run backend/main.ts",
     "dev:frontend": "bun run frontend/main.ts",
-    "build:backend": "cross-env DWEB_BUILD=1 bun run backend/main.ts -- --build",
-    "build:frontend": "cross-env DWEB_BUILD=1 bun run frontend/main.ts -- --build",
+    "build:backend": "bun run backend/main.ts -- --build",
+    "build:frontend": "bun run frontend/main.ts -- --build",
     "start:backend": "bun run dist/backend/server.js",
     "start:frontend": "bun run dist/frontend/server.js"
   },
