@@ -1258,18 +1258,17 @@ export function createAdvancedExampleBrowserSuite(
 
     afterAll(async () => {
       if (skip) return;
-      // 先关浏览器，把 afterAll 的 5s 尽量留给 cleanupAllBrowsers，避免 browser close timeout
-      await cleanupAllBrowsers();
-      for (const child of [childFrontend, childBackend]) {
-        if (child) {
+      // 先杀进程，避免 afterAll 超时时 Bun 把 dev 当成 dangling 误杀
+      for (const c of [childFrontend, childBackend]) {
+        if (c) {
           try {
-            child.kill(9);
-            // 不 await child.status，避免占满 5s
+            c.kill(9);
           } catch {
             // ignore
           }
         }
       }
+      await cleanupAllBrowsers();
       if (originalCwd && originalCwd.length > 0) {
         chdir(originalCwd);
       }
@@ -1361,16 +1360,15 @@ export function createBasicExampleBrowserSuite(
     });
 
     afterAll(async () => {
-      // 先关浏览器，把 afterAll 的 5s 尽量留给 cleanupAllBrowsers，避免 browser close timeout
-      await cleanupAllBrowsers();
+      // 先杀进程，避免 afterAll 超时时 Bun 把 dev 当成 dangling 误杀（killed 1 dangling process）
       if (child) {
         try {
           child.kill(9);
-          // 不 await child.status，避免占满 5s 导致上一行已开始的 browser close 超时
         } catch {
           // ignore
         }
       }
+      await cleanupAllBrowsers();
       if (originalCwd && originalCwd.length > 0) {
         chdir(originalCwd);
       }

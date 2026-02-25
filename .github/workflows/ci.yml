@@ -117,8 +117,14 @@ jobs:
         run: bun test --max-concurrency=1 tests/unit
       - name: Test (Bun) integration
         run: bun test --max-concurrency=1 tests/integration
+      # e2e 按文件串行跑，每进程仅 2 个套件，减少 afterAll 超时 / dangling / browser close 互相干扰
       - name: Test (Bun) e2e
-        run: bun test --max-concurrency=1 tests/e2e
+        run: |
+          failed=0
+          for f in tests/e2e/*.test.ts; do
+            bun test --max-concurrency=1 "$f" || failed=1
+          done
+          exit $failed
 
   test-macos-bun:
     runs-on: macos-latest
@@ -143,8 +149,14 @@ jobs:
         run: bun test --max-concurrency=1 tests/unit
       - name: Test (Bun, macOS) integration
         run: bun test --max-concurrency=1 tests/integration
+      # e2e 按文件串行跑，每进程仅 2 个套件，减少 afterAll 超时 / dangling / browser close 互相干扰
       - name: Test (Bun, macOS) e2e
-        run: bun test --max-concurrency=1 tests/e2e
+        run: |
+          failed=0
+          for f in tests/e2e/*.test.ts; do
+            bun test --max-concurrency=1 "$f" || failed=1
+          done
+          exit $failed
 
   # Windows 上不跑 Bun 测试：Bun 在 Windows 下 package.json 脚本子进程拿不到 --build，
   # 导致示例 build 会启动服务器而非构建；且存在 chromium.launch() 卡住等已知问题。
