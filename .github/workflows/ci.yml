@@ -113,7 +113,9 @@ jobs:
         run: |
           for dir in examples/*/basic examples/*/advanced; do
             echo "=== $dir ==="
-            (cd "$dir" && bun install && bun run build) || exit 1
+            (cd "$dir" && bun install && (
+              grep -q '"build":' package.json && bun run build || (bun run build:backend && bun run build:frontend)
+            )) || exit 1
           done
 
       - name: Install Playwright Chromium
@@ -141,7 +143,9 @@ jobs:
         run: |
           for dir in examples/*/basic examples/*/advanced; do
             echo "=== $dir ==="
-            (cd "$dir" && bun install && bun run build) || exit 1
+            (cd "$dir" && bun install && (
+              grep -q '"build":' package.json && bun run build || (bun run build:backend && bun run build:frontend)
+            )) || exit 1
           done
 
       - name: Install Playwright Chromium
@@ -177,7 +181,13 @@ jobs:
             Write-Host "=== $dir ==="
             Push-Location $dir
             bun install; if ($LASTEXITCODE -ne 0) { $err = 1 }
-            bun run build; if ($LASTEXITCODE -ne 0) { $err = 1 }
+            $pkg = Get-Content package.json -Raw | ConvertFrom-Json
+            if ($pkg.scripts.build) {
+              bun run build; if ($LASTEXITCODE -ne 0) { $err = 1 }
+            } else {
+              bun run build:backend; if ($LASTEXITCODE -ne 0) { $err = 1 }
+              bun run build:frontend; if ($LASTEXITCODE -ne 0) { $err = 1 }
+            }
             Pop-Location
           }
           if ($err -ne 0) { exit 1 }
