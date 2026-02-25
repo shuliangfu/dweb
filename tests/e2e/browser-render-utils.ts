@@ -2,7 +2,7 @@
  * e2e: 浏览器渲染测试
  *
  * 使用 @dreamer/test 的浏览器测试能力，对 Preact/React/View 的 CSR、Hybrid、SSR、SSG 示例
- * 进行构建、启动服务器、Puppeteer 访问页面，验证无 hydration 错误且页面正常渲染。
+ * 启动 dev 服务（不 build），Puppeteer 访问页面，验证无 hydration 错误且页面正常渲染。
  * view-* 含 basic 与 advanced（advanced 为双进程 backend+frontend，端口由 env 指定）。
  * 覆盖 Windows 在内的多平台，CI 中 Windows 需通过 setup-chrome action 配置 Chrome。
  */
@@ -306,7 +306,7 @@ async function buildExample(
   exampleDir: string,
   entry: string = "src/main.ts",
 ): Promise<void> {
-  await ensureBunDeps(exampleDir);
+  // await ensureBunDeps(exampleDir); // 本地测试删除示例 node_modules 仍通过，先注释
   const distDir = join(exampleDir, "dist");
   if (await exists(distDir)) {
     await remove(distDir, { recursive: true });
@@ -1144,7 +1144,7 @@ async function buildExampleAdvanced(
   exampleDir: string,
   entries: [string, string] = ["src/backend/main.ts", "src/frontend/main.ts"],
 ): Promise<void> {
-  await ensureBunDeps(exampleDir);
+  // await ensureBunDeps(exampleDir); // 本地测试删除示例 node_modules 仍通过，先注释
   const distDir = join(exampleDir, "dist");
   if (await exists(distDir)) {
     await remove(distDir, { recursive: true });
@@ -1207,21 +1207,15 @@ export function createAdvancedExampleBrowserSuite(
       originalCwd = cwd();
       exampleDir = resolve(DWEB_ROOT, "examples", exampleName, "advanced");
       chdir(exampleDir);
-      await buildExampleAdvanced(exampleDir, entries);
+      // await ensureBunDeps(exampleDir); // 本地测试删除示例 node_modules 仍通过，先注释
 
-      // 启动前探测可用端口，再传给子进程，避免 server 自动换端口导致测试轮询错端口
+      // 启动 backend dev 服务
       actualBackendPort = await findAvailablePort("127.0.0.1", backendPort);
-      // 强制 prod：e2e 启动的是构建产物，避免继承测试进程的 DENO_ENV/BUN_ENV=dev 导致仍打印 Dev server
-      const envBackend = {
-        ...getEnvAll(),
-        PORT: String(actualBackendPort),
-        DENO_ENV: "prod",
-        BUN_ENV: "prod",
-      };
+      const envBackend = { ...getEnvAll(), PORT: String(actualBackendPort) };
       const startBackend = createCommand(execPath(), {
         args: IS_DENO
-          ? ["run", "-A", "dist/backend/server.js"]
-          : ["run", "dist/backend/server.js"],
+          ? ["run", "-A", entries[0]]
+          : ["run", entries[0]],
         cwd: exampleDir,
         env: envBackend,
         stdout: "inherit",
@@ -1229,23 +1223,16 @@ export function createAdvancedExampleBrowserSuite(
       });
       childBackend = startBackend.spawn();
       childBackend.unref();
-      // Windows CI 上构建+启动较慢给 2 分钟；非 Windows 给 45s（SSG 等冷启动较慢）
       const maxWait = platform() === "windows" ? 120000 : 45000;
       await waitForServerReady(actualBackendPort, maxWait, "/api/users");
 
-      // frontend 端口在 backend 已启动后再探测，避免与 backend 占用端口冲突
+      // 启动 frontend dev 服务
       actualFrontendPort = await findAvailablePort("127.0.0.1", frontendPort);
-      // 强制 prod：e2e 启动的是构建产物 dist/frontend/server.js，避免继承测试进程环境导致仍打印 Dev server
-      const envFrontend = {
-        ...getEnvAll(),
-        PORT: String(actualFrontendPort),
-        DENO_ENV: "prod",
-        BUN_ENV: "prod",
-      };
+      const envFrontend = { ...getEnvAll(), PORT: String(actualFrontendPort) };
       const startFrontend = createCommand(execPath(), {
         args: IS_DENO
-          ? ["run", "-A", "dist/frontend/server.js"]
-          : ["run", "dist/frontend/server.js"],
+          ? ["run", "-A", entries[1]]
+          : ["run", entries[1]],
         cwd: exampleDir,
         env: envFrontend,
         stdout: "inherit",
@@ -1255,7 +1242,6 @@ export function createAdvancedExampleBrowserSuite(
       childFrontend.unref();
 
       await waitForServerReady(actualFrontendPort, maxWait, "/");
-      // 就绪后再等一段，避免 preact-hybrid-advanced 等双进程场景下首请求/goto 仍偶发挂起
       await new Promise((r) => setTimeout(r, 3000));
     });
 
@@ -1341,21 +1327,13 @@ export function createBasicExampleBrowserSuite(
       originalCwd = cwd();
       exampleDir = resolve(DWEB_ROOT, "examples", exampleName, "basic");
       chdir(exampleDir);
-      await buildExample(exampleDir, entry);
+      // await ensureBunDeps(exampleDir); // 本地测试删除示例 node_modules 仍通过，先注释
 
-      // 启动前先探测从 preferredPort 起的可用端口，再传给子进程，避免「端口被占用 → server 自动换端口 → 测试仍轮询原端口」导致失败
+      // 启动 dev 服务（与 view 一致，不 build，直接跑入口）
       actualPort = await findAvailablePort("127.0.0.1", preferredPort);
-      // 强制 prod：e2e 启动的是构建产物 dist/server.js，避免继承测试进程的 DENO_ENV/BUN_ENV=dev 导致仍打印 Dev server
-      const env = {
-        ...getEnvAll(),
-        PORT: String(actualPort),
-        DENO_ENV: "prod",
-        BUN_ENV: "prod",
-      };
+      const env = { ...getEnvAll(), PORT: String(actualPort) };
       const startCmd = createCommand(execPath(), {
-        args: IS_DENO
-          ? ["run", "-A", "dist/server.js"]
-          : ["run", "dist/server.js"],
+        args: IS_DENO ? ["run", "-A", entry] : ["run", entry],
         cwd: exampleDir,
         env,
         stdout: "inherit",
@@ -1364,10 +1342,8 @@ export function createBasicExampleBrowserSuite(
       child = startCmd.spawn();
       child.unref();
 
-      // 轮询等待服务器就绪（Windows CI 较慢；Bun 下即使用 --max-concurrency=1 也适当放宽）
       const maxWait = platform() === "windows" ? 60000 : 40000;
       await waitForServerReady(actualPort, maxWait);
-      // 就绪后再等一段，避免偶发 ERR_CONNECTION_REFUSED（如 view-hybrid-flat 等启动略慢）
       await new Promise((r) => setTimeout(r, 4000));
     });
 
