@@ -1258,26 +1258,18 @@ export function createAdvancedExampleBrowserSuite(
 
     afterAll(async () => {
       if (skip) return;
+      // 先关浏览器，把 afterAll 的 5s 尽量留给 cleanupAllBrowsers，避免 browser close timeout
+      await cleanupAllBrowsers();
       for (const child of [childFrontend, childBackend]) {
         if (child) {
           try {
-            child.kill(15);
-            await Promise.race([
-              child.status,
-              new Promise<void>((r) => setTimeout(r, 1500)),
-            ]);
-            try {
-              child.kill(9);
-              await child.status;
-            } catch {
-              // ignore
-            }
+            child.kill(9);
+            // 不 await child.status，避免占满 5s
           } catch {
             // ignore
           }
         }
       }
-      await cleanupAllBrowsers();
       if (originalCwd && originalCwd.length > 0) {
         chdir(originalCwd);
       }
@@ -1369,25 +1361,16 @@ export function createBasicExampleBrowserSuite(
     });
 
     afterAll(async () => {
+      // 先关浏览器，把 afterAll 的 5s 尽量留给 cleanupAllBrowsers，避免 browser close timeout
+      await cleanupAllBrowsers();
       if (child) {
         try {
-          child.kill(15);
-          // 最多等 1.5s 让进程优雅退出，避免占满 afterAll 超时导致留给 cleanupAllBrowsers 的时间不足（browser close timeout）
-          await Promise.race([
-            child.status,
-            new Promise<void>((r) => setTimeout(r, 1500)),
-          ]);
-          try {
-            child.kill(9);
-            await child.status;
-          } catch {
-            // ignore
-          }
+          child.kill(9);
+          // 不 await child.status，避免占满 5s 导致上一行已开始的 browser close 超时
         } catch {
           // ignore
         }
       }
-      await cleanupAllBrowsers();
       if (originalCwd && originalCwd.length > 0) {
         chdir(originalCwd);
       }
