@@ -158,5 +158,29 @@ jobs:
           done
           exit $failed
 
-  # Windows 上不跑 Bun 测试：Bun 在 Windows 下 package.json 脚本子进程拿不到 --build，
-  # 导致示例 build 会启动服务器而非构建；且存在 chromium.launch() 卡住等已知问题。
+  test-windows-bun:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies (Bun)
+        run: bun install
+
+      - name: Install Playwright Chromium
+        run: npx -y playwright@latest install chromium
+
+      # 仅跑 unit 与 e2e，不跑 integration
+      - name: Test (Bun, Windows) unit
+        run: bun test --max-concurrency=1 tests/unit
+      # e2e 按文件串行跑，每进程仅 2 个套件，减少 afterAll 超时 / dangling / browser close 互相干扰
+      - name: Test (Bun, Windows) e2e
+        run: |
+          failed=0
+          for f in tests/e2e/*.test.ts; do
+            bun test --max-concurrency=1 "$f" || failed=1
+          done
+          exit $failed
