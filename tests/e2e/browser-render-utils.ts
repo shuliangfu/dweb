@@ -1112,27 +1112,37 @@ async function assertBrowserClickUsers(
   }
   await page.click('a[href="/users"]', { timeout: BROWSER_TEST_TIMEOUT_MS });
   // 点击后稍等再轮询，避免 CI 上导航尚未完成即开始 waitFor
-  await new Promise((r) => setTimeout(r, 1500));
+  await new Promise((r) => setTimeout(r, 3000));
 
-  await browser.waitFor(
-    () => {
+  try {
+    await browser.waitFor(
+      () => {
+        const doc = (globalThis as Record<string, unknown>).document as
+          | { body?: { innerHTML?: string } }
+          | undefined;
+        const html = doc?.body?.innerHTML ?? "";
+        return html.includes("用户管理") || html.includes("用户列表");
+      },
+      { timeout: contentTimeout },
+    );
+
+    const hasUsersPage = await browser.evaluate(() => {
       const doc = (globalThis as Record<string, unknown>).document as
         | { body?: { innerHTML?: string } }
         | undefined;
       const html = doc?.body?.innerHTML ?? "";
       return html.includes("用户管理") || html.includes("用户列表");
-    },
-    { timeout: contentTimeout },
-  );
-
-  const hasUsersPage = await browser.evaluate(() => {
-    const doc = (globalThis as Record<string, unknown>).document as
-      | { body?: { innerHTML?: string } }
-      | undefined;
-    const html = doc?.body?.innerHTML ?? "";
-    return html.includes("用户管理") || html.includes("用户列表");
-  });
-  expect(hasUsersPage).toBe(true);
+    });
+    expect(hasUsersPage).toBe(true);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("been closed") || msg.includes("Target page")) {
+      throw new Error(
+        `assertBrowserClickUsers: 浏览器/页面在 waitFor 期间已关闭，常见于 CI 超时或 reuseBrowser 共享导致。原错误: ${msg}`,
+      );
+    }
+    throw err;
+  }
 }
 
 /**
@@ -1280,6 +1290,7 @@ export function createAdvancedExampleBrowserSuite(
       },
     });
 
+    // reuseBrowser: false 避免与上一用例共享浏览器，减少 CI 上 "Target page has been closed" 偶发
     it.skipIf(skip, "应能通过点击用户管理链接进入用户页", async (t) => {
       if (!t) throw new Error("test context 不可用");
       await assertBrowserClickUsers(t, actualFrontendPort);
@@ -1291,7 +1302,7 @@ export function createAdvancedExampleBrowserSuite(
         enabled: true,
         headless: true,
         dumpio: true,
-        reuseBrowser: true,
+        reuseBrowser: false,
         browserSource: "test",
         protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
       },
