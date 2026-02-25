@@ -109,6 +109,13 @@ jobs:
       - name: Install dependencies (Bun)
         run: bun install
 
+      - name: Install and build all examples (Bun)
+        run: |
+          for dir in examples/*/basic examples/*/advanced; do
+            echo "=== $dir ==="
+            (cd "$dir" && bun install && bun run build) || exit 1
+          done
+
       - name: Install Playwright Chromium
         run: npx -y playwright@latest install chromium
 
@@ -129,6 +136,13 @@ jobs:
 
       - name: Install dependencies (Bun)
         run: bun install
+
+      - name: Install and build all examples (Bun)
+        run: |
+          for dir in examples/*/basic examples/*/advanced; do
+            echo "=== $dir ==="
+            (cd "$dir" && bun install && bun run build) || exit 1
+          done
 
       - name: Install Playwright Chromium
         run: npx -y playwright@latest install chromium
@@ -153,6 +167,20 @@ jobs:
 
       - name: Install dependencies (Bun)
         run: bun install
+
+      - name: Install and build all examples (Bun)
+        shell: pwsh
+        run: |
+          $err = 0
+          Get-ChildItem -Path examples -Recurse -Filter package.json | ForEach-Object {
+            $dir = $_.DirectoryName
+            Write-Host "=== $dir ==="
+            Push-Location $dir
+            bun install; if ($LASTEXITCODE -ne 0) { $err = 1 }
+            bun run build; if ($LASTEXITCODE -ne 0) { $err = 1 }
+            Pop-Location
+          }
+          if ($err -ne 0) { exit 1 }
 
       # Windows 上浏览器测试由上方 test-windows (Deno) 覆盖。
       # Bun 在 Windows 存在已知 bug（chromium.launch() 卡住不返回，见 oven-sh/bun#15679），
