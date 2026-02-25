@@ -205,10 +205,12 @@ export class App extends EventEmitter implements IApp {
     // 2. __DWEB_PROD__ 全局标志：说明是编译后的生产代码（由 builder-server / Bun 构建注入），保持 prod
     // 3. 其他情况：设置 DENO_ENV=dev（开发模式）
     // 直接调用 args() 而不是 this._isBuildMode()，因为此时实例还未完全初始化
+    // runtime-adapter 1.0.18+ 在 Bun 下优先用 Bun.argv，Windows 也能正确拿到 --build
+    const buildFlag = args().includes("--build");
     const existingDenoEnv = getEnv("DENO_ENV");
     if (existingDenoEnv) {
       // 已由 start 脚本或环境设置，不覆盖
-    } else if (args().includes("--build")) {
+    } else if (buildFlag) {
       setEnv("DENO_ENV", "prod");
     } else if ("__DWEB_PROD__" in globalThis) {
       // 编译后的生产代码（由 builder-server 注入标志）
@@ -911,8 +913,7 @@ export class App extends EventEmitter implements IApp {
   /**
    * 检测是否为 build 模式（通过命令行参数 --build）
    *
-   * 使用 @dreamer/runtime-adapter 的 args() 函数获取命令行参数
-   * 自动兼容 Deno、Bun、Node 环境
+   * 使用 @dreamer/runtime-adapter 的 args()，Bun 下优先 Bun.argv（含 Windows 兼容）。
    */
   private _isBuildMode(): boolean {
     return args().includes("--build");
