@@ -1261,7 +1261,16 @@ export function createAdvancedExampleBrowserSuite(
         if (child) {
           try {
             child.kill(15);
-            await child.status;
+            await Promise.race([
+              child.status,
+              new Promise<void>((r) => setTimeout(r, 1500)),
+            ]);
+            try {
+              child.kill(9);
+              await child.status;
+            } catch {
+              // ignore
+            }
           } catch {
             // ignore
           }
@@ -1362,7 +1371,17 @@ export function createBasicExampleBrowserSuite(
       if (child) {
         try {
           child.kill(15);
-          await child.status;
+          // 最多等 1.5s 让进程优雅退出，避免占满 afterAll 超时导致留给 cleanupAllBrowsers 的时间不足（browser close timeout）
+          await Promise.race([
+            child.status,
+            new Promise<void>((r) => setTimeout(r, 1500)),
+          ]);
+          try {
+            child.kill(9);
+            await child.status;
+          } catch {
+            // ignore
+          }
         } catch {
           // ignore
         }
