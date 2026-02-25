@@ -1211,7 +1211,13 @@ export function createAdvancedExampleBrowserSuite(
 
       // 启动前探测可用端口，再传给子进程，避免 server 自动换端口导致测试轮询错端口
       actualBackendPort = await findAvailablePort("127.0.0.1", backendPort);
-      const envBackend = { ...getEnvAll(), PORT: String(actualBackendPort) };
+      // 强制 prod：e2e 启动的是构建产物，避免继承测试进程的 DENO_ENV/BUN_ENV=dev 导致仍打印 Dev server
+      const envBackend = {
+        ...getEnvAll(),
+        PORT: String(actualBackendPort),
+        DENO_ENV: "prod",
+        BUN_ENV: "prod",
+      };
       const startBackend = createCommand(execPath(), {
         args: IS_DENO
           ? ["run", "-A", "dist/backend/server.js"]
@@ -1229,7 +1235,13 @@ export function createAdvancedExampleBrowserSuite(
 
       // frontend 端口在 backend 已启动后再探测，避免与 backend 占用端口冲突
       actualFrontendPort = await findAvailablePort("127.0.0.1", frontendPort);
-      const envFrontend = { ...getEnvAll(), PORT: String(actualFrontendPort) };
+      // 强制 prod：e2e 启动的是构建产物 dist/frontend/server.js，避免继承测试进程环境导致仍打印 Dev server
+      const envFrontend = {
+        ...getEnvAll(),
+        PORT: String(actualFrontendPort),
+        DENO_ENV: "prod",
+        BUN_ENV: "prod",
+      };
       const startFrontend = createCommand(execPath(), {
         args: IS_DENO
           ? ["run", "-A", "dist/frontend/server.js"]
@@ -1333,7 +1345,13 @@ export function createBasicExampleBrowserSuite(
 
       // 启动前先探测从 preferredPort 起的可用端口，再传给子进程，避免「端口被占用 → server 自动换端口 → 测试仍轮询原端口」导致失败
       actualPort = await findAvailablePort("127.0.0.1", preferredPort);
-      const env = { ...getEnvAll(), PORT: String(actualPort) };
+      // 强制 prod：e2e 启动的是构建产物 dist/server.js，避免继承测试进程的 DENO_ENV/BUN_ENV=dev 导致仍打印 Dev server
+      const env = {
+        ...getEnvAll(),
+        PORT: String(actualPort),
+        DENO_ENV: "prod",
+        BUN_ENV: "prod",
+      };
       const startCmd = createCommand(execPath(), {
         args: IS_DENO
           ? ["run", "-A", "dist/server.js"]

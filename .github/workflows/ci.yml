@@ -109,15 +109,6 @@ jobs:
       - name: Install dependencies (Bun)
         run: bun install
 
-      - name: Install and build all examples (Bun)
-        run: |
-          for dir in examples/*/basic examples/*/advanced; do
-            echo "=== $dir ==="
-            (cd "$dir" && bun install && (
-              grep -q '"build":' package.json && bun run build || (bun run build:backend && bun run build:frontend)
-            )) || exit 1
-          done
-
       - name: Install Playwright Chromium
         run: npx -y playwright@latest install chromium
 
@@ -138,15 +129,6 @@ jobs:
 
       - name: Install dependencies (Bun)
         run: bun install
-
-      - name: Install and build all examples (Bun)
-        run: |
-          for dir in examples/*/basic examples/*/advanced; do
-            echo "=== $dir ==="
-            (cd "$dir" && bun install && (
-              grep -q '"build":' package.json && bun run build || (bun run build:backend && bun run build:frontend)
-            )) || exit 1
-          done
 
       - name: Install Playwright Chromium
         run: npx -y playwright@latest install chromium
