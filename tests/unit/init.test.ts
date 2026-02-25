@@ -25,7 +25,9 @@ describe("init (cmd/init.ts)", () => {
   it(
     "generate() 应能生成单应用项目（Preact + Tailwind + with-about）",
     async () => {
-      testDir = await makeTempDir({ prefix: "dweb-init-single-" });
+      // 使用「父级临时目录 + 不存在的子路径」作为 targetDir，避免 generate() 内 exists 为 true 触发 confirm（测试不交互）
+      const parentDir = await makeTempDir({ prefix: "dweb-init-single-" });
+      testDir = join(parentDir, "test-app");
 
       const opts: InitOptions = {
         targetDir: testDir,
@@ -102,13 +104,14 @@ describe("init (cmd/init.ts)", () => {
       expect(denoJson).toMatch(/@dreamer\/render@\^1\.\d+\.\d+/);
       expect(denoJson).toMatch(/@dreamer\/router@\^1\.\d+\.\d+/);
 
-      await remove(testDir, { recursive: true });
+      await remove(parentDir, { recursive: true });
     },
     { timeout: 20_000 },
   );
 
   it("generate() 应能生成多应用项目", async () => {
-    testDir = await makeTempDir({ prefix: "dweb-init-multi-" });
+    const parentDir = await makeTempDir({ prefix: "dweb-init-multi-" });
+    testDir = join(parentDir, "test-multi");
 
     const opts: InitOptions = {
       targetDir: testDir,
@@ -151,11 +154,12 @@ describe("init (cmd/init.ts)", () => {
       expect(appConfigTs).toContain(`name: "${app}"`);
     }
 
-    await remove(testDir, { recursive: true });
+    await remove(parentDir, { recursive: true });
   });
 
   it("generate() 选择 unocss 时应包含 unocss 依赖", async () => {
-    testDir = await makeTempDir({ prefix: "dweb-init-unocss-" });
+    const parentDir = await makeTempDir({ prefix: "dweb-init-unocss-" });
+    testDir = join(parentDir, "unocss-app");
 
     const opts: InitOptions = {
       targetDir: testDir,
@@ -177,11 +181,12 @@ describe("init (cmd/init.ts)", () => {
     expect(denoJson).toContain("@unocss/preset-wind3");
     expect(denoJson).toContain("@unocss/preset-icons");
 
-    await remove(testDir, { recursive: true });
+    await remove(parentDir, { recursive: true });
   });
 
   it("generate() 选择 Bun 运行时应生成 package.json 与 .npmrc，且不生成 deno.json", async () => {
-    testDir = await makeTempDir({ prefix: "dweb-init-bun-" });
+    const parentDir = await makeTempDir({ prefix: "dweb-init-bun-" });
+    testDir = join(parentDir, "bun-app");
 
     const opts: InitOptions = {
       targetDir: testDir,
@@ -223,6 +228,6 @@ describe("init (cmd/init.ts)", () => {
     expect(tsconfig).toContain("node_modules");
     expect(tsconfig).toContain("nodenext");
 
-    await remove(testDir, { recursive: true });
+    await remove(parentDir, { recursive: true });
   });
 });
