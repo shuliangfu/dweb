@@ -8,6 +8,17 @@ and this project adheres to
 
 ---
 
+## [3.0.95] - 2026-02-25
+
+### Changed
+
+- **Init:** Directory existence check and overwrite confirm now run inside
+  `generate()` before any `ensureDir(targetDir)`. The project directory is
+  created only after validation (and user confirmation if it already exists); no
+  directory is created before this check.
+
+---
+
 ## [3.0.94] - 2026-02-25
 
 ### Changed

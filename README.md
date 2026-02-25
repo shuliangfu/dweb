@@ -1906,10 +1906,10 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.94] - 2026-02-25
+### [3.0.95] - 2026-02-25
 
-**Changed**: Init creates project directory only after parameter selection and
-version fetch (avoids "directory exists" on validation). Full changelog:
+**Changed**: Init validates directory exists inside `generate()` before creating
+it (no directory created before validation). Full changelog:
 [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---

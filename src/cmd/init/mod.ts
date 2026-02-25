@@ -2,16 +2,16 @@
  * dweb init 脚手架入口：收集选项、生成项目、主入口
  */
 
-import { confirm, info, success } from "@dreamer/console";
-import { basename, cwd, exists } from "@dreamer/runtime-adapter";
+import { info, success } from "@dreamer/console";
+import { basename, cwd } from "@dreamer/runtime-adapter";
 import { $tr } from "../../utils/i18n.ts";
 import { loadDwebDenoJson } from "../../utils/version.ts";
 import type { DwebDenoConfig } from "../../utils/version.ts";
 import { collectOptions } from "./collect.ts";
-import { generate } from "./generate.ts";
+import { generate, InitCancelledError } from "./generate.ts";
 import type { InitMainOptions, InitOptions } from "./types.ts";
 
-export { collectOptions, generate };
+export { collectOptions, generate, InitCancelledError };
 export type { InitMainOptions, InitOptions };
 export { loadDwebDenoJson };
 export type { DwebDenoConfig };
@@ -28,20 +28,15 @@ export async function main(
 ): Promise<void> {
   const opts = await collectOptions(argv, options?.beta);
 
-  const targetExists = await exists(opts.targetDir);
-  if (targetExists) {
-    const go = await confirm(
-      $tr("init.dirExistsConfirm", { path: opts.targetDir }),
-      false,
-    );
-    if (!go) {
-      info($tr("init.cancelled"));
+  info($tr("init.generatingProject"));
+  try {
+    await generate(opts);
+  } catch (err) {
+    if (err instanceof InitCancelledError) {
       return;
     }
+    throw err;
   }
-
-  info($tr("init.generatingProject"));
-  await generate(opts);
 
   success($tr("init.projectCreated"));
   info($tr("init.nextSteps"));

@@ -2,10 +2,17 @@
  * 根据 init 选项生成项目目录与文件
  */
 
-import { failSpinner, startSpinner, succeedSpinner } from "@dreamer/console";
+import {
+  confirm,
+  failSpinner,
+  info,
+  startSpinner,
+  succeedSpinner,
+} from "@dreamer/console";
 import {
   chmod,
   ensureDir,
+  exists,
   join,
   platform,
   writeTextFile,
@@ -53,9 +60,17 @@ import {
   getVscodeSettingsJson,
 } from "./templates/static.ts";
 
+/** 用户在校验「目录已存在」时选择不覆盖，generate 抛出此错误以便 main 提示取消 */
+export class InitCancelledError extends Error {
+  constructor() {
+    super("init.cancelled");
+    this.name = "InitCancelledError";
+  }
+}
+
 /**
  * 根据选项生成项目文件。
- * 先拉取版本等准备工作（不创建目录），再创建项目目录并写入文件，避免未完成就建目录导致后续校验报「目录已存在」。
+ * 先校验目标目录是否存在并征得用户确认，再拉取版本，最后才创建项目目录并写入文件；绝不先创建目录再校验。
  */
 export async function generate(opts: InitOptions): Promise<void> {
   const { targetDir, useSrc, style, exampleLevel, appMode, appNames } = opts;
@@ -63,7 +78,20 @@ export async function generate(opts: InitOptions): Promise<void> {
   const isMulti = appMode === "multi" && appNames != null &&
     appNames.length > 0;
 
-  // 参数选择完成后先拉取版本，不创建目录；创建目录放到后面，与 main() 的「目录已存在」校验顺序一致
+  // 先校验目录是否存在，通过后再创建；不先创建目录
+  const targetExists = await exists(targetDir);
+  if (targetExists) {
+    const go = await confirm(
+      $tr("init.dirExistsConfirm", { path: targetDir }),
+      false,
+    );
+    if (!go) {
+      info($tr("init.cancelled"));
+      throw new InitCancelledError();
+    }
+  }
+
+  // 拉取版本（仍不创建目录）
   const useBeta = opts.useBeta ?? false;
   startSpinner($tr("init.fetchingVersions"));
   let dwebConfig: DwebDenoConfig | null = null;
@@ -83,7 +111,7 @@ export async function generate(opts: InitOptions): Promise<void> {
     };
   }
 
-  // 准备工作完成后再创建项目根目录并写入文件
+  // 校验通过且准备工作完成后，再创建项目根目录并写入文件
   await ensureDir(targetDir);
 
   if (isMulti && appNames) {
