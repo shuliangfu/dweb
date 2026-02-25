@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "bun run src/main.ts",
-    "build": "bun run src/main.ts -- --build",
+    "build": "DWEB_BUILD=1 bun run src/main.ts -- --build",
     "start": "bun run dist/server.js"
   },
   "dependencies": {
