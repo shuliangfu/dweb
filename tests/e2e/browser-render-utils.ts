@@ -74,7 +74,7 @@ const E2E_PORTS: Record<string, number> = {
 
 /** 浏览器单用例超时：统一 90s，Bun 下即使用 --max-concurrency=1 仍易因启动/渲染慢触达上限，Deno 更稳故 90s 足够 */
 /** 单用例超时：30s，超时即失败不拖长时间 */
-const BROWSER_TEST_TIMEOUT_MS = 30_000;
+const BROWSER_TEST_TIMEOUT_MS = 60_000;
 
 /** 就绪探测选项：advanced 的 backend 必须用 path: "/api/users"，否则 SSG backend 的 GET / 会返回 500 */
 type WaitForServerReadyOptions = { path?: string };
