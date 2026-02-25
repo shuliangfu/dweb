@@ -112,8 +112,13 @@ jobs:
       - name: Install Playwright Chromium
         run: npx -y playwright@latest install chromium
 
-      - name: Test (Bun)
-        run: bun test --max-concurrency=1 tests/
+      # unit、integration、e2e 分开跑，避免 integration 结束时触发 cleanupSuiteBrowser 导致 "browser close timeout"
+      - name: Test (Bun) unit
+        run: bun test --max-concurrency=1 tests/unit
+      - name: Test (Bun) integration
+        run: bun test --max-concurrency=1 tests/integration
+      - name: Test (Bun) e2e
+        run: bun test --max-concurrency=1 tests/e2e
 
   test-macos-bun:
     runs-on: macos-latest
@@ -133,8 +138,13 @@ jobs:
       - name: Install Playwright Chromium
         run: npx -y playwright@latest install chromium
 
-      - name: Test (Bun, macOS)
-        run: bun test --max-concurrency=1 tests/
+      # unit、integration、e2e 分开跑，避免 integration 结束时触发 cleanupSuiteBrowser 导致 "browser close timeout"
+      - name: Test (Bun, macOS) unit
+        run: bun test --max-concurrency=1 tests/unit
+      - name: Test (Bun, macOS) integration
+        run: bun test --max-concurrency=1 tests/integration
+      - name: Test (Bun, macOS) e2e
+        run: bun test --max-concurrency=1 tests/e2e
 
   # Windows 上不跑 Bun 测试：Bun 在 Windows 下 package.json 脚本子进程拿不到 --build，
   # 导致示例 build 会启动服务器而非构建；且存在 chromium.launch() 卡住等已知问题。
