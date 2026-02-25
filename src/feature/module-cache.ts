@@ -12,7 +12,11 @@
  * - 容量与淘汰间隔由 getCacheOptions() 决定（可由 config.build.devCache 覆盖）
  */
 
-import { cwd, resolve } from "../core/runtime-adapter.ts";
+import {
+  cwd,
+  pathToFileUrl,
+  resolve,
+} from "../core/runtime-adapter.ts";
 import { getCacheOptions } from "../utils/constants.ts";
 
 /** 文件路径 -> 版本号（变更时递增），用于 import URL 的 cache-busting */
@@ -22,23 +26,34 @@ const versionMap = new Map<string, number>();
 let writeCountSinceEviction = 0;
 
 /**
+ * 从 file:// URL 的 href 中取出路径部分（Windows: /D:/path -> D:/path）
+ */
+function pathFromFileUrl(fileUrl: string): string {
+  let path = fileUrl.slice(7);
+  if (path.length >= 3 && path[0] === "/" && path[2] === ":") {
+    path = path.slice(1);
+  }
+  return path;
+}
+
+/**
  * 将路径规范化为绝对路径，用于版本 map 的 key
- * Windows 兼容：file:///D:/path、file:///d:/path、D:\path 应归一为同一 key
+ * Windows 兼容：file:// 与路径走同一套归一；已是 Windows 风格路径（X:/ 或 X:\）时不再经 pathToFileUrl，避免 Unix 上 D:/ 被当成普通路径段
  */
 function normalizePath(pathOrUrl: string): string {
-  let path = pathOrUrl;
-  if (path.startsWith("file://")) {
-    path = path.slice(7);
-    // Windows: file:///D:/path -> /D:/path，归一为 D:/path 以匹配直接路径
-    if (path.length >= 3 && path[0] === "/" && path[2] === ":") {
-      path = path.slice(1);
-    }
-  }
-  if (!path.startsWith("/") && !path.match(/^[A-Za-z]:/)) {
-    path = resolve(cwd(), path);
+  let path: string;
+  if (pathOrUrl.startsWith("file://")) {
+    path = pathFromFileUrl(pathOrUrl);
+  } else if (pathOrUrl.match(/^[A-Za-z]:[/\\]/)) {
+    // 已是 Windows 风格，按 file URL 的 path 规则归一（跨平台测试如 file:///D:/path 与 D:/path 一致）
+    path = pathFromFileUrl("file:///" + pathOrUrl.replace(/\\/g, "/"));
+  } else {
+    const abs = !pathOrUrl.startsWith("/")
+      ? resolve(cwd(), pathOrUrl)
+      : pathOrUrl;
+    path = pathFromFileUrl(pathToFileUrl(abs));
   }
   path = path.replace(/\\/g, "/");
-  // Windows：盘符统一为大写，使 pathToFileUrl 的 file:///c:/ 与 C:\ 或 c:\ 归为同一 key
   if (path.length >= 2 && path[1] === ":") {
     path = path[0].toUpperCase() + path.slice(1);
   }
