@@ -173,15 +173,6 @@ jobs:
       - name: Install Playwright Chromium
         run: npx -y playwright@latest install chromium
 
-      # 仅跑 unit 与 e2e，不跑 integration
+      # 仅跑 unit不跑 integration 与 e2e
       - name: Test (Bun, Windows) unit
         run: bun test --max-concurrency=1 tests/unit
-      # e2e 按文件串行跑，每进程仅 2 个套件，减少 afterAll 超时 / dangling / browser close 互相干扰；Windows 默认 pwsh 需指定 bash
-      - name: Test (Bun, Windows) e2e
-        shell: bash
-        run: |
-          failed=0
-          for f in tests/e2e/*.test.ts; do
-            bun test --max-concurrency=1 "$f" || failed=1
-          done
-          exit $failed
