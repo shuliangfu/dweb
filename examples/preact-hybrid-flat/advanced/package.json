@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@dreamer/dweb": "file:../../../",
-    "@dreamer/runtime-adapter": "npm:@jsr/dreamer__runtime-adapter@^1.0.17",
+    "@dreamer/runtime-adapter": "npm:@jsr/dreamer__runtime-adapter@^1.0.18",
     "lightningcss": "1.31.1",
     "tailwindcss": "4.2.0"
   }
