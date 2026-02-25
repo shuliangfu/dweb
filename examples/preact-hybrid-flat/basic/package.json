@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "bun run main.ts",
-    "build": "DWEB_BUILD=1 bun run main.ts -- --build",
+    "build": "cross-env DWEB_BUILD=1 bun run main.ts -- --build",
     "start": "bun run dist/server.js"
   },
   "dependencies": {
