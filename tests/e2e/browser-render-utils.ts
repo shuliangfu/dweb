@@ -73,7 +73,8 @@ const E2E_PORTS: Record<string, number> = {
 };
 
 /** 浏览器单用例超时：统一 90s，Bun 下即使用 --max-concurrency=1 仍易因启动/渲染慢触达上限，Deno 更稳故 90s 足够 */
-const BROWSER_TEST_TIMEOUT_MS = 90_000;
+/** 单用例超时：30s，超时即失败不拖长时间 */
+const BROWSER_TEST_TIMEOUT_MS = 30_000;
 
 /** 就绪探测选项：advanced 的 backend 必须用 path: "/api/users"，否则 SSG backend 的 GET / 会返回 500 */
 type WaitForServerReadyOptions = { path?: string };
@@ -1232,7 +1233,7 @@ export function createAdvancedExampleBrowserSuite(
         stderr: "inherit",
       });
       childBackend = startBackend.spawn();
-      childBackend.unref();
+      // 不使用 unref()，避免 Bun 将子进程视为 dangling 在其它套件超时时误杀（killed 1 dangling process）
       const maxWait = platform() === "windows" ? 120000 : 45000;
       await waitForServerReady(actualBackendPort, maxWait, "/api/users");
 
@@ -1249,7 +1250,7 @@ export function createAdvancedExampleBrowserSuite(
         stderr: "inherit",
       });
       childFrontend = startFrontend.spawn();
-      childFrontend.unref();
+      // 不使用 unref()，避免 Bun 将子进程视为 dangling 在其它套件超时时误杀
 
       await waitForServerReady(actualFrontendPort, maxWait, "/");
       await new Promise((r) => setTimeout(r, 3000));
@@ -1286,7 +1287,7 @@ export function createAdvancedExampleBrowserSuite(
       if (!t) throw new Error("test context 不可用");
       await assertBrowserRender(t, actualFrontendPort);
     }, {
-      timeout: 90000,
+      timeout: BROWSER_TEST_TIMEOUT_MS,
       sanitizeOps: false,
       sanitizeResources: false,
       browser: {
@@ -1295,7 +1296,7 @@ export function createAdvancedExampleBrowserSuite(
         dumpio: true,
         reuseBrowser: true,
         browserSource: "test",
-        protocolTimeout: 90000,
+        protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
       },
     });
 
@@ -1360,7 +1361,7 @@ export function createBasicExampleBrowserSuite(
         stderr: "inherit",
       });
       child = startCmd.spawn();
-      child.unref();
+      // 不使用 unref()，避免 Bun 将子进程视为 dangling 在其它套件超时时误杀（导致 preact-ssr 等套件的 dev 被误杀、测试挂起 90s）
 
       const maxWait = platform() === "windows" ? 60000 : 40000;
       await waitForServerReady(actualPort, maxWait);
