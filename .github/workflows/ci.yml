@@ -12,9 +12,12 @@ jobs:
   test-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
-      - uses: denoland/setup-deno@v2
+      - name: Install image dependencies (Linux)
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+
+      - uses: denoland/setup-deno@v1
         with:
           deno-version: v2.5
 
@@ -36,9 +39,12 @@ jobs:
   test-macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
-      - uses: denoland/setup-deno@v2
+      - name: Install image dependencies (macOS)
+        run: brew install imagemagick
+
+      - uses: denoland/setup-deno@v1
         with:
           deno-version: v2.5
 
@@ -60,14 +66,18 @@ jobs:
   test-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
-      - uses: denoland/setup-deno@v2
+      - name: Install image dependencies (Windows)
+        run: choco install imagemagick -y
+        shell: pwsh
+
+      - uses: denoland/setup-deno@v1
         with:
           deno-version: v2.5
 
       - name: Setup Chrome (for browser E2E tests)
-        uses: browser-actions/setup-chrome@v2
+        uses: browser-actions/setup-chrome@v1
 
       - name: Cache dependencies
         run: deno cache src/cli.ts src/setup.ts
@@ -83,3 +93,71 @@ jobs:
 
       - name: Test (Deno, Windows)
         run: deno test -A --no-check tests/
+
+  test-linux-bun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install image dependencies (Linux)
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies (Bun)
+        run: bun install
+
+      - name: Install Playwright Chromium
+        run: npx -y playwright@latest install chromium
+
+      - name: Test (Bun)
+        run: bun test tests/
+
+  test-macos-bun:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install image dependencies (macOS)
+        run: brew install imagemagick
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies (Bun)
+        run: bun install
+
+      - name: Install Playwright Chromium
+        run: npx -y playwright@latest install chromium
+
+      - name: Test (Bun, macOS)
+        run: bun test tests/
+
+  test-windows-bun:
+    runs-on: windows-latest
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}\.playwright-browsers
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install image dependencies (Windows)
+        run: choco install imagemagick -y
+        shell: pwsh
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies (Bun)
+        run: bun install
+
+      # Windows 上浏览器测试由上方 test-windows (Deno) 覆盖。
+      # Bun 在 Windows 存在已知 bug（chromium.launch() 卡住不返回，见 oven-sh/bun#15679），
+      # 故此处仅跑非 browser 用例；待 Bun 修复后可改为 bun test tests/
+      - name: Test (Bun, Windows)
+        shell: pwsh
+        run: bun test tests/integration tests/unit
+        timeout-minutes: 10

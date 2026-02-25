@@ -284,10 +284,14 @@ async function ensureBunDeps(exampleDir: string): Promise<void> {
     stderr: "piped",
   });
   const proc = cmd.spawn();
+
   const [status, stderrText] = await Promise.all([
     proc.status,
     proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
   ]);
+
+  proc.unref();
+
   if (!status.success) {
     throw new Error(`bun install 失败: ${stderrText}`);
   }
@@ -318,10 +322,14 @@ async function buildExample(
     stderr: "piped",
   });
   const proc = cmd.spawn();
+
   const [status, stderrText] = await Promise.all([
     proc.status,
     proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
   ]);
+
+  proc.unref();
+
   if (!status.success) {
     throw new Error(`build 失败: ${stderrText}`);
   }
@@ -1152,10 +1160,14 @@ async function buildExampleAdvanced(
       stderr: "piped",
     });
     const proc = cmd.spawn();
+
     const [status, stderrText] = await Promise.all([
       proc.status,
       proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
     ]);
+
+    proc.unref();
+
     if (!status.success) {
       throw new Error(`build ${entry} 失败: ${stderrText}`);
     }
@@ -1210,6 +1222,7 @@ export function createAdvancedExampleBrowserSuite(
         stderr: "inherit",
       });
       childBackend = startBackend.spawn();
+      childBackend.unref();
       // Windows CI 上构建+启动较慢给 2 分钟；非 Windows 给 45s（SSG 等冷启动较慢）
       const maxWait = platform() === "windows" ? 120000 : 45000;
       await waitForServerReady(actualBackendPort, maxWait, "/api/users");
@@ -1227,6 +1240,8 @@ export function createAdvancedExampleBrowserSuite(
         stderr: "inherit",
       });
       childFrontend = startFrontend.spawn();
+      childFrontend.unref();
+
       await waitForServerReady(actualFrontendPort, maxWait, "/");
       // 就绪后再等一段，避免 preact-hybrid-advanced 等双进程场景下首请求/goto 仍偶发挂起
       await new Promise((r) => setTimeout(r, 3000));
@@ -1329,6 +1344,7 @@ export function createBasicExampleBrowserSuite(
         stderr: "inherit",
       });
       child = startCmd.spawn();
+      child.unref();
 
       // 轮询等待服务器就绪（Windows CI 较慢；Bun 下即使用 --max-concurrency=1 也适当放宽）
       const maxWait = platform() === "windows" ? 60000 : 40000;

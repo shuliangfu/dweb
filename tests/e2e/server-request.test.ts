@@ -99,6 +99,7 @@ describe("e2e: 服务器请求", () => {
       try {
         child.kill(15);
         await child.status;
+        child.unref();
       } catch {
         // ignore
       }
