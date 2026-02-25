@@ -176,8 +176,9 @@ jobs:
       # 仅跑 unit 与 e2e，不跑 integration
       - name: Test (Bun, Windows) unit
         run: bun test --max-concurrency=1 tests/unit
-      # e2e 按文件串行跑，每进程仅 2 个套件，减少 afterAll 超时 / dangling / browser close 互相干扰
+      # e2e 按文件串行跑，每进程仅 2 个套件，减少 afterAll 超时 / dangling / browser close 互相干扰；Windows 默认 pwsh 需指定 bash
       - name: Test (Bun, Windows) e2e
+        shell: bash
         run: |
           failed=0
           for f in tests/e2e/*.test.ts; do
