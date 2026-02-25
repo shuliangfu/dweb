@@ -54,7 +54,8 @@ import {
 } from "./templates/static.ts";
 
 /**
- * 根据选项生成项目文件
+ * 根据选项生成项目文件。
+ * 先拉取版本等准备工作（不创建目录），再创建项目目录并写入文件，避免未完成就建目录导致后续校验报「目录已存在」。
  */
 export async function generate(opts: InitOptions): Promise<void> {
   const { targetDir, useSrc, style, exampleLevel, appMode, appNames } = opts;
@@ -62,6 +63,27 @@ export async function generate(opts: InitOptions): Promise<void> {
   const isMulti = appMode === "multi" && appNames != null &&
     appNames.length > 0;
 
+  // 参数选择完成后先拉取版本，不创建目录；创建目录放到后面，与 main() 的「目录已存在」校验顺序一致
+  const useBeta = opts.useBeta ?? false;
+  startSpinner($tr("init.fetchingVersions"));
+  let dwebConfig: DwebDenoConfig | null = null;
+  let jsrVersions: JsrVersions;
+  try {
+    dwebConfig = await loadDwebDenoJson();
+    jsrVersions = await fetchDreamerVersions(useBeta, dwebConfig);
+    succeedSpinner($tr("init.fetched"));
+  } catch {
+    failSpinner($tr("init.fetchFailed"));
+    jsrVersions = {
+      dweb: dwebConfig?.version ?? FALLBACK_DWEB_VERSION,
+      render: "1.0.0",
+      router: "1.0.0",
+      plugins: "1.0.0",
+      view: FALLBACK_VIEW_VERSION,
+    };
+  }
+
+  // 准备工作完成后再创建项目根目录并写入文件
   await ensureDir(targetDir);
 
   if (isMulti && appNames) {
@@ -242,24 +264,6 @@ export async function generate(opts: InitOptions): Promise<void> {
     );
   }
 
-  const useBeta = opts.useBeta ?? false;
-  startSpinner($tr("init.fetchingVersions"));
-  let dwebConfig: DwebDenoConfig | null = null;
-  let jsrVersions: JsrVersions;
-  try {
-    dwebConfig = await loadDwebDenoJson();
-    jsrVersions = await fetchDreamerVersions(useBeta, dwebConfig);
-    succeedSpinner($tr("init.fetched"));
-  } catch {
-    failSpinner($tr("init.fetchFailed"));
-    jsrVersions = {
-      dweb: dwebConfig?.version ?? FALLBACK_DWEB_VERSION,
-      render: "1.0.0",
-      router: "1.0.0",
-      plugins: "1.0.0",
-      view: FALLBACK_VIEW_VERSION,
-    };
-  }
   if (opts.runtime === "deno") {
     await writeTextFile(
       join(targetDir, "deno.json"),

@@ -1974,11 +1974,10 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.93] - 2026-02-25
+### [3.0.94] - 2026-02-25
 
-**修复**：module-cache Windows 路径归一。**变更**：E2E afterAll 与超时；CI Bun
-Windows 仅 unit 并移除 Playwright 安装；依赖（logger、middlewares、
-plugins、render、view）；init 模板 i18n-ally usageMatchRegex。完整变更日志：
+**变更**：Init
+在参数选择与版本拉取完成后再创建项目目录，避免校验时报「目录已存在」。完整变更日志：
 [CHANGELOG.md](./CHANGELOG.md)
 
 ---

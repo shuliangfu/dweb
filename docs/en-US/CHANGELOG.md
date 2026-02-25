@@ -8,6 +8,18 @@ and this project adheres to
 
 ---
 
+## [3.0.94] - 2026-02-25
+
+### Changed
+
+- **Init:** Project directory is created only after parameter selection and
+  version fetch complete. Previously the directory was created at the start of
+  `generate()`; now version fetch runs first (no directory creation), then
+  `ensureDir(targetDir)` runs so validation ("directory exists" in `main()`) is
+  not affected by an early-created directory.
+
+---
+
 ## [3.0.93] - 2026-02-25
 
 ### Fixed

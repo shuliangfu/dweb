@@ -1906,12 +1906,10 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.93] - 2026-02-25
+### [3.0.94] - 2026-02-25
 
-**Fixed**: module-cache path normalization on Windows. **Changed**: E2E afterAll
-and timeouts; CI Bun Windows unit-only and removed Playwright install;
-dependencies (logger, middlewares, plugins, render, view); init template
-i18n-ally usageMatchRegex. Full changelog:
+**Changed**: Init creates project directory only after parameter selection and
+version fetch (avoids "directory exists" on validation). Full changelog:
 [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
