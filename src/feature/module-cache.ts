@@ -15,6 +15,7 @@
 import {
   cwd,
   pathToFileUrl,
+  platform,
   resolve,
 } from "../core/runtime-adapter.ts";
 import { getCacheOptions } from "../utils/constants.ts";
@@ -38,17 +39,18 @@ function pathFromFileUrl(fileUrl: string): string {
 
 /**
  * 将路径规范化为绝对路径，用于版本 map 的 key
- * Windows 兼容：file:// 与路径走同一套归一；已是 Windows 风格路径（X:/ 或 X:\）时不再经 pathToFileUrl，避免 Unix 上 D:/ 被当成普通路径段
+ * Windows：路径统一经 pathToFileUrl 再取 path，保证 pathToFileUrl(testPath) 与 testPath 查同一 key
+ * 非 Windows：已是 X:/ 或 X:\ 的合成路径不经过 pathToFileUrl，避免 D:/ 被当普通路径段导致 key 不一致
  */
 function normalizePath(pathOrUrl: string): string {
   let path: string;
   if (pathOrUrl.startsWith("file://")) {
     path = pathFromFileUrl(pathOrUrl);
-  } else if (pathOrUrl.match(/^[A-Za-z]:[/\\]/)) {
-    // 已是 Windows 风格，按 file URL 的 path 规则归一（跨平台测试如 file:///D:/path 与 D:/path 一致）
+  } else if (pathOrUrl.match(/^[A-Za-z]:[/\\]/) && platform() !== "windows") {
+    // 非 Windows 上 D:/path 为合成路径，按 file URL 规则归一（跨平台测试）
     path = pathFromFileUrl("file:///" + pathOrUrl.replace(/\\/g, "/"));
   } else {
-    const abs = !pathOrUrl.startsWith("/")
+    const abs = !pathOrUrl.startsWith("/") && !pathOrUrl.match(/^[A-Za-z]:/)
       ? resolve(cwd(), pathOrUrl)
       : pathOrUrl;
     path = pathFromFileUrl(pathToFileUrl(abs));
