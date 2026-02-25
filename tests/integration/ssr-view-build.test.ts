@@ -24,11 +24,7 @@ import {
   type SpawnedProcess,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
-import {
-  existsBuildOutput,
-  getRepoRoot,
-  getSpawnCwdForIntegration,
-} from "../setup.ts";
+import { existsBuildOutput, getRepoRoot, getSpawnCwd } from "../setup.ts";
 
 /** 构建后启动 SSR 服务时使用的端口，与其它 e2e 错开 */
 const SSR_BUILD_SERVER_PORT = 39998;
@@ -64,7 +60,7 @@ describe("integration: SSR + View 构建", () => {
       : ["run", "src/main.ts", "--build"];
     const cmd = createCommand(execPath(), {
       args,
-      cwd: getSpawnCwdForIntegration(),
+      cwd: getSpawnCwd(exampleDir),
       stdout: "piped",
       stderr: "piped",
     });
@@ -106,7 +102,7 @@ describe("integration: SSR + View 构建", () => {
         : ["run", join(exampleDir, "dist", "server.js")];
       const cmd = createCommand(execPath(), {
         args,
-        cwd: getSpawnCwdForIntegration(),
+        cwd: getSpawnCwd(exampleDir),
         stdout: "piped",
         stderr: "piped",
         env: { ...getEnvAll(), PORT: String(SSR_BUILD_SERVER_PORT) },

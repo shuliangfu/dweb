@@ -20,11 +20,7 @@ import {
   remove,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
-import {
-  existsBuildOutput,
-  getRepoRoot,
-  getSpawnCwdForIntegration,
-} from "../setup.ts";
+import { existsBuildOutput, getRepoRoot, getSpawnCwd } from "../setup.ts";
 
 /** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
 const REPO_ROOT = getRepoRoot();
@@ -56,7 +52,7 @@ describe("integration: Hybrid + Preact 构建（无 src 目录）", () => {
       : ["run", "main.ts", "--build"];
     const cmd = createCommand(execPath(), {
       args,
-      cwd: getSpawnCwdForIntegration(),
+      cwd: getSpawnCwd(exampleDir),
       stdout: "piped",
       stderr: "piped",
     });
