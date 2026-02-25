@@ -23,7 +23,7 @@ let writeCountSinceEviction = 0;
 
 /**
  * 将路径规范化为绝对路径，用于版本 map 的 key
- * Windows 兼容：file:///D:/path 与 D:\path 应归一为同一 key
+ * Windows 兼容：file:///D:/path、file:///d:/path、D:\path 应归一为同一 key
  */
 function normalizePath(pathOrUrl: string): string {
   let path = pathOrUrl;
@@ -37,7 +37,12 @@ function normalizePath(pathOrUrl: string): string {
   if (!path.startsWith("/") && !path.match(/^[A-Za-z]:/)) {
     path = resolve(cwd(), path);
   }
-  return path.replace(/\\/g, "/");
+  path = path.replace(/\\/g, "/");
+  // Windows：盘符统一为大写，使 pathToFileUrl 的 file:///c:/ 与 C:\ 或 c:\ 归为同一 key
+  if (path.length >= 2 && path[1] === ":") {
+    path = path[0].toUpperCase() + path.slice(1);
+  }
+  return path;
 }
 
 /**
