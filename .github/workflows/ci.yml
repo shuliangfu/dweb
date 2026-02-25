@@ -170,9 +170,6 @@ jobs:
       - name: Install dependencies (Bun)
         run: bun install
 
-      - name: Install Playwright Chromium
-        run: npx -y playwright@latest install chromium
-
       # 仅跑 unit不跑 integration 与 e2e
       - name: Test (Bun, Windows) unit
         run: bun test --max-concurrency=1 tests/unit

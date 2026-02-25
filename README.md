@@ -1906,12 +1906,13 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.92] - 2026-02-24
+### [3.0.93] - 2026-02-25
 
-**Changed**: Init (Bun) tsconfig.json template — allowImportingTsExtensions and
-include jsx.d.ts.
-
-Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Fixed**: module-cache path normalization on Windows. **Changed**: E2E afterAll
+and timeouts; CI Bun Windows unit-only and removed Playwright install;
+dependencies (logger, middlewares, plugins, render, view); init template
+i18n-ally usageMatchRegex. Full changelog:
+[CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 

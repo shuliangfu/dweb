@@ -1974,12 +1974,12 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.92] - 2026-02-24
+### [3.0.93] - 2026-02-25
 
-**变更**：Init（Bun）tsconfig.json 模板增加 allowImportingTsExtensions 与
-include jsx.d.ts。
-
-完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
+**修复**：module-cache Windows 路径归一。**变更**：E2E afterAll 与超时；CI Bun
+Windows 仅 unit 并移除 Playwright 安装；依赖（logger、middlewares、
+plugins、render、view）；init 模板 i18n-ally usageMatchRegex。完整变更日志：
+[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 

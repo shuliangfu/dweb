@@ -8,6 +8,44 @@ and this project adheres to
 
 ---
 
+## [3.0.93] - 2026-02-25
+
+### Fixed
+
+- **module-cache (Windows):** Path normalization for `getModuleVersion()` /
+  `invalidateModule()` so `file://` URLs and Windows paths (`D:\path`,
+  `D:/path`) resolve to the same cache key. On Windows, path input is normalized
+  via `pathToFileUrl()` so `pathToFileUrl(testPath)` and `testPath` look up the
+  same entry; drive letter is normalized to uppercase. On non-Windows, synthetic
+  Windows-style paths (e.g. in tests) are normalized without `pathToFileUrl` so
+  cross-platform tests pass.
+
+### Changed
+
+- **E2E:** afterAll now kills the dev process first (SIGKILL, no await), then
+  runs `cleanupAllBrowsers()`, to avoid Bun treating the process as "dangling"
+  when afterAll times out and to reduce "browser close timeout" / afterAll
+  timeout failures.
+- **E2E:** Removed `unref()` on e2e dev server child processes so Bun does not
+  kill them as dangling when another suite times out.
+- **E2E:** Browser test timeout reduced from 90s to 30s per test.
+- **CI (Bun Linux/macOS):** E2E tests run per file (one process per
+  `tests/e2e/*.test.ts`) to reduce afterAll and browser cleanup interference
+  between suites.
+- **CI (Bun Windows):** Only unit tests run; e2e and integration are skipped on
+  Windows Bun due to dev server often not becoming ready in time and browser e2e
+  instability on Windows runners (aligned with @dreamer/view; Deno test-windows
+  still runs full tests including e2e). Removed "Install Playwright Chromium"
+  step (Windows does not run e2e).
+- **Dependencies:** Bumped @dreamer/logger to ^1.0.3, @dreamer/middlewares to
+  ^1.0.4, @dreamer/plugins to ^1.0.8, @dreamer/render to ^1.0.41, @dreamer/view
+  to ^1.1.2. All examples updated accordingly.
+- **Init template:** i18n-ally `usageMatchRegex` in
+  `.vscode/i18n-ally-custom-framework.yml` template fixed (quote escape
+  sequences for `$t`/`$tr` key matching).
+
+---
+
 ## [3.0.92] - 2026-02-24
 
 ### Changed

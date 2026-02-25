@@ -7,6 +7,39 @@
 
 ---
 
+## [3.0.93] - 2026-02-25
+
+### 修复
+
+- **module-cache（Windows）**：`getModuleVersion()` / `invalidateModule()`
+  的路径归一逻辑调整，使 `file://` URL 与 Windows
+  路径（`D:\path`、`D:/path`）解析为同一缓存 key。Windows 上路径输入经
+  `pathToFileUrl()` 归一，保证 `pathToFileUrl(testPath)` 与 `testPath`
+  查同一项；盘符统一为大写。非 Windows 上对合成 Windows
+  风格路径（如测试用例）不经 `pathToFileUrl` 归一，保证跨平台测试通过。
+
+### 变更
+
+- **E2E**：afterAll 改为先对 dev 进程发 SIGKILL（不 await），再执行
+  `cleanupAllBrowsers()`，避免 afterAll 超时时 Bun 将进程当作 dangling
+  误杀，并减少「browser close timeout」与 afterAll 超时失败。
+- **E2E**：移除 e2e dev 子进程的 `unref()`，避免其它套件超时时 Bun 将其当
+  dangling 误杀。
+- **E2E**：单用例浏览器测试超时由 90s 调整为 30s。
+- **CI（Bun Linux/macOS）**：e2e 按文件串行执行（每个 `tests/e2e/*.test.ts`
+  单独进程），减轻套件间 afterAll 与浏览器清理互相干扰。
+- **CI（Bun Windows）**：仅跑 unit，不跑 integration 与 e2e；因 Windows CI 上
+  dev 服务常无法在超时内就绪、浏览器 e2e 不稳定（与 @dreamer/view 一致；Deno
+  test-windows 仍跑完整测试含 e2e）。移除「Install Playwright
+  Chromium」步骤（Windows 不跑 e2e）。
+- **依赖**：@dreamer/logger ^1.0.3、@dreamer/middlewares
+  ^1.0.4、@dreamer/plugins ^1.0.8、@dreamer/render ^1.0.41、@dreamer/view
+  ^1.1.2；所有示例已同步更新。
+- **Init 模板**：.vscode/i18n-ally-custom-framework.yml 中 usageMatchRegex
+  引号转义修正（`$t`/`$tr` 键匹配）。
+
+---
+
 ## [3.0.92] - 2026-02-24
 
 ### 变更

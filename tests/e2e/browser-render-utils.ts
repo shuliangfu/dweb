@@ -1224,9 +1224,7 @@ export function createAdvancedExampleBrowserSuite(
       actualBackendPort = await findAvailablePort("127.0.0.1", backendPort);
       const envBackend = { ...getEnvAll(), PORT: String(actualBackendPort) };
       const startBackend = createCommand(execPath(), {
-        args: IS_DENO
-          ? ["run", "-A", entries[0]]
-          : ["run", entries[0]],
+        args: IS_DENO ? ["run", "-A", entries[0]] : ["run", entries[0]],
         cwd: exampleDir,
         env: envBackend,
         stdout: "inherit",
@@ -1241,9 +1239,7 @@ export function createAdvancedExampleBrowserSuite(
       actualFrontendPort = await findAvailablePort("127.0.0.1", frontendPort);
       const envFrontend = { ...getEnvAll(), PORT: String(actualFrontendPort) };
       const startFrontend = createCommand(execPath(), {
-        args: IS_DENO
-          ? ["run", "-A", entries[1]]
-          : ["run", entries[1]],
+        args: IS_DENO ? ["run", "-A", entries[1]] : ["run", entries[1]],
         cwd: exampleDir,
         env: envFrontend,
         stdout: "inherit",

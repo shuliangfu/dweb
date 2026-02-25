@@ -29,7 +29,11 @@ preact-basic/
 
 ### Bun 用户（build / start 前必读）
 
-示例依赖的 `@dreamer/i18n` 等包已由 **dweb 根目录** 的 `package.json` 声明。请先在 **dweb 仓库根目录**（本示例的 `../../../`）执行一次 `bun install`，再在本目录执行 `bun run build` 与 `bun run start`。这样运行时会沿目录向上解析到根 `node_modules`，无需在示例中重复声明这些依赖。
+示例依赖的 `@dreamer/i18n` 等包已由 **dweb 根目录** 的 `package.json`
+声明。请先在 **dweb 仓库根目录**（本示例的 `../../../`）执行一次
+`bun install`，再在本目录执行 `bun run build` 与
+`bun run start`。这样运行时会沿目录向上解析到根
+`node_modules`，无需在示例中重复声明这些依赖。
 
 ```bash
 # 在 dweb 根目录执行（仅需一次）
