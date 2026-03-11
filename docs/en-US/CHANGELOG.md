@@ -12,8 +12,8 @@ and this project adheres to
 
 ### Fixed
 
-- **SSR/CSR/Hybrid:** Use optional chaining for `router.getLayoutPathsForPath` in
-  render-ssr, render-hybrid, and render-csr. When the method is missing (e.g.
+- **SSR/CSR/Hybrid:** Use optional chaining for `router.getLayoutPathsForPath`
+  in render-ssr, render-hybrid, and render-csr. When the method is missing (e.g.
   unit test mocks or older @dreamer/router), layout paths default to `[]`
   instead of throwing, so the renderer correctly returns `null` when
   `loadRouteModule` returns null (path outside project) or when pageModule has
