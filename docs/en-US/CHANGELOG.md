@@ -8,6 +8,23 @@ and this project adheres to
 
 ---
 
+## [3.1.0] - 2026-03-11
+
+### Fixed
+
+- **HMR:** Multi-segment routes (e.g. `admin/index`, `bgb-x-admin/index`) now
+  resolve to the correct chunk instead of the root index. Chunk matching prefers
+  path-style keys and first-segment names (e.g. `bgb-x-admin-XXX.js`) when
+  esbuild emits them.
+- **HMR:** Client accepts chunk URL with path (e.g.
+  `/routes/admin/index-XXX.js`) via `chunkFullBase` and
+  `comp.startsWith(chunkBaseFromUrl + "/")`, so the correct chunk is loaded
+  without full page reload.
+- **HMR:** When no matching chunk URL is available, fall back to full page
+  reload so updated code is still applied.
+
+---
+
 ## [3.0.95] - 2026-02-25
 
 ### Changed

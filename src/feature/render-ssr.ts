@@ -116,22 +116,30 @@ export function createRendererSSR(
       const routeCss: string[] = [];
       const cssCollector = (css: string) => routeCss.push(css);
 
-      // 并行加载页面、App、Layout 组件（支持 .ts/.tsx）
+      // 并行加载页面、App 与布局链（支持嵌套布局：从根到当前路径的 _layout）
       const appPath = router.getSpecialFile("_app");
-      const layoutPath = router.getSpecialFile("_layout");
+      const layoutPaths = router.getLayoutPathsForPath(match.route.path);
       const loadOpts = {
         cssCollector,
         logger: container.has("logger") ? getLogger(container) : undefined,
         engine: renderConfig.engine ?? undefined,
       };
-      const [pageModule, appModule, layoutModule] = await Promise.all([
+      const [pageModule, appModule, ...layoutModulesRaw] = await Promise.all([
         loadRouteModule(match.route.fullPath, loadOpts),
         appPath ? loadRouteModule(appPath, loadOpts) : Promise.resolve(null),
-        layoutPath
-          ? loadRouteModule(layoutPath, loadOpts)
-          : Promise.resolve(null),
+        ...layoutPaths.map((p) => loadRouteModule(p, loadOpts)),
       ]);
-
+      // 若某层 _layout 导出 inheritLayout = false，则不继承其之上的父级 layout，仅保留从该层起的链
+      const inheritBreakIndex = layoutModulesRaw.findIndex(
+        (m) => m && (m as Record<string, unknown>).inheritLayout === false,
+      );
+      const layoutModules = inheritBreakIndex >= 0
+        ? layoutModulesRaw.slice(inheritBreakIndex)
+        : layoutModulesRaw;
+      const layoutComponents =
+        (layoutModules as Array<Record<string, unknown> | null>)
+          .map((m) => m?.default ?? m?.Layout)
+          .filter((c): c is NonNullable<typeof c> => c != null);
       if (!pageModule) {
         return null;
       }
@@ -143,8 +151,6 @@ export function createRendererSSR(
       }
 
       const AppComponent = appModule?.default ?? appModule?.App ?? null;
-      const LayoutComponent = layoutModule?.default ?? layoutModule?.Layout ??
-        null;
 
       // 准备页面属性（params/query 做安全过滤，防止原型污染等）
       const pageProps: Record<string, unknown> = {
@@ -212,8 +218,8 @@ export function createRendererSSR(
         layouts.push({ component: AppComponent });
       }
 
-      // Layout 组件作为中间层布局
-      if (LayoutComponent) {
+      // 布局链作为中间层（从外到内依次包裹）
+      for (const LayoutComponent of layoutComponents) {
         layouts.push({ component: LayoutComponent });
       }
 

@@ -18,6 +18,7 @@
  */
 
 import { BuilderClient } from "@dreamer/esbuild";
+import { createRouter } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import {
   basename,
@@ -107,16 +108,65 @@ function getComponentPathFromFilePath(
 
 /**
  * 根据 componentPath 从输出文件名列表中匹配对应 chunk。
- * esbuild 命名规则：about.tsx -> about-XXX.js；index.tsx 常与同目录一起打出 -> routes-XXX.js。
+ * esbuild 命名规则：about.tsx -> about-XXX.js；多段如 admin/index 可能为 admin-index-XXX.js 或 admin/index-XXX.js；
+ * 根 index 可能为 routes-XXX.js。优先按完整路径匹配，避免 admin/index 误匹配到根 index 的 chunk。
  */
 function getChunkFileNameForComponent(
   componentPath: string,
   outputFileNames: string[],
 ): string | null {
   const segment = componentPath.split("/").pop() || componentPath;
-  const jsOnly = outputFileNames.filter((n) =>
+  let jsOnly = outputFileNames.filter((n) =>
     n.endsWith(".js") && n !== CLIENT_OUTPUT_MAIN_FILENAME
   );
+
+  // 多段路径（如 admin/index）：优先匹配含完整路径的 chunk，避免与根 index 混淆
+  if (componentPath.includes("/")) {
+    const firstSegment = componentPath.split("/")[0];
+    const pathAsDash = componentPath.replace(/\//g, "-");
+    const pathAsUnderscore = componentPath.replace(/\//g, "_");
+    const pathAsSlash = componentPath;
+    const pathVariants = [pathAsDash, pathAsUnderscore, pathAsSlash];
+    // 优先尝试 key 中含路径段的 chunk（如 routes/admin/index-XXX.js、admin-index-XXX.js），提高命中率
+    jsOnly = [...jsOnly].sort((a, b) => {
+      const aHasPath = firstSegment && a.includes(firstSegment) ? 0 : 1;
+      const bHasPath = firstSegment && b.includes(firstSegment) ? 0 : 1;
+      return aHasPath - bHasPath;
+    });
+    for (const name of jsOnly) {
+      const base = name.slice(0, -3).replace(/\.js$/, "");
+      const baseNoHash = base.replace(/-[A-Za-z0-9]{6,10}$/, "");
+      const baseLastPart = base.includes("/") ? base.split("/").pop()! : base;
+      const baseLastNoHash = baseLastPart.replace(/-[A-Za-z0-9]{6,10}$/, "");
+      // 支持 key 为 routes/admin/index-XXX.js 等形式（baseNoHash 含路径）
+      const baseEndsWithPath = baseNoHash === pathAsSlash ||
+        baseNoHash.endsWith("/" + pathAsSlash) ||
+        baseNoHash.endsWith(pathAsSlash) ||
+        baseNoHash.endsWith("/" + pathAsDash) ||
+        baseNoHash.endsWith(pathAsDash) ||
+        baseNoHash.endsWith(pathAsUnderscore);
+      // esbuild 对 bgb-x-admin/index 可能只产出 bgb-x-admin-XXX.js（首段作 base），需单独匹配
+      if (baseNoHash === firstSegment || base.startsWith(firstSegment + "-")) {
+        return name;
+      }
+      for (const pv of pathVariants) {
+        if (
+          baseNoHash === pv ||
+          baseLastNoHash === pv ||
+          baseEndsWithPath ||
+          base.startsWith(pv + "-") ||
+          baseLastPart.startsWith(pv + "-")
+        ) {
+          return name;
+        }
+      }
+      if (pathVariants.some((pv) => base === pv || baseLastPart === pv)) {
+        return name;
+      }
+    }
+    // 多段路径未命中时不再用 segment 匹配，避免误用根 index 的 chunk
+    return null;
+  }
 
   for (const name of jsOnly) {
     const base = name.slice(0, -3);
@@ -124,8 +174,8 @@ function getChunkFileNameForComponent(
       return name;
     }
   }
-  // index 路由：esbuild 可能把 routes/index.tsx 打成 routes-XXX.js 而非 index-XXX.js
-  if (segment === "index") {
+  // 根 index 路由：esbuild 可能把 routes/index.tsx 打成 routes-XXX.js；仅当 componentPath 为单段 "index" 时匹配
+  if (segment === "index" && !componentPath.includes("/")) {
     const routesChunk = jsOnly.find((n) => {
       const base = n.slice(0, -3);
       return base.startsWith("routes-");
@@ -183,6 +233,27 @@ interface RouteComponentInfo {
 
 /** 路由扫描最大深度，防止过深目录导致栈溢出 */
 const MAX_ROUTE_SCAN_DEPTH = 10;
+
+/**
+ * 使用 @dreamer/router 扫描路由目录并生成「路由路径 -> 布局 key 链」映射（支持嵌套 _layout）
+ * @param routesDirPath 路由目录绝对路径
+ * @returns hasLayout 是否存在任意布局；routeLayoutKeys 每个路由路径对应的 _layout key 数组（从外到内）
+ */
+async function getRouteLayoutKeys(routesDirPath: string): Promise<{
+  hasLayout: boolean;
+  routeLayoutKeys: Record<string, string[]>;
+}> {
+  const router = createRouter({ routesDir: routesDirPath });
+  await router.scan();
+  const routeLayoutKeys: Record<string, string[]> = {};
+  for (const r of router.getRoutes()) {
+    routeLayoutKeys[r.path] = router.getLayoutKeysForPath(r.path);
+  }
+  const hasLayout = Object.values(routeLayoutKeys).some((arr) =>
+    arr.length > 0
+  );
+  return { hasLayout, routeLayoutKeys };
+}
 
 /**
  * 扫描路由目录，获取所有路由组件
@@ -326,6 +397,7 @@ type ClientDepRenderMode = "csr" | "hybrid" | "ssr" | "ssg";
  * @param hasLayout 是否存在 _layout 文件
  * @param hmrCssEntries 开发态 HMR CSS 配置
  * @param renderMode 渲染模式（view 时用于选择 view/csr 或 view/hybrid）
+ * @param routeLayoutKeys 可选，路由路径 -> 布局 key 链（支持嵌套布局）；有则生成 loadLayouts(pathname)
  * @returns client.dep.tsx 的完整源码
  */
 function generateClientDepContent(
@@ -334,7 +406,11 @@ function generateClientDepContent(
   hasLayout: boolean,
   hmrCssEntries: Array<{ url: string; styleId: string }>,
   renderMode: ClientDepRenderMode = "hybrid",
+  routeLayoutKeys?: Record<string, string[]>,
 ): string {
+  const useNestedLayouts = Boolean(
+    routeLayoutKeys && Object.keys(routeLayoutKeys).length > 0,
+  );
   const adapterImport = ENGINE_RENDER_ADAPTER[engine] ??
     "@dreamer/render/client/preact";
   const isViewEngine = engine === "view";
@@ -370,11 +446,50 @@ import {
   ).join("\n");
 
   const layoutExt = ".tsx";
-  const layoutCode = hasLayout
+  const routeLayoutKeysJson = useNestedLayouts && routeLayoutKeys
+    ? JSON.stringify(routeLayoutKeys)
+    : "{}";
+  /** 嵌套布局时 loadLayouts 接收 match，由调用方传入 router.match(pathname) 或当前 match */
+  const loadLayoutsArgInit = useNestedLayouts
+    ? 'router.match((typeof _win.location !== "undefined" && _win.location?.pathname) ? _win.location.pathname : "/")'
+    : "";
+  const loadLayoutsCallInit = useNestedLayouts
+    ? `loadLayouts(${loadLayoutsArgInit})`
+    : "loadLayouts()";
+  const loadLayoutsCallRender = useNestedLayouts
+    ? "loadLayouts(match)"
+    : "loadLayouts()";
+  const layoutCode = useNestedLayouts
+    ? `
+/** 路由路径 -> 该路径下从外到内的 _layout key 链（嵌套布局） */
+const ROUTE_LAYOUT_KEYS: Record<string, string[]> = ${routeLayoutKeysJson};
+
+export async function loadLayouts(match: { route: { path: string } } | null): Promise<LayoutComponent[]> {
+  if (!match) return [];
+  const keys = ROUTE_LAYOUT_KEYS[match.route.path] ?? ROUTE_LAYOUT_KEYS["/"] ?? [];
+  const result: LayoutComponent[] = [];
+  let inheritBreakIndex = -1;
+  for (let i = 0; i < keys.length; i++) {
+    try {
+      const mod = await import("./routes/" + keys[i] + "${layoutExt}");
+      const C = mod?.default ?? mod?.Layout;
+      if (C && (typeof C === "function" || typeof C === "object")) result.push({ component: C, props: {} });
+      if ((mod as Record<string, unknown>)?.inheritLayout === false) inheritBreakIndex = i;
+    } catch (e) {
+      console.warn(${
+      JSON.stringify($tr("client.layoutLoadFailed"))
+    }, keys[i], e);
+    }
+  }
+  return inheritBreakIndex >= 0 ? result.slice(inheritBreakIndex) : result;
+}
+
+export function clearLayoutCache(): void { /* no-op for nested */ }`
+    : hasLayout
     ? `
 let cachedLayouts: LayoutComponent[] | null = null;
 
-export async function loadLayouts(): Promise<LayoutComponent[]> {
+export async function loadLayouts(_pathname?: string): Promise<LayoutComponent[]> {
   if (cachedLayouts) return cachedLayouts;
   try {
     const LayoutModule = await import("./routes/_layout${layoutExt}");
@@ -398,7 +513,7 @@ export function clearLayoutCache(): void {
     : `
 let cachedLayouts: LayoutComponent[] | null = null;
 
-export async function loadLayouts(): Promise<LayoutComponent[]> {
+export async function loadLayouts(_pathname?: string): Promise<LayoutComponent[]> {
   return [];
 }
 
@@ -851,20 +966,22 @@ export async function setupHydrationRouterAndHmr(opts: {
       unmountPrevious(); renderNotFound(containerId); return;
     }
     // 有 chunkUrl 且匹配当前路由时，用 import(chunkUrl + "?t=" + ts) 强制拉取新 chunk（绕过浏览器模块缓存）
-    // 否则 loadPageModule 会返回缓存，不会发起网络请求，拿不到新代码
+    // 否则 loadPageModule 返回缓存，拿不到新代码。多段路由如 admin/index 的 chunk 可能为 admin-index-XXX.js，需按完整路径匹配
     const comp = match.route.component;
     const compLastSegment = comp.split("/").pop() || comp;
-    // 从 /_client/index-XYZ789.js 提取 "index"（文件名中 -hash 前的部分）
-    const chunkBaseFromUrl = typeof chunkUrl === "string"
-      ? (chunkUrl.match(/([^/-]+)-[A-Za-z0-9]{6,10}\\.js(?:\\.map)?$/)?.[1] ??
-        ((chunkUrl.split("/").pop() || "").replace(/-[A-Za-z0-9]{6,10}\\.js.*$/, "") || null))
-      : null;
     const compBase = compLastSegment.replace(/\\.(tsx?|jsx?)$/, "");
-    // index 路由的 chunk 可能为 routes-XXX.js，需特殊匹配
-    const useChunkUrl = chunkUrl && chunkBaseFromUrl &&
+    const compPathAsBase = comp.replace(/\\//g, "-");
+    const chunkUrlStr = typeof chunkUrl === "string" ? chunkUrl : "";
+    const chunkFileName = chunkUrlStr ? (chunkUrlStr.split("/").pop() || "") : "";
+    const chunkPathNoExt = chunkUrlStr.replace(/\\/[^/]+$/, "");
+    const chunkBaseFromUrl = chunkFileName ? chunkFileName.replace(/-[A-Za-z0-9]{6,10}\\.js(\\\.map)?$/i, "").replace(/\\.js.*$/, "") : null;
+    const chunkFullBase = (chunkPathNoExt && chunkBaseFromUrl) ? (chunkPathNoExt + "/" + chunkBaseFromUrl) : chunkBaseFromUrl;
+    const useChunkUrl = chunkUrl && (chunkBaseFromUrl || chunkFullBase) &&
       (compBase === chunkBaseFromUrl || compLastSegment === chunkBaseFromUrl ||
-        comp === chunkBaseFromUrl ||
-        (compBase === "index" && chunkBaseFromUrl === "routes"));
+        comp === chunkBaseFromUrl || compPathAsBase === chunkBaseFromUrl ||
+        (chunkBaseFromUrl && comp.startsWith(chunkBaseFromUrl + "/")) ||
+        (chunkFullBase && (chunkFullBase.endsWith("/" + comp) || chunkFullBase === comp || chunkFullBase.endsWith(compPathAsBase))) ||
+        (compBase === "index" && !comp.includes("/") && chunkBaseFromUrl === "routes"));
     if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
       console.log(${JSON.stringify($tr("client.hmrChunkUrlMatch"))}, {
         chunkUrl,
@@ -885,6 +1002,11 @@ export async function setupHydrationRouterAndHmr(opts: {
   }, busted);
         }
         return import(/* @vite-ignore */ busted);
+      }
+      // 无 chunkUrl 或未匹配时 loadPageModule 会命中浏览器模块缓存，无法拿到新代码；整页刷新以加载最新
+      if (typeof _win.location !== "undefined" && _win.location.reload) {
+        _win.location.reload();
+        return new Promise(function() {});
       }
       return loadPageModule(match.route.component);
     };
@@ -907,7 +1029,7 @@ export async function setupHydrationRouterAndHmr(opts: {
         const PageComponent = modObj.default ?? modObj.Page;
         if (!PageComponent) { renderNotFound(containerId); return; }
         const skipLayouts = modObj.inheritLayout === false;
-        return loadLayouts().then(async (layoutList) => {
+        return ${loadLayoutsCallRender}.then(async (layoutList) => {
           if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
             console.log(${
     JSON.stringify($tr("client.hmrRenderCsrBefore"))
@@ -1016,7 +1138,7 @@ export async function initApp(): Promise<DwebApp> {
   });
   // 在首次 await 前注册链接点击拦截器（CSR/Hybrid）；SSR/SSG 时 interceptLinks 为 false，不拦截
   router.start();
-  const layouts = await loadLayouts();
+  const layouts = await ${loadLayoutsCallInit};
   const isHydratedRef = { current: false };
   await setupHydrationRouterAndHmr({ g, router, containerId, engine, layouts, isHydratedRef, isHybridMode });
 
@@ -1042,7 +1164,7 @@ export async function initApp(): Promise<DwebApp> {
         return;
       }
       const skipLayouts = module.inheritLayout === false;
-      const layoutList = await loadLayouts();
+      const layoutList = await ${loadLayoutsCallRender};
       ${renderCurrentRouteSnippet}
     } catch (error) {
       console.error(${
@@ -1153,8 +1275,9 @@ export async function ensureClientEntryFile(
   const renderMode = (renderConfig.mode ?? "hybrid") as ClientDepRenderMode;
 
   const components = await scanRouteComponents(routesDirPath, "", engine);
-  const layoutPathTsx = join(routesDirPath, "_layout.tsx");
-  const hasLayout = await exists(layoutPathTsx);
+  const { hasLayout, routeLayoutKeys } = await getRouteLayoutKeys(
+    routesDirPath,
+  );
 
   if (await exists(tempClientEntryPath)) {
     logger.debug(
@@ -1173,6 +1296,7 @@ export async function ensureClientEntryFile(
     hasLayout,
     hmrCssEntries,
     renderMode,
+    routeLayoutKeys,
   );
   await writeTextFile(clientDepPath, clientDepCode);
   logger.debug($tr("log.clientDepGenerated", {
@@ -1239,8 +1363,9 @@ export async function prepareClientBuildEntry(
   const components = await scanRouteComponents(routesDirPath, "", engine);
   logger.debug($tr("log.routesScanned", { count: String(components.length) }));
 
-  const layoutPathTsx = join(routesDirPath, "_layout.tsx");
-  const hasLayout = await exists(layoutPathTsx);
+  const { hasLayout, routeLayoutKeys } = await getRouteLayoutKeys(
+    routesDirPath,
+  );
   const hmrCssEntries = getHmrCssEntries(container);
   const clientDepPath = join(resolve(srcDir), CLIENT_DEP_FILENAME);
 
@@ -1254,6 +1379,7 @@ export async function prepareClientBuildEntry(
     hasLayout,
     hmrCssEntries,
     renderMode,
+    routeLayoutKeys,
   );
   await writeTextFile(clientDepPath, clientDepCode);
   logger.debug(
@@ -1472,9 +1598,10 @@ export async function buildClientScript(
       count: String(components.length),
     }));
 
-    // 检查是否存在 _layout 文件（客户端仅加载 _layout，不加载 _app，见 generateClientDepContent 注释）
-    const layoutPathTsx = join(routesDirPath, "_layout.tsx");
-    const hasLayout = await exists(layoutPathTsx);
+    // 布局链（支持嵌套 _layout，见 generateClientDepContent 注释）
+    const { hasLayout, routeLayoutKeys } = await getRouteLayoutKeys(
+      routesDirPath,
+    );
 
     const hmrCssEntries = getHmrCssEntries(container);
     const clientDepPath = join(srcDir, CLIENT_DEP_FILENAME);
@@ -1487,6 +1614,7 @@ export async function buildClientScript(
       hasLayout,
       hmrCssEntries,
       renderMode,
+      routeLayoutKeys,
     );
     if (!skipWritingClientDep) {
       await writeTextFile(clientDepPath, clientDepCode);

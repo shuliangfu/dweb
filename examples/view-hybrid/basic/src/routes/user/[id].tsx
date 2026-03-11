@@ -43,7 +43,7 @@ export default function User({ params }: UserProps) {
 
   return (
     <div class="py-5">
-      <h1 class="mb-8 text-3xl font-bold">用户详情</h1>
+      <h1 class="mb-8 text-3xl font-bold">用户详情 22</h1>
 
       <div class="flex items-center gap-6 rounded-xl bg-white p-8 shadow-md">
         <div class="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-purple-600 text-3xl font-bold text-white">

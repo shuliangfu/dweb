@@ -7,6 +7,20 @@
 
 ---
 
+## [3.1.0] - 2026-03-11
+
+### 修复
+
+- **HMR**：多段路由（如 `admin/index`、`bgb-x-admin/index`）现在能正确解析到对应
+  chunk，不再误用根 index 的 chunk；匹配时支持路径形式及首段命名（如
+  `bgb-x-admin-XXX.js`）。
+- **HMR**：客户端支持带路径的 chunk URL（如 `/routes/admin/index-XXX.js`），通过
+  `chunkFullBase` 与 `comp.startsWith(chunkBaseFromUrl + "/")` 正确加载对应
+  chunk，无需整页刷新。
+- **HMR**：当无法匹配到对应 chunk URL 时，回退为整页刷新，确保能加载到最新代码。
+
+---
+
 ## [3.0.95] - 2026-02-25
 
 ### 变更

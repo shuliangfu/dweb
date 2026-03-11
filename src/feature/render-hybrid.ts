@@ -143,9 +143,9 @@ export function createRendererHybrid(
         return null;
       }
 
-      // 加载特殊文件
+      // 加载特殊文件（支持嵌套布局：按当前路由路径加载从根到当前的 layout 链）
       const appPath = router.getSpecialFile("_app");
-      const layoutPath = router.getSpecialFile("_layout");
+      const layoutPaths = router.getLayoutPathsForPath(match.route.path);
 
       // 加载 App 组件
       let AppComponent: unknown = null;
@@ -154,12 +154,20 @@ export function createRendererHybrid(
         AppComponent = appModule?.default ?? appModule?.App;
       }
 
-      // 加载 Layout 组件
-      let LayoutComponent: unknown = null;
-      if (layoutPath) {
-        const layoutModule = await loadRouteModule(layoutPath, loadOpts);
-        LayoutComponent = layoutModule?.default ?? layoutModule?.Layout;
-      }
+      // 加载布局链（从外到内：根 _layout、子路由 _layout…）
+      const layoutModules = await Promise.all(
+        layoutPaths.map((p) => loadRouteModule(p, loadOpts)),
+      );
+      // 若某层 _layout 导出 inheritLayout = false，则不继承其之上的父级 layout，仅保留从该层起的链
+      const inheritBreakIndex = layoutModules.findIndex(
+        (m) => (m as Record<string, unknown>)?.inheritLayout === false,
+      );
+      const modulesToUse = inheritBreakIndex >= 0
+        ? layoutModules.slice(inheritBreakIndex)
+        : layoutModules;
+      const layoutComponents = modulesToUse
+        .map((m) => m?.default ?? m?.Layout)
+        .filter((c): c is NonNullable<typeof c> => c != null);
 
       // 准备页面属性（params/query 做安全过滤，防止原型污染等）
       const pageProps: Record<string, unknown> = {
@@ -201,8 +209,8 @@ export function createRendererHybrid(
         throw new Error($tr("errors.hybridNeedAppComponent", { message: msg }));
       }
 
-      // Layout 组件作为中间层布局
-      if (LayoutComponent) {
+      // 布局链作为中间层（从外到内依次包裹）
+      for (const LayoutComponent of layoutComponents) {
         layouts.push({ component: LayoutComponent });
       }
 

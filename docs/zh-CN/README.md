@@ -1974,10 +1974,10 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.0.95] - 2026-02-25
+### [3.1.0] - 2026-03-11
 
-**变更**：Init 在 `generate()`
-内先校验目录是否存在再创建，绝不先建目录再校验。完整变更日志：
+**修复**：HMR 多段路由（如 `admin/index`、`bgb-x-admin/index`）正确解析到对应
+chunk；客户端支持带路径的 chunk URL；无匹配时回退整页刷新。完整变更日志：
 [CHANGELOG.md](./CHANGELOG.md)
 
 ---

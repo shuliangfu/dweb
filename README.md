@@ -1906,11 +1906,12 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.0.95] - 2026-02-25
+### [3.1.0] - 2026-03-11
 
-**Changed**: Init validates directory exists inside `generate()` before creating
-it (no directory created before validation). Full changelog:
-[CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Fixed**: HMR for multi-segment routes (e.g. `admin/index`,
+`bgb-x-admin/index`) now resolves to the correct chunk; client accepts
+path-style chunk URLs; fallback to full page reload when no chunk match. Full
+changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 

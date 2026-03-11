@@ -138,7 +138,7 @@ export function createRendererCSR(
 
       const ctx = _ctx as { url?: { href?: string }; request?: Request };
       const appPath = router.getSpecialFile("_app");
-      const layoutPath = router.getSpecialFile("_layout");
+      const layoutPaths = router.getLayoutPathsForPath(match.route.path);
       const loadOpts = {
         logger: container.has("logger") ? getLogger(container) : undefined,
       };
@@ -162,11 +162,19 @@ export function createRendererCSR(
         );
       }
 
-      let LayoutComponent: unknown = null;
-      if (layoutPath) {
-        const layoutModule = await loadRouteModule(layoutPath, loadOpts);
-        LayoutComponent = layoutModule?.default ?? layoutModule?.Layout;
-      }
+      const layoutModulesRaw = await Promise.all(
+        layoutPaths.map((p) => loadRouteModule(p, loadOpts)),
+      );
+      // 若某层 _layout 导出 inheritLayout = false，则不继承其之上的父级 layout，仅保留从该层起的链
+      const inheritBreakIndex = layoutModulesRaw.findIndex(
+        (m) => m && (m as Record<string, unknown>).inheritLayout === false,
+      );
+      const layoutModules = inheritBreakIndex >= 0
+        ? layoutModulesRaw.slice(inheritBreakIndex)
+        : layoutModulesRaw;
+      const layoutComponents = layoutModules
+        .map((m) => m?.default ?? m?.Layout)
+        .filter((c): c is NonNullable<typeof c> => c != null);
 
       // CSR 首屏：执行当前路由的 load()，将结果注入 __DATA__；并解析 metadata 注入 head（title/description）
       let hydrationData: {
@@ -256,7 +264,9 @@ export function createRendererCSR(
       > = [
         { component: AppComponent },
       ];
-      if (LayoutComponent) layouts.push({ component: LayoutComponent });
+      for (const LayoutComponent of layoutComponents) {
+        layouts.push({ component: LayoutComponent });
+      }
 
       const result = await renderService.renderSSR({
         engine,

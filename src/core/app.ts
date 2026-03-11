@@ -1111,9 +1111,9 @@ export class App extends EventEmitter implements IApp {
             return data;
           };
 
-          /** 加载布局组件（_app -> _layout，从外到内，用于 SSG 预渲染） */
+          /** 加载布局组件（_app -> 嵌套 _layout 链，从外到内，用于 SSG 预渲染） */
           const loadRouteLayouts = async (
-            _routePath: string,
+            routePath: string,
           ): Promise<
             Array<{ component: unknown; props?: Record<string, unknown> }>
           > => {
@@ -1126,9 +1126,26 @@ export class App extends EventEmitter implements IApp {
               const AppComponent = await loadModuleByPath(appPath);
               if (AppComponent) layouts.push({ component: AppComponent });
             }
-            const layoutPath = router.getSpecialFile("_layout");
-            if (layoutPath) {
-              const LayoutComponent = await loadModuleByPath(layoutPath);
+            const layoutPaths = router.getLayoutPathsForPath(routePath);
+            const loadOpts = {
+              logger: this.container.has("logger")
+                ? getLogger(this.container)
+                : undefined,
+            };
+            const layoutModules = await Promise.all(
+              layoutPaths.map((p) => loadRouteModule(p, loadOpts)),
+            );
+            const inheritBreakIndex = layoutModules.findIndex(
+              (m) =>
+                m && (m as Record<string, unknown>).inheritLayout === false,
+            );
+            const toUse = inheritBreakIndex >= 0
+              ? layoutModules.slice(inheritBreakIndex)
+              : layoutModules;
+            for (const mod of toUse) {
+              const LayoutComponent =
+                (mod as Record<string, unknown>)?.default ??
+                  (mod as Record<string, unknown>)?.Layout;
               if (LayoutComponent) layouts.push({ component: LayoutComponent });
             }
             return layouts;
