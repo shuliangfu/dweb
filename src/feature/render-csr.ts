@@ -138,7 +138,7 @@ export function createRendererCSR(
 
       const ctx = _ctx as { url?: { href?: string }; request?: Request };
       const appPath = router.getSpecialFile("_app");
-      const layoutPaths = router.getLayoutPathsForPath(match.route.path);
+      const layoutPaths = router.getLayoutPathsForPath?.(match.route.path) ?? [];
       const loadOpts = {
         logger: container.has("logger") ? getLogger(container) : undefined,
       };

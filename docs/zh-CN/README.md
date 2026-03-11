@@ -1974,11 +1974,11 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.1.0] - 2026-03-11
+### [3.1.1] - 2026-03-11
 
-**修复**：HMR 多段路由（如 `admin/index`、`bgb-x-admin/index`）正确解析到对应
-chunk；客户端支持带路径的 chunk URL；无匹配时回退整页刷新。完整变更日志：
-[CHANGELOG.md](./CHANGELOG.md)
+**修复**：SSR/CSR/Hybrid 对 `router.getLayoutPathsForPath` 使用可选链；方法缺失时
+（如测试 mock）布局路径默认为 `[]`，渲染器在路径在项目外或无 default/Page 时
+正确返回 `null`（CI 测试通过）。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 

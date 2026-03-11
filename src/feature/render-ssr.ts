@@ -118,7 +118,7 @@ export function createRendererSSR(
 
       // 并行加载页面、App 与布局链（支持嵌套布局：从根到当前路径的 _layout）
       const appPath = router.getSpecialFile("_app");
-      const layoutPaths = router.getLayoutPathsForPath(match.route.path);
+      const layoutPaths = router.getLayoutPathsForPath?.(match.route.path) ?? [];
       const loadOpts = {
         cssCollector,
         logger: container.has("logger") ? getLogger(container) : undefined,

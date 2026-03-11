@@ -145,7 +145,7 @@ export function createRendererHybrid(
 
       // 加载特殊文件（支持嵌套布局：按当前路由路径加载从根到当前的 layout 链）
       const appPath = router.getSpecialFile("_app");
-      const layoutPaths = router.getLayoutPathsForPath(match.route.path);
+      const layoutPaths = router.getLayoutPathsForPath?.(match.route.path) ?? [];
 
       // 加载 App 组件
       let AppComponent: unknown = null;

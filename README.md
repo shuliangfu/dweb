@@ -1906,12 +1906,12 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.1.0] - 2026-03-11
+### [3.1.1] - 2026-03-11
 
-**Fixed**: HMR for multi-segment routes (e.g. `admin/index`,
-`bgb-x-admin/index`) now resolves to the correct chunk; client accepts
-path-style chunk URLs; fallback to full page reload when no chunk match. Full
-changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Fixed**: SSR/CSR/Hybrid use optional chaining for `router.getLayoutPathsForPath`;
+when missing (e.g. test mocks), layout paths default to `[]` so the renderer
+correctly returns `null` for path-outside-project or no default/Page (CI tests).
+Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 

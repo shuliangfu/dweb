@@ -7,6 +7,18 @@
 
 ---
 
+## [3.1.1] - 2026-03-11
+
+### 修复
+
+- **SSR/CSR/Hybrid**：在 render-ssr、render-hybrid、render-csr 中对
+  `router.getLayoutPathsForPath` 使用可选链；当该方法不存在（如单元测试
+  mock 或旧版 @dreamer/router）时，布局路径默认为 `[]`，不再抛错，渲染器
+  能在 `loadRouteModule` 返回 null（路径在项目外）或 pageModule 无
+  default/Page 导出时正确返回 `null`（修复 CI 测试失败）。
+
+---
+
 ## [3.1.0] - 2026-03-11
 
 ### 修复
