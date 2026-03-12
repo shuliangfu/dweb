@@ -8,6 +8,16 @@ and this project adheres to
 
 ---
 
+## [3.1.2] - 2026-03-12
+
+### Changed
+
+- **Dependencies**: Bumped @dreamer/render to ^1.1.0 and @dreamer/view to ^1.1.3
+  for compatibility with view dynamic-child single-node optimization and render
+  1.1.x.
+
+---
+
 ## [3.1.1] - 2026-03-11
 
 ### Fixed
