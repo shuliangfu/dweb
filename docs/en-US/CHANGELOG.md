@@ -8,6 +8,30 @@ and this project adheres to
 
 ---
 
+## [3.1.6] - 2026-03-13
+
+### Added
+
+- **Client bundle strip of route `load`:** CSR client build uses an esbuild
+  plugin that removes the `load` export (and its body) from route modules before
+  bundling, so server-only dependencies (e.g. `@dreamer/runtime-adapter`,
+  `node:*`) used only inside `load()` are not included in browser chunks.
+- **Strip supports `export const load = ...`:** The strip logic now also removes
+  `export const load = () => { }`, `export const load = async () => { }`, and
+  `export const load = function (...) { }` / `async function (...) { }` forms,
+  in addition to `export function load(...)` and
+  `export async function load(...)`.
+
+### Fixed
+
+- **stripLoadExport brace matching:** Function body is found by skipping the
+  parameter list `(...)` then counting all `{` and `}` so nested braces (e.g.
+  `return Promise.resolve({ ... });`) are handled correctly; this fixes
+  "Unexpected }" and "Expected identifier" errors when building the client
+  bundle for routes that use `load()`.
+
+---
+
 ## [3.1.5] - 2026-03-13
 
 ### Added

@@ -1974,16 +1974,11 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.1.5] - 2026-03-13
+### [3.1.6] - 2026-03-13
 
-**新增**：Layout 与页面 `load()`、`props.data`；hydrate 与客户端导航
-layoutData；CSR 首屏 layout 数据与 `__DWEB_ON_READY__`；load-data 中间件
-`/_dweb_data`；导出 `LoadContext`/`ApiContext`；e2e
-`assertLoadDataInjected`；所有 CSR/hybrid basic 示例带 load 与 e2e
-标记。**变更**：示例 `load()` 使用 `Promise.resolve` 满足
-require-await。**修复**：E2E view-hybrid-flat 在 Linux
-上跳过计数器/metadata。**变更**：CI 使用 checkout@v5、setup-deno@v2、
-setup-bun@v2.1.3。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
+**新增**：客户端 bundle 剔除路由 `load`（esbuild 插件），服务端依赖不进浏览器
+chunk；剔除支持 `export const load = ...` 形式。**修复**：stripLoadExport 大括号
+匹配以支持嵌套。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 

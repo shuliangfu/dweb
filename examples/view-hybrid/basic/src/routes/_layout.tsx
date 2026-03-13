@@ -4,6 +4,7 @@
  */
 
 import type { VNode } from "@dreamer/view";
+import { getEnv } from "@dreamer/runtime-adapter";
 
 interface LayoutProps {
   children?: VNode | VNode[];
@@ -16,6 +17,8 @@ export interface LayoutLoadData {
 }
 
 export function load(_ctx: LoadContext): Promise<LayoutLoadData> {
+  console.log(getEnv());
+
   return Promise.resolve({
     layoutLoadMarker: "layout-load-ok",
   });

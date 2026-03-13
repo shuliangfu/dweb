@@ -1906,15 +1906,11 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.1.5] - 2026-03-13
+### [3.1.6] - 2026-03-13
 
-**Added**: Layout and page `load()` with `props.data`; hydration and client-nav
-layoutData; CSR first-screen layout data and `__DWEB_ON_READY__`; load-data
-middleware `/_dweb_data`; exports `LoadContext`/`ApiContext`; e2e
-`assertLoadDataInjected`; all CSR/hybrid basic examples have load + e2e markers.
-**Changed**: Examples `load()` use `Promise.resolve` for require-await.
-**Fixed**: E2E view-hybrid-flat skip counter/metadata on Linux. **Changed**: CI
-checkout@v5, setup-deno@v2, setup-bun@v2.1.3. Full changelog:
+**Added**: Client bundle strip of route `load` (esbuild plugin) so server-only
+deps are not in browser chunks; strip supports `export const load = ...` forms.
+**Fixed**: stripLoadExport brace matching for nested braces. Full changelog:
 [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---

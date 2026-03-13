@@ -7,6 +7,27 @@
 
 ---
 
+## [3.1.6] - 2026-03-13
+
+### 新增
+
+- **客户端 bundle 剔除路由 `load`：** CSR 客户端构建使用 esbuild 插件，在打包前
+  从路由模块中移除 `load` 导出及其函数体，使仅被 `load()` 引用的服务端依赖（如
+  `@dreamer/runtime-adapter`、`node:*`）不会打进浏览器 chunk。
+- **剔除支持 `export const load = ...`：** 除 `export function load(...)` 与
+  `export async function load(...)` 外，现也支持剔除
+  `export const load = () => { }`、`export const load = async () => { }` 以及
+  `export const load = function (...) { }` / `async function (...) { }` 形式。
+
+### 修复
+
+- **stripLoadExport 大括号匹配：** 通过先跳过参数列表 `(...)` 再对全部 `{`、`}`
+  计数 确定函数体边界，正确处理嵌套大括号（如
+  `return Promise.resolve({ ... });`）， 修复带 `load()` 的路由在构建客户端
+  bundle 时出现 "Unexpected }" 与 "Expected identifier" 的错误。
+
+---
+
 ## [3.1.5] - 2026-03-13
 
 ### 新增
