@@ -1906,11 +1906,12 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.1.3] - 2026-03-13
+### [3.1.4] - 2026-03-13
 
-**Fixed**: View – generated client always unmounts on route change to avoid
-previous page DOM leaking. Full changelog:
-[CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Fixed**: Generated client TypeScript errors (View engine); optional
+`route.path`, `__DATA__.route`, HMR link cast, CSR props optional chaining.
+**Changed**: Examples dependencies aligned with dweb; CI uses Node 24 and
+checkout@v4. Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 

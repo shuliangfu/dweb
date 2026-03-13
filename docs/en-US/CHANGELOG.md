@@ -12,14 +12,14 @@ and this project adheres to
 
 ### Fixed
 
-- **Generated client (_client.dep.tsx):** Resolved TypeScript errors in generated
-  code when using View engine and strict type checking. `loadLayouts(match)` now
-  accepts `match` with optional `route.path` and uses a safe path key for
-  layout lookup. `DwebGlobal.__DATA__` type in the generated file now includes
-  `route?: string` so `__d.route` is valid. HMR CSS update uses
-  `(el as HTMLLinkElement).href` when the element is a link. CSR initial props
-  snippet uses optional chaining for `__d` and `__d.route` / `__d.page` to avoid
-  "possibly undefined" and missing property errors.
+- **Generated client (_client.dep.tsx):** Resolved TypeScript errors in
+  generated code when using View engine and strict type checking.
+  `loadLayouts(match)` now accepts `match` with optional `route.path` and uses a
+  safe path key for layout lookup. `DwebGlobal.__DATA__` type in the generated
+  file now includes `route?: string` so `__d.route` is valid. HMR CSS update
+  uses `(el as HTMLLinkElement).href` when the element is a link. CSR initial
+  props snippet uses optional chaining for `__d` and `__d.route` / `__d.page` to
+  avoid "possibly undefined" and missing property errors.
 
 ### Changed
 
@@ -28,6 +28,9 @@ and this project adheres to
   @dreamer/middlewares ^1.0.4, @dreamer/plugins ^1.0.9, @dreamer/render ^1.1.0,
   @dreamer/router ^1.1.0, @dreamer/view ^1.1.3, and preact-render-to-string
   6.2.0 where used.
+- **CI:** GitHub Actions Node.js 20 deprecation warning removed: set
+  `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true` and upgraded `actions/checkout`
+  from v3 to v4.
 
 ---
 

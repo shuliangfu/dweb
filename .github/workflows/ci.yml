@@ -8,11 +8,14 @@ on:
   pull_request:
     branches: [dev]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   test-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install image dependencies (Linux)
         run: sudo apt-get update && sudo apt-get install -y imagemagick
@@ -39,7 +42,7 @@ jobs:
   test-macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install image dependencies (macOS)
         run: brew install imagemagick
@@ -66,7 +69,7 @@ jobs:
   test-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install image dependencies (Windows)
         run: choco install imagemagick -y
@@ -97,7 +100,7 @@ jobs:
   test-linux-bun:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install image dependencies (Linux)
         run: sudo apt-get update && sudo apt-get install -y imagemagick
@@ -129,7 +132,7 @@ jobs:
   test-macos-bun:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install image dependencies (macOS)
         run: brew install imagemagick
@@ -161,7 +164,7 @@ jobs:
   test-windows-bun:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: oven-sh/setup-bun@v2
         with:

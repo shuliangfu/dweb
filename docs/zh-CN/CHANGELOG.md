@@ -11,19 +11,23 @@
 
 ### 修复
 
-- **生成客户端（_client.dep.tsx）**：修复在 View 引擎下启用严格类型检查时生成代码
-  的 TypeScript 报错。`loadLayouts(match)` 现接受 `route.path` 为可选的 `match`，
-  并用安全路径 key 做布局查找。生成文件中的 `DwebGlobal.__DATA__` 类型增加
-  `route?: string`，使 `__d.route` 合法。HMR 更新 CSS 时对 link 元素使用
+- **生成客户端（_client.dep.tsx）**：修复在 View
+  引擎下启用严格类型检查时生成代码 的 TypeScript 报错。`loadLayouts(match)`
+  现接受 `route.path` 为可选的 `match`， 并用安全路径 key
+  做布局查找。生成文件中的 `DwebGlobal.__DATA__` 类型增加 `route?: string`，使
+  `__d.route` 合法。HMR 更新 CSS 时对 link 元素使用
   `(el as HTMLLinkElement).href`。CSR 首屏 props 片段对 `__d`、`__d.route`、
   `__d.page` 使用可选链，避免“可能为 undefined”及缺少属性的错误。
 
 ### 变更
 
 - **示例**：将 30 个示例项目的依赖与 dweb/deno.json 对齐：@dreamer/database
-  ^1.0.8、@dreamer/logger ^1.0.3、@dreamer/middlewares ^1.0.4、
-  @dreamer/plugins ^1.0.9、@dreamer/render ^1.1.0、@dreamer/router ^1.1.0、
-  @dreamer/view ^1.1.3，以及 preact-render-to-string 6.2.0（在使用的示例中）。
+  ^1.0.8、@dreamer/logger ^1.0.3、@dreamer/middlewares ^1.0.4、 @dreamer/plugins
+  ^1.0.9、@dreamer/render ^1.1.0、@dreamer/router ^1.1.0、 @dreamer/view
+  ^1.1.3，以及 preact-render-to-string 6.2.0（在使用的示例中）。
+- **CI**：消除 GitHub Actions Node.js 20 弃用警告：设置
+  `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true`，并将 `actions/checkout` 从 v3
+  升级为 v4。
 
 ---
 

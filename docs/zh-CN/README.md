@@ -1974,10 +1974,12 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.1.3] - 2026-03-13
+### [3.1.4] - 2026-03-13
 
-**修复**：View – 生成客户端在路由切换时始终先卸载，避免上一页 DOM 残留。完整
-变更日志：[CHANGELOG.md](./CHANGELOG.md)
+**修复**：生成客户端 TypeScript 报错（View 引擎）；可选 `route.path`、
+`__DATA__.route`、HMR link 强转、CSR props 可选链。**变更**：示例依赖与 dweb
+对齐；CI 使用 Node 24 与 checkout@v4。完整变更日志：
+[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 
