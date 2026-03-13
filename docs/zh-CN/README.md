@@ -1974,12 +1974,16 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.1.4] - 2026-03-13
+### [3.1.5] - 2026-03-13
 
-**修复**：生成客户端 TypeScript 报错（View 引擎）；可选 `route.path`、
-`__DATA__.route`、HMR link 强转、CSR props 可选链。**变更**：示例依赖与 dweb
-对齐；CI 使用 Node 24 与 checkout@v4。完整变更日志：
-[CHANGELOG.md](./CHANGELOG.md)
+**新增**：Layout 与页面 `load()`、`props.data`；hydrate 与客户端导航
+layoutData；CSR 首屏 layout 数据与 `__DWEB_ON_READY__`；load-data 中间件
+`/_dweb_data`；导出 `LoadContext`/`ApiContext`；e2e
+`assertLoadDataInjected`；所有 CSR/hybrid basic 示例带 load 与 e2e
+标记。**变更**：示例 `load()` 使用 `Promise.resolve` 满足
+require-await。**修复**：E2E view-hybrid-flat 在 Linux
+上跳过计数器/metadata。**变更**：CI 使用 checkout@v5、setup-deno@v2、
+setup-bun@v2.1.3。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 

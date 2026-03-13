@@ -1428,10 +1428,8 @@ export function createBasicExampleBrowserSuite(
     options?.skipCounterAndMetadataOnLinux === true;
   const isLinux = platform() === "linux";
   /** 所有 basic 示例（含 SSR/SSG）均已支持客户端激活与计数器，均跑计数器浏览器测试；Linux 上可单独跳过计数器/metadata 以规避 dev 进程中途退出导致的偶发失败 */
-  const skipCounter =
-    skip || (skipCounterAndMetadataOnLinux && isLinux);
-  const skipMetadata =
-    skip || (skipCounterAndMetadataOnLinux && isLinux);
+  const skipCounter = skip || (skipCounterAndMetadataOnLinux && isLinux);
+  const skipMetadata = skip || (skipCounterAndMetadataOnLinux && isLinux);
 
   describe(`e2e: 浏览器渲染 - ${exampleName}`, () => {
     let originalCwd: string | undefined;

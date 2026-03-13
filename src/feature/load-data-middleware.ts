@@ -98,14 +98,17 @@ export function createLoadDataMiddleware(
       });
 
       // 客户端导航时也返回 layoutData：对该路径的 layout 链执行 load，与首屏行为一致
-      const layoutPaths = (router as { getLayoutPathsForPath?(path: string): string[] }).getLayoutPathsForPath?.(match.route.path) ?? [];
+      const layoutPaths =
+        (router as { getLayoutPathsForPath?(path: string): string[] })
+          .getLayoutPathsForPath?.(match.route.path) ?? [];
       const layoutPropsList: Array<Record<string, unknown>> = [];
       if (layoutPaths.length > 0) {
         const layoutModulesRaw = await Promise.all(
           layoutPaths.map((p: string) => loadRouteModule(p, loadOpts)),
         );
         const inheritBreakIndex = layoutModulesRaw.findIndex(
-          (m: unknown) => m && (m as Record<string, unknown>).inheritLayout === false,
+          (m: unknown) =>
+            m && (m as Record<string, unknown>).inheritLayout === false,
         );
         const modulesToUse = inheritBreakIndex >= 0
           ? layoutModulesRaw.slice(inheritBreakIndex)

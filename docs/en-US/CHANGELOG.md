@@ -12,11 +12,10 @@ and this project adheres to
 
 ### Added
 
-- **Layout and page `load()` support:** Layout and page route modules can
-  export a `load(context)` function. The return value is passed to components as
+- **Layout and page `load()` support:** Layout and page route modules can export
+  a `load(context)` function. The return value is passed to components as
   `props.data` (layout: `layouts[i].props.data`, page: `pageProps.data`).
-  Supported in SSR, hybrid, and CSR modes. No longer flattened into other
-  props.
+  Supported in SSR, hybrid, and CSR modes. No longer flattened into other props.
 - **Hydration and client-side navigation:** `hydrationData.layoutData` is
   included in the initial HTML so layout `data` is available after hydrate.
   Client-side navigation requests `/_dweb_data` for the new path; the response
@@ -36,14 +35,15 @@ and this project adheres to
   `@dreamer/dweb` for use in route modules (e.g. typing `load` parameters).
 - **E2E load-data assertion:** New helper `assertLoadDataInjected(t, port)`
   visits the home page, waits for content and for `[data-testid="layout-load"]`
-  and `[data-testid="page-load"]` to have `data-value` equal to
-  `layout-load-ok` and `page-load-ok`. `createBasicExampleBrowserSuite` accepts
-  an optional `assertLoadData: true` to add a test case that runs this assertion.
+  and `[data-testid="page-load"]` to have `data-value` equal to `layout-load-ok`
+  and `page-load-ok`. `createBasicExampleBrowserSuite` accepts an optional
+  `assertLoadData: true` to add a test case that runs this assertion.
 - **Examples (CSR and hybrid basic):** All basic examples that use CSR or hybrid
   (view-csr, view-hybrid, view-hybrid-flat, react-csr, react-hybrid,
   react-hybrid-flat, preact-csr, preact-hybrid, preact-hybrid-flat) now define
-  `load()` in `_layout` and index returning `layoutLoadMarker` / `pageLoadMarker`
-  and render `<span data-testid="layout-load" data-value={...} />` and
+  `load()` in `_layout` and index returning `layoutLoadMarker` /
+  `pageLoadMarker` and render
+  `<span data-testid="layout-load" data-value={...} />` and
   `<span data-testid="page-load" data-value={...} />` for e2e. Their e2e suites
   pass `{ assertLoadData: true }` so the “应能注入 layout 与页面 load 数据” test
   runs.
@@ -51,9 +51,22 @@ and this project adheres to
 ### Changed
 
 - **Examples:** All `load()` functions in the above CSR/hybrid basic examples
-  now return `Promise.resolve(...)` instead of `async function load(...) { return
-  { ... }; }` to satisfy the Deno lint rule `require-await` (no unnecessary
-  async).
+  now return `Promise.resolve(...)` instead of
+  `async function load(...) { return
+  { ... }; }` to satisfy the Deno lint rule
+  `require-await` (no unnecessary async).
+
+### Fixed
+
+- **E2E (Linux Deno):** Skip counter and metadata tests for view-hybrid-flat
+  basic on Linux to avoid flaky failures when the dev process exits mid-suite
+  (connection reset/refused). Option `skipCounterAndMetadataOnLinux: true` in
+  `createBasicExampleBrowserSuite`.
+
+### Changed
+
+- **CI:** Upgrade to `actions/checkout@v5`, `denoland/setup-deno@v2`,
+  `oven-sh/setup-bun@v2.1.3` for Node 24 readiness.
 
 ---
 

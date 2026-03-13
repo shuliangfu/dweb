@@ -540,7 +540,8 @@ export function clearLayoutCache(): void {
     RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;`;
 
   // 将服务端注入的 layoutData 合并到各 layout 的 props，使 hydrate 时 Layout 能收到 data
-  const mergeLayoutDataSnippet = `const _layoutData = (hydrationData.layoutData && Array.isArray(hydrationData.layoutData)) ? hydrationData.layoutData : [];
+  const mergeLayoutDataSnippet =
+    `const _layoutData = (hydrationData.layoutData && Array.isArray(hydrationData.layoutData)) ? hydrationData.layoutData : [];
       const _layouts = layouts.map((l, i) => ({ component: l.component, props: _layoutData[i] ?? l.props ?? {} }));`;
   /** View Hybrid：首屏只 setViewState + createReactiveRootHydrate，一次水合同一根后续 patch；非 View 走 render 的 hydrate。 */
   const hybridInitBlock = isViewEngine
@@ -582,7 +583,8 @@ export function clearLayoutCache(): void {
       }
       (g as DwebGlobal).__DWEB_LAST_PATHNAME__ = _pathAndSearch;`;
   // 客户端导航：将 __data 返回的 layoutData 合并到 layouts，使点击链接切换页面时 layout 也能收到 data；页面只收 params/query/data
-  const onRouteChangeMergeLayoutSnippet = `var _navLayoutData = (_navProps && Array.isArray(_navProps.layoutData)) ? _navProps.layoutData : [];
+  const onRouteChangeMergeLayoutSnippet =
+    `var _navLayoutData = (_navProps && Array.isArray(_navProps.layoutData)) ? _navProps.layoutData : [];
       var _layoutsNav = _navLayoutData.length ? layouts.map(function(l, i){ return { component: l.component, props: _navLayoutData[i] ?? l.props ?? {} }; }) : layouts;
       var _pageProps = _navProps ? { params: _navProps.params || {}, query: _navProps.query || {}, data: _navProps.data } : { params: match.params || {}, query: match.query || {} };`;
   /**
@@ -619,7 +621,8 @@ export function clearLayoutCache(): void {
       var __use = __d != null && (match.route?.path ?? "") === (__d.route ?? "");
       var _layoutData = (__use && __d && Array.isArray(__d.layoutData)) ? __d.layoutData : [];
       var _props = __use ? (function(){ (g as DwebGlobal).__DATA__ = undefined; return __d?.page ?? { params: match.params, query: match.query }; })() : { params: match.params, query: match.query };`;
-  const csrMergeLayoutDataSnippet = `var _layoutsCsr = (__use && _layoutData.length) ? layoutList.map(function(l, i){ return { component: l.component, props: _layoutData[i] ?? l.props ?? {} }; }) : layoutList;`;
+  const csrMergeLayoutDataSnippet =
+    `var _layoutsCsr = (__use && _layoutData.length) ? layoutList.map(function(l, i){ return { component: l.component, props: _layoutData[i] ?? l.props ?? {} }; }) : layoutList;`;
   const setLastPathSnippet =
     `(g as DwebGlobal).__DWEB_LAST_PATHNAME__ = (typeof _win.location !== "undefined" && _win.location.pathname ? _win.location.pathname : "/") + (typeof _win.location !== "undefined" && _win.location.search ? _win.location.search : "");`;
   const renderCurrentRouteSnippet = isViewEngine

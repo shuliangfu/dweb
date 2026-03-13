@@ -171,7 +171,9 @@ export function createRendererSSR(
 
       // 为每个 _layout 模块调用 load（若存在），并将返回值作为该层 layout 的 props.data
       const layoutPropsList: Array<Record<string, unknown>> = [];
-      for (const mod of layoutModules as Array<Record<string, unknown> | null>) {
+      for (
+        const mod of layoutModules as Array<Record<string, unknown> | null>
+      ) {
         if (!mod || typeof mod.load !== "function") {
           layoutPropsList.push({});
           continue;

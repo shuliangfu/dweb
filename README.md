@@ -1906,12 +1906,16 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.1.4] - 2026-03-13
+### [3.1.5] - 2026-03-13
 
-**Fixed**: Generated client TypeScript errors (View engine); optional
-`route.path`, `__DATA__.route`, HMR link cast, CSR props optional chaining.
-**Changed**: Examples dependencies aligned with dweb; CI uses Node 24 and
-checkout@v4. Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Added**: Layout and page `load()` with `props.data`; hydration and client-nav
+layoutData; CSR first-screen layout data and `__DWEB_ON_READY__`; load-data
+middleware `/_dweb_data`; exports `LoadContext`/`ApiContext`; e2e
+`assertLoadDataInjected`; all CSR/hybrid basic examples have load + e2e markers.
+**Changed**: Examples `load()` use `Promise.resolve` for require-await.
+**Fixed**: E2E view-hybrid-flat skip counter/metadata on Linux. **Changed**: CI
+checkout@v5, setup-deno@v2, setup-bun@v2.1.3. Full changelog:
+[CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 
