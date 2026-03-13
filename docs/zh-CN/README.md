@@ -1974,11 +1974,12 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.1.6] - 2026-03-13
+### [3.1.7] - 2026-03-14
 
-**新增**：客户端 bundle 剔除路由 `load`（esbuild 插件），服务端依赖不进浏览器
-chunk；剔除支持 `export const load = ...` 形式。**修复**：stripLoadExport 大括号
-匹配以支持嵌套。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
+**变更**：strip-load 插件独立为
+`strip-load-plugin.ts`；完整构建（`runBuildWithBuilder`）在客户端配置中传入该插件，`--build`
+时也会在 client bundle 中剔除路由
+`load`。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 

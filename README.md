@@ -1906,11 +1906,11 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.1.6] - 2026-03-13
+### [3.1.7] - 2026-03-14
 
-**Added**: Client bundle strip of route `load` (esbuild plugin) so server-only
-deps are not in browser chunks; strip supports `export const load = ...` forms.
-**Fixed**: stripLoadExport brace matching for nested braces. Full changelog:
+**Changed**: Strip-load plugin moved to `strip-load-plugin.ts`; full build
+(`runBuildWithBuilder`) now passes the plugin in client config so `--build` also
+strips route `load` in client bundle. Full changelog:
 [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---

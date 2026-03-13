@@ -7,6 +7,21 @@
 
 ---
 
+## [3.1.7] - 2026-03-14
+
+### 变更
+
+- **Strip-load 插件独立模块：** 用于客户端构建时剔除路由 `load` 导出的插件已移至
+  `src/feature/strip-load-plugin.ts`，导出
+  `createStripLoadPlugin(routesDirPath)` 与
+  `stripLoadExport(source)`，便于调试与复用。
+- **完整构建使用 strip-load 插件：** `runBuildWithBuilder` 在客户端配置中传入
+  `plugins: [createStripLoadPlugin(routesDirPath)]`，使
+  `deno run src/main.ts --build`（及基于 Builder 的构建）在客户端 bundle
+  中同样剔除路由模块的 `load`，避免 `node:*` 等服务端依赖打进浏览器 chunk。
+
+---
+
 ## [3.1.6] - 2026-03-13
 
 ### 新增

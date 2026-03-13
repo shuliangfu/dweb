@@ -33,6 +33,7 @@ import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { prepareClientBuildEntry } from "./csr-client-builder.ts";
+import { createStripLoadPlugin } from "./strip-load-plugin.ts";
 
 /**
  * 初始化构建工具
@@ -255,11 +256,16 @@ export async function runBuildWithBuilder(
   };
 
   // 客户端配置（非 SSG 时准备入口并构建）
+  // 客户端构建必须带上 strip-load 插件，剔除路由模块的 load 导出及其依赖，避免 node:* 等打进浏览器 chunk
   let clientConfig: ClientConfig | undefined;
   if (!options?.skipClient) {
     const prepared = await prepareClientBuildEntry(container, config);
     const buildClient = (config.build as { client?: { debug?: boolean } })
       ?.client;
+    const routerConfig = (config.router || {}) as { routesDir?: string };
+    const routesDirRaw = routerConfig.routesDir ?? "./src/routes";
+    const routesDir = routesDirRaw.replace(/^\.\/?/, "") || routesDirRaw;
+    const routesDirPath = join(cwd(), routesDir);
     clientConfig = {
       entry: prepared.entry,
       output: prepared.output,
@@ -267,6 +273,7 @@ export async function runBuildWithBuilder(
       bundle: prepared.bundle,
       debug: buildClient?.debug,
       logger,
+      plugins: [createStripLoadPlugin(routesDirPath)],
     };
   }
 

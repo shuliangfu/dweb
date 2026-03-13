@@ -8,6 +8,22 @@ and this project adheres to
 
 ---
 
+## [3.1.7] - 2026-03-14
+
+### Changed
+
+- **Strip-load plugin in separate module:** The client build plugin that strips
+  route `load` exports is now in `src/feature/strip-load-plugin.ts`. Exports
+  `createStripLoadPlugin(routesDirPath)` and `stripLoadExport(source)` for
+  easier debugging and reuse.
+- **Full build uses strip-load plugin:** `runBuildWithBuilder` now passes
+  `plugins: [createStripLoadPlugin(routesDirPath)]` in the client config so that
+  `deno run src/main.ts --build` (and Builder-based builds) also strip `load`
+  from route modules in the client bundle, avoiding `node:*` and other
+  server-only deps in browser chunks.
+
+---
+
 ## [3.1.6] - 2026-03-13
 
 ### Added
