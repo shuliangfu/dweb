@@ -3,18 +3,34 @@
  * 页头、页脚和内容区域（使用 Tailwind CSS v4）
  */
 
+import type { LoadContext } from "@dreamer/dweb";
 import type { ComponentChildren } from "preact";
+
+/** e2e 用：layout load 注入的标记 */
+export interface LayoutLoadData {
+  layoutLoadMarker: string;
+}
 
 interface LayoutProps {
   children: ComponentChildren;
+  data?: LayoutLoadData;
+}
+
+export function load(_ctx: LoadContext): Promise<LayoutLoadData> {
+  return Promise.resolve({ layoutLoadMarker: "layout-load-ok" });
 }
 
 /**
  * 全局布局组件
  */
-export default function Layout({ children }: LayoutProps) {
+export default function Layout({ children, data }: LayoutProps) {
   return (
     <div class="min-h-screen flex flex-col">
+      <span
+        data-testid="layout-load"
+        data-value={data?.layoutLoadMarker ?? ""}
+        aria-hidden="true"
+      />
       {/* 页头 */}
       <header class="bg-white shadow-sm sticky top-0 z-50">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">

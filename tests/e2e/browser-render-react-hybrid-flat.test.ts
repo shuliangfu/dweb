@@ -7,7 +7,9 @@ import {
   createBasicExampleBrowserSuite,
 } from "./browser-render-utils.ts";
 
-createBasicExampleBrowserSuite("react-hybrid-flat", "main.ts");
+createBasicExampleBrowserSuite("react-hybrid-flat", "main.ts", {
+  assertLoadData: true,
+});
 createAdvancedExampleBrowserSuite("react-hybrid-flat", 3048, 3049, {
   entries: ["backend/main.ts", "frontend/main.ts"],
 });

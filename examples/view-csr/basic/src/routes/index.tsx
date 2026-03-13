@@ -11,11 +11,25 @@ export const metadata = {
   description: "Dweb 示例项目首页",
 };
 
+/** e2e 用：页面 load 注入的标记 */
+export interface HomeLoadData {
+  pageLoadMarker: string;
+}
+
+interface HomeProps {
+  data?: HomeLoadData;
+}
+
+export function load(_ctx: LoadContext): Promise<HomeLoadData> {
+  return Promise.resolve({
+    pageLoadMarker: "page-load-ok",
+  });
+}
 /**
  * 首页
  * @returns 首页内容
  */
-export default function Home() {
+export default function Home({ data }: HomeProps) {
   const [count, setCount] = createSignal(0);
   createEffect(() => {
     console.log("[createEffect]", new Date().toISOString());
@@ -23,6 +37,12 @@ export default function Home() {
 
   return (
     <div class="py-5">
+      {/* e2e: 验证页面 load 数据注入 */}
+      <span
+        data-testid="page-load"
+        data-value={data?.pageLoadMarker ?? ""}
+        aria-hidden="true"
+      />
       <section class="mb-10 rounded-xl bg-linear-to-br from-[#667eea] to-[#764ba2] px-5 py-15 text-center text-white">
         <h1 class="mb-4 text-4xl">欢迎使用 Dweb 框架</h1>
         <p class="text-xl text-white/90">

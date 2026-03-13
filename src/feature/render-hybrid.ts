@@ -185,14 +185,29 @@ export function createRendererHybrid(
         response: createServerResponse(),
       });
 
-      // 调用 load 函数获取服务端数据（如果存在）；若返回 Response 则直接作为响应（服务端跳转等）
+      // 为每个 _layout 模块调用 load（若存在），并将返回值作为该层 layout 的 props.data
+      const layoutPropsList: Array<Record<string, unknown>> = [];
+      for (const mod of modulesToUse as Array<Record<string, unknown>>) {
+        if (!mod || typeof mod.load !== "function") {
+          layoutPropsList.push({});
+          continue;
+        }
+        const raw = await mod.load(loadContext);
+        if (raw instanceof Response) {
+          return raw;
+        }
+        const data = (raw as Record<string, unknown> | null) ?? {};
+        layoutPropsList.push({ data });
+      }
+
+      // 调用 load 函数获取服务端数据（如果存在）；若返回 Response 则直接作为响应（服务端跳转等）。返回值以 props.data 传入页面，与 layout 一致。
       if (typeof pageModule.load === "function") {
         const raw = await pageModule.load(loadContext);
         if (raw instanceof Response) {
           return raw;
         }
         const serverData = raw as Record<string, unknown> | null;
-        if (serverData) Object.assign(pageProps, serverData);
+        if (serverData) pageProps.data = serverData;
       }
 
       // 构建布局数组（从外到内：App -> Layout -> Page）
@@ -210,10 +225,13 @@ export function createRendererHybrid(
         throw new Error($tr("errors.hybridNeedAppComponent", { message: msg }));
       }
 
-      // 布局链作为中间层（从外到内依次包裹）
-      for (const LayoutComponent of layoutComponents) {
-        layouts.push({ component: LayoutComponent });
-      }
+      // 布局链作为中间层（从外到内依次包裹），传入各层 load 的返回值作为 props.data
+      layoutComponents.forEach((LayoutComponent, i) => {
+        layouts.push({
+          component: LayoutComponent,
+          props: layoutPropsList[i],
+        });
+      });
 
       // 从已 import 的路由模块读取 metadata（支持常量对象或方法），解析后交给 render 生成 meta 标签（复用 loadContext）
       let contextData: SSROptions["contextData"];
@@ -282,12 +300,14 @@ export function createRendererHybrid(
         ? extractComponentPathFromRouteFile(routesDirPath, rawComponent) ||
           rawComponent.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "").trim()
         : rawComponent;
+      // layoutData 供客户端 hydrate 时注入到各层 Layout 的 props，与服务端 SSR 一致
       const hydrationData = {
         page: pageProps,
         route: match.route.path,
         params: match.params,
         query: match.query,
         component: normalizedComponent,
+        layoutData: layoutPropsList,
       };
 
       // 构建客户端配置脚本（开发模式启用 HMR 调试：在控制台设置 globalThis.__DWEB_HMR_DEBUG__ = true 可查看详细日志）

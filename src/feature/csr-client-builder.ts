@@ -539,12 +539,17 @@ export function clearLayoutCache(): void {
     });
     RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;`;
 
+  // 将服务端注入的 layoutData 合并到各 layout 的 props，使 hydrate 时 Layout 能收到 data
+  const mergeLayoutDataSnippet = `const _layoutData = (hydrationData.layoutData && Array.isArray(hydrationData.layoutData)) ? hydrationData.layoutData : [];
+      const _layouts = layouts.map((l, i) => ({ component: l.component, props: _layoutData[i] ?? l.props ?? {} }));`;
   /** View Hybrid：首屏只 setViewState + createReactiveRootHydrate，一次水合同一根后续 patch；非 View 走 render 的 hydrate。 */
   const hybridInitBlock = isViewEngine
-    ? `setViewState({ page: PageComponent, props: hydrationData.page || { params: hydrationData.params || {}, query: hydrationData.query || {} }, layouts: skipLayouts ? [] : layouts, skipLayouts });
+    ? `${mergeLayoutDataSnippet}
+      setViewState({ page: PageComponent, props: hydrationData.page || { params: hydrationData.params || {}, query: hydrationData.query || {} }, layouts: skipLayouts ? [] : _layouts, skipLayouts });
       _viewEnsureReactiveRoot(containerId);
       isHydratedRef.current = true;`
-    : `const hydResult = await hydrate({
+    : `${mergeLayoutDataSnippet}
+      const hydResult = await hydrate({
         engine,
         component: PageComponent,
         container: \`#\${containerId}\`,
@@ -552,7 +557,7 @@ export function clearLayoutCache(): void {
           params: hydrationData.params || {},
           query: hydrationData.query || {},
         },
-        layouts: skipLayouts ? undefined : layouts,
+        layouts: skipLayouts ? undefined : _layouts,
         skipLayouts,
         debug: !!(_win.__DWEB_DEBUG__),
       });
@@ -576,6 +581,10 @@ export function clearLayoutCache(): void {
         _navProps = { params: match.params || {}, query: match.query || {} };
       }
       (g as DwebGlobal).__DWEB_LAST_PATHNAME__ = _pathAndSearch;`;
+  // 客户端导航：将 __data 返回的 layoutData 合并到 layouts，使点击链接切换页面时 layout 也能收到 data；页面只收 params/query/data
+  const onRouteChangeMergeLayoutSnippet = `var _navLayoutData = (_navProps && Array.isArray(_navProps.layoutData)) ? _navProps.layoutData : [];
+      var _layoutsNav = _navLayoutData.length ? layouts.map(function(l, i){ return { component: l.component, props: _navLayoutData[i] ?? l.props ?? {} }; }) : layouts;
+      var _pageProps = _navProps ? { params: _navProps.params || {}, query: _navProps.query || {}, data: _navProps.data } : { params: match.params || {}, query: match.query || {} };`;
   /**
    * View / React/Preact 统一：先拉取 __data（旧内容仍可见），
    * 再 unmount/清空。View 在路由切换时始终先卸载再挂载，避免按索引 patch 导致上一页 DOM 残留在当前页。
@@ -583,11 +592,13 @@ export function clearLayoutCache(): void {
   const onRouteChangeRenderSnippet = isViewEngine
     ? `if (_win.__DWEB_DEBUG__) console.log("[dweb:view] onRouteChange", { component: match.route.component, hasPage: !!PageComponent });
       ${fetchRouteDataSnippet}
+      ${onRouteChangeMergeLayoutSnippet}
       unmountPrevious();
-      setViewState({ page: PageComponent, props: _navProps, layouts, skipLayouts });
+      setViewState({ page: PageComponent, props: _pageProps, layouts: _layoutsNav, skipLayouts });
       _viewEnsureReactiveRoot(containerId);
       (g as DwebGlobal).__DWEB_ON_READY__?.();`
     : `${fetchRouteDataSnippet}
+      ${onRouteChangeMergeLayoutSnippet}
       unmountPrevious();
       const _container = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
       if (_container && typeof _container.replaceChildren === "function") _container.replaceChildren();
@@ -595,27 +606,29 @@ export function clearLayoutCache(): void {
         engine,
         component: PageComponent,
         container: "#" + containerId,
-        props: _navProps,
-        layouts: skipLayouts ? undefined : layouts,
+        props: _pageProps,
+        layouts: skipLayouts ? undefined : _layoutsNav,
         skipLayouts,
         debug: !!(_win.__DWEB_DEBUG__),
       });
       RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
       (g as DwebGlobal).__DWEB_ON_READY__?.();`;
 
-  // CSR 首屏：若服务端注入了 __DATA__（当前路由的 load 结果），则使用其 page 作为 props，用后清空避免客户端导航误用
+  // CSR 首屏：若服务端注入了 __DATA__（当前路由的 load 结果），则使用其 page 与 layoutData，用后清空避免客户端导航误用
   const csrInitialPropsSnippet = `var __d = (g as DwebGlobal).__DATA__;
       var __use = __d != null && (match.route?.path ?? "") === (__d.route ?? "");
+      var _layoutData = (__use && __d && Array.isArray(__d.layoutData)) ? __d.layoutData : [];
       var _props = __use ? (function(){ (g as DwebGlobal).__DATA__ = undefined; return __d?.page ?? { params: match.params, query: match.query }; })() : { params: match.params, query: match.query };`;
+  const csrMergeLayoutDataSnippet = `var _layoutsCsr = (__use && _layoutData.length) ? layoutList.map(function(l, i){ return { component: l.component, props: _layoutData[i] ?? l.props ?? {} }; }) : layoutList;`;
   const setLastPathSnippet =
     `(g as DwebGlobal).__DWEB_LAST_PATHNAME__ = (typeof _win.location !== "undefined" && _win.location.pathname ? _win.location.pathname : "/") + (typeof _win.location !== "undefined" && _win.location.search ? _win.location.search : "");`;
   const renderCurrentRouteSnippet = isViewEngine
     ? `if (_win.__DWEB_DEBUG__) console.log("[dweb:view] renderCurrentRoute", { component: match.route.component, hasPage: !!PageComponent, layoutsCount: layoutList?.length ?? 0 });
       ${setLastPathSnippet}
       ${csrInitialPropsSnippet}
-      setViewState({ page: PageComponent, props: _props, layouts: layoutList, skipLayouts });
+      ${csrMergeLayoutDataSnippet}
+      setViewState({ page: PageComponent, props: _props, layouts: _layoutsCsr, skipLayouts });
       if (!_viewReactiveRoot && RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
-      // 首屏与 view 的 mount() 一致：同步执行 _viewEnsureReactiveRoot，避免 queueMicrotask 延后导致首屏事件未绑定；非首屏（已有 root）仍用 queueMicrotask 避免阻塞
       if (!_viewReactiveRoot) {
         _viewEnsureReactiveRoot(containerId);
         _win.__DWEB_ON_READY__?.();
@@ -633,16 +646,18 @@ export function clearLayoutCache(): void {
       if (_container && typeof _container.replaceChildren === "function") _container.replaceChildren();
       ${setLastPathSnippet}
       ${csrInitialPropsSnippet}
+      ${csrMergeLayoutDataSnippet}
       const csrResult = await renderCSR({
         engine,
         component: PageComponent,
         container: "#" + containerId,
         props: _props,
-        layouts: skipLayouts ? undefined : layoutList,
+        layouts: skipLayouts ? undefined : _layoutsCsr,
         skipLayouts,
         debug: !!(_win.__DWEB_DEBUG__),
       });
-      RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;`;
+      RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
+      (g as DwebGlobal).__DWEB_ON_READY__?.();`;
 
   return `/// <reference lib="dom" />
 /**
@@ -1088,8 +1103,8 @@ export async function setupHydrationRouterAndHmr(opts: {
       });
   };
 
-  // Hybrid 下 onRouteChange 注册时会同步用当前路由调用一次；此时已 hydrate 过该路由，不能再 renderCSR，否则会触发 React "early update before hydrate" 报错
-  let skipNextRouteChange = isHybridMode;
+  // onRouteChange 注册时 router 会立即用当前路由触发一次。CSR 下若执行会导致先渲染一次（_navProps 可能无 data），再 renderCurrentRoute 用 __DATA__ 又渲染一次，出现双渲染；Hybrid 下该次会与 hydrate 冲突。故首轮均跳过，由 renderCurrentRoute（CSR）或 hydrate（Hybrid）负责首屏。
+  let skipNextRouteChange = true;
   router.onRouteChange(async (match) => {
     if (!match) { unmountPrevious(); renderNotFound(containerId); return; }
     if (skipNextRouteChange) {

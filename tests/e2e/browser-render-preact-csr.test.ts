@@ -7,5 +7,7 @@ import {
   createBasicExampleBrowserSuite,
 } from "./browser-render-utils.ts";
 
-createBasicExampleBrowserSuite("preact-csr", "src/main.ts");
+createBasicExampleBrowserSuite("preact-csr", "src/main.ts", {
+  assertLoadData: true,
+});
 createAdvancedExampleBrowserSuite("preact-csr", 3030, 3031);

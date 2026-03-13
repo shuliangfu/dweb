@@ -177,6 +177,35 @@ export function createRendererCSR(
         .map((m) => m?.default ?? m?.Layout)
         .filter((c): c is NonNullable<typeof c> => c != null);
 
+      // 为每个 _layout 模块调用 load（若存在），并将返回值作为该层 layout 的 props.data（CSR 首屏 shell 使用）
+      const csrLoadContext = ctx?.request
+        ? createLoadContext({
+          request: ctx.request,
+          url: ctx?.url?.href ?? "",
+          params: match.params ?? {},
+          query: match.query ?? {},
+          session: (ctx as { session?: SessionData }).session,
+          response: createServerResponse(),
+        })
+        : null;
+      const layoutPropsList: Array<Record<string, unknown>> = [];
+      if (csrLoadContext) {
+        for (const mod of layoutModules as Array<Record<string, unknown>>) {
+          if (!mod || typeof mod.load !== "function") {
+            layoutPropsList.push({});
+            continue;
+          }
+          const raw = await mod.load(csrLoadContext);
+          if (raw instanceof Response) {
+            return raw;
+          }
+          const data = (raw as Record<string, unknown> | null) ?? {};
+          layoutPropsList.push({ data });
+        }
+      } else {
+        layoutComponents.forEach(() => layoutPropsList.push({}));
+      }
+
       // CSR 首屏：执行当前路由的 load()，将结果注入 __DATA__；并解析 metadata 注入 head（title/description）
       let hydrationData: {
         page: Record<string, unknown>;
@@ -184,6 +213,7 @@ export function createRendererCSR(
         params: Record<string, string>;
         query: Record<string, string>;
         component: string;
+        layoutData?: Array<Record<string, unknown>>;
       } | null = null;
       let csrMetaTags = "";
       const fullPath = (match.route as { fullPath?: string }).fullPath;
@@ -211,7 +241,7 @@ export function createRendererCSR(
               return raw;
             }
             const serverData = raw as Record<string, unknown> | null;
-            if (serverData) Object.assign(pageProps, serverData);
+            if (serverData) pageProps.data = serverData;
             const rawComponent =
               (match.route as { file?: string; path?: string }).file ||
               (match.route as { path?: string }).path || "";
@@ -229,6 +259,28 @@ export function createRendererCSR(
               params: match.params,
               query: match.query,
               component: normalizedComponent,
+              layoutData: layoutPropsList,
+            };
+          } else if (layoutPropsList.length > 0) {
+            // 页面无 load 时仍注入 layoutData，供客户端首屏合并到 Layout props
+            const rawComponent =
+              (match.route as { file?: string; path?: string }).file ||
+              (match.route as { path?: string }).path || "";
+            const normalizedComponent = typeof rawComponent === "string"
+              ? extractComponentPathFromRouteFile(
+                routesDirPath,
+                rawComponent,
+              ) ||
+                rawComponent.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "")
+                  .trim()
+              : rawComponent;
+            hydrationData = {
+              page: { params: match.params, query: match.query },
+              route: (match.route as { path?: string }).path ?? "",
+              params: match.params,
+              query: match.query,
+              component: normalizedComponent,
+              layoutData: layoutPropsList,
             };
           }
           // 从已 import 的路由模块读取 metadata（常量或方法），注入首屏 head
@@ -265,9 +317,12 @@ export function createRendererCSR(
       > = [
         { component: AppComponent },
       ];
-      for (const LayoutComponent of layoutComponents) {
-        layouts.push({ component: LayoutComponent });
-      }
+      layoutComponents.forEach((LayoutComponent, i) => {
+        layouts.push({
+          component: LayoutComponent,
+          props: layoutPropsList[i],
+        });
+      });
 
       const result = await renderService.renderSSR({
         engine,

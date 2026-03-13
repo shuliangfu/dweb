@@ -84,12 +84,29 @@ interface ChatMessage {
  * - 仅依赖 status/input/messages 的 Socket.IO 区块同理，避免整页重跑
  * 包含 Socket.IO 客户端示例：连接状态、发送消息、接收消息
  */
+
+/** e2e 用：页面 load 注入的标记 */
+export interface HomeLoadData {
+  pageLoadMarker: string;
+}
+
+export function load(_ctx: LoadContext): Promise<HomeLoadData> {
+  return Promise.resolve({
+    pageLoadMarker: "page-load-ok",
+  });
+}
+
 /** 首页元数据（常量），用于生成 <title> / <meta> */
 export const metadata = {
   title: "首页 - Dweb Basic",
   description: "Dweb 示例项目首页",
 };
-export default function Home() {
+
+interface HomeProps {
+  data?: HomeLoadData;
+}
+
+export default function Home({ data }: HomeProps) {
   const clientRef: { current: Client | null } = { current: null };
   const [count, setCount] = createSignal(0);
   const [status, setStatus] = createSignal<ConnectionStatus>("idle");
@@ -211,6 +228,12 @@ export default function Home() {
 
   return (
     <div class={classes.page}>
+      {/* e2e: 验证页面 load 数据注入 */}
+      <span
+        data-testid="page-load"
+        data-value={data?.pageLoadMarker ?? ""}
+        aria-hidden="true"
+      />
       <section class={classes.hero}>
         <h1 class={classes.heroTitle}>欢迎使用 Dweb 框架</h1>
         <p class={classes.heroDesc}>

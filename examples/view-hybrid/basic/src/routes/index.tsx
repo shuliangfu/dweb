@@ -97,7 +97,27 @@ export const metadata = {
   title: "首页 - Dweb Basic",
   description: "Dweb 示例项目首页",
 };
-export default function Home() {
+
+/** e2e 用：页面 load 注入的标记，断言 data-value 为 PAGE_LOAD_MARKER */
+export interface HomeLoadData {
+  pageLoadMarker: string;
+}
+
+export function load(_ctx: LoadContext): Promise<HomeLoadData> {
+  return Promise.resolve({
+    pageLoadMarker: "page-load-ok",
+  });
+}
+
+interface HomeProps {
+  data?: HomeLoadData;
+}
+
+export default function Home({ data }: HomeProps) {
+  createEffect(() => {
+    console.log("[createEffect]", new Date().toISOString());
+  });
+
   const clientRef: { current: Client | null } = { current: null };
   const [count, setCount] = createSignal(0);
   const [status, setStatus] = createSignal<ConnectionStatus>("idle");
@@ -208,6 +228,12 @@ export default function Home() {
 
   return (
     <div class={classes.page}>
+      {/* e2e: 验证页面 load 数据注入 */}
+      <span
+        data-testid="page-load"
+        data-value={data?.pageLoadMarker ?? ""}
+        aria-hidden="true"
+      />
       <section class={classes.hero}>
         <h1 class={classes.heroTitle}>欢迎使用 Dweb 框架</h1>
         <p class={classes.heroDesc}>

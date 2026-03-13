@@ -1,6 +1,18 @@
+import type { LoadContext } from "@dreamer/dweb";
 import { Client } from "@dreamer/websocket/client";
 import { useEffect, useRef, useState } from "preact/hooks";
 // import "../assets/index.css";
+
+/** e2e 用：页面 load 注入的标记 */
+export interface HomeLoadData {
+  pageLoadMarker: string;
+}
+
+export function load(_ctx: LoadContext): Promise<HomeLoadData> {
+  return Promise.resolve({
+    pageLoadMarker: "page-load-ok",
+  });
+}
 
 /**
  * 页面 Tailwind 类名（全部提取为静态对象，便于生产构建扫描）
@@ -82,7 +94,12 @@ export const metadata = {
   title: "首页 - Dweb Basic",
   description: "Dweb 示例项目首页",
 };
-export default function Home() {
+
+interface HomeProps {
+  data?: HomeLoadData;
+}
+
+export default function Home({ data }: HomeProps) {
   const clientRef = useRef<Client | null>(null);
   const [count, setCount] = useState(0);
   const [status, setStatus] = useState<ConnectionStatus>("idle");
@@ -220,6 +237,12 @@ export default function Home() {
 
   return (
     <div class={classes.page}>
+      {/* e2e: 验证页面 load 数据注入 */}
+      <span
+        data-testid="page-load"
+        data-value={data?.pageLoadMarker ?? ""}
+        aria-hidden="true"
+      />
       <section class={classes.hero}>
         <h1 class={classes.heroTitle}>欢迎使用 Dweb 框架</h1>
         <p class={classes.heroDesc}>

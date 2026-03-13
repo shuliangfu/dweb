@@ -7,5 +7,7 @@ import {
   createBasicExampleBrowserSuite,
 } from "./browser-render-utils.ts";
 
-createBasicExampleBrowserSuite("view-hybrid", "src/main.ts");
+createBasicExampleBrowserSuite("view-hybrid", "src/main.ts", {
+  assertLoadData: true,
+});
 createAdvancedExampleBrowserSuite("view-hybrid", 3022, 3023);

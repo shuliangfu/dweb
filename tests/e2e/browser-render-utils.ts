@@ -677,6 +677,102 @@ async function assertBrowserClickAbout(
 }
 
 /**
+ * 断言首页已注入 layout 与页面 load 数据（通过 data-testid="layout-load" / "page-load" 的 data-value）。
+ * 先访问首页并等待主体内容就绪，再等待并断言 layout-load-ok / page-load-ok。
+ * @param t 测试上下文（需含 browser）
+ * @param port 服务器端口
+ */
+async function assertLoadDataInjected(
+  t: {
+    browser?: {
+      page: unknown;
+      goto: (url: string) => Promise<void>;
+      evaluate: (fn: () => unknown) => Promise<unknown>;
+      waitFor: (
+        fn: () => boolean,
+        options?: { timeout?: number },
+      ) => Promise<void>;
+    };
+  },
+  port: number,
+): Promise<void> {
+  if (!t?.browser) {
+    throw new Error("browser 上下文不可用");
+  }
+  await ensureServerAlive(port, 15000);
+  const browser = t.browser;
+  const page = browser.page as {
+    goto: (
+      url: string,
+      options?: { waitUntil?: string; timeout?: number },
+    ) => Promise<unknown>;
+  };
+
+  const url = `http://127.0.0.1:${port}/`;
+  if (typeof page?.goto === "function") {
+    await gotoWithRetry(page, url);
+  } else {
+    await browser.goto(url);
+  }
+
+  const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
+  await browser.waitFor(
+    () => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string } }
+        | undefined;
+      const html = doc?.body?.innerHTML ?? "";
+      return (
+        html.includes("欢迎使用 Dweb 框架") ||
+        html.includes("Welcome to Dweb") ||
+        html.includes("React CSR Advanced Example") ||
+        html.includes("React Advanced") ||
+        html.includes("View Advanced") ||
+        html.includes("Preact Advanced") ||
+        html.includes("用户管理")
+      );
+    },
+    { timeout: contentTimeout },
+  );
+
+  await browser.waitFor(
+    () => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | {
+          querySelector?: (
+            s: string,
+          ) => { getAttribute?: (a: string) => string | null } | null;
+        }
+        | undefined;
+      const layoutEl = doc?.querySelector?.('[data-testid="layout-load"]');
+      const pageEl = doc?.querySelector?.('[data-testid="page-load"]');
+      const layoutVal = layoutEl?.getAttribute?.("data-value") ?? "";
+      const pageVal = pageEl?.getAttribute?.("data-value") ?? "";
+      return layoutVal === "layout-load-ok" && pageVal === "page-load-ok";
+    },
+    { timeout: contentTimeout },
+  );
+
+  const result = await browser.evaluate(() => {
+    const doc = (globalThis as Record<string, unknown>).document as
+      | {
+        querySelector?: (
+          s: string,
+        ) => { getAttribute?: (a: string) => string | null } | null;
+      }
+      | undefined;
+    const layoutEl = doc?.querySelector?.('[data-testid="layout-load"]');
+    const pageEl = doc?.querySelector?.('[data-testid="page-load"]');
+    return {
+      layout: layoutEl?.getAttribute?.("data-value") ?? "",
+      page: pageEl?.getAttribute?.("data-value") ?? "",
+    };
+  }) as { layout: string; page: string };
+  expect(result.layout).toBe("layout-load-ok");
+  expect(result.page).toBe("page-load-ok");
+}
+
+/**
  * 从页面解析当前计数器数字。
  * 优先读 [data-counter-value] 元素的 textContent（SSR/SSG/部分 CSR 仅显示数字）；
  * 若无则回退到 body 文本中的 "count: N" 形式（部分 CSR/Hybrid 示例）。
@@ -1313,14 +1409,16 @@ export function createAdvancedExampleBrowserSuite(
  * @param exampleName 示例名称（如 preact-csr、preact-hybrid）
  * @param entry 入口文件：有 src 用 "src/main.ts"，无 src 用 "main.ts"
  * @param options.skip 为 true 时跳过该套件的用例（用于已知会挂起的用例，如 react-ssg）
+ * @param options.assertLoadData 为 true 时增加「应能注入 layout 与页面 load 数据」用例
  */
 export function createBasicExampleBrowserSuite(
   exampleName: string,
   entry: string = "src/main.ts",
-  options?: { skip?: boolean },
+  options?: { skip?: boolean; assertLoadData?: boolean },
 ): void {
   const preferredPort = E2E_PORTS[exampleName] ?? 3000;
   const skip = options?.skip === true;
+  const assertLoadData = options?.assertLoadData === true;
   /** 所有 basic 示例（含 SSR/SSG）均已支持客户端激活与计数器，均跑计数器浏览器测试 */
   const skipCounter = skip;
 
@@ -1404,6 +1502,28 @@ export function createBasicExampleBrowserSuite(
         protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
       },
     });
+
+    it.skipIf(
+      !assertLoadData || skip,
+      "应能注入 layout 与页面 load 数据",
+      async (t) => {
+        if (!t) throw new Error("test context 不可用");
+        await assertLoadDataInjected(t, actualPort);
+      },
+      {
+        timeout: BROWSER_TEST_TIMEOUT_MS,
+        sanitizeOps: false,
+        sanitizeResources: false,
+        browser: {
+          enabled: true,
+          headless: true,
+          dumpio: true,
+          reuseBrowser: true,
+          browserSource: "test",
+          protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
+        },
+      },
+    );
 
     it.skipIf(
       skipCounter,

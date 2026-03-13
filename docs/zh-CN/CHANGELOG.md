@@ -7,6 +7,45 @@
 
 ---
 
+## [3.1.5] - 2026-03-13
+
+### 新增
+
+- **Layout 与页面 `load()` 支持**：布局与页面路由模块可导出 `load(context)`，返回值以
+  `props.data` 传入组件（布局为 `layouts[i].props.data`，页面为
+  `pageProps.data`）。支持 SSR、hybrid、CSR 模式，不再将 load 结果扁平到其他
+  props。
+- **Hydrate 与客户端导航**：首屏 HTML 中的 `hydrationData.layoutData` 供
+  hydrate 后使用；客户端导航会请求 `/_dweb_data`，响应中的 `layoutData`
+  与当前路径的 layout 链一致，合并后使切换路由后各层 layout 仍能收到
+  `data`，无需整页刷新。
+- **CSR 首屏 layout 数据**：CSR 模式下从 `__DATA__._layoutData` 合并 layout
+  load 结果，首屏即带正确的 layout `data`；并跳过首次 router
+  `onRouteChange`，避免双渲染。
+- **React/Preact CSR 首屏 loading**：首屏 CSR 渲染完成后（非 View 引擎）调用
+  `__DWEB_ON_READY__`，便于去掉 loading 遮罩，e2e「点击关于」等用例不再超时。
+- **Load-data 中间件**：`/_dweb_data` 由 load-data-middleware 处理，对当前路径的
+  layout 链执行各层 `load()`，在 JSON 响应体中返回 `layoutData`，供客户端导航合并。
+- **公开导出**：从 `@dreamer/dweb` 导出 `LoadContext` 与 `ApiContext`，便于在路由模块中为
+  `load` 参数等做类型标注。
+- **E2E load 数据断言**：新增 `assertLoadDataInjected(t, port)`，访问首页并等待
+  `[data-testid="layout-load"]` 与 `[data-testid="page-load"]` 的
+  `data-value` 为 `layout-load-ok` / `page-load-ok`。`createBasicExampleBrowserSuite`
+  支持选项 `assertLoadData: true`，可增加一条执行该断言的用例。
+- **示例（CSR 与 hybrid basic）**：所有使用 CSR 或 hybrid 的 basic 示例（view-csr、view-hybrid、view-hybrid-flat、react-csr、react-hybrid、react-hybrid-flat、preact-csr、preact-hybrid、preact-hybrid-flat）均在
+  `_layout` 与 index 中定义 `load()`，返回 `layoutLoadMarker` /
+  `pageLoadMarker`，并渲染 `data-testid="layout-load"` 与
+  `data-testid="page-load"` 的 span 供 e2e 断言；对应 e2e 套件传入
+  `{ assertLoadData: true }`，运行「应能注入 layout 与页面 load 数据」用例。
+
+### 变更
+
+- **示例**：上述 CSR/hybrid basic 示例中的全部 `load()` 改为通过
+  `Promise.resolve(...)` 返回，不再使用 `async function load(...) { return {
+  ... }; }`，以符合 Deno lint 规则 `require-await`（避免不必要的 async）。
+
+---
+
 ## [3.1.4] - 2026-03-13
 
 ### 修复

@@ -84,32 +84,64 @@ export function createLoadDataMiddleware(
         return;
       }
 
+      const url = pathname +
+        (Object.keys(queryFromUrl).length
+          ? "?" + new URLSearchParams(queryFromUrl).toString()
+          : "");
+      const loadContext = createLoadContext({
+        request: ctx.request,
+        url,
+        params: match.params ?? {},
+        query: queryFromUrl,
+        session: (ctx as { session?: SessionData }).session,
+        response: createServerResponse(),
+      });
+
+      // 客户端导航时也返回 layoutData：对该路径的 layout 链执行 load，与首屏行为一致
+      const layoutPaths = (router as { getLayoutPathsForPath?(path: string): string[] }).getLayoutPathsForPath?.(match.route.path) ?? [];
+      const layoutPropsList: Array<Record<string, unknown>> = [];
+      if (layoutPaths.length > 0) {
+        const layoutModulesRaw = await Promise.all(
+          layoutPaths.map((p: string) => loadRouteModule(p, loadOpts)),
+        );
+        const inheritBreakIndex = layoutModulesRaw.findIndex(
+          (m: unknown) => m && (m as Record<string, unknown>).inheritLayout === false,
+        );
+        const modulesToUse = inheritBreakIndex >= 0
+          ? layoutModulesRaw.slice(inheritBreakIndex)
+          : layoutModulesRaw;
+        for (const mod of modulesToUse as Array<Record<string, unknown>>) {
+          if (!mod || typeof mod.load !== "function") {
+            layoutPropsList.push({});
+            continue;
+          }
+          const raw = await mod.load(loadContext);
+          if (raw instanceof Response) {
+            ctx.response = raw;
+            return;
+          }
+          const data = (raw as Record<string, unknown> | null) ?? {};
+          layoutPropsList.push({ data });
+        }
+      }
+
       const pageModule = await loadRouteModule(fullPath, loadOpts);
       const pageProps: Record<string, unknown> = {
         params: sanitizeRequestParams(match.params),
         query: sanitizeRequestParams(queryFromUrl),
       };
+      if (layoutPropsList.length > 0) {
+        pageProps.layoutData = layoutPropsList;
+      }
 
       if (pageModule && typeof pageModule.load === "function") {
-        const url = pathname +
-          (Object.keys(queryFromUrl).length
-            ? "?" + new URLSearchParams(queryFromUrl).toString()
-            : "");
-        const loadContext = createLoadContext({
-          request: ctx.request,
-          url,
-          params: match.params ?? {},
-          query: queryFromUrl,
-          session: (ctx as { session?: SessionData }).session,
-          response: createServerResponse(),
-        });
         const raw = await pageModule.load(loadContext);
         if (raw instanceof Response) {
           ctx.response = raw;
           return;
         }
         const serverData = raw as Record<string, unknown> | null;
-        if (serverData) Object.assign(pageProps, serverData);
+        if (serverData) pageProps.data = serverData;
       }
 
       ctx.response = new Response(JSON.stringify(pageProps), {

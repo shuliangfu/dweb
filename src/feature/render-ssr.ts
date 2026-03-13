@@ -169,6 +169,21 @@ export function createRendererSSR(
         response: createServerResponse(),
       });
 
+      // 为每个 _layout 模块调用 load（若存在），并将返回值作为该层 layout 的 props.data
+      const layoutPropsList: Array<Record<string, unknown>> = [];
+      for (const mod of layoutModules as Array<Record<string, unknown> | null>) {
+        if (!mod || typeof mod.load !== "function") {
+          layoutPropsList.push({});
+          continue;
+        }
+        const raw = await mod.load(loadContext);
+        if (raw instanceof Response) {
+          return raw;
+        }
+        const data = (raw as Record<string, unknown> | null) ?? {};
+        layoutPropsList.push({ data });
+      }
+
       // 调用 load 函数获取服务端数据（若存在），带短期缓存减轻重 I/O；若返回 Response 则直接作为响应（服务端跳转等）
       if (typeof pageModule.load === "function") {
         const cacheKey = getLoadCacheKey(url, match.params);
@@ -205,7 +220,7 @@ export function createRendererSSR(
         }
 
         if (serverData && !(serverData instanceof Response)) {
-          Object.assign(pageProps, serverData);
+          pageProps.data = serverData;
         }
       }
 
@@ -219,10 +234,13 @@ export function createRendererSSR(
         layouts.push({ component: AppComponent });
       }
 
-      // 布局链作为中间层（从外到内依次包裹）
-      for (const LayoutComponent of layoutComponents) {
-        layouts.push({ component: LayoutComponent });
-      }
+      // 布局链作为中间层（从外到内依次包裹），传入各层 load 的返回值作为 props.data
+      layoutComponents.forEach((LayoutComponent, i) => {
+        layouts.push({
+          component: LayoutComponent,
+          props: layoutPropsList[i],
+        });
+      });
 
       // 从已 import 的路由模块读取 metadata（支持常量对象或方法），解析后交给 render 生成 meta 标签（复用 loadContext）
       let contextData: SSROptions["contextData"];
@@ -290,12 +308,14 @@ export function createRendererSSR(
             rawComponent.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "")
               .trim()
           : rawComponent;
+        // layoutData 供客户端 hydrate 时注入到各层 Layout 的 props
         const hydrationData = {
           page: pageProps,
           route: match.route.path,
           params: match.params,
           query: match.query,
           component: normalizedComponent,
+          layoutData: layoutPropsList,
         };
         const debugRender = renderConfig.debug === true;
         const clientConfigScript = `

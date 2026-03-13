@@ -70,6 +70,12 @@ export type {
 export type { HttpContext as Context } from "@dreamer/server";
 
 /**
+ * load() 上下文类型（LoadContext）、API 上下文（ApiContext）等，
+ * 供 routes 中 _layout/页面 load、api 路由使用。
+ */
+export type { ApiContext, LoadContext } from "./types/context.ts";
+
+/**
  * 中间件 next 函数类型
  *
  * 调用以执行后续中间件，在路由中间件中必须调用 next() 才能继续处理请求。

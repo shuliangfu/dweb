@@ -7,14 +7,32 @@ import type { VNode } from "@dreamer/view";
 
 interface LayoutProps {
   children?: VNode | VNode[];
+  data?: LayoutLoadData;
+}
+
+/** e2e 用：layout load 注入的标记 */
+export interface LayoutLoadData {
+  layoutLoadMarker: string;
+}
+
+export function load(_ctx: LoadContext): Promise<LayoutLoadData> {
+  return Promise.resolve({
+    layoutLoadMarker: "layout-load-ok",
+  });
 }
 
 /**
  * 全局布局组件
  */
-export default function Layout({ children }: LayoutProps) {
+export default function Layout({ children, data }: LayoutProps) {
   return (
     <div class="min-h-screen flex flex-col">
+      {/* e2e: 验证 layout load 数据注入 */}
+      <span
+        data-testid="layout-load"
+        data-value={data?.layoutLoadMarker ?? ""}
+        aria-hidden="true"
+      />
       {/* 页头 */}
       <header class="bg-white shadow-sm sticky top-0 z-50">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">

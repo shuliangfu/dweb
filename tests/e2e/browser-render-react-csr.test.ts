@@ -7,5 +7,7 @@ import {
   createBasicExampleBrowserSuite,
 } from "./browser-render-utils.ts";
 
-createBasicExampleBrowserSuite("react-csr", "src/main.ts");
+createBasicExampleBrowserSuite("react-csr", "src/main.ts", {
+  assertLoadData: true,
+});
 createAdvancedExampleBrowserSuite("react-csr", 3040, 3041);
