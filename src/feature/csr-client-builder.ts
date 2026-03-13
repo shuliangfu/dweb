@@ -464,9 +464,10 @@ import {
 /** 路由路径 -> 该路径下从外到内的 _layout key 链（嵌套布局） */
 const ROUTE_LAYOUT_KEYS: Record<string, string[]> = ${routeLayoutKeysJson};
 
-export async function loadLayouts(match: { route: { path: string } } | null): Promise<LayoutComponent[]> {
+export async function loadLayouts(match: { route: { path?: string } } | null): Promise<LayoutComponent[]> {
   if (!match) return [];
-  const keys = ROUTE_LAYOUT_KEYS[match.route.path] ?? ROUTE_LAYOUT_KEYS["/"] ?? [];
+  const pathKey = match.route?.path ?? "";
+  const keys = ROUTE_LAYOUT_KEYS[pathKey] ?? ROUTE_LAYOUT_KEYS["/"] ?? [];
   const result: LayoutComponent[] = [];
   let inheritBreakIndex = -1;
   for (let i = 0; i < keys.length; i++) {
@@ -604,8 +605,8 @@ export function clearLayoutCache(): void {
 
   // CSR 首屏：若服务端注入了 __DATA__（当前路由的 load 结果），则使用其 page 作为 props，用后清空避免客户端导航误用
   const csrInitialPropsSnippet = `var __d = (g as DwebGlobal).__DATA__;
-      var __use = __d && match.route.path === __d.route;
-      var _props = __use ? (function(){ (g as DwebGlobal).__DATA__ = undefined; return __d.page || { params: match.params, query: match.query }; })() : { params: match.params, query: match.query };`;
+      var __use = __d != null && (match.route?.path ?? "") === (__d.route ?? "");
+      var _props = __use ? (function(){ (g as DwebGlobal).__DATA__ = undefined; return __d?.page ?? { params: match.params, query: match.query }; })() : { params: match.params, query: match.query };`;
   const setLastPathSnippet =
     `(g as DwebGlobal).__DWEB_LAST_PATHNAME__ = (typeof _win.location !== "undefined" && _win.location.pathname ? _win.location.pathname : "/") + (typeof _win.location !== "undefined" && _win.location.search ? _win.location.search : "");`;
   const renderCurrentRouteSnippet = isViewEngine
@@ -661,6 +662,7 @@ export interface DwebGlobal {
   __DWEB_ENGINE__?: "react" | "preact" | "view";
   __DWEB_CONTAINER_ID__?: string;
   __DATA__?: {
+    route?: string;
     page?: Record<string, unknown>;
     params?: Record<string, string>;
     query?: Record<string, string>;
@@ -1058,7 +1060,7 @@ export async function setupHydrationRouterAndHmr(opts: {
               if (!el) return;
               // link 元素：通过更新 href 加时间戳刷新缓存；style 元素：fetch 后写入 textContent
               if (el.tagName === "LINK") {
-                el.href = entry.url + "?t=" + Date.now();
+                (el as HTMLLinkElement).href = entry.url + "?t=" + Date.now();
               } else {
                 fetch(entry.url + "?t=" + Date.now())
                   .then(function(r) { return r.ok ? r.text() : Promise.reject(new Error(${

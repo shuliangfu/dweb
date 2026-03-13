@@ -8,6 +8,29 @@ and this project adheres to
 
 ---
 
+## [3.1.4] - 2026-03-13
+
+### Fixed
+
+- **Generated client (_client.dep.tsx):** Resolved TypeScript errors in generated
+  code when using View engine and strict type checking. `loadLayouts(match)` now
+  accepts `match` with optional `route.path` and uses a safe path key for
+  layout lookup. `DwebGlobal.__DATA__` type in the generated file now includes
+  `route?: string` so `__d.route` is valid. HMR CSS update uses
+  `(el as HTMLLinkElement).href` when the element is a link. CSR initial props
+  snippet uses optional chaining for `__d` and `__d.route` / `__d.page` to avoid
+  "possibly undefined" and missing property errors.
+
+### Changed
+
+- **Examples:** Aligned all 30 example projects’ dependencies with
+  dweb/deno.json: @dreamer/database ^1.0.8, @dreamer/logger ^1.0.3,
+  @dreamer/middlewares ^1.0.4, @dreamer/plugins ^1.0.9, @dreamer/render ^1.1.0,
+  @dreamer/router ^1.1.0, @dreamer/view ^1.1.3, and preact-render-to-string
+  6.2.0 where used.
+
+---
+
 ## [3.1.3] - 2026-03-13
 
 ### Fixed
