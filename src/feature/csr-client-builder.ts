@@ -577,13 +577,12 @@ export function clearLayoutCache(): void {
       (g as DwebGlobal).__DWEB_LAST_PATHNAME__ = _pathAndSearch;`;
   /**
    * View / React/Preact 统一：先拉取 __data（旧内容仍可见），
-   * 再 unmount/清空（View 仅在无 reactive root 时 unmount，
-   * 有 root 时仅 setViewState 做就地 patch），最后应用新视图
+   * 再 unmount/清空。View 在路由切换时始终先卸载再挂载，避免按索引 patch 导致上一页 DOM 残留在当前页。
    */
   const onRouteChangeRenderSnippet = isViewEngine
     ? `if (_win.__DWEB_DEBUG__) console.log("[dweb:view] onRouteChange", { component: match.route.component, hasPage: !!PageComponent });
       ${fetchRouteDataSnippet}
-      if (!_viewReactiveRoot) unmountPrevious();
+      unmountPrevious();
       setViewState({ page: PageComponent, props: _navProps, layouts, skipLayouts });
       _viewEnsureReactiveRoot(containerId);
       (g as DwebGlobal).__DWEB_ON_READY__?.();`

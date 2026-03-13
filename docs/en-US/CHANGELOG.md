@@ -8,6 +8,18 @@ and this project adheres to
 
 ---
 
+## [3.1.3] - 2026-03-13
+
+### Fixed
+
+- **View (generated client):** Always call `unmountPrevious()` on route change
+  in generated `_client.dep.tsx`. Previously the reactive root was only
+  unmounted when it did not exist, so in-place patch could leave DOM from the
+  previous page (e.g. bonus detail list) visible on the new page. Now each
+  navigation unmounts then mounts, avoiding cross-page DOM leakage.
+
+---
+
 ## [3.1.2] - 2026-03-12
 
 ### Changed

@@ -1906,10 +1906,11 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.1.2] - 2026-03-12
+### [3.1.3] - 2026-03-13
 
-**Changed**: Dependencies – Bumped @dreamer/render to ^1.1.0 and @dreamer/view
-to ^1.1.3. Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Fixed**: View – generated client always unmounts on route change to avoid
+previous page DOM leaking. Full changelog:
+[CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 

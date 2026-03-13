@@ -1974,10 +1974,10 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.1.2] - 2026-03-12
+### [3.1.3] - 2026-03-13
 
-**变更**：依赖 – 将 @dreamer/render 更新至 ^1.1.0、@dreamer/view 更新至
-^1.1.3。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
+**修复**：View – 生成客户端在路由切换时始终先卸载，避免上一页 DOM 残留。完整
+变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 
