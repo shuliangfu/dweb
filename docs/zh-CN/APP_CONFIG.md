@@ -194,9 +194,9 @@ const config: AppConfig = {
     showTime: true,
     showLevel: true,
     tags: ["app"],
+    /** output.console：true | false | "auto"（auto 表示按 TTY 自动选择：有 TTY 打控制台，无 TTY 写文件） */
     output: {
-      auto: true,
-      console: true,
+      console: "auto",
       file: {
         path: "./logs/app.log",
         rotate: true,
@@ -614,7 +614,7 @@ const config: AppConfig = {
     level: "info",
     format: "json",
     output: {
-      auto: true,
+      console: "auto",
       file: { path: "./logs/app.log", rotate: true },
     },
   },

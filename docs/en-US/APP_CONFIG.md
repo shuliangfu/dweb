@@ -196,9 +196,9 @@ const config: AppConfig = {
     showTime: true,
     showLevel: true,
     tags: ["app"],
+    /** output.console: true | false | "auto" (auto = by TTY: console in foreground, file in background) */
     output: {
-      auto: true,
-      console: true,
+      console: "auto",
       file: {
         path: "./logs/app.log",
         rotate: true,
@@ -630,7 +630,7 @@ const config: AppConfig = {
     level: "info",
     format: "json",
     output: {
-      auto: true,
+      console: "auto",
       file: { path: "./logs/app.log", rotate: true },
     },
   },
