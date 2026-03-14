@@ -8,6 +8,19 @@ and this project adheres to
 
 ---
 
+## [3.1.8] - 2026-03-14
+
+### Changed
+
+- **Init templates (logger):** Generated config uses
+  `logger.output.console: "auto"` and no longer includes `auto: true`.
+- **Init templates (format):** Config template objects in `config-full.ts` and
+  `config.ts` are now formatted in multi-line style (e.g. `server.dev.hmr`,
+  `logger.output`, database/socket/session comments, redirects, plugins,
+  middlewares).
+
+---
+
 ## [3.1.7] - 2026-03-14
 
 ### Changed

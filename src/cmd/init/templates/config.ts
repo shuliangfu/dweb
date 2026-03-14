@@ -54,9 +54,9 @@ export default {
     //   outputDir: "dist/static",
     //   routes: ["/", "/about"],
     //   /** ${$tr("init.comments.dynamicRoutesSupport")} */
-    //   dynamicRoutes: { "/user/[id]": ["1", "2", "3"] }, // ${
-      $tr("init.comments.dynamicRoutesExample")
-    }
+    //   dynamicRoutes: {
+    //     "/user/[id]": ["1", "2", "3"],
+    //   }, // ${$tr("init.comments.dynamicRoutesExample")}
     //   hydrate: true,
     // },
   },
@@ -64,8 +64,7 @@ export default {
     level: "info",
     format: "text",
     output: {
-      auto: true,
-      console: true,
+      console: "auto",
       file: {
         path: "runtime/logs/${appName}.log",
         rotate: true,
@@ -98,7 +97,10 @@ export default {
     host: "127.0.0.1",
     port: ${port},
     dev: {
-      hmr: { enabled: true, path: "/__hmr" },
+      hmr: {
+        enabled: true,
+        path: "/__hmr",
+      },
       watch: {
         paths: ["./src"],
         ignore: ["node_modules", ".git", "dist"],

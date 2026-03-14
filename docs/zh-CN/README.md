@@ -1974,12 +1974,10 @@ config、router、plugin、build、render、windows
 
 ## 📋 变更日志
 
-### [3.1.7] - 2026-03-14
+### [3.1.8] - 2026-03-14
 
-**变更**：strip-load 插件独立为
-`strip-load-plugin.ts`；完整构建（`runBuildWithBuilder`）在客户端配置中传入该插件，`--build`
-时也会在 client bundle 中剔除路由
-`load`。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
+**变更**：Init 模板使用 `logger.output.console: "auto"` 并移除 `auto: true`；
+模板中的配置对象改为多行格式。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 

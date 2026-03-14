@@ -7,6 +7,19 @@
 
 ---
 
+## [3.1.8] - 2026-03-14
+
+### 变更
+
+- **Init 模板（logger）：** 生成配置使用
+  `logger.output.console: "auto"`，不再包含 `auto: true`。
+- **Init 模板（格式）：** `config-full.ts` 与 `config.ts`
+  中的配置对象改为多行格式 （如
+  `server.dev.hmr`、`logger.output`、database/socket/session 注释、
+  redirects、plugins、middlewares）。
+
+---
+
 ## [3.1.7] - 2026-03-14
 
 ### 变更

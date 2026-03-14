@@ -1906,12 +1906,11 @@ makeTempDir).
 
 ## 📋 Changelog
 
-### [3.1.7] - 2026-03-14
+### [3.1.8] - 2026-03-14
 
-**Changed**: Strip-load plugin moved to `strip-load-plugin.ts`; full build
-(`runBuildWithBuilder`) now passes the plugin in client config so `--build` also
-strips route `load` in client bundle. Full changelog:
-[CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Changed**: Init templates use `logger.output.console: "auto"` and drop
+`auto: true`; config objects in templates formatted to multi-line. Full
+changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 
