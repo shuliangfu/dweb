@@ -7,7 +7,7 @@
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](../../LICENSE)
-[![Tests](https://img.shields.io/badge/tests-818%20passed-brightgreen)](./TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-839%20passed-brightgreen)](./TEST_REPORT.md)
 
 ---
 
@@ -724,58 +724,6 @@ export function loadCommonDevConfig() {
     logLevel: "debug",
   };
 }
-```
-
-#### 共享 App 实例
-
-在某些场景下，可能需要多个应用或工具（如 console CLI）共享同一个 App 实例：
-
-```typescript
-// src/common/app.ts
-// 创建共享的 App 实例
-import type { AppConfig } from "jsr:@dreamer/dweb";
-import { App } from "jsr:@dreamer/dweb";
-import { loadCommonConfig } from "./config/main.ts";
-
-let sharedApp: App | null = null;
-
-export function getSharedApp(): App {
-  if (!sharedApp) {
-    sharedApp = new App(loadCommonConfig() as AppConfig);
-  }
-  return sharedApp;
-}
-
-export function createApp(config?: Partial<AppConfig>): App {
-  return new App({ ...loadCommonConfig(), ...config } as AppConfig);
-}
-```
-
-**使用共享实例**：
-
-```typescript
-// src/backend/main.ts（默认使用 src 目录）
-import { createApp } from "../common/app.ts";
-
-// 通过 createApp 传入后端特定配置（server、router 等）
-const app = createApp({
-  name: "backend",
-  server: { port: 3000, host: "localhost" },
-  router: { routesDir: "./src/backend/routes" },
-  render: { engine: "preact", mode: "ssr" },
-});
-await app.start();
-```
-
-```typescript
-// console CLI 工具中使用
-import { getDatabaseManager } from "jsr:@dreamer/dweb";
-import { getSharedApp } from "../common/app.ts";
-
-const app = getSharedApp(); // 共享实例（loadCommonConfig 需包含 database 配置）
-const manager = getDatabaseManager(app.container);
-const db = manager.getConnection("default");
-// 使用数据库服务执行 CLI 命令（需配置 config.database）
 ```
 
 **多应用模式配置和启动**：
@@ -1780,7 +1728,6 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 | **代码共享** | 直接共享                                           | 通过 common 目录共享                                                       |
 | **启动方式** | 单一入口                                           | 多个入口（可并行启动）                                                     |
 | **复杂度**   | 低                                                 | 中高                                                                       |
-| **共享实例** | 直接使用                                           | 通过 getSharedApp() 获取共享实例                                           |
 
 **选择建议**：
 
@@ -1962,13 +1909,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📊 测试报告
 
-单元测试结果见 [TEST_REPORT.md](./TEST_REPORT.md)。
+详细结果见 [TEST_REPORT.md](./TEST_REPORT.md)。
 
-**测试总结**：共 48 个单元测试文件、689 个用例全部通过（3 个 Windows
-专属用例在非 Windows 时忽略）。覆盖
-config、router、plugin、build、render、windows
-等核心模块。路径与配置加载相关测试已支持 Windows
-跨平台（pathToFileUrl、makeTempDir）。
+**测试总结**：共 83 个测试文件、839 个用例通过（8 个忽略：2 个 Windows
+专属、6 个 e2e SSG/SSR 下「注入 layout/页面 load 数据」）。覆盖
+单元（config、router、plugin、build、render、windows 等）、e2e 浏览器渲染与
+集成构建。路径与配置加载测试已支持 Windows 跨平台（pathToFileUrl、makeTempDir）。
 
 ---
 
@@ -1992,8 +1938,7 @@ config、router、plugin、build、render、windows
 - **按需使用**：可仅使用 dweb，或按需安装其他 @dreamer/*
   包（database、cache、storage 等）
 - **类型安全**：完整 TypeScript 类型支持
-- **应用模式**：支持单应用与多应用模式；可共享 App 实例（如
-  getSharedApp）供多入口或 CLI 使用
+- **应用模式**：支持单应用与多应用模式
 
 ---
 

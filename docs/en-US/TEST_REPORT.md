@@ -6,9 +6,9 @@
 
 | Item             | Value                 |
 | ---------------- | --------------------- |
-| Framework        | 3.0.88                |
+| Framework        | 3.1.8                 |
 | Test framework   | @dreamer/test@^1.0.15 |
-| Test date        | 2026-02-24            |
+| Test date        | 2026-03-14            |
 | Test environment | Deno 2.x / Bun 1.x    |
 
 ---
@@ -19,13 +19,13 @@
 
 | Metric           | Count                                    |
 | ---------------- | ---------------------------------------- |
-| Test files       | 83+                                      |
-| Total test cases | 833                                      |
-| Passed           | 833                                      |
-| Ignored          | 2                                        |
+| Test files       | 83                                       |
+| Total test cases | 847 (839 passed + 8 ignored)             |
+| Passed           | 839                                      |
+| Ignored          | 8                                        |
 | Failed           | 0                                        |
 | Pass rate        | 100%                                     |
-| Execution time   | ~6m18s (`deno test -A tests` single run) |
+| Execution time   | ~7m25s (`deno test -A tests` single run) |
 
 ### Test File Statistics
 
@@ -86,8 +86,9 @@
 | `cmd-update.test.ts`            | 4              | ✅ All passed |
 | `cli.test.ts`                   | 2              | ✅ All passed |
 
-> **Note**: 2 cases in `windows.test.ts` are Windows-only (skipped via `skipIf`
-> on non-Windows)
+> **Note**: 8 cases ignored in total: 2 in `windows.test.ts` (Windows-only,
+> skipped via `skipIf` on non-Windows); 6 in e2e browser SSG/SSR tests
+> (“应能注入 layout 与页面 load 数据” skipped in SSG/SSR mode).
 
 #### E2E Tests (tests/e2e/)
 
@@ -109,7 +110,7 @@
 | `browser-render-view-hybrid.test.ts`        | 9          | ✅ All passed | View Hybrid                                               |
 | `browser-render-view-hybrid-flat.test.ts`   | 9          | ✅ All passed | View Hybrid (no src)                                      |
 | `server-request.test.ts`                    | 3          | ✅ All passed | Server starts and returns HTML                            |
-| **Subtotal**                                | **138**    | ✅ All passed | Included in total ~6m18s                                  |
+| **Subtotal**                                | **138**    | ✅ All passed | Included in total ~7m25s (6 e2e cases ignored in SSG/SSR) |
 
 #### Integration Tests (tests/integration/)
 

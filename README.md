@@ -7,7 +7,7 @@
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-818%20passed-brightgreen)](./docs/en-US/TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-839%20passed-brightgreen)](./docs/en-US/TEST_REPORT.md)
 
 ---
 
@@ -740,59 +740,6 @@ export function loadCommonDevConfig() {
     logLevel: "debug",
   };
 }
-```
-
-#### Shared App instance
-
-In some cases you may need multiple apps or tools (e.g. console CLI) to share
-one App instance:
-
-```typescript
-// src/common/app.ts
-// Create shared App instance
-import type { AppConfig } from "jsr:@dreamer/dweb";
-import { App } from "jsr:@dreamer/dweb";
-import { loadCommonConfig } from "./config/main.ts";
-
-let sharedApp: App | null = null;
-
-export function getSharedApp(): App {
-  if (!sharedApp) {
-    sharedApp = new App(loadCommonConfig() as AppConfig);
-  }
-  return sharedApp;
-}
-
-export function createApp(config?: Partial<AppConfig>): App {
-  return new App({ ...loadCommonConfig(), ...config } as AppConfig);
-}
-```
-
-**Using shared instance**:
-
-```typescript
-// src/backend/main.ts (default uses src/)
-import { createApp } from "../common/app.ts";
-
-// Pass backend-specific config (server, router, etc.) via createApp
-const app = createApp({
-  name: "backend",
-  server: { port: 3000, host: "localhost" },
-  router: { routesDir: "./src/backend/routes" },
-  render: { engine: "preact", mode: "ssr" },
-});
-await app.start();
-```
-
-```typescript
-// In console CLI
-import { getDatabaseManager } from "jsr:@dreamer/dweb";
-import { getSharedApp } from "../common/app.ts";
-
-const app = getSharedApp(); // Shared instance (loadCommonConfig must include database)
-const manager = getDatabaseManager(app.container);
-const db = manager.getConnection("default");
-// Use db for CLI commands (requires config.database)
 ```
 
 **Multi-app mode config and startup**:
@@ -1725,10 +1672,9 @@ manual reload.
 | **Structure**       | Simple (routes, main.ts or src/routes, src/main.ts) | Complex (backend, frontend, mobile or src/backend, src/frontend, src/mobile) |
 | **Config**          | Single config dir                                   | Per-app config + shared (common/config)                                      |
 | **Use case**        | Small/medium, full-stack                            | Large, frontend/backend split, multi-platform                                |
-| **Sharing**         | Direct                                              | Via common/                                                                  |
-| **Startup**         | Single entry                                        | Multiple entries (can run in parallel)                                       |
-| **Complexity**      | Low                                                 | Medium–high                                                                  |
-| **Shared instance** | Direct use                                          | Via getSharedApp()                                                           |
+| **Sharing**    | Direct                                              | Via common/                                                                  |
+| **Startup**    | Single entry                                        | Multiple entries (can run in parallel)                                       |
+| **Complexity** | Low                                                 | Medium–high                                                                  |
 
 **Recommendation**:
 
@@ -1896,11 +1842,11 @@ Install with `deno add jsr:@dreamer/<package-name>`. See
 
 See [TEST_REPORT.md](./docs/en-US/TEST_REPORT.md).
 
-**Summary**: 56 test files, 480 tests, all passing. Covers unit tests (config,
-app, router, plugin, build, render, etc.), e2e tests (server request
-validation), and integration tests (config lifecycle, CSR/SSR/SSG/Hybrid build).
-Path and config-loader tests support Windows cross-platform (pathToFileUrl,
-makeTempDir).
+**Summary**: 83 test files, 839 tests passing (8 ignored: 2 Windows-only, 6 e2e
+“inject layout/page load data” in SSG/SSR mode). Covers unit tests (config,
+app, router, plugin, build, render, windows, etc.), e2e browser-render tests,
+and integration tests (config lifecycle, CSR/SSR/SSG/Hybrid build). Path and
+config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ---
 
@@ -1924,8 +1870,7 @@ changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 - **Optional**: Use dweb alone or install other @dreamer/* libs (database,
   cache, storage, etc.) as needed
 - **Type safety**: Full TypeScript support
-- **Modes**: Single-app and multi-app; can share App instance (e.g.
-  getSharedApp) for multiple entry points or CLI
+- **Modes**: Single-app and multi-app
 
 ---
 
