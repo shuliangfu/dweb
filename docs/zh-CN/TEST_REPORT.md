@@ -25,7 +25,7 @@
 | 忽略用例数   | 8                                         |
 | 失败用例数   | 0                                         |
 | 通过率       | 100%                                      |
-| 测试执行时间 | 约 7m25s（`deno test -A tests` 一次执行）  |
+| 测试执行时间 | 约 7m25s（`deno test -A tests` 一次执行） |
 
 ### 测试文件统计
 
@@ -86,30 +86,30 @@
 | `cmd-update.test.ts`            | 4            | ✅ 全部通过 |
 | `cli.test.ts`                   | 2            | ✅ 全部通过 |
 
-> **说明**：共 8 个用例忽略：`windows.test.ts` 中 2 个为 Windows 平台专属
-> （非 Windows 上 `skipIf` 忽略）；e2e 浏览器 SSG/SSR 中 6 个
-> 「应能注入 layout 与页面 load 数据」在 SSG/SSR 模式下忽略。
+> **说明**：共 8 个用例忽略：`windows.test.ts` 中 2 个为 Windows 平台专属 （非
+> Windows 上 `skipIf` 忽略）；e2e 浏览器 SSG/SSR 中 6 个 「应能注入 layout
+> 与页面 load 数据」在 SSG/SSR 模式下忽略。
 
 #### 端到端测试 (tests/e2e/)
 
-| 文件名                                      | 测试用例数 | 状态        | 说明                                                    |
-| ------------------------------------------- | ---------- | ----------- | ------------------------------------------------------- |
-| `browser-render-preact-csr.test.ts`         | 9          | ✅ 全部通过 | Preact CSR basic/advanced：首页、关于、计数器、metadata |
-| `browser-render-preact-ssr.test.ts`         | 9          | ✅ 全部通过 | Preact SSR                                              |
-| `browser-render-preact-ssg.test.ts`         | 9          | ✅ 全部通过 | Preact SSG                                              |
-| `browser-render-preact-hybrid.test.ts`      | 9          | ✅ 全部通过 | Preact Hybrid                                           |
-| `browser-render-preact-hybrid-flat.test.ts` | 9          | ✅ 全部通过 | Preact Hybrid（无 src）                                 |
-| `browser-render-react-csr.test.ts`          | 9          | ✅ 全部通过 | React CSR basic/advanced                                |
-| `browser-render-react-ssr.test.ts`          | 9          | ✅ 全部通过 | React SSR                                               |
-| `browser-render-react-ssg.test.ts`          | 9          | ✅ 全部通过 | React SSG                                               |
-| `browser-render-react-hybrid.test.ts`       | 9          | ✅ 全部通过 | React Hybrid                                            |
-| `browser-render-react-hybrid-flat.test.ts`  | 9          | ✅ 全部通过 | React Hybrid（无 src）                                  |
-| `browser-render-view-csr.test.ts`           | 9          | ✅ 全部通过 | View CSR                                                |
-| `browser-render-view-ssr.test.ts`           | 9          | ✅ 全部通过 | View SSR                                                |
-| `browser-render-view-ssg.test.ts`           | 9          | ✅ 全部通过 | View SSG                                                |
-| `browser-render-view-hybrid.test.ts`        | 9          | ✅ 全部通过 | View Hybrid                                             |
-| `browser-render-view-hybrid-flat.test.ts`   | 9          | ✅ 全部通过 | View Hybrid（无 src）                                   |
-| `server-request.test.ts`                    | 3          | ✅ 全部通过 | 启动服务器并返回 HTML                                   |
+| 文件名                                      | 测试用例数 | 状态        | 说明                                                      |
+| ------------------------------------------- | ---------- | ----------- | --------------------------------------------------------- |
+| `browser-render-preact-csr.test.ts`         | 9          | ✅ 全部通过 | Preact CSR basic/advanced：首页、关于、计数器、metadata   |
+| `browser-render-preact-ssr.test.ts`         | 9          | ✅ 全部通过 | Preact SSR                                                |
+| `browser-render-preact-ssg.test.ts`         | 9          | ✅ 全部通过 | Preact SSG                                                |
+| `browser-render-preact-hybrid.test.ts`      | 9          | ✅ 全部通过 | Preact Hybrid                                             |
+| `browser-render-preact-hybrid-flat.test.ts` | 9          | ✅ 全部通过 | Preact Hybrid（无 src）                                   |
+| `browser-render-react-csr.test.ts`          | 9          | ✅ 全部通过 | React CSR basic/advanced                                  |
+| `browser-render-react-ssr.test.ts`          | 9          | ✅ 全部通过 | React SSR                                                 |
+| `browser-render-react-ssg.test.ts`          | 9          | ✅ 全部通过 | React SSG                                                 |
+| `browser-render-react-hybrid.test.ts`       | 9          | ✅ 全部通过 | React Hybrid                                              |
+| `browser-render-react-hybrid-flat.test.ts`  | 9          | ✅ 全部通过 | React Hybrid（无 src）                                    |
+| `browser-render-view-csr.test.ts`           | 9          | ✅ 全部通过 | View CSR                                                  |
+| `browser-render-view-ssr.test.ts`           | 9          | ✅ 全部通过 | View SSR                                                  |
+| `browser-render-view-ssg.test.ts`           | 9          | ✅ 全部通过 | View SSG                                                  |
+| `browser-render-view-hybrid.test.ts`        | 9          | ✅ 全部通过 | View Hybrid                                               |
+| `browser-render-view-hybrid-flat.test.ts`   | 9          | ✅ 全部通过 | View Hybrid（无 src）                                     |
+| `server-request.test.ts`                    | 3          | ✅ 全部通过 | 启动服务器并返回 HTML                                     |
 | **小计**                                    | **138**    | ✅ 全部通过 | 执行时间含在总时长约 7m25s 内（SSG/SSR 下 6 个 e2e 忽略） |
 
 #### 集成测试 (tests/integration/)

@@ -7,6 +7,16 @@
 
 ---
 
+## [3.1.9] - 2026-03-14
+
+### 变更
+
+- **依赖**：将 @dreamer/render 更新至 ^1.1.1、@dreamer/view 更新至 ^1.1.4（根
+  目录及全部示例：preact/react/view 的 CSR、SSR、SSG、hybrid、hybrid-flat），
+  以兼容 render v1.1.1 与 view v1.1.4。
+
+---
+
 ## [3.1.8] - 2026-03-14
 
 ### 变更

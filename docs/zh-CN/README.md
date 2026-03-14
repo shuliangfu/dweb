@@ -1911,19 +1911,20 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 详细结果见 [TEST_REPORT.md](./TEST_REPORT.md)。
 
-**测试总结**：共 83 个测试文件、839 个用例通过（8 个忽略：2 个 Windows
-专属、6 个 e2e SSG/SSR 下「注入 layout/页面 load 数据」）。覆盖
+**测试总结**：共 83 个测试文件、839 个用例通过（8 个忽略：2 个 Windows 专属、6
+个 e2e SSG/SSR 下「注入 layout/页面 load 数据」）。覆盖
 单元（config、router、plugin、build、render、windows 等）、e2e 浏览器渲染与
-集成构建。路径与配置加载测试已支持 Windows 跨平台（pathToFileUrl、makeTempDir）。
+集成构建。路径与配置加载测试已支持 Windows
+跨平台（pathToFileUrl、makeTempDir）。
 
 ---
 
 ## 📋 变更日志
 
-### [3.1.8] - 2026-03-14
+### [3.1.9] - 2026-03-14
 
-**变更**：Init 模板使用 `logger.output.console: "auto"` 并移除 `auto: true`；
-模板中的配置对象改为多行格式。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
+**变更**：将 @dreamer/render 更新至 ^1.1.1、@dreamer/view 更新至 ^1.1.4（根
+目录及全部示例）。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 

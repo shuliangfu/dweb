@@ -8,6 +8,16 @@ and this project adheres to
 
 ---
 
+## [3.1.9] - 2026-03-14
+
+### Changed
+
+- **Dependencies**: Bumped @dreamer/render to ^1.1.1 and @dreamer/view to ^1.1.4
+  in root and all examples (preact/react/view CSR, SSR, SSG, hybrid,
+  hybrid-flat) for compatibility with render v1.1.1 and view v1.1.4.
+
+---
+
 ## [3.1.8] - 2026-03-14
 
 ### Changed

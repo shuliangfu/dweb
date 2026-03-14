@@ -1666,15 +1666,15 @@ manual reload.
 
 ## Application mode comparison
 
-| Aspect              | Single-app                                          | Multi-app                                                                    |
-| ------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------- |
-| **App instances**   | One                                                 | Multiple                                                                     |
-| **Structure**       | Simple (routes, main.ts or src/routes, src/main.ts) | Complex (backend, frontend, mobile or src/backend, src/frontend, src/mobile) |
-| **Config**          | Single config dir                                   | Per-app config + shared (common/config)                                      |
-| **Use case**        | Small/medium, full-stack                            | Large, frontend/backend split, multi-platform                                |
-| **Sharing**    | Direct                                              | Via common/                                                                  |
-| **Startup**    | Single entry                                        | Multiple entries (can run in parallel)                                       |
-| **Complexity** | Low                                                 | Medium–high                                                                  |
+| Aspect            | Single-app                                          | Multi-app                                                                    |
+| ----------------- | --------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **App instances** | One                                                 | Multiple                                                                     |
+| **Structure**     | Simple (routes, main.ts or src/routes, src/main.ts) | Complex (backend, frontend, mobile or src/backend, src/frontend, src/mobile) |
+| **Config**        | Single config dir                                   | Per-app config + shared (common/config)                                      |
+| **Use case**      | Small/medium, full-stack                            | Large, frontend/backend split, multi-platform                                |
+| **Sharing**       | Direct                                              | Via common/                                                                  |
+| **Startup**       | Single entry                                        | Multiple entries (can run in parallel)                                       |
+| **Complexity**    | Low                                                 | Medium–high                                                                  |
 
 **Recommendation**:
 
@@ -1843,20 +1843,19 @@ Install with `deno add jsr:@dreamer/<package-name>`. See
 See [TEST_REPORT.md](./docs/en-US/TEST_REPORT.md).
 
 **Summary**: 83 test files, 839 tests passing (8 ignored: 2 Windows-only, 6 e2e
-“inject layout/page load data” in SSG/SSR mode). Covers unit tests (config,
-app, router, plugin, build, render, windows, etc.), e2e browser-render tests,
-and integration tests (config lifecycle, CSR/SSR/SSG/Hybrid build). Path and
+“inject layout/page load data” in SSG/SSR mode). Covers unit tests (config, app,
+router, plugin, build, render, windows, etc.), e2e browser-render tests, and
+integration tests (config lifecycle, CSR/SSR/SSG/Hybrid build). Path and
 config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ---
 
 ## 📋 Changelog
 
-### [3.1.8] - 2026-03-14
+### [3.1.9] - 2026-03-14
 
-**Changed**: Init templates use `logger.output.console: "auto"` and drop
-`auto: true`; config objects in templates formatted to multi-line. Full
-changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Changed**: Bumped @dreamer/render to ^1.1.1 and @dreamer/view to ^1.1.4 (root
+and all examples). Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 
