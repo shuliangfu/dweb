@@ -121,15 +121,19 @@ function getChunkFileNameForComponent(
     n.endsWith(".js") && n !== CLIENT_OUTPUT_MAIN_FILENAME
   );
 
-  // 多段路径（如 admin/index）：优先匹配含完整路径的 chunk，避免与根 index 混淆
+  // 多段路径（如 desktop/basic/button、desktop/index）：优先匹配含完整路径的 chunk，避免与首段同名 chunk 混淆
   if (componentPath.includes("/")) {
-    const firstSegment = componentPath.split("/")[0];
+    const segments = componentPath.split("/");
+    const firstSegment = segments[0];
     const pathAsDash = componentPath.replace(/\//g, "-");
     const pathAsUnderscore = componentPath.replace(/\//g, "_");
     const pathAsSlash = componentPath;
     const pathVariants = [pathAsDash, pathAsUnderscore, pathAsSlash];
-    // 优先尝试 key 中含路径段的 chunk（如 routes/admin/index-XXX.js、admin-index-XXX.js），提高命中率
+    // 优先尝试 key 中含完整路径的 chunk（如 desktop-basic-button-XXX.js），再考虑首段
     jsOnly = [...jsOnly].sort((a, b) => {
+      const aHasFull = pathVariants.some((pv) => a.includes(pv)) ? 0 : 1;
+      const bHasFull = pathVariants.some((pv) => b.includes(pv)) ? 0 : 1;
+      if (aHasFull !== bHasFull) return aHasFull - bHasFull;
       const aHasPath = firstSegment && a.includes(firstSegment) ? 0 : 1;
       const bHasPath = firstSegment && b.includes(firstSegment) ? 0 : 1;
       return aHasPath - bHasPath;
@@ -139,17 +143,12 @@ function getChunkFileNameForComponent(
       const baseNoHash = base.replace(/-[A-Za-z0-9]{6,10}$/, "");
       const baseLastPart = base.includes("/") ? base.split("/").pop()! : base;
       const baseLastNoHash = baseLastPart.replace(/-[A-Za-z0-9]{6,10}$/, "");
-      // 支持 key 为 routes/admin/index-XXX.js 等形式（baseNoHash 含路径）
       const baseEndsWithPath = baseNoHash === pathAsSlash ||
         baseNoHash.endsWith("/" + pathAsSlash) ||
         baseNoHash.endsWith(pathAsSlash) ||
         baseNoHash.endsWith("/" + pathAsDash) ||
         baseNoHash.endsWith(pathAsDash) ||
         baseNoHash.endsWith(pathAsUnderscore);
-      // esbuild 对 bgb-x-admin/index 可能只产出 bgb-x-admin-XXX.js（首段作 base），需单独匹配
-      if (baseNoHash === firstSegment || base.startsWith(firstSegment + "-")) {
-        return name;
-      }
       for (const pv of pathVariants) {
         if (
           baseNoHash === pv ||
@@ -164,8 +163,14 @@ function getChunkFileNameForComponent(
       if (pathVariants.some((pv) => base === pv || baseLastPart === pv)) {
         return name;
       }
+      // 仅两段路径（如 desktop/index）且 chunk 为首段名时，允许匹配，避免 desktop/index 误用 desktop-basic-button
+      if (
+        segments.length === 2 &&
+        (baseNoHash === firstSegment || base.startsWith(firstSegment + "-"))
+      ) {
+        return name;
+      }
     }
-    // 多段路径未命中时不再用 segment 匹配，避免误用根 index 的 chunk
     return null;
   }
 
@@ -543,7 +548,7 @@ export function clearLayoutCache(): void {
   // 将服务端注入的 layoutData 合并到各 layout 的 props，使 hydrate 时 Layout 能收到 data
   const mergeLayoutDataSnippet =
     `const _layoutData = (hydrationData.layoutData && Array.isArray(hydrationData.layoutData)) ? hydrationData.layoutData : [];
-      const _layouts = layouts.map((l, i) => ({ component: l.component, props: _layoutData[i] ?? l.props ?? {} }));`;
+      const _layouts: LayoutComponent[] = layouts.map((l, i) => ({ component: l.component, props: (_layoutData[i] ?? l.props ?? {}) as Record<string, unknown> }));`;
   /** View Hybrid：首屏只 setViewState + createReactiveRootHydrate，一次水合同一根后续 patch；非 View 走 render 的 hydrate。 */
   const hybridInitBlock = isViewEngine
     ? `${mergeLayoutDataSnippet}
@@ -584,8 +589,13 @@ export function clearLayoutCache(): void {
       }
       (g as DwebGlobal).__DWEB_LAST_PATHNAME__ = _pathAndSearch;`;
   // 客户端导航：将 __data 返回的 layoutData 合并到 layouts，使点击链接切换页面时 layout 也能收到 data；页面只收 params/query/data
-  const onRouteChangeMergeLayoutSnippet =
-    `var _navLayoutData = (_navProps && Array.isArray(_navProps.layoutData)) ? _navProps.layoutData : [];
+  // 嵌套布局时按当前 match 加载 layoutListNav，避免回到首页等仍用初始路由的 layouts 导致侧栏残留
+  const onRouteChangeMergeLayoutSnippet = useNestedLayouts
+    ? `const layoutListNav = await loadLayouts(match);
+      var _navLayoutData = (_navProps && Array.isArray(_navProps.layoutData)) ? _navProps.layoutData : [];
+      var _layoutsNav: LayoutComponent[] = _navLayoutData.length ? layoutListNav.map(function(l, i){ return { component: l.component, props: (_navLayoutData[i] ?? l.props ?? {}) as Record<string, unknown> }; }) : layoutListNav;
+      var _pageProps = _navProps ? { params: _navProps.params || {}, query: _navProps.query || {}, data: _navProps.data } : { params: match.params || {}, query: match.query || {} };`
+    : `var _navLayoutData = (_navProps && Array.isArray(_navProps.layoutData)) ? _navProps.layoutData : [];
       var _layoutsNav = _navLayoutData.length ? layouts.map(function(l, i){ return { component: l.component, props: _navLayoutData[i] ?? l.props ?? {} }; }) : layouts;
       var _pageProps = _navProps ? { params: _navProps.params || {}, query: _navProps.query || {}, data: _navProps.data } : { params: match.params || {}, query: match.query || {} };`;
   /**
@@ -623,7 +633,7 @@ export function clearLayoutCache(): void {
       var _layoutData = (__use && __d && Array.isArray(__d.layoutData)) ? __d.layoutData : [];
       var _props = __use ? (function(){ (g as DwebGlobal).__DATA__ = undefined; return __d?.page ?? { params: match.params, query: match.query }; })() : { params: match.params, query: match.query };`;
   const csrMergeLayoutDataSnippet =
-    `var _layoutsCsr = (__use && _layoutData.length) ? layoutList.map(function(l, i){ return { component: l.component, props: _layoutData[i] ?? l.props ?? {} }; }) : layoutList;`;
+    `var _layoutsCsr: LayoutComponent[] = (__use && _layoutData.length) ? layoutList.map(function(l, i){ return { component: l.component, props: (_layoutData[i] ?? l.props ?? {}) as Record<string, unknown> }; }) : layoutList;`;
   const setLastPathSnippet =
     `(g as DwebGlobal).__DWEB_LAST_PATHNAME__ = (typeof _win.location !== "undefined" && _win.location.pathname ? _win.location.pathname : "/") + (typeof _win.location !== "undefined" && _win.location.search ? _win.location.search : "");`;
   const renderCurrentRouteSnippet = isViewEngine
@@ -686,6 +696,8 @@ export interface DwebGlobal {
     params?: Record<string, string>;
     query?: Record<string, string>;
     component?: string;
+    /** 各层 layout 的 props 数组（SSR/hydration 时由服务端注入） */
+    layoutData?: unknown[];
   };
   __DWEB_MODE__?: "csr" | "hybrid" | "ssr" | "ssg";
   /** 是否为开发模式（服务端注入，用于区分 dev/prod 行为，如 CSS 强制刷新仅 dev 执行） */
@@ -948,26 +960,30 @@ export async function setupHydrationRouterAndHmr(opts: {
   // 先启动路由器，确保链接点击拦截器尽早注册（避免 hydrate 失败时链接无法响应）
   router.start();
   if (isHybridMode && !isHydratedRef.current) {
-    try {
-      const hydrationData = g.__DATA__!;
-      const componentPath = hydrationData.component || "";
-      const module = await loadPageModule(componentPath) as Record<string, unknown>;
-      const PageComponent = module?.default ?? module?.Page;
-      if (!PageComponent) {
-        const msg = ${
+    const currentPath = (typeof _win.location !== "undefined" && _win.location?.pathname) ? _win.location.pathname.replace(/\\/$/, "") || "/" : "/";
+    const dataRoute = (g.__DATA__?.route ?? "").replace(/\\/$/, "") || "/";
+    if (dataRoute === currentPath) {
+      try {
+        const hydrationData = g.__DATA__!;
+        const componentPath = hydrationData.component || "";
+        const module = await loadPageModule(componentPath) as Record<string, unknown>;
+        const PageComponent = module?.default ?? module?.Page;
+        if (!PageComponent) {
+          const msg = ${
     JSON.stringify($tr("client.hydrationFailed"))
   } + (componentPath ? \`: component "\${componentPath}" not found\` : "");
-        console.error(msg);
-        renderError(containerId, new Error(msg));
-        return;
-      }
-      const skipLayouts = module?.inheritLayout === false;
-      ${hybridInitBlock}
-    } catch (error) {
-      console.error(${
+          console.error(msg);
+          renderError(containerId, new Error(msg));
+          return;
+        }
+        const skipLayouts = module?.inheritLayout === false;
+        ${hybridInitBlock}
+      } catch (error) {
+        console.error(${
     JSON.stringify($tr("client.hydrationFailed"))
   } + ":", error);
-      renderError(containerId, error);
+        renderError(containerId, error);
+      }
     }
   }
   g.__HMR_REFRESH__ = (hmrOpts) => {

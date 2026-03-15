@@ -33,7 +33,7 @@
     "cssnano": "npm:cssnano@7.0.3",
     "tailwindcss": "npm:tailwindcss@4.1.18",
     "esbuild": "npm:esbuild@0.27.2",
-    "@dreamer/view": "jsr:@dreamer/view@^1.1.3"
+    "@dreamer/view": "jsr:@dreamer/view@^1.1.5"
   },
   "compilerOptions": {
     "jsx": "react-jsx",

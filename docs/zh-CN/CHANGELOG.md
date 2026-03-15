@@ -7,6 +7,29 @@
 
 ---
 
+## [3.1.10] - 2026-03-15
+
+### 修复
+
+- **仅当路由与 URL 一致时执行 hydrate / 使用 **DATA**：** Hybrid/SSR/SSG 下仅在
+  `__DATA__.route` 与当前 pathname 一致时执行 hydrate；CSR 首屏同样仅在
+  `__DATA__.route` 与当前路由一致时使用服务端注入的 `__DATA__`（原有 `__use`
+  校验）。修复直接访问嵌套路由（如 `/desktop`）时侧栏需刷新才出现的问题。
+- **onRouteChange 使用当前路由的 layouts：** 客户端导航改为按目标路由调用
+  `loadLayouts(match)`，修复回到首页后桌面侧栏仍残留的问题。
+- **多级路由的 HMR chunk 匹配：** `getChunkFileNameForComponent`
+  优先按完整路径（如 `desktop-basic-button`）匹配，仅在两段路径（如
+  `desktop/index`）时允许首段匹配，修复在 `/desktop/basic/button` 下改
+  `button.tsx` 热更后误渲染到 `/desktop/index` 的问题。
+
+### 新增
+
+- **生成 _client.dep.tsx：** `DwebGlobal.__DATA__` 增加
+  `layoutData?: unknown[]`，布局数组标注为 `LayoutComponent[]` 并做 props
+  断言，便于类型检查。
+
+---
+
 ## [3.1.9] - 2026-03-14
 
 ### 变更

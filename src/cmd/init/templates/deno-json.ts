@@ -67,9 +67,9 @@ export function getDenoJson(
     .join(",\n");
   const importsNpmPart = npmImports ? `,\n\n${npmImports}` : "";
   const jsxImportSource = getJsxImportSource(opts.engine);
-  /** view 引擎需在 compilerOptions 中声明 types 指向 jsx.d.ts，供 TSX 类型检查 */
+  /** view 引擎需在 compilerOptions 中声明 types 指向 jsx.d.ts，供 TSX 类型检查（使用 ./ 相对路径） */
   const compilerTypes = opts.engine === "view"
-    ? ',\n    "types": ["jsx.d.ts"]'
+    ? ',\n    "types": ["./jsx.d.ts"]'
     : "";
 
   const isMulti = opts.appMode === "multi" && (opts.appNames?.length ?? 0) > 0;

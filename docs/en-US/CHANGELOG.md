@@ -8,6 +8,33 @@ and this project adheres to
 
 ---
 
+## [3.1.10] - 2026-03-15
+
+### Fixed
+
+- **Hydrate / CSR only when route matches URL:** Generated client runs hydrate
+  (Hybrid/SSR/SSG) only when `__DATA__.route` equals the current pathname; CSR
+  first-screen render already used `__DATA__` only when `__DATA__.route` matched
+  the current route (`__use` check). Fixes direct navigation to nested routes
+  (e.g. `/desktop`) where the sidebar did not appear until refresh.
+- **onRouteChange uses current route layouts:** Client navigation now loads
+  layouts via `loadLayouts(match)` for the target route instead of the initial
+  route. Fixes the desktop sidebar persisting when navigating back to the
+  homepage.
+- **HMR chunk matching for multi-segment routes:**
+  `getChunkFileNameForComponent` now prefers full path match (e.g.
+  `desktop-basic-button`) and only allows first-segment match for two-segment
+  paths (e.g. `desktop/index`). Fixes hot reload on `/desktop/basic/button`
+  incorrectly rendering `/desktop/index` after editing `button.tsx`.
+
+### Added
+
+- **Generated _client.dep.tsx:** `DwebGlobal.__DATA__` now includes
+  `layoutData?: unknown[]`; layout arrays are typed as `LayoutComponent[]` with
+  proper props cast for type-checking.
+
+---
+
 ## [3.1.9] - 2026-03-14
 
 ### Changed
