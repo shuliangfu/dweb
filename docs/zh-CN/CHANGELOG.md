@@ -7,6 +7,22 @@
 
 ---
 
+## [3.1.11] - 2026-03-15
+
+### 新增
+
+- **zh-TW（繁体中文）语言包：** 新增 `zh-TW.json`，并在
+  `SUPPORTED_APP_LANGUAGES`、`SUPPORTED_LOCALES`、`LOCALE_DATA` 中支持繁体中文。
+- **Init 模板注释与 i18n：** 初始化模板（`config-full.ts`、`config.ts`）为配置项
+  增加详细注释；各语言包（zh-CN、en-US、ja-JP 等）新增 `init.comments` 相关 i18n
+  key，供生成配置时使用。
+
+### 变更
+
+- **依赖：** @dreamer/view 升级至 ^1.1.6。
+
+---
+
 ## [3.1.10] - 2026-03-15
 
 ### 修复

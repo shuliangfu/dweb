@@ -37,17 +37,26 @@ export function getConfigMainTs(
 import type { AppConfig } from "@dreamer/dweb";
 
 export default {
+  /** ${$tr("init.comments.nameDesc")} */
   name: "${configName}",
+  /** ${$tr("init.comments.versionDesc")} */
   version: "1.0.0",
+  /** ${$tr("init.comments.routerDesc")} */
   router: {
+    /** ${$tr("init.comments.routesDirDesc")} */
     routesDir: "${routesDir}",
   },
+  /** ${$tr("init.comments.renderDesc")} */
   // ${$tr("init.comments.renderFullDoc")}
   render: {
+    /** ${$tr("init.comments.renderEngineDesc")} */
     engine: "${opts.engine}",
+    /** ${$tr("init.comments.renderModeDesc")} */
     mode: "${renderMode}",
     // debug: false,
+    // /** ${$tr("init.comments.ssrHydrate")} */
     // ssr: {
+    //   /** ${$tr("init.comments.ssrHydrateOption")} */
     //   hydrate: true,
     // },
     // ssg: {
@@ -57,12 +66,17 @@ export default {
     //   dynamicRoutes: {
     //     "/user/[id]": ["1", "2", "3"],
     //   }, // ${$tr("init.comments.dynamicRoutesExample")}
+    //   /** ${$tr("init.comments.ssgHydrateOption")} */
     //   hydrate: true,
     // },
   },
+  /** ${$tr("init.comments.loggerDesc")} */
   logger: {
+    /** ${$tr("init.comments.loggerLevelDesc")} */
     level: "info",
+    /** ${$tr("init.comments.loggerFormatDesc")} */
     format: "text",
+    /** ${$tr("init.comments.loggerOutputDesc")} */
     output: {
       console: "auto",
       file: {
@@ -74,8 +88,10 @@ export default {
       },
     },
   },
+  /** ${$tr("init.comments.buildDesc")} */
   build: {
     server: {
+      /** ${$tr("init.comments.useNativeCompileDesc")} */
       useNativeCompile: false,
     },
   },

@@ -1852,14 +1852,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.1.10] - 2026-03-15
+### [3.1.11] - 2026-03-15
 
-**Fixed**: Hydrate/CSR use server-injected `__DATA__` only when route matches
-current URL; onRouteChange uses layouts for target route (fixes sidebar
-persisting on homepage); HMR chunk matching for multi-segment routes (fixes hot
-reload on e.g. `/desktop/basic/button`). **Added**: `layoutData` in generated
-`DwebGlobal.__DATA__` and `LayoutComponent[]` types. Full changelog:
-[CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Added**: zh-TW (Traditional Chinese) locale; init template comments and
+`init.comments` i18n keys in all locale files. **Changed**: @dreamer/view to
+^1.1.6. Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 

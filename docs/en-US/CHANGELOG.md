@@ -8,6 +8,24 @@ and this project adheres to
 
 ---
 
+## [3.1.11] - 2026-03-15
+
+### Added
+
+- **zh-TW (Traditional Chinese) locale:** New `zh-TW.json` and support in
+  `SUPPORTED_APP_LANGUAGES`, `SUPPORTED_LOCALES`, and `LOCALE_DATA` for
+  Traditional Chinese.
+- **Init template comments and i18n:** Init templates (`config-full.ts`,
+  `config.ts`) now include detailed comments for options; all locale files
+  (zh-CN, en-US, ja-JP, etc.) include `init.comments` i18n keys for config
+  generation.
+
+### Changed
+
+- **Dependencies:** Bump @dreamer/view to ^1.1.6.
+
+---
+
 ## [3.1.10] - 2026-03-15
 
 ### Fixed

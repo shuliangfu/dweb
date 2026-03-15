@@ -102,6 +102,7 @@ export interface DatabaseAppConfig {
  */
 export const SUPPORTED_APP_LANGUAGES = [
   "zh-CN",
+  "zh-TW",
   "en-US",
   "ja-JP",
   "ko-KR",

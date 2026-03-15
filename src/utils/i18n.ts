@@ -20,8 +20,10 @@ import { setDwebErrorTranslator } from "./errors.ts";
 
 // 服务端：静态 import 在构建时内联，无需运行时 fetch
 
-// 中文
+// 简体中文
 import zhCN from "../locales/zh-CN.json" with { type: "json" };
+// 繁体中文
+import zhTW from "../locales/zh-TW.json" with { type: "json" };
 // 英文
 import enUS from "../locales/en-US.json" with { type: "json" };
 // 日文
@@ -50,6 +52,7 @@ let pendingLocale: string | null = null;
 /** 支持的 locale 列表 */
 const SUPPORTED_LOCALES = [
   "zh-CN",
+  "zh-TW",
   "en-US",
   "ja-JP",
   "ko-KR",
@@ -120,6 +123,7 @@ export function getDefaultAppLanguage(): AppLanguage {
 /** 预加载的翻译数据（构建时内联，服务端无需 fetch） */
 const LOCALE_DATA: Record<string, TranslationData> = {
   "zh-CN": zhCN as TranslationData,
+  "zh-TW": zhTW as TranslationData,
   "en-US": enUS as TranslationData,
   "ja-JP": jaJP as TranslationData,
   "ko-KR": koKR as TranslationData,

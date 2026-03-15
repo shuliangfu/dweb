@@ -1921,10 +1921,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.1.9] - 2026-03-14
+### [3.1.11] - 2026-03-15
 
-**变更**：将 @dreamer/render 更新至 ^1.1.1、@dreamer/view 更新至 ^1.1.4（根
-目录及全部示例）。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
+**新增**：zh-TW（繁体中文）语言包；init 模板注释与各语言包 `init.comments`
+i18n。 **变更**：@dreamer/view 升级至
+^1.1.6。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 
