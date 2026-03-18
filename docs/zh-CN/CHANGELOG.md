@@ -7,6 +7,18 @@
 
 ---
 
+## [3.1.12] - 2026-03-19
+
+### 变更
+
+- **View 引擎：页面内 state 变更时不再整树重渲染。** 生成的客户端改为使用
+  `_viewStateRoot` 包装：根 effect 仅读取 `getViewState()` 并渲染该包装层；完整
+  页面树（layouts + page）在包装层的 getter 内构建。页面级 state（如组件
+  signal）仅在该 getter 执行时被读取，因此更新时只重跑该层 effect，不再触发整树
+  重渲染（与 Segmented 等控件交互时不再出现所有 `data-view-dynamic` 闪动）。
+
+---
+
 ## [3.1.11] - 2026-03-15
 
 ### 新增

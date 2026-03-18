@@ -8,6 +8,20 @@ and this project adheres to
 
 ---
 
+## [3.1.12] - 2026-03-19
+
+### Changed
+
+- **View engine: avoid whole-tree re-render on page state change.** Generated
+  client now uses a `_viewStateRoot` wrapper: the root effect only reads
+  `getViewState()` and renders this wrapper; the full page tree (layouts + page)
+  is built inside the wrapper’s getter. Page-level state (e.g. component
+  signals) is only read when that getter runs, so updating it re-runs only that
+  effect and no longer triggers a full tree re-render (no more flashing of all
+  `data-view-dynamic` nodes when interacting with controls like Segmented).
+
+---
+
 ## [3.1.11] - 2026-03-15
 
 ### Added

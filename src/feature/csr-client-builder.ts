@@ -894,7 +894,17 @@ ${
 const [getViewState, setViewState] = createSignal({ page: null as unknown, props: {} as Record<string, unknown>, layouts: [] as LayoutComponent[], skipLayouts: false });
 let _viewReactiveRoot: { unmount: () => void } | null = null;
 
-/** View 引擎：无 reactive root 时创建。CSR 用 mount(selector, () => buildViewTree(getViewState()...)) 与 view 示例一致；Hybrid/SSR/SSG 且容器有服务端 HTML 时用 createReactiveRootHydrate。 */
+/** 包装组件：返回 getter，getter 内读 getViewState() 并 buildViewTree，使「页面内 state」只订阅本层 effect，避免整树重渲染（仅本层 data-view-dynamic 更新）。 */
+function _viewStateRoot(props: { getViewState: () => { page: unknown; props: Record<string, unknown>; layouts: LayoutComponent[]; skipLayouts: boolean } }) {
+  return () => {
+    const s = props.getViewState();
+    if (_win.__DWEB_DEBUG__) console.log("[dweb:view] ViewStateRoot getter", { hasPage: !!s.page, layoutsLen: s.layouts?.length ?? 0, skipLayouts: s.skipLayouts });
+    if (s.page == null && _win.__DWEB_DEBUG__) console.warn("[dweb:view] ViewStateRoot getter: s.page is null");
+    return buildViewTree(s.page, s.props, s.layouts, s.skipLayouts);
+  };
+}
+
+/** View 引擎：无 reactive root 时创建。根 effect 只读 getViewState() 并渲染 ViewStateRoot，页面内容在 ViewStateRoot 的 getter 内构建，页面内 state 变化时仅该 getter 的 effect 重跑，不整树重渲染。 */
 function _viewEnsureReactiveRoot(containerId: string): void {
   const el = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
   if (!el) {
@@ -908,10 +918,8 @@ function _viewEnsureReactiveRoot(containerId: string): void {
     if (_win.__DWEB_DEBUG__) console.log("[dweb:view] _viewEnsureReactiveRoot: clearing #" + containerId + (isHydrateMode ? " (mount mode)" : " (csr, replace loading shell)"));
     if (typeof (el as HTMLElement).replaceChildren === "function") (el as HTMLElement).replaceChildren(); else (el as HTMLElement).innerHTML = "";
     _viewReactiveRoot = mount("#" + containerId, () => {
-      const s = getViewState();
-      if (_win.__DWEB_DEBUG__) console.log("[dweb:view] mount fn", { hasPage: !!s.page, layoutsLen: s.layouts?.length ?? 0, skipLayouts: s.skipLayouts });
-      if (s.page == null && _win.__DWEB_DEBUG__) console.warn("[dweb:view] mount: s.page is null");
-      return buildViewTree(s.page, s.props, s.layouts, s.skipLayouts);
+      getViewState();
+      return buildViewTree(_viewStateRoot, { getViewState }, [], true);
     }, { noopIfNotFound: true });
     if (_win.__DWEB_DEBUG__) console.log("[dweb:view] _viewEnsureReactiveRoot: done, container childCount=" + (el as HTMLElement).childNodes.length);
     RENDER_STATE.lastUnmount = () => {

@@ -1921,11 +1921,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.1.11] - 2026-03-15
+### [3.1.12] - 2026-03-19
 
-**新增**：zh-TW（繁体中文）语言包；init 模板注释与各语言包 `init.comments`
-i18n。 **变更**：@dreamer/view 升级至
-^1.1.6。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
+**变更**：View 引擎在页面内 state 变更时不再整树重渲染，生成客户端使用
+`_viewStateRoot`
+包装，仅页面内容层更新。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 

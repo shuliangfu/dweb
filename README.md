@@ -1852,11 +1852,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.1.11] - 2026-03-15
+### [3.1.12] - 2026-03-19
 
-**Added**: zh-TW (Traditional Chinese) locale; init template comments and
-`init.comments` i18n keys in all locale files. **Changed**: @dreamer/view to
-^1.1.6. Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Changed**: View engine avoids whole-tree re-render on page state change;
+generated client uses `_viewStateRoot` wrapper so only the page content layer
+updates. Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 
