@@ -7,6 +7,18 @@
 
 ---
 
+## [3.1.13] - 2026-03-19
+
+### 变更
+
+- **View 引擎：布局与页面内容拆为两层 getter。** 生成客户端在 `_viewStateRoot`
+  外增加 `_viewPageContent`：布局在 `_viewStateRoot` 的 getter
+  内构建，仅页面正文 在 `_viewPageContent` 的 getter 内构建。页面内 state（如
+  Segmented 的 `value()`） 变更时只重跑页面内容层 effect，仅该层
+  `data-view-dynamic` 更新，不再整树重渲染。
+
+---
+
 ## [3.1.12] - 2026-03-19
 
 ### 变更

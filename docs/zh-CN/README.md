@@ -1921,11 +1921,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.1.12] - 2026-03-19
+### [3.1.13] - 2026-03-19
 
-**变更**：View 引擎在页面内 state 变更时不再整树重渲染，生成客户端使用
-`_viewStateRoot`
-包装，仅页面内容层更新。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
+**变更**：View 引擎将布局与页面内容拆为两层 getter（`_viewStateRoot` +
+`_viewPageContent`），页面内 state
+变更时仅页面内容层重跑。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 

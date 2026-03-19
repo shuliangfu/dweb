@@ -8,6 +8,19 @@ and this project adheres to
 
 ---
 
+## [3.1.13] - 2026-03-19
+
+### Changed
+
+- **View engine: split layout and page content into two getter layers.**
+  Generated client now uses `_viewPageContent` in addition to `_viewStateRoot`:
+  layouts are built in `_viewStateRoot`'s getter, and only the page body is
+  built in `_viewPageContent`'s getter. When page-level state (e.g. Segmented
+  `value()`) changes, only the page-content effect re-runs, so only that layer's
+  `data-view-dynamic` updates instead of the whole tree.
+
+---
+
 ## [3.1.12] - 2026-03-19
 
 ### Changed

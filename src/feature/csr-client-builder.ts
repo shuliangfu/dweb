@@ -894,17 +894,27 @@ ${
 const [getViewState, setViewState] = createSignal({ page: null as unknown, props: {} as Record<string, unknown>, layouts: [] as LayoutComponent[], skipLayouts: false });
 let _viewReactiveRoot: { unmount: () => void } | null = null;
 
-/** 包装组件：返回 getter，getter 内读 getViewState() 并 buildViewTree，使「页面内 state」只订阅本层 effect，避免整树重渲染（仅本层 data-view-dynamic 更新）。 */
+/** 仅渲染「当前页」的包装组件：返回 getter，getter 内读 getViewState() 并 buildViewTree(page, props)，不包含 layouts。页面内 state（如 value()）只在本 getter 的 effect 中被读，故仅本层重跑、仅本层 data-view-dynamic 更新。 */
+function _viewPageContent(props: { getViewState: () => { page: unknown; props: Record<string, unknown>; layouts: LayoutComponent[]; skipLayouts: boolean } }) {
+  return () => {
+    const s = props.getViewState();
+    if (_win.__DWEB_DEBUG__) console.log("[dweb:view] PageContent getter", { hasPage: !!s.page });
+    if (s.page == null && _win.__DWEB_DEBUG__) console.warn("[dweb:view] PageContent getter: s.page is null");
+    return buildViewTree(s.page, s.props, [], true);
+  };
+}
+
+/** 包装组件：返回 getter，getter 内读 getViewState()，用 layouts + _viewPageContent 构建树；路由变时本层重跑，页面内 state 变时仅 _viewPageContent 的 getter 重跑。 */
 function _viewStateRoot(props: { getViewState: () => { page: unknown; props: Record<string, unknown>; layouts: LayoutComponent[]; skipLayouts: boolean } }) {
   return () => {
     const s = props.getViewState();
     if (_win.__DWEB_DEBUG__) console.log("[dweb:view] ViewStateRoot getter", { hasPage: !!s.page, layoutsLen: s.layouts?.length ?? 0, skipLayouts: s.skipLayouts });
     if (s.page == null && _win.__DWEB_DEBUG__) console.warn("[dweb:view] ViewStateRoot getter: s.page is null");
-    return buildViewTree(s.page, s.props, s.layouts, s.skipLayouts);
+    return buildViewTree(_viewPageContent, { getViewState: props.getViewState }, s.layouts, s.skipLayouts);
   };
 }
 
-/** View 引擎：无 reactive root 时创建。根 effect 只读 getViewState() 并渲染 ViewStateRoot，页面内容在 ViewStateRoot 的 getter 内构建，页面内 state 变化时仅该 getter 的 effect 重跑，不整树重渲染。 */
+/** View 引擎：无 reactive root 时创建。根 effect 只读 getViewState() 并渲染 ViewStateRoot；布局在 ViewStateRoot getter 内，页面内容在 _viewPageContent getter 内，页面内 state 变化时仅页面层 effect 重跑。 */
 function _viewEnsureReactiveRoot(containerId: string): void {
   const el = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
   if (!el) {

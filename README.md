@@ -1852,11 +1852,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.1.12] - 2026-03-19
+### [3.1.13] - 2026-03-19
 
-**Changed**: View engine avoids whole-tree re-render on page state change;
-generated client uses `_viewStateRoot` wrapper so only the page content layer
-updates. Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Changed**: View engine splits layout and page content into two getter layers
+(`_viewStateRoot` + `_viewPageContent`); only the page-content layer re-runs on
+page state change. Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 
