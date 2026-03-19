@@ -1921,11 +1921,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.1.13] - 2026-03-19
+### [3.2.0] - 2026-03-19
 
-**变更**：View 引擎将布局与页面内容拆为两层 getter（`_viewStateRoot` +
-`_viewPageContent`），页面内 state
-变更时仅页面内容层重跑。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
+**变更**：View 引擎仅保留一层 `data-view-dynamic`；根 effect 直接返回布局 +
+页面树，仅 `_viewPageContent` 为
+getter。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 

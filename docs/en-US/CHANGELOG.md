@@ -8,6 +8,18 @@ and this project adheres to
 
 ---
 
+## [3.2.0] - 2026-03-19
+
+### Changed
+
+- **View engine: single data-view-dynamic layer.** Generated client no longer
+  wraps the root in a `_viewStateRoot` getter; the root effect now returns the
+  layout + page tree directly with only `_viewPageContent` as a getter. This
+  produces a single `data-view-dynamic` wrapper for page content instead of two
+  nested layers.
+
+---
+
 ## [3.1.13] - 2026-03-19
 
 ### Changed

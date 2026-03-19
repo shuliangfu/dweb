@@ -904,17 +904,7 @@ function _viewPageContent(props: { getViewState: () => { page: unknown; props: R
   };
 }
 
-/** 包装组件：返回 getter，getter 内读 getViewState()，用 layouts + _viewPageContent 构建树；路由变时本层重跑，页面内 state 变时仅 _viewPageContent 的 getter 重跑。 */
-function _viewStateRoot(props: { getViewState: () => { page: unknown; props: Record<string, unknown>; layouts: LayoutComponent[]; skipLayouts: boolean } }) {
-  return () => {
-    const s = props.getViewState();
-    if (_win.__DWEB_DEBUG__) console.log("[dweb:view] ViewStateRoot getter", { hasPage: !!s.page, layoutsLen: s.layouts?.length ?? 0, skipLayouts: s.skipLayouts });
-    if (s.page == null && _win.__DWEB_DEBUG__) console.warn("[dweb:view] ViewStateRoot getter: s.page is null");
-    return buildViewTree(_viewPageContent, { getViewState: props.getViewState }, s.layouts, s.skipLayouts);
-  };
-}
-
-/** View 引擎：无 reactive root 时创建。根 effect 只读 getViewState() 并渲染 ViewStateRoot；布局在 ViewStateRoot getter 内，页面内容在 _viewPageContent getter 内，页面内 state 变化时仅页面层 effect 重跑。 */
+/** View 引擎：无 reactive root 时创建。根 effect 读 getViewState() 并直接返回「布局 + _viewPageContent」树，不再包一层 _viewStateRoot getter，故整棵树仅 _viewPageContent 一个 getter，只产生一层 data-view-dynamic。路由变时根 effect 重跑，页面内 state 变时仅 _viewPageContent 的 getter 重跑。 */
 function _viewEnsureReactiveRoot(containerId: string): void {
   const el = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
   if (!el) {
@@ -928,8 +918,9 @@ function _viewEnsureReactiveRoot(containerId: string): void {
     if (_win.__DWEB_DEBUG__) console.log("[dweb:view] _viewEnsureReactiveRoot: clearing #" + containerId + (isHydrateMode ? " (mount mode)" : " (csr, replace loading shell)"));
     if (typeof (el as HTMLElement).replaceChildren === "function") (el as HTMLElement).replaceChildren(); else (el as HTMLElement).innerHTML = "";
     _viewReactiveRoot = mount("#" + containerId, () => {
-      getViewState();
-      return buildViewTree(_viewStateRoot, { getViewState }, [], true);
+      const s = getViewState();
+      if (_win.__DWEB_DEBUG__) console.log("[dweb:view] root effect", { hasPage: !!s.page, layoutsLen: s.layouts?.length ?? 0, skipLayouts: s.skipLayouts });
+      return buildViewTree(_viewPageContent, { getViewState }, s.layouts, s.skipLayouts);
     }, { noopIfNotFound: true });
     if (_win.__DWEB_DEBUG__) console.log("[dweb:view] _viewEnsureReactiveRoot: done, container childCount=" + (el as HTMLElement).childNodes.length);
     RENDER_STATE.lastUnmount = () => {

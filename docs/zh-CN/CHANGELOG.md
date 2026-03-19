@@ -7,6 +7,16 @@
 
 ---
 
+## [3.2.0] - 2026-03-19
+
+### 变更
+
+- **View 引擎：仅一层 data-view-dynamic。** 生成客户端不再使用 `_viewStateRoot`
+  getter 包装根；根 effect 直接返回「布局 + 页面」树，仅 `_viewPageContent` 为
+  getter，页面内容只产生一层 `data-view-dynamic` 包裹， 不再出现两层嵌套。
+
+---
+
 ## [3.1.13] - 2026-03-19
 
 ### 变更

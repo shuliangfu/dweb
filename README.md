@@ -1852,11 +1852,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.1.13] - 2026-03-19
+### [3.2.0] - 2026-03-19
 
-**Changed**: View engine splits layout and page content into two getter layers
-(`_viewStateRoot` + `_viewPageContent`); only the page-content layer re-runs on
-page state change. Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Changed**: View engine uses a single `data-view-dynamic` layer; root effect
+returns layout + page tree directly with only `_viewPageContent` as getter. Full
+changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 
