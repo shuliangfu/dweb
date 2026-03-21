@@ -460,10 +460,10 @@ function generateClientDepContent(
     ? (renderMode === "csr"
       ? `import { renderCSR, buildViewTree } from "${viewAdapterPath}";
 import { createSignal, mount } from "@dreamer/view/csr";
-import { insert } from "@dreamer/view";`
+import { insert, type SignalRef } from "@dreamer/view";`
       : `import { buildViewTree } from "${viewAdapterPath}";
 ${viewImport}
-import { insert } from "@dreamer/view";`)
+import { insert, type SignalRef } from "@dreamer/view";`)
     : `import { hydrate, renderCSR } from "${adapterImport}";`;
   /** API 路由（api/ 下）仅服务端使用，不加入 ROUTE_LOADERS，避免客户端 bundle 解析 .ts 或错误引用 */
   const pageComponents = components.filter(
@@ -597,17 +597,20 @@ export function clearLayoutCache(): void {
 
   // __data 仅在 onRouteChange 内请求。同页锚点虽不触发 router 的 navigate，但浏览器改 hash 可能触发 popstate，仍会进 onRouteChange，
   // 故用 pathname+search 判断：与上次相同则视为「同页仅 hash」，不请求 __data。保留 pathname 保留字(/_*、/__data 等)也不请求。
+  /** 使用 let/const 且不在嵌套块内声明 var，满足 deno lint（no-var、no-inner-declarations） */
   const fetchRouteDataSnippet =
-    `var _pathname = (typeof _win.location !== "undefined" && _win.location.pathname) ? _win.location.pathname : "/";
-      var _search = (typeof _win.location !== "undefined" && _win.location.search) ? _win.location.search : "";
-      var _pathAndSearch = _pathname + _search;
-      var _samePageHashOnly = (typeof (g as DwebGlobal).__DWEB_LAST_PATHNAME__ === "string" && (g as DwebGlobal).__DWEB_LAST_PATHNAME__ === _pathAndSearch);
-      var _reservedOrInvalid = !_pathname || _pathname === "${DWEB_DATA_PATH}" || _pathname.indexOf("/_") === 0 || _pathname.indexOf("//") !== -1 || _samePageHashOnly;
-      var _navProps;
+    `const _pathname = (typeof _win.location !== "undefined" && _win.location.pathname) ? _win.location.pathname : "/";
+      const _search = (typeof _win.location !== "undefined" && _win.location.search) ? _win.location.search : "";
+      const _pathAndSearch = _pathname + _search;
+      const _samePageHashOnly = (typeof (g as DwebGlobal).__DWEB_LAST_PATHNAME__ === "string" && (g as DwebGlobal).__DWEB_LAST_PATHNAME__ === _pathAndSearch);
+      const _reservedOrInvalid = !_pathname || _pathname === "${DWEB_DATA_PATH}" || _pathname.indexOf("/_") === 0 || _pathname.indexOf("//") !== -1 || _samePageHashOnly;
+      let _navProps: { params?: Record<string, string>; query?: Record<string, string>; layoutData?: unknown[]; data?: unknown };
       if (!_reservedOrInvalid) {
-        var _dataUrl = "${DWEB_DATA_PATH}?path=" + encodeURIComponent(_pathname) + (_search ? "&" + _search.slice(1) : "");
-        var _dataRes = await fetch(_dataUrl);
-        _navProps = (_dataRes && _dataRes.ok) ? await _dataRes.json() : { params: match.params || {}, query: match.query || {} };
+        const _dataUrl = "${DWEB_DATA_PATH}?path=" + encodeURIComponent(_pathname) + (_search ? "&" + _search.slice(1) : "");
+        const _dataRes = await fetch(_dataUrl);
+        _navProps = (_dataRes && _dataRes.ok)
+          ? (await _dataRes.json()) as { params?: Record<string, string>; query?: Record<string, string>; layoutData?: unknown[]; data?: unknown }
+          : { params: match.params || {}, query: match.query || {} };
       } else {
         _navProps = { params: match.params || {}, query: match.query || {} };
       }
@@ -616,12 +619,12 @@ export function clearLayoutCache(): void {
   // 嵌套布局时按当前 match 加载 layoutListNav，避免回到首页等仍用初始路由的 layouts 导致侧栏残留
   const onRouteChangeMergeLayoutSnippet = useNestedLayouts
     ? `const layoutListNav = await loadLayouts(match);
-      var _navLayoutData = (_navProps && Array.isArray(_navProps.layoutData)) ? _navProps.layoutData : [];
-      var _layoutsNav: LayoutComponent[] = _navLayoutData.length ? layoutListNav.map(function(l, i){ return { component: l.component, props: (_navLayoutData[i] ?? l.props ?? {}) as Record<string, unknown> }; }) : layoutListNav;
-      var _pageProps = _navProps ? { params: _navProps.params || {}, query: _navProps.query || {}, data: _navProps.data } : { params: match.params || {}, query: match.query || {} };`
-    : `var _navLayoutData = (_navProps && Array.isArray(_navProps.layoutData)) ? _navProps.layoutData : [];
-      var _layoutsNav = _navLayoutData.length ? layouts.map(function(l, i){ return { component: l.component, props: _navLayoutData[i] ?? l.props ?? {} }; }) : layouts;
-      var _pageProps = _navProps ? { params: _navProps.params || {}, query: _navProps.query || {}, data: _navProps.data } : { params: match.params || {}, query: match.query || {} };`;
+      const _navLayoutData = (_navProps && Array.isArray(_navProps.layoutData)) ? _navProps.layoutData : [];
+      const _layoutsNav: LayoutComponent[] = _navLayoutData.length ? layoutListNav.map((l, i) => ({ component: l.component, props: (_navLayoutData[i] ?? l.props ?? {}) as Record<string, unknown> })) : layoutListNav;
+      const _pageProps = _navProps ? { params: _navProps.params || {}, query: _navProps.query || {}, data: _navProps.data } : { params: match.params || {}, query: match.query || {} };`
+    : `const _navLayoutData = (_navProps && Array.isArray(_navProps.layoutData)) ? _navProps.layoutData : [];
+      const _layoutsNav = _navLayoutData.length ? layouts.map((l, i) => ({ component: l.component, props: _navLayoutData[i] ?? l.props ?? {} })) : layouts;
+      const _pageProps = _navProps ? { params: _navProps.params || {}, query: _navProps.query || {}, data: _navProps.data } : { params: match.params || {}, query: match.query || {} };`;
   /**
    * View / React/Preact 统一：先拉取 __data（旧内容仍可见），
    * 再 unmount/清空。View 在路由切换时始终先卸载再挂载，避免按索引 patch 导致上一页 DOM 残留在当前页。
@@ -652,12 +655,12 @@ export function clearLayoutCache(): void {
       (g as DwebGlobal).__DWEB_ON_READY__?.();`;
 
   // CSR 首屏：若服务端注入了 __DATA__（当前路由的 load 结果），则使用其 page 与 layoutData，用后清空避免客户端导航误用
-  const csrInitialPropsSnippet = `var __d = (g as DwebGlobal).__DATA__;
-      var __use = __d != null && (match.route?.path ?? "") === (__d.route ?? "");
-      var _layoutData = (__use && __d && Array.isArray(__d.layoutData)) ? __d.layoutData : [];
-      var _props = __use ? (function(){ (g as DwebGlobal).__DATA__ = undefined; return __d?.page ?? { params: match.params, query: match.query }; })() : { params: match.params, query: match.query };`;
+  const csrInitialPropsSnippet = `const __d = (g as DwebGlobal).__DATA__;
+      const __use = __d != null && (match.route?.path ?? "") === (__d.route ?? "");
+      const _layoutData = (__use && __d && Array.isArray(__d.layoutData)) ? __d.layoutData : [];
+      const _props = __use ? (() => { (g as DwebGlobal).__DATA__ = undefined; return __d?.page ?? { params: match.params, query: match.query }; })() : { params: match.params, query: match.query };`;
   const csrMergeLayoutDataSnippet =
-    `var _layoutsCsr: LayoutComponent[] = (__use && _layoutData.length) ? layoutList.map(function(l, i){ return { component: l.component, props: (_layoutData[i] ?? l.props ?? {}) as Record<string, unknown> }; }) : layoutList;`;
+    `const _layoutsCsr: LayoutComponent[] = (__use && _layoutData.length) ? layoutList.map((l, i) => ({ component: l.component, props: (_layoutData[i] ?? l.props ?? {}) as Record<string, unknown> })) : layoutList;`;
   const setLastPathSnippet =
     `(g as DwebGlobal).__DWEB_LAST_PATHNAME__ = (typeof _win.location !== "undefined" && _win.location.pathname ? _win.location.pathname : "/") + (typeof _win.location !== "undefined" && _win.location.search ? _win.location.search : "");`;
   const renderCurrentRouteSnippet = isViewEngine
@@ -914,9 +917,9 @@ export const RENDER_STATE: { lastUnmount: (() => void) | null } = { lastUnmount:
 ${
     isViewEngine
       ? `
-/** View 引擎：createSignal 返回 SignalRef；用 viewState.value 存根状态，getViewState/setViewState 供路由片段读写。根挂载用 mount(selector, (el) => insert(el, getter))，getter 内 buildViewTree 与 @dreamer/view 约定一致。 */
+/** View 引擎：createSignal 返回 SignalRef；显式标注类型避免部分检查器将返回值误判为可迭代元组（TS2488）。 */
 type _ViewStateRoot = { page: unknown; props: Record<string, unknown>; layouts: LayoutComponent[]; skipLayouts: boolean };
-const viewState = createSignal<_ViewStateRoot>({ page: null as unknown, props: {} as Record<string, unknown>, layouts: [] as LayoutComponent[], skipLayouts: false });
+const viewState: SignalRef<_ViewStateRoot> = createSignal<_ViewStateRoot>({ page: null as unknown, props: {} as Record<string, unknown>, layouts: [] as LayoutComponent[], skipLayouts: false });
 function getViewState(): _ViewStateRoot {
   return viewState.value;
 }
@@ -975,7 +978,9 @@ export async function setupHydrationRouterAndHmr(opts: {
   isHydratedRef: { current: boolean };
   isHybridMode: boolean;
 }): Promise<void> {
-  const { g, router, containerId, engine, layouts, isHydratedRef, isHybridMode } = opts;
+  const { g, router, containerId,${
+    isViewEngine ? "" : " engine,"
+  } layouts, isHydratedRef, isHybridMode } = opts;
   // 等待 #containerId 已挂载到 DOM（Preact/React/View 等脚本可能早于 body 解析执行，导致 hydrate 时找不到 #app）
   await new Promise<void>((resolve) => {
     const sel = "#" + containerId;
@@ -987,8 +992,9 @@ export async function setupHydrationRouterAndHmr(opts: {
       resolve();
       return;
     }
-    if (typeof window !== "undefined") {
-      window.addEventListener("DOMContentLoaded", () => resolve(), { once: true });
+    // 使用 globalThis，避免 deno lint no-window / no-window-prefix
+    if (typeof globalThis.addEventListener === "function") {
+      globalThis.addEventListener("DOMContentLoaded", () => resolve(), { once: true });
     } else {
       resolve();
     }
@@ -1084,7 +1090,7 @@ export async function setupHydrationRouterAndHmr(opts: {
       // 无 chunkUrl 或未匹配时 loadPageModule 会命中浏览器模块缓存，无法拿到新代码；整页刷新以加载最新
       if (typeof _win.location !== "undefined" && _win.location.reload) {
         _win.location.reload();
-        return new Promise(function() {});
+        return new Promise(() => {});
       }
       return loadPageModule(match.route.component);
     };
@@ -1107,7 +1113,9 @@ export async function setupHydrationRouterAndHmr(opts: {
         const PageComponent = modObj.default ?? modObj.Page;
         if (!PageComponent) { renderNotFound(containerId); return; }
         const skipLayouts = modObj.inheritLayout === false;
-        return ${loadLayoutsCallRender}.then(async (layoutList) => {
+        return ${loadLayoutsCallRender}.then(${
+    isViewEngine ? "" : "async "
+  }(layoutList) => {
           if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
             console.log(${
     JSON.stringify($tr("client.hmrRenderCsrBefore"))
@@ -1115,7 +1123,7 @@ export async function setupHydrationRouterAndHmr(opts: {
           }
           // 新模块已就绪，在 render 前一刻执行 unmount + 移除旧 CSS，最小化空白时间，消除闪动
           unmountPrevious();
-          oldCssEls.forEach(function(el) { el.remove(); });
+          oldCssEls.forEach((el) => { el.remove(); });
           ${hmrRenderSnippet}
           if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
             console.log(${JSON.stringify($tr("client.hmrRenderCsrComplete"))});
@@ -1132,7 +1140,7 @@ export async function setupHydrationRouterAndHmr(opts: {
             }
           }
           if (typeof _win.document !== "undefined") {
-            HMR_CSS_ENTRIES.forEach(function(entry) {
+            HMR_CSS_ENTRIES.forEach((entry) => {
               const el = _win.document.getElementById(entry.styleId);
               if (!el) return;
               // link 元素：通过更新 href 加时间戳刷新缓存；style 元素：fetch 后写入 textContent
@@ -1140,11 +1148,11 @@ export async function setupHydrationRouterAndHmr(opts: {
                 (el as HTMLLinkElement).href = entry.url + "?t=" + Date.now();
               } else {
                 fetch(entry.url + "?t=" + Date.now())
-                  .then(function(r) { return r.ok ? r.text() : Promise.reject(new Error(${
+                  .then((r) => r.ok ? r.text() : Promise.reject(new Error(${
     JSON.stringify($tr("client.hmrCssFetchFailedPrefix"))
-  } + r.statusText)); })
-                  .then(function(css) { el.textContent = css; })
-                  .catch(function() {});
+  } + r.statusText)))
+                  .then((css) => { el.textContent = css; })
+                  .catch(() => {});
               }
             });
           }
@@ -1255,9 +1263,13 @@ export async function initApp(): Promise<DwebApp> {
 
   // CSR 模式：router.start() 不会用当前 URL 触发 onRouteChange，首屏需主动渲染当前路由
   if (!isHybridMode) await renderCurrentRoute();
-  // View + Hybrid：若首屏未创建 _viewReactiveRoot（例如未注入 __DATA__ 未走 hybrid 首屏块），则补一次 renderCurrentRoute → _viewEnsureReactiveRoot
-  else if (engine === "view" && !_viewReactiveRoot) await renderCurrentRoute();
-  return { renderCurrentRoute, router };
+${
+    isViewEngine
+      ? `  // View + Hybrid：若首屏未创建 _viewReactiveRoot（例如未注入 __DATA__ 未走 hybrid 首屏块），则补一次 renderCurrentRoute；React/Preact 不生成此符号，故仅 View 模板输出本行
+  else if (!_viewReactiveRoot) await renderCurrentRoute();
+`
+      : ""
+  }  return { renderCurrentRoute, router };
 }
 `;
 }

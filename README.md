@@ -1852,17 +1852,15 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.2.3] - 2026-03-22
+### [3.2.4] - 2026-03-22
 
-**Added**: View **TSX** via **esbuild + `compileSource`** on server and client
-(`view-tsx-compile-plugin`, `view-ssr-route-bundle`); **`loadRouteModule`**
-**`routesDirPath`**; **`~/.dreamer/<project>/`** helpers in **cache-dirs**; View
-SSR bundle disk cache under **`runtime/cache/`**;
-**`createDwebClientBundlePlugins`**. **Changed**: deps (**esbuild**, **router**,
-**view**); SSG / **load-data** pass engine + routes dir; HMR clears View SSR
-bundle cache; init + basic examples (**SignalRef**, **e2e-counter** /
-**data-counter-value**); e2e counter utils. **Fixed**: **view-ssg** basic
-increment button. Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Changed**: @dreamer/view **^1.3.4**; **CSR client builder** — View
+**`client.dep.tsx`** imports **`SignalRef`**, **`viewState`** typed as
+**`SignalRef<_ViewStateRoot>`** (avoids TS2488); embedded route/HMR snippets use
+**`const`/`let`** and arrows for **deno lint**; **`globalThis`** for
+**`DOMContentLoaded`**; View-only hybrid **`_viewReactiveRoot`** line and HMR
+**`async`** emission refined. Full changelog:
+[CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 

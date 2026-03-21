@@ -8,6 +8,26 @@ and this project adheres to
 
 ---
 
+## [3.2.4] - 2026-03-22
+
+### Changed
+
+- **Dependencies:** @dreamer/view **^1.3.4** (mirrored in `package.json`,
+  `deno.json`).
+- **CSR client builder (`csr-client-builder.ts`):** View **`client.dep.tsx`**
+  template imports **`SignalRef`** with **`insert`**; **`viewState`** is
+  explicitly typed as **`SignalRef<_ViewStateRoot>`** so checkers do not treat
+  **`createSignal`** as an iterable tuple (e.g. **TS2488**). Embedded **`__data`
+  / CSR / HMR** route snippets use **`const`**/**`let`** instead of **`var`**
+  and arrow callbacks where appropriate for **deno lint** (**no-var**,
+  **no-inner-declarations**). **`setupHydrationRouterAndHmr`** omits unused
+  **`engine`** from destructuring when the generated client is View-only;
+  **`DOMContentLoaded`** waits via **`globalThis.addEventListener`**; the View
+  hybrid bootstrap line **`else if (!_viewReactiveRoot)`** is emitted only for
+  the View engine; HMR **`.then`** uses **`async`** only for non-View engines.
+
+---
+
 ## [3.2.3] - 2026-03-22
 
 ### Added

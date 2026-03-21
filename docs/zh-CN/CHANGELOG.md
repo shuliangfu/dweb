@@ -7,6 +7,25 @@
 
 ---
 
+## [3.2.4] - 2026-03-22
+
+### 变更
+
+- **依赖：** @dreamer/view **^1.3.4**（`package.json`、`deno.json` 已对齐）。
+- **CSR 客户端构建（`csr-client-builder.ts`）：** View 生成的
+  **`client.dep.tsx`** 在引入 **`insert`** 时同时引入
+  **`SignalRef`**；**`viewState`** 显式标注为
+  **`SignalRef<_ViewStateRoot>`**，避免部分检查器将 **`createSignal`**
+  误判为可迭代元组（如 **TS2488**）。内嵌的 **`__data` / CSR / HMR** 路由片段将
+  **`var`** 改为 **`const` / `let`**，并在合适处使用箭头函数，以符合 **deno
+  lint**（**no-var**、**no-inner-declarations**）。**`setupHydrationRouterAndHmr`**
+  在仅 View 引擎的生成代码中不再解构未使用的
+  **`engine`**；**`DOMContentLoaded`** 通过 **`globalThis.addEventListener`**
+  监听；**View + Hybrid** 下仅 View 模板输出 **`else if (!_viewReactiveRoot)`**
+  补渲染；HMR 的 **`.then`** 仅在非 View 引擎时保留 **`async`**。
+
+---
+
 ## [3.2.3] - 2026-03-22
 
 ### 新增
