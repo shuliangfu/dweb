@@ -8,6 +8,48 @@ and this project adheres to
 
 ---
 
+## [3.2.3] - 2026-03-22
+
+### Added
+
+- **View engine: esbuild + jsx-compiler for app TSX on server and client.**
+  `view-tsx-compile-plugin.ts` (`createViewClientTsxPlugin`) runs
+  `compileSource` for `.tsx` under the app `src` tree (with `stripLoadInRoutes`
+  for client bundles). `view-ssr-route-bundle.ts`
+  (`loadViewRouteModuleViaSsrBundle`) bundles View route `.tsx` for dynamic
+  import so SSR/SSG/`load()` match client JSX semantics. **`loadRouteModule`**
+  accepts **`routesDirPath`** and uses this path when **`engine === "view"`**
+  and the file is **`.tsx`**.
+- **User-level per-project cache:** `getDreamerProjectDirCacheSegment` and
+  `getDreamerProjectCacheRoot` in **`cache-dirs.ts`** (`~/.dreamer/<project>/`),
+  used by the View SSR bundle cache.
+- **CSR client builder:**
+  **`createDwebClientBundlePlugins(engine, routesDirPath)`** registers the View
+  compile plugin or **`createStripLoadPlugin`** for React/Preact.
+
+### Changed
+
+- **Dependencies:** @dreamer/esbuild **^1.1.5**, @dreamer/router **^1.1.1**,
+  @dreamer/view **^1.3.3** (mirrored in `package.json`).
+- **App (SSG) and load-data middleware:** Pass **`engine`** and resolved
+  **`routesDir`** into **`loadRouteModule`** so View SSG and route **`load`**
+  use the new pipeline.
+- **Server / HMR:** **`clearViewSsrBundleCacheForPath`** on file change, with
+  CSS route cache clearing.
+- **Init templates (`components.ts`):** View samples use **SignalRef** (`.value`
+  / `{count}`).
+- **Basic examples:** Counter sections use **`data-testid="e2e-counter"`** and
+  **`data-counter-value`**; View examples use SignalRef consistently.
+- **E2E `browser-render-utils`:** Counter detection prefers
+  **`data-counter-value`** with **`count: N`** text fallback.
+
+### Fixed
+
+- **view-ssg basic example:** Increment button no longer used invalid
+  **`setCount(count() + 1)`**; updates **`count.value`** correctly.
+
+---
+
 ## [3.2.2] - 2026-03-21
 
 ### Changed

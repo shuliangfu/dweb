@@ -30,7 +30,8 @@ export function load(_ctx: LoadContext): Promise<HomeLoadData> {
  * @returns 首页内容
  */
 export default function Home({ data }: HomeProps) {
-  const [count, setCount] = createSignal(0);
+  /** 计数：`createSignal` 返回 SignalRef，用 `.value` 读写（@dreamer/view 1.3+，勿用元组解构）。 */
+  const count = createSignal(0);
   createEffect(() => {
     console.log("[createEffect]", new Date().toISOString());
   });
@@ -74,33 +75,52 @@ export default function Home({ data }: HomeProps) {
         </div>
       </section>
 
-      <section class="mb-10 rounded-xl border border-gray-200 bg-white p-6 shadow-md">
+      {
+        /*
+         * data-testid / data-counter-value：与 e2e assertBrowserCounterButtons 一致，便于稳定读数与定位。
+         */
+      }
+      <section
+        class="mb-10 rounded-xl border border-gray-200 bg-white p-6 shadow-md"
+        data-testid="e2e-counter"
+      >
         <h2 class="mb-4 text-center text-[#667eea]">计数器示例</h2>
         <p class="mb-4 text-center text-sm text-gray-500">
           View 细粒度渲染：仅此块随 count 更新
         </p>
         {() => (
           <div class="flex flex-col items-center justify-center gap-4">
-            <span class="text-2xl font-semibold">count: {count()}</span>
+            <span
+              class="text-2xl font-semibold"
+              data-counter-value={String(count.value)}
+            >
+              count: {count}
+            </span>
             <div class="flex flex-wrap items-center justify-center gap-2">
               <button
                 type="button"
                 class="rounded-lg border-0 bg-[#667eea] px-4 py-2 text-white hover:opacity-90"
-                onClick={() => setCount(count() + 1)}
+                onClick={() => {
+                  count.value = count.value + 1;
+                }}
               >
                 加一
               </button>
               <button
                 type="button"
                 class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50"
-                onClick={() => setCount(count() - 1)}
+                onClick={() => {
+                  count.value = count.value - 1;
+                }}
               >
                 减一
               </button>
               <button
                 type="button"
                 class="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2 text-gray-600 hover:bg-gray-200"
-                onClick={() => setCount(0)}
+                onClick={() => {
+                  count.value = 0;
+                }}
               >
                 重置
               </button>

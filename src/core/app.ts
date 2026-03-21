@@ -1075,6 +1075,15 @@ export class App extends EventEmitter implements IApp {
         if (routePaths.length === 0) {
           logger.warn($tr("log.ssgNoPaths"));
         } else {
+          const ssgEngine = renderCfg.engine ?? "preact";
+          const routerConfigSsg = (config.router || {}) as {
+            routesDir?: string;
+          };
+          const routesDirSsg = routerConfigSsg.routesDir ?? "./src/routes";
+          const ssgRoutesDirPath = join(
+            cwd(),
+            routesDirSsg.replace(/^\.\/?/, "") || routesDirSsg,
+          );
           const ssgOutputDir = renderCfg.ssg?.outputDir ?? clientOutputDir;
           const absOutputDir = join(cwd(), ssgOutputDir);
           /** 按路径加载模块（支持 .ts/.tsx，用于 loadRouteComponent、loadRouteLayouts） */
@@ -1083,6 +1092,8 @@ export class App extends EventEmitter implements IApp {
               logger: this.container.has("logger")
                 ? getLogger(this.container)
                 : undefined,
+              engine: ssgEngine,
+              routesDirPath: ssgRoutesDirPath,
             });
             return mod?.default ?? mod?.Page ?? mod?.App ?? mod?.Layout ?? null;
           };
@@ -1131,6 +1142,8 @@ export class App extends EventEmitter implements IApp {
               logger: this.container.has("logger")
                 ? getLogger(this.container)
                 : undefined,
+              engine: ssgEngine,
+              routesDirPath: ssgRoutesDirPath,
             };
             const layoutModules = await Promise.all(
               layoutPaths.map((p) => loadRouteModule(p, loadOpts)),
@@ -1156,7 +1169,7 @@ export class App extends EventEmitter implements IApp {
           ) ?? [];
           const headInject = cssLinks.length > 0 ? cssLinks.join("\n") : "";
 
-          const engine = renderCfg.engine ?? "preact";
+          const engine = ssgEngine;
           const cwdPath = cwd();
 
           /** 每生成一个 HTML 就立即输出日志，避免数据多时长时间无输出像卡住 */

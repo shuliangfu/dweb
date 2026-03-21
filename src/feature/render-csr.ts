@@ -105,7 +105,10 @@ export function createRendererCSR(
   const engine = renderConfig.engine || "preact";
   const routerConfig = (config.router || {}) as { routesDir?: string };
   const routesDir = routerConfig.routesDir ?? "./src/routes";
-  const routesDirPath = join(cwd(), routesDir);
+  const routesDirPath = join(
+    cwd(),
+    routesDir.replace(/^\.\/?/, "") || routesDir,
+  );
   const clientRoutes = collectClientRoutes(router, routesDirPath);
 
   /** 根据 engine 选择 createElement（仅 React/Preact 使用） */
@@ -142,6 +145,8 @@ export function createRendererCSR(
         [];
       const loadOpts = {
         logger: container.has("logger") ? getLogger(container) : undefined,
+        engine: renderConfig.engine,
+        routesDirPath,
       };
 
       let AppComponent: unknown = null;

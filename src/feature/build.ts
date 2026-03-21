@@ -32,8 +32,10 @@ import {
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
-import { prepareClientBuildEntry } from "./csr-client-builder.ts";
-import { createStripLoadPlugin } from "./strip-load-plugin.ts";
+import {
+  createDwebClientBundlePlugins,
+  prepareClientBuildEntry,
+} from "./csr-client-builder.ts";
 
 /**
  * 初始化构建工具
@@ -273,7 +275,7 @@ export async function runBuildWithBuilder(
       bundle: prepared.bundle,
       debug: buildClient?.debug,
       logger,
-      plugins: [createStripLoadPlugin(routesDirPath)],
+      plugins: createDwebClientBundlePlugins(prepared.engine, routesDirPath),
     };
   }
 

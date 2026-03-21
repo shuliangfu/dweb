@@ -52,14 +52,27 @@ export default function Home() {
         </div>
       </section>
 
+      {
+        /*
+         * data-testid / data-counter-value：与 e2e assertBrowserCounterButtons 一致，便于稳定读数与定位。
+         */
+      }
       {/* 客户端激活计数器：hydrate 后点击可更新 */}
-      <section class="mb-10 rounded-xl border border-gray-200 bg-white p-6 shadow-md">
+      <section
+        class="mb-10 rounded-xl border border-gray-200 bg-white p-6 shadow-md"
+        data-testid="e2e-counter"
+      >
         <h2 class="mb-4 text-center text-[#667eea]">计数器示例</h2>
         <p class="mb-4 text-center text-sm text-gray-500">
           加一、减一、重置（SSG 客户端激活）
         </p>
         <div class="flex flex-col items-center justify-center gap-4">
-          <span class="text-2xl font-semibold" data-counter-value>{count}</span>
+          <span
+            class="text-2xl font-semibold"
+            data-counter-value={String(count)}
+          >
+            count: {count}
+          </span>
           <div class="flex flex-wrap items-center justify-center gap-2">
             <button
               type="button"

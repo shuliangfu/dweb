@@ -10,6 +10,7 @@ import type { SessionData } from "@dreamer/session";
 import type { Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
+import { cwd, join } from "../core/runtime-adapter.ts";
 import { createLoadContext, createServerResponse } from "../types/context.ts";
 import { getLogger } from "../utils/logger.ts";
 import { sanitizeRequestParams } from "../utils/sanitize.ts";
@@ -41,8 +42,19 @@ export function createLoadDataMiddleware(
   router: Router,
   _config: AppConfig,
 ): (ctx: HttpContext, next: () => Promise<void>) => Promise<void> {
+  const renderCfg = (_config.render || {}) as {
+    engine?: "react" | "preact" | "view";
+  };
+  const routerCfg = (_config.router || {}) as { routesDir?: string };
+  const routesDirRaw = routerCfg.routesDir ?? "./src/routes";
+  const routesDirPath = join(
+    cwd(),
+    routesDirRaw.replace(/^\.\/?/, "") || routesDirRaw,
+  );
   const loadOpts = {
     logger: container.has("logger") ? getLogger(container) : undefined,
+    engine: renderCfg.engine,
+    routesDirPath,
   };
 
   return async (ctx: HttpContext, next: () => Promise<void>): Promise<void> => {

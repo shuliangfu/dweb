@@ -7,6 +7,49 @@
 
 ---
 
+## [3.2.3] - 2026-03-22
+
+### 新增
+
+- **View 引擎：服务端与客户端对应用 TSX 走 esbuild + jsx-compiler。**
+  **`view-tsx-compile-plugin.ts`**（`createViewClientTsxPlugin`）对应用 `src`
+  树内 **`.tsx`** 执行 **`compileSource`**（客户端 bundle 下路由目录配合
+  **`stripLoadInRoutes`**）。**`view-ssr-route-bundle.ts`**
+  （`loadViewRouteModuleViaSsrBundle`）将 View 路由 **`.tsx`** 打成单包再动态
+  **`import`**，使 SSR/SSG/**`load()`** 与浏览器端 JSX
+  语义一致。**`loadRouteModule`** 增加 **`routesDirPath`**；当
+  **`engine === "view"`** 且文件为 **`.tsx`** 时走该管线。
+- **用户级按项目缓存：** **`cache-dirs.ts`** 新增
+  **`getDreamerProjectDirCacheSegment`**、
+  **`getDreamerProjectCacheRoot`**（`~/.dreamer/<项目目录名>/`），供 View SSR
+  bundle 缓存等使用。
+- **CSR 客户端构建：**
+  **`createDwebClientBundlePlugins(engine, routesDirPath)`**， View
+  注册编译插件，React/Preact 仍走 **`createStripLoadPlugin`**。
+
+### 变更
+
+- **依赖：** @dreamer/esbuild **^1.1.5**、@dreamer/router
+  **^1.1.1**、@dreamer/view **^1.3.3**（`package.json` 已对齐）。
+- **App（SSG）与 load-data 中间件：** 向 **`loadRouteModule`** 传入 **`engine`**
+  与解析后的 **`routesDir`**，使 View 的 SSG 与路由 **`load`** 使用新加载管线。
+- **Server / HMR：** 文件变更时除 CSS 路由缓存外，调用
+  **`clearViewSsrBundleCacheForPath`** 清理 View SSR bundle 缓存。
+- **Init 模板（`components.ts`）：** View 示例与 **SignalRef**（**`.value`** /
+  **`{count}`**） 一致。
+- **各 basic 示例：** 计数器区块增加
+  **`data-testid="e2e-counter"`**、**`data-counter-value`**； View 栈统一
+  SignalRef 写法。
+- **E2E `browser-render-utils`：** 读计数优先
+  **`data-counter-value`**，并保留正文 **`count: N`** 回退。
+
+### 修复
+
+- **view-ssg basic 示例：** 「加一」不再错误调用
+  **`setCount(count() + 1)`**，改为正确更新 **`count.value`**。
+
+---
+
 ## [3.2.2] - 2026-03-21
 
 ### 变更

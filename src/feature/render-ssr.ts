@@ -124,6 +124,7 @@ export function createRendererSSR(
         cssCollector,
         logger: container.has("logger") ? getLogger(container) : undefined,
         engine: renderConfig.engine ?? undefined,
+        routesDirPath,
       };
       const [pageModule, appModule, ...layoutModulesRaw] = await Promise.all([
         loadRouteModule(match.route.fullPath, loadOpts),
@@ -357,6 +358,8 @@ export function createRendererSSR(
         try {
           const errorModule = await loadRouteModule(errorPath, {
             logger: container.has("logger") ? getLogger(container) : undefined,
+            engine: renderConfig.engine ?? undefined,
+            routesDirPath,
           });
           const ErrorComponent = errorModule?.default ?? errorModule?.Error;
           if (ErrorComponent) {

@@ -17,11 +17,11 @@
 import {
   cwd,
   getEnv,
-  hash,
   join,
   relative,
   resolve,
 } from "../core/runtime-adapter.ts";
+import { getDreamerProjectDirCacheSegment } from "./cache-dirs.ts";
 import { DwebErrorCode, throwDwebError } from "./errors.ts";
 import { $tr } from "./i18n.ts";
 import { isWindows } from "./runtime.ts";
@@ -272,27 +272,26 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
 /**
  * 获取 dweb 框架的客户端构建缓存目录
  *
- * 路径：~/.dreamer/{projectHash}/{appDir}/client-out
- * - projectHash：项目目录绝对路径的 SHA-256 前 16 位，避免不同项目冲突
+ * 路径：`~/.dreamer/<项目根目录名>/{appDir}/client-out`
+ * - 项目目录名：与 {@link getDreamerProjectDirCacheSegment} 一致（`cwd` 末级文件夹名）
  * - appDir：多应用时应用名（如 backend），单应用为 "default"
  *
  * @returns 缓存目录绝对路径
  *
  * @example
  * ```ts
- * const cacheDir = await getDreamerClientCacheDir();
- * // => "/home/user/.dreamer/a1b2c3d4e5f6g7h8/default/client-out"
+ * const cacheDir = getDreamerClientCacheDir();
+ * // => "/home/user/.dreamer/bgb/default/client-out"
  * ```
  */
-export async function getDreamerClientCacheDir(): Promise<string> {
+export function getDreamerClientCacheDir(): string {
   const home = getEnv("HOME") ?? getEnv("USERPROFILE");
   if (!home) {
     throwDwebError(DwebErrorCode.DREAMER_CACHE_HOME_UNAVAILABLE);
   }
-  const projectAbs = resolve(cwd());
-  const projectHash = (await hash(projectAbs, "SHA-256")).slice(0, 16);
+  const projectDirSegment = getDreamerProjectDirCacheSegment();
   const { client } = getInferredBuildOutputDirs();
   const parts = client.replace(/\\/g, "/").split("/");
   const appDir = parts.length === 2 ? "default" : (parts[1] ?? "default");
-  return join(home, ".dreamer", projectHash, appDir, "client-out");
+  return join(home, ".dreamer", projectDirSegment, appDir, "client-out");
 }

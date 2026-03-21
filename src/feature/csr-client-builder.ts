@@ -17,7 +17,7 @@
  * - 这样 esbuild 可以正确打包所有依赖
  */
 
-import { BuilderClient } from "@dreamer/esbuild";
+import { BuilderClient, type BuildPlugin } from "@dreamer/esbuild";
 import { createRouter } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import {
@@ -49,6 +49,31 @@ import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { normalizePathForCompare, pathForLog } from "../utils/path.ts";
 import { createStripLoadPlugin } from "./strip-load-plugin.ts";
+import { createViewClientTsxPlugin } from "./view-tsx-compile-plugin.ts";
+
+/**
+ * 为客户端 bundle 注册 esbuild 插件：View 引擎对应用 `src` 内 `.tsx` 走 `compileSource`（与官方 view 构建一致），并在路由目录下内含 strip-load；React/Preact 仅 strip-load。
+ *
+ * @param engine - 渲染引擎
+ * @param routesDirPath - 路由目录绝对路径（与 `router.routesDir` 解析结果一致）
+ * @returns 供 `BuilderClient` / `Builder` 的 `plugins` 数组
+ */
+export function createDwebClientBundlePlugins(
+  engine: "react" | "preact" | "view",
+  routesDirPath: string,
+): BuildPlugin[] {
+  const routesAbs = resolve(routesDirPath);
+  const appSrcRoot = resolve(join(routesDirPath, ".."));
+  if (engine === "view") {
+    return [
+      createViewClientTsxPlugin({
+        appSrcRoot,
+        routesDirAbs: routesAbs,
+      }),
+    ];
+  }
+  return [createStripLoadPlugin(routesAbs)];
+}
 
 /**
  * 客户端脚本构建结果
@@ -376,7 +401,7 @@ const ENGINE_RENDER_ADAPTER: Record<string, string> = {
   view: "@dreamer/render/client/view",
 };
 
-/** View 引擎按 renderMode 的适配路径：csr 用 view-csr（仅 CSR），hybrid/ssr/ssg 用 view-hybrid（含 hydrate） */
+/** View 引擎按 renderMode 的适配路径：csr 用 view-csr；hybrid/ssr/ssg 用 view-hybrid（现仅从中取 buildViewTree，激活路径为 view 的 mount/insert） */
 const VIEW_ADAPTER_BY_MODE: Record<ClientDepRenderMode, string> = {
   csr: "@dreamer/render/client/view-csr",
   hybrid: "@dreamer/render/client/view-hybrid",
@@ -394,10 +419,10 @@ type ClientDepRenderMode = "csr" | "hybrid" | "ssr" | "ssg";
  * 注意：客户端 loadLayouts 仅加载 _layout，不加载 _app。_app 是服务端文档根（输出 html/body），容器 #app 在其内部，
  * 故 hydrate/CSR 只需 Layout(Page)，否则会将 App 渲染进容器导致嵌套 html/body 或 hydrate 不匹配。
  *
- * View 引擎按 renderMode 区分：csr 用 @dreamer/render/client/view-csr（renderCSR/buildViewTree 等，bundle 更小）；
- * hybrid/ssr/ssg 用 @dreamer/render/client/view-hybrid（含 hydrate、createReactiveRootHydrate）。
- * 客户端根挂载与 @dreamer/view 一致：`mount(selector, (el) => insert(el, () => rootVNode))`，由 `@dreamer/view` 提供 `insert`。
- * SSR/SSG 的客户端激活与 hybrid 一致，均为 hydrate，不是 csr。
+ * View 引擎按 renderMode 区分：csr 用 @dreamer/render/client/view-csr（renderCSR/buildViewTree）；
+ * hybrid/ssr/ssg 用 @dreamer/render/client/view-hybrid（仅 import buildViewTree；首屏与路由用 mount/insert，不再调用适配器的 hydrate/createReactiveRoot*）。
+ * 客户端根挂载与 @dreamer/view 一致：`mount(selector, (el) => insert(el, getter))`。
+ * SSR/SSG 在语义上仍为「带服务端 HTML 的激活」，但 View 引擎实现上与 hybrid 同属 mount/insert 路径，不是 csr。
  *
  * @param engine 渲染引擎（用于 hydrate/renderCSR 导入及 setupHydrationRouterAndHmr）
  * @param components 路由组件列表
@@ -421,7 +446,7 @@ function generateClientDepContent(
   const adapterImport = ENGINE_RENDER_ADAPTER[engine] ??
     "@dreamer/render/client/preact";
   const isViewEngine = engine === "view";
-  /** view + csr：用 view-csr 适配器（仅 createReactiveRoot/buildViewTree/renderCSR）；view + hybrid|ssr|ssg：用 view-hybrid（含 hydrate/createReactiveRootHydrate） */
+  /** view + csr：用 view-csr（renderCSR/buildViewTree）；view + hybrid|ssr|ssg：用 view-hybrid 的 buildViewTree；首屏激活与后续路由已由 mount+insert 接管，不再从适配器导入 hydrate/createReactiveRoot* */
   const viewAdapterPath = isViewEngine
     ? VIEW_ADAPTER_BY_MODE[renderMode]
     : adapterImport;
@@ -430,19 +455,15 @@ function generateClientDepContent(
     : isViewEngine
     ? 'import { createSignal, mount } from "@dreamer/view/hybrid";'
     : "";
+  /** import 顺序：@dreamer/router → @dreamer/render → @dreamer/view/* → @dreamer/view（与 bgb 等项目约定一致） */
   const renderAdapterImport = isViewEngine
     ? (renderMode === "csr"
-      ? `import { createSignal, mount } from "@dreamer/view/csr";
-import { insert } from "@dreamer/view";
-import { renderCSR, buildViewTree } from "${viewAdapterPath}";`
-      : `${viewImport}
-import { insert } from "@dreamer/view";
-import {
-  buildViewTree,
-  createReactiveRoot,
-  createReactiveRootHydrate,
-  hydrate,
-} from "${viewAdapterPath}";`)
+      ? `import { renderCSR, buildViewTree } from "${viewAdapterPath}";
+import { createSignal, mount } from "@dreamer/view/csr";
+import { insert } from "@dreamer/view";`
+      : `import { buildViewTree } from "${viewAdapterPath}";
+${viewImport}
+import { insert } from "@dreamer/view";`)
     : `import { hydrate, renderCSR } from "${adapterImport}";`;
   /** API 路由（api/ 下）仅服务端使用，不加入 ROUTE_LOADERS，避免客户端 bundle 解析 .ts 或错误引用 */
   const pageComponents = components.filter(
@@ -552,7 +573,7 @@ export function clearLayoutCache(): void {
   const mergeLayoutDataSnippet =
     `const _layoutData = (hydrationData.layoutData && Array.isArray(hydrationData.layoutData)) ? hydrationData.layoutData : [];
       const _layouts: LayoutComponent[] = layouts.map((l, i) => ({ component: l.component, props: (_layoutData[i] ?? l.props ?? {}) as Record<string, unknown> }));`;
-  /** View Hybrid：首屏只 setViewState + createReactiveRootHydrate，一次水合同一根后续 patch；非 View 走 render 的 hydrate。 */
+  /** View Hybrid：首屏 setViewState + _viewEnsureReactiveRoot（mount/insert/buildViewTree）；非 View 走 render 的 hydrate()。 */
   const hybridInitBlock = isViewEngine
     ? `${mergeLayoutDataSnippet}
       setViewState({ page: PageComponent, props: hydrationData.page || { params: hydrationData.params || {}, query: hydrationData.query || {} }, layouts: skipLayouts ? [] : _layouts, skipLayouts });
@@ -893,11 +914,18 @@ export const RENDER_STATE: { lastUnmount: (() => void) | null } = { lastUnmount:
 ${
     isViewEngine
       ? `
-/** View 引擎：用 createSignal 存当前页/布局/props；根挂载用 mount(selector, (el) => insert(el, getter))，getter 内 buildViewTree 与 view 2.x createRoot 约定一致。 */
-const [getViewState, setViewState] = createSignal({ page: null as unknown, props: {} as Record<string, unknown>, layouts: [] as LayoutComponent[], skipLayouts: false });
+/** View 引擎：createSignal 返回 SignalRef；用 viewState.value 存根状态，getViewState/setViewState 供路由片段读写。根挂载用 mount(selector, (el) => insert(el, getter))，getter 内 buildViewTree 与 @dreamer/view 约定一致。 */
+type _ViewStateRoot = { page: unknown; props: Record<string, unknown>; layouts: LayoutComponent[]; skipLayouts: boolean };
+const viewState = createSignal<_ViewStateRoot>({ page: null as unknown, props: {} as Record<string, unknown>, layouts: [] as LayoutComponent[], skipLayouts: false });
+function getViewState(): _ViewStateRoot {
+  return viewState.value;
+}
+function setViewState(next: _ViewStateRoot): void {
+  viewState.value = next;
+}
 let _viewReactiveRoot: { unmount: () => void } | null = null;
 
-/** 仅渲染「当前页」的包装组件：返回 getter，getter 内读 getViewState() 并 buildViewTree(page, props)，不包含 layouts。页面内 state（如 value()）只在本 getter 的 effect 中被读，故仅本层重跑、仅本层 data-view-dynamic 更新。 */
+/** 仅渲染「当前页」的包装组件：返回 getter，getter 内读 getViewState() 并 buildViewTree(page, props)，不包含 layouts。页面内 state（SignalRef 的 .value）只在本 getter 的 effect 中被读，故仅本层重跑、仅本层 data-view-dynamic 更新。 */
 function _viewPageContent(props: { getViewState: () => { page: unknown; props: Record<string, unknown>; layouts: LayoutComponent[]; skipLayouts: boolean } }) {
   return () => {
     const s = props.getViewState();
@@ -1227,7 +1255,7 @@ export async function initApp(): Promise<DwebApp> {
 
   // CSR 模式：router.start() 不会用当前 URL 触发 onRouteChange，首屏需主动渲染当前路由
   if (!isHybridMode) await renderCurrentRoute();
-  // View + Hybrid：若 hydrate 后仍未创建 reactive root（例如服务端未注入 __DATA__ 导致未走 hydrate 分支），则首屏也执行一次 renderCurrentRoute，确保首次刷新即调用 createReactiveRoot
+  // View + Hybrid：若首屏未创建 _viewReactiveRoot（例如未注入 __DATA__ 未走 hybrid 首屏块），则补一次 renderCurrentRoute → _viewEnsureReactiveRoot
   else if (engine === "view" && !_viewReactiveRoot) await renderCurrentRoute();
   return { renderCurrentRoute, router };
 }
@@ -1568,7 +1596,7 @@ async function doDevBuild(
       chunkNames: "[name]-[hash]",
     },
     lang,
-    plugins: [createStripLoadPlugin(routesDirPath)],
+    plugins: createDwebClientBundlePlugins(engine, routesDirPath),
   });
   await builder.createContext("dev", { write: false });
   cachedDevBuilder = builder;
@@ -1765,7 +1793,7 @@ export async function buildClientScript(
         lang: config.language === "zh-CN" || config.language === "en-US"
           ? config.language
           : undefined,
-        plugins: [createStripLoadPlugin(routesDirPath)],
+        plugins: createDwebClientBundlePlugins(engine, routesDirPath),
       });
 
       await builder.build(mode);
@@ -1811,7 +1839,7 @@ export async function buildClientScript(
       // ========================================
       // 开发模式：纯内存构建，使用 ~/.dreamer/{projectHash}/{appDir}/client-out 缓存，避免在项目内创建临时目录
       // ========================================
-      const memOutputDir = await getDreamerClientCacheDir();
+      const memOutputDir = getDreamerClientCacheDir();
       await ensureDir(memOutputDir);
 
       let buildResultDev;

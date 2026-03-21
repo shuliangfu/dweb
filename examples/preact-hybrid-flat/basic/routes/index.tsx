@@ -274,11 +274,21 @@ export default function Home({ data }: HomeProps) {
         </div>
       </section>
 
-      <section class={classes.socketSection}>
+      {
+        /*
+         * data-testid / data-counter-value：与 e2e assertBrowserCounterButtons 一致，便于稳定读数与定位。
+         */
+      }
+      <section class={classes.socketSection} data-testid="e2e-counter">
         <h2 class={classes.socketTitle}>计数器示例</h2>
         <p class={classes.socketDesc}>加一、减一、重置</p>
         <div class="flex flex-col items-center justify-center gap-4">
-          <span class="text-2xl font-semibold">count: {count}</span>
+          <span
+            class="text-2xl font-semibold"
+            data-counter-value={String(count)}
+          >
+            count: {count}
+          </span>
           <div class="flex flex-wrap items-center justify-center gap-2">
             <button
               type="button"

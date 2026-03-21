@@ -299,6 +299,69 @@ async function waitForDocumentCompleteViaEvaluate(
 }
 
 /**
+ * 轮询直到页面存在可解析的计数器数值（与 {@link getCountFromPage} 判定一致）。
+ * View SSR/SSG 在 headless/CI 上客户端脚本与水合可能明显晚于 `document.complete`，单独等待可减少误报。
+ *
+ * @param browser 浏览器上下文
+ * @param timeoutMs 最大等待毫秒
+ */
+async function waitForCounterReadableViaEvaluate(
+  browser: { evaluate: (fn: () => unknown) => Promise<unknown> },
+  timeoutMs: number,
+): Promise<void> {
+  const pollMs = 150;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const readable = await browser.evaluate(() => {
+      type CounterEl = {
+        textContent?: string | null;
+        getAttribute?: (name: string) => string | null;
+      };
+      const doc = (globalThis as Record<string, unknown>).document as
+        | {
+          body?: { innerText?: string };
+          querySelectorAll?: (s: string) => ArrayLike<CounterEl> | null;
+        }
+        | undefined;
+      const nodes = doc?.querySelectorAll?.("[data-counter-value]");
+      if (nodes && nodes.length > 0) {
+        for (let i = 0; i < nodes.length; i++) {
+          const el = nodes[i]!;
+          const valueText = el.textContent?.trim();
+          if (valueText !== undefined && valueText !== "") {
+            const num = parseInt(valueText, 10);
+            if (!Number.isNaN(num)) return true;
+            const cm = valueText.match(/count:\s*(\d+)/i);
+            if (cm) {
+              const n = parseInt(cm[1], 10);
+              if (!Number.isNaN(n)) return true;
+            }
+          }
+          const attr = el.getAttribute?.("data-counter-value")?.trim();
+          if (attr !== undefined && attr !== "") {
+            const num = parseInt(attr, 10);
+            if (!Number.isNaN(num)) return true;
+          }
+        }
+      }
+      /** 与 {@link getCountFromPage} 一致：view-csr / view-hybrid-flat 等仅有「count: N」文案、无 data-counter-value */
+      const text = doc?.body?.innerText ?? "";
+      const m = text.match(/count:\s*(\d+)/i);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (!Number.isNaN(n)) return true;
+      }
+      return false;
+    }) as boolean;
+    if (readable) return;
+    await new Promise((r) => setTimeout(r, pollMs));
+  }
+  throw new Error(
+    `waitForCounterReadableViaEvaluate: ${timeoutMs}ms 内未读到计数器（[data-counter-value] 或正文 count: N，hydration 或未挂载）`,
+  );
+}
+
+/**
  * 轮询直到关于页正文出现（中文或英文示例）
  * @param browser 浏览器上下文
  * @param timeoutMs 最大等待毫秒
@@ -865,7 +928,7 @@ async function assertLoadDataInjected(
 
 /**
  * 从页面解析当前计数器数字。
- * 优先读 [data-counter-value] 元素的 textContent（SSR/SSG/部分 CSR 仅显示数字）；
+ * 遍历所有 [data-counter-value]：优先 textContent，其次 data-counter-value 属性（与 view-hybrid 等示例一致，hydration 前后更稳）；
  * 若无则回退到 body 文本中的 "count: N" 形式（部分 CSR/Hybrid 示例）。
  * @returns 当前 count 或 null（无计数器区块或未解析到数字时）
  */
@@ -875,20 +938,39 @@ function getCountFromPage(
   },
 ): Promise<number | null> {
   return browser.evaluate(() => {
+    type CounterEl = {
+      textContent?: string | null;
+      getAttribute?: (name: string) => string | null;
+    };
     const doc = (globalThis as Record<string, unknown>).document as
       | {
         body?: { innerText?: string };
-        querySelector?: (s: string) => { textContent?: string | null } | null;
+        querySelectorAll?: (s: string) => ArrayLike<CounterEl> | null;
       }
       | undefined;
-    const el = doc?.querySelector?.("[data-counter-value]");
-    const valueText = el?.textContent?.trim();
-    if (valueText !== undefined && valueText !== "") {
-      const n = parseInt(valueText, 10);
-      if (!Number.isNaN(n)) return n;
+    const nodes = doc?.querySelectorAll?.("[data-counter-value]");
+    if (nodes && nodes.length > 0) {
+      for (let i = 0; i < nodes.length; i++) {
+        const el = nodes[i]!;
+        const valueText = el.textContent?.trim();
+        if (valueText !== undefined && valueText !== "") {
+          const n = parseInt(valueText, 10);
+          if (!Number.isNaN(n)) return n;
+          const cm = valueText.match(/count:\s*(\d+)/i);
+          if (cm) {
+            const nn = parseInt(cm[1], 10);
+            if (!Number.isNaN(nn)) return nn;
+          }
+        }
+        const attr = el.getAttribute?.("data-counter-value")?.trim();
+        if (attr !== undefined && attr !== "") {
+          const n = parseInt(attr, 10);
+          if (!Number.isNaN(n)) return n;
+        }
+      }
     }
     const text = doc?.body?.innerText ?? "";
-    const m = text.match(/count:\s*(\d+)/);
+    const m = text.match(/count:\s*(\d+)/i);
     return m ? parseInt(m[1], 10) : null;
   }) as Promise<number | null>;
 }
@@ -1031,8 +1113,8 @@ async function assertBrowserCounterButtons(
 
   /** 等待 document complete 再操作计数器，避免 hydration 前点击无效 */
   await waitForDocumentCompleteViaEvaluate(browser, firstWaitTimeoutMs);
-  /** 再留一点时间给客户端 hydration 绑定事件 */
-  await new Promise((r) => setTimeout(r, 500));
+  /** 再留一点时间给客户端 hydration 绑定事件（慢机/CI 略加长） */
+  await new Promise((r) => setTimeout(r, 800));
 
   const hasCounter = await browser.evaluate(() => {
     const doc = (globalThis as Record<string, unknown>).document as
@@ -1071,15 +1153,11 @@ async function assertBrowserCounterButtons(
       tick();
     });
 
-  /** 等待计数器可读（hydration 完成），最多 5s */
-  const hydrateWaitMs = 5000;
-  const hydrateStart = Date.now();
-  let n: number | null = null;
-  while (Date.now() - hydrateStart < hydrateWaitMs) {
-    n = await getCountFromPage(browser);
-    if (n !== null) break;
-    await new Promise((r) => setTimeout(r, 150));
-  }
+  /**
+   * 等待计数器可读（hydration 完成）：单独长超时，避免仅 5s 轮询在 View SSR/SSG + headless 下偶发不足
+   */
+  await waitForCounterReadableViaEvaluate(browser, 15000);
+  let n = await getCountFromPage(browser);
   expect(n).not.toBe(null);
 
   /** 点击后多留一点时间给 re-render（hybrid 等较慢） */

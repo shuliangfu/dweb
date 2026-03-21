@@ -1852,11 +1852,16 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.2.2] - 2026-03-21
+### [3.2.3] - 2026-03-22
 
-**Changed** (CI): **`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`** on **`ci.yml`** /
-**`publish.yml`** / **`block-legacy-merge.yml`** for Node 24 JS Actions; Bun
-**`setup-bun@v2`**. Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Added**: View **TSX** via **esbuild + `compileSource`** on server and client
+(`view-tsx-compile-plugin`, `view-ssr-route-bundle`); **`loadRouteModule`**
+**`routesDirPath`**; per-project **`~/.dreamer/<project>/`** cache helpers;
+**`createDwebClientBundlePlugins`**. **Changed**: deps (**esbuild**, **router**,
+**view**); SSG / **load-data** pass engine + routes dir; HMR clears View SSR
+bundle cache; init + basic examples (**SignalRef**, **e2e-counter** /
+**data-counter-value**); e2e counter utils. **Fixed**: **view-ssg** basic
+increment button. Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 

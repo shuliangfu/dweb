@@ -30,7 +30,8 @@ const GALLERY_IMAGES = [
  * @returns 相册页面内容
  */
 export default function Gallery() {
-  const [selectedIndex, setSelectedIndex] = createSignal<number | null>(null);
+  /** 当前预览下标：`createSignal` 返回 SignalRef，用 `.value` 读写。 */
+  const selectedIndex = createSignal<number | null>(null);
 
   return (
     <div class="py-8">
@@ -54,7 +55,9 @@ export default function Gallery() {
             <button
               type="button"
               class="block w-full aspect-4/3 overflow-hidden bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-              onClick={() => setSelectedIndex(index)}
+              onClick={() => {
+                selectedIndex.value = index;
+              }}
             >
               <img
                 src={img.src}
@@ -78,19 +81,23 @@ export default function Gallery() {
 
       {/* 大图预览弹层：用箭头函数包成「动态子节点」，仅此槽位随 selectedIndex 更新，避免整组件重跑导致下方所有图片重新加载 */}
       {() =>
-        selectedIndex() !== null && (
+        selectedIndex.value !== null && (
           <div
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
             role="dialog"
             aria-modal="true"
             aria-label="图片预览"
-            onClick={() => setSelectedIndex(null)}
+            onClick={() => {
+              selectedIndex.value = null;
+            }}
           >
             <button
               type="button"
               class="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
               aria-label="关闭"
-              onClick={() => setSelectedIndex(null)}
+              onClick={() => {
+                selectedIndex.value = null;
+              }}
             >
               <svg
                 class="h-6 w-6"
@@ -107,8 +114,8 @@ export default function Gallery() {
               </svg>
             </button>
             <img
-              src={GALLERY_IMAGES[selectedIndex()!].src}
-              alt={GALLERY_IMAGES[selectedIndex()!].alt}
+              src={GALLERY_IMAGES[selectedIndex.value!].src}
+              alt={GALLERY_IMAGES[selectedIndex.value!].alt}
               class="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             />

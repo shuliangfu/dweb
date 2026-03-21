@@ -119,9 +119,10 @@ interface HomeProps {
 }
 
 export default function Home({ data }: HomeProps) {
-  const [count, setCount] = createSignal(0);
-  const [status, setStatus] = createSignal<ConnectionStatus>("idle");
-  const [messages, setMessages] = createSignal<ChatMessage[]>([]);
+  /** 以下均为 SignalRef：`createSignal` 返回单对象，用 `.value` 读写；列表更新可用 `messages.value = (prev) => [...]`。 */
+  const count = createSignal(0);
+  const status = createSignal<ConnectionStatus>("idle");
+  const messages = createSignal<ChatMessage[]>([]);
   /**
    * 非受控输入 + `createRef`：`ref={messageInputRef}` 由编译器处理。
    *
@@ -132,7 +133,7 @@ export default function Home({ data }: HomeProps) {
    *
    * **现行为：** compileSource 路径下对象 ref 走 `scheduleFunctionRef`。`deno.json` 使用 `jsx: "react-jsx"` 时
    * JSX 经 `jsx()`→VNode→`mountVNodeTree`，ref 在 `vnode-mount` 中同样用 `scheduleFunctionRef` 绑定。
-   * 输入区仍勿与 `value={signal()}` 放在同一段会随输入刷新的 `{() => ...}` 内，以免失焦。
+   * 输入区仍勿与受 SignalRef 驱动的 `value` 放在同一段会随输入刷新的 `{() => ...}` 内，以免失焦。
    */
   const messageInputRef = createRef<HTMLInputElement>(null);
   const clientRef: { current: Client | null } = { current: null };
@@ -150,14 +151,16 @@ export default function Home({ data }: HomeProps) {
     if (client?.connected) {
       debugLog("→ chat-message 发送:", text);
       client.emit("chat-message", { text });
-      setMessages((prev) => [...prev, { type: "sent", text, at: Date.now() }]);
+      messages.value = (
+        prev,
+      ) => [...prev, { type: "sent", text, at: Date.now() }];
       if (el) el.value = "";
     } else {
       debugLog("→ 发送失败：未连接");
-      setMessages((prev) => [
+      messages.value = (prev) => [
         ...prev,
         { type: "sent", text: `[未连接] ${text}`, at: Date.now() },
-      ]);
+      ];
       if (el) el.value = "";
     }
   };
@@ -185,33 +188,33 @@ export default function Home({ data }: HomeProps) {
 
     const onOpen = () => {
       debugLog("✓ open 事件触发，已连接");
-      setStatus("connected");
+      status.value = "connected";
     };
     const onClose = (_data?: { code?: number; reason?: string }) => {
       debugLog("✗ close 事件触发");
-      setStatus("disconnected");
+      status.value = "disconnected";
     };
     const onError = (_err: unknown) => {
       debugLog("✗ error 事件触发");
-      setStatus("error");
+      status.value = "error";
     };
     const onReconnectAttempt = (_attempt?: number) => {
       debugLog("↻ reconnect_attempt 事件触发，自动重连中…");
-      setStatus("connecting");
+      status.value = "connecting";
     };
     const onReconnectFailed = () => {
       debugLog("✗ reconnect_failed 事件触发，重连已放弃");
-      setStatus("error");
+      status.value = "error";
     };
     const onChatResponse = (data: { text?: string; message?: string }) => {
       const text = typeof data === "string"
         ? data
         : (data?.text ?? data?.message ?? JSON.stringify(data));
       debugLog("← chat-response 收到:", text);
-      setMessages((prev) => [
+      messages.value = (prev) => [
         ...prev,
         { type: "received", text, at: Date.now() },
-      ]);
+      ];
     };
 
     client.on("open", onOpen);
@@ -221,7 +224,7 @@ export default function Home({ data }: HomeProps) {
     client.on("reconnect_failed", onReconnectFailed);
     client.on("chat-response", onChatResponse);
 
-    setStatus("connecting");
+    status.value = "connecting";
     debugLog("事件监听器已注册，status → connecting");
 
     onCleanup(() => {
@@ -291,29 +294,35 @@ export default function Home({ data }: HomeProps) {
           <div class="flex flex-col items-center justify-center gap-4">
             <span
               class="text-2xl font-semibold"
-              data-counter-value={String(count())}
+              data-counter-value={String(count.value)}
             >
-              count: {count()}
+              count: {count}
             </span>
             <div class="flex flex-wrap items-center justify-center gap-2">
               <button
                 type="button"
                 class="rounded-lg border-0 bg-[#667eea] px-4 py-2 text-white hover:opacity-90"
-                onClick={() => setCount(count() + 1)}
+                onClick={() => {
+                  count.value = count.value + 1;
+                }}
               >
                 加一
               </button>
               <button
                 type="button"
                 class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50"
-                onClick={() => setCount(count() - 1)}
+                onClick={() => {
+                  count.value = count.value - 1;
+                }}
               >
                 减一
               </button>
               <button
                 type="button"
                 class="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2 text-gray-600 hover:bg-gray-200"
-                onClick={() => setCount(0)}
+                onClick={() => {
+                  count.value = 0;
+                }}
               >
                 重置
               </button>
@@ -325,7 +334,7 @@ export default function Home({ data }: HomeProps) {
       {
         /*
          * WebSocket 区：status、消息列表各自 `{() => ...}`，输入框静态挂载。
-         * 勿把 `value={signal()}` 的 input 放进会随该 signal 更新的同一段动态子树，否则会失焦。
+         * 勿把与 SignalRef 绑定的 `value` 的 input 放进会随该 signal 更新的同一段动态子树，否则会失焦。
          */
       }
       <section class={`${classes.socketSection} ${classes.socketSectionOuter}`}>
@@ -337,9 +346,11 @@ export default function Home({ data }: HomeProps) {
         {() => (
           <div class={classes.statusBadgeWrap}>
             <span
-              class={`${classes.statusBadge} ${statusBadgeClasses[status()]}`}
+              class={`${classes.statusBadge} ${
+                statusBadgeClasses[status.value]
+              }`}
             >
-              {statusLabel[status()]}
+              {statusLabel[status.value]}
             </span>
           </div>
         )}
@@ -361,7 +372,7 @@ export default function Home({ data }: HomeProps) {
         </div>
         {() => (
           <div class={classes.messageBox}>
-            {messages().length === 0
+            {messages.value.length === 0
               ? (
                 <p class={classes.messageEmpty}>
                   暂无消息。发送后显示在这里。
@@ -369,7 +380,7 @@ export default function Home({ data }: HomeProps) {
               )
               : (
                 <ul class={classes.messageList}>
-                  {messages().map((msg, i) => (
+                  {messages.value.map((msg, i) => (
                     <li
                       key={`${msg.at}-${i}`}
                       class={msg.type === "sent"

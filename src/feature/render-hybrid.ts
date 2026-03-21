@@ -107,7 +107,10 @@ export function createRendererHybrid(
 
   const routerConfig = (config.router || {}) as { routesDir?: string };
   const routesDir = routerConfig.routesDir ?? "./src/routes";
-  const routesDirPath = join(cwd(), routesDir);
+  const routesDirPath = join(
+    cwd(),
+    routesDir.replace(/^\.\/?/, "") || routesDir,
+  );
 
   // 收集所有路由信息（用于注入到客户端，component 与 ROUTE_LOADERS key 统一格式）
   const clientRoutes = collectClientRoutes(router, routesDirPath);
@@ -131,6 +134,7 @@ export function createRendererHybrid(
         cssCollector,
         logger: container.has("logger") ? getLogger(container) : undefined,
         engine: renderConfig.engine,
+        routesDirPath,
       };
       const pageModule = await loadRouteModule(match.route.fullPath, loadOpts);
       if (!pageModule) {
@@ -373,6 +377,8 @@ ${hybridOptions.bodyTags || ""}`;
         try {
           const errorModule = await loadRouteModule(errorPath, {
             logger: container.has("logger") ? getLogger(container) : undefined,
+            engine: renderConfig.engine,
+            routesDirPath,
           });
           const ErrorComponent = errorModule?.default ?? errorModule?.Error;
           if (ErrorComponent) {

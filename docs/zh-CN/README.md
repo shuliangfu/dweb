@@ -1921,11 +1921,16 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.2.2] - 2026-03-21
+### [3.2.3] - 2026-03-22
 
-**变更**（CI）：在 **`ci.yml`**、**`publish.yml`**、**`block-legacy-merge.yml`**
-中设置 **`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`**，Node 类 Action 提前使用 Node
-24；Bun 仍用 **`setup-bun@v2`**。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
+**新增**：View 应用 **TSX** 在服务端与客户端经 **esbuild + `compileSource`**
+（`view-tsx-compile-plugin`、`view-ssr-route-bundle`）；**`loadRouteModule`**
+支持 **`routesDirPath`**；用户目录下按项目 **`~/.dreamer/<项目名>/`** 缓存；
+**`createDwebClientBundlePlugins`**。**变更**：依赖（**esbuild**、**router**、**view**）；
+SSG / **load-data** 传入引擎与 routes 目录；HMR 清理 View SSR bundle 缓存； init
+与各 basic 示例（**SignalRef**、**e2e-counter** / **data-counter-value**）； e2e
+计数工具。**修复**：**view-ssg** basic 「加一」按钮。完整变更日志：
+[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 
