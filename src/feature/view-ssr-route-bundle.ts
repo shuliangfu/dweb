@@ -18,7 +18,6 @@ import {
   resolve,
   writeTextFile,
 } from "../core/runtime-adapter.ts";
-import { getDreamerProjectCacheRoot } from "../utils/cache-dirs.ts";
 import { getModuleVersion } from "./module-cache.ts";
 import { createViewClientTsxPlugin } from "./view-tsx-compile-plugin.ts";
 
@@ -26,6 +25,22 @@ import { createViewClientTsxPlugin } from "./view-tsx-compile-plugin.ts";
  * 内存缓存：规范化入口路径 + 模块版本 → 已 import 的命名空间（避免重复 esbuild 与同 URL 缓存问题）
  */
 const viewSsrBundledModuleCache = new Map<string, Record<string, unknown>>();
+
+/**
+ * View SSR 单包在磁盘上的缓存根：当前项目根下 `runtime/cache/`（与进程 `cwd()` 一致）。
+ * 子目录 **`bundle-out`**（esbuild `output`）、**`bundle-cache`**（写入 `entry-*.mjs` 再动态 `import`）。
+ * 将 `.mjs` 放在项目树内，便于 Bun 从项目 `node_modules` 解析 bundle 内 **external** 的 `@dreamer/view` 等；
+ * init 模板已忽略整个 `runtime/` 目录。
+ *
+ * @returns `outDir`（bundle-out）、`cacheDir`（bundle-cache）
+ */
+function getViewSsrBundleDiskCacheDirs(): { outDir: string; cacheDir: string } {
+  const root = join(cwd(), "runtime", "cache");
+  return {
+    outDir: join(root, "bundle-out"),
+    cacheDir: join(root, "bundle-cache"),
+  };
+}
 
 /**
  * 从 esbuild 内存产出中选取主入口 JS（单 chunk、无代码分割时通常仅一条 .js）
@@ -85,17 +100,7 @@ export async function loadViewRouteModuleViaSsrBundle(
     return cached;
   }
 
-  /**
-   * 磁盘缓存：`~/.dreamer/<项目根目录名>/ssr-view-bundle-out|ssr-view-bundle-cache`
-   * 用项目文件夹名区分项目；无主目录环境回退到项目内 `.dweb/`。
-   */
-  const dreamerProjectRoot = getDreamerProjectCacheRoot();
-  const outDir = dreamerProjectRoot
-    ? join(dreamerProjectRoot, "ssr-view-bundle-out")
-    : join(cwd(), ".dweb", "ssr-view-bundle-out");
-  const cacheDir = dreamerProjectRoot
-    ? join(dreamerProjectRoot, "ssr-view-bundle-cache")
-    : join(cwd(), ".dweb", "ssr-view-bundle-cache");
+  const { outDir, cacheDir } = getViewSsrBundleDiskCacheDirs();
   try {
     await ensureDir(outDir);
     await ensureDir(cacheDir);

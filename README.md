@@ -1856,8 +1856,9 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 **Added**: View **TSX** via **esbuild + `compileSource`** on server and client
 (`view-tsx-compile-plugin`, `view-ssr-route-bundle`); **`loadRouteModule`**
-**`routesDirPath`**; per-project **`~/.dreamer/<project>/`** cache helpers;
-**`createDwebClientBundlePlugins`**. **Changed**: deps (**esbuild**, **router**,
+**`routesDirPath`**; **`~/.dreamer/<project>/`** helpers in **cache-dirs**; View
+SSR bundle disk cache under **`runtime/cache/`**; **`createDwebClientBundlePlugins`**.
+**Changed**: deps (**esbuild**, **router**,
 **view**); SSG / **load-data** pass engine + routes dir; HMR clears View SSR
 bundle cache; init + basic examples (**SignalRef**, **e2e-counter** /
 **data-counter-value**); e2e counter utils. **Fixed**: **view-ssg** basic

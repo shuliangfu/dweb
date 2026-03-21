@@ -19,10 +19,12 @@
   **`import`**，使 SSR/SSG/**`load()`** 与浏览器端 JSX
   语义一致。**`loadRouteModule`** 增加 **`routesDirPath`**；当
   **`engine === "view"`** 且文件为 **`.tsx`** 时走该管线。
-- **用户级按项目缓存：** **`cache-dirs.ts`** 新增
-  **`getDreamerProjectDirCacheSegment`**、
-  **`getDreamerProjectCacheRoot`**（`~/.dreamer/<项目目录名>/`），供 View SSR
-  bundle 缓存等使用。
+- **用户级按项目缓存辅助：** **`cache-dirs.ts`** 新增
+  **`getDreamerProjectDirCacheSegment`**、**`getDreamerProjectCacheRoot`**
+  （`~/.dreamer/<项目目录名>/`），供其它能力（如构建目录）使用。**View SSR
+  路由单包** 的磁盘产出使用 **`<cwd>/runtime/cache/bundle-out`** 与
+  **`<cwd>/runtime/cache/bundle-cache`**，使动态 **`import`** 能从工程内解析
+  **external** 依赖（兼容 Bun）。
 - **CSR 客户端构建：**
   **`createDwebClientBundlePlugins(engine, routesDirPath)`**， View
   注册编译插件，React/Preact 仍走 **`createStripLoadPlugin`**。
@@ -31,6 +33,9 @@
 
 - **依赖：** @dreamer/esbuild **^1.1.5**、@dreamer/router
   **^1.1.1**、@dreamer/view **^1.3.3**（`package.json` 已对齐）。
+- **View SSR 路由单包磁盘缓存：** 改为写入 **`<cwd>/runtime/cache/`**（子目录
+  **`bundle-out`**、**`bundle-cache`**），不再使用 **`~/.dreamer/`** 或
+  **`.dweb/`**，便于 Bun 从工程内解析 **external**。
 - **App（SSG）与 load-data 中间件：** 向 **`loadRouteModule`** 传入 **`engine`**
   与解析后的 **`routesDir`**，使 View 的 SSG 与路由 **`load`** 使用新加载管线。
 - **Server / HMR：** 文件变更时除 CSS 路由缓存外，调用

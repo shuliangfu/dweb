@@ -20,9 +20,12 @@ and this project adheres to
   import so SSR/SSG/`load()` match client JSX semantics. **`loadRouteModule`**
   accepts **`routesDirPath`** and uses this path when **`engine === "view"`**
   and the file is **`.tsx`**.
-- **User-level per-project cache:** `getDreamerProjectDirCacheSegment` and
-  `getDreamerProjectCacheRoot` in **`cache-dirs.ts`** (`~/.dreamer/<project>/`),
-  used by the View SSR bundle cache.
+- **User-level per-project cache helpers:** `getDreamerProjectDirCacheSegment`
+  and `getDreamerProjectCacheRoot` in **`cache-dirs.ts`**
+  (`~/.dreamer/<project>/`) for other features (e.g. build dirs). **View SSR
+  route bundle** disk output uses **`<cwd>/runtime/cache/bundle-out`** and
+  **`<cwd>/runtime/cache/bundle-cache`** so dynamic `import` resolves
+  **external** deps from the project (Bun-compatible).
 - **CSR client builder:**
   **`createDwebClientBundlePlugins(engine, routesDirPath)`** registers the View
   compile plugin or **`createStripLoadPlugin`** for React/Preact.
@@ -31,6 +34,9 @@ and this project adheres to
 
 - **Dependencies:** @dreamer/esbuild **^1.1.5**, @dreamer/router **^1.1.1**,
   @dreamer/view **^1.3.3** (mirrored in `package.json`).
+- **View SSR route bundle disk cache:** Writes under **`<cwd>/runtime/cache/`**
+  (`bundle-out`, `bundle-cache`) instead of **`~/.dreamer/`** or **`.dweb/`**,
+  so Bun resolves **external** imports from the project.
 - **App (SSG) and load-data middleware:** Pass **`engine`** and resolved
   **`routesDir`** into **`loadRouteModule`** so View SSG and route **`load`**
   use the new pipeline.
