@@ -7,6 +7,19 @@
 
 ---
 
+## [3.2.5] - 2026-03-22
+
+### 修复
+
+- **`view-ssr-route-bundle.ts`：** 打包或动态 **`import`** 失败时，按
+  **`logger.error(message, data, error)`**
+  约定将捕获的异常放在**第三参**；第二参为结构化 **`data`**。此前把 **`Error`**
+  放在第二参会被序列化为 **`{}`**，看不到 **message** 与
+  **stack**。**`console.error`** 分支同样输出 **`entry`**、**`diskPath`**
+  与异常对象。
+
+---
+
 ## [3.2.4] - 2026-03-22
 
 ### 变更

@@ -158,11 +158,12 @@ export async function loadViewRouteModuleViaSsrBundle(
     viewSsrBundledModuleCache.set(cacheKey, mod);
     return mod;
   } catch (e) {
+    /** Logger.error 签名为 (message, data?, error?)，异常必须传第三参，否则会被当作 data 序列化成 `{}` */
     const msg = "view-ssr-route-bundle: bundle or import failed";
     if (options?.logger) {
-      options.logger.error(msg, e);
+      options.logger.error(msg, { entry: entryResolved, diskPath }, e);
     } else {
-      console.error(msg, e);
+      console.error(msg, { entry: entryResolved, diskPath }, e);
     }
     return null;
   }

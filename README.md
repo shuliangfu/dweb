@@ -1852,15 +1852,12 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.2.4] - 2026-03-22
+### [3.2.5] - 2026-03-22
 
-**Changed**: @dreamer/view **^1.3.4**; **CSR client builder** — View
-**`client.dep.tsx`** imports **`SignalRef`**, **`viewState`** typed as
-**`SignalRef<_ViewStateRoot>`** (avoids TS2488); embedded route/HMR snippets use
-**`const`/`let`** and arrows for **deno lint**; **`globalThis`** for
-**`DOMContentLoaded`**; View-only hybrid **`_viewReactiveRoot`** line and HMR
-**`async`** emission refined. Full changelog:
-[CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Fixed**: **`view-ssr-route-bundle`** — **`logger.error`** now passes the
+caught error as the **third** argument (with **`entry`** / **`diskPath`** in
+**`data`**) so failures show **message** and **stack** instead of **`{}`**. Full
+changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 

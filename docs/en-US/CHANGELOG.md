@@ -8,6 +8,19 @@ and this project adheres to
 
 ---
 
+## [3.2.5] - 2026-03-22
+
+### Fixed
+
+- **`view-ssr-route-bundle.ts`:** On bundle/import failure, call
+  **`logger.error(message, data, error)`** with the caught value as the
+  **third** argument (not the second). The second slot is **structured `data`**;
+  passing an **`Error`** there was serialized as **`{}`**, hiding **message**
+  and **stack**. **`console.error`** path now logs **`entry`** and
+  **`diskPath`** alongside the error for consistency.
+
+---
+
 ## [3.2.4] - 2026-03-22
 
 ### Changed

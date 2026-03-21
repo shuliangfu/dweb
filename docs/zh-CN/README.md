@@ -1921,14 +1921,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.2.4] - 2026-03-22
+### [3.2.5] - 2026-03-22
 
-**变更**：@dreamer/view **^1.3.4**；**CSR 客户端构建** — View 生成的
-**`client.dep.tsx`** 引入 **`SignalRef`**，**`viewState`** 标注为
-**`SignalRef<_ViewStateRoot>`**（避免 TS2488）；内嵌路由/HMR 片段改用
-**`const`/`let`** 与箭头函数以通过 **deno lint**；**`DOMContentLoaded`** 使用
-**`globalThis`**；仅 View 模板输出 Hybrid **`_viewReactiveRoot`** 补渲染，HMR
-**`async`** 按引擎区分。完整变更日志： [CHANGELOG.md](./CHANGELOG.md)
+**修复**：**`view-ssr-route-bundle`** — **`logger.error`**
+将异常放在**第三参**（第二参为 **`entry` / `diskPath`** 等
+**`data`**），失败时可看到 **message** 与 **stack**，不再出现
+**`{}`**。完整变更日志： [CHANGELOG.md](./CHANGELOG.md)
 
 ---
 
