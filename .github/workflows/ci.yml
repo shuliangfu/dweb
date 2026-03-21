@@ -8,6 +8,8 @@ on:
   pull_request:
     branches: [dev]
 
+# 工作流级 env：让基于 Node 的 GitHub Actions（如 checkout、setup-*）提前使用 Node 24 运行时，
+# 便于在官方强制升级前做性能/稳定性验证。参见 GitHub 文档中的 FORCE_JAVASCRIPT_ACTIONS_TO_NODE24。
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -105,7 +107,7 @@ jobs:
       - name: Install image dependencies (Linux)
         run: sudo apt-get update && sudo apt-get install -y imagemagick
 
-      - uses: oven-sh/setup-bun@v2.1.3
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
@@ -137,7 +139,7 @@ jobs:
       - name: Install image dependencies (macOS)
         run: brew install imagemagick
 
-      - uses: oven-sh/setup-bun@v2.1.3
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
@@ -166,7 +168,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: oven-sh/setup-bun@v2.1.3
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
