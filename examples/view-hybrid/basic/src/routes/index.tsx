@@ -1,4 +1,9 @@
-import { createEffect, createSignal, onCleanup } from "@dreamer/view";
+import {
+  createEffect,
+  createRef,
+  createSignal,
+  onCleanup,
+} from "@dreamer/view";
 import { Client } from "@dreamer/websocket/client";
 
 // import "../assets/index.css";
@@ -118,11 +123,48 @@ export default function Home({ data }: HomeProps) {
     console.log("[createEffect]", new Date().toISOString());
   });
 
-  const clientRef: { current: Client | null } = { current: null };
   const [count, setCount] = createSignal(0);
   const [status, setStatus] = createSignal<ConnectionStatus>("idle");
   const [messages, setMessages] = createSignal<ChatMessage[]>([]);
-  const [input, setInput] = createSignal("");
+  /**
+   * 非受控输入 + `createRef`：`ref={messageInputRef}` 由编译器处理。
+   *
+   * **为何以前在 dweb Hybrid 里读不到 `ref.current`？** 旧版编译器对「对象 ref」仅在
+   * `el.isConnected === true` 时赋值；路由页在嵌套 `insertReactive` 里挂载时，input 常尚未接入
+   * document，`ref.current` 会一直为 `null`。`view/examples` 里 gallery 等多是往**已在文档里的**
+   * 容器 `mount`，append 时往往已 `isConnected`，所以不容易踩坑。
+   *
+   * **现行为：** compileSource 路径下对象 ref 走 `scheduleFunctionRef`。`deno.json` 使用 `jsx: "react-jsx"` 时
+   * JSX 经 `jsx()`→VNode→`mountVNodeTree`，ref 在 `vnode-mount` 中同样用 `scheduleFunctionRef` 绑定。
+   * 输入区仍勿与 `value={signal()}` 放在同一段会随输入刷新的 `{() => ...}` 内，以免失焦。
+   */
+  const messageInputRef = createRef<HTMLInputElement>(null);
+  const clientRef: { current: Client | null } = { current: null };
+
+  /**
+   * 发送一条消息到服务端（事件名 chat-message，需服务端监听并可选回发 chat-response）。
+   *
+   * 调试说明：`console.log` 仅在**浏览器 DevTools 控制台**输出，不会出现在运行 `deno task dev` 的终端里。
+   */
+  const handleSend = () => {
+    const el = messageInputRef.current;
+    const text = (el?.value ?? "").trim();
+    if (!text) return;
+    const client = clientRef.current;
+    if (client?.connected) {
+      debugLog("→ chat-message 发送:", text);
+      client.emit("chat-message", { text });
+      setMessages((prev) => [...prev, { type: "sent", text, at: Date.now() }]);
+      if (el) el.value = "";
+    } else {
+      debugLog("→ 发送失败：未连接");
+      setMessages((prev) => [
+        ...prev,
+        { type: "sent", text: `[未连接] ${text}`, at: Date.now() },
+      ]);
+      if (el) el.value = "";
+    }
+  };
 
   createEffect(() => {
     // 仅浏览器端创建并连接 WebSocket 客户端；SSR 时跳过，避免服务进程内自连 /ws
@@ -197,26 +239,6 @@ export default function Home({ data }: HomeProps) {
       clientRef.current = null;
     });
   }, []);
-
-  /** 发送一条消息到服务端（事件名 chat-message，需服务端监听并可选回发 chat-response） */
-  const handleSend = () => {
-    const text = input().trim();
-    if (!text) return;
-    const client = clientRef.current;
-    if (client?.connected) {
-      debugLog("→ chat-message 发送:", text);
-      client.emit("chat-message", { text });
-      setMessages((prev) => [...prev, { type: "sent", text, at: Date.now() }]);
-      setInput("");
-    } else {
-      debugLog("→ 发送失败：未连接");
-      setMessages((prev) => [
-        ...prev,
-        { type: "sent", text: `[未连接] ${text}`, at: Date.now() },
-      ]);
-      setInput("");
-    }
-  };
 
   const statusLabel: Record<ConnectionStatus, string> = {
     idle: "未连接",
@@ -298,7 +320,12 @@ export default function Home({ data }: HomeProps) {
         )}
       </section>
 
-      {/* WebSocket 客户端示例：整块包成动态子节点，仅此槽位随 status/input/messages 更新，避免整页重跑（含其他 section）；mt-8 与上方计数器模块留出间距 */}
+      {
+        /*
+         * WebSocket 区：status、消息列表各自 `{() => ...}`，输入框静态挂载。
+         * 勿把 `value={signal()}` 的 input 放进会随该 signal 更新的同一段动态子树，否则会失焦。
+         */
+      }
       <section class={`${classes.socketSection} ${classes.socketSectionOuter}`}>
         <h2 class={classes.socketTitle}>WebSocket 客户端示例</h2>
         <p class={classes.socketDesc}>
@@ -306,55 +333,54 @@ export default function Home({ data }: HomeProps) {
           chat-message、接收 chat-response
         </p>
         {() => (
-          <>
-            <div class={classes.statusBadgeWrap}>
-              <span
-                class={`${classes.statusBadge} ${statusBadgeClasses[status()]}`}
-              >
-                {statusLabel[status()]}
-              </span>
-            </div>
-            <div class={classes.inputWrap}>
-              <input
-                type="text"
-                class={classes.input}
-                placeholder="输入消息并发送 (chat-message)"
-                value={input()}
-                onInput={(e) => setInput((e.target as HTMLInputElement).value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              />
-              <button
-                type="button"
-                class={classes.sendBtn}
-                onClick={handleSend}
-              >
-                发送
-              </button>
-            </div>
-            <div class={classes.messageBox}>
-              {messages().length === 0
-                ? (
-                  <p class={classes.messageEmpty}>
-                    暂无消息。发送后显示在这里。
-                  </p>
-                )
-                : (
-                  <ul class={classes.messageList}>
-                    {messages().map((msg, i) => (
-                      <li
-                        key={`${msg.at}-${i}`}
-                        class={msg.type === "sent"
-                          ? classes.messageSent
-                          : classes.messageReceived}
-                      >
-                        {msg.type === "sent" ? "→ " : "← "}
-                        {msg.text}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-            </div>
-          </>
+          <div class={classes.statusBadgeWrap}>
+            <span
+              class={`${classes.statusBadge} ${statusBadgeClasses[status()]}`}
+            >
+              {statusLabel[status()]}
+            </span>
+          </div>
+        )}
+        <div class={classes.inputWrap}>
+          <input
+            ref={messageInputRef}
+            type="text"
+            class={classes.input}
+            placeholder="输入消息并发送 (chat-message)"
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          />
+          <button
+            type="button"
+            class={classes.sendBtn}
+            onClick={handleSend}
+          >
+            发送
+          </button>
+        </div>
+        {() => (
+          <div class={classes.messageBox}>
+            {messages().length === 0
+              ? (
+                <p class={classes.messageEmpty}>
+                  暂无消息。发送后显示在这里。
+                </p>
+              )
+              : (
+                <ul class={classes.messageList}>
+                  {messages().map((msg, i) => (
+                    <li
+                      key={`${msg.at}-${i}`}
+                      class={msg.type === "sent"
+                        ? classes.messageSent
+                        : classes.messageReceived}
+                    >
+                      {msg.type === "sent" ? "→ " : "← "}
+                      {msg.text}
+                    </li>
+                  ))}
+                </ul>
+              )}
+          </div>
         )}
       </section>
     </div>

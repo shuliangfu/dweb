@@ -1,5 +1,10 @@
 import { Client } from "@dreamer/socket-io/client";
-import { createEffect, createSignal, onCleanup } from "@dreamer/view";
+import {
+  createEffect,
+  createRef,
+  createSignal,
+  onCleanup,
+} from "@dreamer/view";
 
 /**
  * 页面 UnoCSS 类名（全部提取为静态对象，便于 unocssPlugin 扫描）
@@ -81,7 +86,7 @@ interface ChatMessage {
  * 首页组件（View 细粒度渲染）
  * 路由: /
  * - 仅依赖 count 的 UI 包在 {() => (...)} 中，count 变化时只重跑该块
- * - 仅依赖 status/input/messages 的 Socket.IO 区块同理，避免整页重跑
+ * - 仅依赖 status/messages 的 Socket.IO 区块用 `{() => ...}`；输入框非受控 + ref，避免与 input signal 同段更新导致失焦
  * 包含 Socket.IO 客户端示例：连接状态、发送消息、接收消息
  */
 
@@ -111,7 +116,8 @@ export default function Home({ data }: HomeProps) {
   const [count, setCount] = createSignal(0);
   const [status, setStatus] = createSignal<ConnectionStatus>("idle");
   const [messages, setMessages] = createSignal<ChatMessage[]>([]);
-  const [input, setInput] = createSignal("");
+  /** 非受控输入：避免与 `value={signal()}` 同段动态子树一起更新时整段 DOM 替换失焦 */
+  const messageInputRef = createRef<HTMLInputElement>(null);
 
   createEffect(() => {
     // 仅浏览器端创建并连接 Socket.IO 客户端；SSR 时跳过，避免服务进程内自连导致 /socket.io/ 500 与握手 404
@@ -200,21 +206,22 @@ export default function Home({ data }: HomeProps) {
 
   /** 发送一条消息到服务端（事件名 chat-message，需服务端监听并可选回发 chat-response） */
   const handleSend = () => {
-    const text = input().trim();
+    const el = messageInputRef.current;
+    const text = (el?.value ?? "").trim();
     if (!text) return;
     const client = clientRef.current;
     if (client?.isConnected()) {
       debugLog("→ chat-message 发送:", text);
       client.emit("chat-message", { text });
       setMessages((prev) => [...prev, { type: "sent", text, at: Date.now() }]);
-      setInput("");
+      if (el) el.value = "";
     } else {
       debugLog("→ 发送失败：未连接");
       setMessages((prev) => [
         ...prev,
         { type: "sent", text: `[未连接] ${text}`, at: Date.now() },
       ]);
-      setInput("");
+      if (el) el.value = "";
     }
   };
 
@@ -299,7 +306,6 @@ export default function Home({ data }: HomeProps) {
         )}
       </section>
 
-      {/* View 细粒度 + Socket.IO：整块包成 {() => (...)}，仅此槽位随 status/input/messages 更新，避免整页重跑；与 view-hybrid/basic 的 WebSocket 区块写法一致 */}
       <section class={`${classes.socketSection} ${classes.socketSectionOuter}`}>
         <h2 class={classes.socketTitle}>Socket.IO 客户端示例</h2>
         <p class={classes.socketDesc}>
@@ -307,55 +313,54 @@ export default function Home({ data }: HomeProps) {
           chat-message、接收 chat-response
         </p>
         {() => (
-          <>
-            <div class={classes.statusBadgeWrap}>
-              <span
-                class={`${classes.statusBadge} ${statusBadgeClasses[status()]}`}
-              >
-                {statusLabel[status()]}
-              </span>
-            </div>
-            <div class={classes.inputWrap}>
-              <input
-                type="text"
-                class={classes.input}
-                placeholder="输入消息并发送 (chat-message)"
-                value={input()}
-                onInput={(e) => setInput((e.target as HTMLInputElement).value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              />
-              <button
-                type="button"
-                class={classes.sendBtn}
-                onClick={handleSend}
-              >
-                发送
-              </button>
-            </div>
-            <div class={classes.messageBox}>
-              {messages().length === 0
-                ? (
-                  <p class={classes.messageEmpty}>
-                    暂无消息。发送后显示在这里。
-                  </p>
-                )
-                : (
-                  <ul class={classes.messageList}>
-                    {messages().map((msg, i) => (
-                      <li
-                        key={`${msg.at}-${i}`}
-                        class={msg.type === "sent"
-                          ? classes.messageSent
-                          : classes.messageReceived}
-                      >
-                        {msg.type === "sent" ? "→ " : "← "}
-                        {msg.text}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-            </div>
-          </>
+          <div class={classes.statusBadgeWrap}>
+            <span
+              class={`${classes.statusBadge} ${statusBadgeClasses[status()]}`}
+            >
+              {statusLabel[status()]}
+            </span>
+          </div>
+        )}
+        <div class={classes.inputWrap}>
+          <input
+            ref={messageInputRef}
+            type="text"
+            class={classes.input}
+            placeholder="输入消息并发送 (chat-message)"
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          />
+          <button
+            type="button"
+            class={classes.sendBtn}
+            onClick={handleSend}
+          >
+            发送
+          </button>
+        </div>
+        {() => (
+          <div class={classes.messageBox}>
+            {messages().length === 0
+              ? (
+                <p class={classes.messageEmpty}>
+                  暂无消息。发送后显示在这里。
+                </p>
+              )
+              : (
+                <ul class={classes.messageList}>
+                  {messages().map((msg, i) => (
+                    <li
+                      key={`${msg.at}-${i}`}
+                      class={msg.type === "sent"
+                        ? classes.messageSent
+                        : classes.messageReceived}
+                    >
+                      {msg.type === "sent" ? "→ " : "← "}
+                      {msg.text}
+                    </li>
+                  ))}
+                </ul>
+              )}
+          </div>
         )}
       </section>
     </div>

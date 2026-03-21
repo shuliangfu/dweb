@@ -63,6 +63,8 @@ export function Button({
 export function getAppTsx(opts: InitOptions): string {
   const titleName = opts.projectName;
   const propsSnippet = getAppPropsTypeSnippet(opts.engine);
+  /** View 引擎 JSX 推荐使用 class；Preact/React 使用 className */
+  const attr = opts.engine === "view" ? "class" : "className";
   return `/**
  * App root component
  */
@@ -86,7 +88,7 @@ export default function App({
         <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
         <title>{title}</title>
       </head>
-      <body className="bg-gray-100 text-gray-900 antialiased">
+      <body ${attr}="bg-gray-100 text-gray-900 antialiased">
         <div id="app">{children}</div>
       </body>
     </html>
@@ -109,6 +111,8 @@ export function getLayoutTsx(opts: InitOptions, appName?: string): string {
     ? $tr("init.template.styleTailwind")
     : $tr("init.template.styleGeneric");
   const importAndProps = getLayoutPropsTypeSnippet(opts.engine);
+  /** View 引擎 JSX 推荐使用 class，与 index/Button 模板一致 */
+  const attr = opts.engine === "view" ? "class" : "className";
 
   return `/**
  * ${$tr("init.template.layoutComment", { style: styleComment })}
@@ -118,21 +122,21 @@ ${importAndProps}
 
 export default function Layout({ children }: LayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center justify-between h-16">
+    <div ${attr}="min-h-screen flex flex-col">
+      <header ${attr}="bg-white shadow-sm sticky top-0 z-50">
+        <div ${attr}="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav ${attr}="flex items-center justify-between h-16">
             <a
               href="/"
-              className="text-xl font-bold ${accentClass}"
+              ${attr}="text-xl font-bold ${accentClass}"
             >
               ${appDisplayName}
             </a>
-            <ul className="flex items-center gap-6 list-none m-0 p-0">
+            <ul ${attr}="flex items-center gap-6 list-none m-0 p-0">
               <li>
                 <a
                   href="/"
-                  className="${linkClass}"
+                  ${attr}="${linkClass}"
                 >
                   ${$tr("init.template.navHome")}
                 </a>
@@ -140,7 +144,7 @@ export default function Layout({ children }: LayoutProps) {
               <li>
                 <a
                   href="/about"
-                  className="${linkClass}"
+                  ${attr}="${linkClass}"
                 >
                   ${$tr("init.template.navAbout")}
                 </a>
@@ -150,15 +154,15 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </header>
 
-      <main className="flex-1">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main ${attr}="flex-1">
+        <div ${attr}="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {children}
         </div>
       </main>
 
-      <footer className="bg-gray-800 text-white py-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-400">
+      <footer ${attr}="bg-gray-800 text-white py-8">
+        <div ${attr}="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p ${attr}="text-gray-400">
             ${$tr("init.template.footerBuilt")}
           </p>
         </div>
@@ -292,6 +296,8 @@ ${counterSection}
 
 export function getAboutTsx(opts: InitOptions): string {
   const engineName = getEngineDisplayName(opts.engine);
+  /** View 使用 class；dangerouslySetInnerHTML 与 React 一致，由编译器处理 */
+  const attr = opts.engine === "view" ? "class" : "className";
   return `/**
  * ${$tr("init.comments.aboutPage")}
  * ${$tr("init.comments.aboutRoute")}
@@ -299,20 +305,20 @@ export function getAboutTsx(opts: InitOptions): string {
 
 export default function About() {
   return (
-    <div className="py-5">
-      <h1 className="mb-8 text-3xl font-bold">${
+    <div ${attr}="py-5">
+      <h1 ${attr}="mb-8 text-3xl font-bold">${
     $tr("init.template.aboutTitle")
   }</h1>
 
-      <section className="rounded-lg bg-white p-8 shadow-md">
-        <p className="mb-6" dangerouslySetInnerHTML={{ __html: "${
+      <section ${attr}="rounded-lg bg-white p-8 shadow-md">
+        <p ${attr}="mb-6" dangerouslySetInnerHTML={{ __html: "${
     $tr("init.template.aboutDesc", { engine: engineName })
   }" }} />
 
-        <h2 className="mb-4 mt-6 text-xl font-semibold text-indigo-600">${
+        <h2 ${attr}="mb-4 mt-6 text-xl font-semibold text-indigo-600">${
     $tr("init.template.aboutTechStack")
   }</h2>
-        <ul className="ml-5 list-disc space-y-2">
+        <ul ${attr}="ml-5 list-disc space-y-2">
           <li>
             <strong>@dreamer/dweb</strong> - ${$tr("init.template.techDweb")}
           </li>
@@ -333,8 +339,10 @@ export default function About() {
 `;
 }
 
-export function getUserByIdTsx(_opts: InitOptions): string {
+export function getUserByIdTsx(opts: InitOptions): string {
   const avatarGradient = "bg-linear-to-br from-indigo-500 to-purple-600";
+  /** View 引擎与首页、布局一致使用 class */
+  const attr = opts.engine === "view" ? "class" : "className";
   return `/**
  * ${$tr("init.comments.userDetailPage")}
  * ${$tr("init.comments.dynamicRoute")}
@@ -369,16 +377,16 @@ export default function User({ params }: UserProps) {
 
   if (!user) {
     return (
-      <div className="py-16 px-5 text-center">
-        <h1 className="mb-4 text-2xl font-bold text-red-500">${
+      <div ${attr}="py-16 px-5 text-center">
+        <h1 ${attr}="mb-4 text-2xl font-bold text-red-500">${
     $tr("init.template.userNotFound")
   }</h1>
-        <p className="mb-4">${
+        <p ${attr}="mb-4">${
     $tr("init.template.userNotFoundDescPrefix")
   }{params.id}${$tr("init.template.userNotFoundDescSuffix")}</p>
         <a
           href="/"
-          className="mt-5 inline-block rounded-md bg-blue-600 px-5 py-2.5 text-white no-underline hover:bg-blue-700"
+          ${attr}="mt-5 inline-block rounded-md bg-blue-600 px-5 py-2.5 text-white no-underline hover:bg-blue-700"
         >
           ${$tr("init.template.backToHome")}
         </a>
@@ -387,40 +395,40 @@ export default function User({ params }: UserProps) {
   }
 
   return (
-    <div className="py-5">
-      <h1 className="mb-8 text-3xl font-bold">${
+    <div ${attr}="py-5">
+      <h1 ${attr}="mb-8 text-3xl font-bold">${
     $tr("init.template.userDetail")
   }</h1>
 
-      <div className="flex items-center gap-6 rounded-xl bg-white p-8 shadow-md">
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full ${avatarGradient} text-3xl font-bold text-white">
+      <div ${attr}="flex items-center gap-6 rounded-xl bg-white p-8 shadow-md">
+        <div ${attr}="flex h-20 w-20 shrink-0 items-center justify-center rounded-full ${avatarGradient} text-3xl font-bold text-white">
           {user.name.charAt(0)}
         </div>
         <div>
-          <h2 className="mb-2 text-2xl font-semibold">{user.name}</h2>
-          <p className="mb-2.5 text-gray-600">{user.email}</p>
-          <span className="inline-block rounded-full bg-indigo-500 px-3 py-1 text-sm text-white">
+          <h2 ${attr}="mb-2 text-2xl font-semibold">{user.name}</h2>
+          <p ${attr}="mb-2.5 text-gray-600">{user.email}</p>
+          <span ${attr}="inline-block rounded-full bg-indigo-500 px-3 py-1 text-sm text-white">
             {user.role}
           </span>
         </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap gap-4">
+      <div ${attr}="mt-8 flex flex-wrap gap-4">
         <a
           href="/user/1"
-          className="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
+          ${attr}="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
         >
           ${$tr("init.template.user1")}
         </a>
         <a
           href="/user/2"
-          className="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
+          ${attr}="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
         >
           ${$tr("init.template.user2")}
         </a>
         <a
           href="/user/3"
-          className="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
+          ${attr}="rounded-md bg-gray-100 px-5 py-2.5 text-gray-800 no-underline transition-colors hover:bg-gray-200"
         >
           ${$tr("init.template.user3")}
         </a>

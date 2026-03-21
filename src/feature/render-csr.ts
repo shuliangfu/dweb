@@ -12,22 +12,22 @@
  * 3. 客户端脚本根据路由渲染页面
  */
 
+import { resolveMetadata } from "@dreamer/render";
+import type { RouteMatch, Router } from "@dreamer/router";
+import type { ServiceContainer } from "@dreamer/service";
+import type { SessionData } from "@dreamer/session";
 import { jsx as viewJsx } from "@dreamer/view/jsx-runtime";
 import { createElement as createElementPreact } from "preact";
 import { createElement as createElementReact } from "react";
-import type { RouteMatch, Router } from "@dreamer/router";
-import type { ServiceContainer } from "@dreamer/service";
 import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
+import type { AppConfig } from "../types/app.ts";
+import { createLoadContext, createServerResponse } from "../types/context.ts";
+import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { extractComponentPathFromRouteFile } from "../utils/path.ts";
-import type { AppConfig } from "../types/app.ts";
-import { $tr } from "../utils/i18n.ts";
-import { resolveMetadata } from "@dreamer/render";
-import type { SessionData } from "@dreamer/session";
-import { createLoadContext, createServerResponse } from "../types/context.ts";
 import { loadRouteModule } from "./load-route-module.ts";
-import { getRender } from "./render.ts";
 import { hasContainerElementInHtml } from "./render-utils.ts";
+import { getRender } from "./render.ts";
 
 /** 转义 meta 内容中的 HTML 与引号，避免注入与断签 */
 function escapeHtmlForMeta(text: string): string {

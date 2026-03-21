@@ -31,6 +31,7 @@ export function getDenoJson(
   const routerSpec = `jsr:@dreamer/router@^${jsrVersions.router}`;
 
   const viewVersion = jsrVersions.view;
+  const viewSpec = `jsr:@dreamer/view@^${viewVersion}`;
   const dreamerImports = [
     `    "@dreamer/dweb": "jsr:@dreamer/dweb@^${dwebVersion}"`,
     `    "@dreamer/render": "${renderSpec}"`,
@@ -38,9 +39,7 @@ export function getDenoJson(
     ...(hasStyleAssets
       ? [`    "@dreamer/plugins": "jsr:@dreamer/plugins@^${pluginsVersion}"`]
       : []),
-    ...(opts.engine === "view"
-      ? [`    "@dreamer/view": "jsr:@dreamer/view@^${viewVersion}"`]
-      : []),
+    ...(opts.engine === "view" ? [`    "@dreamer/view": "${viewSpec}"`] : []),
   ].join(",\n");
 
   const tailwindNpmImports = useTailwind

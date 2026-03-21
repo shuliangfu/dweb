@@ -20,6 +20,7 @@ import {
   platform,
   readTextFile,
   remove,
+  resolve,
   symlink,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
@@ -27,6 +28,36 @@ import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import { getRepoRoot } from "../setup.ts";
 
 const REPO_ROOT = getRepoRoot();
+
+/**
+ * 将 dweb/deno.json 中的 import 映射值转为子进程可解析的 spec。
+ * 相对路径（如 `../render/src/mod.ts`）相对**原 deno.json 所在目录**（即 dweb 包根）解析，
+ * 再写成绝对 `file://`；若原样复制到临时目录 deno.json，会按临时目录解析，导致找不到模块（如 `/T/render/...`）。
+ *
+ * @param spec - import map 的值
+ * @param denoJsonDir - 仓库内 dweb/deno.json 所在目录（与 getRepoRoot() 一致）
+ */
+function resolveImportMapEntryForTempProject(
+  spec: string,
+  denoJsonDir: string,
+): string {
+  if (
+    spec.startsWith("npm:") ||
+    spec.startsWith("jsr:") ||
+    spec.startsWith("http://") ||
+    spec.startsWith("https://")
+  ) {
+    return spec;
+  }
+  if (spec.startsWith("file:")) {
+    return spec;
+  }
+  if (spec.startsWith(".")) {
+    const absPath = resolve(denoJsonDir, spec).replace(/\\/g, "/");
+    return absPath.startsWith("/") ? `file://${absPath}` : `file:///${absPath}`;
+  }
+  return spec;
+}
 
 /** Windows 上 Bun 创建目录符号链接常需管理员或开发者模式，CI 易失败，整套件跳过 */
 const isBunWindows = !IS_DENO && platform() === "windows";
@@ -54,14 +85,22 @@ const runConfigLifecycleSuite = () => {
         const dwebLocal = dwebModPath.startsWith("/")
           ? `file://${dwebModPath}`
           : `file:///${dwebModPath}`;
+        /** 相对路径须相对 dweb 包根解析后再写入，否则临时目录下 `../render` 会指到错误位置 */
+        const resolvedImports: Record<string, string> = {};
+        for (const [key, val] of Object.entries(repoDenoJson.imports ?? {})) {
+          if (typeof val === "string") {
+            resolvedImports[key] = resolveImportMapEntryForTempProject(
+              val,
+              REPO_ROOT,
+            );
+          }
+        }
+        resolvedImports["@dreamer/dweb"] = dwebLocal;
         await writeTextFile(
           join(testDir, "deno.json"),
           JSON.stringify(
             {
-              imports: {
-                ...repoDenoJson.imports,
-                "@dreamer/dweb": dwebLocal,
-              },
+              imports: resolvedImports,
             },
             null,
             2,

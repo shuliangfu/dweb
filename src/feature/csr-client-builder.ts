@@ -47,8 +47,8 @@ import {
 } from "../utils/constants.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
-import { createStripLoadPlugin } from "./strip-load-plugin.ts";
 import { normalizePathForCompare, pathForLog } from "../utils/path.ts";
+import { createStripLoadPlugin } from "./strip-load-plugin.ts";
 
 /**
  * 客户端脚本构建结果
@@ -394,8 +394,9 @@ type ClientDepRenderMode = "csr" | "hybrid" | "ssr" | "ssg";
  * 注意：客户端 loadLayouts 仅加载 _layout，不加载 _app。_app 是服务端文档根（输出 html/body），容器 #app 在其内部，
  * 故 hydrate/CSR 只需 Layout(Page)，否则会将 App 渲染进容器导致嵌套 html/body 或 hydrate 不匹配。
  *
- * View 引擎按 renderMode 区分：csr 用 @dreamer/render/client/view-csr（仅 createReactiveRoot/buildViewTree/renderCSR，bundle 更小）；
- * hybrid/ssr/ssg 用 @dreamer/render/client/view（主包完整适配器，含 hydrate、createReactiveRootHydrate）。
+ * View 引擎按 renderMode 区分：csr 用 @dreamer/render/client/view-csr（renderCSR/buildViewTree 等，bundle 更小）；
+ * hybrid/ssr/ssg 用 @dreamer/render/client/view-hybrid（含 hydrate、createReactiveRootHydrate）。
+ * 客户端根挂载与 @dreamer/view 一致：`mount(selector, (el) => insert(el, () => rootVNode))`，由 `@dreamer/view` 提供 `insert`。
  * SSR/SSG 的客户端激活与 hybrid 一致，均为 hydrate，不是 csr。
  *
  * @param engine 渲染引擎（用于 hydrate/renderCSR 导入及 setupHydrationRouterAndHmr）
@@ -432,8 +433,10 @@ function generateClientDepContent(
   const renderAdapterImport = isViewEngine
     ? (renderMode === "csr"
       ? `import { createSignal, mount } from "@dreamer/view/csr";
+import { insert } from "@dreamer/view";
 import { renderCSR, buildViewTree } from "${viewAdapterPath}";`
       : `${viewImport}
+import { insert } from "@dreamer/view";
 import {
   buildViewTree,
   createReactiveRoot,
@@ -890,7 +893,7 @@ export const RENDER_STATE: { lastUnmount: (() => void) | null } = { lastUnmount:
 ${
     isViewEngine
       ? `
-/** View 引擎：用 createSignal 存当前页/布局/props；CSR 用 mount(selector, fn) 与 view 示例一致，fn 内读 getViewState() 实现响应式 patch；Hybrid/SSR/SSG 用 createReactiveRootHydrate。 */
+/** View 引擎：用 createSignal 存当前页/布局/props；根挂载用 mount(selector, (el) => insert(el, getter))，getter 内 buildViewTree 与 view 2.x createRoot 约定一致。 */
 const [getViewState, setViewState] = createSignal({ page: null as unknown, props: {} as Record<string, unknown>, layouts: [] as LayoutComponent[], skipLayouts: false });
 let _viewReactiveRoot: { unmount: () => void } | null = null;
 
@@ -917,10 +920,12 @@ function _viewEnsureReactiveRoot(containerId: string): void {
     // CSR 时服务端已在 #app 内渲染 Layout(Loading)；mount() 会 appendChild，先清空避免两屏。Hybrid/SSR/SSG 同需清空再挂载。
     if (_win.__DWEB_DEBUG__) console.log("[dweb:view] _viewEnsureReactiveRoot: clearing #" + containerId + (isHydrateMode ? " (mount mode)" : " (csr, replace loading shell)"));
     if (typeof (el as HTMLElement).replaceChildren === "function") (el as HTMLElement).replaceChildren(); else (el as HTMLElement).innerHTML = "";
-    _viewReactiveRoot = mount("#" + containerId, () => {
-      const s = getViewState();
-      if (_win.__DWEB_DEBUG__) console.log("[dweb:view] root effect", { hasPage: !!s.page, layoutsLen: s.layouts?.length ?? 0, skipLayouts: s.skipLayouts });
-      return buildViewTree(_viewPageContent, { getViewState }, s.layouts, s.skipLayouts);
+    _viewReactiveRoot = mount("#" + containerId, (el) => {
+      insert(el, () => {
+        const s = getViewState();
+        if (_win.__DWEB_DEBUG__) console.log("[dweb:view] root effect", { hasPage: !!s.page, layoutsLen: s.layouts?.length ?? 0, skipLayouts: s.skipLayouts });
+        return buildViewTree(_viewPageContent, { getViewState }, s.layouts, s.skipLayouts);
+      });
     }, { noopIfNotFound: true });
     if (_win.__DWEB_DEBUG__) console.log("[dweb:view] _viewEnsureReactiveRoot: done, container childCount=" + (el as HTMLElement).childNodes.length);
     RENDER_STATE.lastUnmount = () => {

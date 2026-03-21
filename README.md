@@ -1852,10 +1852,12 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.2.0] - 2026-03-19
+### [3.2.1] - 2026-03-21
 
-**Changed**: View engine uses a single `data-view-dynamic` layer; root effect
-returns layout + page tree directly with only `_viewPageContent` as getter. Full
+**Changed** (`src/`): Init **`deno-json`** template — View projects only one
+**`@dreamer/view`** import line; **`components`** templates use **`class`** for
+View engine; **`csr-client-builder`** — CSR **`client.dep.tsx`** adds
+**`insert`** from **`@dreamer/view`**, docs for **view-hybrid** path. Full
 changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---

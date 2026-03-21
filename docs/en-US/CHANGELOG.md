@@ -8,6 +8,28 @@ and this project adheres to
 
 ---
 
+## [3.2.1] - 2026-03-21
+
+### Changed
+
+- **`src/cmd/init/templates/deno-json.ts`:** For **View** engine, the generated
+  project `deno.json` **imports** block only adds **`@dreamer/view`** (single
+  JSR line built from `viewSpec`); removed extra rows for `/csr`, `/hybrid`,
+  `/jsx-runtime`, `/compiler`, etc.
+- **`src/cmd/init/templates/components.ts`:** When **engine === "view"**,
+  generated **App**, **Layout**, **About**, and **user detail** route templates
+  use the **`class`** attribute instead of **`className`** for HTML elements;
+  **`getUserByIdTsx`** now takes **`opts`** so it can branch on engine like
+  other templates.
+- **`src/feature/csr-client-builder.ts`:** **View + CSR** generated
+  **`client.dep.tsx`** now imports **`insert`** from **`@dreamer/view`** next to
+  **`createSignal` / `mount`** from **`@dreamer/view/csr`** (aligned with View
+  v1.3 **mount fn + insert**). Module docs updated: **hybrid / SSR / SSG**
+  client paths use **`@dreamer/render/client/view-hybrid`** and describe
+  **`mount` + `insert`** on the container.
+
+---
+
 ## [3.2.0] - 2026-03-19
 
 ### Changed

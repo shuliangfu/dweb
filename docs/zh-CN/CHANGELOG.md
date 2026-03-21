@@ -7,6 +7,27 @@
 
 ---
 
+## [3.2.1] - 2026-03-21
+
+### 变更
+
+- **`src/cmd/init/templates/deno-json.ts`：** **View** 引擎时，init 生成的项目根
+  **`deno.json`** 的 **imports** 仅写入一行 **`@dreamer/view`**（由 `viewSpec`
+  拼出 JSR 地址），不再生成 `/csr`、`/hybrid`、`/jsx-runtime`、`/compiler` 等
+  多条子路径映射。
+- **`src/cmd/init/templates/components.ts`：** 当 **`engine === "view"`**
+  时，生成 的 **App**、**Layout**、**About**、**用户详情** 等页面模板中，DOM
+  上使用 **`class`** 属性，不再使用 **`className`**；**`getUserByIdTsx`**
+  改为接收 **`opts`**，与其它模板一样按引擎分支。
+- **`src/feature/csr-client-builder.ts`：** **View + CSR** 下生成的
+  **`client.dep.tsx`** 在从 **`@dreamer/view/csr`** 引入 **`createSignal` /
+  `mount`** 的同时，增加从 **`@dreamer/view`** 引入 **`insert`**（对齐 View v1.3
+  **挂载函数 + insert**）。文件头注释已更新：**hybrid / SSR / SSG** 客户端 走
+  **`@dreamer/render/client/view-hybrid`**，并说明 **`mount` + `insert`** 的
+  挂载方式。
+
+---
+
 ## [3.2.0] - 2026-03-19
 
 ### 变更
