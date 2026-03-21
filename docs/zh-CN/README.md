@@ -1925,11 +1925,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 **新增**：View 应用 **TSX** 在服务端与客户端经 **esbuild + `compileSource`**
 （`view-tsx-compile-plugin`、`view-ssr-route-bundle`）；**`loadRouteModule`**
-支持 **`routesDirPath`**；**cache-dirs** 下 **`~/.dreamer/<项目名>/`** 辅助函数； View
-SSR 单包磁盘缓存在项目 **`runtime/cache/`**；**`createDwebClientBundlePlugins`**。
-**变更**：依赖（**esbuild**、**router**、**view**）；
-SSG / **load-data** 传入引擎与 routes 目录；HMR 清理 View SSR bundle 缓存； init
-与各 basic 示例（**SignalRef**、**e2e-counter** / **data-counter-value**）； e2e
+支持 **`routesDirPath`**；**cache-dirs** 下 **`~/.dreamer/<项目名>/`**
+辅助函数； View SSR 单包磁盘缓存在项目
+**`runtime/cache/`**；**`createDwebClientBundlePlugins`**。
+**变更**：依赖（**esbuild**、**router**、**view**）； SSG / **load-data**
+传入引擎与 routes 目录；HMR 清理 View SSR bundle 缓存； init 与各 basic
+示例（**SignalRef**、**e2e-counter** / **data-counter-value**）； e2e
 计数工具。**修复**：**view-ssg** basic 「加一」按钮。完整变更日志：
 [CHANGELOG.md](./CHANGELOG.md)
 
