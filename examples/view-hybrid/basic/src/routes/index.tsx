@@ -119,10 +119,6 @@ interface HomeProps {
 }
 
 export default function Home({ data }: HomeProps) {
-  createEffect(() => {
-    console.log("[createEffect]", new Date().toISOString());
-  });
-
   const [count, setCount] = createSignal(0);
   const [status, setStatus] = createSignal<ConnectionStatus>("idle");
   const [messages, setMessages] = createSignal<ChatMessage[]>([]);
@@ -287,12 +283,18 @@ export default function Home({ data }: HomeProps) {
         </div>
       </section>
 
-      <section class={classes.socketSection}>
+      {/* data-testid / data-counter-value 供 e2e 精确定位计数器，避免与其它 section 按钮混淆 */}
+      <section class={classes.socketSection} data-testid="e2e-counter">
         <h2 class={classes.socketTitle}>计数器示例</h2>
         <p class={classes.socketDesc}>View 细粒度渲染：仅此块随 count 更新</p>
         {() => (
           <div class="flex flex-col items-center justify-center gap-4">
-            <span class="text-2xl font-semibold">count: {count()}</span>
+            <span
+              class="text-2xl font-semibold"
+              data-counter-value={String(count())}
+            >
+              count: {count()}
+            </span>
             <div class="flex flex-wrap items-center justify-center gap-2">
               <button
                 type="button"

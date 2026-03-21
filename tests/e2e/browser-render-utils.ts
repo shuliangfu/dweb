@@ -235,6 +235,97 @@ async function waitForContentViaEvaluate(
 }
 
 /**
+ * 通过 evaluate 轮询直到进入「用户列表」页（与仅含导航「用户管理」文案的首页区分）。
+ * Bun/Playwright 下 waitForFunction 偶发不更新或与环境差异，故用轮询 evaluate。
+ * @param browser 浏览器上下文
+ * @param timeoutMs 最大等待毫秒
+ */
+async function waitForUsersListPageViaEvaluate(
+  browser: { evaluate: (fn: () => unknown) => Promise<unknown> },
+  timeoutMs: number,
+): Promise<void> {
+  const pollMs = 400;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const ok = await browser.evaluate(() => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string } }
+        | undefined;
+      const loc = (globalThis as Record<string, unknown>).location as
+        | { pathname?: string }
+        | undefined;
+      const html = doc?.body?.innerHTML ?? "";
+      const path = loc?.pathname ?? "";
+      /** 列表路由：/users 或 /users/（非 /users/123 详情） */
+      const onUsersList = /\/users\/?$/.test(path);
+      if (html.includes("管理系统中的所有用户")) return true;
+      if (html.includes("用户列表")) return true;
+      if (onUsersList && html.includes("用户管理")) return true;
+      if (onUsersList && html.includes("暂无用户")) return true;
+      return false;
+    }) as boolean;
+    if (ok) return;
+    await new Promise((r) => setTimeout(r, pollMs));
+  }
+  throw new Error(
+    `waitForUsersListPageViaEvaluate: ${timeoutMs}ms 内未检测到用户列表页（pathname 与正文）`,
+  );
+}
+
+/**
+ * 轮询 document.readyState === complete（evaluate），避免 waitFor 在 Bun 下偶发问题
+ * @param browser 浏览器上下文
+ * @param timeoutMs 最大等待毫秒
+ */
+async function waitForDocumentCompleteViaEvaluate(
+  browser: { evaluate: (fn: () => unknown) => Promise<unknown> },
+  timeoutMs: number,
+): Promise<void> {
+  const pollMs = 200;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const ok = await browser.evaluate(() => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { readyState?: string }
+        | undefined;
+      return doc?.readyState === "complete";
+    }) as boolean;
+    if (ok) return;
+    await new Promise((r) => setTimeout(r, pollMs));
+  }
+  throw new Error(
+    `waitForDocumentCompleteViaEvaluate: ${timeoutMs}ms 内 readyState 未为 complete`,
+  );
+}
+
+/**
+ * 轮询直到关于页正文出现（中文或英文示例）
+ * @param browser 浏览器上下文
+ * @param timeoutMs 最大等待毫秒
+ */
+async function waitForAboutPageBodyViaEvaluate(
+  browser: { evaluate: (fn: () => unknown) => Promise<unknown> },
+  timeoutMs: number,
+): Promise<void> {
+  const pollMs = 400;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const ok = await browser.evaluate(() => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string } }
+        | undefined;
+      const html = doc?.body?.innerHTML ?? "";
+      return html.includes("关于我们") || html.includes("About us");
+    }) as boolean;
+    if (ok) return;
+    await new Promise((r) => setTimeout(r, pollMs));
+  }
+  throw new Error(
+    `waitForAboutPageBodyViaEvaluate: ${timeoutMs}ms 内未检测到关于页内容`,
+  );
+}
+
+/**
  * 带一次重试的 page.goto，用于缓解 CI 上偶发 ERR_CONNECTION_REFUSED（服务器刚就绪但尚未完全可连）
  */
 async function gotoWithRetry(
@@ -270,7 +361,7 @@ async function gotoWithRetry(
  * 若示例在 dweb 仓库内（DWEB_ROOT），则跳过：在子目录执行会解析 file: 指向的 dweb/package.json，其中
  * npm:@jsr/dreamer__* 依赖会向 npm 请求，JSR 包不在 npm 上导致 404；仓库内 e2e 依赖 workspace 已有 node_modules。
  */
-async function ensureBunDeps(exampleDir: string): Promise<void> {
+async function _ensureBunDeps(exampleDir: string): Promise<void> {
   if (IS_DENO) return;
   const normalizedExample = resolve(exampleDir);
   const rootDir = resolve(DWEB_ROOT);
@@ -303,11 +394,11 @@ async function ensureBunDeps(exampleDir: string): Promise<void> {
  * @param exampleDir 示例目录
  * @param entry 入口文件：有 src 目录用 "src/main.ts"，无 src 用 "main.ts"
  */
-async function buildExample(
+async function _buildExample(
   exampleDir: string,
   entry: string = "src/main.ts",
 ): Promise<void> {
-  // await ensureBunDeps(exampleDir); // 本地测试删除示例 node_modules 仍通过，先注释
+  // await _ensureBunDeps(exampleDir); // 本地测试删除示例 node_modules 仍通过，先注释
   const distDir = join(exampleDir, "dist");
   if (await exists(distDir)) {
     await remove(distDir, { recursive: true });
@@ -816,15 +907,23 @@ async function clickCounterButton(
 ): Promise<void> {
   type ButtonLike = { textContent?: string | null; click?: () => void };
   type DocLike = {
+    querySelector?: (
+      s: string,
+    ) => { querySelectorAll?: (s: string) => ArrayLike<ButtonLike> } | null;
     querySelectorAll?: (s: string) => ArrayLike<ButtonLike>;
   };
+  // 以下三段须在 evaluate 内自包含（不能引用外部函数，否则浏览器端无定义）
   if (buttonText === "加一") {
     await browser.evaluate(() => {
       const doc = (globalThis as Record<string, unknown>).document as
         | DocLike
         | undefined;
-      const buttons = doc?.querySelectorAll?.("section button") ?? [];
-      const btn = Array.from(buttons).find(
+      const scope = doc?.querySelector?.('[data-testid="e2e-counter"]');
+      const scoped = scope?.querySelectorAll?.("button");
+      const list = scoped && scoped.length > 0
+        ? Array.from(scoped)
+        : Array.from(doc?.querySelectorAll?.("section button") ?? []);
+      const btn = list.find(
         (b: ButtonLike) => b.textContent?.trim() === "加一",
       );
       btn?.click?.();
@@ -834,8 +933,12 @@ async function clickCounterButton(
       const doc = (globalThis as Record<string, unknown>).document as
         | DocLike
         | undefined;
-      const buttons = doc?.querySelectorAll?.("section button") ?? [];
-      const btn = Array.from(buttons).find(
+      const scope = doc?.querySelector?.('[data-testid="e2e-counter"]');
+      const scoped = scope?.querySelectorAll?.("button");
+      const list = scoped && scoped.length > 0
+        ? Array.from(scoped)
+        : Array.from(doc?.querySelectorAll?.("section button") ?? []);
+      const btn = list.find(
         (b: ButtonLike) => b.textContent?.trim() === "减一",
       );
       btn?.click?.();
@@ -845,8 +948,12 @@ async function clickCounterButton(
       const doc = (globalThis as Record<string, unknown>).document as
         | DocLike
         | undefined;
-      const buttons = doc?.querySelectorAll?.("section button") ?? [];
-      const btn = Array.from(buttons).find(
+      const scope = doc?.querySelector?.('[data-testid="e2e-counter"]');
+      const scoped = scope?.querySelectorAll?.("button");
+      const list = scoped && scoped.length > 0
+        ? Array.from(scoped)
+        : Array.from(doc?.querySelectorAll?.("section button") ?? []);
+      const btn = list.find(
         (b: ButtonLike) => b.textContent?.trim() === "重置",
       );
       btn?.click?.();
@@ -918,42 +1025,12 @@ async function assertBrowserCounterButtons(
     await browser.goto(url);
   }
 
-  // 首页欢迎或 layout 文案（与 assertBrowserRender 条件一致，含 view-hybrid-flat/特性/UnoCSS 及放宽条件）
-  const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
+  // 首页欢迎或 layout 文案：用 evaluate 轮询（与 assertBrowserRender 一致，避免 Bun 下 waitFor 卡住）
   const firstWaitTimeoutMs = 20000;
-  await browser.waitFor(
-    () => {
-      const doc = (globalThis as Record<string, unknown>).document as
-        | { body?: { innerHTML?: string }; readyState?: string }
-        | undefined;
-      const html = doc?.body?.innerHTML ?? "";
-      const ready = doc?.readyState === "complete";
-      const hasText = html.includes("欢迎使用 Dweb 框架") ||
-        html.includes("Welcome to Dweb") ||
-        html.includes("React CSR Advanced Example") ||
-        html.includes("React Advanced") ||
-        html.includes("View Advanced") ||
-        html.includes("Preact Advanced") ||
-        html.includes("用户管理") ||
-        html.includes("核心特性") ||
-        html.includes("特性") ||
-        html.includes("UnoCSS") ||
-        html.includes("首页");
-      return hasText || (ready && html.length > 300);
-    },
-    { timeout: firstWaitTimeoutMs },
-  );
+  await waitForContentViaEvaluate(browser, firstWaitTimeoutMs);
 
-  /** 等待页面加载完成（load 完成、readyState === complete）再操作，避免在 hydration 前点击 */
-  await browser.waitFor(
-    () => {
-      const doc = (globalThis as Record<string, unknown>).document as
-        | { readyState?: string }
-        | undefined;
-      return doc?.readyState === "complete";
-    },
-    { timeout: firstWaitTimeoutMs },
-  );
+  /** 等待 document complete 再操作计数器，避免 hydration 前点击无效 */
+  await waitForDocumentCompleteViaEvaluate(browser, firstWaitTimeoutMs);
   /** 再留一点时间给客户端 hydration 绑定事件 */
   await new Promise((r) => setTimeout(r, 500));
 
@@ -1064,28 +1141,7 @@ async function assertBrowserMetadata(
   }
 
   const firstWaitTimeoutMs = 20000;
-  await browser.waitFor(
-    () => {
-      const doc = (globalThis as Record<string, unknown>).document as
-        | { body?: { innerHTML?: string }; readyState?: string }
-        | undefined;
-      const html = doc?.body?.innerHTML ?? "";
-      const ready = doc?.readyState === "complete";
-      const hasText = html.includes("欢迎使用 Dweb 框架") ||
-        html.includes("Welcome to Dweb") ||
-        html.includes("React CSR Advanced Example") ||
-        html.includes("React Advanced") ||
-        html.includes("View Advanced") ||
-        html.includes("Preact Advanced") ||
-        html.includes("用户管理") ||
-        html.includes("核心特性") ||
-        html.includes("特性") ||
-        html.includes("UnoCSS") ||
-        html.includes("首页");
-      return hasText || (ready && html.length > 300);
-    },
-    { timeout: firstWaitTimeoutMs },
-  );
+  await waitForContentViaEvaluate(browser, firstWaitTimeoutMs);
 
   const homeMeta = await browser.evaluate(() => {
     const doc = (globalThis as Record<string, unknown>).document as
@@ -1111,16 +1167,7 @@ async function assertBrowserMetadata(
   } else {
     await browser.goto(aboutUrl);
   }
-  await browser.waitFor(
-    () => {
-      const doc = (globalThis as Record<string, unknown>).document as
-        | { body?: { innerHTML?: string } }
-        | undefined;
-      const html = doc?.body?.innerHTML ?? "";
-      return html.includes("关于我们") || html.includes("About us");
-    },
-    { timeout: firstWaitTimeoutMs },
-  );
+  await waitForAboutPageBodyViaEvaluate(browser, firstWaitTimeoutMs);
 
   const aboutMeta = await browser.evaluate(() => {
     const doc = (globalThis as Record<string, unknown>).document as
@@ -1185,57 +1232,41 @@ async function assertBrowserClickUsers(
   }
 
   const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
-  await browser.waitFor(
-    () => {
-      const doc = (globalThis as Record<string, unknown>).document as
-        | { body?: { innerHTML?: string } }
-        | undefined;
-      const html = doc?.body?.innerHTML ?? "";
-      return (
-        html.includes("欢迎使用 Dweb 框架") ||
-        html.includes("Welcome to Dweb") ||
-        html.includes("React CSR Advanced Example") ||
-        html.includes("React Advanced") ||
-        html.includes("View Advanced") ||
-        html.includes("Preact Advanced") ||
-        html.includes("用户管理")
-      );
-    },
-    { timeout: contentTimeout },
-  );
+  /** 首屏：与 assertBrowserRender 一致用 evaluate 轮询，避免 Bun 下 waitForFunction 不满足 */
+  await waitForContentViaEvaluate(browser, contentTimeout);
 
   if (typeof page.click !== "function") {
     throw new Error("page.click 不可用，无法执行点击");
   }
   await page.click('a[href="/users"]', { timeout: BROWSER_TEST_TIMEOUT_MS });
-  // 点击后稍等再轮询，避免 CI 上导航尚未完成即开始 waitFor
+  // 点击后稍等再轮询，避免 CI 上导航尚未完成即开始检测
   await new Promise((r) => setTimeout(r, 3000));
 
   try {
-    await browser.waitFor(
-      () => {
-        const doc = (globalThis as Record<string, unknown>).document as
-          | { body?: { innerHTML?: string } }
-          | undefined;
-        const html = doc?.body?.innerHTML ?? "";
-        return html.includes("用户管理") || html.includes("用户列表");
-      },
-      { timeout: contentTimeout },
-    );
+    await waitForUsersListPageViaEvaluate(browser, contentTimeout);
 
     const hasUsersPage = await browser.evaluate(() => {
       const doc = (globalThis as Record<string, unknown>).document as
         | { body?: { innerHTML?: string } }
         | undefined;
+      const loc = (globalThis as Record<string, unknown>).location as
+        | { pathname?: string }
+        | undefined;
       const html = doc?.body?.innerHTML ?? "";
-      return html.includes("用户管理") || html.includes("用户列表");
+      const path = loc?.pathname ?? "";
+      const onUsersList = /\/users\/?$/.test(path);
+      if (html.includes("管理系统中的所有用户")) return true;
+      if (html.includes("用户列表")) return true;
+      if (onUsersList && html.includes("用户管理")) return true;
+      if (onUsersList && html.includes("暂无用户")) return true;
+      return false;
     });
     expect(hasUsersPage).toBe(true);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("been closed") || msg.includes("Target page")) {
       throw new Error(
-        `assertBrowserClickUsers: 浏览器/页面在 waitFor 期间已关闭，常见于 CI 超时或 reuseBrowser 共享导致。原错误: ${msg}`,
+        `assertBrowserClickUsers: 浏览器/页面在等待用户列表页期间已关闭，常见于 CI 超时或 reuseBrowser 共享导致。原错误: ${msg}`,
       );
     }
     throw err;
@@ -1247,11 +1278,11 @@ async function assertBrowserClickUsers(
  * @param exampleDir 示例 advanced 目录
  * @param entries 入口对 [backend入口, frontend入口]，默认 src 目录结构
  */
-async function buildExampleAdvanced(
+async function _buildExampleAdvanced(
   exampleDir: string,
   entries: [string, string] = ["src/backend/main.ts", "src/frontend/main.ts"],
 ): Promise<void> {
-  // await ensureBunDeps(exampleDir); // 本地测试删除示例 node_modules 仍通过，先注释
+  // await _ensureBunDeps(exampleDir); // 本地测试删除示例 node_modules 仍通过，先注释
   const distDir = join(exampleDir, "dist");
   if (await exists(distDir)) {
     await remove(distDir, { recursive: true });
@@ -1314,7 +1345,7 @@ export function createAdvancedExampleBrowserSuite(
       originalCwd = cwd();
       exampleDir = resolve(DWEB_ROOT, "examples", exampleName, "advanced");
       chdir(exampleDir);
-      // await ensureBunDeps(exampleDir); // 本地测试删除示例 node_modules 仍通过，先注释
+      // await _ensureBunDeps(exampleDir); // 本地测试删除示例 node_modules 仍通过，先注释
 
       // 启动 backend dev 服务
       actualBackendPort = await findAvailablePort("127.0.0.1", backendPort);
@@ -1442,7 +1473,7 @@ export function createBasicExampleBrowserSuite(
       originalCwd = cwd();
       exampleDir = resolve(DWEB_ROOT, "examples", exampleName, "basic");
       chdir(exampleDir);
-      // await ensureBunDeps(exampleDir); // 本地测试删除示例 node_modules 仍通过，先注释
+      // await _ensureBunDeps(exampleDir); // 本地测试删除示例 node_modules 仍通过，先注释
 
       // 启动 dev 服务（与 view 一致，不 build，直接跑入口）
       actualPort = await findAvailablePort("127.0.0.1", preferredPort);
