@@ -7,6 +7,17 @@
 
 ---
 
+## [3.2.2] - 2026-03-21
+
+### 变更
+
+- **GitHub Actions**：在
+  **`ci.yml`**、**`publish.yml`**、**`block-legacy-merge.yml`** 中增加工作流级
+  **`env.FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true`**，使基于 Node 的 Action
+  提前使用 Node 24 运行时；Bun 任务仍使用 **`oven-sh/setup-bun@v2`**。
+
+---
+
 ## [3.2.1] - 2026-03-21
 
 ### 变更

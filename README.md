@@ -1852,13 +1852,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.2.1] - 2026-03-21
+### [3.2.2] - 2026-03-21
 
-**Changed** (`src/`): Init **`deno-json`** template — View projects only one
-**`@dreamer/view`** import line; **`components`** templates use **`class`** for
-View engine; **`csr-client-builder`** — CSR **`client.dep.tsx`** adds
-**`insert`** from **`@dreamer/view`**, docs for **view-hybrid** path. Full
-changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Changed** (CI): **`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`** on **`ci.yml`** /
+**`publish.yml`** / **`block-legacy-merge.yml`** for Node 24 JS Actions; Bun
+**`setup-bun@v2`**. Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 

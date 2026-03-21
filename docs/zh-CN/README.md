@@ -1921,13 +1921,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.2.1] - 2026-03-21
+### [3.2.2] - 2026-03-21
 
-**变更**（`src/`）：**`deno-json`** 模板在 View 引擎下只生成一行
-**`@dreamer/view`**；**`components`** 在 View 下用
-**`class`**；**`csr-client-builder`** 为 CSR 生成 **`client.dep.tsx`** 时增加
-**`insert`** 并 更新 view-hybrid
-说明。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
+**变更**（CI）：在 **`ci.yml`**、**`publish.yml`**、**`block-legacy-merge.yml`**
+中设置 **`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`**，Node 类 Action 提前使用 Node
+24；Bun 仍用 **`setup-bun@v2`**。完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 

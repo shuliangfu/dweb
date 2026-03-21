@@ -7,6 +7,11 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+# 工作流级 env：让基于 Node 的 GitHub Actions（如 checkout、setup-*）提前使用 Node 24 运行时，
+# 便于在官方强制升级前做性能/稳定性验证。参见 GitHub 文档中的 FORCE_JAVASCRIPT_ACTIONS_TO_NODE24。
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   block-legacy:
     runs-on: ubuntu-latest
