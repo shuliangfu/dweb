@@ -5,14 +5,59 @@
  * 使用项目内安装的 npm:chart.js，仅在客户端挂载后初始化图表
  */
 
-import type { VNode } from "@dreamer/view";
+import {
+  createEffect,
+  getDocument,
+  onCleanup,
+  type VNode,
+} from "@dreamer/view";
 /** 静态导入 chart.js/auto，自动注册全部图表类型及组件 */
 import Chart from "chart.js/auto";
 
-/** 是否已初始化过图表（避免重复创建） */
-let chartsInitialized = false;
-/** 是否已调度过初始化（避免多次 setTimeout） */
-let chartsScheduled = false;
+/** 本页各 canvas 的 id：离开路由或二次进入前须 `destroy`，否则模块仍缓存、DOM 却是新的，图表不会再创建 */
+const CHART_CANVAS_IDS = [
+  "chart-line",
+  "chart-bar",
+  "chart-radar",
+  "chart-doughnut",
+  "chart-pie",
+  "chart-polarArea",
+  "chart-bubble",
+  "chart-scatter",
+] as const;
+
+/**
+ * 返回当前可用于 Chart.js 的 `document`，不可用时为 `null`。
+ *
+ * **与 `@dreamer/view` SSR 的关系**：框架的 SSR 兼容是指用**伪 document**（仅 `createElement` / `createTextNode`，见 `createSSRDocument`）跑同一套编译产物并序列化 HTML，
+ * 并不是在服务端提供完整浏览器 `Document`（无 `getElementById` 等）。因此业务侧应使用 {@link getDocument}：
+ * 在 `renderToString` 且已设置 `__VIEW_SSR__`、又未挂影子 document 时，`getDocument()` 为 `null`；
+ * 若误用 `globalThis.document`，会得到伪对象，`getElementById` 不存在会抛错。
+ *
+ * 极少数环境（浏览器内 `renderToString` 且无法改写 `globalThis.document`）会挂**影子**伪 document，仍无 `getElementById`，故再做能力探测。
+ *
+ * @returns 可 `getElementById` 且存在 `HTMLCanvasElement` 时返回 `document`，否则 `null`
+ */
+function getChartDocument(): Document | null {
+  const doc = getDocument();
+  if (doc == null) return null;
+  if (typeof doc.getElementById !== "function") return null;
+  const g = globalThis as { HTMLCanvasElement?: unknown };
+  if (typeof g.HTMLCanvasElement !== "function") return null;
+  return doc;
+}
+
+/**
+ * 按 id 查找 canvas 并销毁已存在的 Chart.js 实例（SPA 切换路由后须重新 init）
+ */
+function destroyPageCharts(doc: Document): void {
+  for (const id of CHART_CANVAS_IDS) {
+    const el = doc.getElementById(id);
+    if (el instanceof HTMLCanvasElement) {
+      Chart.getChart(el)?.destroy();
+    }
+  }
+}
 
 /** 页面内锚点导航项 */
 const NAV_ITEMS = [
@@ -27,15 +72,9 @@ const NAV_ITEMS = [
 ] as const;
 
 /**
- * 在客户端创建全部 Chart.js 图表示例
- * 仅在存在 document 时执行，使用 globalThis 兼容 Deno 环境
+ * 在客户端对当前 document 创建全部 Chart.js 图表示例（调用前应先 `destroyPageCharts` 清掉同 id 上的旧实例）
  */
-function initCharts(): void {
-  const g = globalThis as unknown as { document?: Document };
-  if (!g.document || chartsInitialized) return;
-  chartsInitialized = true;
-
-  const doc = g.document!;
+function initCharts(doc: Document): void {
   const colors = [
     "#667eea",
     "#764ba2",
@@ -260,12 +299,27 @@ function initCharts(): void {
 }
 
 export default function Charts(): VNode {
-  // 仅在客户端执行：延迟一帧后初始化图表（确保 canvas 已挂载），使用项目内 npm:chart.js
-  const g = globalThis as unknown as { document?: Document };
-  if (g.document && !chartsInitialized && !chartsScheduled) {
-    chartsScheduled = true;
-    setTimeout(initCharts, 0);
-  }
+  /**
+   * 每次进入本路由：effect 挂载后延迟初始化；离开时 clearTimeout + destroy。
+   * 不能用模块级 `chartsInitialized`：Hybrid 路由复用同一模块，二次进入时仍为 true，会跳过 init。
+   */
+  createEffect(() => {
+    // 用 getDocument() 对齐 view 的 SSR 语义；勿在此用 globalThis.document 直接当浏览器 DOM
+    const doc = getChartDocument();
+    if (doc == null) return;
+
+    const timer = globalThis.setTimeout(() => {
+      destroyPageCharts(doc);
+      initCharts(doc);
+    }, 0);
+
+    onCleanup(() => {
+      globalThis.clearTimeout(timer);
+      const d = getChartDocument();
+      if (d != null) destroyPageCharts(d);
+    });
+  }, []);
+
   return (
     <div className="py-5">
       {/* 标题区 */}

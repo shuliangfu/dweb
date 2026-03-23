@@ -8,6 +8,125 @@ and this project adheres to
 
 ---
 
+## [3.2.6] - 2026-03-23
+
+### Changed
+
+- **View (config shape):** **`render.compiler`** is **`RenderCompilerOptions`**
+  — **`{ dirs: string[]; client?: boolean; server?: boolean }`**. Use a
+  **non-empty `dirs`** list for compile roots (e.g. **`{ dirs: ["./src"] }`**);
+  add more entries for monorepo / JSR packages when routes import `.tsx` outside
+  the app tree. Omitting **`compiler`**, or **`dirs` empty**, disables
+  jsx-compiler on that side’s resolution path. **`client`** / **`server`**
+  control whether the **client bundle** vs **server route loading** uses the
+  compiler (**omitted** or **`true`** means on, **`false`** means off — same as
+  **`!== false`** in code). **CSR-only doc sites** may set **`server: false`**
+  while keeping client compilation.
+- **View:** **`createViewClientTsxPlugin`** no longer accepts **`appSrcRoot`**;
+  it requires **`compileRoots`** (absolute roots derived from
+  **`render.compiler`** via **`resolveRenderCompilerForClient`** in the
+  framework).
+- **View:** **`createDwebClientBundlePlugins`** accepts an optional third
+  argument **`{ compiler?: string[] }`** (already **resolved** absolute roots).
+  For View, an empty **`compiler`** registers only **`createStripLoadPlugin`**
+  (no **`compileSource`**).
+- **Dependencies:** **`@dreamer/esbuild` ^1.1.6**, **`@dreamer/view` ^1.3.5**
+  (`deno.json`, `package.json`, and example import maps where applicable).
+- **`render-hybrid.ts` / `render-ssr.ts` / `render-csr.ts`:** Resolve with
+  **`resolveRenderCompilerForServer`** and pass
+  **`renderCompilerRootsResolved`** into **`loadRouteModule`** (and
+  error-boundary loads where applicable).
+- **`build.ts` (production client):** Uses **`resolveRenderCompilerForClient`**
+  before **`createDwebClientBundlePlugins`**.
+- **`app.ts` (SSG):** Uses **`resolveRenderCompilerForServer`** when calling
+  **`loadRouteModule`** for page/layout loading.
+- **`csr-client-builder.ts`:** Uses **`resolveRenderCompilerForClient`** for dev
+  client bundle roots.
+- **Documentation:** **`docs/en-US/APP_CONFIG.md`** and
+  **`docs/zh-CN/APP_CONFIG.md`** — **`render.compiler`** as
+  **`RenderCompilerOptions`** (field table, **`client` / `server`**, monorepo
+  example, **`server: false`** note).
+- **`load-data-middleware.ts`:** Comments only — explicitly documents that the
+  **`/__data`** path does **not** pass **`render.compiler`** (native module load
+  for **`load()`** only); import order tidy.
+- **Integration tests (`config-lifecycle.test.ts`):** Temp projects created
+  under **`tests/data/`** with **`makeTempDir(..., { dir: dataParent })`**;
+  comments on workspace vs esbuild Deno cache.
+
+### Added
+
+- **`src/types/app.ts`:** **`RenderCompilerOptions`** and
+  **`AppConfig.render.compiler`** typed as that object.
+- **`src/utils/view-compiler.ts`** (exported via **`src/utils/mod.ts`**):
+  **`resolveRenderCompilerForClient`** / **`resolveRenderCompilerForServer`**
+  apply **`client` / `server`** flags then normalize **`dirs`** to **absolute**
+  paths (forward slashes); **`normalizeRenderCompiler(compiler, cwdPath?)`**
+  normalizes **`dirs` only** (ignores flags — for tooling). Missing compiler or
+  empty **`dirs`** yields **`undefined`**.
+- **Hybrid hydration data:** **`globalThis.__DATA__.pathname`** — the request
+  **pathname** (trailing slash stripped), aligned with **`location.pathname`**.
+  Used so the client can decide whether to hydrate on **dynamic** URLs where
+  **`match.route.path`** is still a **pattern** (e.g. `/user/:id` vs `/user/1`).
+- **Client bootstrap (`csr-client-builder.ts`):** Hydration guard compares
+  **`__DATA__.pathname ?? __DATA__.route`** to **`location.pathname`** instead
+  of relying on **`route` alone**.
+- **View `createViewClientTsxPlugin`:** **In-memory cache** inside a single
+  esbuild **`setup`**: **`Map<SHA-256 hex, compiled source>`** where the key is
+  **`pathNorm + insertImportPath + source after strip-load`** (via
+  **`crypto.subtle.digest`**), avoiding repeated **`compileSource`** for
+  identical inputs during one build / watch cycle.
+- **View SSR route bundle (`view-ssr-route-bundle.ts`):**
+  - **Disk cache file names** use a **content fingerprint** of the logical route
+    file: raw `.tsx` if no CSS imports; otherwise **stripped TSX + sorted CSS
+    file contents**, consistent with **`load-route-module`** CSS route caching.
+  - **Exported helpers:** **`getViewSsrBundleDiskCacheDirs`**,
+    **`clearViewSsrBundledModuleMemoryCache`**,
+    **`removeViewSsrBundleDiskCacheDirs`**,
+    **`resetViewSsrBundleShutdownInterruptFlag`**,
+    **`consumeViewSsrBundleShutdownInterruptFlag`**.
+  - **Graceful shutdown:** **`isLikelyEsbuildShutdownInterruption`** detects
+    **`EPIPE`** / **`The service was stopped`** after **SIGINT** so teardown
+    does not spam **ERROR** logs; **`loadRouteModule`** calls
+    **`resetViewSsrBundleShutdownInterruptFlag`** at the start of each load.
+- **`loadRouteModule`:** Optional **`compiler`** in the options object — when
+  **`engine === "view"`**, **`.tsx`**, and **`compiler`** is non-empty, the View
+  SSR bundle path is used; **`compileRoots`** is forwarded into
+  **`loadViewRouteModuleViaSsrBundle`**.
+- **Root `deno.json` `workspace`:** **`./tests/data/dweb-integration-*`** so
+  integration temp projects satisfy Deno’s workspace membership rule.
+- **`.gitignore`:** **`tests/data/dweb-integration-*/`** so integration temp
+  dirs under `tests/data/` are not committed.
+- **Init templates (`config.ts`, `config-full.ts`):** View engine emits
+  **`compiler: { dirs: [...], client: true, server: true }`** with i18n line
+  comments (**`getInitViewCompilerObjectBlock`** / commented variant for
+  non-View); same default root convention as **`routesDir`** parent.
+- **Examples:** **`view-hybrid/basic`** — Chart.js demo route using
+  **`createEffect` / `onCleanup`**, **`getDocument()`**, and SPA-safe chart
+  teardown; **`chart.js`** dependency; **`render.compiler`** as object in
+  config; other examples’ **`deno.json` / `package.json`** aligned with
+  dependency bumps.
+
+### Fixed
+
+- **Hybrid dynamic routes:** Hydration could be skipped when
+  **`__DATA__.route`** was a **pattern** and **`location.pathname`** was a
+  **concrete** URL; fixed by injecting and comparing **`pathname`**.
+
+### Internationalization
+
+- **Locale packs (`src/locales/*.json`):** Completed translations for remaining
+  **log**, **CLI**, and **render-mode** strings across **de-DE**, **en-US**,
+  **es-ES**, **fr-FR**, **id-ID**, **ja-JP**, **ko-KR**, **pt-BR**, **zh-CN**,
+  **zh-TW**.
+- **`init.comments`:** **`renderCompilerDesc`**,
+  **`renderCompilerDirsComment`**, **`renderCompilerClientComment`**,
+  **`renderCompilerServerComment`**, and updated **`renderCompilerExampleHint`**
+  for the **`compiler` object** template; **ja-JP**, **ko-KR**, **de-DE**,
+  **fr-FR**, **es-ES**, **pt-BR**, **id-ID** use full localized sentences (not
+  English stubs).
+
+---
+
 ## [3.2.5] - 2026-03-22
 
 ### Fixed

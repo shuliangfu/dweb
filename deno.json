@@ -44,7 +44,7 @@
     "@dreamer/config": "jsr:@dreamer/config@^1.0.1",
     "@dreamer/console": "jsr:@dreamer/console@^1.0.12",
     "@dreamer/database": "jsr:@dreamer/database@^1.0.8",
-    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.1.5",
+    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.1.6",
     "@dreamer/i18n": "jsr:@dreamer/i18n@^1.0.1",
     "@dreamer/image": "jsr:@dreamer/image@^1.0.2",
     "@dreamer/lifecycle": "jsr:@dreamer/lifecycle@^1.0.2",
@@ -62,7 +62,7 @@
     "@dreamer/socket-io": "jsr:@dreamer/socket-io@^1.0.12",
     "@dreamer/test": "jsr:@dreamer/test@^1.0.15",
     "@dreamer/utils": "jsr:@dreamer/utils@^1.0.1",
-    "@dreamer/view": "jsr:@dreamer/view@^1.3.4",
+    "@dreamer/view": "jsr:@dreamer/view@^1.3.5",
     "@dreamer/websocket": "jsr:@dreamer/websocket@^1.0.6",
     "preact": "npm:preact@10.28.3",
     "preact-render-to-string": "npm:preact-render-to-string@6.2.0",
@@ -80,7 +80,8 @@
     "test:e2e": "deno test -A tests/e2e/"
   },
   "workspace": [
-    "./examples/*/*"
+    "./examples/*/*",
+    "./tests/data/dweb-integration-*"
   ],
   "nodeModulesDir": "auto",
   "exclude": [

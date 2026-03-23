@@ -20,11 +20,12 @@ import { jsx as viewJsx } from "@dreamer/view/jsx-runtime";
 import { createElement as createElementPreact } from "preact";
 import { createElement as createElementReact } from "react";
 import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
-import type { AppConfig } from "../types/app.ts";
+import type { AppConfig, RenderCompilerOptions } from "../types/app.ts";
 import { createLoadContext, createServerResponse } from "../types/context.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { extractComponentPathFromRouteFile } from "../utils/path.ts";
+import { resolveRenderCompilerForServer } from "../utils/view-compiler.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { hasContainerElementInHtml } from "./render-utils.ts";
 import { getRender } from "./render.ts";
@@ -95,6 +96,7 @@ export function createRendererCSR(
     engine?: "react" | "preact" | "view";
     mode?: "ssr" | "csr" | "ssg";
     csr?: RenderCSROptions;
+    compiler?: RenderCompilerOptions;
   };
   const csrOptions: RenderCSROptions = {
     clientScript: "/_client.js",
@@ -108,6 +110,9 @@ export function createRendererCSR(
   const routesDirPath = join(
     cwd(),
     routesDir.replace(/^\.\/?/, "") || routesDir,
+  );
+  const renderCompilerRootsResolved = resolveRenderCompilerForServer(
+    renderConfig.compiler,
   );
   const clientRoutes = collectClientRoutes(router, routesDirPath);
 
@@ -139,7 +144,11 @@ export function createRendererCSR(
     try {
       if (match.isApi) return null;
 
-      const ctx = _ctx as { url?: { href?: string }; request?: Request };
+      const ctx = _ctx as {
+        url?: { href?: string };
+        request?: Request;
+        path?: string;
+      };
       const appPath = router.getSpecialFile("_app");
       const layoutPaths = router.getLayoutPathsForPath?.(match.route.path) ??
         [];
@@ -147,6 +156,7 @@ export function createRendererCSR(
         logger: container.has("logger") ? getLogger(container) : undefined,
         engine: renderConfig.engine,
         routesDirPath,
+        compiler: renderCompilerRootsResolved,
       };
 
       let AppComponent: unknown = null;
@@ -215,6 +225,8 @@ export function createRendererCSR(
       let hydrationData: {
         page: Record<string, unknown>;
         route: string;
+        /** 与 location.pathname 一致，供客户端首屏与 hydrate 门控 */
+        pathname?: string;
         params: Record<string, string>;
         query: Record<string, string>;
         component: string;
@@ -261,6 +273,7 @@ export function createRendererCSR(
             hydrationData = {
               page: pageProps,
               route: (match.route as { path?: string }).path ?? "",
+              pathname: (ctx.path || "/").replace(/\/$/, "") || "/",
               params: match.params,
               query: match.query,
               component: normalizedComponent,
@@ -282,6 +295,7 @@ export function createRendererCSR(
             hydrationData = {
               page: { params: match.params, query: match.query },
               route: (match.route as { path?: string }).path ?? "",
+              pathname: (ctx.path || "/").replace(/\/$/, "") || "/",
               params: match.params,
               query: match.query,
               component: normalizedComponent,

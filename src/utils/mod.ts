@@ -43,3 +43,4 @@ export * from "./path.ts";
 export * from "./route.ts";
 export * from "./runtime.ts";
 export * from "./sanitize.ts";
+export * from "./view-compiler.ts";

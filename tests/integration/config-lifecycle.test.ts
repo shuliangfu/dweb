@@ -4,6 +4,10 @@
  * 测试 config 加载 + lifecycle 钩子 + middleware 的协作。
  * 通过子进程执行临时目录中的 src/main.ts，使框架以该入口推断 config/build 路径，避免 DWEB_E20。
  *
+ * **临时目录**：`tests/data/dweb-integration-*` 仅为本套件生成的**假项目根**（含 deno.json），
+ * 与 `@dreamer/esbuild` 的 **`deno info` 模块映射磁盘缓存** 无关；后者由 esbuild 在
+ * `~/.dreamer/<项目目录名>/esbuild-deno-cache/` 下自动创建，无需在本文件中配置。
+ *
  * Deno：使用 deno.json 的 imports 将 @dreamer/dweb 指向本地 file://。
  * Bun：Bun 不读 deno.json，需在临时目录写 package.json 并用 file: 引用本地 dweb，再 bun install 后运行。
  */
@@ -62,13 +66,27 @@ function resolveImportMapEntryForTempProject(
 /** Windows 上 Bun 创建目录符号链接常需管理员或开发者模式，CI 易失败，整套件跳过 */
 const isBunWindows = !IS_DENO && platform() === "windows";
 
+/**
+ * 集成测试临时工程父目录（`dweb/tests/data`），避免占用 `~/.dreamer` 或与 esbuild 磁盘缓存混淆。
+ * 子目录 `dweb-integration-*` 须在根 `deno.json` 的 `workspace` 中声明为成员，否则子进程会报
+ * “Config file must be a member of the workspace”。
+ */
+function integrationTempParentDir(): string {
+  return join(REPO_ROOT, "tests", "data");
+}
+
 const runConfigLifecycleSuite = () => {
   describe("integration: 配置与生命周期", () => {
     let testDir: string;
     let originalCwd: string;
 
     beforeAll(async () => {
-      testDir = await makeTempDir({ prefix: "dweb-integration-" });
+      const dataParent = integrationTempParentDir();
+      await ensureDir(dataParent);
+      testDir = await makeTempDir({
+        prefix: "dweb-integration-",
+        dir: dataParent,
+      });
       originalCwd = cwd();
       chdir(testDir);
 

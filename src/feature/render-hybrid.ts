@@ -21,12 +21,13 @@ import type { SessionData } from "@dreamer/session";
 import type { ServiceContainer } from "@dreamer/service";
 import { createLoadContext, createServerResponse } from "../types/context.ts";
 import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
-import type { AppConfig } from "../types/app.ts";
+import type { AppConfig, RenderCompilerOptions } from "../types/app.ts";
 import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { sanitizeRequestParams } from "../utils/sanitize.ts";
 import { extractComponentPathFromRouteFile } from "../utils/path.ts";
+import { resolveRenderCompilerForServer } from "../utils/view-compiler.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
 import { hasContainerElementInHtml } from "./render-utils.ts";
@@ -96,6 +97,7 @@ export function createRendererHybrid(
     mode?: "ssr" | "csr" | "ssg" | "hybrid";
     hybrid?: RenderHybridOptions;
     csr?: RenderHybridOptions;
+    compiler?: RenderCompilerOptions;
   };
 
   const hybridOptions: RenderHybridOptions = {
@@ -110,6 +112,9 @@ export function createRendererHybrid(
   const routesDirPath = join(
     cwd(),
     routesDir.replace(/^\.\/?/, "") || routesDir,
+  );
+  const renderCompilerRootsResolved = resolveRenderCompilerForServer(
+    renderConfig.compiler,
   );
 
   // 收集所有路由信息（用于注入到客户端，component 与 ROUTE_LOADERS key 统一格式）
@@ -135,6 +140,7 @@ export function createRendererHybrid(
         logger: container.has("logger") ? getLogger(container) : undefined,
         engine: renderConfig.engine,
         routesDirPath,
+        compiler: renderCompilerRootsResolved,
       };
       const pageModule = await loadRouteModule(match.route.fullPath, loadOpts);
       if (!pageModule) {
@@ -305,9 +311,12 @@ export function createRendererHybrid(
           rawComponent.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "").trim()
         : rawComponent;
       // layoutData 供客户端 hydrate 时注入到各层 Layout 的 props，与服务端 SSR 一致
+      /** 与浏览器 location.pathname 一致（去尾斜杠），用于 hybrid hydrate 门控；勿用 route.path（动态路由常为 `/user/:id` 与 `/user/1` 不等） */
+      const hydrationPathname = (ctx.path || "/").replace(/\/$/, "") || "/";
       const hydrationData = {
         page: pageProps,
         route: match.route.path,
+        pathname: hydrationPathname,
         params: match.params,
         query: match.query,
         component: normalizedComponent,
@@ -379,6 +388,7 @@ ${hybridOptions.bodyTags || ""}`;
             logger: container.has("logger") ? getLogger(container) : undefined,
             engine: renderConfig.engine,
             routesDirPath,
+            compiler: renderCompilerRootsResolved,
           });
           const ErrorComponent = errorModule?.default ?? errorModule?.Error;
           if (ErrorComponent) {

@@ -1,8 +1,8 @@
 /**
  * 路由模块加载（统一入口）
  *
- * 支持 .ts、.tsx（以及 .js/.jsx）。React/Preact 走原生 `import`；**View 引擎**下 `.tsx` 走 esbuild +
- * `compileSource`（与客户端一致），保证内置 JSX 指令语义一致。
+ * 支持 .ts、.tsx（以及 .js/.jsx）。React/Preact 走原生 `import`；**View 引擎**下 `.tsx` 仅在配置了
+ * 非空 `render.compiler` 时走 esbuild + `compileSource`（与客户端一致）；未配置则走原生 `import`。
  * 开发模式下通过 cache-busting 参数绕过模块缓存，确保文件变更后刷新能拿到最新内容。
  *
  * SSR 时：若路由含 `import "*.css"`，Deno/Bun 原生不支持加载 CSS 模块，
@@ -30,7 +30,10 @@ import { getCacheOptions } from "../utils/constants.ts";
 import { $tr } from "../utils/i18n.ts";
 import { isPathWithinProject } from "../utils/path.ts";
 import { getModuleVersion } from "./module-cache.ts";
-import { loadViewRouteModuleViaSsrBundle } from "./view-ssr-route-bundle.ts";
+import {
+  loadViewRouteModuleViaSsrBundle,
+  resetViewSsrBundleShutdownInterruptFlag,
+} from "./view-ssr-route-bundle.ts";
 
 /** 仅匹配 import "xxx.css" 或 import 'xxx.css' 形式的副作用导入（支持单双引号） */
 const CSS_IMPORT_RE = /^\s*import\s+["'][^"']*\.css["']\s*;?\s*$/gm;
@@ -186,6 +189,11 @@ export async function loadRouteModule(
     engine?: "react" | "preact" | "view";
     /** View SSR bundle 用：routes 目录绝对路径（未传时默认 `cwd()/src/routes`） */
     routesDirPath?: string;
+    /**
+     * View：非空时 `render.compiler` 规范化后的绝对路径根列表；**仅此时** `.tsx` 走 `compileSource`（SSR bundle 与客户端）。
+     * 须包含应用源码根及需参与编译的 workspace 依赖根。
+     */
+    compiler?: string[];
   },
 ): Promise<Record<string, unknown> | null> {
   const cwdPath = cwd();
@@ -193,6 +201,8 @@ export async function loadRouteModule(
   const pathInput = filePath.replace(/\\/g, "/");
 
   try {
+    /** 避免上一条路由在关闭中设置的标记污染本次结果 */
+    resetViewSsrBundleShutdownInterruptFlag();
     // 解析为绝对路径并校验在项目内，防止路径穿越
     let absPath: string;
     if (pathInput.startsWith("file://")) {
@@ -217,9 +227,15 @@ export async function loadRouteModule(
     const routesDirResolved = await resolve(
       options?.routesDirPath ?? join(cwdPath, "src", "routes"),
     );
-    /** 是否为 View 且需走编译器管线（仅 .tsx） */
+    /** 与客户端一致的 `render.compiler` 根（绝对路径）；非空时才启用 View SSR bundle */
+    const viewCompilerRootsResolved =
+      options?.compiler != null && options.compiler.length > 0
+        ? options.compiler
+        : undefined;
+    /** View + .tsx + 已配置非空 `render.compiler`：走 esbuild 单文件 bundle 与 jsx-compiler */
     const useViewSsrBundle = options?.engine === "view" &&
-      /\.tsx$/i.test(absPath);
+      /\.tsx$/i.test(absPath) &&
+      viewCompilerRootsResolved != null;
 
     const rawSource = await readTextFile(absPath);
     if (hasCssImport(rawSource)) {
@@ -274,6 +290,7 @@ export async function loadRouteModule(
             {
               logger: options?.logger,
               cacheIdentityPath: normalizedPath,
+              compileRoots: viewCompilerRootsResolved,
             },
           );
         } else {
@@ -311,6 +328,7 @@ export async function loadRouteModule(
     if (useViewSsrBundle) {
       return await loadViewRouteModuleViaSsrBundle(absPath, routesDirResolved, {
         logger: options?.logger,
+        compileRoots: viewCompilerRootsResolved,
       });
     }
 

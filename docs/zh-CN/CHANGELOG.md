@@ -7,6 +7,119 @@
 
 ---
 
+## [3.2.6] - 2026-03-23
+
+### 变更
+
+- **View（配置形态）：** **`render.compiler`** 为 **`RenderCompilerOptions`**
+  对象 **`{ dirs: string[]; client?: boolean; server?: boolean }`**。须配置
+  **非空 `dirs`** 列出编译根（如
+  **`{ dirs: ["./src"] }`**）；路由引用工作区或其它包的 `.tsx`
+  时把对应根一并写入 **`dirs`**。未配置 **`compiler`** 或 **`dirs` 为空** 时，
+  按解析路径在该端不启用 jsx-compiler。**`client`** / **`server`**
+  分别控制**客户端 bundle** 与**服务端加载 .tsx 路由**是否走编译器（**省略**或
+  **`true`** 为启用， **`false`** 为关闭，与代码中 **`!== false`** 一致）。**纯
+  CSR 文档站**可设 **`server: false`** 且保留客户端编译。
+- **View：** **`createViewClientTsxPlugin`** 不再接受 **`appSrcRoot`**，改为必填
+  **`compileRoots`**（由框架通过 **`resolveRenderCompilerForClient`** 从
+  **`render.compiler`** 得到的绝对路径列表）。
+- **View：** **`createDwebClientBundlePlugins`** 可选第三参
+  **`{ compiler?: string[] }`** （传入的已是**规范化后的绝对路径**）。View 下若
+  **`compiler` 为空**，仅注册 **`createStripLoadPlugin`**，**不**执行
+  **`compileSource`**。
+- **依赖：** **`@dreamer/esbuild` ^1.1.6**、**`@dreamer/view` ^1.3.5**（根
+  **`deno.json`、`package.json`** 及示例 import 等）。
+- **`render-hybrid.ts` / `render-ssr.ts` / `render-csr.ts`：** 使用
+  **`resolveRenderCompilerForServer`** 解析并传入
+  **`renderCompilerRootsResolved`** 至
+  **`loadRouteModule`**（及错误边界等加载处）。
+- **生产客户端构建（`build.ts`）：** 先 **`resolveRenderCompilerForClient`**
+  再传入 **`createDwebClientBundlePlugins`**。
+- **SSG 构建（`app.ts`）：** 对 **`loadRouteModule`** 使用
+  **`resolveRenderCompilerForServer`**。
+- **开发客户端（`csr-client-builder.ts`）：** 使用
+  **`resolveRenderCompilerForClient`** 解析编译根。
+- **文档：** **`docs/en-US/APP_CONFIG.md`**、**`docs/zh-CN/APP_CONFIG.md`** — 将
+  **`render.compiler`** 写为
+  **`RenderCompilerOptions`**（字段表、**`client`/`server`**、 monorepo
+  示例、**`server: false`** 说明）。
+- **`load-data-middleware.ts`：** 仅注释与 import 顺序 — 明确 **`/__data`**
+  **不**传 **`compiler`**（仅为执行 **`load()`** 做原生加载）。
+- **集成测试（`config-lifecycle.test.ts`）：** 临时工程建在 **`tests/data/`**
+  下； 注释说明与 esbuild **`deno info`** 磁盘缓存、**`~/.dreamer`** 的区别。
+
+### 新增
+
+- **`src/types/app.ts`：**
+  **`RenderCompilerOptions`**，**`AppConfig.render.compiler`** 为该对象类型。
+- **`src/utils/view-compiler.ts`**（经 **`src/utils/mod.ts`**
+  再导出）：**`resolveRenderCompilerForClient`** /
+  **`resolveRenderCompilerForServer`** 先按 **`client` / `server`** 再规范化
+  **`dirs`**
+  为**绝对路径、正斜杠**；**`normalizeRenderCompiler(compiler, cwdPath?)`**
+  仅规范化 **`dirs`**（**不**读开关，供工具使用）。未配置或 **`dirs` 为空** 返回
+  **`undefined`**。
+- **Hybrid 注水数据：** **`globalThis.__DATA__.pathname`** — 与请求一致的
+  **pathname**（去尾斜杠），对齐浏览器 **`location.pathname`**，用于**动态路由**
+  场景（**`match.route.path`** 仍为模式串，如 **`/user/:id`**，与实际 URL
+  **`/user/1`** 不同）。
+- **客户端启动（`csr-client-builder.ts`）：** 注水门控使用
+  **`__DATA__.pathname ?? __DATA__.route`** 与 **`location.pathname`**
+  比较，避免 仅依赖 **`route`** 导致误判。
+- **View `createViewClientTsxPlugin`：** 单次 esbuild **`setup`** 内
+  **内存缓存** （**`Map<SHA-256 十六进制, 编译后源码>`**），键为 **路径 + insert
+  源 + strip-load
+  后源码**（**`crypto.subtle.digest`**），同一构建/监视周期内避免重复
+  **`compileSource`**。
+- **View SSR 路由 bundle（`view-ssr-route-bundle.ts`）：**
+  - **磁盘缓存文件名**使用与 **`load-route-module`** 一致的**内容指纹**：无 CSS
+    时为整段 `.tsx`；有 **`import '*.css'`** 时为**剥离后的 tsx + 各 CSS
+    文件内容**。
+  - **导出：** **`getViewSsrBundleDiskCacheDirs`**、
+    **`clearViewSsrBundledModuleMemoryCache`**、**`removeViewSsrBundleDiskCacheDirs`**、
+    **`resetViewSsrBundleShutdownInterruptFlag`**、
+    **`consumeViewSsrBundleShutdownInterruptFlag`**。
+  - **进程退出：** 识别 **`EPIPE`** / **`The service was stopped`**（如
+    **Ctrl+C** 后 esbuild 已停），减少误报 **ERROR**；**`loadRouteModule`**
+    每次加载开头调用
+    **`resetViewSsrBundleShutdownInterruptFlag`**，避免上一条路由的标记污染本次。
+- **`loadRouteModule`：** 选项增加 **`compiler`**；**View + .tsx + 非空
+  compiler** 时 走 SSR bundle，并将 **`compileRoots`** 传入
+  **`loadViewRouteModuleViaSsrBundle`**。
+- **根目录 `deno.json` 的 `workspace`：** 增加
+  **`./tests/data/dweb-integration-*`**， 满足集成测试临时工程的 workspace
+  成员校验。
+- **`.gitignore`：** 忽略
+  **`tests/data/dweb-integration-*/`**，避免集成测试临时目录被提交。
+- **初始化模板（`config.ts`、`config-full.ts`）：** View 引擎生成
+  **`compiler: { dirs: [...], client: true, server: true }`** 及 i18n 行内注释
+  （**`getInitViewCompilerObjectBlock`** / 非 View 时的注释示例块）；默认根与
+  **`routesDir`** 父目录约定一致。
+- **示例：** **`view-hybrid/basic`** 增加 Chart.js 图表示例（**`createEffect` /
+  `onCleanup`**、**`getDocument()`**、SPA 二次进入销毁图表）；**`chart.js`**
+  依赖；配置中 **`render.compiler`** 为对象；其余示例 **`deno.json` /
+  `package.json`** 依赖版本对齐。
+
+### 修复
+
+- **Hybrid 动态路由：** 当 **`__DATA__.route`** 为**路由模式**而
+  **`location.pathname`** 为**具体路径**时，原先可能跳过注水；通过注入并比较
+  **`pathname`** 修复。
+
+### 国际化
+
+- **语言包（`src/locales/*.json`）：** 补全各语种下剩余
+  **日志**、**CLI**、**渲染模式**
+  相关文案（**de-DE、en-US、es-ES、fr-FR、id-ID、ja-JP、ko-KR、pt-BR、zh-CN、zh-TW**）。
+- **`init.comments`：** 新增/更新
+  **`renderCompilerDesc`**、**`renderCompilerDirsComment`**、
+  **`renderCompilerClientComment`**、**`renderCompilerServerComment`**、**`renderCompilerExampleHint`**，
+  适配 **`compiler`
+  对象**模板；**ja-JP、ko-KR、de-DE、fr-FR、es-ES、pt-BR、id-ID** 等
+  为完整目标语表述（非英文占位）。
+
+---
+
 ## [3.2.5] - 2026-03-22
 
 ### 修复

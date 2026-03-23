@@ -8,6 +8,73 @@ import { $tr, getBuildServerExternal, getDefaultLanguage } from "../helpers.ts";
 import type { InitOptions } from "../types.ts";
 
 /**
+ * init 模板用：`render.compiler` 默认根，与默认 `routesDir` 的父目录一致（View 引擎须配置 compiler 时写入）。
+ *
+ * @param opts - init 选项
+ * @param appName - 多应用场景下应用子目录名（与 `routesDir` 前缀一致）
+ */
+export function getInitViewCompilerDefaultRoot(
+  opts: InitOptions,
+  appName?: string,
+): string {
+  const prefix = opts.useSrc ? "src/" : "";
+  if (appName) {
+    return `./${prefix}${appName}`;
+  }
+  return opts.useSrc ? "./src" : ".";
+}
+
+/**
+ * init 生成的 `render.compiler` 对象块（含注释），供 `getConfigMainTs` / 完整模板复用。
+ *
+ * @param opts - init 选项
+ * @param appName - 多应用时子应用目录名（决定默认 `dirs` 首项）
+ * @returns 已缩进的多行片段（每行前置 4 空格）
+ */
+export function getInitViewCompilerObjectBlock(
+  opts: InitOptions,
+  appName?: string,
+): string {
+  const dirsJson = JSON.stringify([
+    getInitViewCompilerDefaultRoot(opts, appName),
+  ]);
+  return `    /** ${$tr("init.comments.renderCompilerDesc")} */
+    compiler: {
+      /** ${$tr("init.comments.renderCompilerDirsComment")} */
+      dirs: ${dirsJson},
+      /** ${$tr("init.comments.renderCompilerClientComment")} */
+      client: true,
+      /** ${$tr("init.comments.renderCompilerServerComment")} */
+      server: true,
+    },`;
+}
+
+/**
+ * 非 View 引擎时输出的「整段注释」compiler 示例，便于用户切换到 view 时复制。
+ *
+ * @param opts - init 选项
+ * @param appName - 多应用时子应用目录名
+ */
+export function getInitViewCompilerObjectBlockCommented(
+  opts: InitOptions,
+  appName?: string,
+): string {
+  const dirsJson = JSON.stringify([
+    getInitViewCompilerDefaultRoot(opts, appName),
+  ]);
+  return `    // /** ${$tr("init.comments.renderCompilerDesc")} */
+    // compiler: {
+    //   /** ${$tr("init.comments.renderCompilerDirsComment")} */
+    //   dirs: ${dirsJson},
+    //   /** ${$tr("init.comments.renderCompilerClientComment")} */
+    //   // client: true,
+    //   /** ${$tr("init.comments.renderCompilerServerComment")} */
+    //   // server: true,
+    //   // ${$tr("init.comments.renderCompilerExampleHint")}
+    // },`;
+}
+
+/**
  * 单应用完整 config/main.ts：所有配置节均存在，不用的整块注释
  */
 export function getFullSingleAppConfigMainTs(opts: InitOptions): string {
@@ -17,6 +84,9 @@ export function getFullSingleAppConfigMainTs(opts: InitOptions): string {
   const serverPort = DEFAULT_PORT_BASE;
   const renderMode = opts.renderMode ?? "hybrid";
   const language = getDefaultLanguage();
+  const viewCompilerBlock = opts.engine === "view"
+    ? getInitViewCompilerObjectBlock(opts)
+    : getInitViewCompilerObjectBlockCommented(opts);
 
   return `/**
  * ${$tr("init.comments.appConfigShort")}
@@ -108,6 +178,7 @@ const config: AppConfig = {
     engine: "${opts.engine}",
     /** ${$tr("init.comments.renderModeDesc")} */
     mode: "${renderMode}",
+${viewCompilerBlock}
     /** ${$tr("init.comments.renderDebugDesc")} */
     // debug: false,
     // /** ${$tr("init.comments.ssrHydrate")} */
@@ -343,6 +414,9 @@ export default config;
  */
 export function getFullCommonConfigMainTs(opts: InitOptions): string {
   const language = getDefaultLanguage();
+  const viewCompilerBlockCommon = opts.engine === "view"
+    ? getInitViewCompilerObjectBlock(opts)
+    : getInitViewCompilerObjectBlockCommented(opts);
   return `/**
  * ${$tr("init.comments.commonConfig")}
  * ${$tr("init.comments.commonConfigDesc")}
@@ -395,6 +469,7 @@ export default {
     engine: "${opts.engine}",
     /** ${$tr("init.comments.renderModeDesc")} */
     mode: "${opts.renderMode ?? "hybrid"}",
+${viewCompilerBlockCommon}
     // debug: false,
     // ssr: { hydrate: true },
     // ssg: { outputDir: "dist/static", routes: ["/", "/about"], dynamicRoutes: { "/user/[id]": ["1", "2", "3"] }, hydrate: true },

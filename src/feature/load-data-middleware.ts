@@ -5,16 +5,16 @@
  * 服务端根据 path 匹配路由、执行 load()，返回 JSON，供客户端渲染时注入到页面组件。
  */
 
-import type { HttpContext } from "@dreamer/server";
-import type { SessionData } from "@dreamer/session";
 import type { Router } from "@dreamer/router";
+import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
-import type { AppConfig } from "../types/app.ts";
+import type { SessionData } from "@dreamer/session";
 import { cwd, join } from "../core/runtime-adapter.ts";
+import type { AppConfig } from "../types/app.ts";
 import { createLoadContext, createServerResponse } from "../types/context.ts";
+import { DWEB_DATA_PATH } from "../utils/constants.ts";
 import { getLogger } from "../utils/logger.ts";
 import { sanitizeRequestParams } from "../utils/sanitize.ts";
-import { DWEB_DATA_PATH } from "../utils/constants.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 
 /** 数据接口路径（与客户端 fetch 一致），统一从 constants 导出便于引用 */
@@ -25,7 +25,7 @@ export { DWEB_DATA_PATH };
  *
  * 仅处理 GET 请求且 pathname 为 /_dweb_data 的请求：
  * - 从 query 读取 path（要加载的路由 pathname，如 /users/123）
- * - 匹配路由，加载页面模块，执行 load()
+ * - 匹配路由，加载页面模块，执行 load()（**不**传 `render.compiler`：不走 View jsx 编译管线，仅原生加载以执行 `load`）
  * - 返回 { params, query, ...loadResult } 的 JSON
  *
  * 错误与状态码约定：
@@ -51,6 +51,7 @@ export function createLoadDataMiddleware(
     cwd(),
     routesDirRaw.replace(/^\.\/?/, "") || routesDirRaw,
   );
+  /** 数据接口只需执行模块的 `load()`，不注入 `compiler`，避免 View `.tsx` 走 esbuild/jsx-compiler */
   const loadOpts = {
     logger: container.has("logger") ? getLogger(container) : undefined,
     engine: renderCfg.engine,
