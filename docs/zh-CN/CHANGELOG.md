@@ -7,6 +7,46 @@
 
 ---
 
+## [3.2.7] - 2026-03-23
+
+### 变更
+
+- **依赖**：根目录 **`deno.json`**、**`package.json`** 及**全部示例**
+  **`deno.json`**（Preact/React/View 的 CSR、hybrid、hybrid-flat、SSR、SSG，
+  basic/advanced）将 **`@dreamer/router`** 升至 **^1.1.2**、**`@dreamer/view`**
+  升至 **^1.3.6**。对齐路由客户端（链接拦截、**`composedPath`**、错误
+  **`target`** 字符串规范化、服务端 **`isLikelyClientBundledAssetPath`** 对
+  bundle 请求早退等）与 View **`setIntrinsicDomAttribute`** / 动态本征属性代码
+  生成。
+
+### 新增
+
+- **`config.router.debug` 与客户端路由日志打通**：当 **`router.debug === true`**
+  时，内联启动脚本注入
+  **`globalThis.__DWEB_ROUTER_DEBUG__ = true`**（若尚未设置），使
+  **`@dreamer/router/client`** 的 **`createRouter({ debug: true })`** 能单独
+  打开路由诊断，而不必依赖 **`render.debug`** / **`__DWEB_DEBUG__`**（后者主要
+  影响 View / render 侧啰嗦程度）。
+- **`DwebGlobal`（`csr-client-builder.ts`）**：补充 **`__DWEB_ROUTER_DEBUG__`**
+  说明，并明确 **`__DWEB_DEBUG__`** 来自 **`render.debug`**。
+- **客户端启动（`csr-client-builder.ts`）**：**`createRouter`** 的 **`debug`**
+  为 **`!!__DWEB_DEBUG__ || !!__DWEB_ROUTER_DEBUG__`**，任一为真即
+  可输出路由客户端调试信息（含点击拦截与跳过原因等）。
+
+### 变更（渲染 / SSG）
+
+- **`render-csr.ts`**：读取 **`config.router.debug`**，将 **`routerDebug`** 传入
+  **`generateFallbackCSRHtml`**，并在主 CSR 外壳与无 **`_app`** 降级 HTML 中写入
+  **`__DWEB_ROUTER_DEBUG__`** 注入行。
+- **`render-hybrid.ts`**：在混合模式注水内联脚本中，与既有 dev
+  **`__DWEB_DEBUG__`** / HMR 开关并列注入 **`__DWEB_ROUTER_DEBUG__`**。
+- **`render-ssr.ts`**：在 SSR 客户端配置脚本中，与 **`render.debug`** →
+  **`__DWEB_DEBUG__`** 并列注入 **`__DWEB_ROUTER_DEBUG__`**。
+- **`app.ts`（SSG 静态 HTML）**：静态导出页生成的客户端配置脚本同样注入
+  **`__DWEB_ROUTER_DEBUG__`**，与 CSR/SSR/Hybrid 行为一致。
+
+---
+
 ## [3.2.6] - 2026-03-23
 
 ### 变更

@@ -331,9 +331,17 @@ export function createRendererSSR(
           layoutData: layoutPropsList,
         };
         const debugRender = renderConfig.debug === true;
+        const routerDebug =
+          (resolvedConfig.router as { debug?: boolean } | undefined)
+            ?.debug === true;
         const clientConfigScript = `
 <script>
   ${debugRender ? "globalThis.__DWEB_DEBUG__ = true;" : ""}
+  ${
+          routerDebug
+            ? "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;"
+            : ""
+        }
   globalThis.__DATA__ = ${JSON.stringify(hydrationData)};
   globalThis.__DWEB_DEV__ = ${isDev};
   globalThis.__DWEB_ROUTES__ = ${JSON.stringify(clientRoutes)};

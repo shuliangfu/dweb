@@ -1264,9 +1264,17 @@ export class App extends EventEmitter implements IApp {
                     {},
                 component: normalizedComponent,
               };
+              const ssgRouterDebug =
+                (config.router as { debug?: boolean } | undefined)?.debug ===
+                  true;
               const clientConfigScript = `
 <script>
   globalThis.__DATA__ = ${JSON.stringify(hydrationData)};
+  ${
+                ssgRouterDebug
+                  ? "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;"
+                  : ""
+              }
   globalThis.__DWEB_DEV__ = false;
   globalThis.__DWEB_ROUTES__ = ${JSON.stringify(clientRoutes)};
   globalThis.__DWEB_ENGINE__ = "${engine}";

@@ -744,8 +744,13 @@ export interface DwebGlobal {
   __DWEB_ON_READY__?: () => void;
   /** 开发模式 HMR 调试日志开关（控制台设置 globalThis.__DWEB_HMR_DEBUG__ = true 可查看详细日志） */
   __DWEB_HMR_DEBUG__?: boolean;
-  /** 详细调试日志开关（传 true 时 render 与 router 输出详细调试信息，开发模式默认 true） */
+  /** 详细调试日志开关（由 render.debug 注入；为 true 时 View 与部分 render 路径更啰嗦） */
   __DWEB_DEBUG__?: boolean;
+  /**
+   * 客户端路由调试（与 config.router.debug 对应，由 HTML 内联脚本注入）
+   * 为 true 时 @dreamer/router/client 的 createRouter debug 会输出点击拦截等日志，独立于 __DWEB_DEBUG__
+   */
+  __DWEB_ROUTER_DEBUG__?: boolean;
   /** 上次的 pathname+search（不含 hash），同页仅 hash 变化时不请求 __data */
   __DWEB_LAST_PATHNAME__?: string;
 }
@@ -1228,7 +1233,8 @@ export async function initApp(): Promise<DwebApp> {
   const router = createRouter({
     routes,
     engine,
-    debug: !!(_win.__DWEB_DEBUG__),
+    // render.debug → __DWEB_DEBUG__；config.router.debug → __DWEB_ROUTER_DEBUG__（仅客户端路由日志）
+    debug: !!(_win.__DWEB_DEBUG__) || !!(_win.__DWEB_ROUTER_DEBUG__),
     // SSR/SSG 仅做当前页 hydrate、不做客户端路由，链接点击走浏览器默认整页跳转
     interceptLinks: _win.__DWEB_MODE__ !== "ssr" && _win.__DWEB_MODE__ !== "ssg",
   });

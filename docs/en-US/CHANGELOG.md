@@ -8,6 +8,49 @@ and this project adheres to
 
 ---
 
+## [3.2.7] - 2026-03-23
+
+### Changed
+
+- **Dependencies:** **`@dreamer/router` ^1.1.2**, **`@dreamer/view` ^1.3.6** in
+  root **`deno.json`**, **`package.json`**, and **all example `deno.json`**
+  import maps (Preact/React/View CSR, hybrid, hybrid-flat, SSR, SSG — basic and
+  advanced). Aligns with router client fixes (link intercept, bundle-path match
+  skip) and View **`setIntrinsicDomAttribute`** / compileSource dynamic DOM
+  props.
+
+### Added
+
+- **Router debug flag wired to the client (`config.router.debug`):** When
+  **`router.debug`** is **`true`**, dweb injects
+  **`globalThis.__DWEB_ROUTER_DEBUG__ = true`** (unless already set) in the
+  inline bootstrap script so **`@dreamer/router/client`** can enable
+  **`createRouter({ debug: true })`** without tying router logs to
+  **`render.debug`** / **`__DWEB_DEBUG__`** (which mainly affects View/render
+  verbosity).
+- **`DwebGlobal` (`csr-client-builder.ts`):** documents
+  **`__DWEB_ROUTER_DEBUG__`** and clarifies that **`__DWEB_DEBUG__`** comes from
+  **`render.debug`**.
+- **Client bootstrap (`csr-client-builder.ts`):** **`createRouter`** now uses
+  **`debug: !!__DWEB_DEBUG__ || !!__DWEB_ROUTER_DEBUG__`** so either flag
+  enables router client diagnostics (click intercept, skip reasons when debug is
+  on).
+
+### Changed (render / SSG)
+
+- **`render-csr.ts`:** Reads **`config.router.debug`**, passes **`routerDebug`**
+  into **`generateFallbackCSRHtml`**, and emits the **`__DWEB_ROUTER_DEBUG__`**
+  line in both the normal CSR shell and the no-**`_app`** fallback HTML.
+- **`render-hybrid.ts`:** Same injection in the hybrid hydration inline script
+  next to existing dev **`__DWEB_DEBUG__`** / HMR flags.
+- **`render-ssr.ts`:** Same injection in the SSR client config script alongside
+  **`render.debug`** → **`__DWEB_DEBUG__`**.
+- **`app.ts` (SSG static HTML):** Same injection in the generated client config
+  script for static export pages so SSG + client hydration can debug router
+  behavior consistently.
+
+---
+
 ## [3.2.6] - 2026-03-23
 
 ### Changed

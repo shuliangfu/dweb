@@ -18,7 +18,7 @@
     "@dreamer/plugin": "jsr:@dreamer/plugin@^1.0.2",
     "@dreamer/plugins": "jsr:@dreamer/plugins@^1.0.9",
     "@dreamer/render": "jsr:@dreamer/render@^1.1.2",
-    "@dreamer/router": "jsr:@dreamer/router@^1.1.0",
+    "@dreamer/router": "jsr:@dreamer/router@^1.1.2",
     "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.0.18",
     "@dreamer/server": "jsr:@dreamer/server@^1.0.9",
     "@dreamer/service": "jsr:@dreamer/service@^1.0.2",

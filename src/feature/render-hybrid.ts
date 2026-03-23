@@ -261,6 +261,9 @@ export function createRendererHybrid(
       const isDev =
         (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
       const debugRender = renderConfig.debug === true;
+      /** 与 `config.router.debug` 一致：注入 `__DWEB_ROUTER_DEBUG__`，驱动客户端 `@dreamer/router/client` 的 debug */
+      const routerDebug =
+        (config.router as { debug?: boolean } | undefined)?.debug === true;
 
       const result = await renderService.renderSSR({
         engine,
@@ -329,6 +332,11 @@ export function createRendererHybrid(
   ${
         debugRender
           ? "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true; globalThis.__DWEB_DEBUG__ = globalThis.__DWEB_DEBUG__ ?? true;"
+          : ""
+      }
+  ${
+        routerDebug
+          ? "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;"
           : ""
       }
   // Hydration 数据

@@ -1852,20 +1852,16 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.2.6] - 2026-03-23
+### [3.2.7] - 2026-03-23
 
-**Changed**: View **`render.compiler`** is **`RenderCompilerOptions`**
-(`{ dirs, client?, server? }`); **`resolveRenderCompilerForClient`** /
-**`resolveRenderCompilerForServer`**; **`@dreamer/esbuild` ^1.1.6**,
-**`@dreamer/view` ^1.3.5**; APP_CONFIG and init templates updated.
+**Changed**: **`@dreamer/router` ^1.1.2**, **`@dreamer/view` ^1.3.6** (root +
+all example import maps).
 
-**Added**: **`view-compiler.ts`**, **`RenderCompilerOptions`** type;
-**`__DATA__.pathname`** for hybrid hydration on dynamic URLs; View client
-**compileSource** in-memory cache; View SSR bundle disk cache / shutdown
-helpers; integration **`tests/data/`** workspace entries.
-
-**Fixed**: Hybrid hydration when **`route`** is a pattern vs concrete
-**`location.pathname`**.
+**Added**: **`config.router.debug`** injects
+**`globalThis.__DWEB_ROUTER_DEBUG__`** in CSR / Hybrid / SSR / SSG inline
+scripts; **`createRouter`** uses **`__DWEB_DEBUG__ || __DWEB_ROUTER_DEBUG__`**;
+**`DwebGlobal`** documents router vs render debug — enables
+**`@dreamer/router/client`** diagnostics without forcing **`render.debug`**.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

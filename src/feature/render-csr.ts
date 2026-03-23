@@ -106,6 +106,9 @@ export function createRendererCSR(
   };
   const engine = renderConfig.engine || "preact";
   const routerConfig = (config.router || {}) as { routesDir?: string };
+  /** 注入 `__DWEB_ROUTER_DEBUG__`，与 Hybrid 行为一致 */
+  const routerDebug =
+    (config.router as { debug?: boolean } | undefined)?.debug === true;
   const routesDir = routerConfig.routesDir ?? "./src/routes";
   const routesDirPath = join(
     cwd(),
@@ -167,7 +170,12 @@ export function createRendererCSR(
 
       if (!AppComponent) {
         return new Response(
-          generateFallbackCSRHtml(csrOptions, clientRoutes, engine),
+          generateFallbackCSRHtml(
+            csrOptions,
+            clientRoutes,
+            engine,
+            routerDebug,
+          ),
           {
             status: 200,
             headers: {
@@ -383,6 +391,11 @@ ${overlayHtml}
           ? "globalThis.__DWEB_HMR_DEBUG__ = globalThis.__DWEB_HMR_DEBUG__ ?? true; globalThis.__DWEB_DEBUG__ = globalThis.__DWEB_DEBUG__ ?? true;"
           : ""
       }
+  ${
+        routerDebug
+          ? "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;"
+          : ""
+      }
 ${dataScript}  globalThis.__DWEB_DEV__ = ${isDevCsr};
   globalThis.__DWEB_MODE__ = "csr";
   globalThis.__DWEB_ROUTES__ = ${JSON.stringify(clientRoutes)};
@@ -467,10 +480,15 @@ function collectClientRoutes(
 }
 
 /** 无 _app.tsx 时的降级 HTML 外壳（静态模板），与主路径一致：全屏遮罩 + __DWEB_ON_READY__ */
+/**
+ * 无 _app 时的 CSR 外壳 HTML
+ * @param routerDebug 为 true 时注入 `__DWEB_ROUTER_DEBUG__`，便于调试客户端路由
+ */
 function generateFallbackCSRHtml(
   options: RenderCSROptions,
   routes: Array<{ path: string; component: string; type: string }>,
   engine: "react" | "preact" | "view",
+  routerDebug: boolean,
 ): string {
   const { clientScript, containerId, title, headTags, bodyTags } = options;
   const loadingStyles = `<style id="dweb-loading-styles">
@@ -496,6 +514,11 @@ function generateFallbackCSRHtml(
   <div id="${containerId}"></div>
   ${overlayHtml}
   <script>
+    ${
+    routerDebug
+      ? "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;"
+      : ""
+  }
     globalThis.__DWEB_MODE__ = "csr";
     globalThis.__DWEB_ROUTES__ = ${JSON.stringify(routes)};
     globalThis.__DWEB_ENGINE__ = "${engine}";

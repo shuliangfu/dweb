@@ -1921,20 +1921,16 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.2.6] - 2026-03-23
+### [3.2.7] - 2026-03-23
 
-**变更**：View **`render.compiler`** 为 **`RenderCompilerOptions`**
-（`{ dirs, client?, server? }`）；**`resolveRenderCompilerForClient`** /
-**`resolveRenderCompilerForServer`**；依赖 **`@dreamer/esbuild` ^1.1.6**、
-**`@dreamer/view` ^1.3.5**；APP_CONFIG 与 init 模板已同步。
+**变更**：**`@dreamer/router` ^1.1.2**、**`@dreamer/view` ^1.3.6**（根目录与
+全部示例 **`deno.json`**）。
 
-**新增**：**`view-compiler.ts`**、**`RenderCompilerOptions`** 类型；
-**`__DATA__.pathname`**（混合模式动态 URL 注水）；View 客户端 **compileSource**
-内存缓存；View SSR 路由 bundle 磁盘缓存与优雅退出辅助；集成测试
-**`tests/data/`** workspace 配置。
-
-**修复**：动态路由下 **`route`** 为模式串与 **`location.pathname`** 不一致时的
-注水判断。
+**新增**：**`config.router.debug`** 在 CSR / Hybrid / SSR / SSG 内联脚本注入
+**`globalThis.__DWEB_ROUTER_DEBUG__`**；**`createRouter`** 使用
+**`__DWEB_DEBUG__ || __DWEB_ROUTER_DEBUG__`**；**`DwebGlobal`** 区分路由与
+render 调试开关——可单独打开 **`@dreamer/router/client`** 诊断而不必开
+**`render.debug`**。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
