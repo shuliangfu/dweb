@@ -1852,12 +1852,22 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.2.5] - 2026-03-22
+### [3.2.6] - 2026-03-23
 
-**Fixed**: **`view-ssr-route-bundle`** — **`logger.error`** now passes the
-caught error as the **third** argument (with **`entry`** / **`diskPath`** in
-**`data`**) so failures show **message** and **stack** instead of **`{}`**. Full
-changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Changed**: View **`render.compiler`** is **`RenderCompilerOptions`**
+(`{ dirs, client?, server? }`); **`resolveRenderCompilerForClient`** /
+**`resolveRenderCompilerForServer`**; **`@dreamer/esbuild` ^1.1.6**,
+**`@dreamer/view` ^1.3.5**; APP_CONFIG and init templates updated.
+
+**Added**: **`view-compiler.ts`**, **`RenderCompilerOptions`** type;
+**`__DATA__.pathname`** for hybrid hydration on dynamic URLs; View client
+**compileSource** in-memory cache; View SSR bundle disk cache / shutdown
+helpers; integration **`tests/data/`** workspace entries.
+
+**Fixed**: Hybrid hydration when **`route`** is a pattern vs concrete
+**`location.pathname`**.
+
+Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
 ---
 

@@ -1921,12 +1921,22 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.2.5] - 2026-03-22
+### [3.2.6] - 2026-03-23
 
-**修复**：**`view-ssr-route-bundle`** — **`logger.error`**
-将异常放在**第三参**（第二参为 **`entry` / `diskPath`** 等
-**`data`**），失败时可看到 **message** 与 **stack**，不再出现
-**`{}`**。完整变更日志： [CHANGELOG.md](./CHANGELOG.md)
+**变更**：View **`render.compiler`** 为 **`RenderCompilerOptions`**
+（`{ dirs, client?, server? }`）；**`resolveRenderCompilerForClient`** /
+**`resolveRenderCompilerForServer`**；依赖 **`@dreamer/esbuild` ^1.1.6**、
+**`@dreamer/view` ^1.3.5**；APP_CONFIG 与 init 模板已同步。
+
+**新增**：**`view-compiler.ts`**、**`RenderCompilerOptions`** 类型；
+**`__DATA__.pathname`**（混合模式动态 URL 注水）；View 客户端 **compileSource**
+内存缓存；View SSR 路由 bundle 磁盘缓存与优雅退出辅助；集成测试
+**`tests/data/`** workspace 配置。
+
+**修复**：动态路由下 **`route`** 为模式串与 **`location.pathname`** 不一致时的
+注水判断。
+
+完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 
