@@ -7,20 +7,23 @@
 
 ---
 
-## [3.2.8] - 2026-03-26
+## [3.2.8] - 2026-03-27
 
 ### 变更
 
 - **依赖（`deno.json` imports）：**
   **`@dreamer/render`**、**`@dreamer/router`**、 **`@dreamer/view`** 改为
-  **JSR**（**`^1.1.3`**、**`^1.1.3`**、**`^1.3.7`**），不再 使用 monorepo
+  **JSR**（**`^1.1.3`**、**`^1.1.3`**、**`^1.3.8`**），不再 使用 monorepo
   **`../render`** / **`../view`**。**`@dreamer/view`** 仅一条根映射；
   **`/ssr`**、**`/compiler`**、**`/jsx-runtime`**、**`/csr`**、**`/hybrid`**
   等由已发布包 **`exports`** 解析。
 - **依赖（`package.json`）：** 删除错误的 **`@dreamer/dweb`: `file:../dweb`**；
   **`@dreamer/render`**、**`@dreamer/router`**、**`@dreamer/view`** 的
   **`npm:@jsr/dreamer__*`** 与 **`deno.json`** 对齐（**`^1.1.3`** / **`^1.1.3`**
-  / **`^1.3.7`**）。
+  / **`^1.3.8`**）。
+- **`@dreamer/view` ^1.3.8：** 与 View 1.3.8 对齐——**view-cli init** 生成的
+  **`src/main.tsx`** 使用 **`mountWithRouter`**，站内导航会更新主内容；
+  **`getRoot`** 的 JSDoc 由 init 多语言键生成。
 - **`src/feature/csr-client-builder.ts` — `scanRouteComponents`：** 扩展名仅匹配
   **`.tsx` / `.jsx`**（不含 **`.ts` / `.js`**）；与 **`@dreamer/router`**
   一致，非 **`api/`** 下的 **`.ts`/`.js`** 不作为页面；仅 JSX 进入客户端懒加载 /

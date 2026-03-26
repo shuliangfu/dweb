@@ -8,13 +8,13 @@ and this project adheres to
 
 ---
 
-## [3.2.8] - 2026-03-26
+## [3.2.8] - 2026-03-27
 
 ### Changed
 
 - **Dependencies (`deno.json` imports):** **`@dreamer/render`**,
   **`@dreamer/router`**, and **`@dreamer/view`** use **JSR** specifiers
-  (**`^1.1.3`**, **`^1.1.3`**, **`^1.3.7`**) instead of monorepo-relative
+  (**`^1.1.3`**, **`^1.1.3`**, **`^1.3.8`**) instead of monorepo-relative
   **`../render`** / **`../view`**. **`@dreamer/view`** has a **single** root
   mapping; subpaths (**`/ssr`**, **`/compiler`**, **`/jsx-runtime`**,
   **`/csr`**, **`/hybrid`**, etc.) resolve via the published package
@@ -22,7 +22,11 @@ and this project adheres to
 - **Dependencies (`package.json`):** Removed the erroneous **`@dreamer/dweb`:
   `file:../dweb`** entry. **`@dreamer/render`**, **`@dreamer/router`**, and
   **`@dreamer/view`** **`npm:@jsr/dreamer__*`** ranges match **`deno.json`**
-  (**`^1.1.3`** / **`^1.1.3`** / **`^1.3.7`**).
+  (**`^1.1.3`** / **`^1.1.3`** / **`^1.3.8`**).
+- **`@dreamer/view` ^1.3.8:** Aligns with View [1.3.8] — **`view-cli init`**
+  generated **`src/main.tsx`** uses **`mountWithRouter`** so SPA navigation
+  updates page content; **`getRoot`** JSDoc in the init template is driven by
+  locale keys.
 - **`src/feature/csr-client-builder.ts` — `scanRouteComponents`:** File
   extension filter is **`.tsx` / `.jsx` only** (not **`.ts` / `.js`**). Only JSX
   pages are registered for the client lazy-load / **`_client.dep`** graph,

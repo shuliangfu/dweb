@@ -1857,15 +1857,17 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.2.8] - 2026-03-26
+### [3.2.8] - 2026-03-27
 
 **Changed** — **Dependencies:** **`deno.json`** **`@dreamer/render` / `router` /
-`view`** on **JSR** (**`^1.1.3`**, **`^1.1.3`**, **`^1.3.7`**); single
+`view`** on **JSR** (**`^1.1.3`**, **`^1.1.3`**, **`^1.3.8`**); single
 **`@dreamer/view`** map. **`package.json`:** removed bad **`file:../dweb`**;
 aligned **`npm:@jsr/dreamer__*`** ranges.
 **`src/feature/csr-client-builder.ts`:** **`scanRouteComponents`** —
 **`.tsx`/`.jsx`** only for client lazy routes (aligned with
-**`@dreamer/router`**).
+**`@dreamer/router`**). **`@dreamer/view` ^1.3.8:** **view-cli init**
+**`main.tsx`** uses **`mountWithRouter`**; **`getRoot`** JSDoc from init
+locales.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 
