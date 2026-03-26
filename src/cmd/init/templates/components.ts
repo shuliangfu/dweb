@@ -191,9 +191,13 @@ export function getIndexTsx(opts: InitOptions): string {
     : opts.engine === "preact"
     ? 'import { useState } from "preact/hooks";\n\n'
     : 'import { useState } from "react";\n\n';
-  /** View：`createSignal` 返回 SignalRef，用 `.value` 读写；勿再使用元组解构 `[get, set]`（会报「not iterable」）。 */
+  /**
+   * View：init 模板用 `createSignal(0)` + `count.value`，与文档入门一致；需要时也可 `const [n, setN] = createSignal(0)`。
+   */
   const counterState = isView
-    ? "  const count = createSignal(0);\n"
+    ? `
+  const count = createSignal(0);
+`
     : "  const [count, setCount] = useState(0);\n";
   const counterSection = isView
     ? `      <section ${attr}="mb-10 rounded-xl border border-gray-200 bg-white p-6 shadow-md">
@@ -207,13 +211,28 @@ export function getIndexTsx(opts: InitOptions): string {
           <div ${attr}="flex flex-col items-center justify-center gap-4">
             <span ${attr}="text-2xl font-semibold">count: ${"{"}count${"}"}</span>
             <div ${attr}="flex flex-wrap items-center justify-center gap-2">
-              <Button variant="primary" onClick={() => { count.value = count.value + 1; }}>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  count.value = count.value + 1;
+                }}
+              >
                 ${$tr("init.template.counterIncrement")}
               </Button>
-              <Button variant="secondary" onClick={() => { count.value = count.value - 1; }}>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  count.value = count.value - 1;
+                }}
+              >
                 ${$tr("init.template.counterDecrement")}
               </Button>
-              <Button variant="ghost" onClick={() => { count.value = 0; }}>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  count.value = 0;
+                }}
+              >
                 ${$tr("init.template.counterReset")}
               </Button>
             </div>

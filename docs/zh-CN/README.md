@@ -1924,17 +1924,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.2.8] - 2026-03-27
+### [3.2.9] - 2026-03-27
 
-**变更** — **依赖：** **`deno.json`** 中 **`@dreamer/render` / `router` /
-`view`** 走
-**JSR**（**`^1.1.3`**、**`^1.1.3`**、**`^1.3.8`**），**`@dreamer/view`**
-仅主路径。 **`package.json`**：去掉错误
-**`file:../dweb`**，**`npm:@jsr/dreamer__*`** 与 **`deno.json`**
-对齐。**`src/feature/csr-client-builder.ts`**：**`scanRouteComponents`** 仅
-**`.tsx`/`.jsx`** 参与客户端懒加载路由（与 **`@dreamer/router`** 一致）。
-**`@dreamer/view` ^1.3.8：** **view-cli init** 的 **`main.tsx`** 使用
-**`mountWithRouter`**；**getRoot** JSDoc 走 init 多语言。
+**变更** — **`@dreamer/view` `^1.3.9`**（根 **`deno.json`** / **`package.json`**
+及全部 View **示例**）。**Init 模板：** View 计数器 **`createSignal` +
+`.value`**，注释可写解构。**测试：** **`init.test.ts`** 校验 View
+**`generate()`** 生成的 **`index.tsx`**。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

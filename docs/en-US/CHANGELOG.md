@@ -8,6 +8,30 @@ and this project adheres to
 
 ---
 
+## [3.2.9] - 2026-03-27
+
+### Changed
+
+- **Dependencies (`deno.json` / `package.json`):** **`@dreamer/view`**
+  **`^1.3.9`** (was **`^1.3.8`**), aligned with View [1.3.9] — single-argument
+  **`createSignal`**, iterable **`const [get, set] = createSignal(x)`**, and
+  related typing / **`<For>`** inference fixes.
+- **Init template (`src/cmd/init/templates/components.ts`):** View home counter
+  keeps **`createSignal(0)`** + **`count.value`**; JSDoc notes optional
+  destructuring when desired.
+- **Examples (View CSR / hybrid / hybrid-flat / SSR / SSG, basic + advanced):**
+  **`deno.json`** and **`package.json`** import maps use **`@dreamer/view`
+  `^1.3.9`**.
+
+### Added
+
+- **`tests/unit/init.test.ts`:** View **`generate()`** case asserts
+  **`createSignal`** + **`.value`** in **`index.tsx`** and rejects tuple
+  destructuring in the generated template (init default remains **SignalRef**
+  style).
+
+---
+
 ## [3.2.8] - 2026-03-27
 
 ### Changed

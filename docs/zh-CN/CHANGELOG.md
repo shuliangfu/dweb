@@ -7,6 +7,28 @@
 
 ---
 
+## [3.2.9] - 2026-03-27
+
+### 变更
+
+- **依赖（`deno.json` / `package.json`）：** **`@dreamer/view`**
+  **`^1.3.9`**（原 **`^1.3.8`**），与 View 1.3.9 对齐——**`createSignal`**
+  单参、可 **`const [get, set] = createSignal(x)`** 解构及 **`<For>`**
+  推断等修复。
+- **Init 模板（`src/cmd/init/templates/components.ts`）：** View 首页计数器仍为
+  **`createSignal(0)`** + **`count.value`**；注释说明亦可按需使用解构写法。
+- **示例（View CSR / hybrid / hybrid-flat / SSR / SSG，basic / advanced）：**
+  **`deno.json`** 与 **`package.json`** 中 **`@dreamer/view`** 升为
+  **`^1.3.9`**。
+
+### 新增
+
+- **`tests/unit/init.test.ts`：** View 引擎 **`generate()`** 用例校验生成的
+  **`index.tsx`** 使用 **`createSignal`** 与 **`.value`**，且模板不出现元组解构
+  **`[count, setCount] = createSignal`**（init 默认仍为 SignalRef 风格）。
+
+---
+
 ## [3.2.8] - 2026-03-27
 
 ### 变更
