@@ -1034,8 +1034,13 @@ export default function Users(
 | `[...slug].tsx` | `routes/docs/[...slug].tsx` | `/docs/*`                |
 | `api/*.ts`      | `routes/api/users.ts`       | `/api/users` (API route) |
 
-Supports `.ts`, `.tsx`, `.js`, `.jsx`. Route components can `import "*.css"`;
-the framework strips and injects styles.
+**Page routes** (hydratable UI) are registered only for **`.tsx`** and
+**`.jsx`** under **`routes/`**. **`.ts`** and **`.js`** files in that tree
+(outside **`api/`**) are not treated as pages and are not added to the client
+lazy-load map — use them for shared helpers or constants. **API routes** (path
+contains an **`api/`** segment) may still use **`.ts`**, **`.js`**, **`.tsx`**,
+or **`.jsx`** as handlers. Route components can `import "*.css"`; the framework
+strips and injects styles.
 
 **Handling**:
 
@@ -1852,16 +1857,15 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.2.7] - 2026-03-23
+### [3.2.8] - 2026-03-26
 
-**Changed**: **`@dreamer/router` ^1.1.2**, **`@dreamer/view` ^1.3.6** (root +
-all example import maps).
-
-**Added**: **`config.router.debug`** injects
-**`globalThis.__DWEB_ROUTER_DEBUG__`** in CSR / Hybrid / SSR / SSG inline
-scripts; **`createRouter`** uses **`__DWEB_DEBUG__ || __DWEB_ROUTER_DEBUG__`**;
-**`DwebGlobal`** documents router vs render debug — enables
-**`@dreamer/router/client`** diagnostics without forcing **`render.debug`**.
+**Changed** — **Dependencies:** **`deno.json`** **`@dreamer/render` / `router` /
+`view`** on **JSR** (**`^1.1.3`**, **`^1.1.3`**, **`^1.3.7`**); single
+**`@dreamer/view`** map. **`package.json`:** removed bad **`file:../dweb`**;
+aligned **`npm:@jsr/dreamer__*`** ranges.
+**`src/feature/csr-client-builder.ts`:** **`scanRouteComponents`** —
+**`.tsx`/`.jsx`** only for client lazy routes (aligned with
+**`@dreamer/router`**).
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

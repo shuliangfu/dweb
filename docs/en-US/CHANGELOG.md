@@ -8,6 +8,30 @@ and this project adheres to
 
 ---
 
+## [3.2.8] - 2026-03-26
+
+### Changed
+
+- **Dependencies (`deno.json` imports):** **`@dreamer/render`**,
+  **`@dreamer/router`**, and **`@dreamer/view`** use **JSR** specifiers
+  (**`^1.1.3`**, **`^1.1.3`**, **`^1.3.7`**) instead of monorepo-relative
+  **`../render`** / **`../view`**. **`@dreamer/view`** has a **single** root
+  mapping; subpaths (**`/ssr`**, **`/compiler`**, **`/jsx-runtime`**,
+  **`/csr`**, **`/hybrid`**, etc.) resolve via the published package
+  **`exports`**.
+- **Dependencies (`package.json`):** Removed the erroneous **`@dreamer/dweb`:
+  `file:../dweb`** entry. **`@dreamer/render`**, **`@dreamer/router`**, and
+  **`@dreamer/view`** **`npm:@jsr/dreamer__*`** ranges match **`deno.json`**
+  (**`^1.1.3`** / **`^1.1.3`** / **`^1.3.7`**).
+- **`src/feature/csr-client-builder.ts` — `scanRouteComponents`:** File
+  extension filter is **`.tsx` / `.jsx` only** (not **`.ts` / `.js`**). Only JSX
+  pages are registered for the client lazy-load / **`_client.dep`** graph,
+  aligned with **`@dreamer/router`** (non-**`api/`** **`.ts`/`.js`** under
+  **`routes/`** are not pages). Utility **`.ts`** files are not treated as
+  hydrateable route entries.
+
+---
+
 ## [3.2.7] - 2026-03-23
 
 ### Changed

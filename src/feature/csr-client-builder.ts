@@ -300,8 +300,8 @@ async function getRouteLayoutKeys(routesDirPath: string): Promise<{
  *
  * @param routesDir 路由目录绝对路径
  * @param basePath 相对路径前缀（用于层级路径）
- * @param engine 渲染引擎（用于类型，当前仅支持 .tsx/.jsx）
- * @returns 路由组件列表
+ * @param engine 渲染引擎（用于类型）
+ * @returns 路由组件列表（仅含 .tsx / .jsx，不把 .ts / .js 当作可水合页面）
  */
 async function scanRouteComponents(
   routesDir: string,
@@ -309,7 +309,8 @@ async function scanRouteComponents(
   _engine: "react" | "preact" | "view" = "preact",
 ): Promise<RouteComponentInfo[]> {
   const components: RouteComponentInfo[] = [];
-  const extRe = /\.(tsx?|jsx?)$/;
+  /** 客户端懒加载仅注册 JSX 页面；工具 .ts 放在 routes 下也不会误入 _client.dep */
+  const extRe = /\.(tsx|jsx)$/;
 
   /** 待处理队列：(目录路径, 相对路径前缀, 当前深度) */
   const queue: Array<{ dir: string; base: string; depth: number }> = [

@@ -7,6 +7,27 @@
 
 ---
 
+## [3.2.8] - 2026-03-26
+
+### 变更
+
+- **依赖（`deno.json` imports）：**
+  **`@dreamer/render`**、**`@dreamer/router`**、 **`@dreamer/view`** 改为
+  **JSR**（**`^1.1.3`**、**`^1.1.3`**、**`^1.3.7`**），不再 使用 monorepo
+  **`../render`** / **`../view`**。**`@dreamer/view`** 仅一条根映射；
+  **`/ssr`**、**`/compiler`**、**`/jsx-runtime`**、**`/csr`**、**`/hybrid`**
+  等由已发布包 **`exports`** 解析。
+- **依赖（`package.json`）：** 删除错误的 **`@dreamer/dweb`: `file:../dweb`**；
+  **`@dreamer/render`**、**`@dreamer/router`**、**`@dreamer/view`** 的
+  **`npm:@jsr/dreamer__*`** 与 **`deno.json`** 对齐（**`^1.1.3`** / **`^1.1.3`**
+  / **`^1.3.7`**）。
+- **`src/feature/csr-client-builder.ts` — `scanRouteComponents`：** 扩展名仅匹配
+  **`.tsx` / `.jsx`**（不含 **`.ts` / `.js`**）；与 **`@dreamer/router`**
+  一致，非 **`api/`** 下的 **`.ts`/`.js`** 不作为页面；仅 JSX 进入客户端懒加载 /
+  **`_client.dep`**，工具 **`.ts`** 不会当作可水合页面登记。
+
+---
+
 ## [3.2.7] - 2026-03-23
 
 ### 变更

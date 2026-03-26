@@ -1049,8 +1049,11 @@ export default function Users(
 | `[...slug].tsx` | `routes/docs/[...slug].tsx` | `/docs/*`                |
 | `api/*.ts`      | `routes/api/users.ts`       | `/api/users`（API 路由） |
 
-支持 `.ts`、`.tsx`、`.js`、`.jsx`。路由组件可
-`import "*.css"`，框架会剥离并注入页面。
+**页面路由**（可水合的 UI）仅识别 **`routes/` 下的 `.tsx`、`.jsx`**；同目录中的
+`.ts`、`.js`
+不会生成页面，也不会进入客户端懒加载映射（可放共享工具、常量）。**API
+路由**（路径中包含 `api/` 段）仍可使用 **`.ts`、`.js`**（或 `.tsx`、`.jsx`）作为
+handler。路由组件可 `import "*.css"`，框架会剥离并注入页面。
 
 **处理机制**：
 
@@ -1921,16 +1924,15 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.2.7] - 2026-03-23
+### [3.2.8] - 2026-03-26
 
-**变更**：**`@dreamer/router` ^1.1.2**、**`@dreamer/view` ^1.3.6**（根目录与
-全部示例 **`deno.json`**）。
-
-**新增**：**`config.router.debug`** 在 CSR / Hybrid / SSR / SSG 内联脚本注入
-**`globalThis.__DWEB_ROUTER_DEBUG__`**；**`createRouter`** 使用
-**`__DWEB_DEBUG__ || __DWEB_ROUTER_DEBUG__`**；**`DwebGlobal`** 区分路由与
-render 调试开关——可单独打开 **`@dreamer/router/client`** 诊断而不必开
-**`render.debug`**。
+**变更** — **依赖：** **`deno.json`** 中 **`@dreamer/render` / `router` /
+`view`** 走
+**JSR**（**`^1.1.3`**、**`^1.1.3`**、**`^1.3.7`**），**`@dreamer/view`**
+仅主路径。 **`package.json`**：去掉错误
+**`file:../dweb`**，**`npm:@jsr/dreamer__*`** 与 **`deno.json`**
+对齐。**`src/feature/csr-client-builder.ts`**：**`scanRouteComponents`** 仅
+**`.tsx`/`.jsx`** 参与客户端懒加载路由（与 **`@dreamer/router`** 一致）。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 
