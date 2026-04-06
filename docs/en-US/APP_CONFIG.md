@@ -21,7 +21,7 @@ with the following main sections:
 | `pluginManagerOptions` | PluginManagerOptions | Plugin manager options (autoActivate, continueOnError, enableHotReload, etc.)                                                                                                                                        |
 | `server`               | ServerOptions        | Server configuration                                                                                                                                                                                                 |
 | `router`               | RouterOptions        | Router configuration                                                                                                                                                                                                 |
-| `render`               | object               | Render config (`engine`, `mode`, `debug`; **`compiler`** is **View-only**: extra `compileSource` root paths; see **render.compiler** below and [View View Template Engine](#view-view-template-engine))              |
+| `render`               | object               | Render config (`engine`, `mode`, `debug`, etc.; see render-related sections below and [View View Template Engine](#view-view-template-engine))                                                                       |
 | `build`                | BuildAppConfig       | Build configuration                                                                                                                                                                                                  |
 | `logger`               | LoggerConfig         | Logger configuration                                                                                                                                                                                                 |
 | `database`             | DatabaseAppConfig    | Database configuration                                                                                                                                                                                               |
@@ -119,17 +119,6 @@ const config: AppConfig = {
     engine: "preact",
     /** Render mode: ssr | csr | ssg | hybrid */
     mode: "hybrid",
-    /**
-     * View only: `compiler` is `{ dirs, client?, server? }`. See **render.compiler** below.
-     */
-    // compiler: {
-    //   /** Roots for compileSource; include app + workspace/JSR packages */
-    //   dirs: ["./src"],
-    //   /** Client bundle: jsx-compiler; omit means enabled */
-    //   // client: true,
-    //   /** Server .tsx routes: compiler; use false for CSR-only doc sites */
-    //   // server: true,
-    // },
     /** SSR config (when mode is ssr). hydrate: enable client hydration (default true). */
     ssr: {
       hydrate: true,
@@ -391,46 +380,6 @@ click handlers, without enabling client-side routing).
 Both options require `@dreamer/router@^1.0.10` on the client (used by the
 generated client bundle) so that when `hydrate` is enabled, link clicks use full
 page navigation instead of client-side routing.
-
----
-
-### render.compiler (View-only)
-
-Optional when **`render.engine` is `"view"`**. Type: **`RenderCompilerOptions`**
-(`AppConfig.render.compiler`) object:
-
-| Field        | Type       | Description                                                                                                                                                                                                                                                                                                                                           |
-| ------------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`dirs`**   | `string[]` | **Must be non-empty** to enable the jsx-compiler. Lists **source roots** that participate in `compileSource` (**relative to process `cwd()`** or **absolute**, e.g. from `import.meta.resolve` / `dirname` / `join`). Include the app root (e.g. `./src`) and any **workspace / JSR** package roots (e.g. `./src` and `../ui-view/src`).              |
-| **`client`** | `boolean?` | Whether the **client** bundle (dev HMR, production `_client` build) uses the jsx-compiler. **Omitted or `true`**: enabled; **`false`**: same client behavior as when `compiler` is unset (strip-load only, etc.).                                                                                                                                     |
-| **`server`** | `boolean?` | Whether **server** loading of `.tsx` routes uses the compiler (SSR route bundle, `loadRouteModule`). **Omitted or `true`**: enabled; **`false`**: native `import`. **CSR-only** or doc sites may set **`server: false`** (same idea as `@dreamer/ui-view` docs); keep **`true`** for **SSR / hybrid / SSG** when the server must compile View `.tsx`. |
-
-If **`render.compiler`** is missing or **`dirs` is empty**, jsx-compiler is off
-(client strip-load only; server native `import`).
-
-**Resolution**: `resolveRenderCompilerForClient` /
-`resolveRenderCompilerForServer` in dweb use **`client !== false`** and
-**`server !== false`** per side; **`dirs`** are normalized to absolute paths
-(forward slashes). For tooling that only needs the root list, use
-**`normalizeRenderCompiler`** (normalizes **`dirs`** only; ignores client/server
-flags).
-
-**Note**: esbuild still follows the **import graph**; `compileSource` applies to
-loaded **`.tsx`** files under a listed **`dirs`** root.
-
-**Example** (monorepo + client-side compiler only):
-
-```ts
-render: {
-  engine: "view",
-  mode: "hybrid",
-  compiler: {
-    dirs: ["./src", "../src"],
-    client: true,
-    server: false,
-  },
-},
-```
 
 ---
 

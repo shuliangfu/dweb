@@ -58,24 +58,6 @@ export type BuildAppConfig = Omit<BuilderConfig, "server"> & {
 };
 
 /**
- * View 引擎 `render.compiler`：用 `dirs` 指定源码根，并可分别关闭客户端或服务端的 jsx-compiler。
- */
-export interface RenderCompilerOptions {
-  /** 参与 `compileSource` 的源码根（相对进程 `cwd()` 或绝对路径） */
-  dirs: string[];
-  /**
-   * 客户端 bundle（开发 HMR、生产构建）是否走 jsx-compiler。
-   * 省略或为 `true` 时启用；为 `false` 时与未配置 `compiler` 的客户端行为一致（仅 strip-load 等）。
-   */
-  client?: boolean;
-  /**
-   * 服务端（SSR 路由 bundle、`loadRouteModule` 动态加载 `.tsx`）是否走编译器。
-   * 省略或为 `true` 时启用；为 `false` 时走原生 `import`。
-   */
-  server?: boolean;
-}
-
-/**
  * 数据库应用配置
  *
  * 支持默认连接和命名连接，可配置 DatabaseManager 选项。
@@ -167,15 +149,6 @@ export interface AppConfig extends Record<string, unknown> {
       /** 是否启用客户端激活（hydrate），默认 true；关闭后仅输出服务端 HTML，不注入 _client.js */
       hydrate?: boolean;
     };
-    /**
-     * 仅 **View 引擎**：配置 **`{ dirs, client?, server? }`**。
-     * 非空 `dirs` 且对应端未关闭时，所列根下 `.tsx` 在该端走 `compileSource`；未配置、空 `dirs` 或该端
-     * `client`/`server` 为 `false` 时，该端不启用 jsx-compiler（客户端仅 strip-load，服务端原生 `import`）。
-     * 须包含应用源码根（如 `./src`）及 workspace 依赖包根。
-     *
-     * @example `{ dirs: ["./src", "../ui-view/src"], client: true, server: true }`
-     */
-    compiler?: RenderCompilerOptions;
     /** SSG 配置（mode 为 ssg 时生效） */
     ssg?: {
       outputDir?: string;

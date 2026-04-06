@@ -19,7 +19,7 @@
 | `pluginManagerOptions` | PluginManagerOptions | 插件管理器选项（autoActivate、continueOnError、enableHotReload 等）                                                                                                                 |
 | `server`               | ServerOptions        | 服务器配置                                                                                                                                                                          |
 | `router`               | RouterOptions        | 路由配置                                                                                                                                                                            |
-| `render`               | object               | 渲染配置（`engine`、`mode`、`debug`；**`compiler`** 仅 **View**：额外 `compileSource` 源码根路径数组；见下文 **render.compiler** 与 [View 视图模板引擎](#view-视图模板引擎)）       |
+| `render`               | object               | 渲染配置（`engine`、`mode`、`debug` 等；详见下文渲染相关小节与 [View 视图模板引擎](#view-视图模板引擎)）                                                                            |
 | `build`                | BuildAppConfig       | 构建配置                                                                                                                                                                            |
 | `logger`               | LoggerConfig         | 日志配置                                                                                                                                                                            |
 | `database`             | DatabaseAppConfig    | 数据库配置                                                                                                                                                                          |
@@ -117,18 +117,6 @@ const config: AppConfig = {
     engine: "preact",
     /** 渲染模式：ssr | csr | ssg | hybrid */
     mode: "hybrid",
-    /**
-     * 仅 engine 为 "view" 时有效：`compiler` 为对象 `{ dirs, client?, server? }`。
-     * 详见下文「render.compiler」；monorepo 可写多个根（如 `./src` 与 `../pkg/src`）。
-     */
-    // compiler: {
-    //   /** 走 compileSource 的源码根；须含应用与依赖包 */
-    //   dirs: ["./src"],
-    //   /** 客户端 bundle 是否走 jsx-compiler；省略视为 true */
-    //   // client: true,
-    //   /** 服务端 .tsx 路由是否走编译器；纯 CSR 文档站可设 false */
-    //   // server: true,
-    // },
     /** SSR 配置（mode 为 ssr 时生效）。hydrate：是否启用客户端激活，默认 true。 */
     ssr: {
       hydrate: true,
@@ -385,46 +373,6 @@ export default config;
 
 两选项均依赖客户端使用 `@dreamer/router@^1.0.10`（由生成代码引入），以便在启用
 hydrate 时链接使用整页跳转而非客户端路由。
-
----
-
-### render.compiler（仅 View 引擎）
-
-当 **`render.engine` 为 `"view"`** 时可选。类型为 **`RenderCompilerOptions`**
-（`AppConfig.render.compiler`）对象：
-
-| 字段         | 类型       | 说明                                                                                                                                                                                                                                                                                                         |
-| ------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **`dirs`**   | `string[]` | **须非空**才会启用 jsx-compiler。列出参与 `compileSource` 判断的**源码根**（相对进程 **`cwd()`** 或**绝对路径**，可用 `import.meta.resolve` / `dirname` / `join` 等推导）。须包含应用源码根（如 `./src`）以及 **workspace / JSR** 依赖包根（如 `./src` 与 `../ui-view/src`）。                               |
-| **`client`** | `boolean?` | 客户端（开发 HMR、生产 `_client` 构建）是否走 jsx-compiler。**省略或与 `true` 等价**：启用；**`false`** 时与未配置 `compiler` 的客户端一致（仅 strip-load 等）。                                                                                                                                             |
-| **`server`** | `boolean?` | 服务端（SSR 路由单文件 bundle、`loadRouteModule` 加载 `.tsx`）是否走编译器。**省略或与 `true` 等价**：启用；**`false`** 时为原生 `import`。纯 **CSR** 或仅需客户端编译的文档站可设 **`server: false`**（与 `@dreamer/ui-view` 文档示例一致），**SSR / hybrid / SSG** 预渲染需服务端编译时请保持 **`true`**。 |
-
-未配置整个 **`render.compiler`**，或 **`dirs` 为空数组**，则**不**启用
-jsx-compiler（客户端仅 strip-load，服务端原生 `import`）。
-
-**判定规则**：框架内 `resolveRenderCompilerForClient` /
-`resolveRenderCompilerForServer` 分别按
-**`client !== false`**、**`server !== false`**
-判断是否在该端启用编译器；**`dirs`** 再经 `dweb`
-规范化为绝对路径（正斜杠）。工具场景若只需目录列表可使用
-**`normalizeRenderCompiler`**（仅规范化 `dirs`，不读 `client`/`server`）。
-
-**注意**：esbuild 仍只打包 **import 图** 中实际被引用的模块；路径落在 **`dirs`**
-所列根下的已加载 **`.tsx`** 才会执行 `compileSource`。
-
-**示例**（monorepo + 仅客户端走编译器）：
-
-```ts
-render: {
-  engine: "view",
-  mode: "hybrid",
-  compiler: {
-    dirs: ["./src", "../src"],
-    client: true,
-    server: false,
-  },
-},
-```
 
 ---
 

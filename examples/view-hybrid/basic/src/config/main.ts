@@ -26,11 +26,9 @@ const config: AppConfig = {
   render: {
     engine: "view",
     mode: "hybrid",
-    compiler: {
-      dirs: ["./src"],
-      client: true,
-      server: true,
-    },
+    // ssr: {
+    //   hydrate: false,
+    // },
   },
 
   // 路由配置

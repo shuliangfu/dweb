@@ -1,5 +1,5 @@
 /**
- * init 生成的静态文件：.gitignore、.vscode/settings.json、.vscode/i18n-ally-custom-framework.yml、Tailwind/Uno CSS 入口、favicon.svg、jsx.d.ts、deploy.sh、tsconfig.json（Bun）
+ * init 生成的静态文件：.gitignore、.vscode/settings.json、.vscode/i18n-ally-custom-framework.yml、Tailwind/Uno CSS 入口、favicon.svg、deploy.sh、tsconfig.json（Bun）
  */
 
 import { $tr, getJsxImportSource } from "../helpers.ts";
@@ -11,27 +11,6 @@ export function getDeploySh(): string {
 set -e
 dweb-cli build
 docker compose up -d
-`;
-}
-
-/**
- * JSX 固有元素类型文件内容：供选用 view 引擎的项目做 TSX 类型检查。
- * 与 @dreamer/view 的 examples/jsx.d.ts 一致，JSR 不允许在包内 declare global，故由 init 写入项目根目录。
- */
-export function getJsxDts(): string {
-  return `/**
- * ${$tr("init.comments.jsxDtsLine1")}
- * ${$tr("init.comments.jsxDtsLine2")}
- */
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      [tag: string]: Record<string, unknown>;
-    }
-  }
-}
-
-export {};
 `;
 }
 
@@ -121,7 +100,7 @@ refactorTemplates:
 
 /**
  * Bun 项目用 tsconfig.json：根据模板引擎设置 jsx / jsxImportSource，供 tsc 与 IDE 类型检查
- * moduleResolution: "nodenext" 与 NodeNext 模块规范一致；include 含 jsx.d.ts 供 view 引擎类型
+ * moduleResolution: "nodenext" 与 NodeNext 模块规范一致；View 类型由依赖包与 jsxImportSource 解析
  * 仅当 runtime === "bun" 时由 generate 写入
  */
 export function getTsconfigJson(opts: InitOptions): string {
@@ -142,7 +121,7 @@ export function getTsconfigJson(opts: InitOptions): string {
         "isolatedModules": true,
         "allowImportingTsExtensions": true,
       },
-      "include": ["src/**/*", "jsx.d.ts"],
+      "include": ["src/**/*"],
       "exclude": ["node_modules", "dist"],
     },
     null,

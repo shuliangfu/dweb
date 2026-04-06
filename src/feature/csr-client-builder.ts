@@ -35,7 +35,7 @@ import {
   writeTextFile,
 } from "../core/runtime-adapter.ts";
 
-import type { AppConfig, RenderCompilerOptions } from "../types/app.ts";
+import type { AppConfig } from "../types/app.ts";
 import {
   getDreamerClientCacheDir,
   getInferredBuildOutputDirs,
@@ -48,37 +48,21 @@ import {
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { normalizePathForCompare, pathForLog } from "../utils/path.ts";
-import { resolveRenderCompilerForClient } from "../utils/view-compiler.ts";
 import { createStripLoadPlugin } from "./strip-load-plugin.ts";
-import { createViewClientTsxPlugin } from "./view-tsx-compile-plugin.ts";
 
 /**
- * 为客户端 bundle 注册 esbuild 插件：View 引擎对应用 `src` 内 `.tsx` 走 `compileSource`（与官方 view 构建一致），并在路由目录下内含 strip-load；React/Preact 仅 strip-load。
+ * 为客户端 bundle 注册 esbuild 插件：在路由目录下剔除 `load` 导出（strip-load），避免打进浏览器 chunk。
+ * 各引擎行为一致；View `.tsx` 由运行时与 `deno.json` 的 JSX 配置处理。
  *
- * @param engine - 渲染引擎
+ * @param _engine - 渲染引擎（保留参数便于将来按引擎扩展插件）
  * @param routesDirPath - 路由目录绝对路径（与 `router.routesDir` 解析结果一致）
- * @param options.compiler - 仅 View：`compileSource` 根目录（已规范化的绝对路径，与 `AppConfig.render.compiler` 对应）；**必须非空**才会注册 jsx-compiler 插件，否则仅 strip-load（与未配置 `render.compiler` 一致）
  * @returns 供 `BuilderClient` / `Builder` 的 `plugins` 数组
  */
 export function createDwebClientBundlePlugins(
-  engine: "react" | "preact" | "view",
+  _engine: "react" | "preact" | "view",
   routesDirPath: string,
-  options?: { compiler?: string[] },
 ): BuildPlugin[] {
   const routesAbs = resolve(routesDirPath);
-  if (engine === "view") {
-    const compilerRoots = options?.compiler;
-    /** 未配置 `render.compiler`：不走 jsx-compiler，仅剔除路由中的 load（与 React/Preact 客户端一致） */
-    if ((compilerRoots?.length ?? 0) === 0) {
-      return [createStripLoadPlugin(routesAbs)];
-    }
-    return [
-      createViewClientTsxPlugin({
-        routesDirAbs: routesAbs,
-        compileRoots: compilerRoots!,
-      }),
-    ];
-  }
   return [createStripLoadPlugin(routesAbs)];
 }
 
@@ -102,6 +86,11 @@ export interface ClientBuildResult {
   chunkBaseIndex?: Map<string, string>;
   /** 本次变更对应路由的 chunk 的 URL（HMR 无感刷新用，如 /_client/index-XXX.js） */
   chunkUrl?: string;
+  /**
+   * 开发态：各页面路由对应的 chunk URL（与 ROUTE_LOADERS 的 key 一致）。
+   * 改共享组件时与 `chunkUrl` 一并下发，供客户端按当前路由强制 `import` 而无需整页刷新。
+   */
+  routeChunkUrls?: Record<string, string>;
 }
 
 /**
@@ -137,6 +126,50 @@ function getComponentPathFromFilePath(
     normalizedFile.indexOf(normalizedRoutes) + normalizedRoutes.length,
   ).replace(/^\//, "").replace(/\.(tsx?|jsx?)$/, "");
   return relative || null;
+}
+
+/**
+ * 变更文件是否位于「routes 的父目录（通常为 src）」下、且不在 routes 目录内。
+ * 例如 `src/config/main.ts`、共享组件等：无单一 `chunkUrl`，但会随构建下发 `routeChunkUrls`，由客户端按当前路由 `import` 刷新；
+ * 与 `_client.tsx` 一样不应打「无法推导 componentPath」的 WARN。
+ *
+ * @param routesDirPath 路由目录绝对路径（与 scanRouteComponents 一致）
+ * @param filePath 变更文件的绝对或相对路径
+ */
+function isNonRouteSrcUnderAppSrc(
+  routesDirPath: string,
+  filePath: string,
+): boolean {
+  const routesAbs = normalizePathForCompare(resolve(routesDirPath));
+  const srcRootAbs = normalizePathForCompare(resolve(routesAbs, ".."));
+  const fileAbs = normalizePathForCompare(resolve(filePath));
+  const underSrc = fileAbs === srcRootAbs ||
+    fileAbs.startsWith(srcRootAbs + "/");
+  const underRoutes = fileAbs === routesAbs ||
+    fileAbs.startsWith(routesAbs + "/");
+  return underSrc && !underRoutes;
+}
+
+/**
+ * 为开发态 HMR 构建「路由 component 标识 → 当前产物 chunk 的 URL」映射。
+ * 改 `src/components` 等共享模块时无单一 `chunkUrl`，客户端用 `match.route.component` 查表即可只刷新当前路由。
+ *
+ * @param routeComponents `scanRouteComponents` 结果
+ * @param outputFileNames 本次构建内存产物中的文件名列表（含 basename 与相对路径键）
+ */
+function buildRouteChunkUrlMap(
+  routeComponents: readonly { componentPath: string }[],
+  outputFileNames: string[],
+): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const c of routeComponents) {
+    const chunkFileName = getChunkFileNameForComponent(
+      c.componentPath,
+      outputFileNames,
+    );
+    if (chunkFileName) map[c.componentPath] = `/${chunkFileName}`;
+  }
+  return map;
 }
 
 /**
@@ -430,7 +463,7 @@ type ClientDepRenderMode = "csr" | "hybrid" | "ssr" | "ssg";
  * View 引擎按 renderMode 区分：csr 用 @dreamer/render/client/view-csr（仅 **buildViewTree**；
  * 首屏与路由由 **mount/insert** 接管，不调用 **renderCSR**）；hybrid/ssr/ssg 用
  * @dreamer/render/client/view-hybrid（同样仅 **buildViewTree**）。
- * 客户端根挂载与 @dreamer/view 一致：`mount(selector, (el) => insert(el, getter))`。
+ * 客户端根挂载与 @dreamer/view 一致：`mount(() => () => …, container)`（返回函数子，由运行时 `insert` 建 effect）。
  * SSR/SSG 在语义上仍为「带服务端 HTML 的激活」，但 View 引擎实现上与 hybrid 同属 mount/insert 路径，不是 csr。
  *
  * @param engine 渲染引擎（用于 hydrate/renderCSR 导入及 setupHydrationRouterAndHmr）
@@ -455,24 +488,17 @@ function generateClientDepContent(
   const adapterImport = ENGINE_RENDER_ADAPTER[engine] ??
     "@dreamer/render/client/preact";
   const isViewEngine = engine === "view";
-  /** view + csr：从 view-csr 仅取 buildViewTree；view + hybrid|ssr|ssg：从 view-hybrid 取 buildViewTree；激活与路由均由 mount+insert，不导入 renderCSR */
+  /** view + csr：从 view-csr 仅取 buildViewTree；view + hybrid|ssr|ssg：从 view-hybrid 取 buildViewTree；激活与路由均由主包 `mount` + 函数子，不导入 renderCSR */
   const viewAdapterPath = isViewEngine
     ? VIEW_ADAPTER_BY_MODE[renderMode]
     : adapterImport;
-  const viewImport = isViewEngine && renderMode === "csr"
-    ? 'import { createSignal, mount } from "@dreamer/view/csr";'
-    : isViewEngine
-    ? 'import { createSignal, mount } from "@dreamer/view/hybrid";'
-    : "";
-  /** import 顺序：@dreamer/router → @dreamer/render → @dreamer/view/* → @dreamer/view（与 bgb 等项目约定一致） */
+  /**
+   * View 客户端：仅从主包 `@dreamer/view` 导入 `createSignal`、`mount`、`Signal`（不再使用已移除的
+   * `@dreamer/view/hybrid`、`@dreamer/view/csr` 等子路径，避免 esbuild 解析失败）。
+   */
   const renderAdapterImport = isViewEngine
-    ? (renderMode === "csr"
-      ? `import { buildViewTree } from "${viewAdapterPath}";
-import { createSignal, mount } from "@dreamer/view/csr";
-import { insert, type SignalRef } from "@dreamer/view";`
-      : `import { buildViewTree } from "${viewAdapterPath}";
-${viewImport}
-import { insert, type SignalRef } from "@dreamer/view";`)
+    ? `import { buildViewTree } from "${viewAdapterPath}";
+import { createSignal, mount, type Signal } from "@dreamer/view";`
     : `import { hydrate, renderCSR } from "${adapterImport}";`;
   /** API 路由（api/ 下）仅服务端使用，不加入 ROUTE_LOADERS，避免客户端 bundle 解析 .ts 或错误引用 */
   const pageComponents = components.filter(
@@ -740,7 +766,10 @@ export interface DwebGlobal {
   __DWEB_MODE__?: "csr" | "hybrid" | "ssr" | "ssg";
   /** 是否为开发模式（服务端注入，用于区分 dev/prod 行为，如 CSS 强制刷新仅 dev 执行） */
   __DWEB_DEV__?: boolean;
-  __HMR_REFRESH__?: (options?: { chunkUrl?: string }) => void;
+  __HMR_REFRESH__?: (options?: {
+    chunkUrl?: string;
+    routeChunkUrls?: Record<string, string>;
+  }) => void;
   /** CSR 模式下页面渲染完成时调用，用于淡出 loading 遮罩 */
   __DWEB_ON_READY__?: () => void;
   /** 开发模式 HMR 调试日志开关（控制台设置 globalThis.__DWEB_HMR_DEBUG__ = true 可查看详细日志） */
@@ -933,9 +962,9 @@ export const RENDER_STATE: { lastUnmount: (() => void) | null } = { lastUnmount:
 ${
     isViewEngine
       ? `
-/** View 引擎：createSignal 返回 SignalRef；显式标注类型避免部分检查器将返回值误判为可迭代元组（TS2488）。 */
+/** View 引擎：createSignal 返回 Signal；显式标注类型避免部分检查器将返回值误判为可迭代元组（TS2488）。 */
 type _ViewStateRoot = { page: unknown; props: Record<string, unknown>; layouts: LayoutComponent[]; skipLayouts: boolean };
-const viewState: SignalRef<_ViewStateRoot> = createSignal<_ViewStateRoot>({ page: null as unknown, props: {} as Record<string, unknown>, layouts: [] as LayoutComponent[], skipLayouts: false });
+const viewState: Signal<_ViewStateRoot> = createSignal<_ViewStateRoot>({ page: null as unknown, props: {} as Record<string, unknown>, layouts: [] as LayoutComponent[], skipLayouts: false });
 function getViewState(): _ViewStateRoot {
   return viewState.value;
 }
@@ -944,7 +973,7 @@ function setViewState(next: _ViewStateRoot): void {
 }
 let _viewReactiveRoot: { unmount: () => void } | null = null;
 
-/** 仅渲染「当前页」的包装组件：返回 getter，getter 内读 getViewState() 并 buildViewTree(page, props)，不包含 layouts。页面内 state（SignalRef 的 .value）只在本 getter 的 effect 中被读，故仅本层重跑、仅本层 data-view-dynamic 更新。 */
+/** 仅渲染「当前页」的包装组件：返回 getter，getter 内读 getViewState() 并 buildViewTree(page, props)，不包含 layouts。页面内 state（Signal 的 .value）只在本 getter 的 effect 中被读，故仅本层重跑、仅本层 data-view-dynamic 更新。 */
 function _viewPageContent(props: { getViewState: () => { page: unknown; props: Record<string, unknown>; layouts: LayoutComponent[]; skipLayouts: boolean } }) {
   return () => {
     const s = props.getViewState();
@@ -967,13 +996,16 @@ function _viewEnsureReactiveRoot(containerId: string): void {
     // CSR 时服务端已在 #app 内渲染 Layout(Loading)；mount() 会 appendChild，先清空避免两屏。Hybrid/SSR/SSG 同需清空再挂载。
     if (_win.__DWEB_DEBUG__) console.log("[dweb:view] _viewEnsureReactiveRoot: clearing #" + containerId + (isHydrateMode ? " (mount mode)" : " (csr, replace loading shell)"));
     if (typeof (el as HTMLElement).replaceChildren === "function") (el as HTMLElement).replaceChildren(); else (el as HTMLElement).innerHTML = "";
-    _viewReactiveRoot = mount("#" + containerId, (el) => {
-      insert(el, () => {
+    /** 与 @dreamer/view 的 mount(fn, container) 对齐：fn 返回 getter，等价于旧 insert(host, () => …) */
+    const host = el as HTMLElement;
+    const dispose = mount(() => {
+      return () => {
         const s = getViewState();
         if (_win.__DWEB_DEBUG__) console.log("[dweb:view] root effect", { hasPage: !!s.page, layoutsLen: s.layouts?.length ?? 0, skipLayouts: s.skipLayouts });
         return buildViewTree(_viewPageContent, { getViewState }, s.layouts, s.skipLayouts);
-      });
-    }, { noopIfNotFound: true });
+      };
+    }, host);
+    _viewReactiveRoot = { unmount: dispose };
     if (_win.__DWEB_DEBUG__) console.log("[dweb:view] _viewEnsureReactiveRoot: done, container childCount=" + (el as HTMLElement).childNodes.length);
     RENDER_STATE.lastUnmount = () => {
       _viewReactiveRoot?.unmount();
@@ -1052,6 +1084,7 @@ export async function setupHydrationRouterAndHmr(opts: {
   }
   g.__HMR_REFRESH__ = (hmrOpts) => {
     const chunkUrl = hmrOpts?.chunkUrl;
+    const routeChunkUrls = hmrOpts?.routeChunkUrls;
     if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
       console.log(${JSON.stringify($tr("client.hmrDebugEnabled"))});
     }
@@ -1103,7 +1136,19 @@ export async function setupHydrationRouterAndHmr(opts: {
         }
         return import(/* @vite-ignore */ busted);
       }
-      // 无 chunkUrl 或未匹配时 loadPageModule 会命中浏览器模块缓存，无法拿到新代码；整页刷新以加载最新
+      // 无精确 chunkUrl 时（如改了 src/components）：用本次构建下发的「路由 → chunk」表拉取当前页 chunk，避免整页刷新
+      const mapped = routeChunkUrls && typeof routeChunkUrls === "object" && comp
+        ? routeChunkUrls[comp]
+        : undefined;
+      if (typeof mapped === "string" && mapped.length > 0) {
+        const path = mapped.startsWith("/") ? mapped : "/" + mapped;
+        const busted = path + (path.includes("?") ? "&" : "?") + "t=" + Date.now();
+        if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
+          console.log("[dweb:hmr] routeChunkUrls", { comp, busted });
+        }
+        return import(/* @vite-ignore */ busted);
+      }
+      // 仍无法定位 chunk 时整页刷新
       if (typeof _win.location !== "undefined" && _win.location.reload) {
         _win.location.reload();
         return new Promise(() => {});
@@ -1606,7 +1651,6 @@ async function doDevBuild(
     info: (msg: string, data?: unknown) => void;
   },
   lang?: "en-US" | "zh-CN",
-  compilerRoots?: string[],
 ): Promise<{
   outputContents?: Array<{ path: string; text: string; contents?: Uint8Array }>;
 }> {
@@ -1626,9 +1670,7 @@ async function doDevBuild(
       chunkNames: "[name]-[hash]",
     },
     lang,
-    plugins: createDwebClientBundlePlugins(engine, routesDirPath, {
-      compiler: compilerRoots,
-    }),
+    plugins: createDwebClientBundlePlugins(engine, routesDirPath),
   });
   await builder.createContext("dev", { write: false });
   cachedDevBuilder = builder;
@@ -1691,14 +1733,9 @@ export async function buildClientScript(
     const renderConfig = (config.render || {}) as {
       engine?: "react" | "preact" | "view";
       mode?: "csr" | "hybrid" | "ssr" | "ssg";
-      compiler?: RenderCompilerOptions;
     };
     const engine = renderConfig.engine || "preact";
     const renderMode = (renderConfig.mode ?? "hybrid") as ClientDepRenderMode;
-    /** View：依赖包源码目录一并走 compileSource（与 SSR loadRouteModule 共用配置） */
-    const renderCompilerRootsResolved = resolveRenderCompilerForClient(
-      renderConfig.compiler,
-    );
 
     // 构建调试：仅使用 config.build.client.debug / config.build.server.debug 传递至 esbuild
     const buildConfig = config.build as {
@@ -1830,9 +1867,7 @@ export async function buildClientScript(
         lang: config.language === "zh-CN" || config.language === "en-US"
           ? config.language
           : undefined,
-        plugins: createDwebClientBundlePlugins(engine, routesDirPath, {
-          compiler: renderCompilerRootsResolved,
-        }),
+        plugins: createDwebClientBundlePlugins(engine, routesDirPath),
       });
 
       await builder.build(mode);
@@ -1900,7 +1935,6 @@ export async function buildClientScript(
             config.language === "zh-CN" || config.language === "en-US"
               ? config.language
               : undefined,
-            renderCompilerRootsResolved,
           );
         }
       } else {
@@ -1914,7 +1948,6 @@ export async function buildClientScript(
           config.language === "zh-CN" || config.language === "en-US"
             ? config.language
             : undefined,
-          renderCompilerRootsResolved,
         );
       }
 
@@ -2004,10 +2037,13 @@ export async function buildClientScript(
       if (options?.changedPath) {
         const changedPathAbs = resolve(options.changedPath);
         const changedBasename = basename(changedPathAbs);
-        // client.dep.tsx / client.tsx 为客户端入口，非路由组件，无法推导 componentPath，整页刷新即可，不打 WARN
+        // client.dep.tsx / client.tsx 为客户端入口，非路由组件；HMR 仍下发 routeChunkUrls，由客户端按当前路由 import
         const isClientEntry = changedBasename === CLIENT_DEP_FILENAME ||
           changedBasename === CLIENT_ENTRY_FILENAME;
-        const componentPath = isClientEntry
+        /** 配置、公共模块等：在 src 下但不在 routes 下，无单一 chunkUrl；不打 WARN，靠 routeChunkUrls 刷新当前路由 */
+        const isWholeClientBundlePath = isClientEntry ||
+          isNonRouteSrcUnderAppSrc(routesDirPath, changedPathAbs);
+        const componentPath = isWholeClientBundlePath
           ? null
           : getComponentPathFromFilePath(routesDirPath, changedPathAbs);
         if (componentPath) {
@@ -2028,7 +2064,7 @@ export async function buildClientScript(
               }),
             );
           }
-        } else if (!isClientEntry) {
+        } else if (!isWholeClientBundlePath) {
           logger.warn(
             $tr("log.hmrComponentPathNotFound", {
               changedPath: options.changedPath ?? "",
@@ -2041,6 +2077,11 @@ export async function buildClientScript(
       const { chunkContentIndex, chunkBaseIndex } = buildChunkIndices(
         outputFilesDev,
       );
+      const outputNamesForHmr = Array.from(outputFilesDev.keys());
+      const routeChunkUrlsDev = buildRouteChunkUrlMap(
+        components,
+        outputNamesForHmr,
+      );
       result = {
         code: mainCodeDev,
         buildTime: Date.now(),
@@ -2049,6 +2090,7 @@ export async function buildClientScript(
         chunkContentIndex,
         chunkBaseIndex,
         chunkUrl: chunkUrlDev,
+        routeChunkUrls: routeChunkUrlsDev,
       };
     }
 

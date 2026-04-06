@@ -25,7 +25,7 @@ export { DWEB_DATA_PATH };
  *
  * 仅处理 GET 请求且 pathname 为 /_dweb_data 的请求：
  * - 从 query 读取 path（要加载的路由 pathname，如 /users/123）
- * - 匹配路由，加载页面模块，执行 load()（**不**传 `render.compiler`：不走 View jsx 编译管线，仅原生加载以执行 `load`）
+ * - 匹配路由，加载页面模块，执行 load()（原生动态 `import`，与 SSR 路由加载一致）
  * - 返回 { params, query, ...loadResult } 的 JSON
  *
  * 错误与状态码约定：
@@ -51,7 +51,7 @@ export function createLoadDataMiddleware(
     cwd(),
     routesDirRaw.replace(/^\.\/?/, "") || routesDirRaw,
   );
-  /** 数据接口只需执行模块的 `load()`，不注入 `compiler`，避免 View `.tsx` 走 esbuild/jsx-compiler */
+  /** 数据接口只需执行模块的 `load()`，与常规路由加载相同（原生动态 import） */
   const loadOpts = {
     logger: container.has("logger") ? getLogger(container) : undefined,
     engine: renderCfg.engine,

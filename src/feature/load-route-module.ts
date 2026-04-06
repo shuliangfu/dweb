@@ -1,8 +1,7 @@
 /**
  * 路由模块加载（统一入口）
  *
- * 支持 .ts、.tsx（以及 .js/.jsx）。React/Preact 走原生 `import`；**View 引擎**下 `.tsx` 仅在配置了
- * 非空 `render.compiler` 时走 esbuild + `compileSource`（与客户端一致）；未配置则走原生 `import`。
+ * 支持 .ts、.tsx（以及 .js/.jsx）。各引擎均走原生动态 `import`（含 View `.tsx`，依赖运行时/TS 配置）。
  * 开发模式下通过 cache-busting 参数绕过模块缓存，确保文件变更后刷新能拿到最新内容。
  *
  * SSR 时：若路由含 `import "*.css"`，Deno/Bun 原生不支持加载 CSS 模块，
@@ -30,10 +29,7 @@ import { getCacheOptions } from "../utils/constants.ts";
 import { $tr } from "../utils/i18n.ts";
 import { isPathWithinProject } from "../utils/path.ts";
 import { getModuleVersion } from "./module-cache.ts";
-import {
-  loadViewRouteModuleViaSsrBundle,
-  resetViewSsrBundleShutdownInterruptFlag,
-} from "./view-ssr-route-bundle.ts";
+import { resetViewSsrBundleShutdownInterruptFlag } from "./view-ssr-route-bundle.ts";
 
 /** 仅匹配 import "xxx.css" 或 import 'xxx.css' 形式的副作用导入（支持单双引号） */
 const CSS_IMPORT_RE = /^\s*import\s+["'][^"']*\.css["']\s*;?\s*$/gm;
@@ -174,7 +170,7 @@ async function computeContentHash(
  * @param filePath 文件路径（可为 file://、绝对或相对）
  * @param options.cssCollector 可选，收到每段 CSS 内容时调用，用于 SSR 注入到页面 head
  * @param options.logger 可选，失败时用 logger.error 输出，便于日志聚合；未传则用 console.error
- * @param options.routesDirPath 可选；`engine === "view"` 时建议传入应用 `routes` 目录绝对路径（与 `router.routesDir` 解析结果一致）
+ * @param options.routesDirPath 可选；历史兼容保留，当前加载逻辑不依赖此字段
  * @returns 模块对象，失败返回 null
  *
  * 错误边界约定：失败时不抛错，仅返回 null 并记录日志（logger 或 console）。
@@ -189,11 +185,6 @@ export async function loadRouteModule(
     engine?: "react" | "preact" | "view";
     /** View SSR bundle 用：routes 目录绝对路径（未传时默认 `cwd()/src/routes`） */
     routesDirPath?: string;
-    /**
-     * View：非空时 `render.compiler` 规范化后的绝对路径根列表；**仅此时** `.tsx` 走 `compileSource`（SSR bundle 与客户端）。
-     * 须包含应用源码根及需参与编译的 workspace 依赖根。
-     */
-    compiler?: string[];
   },
 ): Promise<Record<string, unknown> | null> {
   const cwdPath = cwd();
@@ -222,20 +213,6 @@ export async function loadRouteModule(
     const normalizedPath = absPath.replace(/\\/g, "/");
     let moduleUrl: string;
     let tempPath: string | null = null;
-
-    /** View 单文件 bundle 使用的 routes 根目录（绝对路径） */
-    const routesDirResolved = await resolve(
-      options?.routesDirPath ?? join(cwdPath, "src", "routes"),
-    );
-    /** 与客户端一致的 `render.compiler` 根（绝对路径）；非空时才启用 View SSR bundle */
-    const viewCompilerRootsResolved =
-      options?.compiler != null && options.compiler.length > 0
-        ? options.compiler
-        : undefined;
-    /** View + .tsx + 已配置非空 `render.compiler`：走 esbuild 单文件 bundle 与 jsx-compiler */
-    const useViewSsrBundle = options?.engine === "view" &&
-      /\.tsx$/i.test(absPath) &&
-      viewCompilerRootsResolved != null;
 
     const rawSource = await readTextFile(absPath);
     if (hasCssImport(rawSource)) {
@@ -282,20 +259,7 @@ export async function loadRouteModule(
         await writeTextFile(tempPath, stripped);
         // Windows：用正向斜杠生成 file URL，避免动态 import 解析差异
         moduleUrl = pathToFileURL(tempPath.replace(/\\/g, "/")).href;
-        let mod: Record<string, unknown> | null;
-        if (useViewSsrBundle) {
-          mod = await loadViewRouteModuleViaSsrBundle(
-            tempPath,
-            routesDirResolved,
-            {
-              logger: options?.logger,
-              cacheIdentityPath: normalizedPath,
-              compileRoots: viewCompilerRootsResolved,
-            },
-          );
-        } else {
-          mod = (await import(moduleUrl)) as Record<string, unknown>;
-        }
+        const mod = (await import(moduleUrl)) as Record<string, unknown>;
         if (!mod) {
           return null;
         }
@@ -323,13 +287,6 @@ export async function loadRouteModule(
           }
         }
       }
-    }
-
-    if (useViewSsrBundle) {
-      return await loadViewRouteModuleViaSsrBundle(absPath, routesDirResolved, {
-        logger: options?.logger,
-        compileRoots: viewCompilerRootsResolved,
-      });
     }
 
     moduleUrl = pathToFileURL(normalizedPath).href;

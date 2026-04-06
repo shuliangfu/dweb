@@ -6,7 +6,7 @@
  * - generate() 能正确生成多应用项目结构
  * - 生成的文件不包含 Socket.IO 相关代码
  * - 应用名称从 config/main.ts 读取，deno.json 不包含 name 字段（避免 Deno 警告）
- * - View 引擎：index 默认 `createSignal` + `.value`（init 模板不出现元组解构），且 main.ts 含 render.compiler
+ * - View 引擎：index 默认 `createSignal` + `.value`（init 模板不出现元组解构）
  */
 
 import "../setup.ts";
@@ -233,7 +233,7 @@ describe("init (cmd/init.ts)", () => {
   });
 
   it(
-    "generate() View 引擎：首页须用 SignalRef（createSignal + .value），且配置含 render.compiler（防 SSR/Hybrid 踩坑）",
+    "generate() View 引擎：首页须用 createSignal + .value",
     async () => {
       const parentDir = await makeTempDir({ prefix: "dweb-init-view-" });
       const dir = join(parentDir, "view-app");
@@ -266,14 +266,13 @@ describe("init (cmd/init.ts)", () => {
         join(dir, "src", "config", "main.ts"),
       );
       expect(configTs).toContain('engine: "view"');
-      expect(configTs).toContain("compiler:");
-      expect(configTs).toContain("dirs:");
-      expect(configTs).toContain("server: true");
-      expect(configTs).toContain("client: true");
+      expect(configTs).toContain('mode: "hybrid"');
 
       const denoJson = await readTextFile(join(dir, "deno.json"));
       expect(denoJson).toContain("@dreamer/view");
       expect(denoJson).toContain('"jsxImportSource": "@dreamer/view"');
+      expect(denoJson).not.toContain("jsx.d.ts");
+      expect(await exists(join(dir, "jsx.d.ts"))).toBe(false);
 
       await remove(parentDir, { recursive: true });
     },

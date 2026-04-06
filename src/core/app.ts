@@ -74,7 +74,6 @@ import {
   type AppStage,
   type IApp,
   isSocketIOAdapter,
-  type RenderCompilerOptions,
 } from "../types/app.ts";
 import { getClientOutputDir } from "../utils/build-dirs.ts";
 import {
@@ -91,7 +90,6 @@ import {
 } from "../utils/path.ts";
 import { parseRoutePath } from "../utils/route.ts";
 import { getDwebVersion } from "../utils/version.ts";
-import { resolveRenderCompilerForServer } from "../utils/view-compiler.ts";
 import {
   deepMergeConfig,
   getConfig,
@@ -1041,7 +1039,6 @@ export class App extends EventEmitter implements IApp {
         const renderCfg = config.render as {
           debug?: boolean;
           engine?: "react" | "preact" | "view";
-          compiler?: RenderCompilerOptions;
           ssg?: {
             outputDir?: string;
             routes?: string[];
@@ -1087,9 +1084,6 @@ export class App extends EventEmitter implements IApp {
             cwd(),
             routesDirSsg.replace(/^\.\/?/, "") || routesDirSsg,
           );
-          const ssgViewCompileRoots = resolveRenderCompilerForServer(
-            renderCfg.compiler,
-          );
           const ssgOutputDir = renderCfg.ssg?.outputDir ?? clientOutputDir;
           const absOutputDir = join(cwd(), ssgOutputDir);
           /** 按路径加载模块（支持 .ts/.tsx，用于 loadRouteComponent、loadRouteLayouts） */
@@ -1100,7 +1094,6 @@ export class App extends EventEmitter implements IApp {
                 : undefined,
               engine: ssgEngine,
               routesDirPath: ssgRoutesDirPath,
-              compiler: ssgViewCompileRoots,
             });
             return mod?.default ?? mod?.Page ?? mod?.App ?? mod?.Layout ?? null;
           };
@@ -1151,7 +1144,6 @@ export class App extends EventEmitter implements IApp {
                 : undefined,
               engine: ssgEngine,
               routesDirPath: ssgRoutesDirPath,
-              compiler: ssgViewCompileRoots,
             };
             const layoutModules = await Promise.all(
               layoutPaths.map((p) => loadRouteModule(p, loadOpts)),

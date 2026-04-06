@@ -1924,12 +1924,20 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.2.9] - 2026-03-27
+### [3.3.0] - 2026-04-06
 
-**变更** — **`@dreamer/view` `^1.3.9`**（根 **`deno.json`** / **`package.json`**
-及全部 View **示例**）。**Init 模板：** View 计数器 **`createSignal` +
-`.value`**，注释可写解构。**测试：** **`init.test.ts`** 校验 View
-**`generate()`** 生成的 **`index.tsx`**。
+**破坏性变更** — 移除 **`render.compiler`** 及 View 在 dweb 内的 jsx-compiler /
+SSR bundle
+管线（**`createViewClientTsxPlugin`**、**`loadViewRouteModuleViaSsrBundle`**、
+**`view-compiler`**）。**`loadRouteModule`** 各引擎均走原生 **`import`**。
+
+**变更** — 对齐 **View 2.x**：生成的 **`_client.dep.tsx`** 仅从
+**`@dreamer/view`** 主包导入；根挂载 **`mount(() => () => …, host)`**；开发
+**HMR** 支持 **`routeChunkUrls`** （改 **`src/`** 共享代码时按路由拉
+chunk）。**Init：** 不再生成 **`jsx.d.ts`** / **`types`**，模板不含
+**`render.compiler`**。**依赖：** **`@dreamer/view` `^2.0.0`**、
+**`@dreamer/render` `^1.1.4`**、**`@dreamer/server`
+`^1.0.10`**、**`@dreamer/test` `^1.1.1`**。
 
 完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
 

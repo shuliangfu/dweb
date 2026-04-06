@@ -7,6 +7,75 @@
 
 ---
 
+## [3.3.0] - 2026-04-06
+
+### 破坏性变更
+
+- **移除 `AppConfig.render.compiler`：** 不再提供 View 专用的
+  **`RenderCompilerOptions`**（**`{ dirs, client?, server? }`**）及
+  **`resolveRenderCompilerForClient` / `resolveRenderCompilerForServer`**。
+  框架不再在自有 esbuild 客户端插件或 SSR 侧对 `.tsx` 路由执行
+  **`compileSource`** 管线。
+- **删除模块：**
+  **`src/utils/view-compiler.ts`**、**`src/feature/view-tsx-compile-plugin.ts`**，
+  以及 **`loadViewRouteModuleViaSsrBundle`**
+  的完整实现（**`view-ssr-route-bundle.ts`** 仅保留缓存清理 /
+  关断等无操作导出）。**`src/utils/mod.ts`** 不再导出 **`view-compiler`**。
+- **路由加载：** **`loadRouteModule`** 对 **`.ts` / `.tsx` / `.js` / `.jsx`**
+  （含 View）一律使用原生动态 **`import`**，保留既有 CSS 副作用剥离逻辑。
+  **`app.ts`**、**`render-csr.ts`**、**`render-hybrid.ts`**、**`render-ssr.ts`**、
+  **`load-data-middleware.ts`** 等调用处不再传入 **`compiler`**。
+- **客户端插件：** **`createDwebClientBundlePlugins(engine, routesDirPath)`**
+  取消第三参 **`options.compiler`**；各引擎仅注册 **`createStripLoadPlugin`**
+  （剔除路由模块中的 **`load`**，避免打进浏览器）。**`runBuildWithBuilder`**
+  已同步调整。
+
+### 变更
+
+- **View + 生成的 `_client.dep.tsx`：** 客户端仅从 **`@dreamer/view` 主包**导入
+  **`createSignal`**、**`mount`**、**`Signal`**，去掉 **`@dreamer/view/hybrid`**
+  / **`@dreamer/view/csr`** 等子路径，避免 esbuild 在仅配置主包映射时解析失败。
+- **View 根挂载 API：** **`_viewEnsureReactiveRoot`** 改为
+  **`mount(() => () => …, host)`**（函数子 + **`insert`** 语义），与 **View
+  2.x** 一致；生成代码中状态类型以 **`Signal`** 表述，替代 **`SignalRef`**
+  等旧称。
+- **开发 HMR（`csr-client-builder.ts` + `server.ts`）：** 构建结果可携带
+  **`routeChunkUrls`**（路由 **`componentPath` → chunk URL**）。内联
+  **`__HMR_REFRESH__`** 支持 **`{ chunkUrl?, routeChunkUrls? }`**。当修改
+  **`src/`** 下非 **`routes/`** 的共享文件且无单一 **`chunkUrl`**
+  时，客户端优先按 当前路由查表动态 **`import`** 对应
+  chunk，减少整页刷新。**`ClientBuildResult`** 补充 **`routeChunkUrls`** 说明。
+- **日志：** **`isNonRouteSrcUnderAppSrc`** 避免对 **`src/`** 下、**`routes/`**
+  外 文件变更误报「无法推导 componentPath」类 WARN。
+- **dweb 包 `deno.json`：** **`compilerOptions.jsxImportSource`** 设为
+  **`@dreamer/view`**（框架源码 JSX 与 View 对齐）。
+- **`doDevBuild`：** 移除已无用的 **`compilerRoots`** 参数。
+
+### Init（`dweb init`）
+
+- **不再生成根目录 `jsx.d.ts`：** View 项目不再写入该文件；**`deno.json`**
+  不再配置 **`compilerOptions.types: ["./jsx.d.ts"]`**，TSX 类型依赖
+  **`@dreamer/view`** 与 **`jsxImportSource`**。
+- **Bun `tsconfig.json` 模板：** **`include`** 仅为 **`["src/**/*"]`**。
+- **配置模板：** **`config.ts` / `config-full.ts`** 去掉 **`render.compiler`**
+  块及相关辅助函数。
+
+### 文档与 i18n
+
+- **`docs/en-US/APP_CONFIG.md`、`docs/zh-CN/APP_CONFIG.md`：** 删除
+  **`render.compiler`** 专节与示例；概览表中 **`render`** 描述已更新。
+- **多语言 locale：** 移除 **`renderCompiler*`** 等 init
+  注释键，**`renderDesc`** 不再提及 compiler。
+
+### 依赖（`deno.json`）
+
+- **`@dreamer/render`**：**`^1.1.4`**
+- **`@dreamer/server`**：**`^1.0.10`**
+- **`@dreamer/view`**：**`^2.0.0`**
+- **`@dreamer/test`**：**`^1.1.1`**（测试）
+
+---
+
 ## [3.2.9] - 2026-03-27
 
 ### 变更

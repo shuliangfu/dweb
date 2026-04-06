@@ -27,10 +27,9 @@ import {
   collectClientRoutes,
   hasContainerElementInHtml,
 } from "./render-utils.ts";
-import { resolveRenderCompilerForServer } from "../utils/view-compiler.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
-import type { AppConfig, RenderCompilerOptions } from "../types/app.ts";
+import type { AppConfig } from "../types/app.ts";
 
 /** load 结果短期缓存 TTL（毫秒），减轻重 I/O 的重复请求 */
 const LOAD_CACHE_TTL_MS = 1000;
@@ -91,7 +90,6 @@ export function createRendererSSR(
     debug?: boolean;
     engine?: "react" | "preact" | "view";
     ssr?: { hydrate?: boolean };
-    compiler?: RenderCompilerOptions;
   };
   const engine = renderConfig.engine ?? "preact";
   const routerConfig = (config.router || {}) as { routesDir?: string };
@@ -99,10 +97,6 @@ export function createRendererSSR(
   const routesDirPath = join(
     cwd(),
     routesDir.replace(/^\.\/?/, "") || routesDir,
-  );
-  /** View SSR bundle：与客户端一致的额外 compileSource 根（绝对路径） */
-  const renderCompilerRootsResolved = resolveRenderCompilerForServer(
-    renderConfig.compiler,
   );
   const clientRoutes = collectClientRoutes(router, routesDirPath);
   const containerId = SSR_CONTAINER_ID;
@@ -131,7 +125,6 @@ export function createRendererSSR(
         logger: container.has("logger") ? getLogger(container) : undefined,
         engine: renderConfig.engine ?? undefined,
         routesDirPath,
-        compiler: renderCompilerRootsResolved,
       };
       const [pageModule, appModule, ...layoutModulesRaw] = await Promise.all([
         loadRouteModule(match.route.fullPath, loadOpts),
@@ -378,7 +371,6 @@ export function createRendererSSR(
             logger: container.has("logger") ? getLogger(container) : undefined,
             engine: renderConfig.engine ?? undefined,
             routesDirPath,
-            compiler: renderCompilerRootsResolved,
           });
           const ErrorComponent = errorModule?.default ?? errorModule?.Error;
           if (ErrorComponent) {

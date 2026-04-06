@@ -8,6 +8,90 @@ and this project adheres to
 
 ---
 
+## [3.3.0] - 2026-04-06
+
+### Breaking changes
+
+- **`AppConfig.render.compiler` removed:** The View-only
+  **`RenderCompilerOptions`** shape (`{ dirs, client?, server? }`) and the
+  **`resolveRenderCompilerForClient` / `resolveRenderCompilerForServer`**
+  helpers are gone. dweb no longer runs **`compileSource`** inside its own
+  esbuild client plugin or a parallel SSR bundle for `.tsx` routes.
+- **Deleted modules:** **`src/utils/view-compiler.ts`**,
+  **`src/feature/view-tsx-compile-plugin.ts`**, and the real implementation of
+  **`loadViewRouteModuleViaSsrBundle`** ( **`view-ssr-route-bundle.ts`** is now
+  a thin stub: cache reset / shutdown hooks only). **`src/utils/mod.ts`** no
+  longer re-exports **`view-compiler`**.
+- **Route loading:** **`loadRouteModule`** always uses native dynamic
+  **`import`** for `.ts` / `.tsx` / `.js` / `.jsx` (including View), with the
+  existing CSS side-effect stripping path unchanged. Call sites in **`app.ts`**,
+  **`render-csr.ts`**, **`render-hybrid.ts`**, **`render-ssr.ts`**, and
+  **`load-data-middleware.ts`** no longer pass a **`compiler`** option.
+- **Client bundle plugins:**
+  **`createDwebClientBundlePlugins(engine,
+  routesDirPath)`** no longer accepts
+  a third **`options.compiler`** argument. All engines get
+  **`createStripLoadPlugin`** only (strip **`load`** from route modules for the
+  browser). **`runBuildWithBuilder`** updated accordingly.
+
+### Changed
+
+- **View + JSR subpaths in generated `_client.dep.tsx`:** Client code now
+  imports **`createSignal`**, **`mount`**, and **`Signal`** from the root
+  **`@dreamer/view`** package only. Imports such as **`@dreamer/view/hybrid`** /
+  **`@dreamer/view/csr`** are removed so esbuild resolves against published
+  **`exports`** (fixes “Could not resolve `@dreamer/view/hybrid`” for init /
+  JSR-only apps).
+- **View root mount API:** **`_viewEnsureReactiveRoot`** uses
+  **`mount(() => () => …, host)`** (function child + **`insert`** semantics)
+  instead of **`mount(selector, (el) => insert(el, …))`**, matching **View
+  2.x**. Generated client state uses **`Signal<_ViewStateRoot>`** instead of
+  **`SignalRef`** in comments/types where applicable.
+- **Dev HMR (`csr-client-builder.ts` + `server.ts`):** Rebuild results can carry
+  **`routeChunkUrls`** (map from route **`componentPath`** to chunk URL). The
+  injected **`__HMR_REFRESH__`** callback accepts
+  **`{ chunkUrl?, routeChunkUrls?
+  }`**. When a shared file under **`src/`**
+  (but outside **`routes/`**) changes and there is no single **`chunkUrl`**, the
+  client tries **`routeChunkUrls[currentRoute.component]`** before falling back
+  to a full reload. **`ClientBuildResult`** documents **`routeChunkUrls`**.
+- **Noise reduction:** **`isNonRouteSrcUnderAppSrc`** avoids spurious warnings
+  when changed files live under **`src/`** but not under **`routes/`** (e.g.
+  shared components, config).
+- **dweb package `deno.json`:** **`compilerOptions.jsxImportSource`** is
+  **`@dreamer/view`** (framework source uses View JSX).
+- **`doDevBuild`:** Removed unused **`compilerRoots`** parameter (call chain
+  simplified after compiler removal).
+
+### Init (`dweb init`)
+
+- **No root `jsx.d.ts`:** View projects no longer get a generated **`jsx.d.ts`**
+  file; **`deno.json`** no longer sets **`compilerOptions.types`** to
+  **`["./jsx.d.ts"]`**. TSX typing relies on **`@dreamer/view`** and
+  **`jsxImportSource`**.
+- **Bun `tsconfig.json` template:** **`include`** is **`["src/**/*"]`** only (no
+  **`jsx.d.ts`** entry).
+- **Config templates:** Removed **`render.compiler`** blocks and helpers
+  (**`getInitViewCompilerObjectBlock`**, etc.) from **`config.ts`** /
+  **`config-full.ts`**.
+
+### Documentation & i18n
+
+- **`docs/en-US/APP_CONFIG.md`** / **`docs/zh-CN/APP_CONFIG.md`:** Removed the
+  **`render.compiler`** section and sample config; **`render`** row in the
+  overview table updated.
+- **Locale files:** Dropped **`renderCompiler*`** init comment keys and trimmed
+  **`renderDesc`** (no compiler wording).
+
+### Dependencies (`deno.json`)
+
+- **`@dreamer/render`**: **`^1.1.4`**
+- **`@dreamer/server`**: **`^1.0.10`**
+- **`@dreamer/view`**: **`^2.0.0`**
+- **`@dreamer/test`**: **`^1.1.1`** (tests)
+
+---
+
 ## [3.2.9] - 2026-03-27
 
 ### Changed

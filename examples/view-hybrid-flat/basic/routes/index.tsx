@@ -1,9 +1,9 @@
 import { Client } from "@dreamer/socket-io/client";
 import {
   createEffect,
-  createRef,
   createSignal,
   onCleanup,
+  type ViewRefObject,
 } from "@dreamer/view";
 
 /**
@@ -114,14 +114,14 @@ interface HomeProps {
 export default function Home({ data }: HomeProps) {
   const clientRef: { current: Client | null } = { current: null };
   /**
-   * 以下均为 SignalRef：`createSignal` 返回单对象，用 `.value` 读写；
-   * 列表更新可用 `messages.value = (prev) => [...]`（@dreamer/view 1.3+，勿用元组解构）。
+   * 以下均为 `createSignal` 返回的 Signal，用 `.value` 读写；
+   * 列表更新可用 `messages.value = (prev) => [...]`（勿用元组解构）。
    */
   const count = createSignal(0);
   const status = createSignal<ConnectionStatus>("idle");
   const messages = createSignal<ChatMessage[]>([]);
-  /** 非受控输入：避免与受 SignalRef 驱动的 `value` 同段动态子树一起更新时整段 DOM 替换失焦 */
-  const messageInputRef = createRef<HTMLInputElement>(null);
+  /** 非受控输入：`ViewRefObject`，避免与受 signal 驱动的 `value` 同段动态子树一起更新时整段 DOM 替换失焦 */
+  const messageInputRef: ViewRefObject<HTMLInputElement> = { current: null };
 
   createEffect(() => {
     // 仅浏览器端创建并连接 Socket.IO 客户端；SSR 时跳过，避免服务进程内自连导致 /socket.io/ 500 与握手 404

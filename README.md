@@ -1857,13 +1857,19 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.2.9] - 2026-03-27
+### [3.3.0] - 2026-04-06
 
-**Changed** — **`@dreamer/view` `^1.3.9`** (root **`deno.json`** /
-**`package.json`** + all View **examples**). **Init template:** View counter
-**`createSignal` + `.value`**; JSDoc mentions optional destructuring. **Tests:**
-**`init.test.ts`** View **`generate()`** asserts generated **`index.tsx`**
-shape.
+**Breaking** — Removed **`render.compiler`** / View jsx-compiler pipeline in
+dweb (client **`createViewClientTsxPlugin`**, SSR
+**`loadViewRouteModuleViaSsrBundle`**, **`view-compiler`** utils).
+**`loadRouteModule`** uses native **`import`** for all engines.
+
+**Changed** — **View 2.x** alignment: generated **`_client.dep.tsx`** imports
+from **`@dreamer/view`** only; root **`mount(() => () => …, host)`**; dev
+**HMR** **`routeChunkUrls`** for shared **`src/`** edits. **Init:** no
+**`jsx.d.ts`** / **`compilerOptions.types`**, no **`render.compiler`** in
+templates. **Deps:** **`@dreamer/view` `^2.0.0`**, **`@dreamer/render`
+`^1.1.4`**, **`@dreamer/server` `^1.0.10`**, **`@dreamer/test` `^1.1.1`**.
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

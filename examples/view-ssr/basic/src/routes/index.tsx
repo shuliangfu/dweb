@@ -17,7 +17,7 @@ export const metadata = {
  * @returns 首页内容
  */
 export default function Home() {
-  /** 计数：`createSignal` 返回 SignalRef，用 `.value` 读写（@dreamer/view 1.3+，勿用元组解构）。 */
+  /** 计数：`createSignal` 返回 Signal，用 `.value` 读写（勿用元组解构）。 */
   const count = createSignal(0);
 
   return (

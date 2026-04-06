@@ -66,10 +66,7 @@ export function getDenoJson(
     .join(",\n");
   const importsNpmPart = npmImports ? `,\n\n${npmImports}` : "";
   const jsxImportSource = getJsxImportSource(opts.engine);
-  /** view 引擎需在 compilerOptions 中声明 types 指向 jsx.d.ts，供 TSX 类型检查（使用 ./ 相对路径） */
-  const compilerTypes = opts.engine === "view"
-    ? ',\n    "types": ["./jsx.d.ts"]'
-    : "";
+  /** View 引擎 TSX 类型由 @dreamer/view 与 jsxImportSource 提供，无需项目根 jsx.d.ts 或 compilerOptions.types */
 
   const isMulti = opts.appMode === "multi" && (opts.appNames?.length ?? 0) > 0;
   const commonPath = opts.useSrc ? "./src/common/" : "./common/";
@@ -111,7 +108,7 @@ ${dirAliasesBlock}${dreamerImports}${importsNpmPart}
   "nodeModulesDir": "auto",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "jsxImportSource": "${jsxImportSource}"${compilerTypes}
+    "jsxImportSource": "${jsxImportSource}"
   }
 }
 `;

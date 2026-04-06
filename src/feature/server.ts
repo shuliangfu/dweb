@@ -141,7 +141,11 @@ export function initializeServer(
             container,
             options?.changedPath ? [options.changedPath] : [],
           );
-          return { outputFiles: [], chunkUrl: result.chunkUrl };
+          return {
+            outputFiles: [],
+            chunkUrl: result.chunkUrl,
+            routeChunkUrls: result.routeChunkUrls,
+          };
         },
       },
     };

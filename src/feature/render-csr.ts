@@ -20,12 +20,11 @@ import { jsx as viewJsx } from "@dreamer/view/jsx-runtime";
 import { createElement as createElementPreact } from "preact";
 import { createElement as createElementReact } from "react";
 import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
-import type { AppConfig, RenderCompilerOptions } from "../types/app.ts";
+import type { AppConfig } from "../types/app.ts";
 import { createLoadContext, createServerResponse } from "../types/context.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { extractComponentPathFromRouteFile } from "../utils/path.ts";
-import { resolveRenderCompilerForServer } from "../utils/view-compiler.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { hasContainerElementInHtml } from "./render-utils.ts";
 import { getRender } from "./render.ts";
@@ -96,7 +95,6 @@ export function createRendererCSR(
     engine?: "react" | "preact" | "view";
     mode?: "ssr" | "csr" | "ssg";
     csr?: RenderCSROptions;
-    compiler?: RenderCompilerOptions;
   };
   const csrOptions: RenderCSROptions = {
     clientScript: "/_client.js",
@@ -113,9 +111,6 @@ export function createRendererCSR(
   const routesDirPath = join(
     cwd(),
     routesDir.replace(/^\.\/?/, "") || routesDir,
-  );
-  const renderCompilerRootsResolved = resolveRenderCompilerForServer(
-    renderConfig.compiler,
   );
   const clientRoutes = collectClientRoutes(router, routesDirPath);
 
@@ -159,7 +154,6 @@ export function createRendererCSR(
         logger: container.has("logger") ? getLogger(container) : undefined,
         engine: renderConfig.engine,
         routesDirPath,
-        compiler: renderCompilerRootsResolved,
       };
 
       let AppComponent: unknown = null;

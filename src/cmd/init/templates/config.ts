@@ -9,8 +9,6 @@ import type { InitOptions } from "../types.ts";
 import {
   getFullCommonConfigMainTs,
   getFullSingleAppConfigMainTs,
-  getInitViewCompilerObjectBlock,
-  getInitViewCompilerObjectBlockCommented,
 } from "./config-full.ts";
 
 /**
@@ -32,10 +30,6 @@ export function getConfigMainTs(
   const renderMode = opts.renderMode ?? "hybrid";
 
   if (appName) {
-    // View：写入 compiler 对象（dirs + client/server）；非 View 则输出注释示例
-    const viewCompilerBlockApp = opts.engine === "view"
-      ? getInitViewCompilerObjectBlock(opts, appName)
-      : getInitViewCompilerObjectBlockCommented(opts, appName);
     return `/**
  * ${$tr("init.comments.appConfig", { appName })}
  * ${$tr("init.comments.commonFieldsMerged")}
@@ -59,7 +53,6 @@ export default {
     engine: "${opts.engine}",
     /** ${$tr("init.comments.renderModeDesc")} */
     mode: "${renderMode}",
-${viewCompilerBlockApp}
     // debug: false,
     // /** ${$tr("init.comments.ssrHydrate")} */
     // ssr: {

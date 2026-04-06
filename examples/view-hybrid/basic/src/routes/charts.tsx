@@ -5,12 +5,7 @@
  * 使用项目内安装的 npm:chart.js，仅在客户端挂载后初始化图表
  */
 
-import {
-  createEffect,
-  getDocument,
-  onCleanup,
-  type VNode,
-} from "@dreamer/view";
+import { createEffect, onCleanup, type VNode } from "@dreamer/view";
 /** 静态导入 chart.js/auto，自动注册全部图表类型及组件 */
 import Chart from "chart.js/auto";
 
@@ -29,18 +24,15 @@ const CHART_CANVAS_IDS = [
 /**
  * 返回当前可用于 Chart.js 的 `document`，不可用时为 `null`。
  *
- * **与 `@dreamer/view` SSR 的关系**：框架的 SSR 兼容是指用**伪 document**（仅 `createElement` / `createTextNode`，见 `createSSRDocument`）跑同一套编译产物并序列化 HTML，
- * 并不是在服务端提供完整浏览器 `Document`（无 `getElementById` 等）。因此业务侧应使用 {@link getDocument}：
- * 在 `renderToString` 且已设置 `__VIEW_SSR__`、又未挂影子 document 时，`getDocument()` 为 `null`；
- * 若误用 `globalThis.document`，会得到伪对象，`getElementById` 不存在会抛错。
- *
- * 极少数环境（浏览器内 `renderToString` 且无法改写 `globalThis.document`）会挂**影子**伪 document，仍无 `getElementById`，故再做能力探测。
+ * **与 `@dreamer/view` SSR 的关系**：SSR 时无真实 DOM，或 `globalThis.VIEW_SSR === true` 时视为服务端路径；
+ * 伪 document 往往无 `getElementById`，须在此做能力探测后再初始化 Chart.js。
  *
  * @returns 可 `getElementById` 且存在 `HTMLCanvasElement` 时返回 `document`，否则 `null`
  */
 function getChartDocument(): Document | null {
-  const doc = getDocument();
-  if (doc == null) return null;
+  if (typeof globalThis.document === "undefined") return null;
+  if ((globalThis as { VIEW_SSR?: boolean }).VIEW_SSR === true) return null;
+  const doc = globalThis.document;
   if (typeof doc.getElementById !== "function") return null;
   const g = globalThis as { HTMLCanvasElement?: unknown };
   if (typeof g.HTMLCanvasElement !== "function") return null;
@@ -304,7 +296,7 @@ export default function Charts(): VNode {
    * 不能用模块级 `chartsInitialized`：Hybrid 路由复用同一模块，二次进入时仍为 true，会跳过 init。
    */
   createEffect(() => {
-    // 用 getDocument() 对齐 view 的 SSR 语义；勿在此用 globalThis.document 直接当浏览器 DOM
+    // 用 getChartDocument() 对齐 SSR（VIEW_SSR / 伪 document）语义
     const doc = getChartDocument();
     if (doc == null) return;
 

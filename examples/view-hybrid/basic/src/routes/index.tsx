@@ -1,10 +1,12 @@
 import {
   createEffect,
-  createRef,
   createSignal,
   onCleanup,
+  type ViewRefObject,
 } from "@dreamer/view";
 import { Client } from "@dreamer/websocket/client";
+
+import { Button } from "../components/Button.tsx";
 
 // import "../assets/index.css";
 
@@ -32,8 +34,6 @@ const classes = {
   statusBadge: "inline-flex rounded-full px-3 py-1 text-sm font-medium",
   input:
     "flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-none focus:border-[#667eea] focus:outline-none focus:ring-2 focus:ring-[#667eea]/30",
-  sendBtn:
-    "rounded-lg border-0 bg-[#667eea] px-4 py-2 text-white shadow-none transition-colors hover:bg-[#5a6fd6]",
   messageBox:
     "max-h-48 overflow-y-auto rounded border border-gray-100 bg-gray-50 p-3",
   messageEmpty: "text-center text-gray-400",
@@ -119,23 +119,15 @@ interface HomeProps {
 }
 
 export default function Home({ data }: HomeProps) {
-  /** 以下均为 SignalRef：`createSignal` 返回单对象，用 `.value` 读写；列表更新可用 `messages.value = (prev) => [...]`。 */
+  /** 以下均为 `createSignal` 返回的 Signal：用 `.value` 读写；列表更新可用 `messages.value = (prev) => [...]`。 */
   const count = createSignal(0);
   const status = createSignal<ConnectionStatus>("idle");
   const messages = createSignal<ChatMessage[]>([]);
   /**
-   * 非受控输入 + `createRef`：`ref={messageInputRef}` 由编译器处理。
-   *
-   * **为何以前在 dweb Hybrid 里读不到 `ref.current`？** 旧版编译器对「对象 ref」仅在
-   * `el.isConnected === true` 时赋值；路由页在嵌套 `insertReactive` 里挂载时，input 常尚未接入
-   * document，`ref.current` 会一直为 `null`。`view/examples` 里 gallery 等多是往**已在文档里的**
-   * 容器 `mount`，append 时往往已 `isConnected`，所以不容易踩坑。
-   *
-   * **现行为：** compileSource 路径下对象 ref 走 `scheduleFunctionRef`。`deno.json` 使用 `jsx: "react-jsx"` 时
-   * JSX 经 `jsx()`→VNode→`mountVNodeTree`，ref 在 `vnode-mount` 中同样用 `scheduleFunctionRef` 绑定。
-   * 输入区仍勿与受 SignalRef 驱动的 `value` 放在同一段会随输入刷新的 `{() => ...}` 内，以免失焦。
+   * 非受控输入：`ref={messageInputRef}` 使用 {@link ViewRefObject}（`{ current }`），由 JSX 运行时填入 DOM。
+   * 输入区勿与受 signal 驱动的 `value` 放在同一段会随输入刷新的 `{() => ...}` 内，以免失焦。
    */
-  const messageInputRef = createRef<HTMLInputElement>(null);
+  const messageInputRef: ViewRefObject<HTMLInputElement> = { current: null };
   const clientRef: { current: Client | null } = { current: null };
 
   /**
@@ -299,33 +291,27 @@ export default function Home({ data }: HomeProps) {
               count: {count}
             </span>
             <div class="flex flex-wrap items-center justify-center gap-2">
-              <button
-                type="button"
-                class="rounded-lg border-0 bg-[#667eea] px-4 py-2 text-white hover:opacity-90"
+              <Button
+                label="加一"
+                variant="primary"
                 onClick={() => {
                   count.value = count.value + 1;
                 }}
-              >
-                加一
-              </button>
-              <button
-                type="button"
-                class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50"
+              />
+              <Button
+                label="减一"
+                variant="secondary"
                 onClick={() => {
                   count.value = count.value - 1;
                 }}
-              >
-                减一
-              </button>
-              <button
-                type="button"
-                class="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2 text-gray-600 hover:bg-gray-200"
+              />
+              <Button
+                label="重置"
+                variant="muted"
                 onClick={() => {
                   count.value = 0;
                 }}
-              >
-                重置
-              </button>
+              />
             </div>
           </div>
         )}
@@ -334,7 +320,7 @@ export default function Home({ data }: HomeProps) {
       {
         /*
          * WebSocket 区：status、消息列表各自 `{() => ...}`，输入框静态挂载。
-         * 勿把与 SignalRef 绑定的 `value` 的 input 放进会随该 signal 更新的同一段动态子树，否则会失焦。
+         * 勿把与 signal 绑定的 `value` 的 input 放进会随该 signal 更新的同一段动态子树，否则会失焦。
          */
       }
       <section class={`${classes.socketSection} ${classes.socketSectionOuter}`}>
@@ -362,13 +348,7 @@ export default function Home({ data }: HomeProps) {
             placeholder="输入消息并发送 (chat-message)"
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
           />
-          <button
-            type="button"
-            class={classes.sendBtn}
-            onClick={handleSend}
-          >
-            发送
-          </button>
+          <Button label="发送" variant="primary" onClick={handleSend} />
         </div>
         {() => (
           <div class={classes.messageBox}>

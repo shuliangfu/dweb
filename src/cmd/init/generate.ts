@@ -52,7 +52,6 @@ import {
   getFaviconSvg,
   getGitignore,
   getI18nAllyCustomFrameworkYml,
-  getJsxDts,
   getNpmrc,
   getTailwindCss,
   getTsconfigJson,
@@ -308,9 +307,6 @@ export async function generate(opts: InitOptions): Promise<void> {
       join(targetDir, "tsconfig.json"),
       getTsconfigJson(opts),
     );
-  }
-  if (opts.engine === "view") {
-    await writeTextFile(join(targetDir, "jsx.d.ts"), getJsxDts());
   }
   await writeTextFile(join(targetDir, ".gitignore"), getGitignore());
 

@@ -24,12 +24,11 @@ import {
   join,
   relative,
 } from "../core/runtime-adapter.ts";
-import type { AppConfig, RenderCompilerOptions } from "../types/app.ts";
+import type { AppConfig } from "../types/app.ts";
 import {
   getInferredBuildOutputDirs,
   getMainModulePath,
 } from "../utils/build-dirs.ts";
-import { resolveRenderCompilerForClient } from "../utils/view-compiler.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
@@ -269,9 +268,6 @@ export async function runBuildWithBuilder(
     const routesDirRaw = routerConfig.routesDir ?? "./src/routes";
     const routesDir = routesDirRaw.replace(/^\.\/?/, "") || routesDirRaw;
     const routesDirPath = join(cwd(), routesDir);
-    const renderCompilerRoots = resolveRenderCompilerForClient(
-      ((config.render || {}) as { compiler?: RenderCompilerOptions }).compiler,
-    );
     clientConfig = {
       entry: prepared.entry,
       output: prepared.output,
@@ -279,9 +275,7 @@ export async function runBuildWithBuilder(
       bundle: prepared.bundle,
       debug: buildClient?.debug,
       logger,
-      plugins: createDwebClientBundlePlugins(prepared.engine, routesDirPath, {
-        compiler: renderCompilerRoots,
-      }),
+      plugins: createDwebClientBundlePlugins(prepared.engine, routesDirPath),
     };
   }
 
