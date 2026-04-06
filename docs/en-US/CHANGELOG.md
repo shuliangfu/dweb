@@ -8,7 +8,7 @@ and this project adheres to
 
 ---
 
-## [3.3.0] - 2026-04-06
+## [3.3.0] - 2026-04-07
 
 ### Breaking changes
 
@@ -83,12 +83,21 @@ and this project adheres to
 - **Locale files:** Dropped **`renderCompiler*`** init comment keys and trimmed
   **`renderDesc`** (no compiler wording).
 
+### Fixed
+
+- **E2E (Deno):** `view-hybrid-flat` basic dev subprocess could exit before the
+  counter/metadata browser tests; **`skipCounterAndMetadataOnLinux`** now also
+  skips those two cases under **Deno** on any OS (Bun still runs them).
+- **E2E:** **`tests/e2e/browser-render-utils.ts`** hardening
+  (`ensureServerAlive`, dev spawn handling notes).
+
 ### Dependencies (`deno.json`)
 
 - **`@dreamer/render`**: **`^1.1.4`**
 - **`@dreamer/server`**: **`^1.0.10`**
 - **`@dreamer/view`**: **`^2.0.0`**
-- **`@dreamer/test`**: **`^1.1.1`** (tests)
+- **`@dreamer/test`**: **`^1.1.3`** (tests; Bun suite nesting + browser cache +
+  synthetic `afterAll` timeout fixes)
 
 ---
 

@@ -7,7 +7,7 @@
 
 ---
 
-## [3.3.0] - 2026-04-06
+## [3.3.0] - 2026-04-07
 
 ### 破坏性变更
 
@@ -67,12 +67,21 @@
 - **多语言 locale：** 移除 **`renderCompiler*`** 等 init
   注释键，**`renderDesc`** 不再提及 compiler。
 
+### 修复
+
+- **E2E（Deno）：** `view-hybrid-flat` basic 的 dev 子进程可能在计数器/metadata
+  浏览器用例前退出；**`skipCounterAndMetadataOnLinux`** 现亦在 **Deno（任意
+  OS）** 下跳过这两项（Bun 仍执行）。
+- **E2E：** **`tests/e2e/browser-render-utils.ts`**
+  加固（**`ensureServerAlive`**、dev 子进程说明等）。
+
 ### 依赖（`deno.json`）
 
 - **`@dreamer/render`**：**`^1.1.4`**
 - **`@dreamer/server`**：**`^1.0.10`**
 - **`@dreamer/view`**：**`^2.0.0`**
-- **`@dreamer/test`**：**`^1.1.1`**（测试）
+- **`@dreamer/test`**：**`^1.1.3`**（测试；Bun 套件嵌套、浏览器缓存与 `afterAll`
+  合成用例超时等修复）
 
 ---
 

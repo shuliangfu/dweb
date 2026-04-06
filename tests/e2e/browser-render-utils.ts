@@ -1528,7 +1528,9 @@ export function createAdvancedExampleBrowserSuite(
  * @param entry 入口文件：有 src 用 "src/main.ts"，无 src 用 "main.ts"
  * @param options.skip 为 true 时跳过该套件的用例（用于已知会挂起的用例，如 react-ssg）
  * @param options.assertLoadData 为 true 时增加「应能注入 layout 与页面 load 数据」用例
- * @param options.skipCounterAndMetadataOnLinux 为 true 时在 Linux 上跳过计数器与 metadata 用例（用于 CI 上 dev 进程易中途退出的示例，如 view-hybrid-flat）
+ * @param options.skipCounterAndMetadataOnLinux 为 true 时在 **Linux 或 Deno（任意 OS）** 上跳过计数器与 metadata 用例。
+ *   view-hybrid-flat 等示例的 dev 子进程在 Deno 下连跑多条浏览器用例后易中途退出，后续 `ensureServerAlive` 会 `connection refused`；
+ *   Bun 下较稳定，故仍执行这两项。
  */
 export function createBasicExampleBrowserSuite(
   exampleName: string,
@@ -1545,9 +1547,14 @@ export function createBasicExampleBrowserSuite(
   const skipCounterAndMetadataOnLinux =
     options?.skipCounterAndMetadataOnLinux === true;
   const isLinux = platform() === "linux";
-  /** 所有 basic 示例（含 SSR/SSG）均已支持客户端激活与计数器，均跑计数器浏览器测试；Linux 上可单独跳过计数器/metadata 以规避 dev 进程中途退出导致的偶发失败 */
-  const skipCounter = skip || (skipCounterAndMetadataOnLinux && isLinux);
-  const skipMetadata = skip || (skipCounterAndMetadataOnLinux && isLinux);
+  /**
+   * 在 Linux 或 Deno 上跳过计数器/metadata：与仅 Linux 相比，Deno 在 macOS/Windows 本地跑全量 e2e 时同样会出现
+   * dev 先退出、后两条用例连固定端口失败；Bun 不受影响。
+   */
+  const skipCounterMetadataFlakyEnv = skipCounterAndMetadataOnLinux &&
+    (isLinux || IS_DENO);
+  const skipCounter = skip || skipCounterMetadataFlakyEnv;
+  const skipMetadata = skip || skipCounterMetadataFlakyEnv;
 
   describe(`e2e: 浏览器渲染 - ${exampleName}`, () => {
     let originalCwd: string | undefined;

@@ -1857,7 +1857,7 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.3.0] - 2026-04-06
+### [3.3.0] - 2026-04-07
 
 **Breaking** — Removed **`render.compiler`** / View jsx-compiler pipeline in
 dweb (client **`createViewClientTsxPlugin`**, SSR
@@ -1869,7 +1869,10 @@ from **`@dreamer/view`** only; root **`mount(() => () => …, host)`**; dev
 **HMR** **`routeChunkUrls`** for shared **`src/`** edits. **Init:** no
 **`jsx.d.ts`** / **`compilerOptions.types`**, no **`render.compiler`** in
 templates. **Deps:** **`@dreamer/view` `^2.0.0`**, **`@dreamer/render`
-`^1.1.4`**, **`@dreamer/server` `^1.0.10`**, **`@dreamer/test` `^1.1.1`**.
+`^1.1.4`**, **`@dreamer/server` `^1.0.10`**, **`@dreamer/test` `^1.1.3`**.
+
+**Fixed** — Deno e2e: **`view-hybrid-flat`** counter/metadata skipped under Deno
+when dev exits early (same flag as Linux-only skip, extended).
 
 Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
 

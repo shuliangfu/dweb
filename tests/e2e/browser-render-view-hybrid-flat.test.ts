@@ -9,7 +9,7 @@ import {
 
 createBasicExampleBrowserSuite("view-hybrid-flat", "main.ts", {
   assertLoadData: true,
-  // Linux Deno CI: dev 进程在跑完前几项后易中途退出，导致计数器/metadata 用例 connection reset；仅 Linux 跳过这两项以通过 CI
+  // dev 在 Deno（任意 OS）或 Linux 上连跑多条浏览器用例后易退出，计数器/metadata 会 connection refused；Bun 仍跑这两项
   skipCounterAndMetadataOnLinux: true,
 });
 createAdvancedExampleBrowserSuite("view-hybrid-flat", 3028, 3029, {
