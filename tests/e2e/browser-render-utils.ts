@@ -72,8 +72,10 @@ const E2E_PORTS: Record<string, number> = {
   "view-hybrid-flat": 3015,
 };
 
-/** 浏览器单用例超时：统一 90s，Bun 下即使用 --max-concurrency=1 仍易因启动/渲染慢触达上限，Deno 更稳故 90s 足够 */
-/** 单用例超时：30s，超时即失败不拖长时间 */
+/**
+ * e2e 浏览器用例超时（毫秒）。basic 与 advanced 共用；根因修复见 @dreamer/test 中浏览器缓存键使用完整 suitePath，
+ * 避免多文件顺序跑时跨套件共用 Playwright 实例导致挂死与 Bun killed dangling processes，而非依赖拉长本值。
+ */
 const BROWSER_TEST_TIMEOUT_MS = 60_000;
 
 /** 就绪探测选项：advanced 的 backend 必须用 path: "/api/users"，否则 SSG backend 的 GET / 会返回 500 */
@@ -494,6 +496,7 @@ async function _buildExample(
  * 浏览器渲染断言：无 hydration 错误、页面包含预期内容
  * @param t 测试上下文（含 browser）
  * @param port 服务器端口
+ * @param opts.timeoutMs 可选；默认 {@link BROWSER_TEST_TIMEOUT_MS}，与外层 `it` 超时一致时可显式传入
  */
 async function assertBrowserRender(
   t: {
@@ -508,17 +511,20 @@ async function assertBrowserRender(
     };
   },
   port: number,
+  opts?: { timeoutMs?: number },
 ): Promise<void> {
   if (!t?.browser) {
     throw new Error("browser 上下文不可用");
   }
   const browser = t.browser;
+  /** 与外层 `it` / `waitForContentViaEvaluate` 一致，避免内层先 60s 失败而外层仍等到 120s */
+  const limit = opts?.timeoutMs ?? BROWSER_TEST_TIMEOUT_MS;
 
   /** 先确认服务器已就绪，避免 goto 长时间挂起触发 Bun 僵尸进程杀手 */
   await ensureServerAlive(port, 15000);
 
   /** 整段断言硬超时，避免 SSG 等场景下 goto/waitFor 卡死导致测试一直挂起 */
-  const hardTimeoutMs = BROWSER_TEST_TIMEOUT_MS;
+  const hardTimeoutMs = limit;
   await Promise.race([
     (async () => {
       const consoleErrors: string[] = [];
@@ -576,7 +582,7 @@ async function assertBrowserRender(
       }
 
       // 用 evaluate 轮询等待首屏内容（保证在浏览器内执行，避免 Bun 下 waitFor 回调在宿主执行导致永不满足、超时 90s）
-      const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
+      const contentTimeout = limit;
       try {
         await waitForContentViaEvaluate(browser, contentTimeout);
       } catch (err) {
@@ -1272,6 +1278,7 @@ async function assertBrowserMetadata(
  * preact/view 用户页标题为「用户管理」，react 为「用户列表」，二者满足其一即通过
  * @param t 测试上下文（含 browser）
  * @param port 前端服务端口（浏览器访问此端口）
+ * @param opts.timeoutMs 可选；应与外层 `it` 的 timeout 一致
  */
 async function assertBrowserClickUsers(
   t: {
@@ -1286,11 +1293,13 @@ async function assertBrowserClickUsers(
     };
   },
   port: number,
+  opts?: { timeoutMs?: number },
 ): Promise<void> {
   if (!t?.browser) {
     throw new Error("browser 上下文不可用");
   }
   const browser = t.browser;
+  const limit = opts?.timeoutMs ?? BROWSER_TEST_TIMEOUT_MS;
   const page = browser.page as {
     goto: (
       url: string,
@@ -1303,20 +1312,20 @@ async function assertBrowserClickUsers(
   if (typeof page.goto === "function") {
     await page.goto(url, {
       waitUntil: "load",
-      timeout: BROWSER_TEST_TIMEOUT_MS,
+      timeout: limit,
     });
   } else {
     await browser.goto(url);
   }
 
-  const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
+  const contentTimeout = limit;
   /** 首屏：与 assertBrowserRender 一致用 evaluate 轮询，避免 Bun 下 waitForFunction 不满足 */
   await waitForContentViaEvaluate(browser, contentTimeout);
 
   if (typeof page.click !== "function") {
     throw new Error("page.click 不可用，无法执行点击");
   }
-  await page.click('a[href="/users"]', { timeout: BROWSER_TEST_TIMEOUT_MS });
+  await page.click('a[href="/users"]', { timeout: limit });
   // 点击后稍等再轮询，避免 CI 上导航尚未完成即开始检测
   await new Promise((r) => setTimeout(r, 3000));
 
