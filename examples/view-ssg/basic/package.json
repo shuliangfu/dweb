@@ -9,9 +9,9 @@
   },
   "dependencies": {
     "@dreamer/dweb": "npm:@jsr/dreamer__dweb@^3.2.7",
-    "@dreamer/render": "file:../../../../render",
+    "@dreamer/render": "npm:@jsr/dreamer__render@^1.1.4",
     "@dreamer/runtime-adapter": "npm:@jsr/dreamer__runtime-adapter@^1.0.18",
-    "@dreamer/view": "file:../../../../view",
+    "@dreamer/view": "npm:@jsr/dreamer__view@^2.0.0",
     "tailwindcss": "4.2.0"
   }
 }
