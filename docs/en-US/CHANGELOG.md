@@ -8,6 +8,17 @@ and this project adheres to
 
 ---
 
+## [3.3.1] - 2026-04-07
+
+### Changed
+
+- **Dependencies**: Bump `@dreamer/server` to `^1.0.11` (JSR) for HMR client
+  fixes (reuse `#__hmr-status-container` on WebSocket reconnect, dedupe
+  containers) and server hot-path performance tweaks (`Http`, dev watch ignore
+  preprocessing, HMR message merge).
+
+---
+
 ## [3.3.0] - 2026-04-07
 
 ### Breaking changes

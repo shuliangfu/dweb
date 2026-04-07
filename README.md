@@ -1857,24 +1857,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.3.0] - 2026-04-07
+### [3.3.1] - 2026-04-07
 
-**Breaking** — Removed **`render.compiler`** / View jsx-compiler pipeline in
-dweb (client **`createViewClientTsxPlugin`**, SSR
-**`loadViewRouteModuleViaSsrBundle`**, **`view-compiler`** utils).
-**`loadRouteModule`** uses native **`import`** for all engines.
-
-**Changed** — **View 2.x** alignment: generated **`_client.dep.tsx`** imports
-from **`@dreamer/view`** only; root **`mount(() => () => …, host)`**; dev
-**HMR** **`routeChunkUrls`** for shared **`src/`** edits. **Init:** no
-**`jsx.d.ts`** / **`compilerOptions.types`**, no **`render.compiler`** in
-templates. **Deps:** **`@dreamer/view` `^2.0.0`**, **`@dreamer/render`
-`^1.1.4`**, **`@dreamer/server` `^1.0.10`**, **`@dreamer/test` `^1.1.3`**.
-
-**Fixed** — Deno e2e: **`view-hybrid-flat`** counter/metadata skipped under Deno
-when dev exits early (same flag as Linux-only skip, extended).
-
-Full changelog: [CHANGELOG.md](./docs/en-US/CHANGELOG.md)
+**Changed** — **`@dreamer/server` `^1.0.11`**: HMR overlay no longer stacks on
+reconnect; HTTP/dev and HMR client merge optimizations. Full history:
+[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

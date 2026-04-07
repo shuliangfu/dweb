@@ -1924,24 +1924,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.3.0] - 2026-04-07
+### [3.3.1] - 2026-04-07
 
-**破坏性变更** — 移除 **`render.compiler`** 及 View 在 dweb 内的 jsx-compiler /
-SSR bundle
-管线（**`createViewClientTsxPlugin`**、**`loadViewRouteModuleViaSsrBundle`**、
-**`view-compiler`**）。**`loadRouteModule`** 各引擎均走原生 **`import`**。
-
-**变更** — 对齐 **View 2.x**：生成的 **`_client.dep.tsx`** 仅从
-**`@dreamer/view`** 主包导入；根挂载 **`mount(() => () => …, host)`**；开发
-**HMR** 支持 **`routeChunkUrls`**。**Init：** 不再生成 **`jsx.d.ts`** /
-**`types`**，模板不含 **`render.compiler`**。**依赖：** **`@dreamer/view`
-`^2.0.0`**、**`@dreamer/render` `^1.1.4`**、**`@dreamer/server`
-`^1.0.10`**、**`@dreamer/test` `^1.1.3`**。
-
-**修复** — Deno e2e：**`view-hybrid-flat`** 在 Deno 下因 dev
-早退时跳过计数器/metadata （原 Linux 专用标志扩展为 Linux 或 Deno）。
-
-完整变更日志：[CHANGELOG.md](./CHANGELOG.md)
+**变更** — **`@dreamer/server` `^1.0.11`**：HMR 重连不再叠多个状态容器；服务端
+HTTP/开发监听与 HMR 客户端合并等优化。完整历史见
+[CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 
