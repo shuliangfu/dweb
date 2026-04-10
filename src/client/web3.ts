@@ -1399,7 +1399,7 @@ export class Web3Client {
    * 扫描历史合约事件
    * @private
    */
-  private async scanHistoricalContractEvents(
+  async scanHistoricalContractEvents(
     contractAddress: string,
     eventName: string,
     callback: ContractEventListener,
