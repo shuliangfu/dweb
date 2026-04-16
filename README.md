@@ -1857,11 +1857,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.3.1] - 2026-04-07
+### [3.3.2] - 2026-04-17
 
-**Changed** — **`@dreamer/server` `^1.0.11`**: HMR overlay no longer stacks on
-reconnect; HTTP/dev and HMR client merge optimizations. Full history:
-[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Changed** — Bump **`@dreamer/config` `^1.0.3`** and **`@dreamer/database`
+`^1.0.9`** (JSR); other `@dreamer/*` pins refreshed in `deno.json` /
+`package.json`. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

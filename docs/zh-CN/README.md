@@ -1924,11 +1924,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.3.1] - 2026-04-07
+### [3.3.2] - 2026-04-17
 
-**变更** — **`@dreamer/server` `^1.0.11`**：HMR 重连不再叠多个状态容器；服务端
-HTTP/开发监听与 HMR 客户端合并等优化。完整历史见
-[CHANGELOG.md](./CHANGELOG.md)。
+**变更** — 提升 **`@dreamer/config` `^1.0.3`**、**`@dreamer/database`
+`^1.0.9`**（JSR）；其余 **`@dreamer/*`** 约束见 **`deno.json`** /
+**`package.json`**。完整历史见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

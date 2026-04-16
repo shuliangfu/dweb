@@ -11,6 +11,7 @@ import {
   ConfigManager,
   type ConfigManagerOptions,
   createConfigManager,
+  preloadDotEnvSync,
 } from "@dreamer/config";
 import type {
   Middleware,
@@ -689,6 +690,12 @@ export async function initializeConfigManager(
   const env = getEnv("DENO_ENV") ||
     getEnv("BUN_ENV") ||
     getEnv("NODE_ENV") || "dev";
+
+  /**
+   * 在 import 各层 `config/main.ts` 之前，同步合并仓库根与各配置目录下的 `.env` / `.env.{dev|test|prod}` / `.env.{原始环境名}`，
+   * 并写入进程环境（不覆盖已存在的键），使 `main.ts` 顶层 `getEnv` 能读到与 @dreamer/config `loadSync` 一致的分层规则。
+   */
+  preloadDotEnvSync([".", ...directories], { env, override: false });
 
   // 加载框架配置（按优先级从低到高）
   let mainConfig: AppConfig = {};

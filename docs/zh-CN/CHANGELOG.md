@@ -7,6 +7,18 @@
 
 ---
 
+## [3.3.2] - 2026-04-17
+
+### 变更
+
+- **依赖**：提升 JSR 约束 — **`@dreamer/config` `^1.0.3`**（分层 `.env` 合并与进
+  程空位写入、包根再导出环境 API、首次 import 时预热 cwd 下 `.env`）、
+  **`@dreamer/database` `^1.0.9`**（MongoDB：配置了 `replicaSet` 且未显式传
+  `directConnection` 时默认直连）。**`deno.json`** 与 **`package.json`**
+  依赖表已 同步。
+
+---
+
 ## [3.3.1] - 2026-04-07
 
 ### 变更

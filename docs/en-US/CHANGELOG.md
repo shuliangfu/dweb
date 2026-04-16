@@ -8,6 +8,19 @@ and this project adheres to
 
 ---
 
+## [3.3.2] - 2026-04-17
+
+### Changed
+
+- **Dependencies**: Bump JSR pins — `@dreamer/config` to `^1.0.3` (layered
+  `.env` merge behavior, root re-exports for `getEnv` / `setEnv` / `hasEnv` /
+  `deleteEnv`, import-time `preloadDotEnvSync(["."])` from cwd),
+  `@dreamer/database` to `^1.0.9` (MongoDB: default `directConnection` when
+  `replicaSet` is set and `directConnection` is omitted). `deno.json` and
+  `package.json` dependency tables updated accordingly.
+
+---
+
 ## [3.3.1] - 2026-04-07
 
 ### Changed

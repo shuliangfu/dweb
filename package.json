@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "3.3.1",
+  "version": "3.3.2",
   "description": "A full-stack Web framework compatible with Deno and Bun, integrating @dreamer/* libraries for an out-of-the-box development experience.",
   "type": "module",
   "license": "Apache-2.0",
@@ -40,9 +40,9 @@
     "examples/*/advanced"
   ],
   "dependencies": {
-    "@dreamer/config": "npm:@jsr/dreamer__config@^1.0.1",
+    "@dreamer/config": "npm:@jsr/dreamer__config@^1.0.3",
     "@dreamer/console": "npm:@jsr/dreamer__console@^1.0.12",
-    "@dreamer/database": "npm:@jsr/dreamer__database@^1.0.8",
+    "@dreamer/database": "npm:@jsr/dreamer__database@^1.0.9",
     "@dreamer/esbuild": "npm:@jsr/dreamer__esbuild@^1.1.6",
     "@dreamer/i18n": "npm:@jsr/dreamer__i18n@^1.0.1",
     "@dreamer/image": "npm:@jsr/dreamer__image@^1.0.2",
@@ -60,7 +60,7 @@
     "@dreamer/session": "npm:@jsr/dreamer__session@^1.0.4",
     "@dreamer/socket-io": "npm:@jsr/dreamer__socket-io@^1.0.12",
     "@dreamer/utils": "npm:@jsr/dreamer__utils@^1.0.1",
-    "@dreamer/view": "npm:@jsr/dreamer__view@^2.0.0",
+    "@dreamer/view": "npm:@jsr/dreamer__view@^2.0.1",
     "@dreamer/websocket": "npm:@jsr/dreamer__websocket@^1.0.6",
     "autoprefixer": "10.4.19",
     "chart.js": "npm:chart.js@4.5.1",
