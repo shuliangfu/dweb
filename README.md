@@ -1857,12 +1857,12 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.3.4] - 2026-04-17
+### [3.3.5] - 2026-04-17
 
-**Breaking** — `LoadContext` uses **`req` / `res`** (not `request` /
-`response`); **`ApiContext`** re-exported from **`@dreamer/server`**.
-**Changed** — Bump **`@dreamer/router` `^1.1.4`**, **`@dreamer/server`
-`^1.1.0`**. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Changed** — Bump **`@dreamer/server` `^1.1.1`** (optional **`ctx.body`** on
+re-exported API types). **Previous** line:
+[3.3.4](./docs/en-US/CHANGELOG.md#334---2026-04-17). Full history:
+[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

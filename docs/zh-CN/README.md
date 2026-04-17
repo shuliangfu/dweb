@@ -1924,11 +1924,10 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.3.4] - 2026-04-17
+### [3.3.5] - 2026-04-17
 
-**破坏性变更** — **`LoadContext`** 使用 **`req` / `res`**（不再使用 **`request`
-/ `response`**）；**`ApiContext`** 从 **`@dreamer/server`** 再导出。**变更** —
-**`@dreamer/router` `^1.1.4`**、**`@dreamer/server` `^1.1.0`**。详见
+**变更** — **`@dreamer/server` `^1.1.1`**，再导出 API 类型含可选
+**`body`**。上一版摘要见 [3.3.4](./CHANGELOG.md#334---2026-04-17)。详见
 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---

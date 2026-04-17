@@ -7,6 +7,16 @@
 
 ---
 
+## [3.3.5] - 2026-04-17
+
+### 变更
+
+- **依赖**：**`@dreamer/server` `^1.1.1`**（JSR）。再导出的 **`ApiContext` /
+  `ApiRouteContext`** 含可选 **`body`**（由 **`RouterAdapter`** 对文件路由 API
+  预解析 JSON）。**`deno.json`** 与 **`package.json`** 已同步。
+
+---
+
 ## [3.3.4] - 2026-04-17
 
 ### 破坏性变更

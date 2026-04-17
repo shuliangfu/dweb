@@ -8,6 +8,17 @@ and this project adheres to
 
 ---
 
+## [3.3.5] - 2026-04-17
+
+### Changed
+
+- **Dependencies**: Bump **`@dreamer/server`** to **`^1.1.1`** (JSR).
+  Re-exported **`ApiContext` / `ApiRouteContext`** now include optional
+  **`body`** (JSON pre-parsed by **`RouterAdapter`** for file-route API
+  handlers). `deno.json` and `package.json` updated.
+
+---
+
 ## [3.3.4] - 2026-04-17
 
 ### Breaking changes
