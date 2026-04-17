@@ -1857,11 +1857,12 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.3.3] - 2026-04-17
+### [3.3.4] - 2026-04-17
 
-**Changed** — Bump **`@dreamer/plugins` `^1.1.0`** (JSR). **Documentation** —
-`APP_CONFIG`: optional cron via `scheduledPlugin`; root `logger` as
-`LoggerConfig`. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Breaking** — `LoadContext` uses **`req` / `res`** (not `request` /
+`response`); **`ApiContext`** re-exported from **`@dreamer/server`**.
+**Changed** — Bump **`@dreamer/router` `^1.1.4`**, **`@dreamer/server`
+`^1.1.0`**. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

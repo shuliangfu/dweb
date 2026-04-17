@@ -85,13 +85,13 @@ describe("context.ts", () => {
   });
 
   describe("createLoadContext()", () => {
-    it("从 request 填充 method、headers、cookies 并包含 url/params/query", () => {
+    it("从 req 填充 method、headers、cookies 并包含 url/params/query", () => {
       const req = new Request("https://example.com/path?k=v", {
         method: "GET",
         headers: { Cookie: "sid=abc" },
       });
       const ctx = createLoadContext({
-        request: req,
+        req,
         url: "/path?k=v",
         params: {},
         query: { k: "v" },
@@ -99,28 +99,28 @@ describe("context.ts", () => {
       expect(ctx.url).toBe("/path?k=v");
       expect(ctx.params).toEqual({});
       expect(ctx.query).toEqual({ k: "v" });
-      expect(ctx.request).toBe(req);
+      expect(ctx.req).toBe(req);
       expect(ctx.method).toBe("GET");
       expect(ctx.cookies).toEqual({ sid: "abc" });
       expect(ctx.headers).toBe(req.headers);
       expect(ctx.session).toBeUndefined();
-      expect(ctx.response).toBeUndefined();
+      expect(ctx.res).toBeUndefined();
     });
 
-    it("可注入可选的 session 与 response", () => {
+    it("可注入可选的 session 与 res", () => {
       const req = new Request("https://example.com/");
       const resp = createServerResponse();
       const session = { userId: "u1" } as { userId: string };
       const ctx = createLoadContext({
-        request: req,
+        req,
         url: "/",
         params: { id: "x" },
         query: {},
         session,
-        response: resp,
+        res: resp,
       });
       expect(ctx.session).toBe(session);
-      expect(ctx.response).toBe(resp);
+      expect(ctx.res).toBe(resp);
       expect(ctx.params).toEqual({ id: "x" });
     });
   });

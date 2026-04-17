@@ -70,8 +70,9 @@ export type {
 export type { HttpContext as Context } from "@dreamer/server";
 
 /**
- * load() 上下文类型（LoadContext）、API 上下文（ApiContext）等，
- * 供 routes 中 _layout/页面 load、api 路由使用。
+ * 路由上下文类型：
+ * - **LoadContext**：页面 `load(ctx)`，由 dweb 定义（`res` 在部分场景可选）。
+ * - **ApiContext**：文件路由 API，从 `@dreamer/server` 再导出，与 RouterAdapter 注入类型一致。
  */
 export type { ApiContext, LoadContext } from "./types/context.ts";
 

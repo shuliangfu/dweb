@@ -8,6 +8,35 @@ and this project adheres to
 
 ---
 
+## [3.3.4] - 2026-04-17
+
+### Breaking changes
+
+- **`LoadContext`**: Renamed **`request` → `req`** and **`response` → `res`**
+  (aligned with `@dreamer/server` file-route API naming). Update `load()`
+  handlers and any code reading the old property names.
+- **`createLoadContext`**: Options renamed **`request` → `req`**, **`response` →
+  `res`**.
+- **`ApiContext` / `ApiRouteContext`**: Re-exported from **`@dreamer/server`**
+  (same types as **`RouterAdapter`**); **`ApiContext`** is no longer a
+  **`LoadContext`** alias — file-route handlers use **`res`** as required on the
+  server type.
+
+### Changed
+
+- **Rendering** (`render-ssr`, `render-hybrid`, `render-csr`) and
+  **`load-data-middleware`**: Build **`LoadContext`** with **`req` / `res`**.
+- **Dependencies**: Bump **`@dreamer/router`** to **`^1.1.4`** and
+  **`@dreamer/server`** to **`^1.1.0`** (JSR). `deno.json` and `package.json`
+  updated.
+
+### Tests
+
+- **`tests/unit/context.test.ts`**: Updated for
+  **`createLoadContext({ req, … })`**.
+
+---
+
 ## [3.3.3] - 2026-04-17
 
 ### Changed

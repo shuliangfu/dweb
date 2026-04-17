@@ -102,12 +102,12 @@ export function createLoadDataMiddleware(
           ? "?" + new URLSearchParams(queryFromUrl).toString()
           : "");
       const loadContext = createLoadContext({
-        request: ctx.request,
+        req: ctx.request,
         url,
         params: match.params ?? {},
         query: queryFromUrl,
         session: (ctx as { session?: SessionData }).session,
-        response: createServerResponse(),
+        res: createServerResponse(),
       });
 
       // 客户端导航时也返回 layoutData：对该路径的 layout 链执行 load，与首屏行为一致

@@ -162,12 +162,12 @@ export function createRendererSSR(
 
       const url = ctx.url?.href || ctx.path;
       const loadContext = createLoadContext({
-        request: ctx.request,
+        req: ctx.request,
         url,
         params: match.params ?? {},
         query: match.query ?? {},
         session: (ctx as { session?: SessionData }).session,
-        response: createServerResponse(),
+        res: createServerResponse(),
       });
 
       // 为每个 _layout 模块调用 load（若存在），并将返回值作为该层 layout 的 props.data

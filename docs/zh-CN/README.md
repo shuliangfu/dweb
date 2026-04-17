@@ -1924,11 +1924,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.3.3] - 2026-04-17
+### [3.3.4] - 2026-04-17
 
-**变更** — 提升 **`@dreamer/plugins` `^1.1.0`**（JSR）。**文档** —
-**`APP_CONFIG`**： 可选计划任务（**`scheduledPlugin`**）；根级 **`logger`**
-说明。完整历史见 [CHANGELOG.md](./CHANGELOG.md)。
+**破坏性变更** — **`LoadContext`** 使用 **`req` / `res`**（不再使用 **`request`
+/ `response`**）；**`ApiContext`** 从 **`@dreamer/server`** 再导出。**变更** —
+**`@dreamer/router` `^1.1.4`**、**`@dreamer/server` `^1.1.0`**。详见
+[CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

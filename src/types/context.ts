@@ -10,7 +10,7 @@ import type { SessionData } from "@dreamer/session";
 
 /**
  * 服务端响应辅助对象
- * 由框架注入到 LoadContext.response / ApiContext.response，用于在 load() 或 API 中统一生成各类响应（含服务端跳转）。
+ * 由框架注入到 LoadContext.res / ApiContext.res，用于在 load() 中统一生成各类响应（含服务端跳转）。
  * 所有方法返回标准 Response，可直接 return 给框架使用。
  */
 export interface ServerResponse {
@@ -63,9 +63,7 @@ export interface MetaContext {
 }
 
 /**
- * load 方法接收的上下文
- * 包含完整请求信息，便于在服务端获取数据时使用 cookie、session、headers 等
- * 含 [key: string]: unknown 以与 @dreamer/render 的 LoadContext 兼容
+ * load() 收到的上下文：使用 **`req` / `res`**，与 `@dreamer/server` 文件路由 API 一致。
  */
 export interface LoadContext {
   /** 当前请求 URL（完整或 pathname+search） */
@@ -74,18 +72,18 @@ export interface LoadContext {
   params: Record<string, string>;
   /** 查询参数（从 URL search 解析的键值对） */
   query: Record<string, string>;
-  /** 原始 Web 标准 Request 对象 */
-  request: Request;
+  /** 原始 Web 标准 Request */
+  req: Request;
   /**
-   * 响应辅助（由框架注入）：redirect、json、html、text、body、status 等，
-   * 用于在 load() 中做服务端跳转或返回多种格式；部分场景如 load-data 仅返回 JSON 时可能未注入。
+   * 响应辅助（由框架注入）：redirect、json、html 等；
+   * 部分场景（如仅序列化 JSON 的 load-data）可能未注入。
    */
-  response?: ServerResponse;
+  res?: ServerResponse;
   /** 请求方法（GET、POST、PUT、DELETE 等） */
   method: string;
-  /** 解析后的 Cookie 键值对（来自 request 的 Cookie 头） */
+  /** 解析后的 Cookie 键值对（来自 Cookie 头） */
   cookies: Record<string, string>;
-  /** 请求头（Web 标准 Headers，只读） */
+  /** 请求头（与 `req.headers` 相同引用） */
   headers: Headers;
   /**
    * 会话数据（由 @dreamer/session 中间件注入；config.session 未启用时为 undefined）
@@ -96,10 +94,14 @@ export interface LoadContext {
 }
 
 /**
- * API 路由处理器接收的上下文
- * 与 LoadContext 结构一致，便于在 api/* 路由中访问请求、cookie、session 等
+ * 文件路由 API 处理器参数类型：与 `@dreamer/server` 的 {@link ApiRouteContext} 同源。
+ *
+ * - **页面 `load(ctx)`** 使用本文件的 {@link LoadContext}（`res` 在部分场景可选）。
+ * - **文件路由 `export async function foo(ctx)`** 使用本别名，与 RouterAdapter 注入的上下文一致（`res` 必填）。
+ *
+ * 字段命名统一为 `req` / `res`，避免与历史 `request` / `response` 混用。
  */
-export type ApiContext = LoadContext;
+export type { ApiContext, ApiRouteContext } from "@dreamer/server";
 
 /**
  * 从 Request 的 Cookie 头解析出键值对
@@ -126,29 +128,29 @@ export function parseCookies(request: Request): Record<string, string> {
 }
 
 /**
- * 构建 LoadContext / ApiContext
- * 供框架在调用 load() 或 API 处理器时使用
+ * 构建 {@link LoadContext}（供框架在调用 `load()` 时注入）
  *
- * @param options url、params、query、request 及可选的 session、response
- * @returns 完整的 LoadContext
+ * 文件路由 API 的上下文由 `@dreamer/server` 的 `buildApiRouteContext` 构造，类型为 {@link ApiContext}。
+ *
+ * @param options url、params、query、req 及可选 session、res
  */
 export function createLoadContext(options: {
-  request: Request;
+  req: Request;
   url: string;
   params: Record<string, string>;
   query: Record<string, string>;
   session?: SessionData;
-  response?: ServerResponse;
+  res?: ServerResponse;
 }): LoadContext {
   return {
     url: options.url,
     params: options.params,
     query: options.query,
-    request: options.request,
-    response: options.response,
-    method: options.request.method,
-    cookies: parseCookies(options.request),
-    headers: options.request.headers,
+    req: options.req,
+    res: options.res,
+    method: options.req.method,
+    cookies: parseCookies(options.req),
+    headers: options.req.headers,
     session: options.session,
   };
 }
@@ -191,7 +193,7 @@ const BINARY_HEADERS = new Headers({
 
 /**
  * 创建服务端响应辅助对象
- * 供框架在构建 LoadContext 时注入，使 load() / API 可统一使用 redirect、json、html 等
+ * 供框架在构建 LoadContext 时注入，使 load() 可统一使用 redirect、json、html 等
  *
  * @returns ServerResponse 实例，所有方法返回标准 Web Response
  */

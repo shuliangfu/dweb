@@ -197,12 +197,12 @@ export function createRendererCSR(
       // 为每个 _layout 模块调用 load（若存在），并将返回值作为该层 layout 的 props.data（CSR 首屏 shell 使用）
       const csrLoadContext = ctx?.request
         ? createLoadContext({
-          request: ctx.request,
+          req: ctx.request,
           url: ctx?.url?.href ?? "",
           params: match.params ?? {},
           query: match.query ?? {},
           session: (ctx as { session?: SessionData }).session,
-          response: createServerResponse(),
+          res: createServerResponse(),
         })
         : null;
       const layoutPropsList: Array<Record<string, unknown>> = [];
@@ -242,12 +242,12 @@ export function createRendererCSR(
           const req = ctx?.request;
           const loadContext = req
             ? createLoadContext({
-              request: req,
+              req,
               url: ctx?.url?.href ?? "",
               params: match.params ?? {},
               query: match.query ?? {},
               session: (ctx as { session?: SessionData }).session,
-              response: createServerResponse(),
+              res: createServerResponse(),
             })
             : null;
           if (typeof pageModule.load === "function" && loadContext) {

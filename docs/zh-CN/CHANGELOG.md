@@ -7,6 +7,32 @@
 
 ---
 
+## [3.3.4] - 2026-04-17
+
+### 破坏性变更
+
+- **`LoadContext`**：字段重命名为 **`request` → `req`**、**`response` → `res`**
+  （与 **`@dreamer/server`** 文件路由 API 命名一致）。请在 **`load()`**
+  及所有读取旧字段名的代码中迁移。
+- **`createLoadContext`**：参数重命名为 **`request` → `req`**、**`response` →
+  `res`**。
+- **`ApiContext` / `ApiRouteContext`**：从 **`@dreamer/server`** 再导出（与
+  **`RouterAdapter`** 一致）；**`ApiContext`** 不再等同于
+  **`LoadContext`**，服务端类型要求 **`res`** 必填。
+
+### 变更
+
+- **渲染**（**`render-ssr`**、**`render-hybrid`**、**`render-csr`**）与
+  **`load-data-middleware`**：使用 **`req` / `res`** 构建 **`LoadContext`**。
+- **依赖**：**`@dreamer/router` `^1.1.4`**、**`@dreamer/server`
+  `^1.1.0`**（JSR）， **`deno.json`** 与 **`package.json`** 已同步。
+
+### 测试
+
+- **`tests/unit/context.test.ts`**：已适配 **`createLoadContext({ req, … })`**。
+
+---
+
 ## [3.3.3] - 2026-04-17
 
 ### 变更
