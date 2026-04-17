@@ -7,7 +7,7 @@
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](../../LICENSE)
-[![Tests](https://img.shields.io/badge/tests-839%20passed-brightgreen)](./TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-840%20passed-brightgreen)](./TEST_REPORT.md)
 
 ---
 
@@ -1914,7 +1914,7 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 详细结果见 [TEST_REPORT.md](./TEST_REPORT.md)。
 
-**测试总结**：共 83 个测试文件、839 个用例通过（8 个忽略：2 个 Windows 专属、6
+**测试总结**：共 83 个测试文件、840 个用例通过（8 个忽略：2 个 Windows 专属、6
 个 e2e SSG/SSR 下「注入 layout/页面 load 数据」）。覆盖
 单元（config、router、plugin、build、render、windows 等）、e2e 浏览器渲染与
 集成构建。路径与配置加载测试已支持 Windows
@@ -1924,11 +1924,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.3.5] - 2026-04-17
+### [3.3.6] - 2026-04-17
 
-**变更** — **`@dreamer/server` `^1.1.1`**，再导出 API 类型含可选
-**`body`**。上一版摘要见 [3.3.4](./CHANGELOG.md#334---2026-04-17)。详见
-[CHANGELOG.md](./CHANGELOG.md)。
+**变更** — **`createServerResponse().json()`** 统一为
+**`{ success, data }`**，与 **`@dreamer/server` `^1.1.2`** 一致。上一版摘要见
+[3.3.5](./CHANGELOG.md#335---2026-04-17)。详见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

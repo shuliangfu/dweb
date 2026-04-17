@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "3.3.5",
+  "version": "3.3.6",
   "description": "A full-stack Web framework compatible with Deno and Bun, integrating @dreamer/* libraries for an out-of-the-box development experience.",
   "license": "Apache-2.0",
   "exports": {
@@ -58,7 +58,7 @@
 
     "@dreamer/router": "jsr:@dreamer/router@^1.1.4",
     "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.0.18",
-    "@dreamer/server": "jsr:@dreamer/server@^1.1.1",
+    "@dreamer/server": "jsr:@dreamer/server@^1.1.2",
     "@dreamer/session": "jsr:@dreamer/session@^1.0.4",
     "@dreamer/service": "jsr:@dreamer/service@^1.0.2",
     "@dreamer/socket-io": "jsr:@dreamer/socket-io@^1.0.12",

@@ -8,6 +8,23 @@ and this project adheres to
 
 ---
 
+## [3.3.6] - 2026-04-17
+
+### Changed
+
+- **`createServerResponse().json()`** (`src/types/context.ts`): Response body is
+  always **`{ success: boolean, data: unknown }`**; **`success`** follows HTTP
+  status (2xx → **`true`**). Aligns with **`@dreamer/server`** 1.1.2.
+- **Dependencies**: Bump **`@dreamer/server`** to **`^1.1.2`** (JSR).
+  **`deno.json`** and **`package.json`** updated.
+
+### Tests
+
+- **`tests/unit/context.test.ts`**: Covers wrapped JSON and non-2xx
+  **`success: false`**.
+
+---
+
 ## [3.3.5] - 2026-04-17
 
 ### Changed

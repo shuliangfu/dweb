@@ -6,9 +6,9 @@
 
 | 项目     | 值                    |
 | -------- | --------------------- |
-| 框架版本 | 3.1.8                 |
+| 框架版本 | 3.3.6                 |
 | 测试框架 | @dreamer/test@^1.0.15 |
-| 测试时间 | 2026-03-14            |
+| 测试时间 | 2026-04-17            |
 | 测试环境 | Deno 2.x / Bun 1.x    |
 
 ---
@@ -20,8 +20,8 @@
 | 指标         | 数值                                      |
 | ------------ | ----------------------------------------- |
 | 测试文件数   | 83                                        |
-| 测试用例总数 | 847（839 通过 + 8 忽略）                  |
-| 通过用例数   | 839                                       |
+| 测试用例总数 | 848（840 通过 + 8 忽略）                  |
+| 通过用例数   | 840                                       |
 | 忽略用例数   | 8                                         |
 | 失败用例数   | 0                                         |
 | 通过率       | 100%                                      |
@@ -37,7 +37,7 @@
 | `asset-manifest.test.ts`        | 6            | ✅ 全部通过 |
 | `build-dirs.test.ts`            | 18           | ✅ 全部通过 |
 | `config.test.ts`                | 64           | ✅ 全部通过 |
-| `context.test.ts`               | 21           | ✅ 全部通过 |
+| `context.test.ts`               | 22           | ✅ 全部通过 |
 | `render.test.ts`                | 46           | ✅ 全部通过 |
 | `command.test.ts`               | 42           | ✅ 全部通过 |
 | `build.test.ts`                 | 23           | ✅ 全部通过 |
@@ -591,7 +591,7 @@
 
 - ✅ createCLI() 返回 Command、具备 execute 方法
 
-### 20. 路由上下文 (context.test.ts) - 21 个测试
+### 20. 路由上下文 (context.test.ts) - 22 个测试
 
 - ✅ **parseCookies()**：无/空 Cookie 头、单/多
   cookie、重复键、去空格、跳过非法段
@@ -599,7 +599,10 @@
 - ✅ **createLoadContext()**：从 Request 填充 method、headers、cookies；可选
   session、response
 - ✅
-  **createServerResponse()**：redirect（302/301）、json、html、text、binary（Uint8Array/ArrayBuffer）、body、status（含
+  **createServerResponse()**：redirect（302/301）、**json**（**`{ success,
+  data }`**
+  封装；非 2xx
+  状态）、html、text、binary（Uint8Array/ArrayBuffer）、body、status（含
   statusText）
 
 ### 21. 其他单元测试（app、asset-manifest、build-dirs、sanitize、path、runtime 等）
@@ -763,7 +766,7 @@
 
 ## 🎯 结论
 
-@dreamer/dweb 框架的测试在文件级已全面覆盖，共 **833** 个测试用例全部通过（2 个
+@dreamer/dweb 框架的测试在文件级已全面覆盖，共 **840** 个测试用例全部通过（2 个
 Windows 专属用例在非 Windows 时忽略）。测试通过 `deno test -A tests`
 一次执行，总时长约
 **6m18s**。所有测试均为实质性测试，验证了具体的功能行为。单元测试包含

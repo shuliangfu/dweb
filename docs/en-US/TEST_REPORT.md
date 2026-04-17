@@ -6,9 +6,9 @@
 
 | Item             | Value                 |
 | ---------------- | --------------------- |
-| Framework        | 3.1.8                 |
+| Framework        | 3.3.6                 |
 | Test framework   | @dreamer/test@^1.0.15 |
-| Test date        | 2026-03-14            |
+| Test date        | 2026-04-17            |
 | Test environment | Deno 2.x / Bun 1.x    |
 
 ---
@@ -20,8 +20,8 @@
 | Metric           | Count                                    |
 | ---------------- | ---------------------------------------- |
 | Test files       | 83                                       |
-| Total test cases | 847 (839 passed + 8 ignored)             |
-| Passed           | 839                                      |
+| Total test cases | 848 (840 passed + 8 ignored)             |
+| Passed           | 840                                      |
 | Ignored          | 8                                        |
 | Failed           | 0                                        |
 | Pass rate        | 100%                                     |
@@ -37,7 +37,7 @@
 | `asset-manifest.test.ts`        | 6              | ✅ All passed |
 | `build-dirs.test.ts`            | 18             | ✅ All passed |
 | `config.test.ts`                | 64             | ✅ All passed |
-| `context.test.ts`               | 21             | ✅ All passed |
+| `context.test.ts`               | 22             | ✅ All passed |
 | `render.test.ts`                | 46             | ✅ All passed |
 | `command.test.ts`               | 42             | ✅ All passed |
 | `build.test.ts`                 | 23             | ✅ All passed |
@@ -589,14 +589,15 @@
 
 - ✅ createCLI() returns Command with execute method
 
-### 20. Context / LoadContext (context.test.ts) - 21 tests
+### 20. Context / LoadContext (context.test.ts) - 22 tests
 
 - ✅ **parseCookies()**: empty/missing Cookie header, single/multiple cookies,
   duplicate keys, trim, skip invalid segments
 - ✅ **createMetaContext()**: returns url, params, query
 - ✅ **createLoadContext()**: fills method, headers, cookies from Request;
   optional session and response
-- ✅ **createServerResponse()**: redirect (302/301), json, html, text, binary
+- ✅ **createServerResponse()**: redirect (302/301), **json**
+  (`{ success, data }` envelope; non-2xx status), html, text, binary
   (Uint8Array/ArrayBuffer), body, status (with statusText)
 
 ### 21. Additional Unit Tests (app, asset-manifest, build-dirs, sanitize, path, runtime, etc.)
@@ -797,5 +798,5 @@ verify actual behavior. Coverage includes:
 - ✅ **Integration tests**: config and lifecycle, CSR/SSR/SSG/Hybrid build and
   server checks for multiple engines
 
-Core framework, e2e, and integration scenarios are fully tested. **833** cases
+Core framework, e2e, and integration scenarios are fully tested. **840** cases
 pass; **2** Windows-only cases are skipped on non-Windows.

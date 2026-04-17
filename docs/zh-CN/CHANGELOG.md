@@ -7,6 +7,22 @@
 
 ---
 
+## [3.3.6] - 2026-04-17
+
+### 变更
+
+- **`createServerResponse().json()`**（**`src/types/context.ts`**）：响应体统一为
+  **`{ success: boolean, data: unknown }`**，**`success`** 由 HTTP 状态码（2xx
+  为 **`true`**）推导，与 **`@dreamer/server`** 1.1.2 一致。
+- **依赖**：**`@dreamer/server` `^1.1.2`**（JSR），**`deno.json`** 与
+  **`package.json`** 已同步。
+
+### 测试
+
+- **`tests/unit/context.test.ts`**：补充 **`{ success, data }`** 及非 2xx 场景。
+
+---
+
 ## [3.3.5] - 2026-04-17
 
 ### 变更

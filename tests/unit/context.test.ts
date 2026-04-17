@@ -143,10 +143,19 @@ describe("context.ts", () => {
     });
 
     describe("json()", () => {
-      it("返回 application/json 且 body 为 JSON 字符串", async () => {
+      it("返回 application/json 且 body 为 { success, data } 封装", async () => {
         const r = res.json({ a: 1 });
         expect(r.headers.get("Content-Type")).toContain("application/json");
-        expect(await r.json()).toEqual({ a: 1 });
+        expect(await r.json()).toEqual({ success: true, data: { a: 1 } });
+      });
+
+      it("init.status 非 2xx 时 success 为 false", async () => {
+        const r = res.json({ error: "bad" }, { status: 400 });
+        expect(r.status).toBe(400);
+        expect(await r.json()).toEqual({
+          success: false,
+          data: { error: "bad" },
+        });
       });
     });
 
