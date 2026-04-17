@@ -32,6 +32,14 @@ with the following main sections:
 
 ---
 
+## 1.1 Cron / scheduled jobs (optional)
+
+Cron-based jobs are **not** a top-level `AppConfig` field. Add
+**`scheduledPlugin`** from **`@dreamer/plugins`** to **`plugins`**. See
+[plugins README — Scheduled tasks](../../../plugins/README.md#scheduled-tasks-cron-plugin).
+
+---
+
 ## 2. Full Configuration Example
 
 ### Single-app mode (config/main.ts)
@@ -340,6 +348,9 @@ const config: AppConfig = {
 
 export default config;
 ```
+
+**`logger`**: The root **`logger`** is a **`LoggerConfig`** for the whole
+application (HTTP stack, framework logs, etc.).
 
 ---
 

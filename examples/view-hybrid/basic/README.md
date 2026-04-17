@@ -33,7 +33,18 @@ view-basic/
 deno task dev
 ```
 
-访问 http://localhost:3002
+访问 http://localhost:3012（端口以 `src/config/main.ts` 为准，可用环境变量
+`PORT` 覆盖）。
+
+启动后，终端会按 `src/config/main.dev.ts`
+输出：**计划任务**（`scheduledPlugin`：每 40 秒一次 `deno eval`、每分钟第 20
+秒执行 `src/scripts/scheduled-sample.ts`）以及 **队列**（`queuePlugin` +
+`MemoryQueueAdapter`，队列名 `sample`，容器注册为
+`queueManager:dev`）。内存队列仅在应用进程内有效，可另开终端执行
+**`deno task enqueue-queue`**（或
+`deno run -A src/scripts/enqueue-queue-sample.ts`）向
+`POST /api/dev/queue-sample` 投递一条任务，服务端消费后会在 `process`
+中打印日志。按 Ctrl+C 停止时插件会在 `onStop` 中关闭 Cron 与队列管理器。
 
 ### 构建生产版本
 

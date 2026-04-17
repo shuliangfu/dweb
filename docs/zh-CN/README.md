@@ -1924,11 +1924,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.3.2] - 2026-04-17
+### [3.3.3] - 2026-04-17
 
-**变更** — 提升 **`@dreamer/config` `^1.0.3`**、**`@dreamer/database`
-`^1.0.9`**（JSR）；其余 **`@dreamer/*`** 约束见 **`deno.json`** /
-**`package.json`**。完整历史见 [CHANGELOG.md](./CHANGELOG.md)。
+**变更** — 提升 **`@dreamer/plugins` `^1.1.0`**（JSR）。**文档** —
+**`APP_CONFIG`**： 可选计划任务（**`scheduledPlugin`**）；根级 **`logger`**
+说明。完整历史见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

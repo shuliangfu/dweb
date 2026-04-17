@@ -30,6 +30,14 @@
 
 ---
 
+## 1.1 计划任务（Cron，可选）
+
+计划任务**不是** `AppConfig` 顶层字段。在 **`plugins`** 中加入
+`@dreamer/plugins` 的 **`scheduledPlugin`** 即可。详见
+[plugins 文档](../../../plugins/docs/zh-CN/README.md)（计划任务相关章节）。
+
+---
+
 ## 二、完整配置示例
 
 ### 单应用模式（config/main.ts）
@@ -338,6 +346,9 @@ const config: AppConfig = {
 
 export default config;
 ```
+
+**`logger`**：上文根配置 **`logger`** 为 **`LoggerConfig`**，作用于整应用（HTTP
+栈、框架日志等）。
 
 ---
 

@@ -982,7 +982,7 @@ export class App extends EventEmitter implements IApp {
     // 触发 EventEmitter 事件
     this.emit("start");
 
-    // 启动应用
+    // 启动应用（HTTP 等就绪）
     await lifecycleManager.start();
   }
 

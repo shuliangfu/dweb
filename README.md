@@ -1857,11 +1857,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.3.2] - 2026-04-17
+### [3.3.3] - 2026-04-17
 
-**Changed** — Bump **`@dreamer/config` `^1.0.3`** and **`@dreamer/database`
-`^1.0.9`** (JSR); other `@dreamer/*` pins refreshed in `deno.json` /
-`package.json`. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Changed** — Bump **`@dreamer/plugins` `^1.1.0`** (JSR). **Documentation** —
+`APP_CONFIG`: optional cron via `scheduledPlugin`; root `logger` as
+`LoggerConfig`. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

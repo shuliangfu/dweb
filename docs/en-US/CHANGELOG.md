@@ -8,6 +8,22 @@ and this project adheres to
 
 ---
 
+## [3.3.3] - 2026-04-17
+
+### Changed
+
+- **Dependencies**: Bump `@dreamer/plugins` to `^1.1.0` (JSR; scheduled and
+  queue plugins, etc.). `deno.json` and `package.json` dependency tables updated
+  accordingly.
+
+### Documentation
+
+- **APP_CONFIG** (en-US / zh-CN): Document optional cron/scheduled jobs via
+  `scheduledPlugin` in `plugins`; clarify that root `logger` is `LoggerConfig`
+  for the whole application.
+
+---
+
 ## [3.3.2] - 2026-04-17
 
 ### Changed

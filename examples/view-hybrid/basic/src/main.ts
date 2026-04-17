@@ -8,7 +8,14 @@ import { App, getSocketIoServer, getWebSocketServer } from "@dreamer/dweb";
 import { staticPlugin } from "@dreamer/plugins/static";
 import { tailwindPlugin } from "@dreamer/plugins/tailwindcss";
 
+import { setQueueDevContainer } from "./queue-dev-container.ts";
+
 const app = new App();
+
+// 供 `/api/dev/queue-sample` 在请求时访问容器内已注册的 `queueManager:dev`（仅服务端）
+app.on("init", () => {
+  setQueueDevContainer(app.container);
+});
 
 app.registerPlugin(tailwindPlugin({
   output: "dist/client/assets",
