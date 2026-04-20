@@ -1924,11 +1924,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.3.6] - 2026-04-17
+### [3.3.8] - 2026-04-20
 
-**变更** — **`createServerResponse().json()`** 统一为
-**`{ success, data }`**，与 **`@dreamer/server` `^1.1.2`** 一致。上一版摘要见
-[3.3.5](./CHANGELOG.md#335---2026-04-17)。详见 [CHANGELOG.md](./CHANGELOG.md)。
+**变更** — **`@dreamer/test` `^1.1.7`**（浏览器测试 **`page.evaluate`**
+宿主侧超时）。 上一版摘要见 [3.3.7](./CHANGELOG.md)。详见
+[CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

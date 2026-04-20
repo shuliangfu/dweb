@@ -146,9 +146,10 @@ describe("init (cmd/init.ts)", () => {
       // 验证各应用目录及 config/main.ts 包含对应应用名
       for (const app of ["backend", "frontend"]) {
         expect(await exists(join(testDir, "src", app, "main.ts"))).toBe(true);
-        expect(await exists(join(testDir, "src", app, "config", "main.ts"))).toBe(
-          true,
-        );
+        expect(await exists(join(testDir, "src", app, "config", "main.ts")))
+          .toBe(
+            true,
+          );
         expect(await exists(join(testDir, "src", app, "routes", "index.tsx")))
           .toBe(true);
         const appConfigTs = await readTextFile(

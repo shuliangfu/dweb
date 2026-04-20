@@ -7,6 +7,17 @@
 
 ---
 
+## [3.3.8] - 2026-04-20
+
+### 变更
+
+- **依赖**：**`@dreamer/test` `^1.1.7`**（JSR，**`package.json`** 为
+  devDependency）。 与 **`@dreamer/test` `1.1.7`** 中 Playwright
+  **`page.evaluate`** 宿主侧超时对齐， 减轻部分 CI（尤其 macOS + Deno）下浏览器
+  e2e 长时间挂起。
+
+---
+
 ## [3.3.7] - 2026-04-18
 
 ### 变更

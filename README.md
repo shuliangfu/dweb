@@ -1857,12 +1857,12 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.3.6] - 2026-04-17
+### [3.3.8] - 2026-04-20
 
-**Changed** — **`createServerResponse().json()`** returns
-**`{ success, data }`** (aligned with **`@dreamer/server` `^1.1.2`**).
-**Previous** line: [3.3.5](./docs/en-US/CHANGELOG.md#335---2026-04-17). Full
-history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Changed** — Bump **`@dreamer/test`** to **`^1.1.7`** for Playwright browser
+tests (host-side **`page.evaluate`** timeout). **Previous** line:
+[3.3.7](./docs/en-US/CHANGELOG.md). Full history:
+[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

@@ -8,6 +8,17 @@ and this project adheres to
 
 ---
 
+## [3.3.8] - 2026-04-20
+
+### Changed
+
+- **Dependencies**: Bump **`@dreamer/test`** to **`^1.1.7`** (JSR and npm
+  devDependency). Uses host-side timeouts for Playwright **`page.evaluate`** in
+  **`@dreamer/test`** browser context, reducing long-hanging browser e2e on some
+  CI hosts (notably macOS Deno pipelines).
+
+---
+
 ## [3.3.7] - 2026-04-18
 
 ### Changed
