@@ -1349,6 +1349,42 @@ function expectHeadMeta(
 }
 
 /**
+ * 轮询直到 `document.title` 与路由 description meta 与期望值一致。
+ *
+ * SPA 从 `/about` 等切回 `/` 时，`waitForContentViaEvaluate` 会因页眉导航含「首页」文案而过早返回，
+ * 此时 React 可能尚未提交新的 document title（Linux CI headless 下更易复现）。
+ *
+ * @param browser - 含 evaluate 的浏览器上下文
+ * @param expected - 期望的 title / description
+ * @param timeoutMs - 最大等待毫秒
+ * @param label - 超时失败时的断言标签
+ */
+async function waitForRouteHeadMetaMatch(
+  browser: { evaluate: (fn: () => unknown) => Promise<unknown> },
+  expected: { title: string; description: string },
+  timeoutMs: number,
+  label: string,
+): Promise<void> {
+  const pollMs = 150;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const actual = await readRouteHeadMeta(browser);
+    if (
+      actual.title === expected.title &&
+      actual.description === expected.description
+    ) {
+      return;
+    }
+    await new Promise((r) => setTimeout(r, pollMs));
+  }
+  expectHeadMeta(
+    await readRouteHeadMeta(browser),
+    expected,
+    `${label}（waitForRouteHeadMetaMatch 超时 ${timeoutMs}ms）`,
+  );
+}
+
+/**
  * 浏览器断言：校验 basic 示例在多级 **客户端导航** 后 title/description 与路由定义一致，
  * 并与上一路由不同（防止 head 滞留旧值）。
  *
@@ -1419,10 +1455,10 @@ async function assertBrowserMetadata(
   expect(aboutHead.title).not.toBe(BASIC_E2E_HOME_TITLE);
 
   await page.click('header a[href="/"]', { timeout: contentTimeout });
-  await waitForContentViaEvaluate(browser, navTimeoutMs);
-  expectHeadMeta(
-    await readRouteHeadMeta(browser),
+  await waitForRouteHeadMetaMatch(
+    browser,
     homeExpected,
+    navTimeoutMs,
     "返回首页（点击后的 SPA）",
   );
 
@@ -1438,10 +1474,10 @@ async function assertBrowserMetadata(
   expect(userHead.title).not.toBe(BASIC_E2E_ABOUT_TITLE);
 
   await page.click('header a[href="/"]', { timeout: contentTimeout });
-  await waitForContentViaEvaluate(browser, navTimeoutMs);
-  expectHeadMeta(
-    await readRouteHeadMeta(browser),
+  await waitForRouteHeadMetaMatch(
+    browser,
     homeExpected,
+    navTimeoutMs,
     "再次返回首页",
   );
 
@@ -1458,7 +1494,12 @@ async function assertBrowserMetadata(
     );
 
     await page.click('header a[href="/"]', { timeout: contentTimeout });
-    await waitForContentViaEvaluate(browser, navTimeoutMs);
+    await waitForRouteHeadMetaMatch(
+      browser,
+      homeExpected,
+      navTimeoutMs,
+      "相册后返回首页",
+    );
 
     await page.click('a[href="/charts"]', { timeout: contentTimeout });
     await waitForChartsPageBodyViaEvaluate(browser, navTimeoutMs);
