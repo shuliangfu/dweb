@@ -110,80 +110,90 @@ describe("init (cmd/init.ts)", () => {
     { timeout: 20_000 },
   );
 
-  it("generate() 应能生成多应用项目", async () => {
-    const parentDir = await makeTempDir({ prefix: "dweb-init-multi-" });
-    testDir = join(parentDir, "test-multi");
+  it(
+    "generate() 应能生成多应用项目",
+    async () => {
+      const parentDir = await makeTempDir({ prefix: "dweb-init-multi-" });
+      testDir = join(parentDir, "test-multi");
 
-    const opts: InitOptions = {
-      targetDir: testDir,
-      projectName: "test-multi",
-      appMode: "multi",
-      appNames: ["backend", "frontend"],
-      runtime: "deno",
-      engine: "preact",
-      renderMode: "ssr",
-      style: "tailwind",
-      useSrc: true,
-      exampleLevel: "minimal",
-    };
+      const opts: InitOptions = {
+        targetDir: testDir,
+        projectName: "test-multi",
+        appMode: "multi",
+        appNames: ["backend", "frontend"],
+        runtime: "deno",
+        engine: "preact",
+        renderMode: "ssr",
+        style: "tailwind",
+        useSrc: true,
+        exampleLevel: "minimal",
+      };
 
-    await generate(opts);
+      await generate(opts);
 
-    // 验证 common 目录
-    expect(await exists(join(testDir, "src", "common", "config", "main.ts")))
-      .toBe(true);
-
-    // Deno 运行时：有 deno.json，无 package.json
-    expect(await exists(join(testDir, "deno.json"))).toBe(true);
-    expect(await exists(join(testDir, "package.json"))).toBe(false);
-
-    // 验证 deno.json 不包含 name 字段
-    const denoJson = await readTextFile(join(testDir, "deno.json"));
-    expect(denoJson).not.toContain('"name":');
-
-    // 验证各应用目录及 config/main.ts 包含对应应用名
-    for (const app of ["backend", "frontend"]) {
-      expect(await exists(join(testDir, "src", app, "main.ts"))).toBe(true);
-      expect(await exists(join(testDir, "src", app, "config", "main.ts"))).toBe(
-        true,
-      );
-      expect(await exists(join(testDir, "src", app, "routes", "index.tsx")))
+      // 验证 common 目录
+      expect(await exists(join(testDir, "src", "common", "config", "main.ts")))
         .toBe(true);
-      const appConfigTs = await readTextFile(
-        join(testDir, "src", app, "config", "main.ts"),
-      );
-      expect(appConfigTs).toContain(`name: "${app}"`);
-    }
 
-    await remove(parentDir, { recursive: true });
-  });
+      // Deno 运行时：有 deno.json，无 package.json
+      expect(await exists(join(testDir, "deno.json"))).toBe(true);
+      expect(await exists(join(testDir, "package.json"))).toBe(false);
 
-  it("generate() 选择 unocss 时应包含 unocss 依赖", async () => {
-    const parentDir = await makeTempDir({ prefix: "dweb-init-unocss-" });
-    testDir = join(parentDir, "unocss-app");
+      // 验证 deno.json 不包含 name 字段
+      const denoJson = await readTextFile(join(testDir, "deno.json"));
+      expect(denoJson).not.toContain('"name":');
 
-    const opts: InitOptions = {
-      targetDir: testDir,
-      projectName: "unocss-app",
-      appMode: "single",
-      runtime: "deno",
-      engine: "preact",
-      renderMode: "csr",
-      style: "unocss",
-      useSrc: true,
-      exampleLevel: "minimal",
-    };
+      // 验证各应用目录及 config/main.ts 包含对应应用名
+      for (const app of ["backend", "frontend"]) {
+        expect(await exists(join(testDir, "src", app, "main.ts"))).toBe(true);
+        expect(await exists(join(testDir, "src", app, "config", "main.ts"))).toBe(
+          true,
+        );
+        expect(await exists(join(testDir, "src", app, "routes", "index.tsx")))
+          .toBe(true);
+        const appConfigTs = await readTextFile(
+          join(testDir, "src", app, "config", "main.ts"),
+        );
+        expect(appConfigTs).toContain(`name: "${app}"`);
+      }
 
-    await generate(opts);
+      await remove(parentDir, { recursive: true });
+    },
+    // Windows CI 上临时目录与多应用写入较慢，与单应用 / View 用例一致放宽超时
+    { timeout: 20_000 },
+  );
 
-    const denoJson = await readTextFile(join(testDir, "deno.json"));
-    expect(denoJson).toContain("@dreamer/plugins");
-    expect(denoJson).toContain("@unocss/core");
-    expect(denoJson).toContain("@unocss/preset-wind3");
-    expect(denoJson).toContain("@unocss/preset-icons");
+  it(
+    "generate() 选择 unocss 时应包含 unocss 依赖",
+    async () => {
+      const parentDir = await makeTempDir({ prefix: "dweb-init-unocss-" });
+      testDir = join(parentDir, "unocss-app");
 
-    await remove(parentDir, { recursive: true });
-  });
+      const opts: InitOptions = {
+        targetDir: testDir,
+        projectName: "unocss-app",
+        appMode: "single",
+        runtime: "deno",
+        engine: "preact",
+        renderMode: "csr",
+        style: "unocss",
+        useSrc: true,
+        exampleLevel: "minimal",
+      };
+
+      await generate(opts);
+
+      const denoJson = await readTextFile(join(testDir, "deno.json"));
+      expect(denoJson).toContain("@dreamer/plugins");
+      expect(denoJson).toContain("@unocss/core");
+      expect(denoJson).toContain("@unocss/preset-wind3");
+      expect(denoJson).toContain("@unocss/preset-icons");
+
+      await remove(parentDir, { recursive: true });
+    },
+    // 与多应用用例相同：CI Windows + Bun 下 generate 易超默认 5s
+    { timeout: 20_000 },
+  );
 
   it("generate() 选择 Bun 运行时应生成 package.json 与 .npmrc，且不生成 deno.json", async () => {
     const parentDir = await makeTempDir({ prefix: "dweb-init-bun-" });
