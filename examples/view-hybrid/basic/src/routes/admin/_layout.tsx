@@ -1,6 +1,6 @@
 /**
  * BGB Admin 嵌套布局
- * 仅对 /bgb-x-admin 下的页面生效，与根 _layout 形成嵌套（根 layout -> 本 layout -> 页面）
+ * 仅对 /admin 下的页面生效，与根 _layout 形成嵌套（根 layout -> 本 layout -> 页面）
  */
 
 import type { VNode } from "@dreamer/view";

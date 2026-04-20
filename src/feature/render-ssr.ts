@@ -18,7 +18,11 @@ import type { SessionData } from "@dreamer/session";
 import { getConfig } from "../core/config.ts";
 import { getLogger } from "../utils/logger.ts";
 import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
-import { createLoadContext, createServerResponse } from "../types/context.ts";
+import {
+  createLoadContext,
+  createServerResponse,
+  requestFromHttpContext,
+} from "../types/context.ts";
 import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
 import { sanitizeRequestParams } from "../utils/sanitize.ts";
 import { $tr } from "../utils/i18n.ts";
@@ -162,7 +166,7 @@ export function createRendererSSR(
 
       const url = ctx.url?.href || ctx.path;
       const loadContext = createLoadContext({
-        req: ctx.request,
+        req: requestFromHttpContext(ctx),
         url,
         params: match.params ?? {},
         query: match.query ?? {},

@@ -1,7 +1,13 @@
 /**
  * BGB Admin 首页
- * 路由: /bgb-x-admin（使用嵌套布局：根 _layout + bgb-x-admin/_layout）
+ * 路由: /admin（目录 routes/admin/；嵌套布局：根 _layout + admin/_layout）
  */
+
+/** 管理端首页元数据（与前台各页区分） */
+export const metadata = {
+  title: "管理后台 - Dweb Basic",
+  description: "BGB 管理端嵌套布局示例",
+};
 
 export default function BgbAdminIndex() {
   return (

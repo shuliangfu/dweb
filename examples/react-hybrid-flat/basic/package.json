@@ -10,6 +10,8 @@
   "dependencies": {
     "@dreamer/dweb": "file:../../../",
     "@dreamer/runtime-adapter": "npm:@jsr/dreamer__runtime-adapter@^1.0.18",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
     "tailwindcss": "4.2.0"
   }
 }

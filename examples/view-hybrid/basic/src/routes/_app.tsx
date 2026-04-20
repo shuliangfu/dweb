@@ -2,6 +2,9 @@
  * 应用根组件
  * 定义 HTML 文档结构
  * TailwindCSS 由 @dreamer/plugins/tailwindcss 插件自动注入
+ *
+ * 标题与 SEO 描述由各路由 `export const metadata` 经 `@dreamer/render` 的 `generateMetaTags`
+ * 注入 head；此处勿再写 `<title>` / `<meta name="description">`，否则会与 SSR 注入重复多条标签。
  */
 
 import type { VNode } from "@dreamer/view";
@@ -10,10 +13,6 @@ import type { VNode } from "@dreamer/view";
 interface AppProps {
   /** 子组件 */
   children?: VNode | VNode[];
-  /** 页面标题 */
-  title?: string;
-  /** 页面描述 */
-  description?: string;
 }
 
 /**
@@ -21,18 +20,12 @@ interface AppProps {
  * @param props - 组件属性
  * @returns HTML 文档结构
  */
-export default function App({
-  children,
-  title = "View Hybrid Basic Example",
-  description = "A basic View application Built with @dreamer/dweb",
-}: AppProps) {
+export default function App({ children }: AppProps) {
   return (
     <html lang="zh-CN">
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="description" content={description} />
-        <title>{title}</title>
         <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
       </head>
       <body class="bg-gray-100 text-gray-900 antialiased">

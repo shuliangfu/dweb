@@ -63,6 +63,12 @@ const NAV_ITEMS = [
   { id: "scatter", label: "散点图 (Scatter)" },
 ] as const;
 
+/** 图表示例页：与相册、用户等区分的元数据 */
+export const metadata = {
+  title: "图表 - Dweb Basic",
+  description: "Chart.js 全类型图表示例",
+};
+
 /**
  * 在客户端对当前 document 创建全部 Chart.js 图表示例（调用前应先 `destroyPageCharts` 清掉同 id 上的旧实例）
  */

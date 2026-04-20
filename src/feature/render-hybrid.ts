@@ -19,7 +19,11 @@ import type { RouteMatch, Router } from "@dreamer/router";
 import type { HttpContext } from "@dreamer/server";
 import type { SessionData } from "@dreamer/session";
 import type { ServiceContainer } from "@dreamer/service";
-import { createLoadContext, createServerResponse } from "../types/context.ts";
+import {
+  createLoadContext,
+  createServerResponse,
+  requestFromHttpContext,
+} from "../types/context.ts";
 import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
@@ -180,7 +184,7 @@ export function createRendererHybrid(
       };
 
       const loadContext = createLoadContext({
-        req: ctx.request,
+        req: requestFromHttpContext(ctx),
         url: ctx.url.href,
         params: match.params ?? {},
         query: match.query ?? {},

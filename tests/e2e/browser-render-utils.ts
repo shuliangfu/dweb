@@ -78,6 +78,23 @@ const E2E_PORTS: Record<string, number> = {
  */
 const BROWSER_TEST_TIMEOUT_MS = 60_000;
 
+/**
+ * 各 basic 示例中 `index` / `about` / 用户页与 view-hybrid 扩展路由的元数据期望文案（与源文件 `export const metadata` 一致）。
+ * 浏览器断言须与这些值完全匹配，以发现「导航后 head 未更新、仍保留上一页」的 bug。
+ */
+const BASIC_E2E_HOME_TITLE = "首页 - Dweb Basic";
+const BASIC_E2E_HOME_DESC = "Dweb 示例项目首页";
+const BASIC_E2E_ABOUT_TITLE = "关于 - Dweb Basic";
+const BASIC_E2E_ABOUT_DESC = "关于本示例项目";
+const BASIC_E2E_USER1_TITLE = "用户 1 - Dweb Basic";
+const BASIC_E2E_USER1_DESC = "用户详情 id=1";
+const VIEW_HYBRID_GALLERY_TITLE = "相册 - Dweb Basic";
+const VIEW_HYBRID_GALLERY_DESC = "图片画廊与预览交互示例";
+const VIEW_HYBRID_CHARTS_TITLE = "图表 - Dweb Basic";
+const VIEW_HYBRID_CHARTS_DESC = "Chart.js 全类型图表示例";
+const VIEW_HYBRID_ADMIN_TITLE = "管理后台 - Dweb Basic";
+const VIEW_HYBRID_ADMIN_DESC = "BGB 管理端嵌套布局示例";
+
 /** 就绪探测选项：advanced 的 backend 必须用 path: "/api/users"，否则 SSG backend 的 GET / 会返回 500 */
 type WaitForServerReadyOptions = { path?: string };
 
@@ -1184,10 +1201,160 @@ async function assertBrowserCounterButtons(
 }
 
 /**
- * 浏览器断言：校验 basic 示例首页与关于页的 metadata（title / meta description）已渲染且非空
- * 各示例的 title/description 文案可能不同（来自 index 或服务端注入），仅断言存在即可
+ * 轮询直到相册页正文出现（view-hybrid basic）
+ */
+async function waitForGalleryPageBodyViaEvaluate(
+  browser: { evaluate: (fn: () => unknown) => Promise<unknown> },
+  timeoutMs: number,
+): Promise<void> {
+  const pollMs = 400;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const ok = await browser.evaluate(() => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string } }
+        | undefined;
+      const html = doc?.body?.innerHTML ?? "";
+      return html.includes("图片相册");
+    }) as boolean;
+    if (ok) return;
+    await new Promise((r) => setTimeout(r, pollMs));
+  }
+  throw new Error(
+    `waitForGalleryPageBodyViaEvaluate: ${timeoutMs}ms 内未检测到相册页内容`,
+  );
+}
+
+/**
+ * 轮询直到 Chart.js 示例页正文出现（view-hybrid basic）
+ */
+async function waitForChartsPageBodyViaEvaluate(
+  browser: { evaluate: (fn: () => unknown) => Promise<unknown> },
+  timeoutMs: number,
+): Promise<void> {
+  const pollMs = 400;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const ok = await browser.evaluate(() => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string } }
+        | undefined;
+      const html = doc?.body?.innerHTML ?? "";
+      return html.includes("Chart.js 图表示例");
+    }) as boolean;
+    if (ok) return;
+    await new Promise((r) => setTimeout(r, pollMs));
+  }
+  throw new Error(
+    `waitForChartsPageBodyViaEvaluate: ${timeoutMs}ms 内未检测到图表页内容`,
+  );
+}
+
+/**
+ * 轮询直到管理后台首页正文出现（view-hybrid basic 的 /admin，即 routes/admin/）
+ */
+async function waitForAdminIndexBodyViaEvaluate(
+  browser: { evaluate: (fn: () => unknown) => Promise<unknown> },
+  timeoutMs: number,
+): Promise<void> {
+  const pollMs = 400;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const ok = await browser.evaluate(() => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string } }
+        | undefined;
+      const html = doc?.body?.innerHTML ?? "";
+      return html.includes("布局测试") && html.includes("Admin");
+    }) as boolean;
+    if (ok) return;
+    await new Promise((r) => setTimeout(r, pollMs));
+  }
+  throw new Error(
+    `waitForAdminIndexBodyViaEvaluate: ${timeoutMs}ms 内未检测到管理页内容`,
+  );
+}
+
+/**
+ * 轮询直到用户详情页（/user/1）正文出现
+ */
+async function waitForUserDetailPageBodyViaEvaluate(
+  browser: { evaluate: (fn: () => unknown) => Promise<unknown> },
+  timeoutMs: number,
+): Promise<void> {
+  const pollMs = 400;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const ok = await browser.evaluate(() => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string } }
+        | undefined;
+      const html = doc?.body?.innerHTML ?? "";
+      return html.includes("zhangsan@example.com") ||
+        html.includes("用户不存在");
+    }) as boolean;
+    if (ok) return;
+    await new Promise((r) => setTimeout(r, pollMs));
+  }
+  throw new Error(
+    `waitForUserDetailPageBodyViaEvaluate: ${timeoutMs}ms 内未检测到用户详情页内容`,
+  );
+}
+
+/**
+ * 读取当前页的 title 与主 description meta（优先 `data-dweb-route-meta`，否则首条 description）
+ */
+async function readRouteHeadMeta(browser: {
+  evaluate: (fn: () => unknown) => Promise<unknown>;
+}): Promise<{ title: string; description: string }> {
+  return await browser.evaluate(() => {
+    const doc = (globalThis as Record<string, unknown>).document as
+      | {
+        title?: string;
+        querySelector?: (
+          s: string,
+        ) => { getAttribute?: (n: string) => string | null } | null;
+      }
+      | undefined;
+    const title = doc?.title ?? "";
+    const tagged = doc?.querySelector?.(
+      'meta[name="description"][data-dweb-route-meta]',
+    );
+    const fb = doc?.querySelector?.('meta[name="description"]');
+    const metaEl = tagged ?? fb;
+    const description = metaEl?.getAttribute?.("content") ?? "";
+    return { title, description };
+  }) as { title: string; description: string };
+}
+
+/**
+ * 断言 head 与期望值完全一致（用于捕获 SPA 切换后仍为上一页 metadata 的情况）
+ *
+ * @param actual 当前 document 中的 title / description
+ * @param expected 路由 metadata 期望
+ * @param label 失败时附加说明
+ */
+function expectHeadMeta(
+  actual: { title: string; description: string },
+  expected: { title: string; description: string },
+  label: string,
+): void {
+  try {
+    expect(actual.title).toBe(expected.title);
+    expect(actual.description).toBe(expected.description);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new Error(`${label}: ${msg}`);
+  }
+}
+
+/**
+ * 浏览器断言：校验 basic 示例在多级 **客户端导航** 后 title/description 与路由定义一致，
+ * 并与上一路由不同（防止 head 滞留旧值）。
+ *
  * @param t 测试上下文（含 browser）
  * @param port 服务器端口
+ * @param options.viewHybridExtraRoutes 为 true 时额外测 view-hybrid 的相册/图表/管理页（仅该示例配置）
  */
 async function assertBrowserMetadata(
   t: {
@@ -1202,6 +1369,7 @@ async function assertBrowserMetadata(
     };
   },
   port: number,
+  options?: { viewHybridExtraRoutes?: boolean },
 ): Promise<void> {
   if (!t?.browser) {
     throw new Error("browser 上下文不可用");
@@ -1214,62 +1382,111 @@ async function assertBrowserMetadata(
       url: string,
       options?: { waitUntil?: string; timeout?: number },
     ) => Promise<unknown>;
+    click: (selector: string, options?: { timeout?: number }) => Promise<void>;
   };
 
   const baseUrl = `http://127.0.0.1:${port}/`;
   const navTimeoutMs = 20000;
+  const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
+
   if (typeof page.goto === "function") {
     await gotoWithRetry(page, baseUrl, { timeout: navTimeoutMs });
   } else {
     await browser.goto(baseUrl);
   }
 
-  const firstWaitTimeoutMs = 20000;
-  await waitForContentViaEvaluate(browser, firstWaitTimeoutMs);
+  await waitForContentViaEvaluate(browser, navTimeoutMs);
 
-  const homeMeta = await browser.evaluate(() => {
-    const doc = (globalThis as Record<string, unknown>).document as
-      | {
-        title?: string;
-        querySelector?: (
-          s: string,
-        ) => { getAttribute?: (n: string) => string } | null;
-      }
-      | undefined;
-    const metaDesc = doc?.querySelector?.('meta[name="description"]');
-    return {
-      title: doc?.title ?? "",
-      description: metaDesc?.getAttribute?.("content") ?? "",
-    };
-  }) as { title: string; description: string };
-  expect(homeMeta.title.length).toBeGreaterThan(0);
-  expect(homeMeta.description.length).toBeGreaterThan(0);
+  const homeExpected = {
+    title: BASIC_E2E_HOME_TITLE,
+    description: BASIC_E2E_HOME_DESC,
+  };
+  expectHeadMeta(await readRouteHeadMeta(browser), homeExpected, "首页首屏");
 
-  const aboutUrl = `http://127.0.0.1:${port}/about`;
-  if (typeof page.goto === "function") {
-    await gotoWithRetry(page, aboutUrl, { timeout: BROWSER_TEST_TIMEOUT_MS });
-  } else {
-    await browser.goto(aboutUrl);
+  if (typeof page.click !== "function") {
+    throw new Error("page.click 不可用，无法验证 SPA metadata");
   }
-  await waitForAboutPageBodyViaEvaluate(browser, firstWaitTimeoutMs);
 
-  const aboutMeta = await browser.evaluate(() => {
-    const doc = (globalThis as Record<string, unknown>).document as
-      | {
-        title?: string;
-        querySelector?: (
-          s: string,
-        ) => { getAttribute?: (n: string) => string } | null;
-      }
-      | undefined;
-    const metaDesc = doc?.querySelector?.('meta[name="description"]');
-    return {
-      title: doc?.title ?? "",
-      description: metaDesc?.getAttribute?.("content") ?? "",
-    };
-  }) as { title: string; description: string };
-  expect(aboutMeta.title.length).toBeGreaterThan(0);
-  expect(aboutMeta.description.length).toBeGreaterThan(0);
+  await page.click('a[href="/about"]', { timeout: contentTimeout });
+  await waitForAboutPageBodyViaEvaluate(browser, navTimeoutMs);
+
+  const aboutExpected = {
+    title: BASIC_E2E_ABOUT_TITLE,
+    description: BASIC_E2E_ABOUT_DESC,
+  };
+  const aboutHead = await readRouteHeadMeta(browser);
+  expectHeadMeta(aboutHead, aboutExpected, "关于页（点击后的 SPA）");
+  expect(aboutHead.title).not.toBe(BASIC_E2E_HOME_TITLE);
+
+  await page.click('header a[href="/"]', { timeout: contentTimeout });
+  await waitForContentViaEvaluate(browser, navTimeoutMs);
+  expectHeadMeta(
+    await readRouteHeadMeta(browser),
+    homeExpected,
+    "返回首页（点击后的 SPA）",
+  );
+
+  await page.click('a[href="/user/1"]', { timeout: contentTimeout });
+  await waitForUserDetailPageBodyViaEvaluate(browser, navTimeoutMs);
+
+  const userExpected = {
+    title: BASIC_E2E_USER1_TITLE,
+    description: BASIC_E2E_USER1_DESC,
+  };
+  const userHead = await readRouteHeadMeta(browser);
+  expectHeadMeta(userHead, userExpected, "用户详情（点击后的 SPA）");
+  expect(userHead.title).not.toBe(BASIC_E2E_ABOUT_TITLE);
+
+  await page.click('header a[href="/"]', { timeout: contentTimeout });
+  await waitForContentViaEvaluate(browser, navTimeoutMs);
+  expectHeadMeta(
+    await readRouteHeadMeta(browser),
+    homeExpected,
+    "再次返回首页",
+  );
+
+  if (options?.viewHybridExtraRoutes === true) {
+    await page.click('a[href="/gallery"]', { timeout: contentTimeout });
+    await waitForGalleryPageBodyViaEvaluate(browser, navTimeoutMs);
+    expectHeadMeta(
+      await readRouteHeadMeta(browser),
+      {
+        title: VIEW_HYBRID_GALLERY_TITLE,
+        description: VIEW_HYBRID_GALLERY_DESC,
+      },
+      "相册页",
+    );
+
+    await page.click('header a[href="/"]', { timeout: contentTimeout });
+    await waitForContentViaEvaluate(browser, navTimeoutMs);
+
+    await page.click('a[href="/charts"]', { timeout: contentTimeout });
+    await waitForChartsPageBodyViaEvaluate(browser, navTimeoutMs);
+    expectHeadMeta(
+      await readRouteHeadMeta(browser),
+      {
+        title: VIEW_HYBRID_CHARTS_TITLE,
+        description: VIEW_HYBRID_CHARTS_DESC,
+      },
+      "图表页",
+    );
+
+    const adminUrl = `http://127.0.0.1:${port}/admin`;
+    if (typeof page.goto === "function") {
+      await gotoWithRetry(page, adminUrl, { timeout: contentTimeout });
+    } else {
+      await browser.goto(adminUrl);
+    }
+    await waitForAdminIndexBodyViaEvaluate(browser, navTimeoutMs);
+    expectHeadMeta(
+      await readRouteHeadMeta(browser),
+      {
+        title: VIEW_HYBRID_ADMIN_TITLE,
+        description: VIEW_HYBRID_ADMIN_DESC,
+      },
+      "管理后台（整页打开）",
+    );
+  }
 }
 
 /**
@@ -1683,10 +1900,12 @@ export function createBasicExampleBrowserSuite(
 
     it.skipIf(
       skipMetadata,
-      "应渲染首页与关于页的 metadata（title/description）",
+      "应在客户端路由切换后更新 head（title/description），与当前路由 metadata 一致",
       async (t) => {
         if (!t) throw new Error("test context 不可用");
-        await assertBrowserMetadata(t, actualPort);
+        await assertBrowserMetadata(t, actualPort, {
+          viewHybridExtraRoutes: exampleName === "view-hybrid",
+        });
       },
       {
         timeout: BROWSER_TEST_TIMEOUT_MS,

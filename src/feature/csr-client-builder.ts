@@ -639,17 +639,94 @@ export function clearLayoutCache(): void {
       const _pathAndSearch = _pathname + _search;
       const _samePageHashOnly = (typeof (g as DwebGlobal).__DWEB_LAST_PATHNAME__ === "string" && (g as DwebGlobal).__DWEB_LAST_PATHNAME__ === _pathAndSearch);
       const _reservedOrInvalid = !_pathname || _pathname === "${DWEB_DATA_PATH}" || _pathname.indexOf("/_") === 0 || _pathname.indexOf("//") !== -1 || _samePageHashOnly;
-      let _navProps: { params?: Record<string, string>; query?: Record<string, string>; layoutData?: unknown[]; data?: unknown };
+      let _navProps: { params?: Record<string, string>; query?: Record<string, string>; layoutData?: unknown[]; data?: unknown; metadata?: Record<string, unknown>; metadataTagsHtml?: string; metadataTitleHtml?: string };
       if (!_reservedOrInvalid) {
         const _dataUrl = "${DWEB_DATA_PATH}?path=" + encodeURIComponent(_pathname) + (_search ? "&" + _search.slice(1) : "");
         const _dataRes = await fetch(_dataUrl);
         _navProps = (_dataRes && _dataRes.ok)
-          ? (await _dataRes.json()) as { params?: Record<string, string>; query?: Record<string, string>; layoutData?: unknown[]; data?: unknown }
+          ? (await _dataRes.json()) as { params?: Record<string, string>; query?: Record<string, string>; layoutData?: unknown[]; data?: unknown; metadata?: Record<string, unknown>; metadataTagsHtml?: string; metadataTitleHtml?: string }
           : { params: match.params || {}, query: match.query || {} };
       } else {
         _navProps = { params: match.params || {}, query: match.query || {} };
       }
-      (g as DwebGlobal).__DWEB_LAST_PATHNAME__ = _pathAndSearch;`;
+      (g as DwebGlobal).__DWEB_LAST_PATHNAME__ = _pathAndSearch;
+      const _routeMetaHtml = (_navProps && typeof _navProps.metadataTagsHtml === "string") ? _navProps.metadataTagsHtml : "";
+      const _routeTitleHtml = (_navProps && typeof _navProps.metadataTitleHtml === "string") ? _navProps.metadataTitleHtml : "";
+      /** 旧版 __data 仅返回合并后的 metadataTagsHtml（内含 title 标签）：无 metadataTitleHtml 字段且字符串含 title */
+      const _legacyMetaCombined = typeof _navProps.metadataTitleHtml === "undefined" && _routeMetaHtml.indexOf("<title") !== -1;
+      const _routeMetaObj = _navProps && typeof _navProps.metadata === "object" && _navProps.metadata !== null ? _navProps.metadata : null;
+      if (typeof document !== "undefined") {
+        const _head = document.head;
+        /** ① 移除上一轮由 generateMetaTags 写入、带 data-dweb-route-meta 的节点 */
+        _head.querySelectorAll("[data-dweb-route-meta]").forEach((el) => { el.remove(); });
+        /**
+         * ② 兼容「未打标」或解析差异导致 ① 未选中：摘掉 head 内全部路由级 SEO 占位，
+         * 否则 template 注入会在每次 SPA 切换再追加一整份 title/og/twitter，DevTools 里多套标签堆叠。
+         * 不与 charset/viewport/icon 冲突；仅限与 mergeMetadata/generateMetaTags 常见字段对齐的 meta。
+         */
+        _head.querySelectorAll("title").forEach((el) => { el.remove(); });
+        _head.querySelectorAll(
+          'meta[name="description"], meta[name="keywords"], meta[name="author"], meta[property^="og:"], meta[name^="twitter:"]',
+        ).forEach((el) => { el.remove(); });
+        const _vpAnchor = _head.querySelector('meta[name="viewport"]') ||
+          _head.querySelector("meta[charset]");
+        if (_legacyMetaCombined && _routeMetaHtml.length > 0) {
+          const _tplLegacy = document.createElement("template");
+          _tplLegacy.innerHTML = _routeMetaHtml.trim();
+          const _legacyFrag = Array.from(_tplLegacy.content.childNodes);
+          if (_vpAnchor != null && typeof _vpAnchor.after === "function") {
+            _vpAnchor.after(..._legacyFrag);
+          } else {
+            document.head.append(..._legacyFrag);
+          }
+        } else if (_routeMetaHtml.length > 0 || _routeTitleHtml.length > 0) {
+          /** 新版：meta 块与 title 分两串插入，title 紧跟 meta 最后一个节点之后（不把 title 夹在 meta 中间） */
+          let _insertTail = _vpAnchor;
+          if (_routeMetaHtml.length > 0) {
+            const _tplM = document.createElement("template");
+            _tplM.innerHTML = _routeMetaHtml.trim();
+            const _nodesM = Array.from(_tplM.content.childNodes);
+            if (_insertTail != null && typeof _insertTail.after === "function") {
+              _insertTail.after(..._nodesM);
+              _insertTail = _nodesM[_nodesM.length - 1];
+            } else {
+              document.head.append(..._nodesM);
+              _insertTail = document.head.lastChild;
+            }
+          }
+          if (_routeTitleHtml.length > 0) {
+            const _tplT = document.createElement("template");
+            _tplT.innerHTML = _routeTitleHtml.trim();
+            const _nodesT = Array.from(_tplT.content.childNodes);
+            if (_insertTail != null && typeof _insertTail.after === "function") {
+              _insertTail.after(..._nodesT);
+            } else {
+              document.head.append(..._nodesT);
+            }
+          }
+        } else if (_routeMetaObj != null) {
+          const _metaTitle = _routeMetaObj["title"];
+          const _metaDesc = _routeMetaObj["description"];
+          const _anchorFb = _head.querySelector('meta[name="viewport"]') ||
+            _head.querySelector("meta[charset]");
+          if (typeof _metaTitle === "string" && _metaTitle.length > 0) {
+            document.title = _metaTitle;
+          }
+          if (typeof _metaDesc === "string") {
+            let _desEl = document.querySelector('meta[name="description"]');
+            if (!_desEl) {
+              _desEl = document.createElement("meta");
+              _desEl.setAttribute("name", "description");
+              if (_anchorFb != null && typeof _anchorFb.after === "function") {
+                _anchorFb.after(_desEl);
+              } else {
+                document.head.appendChild(_desEl);
+              }
+            }
+            _desEl.setAttribute("content", _metaDesc);
+          }
+        }
+      }`;
   // 客户端导航：将 __data 返回的 layoutData 合并到 layouts，使点击链接切换页面时 layout 也能收到 data；页面只收 params/query/data
   // 嵌套布局时按当前 match 加载 layoutListNav，避免回到首页等仍用初始路由的 layouts 导致侧栏残留
   const onRouteChangeMergeLayoutSnippet = useNestedLayouts

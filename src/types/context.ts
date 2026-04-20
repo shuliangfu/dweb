@@ -6,6 +6,7 @@
  * @module
  */
 
+import type { HttpContext } from "@dreamer/server";
 import type { SessionData } from "@dreamer/session";
 
 /**
@@ -109,6 +110,31 @@ export interface LoadContext {
 export type { ApiContext, ApiRouteContext } from "@dreamer/server";
 
 /**
+ * 判断是否为可用的 Web {@link Request}。
+ * 在 Bun 等运行时中，跨 realm 的 `instanceof Request` 可能为 false，故用 duck typing。
+ *
+ * @param req - 待检测值
+ */
+function isUsableWebRequest(req: unknown): req is Request {
+  if (req == null || typeof req !== "object") return false;
+  const r = req as Partial<Request>;
+  return typeof r.method === "string" && typeof r.headers?.get === "function";
+}
+
+/**
+ * 当未传入有效 `req` 时，用 `url` 合成最小 `Request`（默认 GET），供 {@link createLoadContext} 使用。
+ *
+ * @param url - 完整 URL 或以 `/` 开头的路径
+ */
+function syntheticRequestForLoad(url: string): Request {
+  const urlStr = (url ?? "").trim() || "/";
+  const href = urlStr.startsWith("http://") || urlStr.startsWith("https://")
+    ? urlStr
+    : `http://127.0.0.1${urlStr.startsWith("/") ? urlStr : `/${urlStr}`}`;
+  return new Request(href, { method: "GET", headers: new Headers() });
+}
+
+/**
  * 从 Request 的 Cookie 头解析出键值对
  * 用于在构建 LoadContext / ApiContext 时填充 cookies 字段
  *
@@ -133,29 +159,62 @@ export function parseCookies(request: Request): Record<string, string> {
 }
 
 /**
+ * 从 {@link HttpContext} 得到供 `load()` 使用的标准 `Request`。
+ *
+ * 正常由 `@dreamer/server` 创建上下文时注入 `ctx.request`；在部分运行环境
+ * （如部分 Bun 链路上）该字段可能未挂上，但同对象上通常已有 `url` / `path` / `method` /
+ * `headers`，此时用其合成最小 `Request`，避免 `createLoadContext` 读 `req.method` 抛错。
+ * 同时兼容历史别名字段 `req`（与部分 Node 风格中间件命名一致）。
+ *
+ * @param ctx HTTP 请求上下文
+ * @returns Web 标准 Request
+ */
+export function requestFromHttpContext(ctx: HttpContext): Request {
+  const legacy = ctx as unknown as { req?: Request };
+  const direct = ctx.request ?? legacy.req;
+  if (isUsableWebRequest(direct)) {
+    return direct;
+  }
+  const pathname = ctx.path ?? "/";
+  const safePath = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  const href = ctx.url?.href ?? `http://127.0.0.1${safePath}`;
+  const rawHdrs = ctx.headers;
+  const hdrs = rawHdrs != null && typeof (rawHdrs as Headers).get === "function"
+    ? (rawHdrs as Headers)
+    : new Headers();
+  return new Request(href, {
+    method: (ctx.method ?? "GET").toUpperCase(),
+    headers: hdrs,
+  });
+}
+
+/**
  * 构建 {@link LoadContext}（供框架在调用 `load()` 时注入）
  *
  * 文件路由 API 的上下文由 `@dreamer/server` 的 `buildApiRouteContext` 构造，类型为 {@link ApiContext}。
  *
- * @param options url、params、query、req 及可选 session、res
+ * @param options url、params、query、req（可缺省，将按 url 合成）及可选 session、res
  */
 export function createLoadContext(options: {
-  req: Request;
+  req?: Request;
   url: string;
   params: Record<string, string>;
   query: Record<string, string>;
   session?: SessionData;
   res?: ServerResponse;
 }): LoadContext {
+  const req = isUsableWebRequest(options.req)
+    ? options.req
+    : syntheticRequestForLoad(options.url);
   return {
     url: options.url,
     params: options.params,
     query: options.query,
-    req: options.req,
+    req,
     res: options.res,
-    method: options.req.method,
-    cookies: parseCookies(options.req),
-    headers: options.req.headers,
+    method: req.method,
+    cookies: parseCookies(req),
+    headers: req.headers,
     session: options.session,
   };
 }

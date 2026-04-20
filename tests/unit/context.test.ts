@@ -123,6 +123,17 @@ describe("context.ts", () => {
       expect(ctx.res).toBe(resp);
       expect(ctx.params).toEqual({ id: "x" });
     });
+
+    it("未传 req 时按 url 合成 Request，不抛错", () => {
+      const ctx = createLoadContext({
+        url: "/foo?a=1",
+        params: {},
+        query: { a: "1" },
+      });
+      expect(ctx.method).toBe("GET");
+      expect(ctx.req.url).toContain("/foo");
+      expect(ctx.cookies).toEqual({});
+    });
   });
 
   describe("createServerResponse()", () => {

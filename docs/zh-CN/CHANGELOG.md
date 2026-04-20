@@ -7,6 +7,32 @@
 
 ---
 
+## [3.3.7] - 2026-04-18
+
+### 变更
+
+- **依赖 / 构建链**：与 **`@dreamer/esbuild` `1.1.8`** 对齐。本仓库通过
+  **`package.json`** 的 **`file:../esbuild`** 与 **`deno.json`** 的
+  **`../esbuild/src/mod.ts`** 指向 sibling **`esbuild`** 子包；对外发布
+  **`@dreamer/dweb`** 至 JSR 前，请先发布 **`@dreamer/esbuild`**
+  **`1.1.8`**，再将依赖约束改为 **`npm:@jsr/dreamer__esbuild@^1.1.8`** 与
+  **`jsr:@dreamer/esbuild@^1.1.8`**。Bun 客户端构建中 **`bun-resolver`**
+  支持通过 **`createRequire`** 解析非 scoped 裸 npm 模块（如
+  **`react-dom`**、**`react-dom/client`**、 **`scheduler`**），修复客户端构建将
+  **`nodePaths`** 置空时，从 **`bun-protocol`** 路径加载
+  **`@dreamer/render/client/react`** 无法解析 **`react-dom`** 的问题；与 Deno 侧
+  **`denoResolverPlugin`** 行为对齐。
+- **`package.json`**：新增 **`overrides`**，锁定 **`preact`** 与
+  **`preact-render-to-string`**，降低工作区内多份 Preact 导致的 SSR/SSG
+  **hooks** 上下文异常（如 **`__H`**）风险。
+
+### 测试
+
+- **Bun**：React / Preact 相关 **`tests/integration/**`**
+  构建集成场景与上述解析链对齐。
+
+---
+
 ## [3.3.6] - 2026-04-17
 
 ### 变更

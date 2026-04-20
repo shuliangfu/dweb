@@ -3,6 +3,8 @@
  * 动态路由: /user/:id
  */
 
+import type { LoadContext } from "@dreamer/dweb";
+
 /** 用户页面属性 */
 interface UserProps {
   /** 路由参数 */
@@ -17,6 +19,14 @@ const users: Record<string, { name: string; email: string; role: string }> = {
   "2": { name: "李四", email: "lisi@example.com", role: "用户" },
   "3": { name: "王五", email: "wangwu@example.com", role: "访客" },
 };
+
+/**
+ * 用户详情页元数据（随路由 id 变化，与其他页面区分）
+ */
+export const metadata = (ctx: LoadContext) => ({
+  title: `用户 ${ctx.params.id ?? "?"} - Dweb Basic`,
+  description: `用户详情 id=${ctx.params.id ?? ""}`,
+});
 
 /**
  * 用户详情页面

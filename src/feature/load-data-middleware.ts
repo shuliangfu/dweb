@@ -5,13 +5,23 @@
  * 服务端根据 path 匹配路由、执行 load()，返回 JSON，供客户端渲染时注入到页面组件。
  */
 
+import {
+  generateRouteMetaTagsWithoutTitle,
+  generateRouteTitleTag,
+  type Metadata,
+  resolveMetadata,
+} from "@dreamer/render";
 import type { Router } from "@dreamer/router";
 import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import type { SessionData } from "@dreamer/session";
 import { cwd, join } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
-import { createLoadContext, createServerResponse } from "../types/context.ts";
+import {
+  createLoadContext,
+  createServerResponse,
+  requestFromHttpContext,
+} from "../types/context.ts";
 import { DWEB_DATA_PATH } from "../utils/constants.ts";
 import { getLogger } from "../utils/logger.ts";
 import { sanitizeRequestParams } from "../utils/sanitize.ts";
@@ -102,7 +112,7 @@ export function createLoadDataMiddleware(
           ? "?" + new URLSearchParams(queryFromUrl).toString()
           : "");
       const loadContext = createLoadContext({
-        req: ctx.request,
+        req: requestFromHttpContext(ctx),
         url,
         params: match.params ?? {},
         query: queryFromUrl,
@@ -158,6 +168,38 @@ export function createLoadDataMiddleware(
         }
         const serverData = raw as Record<string, unknown> | null;
         if (serverData) pageProps.data = serverData;
+      }
+
+      /**
+       * 客户端路由切换时 `/__data` 仅返回 load() 会导致 `<title>` / meta 不更新。
+       * 与 SSR/hybrid 一致：解析页面模块的 `metadata`，一并序列化供浏览器写入 head。
+       */
+      if (pageModule) {
+        const metadataExport = (pageModule as Record<string, unknown>).metadata;
+        if (metadataExport !== undefined && metadataExport !== null) {
+          try {
+            const resolved = await resolveMetadata(
+              metadataExport as Parameters<typeof resolveMetadata>[0],
+              loadContext as Parameters<typeof resolveMetadata>[1],
+            );
+            if (resolved && Object.keys(resolved as object).length > 0) {
+              pageProps.metadata = resolved;
+              /** 与 SSR 分两针注入一致：meta 块与 `<title>` 分开，避免 `<title>` 夹在 meta 中间 */
+              pageProps.metadataTagsHtml = generateRouteMetaTagsWithoutTitle(
+                resolved as Metadata,
+              );
+              pageProps.metadataTitleHtml = generateRouteTitleTag(
+                resolved as Metadata,
+              );
+            }
+          } catch (e) {
+            getLogger(container).warn(
+              "[dweb] metadata resolve skipped for load-data",
+              pathname,
+              e,
+            );
+          }
+        }
       }
 
       ctx.response = new Response(JSON.stringify(pageProps), {

@@ -8,6 +8,32 @@ and this project adheres to
 
 ---
 
+## [3.3.7] - 2026-04-18
+
+### Changed
+
+- **Dependencies / build chain**: Align with **`@dreamer/esbuild` `1.1.8`**.
+  This repo links the sibling **`esbuild`** package via **`file:../esbuild`** in
+  **`package.json`** and **`../esbuild/src/mod.ts`** in **`deno.json`**. Before
+  publishing **`@dreamer/dweb`** to JSR, publish **`@dreamer/esbuild` `1.1.8`**
+  first, then switch constraints to **`npm:@jsr/dreamer__esbuild@^1.1.8`** and
+  **`jsr:@dreamer/esbuild@^1.1.8`**. The Bun **`bun-resolver`** resolves
+  **unscoped bare npm specifiers** (e.g. **`react-dom`**,
+  **`react-dom/client`**, **`scheduler`**) via **`createRequire`** when the
+  client build clears **`nodePaths`**, fixing failures loading
+  **`@dreamer/render/client/react`** through **`bun-protocol`** paths. Aligns
+  Bun bundling with the Deno **`denoResolverPlugin`** behavior.
+- **`package.json`**: Add **`overrides`** for **`preact`** and
+  **`preact-render-to-string`** to reduce duplicate Preact copies and SSR/SSG
+  hook context issues (e.g. **`__H`**).
+
+### Tests
+
+- **Bun**: React / Preact **`tests/integration/**`** build scenarios validated
+  against the updated resolver chain.
+
+---
+
 ## [3.3.6] - 2026-04-17
 
 ### Changed

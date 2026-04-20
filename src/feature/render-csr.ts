@@ -13,6 +13,7 @@
  */
 
 import { resolveMetadata } from "@dreamer/render";
+import type { HttpContext } from "@dreamer/server";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import type { SessionData } from "@dreamer/session";
@@ -21,7 +22,11 @@ import { createElement as createElementPreact } from "preact";
 import { createElement as createElementReact } from "react";
 import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
-import { createLoadContext, createServerResponse } from "../types/context.ts";
+import {
+  createLoadContext,
+  createServerResponse,
+  requestFromHttpContext,
+} from "../types/context.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { extractComponentPathFromRouteFile } from "../utils/path.ts";
@@ -195,32 +200,27 @@ export function createRendererCSR(
         .filter((c): c is NonNullable<typeof c> => c != null);
 
       // 为每个 _layout 模块调用 load（若存在），并将返回值作为该层 layout 的 props.data（CSR 首屏 shell 使用）
-      const csrLoadContext = ctx?.request
-        ? createLoadContext({
-          req: ctx.request,
-          url: ctx?.url?.href ?? "",
-          params: match.params ?? {},
-          query: match.query ?? {},
-          session: (ctx as { session?: SessionData }).session,
-          res: createServerResponse(),
-        })
-        : null;
+      /** Bun 等环境下 `ctx.request` 可能未挂接，与 hybrid 一致用 {@link requestFromHttpContext} 兜底 */
+      const csrLoadContext = createLoadContext({
+        req: requestFromHttpContext(ctx as HttpContext),
+        url: ctx?.url?.href ?? ctx?.path ?? "/",
+        params: match.params ?? {},
+        query: match.query ?? {},
+        session: (ctx as { session?: SessionData }).session,
+        res: createServerResponse(),
+      });
       const layoutPropsList: Array<Record<string, unknown>> = [];
-      if (csrLoadContext) {
-        for (const mod of layoutModules as Array<Record<string, unknown>>) {
-          if (!mod || typeof mod.load !== "function") {
-            layoutPropsList.push({});
-            continue;
-          }
-          const raw = await mod.load(csrLoadContext);
-          if (raw instanceof Response) {
-            return raw;
-          }
-          const data = (raw as Record<string, unknown> | null) ?? {};
-          layoutPropsList.push({ data });
+      for (const mod of layoutModules as Array<Record<string, unknown>>) {
+        if (!mod || typeof mod.load !== "function") {
+          layoutPropsList.push({});
+          continue;
         }
-      } else {
-        layoutComponents.forEach(() => layoutPropsList.push({}));
+        const raw = await mod.load(csrLoadContext);
+        if (raw instanceof Response) {
+          return raw;
+        }
+        const data = (raw as Record<string, unknown> | null) ?? {};
+        layoutPropsList.push({ data });
       }
 
       // CSR 首屏：执行当前路由的 load()，将结果注入 __DATA__；并解析 metadata 注入 head（title/description）
@@ -239,18 +239,15 @@ export function createRendererCSR(
       if (fullPath) {
         const pageModule = await loadRouteModule(fullPath, loadOpts);
         if (pageModule) {
-          const req = ctx?.request;
-          const loadContext = req
-            ? createLoadContext({
-              req,
-              url: ctx?.url?.href ?? "",
-              params: match.params ?? {},
-              query: match.query ?? {},
-              session: (ctx as { session?: SessionData }).session,
-              res: createServerResponse(),
-            })
-            : null;
-          if (typeof pageModule.load === "function" && loadContext) {
+          const loadContext = createLoadContext({
+            req: requestFromHttpContext(ctx as HttpContext),
+            url: ctx?.url?.href ?? ctx?.path ?? "/",
+            params: match.params ?? {},
+            query: match.query ?? {},
+            session: (ctx as { session?: SessionData }).session,
+            res: createServerResponse(),
+          });
+          if (typeof pageModule.load === "function") {
             const pageProps: Record<string, unknown> = {
               params: match.params,
               query: match.query,

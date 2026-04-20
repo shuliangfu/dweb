@@ -25,6 +25,12 @@ const GALLERY_IMAGES = [
   { src: "/assets/images/6.jpeg", alt: "图片 6", title: "美女 6" },
 ];
 
+/** 相册页：与首页/关于/用户等区分的 title 与描述 */
+export const metadata = {
+  title: "相册 - Dweb Basic",
+  description: "图片画廊与预览交互示例",
+};
+
 /**
  * 将角度规范到 [0, 360)，仅用于界面上的「当前角度」文案。
  * 注意：不要把它写进带 `transition: transform` 的 `rotate()`——
