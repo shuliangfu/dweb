@@ -14,6 +14,7 @@ import {
   MongoModel,
   QueryLogger,
   type QueryLoggerConfig,
+  setDatabaseManager,
   SQLModel,
 } from "@dreamer/database";
 import type { ServiceContainer } from "@dreamer/service";
@@ -181,6 +182,14 @@ export async function connectDatabases(
       }
     }
   }
+
+  /**
+   * 与 `@dreamer/database` 模块级单例对齐：`MongoModel` / `SQLModel` 通过
+   * `getDatabaseAsync()` 使用的是 `init-database` 中的全局 `DatabaseManager`，
+   * 若不调用 `setDatabaseManager`，框架仅在容器内完成 `connect`，ORM 仍会走
+   * `autoInitDatabase` 并报「配置加载器未设置」。
+   */
+  setDatabaseManager(manager);
 }
 
 /**

@@ -7,6 +7,25 @@
 
 ---
 
+## [3.3.12] - 2026-04-21
+
+### 修复
+
+- **数据库集成**（**`src/core/database.ts`**）：在 **`connectDatabases`**
+  执行结束后调用 **`setDatabaseManager(manager)`**，使 **`@dreamer/database`**
+  的 ORM（**`MongoModel`** / **`SQLModel`**）与框架 **服务容器** 使用**同一**
+  **`DatabaseManager` 实例**。此前仅由 dweb 连库时，ORM 的
+  **`getDatabaseAsync`** 会走 **`autoInitDatabase`** 且未设置
+  **`setDatabaseConfigLoader`**，运行期报 「数据库配置加载器未设置」等错误。
+
+### 测试
+
+- **`tests/unit/database.test.ts`**：覆盖全局 Manager 与容器一致、无需
+  **`setDatabaseConfigLoader`** 的 **`getDatabaseAsync`**，以及
+  **`connectDatabases`** 后 **`SQLModel.init` / `create`** 烟测。
+
+---
+
 ## [3.3.11] - 2026-04-21
 
 ### 变更

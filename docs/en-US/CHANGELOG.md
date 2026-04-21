@@ -8,6 +8,26 @@ and this project adheres to
 
 ---
 
+## [3.3.12] - 2026-04-21
+
+### Fixed
+
+- **Database integration** (`src/core/database.ts`): After `connectDatabases`
+  finishes, call **`setDatabaseManager(manager)`** so **`@dreamer/database`**
+  ORM (**`MongoModel`** / **`SQLModel`**) shares the same **`DatabaseManager`**
+  instance as the framework **`ServiceContainer`**. Previously
+  **`getDatabaseAsync`** tried **`autoInitDatabase`** without
+  **`setDatabaseConfigLoader`**, causing "database config loader not set" at
+  runtime when using ORM after dweb connected the database.
+
+### Tests
+
+- **`tests/unit/database.test.ts`**: Assert ORM global manager matches the
+  container, **`getDatabaseAsync`** without a config loader, and a minimal
+  **`SQLModel.init` / `create`** smoke path after **`connectDatabases`**.
+
+---
+
 ## [3.3.11] - 2026-04-21
 
 ### Changed

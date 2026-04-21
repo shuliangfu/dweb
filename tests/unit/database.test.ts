@@ -5,17 +5,64 @@
  * - initializeDatabase 初始化数据库管理器
  * - getDatabaseManager 获取数据库管理器
  * - getDatabaseStatus 获取连接状态
+ * - connectDatabases 将容器内 Manager 同步到 `@dreamer/database` 全局单例（ORM）
+ * - SQLModel.init/create 验证 ORM 已通过全局连接就绪（MongoModel 同源的 getDatabaseAsync）
  */
 
 import "../setup.ts";
-import { describe, expect, it } from "@dreamer/test";
 import {
+  closeDatabase,
+  getDatabaseAsync,
+  getDatabaseManager as getOrmDatabaseManager,
+  isDatabaseInitialized,
+  SQLModel,
+} from "@dreamer/database";
+import { beforeEach, describe, expect, it } from "@dreamer/test";
+import {
+  connectDatabases,
   getDatabaseManager,
   getDatabaseStatus,
   initializeDatabase,
 } from "../../src/core/database.ts";
 import { initializeServiceContainer } from "../../src/core/service.ts";
 import type { AppConfig } from "../../src/types/app.ts";
+import { initializeLogger } from "../../src/utils/logger.ts";
+import type { ServiceContainer } from "@dreamer/service";
+
+/**
+ * `connectDatabases` 内部会 `getLogger(container)`，单测需先注册 logger。
+ *
+ * @param base 合并进 `initializeLogger` 的应用配置片段
+ */
+function createDbTestContainer(base: AppConfig = {}): ServiceContainer {
+  const container = initializeServiceContainer();
+  initializeLogger(container, base);
+  return container;
+}
+
+/**
+ * SQLite 烟测表名：`connectDatabases` + `SQLModel` 全流程用（与 Mongo 无关，仅验证 ORM 绑定全局 Manager）。
+ */
+const ORM_CONNECT_SMOKE_TABLE = "dweb_orm_connect_smoke";
+
+/**
+ * 最小 SQL 模型：仅 `id` + `tag`，用于断言 `init`/`create` 可走通。
+ */
+class OrmConnectSmokeModel extends SQLModel {
+  static override tableName = ORM_CONNECT_SMOKE_TABLE;
+  static override primaryKey = "id";
+  /** schema 非基类声明成员，不可用 override */
+  static schema = {
+    id: {
+      type: "integer" as const,
+      validate: {},
+    },
+    tag: {
+      type: "string" as const,
+      validate: { required: true },
+    },
+  };
+}
 
 describe("数据库集成 (database.ts)", () => {
   describe("initializeDatabase()", () => {
@@ -165,6 +212,120 @@ describe("数据库集成 (database.ts)", () => {
       const manager = initializeDatabase(container, config);
 
       expect(manager).toBeDefined();
+    });
+  });
+
+  describe("connectDatabases()", () => {
+    /** 清空 `@dreamer/database` 全局单例，避免用例间串扰 */
+    beforeEach(async () => {
+      await closeDatabase().catch(() => {
+        /** 尚无全局实例时忽略 */
+      });
+    });
+
+    it("应在连库成功后把容器 DatabaseManager 同步为 ORM 所用全局实例", async () => {
+      const container = createDbTestContainer();
+      const config: AppConfig = {
+        language: "en-US",
+        database: {
+          default: {
+            adapter: "sqlite",
+            connection: {
+              filename: ":memory:",
+            },
+          },
+        },
+      };
+
+      initializeDatabase(container, config);
+      expect(isDatabaseInitialized()).toBe(false);
+
+      await connectDatabases(container, config);
+
+      const fromContainer = getDatabaseManager(container);
+      const fromOrmPackage = getOrmDatabaseManager();
+
+      expect(fromOrmPackage).toBe(fromContainer);
+      expect(isDatabaseInitialized()).toBe(true);
+
+      await closeDatabase();
+    });
+
+    it("同步后 ORM 的 getDatabaseAsync 不应依赖 setDatabaseConfigLoader", async () => {
+      const container = createDbTestContainer();
+      const config: AppConfig = {
+        language: "en-US",
+        database: {
+          default: {
+            adapter: "sqlite",
+            connection: {
+              filename: ":memory:",
+            },
+          },
+        },
+      };
+
+      initializeDatabase(container, config);
+      await connectDatabases(container, config);
+
+      const adapter = await getDatabaseAsync("default");
+      expect(adapter).toBeDefined();
+
+      await closeDatabase();
+    });
+
+    it("在未连接任何命名连接但仍调用 connectDatabases 时应注册全局 Manager", async () => {
+      const container = createDbTestContainer();
+      const config: AppConfig = {
+        database: {},
+      };
+
+      initializeDatabase(container, config);
+      await connectDatabases(container, config);
+
+      expect(getOrmDatabaseManager()).toBe(getDatabaseManager(container));
+
+      await closeDatabase();
+    });
+
+    it("connectDatabases 后 SQLModel.init 与 create 可用（ORM 已从全局连接取适配器）", async () => {
+      const container = createDbTestContainer();
+      const config: AppConfig = {
+        language: "en-US",
+        database: {
+          default: {
+            adapter: "sqlite",
+            connection: {
+              filename: ":memory:",
+            },
+          },
+        },
+      };
+
+      initializeDatabase(container, config);
+      await connectDatabases(container, config);
+
+      const adapter = await getDatabaseAsync("default");
+      await adapter.execute(
+        `DROP TABLE IF EXISTS ${ORM_CONNECT_SMOKE_TABLE}`,
+        [],
+      );
+      await adapter.execute(
+        `CREATE TABLE ${ORM_CONNECT_SMOKE_TABLE} (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          tag TEXT NOT NULL
+        )`,
+        [],
+      );
+
+      await OrmConnectSmokeModel.init();
+      expect(OrmConnectSmokeModel.adapter).toBeDefined();
+
+      await OrmConnectSmokeModel.create({ tag: "orm_ping" });
+      const rows = await OrmConnectSmokeModel.findAll();
+      expect(rows.length).toBe(1);
+
+      await closeDatabase();
     });
   });
 });

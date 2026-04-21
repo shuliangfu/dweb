@@ -1924,10 +1924,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.3.11] - 2026-04-21
+### [3.3.12] - 2026-04-21
 
-**变更** — 根目录与 **examples** 的 npm 依赖统一 **`^`** 范围（React/Preact/CSS
-栈）；**`dweb init`** 生成的第三方 npm 依赖亦带 **`^`**。详见
+**修复** — **`connectDatabases`** 结束时调用 **`setDatabaseManager`**，使
+**`@dreamer/database`** ORM 与框架共用 **`DatabaseManager`**（避免依赖
+**`setDatabaseConfigLoader`** 方可初始化 ORM）。详见
 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---

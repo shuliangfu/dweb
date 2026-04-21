@@ -1857,11 +1857,12 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.3.11] - 2026-04-21
+### [3.3.12] - 2026-04-21
 
-**Changed** — Root and **examples** npm deps use **`^`** ranges
-(React/Preact/CSS stack); **`dweb init`** emits caret versions for third-party
-npm deps. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Fixed** — **`connectDatabases`** now calls **`setDatabaseManager`** so
+**`@dreamer/database`** ORM shares the framework’s **`DatabaseManager`** (fixes
+ORM init without **`setDatabaseConfigLoader`**). Full history:
+[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 
