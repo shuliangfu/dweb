@@ -13,7 +13,7 @@
  */
 
 import { resolveMetadata } from "@dreamer/render";
-import type { HttpContext } from "@dreamer/server";
+import { type HttpContext, snapshotMatchedRoute } from "@dreamer/server";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import type { SessionData } from "@dreamer/session";
@@ -208,6 +208,7 @@ export function createRendererCSR(
         query: match.query ?? {},
         session: (ctx as { session?: SessionData }).session,
         res: createServerResponse(),
+        matchedRoute: snapshotMatchedRoute(match.route),
       });
       const layoutPropsList: Array<Record<string, unknown>> = [];
       for (const mod of layoutModules as Array<Record<string, unknown>>) {
@@ -246,6 +247,7 @@ export function createRendererCSR(
             query: match.query ?? {},
             session: (ctx as { session?: SessionData }).session,
             res: createServerResponse(),
+            matchedRoute: snapshotMatchedRoute(match.route),
           });
           if (typeof pageModule.load === "function") {
             const pageProps: Record<string, unknown> = {

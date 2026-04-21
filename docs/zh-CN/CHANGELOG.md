@@ -7,6 +7,30 @@
 
 ---
 
+## [3.3.10] - 2026-04-21
+
+### 变更
+
+- **`LoadContext`**（**`types/context.ts`**）：在 **`HttpContext`** 基础上省略
+  **`cookies`**、**`url`**（**`URL`**）、**`response`**，增补
+  **`pathname`**、**`search`**、**`requestId`**、可选 **`clientIp`**、可选
+  **`matchedRoute`**（**`MatchedRouteSnapshot`**）。**`createLoadContext`** 填充
+  **`request`**、**`path`**、**`method`**、**`headers`**、可选 **`body`** /
+  **`error`**，并从 **`req`** 解析 Cookie；移除原 **`LoadContext`**
+  字符串索引签名。
+- **导出**：**`MatchedRouteSnapshot`**；**`pathnameFromLoadUrl`**（**`@dreamer/server`**
+  的 **`pathnameFromHref`** 别名）。
+- **`createLoadContext`**：可选 **`matchedRoute`**；SSR / CSR / hybrid 渲染器与
+  **`load-data`** 中间件在构造 **`LoadContext`** 时传入
+  **`snapshotMatchedRoute(match.route)`**。
+
+### 测试
+
+- **`tests/unit/context.test.ts`**：覆盖扩展后的 **`createLoadContext`** /
+  **`LoadContext`**。
+
+---
+
 ## [3.3.9] - 2026-04-21
 
 ### 变更

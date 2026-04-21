@@ -8,6 +8,30 @@ and this project adheres to
 
 ---
 
+## [3.3.10] - 2026-04-21
+
+### Changed
+
+- **`LoadContext`** (`types/context.ts`): Aligns structurally with
+  **`HttpContext`** without **`cookies`** / **`url`** (**`URL`**) /
+  **`response`**; adds **`pathname`**, **`search`**, **`requestId`**, optional
+  **`clientIp`**, optional **`matchedRoute`** (**`MatchedRouteSnapshot`**).
+  **`createLoadContext`** fills **`request`**, **`path`**, **`method`**,
+  **`headers`**, optional **`body`** / **`error`**, parses cookies from
+  **`req`**, and omits the previous **`LoadContext`** string index signature.
+- **Exports**: **`MatchedRouteSnapshot`**; **`pathnameFromLoadUrl`** (alias for
+  **`pathnameFromHref`** from **`@dreamer/server`**).
+- **`createLoadContext`**: Accepts optional **`matchedRoute`**. SSR, CSR, hybrid
+  renderers, and **`load-data`** middleware pass
+  **`snapshotMatchedRoute(match.route)`** when constructing **`LoadContext`**.
+
+### Tests
+
+- **`tests/unit/context.test.ts`**: Covers enriched **`createLoadContext`** /
+  **`LoadContext`** shape.
+
+---
+
 ## [3.3.9] - 2026-04-21
 
 ### Changed

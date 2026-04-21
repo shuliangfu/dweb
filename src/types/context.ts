@@ -6,8 +6,21 @@
  * @module
  */
 
-import type { HttpContext } from "@dreamer/server";
+import type { HttpContext, MatchedRouteSnapshot } from "@dreamer/server";
+import {
+  pathnameFromHref,
+  resolveClientIp,
+  resolveRequestId,
+  searchFromHref,
+} from "@dreamer/server";
 import type { SessionData } from "@dreamer/session";
+
+export type { MatchedRouteSnapshot };
+
+/**
+ * 与 `@dreamer/server` 的 {@link pathnameFromHref} 等价，保留旧名称供兼容。
+ */
+export { pathnameFromHref as pathnameFromLoadUrl } from "@dreamer/server";
 
 /**
  * 服务端响应辅助对象
@@ -69,35 +82,46 @@ export interface MetaContext {
 }
 
 /**
- * load() 收到的上下文：使用 **`req` / `res`**，与 `@dreamer/server` 文件路由 API 一致。
+ * `load()` 收到的上下文。
+ *
+ * 在 {@link HttpContext} 上去掉中间件专用 **`response`**，并用字符串 **`url`**、
+ * **`Record` 形式 cookies** 替代（与路由层快照一致）；其余 **`HttpContext` /
+ * `MiddlewareContext`** 字段保留，可按需访问。
+ *
+ * **`req`** 与 **`request`** 指向同一 {@link Request}（`req` 与 API 上下文命名一致）。
  */
-export interface LoadContext {
-  /** 当前请求 URL（完整或 pathname+search） */
+export type LoadContext = Omit<HttpContext, "cookies" | "url" | "response"> & {
+  /** 当前请求 URL 字符串（完整或 pathname+search），替代 `HttpContext.url`（`URL`） */
   url: string;
-  /** 路由参数（如 [id] 解析后的键值） */
+  /** 解析后的 Cookie 快照（替代 `HttpContext.cookies` 的方法对象） */
+  cookies: Record<string, string>;
+  /** 路由参数（框架保证注入对象） */
   params: Record<string, string>;
-  /** 查询参数（从 URL search 解析的键值对） */
+  /** 查询参数（框架保证注入对象） */
   query: Record<string, string>;
-  /** 原始 Web 标准 Request */
+  /**
+   * 规范化 pathname（去掉末尾 `/`，根为 `/`），便于导航与 `location.pathname` 对齐。
+   */
+  pathname: string;
+  /** URL 的 `search` 段（含 `?`，无查询时为 `""`） */
+  search: string;
+  /** 链路 ID（`x-request-id` / `x-correlation-id` 或新生成 UUID） */
+  requestId: string;
+  /** 尽力从代理头推断的客户端地址 */
+  clientIp?: string;
+  /** 当前匹配路由快照（CSR 等场景可能缺省） */
+  matchedRoute?: MatchedRouteSnapshot;
+  /**
+   * 与 {@link HttpContext.request} 相同引用；保留 `req` 以便与 {@link ApiContext} 一致。
+   */
   req: Request;
   /**
-   * 响应辅助（由框架注入）：redirect、json、html 等；
-   * 部分场景（如仅序列化 JSON 的 load-data）可能未注入。
+   * 响应助手（部分 load-data 场景可能未注入）
    */
   res?: ServerResponse;
-  /** 请求方法（GET、POST、PUT、DELETE 等） */
-  method: string;
-  /** 解析后的 Cookie 键值对（来自 Cookie 头） */
-  cookies: Record<string, string>;
-  /** 请求头（与 `req.headers` 相同引用） */
-  headers: Headers;
-  /**
-   * 会话数据（由 @dreamer/session 中间件注入；config.session 未启用时为 undefined）
-   */
+  /** 会话（未启用 session 中间件时为 `undefined`） */
   session?: SessionData;
-  /** 允许扩展，与 @dreamer/render LoadContext 兼容 */
-  [key: string]: unknown;
-}
+};
 
 /**
  * 文件路由 API 处理器参数类型：与 `@dreamer/server` 的 {@link ApiRouteContext} 同源。
@@ -193,7 +217,7 @@ export function requestFromHttpContext(ctx: HttpContext): Request {
  *
  * 文件路由 API 的上下文由 `@dreamer/server` 的 `buildApiRouteContext` 构造，类型为 {@link ApiContext}。
  *
- * @param options url、params、query、req（可缺省，将按 url 合成）及可选 session、res
+ * @param options url、params、query、req（可缺省，将按 url 合成）及可选 session、res、matchedRoute
  */
 export function createLoadContext(options: {
   req?: Request;
@@ -202,19 +226,36 @@ export function createLoadContext(options: {
   query: Record<string, string>;
   session?: SessionData;
   res?: ServerResponse;
+  matchedRoute?: MatchedRouteSnapshot | null;
 }): LoadContext {
   const req = isUsableWebRequest(options.req)
     ? options.req
     : syntheticRequestForLoad(options.url);
+  const pathname = pathnameFromHref(options.url);
+  const search = searchFromHref(options.url);
+  const requestId = resolveRequestId(req.headers);
+  const clientIp = resolveClientIp(req.headers);
+  const cookiesRecord = parseCookies(req);
+  /** 与 `pathname` 一致，作为 {@link HttpContext.path} 注入 */
+  const pathForCtx = pathname;
   return {
-    url: options.url,
+    request: req,
+    req,
+    path: pathForCtx,
+    method: req.method,
+    headers: req.headers,
     params: options.params,
     query: options.query,
-    req,
+    body: undefined,
+    error: undefined,
+    url: options.url,
+    cookies: cookiesRecord,
+    pathname,
+    search,
+    requestId,
+    clientIp,
+    matchedRoute: options.matchedRoute ?? undefined,
     res: options.res,
-    method: req.method,
-    cookies: parseCookies(req),
-    headers: req.headers,
     session: options.session,
   };
 }

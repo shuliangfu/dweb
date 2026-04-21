@@ -15,6 +15,7 @@ import {
   createMetaContext,
   createServerResponse,
   parseCookies,
+  pathnameFromLoadUrl,
 } from "../../src/types/context.ts";
 
 describe("context.ts", () => {
@@ -84,8 +85,19 @@ describe("context.ts", () => {
     });
   });
 
+  describe("pathnameFromLoadUrl()", () => {
+    it("解析绝对 URL 并去掉尾 /", () => {
+      expect(pathnameFromLoadUrl("https://a.com/foo/")).toBe("/foo");
+      expect(pathnameFromLoadUrl("https://a.com/")).toBe("/");
+    });
+
+    it("相对路径与 query 不影响 pathname", () => {
+      expect(pathnameFromLoadUrl("/bar?x=1")).toBe("/bar");
+    });
+  });
+
   describe("createLoadContext()", () => {
-    it("从 req 填充 method、headers、cookies 并包含 url/params/query", () => {
+    it("从 req 填充 method、headers、cookies 并包含 url/params/query/pathname/search/requestId", () => {
       const req = new Request("https://example.com/path?k=v", {
         method: "GET",
         headers: { Cookie: "sid=abc" },
@@ -97,9 +109,15 @@ describe("context.ts", () => {
         query: { k: "v" },
       });
       expect(ctx.url).toBe("/path?k=v");
+      expect(ctx.pathname).toBe("/path");
+      expect(ctx.search).toBe("?k=v");
+      expect(ctx.requestId).toBeDefined();
+      expect(ctx.clientIp).toBeUndefined();
       expect(ctx.params).toEqual({});
       expect(ctx.query).toEqual({ k: "v" });
       expect(ctx.req).toBe(req);
+      expect(ctx.request).toBe(req);
+      expect(ctx.path).toBe("/path");
       expect(ctx.method).toBe("GET");
       expect(ctx.cookies).toEqual({ sid: "abc" });
       expect(ctx.headers).toBe(req.headers);
@@ -124,6 +142,36 @@ describe("context.ts", () => {
       expect(ctx.params).toEqual({ id: "x" });
     });
 
+    it("继承 x-request-id、解析 x-forwarded-for，并接纳 matchedRoute", () => {
+      const req = new Request("https://example.com/page?x=1", {
+        headers: {
+          "x-request-id": "rid-test",
+          "x-forwarded-for": "203.0.113.9, 10.0.0.1",
+        },
+      });
+      const ctx = createLoadContext({
+        req,
+        url: "https://example.com/page?x=1",
+        params: {},
+        query: { x: "1" },
+        matchedRoute: {
+          path: "/page",
+          file: "page.tsx",
+          fullPath: "/proj/routes/page.tsx",
+          isApi: false,
+        },
+      });
+      expect(ctx.requestId).toBe("rid-test");
+      expect(ctx.clientIp).toBe("203.0.113.9");
+      expect(ctx.search).toBe("?x=1");
+      expect(ctx.matchedRoute).toEqual({
+        path: "/page",
+        file: "page.tsx",
+        fullPath: "/proj/routes/page.tsx",
+        isApi: false,
+      });
+    });
+
     it("未传 req 时按 url 合成 Request，不抛错", () => {
       const ctx = createLoadContext({
         url: "/foo?a=1",
@@ -132,6 +180,8 @@ describe("context.ts", () => {
       });
       expect(ctx.method).toBe("GET");
       expect(ctx.req.url).toContain("/foo");
+      expect(ctx.pathname).toBe("/foo");
+      expect(ctx.search).toBe("?a=1");
       expect(ctx.cookies).toEqual({});
     });
   });

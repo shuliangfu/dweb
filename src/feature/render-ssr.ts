@@ -13,7 +13,7 @@
 import { resolveMetadata, type SSROptions } from "@dreamer/render";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
-import type { HttpContext } from "@dreamer/server";
+import { type HttpContext, snapshotMatchedRoute } from "@dreamer/server";
 import type { SessionData } from "@dreamer/session";
 import { getConfig } from "../core/config.ts";
 import { getLogger } from "../utils/logger.ts";
@@ -172,6 +172,7 @@ export function createRendererSSR(
         query: match.query ?? {},
         session: (ctx as { session?: SessionData }).session,
         res: createServerResponse(),
+        matchedRoute: snapshotMatchedRoute(match.route),
       });
 
       // 为每个 _layout 模块调用 load（若存在），并将返回值作为该层 layout 的 props.data

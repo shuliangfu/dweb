@@ -1924,11 +1924,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.3.9] - 2026-04-21
+### [3.3.10] - 2026-04-21
 
-**变更** — SPA 路由切换：**`loadPageModule`** 与 **`/_dweb_data`** 并行（生成
-**`_client.dep.tsx`**），加快 **`head`** metadata 与正文对齐。上一版摘要见
-[3.3.8](./CHANGELOG.md)。详见 [CHANGELOG.md](./CHANGELOG.md)。
+**变更** — **`LoadContext`** 增补 **`pathname`** / **`search`** /
+**`requestId`** 等； **`createLoadContext`** 与渲染管道传入
+**`matchedRoute`**。上一版摘要见 [3.3.9](./CHANGELOG.md)。详见
+[CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

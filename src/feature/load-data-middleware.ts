@@ -12,7 +12,7 @@ import {
   resolveMetadata,
 } from "@dreamer/render";
 import type { Router } from "@dreamer/router";
-import type { HttpContext } from "@dreamer/server";
+import { type HttpContext, snapshotMatchedRoute } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import type { SessionData } from "@dreamer/session";
 import { cwd, join } from "../core/runtime-adapter.ts";
@@ -118,6 +118,7 @@ export function createLoadDataMiddleware(
         query: queryFromUrl,
         session: (ctx as { session?: SessionData }).session,
         res: createServerResponse(),
+        matchedRoute: snapshotMatchedRoute(match.route),
       });
 
       // 客户端导航时也返回 layoutData：对该路径的 layout 链执行 load，与首屏行为一致
