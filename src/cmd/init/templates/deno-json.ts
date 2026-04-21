@@ -15,7 +15,8 @@ import { getJsxImportSource } from "../helpers.ts";
 import type { InitOptions, JsrVersions } from "../types.ts";
 
 /**
- * 根据 opts 与 JSR 版本生成项目根 deno.json 内容
+ * 根据 opts 与 JSR 版本生成项目根 deno.json 内容。
+ * npm: 依赖使用 `package@^x.y.z`，与仓库根 deno.json 写法一致。
  */
 export function getDenoJson(
   opts: InitOptions,
@@ -43,23 +44,23 @@ export function getDenoJson(
   ].join(",\n");
 
   const tailwindNpmImports = useTailwind
-    ? `    "postcss": "npm:postcss@${POSTCSS_VERSION}",
-    "tailwindcss": "npm:tailwindcss@${TAILWIND_VERSION}",
-    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@${TAILWIND_VERSION}"`
+    ? `    "postcss": "npm:postcss@^${POSTCSS_VERSION}",
+    "tailwindcss": "npm:tailwindcss@^${TAILWIND_VERSION}",
+    "@tailwindcss/postcss": "npm:@tailwindcss/postcss@^${TAILWIND_VERSION}"`
     : "";
   const unocssNpmImports = useUno
-    ? `    "@unocss/core": "npm:@unocss/core@${UNOCSS_CORE_VERSION}",
-    "@unocss/preset-wind3": "npm:@unocss/preset-wind3@${UNOCSS_CORE_VERSION}",
-    "@unocss/preset-icons": "npm:@unocss/preset-icons@${UNOCSS_CORE_VERSION}"`
+    ? `    "@unocss/core": "npm:@unocss/core@^${UNOCSS_CORE_VERSION}",
+    "@unocss/preset-wind3": "npm:@unocss/preset-wind3@^${UNOCSS_CORE_VERSION}",
+    "@unocss/preset-icons": "npm:@unocss/preset-icons@^${UNOCSS_CORE_VERSION}"`
     : "";
 
   const engineImports = opts.engine === "preact"
-    ? `    "preact": "npm:preact@${PREACT_VERSION}"`
+    ? `    "preact": "npm:preact@^${PREACT_VERSION}"`
     : opts.engine === "view"
     ? ""
-    : `    "react": "npm:react@${REACT_VERSION}",
-    "react-dom": "npm:react-dom@${REACT_DOM_VERSION}",
-    "scheduler": "npm:scheduler@${SCHEDULER_VERSION}"`;
+    : `    "react": "npm:react@^${REACT_VERSION}",
+    "react-dom": "npm:react-dom@^${REACT_DOM_VERSION}",
+    "scheduler": "npm:scheduler@^${SCHEDULER_VERSION}"`;
 
   const npmImports = [tailwindNpmImports, unocssNpmImports, engineImports]
     .filter(Boolean)

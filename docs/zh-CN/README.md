@@ -1924,11 +1924,10 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.3.10] - 2026-04-21
+### [3.3.11] - 2026-04-21
 
-**变更** — **`LoadContext`** 增补 **`pathname`** / **`search`** /
-**`requestId`** 等； **`createLoadContext`** 与渲染管道传入
-**`matchedRoute`**。上一版摘要见 [3.3.9](./CHANGELOG.md)。详见
+**变更** — 根目录与 **examples** 的 npm 依赖统一 **`^`** 范围（React/Preact/CSS
+栈）；**`dweb init`** 生成的第三方 npm 依赖亦带 **`^`**。详见
 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---

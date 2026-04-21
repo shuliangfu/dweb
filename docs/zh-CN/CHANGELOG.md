@@ -7,6 +7,22 @@
 
 ---
 
+## [3.3.11] - 2026-04-21
+
+### 变更
+
+- **根清单**：**`deno.json`** / **`package.json`** 将 npm 依赖统一为语义化
+  **caret**
+  （Preact/React/PostCSS/autoprefixer/cssnano/scheduler、Tailwind/UnoCSS
+  等）；**`package.json`** **`overrides`** 锁定 Preact 栈一致。
+- **示例**（**`examples/**`**）：各示例 **`deno.json`**、**`package.json`**
+  使用相同的 **`^`** 范围，避免工作区内 **react / react-dom** 补丁版本不一致。
+- **`dweb init`**（**`src/cmd/init`**）：生成项目对第三方 npm 依赖输出
+  **`npm:pkg@^x.y.z`** / **`"^x.y.z"`**；**`constants.ts`** 基准版本已更新（如
+  React **19.2.5**、Preact **10.29.1**、PostCSS **8.5.10**）。
+
+---
+
 ## [3.3.10] - 2026-04-21
 
 ### 变更

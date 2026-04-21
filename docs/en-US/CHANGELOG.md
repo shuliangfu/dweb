@@ -8,6 +8,23 @@ and this project adheres to
 
 ---
 
+## [3.3.11] - 2026-04-21
+
+### Changed
+
+- **Root manifests**: **`deno.json`** / **`package.json`** align npm deps on
+  semver **carets** (Preact/React/PostCSS/autoprefixer/cssnano/scheduler,
+  Tailwind/UnoCSS where applicable); **`package.json`** **`overrides`** keep the
+  Preact stack consistent.
+- **Examples** (**`examples/**`**): every example **`deno.json`** and
+  **`package.json`** uses the same **`^`** ranges for the UI/CSS stack (avoids
+  mismatched **`react`** vs **`react-dom`** patches in workspaces).
+- **`dweb init`** (**`src/cmd/init`**): templates emit **`npm:pkg@^x.y.z`** /
+  **`"^x.y.z"`** for third-party npm deps; **`constants.ts`** baselines bumped
+  (e.g. React **19.2.5**, Preact **10.29.1**, PostCSS **8.5.10**).
+
+---
+
 ## [3.3.10] - 2026-04-21
 
 ### Changed

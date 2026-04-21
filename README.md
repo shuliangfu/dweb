@@ -1857,13 +1857,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.3.10] - 2026-04-21
+### [3.3.11] - 2026-04-21
 
-**Changed** — **`LoadContext`** enriched (**`pathname`**, **`search`**,
-**`requestId`**, **`clientIp`**, **`matchedRoute`**); **`createLoadContext`**
-wires **`HttpContext`** fields; renderers / **`load-data`** pass
-**`matchedRoute`**. **Previous**: [3.3.9](./docs/en-US/CHANGELOG.md). Full
-history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Changed** — Root and **examples** npm deps use **`^`** ranges
+(React/Preact/CSS stack); **`dweb init`** emits caret versions for third-party
+npm deps. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

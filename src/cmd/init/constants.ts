@@ -25,17 +25,19 @@ export const DEFAULT_PORT_BASE = 3000;
 /** fetchDreamerVersions 失败时 view 引擎的兜底版本 */
 export const FALLBACK_VIEW_VERSION = "1.0.6";
 
-/** Preact 版本（deno.json imports） */
-export const PREACT_VERSION = "10.28.3";
+/**
+ * Preact 基准版本（模板中写成 `^${PREACT_VERSION}`，与根项目一致）
+ */
+export const PREACT_VERSION = "10.29.1";
 
-/** React / React-DOM / Scheduler 版本（deno.json imports） */
-export const REACT_VERSION = "19.2.4";
-export const REACT_DOM_VERSION = "19.2.4";
+/** React / React-DOM / Scheduler 基准版本（同上，输出带 ^） */
+export const REACT_VERSION = "19.2.5";
+export const REACT_DOM_VERSION = "19.2.5";
 export const SCHEDULER_VERSION = "0.27.0";
 
-/** Tailwind v4 相关版本 */
+/** Tailwind v4 / PostCSS 基准版本（输出带 ^） */
 export const TAILWIND_VERSION = "4.1.18";
-export const POSTCSS_VERSION = "8.4.39";
+export const POSTCSS_VERSION = "8.5.10";
 
-/** UnoCSS 相关版本 */
+/** UnoCSS 基准版本（输出带 ^） */
 export const UNOCSS_CORE_VERSION = "66.0.0";

@@ -29,7 +29,8 @@ function toNpmName(projectName: string): string {
 }
 
 /**
- * 根据 opts 与 jsrVersions 生成 dependencies 块（与 deno.json imports 对应）
+ * 根据 opts 与 jsrVersions 生成 dependencies 块（与 deno.json imports 对应）。
+ * 第三方 npm 依赖统一使用 `^` + constants 中的基准版本，便于补丁升级。
  */
 function getDependenciesBlock(opts: InitOptions, jsr: JsrVersions): string {
   const useUno = opts.style === "unocss";
@@ -50,26 +51,26 @@ function getDependenciesBlock(opts: InitOptions, jsr: JsrVersions): string {
 
   const tailwindDeps = useTailwind
     ? [
-      `    "postcss": "${POSTCSS_VERSION}"`,
-      `    "tailwindcss": "${TAILWIND_VERSION}"`,
-      `    "@tailwindcss/postcss": "${TAILWIND_VERSION}"`,
+      `    "postcss": "^${POSTCSS_VERSION}"`,
+      `    "tailwindcss": "^${TAILWIND_VERSION}"`,
+      `    "@tailwindcss/postcss": "^${TAILWIND_VERSION}"`,
     ]
     : [];
   const unocssDeps = useUno
     ? [
-      `    "@unocss/core": "${UNOCSS_CORE_VERSION}"`,
-      `    "@unocss/preset-wind3": "${UNOCSS_CORE_VERSION}"`,
-      `    "@unocss/preset-icons": "${UNOCSS_CORE_VERSION}"`,
+      `    "@unocss/core": "^${UNOCSS_CORE_VERSION}"`,
+      `    "@unocss/preset-wind3": "^${UNOCSS_CORE_VERSION}"`,
+      `    "@unocss/preset-icons": "^${UNOCSS_CORE_VERSION}"`,
     ]
     : [];
   const engineDeps = opts.engine === "preact"
-    ? [`    "preact": "${PREACT_VERSION}"`]
+    ? [`    "preact": "^${PREACT_VERSION}"`]
     : opts.engine === "view"
     ? []
     : [
-      `    "react": "${REACT_VERSION}"`,
-      `    "react-dom": "${REACT_DOM_VERSION}"`,
-      `    "scheduler": "${SCHEDULER_VERSION}"`,
+      `    "react": "^${REACT_VERSION}"`,
+      `    "react-dom": "^${REACT_DOM_VERSION}"`,
+      `    "scheduler": "^${SCHEDULER_VERSION}"`,
     ];
 
   const all = [...dreamerDeps, ...tailwindDeps, ...unocssDeps, ...engineDeps];

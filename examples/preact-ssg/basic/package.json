@@ -10,8 +10,8 @@
   "dependencies": {
     "@dreamer/dweb": "file:../../../",
     "@dreamer/runtime-adapter": "npm:@jsr/dreamer__runtime-adapter@^1.0.18",
-    "preact": "10.28.3",
-    "preact-render-to-string": "6.2.0",
+    "preact": "^10.29.1",
+    "preact-render-to-string": "^6.6.7",
     "tailwindcss": "4.2.0"
   }
 }
