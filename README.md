@@ -1857,11 +1857,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.3.8] - 2026-04-20
+### [3.3.9] - 2026-04-21
 
-**Changed** — Bump **`@dreamer/test`** to **`^1.1.7`** for Playwright browser
-tests (host-side **`page.evaluate`** timeout). **Previous** line:
-[3.3.7](./docs/en-US/CHANGELOG.md). Full history:
+**Changed** — SPA navigation: **`loadPageModule`** and **`/_dweb_data`** run in
+parallel in **`_client.dep.tsx`** generation for faster **`head`** updates with
+route metadata. **Previous**: [3.3.8](./docs/en-US/CHANGELOG.md). Full history:
 [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---

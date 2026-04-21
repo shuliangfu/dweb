@@ -632,25 +632,34 @@ export function clearLayoutCache(): void {
 
   // __data 仅在 onRouteChange 内请求。同页锚点虽不触发 router 的 navigate，但浏览器改 hash 可能触发 popstate，仍会进 onRouteChange，
   // 故用 pathname+search 判断：与上次相同则视为「同页仅 hash」，不请求 __data。保留 pathname 保留字(/_*、/__data 等)也不请求。
-  /** 使用 let/const 且不在嵌套块内声明 var，满足 deno lint（no-var、no-inner-declarations） */
-  const fetchRouteDataSnippet =
+  /**
+   * 与 loadPageModule **并行**拉取 `/_dweb_data`，避免「先等路由 chunk、再等 __data」串行加倍延迟，
+   * 使 `<title>` / meta 与正文尽可能同时就绪（原先 metadata 往往晚 ~一整段网络 RTT）。
+   */
+  const parallelLoadPageAndNavDataSnippet =
     `const _pathname = (typeof _win.location !== "undefined" && _win.location.pathname) ? _win.location.pathname : "/";
       const _search = (typeof _win.location !== "undefined" && _win.location.search) ? _win.location.search : "";
       const _pathAndSearch = _pathname + _search;
       const _samePageHashOnly = (typeof (g as DwebGlobal).__DWEB_LAST_PATHNAME__ === "string" && (g as DwebGlobal).__DWEB_LAST_PATHNAME__ === _pathAndSearch);
       const _reservedOrInvalid = !_pathname || _pathname === "${DWEB_DATA_PATH}" || _pathname.indexOf("/_") === 0 || _pathname.indexOf("//") !== -1 || _samePageHashOnly;
-      let _navProps: { params?: Record<string, string>; query?: Record<string, string>; layoutData?: unknown[]; data?: unknown; metadata?: Record<string, unknown>; metadataTagsHtml?: string; metadataTitleHtml?: string };
-      if (!_reservedOrInvalid) {
-        const _dataUrl = "${DWEB_DATA_PATH}?path=" + encodeURIComponent(_pathname) + (_search ? "&" + _search.slice(1) : "");
-        const _dataRes = await fetch(_dataUrl);
-        _navProps = (_dataRes && _dataRes.ok)
-          ? (await _dataRes.json()) as { params?: Record<string, string>; query?: Record<string, string>; layoutData?: unknown[]; data?: unknown; metadata?: Record<string, unknown>; metadataTagsHtml?: string; metadataTitleHtml?: string }
-          : { params: match.params || {}, query: match.query || {} };
-      } else {
-        _navProps = { params: match.params || {}, query: match.query || {} };
-      }
-      (g as DwebGlobal).__DWEB_LAST_PATHNAME__ = _pathAndSearch;
-      const _routeMetaHtml = (_navProps && typeof _navProps.metadataTagsHtml === "string") ? _navProps.metadataTagsHtml : "";
+      type _NavProps = { params?: Record<string, string>; query?: Record<string, string>; layoutData?: unknown[]; data?: unknown; metadata?: Record<string, unknown>; metadataTagsHtml?: string; metadataTitleHtml?: string };
+      const [module, _navProps] = await Promise.all([
+        loadPageModule(match.route.component) as Promise<Record<string, unknown>>,
+        (async (): Promise<_NavProps> => {
+          if (_reservedOrInvalid) {
+            return { params: match.params || {}, query: match.query || {} };
+          }
+          const _dataUrl = "${DWEB_DATA_PATH}?path=" + encodeURIComponent(_pathname) + (_search ? "&" + _search.slice(1) : "");
+          const _dataRes = await fetch(_dataUrl);
+          return (_dataRes && _dataRes.ok)
+            ? (await _dataRes.json()) as _NavProps
+            : { params: match.params || {}, query: match.query || {} };
+        })(),
+      ]);
+      (g as DwebGlobal).__DWEB_LAST_PATHNAME__ = _pathAndSearch;`;
+  /** 在已有 `_navProps` 时写入 document.head（由 applyRouteMetadataHeadSnippet 使用） */
+  const applyRouteMetadataHeadSnippet =
+    `const _routeMetaHtml = (_navProps && typeof _navProps.metadataTagsHtml === "string") ? _navProps.metadataTagsHtml : "";
       const _routeTitleHtml = (_navProps && typeof _navProps.metadataTitleHtml === "string") ? _navProps.metadataTitleHtml : "";
       /** 旧版 __data 仅返回合并后的 metadataTagsHtml（内含 title 标签）：无 metadataTitleHtml 字段且字符串含 title */
       const _legacyMetaCombined = typeof _navProps.metadataTitleHtml === "undefined" && _routeMetaHtml.indexOf("<title") !== -1;
@@ -738,19 +747,17 @@ export function clearLayoutCache(): void {
       const _layoutsNav = _navLayoutData.length ? layouts.map((l, i) => ({ component: l.component, props: _navLayoutData[i] ?? l.props ?? {} })) : layouts;
       const _pageProps = _navProps ? { params: _navProps.params || {}, query: _navProps.query || {}, data: _navProps.data } : { params: match.params || {}, query: match.query || {} };`;
   /**
-   * View / React/Preact 统一：先拉取 __data（旧内容仍可见），
-   * 再 unmount/清空。View 在路由切换时始终先卸载再挂载，避免按索引 patch 导致上一页 DOM 残留在当前页。
+   * View / React/Preact：由外层先并行完成 loadPageModule + __data 并写入 head（见 parallelLoadPageAndNavDataSnippet），
+   * 此处仅合并 layout、unmount、渲染正文。旧内容直至 unmount 前仍可见。
    */
   const onRouteChangeRenderSnippet = isViewEngine
     ? `if (_win.__DWEB_DEBUG__) console.log("[dweb:view] onRouteChange", { component: match.route.component, hasPage: !!PageComponent });
-      ${fetchRouteDataSnippet}
       ${onRouteChangeMergeLayoutSnippet}
       unmountPrevious();
       setViewState({ page: PageComponent, props: _pageProps, layouts: _layoutsNav, skipLayouts });
       _viewEnsureReactiveRoot(containerId);
       (g as DwebGlobal).__DWEB_ON_READY__?.();`
-    : `${fetchRouteDataSnippet}
-      ${onRouteChangeMergeLayoutSnippet}
+    : `${onRouteChangeMergeLayoutSnippet}
       unmountPrevious();
       const _container = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
       if (_container && typeof _container.replaceChildren === "function") _container.replaceChildren();
@@ -1321,11 +1328,12 @@ export async function setupHydrationRouterAndHmr(opts: {
     }
     if (isHybridMode && !isHydratedRef.current) { isHydratedRef.current = true; return; }
     try {
-      const module = await loadPageModule(match.route.component) as Record<string, unknown>;
+      ${parallelLoadPageAndNavDataSnippet}
       if (!module) { unmountPrevious(); renderNotFound(containerId); return; }
       const PageComponent = module.default ?? module.Page;
       if (!PageComponent) { unmountPrevious(); renderNotFound(containerId); return; }
       const skipLayouts = module.inheritLayout === false;
+      ${applyRouteMetadataHeadSnippet}
       ${onRouteChangeRenderSnippet}
     } catch (error) {
       console.error(${

@@ -8,6 +8,18 @@ and this project adheres to
 
 ---
 
+## [3.3.9] - 2026-04-21
+
+### Changed
+
+- **Client router / metadata** (`csr-client-builder`): On SPA navigation,
+  **`loadPageModule`** and **`GET`** **`/_dweb_data`** now run **in parallel**
+  (**`Promise.all`** in generated **`_client.dep.tsx`**). Previously they ran
+  **sequentially**, which added roughly one round-trip delay before **`head`**
+  (**`<title>`**, meta tags) could match the new route’s body after chunk load.
+
+---
+
 ## [3.3.8] - 2026-04-20
 
 ### Changed

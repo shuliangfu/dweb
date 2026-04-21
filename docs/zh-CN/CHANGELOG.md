@@ -7,6 +7,17 @@
 
 ---
 
+## [3.3.9] - 2026-04-21
+
+### 变更
+
+- **客户端路由 / metadata**（**`csr-client-builder`**）：SPA 切换路由时，
+  **`loadPageModule`** 与 **`GET /_dweb_data`** 改为 **`Promise.all`
+  并行**（写入生成的 **`_client.dep.tsx`**）。此前为串行执行，往往在路由 chunk
+  加载后再等一轮 `__data`， **`<title>` / meta** 相对正文更新更慢。
+
+---
+
 ## [3.3.8] - 2026-04-20
 
 ### 变更
