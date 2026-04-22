@@ -8,6 +8,27 @@ and this project adheres to
 
 ---
 
+## [3.4.0] - 2026-04-22
+
+### Changed
+
+- **`configProfileFromRuntimeEnv()`** (`src/utils/runtime.ts`): Profile for
+  `main.{env}.ts` / `params.{env}.ts` is **only** derived from **`RUNTIME_ENV`**
+  (`dev` | `build` | `start`); default **`dev`** when unset or invalid (no
+  `DENO_ENV` override in this helper).
+- **`initializeConfigManager`**: Calls **`preloadDotEnvSync`** before reading
+  the profile, then loads layered **`main`/`params`** so `.env` keys are
+  available to **`main.ts`** during import.
+- **`loadMainConfig` / `loadParamsConfig`**: For **`build`** and **`start`**,
+  merge **`main.prod.ts` / `params.prod.ts` before** `main.build.ts` /
+  `main.start.ts` (or `params.*`) so projects that only ship production overlays
+  under the historical **`*.prod.ts`** names still apply.
+
+### Tests
+
+- **`tests/unit/runtime.test.ts`**: Expectations aligned with `RUNTIME_ENV`–only
+  profile names.
+
 ## [3.3.13] - 2026-04-22
 
 ### Added

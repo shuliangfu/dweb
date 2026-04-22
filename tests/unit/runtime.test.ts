@@ -101,8 +101,7 @@ describe("运行时工具 (runtime.ts)", () => {
   });
 
   describe("configProfileFromRuntimeEnv()", () => {
-    it("应与当前 RUNTIME_ENV（dev/build/start）一致；未设置时默认为 dev", () => {
-      // 通过 runtime-adapter 读写环境变量，兼容 Deno 与 Bun 测试环境
+    it("应与当前 RUNTIME_ENV（dev/build/start）一致；未设或非法时默认为 dev", () => {
       const prev = getEnv("RUNTIME_ENV");
       try {
         deleteEnv("RUNTIME_ENV");

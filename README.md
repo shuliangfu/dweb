@@ -1857,12 +1857,13 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.3.13] - 2026-04-22
+### [3.4.0] - 2026-04-22
 
-**Changed** — Introduces **`RUNTIME_ENV`** (`dev` / `build` / `start`) for CLI
-spawns, **`App`**, server mode, config profiles, and render/build paths; bumps
-**`@dreamer/config`**, **`@dreamer/plugins`**, **`@dreamer/server`**. Full
-history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Changed** — Config profile from **`configProfileFromRuntimeEnv()`** follows
+**`RUNTIME_ENV` only**; **`preloadDotEnvSync`** runs before profile resolution;
+**`build`/`start`** layers merge **`main.prod`/`params.prod`** before
+**`main.{build|start}`** files. Full history:
+[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

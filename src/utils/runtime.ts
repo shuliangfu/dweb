@@ -236,13 +236,16 @@ export function getRunArgs(filePath: string): string[] {
 }
 
 /**
- * 供 `main.{env}.ts`、`params.{env}.ts`、`.env.{env}` 等使用的 profile 名，
- * 与进程环境变量 `RUNTIME_ENV`（`dev` | `build` | `start`）一一对应；未设置或非法值时默认 `dev`。
+ * 供 `main.{env}.ts`、`params.{env}.ts` 及 `preloadDotEnvSync` 选层等使用的 profile 名，
+ * **仅**与进程 `RUNTIME_ENV`（`dev` | `build` | `start`）一致；未设置或非法时默认 `dev`。
  *
- * @returns `dev`、`build` 或 `start`
+ * 与 `main.prod.ts` 的约定：在 `loadMainConfig` 中，当本函数返回 `build` 或 `start` 时会**额外**
+ * 先合并 `main.prod.ts`（再合并 `main.build.ts` / `main.start.ts` 若存在），以兼容只维护生产覆盖文件的项目。
  */
 export function configProfileFromRuntimeEnv(): string {
   const r = getEnv("RUNTIME_ENV");
-  if (r === "dev" || r === "build" || r === "start") return r;
+  if (r === "dev" || r === "build" || r === "start") {
+    return r;
+  }
   return "dev";
 }

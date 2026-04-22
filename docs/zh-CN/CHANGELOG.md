@@ -7,6 +7,25 @@
 
 ---
 
+## [3.4.0] - 2026-04-22
+
+### 变更
+
+- **`configProfileFromRuntimeEnv()`**（**`src/utils/runtime.ts`**）：
+  **`main.{env}.ts`** / **`params.{env}.ts` 的 profile 仅**由**
+  **`RUNTIME_ENV`**（`dev` | `build` | `start`）决定；未设或非法时默认
+  **`dev`**（本函数**不再**读取 `DENO_ENV`）。
+- **`initializeConfigManager`**：先 **`preloadDotEnvSync`** 再取 profile，保证
+  各层 **`main.ts` import 前** 进程里已有 **`.env`** 注入的键。
+- **`loadMainConfig` / `loadParamsConfig`**：当 profile 为 **`build`** 或
+  **`start`** 时，在 **`main.build.ts` / `main.start.ts`** 之前**先**合并
+  **`main.prod.ts` / `params.prod.ts`**，兼容只维护 `*.prod`
+  作为生产增量的项目。
+
+### 测试
+
+- **`tests/unit/runtime.test.ts`**：与仅基于 `RUNTIME_ENV` 的 profile 行为一致。
+
 ## [3.3.13] - 2026-04-22
 
 ### 新增

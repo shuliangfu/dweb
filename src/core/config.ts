@@ -561,11 +561,11 @@ export function deepMergeConfig(
 
 /**
  * 加载框架配置（main.ts 系列）
- * 支持：main.ts, main.{env}.ts
- * 使用深度合并，用户只需在 main.dev.ts 中写增量覆盖，无需手动导入合并
+ * 使用深度合并：`main.ts` →（`env` 为 `build`/`start` 时）`main.prod.ts` → `main.{env}.ts`。
+ * `env` 由 {@link configProfileFromRuntimeEnv} 提供，与 `RUNTIME_ENV` 一致（`dev` | `build` | `start`）。
  *
  * @param directory 配置目录
- * @param env 环境名称
+ * @param env 与 `RUNTIME_ENV` 对应的 `dev` / `build` / `start`
  * @returns 合并后的框架配置对象（AppConfig）
  */
 async function loadMainConfig(
@@ -583,7 +583,18 @@ async function loadMainConfig(
     }
   }
 
-  // 2. 加载 main.{env}.ts（环境特定配置，深度合并覆盖 main.ts）
+  // 2. build / start：先合并 main.prod（与仅维护 main.prod 的约定兼容），再由 main.build / main.start 覆盖
+  if (env === "build" || env === "start") {
+    const prodPath = `${directory}/main.prod.ts`;
+    if (await fileExists(prodPath)) {
+      const prodConfig = await loadModuleConfig(prodPath);
+      if (prodConfig) {
+        config = deepMergeConfig(config, prodConfig as AppConfig);
+      }
+    }
+  }
+
+  // 3. 加载 main.{env}.ts
   const envMainPath = `${directory}/main.${env}.ts`;
   if (await fileExists(envMainPath)) {
     const envConfig = await loadModuleConfig(envMainPath);
@@ -629,11 +640,11 @@ function deepMergeParams(
 }
 
 /**
- * 加载业务配置（params.ts、params.{env}.ts）
- * 支持 params.ts、params.dev.ts、params.prod.ts，深度合并，用户只需在 params.dev.ts 中写增量
+ * 加载业务配置（params.ts、params.{env}.ts），合并顺序与 {@link loadMainConfig} 一致
+ * （`build`/`start` 时先合 `params.prod.ts` 再合 `params.{env}.ts`）。
  *
  * @param directory 配置目录
- * @param env 环境名称（dev、prod 等）
+ * @param env 与 `RUNTIME_ENV` 一致
  * @returns 合并后的业务配置对象
  */
 async function loadParamsConfig(
@@ -646,6 +657,15 @@ async function loadParamsConfig(
     const baseParams = await loadModuleConfig(paramsPath);
     if (baseParams && typeof baseParams === "object") {
       params = deepMergeParams(params, baseParams as Record<string, unknown>);
+    }
+  }
+  if (env === "build" || env === "start") {
+    const prodPath = `${directory}/params.prod.ts`;
+    if (await fileExists(prodPath)) {
+      const prodParams = await loadModuleConfig(prodPath);
+      if (prodParams && typeof prodParams === "object") {
+        params = deepMergeParams(params, prodParams as Record<string, unknown>);
+      }
     }
   }
   const envParamsPath = `${directory}/params.${env}.ts`;
@@ -686,14 +706,12 @@ export async function initializeConfigManager(
 ): Promise<ConfigManager> {
   // 默认同时检查 ./config 与 ./src/config，兼容两种项目结构
   const directories = options.directories || ["./config", "./src/config"];
-  // 直接从环境变量读取（兼容 Deno、Bun 和 Node.js）
-  const env = configProfileFromRuntimeEnv();
-
   /**
-   * 在 import 各层 `config/main.ts` 之前，同步合并仓库根与各配置目录下的 `.env` / `.env.{dev|test|prod}` / `.env.{原始环境名}`，
-   * 并写入进程环境（不覆盖已存在的键），使 `main.ts` 顶层 `getEnv` 能读到与 @dreamer/config `loadSync` 一致的分层规则。
+   * 先合并 `.env`（不传入 `options.env` 时由 @dreamer/config 用进程 `RUNTIME_ENV` 选层），
+   * 使 `getEnv` 在加载 `config/main.ts` 时可用；`main`/`params` 分层名由 {@link configProfileFromRuntimeEnv} 仅根据 `RUNTIME_ENV` 决定。
    */
-  preloadDotEnvSync([".", ...directories], { env, override: false });
+  preloadDotEnvSync([".", ...directories], { override: false });
+  const env = configProfileFromRuntimeEnv();
 
   // 加载框架配置（按优先级从低到高）
   let mainConfig: AppConfig = {};
