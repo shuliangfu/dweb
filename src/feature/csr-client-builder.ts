@@ -1801,9 +1801,11 @@ export async function buildClientScript(
   try {
     // 获取运行模式（提前计算，用于决定是否写入 client.dep.tsx 避免 HMR 循环）
     const serverConfig = (config.server || {}) as { mode?: "dev" | "prod" };
-    const envMode = getEnv("DENO_ENV") || getEnv("BUN_ENV") ||
-      getEnv("NODE_ENV") || "dev";
-    const mode = serverConfig.mode || envMode as "dev" | "prod";
+    // 仅 RUNTIME_ENV=dev 走 dev 压缩策略；build/start 走 prod（esbuild mode）
+    const mode = (serverConfig.mode ??
+      (getEnv("RUNTIME_ENV") === "dev" ? "dev" : "prod")) as
+        | "dev"
+        | "prod";
     const isProd = mode === "prod";
 
     // 若本次构建由 client.dep.tsx / client.tsx 变更触发，开发模式下不再写回该文件，避免：写文件 -> watch 触发 -> 再构建 -> 再写 -> 循环导致疯狂请求

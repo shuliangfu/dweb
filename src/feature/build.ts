@@ -116,8 +116,9 @@ export function initializeBuild(
     // 构建选项
     build: {
       mode: (buildConfig.mode as "dev" | "prod") ||
-        (getEnv("DENO_ENV") || getEnv("BUN_ENV") ||
-          "prod") as "dev" | "prod",
+        (getEnv("RUNTIME_ENV") === "dev" ? "dev" : "prod") as
+          | "dev"
+          | "prod",
 
       clean: buildConfig.clean as boolean | undefined,
       cache: buildConfig.cache as boolean | string | undefined,

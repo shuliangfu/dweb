@@ -8,6 +8,45 @@ and this project adheres to
 
 ---
 
+## [3.3.13] - 2026-04-22
+
+### Added
+
+- **`RUNTIME_ENV`** (`dev` | `build` | `start`): `dweb dev` / `dweb build` /
+  `dweb start` pass a full inherited env plus **`RUNTIME_ENV`** to spawned
+  `deno task` / `bun` children via **`envWithRuntime()`**
+  (`src/utils/runtime.ts`).
+- **`configProfileFromRuntimeEnv()`**: maps the current process’s
+  **`RUNTIME_ENV`** to a config profile (defaults to **`dev`** when unset or
+  invalid) for **`main.{env}.ts`** / `.env` layering.
+
+### Changed
+
+- **`App`**: Auto-sets **`RUNTIME_ENV`** from argv (`--dev`, `--build`,
+  `--start`) and **`__DWEB_PROD__`** instead of **`DENO_ENV`**; does not
+  override if already set. **Dev no-cache** runs only when
+  **`RUNTIME_ENV=dev`**; **request logger** `detailed` when
+  **`server.mode=prod`** or **`RUNTIME_ENV`** is **`build`** or **`start`**.
+  **`_ensureClientBuildForRender`** branches on **`RUNTIME_ENV`** (dev vs
+  build/start).
+- **`initializeServer`**: **`@dreamer/server`** `dev` (HMR) only when
+  **`RUNTIME_ENV=dev`**.
+- **Config** (`config.ts`, `config-loader.ts`): profile name from
+  **`configProfileFromRuntimeEnv()`** instead of **`DENO_ENV`** / **`BUN_ENV`**
+  / **`NODE_ENV`**.
+- **Render / build / CSR** (`build.ts`, `csr-client-*`, `load-route-module.ts`,
+  `render-*.ts`): “dev vs prod” and import cache busting use **`RUNTIME_ENV`**
+  consistently.
+- **Dependencies** (`deno.json` / `package.json`): **`@dreamer/config`**
+  **^1.0.4**, **`@dreamer/plugins`** **^1.1.4**, **`@dreamer/server`**
+  **^1.1.5**.
+
+### Tests
+
+- **`tests/unit/runtime.test.ts`**: **`envWithRuntime()`** and
+  **`configProfileFromRuntimeEnv()`** behavior.
+- **`tests/unit/render-ssg.test.ts`**: prod skip uses **`RUNTIME_ENV`**.
+
 ## [3.3.12] - 2026-04-21
 
 ### Fixed

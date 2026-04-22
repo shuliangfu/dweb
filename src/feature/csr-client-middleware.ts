@@ -52,9 +52,10 @@ export function createClientScriptMiddleware(
   const logger = getLogger(container);
 
   const serverConfig = (config.server || {}) as { mode?: "dev" | "prod" };
-  const envMode = getEnv("DENO_ENV") || getEnv("BUN_ENV") ||
-    getEnv("NODE_ENV") || "dev";
-  const mode = serverConfig.mode || envMode as "dev" | "prod";
+  const mode = (serverConfig.mode ??
+    (getEnv("RUNTIME_ENV") === "dev" ? "dev" : "prod")) as
+      | "dev"
+      | "prod";
   const isProd = mode === "prod";
 
   const buildConfig = (config.build || {}) as {

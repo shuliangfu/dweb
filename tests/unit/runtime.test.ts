@@ -8,14 +8,18 @@
  * - getLintArgs 格式化参数
  * - getFmtArgs 格式化参数
  * - getRunArgs 运行脚本参数
+ * - envWithRuntime RUNTIME_ENV 注入
  * - isWindows 平台判断
  *
  * 注：不测试 @dreamer/runtime-adapter 的 IS_DENO/IS_BUN，仅测试本框架对返回值的处理逻辑。
  */
 
 import "../setup.ts";
+import { deleteEnv, getEnv, setEnv } from "@dreamer/runtime-adapter";
 import { describe, expect, it } from "@dreamer/test";
 import {
+  configProfileFromRuntimeEnv,
+  envWithRuntime,
   getFmtArgs,
   getLintArgs,
   getRunArgs,
@@ -85,6 +89,40 @@ describe("运行时工具 (runtime.ts)", () => {
   describe("isWindows()", () => {
     it("应返回布尔值", () => {
       expect(typeof isWindows()).toBe("boolean");
+    });
+  });
+
+  describe("envWithRuntime()", () => {
+    it("应设置 RUNTIME_ENV 为 dev、build 或 start", () => {
+      expect(envWithRuntime("dev").RUNTIME_ENV).toBe("dev");
+      expect(envWithRuntime("build").RUNTIME_ENV).toBe("build");
+      expect(envWithRuntime("start").RUNTIME_ENV).toBe("start");
+    });
+  });
+
+  describe("configProfileFromRuntimeEnv()", () => {
+    it("应与当前 RUNTIME_ENV（dev/build/start）一致；未设置时默认为 dev", () => {
+      // 通过 runtime-adapter 读写环境变量，兼容 Deno 与 Bun 测试环境
+      const prev = getEnv("RUNTIME_ENV");
+      try {
+        deleteEnv("RUNTIME_ENV");
+        expect(configProfileFromRuntimeEnv()).toBe("dev");
+
+        setEnv("RUNTIME_ENV", "build");
+        expect(configProfileFromRuntimeEnv()).toBe("build");
+
+        setEnv("RUNTIME_ENV", "start");
+        expect(configProfileFromRuntimeEnv()).toBe("start");
+
+        setEnv("RUNTIME_ENV", "bogus");
+        expect(configProfileFromRuntimeEnv()).toBe("dev");
+      } finally {
+        if (prev !== undefined) {
+          setEnv("RUNTIME_ENV", prev);
+        } else {
+          deleteEnv("RUNTIME_ENV");
+        }
+      }
     });
   });
 });

@@ -159,8 +159,7 @@ export function createRendererSSG(
         return null;
       }
 
-      const isDev =
-        (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
+      const isDev = getEnv("RUNTIME_ENV") === "dev";
 
       // 开发环境：使用 SSR 服务端渲染，不读 dist
       if (isDev) {
@@ -247,8 +246,7 @@ export function createRendererSSG(
       });
     } catch (error) {
       console.error($tr("log.ssgError"), error);
-      const isDev =
-        (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
+      const isDev = getEnv("RUNTIME_ENV") === "dev";
       const errHeaders: Record<string, string> = {
         "Content-Type": "text/html; charset=utf-8",
       };

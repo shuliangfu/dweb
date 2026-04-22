@@ -7,6 +7,41 @@
 
 ---
 
+## [3.3.13] - 2026-04-22
+
+### 新增
+
+- **`RUNTIME_ENV`**（`dev` | `build` | `start`）：`dweb dev` / `build` / `start`
+  在 `createCommand` 子进程传入**完整继承 env** 并设置 **`RUNTIME_ENV`**（
+  **`envWithRuntime()`**，见 **`src/utils/runtime.ts`**）。
+- **`configProfileFromRuntimeEnv()`**：从当前进程的 **`RUNTIME_ENV`** 得到配置
+  profile（未设或非法时默认 **`dev`**），供 **`main.{env}.ts`**、`.env` 分层等。
+
+### 变更
+
+- **`App`**：用 **`RUNTIME_ENV`**（`--dev` / `--build` / `--start`、
+  **`__DWEB_PROD__`**）替代原 **`DENO_ENV` 自动推断**；已设则不覆盖。仅
+  **`RUNTIME_ENV=dev`** 启用 dev 无缓存；**`requestLogger.detailed`** 在
+  **`server.mode=prod`** 或 **`RUNTIME_ENV`** 为 **`build`** / **`start`** 时
+  开启；**`_ensureClientBuildForRender`** 按 **`RUNTIME_ENV`** 分支。
+- **`initializeServer`**：仅当 **`RUNTIME_ENV=dev`** 时启用
+  **`@dreamer/server`** 的 **`dev`**（HMR 等）。
+- **配置**（**`config.ts`**、**`config-loader.ts`**）：profile 来自
+  **`configProfileFromRuntimeEnv()`**，不再用 **`DENO_ENV`** / **`BUN_ENV`** /
+  **`NODE_ENV`** 拼 profile 名。
+- **渲染与构建**（**`build.ts`**、**`csr-client-*`**、**`load-route-module.ts`**、
+  **`render-*.ts`**）：开发态判断与 **`?v=`** 绕过 import 缓存统一用
+  **`RUNTIME_ENV`**。
+- **依赖**（**`deno.json`** / **`package.json`**）：**`@dreamer/config`**
+  **^1.0.4**、**`@dreamer/plugins`** **^1.1.4**、**`@dreamer/server`**
+  **^1.1.5**。
+
+### 测试
+
+- **`tests/unit/runtime.test.ts`**：覆盖 **`envWithRuntime()`** 与
+  **`configProfileFromRuntimeEnv()`**。
+- **`tests/unit/render-ssg.test.ts`**：prod 分支判断改为 **`RUNTIME_ENV`**。
+
 ## [3.3.12] - 2026-04-21
 
 ### 修复

@@ -292,8 +292,8 @@ export async function loadRouteModule(
     moduleUrl = pathToFileURL(normalizedPath).href;
 
     // 开发模式：通过 ?v=version 绕过 import 缓存，确保文件变更后能拿到最新模块
-    const env = getEnv("DENO_ENV") || getEnv("BUN_ENV") || getEnv("NODE_ENV");
-    if (env === "dev") {
+    // 仅 RUNTIME_ENV=dev 禁用 import 缓存（与其它「开发态」判断一致）
+    if (getEnv("RUNTIME_ENV") === "dev") {
       const version = getModuleVersion(moduleUrl);
       moduleUrl = `${moduleUrl}?v=${version}`;
     }

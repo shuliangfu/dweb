@@ -12,7 +12,6 @@
  */
 
 import {
-  getEnv,
   join,
   pathToFileUrl,
   readdir,
@@ -20,6 +19,7 @@ import {
   resolve,
   stat,
 } from "@dreamer/runtime-adapter";
+import { configProfileFromRuntimeEnv } from "./runtime.ts";
 import { deepMergeConfig } from "../core/config.ts";
 import type { AppConfig } from "../types/app.ts";
 
@@ -178,9 +178,7 @@ export async function loadProjectConfig(
   projectRoot: string,
   app?: string,
 ): Promise<AppConfig> {
-  const env = getEnv("DENO_ENV") ||
-    getEnv("BUN_ENV") ||
-    getEnv("NODE_ENV") || "dev";
+  const env = configProfileFromRuntimeEnv();
 
   const root = resolve(projectRoot);
   let config: AppConfig = {};

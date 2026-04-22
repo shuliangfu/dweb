@@ -56,11 +56,9 @@ export function initializeServer(
   const logger = getLogger(container);
 
   // 创建服务器实例
-  // DENO_ENV 由 App 构造函数自动设置：
-  // - 有 --build 参数时设置为 prod
-  // - 无 --build 参数时设置为 dev
-  // - 运行编译后的 server.js 时，默认为 prod
-  const mode = (getEnv("DENO_ENV") || "prod") as "dev" | "prod";
+  // App / CLI 已设置 RUNTIME_ENV：仅 dev 启用 server.dev（HMR/watch）；build/start 走生产路径
+  const rt = getEnv("RUNTIME_ENV");
+  const mode = (rt === "dev" ? "dev" : "prod") as "dev" | "prod";
 
   // 获取 host，优先使用 server.host，最后使用默认值
   const host = serverConfig.host || "127.0.0.1";

@@ -6,6 +6,7 @@
  * - 单应用：执行 deno task build
  * - 多应用：可指定应用名构建单个，或不指定则构建全部
  * - 使用 loadProjectConfig 获取 config.build 等配置
+ * - 子进程环境变量设置 RUNTIME_ENV=build（与任务脚本中的 `--build` 语义一致）
  *
  * 运行方式：
  * - dweb build              # 单应用 或 多应用构建全部
@@ -19,7 +20,7 @@ import { $tr } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 import { loadProjectConfig } from "../utils/config-loader.ts";
 import { getProjectInfo } from "../utils/project.ts";
-import { getRuntime, getTaskArgs } from "../utils/runtime.ts";
+import { envWithRuntime, getRuntime, getTaskArgs } from "../utils/runtime.ts";
 
 /**
  * build 命令主入口
@@ -67,6 +68,7 @@ export async function main(
     const cmd = createCommand(runtime, {
       args: getTaskArgs(taskName),
       cwd: projectRoot,
+      env: envWithRuntime("build"),
       stdin: "inherit",
       stdout: "inherit",
       stderr: "inherit",
@@ -119,6 +121,7 @@ export async function main(
     const cmd = createCommand(runtime, {
       args: getTaskArgs(taskName),
       cwd: projectRoot,
+      env: envWithRuntime("build"),
       stdin: "inherit",
       stdout: "inherit",
       stderr: "inherit",

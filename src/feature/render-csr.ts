@@ -370,8 +370,7 @@ export function createRendererCSR(
 </style>`;
       const overlayHtml =
         `<div id="dweb-loading-overlay" aria-hidden="true"><div class="dweb-spinner"></div></div>`;
-      const isDevCsr =
-        (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
+      const isDevCsr = getEnv("RUNTIME_ENV") === "dev";
       const debugRender = renderConfig.debug === true;
       const dataScript = hydrationData
         ? `  globalThis.__DATA__ = ${JSON.stringify(hydrationData)};\n`
@@ -421,8 +420,7 @@ ${csrOptions.bodyTags || ""}`;
       });
     } catch (error) {
       console.error($tr("log.csrError"), error);
-      const isDevCsr =
-        (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
+      const isDevCsr = getEnv("RUNTIME_ENV") === "dev";
       return new Response(
         `<!DOCTYPE html><html><head><title>500 Error</title></head><body><h1>Internal Server Error</h1><p>${
           error instanceof Error ? error.message : String(error)

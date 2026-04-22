@@ -264,8 +264,7 @@ export function createRendererSSR(
       }
 
       // 调用 SSR 渲染（engine 从 config 读取，debug 支持 config.render.debug 或开发模式）
-      const isDev =
-        (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
+      const isDev = getEnv("RUNTIME_ENV") === "dev";
       const ssrOptions: SSROptions = {
         engine,
         component: PageComponent,
@@ -389,8 +388,7 @@ export function createRendererSSR(
               debug: renderConfig.debug === true,
             };
             const result = await renderService.renderSSR(errSsrOptions);
-            const isDev =
-              (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
+            const isDev = getEnv("RUNTIME_ENV") === "dev";
             return new Response(result.html, {
               status: 500,
               headers: {
@@ -407,8 +405,7 @@ export function createRendererSSR(
       }
 
       // 默认错误响应
-      const isDev =
-        (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
+      const isDev = getEnv("RUNTIME_ENV") === "dev";
       return new Response(
         `<!DOCTYPE html><html><head><title>500 Error</title></head><body><h1>Internal Server Error</h1><p>${
           error instanceof Error ? error.message : String(error)

@@ -256,8 +256,7 @@ export function createRendererHybrid(
 
       // 调用 SSR 渲染（debug 支持 config.render.debug 或开发模式）
       const engine = renderConfig.engine || "preact";
-      const isDev =
-        (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
+      const isDev = getEnv("RUNTIME_ENV") === "dev";
       const debugRender = renderConfig.debug === true;
       /** 与 `config.router.debug` 一致：注入 `__DWEB_ROUTER_DEBUG__`，驱动客户端 `@dreamer/router/client` 的 debug */
       const routerDebug =

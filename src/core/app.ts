@@ -198,25 +198,32 @@ export class App extends EventEmitter implements IApp {
     // 调用 EventEmitter 构造函数
     super();
 
-    // 自动设置环境变量，无需用户手动配置
+    // 自动设置 RUNTIME_ENV，无需用户手动配置（与 deno task 中 --dev/--build/--start 及 dweb-cli 注入一致）
     // 判断逻辑：
-    // 0. 若已设置 DENO_ENV（如 start 脚本里 DENO_ENV=prod），则不覆盖
-    // 1. --build 参数：设置 DENO_ENV=prod（构建模式）
-    // 2. __DWEB_PROD__ 全局标志：说明是编译后的生产代码（由 builder-server / Bun 构建注入），保持 prod
-    // 3. 其他情况：设置 DENO_ENV=dev（开发模式）
+    // 0. 若已设置 RUNTIME_ENV（如 dweb-cli spawn 已注入），则不覆盖
+    // 1. --build：构建阶段 → build
+    // 2. __DWEB_PROD__：编译产物运行（builder-server / Bun 注入）→ start
+    // 3. --start：显式生产启动（如 dist/server.js --start）→ start
+    // 4. --dev：显式开发 → dev
+    // 5. 其余默认 → dev
     // 直接调用 args() 而不是 this._isBuildMode()，因为此时实例还未完全初始化
-    const buildFlag = args().includes("--build");
-    const existingDenoEnv = getEnv("DENO_ENV");
-    if (existingDenoEnv) {
-      // 已由 start 脚本或环境设置，不覆盖
-    } else if (buildFlag) {
-      setEnv("DENO_ENV", "prod");
-    } else if ("__DWEB_PROD__" in globalThis) {
-      // 编译后的生产代码（由 builder-server 注入标志）
-      setEnv("DENO_ENV", "prod");
-    } else {
-      // 开发模式
-      setEnv("DENO_ENV", "dev");
+    const existingRuntimeEnv = getEnv("RUNTIME_ENV");
+    if (!existingRuntimeEnv) {
+      const argv = args();
+      const buildFlag = argv.includes("--build");
+      const startFlag = argv.includes("--start");
+      const devFlag = argv.includes("--dev");
+      if (buildFlag) {
+        setEnv("RUNTIME_ENV", "build");
+      } else if ("__DWEB_PROD__" in globalThis) {
+        setEnv("RUNTIME_ENV", "start");
+      } else if (startFlag) {
+        setEnv("RUNTIME_ENV", "start");
+      } else if (devFlag) {
+        setEnv("RUNTIME_ENV", "dev");
+      } else {
+        setEnv("RUNTIME_ENV", "dev");
+      }
     }
 
     // 从配置中获取应用名称和版本
@@ -415,13 +422,17 @@ export class App extends EventEmitter implements IApp {
       const router = getRouter(this.container);
 
       const serverCfgForLog = (mergedConfig.server || {}) as { mode?: string };
-      const envModeForLog = getEnv("DENO_ENV") || getEnv("BUN_ENV") ||
-        getEnv("NODE_ENV") || "dev";
-      const isProd = (serverCfgForLog.mode || envModeForLog) === "prod";
+      /** 仅 RUNTIME_ENV=dev 视为本地开发请求（禁用缓存等）；build/start 或 unset 均不走 dev 缓存策略 */
+      const rt = getEnv("RUNTIME_ENV");
+      const isRuntimeDev = rt === "dev";
+      const serverModeOverride = serverCfgForLog.mode;
+      const useDetailedRequestLog = serverModeOverride === "prod" ||
+        rt === "start" ||
+        rt === "build";
 
       // 开发模式：最先注册，在 next() 后统一为所有响应加上禁用缓存头，避免浏览器/代理缓存导致改代码不生效
       server.use(
-        createDevNoCacheMiddleware(!isProd),
+        createDevNoCacheMiddleware(isRuntimeDev),
         undefined,
         "dev-no-cache",
       );
@@ -432,7 +443,7 @@ export class App extends EventEmitter implements IApp {
         requestLogger({
           logger: getLogger(this.container),
           skip: (ctx) => ctx.path.startsWith("/.well-known/"),
-          detailed: isProd,
+          detailed: useDetailedRequestLog,
         }),
       );
 
@@ -518,7 +529,6 @@ export class App extends EventEmitter implements IApp {
         );
         server.use(clientScriptMiddleware);
 
-        const { isProd } = this._getRunModeFromConfig(mergedConfig);
         const clientOutputDir = getClientOutputDir(mergedConfig);
         const prebuiltClientPath = join(
           cwd(),
@@ -528,7 +538,6 @@ export class App extends EventEmitter implements IApp {
         const hasPrebuiltClient = await exists(prebuiltClientPath);
         await this._ensureClientBuildForRender(
           mergedConfig,
-          isProd,
           hasPrebuiltClient,
         );
 
@@ -558,7 +567,6 @@ export class App extends EventEmitter implements IApp {
         );
         server.use(clientScriptMiddleware);
 
-        const { isProd } = this._getRunModeFromConfig(mergedConfig);
         const clientOutputDir = getClientOutputDir(mergedConfig);
         const prebuiltClientPath = join(
           cwd(),
@@ -568,7 +576,6 @@ export class App extends EventEmitter implements IApp {
         const hasPrebuiltClient = await exists(prebuiltClientPath);
         await this._ensureClientBuildForRender(
           mergedConfig,
-          isProd,
           hasPrebuiltClient,
         );
 
@@ -608,7 +615,6 @@ export class App extends EventEmitter implements IApp {
         );
         server.use(clientScriptMiddleware);
 
-        const { isProd } = this._getRunModeFromConfig(mergedConfig);
         const clientOutputDir = getClientOutputDir(mergedConfig);
         const prebuiltClientPath = join(
           cwd(),
@@ -618,7 +624,6 @@ export class App extends EventEmitter implements IApp {
         const hasPrebuiltClient = await exists(prebuiltClientPath);
         await this._ensureClientBuildForRender(
           mergedConfig,
-          isProd,
           hasPrebuiltClient,
         );
 
@@ -917,36 +922,31 @@ export class App extends EventEmitter implements IApp {
   }
 
   /**
-   * 从配置与环境变量得到运行模式（dev/prod）及是否为生产
-   * 用于 CSR/Hybrid/SSR 等渲染分支中统一获取 isProd，减少重复。
-   */
-  private _getRunModeFromConfig(config: AppConfig): {
-    runMode: string;
-    isProd: boolean;
-  } {
-    const serverCfg = config.server as { mode?: string } | undefined;
-    const envMode = getEnv("DENO_ENV") || getEnv("BUN_ENV") ||
-      getEnv("NODE_ENV") || "dev";
-    const runMode = serverCfg?.mode || envMode;
-    return { runMode, isProd: runMode === "prod" };
-  }
-
-  /**
    * 在需要客户端脚本的渲染模式下，按需生成 _client.tsx 并执行客户端构建（内存或磁盘）。
-   * 开发模式始终构建以保证 HMR；生产模式仅当无预构建产物且非 --build 时构建。
+   *
+   * - RUNTIME_ENV=dev：始终保证入口并按需客户端构建（非 `--build` 进程内构建）
+   * - RUNTIME_ENV=build | start：无预构建产物且当前不是「仅 CLI build」时再构建客户端
    */
   private async _ensureClientBuildForRender(
     config: AppConfig,
-    isProd: boolean,
     hasPrebuiltClient: boolean,
   ): Promise<void> {
-    if (!isProd) {
+    const rt = getEnv("RUNTIME_ENV");
+
+    if (rt === "dev") {
       await ensureClientEntryFile(this.container, config);
       if (!this._isBuildMode()) {
         await buildClientScript(this.container, config);
       }
-    } else if (!hasPrebuiltClient && !this._isBuildMode()) {
-      await buildClientScript(this.container, config);
+    } else if (rt === "build" || rt === "start") {
+      if (!hasPrebuiltClient && !this._isBuildMode()) {
+        await buildClientScript(this.container, config);
+      }
+    } else {
+      // 未设置或非预期值：与「非 dev」保守策略一致（兼容仅通过 CLI 读配置的进程）
+      if (!hasPrebuiltClient && !this._isBuildMode()) {
+        await buildClientScript(this.container, config);
+      }
     }
   }
 

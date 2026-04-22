@@ -1857,12 +1857,12 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.3.12] - 2026-04-21
+### [3.3.13] - 2026-04-22
 
-**Fixed** — **`connectDatabases`** now calls **`setDatabaseManager`** so
-**`@dreamer/database`** ORM shares the framework’s **`DatabaseManager`** (fixes
-ORM init without **`setDatabaseConfigLoader`**). Full history:
-[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Changed** — Introduces **`RUNTIME_ENV`** (`dev` / `build` / `start`) for CLI
+spawns, **`App`**, server mode, config profiles, and render/build paths; bumps
+**`@dreamer/config`**, **`@dreamer/plugins`**, **`@dreamer/server`**. Full
+history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

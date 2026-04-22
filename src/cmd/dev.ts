@@ -6,6 +6,7 @@
  * - 单应用：执行 deno task dev
  * - 多应用：需指定应用名，执行 deno task dev:xxx
  * - 使用 loadProjectConfig 获取 config.server 等配置（端口、主机等）
+ * - 子进程环境变量设置 RUNTIME_ENV=dev（与任务脚本中的 `--dev` 语义一致）
  *
  * 运行方式：
  * - dweb dev              # 单应用
@@ -19,7 +20,7 @@ import { $tr } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 import { loadProjectConfig } from "../utils/config-loader.ts";
 import { getProjectInfo } from "../utils/project.ts";
-import { getRuntime, getTaskArgs } from "../utils/runtime.ts";
+import { envWithRuntime, getRuntime, getTaskArgs } from "../utils/runtime.ts";
 
 /**
  * dev 命令主入口
@@ -66,10 +67,12 @@ export async function main(
     const cmd = createCommand(runtime, {
       args: getTaskArgs(taskName),
       cwd: projectRoot,
+      env: envWithRuntime("dev"),
       stdin: "inherit",
       stdout: "inherit",
       stderr: "inherit",
     });
+
     const child = cmd.spawn();
     const status = await child.status;
     if (!status.success) {
@@ -117,6 +120,7 @@ export async function main(
   const cmd = createCommand(runtime, {
     args: getTaskArgs(taskName),
     cwd: projectRoot,
+    env: envWithRuntime("dev"),
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",

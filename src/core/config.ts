@@ -25,10 +25,10 @@ import type { AppConfig } from "../types/app.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $tr } from "../utils/i18n.ts";
 import { isPathWithinProject, normalizePathForCompare } from "../utils/path.ts";
+import { configProfileFromRuntimeEnv } from "../utils/runtime.ts";
 import {
   cwd,
   existsSync,
-  getEnv,
   join,
   realPath,
   resolve,
@@ -687,9 +687,7 @@ export async function initializeConfigManager(
   // 默认同时检查 ./config 与 ./src/config，兼容两种项目结构
   const directories = options.directories || ["./config", "./src/config"];
   // 直接从环境变量读取（兼容 Deno、Bun 和 Node.js）
-  const env = getEnv("DENO_ENV") ||
-    getEnv("BUN_ENV") ||
-    getEnv("NODE_ENV") || "dev";
+  const env = configProfileFromRuntimeEnv();
 
   /**
    * 在 import 各层 `config/main.ts` 之前，同步合并仓库根与各配置目录下的 `.env` / `.env.{dev|test|prod}` / `.env.{原始环境名}`，

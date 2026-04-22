@@ -7,7 +7,7 @@
  * @module
  */
 
-import { IS_BUN, IS_DENO, platform } from "@dreamer/runtime-adapter";
+import { getEnv, IS_BUN, IS_DENO, platform } from "@dreamer/runtime-adapter";
 import { DwebErrorCode, throwDwebError } from "./errors.ts";
 
 export { IS_BUN, IS_DENO };
@@ -83,6 +83,60 @@ export function getTaskArgs(taskName: string): string[] {
     return ["run", taskName];
   }
   throwDwebError(DwebErrorCode.RUNTIME_UNSUPPORTED);
+}
+
+/**
+ * dweb-cli 与子应用约定的运行时阶段标识（与 `--dev` / `--build` / `--start` 语义一致）。
+ *
+ * 通过环境变量 `RUNTIME_ENV` 传入子进程，便于在未重复追加 CLI 参数时仍能区分 dev/build/start。
+ */
+export type RuntimeEnvKind = "dev" | "build" | "start";
+
+/**
+ * 读取当前进程完整环境变量表，供 spawn 子进程时做合并（避免仅传入部分键导致其它变量丢失）。
+ *
+ * @returns 当前进程 env 的快照
+ */
+function getInheritedEnvForSpawn(): Record<string, string> {
+  if (IS_DENO) {
+    // Deno 1.x+ 提供 toObject() 快照进程环境（较 entries() 兼容性更好）
+    return { ...Deno.env.toObject() };
+  }
+  if (IS_BUN) {
+    const procEnv = (
+      globalThis as unknown as {
+        process?: { env?: Record<string, string | undefined> };
+      }
+    ).process?.env ?? {};
+    const out: Record<string, string> = {};
+    for (const [key, value] of Object.entries(procEnv)) {
+      if (typeof value === "string") {
+        out[key] = value;
+      }
+    }
+    return out;
+  }
+  throwDwebError(DwebErrorCode.RUNTIME_UNSUPPORTED);
+}
+
+/**
+ * 构造传给 `createCommand(..., { env })` 的环境变量：继承当前进程 env，并设置 `RUNTIME_ENV`。
+ *
+ * @param runtime 对应 dweb dev / build / start 命令
+ * @returns 可用于子进程的完整 env 对象
+ *
+ * @example
+ * ```ts
+ * createCommand(runtime, {
+ *   args: getTaskArgs("dev"),
+ *   env: envWithRuntime("dev"),
+ * });
+ * ```
+ */
+export function envWithRuntime(
+  runtime: RuntimeEnvKind,
+): Record<string, string> {
+  return { ...getInheritedEnvForSpawn(), RUNTIME_ENV: runtime };
 }
 
 /**
@@ -179,4 +233,16 @@ export function getRunArgs(filePath: string): string[] {
     return ["run", filePath];
   }
   throwDwebError(DwebErrorCode.RUNTIME_UNSUPPORTED);
+}
+
+/**
+ * 供 `main.{env}.ts`、`params.{env}.ts`、`.env.{env}` 等使用的 profile 名，
+ * 与进程环境变量 `RUNTIME_ENV`（`dev` | `build` | `start`）一一对应；未设置或非法值时默认 `dev`。
+ *
+ * @returns `dev`、`build` 或 `start`
+ */
+export function configProfileFromRuntimeEnv(): string {
+  const r = getEnv("RUNTIME_ENV");
+  if (r === "dev" || r === "build" || r === "start") return r;
+  return "dev";
 }

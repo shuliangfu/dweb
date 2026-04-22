@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "3.3.12",
+  "version": "3.3.13",
   "description": "A full-stack Web framework compatible with Deno and Bun, integrating @dreamer/* libraries for an out-of-the-box development experience.",
   "type": "module",
   "license": "Apache-2.0",
@@ -40,7 +40,7 @@
     "examples/*/advanced"
   ],
   "dependencies": {
-    "@dreamer/config": "npm:@jsr/dreamer__config@^1.0.3",
+    "@dreamer/config": "npm:@jsr/dreamer__config@^1.0.4",
     "@dreamer/console": "npm:@jsr/dreamer__console@^1.0.12",
     "@dreamer/database": "npm:@jsr/dreamer__database@^1.0.9",
     "@dreamer/esbuild": "npm:@jsr/dreamer__esbuild@^1.1.9",
@@ -51,11 +51,11 @@
     "@dreamer/middleware": "npm:@jsr/dreamer__middleware@^1.0.2",
     "@dreamer/middlewares": "npm:@jsr/dreamer__middlewares@^1.0.4",
     "@dreamer/plugin": "npm:@jsr/dreamer__plugin@^1.0.2",
-    "@dreamer/plugins": "npm:@jsr/dreamer__plugins@^1.1.1",
+    "@dreamer/plugins": "npm:@jsr/dreamer__plugins@^1.1.4",
     "@dreamer/render": "npm:@jsr/dreamer__render@^1.1.7",
     "@dreamer/router": "npm:@jsr/dreamer__router@^1.1.7",
     "@dreamer/runtime-adapter": "npm:@jsr/dreamer__runtime-adapter@^1.0.18",
-    "@dreamer/server": "npm:@jsr/dreamer__server@^1.1.4",
+    "@dreamer/server": "npm:@jsr/dreamer__server@^1.1.5",
     "@dreamer/service": "npm:@jsr/dreamer__service@^1.0.2",
     "@dreamer/session": "npm:@jsr/dreamer__session@^1.0.4",
     "@dreamer/socket-io": "npm:@jsr/dreamer__socket-io@^1.0.12",

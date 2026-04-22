@@ -93,8 +93,7 @@ describe("SSG 渲染器 (render-ssg.ts)", () => {
       });
 
       it("预渲染文件不存在时应返回 null（prod 模式）", async () => {
-        const isDev =
-          (getEnv("DENO_ENV") || getEnv("BUN_ENV") || "prod") === "dev";
+        const isDev = getEnv("RUNTIME_ENV") === "dev";
         if (isDev) return; // 开发环境走 SSR，跳过
 
         const container = initializeServiceContainer();
