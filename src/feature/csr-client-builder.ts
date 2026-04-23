@@ -773,20 +773,44 @@ export function clearLayoutCache(): void {
       RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
       (g as DwebGlobal).__DWEB_ON_READY__?.();`;
 
-  // CSR 首屏：若服务端注入了 __DATA__（当前路由的 load 结果），则使用其 page 与 layoutData，用后清空避免客户端导航误用
-  const csrInitialPropsSnippet = `const __d = (g as DwebGlobal).__DATA__;
+  /**
+   * CSR `renderCurrentRoute`：首屏有服务端注入的 `__DATA__` 时用其 `page`/`layoutData`，用后即清空，避免
+   * 客户端 `onRouteChange` 误用；若已清空（如首屏后再次调用 `renderCurrentRoute`，i18n `onChange` 等），则
+   * 与 `onRouteChange` 相同请求 `/__data`，以恢复各层 `layout` 的 `load()` 数据（含 Session）。
+   */
+  const csrRenderCurrentRouteDataSnippet =
+    `const __d = (g as DwebGlobal).__DATA__;
       const __use = __d != null && (match.route?.path ?? "") === (__d.route ?? "");
-      const _layoutData = (__use && __d && Array.isArray(__d.layoutData)) ? __d.layoutData : [];
-      const _props = __use ? (() => { (g as DwebGlobal).__DATA__ = undefined; return __d?.page ?? { params: match.params, query: match.query }; })() : { params: match.params, query: match.query };`;
-  const csrMergeLayoutDataSnippet =
-    `const _layoutsCsr: LayoutComponent[] = (__use && _layoutData.length) ? layoutList.map((l, i) => ({ component: l.component, props: (_layoutData[i] ?? l.props ?? {}) as Record<string, unknown> })) : layoutList;`;
+      type _CsrRcrDataProps = { params?: Record<string, string>; query?: Record<string, string>; layoutData?: unknown[]; data?: unknown };
+      let _layoutData: unknown[] = [];
+      let _props: Record<string, unknown>;
+      if (__use) {
+        _layoutData = __d && Array.isArray(__d.layoutData) ? __d.layoutData : [];
+        _props = (() => { (g as DwebGlobal).__DATA__ = undefined; return __d?.page ?? { params: match.params, query: match.query }; })() as Record<string, unknown>;
+      } else {
+        const _search = (typeof _win.location !== "undefined" && _win.location?.search) ? _win.location.search : "";
+        let _rcrNav: _CsrRcrDataProps = {};
+        try {
+          const _dataUrl = "/__data?path=" + encodeURIComponent(pathname) + (_search ? "&" + _search.slice(1) : "");
+          const _dataRes = await fetch(_dataUrl);
+          if (_dataRes && _dataRes.ok) {
+            _rcrNav = (await _dataRes.json()) as _CsrRcrDataProps;
+          }
+        } catch {
+          /* 与 onRouteChange：__data 失败则无 layoutData */
+        }
+        _layoutData = Array.isArray(_rcrNav.layoutData) ? _rcrNav.layoutData : [];
+        _props = { params: _rcrNav.params || (match.params || {}), query: _rcrNav.query || (match.query || {}), data: _rcrNav.data } as Record<string, unknown>;
+      }
+      const _layoutsCsr: LayoutComponent[] = _layoutData.length
+        ? layoutList.map((l, i) => ({ component: l.component, props: (_layoutData[i] ?? l.props ?? {}) as Record<string, unknown> }))
+        : layoutList;`;
   const setLastPathSnippet =
     `(g as DwebGlobal).__DWEB_LAST_PATHNAME__ = (typeof _win.location !== "undefined" && _win.location.pathname ? _win.location.pathname : "/") + (typeof _win.location !== "undefined" && _win.location.search ? _win.location.search : "");`;
   const renderCurrentRouteSnippet = isViewEngine
     ? `if (_win.__DWEB_DEBUG__) console.log("[dweb:view] renderCurrentRoute", { component: match.route.component, hasPage: !!PageComponent, layoutsCount: layoutList?.length ?? 0 });
       ${setLastPathSnippet}
-      ${csrInitialPropsSnippet}
-      ${csrMergeLayoutDataSnippet}
+      ${csrRenderCurrentRouteDataSnippet}
       setViewState({ page: PageComponent, props: _props, layouts: _layoutsCsr, skipLayouts });
       if (!_viewReactiveRoot && RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
       if (!_viewReactiveRoot) {
@@ -805,8 +829,7 @@ export function clearLayoutCache(): void {
       const _container = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
       if (_container && typeof _container.replaceChildren === "function") _container.replaceChildren();
       ${setLastPathSnippet}
-      ${csrInitialPropsSnippet}
-      ${csrMergeLayoutDataSnippet}
+      ${csrRenderCurrentRouteDataSnippet}
       const csrResult = await renderCSR({
         engine,
         component: PageComponent,

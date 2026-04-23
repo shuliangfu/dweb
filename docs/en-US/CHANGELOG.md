@@ -8,6 +8,17 @@ and this project adheres to
 
 ---
 
+## [3.4.1] - 2026-04-18
+
+### Fixed
+
+- **Generated CSR `renderCurrentRoute`** (`src/feature/csr-client-builder.ts` →
+  `_client.dep.tsx`): After server-injected `__DATA__` was cleared on first use,
+  a later call to `renderCurrentRoute` (e.g. from i18n `onChange` after language
+  switch) re-rendered layouts **without** `load()` data. The client now
+  **fetches `/__data`** in that case, same as `onRouteChange`, so each layout
+  again receives merged `layoutData` (e.g. session in layout `data`).
+
 ## [3.4.0] - 2026-04-22
 
 ### Changed

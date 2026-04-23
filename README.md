@@ -1857,12 +1857,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.4.0] - 2026-04-22
+### [3.4.1] - 2026-04-18
 
-**Changed** — Config profile from **`configProfileFromRuntimeEnv()`** follows
-**`RUNTIME_ENV` only**; **`preloadDotEnvSync`** runs before profile resolution;
-**`build`/`start`** layers merge **`main.prod`/`params.prod`** before
-**`main.{build|start}`** files. Full history:
+**Fixed** — CSR **`renderCurrentRoute`**: when `__DATA__` was already consumed,
+a follow-up re-render (e.g. i18n refresh) now **fetches `/__data`** so layouts
+keep **`load()`** `data` (e.g. session). Full history:
 [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---

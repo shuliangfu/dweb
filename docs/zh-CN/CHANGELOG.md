@@ -7,6 +7,17 @@
 
 ---
 
+## [3.4.1] - 2026-04-18
+
+### 修复
+
+- **生成的 CSR `renderCurrentRoute`** （`src/feature/csr-client-builder.ts` →
+  `_client.dep.tsx`）：在首屏**消费并清空**服务端 注入的 `__DATA__`
+  后，若再次调用 `renderCurrentRoute`（例如多语言 `i18n.onChange`
+  切语言后刷新视图），原逻辑未再拉取 `/__data`，各层 layout 丢失 `load()` 回传的
+  `data`（如 Session 用户）。现与 `onRouteChange` 一样，在该路径下**请求
+  `/__data`** 并合并 `layoutData`。
+
 ## [3.4.0] - 2026-04-22
 
 ### 变更

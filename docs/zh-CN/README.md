@@ -1924,12 +1924,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.3.12] - 2026-04-21
+### [3.4.1] - 2026-04-18
 
-**修复** — **`connectDatabases`** 结束时调用 **`setDatabaseManager`**，使
-**`@dreamer/database`** ORM 与框架共用 **`DatabaseManager`**（避免依赖
-**`setDatabaseConfigLoader`** 方可初始化 ORM）。详见
-[CHANGELOG.md](./CHANGELOG.md)。
+**修复** — 生成的 CSR **`renderCurrentRoute`**：在 **`__DATA__` 已首屏用过后，
+再次重渲染（如多语言 `onChange`）时改为请求 **`/__data`**，恢复各层 layout 的
+**`load()`** 数据（如 Session）。详见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 
