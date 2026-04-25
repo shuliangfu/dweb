@@ -12,15 +12,18 @@ import {
   chdir,
   createCommand,
   cwd,
-  execPath,
   exists,
-  IS_DENO,
   join,
   readTextFile,
   remove,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
-import { existsBuildOutput, getRepoRoot, getSpawnCwd } from "../setup.ts";
+import {
+  existsBuildOutput,
+  getDenoExecutableForExamples,
+  getRepoRoot,
+  getSpawnCwd,
+} from "../setup.ts";
 
 /** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
 const REPO_ROOT = getRepoRoot();
@@ -46,12 +49,9 @@ describe("integration: SSG + React 构建", () => {
       await remove(distDir, { recursive: true });
     }
 
-    // -A 为 Deno 权限参数，Bun 不支持，需根据运行时判断
-    const args = IS_DENO
-      ? ["run", "-A", "src/main.ts", "--build"]
-      : ["run", "src/main.ts", "--build"];
-    const cmd = createCommand(execPath(), {
-      args,
+    // 子进程始终用 Deno 跑 deno.json，与 deno test 同构，避免 bun run 在仓库内双份 react
+    const cmd = createCommand(getDenoExecutableForExamples(), {
+      args: ["run", "-A", "src/main.ts", "--build"],
       cwd: getSpawnCwd(exampleDir),
       stdout: "piped",
       stderr: "piped",

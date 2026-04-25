@@ -9,9 +9,13 @@
  * 需在测试脚本中通过 `import "../setup.ts"` 或 `import "./setup.ts"` 导入。
  */
 import {
+  createCommand,
   cwd,
   dirname,
+  execPath,
   exists,
+  IS_BUN,
+  join,
   platform,
   resolve,
   setEnv,
@@ -44,6 +48,65 @@ export function getSpawnCwd(dir: string): string {
     return dir.replace(/\//g, "\\");
   }
   return dir;
+}
+
+/**
+ * 集成/e2e 中 spawn 子进程时使用的 **Deno 可执行文件**路径。
+ *
+ * 在 dweb 仓库中同时存在 Bun 的 `node_modules/.bun` 与 Deno 的 `node_modules/.deno` 时，若
+ * 用 `bun run` 启动示例，用户侧 `react` / `preact` 与渲染链中的
+ * `react-dom` / `preact-render-to-string` 等可能解到**不同物理副本**，
+ * 出现 `Invalid hook call`、Preact `r.__H` 等。子进程复用与 `deno test` 相同的
+ * **Deno** + 示例内 `deno.json`，可保证单一依赖图。
+ *
+ * 在 `deno test` 下复用 `Deno.execPath()`；否则从 PATH 解析 `deno`（须已安装并可用）。
+ *
+ * @returns 绝对路径，或当无法取得当前解释器路径时为 `"deno"`
+ */
+export function getDenoExecutableForExamples(): string {
+  const d = (globalThis as { Deno?: { execPath: () => string } }).Deno;
+  if (d && typeof d.execPath === "function") {
+    return d.execPath();
+  }
+  return "deno";
+}
+
+/**
+ * 在 **Bun** 下为示例目录安装 `node_modules`（`package.json` 中
+ * `"@dreamer/dweb": "file:../../.."` 等需解析到磁盘路径）。
+ * **Deno** 下示例通过 `deno.json` 的 `imports` 直链 `../../../src/mod.ts`，无需本步骤。
+ *
+ * 未执行时集成/e2e 子进程会报 `ENOENT .../node_modules/@dreamer/dweb`。
+ * 若已存在已链接的 `@dreamer/dweb` 则立即返回，不重复 `bun install`。
+ *
+ * @param exampleDir 示例根目录（含 `package.json`）
+ */
+export async function ensureExampleDependenciesInstalled(
+  exampleDir: string,
+): Promise<void> {
+  if (!IS_BUN) {
+    return;
+  }
+  const marker = join(exampleDir, "node_modules", "@dreamer", "dweb");
+  if (await exists(marker)) {
+    return;
+  }
+  const cmd = createCommand(execPath(), {
+    args: ["install"],
+    cwd: getSpawnCwd(exampleDir),
+    stdout: "piped",
+    stderr: "piped",
+  });
+  const proc = cmd.spawn();
+  const [status, stderrText] = await Promise.all([
+    proc.status,
+    proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
+  ]);
+  if (!status.success) {
+    throw new Error(
+      `bun install failed in ${exampleDir}: ${stderrText || "(no stderr)"}`,
+    );
+  }
 }
 
 /**

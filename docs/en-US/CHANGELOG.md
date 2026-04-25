@@ -44,6 +44,10 @@ and this project adheres to
 - **`tests/unit/path.test.ts`**: Child paths that do **not** exist yet (e.g.
   `config/main.ts` under a temp project) must still be treated as inside the
   project, matching GHA / browser test runs.
+- **Integration / e2e (Bun)**: **`tests/setup.ts`** adds
+  **`ensureExampleDependenciesInstalled`**: if `node_modules/@dreamer/dweb` is
+  missing in an example, run **`bun install`** there before build/dev subprocess
+  (Deno still uses `deno.json` imports and skips this).
 
 ## [3.4.2] - 2026-04-25
 

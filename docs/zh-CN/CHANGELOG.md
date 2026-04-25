@@ -38,6 +38,10 @@
   断言。
 - **`tests/unit/path.test.ts`**：临时目录下**尚未存在**的子路径（如
   `config/main.ts`）仍应判为项目内，与 GHA 上 `path` / 浏览器用例一致。
+- **集成 / e2e（Bun）**：**`tests/setup.ts`** 增加
+  **`ensureExampleDependenciesInstalled`**：若示例目录无
+  `node_modules/@dreamer/dweb`，则在子进程 build/dev 前对该目录执行
+  **`bun install`**（Deno 仍走 `deno.json` 的 `imports`，不执行本步）。
 
 ## [3.4.2] - 2026-04-25
 

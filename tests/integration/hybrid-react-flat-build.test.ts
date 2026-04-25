@@ -12,15 +12,18 @@ import {
   chdir,
   createCommand,
   cwd,
-  execPath,
   exists,
-  IS_DENO,
   join,
   readdir,
   remove,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
-import { existsBuildOutput, getRepoRoot, getSpawnCwd } from "../setup.ts";
+import {
+  existsBuildOutput,
+  getDenoExecutableForExamples,
+  getRepoRoot,
+  getSpawnCwd,
+} from "../setup.ts";
 
 /** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
 const REPO_ROOT = getRepoRoot();
@@ -46,12 +49,9 @@ describe("integration: Hybrid + React 构建（无 src 目录）", () => {
       await remove(distDir, { recursive: true });
     }
 
-    // 无 src 目录，入口为 main.ts
-    const args = IS_DENO
-      ? ["run", "-A", "main.ts", "--build"]
-      : ["run", "main.ts", "--build"];
-    const cmd = createCommand(execPath(), {
-      args,
+    // 无 src 目录，入口为 main.ts；子进程用 Deno 与 deno.json 一致
+    const cmd = createCommand(getDenoExecutableForExamples(), {
+      args: ["run", "-A", "main.ts", "--build"],
       cwd: getSpawnCwd(exampleDir),
       stdout: "piped",
       stderr: "piped",

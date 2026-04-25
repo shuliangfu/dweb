@@ -16,6 +16,7 @@ import {
   execPath,
   exists,
   getEnvAll,
+  IS_BUN,
   IS_DENO,
   join,
   platform,
@@ -31,6 +32,7 @@ import {
   expect,
   it,
 } from "@dreamer/test";
+import { getDenoExecutableForExamples } from "../setup.ts";
 
 /**
  * 从本模块路径解析出的 dweb 项目根目录（不依赖 cwd，避免多套件顺序执行时 cwd 被上一套件改变导致路径错误）
@@ -77,6 +79,14 @@ const E2E_PORTS: Record<string, number> = {
  * 避免多文件顺序跑时跨套件共用 Playwright 实例导致挂死与 Bun killed dangling processes，而非依赖拉长本值。
  */
 const BROWSER_TEST_TIMEOUT_MS = 60_000;
+
+/**
+ * Bun 跑 e2e 时子进程/Playwright 较 Deno 同机更慢，以下长链路在 60s 内易触顶：
+ * - advanced 双进程下「点用户管理进 /users」
+ * - view-hybrid 多段 SPA 路由 + 相册/图表/管理页的 head metadata
+ * Deno 仍用 {@link BROWSER_TEST_TIMEOUT_MS}，仅 Bun 放宽。
+ */
+const BUN_HEAVY_E2E_TIMEOUT_MS = 120_000;
 
 /**
  * 各 basic 示例中 `index` / `about` / 用户页与 view-hybrid 扩展路由的元数据期望文案（与源文件 `export const metadata` 一致）。
@@ -486,11 +496,8 @@ async function _buildExample(
     await remove(distDir, { recursive: true });
   }
 
-  const args = IS_DENO
-    ? ["run", "-A", entry, "--build"]
-    : ["run", entry, "--build"];
-  const cmd = createCommand(execPath(), {
-    args,
+  const cmd = createCommand(getDenoExecutableForExamples(), {
+    args: ["run", "-A", entry, "--build"],
     cwd: exampleDir,
     stdout: "piped",
     stderr: "piped",
@@ -1423,7 +1430,10 @@ async function assertBrowserMetadata(
 
   const baseUrl = `http://127.0.0.1:${port}/`;
   const navTimeoutMs = 20000;
-  const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
+  /** view-hybrid 多段路由 + Bun 偏慢时，单次 click 与整段断言需与外层 it 超时同量级 */
+  const contentTimeout = IS_BUN && options?.viewHybridExtraRoutes === true
+    ? BUN_HEAVY_E2E_TIMEOUT_MS
+    : BROWSER_TEST_TIMEOUT_MS;
 
   if (typeof page.goto === "function") {
     await gotoWithRetry(page, baseUrl, { timeout: navTimeoutMs });
@@ -1633,11 +1643,8 @@ async function _buildExampleAdvanced(
     await remove(distDir, { recursive: true });
   }
   for (const entry of entries) {
-    const args = IS_DENO
-      ? ["run", "-A", entry, "--build"]
-      : ["run", entry, "--build"];
-    const cmd = createCommand(execPath(), {
-      args,
+    const cmd = createCommand(getDenoExecutableForExamples(), {
+      args: ["run", "-A", entry, "--build"],
       cwd: exampleDir,
       stdout: "piped",
       stderr: "piped",
@@ -1690,13 +1697,12 @@ export function createAdvancedExampleBrowserSuite(
       originalCwd = cwd();
       exampleDir = resolve(DWEB_ROOT, "examples", exampleName, "advanced");
       chdir(exampleDir);
-      // await _ensureBunDeps(exampleDir); // 本地测试删除示例 node_modules 仍通过，先注释
 
       // 启动 backend dev 服务
       actualBackendPort = await findAvailablePort("127.0.0.1", backendPort);
       const envBackend = { ...getEnvAll(), PORT: String(actualBackendPort) };
-      const startBackend = createCommand(execPath(), {
-        args: IS_DENO ? ["run", "-A", entries[0]] : ["run", entries[0]],
+      const startBackend = createCommand(getDenoExecutableForExamples(), {
+        args: ["run", "-A", entries[0]],
         cwd: exampleDir,
         env: envBackend,
         stdout: "inherit",
@@ -1710,8 +1716,8 @@ export function createAdvancedExampleBrowserSuite(
       // 启动 frontend dev 服务
       actualFrontendPort = await findAvailablePort("127.0.0.1", frontendPort);
       const envFrontend = { ...getEnvAll(), PORT: String(actualFrontendPort) };
-      const startFrontend = createCommand(execPath(), {
-        args: IS_DENO ? ["run", "-A", entries[1]] : ["run", entries[1]],
+      const startFrontend = createCommand(getDenoExecutableForExamples(), {
+        args: ["run", "-A", entries[1]],
         cwd: exampleDir,
         env: envFrontend,
         stdout: "inherit",
@@ -1742,11 +1748,18 @@ export function createAdvancedExampleBrowserSuite(
       }
     });
 
+    const advancedRenderTimeout = (exampleName === "view-hybrid" ||
+        exampleName === "view-hybrid-flat") && IS_BUN
+      ? BUN_HEAVY_E2E_TIMEOUT_MS
+      : BROWSER_TEST_TIMEOUT_MS;
+
     it.skipIf(skip, "应能渲染且无 hydration 错误", async (t) => {
       if (!t) throw new Error("test context 不可用");
-      await assertBrowserRender(t, actualFrontendPort);
+      await assertBrowserRender(t, actualFrontendPort, {
+        timeoutMs: advancedRenderTimeout,
+      });
     }, {
-      timeout: BROWSER_TEST_TIMEOUT_MS,
+      timeout: advancedRenderTimeout,
       sanitizeOps: false,
       sanitizeResources: false,
       browser: {
@@ -1755,16 +1768,21 @@ export function createAdvancedExampleBrowserSuite(
         dumpio: true,
         reuseBrowser: true,
         browserSource: "test",
-        protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
+        protocolTimeout: advancedRenderTimeout,
       },
     });
 
     // reuseBrowser: false 避免与上一用例共享浏览器，减少 CI 上 "Target page has been closed" 偶发
+    const clickUsersTimeout = IS_BUN
+      ? BUN_HEAVY_E2E_TIMEOUT_MS
+      : BROWSER_TEST_TIMEOUT_MS;
     it.skipIf(skip, "应能通过点击用户管理链接进入用户页", async (t) => {
       if (!t) throw new Error("test context 不可用");
-      await assertBrowserClickUsers(t, actualFrontendPort);
+      await assertBrowserClickUsers(t, actualFrontendPort, {
+        timeoutMs: clickUsersTimeout,
+      });
     }, {
-      timeout: BROWSER_TEST_TIMEOUT_MS,
+      timeout: clickUsersTimeout,
       sanitizeOps: false,
       sanitizeResources: false,
       browser: {
@@ -1773,7 +1791,7 @@ export function createAdvancedExampleBrowserSuite(
         dumpio: true,
         reuseBrowser: false,
         browserSource: "test",
-        protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
+        protocolTimeout: clickUsersTimeout,
       },
     });
   });
@@ -1814,6 +1832,17 @@ export function createBasicExampleBrowserSuite(
   const skipCounter = skip || skipCounterMetadataFlakyEnv;
   const skipMetadata = skip || skipCounterMetadataFlakyEnv;
 
+  /**
+   * `view-hybrid` / `view-hybrid-flat` 的 dev 含 WebSocket、定时任务、队列等，在 **Bun** 上
+   * 于 `browser-render-view-*` 全量跑的后段，首条「无 hydration 错误」易触顶 60s 外层 `it`；
+   * 超时后 Bun 会 `killed N dangling process` 杀掉子进程，后续用例对同一端口
+   * `ConnectionRefused`（与 assertBrowserMetadata 的 Bun 宽限同量级）。
+   */
+  const basicBrowserItTimeout = IS_BUN &&
+      (exampleName === "view-hybrid" || exampleName === "view-hybrid-flat")
+    ? BUN_HEAVY_E2E_TIMEOUT_MS
+    : BROWSER_TEST_TIMEOUT_MS;
+
   describe(`e2e: 浏览器渲染 - ${exampleName}`, () => {
     let originalCwd: string | undefined;
     let child: SpawnedProcess | null = null;
@@ -1825,13 +1854,12 @@ export function createBasicExampleBrowserSuite(
       originalCwd = cwd();
       exampleDir = resolve(DWEB_ROOT, "examples", exampleName, "basic");
       chdir(exampleDir);
-      // await _ensureBunDeps(exampleDir); // 本地测试删除示例 node_modules 仍通过，先注释
 
-      // 启动 dev 服务（与 view 一致，不 build，直接跑入口）
+      // 启动 dev 服务（Deno 子进程，与 deno.json 一致，避免 bun 下双 preact）
       actualPort = await findAvailablePort("127.0.0.1", preferredPort);
       const env = { ...getEnvAll(), PORT: String(actualPort) };
-      const startCmd = createCommand(execPath(), {
-        args: IS_DENO ? ["run", "-A", entry] : ["run", entry],
+      const startCmd = createCommand(getDenoExecutableForExamples(), {
+        args: ["run", "-A", entry],
         cwd: exampleDir,
         env,
         stdout: "inherit",
@@ -1862,9 +1890,11 @@ export function createBasicExampleBrowserSuite(
 
     it.skipIf(skip, "应能渲染且无 hydration 错误", async (t) => {
       if (!t) throw new Error("test context 不可用");
-      await assertBrowserRender(t, actualPort);
+      await assertBrowserRender(t, actualPort, {
+        timeoutMs: basicBrowserItTimeout,
+      });
     }, {
-      timeout: BROWSER_TEST_TIMEOUT_MS,
+      timeout: basicBrowserItTimeout,
       sanitizeOps: false,
       sanitizeResources: false,
       browser: {
@@ -1874,7 +1904,7 @@ export function createBasicExampleBrowserSuite(
         reuseBrowser: true,
         // 使用 Playwright 自带 Chromium
         browserSource: "test",
-        protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
+        protocolTimeout: basicBrowserItTimeout,
       },
     });
 
@@ -1882,7 +1912,7 @@ export function createBasicExampleBrowserSuite(
       if (!t) throw new Error("test context 不可用");
       await assertBrowserClickAbout(t, actualPort);
     }, {
-      timeout: BROWSER_TEST_TIMEOUT_MS,
+      timeout: basicBrowserItTimeout,
       sanitizeOps: false,
       sanitizeResources: false,
       browser: {
@@ -1891,7 +1921,7 @@ export function createBasicExampleBrowserSuite(
         dumpio: true,
         reuseBrowser: true,
         browserSource: "test",
-        protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
+        protocolTimeout: basicBrowserItTimeout,
       },
     });
 
@@ -1903,7 +1933,7 @@ export function createBasicExampleBrowserSuite(
         await assertLoadDataInjected(t, actualPort);
       },
       {
-        timeout: BROWSER_TEST_TIMEOUT_MS,
+        timeout: basicBrowserItTimeout,
         sanitizeOps: false,
         sanitizeResources: false,
         browser: {
@@ -1912,7 +1942,7 @@ export function createBasicExampleBrowserSuite(
           dumpio: true,
           reuseBrowser: true,
           browserSource: "test",
-          protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
+          protocolTimeout: basicBrowserItTimeout,
         },
       },
     );
@@ -1925,7 +1955,7 @@ export function createBasicExampleBrowserSuite(
         await assertBrowserCounterButtons(t, actualPort);
       },
       {
-        timeout: BROWSER_TEST_TIMEOUT_MS,
+        timeout: basicBrowserItTimeout,
         sanitizeOps: false,
         sanitizeResources: false,
         browser: {
@@ -1934,7 +1964,7 @@ export function createBasicExampleBrowserSuite(
           dumpio: true,
           reuseBrowser: true,
           browserSource: "test",
-          protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
+          protocolTimeout: basicBrowserItTimeout,
         },
       },
     );
@@ -1949,7 +1979,7 @@ export function createBasicExampleBrowserSuite(
         });
       },
       {
-        timeout: BROWSER_TEST_TIMEOUT_MS,
+        timeout: basicBrowserItTimeout,
         sanitizeOps: false,
         sanitizeResources: false,
         browser: {
@@ -1958,7 +1988,7 @@ export function createBasicExampleBrowserSuite(
           dumpio: true,
           reuseBrowser: true,
           browserSource: "test",
-          protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
+          protocolTimeout: basicBrowserItTimeout,
         },
       },
     );

@@ -8,8 +8,8 @@
  * 与 `@dreamer/esbuild` 的 **`deno info` 模块映射磁盘缓存** 无关；后者由 esbuild 在
  * `~/.dreamer/<项目目录名>/esbuild-deno-cache/` 下自动创建，无需在本文件中配置。
  *
- * Deno：使用 deno.json 的 imports 将 @dreamer/dweb 指向本地 file://。
- * Bun：Bun 不读 deno.json，需在临时目录写 package.json 并用 file: 引用本地 dweb，再 bun install 后运行。
+ * 子进程统一用 **Deno** 与临时目录的 `deno.json` 将 @dreamer/dweb 指向本地，避免
+ * 在 `bun test` 下用 `bun run` 时混用 node_modules 导致 preact 双份。
  */
 
 import {
@@ -17,19 +17,15 @@ import {
   createCommand,
   cwd,
   ensureDir,
-  execPath,
-  IS_DENO,
   join,
   makeTempDir,
-  platform,
   readTextFile,
   remove,
   resolve,
-  symlink,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
-import { getRepoRoot } from "../setup.ts";
+import { getDenoExecutableForExamples, getRepoRoot } from "../setup.ts";
 
 const REPO_ROOT = getRepoRoot();
 
@@ -62,9 +58,6 @@ function resolveImportMapEntryForTempProject(
   }
   return spec;
 }
-
-/** Windows 上 Bun 创建目录符号链接常需管理员或开发者模式，CI 易失败，整套件跳过 */
-const isBunWindows = !IS_DENO && platform() === "windows";
 
 /**
  * 集成测试临时工程父目录（`dweb/tests/data`），避免占用 `~/.dreamer` 或与 esbuild 磁盘缓存混淆。
@@ -124,16 +117,6 @@ const runConfigLifecycleSuite = () => {
             2,
           ),
         );
-
-        // Bun 不读 deno.json，通过 node_modules 符号链接指向本地 dweb，Bun 会使用仓库内 node_modules 解析 dweb 的依赖
-        if (!IS_DENO) {
-          await ensureDir(join(testDir, "node_modules", "@dreamer"));
-          await symlink(
-            REPO_ROOT,
-            join(testDir, "node_modules", "@dreamer", "dweb"),
-            "dir",
-          );
-        }
 
         // 入口为 src/main.ts 时，框架推断 config 目录为 src/config
         await ensureDir(join(testDir, "src", "config"));
@@ -206,11 +189,8 @@ if (g.process?.exit) g.process.exit(0);
 
     it("App 应能加载 config 并注册生命周期钩子", async () => {
       // cwd=testDir 时子进程使用 testDir/deno.json（@dreamer/dweb 指向本地），入口为 src/main.ts
-      const args = IS_DENO
-        ? ["run", "-A", "src/main.ts"]
-        : ["run", "src/main.ts"];
-      const cmd = createCommand(execPath(), {
-        args,
+      const cmd = createCommand(getDenoExecutableForExamples(), {
+        args: ["run", "-A", "src/main.ts"],
         cwd: testDir,
         stdout: "piped",
         stderr: "piped",
@@ -238,6 +218,4 @@ if (g.process?.exit) g.process.exit(0);
   });
 };
 
-if (!isBunWindows) {
-  runConfigLifecycleSuite();
-}
+runConfigLifecycleSuite();
