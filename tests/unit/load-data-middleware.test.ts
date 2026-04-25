@@ -65,13 +65,19 @@ describe("Load 数据接口中间件 (load-data-middleware.ts)", () => {
     testDir = await makeTempDir({ prefix: "dweb-load-data-" });
     originalCwd = cwd();
     chdir(testDir);
-    routesDir = join(testDir, "src", "routes");
-    await ensureDir(routesDir);
-    pagePath = join(routesDir, "index.tsx");
-    layoutPath = join(routesDir, "_layout.tsx");
-    errorPagePath = join(routesDir, "error.tsx");
+    /**
+     * 使用**相对** `cwd()` 的 routes 路径，避免 Windows 上 `makeTempDir` 返回的绝对路径
+     * 与 `chdir` 后 `process.cwd` / `realPath` 的 8.3/长名表示不一致，导致
+     * `isPathWithinProject` 误判、`loadRouteModule` 返回 null、本套件断言失败。
+     */
+    routesDir = join("src", "routes");
+    const routesDirAbs = join(cwd(), routesDir);
+    await ensureDir(routesDirAbs);
+    pagePath = join("src", "routes", "index.tsx");
+    layoutPath = join("src", "routes", "_layout.tsx");
+    errorPagePath = join("src", "routes", "error.tsx");
     await writeTextFile(
-      pagePath,
+      join(cwd(), pagePath),
       `
 export const metadata = { title: "Home </script>", description: "Desc <safe>" };
 export function load(ctx) {
@@ -80,7 +86,7 @@ export function load(ctx) {
 `,
     );
     await writeTextFile(
-      layoutPath,
+      join(cwd(), layoutPath),
       `
 export function load() {
   return { shell: "layout" };
@@ -88,7 +94,7 @@ export function load() {
 `,
     );
     await writeTextFile(
-      errorPagePath,
+      join(cwd(), errorPagePath),
       `
 export function load() {
   throw new Error("boom <script>");
