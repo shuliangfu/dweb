@@ -11,6 +11,39 @@ import { platform } from "@dreamer/runtime-adapter";
 import { cwd, relative, resolve } from "../core/runtime-adapter.ts";
 
 /**
+ * 去掉 Windows 上 `fs.realPath` 等可能返回的逐字（verbatim）路径前缀
+ * `\\?\\` / `\\?\\UNC\\` / `//?/C:/` 等，使与 `process.cwd()` 常见的 `C:\\...` 在
+ * 同一套归一规则下可安全比较。否则 `isPathWithinProject` 会误判、动态 import 不加载。
+ *
+ * @param absolute 已 `resolve` 的绝对路径
+ * @returns 可参与斜杠归一、与项目根比对的等效路径
+ * @see https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#maximum-path-length-limitation
+ */
+function stripWindowsVerbatimForCompare(absolute: string): string {
+  if (platform() !== "windows") {
+    return absolute;
+  }
+  if (absolute.startsWith("\\\\?\\UNC\\")) {
+    // \\?\UNC\server\share\path -> \\server\share\path
+    return "\\\\" + absolute.slice(8);
+  }
+  if (absolute.startsWith("\\\\?\\")) {
+    // \\?\C:\path -> C:\path
+    return absolute.slice(4);
+  }
+  const s = absolute.replace(/\\/g, "/");
+  if (s.length >= 8 && s.toLowerCase().startsWith("//?/unc/")) {
+    // //?/unc/server/share -> //server/share
+    return "//" + s.slice(8);
+  }
+  if (s.startsWith("//?/") && s.length > 4) {
+    // //?/C:/Users/... -> C:/Users/...
+    return s.slice(4);
+  }
+  return absolute;
+}
+
+/**
  * 规范化路径用于字符串比较
  * 统一斜杠、解析绝对路径，便于跨平台比较
  *
@@ -18,7 +51,9 @@ import { cwd, relative, resolve } from "../core/runtime-adapter.ts";
  * @returns 规范化后的路径字符串
  */
 export function normalizePathForCompare(p: string): string {
-  const s = resolve(p).replace(/\\/g, "/");
+  const resolved = resolve(p);
+  const unverbatim = stripWindowsVerbatimForCompare(resolved);
+  const s = unverbatim.replace(/\\/g, "/");
   return s.replace(/\/\.\//g, "/").replace(/\/+$/g, "");
 }
 

@@ -1857,13 +1857,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.4.2] - 2026-04-25
+### [3.4.3] - 2026-04-25
 
-**Added** — Safe inline JSON (`serializeJsonForInlineScript`), stricter default
-error HTML/JSON in production, optional **`securityHeaders`** middleware, and
-**`csr-client-route-manifest`** with correct **Router** path normalization for
-**`ROUTE_LOADERS`**. **Changed** — **Hybrid** parallel page/**_app**/**_layout**
-load; **`load-data`** 500 message hiding in production. Full history:
+**Fixed** — **`normalizePathForCompare`** strips Windows `\\?\` / `//?/`
+verbatim paths from **`realpath`** so **`loadRouteModule`** and **`/__data`**
+work on **Windows + Bun** (CI). Full history:
 [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---

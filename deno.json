@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "3.4.2",
+  "version": "3.4.3",
   "description": "A full-stack Web framework compatible with Deno and Bun, integrating @dreamer/* libraries for an out-of-the-box development experience.",
   "license": "Apache-2.0",
   "exports": {

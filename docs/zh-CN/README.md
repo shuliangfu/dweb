@@ -1924,13 +1924,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.4.2] - 2026-04-25
+### [3.4.3] - 2026-04-25
 
-**新增** — 内联 JSON 安全序列化、生产环境错误信息收敛、可选
-**`securityHeaders`** 中间件，以及 **`csr-client-route-manifest`** 对 Router
-路径的归一化，保证 **`ROUTE_LOADERS`** 与首页 **`index`** 等路由一致。**变更** —
-**Hybrid** 首屏 **page/_app/_layout** 并行加载；**`/__data`**
-生产环境不返回内部错误细节。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
+**修复** — **`normalizePathForCompare`** 去除 Windows 上 `realpath` 返回的
+`\\?\` 等**逐字路径**前缀，使 **`loadRouteModule`** 与 **`/__data`** 在 **Bun +
+Windows**（含 CI）下行为正确。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

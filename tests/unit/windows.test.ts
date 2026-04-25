@@ -113,6 +113,35 @@ describe("Windows 兼容性 (windows.test.ts)", () => {
       const normalized = normalizePathForCompare(unicode);
       expect(normalized).not.toContain("\\");
     });
+
+    /**
+     * Windows 上 `fs.realpath` 等可能返回 `\\?\C:\...` 逐字形式；须与
+     * `process.cwd()` 的常规 `C:\...` 在 `isPathWithinProject` 中可比，否则
+     * loadRouteModule 会误拒（load-data 等用例在 Bun+Windows CI 中失败）。
+     */
+    it("Windows 下应归一化 \\\\?\\ 逐字绝对路径，便于与项目根比较", () => {
+      if (platform() !== "windows") {
+        return;
+      }
+      const withBackslash = projectRoot.replace(/\//g, "\\");
+      const verbatim = "\\\\?\\" + withBackslash;
+      const normV = normalizePathForCompare(verbatim);
+      const normP = normalizePathForCompare(projectRoot);
+      expect(normV).toBe(normP);
+    });
+
+    /**
+     * 在逐字 `projectRoot` 上确认「路径在 Project 内」的判定，与
+     * `normalizePathForCompare` 的 strip 一致。
+     */
+    it("Windows 下 isPathWithinProject 应接受带 \\?\\ 的归一路径", () => {
+      if (platform() !== "windows") {
+        return;
+      }
+      const withBackslash = projectRoot.replace(/\//g, "\\");
+      const verbatimRoot = "\\\\?\\" + withBackslash;
+      expect(isPathWithinProject(verbatimRoot, projectRoot)).toBe(true);
+    });
   });
 
   // ==================== 构建输出推断 ====================

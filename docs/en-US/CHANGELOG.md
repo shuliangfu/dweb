@@ -8,6 +8,25 @@ and this project adheres to
 
 ---
 
+## [3.4.3] - 2026-04-25
+
+### Fixed
+
+- **Windows + Bun (CI `test-windows-bun`)**: `fs.realpath` can return
+  **verbatim** absolute paths (`\\?\C:\...`, `\\?\UNC\...`, or `//?/C:/...`),
+  while `process.cwd()` stays in the normal `C:\...` form.
+  `normalizePathForCompare` in **`src/utils/path.ts`** now strips these prefixes
+  so **`isPathWithinProject`** and **`loadRouteModule`** agree on “inside
+  project” and `GET /__data` continues to return page `load()`, layout, and
+  metadata as expected (previously `loadRouteModule` could return `null` and the
+  load-data middleware tests failed).
+
+### Tests
+
+- **`tests/unit/windows.test.ts`**: Assertions for verbatim path normalization
+  and `isPathWithinProject` on Windows; load-data middleware contract unchanged
+  but validated on Windows runners after the path fix.
+
 ## [3.4.2] - 2026-04-25
 
 ### Added
