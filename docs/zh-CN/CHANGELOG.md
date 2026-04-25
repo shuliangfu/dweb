@@ -11,18 +11,27 @@
 
 ### 修复
 
-- **Windows + Bun（CI `test-windows-bun`）**：`fs.realpath` 可能返回**逐字
-  （verbatim）**绝对路径（`\\?\C:\...`、`\\?\UNC\...` 或 `//?/C:/...`），而
-  `process.cwd()` 多为常规 `C:\...` 形式。已在 **`src/utils/path.ts`** 的
-  `normalizePathForCompare` 中剥除上述前缀，使 **`isPathWithinProject`** 与
-  **`loadRouteModule`** 对「是否在项目内」判断一致，** `GET /__data`** 能继续
-  正常返回 page **`load()`**、layout 与 metadata（否则 `loadRouteModule` 可能
-  得到 `null`，load-data 相关用例在 Windows 上会失败）。
+- **Windows + Bun（含 CI `test-windows-bun`）** — **`src/utils/path.ts`**
+  中两类与 Windows 路径**形态**相关的问题，一并修掉：
+  1. **`fs.realpath` 的逐字路径**（`\\?\C:\...`、`\\?\UNC\...` 或 `//?/C:/...`）
+     与 **`process.cwd()`** 常规 `C:\...` 不一致。在
+     **`normalizePathForCompare`** 中剥除上述逐字前缀，使
+     **`isPathWithinProject`** 能正确比较同一项目根下的路径。
+  2. **8.3 短名**（如 `RUNNER~1`）与**长名**混用：同一实际目录在 `cwd()` 与
+     `realpath` 结果上可能一短一长，仅靠第 1 点仍可能误判。在
+     **`isPathWithinProject`** 的 Windows 分支，对**候选路径与项目根**在
+     `resolve` 后均调用 **`realPathSync`**， 再经上述逐字/斜杠归一，避免 GHA
+     上「Path must be in project: …/index.tsx」而 cwd 为长名的 false negative。
+
+  合起来保证 **`loadRouteModule`** 与 **`GET /__data`** 在 **Windows + Bun** 上
+  能持续返回 page **`load()`**、layout 与 metadata；此前 `loadRouteModule` 可能
+  为 `null`，`load-data` 单测会失败。
 
 ### 测试
 
-- **`tests/unit/windows.test.ts`**：在 Windows 上对逐字路径的归一化及
-  `isPathWithinProject` 的断言；修复后 load-data 行为在 Windows 上再次得到验证。
+- **`tests/unit/windows.test.ts`**：逐字路径归一、`isPathWithinProject`；在
+  Windows 上于临时项目写文件，对 `realPathSync` 结果与 `isPathWithinProject`
+  断言。
 
 ## [3.4.2] - 2026-04-25
 

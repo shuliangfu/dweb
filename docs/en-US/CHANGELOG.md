@@ -12,20 +12,30 @@ and this project adheres to
 
 ### Fixed
 
-- **Windows + Bun (CI `test-windows-bun`)**: `fs.realpath` can return
-  **verbatim** absolute paths (`\\?\C:\...`, `\\?\UNC\...`, or `//?/C:/...`),
-  while `process.cwd()` stays in the normal `C:\...` form.
-  `normalizePathForCompare` in **`src/utils/path.ts`** now strips these prefixes
-  so **`isPathWithinProject`** and **`loadRouteModule`** agree on “inside
-  project” and `GET /__data` continues to return page `load()`, layout, and
-  metadata as expected (previously `loadRouteModule` could return `null` and the
-  load-data middleware tests failed).
+- **Windows + Bun (CI `test-windows-bun`)** — two path-shape issues in
+  **`src/utils/path.ts`**:
+  - **Verbatim** absolute paths from **`fs.realpath`** (`\\?\C:\...`,
+    `\\?\UNC\...`, or `//?/C:/...`) while **`process.cwd()`** is the normal
+    `C:\...` form. **`normalizePathForCompare`** now strips these prefixes so
+    string comparison and **`isPathWithinProject`** can treat routes as under
+    the project.
+  - **8.3 short names** (e.g. `C:\Users\RUNNER~1\...`) **vs long**
+    (`C:\Users\runner\...`): **`isPathWithinProject`** (Windows) now applies
+    **`realPathSync`** to both the candidate path and the project root after
+    `resolve`, in addition to the above, so the same real directory is not
+    rejected when one side uses SFN and the other a long `cwd` (typical in GHA,
+    e.g. `Path must be in project: .../index.tsx`).
+
+  Together, **`loadRouteModule`** and **`GET /__data`** keep returning page
+  **`load()`**, layout, and metadata on **Windows + Bun**; previously
+  `loadRouteModule` could return `null` and the load-data middleware unit tests
+  could fail.
 
 ### Tests
 
-- **`tests/unit/windows.test.ts`**: Assertions for verbatim path normalization
-  and `isPathWithinProject` on Windows; load-data middleware contract unchanged
-  but validated on Windows runners after the path fix.
+- **`tests/unit/windows.test.ts`**: Verbatim-path normalization, `realPathSync`
+  on an existing file under a temp project + **`isPathWithinProject`**
+  (Windows); post-fix validation for **`/__data`** on Windows agents.
 
 ## [3.4.2] - 2026-04-25
 

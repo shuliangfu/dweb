@@ -1859,10 +1859,10 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ### [3.4.3] - 2026-04-25
 
-**Fixed** — **`normalizePathForCompare`** strips Windows `\\?\` / `//?/`
-verbatim paths from **`realpath`** so **`loadRouteModule`** and **`/__data`**
-work on **Windows + Bun** (CI). Full history:
-[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Fixed** (Windows + Bun, CI) — **`normalizePathForCompare`**: strip verbatim
+`\\?\` / `//?/` paths; **`isPathWithinProject`**: on Windows, **`realPathSync`**
+on both sides so **8.3 (RUNNER~1) and long** path forms match. **`/__data` /
+`loadRouteModule`**. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

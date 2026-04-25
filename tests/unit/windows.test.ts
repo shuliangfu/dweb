@@ -19,8 +19,10 @@ import {
   makeTempDir,
   pathToFileUrl,
   platform,
+  realPathSync,
   remove,
   resolve,
+  writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import { getInferredBuildOutputDirs } from "../../src/utils/build-dirs.ts";
@@ -393,6 +395,21 @@ describe("Windows 兼容性 (windows.test.ts)", () => {
         expect(isPathWithinProject(winStyle, projectRoot)).toBe(true);
       },
     );
+
+    /**
+     * GHA / CI 下常见：`fs.realpath` 返回 8.3 短名（`RUNNER~1`）而 `cwd()` 为长名，
+     * 仅靠 strip `\\?\\` 仍无法与项目根比字符串。`isPathWithinProject` 在 Windows
+     * 上对双方做 `realPathSync` 与现有逐字/斜杠归一后一致。
+     */
+    it("Windows 下 已存在文件的 realPath 与 projectRoot 应判为项目内", async () => {
+      if (platform() !== "windows") {
+        return;
+      }
+      const f = join(projectRoot, "dweb-ispath-realpath.txt");
+      await writeTextFile(f, "1");
+      const fromReal = realPathSync(f);
+      expect(isPathWithinProject(fromReal, projectRoot)).toBe(true);
+    });
   });
 
   // ==================== 日志友好路径 ====================

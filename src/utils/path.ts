@@ -7,7 +7,7 @@
  * - 日志友好路径格式化
  */
 
-import { platform } from "@dreamer/runtime-adapter";
+import { platform, realPathSync } from "@dreamer/runtime-adapter";
 import { cwd, relative, resolve } from "../core/runtime-adapter.ts";
 
 /**
@@ -58,10 +58,30 @@ export function normalizePathForCompare(p: string): string {
 }
 
 /**
+ * Windows 上同一路径可能同时存在 **8.3 短名**（如 `RUNNER~1`）与**长名**
+ * （如 `Users\runner\`）两种表示；`cwd()` 与 `fs.realpath` 返回的哪一种
+ * 不一致时，仅靠斜杠/逐字归一后仍无法用 `startsWith` 比较。
+ * 本函数在参与 `isPathWithinProject` 前用 **`realPathSync` 收束为同一形式**（失败则回退
+ * 为 `resolve` 结果，避免路径尚不存在时抛错阻断调用方）。
+ */
+function toComparableRealPath(absolute: string): string {
+  if (platform() !== "windows") {
+    return absolute;
+  }
+  const resolved = resolve(absolute);
+  try {
+    return realPathSync(resolved);
+  } catch {
+    return resolved;
+  }
+}
+
+/**
  * 校验路径是否在项目目录内，防止加载项目外任意文件
  *
  * 用于：中间件/插件加载、路由模块加载、配置热重载等场景。
- * Windows 下使用大小写不敏感比较，避免驱动号等差异导致误判。
+ * Windows 下使用大小写不敏感比较，避免驱动号等差异导致误判；并对 **8.3 / 长路径**
+ * 与 **`\\?\` 逐字** 等形态做与 `cwd` 可比的归一（见上）。
  *
  * @param resolvedPath 已解析的绝对路径
  * @param projectRoot 项目根目录（默认 cwd）
@@ -71,8 +91,12 @@ export function isPathWithinProject(
   resolvedPath: string,
   projectRoot: string = cwd(),
 ): boolean {
-  const a = normalizePathForCompare(resolvedPath);
-  const b = normalizePathForCompare(projectRoot);
+  const a = normalizePathForCompare(
+    toComparableRealPath(resolvedPath),
+  );
+  const b = normalizePathForCompare(
+    toComparableRealPath(projectRoot),
+  );
   const isWin = platform() === "windows";
   const cmp = (x: string, y: string) =>
     isWin ? x.toLowerCase() === y.toLowerCase() : x === y;

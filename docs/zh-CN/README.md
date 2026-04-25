@@ -1926,9 +1926,9 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ### [3.4.3] - 2026-04-25
 
-**修复** — **`normalizePathForCompare`** 去除 Windows 上 `realpath` 返回的
-`\\?\` 等**逐字路径**前缀，使 **`loadRouteModule`** 与 **`/__data`** 在 **Bun +
-Windows**（含 CI）下行为正确。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
+**修复**（Windows + Bun、CI）— **`normalizePathForCompare`** 去逐字 `\\?\` 等；
+**`isPathWithinProject`** 在 Windows 上对双路径 **`realPathSync`**，统一 **8.3
+与长名**。**`__data` / 路由模块**。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 
