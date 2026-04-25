@@ -77,11 +77,51 @@ function toComparableRealPath(absolute: string): string {
 }
 
 /**
+ * Windows 上在 `toComparableRealPath` 后仍用字符串 **startsWith** 时，8.3 与长名
+ * 混用（`RUNNER~1` vs 完整用户名段）会失败。对同一盘符的绝对路径，用
+ * `relative(root, child)` 判断「是否在根下」比前缀更稳；并排除跨盘符
+ * （runtime-adapter 在异盘时 `relative` 会返回目标绝对路径，按「非子路径」处理）。
+ */
+function isPathUnderRootOnWindows(
+  childAbs: string,
+  rootAbs: string,
+): boolean {
+  const a = childAbs.replace(/\\/g, "/");
+  const b = rootAbs.replace(/\\/g, "/");
+  const dA = a.match(/^([A-Za-z]):\//i)?.[1];
+  const dB = b.match(/^([A-Za-z]):\//i)?.[1];
+  if (dA && dB && dA.toLowerCase() !== dB.toLowerCase()) {
+    return false;
+  }
+  const rel = relative(rootAbs, childAbs);
+  if (rel === "" || rel === ".") {
+    return true;
+  }
+  if (/^([A-Za-z]):\//.test(rel) && (rel.length > 3 || /[/\\]/.test(rel))) {
+    const cNorm = a.toLowerCase();
+    const rNorm = b.toLowerCase();
+    if (cNorm === rNorm) {
+      return true;
+    }
+    return cNorm.startsWith(rNorm.endsWith("/") ? rNorm : rNorm + "/");
+  }
+  const withSlash = rel.replace(/\\/g, "/");
+  if (withSlash.split("/").some((p) => p === "..") || withSlash === "..") {
+    return false;
+  }
+  if (/^\.\.($|\/)/.test(withSlash)) {
+    return false;
+  }
+  return true;
+}
+
+/**
  * 校验路径是否在项目目录内，防止加载项目外任意文件
  *
  * 用于：中间件/插件加载、路由模块加载、配置热重载等场景。
- * Windows 下使用大小写不敏感比较，避免驱动号等差异导致误判；并对 **8.3 / 长路径**
- * 与 **`\\?\` 逐字** 等形态做与 `cwd` 可比的归一（见上）。
+ * **Windows** 在逐字/斜杠/ **realPathSync** 后，优先用
+ * `isPathUnderRootOnWindows` 做 **relative 判定**；**非 Windows** 用字符串
+ * 相等 + 带 `/` 前缀。
  *
  * @param resolvedPath 已解析的绝对路径
  * @param projectRoot 项目根目录（默认 cwd）
@@ -91,24 +131,23 @@ export function isPathWithinProject(
   resolvedPath: string,
   projectRoot: string = cwd(),
 ): boolean {
-  const a = normalizePathForCompare(
-    toComparableRealPath(resolvedPath),
-  );
-  const b = normalizePathForCompare(
-    toComparableRealPath(projectRoot),
-  );
   const isWin = platform() === "windows";
-  const cmp = (x: string, y: string) =>
-    isWin ? x.toLowerCase() === y.toLowerCase() : x === y;
-  const startsWith = (x: string, y: string) =>
-    isWin ? x.toLowerCase().startsWith(y.toLowerCase()) : x.startsWith(y);
-  return cmp(a, b) || startsWith(a, b + "/");
+  if (isWin) {
+    const child = toComparableRealPath(resolvedPath);
+    const root = toComparableRealPath(projectRoot);
+    return isPathUnderRootOnWindows(child, root);
+  }
+  const a = normalizePathForCompare(resolvedPath);
+  const b = normalizePathForCompare(projectRoot);
+  return a === b || a.startsWith(b + "/");
 }
 
 /**
  * 将路径转为日志友好格式：在项目内则返回相对路径，否则返回原路径
  *
  * 用于 DEBUG 日志，避免输出过长绝对路径。
+ * **Windows** 在通过 **`isPathWithinProject`** 后，用与之一致的
+ * **`toComparableRealPath` + `relative`** 生成相对式，与 8.3/长名一致。
  *
  * @param absOrRelPath 绝对或相对路径
  * @param projectRoot 项目根目录（默认 cwd）
@@ -118,12 +157,18 @@ export function pathForLog(
   absOrRelPath: string,
   projectRoot: string = cwd(),
 ): string {
-  const resolved = normalizePathForCompare(absOrRelPath);
-  const rootNorm = normalizePathForCompare(projectRoot);
-  if (resolved === rootNorm || resolved.startsWith(rootNorm + "/")) {
-    return relative(projectRoot, resolved) || ".";
+  if (!isPathWithinProject(absOrRelPath, projectRoot)) {
+    return absOrRelPath;
   }
-  return absOrRelPath;
+  if (platform() === "windows") {
+    const relp = relative(
+      toComparableRealPath(projectRoot),
+      toComparableRealPath(absOrRelPath),
+    );
+    return relp === "" || relp === "." ? "." : relp.replace(/\\/g, "/");
+  }
+  const resolved = normalizePathForCompare(absOrRelPath);
+  return relative(projectRoot, resolved) || ".";
 }
 
 /**

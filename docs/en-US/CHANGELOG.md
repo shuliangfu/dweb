@@ -20,11 +20,14 @@ and this project adheres to
     string comparison and **`isPathWithinProject`** can treat routes as under
     the project.
   - **8.3 short names** (e.g. `C:\Users\RUNNER~1\...`) **vs long**
-    (`C:\Users\runner\...`): **`isPathWithinProject`** (Windows) now applies
-    **`realPathSync`** to both the candidate path and the project root after
-    `resolve`, in addition to the above, so the same real directory is not
-    rejected when one side uses SFN and the other a long `cwd` (typical in GHA,
-    e.g. `Path must be in project: .../index.tsx`).
+    (`C:\Users\runner\...`): **`isPathWithinProject`** (Windows) applies
+    **`realPathSync`** to both sides after `resolve`, then uses
+    **`path.relative`** (not only string **startsWith** on normalized strings)
+    to decide if the file is under the project root, so mixed SFN/long/UNC edge
+    cases in CI still resolve correctly (GHA, e.g.
+    `Path must be in project: .../index.tsx`).
+  - **`pathForLog`**: on Windows, uses the same “inside project” rule and
+    `toComparableRealPath` + **`relative`** for the returned relative path.
 
   Together, **`loadRouteModule`** and **`GET /__data`** keep returning page
   **`load()`**, layout, and metadata on **Windows + Bun**; previously

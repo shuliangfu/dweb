@@ -17,11 +17,13 @@
      与 **`process.cwd()`** 常规 `C:\...` 不一致。在
      **`normalizePathForCompare`** 中剥除上述逐字前缀，使
      **`isPathWithinProject`** 能正确比较同一项目根下的路径。
-  2. **8.3 短名**（如 `RUNNER~1`）与**长名**混用：同一实际目录在 `cwd()` 与
-     `realpath` 结果上可能一短一长，仅靠第 1 点仍可能误判。在
-     **`isPathWithinProject`** 的 Windows 分支，对**候选路径与项目根**在
-     `resolve` 后均调用 **`realPathSync`**， 再经上述逐字/斜杠归一，避免 GHA
-     上「Path must be in project: …/index.tsx」而 cwd 为长名的 false negative。
+  2. **8.3 短名**与**长名**混用：双方经 **`realPathSync`**
+     后，**`isPathWithinProject`** （Windows）用 **`path.relative(根, 子)`**
+     判定是否在项目内，**不仅**对归一 字符串做 **startsWith**，减少 GHA
+     上仍误判「Path must be in project」的 情况。
+  3. **`pathForLog`**：在 Windows 上采用相同判内规则，并以
+     **`toComparableRealPath`**
+     - **`relative`** 输出相对路径。
 
   合起来保证 **`loadRouteModule`** 与 **`GET /__data`** 在 **Windows + Bun** 上
   能持续返回 page **`load()`**、layout 与 metadata；此前 `loadRouteModule` 可能
