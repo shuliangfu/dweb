@@ -14,7 +14,12 @@ import {
   type SpawnedProcess,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
-import { getDenoExecutableForExamples, getRepoRoot } from "../setup.ts";
+import {
+  ensureExampleDependenciesInstalled,
+  exampleRunArgs,
+  getExampleChildProcessExecutable,
+  getRepoRoot,
+} from "../setup.ts";
 
 /**
  * server-request 专用端口，与 browser-render 中 preact-ssr basic（3005）错开，
@@ -30,9 +35,10 @@ describe("e2e: 服务器请求", () => {
   let child: SpawnedProcess | null = null;
   let exampleDir: string;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     originalCwd = cwd();
     exampleDir = join(REPO_ROOT, "examples", "preact-ssr", "basic");
+    await ensureExampleDependenciesInstalled(exampleDir);
     chdir(exampleDir);
   });
 
@@ -52,9 +58,9 @@ describe("e2e: 服务器请求", () => {
 
   it("应能启动服务器并返回 HTML", async () => {
     const env = { ...getEnvAll(), PORT: String(E2E_PORT) };
-    // 用 Deno 子进程，与 deno test 的依赖图一致，避免 bun 下双 preact
-    const cmd = createCommand(getDenoExecutableForExamples(), {
-      args: ["run", "-A", "src/main.ts"],
+    // 子进程可执行文件与 `bun test` / `deno test` 当前运行时一致，参数见 exampleRunArgs
+    const cmd = createCommand(getExampleChildProcessExecutable(), {
+      args: exampleRunArgs("src/main.ts"),
       cwd: exampleDir,
       env,
       stdout: "inherit",

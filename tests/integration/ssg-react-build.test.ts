@@ -19,8 +19,10 @@ import {
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import {
+  ensureExampleDependenciesInstalled,
+  exampleBuildArgs,
   existsBuildOutput,
-  getDenoExecutableForExamples,
+  getExampleChildProcessExecutable,
   getRepoRoot,
   getSpawnCwd,
 } from "../setup.ts";
@@ -32,9 +34,10 @@ describe("integration: SSG + React 构建", () => {
   let originalCwd: string;
   let exampleDir: string;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     originalCwd = cwd();
     exampleDir = join(REPO_ROOT, "examples", "react-ssg", "basic");
+    await ensureExampleDependenciesInstalled(exampleDir);
     chdir(exampleDir);
   });
 
@@ -49,9 +52,9 @@ describe("integration: SSG + React 构建", () => {
       await remove(distDir, { recursive: true });
     }
 
-    // 子进程始终用 Deno 跑 deno.json，与 deno test 同构，避免 bun run 在仓库内双份 react
-    const cmd = createCommand(getDenoExecutableForExamples(), {
-      args: ["run", "-A", "src/main.ts", "--build"],
+    // 子进程与当前测试运行时可执行文件一致，仍由 deno.json 解析依赖
+    const cmd = createCommand(getExampleChildProcessExecutable(), {
+      args: exampleBuildArgs("src/main.ts"),
       cwd: getSpawnCwd(exampleDir),
       stdout: "piped",
       stderr: "piped",

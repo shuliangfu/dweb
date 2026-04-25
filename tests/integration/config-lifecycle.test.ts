@@ -8,8 +8,8 @@
  * 与 `@dreamer/esbuild` 的 **`deno info` 模块映射磁盘缓存** 无关；后者由 esbuild 在
  * `~/.dreamer/<项目目录名>/esbuild-deno-cache/` 下自动创建，无需在本文件中配置。
  *
- * 子进程统一用 **Deno** 与临时目录的 `deno.json` 将 @dreamer/dweb 指向本地，避免
- * 在 `bun test` 下用 `bun run` 时混用 node_modules 导致 preact 双份。
+ * 子进程与当前测试运行时可执行文件一致（`bun test` 为 `bun run`；`deno test` 为 `deno run -A`），
+ * 由临时目录的 `deno.json` 将 @dreamer/dweb 解析到本地源码。
  */
 
 import {
@@ -25,7 +25,11 @@ import {
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
-import { getDenoExecutableForExamples, getRepoRoot } from "../setup.ts";
+import {
+  exampleRunArgs,
+  getExampleChildProcessExecutable,
+  getRepoRoot,
+} from "../setup.ts";
 
 const REPO_ROOT = getRepoRoot();
 
@@ -189,8 +193,8 @@ if (g.process?.exit) g.process.exit(0);
 
     it("App 应能加载 config 并注册生命周期钩子", async () => {
       // cwd=testDir 时子进程使用 testDir/deno.json（@dreamer/dweb 指向本地），入口为 src/main.ts
-      const cmd = createCommand(getDenoExecutableForExamples(), {
-        args: ["run", "-A", "src/main.ts"],
+      const cmd = createCommand(getExampleChildProcessExecutable(), {
+        args: exampleRunArgs("src/main.ts"),
         cwd: testDir,
         stdout: "piped",
         stderr: "piped",

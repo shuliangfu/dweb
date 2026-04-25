@@ -19,8 +19,10 @@ import {
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import {
+  ensureExampleDependenciesInstalled,
+  exampleBuildArgs,
   existsBuildOutput,
-  getDenoExecutableForExamples,
+  getExampleChildProcessExecutable,
   getRepoRoot,
   getSpawnCwd,
 } from "../setup.ts";
@@ -32,9 +34,10 @@ describe("integration: CSR + React 构建", () => {
   let originalCwd: string;
   let exampleDir: string;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     originalCwd = cwd();
     exampleDir = join(REPO_ROOT, "examples", "react-csr", "basic");
+    await ensureExampleDependenciesInstalled(exampleDir);
     chdir(exampleDir);
   });
 
@@ -49,8 +52,8 @@ describe("integration: CSR + React 构建", () => {
       await remove(distDir, { recursive: true });
     }
 
-    const cmd = createCommand(getDenoExecutableForExamples(), {
-      args: ["run", "-A", "src/main.ts", "--build"],
+    const cmd = createCommand(getExampleChildProcessExecutable(), {
+      args: exampleBuildArgs("src/main.ts"),
       cwd: getSpawnCwd(exampleDir),
       stdout: "piped",
       stderr: "piped",

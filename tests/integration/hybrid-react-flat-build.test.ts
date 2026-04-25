@@ -19,8 +19,10 @@ import {
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import {
+  ensureExampleDependenciesInstalled,
+  exampleBuildArgs,
   existsBuildOutput,
-  getDenoExecutableForExamples,
+  getExampleChildProcessExecutable,
   getRepoRoot,
   getSpawnCwd,
 } from "../setup.ts";
@@ -32,9 +34,10 @@ describe("integration: Hybrid + React 构建（无 src 目录）", () => {
   let originalCwd: string;
   let exampleDir: string;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     originalCwd = cwd();
     exampleDir = join(REPO_ROOT, "examples", "react-hybrid-flat", "basic");
+    await ensureExampleDependenciesInstalled(exampleDir);
     chdir(exampleDir);
   });
 
@@ -49,9 +52,9 @@ describe("integration: Hybrid + React 构建（无 src 目录）", () => {
       await remove(distDir, { recursive: true });
     }
 
-    // 无 src 目录，入口为 main.ts；子进程用 Deno 与 deno.json 一致
-    const cmd = createCommand(getDenoExecutableForExamples(), {
-      args: ["run", "-A", "main.ts", "--build"],
+    // 无 src 目录，入口为 main.ts；可执行文件与当前测试运行时一致
+    const cmd = createCommand(getExampleChildProcessExecutable(), {
+      args: exampleBuildArgs("main.ts"),
       cwd: getSpawnCwd(exampleDir),
       stdout: "piped",
       stderr: "piped",

@@ -32,7 +32,12 @@ import {
   expect,
   it,
 } from "@dreamer/test";
-import { getDenoExecutableForExamples } from "../setup.ts";
+import {
+  ensureExampleDependenciesInstalled,
+  exampleBuildArgs,
+  exampleRunArgs,
+  getExampleChildProcessExecutable,
+} from "../setup.ts";
 
 /**
  * 从本模块路径解析出的 dweb 项目根目录（不依赖 cwd，避免多套件顺序执行时 cwd 被上一套件改变导致路径错误）
@@ -490,14 +495,16 @@ async function _buildExample(
   exampleDir: string,
   entry: string = "src/main.ts",
 ): Promise<void> {
-  // await _ensureBunDeps(exampleDir); // 本地测试删除示例 node_modules 仍通过，先注释
+  // 仓库内示例在 Bun 下需 node_modules 中可解析的 @dreamer/dweb 等
+  await ensureExampleDependenciesInstalled(exampleDir);
+  // await _ensureBunDeps(exampleDir); // 非仓库根路径示例仍走本地 _ensureBunDeps
   const distDir = join(exampleDir, "dist");
   if (await exists(distDir)) {
     await remove(distDir, { recursive: true });
   }
 
-  const cmd = createCommand(getDenoExecutableForExamples(), {
-    args: ["run", "-A", entry, "--build"],
+  const cmd = createCommand(getExampleChildProcessExecutable(), {
+    args: exampleBuildArgs(entry),
     cwd: exampleDir,
     stdout: "piped",
     stderr: "piped",
@@ -1637,14 +1644,15 @@ async function _buildExampleAdvanced(
   exampleDir: string,
   entries: [string, string] = ["src/backend/main.ts", "src/frontend/main.ts"],
 ): Promise<void> {
-  // await _ensureBunDeps(exampleDir); // 本地测试删除示例 node_modules 仍通过，先注释
+  await ensureExampleDependenciesInstalled(exampleDir);
+  // await _ensureBunDeps(exampleDir); // 非仓库根路径示例仍走本地 _ensureBunDeps
   const distDir = join(exampleDir, "dist");
   if (await exists(distDir)) {
     await remove(distDir, { recursive: true });
   }
   for (const entry of entries) {
-    const cmd = createCommand(getDenoExecutableForExamples(), {
-      args: ["run", "-A", entry, "--build"],
+    const cmd = createCommand(getExampleChildProcessExecutable(), {
+      args: exampleBuildArgs(entry),
       cwd: exampleDir,
       stdout: "piped",
       stderr: "piped",
@@ -1697,12 +1705,13 @@ export function createAdvancedExampleBrowserSuite(
       originalCwd = cwd();
       exampleDir = resolve(DWEB_ROOT, "examples", exampleName, "advanced");
       chdir(exampleDir);
+      await ensureExampleDependenciesInstalled(exampleDir);
 
       // 启动 backend dev 服务
       actualBackendPort = await findAvailablePort("127.0.0.1", backendPort);
       const envBackend = { ...getEnvAll(), PORT: String(actualBackendPort) };
-      const startBackend = createCommand(getDenoExecutableForExamples(), {
-        args: ["run", "-A", entries[0]],
+      const startBackend = createCommand(getExampleChildProcessExecutable(), {
+        args: exampleRunArgs(entries[0]),
         cwd: exampleDir,
         env: envBackend,
         stdout: "inherit",
@@ -1716,8 +1725,8 @@ export function createAdvancedExampleBrowserSuite(
       // 启动 frontend dev 服务
       actualFrontendPort = await findAvailablePort("127.0.0.1", frontendPort);
       const envFrontend = { ...getEnvAll(), PORT: String(actualFrontendPort) };
-      const startFrontend = createCommand(getDenoExecutableForExamples(), {
-        args: ["run", "-A", entries[1]],
+      const startFrontend = createCommand(getExampleChildProcessExecutable(), {
+        args: exampleRunArgs(entries[1]),
         cwd: exampleDir,
         env: envFrontend,
         stdout: "inherit",
@@ -1854,12 +1863,13 @@ export function createBasicExampleBrowserSuite(
       originalCwd = cwd();
       exampleDir = resolve(DWEB_ROOT, "examples", exampleName, "basic");
       chdir(exampleDir);
+      await ensureExampleDependenciesInstalled(exampleDir);
 
-      // 启动 dev 服务（Deno 子进程，与 deno.json 一致，避免 bun 下双 preact）
+      // 启动 dev 服务（可执行文件与当前测试运行时一致，参数见 exampleRunArgs）
       actualPort = await findAvailablePort("127.0.0.1", preferredPort);
       const env = { ...getEnvAll(), PORT: String(actualPort) };
-      const startCmd = createCommand(getDenoExecutableForExamples(), {
-        args: ["run", "-A", entry],
+      const startCmd = createCommand(getExampleChildProcessExecutable(), {
+        args: exampleRunArgs(entry),
         cwd: exampleDir,
         env,
         stdout: "inherit",
