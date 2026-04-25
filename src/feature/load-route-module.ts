@@ -188,6 +188,21 @@ export async function loadRouteModule(
   },
 ): Promise<Record<string, unknown> | null> {
   const cwdPath = cwd();
+  /**
+   * 优先使用调用方提供的 routesDirPath 推导项目根，避免测试并发场景下其它用例
+   * `chdir()` 改变全局 cwd 导致路径校验误判（Windows + Bun 尤其明显）。
+   *
+   * 约定：默认 routesDirPath 为 `<projectRoot>/src/routes`，因此项目根可回退两级。
+   * 若未提供 routesDirPath 或为空，则保持原行为使用 `cwd()`。
+   */
+  const projectRootForResolve = (() => {
+    const routesDir = options?.routesDirPath;
+    if (!routesDir || typeof routesDir !== "string") {
+      return cwdPath;
+    }
+    const normalizedRoutesDir = routesDir.replace(/\\/g, "/");
+    return resolve(normalizedRoutesDir, "..", "..");
+  })();
   // 统一为正向斜杠，避免 Windows 下 realPath/pathToFileURL 因反斜杠导致解析差异
   const pathInput = filePath.replace(/\\/g, "/");
 
@@ -202,10 +217,10 @@ export async function loadRouteModule(
     } else if (pathInput.startsWith("/") || pathInput.match(/^[A-Za-z]:/)) {
       absPath = await realPath(pathInput);
     } else {
-      absPath = await realPath(join(cwdPath, pathInput));
+      absPath = await realPath(join(projectRootForResolve, pathInput));
     }
 
-    if (!isPathWithinProject(absPath, cwdPath)) {
+    if (!isPathWithinProject(absPath, projectRootForResolve)) {
       console.warn(`${$tr("log.pathMustBeInProject")}: ${filePath}`);
       return null;
     }
