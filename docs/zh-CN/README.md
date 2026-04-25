@@ -7,7 +7,7 @@
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](../../LICENSE)
-[![Tests](https://img.shields.io/badge/tests-840%20passed-brightgreen)](./TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-865%20passed-brightgreen)](./TEST_REPORT.md)
 
 ---
 
@@ -1914,7 +1914,7 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 详细结果见 [TEST_REPORT.md](./TEST_REPORT.md)。
 
-**测试总结**：共 83 个测试文件、840 个用例通过（8 个忽略：2 个 Windows 专属、6
+**测试总结**：共 86 个测试文件、865 个用例通过（10 个忽略：2 个 Windows 专属、8
 个 e2e SSG/SSR 下「注入 layout/页面 load 数据」）。覆盖
 单元（config、router、plugin、build、render、windows 等）、e2e 浏览器渲染与
 集成构建。路径与配置加载测试已支持 Windows
@@ -1924,11 +1924,13 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.4.1] - 2026-04-18
+### [3.4.2] - 2026-04-25
 
-**修复** — 生成的 CSR **`renderCurrentRoute`**：在 **`__DATA__` 已首屏用过后，
-再次重渲染（如多语言 `onChange`）时改为请求 **`/__data`**，恢复各层 layout 的
-**`load()`** 数据（如 Session）。详见 [CHANGELOG.md](./CHANGELOG.md)。
+**新增** — 内联 JSON 安全序列化、生产环境错误信息收敛、可选
+**`securityHeaders`** 中间件，以及 **`csr-client-route-manifest`** 对 Router
+路径的归一化，保证 **`ROUTE_LOADERS`** 与首页 **`index`** 等路由一致。**变更** —
+**Hybrid** 首屏 **page/_app/_layout** 并行加载；**`/__data`**
+生产环境不返回内部错误细节。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

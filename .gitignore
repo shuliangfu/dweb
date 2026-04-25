@@ -46,6 +46,8 @@ tests/output/
 tests/unit/**/data/
 tests/integration/**/data/
 tests/e2e/**/data/
+# 示例项目内与测试脚本生成的数据输出（不提交）
+examples/**/tests/data/
 .snapshots/
 
 # 测试覆盖率

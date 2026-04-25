@@ -30,6 +30,10 @@ import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { sanitizeRequestParams } from "../utils/sanitize.ts";
+import {
+  createDefaultErrorHtml,
+  serializeJsonForInlineScript,
+} from "../utils/security.ts";
 import { extractComponentPathFromRouteFile } from "../utils/path.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
@@ -132,14 +136,21 @@ export function createRendererHybrid(
       const routeCss: string[] = [];
       const cssCollector = (css: string) => routeCss.push(css);
 
-      // 加载页面组件（支持 .ts/.tsx）
       const loadOpts = {
         cssCollector,
         logger: container.has("logger") ? getLogger(container) : undefined,
         engine: renderConfig.engine,
         routesDirPath,
       };
-      const pageModule = await loadRouteModule(match.route.fullPath, loadOpts);
+      // 并行加载页面、_app 与布局链，避免 Hybrid 首屏出现 page -> app -> layout 的瀑布等待。
+      const appPath = router.getSpecialFile("_app");
+      const layoutPaths = router.getLayoutPathsForPath?.(match.route.path) ??
+        [];
+      const [pageModule, appModule, ...layoutModulesRaw] = await Promise.all([
+        loadRouteModule(match.route.fullPath, loadOpts),
+        appPath ? loadRouteModule(appPath, loadOpts) : Promise.resolve(null),
+        ...layoutPaths.map((p) => loadRouteModule(p, loadOpts)),
+      ]);
       if (!pageModule) {
         return null;
       }
@@ -150,29 +161,14 @@ export function createRendererHybrid(
         return null;
       }
 
-      // 加载特殊文件（支持嵌套布局：按当前路由路径加载从根到当前的 layout 链）
-      const appPath = router.getSpecialFile("_app");
-      const layoutPaths = router.getLayoutPathsForPath?.(match.route.path) ??
-        [];
-
-      // 加载 App 组件
-      let AppComponent: unknown = null;
-      if (appPath) {
-        const appModule = await loadRouteModule(appPath, loadOpts);
-        AppComponent = appModule?.default ?? appModule?.App;
-      }
-
-      // 加载布局链（从外到内：根 _layout、子路由 _layout…）
-      const layoutModules = await Promise.all(
-        layoutPaths.map((p) => loadRouteModule(p, loadOpts)),
-      );
+      const AppComponent = appModule?.default ?? appModule?.App ?? null;
       // 若某层 _layout 导出 inheritLayout = false，则不继承其之上的父级 layout，仅保留从该层起的链
-      const inheritBreakIndex = layoutModules.findIndex(
+      const inheritBreakIndex = layoutModulesRaw.findIndex(
         (m) => (m as Record<string, unknown>)?.inheritLayout === false,
       );
       const modulesToUse = inheritBreakIndex >= 0
-        ? layoutModules.slice(inheritBreakIndex)
-        : layoutModules;
+        ? layoutModulesRaw.slice(inheritBreakIndex)
+        : layoutModulesRaw;
       const layoutComponents = modulesToUse
         .map((m) => m?.default ?? m?.Layout)
         .filter((c): c is NonNullable<typeof c> => c != null);
@@ -337,10 +333,10 @@ export function createRendererHybrid(
           : ""
       }
   // Hydration 数据
-  globalThis.__DATA__ = ${JSON.stringify(hydrationData)};
+  globalThis.__DATA__ = ${serializeJsonForInlineScript(hydrationData)};
   // 客户端路由配置
   globalThis.__DWEB_DEV__ = ${isDev};
-  globalThis.__DWEB_ROUTES__ = ${JSON.stringify(clientRoutes)};
+  globalThis.__DWEB_ROUTES__ = ${serializeJsonForInlineScript(clientRoutes)};
   globalThis.__DWEB_ENGINE__ = "${engine}";
   globalThis.__DWEB_CONTAINER_ID__ = "${hybridOptions.containerId}";
   globalThis.__DWEB_MODE__ = "hybrid";
@@ -419,9 +415,7 @@ ${hybridOptions.bodyTags || ""}`;
 
       // 默认错误响应
       return new Response(
-        `<!DOCTYPE html><html><head><title>500 Error</title></head><body><h1>Internal Server Error</h1><p>${
-          error instanceof Error ? error.message : String(error)
-        }</p></body></html>`,
+        createDefaultErrorHtml(error),
         {
           status: 500,
           headers: {

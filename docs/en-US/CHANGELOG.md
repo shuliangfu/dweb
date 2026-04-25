@@ -8,6 +8,46 @@ and this project adheres to
 
 ---
 
+## [3.4.2] - 2026-04-25
+
+### Added
+
+- **`src/utils/security.ts`**: `serializeJsonForInlineScript` for safe inline
+  `globalThis.__DATA__` / route JSON; `escapeHtml`, `createDefaultErrorHtml`,
+  and `createJsonErrorBody` to avoid HTML/script injection and to hide error
+  details in production.
+- **`src/feature/csr-client-route-manifest.ts`**: shared CSR route manifest
+  (component paths + layout keys) with optional reuse of the app `Router` scan
+  to reduce duplicate I/O; falls back to filesystem scan when needed.
+- **Optional `securityHeaders`** on `AppConfig` and
+  **`createSecurityHeadersMiddleware`** (`src/core/middleware.ts`): off by
+  default; when enabled, appends conservative security response headers (does
+  not set CSP by default; apps can pass `contentSecurityPolicy` if desired).
+
+### Changed
+
+- **Inline hydration data** (`render-ssr`, `render-csr`, `render-hybrid`,
+  `render-ssg`, `app` SSG post-pass): use safe JSON serialization for `__DATA__`
+  and `__DWEB_ROUTES__`.
+- **Default 500 HTML** in render paths uses `createDefaultErrorHtml` (dev shows
+  escaped message; production shows a fixed message).
+- **`load-data` 500 JSON** uses `createJsonErrorBody` (no internal error detail
+  in production).
+- **Hybrid** (`render-hybrid.ts`): load page, `_app`, and layout modules in
+  **parallel** (`Promise.all`) to reduce cold-start waterfall.
+- **CSR client build** (`buildClientScript`, `ensureClientEntryFile`,
+  `prepareClientBuildEntry`): consume **`getRouteClientManifest`**; manifest
+  normalizes router file paths (absolute, project-relative, and
+  `routes/`-relative) so **`ROUTE_LOADERS`** keys match `index`, nested routes,
+  etc. (fixes hydration "component not found" when manifest was empty or keys
+  were wrong).
+
+### Tests
+
+- `tests/unit/security.test.ts`, `tests/unit/load-data-middleware.test.ts`,
+  `tests/unit/csr-client-route-manifest.test.ts`, extended `csr-client-builder`
+  and `middleware` unit tests.
+
 ## [3.4.1] - 2026-04-18
 
 ### Fixed

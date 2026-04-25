@@ -6,9 +6,9 @@
 
 | Item             | Value                |
 | ---------------- | -------------------- |
-| Framework        | 3.3.10               |
+| Framework        | 3.4.2                |
 | Test framework   | @dreamer/test@^1.1.7 |
-| Test date        | 2026-04-21           |
+| Test date        | 2026-04-25           |
 | Test environment | Deno 2.x / Bun 1.x   |
 
 ---
@@ -17,78 +17,81 @@
 
 ### Overall Statistics
 
-| Metric           | Count                                    |
-| ---------------- | ---------------------------------------- |
-| Test files       | 83                                       |
-| Total test cases | 848 (840 passed + 8 ignored)             |
-| Passed           | 840                                      |
-| Ignored          | 8                                        |
-| Failed           | 0                                        |
-| Pass rate        | 100%                                     |
-| Execution time   | ~7m25s (`deno test -A tests` single run) |
+| Metric           | Count                                   |
+| ---------------- | --------------------------------------- |
+| Test files       | 86                                      |
+| Total test cases | 875 (865 passed + 10 ignored)           |
+| Passed           | 865                                     |
+| Ignored          | 10                                      |
+| Failed           | 0                                       |
+| Pass rate        | 100%                                    |
+| Execution time   | ~8m1s (`deno test -A tests` single run) |
 
 ### Test File Statistics
 
 #### Unit Tests (tests/unit/)
 
-| File name                       | Test count     | Status        |
-| ------------------------------- | -------------- | ------------- |
-| `app.test.ts`                   | 20             | ✅ All passed |
-| `asset-manifest.test.ts`        | 6              | ✅ All passed |
-| `build-dirs.test.ts`            | 18             | ✅ All passed |
-| `config.test.ts`                | 64             | ✅ All passed |
-| `context.test.ts`               | 22             | ✅ All passed |
-| `render.test.ts`                | 46             | ✅ All passed |
-| `command.test.ts`               | 42             | ✅ All passed |
-| `build.test.ts`                 | 23             | ✅ All passed |
-| `windows.test.ts`               | 48 (2 ignored) | ✅ All passed |
-| `path.test.ts`                  | 19             | ✅ All passed |
-| `plugin-events.test.ts`         | 17             | ✅ All passed |
-| `logger.test.ts`                | 18             | ✅ All passed |
-| `runtime-adapter.test.ts`       | 18             | ✅ All passed |
-| `server.test.ts`                | 14             | ✅ All passed |
-| `plugin.test.ts`                | 16             | ✅ All passed |
-| `sanitize.test.ts`              | 16             | ✅ All passed |
-| `lifecycle.test.ts`             | 13             | ✅ All passed |
-| `middleware.test.ts`            | 13             | ✅ All passed |
-| `router.test.ts`                | 13             | ✅ All passed |
-| `errors.test.ts`                | 13             | ✅ All passed |
-| `database.test.ts`              | 12             | ✅ All passed |
-| `jsr-versions.test.ts`          | 12             | ✅ All passed |
-| `i18n.test.ts`                  | 14             | ✅ All passed |
-| `load-route-module.test.ts`     | 8              | ✅ All passed |
-| `service.test.ts`               | 10             | ✅ All passed |
-| `runtime.test.ts`               | 10             | ✅ All passed |
-| `csr-client-builder.test.ts`    | 6              | ✅ All passed |
-| `socket-io.test.ts`             | 10             | ✅ All passed |
-| `websocket.test.ts`             | 8              | ✅ All passed |
-| `generate.test.ts`              | 7              | ✅ All passed |
-| `csr-client-middleware.test.ts` | 7              | ✅ All passed |
-| `config-loader.test.ts`         | 5              | ✅ All passed |
-| `module-cache.test.ts`          | 6              | ✅ All passed |
-| `cmd-build.test.ts`             | 4              | ✅ All passed |
-| `cmd-clean.test.ts`             | 4              | ✅ All passed |
-| `render-hybrid.test.ts`         | 7              | ✅ All passed |
-| `render-ssr.test.ts`            | 7              | ✅ All passed |
-| `render-ssg.test.ts`            | 6              | ✅ All passed |
-| `db.test.ts`                    | 4              | ✅ All passed |
-| `init.test.ts`                  | 5              | ✅ All passed |
-| `project.test.ts`               | 4              | ✅ All passed |
-| `version.test.ts`               | 4              | ✅ All passed |
-| `render-csr.test.ts`            | 4              | ✅ All passed |
-| `cmd-dev.test.ts`               | 3              | ✅ All passed |
-| `cmd-fmt.test.ts`               | 3              | ✅ All passed |
-| `cmd-lint.test.ts`              | 3              | ✅ All passed |
-| `cmd-preview.test.ts`           | 3              | ✅ All passed |
-| `cmd-start.test.ts`             | 3              | ✅ All passed |
-| `cmd-test.test.ts`              | 3              | ✅ All passed |
-| `cmd-upgrade.test.ts`           | 3              | ✅ All passed |
-| `cmd-update.test.ts`            | 4              | ✅ All passed |
-| `cli.test.ts`                   | 2              | ✅ All passed |
+| File name                           | Test count     | Status        |
+| ----------------------------------- | -------------- | ------------- |
+| `app.test.ts`                       | 20             | ✅ All passed |
+| `asset-manifest.test.ts`            | 6              | ✅ All passed |
+| `build-dirs.test.ts`                | 18             | ✅ All passed |
+| `config.test.ts`                    | 64             | ✅ All passed |
+| `context.test.ts`                   | 26             | ✅ All passed |
+| `render.test.ts`                    | 46             | ✅ All passed |
+| `command.test.ts`                   | 42             | ✅ All passed |
+| `build.test.ts`                     | 23             | ✅ All passed |
+| `windows.test.ts`                   | 46 (2 ignored) | ✅ All passed |
+| `path.test.ts`                      | 19             | ✅ All passed |
+| `plugin-events.test.ts`             | 17             | ✅ All passed |
+| `logger.test.ts`                    | 18             | ✅ All passed |
+| `runtime-adapter.test.ts`           | 18             | ✅ All passed |
+| `server.test.ts`                    | 14             | ✅ All passed |
+| `plugin.test.ts`                    | 16             | ✅ All passed |
+| `sanitize.test.ts`                  | 16             | ✅ All passed |
+| `database.test.ts`                  | 16             | ✅ All passed |
+| `lifecycle.test.ts`                 | 13             | ✅ All passed |
+| `middleware.test.ts`                | 15             | ✅ All passed |
+| `router.test.ts`                    | 13             | ✅ All passed |
+| `errors.test.ts`                    | 13             | ✅ All passed |
+| `jsr-versions.test.ts`              | 12             | ✅ All passed |
+| `i18n.test.ts`                      | 14             | ✅ All passed |
+| `load-route-module.test.ts`         | 8              | ✅ All passed |
+| `service.test.ts`                   | 10             | ✅ All passed |
+| `runtime.test.ts`                   | 12             | ✅ All passed |
+| `csr-client-builder.test.ts`        | 7              | ✅ All passed |
+| `socket-io.test.ts`                 | 10             | ✅ All passed |
+| `websocket.test.ts`                 | 8              | ✅ All passed |
+| `generate.test.ts`                  | 7              | ✅ All passed |
+| `csr-client-middleware.test.ts`     | 7              | ✅ All passed |
+| `csr-client-route-manifest.test.ts` | 3              | ✅ All passed |
+| `load-data-middleware.test.ts`      | 6              | ✅ All passed |
+| `security.test.ts`                  | 4              | ✅ All passed |
+| `config-loader.test.ts`             | 5              | ✅ All passed |
+| `module-cache.test.ts`              | 6              | ✅ All passed |
+| `cmd-build.test.ts`                 | 4              | ✅ All passed |
+| `cmd-clean.test.ts`                 | 4              | ✅ All passed |
+| `render-hybrid.test.ts`             | 7              | ✅ All passed |
+| `render-ssr.test.ts`                | 7              | ✅ All passed |
+| `render-ssg.test.ts`                | 6              | ✅ All passed |
+| `db.test.ts`                        | 4              | ✅ All passed |
+| `init.test.ts`                      | 6              | ✅ All passed |
+| `project.test.ts`                   | 4              | ✅ All passed |
+| `version.test.ts`                   | 4              | ✅ All passed |
+| `render-csr.test.ts`                | 4              | ✅ All passed |
+| `cmd-dev.test.ts`                   | 3              | ✅ All passed |
+| `cmd-fmt.test.ts`                   | 3              | ✅ All passed |
+| `cmd-lint.test.ts`                  | 3              | ✅ All passed |
+| `cmd-preview.test.ts`               | 3              | ✅ All passed |
+| `cmd-start.test.ts`                 | 3              | ✅ All passed |
+| `cmd-test.test.ts`                  | 3              | ✅ All passed |
+| `cmd-upgrade.test.ts`               | 3              | ✅ All passed |
+| `cmd-update.test.ts`                | 4              | ✅ All passed |
+| `cli.test.ts`                       | 2              | ✅ All passed |
 
-> **Note**: 8 cases ignored in total: 2 in `windows.test.ts` (Windows-only,
-> skipped via `skipIf` on non-Windows); 6 in e2e browser SSG/SSR tests
-> (“应能注入 layout 与页面 load 数据” skipped in SSG/SSR mode).
+> **Note**: 10 cases ignored in total: 2 in `windows.test.ts` (Windows-only,
+> skipped via `skipIf` on non-Windows); 8 in e2e browser SSG/SSR (including
+> “应能注入 layout 与页面 load 数据” skipped in SSG/SSR mode).
 
 #### E2E Tests (tests/e2e/)
 
@@ -110,7 +113,7 @@
 | `browser-render-view-hybrid.test.ts`        | 9          | ✅ All passed | View Hybrid                                               |
 | `browser-render-view-hybrid-flat.test.ts`   | 9          | ✅ All passed | View Hybrid (no src)                                      |
 | `server-request.test.ts`                    | 3          | ✅ All passed | Server starts and returns HTML                            |
-| **Subtotal**                                | **138**    | ✅ All passed | Included in total ~7m25s (6 e2e cases ignored in SSG/SSR) |
+| **Subtotal**                                | **145**    | ✅ All passed | Included in total ~8m1s (8 e2e cases ignored in SSG/SSR)  |
 
 #### Integration Tests (tests/integration/)
 
@@ -131,13 +134,13 @@
 | `ssr-preact-build.test.ts`         | 4          | ✅ All passed | SSR + Preact build and server check |
 | `ssr-react-build.test.ts`          | 4          | ✅ All passed | SSR + React build and server check  |
 | `ssr-view-build.test.ts`           | 4          | ✅ All passed | SSR + View build and server check   |
-| **Subtotal**                       | **48**     | ✅ All passed | ~18s                                |
+| **Subtotal**                       | **45**     | ✅ All passed | ~25s                                |
 
 ---
 
 ## 🔍 Feature Test Details
 
-### 1. Config Management (config.test.ts) - 63 tests
+### 1. Config Management (config.test.ts) - 64 tests
 
 #### 1.1 validateConfig() validation
 
@@ -611,8 +614,8 @@
 - ✅ **path.test.ts** (18): isPathWithinProject, pathForLog,
   normalizePathForCompare, extractComponentPathFromRouteFile (makeTempDir for
   Windows)
-- ✅ **runtime.test.ts** (9): getRuntime, getTaskArgs, getTestArgs, getLintArgs,
-  etc.
+- ✅ **runtime.test.ts** (12): getRuntime, getTaskArgs, getTestArgs,
+  getLintArgs, etc.
 - ✅ **module-cache.test.ts** (5): invalidateModule, getModuleVersion
   (pathToFileUrl for Windows)
 - ✅ **load-route-module.test.ts** (7): loadRouteModule,
@@ -798,5 +801,6 @@ verify actual behavior. Coverage includes:
 - ✅ **Integration tests**: config and lifecycle, CSR/SSR/SSG/Hybrid build and
   server checks for multiple engines
 
-Core framework, e2e, and integration scenarios are fully tested. **840** cases
-pass; **2** Windows-only cases are skipped on non-Windows.
+Core framework, e2e, and integration scenarios are fully tested. **865** cases
+pass; **10** are ignored where appropriate (**2** Windows-only on non-Windows;
+**8** e2e SSG/SSR scenarios).

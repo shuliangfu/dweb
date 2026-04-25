@@ -7,6 +7,43 @@
 
 ---
 
+## [3.4.2] - 2026-04-25
+
+### 新增
+
+- **`src/utils/security.ts`**：`serializeJsonForInlineScript` 用于内联
+  `globalThis.__DATA__` 与路由 JSON 的安全序列化；`escapeHtml`、
+  `createDefaultErrorHtml`、`createJsonErrorBody` 防 HTML/脚本注入，生产环境
+  不暴露错误细节。
+- **`src/feature/csr-client-route-manifest.ts`**：统一的 CSR 路由 manifest（组件
+  路径 + 布局 key），可复用应用内已扫描的 **Router** 结果以减少重复 I/O，必要
+  时回退到文件系统扫描。
+- **可选 `securityHeaders`**（`AppConfig`）与
+  **`createSecurityHeadersMiddleware`**
+  （`src/core/middleware.ts`）：默认关闭；开启后追加较保守的安全响应头（默认不
+  设 CSP，应用可传 `contentSecurityPolicy`）。
+
+### 变更
+
+- **内联激活数据**（`render-ssr`、`render-csr`、`render-hybrid`、
+  `render-ssg`、**SSG** 二次注入）对 `__DATA__` 与 `__DWEB_ROUTES__` 使用安全
+  JSON 序列化。
+- 各渲染路径的 **默认 500 HTML** 使用 `createDefaultErrorHtml`（开发态展示转义
+  摘要，生产为固定文案）。
+- **`/ __data` 等 load-data 接口** 500 响应体使用 `createJsonErrorBody`（生产
+  不返回内部堆栈/细节）。
+- **Hybrid**（`render-hybrid.ts`）：页面、**_app**、**_layout** 模块 **并行** 加
+  载（`Promise.all`）。
+- **客户端构建** 使用 **`getRouteClientManifest`** 归一化路由文件路径，确保
+  **`ROUTE_LOADERS`** 的 key 正确（修复空 manifest 或 `src/routes/...` 等错误
+  导入导致的 **hydration 找不到 `index` 等组件**）。
+
+### 测试
+
+- 新增/扩展 `tests/unit/security.test.ts`、
+  `tests/unit/load-data-middleware.test.ts`、
+  `tests/unit/csr-client-route-manifest.test.ts` 等。
+
 ## [3.4.1] - 2026-04-18
 
 ### 修复

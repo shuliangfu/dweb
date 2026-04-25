@@ -11,6 +11,7 @@
 import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import {
+  createSecurityHeadersMiddleware,
   getMiddlewareChain,
   initializeMiddleware,
   registerMiddleware,
@@ -231,6 +232,42 @@ describe("中间件系统 (middleware.ts)", () => {
       }
 
       expect(secondCalled).toBe(false);
+    });
+  });
+
+  describe("createSecurityHeadersMiddleware()", () => {
+    it("默认关闭时不应修改响应头", async () => {
+      const middleware = createSecurityHeadersMiddleware({});
+      const ctx = {
+        response: undefined as Response | undefined,
+      };
+      await middleware(ctx as never, async () => {
+        ctx.response = new Response("ok");
+      });
+
+      expect(ctx.response?.headers.has("X-Content-Type-Options")).toBe(false);
+    });
+
+    it("启用后应追加默认安全响应头且不覆盖已有头", async () => {
+      const middleware = createSecurityHeadersMiddleware({
+        securityHeaders: true,
+      });
+      const ctx = {
+        response: undefined as Response | undefined,
+      };
+      await middleware(ctx as never, async () => {
+        ctx.response = new Response("ok", {
+          headers: { "X-Frame-Options": "DENY" },
+        });
+      });
+
+      expect(ctx.response?.headers.get("X-Content-Type-Options")).toBe(
+        "nosniff",
+      );
+      expect(ctx.response?.headers.get("X-Frame-Options")).toBe("DENY");
+      expect(ctx.response?.headers.get("Referrer-Policy")).toBe(
+        "strict-origin-when-cross-origin",
+      );
     });
   });
 });

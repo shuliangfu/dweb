@@ -89,6 +89,7 @@ import {
   isPathWithinProject,
 } from "../utils/path.ts";
 import { parseRoutePath } from "../utils/route.ts";
+import { serializeJsonForInlineScript } from "../utils/security.ts";
 import { getDwebVersion } from "../utils/version.ts";
 import {
   deepMergeConfig,
@@ -107,6 +108,7 @@ import { getLifecycleManager, initializeLifecycle } from "./lifecycle.ts";
 import {
   createDevNoCacheMiddleware,
   createHealthCheckMiddleware,
+  createSecurityHeadersMiddleware,
   getServerMiddlewares,
   initializeMiddleware,
   pluginEventsMiddleware,
@@ -435,6 +437,11 @@ export class App extends EventEmitter implements IApp {
         createDevNoCacheMiddleware(isRuntimeDev),
         undefined,
         "dev-no-cache",
+      );
+      server.use(
+        createSecurityHeadersMiddleware(mergedConfig),
+        undefined,
+        "security-headers",
       );
 
       // 框架级中间件：Request ID、请求日志（先于用户中间件执行）
@@ -1261,14 +1268,14 @@ export class App extends EventEmitter implements IApp {
                   true;
               const clientConfigScript = `
 <script>
-  globalThis.__DATA__ = ${JSON.stringify(hydrationData)};
+  globalThis.__DATA__ = ${serializeJsonForInlineScript(hydrationData)};
   ${
                 ssgRouterDebug
                   ? "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;"
                   : ""
               }
   globalThis.__DWEB_DEV__ = false;
-  globalThis.__DWEB_ROUTES__ = ${JSON.stringify(clientRoutes)};
+  globalThis.__DWEB_ROUTES__ = ${serializeJsonForInlineScript(clientRoutes)};
   globalThis.__DWEB_ENGINE__ = "${engine}";
   globalThis.__DWEB_CONTAINER_ID__ = "${containerId}";
   globalThis.__DWEB_MODE__ = "ssg";

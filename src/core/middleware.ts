@@ -22,7 +22,7 @@ import {
 } from "@dreamer/middleware";
 import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
-import type { AppConfig } from "../types/app.ts";
+import type { AppConfig, SecurityHeadersConfig } from "../types/app.ts";
 import { createDwebError, DwebErrorCode } from "../utils/errors.ts";
 import {
   emitOnError,
@@ -262,5 +262,77 @@ export function createDevNoCacheMiddleware(
         headers: h,
       });
     }
+  };
+}
+
+/**
+ * 解析安全响应头配置。默认关闭；传 `true` 时使用低破坏默认值。
+ *
+ * @param input 用户配置
+ */
+function resolveSecurityHeadersConfig(
+  input: AppConfig["securityHeaders"],
+): SecurityHeadersConfig | null {
+  if (input === true) return { enabled: true };
+  if (input == null || input === false) return null;
+  return input.enabled === false ? null : input;
+}
+
+/**
+ * 创建可选安全响应头中间件。
+ *
+ * 默认头避免 MIME sniffing、减少 referrer 泄露、禁用高风险浏览器特性；
+ * CSP 默认不设置，避免破坏现有内联脚本、HMR 与用户自定义资源策略。
+ *
+ * @param config 应用配置
+ */
+export function createSecurityHeadersMiddleware(
+  config: AppConfig,
+): (ctx: HttpContext, next: () => Promise<void>) => Promise<void> {
+  const security = resolveSecurityHeadersConfig(config.securityHeaders);
+  if (!security) {
+    return async (_ctx: HttpContext, next: () => Promise<void>) => {
+      await next();
+    };
+  }
+
+  const defaults: Record<string, string> = {
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": security.referrerPolicy === false
+      ? ""
+      : security.referrerPolicy ?? "strict-origin-when-cross-origin",
+    "Permissions-Policy": security.permissionsPolicy === false
+      ? ""
+      : security.permissionsPolicy ??
+        "camera=(), microphone=(), geolocation=(), payment=()",
+  };
+  if (security.frameOptions !== false) {
+    defaults["X-Frame-Options"] = security.frameOptions ?? "SAMEORIGIN";
+  }
+  if (typeof security.contentSecurityPolicy === "string") {
+    defaults["Content-Security-Policy"] = security.contentSecurityPolicy;
+  }
+  for (const [key, value] of Object.entries(security.headers ?? {})) {
+    if (value === false || value == null) {
+      delete defaults[key];
+    } else {
+      defaults[key] = value;
+    }
+  }
+
+  return async (ctx: HttpContext, next: () => Promise<void>): Promise<void> => {
+    await next();
+    if (!ctx.response) return;
+    const headers = new Headers(ctx.response.headers);
+    for (const [key, value] of Object.entries(defaults)) {
+      if (value.length > 0 && !headers.has(key)) {
+        headers.set(key, value);
+      }
+    }
+    ctx.response = new Response(ctx.response.body, {
+      status: ctx.response.status,
+      statusText: ctx.response.statusText,
+      headers,
+    });
   };
 }

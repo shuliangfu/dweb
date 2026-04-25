@@ -57,6 +57,22 @@ export type BuildAppConfig = Omit<BuilderConfig, "server"> & {
   devCache?: DevCacheOptions;
 };
 
+/** 安全响应头配置；默认不启用，避免破坏已有 CSP / iframe / HMR 场景。 */
+export interface SecurityHeadersConfig {
+  /** 是否启用安全响应头。`securityHeaders: true` 等价于启用默认安全头。 */
+  enabled?: boolean;
+  /** Content-Security-Policy；传 false 表示不设置 CSP。 */
+  contentSecurityPolicy?: string | false;
+  /** X-Frame-Options；传 false 表示不设置。 */
+  frameOptions?: "DENY" | "SAMEORIGIN" | false;
+  /** Referrer-Policy；传 false 表示不设置。 */
+  referrerPolicy?: string | false;
+  /** Permissions-Policy；传 false 表示不设置。 */
+  permissionsPolicy?: string | false;
+  /** 额外响应头，会覆盖默认同名安全头。 */
+  headers?: Record<string, string | false | undefined>;
+}
+
 /**
  * 数据库应用配置
  *
@@ -177,6 +193,8 @@ export interface AppConfig extends Record<string, unknown> {
   >;
   /** 日志配置 */
   logger?: LoggerConfig;
+  /** 可选安全响应头；默认关闭，启用后在所有框架响应上追加安全头。 */
+  securityHeaders?: boolean | SecurityHeadersConfig;
   /** 数据库配置 */
   database?: DatabaseAppConfig;
   /**

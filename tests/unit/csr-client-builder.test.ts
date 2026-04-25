@@ -12,6 +12,7 @@ import { initializeServiceContainer } from "../../src/core/service.ts";
 import {
   clearClientScriptCache,
   createClientScriptMiddleware,
+  generateClientDepContent,
   getCachedClientScript,
 } from "../../src/feature/csr-client-builder.ts";
 import type { AppConfig } from "../../src/types/app.ts";
@@ -62,6 +63,28 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
 
       const middleware = createClientScriptMiddleware(container, config);
       expect(middleware.length).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe("generateClientDepContent()", () => {
+    it("生成的 head meta 插入锚点应使用 ChildNode，避免 generated client 类型回归", () => {
+      const code = generateClientDepContent(
+        "view",
+        [
+          {
+            componentPath: "index",
+            fullPath: "/tmp/routes/index.tsx",
+            importName: "Route_index",
+          },
+        ],
+        false,
+        [],
+        "hybrid",
+        {},
+      );
+
+      expect(code).toContain("let _insertTail: ChildNode | null = _vpAnchor;");
+      expect(code).toContain("_insertTail = _nodesM[_nodesM.length - 1];");
     });
   });
 });

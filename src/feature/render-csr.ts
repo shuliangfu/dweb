@@ -30,6 +30,10 @@ import {
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { extractComponentPathFromRouteFile } from "../utils/path.ts";
+import {
+  createDefaultErrorHtml,
+  serializeJsonForInlineScript,
+} from "../utils/security.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { hasContainerElementInHtml } from "./render-utils.ts";
 import { getRender } from "./render.ts";
@@ -373,7 +377,9 @@ export function createRendererCSR(
       const isDevCsr = getEnv("RUNTIME_ENV") === "dev";
       const debugRender = renderConfig.debug === true;
       const dataScript = hydrationData
-        ? `  globalThis.__DATA__ = ${JSON.stringify(hydrationData)};\n`
+        ? `  globalThis.__DATA__ = ${
+          serializeJsonForInlineScript(hydrationData)
+        };\n`
         : "";
       const clientConfigScript = `
 ${overlayHtml}
@@ -390,7 +396,7 @@ ${overlayHtml}
       }
 ${dataScript}  globalThis.__DWEB_DEV__ = ${isDevCsr};
   globalThis.__DWEB_MODE__ = "csr";
-  globalThis.__DWEB_ROUTES__ = ${JSON.stringify(clientRoutes)};
+  globalThis.__DWEB_ROUTES__ = ${serializeJsonForInlineScript(clientRoutes)};
   globalThis.__DWEB_ENGINE__ = "${engine}";
   globalThis.__DWEB_CONTAINER_ID__ = "${csrOptions.containerId}";
   globalThis.__DWEB_ON_READY__ = function(){var el=document.getElementById("dweb-loading-overlay");if(el){el.classList.add("dweb-loading-done");el.addEventListener("transitionend",function(){el.remove();var s=document.getElementById("dweb-loading-styles");if(s)s.remove()},{once:true})}};
@@ -422,9 +428,7 @@ ${csrOptions.bodyTags || ""}`;
       console.error($tr("log.csrError"), error);
       const isDevCsr = getEnv("RUNTIME_ENV") === "dev";
       return new Response(
-        `<!DOCTYPE html><html><head><title>500 Error</title></head><body><h1>Internal Server Error</h1><p>${
-          error instanceof Error ? error.message : String(error)
-        }</p></body></html>`,
+        createDefaultErrorHtml(error),
         {
           status: 500,
           headers: {
@@ -511,7 +515,7 @@ function generateFallbackCSRHtml(
       : ""
   }
     globalThis.__DWEB_MODE__ = "csr";
-    globalThis.__DWEB_ROUTES__ = ${JSON.stringify(routes)};
+    globalThis.__DWEB_ROUTES__ = ${serializeJsonForInlineScript(routes)};
     globalThis.__DWEB_ENGINE__ = "${engine}";
     globalThis.__DWEB_CONTAINER_ID__ = "${containerId}";
     ${onReadyScript}

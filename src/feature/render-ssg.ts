@@ -34,6 +34,7 @@ import {
   DEFAULT_PRELOAD_MAX_SIZE_MB,
 } from "../utils/constants.ts";
 import { isPathWithinProject } from "../utils/path.ts";
+import { createDefaultErrorHtml } from "../utils/security.ts";
 import { createRendererSSR } from "./render-ssr.ts";
 
 /**
@@ -254,9 +255,7 @@ export function createRendererSSG(
         errHeaders["Cache-Control"] = "no-cache, no-store, must-revalidate";
       }
       return new Response(
-        `<!DOCTYPE html><html><head><title>500 Error</title></head><body><h1>Internal Server Error</h1><p>${
-          error instanceof Error ? error.message : String(error)
-        }</p></body></html>`,
+        createDefaultErrorHtml(error),
         { status: 500, headers: errHeaders },
       );
     }

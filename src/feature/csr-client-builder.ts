@@ -18,7 +18,6 @@
  */
 
 import { BuilderClient, type BuildPlugin } from "@dreamer/esbuild";
-import { createRouter } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import {
   basename,
@@ -48,6 +47,10 @@ import {
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { normalizePathForCompare, pathForLog } from "../utils/path.ts";
+import {
+  getRouteClientManifest,
+  type RouteComponentInfo,
+} from "./csr-client-route-manifest.ts";
 import { createStripLoadPlugin } from "./strip-load-plugin.ts";
 
 /**
@@ -291,109 +294,6 @@ export function isClientChunkFile(pathname: string): boolean {
 }
 
 /**
- * 路由组件信息
- */
-interface RouteComponentInfo {
-  /** 组件路径（相对于 routes 目录，如 "index" 或 "user/[id]"） */
-  componentPath: string;
-  /** 完整文件路径 */
-  fullPath: string;
-  /** 导入变量名 */
-  importName: string;
-}
-
-/** 路由扫描最大深度，防止过深目录导致栈溢出 */
-const MAX_ROUTE_SCAN_DEPTH = 10;
-
-/**
- * 使用 @dreamer/router 扫描路由目录并生成「路由路径 -> 布局 key 链」映射（支持嵌套 _layout）
- * @param routesDirPath 路由目录绝对路径
- * @returns hasLayout 是否存在任意布局；routeLayoutKeys 每个路由路径对应的 _layout key 数组（从外到内）
- */
-async function getRouteLayoutKeys(routesDirPath: string): Promise<{
-  hasLayout: boolean;
-  routeLayoutKeys: Record<string, string[]>;
-}> {
-  const router = createRouter({ routesDir: routesDirPath });
-  await router.scan();
-  const routeLayoutKeys: Record<string, string[]> = {};
-  for (const r of router.getRoutes()) {
-    routeLayoutKeys[r.path] = router.getLayoutKeysForPath(r.path);
-  }
-  const hasLayout = Object.values(routeLayoutKeys).some((arr) =>
-    arr.length > 0
-  );
-  return { hasLayout, routeLayoutKeys };
-}
-
-/**
- * 扫描路由目录，获取所有路由组件
- *
- * 使用迭代（队列）替代递归，避免路由多时递归过深；并限制最大扫描深度。
- *
- * @param routesDir 路由目录绝对路径
- * @param basePath 相对路径前缀（用于层级路径）
- * @param engine 渲染引擎（用于类型）
- * @returns 路由组件列表（仅含 .tsx / .jsx，不把 .ts / .js 当作可水合页面）
- */
-async function scanRouteComponents(
-  routesDir: string,
-  basePath = "",
-  _engine: "react" | "preact" | "view" = "preact",
-): Promise<RouteComponentInfo[]> {
-  const components: RouteComponentInfo[] = [];
-  /** 客户端懒加载仅注册 JSX 页面；工具 .ts 放在 routes 下也不会误入 _client.dep */
-  const extRe = /\.(tsx|jsx)$/;
-
-  /** 待处理队列：(目录路径, 相对路径前缀, 当前深度) */
-  const queue: Array<{ dir: string; base: string; depth: number }> = [
-    { dir: routesDir, base: basePath, depth: 0 },
-  ];
-
-  while (queue.length > 0) {
-    const { dir, base, depth } = queue.shift()!;
-    if (depth >= MAX_ROUTE_SCAN_DEPTH) continue;
-
-    try {
-      const entries = await readdir(dir);
-
-      for (const entry of entries) {
-        const entryPath = join(dir, entry.name);
-
-        if (entry.isDirectory) {
-          queue.push({
-            dir: entryPath,
-            base: base ? `${base}/${entry.name}` : entry.name,
-            depth: depth + 1,
-          });
-        } else if (entry.isFile && extRe.test(entry.name)) {
-          const fileName = entry.name.replace(extRe, "");
-          if (fileName.startsWith("_")) continue;
-
-          const componentPath = base ? `${base}/${fileName}` : fileName;
-          const importName = "Route_" +
-            componentPath
-              .replace(/\//g, "_")
-              .replace(/-/g, "_")
-              .replace(/\[/g, "$")
-              .replace(/\]/g, "$");
-
-          components.push({
-            componentPath,
-            fullPath: entryPath,
-            importName,
-          });
-        }
-      }
-    } catch {
-      // 目录不存在或读取失败，跳过
-    }
-  }
-
-  return components;
-}
-
-/**
  * 从容器中读取 Tailwind / UnoCSS 等插件的配置，计算开发态 HMR CSS URL 与 style 元素 id
  * 供生成 client 时写入代码，HMR 无感刷新后按该 URL 拉取最新 CSS 并替换对应 style 内容
  *
@@ -474,7 +374,7 @@ type ClientDepRenderMode = "csr" | "hybrid" | "ssr" | "ssg";
  * @param routeLayoutKeys 可选，路由路径 -> 布局 key 链（支持嵌套布局）；有则生成 loadLayouts(pathname)
  * @returns client.dep.tsx 的完整源码
  */
-function generateClientDepContent(
+export function generateClientDepContent(
   engine: "react" | "preact" | "view",
   components: RouteComponentInfo[],
   hasLayout: boolean,
@@ -690,7 +590,7 @@ export function clearLayoutCache(): void {
           }
         } else if (_routeMetaHtml.length > 0 || _routeTitleHtml.length > 0) {
           /** 新版：meta 块与 title 分两串插入，title 紧跟 meta 最后一个节点之后（不把 title 夹在 meta 中间） */
-          let _insertTail = _vpAnchor;
+          let _insertTail: ChildNode | null = _vpAnchor;
           if (_routeMetaHtml.length > 0) {
             const _tplM = document.createElement("template");
             _tplM.innerHTML = _routeMetaHtml.trim();
@@ -1534,10 +1434,12 @@ export async function ensureClientEntryFile(
   const engine = renderConfig.engine || "preact";
   const renderMode = (renderConfig.mode ?? "hybrid") as ClientDepRenderMode;
 
-  const components = await scanRouteComponents(routesDirPath, "", engine);
-  const { hasLayout, routeLayoutKeys } = await getRouteLayoutKeys(
-    routesDirPath,
-  );
+  const { components, hasLayout, routeLayoutKeys } =
+    await getRouteClientManifest(
+      container,
+      routesDirPath,
+      engine,
+    );
 
   if (await exists(tempClientEntryPath)) {
     logger.debug(
@@ -1620,12 +1522,14 @@ export async function prepareClientBuildEntry(
     | "view";
   const renderMode = (renderConfig.mode ?? "hybrid") as ClientDepRenderMode;
 
-  const components = await scanRouteComponents(routesDirPath, "", engine);
+  const { components, hasLayout, routeLayoutKeys } =
+    await getRouteClientManifest(
+      container,
+      routesDirPath,
+      engine,
+    );
   logger.debug($tr("log.routesScanned", { count: String(components.length) }));
 
-  const { hasLayout, routeLayoutKeys } = await getRouteLayoutKeys(
-    routesDirPath,
-  );
   const hmrCssEntries = getHmrCssEntries(container);
   const clientDepPath = join(resolve(srcDir), CLIENT_DEP_FILENAME);
 
@@ -1858,16 +1762,16 @@ export async function buildClientScript(
       buildConfig?.debug ??
       false;
 
-    // 扫描路由目录，获取所有路由组件（.tsx/.jsx）
-    const components = await scanRouteComponents(routesDirPath, "", engine);
+    // 优先复用已初始化 Router 的扫描结果；无 Router 时回退到文件系统扫描。
+    const { components, hasLayout, routeLayoutKeys } =
+      await getRouteClientManifest(
+        container,
+        routesDirPath,
+        engine,
+      );
     logger.debug($tr("log.routesScanned", {
       count: String(components.length),
     }));
-
-    // 布局链（支持嵌套 _layout，见 generateClientDepContent 注释）
-    const { hasLayout, routeLayoutKeys } = await getRouteLayoutKeys(
-      routesDirPath,
-    );
 
     const hmrCssEntries = getHmrCssEntries(container);
     const clientDepPath = join(srcDir, CLIENT_DEP_FILENAME);

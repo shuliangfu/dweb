@@ -25,6 +25,7 @@ import {
 import { DWEB_DATA_PATH } from "../utils/constants.ts";
 import { getLogger } from "../utils/logger.ts";
 import { sanitizeRequestParams } from "../utils/sanitize.ts";
+import { createJsonErrorBody } from "../utils/security.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 
 /** 数据接口路径（与客户端 fetch 一致），统一从 constants 导出便于引用 */
@@ -210,10 +211,7 @@ export function createLoadDataMiddleware(
     } catch (err) {
       getLogger(container).error("[dweb] load-data error", pathname, err);
       ctx.response = new Response(
-        JSON.stringify({
-          error: "load_failed",
-          message: err instanceof Error ? err.message : String(err),
-        }),
+        JSON.stringify(createJsonErrorBody("load_failed", err)),
         { status: 500, headers: { "Content-Type": "application/json" } },
       );
     }

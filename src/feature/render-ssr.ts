@@ -25,6 +25,10 @@ import {
 } from "../types/context.ts";
 import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
 import { sanitizeRequestParams } from "../utils/sanitize.ts";
+import {
+  createDefaultErrorHtml,
+  serializeJsonForInlineScript,
+} from "../utils/security.ts";
 import { $tr } from "../utils/i18n.ts";
 import { extractComponentPathFromRouteFile } from "../utils/path.ts";
 import {
@@ -339,9 +343,9 @@ export function createRendererSSR(
             ? "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;"
             : ""
         }
-  globalThis.__DATA__ = ${JSON.stringify(hydrationData)};
+  globalThis.__DATA__ = ${serializeJsonForInlineScript(hydrationData)};
   globalThis.__DWEB_DEV__ = ${isDev};
-  globalThis.__DWEB_ROUTES__ = ${JSON.stringify(clientRoutes)};
+  globalThis.__DWEB_ROUTES__ = ${serializeJsonForInlineScript(clientRoutes)};
   globalThis.__DWEB_ENGINE__ = "${engine}";
   globalThis.__DWEB_CONTAINER_ID__ = "${containerId}";
   globalThis.__DWEB_MODE__ = "ssr";
@@ -407,9 +411,7 @@ export function createRendererSSR(
       // 默认错误响应
       const isDev = getEnv("RUNTIME_ENV") === "dev";
       return new Response(
-        `<!DOCTYPE html><html><head><title>500 Error</title></head><body><h1>Internal Server Error</h1><p>${
-          error instanceof Error ? error.message : String(error)
-        }</p></body></html>`,
+        createDefaultErrorHtml(error),
         {
           status: 500,
           headers: {

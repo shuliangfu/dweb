@@ -7,7 +7,7 @@
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-840%20passed-brightgreen)](./docs/en-US/TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-865%20passed-brightgreen)](./docs/en-US/TEST_REPORT.md)
 
 ---
 
@@ -1847,7 +1847,7 @@ Install with `deno add jsr:@dreamer/<package-name>`. See
 
 See [TEST_REPORT.md](./docs/en-US/TEST_REPORT.md).
 
-**Summary**: 83 test files, 840 tests passing (8 ignored: 2 Windows-only, 6 e2e
+**Summary**: 86 test files, 865 tests passing (10 ignored: 2 Windows-only, 8 e2e
 “inject layout/page load data” in SSG/SSR mode). Covers unit tests (config, app,
 router, plugin, build, render, windows, etc.), e2e browser-render tests, and
 integration tests (config lifecycle, CSR/SSR/SSG/Hybrid build). Path and
@@ -1857,11 +1857,13 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.4.1] - 2026-04-18
+### [3.4.2] - 2026-04-25
 
-**Fixed** — CSR **`renderCurrentRoute`**: when `__DATA__` was already consumed,
-a follow-up re-render (e.g. i18n refresh) now **fetches `/__data`** so layouts
-keep **`load()`** `data` (e.g. session). Full history:
+**Added** — Safe inline JSON (`serializeJsonForInlineScript`), stricter default
+error HTML/JSON in production, optional **`securityHeaders`** middleware, and
+**`csr-client-route-manifest`** with correct **Router** path normalization for
+**`ROUTE_LOADERS`**. **Changed** — **Hybrid** parallel page/**_app**/**_layout**
+load; **`load-data`** 500 message hiding in production. Full history:
 [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
