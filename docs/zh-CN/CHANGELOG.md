@@ -17,13 +17,15 @@
      与 **`process.cwd()`** 常规 `C:\...` 不一致。在
      **`normalizePathForCompare`** 中剥除上述逐字前缀，使
      **`isPathWithinProject`** 能正确比较同一项目根下的路径。
-  2. **8.3 短名**与**长名**混用：双方经 **`realPathSync`**
-     后，**`isPathWithinProject`** （Windows）用 **`path.relative(根, 子)`**
-     判定是否在项目内，**不仅**对归一 字符串做 **startsWith**，减少 GHA
-     上仍误判「Path must be in project」的 情况。
-  3. **`pathForLog`**：在 Windows 上采用相同判内规则，并以
-     **`toComparableRealPath`**
-     - **`relative`** 输出相对路径。
+  2. **8.3 短名**与**长名**混用：Windows 上 **`toComparableRealPath`** 在路径
+     存在时 **`realPathSync`**；若**文件或中间目录尚不存在**则**向上**找到已存在
+     目录做 **`realPathSync`** 再逐段 **`join`**，使子路径前缀与项目根为同一
+     规范形式，再 **`path.relative(根, 子)`** 判内（**仅**对归一字符串
+     **startsWith** 仍不足）。避免「根为短名、子路径仅 resolve 为长名」时
+     **`relative` 出现错误 `..`**，导致 `isPathWithinProject` / `pathForLog` 在
+     GHA 临时目录等场景误判。
+  3. **`pathForLog`**：在 Windows 上与相同规则一致，以
+     **`toComparableRealPath` + `relative`** 输出相对路径。
 
   合起来保证 **`loadRouteModule`** 与 **`GET /__data`** 在 **Windows + Bun** 上
   能持续返回 page **`load()`**、layout 与 metadata；此前 `loadRouteModule` 可能
@@ -34,6 +36,8 @@
 - **`tests/unit/windows.test.ts`**：逐字路径归一、`isPathWithinProject`；在
   Windows 上于临时项目写文件，对 `realPathSync` 结果与 `isPathWithinProject`
   断言。
+- **`tests/unit/path.test.ts`**：临时目录下**尚未存在**的子路径（如
+  `config/main.ts`）仍应判为项目内，与 GHA 上 `path` / 浏览器用例一致。
 
 ## [3.4.2] - 2026-04-25
 

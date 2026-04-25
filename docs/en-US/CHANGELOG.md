@@ -20,12 +20,14 @@ and this project adheres to
     string comparison and **`isPathWithinProject`** can treat routes as under
     the project.
   - **8.3 short names** (e.g. `C:\Users\RUNNER~1\...`) **vs long**
-    (`C:\Users\runner\...`): **`isPathWithinProject`** (Windows) applies
-    **`realPathSync`** to both sides after `resolve`, then uses
-    **`path.relative`** (not only string **startsWith** on normalized strings)
-    to decide if the file is under the project root, so mixed SFN/long/UNC edge
-    cases in CI still resolve correctly (GHA, e.g.
-    `Path must be in project: .../index.tsx`).
+    (`C:\Users\runner\...`): **`isPathWithinProject`** (Windows) uses
+    **`toComparableRealPath`**: **`realPathSync`** when the path exists; if a
+    file or parent segment is **missing**, walk up to an existing directory,
+    **`realPathSync`** that, then **`join`** the remaining segments so the child
+    prefix matches the project root’s canonical form. Then **`path.relative`**
+    (not only string **startsWith**) decides containment. This avoids spurious
+    `..` from mixing SFN root with a long `resolve` only for non-existent paths
+    (Windows CI / browser test runs on temp dirs).
   - **`pathForLog`**: on Windows, uses the same “inside project” rule and
     `toComparableRealPath` + **`relative`** for the returned relative path.
 
@@ -39,6 +41,9 @@ and this project adheres to
 - **`tests/unit/windows.test.ts`**: Verbatim-path normalization, `realPathSync`
   on an existing file under a temp project + **`isPathWithinProject`**
   (Windows); post-fix validation for **`/__data`** on Windows agents.
+- **`tests/unit/path.test.ts`**: Child paths that do **not** exist yet (e.g.
+  `config/main.ts` under a temp project) must still be treated as inside the
+  project, matching GHA / browser test runs.
 
 ## [3.4.2] - 2026-04-25
 

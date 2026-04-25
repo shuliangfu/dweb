@@ -8,7 +8,14 @@
  */
 
 import { platform, realPathSync } from "@dreamer/runtime-adapter";
-import { cwd, relative, resolve } from "../core/runtime-adapter.ts";
+import {
+  basename,
+  cwd,
+  dirname,
+  join,
+  relative,
+  resolve,
+} from "../core/runtime-adapter.ts";
 
 /**
  * 去掉 Windows 上 `fs.realPath` 等可能返回的逐字（verbatim）路径前缀
@@ -61,19 +68,53 @@ export function normalizePathForCompare(p: string): string {
  * Windows 上同一路径可能同时存在 **8.3 短名**（如 `RUNNER~1`）与**长名**
  * （如 `Users\runner\`）两种表示；`cwd()` 与 `fs.realpath` 返回的哪一种
  * 不一致时，仅靠斜杠/逐字归一后仍无法用 `startsWith` 比较。
- * 本函数在参与 `isPathWithinProject` 前用 **`realPathSync` 收束为同一形式**（失败则回退
- * 为 `resolve` 结果，避免路径尚不存在时抛错阻断调用方）。
+ * 本函数在参与 `isPathWithinProject` 前用 **`realPathSync` 收束为同一形式**。
+ * 若**末级或中间目录尚不存在**则 `realPathSync` 会失败：此时**向上**找到已存在
+ * 的目录做 `realPathSync` 再逐段 `join`，与项目根上 `realPathSync` 的 8.3/长名
+ * 表示一致，避免对「仅 resolve 的绝对路径」与根混用导致 `path.relative` 出现无意义
+ * 的 `..` 而误判为项目外（GHA + Bun 上 `isPathWithinProject` / `pathForLog` 失败）。
  */
 function toComparableRealPath(absolute: string): string {
   if (platform() !== "windows") {
     return absolute;
   }
+  return realPathWithMissingSegments(absolute);
+}
+
+/**
+ * Windows：对已 `resolve` 的路径尽量得到与 `fs.realPath` 一致的表示；遇 ENOENT
+ * 则自底向上剥离末段，直到 `realPathSync` 成功，再按序 `join` 回未解析的各段。
+ *
+ * @param absolute 已 `resolve` 的绝对路径
+ */
+function realPathWithMissingSegments(absolute: string): string {
   const resolved = resolve(absolute);
   try {
     return realPathSync(resolved);
   } catch {
-    return resolved;
+    // 典型原因：子路径或中间目录尚未存在，无法一次 realPath 整条路径
   }
+  const tail: string[] = [];
+  let current = resolved;
+  for (let i = 0; i < 1024; i++) {
+    try {
+      const real = realPathSync(current);
+      let out = real;
+      for (const seg of tail) {
+        out = join(out, seg);
+      }
+      return out;
+    } catch {
+      const parent = dirname(current);
+      const base = basename(current);
+      if (parent === current || !base) {
+        return resolved;
+      }
+      tail.unshift(base);
+      current = parent;
+    }
+  }
+  return resolved;
 }
 
 /**
