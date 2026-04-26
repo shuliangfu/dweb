@@ -1924,7 +1924,7 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.4.3] - 2026-04-25
+### [3.4.3] - 2026-04-26
 
 **修复**（Windows + Bun、CI）— **`normalizePathForCompare`** 去逐字 `\\?\` 等；
 **`isPathWithinProject`** 在 Windows 上对双路径 **`realPathSync`**，统一 **8.3

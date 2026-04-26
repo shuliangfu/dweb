@@ -1857,7 +1857,7 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.4.3] - 2026-04-25
+### [3.4.3] - 2026-04-26
 
 **Fixed** (Windows + Bun, CI) — **`normalizePathForCompare`**: strip verbatim
 `\\?\` / `//?/` paths; **`isPathWithinProject`**: on Windows, **`realPathSync`**

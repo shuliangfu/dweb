@@ -8,7 +8,7 @@ and this project adheres to
 
 ---
 
-## [3.4.3] - 2026-04-25
+## [3.4.3] - 2026-04-26
 
 ### Fixed
 
@@ -48,6 +48,20 @@ and this project adheres to
   **`ensureExampleDependenciesInstalled`**: if `node_modules/@dreamer/dweb` is
   missing in an example, run **`bun install`** there before build/dev subprocess
   (Deno still uses `deno.json` imports and skips this).
+- **`src/feature/load-data-middleware.ts`**: for route module loading in
+  `GET /__data`, convert router-returned file paths to absolute paths and pass a
+  per-file `routesDirPath` (`dirname(absPath)`) to avoid cross-suite `cwd`
+  interference during Bun unit concurrency on Windows.
+- **`src/feature/load-route-module.ts`**: keep the strict in-project guard, and
+  add a Windows fallback containment check (normalized absolute-prefix against
+  `routesDirPath`) when `isPathWithinProject` false-negatives due to 8.3
+  short-name vs long-path mismatch (`RUNNER~1` style temp directories in CI).
+
+### Tests
+
+- Re-ran **`bun test tests/unit`** (626 files set in CI workflow scope) after
+  the fallback guard update; `load-data-middleware` assertions pass without
+  `Path must be in project` false negatives.
 
 ## [3.4.2] - 2026-04-25
 

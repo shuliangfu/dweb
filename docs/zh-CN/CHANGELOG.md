@@ -7,7 +7,7 @@
 
 ---
 
-## [3.4.3] - 2026-04-25
+## [3.4.3] - 2026-04-26
 
 ### 修复
 
@@ -42,6 +42,18 @@
   **`ensureExampleDependenciesInstalled`**：若示例目录无
   `node_modules/@dreamer/dweb`，则在子进程 build/dev 前对该目录执行
   **`bun install`**（Deno 仍走 `deno.json` 的 `imports`，不执行本步）。
+- **`src/feature/load-data-middleware.ts`**：`GET /__data` 加载路由模块时， 将
+  router 返回路径统一转为绝对路径，并按每个文件传入
+  `routesDirPath: dirname(absPath)`，避免 Bun Windows 单测并发时被其它套件
+  `chdir` 干扰。
+- **`src/feature/load-route-module.ts`**：在保持原路径安全校验前提下，补充
+  Windows 兜底包含判断（基于 `routesDirPath` 的规范化绝对前缀），修复 `RUNNER~1`
+  等 8.3 短名与长路径混用导致的假阴性误判。
+
+### 测试（补充）
+
+- 补跑 **`bun test tests/unit`**（与 CI 同范围 626 用例），确认
+  `load-data-middleware` 不再出现 `Path must be in project` 假阴性并通过断言。
 
 ## [3.4.2] - 2026-04-25
 
