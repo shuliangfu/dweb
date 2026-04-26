@@ -27,7 +27,7 @@ import {
 } from "../core/runtime-adapter.ts";
 import { getCacheOptions } from "../utils/constants.ts";
 import { $tr } from "../utils/i18n.ts";
-import { isPathWithinProject } from "../utils/path.ts";
+import { isPathWithinProject, normalizePathForCompare } from "../utils/path.ts";
 import { getModuleVersion } from "./module-cache.ts";
 import { resetViewSsrBundleShutdownInterruptFlag } from "./view-ssr-route-bundle.ts";
 
@@ -227,8 +227,32 @@ export async function loadRouteModule(
     }
 
     if (!isPathWithinProject(absPath, pathSecurityRoot)) {
-      console.warn(`${$tr("log.pathMustBeInProject")}: ${filePath}`);
-      return null;
+      /**
+       * Windows + Bun 下 `realPath` 可能在短路径(8.3)/长路径间切换，导致本应在
+       * routes 目录内的文件被误判为项目外（假阴性）。这里补一个仅用于兜底的
+       * 规范化前缀判断，优先使用调用方提供的 routesDirPath 与原始输入路径比较。
+       */
+      let fallbackAllowed = false;
+      const routesDir = options?.routesDirPath;
+      if (routesDir && typeof routesDir === "string" && routesDir.trim()) {
+        const routeRootNorm = normalizePathForCompare(routesDir);
+        const inputAbsForFallback = pathInput.startsWith("file://")
+          ? (() => {
+            let p = decodeURIComponent(new URL(pathInput).pathname);
+            if (p.match(/^\/[A-Za-z]:/)) p = p.slice(1);
+            return p;
+          })()
+          : (pathInput.startsWith("/") || pathInput.match(/^[A-Za-z]:/))
+          ? pathInput
+          : resolve(cwdPath, pathInput);
+        const inputNorm = normalizePathForCompare(inputAbsForFallback);
+        fallbackAllowed = inputNorm === routeRootNorm ||
+          inputNorm.startsWith(routeRootNorm + "/");
+      }
+      if (!fallbackAllowed) {
+        console.warn(`${$tr("log.pathMustBeInProject")}: ${filePath}`);
+        return null;
+      }
     }
 
     const normalizedPath = absPath.replace(/\\/g, "/");
