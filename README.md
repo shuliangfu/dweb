@@ -1857,12 +1857,13 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.4.3] - 2026-04-26
+### [3.4.4] - 2026-04-27
 
-**Fixed** (Windows + Bun, CI) — **`normalizePathForCompare`**: strip verbatim
-`\\?\` / `//?/` paths; **`isPathWithinProject`**: on Windows, **`realPathSync`**
-on both sides so **8.3 (RUNNER~1) and long** path forms match. **`/__data` /
-`loadRouteModule`**. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Fixed** — **`resolveRouterRoutesDirPath`**: correct **`router.routesDir`**
+when **cwd** is the app subfolder but the config still uses a
+**parent-relative** path (e.g. `./frontend/routes`), avoiding
+`.../frontend/frontend/routes`; unified across router, **load data**, render,
+build, and dev watch. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

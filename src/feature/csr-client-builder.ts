@@ -46,7 +46,11 @@ import {
 } from "../utils/constants.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
-import { normalizePathForCompare, pathForLog } from "../utils/path.ts";
+import {
+  normalizePathForCompare,
+  pathForLog,
+  resolveRouterRoutesDirPath,
+} from "../utils/path.ts";
 import {
   getRouteClientManifest,
   type RouteComponentInfo,
@@ -489,7 +493,7 @@ export function clearLayoutCache(): void {
 
   /** View：setViewState + ensureReactiveRoot（模板已在 snippet 前调过 unmountPrevious）；非 view：清空容器 + renderCSR */
   const hmrRenderSnippet = isViewEngine
-    ? `setViewState({ page: PageComponent, props: { params: match.params, query: match.query }, layouts: layoutList, skipLayouts });
+    ? `setViewState({ page: PageComponent, routeComponent: match.route.component, props: { params: match.params, query: match.query }, layouts: layoutList, skipLayouts }, { force: true });
     _viewEnsureReactiveRoot(containerId);`
     : `const _container = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
     if (_container && typeof _container.replaceChildren === "function") _container.replaceChildren();
@@ -511,7 +515,7 @@ export function clearLayoutCache(): void {
   /** View Hybrid：首屏 setViewState + _viewEnsureReactiveRoot（mount/insert/buildViewTree）；非 View 走 render 的 hydrate()。 */
   const hybridInitBlock = isViewEngine
     ? `${mergeLayoutDataSnippet}
-      setViewState({ page: PageComponent, props: hydrationData.page || { params: hydrationData.params || {}, query: hydrationData.query || {} }, layouts: skipLayouts ? [] : _layouts, skipLayouts });
+      setViewState({ page: PageComponent, routeComponent: componentPath, props: hydrationData.page || { params: hydrationData.params || {}, query: hydrationData.query || {} }, layouts: skipLayouts ? [] : _layouts, skipLayouts });
       _viewEnsureReactiveRoot(containerId);
       isHydratedRef.current = true;`
     : `${mergeLayoutDataSnippet}
@@ -653,8 +657,17 @@ export function clearLayoutCache(): void {
   const onRouteChangeRenderSnippet = isViewEngine
     ? `if (_win.__DWEB_DEBUG__) console.log("[dweb:view] onRouteChange", { component: match.route.component, hasPage: !!PageComponent });
       ${onRouteChangeMergeLayoutSnippet}
+      /**
+       * 须先与当前 viewState 比较再决定是否 unmount：若已 unmount 而 setViewState 因语义相同被跳过，
+       * 会再走 _viewEnsureReactiveRoot 用旧状态重建整树 → 页面 onMount 风暴（如路由重复 notify）。
+       */
+      const _nextViewRoot: _ViewStateRoot = { page: PageComponent, routeComponent: match.route.component, props: _pageProps, layouts: skipLayouts ? [] : _layoutsNav, skipLayouts };
+      if (_isSameViewStateRoot(getViewState(), _nextViewRoot)) {
+        (g as DwebGlobal).__DWEB_ON_READY__?.();
+        return;
+      }
       unmountPrevious();
-      setViewState({ page: PageComponent, props: _pageProps, layouts: _layoutsNav, skipLayouts });
+      setViewState(_nextViewRoot);
       _viewEnsureReactiveRoot(containerId);
       (g as DwebGlobal).__DWEB_ON_READY__?.();`
     : `${onRouteChangeMergeLayoutSnippet}
@@ -702,16 +715,23 @@ export function clearLayoutCache(): void {
         _layoutData = Array.isArray(_rcrNav.layoutData) ? _rcrNav.layoutData : [];
         _props = { params: _rcrNav.params || (match.params || {}), query: _rcrNav.query || (match.query || {}), data: _rcrNav.data } as Record<string, unknown>;
       }
-      const _layoutsCsr: LayoutComponent[] = _layoutData.length
+      const _layoutsCsr: LayoutComponent[] = skipLayouts ? [] : (_layoutData.length
         ? layoutList.map((l, i) => ({ component: l.component, props: (_layoutData[i] ?? l.props ?? {}) as Record<string, unknown> }))
-        : layoutList;`;
+        : layoutList);`;
   const setLastPathSnippet =
     `(g as DwebGlobal).__DWEB_LAST_PATHNAME__ = (typeof _win.location !== "undefined" && _win.location.pathname ? _win.location.pathname : "/") + (typeof _win.location !== "undefined" && _win.location.search ? _win.location.search : "");`;
   const renderCurrentRouteSnippet = isViewEngine
-    ? `if (_win.__DWEB_DEBUG__) console.log("[dweb:view] renderCurrentRoute", { component: match.route.component, hasPage: !!PageComponent, layoutsCount: layoutList?.length ?? 0 });
-      ${setLastPathSnippet}
+    ? `${setLastPathSnippet}
       ${csrRenderCurrentRouteDataSnippet}
-      setViewState({ page: PageComponent, props: _props, layouts: _layoutsCsr, skipLayouts });
+      const _rcrNext: _ViewStateRoot = { page: PageComponent, routeComponent: match.route.component, props: _props, layouts: skipLayouts ? [] : _layoutsCsr, skipLayouts };
+      if (_isSameViewStateRoot(getViewState(), _rcrNext)) {
+        if (!_viewReactiveRoot) {
+          _viewEnsureReactiveRoot(containerId);
+          _win.__DWEB_ON_READY__?.();
+        }
+        return;
+      }
+      setViewState(_rcrNext);
       if (!_viewReactiveRoot && RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
       if (!_viewReactiveRoot) {
         _viewEnsureReactiveRoot(containerId);
@@ -723,8 +743,7 @@ export function clearLayoutCache(): void {
           _viewEnsureReactiveRoot(containerId);
           _win.__DWEB_ON_READY__?.();
         }
-      }
-      if (_win.__DWEB_DEBUG__) console.log("[dweb:view] renderCurrentRoute done");`
+      }`
     : `if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
       const _container = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
       if (_container && typeof _container.replaceChildren === "function") _container.replaceChildren();
@@ -741,6 +760,36 @@ export function clearLayoutCache(): void {
       });
       RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;
       (g as DwebGlobal).__DWEB_ON_READY__?.();`;
+
+  /** initApp 内 layouts 加载后至 setupHydration 前：View Hybrid 预合并 layoutData，消除 viewState 初始 layouts=[] 与 hydrate 的 layouts.length 抖动 */
+  const initAppLayoutsAndHydrateBody = isViewEngine
+    ? `  const layouts = await ${loadLayoutsCallInit};
+  if (isHybridMode) {
+    try {
+      const __dPre = g.__DATA__;
+      if (__dPre) {
+        const _ldPre = Array.isArray(__dPre.layoutData) ? __dPre.layoutData : [];
+        const _mergedPre: LayoutComponent[] = _ldPre.length
+          ? layouts.map((l, i) => ({ component: l.component, props: (_ldPre[i] ?? l.props ?? {}) as Record<string, unknown> }))
+          : layouts;
+        const _vs0 = getViewState();
+        setViewState({
+          page: _vs0.page,
+          routeComponent: _vs0.routeComponent,
+          props: _vs0.props,
+          layouts: _mergedPre,
+          skipLayouts: _vs0.skipLayouts,
+        });
+      }
+    } catch {
+      /* Hybrid View：预合并 SSR layoutData 失败不阻塞 hydrate */
+    }
+  }
+  const isHydratedRef = { current: false };
+  await setupHydrationRouterAndHmr({ g, router, containerId, engine, layouts, isHydratedRef, isHybridMode });`
+    : `  const layouts = await ${loadLayoutsCallInit};
+  const isHydratedRef = { current: false };
+  await setupHydrationRouterAndHmr({ g, router, containerId, engine, layouts, isHydratedRef, isHybridMode });`;
 
   return `/// <reference lib="dom" />
 /**
@@ -970,18 +1019,126 @@ ${
     isViewEngine
       ? `
 /** View 引擎：createSignal 返回 Signal；显式标注类型避免部分检查器将返回值误判为可迭代元组（TS2488）。 */
-type _ViewStateRoot = { page: unknown; props: Record<string, unknown>; layouts: LayoutComponent[]; skipLayouts: boolean };
-const viewState: Signal<_ViewStateRoot> = createSignal<_ViewStateRoot>({ page: null as unknown, props: {} as Record<string, unknown>, layouts: [] as LayoutComponent[], skipLayouts: false });
+/**
+ * routeComponent：路由扫描时的组件路径（与 match.route.component / hydrationData.component 同源）。
+ * Hybrid 首屏 hydrate 的 Page 与后续 loadPageModule 可能是不同函数引用，比较「是否同页」须用路径而非 page 引用。
+ */
+type _ViewStateRoot = { page: unknown; routeComponent: string; props: Record<string, unknown>; layouts: LayoutComponent[]; skipLayouts: boolean };
+/** Hybrid 首屏脚本执行时已有内联 __DATA__，先写入 routeComponent，避免与首屏 setViewState 比较时误判为 routeComponent 维度（日志里 why 一直是 routeComponent） */
+const _viewStateBootRoute = ((): string => {
+  try {
+    const _g = globalThis as unknown as DwebGlobal;
+    const _c = _g.__DATA__?.component;
+    return typeof _c === "string" && _c.length > 0 ? _c : "";
+  } catch {
+    return "";
+  }
+})();
+const viewState: Signal<_ViewStateRoot> = createSignal<_ViewStateRoot>({ page: null as unknown, routeComponent: _viewStateBootRoute, props: {} as Record<string, unknown>, layouts: [] as LayoutComponent[], skipLayouts: false });
 function getViewState(): _ViewStateRoot {
   return viewState.value;
 }
-function setViewState(next: _ViewStateRoot): void {
+/**
+ * 深度稳定序列化：对象键按字典序排序后再 stringify，避免「同一语义、键序不同」导致 canonical 不一致。
+ */
+function _stableJsonForViewState(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    let out = "[";
+    for (let i = 0; i < value.length; i++) {
+      if (i > 0) out += ",";
+      out += _stableJsonForViewState(value[i]);
+    }
+    return out + "]";
+  }
+  const obj = value as Record<string, unknown>;
+  const keys = Object.keys(obj).sort();
+  let out = "{";
+  for (let i = 0; i < keys.length; i++) {
+    if (i > 0) out += ",";
+    const k = keys[i]!;
+    out += JSON.stringify(k) + ":" + _stableJsonForViewState(obj[k]);
+  }
+  return out + "}";
+}
+/**
+ * 将路由页 props 规范为稳定 JSON：避免「缺省 data / data 为 undefined」与「data: {}」在 JSON.stringify 下不一致，
+ * 导致误判为状态变化、setViewState 触发整树重挂与 onMount 重复请求（如 i18n.onChange → renderCurrentRoute）。
+ */
+function _canonicalPagePropsForViewState(p: Record<string, unknown>): string {
+  const src = p ?? ({} as Record<string, unknown>);
+  const rawParams = src["params"];
+  const rawQuery = src["query"];
+  const rawData = src["data"];
+  const params = rawParams != null && typeof rawParams === "object" && !Array.isArray(rawParams)
+    ? rawParams
+    : {};
+  const query = rawQuery != null && typeof rawQuery === "object" && !Array.isArray(rawQuery)
+    ? rawQuery
+    : {};
+  const data = rawData === undefined || rawData === null ? {} : rawData;
+  try {
+    return _stableJsonForViewState({ params, query, data });
+  } catch {
+    return "__dweb:canonicalPagePropsError__";
+  }
+}
+/**
+ * 布局 load 注入 props 的稳定比较：缺省字段与 null 统一，减少无意义的全树重挂。
+ */
+function _canonicalLayoutPropsForViewState(p: Record<string, unknown> | undefined): string {
+  const src = p ?? {};
+  try {
+    return _stableJsonForViewState({
+      pathname: src["pathname"] ?? null,
+      themeMode: src["themeMode"] ?? null,
+      uiLocale: src["uiLocale"] ?? null,
+      user: src["user"] ?? null,
+    });
+  } catch {
+    return "__dweb:canonicalLayoutPropsError__";
+  }
+}
+/** 与 loadPageModule 的 normalize 规则一致，用于比较 routeComponent，避免路径写法差异导致误判换页 */
+function _routeKeyForViewState(componentPath: string): string {
+  if (componentPath == null || String(componentPath).trim() === "") return "";
+  return normalizeComponentPathForLookup(String(componentPath));
+}
+/**
+ * 判断两次 View 根状态是否语义相同，避免仅「新对象引用」触发 notify 导致整树卸载重挂。
+ * 注意：不比较 layout/page 的 **函数引用**——Hybrid 下首屏与 loadPageModule 可能各有一份模块实例，引用不同但语义同页。
+ * 须比较 page 是否已加载：initApp 预合并 layouts 后 page 常为 null，若仅比 props/layouts 会与 hydrate 误判为相同而跳过 setViewState，buildViewTree 收到 null 时运行时报 invalid component（JS 中 typeof null 为 object）。勿在本注释内使用反引号，否则打断 csr-client-builder 外层模板字符串。
+ */
+function _isSameViewStateRoot(a: _ViewStateRoot, b: _ViewStateRoot): boolean {
+  if (_routeKeyForViewState(a.routeComponent) !== _routeKeyForViewState(b.routeComponent) || a.skipLayouts !== b.skipLayouts) return false;
+  if ((a.page == null) !== (b.page == null)) return false;
+  if (a.layouts.length !== b.layouts.length) return false;
+  for (let i = 0; i < a.layouts.length; i++) {
+    if (
+      _canonicalLayoutPropsForViewState(a.layouts[i].props) !==
+        _canonicalLayoutPropsForViewState(b.layouts[i].props)
+    ) {
+      return false;
+    }
+  }
+  return _canonicalPagePropsForViewState(a.props) === _canonicalPagePropsForViewState(b.props);
+}
+/**
+ * @param opts.force - HMR 等同路由换新 chunk 时必须写入新 page/layout 引用，即使 canonical 状态与上次相同
+ */
+function setViewState(next: _ViewStateRoot, opts?: { force?: boolean }): void {
+  const prev = viewState.value;
+  if (!opts?.force && _isSameViewStateRoot(prev, next)) {
+    return;
+  }
   viewState.value = next;
 }
 let _viewReactiveRoot: { unmount: () => void } | null = null;
 
 /** 仅渲染「当前页」的包装组件：返回 getter，getter 内读 getViewState() 并 buildViewTree(page, props)，不包含 layouts。页面内 state（Signal 的 .value）只在本 getter 的 effect 中被读，故仅本层重跑、仅本层 data-view-dynamic 更新。 */
-function _viewPageContent(props: { getViewState: () => { page: unknown; props: Record<string, unknown>; layouts: LayoutComponent[]; skipLayouts: boolean } }) {
+function _viewPageContent(props: { getViewState: () => { page: unknown; routeComponent: string; props: Record<string, unknown>; layouts: LayoutComponent[]; skipLayouts: boolean } }) {
   return () => {
     const s = props.getViewState();
     if (_win.__DWEB_DEBUG__) console.log("[dweb:view] PageContent getter", { hasPage: !!s.page });
@@ -1294,11 +1451,14 @@ export async function initApp(): Promise<DwebApp> {
   });
   // 在首次 await 前注册链接点击拦截器（CSR/Hybrid）；SSR/SSG 时 interceptLinks 为 false，不拦截
   router.start();
-  const layouts = await ${loadLayoutsCallInit};
-  const isHydratedRef = { current: false };
-  await setupHydrationRouterAndHmr({ g, router, containerId, engine, layouts, isHydratedRef, isHybridMode });
+${initAppLayoutsAndHydrateBody}
 
-  async function renderCurrentRoute(): Promise<void> {
+  /**
+   * 合并同帧/突发多次 renderCurrentRoute（如 i18n、插件连续触发）：只执行最后一次，并在 await 后丢弃已过期的执行，避免 View 整树反复重挂。
+   */
+  let _dwebRcrCoalesceToken = 0;
+  async function renderCurrentRouteImpl(): Promise<void> {
+    const myToken = _dwebRcrCoalesceToken;
     const pathname = (typeof _win.location !== "undefined" && _win.location?.pathname) ? _win.location.pathname : "/";
     const match = router.match(pathname);
     if (!match) {
@@ -1308,6 +1468,7 @@ export async function initApp(): Promise<DwebApp> {
     }
     try {
       const module = await loadPageModule(match.route.component) as Record<string, unknown>;
+      if (myToken !== _dwebRcrCoalesceToken) return;
       if (!module) {
         if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
         renderNotFound(containerId);
@@ -1321,14 +1482,25 @@ export async function initApp(): Promise<DwebApp> {
       }
       const skipLayouts = module.inheritLayout === false;
       const layoutList = await ${loadLayoutsCallRender};
+      if (myToken !== _dwebRcrCoalesceToken) return;
       ${renderCurrentRouteSnippet}
     } catch (error) {
+      if (myToken !== _dwebRcrCoalesceToken) return;
       console.error(${
     JSON.stringify($tr("client.pageLoadError"))
   } + ":", error);
       if (RENDER_STATE.lastUnmount) { RENDER_STATE.lastUnmount(); RENDER_STATE.lastUnmount = null; }
       renderError(containerId, error);
     }
+  }
+
+  async function renderCurrentRoute(): Promise<void> {
+    const t = ++_dwebRcrCoalesceToken;
+    await Promise.resolve();
+    if (t !== _dwebRcrCoalesceToken) {
+      return;
+    }
+    await renderCurrentRouteImpl();
   }
 
   // CSR 模式：router.start() 不会用当前 URL 触发 onRouteChange，首屏需主动渲染当前路由
@@ -1421,9 +1593,10 @@ export async function ensureClientEntryFile(
   const logger = getLogger(container);
 
   const routerConfig = (config.router || {}) as { routesDir?: string };
-  const routesDirRaw = routerConfig.routesDir || "./src/routes";
-  const routesDir = routesDirRaw.replace(/^\.\/?/, "") || routesDirRaw;
-  const routesDirPath = join(cwd(), routesDir);
+  const routesDirPath = resolveRouterRoutesDirPath(
+    cwd(),
+    routerConfig.routesDir || "./src/routes",
+  );
   const srcDir = join(routesDirPath, "..");
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
 
@@ -1506,9 +1679,10 @@ export async function prepareClientBuildEntry(
 }> {
   const logger = getLogger(container);
   const routerConfig = (config.router || {}) as { routesDir?: string };
-  const routesDirRaw = routerConfig.routesDir || "./src/routes";
-  const routesDir = routesDirRaw.replace(/^\.\/?/, "") || routesDirRaw;
-  const routesDirPath = join(cwd(), routesDir);
+  const routesDirPath = resolveRouterRoutesDirPath(
+    cwd(),
+    routerConfig.routesDir || "./src/routes",
+  );
   const srcDir = join(routesDirPath, "../");
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);
 
@@ -1714,9 +1888,10 @@ export async function buildClientScript(
   // 获取客户端入口文件路径
   const routerConfig = (config.router || {}) as { routesDir?: string };
 
-  const routesDirRaw = routerConfig.routesDir || "./src/routes";
-  const routesDir = routesDirRaw.replace(/^\.\/?/, "") || routesDirRaw;
-  const routesDirPath = join(cwd(), routesDir);
+  const routesDirPath = resolveRouterRoutesDirPath(
+    cwd(),
+    routerConfig.routesDir || "./src/routes",
+  );
   const srcDir = join(routesDirPath, "..");
 
   const tempClientEntryPath = join(srcDir, CLIENT_ENTRY_FILENAME);

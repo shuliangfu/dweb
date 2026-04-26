@@ -7,6 +7,27 @@
 
 ---
 
+## [3.4.4] - 2026-04-27
+
+### 修复
+
+- **多包 / 扁平项目下 `router.routesDir` 与 `process.cwd()` 不一致**：若进程序在
+  **应用子目录**（如 `.../advanced/frontend`）启动，而配置仍写相对**上一级**
+  根目录的路径（如 `./frontend/routes`，本意为
+  `.../advanced/frontend/routes`）， 则原先 `join(cwd, "frontend/routes")`
+  会得到 `.../frontend/frontend/routes`（Bun 下常 ENOENT），`loadRouteModule` 与
+  **`GET /__data`** 失败。新增 **`resolveRouterRoutesDirPath`**
+  （**`src/utils/path.ts`**）：主路径非目录时尝试**去掉最前一段**再解析 ；若
+  **`routesDir` 为绝对路径**则仅做 **`resolve`**、不与 `cwd` 再拼接
+  。**`initializeRouter`**、**`createLoadDataMiddleware`**、各
+  **CSR/SSR/Hybrid** 渲染、 **build / CSR 客户端**、**routes 中间件**、**SSG
+  注入**、**开发 watch** 等统一 使用该解析，与路由扫描一致。
+
+### 测试
+
+- **`tests/unit/path.test.ts`**：对 **`resolveRouterRoutesDirPath`** 的默认
+  `src/routes`、**重复首段**（如 `frontend`）回退、**绝对** `routesDir` 的用例。
+
 ## [3.4.3] - 2026-04-26
 
 ### 修复

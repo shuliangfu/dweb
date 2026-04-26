@@ -24,7 +24,7 @@ import {
   createServerResponse,
   requestFromHttpContext,
 } from "../types/context.ts";
-import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
+import { cwd, getEnv } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
 import { $tr } from "../utils/i18n.ts";
@@ -34,7 +34,10 @@ import {
   createDefaultErrorHtml,
   serializeJsonForInlineScript,
 } from "../utils/security.ts";
-import { extractComponentPathFromRouteFile } from "../utils/path.ts";
+import {
+  extractComponentPathFromRouteFile,
+  resolveRouterRoutesDirPath,
+} from "../utils/path.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
 import { hasContainerElementInHtml } from "./render-utils.ts";
@@ -114,10 +117,9 @@ export function createRendererHybrid(
   };
 
   const routerConfig = (config.router || {}) as { routesDir?: string };
-  const routesDir = routerConfig.routesDir ?? "./src/routes";
-  const routesDirPath = join(
+  const routesDirPath = resolveRouterRoutesDirPath(
     cwd(),
-    routesDir.replace(/^\.\/?/, "") || routesDir,
+    routerConfig.routesDir ?? "./src/routes",
   );
   // 收集所有路由信息（用于注入到客户端，component 与 ROUTE_LOADERS key 统一格式）
   const clientRoutes = collectClientRoutes(router, routesDirPath);

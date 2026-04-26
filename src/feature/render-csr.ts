@@ -20,7 +20,7 @@ import type { SessionData } from "@dreamer/session";
 import { jsx as viewJsx } from "@dreamer/view/jsx-runtime";
 import { createElement as createElementPreact } from "preact";
 import { createElement as createElementReact } from "react";
-import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
+import { cwd, getEnv } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import {
   createLoadContext,
@@ -29,7 +29,10 @@ import {
 } from "../types/context.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
-import { extractComponentPathFromRouteFile } from "../utils/path.ts";
+import {
+  extractComponentPathFromRouteFile,
+  resolveRouterRoutesDirPath,
+} from "../utils/path.ts";
 import {
   createDefaultErrorHtml,
   serializeJsonForInlineScript,
@@ -116,10 +119,9 @@ export function createRendererCSR(
   /** 注入 `__DWEB_ROUTER_DEBUG__`，与 Hybrid 行为一致 */
   const routerDebug =
     (config.router as { debug?: boolean } | undefined)?.debug === true;
-  const routesDir = routerConfig.routesDir ?? "./src/routes";
-  const routesDirPath = join(
+  const routesDirPath = resolveRouterRoutesDirPath(
     cwd(),
-    routesDir.replace(/^\.\/?/, "") || routesDir,
+    routerConfig.routesDir ?? "./src/routes",
   );
   const clientRoutes = collectClientRoutes(router, routesDirPath);
 

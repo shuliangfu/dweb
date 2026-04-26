@@ -12,14 +12,15 @@ import type { ServiceContainer } from "@dreamer/service";
 import { pluginEvents } from "../core/plugin-events.ts";
 import {
   cwd,
+  dirname,
   existsSync,
   getEnv,
-  join,
   relative,
 } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
+import { resolveRouterRoutesDirPath } from "../utils/path.ts";
 import {
   buildClientScript,
   clearClientScriptCache,
@@ -72,13 +73,12 @@ export function initializeServer(
     // 3. 都没有则使用默认值 ./src
     let defaultWatchPaths = ["./src"];
     if (config.router?.routesDir) {
-      // 从 routesDir 推断 src 目录（取 routesDir 的父目录）
-      // 例如：./src/routes -> ./src（Windows 兼容：先统一反斜杠再匹配）；用 resolve/relative 规范化，避免 dir/./dir
-      const routesDir = config.router.routesDir as string;
-      const srcDirRaw =
-        routesDir.replace(/\\/g, "/").replace(/\/routes\/?$/, "") || "./src";
-      const srcDirResolved = join(cwd(), srcDirRaw);
-      const srcDirRel = relative(cwd(), srcDirResolved) || ".";
+      // 与 initializeRouter / load-data 一致：用 resolveRouterRoutesDirPath 得到真实 routes 目录，再取父级作为 watch 根（含 flat + monorepo 下 cwd 差异）
+      const routesAbs = resolveRouterRoutesDirPath(
+        cwd(),
+        config.router.routesDir as string,
+      );
+      const srcDirRel = relative(cwd(), dirname(routesAbs)) || ".";
       defaultWatchPaths = [srcDirRel];
     }
 

@@ -1924,11 +1924,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.4.3] - 2026-04-26
+### [3.4.4] - 2026-04-27
 
-**修复**（Windows + Bun、CI）— **`normalizePathForCompare`** 去逐字 `\\?\` 等；
-**`isPathWithinProject`** 在 Windows 上对双路径 **`realPathSync`**，统一 **8.3
-与长名**。**`__data` / 路由模块**。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
+**修复** — **`resolveRouterRoutesDirPath`**：在 **cwd 已是应用子目录** 而
+**`router.routesDir`** 仍相对上一级（如 `./frontend/routes`）时，避免拼出
+`frontend/frontend/routes`；路由、**`__data`**、渲染、构建、watch 统一解析。完整
+记录见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

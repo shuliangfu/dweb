@@ -15,7 +15,7 @@ import type { Router } from "@dreamer/router";
 import { type HttpContext, snapshotMatchedRoute } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import type { SessionData } from "@dreamer/session";
-import { cwd, dirname, join, resolve } from "../core/runtime-adapter.ts";
+import { cwd, dirname, resolve } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import {
   createLoadContext,
@@ -24,6 +24,7 @@ import {
 } from "../types/context.ts";
 import { DWEB_DATA_PATH } from "../utils/constants.ts";
 import { getLogger } from "../utils/logger.ts";
+import { resolveRouterRoutesDirPath } from "../utils/path.ts";
 import { sanitizeRequestParams } from "../utils/sanitize.ts";
 import { createJsonErrorBody } from "../utils/security.ts";
 import { loadRouteModule } from "./load-route-module.ts";
@@ -58,10 +59,7 @@ export function createLoadDataMiddleware(
   };
   const routerCfg = (_config.router || {}) as { routesDir?: string };
   const routesDirRaw = routerCfg.routesDir ?? "./src/routes";
-  const routesDirPath = join(
-    cwd(),
-    routesDirRaw.replace(/^\.\/?/, "") || routesDirRaw,
-  );
+  const routesDirPath = resolveRouterRoutesDirPath(cwd(), routesDirRaw);
   /**
    * 从 routes 目录推导应用根目录（用于把 router 的相对 `fullPath` 稳定转为绝对路径）。
    *

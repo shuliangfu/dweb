@@ -14,8 +14,10 @@ import {
   type RouterOptions,
 } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
+import { cwd } from "../core/runtime-adapter.ts";
 import { pluginEvents, type RouteDefinition } from "../core/plugin-events.ts";
 import type { AppConfig } from "../types/app.ts";
+import { resolveRouterRoutesDirPath } from "../utils/path.ts";
 
 /**
  * 初始化路由系统
@@ -38,8 +40,12 @@ export async function initializeRouter(
 ): Promise<Router> {
   // 从配置中获取路由选项（engine、ssr 由 render 提供，服务端路由不接收）
   const routerConfig = (config.router || {}) as RouterOptions;
+  const routesDirAbs = resolveRouterRoutesDirPath(
+    cwd(),
+    routerConfig.routesDir || "./src/routes",
+  );
   const router = createRouter({
-    routesDir: routerConfig.routesDir || "./src/routes",
+    routesDir: routesDirAbs,
     apiMode: routerConfig.apiMode || "restful",
     debug: routerConfig.debug === true,
   });

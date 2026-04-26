@@ -87,6 +87,7 @@ import { getLogger, initializeLogger } from "../utils/logger.ts";
 import {
   extractComponentPathFromRouteFile,
   isPathWithinProject,
+  resolveRouterRoutesDirPath,
 } from "../utils/path.ts";
 import { parseRoutePath } from "../utils/route.ts";
 import { serializeJsonForInlineScript } from "../utils/security.ts";
@@ -662,8 +663,11 @@ export class App extends EventEmitter implements IApp {
    */
   private async _registerRoutesMiddleware(config: AppConfig): Promise<void> {
     const routerConfig = (config.router || {}) as { routesDir?: string };
-    const routesDir = routerConfig.routesDir || "./src/routes";
-    const absPath = join(cwd(), routesDir, "_middleware.ts");
+    const routesBase = resolveRouterRoutesDirPath(
+      cwd(),
+      routerConfig.routesDir || "./src/routes",
+    );
+    const absPath = join(routesBase, "_middleware.ts");
     if (!(await exists(absPath))) {
       return;
     }
@@ -1087,9 +1091,9 @@ export class App extends EventEmitter implements IApp {
             routesDir?: string;
           };
           const routesDirSsg = routerConfigSsg.routesDir ?? "./src/routes";
-          const ssgRoutesDirPath = join(
+          const ssgRoutesDirPath = resolveRouterRoutesDirPath(
             cwd(),
-            routesDirSsg.replace(/^\.\/?/, "") || routesDirSsg,
+            routesDirSsg,
           );
           const ssgOutputDir = renderCfg.ssg?.outputDir ?? clientOutputDir;
           const absOutputDir = join(cwd(), ssgOutputDir);
@@ -1208,10 +1212,9 @@ export class App extends EventEmitter implements IApp {
             const routerConfig = (config.router || {}) as {
               routesDir?: string;
             };
-            const routesDir = routerConfig.routesDir ?? "./src/routes";
-            const routesDirPath = join(
+            const routesDirPath = resolveRouterRoutesDirPath(
               cwd(),
-              routesDir.replace(/^\.\/?/, "") || routesDir,
+              routerConfig.routesDir ?? "./src/routes",
             );
             const clientRoutes = collectClientRoutes(router, routesDirPath);
             const containerId = "app";

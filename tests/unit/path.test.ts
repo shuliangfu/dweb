@@ -10,13 +10,21 @@
  */
 
 import "../setup.ts";
-import { join, makeTempDir, remove, resolve } from "@dreamer/runtime-adapter";
+import {
+  cwd,
+  ensureDir,
+  join,
+  makeTempDir,
+  remove,
+  resolve,
+} from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import {
   extractComponentPathFromRouteFile,
   isPathWithinProject,
   normalizePathForCompare,
   pathForLog,
+  resolveRouterRoutesDirPath,
 } from "../../src/utils/path.ts";
 
 describe("路径工具 (path.ts)", () => {
@@ -33,6 +41,36 @@ describe("路径工具 (path.ts)", () => {
   afterAll(async () => {
     await remove(projectRoot, { recursive: true });
     await remove(otherDir, { recursive: true });
+  });
+
+  describe("resolveRouterRoutesDirPath()", () => {
+    it("应解析为 cwd 下存在的 routes 目录（标准 ./src/routes）", async () => {
+      const root = await makeTempDir({ prefix: "dweb-resolve-routes-" });
+      const expected = join(root, "src", "routes");
+      await ensureDir(expected);
+      const got = resolveRouterRoutesDirPath(root, "./src/routes");
+      expect(got.replace(/\\/g, "/")).toBe(expected.replace(/\\/g, "/"));
+      await remove(root, { recursive: true });
+    });
+
+    it("cwd 已在应用子目录时，应去掉配置首段，避免 frontend/frontend/routes 重复", async () => {
+      const root = await makeTempDir({ prefix: "dweb-resolve-routes-dup-" });
+      const appFront = join(root, "frontend");
+      const expected = join(appFront, "routes");
+      await ensureDir(expected);
+      const got = resolveRouterRoutesDirPath(appFront, "./frontend/routes");
+      expect(got.replace(/\\/g, "/")).toBe(expected.replace(/\\/g, "/"));
+      await remove(root, { recursive: true });
+    });
+
+    it("已为绝对路径时应直接 resolve，勿与 cwd 再拼接", async () => {
+      const root = await makeTempDir({ prefix: "dweb-resolve-routes-abs-" });
+      const absRoutes = join(root, "my-routes");
+      await ensureDir(absRoutes);
+      const got = resolveRouterRoutesDirPath(cwd(), absRoutes);
+      expect(got.replace(/\\/g, "/")).toBe(absRoutes.replace(/\\/g, "/"));
+      await remove(root, { recursive: true });
+    });
   });
 
   describe("isPathWithinProject()", () => {

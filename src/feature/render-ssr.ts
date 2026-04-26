@@ -17,7 +17,7 @@ import { type HttpContext, snapshotMatchedRoute } from "@dreamer/server";
 import type { SessionData } from "@dreamer/session";
 import { getConfig } from "../core/config.ts";
 import { getLogger } from "../utils/logger.ts";
-import { cwd, getEnv, join } from "../core/runtime-adapter.ts";
+import { cwd, getEnv } from "../core/runtime-adapter.ts";
 import {
   createLoadContext,
   createServerResponse,
@@ -30,7 +30,10 @@ import {
   serializeJsonForInlineScript,
 } from "../utils/security.ts";
 import { $tr } from "../utils/i18n.ts";
-import { extractComponentPathFromRouteFile } from "../utils/path.ts";
+import {
+  extractComponentPathFromRouteFile,
+  resolveRouterRoutesDirPath,
+} from "../utils/path.ts";
 import {
   collectClientRoutes,
   hasContainerElementInHtml,
@@ -101,10 +104,9 @@ export function createRendererSSR(
   };
   const engine = renderConfig.engine ?? "preact";
   const routerConfig = (config.router || {}) as { routesDir?: string };
-  const routesDir = routerConfig.routesDir ?? "./src/routes";
-  const routesDirPath = join(
+  const routesDirPath = resolveRouterRoutesDirPath(
     cwd(),
-    routesDir.replace(/^\.\/?/, "") || routesDir,
+    routerConfig.routesDir ?? "./src/routes",
   );
   const clientRoutes = collectClientRoutes(router, routesDirPath);
   const containerId = SSR_CONTAINER_ID;

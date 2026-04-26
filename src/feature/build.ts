@@ -32,6 +32,7 @@ import {
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
+import { resolveRouterRoutesDirPath } from "../utils/path.ts";
 import {
   createDwebClientBundlePlugins,
   prepareClientBuildEntry,
@@ -266,9 +267,10 @@ export async function runBuildWithBuilder(
     const buildClient = (config.build as { client?: { debug?: boolean } })
       ?.client;
     const routerConfig = (config.router || {}) as { routesDir?: string };
-    const routesDirRaw = routerConfig.routesDir ?? "./src/routes";
-    const routesDir = routesDirRaw.replace(/^\.\/?/, "") || routesDirRaw;
-    const routesDirPath = join(cwd(), routesDir);
+    const routesDirPath = resolveRouterRoutesDirPath(
+      cwd(),
+      routerConfig.routesDir ?? "./src/routes",
+    );
     clientConfig = {
       entry: prepared.entry,
       output: prepared.output,

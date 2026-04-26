@@ -8,6 +8,32 @@ and this project adheres to
 
 ---
 
+## [3.4.4] - 2026-04-27
+
+### Fixed
+
+- **`router.routesDir` vs `process.cwd()`** in **multi-app / flat** layouts:
+  when the working directory is already the app folder (e.g.
+  `.../my-app/frontend`) but the config still uses a path relative to the
+  **parent** repo root (e.g. `./frontend/routes`), a naive
+  `join(cwd, "frontend/routes")` could resolve to `.../frontend/frontend/routes`
+  and break **`import` / `loadRouteModule`** and **`GET /__data`**. Added
+  **`resolveRouterRoutesDirPath`** in **`src/utils/path.ts`**: if the primary
+  resolved path is not an existing directory, try dropping the first path
+  segment (`frontend/routes` → `routes` under the same cwd); if **`routesDir`**
+  is already **absolute**, only **`resolve`**, do not join to cwd. The same
+  helper is used for **`initializeRouter`**, **`createLoadDataMiddleware`**,
+  **CSR / SSR / Hybrid** renderers, **build** and **CSR client** pipeline,
+  **routes** middleware registration, **SSG** hydration pass, and **dev**
+  **`server.dev.watch`** inference so route scanning, data loading, and client
+  bundles agree on the routes directory.
+
+### Tests
+
+- **`tests/unit/path.test.ts`**: `resolveRouterRoutesDirPath` for default
+  `./src/routes`, duplicate-segment (e.g. `frontend`) fallback, and absolute
+  `routesDir`.
+
 ## [3.4.3] - 2026-04-26
 
 ### Fixed

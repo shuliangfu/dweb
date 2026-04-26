@@ -7,7 +7,11 @@
  * - 日志友好路径格式化
  */
 
-import { platform, realPathSync } from "@dreamer/runtime-adapter";
+import {
+  isDirectorySync,
+  platform,
+  realPathSync,
+} from "@dreamer/runtime-adapter";
 import {
   basename,
   cwd,
@@ -62,6 +66,54 @@ export function normalizePathForCompare(p: string): string {
   const unverbatim = stripWindowsVerbatimForCompare(resolved);
   const s = unverbatim.replace(/\\/g, "/");
   return s.replace(/\/\.\//g, "/").replace(/\/+$/g, "");
+}
+
+/**
+ * 将 `config.router.routesDir` 规范为**绝对**路径，兼容「仓库 / 多包根为 cwd」与
+ * 「应用子目录为 cwd」两种启动方式对同一条配置的差异。
+ *
+ * 典型问题：多包示例中配置为 `./frontend/routes`；从 monorepo 子目录
+ * `.../my-app/frontend` 启动时若直接 `join(cwd, "frontend/routes")` 会得到
+ * `.../my-app/frontend/frontend/routes`（首段与 cwd 末级重复，ENOENT）。
+ * 当**主解析路径**不是已存在目录时，再尝试**去掉最前一段**后解析
+ * （`frontend/routes` → 与 `cwd` 同级的 `routes`）。
+ *
+ * 若主路径、备选路径均不是目录，返回主路径（与仅 `join`+`resolve` 的旧行为一致，便于由上层报清晰错误）。
+ *
+ * @param cwdPath 当前工作目录
+ * @param routesDirRaw 配置中的 `router.routesDir`（可含 `./` 前缀，缺省同 `./src/routes`）
+ * @returns 已 `resolve` 的绝对路径
+ */
+export function resolveRouterRoutesDirPath(
+  cwdPath: string,
+  routesDirRaw?: string,
+): string {
+  const defaultRel = "./src/routes";
+  const raw = routesDirRaw != null && String(routesDirRaw).trim() !== ""
+    ? String(routesDirRaw).trim()
+    : defaultRel;
+  const trimmed = raw.replace(/^\.\/?/, "") || raw;
+  /**
+   * 调用方已传绝对路径（如测试里 `join(testDir, "routes")`）时仅 `resolve` 收束，
+   * 不要与 `cwd` 再 `join`；否则部分运行时下 `join` 对绝对第二参的行为与「去首段」补救
+   * 会破坏路径。
+   */
+  if (trimmed.startsWith("/") || /^[A-Za-z]:[\\/]/.test(trimmed)) {
+    return resolve(trimmed);
+  }
+  const normalized = trimmed;
+  const primary = resolve(join(cwdPath, normalized));
+  if (isDirectorySync(primary)) {
+    return primary;
+  }
+  const segs = normalized.split(/[/\\]+/).filter(Boolean);
+  if (segs.length >= 2) {
+    const alt = resolve(join(cwdPath, segs.slice(1).join("/")));
+    if (isDirectorySync(alt)) {
+      return alt;
+    }
+  }
+  return primary;
 }
 
 /**
