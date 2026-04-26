@@ -15,7 +15,7 @@ import type { Router } from "@dreamer/router";
 import { type HttpContext, snapshotMatchedRoute } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import type { SessionData } from "@dreamer/session";
-import { cwd, join, resolve } from "../core/runtime-adapter.ts";
+import { cwd, dirname, join, resolve } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import {
   createLoadContext,
@@ -161,9 +161,14 @@ export function createLoadDataMiddleware(
       const layoutPropsList: Array<Record<string, unknown>> = [];
       if (layoutPaths.length > 0) {
         const layoutModulesRaw = await Promise.all(
-          layoutPaths.map((p: string) =>
-            loadRouteModule(toAbsoluteRoutePath(p), loadOpts)
-          ),
+          layoutPaths.map((p: string) => {
+            const absLayoutPath = toAbsoluteRoutePath(p);
+            return loadRouteModule(absLayoutPath, {
+              ...loadOpts,
+              // 使用当前绝对文件路径的目录作为 routesDirPath，避免 Windows 8.3/长路径混用误判
+              routesDirPath: dirname(absLayoutPath),
+            });
+          }),
         );
         const inheritBreakIndex = layoutModulesRaw.findIndex(
           (m: unknown) =>
@@ -187,10 +192,12 @@ export function createLoadDataMiddleware(
         }
       }
 
-      const pageModule = await loadRouteModule(
-        toAbsoluteRoutePath(fullPath),
-        loadOpts,
-      );
+      const absPagePath = toAbsoluteRoutePath(fullPath);
+      const pageModule = await loadRouteModule(absPagePath, {
+        ...loadOpts,
+        // 使用当前绝对文件路径的目录作为 routesDirPath，避免 Windows 8.3/长路径混用误判
+        routesDirPath: dirname(absPagePath),
+      });
       const pageProps: Record<string, unknown> = {
         params: sanitizeRequestParams(match.params),
         query: sanitizeRequestParams(queryFromUrl),
