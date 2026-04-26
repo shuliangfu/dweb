@@ -170,7 +170,8 @@ async function computeContentHash(
  * @param filePath 文件路径（可为 file://、绝对或相对）
  * @param options.cssCollector 可选，收到每段 CSS 内容时调用，用于 SSR 注入到页面 head
  * @param options.logger 可选，失败时用 logger.error 输出，便于日志聚合；未传则用 console.error
- * @param options.routesDirPath 可选；历史兼容保留，当前加载逻辑不依赖此字段
+ * @param options.routesDirPath 可选；若传入绝对路径，则以其**父目录**作为「允许加载」的路径安全边界
+ * （与仅 `cwd()` 相比，在测试并发 `chdir` 时更稳）；**不**改变相对路径解析基准（仍为 `cwd()`）。
  * @returns 模块对象，失败返回 null
  *
  * 错误边界约定：失败时不抛错，仅返回 null 并记录日志（logger 或 console）。
@@ -189,19 +190,18 @@ export async function loadRouteModule(
 ): Promise<Record<string, unknown> | null> {
   const cwdPath = cwd();
   /**
-   * 优先使用调用方提供的 routesDirPath 推导项目根，避免测试并发场景下其它用例
-   * `chdir()` 改变全局 cwd 导致路径校验误判（Windows + Bun 尤其明显）。
+   * 路径安全边界：未传 `routesDirPath` 时用 `cwd()`；传入时用 **`routesDir` 的父目录**
+   * （例如 `…/src/frontend/routes` → `…/src/frontend`），**不可**误用 `../../` 假定一定是
+   * `<项目根>/src/routes`，否则多应用/多入口（如 `src/frontend/routes`）会拼出 `src/src/…`。
    *
-   * 约定：默认 routesDirPath 为 `<projectRoot>/src/routes`，因此项目根可回退两级。
-   * 若未提供 routesDirPath 或为空，则保持原行为使用 `cwd()`。
+   * 相对路径的磁盘解析仍以 **`cwd()`** 为准（与路由扫描、入口工作目录一致）。
    */
-  const projectRootForResolve = (() => {
+  const pathSecurityRoot = (() => {
     const routesDir = options?.routesDirPath;
-    if (!routesDir || typeof routesDir !== "string") {
+    if (!routesDir || typeof routesDir !== "string" || !routesDir.trim()) {
       return cwdPath;
     }
-    const normalizedRoutesDir = routesDir.replace(/\\/g, "/");
-    return resolve(normalizedRoutesDir, "..", "..");
+    return resolve(routesDir.replace(/\\/g, "/"), "..");
   })();
   // 统一为正向斜杠，避免 Windows 下 realPath/pathToFileURL 因反斜杠导致解析差异
   const pathInput = filePath.replace(/\\/g, "/");
@@ -217,10 +217,10 @@ export async function loadRouteModule(
     } else if (pathInput.startsWith("/") || pathInput.match(/^[A-Za-z]:/)) {
       absPath = await realPath(pathInput);
     } else {
-      absPath = await realPath(join(projectRootForResolve, pathInput));
+      absPath = await realPath(join(cwdPath, pathInput));
     }
 
-    if (!isPathWithinProject(absPath, projectRootForResolve)) {
+    if (!isPathWithinProject(absPath, pathSecurityRoot)) {
       console.warn(`${$tr("log.pathMustBeInProject")}: ${filePath}`);
       return null;
     }
@@ -238,7 +238,7 @@ export async function loadRouteModule(
       for (const p of cssPaths.sort()) {
         try {
           const cssAbsPath = await realPath(join(routeDir, p));
-          if (isPathWithinProject(cssAbsPath, cwdPath)) {
+          if (isPathWithinProject(cssAbsPath, pathSecurityRoot)) {
             const cssContent = await readTextFile(cssAbsPath);
             cssEntries.push([p, cssContent]);
           }

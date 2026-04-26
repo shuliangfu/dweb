@@ -17,6 +17,7 @@ import {
   IS_BUN,
   join,
   platform,
+  remove,
   resolve,
   setEnv,
 } from "@dreamer/runtime-adapter";
@@ -93,6 +94,38 @@ export function exampleRunArgs(entry: string): string[] {
 }
 
 /**
+ * Bun workspace 安装会在示例目录下为 `react` / `preact` 等创建 `.bun` 链接，
+ * 但本仓库本地 `@dreamer/dweb -> @dreamer/render` 仍从根 `node_modules/.deno`
+ * 解析 renderer（react-dom / preact-render-to-string）。
+ *
+ * SSG 会在同一进程内同时加载页面组件与 renderer；若页面组件来自 `.bun/react`
+ * 而 renderer 来自 `.deno/react-dom`，就会出现 React/Preact 双份实例导致的
+ * “Invalid hook call” / `r.__H` 等 hook 错误。
+ *
+ * 因此 Bun 测试下删除示例局部 renderer 相关链接，让页面组件向上解析到 dweb 根
+ * `node_modules` 中与 `@dreamer/render` 同源的依赖。这里不影响 Deno 测试。
+ *
+ * @param exampleDir 示例根目录（含 node_modules）
+ */
+async function removeExampleLocalRendererLinks(
+  exampleDir: string,
+): Promise<void> {
+  if (!IS_BUN) {
+    return;
+  }
+  const packages = [
+    "react",
+    "react-dom",
+    "scheduler",
+    "preact",
+    "preact-render-to-string",
+  ];
+  for (const pkg of packages) {
+    await remove(join(exampleDir, "node_modules", pkg), { recursive: true });
+  }
+}
+
+/**
  * 在 **Bun** 下为示例目录安装 `node_modules`（`package.json` 中
  * `"@dreamer/dweb": "file:../../.."` 等需解析到磁盘路径）。
  * **Deno** 下示例通过 `deno.json` 的 `imports` 直链 `../../../src/mod.ts`，无需本步骤。
@@ -110,6 +143,7 @@ export async function ensureExampleDependenciesInstalled(
   }
   const marker = join(exampleDir, "node_modules", "@dreamer", "dweb");
   if (await exists(marker)) {
+    await removeExampleLocalRendererLinks(exampleDir);
     return;
   }
   const cmd = createCommand(execPath(), {
@@ -128,6 +162,7 @@ export async function ensureExampleDependenciesInstalled(
       `bun install failed in ${exampleDir}: ${stderrText || "(no stderr)"}`,
     );
   }
+  await removeExampleLocalRendererLinks(exampleDir);
 }
 
 /**
