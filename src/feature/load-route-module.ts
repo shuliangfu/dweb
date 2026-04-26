@@ -190,19 +190,25 @@ export async function loadRouteModule(
 ): Promise<Record<string, unknown> | null> {
   const cwdPath = cwd();
   /**
-   * 路径安全边界：未传 `routesDirPath` 时用 `cwd()`；传入时用 **`routesDir` 的父目录**
-   * （例如 `…/src/frontend/routes` → `…/src/frontend`），**不可**误用 `../../` 假定一定是
-   * `<项目根>/src/routes`，否则多应用/多入口（如 `src/frontend/routes`）会拼出 `src/src/…`。
+   * 模块文件安全边界：
+   * - 未传 `routesDirPath` 时回退 `cwd()`；
+   * - 传入时使用 `routesDirPath` 本身（通常为 `.../src/routes` 或其子目录）。
    *
-   * 相对路径的磁盘解析仍以 **`cwd()`** 为准（与路由扫描、入口工作目录一致）。
+   * 说明：此前统一用 `routesDirPath/..` 作为根，在 Windows + Bun 的短路径/长路径混用下，
+   * 反而更容易把本应合法的 `routes/*.tsx` 误判为项目外。
    */
   const pathSecurityRoot = (() => {
     const routesDir = options?.routesDirPath;
     if (!routesDir || typeof routesDir !== "string" || !routesDir.trim()) {
       return cwdPath;
     }
-    return resolve(routesDir.replace(/\\/g, "/"), "..");
+    return resolve(routesDir.replace(/\\/g, "/"));
   })();
+  /**
+   * CSS 依赖允许范围：相对模块可访问到 routes 同级（如 `../assets/*.css`），
+   * 因此较模块边界放宽一级目录。
+   */
+  const cssSecurityRoot = resolve(pathSecurityRoot, "..");
   // 统一为正向斜杠，避免 Windows 下 realPath/pathToFileURL 因反斜杠导致解析差异
   const pathInput = filePath.replace(/\\/g, "/");
 
@@ -238,7 +244,7 @@ export async function loadRouteModule(
       for (const p of cssPaths.sort()) {
         try {
           const cssAbsPath = await realPath(join(routeDir, p));
-          if (isPathWithinProject(cssAbsPath, pathSecurityRoot)) {
+          if (isPathWithinProject(cssAbsPath, cssSecurityRoot)) {
             const cssContent = await readTextFile(cssAbsPath);
             cssEntries.push([p, cssContent]);
           }
