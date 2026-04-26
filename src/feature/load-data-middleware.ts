@@ -15,7 +15,7 @@ import type { Router } from "@dreamer/router";
 import { type HttpContext, snapshotMatchedRoute } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import type { SessionData } from "@dreamer/session";
-import { cwd, join } from "../core/runtime-adapter.ts";
+import { cwd, join, resolve } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import {
   createLoadContext,
@@ -62,6 +62,38 @@ export function createLoadDataMiddleware(
     cwd(),
     routesDirRaw.replace(/^\.\/?/, "") || routesDirRaw,
   );
+  /**
+   * 从 routes 目录推导应用根目录（用于把 router 的相对 `fullPath` 稳定转为绝对路径）。
+   *
+   * 背景：Bun 测试并发时其它套件可能 `chdir()`，若把 `src/routes/index.tsx` 这类相对路径
+   * 直接交给 `loadRouteModule`，会偶发按“错误 cwd”解析，触发
+   * `Path must be in project` 与 load-data 断言失败。
+   */
+  const appRootPath = (() => {
+    const normalized = routesDirPath.replace(/\\/g, "/");
+    const srcMarkerIdx = normalized.lastIndexOf("/src/");
+    if (srcMarkerIdx >= 0) {
+      return normalized.slice(0, srcMarkerIdx);
+    }
+    if (normalized.endsWith("/src")) {
+      return normalized.slice(0, -4);
+    }
+    return resolve(routesDirPath, "..");
+  })();
+  /**
+   * 将 router 产出的路由文件路径规范为绝对路径：
+   * - 绝对路径：原样返回；
+   * - 相对路径：按 appRootPath 解析，避免依赖全局 cwd。
+   */
+  const toAbsoluteRoutePath = (routePath: string): string => {
+    if (routePath.startsWith("file://")) {
+      return routePath;
+    }
+    if (routePath.startsWith("/") || routePath.match(/^[A-Za-z]:/)) {
+      return routePath;
+    }
+    return resolve(appRootPath, routePath);
+  };
   /** 数据接口只需执行模块的 `load()`，与常规路由加载相同（原生动态 import） */
   const loadOpts = {
     logger: container.has("logger") ? getLogger(container) : undefined,
@@ -129,7 +161,9 @@ export function createLoadDataMiddleware(
       const layoutPropsList: Array<Record<string, unknown>> = [];
       if (layoutPaths.length > 0) {
         const layoutModulesRaw = await Promise.all(
-          layoutPaths.map((p: string) => loadRouteModule(p, loadOpts)),
+          layoutPaths.map((p: string) =>
+            loadRouteModule(toAbsoluteRoutePath(p), loadOpts)
+          ),
         );
         const inheritBreakIndex = layoutModulesRaw.findIndex(
           (m: unknown) =>
@@ -153,7 +187,10 @@ export function createLoadDataMiddleware(
         }
       }
 
-      const pageModule = await loadRouteModule(fullPath, loadOpts);
+      const pageModule = await loadRouteModule(
+        toAbsoluteRoutePath(fullPath),
+        loadOpts,
+      );
       const pageProps: Record<string, unknown> = {
         params: sanitizeRequestParams(match.params),
         query: sanitizeRequestParams(queryFromUrl),
