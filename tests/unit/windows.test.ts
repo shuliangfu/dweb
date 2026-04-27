@@ -21,7 +21,6 @@ import {
   platform,
   realPathSync,
   remove,
-  resolve,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
@@ -30,6 +29,7 @@ import {
   extractComponentPathFromRouteFile,
   isPathWithinProject,
   normalizePathForCompare,
+  normalizePathStringForSubpathExtraction,
   pathForLog,
 } from "../../src/utils/path.ts";
 import {
@@ -143,6 +143,24 @@ describe("Windows 兼容性 (windows.test.ts)", () => {
       const withBackslash = projectRoot.replace(/\//g, "\\");
       const verbatimRoot = "\\\\?\\" + withBackslash;
       expect(isPathWithinProject(verbatimRoot, projectRoot)).toBe(true);
+    });
+
+    /**
+     * `join` 可能返回 `//?/D:...` 而 routes 配置为 `D:...`；不 resolve 仅剥前缀时
+     * 须两端都走 `stripWindowsVerbatim`（见 csr-client-route-manifest 子路径逻辑）。
+     */
+    it("normalizePathStringForSubpathExtraction 在 Windows 上应剥 //?/ 后两端可对齐", () => {
+      if (platform() !== "windows") {
+        return;
+      }
+      const r = "D:/a/b/routes";
+      const f = "//?/D:/a/b/routes/about.tsx";
+      const nr = normalizePathStringForSubpathExtraction(r);
+      const nf = normalizePathStringForSubpathExtraction(f);
+      expect(nf.length).toBeGreaterThan(nr.length);
+      expect(nf[nr.length]!).toBe("/");
+      expect(nf.slice(0, nr.length).toLowerCase()).toBe(nr.toLowerCase());
+      expect(nf.slice(nr.length + 1)).toBe("about.tsx");
     });
   });
 

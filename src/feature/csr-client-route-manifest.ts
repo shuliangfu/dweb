@@ -6,7 +6,10 @@
 import { createRouter, type Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import { cwd, join, readdir, relative } from "../core/runtime-adapter.ts";
-import { normalizePathForCompare } from "../utils/path.ts";
+import {
+  normalizePathForCompare,
+  normalizePathStringForSubpathExtraction,
+} from "../utils/path.ts";
 
 /** 路由组件信息 */
 export interface RouteComponentInfo {
@@ -76,7 +79,7 @@ function normalizeRouteFilePath(raw: string, routesDirPath: string): string {
 /**
  * 在已用 {@link normalizePathForCompare} 收束后的路径上，用「/」段做大小写不敏感前缀
  * 匹配，得到 `routes` 目录之下的子路径。真实 Windows 上经 `resolve` 后，偶发
- * 整段字符串**逐字符**前辍仍与 `routes` 对不齐，但**段**列表一致，此时仅此步可解。
+ * 整段字符串**逐字符**前缀仍与 `routes` 对不齐，但**段**列表一致，此时仅此步可解。
  *
  * @param normFile 归一后的文件路径
  * @param normRoutes 归一后的 routes 目录
@@ -107,8 +110,8 @@ function getRelativeToRoutesDirBySegments(
  * Windows 上 `normalizePathForCompare` 内部的 `resolve` 可能把**同一目录**展成
  * 8.3/逐字/常规等不同形态，导致归一后整串/按段 与 `routes` 均对不齐；而 Router
  * 的 `fullPath` 与当前 `routesDirPath` 往往本为同一套字面母串。故先对只做了
- * 反斜杠→`/` 的两端做**定界**前缀：必须 `file[routesLen]==="/"`，避免 `C:/a` 误
- * 匹配 `C:/ab/...`。
+ * 反斜杠→`/` 并剥 Windows 逐字 `//?/` 后再做**定界**前缀：须 `file[routesLen]==="/"`，
+ * 避免 `C:/a` 误匹配 `C:/ab/...`；**仅**一端是 `//?/D/...` 时也必须先归一再比。
  *
  * @param routeFilePath 路由文件绝对路径
  * @param routesDirPath routes 目录绝对路径
@@ -118,8 +121,8 @@ function getRouteComponentPathBeforeResolve(
   routeFilePath: string,
   routesDirPath: string,
 ): string | null {
-  const f = routeFilePath.replace(/\\/g, "/");
-  const r = routesDirPath.replace(/\\/g, "/").replace(/\/+$/g, "");
+  const f = normalizePathStringForSubpathExtraction(routeFilePath);
+  const r = normalizePathStringForSubpathExtraction(routesDirPath);
   if (f.length <= r.length) {
     return null;
   }
@@ -142,17 +145,28 @@ function getRouteComponentPathBeforeResolve(
  *
  * @param routeFilePath 路由文件绝对路径
  * @param routesDirPath routes 目录绝对路径
+ * @param routerRawPath Router 的 `fullPath` 原文（与 `raw` 一致时可为归一后路径），在
+ * `join` 结果与原文其一含逐字前缀时多试一次
  */
 function getRouteComponentPath(
   routeFilePath: string,
   routesDirPath: string,
+  routerRawPath?: string,
 ): string {
-  const rawRel = getRouteComponentPathBeforeResolve(
-    routeFilePath,
-    routesDirPath,
-  );
-  if (rawRel !== null) {
-    return rawRel;
+  const beforeCandidates: string[] = [];
+  const seen = new Set<string>();
+  for (const p of [routeFilePath, routerRawPath]) {
+    if (p == null || p === "" || seen.has(p)) {
+      continue;
+    }
+    seen.add(p);
+    beforeCandidates.push(p);
+  }
+  for (const p of beforeCandidates) {
+    const rawRel = getRouteComponentPathBeforeResolve(p, routesDirPath);
+    if (rawRel !== null) {
+      return rawRel;
+    }
   }
   const normRoutes = normalizePathForCompare(routesDirPath);
   const normFile = normalizePathForCompare(routeFilePath);
@@ -316,7 +330,11 @@ export function collectRouteClientManifestFromRouter(
       continue;
     }
     const routeFilePath = normalizeRouteFilePath(raw, routesDirPath);
-    const rel = getRouteComponentPath(routeFilePath, routesDirPath);
+    const rel = getRouteComponentPath(
+      routeFilePath,
+      routesDirPath,
+      String(raw),
+    );
     if (rel.startsWith("..")) continue;
     const componentPath = rel.replace(extRe, "");
     if (componentPath.split("/").some((part) => part.startsWith("_"))) {

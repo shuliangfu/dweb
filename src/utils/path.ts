@@ -69,6 +69,21 @@ export function normalizePathForCompare(p: string): string {
 }
 
 /**
+ * 仅做逐字/斜杠/尾斜杠/`.` 段 归一，**不**调用 `resolve`。
+ * 在 Windows 上，若 `join` 或 runtime 对文件路径返回 `//?/D:/...`，而
+ * `routesDir` 仍为 `D:/...`，则在「不 resolve」的前缀剥除阶段两端必须同时剥
+ * `//?/`，否则整串在位置 0 上永远对不齐。
+ *
+ * @param p 任意表示绝对路径的字符串
+ * @returns 可安全做子路径前缀比对的字符串
+ */
+export function normalizePathStringForSubpathExtraction(p: string): string {
+  const s0 = p.replace(/\\/g, "/");
+  const u = stripWindowsVerbatimForCompare(s0);
+  return u.replace(/\\/g, "/").replace(/\/\.\//g, "/").replace(/\/+$/g, "");
+}
+
+/**
  * 将 `config.router.routesDir` 规范为**绝对**路径，兼容「仓库 / 多包根为 cwd」与
  * 「应用子目录为 cwd」两种启动方式对同一条配置的差异。
  *
