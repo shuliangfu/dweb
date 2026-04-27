@@ -299,6 +299,7 @@
   },
   "dev": {
     "starting": "{app} 개발 서버 시작 중...",
+    "startingSingle": "개발 서버 시작 중...",
     "exitCode": "Dev exit code: {code}",
     "exitCodeApp": "dev:{app} exit code: {code}"
   },

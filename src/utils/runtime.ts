@@ -86,6 +86,48 @@ export function getTaskArgs(taskName: string): string[] {
 }
 
 /**
+ * 将 `deno.json` 中 **整条** task 命令字符串（如 `deno run -A src/main.ts --dev`）解析为
+ * 传给 `createCommand("deno", { args })` 的参数（**不含**可执行名 `deno`）。
+ * 仅当命令以 `deno run` 开头（大小写不敏感、允许多个空格）时成功；否则返回 `null`。
+ * 与 `App` 的 `RUNTIME_ENV` 约定配合时，推荐 task 中显式带 `--dev` / `--build` / `--start`。
+ *
+ * @param taskLine `tasks[dev]` 等对应的字符串
+ * @returns 如 `["run", "-A", "src/main.ts", "--dev"]`；无法识别为 `deno run ...` 时返回 `null`
+ */
+export function getDenoRunArgsFromTaskString(
+  taskLine: string,
+): string[] | null {
+  const s = taskLine.trim();
+  const m = s.match(/^deno\s+run\s+(.+)$/i);
+  if (!m) return null;
+  const rest = m[1]!.trim();
+  if (!rest) return null;
+  const parts = rest.split(/\s+/).filter(Boolean);
+  return ["run", ...parts];
+}
+
+/**
+ * 为 `dweb dev` / `build` / `start` 子进程选择参数：
+ * - **Deno** 且对应 task 为 `deno run ...`：直接 `deno run ...`（不经过 `deno task`），
+ *   与手动执行 `deno run -A src/main.ts --dev` 等一致，也避免 `Task <name> deno run ...` 的终端提示。
+ * - 否则回退为 {@link getTaskArgs}（`deno task <name>` / `bun run <name>`）。
+ *
+ * @param taskName 如 `dev`、`build:start`、`dev:backend`
+ * @param tasks 项目 `deno.json` 的 `tasks` 表
+ */
+export function getSpawnArgsForDwebTask(
+  taskName: string,
+  tasks: Record<string, string | undefined>,
+): string[] {
+  const line = tasks[taskName];
+  if (IS_DENO && line !== undefined) {
+    const direct = getDenoRunArgsFromTaskString(line);
+    if (direct) return direct;
+  }
+  return getTaskArgs(taskName);
+}
+
+/**
  * dweb-cli 与子应用约定的运行时阶段标识（与 `--dev` / `--build` / `--start` 语义一致）。
  *
  * 通过环境变量 `RUNTIME_ENV` 传入子进程，便于在未重复追加 CLI 参数时仍能区分 dev/build/start。

@@ -476,7 +476,7 @@ export class App extends EventEmitter implements IApp {
           "socket-io",
         );
         if (!this._isBuildMode()) {
-          getLogger(this.container).info(
+          getLogger(this.container).debug(
             $tr("log.socketIoMounted", { path: socketIoPath }),
           );
         }
@@ -491,7 +491,7 @@ export class App extends EventEmitter implements IApp {
           "websocket",
         );
         if (!this._isBuildMode()) {
-          getLogger(this.container).info(
+          getLogger(this.container).debug(
             $tr("log.websocketMounted", { path: websocketPath }),
           );
         }
@@ -550,7 +550,7 @@ export class App extends EventEmitter implements IApp {
         );
 
         if (!this._isBuildMode()) {
-          renderLogger.info($tr("log.renderModeCsr"));
+          renderLogger.debug($tr("log.renderModeCsr"));
         }
       } else if (renderMode === "hybrid") {
         // Hybrid 模式：服务端渲染完整 HTML + 客户端 hydrate
@@ -588,7 +588,7 @@ export class App extends EventEmitter implements IApp {
         );
 
         if (!this._isBuildMode()) {
-          renderLogger.info($tr("log.renderModeHybrid"));
+          renderLogger.debug($tr("log.renderModeHybrid"));
         }
       } else if (renderMode === "ssg") {
         // SSG 模式：从预渲染输出目录提供静态 HTML，并注册客户端脚本以便激活
@@ -606,7 +606,7 @@ export class App extends EventEmitter implements IApp {
         server.use(clientScriptMiddleware);
 
         if (!this._isBuildMode()) {
-          renderLogger.info($tr("log.renderModeSsg"));
+          renderLogger.debug($tr("log.renderModeSsg"));
         }
       } else {
         // SSR 模式：服务端渲染完整 HTML + 客户端激活（事件响应）
@@ -636,7 +636,7 @@ export class App extends EventEmitter implements IApp {
         );
 
         if (!this._isBuildMode()) {
-          renderLogger.info($tr("log.renderModeSsr"));
+          renderLogger.debug($tr("log.renderModeSsr"));
         }
       }
 

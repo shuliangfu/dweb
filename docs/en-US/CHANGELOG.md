@@ -8,6 +8,19 @@ and this project adheres to
 
 ---
 
+## [3.4.9] - 2026-04-27
+
+### Changed
+
+- **CLI** (`dweb dev` / `dweb start`, `src/cmd/dev.ts`, `src/cmd/start.ts`):
+  removed the `ℹ` lines that printed the **dev/prod port from `config.server`**
+  before spawning the task. **Single-app** `dweb dev` now logs
+  **`dev.startingSingle`** (“Starting dev server…”) before spawn, aligned with
+  **`start.startingSingle`** for production. Multi-app `dev` / `start` behavior
+  for **`dev.starting`** / **`start.starting`** is unchanged; only the redundant
+  port-from-config messages were removed. Locales: added
+  **`dev.startingSingle`** in all supported languages.
+
 ## [3.4.8] - 2026-04-27
 
 ### Added

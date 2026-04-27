@@ -299,6 +299,7 @@
   },
   "dev": {
     "starting": "Memulai server dev {app}...",
+    "startingSingle": "Memulai server pengembangan...",
     "exitCode": "Dev kode keluar: {code}",
     "exitCodeApp": "dev:{app} kode keluar: {code}"
   },

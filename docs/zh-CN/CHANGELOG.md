@@ -7,6 +7,18 @@
 
 ---
 
+## [3.4.9] - 2026-04-27
+
+### 变更
+
+- **CLI**（`dweb dev` / `dweb start`，`src/cmd/dev.ts`、`src/cmd/start.ts`）：
+  移除了在 spawn 子进程前根据 **`config.server`** 打印**开发/生产端口** 的 `ℹ`
+  日志。单应用 **`dweb dev`** 在 spawn 前会输出与生产对称的提示
+  （**`dev.startingSingle`**，如「正在启动开发服务器...」），与
+  **`start.startingSingle`** 一致。多应用仍使用 **`dev.starting`** /
+  **`start.starting`**，仅去掉冗余的端口行。各语言包已补充
+  **`dev.startingSingle`** 键。
+
 ## [3.4.8] - 2026-04-27
 
 ### 新增

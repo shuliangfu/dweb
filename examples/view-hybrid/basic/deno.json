@@ -1,8 +1,8 @@
 {
   "tasks": {
-    "dev": "deno run -A src/main.ts",
+    "dev": "deno run -A src/main.ts --dev",
     "build": "deno run -A src/main.ts --build",
-    "start": "deno run -A dist/server.js",
+    "start": "deno run -A dist/server.js --start",
     "enqueue-queue": "deno run -A src/scripts/enqueue-queue-sample.ts"
   },
   "imports": {

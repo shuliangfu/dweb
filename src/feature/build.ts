@@ -153,8 +153,9 @@ export function initializeBuild(
   // 将构建器注册到服务容器
   container.registerSingleton("build", () => builder);
 
+  // 开发态构建器就绪为诊断信息，用 debug 避免默认 info 刷屏
   if (!args().includes("--build")) {
-    logger.info($tr("log.buildToolReady"));
+    logger.debug($tr("log.buildToolReady"));
   }
 
   return builder;

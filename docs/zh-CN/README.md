@@ -1924,11 +1924,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.4.8] - 2026-04-27
+### [3.4.9] - 2026-04-27
 
-**新增** — 包根 **`update-deps.sh`**：先主包、后 **`examples/**`** 批量
-**`deno update`**。**变更** — 仓库内示例依赖与锁已随 `deno update`
-对齐（**不**打入 JSR 包）。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
+**变更** — **CLI**（`dweb dev` / `dweb start`）：去掉 spawn 前由
+**`config.server`** 打印端口的 **ℹ** 行；**单应用** `dweb dev`
+在启动任务前会输出 **`dev.startingSingle`**（与单应用 **`dweb start`** 的
+**`start.startingSingle`** 对称）。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

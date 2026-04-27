@@ -3,10 +3,10 @@
  *
  * 职责：
  * - 构建生产版本
- * - 单应用：执行 deno task build
+ * - 单应用：若 `tasks.build` 为 `deno run ...` 则直接 `deno run ...`；否则 `deno task build`
  * - 多应用：可指定应用名构建单个，或不指定则构建全部
  * - 使用 loadProjectConfig 获取 config.build 等配置
- * - 子进程环境变量设置 RUNTIME_ENV=build（与任务脚本中的 `--build` 语义一致）
+ * - 子进程环境变量设置 RUNTIME_ENV=build（与任务及 `--build` 语义一致）
  *
  * 运行方式：
  * - dweb build              # 单应用 或 多应用构建全部
@@ -20,7 +20,11 @@ import { $tr } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 import { loadProjectConfig } from "../utils/config-loader.ts";
 import { getProjectInfo } from "../utils/project.ts";
-import { envWithRuntime, getRuntime, getTaskArgs } from "../utils/runtime.ts";
+import {
+  envWithRuntime,
+  getRuntime,
+  getSpawnArgsForDwebTask,
+} from "../utils/runtime.ts";
 
 /**
  * build 命令主入口
@@ -66,7 +70,7 @@ export async function main(
     }
     info($tr("build.building"));
     const cmd = createCommand(runtime, {
-      args: getTaskArgs(taskName),
+      args: getSpawnArgsForDwebTask(taskName, projectInfo.tasks),
       cwd: projectRoot,
       env: envWithRuntime("build"),
       stdin: "inherit",
@@ -119,7 +123,7 @@ export async function main(
     }
     info($tr("build.building"));
     const cmd = createCommand(runtime, {
-      args: getTaskArgs(taskName),
+      args: getSpawnArgsForDwebTask(taskName, projectInfo.tasks),
       cwd: projectRoot,
       env: envWithRuntime("build"),
       stdin: "inherit",

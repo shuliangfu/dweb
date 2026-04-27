@@ -3,10 +3,9 @@
  *
  * 职责：
  * - 启动生产服务器（需先执行 build）
- * - 单应用：执行 deno task start
- * - 多应用：需指定应用名，执行 deno task start:xxx
- * - 使用 loadProjectConfig 获取 config.server 等配置（端口、主机等）
- * - 子进程环境变量设置 RUNTIME_ENV=start（与任务脚本中的 `--start` 语义一致）
+ * - 单应用：若 `tasks.start` 为 `deno run ...` 则直接 `deno run ...`；否则 `deno task start`
+ * - 多应用：对 `start:app` 同理
+ * - 子进程环境变量设置 RUNTIME_ENV=start（与任务及 `--start` 语义一致）
  *
  * 运行方式：
  * - dweb start              # 单应用
@@ -18,9 +17,12 @@ import { error, info } from "@dreamer/console";
 import { createCommand, cwd } from "@dreamer/runtime-adapter";
 import { $tr } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
-import { loadProjectConfig } from "../utils/config-loader.ts";
 import { getProjectInfo } from "../utils/project.ts";
-import { envWithRuntime, getRuntime, getTaskArgs } from "../utils/runtime.ts";
+import {
+  envWithRuntime,
+  getRuntime,
+  getSpawnArgsForDwebTask,
+} from "../utils/runtime.ts";
 
 /**
  * start 命令主入口
@@ -53,22 +55,9 @@ export async function main(
       error($tr("common.ensureInit", { task: taskName }));
       return;
     }
-    try {
-      const config = await loadProjectConfig(projectRoot);
-      const serverConfig = config.server as
-        | { port?: number; host?: string }
-        | undefined;
-      if (serverConfig?.port) {
-        info(
-          $tr("common.portFromConfigProd", { port: String(serverConfig.port) }),
-        );
-      }
-    } catch {
-      // 配置加载失败时忽略
-    }
     info($tr("start.startingSingle"));
     const cmd = createCommand(runtime, {
-      args: getTaskArgs(taskName),
+      args: getSpawnArgsForDwebTask(taskName, projectInfo.tasks),
       cwd: projectRoot,
       env: envWithRuntime("start"),
       stdin: "inherit",
@@ -107,22 +96,9 @@ export async function main(
     return;
   }
 
-  try {
-    const config = await loadProjectConfig(projectRoot, app);
-    const serverConfig = config.server as
-      | { port?: number; host?: string }
-      | undefined;
-    if (serverConfig?.port) {
-      info(
-        $tr("common.portFromConfigProd", { port: String(serverConfig.port) }),
-      );
-    }
-  } catch {
-    // 配置加载失败时忽略
-  }
   info($tr("start.starting", { app }));
   const cmd = createCommand(runtime, {
-    args: getTaskArgs(taskName),
+    args: getSpawnArgsForDwebTask(taskName, projectInfo.tasks),
     cwd: projectRoot,
     env: envWithRuntime("start"),
     stdin: "inherit",

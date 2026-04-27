@@ -299,6 +299,7 @@
   },
   "dev": {
     "starting": "正在啟動 {app} 開發伺服器...",
+    "startingSingle": "正在啟動開發伺服器...",
     "exitCode": "dev 命令退出码: {code}",
     "exitCodeApp": "dev:{app} 命令退出码: {code}"
   },

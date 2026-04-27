@@ -20,10 +20,12 @@ import { describe, expect, it } from "@dreamer/test";
 import {
   configProfileFromRuntimeEnv,
   envWithRuntime,
+  getDenoRunArgsFromTaskString,
   getFmtArgs,
   getLintArgs,
   getRunArgs,
   getRuntime,
+  getSpawnArgsForDwebTask,
   getTaskArgs,
   getTestArgs,
   isWindows,
@@ -42,6 +44,36 @@ describe("运行时工具 (runtime.ts)", () => {
       const args = getTaskArgs("dev");
       expect(args).toHaveLength(2);
       expect(args[1]).toBe("dev");
+    });
+  });
+
+  describe("getDenoRunArgsFromTaskString()", () => {
+    it("应解析标准 deno run 任务行", () => {
+      expect(
+        getDenoRunArgsFromTaskString("deno run -A src/main.ts --dev"),
+      ).toEqual(["run", "-A", "src/main.ts", "--dev"]);
+      expect(
+        getDenoRunArgsFromTaskString(
+          "  DENO  RUN  -A dist/server.js --start  ",
+        ),
+      ).toEqual(["run", "-A", "dist/server.js", "--start"]);
+    });
+    it("对非 deno run 行应返回 null", () => {
+      expect(getDenoRunArgsFromTaskString("deno task dev")).toBeNull();
+      expect(getDenoRunArgsFromTaskString("bun run dev")).toBeNull();
+    });
+  });
+
+  describe("getSpawnArgsForDwebTask()", () => {
+    it("有 deno run 行时应为直接 run 参数，否则为 task 回退", () => {
+      const tasks: Record<string, string> = {
+        dev: "deno run -A src/main.ts --dev",
+        other: "echo done",
+      };
+      const a = getSpawnArgsForDwebTask("dev", tasks);
+      const b = getSpawnArgsForDwebTask("other", tasks);
+      expect(a[0]).toBe("run");
+      expect(b).toEqual(getTaskArgs("other"));
     });
   });
 
