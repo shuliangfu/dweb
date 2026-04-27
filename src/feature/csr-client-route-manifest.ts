@@ -74,6 +74,34 @@ function normalizeRouteFilePath(raw: string, routesDirPath: string): string {
 }
 
 /**
+ * 在已用 {@link normalizePathForCompare} 收束后的路径上，用「/」段做大小写不敏感前缀
+ * 匹配，得到 `routes` 目录之下的子路径。真实 Windows 上经 `resolve` 后，偶发
+ * 整段字符串**逐字符**前辍仍与 `routes` 对不齐，但**段**列表一致，此时仅此步可解。
+ *
+ * @param normFile 归一后的文件路径
+ * @param normRoutes 归一后的 routes 目录
+ * @returns 相对子路径，若 `normFile` 不落在 `normRoutes` 之下则为 `null`
+ */
+function getRelativeToRoutesDirBySegments(
+  normFile: string,
+  normRoutes: string,
+): string | null {
+  const toSegs = (p: string) => p.split("/").filter((s) => s.length > 0);
+  const fSegs = toSegs(normFile);
+  const rSegs = toSegs(normRoutes);
+  if (fSegs.length < rSegs.length) return null;
+  for (let i = 0; i < rSegs.length; i++) {
+    if (fSegs[i]!.toLowerCase() !== rSegs[i]!.toLowerCase()) {
+      return null;
+    }
+  }
+  if (fSegs.length === rSegs.length) {
+    return "";
+  }
+  return fSegs.slice(rSegs.length).join("/");
+}
+
+/**
  * 将绝对文件路径转换为相对 routes 目录的组件路径。
  *
  * Windows + CI：若仅依赖 {@link relative}，在**短名/长名、逐字与常规路径**混用时会退回
@@ -93,10 +121,17 @@ function getRouteComponentPath(
   if (normFile === normRoutes) {
     return "";
   }
+  /**
+   * 优先按**路径段**剥前缀，避免 Windows 上 resolve 后整串 `startsWith` 仍不成立
+   * （与 {@link getRelativeToRoutesDirBySegments} 注释中说明的 CI 问题一致）。
+   */
+  const bySeg = getRelativeToRoutesDirBySegments(normFile, normRoutes);
+  if (bySeg !== null) {
+    return bySeg;
+  }
   const nLower = normRoutes.toLowerCase();
   /**
-   * 1) 固定长度、大小写不敏感前缀（真实 Windows 上比 `f.startsWith(r+/)` 稳，避免
-   * `D:`/逐字/短长名在归一后仍略不一致时首段 `startsWith` 失败，退回整段绝对路径）。
+   * 1) 固定长度、大小写不敏感前缀（在段匹配失败时仍作补充）。
    */
   const n = normRoutes.length;
   if (
