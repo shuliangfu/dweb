@@ -8,6 +8,20 @@ and this project adheres to
 
 ---
 
+## [3.4.7] - 2026-04-27
+
+### Fixed
+
+- **Global `dweb-cli` install (setup)** (`src/setup.ts`): `deno install` now
+  uses a version-pinned entry point, `jsr:@dreamer/dweb@<version>/cli`, where
+  `<version>` is read from the same package’s root `deno.json` (via
+  `loadDwebDenoJson()`), instead of unversioned `jsr:@dreamer/dweb/cli`. In some
+  Deno and cache environments the unversioned specifier could still resolve to
+  stale dweb, so the displayed or cached version and new projects’ `imports`
+  could look up to date while `dweb init` still used old template code (for
+  example, `tasks` without `--dev` / `--start`, or older generated npm import
+  baselines in `deno.json`).
+
 ## [3.4.6] - 2026-04-27
 
 ### Fixed

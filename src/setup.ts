@@ -53,14 +53,29 @@ function isLocalRun(): boolean {
 }
 
 /**
- * 获取 CLI 入口路径或 JSR 说明符
- * - 本地：返回项目内 src/cli.ts 的绝对路径
- * - JSR：返回 jsr:@dreamer/dweb/cli
+ * 获取本地调试用的 CLI 入口：项目内 `src/cli.ts` 的绝对路径
  */
-function getCliEntry(): string {
-  if (isLocalRun()) {
-    const root = getPackageRoot();
-    return join(root, "src", "cli.ts");
+function getLocalCliEntry(): string {
+  const root = getPackageRoot();
+  return join(root, "src", "cli.ts");
+}
+
+/**
+ * 解析从 JSR 安装全局 `dweb-cli` 时使用的 **带版本** 的 CLI 说明符
+ *
+ * 未带版本时写 `jsr:@dreamer/dweb/cli` 在部分 Deno/缓存 场景下会固定到**旧次解析**，
+ * 与当前本次实际执行的 setup 包版本无关，导致 `dweb-cli -v` / 缓存 显示新版而
+ * `init` 仍跑旧模板（如 `postcss@8.4.39`、tasks 无 `--dev`）。此处用包根
+ * `deno.json` 的 `version` 与**当前进程**为同一 dweb 包，保证与 `deno run` 的 setup
+ * 次一致。
+ *
+ * @returns 如 `jsr:@dreamer/dweb@3.4.7/cli`；读版本失败时回退无版本说明符
+ */
+async function getRemoteJsrCliEntry(): Promise<string> {
+  const config = await loadDwebDenoJson();
+  const v = config?.version?.trim();
+  if (v) {
+    return `jsr:@dreamer/dweb@${v}/cli`;
   }
   return "jsr:@dreamer/dweb/cli";
 }
@@ -111,12 +126,11 @@ async function createTempCliConfig(): Promise<string> {
 /**
  * 执行 deno install 安装全局命令
  *
- * - JSR 远程安装：不使用 --config，直接安装 jsr:@dreamer/dweb/cli，由 JSR 包自身配置解析
+ * - JSR 远程安装：不使用 --config，安装与当前包版本一致的 `jsr:@dreamer/dweb@x.y.z/cli`
  * - 本地调试安装：使用 --config 临时 config（去除 workspace），避免解析 examples 等不存在的路径
  */
 async function installGlobalCli(): Promise<void> {
   const runtime = getRuntime();
-  const cliEntry = getCliEntry();
   const args: string[] = [
     "install",
     "--global",
@@ -132,7 +146,7 @@ async function installGlobalCli(): Promise<void> {
     const tempConfigPath = await createTempCliConfig();
     args.push("--config", tempConfigPath);
     try {
-      args.push(cliEntry);
+      args.push(getLocalCliEntry());
       const cmd = createCommand(runtime, {
         args,
         stdout: "null",
@@ -167,7 +181,8 @@ async function installGlobalCli(): Promise<void> {
       await remove(tempConfigPath).catch(() => {});
     }
   } else {
-    args.push(cliEntry);
+    const remoteEntry = await getRemoteJsrCliEntry();
+    args.push(remoteEntry);
     const cmd = createCommand(runtime, {
       args,
       stdout: "null",

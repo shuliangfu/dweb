@@ -7,6 +7,18 @@
 
 ---
 
+## [3.4.7] - 2026-04-27
+
+### 修复
+
+- **全局 `dweb-cli` 安装（setup）**（`src/setup.ts`）：`deno install` 改为安装
+  **带版本** 的入口 `jsr:@dreamer/dweb@<version>/cli`，其中 `<version>` 来自
+  当前**同一**包根 `deno.json`（`loadDwebDenoJson()`），而不再使用无版本号的
+  `jsr:@dreamer/dweb/cli`。部分 Deno/缓存 场景下，无版本说明符会仍解析到**旧**
+  dweb，出现展示或缓存已更新、新建项目 `imports` 也新，但 **`dweb init` 仍跑
+  旧模板**（例如 `tasks` 无 `--dev` / `--start`，或生成物中 npm
+  基准仍偏旧）的问题。
+
 ## [3.4.6] - 2026-04-27
 
 ### 修复

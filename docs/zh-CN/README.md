@@ -1924,11 +1924,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.4.6] - 2026-04-27
+### [3.4.7] - 2026-04-27
 
-**修复** — `dweb-cli -v` 与 `getDwebVersion()`：展示版本与当前已加载的 dweb
-包**一致**，避免 `~/.dreamer` 缓存过新而 `init` 仍用旧模板。**3.4.5 已含**：
-`init` 的 `tasks` 增加 `--dev` / `--start`。完整记录见
+**修复** — **setup** 使用 **带版本** 的 `jsr:@dreamer/dweb@<version>/cli`
+安装全局 CLI，避免无版本号 `jsr:@dreamer/dweb/cli` 在部分环境下仍绑到旧
+dweb、导致 `-v` 与新项目 `imports` 已新而 **`init` 仍跑旧模板**。**3.4.5–3.4.6**
+另有 `init` 的 `tasks` 与 `getDwebVersion()` 相关修复。完整记录见
 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---

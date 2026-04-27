@@ -1857,12 +1857,15 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.4.6] - 2026-04-27
+### [3.4.7] - 2026-04-27
 
-**Fixed** — **`dweb-cli -v`** / **`getDwebVersion()`**: version now matches the
-**loaded** dweb package, not a stale `~/.dreamer` file (avoids `init` template
-older than the printed version). **Changed (3.4.5):** `init` **`tasks`** `--dev`
-/ `--start`. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Fixed** — **setup** installs **`jsr:@dreamer/dweb@<version>/cli`** (pinned)
+instead of unversioned **`jsr:@dreamer/dweb/cli`**, so the global `dweb-cli`
+runs the same dweb as the script you execute (avoids `init` still on old
+templates while `-v` / new project `imports` look new). **Also in 3.4.5–3.4.6:**
+`init` **`tasks`** `--dev` / `--start`; **`getDwebVersion()`** /
+**`dweb-cli -v`** vs `~/.dreamer`. Full history:
+[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 
