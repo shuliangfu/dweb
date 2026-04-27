@@ -10,6 +10,7 @@ import {
   extractComponentPathFromRouteFile,
   normalizePathForCompare,
   normalizePathStringForSubpathExtraction,
+  subpathFromRoutesDirMarker,
 } from "../utils/path.ts";
 
 /** 路由组件信息 */
@@ -232,6 +233,55 @@ function getRouteComponentPath(
 }
 
 /**
+ * 若 `componentPath` 被误成带盘符的**绝对**串，`_client.dep.tsx` 会生成
+ * `import(\"./routes/D:/...")` 导致 esbuild 无法解析。用
+ * `fullPath` + `routesDirPath` 在生成入口前再收束一次 key。
+ */
+function shouldSanitizeComponentKeyForClient(componentPath: string): boolean {
+  return /[A-Za-z]:\//.test(componentPath.replace(/\\/g, "/"));
+}
+
+/**
+ * 将误写成 Windows 绝对路径的 `componentPath` 收束为 routes 相对段。
+ *
+ * @param components 已收集的路由项
+ * @param routesDirPath routes 目录绝对路径
+ */
+function sanitizeClientRouteComponents(
+  components: RouteComponentInfo[],
+  routesDirPath: string,
+): RouteComponentInfo[] {
+  return components.map((c) => {
+    if (!shouldSanitizeComponentKeyForClient(c.componentPath)) {
+      return c;
+    }
+    /** `extract` 优先；仍带盘符或空时再用 `/routes/` 标记截取（与 client builder 一致） */
+    let fixed = extractComponentPathFromRouteFile(
+      routesDirPath,
+      c.fullPath,
+    );
+    if (!fixed || shouldSanitizeComponentKeyForClient(fixed)) {
+      const viaMarker = subpathFromRoutesDirMarker(c.fullPath);
+      if (viaMarker && !shouldSanitizeComponentKeyForClient(viaMarker)) {
+        fixed = viaMarker;
+      }
+    }
+    if (
+      !fixed ||
+      fixed === c.componentPath ||
+      shouldSanitizeComponentKeyForClient(fixed)
+    ) {
+      return c;
+    }
+    return {
+      ...c,
+      componentPath: fixed,
+      importName: routeImportName(fixed),
+    };
+  });
+}
+
+/**
  * 使用 @dreamer/router 扫描路由目录并生成「路由路径 -> 布局 key 链」映射。
  *
  * @param routesDirPath 路由目录绝对路径
@@ -348,50 +398,10 @@ export function collectRouteClientManifestFromRouter(
     });
   }
   return {
-    components,
+    components: sanitizeClientRouteComponents(components, routesDirPath),
     hasLayout: Object.values(routeLayoutKeys).some((arr) => arr.length > 0),
     routeLayoutKeys,
   };
-}
-
-/**
- * 若 `componentPath` 被误成带盘符的**绝对**串，`_client.dep.tsx` 会生成
- * `import(\"./routes/D:/...")` 导致 esbuild 无法解析。用
- * `fullPath` + `routesDirPath` 在生成入口前再收束一次 key。
- */
-function shouldSanitizeComponentKeyForClient(componentPath: string): boolean {
-  return /[A-Za-z]:\//.test(componentPath.replace(/\\/g, "/"));
-}
-
-/**
- * @param components 已收集的路由项
- * @param routesDirPath routes 目录绝对路径
- */
-function sanitizeClientRouteComponents(
-  components: RouteComponentInfo[],
-  routesDirPath: string,
-): RouteComponentInfo[] {
-  return components.map((c) => {
-    if (!shouldSanitizeComponentKeyForClient(c.componentPath)) {
-      return c;
-    }
-    const fixed = extractComponentPathFromRouteFile(
-      routesDirPath,
-      c.fullPath,
-    );
-    if (
-      !fixed ||
-      fixed === c.componentPath ||
-      shouldSanitizeComponentKeyForClient(fixed)
-    ) {
-      return c;
-    }
-    return {
-      ...c,
-      componentPath: fixed,
-      importName: routeImportName(fixed),
-    };
-  });
 }
 
 /**
@@ -412,13 +422,8 @@ export async function getRouteClientManifest(
       routesDirPath,
     );
     if (manifest.components.length > 0) {
-      return {
-        ...manifest,
-        components: sanitizeClientRouteComponents(
-          manifest.components,
-          routesDirPath,
-        ),
-      };
+      // `collectRouteClientManifestFromRouter` 已对 components 做过 sanitize
+      return manifest;
     }
   }
 
