@@ -177,6 +177,26 @@ describe("路径工具 (path.ts)", () => {
       ).toBe("index");
     });
 
+    /**
+     * 与 GHA `windows-latest` 上一致：盘符 + 字面；须与 `routes` 目录做**不**依赖
+     * 弱 `includes` 的截取，否则 ROUTE_LOADERS 会带 `D:` key。
+     */
+    it("Windows 字面 D: 与 routes 时应提取相对段（不依赖仅 resolve 含）", () => {
+      const routesF = "D:/a/b/app/src/frontend/routes";
+      const fileF = "D:/a/b/app/src/frontend/routes/about.tsx";
+      expect(
+        extractComponentPathFromRouteFile(routesF, fileF),
+      ).toBe("about");
+    });
+
+    it("逐字 //?/ 文件路径在 strip 后应与 D: 目录对齐并提取子路径", () => {
+      const routesF = "D:/a/b/routes";
+      const fileF = "//?/D:/a/b/routes/p.tsx";
+      expect(
+        extractComponentPathFromRouteFile(routesF, fileF),
+      ).toBe("p");
+    });
+
     it("带 ./ 前缀的相对路径应去除前缀", () => {
       const routesDirPath = join(projectRoot, "src/routes");
       expect(

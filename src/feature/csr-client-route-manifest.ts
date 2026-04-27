@@ -7,6 +7,7 @@ import { createRouter, type Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import { cwd, join, readdir, relative } from "../core/runtime-adapter.ts";
 import {
+  extractComponentPathFromRouteFile,
   normalizePathForCompare,
   normalizePathStringForSubpathExtraction,
 } from "../utils/path.ts";
@@ -354,6 +355,46 @@ export function collectRouteClientManifestFromRouter(
 }
 
 /**
+ * 若 `componentPath` 被误成带盘符的**绝对**串，`_client.dep.tsx` 会生成
+ * `import(\"./routes/D:/...")` 导致 esbuild 无法解析。用
+ * `fullPath` + `routesDirPath` 在生成入口前再收束一次 key。
+ */
+function shouldSanitizeComponentKeyForClient(componentPath: string): boolean {
+  return /[A-Za-z]:\//.test(componentPath.replace(/\\/g, "/"));
+}
+
+/**
+ * @param components 已收集的路由项
+ * @param routesDirPath routes 目录绝对路径
+ */
+function sanitizeClientRouteComponents(
+  components: RouteComponentInfo[],
+  routesDirPath: string,
+): RouteComponentInfo[] {
+  return components.map((c) => {
+    if (!shouldSanitizeComponentKeyForClient(c.componentPath)) {
+      return c;
+    }
+    const fixed = extractComponentPathFromRouteFile(
+      routesDirPath,
+      c.fullPath,
+    );
+    if (
+      !fixed ||
+      fixed === c.componentPath ||
+      shouldSanitizeComponentKeyForClient(fixed)
+    ) {
+      return c;
+    }
+    return {
+      ...c,
+      componentPath: fixed,
+      importName: routeImportName(fixed),
+    };
+  });
+}
+
+/**
  * 获取客户端构建所需的路由 manifest。优先复用容器内 Router，缺失时回退到文件系统扫描。
  *
  * @param container 服务容器
@@ -371,7 +412,13 @@ export async function getRouteClientManifest(
       routesDirPath,
     );
     if (manifest.components.length > 0) {
-      return manifest;
+      return {
+        ...manifest,
+        components: sanitizeClientRouteComponents(
+          manifest.components,
+          routesDirPath,
+        ),
+      };
     }
   }
 
@@ -379,5 +426,9 @@ export async function getRouteClientManifest(
   const { hasLayout, routeLayoutKeys } = await getRouteLayoutKeys(
     routesDirPath,
   );
-  return { components, hasLayout, routeLayoutKeys };
+  return {
+    components: sanitizeClientRouteComponents(components, routesDirPath),
+    hasLayout,
+    routeLayoutKeys,
+  };
 }

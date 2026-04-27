@@ -309,7 +309,29 @@ export function extractComponentPathFromRouteFile(
     return normalizedNoExt;
   }
 
-  // 绝对路径：从 routesDirPath 后截取
+  // 绝对路径：优先**不**经 `resolve` 的与 manifest 子路径一致的前缀/索引截取（`//?/D:`
+  // 与 `D:` 在 Windows 上否则 `includes` 全串 对不齐）。
+  const r0 = normalizePathStringForSubpathExtraction(routesDirPath);
+  const f0 = normalizePathStringForSubpathExtraction(
+    noExt,
+  );
+  if (
+    f0.length > r0.length && f0[r0.length] === "/" &&
+    f0.slice(0, r0.length).toLowerCase() === r0.toLowerCase()
+  ) {
+    return f0.slice(r0.length + 1);
+  }
+  {
+    const fL = f0.toLowerCase();
+    const nL = r0.toLowerCase() + "/";
+    const at = fL.indexOf(nL);
+    if (at >= 0) {
+      const out = f0.slice(at + nL.length);
+      if (out) return out;
+    }
+  }
+
+  // 回退：resolve 后 `includes`（与旧版兼容）
   const normalizedRoutes = normalizePathForCompare(routesDirPath);
   const normalizedRaw = normalizePathForCompare(rawPath)
     .replace(/\.(tsx?|jsx?)$/, "")
