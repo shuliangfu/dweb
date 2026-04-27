@@ -47,6 +47,7 @@ import {
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import {
+  extractComponentPathFromRouteFile,
   normalizePathForCompare,
   pathForLog,
   resolveRouterRoutesDirPath,
@@ -358,6 +359,32 @@ const VIEW_ADAPTER_BY_MODE: Record<ClientDepRenderMode, string> = {
 type ClientDepRenderMode = "csr" | "hybrid" | "ssr" | "ssg";
 
 /**
+ * 生成 ROUTE_LOADERS 的 key 与 `import(\`./routes/...\`)` 相对段。
+ * 必须以 `fullPath` + `routesDirPath` 用 {@link extractComponentPathFromRouteFile} 收束，
+ * 不得单独信任 `componentPath`（Windows 上曾被写成整段 `D:/...`）。
+ */
+function routeLoaderKeyForClientDep(
+  routesDirPath: string,
+  c: RouteComponentInfo,
+): string {
+  const fromFull = extractComponentPathFromRouteFile(
+    routesDirPath,
+    c.fullPath,
+  );
+  if (
+    fromFull &&
+    !/[A-Za-z]:\//.test(fromFull.replace(/\\/g, "/"))
+  ) {
+    return fromFull;
+  }
+  const cp = c.componentPath.replace(/\\/g, "/");
+  if (cp && !/[A-Za-z]:\//.test(cp)) {
+    return cp;
+  }
+  return (fromFull || cp || "index").replace(/\\/g, "/");
+}
+
+/**
  * 生成 client.dep.tsx 内容（路由加载器、缓存、HMR CSS、loadLayouts、loadPageModule、renderNotFound、renderError、setupHydrationRouterAndHmr 等）
  * 此文件每次构建/启动都会重新生成；client.tsx 仅不存在时生成，便于用户修改入口逻辑。
  *
@@ -372,6 +399,7 @@ type ClientDepRenderMode = "csr" | "hybrid" | "ssr" | "ssg";
  *
  * @param engine 渲染引擎（用于 hydrate/renderCSR 导入及 setupHydrationRouterAndHmr）
  * @param components 路由组件列表
+ * @param routesDirPath 与 {@link getRouteClientManifest} 中一致的 routes 绝对路径
  * @param hasLayout 是否存在 _layout 文件
  * @param hmrCssEntries 开发态 HMR CSS 配置
  * @param renderMode 渲染模式（view 时用于选择 view/csr 或 view/hybrid）
@@ -381,6 +409,7 @@ type ClientDepRenderMode = "csr" | "hybrid" | "ssr" | "ssg";
 export function generateClientDepContent(
   engine: "react" | "preact" | "view",
   components: RouteComponentInfo[],
+  routesDirPath: string,
   hasLayout: boolean,
   hmrCssEntries: Array<{ url: string; styleId: string }>,
   renderMode: ClientDepRenderMode = "hybrid",
@@ -406,13 +435,16 @@ import { createSignal, mount, type Signal } from "@dreamer/view";`
     : `import { hydrate, renderCSR } from "${adapterImport}";`;
   /** API 路由（api/ 下）仅服务端使用，不加入 ROUTE_LOADERS，避免客户端 bundle 解析 .ts 或错误引用 */
   const pageComponents = components.filter(
-    (c) => !c.componentPath.replace(/\\/g, "/").startsWith("api/"),
+    (c) => !routeLoaderKeyForClientDep(routesDirPath, c).startsWith("api/"),
   );
   const routeExt = ".tsx";
-  const routeLoaders = pageComponents.map(
-    (c) =>
-      `  "${c.componentPath}": () => import("./routes/${c.componentPath}${routeExt}"),`,
-  ).join("\n");
+  const routeLoaders = pageComponents
+    .map((c) => {
+      const k = routeLoaderKeyForClientDep(routesDirPath, c);
+      const spec = `./routes/${k}${routeExt}`;
+      return `  ${JSON.stringify(k)}: () => import(${JSON.stringify(spec)}),`;
+    })
+    .join("\n");
 
   const layoutExt = ".tsx";
   const routeLayoutKeysJson = useNestedLayouts && routeLayoutKeys
@@ -1628,6 +1660,7 @@ export async function ensureClientEntryFile(
   const clientDepCode = generateClientDepContent(
     engine,
     components,
+    routesDirPath,
     hasLayout,
     hmrCssEntries,
     renderMode,
@@ -1714,6 +1747,7 @@ export async function prepareClientBuildEntry(
   const clientDepCode = generateClientDepContent(
     engine,
     components,
+    routesDirPath,
     hasLayout,
     hmrCssEntries,
     renderMode,
@@ -1956,6 +1990,7 @@ export async function buildClientScript(
     const clientDepCode = generateClientDepContent(
       engine,
       components,
+      routesDirPath,
       hasLayout,
       hmrCssEntries,
       renderMode,

@@ -77,6 +77,7 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
             importName: "Route_index",
           },
         ],
+        "/tmp/routes",
         false,
         [],
         "hybrid",
@@ -97,6 +98,7 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
             importName: "Route_index",
           },
         ],
+        "/tmp/routes",
         false,
         [],
         "csr",
@@ -130,6 +132,7 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
             importName: "Route_index",
           },
         ],
+        "/tmp/routes",
         false,
         [],
         "hybrid",
@@ -140,6 +143,29 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
       expect(code).toContain("_mergedPre");
       expect(code).toContain("_ldPre");
       expect(code).toContain("(a.page == null) !== (b.page == null)");
+    });
+
+    it("Windows 下 componentPath 误为整段 D: 时仍用 fullPath+routes 生成相对 import", () => {
+      const routesDir = "D:/a/dweb/dweb/examples/preact-ssg/basic/src/routes";
+      const file = `${routesDir}/about.tsx`;
+      const code = generateClientDepContent(
+        "preact",
+        [
+          {
+            componentPath: `${routesDir}/about`,
+            fullPath: file,
+            importName: "Route_bad",
+          },
+        ],
+        routesDir,
+        false,
+        [],
+        "hybrid",
+        {},
+      );
+      expect(code).toContain(`${JSON.stringify("about")}:`);
+      expect(code).toContain(JSON.stringify("./routes/about.tsx"));
+      expect(code).not.toContain("./routes/D:");
     });
   });
 });

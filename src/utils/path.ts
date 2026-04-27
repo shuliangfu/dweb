@@ -84,6 +84,33 @@ export function normalizePathStringForSubpathExtraction(p: string): string {
 }
 
 /**
+ * 在经 {@link normalizePathStringForSubpathExtraction} 后的两路径上，按段（大小写不敏感）
+ * 比较「routes 目录是否为其前缀」，返回 routes 下相对子路径。用于 `resolve` 后整串
+ * 前辍仍对不齐、但段列表一致时（如 8.3/长名混用）收束为 `index`、`user/[id]`。
+ *
+ * @param normFile 归一后的**无扩展名**文件路径
+ * @param normRoutes 归一后的 routes 目录
+ */
+export function getRelativePathToRoutesBySegments(
+  normFile: string,
+  normRoutes: string,
+): string | null {
+  const toSegs = (p: string) => p.split("/").filter((s) => s.length > 0);
+  const fSegs = toSegs(normFile);
+  const rSegs = toSegs(normRoutes);
+  if (fSegs.length < rSegs.length) return null;
+  for (let i = 0; i < rSegs.length; i++) {
+    if (fSegs[i]!.toLowerCase() !== rSegs[i]!.toLowerCase()) {
+      return null;
+    }
+  }
+  if (fSegs.length === rSegs.length) {
+    return "";
+  }
+  return fSegs.slice(rSegs.length).join("/");
+}
+
+/**
  * 将 `config.router.routesDir` 规范为**绝对**路径，兼容「仓库 / 多包根为 cwd」与
  * 「应用子目录为 cwd」两种启动方式对同一条配置的差异。
  *
@@ -328,6 +355,12 @@ export function extractComponentPathFromRouteFile(
     if (at >= 0) {
       const out = f0.slice(at + nL.length);
       if (out) return out;
+    }
+  }
+  {
+    const bySeg = getRelativePathToRoutesBySegments(f0, r0);
+    if (bySeg != null && bySeg !== "") {
+      return bySeg;
     }
   }
 
