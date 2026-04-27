@@ -209,6 +209,13 @@ describe("路径工具 (path.ts)", () => {
       expect(extractComponentPathFromRouteFile(routesDirPath, "")).toBe("");
     });
 
+    it("GHA Windows：即使 includes/对齐失败，仍从 /routes/ 标记取 about", () => {
+      const fileF =
+        "D:/a/dweb/dweb/examples/preact-csr/basic/src/routes/about.tsx";
+      const badRoutes = "D:/unrelated/other/routes";
+      expect(extractComponentPathFromRouteFile(badRoutes, fileF)).toBe("about");
+    });
+
     it("非字符串类型应返回空串", () => {
       const routesDirPath = join(projectRoot, "src/routes");
       expect(

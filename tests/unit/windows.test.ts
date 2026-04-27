@@ -337,14 +337,13 @@ describe("Windows 兼容性 (windows.test.ts)", () => {
       expect(result).toBe("user/[id]");
     });
 
-    it("边界：routesDirPath 与 rawPath 不一致时返回归一后的 rawPath", () => {
+    it("边界：routesDir 与 file 不同盘/根时仍从 `/.../routes/` 标记截取为 foo", () => {
       const raw = "E:/other/project/src/routes/foo.tsx";
       const result = extractComponentPathFromRouteFile(
         "C:/project/src/routes",
         raw,
       );
-      expect(result).toContain("foo");
-      expect(result).not.toContain("\\");
+      expect(result).toBe("foo");
     });
 
     it("边界：带 [id] 动态段应正确提取", () => {

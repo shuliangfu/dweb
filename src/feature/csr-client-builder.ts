@@ -51,6 +51,7 @@ import {
   normalizePathForCompare,
   pathForLog,
   resolveRouterRoutesDirPath,
+  subpathFromRoutesDirMarker,
 } from "../utils/path.ts";
 import {
   getRouteClientManifest,
@@ -362,7 +363,19 @@ type ClientDepRenderMode = "csr" | "hybrid" | "ssr" | "ssg";
  * 生成 ROUTE_LOADERS 的 key 与 `import(\`./routes/...\`)` 相对段。
  * 必须以 `fullPath` + `routesDirPath` 用 {@link extractComponentPathFromRouteFile} 收束，
  * 不得单独信任 `componentPath`（Windows 上曾被写成整段 `D:/...`）。
+ * 已提取串若仍带盘符或起始于 `/`（整段绝对路径作 key）则丢弃，并用
+ * {@link subpathFromRoutesDirMarker} 作最后手段；**禁止**在兜底处把 `D:/...` 写进源码。
  */
+function looksLikeAbsoluteRouteKey(s: string): boolean {
+  const n = s.replace(/\\/g, "/").trim();
+  if (!n) return true;
+  if (n.startsWith("/")) return true;
+  if (/^[A-Za-z]:\//.test(n) || n.startsWith("\\\\") || n.startsWith("//")) {
+    return true;
+  }
+  return false;
+}
+
 function routeLoaderKeyForClientDep(
   routesDirPath: string,
   c: RouteComponentInfo,
@@ -371,17 +384,26 @@ function routeLoaderKeyForClientDep(
     routesDirPath,
     c.fullPath,
   );
-  if (
-    fromFull &&
-    !/[A-Za-z]:\//.test(fromFull.replace(/\\/g, "/"))
-  ) {
+  if (fromFull && !looksLikeAbsoluteRouteKey(fromFull)) {
     return fromFull;
   }
   const cp = c.componentPath.replace(/\\/g, "/");
-  if (cp && !/[A-Za-z]:\//.test(cp)) {
+  if (cp && !looksLikeAbsoluteRouteKey(cp)) {
     return cp;
   }
-  return (fromFull || cp || "index").replace(/\\/g, "/");
+  {
+    const fromMarker = subpathFromRoutesDirMarker(c.fullPath);
+    if (fromMarker && !looksLikeAbsoluteRouteKey(fromMarker)) {
+      return fromMarker;
+    }
+  }
+  {
+    const fromMarkerCp = subpathFromRoutesDirMarker(c.componentPath);
+    if (fromMarkerCp && !looksLikeAbsoluteRouteKey(fromMarkerCp)) {
+      return fromMarkerCp;
+    }
+  }
+  return "index";
 }
 
 /**

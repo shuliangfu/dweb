@@ -307,6 +307,27 @@ export function pathForLog(
 }
 
 /**
+ * 从文件路径中截取不区分大小写的最后一个 `.../routes/<子路径>` 的 route key（去扩展名）。
+ * 不依赖与 `routesDir` 的字符串是否可对齐，用于 8.3/逐字路径及 `path.relative` 异盘失败等场景。
+ *
+ * @param absoluteFilePath 带扩展名的**绝对或普通**源文件路径
+ * @returns 如 `about`、`user/[id]`；无 `/.../routes/` 时返回 `""`
+ */
+export function subpathFromRoutesDirMarker(absoluteFilePath: string): string {
+  if (!absoluteFilePath || typeof absoluteFilePath !== "string") {
+    return "";
+  }
+  const s = absoluteFilePath.trim().replace(/\\/g, "/");
+  if (!s) return "";
+  const lower = s.toLowerCase();
+  const needle = "/routes/";
+  const idx = lower.lastIndexOf(needle);
+  if (idx < 0) return "";
+  const rest = s.slice(idx + needle.length);
+  return rest.replace(/\.(tsx?|jsx?)$/i, "").replace(/\/+$/, "");
+}
+
+/**
  * 从任意路径提取与 ROUTE_LOADERS key 一致的 component 路径（Windows 兼容）
  *
  * CSR/Hybrid 模式下，客户端 loadPageModule 需匹配 ROUTE_LOADERS 的 key（如 "index"、"user/[id]"）。
@@ -317,7 +338,8 @@ export function pathForLog(
  *
  * @param routesDirPath routes 目录的绝对路径（如 C:/project/src/routes 或 /project/src/routes）
  * @param rawPath 原始路径（如 match.route.file、C:/project/src/routes/index、src\routes\user\[id].tsx）
- * @returns 提取的 component 路径（如 "index"、"user/[id]"），无法提取时返回规范化后的 rawPath
+ * @returns 提取的 component 路径（如 "index" 与 "user/[id]"）；**不再**在失败时回传
+ * 整段绝对路径（易误用为 `ROUTE_LOADERS` 的 import key），无可靠结果时返回 `""`。
  */
 export function extractComponentPathFromRouteFile(
   routesDirPath: string,
@@ -370,13 +392,41 @@ export function extractComponentPathFromRouteFile(
     .replace(/\.(tsx?|jsx?)$/, "")
     .trim();
   if (normalizedRaw.includes(normalizedRoutes)) {
-    const relative = normalizedRaw
+    const relPart = normalizedRaw
       .slice(
         normalizedRaw.indexOf(normalizedRoutes) + normalizedRoutes.length,
       )
       .replace(/^\//, "");
-    if (relative) return relative;
+    if (relPart) return relPart;
   }
 
-  return normalizedRaw.replace(/\\/g, "/").trim();
+  // 回退：`resolve` + `path.relative` +（仅 Windows）`realPath` 以统一 8.3/长名/逐字
+  {
+    try {
+      const routesR = platform() === "windows"
+        ? realPathWithMissingSegments(resolve(routesDirPath))
+        : resolve(routesDirPath);
+      const fileR = platform() === "windows"
+        ? realPathWithMissingSegments(resolve(trimmed))
+        : resolve(trimmed);
+      const rel0 = relative(routesR, fileR);
+      const rel = rel0.replace(/\\/g, "/");
+      if (
+        rel && rel !== "." && !/^\.\.(\/|$)/.test(rel) &&
+        !/^[A-Za-z]:\//.test(rel) && !rel.startsWith("/")
+      ) {
+        const noExtRel = rel.replace(/\.(tsx?|jsx?)$/, "");
+        if (noExtRel && !/^\.\.(\/|$)/.test(noExtRel)) {
+          return noExtRel;
+        }
+      }
+    } catch {
+      // 与 routes 的相对化失败，继续
+    }
+  }
+  {
+    const viaMarker = subpathFromRoutesDirMarker(trimmed);
+    if (viaMarker) return viaMarker;
+  }
+  return "";
 }
