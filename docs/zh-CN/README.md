@@ -1924,13 +1924,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.4.7] - 2026-04-27
+### [3.4.8] - 2026-04-27
 
-**修复** — **setup** 使用 **带版本** 的 `jsr:@dreamer/dweb@<version>/cli`
-安装全局 CLI，避免无版本号 `jsr:@dreamer/dweb/cli` 在部分环境下仍绑到旧
-dweb、导致 `-v` 与新项目 `imports` 已新而 **`init` 仍跑旧模板**。**3.4.5–3.4.6**
-另有 `init` 的 `tasks` 与 `getDwebVersion()` 相关修复。完整记录见
-[CHANGELOG.md](./CHANGELOG.md)。
+**新增** — 包根 **`update-deps.sh`**：先主包、后 **`examples/**`** 批量
+**`deno update`**。**变更** — 仓库内示例依赖与锁已随 `deno update`
+对齐（**不**打入 JSR 包）。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

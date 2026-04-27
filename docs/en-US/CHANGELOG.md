@@ -8,6 +8,22 @@ and this project adheres to
 
 ---
 
+## [3.4.8] - 2026-04-27
+
+### Added
+
+- **Repository tooling**: `update-deps.sh` at the dweb package root runs
+  **`deno update`** for the main `deno.json` first, then for every `examples/**`
+  project that has a `deno.json`, so maintainers can refresh import specifiers
+  and lockfiles in one step.
+
+### Changed
+
+- **Examples** (Git repository only; not included in the JSR published tarball):
+  all sample apps under `examples/` were refreshed with **`deno update`** so
+  their `deno.json` / `package.json` and lockfiles match current resolution for
+  `@dreamer/*` and npm dependencies.
+
 ## [3.4.7] - 2026-04-27
 
 ### Fixed
