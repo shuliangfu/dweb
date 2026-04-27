@@ -7,6 +7,15 @@
 
 ---
 
+## [3.4.5] - 2026-04-27
+
+### 变更
+
+- **`dweb init` 生成的 `deno.json`
+  模板**（`src/cmd/init/templates/deno-json.ts`）： `dev` / `start` 任务分别追加
+  `--dev`、`--start`，`build` 已带 `--build`，与 **`App`** 中 **`RUNTIME_ENV`**
+  与 **argv** 约定一致。多应用 `dev:应用` / `start:应用` 同步加上对应参数。
+
 ## [3.4.4] - 2026-04-27
 
 ### 修复

@@ -1857,14 +1857,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.4.4] - 2026-04-27
+### [3.4.5] - 2026-04-27
 
-**Fixed** — **`resolveRouterRoutesDirPath`** (flat **cwd** vs
-**`router.routesDir`**). **Windows CSR client**
-(**`extractComponentPathFromRouteFile`**, **`routeLoaderKey`**,
-**`collectRouteClientManifestFromRouter` + sanitize**): **ROUTE_LOADERS** and
-**`_client.dep.tsx`** no longer use **`D:/...`** in **`import(`./routes/...`)`**
-on CI/Bun. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Changed** — **`dweb init` `deno.json` `tasks`**: `dev` / `start` now pass
+`--dev` / `--start` (align **`RUNTIME_ENV`** with **`App`**). Full history:
+[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

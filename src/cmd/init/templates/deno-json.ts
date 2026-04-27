@@ -71,10 +71,14 @@ export function getDenoJson(
 
   const isMulti = opts.appMode === "multi" && (opts.appNames?.length ?? 0) > 0;
   const commonPath = opts.useSrc ? "./src/common/" : "./common/";
+  // 与 `App` 中 `RUNTIME_ENV` 约定一致：`--dev` / `--build` / `--start` 显式传入
   const tasksBlock = isMulti && opts.appNames
     ? [
       opts.appNames
-        .map((app) => `    "dev:${app}": "deno run -A ${prefix}${app}/main.ts"`)
+        .map(
+          (app) =>
+            `    "dev:${app}": "deno run -A ${prefix}${app}/main.ts --dev"`,
+        )
         .join(",\n"),
       opts.appNames
         .map(
@@ -83,12 +87,15 @@ export function getDenoJson(
         )
         .join(",\n"),
       opts.appNames
-        .map((app) => `    "start:${app}": "deno run -A dist/${app}/server.js"`)
+        .map(
+          (app) =>
+            `    "start:${app}": "deno run -A dist/${app}/server.js --start"`,
+        )
         .join(",\n"),
     ].join(",\n\n")
-    : `    "dev": "deno run -A ${prefix}main.ts",
+    : `    "dev": "deno run -A ${prefix}main.ts --dev",
     "build": "deno run -A ${prefix}main.ts --build",
-    "start": "deno run -A dist/server.js"`;
+    "start": "deno run -A dist/server.js --start"`;
 
   const appDirPrefix = opts.useSrc ? "./src/" : "./";
   const dirAliasesBlock = isMulti && opts.appNames

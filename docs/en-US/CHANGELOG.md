@@ -8,6 +8,17 @@ and this project adheres to
 
 ---
 
+## [3.4.5] - 2026-04-27
+
+### Changed
+
+- **`dweb init` `deno.json` template** (`src/cmd/init/templates/deno-json.ts`):
+  **`tasks.dev`** and **`tasks.start`** now pass **`--dev`** and **`--start`**
+  (and **`--build`** was already on the build task) so `App`’s **`RUNTIME_ENV`**
+  matches **`dweb-cli`** / argv conventions without relying on defaults.
+  Multi-app task names follow the same pattern (**`dev:app`**, **`build:app`**,
+  **`start:app`**).
+
 ## [3.4.4] - 2026-04-27
 
 ### Fixed
