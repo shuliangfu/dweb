@@ -1924,10 +1924,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.4.5] - 2026-04-27
+### [3.4.6] - 2026-04-27
 
-**变更** — **`dweb init` 生成 `deno.json` 的 `tasks`**：`dev` / `start` 显式加
-`--dev` / `--start`，与 **`App`** 的 **`RUNTIME_ENV`** 一致。完整记录见
+**修复** — `dweb-cli -v` 与 `getDwebVersion()`：展示版本与当前已加载的 dweb
+包**一致**，避免 `~/.dreamer` 缓存过新而 `init` 仍用旧模板。**3.4.5 已含**：
+`init` 的 `tasks` 增加 `--dev` / `--start`。完整记录见
 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---

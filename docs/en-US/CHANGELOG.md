@@ -8,6 +8,18 @@ and this project adheres to
 
 ---
 
+## [3.4.6] - 2026-04-27
+
+### Fixed
+
+- **`getDwebVersion()`** (`src/utils/version.ts`): on JSR / remote, **no longer
+  prefers** `~/.dreamer/dweb/version.json` **before** the **running** package
+  version. That cache could be **newer** than the Deno module cache, so
+  **`dweb-cli -v`** showed a recent version (e.g. 3.4.5) while **`init` still
+  executed older template code** (e.g. `tasks` without `--dev` / `--start`). The
+  CLI version string now **matches `DWEB_VERSION`** from the loaded dweb
+  package, with cache only as a fall back.
+
 ## [3.4.5] - 2026-04-27
 
 ### Changed

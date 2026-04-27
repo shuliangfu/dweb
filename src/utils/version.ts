@@ -276,9 +276,11 @@ export async function loadDwebDenoJson(): Promise<DwebDenoConfig | null> {
 /**
  * 获取 dweb 框架版本号
  *
- * - 生产 bundle 运行：优先返回构建时注入的 globalThis.__DWEB_VERSION__（避免 import.meta.url 指向 dist 导致读错 deno.json）
- * - 本地运行：从 deno.json 读取
- * - JSR 远程运行：1) 先读缓存；2) 缓存无则请求网络；3) 请求成功则写入缓存
+ * - 生产 bundle 运行：优先返回构建时注入的 globalThis.__DWEB_VERSION__
+ * - **与当前进程已加载的 dweb 包一致**：优先用同步读取的 `DWEB_VERSION`（同包 `deno.json`），
+ *   **不得**在 JSR 上先读 `~/.dreamer/dweb/version.json`：否则用户升级后可能「缓存版本新于
+ *   Deno 模块缓存」，`dweb-cli -v` 显示 3.4.5 而 `init` 仍执行旧包代码（如缺少 `--dev` task）。
+ * - 若 `DWEB_VERSION` 为 `0.0.0`（读失败），再 `loadDwebDenoJson()` 或本机 `version` 文件兜底。
  *
  * @returns 版本号字符串
  */
@@ -289,19 +291,30 @@ export async function getDwebVersion(): Promise<string> {
   if (typeof globalThis !== "undefined" && injected) {
     return injected;
   }
-  // 1. JSR 远程运行时，先尝试从缓存读取（避免每次请求网络）
+  // 1. 与 `import` 的 dweb 包内 deno.json 一致（与 init 模板等同进程来源）
+  if (DWEB_VERSION !== "0.0.0") {
+    if (isRemoteRun()) {
+      await writeVersionCache(DWEB_VERSION).catch(() => {
+        // 与磁盘缓存对齐，仅辅助展示与 upgrade 比较，忽略写入失败
+      });
+    }
+    return DWEB_VERSION;
+  }
+  // 2. 包内读取失败时：再 fetch/读文件
+  const config = await loadDwebDenoJson();
+  const version = config?.version;
+  if (version) {
+    if (isRemoteRun()) {
+      await writeVersionCache(version).catch(() => {});
+    }
+    return version;
+  }
+  // 3. 最后兜底：旧行为仅作后备
   if (isRemoteRun()) {
     const cached = await readVersionCache();
     if (cached) return cached;
   }
-  // 2. 缓存未命中：请求网络（本地则读文件）
-  const config = await loadDwebDenoJson();
-  const version = config?.version ?? FALLBACK_DWEB_VERSION;
-  // 3. 远程且获取成功：写入缓存，供下次快速读取
-  if (isRemoteRun() && config?.version) {
-    await writeVersionCache(config.version);
-  }
-  return version;
+  return FALLBACK_DWEB_VERSION;
 }
 
 /**

@@ -7,6 +7,17 @@
 
 ---
 
+## [3.4.6] - 2026-04-27
+
+### 修复
+
+- **`getDwebVersion()`**（`src/utils/version.ts`）：在 **JSR /
+  远程**下**不再**先读 **`~/.dreamer/dweb/version.json`**
+  再定版本。该文件可能比当前 Deno 已缓存的 dweb 包**更新**，导致
+  **`dweb-cli -v`** 显示新版本而 **`init` 仍走旧包** （例如 `tasks` 无 `--dev` /
+  `--start`）。现优先与 **`DWEB_VERSION`** （已加载包内
+  `deno.json`）一致，仅失败时再兜底。
+
 ## [3.4.5] - 2026-04-27
 
 ### 变更
