@@ -1926,10 +1926,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ### [3.4.4] - 2026-04-27
 
-**修复** — **`resolveRouterRoutesDirPath`** （多包/扁平 **cwd** 与
-**`router.routesDir`**）；**CSR 路由 manifest**
-（**`getRouteComponentPath`**，Windows 上避免 **`import("./routes/D:/...")`**
-误入 **ROUTE_LOADERS**）。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
+**修复** — **`resolveRouterRoutesDirPath`** （**cwd** 与
+**`router.routesDir`**）；**Windows** 下 **CSR 客户端**（`extract`、
+`routeLoaderKey`、`collect` + **sanitize**）使 **ROUTE_LOADERS** 与
+**`_client.dep.tsx`** 的 `import` 为相对 `routes` 路径，**不再**写入带盘符的整段
+绝对路径。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

@@ -22,22 +22,33 @@
   。**`initializeRouter`**、**`createLoadDataMiddleware`**、各
   **CSR/SSR/Hybrid** 渲染、 **build / CSR 客户端**、**routes 中间件**、**SSG
   注入**、**开发 watch** 等统一 使用该解析，与路由扫描一致。
-- **Windows + `collectRouteClientManifestFromRouter`**：仅依赖 `path.relative`
-  时，在盘符/形态差异常退回**带 `D:/` 的“绝对”串**， **`componentPath`** 错成
-  `D:/.../routes/about`，生成 **`ROUTE_LOADERS`** 的
-  `import("./routes/D:/.../about.tsx")`，**esbuild** 无法解析。在
-  **`src/feature/csr-client-route-manifest.ts`** 的 **`getRouteComponentPath`**
-  中已用 **`normalizePathForCompare`** 收束，并以 **大小写不敏感**的 `routes`
-  目录前缀截断；若 `relative` 仍返回绝对盘符 路径则再收束（覆盖 Windows CI 如
-  GHA 下路径）。
+- **Windows + CSR 客户端 + Router manifest（ROUTE_LOADERS）**：在 **Bun** /
+  **GHA** `D:` 下，`path.relative` 或前缀收束仍可能让 **`componentPath`**
+  与生成的 **`_client.dep.tsx`** 键/`import` 带整段
+  **`D:/.../routes/...`，**esbuild** 报 `import("./routes/D:/...")` 无法解析。
+  - **`src/utils/path.ts`**： **`extractComponentPathFromRouteFile`** 增加
+    `resolve` + `path.relative`（Windows 上配合
+    **`realPathWithMissingSegments`**）及 **`subpathFromRoutesDirMarker`**
+    兜底，失败时**不再**回传整段盘符路径；新增
+    **`subpathFromRoutesDirMarker`**（从路径中最后一个 `.../routes/…`
+    截取子路径）。
+  - **`src/feature/csr-client-builder.ts`**：**`routeLoaderKeyForClientDep`** 拒
+    绝整段盘符作 key，并与 **`subpathFromRoutesDirMarker`** 对齐后再回退
+    `"index"`（`import` 参数经 JSON 序列化）。
+  - **`src/feature/csr-client-route-manifest.ts`**： **`getRouteComponentPath`**
+    原逻辑继续加强； **`collectRouteClientManifestFromRouter` 返回前经**
+    **`sanitizeClientRouteComponents`**（`extract` + 标记兜底）；
+    **`getRouteClientManifest`** 的 Router 分支**不再**二次 sanitize。
 
 ### 测试
 
-- **`tests/unit/path.test.ts`**：对 **`resolveRouterRoutesDirPath`** 的默认
-  `src/routes`、**重复首段**（如 `frontend`）回退、**绝对** `routesDir` 的用例。
-- **`tests/unit/csr-client-route-manifest.test.ts`**：模拟 `D:` 盘
-  **fullPath**， **`componentPath` 为 `about`** 且**不含**盘符段，避免
-  **ROUTE_LOADERS** 键 错误。
+- **`tests/unit/path.test.ts`**： **`resolveRouterRoutesDirPath`** 默认与回退
+  用例；GHA 风格 D: 路径、错误 `routesDir` 时仍从 **`/routes/`** 标记取
+  **`about`**。
+- **`tests/unit/csr-client-route-manifest.test.ts`**：`D:` 盘 `fullPath` 下
+  **`componentPath` 为 `about`**。
+- **`tests/unit/csr-client-builder.test.ts`**：错误 `componentPath` 时生成物仍为
+  相对 **`./routes/about.tsx`**。
 
 ## [3.4.3] - 2026-04-26
 

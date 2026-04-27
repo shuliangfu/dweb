@@ -27,24 +27,38 @@ and this project adheres to
   **routes** middleware registration, **SSG** hydration pass, and **dev**
   **`server.dev.watch`** inference so route scanning, data loading, and client
   bundles agree on the routes directory.
-- **Windows + `collectRouteClientManifestFromRouter`**: `path.relative` from
-  routes directory to a route file could return a **drive-letter absolute**
-  string when path forms differ, so `componentPath` became `D:/.../routes/about`
-  and the generated client script contained invalid imports such as
-  `import("./routes/D:/.../about.tsx")` (**ROUTE_LOADERS** / **esbuild**).
-  **`getRouteComponentPath`** in **`src/feature/csr-client-route-manifest.ts`**
-  now normalizes with **`normalizePathForCompare`**, uses a **case-insensitive**
-  `routesDir/` prefix to slice the component segment, and falls back if
-  `relative` still returns an absolute path (Windows CI, e.g. GHA
-  `D:/a/dweb/...`).
+- **Windows + CSR client + Router manifest (ROUTE_LOADERS)**: on **Bun** /
+  **GHA** `D:/` paths, `path.relative` or string prefix could still leave
+  `componentPath` and generated **`_client.dep.tsx`** keys/imports as
+  `D:/.../routes/...`, breaking **esbuild** (`import("./routes/D:/...")`).
+  - **`src/utils/path.ts`**: **`extractComponentPathFromRouteFile`** now falls
+    back to **`path.relative`** after `resolve` (and
+    **`realPathWithMissingSegments`** on Windows) and to
+    **`subpathFromRoutesDirMarker`**, and **no longer** returns a full
+    drive-letter string on failure.
+  - **`subpathFromRoutesDirMarker`**: takes the subpath after the last
+    `.../routes/…` in the file path.
+  - **`src/feature/csr-client-builder.ts`**: **`routeLoaderKeyForClientDep`**
+    rejects absolute-looking keys and uses the same marker before **`"index"`**
+    (JSON-safe **`import(`./routes/...`)** strings).
+  - **`src/feature/csr-client-route-manifest.ts`**: **`getRouteComponentPath`**
+    still hardens `relative` / prefix;
+    **`collectRouteClientManifestFromRouter`** now returns
+    **`sanitizeClientRouteComponents`**, and sanitize uses **`extract` +
+    `subpathFromRoutesDirMarker`**; **`getRouteClientManifest`** no longer
+    double-sanitizes the Router branch.
 
 ### Tests
 
 - **`tests/unit/path.test.ts`**: `resolveRouterRoutesDirPath` for default
-  `./src/routes`, duplicate-segment (e.g. `frontend`) fallback, and absolute
-  `routesDir`.
+  `./src/routes`, duplicate-segment (e.g. `frontend`) fallback, absolute
+  `routesDir`, and a **GHA-style** D: path with mismatched `routesDir` that
+  still yields **`about`** from the `routes` marker.
 - **`tests/unit/csr-client-route-manifest.test.ts`**: D: drive `fullPath` and
   `routesDir` yield `componentPath` **`about`**, not a path with a drive letter.
+- **`tests/unit/csr-client-builder.test.ts`**: Windows `componentPath` with full
+  D: `routes` string still emits relative **`./routes/about.tsx`** in generated
+  client dep.
 
 ## [3.4.3] - 2026-04-26
 

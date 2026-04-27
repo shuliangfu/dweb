@@ -1859,10 +1859,12 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ### [3.4.4] - 2026-04-27
 
-**Fixed** — **`resolveRouterRoutesDirPath`**: flat/monorepo **cwd** vs
-**`router.routesDir`**. **CSR manifest** (**`getRouteComponentPath`**): Windows
-CI no longer generates **`import("./routes/D:/...")`** in **ROUTE_LOADERS**.
-Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Fixed** — **`resolveRouterRoutesDirPath`** (flat **cwd** vs
+**`router.routesDir`**). **Windows CSR client**
+(**`extractComponentPathFromRouteFile`**, **`routeLoaderKey`**,
+**`collectRouteClientManifestFromRouter` + sanitize**): **ROUTE_LOADERS** and
+**`_client.dep.tsx`** no longer use **`D:/...`** in **`import(`./routes/...`)`**
+on CI/Bun. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 
