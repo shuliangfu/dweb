@@ -76,4 +76,31 @@ describe("CSR 客户端路由 manifest (csr-client-route-manifest.ts)", () => {
       await remove(projectRoot, { recursive: true });
     }
   });
+
+  it("Windows: Router fullPath 为 D: 盘绝对路径时 componentPath 须为相对 routes 段，避免 D:/ 误入 ROUTE_LOADERS key", () => {
+    const routesDirPath =
+      "D:/a/dweb/dweb/examples/preact-ssr/advanced/src/frontend/routes";
+    const aboutPath = `${routesDirPath}/about.tsx`;
+    const router = {
+      getRoutes: () => [
+        {
+          path: "/about",
+          file: "about.tsx",
+          fullPath: aboutPath,
+          isApi: false,
+          isSpecial: false,
+        },
+      ],
+      getLayoutKeysForPath: () => [],
+    } as unknown as Router;
+
+    const manifest = collectRouteClientManifestFromRouter(
+      router,
+      routesDirPath,
+    );
+
+    expect(manifest.components.length).toBe(1);
+    expect(manifest.components[0].componentPath).toBe("about");
+    expect(manifest.components[0].componentPath).not.toMatch(/[A-Z]:\//);
+  });
 });

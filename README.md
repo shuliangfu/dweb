@@ -1859,11 +1859,10 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ### [3.4.4] - 2026-04-27
 
-**Fixed** — **`resolveRouterRoutesDirPath`**: correct **`router.routesDir`**
-when **cwd** is the app subfolder but the config still uses a
-**parent-relative** path (e.g. `./frontend/routes`), avoiding
-`.../frontend/frontend/routes`; unified across router, **load data**, render,
-build, and dev watch. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Fixed** — **`resolveRouterRoutesDirPath`**: flat/monorepo **cwd** vs
+**`router.routesDir`**. **CSR manifest** (**`getRouteComponentPath`**): Windows
+CI no longer generates **`import("./routes/D:/...")`** in **ROUTE_LOADERS**.
+Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

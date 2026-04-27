@@ -27,12 +27,24 @@ and this project adheres to
   **routes** middleware registration, **SSG** hydration pass, and **dev**
   **`server.dev.watch`** inference so route scanning, data loading, and client
   bundles agree on the routes directory.
+- **Windows + `collectRouteClientManifestFromRouter`**: `path.relative` from
+  routes directory to a route file could return a **drive-letter absolute**
+  string when path forms differ, so `componentPath` became `D:/.../routes/about`
+  and the generated client script contained invalid imports such as
+  `import("./routes/D:/.../about.tsx")` (**ROUTE_LOADERS** / **esbuild**).
+  **`getRouteComponentPath`** in **`src/feature/csr-client-route-manifest.ts`**
+  now normalizes with **`normalizePathForCompare`**, uses a **case-insensitive**
+  `routesDir/` prefix to slice the component segment, and falls back if
+  `relative` still returns an absolute path (Windows CI, e.g. GHA
+  `D:/a/dweb/...`).
 
 ### Tests
 
 - **`tests/unit/path.test.ts`**: `resolveRouterRoutesDirPath` for default
   `./src/routes`, duplicate-segment (e.g. `frontend`) fallback, and absolute
   `routesDir`.
+- **`tests/unit/csr-client-route-manifest.test.ts`**: D: drive `fullPath` and
+  `routesDir` yield `componentPath` **`about`**, not a path with a drive letter.
 
 ## [3.4.3] - 2026-04-26
 

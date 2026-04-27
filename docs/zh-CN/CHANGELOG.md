@@ -22,11 +22,22 @@
   。**`initializeRouter`**、**`createLoadDataMiddleware`**、各
   **CSR/SSR/Hybrid** 渲染、 **build / CSR 客户端**、**routes 中间件**、**SSG
   注入**、**开发 watch** 等统一 使用该解析，与路由扫描一致。
+- **Windows + `collectRouteClientManifestFromRouter`**：仅依赖 `path.relative`
+  时，在盘符/形态差异常退回**带 `D:/` 的“绝对”串**， **`componentPath`** 错成
+  `D:/.../routes/about`，生成 **`ROUTE_LOADERS`** 的
+  `import("./routes/D:/.../about.tsx")`，**esbuild** 无法解析。在
+  **`src/feature/csr-client-route-manifest.ts`** 的 **`getRouteComponentPath`**
+  中已用 **`normalizePathForCompare`** 收束，并以 **大小写不敏感**的 `routes`
+  目录前缀截断；若 `relative` 仍返回绝对盘符 路径则再收束（覆盖 Windows CI 如
+  GHA 下路径）。
 
 ### 测试
 
 - **`tests/unit/path.test.ts`**：对 **`resolveRouterRoutesDirPath`** 的默认
   `src/routes`、**重复首段**（如 `frontend`）回退、**绝对** `routesDir` 的用例。
+- **`tests/unit/csr-client-route-manifest.test.ts`**：模拟 `D:` 盘
+  **fullPath**， **`componentPath` 为 `about`** 且**不含**盘符段，避免
+  **ROUTE_LOADERS** 键 错误。
 
 ## [3.4.3] - 2026-04-26
 

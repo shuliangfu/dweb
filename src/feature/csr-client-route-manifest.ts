@@ -6,6 +6,7 @@
 import { createRouter, type Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import { cwd, join, readdir, relative } from "../core/runtime-adapter.ts";
+import { normalizePathForCompare } from "../utils/path.ts";
 
 /** 路由组件信息 */
 export interface RouteComponentInfo {
@@ -75,6 +76,11 @@ function normalizeRouteFilePath(raw: string, routesDirPath: string): string {
 /**
  * 将绝对文件路径转换为相对 routes 目录的组件路径。
  *
+ * Windows + CI：若仅依赖 {@link relative}，在**短名/长名、逐字与常规路径**混用时会退回
+ * **带盘符的“绝对”串**，进而把整段 `D:/.../routes/about` 错当成 `componentPath`，
+ * 生成 `import("./routes/D:/...")` 在 esbuild 中无法解析。因此先用
+ * {@link normalizePathForCompare} 对两端收束，再取 `routes` 之后子路径。
+ *
  * @param routeFilePath 路由文件绝对路径
  * @param routesDirPath routes 目录绝对路径
  */
@@ -82,12 +88,30 @@ function getRouteComponentPath(
   routeFilePath: string,
   routesDirPath: string,
 ): string {
+  const normRoutes = normalizePathForCompare(routesDirPath);
+  const normFile = normalizePathForCompare(routeFilePath);
+  if (normFile === normRoutes) {
+    return "";
+  }
+  /** 目录前缀**大小写不敏感**比较，避免 Windows 上盘符/短长名经 resolve 后仍与 page 略不一致。 */
+  const dirPrefix = normRoutes + "/";
+  if (normFile.toLowerCase().startsWith(dirPrefix.toLowerCase())) {
+    return normFile.slice(dirPrefix.length);
+  }
   let rel = relative(routesDirPath, routeFilePath).replace(/\\/g, "/");
+  /**
+   * `path.relative` 仍给 `D:/...` 等「绝对」串时，以归一化后字符串按前缀再截断。
+   */
+  if (rel && /^[A-Za-z]:\//.test(rel) && !rel.startsWith("..")) {
+    if (normFile.toLowerCase().startsWith(dirPrefix.toLowerCase())) {
+      rel = normFile.slice(dirPrefix.length);
+    }
+  }
   const routesDirParts = routesDirPath.replace(/\\/g, "/").split("/")
     .filter(Boolean);
   for (let len = Math.min(routesDirParts.length, 4); len >= 1; len--) {
     const prefix = routesDirParts.slice(-len).join("/");
-    if (rel.startsWith(`${prefix}/`)) {
+    if (rel.length > 0 && rel.startsWith(`${prefix}/`)) {
       rel = rel.slice(prefix.length + 1);
       break;
     }

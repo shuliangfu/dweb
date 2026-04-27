@@ -1926,10 +1926,10 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ### [3.4.4] - 2026-04-27
 
-**修复** — **`resolveRouterRoutesDirPath`**：在 **cwd 已是应用子目录** 而
-**`router.routesDir`** 仍相对上一级（如 `./frontend/routes`）时，避免拼出
-`frontend/frontend/routes`；路由、**`__data`**、渲染、构建、watch 统一解析。完整
-记录见 [CHANGELOG.md](./CHANGELOG.md)。
+**修复** — **`resolveRouterRoutesDirPath`** （多包/扁平 **cwd** 与
+**`router.routesDir`**）；**CSR 路由 manifest**
+（**`getRouteComponentPath`**，Windows 上避免 **`import("./routes/D:/...")`**
+误入 **ROUTE_LOADERS**）。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 
