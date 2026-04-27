@@ -102,12 +102,43 @@ function getRelativeToRoutesDirBySegments(
 }
 
 /**
+ * 在**未**调用 `resolve` 的路径上，按「`routes` 目录为父、`file` 为子」从字符串剥子路径。
+ *
+ * Windows 上 `normalizePathForCompare` 内部的 `resolve` 可能把**同一目录**展成
+ * 8.3/逐字/常规等不同形态，导致归一后整串/按段 与 `routes` 均对不齐；而 Router
+ * 的 `fullPath` 与当前 `routesDirPath` 往往本为同一套字面母串。故先对只做了
+ * 反斜杠→`/` 的两端做**定界**前缀：必须 `file[routesLen]==="/"`，避免 `C:/a` 误
+ * 匹配 `C:/ab/...`。
+ *
+ * @param routeFilePath 路由文件绝对路径
+ * @param routesDirPath routes 目录绝对路径
+ * @returns 相对子路径，无法判定为父子关系时返回 `null`
+ */
+function getRouteComponentPathBeforeResolve(
+  routeFilePath: string,
+  routesDirPath: string,
+): string | null {
+  const f = routeFilePath.replace(/\\/g, "/");
+  const r = routesDirPath.replace(/\\/g, "/").replace(/\/+$/g, "");
+  if (f.length <= r.length) {
+    return null;
+  }
+  if (f[r.length] !== "/") {
+    return null;
+  }
+  if (f.slice(0, r.length).toLowerCase() !== r.toLowerCase()) {
+    return null;
+  }
+  return f.slice(r.length + 1);
+}
+
+/**
  * 将绝对文件路径转换为相对 routes 目录的组件路径。
  *
  * Windows + CI：若仅依赖 {@link relative}，在**短名/长名、逐字与常规路径**混用时会退回
  * **带盘符的“绝对”串**，进而把整段 `D:/.../routes/about` 错当成 `componentPath`，
- * 生成 `import("./routes/D:/...")` 在 esbuild 中无法解析。因此先用
- * {@link normalizePathForCompare} 对两端收束，再取 `routes` 之后子路径。
+ * 生成 `import("./routes/D:/...")` 在 esbuild 中无法解析。故先尝试
+ * {@link getRouteComponentPathBeforeResolve}，再用 {@link normalizePathForCompare} 收束。
  *
  * @param routeFilePath 路由文件绝对路径
  * @param routesDirPath routes 目录绝对路径
@@ -116,6 +147,13 @@ function getRouteComponentPath(
   routeFilePath: string,
   routesDirPath: string,
 ): string {
+  const rawRel = getRouteComponentPathBeforeResolve(
+    routeFilePath,
+    routesDirPath,
+  );
+  if (rawRel !== null) {
+    return rawRel;
+  }
   const normRoutes = normalizePathForCompare(routesDirPath);
   const normFile = normalizePathForCompare(routeFilePath);
   if (normFile === normRoutes) {
