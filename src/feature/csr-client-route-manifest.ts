@@ -93,18 +93,42 @@ function getRouteComponentPath(
   if (normFile === normRoutes) {
     return "";
   }
-  /** 目录前缀**大小写不敏感**比较，避免 Windows 上盘符/短长名经 resolve 后仍与 page 略不一致。 */
-  const dirPrefix = normRoutes + "/";
-  if (normFile.toLowerCase().startsWith(dirPrefix.toLowerCase())) {
-    return normFile.slice(dirPrefix.length);
+  const nLower = normRoutes.toLowerCase();
+  /**
+   * 1) 固定长度、大小写不敏感前缀（真实 Windows 上比 `f.startsWith(r+/)` 稳，避免
+   * `D:`/逐字/短长名在归一后仍略不一致时首段 `startsWith` 失败，退回整段绝对路径）。
+   */
+  const n = normRoutes.length;
+  if (
+    normFile.length > n &&
+    normFile[n] === "/" &&
+    normFile.slice(0, n).toLowerCase() === nLower
+  ) {
+    return normFile.slice(n + 1);
+  }
+  /**
+   * 2) 同 {@link getComponentPathFromFilePath}：`includes` + `indexOf`（不假设首字符
+   * 在 index 0 上两种归一后字节级对齐）。
+   */
+  const fLower = normFile.toLowerCase();
+  if (fLower.length > 0) {
+    const withSlash = fLower.indexOf(nLower + "/");
+    if (withSlash === 0) {
+      return normFile.slice(nLower.length + 1);
+    }
   }
   let rel = relative(routesDirPath, routeFilePath).replace(/\\/g, "/");
-  /**
-   * `path.relative` 仍给 `D:/...` 等「绝对」串时，以归一化后字符串按前缀再截断。
-   */
   if (rel && /^[A-Za-z]:\//.test(rel) && !rel.startsWith("..")) {
-    if (normFile.toLowerCase().startsWith(dirPrefix.toLowerCase())) {
-      rel = normFile.slice(dirPrefix.length);
+    if (
+      normFile.length > n && normFile[n] === "/" &&
+      normFile.slice(0, n).toLowerCase() === nLower
+    ) {
+      rel = normFile.slice(n + 1);
+    } else {
+      const pos = fLower.indexOf(nLower + "/");
+      if (pos === 0) {
+        rel = normFile.slice(nLower.length + 1);
+      }
     }
   }
   const routesDirParts = routesDirPath.replace(/\\/g, "/").split("/")
