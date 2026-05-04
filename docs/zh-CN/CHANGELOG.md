@@ -7,6 +7,20 @@
 
 ---
 
+## [3.5.0] - 2026-05-04
+
+### 变更
+
+- **依赖**（主包 **`deno.json`** / **`package.json`**）：上调
+  **`@dreamer/database`** (^1.1.0)、**`@dreamer/server`**
+  (^1.1.6)、**`@dreamer/socket-io`** (^1.1.0)，以及 npm **`postcss`**
+  (^8.5.13)、**`cssnano`** (^7.1.8) 的版本范围。
+
+### 仅仓库（不参与 JSR 包体）
+
+- **示例**：**`examples/view-hybrid/basic`** 将 **`@dreamer/server`** 对齐至
+  ^1.1.6。
+
 ## [3.4.9] - 2026-04-27
 
 ### 变更

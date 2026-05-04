@@ -8,6 +8,20 @@ and this project adheres to
 
 ---
 
+## [3.5.0] - 2026-05-04
+
+### Changed
+
+- **Dependencies** (main `deno.json` / `package.json`): raised ranges for
+  **`@dreamer/database`** (^1.1.0), **`@dreamer/server`** (^1.1.6),
+  **`@dreamer/socket-io`** (^1.1.0), **`postcss`** (^8.5.13), and **`cssnano`**
+  (^7.1.8).
+
+### Repository-only
+
+- **Examples** (not shipped on JSR): **`examples/view-hybrid/basic`** aligned
+  **`@dreamer/server`** to ^1.1.6.
+
 ## [3.4.9] - 2026-04-27
 
 ### Changed

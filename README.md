@@ -1857,11 +1857,12 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.4.9] - 2026-04-27
+### [3.5.0] - 2026-05-04
 
-**Changed** — CLI: removed per-config port info logs before `dev`/`start` spawn;
-single-app `dweb dev` shows **`dev.startingSingle`** before the task (aligned
-with **`start.startingSingle`**). Full history:
+**Changed** — Raised **`@dreamer/database`**, **`@dreamer/server`**,
+**`@dreamer/socket-io`**, **`postcss`**, and **`cssnano`** ranges in the main
+manifests; repo-only **`examples/view-hybrid/basic`** bumps
+**`@dreamer/server`** to ^1.1.6. Full history:
 [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---

@@ -1924,12 +1924,13 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.4.9] - 2026-04-27
+### [3.5.0] - 2026-05-04
 
-**变更** — **CLI**（`dweb dev` / `dweb start`）：去掉 spawn 前由
-**`config.server`** 打印端口的 **ℹ** 行；**单应用** `dweb dev`
-在启动任务前会输出 **`dev.startingSingle`**（与单应用 **`dweb start`** 的
-**`start.startingSingle`** 对称）。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
+**变更** — 主清单上调
+**`@dreamer/database`**、**`@dreamer/server`**、**`@dreamer/socket-io`**、**`postcss`**、**`cssnano`**
+的版本范围；仓库内示例 **`examples/view-hybrid/basic`** 将 **`@dreamer/server`**
+对齐至 ^1.1.6（不参与 JSR 发布包体）。完整记录见
+[CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 
