@@ -1924,13 +1924,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.5.0] - 2026-05-04
+### [3.5.1] - 2026-05-05
 
-**变更** — 主清单上调
-**`@dreamer/database`**、**`@dreamer/server`**、**`@dreamer/socket-io`**、**`postcss`**、**`cssnano`**
-的版本范围；仓库内示例 **`examples/view-hybrid/basic`** 将 **`@dreamer/server`**
-对齐至 ^1.1.6（不参与 JSR 发布包体）。完整记录见
-[CHANGELOG.md](./CHANGELOG.md)。
+**修复** — 生成客户端 **`_client.dep.tsx`** 时，若内存 **`Router`**
+滞后于磁盘（已删页面仍留在路由表），不再对已删除的 **`routes/*.tsx`** 生成
+import，并与目录扫描合并。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

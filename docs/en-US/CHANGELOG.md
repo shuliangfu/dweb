@@ -8,6 +8,19 @@ and this project adheres to
 
 ---
 
+## [3.5.1] - 2026-05-05
+
+### Fixed
+
+- **Client bundle manifest** (`getRouteClientManifest`,
+  `src/feature/csr-client-route-manifest.ts`): when reusing the app `Router`
+  from the service container, entries whose route files **no longer exist on
+  disk** are dropped (e.g. after deleting a page during dev hot reload), then
+  merged with a fresh filesystem scan so new pages are included. Layout keys
+  always come from a current `routes` directory scan. Prevents generated
+  `_client.dep.tsx` from importing missing `./routes/*.tsx` and breaking the
+  client esbuild step.
+
 ## [3.5.0] - 2026-05-04
 
 ### Changed

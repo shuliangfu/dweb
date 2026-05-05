@@ -1857,13 +1857,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.5.0] - 2026-05-04
+### [3.5.1] - 2026-05-05
 
-**Changed** — Raised **`@dreamer/database`**, **`@dreamer/server`**,
-**`@dreamer/socket-io`**, **`postcss`**, and **`cssnano`** ranges in the main
-manifests; repo-only **`examples/view-hybrid/basic`** bumps
-**`@dreamer/server`** to ^1.1.6. Full history:
-[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Fixed** — Client **`_client.dep.tsx`** generation no longer imports deleted
+route files when the in-memory **Router** is stale; merges with a filesystem
+scan. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 
