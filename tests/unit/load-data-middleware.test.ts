@@ -26,6 +26,28 @@ import {
 import type { AppConfig } from "../../src/types/app.ts";
 import { initializeLogger } from "../../src/utils/logger.ts";
 
+/**
+ * 注册测试用最小 App 实例，满足渲染与 load-data 中间件对 `container.get("app")` 的依赖。
+ *
+ * @param container 服务容器。
+ */
+function registerMockApp(
+  container: ReturnType<typeof initializeServiceContainer>,
+) {
+  container.registerSingleton("app", () => ({
+    name: "test-app",
+    version: "0.0.0",
+    container,
+    stage: "init",
+    use() {},
+    registerPlugin() {},
+    on() {},
+    start: async () => {},
+    stop: async () => {},
+    shutdown: async () => {},
+  }));
+}
+
 /** 创建测试用 HttpContext，并记录 next 是否被调用。 */
 function mockContext(pathname: string, method = "GET") {
   let nextCalled = false;
@@ -110,6 +132,7 @@ export function load() {
 
   function createMiddleware(router: Router) {
     const container = initializeServiceContainer();
+    registerMockApp(container);
     const config: AppConfig = {
       router: { routesDir },
       render: { engine: "view" },

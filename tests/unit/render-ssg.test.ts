@@ -18,10 +18,33 @@ import { createRendererSSG } from "../../src/feature/render-ssg.ts";
 import { initializeRender } from "../../src/feature/render.ts";
 import type { AppConfig } from "../../src/types/app.ts";
 
+/**
+ * 注册测试用最小 App 实例，满足渲染器对 `container.get("app")` 的依赖。
+ *
+ * @param container 服务容器。
+ */
+function registerMockApp(
+  container: ReturnType<typeof initializeServiceContainer>,
+) {
+  container.registerSingleton("app", () => ({
+    name: "test-app",
+    version: "0.0.0",
+    container,
+    stage: "init",
+    use() {},
+    registerPlugin() {},
+    on() {},
+    start: async () => {},
+    stop: async () => {},
+    shutdown: async () => {},
+  }));
+}
+
 describe("SSG 渲染器 (render-ssg.ts)", () => {
   describe("createRendererSSG()", () => {
     it("应返回函数", () => {
       const container = initializeServiceContainer();
+      registerMockApp(container);
       /** 显式指定 outputDir，避免 Bun 下 getInferredBuildOutputDirs 因 process.argv 路径段数不符而抛错 */
       const config: AppConfig = {
         render: { ssg: { outputDir: "dist/client" } },
@@ -39,6 +62,7 @@ describe("SSG 渲染器 (render-ssg.ts)", () => {
 
     it("返回的函数应接受 (ctx, match) 两个参数", () => {
       const container = initializeServiceContainer();
+      registerMockApp(container);
       /** 显式指定 outputDir，避免 Bun 下 getInferredBuildOutputDirs 因 process.argv 路径段数不符而抛错 */
       const config: AppConfig = {
         render: { ssg: { outputDir: "dist/client" } },
@@ -56,6 +80,7 @@ describe("SSG 渲染器 (render-ssg.ts)", () => {
 
     it("match.isApi 为 true 时应返回 null", async () => {
       const container = initializeServiceContainer();
+      registerMockApp(container);
       const config: AppConfig = {
         render: { ssg: { outputDir: "dist/client" } },
       };
@@ -97,6 +122,7 @@ describe("SSG 渲染器 (render-ssg.ts)", () => {
         if (isDev) return; // 开发环境走 SSR，跳过
 
         const container = initializeServiceContainer();
+        registerMockApp(container);
         const config: AppConfig = {
           render: { ssg: { outputDir } },
         };

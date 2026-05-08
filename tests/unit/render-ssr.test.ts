@@ -25,10 +25,33 @@ import { createRendererSSR } from "../../src/feature/render-ssr.ts";
 import { initializeRender } from "../../src/feature/render.ts";
 import type { AppConfig } from "../../src/types/app.ts";
 
+/**
+ * 注册测试用最小 App 实例，满足渲染器对 `container.get("app")` 的依赖。
+ *
+ * @param container 服务容器。
+ */
+function registerMockApp(
+  container: ReturnType<typeof initializeServiceContainer>,
+) {
+  container.registerSingleton("app", () => ({
+    name: "test-app",
+    version: "0.0.0",
+    container,
+    stage: "init",
+    use() {},
+    registerPlugin() {},
+    on() {},
+    start: async () => {},
+    stop: async () => {},
+    shutdown: async () => {},
+  }));
+}
+
 describe("SSR 渲染器 (render-ssr.ts)", () => {
   describe("createRendererSSR()", () => {
     it("应返回函数", () => {
       const container = initializeServiceContainer();
+      registerMockApp(container);
       const config: AppConfig = {};
       container.registerSingleton("config", () => config);
       initializeRender(container, config);
@@ -43,6 +66,7 @@ describe("SSR 渲染器 (render-ssr.ts)", () => {
 
     it("返回的函数应接受 (ctx, match) 两个参数", () => {
       const container = initializeServiceContainer();
+      registerMockApp(container);
       const config: AppConfig = {};
       container.registerSingleton("config", () => config);
       initializeRender(container, config);
@@ -57,6 +81,7 @@ describe("SSR 渲染器 (render-ssr.ts)", () => {
 
     it("match.isApi 为 true 时应返回 null", async () => {
       const container = initializeServiceContainer();
+      registerMockApp(container);
       const config: AppConfig = {};
       container.registerSingleton("config", () => config);
       initializeRender(container, config);
@@ -82,6 +107,7 @@ describe("SSR 渲染器 (render-ssr.ts)", () => {
 
     it("loadRouteModule 返回 null（路径在项目外）时应返回 null", async () => {
       const container = initializeServiceContainer();
+      registerMockApp(container);
       const config: AppConfig = {};
       container.registerSingleton("config", () => config);
       initializeRender(container, config);
@@ -130,6 +156,7 @@ describe("SSR 渲染器 (render-ssr.ts)", () => {
 
       it("pageModule 存在但无 default 和 Page 时应返回 null", async () => {
         const container = initializeServiceContainer();
+        registerMockApp(container);
         const config: AppConfig = {};
         container.registerSingleton("config", () => config);
         initializeRender(container, config);

@@ -14,10 +14,33 @@ import { createRendererCSR } from "../../src/feature/render-csr.ts";
 import { initializeRender } from "../../src/feature/render.ts";
 import type { AppConfig } from "../../src/types/app.ts";
 
+/**
+ * 注册测试用最小 App 实例，满足渲染器对 `container.get("app")` 的依赖。
+ *
+ * @param container 服务容器。
+ */
+function registerMockApp(
+  container: ReturnType<typeof initializeServiceContainer>,
+) {
+  container.registerSingleton("app", () => ({
+    name: "test-app",
+    version: "0.0.0",
+    container,
+    stage: "init",
+    use() {},
+    registerPlugin() {},
+    on() {},
+    start: async () => {},
+    stop: async () => {},
+    shutdown: async () => {},
+  }));
+}
+
 describe("CSR 渲染器 (render-csr.ts)", () => {
   describe("createRendererCSR()", () => {
     it("应返回函数", () => {
       const container = initializeServiceContainer();
+      registerMockApp(container);
       const config: AppConfig = { name: "test" };
       initializeRender(container, config);
 
@@ -31,6 +54,7 @@ describe("CSR 渲染器 (render-csr.ts)", () => {
 
     it("应接受 container、router、config 三个参数", () => {
       const container = initializeServiceContainer();
+      registerMockApp(container);
       const config: AppConfig = {};
       initializeRender(container, config);
 
@@ -44,6 +68,7 @@ describe("CSR 渲染器 (render-csr.ts)", () => {
 
     it("match.isApi 为 true 时应返回 null", async () => {
       const container = initializeServiceContainer();
+      registerMockApp(container);
       const config: AppConfig = { name: "test" };
       initializeRender(container, config);
 
