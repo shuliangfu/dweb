@@ -1924,12 +1924,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.5.3] - 2026-05-08
+### [3.5.4] - 2026-05-09
 
-**修复** — View HMR 会重新获取 `load()` / layout 数据且不卸载 reactive root；
-不再用强制整页刷新作为常规兜底；全局 CSS
-链接在新样式加载成功后再替换，避免样式闪动。 **变更** — React / react-dom
-模板基准统一为 `^19.2.6`；**@dreamer/render** 升至 ^1.1.8。完整记录见
+**修复** — 开发态 HMR 能识别「仅末段命名」的多段路由 chunk（如
+`create-<hash>.js`），恢复 **`routeChunkUrls`** 与热更新，避免浏览器沿用旧模块。
+**新增** — 相关单测；**`getChunkFileNameForComponent`** 导出。完整记录见
 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---

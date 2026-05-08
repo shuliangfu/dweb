@@ -7,6 +7,27 @@
 
 ---
 
+## [3.5.4] - 2026-05-09
+
+### 修复
+
+- **开发态 HMR chunk 映射**（`src/feature/csr-client-builder.ts`，
+  **`getChunkFileNameForComponent`**）：多段路由产物有时仅为**末段文件名**（如
+  `workspace/projects/create.tsx` → `create-<hash>.js`），旧逻辑匹配失败导致
+  **`routeChunkUrls`** 为空，客户端退回裸 `import()`，浏览器继续缓存旧模块。
+  现增加「**末段唯一候选**」回退：仅当匹配到的 chunk 唯一时才采纳，恢复类似
+  **`/workspace/projects/create`** 等深层路由的热更新。
+
+### 变更
+
+- **导出**：**`getChunkFileNameForComponent`** 现从 **`csr-client-builder.ts`**
+  导出，便于单测与外部工具使用。
+
+### 新增
+
+- **测试**（**`tests/unit/csr-client-builder.test.ts`**）：覆盖末段 chunk 解析与
+  多候选时不误匹配的场景。
+
 ## [3.5.3] - 2026-05-08
 
 ### 修复

@@ -8,6 +8,29 @@ and this project adheres to
 
 ---
 
+## [3.5.4] - 2026-05-09
+
+### Fixed
+
+- **Dev HMR chunk mapping** (`src/feature/csr-client-builder.ts`,
+  `getChunkFileNameForComponent`): when esbuild emits a **basename-only** chunk
+  for a multi-segment route (e.g. `workspace/projects/create.tsx` →
+  `create-<hash>.js`), the matcher previously returned no file, leaving
+  `routeChunkUrls` empty so the client fell back to a bare dynamic `import()`
+  and the browser kept serving a stale module. A **unique last-segment**
+  fallback now resolves the chunk when exactly one candidate matches, restoring
+  hot reload for deep routes such as `/workspace/projects/create`.
+
+### Changed
+
+- **Exports** (`getChunkFileNameForComponent`): function is now **exported**
+  from `csr-client-builder.ts` for unit tests and advanced tooling.
+
+### Added
+
+- **Tests** (`tests/unit/csr-client-builder.test.ts`): coverage for the
+  last-segment HMR chunk resolution case.
+
 ## [3.5.3] - 2026-05-08
 
 ### Fixed

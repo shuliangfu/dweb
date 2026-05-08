@@ -14,6 +14,7 @@ import {
   createClientScriptMiddleware,
   generateClientDepContent,
   getCachedClientScript,
+  getChunkFileNameForComponent,
 } from "../../src/feature/csr-client-builder.ts";
 import type { AppConfig } from "../../src/types/app.ts";
 import { initializeLogger } from "../../src/utils/logger.ts";
@@ -166,6 +167,26 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
       expect(code).toContain(`${JSON.stringify("about")}:`);
       expect(code).toContain(JSON.stringify("./routes/about.tsx"));
       expect(code).not.toContain("./routes/D:");
+    });
+  });
+
+  describe("getChunkFileNameForComponent()", () => {
+    it("深层路由产物仅为末段 create-*.js 时应命中 workspace/projects/create（HMR routeChunkUrls）", () => {
+      const names = [
+        "_client.js",
+        "workspace-index-ABCDEF.js",
+        "create-XYZABC1.js",
+      ];
+      expect(
+        getChunkFileNameForComponent("workspace/projects/create", names),
+      ).toBe("create-XYZABC1.js");
+    });
+
+    it("末段同名多 chunk 时不应采用模糊匹配", () => {
+      const names = ["create-AAAAAA.js", "create-BBBBBB.js"];
+      expect(
+        getChunkFileNameForComponent("workspace/projects/create", names),
+      ).toBeNull();
     });
   });
 });

@@ -1857,13 +1857,13 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.5.3] - 2026-05-08
+### [3.5.4] - 2026-05-09
 
-**Fixed** — View HMR now refreshes `load()` / layout data without unmounting the
-reactive root, avoids forced full-page reload fallbacks, and swaps global CSS
-links only after the refreshed stylesheet is loaded. **Changed** — React /
-react-dom template baselines are aligned to `^19.2.6`; **@dreamer/render** is
-raised to ^1.1.8. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Fixed** — Dev HMR now resolves multi-segment routes whose esbuild chunk is
+named by the **last path segment only** (e.g. `create-<hash>.js`), so
+`routeChunkUrls` stays populated and updates apply without a stale module cache.
+**Added** — Tests and export for `getChunkFileNameForComponent`. Full history:
+[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

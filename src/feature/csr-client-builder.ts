@@ -186,7 +186,7 @@ function buildRouteChunkUrlMap(
  * esbuild 命名规则：about.tsx -> about-XXX.js；多段如 admin/index 可能为 admin-index-XXX.js 或 admin/index-XXX.js；
  * 根 index 可能为 routes-XXX.js。优先按完整路径匹配，避免 admin/index 误匹配到根 index 的 chunk。
  */
-function getChunkFileNameForComponent(
+export function getChunkFileNameForComponent(
   componentPath: string,
   outputFileNames: string[],
 ): string | null {
@@ -244,6 +244,27 @@ function getChunkFileNameForComponent(
       ) {
         return name;
       }
+    }
+    /**
+     * esbuild 对深层路由有时只产出「末段」文件名（如 workspace/projects/create.tsx → create-XXX.js），
+     * 上文按完整 pathVariants 匹配会失败，导致 routeChunkUrls 缺项、HMR 退回裸 import() 被浏览器缓存。
+     * 若按末段匹配的候选 chunk 唯一，则采纳该文件。
+     */
+    const lastSeg = segments[segments.length - 1] || "";
+    if (lastSeg) {
+      const lastSegCandidates = jsOnly.filter((name) => {
+        const base = name.slice(0, -3).replace(/\.js$/, "");
+        const baseNoHash = base.replace(/-[A-Za-z0-9]{6,10}$/, "");
+        const baseLastPart = base.includes("/") ? base.split("/").pop()! : base;
+        const baseLastNoHash = baseLastPart.replace(/-[A-Za-z0-9]{6,10}$/, "");
+        return (
+          baseNoHash === lastSeg ||
+          baseLastNoHash === lastSeg ||
+          base.startsWith(lastSeg + "-") ||
+          baseLastPart.startsWith(lastSeg + "-")
+        );
+      });
+      if (lastSegCandidates.length === 1) return lastSegCandidates[0];
     }
     return null;
   }
