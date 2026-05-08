@@ -9,6 +9,7 @@
  */
 
 import "../setup.ts";
+import { createServiceContainer } from "@dreamer/service";
 import { describe, expect, it } from "@dreamer/test";
 import {
   createLoadContext,
@@ -17,6 +18,30 @@ import {
   parseCookies,
   pathnameFromLoadUrl,
 } from "../../src/types/context.ts";
+import type { IApp } from "../../src/types/app.ts";
+
+/**
+ * 创建测试用 dweb 上下文对象。
+ *
+ * @returns 最小可用的 app 与 container。
+ */
+function createTestDwebContext() {
+  const container = createServiceContainer();
+  const app = {
+    name: "test-app",
+    version: "0.0.0",
+    container,
+    stage: "init",
+    use() {},
+    registerPlugin() {},
+    on() {},
+    start: async () => {},
+    stop: async () => {},
+    shutdown: async () => {},
+  } as unknown as IApp;
+  container.registerSingleton("app", () => app);
+  return { app, container };
+}
 
 describe("context.ts", () => {
   describe("parseCookies()", () => {
@@ -97,12 +122,15 @@ describe("context.ts", () => {
   });
 
   describe("createLoadContext()", () => {
+    const testDwebContext = createTestDwebContext();
+
     it("从 req 填充 method、headers、cookies 并包含 url/params/query/pathname/search/requestId", () => {
       const req = new Request("https://example.com/path?k=v", {
         method: "GET",
         headers: { Cookie: "sid=abc" },
       });
       const ctx = createLoadContext({
+        ...testDwebContext,
         req,
         url: "/path?k=v",
         params: {},
@@ -123,6 +151,8 @@ describe("context.ts", () => {
       expect(ctx.headers).toBe(req.headers);
       expect(ctx.session).toBeUndefined();
       expect(ctx.res).toBeUndefined();
+      expect(ctx.app).toBe(testDwebContext.app);
+      expect(ctx.container).toBe(testDwebContext.container);
     });
 
     it("可注入可选的 session 与 res", () => {
@@ -130,6 +160,7 @@ describe("context.ts", () => {
       const resp = createServerResponse();
       const session = { userId: "u1" } as { userId: string };
       const ctx = createLoadContext({
+        ...testDwebContext,
         req,
         url: "/",
         params: { id: "x" },
@@ -150,6 +181,7 @@ describe("context.ts", () => {
         },
       });
       const ctx = createLoadContext({
+        ...testDwebContext,
         req,
         url: "https://example.com/page?x=1",
         params: {},
@@ -174,6 +206,7 @@ describe("context.ts", () => {
 
     it("未传 req 时按 url 合成 Request，不抛错", () => {
       const ctx = createLoadContext({
+        ...testDwebContext,
         url: "/foo?a=1",
         params: {},
         query: { a: "1" },

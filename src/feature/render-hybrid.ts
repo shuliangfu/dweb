@@ -25,7 +25,7 @@ import {
   requestFromHttpContext,
 } from "../types/context.ts";
 import { cwd, getEnv } from "../core/runtime-adapter.ts";
-import type { AppConfig } from "../types/app.ts";
+import type { AppConfig, IApp } from "../types/app.ts";
 import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
@@ -97,6 +97,7 @@ export function createRendererHybrid(
   router: Router,
   config: AppConfig,
 ): (ctx: HttpContext, match: RouteMatch) => Promise<Response | null> {
+  const app = container.get<IApp>("app");
   // 获取渲染服务
   const renderService = getRender(container);
 
@@ -182,6 +183,8 @@ export function createRendererHybrid(
       };
 
       const loadContext = createLoadContext({
+        app,
+        container,
         req: requestFromHttpContext(ctx),
         url: ctx.url.href,
         params: match.params ?? {},

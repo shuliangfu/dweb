@@ -143,7 +143,7 @@ describe("init (cmd/init.ts)", () => {
       const denoJson = await readTextFile(join(testDir, "deno.json"));
       expect(denoJson).not.toContain('"name":');
 
-      // 验证各应用目录及 config/main.ts 包含对应应用名
+      // 验证各应用 config/main.ts 中 name 为「项目名-应用目录名」（如 test-multi-backend）
       for (const app of ["backend", "frontend"]) {
         expect(await exists(join(testDir, "src", app, "main.ts"))).toBe(true);
         expect(await exists(join(testDir, "src", app, "config", "main.ts")))
@@ -155,7 +155,7 @@ describe("init (cmd/init.ts)", () => {
         const appConfigTs = await readTextFile(
           join(testDir, "src", app, "config", "main.ts"),
         );
-        expect(appConfigTs).toContain(`name: "${app}"`);
+        expect(appConfigTs).toContain(`name: "test-multi-${app}"`);
       }
 
       await remove(parentDir, { recursive: true });

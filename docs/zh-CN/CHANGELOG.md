@@ -7,6 +7,29 @@
 
 ---
 
+## [3.5.2] - 2026-05-08
+
+### 新增
+
+- **路由 `load` 与文件路由 API 上下文**（`src/types/context.ts` 中
+  **`LoadContext`**、**`ApiContext`** / **`ApiRouteContext`**）：增加 **`app`**
+  （**`IApp`**）与
+  **`container`**（**`ServiceContainer`**），便于在路由模块内解析
+  框架服务。**`createLoadContext`** 现要求传入二者；CSR / hybrid / SSR 渲染与
+  **`createLoadDataMiddleware`** 均已注入。
+- **路由挂接服务器**（`src/core/app.ts`）：向 **`server.useRouter`** 传入
+  **`extendApiContext`**，使 API 路由处理器同样获得 **`app`** / **`container`**
+  （与 **@dreamer/server** ^1.1.7 对齐）。
+
+### 变更
+
+- **`dweb init` 多应用**（`src/cmd/init/templates/config.ts`）：各应用生成的
+  **`config/main.ts`** 中 **`name`** 为 **`${projectName}-${appName}`**（例如
+  **`book-backend`**），不再仅用应用目录名。
+- **依赖**（主 **`deno.json`** / **`package.json`**）：**@dreamer/server**
+  ^1.1.7、**react** / **react-dom** ^19.2.6、**postcss** ^8.5.14、**cssnano**
+  ^7.1.9。
+
 ## [3.5.1] - 2026-05-05
 
 ### 修复

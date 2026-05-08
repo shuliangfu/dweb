@@ -1857,11 +1857,13 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.5.1] - 2026-05-05
+### [3.5.2] - 2026-05-08
 
-**Fixed** — Client **`_client.dep.tsx`** generation no longer imports deleted
-route files when the in-memory **Router** is stale; merges with a filesystem
-scan. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Added** — **`LoadContext`** and API route context include **`app`** and
+**`container`**; **`server.useRouter`** receives **`extendApiContext`** for API
+handlers. **Changed** — Multi-app **`dweb init`** sets **`name`** to
+**`project-app`**; bumped **@dreamer/server**, React, postcss, cssnano. Full
+history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

@@ -8,6 +8,27 @@ and this project adheres to
 
 ---
 
+## [3.5.2] - 2026-05-08
+
+### Added
+
+- **Route `load` and file-route handler context** (`LoadContext`, `ApiContext`,
+  `ApiRouteContext` in `src/types/context.ts`): expose **`app`** (`IApp`) and
+  **`container`** (`ServiceContainer`) so route modules can resolve framework
+  services. **`createLoadContext`** now requires these; CSR, hybrid, SSR
+  renderers and **`createLoadDataMiddleware`** pass them through.
+- **Server router wiring** (`src/core/app.ts`): pass **`extendApiContext`** to
+  **`server.useRouter`** so API route handlers receive the same **`app`** /
+  **`container`** (aligned with **@dreamer/server** ^1.1.7).
+
+### Changed
+
+- **`dweb init` (multi-app)** (`src/cmd/init/templates/config.ts`): generated
+  per-app **`config/main.ts`** **`name`** is **`${projectName}-${appName}`**
+  (e.g. **`book-backend`**) instead of the app folder name only.
+- **Dependencies** (`deno.json` / `package.json`): **@dreamer/server** ^1.1.7,
+  **react** / **react-dom** ^19.2.6, **postcss** ^8.5.14, **cssnano** ^7.1.9.
+
 ## [3.5.1] - 2026-05-05
 
 ### Fixed

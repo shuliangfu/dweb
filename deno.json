@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "3.5.1",
+  "version": "3.5.2",
   "description": "A full-stack Web framework compatible with Deno and Bun, integrating @dreamer/* libraries for an out-of-the-box development experience.",
   "license": "Apache-2.0",
   "exports": {
@@ -56,7 +56,7 @@
     "@dreamer/render": "jsr:@dreamer/render@^1.1.7",
     "@dreamer/router": "jsr:@dreamer/router@^1.1.7",
     "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.0.18",
-    "@dreamer/server": "jsr:@dreamer/server@^1.1.6",
+    "@dreamer/server": "jsr:@dreamer/server@^1.1.7",
     "@dreamer/session": "jsr:@dreamer/session@^1.0.4",
     "@dreamer/service": "jsr:@dreamer/service@^1.0.2",
     "@dreamer/socket-io": "jsr:@dreamer/socket-io@^1.1.0",
@@ -66,12 +66,12 @@
     "@dreamer/websocket": "jsr:@dreamer/websocket@^1.0.6",
     "preact": "npm:preact@^10.29.1",
     "preact-render-to-string": "npm:preact-render-to-string@^6.6.7",
-    "react": "npm:react@^19.2.5",
-    "react-dom": "npm:react-dom@^19.2.5",
+    "react": "npm:react@^19.2.6",
+    "react-dom": "npm:react-dom@^19.2.6",
     "scheduler": "npm:scheduler@^0.27.0",
-    "postcss": "npm:postcss@^8.5.13",
+    "postcss": "npm:postcss@^8.5.14",
     "autoprefixer": "npm:autoprefixer@^10.5.0",
-    "cssnano": "npm:cssnano@^7.1.8"
+    "cssnano": "npm:cssnano@^7.1.9"
   },
   "tasks": {
     "setup": "deno run -A src/setup.ts",

@@ -40,7 +40,7 @@ import {
 } from "./render-utils.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
-import type { AppConfig } from "../types/app.ts";
+import type { AppConfig, IApp } from "../types/app.ts";
 
 /** load 结果短期缓存 TTL（毫秒），减轻重 I/O 的重复请求 */
 const LOAD_CACHE_TTL_MS = 1000;
@@ -92,6 +92,7 @@ export function createRendererSSR(
   router: Router,
   config: AppConfig,
 ): (ctx: HttpContext, match: RouteMatch) => Promise<Response | null> {
+  const app = container.get<IApp>("app");
   // 获取渲染服务与配置
   const renderService = getRender(container);
   const resolvedConfig = getConfig(container);
@@ -172,6 +173,8 @@ export function createRendererSSR(
 
       const url = ctx.url?.href || ctx.path;
       const loadContext = createLoadContext({
+        app,
+        container,
         req: requestFromHttpContext(ctx),
         url,
         params: match.params ?? {},

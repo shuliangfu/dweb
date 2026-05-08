@@ -21,7 +21,7 @@ import { jsx as viewJsx } from "@dreamer/view/jsx-runtime";
 import { createElement as createElementPreact } from "preact";
 import { createElement as createElementReact } from "react";
 import { cwd, getEnv } from "../core/runtime-adapter.ts";
-import type { AppConfig } from "../types/app.ts";
+import type { AppConfig, IApp } from "../types/app.ts";
 import {
   createLoadContext,
   createServerResponse,
@@ -101,6 +101,7 @@ export function createRendererCSR(
   router: Router,
   config: AppConfig,
 ): (ctx: unknown, match: RouteMatch) => Promise<Response | null> {
+  const app = container.get<IApp>("app");
   const renderService = getRender(container);
   const renderConfig = (config.render || {}) as {
     debug?: boolean;
@@ -208,6 +209,8 @@ export function createRendererCSR(
       // 为每个 _layout 模块调用 load（若存在），并将返回值作为该层 layout 的 props.data（CSR 首屏 shell 使用）
       /** Bun 等环境下 `ctx.request` 可能未挂接，与 hybrid 一致用 {@link requestFromHttpContext} 兜底 */
       const csrLoadContext = createLoadContext({
+        app,
+        container,
         req: requestFromHttpContext(ctx as HttpContext),
         url: ctx?.url?.href ?? ctx?.path ?? "/",
         params: match.params ?? {},
@@ -247,6 +250,8 @@ export function createRendererCSR(
         const pageModule = await loadRouteModule(fullPath, loadOpts);
         if (pageModule) {
           const loadContext = createLoadContext({
+            app,
+            container,
             req: requestFromHttpContext(ctx as HttpContext),
             url: ctx?.url?.href ?? ctx?.path ?? "/",
             params: match.params ?? {},

@@ -26,7 +26,13 @@ export function getConfigMainTs(
     : opts.useSrc
     ? "./src/routes"
     : "./routes";
-  const configName = appName ?? opts.projectName;
+  /**
+   * 多应用：全局展示名用「项目名-应用目录名」（如 book + backend → book-backend），
+   * 便于日志/监控区分；单应用仍为项目名称。
+   */
+  const configName = appName != null
+    ? `${opts.projectName}-${appName}`
+    : opts.projectName;
   const renderMode = opts.renderMode ?? "hybrid";
 
   if (appName) {

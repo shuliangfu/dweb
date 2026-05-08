@@ -1924,11 +1924,13 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.5.1] - 2026-05-05
+### [3.5.2] - 2026-05-08
 
-**修复** — 生成客户端 **`_client.dep.tsx`** 时，若内存 **`Router`**
-滞后于磁盘（已删页面仍留在路由表），不再对已删除的 **`routes/*.tsx`** 生成
-import，并与目录扫描合并。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
+**新增** — **`LoadContext`** 与 API 路由上下文包含 **`app`**、**`container`**；
+**`server.useRouter`** 传入 **`extendApiContext`**。**变更** — 多应用
+**`dweb init`** 的 **`name`** 为 **`项目名-应用名`**；上调
+**@dreamer/server**、React、postcss、 cssnano。完整记录见
+[CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

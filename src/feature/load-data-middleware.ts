@@ -16,7 +16,7 @@ import { type HttpContext, snapshotMatchedRoute } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import type { SessionData } from "@dreamer/session";
 import { cwd, dirname, resolve } from "../core/runtime-adapter.ts";
-import type { AppConfig } from "../types/app.ts";
+import type { AppConfig, IApp } from "../types/app.ts";
 import {
   createLoadContext,
   createServerResponse,
@@ -54,6 +54,7 @@ export function createLoadDataMiddleware(
   router: Router,
   _config: AppConfig,
 ): (ctx: HttpContext, next: () => Promise<void>) => Promise<void> {
+  const app = container.get<IApp>("app");
   const renderCfg = (_config.render || {}) as {
     engine?: "react" | "preact" | "view";
   };
@@ -143,6 +144,8 @@ export function createLoadDataMiddleware(
           ? "?" + new URLSearchParams(queryFromUrl).toString()
           : "");
       const loadContext = createLoadContext({
+        app,
+        container,
         req: requestFromHttpContext(ctx),
         url,
         params: match.params ?? {},

@@ -6,7 +6,12 @@
  * @module
  */
 
-import type { HttpContext, MatchedRouteSnapshot } from "@dreamer/server";
+import type {
+  ApiContext as ServerApiContext,
+  ApiRouteContext as ServerApiRouteContext,
+  HttpContext,
+  MatchedRouteSnapshot,
+} from "@dreamer/server";
 import {
   pathnameFromHref,
   resolveClientIp,
@@ -14,6 +19,8 @@ import {
   searchFromHref,
 } from "@dreamer/server";
 import type { SessionData } from "@dreamer/session";
+import type { ServiceContainer } from "@dreamer/service";
+import type { IApp } from "./app.ts";
 
 export type { MatchedRouteSnapshot };
 
@@ -82,6 +89,20 @@ export interface MetaContext {
 }
 
 /**
+ * dweb 路由上下文共享的框架对象。
+ *
+ * 说明：
+ * - `app` 方便访问当前 App 实例。
+ * - `container` 用于读取业务服务、配置、日志、数据库管理器等单例服务。
+ */
+export interface DwebContextServices {
+  /** 当前 dweb App 实例。 */
+  app: IApp;
+  /** 当前 App 对应的服务容器。 */
+  container: ServiceContainer;
+}
+
+/**
  * `load()` 收到的上下文。
  *
  * 在 {@link HttpContext} 上去掉中间件专用 **`response`**，并用字符串 **`url`**、
@@ -91,6 +112,10 @@ export interface MetaContext {
  * **`req`** 与 **`request`** 指向同一 {@link Request}（`req` 与 API 上下文命名一致）。
  */
 export type LoadContext = Omit<HttpContext, "cookies" | "url" | "response"> & {
+  /** 当前 dweb App 实例。 */
+  app: IApp;
+  /** 当前 App 对应的服务容器。 */
+  container: ServiceContainer;
   /** 当前请求 URL 字符串（完整或 pathname+search），替代 `HttpContext.url`（`URL`） */
   url: string;
   /** 解析后的 Cookie 快照（替代 `HttpContext.cookies` 的方法对象） */
@@ -124,14 +149,19 @@ export type LoadContext = Omit<HttpContext, "cookies" | "url" | "response"> & {
 };
 
 /**
- * 文件路由 API 处理器参数类型：与 `@dreamer/server` 的 {@link ApiRouteContext} 同源。
+ * 文件路由 API 处理器参数类型：在 `@dreamer/server` 基础上下文上叠加 dweb 框架对象。
  *
  * - **页面 `load(ctx)`** 使用本文件的 {@link LoadContext}（`res` 在部分场景可选）。
  * - **文件路由 `export async function foo(ctx)`** 使用本别名，与 RouterAdapter 注入的上下文一致（`res` 必填）。
  *
  * 字段命名统一为 `req` / `res`，避免与历史 `request` / `response` 混用。
  */
-export type { ApiContext, ApiRouteContext } from "@dreamer/server";
+export type ApiRouteContext = ServerApiRouteContext & DwebContextServices;
+
+/**
+ * {@link ApiRouteContext} 别名。
+ */
+export type ApiContext = ServerApiContext & DwebContextServices;
 
 /**
  * 判断是否为可用的 Web {@link Request}。
@@ -220,6 +250,8 @@ export function requestFromHttpContext(ctx: HttpContext): Request {
  * @param options url、params、query、req（可缺省，将按 url 合成）及可选 session、res、matchedRoute
  */
 export function createLoadContext(options: {
+  app: IApp;
+  container: ServiceContainer;
   req?: Request;
   url: string;
   params: Record<string, string>;
@@ -239,6 +271,8 @@ export function createLoadContext(options: {
   /** 与 `pathname` 一致，作为 {@link HttpContext.path} 注入 */
   const pathForCtx = pathname;
   return {
+    app: options.app,
+    container: options.container,
     request: req,
     req,
     path: pathForCtx,

@@ -506,8 +506,22 @@ export class App extends EventEmitter implements IApp {
         );
       }
 
-      // 将路由集成到服务器
-      server.useRouter(router);
+      // 将路由集成到服务器，并把 dweb App 与服务容器注入 API 上下文。
+      // 说明：extendApiContext 由新版 @dreamer/server 支持；类型交叉可兼容旧类型声明。
+      type DwebRouterOptions =
+        & NonNullable<
+          Parameters<typeof server.useRouter>[1]
+        >
+        & {
+          extendApiContext: () => Record<string, unknown>;
+        };
+      const routerOptions: DwebRouterOptions = {
+        extendApiContext: () => ({
+          app: this,
+          container: this.container,
+        }),
+      };
+      server.useRouter(router, routerOptions);
 
       // 根据渲染模式选择渲染器
       const renderMode = (mergedConfig.render as { mode?: string })?.mode ||
