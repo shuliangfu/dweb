@@ -8,6 +8,28 @@ and this project adheres to
 
 ---
 
+## [3.5.3] - 2026-05-08
+
+### Fixed
+
+- **View HMR** (`src/feature/csr-client-builder.ts`): refreshes current route
+  `load()` data and layout data before applying a hot update, keeps the View
+  reactive root mounted during same-route updates, and avoids forcing a full
+  page reload when a hot update cannot resolve a fresh chunk.
+- **CSS HMR** (`src/feature/csr-client-builder.ts`): refreshes injected global
+  stylesheet links with a preload-and-swap flow, preventing the page from
+  briefly losing Tailwind styles while `/assets/tailwind.css` is refreshed.
+- **React dependency alignment** (`src/cmd/init/constants.ts`): generated React
+  projects now use matching React / react-dom caret baselines (`^19.2.6`), and
+  dweb depends on **@dreamer/render** ^1.1.8 to avoid React 19 runtime version
+  mismatch errors.
+
+### Repository-only
+
+- **Example** (`examples/view-hybrid/basic/src/routes/about.tsx`): renders
+  `load()` data on the about page so View Hybrid HMR can be verified with real
+  page data.
+
 ## [3.5.2] - 2026-05-08
 
 ### Added

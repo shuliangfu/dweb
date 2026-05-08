@@ -7,6 +7,25 @@
 
 ---
 
+## [3.5.3] - 2026-05-08
+
+### 修复
+
+- **View HMR**（`src/feature/csr-client-builder.ts`）：热更新前重新获取当前路由
+  `load()` 数据与 layout 数据；同路由更新时保持 View reactive root 不卸载；
+  无法定位新 chunk 时不再强制整页刷新。
+- **CSS HMR**（`src/feature/csr-client-builder.ts`）：全局样式链接改为先加载新
+  CSS、成功后再替换旧链接，避免刷新 `/assets/tailwind.css`
+  时页面短暂无样式闪动。
+- **React 依赖对齐**（`src/cmd/init/constants.ts`）：新生成 React 项目的 React /
+  react-dom caret 基准统一为 `^19.2.6`；dweb 依赖 **@dreamer/render**
+  ^1.1.8，避免 React 19 运行时版本不一致错误。
+
+### 仅仓库
+
+- **示例**（`examples/view-hybrid/basic/src/routes/about.tsx`）：在 about 页渲染
+  `load()` 数据，便于用真实页面数据验证 View Hybrid HMR。
+
 ## [3.5.2] - 2026-05-08
 
 ### 新增

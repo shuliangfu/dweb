@@ -545,9 +545,9 @@ export function clearLayoutCache(): void {
   cachedLayouts = null;
 }`;
 
-  /** View：setViewState + ensureReactiveRoot（模板已在 snippet 前调过 unmountPrevious）；非 view：清空容器 + renderCSR */
+  /** View：只更新 reactive root 的 viewState；非 view：卸载旧渲染树后重新 renderCSR。 */
   const hmrRenderSnippet = isViewEngine
-    ? `setViewState({ page: PageComponent, routeComponent: match.route.component, props: { params: match.params, query: match.query }, layouts: layoutList, skipLayouts }, { force: true });
+    ? `setViewState({ page: PageComponent, routeComponent: match.route.component, props: _hmrPageProps, layouts: _hmrLayouts, skipLayouts }, { force: true });
     _viewEnsureReactiveRoot(containerId);`
     : `const _container = typeof document !== "undefined" ? document.querySelector("#" + containerId) : null;
     if (_container && typeof _container.replaceChildren === "function") _container.replaceChildren();
@@ -555,12 +555,15 @@ export function clearLayoutCache(): void {
       engine,
       component: PageComponent,
       container: "#" + containerId,
-      props: { params: match.params, query: match.query },
-      layouts: skipLayouts ? undefined : layoutList,
+      props: _hmrPageProps,
+      layouts: skipLayouts ? undefined : _hmrLayouts,
       skipLayouts,
       debug: !!(_win.__DWEB_DEBUG__),
     });
     RENDER_STATE.lastUnmount = csrResult?.unmount ?? null;`;
+  const hmrBeforeRenderSnippet = isViewEngine
+    ? `/* View HMR keeps the reactive root mounted so updates do not flash or lose current DOM state. */`
+    : `unmountPrevious();`;
 
   // 将服务端注入的 layoutData 合并到各 layout 的 props，使 hydrate 时 Layout 能收到 data
   const mergeLayoutDataSnippet =
@@ -1366,18 +1369,14 @@ export async function setupHydrationRouterAndHmr(opts: {
         }
         return import(/* @vite-ignore */ busted);
       }
-      // 仍无法定位 chunk 时整页刷新
-      if (typeof _win.location !== "undefined" && _win.location.reload) {
-        _win.location.reload();
-        return new Promise(() => {});
-      }
+      // 无法定位新 chunk 时仍尝试复用路由 loader，避免一次辅助文件更新直接触发整页刷新。
       return loadPageModule(match.route.component);
     };
     const scrollX = typeof _win.scrollX === "number" ? _win.scrollX : 0;
     const scrollY = typeof _win.scrollY === "number" ? _win.scrollY : 0;
-    // 先记录待移除的旧 CSS 元素（加载前快照，避免误删新 chunk 注入的样式）
+    // 仅记录路由 chunk 注入的旧 CSS；全局样式节点由 HMR_CSS_ENTRIES 原地刷新，不能提前删除。
     const oldCssEls = typeof _win.document !== "undefined"
-      ? Array.from(_win.document.querySelectorAll("[data-dweb-route-css],[data-dweb-css-id]"))
+      ? Array.from(_win.document.querySelectorAll("[data-dweb-route-css]"))
       : [];
     // 先加载新模块（旧内容保持可见），加载完成后再 unmount + 移除旧 CSS + render，避免长时间空白导致闪动
     loadModule()
@@ -1392,16 +1391,36 @@ export async function setupHydrationRouterAndHmr(opts: {
         const PageComponent = modObj.default ?? modObj.Page;
         if (!PageComponent) { renderNotFound(containerId); return; }
         const skipLayouts = modObj.inheritLayout === false;
-        return ${loadLayoutsCallRender}.then(${
-    isViewEngine ? "" : "async "
-  }(layoutList) => {
+        return ${loadLayoutsCallRender}.then(async (layoutList) => {
+          type _HmrNavProps = { params?: Record<string, string>; query?: Record<string, string>; layoutData?: unknown[]; data?: unknown };
+          let _hmrNavProps: _HmrNavProps = { params: match.params || {}, query: match.query || {} };
+          try {
+            const _hmrPathname = (typeof _win.location !== "undefined" && _win.location.pathname) ? _win.location.pathname : "/";
+            const _hmrSearch = (typeof _win.location !== "undefined" && _win.location.search) ? _win.location.search : "";
+            if (_hmrPathname && _hmrPathname !== "${DWEB_DATA_PATH}" && _hmrPathname.indexOf("/_") !== 0 && _hmrPathname.indexOf("//") === -1) {
+              const _hmrDataUrl = "${DWEB_DATA_PATH}?path=" + encodeURIComponent(_hmrPathname) + (_hmrSearch ? "&" + _hmrSearch.slice(1) : "");
+              const _hmrDataRes = await fetch(_hmrDataUrl);
+              if (_hmrDataRes && _hmrDataRes.ok) {
+                _hmrNavProps = (await _hmrDataRes.json()) as _HmrNavProps;
+              }
+            }
+          } catch {
+            /* HMR data refresh failed: keep current route params/query instead of forcing a full reload. */
+          }
+          const _hmrLayoutData = (_hmrNavProps && Array.isArray(_hmrNavProps.layoutData)) ? _hmrNavProps.layoutData : [];
+          const _hmrLayouts: LayoutComponent[] = skipLayouts ? [] : (_hmrLayoutData.length
+            ? layoutList.map((l, i) => ({ component: l.component, props: (_hmrLayoutData[i] ?? l.props ?? {}) as Record<string, unknown> }))
+            : layoutList);
+          const _hmrPageProps = _hmrNavProps
+            ? { params: _hmrNavProps.params || (match.params || {}), query: _hmrNavProps.query || (match.query || {}), data: _hmrNavProps.data }
+            : { params: match.params || {}, query: match.query || {} };
           if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
             console.log(${
     JSON.stringify($tr("client.hmrRenderCsrBefore"))
   }, { componentPath: match.route.component });
           }
-          // 新模块已就绪，在 render 前一刻执行 unmount + 移除旧 CSS，最小化空白时间，消除闪动
-          unmountPrevious();
+          // 新模块与 load() 数据已就绪后再切换渲染树，避免缺数据或空容器造成闪动。
+          ${hmrBeforeRenderSnippet}
           oldCssEls.forEach((el) => { el.remove(); });
           ${hmrRenderSnippet}
           if (typeof _win.__DWEB_HMR_DEBUG__ !== "undefined" && _win.__DWEB_HMR_DEBUG__) {
@@ -1422,9 +1441,21 @@ export async function setupHydrationRouterAndHmr(opts: {
             HMR_CSS_ENTRIES.forEach((entry) => {
               const el = _win.document.getElementById(entry.styleId);
               if (!el) return;
-              // link 元素：通过更新 href 加时间戳刷新缓存；style 元素：fetch 后写入 textContent
+              // link 元素：先并行加载新样式，load 后再替换旧节点，避免直接改 href 导致短暂无样式闪动。
               if (el.tagName === "LINK") {
-                (el as HTMLLinkElement).href = entry.url + "?t=" + Date.now();
+                const oldLink = el as HTMLLinkElement;
+                const nextHref = entry.url + "?t=" + Date.now();
+                const nextLink = oldLink.cloneNode(false) as HTMLLinkElement;
+                nextLink.removeAttribute("id");
+                nextLink.href = nextHref;
+                nextLink.onload = () => {
+                  oldLink.remove();
+                  nextLink.id = entry.styleId;
+                };
+                nextLink.onerror = () => {
+                  nextLink.remove();
+                };
+                oldLink.after(nextLink);
               } else {
                 fetch(entry.url + "?t=" + Date.now())
                   .then((r) => r.ok ? r.text() : Promise.reject(new Error(${
@@ -1446,9 +1477,6 @@ export async function setupHydrationRouterAndHmr(opts: {
         console.warn(${
     JSON.stringify($tr("client.hmrFallback"))
   } + ":", err?.message || err);
-        if (typeof _win.location !== "undefined") {
-          _win.location.reload();
-        }
       });
   };
 

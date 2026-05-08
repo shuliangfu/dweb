@@ -1857,13 +1857,13 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.5.2] - 2026-05-08
+### [3.5.3] - 2026-05-08
 
-**Added** — **`LoadContext`** and API route context include **`app`** and
-**`container`**; **`server.useRouter`** receives **`extendApiContext`** for API
-handlers. **Changed** — Multi-app **`dweb init`** sets **`name`** to
-**`project-app`**; bumped **@dreamer/server**, React, postcss, cssnano. Full
-history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Fixed** — View HMR now refreshes `load()` / layout data without unmounting the
+reactive root, avoids forced full-page reload fallbacks, and swaps global CSS
+links only after the refreshed stylesheet is loaded. **Changed** — React /
+react-dom template baselines are aligned to `^19.2.6`; **@dreamer/render** is
+raised to ^1.1.8. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

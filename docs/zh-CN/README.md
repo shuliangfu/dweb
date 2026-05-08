@@ -1924,12 +1924,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.5.2] - 2026-05-08
+### [3.5.3] - 2026-05-08
 
-**新增** — **`LoadContext`** 与 API 路由上下文包含 **`app`**、**`container`**；
-**`server.useRouter`** 传入 **`extendApiContext`**。**变更** — 多应用
-**`dweb init`** 的 **`name`** 为 **`项目名-应用名`**；上调
-**@dreamer/server**、React、postcss、 cssnano。完整记录见
+**修复** — View HMR 会重新获取 `load()` / layout 数据且不卸载 reactive root；
+不再用强制整页刷新作为常规兜底；全局 CSS
+链接在新样式加载成功后再替换，避免样式闪动。 **变更** — React / react-dom
+模板基准统一为 `^19.2.6`；**@dreamer/render** 升至 ^1.1.8。完整记录见
 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
