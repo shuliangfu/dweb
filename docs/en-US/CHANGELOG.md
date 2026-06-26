@@ -10,6 +10,38 @@ and this project adheres to
 
 ---
 
+## [3.5.7] - 2026-06-26
+
+### Added
+
+- **`deno task pw:install`**: installs Playwright Chromium for browser e2e tests
+  (`tests/e2e/`); add **`playwright`** to dev imports in **`deno.json`**.
+
+### Fixed
+
+- **WebSocket upgrade** (`src/feature/websocket.ts`, `src/core/app.ts`):
+  register upgrades via **`registerWebSocketUpgrade`** on
+  **`server.http.onWebSocket`** so Deno receives a **synchronous 101** response.
+  The previous async middleware path caused
+  **`Upgrade response was not returned from callback`** and could break all HTTP
+  after a failed **`/ws`** handshake.
+- **`createWebSocketMiddleware`**: only intercepts requests with
+  **`Upgrade: websocket`**; non-upgrade traffic passes through **`next()`**.
+
+### Changed
+
+- **Deferred client navigation** (`src/feature/csr-client-builder.ts`): SPA
+  route changes render the page shell (params/query) as soon as the route chunk
+  loads; **`/__data`** runs in parallel and patches **`document.head`** plus
+  re-renders when ready. **`router.navigate()`** no longer waits on
+  **`__data`**, improving perceived speed on slow networks. Uses
+  **`_DWEB_NAV_DATA_SEQ`** to drop stale responses on rapid clicks.
+- **JSR dependencies**: **`@dreamer/runtime-adapter`** **`^1.0.19`**,
+  **`@dreamer/server`** **`^1.1.9`**, **`@dreamer/websocket`** **`^1.0.7`**
+  (sync upgrade support).
+- **Examples**: all example **`deno.json`** files updated to the JSR versions
+  above.
+
 ## [3.5.6] - 2026-06-26
 
 ### Fixed

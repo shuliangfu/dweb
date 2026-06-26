@@ -9,6 +9,35 @@
 
 ---
 
+## [3.5.7] - 2026-06-26
+
+### 新增
+
+- **`deno task pw:install`**：为浏览器 e2e（**`tests/e2e/`**）安装 Playwright
+  Chromium；**`deno.json`** 增加 **`playwright`** 开发依赖。
+
+### 修复
+
+- **WebSocket 升级**（**`src/feature/websocket.ts`**、**`src/core/app.ts`**）：
+  通过 **`registerWebSocketUpgrade`** 注册 **`server.http.onWebSocket`**，使
+  Deno 收到**同步 101**。旧 async 中间件路径会触发
+  **`Upgrade response was not returned from callback`**，**`/ws`** 握手失败后
+  可能导致整站 HTTP 不可用。
+- **`createWebSocketMiddleware`**：仅拦截带 **`Upgrade: websocket`**
+  的请求，其余 走 **`next()`**。
+
+### 变更
+
+- **客户端两阶段导航**（**`src/feature/csr-client-builder.ts`**）：路由 chunk
+  就绪即渲染 shell（params/query），**`/__data`** 并行拉取，到达后更新
+  **`document.head`** 并二次渲染；**`router.navigate()`** 不再等待
+  **`__data`**，慢网下切换更流畅。使用 **`_DWEB_NAV_DATA_SEQ`** 丢弃快速连点
+  时的过期响应。
+- **JSR 依赖**：**`@dreamer/runtime-adapter`** **`^1.0.19`**、
+  **`@dreamer/server`** **`^1.1.9`**、**`@dreamer/websocket`** **`^1.0.7`**
+  （同步升级支持）。
+- **示例**：全部示例 **`deno.json`** 同步上述 JSR 版本。
+
 ## [3.5.6] - 2026-06-26
 
 ### 修复

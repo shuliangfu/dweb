@@ -1924,11 +1924,13 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.5.6] - 2026-06-26
+### [3.5.7] - 2026-06-26
 
-**修复** — 构建路径推断保留 **`.dist`**，生产态 Tailwind 可找到 hash CSS；Bun CI
-preload 与 **`bson`** 锁定修复 **`isBuildingSnapshot`** 报错。**变更** — 未配
-**`build.client.output`** 时从 **`build.server.output`** 推导 client 目录。
+**新增** — **`deno task pw:install`** 安装 Playwright Chromium（浏览器 e2e）。
+**修复** — WebSocket 经 **`registerWebSocketUpgrade`** 同步返回 101（Deno
+兼容）。 **变更** — 客户端两阶段导航：先渲染 shell，**`/__data`** 到达后
+patch；JSR 依赖
+**`runtime-adapter@^1.0.19`**、**`server@^1.1.9`**、**`websocket@^1.0.7`**。
 完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---

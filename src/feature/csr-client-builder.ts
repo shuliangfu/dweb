@@ -615,30 +615,35 @@ export function clearLayoutCache(): void {
   // __data 仅在 onRouteChange 内请求。同页锚点虽不触发 router 的 navigate，但浏览器改 hash 可能触发 popstate，仍会进 onRouteChange，
   // 故用 pathname+search 判断：与上次相同则视为「同页仅 hash」，不请求 __data。保留 pathname 保留字(/_*、/__data 等)也不请求。
   /**
-   * 与 loadPageModule **并行**拉取 `/_dweb_data`，避免「先等路由 chunk、再等 __data」串行加倍延迟，
-   * 使 `<title>` / meta 与正文尽可能同时就绪（原先 metadata 往往晚 ~一整段网络 RTT）。
+   * 两阶段导航（deferred）：先只 await 路由 chunk，首帧即渲染 shell（params/query），
+   * __data 与 chunk 并行发起但不阻塞首帧；到达后 patch document.head 并二次渲染。
    */
-  const parallelLoadPageAndNavDataSnippet =
-    `const _pathname = (typeof _win.location !== "undefined" && _win.location.pathname) ? _win.location.pathname : "/";
+  const deferredNavLoadModuleSnippet = `const _navSeq = ++_DWEB_NAV_DATA_SEQ;
+      const _pathname = (typeof _win.location !== "undefined" && _win.location.pathname) ? _win.location.pathname : "/";
       const _search = (typeof _win.location !== "undefined" && _win.location.search) ? _win.location.search : "";
       const _pathAndSearch = _pathname + _search;
       const _samePageHashOnly = (typeof (g as DwebGlobal).__DWEB_LAST_PATHNAME__ === "string" && (g as DwebGlobal).__DWEB_LAST_PATHNAME__ === _pathAndSearch);
       const _reservedOrInvalid = !_pathname || _pathname === "${DWEB_DATA_PATH}" || _pathname.indexOf("/_") === 0 || _pathname.indexOf("//") !== -1 || _samePageHashOnly;
       type _NavProps = { params?: Record<string, string>; query?: Record<string, string>; layoutData?: unknown[]; data?: unknown; metadata?: Record<string, unknown>; metadataTagsHtml?: string; metadataTitleHtml?: string };
-      const [module, _navProps] = await Promise.all([
-        loadPageModule(match.route.component) as Promise<Record<string, unknown>>,
-        (async (): Promise<_NavProps> => {
-          if (_reservedOrInvalid) {
-            return { params: match.params || {}, query: match.query || {} };
-          }
-          const _dataUrl = "${DWEB_DATA_PATH}?path=" + encodeURIComponent(_pathname) + (_search ? "&" + _search.slice(1) : "");
-          const _dataRes = await fetch(_dataUrl);
+      let _navProps: _NavProps = { params: match.params || {}, query: match.query || {} };
+      /** 与 loadPageModule 并行发起 __data，但不阻塞阶段 1 渲染 */
+      let _navDataPromise: Promise<_NavProps> | null = null;
+      if (!_reservedOrInvalid) {
+        const _dataUrl = "${DWEB_DATA_PATH}?path=" + encodeURIComponent(_pathname) + (_search ? "&" + _search.slice(1) : "");
+        _navDataPromise = fetch(_dataUrl).then(async (_dataRes): Promise<_NavProps> => {
           return (_dataRes && _dataRes.ok)
             ? (await _dataRes.json()) as _NavProps
             : { params: match.params || {}, query: match.query || {} };
-        })(),
-      ]);
+        });
+      }
+      const module = await loadPageModule(match.route.component) as Promise<Record<string, unknown>>;
+      if (_navSeq !== _DWEB_NAV_DATA_SEQ) return;
       (g as DwebGlobal).__DWEB_LAST_PATHNAME__ = _pathAndSearch;`;
+  /** 阶段 2：await 已在阶段 1 发起的 __data Promise，结果写入 _fullNavProps */
+  const deferredNavFetchDataSnippet =
+    `const _fullNavProps: _NavProps = _navDataPromise != null
+            ? await _navDataPromise
+            : { params: match.params || {}, query: match.query || {} };`;
   /** 在已有 `_navProps` 时写入 document.head（由 applyRouteMetadataHeadSnippet 使用） */
   const applyRouteMetadataHeadSnippet =
     `const _routeMetaHtml = (_navProps && typeof _navProps.metadataTagsHtml === "string") ? _navProps.metadataTagsHtml : "";
@@ -729,8 +734,8 @@ export function clearLayoutCache(): void {
       const _layoutsNav = _navLayoutData.length ? layouts.map((l, i) => ({ component: l.component, props: _navLayoutData[i] ?? l.props ?? {} })) : layouts;
       const _pageProps = _navProps ? { params: _navProps.params || {}, query: _navProps.query || {}, data: _navProps.data } : { params: match.params || {}, query: match.query || {} };`;
   /**
-   * View / React/Preact：由外层先并行完成 loadPageModule + __data 并写入 head（见 parallelLoadPageAndNavDataSnippet），
-   * 此处仅合并 layout、unmount、渲染正文。旧内容直至 unmount 前仍可见。
+   * View / React/Preact：由 _renderNavPage 调用；合并 layout、unmount、渲染正文。
+   * 首帧可在无 __data 时先渲染 shell，__data 到达后同函数二次执行以 patch 数据与 head。
    */
   const onRouteChangeRenderSnippet = isViewEngine
     ? `if (_win.__DWEB_DEBUG__) console.log("[dweb:view] onRouteChange", { component: match.route.component, hasPage: !!PageComponent });
@@ -1093,6 +1098,8 @@ export interface ClientRouterLike {
  */
 /** 共享的渲染状态：存储上次卸载函数，HMR/路由切换前需先调用以清理 Preact/React/Solid 内部状态，避免 __H 等 hooks 冲突 */
 export const RENDER_STATE: { lastUnmount: (() => void) | null } = { lastUnmount: null };
+/** 客户端导航 __data 请求代数：快速连点时丢弃过期 __data 响应，避免旧页数据覆盖新页 */
+let _DWEB_NAV_DATA_SEQ = 0;
 ${
     isViewEngine
       ? `
@@ -1519,13 +1526,41 @@ export async function setupHydrationRouterAndHmr(opts: {
     }
     if (isHybridMode && !isHydratedRef.current) { isHydratedRef.current = true; return; }
     try {
-      ${parallelLoadPageAndNavDataSnippet}
+      ${deferredNavLoadModuleSnippet}
       if (!module) { unmountPrevious(); renderNotFound(containerId); return; }
       const PageComponent = module.default ?? module.Page;
       if (!PageComponent) { unmountPrevious(); renderNotFound(containerId); return; }
       const skipLayouts = module.inheritLayout === false;
+      /**
+       * 两阶段导航渲染：首帧只带 params/query（不阻塞等 __data）；__data 返回后 patch head 并二次渲染。
+       * @param _props 当前导航 props（含 __data 的 data/layoutData/metadata）
+       * @param _withHead 是否在渲染前写入 document.head（首帧跳过，避免无 SEO 数据时清掉 title）
+       */
+      const _renderNavPage = async (_props: _NavProps, _withHead: boolean): Promise<void> => {
+        _navProps = _props;
+        if (_withHead) {
       ${applyRouteMetadataHeadSnippet}
+        }
       ${onRouteChangeRenderSnippet}
+      };
+      if (_reservedOrInvalid) {
+        await _renderNavPage(_navProps, false);
+        return;
+      }
+      /** 阶段 1：路由 chunk 就绪即切换页面，router.navigate 不再等待 __data */
+      await _renderNavPage(_navProps, false);
+      /** 阶段 2：后台拉 __data；快速连点时用 nav seq 丢弃过期响应 */
+      const _navSeqCapture = _navSeq;
+      void (async (): Promise<void> => {
+        try {
+      ${deferredNavFetchDataSnippet}
+          if (_navSeqCapture !== _DWEB_NAV_DATA_SEQ) return;
+          await _renderNavPage(_fullNavProps, true);
+        } catch (_navDataErr) {
+          if (_navSeqCapture !== _DWEB_NAV_DATA_SEQ) return;
+          if (_win.__DWEB_DEBUG__) console.warn("[dweb] deferred __data fetch failed:", _navDataErr);
+        }
+      })();
     } catch (error) {
       console.error(${
     JSON.stringify($tr("client.pageLoadError"))

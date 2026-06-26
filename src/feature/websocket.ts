@@ -9,6 +9,7 @@
 
 import { createWebSocketContext, type SocketContext } from "@dreamer/plugin";
 import type { HttpContext } from "@dreamer/server";
+import type { Server as HttpServer } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import { Server } from "@dreamer/websocket";
 import type { AppConfig, SocketConfig } from "../types/app.ts";
@@ -100,6 +101,8 @@ export function initializeWebSocket(
 
   container.registerSingleton(WEBSOCKET_SERVER_KEY, () => ws);
   container.registerSingleton(WEBSOCKET_PATH_KEY, () => path);
+  /** 预初始化适配器，避免首条 WebSocket 升级时异步等待 */
+  void ws.prepare().catch(() => {});
   return path;
 }
 
@@ -145,17 +148,35 @@ export function getWebSocketPath(
 }
 
 /**
- * 创建 WebSocket 委托中间件
+ * 在 HTTP 服务器上注册 WebSocket 升级处理器（与 HMR 相同，走 onWebSocket 同步返回 101）
  *
- * 仅当请求路径以 websocketPath 开头时执行：将 request 交给 WebSocket 处理并设置 ctx.response。
+ * Deno 下不可经中间件 `await handleRequest()` 做升级，否则整站 HTTP 会挂死。
+ *
+ * @param container 服务容器
+ * @param server @dreamer/server 实例
+ */
+export function registerWebSocketUpgrade(
+  container: ServiceContainer,
+  server: HttpServer,
+): void {
+  const path = getWebSocketPath(container);
+  if (!path) {
+    return;
+  }
+  const ws = getWebSocketServer(container);
+  server.http.onWebSocket(path, (req: Request): Response => {
+    return ws.handleUpgrade(req);
+  });
+}
+
+/**
+ * 创建 WebSocket 委托中间件（已废弃：请改用 {@link registerWebSocketUpgrade}）
+ *
+ * 仅当请求路径以 websocketPath 开头且为 WebSocket 升级时同步处理；非升级请求交给 next。
  *
  * @param container 服务容器
  * @returns 中间件函数
- *
- * @example
- * ```ts
- * app.use(createWebSocketMiddleware(container));
- * ```
+ * @deprecated 使用 registerWebSocketUpgrade(container, server) 代替
  */
 export function createWebSocketMiddleware(
   container: ServiceContainer,
@@ -166,7 +187,12 @@ export function createWebSocketMiddleware(
       await next();
       return;
     }
+    const upgrade = ctx.request.headers.get("upgrade");
+    if (!upgrade || upgrade.toLowerCase() !== "websocket") {
+      await next();
+      return;
+    }
     const ws = getWebSocketServer(container);
-    ctx.response = await ws.handleRequest(ctx.request);
+    ctx.response = ws.handleUpgrade(ctx.request);
   };
 }

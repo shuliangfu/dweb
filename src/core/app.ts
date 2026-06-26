@@ -62,9 +62,9 @@ import {
   initializeSocketIo,
 } from "../feature/socket-io.ts";
 import {
-  createWebSocketMiddleware,
   getWebSocketPath,
   initializeWebSocket,
+  registerWebSocketUpgrade,
 } from "../feature/websocket.ts";
 import {
   type AppConfig,
@@ -482,14 +482,10 @@ export class App extends EventEmitter implements IApp {
         }
       }
 
-      // socket.adapter 为 websocket 时：路径前缀匹配委托给 WebSocket 处理
+      // socket.adapter 为 websocket 时：经 onWebSocket 同步升级（不可走 await 中间件，否则 Deno 会挂死 HTTP）
       const websocketPath = getWebSocketPath(this.container);
       if (websocketPath) {
-        server.use(
-          createWebSocketMiddleware(this.container),
-          websocketPath,
-          "websocket",
-        );
+        registerWebSocketUpgrade(this.container, server);
         if (!this._isBuildMode()) {
           getLogger(this.container).debug(
             $tr("log.websocketMounted", { path: websocketPath }),

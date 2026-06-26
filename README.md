@@ -1857,12 +1857,13 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.5.6] - 2026-06-26
+### [3.5.7] - 2026-06-26
 
-**Fixed** — Preserve **`.dist`** in build output path inference so production
-Tailwind finds hashed CSS; Bun CI preload + **`bson`** pin for
-**`isBuildingSnapshot`**. **Changed** — **`getClientOutputDir`** derives client
-path from **`build.server.output`** when unset. Full history:
+**Added** — **`deno task pw:install`** for Playwright Chromium (browser e2e).
+**Fixed** — WebSocket sync upgrade via **`registerWebSocketUpgrade`** (Deno 101
+response). **Changed** — Deferred SPA navigation: render shell first, patch
+**`/__data`** when ready; JSR deps **`runtime-adapter@^1.0.19`**,
+**`server@^1.1.9`**, **`websocket@^1.0.7`**. Full history:
 [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---

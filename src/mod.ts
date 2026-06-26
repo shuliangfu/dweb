@@ -355,6 +355,7 @@ export {
   getWebSocketPath,
   getWebSocketServer,
   initializeWebSocket,
+  registerWebSocketUpgrade,
 } from "./feature/websocket.ts";
 
 /**
