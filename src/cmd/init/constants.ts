@@ -28,11 +28,11 @@ export const FALLBACK_VIEW_VERSION = "1.0.6";
 /**
  * Preact 基准版本（模板中写成 `^${PREACT_VERSION}`，与根项目一致）
  */
-export const PREACT_VERSION = "10.29.1";
+export const PREACT_VERSION = "10.29.2";
 
 /** React / React-DOM 的范围起点必须一致，React 19 会在实际版本不一致时拒绝启动。 */
-export const REACT_VERSION = "19.2.6";
-export const REACT_DOM_VERSION = "19.2.6";
+export const REACT_VERSION = "19.2.7";
+export const REACT_DOM_VERSION = "19.2.7";
 export const SCHEDULER_VERSION = "0.27.0";
 
 /** Tailwind v4 / PostCSS 基准版本（输出带 ^） */

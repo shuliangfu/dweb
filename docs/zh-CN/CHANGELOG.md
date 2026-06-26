@@ -7,6 +7,30 @@
 
 ---
 
+---
+
+## [3.5.5] - 2026-06-26
+
+### 修复
+
+- **Hybrid/CSR 布局 hydration**（`src/feature/csr-client-builder.ts`，
+  **`_canonicalLayoutPropsForViewState`**）：布局 **`load()`** 注入字段同时从
+  props 顶层与嵌套 **`props.data`** 读取，与 load-data 中间件序列化方式一致，
+  避免 **`uiLocale`** 等字段在 canonical 比较中恒为 null 导致导航/HMR 后客户端
+  误判为未变化而不重渲染。
+
+### 变更
+
+- **JSR 依赖**：**`@dreamer/server`** 升至 **`^1.1.8`**（action 模式 API
+  **`index`** 回落与 **`takeLastResponse`** 修复）。
+- **npm 依赖**：Preact **`^10.29.2`**、**`preact-render-to-string`**
+  **`^6.7.0`**、React / React-DOM **`^19.2.7`**、PostCSS **`^8.5.15`**、
+  Autoprefixer **`^10.5.2`**。
+- **init 脚手架**（**`src/cmd/init/constants.ts`**）：**`PREACT_VERSION`**
+  **`10.29.2`**，React **`19.2.7`** 与根项目 imports 对齐。
+- **Preact 示例**：**`examples/preact-*`** 下全部 **`deno.json`** /
+  **`package.json`** 同步 Preact **`^10.29.2`**。
+
 ## [3.5.4] - 2026-05-09
 
 ### 修复

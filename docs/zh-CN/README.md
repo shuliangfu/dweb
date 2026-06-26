@@ -1924,12 +1924,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.5.4] - 2026-05-09
+### [3.5.5] - 2026-06-26
 
-**修复** — 开发态 HMR 能识别「仅末段命名」的多段路由 chunk（如
-`create-<hash>.js`），恢复 **`routeChunkUrls`** 与热更新，避免浏览器沿用旧模块。
-**新增** — 相关单测；**`getChunkFileNameForComponent`** 导出。完整记录见
-[CHANGELOG.md](./CHANGELOG.md)。
+**修复** — 布局 hydration 从嵌套 **`props.data`** 读取 load 字段，修复导航/HMR
+后 UI 不刷新。**变更** — **`@dreamer/server`** **`^1.1.8`**；Preact
+**`^10.29.2`**、React **`^19.2.7`** 等 npm 依赖；preact 示例与 init 模板同步。
+完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

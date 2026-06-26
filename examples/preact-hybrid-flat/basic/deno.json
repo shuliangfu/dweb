@@ -23,8 +23,8 @@
     "@dreamer/service": "jsr:@dreamer/service@^1.0.2",
     "@dreamer/utils": "jsr:@dreamer/utils@^1.0.1",
     "@dreamer/websocket": "jsr:@dreamer/websocket@^1.0.6",
-    "preact": "npm:preact@^10.29.1",
-    "preact/jsx-runtime": "npm:preact@^10.29.1/jsx-runtime"
+    "preact": "npm:preact@^10.29.2",
+    "preact/jsx-runtime": "npm:preact@^10.29.2/jsx-runtime"
   },
   "compilerOptions": {
     "jsx": "react-jsx",

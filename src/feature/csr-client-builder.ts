@@ -1165,15 +1165,23 @@ function _canonicalPagePropsForViewState(p: Record<string, unknown>): string {
 }
 /**
  * 布局 load 注入 props 的稳定比较：缺省字段与 null 统一，减少无意义的全树重挂。
+ * Hybrid/CSR 下各层 layout 的 load() 返回值由服务端与 /__data 打成「props.data = load 返回值」（见 load-data-middleware），
+ * 故须同时读取顶层与 data 内嵌字段，否则 uiLocale 等永远在 canonical 里为 null，renderCurrentRoute 会与 hydrate 快照误判为相同而短路。
+ * 勿在本注释内使用反引号，否则会打断外层模板字符串。
  */
 function _canonicalLayoutPropsForViewState(p: Record<string, unknown> | undefined): string {
   const src = p ?? {};
+  const rawNested = src["data"];
+  const nested =
+    rawNested != null && typeof rawNested === "object" && !Array.isArray(rawNested)
+      ? (rawNested as Record<string, unknown>)
+      : {};
   try {
     return _stableJsonForViewState({
-      pathname: src["pathname"] ?? null,
-      themeMode: src["themeMode"] ?? null,
-      uiLocale: src["uiLocale"] ?? null,
-      user: src["user"] ?? null,
+      pathname: src["pathname"] ?? nested["pathname"] ?? null,
+      themeMode: src["themeMode"] ?? nested["themeMode"] ?? null,
+      uiLocale: src["uiLocale"] ?? nested["uiLocale"] ?? null,
+      user: src["user"] ?? nested["user"] ?? null,
     });
   } catch {
     return "__dweb:canonicalLayoutPropsError__";

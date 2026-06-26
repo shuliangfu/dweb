@@ -8,6 +8,31 @@ and this project adheres to
 
 ---
 
+---
+
+## [3.5.5] - 2026-06-26
+
+### Fixed
+
+- **Hybrid/CSR layout hydration** (`src/feature/csr-client-builder.ts`,
+  `_canonicalLayoutPropsForViewState`): read layout `load()` fields from both
+  top-level props and nested **`props.data`**, matching how load-data middleware
+  serializes layout data. Avoids false “unchanged” snapshots (e.g.
+  **`uiLocale`** stuck as null) that skipped client re-renders after navigation
+  or HMR.
+
+### Changed
+
+- **JSR dependency**: **`@dreamer/server`** **`^1.1.8`** (action-mode API
+  **`index`** fallback and **`takeLastResponse`** fixes).
+- **npm dependencies**: Preact **`^10.29.2`**, **`preact-render-to-string`**
+  **`^6.7.0`**, React / React-DOM **`^19.2.7`**, PostCSS **`^8.5.15`**,
+  Autoprefixer **`^10.5.2`**.
+- **Init scaffold** (`src/cmd/init/constants.ts`): **`PREACT_VERSION`**
+  **`10.29.2`**, React **`19.2.7`** aligned with root imports.
+- **Preact examples**: all **`deno.json`** / **`package.json`** under
+  **`examples/preact-*`** synced to Preact **`^10.29.2`**.
+
 ## [3.5.4] - 2026-05-09
 
 ### Fixed

@@ -1857,13 +1857,13 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.5.4] - 2026-05-09
+### [3.5.5] - 2026-06-26
 
-**Fixed** — Dev HMR now resolves multi-segment routes whose esbuild chunk is
-named by the **last path segment only** (e.g. `create-<hash>.js`), so
-`routeChunkUrls` stays populated and updates apply without a stale module cache.
-**Added** — Tests and export for `getChunkFileNameForComponent`. Full history:
-[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Fixed** — Layout hydration reads nested **`props.data`** in
+**`_canonicalLayoutPropsForViewState`**, fixing stale UI after navigation/HMR.
+**Changed** — **`@dreamer/server`** **`^1.1.8`**; Preact **`^10.29.2`**, React
+**`^19.2.7`**, and related npm deps; preact examples and init templates synced.
+Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 
