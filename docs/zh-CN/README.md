@@ -1924,11 +1924,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.5.5] - 2026-06-26
+### [3.5.6] - 2026-06-26
 
-**修复** — 布局 hydration 从嵌套 **`props.data`** 读取 load 字段，修复导航/HMR
-后 UI 不刷新。**变更** — **`@dreamer/server`** **`^1.1.8`**；Preact
-**`^10.29.2`**、React **`^19.2.7`** 等 npm 依赖；preact 示例与 init 模板同步。
+**修复** — 构建路径推断保留 **`.dist`**，生产态 Tailwind 可找到 hash CSS；Bun CI
+preload 与 **`bson`** 锁定修复 **`isBuildingSnapshot`** 报错。**变更** — 未配
+**`build.client.output`** 时从 **`build.server.output`** 推导 client 目录。
 完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---

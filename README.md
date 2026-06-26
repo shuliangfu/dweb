@@ -1857,13 +1857,13 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.5.5] - 2026-06-26
+### [3.5.6] - 2026-06-26
 
-**Fixed** — Layout hydration reads nested **`props.data`** in
-**`_canonicalLayoutPropsForViewState`**, fixing stale UI after navigation/HMR.
-**Changed** — **`@dreamer/server`** **`^1.1.8`**; Preact **`^10.29.2`**, React
-**`^19.2.7`**, and related npm deps; preact examples and init templates synced.
-Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Fixed** — Preserve **`.dist`** in build output path inference so production
+Tailwind finds hashed CSS; Bun CI preload + **`bson`** pin for
+**`isBuildingSnapshot`**. **Changed** — **`getClientOutputDir`** derives client
+path from **`build.server.output`** when unset. Full history:
+[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

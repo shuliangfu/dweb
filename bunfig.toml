@@ -1,0 +1,3 @@
+# Bun 测试配置：CI 与本地 `bun test` 均自动 preload 兼容桩
+[test]
+preload = ["./tests/bun-preload.ts"]

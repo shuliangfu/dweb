@@ -10,6 +10,28 @@ and this project adheres to
 
 ---
 
+## [3.5.6] - 2026-06-26
+
+### Fixed
+
+- **Build output path inference** (`src/utils/build-dirs.ts`): preserve hidden
+  output directories such as **`.dist`** when inferring client assets from
+  **`<output>/<app>/server.js`**. The previous **`/^\.\/?/`** strip turned
+  **`.dist/dapp/server.js`** into **`dist/dapp/server.js`**, so Tailwind and
+  other plugins could not find hashed CSS under **`.dist/.../client/assets`** in
+  production.
+- **Bun unit tests (CI)**: **`bson@7.3.1`** loads
+  **`node:v8.isBuildingSnapshot`** at import time, which Bun does not implement
+  yet. Added **`tests/bun-preload.ts`** and **`bunfig.toml`** test preload, plus
+  **`bson`** **`7.2.0`** override in **`package.json`**, fixing **`test-*-bun`**
+  jobs on Linux/macOS/Windows.
+
+### Changed
+
+- **`getClientOutputDir`**: when **`build.client.output`** is unset, derive
+  **`{build.server.output}/client`** so apps that only configure server output
+  (e.g. **`.dist/dapp`**) resolve the correct client assets directory.
+
 ## [3.5.5] - 2026-06-26
 
 ### Fixed

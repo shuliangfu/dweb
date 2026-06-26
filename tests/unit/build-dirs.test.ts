@@ -86,6 +86,14 @@ describe("getInferredBuildOutputDirs", () => {
     expect(client).toBe("output/frontend/client");
   });
 
+  it(".dist/dapp/server.js（隐藏目录 .dist）→ .dist/dapp、.dist/dapp/client", () => {
+    const { server, client } = getInferredBuildOutputDirs(
+      ".dist/dapp/server.js",
+    );
+    expect(server).toBe(".dist/dapp");
+    expect(client).toBe(".dist/dapp/client");
+  });
+
   it("段数 4 应抛出错误", () => {
     expect(() => getInferredBuildOutputDirs("src/a/b/main.ts")).toThrow(
       /Entry path format not supported|入口路径格式不支持|需 1–3 段/,

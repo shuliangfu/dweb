@@ -9,6 +9,27 @@
 
 ---
 
+## [3.5.6] - 2026-06-26
+
+### 修复
+
+- **构建输出路径推断**（`src/utils/build-dirs.ts`）：从
+  **`<output>/<app>/server.js`** 推断 client 资源目录时保留 **`.dist`**
+  等隐藏目录名。旧逻辑 **`/^\.\/?/`** 会把 **`.dist/dapp/server.js`** 误解析为
+  **`dist/dapp/server.js`**，导致生产态 Tailwind 等插件无法在
+  **`.dist/.../client/assets`** 找到带 hash 的 CSS。
+- **Bun 单元测试（CI）**：**`bson@7.3.1`** 在 import 阶段调用
+  **`node:v8.isBuildingSnapshot`**，Bun 尚未实现该 API。新增
+  **`tests/bun-preload.ts`** 与 **`bunfig.toml`** 测试 preload，并在
+  **`package.json`** 中锁定 **`bson`** **`7.2.0`**，修复 Linux/macOS/Windows 上
+  **`test-*-bun`** 任务失败。
+
+### 变更
+
+- **`getClientOutputDir`**：未配置 **`build.client.output`** 时，从
+  **`build.server.output`** 推导 **`{server.output}/client`**，仅配置
+  **`.dist/dapp`** 等 server 输出目录的应用也能正确定位 client 资源。
+
 ## [3.5.5] - 2026-06-26
 
 ### 修复

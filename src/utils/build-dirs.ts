@@ -58,6 +58,14 @@ function throwEntryPathError(path: string, reason: string): never {
 }
 
 /**
+ * 去掉路径开头的 `./` 前缀，保留以 `.` 开头的目录名（如 `.dist`）。
+ * 旧实现使用 `/^\.\/?/` 会把 `.dist/foo` 误变成 `dist/foo`。
+ */
+function stripLeadingDotSlash(path: string): string {
+  return path.replace(/\\/g, "/").replace(/^\.\//, "");
+}
+
+/**
  * 从超长路径中提取符合规则的入口相对路径（1–3 段）
  *
  * 当 relative() 在 Windows 等环境下产生过多 ../ 段时，
@@ -65,7 +73,7 @@ function throwEntryPathError(path: string, reason: string): never {
  * 优先识别 src/main.ts（单应用），避免将项目名误判为应用名。
  */
 function extractEntryFromLongPath(fullPath: string): string | null {
-  const normalized = fullPath.replace(/\\/g, "/").replace(/^\.\/?/, "");
+  const normalized = stripLeadingDotSlash(fullPath);
   const parts = normalized.split("/").filter(Boolean);
   const mainIdx = parts.lastIndexOf("main.ts");
   if (mainIdx < 0) {
@@ -157,11 +165,16 @@ export function getMainModulePath(): string | null {
  * @returns 客户端输出目录相对路径（如 "dist/client"）
  */
 export function getClientOutputDir(config?: {
-  build?: { client?: { output?: string } };
+  build?: { client?: { output?: string }; server?: { output?: string } };
 }): string {
-  const output = config?.build?.client?.output;
-  if (typeof output === "string" && output.trim() !== "") {
-    return output.trim();
+  const clientOutput = config?.build?.client?.output;
+  if (typeof clientOutput === "string" && clientOutput.trim() !== "") {
+    return clientOutput.trim();
+  }
+  // 仅配置 server.output（如 .dist/dapp）时，客户端目录默认为 <server.output>/client
+  const serverOutput = config?.build?.server?.output;
+  if (typeof serverOutput === "string" && serverOutput.trim() !== "") {
+    return join(serverOutput.trim(), "client").replace(/\\/g, "/");
   }
   return getInferredBuildOutputDirs().client;
 }
@@ -186,6 +199,12 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
 } {
   let entry: string;
   if (overrideEntry != null) {
+    if (overrideEntry.trim() === "") {
+      throwEntryPathError(
+        overrideEntry,
+        $tr("errors.entryPathInvalidReasonSegmentCount", { count: "0" }),
+      );
+    }
     entry = overrideEntry.startsWith(".")
       ? overrideEntry
       : join(".", overrideEntry);
@@ -202,7 +221,7 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
         : join(".", relativeEntry);
       // 入口为 main.ts 时用于推断（开发/构建）；入口为构建产物 server.js 时也用于推断（生产 start）
       // 避免用 dist/backend/server.js 启动时仍按 src/main.ts 推断成 dist/client，导致 SSG 读错目录返回 500
-      const pathParts = normalized.replace(/\\/g, "/").replace(/^\.\/?/, "")
+      const pathParts = stripLeadingDotSlash(normalized)
         .split("/").filter(Boolean);
       const last = pathParts[pathParts.length - 1] ?? "";
       const isBuiltServerEntry = (last === "server.js" || last === "server") &&
@@ -213,7 +232,7 @@ export function getInferredBuildOutputDirs(overrideEntry?: string): {
     }
   }
   // Windows 兼容：先将反斜杠转为正斜杠，避免 split("/") 在 Windows 路径下分段错误
-  let parts = entry.replace(/\\/g, "/").replace(/^\.\/?/, "").split("/")
+  let parts = stripLeadingDotSlash(entry).split("/")
     .filter(Boolean);
 
   // Windows 等环境下 relative() 可能产生过多 ../ 段，尝试从路径中提取有效入口
