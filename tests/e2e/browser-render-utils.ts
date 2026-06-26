@@ -1367,6 +1367,7 @@ function expectHeadMeta(
  *
  * SPA 从 `/about` 等切回 `/` 时，`waitForContentViaEvaluate` 会因页眉导航含「首页」文案而过早返回，
  * 此时 React 可能尚未提交新的 document title（Linux CI headless 下更易复现）。
+ * 两阶段 deferred 导航下首帧不 patch head，须等 `/__data` 到达后再断言 title/meta。
  *
  * @param browser - 含 evaluate 的浏览器上下文
  * @param expected - 期望的 title / description
@@ -1460,15 +1461,19 @@ async function assertBrowserMetadata(
     throw new Error("page.click 不可用，无法验证 SPA metadata");
   }
 
-  await page.click('a[href="/about"]', { timeout: contentTimeout });
-  await waitForAboutPageBodyViaEvaluate(browser, navTimeoutMs);
-
   const aboutExpected = {
     title: BASIC_E2E_ABOUT_TITLE,
     description: BASIC_E2E_ABOUT_DESC,
   };
+  await page.click('a[href="/about"]', { timeout: contentTimeout });
+  await waitForAboutPageBodyViaEvaluate(browser, navTimeoutMs);
+  await waitForRouteHeadMetaMatch(
+    browser,
+    aboutExpected,
+    navTimeoutMs,
+    "关于页（点击后的 SPA）",
+  );
   const aboutHead = await readRouteHeadMeta(browser);
-  expectHeadMeta(aboutHead, aboutExpected, "关于页（点击后的 SPA）");
   expect(aboutHead.title).not.toBe(BASIC_E2E_HOME_TITLE);
 
   await page.click('header a[href="/"]', { timeout: contentTimeout });
@@ -1486,8 +1491,13 @@ async function assertBrowserMetadata(
     title: BASIC_E2E_USER1_TITLE,
     description: BASIC_E2E_USER1_DESC,
   };
+  await waitForRouteHeadMetaMatch(
+    browser,
+    userExpected,
+    navTimeoutMs,
+    "用户详情（点击后的 SPA）",
+  );
   const userHead = await readRouteHeadMeta(browser);
-  expectHeadMeta(userHead, userExpected, "用户详情（点击后的 SPA）");
   expect(userHead.title).not.toBe(BASIC_E2E_ABOUT_TITLE);
 
   await page.click('header a[href="/"]', { timeout: contentTimeout });
@@ -1501,12 +1511,13 @@ async function assertBrowserMetadata(
   if (options?.viewHybridExtraRoutes === true) {
     await page.click('a[href="/gallery"]', { timeout: contentTimeout });
     await waitForGalleryPageBodyViaEvaluate(browser, navTimeoutMs);
-    expectHeadMeta(
-      await readRouteHeadMeta(browser),
+    await waitForRouteHeadMetaMatch(
+      browser,
       {
         title: VIEW_HYBRID_GALLERY_TITLE,
         description: VIEW_HYBRID_GALLERY_DESC,
       },
+      navTimeoutMs,
       "相册页",
     );
 
@@ -1520,12 +1531,13 @@ async function assertBrowserMetadata(
 
     await page.click('a[href="/charts"]', { timeout: contentTimeout });
     await waitForChartsPageBodyViaEvaluate(browser, navTimeoutMs);
-    expectHeadMeta(
-      await readRouteHeadMeta(browser),
+    await waitForRouteHeadMetaMatch(
+      browser,
       {
         title: VIEW_HYBRID_CHARTS_TITLE,
         description: VIEW_HYBRID_CHARTS_DESC,
       },
+      navTimeoutMs,
       "图表页",
     );
 
