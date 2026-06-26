@@ -27,6 +27,9 @@ and this project adheres to
   after a failed **`/ws`** handshake.
 - **`createWebSocketMiddleware`**: only intercepts requests with
   **`Upgrade: websocket`**; non-upgrade traffic passes through **`next()`**.
+- **`package.json` overrides**: align **`preact`** override with direct
+  dependency (**`^10.29.3`**) so **`npx`** / JSR publish and CI Playwright
+  install no longer fail with **`EOVERRIDE`**.
 
 ### Changed
 

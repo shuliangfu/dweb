@@ -25,6 +25,9 @@
   可能导致整站 HTTP 不可用。
 - **`createWebSocketMiddleware`**：仅拦截带 **`Upgrade: websocket`**
   的请求，其余 走 **`next()`**。
+- **`package.json` overrides**：**`preact`**
+  覆盖版本与直接依赖对齐（**`^10.29.3`**）， 修复 CI
+  **`npx playwright install`** 与 JSR 发布时的 **`EOVERRIDE`** 错误。
 
 ### 变更
 
