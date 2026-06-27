@@ -1924,11 +1924,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.5.8] - 2026-06-27
+### [3.5.9] - 2026-06-27
 
-**新增** — 嵌套 **`routes/_middleware.ts`** 链式执行（规则同
-**`_layout`**），支持 **`return Response`** 短路。 **变更** —
-**`@dreamer/router`** **`^1.1.8`**。 完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
+**修复** — 路由中间件 ctx 注入 **`container`** / **`app`**，嵌套
+**`_middleware.ts`** 可正确解析登录态。完整记录见
+[CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

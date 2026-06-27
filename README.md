@@ -1857,11 +1857,10 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.5.8] - 2026-06-27
+### [3.5.9] - 2026-06-27
 
-**Added** — Nested **`routes/_middleware.ts`** chain (root → subdirectories,
-same as **`_layout`**); **`return Response`** short-circuit. **Changed** —
-**`@dreamer/router`** **`^1.1.8`**. Full history:
+**Fixed** — Route middleware ctx now includes **`container`** / **`app`** (token
+identity works in nested **`_middleware.ts`**). Full history:
 [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---

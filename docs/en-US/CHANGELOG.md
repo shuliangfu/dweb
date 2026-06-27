@@ -10,6 +10,23 @@ and this project adheres to
 
 ---
 
+## [3.5.9] - 2026-06-27
+
+### Fixed
+
+- **Nested route middleware context** (`src/feature/routes-middleware.ts`):
+  inject **`container`** and **`app`** into the HTTP context before running
+  **`routes/_middleware.ts`**, matching API **`extendApiContext`**. Without
+  this, app middleware could not resolve **`UserService`** / token identity even
+  when the client was logged in (API **`/api/user/identity`** worked).
+
+### Tests
+
+- **`tests/unit/routes-middleware.test.ts`**: assert **`container`** is present
+  on the context passed to route middleware.
+
+---
+
 ## [3.5.8] - 2026-06-27
 
 ### Added

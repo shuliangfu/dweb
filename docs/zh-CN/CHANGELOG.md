@@ -9,6 +9,24 @@
 
 ---
 
+## [3.5.9] - 2026-06-27
+
+### 修复
+
+- **嵌套路由中间件上下文**（**`src/feature/routes-middleware.ts`**）：执行
+  **`routes/_middleware.ts`** 前向 HTTP 上下文注入
+  **`container`**、**`app`**（与 API **`extendApiContext`**
+  一致）。修复前应用中间件无法访问 **`UserService`** 解析
+  token，导致已登录用户访问子目录仍被重定向（API **`/api/user/identity`**
+  正常）。
+
+### 测试
+
+- **`tests/unit/routes-middleware.test.ts`**：断言 route middleware 收到的 ctx
+  含 **`container`**。
+
+---
+
 ## [3.5.8] - 2026-06-27
 
 ### 新增

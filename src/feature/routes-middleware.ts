@@ -5,17 +5,49 @@
  * 例如访问 /hs-admin 时会依次执行 routes/_middleware.ts → routes/hs-admin/_middleware.ts。
  */
 
-import type { Middleware, MiddlewareContext } from "@dreamer/middleware";
+import type { Middleware } from "@dreamer/middleware";
 import type { Router } from "@dreamer/router";
 import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
+import { getApp } from "../core/app.ts";
 import { getRouter } from "./router.ts";
+
+/** 路由中间件上下文：注入 container / app，供 routes/_middleware.ts 使用 */
+type RouteMiddlewareContext = HttpContext & {
+  container: ServiceContainer;
+  app?: ReturnType<typeof getApp>;
+};
 
 /** 路由中间件函数：可返回 Response 以短路后续链 */
 type RouteMiddlewareFn = (
-  ctx: MiddlewareContext,
+  ctx: RouteMiddlewareContext,
   next: () => Promise<void>,
 ) => Promise<void | Response>;
+
+/**
+ * 为 routes/_middleware.ts 补齐 container / app（与 API extendApiContext 对齐）
+ *
+ * @param ctx HTTP 上下文
+ * @param container 服务容器
+ * @returns 扩展后的中间件上下文
+ */
+function ensureRouteMiddlewareContext(
+  ctx: HttpContext,
+  container: ServiceContainer,
+): RouteMiddlewareContext {
+  const routeCtx = ctx as RouteMiddlewareContext;
+  if (!routeCtx.container) {
+    routeCtx.container = container;
+  }
+  if (!routeCtx.app && container.has("app")) {
+    try {
+      routeCtx.app = getApp(container);
+    } catch {
+      // app 尚未注册时忽略
+    }
+  }
+  return routeCtx;
+}
 
 /**
  * 从 Router 扫描结果加载指定 pathname 对应的嵌套中间件函数列表（从外到内）
@@ -76,6 +108,7 @@ export function createNestedRoutesMiddleware(
     const pathname = ctx.path ||
       new URL(ctx.request.url).pathname;
     const middlewares = await loadNestedRouteMiddlewares(router, pathname);
+    const routeCtx = ensureRouteMiddlewareContext(ctx, container);
 
     if (middlewares.length === 0) {
       await next();
@@ -98,7 +131,7 @@ export function createNestedRoutesMiddleware(
       }
 
       const middleware = middlewares[index++];
-      const result = await middleware(ctx as MiddlewareContext, runNestedChain);
+      const result = await middleware(routeCtx, runNestedChain);
 
       // 兼容 return Response.redirect(...) 等短路写法
       if (result instanceof Response) {

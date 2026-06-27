@@ -111,4 +111,28 @@ describe("嵌套路由中间件 (routes-middleware.ts)", () => {
 
     expect(called).toBe(true);
   });
+
+  it("执行嵌套中间件时应注入 container 到 ctx", async () => {
+    let seenContainer: ServiceContainer | undefined;
+    const mockRouter = {
+      getMiddlewarePathsForPath: () => ["/routes/_middleware.ts"],
+      loadModule: async () => ({
+        default: async (
+          ctx: { container?: ServiceContainer },
+          next: () => Promise<void>,
+        ) => {
+          seenContainer = ctx.container;
+          await next();
+        },
+      }),
+    } as unknown as Router;
+
+    const container = new ServiceContainer();
+    container.registerSingleton("router", () => mockRouter);
+
+    const middleware = createNestedRoutesMiddleware(container);
+    await middleware(createTestContext("/admin"), async () => {});
+
+    expect(seenContainer).toBe(container);
+  });
 });
