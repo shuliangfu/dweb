@@ -44,6 +44,7 @@ import {
   ensureClientEntryFile,
 } from "../feature/csr-client-builder.ts";
 import { createLoadDataMiddleware } from "../feature/load-data-middleware.ts";
+import { createNestedRoutesMiddleware } from "../feature/routes-middleware.ts";
 import { loadRouteModule } from "../feature/load-route-module.ts";
 import { createRendererCSR } from "../feature/render-csr.ts";
 import { createRendererHybrid } from "../feature/render-hybrid.ts";
@@ -361,7 +362,7 @@ export class App extends EventEmitter implements IApp {
     // 先注册插件并触发 onInit，再初始化服务器/构建 client（以便 getHmrCssEntries 等能读到 tailwindConfig 等）
     await this._registerPluginsFromConfig(mergedConfig);
     await this._registerMiddlewaresFromConfig(mergedConfig);
-    await this._registerRoutesMiddleware(mergedConfig);
+    this._registerRoutesMiddleware(mergedConfig);
     this._initialized = true;
     for (const pending of this._pendingMiddlewares) {
       this.use(
@@ -667,36 +668,21 @@ export class App extends EventEmitter implements IApp {
   }
 
   /**
-   * 按约定自动加载并注册 routes/_middleware.ts（路由级中间件）
+   * 按约定注册 routes 下嵌套 _middleware.ts 链（根 + 子目录，从外到内执行）
    *
-   * @param config 应用配置
+   * 实际模块在请求时由 Router 扫描结果动态加载，与嵌套 _layout 行为一致。
+   *
+   * @param _config 应用配置（保留参数以兼容调用方）
    */
-  private async _registerRoutesMiddleware(config: AppConfig): Promise<void> {
-    const routerConfig = (config.router || {}) as { routesDir?: string };
-    const routesBase = resolveRouterRoutesDirPath(
-      cwd(),
-      routerConfig.routesDir || "./src/routes",
+  private _registerRoutesMiddleware(_config: AppConfig): void {
+    registerMiddleware(
+      this.container,
+      createNestedRoutesMiddleware(this.container) as Middleware<
+        MiddlewareContext
+      >,
+      undefined,
+      "routes-middleware",
     );
-    const absPath = join(routesBase, "_middleware.ts");
-    if (!(await exists(absPath))) {
-      return;
-    }
-    try {
-      const middleware = await this._loadMiddlewareFromFile(absPath);
-      registerMiddleware(
-        this.container,
-        middleware,
-        undefined,
-        "routes-middleware",
-      );
-    } catch (error) {
-      const logger = getLogger(this.container);
-      logger.warn(
-        $tr("log.routesMiddlewareSkipped", {
-          message: error instanceof Error ? error.message : String(error),
-        }),
-      );
-    }
   }
 
   /**

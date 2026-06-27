@@ -10,6 +10,32 @@ and this project adheres to
 
 ---
 
+## [3.5.8] - 2026-06-27
+
+### Added
+
+- **Nested route middleware** (`src/feature/routes-middleware.ts`):
+  **`createNestedRoutesMiddleware`** chains **`routes/_middleware.ts`** files
+  from root to the current pathname (outer → inner), matching nested
+  **`_layout`** behavior (e.g. **`routes/_middleware.ts`** then
+  **`routes/hs-admin/_middleware.ts`** for **`/hs-admin/*`**). Supports
+  **`return Response`** short-circuit (writes **`ctx.response`**).
+
+### Changed
+
+- **`App._registerRoutesMiddleware`**: registers the nested executor instead of
+  loading only the root **`routes/_middleware.ts`** at init time; modules load
+  per request via **`Router.getMiddlewarePathsForPath`**.
+- **JSR dependency**: **`@dreamer/router`** **`^1.1.8`** (nested middleware path
+  helpers).
+
+### Tests
+
+- **`tests/unit/routes-middleware.test.ts`**: chain order, **`Response`**
+  short-circuit, no-router passthrough.
+
+---
+
 ## [3.5.7] - 2026-06-26
 
 ### Added

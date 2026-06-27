@@ -1857,13 +1857,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.5.7] - 2026-06-26
+### [3.5.8] - 2026-06-27
 
-**Added** — **`deno task pw:install`** for Playwright Chromium (browser e2e).
-**Fixed** — WebSocket sync upgrade via **`registerWebSocketUpgrade`** (Deno 101
-response). **Changed** — Deferred SPA navigation: render shell first, patch
-**`/__data`** when ready; JSR deps **`runtime-adapter@^1.0.19`**,
-**`server@^1.1.9`**, **`websocket@^1.0.7`**. Full history:
+**Added** — Nested **`routes/_middleware.ts`** chain (root → subdirectories,
+same as **`_layout`**); **`return Response`** short-circuit. **Changed** —
+**`@dreamer/router`** **`^1.1.8`**. Full history:
 [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---

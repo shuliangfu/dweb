@@ -9,6 +9,30 @@
 
 ---
 
+## [3.5.8] - 2026-06-27
+
+### 新增
+
+- **嵌套路由中间件**（**`src/feature/routes-middleware.ts`**）：
+  **`createNestedRoutesMiddleware`** 按 pathname 从外到内链式执行
+  **`routes/_middleware.ts`**（与嵌套 **`_layout`** 规则一致，例如
+  **`/hs-admin/*`** 先根中间件再 **`hs-admin/_middleware.ts`**）。支持
+  **`return Response`** 短路（写入 **`ctx.response`**）。
+
+### 变更
+
+- **`App._registerRoutesMiddleware`**：改为注册嵌套执行器，不再仅在 init
+  时加载根 **`routes/_middleware.ts`**；请求时通过
+  **`Router.getMiddlewarePathsForPath`** 动态加载。
+- **JSR 依赖**：**`@dreamer/router`** **`^1.1.8`**（嵌套中间件路径 API）。
+
+### 测试
+
+- **`tests/unit/routes-middleware.test.ts`**：链式顺序、**`Response`** 短路、无
+  Router 放行。
+
+---
+
 ## [3.5.7] - 2026-06-26
 
 ### 新增
