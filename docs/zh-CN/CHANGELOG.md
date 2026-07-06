@@ -7,6 +7,18 @@
 
 ---
 
+## [3.5.10] - 2026-07-06
+
+### 变更
+
+- **依赖**：`@dreamer/esbuild` 由 `^1.1.9` 升至 `^1.2.0`（`deno.json` 与
+  `package.json` 同步），获得 jsr: 运行时回退与动态 `import()` 缓存覆盖； 新增
+  `esbuild` 导入别名指向同一包。
+- **依赖**：`@dreamer/view` 由 `^2.0.2` 升至 `^2.0.3`（`deno.json` 与
+  `package.json` 同步），获得响应式 `hasObservers` 标记、GC 友好的
+  `cleanupObserver`、O(1) `adoptChild` Set、Memo 上游检测修复。
+- **配置**：`deno.json` 新增 `minimumDependencyAge: 0`。
+
 ---
 
 ## [3.5.9] - 2026-06-27

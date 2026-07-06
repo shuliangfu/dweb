@@ -8,6 +8,18 @@ and this project adheres to
 
 ---
 
+## [3.5.10] - 2026-07-06
+
+### Changed
+
+- **Dependencies**: bump `@dreamer/esbuild` from `^1.1.9` to `^1.2.0` in
+  `deno.json` and `package.json` (jsr: runtime fallback + dynamic `import()`
+  cache coverage); add `esbuild` import alias pointing to the same package.
+- **Dependencies**: bump `@dreamer/view` from `^2.0.2` to `^2.0.3` in
+  `deno.json` and `package.json` (reactivity `hasObservers` flag, GC-friendly
+  `cleanupObserver`, O(1) `adoptChild` Set, Memo upstream detection fix).
+- **Config**: add `minimumDependencyAge: 0` to `deno.json`.
+
 ---
 
 ## [3.5.9] - 2026-06-27

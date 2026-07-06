@@ -1857,11 +1857,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.5.9] - 2026-06-27
+### [3.5.10] - 2026-07-06
 
-**Fixed** — Route middleware ctx now includes **`container`** / **`app`** (token
-identity works in nested **`_middleware.ts`**). Full history:
-[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Changed** — Bump `@dreamer/esbuild` to `^1.2.0` (jsr: fallback + dynamic
+import cache); `@dreamer/view` to `^2.0.3` (reactivity perf + GC fixes); add
+`esbuild` import alias. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

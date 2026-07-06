@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "3.5.9",
+  "version": "3.5.10",
   "description": "A full-stack Web framework compatible with Deno and Bun, integrating @dreamer/* libraries for an out-of-the-box development experience.",
   "license": "Apache-2.0",
   "exports": {
@@ -44,7 +44,8 @@
     "@dreamer/config": "jsr:@dreamer/config@^1.0.4",
     "@dreamer/console": "jsr:@dreamer/console@^1.0.12",
     "@dreamer/database": "jsr:@dreamer/database@^1.1.0",
-    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.1.9",
+    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.2.0",
+    "esbuild": "jsr:@dreamer/esbuild@^1.2.0",
     "@dreamer/i18n": "jsr:@dreamer/i18n@^1.0.1",
     "@dreamer/image": "jsr:@dreamer/image@^1.0.2",
     "@dreamer/lifecycle": "jsr:@dreamer/lifecycle@^1.0.2",
@@ -62,7 +63,7 @@
     "@dreamer/socket-io": "jsr:@dreamer/socket-io@^1.1.0",
     "@dreamer/test": "jsr:@dreamer/test@^1.1.8",
     "@dreamer/utils": "jsr:@dreamer/utils@^1.0.1",
-    "@dreamer/view": "jsr:@dreamer/view@^2.0.2",
+    "@dreamer/view": "jsr:@dreamer/view@^2.0.3",
     "@dreamer/websocket": "jsr:@dreamer/websocket@^1.0.7",
     "playwright": "npm:playwright@^1.61.1",
     "preact": "npm:preact@^10.29.3",
@@ -81,6 +82,7 @@
     "test:e2e": "deno test -A tests/e2e/",
     "pw:install": "npx -y playwright@1.59.1 install chromium"
   },
+  "minimumDependencyAge": 0,
   "workspace": [
     "./examples/*/*",
     "./tests/data/dweb-integration-*"

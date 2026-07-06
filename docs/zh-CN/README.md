@@ -1924,11 +1924,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.5.9] - 2026-06-27
+### [3.5.10] - 2026-07-06
 
-**修复** — 路由中间件 ctx 注入 **`container`** / **`app`**，嵌套
-**`_middleware.ts`** 可正确解析登录态。完整记录见
-[CHANGELOG.md](./CHANGELOG.md)。
+**变更** — `@dreamer/esbuild` 升至 `^1.2.0`（jsr: 回退 + 动态 import 缓存）；
+`@dreamer/view` 升至 `^2.0.3`（响应式性能 + GC 修复）；新增 `esbuild`
+导入别名。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 
