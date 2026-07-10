@@ -14,7 +14,11 @@ import {
   createClientScriptMiddleware,
   generateClientDepContent,
   getCachedClientScript,
+  buildChunkIndices,
+  findChunkContent,
+  getChunkBaseName,
   getChunkFileNameForComponent,
+  isClientChunkFile,
 } from "../../src/feature/csr-client-builder.ts";
 import type { AppConfig } from "../../src/types/app.ts";
 import { initializeLogger } from "../../src/utils/logger.ts";
@@ -187,6 +191,95 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
       expect(
         getChunkFileNameForComponent("workspace/projects/create", names),
       ).toBeNull();
+    });
+
+    it("完整路径 dash 命名 desktop-basic-button-*.js 应优先于同名末段", () => {
+      const names = [
+        "button-OTHER1.js",
+        "desktop-basic-button-HASH01.js",
+        "_client.js",
+      ];
+      expect(
+        getChunkFileNameForComponent("desktop/basic/button", names),
+      ).toBe("desktop-basic-button-HASH01.js");
+    });
+
+    it("根 index 应匹配 routes-*.js", () => {
+      const names = ["_client.js", "routes-ABCDEF.js", "about-XYZXYZ.js"];
+      expect(getChunkFileNameForComponent("index", names)).toBe(
+        "routes-ABCDEF.js",
+      );
+    });
+
+    it("单段 about 应匹配 about-*.js", () => {
+      expect(
+        getChunkFileNameForComponent("about", [
+          "_client.js",
+          "about-ABCDEF.js",
+          "home-XYZXYZ.js",
+        ]),
+      ).toBe("about-ABCDEF.js");
+    });
+  });
+
+  describe("isClientChunkFile()", () => {
+    it("应识别 hash chunk 与无 hash 开发 chunk，排除主入口", () => {
+      expect(isClientChunkFile("/about-ABCDEF.js")).toBe(true);
+      expect(isClientChunkFile("/routes/index-ABCDEF.js")).toBe(true);
+      expect(isClientChunkFile("/about.js")).toBe(true);
+      expect(isClientChunkFile("/about-ABCDEF.js.map")).toBe(true);
+      expect(isClientChunkFile("/_client.js")).toBe(false);
+      expect(isClientChunkFile("/_client.js.map")).toBe(false);
+      expect(isClientChunkFile("/api/users")).toBe(false);
+      expect(isClientChunkFile("about-ABCDEF.js")).toBe(false);
+    });
+  });
+
+  describe("findChunkContent() / buildChunkIndices()", () => {
+    it("应按 basename 与 HMR base 回退命中，且多 chunk 不互替", () => {
+      const files = new Map<string, string>([
+        ["about-AAAAAA.js", "about-v1"],
+        ["routes-BBBBBB.js", "routes-content"],
+        ["chunk-111111.js", "chunk-a"],
+        ["chunk-222222.js", "chunk-b"],
+      ]);
+      const { chunkContentIndex, chunkBaseIndex } = buildChunkIndices(files);
+      expect(findChunkContent(files, "about-AAAAAA.js", chunkContentIndex))
+        .toBe("about-v1");
+      // HMR：旧 hash 按 base 回退到唯一 routes 内容
+      expect(
+        findChunkContent(
+          files,
+          "routes-OLDOLD.js",
+          chunkContentIndex,
+          chunkBaseIndex,
+        ),
+      ).toBe("routes-content");
+      // 多个 chunk-* 共享 base「chunk」，不得误回退
+      expect(
+        findChunkContent(
+          files,
+          "chunk-999999.js",
+          chunkContentIndex,
+          chunkBaseIndex,
+        ),
+      ).toBeUndefined();
+      expect(getChunkBaseName("about-ABCDEF.js")).toBe("about");
+      expect(getChunkBaseName("_client.js")).toBe("_client");
+    });
+
+    it("admin/index 不得误匹配根 index 的 routes chunk", () => {
+      const names = [
+        "routes-HOME01.js",
+        "admin-index-ADM001.js",
+        "_client.js",
+      ];
+      expect(getChunkFileNameForComponent("admin/index", names)).toBe(
+        "admin-index-ADM001.js",
+      );
+      expect(getChunkFileNameForComponent("index", names)).toBe(
+        "routes-HOME01.js",
+      );
     });
   });
 });

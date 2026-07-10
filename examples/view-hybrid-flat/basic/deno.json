@@ -24,7 +24,7 @@
     "@dreamer/service": "jsr:@dreamer/service@^1.0.2",
     "@dreamer/socket-io": "jsr:@dreamer/socket-io@^1.0.12",
     "@dreamer/utils": "jsr:@dreamer/utils@^1.0.1",
-    "@dreamer/view": "jsr:@dreamer/view@^2.0.2"
+    "@dreamer/view": "jsr:@dreamer/view@^2.0.4"
   },
   "compilerOptions": {
     "jsx": "react-jsx",

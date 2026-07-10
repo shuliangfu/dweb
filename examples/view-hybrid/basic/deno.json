@@ -27,7 +27,7 @@
     "@dreamer/web3": "jsr:@dreamer/web3@^1.1.1",
     "@dreamer/websocket": "jsr:@dreamer/websocket@^1.0.7",
     "@dreamer/utils": "jsr:@dreamer/utils@^1.0.1",
-    "@dreamer/view": "jsr:@dreamer/view@^2.0.2",
+    "@dreamer/view": "jsr:@dreamer/view@^2.0.4",
     "chart.js": "npm:chart.js@4.5.1",
     "postcss": "npm:postcss@^8.5.12",
     "autoprefixer": "npm:autoprefixer@^10.5.0",

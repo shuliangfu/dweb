@@ -22,6 +22,16 @@ export const DEFAULT_CACHE_OPTIONS: DevCacheOptions = {
   evictionBatchInterval: 50,
 };
 
+/**
+ * 带 content-hash 的静态 JS/CSS 等长缓存策略（immutable 一年）。
+ * 文档 HTML / `__data` 等不得使用此值（仍 no-store）。
+ */
+export const HASHED_ASSET_CACHE_CONTROL =
+  "public, max-age=31536000, immutable";
+
+/** 开发态资源禁用缓存（与 createDevNoCacheMiddleware 语义一致） */
+export const DEV_NO_CACHE_CONTROL = "no-cache, no-store, must-revalidate";
+
 const cacheOptions: DevCacheOptions = { ...DEFAULT_CACHE_OPTIONS };
 
 /**

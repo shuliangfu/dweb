@@ -33,9 +33,7 @@ import {
 } from "./runtime-adapter.ts";
 
 import { AssetsProcessor } from "@dreamer/esbuild";
-import { requestId, requestLogger } from "@dreamer/middlewares";
 import { expandDynamicRoute, filePathToRoute } from "@dreamer/render";
-import { session } from "@dreamer/session";
 import { initializeBuild, runBuildWithBuilder } from "../feature/build.ts";
 import {
   buildClientScript,
@@ -107,10 +105,8 @@ import {
   initializeDatabase,
 } from "./database.ts";
 import { getLifecycleManager, initializeLifecycle } from "./lifecycle.ts";
+import { registerFrameworkHttpMiddlewares } from "./app-http-middlewares.ts";
 import {
-  createDevNoCacheMiddleware,
-  createHealthCheckMiddleware,
-  createSecurityHeadersMiddleware,
   getServerMiddlewares,
   initializeMiddleware,
   pluginEventsMiddleware,
@@ -434,39 +430,11 @@ export class App extends EventEmitter implements IApp {
         rt === "start" ||
         rt === "build";
 
-      // 开发模式：最先注册，在 next() 后统一为所有响应加上禁用缓存头，避免浏览器/代理缓存导致改代码不生效
-      server.use(
-        createDevNoCacheMiddleware(isRuntimeDev),
-        undefined,
-        "dev-no-cache",
-      );
-      server.use(
-        createSecurityHeadersMiddleware(mergedConfig),
-        undefined,
-        "security-headers",
-      );
-
-      // 框架级中间件：Request ID、请求日志（先于用户中间件执行）
-      server.use(requestId());
-      server.use(
-        requestLogger({
-          logger: getLogger(this.container),
-          skip: (ctx) => ctx.path.startsWith("/.well-known/"),
-          detailed: useDetailedRequestLog,
-        }),
-      );
-
-      // Session 中间件（config.session 为 SessionOptions，store 由用户选用 @dreamer/session 的适配器）
-      if (mergedConfig.session) {
-        server.use(session(mergedConfig.session), undefined, "session");
-      }
-
-      // 内置健康检查：GET /health 触发 onHealthCheck 插件事件并返回聚合状态
-      server.use(
-        createHealthCheckMiddleware(this.container),
-        "/health",
-        "health-check",
-      );
+      // 框架默认 HTTP 中间件栈（dev 禁用缓存、安全头、可选 cors/压缩/限流、requestId、session、/health）
+      registerFrameworkHttpMiddlewares(server, mergedConfig, this.container, {
+        isRuntimeDev,
+        useDetailedRequestLog,
+      });
 
       // socket.adapter 为 socketio 时：路径前缀匹配委托给 Socket.IO 处理
       const socketIoPath = getSocketIoPath(this.container);

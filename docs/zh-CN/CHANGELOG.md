@@ -7,6 +7,57 @@
 
 ---
 
+## [3.5.11] - 2026-07-10
+
+### 新增
+
+- **生产 opt-in 中间件**（`AppConfig`）：`cors`、`compression`、`rateLimit`
+  （均基于 `@dreamer/middlewares`；默认关闭，`true` 用库默认，对象则透传选项）。
+  装配见 **`src/core/app-http-middlewares.ts`** 的
+  **`registerFrameworkHttpMiddlewares`**（顺序：dev-no-cache → security-headers
+  → 可选 cors / rateLimit / compression → requestId / requestLogger → 可选
+  session → `/health`）。
+- **`csr-client-chunk.ts`**：从 `csr-client-builder` 拆出 chunk 索引 / 匹配 /
+  HMR 映射纯函数（`buildChunkIndices`、`findChunkContent`、
+  `getChunkFileNameForComponent`、`isClientChunkFile` 等）；`csr-client-builder`
+  仍 re-export，对外 API 兼容。
+- **缓存头常量**（`src/utils/constants.ts`）：`HASHED_ASSET_CACHE_CONTROL`
+  （`public, max-age=31536000, immutable`）、`DEV_NO_CACHE_CONTROL`；客户端
+  chunk / 带 hash 静态资源与 dev 禁用缓存共用同一语义。
+- **文档**：`docs/*/PRODUCTION_CHECKLIST.md`（生产安全/压缩检查清单）、
+  `docs/*/OPTIMIZATION_ANALYSIS.md`（架构与优化路线图）；`APP_CONFIG` 与
+  `FRAMEWORK_ANALYSIS` 交叉引用；`init` 全量模板注释补充上述 opt-in 键。
+
+### 变更
+
+- **依赖**：`@dreamer/view` 由 `^2.0.3` 升至 `^2.0.5`（`deno.json` /
+  `package.json` 同步）。**requires `@dreamer/view` ≥ 2.0.4**（推荐 ≥ 2.0.5）：
+  路由 SSR 同构、键控 For、受控输入 IME/number 焦点，以及 SSR 伪 DOM
+  `hasAttribute` 等 Element API 对齐。
+- **依赖**：`preact` `^10.29.3` → `^10.29.7`；`postcss` `^8.5.15` →
+  `^8.5.16`。
+- **示例**：view 引擎 examples 的 `@dreamer/view` 升至 `^2.0.4`（与主包
+  2.0.5 线兼容）。
+- **`App._registerFrameworkMiddlewares` 路径**：框架 HTTP 栈迁至
+  `registerFrameworkHttpMiddlewares`，`app.ts` 仅委托；既有 dev 禁用缓存、
+  安全头、session、`/health` 行为不变。
+- **客户端静态资源**：`csr-client-middleware` 对带 hash 的 JS/chunk 使用
+  `HASHED_ASSET_CACHE_CONTROL`（增加 `immutable`）。
+- **热路径**：`escapeHtml` / `serializeJsonForInlineScript` 在无特殊字符时跳过
+  多次全局 replace，降低错误页与 inline `__data` 序列化开销。
+
+### 测试
+
+- **单元**：`app-http-middlewares`、`csr-client-chunk`、`constants`、
+  `cache-dirs`、`render-utils`、`strip-load-plugin`、`view-ssr-route-bundle`
+  等覆盖新增/拆出模块；扩展 `csr-client-builder`、`middleware`、`security`
+  相关用例。
+- **e2e**（`tests/e2e/browser-render-utils.ts`）：端口探测增加独占 bind，降低
+  「Port in use 换端口」竞态；Bun 全量连跑时放宽 advanced/basic 超时、禁用
+  `reuseBrowser` 并在 `afterEach` 清理浏览器，减少 dangling kill 连锁失败。
+
+---
+
 ## [3.5.10] - 2026-07-06
 
 ### 变更

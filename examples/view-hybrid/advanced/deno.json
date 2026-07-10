@@ -28,7 +28,7 @@
     "@dreamer/server": "jsr:@dreamer/server@^1.1.9",
     "@dreamer/service": "jsr:@dreamer/service@^1.0.2",
     "@dreamer/utils": "jsr:@dreamer/utils@^1.0.1",
-    "@dreamer/view": "jsr:@dreamer/view@^2.0.2",
+    "@dreamer/view": "jsr:@dreamer/view@^2.0.4",
     "postcss": "npm:postcss@^8.5.12",
     "autoprefixer": "npm:autoprefixer@^10.5.0",
     "cssnano": "npm:cssnano@^7.1.7",

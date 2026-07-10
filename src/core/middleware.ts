@@ -23,6 +23,7 @@ import {
 import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig, SecurityHeadersConfig } from "../types/app.ts";
+import { DEV_NO_CACHE_CONTROL } from "../utils/constants.ts";
 import { createDwebError, DwebErrorCode } from "../utils/errors.ts";
 import {
   emitOnError,
@@ -254,7 +255,7 @@ export function createDevNoCacheMiddleware(
     await next();
     if (ctx.response) {
       const h = new Headers(ctx.response.headers);
-      h.set("Cache-Control", "no-cache, no-store, must-revalidate");
+      h.set("Cache-Control", DEV_NO_CACHE_CONTROL);
       h.set("Pragma", "no-cache");
       ctx.response = new Response(ctx.response.body, {
         status: ctx.response.status,

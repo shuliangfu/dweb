@@ -238,6 +238,20 @@ ${lines}
     // maxMessageLength: 32 * 1024,
   },
 
+  // ========== Production security / transport (opt-in; see docs/*/PRODUCTION_CHECKLIST.md) ==========
+  /** Security response headers (default off). true or { contentSecurityPolicy, frameOptions, ... } */
+  // securityHeaders: true,
+  // securityHeaders: { enabled: true, contentSecurityPolicy: "default-src 'self'" },
+  /** CORS via @dreamer/middlewares (default off). true or CorsOptions */
+  // cors: true,
+  // cors: { origin: ["https://app.example.com"], credentials: true },
+  /** Response compression gzip/br (default off; prefer production) */
+  // compression: true,
+  // compression: { threshold: 1024, enableBrotli: true },
+  /** Simple in-memory rate limit (default off) */
+  // rateLimit: true,
+  // rateLimit: { windowMs: 60_000, max: 120 },
+
   // ========== Database (optional; uncomment and configure to use) ==========
   /** ${$tr("init.comments.databaseDesc")} */
   // database: {
@@ -433,6 +447,12 @@ ${lines}
     },
     // color, showTime, showLevel, tags, filter, maxMessageLength
   },
+
+  // Production opt-in: securityHeaders, cors, compression, rateLimit (see PRODUCTION_CHECKLIST)
+  // securityHeaders: true,
+  // cors: true,
+  // compression: true,
+  // rateLimit: true,
 
   /** ${$tr("init.comments.databaseDesc")} */
   // database: { default: { adapter: "sqlite", connection: { filename: "./data.db" } }, connections: {}, managerOptions: {} },

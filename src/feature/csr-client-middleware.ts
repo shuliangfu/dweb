@@ -19,16 +19,15 @@ import {
 } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
+import {
+  CLIENT_OUTPUT_MAIN_FILENAME,
+  HASHED_ASSET_CACHE_CONTROL,
+} from "../utils/constants.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { isPathWithinProject } from "../utils/path.ts";
-import {
-  buildClientScript,
-  CLIENT_OUTPUT_MAIN_FILENAME,
-  findChunkContent,
-  getCachedClientScript,
-  isClientChunkFile,
-} from "./csr-client-builder.ts";
+import { buildClientScript, getCachedClientScript } from "./csr-client-builder.ts";
+import { findChunkContent, isClientChunkFile } from "./csr-client-chunk.ts";
 
 /**
  * 创建客户端脚本服务中间件
@@ -141,7 +140,7 @@ export function createClientScriptMiddleware(
               "Content-Type": isMap
                 ? "application/json; charset=utf-8"
                 : "application/javascript; charset=utf-8",
-              "Cache-Control": "public, max-age=31536000",
+              "Cache-Control": HASHED_ASSET_CACHE_CONTROL,
             },
           });
           return;
@@ -239,7 +238,7 @@ export function createClientScriptMiddleware(
             "Content-Type": isSourceMap
               ? "application/json; charset=utf-8"
               : "application/javascript; charset=utf-8",
-            "Cache-Control": "public, max-age=31536000",
+            "Cache-Control": HASHED_ASSET_CACHE_CONTROL,
           },
         });
         return;

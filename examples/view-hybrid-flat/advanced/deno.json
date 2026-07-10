@@ -28,7 +28,7 @@
     "@dreamer/server": "jsr:@dreamer/server@^1.1.9",
     "@dreamer/service": "jsr:@dreamer/service@^1.0.2",
     "@dreamer/utils": "jsr:@dreamer/utils@^1.0.1",
-    "@dreamer/view": "jsr:@dreamer/view@^2.0.2",
+    "@dreamer/view": "jsr:@dreamer/view@^2.0.4",
     "@unocss/core": "npm:@unocss/core@66.0.0",
     "@unocss/preset-wind3": "npm:@unocss/preset-wind3@66.0.0",
     "@unocss/preset-icons": "npm:@unocss/preset-icons@66.0.0",

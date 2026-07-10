@@ -1924,11 +1924,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.5.10] - 2026-07-06
+### [3.5.11] - 2026-07-10
 
-**变更** — `@dreamer/esbuild` 升至 `^1.2.0`（jsr: 回退 + 动态 import 缓存）；
-`@dreamer/view` 升至 `^2.0.3`（响应式性能 + GC 修复）；新增 `esbuild`
-导入别名。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
+**新增 / 变更** — `AppConfig` opt-in `cors` / `compression` / `rateLimit`；拆分
+`csr-client-chunk` 与框架 HTTP 中间件装配；`@dreamer/view` 升至 `^2.0.5`
+（requires ≥ 2.0.4）；带 hash 资源 `immutable` 缓存；e2e Bun 稳定性。完整记录见
+[CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

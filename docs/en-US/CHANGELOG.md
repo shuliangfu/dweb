@@ -8,6 +8,59 @@ and this project adheres to
 
 ---
 
+## [3.5.11] - 2026-07-10
+
+### Added
+
+- **Production opt-in middlewares** (`AppConfig`): `cors`, `compression`, and
+  `rateLimit` (via `@dreamer/middlewares`; off by default; `true` uses library
+  defaults, objects pass through). Wired by
+  **`registerFrameworkHttpMiddlewares`** in
+  **`src/core/app-http-middlewares.ts`** (order: dev-no-cache →
+  security-headers → optional cors / rateLimit / compression → requestId /
+  requestLogger → optional session → `/health`).
+- **`csr-client-chunk.ts`**: pure chunk index/match/HMR helpers extracted from
+  `csr-client-builder` (`buildChunkIndices`, `findChunkContent`,
+  `getChunkFileNameForComponent`, `isClientChunkFile`, etc.); re-exported from
+  `csr-client-builder` for API compatibility.
+- **Cache-Control constants** (`src/utils/constants.ts`):
+  `HASHED_ASSET_CACHE_CONTROL` (`public, max-age=31536000, immutable`) and
+  `DEV_NO_CACHE_CONTROL` for hashed client assets and dev no-cache paths.
+- **Docs**: `docs/*/PRODUCTION_CHECKLIST.md`, `docs/*/OPTIMIZATION_ANALYSIS.md`;
+  `APP_CONFIG` / `FRAMEWORK_ANALYSIS` cross-links; full `init` config template
+  comments for the opt-in keys.
+
+### Changed
+
+- **Dependencies**: bump `@dreamer/view` from `^2.0.3` to `^2.0.5` in
+  `deno.json` and `package.json`. **Requires `@dreamer/view` ≥ 2.0.4**
+  (recommend ≥ 2.0.5): route SSR isomorphism, keyed `For`, controlled input
+  IME/number focus, and SSR pseudo-DOM Element API alignment (`hasAttribute`,
+  etc.).
+- **Dependencies**: `preact` `^10.29.3` → `^10.29.7`; `postcss` `^8.5.15` →
+  `^8.5.16`.
+- **Examples**: view-engine examples bump `@dreamer/view` to `^2.0.4` (compatible
+  with the 2.0.5 line).
+- **App HTTP stack**: framework middleware registration moved to
+  `registerFrameworkHttpMiddlewares`; `app.ts` only delegates. Existing
+  dev-no-cache, security headers, session, and `/health` behavior unchanged.
+- **Client static assets**: `csr-client-middleware` serves hashed JS/chunks with
+  `HASHED_ASSET_CACHE_CONTROL` (adds `immutable`).
+- **Hot path**: `escapeHtml` / `serializeJsonForInlineScript` skip global replaces
+  when no special characters are present (error pages / inline `__data`).
+
+### Tests
+
+- **Unit**: coverage for `app-http-middlewares`, `csr-client-chunk`, `constants`,
+  `cache-dirs`, `render-utils`, `strip-load-plugin`, `view-ssr-route-bundle`;
+  extended `csr-client-builder`, `middleware`, and `security` cases.
+- **e2e** (`tests/e2e/browser-render-utils.ts`): exclusive port bind to reduce
+  “Port in use → wrong poll port” races; under Bun full runs, wider timeouts,
+  disable `reuseBrowser`, and `afterEach` browser cleanup to avoid dangling-kill
+  cascades.
+
+---
+
 ## [3.5.10] - 2026-07-06
 
 ### Changed

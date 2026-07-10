@@ -16,6 +16,11 @@ import type {
   MiddlewareCondition,
   MiddlewareContext,
 } from "@dreamer/middleware";
+import type {
+  CompressionOptions,
+  CorsOptions,
+  RateLimitOptions,
+} from "@dreamer/middlewares";
 import type { Plugin, PluginManagerOptions } from "@dreamer/plugin";
 import type { Engine } from "@dreamer/render";
 import type { RouterOptions } from "@dreamer/router";
@@ -195,6 +200,22 @@ export interface AppConfig extends Record<string, unknown> {
   logger?: LoggerConfig;
   /** 可选安全响应头；默认关闭，启用后在所有框架响应上追加安全头。 */
   securityHeaders?: boolean | SecurityHeadersConfig;
+  /**
+   * 可选 CORS 中间件（基于 `@dreamer/middlewares` cors）。
+   * 默认关闭；`true` 使用库默认（origin `*` 等），对象则透传 `CorsOptions`。
+   */
+  cors?: boolean | CorsOptions;
+  /**
+   * 可选响应压缩（基于 `@dreamer/middlewares` compression，gzip/可选 brotli）。
+   * 默认关闭；`true` 使用库默认阈值，对象则透传 `CompressionOptions`。
+   * 建议仅生产启用；开发态有 dev-no-cache 时压缩收益有限。
+   */
+  compression?: boolean | CompressionOptions;
+  /**
+   * 可选简易限流（基于 `@dreamer/middlewares` rateLimit）。
+   * 默认关闭；`true` 使用库默认，对象则透传 `RateLimitOptions`。
+   */
+  rateLimit?: boolean | RateLimitOptions;
   /** 数据库配置 */
   database?: DatabaseAppConfig;
   /**

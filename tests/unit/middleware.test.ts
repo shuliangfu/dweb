@@ -11,6 +11,8 @@
 import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import {
+  createDevNoCacheMiddleware,
+  createHealthCheckMiddleware,
   createSecurityHeadersMiddleware,
   getMiddlewareChain,
   initializeMiddleware,
@@ -18,6 +20,7 @@ import {
 } from "../../src/core/middleware.ts";
 import { initializeServiceContainer } from "../../src/core/service.ts";
 import type { AppConfig } from "../../src/types/app.ts";
+import { DEV_NO_CACHE_CONTROL } from "../../src/utils/constants.ts";
 
 describe("中间件系统 (middleware.ts)", () => {
   describe("initializeMiddleware()", () => {
@@ -268,6 +271,88 @@ describe("中间件系统 (middleware.ts)", () => {
       expect(ctx.response?.headers.get("Referrer-Policy")).toBe(
         "strict-origin-when-cross-origin",
       );
+    });
+
+    it("可配置 CSP 时应写入 Content-Security-Policy", async () => {
+      const middleware = createSecurityHeadersMiddleware({
+        securityHeaders: {
+          enabled: true,
+          contentSecurityPolicy: "default-src 'self'",
+        },
+      });
+      const ctx = {
+        response: undefined as Response | undefined,
+      };
+      await middleware(ctx as never, async () => {
+        ctx.response = new Response("ok");
+      });
+      expect(ctx.response?.headers.get("Content-Security-Policy")).toBe(
+        "default-src 'self'",
+      );
+    });
+  });
+
+  describe("createDevNoCacheMiddleware()", () => {
+    it("非 dev 时不应改响应头", async () => {
+      const middleware = createDevNoCacheMiddleware(false);
+      const ctx = { response: undefined as Response | undefined };
+      await middleware(ctx as never, async () => {
+        ctx.response = new Response("ok");
+      });
+      expect(ctx.response?.headers.has("Cache-Control")).toBe(false);
+    });
+
+    it("dev 时应写入禁用缓存头", async () => {
+      const middleware = createDevNoCacheMiddleware(true);
+      const ctx = { response: undefined as Response | undefined };
+      await middleware(ctx as never, async () => {
+        ctx.response = new Response("ok");
+      });
+      expect(ctx.response?.headers.get("Cache-Control")).toBe(
+        DEV_NO_CACHE_CONTROL,
+      );
+      expect(ctx.response?.headers.get("Pragma")).toBe("no-cache");
+    });
+  });
+
+  describe("createHealthCheckMiddleware()", () => {
+    it("GET /health 在已注册 pluginManager 时应返回 JSON 状态", async () => {
+      const container = initializeServiceContainer();
+      container.registerSingleton("pluginManager", () => ({
+        getRegisteredPlugins: () => [] as string[],
+        getPlugin: () => null,
+        getState: () => "inactive",
+      }));
+      const middleware = createHealthCheckMiddleware(container);
+      const ctx = {
+        path: "/health",
+        request: { method: "GET" },
+        response: undefined as Response | undefined,
+      };
+      let nextCalled = false;
+      await middleware(ctx as never, async () => {
+        nextCalled = true;
+      });
+      expect(nextCalled).toBe(false);
+      expect(ctx.response).toBeDefined();
+      expect([200, 503]).toContain(ctx.response!.status);
+      const body = await ctx.response!.json() as { status?: string };
+      expect(typeof body.status).toBe("string");
+    });
+
+    it("非 /health 应调用 next", async () => {
+      const container = initializeServiceContainer();
+      const middleware = createHealthCheckMiddleware(container);
+      const ctx = {
+        path: "/",
+        request: { method: "GET" },
+        response: undefined as Response | undefined,
+      };
+      let nextCalled = false;
+      await middleware(ctx as never, async () => {
+        nextCalled = true;
+      });
+      expect(nextCalled).toBe(true);
     });
   });
 });

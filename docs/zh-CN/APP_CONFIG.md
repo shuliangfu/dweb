@@ -22,6 +22,10 @@
 | `render`               | object               | 渲染配置（`engine`、`mode`、`debug` 等；详见下文渲染相关小节与 [View 视图模板引擎](#view-视图模板引擎)）                                                                            |
 | `build`                | BuildAppConfig       | 构建配置                                                                                                                                                                            |
 | `logger`               | LoggerConfig         | 日志配置                                                                                                                                                                            |
+| `securityHeaders`      | boolean \| object    | **可选**安全响应头；默认关闭；`true` 启用 nosniff 等默认头，可配 CSP / frameOptions（见 [PRODUCTION_CHECKLIST](./PRODUCTION_CHECKLIST.md)）                                       |
+| `cors`                 | boolean \| CorsOptions | **可选** CORS（`@dreamer/middlewares`）；默认关闭                                                                                                                                |
+| `compression`          | boolean \| object    | **可选** 响应压缩 gzip/br；默认关闭；建议生产开启                                                                                                                                   |
+| `rateLimit`            | boolean \| object    | **可选** 简易内存限流；默认关闭                                                                                                                                                     |
 | `database`             | DatabaseAppConfig    | 数据库配置                                                                                                                                                                          |
 | `socket`               | SocketConfig         | 实时通信配置（type: socketio 或 websocket）                                                                                                                                         |
 | `session`              | SessionOptions       | 会话配置（@dreamer/session）：store 必填；可选 name、maxAge、cookie、autoSave、genId；cookie 选项在设置 session Cookie 时由中间件应用；启用后 load()、API、中间件中可用 ctx.session |

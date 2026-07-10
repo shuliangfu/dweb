@@ -26,6 +26,7 @@ import {
 } from "@dreamer/runtime-adapter";
 import {
   afterAll,
+  afterEach,
   beforeAll,
   cleanupAllBrowsers,
   describe,
@@ -128,6 +129,45 @@ async function isPortInUse(host: string, port: number): Promise<boolean> {
 }
 
 /**
+ * 尝试短暂独占 bind 端口再立刻释放。比仅 TCP connect 更能避免：
+ * 「探测认为空闲 → 子进程启动前被占用 → 服务端 Port X in use, using Y → 测试仍轮询 X」的竞态。
+ */
+async function canExclusiveBind(host: string, port: number): Promise<boolean> {
+  // Bun
+  try {
+    // deno-lint-ignore no-explicit-any
+    const BunGlobal = (globalThis as any).Bun;
+    if (BunGlobal?.serve) {
+      const s = BunGlobal.serve({
+        hostname: host,
+        port,
+        fetch() {
+          return new Response("");
+        },
+      });
+      s.stop(true);
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  // Deno
+  try {
+    // deno-lint-ignore no-explicit-any
+    const DenoGlobal = (globalThis as any).Deno;
+    if (DenoGlobal?.listen) {
+      const l = DenoGlobal.listen({ hostname: host, port });
+      l.close();
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  // 回退：仅 connect 探测
+  return !(await isPortInUse(host, port));
+}
+
+/**
  * 从 startPort 起顺次 +1 查找第一个未被占用的端口
  * 保证 e2e 传给子进程的 PORT 一定可用，子进程不会因端口占用而自动换端口导致测试轮询错端口
  * @param host 主机（如 "127.0.0.1"）
@@ -142,8 +182,13 @@ async function findAvailablePort(
 ): Promise<number> {
   for (let i = 0; i < maxAttempts; i++) {
     const port = startPort + i;
-    const inUse = await isPortInUse(host, port);
-    if (!inUse) return port;
+    if (await isPortInUse(host, port)) continue;
+    // 二次独占 bind，降低竞态；仍可能在 close→spawn 窗口被抢，但明显好于单次 connect
+    if (!(await canExclusiveBind(host, port))) continue;
+    // 短暂等待，避开 TIME_WAIT / 瞬时释放
+    await new Promise((r) => setTimeout(r, 30));
+    if (await isPortInUse(host, port)) continue;
+    return port;
   }
   throw new Error(
     `e2e: 从端口 ${startPort} 起尝试 ${maxAttempts} 次均被占用，无法启动服务`,
@@ -1769,51 +1814,41 @@ export function createAdvancedExampleBrowserSuite(
       }
     });
 
-    const advancedRenderTimeout = (exampleName === "view-hybrid" ||
-        exampleName === "view-hybrid-flat") && IS_BUN
+    // Bun 全量连跑：统一放宽 advanced 超时，且不复用浏览器（见 basic 套件同注释）
+    const advancedItTimeout = IS_BUN
       ? BUN_HEAVY_E2E_TIMEOUT_MS
       : BROWSER_TEST_TIMEOUT_MS;
+    const advancedBrowserOpts = {
+      enabled: true as const,
+      headless: true as const,
+      dumpio: true as const,
+      reuseBrowser: !IS_BUN,
+      browserSource: "test" as const,
+      protocolTimeout: advancedItTimeout,
+    };
 
     it.skipIf(skip, "应能渲染且无 hydration 错误", async (t) => {
       if (!t) throw new Error("test context 不可用");
       await assertBrowserRender(t, actualFrontendPort, {
-        timeoutMs: advancedRenderTimeout,
+        timeoutMs: advancedItTimeout,
       });
     }, {
-      timeout: advancedRenderTimeout,
+      timeout: advancedItTimeout,
       sanitizeOps: false,
       sanitizeResources: false,
-      browser: {
-        enabled: true,
-        headless: true,
-        dumpio: true,
-        reuseBrowser: true,
-        browserSource: "test",
-        protocolTimeout: advancedRenderTimeout,
-      },
+      browser: advancedBrowserOpts,
     });
 
-    // reuseBrowser: false 避免与上一用例共享浏览器，减少 CI 上 "Target page has been closed" 偶发
-    const clickUsersTimeout = IS_BUN
-      ? BUN_HEAVY_E2E_TIMEOUT_MS
-      : BROWSER_TEST_TIMEOUT_MS;
     it.skipIf(skip, "应能通过点击用户管理链接进入用户页", async (t) => {
       if (!t) throw new Error("test context 不可用");
       await assertBrowserClickUsers(t, actualFrontendPort, {
-        timeoutMs: clickUsersTimeout,
+        timeoutMs: advancedItTimeout,
       });
     }, {
-      timeout: clickUsersTimeout,
+      timeout: advancedItTimeout,
       sanitizeOps: false,
       sanitizeResources: false,
-      browser: {
-        enabled: true,
-        headless: true,
-        dumpio: true,
-        reuseBrowser: false,
-        browserSource: "test",
-        protocolTimeout: clickUsersTimeout,
-      },
+      browser: { ...advancedBrowserOpts, reuseBrowser: false },
     });
   });
 }
@@ -1854,15 +1889,27 @@ export function createBasicExampleBrowserSuite(
   const skipMetadata = skip || skipCounterMetadataFlakyEnv;
 
   /**
-   * `view-hybrid` / `view-hybrid-flat` 的 dev 含 WebSocket、定时任务、队列等，在 **Bun** 上
-   * 于 `browser-render-view-*` 全量跑的后段，首条「无 hydration 错误」易触顶 60s 外层 `it`；
-   * 超时后 Bun 会 `killed N dangling process` 杀掉子进程，后续用例对同一端口
-   * `ConnectionRefused`（与 assertBrowserMetadata 的 Bun 宽限同量级）。
+   * Bun 全量 `bun test tests/` 时 Playwright/子进程更慢，且超时后会 `killed N dangling process`
+   * 误杀 dev server 导致同文件后续用例连锁 60s 挂死。对 **全部** basic 套件放宽超时（不仅 hybrid）。
    */
-  const basicBrowserItTimeout = IS_BUN &&
-      (exampleName === "view-hybrid" || exampleName === "view-hybrid-flat")
+  const basicBrowserItTimeout = IS_BUN
     ? BUN_HEAVY_E2E_TIMEOUT_MS
     : BROWSER_TEST_TIMEOUT_MS;
+
+  /**
+   * Bun 下禁用 reuseBrowser：跨用例共享 Chromium 在全量连跑时易出现页面挂死，
+   * 进而超时触发 dangling kill，整文件后半段全红。Deno 仍复用浏览器以加速。
+   */
+  const basicReuseBrowser = !IS_BUN;
+
+  const basicBrowserOpts = {
+    enabled: true as const,
+    headless: true as const,
+    dumpio: true as const,
+    reuseBrowser: basicReuseBrowser,
+    browserSource: "test" as const,
+    protocolTimeout: basicBrowserItTimeout,
+  };
 
   describe(`e2e: 浏览器渲染 - ${exampleName}`, () => {
     let originalCwd: string | undefined;
@@ -1903,12 +1950,20 @@ export function createBasicExampleBrowserSuite(
         } catch {
           // ignore
         }
+        child = null;
       }
       await cleanupAllBrowsers();
       if (originalCwd && originalCwd.length > 0) {
         chdir(originalCwd);
       }
     });
+
+    // Bun：每条用例后清浏览器，降低 reuse 关闭后仍残留的 session 干扰后续用例
+    if (IS_BUN) {
+      afterEach(async () => {
+        await cleanupAllBrowsers();
+      });
+    }
 
     it.skipIf(skip, "应能渲染且无 hydration 错误", async (t) => {
       if (!t) throw new Error("test context 不可用");
@@ -1919,15 +1974,7 @@ export function createBasicExampleBrowserSuite(
       timeout: basicBrowserItTimeout,
       sanitizeOps: false,
       sanitizeResources: false,
-      browser: {
-        enabled: true,
-        headless: true,
-        dumpio: true,
-        reuseBrowser: true,
-        // 使用 Playwright 自带 Chromium
-        browserSource: "test",
-        protocolTimeout: basicBrowserItTimeout,
-      },
+      browser: basicBrowserOpts,
     });
 
     it.skipIf(skip, "应能通过点击关于链接进入关于页", async (t) => {
@@ -1937,14 +1984,7 @@ export function createBasicExampleBrowserSuite(
       timeout: basicBrowserItTimeout,
       sanitizeOps: false,
       sanitizeResources: false,
-      browser: {
-        enabled: true,
-        headless: true,
-        dumpio: true,
-        reuseBrowser: true,
-        browserSource: "test",
-        protocolTimeout: basicBrowserItTimeout,
-      },
+      browser: basicBrowserOpts,
     });
 
     it.skipIf(
@@ -1958,14 +1998,7 @@ export function createBasicExampleBrowserSuite(
         timeout: basicBrowserItTimeout,
         sanitizeOps: false,
         sanitizeResources: false,
-        browser: {
-          enabled: true,
-          headless: true,
-          dumpio: true,
-          reuseBrowser: true,
-          browserSource: "test",
-          protocolTimeout: basicBrowserItTimeout,
-        },
+        browser: basicBrowserOpts,
       },
     );
 
@@ -1980,14 +2013,7 @@ export function createBasicExampleBrowserSuite(
         timeout: basicBrowserItTimeout,
         sanitizeOps: false,
         sanitizeResources: false,
-        browser: {
-          enabled: true,
-          headless: true,
-          dumpio: true,
-          reuseBrowser: true,
-          browserSource: "test",
-          protocolTimeout: basicBrowserItTimeout,
-        },
+        browser: basicBrowserOpts,
       },
     );
 
@@ -2004,14 +2030,7 @@ export function createBasicExampleBrowserSuite(
         timeout: basicBrowserItTimeout,
         sanitizeOps: false,
         sanitizeResources: false,
-        browser: {
-          enabled: true,
-          headless: true,
-          dumpio: true,
-          reuseBrowser: true,
-          browserSource: "test",
-          protocolTimeout: basicBrowserItTimeout,
-        },
+        browser: basicBrowserOpts,
       },
     );
   });

@@ -11,7 +11,15 @@ import { getEnv } from "../core/runtime-adapter.ts";
  * @param value 待输出到 HTML 的值
  */
 export function escapeHtml(value: unknown): string {
-  return String(value)
+  const s = String(value);
+  // 热路径：无特殊字符时零分配返回（错误页/meta 常见纯 ASCII）
+  if (
+    s.indexOf("&") === -1 && s.indexOf("<") === -1 && s.indexOf(">") === -1 &&
+    s.indexOf('"') === -1 && s.indexOf("'") === -1
+  ) {
+    return s;
+  }
+  return s
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -29,7 +37,16 @@ export function escapeHtml(value: unknown): string {
  * @param value 要序列化的值
  */
 export function serializeJsonForInlineScript(value: unknown): string {
-  return JSON.stringify(value)
+  const raw = JSON.stringify(value);
+  // 常见 load() 数据无 <>&/LS 分隔符：跳过五次全局 replace
+  if (
+    raw.indexOf("<") === -1 && raw.indexOf(">") === -1 &&
+    raw.indexOf("&") === -1 && raw.indexOf("\u2028") === -1 &&
+    raw.indexOf("\u2029") === -1
+  ) {
+    return raw;
+  }
+  return raw
     .replace(/</g, "\\u003C")
     .replace(/>/g, "\\u003E")
     .replace(/&/g, "\\u0026")

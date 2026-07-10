@@ -17,6 +17,11 @@ describe("安全输出工具 (security.ts)", () => {
     );
   });
 
+  it("escapeHtml 无特殊字符时应返回同一字符串引用", () => {
+    const s = "hello world 123";
+    expect(escapeHtml(s)).toBe(s);
+  });
+
   it("serializeJsonForInlineScript 应避免 script 上下文逃逸", () => {
     const json = serializeJsonForInlineScript({
       text: "</script><img onerror=alert(1)>",
@@ -28,6 +33,12 @@ describe("安全输出工具 (security.ts)", () => {
     expect(json).toContain("\\u2028");
     expect(json).toContain("\\u2029");
     expect(JSON.parse(json).text).toBe("</script><img onerror=alert(1)>");
+  });
+
+  it("serializeJsonForInlineScript 对安全 JSON 应保持可解析且语义不变", () => {
+    const payload = { a: 1, b: "ok", c: true };
+    const json = serializeJsonForInlineScript(payload);
+    expect(JSON.parse(json)).toEqual(payload);
   });
 
   it("createDefaultErrorHtml 应在不同环境下保持错误页安全", () => {
