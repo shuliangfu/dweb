@@ -34,8 +34,9 @@
   `package.json` 同步）。**requires `@dreamer/view` ≥ 2.0.4**（推荐 ≥ 2.0.5）：
   路由 SSR 同构、键控 For、受控输入 IME/number 焦点，以及 SSR 伪 DOM
   `hasAttribute` 等 Element API 对齐。
-- **依赖**：`preact` `^10.29.3` → `^10.29.7`；`postcss` `^8.5.15` →
-  `^8.5.16`。
+- **依赖**：`preact` `^10.29.3` → `^10.29.7`（**`overrides.preact` 同步**，避免
+  npm `EOVERRIDE` 导致 CI `npx playwright install` / JSR publish 失败）；
+  `postcss` `^8.5.15` → `^8.5.16`。
 - **示例**：view 引擎 examples 的 `@dreamer/view` 升至 `^2.0.4`（与主包
   2.0.5 线兼容）。
 - **`App._registerFrameworkMiddlewares` 路径**：框架 HTTP 栈迁至

@@ -78,7 +78,7 @@
     "@dreamer/test": "npm:@jsr/dreamer__test@^1.1.8"
   },
   "overrides": {
-    "preact": "^10.29.3",
+    "preact": "^10.29.7",
     "preact-render-to-string": "^6.7.0",
     "bson": "7.2.0"
   },

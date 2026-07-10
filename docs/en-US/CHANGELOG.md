@@ -37,8 +37,9 @@ and this project adheres to
   (recommend ≥ 2.0.5): route SSR isomorphism, keyed `For`, controlled input
   IME/number focus, and SSR pseudo-DOM Element API alignment (`hasAttribute`,
   etc.).
-- **Dependencies**: `preact` `^10.29.3` → `^10.29.7`; `postcss` `^8.5.15` →
-  `^8.5.16`.
+- **Dependencies**: `preact` `^10.29.3` → `^10.29.7` (**keep
+  `overrides.preact` in sync** to avoid npm `EOVERRIDE` breaking CI
+  `npx playwright install` / JSR publish); `postcss` `^8.5.15` → `^8.5.16`.
 - **Examples**: view-engine examples bump `@dreamer/view` to `^2.0.4` (compatible
   with the 2.0.5 line).
 - **App HTTP stack**: framework middleware registration moved to
