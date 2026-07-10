@@ -129,11 +129,65 @@ async function isPortInUse(host: string, port: number): Promise<boolean> {
 }
 
 /**
- * 尝试短暂独占 bind 端口再立刻释放。比仅 TCP connect 更能避免：
- * 「探测认为空闲 → 子进程启动前被占用 → 服务端 Port X in use, using Y → 测试仍轮询 X」的竞态。
+ * 用 OS 分配临时端口（bind port 0 → 读实际端口 → 立刻 close）。
+ * 比顺次扫描 + exclusive bind 更稳：旧实现在 bind 后 sleep 再 isPortInUse，
+ * 常把「自己尚未释放完」的端口误判为占用，50 次扫描被自己耗尽，
+ * 触发「从端口 X 起尝试 50 次均被占用」并在 Bun 全量 e2e 后半程连锁失败。
+ */
+async function allocateEphemeralPort(host: string): Promise<number> {
+  // Deno
+  try {
+    // deno-lint-ignore no-explicit-any
+    const DenoGlobal = (globalThis as any).Deno;
+    if (DenoGlobal?.listen) {
+      const l = DenoGlobal.listen({ hostname: host, port: 0 });
+      const addr = l.addr as { port: number };
+      const port = addr.port;
+      l.close();
+      return port;
+    }
+  } catch {
+    // fall through
+  }
+  // Bun
+  try {
+    // deno-lint-ignore no-explicit-any
+    const BunGlobal = (globalThis as any).Bun;
+    if (BunGlobal?.serve) {
+      const s = BunGlobal.serve({
+        hostname: host,
+        port: 0,
+        fetch() {
+          return new Response("");
+        },
+      });
+      const port = Number(s.port);
+      s.stop(true);
+      return port;
+    }
+  } catch {
+    // fall through
+  }
+  throw new Error(`e2e: 无法在 ${host} 上分配 ephemeral 端口`);
+}
+
+/**
+ * 尝试 bind 指定端口并立刻释放；成功表示该端口当时可监听。
+ * **不要**在成功后再 sleep + isPortInUse 复核：stop/close 异步窗口会把端口误判为占用。
  */
 async function canExclusiveBind(host: string, port: number): Promise<boolean> {
-  // Bun
+  // Deno first when available (CI Deno jobs)
+  try {
+    // deno-lint-ignore no-explicit-any
+    const DenoGlobal = (globalThis as any).Deno;
+    if (DenoGlobal?.listen) {
+      const l = DenoGlobal.listen({ hostname: host, port });
+      l.close();
+      return true;
+    }
+  } catch {
+    // try Bun / fail
+  }
   try {
     // deno-lint-ignore no-explicit-any
     const BunGlobal = (globalThis as any).Bun;
@@ -151,48 +205,60 @@ async function canExclusiveBind(host: string, port: number): Promise<boolean> {
   } catch {
     return false;
   }
-  // Deno
-  try {
-    // deno-lint-ignore no-explicit-any
-    const DenoGlobal = (globalThis as any).Deno;
-    if (DenoGlobal?.listen) {
-      const l = DenoGlobal.listen({ hostname: host, port });
-      l.close();
-      return true;
-    }
-  } catch {
-    return false;
-  }
-  // 回退：仅 connect 探测
   return !(await isPortInUse(host, port));
 }
 
 /**
- * 从 startPort 起顺次 +1 查找第一个未被占用的端口
- * 保证 e2e 传给子进程的 PORT 一定可用，子进程不会因端口占用而自动换端口导致测试轮询错端口
- * @param host 主机（如 "127.0.0.1"）
- * @param startPort 起始端口
- * @param maxAttempts 最大尝试次数，默认 50
- * @returns 第一个可用端口号
+ * 为 e2e 子进程挑选 PORT：
+ * 1. 优先 preferred（便于本地对照）；须能 exclusive bind
+ * 2. 否则 OS ephemeral（port 0），避免 300x 段被僵尸/误判占满
+ * 3. 再失败才顺次扫描（宽窗口）
  */
 async function findAvailablePort(
   host: string,
   startPort: number,
-  maxAttempts: number = 50,
+  maxAttempts: number = 200,
 ): Promise<number> {
-  for (let i = 0; i < maxAttempts; i++) {
+  if (await canExclusiveBind(host, startPort)) {
+    return startPort;
+  }
+  try {
+    return await allocateEphemeralPort(host);
+  } catch {
+    // continue to scan
+  }
+  for (let i = 1; i < maxAttempts; i++) {
     const port = startPort + i;
-    if (await isPortInUse(host, port)) continue;
-    // 二次独占 bind，降低竞态；仍可能在 close→spawn 窗口被抢，但明显好于单次 connect
-    if (!(await canExclusiveBind(host, port))) continue;
-    // 短暂等待，避开 TIME_WAIT / 瞬时释放
-    await new Promise((r) => setTimeout(r, 30));
-    if (await isPortInUse(host, port)) continue;
-    return port;
+    if (await canExclusiveBind(host, port)) {
+      return port;
+    }
   }
   throw new Error(
     `e2e: 从端口 ${startPort} 起尝试 ${maxAttempts} 次均被占用，无法启动服务`,
   );
+}
+
+/**
+ * 结束 dev 子进程并等待其端口不再监听，降低跨套件端口堆积。
+ */
+async function killDevProcessAndWaitPort(
+  proc: SpawnedProcess | null,
+  host: string,
+  port: number,
+  maxWaitMs: number = 5000,
+): Promise<void> {
+  if (proc) {
+    try {
+      proc.kill(9);
+    } catch {
+      // ignore
+    }
+  }
+  const deadline = Date.now() + maxWaitMs;
+  while (Date.now() < deadline) {
+    if (!(await isPortInUse(host, port))) return;
+    await new Promise((r) => setTimeout(r, 50));
+  }
 }
 
 /**
@@ -1798,16 +1864,19 @@ export function createAdvancedExampleBrowserSuite(
 
     afterAll(async () => {
       if (skip) return;
-      // 先杀进程，避免 afterAll 超时时 Bun 把 dev 当成 dangling 误杀
-      for (const c of [childFrontend, childBackend]) {
-        if (c) {
-          try {
-            c.kill(9);
-          } catch {
-            // ignore
-          }
-        }
-      }
+      // 先杀进程并等端口释放，避免跨套件 300x 段被僵尸占满
+      await killDevProcessAndWaitPort(
+        childFrontend,
+        "127.0.0.1",
+        actualFrontendPort,
+      );
+      childFrontend = null;
+      await killDevProcessAndWaitPort(
+        childBackend,
+        "127.0.0.1",
+        actualBackendPort,
+      );
+      childBackend = null;
       await cleanupAllBrowsers();
       if (originalCwd && originalCwd.length > 0) {
         chdir(originalCwd);
@@ -1943,15 +2012,9 @@ export function createBasicExampleBrowserSuite(
     });
 
     afterAll(async () => {
-      // 先杀进程，避免 afterAll 超时时 Bun 把 dev 当成 dangling 误杀（killed 1 dangling process）
-      if (child) {
-        try {
-          child.kill(9);
-        } catch {
-          // ignore
-        }
-        child = null;
-      }
+      // 先杀进程并等端口释放，避免 afterAll 超时 / 跨套件端口堆积
+      await killDevProcessAndWaitPort(child, "127.0.0.1", actualPort);
+      child = null;
       await cleanupAllBrowsers();
       if (originalCwd && originalCwd.length > 0) {
         chdir(originalCwd);
