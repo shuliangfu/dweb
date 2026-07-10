@@ -30,6 +30,7 @@ describe("registerFrameworkHttpMiddlewares", () => {
     expect(names).not.toContain("rate-limit");
   });
 
+  // rateLimit() 内部会起清理 interval，装配侧无法释放；仅断言注册名，忽略 ops/resource 泄漏
   it("opt-in 应注册 cors / compression / rate-limit", () => {
     const names: string[] = [];
     const server = {
@@ -52,5 +53,8 @@ describe("registerFrameworkHttpMiddlewares", () => {
     expect(names).toContain("cors");
     expect(names).toContain("compression");
     expect(names).toContain("rate-limit");
+  }, {
+    sanitizeOps: false,
+    sanitizeResources: false,
   });
 });
