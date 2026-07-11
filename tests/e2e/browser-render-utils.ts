@@ -120,10 +120,17 @@ const E2E_PORTS: Record<string, number> = {
 };
 
 /**
- * e2e 浏览器用例超时（毫秒）。basic 与 advanced 共用；根因修复见 @dreamer/test 中浏览器缓存键使用完整 suitePath，
- * 避免多文件顺序跑时跨套件共用 Playwright 实例导致挂死与 Bun killed dangling processes，而非依赖拉长本值。
+ * e2e 浏览器用例单个操作超时（毫秒）。withHostTimeout 以此为上限做宿主侧 Promise.race 兜底。
+ *
+ * 【Why】此值必须远小于测试用例总超时（BUN_HEAVY_E2E_TIMEOUT_MS=120s）。
+ *   一个测试用例内含多个 withHostTimeout 包装的操作（goto + waitFor + click + waitFor…），
+ *   若每个操作超时 = 60s，两个操作串联即达 120s，测试以 timeout 失败而非 error 失败，
+ *   触发 `killed dangling processes` 连锁误杀后续用例。
+ *   令此值 = 30s，单个操作最多浪费 30s，两到三个操作串联仍在 120s 测试超时内，
+ *   测试以 error 失败（可被 afterAll 清理），而非 timeout 失败（触发连锁误杀）。
+ * 【Perf】正常操作 <1s，CI 上最慢的 advanced 双进程启动 + 渲染 < 15s，30s 足够宽裕。
  */
-const BROWSER_TEST_TIMEOUT_MS = 60_000;
+const BROWSER_TEST_TIMEOUT_MS = 45_000;
 
 /**
  * Bun 跑 e2e 时子进程/Playwright 较 Deno 同机更慢，以下长链路在 60s 内易触顶：
@@ -900,29 +907,24 @@ async function assertBrowserClickAbout(
     await browser.goto(url);
   }
 
-  // 首页欢迎或 layout 文案（兼容 i18n 与 advanced 布局）
   const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
-  await withHostTimeout(
-    browser.waitFor(
-      () => {
-        const doc = (globalThis as Record<string, unknown>).document as
-          | { body?: { innerHTML?: string } }
-          | undefined;
-        const html = doc?.body?.innerHTML ?? "";
-        return (
-          html.includes("欢迎使用 Dweb 框架") ||
-          html.includes("Welcome to Dweb") ||
-          html.includes("React CSR Advanced Example") ||
-          html.includes("React Advanced") ||
-          html.includes("View Advanced") ||
-          html.includes("Preact Advanced") ||
-          html.includes("用户管理")
-        );
-      },
-      { timeout: contentTimeout },
-    ),
-    contentTimeout,
-    "browser.waitFor",
+  await browser.waitFor(
+    () => {
+      const doc = (globalThis as Record<string, unknown>).document as
+        | { body?: { innerHTML?: string } }
+        | undefined;
+      const html = doc?.body?.innerHTML ?? "";
+      return (
+        html.includes("欢迎使用 Dweb 框架") ||
+        html.includes("Welcome to Dweb") ||
+        html.includes("React CSR Advanced Example") ||
+        html.includes("React Advanced") ||
+        html.includes("View Advanced") ||
+        html.includes("Preact Advanced") ||
+        html.includes("用户管理")
+      );
+    },
+    { timeout: contentTimeout },
   );
 
   if (typeof page.click !== "function") {
@@ -1726,10 +1728,7 @@ async function assertBrowserClickUsers(
 
   const url = `http://127.0.0.1:${port}/`;
   if (typeof page.goto === "function") {
-    await page.goto(url, {
-      waitUntil: "load",
-      timeout: limit,
-    });
+    await gotoWithRetry(page, url);
   } else {
     await browser.goto(url);
   }

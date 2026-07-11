@@ -75,7 +75,7 @@
     "tailwindcss": "4.2.0"
   },
   "devDependencies": {
-    "@dreamer/test": "npm:@jsr/dreamer__test@^1.1.8"
+    "@dreamer/test": "npm:@jsr/dreamer__test@^1.1.9"
   },
   "overrides": {
     "preact": "^10.29.7",
