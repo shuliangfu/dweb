@@ -54,6 +54,38 @@ const DWEB_ROOT = (() => {
 })();
 
 /**
+ * 宿主侧 Promise 超时保护：当 Playwright 原生操作（page.click / page.goto /
+ * browser.waitFor）的内部超时在 Chrome 挂起时不生效，用 Promise.race + setTimeout
+ * 在宿主侧强制超时，避免卡到 Bun 测试超时触发 `killed dangling processes` 连锁误杀。
+ *
+ * 【Why】@dreamer/test 的 evaluate 已有 evaluateWithHostTimeout 保护，但 goto /
+ *   waitFor / click 直接调用 Playwright Page 方法，无宿主侧兜底。Chrome 在 CI
+ *   headless 下偶发挂起时，这些操作不返回也不超时。
+ * 【Invariant】仅在 Playwright 原生操作上包装，不影响 evaluate（已有保护）。
+ * 【Perf】正常操作 <1s，超时值设为与操作自身 timeout 一致即可。
+ */
+async function withHostTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  label: string,
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error(`${label} 宿主侧超时 ${ms}ms`)),
+          ms,
+        );
+      }),
+    ]);
+  } finally {
+    if (timeoutId !== undefined) clearTimeout(timeoutId);
+  }
+}
+
+/**
  * 各示例使用的端口（避免并行测试时端口冲突，CI/Windows 下可并行或同机多任务）
  * Basic 单端口: preact-csr=3001, preact-hybrid=3002, react-csr=3003, react-hybrid=3004,
  *   preact-ssr=3005, preact-ssg=3006, react-ssr=3007, react-ssg=3008,
@@ -465,11 +497,15 @@ async function gotoWithRetry(
   options: { waitUntil?: string; timeout?: number } = {},
 ): Promise<unknown> {
   try {
-    return await page.goto(url, {
-      waitUntil: "load",
-      timeout: BROWSER_TEST_TIMEOUT_MS,
-      ...options,
-    });
+    return await withHostTimeout(
+      page.goto(url, {
+        waitUntil: "load",
+        timeout: BROWSER_TEST_TIMEOUT_MS,
+        ...options,
+      }),
+      BROWSER_TEST_TIMEOUT_MS,
+      `gotoWithRetry(${url})`,
+    );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (
@@ -477,11 +513,15 @@ async function gotoWithRetry(
       msg.includes("Connection refused")
     ) {
       await new Promise((r) => setTimeout(r, 2000));
-      return await page.goto(url, {
-        waitUntil: "load",
-        timeout: BROWSER_TEST_TIMEOUT_MS,
-        ...options,
-      });
+      return await withHostTimeout(
+        page.goto(url, {
+          waitUntil: "load",
+          timeout: BROWSER_TEST_TIMEOUT_MS,
+          ...options,
+        }),
+        BROWSER_TEST_TIMEOUT_MS,
+        `gotoWithRetry(${url})`,
+      );
     }
     throw err;
   }
@@ -855,40 +895,52 @@ async function assertBrowserClickAbout(
 
   // 首页欢迎或 layout 文案（兼容 i18n 与 advanced 布局）
   const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
-  await browser.waitFor(
-    () => {
-      const doc = (globalThis as Record<string, unknown>).document as
-        | { body?: { innerHTML?: string } }
-        | undefined;
-      const html = doc?.body?.innerHTML ?? "";
-      return (
-        html.includes("欢迎使用 Dweb 框架") ||
-        html.includes("Welcome to Dweb") ||
-        html.includes("React CSR Advanced Example") ||
-        html.includes("React Advanced") ||
-        html.includes("View Advanced") ||
-        html.includes("Preact Advanced") ||
-        html.includes("用户管理")
-      );
-    },
-    { timeout: contentTimeout },
+  await withHostTimeout(
+    browser.waitFor(
+      () => {
+        const doc = (globalThis as Record<string, unknown>).document as
+          | { body?: { innerHTML?: string } }
+          | undefined;
+        const html = doc?.body?.innerHTML ?? "";
+        return (
+          html.includes("欢迎使用 Dweb 框架") ||
+          html.includes("Welcome to Dweb") ||
+          html.includes("React CSR Advanced Example") ||
+          html.includes("React Advanced") ||
+          html.includes("View Advanced") ||
+          html.includes("Preact Advanced") ||
+          html.includes("用户管理")
+        );
+      },
+      { timeout: contentTimeout },
+    ),
+    contentTimeout,
+    "browser.waitFor",
   );
 
   if (typeof page.click !== "function") {
     throw new Error("page.click 不可用，无法执行点击");
   }
-  await page.click('a[href="/about"]', { timeout: BROWSER_TEST_TIMEOUT_MS });
+  await withHostTimeout(
+    page.click('a[href="/about"]', { timeout: BROWSER_TEST_TIMEOUT_MS }),
+    BROWSER_TEST_TIMEOUT_MS,
+    `page.click('a[href="/about"]')`,
+  );
 
   // 关于页文案（兼容 i18n：关于我们 / About us）
-  await browser.waitFor(
-    () => {
-      const doc = (globalThis as Record<string, unknown>).document as
-        | { body?: { innerHTML?: string } }
-        | undefined;
-      const html = doc?.body?.innerHTML ?? "";
-      return html.includes("关于我们") || html.includes("About us");
-    },
-    { timeout: contentTimeout },
+  await withHostTimeout(
+    browser.waitFor(
+      () => {
+        const doc = (globalThis as Record<string, unknown>).document as
+          | { body?: { innerHTML?: string } }
+          | undefined;
+        const html = doc?.body?.innerHTML ?? "";
+        return html.includes("关于我们") || html.includes("About us");
+      },
+      { timeout: contentTimeout },
+    ),
+    contentTimeout,
+    "browser.waitFor",
   );
 
   const hasAboutTitle = await browser.evaluate(() => {
@@ -941,41 +993,49 @@ async function assertLoadDataInjected(
   }
 
   const contentTimeout = BROWSER_TEST_TIMEOUT_MS;
-  await browser.waitFor(
-    () => {
-      const doc = (globalThis as Record<string, unknown>).document as
-        | { body?: { innerHTML?: string } }
-        | undefined;
-      const html = doc?.body?.innerHTML ?? "";
-      return (
-        html.includes("欢迎使用 Dweb 框架") ||
-        html.includes("Welcome to Dweb") ||
-        html.includes("React CSR Advanced Example") ||
-        html.includes("React Advanced") ||
-        html.includes("View Advanced") ||
-        html.includes("Preact Advanced") ||
-        html.includes("用户管理")
-      );
-    },
-    { timeout: contentTimeout },
+  await withHostTimeout(
+    browser.waitFor(
+      () => {
+        const doc = (globalThis as Record<string, unknown>).document as
+          | { body?: { innerHTML?: string } }
+          | undefined;
+        const html = doc?.body?.innerHTML ?? "";
+        return (
+          html.includes("欢迎使用 Dweb 框架") ||
+          html.includes("Welcome to Dweb") ||
+          html.includes("React CSR Advanced Example") ||
+          html.includes("React Advanced") ||
+          html.includes("View Advanced") ||
+          html.includes("Preact Advanced") ||
+          html.includes("用户管理")
+        );
+      },
+      { timeout: contentTimeout },
+    ),
+    contentTimeout,
+    "browser.waitFor",
   );
 
-  await browser.waitFor(
-    () => {
-      const doc = (globalThis as Record<string, unknown>).document as
-        | {
-          querySelector?: (
-            s: string,
-          ) => { getAttribute?: (a: string) => string | null } | null;
-        }
-        | undefined;
-      const layoutEl = doc?.querySelector?.('[data-testid="layout-load"]');
-      const pageEl = doc?.querySelector?.('[data-testid="page-load"]');
-      const layoutVal = layoutEl?.getAttribute?.("data-value") ?? "";
-      const pageVal = pageEl?.getAttribute?.("data-value") ?? "";
-      return layoutVal === "layout-load-ok" && pageVal === "page-load-ok";
-    },
-    { timeout: contentTimeout },
+  await withHostTimeout(
+    browser.waitFor(
+      () => {
+        const doc = (globalThis as Record<string, unknown>).document as
+          | {
+            querySelector?: (
+              s: string,
+            ) => { getAttribute?: (a: string) => string | null } | null;
+          }
+          | undefined;
+        const layoutEl = doc?.querySelector?.('[data-testid="layout-load"]');
+        const pageEl = doc?.querySelector?.('[data-testid="page-load"]');
+        const layoutVal = layoutEl?.getAttribute?.("data-value") ?? "";
+        const pageVal = pageEl?.getAttribute?.("data-value") ?? "";
+        return layoutVal === "layout-load-ok" && pageVal === "page-load-ok";
+      },
+      { timeout: contentTimeout },
+    ),
+    contentTimeout,
+    "browser.waitFor",
   );
 
   const result = await browser.evaluate(() => {
@@ -1499,7 +1559,11 @@ async function assertBrowserMetadata(
     title: BASIC_E2E_ABOUT_TITLE,
     description: BASIC_E2E_ABOUT_DESC,
   };
-  await page.click('a[href="/about"]', { timeout: contentTimeout });
+  await withHostTimeout(
+    page.click('a[href="/about"]', { timeout: contentTimeout }),
+    contentTimeout,
+    `page.click('a[href="/about"]')`,
+  );
   await waitForAboutPageBodyViaEvaluate(browser, navTimeoutMs);
   await waitForRouteHeadMetaMatch(
     browser,
@@ -1510,7 +1574,11 @@ async function assertBrowserMetadata(
   const aboutHead = await readRouteHeadMeta(browser);
   expect(aboutHead.title).not.toBe(BASIC_E2E_HOME_TITLE);
 
-  await page.click('header a[href="/"]', { timeout: contentTimeout });
+  await withHostTimeout(
+    page.click('header a[href="/"]', { timeout: contentTimeout }),
+    contentTimeout,
+    `page.click('header a[href="/"]')`,
+  );
   await waitForRouteHeadMetaMatch(
     browser,
     homeExpected,
@@ -1518,7 +1586,11 @@ async function assertBrowserMetadata(
     "返回首页（点击后的 SPA）",
   );
 
-  await page.click('a[href="/user/1"]', { timeout: contentTimeout });
+  await withHostTimeout(
+    page.click('a[href="/user/1"]', { timeout: contentTimeout }),
+    contentTimeout,
+    `page.click('a[href="/user/1"]')`,
+  );
   await waitForUserDetailPageBodyViaEvaluate(browser, navTimeoutMs);
 
   const userExpected = {
@@ -1534,7 +1606,11 @@ async function assertBrowserMetadata(
   const userHead = await readRouteHeadMeta(browser);
   expect(userHead.title).not.toBe(BASIC_E2E_ABOUT_TITLE);
 
-  await page.click('header a[href="/"]', { timeout: contentTimeout });
+  await withHostTimeout(
+    page.click('header a[href="/"]', { timeout: contentTimeout }),
+    contentTimeout,
+    `page.click('header a[href="/"]')`,
+  );
   await waitForRouteHeadMetaMatch(
     browser,
     homeExpected,
@@ -1543,7 +1619,11 @@ async function assertBrowserMetadata(
   );
 
   if (options?.viewHybridExtraRoutes === true) {
-    await page.click('a[href="/gallery"]', { timeout: contentTimeout });
+    await withHostTimeout(
+      page.click('a[href="/gallery"]', { timeout: contentTimeout }),
+      contentTimeout,
+      `page.click('a[href="/gallery"]')`,
+    );
     await waitForGalleryPageBodyViaEvaluate(browser, navTimeoutMs);
     await waitForRouteHeadMetaMatch(
       browser,
@@ -1555,7 +1635,11 @@ async function assertBrowserMetadata(
       "相册页",
     );
 
-    await page.click('header a[href="/"]', { timeout: contentTimeout });
+    await withHostTimeout(
+      page.click('header a[href="/"]', { timeout: contentTimeout }),
+      contentTimeout,
+      `page.click('header a[href="/"]')`,
+    );
     await waitForRouteHeadMetaMatch(
       browser,
       homeExpected,
@@ -1563,7 +1647,11 @@ async function assertBrowserMetadata(
       "相册后返回首页",
     );
 
-    await page.click('a[href="/charts"]', { timeout: contentTimeout });
+    await withHostTimeout(
+      page.click('a[href="/charts"]', { timeout: contentTimeout }),
+      contentTimeout,
+      `page.click('a[href="/charts"]')`,
+    );
     await waitForChartsPageBodyViaEvaluate(browser, navTimeoutMs);
     await waitForRouteHeadMetaMatch(
       browser,
@@ -1646,7 +1734,11 @@ async function assertBrowserClickUsers(
   if (typeof page.click !== "function") {
     throw new Error("page.click 不可用，无法执行点击");
   }
-  await page.click('a[href="/users"]', { timeout: limit });
+  await withHostTimeout(
+    page.click('a[href="/users"]', { timeout: limit }),
+    limit,
+    `page.click('a[href="/users"]')`,
+  );
   // 点击后稍等再轮询，避免 CI 上导航尚未完成即开始检测
   await new Promise((r) => setTimeout(r, 3000));
 
