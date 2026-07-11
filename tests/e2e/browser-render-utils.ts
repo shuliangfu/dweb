@@ -1810,13 +1810,14 @@ export function createAdvancedExampleBrowserSuite(
     const advancedItTimeout = IS_BUN
       ? BUN_HEAVY_E2E_TIMEOUT_MS
       : BROWSER_TEST_TIMEOUT_MS;
+    // 同 basic 套件：protocolTimeout < 测试超时，避免 evaluate 挂起时与测试超时同时到达
     const advancedBrowserOpts = {
       enabled: true as const,
       headless: true as const,
       dumpio: true as const,
       reuseBrowser: !IS_BUN,
       browserSource: "test" as const,
-      protocolTimeout: advancedItTimeout,
+      protocolTimeout: BROWSER_TEST_TIMEOUT_MS,
     };
 
     it.skipIf(skip, "应能渲染且无 hydration 错误", async (t) => {
@@ -1894,13 +1895,25 @@ export function createBasicExampleBrowserSuite(
    */
   const basicReuseBrowser = !IS_BUN;
 
+  /**
+   * 【Why】protocolTimeout 必须小于测试超时（basicBrowserItTimeout）。
+   *   @dreamer/test 的 evaluate 通过 evaluateWithHostTimeout 做 Promise.race 超时兜底，
+   *   超时 = protocolTimeout。若 protocolTimeout == 测试超时（Bun 下均 120s），
+   *   evaluate 挂起时两者同时到达，测试以 timeout 失败而非 error 失败，
+   *   后续用例被 `killed N dangling processes` 连锁误杀。
+   *   令 protocolTimeout = 60s（< 120s 测试超时），evaluate 挂起时 60s 后 reject，
+   *   测试以 error 失败，后续用例启动新浏览器可正常运行。
+   * 【Invariant】正常 evaluate 调用 <1s，60s 足够宽裕；仅挂起时才触发。
+   */
+  const basicProtocolTimeout = BROWSER_TEST_TIMEOUT_MS;
+
   const basicBrowserOpts = {
     enabled: true as const,
     headless: true as const,
     dumpio: true as const,
     reuseBrowser: basicReuseBrowser,
     browserSource: "test" as const,
-    protocolTimeout: basicBrowserItTimeout,
+    protocolTimeout: basicProtocolTimeout,
   };
 
   describe(`e2e: 浏览器渲染 - ${exampleName}`, () => {
