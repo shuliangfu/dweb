@@ -69,14 +69,21 @@ async function withHostTimeout<T>(
   ms: number,
   label: string,
 ): Promise<T> {
+  /**
+   * 宿主侧超时上限固定为 60s（BROWSER_TEST_TIMEOUT_MS），即使调用方传更大值
+   * （如 view-hybrid 的 120s contentTimeout）。若宿主侧超时 == 测试超时（120s），
+   * Chrome 挂起时两者同时到达，测试以 timeout 失败而非 error，触发
+   * `killed dangling processes` 连锁误杀后续测试。
+   */
+  const effectiveMs = Math.min(ms, BROWSER_TEST_TIMEOUT_MS);
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
       promise,
       new Promise<never>((_, reject) => {
         timeoutId = setTimeout(
-          () => reject(new Error(`${label} 宿主侧超时 ${ms}ms`)),
-          ms,
+          () => reject(new Error(`${label} 宿主侧超时 ${effectiveMs}ms`)),
+          effectiveMs,
         );
       }),
     ]);
