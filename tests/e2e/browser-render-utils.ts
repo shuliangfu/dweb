@@ -129,107 +129,30 @@ async function isPortInUse(host: string, port: number): Promise<boolean> {
 }
 
 /**
- * 用 OS 分配临时端口（bind port 0 → 读实际端口 → 立刻 close）。
- * 比顺次扫描 + exclusive bind 更稳：旧实现在 bind 后 sleep 再 isPortInUse，
- * 常把「自己尚未释放完」的端口误判为占用，50 次扫描被自己耗尽，
- * 触发「从端口 X 起尝试 50 次均被占用」并在 Bun 全量 e2e 后半程连锁失败。
- */
-async function allocateEphemeralPort(host: string): Promise<number> {
-  // Deno
-  try {
-    // deno-lint-ignore no-explicit-any
-    const DenoGlobal = (globalThis as any).Deno;
-    if (DenoGlobal?.listen) {
-      const l = DenoGlobal.listen({ hostname: host, port: 0 });
-      const addr = l.addr as { port: number };
-      const port = addr.port;
-      l.close();
-      return port;
-    }
-  } catch {
-    // fall through
-  }
-  // Bun
-  try {
-    // deno-lint-ignore no-explicit-any
-    const BunGlobal = (globalThis as any).Bun;
-    if (BunGlobal?.serve) {
-      const s = BunGlobal.serve({
-        hostname: host,
-        port: 0,
-        fetch() {
-          return new Response("");
-        },
-      });
-      const port = Number(s.port);
-      s.stop(true);
-      return port;
-    }
-  } catch {
-    // fall through
-  }
-  throw new Error(`e2e: 无法在 ${host} 上分配 ephemeral 端口`);
-}
-
-/**
- * 尝试 bind 指定端口并立刻释放；成功表示该端口当时可监听。
- * **不要**在成功后再 sleep + isPortInUse 复核：stop/close 异步窗口会把端口误判为占用。
- */
-async function canExclusiveBind(host: string, port: number): Promise<boolean> {
-  // Deno first when available (CI Deno jobs)
-  try {
-    // deno-lint-ignore no-explicit-any
-    const DenoGlobal = (globalThis as any).Deno;
-    if (DenoGlobal?.listen) {
-      const l = DenoGlobal.listen({ hostname: host, port });
-      l.close();
-      return true;
-    }
-  } catch {
-    // try Bun / fail
-  }
-  try {
-    // deno-lint-ignore no-explicit-any
-    const BunGlobal = (globalThis as any).Bun;
-    if (BunGlobal?.serve) {
-      const s = BunGlobal.serve({
-        hostname: host,
-        port,
-        fetch() {
-          return new Response("");
-        },
-      });
-      s.stop(true);
-      return true;
-    }
-  } catch {
-    return false;
-  }
-  return !(await isPortInUse(host, port));
-}
-
-/**
- * 为 e2e 子进程挑选 PORT：
- * 1. 优先 preferred（便于本地对照）；须能 exclusive bind
- * 2. 否则 OS ephemeral（port 0），避免 300x 段被僵尸/误判占满
- * 3. 再失败才顺次扫描（宽窗口）
+ * 从起始端口开始顺次 +1 查找可用端口。
+ *
+ * 【Why】必须与 @dreamer/server 的 port-utils.findAvailablePort 逻辑逐行对齐：
+ *   e2e 传 PORT 给 dev 子进程，但 dweb 的 Server 不读 PORT，而是用 config.server.port，
+ *   被占时框架自己从该端口顺次 +1 找可用端口。若 e2e 这里用别的策略（如 OS ephemeral
+ *   或 exclusive bind + sleep recheck），选到的端口会与 dev server 实际监听端口不一致，
+ *   导致测试轮询错端口 → 40s 超时全红。两边扫描顺序一致时，命中端口必然相同。
+ * 【Invariant】仅用 TCP connect 判断占用，不做 exclusive bind / sleep / recheck：
+ *   exclusive bind 后 sleep 再 isPortInUse 会把「自己刚 close 尚未释放」的端口误判为忙，
+ *   50 次扫描被自己耗尽（这正是上一个 commit 引入 ephemeral 反而全红的根因）。
+ * 【Perf】每次探测一次 TCP connect，失败立即试下一端口，无额外 sleep 延时。
+ *
+ * @param host 主机
+ * @param startPort 起始端口（须与示例 config.server.port / E2E_PORTS 一致）
+ * @param maxAttempts 最大尝试次数
  */
 async function findAvailablePort(
   host: string,
   startPort: number,
   maxAttempts: number = 200,
 ): Promise<number> {
-  if (await canExclusiveBind(host, startPort)) {
-    return startPort;
-  }
-  try {
-    return await allocateEphemeralPort(host);
-  } catch {
-    // continue to scan
-  }
-  for (let i = 1; i < maxAttempts; i++) {
+  for (let i = 0; i < maxAttempts; i++) {
     const port = startPort + i;
-    if (await canExclusiveBind(host, port)) {
+    if (!(await isPortInUse(host, port))) {
       return port;
     }
   }
