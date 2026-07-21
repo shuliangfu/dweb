@@ -15,6 +15,7 @@ import {
   dirname,
   execPath,
   exists,
+  getEnv,
   getEnvAll,
   IS_BUN,
   IS_DENO,
@@ -24,11 +25,23 @@ import {
   resolve,
   type SpawnedProcess,
 } from "@dreamer/runtime-adapter";
+
+/**
+ * Bun 下是否跳过 **浏览器** e2e（Playwright）。
+ *
+ * 【Why 默认跳过】oven-sh/bun 上 Playwright 兼容仍不完整（Windows launch、CDP/WebSocket、
+ * 长连跑 timeout/`killed dangling processes` 等仍有 open issue）。macOS 可偶发通过，
+ * 但不作为 CI/默认验收门槛。Deno 浏览器 e2e 不受影响。
+ *
+ * 需要本机强行跑 Bun 浏览器 e2e 时：`DWEB_BUN_BROWSER_E2E=1 bun test tests/e2e/...`
+ */
+const SKIP_BROWSER_E2E_ON_BUN = IS_BUN &&
+  getEnv("DWEB_BUN_BROWSER_E2E") !== "1";
 import {
   afterAll,
   afterEach,
   beforeAll,
-  cleanupAllBrowsers,
+  cleanupSuiteBrowser,
   describe,
   expect,
   it,
@@ -214,20 +227,132 @@ async function killDevProcessAndWaitPort(
   proc: SpawnedProcess | null,
   host: string,
   port: number,
-  maxWaitMs: number = 5000,
+  maxWaitMs: number = 10000,
 ): Promise<void> {
   if (proc) {
     try {
-      proc.kill(9);
+      // killTree 杀掉进程及其全部子进程树（esbuild 等），防止端口泄漏
+      proc.killTree(9);
     } catch {
       // ignore
     }
   }
   const deadline = Date.now() + maxWaitMs;
   while (Date.now() < deadline) {
-    if (!(await isPortInUse(host, port))) return;
+    if (!(await isPortInUse(host, port))) {
+      await new Promise((r) => setTimeout(r, 100));
+      if (!(await isPortInUse(host, port))) return;
+    }
     await new Promise((r) => setTimeout(r, 50));
   }
+}
+
+/**
+ * 启动 dev server 并从 stdout 中解析实际监听端口。
+ *
+ * 【Why】e2e 用 `findAvailablePort`（TCP connect）选端口，但端口处于 TIME_WAIT 时
+ *   connect 失败 → e2e 认为可用 → 传给 dev server → dev server bind 失败 →
+ *   自动 +1 找到别的端口 → 测试轮询原端口 → 40s 超时 → afterAll 未清理 →
+ *   端口累积耗尽。直接从 server 日志解析实际端口，彻底消除端口不匹配。
+ *
+ * 日志格式（多种）：
+ *   `[INFO] Dev server running at http://127.0.0.1:3091`
+ *   `🚀 后台管理启动: http://localhost:3024`
+ *   `🚀 前端服务器启动: http://localhost:3119`
+ */
+async function startDevServerAndWaitForPort(
+  executable: string,
+  args: string[],
+  cwd: string,
+  env: Record<string, string>,
+  readyPath: string,
+  maxWaitMs: number = 45000,
+): Promise<{ child: SpawnedProcess; actualPort: number }> {
+  const startCmd = createCommand(executable, {
+    args,
+    cwd,
+    env,
+    stdout: "piped",
+    stderr: "inherit",
+  });
+  const child = startCmd.spawn();
+  // 标记为 unref，防止 Bun 测试运行器将 dev server 视为 "dangling process" 而误杀
+  child.unref();
+
+  // 从 stdout 读取日志，解析监听端口
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let portResolved = false;
+
+  const portPromise = new Promise<number>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error(`在 ${maxWaitMs}ms 内未检测到 Dev server 端口`));
+    }, maxWaitMs);
+
+    if (child.stdout) {
+      (async () => {
+        const reader = child.stdout!.getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+            for (const line of lines) {
+              console.log(line);
+              // 匹配多种日志格式：
+              //   Dev server running at http://127.0.0.1:PORT
+              //   🚀 XXX启动: http://localhost:PORT
+              const match = line.match(/http:\/\/[\d.]+:(\d+)/);
+              if (match && !portResolved) {
+                portResolved = true;
+                const port = parseInt(match[1], 10);
+                clearTimeout(timeout);
+                resolve(port);
+                // 继续读取剩余输出并透传
+                (async () => {
+                  try {
+                    while (true) {
+                      const { done, value } = await reader.read();
+                      if (done) break;
+                      process.stdout.write(value);
+                    }
+                  } catch {
+                    // ignore
+                  }
+                })().catch(() => {});
+                return;
+              }
+            }
+          }
+        } catch {
+          // ignore read errors
+        }
+      })().catch(() => {});
+    } else {
+      // stdout 为 null（inherit 模式），退回使用 env.PORT
+      clearTimeout(timeout);
+      resolve(parseInt(env.PORT || "3000", 10));
+    }
+  });
+
+  let actualPort: number;
+  try {
+    actualPort = await portPromise;
+    // 等待 HTTP 200 就绪
+    await waitForServerReady(actualPort, maxWaitMs, readyPath);
+  } catch (err) {
+    // 启动失败时必须杀掉子进程及其子进程树，否则端口累积耗尽
+    await killDevProcessAndWaitPort(
+      child,
+      "127.0.0.1",
+      parseInt(env.PORT || "3000", 10),
+    );
+    throw err;
+  }
+
+  return { child, actualPort };
 }
 
 /**
@@ -360,29 +485,45 @@ async function waitForUsersListPageViaEvaluate(
 ): Promise<void> {
   const pollMs = 400;
   const deadline = Date.now() + timeoutMs;
+  let lastPath = "";
+  let lastSnippet = "";
   while (Date.now() < deadline) {
-    const ok = await browser.evaluate(() => {
-      const doc = (globalThis as Record<string, unknown>).document as
-        | { body?: { innerHTML?: string } }
-        | undefined;
-      const loc = (globalThis as Record<string, unknown>).location as
-        | { pathname?: string }
-        | undefined;
-      const html = doc?.body?.innerHTML ?? "";
-      const path = loc?.pathname ?? "";
-      /** 列表路由：/users 或 /users/（非 /users/123 详情） */
-      const onUsersList = /\/users\/?$/.test(path);
-      if (html.includes("管理系统中的所有用户")) return true;
-      if (html.includes("用户列表")) return true;
-      if (onUsersList && html.includes("用户管理")) return true;
-      if (onUsersList && html.includes("暂无用户")) return true;
-      return false;
-    }) as boolean;
-    if (ok) return;
+    try {
+      const result = await browser.evaluate(() => {
+        const doc = (globalThis as Record<string, unknown>).document as
+          | { body?: { innerHTML?: string } }
+          | undefined;
+        const loc = (globalThis as Record<string, unknown>).location as
+          | { pathname?: string }
+          | undefined;
+        const html = doc?.body?.innerHTML ?? "";
+        const path = loc?.pathname ?? "";
+        /** 列表路由：/users 或 /users/（非 /users/123 详情） */
+        const onUsersList = /\/users\/?$/.test(path);
+        const ok = html.includes("管理系统中的所有用户") ||
+          html.includes("用户列表") ||
+          (onUsersList && html.includes("用户管理")) ||
+          (onUsersList && html.includes("暂无用户"));
+        return {
+          ok,
+          path,
+          snippet: html.replace(/\s+/g, " ").slice(0, 200),
+        };
+      }) as { ok: boolean; path: string; snippet: string };
+      lastPath = result.path;
+      lastSnippet = result.snippet;
+      if (result.ok) return;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("been closed") || msg.includes("Target page")) {
+        throw err;
+      }
+      // evaluate 瞬时失败：继续轮询
+    }
     await new Promise((r) => setTimeout(r, pollMs));
   }
   throw new Error(
-    `waitForUsersListPageViaEvaluate: ${timeoutMs}ms 内未检测到用户列表页（pathname 与正文）`,
+    `waitForUsersListPageViaEvaluate: ${timeoutMs}ms 内未检测到用户列表页（pathname=${lastPath}, body≈${lastSnippet}）`,
   );
 }
 
@@ -1540,10 +1681,14 @@ async function assertBrowserMetadata(
   };
 
   const baseUrl = `http://127.0.0.1:${port}/`;
-  const navTimeoutMs = 20000;
-  /** view-hybrid 多段路由 + Bun 偏慢时，单次 click 与整段断言需与外层 it 超时同量级 */
-  const contentTimeout = IS_BUN && options?.viewHybridExtraRoutes === true
-    ? BUN_HEAVY_E2E_TIMEOUT_MS
+  /** 单段导航/内容等待；须显著小于 it 超时，避免 about+home+user(+extra) 串联顶满 120s */
+  const navTimeoutMs = IS_BUN ? 12_000 : 20_000;
+  /**
+   * click 宿主超时：view-hybrid 扩展路由在 Bun 上略放宽，但仍封顶 30s，
+   * 禁止再用 BUN_HEAVY(120s)（会与 it 超时同量级导致硬杀）。
+   */
+  const contentTimeout = IS_BUN
+    ? (options?.viewHybridExtraRoutes === true ? 30_000 : 15_000)
     : BROWSER_TEST_TIMEOUT_MS;
 
   if (typeof page.goto === "function") {
@@ -1733,7 +1878,12 @@ async function assertBrowserClickUsers(
     await browser.goto(url);
   }
 
-  const contentTimeout = limit;
+  /**
+   * 单段等待封顶，避免 contentTimeout=it.timeout(120s) 时
+   * waitForContent + click + waitUsers 串联顶满 it 超时 → Bun 硬杀 dangling。
+   */
+  const contentTimeout = Math.min(limit, BROWSER_TEST_TIMEOUT_MS);
+  const clickTimeout = Math.min(limit, 20_000);
   /** 首屏：与 assertBrowserRender 一致用 evaluate 轮询，避免 Bun 下 waitForFunction 不满足 */
   await waitForContentViaEvaluate(browser, contentTimeout);
 
@@ -1741,12 +1891,12 @@ async function assertBrowserClickUsers(
     throw new Error("page.click 不可用，无法执行点击");
   }
   await withHostTimeout(
-    page.click('a[href="/users"]', { timeout: limit }),
-    limit,
+    page.click('a[href="/users"]', { timeout: clickTimeout }),
+    clickTimeout,
     `page.click('a[href="/users"]')`,
   );
   // 点击后稍等再轮询，避免 CI 上导航尚未完成即开始检测
-  await new Promise((r) => setTimeout(r, 3000));
+  await new Promise((r) => setTimeout(r, 800));
 
   try {
     await waitForUsersListPageViaEvaluate(browser, contentTimeout);
@@ -1830,11 +1980,13 @@ export function createAdvancedExampleBrowserSuite(
   frontendPort: number,
   options?: { skip?: boolean; entries?: [string, string] },
 ): void {
-  const skip = options?.skip === true;
+  /** 显式 skip 或 Bun 默认跳过浏览器 e2e */
+  const skip = options?.skip === true || SKIP_BROWSER_E2E_ON_BUN;
   const entries = options?.entries ??
     ["src/backend/main.ts", "src/frontend/main.ts"];
   const suiteName = `${exampleName}-advanced`;
-  describe(`e2e: 浏览器渲染 - ${suiteName}`, () => {
+  const suiteTitle = `e2e: 浏览器渲染 - ${suiteName}`;
+  describe(suiteTitle, () => {
     let originalCwd: string | undefined;
     let childBackend: SpawnedProcess | null = null;
     let childFrontend: SpawnedProcess | null = null;
@@ -1851,35 +2003,49 @@ export function createAdvancedExampleBrowserSuite(
       chdir(exampleDir);
       await ensureExampleDependenciesInstalled(exampleDir);
 
-      // 启动 backend dev 服务
-      actualBackendPort = await findAvailablePort("127.0.0.1", backendPort);
-      const envBackend = { ...getEnvAll(), PORT: String(actualBackendPort) };
-      const startBackend = createCommand(getExampleChildProcessExecutable(), {
-        args: exampleRunArgs(entries[0]),
-        cwd: exampleDir,
-        env: envBackend,
-        stdout: "inherit",
-        stderr: "inherit",
-      });
-      childBackend = startBackend.spawn();
-      // 不使用 unref()，避免 Bun 将子进程视为 dangling 在其它套件超时时误杀（killed 1 dangling process）
       const maxWait = platform() === "windows" ? 120000 : 45000;
-      await waitForServerReady(actualBackendPort, maxWait, "/api/users");
 
-      // 启动 frontend dev 服务
-      actualFrontendPort = await findAvailablePort("127.0.0.1", frontendPort);
-      const envFrontend = { ...getEnvAll(), PORT: String(actualFrontendPort) };
-      const startFrontend = createCommand(getExampleChildProcessExecutable(), {
-        args: exampleRunArgs(entries[1]),
-        cwd: exampleDir,
-        env: envFrontend,
-        stdout: "inherit",
-        stderr: "inherit",
-      });
-      childFrontend = startFrontend.spawn();
-      // 不使用 unref()，避免 Bun 将子进程视为 dangling 在其它套件超时时误杀
+      // 启动 backend dev 服务，从 stdout 解析实际端口
+      const envBackend = { ...getEnvAll(), PORT: String(backendPort) };
+      try {
+        const backendResult = await startDevServerAndWaitForPort(
+          getExampleChildProcessExecutable(),
+          exampleRunArgs(entries[0]),
+          exampleDir,
+          envBackend,
+          "/api/users",
+          maxWait,
+        );
+        childBackend = backendResult.child;
+        actualBackendPort = backendResult.actualPort;
+      } catch (err) {
+        // startDevServerAndWaitForPort 已杀掉子进程，无需额外清理
+        throw err;
+      }
 
-      await waitForServerReady(actualFrontendPort, maxWait, "/");
+      // 启动 frontend dev 服务，从 stdout 解析实际端口
+      const envFrontend = { ...getEnvAll(), PORT: String(frontendPort) };
+      try {
+        const frontendResult = await startDevServerAndWaitForPort(
+          getExampleChildProcessExecutable(),
+          exampleRunArgs(entries[1]),
+          exampleDir,
+          envFrontend,
+          "/",
+          maxWait,
+        );
+        childFrontend = frontendResult.child;
+        actualFrontendPort = frontendResult.actualPort;
+      } catch (err) {
+        // frontend 启动失败时，必须杀掉已启动的 backend 进程
+        await killDevProcessAndWaitPort(
+          childBackend,
+          "127.0.0.1",
+          actualBackendPort,
+        );
+        childBackend = null;
+        throw err;
+      }
       await new Promise((r) => setTimeout(r, 3000));
     });
 
@@ -1898,11 +2064,18 @@ export function createAdvancedExampleBrowserSuite(
         actualBackendPort,
       );
       childBackend = null;
-      await cleanupAllBrowsers();
+      await cleanupSuiteBrowser(suiteTitle);
       if (originalCwd && originalCwd.length > 0) {
         chdir(originalCwd);
       }
     });
+
+    // Bun：每条用例后只清本套件浏览器（与 basic 套件同策略）
+    if (IS_BUN) {
+      afterEach(async () => {
+        await cleanupSuiteBrowser(suiteTitle);
+      });
+    }
 
     // Bun 全量连跑：统一放宽 advanced 超时，且不复用浏览器（见 basic 套件同注释）
     const advancedItTimeout = IS_BUN
@@ -1952,8 +2125,8 @@ export function createAdvancedExampleBrowserSuite(
  * @param options.skip 为 true 时跳过该套件的用例（用于已知会挂起的用例，如 react-ssg）
  * @param options.assertLoadData 为 true 时增加「应能注入 layout 与页面 load 数据」用例
  * @param options.skipCounterAndMetadataOnLinux 为 true 时在 **Linux 或 Deno（任意 OS）** 上跳过计数器与 metadata 用例。
- *   view-hybrid-flat 等示例的 dev 子进程在 Deno 下连跑多条浏览器用例后易中途退出，后续 `ensureServerAlive` 会 `connection refused`；
- *   Bun 下较稳定，故仍执行这两项。
+ *   view-hybrid-flat 等示例的 dev 子进程在 Deno 下连跑多条浏览器用例后易中途退出，后续 `ensureServerAlive` 会 `connection refused`。
+ *   **Bun 浏览器 e2e 默认整套跳过**（见 {@link SKIP_BROWSER_E2E_ON_BUN}）。
  */
 export function createBasicExampleBrowserSuite(
   exampleName: string,
@@ -1965,7 +2138,8 @@ export function createBasicExampleBrowserSuite(
   },
 ): void {
   const preferredPort = E2E_PORTS[exampleName] ?? 3000;
-  const skip = options?.skip === true;
+  /** 显式 skip 或 Bun 默认跳过浏览器 e2e */
+  const skip = options?.skip === true || SKIP_BROWSER_E2E_ON_BUN;
   const assertLoadData = options?.assertLoadData === true;
   const skipCounterAndMetadataOnLinux =
     options?.skipCounterAndMetadataOnLinux === true;
@@ -2014,7 +2188,8 @@ export function createBasicExampleBrowserSuite(
     protocolTimeout: basicProtocolTimeout,
   };
 
-  describe(`e2e: 浏览器渲染 - ${exampleName}`, () => {
+  const suiteTitle = `e2e: 浏览器渲染 - ${exampleName}`;
+  describe(suiteTitle, () => {
     let originalCwd: string | undefined;
     let child: SpawnedProcess | null = null;
     let exampleDir: string;
@@ -2022,43 +2197,43 @@ export function createBasicExampleBrowserSuite(
     let actualPort: number = preferredPort;
 
     beforeAll(async () => {
+      if (skip) return;
       originalCwd = cwd();
       exampleDir = resolve(DWEB_ROOT, "examples", exampleName, "basic");
       chdir(exampleDir);
       await ensureExampleDependenciesInstalled(exampleDir);
 
-      // 启动 dev 服务（可执行文件与当前测试运行时一致，参数见 exampleRunArgs）
-      actualPort = await findAvailablePort("127.0.0.1", preferredPort);
-      const env = { ...getEnvAll(), PORT: String(actualPort) };
-      const startCmd = createCommand(getExampleChildProcessExecutable(), {
-        args: exampleRunArgs(entry),
-        cwd: exampleDir,
+      // 启动 dev 服务，从 stdout 解析实际监听端口（避免端口 TIME_WAIT 不匹配）
+      const env = { ...getEnvAll(), PORT: String(preferredPort) };
+      const maxWait = platform() === "windows" ? 60000 : 45000;
+      const result = await startDevServerAndWaitForPort(
+        getExampleChildProcessExecutable(),
+        exampleRunArgs(entry),
+        exampleDir,
         env,
-        stdout: "inherit",
-        stderr: "inherit",
-      });
-      child = startCmd.spawn();
-      // 不使用 unref()，避免 Bun 将子进程视为 dangling 在其它套件超时时误杀（导致 preact-ssr 等套件的 dev 被误杀、测试挂起 90s）
-
-      const maxWait = platform() === "windows" ? 60000 : 40000;
-      await waitForServerReady(actualPort, maxWait);
+        "/",
+        maxWait,
+      );
+      child = result.child;
+      actualPort = result.actualPort;
       await new Promise((r) => setTimeout(r, 4000));
     });
 
     afterAll(async () => {
+      if (skip) return;
       // 先杀进程并等端口释放，避免 afterAll 超时 / 跨套件端口堆积
       await killDevProcessAndWaitPort(child, "127.0.0.1", actualPort);
       child = null;
-      await cleanupAllBrowsers();
+      await cleanupSuiteBrowser(suiteTitle);
       if (originalCwd && originalCwd.length > 0) {
         chdir(originalCwd);
       }
     });
 
-    // Bun：每条用例后清浏览器，降低 reuse 关闭后仍残留的 session 干扰后续用例
-    if (IS_BUN) {
+    // Bun：每条用例后只清**本套件**浏览器（仅当未跳过浏览器 e2e 时注册）
+    if (IS_BUN && !skip) {
       afterEach(async () => {
-        await cleanupAllBrowsers();
+        await cleanupSuiteBrowser(suiteTitle);
       });
     }
 
@@ -2124,7 +2299,10 @@ export function createBasicExampleBrowserSuite(
         });
       },
       {
-        timeout: basicBrowserItTimeout,
+        // 多段 SPA 导航：Bun 上给足余量，单步 wait 已在 assertBrowserMetadata 内封顶
+        timeout: IS_BUN
+          ? Math.max(basicBrowserItTimeout, 180_000)
+          : basicBrowserItTimeout,
         sanitizeOps: false,
         sanitizeResources: false,
         browser: basicBrowserOpts,

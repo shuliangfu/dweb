@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-# 在 dweb 包根目录执行：逐个运行 e2e（Bun），便于定位失败文件。
-# 依赖：已 bun install；浏览器 e2e 需本机已安装 Playwright Chromium（如 npx playwright install chromium）。
-set -euo pipefail
+# 在 dweb 包根目录执行：逐个运行 e2e（Bun）。
+#
+# 默认：浏览器 e2e 在 Bun 下会 skip（见 browser-render-utils SKIP_BROWSER_E2E_ON_BUN）。
+# 强制跑浏览器：DWEB_BUN_BROWSER_E2E=1 bash tests/e2e/run-e2e-bun-serial.sh
+# 依赖：已 bun install；浏览器模式需 Playwright Chromium。
+# 单文件失败不中断后续；最后汇总并以非 0 退出。
+set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 FILES=(
@@ -22,8 +26,25 @@ FILES=(
   tests/e2e/browser-render-view-ssg.test.ts
   tests/e2e/browser-render-view-ssr.test.ts
 )
+if [[ "${DWEB_BUN_BROWSER_E2E:-}" == "1" ]]; then
+  echo "DWEB_BUN_BROWSER_E2E=1：将实际运行 Playwright 浏览器 e2e"
+else
+  echo "默认跳过 Bun 浏览器 e2e（仅 server-request 等非浏览器用例会执行逻辑）；强制开启：DWEB_BUN_BROWSER_E2E=1"
+fi
+FAILED=()
 for f in "${FILES[@]}"; do
   echo "========== bun test $f =========="
-  bun test "$f"
+  if ! bun test "$f"; then
+    FAILED+=("$f")
+    echo "!! FAILED: $f"
+  fi
 done
-echo "全部 e2e 文件已顺序跑完。"
+echo "========== 汇总 =========="
+if [ ${#FAILED[@]} -eq 0 ]; then
+  echo "全部 e2e 文件已顺序跑完，均通过。"
+  exit 0
+fi
+echo "失败 ${#FAILED[@]} 个文件："
+printf '  - %s\n' "${FAILED[@]}"
+exit 1
+

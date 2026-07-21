@@ -66,8 +66,13 @@ describe("jsr-versions", () => {
       async () => {
         const version = await fetchJsrLatestVersion("@dreamer/dweb", true);
         console.log("[beta 版] @dreamer/dweb:", version);
-        expect(version).toBeTruthy();
-        expect(typeof version).toBe("string");
+        // 无 beta 发布时 API 返回 null 属正常，不可强制 truthy
+        if (version != null) {
+          expect(typeof version).toBe("string");
+          expect(version.length).toBeGreaterThan(0);
+        } else {
+          expect(version).toBe(null);
+        }
       },
       { timeout: 15_000 },
     );

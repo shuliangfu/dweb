@@ -1,5 +1,6 @@
 # CI: 在 macOS、Ubuntu、Windows 上运行测试，验证跨平台兼容性
 # 结构参考 view 包：Deno 与 Bun 拆成独立 job；Windows 上 Bun 不跑浏览器 e2e
+# 暂不跑 Bun 浏览器 e2e（unit/integration 保留）；恢复时取消 test-*-bun 中 e2e 与 Playwright 注释
 name: CI
 
 on:
@@ -114,22 +115,24 @@ jobs:
       - name: Install dependencies (Bun)
         run: bun install
 
-      - name: Install Playwright Chromium
-        run: npx -y playwright@latest install chromium
+      # 暂不跑 Bun e2e，无需 Playwright
+      # - name: Install Playwright Chromium
+      #   run: npx -y playwright@latest install chromium
 
       # unit、integration、e2e 分开跑，避免 integration 结束时触发 cleanupSuiteBrowser 导致 "browser close timeout"
       - name: Test (Bun) unit
         run: bun test --max-concurrency=1 tests/unit
       - name: Test (Bun) integration
         run: bun test --max-concurrency=1 tests/integration
+      # 暂不跑 Bun 浏览器 e2e（稳定性/耗时）；恢复时取消注释并恢复上面 Playwright 安装
       # e2e 按文件串行跑，每进程仅 2 个套件，减少 afterAll 超时 / dangling / browser close 互相干扰
-      - name: Test (Bun) e2e
-        run: |
-          failed=0
-          for f in tests/e2e/*.test.ts; do
-            bun test --max-concurrency=1 "$f" || failed=1
-          done
-          exit $failed
+      # - name: Test (Bun) e2e
+      #   run: |
+      #     failed=0
+      #     for f in tests/e2e/*.test.ts; do
+      #       bun test --max-concurrency=1 "$f" || failed=1
+      #     done
+      #     exit $failed
 
   test-macos-bun:
     runs-on: macos-latest
@@ -146,22 +149,24 @@ jobs:
       - name: Install dependencies (Bun)
         run: bun install
 
-      - name: Install Playwright Chromium
-        run: npx -y playwright@latest install chromium
+      # 暂不跑 Bun e2e，无需 Playwright
+      # - name: Install Playwright Chromium
+      #   run: npx -y playwright@latest install chromium
 
       # unit、integration、e2e 分开跑，避免 integration 结束时触发 cleanupSuiteBrowser 导致 "browser close timeout"
       - name: Test (Bun, macOS) unit
         run: bun test --max-concurrency=1 tests/unit
       - name: Test (Bun, macOS) integration
         run: bun test --max-concurrency=1 tests/integration
+      # 暂不跑 Bun 浏览器 e2e（稳定性/耗时）；恢复时取消注释并恢复上面 Playwright 安装
       # e2e 按文件串行跑，每进程仅 2 个套件，减少 afterAll 超时 / dangling / browser close 互相干扰
-      - name: Test (Bun, macOS) e2e
-        run: |
-          failed=0
-          for f in tests/e2e/*.test.ts; do
-            bun test --max-concurrency=1 "$f" || failed=1
-          done
-          exit $failed
+      # - name: Test (Bun, macOS) e2e
+      #   run: |
+      #     failed=0
+      #     for f in tests/e2e/*.test.ts; do
+      #       bun test --max-concurrency=1 "$f" || failed=1
+      #     done
+      #     exit $failed
 
   test-windows-bun:
     runs-on: windows-latest

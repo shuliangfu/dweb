@@ -24,9 +24,24 @@
 
 ## 浏览器 e2e 前置
 
-`browser-render.test.ts` 需要 Chrome/Chromium。若出现
+`browser-render-*.test.ts` 需要 Chrome/Chromium。若出现
 `Timed out waiting for WS endpoint`：
 
 1. 安装 Chrome 或 Chromium
 2. 设置 `CHROME_PATH` 环境变量指向可执行文件
 3. Windows CI 需 setup-chrome action
+
+## Deno / Bun
+
+| 运行时 | 浏览器 e2e | 说明 |
+|--------|------------|------|
+| **Deno** | 默认执行 | 主验收路径 |
+| **Bun** | **默认 skip** | 上游 Playwright×Bun 仍不稳；`server-request` 等非浏览器 e2e 仍会跑 |
+
+强制在 Bun 下跑浏览器 e2e：
+
+```bash
+DWEB_BUN_BROWSER_E2E=1 bun test tests/e2e/browser-render-preact-csr.test.ts
+# 或
+DWEB_BUN_BROWSER_E2E=1 bash tests/e2e/run-e2e-bun-serial.sh
+```
