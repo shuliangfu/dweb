@@ -10,7 +10,7 @@
 |----|-----|
 | 文档性质 | **架构规划 / 可行性分析**（非已实现 changelog） |
 | 基准 | `@dreamer/dweb` **3.5.11**；`@dreamer/console` **1.0.x**（CLI 工具库） |
-| 日期 | **2026-07-22**（目录/init 策略已按单应用·多应用补强） |
+| 日期 | **2026-07-22**（目录随 **useSrc** 统一：有 src 则在 src 下，无则在根） |
 | 语言 | 仅中文 |
 | 相关 | [APP_CONFIG.md](./APP_CONFIG.md)、[全面分析-优化与增强.md](./全面分析-优化与增强.md)、`src/cmd/init/*`、`src/utils/project.ts`、`src/feature/command.ts`、`src/cli.ts` |
 
@@ -123,47 +123,106 @@
 | 必需依赖 | server、router、render | **否**；可选 database、logger、plugins |
 | 退出码 | 进程常驻 | **0 成功 / 非 0 失败**（CI/cron 关键） |
 
-### 3.2 init 与目录布局（单应用 vs 多应用）——重点
+### 3.2 init 与目录布局（单应用 vs 多应用 · **统一 useSrc**）
 
 现有 init 已区分（见 `InitOptions.appMode` / `useSrc`、`generate.ts`）：
 
 | 模式 | 目录习惯 |
 |------|----------|
-| **单应用** | Web 根在 `src/`（`useSrc=true` 默认）或项目根（`useSrc=false`）：含 `main.ts`、`config/`、`routes/` |
-| **多应用** | `src/common/`（或 `common/`）+ 多个应用目录 `src/<appName>/`；tasks 形如 `dev:backend` |
+| **单应用** | Web 根在 `src/`（`useSrc=true` 默认）或项目根（`useSrc=false`）：`main.ts`、`config/`、`routes/` |
+| **多应用** | `common/` + 多个 `<appName>/`；均在 `src/` 下或均在根下（由 **useSrc** 决定） |
 
-控制台要回答的问题：**init 问「是否创建控制台应用」时，目录落在哪里？**
+**总原则（与用户约定一致）：**
+
+```text
+prefix = useSrc ? "src/" : ""
+
+# 单应用 + 创建控制台
+  Web:     {prefix}main.ts, {prefix}config/, {prefix}routes/
+  Console: {prefix}console/config/, {prefix}console/routes/
+
+# 多应用 + 创建控制台（console 作为 app 名之一）
+  Common:  {prefix}common/…
+  Web 等:  {prefix}<appName>/…
+  Console: {prefix}console/config/, {prefix}console/routes/
+```
+
+即：**有 src 就都在 src 下；不用 src 就都在项目根。** 单应用 / 多应用同一套 `prefix` 规则，解析器只认「prefix + console」。
+
+控制台内部永远是独立子树，**不与 Web 共用** `{prefix}config/main.ts`：
+
+| 路径 | 归属 |
+|------|------|
+| `{prefix}config/` | **仅 Web**（单应用）或各 app 自己的 config |
+| `{prefix}console/config/` | **仅 Console** |
+| `{prefix}console/routes/` | **仅 CLI 命令**（不是 HTTP 页面） |
 
 ---
 
-#### 3.2.1 多应用：增加名为 `console` 的应用即可
+#### 3.2.1 单应用 + 控制台
 
-用户选择多应用后，应用名列表里勾选/输入 **`console`**（或 init 单独问「是否同时创建控制台应用」→ 自动 `appNames.push("console")`）。
-
-生成结果与现有多应用一致（`prefix = useSrc ? "src/" : ""`）：
+init：单应用 → 是否 `useSrc` → 是否创建控制台。
 
 ```text
-# useSrc = true（默认）
+# useSrc = true（默认）—— console 在 src 下
+my-project/
+  deno.json
+  src/
+    main.ts                 # Web 入口
+    config/                 # Web 配置
+      main.ts
+    routes/                 # Web HTTP 路由
+      …
+    assets/
+    console/                # ★ 控制台（与 main/config/routes 同级，同在 src 内）
+      config/
+        main.ts             # 独立 ConsoleConfig
+      routes/
+        crond.ts            # export start / stop …
+        hello.ts
+      middlewares/          # 可选
+
+# useSrc = false —— console 在项目根（与 Web 的 config/routes 同级）
+my-project/
+  main.ts
+  config/                   # Web
+  routes/                   # Web
+  assets/
+  console/                  # ★ 根级
+    config/
+    routes/
+```
+
+| 点 | 约定 |
+|----|------|
+| 位置 | **`{prefix}console/`**，不是项目根再强制一层、也不是塞进 `routes/` |
+| 独立配置 | 必须是 `console/config/`，禁止只靠 Web 的 `config/main.ts` 分支糊弄 |
+| 与 Web 关系 | 同属一个「单应用项目」源码树（尤其 useSrc 时都在 `src/`），但 **运行面分离**（HTTP vs CLI） |
+| 静态资源扫描 | 构建 Web 时 **排除** `console/**`，避免 esbuild/样式扫到命令文件 |
+
+---
+
+#### 3.2.2 多应用 + 控制台
+
+多应用同样 `prefix = useSrc ? "src/" : ""`。用户应用名中包含 **`console`**（或 init 问「是否创建控制台应用」→ `appNames.push("console")`）。
+
+```text
+# useSrc = true
 my-project/
   src/
     common/
-      config/          # 公共配置（DB 等可两边合并）
+      config/
       model/
       service/
-      …
-    web/               # 示例：业务 Web 应用名可自定
+    web/                    # 示例 Web 应用名
       main.ts
       config/
-      routes/
-      …
-    console/           # ★ 控制台应用 = 普通 app 目录名
-      # 无 main.ts 听 HTTP 也可；或有 main 仅供类型检查
+      routes/               # HTTP
+    console/                # ★ 与 web 同级的应用目录
       config/
-        main.ts        # ConsoleConfig（无 server/render 必填）
-      routes/          # 命令文件路由（不是 HTTP）
+        main.ts
+      routes/               # CLI 命令
         crond.ts
-        user/seed.ts
-      middlewares/     # 可选
 
 # useSrc = false
 my-project/
@@ -176,147 +235,53 @@ my-project/
 
 | 点 | 约定 |
 |----|------|
-| 目录名 | 推荐固定 **`console`**（保留字/惯例），避免 `cli`/`cmd` 与内置命令混淆 |
-| 与 Web 应用 | **同级**；都挂在 `common` 下 |
-| 配置加载 | 与多应用相同：`common/config` → `console/config` 覆盖 |
-| CLI | `dweb-cli run crond/start -a console` 或默认发现名为 `console` 的应用 |
-| **不要** | 再在 `console` 里套一层 `console/console`；不要生成 `dev:console` 除非以后支持「假 HTTP」调试 |
-
-**多应用下「直接增加 console 目录就行」——正确，且与现有 generate 循环「每个 appName 一套 config/routes」同构。**
-
-差异仅在于：console 应用 **不生成**（或生成空壳跳过）HTTP 向的 `routes/*.tsx` 页面模板，而生成 **`routes/*.ts` 命令模块**；`deno.json` **不强制** `dev:console` / `start:console`（可只加注释或 `task run:console` 文档）。
+| 目录名 | 推荐固定 **`console`** |
+| 配置合并 | `common/config` → `console/config`（与现有多应用一致） |
+| 模板差异 | console **不生成**页面 tsx；生成 **命令 `routes/*.ts`** |
+| tasks | **不强制** `dev:console` / `start:console`（无 HTTP）；文档写 `dweb-cli run` |
+| CLI | `dweb-cli run crond/start -a console`（可默认 app=`console`） |
 
 ---
 
-#### 3.2.2 单应用：不能照搬「再开一个 app 名」，推荐「根级并列 `console/`」
-
-单应用 **没有** `appNames`、**没有** `common/` 与 `dev:xxx` 多入口。  
-Web 已经占用「整棵应用根」：
+#### 3.2.3 路径解析算法（统一 prefix）
 
 ```text
-# 当前单应用 + useSrc=true
-my-project/
-  src/
-    main.ts
-    config/      # Web
-    routes/      # Web HTTP
-    assets/
-  deno.json
-```
+function detectUseSrc(projectRoot):
+  # 与现有 dweb 一致：存在 src/main.ts 或 src/<app>/main.ts / src/common 等则 true
+  return exists(join(projectRoot, "src")) && 项目惯例判定
 
-若把控制台塞进 Web 根内部，容易出现两种坏结构：
-
-| 坏结构 | 问题 |
-|--------|------|
-| `src/routes` 与 `src/console` 混在同一「Web 根」且 console 无独立 config | 配置仍绑 Web 的 server/render；边界糊 |
-| `src/config` 同时服务 HTTP 与 CLI | 违背「独立 config」；校验与热更语义纠缠 |
-
-**推荐约定（单应用 · 规范 A，默认）：`console/` 与 Web 根并列，始终在项目根下。**
-
-```text
-# 单应用 + useSrc=true（默认）—— ★ 推荐
-my-project/
-  deno.json
-  package.json          # 若 bun
-  src/                  # 仅 Web
-    main.ts
-    config/
-      main.ts
-    routes/
-      …
-    assets/
-  console/              # ★ 项目根下，与 src 同级（不在 src 内）
-    config/
-      main.ts           # 独立 ConsoleConfig
-    routes/
-      crond.ts
-      hello.ts
-    middlewares/        # 可选
-    README.md
-
-# 单应用 + useSrc=false
-my-project/
-  main.ts
-  config/               # Web
-  routes/               # Web
-  assets/
-  console/              # ★ 仍在项目根，与 Web 的 config/routes 同级
-    config/
-    routes/
-```
-
-| 优点 | 说明 |
-|------|------|
-| 路径稳定 | **无论 useSrc true/false，console 根路径都是 `<projectRoot>/console`**，解析器好写 |
-| 边界清晰 | Web = `src/*` 或根上 main/config/routes；Console = 根上 `console/*` |
-| 与多应用对齐心智 | 多应用是 `…/console/` 应用目录；单应用是根级 `console/`，都是「名叫 console 的一等目录」 |
-| init 简单 | 单应用勾选「创建控制台」→ `ensureDir(project/console/{config,routes})` 写模板，**不必**改成 multi |
-
-**不推荐作为默认（单应用 · 方案 B）：`src/console/`**
-
-```text
-my-project/src/console/config + routes
-```
-
-| 优点 | 缺点 |
-|------|------|
-| 源码都在 `src/` 下，部分团队偏好 | `useSrc=false` 时无 `src/`，规则分裂 |
-| | 易被误认为 Web 子模块；构建/静态资源扫描可能误扫 |
-| | 与多应用路径 `src/console` 撞车语义（单应用的 src/console ≠ 多应用的 app） |
-
-若将来要支持方案 B，仅作 **可选探测路径**，默认仍用根级 `console/`。
-
-**明确否决（单应用）：**
-
-- 仅 `config/console.ts` 一个文件、命令仍塞在 `scripts/`——失去文件路由。  
-- 与 Web 共用唯一 `config/main.ts` 且靠 `if (isCli)` 分支——短期省事，长期配置爆炸。  
-- 把命令放进 Web 的 `routes/api/cli/*` 走 HTTP——安全与运维模型错误。
-
----
-
-#### 3.2.3 路径解析算法（实现必须统一）
-
-运行 `dweb-cli run …` 时，**解析 console 根目录**（伪代码）：
-
-```text
 function resolveConsoleRoot(projectRoot, options):
-  // 1) 显式
-  if options.config or options.consoleDir: return 用户指定
+  if options.consoleDir: return options.consoleDir
 
-  // 2) 多应用：--app console 或默认 app 名为 console
+  prefix = options.useSrc ?? detectUseSrc(projectRoot)
+  base = prefix ? join(projectRoot, "src") : projectRoot
+
+  // 多应用：可指定 -a console
   if project.mode === "multi":
     app = options.app ?? "console"
-    if app 不在 project.appNames 且 目录不存在: error
-    base = useSrcDetect ? join(projectRoot, "src", app) : join(projectRoot, app)
-    // 兼容：若仅有 routes 在 base/routes
-    return base   # 期望 base/config + base/routes
+    root = join(base, app)          # src/console 或 console
+    if exists(join(root, "routes")) or exists(join(root, "config")):
+      return root
+    error: 多应用下未找到控制台目录
 
-  // 3) 单应用：固定项目根下 console/
-  single = join(projectRoot, "console")
-  if exists(single/routes) or exists(single/config): return single
+  // 单应用
+  root = join(base, "console")      # src/console 或 console
+  if exists(join(root, "routes")) or exists(join(root, "config")):
+    return root
 
-  // 4) 可选回退（文档声明，非默认生成）
-  for candidate in [join(projectRoot, "src", "console")]:
-    if exists(candidate/routes): return candidate
-
-  error: 未找到控制台应用目录
+  error: 未找到控制台应用（请创建 console/ 或 init 时勾选）
 ```
 
-**配置文件：**
+**配置 / 路由路径：**
 
-| 模式 | 配置路径 |
-|------|----------|
-| 单应用 | `<projectRoot>/console/config/main.ts`（+ dev/prod 变体可选） |
-| 多应用 | `<prefix>/console/config/main.ts`，并合并 `<prefix>/common/config` |
+| 场景 | console 根 | config | 命令 routes |
+|------|------------|--------|-------------|
+| 单应用 · useSrc | `src/console` | `src/console/config` | `src/console/routes` |
+| 单应用 · 无 src | `console` | `console/config` | `console/routes` |
+| 多应用 · useSrc | `src/console` | `src/console/config`（+ common） | `src/console/routes` |
+| 多应用 · 无 src | `console` | `console/config`（+ common） | `console/routes` |
 
-**命令路由根：**
-
-| 模式 | routes 根 |
-|------|-----------|
-| 单应用 | `<projectRoot>/console/routes` |
-| 多应用 | `<prefix>/console/routes` |
-
-`crond/start` → 始终相对 **该 routes 根**：`…/routes/crond.ts#start`。
+`crond/start` → 始终相对 **该应用的 `routes` 根**：`…/console/routes/crond.ts#start`。
 
 ---
 
@@ -324,53 +289,68 @@ function resolveConsoleRoot(projectRoot, options):
 
 ```text
 ? 应用模式: 单应用 / 多应用
+? 是否使用 src 目录?  (Y/n)     # 已有；决定 prefix
 
 # —— 单应用 ——
-? 是否同时创建控制台应用（console）?  (Y/n)
-  → Yes: 生成 <root>/console/{config,routes} + 示例 hello.ts / crond.ts
-  → 不修改 Web 的 src 结构；useSrc 只影响 Web
+? 是否创建控制台应用（console）?  (Y/n)
+  → Yes: 生成 {prefix}console/{config,routes} + 示例命令
+  → Web 仍为 {prefix}main.ts / config / routes
 
 # —— 多应用 ——
-? 请输入应用名称（可多次）: backend, frontend
-? 是否额外创建控制台应用 console?  (Y/n)   # 或允许用户直接输入名 console
-  → Yes: appNames 含 "console"，走现有多应用生成循环
-  → console 应用使用「命令路由模板」而非页面 tsx 模板
-  → 可选：不生成 dev:console / start:console，仅文档说明 dweb-cli run
+? 应用名称…（可多次）
+? 是否额外创建控制台应用 console?  (Y/n)
+  → Yes: appNames 含 "console"，生成 {prefix}console/…
+  → 使用命令路由模板，而非页面 tsx
 ```
 
-| init 选项（规划） | 类型 | 说明 |
-|-------------------|------|------|
-| `createConsole?: boolean` | boolean | 单应用：是否生成根级 `console/` |
-| `appNames` 含 `"console"` | multi | 多应用：生成 `…/console` 应用目录 |
-| `consoleExample?: boolean` | boolean | 是否带示例命令（默认 true） |
+| init 选项（规划） | 说明 |
+|-------------------|------|
+| `useSrc` | **同时**约束 Web 与 console 是否在 `src/` 下 |
+| `createConsole` | 单应用是否生成 `{prefix}console/` |
+| `appNames` 含 `"console"` | 多应用生成 console 应用目录 |
+| `consoleExample` | 是否带 hello/crond 示例（默认 true） |
 
 ---
 
-#### 3.2.5 对照表（最终推荐）
+#### 3.2.5 对照表（最终约定）
 
-| 场景 | 控制台根目录 | 配置 | 命令 routes | CLI |
-|------|--------------|------|-------------|-----|
-| **单应用 + 要控制台** | **`<project>/console/`**（与 `src/` 或 Web 根 **并列**） | `console/config/` | `console/routes/` | `dweb-cli run crond/start` |
-| **单应用 + 不要控制台** | 不生成 | — | — | 仅有框架内置 cli |
-| **多应用 + 要控制台** | **`<prefix>/console/`**（与其它 app **同级**） | `console/config/` + common | `console/routes/` | `dweb-cli run crond/start -a console`（可默认 app=console） |
-| **多应用纯 Web** | 无 console 名 | — | — | 同现网 |
+| 场景 | useSrc | 控制台根 | CLI 示例 |
+|------|--------|----------|----------|
+| 单应用 + 控制台 | true | **`src/console/`** | `dweb-cli run crond/start` |
+| 单应用 + 控制台 | false | **`console/`**（项目根） | 同上 |
+| 多应用 + 控制台 | true | **`src/console/`** | `dweb-cli run crond/start -a console` |
+| 多应用 + 控制台 | false | **`console/`** | 同上 |
+| 不创建控制台 | * | 不生成 | 仅框架内置 cli |
 
 ```text
-单应用（useSrc）          多应用（useSrc）
-─────────────────        ─────────────────
-project/                 project/
-  src/                     src/
-    main.ts                  common/
-    config/                  web/
-    routes/                  console/     ← app 之一
-  console/      ← 并列         config/
-    config/                  routes/
+单应用 useSrc=true              多应用 useSrc=true
+────────────────────            ────────────────────
+project/                        project/
+  src/                            src/
+    main.ts                         common/
+    config/                         web/
+    routes/                         console/
+    console/   ← 在 src 内            config/
+      config/                         routes/
+      routes/
+
+单应用 useSrc=false             多应用 useSrc=false
+────────────────────            ────────────────────
+project/                        project/
+  main.ts                         common/
+  config/                         web/
+  routes/                         console/
+  console/   ← 在根                 config/
+    config/                         routes/
     routes/
 ```
 
 **一句话：**  
-- 多应用 → **增加一个叫 `console` 的应用目录**（与 web 同级）。  
-- 单应用 → **在项目根增加 `console/` 目录**（与 `src/` 并列，而不是塞进 `src/routes` 旁边却共用 Web config）。
+- **useSrc=true** → 单应用 / 多应用的 console 都在 **`src/console`**。  
+- **useSrc=false** → 都在 **项目根 `console/`**。  
+- 与现有 dweb init 的 `prefix` **同一规则**，不再单应用例外「强制根级、多应用才进 src」。
+
+**仍否决：** 与 Web 共用唯一 `config/main.ts`；命令塞进 Web HTTP `routes/`；`scripts/` 散落替代文件路由。
 
 ### 3.3 路由约定（核心 DSL）
 
@@ -657,9 +637,10 @@ dweb-cli g -t console -n user/seed
 
 ### Phase 0 — 决策（文档确认）
 
-- [x] **目录（本文 §3.2 推荐）**  
-  - 单应用：项目根 **`console/`** 与 Web 根（`src/` 或根级 config/routes）**并列**  
-  - 多应用：与其它 app 同级的 **`console/`** 应用目录（`src/console` 或 `console`）  
+- [x] **目录（本文 §3.2）**  
+  - **统一 `useSrc`**：`prefix = useSrc ? "src/" : ""`，console 根 = **`{prefix}console/`**  
+  - 单应用：`src/console` 或根级 `console/`（与 Web 同 prefix）  
+  - 多应用：与其它 app 同级的 **`console`** 应用目录  
 - [ ] 采用 **`dweb-cli run <route>`** 还是裸路由（仍建议 `run`）  
 - [ ] `App.start` 增加 console 模式还是独立 `ConsoleApp` 类  
 - [ ] init：`createConsole` 询问文案与是否默认生成示例命令  
@@ -728,8 +709,8 @@ dweb-cli g -t console -n user/seed
 | `dweb-cli crond/start` → `console/routes/crond.ts` 的 `start` | **支持**；解析规则优先「文件 + 方法」 |
 | 独立 config，像 web 应用一样 | **支持**；`ConsoleConfig` 分型，无 server 必填 |
 | 控制台应用 vs Web 应用 | **并列一等公民**，共享 common，分离入口与路由根 |
-| **多应用时增加 console 目录** | **正确**；与 `web`/`backend` 同级的 app 目录即可 |
-| **单应用时目录怎么加？** | **项目根下并列 `console/`**（与 `src/` 同级），**不要**塞进 Web 的 `src/routes` 旁却共用 Web config |
+| **多应用时增加 console 目录** | **正确**；与 `web`/`backend` 同级的 app 目录；路径跟 **useSrc** |
+| **单应用时目录怎么加？** | 同样跟 **useSrc**：**有 src → `src/console/`**；**不用 src → 根级 `console/`**；独立 `console/config`，不与 Web 共用 config |
 | 很好吗？ | **很好**；补齐 Artisan 式能力，且复用现有 console + initApp 雏形 |
 
 **建议微调**：首版用 **`dweb-cli run crond/start`** 避免与内置命令冲突；习惯稳定后可加裸命令别名。
@@ -744,9 +725,9 @@ dweb-cli g -t console -n user/seed
 | 本质是什么？ | **文件式 CLI 路由 + 无 HTTP 的 App 运行时** |
 | 最大实现点 | `App` console 模式生命周期 + 路由解析器 + 独立配置加载 |
 | 最先交付 | `run` 子命令 + 单例 hello + 配置 + 退出码测试 |
-| **单应用 console 目录** | **`<projectRoot>/console/{config,routes}`**，与 Web 的 `src/`（或根级 main/config/routes）**并列** |
-| **多应用 console 目录** | **`<prefix>/console/`**，与其它 app **同级**；init 勾选或输入应用名 `console` |
-| **useSrc 影响** | 只影响 Web/多应用的 `src/` 前缀；**单应用 console 始终在项目根**，避免 useSrc 导致双规则 |
+| **单应用 console 目录** | **`{prefix}console/`**：useSrc → `src/console/`；否则根级 `console/` |
+| **多应用 console 目录** | 同样 **`{prefix}console/`**，与其它 app **同级** |
+| **useSrc 影响** | **Web 与 console 同一 prefix**；有 src 都进 src，不用 src 都在根 |
 
 ---
 
