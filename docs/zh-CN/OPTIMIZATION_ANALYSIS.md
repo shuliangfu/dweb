@@ -132,7 +132,7 @@
 |----|------|----------|
 | SSR 响应 | 整页字符串一次返回 | 可选 **streaming SSR**（与 `@dreamer/render` / view `renderToStream` 对齐） |
 | SSG | 构建时静态 | 可选 **ISR/revalidate**（路由级 TTL 或 webhook） |
-| 水合 | 整页 hydrate | 长期 **islands / 分区水合**（依赖 view/render 能力） |
+| 水合 | 整页 hydrate | **保持整页**；**不做 islands**（DX 差；view/Preact 已轻量——见 [全面分析 §1.4](./全面分析-优化与增强.md)） |
 | `load()` | 每请求可打 | 文档 + 可选 **load 结果短缓存**（按 path+query，dev 关闭） |
 | Hybrid | 双端路径 | 与 view `renderRouterToString` 探索 **同构路由表** 减少双实现 |
 
@@ -222,10 +222,10 @@ dweb 将 **View 作为推荐引擎**。view **2.0.4** 与 dweb 直接相关的�
 | # | 项 |
 |---|-----|
 | 1 | ISR / revalidate |
-| 2 | Partial hydration / islands |
-| 3 | OpenAPI 生成 |
-| 4 | OpenTelemetry /metrics |
-| 5 | App 内核进一步拆分 |
+| 2 | OpenAPI 生成 |
+| 3 | OpenTelemetry /metrics |
+| 4 | App 内核进一步拆分 |
+| 5 | 多应用 Console（`dweb-cli run`，见 CONSOLE 专文） |
 
 ### 刻意不做（除非 profiling 证明）
 
@@ -233,6 +233,7 @@ dweb 将 **View 作为推荐引擎**。view **2.0.4** 与 dweb 直接相关的�
 - 去掉 Preact/React 只留 View（生态仍需要）  
 - 默认开启时间分片类复杂调度（属 view 层）  
 - 无测试的 builder 大重构  
+- **Islands / 部分水合 / 分区水合**（产品否决；以 [全面分析](./全面分析-优化与增强.md) 为准）  
 
 ---
 
