@@ -590,37 +590,33 @@ dweb-cli g -t console -n user/seed
 
 ### Phase 0 — 决策（文档确认）
 
-- [x] **目录（本文 §3.2）**  
-  - **统一 `useSrc`**：`prefix = useSrc ? "src/" : ""`，console 根 = **`{prefix}console/`**  
-  - 单应用：`src/console` 或根级 `console/`（与 Web 同 prefix）  
-  - 多应用：与其它 app 同级的 **`console`** 应用目录  
+- [x] **产品范围（§3.2.0）**：**仅多应用**；单应用 init **不询问、不生成** console  
+- [x] **目录**：多应用 `{prefix}console/`，`prefix` 跟 **useSrc**  
 - [ ] 采用 **`dweb-cli run <route>`** 还是裸路由（仍建议 `run`）  
 - [ ] `App.start` 增加 console 模式还是独立 `ConsoleApp` 类  
-- [ ] init：`createConsole` 询问文案与是否默认生成示例命令  
+- [ ] 多应用 init：`createConsole` 文案与示例命令  
 
 ### Phase 1 — MVP（可用）
 
-- [ ] 路径解析：`resolveConsoleRoot`（单应用根级 / 多应用 app）  
+- [ ] 路径解析：`resolveConsoleRoot`（**仅 multi**；single 明确报错）  
 - [ ] `console/routes` + `crond.ts` 多 export 方法  
-- [ ] `dweb-cli run crond/start`（多应用 `-a console`）  
-- [ ] 独立 `console/config/main.ts`  
+- [ ] `dweb-cli run crond/start`（默认 / `-a console`）  
+- [ ] 独立 `console/config/main.ts` + common 合并  
 - [ ] App console 模式：装 DB/logger，不 listen，退出前 shutdown  
 - [ ] 错误信息 + 退出码  
 - [ ] 单测：路由解析 + 一次 e2e 脚本  
-- [ ] init：单应用生成根级 `console/`；多应用可选 app 名 `console`  
 
 ### Phase 1.5 — init 模板（可与 MVP 并行）
 
-- [ ] `InitOptions.createConsole`  
-- [ ] 单应用：不改 Web 树，只写 `<root>/console/**`  
-- [ ] 多应用：app 循环识别 `name === "console"` 时用命令模板而非页面 tsx  
-- [ ] 示例：`routes/hello.ts`（`export async function main`）
+- [ ] 单应用流程：**零** console UI / 生成  
+- [ ] 多应用：`createConsole` 或 app 名 `console` → 命令路由模板（非页面 tsx）  
+- [ ] 示例：`routes/hello.ts` / `crond.ts`  
+- [ ] **不**生成 `dev:console` / `start:console`（或仅文档说明）
 
 ### Phase 2 — DX
 
 - [ ] `run --list` / 命令 help（读 `meta`）  
-- [ ] `generate -t console`  
-- [ ] init 可选脚手架  
+- [ ] `generate -t console`（仅多应用项目）  
 - [ ] 全局中间件（锁、计时）  
 - [ ] 文档：cron/K8s 示例  
 
@@ -647,11 +643,11 @@ dweb-cli g -t console -n user/seed
 
 ## 12. 成功标准
 
-1. 用户只新增 `console/routes/xxx.ts` + config，**无需改框架源码** 即可 `dweb-cli run xxx/yyy`。  
-2. 同一 monorepo 可同时存在 Web 与 Console，**配置互不强制**。  
+1. **多应用**项目中新增 `console/routes/xxx.ts` + config，**无需改框架源码** 即可 `dweb-cli run xxx/yyy`。  
+2. 同一多应用 monorepo 内 Web 与 Console **配置分离**（common 可共享）。  
 3. 命令可访问 **DB/服务容器**，且执行完 **进程正常退出**。  
-4. 内置 `dev/build/db` **行为不变**。  
-5. 文档 + 至少 1 个 example（如 `console/routes/hello.ts`）。  
+4. 内置 `dev/build/db` **行为不变**；**单应用 init 行为不变**（无 console 提问）。  
+5. 文档 + 至少 1 个 **多应用** example（含 `console/routes/hello.ts`）。  
 
 ---
 
