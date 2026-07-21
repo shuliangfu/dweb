@@ -5,8 +5,8 @@
 import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import {
-  clearViewSsrBundledModuleMemoryCache,
   clearViewSsrBundleCacheForPath,
+  clearViewSsrBundledModuleMemoryCache,
   consumeViewSsrBundleShutdownInterruptFlag,
   getViewSsrBundleDiskCacheDirs,
   removeViewSsrBundleDiskCacheDirs,
@@ -21,7 +21,9 @@ describe("view-ssr-route-bundle (hollow API)", () => {
 
   it("磁盘缓存路径应落在 runtime/cache 下", () => {
     const dirs = getViewSsrBundleDiskCacheDirs();
-    expect(dirs.outDir.replace(/\\/g, "/")).toMatch(/runtime\/cache\/bundle-out$/);
+    expect(dirs.outDir.replace(/\\/g, "/")).toMatch(
+      /runtime\/cache\/bundle-out$/,
+    );
     expect(dirs.cacheDir.replace(/\\/g, "/")).toMatch(
       /runtime\/cache\/bundle-cache$/,
     );

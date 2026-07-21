@@ -1857,13 +1857,13 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.5.11] - 2026-07-10
+### [3.5.11] - 2026-07-22
 
 **Added / Changed** — Opt-in `cors` / `compression` / `rateLimit` on
 `AppConfig`; split `csr-client-chunk` + HTTP middleware assembly; bump
-`@dreamer/view` to `^2.0.5` (requires ≥ 2.0.4); hashed asset `immutable`
-cache; e2e Bun stability. Full history:
-[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+`@dreamer/view` `^2.0.5`, `runtime-adapter` `^1.1.0`, `@dreamer/test` `^1.1.10`;
+hashed asset `immutable` cache; e2e host timeouts + Bun browser e2e skip by
+default. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

@@ -21,7 +21,7 @@ export default function Page() { return null; }
     const out = stripLoadExport(src);
     expect(out).not.toContain("export async function load");
     expect(out).toContain("export default function Page");
-    expect(out).toContain('import { db }');
+    expect(out).toContain("import { db }");
   });
 
   it("应移除带泛型的 export function load<T>(...)", () => {

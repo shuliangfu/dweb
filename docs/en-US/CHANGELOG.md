@@ -8,7 +8,7 @@ and this project adheres to
 
 ---
 
-## [3.5.11] - 2026-07-10
+## [3.5.11] - 2026-07-22
 
 ### Added
 
@@ -16,9 +16,9 @@ and this project adheres to
   `rateLimit` (via `@dreamer/middlewares`; off by default; `true` uses library
   defaults, objects pass through). Wired by
   **`registerFrameworkHttpMiddlewares`** in
-  **`src/core/app-http-middlewares.ts`** (order: dev-no-cache →
-  security-headers → optional cors / rateLimit / compression → requestId /
-  requestLogger → optional session → `/health`).
+  **`src/core/app-http-middlewares.ts`** (order: dev-no-cache → security-headers
+  → optional cors / rateLimit / compression → requestId / requestLogger →
+  optional session → `/health`).
 - **`csr-client-chunk.ts`**: pure chunk index/match/HMR helpers extracted from
   `csr-client-builder` (`buildChunkIndices`, `findChunkContent`,
   `getChunkFileNameForComponent`, `isClientChunkFile`, etc.); re-exported from
@@ -37,28 +37,39 @@ and this project adheres to
   (recommend ≥ 2.0.5): route SSR isomorphism, keyed `For`, controlled input
   IME/number focus, and SSR pseudo-DOM Element API alignment (`hasAttribute`,
   etc.).
-- **Dependencies**: `preact` `^10.29.3` → `^10.29.7` (**keep
-  `overrides.preact` in sync** to avoid npm `EOVERRIDE` breaking CI
-  `npx playwright install` / JSR publish); `postcss` `^8.5.15` → `^8.5.16`.
-- **Examples**: view-engine examples bump `@dreamer/view` to `^2.0.4` (compatible
-  with the 2.0.5 line).
+- **Dependencies**: `@dreamer/runtime-adapter` `^1.0.19` → `^1.1.0`;
+  `@dreamer/test` `^1.1.8` → `^1.1.10`.
+- **Dependencies**: `preact` `^10.29.3` → `^10.29.7` (**keep `overrides.preact`
+  in sync** with the direct dep to avoid npm `EOVERRIDE` breaking CI
+  `npx playwright install` / JSR publish); `postcss` `^8.5.15` → `^8.5.21`;
+  `autoprefixer` `^10.5.2` → `^10.5.4`.
+- **Examples**: view-engine examples bump `@dreamer/view` to `^2.0.4`
+  (compatible with the 2.0.5 line).
 - **App HTTP stack**: framework middleware registration moved to
   `registerFrameworkHttpMiddlewares`; `app.ts` only delegates. Existing
   dev-no-cache, security headers, session, and `/health` behavior unchanged.
 - **Client static assets**: `csr-client-middleware` serves hashed JS/chunks with
   `HASHED_ASSET_CACHE_CONTROL` (adds `immutable`).
-- **Hot path**: `escapeHtml` / `serializeJsonForInlineScript` skip global replaces
-  when no special characters are present (error pages / inline `__data`).
+- **Hot path**: `escapeHtml` / `serializeJsonForInlineScript` skip global
+  replaces when no special characters are present (error pages / inline
+  `__data`).
+- **CI / e2e policy**: Bun **browser** Playwright e2e is **skipped by default**
+  (and on Linux/macOS CI); Deno remains the browser e2e gate. Non-browser e2e
+  still runs under Bun. See `tests/e2e/README.md`.
 
 ### Tests
 
-- **Unit**: coverage for `app-http-middlewares`, `csr-client-chunk`, `constants`,
-  `cache-dirs`, `render-utils`, `strip-load-plugin`, `view-ssr-route-bundle`;
-  extended `csr-client-builder`, `middleware`, and `security` cases.
-- **e2e** (`tests/e2e/browser-render-utils.ts`): exclusive port bind to reduce
-  “Port in use → wrong poll port” races; under Bun full runs, wider timeouts,
-  disable `reuseBrowser`, and `afterEach` browser cleanup to avoid dangling-kill
-  cascades.
+- **Unit**: coverage for `app-http-middlewares`, `csr-client-chunk`,
+  `constants`, `cache-dirs`, `render-utils`, `strip-load-plugin`,
+  `view-ssr-route-bundle`; extended `csr-client-builder`, `middleware`, and
+  `security` cases; rateLimit registration tests tolerate interval ops leak
+  (`sanitizeOps` / `sanitizeResources` off).
+- **e2e** (`tests/e2e/browser-render-utils.ts`): exclusive port bind and
+  framework-aligned `findAvailablePort` to reduce Bun “port mismatch /
+  exhaustion” races; host-side timeouts on `page.click` / `goto` / `waitFor`
+  (capped below test timeout); decouple Playwright `protocolTimeout` from test
+  timeout to avoid dangling-kill cascades; under forced Bun browser runs, wider
+  timeouts, disable `reuseBrowser`, and `afterEach` browser cleanup.
 
 ---
 

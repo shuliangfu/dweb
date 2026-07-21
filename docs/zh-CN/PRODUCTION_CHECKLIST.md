@@ -1,6 +1,7 @@
 # 生产部署检查清单（@dreamer/dweb）
 
-> 与 `OPTIMIZATION_ANALYSIS` 配套。以下配置均为 **opt-in**（默认关闭），避免破坏现有项目。
+> 与 `OPTIMIZATION_ANALYSIS` 配套。以下配置均为
+> **opt-in**（默认关闭），避免破坏现有项目。
 
 ## 1. 依赖与引擎
 
@@ -39,7 +40,8 @@ export default {
 ```
 
 - [ ] 启用 `compression`（gzip；可按需 brotli）
-- [ ] 带 hash 的 `/_client*.js` 已使用长缓存（框架默认 `max-age=31536000, immutable`）
+- [ ] 带 hash 的 `/_client*.js` 已使用长缓存（框架默认
+      `max-age=31536000, immutable`）
 - [ ] HTML / `__data` 保持 no-store / 短缓存，勿与静态资源混用
 
 ## 4. 进程与运维
@@ -56,12 +58,12 @@ export default {
 
 ## 相关配置键速查
 
-| 键 | 默认 | 说明 |
-|----|------|------|
-| `securityHeaders` | 关 | CSP / frame / referrer 等 |
-| `cors` | 关 | `@dreamer/middlewares` cors |
-| `compression` | 关 | 响应 gzip/br |
-| `rateLimit` | 关 | 简易限流 |
-| `session` | 关 | 启用后 ctx.session 可用 |
+| 键                | 默认 | 说明                        |
+| ----------------- | ---- | --------------------------- |
+| `securityHeaders` | 关   | CSP / frame / referrer 等   |
+| `cors`            | 关   | `@dreamer/middlewares` cors |
+| `compression`     | 关   | 响应 gzip/br                |
+| `rateLimit`       | 关   | 简易限流                    |
+| `session`         | 关   | 启用后 ctx.session 可用     |
 
 更完整的分析见 [OPTIMIZATION_ANALYSIS.md](./OPTIMIZATION_ANALYSIS.md)。

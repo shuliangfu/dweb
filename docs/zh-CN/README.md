@@ -1924,11 +1924,12 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.5.11] - 2026-07-10
+### [3.5.11] - 2026-07-22
 
 **新增 / 变更** — `AppConfig` opt-in `cors` / `compression` / `rateLimit`；拆分
-`csr-client-chunk` 与框架 HTTP 中间件装配；`@dreamer/view` 升至 `^2.0.5`
-（requires ≥ 2.0.4）；带 hash 资源 `immutable` 缓存；e2e Bun 稳定性。完整记录见
+`csr-client-chunk` 与框架 HTTP 中间件装配；`@dreamer/view` `^2.0.5`、
+`runtime-adapter` `^1.1.0`、`@dreamer/test` `^1.1.10`；带 hash 资源 `immutable`
+缓存；e2e host 超时与 Bun 浏览器 e2e 默认 skip。完整记录见
 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---

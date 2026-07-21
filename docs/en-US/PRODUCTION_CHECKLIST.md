@@ -1,12 +1,14 @@
 # Production checklist (@dreamer/dweb)
 
-> Companion to `OPTIMIZATION_ANALYSIS`. All options below are **opt-in** (off by default) so existing apps keep working.
+> Companion to `OPTIMIZATION_ANALYSIS`. All options below are **opt-in** (off by
+> default) so existing apps keep working.
 
 ## 1. Dependencies & engine
 
 - [ ] `@dreamer/view` ≥ **2.0.4** (recommended engine)
 - [ ] Align dweb + view versions in `deno.json` / `package.json`
-- [ ] Production build via `dweb build` / `RUNTIME_ENV=prod` or `server.mode: "prod"`
+- [ ] Production build via `dweb build` / `RUNTIME_ENV=prod` or
+      `server.mode: "prod"`
 
 ## 2. Security (AppConfig)
 
@@ -22,7 +24,8 @@ export default {
 ```
 
 - [ ] Enable `securityHeaders` in production
-- [ ] Configure `cors` for cross-origin APIs (never `origin: "*"` with credentials)
+- [ ] Configure `cors` for cross-origin APIs (never `origin: "*"` with
+      credentials)
 - [ ] Consider `rateLimit` or edge/gateway limits
 - [ ] Session cookies: `secure` + `httpOnly` + appropriate `sameSite`
 - [ ] Do not leak stack traces to clients in production
@@ -52,12 +55,12 @@ export default {
 
 ## Config quick reference
 
-| Key | Default | Notes |
-|-----|---------|--------|
-| `securityHeaders` | off | CSP / frame / referrer |
-| `cors` | off | `@dreamer/middlewares` cors |
-| `compression` | off | gzip / optional brotli |
-| `rateLimit` | off | simple in-memory limit |
-| `session` | off | enables `ctx.session` |
+| Key               | Default | Notes                       |
+| ----------------- | ------- | --------------------------- |
+| `securityHeaders` | off     | CSP / frame / referrer      |
+| `cors`            | off     | `@dreamer/middlewares` cors |
+| `compression`     | off     | gzip / optional brotli      |
+| `rateLimit`       | off     | simple in-memory limit      |
+| `session`         | off     | enables `ctx.session`       |
 
 See also [OPTIMIZATION_ANALYSIS.md](./OPTIMIZATION_ANALYSIS.md).

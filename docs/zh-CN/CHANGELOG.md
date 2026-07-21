@@ -7,7 +7,7 @@
 
 ---
 
-## [3.5.11] - 2026-07-10
+## [3.5.11] - 2026-07-22
 
 ### 新增
 
@@ -34,11 +34,14 @@
   `package.json` 同步）。**requires `@dreamer/view` ≥ 2.0.4**（推荐 ≥ 2.0.5）：
   路由 SSR 同构、键控 For、受控输入 IME/number 焦点，以及 SSR 伪 DOM
   `hasAttribute` 等 Element API 对齐。
-- **依赖**：`preact` `^10.29.3` → `^10.29.7`（**`overrides.preact` 同步**，避免
-  npm `EOVERRIDE` 导致 CI `npx playwright install` / JSR publish 失败）；
-  `postcss` `^8.5.15` → `^8.5.16`。
-- **示例**：view 引擎 examples 的 `@dreamer/view` 升至 `^2.0.4`（与主包
-  2.0.5 线兼容）。
+- **依赖**：`@dreamer/runtime-adapter` `^1.0.19` → `^1.1.0`；`@dreamer/test`
+  `^1.1.8` → `^1.1.10`。
+- **依赖**：`preact` `^10.29.3` → `^10.29.7`（**`overrides.preact` 与直接依赖同
+  步**，避免 npm `EOVERRIDE` 导致 CI `npx playwright install` / JSR publish
+  失败）；`postcss` `^8.5.15` → `^8.5.21`；`autoprefixer` `^10.5.2` →
+  `^10.5.4`。
+- **示例**：view 引擎 examples 的 `@dreamer/view` 升至 `^2.0.4`（与主包 2.0.5
+  线兼容）。
 - **`App._registerFrameworkMiddlewares` 路径**：框架 HTTP 栈迁至
   `registerFrameworkHttpMiddlewares`，`app.ts` 仅委托；既有 dev 禁用缓存、
   安全头、session、`/health` 行为不变。
@@ -46,16 +49,22 @@
   `HASHED_ASSET_CACHE_CONTROL`（增加 `immutable`）。
 - **热路径**：`escapeHtml` / `serializeJsonForInlineScript` 在无特殊字符时跳过
   多次全局 replace，降低错误页与 inline `__data` 序列化开销。
+- **CI / e2e 策略**：Bun **浏览器** Playwright e2e **默认跳过**（Linux/macOS CI
+  亦跳过）；浏览器 e2e 以 Deno 为主门禁。Bun 下非浏览器 e2e 仍执行。详见
+  `tests/e2e/README.md`。
 
 ### 测试
 
 - **单元**：`app-http-middlewares`、`csr-client-chunk`、`constants`、
   `cache-dirs`、`render-utils`、`strip-load-plugin`、`view-ssr-route-bundle`
   等覆盖新增/拆出模块；扩展 `csr-client-builder`、`middleware`、`security`
-  相关用例。
-- **e2e**（`tests/e2e/browser-render-utils.ts`）：端口探测增加独占 bind，降低
-  「Port in use 换端口」竞态；Bun 全量连跑时放宽 advanced/basic 超时、禁用
-  `reuseBrowser` 并在 `afterEach` 清理浏览器，减少 dangling kill 连锁失败。
+  相关用例；rateLimit 注册用例放宽 interval ops 泄漏检查（`sanitizeOps` /
+  `sanitizeResources` 关闭）。
+- **e2e**（`tests/e2e/browser-render-utils.ts`）：端口探测独占 bind，并与框架
+  `findAvailablePort` 对齐，降低 Bun 端口错配/假耗尽；`page.click` / `goto` /
+  `waitFor` 增加 host 侧超时（上限低于测试超时）；Playwright `protocolTimeout`
+  与测试超时解耦，减少 dangling kill 连锁；强制 Bun 浏览器 连跑时放宽超时、禁用
+  `reuseBrowser` 并在 `afterEach` 清理浏览器。
 
 ---
 

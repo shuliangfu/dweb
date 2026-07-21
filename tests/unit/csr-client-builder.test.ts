@@ -10,12 +10,12 @@ import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import { initializeServiceContainer } from "../../src/core/service.ts";
 import {
+  buildChunkIndices,
   clearClientScriptCache,
   createClientScriptMiddleware,
+  findChunkContent,
   generateClientDepContent,
   getCachedClientScript,
-  buildChunkIndices,
-  findChunkContent,
   getChunkBaseName,
   getChunkFileNameForComponent,
   isClientChunkFile,

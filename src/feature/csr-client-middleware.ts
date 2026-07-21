@@ -26,7 +26,10 @@ import {
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { isPathWithinProject } from "../utils/path.ts";
-import { buildClientScript, getCachedClientScript } from "./csr-client-builder.ts";
+import {
+  buildClientScript,
+  getCachedClientScript,
+} from "./csr-client-builder.ts";
 import { findChunkContent, isClientChunkFile } from "./csr-client-chunk.ts";
 
 /**

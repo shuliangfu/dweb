@@ -3,9 +3,9 @@
 > This document summarizes the current state of the dweb framework, identifies
 > gaps and limitations, and suggests directions for extension and optimization.
 >
-> **Deeper optimization roadmap (architecture, build, view upgrade, P0–P2):**  
-> **[OPTIMIZATION_ANALYSIS.md](./OPTIMIZATION_ANALYSIS.md)** ·
-> Chinese: **[../zh-CN/OPTIMIZATION_ANALYSIS.md](../zh-CN/OPTIMIZATION_ANALYSIS.md)**
+> **Deeper optimization roadmap (architecture, build, view upgrade, P0–P2):**\
+> **[OPTIMIZATION_ANALYSIS.md](./OPTIMIZATION_ANALYSIS.md)** · Chinese:
+> **[../zh-CN/OPTIMIZATION_ANALYSIS.md](../zh-CN/OPTIMIZATION_ANALYSIS.md)**
 
 ---
 
