@@ -21,12 +21,15 @@
 | -------- | ------------------ | ----- | ------- |
 | Deno     | unit + integration | 86    | ✅ Pass |
 | Bun      | unit               | 64    | ✅ Pass |
-| Node.js  | unit               | 51    | ✅ Pass |
+| Node.js  | unit + e2e         | 67    | ✅ Pass |
 
 > **Node.js**: 51 of 64 unit test files run in Node CI (13 excluded: `cmd-*.test.ts`,
 > `init.test.ts`, `project.test.ts`, `test-launcher.test.ts` — these spawn real dweb
-> subprocesses with runtime-specific behavior). Excludes integration (15 files, spawn
-> example projects) and e2e (16 files, need Playwright/Chromium).
+> subprocesses with runtime-specific behavior). Additionally 16 e2e browser test files
+> run under Node via `test-node-e2e.mjs` (Playwright Chromium, same coverage as Deno e2e:
+> Preact/React/View × CSR/SSR/SSG/Hybrid + server-request). Excludes integration
+> (15 files, spawn example projects). Bun browser e2e remains disabled (Playwright
+> compatibility).
 
 ### Overall Statistics (Deno, full suite)
 

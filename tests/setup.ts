@@ -15,6 +15,7 @@ import {
   execPath,
   exists,
   IS_BUN,
+  IS_NODE,
   join,
   platform,
   remove,
@@ -52,14 +53,16 @@ export function getSpawnCwd(dir: string): string {
 }
 
 /**
- * 集成/e2e 中 spawn 示例子进程时使用的**可执行文件**路径。
+ * 子进程 spawn 时使用的**可执行文件**路径。
  *
  * - **`bun test`（CI 常见仅装 Bun、PATH 无 `deno`）**：必须返回当前 **Bun**（`execPath()`），
  *   子进程为 `bun run …`，不可写死为 `deno`。
  * - **`deno test`**：用 `Deno.execPath()` 或回退为 `"deno"`，子进程为 `deno run -A …`。
+ * - **Node（`node --import tsx`）**：返回当前 **Node**（`execPath()`），子进程为
+ *   `node --import tsx <entry> …`（args 由 exampleRunArgs/exampleBuildArgs 构造）。
  */
 export function getExampleChildProcessExecutable(): string {
-  if (IS_BUN) {
+  if (IS_BUN || IS_NODE) {
     return execPath();
   }
   const d = (globalThis as { Deno?: { execPath: () => string } }).Deno;
@@ -70,8 +73,10 @@ export function getExampleChildProcessExecutable(): string {
 }
 
 /**
- * 子进程里执行 `build` 的 argv：`bun` 为 `["run", entry, "--build"]`；Deno 为
- * `["run", "-A", entry, "--build"]`。
+ * 子进程里执行 `build` 的 argv：
+ * - `bun`：`["run", entry, "--build"]`
+ * - Node：`["--import", "tsx", entry, "--build"]`（无 `run`/`-A`，tsx 处理 TS）
+ * - Deno：`["run", "-A", entry, "--build"]`
  *
  * @param entry - 相对 `cwd` 的入口，如 `src/main.ts` 或 `main.ts`（无 src 的 flat 示例）
  */
@@ -79,16 +84,24 @@ export function exampleBuildArgs(entry: string): string[] {
   if (IS_BUN) {
     return ["run", entry, "--build"];
   }
+  if (IS_NODE) {
+    return ["--import", "tsx", entry, "--build"];
+  }
   return ["run", "-A", entry, "--build"];
 }
 
 /**
- * 子进程里执行 `dev` / 直接跑入口 的 argv：`bun` 为 `["run", entry]`；Deno 为
- * `["run", "-A", entry]`。
+ * 子进程里执行 `dev` / 直接跑入口 的 argv：
+ * - `bun`：`["run", entry]`
+ * - Node：`["--import", "tsx", entry]`
+ * - Deno：`["run", "-A", entry]`
  */
 export function exampleRunArgs(entry: string): string[] {
   if (IS_BUN) {
     return ["run", entry];
+  }
+  if (IS_NODE) {
+    return ["--import", "tsx", entry];
   }
   return ["run", "-A", entry];
 }

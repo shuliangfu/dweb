@@ -2,6 +2,7 @@
   "name": "dweb-example-react-hybrid-basic",
   "description": "Dweb example. Bun: bun run dev | bun run build | bun run start",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "bun run src/main.ts",
     "build": "bun run src/main.ts -- --build",

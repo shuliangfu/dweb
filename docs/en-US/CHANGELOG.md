@@ -25,9 +25,19 @@ and this project adheres to
   Node-compatible args with `DENO_ONLY_FLAGS` filter set.
 - **Node.js CI**: 3 new jobs (Linux/macOS/Windows, Node 22) running unit tests
   via `test-node.mjs` (51 files, excluding 13 runtime-specific subprocess
-  tests). Total CI: 9 jobs (3 Deno + 3 Bun + 3 Node).
+  tests) **and e2e browser tests** via `test-node-e2e.mjs` (16 files, Playwright
+  Chromium — same coverage as Deno e2e). Total CI: 9 jobs (3 Deno + 3 Bun +
+  3 Node). Bun browser e2e remains disabled.
 - **`test-node.mjs`**: main-process test runner (no `--test` flag, avoids IPC
   serialization bug), `tsconfig.json` upgraded with Bundler moduleResolution.
+- **`test-node-e2e.mjs`**: Node e2e runner for `tests/e2e/*.test.ts` (serial,
+  per-file subprocess, 240s timeout). Requires Playwright Chromium.
+- **`tests/setup.ts`**: `getExampleChildProcessExecutable()` /
+  `exampleBuildArgs()` / `exampleRunArgs()` now include Node branches
+  (`node --import tsx <entry>`).
+- **Example projects**: all 30 `examples/*/{basic,advanced}/package.json`
+  marked `"type": "module"` (required for tsx to handle dweb's top-level
+  `await initDwebI18n()` in ESM mode under Node).
 
 ### Changed
 

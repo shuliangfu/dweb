@@ -18,8 +18,8 @@
  * ensures the process exits even if a test leaves dangling handles (timers etc.).
  *
  * 【Invariant】One file per process invocation; exit code is the single source of
- * truth for pass/fail. 仅跑 unit 测试（integration 需 spawn 示例子进程、e2e 需
- * Playwright/Chromium，Node CI 排除）。
+ * truth for pass/fail. 仅跑 unit 测试；e2e 浏览器测试由 test-node-e2e.mjs 单独跑
+ * （需 Playwright Chromium），integration 需 spawn 示例子进程亦排除。
  *
  * 【排除清单】以下 unit 测试因运行时专有行为或外部依赖在 Node CI 中排除：
  * - cmd-*.test.ts：测试 dweb CLI 命令参数拼装，部分断言依赖 Deno/Bun 子进程行为

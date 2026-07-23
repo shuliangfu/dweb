@@ -2,6 +2,7 @@
   "name": "dweb-example-preact-ssr-advanced",
   "description": "Dweb example (multi-app). Bun: bun run dev:backend | dev:frontend | build:backend | build:frontend | start:backend | start:frontend",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev:backend": "bun run src/backend/main.ts",
     "dev:frontend": "bun run src/frontend/main.ts",

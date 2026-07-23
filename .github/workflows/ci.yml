@@ -184,7 +184,7 @@ jobs:
       - name: Test (Bun, Windows) unit
         run: bun test --max-concurrency=1 tests/unit
 
-  # ─── Node.js jobs（仅跑 unit，排除 integration/e2e）───
+  # ─── Node.js jobs（unit + e2e 浏览器测试，排除 integration）───
   test-linux-node:
     runs-on: ubuntu-latest
     steps:
@@ -200,8 +200,14 @@ jobs:
       - name: Install dependencies (Node)
         run: npm install
 
+      - name: Install Playwright Chromium
+        run: npx -y playwright@latest install chromium
+
       - name: Test (Node, Linux) unit
         run: npm run test:node
+
+      - name: Test (Node, Linux) e2e
+        run: npm run test:node:e2e
 
   test-macos-node:
     runs-on: macos-latest
@@ -218,8 +224,14 @@ jobs:
       - name: Install dependencies (Node)
         run: npm install
 
+      - name: Install Playwright Chromium
+        run: npx -y playwright@latest install chromium
+
       - name: Test (Node, macOS) unit
         run: npm run test:node
+
+      - name: Test (Node, macOS) e2e
+        run: npm run test:node:e2e
 
   test-windows-node:
     runs-on: windows-latest
@@ -233,5 +245,14 @@ jobs:
       - name: Install dependencies (Node)
         run: npm install
 
+      - name: Setup Chrome (for browser E2E tests)
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Install Playwright Chromium
+        run: npx -y playwright@latest install chromium
+
       - name: Test (Node, Windows) unit
         run: npm run test:node
+
+      - name: Test (Node, Windows) e2e
+        run: npm run test:node:e2e

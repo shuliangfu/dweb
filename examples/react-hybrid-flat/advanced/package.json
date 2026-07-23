@@ -2,6 +2,7 @@
   "name": "dweb-example-react-hybrid-flat-advanced",
   "description": "Dweb example (multi-app). Bun: bun run dev:backend | dev:frontend | build:backend | build:frontend | start:backend | start:frontend",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev:backend": "bun run backend/main.ts",
     "dev:frontend": "bun run frontend/main.ts",

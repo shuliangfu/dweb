@@ -33,6 +33,7 @@
     "check": "deno check src/ tests/",
     "test": "bun test tests/",
     "test:node": "node test-node.mjs",
+    "test:node:e2e": "node test-node-e2e.mjs",
     "test:e2e": "deno test -A tests/e2e/"
   },
   "workspaces": [

@@ -21,10 +21,19 @@
 - **`getNodeRunArgsFromTaskString()`**：将 `deno run ...` 任务行解析为 Node 兼容
   参数，配合 `DENO_ONLY_FLAGS` 过滤集。
 - **Node.js CI**：新增 3 个 job（Linux/macOS/Windows，Node 22），经 `test-node.mjs`
-  运行单元测试（51 文件，排除 13 个运行时专有子进程测试）。CI 共 9 jobs
-  （3 Deno + 3 Bun + 3 Node）。
+  运行单元测试（51 文件，排除 13 个运行时专有子进程测试）**及经 `test-node-e2e.mjs`
+  运行 e2e 浏览器测试**（16 文件，Playwright Chromium——覆盖与 Deno e2e 一致）。
+  CI 共 9 jobs（3 Deno + 3 Bun + 3 Node）。Bun 浏览器 e2e 暂不开启。
 - **`test-node.mjs`**：主进程测试运行器（无 `--test` 标志，避免 IPC 序列化 bug），
   `tsconfig.json` 升级为 Bundler 模块解析。
+- **`test-node-e2e.mjs`**：Node e2e 运行器，跑 `tests/e2e/*.test.ts`（串行、单文件
+  子进程、240s 超时）。需 Playwright Chromium。
+- **`tests/setup.ts`**：`getExampleChildProcessExecutable()` /
+  `exampleBuildArgs()` / `exampleRunArgs()` 新增 Node 分支
+  （`node --import tsx <entry>`）。
+- **示例项目**：全部 30 个 `examples/*/{basic,advanced}/package.json` 标记
+  `"type": "module"`（Node 下 tsx 需 ESM 模式才能处理 dweb 的顶层
+  `await initDwebI18n()`）。
 
 ### 变更
 

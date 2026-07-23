@@ -2,6 +2,7 @@
   "name": "dweb-example-view-hybrid-flat-basic",
   "description": "Dweb example. Bun: bun run dev | bun run build | bun run start",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "bun run main.ts",
     "build": "bun run main.ts -- --build",

@@ -19,12 +19,13 @@
 | -------- | ----------------- | ------ | ------- |
 | Deno     | unit + integration | 86     | ✅ 通过 |
 | Bun      | unit              | 64     | ✅ 通过 |
-| Node.js  | unit              | 51     | ✅ 通过 |
+| Node.js  | unit + e2e        | 67     | ✅ 通过 |
 
 > **Node.js**：64 个 unit 测试中 51 个在 Node CI 运行（排除 13 个：`cmd-*.test.ts`、
 > `init.test.ts`、`project.test.ts`、`test-launcher.test.ts`——这些启动真实 dweb 子进程，
-> 具运行时专有行为）。排除 integration（15 文件，启动示例项目）和 e2e（16 文件，需
-> Playwright/Chromium）。
+> 具运行时专有行为）。另经 `test-node-e2e.mjs` 跑 16 个 e2e 浏览器测试（Playwright
+> Chromium，覆盖与 Deno e2e 一致：Preact/React/View × CSR/SSR/SSG/Hybrid + server-request）。
+> 排除 integration（15 文件，启动示例项目）。Bun 浏览器 e2e 暂不开启（Playwright 兼容性）。
 
 ---
 
