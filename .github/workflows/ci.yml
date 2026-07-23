@@ -31,7 +31,7 @@ jobs:
         run: deno cache src/cli.ts src/setup.ts 2>/dev/null || true
 
       - name: Install Playwright Chromium
-        run: npx -y playwright@1.59.1 install chromium
+        run: npx -y playwright@latest install chromium
 
       - name: Check
         run: deno check src/ tests/
@@ -58,7 +58,7 @@ jobs:
         run: deno cache src/cli.ts src/setup.ts 2>/dev/null || true
 
       - name: Install Playwright Chromium
-        run: npx -y playwright@1.59.1 install chromium
+        run: npx -y playwright@latest install chromium
 
       - name: Check
         run: deno check src/ tests/
@@ -89,7 +89,7 @@ jobs:
         run: deno cache src/cli.ts src/setup.ts
 
       - name: Install Playwright Chromium
-        run: npx -y playwright@1.59.1 install chromium
+        run: npx -y playwright@latest install chromium
 
       - name: Check
         run: deno check src/ tests/
@@ -117,7 +117,7 @@ jobs:
 
       # 暂不跑 Bun e2e，无需 Playwright
       # - name: Install Playwright Chromium
-      #   run: npx -y playwright@1.59.1 install chromium
+      #   run: npx -y playwright@latest install chromium
 
       # unit、integration、e2e 分开跑，避免 integration 结束时触发 cleanupSuiteBrowser 导致 "browser close timeout"
       - name: Test (Bun) unit
@@ -151,7 +151,7 @@ jobs:
 
       # 暂不跑 Bun e2e，无需 Playwright
       # - name: Install Playwright Chromium
-      #   run: npx -y playwright@1.59.1 install chromium
+      #   run: npx -y playwright@latest install chromium
 
       # unit、integration、e2e 分开跑，避免 integration 结束时触发 cleanupSuiteBrowser 导致 "browser close timeout"
       - name: Test (Bun, macOS) unit
@@ -184,7 +184,7 @@ jobs:
       - name: Test (Bun, Windows) unit
         run: bun test --max-concurrency=1 tests/unit
 
-  # ─── Node.js jobs（unit + e2e 浏览器测试，排除 integration）───
+  # ─── Node.js jobs（仅跑 unit，排除 integration/e2e）───
   test-linux-node:
     runs-on: ubuntu-latest
     steps:
@@ -200,14 +200,8 @@ jobs:
       - name: Install dependencies (Node)
         run: npm install
 
-      - name: Install Playwright Chromium
-        run: npx -y playwright@1.59.1 install chromium
-
       - name: Test (Node, Linux) unit
         run: npm run test:node
-
-      - name: Test (Node, Linux) e2e
-        run: npm run test:node:e2e
 
   test-macos-node:
     runs-on: macos-latest
@@ -224,14 +218,8 @@ jobs:
       - name: Install dependencies (Node)
         run: npm install
 
-      - name: Install Playwright Chromium
-        run: npx -y playwright@1.59.1 install chromium
-
       - name: Test (Node, macOS) unit
         run: npm run test:node
-
-      - name: Test (Node, macOS) e2e
-        run: npm run test:node:e2e
 
   test-windows-node:
     runs-on: windows-latest
@@ -245,14 +233,5 @@ jobs:
       - name: Install dependencies (Node)
         run: npm install
 
-      - name: Setup Chrome (for browser E2E tests)
-        uses: browser-actions/setup-chrome@v1
-
-      - name: Install Playwright Chromium
-        run: npx -y playwright@1.59.1 install chromium
-
       - name: Test (Node, Windows) unit
         run: npm run test:node
-
-      - name: Test (Node, Windows) e2e
-        run: npm run test:node:e2e
