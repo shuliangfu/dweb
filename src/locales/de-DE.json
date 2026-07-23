@@ -20,7 +20,7 @@
     "DWEB_E19": "Plugin [{index}] benötigt Namen. Verwenden: { name: \"...\", ... } oder String-Pfad",
     "DWEB_E20": "[dweb] Einstiegspfad-Format nicht unterstützt: {reason}. {hint} Aktueller Pfad: {path}",
     "DWEB_E21": "[dweb] Einstiegspfad hat zu viele Segmente. {hint} Aktueller Pfad: {path}",
-    "DWEB_E22": "Nur Deno- oder Bun-Runtime wird unterstützt",
+    "DWEB_E22": "Nur Deno-, Bun- oder Node.js-Runtime wird unterstützt",
     "DWEB_E23": "App-Instanz nicht initialisiert",
     "DWEB_E24": "Socket.IO nicht konfiguriert. Setzen: socket: { type: 'socketio', ... }",
     "DWEB_E25": "WebSocket nicht konfiguriert. Setzen: socket: { type: 'websocket', ... }",
@@ -135,7 +135,14 @@
     "dbSeed": "Seed (Testdaten)",
     "dbStatus": "Migrationsstatus",
     "upgrade": "dweb aktualisieren",
-    "upgradeBetaOption": "Auf Beta aktualisieren"
+    "upgradeBetaOption": "Auf Beta aktualisieren",
+    "testUnit": "Nur tests/unit ausführen",
+    "testIntegration": "Nur tests/integration ausführen",
+    "testE2e": "Nur tests/e2e ausführen",
+    "testFilter": "Tests nach Namen filtern (Host-Filter)",
+    "testCoverage": "Coverage sammeln (Deno/Bun --coverage)",
+    "testRuntime": "Host-Runtime: deno oder bun",
+    "testVerbose": "Tatsächlichen Host-Befehl anzeigen"
   },
   "common": {
     "noDenoJson": "deno.json nicht gefunden, im dweb-Root ausführen",
@@ -345,7 +352,10 @@
     "runningWithApp": "Führe {app} Tests aus...",
     "appComplete": "{app} Tests abgeschlossen",
     "appFailed": "{app} Tests fehlgeschlagen, Exit-Code: {code}",
-    "addTaskHint": "Füge test oder test:appName Task zu deno.json hinzu"
+    "addTaskHint": "Füge test/test:appName Task hinzu, oder nutze dweb-cli test (ohne Task)",
+    "spawnCommand": "Ausführung: {cmd}",
+    "invalidRuntime": "Nicht unterstütztes --runtime: {value} (deno oder bun)",
+    "noAppTaskFallback": "Task {task} nicht definiert; Fallback auf Host-Tests (Standard tests/)"
   },
   "update": {
     "running": "Aktualisiere Abhängigkeiten und Lockfile...",

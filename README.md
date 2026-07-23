@@ -2,7 +2,7 @@
 
 > 📖 English | [中文文档](./docs/zh-CN/README.md)
 
-> A full-stack Web framework compatible with Deno and Bun, integrating
+> A full-stack Web framework compatible with Deno, Bun and Node.js, integrating
 > @dreamer/* libraries for an out-of-the-box development experience.
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)
@@ -89,12 +89,28 @@ deno add jsr:@dreamer/runtime-adapter
 
 ## 🌍 Compatibility
 
-- **Runtimes**: Deno 2.6+ or Bun 1.3.5
-- **Server**: ✅ Full support (Deno and Bun)
+- **Runtimes**: Deno 2.6+, Bun 1.3+ or Node.js 22+
+- **Server**: ✅ Full support (Deno, Bun and Node.js)
 - **Client**: ✅ Browser (SSR, CSR, SSG, Hybrid)
 - **Cross-platform**: ✅ Fully compatible with macOS, Linux, and Windows—works
   out of the box with no extra configuration
 - **Dependencies**: Integrates all @dreamer/* libraries
+
+### Node.js Usage
+
+dweb CLI commands work under Node.js 22+ via `tsx` (TypeScript loader):
+
+```bash
+# Install dweb-cli globally (from Deno/Bun, works on all runtimes)
+deno run -A jsr:@dreamer/dweb/setup
+
+# Or run directly with Node.js
+npx tsx jsr:@dreamer/dweb/cli dev
+```
+
+For Node.js projects, use `npm` to install and `npx tsx` to run dweb commands.
+The framework auto-detects the runtime and adapts subprocess spawning
+(`deno run` → `node --import tsx`, filtering Deno-specific flags).
 
 ---
 
@@ -1769,7 +1785,7 @@ Use via `dweb-cli` or `deno task`:
 | `start`          | Start production       | `-a, --app` app name                 |
 | `preview`        | Preview build          | `-p, --port` port; `-a, --app` app   |
 | `generate (g)`   | Code generation        | `-t, --type` type; `-n, --name` name |
-| `test`           | Run tests              | `-a, --app` app name                 |
+| `test`           | Run tests (host launcher; write cases with `@dreamer/test`) | `-a/--app`; `--unit` / `--integration` / `--e2e`; `-f/--filter`; `--coverage`; `--runtime deno\|bun`; `--verbose`; path args |
 | `lint`           | Lint                   | -                                    |
 | `fmt`            | Format                 | -                                    |
 | `clean`          | Clean build output     | -                                    |

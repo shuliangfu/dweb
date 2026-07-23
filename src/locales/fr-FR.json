@@ -20,7 +20,7 @@
     "DWEB_E19": "Plugin [{index}] nécessite un nom. Utiliser : { name: \"...\", ... } ou chemin chaîne",
     "DWEB_E20": "[dweb] Format du chemin d'entrée non supporté : {reason}. {hint} Chemin actuel : {path}",
     "DWEB_E21": "[dweb] Chemin d'entrée avec trop de segments. {hint} Chemin actuel : {path}",
-    "DWEB_E22": "Seul le runtime Deno ou Bun est supporté",
+    "DWEB_E22": "Seul le runtime Deno, Bun ou Node.js est supporté",
     "DWEB_E23": "Instance d'app non initialisée",
     "DWEB_E24": "Socket.IO non configuré. Définir socket : { type: 'socketio', ... }",
     "DWEB_E25": "WebSocket non configuré. Définir socket : { type: 'websocket', ... }",
@@ -135,7 +135,14 @@
     "dbSeed": "Seed (données de test)",
     "dbStatus": "Statut des migrations",
     "upgrade": "Mettre à niveau dweb",
-    "upgradeBetaOption": "Mettre à niveau vers bêta"
+    "upgradeBetaOption": "Mettre à niveau vers bêta",
+    "testUnit": "Exécuter uniquement tests/unit",
+    "testIntegration": "Exécuter uniquement tests/integration",
+    "testE2e": "Exécuter uniquement tests/e2e",
+    "testFilter": "Filtrer les tests par nom (filter hôte)",
+    "testCoverage": "Collecter la couverture (Deno/Bun --coverage)",
+    "testRuntime": "Runtime hôte : deno ou bun",
+    "testVerbose": "Afficher la commande hôte spawnée"
   },
   "common": {
     "noDenoJson": "deno.json introuvable, exécuter à la racine dweb",
@@ -345,7 +352,10 @@
     "runningWithApp": "Exécution tests {app}...",
     "appComplete": "Tests {app} terminés",
     "appFailed": "Tests {app} échoués, code sortie : {code}",
-    "addTaskHint": "Ajouter task test ou test:appName dans deno.json"
+    "addTaskHint": "Ajoutez task test ou test:appName, ou utilisez dweb-cli test (sans task)",
+    "spawnCommand": "Exécution : {cmd}",
+    "invalidRuntime": "--runtime non pris en charge : {value} (deno ou bun)",
+    "noAppTaskFallback": "Task {task} non définie ; repli sur les tests hôte (défaut tests/)"
   },
   "update": {
     "running": "Mise à jour dépendances et lockfile...",

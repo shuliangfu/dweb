@@ -4,18 +4,31 @@
 
 ## 📋 Test Overview
 
-| Item             | Value                |
-| ---------------- | -------------------- |
-| Framework        | 3.4.2                |
-| Test framework   | @dreamer/test@^1.1.7 |
-| Test date        | 2026-04-25           |
-| Test environment | Deno 2.x / Bun 1.x   |
+| Item             | Value                          |
+| ---------------- | ------------------------------ |
+| Framework        | 3.6.0                          |
+| Test framework   | @dreamer/test@^1.2.3           |
+| Test date        | 2026-07-23                     |
+| Test environment | Deno 2.x / Bun 1.x / Node.js 22+ |
 
 ---
 
 ## 📊 Test Results
 
-### Overall Statistics
+### Three-Runtime Summary (v3.6.0 Node.js Compatibility)
+
+| Runtime  | Scope              | Files | Result  |
+| -------- | ------------------ | ----- | ------- |
+| Deno     | unit + integration | 86    | ✅ Pass |
+| Bun      | unit               | 64    | ✅ Pass |
+| Node.js  | unit               | 51    | ✅ Pass |
+
+> **Node.js**: 51 of 64 unit test files run in Node CI (13 excluded: `cmd-*.test.ts`,
+> `init.test.ts`, `project.test.ts`, `test-launcher.test.ts` — these spawn real dweb
+> subprocesses with runtime-specific behavior). Excludes integration (15 files, spawn
+> example projects) and e2e (16 files, need Playwright/Chromium).
+
+### Overall Statistics (Deno, full suite)
 
 | Metric           | Count                                   |
 | ---------------- | --------------------------------------- |

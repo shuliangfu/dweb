@@ -20,7 +20,7 @@
     "DWEB_E19": "Plugin [{index}] necesita nombre. Use: { name: \"...\", ... } o path string",
     "DWEB_E20": "[dweb] Formato de path de entrada no soportado: {reason}. {hint} Path actual: {path}",
     "DWEB_E21": "[dweb] El path de entrada tiene demasiados segmentos. {hint} Path actual: {path}",
-    "DWEB_E22": "Solo se soporta runtime Deno o Bun",
+    "DWEB_E22": "Solo se soporta runtime Deno, Bun o Node.js",
     "DWEB_E23": "La instancia App no está inicializada",
     "DWEB_E24": "Socket.IO no configurado. Configure socket: { type: 'socketio', ... }",
     "DWEB_E25": "WebSocket no configurado. Configure socket: { type: 'websocket', ... }",
@@ -135,7 +135,14 @@
     "dbSeed": "Seed (datos de prueba)",
     "dbStatus": "Estado de migración",
     "upgrade": "Actualizar dweb",
-    "upgradeBetaOption": "Actualizar a beta"
+    "upgradeBetaOption": "Actualizar a beta",
+    "testUnit": "Ejecutar solo tests/unit",
+    "testIntegration": "Ejecutar solo tests/integration",
+    "testE2e": "Ejecutar solo tests/e2e",
+    "testFilter": "Filtrar tests por nombre (filter del host)",
+    "testCoverage": "Recoger cobertura (Deno/Bun --coverage)",
+    "testRuntime": "Runtime host: deno o bun",
+    "testVerbose": "Mostrar el comando host que se ejecutará"
   },
   "common": {
     "noDenoJson": "deno.json no encontrado, ejecute en la raíz de dweb",
@@ -345,7 +352,10 @@
     "runningWithApp": "Ejecutando tests {app}...",
     "appComplete": "Tests {app} completados",
     "appFailed": "Tests {app} fallidos, código de salida: {code}",
-    "addTaskHint": "Añada task test o test:appName a deno.json"
+    "addTaskHint": "Añada task test o test:appName, o use dweb-cli test (sin task)",
+    "spawnCommand": "Ejecutando: {cmd}",
+    "invalidRuntime": "--runtime no soportado: {value} (use deno o bun)",
+    "noAppTaskFallback": "Task {task} no definida; se usa host tests (por defecto tests/)"
   },
   "update": {
     "running": "Actualizando dependencias y lockfile...",

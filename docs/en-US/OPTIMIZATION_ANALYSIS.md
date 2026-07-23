@@ -21,6 +21,12 @@ This document focuses on **architecture evolvability, performance, engineering
 debt, and upgrade priority**. It complements `FRAMEWORK_ANALYSIS.md`.\
 Chinese: [../zh-CN/OPTIMIZATION_ANALYSIS.md](../zh-CN/OPTIMIZATION_ANALYSIS.md).
 
+> **Update (2026-07-22):** Full roadmap (view 2.1, no Islands, Console boundary,
+> and **unified `dweb-cli test` launcher + `@dreamer/test`** (analysis + L1 status) —
+> not a third test engine; **§7.4.10 test report demand** json/html/md planned only)
+> lives in Chinese:\
+> [../zh-CN/全面分析-优化与增强.md](../zh-CN/全面分析-优化与增强.md) §7.4 / §7.4.10.
+
 ---
 
 ## 1. Architecture snapshot

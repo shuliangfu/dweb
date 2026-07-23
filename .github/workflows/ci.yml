@@ -25,7 +25,7 @@ jobs:
 
       - uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.5
+          deno-version: v2.9
 
       - name: Cache dependencies
         run: deno cache src/cli.ts src/setup.ts 2>/dev/null || true
@@ -52,7 +52,7 @@ jobs:
 
       - uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.5
+          deno-version: v2.9
 
       - name: Cache dependencies
         run: deno cache src/cli.ts src/setup.ts 2>/dev/null || true
@@ -80,7 +80,7 @@ jobs:
 
       - uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.5
+          deno-version: v2.9
 
       - name: Setup Chrome (for browser E2E tests)
         uses: browser-actions/setup-chrome@v1
@@ -183,3 +183,55 @@ jobs:
       # 仅跑 unit不跑 integration 与 e2e
       - name: Test (Bun, Windows) unit
         run: bun test --max-concurrency=1 tests/unit
+
+  # ─── Node.js jobs（仅跑 unit，排除 integration/e2e）───
+  test-linux-node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install image dependencies (Linux)
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install dependencies (Node)
+        run: npm install
+
+      - name: Test (Node, Linux) unit
+        run: npm run test:node
+
+  test-macos-node:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install image dependencies (macOS)
+        run: brew install imagemagick
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install dependencies (Node)
+        run: npm install
+
+      - name: Test (Node, macOS) unit
+        run: npm run test:node
+
+  test-windows-node:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install dependencies (Node)
+        run: npm install
+
+      - name: Test (Node, Windows) unit
+        run: npm run test:node

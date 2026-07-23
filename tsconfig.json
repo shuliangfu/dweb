@@ -1,19 +1,20 @@
 {
   "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "jsxImportSource": "@dreamer/view",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "lib": ["dom", "dom.iterable", "ESNext"],
     "baseUrl": ".",
     "paths": {
-      "@dreamer/dweb": [
-        "src/mod.ts"
-      ],
-      "@dreamer/dweb/*": [
-        "src/*"
-      ]
-      // "@dreamer/esbuild": [
-      //   "../esbuild/src/mod.ts"
-      // ],
-      // "@dreamer/esbuild/*": [
-      //   "../esbuild/src/*"
-      // ]
+      "@dreamer/dweb": ["src/mod.ts"],
+      "@dreamer/dweb/*": ["src/*"]
     }
-  }
+  },
+  "include": ["src", "tests"]
 }

@@ -41,3 +41,9 @@ export const POSTCSS_VERSION = "8.5.10";
 
 /** UnoCSS 基准版本（输出带 ^） */
 export const UNOCSS_CORE_VERSION = "66.0.0";
+
+/**
+ * 脚手架写入的 `@dreamer/test` 版本（与 dweb 本仓 imports 对齐）
+ * 用例层 describe/it/expect；执行仍由 `dweb-cli test` → 宿主 test
+ */
+export const DREAMER_TEST_VERSION = "1.1.10";

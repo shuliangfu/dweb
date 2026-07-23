@@ -75,7 +75,7 @@ export const DwebErrorCode = {
   /** 入口路径段数过多 */
   ENTRY_PATH_TOO_DEEP: "DWEB_E21",
 
-  /** 仅支持 Deno 或 Bun 运行时 */
+  /** 仅支持 Deno、Bun 或 Node.js 运行时 */
   RUNTIME_UNSUPPORTED: "DWEB_E22",
 
   /** App 实例未初始化 */
@@ -206,7 +206,8 @@ export const DEFAULT_ERROR_MESSAGES: Record<
   [DwebErrorCode.ENTRY_PATH_TOO_DEEP]:
     "[dweb] Entry path segments too many. {hint} Path: {path}",
 
-  [DwebErrorCode.RUNTIME_UNSUPPORTED]: "Only Deno or Bun runtime is supported",
+  [DwebErrorCode.RUNTIME_UNSUPPORTED]:
+    "Only Deno, Bun or Node.js runtime is supported",
 
   [DwebErrorCode.APP_NOT_INITIALIZED]: "App instance not initialized",
   [DwebErrorCode.SOCKET_IO_NOT_CONFIGURED]:

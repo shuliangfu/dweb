@@ -6,6 +6,7 @@
  */
 
 import {
+  DREAMER_TEST_VERSION,
   POSTCSS_VERSION,
   PREACT_VERSION,
   REACT_DOM_VERSION,
@@ -41,6 +42,7 @@ function getDependenciesBlock(opts: InitOptions, jsr: JsrVersions): string {
     `    "@dreamer/dweb": "npm:@jsr/dreamer__dweb@^${jsr.dweb}"`,
     `    "@dreamer/render": "npm:@jsr/dreamer__render@^${jsr.render}"`,
     `    "@dreamer/router": "npm:@jsr/dreamer__router@^${jsr.router}"`,
+    `    "@dreamer/test": "npm:@jsr/dreamer__test@^${DREAMER_TEST_VERSION}"`,
     ...(hasStyleAssets
       ? [`    "@dreamer/plugins": "npm:@jsr/dreamer__plugins@^${jsr.plugins}"`]
       : []),
@@ -104,10 +106,12 @@ export function getPackageJson(
       opts.appNames
         .map((app) => `    "start:${app}": "bun run dist/${app}/server.js"`)
         .join(",\n"),
+      `    "test": "dweb-cli test"`,
     ].join(",\n\n")
     : `    "dev": "bun run ${prefix}main.ts",
     "build": "bun run ${prefix}main.ts -- --build",
-    "start": "bun run dist/server.js"`;
+    "start": "bun run dist/server.js",
+    "test": "dweb-cli test"`;
 
   const dependenciesBlock = getDependenciesBlock(opts, jsrVersions);
 

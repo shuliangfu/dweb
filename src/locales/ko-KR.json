@@ -20,7 +20,7 @@
     "DWEB_E19": "플러그인 [{index}]에 이름이 필요합니다. { name: \"...\", ... } 또는 문자열 경로 사용",
     "DWEB_E20": "[dweb] 진입 경로 형식이 지원되지 않습니다: {reason}. {hint} 현재 경로: {path}",
     "DWEB_E21": "[dweb] 진입 경로 세그먼트가 너무 많습니다. {hint} 현재 경로: {path}",
-    "DWEB_E22": "Deno 또는 Bun 런타임만 지원됩니다",
+    "DWEB_E22": "Deno, Bun 또는 Node.js 런타임만 지원됩니다",
     "DWEB_E23": "App 인스턴스가 초기화되지 않았습니다",
     "DWEB_E24": "Socket.IO가 설정되지 않았습니다. socket: { type: 'socketio', ... } 설정",
     "DWEB_E25": "WebSocket이 설정되지 않았습니다. socket: { type: 'websocket', ... } 설정",
@@ -135,7 +135,14 @@
     "dbSeed": "시드 (테스트 데이터)",
     "dbStatus": "마이그레이션 상태",
     "upgrade": "dweb 업그레이드",
-    "upgradeBetaOption": "베타로 업그레이드"
+    "upgradeBetaOption": "베타로 업그레이드",
+    "testUnit": "tests/unit 만 실행",
+    "testIntegration": "tests/integration 만 실행",
+    "testE2e": "tests/e2e 만 실행",
+    "testFilter": "테스트 이름으로 필터（호스트 전달）",
+    "testCoverage": "커버리지 수집（Deno/Bun --coverage）",
+    "testRuntime": "호스트 런타임: deno 또는 bun",
+    "testVerbose": "실제 spawn 할 호스트 명령 출력"
   },
   "common": {
     "noDenoJson": "deno.json을 찾을 수 없습니다. dweb 루트에서 실행하세요",
@@ -345,7 +352,10 @@
     "runningWithApp": "{app} 테스트 실행 중...",
     "appComplete": "{app} 테스트 완료",
     "appFailed": "{app} 테스트 실패, 종료 코드: {code}",
-    "addTaskHint": "deno.json에 test 또는 test:appName 태스크 추가"
+    "addTaskHint": "test 또는 test:appName 태스크 추가, 또는 dweb-cli test 직접 실행 (task 불필요)",
+    "spawnCommand": "실행: {cmd}",
+    "invalidRuntime": "지원하지 않는 --runtime: {value} (deno 또는 bun)",
+    "noAppTaskFallback": "task {task} 미정의, 호스트 테스트로 대체 (기본 tests/)"
   },
   "update": {
     "running": "의존성 및 lockfile 업데이트 중...",

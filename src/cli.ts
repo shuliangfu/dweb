@@ -16,6 +16,7 @@ import {
   type ParsedOptions,
 } from "./feature/command.ts";
 import { $tr } from "./utils/i18n.ts";
+import { isMainModule } from "./utils/main-module.ts";
 import { getDwebVersion } from "./utils/version.ts";
 
 /**
@@ -224,7 +225,7 @@ export function createCLI(version: string): Command {
     });
 
   // ================================================================================
-  // test 运行测试
+  // test 运行测试（产品 launcher：路径 / 分层 / filter / coverage / runtime）
   // ================================================================================
   const testCmd = cli.command("test", $tr("cliDesc.test"));
   testCmd
@@ -234,6 +235,44 @@ export function createCLI(version: string): Command {
       description: $tr("cliDesc.appOptionalTest"),
       type: "string",
       requiresValue: true,
+    })
+    .option({
+      name: "unit",
+      description: $tr("cliDesc.testUnit"),
+      type: "boolean",
+    })
+    .option({
+      name: "integration",
+      description: $tr("cliDesc.testIntegration"),
+      type: "boolean",
+    })
+    .option({
+      name: "e2e",
+      description: $tr("cliDesc.testE2e"),
+      type: "boolean",
+    })
+    .option({
+      name: "filter",
+      alias: "f",
+      description: $tr("cliDesc.testFilter"),
+      type: "string",
+      requiresValue: true,
+    })
+    .option({
+      name: "coverage",
+      description: $tr("cliDesc.testCoverage"),
+      type: "boolean",
+    })
+    .option({
+      name: "runtime",
+      description: $tr("cliDesc.testRuntime"),
+      type: "string",
+      requiresValue: true,
+    })
+    .option({
+      name: "verbose",
+      description: $tr("cliDesc.testVerbose"),
+      type: "boolean",
     })
     .action(async (args: string[], options: ParsedOptions) => {
       try {
@@ -245,6 +284,7 @@ export function createCLI(version: string): Command {
             message: err instanceof Error ? err.message : String(err),
           }),
         );
+        throw err;
       }
     });
 
@@ -427,9 +467,9 @@ export function createCLI(version: string): Command {
 
 /**
  * 执行 CLI 命令
- * 如果直接运行此文件，则执行 CLI（兼容 Deno 和 Bun）
+ * 如果直接运行此文件，则执行 CLI（兼容 Deno、Bun 和 Node）
  */
-if (import.meta.main) {
+if (isMainModule(import.meta.url)) {
   const version = await getDwebVersion();
   const cli = createCLI(version);
   await cli.execute();

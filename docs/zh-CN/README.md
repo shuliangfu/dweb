@@ -2,7 +2,7 @@
 
 > 📖 [English](../../README.md) | 中文
 
-> 一个兼容 Deno 和 Bun 的全栈 Web 框架，整合 @dreamer/*
+> 一个兼容 Deno、Bun 和 Node.js 的全栈 Web 框架，整合 @dreamer/*
 > 包，提供开箱即用的全栈开发体验
 
 [![JSR](https://jsr.io/badges/@dreamer/dweb)](https://jsr.io/@dreamer/dweb)

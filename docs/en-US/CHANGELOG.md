@@ -8,6 +8,45 @@ and this project adheres to
 
 ---
 
+## [3.6.0] - 2026-07-23
+
+### Added
+
+- **Node.js 22+ compatibility**: dweb CLI commands (`dev`, `build`, `start`,
+  `test`) now run under Node.js via `tsx` TypeScript loader. The framework
+  auto-detects the runtime and adapts subprocess spawning: `deno run` task lines
+  are converted to `node --import tsx <file> <args>`, filtering Deno-specific
+  flags (`-A`, `--allow-*`, `--no-check`, etc.).
+- **`src/utils/main-module.ts`**: cross-runtime main-module detection
+  (`isMainModule()`). Replaces Deno-specific `import.meta.main` in `src/cli.ts`
+  and `src/setup.ts`—Deno compares `Deno.mainModule`, Bun/Node compare
+  `process.argv[1]`.
+- **`getNodeRunArgsFromTaskString()`**: parses `deno run ...` task lines into
+  Node-compatible args with `DENO_ONLY_FLAGS` filter set.
+- **Node.js CI**: 3 new jobs (Linux/macOS/Windows, Node 22) running unit tests
+  via `test-node.mjs` (51 files, excluding 13 runtime-specific subprocess
+  tests). Total CI: 9 jobs (3 Deno + 3 Bun + 3 Node).
+- **`test-node.mjs`**: main-process test runner (no `--test` flag, avoids IPC
+  serialization bug), `tsconfig.json` upgraded with Bundler moduleResolution.
+
+### Changed
+
+- **`src/utils/runtime.ts`**: all exported functions (`getRuntime`,
+  `getTaskArgs`, `getSpawnArgsForDwebTask`, `getTestArgs`, `getLintArgs`,
+  `getFmtArgs`, `getRunArgs`) now include `IS_NODE` branches; `HostTestRuntime`
+  type extended to `"deno" | "bun" | "node"`; `getInheritedEnvForSpawn()` uses
+  `getEnvAll()` (replaces `Deno.env.toObject()`).
+- **Dependencies**: all 22 `@dreamer/*` deps synced to Node-compatible versions
+  (runtime-adapter `^1.2.2`, i18n `^1.1.2`, database `^1.2.0`, esbuild `^1.3.0`,
+  render `^1.2.0`, router `^1.2.0`, server `^1.2.1`, socket-io `^1.2.0`,
+  view `^2.2.0`, etc.).
+- **Error message**: `RUNTIME_UNSUPPORTED` updated from "Only Deno or Bun" to
+  "Only Deno, Bun or Node.js" across `errors.ts` and all 10 locale files.
+- **`package.json`**: removed `private: true`, added `engines.node: ">=22"`,
+  `tsx` devDependency, `test:node` script.
+
+---
+
 ## [3.5.11] - 2026-07-22
 
 ### Added

@@ -20,7 +20,7 @@
     "DWEB_E19": "プラグイン [{index}] には名前が必要です。{ name: \"...\", ... } または文字列パスを使用してください",
     "DWEB_E20": "[dweb] エントリパス形式がサポートされていません: {reason}。{hint} 現在のパス: {path}",
     "DWEB_E21": "[dweb] エントリパスのセグメントが多すぎます。{hint} 現在のパス: {path}",
-    "DWEB_E22": "Deno または Bun ランタイムのみサポートされています",
+    "DWEB_E22": "Deno、Bun または Node.js ランタイムのみサポートされています",
     "DWEB_E23": "App インスタンスが初期化されていません",
     "DWEB_E24": "Socket.IO が設定されていません。socket: { type: 'socketio', ... } を設定してください",
     "DWEB_E25": "WebSocket が設定されていません。socket: { type: 'websocket', ... } を設定してください",
@@ -135,7 +135,14 @@
     "dbSeed": "シード（テストデータ）",
     "dbStatus": "マイグレーションステータス",
     "upgrade": "dweb をアップグレード",
-    "upgradeBetaOption": "ベータ版にアップグレード"
+    "upgradeBetaOption": "ベータ版にアップグレード",
+    "testUnit": "tests/unit のみ実行",
+    "testIntegration": "tests/integration のみ実行",
+    "testE2e": "tests/e2e のみ実行",
+    "testFilter": "テスト名でフィルタ（ホストへ透過）",
+    "testCoverage": "カバレッジ収集（Deno/Bun --coverage）",
+    "testRuntime": "ホスト指定：deno または bun",
+    "testVerbose": "実際に spawn するホストコマンドを表示"
   },
   "common": {
     "noDenoJson": "deno.json が見つかりません。dweb ルートで実行してください",
@@ -345,7 +352,10 @@
     "runningWithApp": "{app} テスト実行中...",
     "appComplete": "{app} テスト完了",
     "appFailed": "{app} テスト失敗、終了コード: {code}",
-    "addTaskHint": "deno.json に test または test:appName タスクを追加してください"
+    "addTaskHint": "test / test:appName タスクを追加するか、dweb-cli test を直接実行（task 不要）",
+    "spawnCommand": "実行: {cmd}",
+    "invalidRuntime": "未対応の --runtime: {value}（deno または bun を指定）",
+    "noAppTaskFallback": "task {task} 未定義のためホストテストにフォールバック（既定 tests/）"
   },
   "update": {
     "running": "依存関係と lockfile を更新中...",

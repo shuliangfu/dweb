@@ -15,12 +15,6 @@
  */
 
 import {
-  failSpinner,
-  startSpinner,
-  succeedSpinner,
-} from "./feature/command.ts";
-import { $tr } from "./utils/i18n.ts";
-import {
   createCommand,
   exit,
   join,
@@ -29,13 +23,20 @@ import {
   remove,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
+import {
+  failSpinner,
+  startSpinner,
+  succeedSpinner,
+} from "./feature/command.ts";
 import { DwebErrorCode, throwDwebError } from "./utils/errors.ts";
+import { $tr } from "./utils/i18n.ts";
+import { isMainModule } from "./utils/main-module.ts";
+import { getRuntime } from "./utils/runtime.ts";
 import {
   getPackageRoot,
   loadDwebDenoJson,
   writeVersionCache,
 } from "./utils/version.ts";
-import { getRuntime } from "./utils/runtime.ts";
 
 /** CLI 全局命令名称 */
 const CLI_NAME = "dweb-cli";
@@ -263,8 +264,8 @@ function printUsage(): void {
   console.log("");
 }
 
-// 主入口：此处直接执行安装
-if (import.meta.main) {
+// 主入口：此处直接执行安装（兼容 Deno、Bun 和 Node）
+if (isMainModule(import.meta.url)) {
   installGlobalCli()
     .then(() => exit(0))
     .catch((err: unknown) => {

@@ -49,6 +49,7 @@ import {
 import { getDockerComposeYml, getDockerfile } from "./templates/docker.ts";
 import {
   getDeploySh,
+  getExampleTestTs,
   getFaviconSvg,
   getGitignore,
   getI18nAllyCustomFrameworkYml,
@@ -309,6 +310,13 @@ export async function generate(opts: InitOptions): Promise<void> {
     );
   }
   await writeTextFile(join(targetDir, ".gitignore"), getGitignore());
+
+  // 示例测试：dweb-cli test → 宿主 test；用例 API 来自 @dreamer/test
+  await ensureDir(join(targetDir, "tests", "unit"));
+  await writeTextFile(
+    join(targetDir, "tests", "unit", "example.test.ts"),
+    getExampleTestTs(),
+  );
 
   await writeTextFile(join(targetDir, "Dockerfile"), getDockerfile(opts));
   await writeTextFile(

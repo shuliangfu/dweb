@@ -7,6 +7,41 @@
 
 ---
 
+## [3.6.0] - 2026-07-23
+
+### 新增
+
+- **Node.js 22+ 全面兼容**：dweb CLI 命令（`dev`、`build`、`start`、`test`）现可
+  在 Node.js 下经 `tsx` TypeScript 加载器运行。框架自动检测运行时并适配子进程
+  启动：将 `deno run` 任务行转为 `node --import tsx <file> <args>`，过滤 Deno 专有
+  标志（`-A`、`--allow-*`、`--no-check` 等）。
+- **`src/utils/main-module.ts`**：跨运行时主模块检测（`isMainModule()`）。替换
+  `src/cli.ts` 和 `src/setup.ts` 中 Deno 专有的 `import.meta.main`——Deno 比较
+  `Deno.mainModule`，Bun/Node 比较 `process.argv[1]`。
+- **`getNodeRunArgsFromTaskString()`**：将 `deno run ...` 任务行解析为 Node 兼容
+  参数，配合 `DENO_ONLY_FLAGS` 过滤集。
+- **Node.js CI**：新增 3 个 job（Linux/macOS/Windows，Node 22），经 `test-node.mjs`
+  运行单元测试（51 文件，排除 13 个运行时专有子进程测试）。CI 共 9 jobs
+  （3 Deno + 3 Bun + 3 Node）。
+- **`test-node.mjs`**：主进程测试运行器（无 `--test` 标志，避免 IPC 序列化 bug），
+  `tsconfig.json` 升级为 Bundler 模块解析。
+
+### 变更
+
+- **`src/utils/runtime.ts`**：所有导出函数（`getRuntime`、`getTaskArgs`、
+  `getSpawnArgsForDwebTask`、`getTestArgs`、`getLintArgs`、`getFmtArgs`、`getRunArgs`）
+  新增 `IS_NODE` 分支；`HostTestRuntime` 类型扩展为 `"deno" | "bun" | "node"`；
+  `getInheritedEnvForSpawn()` 改用 `getEnvAll()`（替代 `Deno.env.toObject()`）。
+- **依赖**：22 个 `@dreamer/*` 依赖全部同步至 Node 兼容版本（runtime-adapter
+  `^1.2.2`、i18n `^1.1.2`、database `^1.2.0`、esbuild `^1.3.0`、render `^1.2.0`、
+  router `^1.2.0`、server `^1.2.1`、socket-io `^1.2.0`、view `^2.2.0` 等）。
+- **错误文案**：`RUNTIME_UNSUPPORTED` 从"仅支持 Deno 或 Bun"更新为"仅支持 Deno、
+  Bun 或 Node.js"，覆盖 `errors.ts` 和全部 10 个 locale 文件。
+- **`package.json`**：移除 `private: true`，新增 `engines.node: ">=22"`、
+  `tsx` devDependency、`test:node` 脚本。
+
+---
+
 ## [3.5.11] - 2026-07-22
 
 ### 新增

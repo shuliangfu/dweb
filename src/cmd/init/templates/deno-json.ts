@@ -3,6 +3,7 @@
  */
 
 import {
+  DREAMER_TEST_VERSION,
   POSTCSS_VERSION,
   PREACT_VERSION,
   REACT_DOM_VERSION,
@@ -37,6 +38,7 @@ export function getDenoJson(
     `    "@dreamer/dweb": "jsr:@dreamer/dweb@^${dwebVersion}"`,
     `    "@dreamer/render": "${renderSpec}"`,
     `    "@dreamer/router": "${routerSpec}"`,
+    `    "@dreamer/test": "jsr:@dreamer/test@^${DREAMER_TEST_VERSION}"`,
     ...(hasStyleAssets
       ? [`    "@dreamer/plugins": "jsr:@dreamer/plugins@^${pluginsVersion}"`]
       : []),

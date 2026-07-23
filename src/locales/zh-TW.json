@@ -20,7 +20,7 @@
     "DWEB_E19": "配置中的插件（索引 {index}）必须提供名称，用于配置合併时識別重复。請使用物件形式：{ name: \"plugin-name\", ... } 或字串路径（可从路径提取名称）",
     "DWEB_E20": "[dweb] 入口路径格式不支援: {reason}。{hint} 当前路径: {path}",
     "DWEB_E21": "[dweb] 入口路径段数过多，不支援多级目錄。{hint} 当前路径: {path}",
-    "DWEB_E22": "僅支援 Deno 或 Bun 运行时環境",
+    "DWEB_E22": "僅支援 Deno、Bun 或 Node.js 运行时環境",
     "DWEB_E23": "App 实例未初始化",
     "DWEB_E24": "Socket.IO 未配置，請在 AppConfig 中設定 socket: { type: 'socketio', ... }",
     "DWEB_E25": "WebSocket 未配置，請在 AppConfig 中設定 socket: { type: 'websocket', ... }",
@@ -135,7 +135,14 @@
     "dbSeed": "執行資料庫种子（填充测试数据）",
     "dbStatus": "查看遷移状态",
     "upgrade": "檢查并升級 dweb 到最新版本",
-    "upgradeBetaOption": "升級到 beta 最新版（預設仅升級稳定版）"
+    "upgradeBetaOption": "升級到 beta 最新版（預設仅升級稳定版）",
+    "testUnit": "僅運行 tests/unit",
+    "testIntegration": "僅運行 tests/integration",
+    "testE2e": "僅運行 tests/e2e",
+    "testFilter": "按用例名過濾（透傳宿主 filter）",
+    "testCoverage": "收集覆蓋率（Deno --coverage / Bun --coverage）",
+    "testRuntime": "顯式選擇宿主：deno 或 bun",
+    "testVerbose": "打印實際 spawn 的宿主命令"
   },
   "common": {
     "noDenoJson": "未找到 deno.json，請在 dweb 專案根目錄執行",
@@ -345,7 +352,10 @@
     "runningWithApp": "正在运行 {app} 测试...",
     "appComplete": "{app} 测试完成",
     "appFailed": "{app} 测试失敗，退出码: {code}",
-    "addTaskHint": "請添加 test 或 test:應用名 task"
+    "addTaskHint": "可添加 test 或 test:應用名 task；或直接使用 dweb-cli test（無需 task）",
+    "spawnCommand": "執行: {cmd}",
+    "invalidRuntime": "不支持的 --runtime: {value}（請使用 deno 或 bun）",
+    "noAppTaskFallback": "未定義 task {task}，回退為宿主測試（默認 tests/）"
   },
   "update": {
     "running": "正在更新依賴与 lockfile...",

@@ -36,6 +36,20 @@ export function getFaviconSvg(): string {
 `;
 }
 
+/**
+ * 脚手架示例单测：用例层用 `@dreamer/test`，执行用 `dweb-cli test`
+ */
+export function getExampleTestTs(): string {
+  return `import { describe, expect, it } from "@dreamer/test";
+
+describe("example", () => {
+  it("1 + 1 === 2", () => {
+    expect(1 + 1).toBe(2);
+  });
+});
+`;
+}
+
 export function getGitignore(): string {
   return `# ${$tr("init.comments.gitignoreDeno")}
 .deno/
@@ -47,6 +61,7 @@ node_modules
 # ${$tr("init.comments.gitignoreBuild")}
 dist/
 build/
+coverage/
 
 # ${$tr("init.comments.gitignoreDwebGen")}
 _client.dep.tsx

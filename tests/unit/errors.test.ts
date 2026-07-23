@@ -49,7 +49,7 @@ describe("统一错误处理 (errors.ts)", () => {
         DwebError,
       );
       expect(() => throwDwebError(DwebErrorCode.RUNTIME_UNSUPPORTED)).toThrow(
-        /仅支持 Deno 或 Bun 运行时环境|Only Deno or Bun runtime is supported/i,
+        /仅支持 Deno.*运行时环境|Only Deno.*runtime is supported/i,
       );
     });
 

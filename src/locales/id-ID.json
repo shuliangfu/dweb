@@ -20,7 +20,7 @@
     "DWEB_E19": "Plugin [{index}] butuh nama. Gunakan: { name: \"...\", ... } atau path string",
     "DWEB_E20": "[dweb] Format path entry tidak didukung: {reason}. {hint} Path saat ini: {path}",
     "DWEB_E21": "[dweb] Path entry memiliki terlalu banyak segmen. {hint} Path saat ini: {path}",
-    "DWEB_E22": "Hanya runtime Deno atau Bun yang didukung",
+    "DWEB_E22": "Hanya runtime Deno, Bun atau Node.js yang didukung",
     "DWEB_E23": "Instance app belum diinisialisasi",
     "DWEB_E24": "Socket.IO tidak dikonfigurasi. Atur socket: { type: 'socketio', ... }",
     "DWEB_E25": "WebSocket tidak dikonfigurasi. Atur socket: { type: 'websocket', ... }",
@@ -135,7 +135,14 @@
     "dbSeed": "Seed (data tes)",
     "dbStatus": "Status migrasi",
     "upgrade": "Perbarui dweb",
-    "upgradeBetaOption": "Perbarui ke beta"
+    "upgradeBetaOption": "Perbarui ke beta",
+    "testUnit": "Jalankan hanya tests/unit",
+    "testIntegration": "Jalankan hanya tests/integration",
+    "testE2e": "Jalankan hanya tests/e2e",
+    "testFilter": "Filter tes berdasarkan nama (filter host)",
+    "testCoverage": "Kumpulkan coverage (Deno/Bun --coverage)",
+    "testRuntime": "Runtime host: deno atau bun",
+    "testVerbose": "Tampilkan perintah host yang di-spawn"
   },
   "common": {
     "noDenoJson": "deno.json tidak ditemukan, jalankan di root dweb",
@@ -345,7 +352,10 @@
     "runningWithApp": "Menjalankan tes {app}...",
     "appComplete": "Tes {app} selesai",
     "appFailed": "Tes {app} gagal, kode keluar: {code}",
-    "addTaskHint": "Tambahkan task test atau test:appName ke deno.json"
+    "addTaskHint": "Tambahkan task test atau test:appName, atau gunakan dweb-cli test (tanpa task)",
+    "spawnCommand": "Menjalankan: {cmd}",
+    "invalidRuntime": "--runtime tidak didukung: {value} (gunakan deno atau bun)",
+    "noAppTaskFallback": "Task {task} tidak didefinisikan; fallback ke host tests (default tests/)"
   },
   "update": {
     "running": "Memperbarui dependensi dan lockfile...",

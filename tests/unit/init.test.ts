@@ -73,6 +73,9 @@ describe("init (cmd/init.ts)", () => {
       expect(await exists(join(testDir, "src", "assets", "tailwind.css"))).toBe(
         true,
       );
+      // 统一测试入口：示例用例（执行用 dweb-cli test）
+      expect(await exists(join(testDir, "tests", "unit", "example.test.ts")))
+        .toBe(true);
 
       // 验证 main.ts 不包含 socket-io，单应用使用 new App() 由框架从 config/main.ts 加载配置
       const mainTs = await readTextFile(join(testDir, "src", "main.ts"));
@@ -97,6 +100,7 @@ describe("init (cmd/init.ts)", () => {
       expect(denoJson).toContain("@dreamer/render");
       expect(denoJson).toContain("@dreamer/router");
       expect(denoJson).toContain("@dreamer/plugins");
+      expect(denoJson).toContain("@dreamer/test");
       expect(denoJson).toContain("postcss");
       expect(denoJson).toContain("tailwindcss");
       expect(denoJson).toContain("@tailwindcss/postcss");
@@ -223,8 +227,12 @@ describe("init (cmd/init.ts)", () => {
     expect(packageJson).toContain('"dev":');
     expect(packageJson).toContain('"build":');
     expect(packageJson).toContain('"start":');
+    expect(packageJson).toContain('"test": "dweb-cli test"');
     expect(packageJson).toContain("bun run");
     expect(packageJson).toContain("@dreamer/dweb");
+    expect(packageJson).toContain("@dreamer/test");
+    expect(await exists(join(testDir, "tests", "unit", "example.test.ts")))
+      .toBe(true);
 
     const npmrc = await readTextFile(join(testDir, ".npmrc"));
     expect(npmrc).toContain("@jsr:registry=");
