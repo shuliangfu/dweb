@@ -65,7 +65,7 @@
     "@dreamer/utils": "jsr:@dreamer/utils@^1.1.0",
     "@dreamer/view": "jsr:@dreamer/view@^2.2.0",
     "@dreamer/websocket": "jsr:@dreamer/websocket@^1.1.0",
-    "playwright": "npm:playwright@^1.61.1",
+    "playwright": "npm:playwright@1.59.1",
     "preact": "npm:preact@^10.29.7",
     "preact-render-to-string": "npm:preact-render-to-string@^6.7.0",
     "react": "npm:react@^19.2.7",
