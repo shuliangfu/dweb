@@ -413,18 +413,19 @@ export function collectRouteClientManifestFromRouter(
 /**
  * 获取客户端构建所需的路由 manifest。
  *
- * 热路径只做**一次** `createRouter().scan()`，同时得到布局链与可水合页面，
- * 避免旧实现「layout scan + 再 walk 目录」的双扫。磁盘扫描结果即真相来源
- * （含 HMR 增删页面）；再按 `exists` 剔除瞬时失效路径。
+ * 用一次 `createRouter().scan()` 取布局链与 Router 页面表；再与目录 walk
+ * （{@link scanRouteComponents}）合并。Windows CI 上 Router `fullPath` 与
+ * `exists(fullPath)` 偶发对不齐会导致 Router 侧组件为空——若不再 walk 目录，
+ * `_client.dep` 的 `ROUTE_LOADERS` 会空，水合报 `component "index" not found`。
  *
- * @param _container 服务容器（保留签名以兼容调用方；manifest 以磁盘 scan 为准）
+ * @param _container 服务容器（保留签名以兼容调用方）
  * @param routesDirPath routes 目录绝对路径
- * @param _engine 渲染引擎，保留用于未来扩展
+ * @param engine 渲染引擎（传给目录扫描，保留扩展点）
  */
 export async function getRouteClientManifest(
   _container: ServiceContainer,
   routesDirPath: string,
-  _engine: "react" | "preact" | "view",
+  engine: "react" | "preact" | "view",
 ): Promise<RouteClientManifest> {
   const freshRouter = createRouter({ routesDir: routesDirPath });
   await freshRouter.scan();
@@ -432,14 +433,29 @@ export async function getRouteClientManifest(
     freshRouter,
     routesDirPath,
   );
-  const components: RouteComponentInfo[] = [];
+  const fsComponents = await scanRouteComponents(routesDirPath, "", engine);
+
+  const merged: RouteComponentInfo[] = [];
+  const seenPaths = new Set<string>();
   for (const c of scanned.components) {
-    if (await exists(c.fullPath)) {
-      components.push(c);
+    if (!(await exists(c.fullPath))) {
+      continue;
+    }
+    merged.push(c);
+    seenPaths.add(c.componentPath);
+  }
+  for (const c of fsComponents) {
+    if (!seenPaths.has(c.componentPath)) {
+      merged.push(c);
+      seenPaths.add(c.componentPath);
     }
   }
+
   return {
-    components: sanitizeClientRouteComponents(components, routesDirPath),
+    components: sanitizeClientRouteComponents(
+      merged.length > 0 ? merged : fsComponents,
+      routesDirPath,
+    ),
     hasLayout: scanned.hasLayout,
     routeLayoutKeys: scanned.routeLayoutKeys,
   };

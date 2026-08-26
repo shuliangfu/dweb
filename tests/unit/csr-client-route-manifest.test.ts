@@ -10,10 +10,15 @@ import {
   join,
   makeTempDir,
   remove,
+  writeTextFile,
 } from "@dreamer/runtime-adapter";
 import type { Router } from "@dreamer/router";
+import type { ServiceContainer } from "@dreamer/service";
 import { describe, expect, it } from "@dreamer/test";
-import { collectRouteClientManifestFromRouter } from "../../src/feature/csr-client-route-manifest.ts";
+import {
+  collectRouteClientManifestFromRouter,
+  getRouteClientManifest,
+} from "../../src/feature/csr-client-route-manifest.ts";
 
 describe("CSR 客户端路由 manifest (csr-client-route-manifest.ts)", () => {
   it("应优先使用 fullPath 收集组件，避免相对 file 导致 index 丢失", () => {
@@ -102,5 +107,32 @@ describe("CSR 客户端路由 manifest (csr-client-route-manifest.ts)", () => {
     expect(manifest.components.length).toBe(1);
     expect(manifest.components[0].componentPath).toBe("about");
     expect(manifest.components[0].componentPath).not.toMatch(/[A-Z]:\//);
+  });
+
+  it("getRouteClientManifest 应合并目录 walk，保证磁盘上的页面进入 ROUTE_LOADERS", async () => {
+    const projectRoot = await makeTempDir({
+      prefix: "dweb-route-manifest-fs-",
+    });
+    const routesDirPath = join(projectRoot, "routes");
+    await ensureDir(routesDirPath);
+    await writeTextFile(
+      join(routesDirPath, "index.tsx"),
+      "export default function Page() { return null; }\n",
+    );
+    await writeTextFile(
+      join(routesDirPath, "about.tsx"),
+      "export default function About() { return null; }\n",
+    );
+    try {
+      const manifest = await getRouteClientManifest(
+        {} as ServiceContainer,
+        routesDirPath,
+        "preact",
+      );
+      const keys = manifest.components.map((c) => c.componentPath).sort();
+      expect(keys).toEqual(["about", "index"]);
+    } finally {
+      await remove(projectRoot, { recursive: true });
+    }
   });
 });
