@@ -194,12 +194,10 @@ export function parseJUnitXml(xml: string): TestRunSummary {
     0,
   );
   const caseCounted = suites.reduce((n, s) => n + s.cases.length, 0);
-  totals.passed = caseCounted > 0
-    ? casePassed
-    : Math.max(
-      0,
-      totals.tests - totals.failed - totals.errors - totals.skipped,
-    );
+  totals.passed = caseCounted > 0 ? casePassed : Math.max(
+    0,
+    totals.tests - totals.failed - totals.errors - totals.skipped,
+  );
 
   return {
     totals,
@@ -258,9 +256,9 @@ export function formatTestReportHtml(summary: TestRunSummary): string {
     suite.cases.map((c) => {
       const msg = c.message ? ` — ${esc(c.message)}` : "";
       const t = c.timeSec != null ? c.timeSec.toFixed(3) : "";
-      return `<tr><td>${c.status}</td><td>${
-        esc(suite.name)
-      }</td><td>${esc(c.name)}${msg}</td><td>${t}</td></tr>`;
+      return `<tr><td>${c.status}</td><td>${esc(suite.name)}</td><td>${
+        esc(c.name)
+      }${msg}</td><td>${t}</td></tr>`;
     })
   ).join("\n");
   return `<!DOCTYPE html>

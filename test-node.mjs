@@ -29,9 +29,9 @@
  *   Node 下示例项目 deno.json tasks 无法直接 npm run，属集成性质。
  * - test-launcher.test.ts：测试 dweb test 命令的子进程启动，依赖宿主运行时 spawn。
  */
-import { readdirSync, statSync, existsSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { join, resolve, relative } from "node:path";
+import { join, relative, resolve } from "node:path";
 
 // 显式置 CI=true：使脚本自包含，不依赖 Unix shell 前缀语法（Windows 不支持
 // `CI=true node ...`）也不依赖外部环境。GitHub Actions 也自动设置 CI=true。
@@ -61,7 +61,9 @@ function collectTests(dir, base = dir) {
     const st = statSync(full);
     if (st.isDirectory()) {
       results.push(...collectTests(full, base));
-    } else if (entry.endsWith(".test.ts") && !EXCLUDE_PATTERNS.includes(entry)) {
+    } else if (
+      entry.endsWith(".test.ts") && !EXCLUDE_PATTERNS.includes(entry)
+    ) {
       results.push(full);
     }
   }
@@ -75,7 +77,9 @@ if (!existsSync(testDir)) {
 }
 
 const files = collectTests(testDir);
-console.log(`Found ${files.length} test files (excluding ${EXCLUDE_PATTERNS.length} runtime-specific files)\n`);
+console.log(
+  `Found ${files.length} test files (excluding ${EXCLUDE_PATTERNS.length} runtime-specific files)\n`,
+);
 
 let failed = 0;
 for (const file of files) {

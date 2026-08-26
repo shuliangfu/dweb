@@ -168,7 +168,7 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
       );
 
       expect(code).toContain(
-        "import { createSignal, hydrate, mount, type Signal } from \"@dreamer/view\";",
+        'import { createSignal, hydrate, mount, type Signal } from "@dreamer/view";',
       );
       expect(code).toContain("__DWEB_MISMATCH_MODE__");
       expect(code).toContain(

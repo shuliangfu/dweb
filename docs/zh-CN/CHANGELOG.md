@@ -7,27 +7,66 @@
 
 ---
 
+## [3.7.0] - 2026-08-26
+
+### 新增
+
+- **应用类型（`api` / `console` / `web`）**：`AppConfig.kind` 驱动 init 脚手架、
+  路由布局与运行时行为。纯 API 应用 handler 直接放在 `routes/` 下（不强制
+  `routes/api/`、无 `_app`）；console 应用走 `dweb-cli run`、不起
+  HTTP。多应用示例： `examples/app-kinds/multi-web-api-console`。
+- **Console 运行时**：`console-router` / `console-list` / 中间件管道、模块
+  `before`/`after` 钩子、help 列表、未知路由 did-you-mean；可选 `console.slim`
+  入口。
+- **可选 `/metrics`**：配置开启后由框架 HTTP 中间件暴露 Prometheus 风格指标。
+- **SSR 流式（dev）**：`render.ssr.stream` 支持开发态渐进 HTML。
+- **水合 `mismatchMode`**：可配置客户端/服务端标记不匹配处理策略。
+- **`dweb test --report`**：产品测试报告输出（json/md/html）。
+- **配置拆分**：从单体 `config.ts` 抽出 `config-infer` / `config-merge` /
+  `config-validate`；渲染管线辅助见 `app-render-pipeline.ts`。
+
+### 变更
+
+- **依赖**：`@dreamer/render` `^1.3.0`、`@dreamer/router` `^1.2.1`（含
+  `RouterOptions.apiOnly`）、`@dreamer/socket-io` `^1.2.1`。移除对
+  `@dreamer/image` 的直接依赖。
+- **CI / 打包**：npm `overrides.preact` 与直接依赖对齐。
+
+### 修复
+
+- app-kinds 示例与 init API/console 路由模板去掉无 `await` 的 `async`，消除 Deno
+  lint `require-await`。
+- **Windows 客户端路由**：`getRouteClientManifest` 恢复目录 walk 合并，避免
+  Router `fullPath`/`exists` 不一致时 `ROUTE_LOADERS` 变空（修复 e2e
+  `component "index" not found`）。
+- kind 集成测试经 JSR 解析 `@dreamer/router` / `@dreamer/render`（CI 只 clone
+  dweb，无 monorepo `file:` 兄弟包）。
+
+---
+
 ## [3.6.0] - 2026-07-23
 
 ### 新增
 
 - **Node.js 22+ 全面兼容**：dweb CLI 命令（`dev`、`build`、`start`、`test`）现可
   在 Node.js 下经 `tsx` TypeScript 加载器运行。框架自动检测运行时并适配子进程
-  启动：将 `deno run` 任务行转为 `node --import tsx <file> <args>`，过滤 Deno 专有
-  标志（`-A`、`--allow-*`、`--no-check` 等）。
+  启动：将 `deno run` 任务行转为 `node --import tsx <file> <args>`，过滤 Deno
+  专有 标志（`-A`、`--allow-*`、`--no-check` 等）。
 - **`src/utils/main-module.ts`**：跨运行时主模块检测（`isMainModule()`）。替换
   `src/cli.ts` 和 `src/setup.ts` 中 Deno 专有的 `import.meta.main`——Deno 比较
   `Deno.mainModule`，Bun/Node 比较 `process.argv[1]`。
 - **`getNodeRunArgsFromTaskString()`**：将 `deno run ...` 任务行解析为 Node 兼容
   参数，配合 `DENO_ONLY_FLAGS` 过滤集。
-- **Node.js CI**：新增 3 个 job（Linux/macOS/Windows，Node 22），经 `test-node.mjs`
-  运行单元测试（51 文件，排除 13 个运行时专有子进程测试）**及经 `test-node-e2e.mjs`
-  运行 e2e 浏览器测试**（16 文件，Playwright Chromium——覆盖与 Deno e2e 一致）。
-  CI 共 9 jobs（3 Deno + 3 Bun + 3 Node）。Bun 浏览器 e2e 暂不开启。
-- **`test-node.mjs`**：主进程测试运行器（无 `--test` 标志，避免 IPC 序列化 bug），
-  `tsconfig.json` 升级为 Bundler 模块解析。
-- **`test-node-e2e.mjs`**：Node e2e 运行器，跑 `tests/e2e/*.test.ts`（串行、单文件
-  子进程、240s 超时）。需 Playwright Chromium。
+- **Node.js CI**：新增 3 个 job（Linux/macOS/Windows，Node 22），经
+  `test-node.mjs` 运行单元测试（51 文件，排除 13 个运行时专有子进程测试）**及经
+  `test-node-e2e.mjs` 运行 e2e 浏览器测试**（16 文件，Playwright
+  Chromium——覆盖与 Deno e2e 一致）。 CI 共 9 jobs（3 Deno + 3 Bun + 3
+  Node）。Bun 浏览器 e2e 暂不开启。
+- **`test-node.mjs`**：主进程测试运行器（无 `--test` 标志，避免 IPC 序列化
+  bug）， `tsconfig.json` 升级为 Bundler 模块解析。
+- **`test-node-e2e.mjs`**：Node e2e 运行器，跑
+  `tests/e2e/*.test.ts`（串行、单文件 子进程、240s 超时）。需 Playwright
+  Chromium。
 - **`tests/setup.ts`**：`getExampleChildProcessExecutable()` /
   `exampleBuildArgs()` / `exampleRunArgs()` 新增 Node 分支
   （`node --import tsx <entry>`）。
@@ -42,12 +81,13 @@
   新增 `IS_NODE` 分支；`HostTestRuntime` 类型扩展为 `"deno" | "bun" | "node"`；
   `getInheritedEnvForSpawn()` 改用 `getEnvAll()`（替代 `Deno.env.toObject()`）。
 - **依赖**：22 个 `@dreamer/*` 依赖全部同步至 Node 兼容版本（runtime-adapter
-  `^1.2.2`、i18n `^1.1.2`、database `^1.2.0`、esbuild `^1.3.0`、render `^1.2.0`、
-  router `^1.2.0`、server `^1.2.1`、socket-io `^1.2.0`、view `^2.2.0` 等）。
+  `^1.2.2`、i18n `^1.1.2`、database `^1.2.0`、esbuild `^1.3.0`、render
+  `^1.2.0`、 router `^1.2.0`、server `^1.2.1`、socket-io `^1.2.0`、view `^2.2.0`
+  等）。
 - **错误文案**：`RUNTIME_UNSUPPORTED` 从"仅支持 Deno 或 Bun"更新为"仅支持 Deno、
   Bun 或 Node.js"，覆盖 `errors.ts` 和全部 10 个 locale 文件。
-- **`package.json`**：移除 `private: true`，新增 `engines.node: ">=22"`、
-  `tsx` devDependency、`test:node` 脚本。
+- **`package.json`**：移除 `private: true`，新增 `engines.node: ">=22"`、 `tsx`
+  devDependency、`test:node` 脚本。
 
 ---
 

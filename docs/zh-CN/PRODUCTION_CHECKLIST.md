@@ -6,8 +6,10 @@
 ## 0. 应用种类（`AppConfig.kind`）
 
 - [ ] 确认顶层 `kind`：`web`（默认）/ `api` / `console`
-- [ ] **api**：生产可优先启用 `cors` / `rateLimit` / `compression`；handler 在 `routes/` 平铺
-- [ ] **console**：无 HTTP listen；运维用 `dweb-cli run <route>`（Cron/K8s CronJob）；勿误绑端口
+- [ ] **api**：生产可优先启用 `cors` / `rateLimit` / `compression`；handler 在
+      `routes/` 平铺
+- [ ] **console**：无 HTTP listen；运维用 `dweb-cli run <route>`（Cron/K8s
+      CronJob）；勿误绑端口
 - [ ] 多应用：**至多一个** `console/`；HTTP 应用各自 `dev`/`build`/`start`
 
 ## 1. 依赖与引擎
@@ -32,13 +34,18 @@ export default {
 ```
 
 - [ ] 生产启用 `securityHeaders`（至少 `true`）
-- [ ] 跨域 API 时配置 **`cors` 白名单**（推荐对象）；避免生产使用 `cors: true`（等价 `origin: "*"`，非 dev 会打警告）
+- [ ] 跨域 API 时配置 **`cors` 白名单**（推荐对象）；避免生产使用
+      `cors: true`（等价 `origin: "*"`，非 dev 会打警告）
 - [ ] 勿在 credentials 场景使用 `origin: "*"`
-- [ ] 使用 Socket.IO 跨域时配置 `socket.config.cors.origin` 白名单，或依赖 `AppConfig.cors.origin` 桥接；勿依赖「反射任意 Origin + credentials」
-- [ ] 公共接口评估 `rateLimit` 或前置网关限流（勿在无受信代理时盲信 `X-Forwarded-For`）
-- [ ] Session Cookie：`secure` + `httpOnly` + 合适 `sameSite`（生产示例勿留 `secure: false`）
+- [ ] 使用 Socket.IO 跨域时配置 `socket.config.cors.origin` 白名单，或依赖
+      `AppConfig.cors.origin` 桥接；勿依赖「反射任意 Origin + credentials」
+- [ ] 公共接口评估 `rateLimit` 或前置网关限流（勿在无受信代理时盲信
+      `X-Forwarded-For`）
+- [ ] Session Cookie：`secure` + `httpOnly` + 合适 `sameSite`（生产示例勿留
+      `secure: false`）
 - [ ] 勿将 `load()` / 错误栈细节暴露给生产客户端（框架 JSON 错误体已区分环境）
-- [ ] 需要请求耗时观测时配置 `onRequestEnd`（或插件同名钩子）；需要 scrape 端点时 opt-in `metrics: true`（默认 `/metrics`）
+- [ ] 需要请求耗时观测时配置 `onRequestEnd`（或插件同名钩子）；需要 scrape
+      端点时 opt-in `metrics: true`（默认 `/metrics`）
 
 ## 3. 性能与传输
 
@@ -69,13 +76,13 @@ export default {
 
 ## 相关配置键速查
 
-| 键                | 默认 | 说明                        |
-| ----------------- | ---- | --------------------------- |
-| `securityHeaders` | 关   | CSP / frame / referrer 等   |
-| `cors`            | 关   | `@dreamer/middlewares` cors |
+| 键                | 默认              | 说明                        |
+| ----------------- | ----------------- | --------------------------- |
+| `securityHeaders` | 关                | CSP / frame / referrer 等   |
+| `cors`            | 关                | `@dreamer/middlewares` cors |
 | `compression`     | **非 dev 默认开** | 响应 gzip/br；`false` 可关  |
-| `rateLimit`       | 关   | 简易限流                    |
-| `metrics`         | 关   | Prometheus 风格 `/metrics`  |
-| `session`         | 关   | 启用后 ctx.session 可用     |
+| `rateLimit`       | 关                | 简易限流                    |
+| `metrics`         | 关                | Prometheus 风格 `/metrics`  |
+| `session`         | 关                | 启用后 ctx.session 可用     |
 
 更完整的分析见 [OPTIMIZATION_ANALYSIS.md](./OPTIMIZATION_ANALYSIS.md)。

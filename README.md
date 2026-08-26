@@ -372,11 +372,11 @@ modes" and "Quick start" below.)
 Set top-level `kind` in `config/main.ts` (same level as `name`). Omit it to keep
 the legacy default: `web`.
 
-| `kind` | Purpose | Routes | Runtime |
-| --- | --- | --- | --- |
-| `web` (default) | Page app | `_app` / `_layout` / pages; nested `routes/api/` allowed | Client build + HTML shell (SSR/CSR/SSG/Hybrid) |
-| `api` | Pure HTTP API | No `_app`; handlers live directly under `routes/` (e.g. `routes/hello.ts` → `/hello`); **not** forced under `routes/api/` | **Skips** client build and HTML render; `dev`/`start` serve JSON/Response only |
-| `console` | CLI app | Export callable actions (e.g. `hello` / `crond`) | No HTTP listen; driven by `dweb-cli run <route>/<action>` |
+| `kind`          | Purpose       | Routes                                                                                                                    | Runtime                                                                        |
+| --------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `web` (default) | Page app      | `_app` / `_layout` / pages; nested `routes/api/` allowed                                                                  | Client build + HTML shell (SSR/CSR/SSG/Hybrid)                                 |
+| `api`           | Pure HTTP API | No `_app`; handlers live directly under `routes/` (e.g. `routes/hello.ts` → `/hello`); **not** forced under `routes/api/` | **Skips** client build and HTML render; `dev`/`start` serve JSON/Response only |
+| `console`       | CLI app       | Export callable actions (e.g. `hello` / `crond`)                                                                          | No HTTP listen; driven by `dweb-cli run <route>/<action>`                      |
 
 ```ts
 // Pure API config (config/main.ts)
@@ -1833,23 +1833,23 @@ manual reload.
 
 Use via `dweb-cli` or `deno task`:
 
-| Command          | Description            | Common options                       |
-| ---------------- | ---------------------- | ------------------------------------ |
-| `init [appName]` | Create project         | `--beta` use beta deps               |
-| `dev`            | Start dev server       | `-a, --app` app name (multi-app)     |
-| `build`          | Build for production   | `-a, --app` app name                 |
-| `start`          | Start production       | `-a, --app` app name                 |
-| `preview`        | Preview build          | `-p, --port` port; `-a, --app` app   |
-| `generate (g)`   | Code generation        | `-t, --type` type; `-n, --name` name |
+| Command          | Description                                                 | Common options                                                                                                               |
+| ---------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `init [appName]` | Create project                                              | `--beta` use beta deps                                                                                                       |
+| `dev`            | Start dev server                                            | `-a, --app` app name (multi-app)                                                                                             |
+| `build`          | Build for production                                        | `-a, --app` app name                                                                                                         |
+| `start`          | Start production                                            | `-a, --app` app name                                                                                                         |
+| `preview`        | Preview build                                               | `-p, --port` port; `-a, --app` app                                                                                           |
+| `generate (g)`   | Code generation                                             | `-t, --type` type; `-n, --name` name                                                                                         |
 | `test`           | Run tests (host launcher; write cases with `@dreamer/test`) | `-a/--app`; `--unit` / `--integration` / `--e2e`; `-f/--filter`; `--coverage`; `--runtime deno\|bun`; `--verbose`; path args |
-| `lint`           | Lint                   | -                                    |
-| `fmt`            | Format                 | -                                    |
-| `clean`          | Clean build output     | -                                    |
-| `update`         | Update deps & lockfile | `--latest`, `--interactive`          |
-| `db migrate (m)` | Database migration     | `-a, --action` up/down; `-n, --name` |
-| `db seed`        | Database seed          | -                                    |
-| `db status`      | Database status        | -                                    |
-| `upgrade`        | Upgrade dweb deps      | `--beta` use beta                    |
+| `lint`           | Lint                                                        | -                                                                                                                            |
+| `fmt`            | Format                                                      | -                                                                                                                            |
+| `clean`          | Clean build output                                          | -                                                                                                                            |
+| `update`         | Update deps & lockfile                                      | `--latest`, `--interactive`                                                                                                  |
+| `db migrate (m)` | Database migration                                          | `-a, --action` up/down; `-n, --name`                                                                                         |
+| `db seed`        | Database seed                                               | -                                                                                                                            |
+| `db status`      | Database status                                             | -                                                                                                                            |
+| `upgrade`        | Upgrade dweb deps                                           | `--beta` use beta                                                                                                            |
 
 **generate types**: `service`, `api`, `model`, `route`.
 
@@ -1929,13 +1929,14 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.5.11] - 2026-07-22
+### [3.7.0] - 2026-08-26
 
-**Added / Changed** — Opt-in `cors` / `compression` / `rateLimit` on
-`AppConfig`; split `csr-client-chunk` + HTTP middleware assembly; bump
-`@dreamer/view` `^2.0.5`, `runtime-adapter` `^1.1.0`, `@dreamer/test` `^1.1.10`;
-hashed asset `immutable` cache; e2e host timeouts + Bun browser e2e skip by
-default. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Added / Changed** — App kinds (`api` / `console` / `web`) with init templates
+and multi-app example; console router/middleware/slim; opt-in `/metrics`;
+`render.ssr.stream` (dev); hydration `mismatchMode`; `dweb test --report`;
+config split; bump `@dreamer/render` `^1.3.0`, `@dreamer/router` `^1.2.1`,
+`@dreamer/socket-io` `^1.2.1`; drop direct `@dreamer/image`. Full history:
+[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

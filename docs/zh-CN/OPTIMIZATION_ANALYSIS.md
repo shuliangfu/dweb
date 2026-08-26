@@ -21,9 +21,9 @@
 
 > **更新（2026-07-22）**：全景刷新版见\
 > **[全面分析-优化与增强.md](./全面分析-优化与增强.md)**（含 view 2.1
-> 协同、增强清单、测试真相、**§7.4 `dweb-cli test` × `@dreamer/test`（分析 + L1 实现回写）**、
-> **§7.4.10 测试报告 json/html/md 需求（仅规划）** 与新路线图）。本文仍保留 3.5.11
-> 当期落地记录。
+> 协同、增强清单、测试真相、**§7.4 `dweb-cli test` × `@dreamer/test`（分析 + L1
+> 实现回写）**、 **§7.4.10 测试报告 json/html/md 需求（仅规划）**
+> 与新路线图）。本文仍保留 3.5.11 当期落地记录。
 
 ---
 
@@ -227,12 +227,12 @@ dweb 将 **View 作为推荐引擎**。view **2.0.4** 与 dweb 直接相关的�
 
 ### P1 — 中期（1～2 迭代）
 
-| # | 项                                      | 状态   | 产出                                                |
-| - | --------------------------------------- | ------ | --------------------------------------------------- |
-| 1 | 继续拆 builder（dep 生成等）            | ✅     | `csr-client-dep` 已拆；入口/HMR 模板仍可再拆         |
-| 2 | 可选压缩 + 统一 hash 资产 Cache-Control | ✅     | `compression` 配置；`HASHED_ASSET_CACHE_CONTROL`    |
-| 3 | CORS/CSP/限流配置项                     | ✅     | `cors` / `securityHeaders.csp` / `rateLimit`；另有 `metrics` |
-| 4 | SSR streaming 试点（view 引擎优先）     | ✅     | render `renderSSRStream` + dweb `render.ssr.stream` |
+| # | 项                                      | 状态 | 产出                                                         |
+| - | --------------------------------------- | ---- | ------------------------------------------------------------ |
+| 1 | 继续拆 builder（dep 生成等）            | ✅   | `csr-client-dep` 已拆；入口/HMR 模板仍可再拆                 |
+| 2 | 可选压缩 + 统一 hash 资产 Cache-Control | ✅   | `compression` 配置；`HASHED_ASSET_CACHE_CONTROL`             |
+| 3 | CORS/CSP/限流配置项                     | ✅   | `cors` / `securityHeaders.csp` / `rateLimit`；另有 `metrics` |
+| 4 | SSR streaming 试点（view 引擎优先）     | ✅   | render `renderSSRStream` + dweb `render.ssr.stream`          |
 
 ### P2 — 架构 / 产品（RFC）
 

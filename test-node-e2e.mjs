@@ -13,9 +13,9 @@
  * 【Invariant】单文件单进程；退出码为通过/失败唯一判据。每文件 240s 超时兜底，
  * 避免 dev server 启动失败或浏览器卡住时无限挂起。
  */
-import { readdirSync, statSync, existsSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { join, resolve, relative } from "node:path";
+import { join, relative, resolve } from "node:path";
 
 process.env.CI = "true";
 

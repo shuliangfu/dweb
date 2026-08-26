@@ -381,7 +381,10 @@ export function createRendererSSR(
         const clientConfigScript = buildHydrationScript();
         const postInjections: Array<{
           content: string;
-          options?: { type?: "meta" | "script" | "data-script"; inHead?: boolean };
+          options?: {
+            type?: "meta" | "script" | "data-script";
+            inHead?: boolean;
+          };
         }> = [];
         if (styleTags) {
           postInjections.push({

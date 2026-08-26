@@ -100,14 +100,16 @@ export function getPackageJson(
   const scriptsBlock = isMulti
     ? [
       ...httpApps.map(
-        (app) => `    "dev:${app.name}": "bun run ${prefix}${app.name}/main.ts"`,
+        (app) =>
+          `    "dev:${app.name}": "bun run ${prefix}${app.name}/main.ts"`,
       ),
       ...httpApps.map(
         (app) =>
           `    "build:${app.name}": "bun run ${prefix}${app.name}/main.ts -- --build"`,
       ),
       ...httpApps.map(
-        (app) => `    "start:${app.name}": "bun run dist/${app.name}/server.js"`,
+        (app) =>
+          `    "start:${app.name}": "bun run dist/${app.name}/server.js"`,
       ),
       `    "test": "dweb-cli test"`,
     ].join(",\n")

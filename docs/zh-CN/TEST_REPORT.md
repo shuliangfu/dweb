@@ -4,28 +4,30 @@
 
 ## 📋 测试概览
 
-| 项目     | 值                          |
-| -------- | --------------------------- |
-| 框架版本 | 3.6.0                       |
-| 测试框架 | @dreamer/test@^1.2.3        |
-| 测试时间 | 2026-07-23                  |
+| 项目     | 值                               |
+| -------- | -------------------------------- |
+| 框架版本 | 3.7.0                            |
+| 测试框架 | @dreamer/test@^1.2.3             |
+| 测试时间 | 2026-08-26                       |
 | 测试环境 | Deno 2.x / Bun 1.x / Node.js 22+ |
 
 ---
 
-## 📊 三端测试结果（v3.6.0 Node.js 兼容性）
+## 📊 三端测试结果（v3.7.0）
 
-| 运行时   | 范围              | 文件数 | 结果    |
-| -------- | ----------------- | ------ | ------- |
-| Deno     | unit + integration | 86     | ✅ 通过 |
-| Bun      | unit              | 64     | ✅ 通过 |
-| Node.js  | unit + e2e        | 67     | ✅ 通过 |
+| 运行时  | 范围               | 文件数 | 结果    |
+| ------- | ------------------ | ------ | ------- |
+| Deno    | unit + integration | 86     | ✅ 通过 |
+| Bun     | unit               | 64     | ✅ 通过 |
+| Node.js | unit + e2e         | 67     | ✅ 通过 |
 
-> **Node.js**：64 个 unit 测试中 51 个在 Node CI 运行（排除 13 个：`cmd-*.test.ts`、
-> `init.test.ts`、`project.test.ts`、`test-launcher.test.ts`——这些启动真实 dweb 子进程，
-> 具运行时专有行为）。另经 `test-node-e2e.mjs` 跑 16 个 e2e 浏览器测试（Playwright
-> Chromium，覆盖与 Deno e2e 一致：Preact/React/View × CSR/SSR/SSG/Hybrid + server-request）。
-> 排除 integration（15 文件，启动示例项目）。Bun 浏览器 e2e 暂不开启（Playwright 兼容性）。
+> **Node.js**：64 个 unit 测试中 51 个在 Node CI 运行（排除 13
+> 个：`cmd-*.test.ts`、
+> `init.test.ts`、`project.test.ts`、`test-launcher.test.ts`——这些启动真实 dweb
+> 子进程， 具运行时专有行为）。另经 `test-node-e2e.mjs` 跑 16 个 e2e
+> 浏览器测试（Playwright Chromium，覆盖与 Deno e2e 一致：Preact/React/View ×
+> CSR/SSR/SSG/Hybrid + server-request）。 排除 integration（15
+> 文件，启动示例项目）。Bun 浏览器 e2e 暂不开启（Playwright 兼容性）。
 
 ---
 

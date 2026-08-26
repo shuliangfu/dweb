@@ -26,7 +26,10 @@ export function resolveApps(opts: InitOptions): InitAppSpec[] {
   if (opts.apps != null && opts.apps.length > 0) {
     return opts.apps;
   }
-  if (opts.appMode === "multi" && opts.appNames != null && opts.appNames.length > 0) {
+  if (
+    opts.appMode === "multi" && opts.appNames != null &&
+    opts.appNames.length > 0
+  ) {
     return opts.appNames.map((name) => ({ name, kind: "web" as const }));
   }
   return [{

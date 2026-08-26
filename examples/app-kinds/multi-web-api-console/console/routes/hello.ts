@@ -8,8 +8,6 @@ export const meta = {
 };
 
 export function world(ctx: ConsoleContext): void {
-  const name = typeof ctx.options.name === "string"
-    ? ctx.options.name
-    : "dweb";
+  const name = typeof ctx.options.name === "string" ? ctx.options.name : "dweb";
   console.log(`Hello, ${name}!`);
 }

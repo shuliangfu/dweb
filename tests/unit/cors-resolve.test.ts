@@ -15,7 +15,10 @@ describe("cors-resolve", () => {
     expect(resolveHttpCorsOptions(undefined)).toBeUndefined();
     expect(resolveHttpCorsOptions(true)).toEqual({});
     expect(
-      resolveHttpCorsOptions({ origin: ["https://a.example"], credentials: true }),
+      resolveHttpCorsOptions({
+        origin: ["https://a.example"],
+        credentials: true,
+      }),
     ).toEqual({ origin: ["https://a.example"], credentials: true });
   });
 

@@ -40,10 +40,12 @@ export interface RenderPipelineServer {
       next: () => Promise<void>,
     ) => Promise<void>,
     // 与 @dreamer/server Server.use 对齐（勿用 unknown，否则 Server 赋值会因参数逆变失败）
-    condition?: string | ((
-      ctx: HttpContext,
-      next: () => Promise<void>,
-    ) => Promise<void>),
+    condition?:
+      | string
+      | ((
+        ctx: HttpContext,
+        next: () => Promise<void>,
+      ) => Promise<void>),
     name?: string,
   ) => void;
 }
@@ -120,9 +122,10 @@ export interface RenderPipelinePlan {
 export function planRenderPipeline(
   mode: string | undefined,
 ): RenderPipelinePlan {
-  const m = mode === "csr" || mode === "hybrid" || mode === "ssg" || mode === "ssr"
-    ? mode
-    : "ssr";
+  const m =
+    mode === "csr" || mode === "hybrid" || mode === "ssg" || mode === "ssr"
+      ? mode
+      : "ssr";
   if (m === "csr" || m === "hybrid") {
     return {
       mode: m,

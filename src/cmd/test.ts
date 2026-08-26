@@ -151,15 +151,15 @@ export async function main(
     ? options.filter
     : undefined;
   const coverage = readCoverageOption(options);
-  const reportOut =
-    typeof options["report-out"] === "string" && options["report-out"].length > 0
-      ? options["report-out"]
-      : typeof options.junitPath === "string" && options.junitPath.length > 0
-      ? options.junitPath
-      : typeof options["junit-path"] === "string" &&
-          options["junit-path"].length > 0
-      ? options["junit-path"]
-      : undefined;
+  const reportOut = typeof options["report-out"] === "string" &&
+      options["report-out"].length > 0
+    ? options["report-out"]
+    : typeof options.junitPath === "string" && options.junitPath.length > 0
+    ? options.junitPath
+    : typeof options["junit-path"] === "string" &&
+        options["junit-path"].length > 0
+    ? options["junit-path"]
+    : undefined;
   const reporterParsed = parseTestReporter(options.reporter);
   if (reporterParsed.invalid) {
     error(
@@ -192,13 +192,12 @@ export async function main(
   }
   const productFormats: ProductReportFormat[] | undefined =
     productParsed.formats;
-  const reportDir =
-    typeof options["report-dir"] === "string" &&
+  const reportDir = typeof options["report-dir"] === "string" &&
       options["report-dir"].length > 0
-      ? options["report-dir"]
-      : typeof options.reportDir === "string" && options.reportDir.length > 0
-      ? options.reportDir
-      : "reports";
+    ? options["report-dir"]
+    : typeof options.reportDir === "string" && options.reportDir.length > 0
+    ? options.reportDir
+    : "reports";
 
   let junitPath = reportOut;
   let tempJunit = false;

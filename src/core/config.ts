@@ -20,12 +20,7 @@ import { pathToFileURL } from "node:url";
 import type { AppConfig } from "../types/app.ts";
 import { isPathWithinProject } from "../utils/path.ts";
 import { configProfileFromRuntimeEnv } from "../utils/runtime.ts";
-import {
-  cwd,
-  realPath,
-  resolve,
-  stat,
-} from "./runtime-adapter.ts";
+import { cwd, realPath, resolve, stat } from "./runtime-adapter.ts";
 import { deepMergeConfig, deepMergeParams } from "./config-merge.ts";
 import { validateConfig } from "./config-validate.ts";
 

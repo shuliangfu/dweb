@@ -302,7 +302,9 @@ describe("init (cmd/init.ts)", () => {
         .toBe(true);
       expect(await exists(join(testDir, "src", "api", "routes", "_app.tsx")))
         .toBe(false);
-      expect(await exists(join(testDir, "src", "console", "routes", "hello.ts")))
+      expect(
+        await exists(join(testDir, "src", "console", "routes", "hello.ts")),
+      )
         .toBe(true);
 
       const apiConfig = await readTextFile(

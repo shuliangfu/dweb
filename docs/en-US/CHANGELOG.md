@@ -8,6 +8,48 @@ and this project adheres to
 
 ---
 
+## [3.7.0] - 2026-08-26
+
+### Added
+
+- **App kinds (`api` / `console` / `web`)**: `AppConfig.kind` drives init
+  scaffolds, route layout, and runtime behavior. Pure API apps place handlers
+  directly under `routes/` (no forced `routes/api/`, no `_app`); console apps
+  use `dweb-cli run` without HTTP listen. Multi-app example:
+  `examples/app-kinds/multi-web-api-console`.
+- **Console runtime**: `console-router` / `console-list` / middleware pipeline,
+  module `before`/`after` hooks, help listing, and did-you-mean for unknown
+  routes; optional `console.slim` entry.
+- **Opt-in `/metrics`**: framework HTTP middleware can expose Prometheus-style
+  metrics when enabled in config.
+- **SSR streaming (dev)**: `render.ssr.stream` for progressive HTML in
+  development.
+- **Hydration `mismatchMode`**: configurable client/server markup mismatch
+  handling.
+- **`dweb test --report`**: product test report output (json/md/html).
+- **Config split**: `config-infer` / `config-merge` / `config-validate`
+  extracted from monolithic `config.ts`; render pipeline helpers in
+  `app-render-pipeline.ts`.
+
+### Changed
+
+- **Dependencies**: `@dreamer/render` `^1.3.0`, `@dreamer/router` `^1.2.1`
+  (incl. `RouterOptions.apiOnly`), `@dreamer/socket-io` `^1.2.1`. Removed direct
+  `@dreamer/image` dependency.
+- **CI / packaging**: align npm `overrides.preact` with direct dep.
+
+### Fixed
+
+- Deno lint `require-await` on app-kinds example / init API & console route
+  templates (drop unused `async` on sync handlers).
+- **Windows client routes**: restore directory-walk merge in
+  `getRouteClientManifest` so `ROUTE_LOADERS` is not emptied when Router
+  `fullPath`/`exists` disagree (fixes e2e `component "index" not found`).
+- Kind integration tests resolve `@dreamer/router` / `@dreamer/render` via JSR
+  (CI only clones dweb; no monorepo `file:` siblings).
+
+---
+
 ## [3.6.0] - 2026-07-23
 
 ### Added
@@ -24,10 +66,10 @@ and this project adheres to
 - **`getNodeRunArgsFromTaskString()`**: parses `deno run ...` task lines into
   Node-compatible args with `DENO_ONLY_FLAGS` filter set.
 - **Node.js CI**: 3 new jobs (Linux/macOS/Windows, Node 22) running unit tests
-  via `test-node.mjs` (51 files, excluding 13 runtime-specific subprocess
-  tests) **and e2e browser tests** via `test-node-e2e.mjs` (16 files, Playwright
-  Chromium — same coverage as Deno e2e). Total CI: 9 jobs (3 Deno + 3 Bun +
-  3 Node). Bun browser e2e remains disabled.
+  via `test-node.mjs` (51 files, excluding 13 runtime-specific subprocess tests)
+  **and e2e browser tests** via `test-node-e2e.mjs` (16 files, Playwright
+  Chromium — same coverage as Deno e2e). Total CI: 9 jobs (3 Deno + 3 Bun + 3
+  Node). Bun browser e2e remains disabled.
 - **`test-node.mjs`**: main-process test runner (no `--test` flag, avoids IPC
   serialization bug), `tsconfig.json` upgraded with Bundler moduleResolution.
 - **`test-node-e2e.mjs`**: Node e2e runner for `tests/e2e/*.test.ts` (serial,
@@ -35,8 +77,8 @@ and this project adheres to
 - **`tests/setup.ts`**: `getExampleChildProcessExecutable()` /
   `exampleBuildArgs()` / `exampleRunArgs()` now include Node branches
   (`node --import tsx <entry>`).
-- **Example projects**: all 30 `examples/*/{basic,advanced}/package.json`
-  marked `"type": "module"` (required for tsx to handle dweb's top-level
+- **Example projects**: all 30 `examples/*/{basic,advanced}/package.json` marked
+  `"type": "module"` (required for tsx to handle dweb's top-level
   `await initDwebI18n()` in ESM mode under Node).
 
 ### Changed
@@ -48,8 +90,8 @@ and this project adheres to
   `getEnvAll()` (replaces `Deno.env.toObject()`).
 - **Dependencies**: all 22 `@dreamer/*` deps synced to Node-compatible versions
   (runtime-adapter `^1.2.2`, i18n `^1.1.2`, database `^1.2.0`, esbuild `^1.3.0`,
-  render `^1.2.0`, router `^1.2.0`, server `^1.2.1`, socket-io `^1.2.0`,
-  view `^2.2.0`, etc.).
+  render `^1.2.0`, router `^1.2.0`, server `^1.2.1`, socket-io `^1.2.0`, view
+  `^2.2.0`, etc.).
 - **Error message**: `RUNTIME_UNSUPPORTED` updated from "Only Deno or Bun" to
   "Only Deno, Bun or Node.js" across `errors.ts` and all 10 locale files.
 - **`package.json`**: removed `private: true`, added `engines.node: ">=22"`,

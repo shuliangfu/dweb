@@ -4,31 +4,32 @@
 
 ## 📋 Test Overview
 
-| Item             | Value                          |
-| ---------------- | ------------------------------ |
-| Framework        | 3.6.0                          |
-| Test framework   | @dreamer/test@^1.2.3           |
-| Test date        | 2026-07-23                     |
+| Item             | Value                            |
+| ---------------- | -------------------------------- |
+| Framework        | 3.7.0                            |
+| Test framework   | @dreamer/test@^1.2.3             |
+| Test date        | 2026-08-26                       |
 | Test environment | Deno 2.x / Bun 1.x / Node.js 22+ |
 
 ---
 
 ## 📊 Test Results
 
-### Three-Runtime Summary (v3.6.0 Node.js Compatibility)
+### Three-Runtime Summary (v3.7.0)
 
-| Runtime  | Scope              | Files | Result  |
-| -------- | ------------------ | ----- | ------- |
-| Deno     | unit + integration | 86    | ✅ Pass |
-| Bun      | unit               | 64    | ✅ Pass |
-| Node.js  | unit + e2e         | 67    | ✅ Pass |
+| Runtime | Scope              | Files | Result  |
+| ------- | ------------------ | ----- | ------- |
+| Deno    | unit + integration | 86    | ✅ Pass |
+| Bun     | unit               | 64    | ✅ Pass |
+| Node.js | unit + e2e         | 67    | ✅ Pass |
 
-> **Node.js**: 51 of 64 unit test files run in Node CI (13 excluded: `cmd-*.test.ts`,
-> `init.test.ts`, `project.test.ts`, `test-launcher.test.ts` — these spawn real dweb
-> subprocesses with runtime-specific behavior). Additionally 16 e2e browser test files
-> run under Node via `test-node-e2e.mjs` (Playwright Chromium, same coverage as Deno e2e:
-> Preact/React/View × CSR/SSR/SSG/Hybrid + server-request). Excludes integration
-> (15 files, spawn example projects). Bun browser e2e remains disabled (Playwright
+> **Node.js**: 51 of 64 unit test files run in Node CI (13 excluded:
+> `cmd-*.test.ts`, `init.test.ts`, `project.test.ts`, `test-launcher.test.ts` —
+> these spawn real dweb subprocesses with runtime-specific behavior).
+> Additionally 16 e2e browser test files run under Node via `test-node-e2e.mjs`
+> (Playwright Chromium, same coverage as Deno e2e: Preact/React/View ×
+> CSR/SSR/SSG/Hybrid + server-request). Excludes integration (15 files, spawn
+> example projects). Bun browser e2e remains disabled (Playwright
 > compatibility).
 
 ### Overall Statistics (Deno, full suite)

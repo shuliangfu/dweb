@@ -26,12 +26,13 @@ import {
   loadDwebDenoJson,
 } from "../../utils/version.ts";
 import { DEFAULT_PORT_BASE, FALLBACK_VIEW_VERSION } from "./constants.ts";
-import {
-  getAppKind,
-  optsForKind,
-  resolveApps,
-} from "./helpers.ts";
-import type { AppKind, InitAppSpec, InitOptions, JsrVersions } from "./types.ts";
+import { getAppKind, optsForKind, resolveApps } from "./helpers.ts";
+import type {
+  AppKind,
+  InitAppSpec,
+  InitOptions,
+  JsrVersions,
+} from "./types.ts";
 import { getDenoJson } from "./templates/deno-json.ts";
 import { getPackageJson } from "./templates/package-json.ts";
 import { getMainTsMulti, getMainTsSingle } from "./templates/main.ts";
@@ -104,7 +105,9 @@ async function generateWebAppFiles(
 
   await writeTextFile(
     join(appBase, "main.ts"),
-    appName != null ? getMainTsMulti(webOpts, appName) : getMainTsSingle(webOpts),
+    appName != null
+      ? getMainTsMulti(webOpts, appName)
+      : getMainTsSingle(webOpts),
   );
   await writeTextFile(
     join(appBase, "config", "main.ts"),
@@ -118,15 +121,24 @@ async function generateWebAppFiles(
     join(appBase, "config", "main.prod.ts"),
     getConfigMainProdTs(port),
   );
-  await writeTextFile(join(appBase, "components", "Button.tsx"), getButtonTsx(webOpts));
+  await writeTextFile(
+    join(appBase, "components", "Button.tsx"),
+    getButtonTsx(webOpts),
+  );
   await writeTextFile(join(appBase, "routes", "_app.tsx"), getAppTsx(webOpts));
   await writeTextFile(
     join(appBase, "routes", "_layout.tsx"),
     getLayoutTsx(webOpts, appName),
   );
-  await writeTextFile(join(appBase, "routes", "index.tsx"), getIndexTsx(webOpts));
+  await writeTextFile(
+    join(appBase, "routes", "index.tsx"),
+    getIndexTsx(webOpts),
+  );
   if (exampleLevel === "with-about") {
-    await writeTextFile(join(appBase, "routes", "about.tsx"), getAboutTsx(webOpts));
+    await writeTextFile(
+      join(appBase, "routes", "about.tsx"),
+      getAboutTsx(webOpts),
+    );
     await ensureDir(join(appBase, "routes", "user"));
     await writeTextFile(
       join(appBase, "routes", "user", "[id].tsx"),
@@ -134,7 +146,10 @@ async function generateWebAppFiles(
     );
   }
   if (style === "tailwind") {
-    await writeTextFile(join(appBase, "assets", "tailwind.css"), getTailwindCss());
+    await writeTextFile(
+      join(appBase, "assets", "tailwind.css"),
+      getTailwindCss(),
+    );
   }
   if (style === "unocss") {
     await writeTextFile(join(appBase, "assets", "uno.css"), getUnoCss());
@@ -154,7 +169,9 @@ async function generateApiAppFiles(
 
   await writeTextFile(
     join(appBase, "main.ts"),
-    appName != null ? getMainTsMulti(apiOpts, appName) : getMainTsSingle(apiOpts),
+    appName != null
+      ? getMainTsMulti(apiOpts, appName)
+      : getMainTsSingle(apiOpts),
   );
   await writeTextFile(
     join(appBase, "config", "main.ts"),

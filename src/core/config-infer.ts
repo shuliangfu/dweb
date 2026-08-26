@@ -8,12 +8,7 @@ import { fileURLToPath } from "node:url";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $tr } from "../utils/i18n.ts";
 import { normalizePathForCompare } from "../utils/path.ts";
-import {
-  cwd,
-  existsSync,
-  join,
-  resolve,
-} from "./runtime-adapter.ts";
+import { cwd, existsSync, join, resolve } from "./runtime-adapter.ts";
 
 /** 入口 main 文件扩展名（预编译，避免重复创建）；i 标志兼容 Windows 路径大小写 */
 const RE_MAIN_EXT = /main\.(ts|tsx|js|jsx)$/i;

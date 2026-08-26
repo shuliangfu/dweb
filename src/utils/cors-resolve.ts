@@ -39,7 +39,7 @@ export function shouldWarnOpenCors(
  * 解析挂载 Socket.IO 时的 cors 配置。
  *
  * 优先级：socket 自身 `cors` → AppConfig.cors 对象的 origin → 开放 `origin: "*"`
- *（由 socket-io 解释为不反射、无 credentials；勿在此反射任意 Origin）。
+ * （由 socket-io 解释为不反射、无 credentials；勿在此反射任意 Origin）。
  *
  * @param appCors AppConfig.cors
  * @param socketCors socket 配置上已有的 cors（若有）
@@ -56,7 +56,9 @@ export function resolveSocketIoCorsOptions(
   if (socketCors != null) {
     return socketCors;
   }
-  if (typeof appCors === "object" && appCors !== null && appCors.origin != null) {
+  if (
+    typeof appCors === "object" && appCors !== null && appCors.origin != null
+  ) {
     return {
       origin: appCors.origin,
       methods: appCors.methods,

@@ -155,7 +155,12 @@ describe("运行时工具 (runtime.ts)", () => {
       const bunArgs = getTestArgs({ paths: ["tests"], filter: "a" }, "bun");
       expect(bunArgs).toEqual(["test", "tests", "-t", "a"]);
       const nodeArgs = getTestArgs({ paths: ["tests"], filter: "a" }, "node");
-      expect(nodeArgs).toEqual(["--import", "tsx", "--test-force-exit", "tests"]);
+      expect(nodeArgs).toEqual([
+        "--import",
+        "tsx",
+        "--test-force-exit",
+        "tests",
+      ]);
     });
 
     it("coverage 字符串应对 Deno 作为目录", () => {
@@ -200,9 +205,8 @@ describe("运行时工具 (runtime.ts)", () => {
     });
 
     it("Bun 不支持的 reporter 应抛错", () => {
-      expect(() =>
-        getTestArgs({ paths: ["tests"], reporter: "tap" }, "bun")
-      ).toThrow(/junit/);
+      expect(() => getTestArgs({ paths: ["tests"], reporter: "tap" }, "bun"))
+        .toThrow(/junit/);
     });
   });
 

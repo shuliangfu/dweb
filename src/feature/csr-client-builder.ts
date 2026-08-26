@@ -56,8 +56,8 @@ import {
   getChunkFileNameForComponent,
 } from "./csr-client-chunk.ts";
 import {
-  generateClientDepContent,
   type ClientDepRenderMode,
+  generateClientDepContent,
 } from "./csr-client-dep.ts";
 import {
   getRouteClientManifest,

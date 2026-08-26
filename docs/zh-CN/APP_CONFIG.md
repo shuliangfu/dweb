@@ -9,32 +9,32 @@
 
 `AppConfig` 是 dweb 框架的应用配置接口，包含以下主要模块：
 
-| 配置项                 | 类型                   | 说明                                                                                                                                                                                |
-| ---------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`                 | string                 | 应用名称                                                                                                                                                                            |
+| 配置项                 | 类型                          | 说明                                                                                                                                                                                                    |
+| ---------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                 | string                        | 应用名称                                                                                                                                                                                                |
 | `kind`                 | `"web" \| "api" \| "console"` | 应用种类（顶层字段，与 `name` 同级）。缺省 **`web`**。`api`：纯 HTTP API，跳过客户端构建与 HTML 壳，handler 直接放在 `routes/`；`console`：CLI，不 listen HTTP，用 `dweb-cli run <route>/<action>` 执行 |
-| `version`              | string                 | 应用版本                                                                                                                                                                            |
-| `language`             | AppLanguage            | 框架语言（zh-CN、en-US、ja-JP、ko-KR、es-ES、pt-BR、id-ID、de-DE、fr-FR；影响 CLI、日志、错误消息等；<br/>默认自动检测环境变量 LANGUAGE/LC_ALL/LANG，否则 en-US）                   |
-| `envPrefix`            | string                 | 环境变量前缀                                                                                                                                                                        |
-| `hotReload`            | boolean                | 是否启用热重载                                                                                                                                                                      |
-| `pluginManagerOptions` | PluginManagerOptions   | 插件管理器选项（autoActivate、continueOnError、enableHotReload 等）                                                                                                                 |
-| `server`               | ServerOptions          | 服务器配置                                                                                                                                                                          |
-| `router`               | RouterOptions          | 路由配置                                                                                                                                                                            |
-| `render`               | object                 | 渲染配置（`engine`、`mode`、`debug` 等；详见下文渲染相关小节与 [View 视图模板引擎](#view-视图模板引擎)）                                                                            |
-| `build`                | BuildAppConfig         | 构建配置                                                                                                                                                                            |
-| `logger`               | LoggerConfig           | 日志配置                                                                                                                                                                            |
-| `securityHeaders`      | boolean \| object      | **可选**安全响应头；默认关闭；`true` 启用 nosniff 等默认头，可配 CSP / frameOptions（见 [PRODUCTION_CHECKLIST](./PRODUCTION_CHECKLIST.md)）                                         |
-| `cors`                 | boolean \| CorsOptions | **可选** CORS；默认关闭。`true` ⇒ `origin: "*"`（非 dev 警告）；生产请用白名单。会桥接到未配置 `socket.cors` 的 Socket.IO                                                                 |
-| `onRequestEnd`         | `(info) => void`       | **可选** 请求结束钩子（path/method/status/durationMs）；插件亦可实现同名钩子                                                                                                          |
-| `compression`          | boolean \| object      | **可选** 响应压缩 gzip/br；**非 dev 默认开启**（`false` 可关）；dev 默认关                                                                                                          |
-| `rateLimit`            | boolean \| object      | **可选** 简易内存限流；默认关闭                                                                                                                                                     |
-| `metrics`              | boolean \| object      | **可选** Prometheus 风格 `/metrics`（`@dreamer/middlewares`）；默认关闭；与 `onRequestEnd` 互补                                                                                      |
-| `database`             | DatabaseAppConfig      | 数据库配置                                                                                                                                                                          |
-| `console`              | `{ slim?: boolean }`   | Console 专有（`kind: "console"`）。`slim: true` 跳过 banner / HTTP 中间件管理器以加速 `dweb-cli run` 冷启动（仍加载 plugins/logger/DB）；可用 `DWEB_CONSOLE_SLIM=1` 覆盖              |
-| `socket`               | SocketConfig           | 实时通信配置（type: socketio 或 websocket）                                                                                                                                         |
-| `session`              | SessionOptions         | 会话配置（@dreamer/session）：store 必填；可选 name、maxAge、cookie、autoSave、genId；cookie 选项在设置 session Cookie 时由中间件应用；启用后 load()、API、中间件中可用 ctx.session |
-| `plugins`              | Array                  | 插件列表                                                                                                                                                                            |
-| `middlewares`          | Array                  | 中间件列表                                                                                                                                                                          |
+| `version`              | string                        | 应用版本                                                                                                                                                                                                |
+| `language`             | AppLanguage                   | 框架语言（zh-CN、en-US、ja-JP、ko-KR、es-ES、pt-BR、id-ID、de-DE、fr-FR；影响 CLI、日志、错误消息等；<br/>默认自动检测环境变量 LANGUAGE/LC_ALL/LANG，否则 en-US）                                       |
+| `envPrefix`            | string                        | 环境变量前缀                                                                                                                                                                                            |
+| `hotReload`            | boolean                       | 是否启用热重载                                                                                                                                                                                          |
+| `pluginManagerOptions` | PluginManagerOptions          | 插件管理器选项（autoActivate、continueOnError、enableHotReload 等）                                                                                                                                     |
+| `server`               | ServerOptions                 | 服务器配置                                                                                                                                                                                              |
+| `router`               | RouterOptions                 | 路由配置                                                                                                                                                                                                |
+| `render`               | object                        | 渲染配置（`engine`、`mode`、`debug` 等；详见下文渲染相关小节与 [View 视图模板引擎](#view-视图模板引擎)）                                                                                                |
+| `build`                | BuildAppConfig                | 构建配置                                                                                                                                                                                                |
+| `logger`               | LoggerConfig                  | 日志配置                                                                                                                                                                                                |
+| `securityHeaders`      | boolean \| object             | **可选**安全响应头；默认关闭；`true` 启用 nosniff 等默认头，可配 CSP / frameOptions（见 [PRODUCTION_CHECKLIST](./PRODUCTION_CHECKLIST.md)）                                                             |
+| `cors`                 | boolean \| CorsOptions        | **可选** CORS；默认关闭。`true` ⇒ `origin: "*"`（非 dev 警告）；生产请用白名单。会桥接到未配置 `socket.cors` 的 Socket.IO                                                                               |
+| `onRequestEnd`         | `(info) => void`              | **可选** 请求结束钩子（path/method/status/durationMs）；插件亦可实现同名钩子                                                                                                                            |
+| `compression`          | boolean \| object             | **可选** 响应压缩 gzip/br；**非 dev 默认开启**（`false` 可关）；dev 默认关                                                                                                                              |
+| `rateLimit`            | boolean \| object             | **可选** 简易内存限流；默认关闭                                                                                                                                                                         |
+| `metrics`              | boolean \| object             | **可选** Prometheus 风格 `/metrics`（`@dreamer/middlewares`）；默认关闭；与 `onRequestEnd` 互补                                                                                                         |
+| `database`             | DatabaseAppConfig             | 数据库配置                                                                                                                                                                                              |
+| `console`              | `{ slim?: boolean }`          | Console 专有（`kind: "console"`）。`slim: true` 跳过 banner / HTTP 中间件管理器以加速 `dweb-cli run` 冷启动（仍加载 plugins/logger/DB）；可用 `DWEB_CONSOLE_SLIM=1` 覆盖                                |
+| `socket`               | SocketConfig                  | 实时通信配置（type: socketio 或 websocket）                                                                                                                                                             |
+| `session`              | SessionOptions                | 会话配置（@dreamer/session）：store 必填；可选 name、maxAge、cookie、autoSave、genId；cookie 选项在设置 session Cookie 时由中间件应用；启用后 load()、API、中间件中可用 ctx.session                     |
+| `plugins`              | Array                         | 插件列表                                                                                                                                                                                                |
+| `middlewares`          | Array                         | 中间件列表                                                                                                                                                                                              |
 
 ---
 
@@ -390,8 +390,9 @@ export default config;
 时，可通过以下配置控制是否启用**客户端激活**（向页面注入 `globalThis.__DATA__`
 与客户端脚本，使当前页在加载后变为可交互，如计数器、点击事件，且不启用客户端路由）。
 
-- **`render.loadCache`**（默认 **关闭**）：SSR 页面 `load()` 结果短期内存缓存。  
-  `true` 或 `{ ttlMs }` 才开启。Key 仅含 URL+params、**不含 session**，勿对个性化页面开启。
+- **`render.loadCache`**（默认 **关闭**）：SSR 页面 `load()` 结果短期内存缓存。\
+  `true` 或 `{ ttlMs }` 才开启。Key 仅含 URL+params、**不含
+  session**，勿对个性化页面开启。
 - **`render.ssr.hydrate`**（默认 `true`）：当 `mode` 为 `ssr` 时，为 `true`
   则服务端在 HTML 中注入 hydration 数据与 `_client.js`，客户端仅对当前页做
   hydrate，链接点击走整页跳转（不做 SPA 路由）。设为 `false` 则仅输出服务端
@@ -404,9 +405,9 @@ export default config;
   hydrate。设为 `false` 则仅输出静态 HTML。
 - **`render.hydration.mismatchMode`**（`"continue" | "assert" | "remount"`，**仅
   View**）：整页 Hybrid/SSR 水合错位策略。会注入
-  `globalThis.__DWEB_MISMATCH_MODE__`。**未设置**仍清空再 mount（与今日默认一致）。
-  `continue`/`assert` 走 view `hydrate`；`remount` 仍清空再 mount。
-  **React/Preact 不支持**（忽略）。
+  `globalThis.__DWEB_MISMATCH_MODE__`。**未设置**仍清空再
+  mount（与今日默认一致）。 `continue`/`assert` 走 view `hydrate`；`remount`
+  仍清空再 mount。 **React/Preact 不支持**（忽略）。
 
 两选项均依赖客户端使用 `@dreamer/router@^1.0.10`（由生成代码引入），以便在启用
 hydrate 时链接使用整页跳转而非客户端路由。
@@ -432,9 +433,9 @@ hydrate 时链接使用整页跳转而非客户端路由。
 
 **配置方式**：在 `AppConfig` 中设置 `render.engine: "view"`。客户端构建将使用
 `@dreamer/render/client/view` 进行水合与 CSR，无需单独「View
-初始化」步骤，框架会自动接入适配器。可选
-`render.hydration.mismatchMode`（仅 View；见上文「SSR/SSG 客户端激活」）控制
-Hybrid/SSR 首屏清空再 mount 或走 `hydrate`。
+初始化」步骤，框架会自动接入适配器。可选 `render.hydration.mismatchMode`（仅
+View；见上文「SSR/SSG 客户端激活」）控制 Hybrid/SSR 首屏清空再 mount 或走
+`hydrate`。
 
 **会话**：需要状态化应用时，可将 View 与
 `config.session`（`@dreamer/session`）搭配使用。配置 `session` 后，在
