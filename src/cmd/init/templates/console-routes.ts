@@ -26,7 +26,7 @@ export const meta = {
 /**
  * 示例命令：打印问候
  */
-export async function world(_ctx: ConsoleContext): Promise<void> {
+export function world(_ctx: ConsoleContext): void {
   console.log(${JSON.stringify($tr("init.template.consoleHelloOutput"))});
 }
 `;
@@ -55,14 +55,14 @@ export const meta = {
 /**
  * 启动示例任务
  */
-export async function start(_ctx: ConsoleContext): Promise<void> {
+export function start(_ctx: ConsoleContext): void {
   console.log(${JSON.stringify($tr("init.template.consoleCrondStart"))});
 }
 
 /**
  * 停止示例任务
  */
-export async function stop(_ctx: ConsoleContext): Promise<void> {
+export function stop(_ctx: ConsoleContext): void {
   console.log(${JSON.stringify($tr("init.template.consoleCrondStop"))});
 }
 `;

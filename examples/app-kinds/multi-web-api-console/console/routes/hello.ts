@@ -7,7 +7,7 @@ export const meta = {
   },
 };
 
-export async function world(ctx: ConsoleContext): Promise<void> {
+export function world(ctx: ConsoleContext): void {
   const name = typeof ctx.options.name === "string"
     ? ctx.options.name
     : "dweb";

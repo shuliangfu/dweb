@@ -20,7 +20,7 @@ import { json } from "@dreamer/router";
 /**
  * GET /hello
  */
-export async function GET(_ctx: ApiContext) {
+export function GET(_ctx: ApiContext) {
   return json({ message: ${JSON.stringify(helloMsg)} });
 }
 
@@ -54,7 +54,7 @@ const users = [
 /**
  * GET /users
  */
-export async function GET(_ctx: ApiContext) {
+export function GET(_ctx: ApiContext) {
   return json({ users });
 }
 `;
@@ -78,7 +78,7 @@ const users: Record<string, { id: string; name: string }> = {
 /**
  * GET /users/:id
  */
-export async function GET(ctx: ApiContext) {
+export function GET(ctx: ApiContext) {
   const id = ctx.params?.id ?? "";
   const user = users[id];
   if (!user) {
