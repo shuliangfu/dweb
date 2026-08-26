@@ -4,8 +4,8 @@
  */
 
 import { DEFAULT_PORT_BASE } from "../constants.ts";
-import { $tr, getDefaultLanguage } from "../helpers.ts";
-import type { InitOptions } from "../types.ts";
+import { $tr, getAppKind, getDefaultLanguage } from "../helpers.ts";
+import type { AppKind, InitOptions } from "../types.ts";
 import {
   getFullCommonConfigMainTs,
   getFullSingleAppConfigMainTs,
@@ -19,6 +19,7 @@ export function getConfigMainTs(
   opts: InitOptions,
   appName?: string,
   _port?: number,
+  kindOverride?: AppKind,
 ): string {
   const prefix = opts.useSrc ? "src/" : "";
   const routesDir = appName
@@ -33,9 +34,97 @@ export function getConfigMainTs(
   const configName = appName != null
     ? `${opts.projectName}-${appName}`
     : opts.projectName;
+  const kind = kindOverride ?? getAppKind(opts, appName);
   const renderMode = opts.renderMode ?? "hybrid";
 
   if (appName) {
+    if (kind === "console") {
+      return `/**
+ * ${$tr("init.comments.appConfig", { appName })}
+ * ${$tr("init.comments.commonFieldsMerged")}
+ */
+import type { AppConfig } from "@dreamer/dweb";
+
+export default {
+  /** ${$tr("init.comments.nameDesc")} */
+  name: "${configName}",
+  /** ${$tr("init.comments.kindDesc")} */
+  kind: "console",
+  /** ${$tr("init.comments.versionDesc")} */
+  version: "1.0.0",
+  /** ${$tr("init.comments.routerDesc")} */
+  router: {
+    /** ${$tr("init.comments.routesDirDesc")} */
+    routesDir: "${routesDir}",
+  },
+  /** ${$tr("init.comments.loggerDesc")} */
+  logger: {
+    level: "info",
+    format: "text",
+    output: {
+      console: "auto",
+      file: {
+        path: "runtime/logs/${appName}.log",
+        rotate: true,
+        strategy: "size",
+        maxSize: 10 * 1024 * 1024,
+        maxFiles: 5,
+      },
+    },
+  },
+} satisfies AppConfig;
+`;
+    }
+
+    if (kind === "api") {
+      return `/**
+ * ${$tr("init.comments.appConfig", { appName })}
+ * ${$tr("init.comments.commonFieldsMerged")}
+ * Production: securityHeaders / cors allowlist / rateLimit — see PRODUCTION_CHECKLIST
+ */
+import type { AppConfig } from "@dreamer/dweb";
+
+export default {
+  /** ${$tr("init.comments.nameDesc")} */
+  name: "${configName}",
+  /** ${$tr("init.comments.kindDesc")} */
+  kind: "api",
+  /** ${$tr("init.comments.versionDesc")} */
+  version: "1.0.0",
+  /** ${$tr("init.comments.routerDesc")} */
+  router: {
+    /** ${$tr("init.comments.routesDirDesc")} */
+    routesDir: "${routesDir}",
+  },
+  /** ${$tr("init.comments.loggerDesc")} */
+  logger: {
+    level: "info",
+    format: "text",
+    output: {
+      console: "auto",
+      file: {
+        path: "runtime/logs/${appName}.log",
+        rotate: true,
+        strategy: "size",
+        maxSize: 10 * 1024 * 1024,
+        maxFiles: 5,
+      },
+    },
+  },
+  /** ${$tr("init.comments.buildDesc")} */
+  build: {
+    server: {
+      /** ${$tr("init.comments.useNativeCompileDesc")} */
+      useNativeCompile: false,
+    },
+  },
+  // securityHeaders: true,
+  // cors: { origin: ["https://app.example.com"], credentials: true },
+  // rateLimit: { windowMs: 60_000, max: 120 },
+} satisfies AppConfig;
+`;
+    }
+
     return `/**
  * ${$tr("init.comments.appConfig", { appName })}
  * ${$tr("init.comments.commonFieldsMerged")}
@@ -45,6 +134,8 @@ import type { AppConfig } from "@dreamer/dweb";
 export default {
   /** ${$tr("init.comments.nameDesc")} */
   name: "${configName}",
+  /** ${$tr("init.comments.kindDesc")} */
+  kind: "web",
   /** ${$tr("init.comments.versionDesc")} */
   version: "1.0.0",
   /** ${$tr("init.comments.routerDesc")} */
@@ -105,7 +196,7 @@ export default {
 `;
   }
 
-  return getFullSingleAppConfigMainTs(opts);
+  return getFullSingleAppConfigMainTs(opts, kind);
 }
 
 /** 开发环境配置 main.dev.ts：host 与 port 单独在此，开发时仅监听本机 */

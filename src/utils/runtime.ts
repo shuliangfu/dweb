@@ -247,6 +247,9 @@ export function envWithRuntime(
  */
 export type HostTestRuntime = "deno" | "bun" | "node";
 
+/** 宿主测试 reporter（L1.5-a 透传） */
+export type HostTestReporter = "junit" | "tap" | "dot";
+
 /**
  * `getTestArgs` 选项：路径、filter、coverage 等产品层统一 flag
  */
@@ -265,6 +268,14 @@ export interface GetTestArgsOptions {
    * - `string`：Deno 用作覆盖率目录；Bun 仍为 `--coverage`（Bun 不接受自定义 dir 于此映射）
    */
   coverage?: boolean | string;
+  /**
+   * 宿主 reporter：`junit` | `tap` | `dot`
+   * - Deno：`--reporter=`；junit 可配合 `--junit-path=`
+   * - Bun：仅可靠支持 `junit`（+ `--reporter-outfile`）；`tap`/`dot` 显式失败
+   */
+  reporter?: HostTestReporter;
+  /** 报告输出路径（junit）；Deno → `--junit-path=`，Bun → `--reporter-outfile=` */
+  reportOut?: string;
 }
 
 /**
@@ -285,7 +296,26 @@ function normalizeTestArgsOptions(
     paths,
     filter: pathOrOptions.filter,
     coverage: pathOrOptions.coverage,
+    reporter: pathOrOptions.reporter,
+    reportOut: pathOrOptions.reportOut,
   };
+}
+
+/**
+ * 校验并规范化 `--reporter` 值；非法返回 invalid。
+ */
+export function parseTestReporter(
+  value: unknown,
+): { reporter?: HostTestReporter; invalid?: string } {
+  if (value === undefined || value === null || value === false) {
+    return {};
+  }
+  const s = String(value).trim().toLowerCase();
+  if (!s) return {};
+  if (s === "junit" || s === "tap" || s === "dot") {
+    return { reporter: s };
+  }
+  return { invalid: s };
 }
 
 /**
@@ -317,6 +347,19 @@ export function getTestArgs(
       throwDwebError(DwebErrorCode.RUNTIME_UNSUPPORTED);
     })());
 
+  if (opts.reporter) {
+    const unsupported = describeUnsupportedTestReporter(
+      opts.reporter,
+      opts.reportOut,
+      runtime,
+    );
+    if (unsupported) {
+      throw new Error(unsupported);
+    }
+  } else if (opts.reportOut) {
+    throw new Error("--report-out requires --reporter junit");
+  }
+
   // Node：无 test 子命令，直接以 node 参数运行测试文件（主进程执行，避免 IPC 序列化 bug）
   if (runtime === "node") {
     return ["--import", "tsx", "--test-force-exit", ...opts.paths];
@@ -347,7 +390,41 @@ export function getTestArgs(
     }
   }
 
+  if (opts.reporter) {
+    if (runtime === "deno") {
+      args.push(`--reporter=${opts.reporter}`);
+      if (opts.reportOut) {
+        args.push(`--junit-path=${opts.reportOut}`);
+      }
+    } else {
+      args.push("--reporter=junit");
+      if (opts.reportOut) {
+        args.push(`--reporter-outfile=${opts.reportOut}`);
+      }
+    }
+  }
+
   return args;
+}
+
+/**
+ * 返回不支持的 reporter 组合说明；支持则返回 undefined。
+ */
+export function describeUnsupportedTestReporter(
+  reporter: HostTestReporter,
+  reportOut: string | undefined,
+  host: HostTestRuntime,
+): string | undefined {
+  if (reportOut && reporter !== "junit") {
+    return `--report-out is only valid with --reporter junit (got ${reporter})`;
+  }
+  if (host === "bun" && reporter !== "junit") {
+    return `Bun test only supports --reporter junit (got ${reporter})`;
+  }
+  if (host === "node") {
+    return "Node test does not support --reporter yet";
+  }
+  return undefined;
 }
 
 /**

@@ -24,7 +24,7 @@ import {
   join,
   relative,
 } from "../core/runtime-adapter.ts";
-import type { AppConfig } from "../types/app.ts";
+import { type AppConfig, isApiKind } from "../types/app.ts";
 import {
   getInferredBuildOutputDirs,
   getMainModulePath,
@@ -69,19 +69,23 @@ export function initializeBuild(
 
   // 构建 BuilderConfig
   // 处理客户端配置：优先使用 buildConfig.client，如果没有则从 renderConfig 生成
+  // 纯 API 应用不生成客户端配置
   let clientConfig: ClientConfig | undefined;
   const existingClientConfig = buildConfig.client as ClientConfig | undefined;
+  const apiApp = isApiKind(config);
 
-  if (existingClientConfig) {
-    // 如果已有客户端配置，直接使用
-    clientConfig = existingClientConfig;
-  } else if (renderConfig.engine) {
-    // 如果没有客户端配置但有渲染引擎，生成默认配置
-    clientConfig = {
-      engine: renderConfig.engine,
-      output: "./dist/client",
-      // 其他字段使用默认值或 undefined
-    };
+  if (!apiApp) {
+    if (existingClientConfig) {
+      // 如果已有客户端配置，直接使用
+      clientConfig = existingClientConfig;
+    } else if (renderConfig.engine) {
+      // 如果没有客户端配置但有渲染引擎，生成默认配置
+      clientConfig = {
+        engine: renderConfig.engine,
+        output: "./dist/client",
+        // 其他字段使用默认值或 undefined
+      };
+    }
   }
 
   // 构建调试：config.build.client.debug / config.build.server.debug 传递至 esbuild
@@ -262,8 +266,10 @@ export async function runBuildWithBuilder(
 
   // 客户端配置（非 SSG 时准备入口并构建）
   // 客户端构建必须带上 strip-load 插件，剔除路由模块的 load 导出及其依赖，避免 node:* 等打进浏览器 chunk
+  // 纯 API 或显式 skipClient：跳过客户端
+  const skipClient = options?.skipClient === true || isApiKind(config);
   let clientConfig: ClientConfig | undefined;
-  if (!options?.skipClient) {
+  if (!skipClient) {
     const prepared = await prepareClientBuildEntry(container, config);
     const buildClient = (config.build as { client?: { debug?: boolean } })
       ?.client;

@@ -3,6 +3,13 @@
 > 与 `OPTIMIZATION_ANALYSIS` 配套。以下配置均为
 > **opt-in**（默认关闭），避免破坏现有项目。
 
+## 0. 应用种类（`AppConfig.kind`）
+
+- [ ] 确认顶层 `kind`：`web`（默认）/ `api` / `console`
+- [ ] **api**：生产可优先启用 `cors` / `rateLimit` / `compression`；handler 在 `routes/` 平铺
+- [ ] **console**：无 HTTP listen；运维用 `dweb-cli run <route>`（Cron/K8s CronJob）；勿误绑端口
+- [ ] 多应用：**至多一个** `console/`；HTTP 应用各自 `dev`/`build`/`start`
+
 ## 1. 依赖与引擎
 
 - [ ] `@dreamer/view` ≥ **2.0.4**（推荐引擎；IME/路由 SSR/For 键控修复）
@@ -25,21 +32,25 @@ export default {
 ```
 
 - [ ] 生产启用 `securityHeaders`（至少 `true`）
-- [ ] 跨域 API 时配置 `cors`（勿在 credentials 场景使用 `origin: "*"`）
-- [ ] 公共接口评估 `rateLimit` 或前置网关限流
-- [ ] Session Cookie：`secure` + `httpOnly` + 合适 `sameSite`
+- [ ] 跨域 API 时配置 **`cors` 白名单**（推荐对象）；避免生产使用 `cors: true`（等价 `origin: "*"`，非 dev 会打警告）
+- [ ] 勿在 credentials 场景使用 `origin: "*"`
+- [ ] 使用 Socket.IO 跨域时配置 `socket.config.cors.origin` 白名单，或依赖 `AppConfig.cors.origin` 桥接；勿依赖「反射任意 Origin + credentials」
+- [ ] 公共接口评估 `rateLimit` 或前置网关限流（勿在无受信代理时盲信 `X-Forwarded-For`）
+- [ ] Session Cookie：`secure` + `httpOnly` + 合适 `sameSite`（生产示例勿留 `secure: false`）
 - [ ] 勿将 `load()` / 错误栈细节暴露给生产客户端（框架 JSON 错误体已区分环境）
+- [ ] 需要请求耗时观测时配置 `onRequestEnd`（或插件同名钩子）；需要 scrape 端点时 opt-in `metrics: true`（默认 `/metrics`）
 
 ## 3. 性能与传输
 
 ```ts
 export default {
-  // 仅生产建议开启；开发态有 dev-no-cache，压缩收益有限
-  compression: true, // 或 { threshold: 1024, enableBrotli: true }
+  // start/build 默认已开启压缩；仅需自定义阈值或显式关闭时再写
+  // compression: { threshold: 1024, enableBrotli: true },
+  // compression: false,
 };
 ```
 
-- [ ] 启用 `compression`（gzip；可按需 brotli）
+- [ ] 确认生产压缩行为（默认开；需关则 `compression: false`；可按需 brotli）
 - [ ] 带 hash 的 `/_client*.js` 已使用长缓存（框架默认
       `max-age=31536000, immutable`）
 - [ ] HTML / `__data` 保持 no-store / 短缓存，勿与静态资源混用
@@ -62,8 +73,9 @@ export default {
 | ----------------- | ---- | --------------------------- |
 | `securityHeaders` | 关   | CSP / frame / referrer 等   |
 | `cors`            | 关   | `@dreamer/middlewares` cors |
-| `compression`     | 关   | 响应 gzip/br                |
+| `compression`     | **非 dev 默认开** | 响应 gzip/br；`false` 可关  |
 | `rateLimit`       | 关   | 简易限流                    |
+| `metrics`         | 关   | Prometheus 风格 `/metrics`  |
 | `session`         | 关   | 启用后 ctx.session 可用     |
 
 更完整的分析见 [OPTIMIZATION_ANALYSIS.md](./OPTIMIZATION_ANALYSIS.md)。

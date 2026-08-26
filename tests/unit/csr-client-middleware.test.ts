@@ -5,6 +5,7 @@
  * - createClientScriptMiddleware 返回中间件函数
  * - 中间件对 /_client.js 以外路径调用 next
  * - 生产模式下从静态目录读取
+ * - 生产态内存缓存（哈希 immutable / 未哈希 mtime）
  */
 
 import "../setup.ts";
@@ -17,11 +18,29 @@ import {
   remove,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
-import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "@dreamer/test";
 import { initializeServiceContainer } from "../../src/core/service.ts";
-import { createClientScriptMiddleware } from "../../src/feature/csr-client-middleware.ts";
+import {
+  clearProdClientFileCache,
+  createClientScriptMiddleware,
+} from "../../src/feature/csr-client-middleware.ts";
 import type { AppConfig } from "../../src/types/app.ts";
+import {
+  HASHED_ASSET_CACHE_CONTROL,
+  UNHASHED_CLIENT_ENTRY_CACHE_CONTROL,
+} from "../../src/utils/constants.ts";
 import { initializeLogger } from "../../src/utils/logger.ts";
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 /** 模拟 HttpContext */
 function mockContext(pathname: string) {
@@ -51,6 +70,10 @@ describe("CSR 客户端脚本中间件 (csr-client-middleware.ts)", () => {
   afterAll(async () => {
     chdir(originalCwd);
     await remove(testDir, { recursive: true });
+  });
+
+  beforeEach(() => {
+    clearProdClientFileCache();
   });
 
   it("createClientScriptMiddleware 应返回函数", () => {
@@ -161,7 +184,73 @@ describe("CSR 客户端脚本中间件 (csr-client-middleware.ts)", () => {
 
     expect(ctx.response).toBeDefined();
     expect(ctx.response?.status).toBe(200);
+    expect(ctx.response?.headers.get("Cache-Control")).toBe(
+      HASHED_ASSET_CACHE_CONTROL,
+    );
     const body = await ctx.response?.text();
     expect(body).toContain("// chunk content");
+  });
+
+  it("生产模式哈希 chunk 删除后仍应命中内存缓存", async () => {
+    const clientDir = join(testDir, "dist", "client-hashed-cache");
+    await ensureDir(clientDir);
+    const chunkPath = join(clientDir, "chunk-deadbeef.js");
+    await writeTextFile(chunkPath, "// hashed immutable");
+
+    const container = initializeServiceContainer();
+    const config: AppConfig = {
+      name: "test",
+      build: {
+        client: { output: "dist/client-hashed-cache", engine: "preact" },
+      },
+      server: { mode: "prod" },
+    };
+    initializeLogger(container, config);
+
+    const middleware = createClientScriptMiddleware(container, config);
+    const first = mockContext("/_client/chunk-deadbeef.js");
+    await middleware(first as never, first.next);
+    expect(first.response?.status).toBe(200);
+    expect(await first.response?.text()).toContain("hashed immutable");
+
+    await remove(chunkPath);
+    const second = mockContext("/_client/chunk-deadbeef.js");
+    await middleware(second as never, second.next);
+    expect(second.response?.status).toBe(200);
+    expect(second.response?.headers.get("Cache-Control")).toBe(
+      HASHED_ASSET_CACHE_CONTROL,
+    );
+    expect(await second.response?.text()).toContain("hashed immutable");
+  });
+
+  it("生产模式未哈希 _client.js 在 mtime 变更后应返回新内容", async () => {
+    const clientDir = join(testDir, "dist", "client-mtime");
+    await ensureDir(clientDir);
+    const mainPath = join(clientDir, "_client.js");
+    await writeTextFile(mainPath, "console.log('v1');");
+
+    const container = initializeServiceContainer();
+    const config: AppConfig = {
+      name: "test",
+      build: { client: { output: "dist/client-mtime", engine: "preact" } },
+      server: { mode: "prod" },
+    };
+    initializeLogger(container, config);
+
+    const middleware = createClientScriptMiddleware(container, config);
+    const first = mockContext("/_client.js");
+    await middleware(first as never, first.next);
+    expect(first.response?.status).toBe(200);
+    expect(first.response?.headers.get("Cache-Control")).toBe(
+      UNHASHED_CLIENT_ENTRY_CACHE_CONTROL,
+    );
+    expect(await first.response?.text()).toContain("v1");
+
+    await sleep(20);
+    await writeTextFile(mainPath, "console.log('v2');");
+    const second = mockContext("/_client.js");
+    await middleware(second as never, second.next);
+    expect(second.response?.status).toBe(200);
+    expect(await second.response?.text()).toContain("v2");
   });
 });

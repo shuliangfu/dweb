@@ -7,8 +7,9 @@
  * SSR 时：若路由含 `import "*.css"`，Deno/Bun 原生不支持加载 CSS 模块，
  * 会剥离 CSS 导入、提取 CSS 内容（可选注入页面）、写入临时文件再加载。
  *
- * 优化：对含 CSS 导入的路由，按「剥离后源码 + CSS 内容」做内容哈希缓存，
- * 相同内容复用已加载模块，避免重复的读文件、写临时、import、删临时等磁盘 I/O。
+ * 优化：
+ * - 含 CSS 导入的路由：按「剥离后源码 + CSS 内容」做内容哈希缓存；
+ * - 全路径按 mtime + 模块版本做短路：未变更时跳过 `readTextFile` / 再 import。
  */
 
 import type { Logger } from "@dreamer/logger";
@@ -23,6 +24,7 @@ import {
   realPath,
   remove,
   resolve,
+  stat,
   writeTextFile,
 } from "../core/runtime-adapter.ts";
 import { getCacheOptions } from "../utils/constants.ts";
@@ -46,6 +48,19 @@ interface CssRouteCacheEntry {
 const cssRouteCache = new Map<string, CssRouteCacheEntry>();
 
 /**
+ * mtime 短路缓存：同一路径在 mtime 与模块版本未变时复用已加载模块，
+ * 避免每次 SSR/__data 请求都 `readTextFile` 探测 CSS 导入。
+ */
+interface MtimeModuleCacheEntry {
+  mtimeMs: number;
+  version: number;
+  module: Record<string, unknown>;
+  cssContent: string[] | null;
+}
+
+const mtimeModuleCache = new Map<string, MtimeModuleCacheEntry>();
+
+/**
  * 淘汰最早缓存条目，防止长期运行无界增长。
  * 容量由 getCacheOptions().maxCssRouteCacheSize 决定（默认 500，可由 config.build.devCache 覆盖）。
  */
@@ -55,6 +70,16 @@ function evictOldestCacheEntry(): void {
   const firstKey = cssRouteCache.keys().next().value;
   if (firstKey !== undefined) {
     cssRouteCache.delete(firstKey);
+  }
+}
+
+/** 淘汰 mtime 缓存最早条目（与 CSS 路由缓存共用容量上限）。 */
+function evictOldestMtimeCacheEntry(): void {
+  const maxSize = getCacheOptions().maxCssRouteCacheSize;
+  if (mtimeModuleCache.size <= maxSize) return;
+  const firstKey = mtimeModuleCache.keys().next().value;
+  if (firstKey !== undefined) {
+    mtimeModuleCache.delete(firstKey);
   }
 }
 
@@ -73,7 +98,39 @@ function normalizePathForCache(pathOrUrl: string): string {
 }
 
 /**
- * 文件变更时清除该路径相关的 CSS 路由缓存
+ * 读取文件 mtime（毫秒）；失败时返回 0（强制走完整加载路径）。
+ */
+async function readMtimeMs(absPath: string): Promise<number> {
+  try {
+    const info = await stat(absPath);
+    return info.mtime?.getTime() ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * 写入 mtime 短路缓存。
+ */
+function rememberMtimeModule(
+  normalizedPath: string,
+  mtimeMs: number,
+  version: number,
+  module: Record<string, unknown>,
+  cssContent: string[] | null,
+): void {
+  if (mtimeMs <= 0) return;
+  mtimeModuleCache.set(normalizedPath, {
+    mtimeMs,
+    version,
+    module,
+    cssContent,
+  });
+  evictOldestMtimeCacheEntry();
+}
+
+/**
+ * 文件变更时清除该路径相关的 CSS 路由缓存与 mtime 短路缓存。
  *
  * 当用户注释/取消注释 CSS 导入时，确保下次加载拿到最新内容，
  * 避免缓存返回旧的「有 CSS」或「无 CSS」的模块。
@@ -87,6 +144,20 @@ export function clearCssRouteCacheForPath(changedPath: string): void {
       cssRouteCache.delete(key);
     }
   }
+  mtimeModuleCache.delete(normalized);
+}
+
+/**
+ * 仅清除 mtime 短路缓存（测试或显式失效用）。
+ *
+ * @param changedPath 变更的文件路径；省略则清空全部
+ */
+export function clearMtimeModuleCacheForPath(changedPath?: string): void {
+  if (!changedPath) {
+    mtimeModuleCache.clear();
+    return;
+  }
+  mtimeModuleCache.delete(normalizePathForCache(changedPath));
 }
 
 /**
@@ -259,6 +330,25 @@ export async function loadRouteModule(
     let moduleUrl: string;
     let tempPath: string | null = null;
 
+    const mtimeMs = await readMtimeMs(absPath);
+    const moduleVersion = getEnv("RUNTIME_ENV") === "dev"
+      ? getModuleVersion(normalizedPath)
+      : 0;
+    const mtimeHit = mtimeModuleCache.get(normalizedPath);
+    if (
+      mtimeHit &&
+      mtimeMs > 0 &&
+      mtimeHit.mtimeMs === mtimeMs &&
+      mtimeHit.version === moduleVersion
+    ) {
+      if (options?.cssCollector && mtimeHit.cssContent) {
+        for (const css of mtimeHit.cssContent) {
+          options.cssCollector(css);
+        }
+      }
+      return mtimeHit.module;
+    }
+
     const rawSource = await readTextFile(absPath);
     if (hasCssImport(rawSource)) {
       // 提取 CSS 路径并读取内容（按路径排序保证哈希确定性）
@@ -289,6 +379,13 @@ export async function loadRouteModule(
             options.cssCollector(css);
           }
         }
+        rememberMtimeModule(
+          normalizedPath,
+          mtimeMs,
+          moduleVersion,
+          cached.module,
+          cached.cssContent,
+        );
         return cached.module;
       }
 
@@ -315,6 +412,13 @@ export async function loadRouteModule(
         // 写入缓存并淘汰旧条目
         cssRouteCache.set(cacheKey, { module: mod, cssContent });
         evictOldestCacheEntry();
+        rememberMtimeModule(
+          normalizedPath,
+          mtimeMs,
+          moduleVersion,
+          mod,
+          cssContent,
+        );
 
         if (options?.cssCollector) {
           for (const css of cssContent) {
@@ -342,8 +446,9 @@ export async function loadRouteModule(
       const version = getModuleVersion(moduleUrl);
       moduleUrl = `${moduleUrl}?v=${version}`;
     }
-    const mod = await import(moduleUrl);
-    return mod as Record<string, unknown>;
+    const mod = await import(moduleUrl) as Record<string, unknown>;
+    rememberMtimeModule(normalizedPath, mtimeMs, moduleVersion, mod, null);
+    return mod;
   } catch (error) {
     console.error(error);
     const msg = `${$tr("log.loadModuleFailed")}: ${filePath}`;

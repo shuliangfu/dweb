@@ -67,8 +67,10 @@
       "update": "Update deps",
       "preview": "Preview",
       "upgrade": "Upgrade",
+      "run": "Run console command",
       "help": "View full help"
     },
+    "runFailedWithMessage": "run failed: {message}",
     "installFailed": "Install failed",
     "installFailedExit": "Install failed, exit: {code}",
     "installing": "Installing {name}...",
@@ -117,7 +119,6 @@
     "portOption": "Port (default 4173)",
     "appOptional": "App name (for multi-app)",
     "generate": "Generate code",
-    "generateTypeOption": "Type (route, api, model, service)",
     "nameOption": "Name",
     "appOptionalGenerate": "App name (for multi-app, e.g. backend, frontend)",
     "test": "Run tests",
@@ -142,7 +143,29 @@
     "testFilter": "Filter tests by name (host filter)",
     "testCoverage": "Collect coverage (Deno/Bun --coverage)",
     "testRuntime": "Host runtime: deno or bun",
-    "testVerbose": "Print the host command that will be spawned"
+    "testReporter": "Host reporter: junit | tap | dot (Bun: junit only)",
+    "testReportOut": "JUnit report output path (requires --reporter junit)",
+    "testJunitPath": "Alias of --report-out for Deno --junit-path",
+    "testProductReport": "Product report formats: json,md,html (from JUnit; comma-separated)",
+    "testReportDir": "Product report output directory (default: reports)",
+    "testVerbose": "Print the host command that will be spawned",
+    "run": "Run a Console app command (kind=console; e.g. hello/world)",
+    "appOptionalRun": "App name (multi-app: console; default resolves the only console)",
+    "runList": "List console commands (optional module filter)",
+    "runTimeout": "Command timeout in ms (exit 124 on timeout)",
+    "generateTypeOption": "Type: route / api / model / service / console (r,a,m,s,c)"
+  },
+  "run": {
+    "missingRoute": "Specify a command route, e.g. dweb-cli run hello/world",
+    "usageHint": "Usage: dweb-cli run <route>/<action> [-a console] [--list] [--timeout ms] [-- --flag]",
+    "notConsoleKind": "Target app kind is \"{kind}\", not console (root: {root})",
+    "failedWithMessage": "Console command failed: {message}",
+    "listHeader": "Available console commands:",
+    "listFooter": "Run: dweb-cli run <route>",
+    "hintList": "Hint: dweb-cli run --list to see commands",
+    "timeout": "Command timed out ({ms}ms), exit 124",
+    "moduleHelpHeader": "Specify an action (this module has multiple commands):",
+    "didYouMean": "Did you mean:"
   },
   "common": {
     "noDenoJson": "deno.json not found, run in dweb root",
@@ -297,12 +320,19 @@
     "fileExists": "File exists: {path}",
     "generateComplete": "{type} {name} generated!",
     "filePath": "File path: {path}",
-    "supportedTypes": "Types: route, api, model, service (r, a, m, s)",
+    "supportedTypes": "Types: route, api, model, service, console (r, a, m, s, c)",
     "generateFailed": "Generate {type} failed: {message}",
     "templateApiHelloMessage": "Hello from {name} API",
     "templateApiCreatedMessage": "Created",
     "templateApiCommentLine1": "{name} API",
-    "templateApiCommentLine2": "Uses Web standard Request/Response, compatible with @dreamer/router apiMode: \"restful\""
+    "templateApiCommentLine2": "Uses Web standard Request/Response, compatible with @dreamer/router apiMode: \"restful\"",
+    "consoleDefaultApp": "No -a given; writing into Console app: {app}",
+    "consoleRootMissing": "Console directory not found; init kind=console or pass -a console",
+    "warnRouteOnConsole": "App kind=console; generating {type} is usually unused (no pages/HTTP)",
+    "warnPageOnApi": "App kind=api; generating a page route is usually unused (no HTML shell)",
+    "warnConsoleOnWeb": "App kind=web; console command goes under web routes/; multi-app: use -a console",
+    "warnConsoleOnHttpApp": "Generating console command on an HTTP app; for pure CLI init kind=console",
+    "consoleRunHint": "Run: dweb-cli run {route}"
   },
   "dev": {
     "starting": "Starting {app} dev server...",
@@ -355,6 +385,12 @@
     "addTaskHint": "Add test or test:appName task, or just run dweb-cli test (no task required)",
     "spawnCommand": "Running: {cmd}",
     "invalidRuntime": "Unsupported --runtime: {value} (use deno or bun)",
+    "invalidReporter": "Unsupported --reporter: {value} (use junit, tap, or dot)",
+    "invalidProductReport": "Unsupported --report format: {value} (use json, md, or html)",
+    "productReportRequiresJunit": "--report requires host junit (do not combine with tap/dot)",
+    "productReportNodeUnsupported": "Node host does not support --report product reports yet",
+    "productReportWritten": "Wrote product reports: {paths}",
+    "productReportFailed": "Failed to write product reports: {message}",
     "noAppTaskFallback": "Task {task} not defined; falling back to host tests (default tests/)"
   },
   "update": {
@@ -474,7 +510,18 @@
       "user2Name": "Jane",
       "user2Role": "User",
       "user3Name": "Bob",
-      "user3Role": "Guest"
+      "user3Role": "Guest",
+      "apiHelloMessage": "Hello from dweb API",
+      "apiCreatedMessage": "Created",
+      "apiHelloComment": "Example API: hello",
+      "apiUsersComment": "Example API: users list",
+      "apiUserByIdComment": "Example API: user by id",
+      "consoleHelloComment": "Example console command: hello",
+      "consoleHelloOutput": "Hello from dweb console!",
+      "consoleCrondComment": "Example console command: crond",
+      "consoleCrondStart": "crond start (example)",
+      "consoleCrondStop": "crond stop (example)",
+      "consoleMainHint": "Console app: use `dweb-cli run hello/world` (HTTP server not started from main.ts)"
     },
     "comments": {
       "serverEntry": "Server entry",
@@ -634,7 +681,29 @@
       "pluginsDesc": "Plugins: array of path strings or { name, version, dependencies, config, onInit, onRequest, ... }. Uncomment to add.",
       "middlewaresDesc": "Middlewares: array of { middleware, name?, condition? } or path strings. Uncomment to add.",
       "middlewareNameDesc": "Middleware name for logs and ordering.",
-      "middlewareConditionDesc": "Condition: (req) => boolean; run middleware only when true."
-    }
+      "middlewareConditionDesc": "Condition: (req) => boolean; run middleware only when true.",
+      "kindDesc": "App kind: web | api | console",
+      "consoleEntryHint": "Console app: use dweb-cli run <route>/<action>; do not start HTTP from main.ts",
+      "consoleConfigHint": "Console app config (no server.listen)",
+      "apiConfigHint": "Pure API app config (no _app / page engine)",
+      "dockerConsoleOnly": "Console-only project has no HTTP service; empty compose"
+    },
+    "appKind": "App kind",
+    "appKindWeb": "Web (pages)",
+    "appKindApi": "API (HTTP only)",
+    "appKindConsole": "Console (CLI)",
+    "consoleNameFixed": "Console app directory fixed as: {name}",
+    "addAnotherApp": "Add another app?",
+    "appsAddedSoFar": "Added: {apps}",
+    "appNameRequiredForKind": "Please enter an app name",
+    "appNameReservedConsole": "Name \"{name}\" is reserved for Console; pick another name or choose Console kind",
+    "exampleLevelConsole": "Console examples",
+    "exampleConsoleWithCrond": "With crond (hello + crond)",
+    "exampleConsoleMinimal": "Minimal (hello)",
+    "exampleLevelApi": "API examples",
+    "exampleApiWithUsers": "With users (hello + users)",
+    "exampleApiMinimal": "Minimal (hello)",
+    "runConsole": "  dweb-cli run hello/world",
+    "runConsoleApp": "  dweb-cli run hello/world -a {app}   # Console command"
   }
 }

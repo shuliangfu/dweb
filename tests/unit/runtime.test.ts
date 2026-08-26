@@ -171,6 +171,39 @@ describe("运行时工具 (runtime.ts)", () => {
       expect(bunArgs).toContain("--coverage");
       expect(bunArgs.some((a) => a.startsWith("--coverage="))).toBe(false);
     });
+
+    it("Deno reporter junit + reportOut 应映射 --reporter / --junit-path", () => {
+      const args = getTestArgs({
+        paths: ["tests"],
+        reporter: "junit",
+        reportOut: "reports/junit.xml",
+      }, "deno");
+      expect(args).toContain("--reporter=junit");
+      expect(args).toContain("--junit-path=reports/junit.xml");
+    });
+
+    it("Deno reporter tap/dot 应透传", () => {
+      expect(getTestArgs({ paths: ["tests"], reporter: "tap" }, "deno"))
+        .toContain("--reporter=tap");
+      expect(getTestArgs({ paths: ["tests"], reporter: "dot" }, "deno"))
+        .toContain("--reporter=dot");
+    });
+
+    it("Bun reporter junit + reportOut 应映射 outfile", () => {
+      const args = getTestArgs({
+        paths: ["tests"],
+        reporter: "junit",
+        reportOut: "out.xml",
+      }, "bun");
+      expect(args).toContain("--reporter=junit");
+      expect(args).toContain("--reporter-outfile=out.xml");
+    });
+
+    it("Bun 不支持的 reporter 应抛错", () => {
+      expect(() =>
+        getTestArgs({ paths: ["tests"], reporter: "tap" }, "bun")
+      ).toThrow(/junit/);
+    });
   });
 
   describe("getLintArgs()", () => {

@@ -3,7 +3,7 @@
  */
 
 import { DEFAULT_PORT_BASE } from "../constants.ts";
-import { $tr } from "../helpers.ts";
+import { $tr, getAppKind, resolveApps } from "../helpers.ts";
 import type { InitOptions, Runtime } from "../types.ts";
 
 /** 端口转 /proc/net/tcp 十六进制格式（如 3000 → 0BB8） */
@@ -80,21 +80,32 @@ WORKDIR /app
 }
 
 export function getDockerComposeYml(opts: InitOptions): string {
-  const isMulti = opts.appMode === "multi" && (opts.appNames?.length ?? 0) > 0;
+  const apps = resolveApps(opts);
+  const isMulti = opts.appMode === "multi" && apps.length > 0 &&
+    (opts.appNames != null || opts.apps != null);
   const projectName = opts.projectName;
+  const httpApps = apps.filter((a) => a.kind === "web" || a.kind === "api");
 
-  if (isMulti && opts.appNames && opts.appNames.length > 0) {
-    const services = opts.appNames
+  if (isMulti) {
+    if (httpApps.length === 0) {
+      return `# docker-compose.yml
+# ${$tr("init.comments.dockerConsoleOnly")}
+# ${$tr("init.comments.dockerRunBuildSingle")}
+
+services: {}
+`;
+    }
+    const services = httpApps
       .map((app, i) => {
         const port = DEFAULT_PORT_BASE + i;
         const command = opts.runtime === "bun"
-          ? ["bun", "run", `dist/${app}/server.js`]
-          : ["deno", "run", "-A", `dist/${app}/server.js`];
+          ? ["bun", "run", `dist/${app.name}/server.js`]
+          : ["deno", "run", "-A", `dist/${app.name}/server.js`];
         return buildDockerService({
-          serviceName: app,
+          serviceName: app.name,
           port,
           command,
-          containerName: `${projectName}-${app}`,
+          containerName: `${projectName}-${app.name}`,
           runtime: opts.runtime,
         });
       })
@@ -111,6 +122,14 @@ ${services}
 networks:
   default:
     driver: bridge
+`;
+  }
+
+  if (getAppKind(opts) === "console") {
+    return `# docker-compose.yml
+# ${$tr("init.comments.dockerConsoleOnly")}
+
+services: {}
 `;
   }
 

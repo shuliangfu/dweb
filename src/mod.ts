@@ -41,11 +41,13 @@ export { DWEB_VERSION } from "./utils/version.ts";
  */
 export type {
   AppConfig,
+  AppKind,
   AppLanguage,
   AppLifecycleHook,
   AppMiddleware,
   AppPlugin,
   AppStage,
+  ConsoleAppConfig,
   DatabaseAppConfig,
   IApp,
   SocketConfig,
@@ -53,6 +55,23 @@ export type {
   SocketType,
   WebSocketConfig,
 } from "./types/app.ts";
+
+/** 应用种类解析：缺省 web；isApiKind / isConsoleKind 用于分支运行时 */
+export {
+  isApiKind,
+  isConsoleKind,
+  resolveAppKind,
+  resolveConsoleSlim,
+} from "./types/app.ts";
+
+/** Console 命令上下文（dweb-cli run 传给 routes 动作） */
+export type { ConsoleContext } from "./feature/console-context.ts";
+
+/** Console 全局中间件类型（console/middlewares） */
+export type { ConsoleMiddleware } from "./feature/console-middleware.ts";
+
+/** App 启动 / 构造选项（console 模式） */
+export type { AppConstructOptions, AppStartOptions } from "./types/app.ts";
 
 /**
  * 路由中间件上下文类型（HttpContext 的别名）

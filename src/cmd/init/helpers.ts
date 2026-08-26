@@ -5,11 +5,61 @@
 import { basename } from "@dreamer/runtime-adapter";
 import { type AppLanguage, SUPPORTED_APP_LANGUAGES } from "../../types/app.ts";
 import { $tr, detectLocale } from "../../utils/i18n.ts";
-import type { Engine, InitOptions, StyleContext } from "./types.ts";
+import type {
+  AppKind,
+  Engine,
+  InitAppSpec,
+  InitOptions,
+  StyleContext,
+} from "./types.ts";
 
 /** 应用名称合法：小写、数字、连字符 */
 export function isValidAppName(name: string): boolean {
   return /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/.test(name);
+}
+
+/**
+ * 解析 init 应用列表：优先 apps；否则由 appNames（全 web）或单应用 kind 推导。
+ * 保证测试/旧调用方只传 appNames 时仍可工作。
+ */
+export function resolveApps(opts: InitOptions): InitAppSpec[] {
+  if (opts.apps != null && opts.apps.length > 0) {
+    return opts.apps;
+  }
+  if (opts.appMode === "multi" && opts.appNames != null && opts.appNames.length > 0) {
+    return opts.appNames.map((name) => ({ name, kind: "web" as const }));
+  }
+  return [{
+    name: opts.projectName,
+    kind: opts.kind ?? "web",
+  }];
+}
+
+/** 是否存在任一 web 应用（决定是否询问引擎/渲染/样式） */
+export function hasWebApp(opts: InitOptions): boolean {
+  return resolveApps(opts).some((a) => a.kind === "web");
+}
+
+/** 是否存在任一 HTTP 应用（web 或 api；console 不 listen） */
+export function hasHttpApp(opts: InitOptions): boolean {
+  return resolveApps(opts).some((a) => a.kind === "web" || a.kind === "api");
+}
+
+/** 按应用名取 kind；找不到时 web */
+export function getAppKind(opts: InitOptions, appName?: string): AppKind {
+  const apps = resolveApps(opts);
+  if (appName == null) {
+    return apps[0]?.kind ?? opts.kind ?? "web";
+  }
+  return apps.find((a) => a.name === appName)?.kind ?? "web";
+}
+
+/**
+ * 为指定 kind 生成有效的样式/引擎选项副本（api/console 强制 style=none，避免写入 UI 插件）
+ */
+export function optsForKind(opts: InitOptions, kind: AppKind): InitOptions {
+  if (kind === "web") return opts;
+  return { ...opts, style: "none" };
 }
 
 /** 从目标路径推断项目名 */

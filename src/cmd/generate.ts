@@ -2,9 +2,10 @@
  * dweb 代码生成命令
  *
  * 职责：
- * - 根据类型和名称生成 route 页面、api 接口、model 模型、service 服务
+ * - 根据类型和名称生成 route 页面、api 接口、model 模型、service 服务、console 命令
  * - 使用 runtime-adapter 保证 Deno/Bun 兼容
  * - 支持 useSrc 检测及多应用 --app 选项
+ * - 按目标 app 的 kind 给出路径/警告（api 平铺 routes/；console 生成 CLI 动作）
  *
  * model 多应用规则：有 common 目录则放 common/models，无 common 则放应用 models（无则创建）
  *
@@ -12,11 +13,12 @@
  * - dweb-cli generate -t service -n User
  * - dweb-cli g -t route -n about
  * - dweb-cli g -t api -n users
- * - dweb-cli g -t model -n User -a frontend  # 多应用：有 common 放 common/models
- * - dweb-cli g -t route -n about -a frontend  # 多应用时指定应用
+ * - dweb-cli g -t console -n hello/world
+ * - dweb-cli g -t model -n User -a frontend
+ * - dweb-cli g -t route -n about -a frontend
  */
 
-import { error, info, success } from "@dreamer/console";
+import { error, info, success, warning } from "@dreamer/console";
 import { $tr } from "../utils/i18n.ts";
 import {
   cwd,
@@ -24,24 +26,43 @@ import {
   ensureDir,
   exists,
   join,
+  readTextFile,
   stat,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
 import { kebabCase, pascalCase } from "@dreamer/utils/string";
 import type { ParsedOptions } from "../feature/command.ts";
+import type { AppKind } from "../types/app.ts";
 import { DwebErrorCode, isDwebError, throwDwebError } from "../utils/errors.ts";
 import { getProjectInfo } from "../utils/project.ts";
+import { resolveConsoleRoot } from "../utils/console-root.ts";
 
 /**
  * 生成命令选项
  */
 export interface GenerateOptions {
-  /** 生成类型：route 页面、api 接口、model 模型、service 服务（支持简写 r, a, m, s） */
+  /** 生成类型：route / api / model / service / console（简写 r, a, m, s, c） */
   type: string;
   /** 名称 */
   name: string;
-  /** 应用名（多应用时指定，如 backend、frontend） */
+  /** 应用名（多应用时指定，如 backend、frontend、console） */
   app?: string;
+}
+
+/** 从 config/main.ts 文本猜测 kind */
+export function detectKindFromConfigText(text: string): AppKind | null {
+  const m = text.match(/\bkind:\s*["'](web|api|console)["']/);
+  return (m?.[1] as AppKind | undefined) ?? null;
+}
+
+async function detectAppKind(basePath: string): Promise<AppKind | null> {
+  const configPath = join(basePath, "config", "main.ts");
+  if (!(await exists(configPath))) return null;
+  try {
+    return detectKindFromConfigText(await readTextFile(configPath));
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -138,14 +159,18 @@ async function getModelBasePathForMultiApp(
  * @param name 名称（支持 user_orders、user-orders、UserOrders 等格式）
  * @returns { targetPath, content } 目标路径和文件内容
  */
+/**
+ * @param opts.apiFlat kind=api 时 handler 平铺在 routes/，不强制 routes/api/
+ */
 function getGenerateContent(
   basePath: string,
   type: string,
   name: string,
+  opts: { apiFlat?: boolean } = {},
 ): { targetPath: string; content: string } {
   const typeLower = type.toLowerCase();
-  const namePascal = pascalCase(name);
-  const nameKebab = kebabCase(name);
+  const namePascal = pascalCase(name.replace(/\//g, "-"));
+  const nameKebab = kebabCase(name.replace(/\//g, "-"));
 
   switch (typeLower) {
     case "service":
@@ -168,7 +193,11 @@ export class ${namePascal}Service {
     }
     case "api":
     case "a": {
-      const targetPath = join(basePath, "routes", "api", `${nameKebab}.ts`);
+      // kind=api：平铺 routes/<name>.ts；web：沿用 routes/api/<name>.ts
+      const targetPath = opts.apiFlat
+        ? join(basePath, "routes", `${nameKebab}.ts`)
+        : join(basePath, "routes", "api", `${nameKebab}.ts`);
+      const urlPath = opts.apiFlat ? `/${nameKebab}` : `/api/${nameKebab}`;
       const helloMsg = $tr("generate.templateApiHelloMessage", {
         name: namePascal,
       });
@@ -182,20 +211,22 @@ export class ${namePascal}Service {
  * ${apiComment2}
  */
 
+import type { ApiContext } from "@dreamer/dweb";
 import { json } from "@dreamer/router";
 
 /**
- * GET /api/${nameKebab}
+ * GET ${urlPath}
  */
-export async function GET(_request: Request) {
+export async function GET(_ctx: ApiContext) {
   return json({ message: ${JSON.stringify(helloMsg)} });
 }
 
 /**
- * POST /api/${nameKebab}
+ * POST ${urlPath}
  */
-export async function POST(request: Request) {
-  const body = await request.json();
+export async function POST(ctx: ApiContext) {
+  const body = (ctx.body as Record<string, unknown> | undefined) ??
+    await ctx.req.json().catch(() => ({}));
   return json({ message: ${JSON.stringify(createdMsg)}, data: body });
 }
 `;
@@ -239,6 +270,42 @@ export default function ${namePascal}Page() {
 `;
       return { targetPath, content };
     }
+    case "console":
+    case "c": {
+      // 支持 user/seed → routes/user/seed.ts；hello → routes/hello.ts
+      const segments = name.replace(/^\/+|\/+$/g, "").split("/").filter(
+        Boolean,
+      );
+      if (segments.length === 0) {
+        throwDwebError(DwebErrorCode.GENERATE_TYPE_UNSUPPORTED, { type });
+      }
+      const fileSegments = segments.map((s) => kebabCase(s));
+      const targetPath = join(basePath, "routes", ...fileSegments) + ".ts";
+      const routeName = fileSegments.join("/");
+      const content = `/**
+ * Console 命令: ${routeName}
+ *
+ * 用法:
+ *   dweb-cli run ${routeName}
+ */
+
+import type { ConsoleContext } from "@dreamer/dweb";
+
+export const meta = {
+  description: "${namePascal} console command",
+  actions: {
+    run: { description: "Run ${routeName}" },
+  },
+};
+
+/** 默认动作（dweb-cli run ${routeName}） */
+export async function run(ctx: ConsoleContext): Promise<void> {
+  ctx.log.info("console command: ${routeName}");
+  // ctx.args / ctx.options — 来自 dweb-cli run ${routeName} -- --flag
+}
+`;
+      return { targetPath, content };
+    }
     default: {
       throwDwebError(DwebErrorCode.GENERATE_TYPE_UNSUPPORTED, { type });
     }
@@ -257,7 +324,7 @@ export async function main(
 ): Promise<void> {
   const type = options.type as string;
   const name = options.name as string;
-  const app = options.app as string | undefined;
+  let app = options.app as string | undefined;
 
   if (!type || !name) {
     error($tr("generate.needTypeAndName"));
@@ -267,15 +334,42 @@ export async function main(
 
   const projectRoot = cwd();
   const projectInfo = await getProjectInfo(projectRoot);
+  const typeLower = type.toLowerCase();
+  const isConsoleType = typeLower === "console" || typeLower === "c";
+  const isRouteType = typeLower === "route" || typeLower === "r";
+  const isApiType = typeLower === "api" || typeLower === "a";
+
+  // console 生成：多应用默认落到 console 根
+  if (isConsoleType && projectInfo?.mode === "multi" && !app) {
+    try {
+      const consoleRoot = await resolveConsoleRoot(projectRoot);
+      const useSrc = await detectUseSrc(projectRoot);
+      const prefix = useSrc ? join(projectRoot, "src") : projectRoot;
+      app = consoleRoot === prefix
+        ? undefined
+        : consoleRoot.replace(prefix + "/", "").replace(prefix + "\\", "");
+      if (!app && consoleRoot !== prefix) {
+        app = "console";
+      }
+      if (app) {
+        info($tr("generate.consoleDefaultApp", { app }));
+      }
+    } catch {
+      warning($tr("generate.consoleRootMissing"));
+    }
+  }
 
   if (
     app && projectInfo?.mode === "multi" && !projectInfo.appNames.includes(app)
   ) {
-    error($tr("common.appNotFound", { app }));
-    error(
-      $tr("common.availableApps", { apps: projectInfo.appNames.join(", ") }),
-    );
-    return;
+    // console 不在 deno tasks 的 appNames 里时仍允许 -a console
+    if (!(isConsoleType && app === "console")) {
+      error($tr("common.appNotFound", { app }));
+      error(
+        $tr("common.availableApps", { apps: projectInfo.appNames.join(", ") }),
+      );
+      return;
+    }
   }
 
   info(
@@ -285,15 +379,37 @@ export async function main(
   );
 
   try {
-    const typeLower = type.toLowerCase();
     const isModel = typeLower === "model" || typeLower === "m";
 
     // model 类型在多应用模式下：有 common 放 common/models，无 common 放应用 models（无则创建）
     const basePath = isModel && projectInfo
       ? await getModelBasePathForMultiApp(projectRoot, app, projectInfo)
+      : isConsoleType && projectInfo?.mode === "multi"
+      ? await resolveConsoleRoot(projectRoot, { app: app ?? "console" })
       : await getGenerateBasePath(projectRoot, app);
 
-    const { targetPath, content } = getGenerateContent(basePath, type, name);
+    const kind = await detectAppKind(basePath);
+
+    // kind 与生成类型交叉警告
+    if (kind === "console" && (isRouteType || isApiType)) {
+      warning($tr("generate.warnRouteOnConsole", { type }));
+    }
+    if (kind === "api" && isRouteType) {
+      warning($tr("generate.warnPageOnApi"));
+    }
+    if (kind === "web" && isConsoleType) {
+      warning($tr("generate.warnConsoleOnWeb"));
+    }
+    if (
+      (kind === "api" || kind === "web") && isConsoleType &&
+      projectInfo?.mode === "single"
+    ) {
+      warning($tr("generate.warnConsoleOnHttpApp"));
+    }
+
+    const { targetPath, content } = getGenerateContent(basePath, type, name, {
+      apiFlat: kind === "api",
+    });
 
     // 确保目录存在（含 models，无则创建）
     await ensureDir(dirname(targetPath));
@@ -312,6 +428,12 @@ export async function main(
 
     success($tr("generate.generateComplete", { type, name }));
     info($tr("generate.filePath", { path: targetPath }));
+    if (isConsoleType) {
+      const routeHint = name.replace(/^\/+|\/+$/g, "").split("/").filter(
+        Boolean,
+      ).map((s) => kebabCase(s)).join("/");
+      info($tr("generate.consoleRunHint", { route: routeHint }));
+    }
   } catch (err) {
     if (
       isDwebError(err) && err.code === DwebErrorCode.GENERATE_TYPE_UNSUPPORTED

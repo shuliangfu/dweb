@@ -67,7 +67,8 @@
       "update": "의존성 업데이트",
       "preview": "미리보기",
       "upgrade": "업그레이드",
-      "help": "전체 도움말 보기"
+      "help": "전체 도움말 보기",
+      "run": "Run console command"
     },
     "installFailed": "설치 실패",
     "installFailedExit": "설치 실패, 종료: {code}",
@@ -101,7 +102,8 @@
     "fmtFailed": "fmt 실패",
     "fmtFailedWithMessage": "fmt 실패: {message}",
     "upgradeFailed": "upgrade 실패",
-    "upgradeFailedWithMessage": "upgrade 실패: {message}"
+    "upgradeFailedWithMessage": "upgrade 실패: {message}",
+    "runFailedWithMessage": "run failed: {message}"
   },
   "cliDesc": {
     "toolName": "DWEB CLI 도구",
@@ -117,7 +119,7 @@
     "portOption": "포트 (기본값 4173)",
     "appOptional": "앱 이름 (다중 앱용)",
     "generate": "코드 생성",
-    "generateTypeOption": "유형 (route, api, model, service)",
+    "generateTypeOption": "Type: route / api / model / service / console (r,a,m,s,c)",
     "nameOption": "이름",
     "appOptionalGenerate": "앱 이름 (다중 앱용, 예: backend, frontend)",
     "test": "테스트 실행",
@@ -142,7 +144,11 @@
     "testFilter": "테스트 이름으로 필터（호스트 전달）",
     "testCoverage": "커버리지 수집（Deno/Bun --coverage）",
     "testRuntime": "호스트 런타임: deno 또는 bun",
-    "testVerbose": "실제 spawn 할 호스트 명령 출력"
+    "testVerbose": "실제 spawn 할 호스트 명령 출력",
+    "run": "Run a Console app command (kind=console; e.g. hello/world)",
+    "appOptionalRun": "App name (multi-app: console; default resolves the only console)",
+    "runList": "List console commands (optional module filter)",
+    "runTimeout": "Command timeout in ms (exit 124 on timeout)"
   },
   "common": {
     "noDenoJson": "deno.json을 찾을 수 없습니다. dweb 루트에서 실행하세요",
@@ -297,12 +303,19 @@
     "fileExists": "파일 존재: {path}",
     "generateComplete": "{type} {name} 생성됨!",
     "filePath": "파일 경로: {path}",
-    "supportedTypes": "유형: route, api, model, service (r, a, m, s)",
+    "supportedTypes": "Types: route, api, model, service, console (r, a, m, s, c)",
     "generateFailed": "{type} 생성 실패: {message}",
     "templateApiHelloMessage": "{name} API에서 Hello",
     "templateApiCreatedMessage": "생성됨",
     "templateApiCommentLine1": "{name}의 API",
-    "templateApiCommentLine2": "Web 표준 Request/Response 사용, @dreamer/router apiMode: \"restful\" 호환"
+    "templateApiCommentLine2": "Web 표준 Request/Response 사용, @dreamer/router apiMode: \"restful\" 호환",
+    "consoleDefaultApp": "No -a given; writing into Console app: {app}",
+    "consoleRootMissing": "Console directory not found; init kind=console or pass -a console",
+    "warnRouteOnConsole": "App kind=console; generating {type} is usually unused (no pages/HTTP)",
+    "warnPageOnApi": "App kind=api; generating a page route is usually unused (no HTML shell)",
+    "warnConsoleOnWeb": "App kind=web; console command goes under web routes/; multi-app: use -a console",
+    "warnConsoleOnHttpApp": "Generating console command on an HTTP app; for pure CLI init kind=console",
+    "consoleRunHint": "Run: dweb-cli run {route}"
   },
   "dev": {
     "starting": "{app} 개발 서버 시작 중...",
@@ -471,7 +484,18 @@
       "user2Name": "Jane",
       "user2Role": "사용자",
       "user3Name": "Bob",
-      "user3Role": "게스트"
+      "user3Role": "게스트",
+      "apiHelloMessage": "Hello from dweb API",
+      "apiCreatedMessage": "Created",
+      "apiHelloComment": "Example API: hello",
+      "apiUsersComment": "Example API: users list",
+      "apiUserByIdComment": "Example API: user by id",
+      "consoleHelloComment": "Example console command: hello",
+      "consoleHelloOutput": "Hello from dweb console!",
+      "consoleCrondComment": "Example console command: crond",
+      "consoleCrondStart": "crond start (example)",
+      "consoleCrondStop": "crond stop (example)",
+      "consoleMainHint": "Console app: use `dweb-cli run hello/world` (HTTP server not started from main.ts)"
     },
     "comments": {
       "serverEntry": "서버 진입점",
@@ -631,7 +655,41 @@
       "pluginsDesc": "플러그인: 경로 문자열 또는 { name, version, dependencies, config, onInit, onRequest, ... } 배열. 추가 시 주석 해제.",
       "middlewaresDesc": "미들웨어: { middleware, name?, condition? } 또는 경로 문자열 배열. 추가 시 주석 해제.",
       "middlewareNameDesc": "로그 및 순서용 미들웨어 이름.",
-      "middlewareConditionDesc": "조건: (req) => boolean; true일 때만 이 미들웨어 실행."
-    }
+      "middlewareConditionDesc": "조건: (req) => boolean; true일 때만 이 미들웨어 실행.",
+      "kindDesc": "App kind: web | api | console",
+      "consoleEntryHint": "Console app: use dweb-cli run <route>/<action>; do not start HTTP from main.ts",
+      "consoleConfigHint": "Console app config (no server.listen)",
+      "apiConfigHint": "Pure API app config (no _app / page engine)",
+      "dockerConsoleOnly": "Console-only project has no HTTP service; empty compose"
+    },
+    "appKind": "App kind",
+    "appKindWeb": "Web (pages)",
+    "appKindApi": "API (HTTP only)",
+    "appKindConsole": "Console (CLI)",
+    "consoleNameFixed": "Console app directory fixed as: {name}",
+    "addAnotherApp": "Add another app?",
+    "appsAddedSoFar": "Added: {apps}",
+    "appNameRequiredForKind": "Please enter an app name",
+    "appNameReservedConsole": "Name \"{name}\" is reserved for Console; pick another name or choose Console kind",
+    "exampleLevelConsole": "Console examples",
+    "exampleConsoleWithCrond": "With crond (hello + crond)",
+    "exampleConsoleMinimal": "Minimal (hello)",
+    "exampleLevelApi": "API examples",
+    "exampleApiWithUsers": "With users (hello + users)",
+    "exampleApiMinimal": "Minimal (hello)",
+    "runConsole": "  dweb-cli run hello/world",
+    "runConsoleApp": "  dweb-cli run hello/world -a {app}   # Console command"
+  },
+  "run": {
+    "missingRoute": "Specify a command route, e.g. dweb-cli run hello/world",
+    "usageHint": "Usage: dweb-cli run <route>/<action> [-a console] [--list] [--timeout ms] [-- --flag]",
+    "notConsoleKind": "Target app kind is \"{kind}\", not console (root: {root})",
+    "failedWithMessage": "Console command failed: {message}",
+    "listHeader": "Available console commands:",
+    "listFooter": "Run: dweb-cli run <route>",
+    "hintList": "Hint: dweb-cli run --list to see commands",
+    "timeout": "Command timed out ({ms}ms), exit 124",
+    "moduleHelpHeader": "Specify an action (this module has multiple commands):",
+    "didYouMean": "Did you mean:"
   }
 }

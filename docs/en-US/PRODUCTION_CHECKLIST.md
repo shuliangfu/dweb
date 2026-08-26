@@ -3,6 +3,13 @@
 > Companion to `OPTIMIZATION_ANALYSIS`. All options below are **opt-in** (off by
 > default) so existing apps keep working.
 
+## 0. App kind (`AppConfig.kind`)
+
+- [ ] Confirm top-level `kind`: `web` (default) / `api` / `console`
+- [ ] **api**: prefer enabling `cors` / `rateLimit` / `compression` in prod; handlers flat under `routes/`
+- [ ] **console**: no HTTP listen; ops via `dweb-cli run <route>` (Cron/K8s CronJob); do not bind a port
+- [ ] Multi-app: **at most one** `console/`; each HTTP app has its own `dev`/`build`/`start`
+
 ## 1. Dependencies & engine
 
 - [ ] `@dreamer/view` ≥ **2.0.4** (recommended engine)
@@ -24,21 +31,29 @@ export default {
 ```
 
 - [ ] Enable `securityHeaders` in production
-- [ ] Configure `cors` for cross-origin APIs (never `origin: "*"` with
-      credentials)
-- [ ] Consider `rateLimit` or edge/gateway limits
+- [ ] Prefer an explicit **`cors` allowlist**; avoid `cors: true` in prod (it means
+      `origin: "*"`, and non-dev logs a warning)
+- [ ] Never use `origin: "*"` with credentials
+- [ ] For cross-origin Socket.IO, set `socket.config.cors.origin` (or rely on
+      `AppConfig.cors.origin` bridging); do not depend on reflecting arbitrary
+      Origins with credentials
+- [ ] Consider `rateLimit` or edge/gateway limits (do not trust
+      `X-Forwarded-For` unless the proxy strips client spoofing)
 - [ ] Session cookies: `secure` + `httpOnly` + appropriate `sameSite`
 - [ ] Do not leak stack traces to clients in production
+- [ ] For request timing, set `onRequestEnd` (or a plugin hook); for a scrape endpoint, opt-in `metrics: true` (default `/metrics`)
 
 ## 3. Performance & transfer
 
 ```ts
 export default {
-  compression: true, // or { threshold: 1024, enableBrotli: true }
+  // compression is on by default outside RUNTIME_ENV=dev; customize or disable:
+  // compression: { threshold: 1024, enableBrotli: true },
+  // compression: false,
 };
 ```
 
-- [ ] Enable `compression` in production
+- [ ] Confirm production compression (on by default; set `false` to disable; brotli optional)
 - [ ] Hashed `/_client*.js` uses long cache (`max-age=31536000, immutable`)
 - [ ] Keep HTML / `__data` short-lived or no-store
 
@@ -59,8 +74,9 @@ export default {
 | ----------------- | ------- | --------------------------- |
 | `securityHeaders` | off     | CSP / frame / referrer      |
 | `cors`            | off     | `@dreamer/middlewares` cors |
-| `compression`     | off     | gzip / optional brotli      |
+| `compression`     | **on outside dev** | gzip / optional brotli; `false` disables |
 | `rateLimit`       | off     | simple in-memory limit      |
+| `metrics`         | off     | Prometheus-style `/metrics` |
 | `session`         | off     | enables `ctx.session`       |
 
 See also [OPTIMIZATION_ANALYSIS.md](./OPTIMIZATION_ANALYSIS.md).

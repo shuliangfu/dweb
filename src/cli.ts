@@ -17,7 +17,9 @@ import {
 } from "./feature/command.ts";
 import { $tr } from "./utils/i18n.ts";
 import { isMainModule } from "./utils/main-module.ts";
+import { preprocessCliArgsForRun } from "./utils/run-passthrough.ts";
 import { getDwebVersion } from "./utils/version.ts";
+import { args as getArgs } from "@dreamer/runtime-adapter";
 
 /**
  * 构建 CLI 版本展示字符串
@@ -183,6 +185,44 @@ export function createCLI(version: string): Command {
     });
 
   // ================================================================================
+  // run Console 命令路由（kind=console）
+  // ================================================================================
+  const runCmd = cli.command("run", $tr("cliDesc.run"));
+  runCmd
+    .option({
+      name: "app",
+      alias: "a",
+      description: $tr("cliDesc.appOptionalRun"),
+      type: "string",
+      requiresValue: true,
+    })
+    .option({
+      name: "list",
+      alias: "l",
+      description: $tr("cliDesc.runList"),
+      type: "boolean",
+    })
+    .option({
+      name: "timeout",
+      description: $tr("cliDesc.runTimeout"),
+      type: "number",
+      requiresValue: true,
+    })
+    .action(async (args: string[], options: ParsedOptions) => {
+      try {
+        const { main: runMain } = await import("./cmd/run.ts");
+        await runMain(args, options);
+      } catch (err) {
+        error(
+          $tr("cli.runFailedWithMessage", {
+            message: err instanceof Error ? err.message : String(err),
+          }),
+        );
+        throw err;
+      }
+    });
+
+  // ================================================================================
   // generate 代码生成（别名 g）
   // ================================================================================
   const generateCmd = cli.command("generate", $tr("cliDesc.generate"));
@@ -266,6 +306,36 @@ export function createCLI(version: string): Command {
     .option({
       name: "runtime",
       description: $tr("cliDesc.testRuntime"),
+      type: "string",
+      requiresValue: true,
+    })
+    .option({
+      name: "reporter",
+      description: $tr("cliDesc.testReporter"),
+      type: "string",
+      requiresValue: true,
+    })
+    .option({
+      name: "report-out",
+      description: $tr("cliDesc.testReportOut"),
+      type: "string",
+      requiresValue: true,
+    })
+    .option({
+      name: "junit-path",
+      description: $tr("cliDesc.testJunitPath"),
+      type: "string",
+      requiresValue: true,
+    })
+    .option({
+      name: "report",
+      description: $tr("cliDesc.testProductReport"),
+      type: "string",
+      requiresValue: true,
+    })
+    .option({
+      name: "report-dir",
+      description: $tr("cliDesc.testReportDir"),
       type: "string",
       requiresValue: true,
     })
@@ -472,5 +542,6 @@ export function createCLI(version: string): Command {
 if (isMainModule(import.meta.url)) {
   const version = await getDwebVersion();
   const cli = createCLI(version);
-  await cli.execute();
+  // 剥离 run 之后的裸 `--` 透传段，避免旧版 console parser 报 unknown option
+  await cli.execute(preprocessCliArgsForRun(getArgs()));
 }

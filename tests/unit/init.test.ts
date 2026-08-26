@@ -83,11 +83,12 @@ describe("init (cmd/init.ts)", () => {
       expect(mainTs).not.toContain("Socket");
       expect(mainTs).toContain("tailwindPlugin");
 
-      // 验证 config/main.ts 包含 name 字段（应用名称由此读取）
+      // 验证 config/main.ts 包含 name / kind 字段（应用名称由此读取）
       const configTs = await readTextFile(
         join(testDir, "src", "config", "main.ts"),
       );
       expect(configTs).toContain('name: "test-app"');
+      expect(configTs).toContain('kind: "web"');
       expect(configTs).not.toContain("socketIo");
 
       // 验证 deno.json 不包含 name 字段（避免 Deno 警告），且不包含 socket-io 依赖
@@ -160,11 +161,167 @@ describe("init (cmd/init.ts)", () => {
           join(testDir, "src", app, "config", "main.ts"),
         );
         expect(appConfigTs).toContain(`name: "test-multi-${app}"`);
+        expect(appConfigTs).toContain('kind: "web"');
       }
 
       await remove(parentDir, { recursive: true });
     },
     // Windows CI 上临时目录与多应用写入较慢，与单应用 / View 用例一致放宽超时
+    { timeout: 20_000 },
+  );
+
+  it(
+    "generate() 应能生成单应用 API 项目（无 _app，routes/hello.ts）",
+    async () => {
+      const parentDir = await makeTempDir({ prefix: "dweb-init-api-" });
+      testDir = join(parentDir, "api-app");
+
+      const opts: InitOptions = {
+        targetDir: testDir,
+        projectName: "api-app",
+        appMode: "single",
+        kind: "api",
+        apps: [{ name: "api-app", kind: "api" }],
+        runtime: "deno",
+        engine: "view",
+        renderMode: "hybrid",
+        style: "none",
+        useSrc: true,
+        exampleLevel: "with-about",
+      };
+
+      await generate(opts);
+
+      expect(await exists(join(testDir, "src", "routes", "hello.ts"))).toBe(
+        true,
+      );
+      expect(await exists(join(testDir, "src", "routes", "users", "index.ts")))
+        .toBe(true);
+      expect(await exists(join(testDir, "src", "routes", "_app.tsx"))).toBe(
+        false,
+      );
+      expect(await exists(join(testDir, "src", "routes", "index.tsx"))).toBe(
+        false,
+      );
+
+      const configTs = await readTextFile(
+        join(testDir, "src", "config", "main.ts"),
+      );
+      expect(configTs).toContain('kind: "api"');
+      expect(configTs).not.toContain("render:");
+
+      const denoJson = await readTextFile(join(testDir, "deno.json"));
+      expect(denoJson).toContain('"dev":');
+      expect(denoJson).not.toContain("tailwindcss");
+      expect(denoJson).not.toMatch(/"preact":\s*"npm:preact/);
+
+      await remove(parentDir, { recursive: true });
+    },
+    { timeout: 20_000 },
+  );
+
+  it(
+    "generate() 应能生成单应用 Console 项目（无 HTTP task）",
+    async () => {
+      const parentDir = await makeTempDir({ prefix: "dweb-init-console-" });
+      testDir = join(parentDir, "cli-app");
+
+      const opts: InitOptions = {
+        targetDir: testDir,
+        projectName: "cli-app",
+        appMode: "single",
+        kind: "console",
+        apps: [{ name: "cli-app", kind: "console" }],
+        runtime: "deno",
+        engine: "view",
+        renderMode: "hybrid",
+        style: "none",
+        useSrc: true,
+        exampleLevel: "with-about",
+      };
+
+      await generate(opts);
+
+      expect(await exists(join(testDir, "src", "routes", "hello.ts"))).toBe(
+        true,
+      );
+      expect(await exists(join(testDir, "src", "routes", "crond.ts"))).toBe(
+        true,
+      );
+      expect(await exists(join(testDir, "src", "routes", "_app.tsx"))).toBe(
+        false,
+      );
+
+      const configTs = await readTextFile(
+        join(testDir, "src", "config", "main.ts"),
+      );
+      expect(configTs).toContain('kind: "console"');
+
+      const mainTs = await readTextFile(join(testDir, "src", "main.ts"));
+      expect(mainTs).not.toContain("app.start()");
+      expect(mainTs).toContain("dweb-cli run");
+
+      const denoJson = await readTextFile(join(testDir, "deno.json"));
+      expect(denoJson).toContain("run:hello");
+      expect(denoJson).not.toContain('"dev":');
+
+      await remove(parentDir, { recursive: true });
+    },
+    { timeout: 20_000 },
+  );
+
+  it(
+    "generate() 多应用混合 web + api + console",
+    async () => {
+      const parentDir = await makeTempDir({ prefix: "dweb-init-mixed-" });
+      testDir = join(parentDir, "mixed");
+
+      const opts: InitOptions = {
+        targetDir: testDir,
+        projectName: "mixed",
+        appMode: "multi",
+        apps: [
+          { name: "web", kind: "web" },
+          { name: "api", kind: "api" },
+          { name: "console", kind: "console" },
+        ],
+        appNames: ["web", "api", "console"],
+        runtime: "deno",
+        engine: "preact",
+        renderMode: "ssr",
+        style: "none",
+        useSrc: true,
+        exampleLevel: "minimal",
+      };
+
+      await generate(opts);
+
+      expect(await exists(join(testDir, "src", "web", "routes", "_app.tsx")))
+        .toBe(true);
+      expect(await exists(join(testDir, "src", "api", "routes", "hello.ts")))
+        .toBe(true);
+      expect(await exists(join(testDir, "src", "api", "routes", "_app.tsx")))
+        .toBe(false);
+      expect(await exists(join(testDir, "src", "console", "routes", "hello.ts")))
+        .toBe(true);
+
+      const apiConfig = await readTextFile(
+        join(testDir, "src", "api", "config", "main.ts"),
+      );
+      expect(apiConfig).toContain('kind: "api"');
+      const consoleConfig = await readTextFile(
+        join(testDir, "src", "console", "config", "main.ts"),
+      );
+      expect(consoleConfig).toContain('kind: "console"');
+
+      const denoJson = await readTextFile(join(testDir, "deno.json"));
+      expect(denoJson).toContain("dev:web");
+      expect(denoJson).toContain("dev:api");
+      expect(denoJson).not.toContain("dev:console");
+      expect(denoJson).toContain("run:hello");
+
+      await remove(parentDir, { recursive: true });
+    },
     { timeout: 20_000 },
   );
 

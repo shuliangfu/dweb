@@ -4,19 +4,129 @@
  */
 
 import { DEFAULT_PORT_BASE } from "../constants.ts";
-import { $tr, getBuildServerExternal, getDefaultLanguage } from "../helpers.ts";
-import type { InitOptions } from "../types.ts";
+import {
+  $tr,
+  getAppKind,
+  getBuildServerExternal,
+  getDefaultLanguage,
+} from "../helpers.ts";
+import type { AppKind, InitOptions } from "../types.ts";
 
 /**
  * 单应用完整 config/main.ts：所有配置节均存在，不用的整块注释
  */
-export function getFullSingleAppConfigMainTs(opts: InitOptions): string {
+export function getFullSingleAppConfigMainTs(
+  opts: InitOptions,
+  kindOverride?: AppKind,
+): string {
   const routesDir = opts.useSrc ? "./src/routes" : "./routes";
   const watchPaths = opts.useSrc ? ["./src"] : ["./"];
   const configName = opts.projectName;
   const serverPort = DEFAULT_PORT_BASE;
   const renderMode = opts.renderMode ?? "hybrid";
   const language = getDefaultLanguage();
+  const kind = kindOverride ?? getAppKind(opts);
+
+  if (kind === "console") {
+    return `/**
+ * ${$tr("init.comments.appConfigShort")}
+ * ${$tr("init.comments.frameworkAutoLoads")}
+ * ${$tr("init.comments.consoleConfigHint")}
+ */
+import type { AppConfig } from "@dreamer/dweb";
+
+const config: AppConfig = {
+  name: "${configName}",
+  kind: "console",
+  version: "1.0.0",
+  language: "${language}",
+  router: {
+    routesDir: "${routesDir}",
+  },
+  logger: {
+    level: "info",
+    format: "text",
+    output: {
+      console: "auto",
+      file: {
+        path: "runtime/logs/app.log",
+        rotate: true,
+        strategy: "size",
+        maxSize: 10 * 1024 * 1024,
+        maxFiles: 5,
+      },
+    },
+  },
+};
+
+export default config;
+`;
+  }
+
+  if (kind === "api") {
+    return `/**
+ * ${$tr("init.comments.appConfigShort")}
+ * ${$tr("init.comments.frameworkAutoLoads")}
+ * ${$tr("init.comments.apiConfigHint")}
+ * Production: enable securityHeaders / cors allowlist / rateLimit — see docs PRODUCTION_CHECKLIST
+ */
+import type { AppConfig } from "@dreamer/dweb";
+
+const config: AppConfig = {
+  name: "${configName}",
+  kind: "api",
+  version: "1.0.0",
+  language: "${language}",
+  hotReload: true,
+  // ${
+      $tr("init.comments.configHostPortInDevProd", {
+        serverPort: String(serverPort),
+      })
+    }
+  server: {
+    dev: {
+      hmr: {
+        enabled: true,
+        path: "/__hmr",
+      },
+      watch: {
+        paths: ${JSON.stringify(watchPaths)},
+        ignore: ["node_modules", ".git", "dist"],
+      },
+    },
+  },
+  router: {
+    routesDir: "${routesDir}",
+  },
+  logger: {
+    level: "info",
+    format: "text",
+    output: {
+      console: "auto",
+      file: {
+        path: "runtime/logs/app.log",
+        rotate: true,
+        strategy: "size",
+        maxSize: 10 * 1024 * 1024,
+        maxFiles: 5,
+      },
+    },
+  },
+  build: {
+    server: {
+      useNativeCompile: false,
+    },
+  },
+  // Opt-in security (recommended in production):
+  // securityHeaders: true,
+  // cors: { origin: ["https://app.example.com"], credentials: true }, // not cors: true (* )
+  // rateLimit: { windowMs: 60_000, max: 120 },
+  // compression is on by default outside RUNTIME_ENV=dev
+};
+
+export default config;
+`;
+  }
 
   return `/**
  * ${$tr("init.comments.appConfigShort")}
@@ -29,6 +139,8 @@ const config: AppConfig = {
   // ========== Basic ==========
   /** ${$tr("init.comments.nameDesc")} */
   name: "${configName}",
+  /** ${$tr("init.comments.kindDesc")} */
+  kind: "web",
   /** ${$tr("init.comments.versionDesc")} */
   version: "1.0.0",
   /** ${$tr("init.comments.frameworkLanguage")} ${
@@ -238,17 +350,21 @@ ${lines}
     // maxMessageLength: 32 * 1024,
   },
 
-  // ========== Production security / transport (opt-in; see docs/*/PRODUCTION_CHECKLIST.md) ==========
+  // ========== Production security / transport (opt-in; see docs PRODUCTION_CHECKLIST) ==========
   /** Security response headers (default off). true or { contentSecurityPolicy, frameOptions, ... } */
   // securityHeaders: true,
   // securityHeaders: { enabled: true, contentSecurityPolicy: "default-src 'self'" },
-  /** CORS via @dreamer/middlewares (default off). true or CorsOptions */
-  // cors: true,
+  /**
+   * CORS via @dreamer/middlewares (default off).
+   * Prefer an origin allowlist in production — \`cors: true\` means origin "*".
+   * When socket (socketio) has no cors, this origin is bridged to Socket.IO.
+   */
   // cors: { origin: ["https://app.example.com"], credentials: true },
-  /** Response compression gzip/br (default off; prefer production) */
-  // compression: true,
+  // cors: true, // open "*"; ok for quick demos, not for credentialed prod APIs
+  /** Response compression gzip/br (on by default outside RUNTIME_ENV=dev; false to disable) */
+  // compression: false,
   // compression: { threshold: 1024, enableBrotli: true },
-  /** Simple in-memory rate limit (default off) */
+  /** Simple in-memory rate limit (default off). Do not trust X-Forwarded-For unless the proxy strips client spoofing. */
   // rateLimit: true,
   // rateLimit: { windowMs: 60_000, max: 120 },
 
@@ -278,6 +394,8 @@ ${lines}
   //   config: {
   //     path: "/socket.io/",
   //     allowCORS: true,
+  //     // Prefer an allowlist for cross-origin sockets (or set AppConfig.cors.origin to bridge)
+  //     cors: { origin: ["https://app.example.com"] },
   //     pingTimeout: 20000,
   //     pingInterval: 25000,
   //     transports: ["websocket", "polling"],
@@ -448,10 +566,11 @@ ${lines}
     // color, showTime, showLevel, tags, filter, maxMessageLength
   },
 
-  // Production opt-in: securityHeaders, cors, compression, rateLimit (see PRODUCTION_CHECKLIST)
+  // Production: securityHeaders/cors/rateLimit still opt-in; compression defaults on outside dev
+  // Prefer cors allowlist (cors: true ⇒ origin "*"). See PRODUCTION_CHECKLIST.
   // securityHeaders: true,
-  // cors: true,
-  // compression: true,
+  // cors: { origin: ["https://app.example.com"], credentials: true },
+  // compression: false, // or { threshold: 1024, enableBrotli: true }
   // rateLimit: true,
 
   /** ${$tr("init.comments.databaseDesc")} */

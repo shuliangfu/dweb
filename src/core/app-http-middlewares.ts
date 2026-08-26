@@ -1,8 +1,8 @@
 /**
  * 框架内置 HTTP 中间件装配（从 app.ts 拆出，行为不变）
  *
- * 顺序：dev-no-cache → security-headers → 可选 cors/rateLimit/compression
- * → requestId / requestLogger → 可选 session → /health
+ * 顺序：dev-no-cache → security-headers → 可选 cors/rateLimit/metrics →
+ * compression（非 dev 默认开）→ requestId / requestLogger → 可选 session → /health
  *
  * Socket / 用户 middlewares / 路由 仍由 App 后续注册。
  *
@@ -13,6 +13,7 @@ import type { Middleware } from "@dreamer/middleware";
 import {
   compression,
   cors,
+  metrics,
   rateLimit,
   requestId,
   requestLogger,
@@ -21,6 +22,10 @@ import type { HttpContext } from "@dreamer/server";
 import { session } from "@dreamer/session";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
+import {
+  resolveHttpCorsOptions,
+  shouldWarnOpenCors,
+} from "../utils/cors-resolve.ts";
 import { getLogger } from "../utils/logger.ts";
 import {
   createDevNoCacheMiddleware,
@@ -67,15 +72,38 @@ export function registerFrameworkHttpMiddlewares(
   );
 
   if (config.cors) {
-    const corsOpts = config.cors === true ? {} : config.cors;
+    const corsOpts = resolveHttpCorsOptions(config.cors)!;
+    if (shouldWarnOpenCors(config.cors, opts.isRuntimeDev)) {
+      getLogger(container).warn(
+        'cors: true enables Access-Control-Allow-Origin "*"; prefer cors: { origin: ["https://app.example.com"] } in production',
+      );
+    }
     server.use(cors(corsOpts), undefined, "cors");
   }
   if (config.rateLimit) {
     const rateOpts = config.rateLimit === true ? {} : config.rateLimit;
     server.use(rateLimit(rateOpts), undefined, "rate-limit");
   }
-  if (config.compression) {
-    const compOpts = config.compression === true ? {} : config.compression;
+  if (config.metrics) {
+    const metricsOpts = config.metrics === true ? {} : config.metrics;
+    server.use(metrics(metricsOpts), undefined, "metrics");
+  }
+  /**
+   * 压缩：`start`/`build`（非 RUNTIME_ENV=dev）默认开启；
+   * 显式 `compression: false` 关闭；`true`/对象按配置透传。
+   * 开发态仍默认关（有 dev-no-cache 时收益有限，且便于调试）。
+   */
+  const compressionOpt = config.compression;
+  const enableCompression = compressionOpt === false
+    ? false
+    : compressionOpt != null
+    ? true
+    : !opts.isRuntimeDev;
+  if (enableCompression) {
+    const compOpts =
+      typeof compressionOpt === "object" && compressionOpt !== null
+        ? compressionOpt
+        : {};
     server.use(compression(compOpts), undefined, "compression");
   }
 

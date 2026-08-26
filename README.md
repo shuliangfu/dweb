@@ -364,7 +364,61 @@ modes" and "Quick start" below.)
 
 ## Application modes
 
-@dreamer/dweb supports two application modes:
+@dreamer/dweb supports **single-app / multi-app** project layouts and three
+**app kinds** (`AppConfig.kind`).
+
+### Three app kinds (`kind`)
+
+Set top-level `kind` in `config/main.ts` (same level as `name`). Omit it to keep
+the legacy default: `web`.
+
+| `kind` | Purpose | Routes | Runtime |
+| --- | --- | --- | --- |
+| `web` (default) | Page app | `_app` / `_layout` / pages; nested `routes/api/` allowed | Client build + HTML shell (SSR/CSR/SSG/Hybrid) |
+| `api` | Pure HTTP API | No `_app`; handlers live directly under `routes/` (e.g. `routes/hello.ts` → `/hello`); **not** forced under `routes/api/` | **Skips** client build and HTML render; `dev`/`start` serve JSON/Response only |
+| `console` | CLI app | Export callable actions (e.g. `hello` / `crond`) | No HTTP listen; driven by `dweb-cli run <route>/<action>` |
+
+```ts
+// Pure API config (config/main.ts)
+export default {
+  name: "api",
+  kind: "api",
+  version: "1.0.0",
+  server: { port: 3001 },
+  router: { routesDir: "./src/routes" },
+};
+```
+
+```ts
+// routes/hello.ts — GET/POST /hello
+import type { ApiContext } from "@dreamer/dweb";
+import { json } from "@dreamer/router";
+
+export async function GET(_ctx: ApiContext) {
+  return json({ message: "Hello API" });
+}
+
+export async function POST(ctx: ApiContext) {
+  const body = (ctx.body as Record<string, unknown> | undefined) ??
+    await ctx.req.json().catch(() => ({}));
+  return json({ message: "created", data: body });
+}
+```
+
+```bash
+# Console app (kind=console) — no HTTP listen
+dweb-cli run hello/world
+dweb-cli run --list
+dweb-cli run hello/world -- --name Ada
+dweb-cli run crond/start -a console   # multi-app
+dweb-cli generate -t console -n user/seed
+```
+
+See also `examples/app-kinds/multi-web-api-console`.
+
+`dweb-cli init` can scaffold Web / API / Console. In multi-app mode each app
+picks its own `kind` and shares `common/`. **At most one** `console` per
+project.
 
 ### Single-app mode (default)
 
@@ -377,11 +431,13 @@ independently and can share common code and config.
 
 **Multi-app conventions**:
 
-- **Backend (backend/admin)**: Default **admin panel** form, with pages,
-  `_app.tsx`, and route views (e.g. user management, settings).
-- **API app**: For **pure API** (no views, no `_app.tsx`, only `routes/api`),
-  create a separate app (e.g. app name `api`) distinct from "backend". Templates
-  and scaffolding can optionally generate API-only route directories.
+- **Web apps** (e.g. backend/admin): pages, `_app.tsx`, route views.
+- **API apps**: set `kind: "api"`; scaffold generates handlers under `routes/`
+  with no `_app`.
+- **Console apps**: default directory name `console`; only one per project.
+
+See the Chinese design note
+[2026-08-25-app-kinds-init-实现分析.md](./docs/zh-CN/2026-08-25-app-kinds-init-实现分析.md).
 
 ---
 
@@ -504,10 +560,10 @@ my-app/
 │   ├── main.ts
 │   ├── routes/
 │   └── config/
-├── api/                # Optional: pure API app (no _app.tsx, only routes/api)
+├── api/                # Optional: pure API (kind: "api"; no _app; handlers in routes/)
 │   ├── main.ts
-│   ├── routes/api/
-│   └── config/
+│   ├── routes/         # e.g. hello.ts → /hello (not forced under routes/api/)
+│   └── config/         # kind: "api"
 ├── mobile/             # Mobile app (optional)
 │   ├── main.ts
 │   ├── routes/
@@ -714,7 +770,7 @@ await mobileApp.start();
 - ✅ Can share common code and config (common directory)
 - ✅ Suitable for large projects, frontend/backend separation
 - ✅ Backend (backend/admin) default has pages, _app.tsx; for pure API (no
-  views) create a separate app (e.g. `api`, only routes/api)
+  views) use `kind: "api"` (handlers directly under `routes/`, no `_app`)
 
 #### Common config and code
 

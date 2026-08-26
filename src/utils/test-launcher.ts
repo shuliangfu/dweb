@@ -69,10 +69,18 @@ export function shouldPreferTestTask(input: {
   layers: TestLayer[];
   filter?: string;
   coverage?: boolean | string;
+  /** 宿主 reporter / report-out 等产品 flag 时强制直 spawn */
+  reporter?: string;
+  reportOut?: string;
+  /** 产品层 --report json,md,html 时强制直 spawn */
+  productReport?: boolean;
 }): boolean {
   if (input.layers.length > 0) return false;
   if (input.filter) return false;
   if (input.coverage !== undefined && input.coverage !== false) return false;
+  if (input.reporter) return false;
+  if (input.reportOut) return false;
+  if (input.productReport) return false;
   // 默认路径 ["tests"] 且无其它 flag → 可走 task
   if (
     input.paths.length === 1 &&

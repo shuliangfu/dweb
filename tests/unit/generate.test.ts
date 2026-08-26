@@ -100,6 +100,41 @@ describe("generate (cmd/generate.ts)", () => {
       expect(content).toContain("About");
     });
 
+    it("应生成 console 命令文件（支持嵌套路径）", async () => {
+      await generateMain([], {
+        type: "console",
+        name: "user/seed",
+      });
+
+      const targetPath = join(testDir, "src", "routes", "user", "seed.ts");
+      expect(await exists(targetPath)).toBe(true);
+
+      const content = await readTextFile(targetPath);
+      expect(content).toContain("ConsoleContext");
+      expect(content).toContain("export async function run");
+      expect(content).toContain("user/seed");
+    });
+
+    it("kind=api 时应将 api 生成到 routes/ 平铺（非 routes/api/）", async () => {
+      await ensureDir(join(testDir, "src", "config"));
+      await writeTextFile(
+        join(testDir, "src", "config", "main.ts"),
+        `export default { kind: "api", name: "api-app" };\n`,
+      );
+
+      await generateMain([], {
+        type: "api",
+        name: "ping",
+      });
+
+      const flat = join(testDir, "src", "routes", "ping.ts");
+      const nested = join(testDir, "src", "routes", "api", "ping.ts");
+      expect(await exists(flat)).toBe(true);
+      expect(await exists(nested)).toBe(false);
+      const content = await readTextFile(flat);
+      expect(content).toContain("GET /ping");
+    });
+
     it("不支持的 type 应完成且不创建文件（捕获 DwebError 并输出错误）", async () => {
       await generateMain([], { type: "unknown", name: "test" });
 

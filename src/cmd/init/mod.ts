@@ -9,6 +9,7 @@ import { loadDwebDenoJson } from "../../utils/version.ts";
 import type { DwebDenoConfig } from "../../utils/version.ts";
 import { collectOptions } from "./collect.ts";
 import { generate, InitCancelledError } from "./generate.ts";
+import { resolveApps } from "./helpers.ts";
 import type { InitMainOptions, InitOptions } from "./types.ts";
 
 export { collectOptions, generate, InitCancelledError };
@@ -40,14 +41,21 @@ export async function main(
 
   success($tr("init.projectCreated"));
   info($tr("init.nextSteps"));
-  const isMulti = opts.appMode === "multi" && (opts.appNames?.length ?? 0) > 0;
+  const apps = resolveApps(opts);
+  const isMulti = opts.appMode === "multi" && apps.length > 0;
   if (opts.targetDir !== cwd()) {
     info($tr("init.cdDir", { dir: basename(opts.targetDir) }));
   }
-  if (isMulti && opts.appNames?.length) {
-    for (const app of opts.appNames) {
-      info($tr("init.runDevApp", { app }));
+  if (isMulti) {
+    for (const app of apps) {
+      if (app.kind === "console") {
+        info($tr("init.runConsoleApp", { app: app.name }));
+      } else {
+        info($tr("init.runDevApp", { app: app.name }));
+      }
     }
+  } else if (apps[0]?.kind === "console") {
+    info($tr("init.runConsole"));
   } else {
     info($tr("init.runDev"));
   }

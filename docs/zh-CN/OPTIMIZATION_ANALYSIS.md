@@ -229,10 +229,10 @@ dweb 将 **View 作为推荐引擎**。view **2.0.4** 与 dweb 直接相关的�
 
 | # | 项                                      | 状态   | 产出                                                |
 | - | --------------------------------------- | ------ | --------------------------------------------------- |
-| 1 | 继续拆 builder（dep 生成等）            | 进行中 | 入口/HMR 模板仍可再拆                               |
+| 1 | 继续拆 builder（dep 生成等）            | ✅     | `csr-client-dep` 已拆；入口/HMR 模板仍可再拆         |
 | 2 | 可选压缩 + 统一 hash 资产 Cache-Control | ✅     | `compression` 配置；`HASHED_ASSET_CACHE_CONTROL`    |
-| 3 | CORS/CSP/限流配置项                     | ✅     | `cors` / `securityHeaders.csp` / `rateLimit` opt-in |
-| 4 | SSR streaming 试点（view 引擎优先）     | 待做   | 需与 render/view 协同                               |
+| 3 | CORS/CSP/限流配置项                     | ✅     | `cors` / `securityHeaders.csp` / `rateLimit`；另有 `metrics` |
+| 4 | SSR streaming 试点（view 引擎优先）     | ✅     | render `renderSSRStream` + dweb `render.ssr.stream` |
 
 ### P2 — 架构 / 产品（RFC）
 

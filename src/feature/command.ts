@@ -92,12 +92,14 @@ export class Command extends BaseCommand {
     // 3. 入口文件 main.ts 传入的 config（最高优先级）
     const loadedConfig = getConfig(this._container);
     delete loadedConfig.server;
+    loadedConfig.hotReload = false;
+    loadedConfig.kind = loadedConfig.kind ?? "console";
 
-    // 创建 App 实例并保存
-    this._app = new App(loadedConfig);
+    // 创建 App 实例并保存（console 模式：不 listen）
+    this._app = new App(loadedConfig, { mode: "console" });
 
-    // 启动 App（会初始化所有服务）
-    await this._app.start();
+    // 启动 App（会初始化所有服务，不 listen HTTP）
+    await this._app.start({ mode: "console" });
   }
 
   /**

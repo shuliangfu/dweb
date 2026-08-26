@@ -38,6 +38,13 @@ export function collectClientRoutes(
 }
 
 /**
+ * 转义 style 内容中的 `</`，避免提前闭合 style 标签
+ */
+export function escapeHtmlInStyle(css: string): string {
+  return css.replace(/<\//g, "\\3C /");
+}
+
+/**
  * 检测 HTML 字符串中是否包含挂载容器元素（某标签的 id 等于 containerId）
  * 仅匹配开始标签（<tag ...>）内的 id 属性，避免误判 script 等文本中的 id="app"。
  *

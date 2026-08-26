@@ -340,7 +340,60 @@ new App(config)
 
 ## 应用模式
 
-@dreamer/dweb 支持两种应用模式：
+@dreamer/dweb 支持**单应用 / 多应用**两种工程组织，以及三种**应用种类**
+（`AppConfig.kind`）。
+
+### 三种应用类型（`kind`）
+
+在 `config/main.ts` **顶层**设置 `kind`（与 `name` 同级）。缺省视为
+`web`，兼容旧项目。
+
+| `kind` | 用途 | 路由约定 | 运行时 |
+| --- | --- | --- | --- |
+| `web`（默认） | 带页面的 Web 应用 | `_app` / `_layout` / 页面；可另有嵌套 `routes/api/` | 构建客户端 + HTML 壳（SSR/CSR/SSG/Hybrid） |
+| `api` | 纯 HTTP API | **无** `_app`；handler **直接**放在 `routes/`（如 `routes/hello.ts` → `/hello`），**不**强制再套 `routes/api/` | **跳过**客户端构建与 HTML 渲染；`dev`/`start` 只提供 JSON/Response |
+| `console` | CLI 命令应用 | 导出可执行动作（如 `hello` / `crond`） | 不 listen HTTP；由 `dweb-cli run <route>/<action>` 驱动 |
+
+```ts
+// 纯 API 示例（config/main.ts）
+export default {
+  name: "api",
+  kind: "api",
+  version: "1.0.0",
+  server: { port: 3001 },
+  router: { routesDir: "./src/routes" },
+};
+```
+
+```ts
+// routes/hello.ts —— GET/POST /hello
+import type { ApiContext } from "@dreamer/dweb";
+import { json } from "@dreamer/router";
+
+export async function GET(_ctx: ApiContext) {
+  return json({ message: "Hello API" });
+}
+
+export async function POST(ctx: ApiContext) {
+  const body = (ctx.body as Record<string, unknown> | undefined) ??
+    await ctx.req.json().catch(() => ({}));
+  return json({ message: "created", data: body });
+}
+```
+
+```bash
+# Console 应用（kind=console）—— 不起 HTTP
+dweb-cli run hello/world
+dweb-cli run --list
+dweb-cli run hello/world -- --name Ada
+dweb-cli run crond/start -a console   # 多应用
+dweb-cli generate -t console -n user/seed
+```
+
+参见 `examples/app-kinds/multi-web-api-console`。
+
+`dweb-cli init` 可选 Web / API / Console；多应用下每个 app 各自选
+`kind`，共用 `common/`。**一项目最多一个** `console`。
 
 ### 单应用模式（默认）
 
@@ -353,12 +406,13 @@ backend、frontend、mobile），每个应用独立运行，可以共享公共�
 
 **多应用形态约定**：
 
-- **后台（backend/admin）**：默认为**后台管理**形态，带页面、有
-  `_app.tsx`、有路由视图（如用户管理、设置页）。
-- **API 应用**：若需**纯 API**（无视图、无 `_app.tsx`，仅
-  `routes/api`），应单独建应用（如应用名
-  `api`），与「后台」区分；模板与脚手架中可选「API 应用」形态生成仅 API
-  路由的目录。
+- **Web 应用（如 backend/admin）**：带页面、有 `_app.tsx`、有路由视图。
+- **API 应用**：设 `kind: "api"`，与带页面的后台区分；脚手架生成仅
+  `routes/` handler、无 `_app`。
+- **Console 应用**：目录默认 `console`，一项目唯一。
+
+详设见
+[2026-08-25-app-kinds-init-实现分析.md](./2026-08-25-app-kinds-init-实现分析.md)。
 
 ---
 
@@ -477,10 +531,10 @@ my-app/
 │   ├── main.ts
 │   ├── routes/
 │   └── config/
-├── api/                # 可选：纯 API 应用（无 _app.tsx，仅 routes/api）
+├── api/                # 可选：纯 API（kind: "api"；无 _app；handler 在 routes/）
 │   ├── main.ts
-│   ├── routes/api/
-│   └── config/
+│   ├── routes/         # 如 hello.ts → /hello（不强制再套 routes/api/）
+│   └── config/         # kind: "api"
 ├── mobile/             # 移动端应用（可选）
 │   ├── main.ts
 │   ├── routes/
@@ -681,8 +735,8 @@ await mobileApp.start();
 - ✅ 每个应用有自己的 main.ts 和 config
 - ✅ 可以共享公共代码和配置（common 目录）
 - ✅ 适合大型项目，前后端分离
-- ✅ 后台（backend/admin）默认带页面、_app.tsx；纯 API 无视图时单独建应用（如
-  `api`，仅 routes/api）
+- ✅ 后台（backend/admin）默认带页面、_app.tsx；纯 API 用 `kind: "api"`（handler
+  直接在 `routes/`，无 `_app`）
 
 #### 公共配置和代码
 

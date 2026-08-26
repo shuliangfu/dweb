@@ -22,12 +22,21 @@ import {
   createServerResponse,
   requestFromHttpContext,
 } from "../types/context.ts";
-import { DWEB_DATA_PATH } from "../utils/constants.ts";
+import {
+  DATA_ENDPOINT_CACHE_CONTROL,
+  DWEB_DATA_PATH,
+} from "../utils/constants.ts";
 import { getLogger } from "../utils/logger.ts";
 import { resolveRouterRoutesDirPath } from "../utils/path.ts";
 import { sanitizeRequestParams } from "../utils/sanitize.ts";
 import { createJsonErrorBody } from "../utils/security.ts";
 import { loadRouteModule } from "./load-route-module.ts";
+
+/** `/__data` JSON 响应公共头：禁止缓存 load 个性化数据 */
+const DATA_JSON_HEADERS = {
+  "Content-Type": "application/json",
+  "Cache-Control": DATA_ENDPOINT_CACHE_CONTROL,
+} as const;
 
 /** 数据接口路径（与客户端 fetch 一致），统一从 constants 导出便于引用 */
 export { DWEB_DATA_PATH };
@@ -122,7 +131,7 @@ export function createLoadDataMiddleware(
       if (!match || match.isApi) {
         ctx.response = new Response(JSON.stringify({ error: "not_found" }), {
           status: 404,
-          headers: { "Content-Type": "application/json" },
+          headers: DATA_JSON_HEADERS,
         });
         return;
       }
@@ -133,7 +142,7 @@ export function createLoadDataMiddleware(
           JSON.stringify({ error: "no_route_path" }),
           {
             status: 404,
-            headers: { "Content-Type": "application/json" },
+            headers: DATA_JSON_HEADERS,
           },
         );
         return;
@@ -251,13 +260,13 @@ export function createLoadDataMiddleware(
 
       ctx.response = new Response(JSON.stringify(pageProps), {
         status: 200,
-        headers: { "Content-Type": "application/json" },
+        headers: DATA_JSON_HEADERS,
       });
     } catch (err) {
       getLogger(container).error("[dweb] load-data error", pathname, err);
       ctx.response = new Response(
         JSON.stringify(createJsonErrorBody("load_failed", err)),
-        { status: 500, headers: { "Content-Type": "application/json" } },
+        { status: 500, headers: DATA_JSON_HEADERS },
       );
     }
   };

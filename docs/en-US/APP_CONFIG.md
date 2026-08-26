@@ -14,6 +14,7 @@ with the following main sections:
 | Option                 | Type                   | Description                                                                                                                                                                                                          |
 | ---------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `name`                 | string                 | Application name                                                                                                                                                                                                     |
+| `kind`                 | `"web" \| "api" \| "console"` | App kind (top-level, same level as `name`). Default **`web`**. `api`: pure HTTP API — skips client build / HTML shell; handlers live directly under `routes/`. `console`: CLI — no HTTP listen; run with `dweb-cli run <route>/<action>`. |
 | `version`              | string                 | Application version                                                                                                                                                                                                  |
 | `language`             | AppLanguage            | Framework language (zh-CN, en-US, ja-JP, ko-KR, es-ES, pt-BR, id-ID, de-DE, fr-FR; affects CLI, logs, error messages; <br/>default: auto-detect LANGUAGE/LC_ALL/LANG, else en-US)                                    |
 | `envPrefix`            | string                 | Environment variable prefix                                                                                                                                                                                          |
@@ -25,10 +26,13 @@ with the following main sections:
 | `build`                | BuildAppConfig         | Build configuration                                                                                                                                                                                                  |
 | `logger`               | LoggerConfig           | Logger configuration                                                                                                                                                                                                 |
 | `securityHeaders`      | boolean \| object      | **Optional** security headers; off by default; see [PRODUCTION_CHECKLIST](./PRODUCTION_CHECKLIST.md)                                                                                                                 |
-| `cors`                 | boolean \| CorsOptions | **Optional** CORS (`@dreamer/middlewares`); off by default                                                                                                                                                           |
-| `compression`          | boolean \| object      | **Optional** response compression; off by default; prefer production                                                                                                                                                 |
+| `cors`                 | boolean \| CorsOptions | **Optional** CORS; off by default. `true` ⇒ `origin: "*"` (warns outside dev); prefer an allowlist in prod. Bridged to Socket.IO when `socket.cors` is unset                                                          |
+| `onRequestEnd`         | `(info) => void`       | **Optional** end-of-request hook (path/method/status/durationMs); plugins may implement the same name                                                                                    |
+| `compression`          | boolean \| object      | **Optional** response compression; **on by default outside `dev`** (`false` to disable); off in `dev`                                                                                                                |
 | `rateLimit`            | boolean \| object      | **Optional** simple in-memory rate limit; off by default                                                                                                                                                             |
+| `metrics`              | boolean \| object      | **Optional** Prometheus-style `/metrics` (`@dreamer/middlewares`); off by default; complements `onRequestEnd`                                                                            |
 | `database`             | DatabaseAppConfig      | Database configuration                                                                                                                                                                                               |
+| `console`              | `{ slim?: boolean }`   | Console-only options (`kind: "console"`). `slim: true` skips banner / HTTP middleware manager for faster `dweb-cli run` cold start (keeps plugins/logger/DB); override with `DWEB_CONSOLE_SLIM=1`                    |
 | `socket`               | SocketConfig           | Real-time config (type: socketio or websocket)                                                                                                                                                                       |
 | `session`              | SessionOptions         | Session config (@dreamer/session): store required; optional name, maxAge, cookie, autoSave, genId; cookie options applied when setting session cookie; ctx.session available in load(), API, middleware when enabled |
 | `plugins`              | Array                  | Plugin list                                                                                                                                                                                                          |
@@ -58,6 +62,8 @@ import type { AppConfig } from "jsr:@dreamer/dweb";
 const config: AppConfig = {
   // ========== Basic info ==========
   name: "my-app",
+  /** App kind: web (default) | api (pure HTTP API) | console (CLI); omit → web */
+  kind: "web",
   version: "1.0.0",
   /** Framework language (zh-CN, en-US, ja-JP, etc.); affects CLI, logs, errors; auto-detect if unset */
   language: "zh-CN",
@@ -143,6 +149,12 @@ const config: AppConfig = {
       /** Enable client hydration for pre-rendered HTML (default true). */
       hydrate: true,
     },
+    /**
+     * View-only whole-page hydration mismatch strategy (Hybrid/SSR).
+     * Unset = wipe+mount (today's default). React/Preact: unsupported / ignored.
+     * continue | assert → view hydrate; remount → wipe+mount.
+     */
+    // hydration: { mismatchMode: "continue" },
   },
 
   // ========== Build config ==========
@@ -387,10 +399,19 @@ click handlers, without enabling client-side routing).
   hydrates the current page only. Link clicks perform full page navigation (no
   SPA routing). Set to `false` to serve plain server-rendered HTML with no
   client script.
+- **`render.ssr.stream`** (default `false`): Streaming SSR. Honored only for
+  `engine: "view"`. In **dev**, responses use a `ReadableStream`; production
+  falls back to the buffered string path when asset-manifest rewrite is
+  required. Not Suspense selective streaming.
 - **`render.ssg.hydrate`** (default `true`): When `mode` is `ssg`, if `true`
   each pre-rendered HTML file is injected with hydration data and `_client.js`
   after build so the page can hydrate in the browser. Set to `false` to output
   static HTML only.
+- **`render.hydration.mismatchMode`** (`"continue" | "assert" | "remount"`,
+  **View only**): Whole-page Hybrid/SSR mismatch strategy. Injects
+  `globalThis.__DWEB_MISMATCH_MODE__`. **Unset** keeps wipe+mount (today's
+  default). `continue`/`assert` call view `hydrate`; `remount` keeps wipe+mount.
+  **React/Preact: unsupported** (ignored).
 
 Both options require `@dreamer/router@^1.0.10` on the client (used by the
 generated client bundle) so that when `hydrate` is enabled, link clicks use full
@@ -420,7 +441,9 @@ new Dweb projects.
 
 **Configuration**: Set `render.engine: "view"` in `AppConfig`. Client build will
 use `@dreamer/render/client/view` for hydration and CSR. No separate “View init”
-step; the framework wires the adapter automatically.
+step; the framework wires the adapter automatically. Optional
+`render.hydration.mismatchMode` (View-only; see SSR/SSG client hydration above)
+controls Hybrid/SSR first-paint wipe+mount vs `hydrate`.
 
 **Session**: For stateful apps, combine View with `config.session`
 (`@dreamer/session`). Once `session` is set, `ctx.session` is available in

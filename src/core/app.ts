@@ -14,10 +14,15 @@ import { ServiceContainer } from "@dreamer/service";
 import { EventEmitter } from "node:events";
 import { pathToFileURL } from "node:url";
 import {
+  isApiKind,
+  isConsoleKind,
+  resolveAppKind,
+  resolveConsoleSlim,
+} from "../types/app.ts";
+import {
   addSignalListener,
   args,
   cwd,
-  exists,
   exit,
   getEnv,
   join,
@@ -35,19 +40,9 @@ import {
 import { AssetsProcessor } from "@dreamer/esbuild";
 import { expandDynamicRoute, filePathToRoute } from "@dreamer/render";
 import { initializeBuild, runBuildWithBuilder } from "../feature/build.ts";
-import {
-  buildClientScript,
-  clearClientScriptCache,
-  createClientScriptMiddleware,
-  ensureClientEntryFile,
-} from "../feature/csr-client-builder.ts";
-import { createLoadDataMiddleware } from "../feature/load-data-middleware.ts";
+import { clearClientScriptCache } from "../feature/csr-client-builder.ts";
 import { createNestedRoutesMiddleware } from "../feature/routes-middleware.ts";
 import { loadRouteModule } from "../feature/load-route-module.ts";
-import { createRendererCSR } from "../feature/render-csr.ts";
-import { createRendererHybrid } from "../feature/render-hybrid.ts";
-import { createRendererSSG } from "../feature/render-ssg.ts";
-import { createRendererSSR } from "../feature/render-ssr.ts";
 import {
   collectClientRoutes,
   hasContainerElementInHtml,
@@ -67,19 +62,18 @@ import {
 } from "../feature/websocket.ts";
 import {
   type AppConfig,
+  type AppConstructOptions,
   type AppLifecycleHook,
   type AppMiddleware,
   type AppPlugin,
   type AppStage,
+  type AppStartOptions,
   type IApp,
   isSocketIOAdapter,
 } from "../types/app.ts";
 import { getClientOutputDir } from "../utils/build-dirs.ts";
-import {
-  CLIENT_OUTPUT_MAIN_FILENAME,
-  DWEB_DATA_PATH,
-  setCacheOptions,
-} from "../utils/constants.ts";
+import { setCacheOptions } from "../utils/constants.ts";
+import { registerAppRenderPipeline } from "./app-render-pipeline.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger, initializeLogger } from "../utils/logger.ts";
@@ -178,6 +172,12 @@ export class App extends EventEmitter implements IApp {
   /** 待注册的生命周期钩子队列（初始化前缓存） */
   private _pendingHooks: Array<{ stage: AppStage; hook: AppLifecycleHook }> =
     [];
+  /** 显式配置目录（CLI console 模式：入口非 main.ts） */
+  private _configDirectories?: string[];
+  /** 是否以 console 模式运行（不 listen / 强制关闭 hotReload） */
+  private _consoleMode = false;
+  /** console.slim / DWEB_CONSOLE_SLIM：跳过 banner 与 HTTP 中间件管理器 */
+  private _consoleSlim = false;
   /** 当前生命周期阶段 */
   get stage(): AppStage {
     try {
@@ -193,10 +193,16 @@ export class App extends EventEmitter implements IApp {
    * 创建 App 实例
    *
    * @param config 应用配置（可选，从 config/main.ts 加载后合并）
+   * @param options 可选；`configDirectories` 供 `dweb-cli run` 显式指定配置目录
    */
-  constructor(config: AppConfig = {}) {
+  constructor(config: AppConfig = {}, options?: AppConstructOptions) {
     // 调用 EventEmitter 构造函数
     super();
+
+    this._configDirectories = options?.configDirectories;
+    if (options?.mode === "console" || isConsoleKind(config)) {
+      this._consoleMode = true;
+    }
 
     // 自动设置 RUNTIME_ENV，无需用户手动配置（与 deno task 中 --dev/--build/--start 及 dweb-cli 注入一致）
     // 判断逻辑：
@@ -276,17 +282,23 @@ export class App extends EventEmitter implements IApp {
    * @param config 应用配置（或覆盖项）
    */
   private async _initializeConfig(config: AppConfig): Promise<void> {
-    // 配置目录：从入口路径推断（src/main.ts → src/config 等），推断失败时用默认
-    let configDir: string | undefined;
-    try {
-      configDir = inferConfigDirectoryFromEntry();
-    } catch {
-      configDir = undefined; // 测试等场景下使用 initializeConfigManager 默认值
+    // 配置目录：显式传入（dweb-cli run）优先；否则从入口路径推断；再失败用默认
+    let directories: string[] | undefined = this._configDirectories;
+    if (!directories) {
+      try {
+        const configDir = inferConfigDirectoryFromEntry();
+        directories = [configDir];
+      } catch {
+        directories = undefined; // 测试等场景下使用 initializeConfigManager 默认值
+      }
     }
+
+    const wantConsole = this._consoleMode || isConsoleKind(config);
     await initializeConfigManager(this.container, {
-      directories: configDir ? [configDir] : undefined,
+      directories,
       envPrefix: config.envPrefix,
-      hotReload: config.hotReload,
+      // console：禁止 hotReload 文件监听，否则 CLI 进程无法退出
+      hotReload: wantConsole ? false : config.hotReload,
     });
 
     // 获取已加载的配置
@@ -299,6 +311,23 @@ export class App extends EventEmitter implements IApp {
     // 深度合并用户提供的配置（入口文件配置优先级最高）
     // 使用深度合并，对 plugins 和 middlewares 数组进行特殊处理
     const mergedConfig = deepMergeConfig(loadedConfig, config) as AppConfig;
+
+    // console：即使 common 泄漏了 server/render，也不得 listen / 构建客户端
+    if (wantConsole || isConsoleKind(mergedConfig)) {
+      this._consoleMode = true;
+      delete mergedConfig.server;
+      mergedConfig.hotReload = false;
+      if (mergedConfig.kind == null) {
+        mergedConfig.kind = "console";
+      }
+    }
+
+    // console 冷启动精简：仅 console 模式；env DWEB_CONSOLE_SLIM 覆盖 console.slim
+    this._consoleSlim = this._consoleMode &&
+      resolveConsoleSlim(mergedConfig, getEnv("DWEB_CONSOLE_SLIM"));
+    if (this._consoleSlim) {
+      mergedConfig.console = { ...mergedConfig.console, slim: true };
+    }
 
     // 验证合并后的配置（自动验证，确保配置正确性）
     validateConfig(mergedConfig);
@@ -324,13 +353,18 @@ export class App extends EventEmitter implements IApp {
     // 初始化日志服务（依赖配置）
     initializeLogger(this.container, mergedConfig);
 
-    await this._logFrameworkBanner(mergedConfig);
+    if (!this._consoleSlim) {
+      await this._logFrameworkBanner(mergedConfig);
+    }
 
-    // 初始化生命周期管理器（所有模式都需要）
+    // 初始化生命周期管理器（所有模式都需要；slim 仍保留以便 DB/插件钩子）
     initializeLifecycle(this.container, mergedConfig);
 
-    // 初始化中间件系统（依赖配置和日志）
-    initializeMiddleware(this.container, mergedConfig);
+    // 初始化中间件系统（依赖配置和日志）。
+    // console slim：跳过 HTTP 中间件管理器（CLI 用 console/middlewares，不走此链）
+    if (!this._consoleSlim) {
+      initializeMiddleware(this.container, mergedConfig);
+    }
 
     // 初始化插件系统（依赖配置）
     initializePlugin(this.container, mergedConfig.pluginManagerOptions);
@@ -357,15 +391,22 @@ export class App extends EventEmitter implements IApp {
 
     // 先注册插件并触发 onInit，再初始化服务器/构建 client（以便 getHmrCssEntries 等能读到 tailwindConfig 等）
     await this._registerPluginsFromConfig(mergedConfig);
-    await this._registerMiddlewaresFromConfig(mergedConfig);
-    this._registerRoutesMiddleware(mergedConfig);
+    if (!this._consoleSlim) {
+      await this._registerMiddlewaresFromConfig(mergedConfig);
+    }
+    // console 无 HTTP：跳过 routes 嵌套中间件（避免无 router 时的无用注册）
+    if (!this._consoleMode) {
+      this._registerRoutesMiddleware(mergedConfig);
+    }
     this._initialized = true;
-    for (const pending of this._pendingMiddlewares) {
-      this.use(
-        pending.middlewareOrPath as AppMiddleware,
-        pending.conditionOrMiddleware,
-        pending.name,
-      );
+    if (!this._consoleSlim) {
+      for (const pending of this._pendingMiddlewares) {
+        this.use(
+          pending.middlewareOrPath as AppMiddleware,
+          pending.conditionOrMiddleware,
+          pending.name,
+        );
+      }
     }
     this._pendingMiddlewares = [];
     for (const plugin of this._pendingPlugins) {
@@ -379,10 +420,13 @@ export class App extends EventEmitter implements IApp {
     await pluginEvents.emitOnInit(this.container);
     this.emit("init");
 
-    // 初始化服务器（依赖配置和日志）
-    if (mergedConfig.server) {
-      // 初始化渲染和路由（服务器需要这些功能）
-      initializeRender(this.container, mergedConfig);
+    // 初始化服务器（依赖配置和日志）；console 模式不 listen
+    if (mergedConfig.server && !this._consoleMode) {
+      const apiApp = isApiKind(mergedConfig);
+      // 路由始终需要；纯 API 跳过渲染引擎（无 HTML 壳 / 无客户端包）
+      if (!apiApp) {
+        initializeRender(this.container, mergedConfig);
+      }
       await initializeRouter(this.container, mergedConfig);
       initializeBuild(this.container, mergedConfig);
 
@@ -405,17 +449,19 @@ export class App extends EventEmitter implements IApp {
       }
 
       // 注册客户端资源目录（多应用时为 dist/<appDir>/client/assets），供 Tailwind 等插件在生产模式解析带 hash 的 CSS 路径
-      const clientOutputDirForAssets = getClientOutputDir(mergedConfig);
-      const clientAssetsDirPath = join(
-        cwd(),
-        clientOutputDirForAssets,
-        "assets",
-      );
-      if (!this.container.has("clientAssetsDir")) {
-        this.container.registerSingleton(
-          "clientAssetsDir",
-          () => clientAssetsDirPath,
+      if (!apiApp) {
+        const clientOutputDirForAssets = getClientOutputDir(mergedConfig);
+        const clientAssetsDirPath = join(
+          cwd(),
+          clientOutputDirForAssets,
+          "assets",
         );
+        if (!this.container.has("clientAssetsDir")) {
+          this.container.registerSingleton(
+            "clientAssetsDir",
+            () => clientAssetsDirPath,
+          );
+        }
       }
 
       const server = getServer(this.container);
@@ -488,135 +534,14 @@ export class App extends EventEmitter implements IApp {
       };
       server.useRouter(router, routerOptions);
 
-      // 根据渲染模式选择渲染器
-      const renderMode = (mergedConfig.render as { mode?: string })?.mode ||
-        "ssr";
-      const renderLogger = getLogger(this.container);
-
-      if (renderMode === "csr") {
-        // CSR 模式：返回 HTML 外壳 + 客户端脚本
-        const csrRenderer = createRendererCSR(
-          this.container,
+      // 纯 API：不挂 HTML 渲染器、不构建/托管客户端脚本
+      if (!apiApp) {
+        await registerAppRenderPipeline(server, {
+          container: this.container,
           router,
-          mergedConfig,
-        );
-        server.setSSRRender(csrRenderer);
-
-        // 客户端页面切换时请求此接口获取该路由 load() 数据
-        server.use(
-          createLoadDataMiddleware(this.container, router, mergedConfig),
-          DWEB_DATA_PATH,
-          "load-data",
-        );
-
-        // 注册客户端脚本服务中间件（处理 /_client.js 请求）
-        const clientScriptMiddleware = createClientScriptMiddleware(
-          this.container,
-          mergedConfig,
-        );
-        server.use(clientScriptMiddleware);
-
-        const clientOutputDir = getClientOutputDir(mergedConfig);
-        const prebuiltClientPath = join(
-          cwd(),
-          clientOutputDir,
-          CLIENT_OUTPUT_MAIN_FILENAME,
-        );
-        const hasPrebuiltClient = await exists(prebuiltClientPath);
-        await this._ensureClientBuildForRender(
-          mergedConfig,
-          hasPrebuiltClient,
-        );
-
-        if (!this._isBuildMode()) {
-          renderLogger.debug($tr("log.renderModeCsr"));
-        }
-      } else if (renderMode === "hybrid") {
-        // Hybrid 模式：服务端渲染完整 HTML + 客户端 hydrate
-        const hybridRenderer = createRendererHybrid(
-          this.container,
-          router,
-          mergedConfig,
-        );
-        server.setSSRRender(hybridRenderer);
-
-        // 客户端页面切换时请求此接口获取该路由 load() 数据
-        server.use(
-          createLoadDataMiddleware(this.container, router, mergedConfig),
-          DWEB_DATA_PATH,
-          "load-data",
-        );
-
-        // 注册客户端脚本服务中间件（处理 /_client.js 请求）
-        const clientScriptMiddleware = createClientScriptMiddleware(
-          this.container,
-          mergedConfig,
-        );
-        server.use(clientScriptMiddleware);
-
-        const clientOutputDir = getClientOutputDir(mergedConfig);
-        const prebuiltClientPath = join(
-          cwd(),
-          clientOutputDir,
-          CLIENT_OUTPUT_MAIN_FILENAME,
-        );
-        const hasPrebuiltClient = await exists(prebuiltClientPath);
-        await this._ensureClientBuildForRender(
-          mergedConfig,
-          hasPrebuiltClient,
-        );
-
-        if (!this._isBuildMode()) {
-          renderLogger.debug($tr("log.renderModeHybrid"));
-        }
-      } else if (renderMode === "ssg") {
-        // SSG 模式：从预渲染输出目录提供静态 HTML，并注册客户端脚本以便激活
-        const ssgRenderer = createRendererSSG(
-          this.container,
-          router,
-          mergedConfig,
-        );
-        server.setSSRRender(ssgRenderer);
-
-        const clientScriptMiddleware = createClientScriptMiddleware(
-          this.container,
-          mergedConfig,
-        );
-        server.use(clientScriptMiddleware);
-
-        if (!this._isBuildMode()) {
-          renderLogger.debug($tr("log.renderModeSsg"));
-        }
-      } else {
-        // SSR 模式：服务端渲染完整 HTML + 客户端激活（事件响应）
-        const ssrRenderer = createRendererSSR(
-          this.container,
-          router,
-          mergedConfig,
-        );
-        server.setSSRRender(ssrRenderer);
-
-        const clientScriptMiddleware = createClientScriptMiddleware(
-          this.container,
-          mergedConfig,
-        );
-        server.use(clientScriptMiddleware);
-
-        const clientOutputDir = getClientOutputDir(mergedConfig);
-        const prebuiltClientPath = join(
-          cwd(),
-          clientOutputDir,
-          CLIENT_OUTPUT_MAIN_FILENAME,
-        );
-        const hasPrebuiltClient = await exists(prebuiltClientPath);
-        await this._ensureClientBuildForRender(
-          mergedConfig,
-          hasPrebuiltClient,
-        );
-
-        if (!this._isBuildMode()) {
-          renderLogger.debug($tr("log.renderModeSsr"));
-        }
+          config: mergedConfig,
+          isBuildMode: () => this._isBuildMode(),
+        });
       }
 
       // 注册插件事件中间件（触发 onRequest/onResponse 事件）
@@ -897,42 +822,19 @@ export class App extends EventEmitter implements IApp {
   }
 
   /**
-   * 在需要客户端脚本的渲染模式下，按需生成 _client.tsx 并执行客户端构建（内存或磁盘）。
-   *
-   * - RUNTIME_ENV=dev：始终保证入口并按需客户端构建（非 `--build` 进程内构建）
-   * - RUNTIME_ENV=build | start：无预构建产物且当前不是「仅 CLI build」时再构建客户端
-   */
-  private async _ensureClientBuildForRender(
-    config: AppConfig,
-    hasPrebuiltClient: boolean,
-  ): Promise<void> {
-    const rt = getEnv("RUNTIME_ENV");
-
-    if (rt === "dev") {
-      await ensureClientEntryFile(this.container, config);
-      if (!this._isBuildMode()) {
-        await buildClientScript(this.container, config);
-      }
-    } else if (rt === "build" || rt === "start") {
-      if (!hasPrebuiltClient && !this._isBuildMode()) {
-        await buildClientScript(this.container, config);
-      }
-    } else {
-      // 未设置或非预期值：与「非 dev」保守策略一致（兼容仅通过 CLI 读配置的进程）
-      if (!hasPrebuiltClient && !this._isBuildMode()) {
-        await buildClientScript(this.container, config);
-      }
-    }
-  }
-
-  /**
    * 启动应用
    *
    * 自动检测 --build 参数：
    * - 如果有 --build 参数，执行 build() 只构建不启动服务器
-   * - 如果没有 --build 参数，正常启动服务器
+   * - 如果没有 --build 参数，正常启动服务器（console 模式不 listen）
+   *
+   * @param options `mode: "console"` 时跳过 HTTP；结束后调用方须 shutdown
    */
-  async start(): Promise<void> {
+  async start(options?: AppStartOptions): Promise<void> {
+    if (options?.mode === "console") {
+      this._consoleMode = true;
+    }
+
     // 检测是否为 build 模式
     if (this._isBuildMode()) {
       await this.build();
@@ -943,13 +845,24 @@ export class App extends EventEmitter implements IApp {
     // 等待初始化完成（框架版本与应用名称已在 _initializeConfig 中首先打印）
     await this._initPromise;
 
+    // 若配置最终解析为 console，与显式 mode 对齐
+    try {
+      if (isConsoleKind(getConfig(this.container))) {
+        this._consoleMode = true;
+      }
+    } catch {
+      // config 可能尚未就绪（极少见）
+    }
+
     const lifecycleManager = getLifecycleManager(this.container);
 
     // 初始化应用
     await lifecycleManager.initialize();
 
-    // 注册信号监听器（优雅关闭）
-    this._setupSignalHandlers();
+    // 信号监听：slim console 由 run.ts 显式 stop/shutdown，跳过装饰性注册
+    if (!this._consoleSlim) {
+      this._setupSignalHandlers();
+    }
 
     // 触发 onStart 事件（应用启动时）
     await pluginEvents.emitOnStart(this.container);
@@ -957,8 +870,27 @@ export class App extends EventEmitter implements IApp {
     // 触发 EventEmitter 事件
     this.emit("start");
 
-    // 启动应用（HTTP 等就绪）
+    // 启动应用（HTTP listen 仅在非 console 且已挂 server hook 时发生）
     await lifecycleManager.start();
+  }
+
+  /** 是否以 console（CLI）模式运行 */
+  isConsoleMode(): boolean {
+    return this._consoleMode;
+  }
+
+  /** console 冷启动精简是否生效（`console.slim` / `DWEB_CONSOLE_SLIM`） */
+  isConsoleSlim(): boolean {
+    return this._consoleSlim;
+  }
+
+  /** 当前解析的应用种类（依赖已加载配置） */
+  getKind(): ReturnType<typeof resolveAppKind> {
+    try {
+      return resolveAppKind(getConfig(this.container));
+    } catch {
+      return this._consoleMode ? "console" : "web";
+    }
   }
 
   /**
@@ -993,22 +925,24 @@ export class App extends EventEmitter implements IApp {
     }
 
     try {
+      const apiApp = isApiKind(config);
       // 触发插件的 onBuild 钩子（Tailwind/UnoCSS 等会直接写入各自的 output 目录）
       await pluginEvents.emitOnBuild(this.container, {
         mode: "prod",
-        target: "client",
+        target: apiApp ? "server" : "client",
       });
       logger.info($tr("log.pluginBuildComplete"));
 
       const renderMode = (config.render as { mode?: string })?.mode ?? "ssr";
       // 使用 @dreamer/esbuild 的 Builder 统一构建（服务端 + 客户端 + 资源）
       // SSR/SSG 也构建客户端，以便静态 HTML 可做客户端激活（事件响应）
+      // 纯 API：只构建服务端，跳过客户端包
       await runBuildWithBuilder(this.container, config, {
-        skipClient: false,
+        skipClient: apiApp,
       });
 
       // SSG 模式：预渲染静态 HTML 到 client 目录（与其它前端产物一致），start 时从该目录读取（在服务端构建之后执行，确保不被覆盖）
-      if (renderMode === "ssg") {
+      if (!apiApp && renderMode === "ssg") {
         const router = getRouter(this.container);
         const renderService = getRender(this.container);
         const renderCfg = config.render as {

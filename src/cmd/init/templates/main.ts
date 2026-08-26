@@ -2,13 +2,19 @@
  * init 生成的 main.ts 模板（单应用与多应用共用 body，通过 getStyleContext 统一样式逻辑）
  */
 
-import { $tr, getEngineDisplayName, getStyleContext } from "../helpers.ts";
+import {
+  $tr,
+  getAppKind,
+  getEngineDisplayName,
+  getStyleContext,
+} from "../helpers.ts";
 import type { InitOptions } from "../types.ts";
 
 /**
  * 生成 main.ts 内容（单应用不传 appName，多应用传 appName 以区分路径与注释）
  */
 function buildMainTsBody(opts: InitOptions, appName?: string): string {
+  const kind = getAppKind(opts, appName);
   const style = getStyleContext(opts, appName);
   const commentLine = appName != null
     ? ` * ${$tr("init.comments.appEntry", { appName })}\n * ${
@@ -21,6 +27,16 @@ function buildMainTsBody(opts: InitOptions, appName?: string): string {
     : ` * ${$tr("init.comments.serverEntry")}\n * ${
       getEngineDisplayName(opts.engine)
     } + @dreamer/dweb\n * ${$tr("init.comments.configAutoLoaded")}`;
+
+  if (kind === "console") {
+    return `/**
+${commentLine}
+ * ${$tr("init.comments.consoleEntryHint")}
+ */
+
+console.log(${JSON.stringify($tr("init.template.consoleMainHint"))});
+`;
+  }
 
   return `/**
 ${commentLine}

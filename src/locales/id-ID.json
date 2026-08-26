@@ -67,7 +67,8 @@
       "update": "Perbarui deps",
       "preview": "Pratinjau",
       "upgrade": "Perbarui",
-      "help": "Lihat bantuan lengkap"
+      "help": "Lihat bantuan lengkap",
+      "run": "Run console command"
     },
     "installFailed": "Instalasi gagal",
     "installFailedExit": "Instalasi gagal, keluar: {code}",
@@ -101,7 +102,8 @@
     "fmtFailed": "Fmt gagal",
     "fmtFailedWithMessage": "Fmt gagal: {message}",
     "upgradeFailed": "Upgrade gagal",
-    "upgradeFailedWithMessage": "Upgrade gagal: {message}"
+    "upgradeFailedWithMessage": "Upgrade gagal: {message}",
+    "runFailedWithMessage": "run failed: {message}"
   },
   "cliDesc": {
     "toolName": "Alat CLI DWEB",
@@ -117,7 +119,7 @@
     "portOption": "Port (bawaan 4173)",
     "appOptional": "Nama app (untuk multi-app)",
     "generate": "Buat kode",
-    "generateTypeOption": "Tipe (route, api, model, service)",
+    "generateTypeOption": "Type: route / api / model / service / console (r,a,m,s,c)",
     "nameOption": "Nama",
     "appOptionalGenerate": "Nama app (untuk multi-app, mis. backend, frontend)",
     "test": "Jalankan tes",
@@ -142,7 +144,11 @@
     "testFilter": "Filter tes berdasarkan nama (filter host)",
     "testCoverage": "Kumpulkan coverage (Deno/Bun --coverage)",
     "testRuntime": "Runtime host: deno atau bun",
-    "testVerbose": "Tampilkan perintah host yang di-spawn"
+    "testVerbose": "Tampilkan perintah host yang di-spawn",
+    "run": "Run a Console app command (kind=console; e.g. hello/world)",
+    "appOptionalRun": "App name (multi-app: console; default resolves the only console)",
+    "runList": "List console commands (optional module filter)",
+    "runTimeout": "Command timeout in ms (exit 124 on timeout)"
   },
   "common": {
     "noDenoJson": "deno.json tidak ditemukan, jalankan di root dweb",
@@ -297,12 +303,19 @@
     "fileExists": "File ada: {path}",
     "generateComplete": "{type} {name} dibuat!",
     "filePath": "Path file: {path}",
-    "supportedTypes": "Tipe: route, api, model, service (r, a, m, s)",
+    "supportedTypes": "Types: route, api, model, service, console (r, a, m, s, c)",
     "generateFailed": "Buat {type} gagal: {message}",
     "templateApiHelloMessage": "Halo dari API {name}",
     "templateApiCreatedMessage": "Dibuat",
     "templateApiCommentLine1": "API {name}",
-    "templateApiCommentLine2": "Menggunakan Request/Response standar Web, kompatibel dengan @dreamer/router apiMode: \"restful\""
+    "templateApiCommentLine2": "Menggunakan Request/Response standar Web, kompatibel dengan @dreamer/router apiMode: \"restful\"",
+    "consoleDefaultApp": "No -a given; writing into Console app: {app}",
+    "consoleRootMissing": "Console directory not found; init kind=console or pass -a console",
+    "warnRouteOnConsole": "App kind=console; generating {type} is usually unused (no pages/HTTP)",
+    "warnPageOnApi": "App kind=api; generating a page route is usually unused (no HTML shell)",
+    "warnConsoleOnWeb": "App kind=web; console command goes under web routes/; multi-app: use -a console",
+    "warnConsoleOnHttpApp": "Generating console command on an HTTP app; for pure CLI init kind=console",
+    "consoleRunHint": "Run: dweb-cli run {route}"
   },
   "dev": {
     "starting": "Memulai server dev {app}...",
@@ -471,7 +484,18 @@
       "user2Name": "Jane",
       "user2Role": "Pengguna",
       "user3Name": "Bob",
-      "user3Role": "Tamu"
+      "user3Role": "Tamu",
+      "apiHelloMessage": "Hello from dweb API",
+      "apiCreatedMessage": "Created",
+      "apiHelloComment": "Example API: hello",
+      "apiUsersComment": "Example API: users list",
+      "apiUserByIdComment": "Example API: user by id",
+      "consoleHelloComment": "Example console command: hello",
+      "consoleHelloOutput": "Hello from dweb console!",
+      "consoleCrondComment": "Example console command: crond",
+      "consoleCrondStart": "crond start (example)",
+      "consoleCrondStop": "crond stop (example)",
+      "consoleMainHint": "Console app: use `dweb-cli run hello/world` (HTTP server not started from main.ts)"
     },
     "comments": {
       "serverEntry": "Entri server",
@@ -631,7 +655,41 @@
       "pluginsDesc": "Plugin: array string path atau { name, version, dependencies, config, onInit, onRequest, ... }. Hapus komentar untuk menambah.",
       "middlewaresDesc": "Middleware: array { middleware, name?, condition? } atau string path. Hapus komentar untuk menambah.",
       "middlewareNameDesc": "Nama middleware untuk log dan urutan.",
-      "middlewareConditionDesc": "Kondisi: (req) => boolean; jalankan middleware hanya jika true."
-    }
+      "middlewareConditionDesc": "Kondisi: (req) => boolean; jalankan middleware hanya jika true.",
+      "kindDesc": "App kind: web | api | console",
+      "consoleEntryHint": "Console app: use dweb-cli run <route>/<action>; do not start HTTP from main.ts",
+      "consoleConfigHint": "Console app config (no server.listen)",
+      "apiConfigHint": "Pure API app config (no _app / page engine)",
+      "dockerConsoleOnly": "Console-only project has no HTTP service; empty compose"
+    },
+    "appKind": "App kind",
+    "appKindWeb": "Web (pages)",
+    "appKindApi": "API (HTTP only)",
+    "appKindConsole": "Console (CLI)",
+    "consoleNameFixed": "Console app directory fixed as: {name}",
+    "addAnotherApp": "Add another app?",
+    "appsAddedSoFar": "Added: {apps}",
+    "appNameRequiredForKind": "Please enter an app name",
+    "appNameReservedConsole": "Name \"{name}\" is reserved for Console; pick another name or choose Console kind",
+    "exampleLevelConsole": "Console examples",
+    "exampleConsoleWithCrond": "With crond (hello + crond)",
+    "exampleConsoleMinimal": "Minimal (hello)",
+    "exampleLevelApi": "API examples",
+    "exampleApiWithUsers": "With users (hello + users)",
+    "exampleApiMinimal": "Minimal (hello)",
+    "runConsole": "  dweb-cli run hello/world",
+    "runConsoleApp": "  dweb-cli run hello/world -a {app}   # Console command"
+  },
+  "run": {
+    "missingRoute": "Specify a command route, e.g. dweb-cli run hello/world",
+    "usageHint": "Usage: dweb-cli run <route>/<action> [-a console] [--list] [--timeout ms] [-- --flag]",
+    "notConsoleKind": "Target app kind is \"{kind}\", not console (root: {root})",
+    "failedWithMessage": "Console command failed: {message}",
+    "listHeader": "Available console commands:",
+    "listFooter": "Run: dweb-cli run <route>",
+    "hintList": "Hint: dweb-cli run --list to see commands",
+    "timeout": "Command timed out ({ms}ms), exit 124",
+    "moduleHelpHeader": "Specify an action (this module has multiple commands):",
+    "didYouMean": "Did you mean:"
   }
 }

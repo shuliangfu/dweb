@@ -12,7 +12,12 @@ import {
   TAILWIND_VERSION,
   UNOCSS_CORE_VERSION,
 } from "../constants.ts";
-import { getJsxImportSource } from "../helpers.ts";
+import {
+  getAppKind,
+  getJsxImportSource,
+  hasWebApp,
+  resolveApps,
+} from "../helpers.ts";
 import type { InitOptions, JsrVersions } from "../types.ts";
 
 /**
@@ -24,8 +29,9 @@ export function getDenoJson(
   jsrVersions: JsrVersions,
 ): string {
   const prefix = opts.useSrc ? "src/" : "";
-  const useUno = opts.style === "unocss";
-  const useTailwind = opts.style === "tailwind";
+  const needUiEngine = hasWebApp(opts);
+  const useUno = needUiEngine && opts.style === "unocss";
+  const useTailwind = needUiEngine && opts.style === "tailwind";
   const hasStyleAssets = useUno || useTailwind;
   const dwebVersion = jsrVersions.dweb;
   const pluginsVersion = jsrVersions.plugins;
@@ -42,7 +48,9 @@ export function getDenoJson(
     ...(hasStyleAssets
       ? [`    "@dreamer/plugins": "jsr:@dreamer/plugins@^${pluginsVersion}"`]
       : []),
-    ...(opts.engine === "view" ? [`    "@dreamer/view": "${viewSpec}"`] : []),
+    ...(needUiEngine && opts.engine === "view"
+      ? [`    "@dreamer/view": "${viewSpec}"`]
+      : []),
   ].join(",\n");
 
   const tailwindNpmImports = useTailwind
@@ -56,7 +64,9 @@ export function getDenoJson(
     "@unocss/preset-icons": "npm:@unocss/preset-icons@^${UNOCSS_CORE_VERSION}"`
     : "";
 
-  const engineImports = opts.engine === "preact"
+  const engineImports = !needUiEngine
+    ? ""
+    : opts.engine === "preact"
     ? `    "preact": "npm:preact@^${PREACT_VERSION}"`
     : opts.engine === "view"
     ? ""
@@ -68,42 +78,61 @@ export function getDenoJson(
     .filter(Boolean)
     .join(",\n");
   const importsNpmPart = npmImports ? `,\n\n${npmImports}` : "";
-  const jsxImportSource = getJsxImportSource(opts.engine);
+  const jsxImportSource = needUiEngine
+    ? getJsxImportSource(opts.engine)
+    : "preact";
   /** View 引擎 TSX 类型由 @dreamer/view 与 jsxImportSource 提供，无需项目根 jsx.d.ts 或 compilerOptions.types */
 
-  const isMulti = opts.appMode === "multi" && (opts.appNames?.length ?? 0) > 0;
+  const apps = resolveApps(opts);
+  const isMulti = opts.appMode === "multi" && apps.length > 0 &&
+    (opts.appNames != null || opts.apps != null);
+  const httpApps = apps.filter((a) => a.kind === "web" || a.kind === "api");
+  const consoleApps = apps.filter((a) => a.kind === "console");
   const commonPath = opts.useSrc ? "./src/common/" : "./common/";
   // 与 `App` 中 `RUNTIME_ENV` 约定一致：`--dev` / `--build` / `--start` 显式传入
-  const tasksBlock = isMulti && opts.appNames
+  // console 不生成 HTTP task；可选留下注释性 run 提示 task
+  const httpTasks = isMulti
     ? [
-      opts.appNames
+      httpApps
         .map(
           (app) =>
-            `    "dev:${app}": "deno run -A ${prefix}${app}/main.ts --dev"`,
+            `    "dev:${app.name}": "deno run -A ${prefix}${app.name}/main.ts --dev"`,
         )
         .join(",\n"),
-      opts.appNames
+      httpApps
         .map(
           (app) =>
-            `    "build:${app}": "deno run -A ${prefix}${app}/main.ts --build"`,
+            `    "build:${app.name}": "deno run -A ${prefix}${app.name}/main.ts --build"`,
         )
         .join(",\n"),
-      opts.appNames
+      httpApps
         .map(
           (app) =>
-            `    "start:${app}": "deno run -A dist/${app}/server.js --start"`,
+            `    "start:${app.name}": "deno run -A dist/${app.name}/server.js --start"`,
         )
         .join(",\n"),
-    ].join(",\n\n")
+    ].filter(Boolean).join(",\n\n")
+    : getAppKind(opts) === "console"
+    ? `    "run:hello": "echo Use: dweb-cli run hello/world"`
     : `    "dev": "deno run -A ${prefix}main.ts --dev",
     "build": "deno run -A ${prefix}main.ts --build",
     "start": "deno run -A dist/server.js --start"`;
 
+  const consoleHintTasks = consoleApps.length > 0 && isMulti
+    ? `    "run:hello": "echo Use: dweb-cli run hello/world -a console"`
+    : "";
+
+  const tasksBlock = [httpTasks, consoleHintTasks].filter(Boolean).join(
+    ",\n\n",
+  );
+
   const appDirPrefix = opts.useSrc ? "./src/" : "./";
-  const dirAliasesBlock = isMulti && opts.appNames
+  const dirAliasesBlock = isMulti
     ? [
       `    "@common/": "${commonPath}"`,
-      ...opts.appNames.map((app) => `    "@${app}/": "${appDirPrefix}${app}/"`),
+      ...apps.map((app) =>
+        `    "@${app.name}/": "${appDirPrefix}${app.name}/"`
+      ),
     ].join(",\n") + ",\n\n"
     : "";
 

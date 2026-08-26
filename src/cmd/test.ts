@@ -5,6 +5,7 @@
  * - 统一入口：`dweb-cli test`（用户无需手写 `deno test` / `bun test`）
  * - 拼装宿主参数并 spawn；用例 API 仍由 `@dreamer/test` 在测试文件中提供
  * - 优先 `tasks.test` / `test:<app>`（无产品 flag 时）；否则 `getTestArgs(...)`
+ * - L1.5-b：`--report json,md,html` 解析宿主 JUnit → 产品报告
  *
  * 运行方式：
  * - dweb-cli test
@@ -13,19 +14,29 @@
  * - dweb-cli test --filter "chunk"
  * - dweb-cli test --coverage
  * - dweb-cli test --runtime deno|bun
+ * - dweb-cli test --report json,md --report-dir reports
  * - dweb-cli test -a backend
  */
 
 import { error, info, success } from "@dreamer/console";
-import { createCommand, cwd, exit } from "@dreamer/runtime-adapter";
+import {
+  createCommand,
+  cwd,
+  exit,
+  makeTempFile,
+  readTextFile,
+} from "@dreamer/runtime-adapter";
 import type { ParsedOptions } from "../feature/command.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getProjectInfo } from "../utils/project.ts";
 import {
+  describeUnsupportedTestReporter,
   getRuntime,
   getTaskArgs,
   getTestArgs,
+  type HostTestReporter,
   type HostTestRuntime,
+  parseTestReporter,
 } from "../utils/runtime.ts";
 import {
   parseTestRuntime,
@@ -34,6 +45,12 @@ import {
   shouldPreferTestTask,
   splitAppAndPaths,
 } from "../utils/test-launcher.ts";
+import {
+  parseJUnitXml,
+  parseProductReportFormats,
+  type ProductReportFormat,
+  writeTestReports,
+} from "../utils/test-report.ts";
 
 /**
  * 读取 CLI 选项中的 coverage：boolean 或目录字符串
@@ -65,11 +82,9 @@ function resolveHostRuntime(
 }
 
 /**
- * spawn 宿主/task 并统一退出码（失败时 `exit(code)`，成功返回）
- *
- * @param formatFailed 根据子进程退出码生成失败文案
+ * spawn 宿主/task；返回退出码（成功 0）。不在此处 exit，便于写完产品报告再退出。
  */
-async function spawnAndReport(
+async function spawnTestProcess(
   host: HostTestRuntime,
   spawnArgs: string[],
   projectRoot: string,
@@ -79,7 +94,7 @@ async function spawnAndReport(
     formatFailed: (code: string) => string;
   },
   verbose: boolean,
-): Promise<void> {
+): Promise<number> {
   if (verbose) {
     info($tr("test.spawnCommand", { cmd: `${host} ${spawnArgs.join(" ")}` }));
   }
@@ -95,11 +110,11 @@ async function spawnAndReport(
   const status = await child.status;
   if (status.success) {
     success(messages.complete);
-    return;
+    return 0;
   }
-  const code = String(status.code ?? "?");
-  error(messages.formatFailed(code));
-  exit(status.code ?? 1);
+  const code = status.code ?? 1;
+  error(messages.formatFailed(String(code)));
+  return code;
 }
 
 /**
@@ -123,11 +138,82 @@ export async function main(
   const host = resolveHostRuntime(options);
   if (!host) return;
 
+  if (host === "node") {
+    const productProbe = parseProductReportFormats(options.report);
+    if (productProbe.formats?.length) {
+      error($tr("test.productReportNodeUnsupported"));
+      return;
+    }
+  }
+
   const verbose = options.verbose === true;
   const filter = typeof options.filter === "string" && options.filter.length > 0
     ? options.filter
     : undefined;
   const coverage = readCoverageOption(options);
+  const reportOut =
+    typeof options["report-out"] === "string" && options["report-out"].length > 0
+      ? options["report-out"]
+      : typeof options.junitPath === "string" && options.junitPath.length > 0
+      ? options.junitPath
+      : typeof options["junit-path"] === "string" &&
+          options["junit-path"].length > 0
+      ? options["junit-path"]
+      : undefined;
+  const reporterParsed = parseTestReporter(options.reporter);
+  if (reporterParsed.invalid) {
+    error(
+      $tr("test.invalidReporter", { value: reporterParsed.invalid }),
+    );
+    return;
+  }
+  let reporter: HostTestReporter | undefined = reporterParsed.reporter;
+  if (reporter) {
+    const unsupported = describeUnsupportedTestReporter(
+      reporter,
+      reportOut,
+      host,
+    );
+    if (unsupported) {
+      error(unsupported);
+      return;
+    }
+  } else if (reportOut) {
+    error("--report-out requires --reporter junit");
+    return;
+  }
+
+  const productParsed = parseProductReportFormats(options.report);
+  if (productParsed.invalid) {
+    error(
+      $tr("test.invalidProductReport", { value: productParsed.invalid }),
+    );
+    return;
+  }
+  const productFormats: ProductReportFormat[] | undefined =
+    productParsed.formats;
+  const reportDir =
+    typeof options["report-dir"] === "string" &&
+      options["report-dir"].length > 0
+      ? options["report-dir"]
+      : typeof options.reportDir === "string" && options.reportDir.length > 0
+      ? options.reportDir
+      : "reports";
+
+  let junitPath = reportOut;
+  let tempJunit = false;
+  if (productFormats?.length) {
+    if (reporter && reporter !== "junit") {
+      error($tr("test.productReportRequiresJunit"));
+      return;
+    }
+    reporter = "junit";
+    if (!junitPath) {
+      junitPath = await makeTempFile({ prefix: "dweb-junit-", suffix: ".xml" });
+      tempJunit = true;
+    }
+  }
+
   const layers = resolveTestLayers({
     unit: options.unit === true,
     integration: options.integration === true,
@@ -146,7 +232,24 @@ export async function main(
     layers,
     filter,
     coverage,
+    reporter,
+    reportOut: junitPath,
+    productReport: !!productFormats?.length,
   });
+
+  const messagesForApp = app
+    ? {
+      running: $tr("test.runningWithApp", { app }),
+      complete: $tr("test.appComplete", { app }),
+      formatFailed: (code: string) => $tr("test.appFailed", { app, code }),
+    }
+    : {
+      running: $tr("test.running"),
+      complete: $tr("test.complete"),
+      formatFailed: (code: string) => $tr("test.exitCode", { code }),
+    };
+
+  let exitCode = 0;
 
   // 多应用：指定 app 时校验
   if (app) {
@@ -162,65 +265,78 @@ export async function main(
 
     const taskName = `test:${app}`;
     if (preferTask && projectInfo.tasks[taskName]) {
-      await spawnAndReport(
+      exitCode = await spawnTestProcess(
         host,
         getTaskArgs(taskName),
         projectRoot,
-        {
-          running: $tr("test.runningWithApp", { app }),
-          complete: $tr("test.appComplete", { app }),
-          formatFailed: (code) => $tr("test.appFailed", { app, code }),
-        },
+        messagesForApp,
         verbose,
       );
-      return;
+    } else {
+      if (preferTask && !projectInfo.tasks[taskName]) {
+        info($tr("test.noAppTaskFallback", { task: taskName }));
+      }
+      exitCode = await spawnTestProcess(
+        host,
+        getTestArgs({
+          paths,
+          filter,
+          coverage,
+          reporter,
+          reportOut: junitPath,
+        }, host),
+        projectRoot,
+        messagesForApp,
+        verbose,
+      );
     }
-
-    // 无 task 或有产品 flag：直接宿主测试（路径仍为 tests/ 或用户指定）
-    if (preferTask && !projectInfo.tasks[taskName]) {
-      // 兼容：提示可配置 task，但仍尝试默认路径
-      info($tr("test.noAppTaskFallback", { task: taskName }));
-    }
-
-    await spawnAndReport(
-      host,
-      getTestArgs({ paths, filter, coverage }, host),
-      projectRoot,
-      {
-        running: $tr("test.runningWithApp", { app }),
-        complete: $tr("test.appComplete", { app }),
-        formatFailed: (code) => $tr("test.appFailed", { app, code }),
-      },
-      verbose,
-    );
-    return;
-  }
-
-  // 单应用 / 未指定 app
-  if (preferTask && projectInfo.tasks.test) {
-    await spawnAndReport(
+  } else if (preferTask && projectInfo.tasks.test) {
+    exitCode = await spawnTestProcess(
       host,
       getTaskArgs("test"),
       projectRoot,
-      {
-        running: $tr("test.running"),
-        complete: $tr("test.complete"),
-        formatFailed: (code) => $tr("test.exitCode", { code }),
-      },
+      messagesForApp,
       verbose,
     );
-    return;
+  } else {
+    exitCode = await spawnTestProcess(
+      host,
+      getTestArgs({
+        paths,
+        filter,
+        coverage,
+        reporter,
+        reportOut: junitPath,
+      }, host),
+      projectRoot,
+      messagesForApp,
+      verbose,
+    );
   }
 
-  await spawnAndReport(
-    host,
-    getTestArgs({ paths, filter, coverage }, host),
-    projectRoot,
-    {
-      running: $tr("test.running"),
-      complete: $tr("test.complete"),
-      formatFailed: (code) => $tr("test.exitCode", { code }),
-    },
-    verbose,
-  );
+  if (productFormats?.length && junitPath) {
+    try {
+      const xml = await readTextFile(junitPath);
+      const summary = parseJUnitXml(xml);
+      const written = await writeTestReports(
+        summary,
+        productFormats,
+        reportDir,
+      );
+      success(
+        $tr("test.productReportWritten", { paths: written.join(", ") }),
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      error($tr("test.productReportFailed", { message: msg }));
+      if (exitCode === 0) exitCode = 1;
+    }
+  }
+
+  // temp junit 留给 OS 清理；显式 --report-out 保留
+  void tempJunit;
+
+  if (exitCode !== 0) {
+    exit(exitCode);
+  }
 }

@@ -1,5 +1,13 @@
 # dweb 控制台应用（Console App）架构规划
 
+> **⚠ 产品范围修订（2026-08-25）**\
+> §3.2.0「**仅多应用**可建 console、单应用 init 不询问」**已废止**。\
+> 新产品：`AppKind = web | api | console` 一等公民——**单应用也可选纯 Console**；多应用下 **每个 app 选类型**，共用 `common/config`。\
+> **补充约定（同日拍板）**：config 用顶层 **`kind`**；**一项目只一个 console**，多应用目录名默认 **`console`**。\
+> **init / 分期实现 / 与 API 并列** 以专文为准：\
+> **[2026-08-25-app-kinds-init-实现分析.md](./2026-08-25-app-kinds-init-实现分析.md)**。\
+> 本文仍作 **Console 运行时 / 路由 DSL / 退出码 / 安全** 详设；实现时 init 边界服从专文。
+
 > **核心设想**\
 > 在现有 **Web 应用**（HTTP + 文件路由 + 渲染）之外，提供并列的
 > **控制台应用**：\
@@ -11,11 +19,11 @@
 
 | 项       | 值                                                                                                                                                                     |
 | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 文档性质 | **架构规划 / 可行性分析**（非已实现 changelog）                                                                                                                        |
+| 文档性质 | **架构规划 / 可行性分析**（非已实现 changelog）；**init 产品范围见 2026-08-25 专文**                                                                                 |
 | 基准     | `@dreamer/dweb` **3.5.11**；`@dreamer/console` **1.0.x**（CLI 工具库）                                                                                                 |
-| 日期     | **2026-07-22**（**仅多应用**支持创建 console；单应用 init **不询问、不生成**）                                                                                         |
+| 日期     | **2026-07-22**（原稿）；**2026-08-25** 文首修订（废止「仅多应用」）                                                                                                   |
 | 语言     | 仅中文                                                                                                                                                                 |
-| 相关     | [APP_CONFIG.md](./APP_CONFIG.md)、[全面分析-优化与增强.md](./全面分析-优化与增强.md)、`src/cmd/init/*`、`src/utils/project.ts`、`src/feature/command.ts`、`src/cli.ts` |
+| 相关     | [2026-08-25-app-kinds-init-实现分析.md](./2026-08-25-app-kinds-init-实现分析.md)、[APP_CONFIG.md](./APP_CONFIG.md)、[全面分析-优化与增强.md](./全面分析-优化与增强.md)、`src/cmd/init/*`、`src/utils/project.ts`、`src/feature/command.ts`、`src/cli.ts` |
 
 ---
 
@@ -135,25 +143,21 @@ command**、**Rails runner**——都是「框架内一等公民的控制台面�
 
 #### 3.2.0 产品决策（硬约束）
 
-| 模式       | init 是否询问 console | init 是否生成 `console/` | 说明                                                                   |
+> **Superseded（2026-08-25）**  
+> 下表为 **历史决策**，实现时 **不要**再按此限制。  
+> **现行（见 app-kinds 专文）：**  
+> - 单应用可选纯 Console（项目根即 console 根）  
+> - 多应用每个 app 选顶层 `kind`；**一项目至多一个** console，目录名 **默认 `console`**  
+> - config 写顶层 `kind: "console"`（与顶层 `name` 同级）  
+> 见 [app-kinds 实现分析](./2026-08-25-app-kinds-init-实现分析.md) §3–§5、§8 Phase 0。
+
+| 模式       | init 是否询问 console | init 是否生成 `console/` | 说明（历史 → 现行）                                                    |
 | ---------- | --------------------- | ------------------------ | ---------------------------------------------------------------------- |
-| **单应用** | **否**                | **否**                   | 只建 Web：`main` / `config` / `routes`；**不要**出现「是否创建控制台」 |
-| **多应用** | **是**                | 用户选是则生成           | `console` 作为与其它 app **同级** 的应用目录                           |
+| **单应用** | **否**（已废止）      | **否**（已废止）         | **现行：可选 kind=console**；根即应用根，不再套一层 `console/`         |
+| **多应用** | **是**（已演进）      | 用户选是则生成           | **现行：选 kind=console 时目录默认 `console`；一项目只允许一个**       |
 
-**理由（简要）：**
-
-1. 单应用心智 = 一个 HTTP 应用；再塞 `console/` 易与 `routes`
-   混淆，配置加载也要分叉。
-2. 控制台天然需要 **common + 独立 app 配置** 的多应用模型（与 Web 共享
-   model/service）。
-3. 需要 CLI 命令面时：init 选 **多应用**，至少一个 Web 应用名 + 可选
-   **console**。
-4. 框架内置 `dweb-cli db` / `generate`
-   等已覆盖单应用常见运维，不必为单应用再开控制台骨架。
-
-> **范围：** 本文「控制台应用」产品与 init 脚手架 **只面向多应用**。\
-> 单应用用户若强行手建目录，**框架可不保证** `dweb-cli run` 解析；文档与实现均以
-> multi 为准。
+**历史理由（仅作档案，已不适用）：** 旧文认为单应用不应塞 console、须走 multi。  
+**现行理由：** Console 与 Web/API 同级一等公民；多应用仍用 common 共享 model/service；目录固定 `console` 降低 `-a` 歧义。
 
 ---
 
@@ -186,9 +190,9 @@ my-project/
       main.ts
       config/
       routes/               # HTTP
-    console/                # ★ 仅多应用 + 勾选后生成
+    console/                # ★ 多应用 + kind=console（一项目只一个；目录名固定）
       config/
-        main.ts
+        main.ts             # 顶层 kind: "console"
       routes/
         crond.ts            # export start / stop …
       middlewares/          # 可选
@@ -204,65 +208,74 @@ my-project/
 
 | 点       | 约定                                                                                   |
 | -------- | -------------------------------------------------------------------------------------- |
-| 目录名   | 推荐固定 **`console`**                                                                 |
-| 配置     | `common/config` → `console/config` 覆盖                                                |
+| 目录名   | **固定默认 `console`**（一项目只一个；init 拦截第二个）                                |
+| 配置     | `common/config` → `console/config` 覆盖；顶层 **`kind: "console"`**                    |
 | 模板     | **命令** `routes/*.ts`，**不**生成页面 tsx；**不**强制 `dev:console` / `start:console` |
-| CLI      | `dweb-cli run crond/start`（默认 app=`console`）或 `-a console`                        |
+| CLI      | `dweb-cli run crond/start`（默认解析唯一 `console`；`-a console` 可选）                |
 | 构建 Web | 扫描静态资源时 **排除** `console/**`                                                   |
 
 ---
 
-#### 3.2.2 单应用（明确不生成）
+#### 3.2.2 单应用（**现行：可选纯 Console**）
+
+> 旧文「单应用不生成 console」**已废止**。现行：
 
 ```text
-# 单应用 useSrc=true —— 仅有 Web，无 console
+# 单应用 + kind=web|api —— 无 console 子目录（根即该应用）
+my-project/
+  src/   # 或不用 src
+    main.ts
+    config/main.ts   # kind: "web" | "api"
+    routes/
+
+# 单应用 + kind=console —— 项目根即 console 根（不再套一层 console/）
 my-project/
   src/
-    main.ts
-    config/
+    config/main.ts   # kind: "console"
     routes/
-    assets/
-
-# 单应用 useSrc=false —— 同样无 console
-my-project/
-  main.ts
-  config/
-  routes/
+      crond.ts
 ```
 
-| init         | 行为                                                                                             |
-| ------------ | ------------------------------------------------------------------------------------------------ |
-| 选「单应用」 | **跳过**一切 console 相关提问与目录生成                                                          |
-| 后续         | 需要控制台 → 应 **重新/改为多应用** 或文档引导「多应用 + console」，而不是在单应用下半吊子塞目录 |
+| init 选「单应用」+ 类型 | 行为 |
+| --- | --- |
+| Web / API | 生成 HTTP 骨架（API 无 `_app`） |
+| Console | 生成 CLI 命令骨架；**不** listen；文档引导 `dweb-cli run` |
+
+若单应用已是 Web，又要加 CLI：应改为 **多应用**（Web + 唯一 `console/`），而不是在 Web 根下半吊子塞 `console/`。
 
 ---
 
-#### 3.2.3 路径解析算法（仅 multi）
+#### 3.2.3 路径解析算法（single + multi）
 
 ```text
 function resolveConsoleRoot(projectRoot, options):
   if options.consoleDir: return options.consoleDir
 
   info = getProjectInfo(projectRoot)   # 现有：看 deno.json tasks 判 single/multi
-  if info.mode !== "multi":
-    error: 控制台应用仅支持多应用项目。请使用多应用结构并包含 console 应用目录。
-
   useSrc = detectUseSrc(projectRoot)
   base = useSrc ? join(projectRoot, "src") : projectRoot
+
+  if info.mode === "single":
+    # 单应用纯 Console：根即应用根；靠顶层 kind === "console" 校验
+    return base
+
+  # 多应用：一项目只一个 console，目录名默认固定
   app = options.app ?? "console"
   root = join(base, app)
 
   if exists(join(root, "routes")) or exists(join(root, "config")):
     return root
-  error: 未找到控制台目录 {root}（init 多应用时请勾选创建 console）
+  error: 未找到控制台目录 {root}（init 多应用时请选择应用类型 Console）
 ```
 
-**配置 / 路由（仅多应用）：**
+**配置 / 路由：**
 
-| useSrc | console 根    | config                                        | 命令 routes          |
-| ------ | ------------- | --------------------------------------------- | -------------------- |
-| true   | `src/console` | `src/console/config`（+ `src/common/config`） | `src/console/routes` |
-| false  | `console`     | `console/config`（+ `common/config`）         | `console/routes`     |
+| 模式 | useSrc | console 根 | config | 命令 routes |
+| --- | --- | --- | --- | --- |
+| multi | true | `src/console` | `src/console/config`（+ `src/common/config`） | `src/console/routes` |
+| multi | false | `console` | `console/config`（+ `common/config`） | `console/routes` |
+| single + kind=console | true | `src` | `src/config` | `src/routes` |
+| single + kind=console | false | 项目根 | `config` | `routes` |
 
 `crond/start` → `…/console/routes/crond.ts` 的 `start`。
 
@@ -613,36 +626,37 @@ dweb-cli g -t console -n user/seed
 
 ### Phase 0 — 决策（文档确认）
 
-- [x] **产品范围（§3.2.0）**：**仅多应用**；单应用 init **不询问、不生成**
-      console
-- [x] **目录**：多应用 `{prefix}console/`，`prefix` 跟 **useSrc**
-- [ ] 采用 **`dweb-cli run <route>`** 还是裸路由（仍建议 `run`）
-- [ ] `App.start` 增加 console 模式还是独立 `ConsoleApp` 类
-- [ ] 多应用 init：`createConsole` 文案与示例命令
+- [x] **产品范围**：**已修订**——单应用可选 Console；详见 app-kinds 专文（废止「仅 multi」）
+- [x] **目录**：多应用 `{prefix}console/`（**固定名**，一项目一个）；`prefix` 跟 **useSrc**；单应用纯 Console 时根即应用根
+- [x] **config**：顶层 `kind: "console"`（与顶层 `name` 同级）
+- [x] 采用 **`dweb-cli run <route>`**（首版不做裸路由）
+- [x] `App.start({ mode: "console" })`（扩展 App，非独立 ConsoleApp）
+- [x] 多应用 init：`kind=console` 文案与示例命令（见 app-kinds Phase 1）
 
-### Phase 1 — MVP（可用）
+### Phase 1 — MVP（可用）✅ 已落地（见 app-kinds Phase 3，2026-08-25）
 
-- [ ] 路径解析：`resolveConsoleRoot`（**仅 multi**；single 明确报错）
-- [ ] `console/routes` + `crond.ts` 多 export 方法
-- [ ] `dweb-cli run crond/start`（默认 / `-a console`）
-- [ ] 独立 `console/config/main.ts` + common 合并
-- [ ] App console 模式：装 DB/logger，不 listen，退出前 shutdown
-- [ ] 错误信息 + 退出码
-- [ ] 单测：路由解析 + 一次 e2e 脚本
+- [x] 路径解析：`resolveConsoleRoot`（single=项目根；multi=`{prefix}console/`）
+- [x] `console/routes` + `crond.ts` 多 export 方法
+- [x] `dweb-cli run crond/start`（默认唯一 console / 可选 `-a console`）
+- [x] 独立 `console/config/main.ts`（含顶层 `kind`）+ common 合并
+- [x] App console 模式：装 DB/logger，不 listen，退出前 shutdown
+- [x] 错误信息 + 退出码
+- [x] 单测：路由解析 + 一次 e2e 脚本
 
-### Phase 1.5 — init 模板（可与 MVP 并行）
+### Phase 1.5 — init 模板（可与 MVP 并行；**以 app-kinds Phase 1 为准**）✅
 
-- [ ] 单应用流程：**零** console UI / 生成
-- [ ] 多应用：`createConsole` 或 app 名 `console` → 命令路由模板（非页面 tsx）
-- [ ] 示例：`routes/hello.ts` / `crond.ts`
-- [ ] **不**生成 `dev:console` / `start:console`（或仅文档说明）
+- [x] 单应用可选 `kind=console` 骨架
+- [x] 多应用：选 Console → 目录默认 `console`；拦截第二个
+- [x] 示例：`routes/hello.ts` / `crond.ts`
+- [x] **不**生成 `dev:console` / `start:console`（或仅文档说明）
 
-### Phase 2 — DX
+### Phase 2 — DX ✅ 部分落地（app-kinds Phase 4 + Console 加固，2026-08-25）
 
-- [ ] `run --list` / 命令 help（读 `meta`）
-- [ ] `generate -t console`（仅多应用项目）
-- [ ] 全局中间件（锁、计时）
-- [ ] 文档：cron/K8s 示例
+- [x] `run --list` / 读 `meta` 描述（模块过滤）
+- [x] `generate -t console`（单/多应用；多应用默认 `console/`）
+- [x] 全局中间件雏形：`console/middlewares/*.ts` + 模块 `before`/`after`（锁/确认等可后续加）
+- [x] 模块 help（`run hello` 列出动作）/ 超时 / `--` 透传 / did-you-mean
+- [x] 文档：README / PRODUCTION / example 仓（cron/K8s 仍可再扩）
 
 ### Phase 3 — 增强
 

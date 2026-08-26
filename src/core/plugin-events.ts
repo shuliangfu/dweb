@@ -137,6 +137,36 @@ export async function emitOnResponse(
 }
 
 /**
+ * 触发 onRequestEnd（耗时观测）：插件钩子 + 可选 AppConfig.onRequestEnd
+ */
+export async function emitOnRequestEnd(
+  container: ServiceContainer,
+  info: {
+    path: string;
+    method: string;
+    status: number;
+    durationMs: number;
+  },
+): Promise<void> {
+  await emitPluginEvent(container, "onRequestEnd", info);
+  if (!container.has("config")) return;
+  const config = container.get<{
+    onRequestEnd?: (i: typeof info) => void | Promise<void>;
+  }>("config");
+  if (typeof config?.onRequestEnd === "function") {
+    try {
+      await config.onRequestEnd(info);
+    } catch (error) {
+      if (container.has("logger")) {
+        getLogger(container).error("onRequestEnd failed:", error);
+      } else {
+        console.error("onRequestEnd failed:", error);
+      }
+    }
+  }
+}
+
+/**
  * 触发 onBuild 事件（构建开始前）
  *
  * @param container 服务容器
@@ -477,6 +507,7 @@ export const pluginEvents = {
   emitOnInit,
   emitOnRequest,
   emitOnResponse,
+  emitOnRequestEnd,
   emitOnBuild,
   emitOnBuildComplete,
   emitOnStart,

@@ -11,6 +11,7 @@ import {
 } from "@dreamer/console";
 import {
   chmod,
+  dirname,
   ensureDir,
   exists,
   join,
@@ -25,7 +26,12 @@ import {
   loadDwebDenoJson,
 } from "../../utils/version.ts";
 import { DEFAULT_PORT_BASE, FALLBACK_VIEW_VERSION } from "./constants.ts";
-import type { InitOptions, JsrVersions } from "./types.ts";
+import {
+  getAppKind,
+  optsForKind,
+  resolveApps,
+} from "./helpers.ts";
+import type { AppKind, InitAppSpec, InitOptions, JsrVersions } from "./types.ts";
 import { getDenoJson } from "./templates/deno-json.ts";
 import { getPackageJson } from "./templates/package-json.ts";
 import { getMainTsMulti, getMainTsSingle } from "./templates/main.ts";
@@ -46,6 +52,8 @@ import {
   getLayoutTsx,
   getUserByIdTsx,
 } from "./templates/components.ts";
+import { listApiRouteFiles } from "./templates/api-routes.ts";
+import { listConsoleRouteFiles } from "./templates/console-routes.ts";
 import { getDockerComposeYml, getDockerfile } from "./templates/docker.ts";
 import {
   getDeploySh,
@@ -68,15 +76,168 @@ export class InitCancelledError extends Error {
   }
 }
 
+async function writeRouteFiles(
+  routesBase: string,
+  files: Array<{ relativePath: string; content: string }>,
+): Promise<void> {
+  for (const f of files) {
+    const full = join(routesBase, f.relativePath);
+    await ensureDir(dirname(full));
+    await writeTextFile(full, f.content);
+  }
+}
+
+async function generateWebAppFiles(
+  opts: InitOptions,
+  appBase: string,
+  appName: string | undefined,
+  port: number,
+): Promise<void> {
+  const exampleLevel = opts.exampleLevel;
+  const style = opts.style;
+  const webOpts = optsForKind(opts, "web");
+
+  await ensureDir(join(appBase, "config"));
+  await ensureDir(join(appBase, "routes"));
+  await ensureDir(join(appBase, "components"));
+  await ensureDir(join(appBase, "assets"));
+
+  await writeTextFile(
+    join(appBase, "main.ts"),
+    appName != null ? getMainTsMulti(webOpts, appName) : getMainTsSingle(webOpts),
+  );
+  await writeTextFile(
+    join(appBase, "config", "main.ts"),
+    getConfigMainTs(webOpts, appName, port, "web"),
+  );
+  await writeTextFile(
+    join(appBase, "config", "main.dev.ts"),
+    getConfigMainDevTs(port),
+  );
+  await writeTextFile(
+    join(appBase, "config", "main.prod.ts"),
+    getConfigMainProdTs(port),
+  );
+  await writeTextFile(join(appBase, "components", "Button.tsx"), getButtonTsx(webOpts));
+  await writeTextFile(join(appBase, "routes", "_app.tsx"), getAppTsx(webOpts));
+  await writeTextFile(
+    join(appBase, "routes", "_layout.tsx"),
+    getLayoutTsx(webOpts, appName),
+  );
+  await writeTextFile(join(appBase, "routes", "index.tsx"), getIndexTsx(webOpts));
+  if (exampleLevel === "with-about") {
+    await writeTextFile(join(appBase, "routes", "about.tsx"), getAboutTsx(webOpts));
+    await ensureDir(join(appBase, "routes", "user"));
+    await writeTextFile(
+      join(appBase, "routes", "user", "[id].tsx"),
+      getUserByIdTsx(webOpts),
+    );
+  }
+  if (style === "tailwind") {
+    await writeTextFile(join(appBase, "assets", "tailwind.css"), getTailwindCss());
+  }
+  if (style === "unocss") {
+    await writeTextFile(join(appBase, "assets", "uno.css"), getUnoCss());
+  }
+  await writeTextFile(join(appBase, "assets", "favicon.svg"), getFaviconSvg());
+}
+
+async function generateApiAppFiles(
+  opts: InitOptions,
+  appBase: string,
+  appName: string | undefined,
+  port: number,
+): Promise<void> {
+  const apiOpts = optsForKind(opts, "api");
+  await ensureDir(join(appBase, "config"));
+  await ensureDir(join(appBase, "routes"));
+
+  await writeTextFile(
+    join(appBase, "main.ts"),
+    appName != null ? getMainTsMulti(apiOpts, appName) : getMainTsSingle(apiOpts),
+  );
+  await writeTextFile(
+    join(appBase, "config", "main.ts"),
+    getConfigMainTs(apiOpts, appName, port, "api"),
+  );
+  await writeTextFile(
+    join(appBase, "config", "main.dev.ts"),
+    getConfigMainDevTs(port),
+  );
+  await writeTextFile(
+    join(appBase, "config", "main.prod.ts"),
+    getConfigMainProdTs(port),
+  );
+  await writeRouteFiles(
+    join(appBase, "routes"),
+    listApiRouteFiles(opts.exampleLevel),
+  );
+}
+
+async function generateConsoleAppFiles(
+  opts: InitOptions,
+  appBase: string,
+  appName: string | undefined,
+): Promise<void> {
+  const consoleOpts = optsForKind(opts, "console");
+  await ensureDir(join(appBase, "config"));
+  await ensureDir(join(appBase, "routes"));
+
+  await writeTextFile(
+    join(appBase, "main.ts"),
+    appName != null
+      ? getMainTsMulti(consoleOpts, appName)
+      : getMainTsSingle(consoleOpts),
+  );
+  await writeTextFile(
+    join(appBase, "config", "main.ts"),
+    getConfigMainTs(consoleOpts, appName, undefined, "console"),
+  );
+  // console 不需要 server port 的 dev/prod 覆盖；仍写空增量便于习惯
+  await writeTextFile(
+    join(appBase, "config", "main.dev.ts"),
+    `/** ${$tr("init.comments.devConfig")} */\nexport default {};\n`,
+  );
+  await writeTextFile(
+    join(appBase, "config", "main.prod.ts"),
+    `/** ${$tr("init.comments.prodConfig")} */\nexport default {};\n`,
+  );
+  await writeRouteFiles(
+    join(appBase, "routes"),
+    listConsoleRouteFiles(opts.exampleLevel),
+  );
+}
+
+async function generateAppByKind(
+  opts: InitOptions,
+  app: InitAppSpec,
+  appBase: string,
+  port: number,
+  isMulti: boolean,
+): Promise<void> {
+  const appName = isMulti ? app.name : undefined;
+  switch (app.kind) {
+    case "api":
+      await generateApiAppFiles(opts, appBase, appName, port);
+      break;
+    case "console":
+      await generateConsoleAppFiles(opts, appBase, appName);
+      break;
+    default:
+      await generateWebAppFiles(opts, appBase, appName, port);
+  }
+}
+
 /**
  * 根据选项生成项目文件。
  * 先校验目标目录是否存在并征得用户确认，再拉取版本，最后才创建项目目录并写入文件；绝不先创建目录再校验。
  */
 export async function generate(opts: InitOptions): Promise<void> {
-  const { targetDir, useSrc, style, exampleLevel, appMode, appNames } = opts;
+  const { targetDir, useSrc, appMode } = opts;
   const prefix = useSrc ? "src/" : "";
-  const isMulti = appMode === "multi" && appNames != null &&
-    appNames.length > 0;
+  const apps = resolveApps(opts);
+  const isMulti = appMode === "multi" && apps.length > 0 &&
+    (opts.appNames != null || opts.apps != null);
 
   // 先校验目录是否存在，通过后再创建；不先创建目录
   const targetExists = await exists(targetDir);
@@ -114,7 +275,7 @@ export async function generate(opts: InitOptions): Promise<void> {
   // 校验通过且准备工作完成后，再创建项目根目录并写入文件
   await ensureDir(targetDir);
 
-  if (isMulti && appNames) {
+  if (isMulti) {
     const commonBase = join(targetDir, prefix, "common");
     await ensureDir(join(commonBase, "config"));
     await ensureDir(join(commonBase, "components"));
@@ -150,146 +311,26 @@ export async function generate(opts: InitOptions): Promise<void> {
       join(commonBase, "utils", "mod.ts"),
       getCommonUtilsModTs(),
     );
-    await writeTextFile(
-      join(commonBase, "components", "Button.tsx"),
-      getButtonTsx(opts),
-    );
+    if (apps.some((a) => a.kind === "web")) {
+      await writeTextFile(
+        join(commonBase, "components", "Button.tsx"),
+        getButtonTsx(optsForKind(opts, "web")),
+      );
+    }
 
-    for (const appName of appNames) {
-      const appBase = join(targetDir, prefix, appName);
-      await ensureDir(join(appBase, "config"));
-      await ensureDir(join(appBase, "routes"));
-      await ensureDir(join(appBase, "components"));
-      await ensureDir(join(appBase, "assets"));
-
-      await writeTextFile(
-        join(appBase, "main.ts"),
-        getMainTsMulti(opts, appName),
-      );
-      await writeTextFile(
-        join(appBase, "config", "main.ts"),
-        getConfigMainTs(
-          opts,
-          appName,
-          DEFAULT_PORT_BASE + appNames.indexOf(appName),
-        ),
-      );
-      await writeTextFile(
-        join(appBase, "config", "main.dev.ts"),
-        getConfigMainDevTs(DEFAULT_PORT_BASE + appNames.indexOf(appName)),
-      );
-      await writeTextFile(
-        join(appBase, "config", "main.prod.ts"),
-        getConfigMainProdTs(DEFAULT_PORT_BASE + appNames.indexOf(appName)),
-      );
-      await writeTextFile(
-        join(appBase, "routes", "_app.tsx"),
-        getAppTsx(opts),
-      );
-      await writeTextFile(
-        join(appBase, "routes", "_layout.tsx"),
-        getLayoutTsx(opts, appName),
-      );
-      await writeTextFile(
-        join(appBase, "routes", "index.tsx"),
-        getIndexTsx(opts),
-      );
-      if (exampleLevel === "with-about") {
-        await writeTextFile(
-          join(appBase, "routes", "about.tsx"),
-          getAboutTsx(opts),
-        );
-        await ensureDir(join(appBase, "routes", "user"));
-        await writeTextFile(
-          join(appBase, "routes", "user", "[id].tsx"),
-          getUserByIdTsx(opts),
-        );
-      }
-      if (style === "tailwind") {
-        await writeTextFile(
-          join(appBase, "assets", "tailwind.css"),
-          getTailwindCss(),
-        );
-      }
-      if (style === "unocss") {
-        await writeTextFile(
-          join(appBase, "assets", "uno.css"),
-          getUnoCss(),
-        );
-      }
-      await writeTextFile(
-        join(appBase, "assets", "favicon.svg"),
-        getFaviconSvg(),
-      );
+    let httpIndex = 0;
+    for (const app of apps) {
+      const appBase = join(targetDir, prefix, app.name);
+      const port = app.kind === "console"
+        ? DEFAULT_PORT_BASE
+        : DEFAULT_PORT_BASE + httpIndex++;
+      await generateAppByKind(opts, app, appBase, port, true);
     }
   } else {
-    const configBase = useSrc
-      ? join(targetDir, "src", "config")
-      : join(targetDir, "config");
-    await ensureDir(configBase);
-    await ensureDir(join(targetDir, prefix, "routes"));
-    await ensureDir(join(targetDir, prefix, "components"));
-    await ensureDir(join(targetDir, prefix, "assets"));
-
-    await writeTextFile(
-      join(targetDir, prefix, "components", "Button.tsx"),
-      getButtonTsx(opts),
-    );
-    await writeTextFile(
-      join(targetDir, prefix, "main.ts"),
-      getMainTsSingle(opts),
-    );
-    await writeTextFile(
-      join(configBase, "main.ts"),
-      getConfigMainTs(opts),
-    );
-    await writeTextFile(
-      join(configBase, "main.dev.ts"),
-      getConfigMainDevTs(),
-    );
-    await writeTextFile(
-      join(configBase, "main.prod.ts"),
-      getConfigMainProdTs(),
-    );
-    await writeTextFile(
-      join(targetDir, prefix, "routes", "_app.tsx"),
-      getAppTsx(opts),
-    );
-    await writeTextFile(
-      join(targetDir, prefix, "routes", "_layout.tsx"),
-      getLayoutTsx(opts),
-    );
-    await writeTextFile(
-      join(targetDir, prefix, "routes", "index.tsx"),
-      getIndexTsx(opts),
-    );
-    if (exampleLevel === "with-about") {
-      await writeTextFile(
-        join(targetDir, prefix, "routes", "about.tsx"),
-        getAboutTsx(opts),
-      );
-      await ensureDir(join(targetDir, prefix, "routes", "user"));
-      await writeTextFile(
-        join(targetDir, prefix, "routes", "user", "[id].tsx"),
-        getUserByIdTsx(opts),
-      );
-    }
-    if (style === "tailwind") {
-      await writeTextFile(
-        join(targetDir, prefix, "assets", "tailwind.css"),
-        getTailwindCss(),
-      );
-    }
-    if (style === "unocss") {
-      await writeTextFile(
-        join(targetDir, prefix, "assets", "uno.css"),
-        getUnoCss(),
-      );
-    }
-    await writeTextFile(
-      join(targetDir, prefix, "assets", "favicon.svg"),
-      getFaviconSvg(),
-    );
+    const app = apps[0] ?? { name: opts.projectName, kind: getAppKind(opts) };
+    const appBase = join(targetDir, prefix);
+    // 单应用：config 在 prefix/config（useSrc 时 src/config）
+    await generateAppByKind(opts, app, appBase, DEFAULT_PORT_BASE, false);
   }
 
   if (opts.runtime === "deno") {
@@ -344,3 +385,6 @@ export async function generate(opts: InitOptions): Promise<void> {
     getI18nAllyCustomFrameworkYml(),
   );
 }
+
+// re-export for callers that might want AppKind locally
+export type { AppKind };

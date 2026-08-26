@@ -1,0 +1,41 @@
+{
+  "tasks": {
+    "dev:web": "deno run -A web/main.ts --dev",
+    "dev:api": "deno run -A api/main.ts --dev",
+    "build:web": "deno run -A web/main.ts --build",
+    "build:api": "deno run -A api/main.ts --build",
+    "start:web": "deno run -A dist/web/server.js --start",
+    "start:api": "deno run -A dist/api/server.js --start",
+    "run:hello": "deno run -A ../../../src/cli.ts run hello/world -a console"
+  },
+  "imports": {
+    "@common/": "./common/",
+    "@web/": "./web/",
+    "@api/": "./api/",
+    "@console/": "./console/",
+    "@dreamer/dweb": "../../../src/mod.ts",
+    "@dreamer/config": "jsr:@dreamer/config@^1.1.0",
+    "@dreamer/console": "jsr:@dreamer/console@^1.1.0",
+    "@dreamer/database": "jsr:@dreamer/database@^1.2.0",
+    "@dreamer/esbuild": "jsr:@dreamer/esbuild@^1.3.0",
+    "@dreamer/lifecycle": "jsr:@dreamer/lifecycle@^1.1.0",
+    "@dreamer/logger": "jsr:@dreamer/logger@^1.1.0",
+    "@dreamer/middleware": "jsr:@dreamer/middleware@^1.1.0",
+    "@dreamer/middlewares": "jsr:@dreamer/middlewares@^1.1.0",
+    "@dreamer/plugin": "jsr:@dreamer/plugin@^1.1.0",
+    "@dreamer/plugins": "jsr:@dreamer/plugins@^1.2.0",
+    "@dreamer/render": "jsr:@dreamer/render@^1.2.0",
+    "@dreamer/router": "jsr:@dreamer/router@^1.2.1",
+    "@dreamer/runtime-adapter": "jsr:@dreamer/runtime-adapter@^1.2.2",
+    "@dreamer/server": "jsr:@dreamer/server@^1.2.1",
+    "@dreamer/service": "jsr:@dreamer/service@^1.1.0",
+    "@dreamer/utils": "jsr:@dreamer/utils@^1.1.0",
+    "@dreamer/view": "jsr:@dreamer/view@^2.2.0",
+    "esbuild": "npm:esbuild@0.27.2"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "@dreamer/view",
+    "lib": ["deno.window", "deno.unstable", "dom"]
+  }
+}

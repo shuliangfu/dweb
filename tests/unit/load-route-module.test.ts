@@ -23,6 +23,7 @@ import {
 import { afterAll, beforeAll, describe, expect, it } from "@dreamer/test";
 import {
   clearCssRouteCacheForPath,
+  clearMtimeModuleCacheForPath,
   loadRouteModule,
 } from "../../src/feature/load-route-module.ts";
 
@@ -64,6 +65,28 @@ describe("loadRouteModule (load-route-module.ts)", () => {
       const mod = await loadRouteModule(join(routeDir, "index.tsx"));
       expect(mod).not.toBeNull();
       expect(typeof (mod as { default?: unknown })?.default).toBe("function");
+    });
+
+    it("mtime 未变时第二次加载应命中短路缓存（同一模块引用）", async () => {
+      const routeDir = join(testDir, "src", "routes");
+      await ensureDir(routeDir);
+      const filePath = join(routeDir, "mtime-cache.tsx");
+      await writeTextFile(
+        filePath,
+        `export default function Page() { return "Cached"; }`,
+      );
+
+      const first = await loadRouteModule(filePath);
+      const second = await loadRouteModule(filePath);
+      expect(first).not.toBeNull();
+      expect(second).toBe(first);
+
+      clearMtimeModuleCacheForPath(filePath);
+      const third = await loadRouteModule(filePath);
+      expect(third).not.toBeNull();
+      expect(typeof (third as { default?: unknown })?.default).toBe(
+        "function",
+      );
     });
 
     it("项目外路径应返回 null", async () => {

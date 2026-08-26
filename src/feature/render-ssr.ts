@@ -10,7 +10,11 @@
  * - 返回 HTML 响应
  */
 
-import { resolveMetadata, type SSROptions } from "@dreamer/render";
+import {
+  createHtmlInjectTransform,
+  resolveMetadata,
+  type SSROptions,
+} from "@dreamer/render";
 import type { RouteMatch, Router } from "@dreamer/router";
 import type { ServiceContainer } from "@dreamer/service";
 import { type HttpContext, snapshotMatchedRoute } from "@dreamer/server";
@@ -30,29 +34,30 @@ import {
   serializeJsonForInlineScript,
 } from "../utils/security.ts";
 import { $tr } from "../utils/i18n.ts";
+import { normalizeMismatchMode } from "../utils/mismatch-mode.ts";
 import {
   extractComponentPathFromRouteFile,
   resolveRouterRoutesDirPath,
 } from "../utils/path.ts";
 import {
   collectClientRoutes,
+  escapeHtmlInStyle,
   hasContainerElementInHtml,
 } from "./render-utils.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
 import type { AppConfig, IApp } from "../types/app.ts";
 
-/** load 结果短期缓存 TTL（毫秒），减轻重 I/O 的重复请求 */
-const LOAD_CACHE_TTL_MS = 1000;
+/** loadCache: true 时的默认 TTL（毫秒） */
+const DEFAULT_LOAD_CACHE_TTL_MS = 1000;
 
-/** load 缓存条目 */
 /** load 缓存值：仅缓存纯数据对象，不缓存 Response */
 interface LoadCacheEntry {
   value: Record<string, unknown>;
   expiresAt: number;
 }
 
-/** 生成 load 缓存 key（URL + params 序列化） */
+/** 生成 load 缓存 key（URL + params 序列化）——不含 session，故默认关闭 */
 function getLoadCacheKey(
   url: string,
   params: Record<string, string> | undefined,
@@ -64,11 +69,19 @@ function getLoadCacheKey(
   }
 }
 
-/**
- * 转义 style 内容中的 </ 避免提前闭合 style 标签
- */
-function escapeHtmlInStyle(css: string): string {
-  return css.replace(/<\//g, "\\3C /");
+/** 解析 render.loadCache：默认关闭；true → 1s；或 { ttlMs } */
+function resolveLoadCacheTtl(
+  renderCfg: { loadCache?: boolean | { ttlMs?: number } },
+): number | null {
+  const lc = renderCfg.loadCache;
+  if (lc === true) return DEFAULT_LOAD_CACHE_TTL_MS;
+  if (
+    lc && typeof lc === "object" && typeof lc.ttlMs === "number" &&
+    lc.ttlMs > 0
+  ) {
+    return lc.ttlMs;
+  }
+  return null;
 }
 
 /** 客户端脚本路径（与 CSR/Hybrid 一致，由中间件提供） */
@@ -101,9 +114,15 @@ export function createRendererSSR(
   const renderConfig = (resolvedConfig.render || {}) as {
     debug?: boolean;
     engine?: "react" | "preact" | "view";
-    ssr?: { hydrate?: boolean };
+    ssr?: { hydrate?: boolean; stream?: boolean };
+    loadCache?: boolean | { ttlMs?: number };
+    hydration?: { mismatchMode?: "continue" | "assert" | "remount" };
   };
+  const loadCacheTtlMs = resolveLoadCacheTtl(renderConfig);
   const engine = renderConfig.engine ?? "preact";
+  const mismatchMode = normalizeMismatchMode(
+    renderConfig.hydration?.mismatchMode,
+  );
   const routerConfig = (config.router || {}) as { routesDir?: string };
   const routesDirPath = resolveRouterRoutesDirPath(
     cwd(),
@@ -201,13 +220,16 @@ export function createRendererSSR(
         layoutPropsList.push({ data });
       }
 
-      // 调用 load 函数获取服务端数据（若存在），带短期缓存减轻重 I/O；若返回 Response 则直接作为响应（服务端跳转等）
+      // 调用 load 函数获取服务端数据（若存在）；缓存默认关闭（见 render.loadCache）
+      // 若返回 Response 则直接作为响应（服务端跳转等）
       if (typeof pageModule.load === "function") {
-        const cacheKey = getLoadCacheKey(url, match.params);
+        const cacheKey = loadCacheTtlMs != null
+          ? getLoadCacheKey(url, match.params)
+          : "";
         const now = Date.now();
         let serverData: Record<string, unknown> | Response | null = null;
 
-        if (cacheKey) {
+        if (cacheKey && loadCacheTtlMs != null) {
           const entry = loadCache.get(cacheKey);
           if (entry && entry.expiresAt > now) {
             serverData = entry.value;
@@ -222,10 +244,13 @@ export function createRendererSSR(
             return raw;
           }
           serverData = raw as Record<string, unknown> | null;
-          if (serverData && cacheKey && !(serverData instanceof Response)) {
+          if (
+            serverData && cacheKey && loadCacheTtlMs != null &&
+            !(serverData instanceof Response)
+          ) {
             loadCache.set(cacheKey, {
               value: serverData,
-              expiresAt: now + LOAD_CACHE_TTL_MS,
+              expiresAt: now + loadCacheTtlMs,
             });
             // 懒清理：超过 200 条时移除过期项，避免内存无限增长
             if (loadCache.size > 200) {
@@ -283,6 +308,101 @@ export function createRendererSSR(
         contextData,
         debug: renderConfig.debug === true,
       };
+
+      const ssrHydrate = renderConfig.ssr?.hydrate !== false;
+      const wantStream = renderConfig.ssr?.stream === true &&
+        engine === "view" &&
+        // 生产 asset-manifest 重写需要完整字符串；无法表达为流注入时回退
+        isDev;
+
+      const buildHydrationScript = (): string | null => {
+        if (!ssrHydrate) return null;
+        const rawComponent = match.route.file || match.route.path || "";
+        const normalizedComponent = typeof rawComponent === "string"
+          ? extractComponentPathFromRouteFile(routesDirPath, rawComponent) ||
+            rawComponent.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "")
+              .trim()
+          : rawComponent;
+        const hydrationPathname = (ctx.path || "/").replace(/\/$/, "") || "/";
+        const hydrationData = {
+          page: pageProps,
+          route: match.route.path,
+          pathname: hydrationPathname,
+          params: match.params,
+          query: match.query,
+          component: normalizedComponent,
+          layoutData: layoutPropsList,
+        };
+        const debugRender = renderConfig.debug === true;
+        const routerDebug =
+          (resolvedConfig.router as { debug?: boolean } | undefined)
+            ?.debug === true;
+        return `
+<script>
+  ${debugRender ? "globalThis.__DWEB_DEBUG__ = true;" : ""}
+  ${
+          routerDebug
+            ? "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;"
+            : ""
+        }
+  globalThis.__DATA__ = ${serializeJsonForInlineScript(hydrationData)};
+  globalThis.__DWEB_DEV__ = ${isDev};
+  globalThis.__DWEB_ROUTES__ = ${serializeJsonForInlineScript(clientRoutes)};
+  globalThis.__DWEB_ENGINE__ = "${engine}";
+  globalThis.__DWEB_CONTAINER_ID__ = "${containerId}";
+  globalThis.__DWEB_MODE__ = "ssr";
+  ${
+          mismatchMode
+            ? `globalThis.__DWEB_MISMATCH_MODE__ = ${
+              JSON.stringify(mismatchMode)
+            };`
+            : ""
+        }
+</script>
+<script type="module" src="${clientScript}"></script>`;
+      };
+
+      const responseHeaders: HeadersInit = {
+        "Content-Type": "text/html; charset=utf-8",
+        ...(isDev
+          ? { "Cache-Control": "no-cache, no-store, must-revalidate" }
+          : {}),
+      };
+
+      if (wantStream) {
+        const streamResult = await renderService.renderSSRStream(ssrOptions);
+        const styleTags = routeCss.length > 0
+          ? routeCss
+            .map((c) =>
+              `<style data-dweb-route-css>${escapeHtmlInStyle(c)}</style>`
+            )
+            .join("")
+          : "";
+        const clientConfigScript = buildHydrationScript();
+        const postInjections: Array<{
+          content: string;
+          options?: { type?: "meta" | "script" | "data-script"; inHead?: boolean };
+        }> = [];
+        if (styleTags) {
+          postInjections.push({
+            content: styleTags,
+            options: { type: "meta", inHead: true },
+          });
+        }
+        if (clientConfigScript) {
+          postInjections.push({
+            content: clientConfigScript,
+            options: { type: "script" },
+          });
+        }
+        const body = postInjections.length > 0
+          ? streamResult.body.pipeThrough(
+            createHtmlInjectTransform(postInjections),
+          )
+          : streamResult.body;
+        return new Response(body, { status: 200, headers: responseHeaders });
+      }
+
       const result = await renderService.renderSSR(ssrOptions);
 
       // 注入路由 CSS 到 </head> 前
@@ -302,7 +422,6 @@ export function createRendererSSR(
       }
 
       // 客户端激活（仅当 render.ssr.hydrate 不为 false 时注入 __DATA__ 与 _client.js）
-      const ssrHydrate = renderConfig.ssr?.hydrate !== false;
       if (ssrHydrate) {
         if (!hasContainerElementInHtml(html, containerId)) {
           const logger = container.has("logger")
@@ -318,60 +437,19 @@ export function createRendererSSR(
             $tr("errors.hybridMountContainerRequired", { containerId }),
           );
         }
-        const rawComponent = match.route.file || match.route.path || "";
-        const normalizedComponent = typeof rawComponent === "string"
-          ? extractComponentPathFromRouteFile(routesDirPath, rawComponent) ||
-            rawComponent.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "")
-              .trim()
-          : rawComponent;
-        // layoutData 供客户端 hydrate 时注入到各层 Layout 的 props
-        /** 实际请求路径（去尾斜杠），供客户端与 location.pathname 比较以决定是否执行 hydrate */
-        const hydrationPathname = (ctx.path || "/").replace(/\/$/, "") || "/";
-        const hydrationData = {
-          page: pageProps,
-          route: match.route.path,
-          pathname: hydrationPathname,
-          params: match.params,
-          query: match.query,
-          component: normalizedComponent,
-          layoutData: layoutPropsList,
-        };
-        const debugRender = renderConfig.debug === true;
-        const routerDebug =
-          (resolvedConfig.router as { debug?: boolean } | undefined)
-            ?.debug === true;
-        const clientConfigScript = `
-<script>
-  ${debugRender ? "globalThis.__DWEB_DEBUG__ = true;" : ""}
-  ${
-          routerDebug
-            ? "globalThis.__DWEB_ROUTER_DEBUG__ = globalThis.__DWEB_ROUTER_DEBUG__ ?? true;"
-            : ""
-        }
-  globalThis.__DATA__ = ${serializeJsonForInlineScript(hydrationData)};
-  globalThis.__DWEB_DEV__ = ${isDev};
-  globalThis.__DWEB_ROUTES__ = ${serializeJsonForInlineScript(clientRoutes)};
-  globalThis.__DWEB_ENGINE__ = "${engine}";
-  globalThis.__DWEB_CONTAINER_ID__ = "${containerId}";
-  globalThis.__DWEB_MODE__ = "ssr";
-</script>
-<script type="module" src="${clientScript}"></script>`;
-        if (html.includes("</body>")) {
-          html = html.replace("</body>", `${clientConfigScript}</body>`);
-        } else {
-          html += clientConfigScript;
+        const clientConfigScript = buildHydrationScript();
+        if (clientConfigScript) {
+          if (html.includes("</body>")) {
+            html = html.replace("</body>", `${clientConfigScript}</body>`);
+          } else {
+            html += clientConfigScript;
+          }
         }
       }
 
-      // 返回 HTML 响应（开发模式禁用缓存，确保 HMR 刷新后拿到最新内容）
       return new Response(html, {
         status: 200,
-        headers: {
-          "Content-Type": "text/html; charset=utf-8",
-          ...(isDev
-            ? { "Cache-Control": "no-cache, no-store, must-revalidate" }
-            : {}),
-        },
+        headers: responseHeaders,
       });
     } catch (error) {
       console.error($tr("log.ssrError"), error);
@@ -390,10 +468,17 @@ export function createRendererSSR(
             const errSsrOptions: SSROptions = {
               engine,
               component: ErrorComponent,
-              props: {
-                error: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-              },
+              props: (() => {
+                const isDev = getEnv("RUNTIME_ENV") === "dev";
+                return {
+                  error: isDev
+                    ? (error instanceof Error ? error.message : String(error))
+                    : "An unexpected error occurred.",
+                  stack: isDev && error instanceof Error
+                    ? error.stack
+                    : undefined,
+                };
+              })(),
               debug: renderConfig.debug === true,
             };
             const result = await renderService.renderSSR(errSsrOptions);

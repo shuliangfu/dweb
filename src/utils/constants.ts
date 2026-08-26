@@ -24,12 +24,34 @@ export const DEFAULT_CACHE_OPTIONS: DevCacheOptions = {
 
 /**
  * 带 content-hash 的静态 JS/CSS 等长缓存策略（immutable 一年）。
- * 文档 HTML / `__data` 等不得使用此值（仍 no-store）。
+ * 文档 HTML / `__data` / 未哈希的 `/_client.js` 不得使用此值。
  */
 export const HASHED_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable";
 
+/**
+ * 未哈希的客户端主入口（`/_client.js`）生产缓存：允许 revalidate，避免发版后一年旧包。
+ */
+export const UNHASHED_CLIENT_ENTRY_CACHE_CONTROL =
+  "public, max-age=0, must-revalidate";
+
 /** 开发态资源禁用缓存（与 createDevNoCacheMiddleware 语义一致） */
 export const DEV_NO_CACHE_CONTROL = "no-cache, no-store, must-revalidate";
+
+/**
+ * `/__data`（load 数据接口）响应缓存：禁止中间层/浏览器缓存个性化 load 结果。
+ */
+export const DATA_ENDPOINT_CACHE_CONTROL = "no-store";
+
+/**
+ * 路径是否像带 content-hash 的产物文件名（如 `index-a1b2c3d4.js`、`chunk-xxxx.js`）。
+ * 固定名 `_client.js` 不算 hashed。
+ */
+export function isHashedAssetFilename(fileName: string): boolean {
+  const base = fileName.split("/").pop() ?? fileName;
+  if (base === "_client.js" || base === "_client.js.map") return false;
+  // esbuild 常见：name-HASH.js / name-HASH.js.map；hash 至少 6 位十六进制或字母数字
+  return /-[A-Za-z0-9_-]{6,}\.(js|css)(\.map)?$/i.test(base);
+}
 
 const cacheOptions: DevCacheOptions = { ...DEFAULT_CACHE_OPTIONS };
 

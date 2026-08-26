@@ -150,6 +150,34 @@ describe("CSR 客户端构建器 (csr-client-builder.ts)", () => {
       expect(code).toContain("(a.page == null) !== (b.page == null)");
     });
 
+    it("View 生成物应支持 __DWEB_MISMATCH_MODE__ continue|assert 走 hydrate，默认仍 wipe+mount", () => {
+      const code = generateClientDepContent(
+        "view",
+        [
+          {
+            componentPath: "index",
+            fullPath: "/tmp/routes/index.tsx",
+            importName: "Route_index",
+          },
+        ],
+        "/tmp/routes",
+        false,
+        [],
+        "hybrid",
+        {},
+      );
+
+      expect(code).toContain(
+        "import { createSignal, hydrate, mount, type Signal } from \"@dreamer/view\";",
+      );
+      expect(code).toContain("__DWEB_MISMATCH_MODE__");
+      expect(code).toContain(
+        'mismatchMode === "continue" || mismatchMode === "assert"',
+      );
+      expect(code).toContain("hydrate(rootFn, host, { mismatchMode })");
+      expect(code).toContain("mount(rootFn, host)");
+    });
+
     it("Windows 下 componentPath 误为整段 D: 时仍用 fullPath+routes 生成相对 import", () => {
       const routesDir = "D:/a/dweb/dweb/examples/preact-ssg/basic/src/routes";
       const file = `${routesDir}/about.tsx`;

@@ -80,6 +80,47 @@ describe("Socket.IO 集成 (socket-io.ts)", () => {
     expect(path).toBe("/socket.io/");
   });
 
+  it("未写 socket.cors 时应注入 origin:'*'（开放且不反射）", () => {
+    const container = initializeServiceContainer();
+    const config: AppConfig = {
+      socket: { adapter: "socketio" },
+    };
+    initializeLogger(container, config);
+    initializeSocketIo(container, config);
+    const io = getSocketIoServer(container);
+    expect(io.options.cors?.origin).toBe("*");
+  });
+
+  it("应将 AppConfig.cors.origin 桥接到 Socket.IO", () => {
+    const container = initializeServiceContainer();
+    const config: AppConfig = {
+      cors: { origin: ["https://app.example.com"], credentials: true },
+      socket: { adapter: "socketio" },
+    };
+    initializeLogger(container, config);
+    initializeSocketIo(container, config);
+    const io = getSocketIoServer(container);
+    expect(io.options.cors?.origin).toEqual(["https://app.example.com"]);
+    expect(io.options.cors?.credentials).toBe(true);
+  });
+
+  it("socket.config.cors 应优先于 AppConfig.cors", () => {
+    const container = initializeServiceContainer();
+    const config: AppConfig = {
+      cors: { origin: ["https://app.example.com"] },
+      socket: {
+        adapter: "socketio",
+        config: {
+          cors: { origin: ["https://socket.example.com"] },
+        },
+      },
+    };
+    initializeLogger(container, config);
+    initializeSocketIo(container, config);
+    const io = getSocketIoServer(container);
+    expect(io.options.cors?.origin).toEqual(["https://socket.example.com"]);
+  });
+
   it("getSocketIoPath 应返回已注册的路径", () => {
     const container = initializeServiceContainer();
     const config: AppConfig = {

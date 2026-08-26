@@ -20,6 +20,7 @@ import {
   isSocketIOAdapter,
   type SocketConfig,
 } from "../types/app.ts";
+import { resolveSocketIoCorsOptions } from "../utils/cors-resolve.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { getLogger } from "../utils/logger.ts";
 
@@ -77,12 +78,27 @@ export function initializeSocketIo(
       (config.language === "zh-CN" || config.language === "en-US"
         ? config.language
         : undefined);
+  const implCorsFields = impl as {
+    cors?: ServerOptions["cors"];
+    allowCORS?: boolean;
+  };
+  const restCorsFields = socketRest as {
+    cors?: ServerOptions["cors"];
+    allowCORS?: boolean;
+  };
+  const socketCors = implCorsFields.cors ?? restCorsFields.cors;
+  const resolvedCors = resolveSocketIoCorsOptions(
+    config.cors,
+    socketCors,
+    implCorsFields.allowCORS ?? restCorsFields.allowCORS,
+  );
   const serverOptions: ServerOptions = {
     ...socketRest,
     ...(socketConfig.config ?? {}),
     path,
     logger,
     lang,
+    ...(resolvedCors != null ? { cors: resolvedCors } : {}),
     // 不传 port/host，挂载到主站
   };
   const io = new Server(serverOptions);

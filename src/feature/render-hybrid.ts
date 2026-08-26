@@ -34,20 +34,22 @@ import {
   createDefaultErrorHtml,
   serializeJsonForInlineScript,
 } from "../utils/security.ts";
+import { normalizeMismatchMode } from "../utils/mismatch-mode.ts";
 import {
   extractComponentPathFromRouteFile,
   resolveRouterRoutesDirPath,
 } from "../utils/path.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
-import { hasContainerElementInHtml } from "./render-utils.ts";
+import {
+  collectClientRoutes,
+  escapeHtmlInStyle,
+  hasContainerElementInHtml,
+} from "./render-utils.ts";
 
 /**
  * 转义 style 内容中的 </ 避免提前闭合 style 标签
  */
-function escapeHtmlInStyle(css: string): string {
-  return css.replace(/<\//g, "\\3C /");
-}
 
 /**
  * Hybrid 渲染选项
@@ -108,7 +110,11 @@ export function createRendererHybrid(
     mode?: "ssr" | "csr" | "ssg" | "hybrid";
     hybrid?: RenderHybridOptions;
     csr?: RenderHybridOptions;
+    hydration?: { mismatchMode?: "continue" | "assert" | "remount" };
   };
+  const mismatchMode = normalizeMismatchMode(
+    renderConfig.hydration?.mismatchMode,
+  );
 
   const hybridOptions: RenderHybridOptions = {
     clientScript: "/_client.js",
@@ -345,6 +351,13 @@ export function createRendererHybrid(
   globalThis.__DWEB_ENGINE__ = "${engine}";
   globalThis.__DWEB_CONTAINER_ID__ = "${hybridOptions.containerId}";
   globalThis.__DWEB_MODE__ = "hybrid";
+  ${
+        mismatchMode
+          ? `globalThis.__DWEB_MISMATCH_MODE__ = ${
+            JSON.stringify(mismatchMode)
+          };`
+          : ""
+      }
 </script>
 <script type="module" src="${hybridOptions.clientScript}"></script>
 ${hybridOptions.bodyTags || ""}`;
@@ -400,10 +413,17 @@ ${hybridOptions.bodyTags || ""}`;
             const result = await renderService.renderSSR({
               engine: renderConfig.engine || "preact",
               component: ErrorComponent,
-              props: {
-                error: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-              },
+              props: (() => {
+                const isDev = getEnv("RUNTIME_ENV") === "dev";
+                return {
+                  error: isDev
+                    ? (error instanceof Error ? error.message : String(error))
+                    : "An unexpected error occurred.",
+                  stack: isDev && error instanceof Error
+                    ? error.stack
+                    : undefined,
+                };
+              })(),
               debug: renderConfig.debug === true,
             });
             return new Response(result.html, {
@@ -430,35 +450,4 @@ ${hybridOptions.bodyTags || ""}`;
       );
     }
   };
-}
-
-/**
- * 收集客户端路由信息
- *
- * @param router 路由实例
- * @param routesDirPath routes 目录绝对路径（用于 extractComponentPathFromRouteFile，确保 component 与 ROUTE_LOADERS key 一致）
- * @returns 客户端路由数组
- */
-function collectClientRoutes(
-  router: Router,
-  routesDirPath: string,
-): Array<{ path: string; component: string; type: string }> {
-  const routes: Array<{ path: string; component: string; type: string }> = [];
-
-  const allRoutes = router.getRoutes?.() || [];
-
-  for (const route of allRoutes) {
-    if (route.isApi) continue;
-
-    const raw = route.file || route.path || "";
-    const component = extractComponentPathFromRouteFile(routesDirPath, raw) ||
-      raw.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "").trim();
-    routes.push({
-      path: route.path,
-      component,
-      type: route.type || "static",
-    });
-  }
-
-  return routes;
 }

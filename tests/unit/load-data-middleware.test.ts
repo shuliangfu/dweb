@@ -163,6 +163,7 @@ export function load() {
     await middleware(req.ctx as HttpContext, req.next);
 
     expect(req.ctx.response?.status).toBe(404);
+    expect(req.ctx.response?.headers.get("Cache-Control")).toBe("no-store");
     const body = await readJson(req.ctx.response);
     expect(body.error).toBe("not_found");
   });
@@ -184,6 +185,10 @@ export function load() {
     await middleware(req.ctx as HttpContext, req.next);
 
     expect(req.ctx.response?.status).toBe(200);
+    expect(req.ctx.response?.headers.get("Cache-Control")).toBe("no-store");
+    expect(req.ctx.response?.headers.get("Content-Type")).toContain(
+      "application/json",
+    );
     const body = await readJson(req.ctx.response);
     expect(body.params).toEqual({ id: "1" });
     expect(body.query).toEqual({ filter: "on" });

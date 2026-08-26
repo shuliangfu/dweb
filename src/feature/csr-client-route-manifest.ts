@@ -413,56 +413,34 @@ export function collectRouteClientManifestFromRouter(
 /**
  * 获取客户端构建所需的路由 manifest。
  *
- * 若容器内已有 Router，会先取其页面组件列表，但会**剔除磁盘上已不存在的文件**
- * （避免删页面后热更新仍生成对已删除 tsx 的 import）；再与当前 routes 目录扫描结果合并，
- * 补上 Router 内存表尚未收录的新页面。布局链始终来自对 routes 目录的重新 scan。
+ * 热路径只做**一次** `createRouter().scan()`，同时得到布局链与可水合页面，
+ * 避免旧实现「layout scan + 再 walk 目录」的双扫。磁盘扫描结果即真相来源
+ * （含 HMR 增删页面）；再按 `exists` 剔除瞬时失效路径。
  *
- * @param container 服务容器
+ * @param _container 服务容器（保留签名以兼容调用方；manifest 以磁盘 scan 为准）
  * @param routesDirPath routes 目录绝对路径
- * @param engine 渲染引擎
+ * @param _engine 渲染引擎，保留用于未来扩展
  */
 export async function getRouteClientManifest(
-  container: ServiceContainer,
+  _container: ServiceContainer,
   routesDirPath: string,
-  engine: "react" | "preact" | "view",
+  _engine: "react" | "preact" | "view",
 ): Promise<RouteClientManifest> {
-  const { hasLayout, routeLayoutKeys } = await getRouteLayoutKeys(
+  const freshRouter = createRouter({ routesDir: routesDirPath });
+  await freshRouter.scan();
+  const scanned = collectRouteClientManifestFromRouter(
+    freshRouter,
     routesDirPath,
   );
-  const fsComponents = await scanRouteComponents(routesDirPath, "", engine);
-
-  if (container.has("router")) {
-    const manifest = collectRouteClientManifestFromRouter(
-      container.get<Router>("router"),
-      routesDirPath,
-    );
-    const merged: RouteComponentInfo[] = [];
-    const seenPaths = new Set<string>();
-    for (const c of manifest.components) {
-      if (!(await exists(c.fullPath))) {
-        continue;
-      }
-      merged.push(c);
-      seenPaths.add(c.componentPath);
-    }
-    for (const c of fsComponents) {
-      if (!seenPaths.has(c.componentPath)) {
-        merged.push(c);
-        seenPaths.add(c.componentPath);
-      }
-    }
-    if (merged.length > 0) {
-      return {
-        components: sanitizeClientRouteComponents(merged, routesDirPath),
-        hasLayout,
-        routeLayoutKeys,
-      };
+  const components: RouteComponentInfo[] = [];
+  for (const c of scanned.components) {
+    if (await exists(c.fullPath)) {
+      components.push(c);
     }
   }
-
   return {
-    components: sanitizeClientRouteComponents(fsComponents, routesDirPath),
-    hasLayout,
-    routeLayoutKeys,
+    components: sanitizeClientRouteComponents(components, routesDirPath),
+    hasLayout: scanned.hasLayout,
+    routeLayoutKeys: scanned.routeLayoutKeys,
   };
 }

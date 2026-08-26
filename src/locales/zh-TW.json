@@ -67,7 +67,8 @@
       "update": "更新依賴",
       "preview": "預覽构建结果",
       "upgrade": "升級 dweb",
-      "help": "查看完整帮助"
+      "help": "查看完整帮助",
+      "run": "Run console command"
     },
     "installFailed": "安装失敗",
     "installFailedExit": "安装失敗，退出码: {code}",
@@ -101,7 +102,8 @@
     "fmtFailed": "fmt 失敗",
     "fmtFailedWithMessage": "fmt 失敗: {message}",
     "upgradeFailed": "upgrade 失敗",
-    "upgradeFailedWithMessage": "upgrade 失敗: {message}"
+    "upgradeFailedWithMessage": "upgrade 失敗: {message}",
+    "runFailedWithMessage": "run failed: {message}"
   },
   "cliDesc": {
     "toolName": "DWEB CLI 工具",
@@ -117,7 +119,7 @@
     "portOption": "端口号（預設 4173）",
     "appOptional": "應用名（多應用时指定）",
     "generate": "生成程式碼",
-    "generateTypeOption": "生成類型（route 頁面、api 介面、model 模型、service 服务）",
+    "generateTypeOption": "Type: route / api / model / service / console (r,a,m,s,c)",
     "nameOption": "名称",
     "appOptionalGenerate": "應用名（多應用时指定，如 backend、frontend）",
     "test": "运行测试",
@@ -142,7 +144,11 @@
     "testFilter": "按用例名過濾（透傳宿主 filter）",
     "testCoverage": "收集覆蓋率（Deno --coverage / Bun --coverage）",
     "testRuntime": "顯式選擇宿主：deno 或 bun",
-    "testVerbose": "打印實際 spawn 的宿主命令"
+    "testVerbose": "打印實際 spawn 的宿主命令",
+    "run": "Run a Console app command (kind=console; e.g. hello/world)",
+    "appOptionalRun": "App name (multi-app: console; default resolves the only console)",
+    "runList": "List console commands (optional module filter)",
+    "runTimeout": "Command timeout in ms (exit 124 on timeout)"
   },
   "common": {
     "noDenoJson": "未找到 deno.json，請在 dweb 專案根目錄執行",
@@ -297,12 +303,19 @@
     "fileExists": "文件已存在: {path}",
     "generateComplete": "{type} {name} 生成完成！",
     "filePath": "文件路径: {path}",
-    "supportedTypes": "支援的類型: route, api, model, service（或简写 r, a, m, s）",
+    "supportedTypes": "Types: route, api, model, service, console (r, a, m, s, c)",
     "generateFailed": "生成 {type} 失敗: {message}",
     "templateApiHelloMessage": "来自 {name} API 的问候",
     "templateApiCreatedMessage": "已创建",
     "templateApiCommentLine1": "{name} API 介面",
-    "templateApiCommentLine2": "使用 Web 标准 Request/Response，与 @dreamer/router 的 apiMode: \"restful\" 兼容"
+    "templateApiCommentLine2": "使用 Web 标准 Request/Response，与 @dreamer/router 的 apiMode: \"restful\" 兼容",
+    "consoleDefaultApp": "No -a given; writing into Console app: {app}",
+    "consoleRootMissing": "Console directory not found; init kind=console or pass -a console",
+    "warnRouteOnConsole": "App kind=console; generating {type} is usually unused (no pages/HTTP)",
+    "warnPageOnApi": "App kind=api; generating a page route is usually unused (no HTML shell)",
+    "warnConsoleOnWeb": "App kind=web; console command goes under web routes/; multi-app: use -a console",
+    "warnConsoleOnHttpApp": "Generating console command on an HTTP app; for pure CLI init kind=console",
+    "consoleRunHint": "Run: dweb-cli run {route}"
   },
   "dev": {
     "starting": "正在啟動 {app} 開發伺服器...",
@@ -474,7 +487,18 @@
       "user2Name": "李四",
       "user2Role": "用戶",
       "user3Name": "王五",
-      "user3Role": "访客"
+      "user3Role": "访客",
+      "apiHelloMessage": "Hello from dweb API",
+      "apiCreatedMessage": "Created",
+      "apiHelloComment": "示例 API：hello",
+      "apiUsersComment": "示例 API：用户列表",
+      "apiUserByIdComment": "示例 API：用户详情",
+      "consoleHelloComment": "示例 Console 命令：hello",
+      "consoleHelloOutput": "Hello from dweb console!",
+      "consoleCrondComment": "示例 Console 命令：crond",
+      "consoleCrondStart": "crond start (example)",
+      "consoleCrondStop": "crond stop (example)",
+      "consoleMainHint": "Console app: use `dweb-cli run hello/world` (HTTP server not started from main.ts)"
     },
     "comments": {
       "serverEntry": "服務端入口",
@@ -634,7 +658,41 @@
       "pluginsDesc": "插件：路径字串或 { name, version, dependencies, config, onInit, onRequest, ... } 陣列。取消註解以添加。",
       "middlewaresDesc": "中介軟體：{ middleware, name?, condition? } 或路径字串陣列。取消註解以添加。",
       "middlewareNameDesc": "中介軟體名称，用于日志与排序。",
-      "middlewareConditionDesc": "条件：(req) => boolean；仅当为 true 时執行该中介軟體。"
-    }
+      "middlewareConditionDesc": "条件：(req) => boolean；仅当为 true 时執行该中介軟體。",
+      "kindDesc": "应用种类：web | api | console",
+      "consoleEntryHint": "控制台应用：请使用 dweb-cli run <route>/<action>，不要用 main.ts 起 HTTP",
+      "consoleConfigHint": "Console 应用配置（无 server.listen）",
+      "apiConfigHint": "纯 API 应用配置（无 _app / 页面引擎）",
+      "dockerConsoleOnly": "纯 Console 项目无 HTTP 服务；docker-compose 为空"
+    },
+    "appKind": "应用类型",
+    "appKindWeb": "Web（页面应用）",
+    "appKindApi": "API（纯接口）",
+    "appKindConsole": "Console（命令行）",
+    "consoleNameFixed": "Console 应用目录固定为: {name}",
+    "addAnotherApp": "是否继续添加应用？",
+    "appsAddedSoFar": "已添加: {apps}",
+    "appNameRequiredForKind": "请输入应用名称",
+    "appNameReservedConsole": "名称 \"{name}\" 保留给 Console 应用，请另选名称或选择类型 Console",
+    "exampleLevelConsole": "Console 示例",
+    "exampleConsoleWithCrond": "含 crond 示例（hello + crond）",
+    "exampleConsoleMinimal": "最小（hello）",
+    "exampleLevelApi": "API 示例",
+    "exampleApiWithUsers": "含 users 示例（hello + users）",
+    "exampleApiMinimal": "最小（hello）",
+    "runConsole": "  dweb-cli run hello/world",
+    "runConsoleApp": "  dweb-cli run hello/world -a {app}   # Console 命令"
+  },
+  "run": {
+    "missingRoute": "Specify a command route, e.g. dweb-cli run hello/world",
+    "usageHint": "Usage: dweb-cli run <route>/<action> [-a console] [--list] [--timeout ms] [-- --flag]",
+    "notConsoleKind": "Target app kind is \"{kind}\", not console (root: {root})",
+    "failedWithMessage": "Console command failed: {message}",
+    "listHeader": "Available console commands:",
+    "listFooter": "Run: dweb-cli run <route>",
+    "hintList": "Hint: dweb-cli run --list to see commands",
+    "timeout": "Command timed out ({ms}ms), exit 124",
+    "moduleHelpHeader": "Specify an action (this module has multiple commands):",
+    "didYouMean": "Did you mean:"
   }
 }

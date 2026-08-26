@@ -19,6 +19,7 @@ import type {
 import type {
   CompressionOptions,
   CorsOptions,
+  MetricsOptions,
   RateLimitOptions,
 } from "@dreamer/middlewares";
 import type { Plugin, PluginManagerOptions } from "@dreamer/plugin";
@@ -101,6 +102,16 @@ export interface DatabaseAppConfig {
 }
 
 /**
+ * HTTP 请求结束观测信息（`AppConfig.onRequestEnd` / 插件 `onRequestEnd`）
+ */
+export interface RequestEndInfo {
+  path: string;
+  method: string;
+  status: number;
+  durationMs: number;
+}
+
+/**
  * 应用配置接口
  *
  * 包含所有集成库的配置选项：服务器、路由、渲染、插件、中间件、日志、数据库、Socket 等。
@@ -137,9 +148,86 @@ export const SUPPORTED_APP_LANGUAGES = [
 /** 框架支持的语言类型 */
 export type AppLanguage = (typeof SUPPORTED_APP_LANGUAGES)[number];
 
+/** 应用种类（与单应用/多应用正交；缺省视为 web） */
+export type AppKind = "web" | "api" | "console";
+
+/**
+ * 解析应用种类：缺省或未设置时按 web（兼容旧项目）
+ */
+export function resolveAppKind(
+  config: { kind?: AppKind } | null | undefined,
+): AppKind {
+  return config?.kind ?? "web";
+}
+
+/** 是否为纯 API 应用（无页面壳、不构建客户端） */
+export function isApiKind(
+  config: { kind?: AppKind } | null | undefined,
+): boolean {
+  return resolveAppKind(config) === "api";
+}
+
+/** 是否为 Console（CLI）应用（不 listen HTTP，由 dweb-cli run 驱动） */
+export function isConsoleKind(
+  config: { kind?: AppKind } | null | undefined,
+): boolean {
+  return resolveAppKind(config) === "console";
+}
+
+/**
+ * Console 冷启动精简：`console.slim` 或 `DWEB_CONSOLE_SLIM`（环境变量优先）。
+ * `1`/`true`/`yes` 开；`0`/`false`/`no` 关；未设 env 时读配置（默认 false）。
+ */
+export function resolveConsoleSlim(
+  config: { console?: { slim?: boolean } } | null | undefined,
+  envValue?: string | null,
+): boolean {
+  const raw = envValue?.trim().toLowerCase();
+  if (raw === "1" || raw === "true" || raw === "yes") return true;
+  if (raw === "0" || raw === "false" || raw === "no") return false;
+  return config?.console?.slim === true;
+}
+
+/** Console 应用专有选项（仅 kind=console 时生效） */
+export interface ConsoleAppConfig {
+  /**
+   * 冷启动精简（默认 false）。跳过 banner、HTTP 中间件管理器等装饰性初始化；
+   * 仍加载 config / logger / plugins+onInit 与可选 DB。可用 `DWEB_CONSOLE_SLIM=1` 覆盖。
+   */
+  slim?: boolean;
+}
+
+/**
+ * App.start 选项
+ *
+ * - `mode: "console"`：跳过 HTTP listen / 客户端构建；结束后须 shutdown 以便 CLI 退出
+ */
+export interface AppStartOptions {
+  /** 启动模式；缺省按配置 `kind`（web/api 走 HTTP，console 不 listen） */
+  mode?: "web" | "console";
+}
+
+/**
+ * App 构造可选参数（CLI 入口非 main.ts 时需显式指定配置目录）
+ */
+export interface AppConstructOptions {
+  /**
+   * 显式配置目录列表（相对或绝对路径）
+   * 用于 `dweb-cli run`：入口为 cli.ts，无法从 main.ts 推断 config 目录
+   */
+  configDirectories?: string[];
+  /** 初始启动模式提示（亦可在 start() 时再传） */
+  mode?: "web" | "console";
+}
+
 export interface AppConfig extends Record<string, unknown> {
   /** 应用名称 */
   name?: string;
+  /**
+   * 应用种类：web（默认页面应用）| api（纯 HTTP API）| console（CLI 命令应用）
+   * 缺省或未设置时按 web 处理，兼容旧项目
+   */
+  kind?: AppKind;
   /** 应用版本 */
   version?: string;
   /**
@@ -165,10 +253,21 @@ export interface AppConfig extends Record<string, unknown> {
     engine?: Engine;
     /** 渲染模式（ssr、csr、ssg、hybrid） */
     mode?: "ssr" | "csr" | "ssg" | "hybrid";
+    /**
+     * 页面 `load()` 结果短期内存缓存（**默认关闭**）。
+     * 旧实现无条件缓存 URL+params 易跨用户串数据；仅在匿名只读页且理解风险时开启。
+     * `true` 使用默认 TTL 1s；或 `{ ttlMs }`。
+     */
+    loadCache?: boolean | { ttlMs?: number };
     /** SSR 配置（mode 为 ssr 时生效） */
     ssr?: {
       /** 是否启用客户端激活（hydrate），默认 true；关闭后仅输出服务端 HTML，不注入 _client.js */
       hydrate?: boolean;
+      /**
+       * 是否启用流式 SSR（默认 false）。
+       * 仅 `engine: "view"` 生效；生产若需 asset-manifest 路径重写会回退为缓冲字符串路径。
+       */
+      stream?: boolean;
     };
     /** SSG 配置（mode 为 ssg 时生效） */
     ssg?: {
@@ -180,6 +279,15 @@ export interface AppConfig extends Record<string, unknown> {
       preloadHtml?: boolean | { maxPages?: number; maxSizeMb?: number };
       // 动态路由按参数展开：键为路由模式（如 /user/[id]），值为参数列表
       dynamicRoutes?: Record<string, string[]>;
+    };
+    /**
+     * 整页水合错位策略（仅 `engine: "view"` 的 Hybrid/SSR 生效；React/Preact 忽略）。
+     * 未设置时客户端仍走清空再 mount（与今日默认一致，等同 remount 兼容）。
+     * - `continue` / `assert`：调用 view `hydrate(..., { mismatchMode })` 复用 SSR DOM
+     * - `remount`：清空后 mount（显式选择今日默认）
+     */
+    hydration?: {
+      mismatchMode?: "continue" | "assert" | "remount";
     };
   };
   /** 构建配置（entry/output 可选，由框架推断默认值） */
@@ -202,13 +310,17 @@ export interface AppConfig extends Record<string, unknown> {
   securityHeaders?: boolean | SecurityHeadersConfig;
   /**
    * 可选 CORS 中间件（基于 `@dreamer/middlewares` cors）。
-   * 默认关闭；`true` 使用库默认（origin `*` 等），对象则透传 `CorsOptions`。
+   * 默认关闭。
+   * - `true`：库默认 `origin: "*"`（非 credentials）；生产请改用对象白名单
+   * - 对象：透传 `CorsOptions`（推荐 `origin: ["https://app.example.com"]`）
+   * 若同时配置 `socket`（socketio）且未写 socket.cors，会把此处 `origin` 桥接到 Socket.IO。
    */
   cors?: boolean | CorsOptions;
   /**
    * 可选响应压缩（基于 `@dreamer/middlewares` compression，gzip/可选 brotli）。
-   * 默认关闭；`true` 使用库默认阈值，对象则透传 `CompressionOptions`。
-   * 建议仅生产启用；开发态有 dev-no-cache 时压缩收益有限。
+   * - `RUNTIME_ENV=dev`：默认关闭（可用 `true`/对象显式开启）
+   * - `start`/`build`（非 dev）：**默认开启**；设 `false` 可关闭
+   * - `true` 使用库默认阈值；对象则透传 `CompressionOptions`
    */
   compression?: boolean | CompressionOptions;
   /**
@@ -216,8 +328,24 @@ export interface AppConfig extends Record<string, unknown> {
    * 默认关闭；`true` 使用库默认，对象则透传 `RateLimitOptions`。
    */
   rateLimit?: boolean | RateLimitOptions;
+  /**
+   * 可选 Prometheus 风格指标（基于 `@dreamer/middlewares` metrics）。
+   * 默认关闭；`true` 使用库默认（端点 `/metrics`）；对象则透传 `MetricsOptions`。
+   * 与 `onRequestEnd` 互补：本项提供 scrape 端点，钩子用于自定义观测。
+   */
+  metrics?: boolean | MetricsOptions;
+  /**
+   * 每个 HTTP 请求结束后的观测钩子（状态码 + 耗时）。
+   * 插件也可实现同名 `onRequestEnd`。
+   */
+  onRequestEnd?: (info: RequestEndInfo) => void | Promise<void>;
   /** 数据库配置 */
   database?: DatabaseAppConfig;
+  /**
+   * Console 专有选项（`kind: "console"`）；如 `slim` 冷启动精简。
+   * 环境变量 `DWEB_CONSOLE_SLIM=1` 可覆盖 `console.slim`。
+   */
+  console?: ConsoleAppConfig;
   /**
    * 实时通信配置（可选）
    * type 为 socketio 时使用 Socket.IO；type 为 websocket 时使用原生 WebSocket（待实现）。
@@ -290,6 +418,15 @@ export interface SocketIOImplConfig {
   path?: string;
   /** 是否允许跨域（默认：true） */
   allowCORS?: boolean;
+  /**
+   * Socket.IO CORS。未设时：若 AppConfig.cors 有 origin 则桥接；否则 `origin: "*"`（不反射任意 Origin）。
+   * 生产跨域请显式白名单，例如 `{ origin: ["https://app.example.com"] }`。
+   */
+  cors?: {
+    origin?: string | string[] | ((origin: string) => boolean);
+    methods?: string[];
+    credentials?: boolean;
+  };
   /** 心跳超时（毫秒，默认：20000） */
   pingTimeout?: number;
   /** 心跳间隔（毫秒，默认：25000） */
@@ -440,8 +577,9 @@ export interface IApp {
 
   /**
    * 启动应用
+   * @param options 可选；`mode: "console"` 时不 listen HTTP
    */
-  start(): Promise<void>;
+  start(options?: AppStartOptions): Promise<void>;
 
   /**
    * 停止应用

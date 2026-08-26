@@ -44,10 +44,14 @@ export async function initializeRouter(
     cwd(),
     routerConfig.routesDir || "./src/routes",
   );
+  /** 纯 API 应用：整棵 routes/ 为 handler（@dreamer/router ≥1.2.1 的 apiOnly） */
+  const apiOnly = config.kind === "api" || routerConfig.apiOnly === true;
   const router = createRouter({
     routesDir: routesDirAbs,
     apiMode: routerConfig.apiMode || "restful",
     debug: routerConfig.debug === true,
+    apiOnly,
+    skipAppValidation: apiOnly || routerConfig.skipAppValidation === true,
   });
 
   // 扫描路由文件

@@ -38,7 +38,10 @@ import {
   serializeJsonForInlineScript,
 } from "../utils/security.ts";
 import { loadRouteModule } from "./load-route-module.ts";
-import { hasContainerElementInHtml } from "./render-utils.ts";
+import {
+  collectClientRoutes,
+  hasContainerElementInHtml,
+} from "./render-utils.ts";
 import { getRender } from "./render.ts";
 
 /** 转义 meta 内容中的 HTML 与引号，避免注入与断签 */
@@ -448,37 +451,6 @@ ${csrOptions.bodyTags || ""}`;
       );
     }
   };
-}
-
-/**
- * 收集客户端路由信息
- *
- * @param router 路由实例
- * @param routesDirPath routes 目录绝对路径（用于 extractComponentPathFromRouteFile，确保 component 与 ROUTE_LOADERS key 一致）
- * @returns 客户端路由数组
- */
-function collectClientRoutes(
-  router: Router,
-  routesDirPath: string,
-): Array<{ path: string; component: string; type: string }> {
-  const routes: Array<{ path: string; component: string; type: string }> = [];
-
-  const allRoutes = router.getRoutes?.() || [];
-
-  for (const route of allRoutes) {
-    if (route.isApi) continue;
-
-    const raw = route.file || route.path || "";
-    const component = extractComponentPathFromRouteFile(routesDirPath, raw) ||
-      raw.replace(/\\/g, "/").replace(/\.(tsx?|jsx?)$/, "").trim();
-    routes.push({
-      path: route.path,
-      component,
-      type: route.type || "static",
-    });
-  }
-
-  return routes;
 }
 
 /** 无 _app.tsx 时的降级 HTML 外壳（静态模板），与主路径一致：全屏遮罩 + __DWEB_ON_READY__ */

@@ -15,6 +15,7 @@ import {
   TAILWIND_VERSION,
   UNOCSS_CORE_VERSION,
 } from "../constants.ts";
+import { getAppKind, hasWebApp, resolveApps } from "../helpers.ts";
 import type { InitOptions, JsrVersions } from "../types.ts";
 
 /**
@@ -34,8 +35,9 @@ function toNpmName(projectName: string): string {
  * 第三方 npm 依赖统一使用 `^` + constants 中的基准版本，便于补丁升级。
  */
 function getDependenciesBlock(opts: InitOptions, jsr: JsrVersions): string {
-  const useUno = opts.style === "unocss";
-  const useTailwind = opts.style === "tailwind";
+  const needUiEngine = hasWebApp(opts);
+  const useUno = needUiEngine && opts.style === "unocss";
+  const useTailwind = needUiEngine && opts.style === "tailwind";
   const hasStyleAssets = useUno || useTailwind;
 
   const dreamerDeps = [
@@ -46,7 +48,7 @@ function getDependenciesBlock(opts: InitOptions, jsr: JsrVersions): string {
     ...(hasStyleAssets
       ? [`    "@dreamer/plugins": "npm:@jsr/dreamer__plugins@^${jsr.plugins}"`]
       : []),
-    ...(opts.engine === "view"
+    ...(needUiEngine && opts.engine === "view"
       ? [`    "@dreamer/view": "npm:@jsr/dreamer__view@^${jsr.view}"`]
       : []),
   ];
@@ -65,7 +67,9 @@ function getDependenciesBlock(opts: InitOptions, jsr: JsrVersions): string {
       `    "@unocss/preset-icons": "^${UNOCSS_CORE_VERSION}"`,
     ]
     : [];
-  const engineDeps = opts.engine === "preact"
+  const engineDeps = !needUiEngine
+    ? []
+    : opts.engine === "preact"
     ? [`    "preact": "^${PREACT_VERSION}"`]
     : opts.engine === "view"
     ? []
@@ -87,27 +91,29 @@ export function getPackageJson(
   jsrVersions: JsrVersions,
 ): string {
   const prefix = opts.useSrc ? "src/" : "";
-  const isMulti = opts.appMode === "multi" && (opts.appNames?.length ?? 0) > 0;
+  const apps = resolveApps(opts);
+  const isMulti = opts.appMode === "multi" && apps.length > 0 &&
+    (opts.appNames != null || opts.apps != null);
+  const httpApps = apps.filter((a) => a.kind === "web" || a.kind === "api");
   const name = toNpmName(opts.projectName);
 
-  const scriptsBlock = isMulti && opts.appNames
+  const scriptsBlock = isMulti
     ? [
-      opts.appNames
-        .map(
-          (app) => `    "dev:${app}": "bun run ${prefix}${app}/main.ts"`,
-        )
-        .join(",\n"),
-      opts.appNames
-        .map(
-          (app) =>
-            `    "build:${app}": "bun run ${prefix}${app}/main.ts -- --build"`,
-        )
-        .join(",\n"),
-      opts.appNames
-        .map((app) => `    "start:${app}": "bun run dist/${app}/server.js"`)
-        .join(",\n"),
+      ...httpApps.map(
+        (app) => `    "dev:${app.name}": "bun run ${prefix}${app.name}/main.ts"`,
+      ),
+      ...httpApps.map(
+        (app) =>
+          `    "build:${app.name}": "bun run ${prefix}${app.name}/main.ts -- --build"`,
+      ),
+      ...httpApps.map(
+        (app) => `    "start:${app.name}": "bun run dist/${app.name}/server.js"`,
+      ),
       `    "test": "dweb-cli test"`,
-    ].join(",\n\n")
+    ].join(",\n")
+    : getAppKind(opts) === "console"
+    ? `    "run:hello": "echo Use: dweb-cli run hello/world",
+    "test": "dweb-cli test"`
     : `    "dev": "bun run ${prefix}main.ts",
     "build": "bun run ${prefix}main.ts -- --build",
     "start": "bun run dist/server.js",

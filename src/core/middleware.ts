@@ -29,6 +29,7 @@ import {
   emitOnError,
   emitOnHealthCheck,
   emitOnRequest,
+  emitOnRequestEnd,
   emitOnResponse,
 } from "./plugin-events.ts";
 
@@ -169,10 +170,18 @@ export function pluginEventsMiddleware(
   container: ServiceContainer,
 ): Middleware<HttpContext> {
   return async (ctx: HttpContext, next: () => Promise<void>): Promise<void> => {
+    const started = performance.now();
     // 触发 onRequest 事件（请求处理前）；若插件返回 Response 则短路后续中间件
     const response = await emitOnRequest(container, ctx);
     if (response) {
       ctx.response = response;
+      await emitOnResponse(container, ctx);
+      await emitOnRequestEnd(container, {
+        path: ctx.path,
+        method: ctx.method,
+        status: ctx.response?.status ?? 0,
+        durationMs: Math.round(performance.now() - started),
+      });
       return;
     }
 
@@ -202,9 +211,14 @@ export function pluginEventsMiddleware(
 
     // 触发 onResponse 事件（请求处理完成后）
     await emitOnResponse(container, ctx);
+    await emitOnRequestEnd(container, {
+      path: ctx.path,
+      method: ctx.method,
+      status: ctx.response?.status ?? 0,
+      durationMs: Math.round(performance.now() - started),
+    });
   };
 }
-
 /**
  * 创建健康检查中间件
  *

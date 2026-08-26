@@ -223,7 +223,7 @@ View is the **recommended** engine. Relevant **2.0.4** capabilities:
 | 1 | Further builder split (dep gen)             | in progress |
 | 2 | Optional compression + hashed Cache-Control | ✅          |
 | 3 | CORS/CSP/rateLimit config                   | ✅          |
-| 4 | Streaming SSR pilot (view first)            | todo        |
+| 4 | Streaming SSR pilot (view first)            | done        |
 
 ### P2 — architecture / product (RFC)
 

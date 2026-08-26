@@ -91,6 +91,33 @@ describe("test-launcher", () => {
         }),
       ).toBe(false);
     });
+
+    it("有 reporter / reportOut 时不应走 task", () => {
+      expect(
+        shouldPreferTestTask({
+          paths: ["tests"],
+          layers: [],
+          reporter: "junit",
+        }),
+      ).toBe(false);
+      expect(
+        shouldPreferTestTask({
+          paths: ["tests"],
+          layers: [],
+          reportOut: "out.xml",
+        }),
+      ).toBe(false);
+    });
+
+    it("有 productReport 时不应走 task", () => {
+      expect(
+        shouldPreferTestTask({
+          paths: ["tests"],
+          layers: [],
+          productReport: true,
+        }),
+      ).toBe(false);
+    });
   });
 
   describe("parseTestRuntime()", () => {

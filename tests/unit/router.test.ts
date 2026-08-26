@@ -154,6 +154,38 @@ describe("路由集成 (router.ts)", () => {
         chdir(originalCwd);
       }
     });
+
+    it("kind=api 时应在无 _app.tsx 下成功扫描 routes/hello.ts", async () => {
+      const container = initializeServiceContainer();
+      initializePlugin(container);
+
+      const apiRoutesDir = join(testDir, "api-routes");
+      await ensureDir(apiRoutesDir);
+      await writeTextFile(
+        join(apiRoutesDir, "hello.ts"),
+        `export async function GET() {
+  return Response.json({ ok: true });
+}
+`,
+      );
+
+      const config: AppConfig = {
+        kind: "api",
+        router: {
+          routesDir: apiRoutesDir,
+        },
+      };
+
+      const router = await initializeRouter(container, config);
+      const routes = router.getRoutes() as Array<{
+        path: string;
+        isApi?: boolean;
+      }>;
+      expect(
+        routes.some((r) => r.path === "/hello" || r.path.includes("hello")),
+      )
+        .toBe(true);
+    });
   });
 
   describe("getRouter()", () => {

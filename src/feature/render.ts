@@ -11,8 +11,10 @@ import {
   type RenderResult,
   renderSSG,
   renderSSR,
+  renderSSRStream,
   type SSGOptions,
   type SSROptions,
+  type StreamRenderResult,
 } from "@dreamer/render";
 import type { ServiceContainer } from "@dreamer/service";
 import type { AppConfig } from "../types/app.ts";
@@ -46,10 +48,20 @@ export function initializeRender(
   // 创建渲染服务对象
   const renderService = {
     /**
-     * 服务端渲染
+     * 服务端渲染（完整 HTML 字符串）
      */
     async renderSSR(options: SSROptions): Promise<RenderResult> {
       return await renderSSR({
+        ...options,
+        engine: options.engine || renderConfig.engine || "preact",
+      });
+    },
+
+    /**
+     * 流式 SSR（ReadableStream；仅 view）
+     */
+    async renderSSRStream(options: SSROptions): Promise<StreamRenderResult> {
+      return await renderSSRStream({
         ...options,
         engine: options.engine || renderConfig.engine || "preact",
       });
@@ -85,6 +97,7 @@ export function initializeRender(
  */
 export function getRender(container: ServiceContainer): {
   renderSSR: (options: SSROptions) => Promise<RenderResult>;
+  renderSSRStream: (options: SSROptions) => Promise<StreamRenderResult>;
   renderSSG: (options: SSGOptions) => Promise<string[]>;
 } {
   return container.get("render");

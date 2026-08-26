@@ -17,7 +17,8 @@ import {
   getEnv,
   relative,
 } from "../core/runtime-adapter.ts";
-import type { AppConfig } from "../types/app.ts";
+import { type AppConfig, isApiKind } from "../types/app.ts";
+import { createCoalescedAsyncRunner } from "../utils/coalesce-async.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
 import { resolveRouterRoutesDirPath } from "../utils/path.ts";
@@ -115,37 +116,61 @@ export function initializeServer(
         ignore: [...watchIgnoreGenerated, ...userIgnore],
       };
 
-    devConfig = {
-      // HMR 配置：用户配置 > 默认启用
-      hmr: userDevConfig.hmr ?? { enabled: true },
-      // watch 配置：合并默认排除（client.dep.tsx、client.tsx）与用户配置
-      watch: watchConfig,
-      // 构建器：文件变更时重新构建并返回 chunkUrl，供 HMR 无感刷新
-      builder: userDevConfig.builder ?? {
-        async rebuild(options?: { changedPath?: string }) {
-          // 使模块缓存失效，确保刷新页面时加载最新内容（项目内所有模块更新都能热重载）
-          // 必须传入 options.changedPath 以命中 chunk 级 HMR（buildClientScript 据此计算 chunkUrl）
-          if (options?.changedPath) {
-            invalidateModule(options.changedPath);
-            // 清除 CSS 路由缓存，避免注释/取消注释 CSS 导入后仍返回旧缓存
-            clearCssRouteCacheForPath(options.changedPath);
-            clearViewSsrBundleCacheForPath(options.changedPath);
-          }
-          // 仅清除脚本缓存，不释放增量 context，以便 HMR 使用 rebuild 加速
-          await clearClientScriptCache();
-          const result = await buildClientScript(container, config, options);
-          // 触发 onHotReload 插件事件（HMR 热重载完成后）
+    const apiApp = isApiKind(config);
+    type DevRebuildResult = {
+      outputFiles?: { path: string; contents: Uint8Array }[];
+      chunkUrl?: string;
+      routeChunkUrls?: Record<string, string>;
+    };
+    type DevRebuildOptions = { changedPath?: string };
+    /**
+     * HMR rebuild 单飞 + 尾随合并：快速连改多文件时避免并行 stampede；
+     * 进行中的调用结束后再用「最后一次 changedPath」补跑一轮。
+     */
+    const coalescedRebuild = createCoalescedAsyncRunner(
+      async (options?: DevRebuildOptions): Promise<DevRebuildResult> => {
+        if (options?.changedPath) {
+          invalidateModule(options.changedPath);
+          clearCssRouteCacheForPath(options.changedPath);
+          clearViewSsrBundleCacheForPath(options.changedPath);
+        }
+        if (apiApp) {
           await pluginEvents.emitOnHotReload(
             container,
             options?.changedPath ? [options.changedPath] : [],
           );
-          return {
-            outputFiles: [],
-            chunkUrl: result.chunkUrl,
-            routeChunkUrls: result.routeChunkUrls,
-          };
-        },
+          return { outputFiles: [] };
+        }
+        // 必须传入 options.changedPath 以命中 chunk 级 HMR（buildClientScript 据此计算 chunkUrl）
+        await clearClientScriptCache();
+        const result = await buildClientScript(container, config, options);
+        await pluginEvents.emitOnHotReload(
+          container,
+          options?.changedPath ? [options.changedPath] : [],
+        );
+        return {
+          outputFiles: [],
+          chunkUrl: result.chunkUrl,
+          routeChunkUrls: result.routeChunkUrls,
+        };
       },
+    );
+    // 纯 API：默认仍 watch + 失效模块缓存；不跑客户端构建（无 HTML 壳）
+    const defaultBuilder = {
+      rebuild(
+        options?: DevRebuildOptions,
+      ): Promise<DevRebuildResult> {
+        return coalescedRebuild(options);
+      },
+    };
+
+    devConfig = {
+      // HMR 配置：用户配置 > 默认启用（API 无 HTML 注入，仅作 watch/失效）
+      hmr: userDevConfig.hmr ?? { enabled: true },
+      // watch 配置：合并默认排除（client.dep.tsx、client.tsx）与用户配置
+      watch: watchConfig,
+      // 构建器：文件变更时重新构建并返回 chunkUrl，供 HMR 无感刷新
+      builder: userDevConfig.builder ?? defaultBuilder,
     };
   }
 
@@ -159,13 +184,43 @@ export function initializeServer(
   };
   const onListen = serverConfig.onListen ?? defaultOnListen;
 
+  /**
+   * 生产环境默认不向客户端暴露 error.message（避免路径/SQL 等泄漏）。
+   * 用户显式传入 server.onError 时仍优先使用用户处理器。
+   */
+  const defaultOnError = (error: unknown): Response => {
+    const isDev = getEnv("RUNTIME_ENV") === "dev";
+    const message = isDev
+      ? (error instanceof Error ? error.message : String(error))
+      : "Internal Server Error";
+    if (!isDev) {
+      logger.error(
+        "[dweb] unhandled request error:",
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+    return new Response(
+      JSON.stringify({
+        error: {
+          status: 500,
+          message,
+          timestamp: new Date().toISOString(),
+        },
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+      },
+    );
+  };
+
   const server = new Server({
     mode,
     port: serverConfig.port || 8000,
     host, // @dreamer/server 使用 host
     logger,
     onListen,
-    onError: serverConfig.onError,
+    onError: serverConfig.onError ?? defaultOnError,
     debug: serverConfig.debug,
     dev: devConfig,
     shutdownTimeout: serverConfig.shutdownTimeout || 10000,

@@ -11,17 +11,19 @@ import type { HttpContext } from "@dreamer/server";
 import type { ServiceContainer } from "@dreamer/service";
 import {
   cwd,
-  exists,
   getEnv,
   join,
   readTextFile,
   resolve,
+  stat,
 } from "../core/runtime-adapter.ts";
 import type { AppConfig } from "../types/app.ts";
 import { getInferredBuildOutputDirs } from "../utils/build-dirs.ts";
 import {
   CLIENT_OUTPUT_MAIN_FILENAME,
   HASHED_ASSET_CACHE_CONTROL,
+  isHashedAssetFilename,
+  UNHASHED_CLIENT_ENTRY_CACHE_CONTROL,
 } from "../utils/constants.ts";
 import { $tr } from "../utils/i18n.ts";
 import { getLogger } from "../utils/logger.ts";
@@ -31,6 +33,74 @@ import {
   getCachedClientScript,
 } from "./csr-client-builder.ts";
 import { findChunkContent, isClientChunkFile } from "./csr-client-chunk.ts";
+
+/** 生产态静态文件内存缓存上限（按绝对路径） */
+const PROD_CLIENT_FILE_CACHE_MAX = 64;
+
+interface ProdClientFileCacheEntry {
+  body: string;
+  /** 未哈希文件的 mtime；哈希文件省略（immutable） */
+  mtimeMs?: number;
+}
+
+const prodClientFileCache = new Map<string, ProdClientFileCacheEntry>();
+
+/** 测试或进程内重置时清空生产静态文件缓存 */
+export function clearProdClientFileCache(): void {
+  prodClientFileCache.clear();
+}
+
+function rememberProdClientFile(
+  absPath: string,
+  entry: ProdClientFileCacheEntry,
+): void {
+  if (prodClientFileCache.has(absPath)) {
+    prodClientFileCache.delete(absPath);
+  }
+  prodClientFileCache.set(absPath, entry);
+  while (prodClientFileCache.size > PROD_CLIENT_FILE_CACHE_MAX) {
+    const oldest = prodClientFileCache.keys().next().value;
+    if (oldest === undefined) break;
+    prodClientFileCache.delete(oldest);
+  }
+}
+
+async function readMtimeMs(absPath: string): Promise<number> {
+  try {
+    const info = await stat(absPath);
+    return info.mtime?.getTime() ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * 生产态读取客户端产物：哈希文件名首次读后常驻；未哈希按 mtime 校验。
+ */
+async function readProdClientFile(
+  absPath: string,
+  fileName: string,
+): Promise<string | null> {
+  try {
+    if (isHashedAssetFilename(fileName)) {
+      const hit = prodClientFileCache.get(absPath);
+      if (hit) return hit.body;
+      const body = await readTextFile(absPath);
+      rememberProdClientFile(absPath, { body });
+      return body;
+    }
+
+    const mtimeMs = await readMtimeMs(absPath);
+    if (mtimeMs <= 0) return null;
+    const hit = prodClientFileCache.get(absPath);
+    if (hit && hit.mtimeMs === mtimeMs) return hit.body;
+    const body = await readTextFile(absPath);
+    rememberProdClientFile(absPath, { body, mtimeMs });
+    return body;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * 创建客户端脚本服务中间件
@@ -135,15 +205,16 @@ export function createClientScriptMiddleware(
           ? `${CLIENT_OUTPUT_MAIN_FILENAME}.map`
           : CLIENT_OUTPUT_MAIN_FILENAME;
         const clientJsPath = join(clientOutputPath, mainFile);
-        if (await exists(clientJsPath)) {
-          const content = await readTextFile(clientJsPath);
+        const content = await readProdClientFile(clientJsPath, mainFile);
+        if (content != null) {
           ctx.response = new Response(content, {
             status: 200,
             headers: {
               "Content-Type": isMap
                 ? "application/json; charset=utf-8"
                 : "application/javascript; charset=utf-8",
-              "Cache-Control": HASHED_ASSET_CACHE_CONTROL,
+              // 主入口文件名固定为 _client.js（无 content-hash），不可 immutable
+              "Cache-Control": UNHASHED_CLIENT_ENTRY_CACHE_CONTROL,
             },
           });
           return;
@@ -153,7 +224,7 @@ export function createClientScriptMiddleware(
             status: 200,
             headers: {
               "Content-Type": "application/json; charset=utf-8",
-              "Cache-Control": devCacheControl,
+              "Cache-Control": UNHASHED_CLIENT_ENTRY_CACHE_CONTROL,
             },
           });
           return;
@@ -180,10 +251,12 @@ export function createClientScriptMiddleware(
           errMsg,
           errStack,
         );
+        const isDev = getEnv("RUNTIME_ENV") === "dev";
+        const clientMsg = isDev ? errMsg : $tr("client.clientScriptLoadFailed");
         ctx.response = new Response(
           `console.error(${
             JSON.stringify($tr("client.clientScriptLoadFailed"))
-          }, ${JSON.stringify(errMsg)});`,
+          }${isDev ? `, ${JSON.stringify(clientMsg)}` : ""});`,
           {
             status: 500,
             headers: {
@@ -233,15 +306,17 @@ export function createClientScriptMiddleware(
         ctx.response = new Response("Not Found", { status: 404 });
         return;
       }
-      if (await exists(resolvedChunkPath)) {
-        const content = await readTextFile(resolvedChunkPath);
+      const content = await readProdClientFile(resolvedChunkPath, fileName);
+      if (content != null) {
         ctx.response = new Response(content, {
           status: 200,
           headers: {
             "Content-Type": isSourceMap
               ? "application/json; charset=utf-8"
               : "application/javascript; charset=utf-8",
-            "Cache-Control": HASHED_ASSET_CACHE_CONTROL,
+            "Cache-Control": isHashedAssetFilename(fileName)
+              ? HASHED_ASSET_CACHE_CONTROL
+              : UNHASHED_CLIENT_ENTRY_CACHE_CONTROL,
           },
         });
         return;
