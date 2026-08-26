@@ -116,6 +116,10 @@ describe("CSR 客户端路由 manifest (csr-client-route-manifest.ts)", () => {
     const routesDirPath = join(projectRoot, "routes");
     await ensureDir(routesDirPath);
     await writeTextFile(
+      join(routesDirPath, "_app.tsx"),
+      "export default function App(props: { children?: unknown }) { return props.children; }\n",
+    );
+    await writeTextFile(
       join(routesDirPath, "index.tsx"),
       "export default function Page() { return null; }\n",
     );
