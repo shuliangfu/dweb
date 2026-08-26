@@ -84,21 +84,21 @@ async function writeLocalDenoJson(testDir: string): Promise<void> {
       );
     }
   }
+  // Only pin @dreamer/dweb to this checkout. Use jsr: for router/render/… (not
+  // monorepo file: siblings) so CI matches published dependency resolution.
   resolvedImports["@dreamer/dweb"] = toFileUrl(
     join(REPO_ROOT, "src", "mod.ts"),
   );
-  resolvedImports["@dreamer/render"] = toFileUrl(
-    join(REPO_ROOT, "..", "render", "src", "mod.ts"),
-  );
-  resolvedImports["@dreamer/router"] = toFileUrl(
-    join(REPO_ROOT, "..", "router", "src", "mod.ts"),
-  );
   await writeTextFile(
     join(testDir, "deno.json"),
-    JSON.stringify({
-      imports: resolvedImports,
-      minimumDependencyAge: 0,
-    }, null, 2),
+    JSON.stringify(
+      {
+        imports: resolvedImports,
+        minimumDependencyAge: 0,
+      },
+      null,
+      2,
+    ),
   );
 }
 

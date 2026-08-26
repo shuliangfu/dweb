@@ -84,23 +84,23 @@ async function writeLocalDenoJson(testDir: string): Promise<void> {
       );
     }
   }
+  // Only pin @dreamer/dweb to this checkout. Sibling packages (router/render/…)
+  // must resolve via jsr: from dweb/deno.json — CI only clones dweb, and we
+  // intentionally consume published JSR deps (not monorepo file: paths).
+  // minimumDependencyAge: 0 still covers freshly published JSR packages.
   resolvedImports["@dreamer/dweb"] = toFileUrl(
     join(REPO_ROOT, "src", "mod.ts"),
   );
-  resolvedImports["@dreamer/router"] = toFileUrl(
-    join(REPO_ROOT, "..", "router", "src", "mod.ts"),
-  );
-  // 刚发版的 JSR 包会被 Deno 默认 minimumDependencyAge 挡住，导致 import @dreamer/dweb
-  // 解析失败 → 配置加载为空 → kind 丢失 → api 缺 _app。本地源 + age=0 双保险。
-  resolvedImports["@dreamer/render"] = toFileUrl(
-    join(REPO_ROOT, "..", "render", "src", "mod.ts"),
-  );
   await writeTextFile(
     join(testDir, "deno.json"),
-    JSON.stringify({
-      imports: resolvedImports,
-      minimumDependencyAge: 0,
-    }, null, 2),
+    JSON.stringify(
+      {
+        imports: resolvedImports,
+        minimumDependencyAge: 0,
+      },
+      null,
+      2,
+    ),
   );
 }
 
