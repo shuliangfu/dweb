@@ -411,7 +411,48 @@ dweb-cli run hello/world
 dweb-cli run --list
 dweb-cli run hello/world -- --name Ada
 dweb-cli run crond/start -a console   # multi-app
+dweb-cli run slow/job --timeout 5000  # timeout control (exit code 124)
 dweb-cli generate -t console -n user/seed
+```
+
+```typescript
+// Single-action command: routes/hello/world.ts (invoked via `dweb-cli run hello/world`)
+import type { ConsoleContext } from "@dreamer/dweb";
+
+export const meta = {
+  description: "User data seeding and setup",
+  actions: {
+    run: { description: "Run user seeding" },
+  },
+};
+
+/** Default action handler (supports default, run, or main) */
+export async function run(ctx: ConsoleContext): Promise<void> {
+  ctx.log.info("Executing command with args:", ctx.args);
+  const force = ctx.options.force ?? false;
+  // Available: ctx.args, ctx.options, ctx.app, ctx.log, ctx.signal, ctx.cwd
+}
+```
+
+```typescript
+// Multi-action aggregation command: routes/crond.ts (invoked via `dweb-cli run crond/start`)
+import type { ConsoleContext } from "@dreamer/dweb";
+
+export const meta = {
+  description: "Cron daemon task manager",
+  actions: {
+    start: { description: "Start background cron daemon" },
+    stop: { description: "Stop running cron daemon" },
+  },
+};
+
+export async function start(ctx: ConsoleContext): Promise<void> {
+  ctx.log.info("Starting crond...");
+}
+
+export async function stop(ctx: ConsoleContext): Promise<void> {
+  ctx.log.info("Stopping crond...");
+}
 ```
 
 See also `examples/app-kinds/multi-web-api-console`.
@@ -1778,6 +1819,9 @@ manual reload.
 | `app.shutdown()`             | Graceful shutdown (SIGTERM/SIGINT)                                   |
 | `app.container`              | Service container (getConfig, getLogger, etc.)                       |
 | `app.stage`                  | Current lifecycle stage                                              |
+| `isApiKind(config)`          | Check if config is an API app (kind === "api")                       |
+| `isConsoleKind(config)`      | Check if config is a Console app (kind === "console")                |
+| `resolveAppKind(config)`     | Resolve app kind, falling back to default "web"                      |
 
 ### Config and params
 
@@ -1816,16 +1860,21 @@ manual reload.
 
 ### Type exports
 
-| Type            | Description                              |
-| --------------- | ---------------------------------------- |
-| `AppConfig`     | App config interface                     |
-| `IApp`          | App interface                            |
-| `AppPlugin`     | Plugin type                              |
-| `AppMiddleware` | Middleware type                          |
-| `AppStage`      | Lifecycle stage                          |
-| `Context`       | Route middleware context (HttpContext)   |
-| `Next`          | Middleware next type                     |
-| `SocketConfig`  | Real-time config (socketio \| websocket) |
+| Type                | Description                                                    |
+| ------------------- | -------------------------------------------------------------- |
+| `AppConfig`         | App config interface                                           |
+| `AppKind`           | App kind union ("web" \| "api" \| "console")                   |
+| `IApp`              | App interface                                                  |
+| `AppPlugin`         | Plugin type                                                    |
+| `AppMiddleware`     | Middleware type                                                |
+| `AppStage`          | Lifecycle stage                                                |
+| `Context`           | Route middleware context (HttpContext alias)                   |
+| `Next`              | Middleware next type                                           |
+| `SocketConfig`      | Real-time config (socketio \| websocket)                       |
+| `ConsoleContext`    | Console route context (args, options, app, log, signal, cwd)   |
+| `ConsoleMiddleware` | Global console middleware type                                 |
+| `ApiContext`        | Pure HTTP API route context (re-exported from @dreamer/server) |
+| `LoadContext`       | Page/SSR data loader context (load(ctx))                       |
 
 ---
 
@@ -1833,25 +1882,27 @@ manual reload.
 
 Use via `dweb-cli` or `deno task`:
 
-| Command          | Description                                                 | Common options                                                                                                               |
-| ---------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `init [appName]` | Create project                                              | `--beta` use beta deps                                                                                                       |
-| `dev`            | Start dev server                                            | `-a, --app` app name (multi-app)                                                                                             |
-| `build`          | Build for production                                        | `-a, --app` app name                                                                                                         |
-| `start`          | Start production                                            | `-a, --app` app name                                                                                                         |
-| `preview`        | Preview build                                               | `-p, --port` port; `-a, --app` app                                                                                           |
-| `generate (g)`   | Code generation                                             | `-t, --type` type; `-n, --name` name                                                                                         |
-| `test`           | Run tests (host launcher; write cases with `@dreamer/test`) | `-a/--app`; `--unit` / `--integration` / `--e2e`; `-f/--filter`; `--coverage`; `--runtime deno\|bun`; `--verbose`; path args |
-| `lint`           | Lint                                                        | -                                                                                                                            |
-| `fmt`            | Format                                                      | -                                                                                                                            |
-| `clean`          | Clean build output                                          | -                                                                                                                            |
-| `update`         | Update deps & lockfile                                      | `--latest`, `--interactive`                                                                                                  |
-| `db migrate (m)` | Database migration                                          | `-a, --action` up/down; `-n, --name`                                                                                         |
-| `db seed`        | Database seed                                               | -                                                                                                                            |
-| `db status`      | Database status                                             | -                                                                                                                            |
-| `upgrade`        | Upgrade dweb deps                                           | `--beta` use beta                                                                                                            |
+| Command           | Description                                                 | Common options                                                                                                                                                              |
+| ----------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `init [appName]`  | Create project                                              | `--beta` use beta deps                                                                                                                                                      |
+| `dev`             | Start dev server                                            | `-a, --app` app name (multi-app)                                                                                                                                            |
+| `build`           | Build for production                                        | `-a, --app` app name                                                                                                                                                        |
+| `start`           | Start production                                            | `-a, --app` app name                                                                                                                                                        |
+| `preview`         | Preview build                                               | `-p, --port` port; `-a, --app` app                                                                                                                                          |
+| `run <routePath>` | Run console command (routes/<route>/<action>)               | `-a, --app` app name; `-l, --list [module]` list commands; `--timeout <ms>` execution timeout (exit code 124); `-- <passthrough>`                                           |
+| `generate (g)`    | Code generation                                             | `-t, --type` type; `-n, --name` name; `-a, --app` app                                                                                                                       |
+| `test`            | Run tests (host launcher; write cases with `@dreamer/test`) | `-a/--app`; `--unit` / `--integration` / `--e2e`; `-f/--filter`; `--coverage`; `--runtime deno\|bun`; `--report json,md,html`; `--report-dir <dir>`; `--verbose`; path args |
+| `lint`            | Lint                                                        | -                                                                                                                                                                           |
+| `fmt`             | Format                                                      | -                                                                                                                                                                           |
+| `clean`           | Clean build output                                          | -                                                                                                                                                                           |
+| `update`          | Update deps & lockfile                                      | `--latest`, `--interactive`                                                                                                                                                 |
+| `db migrate (m)`  | Database migration                                          | `-a, --action` up/down; `-n, --name`                                                                                                                                        |
+| `db seed`         | Database seed                                               | -                                                                                                                                                                           |
+| `db status`       | Database status                                             | -                                                                                                                                                                           |
+| `upgrade`         | Upgrade dweb deps                                           | `--beta` use beta                                                                                                                                                           |
 
-**generate types**: `service`, `api`, `model`, `route`.
+**generate types**: `route (r)`, `api (a)`, `model (m)`, `service (s)`,
+`console (c)`.
 
 ---
 

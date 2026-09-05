@@ -387,7 +387,48 @@ dweb-cli run hello/world
 dweb-cli run --list
 dweb-cli run hello/world -- --name Ada
 dweb-cli run crond/start -a console   # 多应用
+dweb-cli run slow/job --timeout 5000  # 超时控制（超时退出码 124）
 dweb-cli generate -t console -n user/seed
+```
+
+```typescript
+// 单动作命令文件：routes/hello/world.ts（由 dweb-cli run hello/world 触发）
+import type { ConsoleContext } from "@dreamer/dweb";
+
+export const meta = {
+  description: "用户数据播种与初始化",
+  actions: {
+    run: { description: "执行用户数据播种" },
+  },
+};
+
+/** 默认执行方法（支持 default、run 或 main） */
+export async function run(ctx: ConsoleContext): Promise<void> {
+  ctx.log.info("开始执行命令，参数：", ctx.args);
+  const force = ctx.options.force ?? false;
+  // 可直接使用 ctx.args（位置参数）、ctx.options（解析选项）、ctx.app（App 容器）、ctx.signal（取消信号）
+}
+```
+
+```typescript
+// 聚合动作命令文件：routes/crond.ts（由 dweb-cli run crond/start 触发）
+import type { ConsoleContext } from "@dreamer/dweb";
+
+export const meta = {
+  description: "后台 Cron 守护进程管理",
+  actions: {
+    start: { description: "启动守护任务" },
+    stop: { description: "停止守护任务" },
+  },
+};
+
+export async function start(ctx: ConsoleContext): Promise<void> {
+  ctx.log.info("启动 Cron 任务...");
+}
+
+export async function stop(ctx: ConsoleContext): Promise<void> {
+  ctx.log.info("停止 Cron 任务...");
+}
 ```
 
 参见 `examples/app-kinds/multi-web-api-console`。
@@ -1810,6 +1851,9 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 | `app.shutdown()`             | 优雅关闭（含 SIGTERM/SIGINT 处理）                  |
 | `app.container`              | 服务容器，用于获取 getConfig、getLogger 等          |
 | `app.stage`                  | 当前生命周期阶段                                    |
+| `isApiKind(config)`          | 判断配置是否为 API 应用（kind === "api"）           |
+| `isConsoleKind(config)`      | 判断配置是否为 Console 应用（kind === "console"）   |
+| `resolveAppKind(config)`     | 解析应用类型，缺失时回退到默认 "web"                |
 
 ### 配置与参数
 
@@ -1848,16 +1892,21 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ### 类型导出
 
-| 类型            | 说明                                  |
-| --------------- | ------------------------------------- |
-| `AppConfig`     | 应用配置接口                          |
-| `IApp`          | App 类接口                            |
-| `AppPlugin`     | 插件类型                              |
-| `AppMiddleware` | 中间件类型                            |
-| `AppStage`      | 生命周期阶段                          |
-| `Context`       | 路由中间件上下文（HttpContext 别名）  |
-| `Next`          | 中间件 next 函数类型                  |
-| `SocketConfig`  | 实时通信配置（socketio \| websocket） |
+| 类型                | 说明                                                            |
+| ------------------- | --------------------------------------------------------------- |
+| `AppConfig`         | 应用配置接口                                                    |
+| `AppKind`           | 应用类型字面量联合（"web" \| "api" \| "console"）               |
+| `IApp`              | App 类接口                                                      |
+| `AppPlugin`         | 插件类型                                                        |
+| `AppMiddleware`     | 中间件类型                                                      |
+| `AppStage`          | 生命周期阶段                                                    |
+| `Context`           | 路由中间件上下文（HttpContext 别名）                            |
+| `Next`              | 中间件 next 函数类型                                            |
+| `SocketConfig`      | 实时通信配置（socketio \| websocket）                           |
+| `ConsoleContext`    | 控制台动作上下文对象（含 args、options、app、log、signal、cwd） |
+| `ConsoleMiddleware` | 控制台全局中间件函数类型                                        |
+| `ApiContext`        | 纯 HTTP API 路由上下文（从 @dreamer/server 再导出）             |
+| `LoadContext`       | 页面/SSR 数据加载上下文（load(ctx)）                            |
 
 ---
 
@@ -1865,25 +1914,27 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 通过 `dweb-cli` 或 `deno task` 使用：
 
-| 命令             | 说明                | 常用选项                                    |
-| ---------------- | ------------------- | ------------------------------------------- |
-| `init [appName]` | 初始化新项目        | `--beta` 使用 beta 依赖                     |
-| `dev`            | 启动开发服务器      | `-a, --app` 指定应用（多应用时）            |
-| `build`          | 构建生产版本        | `-a, --app` 指定应用                        |
-| `start`          | 启动生产服务器      | `-a, --app` 指定应用                        |
-| `preview`        | 预览构建结果        | `-p, --port` 端口；`-a, --app` 应用         |
-| `generate (g)`   | 代码生成            | `-t, --type` 类型；`-n, --name` 名称        |
-| `test`           | 运行测试            | `-a, --app` 指定应用                        |
-| `lint`           | 代码检查            | -                                           |
-| `fmt`            | 代码格式化          | -                                           |
-| `clean`          | 清理构建产物        | -                                           |
-| `update`         | 更新依赖与 lockfile | `--latest`、`--interactive`                 |
-| `db migrate (m)` | 数据库迁移          | `-a, --action` up/down；`-n, --name` 迁移名 |
-| `db seed`        | 数据库种子          | -                                           |
-| `db status`      | 数据库状态          | -                                           |
-| `upgrade`        | 升级 dweb 依赖      | `--beta` 使用 beta 版本                     |
+| 命令              | 说明                                                  | 常用选项                                                                                                                                                                                      |
+| ----------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `init [appName]`  | 初始化新项目                                          | `--beta` 使用 beta 依赖                                                                                                                                                                       |
+| `dev`             | 启动开发服务器                                        | `-a, --app` 指定应用（多应用时）                                                                                                                                                              |
+| `build`           | 构建生产版本                                          | `-a, --app` 指定应用                                                                                                                                                                          |
+| `start`           | 启动生产服务器                                        | `-a, --app` 指定应用                                                                                                                                                                          |
+| `preview`         | 预览构建结果                                          | `-p, --port` 端口；`-a, --app` 应用                                                                                                                                                           |
+| `run <routePath>` | 运行控制台命令（routes/<route>/<action>）             | `-a, --app` 指定应用；`-l, --list [模块]` 列出命令；`--timeout <毫秒>` 超时终止（退出码 124）；`-- <透传参数>`                                                                                |
+| `generate (g)`    | 代码生成                                              | `-t, --type` 类型；`-n, --name` 名称；`-a, --app` 应用                                                                                                                                        |
+| `test`            | 运行测试（产品级启动器；用例使用 @dreamer/test 编写） | `-a, --app` 指定应用；`--unit` / `--integration` / `--e2e`；`-f, --filter <模式>`；`--coverage`；`--runtime deno\|bun`；`--report json,md,html`；`--report-dir <目录>`；`--verbose`；路径参数 |
+| `lint`            | 代码检查                                              | -                                                                                                                                                                                             |
+| `fmt`             | 代码格式化                                            | -                                                                                                                                                                                             |
+| `clean`           | 清理构建产物                                          | -                                                                                                                                                                                             |
+| `update`          | 更新依赖与 lockfile                                   | `--latest`、`--interactive`                                                                                                                                                                   |
+| `db migrate (m)`  | 数据库迁移                                            | `-a, --action` up/down；`-n, --name` 迁移名                                                                                                                                                   |
+| `db seed`         | 数据库种子                                            | -                                                                                                                                                                                             |
+| `db status`       | 数据库状态                                            | -                                                                                                                                                                                             |
+| `upgrade`         | 升级 dweb 依赖                                        | `--beta` 使用 beta 版本                                                                                                                                                                       |
 
-**generate 支持的类型**：`service`、`api`、`model`、`route`。
+**generate
+支持的类型**：`route (r)`、`api (a)`、`model (m)`、`service (s)`、`console (c)`。
 
 ---
 
