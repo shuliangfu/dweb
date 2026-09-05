@@ -2029,12 +2029,14 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.7.1] - 2026-09-05
+### [3.7.2] - 2026-09-05
 
-**修复 / 变更** — 修复 Deno 2.9+ 环境下 CLI 启动缓慢与进程卡死问题（`setup.ts`
-解耦 Spinner、`Command` 动态按需加载 `App`、CLI 显式进程退出）；升级
-`@dreamer/console` 依赖至 `^1.1.1` 以支持裸 `--` 选项透传。完整记录见
-[CHANGELOG.md](./CHANGELOG.md)。
+**新增 / 修复** — 配置文件与环境变量全自动加载（支持递归向上自动查找项目根
+`findProjectRoot`、兼容
+`deno.json`/`deno.jsonc`/`package.json`、多应用与项目分层 `.env` / `.env.local`
+/ `.env.[mode]` / `.env.[mode].local` 自动预加载、全局 `dweb-cli` 安装脚本剥离
+`--config`）；增强跨运行时 `isMainModule` 主模块入口检测与 JSR
+说明符匹配。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

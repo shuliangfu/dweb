@@ -20,6 +20,7 @@ import {
   stat,
 } from "@dreamer/runtime-adapter";
 import { configProfileFromRuntimeEnv } from "./runtime.ts";
+import { preloadProjectEnvSync } from "./env-loader.ts";
 import { deepMergeConfig } from "../core/config.ts";
 import type { AppConfig } from "../types/app.ts";
 
@@ -178,6 +179,8 @@ export async function loadProjectConfig(
   projectRoot: string,
   app?: string,
 ): Promise<AppConfig> {
+  // 自动预加载项目和应用的全部分层 .env 环境变量
+  preloadProjectEnvSync({ projectRoot, app, override: false });
   const env = configProfileFromRuntimeEnv();
 
   const root = resolve(projectRoot);

@@ -1980,13 +1980,15 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.7.1] - 2026-09-05
+### [3.7.2] - 2026-09-05
 
-**Fixed / Changed** — Fix CLI startup latency and process hangs on Deno 2.9+
-(decouple `setup.ts` spinner, dynamically load `App` in `Command`, and ensure
-explicit process exit in `cli.ts`); bump `@dreamer/console` dependency to
-`^1.1.1` for bare `--` argument passthrough. Full history:
-[CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Added / Fixed** — Fully automatic configuration and environment variable
+discovery (automatic project root detection via `findProjectRoot` supporting
+`deno.json`/`deno.jsonc`/`package.json`, layered `.env` / `.env.local` /
+`.env.[mode]` / `.env.[mode].local` preloading across project and multi-app
+directories, strip `--config` from generated global `dweb-cli` wrapper); enhance
+cross-runtime `isMainModule` with native `import.meta.main` and JSR specifier
+support. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---
 

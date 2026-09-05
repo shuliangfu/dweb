@@ -16,7 +16,9 @@
 
 import {
   createCommand,
+  exists,
   exit,
+  getEnv,
   join,
   makeTempFile,
   readTextFile,
@@ -158,6 +160,7 @@ async function installGlobalCli(): Promise<void> {
       child.unref(); // 立即 unref，避免子进程句柄阻止当前进程自动退出
       const status = await child.status;
       if (status.success) {
+        await cleanGlobalCliWrapper();
         const version = await writeVersionCacheOnInstall();
         succeedSpinner(
           version
@@ -192,6 +195,7 @@ async function installGlobalCli(): Promise<void> {
     child.unref(); // 立即 unref，避免子进程句柄阻止当前进程自动退出
     const status = await child.status;
     if (status.success) {
+      await cleanGlobalCliWrapper();
       const version = await writeVersionCacheOnInstall();
       succeedSpinner(
         version
@@ -228,6 +232,49 @@ async function writeVersionCacheOnInstall(): Promise<string | undefined> {
   return undefined;
 }
 
+/**
+ * 清理全局 wrapper 脚本中的 --config 参数
+ *
+ * 【Why 根源】Deno 2 的 `deno install -g` 会在 wrapper 中强行添加 `--config ~/.deno/bin/.dweb-cli/deno.json`，
+ * 导致全局命令执行时将该隔离配置作为整个进程唯一的 import map，完全忽略当前项目目录的 deno.json，
+ * 进而引起业务项目私有依赖（如 @dreamer/notification 等）报 not a dependency 错误。
+ * 剥离 `--config` 后，Deno 会在用户执行命令时自动向上递归探测当前项目的 deno.json。
+ */
+async function cleanGlobalCliWrapper(): Promise<void> {
+  try {
+    const installRoot = getEnv("DENO_INSTALL_ROOT") ||
+      (getEnv("HOME") ? join(getEnv("HOME")!, ".deno") : undefined) ||
+      (getEnv("USERPROFILE")
+        ? join(getEnv("USERPROFILE")!, ".deno")
+        : undefined);
+
+    if (!installRoot) return;
+
+    const binDir = join(installRoot, "bin");
+    const candidates = [
+      join(binDir, CLI_NAME),
+      join(binDir, `${CLI_NAME}.cmd`),
+      join(binDir, `${CLI_NAME}.ps1`),
+    ];
+
+    for (const file of candidates) {
+      if (await exists(file)) {
+        const content = await readTextFile(file);
+        // 去除 `--config <path>` 选项
+        const cleaned = content.replace(
+          /\s+--config(\s+|=)('[^']*'|"[^"]*"|[^\s'"]+)/g,
+          "",
+        );
+        if (cleaned !== content) {
+          await writeTextFile(file, cleaned);
+        }
+      }
+    }
+  } catch {
+    // 忽略清理异常，不阻塞主流程
+  }
+}
+
 /** 打印 dweb-cli 使用说明 */
 function printUsage(): void {
   console.log("");
@@ -261,7 +308,7 @@ function printUsage(): void {
 }
 
 // 主入口：此处直接执行安装（兼容 Deno、Bun 和 Node）
-if (isMainModule(import.meta.url)) {
+if (isMainModule(import.meta)) {
   installGlobalCli()
     .then(() => exit(0))
     .catch((err: unknown) => {

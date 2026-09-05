@@ -7,6 +7,29 @@
 
 ---
 
+## [3.7.2] - 2026-09-05
+
+### 新增
+
+- **配置文件与环境变量全自动加载**：
+  - 新增
+    `findProjectRoot`：支持从当前工作目录或任意子目录自动向上查找项目根目录（识别
+    `deno.json`、`deno.jsonc` 与 `package.json`）。
+  - 支持 `deno.jsonc` 注释剥离，兼顾单行与多行注释。
+  - 新增全自动分层 `.env`
+    环境变量预加载（`.env`、`.env.local`、`.env.[mode]`、`.env.[mode].local`），无缝支持多应用子目录及公共配置，无需任何手动命令行参数。
+  - `src/setup.ts` 安装脚本在生成全局 `dweb-cli` 时自动剥离 `--config`
+    选项，恢复运行时对用户项目 `deno.json` 的自动探测。
+
+### 修复
+
+- **跨运行时 `isMainModule` 主模块入口检测**：
+  - 增强 `src/utils/main-module.ts` 中的 `isMainModule`，支持直接传入
+    `import.meta` 对象，充分利用 Deno 与 Bun 原生 `import.meta.main`，并支持 JSR
+    远程模块说明符（`jsr:@dreamer/dweb/cli`）入口匹配。
+
+---
+
 ## [3.7.1] - 2026-09-05
 
 ### 修复

@@ -8,6 +8,31 @@ and this project adheres to
 
 ---
 
+## [3.7.2] - 2026-09-05
+
+### Added
+
+- **Automatic configuration and environment variable loading**:
+  - Automatically recursively detect project root from current directory or
+    parent directories (`findProjectRoot` supporting `deno.json`, `deno.jsonc`,
+    and `package.json`).
+  - Added support for `deno.jsonc` with comment stripping.
+  - Added layered `.env` automatic preloading (`.env`, `.env.local`,
+    `.env.[mode]`, `.env.[mode].local`), supporting multi-app subdirectories and
+    common directories without manual CLI flags.
+  - In `src/setup.ts`, automatically strip `--config` from generated global
+    `dweb-cli` wrapper script so user projects' `deno.json` is auto-discovered.
+
+### Fixed
+
+- **Cross-runtime `isMainModule` detection**:
+  - Enhanced `isMainModule` in `src/utils/main-module.ts` to accept `ImportMeta`
+    objects directly, utilizing native `import.meta.main` on Deno/Bun, and added
+    fallback handling for remote JSR module specifiers
+    (`jsr:@dreamer/dweb/cli`).
+
+---
+
 ## [3.7.1] - 2026-09-05
 
 ### Fixed

@@ -39,6 +39,8 @@ import {
 } from "../feature/console-router.ts";
 import { isConsoleKind } from "../types/app.ts";
 import { resolveConsoleRoot } from "../utils/console-root.ts";
+import { preloadProjectEnv } from "../utils/env-loader.ts";
+import { findProjectRoot } from "../utils/project.ts";
 import { $tr } from "../utils/i18n.ts";
 import {
   parseTrailingCommandArgs,
@@ -86,6 +88,7 @@ async function runList(
   appName: string | undefined,
   filter: string | undefined,
 ): Promise<void> {
+  await preloadProjectEnv({ projectRoot, app: appName });
   let consoleRoot: string;
   try {
     consoleRoot = await resolveConsoleRoot(projectRoot, { app: appName });
@@ -111,11 +114,15 @@ export async function main(
   args: string[],
   options: ParsedOptions,
 ): Promise<void> {
-  const projectRoot = cwd();
+  const projectRoot = await findProjectRoot(cwd());
   const appOpt = options.app;
   const appName = typeof appOpt === "string" && appOpt.length > 0
     ? appOpt
     : undefined;
+
+  // 预加载应用与项目环境变量
+  await preloadProjectEnv({ projectRoot, app: appName });
+
   const wantList = options.list === true;
 
   if (wantList) {

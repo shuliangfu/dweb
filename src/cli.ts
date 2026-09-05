@@ -17,6 +17,7 @@ import {
 } from "./feature/command.ts";
 import { $tr } from "./utils/i18n.ts";
 import { isMainModule } from "./utils/main-module.ts";
+import { preloadProjectEnvSync } from "./utils/env-loader.ts";
 import { preprocessCliArgsForRun } from "./utils/run-passthrough.ts";
 import { getDwebVersion } from "./utils/version.ts";
 import { args as getArgs, exit } from "@dreamer/runtime-adapter";
@@ -43,6 +44,9 @@ ${colorize($tr("cli.versionDesc"), "gray")} \n`;
  * @returns 配置完成的 Command 实例
  */
 export function createCLI(version: string): Command {
+  // 预加载当前项目及各分层 .env 配置
+  preloadProjectEnvSync();
+
   const cli = new Command("dweb-cli", $tr("cliDesc.toolName"))
     .setVersion(buildVersionStr(version))
     .option({
@@ -539,7 +543,7 @@ export function createCLI(version: string): Command {
  * 执行 CLI 命令
  * 如果直接运行此文件，则执行 CLI（兼容 Deno、Bun 和 Node）
  */
-if (isMainModule(import.meta.url)) {
+if (isMainModule(import.meta)) {
   const version = await getDwebVersion();
   const cli = createCLI(version);
   // 剥离 run 之后的裸 `--` 透传段，避免旧版 console parser 报 unknown option

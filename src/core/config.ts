@@ -23,6 +23,7 @@ import { configProfileFromRuntimeEnv } from "../utils/runtime.ts";
 import { cwd, realPath, resolve, stat } from "./runtime-adapter.ts";
 import { deepMergeConfig, deepMergeParams } from "./config-merge.ts";
 import { validateConfig } from "./config-validate.ts";
+import { preloadProjectEnvSync } from "../utils/env-loader.ts";
 
 export { inferConfigDirectoryFromEntry } from "./config-infer.ts";
 export { deepMergeConfig } from "./config-merge.ts";
@@ -181,9 +182,10 @@ export async function initializeConfigManager(
   // 默认同时检查 ./config 与 ./src/config，兼容两种项目结构
   const directories = options.directories || ["./config", "./src/config"];
   /**
-   * 先合并 `.env`（不传入 `options.env` 时由 @dreamer/config 用进程 `RUNTIME_ENV` 选层），
+   * 自动探测并合并当前项目所有分层 .env（.env、.env.local、.env.[mode]、.env.[mode].local 等）
    * 使 `getEnv` 在加载 `config/main.ts` 时可用；`main`/`params` 分层名由 {@link configProfileFromRuntimeEnv} 仅根据 `RUNTIME_ENV` 决定。
    */
+  preloadProjectEnvSync({ extraDirectories: directories, override: false });
   preloadDotEnvSync([".", ...directories], { override: false });
   const env = configProfileFromRuntimeEnv();
 
