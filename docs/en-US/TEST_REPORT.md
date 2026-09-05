@@ -6,16 +6,16 @@
 
 | Item             | Value                            |
 | ---------------- | -------------------------------- |
-| Framework        | 3.7.0                            |
+| Framework        | 3.7.1                            |
 | Test framework   | @dreamer/test@^1.2.3             |
-| Test date        | 2026-08-26                       |
+| Test date        | 2026-09-05                       |
 | Test environment | Deno 2.x / Bun 1.x / Node.js 22+ |
 
 ---
 
 ## 📊 Test Results
 
-### Three-Runtime Summary (v3.7.0)
+### Three-Runtime Summary (v3.7.1)
 
 | Runtime | Scope              | Files | Result  |
 | ------- | ------------------ | ----- | ------- |

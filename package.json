@@ -1,6 +1,6 @@
 {
   "name": "@dreamer/dweb",
-  "version": "3.7.0",
+  "version": "3.7.1",
   "description": "A full-stack Web framework compatible with Deno, Bun and Node.js, integrating @dreamer/* libraries for an out-of-the-box development experience.",
   "type": "module",
   "license": "Apache-2.0",
@@ -42,7 +42,7 @@
   ],
   "dependencies": {
     "@dreamer/config": "npm:@jsr/dreamer__config@^1.1.0",
-    "@dreamer/console": "npm:@jsr/dreamer__console@^1.1.0",
+    "@dreamer/console": "npm:@jsr/dreamer__console@^1.1.1",
     "@dreamer/database": "npm:@jsr/dreamer__database@^1.2.0",
     "@dreamer/esbuild": "npm:@jsr/dreamer__esbuild@^1.3.0",
     "@dreamer/i18n": "npm:@jsr/dreamer__i18n@^1.1.2",
@@ -62,11 +62,11 @@
     "@dreamer/utils": "npm:@jsr/dreamer__utils@^1.1.0",
     "@dreamer/view": "npm:@jsr/dreamer__view@^2.2.0",
     "@dreamer/websocket": "npm:@jsr/dreamer__websocket@^1.1.0",
-    "autoprefixer": "^10.5.4",
+    "autoprefixer": "^10.5.5",
     "chart.js": "npm:chart.js@4.5.1",
     "cssnano": "^7.1.9",
     "lightningcss": "1.31.1",
-    "postcss": "^8.5.26",
+    "postcss": "^8.5.28",
     "preact": "^10.29.8",
     "preact-render-to-string": "^6.7.0",
     "react": "^19.2.8",
@@ -76,7 +76,7 @@
   },
   "devDependencies": {
     "@dreamer/test": "npm:@jsr/dreamer__test@^1.2.3",
-    "tsx": "^4.23.12"
+    "tsx": "^4.23.13"
   },
   "overrides": {
     "preact": "^10.29.8",

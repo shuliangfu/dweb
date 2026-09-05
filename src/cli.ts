@@ -19,7 +19,7 @@ import { $tr } from "./utils/i18n.ts";
 import { isMainModule } from "./utils/main-module.ts";
 import { preprocessCliArgsForRun } from "./utils/run-passthrough.ts";
 import { getDwebVersion } from "./utils/version.ts";
-import { args as getArgs } from "@dreamer/runtime-adapter";
+import { args as getArgs, exit } from "@dreamer/runtime-adapter";
 
 /**
  * 构建 CLI 版本展示字符串
@@ -544,4 +544,6 @@ if (isMainModule(import.meta.url)) {
   const cli = createCLI(version);
   // 剥离 run 之后的裸 `--` 透传段，避免旧版 console parser 报 unknown option
   await cli.execute(preprocessCliArgsForRun(getArgs()));
+  // 正常执行完成退出进程，防止外部异步句柄阻止进程自然退出
+  exit(0);
 }

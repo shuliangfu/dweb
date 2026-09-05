@@ -8,6 +8,28 @@ and this project adheres to
 
 ---
 
+## [3.7.1] - 2026-09-05
+
+### Fixed
+
+- **CLI startup and process hang on Deno 2.9+**:
+  - Decoupled `src/setup.ts` spinner import directly from `@dreamer/console`,
+    eliminating indirect static import of the full Web SSR rendering pipeline
+    and bundler.
+  - In `src/feature/command.ts`, dynamically load `App` via
+    `import("../core/app.ts")` on demand inside `initApp()` rather than
+    statically importing it at module top level.
+  - Added explicit `exit(0)` upon CLI completion in `src/cli.ts` to guarantee
+    clean process termination when running on Deno with lingering Node
+    compatibility layer asynchronous handles.
+
+### Changed
+
+- Upgraded `@dreamer/console` dependency to `^1.1.1` to support bare `--`
+  argument passthrough.
+
+---
+
 ## [3.7.0] - 2026-08-26
 
 ### Added

@@ -21,7 +21,7 @@ import { ServiceContainer } from "@dreamer/service";
 import { getConfig } from "../core/config.ts";
 import { DwebErrorCode, throwDwebError } from "../utils/errors.ts";
 import { initializeServiceContainer } from "../core/service.ts";
-import { App } from "../core/app.ts";
+import type { App } from "../core/app.ts";
 
 /**
  * 扩展的命令执行函数类型
@@ -95,8 +95,9 @@ export class Command extends BaseCommand {
     loadedConfig.hotReload = false;
     loadedConfig.kind = loadedConfig.kind ?? "console";
 
-    // 创建 App 实例并保存（console 模式：不 listen）
-    this._app = new App(loadedConfig, { mode: "console" });
+    // 创建 App 实例并保存（console 模式：不 listen，按需动态加载避免冷启动挂载完整 SSR/渲染器依赖）
+    const { App: AppClass } = await import("../core/app.ts");
+    this._app = new AppClass(loadedConfig, { mode: "console" });
 
     // 启动 App（会初始化所有服务，不 listen HTTP）
     await this._app.start({ mode: "console" });

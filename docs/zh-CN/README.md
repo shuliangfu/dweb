@@ -1978,14 +1978,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.7.0] - 2026-08-26
+### [3.7.1] - 2026-09-05
 
-**新增 / 变更** — 应用类型（`api` / `console` / `web`）与 init
-模板、多应用示例； console 路由/中间件/slim；可选
-`/metrics`；`render.ssr.stream`（dev）；水合
-`mismatchMode`；`dweb test --report`；配置拆分；依赖 `@dreamer/render`
-`^1.3.0`、`@dreamer/router` `^1.2.1`、 `@dreamer/socket-io`
-`^1.2.1`；移除直接依赖 `@dreamer/image`。完整记录见
+**修复 / 变更** — 修复 Deno 2.9+ 环境下 CLI 启动缓慢与进程卡死问题（`setup.ts`
+解耦 Spinner、`Command` 动态按需加载 `App`、CLI 显式进程退出）；升级
+`@dreamer/console` 依赖至 `^1.1.1` 以支持裸 `--` 选项透传。完整记录见
 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---

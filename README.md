@@ -1929,13 +1929,12 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.7.0] - 2026-08-26
+### [3.7.1] - 2026-09-05
 
-**Added / Changed** — App kinds (`api` / `console` / `web`) with init templates
-and multi-app example; console router/middleware/slim; opt-in `/metrics`;
-`render.ssr.stream` (dev); hydration `mismatchMode`; `dweb test --report`;
-config split; bump `@dreamer/render` `^1.3.0`, `@dreamer/router` `^1.2.1`,
-`@dreamer/socket-io` `^1.2.1`; drop direct `@dreamer/image`. Full history:
+**Fixed / Changed** — Fix CLI startup latency and process hangs on Deno 2.9+
+(decouple `setup.ts` spinner, dynamically load `App` in `Command`, and ensure
+explicit process exit in `cli.ts`); bump `@dreamer/console` dependency to
+`^1.1.1` for bare `--` argument passthrough. Full history:
 [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
 
 ---

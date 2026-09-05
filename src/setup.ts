@@ -23,11 +23,7 @@ import {
   remove,
   writeTextFile,
 } from "@dreamer/runtime-adapter";
-import {
-  failSpinner,
-  startSpinner,
-  succeedSpinner,
-} from "./feature/command.ts";
+import { failSpinner, startSpinner, succeedSpinner } from "@dreamer/console";
 import { DwebErrorCode, throwDwebError } from "./utils/errors.ts";
 import { $tr } from "./utils/i18n.ts";
 import { isMainModule } from "./utils/main-module.ts";
