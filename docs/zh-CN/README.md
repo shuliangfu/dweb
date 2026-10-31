@@ -2032,14 +2032,15 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.7.2] - 2026-09-05
+### [3.7.3] - 2026-10-31
 
-**新增 / 修复** — 配置文件与环境变量全自动加载（支持递归向上自动查找项目根
-`findProjectRoot`、兼容
-`deno.json`/`deno.jsonc`/`package.json`、多应用与项目分层 `.env` / `.env.local`
-/ `.env.[mode]` / `.env.[mode].local` 自动预加载、全局 `dweb-cli` 安装脚本剥离
-`--config`）；增强跨运行时 `isMainModule` 主模块入口检测与 JSR
-说明符匹配。完整记录见 [CHANGELOG.md](./CHANGELOG.md)。
+**变更 / 修复** — 多应用 `dweb-cli init` 里 API 目录固定为
+`api`，不再询问名称。`dweb-cli run` 的位置参数和选项直接写在路由后面，裸 `--`
+退出码为 2。生产环境流式 SSR 会替换资源清单，并在响应开始前检查挂载容器。Windows
+项目根测试用 `normalizePathForCompare` 比较路径。完整记录见
+[CHANGELOG.md](./CHANGELOG.md)。CI：
+[run 41198009045](https://github.com/shuliangfu/dweb/actions/runs/41198009045)。测试报告：
+[TEST_REPORT.md](./TEST_REPORT.md)。
 
 ---
 

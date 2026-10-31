@@ -1983,15 +1983,16 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.7.2] - 2026-09-05
+### [3.7.3] - 2026-10-31
 
-**Added / Fixed** — Fully automatic configuration and environment variable
-discovery (automatic project root detection via `findProjectRoot` supporting
-`deno.json`/`deno.jsonc`/`package.json`, layered `.env` / `.env.local` /
-`.env.[mode]` / `.env.[mode].local` preloading across project and multi-app
-directories, strip `--config` from generated global `dweb-cli` wrapper); enhance
-cross-runtime `isMainModule` with native `import.meta.main` and JSR specifier
-support. Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md).
+**Changed / Fixed** — Multi-app `dweb-cli init` pins an API app directory to
+`api` (no name prompt). `dweb-cli run` takes positional args and options
+directly after the route; a bare `--` exits 2. Production streaming SSR applies
+the asset manifest and checks the mount container before the response starts.
+The Windows project-root test compares paths with `normalizePathForCompare`.
+Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md). CI:
+[run 41198009045](https://github.com/shuliangfu/dweb/actions/runs/41198009045).
+Test report: [TEST_REPORT.md](./docs/en-US/TEST_REPORT.md).
 
 ---
 

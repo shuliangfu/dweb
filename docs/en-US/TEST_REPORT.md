@@ -4,18 +4,35 @@
 
 ## 📋 Test Overview
 
-| Item             | Value                            |
-| ---------------- | -------------------------------- |
-| Framework        | 3.7.1                            |
-| Test framework   | @dreamer/test@^1.2.3             |
-| Test date        | 2026-09-05                       |
-| Test environment | Deno 2.x / Bun 1.x / Node.js 22+ |
+| Item             | Value                                          |
+| ---------------- | ---------------------------------------------- |
+| Framework        | 3.7.3                                          |
+| Test framework   | @dreamer/test@^1.2.3                           |
+| Test date        | 2026-10-31                                     |
+| Test environment | GitHub Actions CI, Deno 2.9 / Bun / Node.js 22 |
 
 ---
 
 ## 📊 Test Results
 
-### Three-Runtime Summary (v3.7.1)
+### CI (v3.7.3)
+
+[Run 41198009045](https://github.com/shuliangfu/dweb/actions/runs/41198009045)
+on `32dd4130`. All 9 jobs succeeded.
+
+| Job                                 | Result  | Count from the job log                                                                  |
+| ----------------------------------- | ------- | --------------------------------------------------------------------------------------- |
+| test-linux (Deno)                   | ✅ Pass | 1099 passed, 0 failed, 10 ignored (6m33s)                                               |
+| test-windows (Deno)                 | ✅ Pass | 1101 passed, 0 failed, 8 ignored (12m10s)                                               |
+| test-macos (Deno)                   | ✅ Pass | job success; case total not copied here                                                 |
+| test-linux-bun                      | ✅ Pass | unit: 791 pass, 0 fail, 793 ran across 81 files; integration: 20 pass, 0 fail, 17 files |
+| test-macos-bun / test-windows-bun   | ✅ Pass | job success                                                                             |
+| test-linux-node                     | ✅ Pass | 68 unit files passed; 16 e2e files passed; fail 0                                       |
+| test-macos-node / test-windows-node | ✅ Pass | job success                                                                             |
+
+The per-file inventory below is from v3.7.1 and was not regenerated for 3.7.3.
+
+### Three-Runtime Summary (v3.7.1 inventory)
 
 | Runtime | Scope              | Files | Result  |
 | ------- | ------------------ | ----- | ------- |
@@ -32,7 +49,7 @@
 > example projects). Bun browser e2e remains disabled (Playwright
 > compatibility).
 
-### Overall Statistics (Deno, full suite)
+### Overall Statistics (Deno, full suite, v3.7.1 inventory)
 
 | Metric           | Count                                   |
 | ---------------- | --------------------------------------- |

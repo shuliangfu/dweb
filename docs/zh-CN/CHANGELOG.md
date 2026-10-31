@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [3.7.3] - 2026-10-31
+
 ### 变更
 
 - **`dweb-cli init` 多应用**：选择 API 后目录名固定为
@@ -23,6 +25,11 @@
   `dweb-cli run user/add admin admin@qq.com 13800138000` 与
   `dweb-cli run user/add --username admin --email admin@qq.com --phone 13800138000`。`-a`、`--list`、`--timeout`
   仍是框架选项。裸 `--` 分隔符已移除，写上会退出码 2。
+
+### 修复
+
+- **Windows 项目根测试**：用 `normalizePathForCompare` 比较 `findProjectRoot`
+  的结果，使 `makeTempDir` 的反斜杠路径与 `resolve` 的正斜杠路径能够对上。
 
 ---
 

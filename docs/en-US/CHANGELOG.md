@@ -10,6 +10,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.7.3] - 2026-10-31
+
 ### Changed
 
 - **`dweb-cli init` multi-app**: choosing API fixes the directory name to `api`
@@ -28,6 +30,12 @@ and this project adheres to
   `dweb-cli run user/add --username admin --email admin@qq.com --phone 13800138000`.
   `-a`, `--list`, and `--timeout` stay framework options. A bare `--` separator
   is rejected with exit code 2.
+
+### Fixed
+
+- **Windows project-root test**: `findProjectRoot` is compared with
+  `normalizePathForCompare`, so a `makeTempDir` path (backslashes) matches
+  `resolve` (forward slashes).
 
 ---
 
