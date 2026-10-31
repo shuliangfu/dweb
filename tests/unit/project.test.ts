@@ -9,6 +9,7 @@
 import "../setup.ts";
 import { describe, expect, it } from "@dreamer/test";
 import { join, makeTempDir, writeTextFile } from "@dreamer/runtime-adapter";
+import { normalizePathForCompare } from "../../src/utils/path.ts";
 import {
   findProjectRoot,
   getProjectInfo,
@@ -63,7 +64,10 @@ describe("项目检测 (project.ts)", () => {
     );
 
     const detectedRoot = await findProjectRoot(sub);
-    expect(detectedRoot).toBe(root);
+    // makeTempDir 在 Windows 上返回反斜杠，resolve 统一成正斜杠。
+    expect(normalizePathForCompare(detectedRoot)).toBe(
+      normalizePathForCompare(root),
+    );
 
     const info = await getProjectInfo(sub);
     expect(info).not.toBeNull();
