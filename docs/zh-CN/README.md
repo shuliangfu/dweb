@@ -2032,15 +2032,13 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.7.3] - 2026-10-31
+### [3.7.4] - 2026-10-31
 
-**变更 / 修复** — 多应用 `dweb-cli init` 里 API 目录固定为
-`api`，不再询问名称。`dweb-cli run` 的位置参数和选项直接写在路由后面，裸 `--`
-退出码为 2。生产环境流式 SSR 会替换资源清单，并在响应开始前检查挂载容器。Windows
-项目根测试用 `normalizePathForCompare` 比较路径。完整记录见
-[CHANGELOG.md](./CHANGELOG.md)。CI：
-[run 41198009045](https://github.com/shuliangfu/dweb/actions/runs/41198009045)。测试报告：
-[TEST_REPORT.md](./TEST_REPORT.md)。
+**修复** — `dweb-cli upgrade` 在安装 Deno 2.9 的 24
+小时依赖年龄窗口内刚发布的版本时，会带上
+`--minimum-dependency-age=0`。装好的包装脚本去掉 `--config`
+后仍保留该参数。完整记录见
+[CHANGELOG.md](./CHANGELOG.md)。测试报告：[TEST_REPORT.md](./TEST_REPORT.md)。
 
 ---
 

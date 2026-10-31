@@ -4,16 +4,23 @@
 
 ## 📋 Test Overview
 
-| Item             | Value                                          |
-| ---------------- | ---------------------------------------------- |
-| Framework        | 3.7.3                                          |
-| Test framework   | @dreamer/test@^1.2.3                           |
-| Test date        | 2026-10-31                                     |
-| Test environment | GitHub Actions CI, Deno 2.9 / Bun / Node.js 22 |
+| Item             | Value                                               |
+| ---------------- | --------------------------------------------------- |
+| Framework        | 3.7.4                                               |
+| Test framework   | @dreamer/test@^1.2.3                                |
+| Test date        | 2026-10-31                                          |
+| Test environment | Local Deno for the 3.7.4 change; CI below is v3.7.3 |
 
 ---
 
 ## 📊 Test Results
+
+### v3.7.4 local check
+
+`deno test -A --no-check tests/unit/runtime.test.ts`: 26 passed, 0 failed. This
+covers `withFreshDependencyAge` and the wrapper rewrite used by
+`dweb-cli upgrade`. The full three-runtime CI matrix below is still the v3.7.3
+run; it has not been repeated for 3.7.4.
 
 ### CI (v3.7.3)
 

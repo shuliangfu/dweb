@@ -402,7 +402,7 @@
     "upgradedTo": "dweb-cli diperbarui ke {version}",
     "autoInstallFailed": "Instalasi otomatis gagal",
     "manualInstall": "Instalasi manual:",
-    "manualExample": "  deno run -A {spec}",
+    "manualExample": "  deno run -A --minimum-dependency-age=0 {spec}",
     "orManualVersion": "Atau perbarui versi @dreamer/dweb di deno.json"
   },
   "init": {

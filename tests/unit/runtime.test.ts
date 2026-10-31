@@ -17,7 +17,9 @@
 import { deleteEnv, getEnv, setEnv } from "@dreamer/runtime-adapter";
 import { describe, expect, it } from "@dreamer/test";
 import {
+  allowFreshDepsInDenoWrapper,
   configProfileFromRuntimeEnv,
+  DENO_FRESH_DEP_ARG,
   envWithRuntime,
   getDenoRunArgsFromTaskString,
   getFmtArgs,
@@ -29,6 +31,7 @@ import {
   getTaskArgs,
   getTestArgs,
   isWindows,
+  withFreshDependencyAge,
 } from "../../src/utils/runtime.ts";
 import "../setup.ts";
 
@@ -235,6 +238,40 @@ describe("运行时工具 (runtime.ts)", () => {
     it("应包含文件路径", () => {
       const args = getRunArgs("src/main.ts");
       expect(args).toContain("src/main.ts");
+    });
+  });
+
+  describe("withFreshDependencyAge()", () => {
+    it("Deno 下把年龄参数放在入口说明符前面", () => {
+      const args = withFreshDependencyAge([
+        "run",
+        "-A",
+        "jsr:@dreamer/dweb@3.7.3/setup",
+      ]);
+      if (getRuntime() === "deno") {
+        expect(args).toEqual([
+          "run",
+          "-A",
+          DENO_FRESH_DEP_ARG,
+          "jsr:@dreamer/dweb@3.7.3/setup",
+        ]);
+      } else {
+        expect(args).toEqual([
+          "run",
+          "-A",
+          "jsr:@dreamer/dweb@3.7.3/setup",
+        ]);
+      }
+    });
+  });
+
+  describe("allowFreshDepsInDenoWrapper()", () => {
+    it("去掉 --config 并给 deno run 加上年龄参数", () => {
+      const raw =
+        "#!/bin/sh\nexec deno run --allow-all --config /tmp/deno.json 'jsr:@dreamer/dweb@3.7.3/cli' \"$@\"\n";
+      expect(allowFreshDepsInDenoWrapper(raw)).toBe(
+        "#!/bin/sh\nexec deno run --minimum-dependency-age=0 --allow-all 'jsr:@dreamer/dweb@3.7.3/cli' \"$@\"\n",
+      );
     });
   });
 

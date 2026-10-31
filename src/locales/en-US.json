@@ -415,7 +415,7 @@
     "upgradedTo": "dweb-cli upgraded to {version}",
     "autoInstallFailed": "Auto install failed",
     "manualInstall": "Manual install:",
-    "manualExample": "  deno run -A {spec}",
+    "manualExample": "  deno run -A --minimum-dependency-age=0 {spec}",
     "orManualVersion": "Or update @dreamer/dweb version in deno.json"
   },
   "init": {

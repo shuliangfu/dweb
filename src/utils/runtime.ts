@@ -476,6 +476,55 @@ export function getFmtArgs(useTask: boolean = false): string[] {
 }
 
 /**
+ * Deno 2.9 起默认拒绝 24 小时内新发布的 JSR/npm 版本。
+ * 升级刚发布的 dweb 时要显式关掉，否则 `deno run` / `deno install` 选不到新版本。
+ */
+export const DENO_FRESH_DEP_ARG = "--minimum-dependency-age=0";
+
+/**
+ * 在 Deno 参数列表的入口说明符前插入 {@link DENO_FRESH_DEP_ARG}。
+ * Bun / Node 原样返回。
+ */
+export function withFreshDependencyAge(args: string[]): string[] {
+  if (!IS_DENO) return args;
+  if (
+    args.some((arg) =>
+      arg.startsWith("--minimum-dependency-age") ||
+      arg.startsWith("--min-dep-age")
+    )
+  ) {
+    return args;
+  }
+  const last = args[args.length - 1];
+  if (last && !last.startsWith("-")) {
+    return [...args.slice(0, -1), DENO_FRESH_DEP_ARG, last];
+  }
+  return [...args, DENO_FRESH_DEP_ARG];
+}
+
+/**
+ * 去掉全局 wrapper 里的 `--config`，并让 Deno 启动时允许刚发布的 dweb 版本。
+ * `--config` 会盖住用户项目的 deno.json；去掉之后每次启动都会重新解析 JSR 版本，
+ * 24 小时内必须带年龄参数才能跑起来。
+ */
+export function allowFreshDepsInDenoWrapper(content: string): string {
+  const withoutConfig = content.replace(
+    /\s+--config(\s+|=)('[^']*'|"[^"]*"|[^\s'"]+)/g,
+    "",
+  );
+  if (
+    withoutConfig.includes("--minimum-dependency-age") ||
+    withoutConfig.includes("--min-dep-age")
+  ) {
+    return withoutConfig;
+  }
+  return withoutConfig.replace(
+    /(deno(?:\.exe)?\s+run\b)/i,
+    `$1 ${DENO_FRESH_DEP_ARG}`,
+  );
+}
+
+/**
  * 获取执行 run 的参数（运行脚本文件）
  *
  * - Deno: ["run", "-A", filePath]

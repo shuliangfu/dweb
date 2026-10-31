@@ -25,7 +25,11 @@ import { $tr } from "../utils/i18n.ts";
 import type { ParsedOptions } from "../feature/command.ts";
 import { fetchJsrLatestVersion } from "../utils/jsr-versions.ts";
 import { getDwebVersion, writeVersionCache } from "../utils/version.ts";
-import { getRunArgs, getRuntime } from "../utils/runtime.ts";
+import {
+  getRunArgs,
+  getRuntime,
+  withFreshDependencyAge,
+} from "../utils/runtime.ts";
 
 /**
  * 解析版本号用于比较（简化：仅比较主.次.修订）
@@ -81,7 +85,8 @@ export async function main(
 
   const setupSpec = `jsr:@dreamer/dweb@${latest}/setup`;
   const cmd = createCommand(runtime, {
-    args: getRunArgs(setupSpec),
+    // Deno 2.9 默认跳过 24 小时内的新版本，升级刚发布的包必须关掉。
+    args: withFreshDependencyAge(getRunArgs(setupSpec)),
     stdout: "null",
     stderr: "null",
     stdin: "null",

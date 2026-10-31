@@ -29,7 +29,11 @@ import { failSpinner, startSpinner, succeedSpinner } from "@dreamer/console";
 import { DwebErrorCode, throwDwebError } from "./utils/errors.ts";
 import { $tr } from "./utils/i18n.ts";
 import { isMainModule } from "./utils/main-module.ts";
-import { getRuntime } from "./utils/runtime.ts";
+import {
+  allowFreshDepsInDenoWrapper,
+  getRuntime,
+  withFreshDependencyAge,
+} from "./utils/runtime.ts";
 import {
   getPackageRoot,
   loadDwebDenoJson,
@@ -130,7 +134,7 @@ async function createTempCliConfig(): Promise<string> {
  */
 async function installGlobalCli(): Promise<void> {
   const runtime = getRuntime();
-  const args: string[] = [
+  const args: string[] = withFreshDependencyAge([
     "install",
     "--global",
     "-f",
@@ -138,7 +142,7 @@ async function installGlobalCli(): Promise<void> {
     "-n",
     CLI_NAME,
     "-A",
-  ];
+  ]);
 
   if (isLocalRun()) {
     // 仅本地调试时使用 --config，远程安装无需
@@ -260,11 +264,8 @@ async function cleanGlobalCliWrapper(): Promise<void> {
     for (const file of candidates) {
       if (await exists(file)) {
         const content = await readTextFile(file);
-        // 去除 `--config <path>` 选项
-        const cleaned = content.replace(
-          /\s+--config(\s+|=)('[^']*'|"[^"]*"|[^\s'"]+)/g,
-          "",
-        );
+        // 去掉 `--config`，并允许刚发布的 JSR 版本在 24 小时内启动。
+        const cleaned = allowFreshDepsInDenoWrapper(content);
         if (cleaned !== content) {
           await writeTextFile(file, cleaned);
         }

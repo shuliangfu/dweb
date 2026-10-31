@@ -402,7 +402,7 @@
     "upgradedTo": "dweb-cli를 {version}으로 업그레이드함",
     "autoInstallFailed": "자동 설치 실패",
     "manualInstall": "수동 설치:",
-    "manualExample": "  deno run -A {spec}",
+    "manualExample": "  deno run -A --minimum-dependency-age=0 {spec}",
     "orManualVersion": "또는 deno.json의 @dreamer/dweb 버전 업데이트"
   },
   "init": {

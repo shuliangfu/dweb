@@ -402,7 +402,7 @@
     "upgradedTo": "dweb-cli 已升級至 {version}",
     "autoInstallFailed": "自動安装失敗",
     "manualInstall": "請手动執行:",
-    "manualExample": "  deno run -A {spec}",
+    "manualExample": "  deno run -A --minimum-dependency-age=0 {spec}",
     "orManualVersion": "或手动修改專案 deno.json 中的 @dreamer/dweb 版本号"
   },
   "init": {

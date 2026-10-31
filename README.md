@@ -1983,16 +1983,13 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.7.3] - 2026-10-31
+### [3.7.4] - 2026-10-31
 
-**Changed / Fixed** — Multi-app `dweb-cli init` pins an API app directory to
-`api` (no name prompt). `dweb-cli run` takes positional args and options
-directly after the route; a bare `--` exits 2. Production streaming SSR applies
-the asset manifest and checks the mount container before the response starts.
-The Windows project-root test compares paths with `normalizePathForCompare`.
-Full history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md). CI:
-[run 41198009045](https://github.com/shuliangfu/dweb/actions/runs/41198009045).
-Test report: [TEST_REPORT.md](./docs/en-US/TEST_REPORT.md).
+**Fixed** — `dweb-cli upgrade` passes `--minimum-dependency-age=0` when
+installing a version published within Deno 2.9's 24-hour dependency age window.
+The installed wrapper keeps the same flag after `--config` is removed. Full
+history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md). Test report:
+[TEST_REPORT.md](./docs/en-US/TEST_REPORT.md).
 
 ---
 

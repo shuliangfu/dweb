@@ -10,6 +10,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.7.4] - 2026-10-31
+
+### Fixed
+
+- **`dweb-cli upgrade`**: installing a just-published version passes
+  `--minimum-dependency-age=0`, so Deno 2.9's 24-hour dependency age check does
+  not block the upgrade. The installed wrapper gets the same flag after
+  `--config` is removed.
+
 ## [3.7.3] - 2026-10-31
 
 ### Changed
