@@ -136,6 +136,7 @@ export function getDenoJson(
     ].join(",\n") + ",\n\n"
     : "";
 
+  // Deno 2.9 默认拒绝 24 小时内发布的依赖。脚手架项目要能马上安装刚发的 @dreamer/*。
   return `{
   "version": "1.0.0",
   "tasks": {
@@ -144,6 +145,7 @@ ${tasksBlock}
   "imports": {
 ${dirAliasesBlock}${dreamerImports}${importsNpmPart}
   },
+  "minimumDependencyAge": 0,
   "nodeModulesDir": "auto",
   "compilerOptions": {
     "jsx": "react-jsx",

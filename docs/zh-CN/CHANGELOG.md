@@ -9,6 +9,14 @@
 
 ## [Unreleased]
 
+## [3.7.5] - 2026-10-31
+
+### 修复
+
+- **`dweb-cli init`**：生成的 `deno.json` 写入
+  `"minimumDependencyAge": 0`，新建项目可以安装 Deno 2.9 的 24
+  小时依赖年龄窗口内刚发布的 `@dreamer/*` 包。
+
 ## [3.7.4] - 2026-10-31
 
 ### 修复

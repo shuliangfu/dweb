@@ -10,6 +10,14 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.7.5] - 2026-10-31
+
+### Fixed
+
+- **`dweb-cli init`**: the generated `deno.json` sets
+  `"minimumDependencyAge": 0`, so a new project can install `@dreamer/*`
+  packages published inside Deno 2.9's 24-hour dependency age window.
+
 ## [3.7.4] - 2026-10-31
 
 ### Fixed

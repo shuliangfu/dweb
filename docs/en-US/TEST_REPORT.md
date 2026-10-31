@@ -6,14 +6,22 @@
 
 | Item             | Value                                               |
 | ---------------- | --------------------------------------------------- |
-| Framework        | 3.7.4                                               |
+| Framework        | 3.7.5                                               |
 | Test framework   | @dreamer/test@^1.2.3                                |
 | Test date        | 2026-10-31                                          |
-| Test environment | Local Deno for the 3.7.4 change; CI below is v3.7.3 |
+| Test environment | Local Deno for the 3.7.5 change; CI below is v3.7.3 |
 
 ---
 
 ## 📊 Test Results
+
+### v3.7.5 local check
+
+`deno test -A --no-check tests/unit/init.test.ts --filter "刚发布"`: 1 passed, 0
+failed (9 other tests in that file were filtered out). This covers
+`"minimumDependencyAge": 0` in the `deno.json` written by `dweb-cli init`. The
+full three-runtime CI matrix below is still the v3.7.3 run; it has not been
+repeated for 3.7.5.
 
 ### v3.7.4 local check
 

@@ -1983,12 +1983,12 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
-### [3.7.4] - 2026-10-31
+### [3.7.5] - 2026-10-31
 
-**Fixed** — `dweb-cli upgrade` passes `--minimum-dependency-age=0` when
-installing a version published within Deno 2.9's 24-hour dependency age window.
-The installed wrapper keeps the same flag after `--config` is removed. Full
-history: [CHANGELOG.md](./docs/en-US/CHANGELOG.md). Test report:
+**Fixed** — `dweb-cli init` writes `"minimumDependencyAge": 0` into the
+generated `deno.json`, so a new project can install `@dreamer/*` packages
+published inside Deno 2.9's 24-hour dependency age window. Full history:
+[CHANGELOG.md](./docs/en-US/CHANGELOG.md). Test report:
 [TEST_REPORT.md](./docs/en-US/TEST_REPORT.md).
 
 ---

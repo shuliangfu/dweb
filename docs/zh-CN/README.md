@@ -2032,12 +2032,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
-### [3.7.4] - 2026-10-31
+### [3.7.5] - 2026-10-31
 
-**修复** — `dweb-cli upgrade` 在安装 Deno 2.9 的 24
-小时依赖年龄窗口内刚发布的版本时，会带上
-`--minimum-dependency-age=0`。装好的包装脚本去掉 `--config`
-后仍保留该参数。完整记录见
+**修复** — `dweb-cli init` 会在生成的 `deno.json` 里写入
+`"minimumDependencyAge": 0`，新建项目可以安装 Deno 2.9 的 24
+小时依赖年龄窗口内刚发布的 `@dreamer/*` 包。完整记录见
 [CHANGELOG.md](./CHANGELOG.md)。测试报告：[TEST_REPORT.md](./TEST_REPORT.md)。
 
 ---

@@ -19,6 +19,7 @@ import {
   remove,
 } from "@dreamer/runtime-adapter";
 import { generate, type InitOptions } from "../../src/cmd/init.ts";
+import { getDenoJson } from "../../src/cmd/init/templates/deno-json.ts";
 
 describe("init (cmd/init.ts)", () => {
   let testDir: string;
@@ -456,4 +457,29 @@ describe("init (cmd/init.ts)", () => {
     },
     { timeout: 20_000 },
   );
+
+  it("生成的 deno.json 应允许安装刚发布的依赖", () => {
+    const denoJson = getDenoJson(
+      {
+        targetDir: "/tmp/demo",
+        projectName: "demo",
+        appMode: "single",
+        runtime: "deno",
+        engine: "preact",
+        renderMode: "ssr",
+        style: "none",
+        useSrc: false,
+        exampleLevel: "minimal",
+      },
+      {
+        dweb: "3.7.5",
+        render: "1.0.0",
+        router: "1.0.0",
+        plugins: "1.0.0",
+        view: "1.0.0",
+      },
+    );
+    const parsed = JSON.parse(denoJson);
+    expect(parsed.minimumDependencyAge).toBe(0);
+  });
 });
