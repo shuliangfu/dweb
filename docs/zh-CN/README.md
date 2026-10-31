@@ -385,7 +385,8 @@ export async function POST(ctx: ApiContext) {
 # Console 应用（kind=console）—— 不起 HTTP
 dweb-cli run hello/world
 dweb-cli run --list
-dweb-cli run hello/world -- --name Ada
+dweb-cli run user/add admin admin@qq.com 13800138000
+dweb-cli run user/add --username admin --email admin@qq.com --phone 13800138000
 dweb-cli run crond/start -a console   # 多应用
 dweb-cli run slow/job --timeout 5000  # 超时控制（超时退出码 124）
 dweb-cli generate -t console -n user/seed
@@ -434,7 +435,8 @@ export async function stop(ctx: ConsoleContext): Promise<void> {
 参见 `examples/app-kinds/multi-web-api-console`。
 
 `dweb-cli init` 可选 Web / API / Console；多应用下每个 app 各自选 `kind`，共用
-`common/`。**一项目最多一个** `console`。
+`common/`。**一项目最多一个** `api`、**最多一个** `console`。这两个目录名固定为
+`api` 和 `console`，init 不再询问名称。
 
 ### 单应用模式（默认）
 
@@ -447,10 +449,11 @@ backend、frontend、mobile），每个应用独立运行，可以共享公共�
 
 **多应用形态约定**：
 
-- **Web 应用（如 backend/admin）**：带页面、有 `_app.tsx`、有路由视图。
-- **API 应用**：设 `kind: "api"`，与带页面的后台区分；脚手架生成仅 `routes/`
-  handler、无 `_app`。
-- **Console 应用**：目录默认 `console`，一项目唯一。
+- **Web 应用（如 backend/admin）**：带页面、有
+  `_app.tsx`、有路由视图。目录名自定，不能占用 `api` / `console`。
+- **API 应用**：目录固定 `api`，一项目唯一。设 `kind: "api"`，脚手架生成仅
+  `routes/` handler、无 `_app`。
+- **Console 应用**：目录固定 `console`，一项目唯一。
 
 详设见
 [2026-08-25-app-kinds-init-实现分析.md](./2026-08-25-app-kinds-init-实现分析.md)。

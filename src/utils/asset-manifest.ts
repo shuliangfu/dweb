@@ -52,6 +52,106 @@ export function clearAssetManifestCache(): void {
   assetManifestCache.clear();
 }
 
+/**
+ * 按 manifest 顺序做整页替换，与 `String.split` / `join` 一致。
+ * 空 key、以及 key 与 value 相同的项跳过。
+ */
+export function applyAssetManifest(
+  html: string,
+  manifest: Record<string, string>,
+): string {
+  let result = html;
+  for (const [oldPath, newPath] of Object.entries(manifest)) {
+    if (!oldPath || oldPath === newPath) continue;
+    result = result.split(oldPath).join(newPath);
+  }
+  return result;
+}
+
+/**
+ * 流式替换，语义与 {@link applyAssetManifest} 相同。
+ * 每个条目单独持有「可能跨 chunk 的前缀」，避免路径被切在两段之间。
+ */
+export function createAssetPathReplaceTransform(
+  manifest: Record<string, string>,
+): TransformStream<Uint8Array, Uint8Array> {
+  const entries = Object.entries(manifest).filter(([oldPath, newPath]) =>
+    oldPath.length > 0 && oldPath !== newPath
+  );
+  if (entries.length === 0) return new TransformStream();
+
+  let readable: ReadableStream<Uint8Array> | null = null;
+  let writable: WritableStream<Uint8Array> | null = null;
+  for (const [oldPath, newPath] of entries) {
+    const step = createSingleAssetPathTransform(oldPath, newPath);
+    if (readable == null || writable == null) {
+      readable = step.readable;
+      writable = step.writable;
+    } else {
+      readable = readable.pipeThrough(step);
+    }
+  }
+  return { readable: readable!, writable: writable! };
+}
+
+function createSingleAssetPathTransform(
+  oldPath: string,
+  newPath: string,
+): TransformStream<Uint8Array, Uint8Array> {
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let buffer = "";
+
+  function enqueue(
+    controller: TransformStreamDefaultController<Uint8Array>,
+    text: string,
+  ): void {
+    if (text.length > 0) controller.enqueue(encoder.encode(text));
+  }
+
+  /** 吐出已不可能再匹配 oldPath 的前缀，留下最长的 oldPath 前缀。 */
+  function drain(
+    controller: TransformStreamDefaultController<Uint8Array>,
+    flush: boolean,
+  ): void {
+    let out = "";
+    while (true) {
+      const idx = buffer.indexOf(oldPath);
+      if (idx === -1) break;
+      out += buffer.slice(0, idx) + newPath;
+      buffer = buffer.slice(idx + oldPath.length);
+    }
+    if (flush) {
+      out += buffer;
+      buffer = "";
+      enqueue(controller, out);
+      return;
+    }
+    let keep = 0;
+    const max = Math.min(buffer.length, oldPath.length - 1);
+    for (let n = max; n > 0; n--) {
+      if (oldPath.startsWith(buffer.slice(buffer.length - n))) {
+        keep = n;
+        break;
+      }
+    }
+    out += buffer.slice(0, buffer.length - keep);
+    buffer = buffer.slice(buffer.length - keep);
+    enqueue(controller, out);
+  }
+
+  return new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, controller) {
+      buffer += decoder.decode(chunk, { stream: true });
+      drain(controller, false);
+    },
+    flush(controller) {
+      buffer += decoder.decode();
+      drain(controller, true);
+    },
+  });
+}
+
 async function loadAssetManifest(
   manifestPath: string,
 ): Promise<AssetManifest> {
@@ -78,18 +178,12 @@ async function loadAssetManifest(
 }
 
 /**
- * 用 asset-manifest.json 替换 HTML 中的资源路径
- *
- * @param html 原始 HTML
- * @param config 应用配置（用于获取 client output 或 ssg output）
- * @param outputDirOverride 可选，覆盖输出目录（如 SSG 的 ssg.outputDir）
- * @returns 替换后的 HTML
+ * 读取构建产物里的 asset-manifest.json。缺失或无效时返回 null。
  */
-export async function replaceAssetPathsInHtml(
-  html: string,
+export async function readAssetManifest(
   config: AppConfig,
   outputDirOverride?: string,
-): Promise<string> {
+): Promise<Record<string, string> | null> {
   const buildConfig = (config.build || {}) as {
     client?: { output?: string };
   };
@@ -102,14 +196,26 @@ export async function replaceAssetPathsInHtml(
     getInferredBuildOutputDirs().client;
   const manifestPath = join(cwd(), outputDir, "asset-manifest.json");
   try {
-    const manifest = await loadAssetManifest(manifestPath);
-    if (!manifest) return html;
-    let result = html;
-    for (const [oldPath, newPath] of Object.entries(manifest)) {
-      result = result.split(oldPath).join(newPath);
-    }
-    return result;
+    return await loadAssetManifest(manifestPath);
   } catch {
-    return html;
+    return null;
   }
+}
+
+/**
+ * 用 asset-manifest.json 替换 HTML 中的资源路径
+ *
+ * @param html 原始 HTML
+ * @param config 应用配置（用于获取 client output 或 ssg output）
+ * @param outputDirOverride 可选，覆盖输出目录（如 SSG 的 ssg.outputDir）
+ * @returns 替换后的 HTML
+ */
+export async function replaceAssetPathsInHtml(
+  html: string,
+  config: AppConfig,
+  outputDirOverride?: string,
+): Promise<string> {
+  const manifest = await readAssetManifest(config, outputDirOverride);
+  if (!manifest) return html;
+  return applyAssetManifest(html, manifest);
 }

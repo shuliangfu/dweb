@@ -17,8 +17,8 @@ deno run -A ../../../src/cli.ts run --list
 # module help (named actions only — exit 2 with action list)
 deno run -A ../../../src/cli.ts run hello
 
-# run with passthrough flags
-deno run -A ../../../src/cli.ts run hello/world -- --name Ada
+# named options go straight on the command
+deno run -A ../../../src/cli.ts run hello/world --name Ada
 
 # timeout (ms); exit 124 on timeout
 deno run -A ../../../src/cli.ts run hello/world --timeout 10000

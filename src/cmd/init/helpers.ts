@@ -5,6 +5,7 @@
 import { basename } from "@dreamer/runtime-adapter";
 import { type AppLanguage, SUPPORTED_APP_LANGUAGES } from "../../types/app.ts";
 import { $tr, detectLocale } from "../../utils/i18n.ts";
+import { API_APP_NAME, APP_KINDS, CONSOLE_APP_NAME } from "./constants.ts";
 import type {
   AppKind,
   Engine,
@@ -16,6 +17,54 @@ import type {
 /** 应用名称合法：小写、数字、连字符 */
 export function isValidAppName(name: string): boolean {
   return /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/.test(name);
+}
+
+/**
+ * 多应用目录名写死的 kind。
+ * `api` → `api`，`console` → `console`；`web` 由用户输入，返回 undefined。
+ */
+export function fixedMultiAppDirName(kind: AppKind): string | undefined {
+  if (kind === "api") return API_APP_NAME;
+  if (kind === "console") return CONSOLE_APP_NAME;
+  return undefined;
+}
+
+/**
+ * 多应用类型菜单。已有 api / console 后不再列出（各至多一个）。web 可重复添加。
+ */
+export function selectableAppKinds(taken: {
+  api: boolean;
+  console: boolean;
+}): AppKind[] {
+  return APP_KINDS.filter((kind) => {
+    if (kind === "api" && taken.api) return false;
+    if (kind === "console" && taken.console) return false;
+    return true;
+  });
+}
+
+/** 手输应用目录名被拒绝的原因（api / console 不走手输） */
+export type TypedAppNameReject =
+  | "empty"
+  | "invalid"
+  | "duplicate"
+  | "reserved-api"
+  | "reserved-console";
+
+/**
+ * 校验多应用下用户手输的目录名。
+ * `api` 与 `console` 保留给对应 kind，不能给 Web 用。
+ */
+export function rejectTypedAppName(
+  name: string,
+  existingNames: readonly string[],
+): TypedAppNameReject | null {
+  if (!name) return "empty";
+  if (!isValidAppName(name)) return "invalid";
+  if (existingNames.includes(name)) return "duplicate";
+  if (name === API_APP_NAME) return "reserved-api";
+  if (name === CONSOLE_APP_NAME) return "reserved-console";
+  return null;
 }
 
 /**

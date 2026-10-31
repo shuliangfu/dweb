@@ -148,7 +148,12 @@
     "run": "Run a Console app command (kind=console; e.g. hello/world)",
     "appOptionalRun": "App name (multi-app: console; default resolves the only console)",
     "runList": "List console commands (optional module filter)",
-    "runTimeout": "Command timeout in ms (exit 124 on timeout)"
+    "runTimeout": "Command timeout in ms (exit 124 on timeout)",
+    "testReporter": "Host reporter: junit | tap | dot (Bun: junit only)",
+    "testReportOut": "JUnit report output path (requires --reporter junit)",
+    "testJunitPath": "Alias of --report-out for Deno --junit-path",
+    "testProductReport": "Product report formats: json,md,html (from JUnit; comma-separated)",
+    "testReportDir": "Product report output directory (default: reports)"
   },
   "common": {
     "noDenoJson": "deno.json을 찾을 수 없습니다. dweb 루트에서 실행하세요",
@@ -368,7 +373,13 @@
     "addTaskHint": "test 또는 test:appName 태스크 추가, 또는 dweb-cli test 직접 실행 (task 불필요)",
     "spawnCommand": "실행: {cmd}",
     "invalidRuntime": "지원하지 않는 --runtime: {value} (deno 또는 bun)",
-    "noAppTaskFallback": "task {task} 미정의, 호스트 테스트로 대체 (기본 tests/)"
+    "noAppTaskFallback": "task {task} 미정의, 호스트 테스트로 대체 (기본 tests/)",
+    "invalidReporter": "Unsupported --reporter: {value} (use junit, tap, or dot)",
+    "invalidProductReport": "Unsupported --report format: {value} (use json, md, or html)",
+    "productReportRequiresJunit": "--report requires host junit (do not combine with tap/dot)",
+    "productReportNodeUnsupported": "Node host does not support --report product reports yet",
+    "productReportWritten": "Wrote product reports: {paths}",
+    "productReportFailed": "Failed to write product reports: {message}"
   },
   "update": {
     "running": "의존성 및 lockfile 업데이트 중...",
@@ -403,9 +414,9 @@
     "appMode": "앱 모드",
     "appModeSingle": "단일 앱",
     "appModeMulti": "다중 앱",
-    "appNamesHint": "앱 이름, 한 줄에 하나, 빈 줄로 종료",
+    "appNamesHint": "앱마다 종류를 고릅니다. Web은 디렉터리 이름을 입력합니다. API는 api, Console은 console로 고정됩니다. 추가는 확인으로 끝냅니다.",
     "appNamePromptWithAdded": "앱 이름 (추가됨: {apps}; 빈 줄로 종료): ",
-    "appNamePromptEmpty": "앱 이름 (빈 줄로 종료, 최소 1개 필요): ",
+    "appNamePromptEmpty": "Web 앱 디렉터리 이름: ",
     "appNameMinOne": "앱 이름이 최소 1개 필요합니다",
     "appNameInvalid": "\"{name}\" 잘못됨: 소문자, 숫자, 하이픈만",
     "appNameDuplicate": "앱 이름 중복 불가: {name}",
@@ -667,10 +678,12 @@
     "appKindApi": "API (HTTP only)",
     "appKindConsole": "Console (CLI)",
     "consoleNameFixed": "Console app directory fixed as: {name}",
+    "apiNameFixed": "API app directory fixed as: {name}",
     "addAnotherApp": "Add another app?",
     "appsAddedSoFar": "Added: {apps}",
     "appNameRequiredForKind": "Please enter an app name",
     "appNameReservedConsole": "Name \"{name}\" is reserved for Console; pick another name or choose Console kind",
+    "appNameReservedApi": "Name \"{name}\" is reserved for API; pick another name or choose API kind",
     "exampleLevelConsole": "Console examples",
     "exampleConsoleWithCrond": "With crond (hello + crond)",
     "exampleConsoleMinimal": "Minimal (hello)",
@@ -678,11 +691,15 @@
     "exampleApiWithUsers": "With users (hello + users)",
     "exampleApiMinimal": "Minimal (hello)",
     "runConsole": "  dweb-cli run hello/world",
-    "runConsoleApp": "  dweb-cli run hello/world -a {app}   # Console command"
+    "runConsoleApp": "  dweb-cli run hello/world -a {app}   # Console command",
+    "runtime": "Runtime",
+    "runtimeDeno": "Deno (generate deno.json, Docker uses Deno)",
+    "runtimeBun": "Bun (generate package.json + .npmrc, Docker uses Bun)"
   },
   "run": {
     "missingRoute": "Specify a command route, e.g. dweb-cli run hello/world",
-    "usageHint": "Usage: dweb-cli run <route>/<action> [-a console] [--list] [--timeout ms] [-- --flag]",
+    "usageHint": "Usage: dweb-cli run <route>/<action> [args...] [--username value] [-a console] [--list] [--timeout ms]",
+    "doubleDashRemoved": "`--` is no longer supported. Put arguments directly after the route, for example: dweb-cli run user/add --username admin",
     "notConsoleKind": "Target app kind is \"{kind}\", not console (root: {root})",
     "failedWithMessage": "Console command failed: {message}",
     "listHeader": "Available console commands:",

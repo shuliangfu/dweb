@@ -7,6 +7,8 @@ import { describe, expect, it } from "@dreamer/test";
 import {
   collectClientRoutes,
   hasContainerElementInHtml,
+  MountContainerMissingError,
+  streamAfterMountContainer,
 } from "../../src/feature/render-utils.ts";
 
 describe("render-utils", () => {
@@ -29,6 +31,60 @@ describe("render-utils", () => {
       expect(hasContainerElementInHtml(`<div id="other"></div>`, "app")).toBe(
         false,
       );
+    });
+  });
+
+  describe("streamAfterMountContainer()", () => {
+    async function readStream(
+      stream: ReadableStream<Uint8Array>,
+    ): Promise<string> {
+      return await new Response(stream).text();
+    }
+
+    function chunked(
+      html: string,
+      chunkSize: number,
+    ): ReadableStream<Uint8Array> {
+      const bytes = new TextEncoder().encode(html);
+      return new ReadableStream({
+        start(controller) {
+          for (let i = 0; i < bytes.length; i += chunkSize) {
+            controller.enqueue(bytes.subarray(i, i + chunkSize));
+          }
+          controller.close();
+        },
+      });
+    }
+
+    it("容器被切在两个 chunk 时仍原样输出", async () => {
+      const html =
+        `<html><head></head><body><div id="app"><p>hi</p></div></body></html>`;
+      const out = await streamAfterMountContainer(chunked(html, 1), "app");
+      expect(await readStream(out)).toBe(html);
+    });
+
+    it("script 正文里的 id 不算挂载容器", async () => {
+      const html =
+        `<html><body><script>const s = 'id="app"';</script></body></html>`;
+      try {
+        await streamAfterMountContainer(chunked(html, 3), "app");
+        throw new Error("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(MountContainerMissingError);
+      }
+    });
+
+    it("没有容器时抛出，且带已读长度", async () => {
+      const html = `<html><body><div id="other"></div></body></html>`;
+      try {
+        await streamAfterMountContainer(chunked(html, 4), "app");
+        throw new Error("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(MountContainerMissingError);
+        expect((err as MountContainerMissingError).htmlLength).toBe(
+          html.length,
+        );
+      }
     });
   });
 

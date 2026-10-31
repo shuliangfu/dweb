@@ -7,6 +7,25 @@
 
 ---
 
+## [Unreleased]
+
+### 变更
+
+- **`dweb-cli init` 多应用**：选择 API 后目录名固定为
+  `api`，不再询问应用名称，与 Console 固定为 `console` 相同。一项目至多一个
+  API；`api` 不能再用作 Web 应用目录名。多应用提示改为「先选类型，Web
+  才填目录名」。
+- **SSR 流式**：`render.ssr.stream` 在生产环境同样走流。带 hash
+  的资源路径在流上按 `asset-manifest.json` 替换，顺序与整页替换一致（先 head
+  CSS，再 manifest，再 hydration 脚本）。开启 hydration
+  时，流会先确认挂载容器存在再开始响应；找不到则与整页路径一样报错，不返回 200。
+- **`dweb-cli run` 参数**：位置参数和命令选项直接写在路由后面。例如
+  `dweb-cli run user/add admin admin@qq.com 13800138000` 与
+  `dweb-cli run user/add --username admin --email admin@qq.com --phone 13800138000`。`-a`、`--list`、`--timeout`
+  仍是框架选项。裸 `--` 分隔符已移除，写上会退出码 2。
+
+---
+
 ## [3.7.2] - 2026-09-05
 
 ### 新增

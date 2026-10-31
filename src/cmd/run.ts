@@ -3,8 +3,9 @@
  *
  * 用法：
  *   dweb-cli run hello/world
+ *   dweb-cli run user/add admin admin@qq.com 13800138000
+ *   dweb-cli run user/add --username admin --email admin@qq.com --phone 13800138000
  *   dweb-cli run crond/start -a console
- *   dweb-cli run user/seed -- --force
  *   dweb-cli run --list
  *   dweb-cli run hello --list
  *   dweb-cli run slow/job --timeout 5000
@@ -157,7 +158,7 @@ export async function main(
   const configDir = join(consoleRoot, "config");
   let app: App | null = null;
 
-  // 合并：位置参数尾巴 + cli 预处理的 -- 透传
+  // 合并：位置参数尾巴 + cli 预处理摘出的命令选项
   const trailingRaw = [...args.slice(1), ...takeRunPassthrough()];
   const trailing = parseTrailingCommandArgs(trailingRaw);
 

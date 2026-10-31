@@ -385,7 +385,7 @@ function resolveConsoleRoot(projectRoot, options):
 
 ```bash
 dweb-cli run crond/start
-dweb-cli run user/seed -- --force
+dweb-cli run user/seed --force
 ```
 
 - `run` 为唯一内置入口，后面全是用户路由。
@@ -540,7 +540,7 @@ interface ConsoleConfig {
 ```bash
 # 执行（首版）
 dweb-cli run crond/start
-dweb-cli run crond/start -- --verbose --once
+dweb-cli run crond/start --verbose --once
 dweb-cli run user/seed --app console          # 多应用
 dweb-cli run cache/clear -a backend
 
@@ -594,7 +594,7 @@ dweb-cli g -t console -n user/seed
 | ---------------- | ---------------------------------------------- |
 | 系统 cron 每分钟 | `* * * * * cd /app && dweb-cli run crond/tick` |
 | K8s CronJob      | 容器 command：`dweb-cli run report/daily`      |
-| 本地修数据       | `dweb-cli run fix/orders -- --id 123`          |
+| 本地修数据       | `dweb-cli run fix/orders --id 123`             |
 | 发版后迁移       | 继续 `dweb-cli db migrate` 或 console 包装     |
 | 交互式种子       | `dweb-cli run user/seed` + `confirm()`         |
 

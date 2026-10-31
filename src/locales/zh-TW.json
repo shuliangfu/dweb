@@ -148,7 +148,12 @@
     "run": "Run a Console app command (kind=console; e.g. hello/world)",
     "appOptionalRun": "App name (multi-app: console; default resolves the only console)",
     "runList": "List console commands (optional module filter)",
-    "runTimeout": "Command timeout in ms (exit 124 on timeout)"
+    "runTimeout": "Command timeout in ms (exit 124 on timeout)",
+    "testReporter": "宿主 reporter：junit | tap | dot（Bun 仅 junit）",
+    "testReportOut": "JUnit 报告输出路径（需配合 --reporter junit）",
+    "testJunitPath": "--report-out 别名（对应 Deno --junit-path）",
+    "testProductReport": "产品层报告格式：json,md,html（解析 JUnit；可逗号多选）",
+    "testReportDir": "产品报告输出目录（默认 reports）"
   },
   "common": {
     "noDenoJson": "未找到 deno.json，請在 dweb 專案根目錄執行",
@@ -368,7 +373,13 @@
     "addTaskHint": "可添加 test 或 test:應用名 task；或直接使用 dweb-cli test（無需 task）",
     "spawnCommand": "執行: {cmd}",
     "invalidRuntime": "不支持的 --runtime: {value}（請使用 deno 或 bun）",
-    "noAppTaskFallback": "未定義 task {task}，回退為宿主測試（默認 tests/）"
+    "noAppTaskFallback": "未定義 task {task}，回退為宿主測試（默認 tests/）",
+    "invalidReporter": "不支持的 --reporter: {value}（请使用 junit、tap 或 dot）",
+    "invalidProductReport": "不支持的 --report 格式: {value}（请使用 json、md、html）",
+    "productReportRequiresJunit": "--report 需配合宿主 junit（勿与 tap/dot 同用）",
+    "productReportNodeUnsupported": "Node 宿主暂不支持 --report 产品报告",
+    "productReportWritten": "已写入产品报告: {paths}",
+    "productReportFailed": "写入产品报告失败: {message}"
   },
   "update": {
     "running": "正在更新依賴与 lockfile...",
@@ -406,9 +417,9 @@
     "runtime": "运行时",
     "runtimeDeno": "Deno（生成 deno.json，Docker 使用 Deno）",
     "runtimeBun": "Bun（生成 package.json + .npmrc，Docker 使用 Bun）",
-    "appNamesHint": "每行输入一个應用名称（如 backend、frontend），空回车结束（至少输入一个）",
+    "appNamesHint": "每個應用先選類型。Web 再填目錄名；API 固定為 api，Console 固定為 console。用「是否繼續添加」結束。",
     "appNamePromptWithAdded": "應用名称（已添加: {apps}；空回车结束）: ",
-    "appNamePromptEmpty": "應用名称（空回车结束，至少输入一个）: ",
+    "appNamePromptEmpty": "Web 應用目錄名: ",
     "appNameMinOne": "至少需要输入一个應用名称",
     "appNameInvalid": "\"{name}\" 不合法，僅支援小写字母、数字、连字符，且不能以连字符开头或结尾",
     "appNameDuplicate": "應用名称不能重复: {name}",
@@ -670,10 +681,12 @@
     "appKindApi": "API（纯接口）",
     "appKindConsole": "Console（命令行）",
     "consoleNameFixed": "Console 应用目录固定为: {name}",
+    "apiNameFixed": "API 应用目录固定为: {name}",
     "addAnotherApp": "是否继续添加应用？",
     "appsAddedSoFar": "已添加: {apps}",
     "appNameRequiredForKind": "请输入应用名称",
     "appNameReservedConsole": "名称 \"{name}\" 保留给 Console 应用，请另选名称或选择类型 Console",
+    "appNameReservedApi": "名称 \"{name}\" 保留给 API 应用，请另选名称或选择类型 API",
     "exampleLevelConsole": "Console 示例",
     "exampleConsoleWithCrond": "含 crond 示例（hello + crond）",
     "exampleConsoleMinimal": "最小（hello）",
@@ -685,7 +698,8 @@
   },
   "run": {
     "missingRoute": "Specify a command route, e.g. dweb-cli run hello/world",
-    "usageHint": "Usage: dweb-cli run <route>/<action> [-a console] [--list] [--timeout ms] [-- --flag]",
+    "usageHint": "用法: dweb-cli run <route>/<action> [位置参数...] [--username 值] [-a console] [--list] [--timeout ms]",
+    "doubleDashRemoved": "`--` 已不再支持。请把参数直接写在路由后面，例如: dweb-cli run user/add --username admin",
     "notConsoleKind": "Target app kind is \"{kind}\", not console (root: {root})",
     "failedWithMessage": "Console command failed: {message}",
     "listHeader": "Available console commands:",

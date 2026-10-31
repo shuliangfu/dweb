@@ -8,6 +8,29 @@ and this project adheres to
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+- **`dweb-cli init` multi-app**: choosing API fixes the directory name to `api`
+  and skips the name prompt, matching Console (`console`). At most one API per
+  project. `api` can no longer be used as a Web app directory name. Multi-app
+  hints now say: pick a kind first; only Web asks for a directory name.
+- **Streaming SSR**: `render.ssr.stream` stays on in production. Hashed asset
+  paths are replaced on the stream from `asset-manifest.json`, in the same order
+  as the buffered page (head CSS, then manifest, then the hydration script).
+  When hydration is on, the stream confirms the mount container before the
+  response starts. A missing container fails the same way as the buffered page
+  and does not return 200.
+- **`dweb-cli run` arguments**: positional args and command options follow the
+  route directly. Examples:
+  `dweb-cli run user/add admin admin@qq.com 13800138000` and
+  `dweb-cli run user/add --username admin --email admin@qq.com --phone 13800138000`.
+  `-a`, `--list`, and `--timeout` stay framework options. A bare `--` separator
+  is rejected with exit code 2.
+
+---
+
 ## [3.7.2] - 2026-09-05
 
 ### Added

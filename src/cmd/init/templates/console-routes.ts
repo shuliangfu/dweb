@@ -11,7 +11,10 @@ export function getConsoleHelloTs(): string {
  * ${$tr("init.template.consoleHelloComment")}
  *
  * 用法:
- *   dweb-cli run hello/world
+ *   dweb-cli run hello/world Ada
+ *   dweb-cli run hello/world --name Ada
+ * 位置参数在 ctx.args，--name 这类选项在 ctx.options。
+ * 框架选项：-a/--app、-l/--list、--timeout。
  */
 
 import type { ConsoleContext } from "@dreamer/dweb";

@@ -16,7 +16,10 @@ export const RUNTIMES = ["deno", "bun"] as const;
 /** 应用种类菜单顺序（下标 0 为默认 Web） */
 export const APP_KINDS: AppKind[] = ["web", "api", "console"];
 
-/** 多应用下 console 固定目录名 */
+/** 多应用下 api 固定目录名（一项目至多一个） */
+export const API_APP_NAME = "api";
+
+/** 多应用下 console 固定目录名（一项目至多一个） */
 export const CONSOLE_APP_NAME = "console";
 
 /** 模板引擎菜单顺序（与 interactiveMenu 选项一致），下标 0 为默认 */

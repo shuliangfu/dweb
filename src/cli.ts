@@ -18,7 +18,10 @@ import {
 import { $tr } from "./utils/i18n.ts";
 import { isMainModule } from "./utils/main-module.ts";
 import { preloadProjectEnvSync } from "./utils/env-loader.ts";
-import { preprocessCliArgsForRun } from "./utils/run-passthrough.ts";
+import {
+  preprocessCliArgsForRun,
+  RunDoubleDashError,
+} from "./utils/run-passthrough.ts";
 import { getDwebVersion } from "./utils/version.ts";
 import { args as getArgs, exit } from "@dreamer/runtime-adapter";
 
@@ -546,8 +549,18 @@ export function createCLI(version: string): Command {
 if (isMainModule(import.meta)) {
   const version = await getDwebVersion();
   const cli = createCLI(version);
-  // 剥离 run 之后的裸 `--` 透传段，避免旧版 console parser 报 unknown option
-  await cli.execute(preprocessCliArgsForRun(getArgs()));
+  // 摘出 run 的业务选项；裸 `--` 已移除，直接报错
+  let argv: string[];
+  try {
+    argv = preprocessCliArgsForRun(getArgs());
+  } catch (err) {
+    if (err instanceof RunDoubleDashError) {
+      error($tr("run.doubleDashRemoved"));
+      exit(2);
+    }
+    throw err;
+  }
+  await cli.execute(argv);
   // 正常执行完成退出进程，防止外部异步句柄阻止进程自然退出
   exit(0);
 }

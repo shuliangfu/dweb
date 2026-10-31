@@ -148,7 +148,12 @@
     "run": "Run a Console app command (kind=console; e.g. hello/world)",
     "appOptionalRun": "App name (multi-app: console; default resolves the only console)",
     "runList": "List console commands (optional module filter)",
-    "runTimeout": "Command timeout in ms (exit 124 on timeout)"
+    "runTimeout": "Command timeout in ms (exit 124 on timeout)",
+    "testReporter": "Host reporter: junit | tap | dot (Bun: junit only)",
+    "testReportOut": "JUnit report output path (requires --reporter junit)",
+    "testJunitPath": "Alias of --report-out for Deno --junit-path",
+    "testProductReport": "Product report formats: json,md,html (from JUnit; comma-separated)",
+    "testReportDir": "Product report output directory (default: reports)"
   },
   "common": {
     "noDenoJson": "deno.json が見つかりません。dweb ルートで実行してください",
@@ -368,7 +373,13 @@
     "addTaskHint": "test / test:appName タスクを追加するか、dweb-cli test を直接実行（task 不要）",
     "spawnCommand": "実行: {cmd}",
     "invalidRuntime": "未対応の --runtime: {value}（deno または bun を指定）",
-    "noAppTaskFallback": "task {task} 未定義のためホストテストにフォールバック（既定 tests/）"
+    "noAppTaskFallback": "task {task} 未定義のためホストテストにフォールバック（既定 tests/）",
+    "invalidReporter": "Unsupported --reporter: {value} (use junit, tap, or dot)",
+    "invalidProductReport": "Unsupported --report format: {value} (use json, md, or html)",
+    "productReportRequiresJunit": "--report requires host junit (do not combine with tap/dot)",
+    "productReportNodeUnsupported": "Node host does not support --report product reports yet",
+    "productReportWritten": "Wrote product reports: {paths}",
+    "productReportFailed": "Failed to write product reports: {message}"
   },
   "update": {
     "running": "依存関係と lockfile を更新中...",
@@ -403,9 +414,9 @@
     "appMode": "アプリモード",
     "appModeSingle": "単一アプリ",
     "appModeMulti": "複数アプリ",
-    "appNamesHint": "アプリ名を1行に1つ入力、空で終了",
+    "appNamesHint": "アプリごとに種類を選びます。Web はディレクトリ名を入力。API は api、Console は console で固定。追加をやめるときは確認で終了。",
     "appNamePromptWithAdded": "アプリ名（追加済み: {apps}；空で終了）: ",
-    "appNamePromptEmpty": "アプリ名（空で終了、1つ以上必要）: ",
+    "appNamePromptEmpty": "Web アプリのディレクトリ名: ",
     "appNameMinOne": "アプリ名が1つ以上必要です",
     "appNameInvalid": "\"{name}\" 無効: 小文字、数字、ハイフンのみ",
     "appNameDuplicate": "アプリ名は重複できません: {name}",
@@ -667,10 +678,12 @@
     "appKindApi": "API (HTTP only)",
     "appKindConsole": "Console (CLI)",
     "consoleNameFixed": "Console app directory fixed as: {name}",
+    "apiNameFixed": "API app directory fixed as: {name}",
     "addAnotherApp": "Add another app?",
     "appsAddedSoFar": "Added: {apps}",
     "appNameRequiredForKind": "Please enter an app name",
     "appNameReservedConsole": "Name \"{name}\" is reserved for Console; pick another name or choose Console kind",
+    "appNameReservedApi": "Name \"{name}\" is reserved for API; pick another name or choose API kind",
     "exampleLevelConsole": "Console examples",
     "exampleConsoleWithCrond": "With crond (hello + crond)",
     "exampleConsoleMinimal": "Minimal (hello)",
@@ -678,11 +691,15 @@
     "exampleApiWithUsers": "With users (hello + users)",
     "exampleApiMinimal": "Minimal (hello)",
     "runConsole": "  dweb-cli run hello/world",
-    "runConsoleApp": "  dweb-cli run hello/world -a {app}   # Console command"
+    "runConsoleApp": "  dweb-cli run hello/world -a {app}   # Console command",
+    "runtime": "Runtime",
+    "runtimeDeno": "Deno (generate deno.json, Docker uses Deno)",
+    "runtimeBun": "Bun (generate package.json + .npmrc, Docker uses Bun)"
   },
   "run": {
     "missingRoute": "Specify a command route, e.g. dweb-cli run hello/world",
-    "usageHint": "Usage: dweb-cli run <route>/<action> [-a console] [--list] [--timeout ms] [-- --flag]",
+    "usageHint": "Usage: dweb-cli run <route>/<action> [args...] [--username value] [-a console] [--list] [--timeout ms]",
+    "doubleDashRemoved": "`--` is no longer supported. Put arguments directly after the route, for example: dweb-cli run user/add --username admin",
     "notConsoleKind": "Target app kind is \"{kind}\", not console (root: {root})",
     "failedWithMessage": "Console command failed: {message}",
     "listHeader": "Available console commands:",

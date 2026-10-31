@@ -15,15 +15,20 @@ import {
 import { args, cwd, resolve } from "@dreamer/runtime-adapter";
 import { $tr } from "../../utils/i18n.ts";
 import {
-  APP_KINDS,
-  CONSOLE_APP_NAME,
   ENGINES,
   EXAMPLE_LEVELS,
   RENDER_MODES,
   RUNTIMES,
   STYLES,
 } from "./constants.ts";
-import { isValidAppName, projectNameFromDir } from "./helpers.ts";
+import {
+  fixedMultiAppDirName,
+  isValidAppName,
+  projectNameFromDir,
+  rejectTypedAppName,
+  selectableAppKinds,
+  type TypedAppNameReject,
+} from "./helpers.ts";
 import type {
   AppKind,
   AppMode,
@@ -35,19 +40,42 @@ import type {
   Style,
 } from "./types.ts";
 
+const APP_KIND_LABEL: Record<AppKind, string> = {
+  web: "init.appKindWeb",
+  api: "init.appKindApi",
+  console: "init.appKindConsole",
+};
+
 async function promptAppKind(
-  excludeConsole: boolean,
+  taken: { api: boolean; console: boolean },
 ): Promise<AppKind> {
-  const labels = [
-    $tr("init.appKindWeb"),
-    $tr("init.appKindApi"),
-    ...(excludeConsole ? [] : [$tr("init.appKindConsole")]),
-  ];
-  const kinds: AppKind[] = excludeConsole
-    ? APP_KINDS.filter((k) => k !== "console")
-    : [...APP_KINDS];
+  const kinds = selectableAppKinds(taken);
+  const labels = kinds.map((kind) => $tr(APP_KIND_LABEL[kind]));
   const idx = await interactiveMenu($tr("init.appKind"), labels, 0);
   return kinds[idx] ?? "web";
+}
+
+function reportTypedAppNameReject(
+  reason: TypedAppNameReject,
+  name: string,
+): void {
+  switch (reason) {
+    case "empty":
+      consoleError($tr("init.appNameRequiredForKind"));
+      break;
+    case "invalid":
+      consoleError($tr("init.appNameInvalid", { name }));
+      break;
+    case "duplicate":
+      consoleError($tr("init.appNameDuplicate", { name }));
+      break;
+    case "reserved-api":
+      consoleError($tr("init.appNameReservedApi", { name }));
+      break;
+    case "reserved-console":
+      consoleError($tr("init.appNameReservedConsole", { name }));
+      break;
+  }
 }
 
 /**
@@ -108,7 +136,7 @@ export async function collectOptions(
   const apps: InitAppSpec[] = [];
 
   if (appMode === "single") {
-    const kind = await promptAppKind(false);
+    const kind = await promptAppKind({ api: false, console: false });
     apps.push({ name: projectName, kind });
   } else {
     info($tr("init.appNamesHint"));
@@ -123,34 +151,30 @@ export async function collectOptions(
         if (!addMore) break;
       }
 
-      const hasConsole = apps.some((a) => a.kind === "console");
-      const kind = await promptAppKind(hasConsole);
+      const kind = await promptAppKind({
+        api: apps.some((a) => a.kind === "api"),
+        console: apps.some((a) => a.kind === "console"),
+      });
 
-      let name: string;
-      if (kind === "console") {
-        name = CONSOLE_APP_NAME;
-        info($tr("init.consoleNameFixed", { name }));
+      const fixedName = fixedMultiAppDirName(kind);
+      let name = fixedName ?? "";
+      if (fixedName != null) {
+        info(
+          $tr(
+            kind === "api" ? "init.apiNameFixed" : "init.consoleNameFixed",
+            { name },
+          ),
+        );
       } else {
         while (true) {
           const line = await prompt($tr("init.appNamePromptEmpty"));
           name = line?.trim() ?? "";
-          if (!name) {
-            consoleError($tr("init.appNameRequiredForKind"));
-            continue;
-          }
-          if (!isValidAppName(name)) {
-            consoleError($tr("init.appNameInvalid", { name }));
-            continue;
-          }
-          if (apps.some((a) => a.name === name)) {
-            consoleError($tr("init.appNameDuplicate", { name }));
-            continue;
-          }
-          if (name === CONSOLE_APP_NAME) {
-            consoleError($tr("init.appNameReservedConsole", { name }));
-            continue;
-          }
-          break;
+          const reason = rejectTypedAppName(
+            name,
+            apps.map((a) => a.name),
+          );
+          if (reason == null) break;
+          reportTypedAppNameReject(reason, name);
         }
       }
 

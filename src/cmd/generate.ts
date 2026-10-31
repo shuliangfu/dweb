@@ -301,7 +301,8 @@ export const meta = {
 /** 默认动作（dweb-cli run ${routeName}） */
 export async function run(ctx: ConsoleContext): Promise<void> {
   ctx.log.info("console command: ${routeName}");
-  // ctx.args / ctx.options — 来自 dweb-cli run ${routeName} -- --flag
+  // ctx.args：dweb-cli run ${routeName} a b
+  // ctx.options：dweb-cli run ${routeName} --username a --email b
 }
 `;
       return { targetPath, content };

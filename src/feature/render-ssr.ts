@@ -27,7 +27,11 @@ import {
   createServerResponse,
   requestFromHttpContext,
 } from "../types/context.ts";
-import { replaceAssetPathsInHtml } from "../utils/asset-manifest.ts";
+import {
+  createAssetPathReplaceTransform,
+  readAssetManifest,
+  replaceAssetPathsInHtml,
+} from "../utils/asset-manifest.ts";
 import { sanitizeRequestParams } from "../utils/sanitize.ts";
 import {
   createDefaultErrorHtml,
@@ -43,6 +47,8 @@ import {
   collectClientRoutes,
   escapeHtmlInStyle,
   hasContainerElementInHtml,
+  MountContainerMissingError,
+  streamAfterMountContainer,
 } from "./render-utils.ts";
 import { loadRouteModule } from "./load-route-module.ts";
 import { getRender } from "./render.ts";
@@ -310,10 +316,9 @@ export function createRendererSSR(
       };
 
       const ssrHydrate = renderConfig.ssr?.hydrate !== false;
+      // 生产同样流式：资源路径用 manifest 变换在流上替换，不再整页缓冲。
       const wantStream = renderConfig.ssr?.stream === true &&
-        engine === "view" &&
-        // 生产 asset-manifest 重写需要完整字符串；无法表达为流注入时回退
-        isDev;
+        engine === "view";
 
       const buildHydrationScript = (): string | null => {
         if (!ssrHydrate) return null;
@@ -369,6 +374,21 @@ export function createRendererSSR(
           : {}),
       };
 
+      const failMissingMountContainer = (htmlLength: number): never => {
+        const logger = container.has("logger")
+          ? getLogger(container)
+          : undefined;
+        if (logger) {
+          logger.error(
+            $tr("log.ssrMountContainerCheckFailed"),
+            `containerId=${containerId}, html.length=${htmlLength}`,
+          );
+        }
+        throw new Error(
+          $tr("errors.hybridMountContainerRequired", { containerId }),
+        );
+      };
+
       if (wantStream) {
         const streamResult = await renderService.renderSSRStream(ssrOptions);
         const styleTags = routeCss.length > 0
@@ -379,30 +399,41 @@ export function createRendererSSR(
             .join("")
           : "";
         const clientConfigScript = buildHydrationScript();
-        const postInjections: Array<{
-          content: string;
-          options?: {
-            type?: "meta" | "script" | "data-script";
-            inHead?: boolean;
-          };
-        }> = [];
+        // 与整页路径同序：先注入 head CSS，再替换 manifest，最后注入 hydration。
+        let body: ReadableStream<Uint8Array> = streamResult.body;
         if (styleTags) {
-          postInjections.push({
-            content: styleTags,
-            options: { type: "meta", inHead: true },
-          });
+          body = body.pipeThrough(
+            createHtmlInjectTransform([{
+              content: styleTags,
+              options: { type: "meta", inHead: true },
+            }]),
+          );
+        }
+        if (!isDev) {
+          const manifest = await readAssetManifest(resolvedConfig);
+          if (manifest) {
+            body = body.pipeThrough(createAssetPathReplaceTransform(manifest));
+          }
+        }
+        // 与整页路径一样：hydration 开启时必须先看到挂载容器，否则不返回 200。
+        if (ssrHydrate) {
+          try {
+            body = await streamAfterMountContainer(body, containerId);
+          } catch (err) {
+            if (err instanceof MountContainerMissingError) {
+              failMissingMountContainer(err.htmlLength);
+            }
+            throw err;
+          }
         }
         if (clientConfigScript) {
-          postInjections.push({
-            content: clientConfigScript,
-            options: { type: "script" },
-          });
+          body = body.pipeThrough(
+            createHtmlInjectTransform([{
+              content: clientConfigScript,
+              options: { type: "script" },
+            }]),
+          );
         }
-        const body = postInjections.length > 0
-          ? streamResult.body.pipeThrough(
-            createHtmlInjectTransform(postInjections),
-          )
-          : streamResult.body;
         return new Response(body, { status: 200, headers: responseHeaders });
       }
 
@@ -427,18 +458,7 @@ export function createRendererSSR(
       // 客户端激活（仅当 render.ssr.hydrate 不为 false 时注入 __DATA__ 与 _client.js）
       if (ssrHydrate) {
         if (!hasContainerElementInHtml(html, containerId)) {
-          const logger = container.has("logger")
-            ? getLogger(container)
-            : undefined;
-          if (logger) {
-            logger.error(
-              $tr("log.ssrMountContainerCheckFailed"),
-              `containerId=${containerId}, html.length=${html?.length ?? 0}`,
-            );
-          }
-          throw new Error(
-            $tr("errors.hybridMountContainerRequired", { containerId }),
-          );
+          failMissingMountContainer(html?.length ?? 0);
         }
         const clientConfigScript = buildHydrationScript();
         if (clientConfigScript) {

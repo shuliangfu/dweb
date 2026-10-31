@@ -61,3 +61,82 @@ export function hasContainerElementInHtml(
   const re = new RegExp(`<[a-zA-Z][^>]*\\bid=["']${escaped}["']`);
   return re.test(html);
 }
+
+/** 流结束时仍没有挂载容器。调用方应在返回 Response 之前抛出。 */
+export class MountContainerMissingError extends Error {
+  readonly htmlLength: number;
+
+  constructor(containerId: string, htmlLength: number) {
+    super(`mount container not found: ${containerId}`);
+    this.name = "MountContainerMissingError";
+    this.htmlLength = htmlLength;
+  }
+}
+
+/**
+ * 读流直到 HTML 里出现挂载容器，再把已读字节和后续字节合成一条流。
+ * 容器标签可以被切在两个 chunk 里。流结束仍没有容器时抛 MountContainerMissingError，
+ * 此时响应还没发出。
+ */
+export async function streamAfterMountContainer(
+  body: ReadableStream<Uint8Array>,
+  containerId: string,
+): Promise<ReadableStream<Uint8Array>> {
+  const reader = body.getReader();
+  const buffered: Uint8Array[] = [];
+  const decoder = new TextDecoder();
+  let html = "";
+  let found = false;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value || value.byteLength === 0) continue;
+      buffered.push(value.slice());
+      html += decoder.decode(value, { stream: true });
+      if (hasContainerElementInHtml(html, containerId)) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      html += decoder.decode();
+      found = hasContainerElementInHtml(html, containerId);
+    }
+  } catch (err) {
+    await reader.cancel(err).catch(() => undefined);
+    throw err;
+  }
+  if (!found) {
+    await reader.cancel().catch(() => undefined);
+    throw new MountContainerMissingError(containerId, html.length);
+  }
+
+  let offset = 0;
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      while (offset < buffered.length) {
+        const chunk = buffered[offset]!;
+        offset++;
+        if (chunk.byteLength > 0) {
+          controller.enqueue(chunk);
+          return;
+        }
+      }
+      while (true) {
+        const next = await reader.read();
+        if (next.done) {
+          controller.close();
+          return;
+        }
+        if (next.value && next.value.byteLength > 0) {
+          controller.enqueue(next.value);
+          return;
+        }
+      }
+    },
+    cancel(reason) {
+      return reader.cancel(reason);
+    },
+  });
+}

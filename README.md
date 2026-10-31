@@ -409,7 +409,8 @@ export async function POST(ctx: ApiContext) {
 # Console app (kind=console) — no HTTP listen
 dweb-cli run hello/world
 dweb-cli run --list
-dweb-cli run hello/world -- --name Ada
+dweb-cli run user/add admin admin@qq.com 13800138000
+dweb-cli run user/add --username admin --email admin@qq.com --phone 13800138000
 dweb-cli run crond/start -a console   # multi-app
 dweb-cli run slow/job --timeout 5000  # timeout control (exit code 124)
 dweb-cli generate -t console -n user/seed
@@ -458,8 +459,9 @@ export async function stop(ctx: ConsoleContext): Promise<void> {
 See also `examples/app-kinds/multi-web-api-console`.
 
 `dweb-cli init` can scaffold Web / API / Console. In multi-app mode each app
-picks its own `kind` and shares `common/`. **At most one** `console` per
-project.
+picks its own `kind` and shares `common/`. **At most one** `api` and **at most
+one** `console` per project. Their directories are fixed as `api` and `console`;
+init does not ask for those names.
 
 ### Single-app mode (default)
 
@@ -472,10 +474,11 @@ independently and can share common code and config.
 
 **Multi-app conventions**:
 
-- **Web apps** (e.g. backend/admin): pages, `_app.tsx`, route views.
-- **API apps**: set `kind: "api"`; scaffold generates handlers under `routes/`
-  with no `_app`.
-- **Console apps**: default directory name `console`; only one per project.
+- **Web apps** (e.g. backend/admin): pages, `_app.tsx`, route views. You choose
+  the directory name. `api` and `console` are reserved.
+- **API apps**: directory name is fixed as `api` (one per project). Set
+  `kind: "api"`; scaffold generates handlers under `routes/` with no `_app`.
+- **Console apps**: directory name is fixed as `console`; only one per project.
 
 See the Chinese design note
 [2026-08-25-app-kinds-init-实现分析.md](./docs/zh-CN/2026-08-25-app-kinds-init-实现分析.md).

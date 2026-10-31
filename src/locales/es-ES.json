@@ -148,7 +148,12 @@
     "run": "Run a Console app command (kind=console; e.g. hello/world)",
     "appOptionalRun": "App name (multi-app: console; default resolves the only console)",
     "runList": "List console commands (optional module filter)",
-    "runTimeout": "Command timeout in ms (exit 124 on timeout)"
+    "runTimeout": "Command timeout in ms (exit 124 on timeout)",
+    "testReporter": "Host reporter: junit | tap | dot (Bun: junit only)",
+    "testReportOut": "JUnit report output path (requires --reporter junit)",
+    "testJunitPath": "Alias of --report-out for Deno --junit-path",
+    "testProductReport": "Product report formats: json,md,html (from JUnit; comma-separated)",
+    "testReportDir": "Product report output directory (default: reports)"
   },
   "common": {
     "noDenoJson": "deno.json no encontrado, ejecute en la raíz de dweb",
@@ -368,7 +373,13 @@
     "addTaskHint": "Añada task test o test:appName, o use dweb-cli test (sin task)",
     "spawnCommand": "Ejecutando: {cmd}",
     "invalidRuntime": "--runtime no soportado: {value} (use deno o bun)",
-    "noAppTaskFallback": "Task {task} no definida; se usa host tests (por defecto tests/)"
+    "noAppTaskFallback": "Task {task} no definida; se usa host tests (por defecto tests/)",
+    "invalidReporter": "Unsupported --reporter: {value} (use junit, tap, or dot)",
+    "invalidProductReport": "Unsupported --report format: {value} (use json, md, or html)",
+    "productReportRequiresJunit": "--report requires host junit (do not combine with tap/dot)",
+    "productReportNodeUnsupported": "Node host does not support --report product reports yet",
+    "productReportWritten": "Wrote product reports: {paths}",
+    "productReportFailed": "Failed to write product reports: {message}"
   },
   "update": {
     "running": "Actualizando dependencias y lockfile...",
@@ -403,9 +414,9 @@
     "appMode": "Modo app",
     "appModeSingle": "App única",
     "appModeMulti": "Multi app",
-    "appNamesHint": "Nombres de app, uno por línea, vacío para terminar",
+    "appNamesHint": "Elige el tipo de cada app. Web pide el directorio. API queda fijo en api, Console en console. Confirma para terminar.",
     "appNamePromptWithAdded": "Nombre de app (añadidas: {apps}; vacío para terminar): ",
-    "appNamePromptEmpty": "Nombre de app (vacío para terminar, al menos uno requerido): ",
+    "appNamePromptEmpty": "Nombre del directorio Web: ",
     "appNameMinOne": "Se requiere al menos un nombre de app",
     "appNameInvalid": "\"{name}\" no válido: solo minúsculas, números y guiones",
     "appNameDuplicate": "Nombre de app no puede duplicarse: {name}",
@@ -667,10 +678,12 @@
     "appKindApi": "API (HTTP only)",
     "appKindConsole": "Console (CLI)",
     "consoleNameFixed": "Console app directory fixed as: {name}",
+    "apiNameFixed": "API app directory fixed as: {name}",
     "addAnotherApp": "Add another app?",
     "appsAddedSoFar": "Added: {apps}",
     "appNameRequiredForKind": "Please enter an app name",
     "appNameReservedConsole": "Name \"{name}\" is reserved for Console; pick another name or choose Console kind",
+    "appNameReservedApi": "Name \"{name}\" is reserved for API; pick another name or choose API kind",
     "exampleLevelConsole": "Console examples",
     "exampleConsoleWithCrond": "With crond (hello + crond)",
     "exampleConsoleMinimal": "Minimal (hello)",
@@ -678,11 +691,15 @@
     "exampleApiWithUsers": "With users (hello + users)",
     "exampleApiMinimal": "Minimal (hello)",
     "runConsole": "  dweb-cli run hello/world",
-    "runConsoleApp": "  dweb-cli run hello/world -a {app}   # Console command"
+    "runConsoleApp": "  dweb-cli run hello/world -a {app}   # Console command",
+    "runtime": "Runtime",
+    "runtimeDeno": "Deno (generate deno.json, Docker uses Deno)",
+    "runtimeBun": "Bun (generate package.json + .npmrc, Docker uses Bun)"
   },
   "run": {
     "missingRoute": "Specify a command route, e.g. dweb-cli run hello/world",
-    "usageHint": "Usage: dweb-cli run <route>/<action> [-a console] [--list] [--timeout ms] [-- --flag]",
+    "usageHint": "Usage: dweb-cli run <route>/<action> [args...] [--username value] [-a console] [--list] [--timeout ms]",
+    "doubleDashRemoved": "`--` is no longer supported. Put arguments directly after the route, for example: dweb-cli run user/add --username admin",
     "notConsoleKind": "Target app kind is \"{kind}\", not console (root: {root})",
     "failedWithMessage": "Console command failed: {message}",
     "listHeader": "Available console commands:",
