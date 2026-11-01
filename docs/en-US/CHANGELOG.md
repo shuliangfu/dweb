@@ -10,6 +10,15 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [3.7.6] - 2026-11-01
+
+### Changed
+
+- **Dependency**: `@dreamer/server` bumped to `^1.2.2` (action-mode `index`
+  fallback for kind:api / apiOnly bare `/` and `/<resource>`).
+
+---
+
 ## [3.7.5] - 2026-10-31
 
 ### Fixed

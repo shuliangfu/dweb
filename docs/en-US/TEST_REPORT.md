@@ -6,14 +6,21 @@
 
 | Item             | Value                                               |
 | ---------------- | --------------------------------------------------- |
-| Framework        | 3.7.5                                               |
+| Framework        | 3.7.6                                               |
 | Test framework   | @dreamer/test@^1.2.3                                |
-| Test date        | 2026-10-31                                          |
-| Test environment | Local Deno for the 3.7.5 change; CI below is v3.7.3 |
+| Test date        | 2026-11-01                                          |
+| Test environment | Local Deno for the 3.7.6 change; CI below is v3.7.3 |
 
 ---
 
 ## 📊 Test Results
+
+### v3.7.6 local check
+
+Dependency-only release: `@dreamer/server` → `^1.2.2`.
+`deno test -A --minimum-dependency-age=0 --no-check tests/unit/`: **901
+passed**, 0 failed, 2 ignored (~38s). Full three-runtime CI matrix below remains
+the v3.7.3 baseline unless a new CI run is linked.
 
 ### v3.7.5 local check
 

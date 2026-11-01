@@ -1983,6 +1983,11 @@ config-loader tests support Windows cross-platform (pathToFileUrl, makeTempDir).
 
 ## 📋 Changelog
 
+### [3.7.6] - 2026-11-01
+
+- **Changed**: `@dreamer/server` → `^1.2.2` (apiOnly `/` and `/<resource>`
+  action-mode `index` fallback).
+
 ### [3.7.5] - 2026-10-31
 
 **Fixed** — `dweb-cli init` writes `"minimumDependencyAge": 0` into the

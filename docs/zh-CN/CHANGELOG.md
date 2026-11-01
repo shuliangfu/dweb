@@ -9,6 +9,15 @@
 
 ## [Unreleased]
 
+## [3.7.6] - 2026-11-01
+
+### 变更
+
+- **依赖**：`@dreamer/server` 升至 `^1.2.2`（action 模式 `index` 回落支持
+  kind:api / apiOnly 根 `/` 与 `/<resource>`）。
+
+---
+
 ## [3.7.5] - 2026-10-31
 
 ### 修复

@@ -2032,6 +2032,11 @@ Replacement），修改代码后自动刷新，无需手动刷新浏览器。
 
 ## 📋 变更日志
 
+### [3.7.6] - 2026-11-01
+
+- **变更**：`@dreamer/server` → `^1.2.2`（apiOnly 根 `/` 与 `/<resource>` 的
+  action 模式 `index` 回落）。
+
 ### [3.7.5] - 2026-10-31
 
 **修复** — `dweb-cli init` 会在生成的 `deno.json` 里写入
