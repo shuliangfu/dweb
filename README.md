@@ -97,10 +97,11 @@ deno add jsr:@dreamer/runtime-adapter
 - **Bun build argv**: use `bun run <entry> -- --build` (the `--` ensures
   `--build` reaches the app on Windows Bun; Deno／Node keep `--build` without
   `--`)
-- **Windows Bun child process (known limit)**: on Windows+Bun, spawned
+- **Windows Bun (known limits)**: on Windows+Bun, spawned
   `bun run … -- --build` / init-and-serve may exit 0 with empty stdout and no
-  dist (upstream Bun). Related **integration** cases are temporarily skipped;
-  e2e and other OS/runtimes stay on
+  dist (upstream Bun)—related **integration** cases temporarily skipped via
+  `SKIP_WINDOWS_BUN_CHILD_PROCESS`. **CI also disables** Windows Bun **e2e**
+  (browser); Linux/macOS Bun e2e and other OS/runtimes stay on
 - **Dependencies**: Integrates all @dreamer/* libraries
 
 ### Node.js Usage
@@ -2014,8 +2015,8 @@ not locks.
 ### [Unreleased] — upgrade campaign (draft)
 
 - **Changed**: temporary skip of Windows+Bun child-process **integration**
-  (`SKIP_WINDOWS_BUN_CHILD_PROCESS`); upstream empty-stdout/exit-0 limit; e2e
-  and other matrix cells unchanged.
+  (`SKIP_WINDOWS_BUN_CHILD_PROCESS`); **CI disables** Windows Bun e2e step;
+  Linux/macOS Bun e2e and other matrix cells unchanged.
 - **Breaking**: production defaults — `securityHeaders` + `rateLimit` **on**
   outside `dev` (`false` to escape); `cors` stays opt-in.
 - **Added**: `csrf`, optional `upload` (`@dreamer/upload@^2`, `requireAuth`

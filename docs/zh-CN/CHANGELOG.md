@@ -16,8 +16,12 @@
   0**、不落盘 dist，或子进程服务起不来——属上游 Bun 在 Windows 上的兼容限制。相关
   integration（14 个 `*-build`＋api-kind 子进程 init）以
   `SKIP_WINDOWS_BUN_CHILD_PROCESS`（`IS_BUN && platform()==="windows"`）临时
-  skip；**未关**整条 e2e，其它 OS／runtime／进程内 fixture／console-kind 仍跑。
-  示例构建仍建议 `bun run <entry> -- --build`（`--` 保证 `--build` 进 argv）。
+  skip；其它 OS／runtime／进程内 fixture／console-kind 仍跑。示例构建仍建议
+  `bun run <entry> -- --build`（`--` 保证 `--build` 进 argv）。
+- **CI 关闭 Windows Bun e2e**：`.github/workflows/ci.yml` 的
+  `test-windows-bun` **不再跑** `Test (Bun, Windows) e2e`（及专为该步的
+  Chrome／Playwright 安装）——上游 Bun 在 Windows 上浏览器 e2e 无法通过；
+  **未动** Linux／macOS Bun e2e。
 
 ### 破坏性变更
 

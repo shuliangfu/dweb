@@ -1,6 +1,7 @@
-# CI: macOS / Ubuntu / Windows × Deno / Bun / Node — 全量 unit + integration + e2e
+# CI: macOS / Ubuntu / Windows × Deno / Bun / Node — unit + integration + e2e
 # Bun e2e 需 Playwright Chromium；Bun ≥1.4（CI bun-version: latest）。
 # unit / integration / e2e 分步跑，避免 integration 结束 cleanupSuiteBrowser 拖垮 e2e。
+# 例外：Windows＋Bun 临时关闭 e2e（上游浏览器限制）；unit＋integration 仍跑。
 name: CI
 
 # Pin Linux to ubuntu-24.04: ubuntu-latest is 26.04; Playwright rejects
@@ -179,24 +180,12 @@ jobs:
       - name: Install dependencies (Bun)
         run: bun install
 
-      - name: Setup Chrome (for browser E2E tests)
-        uses: browser-actions/setup-chrome@v1
-
-      - name: Install Playwright Chromium
-        run: bunx playwright@1.59.1 install chromium
-
+      # Windows＋Bun 浏览器／e2e：上游兼容限制，CI 临时关闭本步（unit＋integration 仍跑；
+      # integration 中子进程用例见 SKIP_WINDOWS_BUN_CHILD_PROCESS）。勿关 Linux／macOS Bun e2e。
       - name: Test (Bun, Windows) unit
         run: bun test --max-concurrency=1 tests/unit
       - name: Test (Bun, Windows) integration
         run: bun test --max-concurrency=1 tests/integration
-      - name: Test (Bun, Windows) e2e
-        run: |
-          $failed = 0
-          Get-ChildItem tests/e2e/*.test.ts | ForEach-Object {
-            bun test --max-concurrency=1 $_.FullName
-            if ($LASTEXITCODE -ne 0) { $failed = 1 }
-          }
-          exit $failed
 
   # ─── Node.js jobs（unit + integration + e2e 全量）───
   test-linux-node:

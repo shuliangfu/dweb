@@ -17,10 +17,13 @@ and this project adheres to
   exit 0 with **empty stdout/stderr**, write no dist, or fail to listen—an
   upstream Bun-on-Windows compatibility limit. Related integration cases (14
   `*-build` suites + api-kind subprocess init) are temporarily skipped via
-  `SKIP_WINDOWS_BUN_CHILD_PROCESS` (`IS_BUN && platform()==="windows"`). **Does
-  not** disable whole e2e jobs; other OS/runtimes, in-process fixtures, and
-  console-kind still run. Prefer `bun run <entry> -- --build` so `--build`
-  reaches argv.
+  `SKIP_WINDOWS_BUN_CHILD_PROCESS` (`IS_BUN && platform()==="windows"`). Other
+  OS/runtimes, in-process fixtures, and console-kind still run. Prefer
+  `bun run <entry> -- --build` so `--build` reaches argv.
+- **CI disables Windows Bun e2e**: `test-windows-bun` in
+  `.github/workflows/ci.yml` **no longer runs** `Test (Bun, Windows) e2e` (nor
+  the Chrome/Playwright install steps for that job)—upstream Bun browser e2e
+  on Windows cannot pass. **Does not** touch Linux/macOS Bun e2e.
 
 ### Breaking
 
