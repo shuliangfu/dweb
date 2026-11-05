@@ -34,7 +34,7 @@ import {
   exampleRunArgs,
   getExampleChildProcessExecutable,
   getRepoRoot,
-  getSpawnCwd,
+  getSpawnCwdForIntegration,
 } from "../setup.ts";
 
 const REPO_ROOT = getRepoRoot();
@@ -324,7 +324,7 @@ describe("integration: api kind — init generate（子进程）", () => {
 
     const cmd = createCommand(getExampleChildProcessExecutable(), {
       args: exampleRunArgs("src/main.ts"),
-      cwd: getSpawnCwd(testDir),
+      cwd: getSpawnCwdForIntegration(),
       env,
       stdout: "inherit",
       stderr: "inherit",

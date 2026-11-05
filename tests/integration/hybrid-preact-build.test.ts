@@ -24,7 +24,7 @@ import {
   existsBuildOutput,
   getExampleChildProcessExecutable,
   getRepoRoot,
-  getSpawnCwd,
+  getSpawnCwdForIntegration,
 } from "../setup.ts";
 
 /** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
@@ -47,14 +47,14 @@ describe("integration: Hybrid + Preact 构建", () => {
 
   it("build 任务应成功执行并生成 server.js、client 资源及 assets", async () => {
     // 构建前清空 dist，确保从干净环境开始
-    const distDir = join(exampleDir, "dist");
+    const distDir = join(cwd(), "dist");
     if (await exists(distDir)) {
       await remove(distDir, { recursive: true });
     }
 
     const cmd = createCommand(getExampleChildProcessExecutable(), {
       args: exampleBuildArgs("src/main.ts"),
-      cwd: getSpawnCwd(exampleDir),
+      cwd: getSpawnCwdForIntegration(),
       stdout: "piped",
       stderr: "piped",
     });
@@ -68,10 +68,17 @@ describe("integration: Hybrid + Preact 构建", () => {
       throw new Error(`build 失败: ${stderrText}`);
     }
 
-    const serverJs = join(exampleDir, "dist", "server.js");
+    const serverJs = join(cwd(), "dist", "server.js");
+    if (!(await existsBuildOutput(serverJs))) {
+      throw new Error(
+        `build 退出 0 但缺少 ${serverJs}（cwd=${cwd()}）。stderr: ${
+          stderrText || "(empty)"
+        }`,
+      );
+    }
     expect(await existsBuildOutput(serverJs)).toBe(true);
 
-    const clientDir = join(exampleDir, "dist", "client");
+    const clientDir = join(cwd(), "dist", "client");
     expect(await existsBuildOutput(clientDir)).toBe(true);
 
     const clientFiles = await readdir(clientDir);

@@ -24,7 +24,7 @@ import {
   existsBuildOutput,
   getExampleChildProcessExecutable,
   getRepoRoot,
-  getSpawnCwd,
+  getSpawnCwdForIntegration,
 } from "../setup.ts";
 
 /** 仓库根目录，不依赖 cwd，避免上一套件 chdir 导致路径错误 */
@@ -47,14 +47,14 @@ describe("integration: SSG 构建", () => {
 
   it("build 任务应成功执行并生成 HTML（含 headInject）", async () => {
     // 构建前清空 dist，确保从干净环境开始
-    const distDir = join(exampleDir, "dist");
+    const distDir = join(cwd(), "dist");
     if (await exists(distDir)) {
       await remove(distDir, { recursive: true });
     }
 
     const cmd = createCommand(getExampleChildProcessExecutable(), {
       args: exampleBuildArgs("src/main.ts"),
-      cwd: getSpawnCwd(exampleDir),
+      cwd: getSpawnCwdForIntegration(),
       stdout: "piped",
       stderr: "piped",
     });
@@ -68,7 +68,7 @@ describe("integration: SSG 构建", () => {
       throw new Error(`build 失败: ${stderrText}`);
     }
 
-    const indexPath = join(exampleDir, "dist", "client", "index.html");
+    const indexPath = join(cwd(), "dist", "client", "index.html");
     const existsIndex = await existsBuildOutput(indexPath);
     expect(existsIndex).toBe(true);
 
